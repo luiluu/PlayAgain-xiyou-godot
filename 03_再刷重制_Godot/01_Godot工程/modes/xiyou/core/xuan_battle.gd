@@ -5,7 +5,9 @@ extends RefCounted
 ## 余辉不做：原版包在 Game_Battler.gainHp 上，而回光只打角色，角色的 gainHp 是 Game_Actor 自有方法，这层跑不到，实测溢出不转护盾（见交付单「需要用户决定」）。
 ## 第二期：绑定种类登记、寄星／转移／回身、星纹标记、默契结算、附身期间不掉血、移光、留辉、共宿（伤害、双防、并轨 3 级）、列星（星影、目标扩展、到期）、
 ## 星盾流转定轨（10 级）与接力（20 级，installThreeGrowthRelicRuntime）、护盾挡下计护主（mv_oracle/xuan_bind_probe.cjs → tests/xiyou_xuan_bind）。
-## 先照手动先制（Game_Action.speed +100000）没接：OTB 下 action.speed 怎么用还没量；璇玑星盘首回合星契 firstCharge 是 0，不做；60 级列星法宝特效在第三期。
+## 先照手动先制（Game_Action.speed +100000）：量过（xuan_auto speed_* 例），OTB 只在回合开始 makeSpeed，这时行动是 makeActions 新建的空白行动，碰不到璃壁，原版实际没效果；
+## 重制改成手动璃壁把璇排到下个回合最前（O-待定，XIANZHAO_MANUAL_FIRST，false 回到原版）。璇玑星盘首回合星契 firstCharge 是 0，不做。
+## 60 级列星（installThreeGrowthRelicRuntime）：列星后首次回光／璃壁给归宿（不看法宝），戴周天命星仪时首次回光额外净化、首次璃壁给星幕；归宿、星幕各让下一次敌方直接伤害 ×0.9，当回合有效。
 ## 星纹标记原版的 removeState 补回不做：包在 Game_Battler 上，角色走 Game_Actor 自有方法，实测移除后不补回。
 ## 星契自律（内部施放、同轨、先照预支、分光、同调）在第三期，盘点见交付单 cc_wukong-xuan2。
 ## 参照 mv_oracle/xuan_battle_probe.cjs → tests/fixtures/xuan_battle_oracle.json（tests/xiyou_xuan_battle）。
@@ -41,6 +43,8 @@ const GONGSU_DEF := [[0.15, 0.30], [20, 60]]
 const YIGUANG_RATE := [0.0, 0.5, 0.75, 1.0]
 const LIEXING_TURNS := 2
 static var _param_guard := false
+## 【cc·悟空·未经审查】O-待定：先照手动璃壁先制。false＝原版（OTB 下没效果）
+static var XIANZHAO_MANUAL_FIRST := true
 const LINES := {"transfer": "璇：「我去另一边，有事叫我。」"}
 
 
@@ -227,7 +231,7 @@ static func state_id(key: String) -> int:
 
 ## fresh
 static func _fresh() -> Dictionary:
-	return {"tacit": 0, "tonggui": false, "debt": 0, "xianzhaoRound": -99, "liexingUntil": -1, "shadows": [], "record": {}, "dingxing": {}, "shihuiRound": -99, "used": {}, "auto": false}
+	return {"tacit": 0, "tonggui": false, "debt": 0, "xianzhaoRound": -99, "liexingUntil": -1, "shadows": [], "record": {}, "dingxing": {}, "shihuiRound": -99, "used": {}, "auto": false, "homeUsed": false, "relicHealUsed": false, "relicWallUsed": false, "home": {}, "mist": {}}
 
 
 ## startBattle 包装：出战的璇建本场数据，记下这一场的星契自律
@@ -269,10 +273,10 @@ static func is_cleanse_state(st: Dictionary, hard: bool) -> bool:
 	return not hard and RegEx.create_from_string(SOFT_TYPES).search(note) != null
 
 
-## cleansable(t)[0]：第一个可净化的硬控制，没有返回 0
-static func first_cleansable(t: XBattler) -> int:
+## cleansable(t)[0]：第一个可净化的硬控制（hard false 连软状态一起算），没有返回 0
+static func first_cleansable(t: XBattler, hard := true) -> int:
 	for st in t.states():
-		if is_cleanse_state(st, true):
+		if is_cleanse_state(st, hard):
 			return int(st.id)
 	return 0
 
@@ -342,6 +346,74 @@ static func user_effect(logic, u, skill: Dictionary, t: XBattler) -> void:
 				_shihui(logic, u, t)
 				if not data.is_empty():
 					data.record.assist = true
+	_list_star60(logic, u, key_of(skill), t)
+
+
+## 60 级列星（applyItemUserEffect 包装，原效果之后）：资格按这次行动算一次，同一次的各目标共用
+static var _grants60 := {}
+
+
+static func _list_star60(logic, u, key: String, t: XBattler) -> void:
+	if data.is_empty() or XBinding.current_round() > int(data.liexingUntil) or not key in ["huiguang", "libi"]:
+		return
+	var r := XBinding.current_round()
+	if not _grants60.has("home"):
+		_grants60.home = int(u.level) >= 60 and not bool(data.homeUsed)
+	if _grants60.home:
+		data.homeUsed = true
+		data.home[t] = r
+	if int(u.level) < 60 or not relic_on(u):
+		return
+	if key == "huiguang":
+		if not _grants60.has("cleanse"):
+			_grants60.cleanse = not bool(data.relicHealUsed)
+		if _grants60.cleanse:
+			data.relicHealUsed = true
+			var bad := first_cleansable(t, false)
+			if bad > 0:
+				logic._state_remove(t, bad)
+	else:
+		if not _grants60.has("mist"):
+			_grants60.mist = not bool(data.relicWallUsed)
+		if _grants60.mist:
+			data.relicWallUsed = true
+			data.mist[t] = r
+
+
+## X.relicOn：戴着璇玑星盘（60 级显示为周天命星仪）
+static func relic_on(a) -> bool:
+	var id := int(XTusuXuan.RELICS[XUAN])
+	for e in a.equips:
+		if e is Dictionary and str(e.get("kind", "armor")) == "armor" and int(e.get("base", e.get("id", 0))) == id:
+			return true
+	return false
+
+
+## three60-effects 伤害钩子：敌方直接伤害打到带归宿、星幕的目标，各 ×0.9
+static func incoming_ops(item: Dictionary, a, b) -> Array:
+	if data.is_empty() or not XTusu._direct(a, item):
+		return []
+	var r := XBinding.current_round()
+	var ops := []
+	if int(data.home.get(b, -1)) >= r:
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.9})
+	if int(data.mist.get(b, -1)) >= r:
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.9})
+	return ops
+
+
+## executeHpDamage 包装：敌方直接伤害实际打出（含被护盾吸收）后归宿、星幕消费，不看有没有过期
+static func hp_after(u, t, value: float, item: Dictionary) -> void:
+	if value > 0.0 and not data.is_empty() and XTusu._direct(u, item):
+		data.home.erase(t)
+		data.mist.erase(t)
+
+
+## O-待定：先照手动璃壁，下个回合排到最前（原版 Game_Action.speed +100000 在 OTB 下没效果）。_otb_user_shift 与排序预览共用
+static func manual_first_shift(logic, u, skill: Dictionary) -> int:
+	if not XIANZHAO_MANUAL_FIRST or not is_xuan(u) or data.is_empty() or auto_enabled() or key_of(skill) != "libi":
+		return 0
+	return 100000 if XXuanChart.mark_level(logic.state, u, "xianzhao") >= 1 else 0
 
 
 ## 蚀辉：每 3／2／1 回合驱散一项增益
@@ -564,6 +636,9 @@ static func _liexing(logic, u) -> void:
 	if data.is_empty():
 		return
 	data.liexingUntil = XBinding.current_round() + LIEXING_TURNS - 1
+	data.homeUsed = false
+	data.relicHealUsed = false
+	data.relicWallUsed = false
 	data.shadows = shadow_candidates(logic, u).map(func(t): return int(t.actor_id))
 	for id in data.shadows:
 		logic._state_add(logic.state.actor(int(id)), state_id("shadow"))
@@ -670,6 +745,8 @@ static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, prot
 	if list.is_empty():
 		return false
 	var prev := _act
+	var prev60 := _grants60
+	_grants60 = {}
 	_act = {"internal": "xuan"}
 	_act.merge(setup, true)
 	logic.pay_skill_cost(a, skill)
@@ -677,6 +754,7 @@ static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, prot
 		var at := _logs.size()
 		_logs.insert(at, logic.apply(a, skill, x))  # 命中记录排在 apply 期间带出的同轨协同之前（原版 executeHpDamage 在 applyItemUserEffect 之前）
 	_act = prev
+	_grants60 = prev60
 	_logs.append({"type": "battle_text", "text": str(CAST_LINES[key])})
 	XBinding.spend(a, 1)
 	data.used[key] = true
@@ -731,6 +809,7 @@ static func _follow_up(logic, a, skill: Dictionary, target) -> bool:
 
 ## startAction 包装（原 startAction 之前，屠苏在外层）：敌人对我方的伤害行动打到受益者前璃壁（并轨 2 级：打到副宿主也给），每回合一次
 static func start_action(logic, u, skill: Dictionary, chosen) -> Array:
+	_grants60 = {}
 	_last_target = null
 	_main_tonggui = false
 	_direct = u is XEnemy and not skill.is_empty() and XSmartAI.for_opponent(skill) and int(skill.get("damage", {}).get("type", 0)) in [1, 5]

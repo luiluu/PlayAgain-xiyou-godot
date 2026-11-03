@@ -721,7 +721,7 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 		return
 	var entries := []
 	if not XBattleLogic.is_item(skill):
-		entries.append([a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn"), logic._speed])
+		entries.append([a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn") + XXuanBattle.manual_first_shift(logic, a, skill), logic._speed])
 	var cur := XBattleLogic._note_int(skill, "OTB Target Current Turn")
 	var nxt := XBattleLogic._note_int(skill, "OTB Target Next Turn")
 	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):

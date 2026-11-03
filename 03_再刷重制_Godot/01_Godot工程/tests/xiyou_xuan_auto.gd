@@ -1,5 +1,5 @@
 extends Node
-## 璇第三期星契自律（XXuanBattle 内部施放、救援、列星、棱光跟打、分光、同调、璃壁、并轨 1／2 级、先照预支、同轨、回合末释放、自动战斗）
+## 璇第三期星契自律与 60 级列星（归宿、星幕、法宝首次回光额外净化；XXuanBattle 内部施放、救援、列星、棱光跟打、分光、同调、璃壁、并轨 1／2 级、先照预支、同轨、回合末释放、自动战斗）
 ## 对原版参照 tests/fixtures/xuan_auto_oracle.json（mv_oracle/xuan_auto_probe.cjs）：每步后比星契、璇的生命魔法冷却与本场数据、队友生命护盾状态、
 ## 敌人生命与双防减益、这一步的 executeHpDamage 数值与台词。队伍 [177, 1, 8, 2]，3 号敌群（生命加 1e9），随机固定 0.5。
 const FIXTURE := "res://tests/fixtures/xuan_auto_oracle.json"
@@ -57,6 +57,12 @@ func _battle(o: Dictionary) -> XBattleLogic:
 	if o.has("element"):
 		chart.element = int(o.element)
 	XTusuXuan.sync_marks(s, a)
+	if o.has("relic"):
+		var slot := a.equip_slots().find(int(XDB.rec("Armors", XTusuXuan.RELICS[XUAN]).get("etypeId", 0)))
+		a.equips[slot] = {}
+		if bool(o.relic):
+			s.gain_gear("armor", int(XTusuXuan.RELICS[XUAN]), 1)
+			a.equips[slot] = s.gear.pop_back()
 	XXuanChart.set_control(s, a, "manual" if bool(o.get("manual", false)) else "auto")
 	for id in PARTY:
 		s.actor(id).refresh_passive()
@@ -110,7 +116,8 @@ func _snap() -> Dictionary:
 	var party := {}
 	for id in PARTY.slice(1):
 		var x: XActor = _who(id)
-		party["a%d" % id] = {"hp": x.hp, "shield": _shield(x), "states": _pick(x, [10, XXuanBattle.state_id("shadow"), XXuanBattle.state_id("hostmark"), XXuanBattle.state_id("dingxing")])}
+		party["a%d" % id] = {"hp": x.hp, "shield": _shield(x), "states": _pick(x, [10, 35, XXuanBattle.state_id("shadow"), XXuanBattle.state_id("hostmark"), XXuanBattle.state_id("dingxing")]),
+			"home": d.get("home", {}).get(x), "mist": d.get("mist", {}).get(x)}
 	var enemies := {}
 	for e in logic.enemies:
 		enemies[_key(e)] = {"hp": e.hp, "buffs": [e.buffs[3], e.buffs[5]]}
@@ -121,7 +128,8 @@ func _snap() -> Dictionary:
 		"xuan": {"hp": a.hp, "mp": a.mp, "shield": _shield(a), "cd": cd,
 			"states": _pick(a, [XXuanBattle.state_id("possess"), XXuanBattle.state_id("tonggui"), XXuanBattle.state_id("debt"), XXuanBattle.state_id("liexing"), 10]),
 			"data": null if d.is_empty() else {"tacit": d.tacit, "tonggui": d.tonggui, "debt": d.debt, "xianzhaoRound": d.xianzhaoRound, "liexingUntil": d.liexingUntil,
-				"shadows": (d.shadows as Array).map(func(v): return int(v)), "used": used}},
+				"shadows": (d.shadows as Array).map(func(v): return int(v)), "used": used, "homeUsed": d.homeUsed, "relicHealUsed": d.relicHealUsed, "relicWallUsed": d.relicWallUsed},
+			"relic": XXuanBattle.relic_on(a)},
 		"party": party, "enemies": enemies}
 
 
@@ -189,18 +197,42 @@ func _step(st: Array) -> Array:
 		"libi":
 			XShieldLedger.revoke(_who(st[1]), "xuan.libi")
 			XShieldLedger.grant(_who(st[1]), "xuan.libi", float(st[2]), 2, XUAN, {"noBonus": true})
-		"seqhit":
-			# 敌人不带伤害的技能期间序列扣血（参照包 Game_Action.apply 扣；这里照行动起止的包装次序手动走）
-			var e = _who(st[1])
-			var sk: Dictionary = XDB.rec("Skills", int(st[2]))
-			XBinding.start_action(e)
-			logs.append_array(XXuanBattle.start_action(logic, e, sk, e))
-			logic.gain_hp(_who(st[3]), -float(st[4]))
-			logs.append_array(XXuanBattle.end_action(logic, e, sk))
-			XBinding.end_action()
 		"end":
 			logic.end_battle(0)
 	return [ret, logs]
+
+
+## 手动先制：原版 OTB 下没效果（参照 speed_*：真实流程排序前行动是空白的，硬塞璃壁才排到最前）；O-待定 手动璃壁把璇排到下个回合最前，回退开关关了不动
+func _order_after_libi(o: Dictionary) -> Array:
+	logic = _battle(o)
+	_step(["use", XUAN, "jixing", 1])
+	var a: XActor = _who(XUAN)
+	logic.next_order.erase(a)
+	logic.next_order.append(a)
+	_step(["use", XUAN, "libi", 1])
+	var order: Array = logic.next_order.map(func(b): return _key(b))
+	logic.end_battle(0)
+	return order
+
+
+func _check_manual_first(ref: Dictionary) -> void:
+	var speed := {}
+	for c in ref.cases:
+		if str(c.id).begins_with("speed_"):
+			speed[c.id] = c.observed
+	check("speed.dead", speed.speed_manual.afterNext == speed.speed_nomark.afterNext and speed.speed_manual.seenInMakeSpeed == [null], speed.speed_manual)
+	check("speed.control", speed.speed_manual.forcedNext[0] == "a177" and speed.speed_nomark.forcedNext[0] != "a177", speed.speed_manual.forcedNext)
+	var manual := {"manual": true, "marks": {"xianzhao": 1}}
+	XXuanBattle.XIANZHAO_MANUAL_FIRST = false
+	var off := _order_after_libi(manual)
+	check("first.off", off.back() == "a177", off)
+	XXuanBattle.XIANZHAO_MANUAL_FIRST = true
+	var on := _order_after_libi(manual)
+	check("first.on", on[0] == "a177", on)
+	var nomark := _order_after_libi({"manual": true})
+	check("first.nomark", nomark.back() == "a177", nomark)
+	var auto := _order_after_libi({"marks": {"xianzhao": 1}})
+	check("first.auto", auto.back() == "a177", auto)
 
 
 func _ready() -> void:
@@ -211,8 +243,10 @@ func _go() -> void:
 	GameApp.fast_headless_frames()
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("oracle", ref.cases.size() == 17 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
+	check("oracle", ref.cases.size() == 29 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
 	for c in ref.cases:
+		if str(c.id).begins_with("speed_"):
+			continue
 		logic = _battle(c.setup)
 		var steps: Array = c.observed
 		check(c.id + ".start", _norm(_snap()) == _norm(steps[0].snap), [_snap(), steps[0].snap])
@@ -239,5 +273,6 @@ func _go() -> void:
 					check("%s.%s" % [tag, k], got.get(k) == ws[k], [got.get(k), ws[k]])
 		if XBinding.in_battle():
 			logic.end_battle(0)
+	_check_manual_first(ref)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_xuan_auto", "passed": checks - failures.size(), "total": checks, "failures": failures.slice(0, 50)}))
 	get_tree().quit(0 if failures.is_empty() else 1)

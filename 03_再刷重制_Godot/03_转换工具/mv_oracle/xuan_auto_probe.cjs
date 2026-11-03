@@ -45,6 +45,11 @@ function battle(o) {
   if (o.roster) c.roster = o.roster.slice();
   if (o.element) c.element = o.element;
   X.syncMarkSkills(a);
+  if (o.relic != null) {  // 周天命星仪：relic true 装上、false 卸下（列星法宝特效看 X.relicOn）
+    const slot = a.equipSlots().indexOf(w.$dataArmors[I.relic].etypeId);
+    if (o.relic) { w.$gameParty.gainItem(w.$dataArmors[I.relic], 1); a.forceChangeEquip(slot, w.$dataArmors[I.relic]); }
+    else a.forceChangeEquip(slot, null);
+  }
   a._codexXuanControl = o.manual ? 'manual' : 'auto';
   for (const id of PARTY) { const x = who(id); x.refresh(); x.recoverAll(); }
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
@@ -85,18 +90,20 @@ function snap() {
   const party = {};
   for (const id of PARTY.slice(1)) {
     const x = who(id);
-    party['a' + id] = {hp: x.hp, shield: xs(x), states: x._states.filter(s => s === 10 || s === ST('shadow') || s === ST('hostmark') || s === ST('dingxing')).sort((p, q) => p - q)};
+    party['a' + id] = {hp: x.hp, shield: xs(x), states: x._states.filter(s => s === 10 || s === 35 || s === ST('shadow') || s === ST('hostmark') || s === ST('dingxing')).sort((p, q) => p - q),
+      home: x._codex60Home ? x._codex60Home.until : null, mist: x._codex60StarMist ? x._codex60StarMist.until : null};
   }
   const enemies = {};
   for (const e of w.$gameTroop.members()) enemies[key(e)] = {hp: e.hp, buffs: [e._buffs[3], e._buffs[5]]};
   return {round: B.round(), host: h ? 'a' + h.actorId() : null, charges: bd ? bd.charges : null, auto: X.autoEnabled(a),
     xuan: {hp: a.hp, mp: a.mp, shield: xs(a), cd: ['huiguang', 'libi', 'lengguang', 'liexing'].map(k => a.cooldown(K(k))),
       states: a._states.filter(s => [ST('possess'), ST('tonggui'), ST('debt'), ST('liexing'), 10].includes(s)).sort((p, q) => p - q),
-      data: d ? {tacit: d.tacit, tonggui: d.tonggui, debt: d.debt, xianzhaoRound: d.xianzhaoRound, liexingUntil: d.liexingUntil, shadows: d.shadows.slice(), used: Object.keys(d.used).sort()} : null},
+      data: d ? {tacit: d.tacit, tonggui: d.tonggui, debt: d.debt, xianzhaoRound: d.xianzhaoRound, liexingUntil: d.liexingUntil, shadows: d.shadows.slice(), used: Object.keys(d.used).sort(), homeUsed: !!d.homeUsed, relicHealUsed: !!d.relicHealUsed, relicWallUsed: !!d.relicWallUsed} : null,
+      relic: X.relicOn(a)},
     party, enemies};
 }
 // 步骤：use 人 键 目标（璇的指令，目标给角色号或 e序号）｜act 人 技能号 目标（e序号或角色号）｜hit 敌序号 技能号 角色号｜turn｜hp 人 比例｜state 人 状态号｜
-// gain 人 n｜spend 人 n｜tacit 值｜auto 人（makeAutoBattleActions 选的行动）｜libi 人 量（重给一份璃壁）｜seqhit 敌序号 技能号 角色号 扣血｜end
+// gain 人 n｜spend 人 n｜tacit 值｜auto 人（makeAutoBattleActions 选的行动）｜libi 人 量（重给一份璃壁）｜end
 function step(bm, st) {
   const [op, x, y, z] = st;
   let ret = null;
@@ -116,19 +123,14 @@ function step(bm, st) {
     ret = {skill: it ? (I.key[it.id] || it.id) : null, target: act ? act._targetIndex : null};
   }
   else if (op === 'libi') { L.revoke(who(x), 'xuan.libi'); L.grant(who(x), 'xuan.libi', y, 2, XUAN, {noBonus: true}); }
-  else if (op === 'seqhit') {
-    // 敌人放不带伤害的技能（防御，作用自己），行动期间序列扣角色 z 的血 st[4]（审查第 34 期 P3-1：不是 direct 行动，璃壁破了也不给定轨）
-    const oldApply = w.Game_Action.prototype.apply;
-    w.Game_Action.prototype.apply = function (t) { w.Game_Action.prototype.apply = oldApply; const r = oldApply.apply(this, arguments); who(z).gainHp(-st[4]); return r; };
-    begin(bm, who(x), y, +String(x).slice(1)); run(bm);
-    w.Game_Action.prototype.apply = oldApply;
-  }
   else if (op === 'end') bm.endBattle(0);
   else throw new Error('未知步骤 ' + op);
   return ret;
 }
 // 每例：setup（等级、星纹、副宿主、名册、手动）与步骤
 const SCRIPTS = {
+  // 没到 60 级：不给归宿、星幕、额外净化。排最前：法宝一旦被 60 级的璇同步过就留着进化标记（$dataArmors 跨例共用），放后面量到的是进化后的属性
+  home_59: [{level: 59, manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1], ['state', 1, 35], ['use', XUAN, 'huiguang', 1]]],
   // 附身 1 号后下一回合有星契；1 号半血以下，8 号行动结束时救援回光（保留最后 1 点也能护主）；列星就绪也放（护主）；回合末剩的星契按顺序放
   rescue: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['act', 8, 1, 'e0'], ['turn'], ['act', 8, 1, 'e0'], ['turn']]],
   // 宿主攻击后棱光：星契 2 点以上才放（保留最后 1 点），列星先放
@@ -155,8 +157,24 @@ const SCRIPTS = {
   manual: [{manual: true, roster: [8]}, [['auto', XUAN], ['hp', 2, 0.2], ['auto', XUAN], ['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['act', 8, 1, 'e0']]],
   // 定轨（10 级，手动）：敌人攻击打破璃壁给一次定星，同回合同人只一次；下一回合以后再破再给
   dinggui: [{manual: true}, [['use', XUAN, 'jixing', 1], ['libi', 1, 10], ['hit', 'e0', 1, 1], ['libi', 1, 10], ['hit', 'e1', 1, 1], ['turn'], ['turn'], ['libi', 1, 10], ['hit', 'e0', 1, 1]]],
-  // 定轨只认敌方直接伤害行动：不带伤害的技能期间序列扣血打破璃壁，不给定星
-  dinggui_seq: [{manual: true}, [['use', XUAN, 'jixing', 1], ['libi', 1, 10], ['seqhit', 'e0', 2, 1, 50]]],
+  // 定轨只认敌方直接伤害行动：诸神黄昏（8048，不带伤害，真实动作序列 Hp -10%: actors）打破璃壁，不给定星
+  dinggui_seq: [{manual: true}, [['use', XUAN, 'jixing', 1], ['libi', 1, 10], ['hit', 'e0', 8048, 'e0']]],
+  // 60 级列星·归宿（不看法宝）：列星后第一次回光或璃壁给目标归宿，下一次敌方直接伤害 −10%；当回合有效；再放列星重置
+  home: [{manual: true, relic: false}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['hit', 'e0', 1, 1], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1],
+    ['use', XUAN, 'huiguang', 1], ['hit', 'e0', 1, 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'huiguang', 1], ['turn'], ['hit', 'e0', 1, 1]]],
+  // 法宝：首次璃壁给星幕（和归宿同一次时 ×0.81）；被不带伤害的序列扣血不消费
+  mist: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'libi', 1], ['hit', 'e0', 8048, 'e0'], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1]]],
+  // 法宝：回光后再璃壁：归宿给了回光目标，星幕给璃壁目标；两次都不重复
+  mist_after_heal: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'huiguang', 1], ['use', XUAN, 'libi', 8], ['hit', 'e0', 1, 8], ['hit', 'e1', 1, 1], ['hit', 'e2', 1, 1]]],
+  // 法宝：首次回光额外净化一个（含软状态）；第二次回光不额外；没戴法宝只净化硬控
+  cleanse2: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['state', 1, 10], ['state', 1, 35], ['use', XUAN, 'huiguang', 1], ['state', 1, 35], ['use', XUAN, 'huiguang', 1]]],
+  cleanse_norelic: [{manual: true, relic: false}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['state', 1, 10], ['state', 1, 35], ['use', XUAN, 'huiguang', 1]]],
+  // 列星期间一次璃壁打到所有受益者：一次行动里每个目标都拿到归宿、星幕
+  shadow_all: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 8], ['hit', 'e1', 1, 2]]],
+  // 列星期外不给；战斗结束清
+  outside: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1]]],
+  // 自律：敌人出手前内部璃壁也算首次（这一下就减）
+  auto_mist: [{relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['hp', 1, 0.3], ['act', 8, 1, 'e0'], ['hp', 1, 1], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1]]],
   autoact: [{roster: [8]}, [['auto', XUAN], ['hp', 2, 0.2], ['auto', XUAN], ['use', XUAN, 'jixing', 1], ['auto', XUAN], ['end']]]
 };
 const cases = [];
@@ -169,4 +187,38 @@ for (const [id, [setup, steps]] of Object.entries(SCRIPTS)) cases.push(makeCase(
   }
   return out;
 }));
+// 先照「手动璃壁先制」：Game_Action.speed ＋100000，只有 makeSpeed 时行动里已经是璃壁才生效。真实流程量：makeActionOrders 在回合开始跑，
+// 这时行动列表是空的／空白行动（出手后 removeCurrentAction），所以 OTB 排序不受影响。control 例把璃壁硬塞进 _actions 再排，证明包装本身是生效的。
+const inSpeed = [];
+const oldMake = w.Game_Battler.prototype.makeSpeed, oldSpeed = w.Game_Action.prototype.speed;
+let making = false;
+w.Game_Battler.prototype.makeSpeed = function () { making = true; try { return oldMake.apply(this, arguments); } finally { making = false; } };
+w.Game_Action.prototype.speed = function () { const v = oldSpeed.apply(this, arguments), it = this.item(); if (making && this.subject() === who(XUAN)) inSpeed.push(it ? (I.key[it.id] || it.id) : null); return v; };
+const orderOf = list => list.map(key);
+function speedCase(o) {
+  const bm = battle({manual: !o.auto, marks: o.mark ? {xianzhao: 1} : {}});
+  const a = who(XUAN);
+  a._paramPlus[6] -= a.agi - 1; a.refresh();  // 璇敏捷压到 1：本来排最后，才看得出先制有没有用
+  const raw = new w.Game_Action(a); raw.setSkill(K('libi'));
+  const speed = raw.speed() - a.agi;  // 随机 0.5 下的浮动＋包装加的
+  begin(bm, a, K('jixing'), w.$gameParty.members().indexOf(who(1))); run(bm);
+  bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm.startInput(); bm._phase = 'turn';
+  const out = {speedOffset: Math.round(speed), current: orderOf(bm._actionBattlers), next: orderOf(bm._nextTurnActionBattlers)};
+  out.canMove = a.canMove(); out.canInput = a.canInput();
+  a.makeActions();
+  a.currentAction().setSkill(K('libi')); a.currentAction().setTarget(w.$gameParty.members().indexOf(who(1)));
+  bm._subject = a; bm.startAction(); run(bm);
+  a.removeCurrentAction();  // endOTBAction
+  out.actionsLeft = a._actions.length;
+  inSpeed.length = 0;
+  bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm.startInput(); bm._phase = 'turn';  // 真实 endTurn→startInput（makeActions 清行动）→startTurn→makeActionOrders
+  out.seenInMakeSpeed = inSpeed.slice();
+  out.afterCurrent = orderOf(bm._actionBattlers); out.afterNext = orderOf(bm._nextTurnActionBattlers);
+  // 对照：硬塞璃壁再排，才会排到最前
+  const act = new w.Game_Action(a); act.setSkill(K('libi')); a._actions = [act];
+  bm.makeActionOrdersOTB();
+  out.forcedNext = orderOf(bm._nextTurnActionBattlers);
+  return out;
+}
+for (const [id, o] of Object.entries({speed_manual: {mark: true}, speed_nomark: {mark: false}, speed_auto: {mark: true, auto: true}})) cases.push(makeCase(id, o, () => speedCase(o)));
 process.exit(finish(host, 'xuan_auto.json', {hostScope: '真实 BattleManager.startAction～endAction、startTurn／endTurn；星契自律；随机 0.5；五乘区、路线压制三处关', cases}) ? 0 : 1);
