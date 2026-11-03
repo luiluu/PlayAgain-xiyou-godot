@@ -33,6 +33,8 @@ var top := 0
 var actor_pick := 0
 ## 用了带公共事件（效果 44）的技能：菜单整个关掉回地图执行（Scene_ItemBase.checkCommonEvent，主菜单读它）
 var to_map := false
+## 菜单里用了会回地图执行、但重制还没有对应画面的技能：璇「星谱」10349（CE9015 CodexXuan.openStarchart()，星谱页待做），先保持不可用（蜂鸣），免得点了关菜单却什么都不发生
+const MENU_UNBUILT := [10349]
 var actor_top := 0
 var type_win: XMVWindow
 var status_win: XMVWindow
@@ -102,6 +104,8 @@ func current() -> Dictionary:
 ## （XBattleLogic.can_use 按战斗中只认场合 0、1；菜单场合 2 的技能如屠苏「器谱」照「随时」交给它判其余条件，tusu7）
 func usable(skill: Dictionary) -> bool:
 	if skill.is_empty() or not int(skill.get("occasion", 0)) in [0, 2]:
+		return false
+	if int(skill.get("id", 0)) in MENU_UNBUILT:
 		return false
 	var s := skill
 	if int(skill.occasion) == 2:
@@ -293,6 +297,7 @@ func ok() -> void:
 			XSound.system(1)
 			if not _for_friend(current()):
 				use_skill()  # Scene_Skill.determineItem：不是对我方的（器谱这类 scope 0）不选人，直接用、留在列表
+				_refresh()  # Scene_Skill.useItem 之后刷新状态窗（MP）与列表可用灰显
 				return
 			mode = "actor"
 			actor_pick = 0
