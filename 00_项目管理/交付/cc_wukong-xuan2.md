@@ -3,8 +3,6 @@
 - 车道／工作者：C 规则／机制／悟空（cc，悟空 xuan2，Opus medium）
 - 状态：可合并
 
-本分支带着 cc/wukong-honghuang2（总装还没合）：先合 honghuang2，再合本分支。
-
 ## 变更记录草稿
 
 ## 2026-11-03 【cc·悟空·未经审查】洪荒尾巴量到位；璇的战斗效果盘点与第一期（dev.待定）
@@ -63,7 +61,7 @@
 - `语法检查.py` 通过。
 - 选测 `选测.py main --list` 列出 131 个场景，没有全跑。跑了 10 个全部通过：`xiyou_xuan_battle` 246、`xiyou_xuan_chart` 128、`xiyou_tusu` 327、`xiyou_tusu_battle` 4977、`xiyou_guyu_battle` 1637、`xiyou_determinism` 372、`xiyou_battle` 9、`xiyou_state_js` 1733、`xiyou_honghuang_curse_battle` 342、`xiyou_event_compare` 5。
 - 没跑 `xiyou_rules*`：新钩子全部先判 `is_xuan`（`blocks_state` 先判本场数据），切片的 xiyou_rules 角色不触发这些分支；请总装按影响面选测。
-- 上面这轮之后只改过一行注释。
+- 上面这轮之后只改过一行注释。之后合了 main（含 honghuang2、tools50），`--补齐` 后重跑 `xiyou_xuan_battle`、`xiyou_honghuang_curse_battle`、`xiyou_honghuang_reward` 311、`xiyou_determinism`，全过；`探针登记检查.py` 通过。
 - 没开游戏实际玩过；没跑 `反向验证.py`。
 
 ## 本分支提交
