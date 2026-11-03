@@ -31,7 +31,7 @@
   XXuanChart.learn(s, a, "yuhui"); XXuanChart.learn(s, a, "yuhui")
   print(XXuanChart.mark_rows(s, "yuhui"))   # SCRIPT ERROR: Out of bounds，打印 []
   ```
-- 测试为什么没发现：探针与专项的流程最多学到 2 级（`xuan_chart_probe.cjs:144`），夹具里没有 lv3 的页面。修时建议探针加一例学满再打开的流程。原版那行文字带 undefined 是原版缺陷，重制怎么显示由修的人定，登记优化。
+- 测试为什么没发现：探针的页面流程（`xuan_chart_probe.cjs:142～153`）没有打开过 3 级星纹的操作页，夹具里没有「undefined」这行文字。修时建议探针加一例学满再打开的流程。原版那行文字带 undefined 是原版缺陷，重制怎么显示由修的人定，登记优化。
 
 ### P2-1 读档后，命主名册里的人移不出去（xuan1）
 
