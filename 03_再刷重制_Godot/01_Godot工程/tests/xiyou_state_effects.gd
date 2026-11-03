@@ -598,8 +598,11 @@ func _shield_blocks(o: Dictionary) -> void:
 	for index in range(o.pairs.size()):
 		var p: Dictionary = o.pairs[index]
 		var b := ValueBattler.new()
+		b.values = {"mhp": 100.0}
+		b.hp = 100.0
 		for sid in p.pair:
 			b.add_state(int(sid))
+		b.param_refresh()
 		var resources := XResourceContext.new()
 		var record := {}
 		var item := {"id": 1, "damage": {"type": 1, "elementId": p.elementId}}
@@ -621,6 +624,10 @@ func _shield_blocks(o: Dictionary) -> void:
 		var u: XBattler = logic.actors[0]
 		var e: XBattler = logic.enemies[0]
 		e.add_state(sid)
+		# 参照的前置态：热列表已建（typestates）、addState 之后 krz 又标了 dirty（hits[0].dirty）
+		e.param_refresh()
+		e.param_mark_dirty()
+		check("shield.apply.%d.dirty_before" % sid, bool(row.hits[0].dirty) and e.effect_dirty)
 		check("shield.apply.%d.added" % sid, e.state_ids.has(sid), e.state_ids)
 		var skill := XDB.rec("Skills", 1)
 		var first := logic.apply(u, skill, e)

@@ -411,7 +411,8 @@ cases.push(makeCase('tp.native_blocks', {states: [607, 609, 857, 1334, 1336]}, (
 }));
 // 护盾一族（rules2）：React 时 HP 伤害>0 就播动画、移除自身，攻击元素不含本盾元素时伤害清零；Remove 写 _bubbleWrapCooldown（冻结源无读者）。
 // 单块：customEffectEval 直调；连用：两个盾同时挂，走真实 onReactStateEffects 循环（KRZ 热缓存，前一个清零后后一个不再触发）；
-// 实战：真实 Game_Action.apply 打两下（第一下被挡、第二下盾已去）。
+// 实战：真实 Game_Action.apply 打两下（第一下被挡、第二下盾已去）；dirty＝出手前 need_refresh（addState 后 krz 总标 dirty，
+// 破盾时 removeState 的 refresh 因而重建热列表，第二下不再挡）。
 const SHIELDS = [[105, 8], [112, 4], [612, 5], [614, 10], [641, 4], [647, 9], [1039, 8]];
 cases.push(makeCase('query.shield_blocks', {states: SHIELDS.map(s => s[0])}, () => {
   const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
@@ -444,8 +445,8 @@ cases.push(makeCase('query.shield_blocks', {states: SHIELDS.map(s => s[0])}, () 
     for (const [sid] of SHIELDS) {
       prep([sid]); const hits = [];
       for (let i = 0; i < 2; i++) {
-        e.clearResult(); anims = []; const hp = e.hp; action.apply(e);
-        hits.push({hpLoss: hp - e.hp, hpDamage: e.result().hpDamage, elements: action.getItemElements(), ...after([sid])});
+        e.clearResult(); anims = []; const hp = e.hp, dirty = !!e.need_refresh; action.apply(e);
+        hits.push({dirty, hpLoss: hp - e.hp, hpDamage: e.result().hpDamage, elements: action.getItemElements(), ...after([sid])});
       }
       applies.push({state: sid, hits});
     }
