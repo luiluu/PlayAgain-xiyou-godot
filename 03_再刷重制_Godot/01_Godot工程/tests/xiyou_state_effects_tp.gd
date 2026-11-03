@@ -106,7 +106,7 @@ func _ready() -> void:
 		if st is Dictionary:
 			for effect in st.get("effects", []):
 				untranslated += int(effect.op == "js")
-	check("inventory.merged_318", untranslated == 318, untranslated)
+	check("inventory.merged_315", untranslated == 315, untranslated)  # 318 → 315：奈叶二期把 1774 battle、1780 action_start／action_end 三块单句 reserveCommonEvent 翻成 reserve_common_event
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
 	var saved := {}
