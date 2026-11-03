@@ -1224,6 +1224,8 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	logs.append_array(execute(u, skill, target, true))
 	XNanoha.end_execute(self)
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
+	XGuyu.end_action()  # 谷雨 endAction 包装（同 act 的次序，在屠苏之后）：结束行动事件，代命成立就归根
+	logs.append_array(XGuyu.take_visuals())
 	logs.append_array(XGarou.finish(self, u, skill))
 	logs.append_array(XSukuna.finish(self, u, skill, true))
 	logs.append_array(XYomiJingliu.j_finish(self, u, skill))
@@ -1237,6 +1239,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	_mastery_end(u, logs)
 	XMira.liberate(self, u, skill)
 	XNanoha.finish(self, u)
+	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
 	_sync_orders(before, true)
 	return logs
 

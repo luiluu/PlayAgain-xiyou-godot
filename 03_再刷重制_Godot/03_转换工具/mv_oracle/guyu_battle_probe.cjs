@@ -102,6 +102,16 @@ function run(steps, level, rank, ext, relic) {
       log.length = 0;
       const [kind, x, y, z] = st;
       if (kind === 'act') act(bm, who(x), y, z);
+      else if (kind === 'force') {  // 事件强制行动（339 一类：forceAction＋processForcedAction，原版照样 startAction～endAction，谷雨 endAction 包装照跑）：x 人、y 技能、z 敌序号
+        const u = who(x); u.forceAction(y, z); bm.forceAction(u); bm._subject = null;
+        for (let i = 0; i < 20000 && (bm._actionForcedBattler || bm._subject || ['action', 'actionList', 'actionTargetList', 'phaseChange'].includes(bm._phase)); i++) {
+          if (bm._actionForcedBattler && !bm._subject) { bm.processForcedAction(); continue; }
+          const ph = bm._phase;
+          if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
+          else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
+        }
+        bm._phase = 'turn';
+      }
       else if (kind === 'turn') { bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm.startTurn(); bm._phase = 'turn'; }
       else if (kind === 'hp') who(x).setHp(y);
       else if (kind === 'mp') a.setMp(a.mmp);
@@ -157,7 +167,9 @@ const SCRIPTS_B = {
   ai: [['ai'], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['ai'], ['foehp', 1, 1e11], ['ai'], ['hp', 'h', 100], ['ai'],
     ['hp', 'h', 4600], ['hp', 'g', 13000], ['ai'], ['act', 'g', 10289, 0], ['ai'], ['hp', 'h', 7000], ['ai'], ['turn'], ['ai']],
 };
-const LEVELS_B = {sub: [35, 0], self: [35, 0], nosub: [20, 0], shield: [35, 0], transfer: [35, 0], relic: [60, 5, true], ai: [35, 0]};
+// 强制行动也走谷雨 endAction：花期里 1 号被事件强制普攻 → 绽放（付储备、打种子）；谷雨自己被强制治疗 → 事件收束照常
+SCRIPTS_B.forced = [['act', 'g', 10288, 0], ['act', 'g', 10288, 0], ['act', 'g', 10289, 0], ['force', 'h', 1, 1], ['force', 'g', 10288, 0], ['force', 'h', 1, 0]];
+const LEVELS_B = {sub: [35, 0], self: [35, 0], nosub: [20, 0], shield: [35, 0], transfer: [35, 0], relic: [60, 5, true], ai: [35, 0], forced: [35, 0]};
 // 胜利掉谷种金缮石：谷雨在队、还差进阶、背包里少于差额、Math.randomInt(50)==0 才掉 1 个
 function stone(rank, have, draw) {
   newGame();
