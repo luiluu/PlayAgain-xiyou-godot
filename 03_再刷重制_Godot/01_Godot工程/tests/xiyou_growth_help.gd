@@ -117,6 +117,9 @@ func _ready() -> void:
 		_faithful(c, _obj(c))
 		_power(c, _obj(c))
 		_fixed(c, _obj(c), s)
+	# 渡鸦／米拉／甚尔专属法宝的装备评分（XPower._exclusive_gear）
+	for c in data.powerOnly:
+		_power({"id": c.id, "power": c}, XDB.rec("Armors", int(c.id)))
 	# helpNumber：浮点误差抹掉、整数不带小数点
 	check("number", XGrowthHelp.number(1.0) == "1" and XGrowthHelp.number(1.1 + 0.2) == "1.3" and XGrowthHelp.number(1.2000004) == "1.2")
 	# 旧版说明开头换回数据库说明

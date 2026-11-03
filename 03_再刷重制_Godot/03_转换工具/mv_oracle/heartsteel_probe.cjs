@@ -18,7 +18,8 @@ for (const name of ['route-suppress', 'zones-correction']) {
 w.CodexRouteSuppress.otherScale = () => 1;
 w.CodexRouteSuppress.isSuper = () => false;
 if (!w.$) w.$ = {};
-w.$.toaster = () => {};
+const toasts = [];
+w.$.toaster = o => { toasts.push(o.message); };
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
@@ -357,5 +358,62 @@ cases.push(makeCase('order.guyu', {base: 7900}, () => {
   rows.push(['forced', forced(bm, a, H.skillFor(it), 1), guyuSnap(ctx)]);
   rows.push(['attack', act(bm, a, 1, 1), guyuSnap(ctx)]);
   return {rows};
+}));
+// 尾项二：智能 AI 估伤（Codex_SmartBattleAI safeDamage 的心钢分支：常态上限用当前 mhp，乘 castScale，物防最多减一半）
+for (const [base, stacks] of [[7900, 0], [7900, 350], [7901, 100]]) {
+  cases.push(makeCase(`ai.${base}.${stacks}`, {base, stacks}, () => {
+    const ctx = battle(base, {_codexHeartsteelStacks: stacks}), {a, it} = ctx, e = w.$gameTroop.members()[0], rows = [];
+    for (const plus of [0, 5000000]) {
+      e._paramPlus[3] = plus; e.need_refresh = true; e.refresh();
+      for (const id of SKILLS) {
+        const action = new w.Game_Action(a); action.setSkill(id);
+        rows.push({plus, skill: id, def: e.def, mhp: a.mhp, scale: H.castScale(a), safe: w.CodexSmartAI.safeDamage(a, e, w.$dataSkills[id], action)});
+      }
+    }
+    return {inst: inst(it), rows};
+  }));
+}
+// 尾项二：甚尔封印 2634 让主动技能失效时（_tojiSuppressed），心钢不减蓄力、狂妄不计行动；普攻不失效照减；失效的巨人吞噬照样进冷却（包装在 applyGlobal 之前）
+for (const [base, fields] of [[7900, {_codexHeartsteelStacks: 0}], [7902, {_codexHubrisFame: 0}]]) {
+  cases.push(makeCase(`suppress.${base}`, {base}, () => {
+    const ctx = battle(base, fields), {bm, a, it} = ctx, rows = [];
+    const snap = () => ({wait: H.remaining(a), moves: a._codexHubrisMoves || 0, casted: !!a._codexHeartsteelCasted, charges: a._tojiSealCharges || 0, sealed: a.isStateAffected(2634)});
+    const active = a.skills().map(s => s.id).find(id => id > 2 && !SKILLS.includes(id) && w.$dataSkills[id].stypeId != null);
+    a.addState(2634); a._tojiSealCharges = 2;
+    rows.push(['start', snap(), {inst: inst(it), active}]);
+    rows.push(['attack', act(bm, a, 1, 0).length, snap()]);
+    rows.push(['skill1', act(bm, a, active, 0).length, snap()]);
+    rows.push(['skill2', act(bm, a, active, 0).length, snap()]);
+    rows.push(['free', act(bm, a, active, 0).length, snap()]);
+    return {rows};
+  }));
+}
+cases.push(makeCase('suppress.cast', {base: 7900}, () => {
+  const ctx = battle(7900, {_codexHeartsteelStacks: 0}), {bm, a, it} = ctx, sid = H.skillFor(it), rows = [];
+  a._codexHeartsteelWait = 0; a.addState(2634); a._tojiSealCharges = 1;
+  rows.push(['start', heartSnap(ctx), {inst: inst(it)}]);
+  rows.push(['cast', act(bm, a, sid, 0).length, heartSnap(ctx), a.isStateAffected(2634)]);
+  return {rows};
+}));
+// 尾项二：提示（$.toaster）。第一次得到一族才报解锁，再得到不报；掉落先报解锁（gainItem 里）再报获得
+cases.push(makeCase('toast.unlock', {}, () => {
+  newGame(); toasts.length = 0;
+  const rows = [];
+  for (const base of [7900, 7900, 7901, 7902, 7903]) {
+    w.$gameParty.gainItem(w.$dataArmors[base], 1, false);
+    rows.push([base, toasts.splice(0)]);
+  }
+  return {rows};
+}));
+cases.push(makeCase('toast.reward', {}, () => {
+  newGame(); toasts.length = 0;
+  w.$gameMap._mapId = 152; w.$gameMap._codexLeviathanUnknownOrigin = 38; w.$gameTroop._troopId = 454;
+  w.BattleManager._codexHeartsteelRewardRolled = false; w.BattleManager._codexHubrisRewardRolled = false;
+  w.Math.random = () => 0.05;
+  const heart = H.clearReward(0), heartToasts = toasts.splice(0), hubris = U.clearReward(0), hubrisToasts = toasts.splice(0);
+  w.$gameMap._mapId = 176; w.$gameMap._codexLeviathanUnknownOrigin = 165; w.$gameTroop._troopId = 570; w.BattleManager._codexLeviathanCoreRolled = false;
+  const core = H.awardCore(0), coreToasts = toasts.splice(0);
+  w.Math.random = () => 0.5;
+  return {heart, heartToasts, hubris, hubrisToasts, core, coreToasts, origin: H.unknownCoreOrigin()};
 }));
 process.exit(finish(host, 'heartsteel.json', {hostScope: '真实 CodexHeartsteel／CodexHubris（param、paramPlus、skills、meetsSkillConditions、clearReward、enemyWeight、damage、BattleManager 各包装）', cases}) ? 0 : 1);

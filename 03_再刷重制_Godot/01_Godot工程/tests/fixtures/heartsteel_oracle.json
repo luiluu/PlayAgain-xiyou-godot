@@ -4806,6 +4806,646 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "ai.7900.0",
+   "setup": {
+    "base": 7900,
+    "stacks": 0
+   },
+   "observed": {
+    "inst": {
+     "params": [
+      10000,
+      0,
+      0,
+      600,
+      0,
+      600,
+      0,
+      0
+     ],
+     "traits": [
+      [
+       41,
+       1,
+       1
+      ],
+      [
+       22,
+       2,
+       0.05
+      ],
+      [
+       22,
+       0,
+       0.05
+      ],
+      [
+       22,
+       1,
+       0.05
+      ],
+      [
+       22,
+       6,
+       0.05
+      ],
+      [
+       21,
+       4,
+       1.4
+      ],
+      [
+       21,
+       2,
+       1.4
+      ]
+     ],
+     "id": 8019
+    },
+    "rows": [
+     {
+      "plus": 0,
+      "skill": 10227,
+      "def": 19,
+      "mhp": 10485,
+      "scale": 1,
+      "safe": 1048.08
+     },
+     {
+      "plus": 0,
+      "skill": 10228,
+      "def": 19,
+      "mhp": 10485,
+      "scale": 1,
+      "safe": 1455.8400000000001
+     },
+     {
+      "plus": 5000000,
+      "skill": 10227,
+      "def": 6250019,
+      "mhp": 10485,
+      "scale": 1,
+      "safe": 531.64
+     },
+     {
+      "plus": 5000000,
+      "skill": 10228,
+      "def": 6250019,
+      "mhp": 10485,
+      "scale": 1,
+      "safe": 735.5200000000001
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.7900.350",
+   "setup": {
+    "base": 7900,
+    "stacks": 350
+   },
+   "observed": {
+    "inst": {
+     "params": [
+      10000,
+      0,
+      0,
+      600,
+      0,
+      600,
+      0,
+      0
+     ],
+     "traits": [
+      [
+       41,
+       1,
+       1
+      ],
+      [
+       22,
+       2,
+       0.05
+      ],
+      [
+       22,
+       0,
+       0.05
+      ],
+      [
+       22,
+       1,
+       0.05
+      ],
+      [
+       22,
+       6,
+       0.05
+      ],
+      [
+       21,
+       4,
+       1.4
+      ],
+      [
+       21,
+       2,
+       1.4
+      ]
+     ],
+     "id": 8019
+    },
+    "rows": [
+     {
+      "plus": 0,
+      "skill": 10227,
+      "def": 19,
+      "mhp": 12582,
+      "scale": 1.2,
+      "safe": 1381.5232
+     },
+     {
+      "plus": 0,
+      "skill": 10228,
+      "def": 19,
+      "mhp": 12582,
+      "scale": 1.2,
+      "safe": 1911.0976
+     },
+     {
+      "plus": 5000000,
+      "skill": 10227,
+      "def": 6250019,
+      "mhp": 12582,
+      "scale": 1.2,
+      "safe": 698.3616000000001
+     },
+     {
+      "plus": 5000000,
+      "skill": 10228,
+      "def": 6250019,
+      "mhp": 12582,
+      "scale": 1.2,
+      "safe": 963.1487999999999
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "ai.7901.100",
+   "setup": {
+    "base": 7901,
+    "stacks": 100
+   },
+   "observed": {
+    "inst": {
+     "params": [
+      20000,
+      0,
+      0,
+      900,
+      0,
+      900,
+      0,
+      0
+     ],
+     "traits": [
+      [
+       41,
+       1,
+       1
+      ]
+     ],
+     "id": 8018
+    },
+    "rows": [
+     {
+      "plus": 0,
+      "skill": 10227,
+      "def": 19,
+      "mhp": 24582,
+      "scale": 1.1,
+      "safe": 1898.7296000000003
+     },
+     {
+      "plus": 0,
+      "skill": 10228,
+      "def": 19,
+      "mhp": 24582,
+      "scale": 1.1,
+      "safe": 2595.3728000000006
+     },
+     {
+      "plus": 5000000,
+      "skill": 10227,
+      "def": 6250019,
+      "mhp": 24582,
+      "scale": 1.1,
+      "safe": 956.9648000000002
+     },
+     {
+      "plus": 5000000,
+      "skill": 10228,
+      "def": 6250019,
+      "mhp": 24582,
+      "scale": 1.1,
+      "safe": 1305.2864000000002
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "suppress.7900",
+   "setup": {
+    "base": 7900
+   },
+   "observed": {
+    "rows": [
+     [
+      "start",
+      {
+       "wait": 2,
+       "moves": 0,
+       "casted": false,
+       "charges": 2,
+       "sealed": true
+      },
+      {
+       "inst": {
+        "params": [
+         10000,
+         0,
+         0,
+         600,
+         0,
+         600,
+         0,
+         0
+        ],
+        "traits": [
+         [
+          41,
+          1,
+          1
+         ],
+         [
+          22,
+          2,
+          0.05
+         ],
+         [
+          22,
+          0,
+          0.05
+         ],
+         [
+          22,
+          1,
+          0.05
+         ],
+         [
+          22,
+          6,
+          0.05
+         ],
+         [
+          21,
+          4,
+          1.4
+         ],
+         [
+          21,
+          2,
+          1.4
+         ]
+        ],
+        "id": 8019
+       },
+       "active": 101
+      }
+     ],
+     [
+      "attack",
+      1,
+      {
+       "wait": 1,
+       "moves": 1,
+       "casted": false,
+       "charges": 2,
+       "sealed": true
+      }
+     ],
+     [
+      "skill1",
+      0,
+      {
+       "wait": 1,
+       "moves": 1,
+       "casted": false,
+       "charges": 1,
+       "sealed": true
+      }
+     ],
+     [
+      "skill2",
+      0,
+      {
+       "wait": 1,
+       "moves": 1,
+       "casted": false,
+       "charges": 0,
+       "sealed": false
+      }
+     ],
+     [
+      "free",
+      1,
+      {
+       "wait": 0,
+       "moves": 2,
+       "casted": false,
+       "charges": 0,
+       "sealed": false
+      }
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "suppress.7902",
+   "setup": {
+    "base": 7902
+   },
+   "observed": {
+    "rows": [
+     [
+      "start",
+      {
+       "wait": 2,
+       "moves": 0,
+       "casted": false,
+       "charges": 2,
+       "sealed": true
+      },
+      {
+       "inst": {
+        "params": [
+         0,
+         0,
+         1000,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "traits": [
+         [
+          41,
+          1,
+          1
+         ],
+         [
+          22,
+          2,
+          0.05
+         ],
+         [
+          22,
+          0,
+          0.05
+         ],
+         [
+          22,
+          1,
+          0.05
+         ],
+         [
+          22,
+          6,
+          0.05
+         ],
+         [
+          21,
+          4,
+          1.4
+         ],
+         [
+          21,
+          2,
+          1.4
+         ]
+        ],
+        "id": 8019
+       },
+       "active": 101
+      }
+     ],
+     [
+      "attack",
+      1,
+      {
+       "wait": 2,
+       "moves": 1,
+       "casted": false,
+       "charges": 2,
+       "sealed": true
+      }
+     ],
+     [
+      "skill1",
+      0,
+      {
+       "wait": 2,
+       "moves": 1,
+       "casted": false,
+       "charges": 1,
+       "sealed": true
+      }
+     ],
+     [
+      "skill2",
+      0,
+      {
+       "wait": 2,
+       "moves": 1,
+       "casted": false,
+       "charges": 0,
+       "sealed": false
+      }
+     ],
+     [
+      "free",
+      1,
+      {
+       "wait": 2,
+       "moves": 2,
+       "casted": false,
+       "charges": 0,
+       "sealed": false
+      }
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "suppress.cast",
+   "setup": {
+    "base": 7900
+   },
+   "observed": {
+    "rows": [
+     [
+      "start",
+      {
+       "hp": 10485,
+       "mhp": 10485,
+       "wait": 0,
+       "casted": false,
+       "pending": 0,
+       "stacks": 0,
+       "meets": [
+        true,
+        false
+       ],
+       "round": 1
+      },
+      {
+       "inst": {
+        "params": [
+         10000,
+         0,
+         0,
+         600,
+         0,
+         600,
+         0,
+         0
+        ],
+        "traits": [
+         [
+          41,
+          1,
+          1
+         ],
+         [
+          22,
+          2,
+          0.05
+         ],
+         [
+          22,
+          0,
+          0.05
+         ],
+         [
+          22,
+          1,
+          0.05
+         ],
+         [
+          22,
+          6,
+          0.05
+         ],
+         [
+          21,
+          4,
+          1.4
+         ],
+         [
+          21,
+          2,
+          1.4
+         ]
+        ],
+        "id": 8019
+       }
+      }
+     ],
+     [
+      "cast",
+      0,
+      {
+       "hp": 10485,
+       "mhp": 10485,
+       "wait": 3,
+       "casted": true,
+       "pending": 0,
+       "stacks": 0,
+       "meets": [
+        false,
+        false
+       ],
+       "round": 1
+      },
+      false
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "toast.unlock",
+   "setup": {},
+   "observed": {
+    "rows": [
+     [
+      7900,
+      [
+       "已解锁打造配方：杰作利维坦"
+      ]
+     ],
+     [
+      7900,
+      []
+     ],
+     [
+      7901,
+      []
+     ],
+     [
+      7902,
+      [
+       "已解锁打造配方：杰作无我"
+      ]
+     ],
+     [
+      7903,
+      []
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "toast.reward",
+   "setup": {},
+   "observed": {
+    "heart": true,
+    "heartToasts": [
+     "已解锁打造配方：杰作利维坦",
+     "获得神武：心之钢！"
+    ],
+    "hubris": true,
+    "hubrisToasts": [
+     "已解锁打造配方：杰作无我",
+     "获得神武：狂妄！"
+    ],
+    "core": true,
+    "coreToasts": [
+     "获得锻造材料：锻造锤！"
+    ],
+    "origin": 165
+   },
+   "errors": []
   }
  ]
 }
