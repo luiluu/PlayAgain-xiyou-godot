@@ -7,7 +7,7 @@ extends RefCounted
 ## 战力相关备注与被动状态折成「输出／生存／辅助」三项分数，再加「命中 / 暴击与伤害乘区」（三档参照的伤害预演增益）。
 ## 法宝（<Magic Weapon>）按等级×每级属性另加「法宝成长」；等级取实例等级（XMagicWeapon 升级后写在实例上，缺省 CP_MagicWeapon 的初始等级）。
 ## 种族祝福（CodexRaces.powerAdjust 等，见 XRaceBattle.power_*）：参照 race_battle_probe.cjs 的 power.*，测试 xiyou_race_battle。
-## 未移植：渡鸦／米拉／甚尔／狂妄／心钢的专属装备加成（对应角色未接入）。
+## 狂妄／心钢的成长加成见 _growth_gear。未移植：渡鸦／米拉／甚尔的专属装备加成。
 
 const NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 ## 公共参照属性：装备评分与穿戴者无关
@@ -290,6 +290,20 @@ static func _notes(s: Dictionary, obj: Dictionary, visited := {}, is_state := fa
 
 ## gearEffects：三档参照下「装上 vs 不装」的期望伤害之比（命中、暴击、暴伤、终伤、元素、武器类型、穿透、独立乘区），
 ## 乘 (2000 + 已有输出分)；另把附加能力 1、3～9 按有效值（0.05 起算）折分
+## 成长装备按当前阶数（2026-10-08 原版）：狂妄／无我物理池 ×(1＋(扬名倍率−1)×0.6)；心钢／利维坦生命按参照
+## ×(生命倍率−1) 记一行、回合末回复（x[7]）＋3%／5%。参照 growth_help_probe 的 power，专项 xiyou_growth_help。
+static func _growth_gear(s: Dictionary, item: Dictionary) -> void:
+	if _is_weapon(item):
+		return
+	if XHubris.is_gear(item):
+		_pools(s).physical *= 1.0 + (XHubris.rate_for(item, XHubris.growth(item)) - 1.0) * 0.6
+	if XHeartsteel.is_gear(item):
+		var rate := XHeartsteel.hp_rate(item)
+		if rate != 1.0:
+			_attribute(s, 0, REFERENCE[0] * (rate - 1.0), "心钢 · 生命×%.1f（层数%d，第%d阶）" % [rate, XHeartsteel.stacks(item), XHeartsteel.stage(item)])
+		_pools(s).x[7] += 0.05 if XHeartsteel.is_leviathan(item) else 0.03
+
+
 static func _gear_effects(s: Dictionary, item: Dictionary) -> void:
 	var p := _pools(s)
 	var weapon := 0.0
@@ -387,7 +401,7 @@ static func equipment(item: Dictionary) -> Dictionary:
 		return _finish(_empty())
 	# 缓存键含全部输入：正式版按物品对象缓存，Godot 用一张表，故另加种类与武器／防具类型（_is_weapon、武器类型乘区要用）
 	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params"), item.get("traits"),
-		item.get("note"), item.get("level")])
+		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base")])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()
@@ -402,6 +416,7 @@ static func equipment(item: Dictionary) -> Dictionary:
 			_attribute(s, i, plus[i] * level, "法宝成长 · " + NAMES[i])
 	_traits(s, item, false)
 	_notes(s, item)
+	_growth_gear(s, item)
 	_gear_effects(s, item)
 	s.level = level
 	s = _finish(s)

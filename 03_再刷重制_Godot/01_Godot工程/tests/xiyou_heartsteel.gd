@@ -5,8 +5,8 @@ extends Node
 ## hubris.battle.* 是原版口径（KILL_FIX 关：击杀记不上），hubris.fix.* 是修复口径（O-150，默认开）。
 const FIXTURE := "res://tests/fixtures/heartsteel_oracle.json"
 const PARTY := [1, 8, 9, 10]
-## 参照里量了、不在这里比的（draws 由各掉落例自己比；desc 动态说明在尾项）。recipes／unlocked 期二锻造解锁已做，掉落例里比
-const PENDING_FIELDS := ["draws", "desc"]
+## 参照里量了、不在这里比的（draws 由各掉落例自己比）。recipes／unlocked 期二锻造解锁已做，掉落例里比；desc 胜利后的说明（describe）在胜利行比
+const PENDING_FIELDS := ["draws"]
 var checks := 0
 var failures: Array = []
 var logic: XBattleLogic
@@ -322,7 +322,8 @@ func _case_heart_battle(c: Dictionary) -> void:
 	_cmp(c.id + ".attacks3", _heart_snap(ctx), want.attacks3[1])
 	_cmp(c.id + ".cast2", [_act(a, sid, 0), _heart_snap(ctx)], want.cast2.slice(1))
 	logic.end_battle(0)
-	_cmp(c.id + ".victory", {"stacks": XHeartsteel.stacks(ctx.it), "pending": XHeartsteel.pending(ctx.it), "mhp": a.mhp}, want.victory[1])
+	_cmp(c.id + ".victory", {"stacks": XHeartsteel.stacks(ctx.it), "pending": XHeartsteel.pending(ctx.it), "mhp": a.mhp,
+		"desc": XGrowthHelp.view(ctx.it).description}, want.victory[1])
 
 
 func _case_heart_escape(c: Dictionary, inst: Dictionary) -> void:

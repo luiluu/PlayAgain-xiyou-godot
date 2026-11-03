@@ -19,7 +19,8 @@ extends Control
 ## - 锻造配方 457／458（installNativeLeviathanForge.patchCraftScene）：列表确定后先在列表窗位置选一件原件（mode "pick"，一列、行高 72，
 ##   名字 22 号字、第二行 18 号字「品质 · 层数:N · 已装备／背包」，不能锻造的半透明、按了蜂鸣）；选好进数量确认，取消回列表。
 ##   帮助窗换成 XGrowthForge.help_text，详情窗 y 224 起多画几行锻造说明（18 号字、行距 25）。锻造不成蜂鸣并回列表（不弹失败窗）。
-##   未做：选原件时按 Shift 看原件词条（原版另开 Sprite_ItemHelp）。
+##   选原件时按 Shift 看原件词条：详情窗位置另开一张说明卡（字号压到 14 以下，O-007 最小字号照常），藏起详情窗；再按 Shift、取消、
+##   选定都收起，移光标时跟着换（原版 _codexShowSourceHelp，sourceHelp 在 picker.updateHelp 里重画）；帮助窗提示换成「返回升级预览」。
 
 signal closed
 
@@ -76,6 +77,8 @@ var pick_index := 0
 var pick_top := 0
 const PICK_H := 72.0
 const PICK_ROWS := 6                 # floor(448 / 72)
+var source_card: XHelpCard           # 锻造选原件时 Shift 看的原件说明卡
+var source_shown := false
 
 
 func _ready() -> void:
@@ -103,6 +106,9 @@ func _ready() -> void:
 	_buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_buttons.draw.connect(_draw_buttons)
 	add_child(_buttons)
+	source_card = XHelpCard.new()
+	source_card.visible = false
+	add_child(source_card)
 	_reset_list()
 	_refresh()
 
@@ -275,7 +281,7 @@ func _paint_help(c: XMVCanvas) -> void:
 		return
 	var text := str(XCrafting.item_of(r.result).get("description", ""))
 	if XGrowthForge.is_forge_recipe(int(r.id)):
-		text = XGrowthForge.help_text(int(r.id), forge_shown(), mode == "pick", false)
+		text = XGrowthForge.help_text(int(r.id), forge_shown(), mode == "pick", source_shown)
 	var t := XMVText.new(XMVText.convert_escapes(text), 6, 0, c.size.x - 12)
 	t.run()
 	XMVText.paint(c, t.glyphs)
@@ -348,9 +354,21 @@ func _refresh() -> void:
 		confirm_win.canvas.modulate.a = a / 255.0
 	list_win.up_arrow = pick_top > 0 if mode == "pick" else top > 0
 	list_win.down_arrow = pick_top + PICK_ROWS < picks.size() if mode == "pick" else top + LIST_ROWS < list.size()
+	_sync_source()
 	for w in [help_win, cat_win, list_win, detail_win, confirm_win, gold_win, gauge_win, popup_win]:
 		w.refresh()
 	_buttons.queue_redraw()
+
+
+## _codexShowSourceHelp／_codexCloseSourceHelp：选原件且按过 Shift 时，详情窗位置显示光标下那件原件的说明卡（字号最多 14），详情窗藏起
+func _sync_source() -> void:
+	source_shown = source_shown and mode == "pick" and not forge_shown().is_empty()
+	if source_shown:
+		source_card.show_for(forge_shown(), "armor", false)
+		source_card.cap_size(14)
+		source_card.position = DETAIL_RECT.position
+	source_card.visible = source_shown
+	detail_win.visible = not source_shown
 
 
 ## placeButtons：五个按钮总宽 352（含间隔），在详情窗内居中；y 在确认窗上方 2.5 行
@@ -506,6 +524,7 @@ func ok() -> void:
 				XSound.system(3)
 				return
 			XSound.system(1)
+			source_shown = false
 			XGrowthForge.forge_source = src
 			_enter_confirm()
 		"confirm":
@@ -546,8 +565,11 @@ func cancel() -> void:
 			index = -1
 		"pick":
 			XSound.system(2)
-			XGrowthForge.forge_source = {}
-			mode = "list"
+			if source_shown:  # 原件说明卡开着：先收起，留在选原件
+				source_shown = false
+			else:
+				XGrowthForge.forge_source = {}
+				mode = "list"
 		"confirm":
 			XSound.system(2)
 			XGrowthForge.forge_source = {}  # confirmCancel 改写：清掉选好的原件
@@ -637,8 +659,18 @@ func _gui_input(event: InputEvent) -> void:
 				ok()
 
 
+## 选原件时 Shift：开／收原件说明卡（Input.isTriggered('shift')）
+func toggle_source() -> void:
+	if mode == "pick":
+		source_shown = not source_shown
+		_refresh()
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and mode == "pick":
+		get_viewport().set_input_as_handled()
+		toggle_source()
+	elif event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
