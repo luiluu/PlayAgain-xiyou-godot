@@ -145,6 +145,21 @@ def snapshot(generated, bare):
     return tree(root), parts
 
 
+PUSH_TUNING = ['http.postBuffer=2147483648', 'http.version=HTTP/1.1', 'http.lowSpeedLimit=1000', 'http.lowSpeedTime=600']
+
+
+def push_tuning():
+    """产物快照推送的 git 网络设置（tools56）：约 1.1 GB 的 refs/ci/generated/main 第一次推送被 HTTP 408 超时；
+    加大 postBuffer、走 HTTP/1.1、慢速上限放宽到 600 秒后推过了。回退：环境变量 XIYOU_CI_PUSH_TUNING=0（用 git 默认设置）。"""
+    if os.environ.get('XIYOU_CI_PUSH_TUNING') == '0':
+        return []
+    return [x for c in PUSH_TUNING for x in ('-c', c)]
+
+
+def push_generated(url, bare, commit, ref):
+    git(*push_tuning(), 'push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
+
+
 def cmd_upload(a):
     branch = a.branch or current_branch()
     generated = ROOT / GENERATED_REL
@@ -170,7 +185,7 @@ def cmd_upload(a):
                  input='ci generated snapshot %s\n\n%s\n' % (branch, json.dumps(meta, ensure_ascii=False, indent=1)))
     git('update-ref', ref, commit, git_dir=bare)
     log('推送 %s → %s（首次约 400 MB，之后只传改了的文件）' % (commit[:10], ref))
-    git('push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
+    push_generated(url, bare, commit, ref)
     # 只留每个分支最后一次快照：旧对象随 gc 清掉，裸库不会越攒越大
     git('-c', 'gc.pruneExpire=now', 'gc', '--auto', '--quiet', git_dir=bare, check=False)
     print('GENERATED_REF=%s %s' % (ref, commit))

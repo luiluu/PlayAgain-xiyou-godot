@@ -27,6 +27,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 REGISTER = '03_再刷重制_Godot/00_设计/优化登记.md'
 PROJECT = '03_再刷重制_Godot/01_Godot工程'
+TOOLS = '03_再刷重制_Godot/07_开发环境'
 ALLOW = HERE / '回退开关豁免.json'
 ACTIVE = ('保留', '待用户决定', '待用户确认', '已做')
 
@@ -143,11 +144,62 @@ def coverage(name, value, tests):
     return None, []
 
 
+def index_tools(tools):
+    """工具开关的声明与测试：环境变量名 → 声明它的非测试 .py；(JSON 文件, 键, 字段) 三元组；测试 .py 的 (路径, 文本)。
+    O-153 之类工具类优化的开关不在 .gd 里：写成对照表 JSON 的字段（`hookLines.enabled = false`）或环境变量（`XIYOU_HOOKS=0`），tools56 起认。"""
+    envs, fields, tests = {}, set(), []
+    if not tools.is_dir():
+        return envs, fields, tests
+    for f in sorted(tools.glob('*.py')):
+        text = f.read_text(encoding='utf-8', errors='replace')
+        if f.name.startswith('测试'):
+            tests.append((f.name, text))
+            continue
+        for name in re.findall(r'\b(XIYOU_[A-Z0-9_]+)\b', text):
+            envs.setdefault(name, f.name)
+    for f in sorted(tools.glob('*.json')):
+        try:
+            data = json.loads(f.read_text(encoding='utf-8'))
+        except ValueError:
+            continue
+        stack = [data]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if isinstance(v, dict):
+                        fields.update((f.name, k, n) for n in v)
+                        stack.append(v)
+    return envs, fields, tests
+
+
+def tool_coverage(cls, name, value, tests):
+    """工具开关的测试覆盖：环境变量看 `'NAME': '值'`／`NAME=值`，JSON 字段看 `[...]['键']['字段'] = 值`（Python 字面量）。"""
+    py = {'true': 'True', 'false': 'False'}.get(value, value.strip('"'))
+    q = r'[\'"]'
+    if cls is None:
+        lit = re.compile(r'%s%s%s\s*:\s*%s?%s%s?(?![\w.])|\b%s=%s(?![\w.])' % (q, re.escape(name), q, q, re.escape(py), q, re.escape(name), re.escape(py)))
+        dyn = re.compile(r'%s%s%s\s*:\s*(?![\'"\d{\[]|True\b|False\b)\w' % (q, re.escape(name), q))
+    else:
+        lit = re.compile(r'\[%s%s%s\]\s*\[%s%s%s\]\s*=\s*%s?%s%s?(?![\w.])' % (q, re.escape(cls), q, q, re.escape(name), q, q, re.escape(py), q))
+        dyn = re.compile(r'\[%s%s%s\]\s*\[%s%s%s\]\s*=\s*(?![\'"\d{\[]|True\b|False\b)\w' % (q, re.escape(cls), q, q, re.escape(name), q))
+    hits, dynamic = [], []
+    for path, text in tests:
+        for i, line in enumerate(text.splitlines(), 1):
+            s = line.split('#', 1)[0]
+            if lit.search(s):
+                hits.append('%s:%d' % (path, i))
+            elif dyn.search(s):
+                dynamic.append('%s:%d' % (path, i))
+    return ('literal', hits) if hits else ('dynamic', dynamic) if dynamic else (None, [])
+
+
 def scan(root):
     """返回 {'switches': [...], 'unparsed': [...]}；每个开关 {id, key, cls, name, value, file, kind, status, where}。"""
     text = (root / REGISTER).read_text(encoding='utf-8')
     table, bad = rows(text)
     classes, decls, tests = index_project(root / PROJECT)
+    tool_envs, tool_fields, tool_tests = index_tools(root / TOOLS)
     switches, unparsed = [], [{'id': i, 'why': w} for i, w in bad]
     for oid, _where, restore, status in table:
         if not status.startswith(ACTIVE):
@@ -159,6 +211,13 @@ def scan(root):
             unparsed.append({'id': oid, 'why': '提到 %s 但认不出回退值' % '、'.join(dict.fromkeys(loose))})
         for cls, name, value in parsed:
             decl, why = locate(cls, name, classes, decls)
+            if why and ((cls is None and name in tool_envs) or any(f[1:] == (cls, name) for f in tool_fields)):
+                file = tool_envs[name] if cls is None else next(f[0] for f in sorted(tool_fields) if f[1:] == (cls, name))
+                state, where = tool_coverage(cls, name, value, tool_tests)
+                switches.append({'id': oid, 'key': '%s %s' % (oid, '%s.%s' % (cls, name) if cls else name),
+                                 'cls': cls, 'name': name, 'value': value, 'file': '%s/%s' % (TOOLS, file), 'kind': 'tool',
+                                 'status': {'literal': '覆盖', 'dynamic': '人工确认'}.get(state, '缺口'), 'where': where[:3]})
+                continue
             if why:
                 unparsed.append({'id': oid, 'why': why})
                 continue

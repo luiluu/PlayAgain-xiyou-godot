@@ -604,6 +604,22 @@ class HookLineTests(Fixture):
         self.assertIn('xiyou_big', self.scenes('0'))
         self.assertNotIn('xiyou_hooked', self.scenes('0'))
 
+    def test_env_switch_literal_off(self):
+        """O-153 回退开关之一：环境变量 XIYOU_HOOKS=0（回退开关覆盖.py 认字面量写法，tools56）。"""
+        self.edit('\tXHooked.go()\n')
+        with mock.patch.dict(os.environ, {'XIYOU_HOOKS': '0'}):
+            self.assertIn('xiyou_big', {x[:-5] for x in self.pick()['scenes']})
+
+    def test_table_switch_off_restores_file_level_selection(self):
+        """O-153 回退开关之二：对照表 hookLines.enabled = false。"""
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['hookLines']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.edit('\tXHooked.go()\n')
+        s = sel.select(self.root, self.base, table=off)
+        self.assertIn('xiyou_big', {x[:-5] for x in s['scenes']})
+
 
 class HookHistoryTests(unittest.TestCase):
     """tools54 回归例：用主线真实合并算新旧两种选法（不抽样）。新 ⊆ 旧 ∪ 冒烟场景；该合并专属的专项（各车道交付单里跑的）必须在新选法里；
