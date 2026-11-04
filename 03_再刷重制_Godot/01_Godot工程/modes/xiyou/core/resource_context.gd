@@ -253,12 +253,18 @@ func silent_gain(b: XBattler, resource: String, amount: float) -> void:
 func refresh(b: XBattler) -> void:
 	var previous := b.lifecycle_context
 	b.lifecycle_context = state_context(b)
+	var was_dirty := b.effect_dirty
 	_refresh_type_before(b)
 	# The base/actor refresh reaches the global add lock; enemy's saved alias
 	# still reaches the base clamp. Both retain their outer KRZ refresh work.
 	if not (not b is XEnemy and XBattler._adding_state):
 		_refresh_base(b)
+		var alive_before := not b.state_ids.has(1)
 		_refresh_death(b)
+		if was_dirty and alive_before and b.state_ids.has(1):
+			# krz：这次 refresh 只把列表标脏、用时才重建，所以死亡清掉的状态不再进列表；没标脏时旧列表照用（state_effects_probe revive.blocks）
+			b.effect_lists.clear()
+			b.effect_snapshot_valid = false
 	_refresh_type_after(b)
 	b.lifecycle_context = previous
 

@@ -458,6 +458,60 @@ cases.push(makeCase('query.shield_blocks', {states: SHIELDS.map(s => s[0])}, () 
   if (errors.length) throw new Error('native shield errors: ' + JSON.stringify(errors));
   return {rows, pairs, applies};
 }));
+// 自动复活一族（rules3）：Custom Deselect Effect。单块：customEffectEval 直调、按序给随机数，记用掉几个；
+// 实战：真实 Game_Action.apply 打死持有者，看状态有没有活过死亡、deselect 还跑不跑（KRZ 热缓存），以及弹字、结果槽、变量。
+// 切片可达 11 块＋同模板的全游戏可达 6 块（163、494、1255、1258、1733、2712）；1301 强制行动、1317 公共事件不算这一模板。
+const REVIVES = [114, 252, 1099, 1164, 1178, 1191, 1270, 1683, 1725, 1837, 2560, 163, 494, 1255, 1258, 1733, 2712];
+const REVIVE_VAR_STATES = [1683, 1733, 2560];
+cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const errors = [], oldError = w.Yanfly.Util.displayError, oldRandom = w.Math.random, oldPopup = w.Game_Battler.prototype.startDamagePopup;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error), message});
+  let anims = [], draws = 0, script = [], popups = [];
+  const oldAnim = w.Game_Battler.prototype.startAnimation;
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push(id); };
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}); };
+  const VARS = [965, 966, 967, 1597, 1683];
+  const snap = (t, sid) => { const r = t.result(); return {hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), states: t._states.slice().sort((x, y) => x - y), anims: anims.slice(), draws, popups: popups.slice(),
+    vars: VARS.map(v => w.$gameVariables.value(v)), result: {hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}}; };
+  const reset = (t, sid, hp, varv) => { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = t.mhp; t._mp = 10; t._tp = 20; t.need_refresh = true; t.refresh(); if (sid) t.addState(sid); t.clearResult();
+    t.typestates('deselectState'); for (const v of VARS) w.$gameVariables.setValue(v, varv); anims = []; draws = 0; popups = []; };
+  const rows = [], applies = [];
+  // draws 只数块里直接的 Math.random：addState 的 resetStateCounts 走 randomInt（血为 0 时 removeState 的 refresh 也会先加上死亡），另有对照
+  const oldInt = w.Math.randomInt;
+  w.Math.randomInt = n => { const d = draws; try { return oldInt.call(w.Math, n); } finally { draws = d; } };
+  try {
+    w.Math.random = () => { const v = draws < script.length ? script[draws] : 0.5; draws++; return v; };
+    for (const sid of REVIVES) for (const hpMode of ['alive', 'zero', 'dead']) for (const seq of [[0.05, 0.05], [0.95, 0.05], [0.05, 0.95], [0.95, 0.95], [0.15, 0.15], [0.4, 0.4], [0.5, 0.5], [0.6, 0.6]]) for (const varv of REVIVE_VAR_STATES.includes(sid) ? [0, 1, 2] : [0]) {
+      const who = 'enemy', t = e;
+      reset(t, sid, 0, varv); script = seq;
+      if (hpMode === 'zero') t._hp = 0;
+      if (hpMode === 'dead') { t._hp = 0; t._states.push(1); }
+      const mhp = t.mhp, mmp = t.mmp, got = action.customEffectEval(t, sid, 'deselectState', t, 0);
+      rows.push({state: sid, who, hpMode, seq, varv, value: got, ...snap(t, sid), mhp, mmp});
+      t._states = t._states.filter(s => s !== 1);
+    }
+    // 实战：打死持有者（真实 apply），随机数在 deselect 前固定 0.5，deselect 时换成给定值
+    const oldSel = w.Game_Action.prototype.onDeselectStateEffects;
+    let at = 0.5;
+    w.Game_Action.prototype.onDeselectStateEffects = function (...args) { const save = w.Math.random; draws = 0; w.Math.random = () => { draws++; return at; };
+      try { return oldSel.apply(this, args); } finally { w.Math.random = save; } };
+    for (const sid of REVIVES) for (const who of ['enemy', 'actor']) for (const r of [0.05, 0.95]) for (const dirtyWarm of [true, false]) {
+      const t = who === 'enemy' ? e : a, u = who === 'enemy' ? a : e; const act = new w.Game_Action(u); act.setSkill(1);
+      reset(t, sid, 0, 2); t._hp = 1; at = r; w.Math.random = () => 0.5;
+      if (!dirtyWarm) { t.need_refresh = true; t.refresh(); t.typestates('deselectState'); }
+      const dirty = !!t.need_refresh, mhp = t.mhp, mmp = t.mmp; t.clearResult(); act.apply(t);
+      applies.push({state: sid, who, r, dirtyWarm, dirtyBefore: dirty, ...snap(t, sid), mhp, mmp});
+      t._states = t._states.filter(s => s !== 1);
+    }
+    w.Game_Action.prototype.onDeselectStateEffects = oldSel;
+  } finally {
+    w.Math.randomInt = oldInt; w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startAnimation = oldAnim; w.Game_Battler.prototype.startDamagePopup = oldPopup;
+    a._states.length = 0; e._states.length = 0; a.clearResult(); e.clearResult();
+  }
+  if (errors.length) throw new Error('native revive errors: ' + JSON.stringify(errors));
+  return {rows, applies};
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
