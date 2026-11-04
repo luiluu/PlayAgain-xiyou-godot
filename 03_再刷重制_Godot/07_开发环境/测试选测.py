@@ -101,6 +101,19 @@ class SelectTests(Fixture):
         self.assertTrue(all(not n.endswith('.tscn') for n in names))
         self.assertIn('== 选测', err.getvalue())
 
+    def test_report_points_to_tool_gate_unless_docs_only(self):
+        """tools65：改到检查.sh／选测对照.json 等工具（或任何非文档改动）时，选测报告提示车道必跑 工具回归.py；只改文档不提。"""
+        import io
+        for rel, body, expect in [(ENV / '检查.sh', '#!/bin/zsh\n', True), (ENV / '选测对照.json', '{}\n', True),
+                                  (CORE / 'battler.gd', 'class_name XBattler\n# changed\n', True), (Path('00_项目管理/交接板.md'), '# b\n', False)]:
+            with self.subTest(rel=str(rel)):
+                self.put(rel, body)
+                out = io.StringIO()
+                sel.report(self.pick(), out)
+                self.assertEqual('工具回归.py' in out.getvalue(), expect, out.getvalue())
+                self.g('checkout', '--', '.')
+                self.g('clean', '-fdq')
+
     def test_docs_only(self):
         self.put(Path('00_项目管理/交接板.md'), '# board 2\n')
         self.put(SUB / '00_设计/新文档.md', 'new\n')  # 未跟踪也算改动
@@ -1107,8 +1120,60 @@ class CommitRecordTests(Fixture):
         self.assertEqual(runner.record_commit_results(project, sdir, str(godot), {'x.tscn': True}), '')
 
 
-STUB_CHECKS = ['测试工作树清理.py', '测试导出过滤.py', '测试共性验收.py', '测试合并工具.py', '测试公式程序.py', '测试转换器写入.py',
-               '测试记录工具.py', '测试云端准备.py', '测试推送重试.py', '测试内容覆盖.py', '测试插件备注覆盖.py', '测试角色同步提速.py', '测试事件探针分段.py', '测试状态js翻译.py', '测试参照批次.py', '测试提交守卫.py', '测试回退开关覆盖.py', '回退开关覆盖.py', '探针登记检查.py', '测试探针登记检查.py', '测试反向验证.py', '语法检查.py', '参照批次.py', '测试选测.py', '变更记录分卷.py', '待核查.py']
+# 替身名单不手维护（tools65）：从 检查.sh 解析它调用的脚本，除了下面「真身／专用替身」其余一律自动换成只记名字的替身。
+# 车道给 检查.sh 加新检查（tools63、events2、fix4 三次）时不用再来改这里，否则 CheckerTests 要到总装合并才挂。
+CHECK_SH = HERE / '检查.sh'
+# 真身（原样复制）或本测试里专门写了行为的替身：不走通用替身
+REAL_OR_CUSTOM = {'检查.sh', '选测.py', '长任务.py', '云端选测.py', '沿用车道.py', '占槽.py', 'guard_check.cjs', 'boot_check.cjs'}
+
+
+def scripts_called_by_checker(text=None):
+    """解析 检查.sh：返回 (07_开发环境 下被调用的脚本名, 03_转换工具 下被调用的脚本相对路径)，都不含 REAL_OR_CUSTOM。
+    认两种写法：带 $ENV_DIR／$ROOT/03_转换工具 前缀的路径；内嵌 python 里 tools / '名字.py' 这类只剩文件名的，按名字在 07_开发环境 里找得到就算。"""
+    text = CHECK_SH.read_text() if text is None else text
+    ext = r'[\w.\u4e00-\u9fff/-]+\.(?:py|sh|cjs)'
+    env = set(re.findall(r'\$\{?ENV_DIR\}?/(' + ext + ')', text))
+    tools = set(re.findall(r'\$\{?ROOT\}?/03_再刷重制_Godot/03_转换工具/(' + ext + ')', text))
+    code = re.sub(r'(?m)^\s*#.*$', '', text)                              # 整行注释里提到的脚本名不算调用
+    for bare in re.findall(r"""['"]([\w\u4e00-\u9fff]+\.py)['"]""", code):
+        if (HERE / bare).is_file():
+            env.add(bare)
+    return (sorted(n for n in env if n not in REAL_OR_CUSTOM), sorted(n for n in tools if Path(n).name not in REAL_OR_CUSTOM))
+
+
+STUB_ENV, STUB_TOOLS = scripts_called_by_checker()
+STUB_CHECKS = [n for n in STUB_ENV if n != '并行测试.py']   # 兼容旧名：07_开发环境 下的检查脚本替身（并行测试.py 另算）
+
+
+class CheckerStubParseTests(unittest.TestCase):
+    """替身名单自动解析（tools65）：检查.sh 新增一条检查，替身自动跟上；认不出的写法明确报错，不等总装合并才挂。"""
+    def test_parse_finds_known_and_new_calls(self):
+        env, tools = scripts_called_by_checker()
+        self.assertGreaterEqual(len(env), 20)
+        for known in ['测试插件备注覆盖.py', '补跑事件状态探针.py', '并行测试.py', '语法检查.py']:
+            self.assertIn(known, env)
+        self.assertIn('事件空绿扫描.py', tools)
+        self.assertIn('ui_reference/guard_check.py', tools)
+        for custom in REAL_OR_CUSTOM:
+            self.assertNotIn(custom, env)
+        # 模拟车道往 检查.sh 里加新检查：一个 07_开发环境 脚本、一个 03_转换工具 脚本
+        patched = CHECK_SH.read_text() + (
+            '\nwant tools && python3 "$ENV_DIR/测试全新检查.py" >/dev/null\n'
+            'python3 "$ROOT/03_再刷重制_Godot/03_转换工具/新扫描/全新扫描.py" --check\n')
+        env2, tools2 = scripts_called_by_checker(patched)
+        self.assertEqual(sorted(set(env2) - set(env)), ['测试全新检查.py'])
+        self.assertEqual(sorted(set(tools2) - set(tools)), ['新扫描/全新扫描.py'])
+
+    def test_every_script_token_in_checker_is_covered(self):
+        """检查.sh 里出现的每个 .py／.cjs 文件名都要在替身、真身或专用替身里；认不出的调用写法（变量拼路径等）在这里明确报出来。"""
+        env, tools = scripts_called_by_checker()
+        covered = set(env) | {Path(n).name for n in tools} | REAL_OR_CUSTOM | {'检查.sh'}
+        text = re.sub(r'(?m)^\s*#.*$', '', CHECK_SH.read_text())           # 整行注释里提到的脚本名不算调用
+        tokens = {Path(t).name for t in re.findall(r'[\w.\u4e00-\u9fff/-]+\.(?:py|cjs)\b', text)}
+        tokens -= {'xiyou_check.py'}
+        missing = sorted(tokens - covered)
+        self.assertEqual(missing, [], '检查.sh 调用了替身解析认不出的脚本 %s：把调用写成 "$ENV_DIR/名字" 或 "$ROOT/03_再刷重制_Godot/03_转换工具/路径" 的形式，'
+                                     '或在 测试选测.py 的 scripts_called_by_checker／REAL_OR_CUSTOM 里补上' % missing)
 
 
 class CheckerTests(Fixture):
@@ -1121,7 +1186,7 @@ class CheckerTests(Fixture):
         for name in ['检查.sh', '选测.py', '选测对照.json']:
             shutil.copy2(HERE / name, env / name)
         record = 'import sys, pathlib\nwith open(%r, "a") as f: f.write(pathlib.Path(sys.argv[0]).name + " " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls)
-        for name in STUB_CHECKS + ['并行测试.py']:
+        for name in STUB_ENV:
             self.put(ENV / name, record)
         # 沿用车道.py 替身（tools43）：记一行；FAKE_REUSE_DROP 里的场景当作沿用（不再跑），其余原样交回
         self.put(ENV / '沿用车道.py', record + 'import os\nnames = sys.argv[sys.argv.index("--shell") + 1:]\n'
@@ -1130,7 +1195,7 @@ class CheckerTests(Fixture):
                  'print("REUSE_COUNT=%d" % len([n for n in names if n in drop]))\n')
         # 占槽.py 替身：直接跑 -- 后面的命令（真的占槽要用真的 并行测试.py）
         self.put(ENV / '占槽.py', 'import subprocess, sys\nsys.exit(subprocess.run(sys.argv[sys.argv.index("--") + 1:]).returncode)\n')
-        for rel in ['共性参照验收.py', '内容覆盖检查.py', '事件空绿扫描.py', '验证西游来源.py', 'ui_reference/guard_check.py']:
+        for rel in STUB_TOOLS:
             self.put(TOOLS / rel, record)
         self.put(TOOLS / 'mv_oracle/guard_check.cjs', 'require("fs").appendFileSync(%r, "guard_check.cjs\\n")\n' % str(self.calls))
         self.put(TOOLS / 'mv_oracle/boot_check.cjs', 'require("fs").appendFileSync(%r, "boot_check.cjs\\n");'
@@ -1255,9 +1320,28 @@ class CheckerTests(Fixture):
         rc, out, ran = self.check('--oracle')
         self.assertEqual(rc, 0, out)
         self.assertIn('全部通过', out)
-        self.assertEqual(self.names(ran), sorted(set(STUB_CHECKS + ['并行测试.py', 'godot', '共性参照验收.py', '内容覆盖检查.py', '事件空绿扫描.py',
-                                                                   '验证西游来源.py', 'guard_check.py', 'guard_check.cjs', 'boot_check.cjs'])))
+        # 期望名单也从 检查.sh 解析（tools65）：新加的检查脚本不用改这里
+        expected = set(STUB_ENV) | {Path(n).name for n in STUB_TOOLS} | {'godot', 'guard_check.cjs', 'boot_check.cjs'}
+        self.assertEqual(self.names(ran), sorted(expected))
         self.assertEqual(next(l for l in ran if l.startswith('并行测试.py')).split()[1:], [str(self.godot), str(self.root / PROJECT)])
+
+    def test_new_check_added_to_checker_is_auto_stubbed(self):
+        """车道往 检查.sh 里加一条新检查（tools65 起不用改替身名单）：按改后的 检查.sh 重新解析替身，整条检查仍然通过且新脚本被调用到。"""
+        sh = self.root / ENV / '检查.sh'
+        text = sh.read_text().replace('if (( ${#FAIL_ITEMS} )); then',
+                                      'want tools && { if python3 "$ENV_DIR/测试全新检查.py" >/dev/null; then ok "全新检查"; else bad "全新检查"; fi; }\n'
+                                      'if (( ${#FAIL_ITEMS} )); then', 1)
+        self.assertIn('测试全新检查.py', text)
+        sh.write_text(text)
+        record = 'import sys, pathlib\nwith open(%r, "a") as f: f.write(pathlib.Path(sys.argv[0]).name + " " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls)
+        env_new, _ = scripts_called_by_checker(text)
+        added = sorted(set(env_new) - set(STUB_ENV))
+        self.assertEqual(added, ['测试全新检查.py'])
+        for name in added:
+            self.put(ENV / name, record)
+        rc, out, ran = self.check('--oracle')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('测试全新检查.py', self.names(ran))
 
     def test_docs_only_skips_godot_and_tools(self):
         self.put(Path('00_项目管理/交接板.md'), '# board 2\n')
@@ -1266,8 +1350,8 @@ class CheckerTests(Fixture):
         self.assertIn('== 选测', out)
         self.assertIn('跳过导入与测试', out)
         self.assertIn('选测全部通过', out)
-        # 回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）；探针登记检查同样每次跑（tools31 守卫，不到 1 秒）
-        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py', '探针登记检查.py'])
+        # 补跑事件状态探针（缺文件才补量）每次跑；回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）；探针登记检查同样每次跑（tools31 守卫，不到 1 秒）
+        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py', '探针登记检查.py', '补跑事件状态探针.py'])
 
     def test_ui_change_runs_selected_scenes_only(self):
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')
@@ -1405,7 +1489,11 @@ class CheckerTests(Fixture):
 
 
 if __name__ == '__main__':
-    result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__]))
+    # 带参数时只跑点名的类／用例（tools65：python3 测试选测.py CheckerTests CheckerStubParseTests）；不带参数跑整份
+    loader = unittest.defaultTestLoader
+    names = sys.argv[1:]
+    suite = loader.loadTestsFromNames(names, sys.modules[__name__]) if names else loader.loadTestsFromModule(sys.modules[__name__])
+    result = unittest.TextTestRunner().run(suite)
     passed = result.testsRun - len(result.failures) - len(result.errors)
     # 满载时偶发 1 项失败、单跑复现不了（哪吒_10）：失败时把用例名和末行原因单独打出，检查.sh 留日志当证据（tools22）
     for case, trace in result.failures + result.errors:
