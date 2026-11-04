@@ -40,7 +40,7 @@
 - 通过：xiyou_battle_events、xiyou_sve_visual、xiyou_svpngfd、xiyou_vsfx、xiyou_battle_log、xiyou_sequence_visual、xiyou_appearance、xiyou_actor_looks、xiyou_cat。
 - `语法检查.py` 通过；`同步正式西游.py --accept-additions` 退出 0。
 - 反向验证没跑（新断言未单独确认咬得住）。
-- 选测清单见下方「云端／本地结果」。
+- 选测 43 个场景（`选测.py main --list`，含战斗核心类、raven／jingliu／yomi 等）本地全跑，全部通过（未超 40 的云端线，本机跑完约 10 分钟）。
 
 ## 未做
 
