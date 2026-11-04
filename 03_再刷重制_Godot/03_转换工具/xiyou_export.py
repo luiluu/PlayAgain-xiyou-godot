@@ -377,6 +377,83 @@ SHIELD_BLOCK = re.compile(
 BUBBLE_WRAP_REMOVE = ('remove', 'user . _bubbleWrapCooldown = 3 ;')
 
 
+# 自动复活一族（state_effects_probe revive.blocks）：Deselect 块「条件＋按原顺序的几步」，条件和每一步都整句比对，有一句不认识就退回 js。
+REVIVE_CONDS = [
+    (re.compile(r'if \( target \. hp <= 0 \|\| target \. isDead \( \) \) \{ (.*) \}'), lambda m: {'kind': 'down'}),
+    (re.compile(r'if \( \( target \. hp <= 0 \|\| target \. isDead \( \) \) && Math \. random \( \) < ([0-9.]+) \) \{ (.*) \}'),
+     lambda m: {'kind': 'down', 'below': float(m.group(1))}),
+    # 两边各抽一次：血为 0 先抽，没中且已倒下再抽（真实倒下时最多抽两次）
+    (re.compile(r'if \( target \. hp <= 0 && Math \. random \( \) > ([0-9.]+) \|\| target \. isDead \( \) && Math \. random \( \) > \1 \) \{ (.*) \}'),
+     lambda m: {'kind': 'down_each', 'above': float(m.group(1))}),
+    (re.compile(r'if \( target \. hp <= 0 && \$gameVariables \. value \( ([1-9][0-9]*) \) > ([0-9]+) \) \{ (.*) \}'),
+     lambda m: {'kind': 'hp_zero_variable', 'variable': int(m.group(1)), 'above': int(m.group(2))}),
+]
+REVIVE_GAIN = re.compile(r'target \. gain(Hp|Mp|Tp) \( (?:([0-9]+)|target \. (mhp|mmp|tp)(?: \* ([0-9.]+))?|Math \. (floor|ceil) \( target \. (mhp) \* ([0-9.]+) \)) \)')
+REVIVE_STEP_RE = [
+    (re.compile(r'target \. startAnimation \( ([1-9][0-9]*) \)'), lambda m: {'do': 'animation', 'id': int(m.group(1))}),
+    (re.compile(r'target \. removeState \( stateId \)'), lambda m: {'do': 'remove_self'}),
+    (re.compile(r'target \. removeState \( ([1-9][0-9]*) \)'), lambda m: {'do': 'remove_state', 'id': int(m.group(1))}),
+    (re.compile(r'target \. addState \( ([1-9][0-9]*) \)'), lambda m: {'do': 'add_state', 'id': int(m.group(1))}),
+    (re.compile(r'target \. startDamagePopup \( \)'), lambda m: {'do': 'popup'}),
+    (re.compile(r'target \. clearResult \( \)'), lambda m: {'do': 'clear_result'}),
+    (re.compile(r'\$gameVariables \. setValue \( ([1-9][0-9]*) , \$gameVariables \. value \( \1 \) ([+-]) 1 \)'),
+     lambda m: {'do': 'add_variable', 'id': int(m.group(1)), 'delta': 1 if m.group(2) == '+' else -1}),
+]
+
+
+def revive_state_effect(code, phase):
+    from formula_program import Parser, Unsupported
+    if phase != 'deselect':
+        return None
+    try:
+        signature = ' '.join(row[0] for row in Parser(code).tokens[:-1])
+    except Unsupported:
+        return None
+    for pattern, make in REVIVE_CONDS:
+        m = pattern.fullmatch(signature)
+        if m:
+            cond, body = make(m), m.groups()[-1]
+            break
+    else:
+        return None
+    rate = None
+    steps = []
+    for sentence in body.split(' ; '):
+        sentence = sentence.removesuffix(' ;')
+        if sentence.startswith('var rate = '):
+            rate = re.fullmatch(r'var rate = ([0-9.]+)', sentence)
+            if not rate:
+                return None
+            continue
+        if sentence == 'var heal = Math . floor ( target . mhp * rate )':
+            if not rate:
+                return None
+            continue
+        if sentence == 'target . gainHp ( heal )':
+            if not rate:
+                return None
+            steps.append({'do': 'gain', 'resource': 'hp', 'param': 'mhp', 'rate': float(rate.group(1)), 'round': 'floor'})
+            continue
+        gain = REVIVE_GAIN.fullmatch(sentence)
+        if gain:
+            resource = gain.group(1).lower()
+            if gain.group(2):
+                steps.append({'do': 'gain', 'resource': resource, 'amount': int(gain.group(2))})
+            elif gain.group(3):
+                steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(3), 'rate': float(gain.group(4) or 1)})
+            else:
+                steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(6), 'rate': float(gain.group(7)), 'round': gain.group(5)})
+            continue
+        for pattern, make in REVIVE_STEP_RE:
+            m = pattern.fullmatch(sentence)
+            if m:
+                steps.append(make(m))
+                break
+        else:
+            return None
+    return {'op': 'revive', 'cond': cond, 'steps': steps}
+
+
 def permanent_state_effect(tokens, phase):
     """Four complete native-measured blocks; actor ledger capability only.
     Do not accept arbitrary addParam fragments or infer enemy persistence.
@@ -604,6 +681,10 @@ def parse_state_effects(note):
             continue
         if (phase, ' '.join(tokens)) == BUBBLE_WRAP_REMOVE:
             out.append({'phase': phase, 'op': 'noop', 'reason': 'bubble_wrap_cooldown_unread'})
+            continue
+        revive = revive_state_effect(code, phase)
+        if revive:
+            out.append({'phase': phase, **revive})
             continue
         query = query_state_value_effect(code, phase)
         if query:

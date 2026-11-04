@@ -1935,7 +1935,9 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
-	r.died = bool(r.died) and t.is_dead()  # 死而复燃（deselect）当场复活：这一击不算击杀
+	r.died = bool(r.died) and t.is_dead()  # 自动复活（deselect）当场复活：这一击不算击杀
+	if ctx.record.has("state_anims"):
+		r.state_anims = r.get("state_anims", []) + ctx.record.state_anims  # 复活块的 startAnimation
 	XAlienBattle.pop_action()
 	var result := _action_resources.result(t)
 	result.missed = r.missed
