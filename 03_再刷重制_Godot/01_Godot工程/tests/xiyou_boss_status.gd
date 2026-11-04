@@ -184,6 +184,47 @@ func _run() -> void:
 	check("bar_moves_up", panel.bar.position.y == maxf(12.0, 120.0 - 96.0 - 8.0), panel.bar.position)
 	panel.help_source = Callable()
 
+	# 8b. 战力显示（CodexCombatPower.enemy）：已做、默认关。关时布局不变；开时展开才现算，折叠只读缓存
+	check("power_default_off", not XBossStatusPanel.SHOW_POWER and panel.power_of().is_empty() and panel.power_total() == -1.0)
+	XPowerEnemy.clear_cache()
+	var pw := XPowerEnemy.enemy(boss)
+	var jr := func(v: float): return XPower.js_round(v)
+	check("power_enemy_shape", not pw.is_empty() and pw.total > 0.0 and pw.total == pw.parts[0] + pw.parts[1] and pw.parts[2] == 0.0 and pw.output > 0.0, pw)
+	var avoid := (clampf(boss.eva, 0.0, 0.8) + clampf(boss.mev, 0.0, 0.8)) / 2.0
+	var rate := maxf(0.02, (maxf(0.0, boss.pdr) + maxf(0.0, boss.mdr)) / 2.0) * (1.0 - avoid)
+	var ehp := boss.mhp / ((XDamage.defense_rate(10000, boss.def) + XDamage.defense_rate(10000, boss.mdf)) / 2.0) / rate
+	check("power_ehp_formula", absf(pw.effectiveHp - ehp) < 1e-6 * ehp and pw.parts[1] == jr.call(300.0 * pow(ehp / 1000.0, 0.5)), [pw.effectiveHp, ehp])
+	check("power_output_curve", pw.parts[0] == jr.call(600.0 * pow(pw.output / 1000.0, 0.35)), pw)
+	check("power_cache_hit", XPowerEnemy.enemy(boss) == pw and XPowerEnemy.cached(boss) == pw)
+	var saved_hp := boss.mhp
+	boss.state_ids.append(2)  # 签名含状态表：变了缓存失效
+	check("power_cache_signature", XPowerEnemy.cached(boss).is_empty())
+	boss.state_ids.erase(2)
+	check("power_cache_back", XPowerEnemy.cached(boss) == pw and saved_hp == boss.mhp)
+	check("power_format", XPower.format(pw.total).length() > 0)
+	XBossStatusPanel.SHOW_POWER = true
+	XPowerEnemy.clear_cache()
+	panel.open = false
+	check("power_closed_reads_cache_only", panel.power_of().is_empty())
+	panel.open = true
+	var shown := panel.power_of()
+	check("power_open_computes", not shown.is_empty() and shown.total == pw.total, shown)
+	panel.open = false
+	check("power_closed_after_open_cached", panel.power_of().total == pw.total)
+	check("power_stamp_changes", panel.power_total() == pw.total)
+	XBossStatusPanel.SHOW_POWER = false
+	check("power_off_again_empty", panel.power_of().is_empty() and panel.power_total() == -1.0)
+
+	# 战力显示截图（只在窗口模式、给人看）
+	XBossStatusPanel.SHOW_POWER = true
+	panel.open = false
+	XPowerEnemy.enemy(boss)
+	panel.refresh(true)
+	await frames(3)
+	shot("boss_status_bar_power")
+	XBossStatusPanel.SHOW_POWER = false
+	panel.refresh(true)
+
 	# 9. 死亡后消失
 	boss.hp = 0
 	await frames(10)

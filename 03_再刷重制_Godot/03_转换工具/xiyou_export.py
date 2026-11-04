@@ -1406,6 +1406,13 @@ class Exporter:
             else:
                 self.ref_img('sv_enemies' if db['System']['optSideView'] else 'enemies', e['battlerName'])
             skills |= {a['skillId'] for a in e['actions']}
+        # MOG_BossHP：血条三层图，与切片里 Boss 敌人的头像（参数 boss-N 对应 boss-N-头像）
+        bosshp = self.plugins.get('MOG_BossHP', {})
+        for key in ('资源-固定框', '资源-生命条', '资源-生命数值'):
+            self.ref_img('bosshp', bosshp.get(key))
+        for n in range(1, 570):
+            if str(bosshp.get(f'boss-{n}', '0')).isdigit() and int(bosshp.get(f'boss-{n}', '0')) in enemies:
+                self.ref_img('bosshp', (bosshp.get(f'boss-{n}-头像') or '').strip())
         anims = {db['Skills'][s]['animationId'] for s in skills if 0 < s < len(db['Skills']) and db['Skills'][s]}
         anims |= {int(x) for x in cfg.get('extraAnimations', [])} | self.event_animations
         # MOG_TrPopUpBattle：掉落图标上播放物品备注 <dh:N> 的动画（数据库掉落与 YEP_ExtraEnemyDrops 追加掉落）
