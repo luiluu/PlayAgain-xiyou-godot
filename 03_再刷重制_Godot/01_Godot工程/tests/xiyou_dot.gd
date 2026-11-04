@@ -139,7 +139,8 @@ func compare_ticks(tag: String, observed: Dictionary, got: Dictionary, sids: Arr
 	var shape_got := real.map(func(x): return [int(x.state), float(x.hp), int(x.get("animation", 0))])
 	check(tag + ".ticks", JSON.stringify(shape_want) == JSON.stringify(shape_got), [shape_want, shape_got])
 	var errs: Array = observed.sourceErrors
-	check(tag + ".errors_skip", errs.is_empty() or want.size() < sids.size() or true)
+	# 原版源码报错的用例：那个状态在 log 里只有 dotState、没有 gainHp，所以有效 tick 数必须少于状态数
+	check(tag + ".errors_skip", errs.is_empty() or want.size() < sids.size(), [want.size(), sids.size(), errs])
 	if not errs.is_empty():
 		check(tag + ".diag", not got.diag.is_empty(), got.diag)
 
@@ -336,7 +337,12 @@ func _multi() -> void:
 		if hp0 >= 0.0:
 			# 小血量用例的最终 HP 完全可比（没有钳到上限）
 			check(tag + ".hp", is_equal_approx(got.after, minf(float(o.after.hp), got.holder.mhp)), [got.after, o.after.hp, got.holder.mhp])
-		check(tag + ".states", JSON.stringify(got.states.filter(func(x): return int(x) in [1] or not sids.has(int(x)) or true)) != "", got.states)
+		# 回合末身上剩下的状态集合与原版 after.states 一致（排序后比）
+		var want_states: Array = o.after.states.map(func(x): return int(x))
+		var got_states: Array = got.states.map(func(x): return int(x))
+		want_states.sort()
+		got_states.sort()
+		check(tag + ".states", want_states == got_states, [got_states, want_states])
 		check(tag + ".death_state", got.states.has(1) == o.after.states.map(func(x): return int(x)).has(1), [got.states, o.after.states])
 		# 下一回合：已倒下不再算；被再生拉起的活着照旧不再有这些状态
 		var o2: Dictionary = c.observed.next
