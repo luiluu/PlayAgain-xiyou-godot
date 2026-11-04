@@ -73,3 +73,8 @@
 - c4753d2e dot2 ①：2038 Apply Effect 译成 effect_program、探针 damagedot.apply／apply2038
 - 3db71fc7 dot2 ②：屏障实测不可达、探针 barrier_probe、专项 xiyou_barrier
 - 本期：交付单（③ 细查）
+
+## 云端结果
+
+- 同步 `--accept-additions` 退出码 0（dot_probe、state_effects_probe、barrier_probe 新增用例已接受）。
+- 云端选测（23 个场景、3 片，基准 7ba62464，提交 dde2a3b6e3）：通过，<https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41862185511>。基准取 dot1b 头，所以 dot1b 须先合并。
