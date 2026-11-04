@@ -49,6 +49,10 @@ static var FIX_ITACHI_1318 := true
 static var FIX_CRIMSON_1683 := true
 ## BattleManager.queueForceAction 的 339 参数，由战斗逻辑在事件阶段取走（take_forces）
 static var _forces: Array = []
+## fix2：审查 38 P2-1。开战时清掉上一场残留的强制行动与公共事件预约队列（原版 $gameTemp 跨战斗不清，残留会在下一场执行）
+static var FIX_QUEUE_CLEAR := true
+## fix2：审查 38 P2-1。一次事件检查里追加的强制行动跑到队列空（原版整队列当一个公共事件跑，跑的过程中排进来的紧接着下一轮跑，不等下次检查）
+static var FIX_FORCE_DRAIN := true
 ## 战斗双方（friendsUnit 用），XBattleLogic 开战时设
 static var battle_units := {}
 ## YEP_X_CriticalControl 的 $gameSystem._forceCritical（必爆 541、755）；force_previous 是 Game_Action._prevForcedCriticalHit，每次 apply 清
@@ -493,6 +497,15 @@ static func queue_force(b: XBattler, skill: int, target_index: int, resources: X
 	for side in ["actors", "enemies"]:
 		for m in battle_units.get(side, []):
 			resources.seed_result(m, XResourceContext.empty_result())
+
+
+static func clear_queues() -> void:
+	_forces.clear()
+	_reserves.clear()
+
+
+static func has_pending_forces() -> bool:
+	return not _forces.is_empty() or not _reserves.is_empty()
 
 
 static func take_forces() -> Array:

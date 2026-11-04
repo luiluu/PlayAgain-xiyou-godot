@@ -221,6 +221,8 @@ func _take_state_reserves() -> void:
 func _start_battle_effects() -> void:
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	XStateEffects.force_critical = false
+	if XStateEffects.FIX_QUEUE_CLEAR:
+		XStateEffects.clear_queues()
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
@@ -1147,6 +1149,7 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	if is_event_waiting():
 		return []
 	_check = {"first": first_subject, "turn_end": turn_end, "moment": {}, "guard": 0}
+	_drain_rounds = 0
 	return _drive_events()
 
 
@@ -1179,6 +1182,9 @@ func run_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	return logs
 
 
+var _drain_rounds := 0
+
+
 func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
@@ -1197,6 +1203,11 @@ func _drive_events() -> Array:
 					found = i
 					break
 			if found < 0:
+				# 追加的强制行动／预约在这一轮里又排了新的：接着跑到队列空（上限防止暴击必追加的死循环）
+				if XStateEffects.FIX_FORCE_DRAIN and XStateEffects.has_pending_forces() and _drain_rounds < 50:
+					_drain_rounds += 1
+					_check.guard = int(_check.guard) - 1
+					continue
 				break
 			if int(pages[found].get("span", 0)) <= 1:
 				_event_flags[found] = true

@@ -68,6 +68,18 @@ class ReviveLogic:
 		return stream if stream != null else super()
 
 
+## 每执行一条强制行动就再排一条，直到排满 chain 条（模拟多代追加）
+class ChainLogic:
+	extends ReviveLogic
+	var chain := 3
+	var ran := 0
+	func _force_action(p: Array, first_subject: XBattler) -> Array:
+		ran += 1
+		if ran < chain:
+			XStateEffects.queue_force_quiet(actors[0], 1, 0)
+		return super._force_action(p, first_subject)
+
+
 class ValueBattler:
 	extends XBattler
 	var values := {}
@@ -1458,6 +1470,33 @@ func _fix_blocks() -> void:
 	# 排到的强制行动真能跑（一株莲）：逻辑取得走、有记录
 	var forced: Array = logic._force_action([1, int(actor.actor_id), 7303, -2], null)
 	check("fix.1301.force_runs", not forced.is_empty(), forced.size())
+	# 审查 38 P2-1：上一场残留的强制行动／预约不进下一场
+	XStateEffects.queue_force_quiet(actor, 5576, 0)
+	XStateEffects._reserves.append(2)
+	var next_logic := ReviveLogic.new()
+	next_logic.elite_roll = 100.0
+	next_logic.setup(2, s)
+	check("fix.queue_clear.forces", XStateEffects.take_forces().is_empty())
+	check("fix.queue_clear.reserves", not XStateEffects._reserves.has(2), XStateEffects._reserves)
+	XStateEffects.FIX_QUEUE_CLEAR = false
+	XStateEffects.queue_force_quiet(actor, 5576, 0)
+	next_logic = ReviveLogic.new()
+	next_logic.elite_roll = 100.0
+	next_logic.setup(2, s)
+	check("fix.queue_clear.off_keeps", XStateEffects.take_forces().size() == 1)
+	XStateEffects.FIX_QUEUE_CLEAR = true
+	# 追加跑到队列空；关开关回到一次检查只走一代
+	for on in [true, false]:
+		XStateEffects.FIX_FORCE_DRAIN = on
+		XStateEffects.clear_queues()
+		var cl := ChainLogic.new()
+		cl.elite_roll = 100.0
+		cl.setup(2, s)
+		XStateEffects.queue_force_quiet(cl.actors[0], 1, 0)
+		cl.run_events()
+		check("fix.force_drain.%s" % on, (cl.ran == 3) if on else (cl.ran < 3), cl.ran)
+		XStateEffects.clear_queues()
+	XStateEffects.FIX_FORCE_DRAIN = true
 	XState.current = null
 	XStateEffects.battle_units = {}
 
