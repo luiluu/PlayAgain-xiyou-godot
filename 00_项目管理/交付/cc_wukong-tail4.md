@@ -1,7 +1,7 @@
 # 交付：cc/wukong-tail4
 
 - 车道／工作者：B 界面／悟空（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -40,7 +40,10 @@
 
 ### 五、验证
 
-选测结果：待写
+- 专项：`xiyou_quality_icons` 7 项（新）全过。
+- 反向验证 2 项都咬住（XUI 不走这条路径时全库扫描报空白；改亮度门槛）。
+- 合并 main 后跑过同步 `--accept-additions`（测量不变）；`内容覆盖检查` new 0，不用更新基线；探针登记检查过。
+- 选测：云端 270 个场景全过（提交 b0a065ef，基准 aabbcd80，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41793628924）。
 
 ## 交接板
 
@@ -58,4 +61,5 @@
 
 ## 本分支提交
 
-待写
+- c4bdae04 WIP: tail4 交付单草稿；图标模块 uid
+- e1570482 WIP: 超出 IconSet 网格的图标（CodexQualityIcons、谷雨宿傩 HD、谷雨条）
