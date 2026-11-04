@@ -206,6 +206,7 @@ func _take_state_reserves() -> void:
 
 
 func _start_battle_effects() -> void:
+	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
@@ -1031,6 +1032,8 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		for p in XStateEffects.take_forces():
+			logs.append_array(_force_action(p, _check.get("first")))  # queueForceAction：预约事件优先，跑 339（倒下了就不行动）
 		if _runner == null: _runner = XBattleCommonEvent.take(self)  # setupBattleEvent：预约的公共事件（技能／物品效果 44）先于敌群页
 		if _runner == null:
 			if is_won() or is_lost() or int(_check.guard) > pages.size():
@@ -1936,6 +1939,10 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
 	XAlienBattle.seal_last(self, u, skill, t, used and not r.missed and not r.evaded)  # 异化蚀术 apply 包装：命中后封印
+	# BEC apply 包在 BSC 的 deselect 之内：目标、行动者的弹字在 deselect 之前就发了，复活块清结果也不影响这一击的数字
+	var shown: Dictionary = _action_resources.result(t).duplicate(true)
+	var started_before: int = _action_resources.started_popups.get(t, []).size()
+	var user_shown: Array = XResourceContext.popup_queue(_action_resources.result(u)) if u != t else []
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
@@ -1949,10 +1956,15 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	result.critical = r.critical
 	r.result = result.duplicate(true)
 	r.started_popups = _action_resources.started_popups.get(t, [])  # 行动中途 startDamagePopup 的弹字（死而复燃），先于本次结果
-	r.popupQueue = r.started_popups + XResourceContext.popup_queue(result)
+	shown.missed = r.missed
+	shown.evaded = r.evaded
+	shown.critical = r.critical
+	r.started_split = started_before
+	r.popupQueue = r.started_popups.slice(0, started_before) + XResourceContext.popup_queue(shown) + r.started_popups.slice(started_before)
+	r.shown = {"hp": r.hp if ESTABLISH_TRUE_POPUP and r.has("extra") else shown.hpDamage, "mp": shown.mpDamage, "tp": shown.tpDamage}
 	if u != t:
 		# YEP invokeAction 收尾：目标弹字后 subject().startDamagePopup()（反弹、均衡扣自己的血）；被反弹打死时状态块调 performCollapse
-		r.user_popups = XResourceContext.popup_queue(_action_resources.result(u))
+		r.user_popups = user_shown
 		r.user_died = user_was_alive and u.is_dead()
 	r.effectJournal = _action_resources.journal.duplicate(true)
 	r.formulaDiagnostic = _formula_outcome.get("diagnostic", "")

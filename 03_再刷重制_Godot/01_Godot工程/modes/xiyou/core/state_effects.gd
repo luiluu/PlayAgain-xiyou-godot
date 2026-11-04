@@ -24,6 +24,10 @@ static var diagnostics: Array = []
 static var _seen := {}
 ## $gameTemp.reserveCommonEvent 的编号（只存整数），由战斗逻辑在分发后 take_reserves 交给 XBattleCommonEvent.reserve
 static var _reserves: Array[int] = []
+## BattleManager.queueForceAction 的 339 参数，由战斗逻辑在事件阶段取走（take_forces）
+static var _forces: Array = []
+## 战斗双方（friendsUnit 用），XBattleLogic 开战时设
+static var battle_units := {}
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -73,6 +77,13 @@ class PhaseValueProgram:
 	var effects := {}
 
 	func _step(n: Dictionary) -> void:
+		if n.get("op") == "members_loop":
+			for member in XStateEffects._alive_friends(_battlers[n.receiver]):
+				if not _error.is_empty():
+					break
+				_battlers["t"] = member
+				_step(n.body)
+			return
 		if n.get("op") != "loop":
 			super._step(n)
 			return
@@ -91,8 +102,29 @@ class PhaseValueProgram:
 		var args: Array = n.args.map(func(a): return _expr(a))
 		if not _error.is_empty():
 			return UNDEFINED
-		if n.name == "is_dead":
-			return b.is_dead()
+		match str(n.name):
+			"is_dead":
+				return b.is_dead()
+			"is_alive":
+				return b.is_alive()
+			"is_actor":
+				return b is XActor
+			"is_battle_member":
+				return not b is XActor or XStateEffects.battle_units.get("actors", []).has(b)
+			"alive_friends":
+				return float(XStateEffects._alive_friends(b).size())
+			"death_state_id":
+				return 1.0
+			"state_rate":
+				return 1.0 if XAlienBattle.forced_state(b, int(_number(args[0]))) else b.traits_pi(XBattler.TRAIT_STATE_RATE, int(_number(args[0])))
+			"state_resist":
+				return b.traits_set(XBattler.TRAIT_STATE_RESIST).has(int(_number(args[0])))
+			"first_weapon_type":
+				return float(b.first_weapon_type()) if b is XActor else 0.0
+			"has_skill":
+				if not b is XActor:
+					return _fail(JS_TYPE_ERROR)  # 敌人没有 hasSkill：TypeError，eval 外层接住
+				return b.skills().any(func(sk): return int(sk.id if sk is Dictionary else sk) == int(_number(args[0])))
 		if n.name == "throw":
 			return _fail(JS_TYPE_ERROR)  # target.RemoveState 原版没有这个方法：TypeError，eval 外层接住，前面做过的留着、value 照常返回
 		if not effects.get("execute", false):
@@ -108,6 +140,18 @@ class PhaseValueProgram:
 			"set_variable":
 				if XState.current != null and XStateEffects._variable_writable(int(_number(args[0]))):
 					XState.current.set_variable(int(_number(args[0])), _number(args[1]))
+			"add_state":
+				XStateEffects._add_state(b, int(_number(args[0])), effects.context)
+			"animation":
+				XStateEffects._note_anim(int(_number(args[0])), b, effects.context)
+			"set_hp":
+				resources.set_resource(b, "hp", _number(args[0]))
+			"queue_force":
+				XStateEffects.queue_force(b, int(_number(args[0])), int(_number(args[1])), resources)
+			"set_counter":
+				XStateEffects._set_counter(b, int(_number(args[0])), _number(args[1]))
+			"add_actor_counter_level":
+				XStateEffects._add_actor_counter_level(int(_number(args[0])), int(_number(args[1])))
 			"collapse":
 				pass  # performCollapse 只放倒下动画和音效：战斗场景看到死亡状态自己播
 			_:
@@ -284,7 +328,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 ## 伤害 react／confirm 一族（rules4）：整块小程序。字段 target._xmx 等读进局部量、跑完写回；origin.属性块开头读好。
 static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder: XBattler, c: Dictionary, execute: bool) -> float:
 	var vm := PhaseValueProgram.new()
-	vm.effects = {"execute": execute, "resources": c.get("resources")}
+	vm.effects = {"execute": execute, "resources": c.get("resources"), "context": c}
 	var extra := {}
 	var receivers := {"a": c.user, "b": c.target}
 	for local in e.program.locals:
@@ -293,6 +337,10 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 			extra[name] = _field_read(receivers[name[2]], name.substr(4))
 		elif name.begins_with("o_"):
 			extra[name] = float(c.origin.get(name.substr(2)))
+		elif name == "se_state_id":
+			extra[name] = float(_state_id)
+		elif name == "se_attack":
+			extra[name] = c.user.is_attack(c.get("item", {}))
 	var out := vm.run_phase(e.program, c, c.value, execute, extra)
 	if execute:
 		for name in extra:
@@ -303,6 +351,42 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 	if execute:
 		_diagnose(phase, _state_id, holder, "effect_program_unavailable")
 	return c.value
+
+
+static func _alive_friends(b: XBattler) -> Array:
+	var unit: Array = battle_units.get("actors" if b is XActor else "enemies", [])
+	return unit.filter(func(m): return m.is_alive())
+
+
+## BattleManager.queueForceAction：排进预约（$gameTemp.forceActionQueue，事件阶段跑 339，那时倒下了就不行动），并 clearResults 清所有战斗成员的结果槽。
+static func queue_force(b: XBattler, skill: int, target_index: int, resources: XResourceContext) -> void:
+	var unit: Array = battle_units.get("actors" if b is XActor else "enemies", [])
+	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else unit.find(b), skill, target_index])
+	for side in ["actors", "enemies"]:
+		for m in battle_units.get(side, []):
+			resources.seed_result(m, XResourceContext.empty_result())
+
+
+static func take_forces() -> Array:
+	var out := _forces.duplicate()
+	_forces.clear()
+	return out
+
+
+static func _set_counter(b: XBattler, state_id: int, value: float) -> void:
+	var counters: Dictionary = b.state_data.get("_stateCounter", {})
+	counters[str(state_id)] = value
+	b.state_data["_stateCounter"] = counters
+
+
+## $gameActors.actor(n)._stateCounter[s] += 等级。没计数时原版得 NaN，读的地方（paramState）当 0，这里不写 NaN（进存档会坏），留着没有。
+static func _add_actor_counter_level(actor_id: int, state_id: int) -> void:
+	if XState.current == null:
+		return
+	var a: XActor = XState.current.actor(actor_id)
+	var counters: Dictionary = a.state_data.get("_stateCounter", {})
+	if counters.has(str(state_id)):
+		counters[str(state_id)] = float(counters[str(state_id)]) + float(a.level)
 
 
 ## _Shield、_xmx 只有这些块自己读写（不是护盾系统的护盾），记在 state_data；没写过时 undefined，回写时跳过。

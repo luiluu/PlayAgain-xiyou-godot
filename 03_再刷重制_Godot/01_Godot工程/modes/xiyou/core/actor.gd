@@ -420,6 +420,14 @@ func native_skill_ids() -> Array[int]:
 func native_skills() -> Array:
 	return _skill_records(native_skill_ids())
 
+## user.weapons()[0].wtypeId；没武器时 0
+func first_weapon_type() -> int:
+	for e in equip_list():
+		if e != null and e.get("kind") == "weapon":
+			return int(e.get("wtypeId", 0))
+	return 0
+
+
 func skills() -> Array:
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬

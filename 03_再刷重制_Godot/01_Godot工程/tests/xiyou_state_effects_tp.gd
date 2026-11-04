@@ -115,7 +115,7 @@ func _ready() -> void:
 	check("inventory.costume_142", costume == 142, costume)
 	# 318 → 315：奈叶二期把 1774 battle、1780 action_start／action_end 三块单句 reserveCommonEvent 翻成 reserve_common_event；
 	# 315 → 301（真未翻 173 → 159）：rules2 护盾 7 块 React 译成 value_query remove_self、7 块 Remove 译成 noop
-	check("inventory.untranslated_121", untranslated == 121, untranslated)
+	check("inventory.untranslated_105", untranslated == 105, untranslated)
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
 	var saved := {}
