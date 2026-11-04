@@ -1071,6 +1071,25 @@ class Exporter:
             self.deleted += 1
 
     # ---- 数据库 ----
+    def apply_xuan_tusu_icons(self, table, data):
+        """Codex_XuanTusuExtraArt applyDatabase：备注 <CodexTusu:键>／<CodexXuan:键> 的技能、状态、物品、防具换专属图标（运行时才改，数据文件里是旧图标）。"""
+        text = (self.app / 'js/plugins/Codex_XuanTusuExtraArt.js').read_text()
+        icons = json.JSONDecoder().raw_decode(text[text.index('ICONS=') + len('ICONS='):])[0]
+        scope = {'Skills': 'skill:', 'States': 'state:'}.get(table, '')
+        for rec in data:
+            if not isinstance(rec, dict):
+                continue
+            for kind in ['Tusu', 'Xuan']:
+                m = re.search(rf'<Codex{kind}:\s*([^>]+)>', rec.get('note') or '', re.I)
+                if not m:
+                    continue
+                tag = m.group(1).strip()
+                aliases = icons[kind]['aliases']
+                slot = aliases.get(scope + tag, aliases.get(tag))
+                if isinstance(slot, int):
+                    rec['iconIndex'] = icons[kind]['start'] + slot
+                    break
+
     def export_db(self):
         system = self.read('data/System.json')
         element_ids = {n.upper().strip(): i for i, n in enumerate(system['elements']) if n}
@@ -1103,6 +1122,8 @@ class Exporter:
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
             self.db[name] = data
+            if name in ('Skills', 'States', 'Items', 'Armors'):
+                self.apply_xuan_tusu_icons(name, data)
             self.write_json(f'db/{name}.json', data)
         animations = self.db.get('Animations') or self.read('data/Animations.json')
         plugins_text = (self.app / 'js/plugins.js').read_text()

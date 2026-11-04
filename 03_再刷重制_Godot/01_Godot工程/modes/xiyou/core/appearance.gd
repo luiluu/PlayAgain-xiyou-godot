@@ -72,18 +72,21 @@ static func for_look(a: XActor, key: String) -> XAppearance:
 	var name := parts[0]
 	var meta: Dictionary = a.data().get("meta", {})
 	var form := ""
+	var art := ""
 	var states := []
 	for part in parts.slice(1):
 		if part == "card":
 			return for_image("sv_actors/" + name, XCostumes.strip_sv(meta))
 		if part.begins_with("form:"):
 			form = part.substr(5)
+		elif part.begins_with("art:"):
+			art = part.substr(4)
 		elif part.begins_with("st:"):
 			for id in part.substr(3).split(",", false):
 				var st: Dictionary = XDB.rec("States", int(id))
 				if not st.is_empty():
 					states.append(st.get("meta", {}))
-	return for_image("sv_actors/" + name, sv_provider(a, name, meta, form), states)
+	return for_image("sv_actors/" + name, XXuanTusuArt.meta(name, sv_provider(a, name, meta, form), art), states)
 
 
 ## for_battler 会取的图与标签取舍；精灵比对它决定要不要换外观（Sprite_Actor.updateBitmap 每帧比 battlerName，
@@ -100,6 +103,7 @@ static func battler_key(b: XBattler) -> String:
 	var form := sv_form(a)
 	if form != "":
 		key += "|form:" + form
+	key += XXuanTusuArt.key_parts(a)
 	var ids := sv_states(a)
 	if not ids.is_empty():
 		key += "|st:" + ",".join(ids.map(func(x): return str(x)))
@@ -203,6 +207,12 @@ const PROFILES := {
 	"Garou_Human": [64, 64, 7, 0, 51, 64], "Raven_Mythic_SV": [64, 64, 11, 4, 58, 63],
 	"Garou_Cosmic": [64, 64, 18, 14, 46, 55], "UserSV_MiraHuman": [260, 240, 43, 48, 196, 178],
 	"UserSV_MiraDragon": [340, 280, 61, 58, 260, 217], "UserSV_RavenMythic": [380, 280, 84, 55, 268, 211],
+	"Codex_Xuan_v1": [128, 128, 39, 40, 97, 111], "Codex_Xuan_SV_v1": [64, 64, 20, 20, 49, 56],
+	"Codex_Tusu_v1": [128, 128, 38, 40, 95, 112], "Codex_Tusu_SV_v1": [64, 64, 19, 20, 47, 56],
+	# 璇、屠苏的绑定形态（Codex_XuanTusuExtraArt FORMS）：多两项是 targetHeight、maxWidth
+	"Codex_Tusu_sword_v1": [128, 128, 38, 9, 85, 118, 48.0, 70.0], "Codex_Tusu_bow_v1": [128, 128, 46, 15, 85, 119, 48.0, 70.0],
+	"Codex_Tusu_shield_v1": [128, 128, 29, 18, 97, 120, 48.0, 70.0], "Codex_Tusu_book_v1": [128, 128, 12, 38, 119, 112, 32.0, 70.0],
+	"Codex_Tusu_hammer_v1": [128, 128, 29, 19, 100, 120, 48.0, 70.0], "Codex_Bound_Transparent_v1": [128, 128, 63, 63, 65, 65, 2.0, 2.0],
 	"Codex_Sukuna_Full": [270, 260, 79, 42, 190, 222], "garou_human_v2": [192, 176, 50, 37, 146, 172],
 	"garou_cosmic": [128, 128, 28, 8, 99, 120], "yunshang": [192, 192, 34, 52, 158, 184],
 	"Yunshang": [192, 192, 34, 52, 158, 184], "Codex_Garou_QHuman": [64, 64, 7, 0, 51, 64],
@@ -234,7 +244,7 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 			return {}
 	var b := Rect2(p[2], p[3], p[4] - p[2], p[5] - p[3])
 	return {"size": Vector2(p[0], p[1]), "bounds": b, "multi": multi,
-		"scale": minf(PROFILE_H / b.size.y, PROFILE_W / b.size.x)}
+		"scale": minf((p[6] if p.size() > 6 else PROFILE_H) / b.size.y, (p[7] if p.size() > 7 else PROFILE_W) / b.size.x)}
 
 
 ## inferProfile：侧视图量第 2 列第 1 行那格（走路第 2 帧），逐帧图量此刻这张；不透明度 ≥ 12 的外接框
