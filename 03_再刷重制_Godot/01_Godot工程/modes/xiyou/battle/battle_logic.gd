@@ -1100,7 +1100,9 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 	b.param_mark_dirty()
 	if b.is_alive():
 		b.param_refresh()
-		_regenerate(b, logs)
+		XExtDot.tick(self, b, logs)  # YEP_X_ExtDoT：regenerateAll 开头的持续伤害／再生（先于 HP 再生率）
+		if b.is_alive():
+			_regenerate(b, logs)  # 原 regenerateAll 自带 isAlive：被 DoT 打倒就不再生了
 		_tick_states(b, 2)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
 	# 叠毒等 Regenerate 脚本的扣血按状态各弹一次字（regenerateStateEffects 每个状态 clearResult → eval → startDamagePopup）
