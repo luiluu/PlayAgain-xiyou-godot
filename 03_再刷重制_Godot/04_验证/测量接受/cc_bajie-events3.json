@@ -4169,6 +4169,28 @@
       "oldDigest": "b2cea60565cdb317",
       "newDigest": "e1f5926392d582e7",
       "reason": "事件对照快照新增指令点名的队伍外角色（技能／等级／职业），参照探针 watchActors 扩观察面，旧用例的队伍外角色变化此前看不见"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e7p0#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9f8f51f7f29e877b",
+      "newDigest": "50c2cd8730e2c39b",
+      "reason": "事件对照快照新增指令点名的队伍外角色，状态变体也多出队伍外角色变化（总装核对两条：角色 79、52 学技能）"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1194#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8daf59faa366f52f",
+      "newDigest": "59bfbde554288dcd",
+      "reason": "事件对照快照新增指令点名的队伍外角色，状态变体也多出队伍外角色变化（总装核对两条：角色 79、52 学技能）"
     }
   ]
 }

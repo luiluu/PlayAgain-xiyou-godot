@@ -1388,7 +1388,7 @@
       "user": "a167",
       "skill": 10122,
       "target": "e0",
-      "value": 163841698,
+      "value": 157417373,
       "critical": false
      }
     ],
@@ -1431,13 +1431,13 @@
       "user": "a167",
       "skill": 10122,
       "target": "e0",
-      "value": 163841698,
+      "value": 157417373,
       "critical": false
      },
      {
       "kind": "direct",
       "target": "e0",
-      "value": 163841698
+      "value": 157417373
      }
     ],
     "myth": 0,
@@ -1479,7 +1479,7 @@
       "user": "a167",
       "skill": 10124,
       "target": "e0",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      },
      {
@@ -1487,7 +1487,7 @@
       "user": "a167",
       "skill": 10124,
       "target": "e1",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      },
      {
@@ -1495,7 +1495,7 @@
       "user": "a167",
       "skill": 10124,
       "target": "e2",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      }
     ],
@@ -1538,7 +1538,7 @@
       "user": "a167",
       "skill": 10124,
       "target": "e0",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      },
      {
@@ -1546,7 +1546,7 @@
       "user": "a167",
       "skill": 10124,
       "target": "e1",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      },
      {
@@ -1554,23 +1554,23 @@
       "user": "a167",
       "skill": 10124,
       "target": "e2",
-      "value": 167622660,
+      "value": 161050081,
       "critical": false
      },
      {
       "kind": "direct",
       "target": "e0",
-      "value": 167622660
+      "value": 161050081
      },
      {
       "kind": "direct",
       "target": "e1",
-      "value": 167622660
+      "value": 161050081
      },
      {
       "kind": "direct",
       "target": "e2",
-      "value": 167622660
+      "value": 161050081
      }
     ],
     "myth": 0,
@@ -1610,7 +1610,7 @@
       "user": "a167",
       "skill": 10122,
       "target": "e0",
-      "value": 163841698,
+      "value": 157417373,
       "critical": false
      }
     ],
@@ -1762,7 +1762,7 @@
       "user": "a173",
       "skill": 10250,
       "target": "e0",
-      "value": 78988713036,
+      "value": 75891521297,
       "critical": true
      },
      {
@@ -1770,7 +1770,7 @@
       "user": "a173",
       "skill": 10250,
       "target": "e0",
-      "value": 78988713036,
+      "value": 75891521297,
       "critical": true
      }
     ],

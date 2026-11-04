@@ -2,6 +2,7 @@
 // 【cc·悟空·未经审查】渡鸦魔法反射支：目标 mrf 强设后渡鸦技能（hitType 2）被反射回自己，量原版扣血各段、MP、神话／狩猎状态。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');
 const R = w.CodexRaven;
 if (!R || typeof R.damageMultiplier !== 'function') throw new Error('渡鸦模块未安装');
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
@@ -145,6 +146,3 @@ for (const [name, stage, sid, zero] of [['s6.zero', 6, 10250, true], ['s0.zero',
 }
 const ok0 = finish(host, 'raven_reflect.json', {cases});
 process.exit(ok0 ? 0 : 1);
-process.stdout.write('');
-const ok = finish(host, 'raven_reflect.json', {cases});
-process.exit(ok ? 0 : 1);
