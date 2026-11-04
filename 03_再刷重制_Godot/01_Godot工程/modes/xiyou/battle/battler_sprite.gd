@@ -597,10 +597,42 @@ func collapse() -> void:
 		set_motion("dead")
 		return
 	appeared = false
+	_clear_collapse_fx()
+	var body := sprite as Sprite2D
+	var fx: XCollapseFx = null
+	if body != null and body.texture != null and not (look and look.kind == "scene"):
+		# MOG_CollapseEffects 默认死亡效果 0：粉碎（身体马上藏起来，碎块向左上飘散逐块淡出，最久 102 帧）
+		fx = XCollapseFx.start(self, body, _visual_rng(), XCollapseFx.shatter_left())
+	if fx != null:
+		_collapse_fx = fx
+		sprite.modulate = Color(1, 1, 1, 0)
+		effect_left = maxi(effect_left, fx.frames)
+		_fade = create_tween()
+		_fade.tween_interval(32 / 60.0)  # 调用方等的还是 MV startCollapse 的 32 帧，碎块自己继续飘
+		await _fade.finished
+		return
 	effect_left = maxi(effect_left, 32)  # MV Sprite_Enemy.startCollapse：32 帧
 	_fade = create_tween()
 	_fade.tween_property(sprite, "modulate", Color(1, 0.3, 0.3, 0.0), 0.5)
 	await _fade.finished
+
+
+var _collapse_fx: XCollapseFx
+static var _vrng: RandomNumberGenerator
+
+
+## 画面随机数（碎块速度）：不抽战斗规则的全局随机数
+static func _visual_rng() -> RandomNumberGenerator:
+	if _vrng == null:
+		_vrng = RandomNumberGenerator.new()
+		_vrng.randomize()
+	return _vrng
+
+
+func _clear_collapse_fx() -> void:
+	if _collapse_fx != null and is_instance_valid(_collapse_fx):
+		_collapse_fx.clear()
+	_collapse_fx = null
 
 
 ## MV Sprite_Enemy._appeared：开战时没出现的隐藏成员（initVisibility）与倒下后（startCollapse）为 false
@@ -614,12 +646,14 @@ func appear() -> void:
 	effect_left = maxi(effect_left, 16)
 	if _fade and _fade.is_running():
 		_fade.custom_step(3600.0)  # 收掉还在播的倒下淡出（照样发 finished，等它的演出不会卡住）
+	_clear_collapse_fx()
 	sprite.modulate = Color(1, 1, 1, 0)
 	_fade = create_tween()
 	_fade.tween_property(sprite, "modulate", Color.WHITE, 16 / 60.0)
 
 
 func revive_visual() -> void:
+	_clear_collapse_fx()
 	sprite.modulate = Color.WHITE
 	set_motion(_idle_motion())
 
