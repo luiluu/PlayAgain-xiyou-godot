@@ -222,6 +222,9 @@ func _start_battle_effects() -> void:
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	XStateEffects.force_critical = false
 	XStateEffects.force_depth = 0
+	XStateEffects.chain_depth = 0
+	XStateEffects.battle_turn = 0
+	XStateEffects._counter_turn.clear()
 	if XStateEffects.FIX_QUEUE_CLEAR:
 		XStateEffects.clear_queues()
 	_battle_resources = _new_lifecycle_resources()
@@ -919,6 +922,7 @@ var _escape_ratio := -1.0
 
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
 func start_turn() -> void:
+	XStateEffects.battle_turn = turn + 1
 	XGuyu.start_turn(turn + 1)  # 谷雨 startTurn 包装（最外层）：原 startTurn 期间 round＝turnCount＋1
 	# Game_Troop.increaseTurn：span 1（回合）的页重新可执行
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
@@ -1432,7 +1436,9 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XNanoha.begin(self)
+	XStateEffects.chain_depth += 1
 	logs.append_array(execute(u, skill, target, true))
+	XStateEffects.chain_depth -= 1
 	XNanoha.end_execute(self)
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
@@ -2190,7 +2196,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			_action_resources.result(dt).critical = true
 		_damage_record = previous_record
 		if XStateEffects.FIX_MARK_5576 and int(skill.get("id", 0)) in [5576, 5577] and dt.is_state_affected(1067):
-			value *= 4.0  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
+			value *= XStateEffects.MARK_FACTOR  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
 		r.state_value = value
 		_action_resources.result(dt).success = true
 		match type:

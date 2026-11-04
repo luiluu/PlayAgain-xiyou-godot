@@ -66,6 +66,16 @@ static var force_base := false
 static var FIX_QI_RATE_2562 := true
 ## fix2：剑道争锋 2575 说明写用剑时伤害 +3.5%，fix1 按层数 0.5%×层、不限武器（需要 FIX_SWORD_2575 开着）
 static var FIX_SWORD_RATE_2575 := true
+## fix2 琼霄平衡（Kyo 授权 cc 调）：追加（金剪 1068）和反击（1072）打出的 5576／5577 不再触发追加和反击，防连锁
+static var FIX_CHAIN_GUARD := true
+## fix2 琼霄平衡：挨打反击 1072 每名持有者每回合最多反击 1 次（多个敌人同时打时不会连出多招）
+static var FIX_COUNTER_ONCE := true
+## 戮仙印记 1067 的倍率（备注写放大 400%，Kyo 定保持 ×4）
+static var MARK_FACTOR := 4.0
+static var chain_depth := 0
+static var battle_turn := 0
+static var _counter_turn := {}
+const CHAIN_SKILLS := [5576, 5577]
 ## fix2：万古青天一株莲 7303 说明写回复所有队友（包括死亡），技能 scope 8 只打活的
 static var FIX_LOTUS_7303 := true
 
@@ -222,7 +232,10 @@ class PhaseValueProgram:
 				resources.set_resource(b, "hp", _number(args[0]))
 			"queue_counter":
 				var foe: XBattler = effects.context.user
-				XStateEffects.queue_force_quiet(b, int(_number(args[0])), XStateEffects._unit_of(foe).find(foe))
+				var already: bool = XStateEffects.FIX_COUNTER_ONCE and XStateEffects._counter_turn.get(b, -1) == XStateEffects.battle_turn
+				if not already:
+					XStateEffects._counter_turn[b] = XStateEffects.battle_turn
+					XStateEffects.queue_force_quiet(b, int(_number(args[0])), XStateEffects._unit_of(foe).find(foe))
 			"queue_force_quiet":
 				XStateEffects.queue_force_quiet(b, int(_number(args[0])), int(_number(args[1])))
 			"queue_force":
@@ -476,6 +489,8 @@ static func _unit_of(b: XBattler) -> Array:
 
 ## 修正版的强制行动：只排队，不像 queueForceAction 那样清所有结果（这一击的数字要留着）
 static func queue_force_quiet(b: XBattler, skill: int, target_index: int) -> void:
+	if FIX_CHAIN_GUARD and chain_depth > 0 and CHAIN_SKILLS.has(skill):
+		return
 	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else _unit_of(b).find(b), skill, target_index])
 
 

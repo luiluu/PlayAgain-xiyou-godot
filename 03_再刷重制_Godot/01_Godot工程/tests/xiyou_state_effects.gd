@@ -1532,6 +1532,35 @@ func _fix_blocks() -> void:
 		var lotus_logs: Array = logic._force_action([1, int(actor.actor_id), 7303, -2], null)
 		check("fix2.lotus.%s" % on, mate.is_alive() == on, [mate.hp, mate.state_ids, lotus_logs.size(), logic.targets_for(actor, XDB.rec("Skills", 7303)).size(), actor.is_dead()])
 	XStateEffects.FIX_LOTUS_7303 = true
+	# 琼霄平衡：追加／反击打出的招不再触发追加；每回合最多反击 1 次
+	XStateEffects.clear_queues()
+	XStateEffects.chain_depth = 1
+	XStateEffects.queue_force_quiet(actor, 5576, 0)
+	XStateEffects.queue_force_quiet(actor, 7303, -2)
+	check("fix2.chain_guard.on", XStateEffects.take_forces() == [[1, int(actor.actor_id), 7303, -2]])
+	XStateEffects.FIX_CHAIN_GUARD = false
+	XStateEffects.queue_force_quiet(actor, 5576, 0)
+	check("fix2.chain_guard.off", XStateEffects.take_forces().size() == 1)
+	XStateEffects.FIX_CHAIN_GUARD = true
+	XStateEffects.chain_depth = 0
+	var holder := _plain()
+	XStateEffects.battle_units = {"enemies": [foe, holder]}
+	for flag in [true, false]:
+		XStateEffects.FIX_COUNTER_ONCE = flag
+		XStateEffects._counter_turn.clear()
+		XStateEffects.battle_turn = 1
+		XStateEffects.take_forces()
+		for i in range(3):
+			var cctx := _action_ctx(foe, holder, 7.0)
+			cctx.random.seq = [0.25]
+			XStateEffects.run_one("react", holder, st.call(1072), cctx)
+		check("fix2.counter_once.%s" % flag, XStateEffects.take_forces().size() == (1 if flag else 3))
+		XStateEffects.battle_turn = 2
+		var nctx := _action_ctx(foe, holder, 7.0)
+		nctx.random.seq = [0.25]
+		XStateEffects.run_one("react", holder, st.call(1072), nctx)
+		check("fix2.counter_next_turn.%s" % flag, XStateEffects.take_forces().size() == 1)
+	XStateEffects.FIX_COUNTER_ONCE = true
 	# 审查 38 P2-1：上一场残留的强制行动／预约不进下一场
 	XStateEffects.queue_force_quiet(actor, 5576, 0)
 	XStateEffects._reserves.append(2)
