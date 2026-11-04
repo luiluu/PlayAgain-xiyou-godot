@@ -24,6 +24,29 @@ static var diagnostics: Array = []
 static var _seen := {}
 ## $gameTemp.reserveCommonEvent 的编号（只存整数），由战斗逻辑在分发后 take_reserves 交给 XBattleCommonEvent.reserve
 static var _reserves: Array[int] = []
+## fix1：原版笔误的修正，默认开，设 false 回原版
+## 优化 O-待定-1：不灭之躯 2554 RemoveState 笔误，复活不消耗状态
+static var FIX_UNDYING_2554 := true
+## 优化 O-待定-2：护体罡气 2562 MP 归零时移除的是 1662 不是自己
+static var FIX_QI_GUARD_2562 := true
+## 优化 O-待定-3：永世乐土 1302 说明写每个队友减伤 4%（最高 13%），原版累进一个没人读的字段
+static var FIX_ELYSIA_GUARD_1302 := true
+## 优化 O-待定-4：剑道争锋 2575 叠层增伤，原版累进一个没人读的字段
+static var FIX_SWORD_2575 := true
+## 优化 O-待定-5：挨打反击 1072 isDamageAffected 不存在，永远不反击
+static var FIX_SCALE_COUNTER_1072 := true
+## 优化 O-待定-6：金剪追加 1068 crit 阶段冻结版不触发，暴击不追加
+static var FIX_SCISSORS_CRIT_1068 := true
+## 优化 O-待定-7：往世乐土 1301 说明写不会死亡并放一株莲，原版倒下后强制行动放不出来
+static var FIX_ELYSIUM_1301 := true
+## 优化 O-待定-8：秩序 1711、同谐 1716 else if 从小到大写，人多的分支永远到不了
+static var FIX_ORDER_TIERS := true
+## 优化 O-待定-9：戮仙印记 1067 加成写在不生效的 Custom Damage Formula 里
+static var FIX_MARK_5576 := true
+## 优化 O-待定-10：鼬被动 1318 !v == 1 写法，改成本意 v != 1
+static var FIX_ITACHI_1318 := true
+## 优化 O-待定-11：绯红之夜 1683 变量号超范围写不进，永远不触发
+static var FIX_CRIMSON_1683 := true
 ## BattleManager.queueForceAction 的 339 参数，由战斗逻辑在事件阶段取走（take_forces）
 static var _forces: Array = []
 ## 战斗双方（friendsUnit 用），XBattleLogic 开战时设
@@ -173,6 +196,11 @@ class PhaseValueProgram:
 					XStateEffects.force_critical = XStateEffects.force_previous
 			"set_hp":
 				resources.set_resource(b, "hp", _number(args[0]))
+			"queue_counter":
+				var foe: XBattler = effects.context.user
+				XStateEffects.queue_force_quiet(b, int(_number(args[0])), XStateEffects._unit_of(foe).find(foe))
+			"queue_force_quiet":
+				XStateEffects.queue_force_quiet(b, int(_number(args[0])), int(_number(args[1])))
 			"queue_force":
 				XStateEffects.queue_force(b, int(_number(args[0])), int(_number(args[1])), resources)
 			"set_counter":
@@ -256,7 +284,10 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		XAlienBattle.push_action(c.origin, {})  # 异化 customEffectEval 包装：来源是状态来源的帧（逆祷阻断其中对敌人的扣血）
 	if execute and observer.is_valid():
 		observer.call(phase, int(st.id), holder, c)
-	for e in effects:
+	for raw in effects:
+		var e: Dictionary = raw
+		if e.has("fix") and fix_on(str(e.fix)):
+			e = {"phase": e.phase, "op": "effect_program", "program": e.fixed}
 		var op := str(e.get("op", ""))
 		if op == "mul":
 			if _active(e, c):
@@ -412,6 +443,28 @@ static func _emit_result(b: XBattler, resources: XResourceContext, c: Dictionary
 		c.emit.call({"type": "regen", "target": b, "hp": r.hpDamage if r.hpAffected else 0.0, "mp": r.mpDamage, "state": int(c.get("state_id", 0))})
 
 
+static func _unit_of(b: XBattler) -> Array:
+	return battle_units.get("actors" if b is XActor else "enemies", [])
+
+
+## 修正版的强制行动：只排队，不像 queueForceAction 那样清所有结果（这一击的数字要留着）
+static func queue_force_quiet(b: XBattler, skill: int, target_index: int) -> void:
+	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else _unit_of(b).find(b), skill, target_index])
+
+
+static func fix_on(name: String) -> bool:
+	match name:
+		"FIX_UNDYING_2554": return FIX_UNDYING_2554
+		"FIX_QI_GUARD_2562": return FIX_QI_GUARD_2562
+		"FIX_ELYSIA_GUARD_1302": return FIX_ELYSIA_GUARD_1302
+		"FIX_SWORD_2575": return FIX_SWORD_2575
+		"FIX_SCALE_COUNTER_1072": return FIX_SCALE_COUNTER_1072
+		"FIX_ELYSIUM_1301": return FIX_ELYSIUM_1301
+		"FIX_ORDER_TIERS": return FIX_ORDER_TIERS
+		"FIX_ITACHI_1318": return FIX_ITACHI_1318
+	return false
+
+
 ## 换装（setBattlerImage）：只有角色有；换装卡状态由 XCostumes 管，不走这里。_prevBattlerName 已有就不盖，所以同时两个时记的是最初的图。
 static func _costume_image(e: Dictionary, state_id: int, holder: XBattler) -> void:
 	if not holder is XActor or XCostumes.registry().has(state_id):
@@ -544,7 +597,7 @@ static func _note_anim(animation: int, holder: XBattler, c: Dictionary) -> void:
 
 ## Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
 static func _variable_writable(id: int) -> bool:
-	return id > 0 and id < XDB.system().get("variables", []).size()
+	return (id > 0 and id < XDB.system().get("variables", []).size()) or (id == 1683 and FIX_CRIMSON_1683)
 
 
 ## 护盾 React 后半段：target.startAnimation(动画)＋target.removeState(stateId)。动画记进命中记录 state_anims

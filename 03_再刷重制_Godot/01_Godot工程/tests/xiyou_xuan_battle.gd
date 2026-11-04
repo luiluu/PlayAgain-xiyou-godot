@@ -117,14 +117,40 @@ func _c_mp(c: Dictionary) -> void:
 	check(c.id + ".attack", XXuanBattle.mp_cost(r.a, XDB.rec("Skills", 1), 0) == int(o.attack))
 
 
+## 修正支：回光溢出按等级转护盾（1～3 级 20%／35%／50%）；没溢出不给
+func _yuhui_fixed() -> void:
+	XXuanBattle.YUHUI_SHIELD = true
+	for row in [[1, 0.2], [2, 0.35], [3, 0.5]]:
+		var q := _setup(60, {"yuhui": int(row[0])})
+		q.a.hp = q.a.mhp
+		var h: Dictionary = _use(q, "huiguang", q.a)
+		var over := -float(h.hp)
+		var total := 0.0
+		for r in XShieldLedger.rows(q.a):
+			total += float(r.amount)
+		check("yuhui.fixed.%d" % row[0], over > 0.0 and total == floorf(over * float(row[1]) * (1.0 + float(q.a.shield_effect_bonus()))), [over, total, row])
+	# 血缺得多时只有回满之外的部分算溢出
+	var low := _setup(60, {"yuhui": 3})
+	low.a.hp = 1.0
+	var healed: Dictionary = _use(low, "huiguang", low.a)
+	var part := -float(healed.hp) - (low.a.mhp - 1.0)
+	var got := 0.0
+	for r in XShieldLedger.rows(low.a):
+		got += float(r.amount)
+	check("yuhui.fixed.part", part > 0.0 and got == floorf(part * 0.5 * (1.0 + float(low.a.shield_effect_bonus()))), [part, got])
+
+
 func _c_huiguang(c: Dictionary) -> void:
 	var o: Dictionary = c.observed
+	XXuanBattle.YUHUI_SHIELD = false  # 参照比原版：余辉实测不给护盾（fix1 默认修好）
 	if str(c.id) == "huiguang.self":
 		var q := _setup(60, {"yuhui": 3})
 		var h: Dictionary = _use(q, "huiguang", q.a)
 		check(c.id + ".hp", float(h.hp) == float(o.hp), [o.hp, h.hp])
 		check(c.id + ".after", _close(q.a.hp, o.after), [o.after, q.a.hp])
 		check(c.id + ".shield", XShieldLedger.rows(q.a).is_empty())
+		_yuhui_fixed()
+		XXuanBattle.YUHUI_SHIELD = false
 		return
 	var r := _setup(int(c.setup.level), c.setup.marks)
 	r.t.hp = maxf(1.0, floorf(r.t.mhp * float(c.setup.hurt)))
