@@ -189,14 +189,17 @@ func _run() -> void:
 	var fixed := KNOWN.keys().filter(func(k): return rows.has(k) and not unknown.has(k))
 	# 战斗里跑的（清单分类 E）：再按战斗事件解释器跑一遍，分出战斗里其实认得的与真缺的
 	var battle_known := 0
+	var e_total := 0
 	for key in unknown:
 		if str(KNOWN.get(key, "")) != "E":
 			continue
+		e_total += 1
 		var bm: Array = await _try_battle(unknown[key])
 		if bm.is_empty():
 			battle_known += 1
 		print("CENSUS_BATTLE ", JSON.stringify({"key": key, "miss": bm.slice(0, 3)}))
 	print("CENSUS_BATTLE_KNOWN ", battle_known)
+	_check("e_class_all_battle_known", e_total > 0 and battle_known == e_total, [battle_known, e_total])   # E 类全部战斗认得（冻结追击 CE1321 custom1b 补上）
 	# 变量操作读敌人游戏数据（122 操作数 游戏数据 4＝敌人，序号 0；原版 gameDataOperand case 4：0 HP、1 MP、2～9＝param(0～7)）：
 	# 认得之外再看读出的值对不对（取 0 说明序号或类型走歪了）；只在战斗里有敌人，地图解释器不跑
 	var enemy_reads := 0
