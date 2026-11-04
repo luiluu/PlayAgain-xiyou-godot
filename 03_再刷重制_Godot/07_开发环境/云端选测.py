@@ -191,11 +191,36 @@ def push_generated(url, bare, commit, ref):
     git_push(*push_tuning(), 'push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
 
 
+def warn_stale_generated(generated):
+    """推产物快照前比对本树 generated/ 与主工作区（tools64：补齐跳过了刷新、参照停在旧版，云端选测的
+    xiyou_state_effects 等因 oracle_present 假挂，白等一轮 CI）。只提示不拦；XIYOU_SKIP_GENERATED_CHECK=1 不提示。"""
+    if os.environ.get('XIYOU_SKIP_GENERATED_CHECK') == '1':
+        return
+    tool = Path(__file__).resolve().parent / '参照批次.py'
+    common = git('rev-parse', '--path-format=absolute', '--git-common-dir', check=False)
+    top = git('rev-parse', '--path-format=absolute', '--show-toplevel', check=False)
+    if not common or not top or Path(common).parent.resolve() == Path(top).resolve():
+        return  # 主工作区自己
+    main_gen = Path(common).parent / GENERATED_REL
+    if not tool.is_file() or not main_gen.is_dir():
+        return
+    flux = subprocess.run([sys.executable, str(tool), 'flux', common], capture_output=True, text=True)
+    if flux.returncode == 4:
+        log('提示：' + flux.stdout.strip())
+    cmp = subprocess.run([sys.executable, str(tool), 'compare', str(generated), str(main_gen)], capture_output=True, text=True)
+    if cmp.returncode == 3:
+        log('⚠ 产物快照落后主工作区，云端选测可能因参照过期假挂：' + cmp.stdout.strip().replace('\n', ' ')
+            + '（补齐后重跑上传；确认要照现状推就忽略本条）')
+    elif (generated / 'oracle_pending.json').is_file():
+        log('⚠ 上次 --补齐 时总装正在合并，没刷新参照；合并收尾后重跑 新建工作树.sh --补齐 再推产物')
+
+
 def cmd_upload(a):
     branch = a.branch or current_branch()
     generated = ROOT / GENERATED_REL
     if not (generated / 'manifest.json').is_file():
         raise RuntimeError('本工作树没有转换产物（%s）' % generated)
+    warn_stale_generated(generated)
     bare, remote = cache_repo(), remote_name()
     url = git('remote', 'get-url', remote)
     stamp = json.loads((generated / 'sync_stamp.json').read_text()) if (generated / 'sync_stamp.json').is_file() else {}
