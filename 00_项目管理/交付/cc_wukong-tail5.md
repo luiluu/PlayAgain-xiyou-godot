@@ -1,7 +1,7 @@
 # 交付：cc/wukong-tail5
 
 - 车道／工作者：C 规则／机制·悟空（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -46,7 +46,7 @@
 
 - `语法检查.py`：532 个 .gd 0 个问题。
 - `xiyou_stunned_turn`：59/59（改前 50/50，新增 9 条）。
-- 选测 `选测.py main --list` 19 个场景（含抽样），`CHECK_JOBS=2` 本机跑：见下「选测结果」。
+- 选测 `选测.py main --list` 19 个场景（含抽样），`CHECK_JOBS=2` 本机跑：19 个全部通过（871 秒，CHECK_JOBS=2）。
 - `探针登记检查.py` 通过。
 - 没做反向验证：`gate.mirror` 咬不住门写错（root 为空时 finish 本来就空转），它是对「跳过回合不反噬、不留旧 root」这个原版行为的记录；门本身由 `gate.lifelink`、`gate.party` 咬住（tail3 已反向验证）。
 
