@@ -458,7 +458,7 @@ static var _formula_ok := {}
 class NeutralEnemy extends XBattler:
 	var params := []
 
-	func _init(defense: float) -> void:
+	func _init(defense := 0.0) -> void:  # clone_battler 用 new() 无参影子，默认值不能省
 		params = [1000000.0, 10000.0, 10000.0, defense, 10000.0, defense, 100.0, 100.0]
 		hp = params[0]
 		mp = params[1]
