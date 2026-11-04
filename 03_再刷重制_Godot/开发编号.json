@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.301",
-  "sequence": 301,
-  "next": "dev.302",
-  "nextSequence": 302,
+  "current": "dev.303",
+  "sequence": 303,
+  "next": "dev.304",
+  "nextSequence": 304,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "nezha-tools57",
+  "currentChange": "wukong-tail1",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

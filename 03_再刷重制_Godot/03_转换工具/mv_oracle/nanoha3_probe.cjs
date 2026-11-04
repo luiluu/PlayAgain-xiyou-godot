@@ -127,4 +127,29 @@ function ai(mp, hp, opts = {}) {
 for (const mp of [0, 1500, 6667, 23000, 50000]) cases.push(makeCase(`ai.${mp}`, {mp}, () => ai(mp, [BIG_HP, BIG_HP, BIG_HP])));
 cases.push(makeCase('ai.23000.lowfoe', {mp: 23000}, () => ai(23000, [5000, BIG_HP, BIG_HP])));
 cases.push(makeCase('ai.23000.noCannon', {mp: 23000, noCannon: true}, () => ai(23000, [BIG_HP, BIG_HP, BIG_HP], {noCannon: true})));
+// 挂机技能顺序表预定小魔炮（Codex_SmartBattleAI scheduledSkill＋makeAction）：能用又学会才算预定；5692 只在六档魔炮里挑（choose(this,true)），
+// 没得挑才退回普通智能选择；预定别的技能走 XdRs_HangUp 原逻辑。mate：带 1 号残血队友、奈叶会治愈 8，普通智能选择会去救人
+function sched(id, mp, hp, opts = {}) {
+  const {bm, n, foes} = battle(opts.mate ? [NANOHA, MATE] : [NANOHA], hp);
+  n._paramPlus[1] = 50000; n.need_refresh = true; n.refresh();
+  if (opts.noCannon) n.forgetSkill(5692); else n.learnSkill(5692);
+  if (opts.mate) { n.learnSkill(8); w.$gameActors.actor(MATE).setHp(1); }
+  n.setMp(mp);
+  w.ConfigManager.codexSmartAI = !opts.smartOff;
+  w.$gameTroop._turnCount = 1;
+  w.$gameParty._XdRsData_hangUp_ActSkill = id ? {[n.name() + w.Star.NumToThreeNum(1)]: id} : {};
+  delete n._costmp;
+  const action = n.makeAction();
+  const item = action && action.item && action.item();
+  w.$gameParty._XdRsData_hangUp_ActSkill = {};
+  return {mp: n.mp, skill: item ? item.id : null, target: action ? action._targetIndex : null, cannonOnly: !!(action && action._codexSmartScheduledCannon)};
+}
+const HP3 = [BIG_HP, BIG_HP, BIG_HP];
+for (const mp of [0, 1, 1500, 23000]) cases.push(makeCase(`sched.5692.${mp}`, {id: 5692, mp, hp: HP3}, () => sched(5692, mp, HP3)));
+cases.push(makeCase('sched.5692.lowfoe', {id: 5692, mp: 23000, hp: [5000, BIG_HP, BIG_HP]}, () => sched(5692, 23000, [5000, BIG_HP, BIG_HP])));
+cases.push(makeCase('sched.none.mate', {id: 0, mp: 23000, hp: HP3, mate: true}, () => sched(0, 23000, HP3, {mate: true})));
+cases.push(makeCase('sched.5692.mate', {id: 5692, mp: 23000, hp: HP3, mate: true}, () => sched(5692, 23000, HP3, {mate: true})));
+cases.push(makeCase('sched.5692.noCannon', {id: 5692, mp: 23000, hp: HP3, noCannon: true}, () => sched(5692, 23000, HP3, {noCannon: true})));
+cases.push(makeCase('sched.5692.smartOff', {id: 5692, mp: 23000, hp: HP3, smartOff: true}, () => sched(5692, 23000, HP3, {smartOff: true})));
+cases.push(makeCase('sched.attack', {id: 1, mp: 23000, hp: HP3}, () => sched(1, 23000, HP3)));
 process.exit(finish(host, 'nanoha3.json', {hostScope: '真实 BattleManager.startAction 下奈叶大招 5703～5709 的自定义 MP 消耗与伤害后多段', cases}) ? 0 : 1);

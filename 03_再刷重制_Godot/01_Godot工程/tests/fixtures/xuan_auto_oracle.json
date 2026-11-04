@@ -20059,6 +20059,3247 @@
    "errors": []
   },
   {
+   "id": "skip_turn",
+   "setup": {},
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "host": null,
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "use",
+      177,
+      "jixing",
+      1
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ],
+     "snap": {
+      "round": 1,
+      "host": "a1",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "turn"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "hp",
+      1,
+      0.3
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "skip",
+      "e0"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "state",
+      "e1",
+      10
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "skip",
+      "e1"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "invalid",
+      "e2",
+      8,
+      "e2"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "force",
+      "e0",
+      1,
+      8
+     ],
+     "ret": null,
+     "hits": [
+      [
+       "hp",
+       "e0",
+       "a8",
+       31
+      ],
+      [
+       "hp",
+       "a177",
+       "a1",
+       -9740
+      ]
+     ],
+     "casts": [
+      [
+       "huiguang",
+       [
+        "a1"
+       ],
+       true
+      ]
+     ],
+     "lines": [
+      "璇：「别撑了，先缓一口气。」"
+     ],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1122,
+       "shield": [],
+       "cd": [
+        1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [
+         "huiguang"
+        ],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 419,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "id": "skip_actor",
+   "setup": {},
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "host": null,
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "use",
+      177,
+      "jixing",
+      1
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ],
+     "snap": {
+      "round": 1,
+      "host": "a1",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "turn"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "hp",
+      1,
+      0.3
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "state",
+      2,
+      10
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 145,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [
+         10
+        ],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "skip",
+      2
+     ],
+     "ret": null,
+     "hits": [
+      [
+       "hp",
+       "a177",
+       "a1",
+       -9740
+      ]
+     ],
+     "casts": [
+      [
+       "huiguang",
+       [
+        "a1"
+       ],
+       true
+      ]
+     ],
+     "lines": [
+      "璇：「别撑了，先缓一口气。」"
+     ],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1122,
+       "shield": [],
+       "cd": [
+        1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [
+         "huiguang"
+        ],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [
+         10
+        ],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "id": "skip_host",
+   "setup": {},
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "host": null,
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "use",
+      177,
+      "jixing",
+      1
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ],
+     "snap": {
+      "round": 1,
+      "host": "a1",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "turn"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "gain",
+      177,
+      3
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "state",
+      1,
+      10
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         10,
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "skip",
+      1
+     ],
+     "ret": null,
+     "hits": [
+      [
+       "hp",
+       "a177",
+       "a1",
+       -9740
+      ]
+     ],
+     "casts": [
+      [
+       "huiguang",
+       [
+        "a1"
+       ],
+       true
+      ],
+      [
+       "liexing",
+       [
+        "a177"
+       ],
+       true
+      ]
+     ],
+     "lines": [
+      "璇：「别撑了，先缓一口气。」",
+      "璇：「都在。接上。」"
+     ],
+     "snap": {
+      "round": 2,
+      "host": "a1",
+      "charges": 2,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 944,
+       "shield": [],
+       "cd": [
+        1,
+        -1,
+        -1,
+        4
+       ],
+       "states": [
+        2697,
+        2699
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": 3,
+        "shadows": [
+         8,
+         2
+        ],
+        "used": [
+         "huiguang",
+         "liexing"
+        ],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a1": {
+        "hp": 485,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "id": "last_toji",
+   "setup": {
+    "party": [
+     177,
+     171,
+     8,
+     2
+    ]
+   },
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "host": null,
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "use",
+      177,
+      "jixing",
+      171
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ],
+     "snap": {
+      "round": 1,
+      "host": "a171",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "turn"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a171",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "gain",
+      177,
+      3
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a171",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "learn",
+      171,
+      10217
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a171",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "act",
+      171,
+      10217,
+      "e1"
+     ],
+     "ret": null,
+     "hits": [
+      [
+       "hp",
+       "a171",
+       "e1",
+       6341153
+      ],
+      [
+       "hp",
+       "a171",
+       "e0",
+       2092580
+      ],
+      [
+       "hp",
+       "a171",
+       "e2",
+       2092580
+      ],
+      [
+       "hp",
+       "a177",
+       "e1",
+       7499415
+      ]
+     ],
+     "casts": [
+      [
+       "liexing",
+       [
+        "a177"
+       ],
+       true
+      ],
+      [
+       "lengguang",
+       [
+        "e1"
+       ],
+       true
+      ]
+     ],
+     "lines": [
+      "璇：「都在。接上。」",
+      "璇：「往左。现在出手。」"
+     ],
+     "snap": {
+      "round": 2,
+      "host": "a171",
+      "charges": 2,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 956,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        1,
+        4
+       ],
+       "states": [
+        2697,
+        2699
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": 3,
+        "shadows": [
+         8,
+         2
+        ],
+        "used": [
+         "lengguang",
+         "liexing"
+        ],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a171": {
+        "hp": 2198,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 74997922420,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 74986174432,
+        "buffs": [
+         -1,
+         -1
+        ]
+       },
+       "e2": {
+        "hp": 74997922420,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "id": "last_yomi",
+   "setup": {
+    "party": [
+     177,
+     169,
+     8,
+     2
+    ]
+   },
+   "observed": [
+    {
+     "step": [
+      "start"
+     ],
+     "snap": {
+      "round": 1,
+      "host": null,
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "use",
+      177,
+      "jixing",
+      169
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [
+      "璇：「我去另一边，有事叫我。」"
+     ],
+     "snap": {
+      "round": 1,
+      "host": "a169",
+      "charges": 0,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        0,
+        0,
+        0,
+        0
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "turn"
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a169",
+      "charges": 1,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "gain",
+      177,
+      3
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a169",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "learn",
+      169,
+      10172
+     ],
+     "ret": null,
+     "hits": [],
+     "casts": [],
+     "lines": [],
+     "snap": {
+      "round": 2,
+      "host": "a169",
+      "charges": 4,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 1193,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        -1,
+        -1
+       ],
+       "states": [
+        2697
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": -1,
+        "shadows": [],
+        "used": [],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e2": {
+        "hp": 75000015000,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "step": [
+      "act",
+      169,
+      10172,
+      "e1"
+     ],
+     "ret": null,
+     "hits": [
+      [
+       "hp",
+       "a169",
+       "e1",
+       2534940
+      ],
+      [
+       "hp",
+       "a169",
+       "e0",
+       760482
+      ],
+      [
+       "hp",
+       "a169",
+       "e2",
+       760482
+      ],
+      [
+       "hp",
+       "a169",
+       "e1",
+       2534940
+      ],
+      [
+       "hp",
+       "a169",
+       "e0",
+       760482
+      ],
+      [
+       "hp",
+       "a169",
+       "e2",
+       760482
+      ],
+      [
+       "hp",
+       "a177",
+       "e1",
+       7499415
+      ]
+     ],
+     "casts": [
+      [
+       "liexing",
+       [
+        "a177"
+       ],
+       true
+      ],
+      [
+       "lengguang",
+       [
+        "e1"
+       ],
+       true
+      ]
+     ],
+     "lines": [
+      "璇：「都在。接上。」",
+      "璇：「往左。现在出手。」"
+     ],
+     "snap": {
+      "round": 2,
+      "host": "a169",
+      "charges": 2,
+      "auto": true,
+      "xuan": {
+       "hp": 4698,
+       "mp": 956,
+       "shield": [],
+       "cd": [
+        -1,
+        -1,
+        1,
+        4
+       ],
+       "states": [
+        2697,
+        2699
+       ],
+       "data": {
+        "tacit": 0,
+        "tonggui": false,
+        "debt": 0,
+        "xianzhaoRound": -99,
+        "liexingUntil": 3,
+        "shadows": [
+         8,
+         2
+        ],
+        "used": [
+         "lengguang",
+         "liexing"
+        ],
+        "homeUsed": false,
+        "relicHealUsed": false,
+        "relicWallUsed": false
+       },
+       "relic": false
+      },
+      "party": {
+       "a169": {
+        "hp": 500,
+        "shield": [],
+        "states": [
+         2698
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a8": {
+        "hp": 450,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       },
+       "a2": {
+        "hp": 520,
+        "shield": [],
+        "states": [
+         2700
+        ],
+        "home": null,
+        "mist": null
+       }
+      },
+      "enemies": {
+       "e0": {
+        "hp": 74998494036,
+        "buffs": [
+         0,
+         0
+        ]
+       },
+       "e1": {
+        "hp": 74987445705,
+        "buffs": [
+         -1,
+         -1
+        ]
+       },
+       "e2": {
+        "hp": 74998494036,
+        "buffs": [
+         0,
+         0
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
    "id": "autoact",
    "setup": {
     "roster": [

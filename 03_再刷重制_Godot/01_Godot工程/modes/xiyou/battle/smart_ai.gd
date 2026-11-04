@@ -48,8 +48,9 @@ func _init(l: XBattleLogic, a: XActor) -> void:
 
 
 ## 返回 {skill, target(XBattler 或 null＝全体/随机/自动), score, candidates:[{id, item, score, target}]}；没有可选时 skill 为空
-static func choose(l: XBattleLogic, a: XActor) -> Dictionary:
-	return XSmartAI.new(l, a)._choose()
+## cannon_only（choose(actor, cannonOnly)）：只在六档魔炮里挑，不看物品、不退回攻击防御，没得挑返回空
+static func choose(l: XBattleLogic, a: XActor, cannon_only := false) -> Dictionary:
+	return XSmartAI.new(l, a)._choose(cannon_only)
 
 
 # ---- 数据判断 ----
@@ -163,6 +164,7 @@ static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
 	return p if not p.is_empty() else XYunshang.ai_profile(a, rec)
 
 
+const CANNON_SKILL := 5692
 ## 小魔炮六档的功率（cannonPower）
 const CANNON_POWER := {5703: 0.3, 5704: 0.6, 5705: 0.9, 5706: 0.3, 5708: 0.6, 5709: 0.9}
 
@@ -499,7 +501,7 @@ func _followup_score(rec: Dictionary, follow_id: int, ctx: Dictionary) -> float:
 	return maxf(0.0, float(r.score))
 
 
-func _choose() -> Dictionary:
+func _choose(cannon_only := false) -> Dictionary:
 	var friends: Array = logic.actors
 	var foes: Array = logic.alive(logic.enemies)
 	var attack := actor.attack_skill()  # $dataSkills[actor.attackSkillId()]
@@ -507,11 +509,11 @@ func _choose() -> Dictionary:
 	for s in actor.skills():
 		if legal(s, false) and int(s.id) != 5692:
 			candidates.append({"rec": s, "item": false, "eval": valued(s, false), "dir": directed(s, false)})
-	if legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):
+	if not cannon_only and legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):
 		candidates.append({"rec": attack, "item": false, "eval": valued(attack, false), "dir": directed(attack, false)})
 	var cannons := cannon_options()
-	if not cannons.is_empty():
-		candidates = candidates.filter(func(c): return not CANNON_POWER.has(int(c.rec.id)))
+	if cannon_only or not cannons.is_empty():
+		candidates = [] if cannon_only else candidates.filter(func(c): return not CANNON_POWER.has(int(c.rec.id)))
 		for cs in cannons:
 			candidates.append({"rec": cs, "item": false, "eval": valued(cs, false), "dir": directed(cs, false)})
 	var urgent := friends.any(func(t): return t.is_dead() or (t.hp + shield_points(t)) / maxf(1.0, t.mhp) < 0.25)
@@ -537,7 +539,7 @@ func _choose() -> Dictionary:
 	context.longFight = not foes.is_empty() and best_attack < whole * 0.92
 	var ids := logic.state.items.keys().map(func(k): return int(k))
 	ids.sort()
-	for id in ids:
+	for id in ([] if cannon_only else ids):
 		var it := XDB.rec("Items", id)
 		if bool(it.get("consumable", false)) and legal(it, true) and it.get("effects", []).any(func(e): return int(e.code) in [11, 12, 22, 34]):
 			candidates.append({"rec": it, "item": true, "eval": it, "dir": it})
@@ -550,13 +552,13 @@ func _choose() -> Dictionary:
 		if r.score > best_score:
 			best_score = r.score
 			best = {"skill": c.rec, "target": r.target, "prepare": r.get("prepare", Callable())}
-	if best.is_empty() and not foes.is_empty() and legal(attack, false):
+	if best.is_empty() and not cannon_only and not foes.is_empty() and legal(attack, false):
 		var low: XBattler = foes.reduce(func(x, y): return y if y.hp < x.hp else x)
 		best = {"skill": attack, "target": low}
 		if not o_projection and scope_of(directed(attack, false)) == 7:  # 原版 setTarget(敌人序号)，投影成友方单体后按同序号取队友（smoothTarget）
 			var i := logic.enemies.find(low)
 			best.target = friends[i] if i >= 0 and i < friends.size() and friends[i].is_alive() else logic.alive(friends)[0]
-	if best.is_empty():
+	if best.is_empty() and not cannon_only:
 		var guard := XDB.rec("Skills", XBattleLogic.GUARD_SKILL)
 		if can_use(guard):
 			best = {"skill": guard, "target": actor}

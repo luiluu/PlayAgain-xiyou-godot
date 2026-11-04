@@ -5,6 +5,7 @@ extends Node
 const FIXTURE := "res://tests/fixtures/xuan_auto_oracle.json"
 const XUAN := 177
 const PARTY := [177, 1, 8, 2]
+var _party: Array = PARTY
 var checks := 0
 var failures: Array = []
 var logic: XBattleLogic
@@ -41,7 +42,8 @@ func _battle(o: Dictionary) -> XBattleLogic:
 	XState.current = s
 	s.switches[2494] = true
 	s.actor_max_level = 99
-	for id in PARTY:
+	_party = (o.party as Array).map(func(v): return int(v)) if o.has("party") else PARTY
+	for id in _party:
 		s.add_actor(id)
 	var a: XActor = s.actor(XUAN)
 	a.change_level(int(o.get("level", 60)))
@@ -64,7 +66,7 @@ func _battle(o: Dictionary) -> XBattleLogic:
 			s.gain_gear("armor", int(XTusuXuan.RELICS[XUAN]), 1)
 			a.equips[slot] = s.gear.pop_back()
 	XXuanChart.set_control(s, a, "manual" if bool(o.get("manual", false)) else "auto")
-	for id in PARTY:
+	for id in _party:
 		s.actor(id).refresh_passive()
 		s.actor(id).recover_all()
 	var l := XBattleLogic.new()
@@ -115,7 +117,7 @@ func _snap() -> Dictionary:
 	var bd = XBinding.data(a)
 	var cd := ["huiguang", "libi", "lengguang", "liexing"].map(func(k): return a.cooldown_left(XTusuXuan.skill_id(XUAN, k)))
 	var party := {}
-	for id in PARTY.slice(1):
+	for id in _party.slice(1):
 		var x: XActor = _who(id)
 		party["a%d" % id] = {"hp": x.hp, "shield": _shield(x), "states": _pick(x, [10, 35, XXuanBattle.state_id("shadow"), XXuanBattle.state_id("hostmark"), XXuanBattle.state_id("dingxing")]),
 			"home": d.get("home", {}).get(x), "mist": d.get("mist", {}).get(x)}
@@ -198,6 +200,18 @@ func _step(st: Array) -> Array:
 		"libi":
 			XShieldLedger.revoke(_who(st[1]), "xuan.libi")
 			XShieldLedger.grant(_who(st[1]), "xuan.libi", float(st[2]), 2, XUAN, {"noBonus": true})
+		"skip":  # 敌人没有行动；角色不能行动（行动窗给普攻，也不能当成棱光的攻击）
+			var u = _who(st[1])
+			logs = logic.act(u, u.attack_skill() if u is XActor else null, null)
+		"invalid":
+			var u = _who(st[1])
+			u.mp = 0.0
+			logs = logic.act(u, XDB.rec("Skills", int(st[2])), _who(st[3]))
+		"force":
+			var i: int = logic.enemies.find(_who(st[1]))
+			logs = logic._force_action([0, i, int(st[2]), logic.state.battle_members().find(_who(st[3]))], null)
+		"learn":
+			_who(st[1]).learn_skill(int(st[2]))
 		"end":
 			logic.end_battle(0)
 	return [ret, logs]
@@ -244,7 +258,7 @@ func _go() -> void:
 	GameApp.fast_headless_frames()
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("oracle", ref.cases.size() == 29 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
+	check("oracle", ref.cases.size() == 34 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
 	for c in ref.cases:
 		if str(c.id).begins_with("speed_"):
 			continue

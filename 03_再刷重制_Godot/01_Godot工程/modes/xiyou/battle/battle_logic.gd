@@ -725,6 +725,13 @@ func _auto_battle_action(a: XActor) -> Array:
 		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))
 		if id > 2 and a.skills().any(func(x): return int(x.id) == id) and can_use(a, XDB.rec("Skills", id)):
 			return [XDB.rec("Skills", id), null]
+	# 智能AI开着、表里预定小魔炮（只开六选一公共事件，自动战斗不能用）：只在六档魔炮里挑，没得挑退回普通智能选择（Codex_SmartBattleAI makeAction）
+	if XConfig.smart_ai() and XHangUpAuto.scheduled_id(state, self, a, turn) == XSmartAI.CANNON_SKILL:
+		var cannon := XSmartAI.choose(self, a, true)
+		if not cannon.has("skill"):
+			cannon = XSmartAI.choose(self, a)
+		if cannon.has("skill"):
+			return [cannon.skill, cannon.target]
 	var planned := XHangUpAuto.scheduled_skill(state, self, a, turn)
 	if not planned.is_empty():
 		return [planned, null]
@@ -855,7 +862,9 @@ func act(u: XBattler, skill, target) -> Array:
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
-	logs.append_array(XXuanBattle.end_action(self, u, skill))  # 璇 endAction 包装（屠苏之内、谷雨之外）：星契自律，救援回光、列星、宿主攻击后棱光（内部施放）
+	# 敌人跳过的回合不走 endAction（审查 35b P2-1）；角色走 startOTBInput，不能行动也 startAction～endAction，只是没有行动（参照 xuan_auto skip_*）
+	if u.is_actor() or (started and not skipped):
+		logs.append_array(XXuanBattle.end_action(self, u, {} if skipped else skill))  # 璇 endAction 包装（屠苏之内、谷雨之外）：星契自律，救援回光、列星、宿主攻击后棱光（内部施放）
 	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
 	# 狂妄 112、心钢 111 装得比谷雨 133、屠苏 137 早，在里层：前半段排在它们之后，狂妄（外）先于心钢（审查第 29 期 P3-1）
@@ -1703,6 +1712,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		r.counter = true
 		return [{"type": "counter", "user": t, "target": u}, r]
 	var tt := substitute_for(skill, t)
+	XXuanBattle.note_target(tt)  # 璇 Game_Action.apply 包装：记主行动打到的敌人（棱光跟打）。记在这里不进 apply：子行动是新 Game_Action，黄泉扩散、镜流补段 oldApply 绕过（审查 35b P3-1）
 	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
 	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
@@ -1871,7 +1881,6 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var xuan_cmd := XXuanBattle.apply_command(self, u, skill, t)  # 璇 Game_Action.apply 包装：寄星、转移、回身
 	if not xuan_cmd.is_empty():
 		return xuan_cmd
-	XXuanBattle.note_target(t)  # 璇 Game_Action.apply 包装：记下主行动最后打到的敌人（棱光跟打）
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
 	var blocked := [false]
