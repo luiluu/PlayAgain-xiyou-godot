@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -556,8 +557,8 @@ class HookLineTests(Fixture):
 
     def setUp(self):
         super().setUp()
-        self.put(CORE / 'hooked.gd', 'class_name XHooked\n')
-        self.scene('xiyou_hooked', 'XHooked.go()')
+        self.put(CORE / 'hooked.gd', 'class_name XToji\n')
+        self.scene('xiyou_hooked', 'XToji.go()')
         self.scene('xiyou_big', 'XBattler.new()')
         self.scene('xiyou_determinism', 'XBattler.new()')
         self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\treturn a\n')
@@ -573,25 +574,25 @@ class HookLineTests(Fixture):
             return {x[:-5] for x in self.pick()['scenes']}
 
     def test_hook_only_narrows_to_smoke_and_module_users(self):
-        self.edit('\tXHooked.go()  # 钩子\n')
+        self.edit('\tXToji.go()  # 钩子\n')
         new, old = self.scenes('1'), self.scenes('0')
         self.assertIn('xiyou_big', old)
         self.assertNotIn('xiyou_big', new)
         self.assertTrue({'xiyou_hooked', 'xiyou_determinism', 'xiyou_battle', 'xiyou_event_compare'} <= new)
         reasons = ' '.join(r[1] for r in self.pick()['reasons'])
-        self.assertIn('只加钩子调用：XHooked', reasons)
+        self.assertIn('只加钩子调用：XToji', reasons)
 
     def test_glue_lines_allowed_next_to_a_hook_call(self):
-        self.edit('\tif XHooked.has(d):\n\t\treturn {}\n')
+        self.edit('\tif XToji.has(d):\n\t\treturn {}\n')
         self.assertNotIn('xiyou_big', self.scenes('1'))
 
     def test_real_logic_change_falls_back(self):
-        self.edit('\tXHooked.go()\n\tvar hp = 1 + 2\n')
+        self.edit('\tXToji.go()\n\tvar hp = 1 + 2\n')
         self.assertIn('xiyou_big', self.scenes('1'))
 
     def test_hook_free_hunk_falls_back(self):
-        self.edit('\tXHooked.go()\n')
-        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\tXHooked.go()\n\treturn a\nfunc g():\n\tvar hp = 3\n')
+        self.edit('\tXToji.go()\n')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\tXToji.go()\n\treturn a\nfunc g():\n\tvar hp = 3\n')
         self.commit('lane2')
         self.assertIn('xiyou_big', self.scenes('1'))
 
@@ -599,14 +600,64 @@ class HookLineTests(Fixture):
         self.edit('\tXDB.table("Skills")\n')
         self.assertIn('xiyou_big', self.scenes('1'))
 
+    def edit_nar(self, extra):
+        """加 extra 后，xiyou_big 还在不在（在＝没收窄）。"""
+        self.edit(extra)
+        return 'xiyou_big' in self.scenes('1')
+
+    def test_p2_1_only_standalone_calls_narrow(self):
+        """审查 35 P2-1：同一行有运算／赋值／分号、无条件 return 的都退回整组。"""
+        for bad in ('\tvar k = XToji.f(1) * 2 + a.atk\n', '\ta = XToji.f(a) - 100\n', '\tXToji.go(); d.hp = 0\n',
+                    '\tXToji.go() + 1\n', '\tXToji.go()\n\treturn a\n', '\tXToji.go()\n\treturn false\n',
+                    '\tvar x := XToji.f()\n\treturn x\n', '\tvar x := XToji.f()\n\tif not x.is_empty():\n\t\treturn x + 1\n',
+                    '\tvar x := XToji.f()\n\t\tif not x.is_empty():\n\t\t\treturn x\n', '\tif XToji.has(d):\n\t\ta = 3\n',
+                    '\tif XToji.has(d) and a:\n\t\treturn\n', '\tif a:\n\t\tXToji.go()\n'):
+            with self.subTest(bad=bad):
+                self.assertTrue(self.edit_nar(bad), bad)
+        for good in ('\tXToji.go(d, XDB.x(1) * 2)\n', '\tvar x := XToji.f(d)\n\tif not x.is_empty():\n\t\treturn x\n',
+                     '\tif XToji.has(d):\n\t\treturn XToji.val(d)\n', '\tif XToji.has(d):\n\t\treturn false\n', '\tXToji.go()  # a; b\n'):
+            with self.subTest(good=good):
+                self.assertFalse(self.edit_nar(good), good)
+
+    def test_p2_1_deleted_or_changed_lines_fall_back(self):
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\tXToji.old()\n\treturn a\n')
+        self.commit('has hook')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\treturn a\n')   # 纯删钩子行
+        self.commit('delete')
+        self.assertIn('xiyou_big', self.scenes('1'))
+        self.put(CORE / 'battler.gd', 'class_name XBattler\nfunc f(d):\n\tvar a = 1\n\tXToji.new_name()\n\treturn a\n')  # 改钩子行
+        self.commit('change')
+        self.assertIn('xiyou_big', self.scenes('1'))
+
+    def test_p2_2_only_role_modules_are_hooks(self):
+        """审查 35 P2-2：白名单外的（核心设施、新模块）一律不是钩子。"""
+        for mod in ('XBattleRandom', 'XFormulaExecution', 'XFormulaContext', 'XFormulaProgram', 'XGlobalVars', 'XPower', 'XGear', 'XConfig',
+                    'XActionSequence', 'XBattleCommonEvent', 'XBattleEventRunner', 'XShieldLedger', 'XEquipSuits', 'XActorModules',
+                    'XModuleRegistry', 'XParamPlus', 'XImportedBalance', 'XBrandNewThing', 'XBinding', 'XBlackFlash'):
+            with self.subTest(mod=mod):
+                self.assertTrue(self.edit_nar('\t%s.go(d)\n' % mod), mod)
+
+    def test_real_role_whitelist_matches_code(self):
+        """白名单里每个模块在 core/ 下真有对应类，且头注释写着角色（编号或名字）。"""
+        cfg = json.loads((HERE / '选测对照.json').read_text())['hookLines']
+        core = HERE.parent / '01_Godot工程/modes/xiyou/core'
+        if not core.is_dir():
+            self.skipTest('没有工程目录')
+        for mod in cfg['roleModules']:
+            files = [f for f in core.glob('*.gd') if re.search(r'^class_name %s\b' % mod, f.read_text(), re.M)]
+            self.assertEqual(len(files), 1, mod)
+            head = '\n'.join(files[0].read_text().splitlines()[:8])
+            self.assertTrue(re.search(r'\b1[0-9]{2}\b|璇|琦玉|奈叶|云裳|cat-sword', head), (mod, head))
+
     def test_switch_off_restores_file_level_selection(self):
-        self.edit('\tXHooked.go()\n')
+        self.edit('\tXToji.go()\n')
         self.assertIn('xiyou_big', self.scenes('0'))
         self.assertNotIn('xiyou_hooked', self.scenes('0'))
 
     def test_env_switch_literal_off(self):
         """O-153 回退开关之一：环境变量 XIYOU_HOOKS=0（回退开关覆盖.py 认字面量写法，tools56）。"""
-        self.edit('\tXHooked.go()\n')
+        self.edit('\tXToji.go()\n')
         with mock.patch.dict(os.environ, {'XIYOU_HOOKS': '0'}):
             self.assertIn('xiyou_big', {x[:-5] for x in self.pick()['scenes']})
 
@@ -616,19 +667,21 @@ class HookLineTests(Fixture):
         table['hookLines']['enabled'] = False
         off = self.root / 'off.json'
         off.write_text(json.dumps(table))
-        self.edit('\tXHooked.go()\n')
+        self.edit('\tXToji.go()\n')
         s = sel.select(self.root, self.base, table=off)
         self.assertIn('xiyou_big', {x[:-5] for x in s['scenes']})
 
 
 class HookHistoryTests(unittest.TestCase):
     """tools54 回归例：用主线真实合并算新旧两种选法（不抽样）。新 ⊆ 旧 ∪ 冒烟场景；该合并专属的专项（各车道交付单里跑的）必须在新选法里；
-    真改了核心逻辑的合并（296a571a honghuang2）新旧一样。提交不在（浅克隆）就跳过。"""
+    真改了核心逻辑的合并（296a571a honghuang2）新旧一样。tools57 收紧后只有 effc9fa4 还收窄，其余批次（含审查 35 点名的 5bbccdcc、f803fc1f）都退回整组。提交不在（浅克隆）就跳过。"""
     ROOT = HERE.parent.parent
     CASES = [  # (合并, 必选的专项, 是否应变窄)
-        ('b5f3a0ce', ['xiyou_xuan_battle', 'xiyou_xuan_chart', 'xiyou_xuan_bind', 'xiyou_binding'], True),
-        ('c7b7f237', ['xiyou_heartsteel', 'xiyou_growth_forge', 'xiyou_growth_help'], True),
-        ('effc9fa4', ['xiyou_xuan_battle', 'xiyou_xuan_chart'], True),
+        ('5bbccdcc', [], False),  # 闪避公式：改了核心行（有删改行、赋值），审查 35 P2 点名不该收窄
+        ('f803fc1f', [], False),  # 护盾账本：核心设施 XShieldLedger 不是钩子，且改了 absorb_shield 行
+        ('b5f3a0ce', ['xiyou_xuan_battle', 'xiyou_xuan_chart', 'xiyou_xuan_bind', 'xiyou_binding'], False),  # 收紧后退回整组（里面有赋值式钩子）
+        ('c7b7f237', ['xiyou_heartsteel', 'xiyou_growth_forge', 'xiyou_growth_help'], False),  # XHeartsteel／XHubris 不是角色专属模块
+        ('effc9fa4', ['xiyou_xuan_battle', 'xiyou_xuan_chart'], True),  # 仍是纯新增独立调用，窄一点点
         ('296a571a', [], False),
     ]
 
