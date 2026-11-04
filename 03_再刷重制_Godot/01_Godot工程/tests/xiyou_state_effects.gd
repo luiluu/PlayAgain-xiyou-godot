@@ -909,8 +909,8 @@ func _hook_blocks(o: Dictionary) -> void:
 		var effects: Array = XDB.rec("States", pair[0]).effects.filter(func(e): return e.phase == pair[1])
 		check("hook.noop.%d.%s" % pair, effects.size() == 1 and effects[0].op == "noop", effects)
 	# 这些 noop 的依据：标记、基础防御都没人读，def 赋值无效，isDamageAffected 直接报错，Custom Damage Formula 不改伤害
-	check("hook.no_effect_basis", o.s1067[0].e.marked == true and o.s1068[1].e.def == o.s1068[1].def0 and float(o.s1072.got) == 7.0 and not o.s1072.errors.is_empty()
-		and o.customFormula[0].v == o.customFormula[1].v and o.customFormula[2].v == o.customFormula[3].v, [o.s1067, o.s1072.errors, o.customFormula])
+	check("hook.no_effect_basis", o.s1067[0].e.marked == true and o.s1068[1].e.def == o.s1068[1].def0 and float(o.s1072.got) == 7.0 and not o.s1072.sourceErrors.is_empty()
+		and o.customFormula[0].v == o.customFormula[1].v and o.customFormula[2].v == o.customFormula[3].v, [o.s1067, o.s1072.sourceErrors, o.customFormula])
 	XState.current = XState.new_game_blank()
 	_hook_83(o.s83)
 	_hook_1452(o.s1452)
@@ -1072,7 +1072,7 @@ func _hook_1306(rows: Array) -> void:
 		var h: XBattler = a if row.holder == "a" else e
 		h.state_ids.append(1306)
 		var want_loss := ceilf(float(row.hp) * 0.13)
-		check("hook.1306.%d.formula" % index, row.errors.size() > 0 or float(row.hp) - float(row.a.hp) == want_loss, [row.hp, row.a.hp])
+		check("hook.1306.%d.formula" % index, row.sourceErrors.size() > 0 or float(row.hp) - float(row.a.hp) == want_loss, [row.hp, row.a.hp])
 		var hp := minf(float(row.hp), a.mhp)
 		a.hp = hp
 		if row.alone:
@@ -1081,7 +1081,7 @@ func _hook_1306(rows: Array) -> void:
 		var ctx := {"execute": true, "resources": XResourceContext.new()}
 		XStateEffects.run_one("turn_end", h, XDB.rec("States", 1306), ctx)
 		if row.holder == "e":
-			check("hook.1306.%d.enemy_throws" % index, a.hp == hp and not row.errors.is_empty() and row.popups.is_empty(), [a.hp, row.errors])
+			check("hook.1306.%d.enemy_throws" % index, a.hp == hp and not row.sourceErrors.is_empty() and row.popups.is_empty(), [a.hp, row.sourceErrors])
 			continue
 		var pops: Array = ctx.resources.started_popups.get(a, [])
 		var wanted: Array = row.a.states.filter(func(x): return int(x) in [1307, 1312]).map(func(x): return int(x))

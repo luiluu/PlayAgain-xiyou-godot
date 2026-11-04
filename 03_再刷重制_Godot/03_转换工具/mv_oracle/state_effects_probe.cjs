@@ -548,7 +548,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
         script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
         const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
         const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
-        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, errors: errors.slice(),
+        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
           a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
       }
     // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
@@ -566,7 +566,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
       const act = new w.Game_Action(a); act.setSkill(1);
       const before = {ahp: a.hp, amhp: a.mhp, ehp: e.hp, emhp: e.mhp, eshield: e._Shield};
       act.apply(e);
-      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, errors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, sourceErrors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
     }
   } finally {
     Object.assign(item.damage, originalDamage); item.hitType = originalHit;
@@ -588,11 +588,12 @@ cases.push(makeCase('hook.blocks', {}, () => {
   const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
   let collapses = [];
   w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses.push(name(this)); };
+  const statesBefore = w.$dataStates.length;  // 用完摘掉，后面用例新建的测试状态号不能变
   const RES_RATE = fakeTrait(13, 1, 0, '测试·死亡率0'), RES_SET = fakeTrait(14, 1, 1, '测试·死亡抵抗');
   const units = [a, b, e];
   const reset = () => { for (const t of units) { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1000; t._mp = 10; t._tp = 20; t.need_refresh = true; t.refresh(); t._hp = 1000; }
     popups = []; anims = []; collapses = []; errors.length = 0; for (const t of units) { delete t._isMarked; delete t._baseDef; delete t._baseMdef; } };
-  const snap = () => { const o = {errors: errors.slice(), popups: popups.slice(), anims: anims.slice(), collapses: collapses.slice()};
+  const snap = () => { const o = {sourceErrors: errors.slice(), popups: popups.slice(), anims: anims.slice(), collapses: collapses.slice()};
     for (const t of units) { const r = t.result(); o[name(t)] = {hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), mhp: t.mhp, states: t._states.slice().sort((x, y) => x - y), marked: t._isMarked === undefined ? null : t._isMarked,
       added: Array.from(r.addedStates), removed: Array.from(r.removedStates), hpAffected: r.hpAffected, hpDamage: r.hpDamage, def: t.def}; }
     return o; };
@@ -647,7 +648,7 @@ cases.push(makeCase('hook.blocks', {}, () => {
     for (const sid of [2544, 2545]) for (const [who, wt, skill] of [['a', 2, 1], ['a', 11, 1], ['a', 2, 5], ['a', 0, 1], ['e', 2, 1]]) {
       reset(); const u = who === 'a' ? a : e, t = who === 'a' ? e : a;
       a.weapons = () => wt ? [{wtypeId: wt}] : [];
-      const act = action(u, skill); out.weapon.push({sid, who, wt, skill, isAttack: act.isAttack(), got7: act.customEffectEval(t, sid, 'confirmState', u, 7), got99: act.customEffectEval(t, sid, 'confirmState', u, 99), errors: errors.slice()});
+      const act = action(u, skill); out.weapon.push({sid, who, wt, skill, isAttack: act.isAttack(), got7: act.customEffectEval(t, sid, 'confirmState', u, 7), got99: act.customEffectEval(t, sid, 'confirmState', u, 99), sourceErrors: errors.slice()});
     }
     delete a.weapons;
     // 2574 apply：把用户的计数清零，再给 108 号角色加等级；108 不在队也有对象
@@ -655,13 +656,13 @@ cases.push(makeCase('hook.blocks', {}, () => {
     const a108 = w.$gameActors.actor(108);
     for (const [c, c108] of [[5, 7], [undefined, undefined]]) { reset(); a._stateCounter = a._stateCounter || {}; a108._stateCounter = a108._stateCounter || {};
       delete a._stateCounter[2401]; delete a108._stateCounter[2401]; if (c !== undefined) a._stateCounter[2401] = c; if (c108 !== undefined) a108._stateCounter[2401] = c108;
-      a.customEffectEval(2574, 'addState'); out.s2574.push({c, c108, level: a108.level, after: a._stateCounter[2401], after108: String(a108._stateCounter[2401]), errors: errors.slice()}); }
+      a.customEffectEval(2574, 'addState'); out.s2574.push({c, c108, level: a108.level, after: a._stateCounter[2401], after108: String(a108._stateCounter[2401]), sourceErrors: errors.slice()}); }
     // 5576／5577 的 Custom Damage Formula（YEP_DamageCore）：标记不标记时伤害式走哪条，a.atkRate 不存在
     out.customFormula = [];
     for (const skill of [5576, 5577]) for (const marked of [false, true]) { reset(); w.Math.__r = 0; if (marked) e._isMarked = true;
       const act = action(a, skill), oldRnd = w.Math.random; w.Math.random = () => 0.5; let v = null, err = null;
       try { v = act.makeDamageValue(e, false); } catch (x) { err = String(x).slice(0, 60); }
-      w.Math.random = oldRnd; out.customFormula.push({skill, marked, v, err, atk: a.atk, def: e.def, formula: w.$dataSkills[skill].damage.formula.slice(0, 60), errors: errors.slice()}); }
+      w.Math.random = oldRnd; out.customFormula.push({skill, marked, v, thrown: err, atk: a.atk, def: e.def, formula: w.$dataSkills[skill].damage.formula.slice(0, 60), sourceErrors: errors.slice()}); }
     // 1301 真实流程：普通序列里目标不死（immortal），deselect 时 hp 0 未倒下；事件跑完强制行动 7303
     out.s1301flow = [];
     { reset(); const bm = w.BattleManager; for (const u of [a, b]) u._hp = 300; place(e, 1301); e._hp = 1;
@@ -682,6 +683,7 @@ cases.push(makeCase('hook.blocks', {}, () => {
       out.s1301.push({low, before, queuedAny: q, ...snap()}); }
   } finally {
     delete a.weapons; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.$dataStates.length = statesBefore;
     w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA;
     for (const t of units) { t._states.length = 0; t.clearResult(); }
   }
