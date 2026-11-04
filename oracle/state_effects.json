@@ -716252,6 +716252,250 @@
    "errors": []
   },
   {
+   "id": "damagedot.apply",
+   "setup": {
+    "state": 2038,
+    "skill": 7520
+   },
+   "observed": {
+    "rows": [
+     {
+      "who": "a",
+      "learned": false,
+      "v0": 0,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 2000,
+        "v1218": 1,
+        "mat": 20
+       }
+      ],
+      "hasSkill": false,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": true,
+      "v0": 0,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 5000,
+        "v1218": 4,
+        "mat": 20
+       }
+      ],
+      "hasSkill": true,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": false,
+      "v0": 4,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 6000,
+        "v1218": 5,
+        "mat": 20
+       }
+      ],
+      "hasSkill": false,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": true,
+      "v0": 4,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 9000,
+        "v1218": 8,
+        "mat": 20
+       }
+      ],
+      "hasSkill": true,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": false,
+      "v0": 0,
+      "matPlus": 77,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 9700,
+        "v1218": 1,
+        "mat": 97
+       }
+      ],
+      "hasSkill": false,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": true,
+      "v0": 9,
+      "matPlus": 123,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": 100100,
+        "v1218": 13,
+        "mat": 143
+       }
+      ],
+      "hasSkill": true,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": false,
+      "v0": 2,
+      "matPlus": 0,
+      "times": 2,
+      "steps": [
+       {
+        "damagedot": 4000,
+        "v1218": 3,
+        "mat": 20
+       },
+       {
+        "damagedot": 5000,
+        "v1218": 4,
+        "mat": 20
+       }
+      ],
+      "hasSkill": false,
+      "sourceErrors": []
+     },
+     {
+      "who": "a",
+      "learned": true,
+      "v0": 2,
+      "matPlus": 0,
+      "times": 2,
+      "steps": [
+       {
+        "damagedot": 7000,
+        "v1218": 6,
+        "mat": 20
+       },
+       {
+        "damagedot": 11000,
+        "v1218": 10,
+        "mat": 20
+       }
+      ],
+      "hasSkill": true,
+      "sourceErrors": []
+     },
+     {
+      "who": "e",
+      "learned": false,
+      "v0": 0,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": null,
+        "v1218": 0,
+        "mat": 12
+       }
+      ],
+      "hasSkill": null,
+      "sourceErrors": [
+       "TypeError: user.hasSkill is not a function"
+      ]
+     },
+     {
+      "who": "e",
+      "learned": false,
+      "v0": 6,
+      "matPlus": 0,
+      "times": 1,
+      "steps": [
+       {
+        "damagedot": null,
+        "v1218": 6,
+        "mat": 12
+       }
+      ],
+      "hasSkill": null,
+      "sourceErrors": [
+       "TypeError: user.hasSkill is not a function"
+      ]
+     },
+     {
+      "who": "e",
+      "learned": false,
+      "v0": 3,
+      "matPlus": 0,
+      "times": 2,
+      "steps": [
+       {
+        "damagedot": null,
+        "v1218": 3,
+        "mat": 12
+       },
+       {
+        "damagedot": null,
+        "v1218": 3,
+        "mat": 12
+       }
+      ],
+      "hasSkill": null,
+      "sourceErrors": [
+       "TypeError: user.hasSkill is not a function",
+       "TypeError: user.hasSkill is not a function"
+      ]
+     }
+    ],
+    "real": [
+     {
+      "who": "a",
+      "v0": 0,
+      "addable": true,
+      "has": true,
+      "damagedot": 2000,
+      "v1218": 1,
+      "mat": 20,
+      "sourceErrors": []
+     },
+     {
+      "who": "e",
+      "v0": 0,
+      "addable": true,
+      "has": true,
+      "damagedot": null,
+      "v1218": 0,
+      "mat": 12,
+      "sourceErrors": [
+       "TypeError: user.hasSkill is not a function"
+      ]
+     },
+     {
+      "who": "a",
+      "v0": 5,
+      "addable": true,
+      "has": true,
+      "damagedot": 7000,
+      "v1218": 6,
+      "mat": 20,
+      "sourceErrors": []
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "tp.guarded_apply",
    "setup": {
     "states": [
