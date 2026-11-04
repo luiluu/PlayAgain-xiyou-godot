@@ -138,7 +138,7 @@ func compare_ticks(tag: String, observed: Dictionary, got: Dictionary, sids: Arr
 	var shape_want := want.map(func(t): return [t.state, t.popup if t.has("popup") else null, t.get("anim", 0)])
 	var shape_got := real.map(func(x): return [int(x.state), float(x.hp), int(x.get("animation", 0))])
 	check(tag + ".ticks", JSON.stringify(shape_want) == JSON.stringify(shape_got), [shape_want, shape_got])
-	var errs: Array = observed.errors
+	var errs: Array = observed.sourceErrors
 	check(tag + ".errors_skip", errs.is_empty() or want.size() < sids.size() or true)
 	if not errs.is_empty():
 		check(tag + ".diag", not got.diag.is_empty(), got.diag)

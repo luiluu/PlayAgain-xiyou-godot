@@ -54,7 +54,7 @@ function synth(note, extra) {
 }
 const errors = [];
 const oldError = w.Yanfly.Util.displayError;
-w.Yanfly.Util.displayError = (error, code, message) => errors.push({error: String(error && error.message || error), message});
+w.Yanfly.Util.displayError = (error, code, message) => errors.push({text: String(error && error.message || error), message});
 // 随机：Math.random 序列（回绕）；记抽取次数
 let seq = [0.5], pos = 0, draws = 0;
 const rnd = () => { draws++; const v = seq[pos % seq.length]; pos++; return v; };
@@ -107,7 +107,7 @@ function runTurnEnd(h, env) {
   const log = capture(() => h.onTurnEnd());
   const rates = Array.from({length: 14}, (_, i) => h.elementRate(i));
   const stats = h.__dotStats ? JSON.parse(JSON.stringify(h.__dotStats)) : null;
-  return {before, after: snap(h), log, errors: errors.splice(0), draws, globalValue: globalValue(), stats, rates};
+  return {before, after: snap(h), log, sourceErrors: errors.splice(0), draws, globalValue: globalValue(), stats, rates};
 }
 
 const REAL = [33, 35, 43, 48, 54, 55, 57, 69, 70, 84, 89, 90, 91, 93, 95, 117, 132, 135, 160, 164, 168, 176, 177, 181, 185, 243, 261, 286, 347, 365, 473, 474, 487,
