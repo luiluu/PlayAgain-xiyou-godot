@@ -987,6 +987,441 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "ascend.1388.none",
+   "setup": {
+    "ce": 1388,
+    "from": 6133,
+    "to": 6236,
+    "who": []
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1388.party",
+   "setup": {
+    "ce": 1388,
+    "from": 6133,
+    "to": 6236,
+    "who": [
+     1
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1388.offParty",
+   "setup": {
+    "ce": 1388,
+    "from": 6133,
+    "to": 6236,
+    "who": [
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1388.both",
+   "setup": {
+    "ce": 1388,
+    "from": 6133,
+    "to": 6236,
+    "who": [
+     1,
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1389.none",
+   "setup": {
+    "ce": 1389,
+    "from": 6138,
+    "to": 6237,
+    "who": []
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1389.party",
+   "setup": {
+    "ce": 1389,
+    "from": 6138,
+    "to": 6237,
+    "who": [
+     1
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1389.offParty",
+   "setup": {
+    "ce": 1389,
+    "from": 6138,
+    "to": 6237,
+    "who": [
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1389.both",
+   "setup": {
+    "ce": 1389,
+    "from": 6138,
+    "to": 6237,
+    "who": [
+     1,
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1390.none",
+   "setup": {
+    "ce": 1390,
+    "from": 6238,
+    "to": 6239,
+    "who": []
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1390.party",
+   "setup": {
+    "ce": 1390,
+    "from": 6238,
+    "to": 6239,
+    "who": [
+     1
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     false
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1390.offParty",
+   "setup": {
+    "ce": 1390,
+    "from": 6238,
+    "to": 6239,
+    "who": [
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     false
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "ascend.1390.both",
+   "setup": {
+    "ce": 1390,
+    "from": 6238,
+    "to": 6239,
+    "who": [
+     1,
+     11
+    ]
+   },
+   "observed": {
+    "a1": [
+     false,
+     true
+    ],
+    "a8": [
+     false,
+     false
+    ],
+    "a11": [
+     false,
+     true
+    ],
+    "createdBefore": 178,
+    "createdAfter": 178
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.signBoardScene",
+   "setup": {
+    "lines": [
+     "SceneManager.push(Scene_StarSignBoard)"
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.makeUpSign",
+   "setup": {
+    "lines": [
+     "Star.SignBoard.ConductItemMakeUpSign(true);"
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.stateBook",
+   "setup": {
+    "lines": [
+     "SceneManager.push(Scene_StateBook) "
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.openItemSlot",
+   "setup": {
+    "lines": [
+     "$gameParty.openItemSlotMenu();"
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.itemslotShow",
+   "setup": {
+    "lines": null,
+    "plugin": "itemslot show"
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.itemslotHide",
+   "setup": {
+    "lines": null,
+    "plugin": "itemslot hide"
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.pingbizhuangbei",
+   "setup": {
+    "lines": null,
+    "plugin": "pingbizhuangbei"
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": "Cannot read properties of null (reading 'constructor')"
+   },
+   "errors": []
   }
  ]
 }
