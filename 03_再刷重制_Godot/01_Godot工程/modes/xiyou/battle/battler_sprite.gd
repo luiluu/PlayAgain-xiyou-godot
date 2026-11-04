@@ -31,6 +31,8 @@ var prey := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
+## dsPassiveSkill <SvPngFd: N>：开战时取一次，只放大主图（不动影子、武器、状态图标；Sprite_Actor.updateFrame 里 _mainSprite.scale）
+var png_scale := 1.0
 ## setup 给的缩放（旧式角色 0.75、敌人 1／精英 1.8）；新增角色有归一档时改用档里的缩放（_show_frame）
 var _base_scale := 1.0
 ## Codex_MiraRavenMultiFrame 站姿归一档（XAppearance.profile，角色 ID ≥ 167 才有）：此刻这一帧的
@@ -98,6 +100,8 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
 	_base_scale = sprite_scale
+	if b is XActor:
+		png_scale = (b as XActor).sv_png_scale()
 	body_scale = sprite_scale * look.scale
 	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
@@ -157,7 +161,7 @@ func _set_flip(f: bool) -> void:
 ## 身体缩放（场景外观用负的 x 表示翻转）
 func _apply_scale() -> void:
 	var fx := -1.0 if sprite.get_meta("flip", false) else 1.0
-	sprite.scale = Vector2(body_scale * fx, body_scale)
+	sprite.scale = Vector2(body_scale * fx * png_scale, body_scale * png_scale)
 
 
 func set_motion(m: String) -> void:
@@ -269,7 +273,7 @@ func _process(delta: float) -> void:
 			_place_body()
 	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
 		_breath_t += delta * TAU / 2.4
-		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
+		sprite.scale.y = body_scale * png_scale * (1.0 + sin(_breath_t) * 0.02)
 		sprite.position.y = -_lift_px
 	_update_indicators()
 

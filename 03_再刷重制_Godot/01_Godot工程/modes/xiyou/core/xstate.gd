@@ -687,8 +687,15 @@ func gain_item(id: int, amount: int) -> void:
 	# Star_AchievementSystem 包在 Game_Party.gainItem 里层：判定的是改记之后的物品（O-076 另看改记前的）
 	XAchievement.on_item_gain(self, id, amount, before)
 
+## Game_Party.maxItems：正式版运行时默认 9999；物品备注 <Max Item: x> 改成 max(1, x)（YEP_CoreEngine；练型者雷枝 2933、苦寒晶壳 2934 封顶 130，scan2_probe max_item）
+static func item_max(id: int) -> int:
+	var m: Dictionary = XDB.rec("Items", id).get("meta", {})
+	if m.has("Max Item") and str(m["Max Item"]).strip_edges().is_valid_int():
+		return maxi(1, int(str(m["Max Item"]).strip_edges()))
+	return 9999
+
 func _gain_raw(id: int, amount: int) -> void:
-	items[id] = clampi(item_count(id) + amount, 0, 9999)  # $gameParty.maxItems（正式版运行时为 9999）
+	items[id] = clampi(item_count(id) + amount, 0, item_max(id))
 	if items[id] == 0:
 		items.erase(id)
 

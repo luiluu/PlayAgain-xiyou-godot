@@ -35,6 +35,7 @@ KEYS = {
     'dot.json': {'cases': ('id',)},
     'barrier.json': {'cases': ('id',)},
     'passive.json': {'cases': ('id',)},
+    'scan2.json': {'cases': ('id',)},
     'qiyu.json': {'cases': ('id',)},
     'cat.json': {'cases': ('id',)},
     'enemy_book_defeat.json': {'cases': ('id',)},
