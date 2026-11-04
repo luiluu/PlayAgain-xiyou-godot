@@ -32,6 +32,35 @@ class ShieldLogic:
 		return 0.0 if reason == "hit" else 1.0  # 必中、不闪、不暴击（参照 Math.random 0.5、无暴击）
 
 
+## 按序给随机数，用完后 0.5（同参照），记用掉几个。
+class SeqStream:
+	extends XRandomStream
+	var seq := []
+	var floats := 0
+	func next_float(_reason: String, _event_key := "") -> float:
+		floats += 1
+		return float(seq[floats - 1]) if floats <= seq.size() else 0.5
+
+
+## deselect 的 revive 抽取固定成给定值、单独记数；别的抽取（命中等）照 0.5。
+class FixedRule:
+	extends XRandomStream
+	var value := 0.5
+	var floats := 0
+	func next_float(_reason: String, event_key := "") -> float:
+		if event_key == "revive":
+			floats += 1
+			return value
+		return 0.5
+
+
+class ReviveLogic:
+	extends ShieldLogic
+	var stream: XRandomStream
+	func _rule() -> XRandomStream:
+		return stream if stream != null else super()
+
+
 class ValueBattler:
 	extends XBattler
 	var values := {}
@@ -276,6 +305,9 @@ func _run() -> void:
 	check("shield.oracle_present", cases.has("query.shield_blocks"))
 	if cases.has("query.shield_blocks"):
 		_shield_blocks(cases["query.shield_blocks"].observed)
+	check("revive.oracle_present", cases.has("revive.blocks"))
+	if cases.has("revive.blocks"):
+		_revive_blocks(cases["revive.blocks"].observed)
 	XStateEffects.observer = Callable()
 	finish()
 
@@ -639,6 +671,127 @@ func _shield_blocks(o: Dictionary) -> void:
 			[first.hp, first.removed, first.get("state_anims")])
 		check("shield.apply.%d.after" % sid, float(second.hp) == 7.0 and e.hp == hp - 7.0 and not second.has("state_anims")
 			and second.removed.is_empty(), [second.hp, second.get("state_anims"), second.removed])
+
+
+## 自动复活一族（rules3）：切片可达 11 块＋同模板 6 块的 Deselect。单块：按序给随机数，比用掉几个、三种资源、状态、动画、变量、弹字、结果槽；
+## 实战：真实 apply 打死持有者，dirty 与否决定非 <Permanent> 的状态（死亡清掉）还跑不跑。
+func _revive_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("revive.rows", o.rows.size() == 552 and o.applies.size() == 136, [o.rows.size(), o.applies.size()])
+	var seen := {}
+	var variables: Array = XDB.system().get("variables", [])
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		var sid := int(row.state)
+		var st := XDB.rec("States", sid)
+		if not seen.has(sid):
+			seen[sid] = true
+			check("revive.translated.%d" % sid, st.effects.any(func(e): return e.op == "revive") and not st.effects.any(func(e): return e.op == "js" and e.phase == "deselect"), st.effects)
+		var s := XState.new_game_blank()
+		XState.current = s
+		for id in [965, 966, 967, 1597, 1683]:
+			if id < variables.size():
+				s.set_variable(id, float(row.varv))
+		var b := ValueBattler.new()
+		b.values = {"mhp": float(row.mhp), "mmp": float(row.mmp)}
+		b.state_ids.append(sid)
+		b.hp = float(row.mhp) if row.hpMode == "alive" else 0.0
+		b.mp = minf(10.0, float(row.mmp))
+		b.tp = 20.0
+		if row.hpMode == "dead":
+			b.state_ids.append(1)
+		b.resource_death_blocked = row.hpMode == "zero"  # 血为 0 未倒下（原版 isDead 只看死亡状态）
+		var stream := SeqStream.new()
+		stream.seq = row.seq
+		var resources := XResourceContext.new()
+		var record := {}
+		var ctx := {"attacker": b, "defender": b, "target": b, "item": {"id": 1, "damage": {"type": 1, "elementId": 0}}, "value": 0.0, "execute": true,
+			"resources": resources, "record": record, "random": stream}
+		XStateEffects.run_one("deselect", b, st, ctx)
+		var states: Array = b.state_ids.duplicate()
+		states.sort()
+		var result := resources.result(b)
+		var pops: Array = resources.started_popups.get(b, []).map(_pop_row)
+		var want_pops := _want_pops(row.popups, sid)
+		var got := {"hp": b.hp, "mp": b.mp, "tp": b.tp, "dead": b.is_dead(), "states": states, "draws": stream.floats,
+			"anims": record.get("state_anims", []).map(func(p): return int(p[0])), "hpDamage": result.hpDamage, "mpDamage": result.mpDamage, "tpDamage": result.tpDamage,
+			"added": result.addedStates, "removed": result.removedStates, "pops": pops,
+			"vars": [965, 966, 967, 1597, 1683].map(func(id): return s.variable(id))}
+		var want := {"hp": float(row.hp), "mp": float(row.mp), "tp": float(row.tp), "dead": row.dead, "states": row.states.map(func(x): return int(x)), "draws": int(row.draws),
+			"anims": row.anims.map(func(x): return int(x)), "hpDamage": float(row.result.hpDamage), "mpDamage": float(row.result.mpDamage), "tpDamage": float(row.result.tpDamage),
+			"added": row.result.added.map(func(x): return int(x)), "removed": row.result.removed.map(func(x): return int(x)), "pops": want_pops,
+			"vars": row.vars.map(func(x): return float(x))}
+		check("revive.row.%d" % index, got == want, {"row": [sid, row.hpMode, row.seq, row.varv], "want": want, "got": got})
+	for index in range(o.applies.size()):
+		_revive_apply(index, o.applies[index])
+	XState.current = null
+
+
+func _revive_apply(index: int, row: Dictionary) -> void:
+	var sid := int(row.state)
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	s.random_master = XRandomStream.hex64(4500 + index)
+	XState.current = s
+	var variables: Array = XDB.system().get("variables", [])
+	for id in [965, 966, 967, 1597, 1683]:
+		if id < variables.size():
+			s.set_variable(id, 2.0)
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(2, s)
+	logic.stream = FixedRule.new()
+	logic.stream.value = float(row.r)
+	var u: XBattler = logic.actors[0] if row.who == "enemy" else logic.enemies[0]
+	var t: XBattler = logic.enemies[0] if row.who == "enemy" else logic.actors[0]
+	t.state_ids.clear()
+	t.add_state(sid)
+	t.param_refresh()
+	if bool(row.dirtyBefore):
+		t.param_mark_dirty()
+	t.hp = 1.0
+	t.mp = minf(10.0, t.mmp)
+	t.tp = 20.0
+	var mhp := t.mhp
+	var r := logic.apply(u, XDB.rec("Skills", 1), t)
+	var states: Array = t.state_ids.duplicate()
+	states.sort()
+	var want_states: Array = row.states.map(func(x): return int(x))
+	var label := "revive.apply.%d" % index
+	var info := [sid, row.who, row.r, row.dirtyBefore]
+	check(label + ".states", states == want_states, [info, want_states, states])
+	check(label + ".dead", t.is_dead() == bool(row.dead) and bool(r.died) == bool(row.dead), [info, row.dead, t.is_dead(), r.died])
+	check(label + ".draws", logic.stream.floats == int(row.draws), [info, row.draws, logic.stream.floats])
+	check(label + ".anims", r.get("state_anims", []).map(func(p): return int(p[0])) == row.anims.map(func(x): return int(x)), [info, row.anims, r.get("state_anims", [])])
+	var hp_ok: bool = t.hp == float(row.hp) if float(row.hp) <= 1.0 else absf(t.hp / mhp - float(row.hp) / float(row.mhp)) <= 2.0 / mhp  # 血量上限不同（参照 1e8），比例对、取整差一点
+	check(label + ".hp", hp_ok, [info, row.hp, row.mhp, t.hp, mhp])
+	check(label + ".tp", t.tp == float(row.tp), [info, row.tp, t.tp])
+	check(label + ".vars", [965, 966, 967, 1597, 1683].map(func(id): return s.variable(id)) == row.vars.map(func(x): return float(x)), [info, row.vars])
+	check(label + ".result", r.result.addedStates == row.result.added.map(func(x): return int(x)) and r.result.removedStates == row.result.removed.map(func(x): return int(x))
+		and r.result.hpAffected == bool(row.result.hpAffected), [info, row.result, r.result])
+	# 复活块的弹字：回血（以及回蓝、TP）按结果槽拆行（命中那两次弹字原版在 apply 里、这边另走 popupQueue，不比）
+	var pops: Array = r.started_popups.map(_pop_row)
+	var revived: Array = row.popups.filter(func(p): return float(p.hpDamage) < 0.0 or float(p.mpDamage) != 0.0 or float(p.tpDamage) != 0.0)
+	check(label + ".popups", pops.size() == _want_pops(revived, sid).size(), [info, revived, pops])
+
+
+func _pop_row(p: Dictionary) -> Array:
+	return [p.hpAffected, p.hpDamage if p.hpAffected else 0.0, p.mpDamage, p.tpDamage]
+
+
+## 参照记的是 startDamagePopup 那一刻的结果；运行时按种类拆行（血、蓝、TP、状态），状态行不弹数字。
+func _want_pops(rows: Array, _sid: int) -> Array:
+	var out := []
+	for p in rows:
+		if bool(p.hpAffected):
+			out.append([true, float(p.hpDamage), 0.0, 0.0])
+		if float(p.mpDamage) != 0.0:
+			out.append([false, 0.0, float(p.mpDamage), 0.0])
+		if float(p.tpDamage) != 0.0:
+			out.append([false, 0.0, 0.0, float(p.tpDamage)])
+		if not p.added.is_empty() or not p.removed.is_empty():
+			out.append([false, 0.0, 0.0, 0.0])
+	return out
 
 
 func finish() -> void:

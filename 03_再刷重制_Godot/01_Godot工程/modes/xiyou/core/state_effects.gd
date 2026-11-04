@@ -9,12 +9,10 @@ const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm",
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
-	"reserve_common_event", "noop"]
+	"reserve_common_event", "noop", "revive"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
-## 死而复燃（诅咒 7208 推给敌人的状态 1270）Custom Deselect Effect 的原文，由 _revive 翻译；别的 js 块仍只进未翻译清单
-const REVIVE_JS := "if ((target.hp <= 0 || target.isDead()) && Math.random() < 0.15) {\n  target.gainHp(Math.floor(target.mhp * 0.3));\n  target.gainMp(target.mmp);\n  target.gainTp(target.tp);\n  target.startDamagePopup();\n  target.clearResult();\n}"
 
 ## 测试观察者：每次某状态在某 phase 被分发时调用 (phase, state_id, holder, ctx)；ctx 是该状态这次调用的完整上下文
 static var observer := Callable()
@@ -186,9 +184,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "reserve_common_event" and execute:
 			_reserves.append(int(e.id))
 		elif op == "set_variable" and execute:
-			# Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
 			var vid := int(e.id)
-			if XState.current != null and vid > 0 and vid < XDB.system().get("variables", []).size():
+			if XState.current != null and _variable_writable(vid):
 				XState.current.set_variable(vid, float(e.value))
 		elif op == "counter_init" and execute:
 			# 计数 = 计数 || $gameVariables.value(V)：已有的（移除后也留着）不改
@@ -204,9 +201,9 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				c.user.state_data["_stateCounter"] = counters
 			else:
 				_diagnose(phase, int(st.id), holder, "counter_set_unavailable")
-		elif op == "js" and str(e.get("source", "")) == REVIVE_JS:
+		elif op == "revive":
 			if execute:
-				_revive(c)
+				_revive(e, holder, int(st.id), c)
 		elif op == "syntax_error":
 			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
 		elif op == "noop":
@@ -234,28 +231,81 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	return c.value
 
 
-## 死而复燃：目标倒下时 15% 回 30% 血、回满蓝、TP 翻倍；先弹回复数字，再 clearResult 清掉这次结果槽（不显示这一击，也不算击杀，见 XBattleLogic.apply）。
-static func _revive(ctx: Dictionary) -> void:
-	var t: XBattler = ctx.target
-	if not (t.hp <= 0.0 or t.is_dead()):
+## 自动复活一族（rules3，state_effects_probe revive.blocks）：Deselect 块的条件＋按原顺序的几步。
+## 没 clearResult 的块（1164、1837）结果槽留着这次回血与状态变化；clearResult 的先弹字再清，这一击不显示、不算击杀（见 XBattleLogic.apply）。
+static func _revive(e: Dictionary, holder: XBattler, state_id: int, c: Dictionary) -> void:
+	var t: XBattler = c.target
+	if not _revive_cond(e.cond, t, c):
 		return
-	var random: XRandomStream = ctx.get("random")
-	if random == null or random.next_float("state_effect", "revive") >= 0.15:
-		return
-	var resources: XResourceContext = ctx.resources
-	resources.gain(t, "hp", floorf(t.mhp * 0.3))
-	resources.gain(t, "mp", t.mmp)
-	resources.gain(t, "tp", t.tp)
-	resources.start_damage_popup(t)  # 原文 clearResult 前先 startDamagePopup：回血、回蓝、TP 数字照样弹（审查 33 P3-2）
-	resources.seed_result(t, XResourceContext.empty_result())
+	var resources: XResourceContext = c.resources
+	for step in e.steps:
+		match str(step.do):
+			"animation":
+				_note_anim(int(step.id), holder, c)
+			"remove_self":
+				resources.remove_state(t, state_id)
+			"remove_state":
+				resources.remove_state(t, int(step.id))
+			"add_state":
+				_add_state(t, int(step.id), c)
+			"gain":
+				resources.gain(t, str(step.resource), _revive_amount(step, t))
+			"popup":
+				resources.start_damage_popup(t)
+			"clear_result":
+				resources.seed_result(t, XResourceContext.empty_result())
+			"add_variable":
+				if XState.current != null and _variable_writable(int(step.id)):
+					XState.current.set_variable(int(step.id), XState.current.variable(int(step.id)) + float(step.delta))
+
+
+## 条件按原文短路：抽几次随机数与原版相同（down_each 真实倒下时最多抽两次）。
+static func _revive_cond(cond: Dictionary, t: XBattler, c: Dictionary) -> bool:
+	var random: XRandomStream = c.get("random")
+	match str(cond.kind):
+		"down":
+			if not (t.hp <= 0.0 or t.is_dead()):
+				return false
+			return not cond.has("below") or (random != null and random.next_float("state_effect", "revive") < float(cond.below))
+		"down_each":
+			if random == null:
+				return false
+			if t.hp <= 0.0 and random.next_float("state_effect", "revive") > float(cond.above):
+				return true
+			return t.is_dead() and random.next_float("state_effect", "revive") > float(cond.above)
+		"hp_zero_variable":
+			return t.hp <= 0.0 and XState.current != null and XState.current.variable(int(cond.variable)) > float(cond.above)
+	return false
+
+
+static func _revive_amount(step: Dictionary, t: XBattler) -> float:
+	if step.has("amount"):
+		return float(step.amount)
+	var value := float(t.get(str(step.param))) * float(step.rate)
+	match str(step.get("round", "")):
+		"floor":
+			return floorf(value)
+		"ceil":
+			return ceilf(value)
+	return value
+
+
+## target.startAnimation：记进命中记录 state_anims [[动画, 持有者]]，由 battle_scene 在本次弹字前播。
+static func _note_anim(animation: int, holder: XBattler, c: Dictionary) -> void:
+	var record = c.get("record")
+	if record is Dictionary:
+		record["state_anims"] = record.get("state_anims", []) + [[animation, holder]]
+
+
+## Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）
+static func _variable_writable(id: int) -> bool:
+	return id > 0 and id < XDB.system().get("variables", []).size()
 
 
 ## 护盾 React 后半段：target.startAnimation(动画)＋target.removeState(stateId)。动画记进命中记录 state_anims
 ## [[动画, 持有者]]，由 battle_scene 在本次弹字前播；移除走行动的资源上下文（removedStates 进结果槽，Remove 块随之触发）。
 static func _break_shield(e: Dictionary, holder: XBattler, state_id: int, c: Dictionary) -> void:
-	var record = c.get("record")
-	if record is Dictionary:
-		record["state_anims"] = record.get("state_anims", []) + [[int(e.animation), holder]]
+	_note_anim(int(e.animation), holder, c)
 	var resources: XResourceContext = c.get("resources")
 	if resources != null:
 		resources.remove_state(holder, state_id)

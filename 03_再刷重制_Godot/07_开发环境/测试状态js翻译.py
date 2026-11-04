@@ -196,5 +196,31 @@ class ShieldTranslationTests(unittest.TestCase):
                 self.assertEqual(one(tag, code)['op'], 'js')
 
 
+class ReviveTranslationTests(unittest.TestCase):
+    """rules3 自动复活一族：条件与每一步整句比对；有一句不认识、条件改了就退回 js。"""
+    body = 'if (target.hp <= 0 && Math.random() > 0.60 || target.isDead() && Math.random() > 0.60 ) { target.gainHp(target.mhp); target.gainMp(target.mmp); target.gainTp(target.tp); target.startDamagePopup(); target.clearResult(); }'
+
+    def test_exact(self):
+        got = one('Deselect', self.body)
+        self.assertEqual(got['op'], 'revive')
+        self.assertEqual(got['cond'], {'kind': 'down_each', 'above': 0.6})
+        self.assertEqual([s['do'] for s in got['steps']], ['gain', 'gain', 'gain', 'popup', 'clear_result'])
+        auto = one('Deselect', 'if (target.hp <= 0 || target.isDead()) { target.startAnimation(49); var rate = 0.50; var heal = Math.floor(target.mhp * rate); target.removeState(stateId); target.gainHp(heal); target.startDamagePopup(); target.clearResult(); }')
+        self.assertEqual(auto['steps'][:3], [{'do': 'animation', 'id': 49}, {'do': 'remove_self'}, {'do': 'gain', 'resource': 'hp', 'param': 'mhp', 'rate': 0.5, 'round': 'floor'}])
+        var = one('Deselect', 'if (target.hp <= 0 && $gameVariables.value(966) > 1) { target.gainHp(1); $gameVariables.setValue(966,$gameVariables.value(966)-1); }')
+        self.assertEqual(var['cond'], {'kind': 'hp_zero_variable', 'variable': 966, 'above': 1})
+        self.assertEqual(var['steps'][1], {'do': 'add_variable', 'id': 966, 'delta': -1})
+
+    def test_boundaries(self):
+        b = self.body
+        for tag, code in [('Select', b), ('Deselect', b.replace('> 0.60 ||', '> 0.50 ||')), ('Deselect', b.replace('target.gainTp(target.tp)', 'target.gainTp(user.tp)')),
+                          ('Deselect', b.replace('target.clearResult();', 'user.clearResult();')), ('Deselect', b.replace('target.clearResult();', 'target.clearResult(); BattleManager.queueForceAction(target, 7303, -2);')),
+                          ('Deselect', 'if (target.hp <= 0 || target.isDead()) { $gameTemp.reserveCommonEvent(1514); }'),
+                          ('Deselect', 'if (target.hp <= 0) { target.gainHp(1); }'),
+                          ('Deselect', 'if (target.hp <= 0 && $gameVariables.value(966) > 1) { $gameVariables.setValue(966,$gameVariables.value(967)-1); }')]:
+            with self.subTest(tag=tag, code=code[-70:]):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()
