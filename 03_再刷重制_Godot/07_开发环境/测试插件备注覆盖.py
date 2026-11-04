@@ -67,14 +67,14 @@ class KnownCases(unittest.TestCase):
         self.assertIn(key, self.rows, f'抽取没找到标签 {key}')
         return self.rows[key]
 
-    def test_dot_regen_formula_unread(self):
-        for k in ('dotformula', 'regenformula'):
-            r = self.verdict(k)
-            self.assertGreater(r['data_count'], 0)
-            self.assertEqual(r['verdict'], '没读', f'{k}: {r["verdict"]}')
+    def test_known_unread(self):
+        # 技能树 Kyo 10-31 定删，不会有人再去读这个标签；别选还在待做清单上的（dot1b 做完就把旧用例做挂了）
+        r = self.verdict('pstcatname#')
+        self.assertGreater(r['data_count'], 0)
+        self.assertEqual(r['verdict'], '没读', r['why'])
 
     def test_known_read(self):
-        for k in ('customtargeteval', 'item#cost', 'sc自动解除'):
+        for k in ('customtargeteval', 'item#cost', 'sc自动解除', 'dotformula', 'regenformula'):
             r = self.verdict(k)
             self.assertGreater(r['data_count'], 0, k)
             self.assertEqual(r['verdict'], '已读', f'{k}: {r["verdict"]} {r["why"]}')

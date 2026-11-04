@@ -355,7 +355,7 @@ func _idle_motion() -> String:
 		return "dead"
 	if battler.hp_rate() < 0.25:
 		return "dying"
-	if battler.guarding:
+	if battler.is_guard():
 		return "guard"
 	return "walk"
 

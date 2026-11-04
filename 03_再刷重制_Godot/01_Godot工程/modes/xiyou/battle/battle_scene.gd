@@ -96,13 +96,15 @@ var book_appeared: Array = []
 var book_page: XEnemyBookPage
 
 
-func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null) -> void:
+func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Texture2D = null, random_encounter := false) -> void:
 	troop_id = troop
 	snapshot = background
 	can_lose = lose
 	map_data = map
 	logic.can_escape = escape
 	logic.setup(troop, XState.current)
+	if random_encounter:
+		logic.roll_encounter()  # Game_Player.executeEncounter：BattleManager.setup 之后 onEncounter 掷先制／偷袭
 	XPetCapture.roll_battle(logic)  # Star_PetSystem 的 Scene_Battle.start 包装：掷可捕捉（名字加「宝宝」）
 	logic.auto = force_auto
 	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
@@ -575,6 +577,11 @@ func _main() -> void:
 			var sp: XBattlerSprite = sprites[a]
 			sp.position = sp.home + Vector2(300.0 * (entry_frames - f) / entry_frames, 0)
 		await get_tree().physics_frame
+	# BattleManager.displayStartMessages：先制「%1先发制人！」／偷袭「%1被偷袭了！」（YEP Show Pre-Emptive／Surprise Text 开；
+	# 快速战斗的 XdRs_HangUp 包装跳过开场文字）。原版文字与入场移动同时进行，这里入场后再显示
+	var start_text := XPreempt.start_text(logic)
+	if start_text != "" and not XHangUp.fast_fighting(XState.current):
+		await message.run({"lines": [start_text]})
 	var first := true
 	# 敌群事件：开战（第 0 回合）检查一次
 	await _play_troop_events(logic.troop_events())
@@ -710,9 +717,7 @@ func _escape_failure() -> void:
 
 ## TextManager.escapeStart.format($gameParty.name())：出战 1 人时为其名字，否则 partyName「%1的队伍」
 func escape_text() -> String:
-	var leader: XActor = logic.actors[0] if not logic.actors.is_empty() else null
-	var name := "" if leader == null else (leader.display_name() if logic.actors.size() == 1 else str(XDB.system().terms.messages.get("partyName", "%1的队伍")).replace("%1", leader.display_name()))
-	return str(XDB.system().terms.messages.escapeStart).replace("%1", name)
+	return str(XDB.system().terms.messages.escapeStart).replace("%1", XPreempt.party_name(logic.actors))
 
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。

@@ -35,6 +35,10 @@ var random: XBattleRandom
 ## Debug replay boundaries, captured before enemy setup consumes any random value.
 var replay_runtime_start := {}
 var replay_battle_start := {}
+## 先制／偷袭（XPreempt）：只有随机遇敌掷（roll_encounter）；第一个回合结束清掉
+var preemptive := false
+var surprise := false
+var encounter := false   # 本场是随机遇敌（回放要照着再掷一次）
 var _ids := {}
 var _action_resources: XResourceContext
 var _battle_resources: XResourceContext
@@ -107,6 +111,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_ids.clear()
 	turn = 0
 	escaped = false
+	preemptive = false
+	surprise = false
+	encounter = false
 	drop_lock = false
 	_event_flags.clear()
 	_cleared.clear()
@@ -168,6 +175,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XToji.start_battle(self)  # 甚尔 startBattle 包装（原 startBattle 之前）：设第一形态（随后开战清 removeAtBattleEnd 状态）
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
 	XBlackFlash.start_battle(self)  # 黑闪 startBattle 包装（宿傩之内）：round 归 0、清数据
+	if XStateEffects.FIX_QUEUE_CLEAR:
+		XStateEffects.clear_queues()  # rules9 审查 39 P3-5：先清上一场遗留，再移除 removeAtBattleEnd 状态（1307 崩坏能 remove 阶段预约的 CE1505 要留下）
 	for a in actors:
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
@@ -225,8 +234,6 @@ func _start_battle_effects() -> void:
 	XStateEffects.chain_depth = 0
 	XStateEffects.battle_turn = 0
 	XStateEffects._counter_turn.clear()
-	if XStateEffects.FIX_QUEUE_CLEAR:
-		XStateEffects.clear_queues()
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
@@ -335,7 +342,7 @@ func view_of(b: XBattler) -> Dictionary:
 		if int(st.get("iconIndex", 0)) > 0:
 			icons.append(int(st.iconIndex))
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.guarding, "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b),
+		"guarding": b.is_guard(), "can_move": can_move(b), "icons": icons, "shield": b.shield, "look": XAppearance.battler_key(b),
 		"guyu_shield": XGuyu.shield_of(b), "guyu_text": XGuyu.status_text(b),
 		"domain": XBattleIndicators.domain_shown(b), "flash_awake": XBattleIndicators.outline_shown(b)}  # look：换装卡换图；guyu_*：谷雨花荫与侧栏状态字；domain／flash_awake：领域法阵与黑闪描边（画面用）
 
@@ -1062,6 +1069,8 @@ func act(u: XBattler, skill, target) -> Array:
 ## 回合结束（MV onTurnEnd）：解除防御、再生、状态回合 -1；恢复行动的人只补进下个回合。
 func end_turn() -> Array:
 	var logs := []
+	preemptive = false  # BattleManager.endTurn 开头清先制／偷袭（YEP Battle Engine Core 的 endTurn 包装里也清）
+	surprise = false
 	var before := _movable_snapshot()
 	_acted.clear()
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
@@ -1438,9 +1447,10 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XNanoha.begin(self)
-	XStateEffects.chain_depth += 1
+	var chain_step: int = 1 if XStateEffects.CHAIN_SKILLS.has(int(skill.get("id", 0))) else 0  # rules9 审查 39 P3-6：只有 5576／5577 自己打出的这一击算防连锁，别的强制行动不算
+	XStateEffects.chain_depth += chain_step
 	logs.append_array(execute(u, skill, target, true))
-	XStateEffects.chain_depth -= 1
+	XStateEffects.chain_depth -= chain_step
 	XNanoha.end_execute(self)
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
@@ -1516,6 +1526,15 @@ func _restricted(b: XBattler) -> bool:
 	return false
 
 
+## BattleManager.onEncounter（随机遇敌，BattleManager.setup 之后）：两次随机数各取一次，先制与偷袭互斥。
+func roll_encounter() -> void:
+	encounter = true
+	var r := XPreempt.rates(state, enemies)
+	var rolled := XPreempt.roll(_float("encounter_preemptive"), _float("encounter_surprise"), r)
+	preemptive = rolled[0]
+	surprise = rolled[1]
+
+
 ## OTB makeActionOrdersOTB：当前回合 = 上回合排好的「下个回合」；再排新的「下个回合」。
 ## 首回合另排一次当前回合（速度重新随机）。排序稳定，同速时我方在前（JS sort 稳定）。
 func _make_action_orders() -> void:
@@ -1523,7 +1542,8 @@ func _make_action_orders() -> void:
 		current_order = next_order
 	next_order = _sorted_by_speed(alive(actors) + alive(enemies))
 	if not _orders_made:
-		current_order = _sorted_by_speed(actors + enemies)
+		# 原 makeActionOrders：偷袭不排我方、先制不排敌方（只首回合；「下个回合」仍是全员）
+		current_order = _sorted_by_speed((actors if not surprise else []) + (enemies if not preemptive else []))
 		_action_times_modification(current_order, true)
 	_clear_unable()
 	_action_times_modification(next_order)
@@ -1866,14 +1886,14 @@ func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 	return skill
 
 
-## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
+## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf；YEP_ElementCore 再加属性反弹，任何命中类型），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
 ## 反射：行动作用到行动者自己。反击：目标对行动者普通攻击，原行动对该目标无效。
 ## dsPassiveSkill 必中（角色的 SkillCertainHit 被动）时不会被反射/反击。MV 不区分敌我。
 func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	# Game_Battler.setLastTarget（YEP invokeAction）：强制行动「上次目标」用
 	u.last_target_index = maxi(0, (actors if t.is_actor() else enemies).find(t))
 	var sure := certain_hit(u, skill)
-	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
+	var mrf := 0.0 if sure else (t.mrf if XDamage.is_magical(skill) else 0.0) + XDamage.element_reflect_rate(skill, u, t)  # 属性反弹不看命中类型
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
@@ -2252,6 +2272,8 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 		XAlienBattle.pop_action()
 
 
+## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <State Can Added Floor>、<Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
+## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层），重制不需要多层机制；说明「可无限叠加」与原版代码不符。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
@@ -2685,7 +2707,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 ## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
 	XBlackFlash.escape(self)  # 黑闪 processEscape 包装：连闪归 0
-	escaped = _float("escape") < _escape_ratio
+	escaped = preemptive or _float("escape") < _escape_ratio  # processEscape：先制必成功，不掷随机数
 	if not escaped:
 		_escape_ratio += 0.1
 	return escaped

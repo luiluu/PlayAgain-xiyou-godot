@@ -91,6 +91,15 @@ static func _sum_yep(b: XBattler, field: String, e: int, objs: Array) -> float:
 		v += float(o.get("yep", {}).get(field, {}).get(str(e), 0.0))
 	return v
 
+## YEP_ElementCore Game_Action.itemMrf 的属性反弹（<Element Reflect x: +y%>，全游戏只有防具 4998）：行动的每个属性都加目标的反弹率，
+## 不看命中类型（物理、必中也反弹，实测 mv_oracle/multi_element_probe）。数据里没有 <Bypass Element Reflect>。
+static func element_reflect_rate(item: Dictionary, a: XBattler, t: XBattler) -> float:
+	var objs := _yep_objects(t)
+	var rate := 0.0
+	for e in action_elements(item, a):
+		rate += _sum_yep(t, "elementReflect", int(e), objs)
+	return rate
+
 ## YEP_ElementCore：增幅来自状态；角色另加装备、角色、职业。
 static func _yep_objects(b: XBattler) -> Array:
 	var objs := b.states()
@@ -257,8 +266,9 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	if incoming > 0.0 and incoming < 1.0:
 		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
 	incoming *= maxf(0.0, frame.incomingMultiplier)
-	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.guarding else 1.0)
+	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
+	# 多属性取最有利的一个候选（installDamageElementRuntime）。<Multi-Element Rule: …> 被它接管，原版改五种规则数值都不变（multi_element_probe）。
 	var best := {}
 	var cands := []
 	for e in es:
