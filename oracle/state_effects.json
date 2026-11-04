@@ -353572,6 +353572,1562 @@
    "errors": []
   },
   {
+   "id": "rest.blocks",
+   "setup": {},
+   "observed": {
+    "costume": [
+     {
+      "step": "apply66",
+      "battlerName": "ftzs",
+      "raw": "ftzs",
+      "prev": "gxysv2",
+      "priority": null
+     },
+     {
+      "step": "apply226",
+      "battlerName": "2_Brown",
+      "raw": "2_Brown",
+      "prev": "gxysv2",
+      "priority": null
+     },
+     {
+      "step": "remove226",
+      "battlerName": "gxysv2",
+      "raw": "gxysv2",
+      "prev": null,
+      "priority": null
+     },
+     {
+      "step": "remove66",
+      "prev": null,
+      "priority": null
+     },
+     {
+      "step": "remove_only",
+      "prev": null,
+      "priority": null
+     },
+     {
+      "step": "enemy_apply",
+      "enemy": "yyg"
+     },
+     {
+      "step": "enemy_remove",
+      "enemy": "yyg",
+      "sourceErrors": [
+       "TypeError: user.setBattlerImage is not a function"
+      ]
+     }
+    ],
+    "costumeBase": "gxysv2",
+    "crit": [
+     {
+      "sid": 541,
+      "skill": 1,
+      "extra": 0,
+      "itemCrit": true,
+      "critical": true,
+      "flags": [
+       [
+        true,
+        0.19
+       ]
+      ],
+      "forceAfter": false,
+      "noAfter": false,
+      "prev": false
+     },
+     {
+      "sid": 755,
+      "skill": 1,
+      "extra": 0,
+      "itemCrit": true,
+      "critical": true,
+      "flags": [
+       [
+        true,
+        0.19
+       ]
+      ],
+      "forceAfter": false,
+      "noAfter": false,
+      "prev": false
+     },
+     {
+      "sid": 541,
+      "skill": 5,
+      "extra": 0,
+      "itemCrit": true,
+      "critical": true,
+      "flags": [
+       [
+        true,
+        0.19
+       ]
+      ],
+      "forceAfter": false,
+      "noAfter": false,
+      "prev": false
+     },
+     {
+      "sid": 541,
+      "skill": 1,
+      "extra": 755,
+      "itemCrit": true,
+      "critical": true,
+      "flags": [
+       [
+        true,
+        0.19
+       ]
+      ],
+      "forceAfter": true,
+      "noAfter": false,
+      "prev": true
+     }
+    ],
+    "reserve": [
+     {
+      "sid": 1306,
+      "phase": "turnStartState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": false,
+        "hpDamage": 0,
+        "mpDamage": 8,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1506,
+      "a": {
+       "hp": 1000,
+       "mp": 42,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1306
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "sid": 1306,
+      "phase": "turnStartState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "e",
+        "hpAffected": false,
+        "hpDamage": 0,
+        "mpDamage": 1,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1506,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 5,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1306
+       ]
+      }
+     },
+     {
+      "sid": 1307,
+      "phase": "removeState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1505,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1307
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "deadTroop": true,
+      "sid": 1307,
+      "phase": "removeState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1307
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 0,
+       "mp": 6,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      }
+     },
+     {
+      "sid": 1317,
+      "phase": "deselectState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1317
+       ]
+      }
+     },
+     {
+      "sid": 1317,
+      "phase": "deselectState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1514,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 0,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1317
+       ]
+      }
+     },
+     {
+      "sid": 1318,
+      "phase": "turnStartState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1513,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1318
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "sid": 1318,
+      "phase": "turnStartState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1318
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "sid": 1318,
+      "phase": "turnStartState",
+      "value": 0,
+      "got": null,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1318
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "sid": 2007,
+      "phase": "reactState",
+      "value": -1,
+      "got": -1,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2007
+       ]
+      }
+     },
+     {
+      "sid": 2007,
+      "phase": "reactState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1605,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2007
+       ]
+      }
+     },
+     {
+      "sid": 2007,
+      "phase": "reactState",
+      "value": 7,
+      "got": 7,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1605,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2007
+       ]
+      }
+     },
+     {
+      "sid": 2009,
+      "phase": "reactState",
+      "value": -1,
+      "got": -1,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2009
+       ]
+      }
+     },
+     {
+      "sid": 2009,
+      "phase": "reactState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1607,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2009
+       ]
+      }
+     },
+     {
+      "sid": 2009,
+      "phase": "reactState",
+      "value": 7,
+      "got": 7,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1607,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2009
+       ]
+      }
+     },
+     {
+      "sid": 2011,
+      "phase": "reactState",
+      "value": -1,
+      "got": -1,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2011
+       ]
+      }
+     },
+     {
+      "sid": 2011,
+      "phase": "reactState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1599,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2011
+       ]
+      }
+     },
+     {
+      "sid": 2011,
+      "phase": "reactState",
+      "value": 7,
+      "got": 7,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1599,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2011
+       ]
+      }
+     },
+     {
+      "sid": 2026,
+      "phase": "reactState",
+      "value": -1,
+      "got": -1,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2026
+       ]
+      }
+     },
+     {
+      "sid": 2026,
+      "phase": "reactState",
+      "value": 0,
+      "got": 0,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1621,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2026
+       ]
+      }
+     },
+     {
+      "sid": 2026,
+      "phase": "reactState",
+      "value": 7,
+      "got": 7,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1621,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2026
+       ]
+      }
+     },
+     {
+      "sid": 2568,
+      "phase": "confirmState",
+      "value": 5,
+      "got": 5,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1725,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2568
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      }
+     },
+     {
+      "sid": 2568,
+      "phase": "confirmState",
+      "value": 5,
+      "got": 5,
+      "v901": 0,
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 1725,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        2568
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 0,
+       "mp": 6,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      }
+     }
+    ],
+    "troopSize": 3,
+    "mmpA": 200,
+    "regen": [
+     {
+      "sid": 260,
+      "mode": "other",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -400000,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 401000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 999900,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        260
+       ]
+      }
+     },
+     {
+      "sid": 260,
+      "mode": "other",
+      "hp207": true,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -400000,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 401000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000200,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        207,
+        260
+       ]
+      }
+     },
+     {
+      "sid": 260,
+      "mode": "self",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        260
+       ]
+      }
+     },
+     {
+      "sid": 260,
+      "mode": "deadOrigin",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 0,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 0,
+       "mp": 50,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        260
+       ]
+      }
+     },
+     {
+      "sid": 260,
+      "mode": "other",
+      "hp207": false,
+      "ehpIn": 1,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -400000,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [
+       "e"
+      ],
+      "reserved": 0,
+      "a": {
+       "hp": 401000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 0,
+       "mp": 6,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      }
+     },
+     {
+      "sid": 1006,
+      "mode": "other",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -200,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1200,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 998000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1006
+       ]
+      }
+     },
+     {
+      "sid": 1006,
+      "mode": "other",
+      "hp207": true,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -200,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1200,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 998000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        207,
+        1006
+       ]
+      }
+     },
+     {
+      "sid": 1006,
+      "mode": "self",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1006
+       ]
+      }
+     },
+     {
+      "sid": 1006,
+      "mode": "deadOrigin",
+      "hp207": false,
+      "ehpIn": 1000000,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 0,
+       "ehp": 1000000,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [],
+      "anims": [],
+      "collapses": [],
+      "reserved": 0,
+      "a": {
+       "hp": 0,
+       "mp": 50,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 1000000,
+       "mp": 6,
+       "tp": 30,
+       "dead": false,
+       "states": [
+        1006
+       ]
+      }
+     },
+     {
+      "sid": 1006,
+      "mode": "other",
+      "hp207": false,
+      "ehpIn": 1,
+      "before": {
+       "amat": 20,
+       "emat": 12,
+       "ahp": 1000,
+       "ehp": 1,
+       "el": 1,
+       "amhp": 99999999
+      },
+      "sourceErrors": [],
+      "popups": [
+       {
+        "who": "a",
+        "hpAffected": true,
+        "hpDamage": -200,
+        "mpDamage": 0,
+        "tpDamage": 0
+       }
+      ],
+      "anims": [
+       [
+        "a",
+        41
+       ],
+       [
+        "e",
+        532
+       ]
+      ],
+      "collapses": [
+       "e"
+      ],
+      "reserved": 0,
+      "a": {
+       "hp": 1200,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "b": {
+       "hp": 1000,
+       "mp": 50,
+       "tp": 30,
+       "dead": false,
+       "states": []
+      },
+      "e": {
+       "hp": 0,
+       "mp": 6,
+       "tp": 30,
+       "dead": true,
+       "states": [
+        1
+       ]
+      }
+     }
+    ],
+    "gold": {
+     "g0": 0,
+     "after": -300
+    },
+    "tp": [
+     {
+      "tp": 0,
+      "after": 50,
+      "hpAffected": false,
+      "tpDamage": 0,
+      "maxTp": 200
+     },
+     {
+      "tp": 30,
+      "after": 80,
+      "hpAffected": false,
+      "tpDamage": 0,
+      "maxTp": 200
+     },
+     {
+      "tp": 80,
+      "after": 100,
+      "hpAffected": false,
+      "tpDamage": 0,
+      "maxTp": 200
+     },
+     {
+      "tp": 100,
+      "after": 100,
+      "hpAffected": false,
+      "tpDamage": 0,
+      "maxTp": 200
+     }
+    ],
+    "params": [
+     {
+      "who": "a",
+      "p3": 20,
+      "p5": 20,
+      "raw3": 0,
+      "mid": [
+       20,
+       20,
+       -400,
+       -400
+      ],
+      "end": [
+       20,
+       20,
+       0,
+       0
+      ],
+      "v": 2
+     },
+     {
+      "who": "e",
+      "p3": 13,
+      "p5": 13,
+      "raw3": 0,
+      "mid": [
+       13,
+       13,
+       -400,
+       -400
+      ],
+      "end": [
+       13,
+       13,
+       0,
+       0
+      ],
+      "v": 2
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "tp.guarded_apply",
    "setup": {
     "states": [
