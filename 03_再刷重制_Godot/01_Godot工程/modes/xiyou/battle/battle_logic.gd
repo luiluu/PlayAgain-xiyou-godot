@@ -400,6 +400,45 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 		_note_cost_cache[key] = out
 	return _note_cost_cache[key]
 
+## YEP_X_SkillCostItems <Item n Cost: m>（逐行、同一物品累加）：[[物品号, 数量]…]。原版还认武器、防具、按名字、eval 和费率备注，正式数据都没用（参照 target_eval cost.parsed、cost.other_notes）
+static var _item_cost_cache := {}
+static func skill_item_costs(skill: Dictionary) -> Array:
+	var note := str(skill.get("note", ""))
+	if not _item_cost_cache.has(note):
+		var totals := {}
+		for m in RegEx.create_from_string("(?i)<ITEM[ ](\\d+)[ ]COST:[ ](\\d+)>").search_all(note):
+			var id := int(m.get_string(1))
+			totals[id] = int(totals.get(id, 0)) + int(m.get_string(2))
+		var out := []
+		for id in totals:
+			out.append([id, totals[id]])
+		_item_cost_cache[note] = out
+	return _item_cost_cache[note]
+
+## Window_SkillList.drawSkillItemCost（Cost Style 2、格式 ×%1、字号 20）：物品排在 TP、MP、HP 右边（包在 drawTpCost 外）。技能列表和战斗列表共用
+static func item_cost_rows(skill: Dictionary) -> Array:
+	var out := []
+	var costs := skill_item_costs(skill)
+	for i in range(costs.size() - 1, -1, -1):
+		out.append({"text": "×" + str(costs[i][1]), "icon": int(XDB.rec("Items", int(costs[i][0])).get("iconIndex", 0)), "size": 20})
+	return out
+
+## Game_Actor.canPaySkillItemCost：队伍持有数不少于费用；敌人不看物品（Game_BattlerBase 恒真）
+func can_pay_items(a: XBattler, skill: Dictionary) -> bool:
+	if not a.is_actor() or is_item(skill):
+		return true
+	for c in skill_item_costs(skill):
+		if state.item_count(int(c[0])) < int(c[1]):
+			return false
+	return true
+
+## Game_Actor.paySkillItemCost：$gameParty.loseItem（敌人不扣）
+func pay_items(a: XBattler, skill: Dictionary) -> void:
+	if not a.is_actor() or is_item(skill):
+		return
+	for c in skill_item_costs(skill):
+		state.gain_item(int(c[0]), -int(c[1]))
+
 ## YEP_SkillCore skillHpCost：⌊基础＋最大HP×比例⌋、不低于 0；再过熟练度公式（XSkillMastery.cost，正式西游都原样、费用为正时至少 1）。
 ## 异化空壳在战斗中按开场参照生命上限算（Adv:126），见 XAlienBattle.hp_cost_mhp
 static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
@@ -546,6 +585,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if XAlienBattle.blocks_borrowed(state, a, skill):  # 异化百相、无面 meetsSkillConditions：被替换的、没选中的仿形、来源不会了的借来技能
 		return false
+	if not can_pay_items(a, skill):  # YEP_X_SkillCostItems canPaySkillCost：物品不够不能用
+		return false
 	var tusu_pay = XTusu.can_pay(a, skill, float(skill_cost(a, skill).tp))  # 屠苏噬主 canPaySkillCost 包装：屠苏或持武者付得起
 	if tusu_pay != null:
 		return bool(tusu_pay)
@@ -636,6 +677,9 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
 	var foes := enemies if a.is_actor() else actors
 	var friends := actors if a.is_actor() else enemies
+	var custom := target_eval(skill)
+	if not custom.is_empty():
+		return _eval_targets(custom, foes, friends)
 	var scope := int(skill.get("scope", 1))
 	match scope:
 		1:
@@ -667,6 +711,93 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 		11:
 			return [a]
 	return []
+
+## YEP_TargetCore <Custom Target Eval> 的写法（备注原文，不跑 JS）：全库 46 个技能三种（多于 2 个取 2：36，多于 3 个取 2：9，回春术 1），见 _eval_targets。
+## {"more": n}＝随机写法，{"wounded": true}＝回春术 1172；没有这段备注或写法认不出返回 {}（照 scope）
+static var _target_eval_cache := {}
+static func target_eval(skill: Dictionary) -> Dictionary:
+	var note := str(skill.get("note", ""))
+	if note.findn("<Custom Target Eval>") < 0:
+		return {}
+	if not _target_eval_cache.has(note):
+		var out := {}
+		var body := RegEx.create_from_string("(?is)<Custom Target Eval>(.*?)</Custom Target Eval>").search(note)
+		var code := body.get_string(1) if body != null else ""
+		var more := RegEx.create_from_string("foes\\.aliveMembers\\(\\)\\.length>(\\d+)").search(code)
+		if more != null and "tlist.sort" in code:
+			out = {"more": int(more.get_string(1))}
+		elif "user.friendsUnit().aliveMembers()" in code and "tlist.sort" in code:
+			out = {"wounded": true}
+		else:
+			push_warning("认不出的 Custom Target Eval：技能 %s" % str(skill.get("id", "?")))
+		_target_eval_cache[note] = out
+	return _target_eval_cache[note]
+
+
+## YEP_TargetCore makeEvalTargets。不走 repeatTargets，这些技能 repeats 也都是 1。参照 target_eval
+## 随机写法：活着的敌人多于 n 个（36 个技能 n＝2、9 个 n＝3）时打乱取前两个，否则全打。
+## 回春术：受伤的友方，缺血比目前最多的还多就排最前、否则排最后，留前三个，不足三个用第一个补，再打乱；没人受伤时原版是三个 undefined，
+## 后面什么也不发生（只付了消耗，参照 heal.none.run）。
+func _eval_targets(custom: Dictionary, foes: Array, friends: Array) -> Array:
+	if custom.has("more"):
+		var list := alive(foes)
+		return _v8_shuffle(list).slice(0, 2) if list.size() > int(custom.more) else list
+	var hurt := []
+	var most := 0.0
+	for m in alive(friends):
+		var lost: float = m.mhp - m.hp
+		if lost > 0.0:
+			if lost > most and not hurt.is_empty():
+				hurt.insert(0, m)
+			else:
+				hurt.append(m)
+			most = maxf(most, lost)
+	if hurt.is_empty():
+		return []
+	hurt = hurt.slice(0, 3)
+	while hurt.size() < 3:
+		hurt.append(hurt[0])
+	return _v8_shuffle(hurt)
+
+
+## list.sort(function(){return Math.random()-0.5})：每比一次取一个随机数，次数和结果都跟比较结果走。
+## 对照 target_eval 夹具（node 探针，1～8 人 × 15 条磁带）按经验定：不足 8 个＝从第二个起逐个二分插入（pivot 与中点比，小于 0 取左）；
+## 8 个以上（夹具只到 8）＝V8 TimSort 的先找开头连续段（降序翻转）再二分插入。两段各自逐例吻合；为什么 8 个换了写法没查清，队伍上限 4 人，实际只用到前一段
+func _v8_shuffle(source: Array) -> Array:
+	var a := source.duplicate()
+	var n := a.size()
+	if n < 2:
+		return a
+	var order := func() -> float: return _float("target_eval") - 0.5
+	var run := 1
+	if n >= 8:
+		run = 2
+		var descending: bool = order.call() < 0.0
+		while run < n:
+			var o: float = order.call()
+			if (o >= 0.0) if descending else (o < 0.0):
+				break
+			run += 1
+		if descending:
+			var head := a.slice(0, run)
+			head.reverse()
+			for i in run:
+				a[i] = head[i]
+	for start in range(run, n):
+		var pivot = a[start]
+		var left := 0
+		var right := start
+		while left < right:
+			var mid := left + ((right - left) >> 1)
+			if order.call() < 0.0:
+				right = mid
+			else:
+				left = mid + 1
+		for i in range(start, left, -1):
+			a[i] = a[i - 1]
+		a[left] = pivot
+	return a
+
 
 ## MV：按目标的 tgr（受击率）加权随机
 func _random_target(list: Array) -> XBattler:
@@ -1548,6 +1679,7 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 				u.mp -= c.mp
 			u.tp -= c.tp
 			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
+			pay_items(u, skill)  # YEP_X_SkillCostItems paySkillCost：再扣物品
 			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
 	XTusu.pay_after(u, skill, tusu_who)
 	u.pay_cooldown(skill)
