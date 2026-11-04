@@ -257,7 +257,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	if incoming > 0.0 and incoming < 1.0:
 		incoming = 1.0 - (1.0 - incoming) * (1.0 - clampf(pierce, 0.0, 1.0))
 	incoming *= maxf(0.0, frame.incomingMultiplier)
-	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.guarding else 1.0)
+	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
 	var best := {}
 	var cands := []

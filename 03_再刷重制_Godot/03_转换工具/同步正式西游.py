@@ -128,6 +128,7 @@ PROBES = [
     (['state_js_probe.cjs'], ['state_js.json']),
     (['dot_probe.cjs'], ['dot.json']),
     (['barrier_probe.cjs'], ['barrier.json']),
+    (['passive_probe.cjs'], ['passive.json']),
     (['review135_probe.cjs'], ['review135.json']),
     (['stage50_review_probe.cjs'], ['stage50_review.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),
