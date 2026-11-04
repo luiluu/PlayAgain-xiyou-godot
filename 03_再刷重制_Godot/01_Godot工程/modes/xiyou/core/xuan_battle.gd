@@ -6,7 +6,7 @@ extends RefCounted
 ## 第二期：绑定种类登记、寄星／转移／回身、星纹标记、默契结算、附身期间不掉血、移光、留辉、共宿（伤害、双防、并轨 3 级）、列星（星影、目标扩展、到期）、
 ## 星盾流转定轨（10 级）与接力（20 级，installThreeGrowthRelicRuntime）、护盾挡下计护主（mv_oracle/xuan_bind_probe.cjs → tests/xiyou_xuan_bind）。
 ## 先照手动先制（Game_Action.speed +100000）：量过（xuan_auto speed_* 例），OTB 只在回合开始 makeSpeed，这时行动是 makeActions 新建的空白行动，碰不到璃壁，原版实际没效果；
-## 重制改成手动璃壁把璇排到下个回合最前（O-待定，XIANZHAO_MANUAL_FIRST，false 回到原版）。璇玑星盘首回合星契 firstCharge 是 0，不做。
+## 重制改成手动璃壁把璇排到下个回合最前（O-154，XIANZHAO_MANUAL_FIRST，false 回到原版）。璇玑星盘首回合星契 firstCharge 是 0，不做。
 ## 60 级列星（installThreeGrowthRelicRuntime）：列星后首次回光／璃壁给归宿（不看法宝），戴周天命星仪时首次回光额外净化、首次璃壁给星幕；归宿、星幕各让下一次敌方直接伤害 ×0.9，当回合有效。
 ## 星纹标记原版的 removeState 补回不做：包在 Game_Battler 上，角色走 Game_Actor 自有方法，实测移除后不补回。
 ## 星契自律（内部施放、同轨、先照预支、分光、同调）在第三期，盘点见交付单 cc_wukong-xuan2。
@@ -43,7 +43,7 @@ const GONGSU_DEF := [[0.15, 0.30], [20, 60]]
 const YIGUANG_RATE := [0.0, 0.5, 0.75, 1.0]
 const LIEXING_TURNS := 2
 static var _param_guard := false
-## 【cc·悟空·未经审查】O-待定：先照手动璃壁先制。false＝原版（OTB 下没效果）
+## 【cc·悟空·未经审查】O-154：先照手动璃壁先制。false＝原版（OTB 下没效果）
 static var XIANZHAO_MANUAL_FIRST := true
 const LINES := {"transfer": "璇：「我去另一边，有事叫我。」"}
 
@@ -409,7 +409,7 @@ static func hp_after(u, t, value: float, item: Dictionary) -> void:
 		data.mist.erase(t)
 
 
-## O-待定：先照手动璃壁，下个回合排到最前（原版 Game_Action.speed +100000 在 OTB 下没效果）。_otb_user_shift 与排序预览共用
+## O-154：先照手动璃壁，下个回合排到最前（原版 Game_Action.speed +100000 在 OTB 下没效果）。_otb_user_shift 与排序预览共用
 static func manual_first_shift(logic, u, skill: Dictionary) -> int:
 	if not XIANZHAO_MANUAL_FIRST or not is_xuan(u) or data.is_empty() or auto_enabled() or key_of(skill) != "libi":
 		return 0

@@ -203,7 +203,7 @@ func _step(st: Array) -> Array:
 	return [ret, logs]
 
 
-## 手动先制：原版 OTB 下没效果（参照 speed_*：真实流程排序前行动是空白的，硬塞璃壁才排到最前）；O-待定 手动璃壁把璇排到下个回合最前，回退开关关了不动
+## 手动先制：原版 OTB 下没效果（参照 speed_*：真实流程排序前行动是空白的，硬塞璃壁才排到最前）；O-154 手动璃壁把璇排到下个回合最前，回退开关关了不动
 func _order_after_libi(o: Dictionary) -> Array:
 	logic = _battle(o)
 	_step(["use", XUAN, "jixing", 1])
