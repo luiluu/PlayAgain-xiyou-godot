@@ -45,3 +45,8 @@
 
 - 3feb651c passive1：三处补齐＋探针＋专项
 - 本期：交付单
+
+## 云端结果
+
+- 合 main（头 f748c69a）后重跑 `新建工作树.sh --补齐`，`同步正式西游.py --accept-additions` 退出码 0（passive_probe 新增用例已接受；第一次同步因没合最新 main 报 dot.json 错误字段，合并后通过）。
+- 云端选测（258 个场景、7 片，基准 fc7d88f33a，提交 b32ba7099d）：通过，<https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41865550893>。
