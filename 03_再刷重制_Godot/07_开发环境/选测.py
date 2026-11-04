@@ -634,6 +634,10 @@ def report(sel, out):
     else:
         print('  结论：Godot 场景 %d 个%s；非 Godot 检查：%s；文档与登记检查照常' % (
             len(sel['scenes']), '（' + ' '.join(sel['scenes']) + '）' if sel['scenes'] else '', '、'.join(sel['checks']) or '无'), file=out)
+    # 工具快速回归（tools65）：只改文档／登记以外的改动，车道交付都要带；它几十秒跑完替身名单、插件备注、状态 js 翻译这些「合并时才挂」的回归
+    if sel['full'] or sel['scenes'] or sel['checks']:
+        print('  工具快速回归（车道交付必跑，几十秒）：python3 03_再刷重制_Godot/07_开发环境/工具回归.py'
+              '  ← 改了 检查.sh／选测对照.json／转换器／翻译／插件备注或新增检查时尤其要跑', file=out)
 
 
 def main(argv=None):

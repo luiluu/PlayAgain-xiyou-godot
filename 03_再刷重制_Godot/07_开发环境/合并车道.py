@@ -78,6 +78,23 @@ def run(root, args, env=None):
     subprocess.run(list(map(str, args)), cwd=root, check=True, env=env)
 
 
+def tool_gate(root):
+    """选测收尾（--affected）在开云端选测／本机选测之前先跑 工具回归.py（几十秒的工具快速回归：替身名单、插件备注、状态 js 翻译等），
+    失败就早停，省云端额度和一轮本机检查（tools65：这类回归过去要到本机收尾才挂，三次各白耗一轮云端＋10 分钟）。
+    XIYOU_TOOL_GATE=0 关；脚本不存在（夹具仓库）时跳过。失败抛 CalledProcessError，调用处和检查失败一样走 report_batch。"""
+    script = root / ENV / '工具回归.py'
+    if os.environ.get('XIYOU_TOOL_GATE', '1') == '0':
+        return
+    if not script.is_file():
+        print('提示：没有 工具回归.py，跳过工具快速回归', flush=True)
+        return
+    try:
+        run(root, [sys.executable, script])
+    except subprocess.CalledProcessError:
+        print('工具快速回归没过：先修工具（上面 ✗ 项），云端选测与本机检查都没有开始；修好后重跑同一条 --finish。', flush=True)
+        raise
+
+
 def release_only_path(path):
     """版本号、登记、文档类文件（与 云端选测.py 的 release_only 同口径）：收尾提交里只有这些改动不算手补代码。"""
     p = str(path)
@@ -1384,6 +1401,8 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
                 env = cloud_env(state, *load_batch(state_file.parent))
             reuse_note(root).unlink(missing_ok=True)  # 检查.sh 里 沿用车道.py 会重写；没调到它时不能拿上次的
             try:
+                if affected:
+                    tool_gate(root)
                 run(root, check, env=env)
             except subprocess.CalledProcessError:
                 report_batch(root, load_batch(state_file.parent), state)
@@ -1482,6 +1501,8 @@ def close_batch(root, folder, affected=False, cloud=False):
         raise RuntimeError('main 有未提交改动，先提交或移走再收口')
     check = [ENV / '检查.sh', '--oracle'] + (['--affected', pending[0]['base']] if affected else []) + (['--cloud'] if cloud else [])
     try:
+        if affected:
+            tool_gate(root)
         run(root, check, env=cloud_env(*pending) if cloud else None)
     except subprocess.CalledProcessError:
         report_batch(root, pending[:-1], pending[-1])
