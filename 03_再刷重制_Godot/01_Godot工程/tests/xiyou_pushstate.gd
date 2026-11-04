@@ -141,6 +141,36 @@ func _invoke_case(cfg: Dictionary) -> Dictionary:
 		logic._invoke(foe, sk, a)
 	return {"actor": _snap(a), "foe": _snap(foe), "guard": _snap(guard) if guard else null}
 
+## 隐月（<Max State Floor: 0>）：技能 7489 剑饮空月 PushsubState1323 100%。原版连命中恒 1 层（dsPassiveSkill 已带着不重挂，rules9b 实测），
+## 重制同样只有一份，state_ids 不重复。
+func _max_state_floor_case() -> void:
+	var s := XState.new_game(2, 1, [8, 9, 10])
+	XState.current = s
+	var a: XActor = s.actor(1)
+	a.equips.clear()
+	a.skill_ids.clear()
+	a.state_ids.clear()
+	for i in a.equip_slots().size():
+		a.equips.append({})
+	a.learn_skill(7489)
+	a.param_mark_dirty()
+	a.refresh_passive()
+	a.recover_all()
+	var logic := FixedLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(1, s)
+	logic.rnd = 0.0
+	var foe: XEnemy = logic.enemies[0]
+	var sk: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	sk.damage.variance = 0
+	sk.damage.critical = false
+	check("floor.source", a.passive_cache().pushSelfStates.any(func(r): return int(r.stateId) == 1323), a.passive_cache().pushSelfStates)
+	for i in 4:
+		foe.hp = foe.mhp
+		logic.apply(a, sk, foe)
+	check("floor.single", a.state_ids.count(1323) == 1, a.state_ids)
+
+
 func _run() -> void:
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
@@ -178,5 +208,6 @@ func _run() -> void:
 		check(c.id + ".after", got.after.user.states == o.after.user.states and got.after.target.states == o.after.target.states, [got.after, o.after])
 		if not c.setup.get("pre", []).is_empty():
 			check(c.id + ".no_reapply", got.after.target.turns == o.after.target.turns, [got.after.target.turns, o.after.target.turns])
+	_max_state_floor_case()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)

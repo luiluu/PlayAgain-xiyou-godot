@@ -1865,14 +1865,14 @@ func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 	return skill
 
 
-## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
+## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf；YEP_ElementCore 再加属性反弹，任何命中类型），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
 ## 反射：行动作用到行动者自己。反击：目标对行动者普通攻击，原行动对该目标无效。
 ## dsPassiveSkill 必中（角色的 SkillCertainHit 被动）时不会被反射/反击。MV 不区分敌我。
 func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	# Game_Battler.setLastTarget（YEP invokeAction）：强制行动「上次目标」用
 	u.last_target_index = maxi(0, (actors if t.is_actor() else enemies).find(t))
 	var sure := certain_hit(u, skill)
-	var mrf := t.mrf if XDamage.is_magical(skill) and not sure else 0.0
+	var mrf := 0.0 if sure else (t.mrf if XDamage.is_magical(skill) else 0.0) + XDamage.element_reflect_rate(skill, u, t)  # 属性反弹不看命中类型
 	if _float("reflection") < mrf:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
@@ -2251,6 +2251,8 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 		XAlienBattle.pop_action()
 
 
+## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
+## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层），重制不需要多层机制；说明「可无限叠加」与原版代码不符。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):

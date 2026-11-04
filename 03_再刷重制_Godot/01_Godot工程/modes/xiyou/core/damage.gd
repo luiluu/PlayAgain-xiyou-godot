@@ -91,6 +91,15 @@ static func _sum_yep(b: XBattler, field: String, e: int, objs: Array) -> float:
 		v += float(o.get("yep", {}).get(field, {}).get(str(e), 0.0))
 	return v
 
+## YEP_ElementCore Game_Action.itemMrf 的属性反弹（<Element Reflect x: +y%>，全游戏只有防具 4998）：行动的每个属性都加目标的反弹率，
+## 不看命中类型（物理、必中也反弹，实测 mv_oracle/multi_element_probe）。数据里没有 <Bypass Element Reflect>。
+static func element_reflect_rate(item: Dictionary, a: XBattler, t: XBattler) -> float:
+	var objs := _yep_objects(t)
+	var rate := 0.0
+	for e in action_elements(item, a):
+		rate += _sum_yep(t, "elementReflect", int(e), objs)
+	return rate
+
 ## YEP_ElementCore：增幅来自状态；角色另加装备、角色、职业。
 static func _yep_objects(b: XBattler) -> Array:
 	var objs := b.states()

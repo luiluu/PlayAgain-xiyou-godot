@@ -990,6 +990,8 @@ YEP_C1 = re.compile(r'<(?:ELEMENT AMPLIFY) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>'
 YEP_C2 = re.compile(r'<(?:ELEMENT AMPLIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
 YEP_CN1 = re.compile(r'<(?:ELEMENT AMPLIFY) (\d+): ([+\-]\d+(?:\.\d+)?)>', re.I)
 YEP_CN2 = re.compile(r'<(?:ELEMENT AMPLIFY) (.*): ([+\-]\d+(?:\.\d+)?)>', re.I)
+YEP_RF1 = re.compile(r'<(?:ELEMENT REFLECT) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
+YEP_RF2 = re.compile(r'<(?:ELEMENT REFLECT) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
 YEP_C3 = re.compile(r'<(?:ELEMENT MAGNIFY) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
 YEP_C4 = re.compile(r'<(?:ELEMENT MAGNIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
 YEP_CRIT = re.compile(r'<(?:CRITICAL MULTIPLIER): ([+\-]\d+)([%％])>', re.I)
@@ -1020,6 +1022,7 @@ def core_enemy_notetags(rec):
 
 def parse_yep(note, element_ids):
     amp, ampn, mag, crit, multi = {}, {}, {}, 0.0, []
+    reflect = {}
     for line in re.split(r'[\r\n]+', note or ''):
         def eid(name):
             return element_ids.get(name.upper().strip())
@@ -1035,6 +1038,10 @@ def parse_yep(note, element_ids):
             mag[m.group(1)] = float(m.group(2)) * 0.01
         elif (m := YEP_C4.search(line)) and eid(m.group(1)):
             mag[str(eid(m.group(1)))] = float(m.group(2)) * 0.01
+        if m := YEP_RF1.search(line):
+            reflect[m.group(1)] = float(m.group(2)) * 0.01
+        elif (m := YEP_RF2.search(line)) and eid(m.group(1)):
+            reflect[str(eid(m.group(1)))] = float(m.group(2)) * 0.01
         if m := YEP_CRIT.search(line):
             crit = float(m.group(1)) * 0.01
         if m := YEP_MULTI2.search(line):
@@ -1045,6 +1052,7 @@ def parse_yep(note, element_ids):
     if amp: out['elementAmplify'] = amp
     if ampn: out['elementAmplifyN'] = ampn
     if mag: out['elementMagnify'] = mag
+    if reflect: out['elementReflect'] = reflect
     if crit: out['critMultBonus'] = crit
     if multi: out['multipleElements'] = multi
     return out

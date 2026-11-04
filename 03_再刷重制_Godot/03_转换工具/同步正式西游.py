@@ -129,6 +129,7 @@ PROBES = [
     (['review135_probe.cjs'], ['review135.json']),
     (['stage50_review_probe.cjs'], ['stage50_review.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),
+    (['multi_element_probe.cjs'], ['multi_element.json']),
     (['qiyu_probe.cjs'], ['qiyu.json']),
     (['cat_probe.cjs'], ['cat.json']),
     (['race_battle_probe.cjs'], ['race_battle.json']),
