@@ -170,6 +170,11 @@ static func run(code: String, interp) -> Array:
 		var picked = await _target_actor_script(js, interp)
 		if picked != null:
 			return picked
+	# plugins.js 没装载的插件：签到板 Star_SignBoard（CE6 签到、CE330／373 补签卡／补签信）、状态图鉴 Scene_StateBook（CE429）、
+	# 地图快捷栏 MKR_MapItemSlot（CE478）。原版读到未定义的名字抛错，被 YEP command355 吞掉，无操作；
+	# 对照 oracle script_gaps unloaded.*（存档内容与场景都不变）。
+	if _re("^(SceneManager\\.push\\(Scene_(StarSignBoard|StateBook)\\)|Star\\.SignBoard\\.ConductItemMakeUpSign\\((true|false)\\)|\\$gameParty\\.openItemSlotMenu\\(\\));?$").search(js):
+		return []
 	if js.contains("$gameActors.length+1") or js.contains("$gameActors.length + 1"):
 		return []
 	if js.contains("$gameParty.RomGet") and js.contains("Math.random"):

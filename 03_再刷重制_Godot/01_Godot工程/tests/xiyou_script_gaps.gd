@@ -11,6 +11,8 @@ extends Node
 ## - 第三批（events3）：投石问路 CE2486 每个敌人一条暴闪提示（troopCev）；猛击 CE78 带 345 且穿着防具 506 时全体敌人加 43（setArmorState.*）。
 ## - 第四批（八戒 events1）：极尽升华 CE1388～1390（Map047／147／182 守层者送原初火种后调）：会 A 的角色（在队、不在队都算）换成 B，
 ##   对照 ascend.* 十二例；再核存读档后 actor_ops 带 from、读档后才建的角色同样套用；漏了 forgetSkill 的变体仍记认不出，无条件版本照普通循环认得。
+## - 没装载的插件（八戒 events1）：签到板／补签（CE6、330、373）、状态图鉴 CE429、地图快捷栏 CE478／485：原版抛错被吞，无操作，
+##   对照 unloaded.* 七例（存档内容、场景都不变）；`itemslot` 只认 show／hide，别的写法仍记认不出。
 ## 反向：写法稍变（速度写成变量、击败数写成别的对象）仍记认不出。
 const REF := "oracle/script_gaps.json"
 
@@ -319,12 +321,32 @@ func _ascend(ref: Dictionary) -> void:
 	_check("ascend_missing_forget_unknown", not miss2.is_empty(), miss2)
 
 
+## 没装载的插件：整段无操作、不记认不出，存档内容不变（同 oracle unloaded.*）
+func _unloaded(ref: Dictionary) -> void:
+	for pair in [["signBoardScene", 6], ["makeUpSign", 330], ["makeUpSign", 373], ["stateBook", 429], ["openItemSlot", 478]]:
+		var c: Dictionary = ref["unloaded.%s" % pair[0]]
+		var s := XState.new_game(3, 1, [8, 9, 10])
+		XState.current = s
+		var before := JSON.stringify(s.to_dict())
+		var it := MVInterpreter.new(self, 0, 0, XDB.rec("CommonEvents", int(pair[1])).list)
+		await it.run()
+		_check("unloaded_%s_ce%d" % [pair[0], pair[1]], it.skipped.is_empty() and bool(c.observed.sameState) and JSON.stringify(s.to_dict()) == before, [it.skipped, c.observed])
+	# CE485 的两条插件指令分开核（CE 里夹着开关与提示，这里只核插件指令本身）
+	for line in ["itemslot show", "itemslot hide"]:
+		var it2 := MVInterpreter.new(self, 0, 0, [])
+		it2._plugin_command(line)
+		_check("itemslot_cmd_" + line.split(" ")[1], it2.skipped.is_empty(), it2.skipped)
+	var it3 := MVInterpreter.new(self, 0, 0, [])
+	it3._plugin_command("itemslot toggle")
+	_check("itemslot_other_unknown", it3.skipped.size() == 1, it3.skipped)
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_script_gaps"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 32, ref.size())
+	_check("ref_loaded", ref.size() == 39, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
 	await _cleanup(ref)
@@ -332,6 +354,7 @@ func _run() -> void:
 	_battle_states(ref)
 	_battle_batch3(ref)
 	await _ascend(ref)
+	await _unloaded(ref)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
