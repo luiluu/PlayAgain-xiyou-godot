@@ -16,8 +16,6 @@ const WIDTH := 440.0
 const DETAIL_W := 480.0
 const DETAIL_H := 400.0
 const BOX := Vector2(1280, 720)
-const BAR_X := 105.0
-const BAR_Y := 131.5
 const INK := Color("#ffffff")
 const MUTED := Color("#c9ced8")
 const EDGE := Color(1, 1, 1, 0.28)
@@ -122,12 +120,12 @@ func _process(_delta: float) -> void:
 
 func _layout() -> void:
 	var help: Rect2 = help_source.call() if help_source.is_valid() else Rect2()
-	var y := BAR_Y
-	var bar_rect := Rect2(BAR_X, y, WIDTH, BAR_HEIGHT)
+	var y := XBossHpBar.layout_bottom() + 8.0  # 贴在 Boss 血条框下方，隔 8
+	var bar_rect := Rect2(XBossHpBar.layout_pos().x, y, WIDTH, BAR_HEIGHT)
 	if help.has_area() and bar_rect.intersects(help):
 		y = maxf(12.0, minf(y, help.position.y - BAR_HEIGHT - 8.0))
-	bar.position = Vector2(BAR_X, y)
-	var dx := maxf(12.0, minf(BAR_X, BOX.x - DETAIL_W - 12.0))
+	bar.position = Vector2(XBossHpBar.layout_pos().x, y)
+	var dx := maxf(12.0, minf(XBossHpBar.layout_pos().x, BOX.x - DETAIL_W - 12.0))
 	var dy := maxf(12.0, minf(y + BAR_HEIGHT + 6.0, BOX.y - DETAIL_H - 12.0))
 	detail.position = Vector2(dx, dy)
 	detail.visible = open and not (help.has_area() and Rect2(dx, dy, DETAIL_W, DETAIL_H).intersects(help))

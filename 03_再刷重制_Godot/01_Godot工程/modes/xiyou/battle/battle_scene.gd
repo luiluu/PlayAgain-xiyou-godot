@@ -55,6 +55,7 @@ var ui: Control
 var message: XMessageBox
 var help_card: XHelpCard
 var boss_panel: XBossStatusPanel
+var boss_hp: XBossHpBar
 var log_canvas: XMVCanvas
 var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
@@ -338,6 +339,15 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 
 
 func _build_ui(vs: Vector2) -> void:
+	# Boss 血条（MOG_BossHP）：最先加，窗口在它上面（原版 hudField 在窗口层下）
+	boss_hp = XBossHpBar.new()
+	boss_hp.hp_source = func(e): return view(e)
+	boss_hp.busy_source = func(): return message._busy
+	var hp_holder := Node2D.new()
+	hp_holder.position = _origin
+	ui.add_child(hp_holder)
+	hp_holder.add_child(boss_hp)
+	boss_hp.setup(logic.enemies)
 	# 战斗日志 Window_BattleLog (0,92,1280,388)：每行底下一条黑色 64/255 的带子（x 0、宽 1280、行高 36），
 	# <SIMPLE> 行（YEP 行动名：图标＋名字）居中，其余靠左。
 	log_canvas = XMVCanvas.new()
@@ -599,6 +609,7 @@ func _main() -> void:
 			finished.emit(0)
 			return
 		if logic.is_lost():
+			boss_hp.ended()
 			otb.hide_bar()
 			_end_record()
 			# 快速战斗只跳过失败信息（见 XHangUp）
@@ -672,6 +683,7 @@ func _sync_appeared() -> void:
 
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）
 func _escape_success() -> void:
+	boss_hp.ended()
 	_close_windows()
 	_end_record()
 	otb.hide_bar()
@@ -1608,6 +1620,8 @@ func _hit_visual(l: Dictionary) -> bool:
 	for c in l.get("custom_popups", []):
 		_custom_popup(c.target, str(c.text), int(c.format))  # 黑闪 announce：customPopup(label, 2)
 		_log_add(str(c.log))  # _logWindow.push('addText', 名字＋打出了＋label)
+	if t is XEnemy:
+		boss_hp.applied(t, float(view(t).hp))  # MOG_BossHP：Game_Action.apply 记命中的 Boss
 	combo.applied(l.user, t, hit, int(l.skill.get("damage", {}).get("type", 0)), float(l.hp) if float(l.hp) != 0.0 else float(l.mp))
 	if record and hit:
 		record.record(l.user, t, float(l.get("record_hp", l.hp)))
@@ -1839,6 +1853,7 @@ func _end_record() -> void:
 
 ## 胜利：先发放一次奖励，再放大胜利镜头，最后显示 Olivia 的结算布局。
 func _victory() -> void:
+	boss_hp.ended()
 	_close_windows()
 	_end_record()
 	for a in logic.alive(logic.actors):
