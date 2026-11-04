@@ -613,7 +613,8 @@ func battle_items() -> Array:
 
 
 # ---- 目标 ----
-func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
+## confusable：行动者非强制的正式行动（execute 传 not forcing），带混乱类状态（restriction 1～3）时目标改走 XConfusion
+func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confusable := false) -> Array:
 	# 异化 makeTargets 包装：逆祷原 scope 3～6 改随机友方 n 个，恶愿去掉自己
 	var n := XAlienBattle.prayer_random_count(skill)
 	if n > 0:
@@ -625,7 +626,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Arr
 		XYunshang.set_primary(a, out)
 		return out
 	var tusu_list = XTusu.targets(self, a, skill, chosen)  # 屠苏 makeTargets 包装：自己的和鸣、锁定给持武者，金汤滤掉形态中的本体
-	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, _targets_for(a, skill, chosen) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
+	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, (XConfusion.targets(self, a, skill) if confusable and XConfusion.confused(a) else _targets_for(a, skill, chosen)) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
@@ -826,9 +827,9 @@ func decide(b: XBattler) -> Array:
 	if b is XEnemy:
 		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
 		if not cat.is_empty():
-			return cat
+			return XConfusion.prepare_enemy(b, cat)  # Game_Action.prepare：混乱类状态（restriction 1～3）的敌人行动换成普通攻击，行动选择的随机数照取
 		var sk := enemy_action(b)
-		return [null if sk.is_empty() else sk, null]  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
+		return XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null])  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	return auto_battle_action(b) if auto else [b.attack_skill(), null]
 
 
@@ -1603,7 +1604,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	if XActionSequence.has_sequence(skill):
 		var times := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1))))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
-		for t in targets_for(u, skill, chosen):
+		for t in targets_for(u, skill, chosen, not forcing):
 			for i in range(maxi(1, times)):
 				list.append(t)
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
@@ -1615,7 +1616,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		return logs
 	var repeats := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
-	var targets := targets_for(u, skill, chosen)
+	var targets := targets_for(u, skill, chosen, not forcing)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）

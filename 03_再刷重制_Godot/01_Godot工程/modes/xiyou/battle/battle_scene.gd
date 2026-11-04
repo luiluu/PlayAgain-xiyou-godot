@@ -685,7 +685,7 @@ func _command(u: XBattler):
 	if u is XActor and logic.can_move(u) and XHangUp.is_active(XState.current):
 		# 技能顺序表／智能战斗AI（XBattleLogic.auto_battle_action）
 		return logic.auto_battle_action(u)
-	if not (u is XActor) or logic.auto or not logic.can_move(u):
+	if not (u is XActor) or logic.auto or not logic.can_move(u) or XConfusion.confused(u):  # 混乱类状态：canInput 假，没有指令窗，直接普通攻击（自动战斗在上面先走）
 		return logic.decide(u)
 	_set_active(u)
 	while true:
