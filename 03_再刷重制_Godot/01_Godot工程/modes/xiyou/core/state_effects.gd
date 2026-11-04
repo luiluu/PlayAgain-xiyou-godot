@@ -58,6 +58,16 @@ static var battle_units := {}
 ## YEP_X_CriticalControl 的 $gameSystem._forceCritical（必爆 541、755）；force_previous 是 Game_Action._prevForcedCriticalHit，每次 apply 清
 static var force_critical := false
 static var force_previous = null
+## fix2 审查 38 P3-7：必爆 541、755 同时挂着时，原版 previous 被第二个状态盖成 true，整场强制暴击。按层数记，全部解除才回到最初值
+static var FIX_FORCE_CRIT_STACK := true
+static var force_depth := 0
+static var force_base := false
+## fix2：护体罡气 2562 说明写 9.9% 伤害由蓝代替，原版代码 1%（需要 FIX_QI_GUARD_2562 开着）
+static var FIX_QI_RATE_2562 := true
+## fix2：剑道争锋 2575 说明写用剑时伤害 +3.5%，fix1 按层数 0.5%×层、不限武器（需要 FIX_SWORD_2575 开着）
+static var FIX_SWORD_RATE_2575 := true
+## fix2：万古青天一株莲 7303 说明写回复所有队友（包括死亡），技能 scope 8 只打活的
+static var FIX_LOTUS_7303 := true
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -193,10 +203,20 @@ class PhaseValueProgram:
 				b.add_param(int(_number(args[0])), _number(args[1]))
 				resources.refresh(b)
 			"force_critical_on":
-				XStateEffects.force_previous = XStateEffects.force_critical
+				if XStateEffects.FIX_FORCE_CRIT_STACK:
+					if XStateEffects.force_depth == 0:
+						XStateEffects.force_base = XStateEffects.force_critical
+					XStateEffects.force_depth += 1
+				else:
+					XStateEffects.force_previous = XStateEffects.force_critical
 				XStateEffects.force_critical = true
 			"force_critical_restore":
-				if XStateEffects.force_previous != null:
+				if XStateEffects.FIX_FORCE_CRIT_STACK:
+					if XStateEffects.force_depth > 0:
+						XStateEffects.force_depth -= 1
+						if XStateEffects.force_depth == 0:
+							XStateEffects.force_critical = XStateEffects.force_base
+				elif XStateEffects.force_previous != null:
 					XStateEffects.force_critical = XStateEffects.force_previous
 			"set_hp":
 				resources.set_resource(b, "hp", _number(args[0]))
@@ -291,7 +311,10 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	for raw in effects:
 		var e: Dictionary = raw
 		if e.has("fix") and fix_on(str(e.fix)):
-			e = {"phase": e.phase, "op": "effect_program", "program": e.fixed}
+			var program = e.fixed
+			if e.has("fix2") and fix_on(str(e.fix2)):
+				program = e.fixed2
+			e = {"phase": e.phase, "op": "effect_program", "program": program}
 		var op := str(e.get("op", ""))
 		if op == "mul":
 			if _active(e, c):
@@ -466,6 +489,8 @@ static func fix_on(name: String) -> bool:
 		"FIX_ELYSIUM_1301": return FIX_ELYSIUM_1301
 		"FIX_ORDER_TIERS": return FIX_ORDER_TIERS
 		"FIX_ITACHI_1318": return FIX_ITACHI_1318
+		"FIX_QI_RATE_2562": return FIX_QI_RATE_2562
+		"FIX_SWORD_RATE_2575": return FIX_SWORD_RATE_2575
 	return false
 
 

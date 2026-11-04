@@ -221,6 +221,7 @@ func _take_state_reserves() -> void:
 func _start_battle_effects() -> void:
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	XStateEffects.force_critical = false
+	XStateEffects.force_depth = 0
 	if XStateEffects.FIX_QUEUE_CLEAR:
 		XStateEffects.clear_queues()
 	_battle_resources = _new_lifecycle_resources()
@@ -703,6 +704,8 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 			low.sort_custom(func(x, y): return x.hp_rate() < y.hp_rate())
 			return low.slice(0, 1)
 		8:
+			if _lotus_all(skill):
+				return friends.duplicate()  # 说明「回复所有队友（包括死亡）」
 			return alive(friends)
 		9:
 			if chosen and chosen.is_dead() and friends.has(chosen):
@@ -1697,6 +1700,11 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 
 
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
+## fix2：万古青天一株莲（7303）按说明作用于所有队友，含倒下的
+func _lotus_all(skill: Dictionary) -> bool:
+	return XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303
+
+
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
 	# 行动无效（原版没有退回攻击）：敌人走核心 processTurn，isValid 为假整次跳过（不 startAction、不付费）；
@@ -1767,7 +1775,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
 	for t in targets:
 		for i in range(maxi(1, repeats)):
-			if t.is_dead() and not [9, 10].has(int(skill.scope)):
+			if t.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
 				break
 			if u.is_dead():
 				break
@@ -1881,7 +1889,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var tt := substitute_for(skill, t)
 	XXuanBattle.note_target(tt)  # 璇 Game_Action.apply 包装：记主行动打到的敌人（棱光跟打）。记在这里不进 apply：子行动是新 Game_Action，黄泉扩散、镜流补段 oldApply 绕过（审查 35b P3-1）
 	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
-	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	var used := _lotus_all(skill) or (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
 	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
 	var wrapped := []
@@ -2095,12 +2103,13 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
 	XStateEffects.force_previous = null
+	XStateEffects.force_depth = 0
 	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
 	var user_was_alive := u.is_alive()
-	var used := not blocked and (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead()  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
+	var used := not blocked and (_lotus_all(skill) or (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead())  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
 	XAlienBattle.seal_last(self, u, skill, t, used and not r.missed and not r.evaded)  # 异化蚀术 apply 包装：命中后封印
@@ -2153,7 +2162,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var dmg: Dictionary = skill.damage
 	if XImportedBalance.blocks(u, skill):
 		return r  # 导入角色平衡：Game_Action.apply 对禁用角色／号角直接返回
-	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10]:
+	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10] and not _lotus_all(skill):
 		return r
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)

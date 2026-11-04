@@ -1341,6 +1341,10 @@ func _fixes_off() -> void:
 	XStateEffects.FIX_MARK_5576 = false
 	XStateEffects.FIX_ITACHI_1318 = false
 	XStateEffects.FIX_CRIMSON_1683 = false
+	XStateEffects.FIX_QI_RATE_2562 = false
+	XStateEffects.FIX_SWORD_RATE_2575 = false
+	XStateEffects.FIX_FORCE_CRIT_STACK = false
+	XStateEffects.FIX_LOTUS_7303 = false
 
 
 func _fixes_on() -> void:
@@ -1355,6 +1359,10 @@ func _fixes_on() -> void:
 	XStateEffects.FIX_MARK_5576 = true
 	XStateEffects.FIX_ITACHI_1318 = true
 	XStateEffects.FIX_CRIMSON_1683 = true
+	XStateEffects.FIX_QI_RATE_2562 = false  # fix1 的旧断言按 1%／层数，新的 9.9%／3.5% 例单独开
+	XStateEffects.FIX_SWORD_RATE_2575 = false
+	XStateEffects.FIX_FORCE_CRIT_STACK = true
+	XStateEffects.FIX_LOTUS_7303 = true
 
 
 func _fix_blocks() -> void:
@@ -1375,6 +1383,23 @@ func _fix_blocks() -> void:
 	e.state_ids.append(2562)
 	var got := XStateEffects.run_one("react", e, st.call(2562), _action_ctx(a, e, 200.0))
 	check("fix.2562", got == 199.0 and e.mp == 0.0 and not e.state_ids.has(2562), [got, e.mp, e.state_ids])
+	# fix2 护体罡气说明：9.9% 伤害由蓝代替
+	XStateEffects.FIX_QI_RATE_2562 = true
+	e = _plain(1000.0)
+	e.mp = 100.0
+	e.state_ids.append(2562)
+	got = XStateEffects.run_one("react", e, st.call(2562), _action_ctx(a, e, 1000.0))
+	check("fix2.2562.rate", got == 901.0 and e.mp == 1.0 and e.state_ids.has(2562), [got, e.mp, e.state_ids])
+	e.mp = 50.0
+	got = XStateEffects.run_one("react", e, st.call(2562), _action_ctx(a, e, 1000.0))
+	check("fix2.2562.empty", got == 950.0 and e.mp == 0.0 and not e.state_ids.has(2562), [got, e.mp, e.state_ids])
+	XStateEffects.FIX_QI_GUARD_2562 = false
+	e = _plain(1000.0)
+	e.mp = 100.0
+	got = XStateEffects.run_one("react", e, st.call(2562), _action_ctx(a, e, 1000.0))
+	check("fix2.2562.dep_off", got == 990.0, got)  # fix1 开关关了，第二份跟着不用，回原版 1%
+	XStateEffects.FIX_QI_GUARD_2562 = true
+	XStateEffects.FIX_QI_RATE_2562 = false
 	# 永世乐土：每个存活队友减 4%，最高 13%
 	for row in [[1, 100.0], [2, 96.0], [3, 92.0], [4, 88.0], [6, 87.0]]:
 		e = _plain()
@@ -1397,6 +1422,33 @@ func _fix_blocks() -> void:
 	XStateEffects.run_one("remove", u, st.call(2575), res.call())
 	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
 	check("fix.2575.removed", got == 1000.0, got)
+	# fix2 剑道争锋说明：用剑（武器类型 2）时伤害 +3.5%，不看层数
+	XStateEffects.FIX_SWORD_RATE_2575 = true
+	for row in [[2, 1035.0], [11, 1000.0], [0, 1000.0]]:
+		var sw := WeaponActor.new()
+		sw.setup(1)
+		sw.weapon_type = int(row[0])
+		XStateEffects.run_one("apply", sw, st.call(2575), res.call())
+		got = XStateEffects.run_one("confirm", sw, st.call(2575), _action_ctx(sw, a, 1000.0))
+		check("fix2.2575.wt%d" % row[0], got == row[1], [row, got])
+	XStateEffects.FIX_SWORD_RATE_2575 = false
+	# 必爆 541、755 同时挂：先后解除后回到最初值（原版笔误：被第二个盖成 true）
+	for on in [true, false]:
+		XStateEffects.FIX_FORCE_CRIT_STACK = on
+		XStateEffects.force_critical = false
+		XStateEffects.force_depth = 0
+		XStateEffects.force_previous = null
+		var fc := _plain()
+		var crit_item := {"id": 1, "damage": {"type": 1, "elementId": 0, "critical": true}}
+		var cctx := _action_ctx(a, fc, 0.0, crit_item)
+		for sid in [541, 755]:
+			XStateEffects.run_one("select", fc, st.call(sid), cctx)
+		check("fix2.crit_stack.during.%s" % on, XStateEffects.force_critical)
+		for sid in [541, 755]:
+			XStateEffects.run_one("deselect", fc, st.call(sid), cctx)
+		check("fix2.crit_stack.%s" % on, XStateEffects.force_critical == (not on), XStateEffects.force_critical)
+	XStateEffects.FIX_FORCE_CRIT_STACK = true
+	XStateEffects.force_critical = false
 	# 挨打反击：受伤 50% 持有者打回去，不清这一击的结果
 	var hero := _plain()
 	var foe := _plain()
@@ -1470,6 +1522,16 @@ func _fix_blocks() -> void:
 	# 排到的强制行动真能跑（一株莲）：逻辑取得走、有记录
 	var forced: Array = logic._force_action([1, int(actor.actor_id), 7303, -2], null)
 	check("fix.1301.force_runs", not forced.is_empty(), forced.size())
+	# fix2 一株莲说明：回复所有队友（包括死亡）
+	for on in [true, false]:
+		XStateEffects.FIX_LOTUS_7303 = on
+		var mate: XBattler = logic.actors[1]
+		mate.hp = 0.0
+		if not mate.state_ids.has(1):
+			mate.state_ids.append(1)
+		var lotus_logs: Array = logic._force_action([1, int(actor.actor_id), 7303, -2], null)
+		check("fix2.lotus.%s" % on, mate.is_alive() == on, [mate.hp, mate.state_ids, lotus_logs.size(), logic.targets_for(actor, XDB.rec("Skills", 7303)).size(), actor.is_dead()])
+	XStateEffects.FIX_LOTUS_7303 = true
 	# 审查 38 P2-1：上一场残留的强制行动／预约不进下一场
 	XStateEffects.queue_force_quiet(actor, 5576, 0)
 	XStateEffects._reserves.append(2)

@@ -553,6 +553,14 @@ EFFECT_FIXES = {
         ('FIX_ITACHI_1318', 'if ($gameVariables.value(1163) != 1) { user.reserve(1513); }'),
 }
 
+# fix2：在 fix1 修正之上再按技能说明改（Kyo 2026-11-04：说明与代码对不上的一律按说明走）。开关与 fix1 的开关都开时才用第二份程序。
+EFFECT_FIXES2 = {
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { var mpDmg = Math . floor ( value * 0.01 ) ; mpDmg = Math . min ( mpDmg , target . mp ) ; target . gainMp ( - mpDmg ) ; value - = mpDmg ; if ( target . mp === 0 ) { target . removeState ( 1662 ) ; } }'):  # 2562 说明：9.9% 伤害由蓝代替
+        ('FIX_QI_RATE_2562', 'if (value > 0 && this.isHpEffect()) { var mpDmg = Math.floor(value * 0.099); mpDmg = Math.min(mpDmg, target.mp); target.gainMp(-mpDmg); value -= mpDmg; if (target.mp === 0) { target.removeState(2562); } }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.005 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }'):  # 2575 说明：用剑时伤害 +3.5%
+        ('FIX_SWORD_RATE_2575', 'if (this.isHpEffect() && value > 0 && user.isActor() && user.firstWeaponType() === 2) { value += Math.ceil(value * 0.035); }'),
+}
+
 
 def _adapt_phase_tokens(tokens):
     """this.isHpEffect() 等换成 se_ 局部量，$gameVariables.value(常数) 换成 v[常数]，value 的复合赋值展开。"""
@@ -635,6 +643,9 @@ def effect_state_effect(code, phase):
     signature = (phase, ' '.join(tokens))
     fix = EFFECT_FIXES.get(signature)
     fixed = {'fix': fix[0], 'fixed': _compile_effect_tokens([row[0] for row in Parser(fix[1]).tokens[:-1]], signature)} if fix else {}
+    fix2 = EFFECT_FIXES2.get(signature)
+    if fix and fix2:
+        fixed.update({'fix2': fix2[0], 'fixed2': _compile_effect_tokens([row[0] for row in Parser(fix2[1]).tokens[:-1]], signature)})
     if signature in UNREAD_FIELD_BLOCKS:
         return {'op': 'noop', 'reason': 'unread_field', **fixed}
     if signature in NO_EFFECT_BLOCKS:
