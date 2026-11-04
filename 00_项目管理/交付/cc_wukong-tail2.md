@@ -1,7 +1,7 @@
 # 交付：cc/wukong-tail2
 
 - 车道／工作者：C 规则／悟空（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -41,7 +41,7 @@
 - 专项：新 `xiyou_stunned_turn` 42 项、`xiyou_xuan_auto` 4441 项全过。
 - 反向验证 3 项全咬住（敌人被控也减回合、被控角色不走 validate、被控仍带技能）。
 - 探针 `stunned_turn`、`xuan_auto` 不进同步；`xuan_auto` 旧用例逐例比过没变。没动切片和转换器。
-- 选测结果：待写
+- 选测结果：云端 209 个场景全过（提交 384dec0a，基准 2985a786，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41763178954）。
 
 ## 交接板
 
@@ -60,4 +60,6 @@
 
 ## 本分支提交
 
-待写
+- 384dec0a WIP: tail2 交付单草稿
+- 4ba5ce2f 敌人被控不减行动结束的回合；被控角色走绑定 validate；被控时不带技能（参照 stunned_turn、xuan_auto skip_validate）
+- 67654e15 WIP: 被控回合探针 stunned_turn，xuan_auto 补 P3-1 三家例
