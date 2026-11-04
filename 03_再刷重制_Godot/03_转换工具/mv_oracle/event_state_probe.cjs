@@ -124,13 +124,27 @@ function baseCount(table, data) {
   }
   return out;
 }
-function snap() {
+
+// 观察面扩充（events3）：除队伍成员外，再看指令点名的角色（改 HP／经验／等级／技能／装备／名字／职业等指令，及脚本里 $gameActors.actor(N)；
+// 公共事件调用递归 4 层）。队伍外角色的技能、等级此前完全看不见（如 CE 里 318 学习技能的 79 号角色），重制做没做都绿。Godot 侧 tests/xiyou_event_compare.gd 的 _watch_actors 同规则。
+const WATCH_FIXED = new Set([311, 312, 313, 314, 315, 316, 317, 318]), WATCH_DIRECT = new Set([129, 319, 320, 321, 324, 325]);
+function watchActors(list, depth = 0, out = new Set()) {
+  for (const cmd of list || []) {
+    const p = cmd.parameters || [];
+    if (WATCH_FIXED.has(cmd.code) && p[0] === 0) out.add(Number(p[1]));
+    else if (WATCH_DIRECT.has(cmd.code)) out.add(Number(p[0]));
+    else if (cmd.code === 355 || cmd.code === 655) { for (const m of String(p[0]).matchAll(/\$gameActors\.actor\((\d+)\)/g)) out.add(Number(m[1])); }
+    else if (cmd.code === 117 && depth < 4 && w.$dataCommonEvents[p[0]]) watchActors(w.$dataCommonEvents[p[0]].list, depth + 1, out);
+  }
+  return [...out].filter(id => w.$dataActors[id]);
+}
+function snap(watch = []) {
   const g = w, sw = {}, vars = {}, ss = {};
   g.$gameSwitches._data.forEach((v, i) => { if (v) sw[i] = true; });
   g.$gameVariables._data.forEach((v, i) => { if (v !== 0 && v !== undefined && v !== null && v !== '') vars[i] = typeof v === 'number' ? v : String(v); });
   for (const k of Object.keys(g.$gameSelfSwitches._data)) if (g.$gameSelfSwitches._data[k]) ss[k] = true;
   const actors = {};
-  for (const id of g.$gameParty._actors) {
+  for (const id of new Set([...g.$gameParty._actors, ...watch])) {
     const a = g.$gameActors.actor(id);
     actors[id] = {name: a.name(), level: a.level, classId: a._classId, skills: a._skills.slice().sort((x, y) => x - y)};
   }
@@ -218,8 +232,9 @@ function runCase(c) {
   w.SceneManager._scene = sceneStub;
   trace = []; choiceSeen = {};
   applyPreset(c.preset);
-  const before = snap();
   const list = c.kind === 'common' ? w.$dataCommonEvents[c.common].list : w.$dataMap.events[c.event].pages[c.page].list;
+  const watch = watchActors(list);
+  const before = snap(watch);
   // 第一条仓库指令就是「PHWarehouse show」（前面没有 create）的页（如青霞的第 2 页，正常流程里仓库已由第 1 页建好）：照原流程先建好默认仓库，
   // 否则 PH_Warehouse.openWarehouse 取不到仓库、抛 lootBonus 错
   const firstWarehouse = list.find(cmd => cmd.code === 356 && /^PHWarehouse /.test(String(cmd.parameters[0])));
@@ -297,7 +312,7 @@ function runCase(c) {
     }
   } catch (e) { errors.push(String(e && e.message || e).slice(0, 200)); }
   const out = {id: c.id, kind: c.kind, map: c.map, event: c.event, page: c.page, common: c.common, finished: !it.isRunning(), frames,
-    trace, delta: delta(before, snap())};
+    trace, delta: delta(before, snap(watch))};
   if (errors.length) out.errors = errors;
   w.Game_Interpreter.prototype.executeCommand = execute;
   out.base = c.base; out.preset = c.preset;

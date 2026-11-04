@@ -343,7 +343,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	_apply_preset(s, c.get("preset", {}))
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
-	var before := _snap(s)
+	var watch := _watch_actors(list)
+	var before := _snap(s, watch)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
 	MVInterpreter.random_sequence = RANDOM_SEQUENCES.get(str(c.id), [])  # 同参照 event_probe 的 RANDOM_SEQUENCES
@@ -357,7 +358,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	for k in interp.skipped:
 		var key := "%d %s" % [int(k.code), str(k.text).left(40)]
 		skipped[key] = int(skipped.get(key, 0)) + 1
-	return {"trace": host.trace.duplicate(true), "delta": _delta(before, _snap(XState.current)), "skipped": skipped, "aborted": MVInterpreter.aborted}
+	return {"trace": host.trace.duplicate(true), "delta": _delta(before, _snap(XState.current, watch)), "skipped": skipped, "aborted": MVInterpreter.aborted}
 
 
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
@@ -392,7 +393,32 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 
 
 # ---- 状态快照与变化（与 event_probe.cjs 的 snap/delta 同一结构） ----
-func _snap(s: XState) -> Dictionary:
+## 观察面扩充（events3）：指令点名的队伍外角色也进快照；规则同 event_probe.cjs 的 watchActors
+func _watch_actors(list: Array, depth: int = 0, out: Array = []) -> Array:
+	var re := RegEx.new()
+	re.compile("\\$gameActors\\.actor\\((\\d+)\\)")
+	for cmd in list:
+		var code := int(cmd.code)
+		var p: Array = cmd.get("parameters", [])
+		var id := -1
+		if code >= 311 and code <= 318:
+			if p.size() > 1 and int(p[0]) == 0:
+				id = int(p[1])
+		elif code in [129, 319, 320, 321, 324, 325]:
+			id = int(p[0])
+		elif code == 355 or code == 655:
+			for m in re.search_all(str(p[0])):
+				var n := int(m.get_string(1))
+				if not out.has(n):
+					out.append(n)
+		elif code == 117 and depth < 4:
+			_watch_actors(XDB.rec("CommonEvents", int(p[0])).get("list", []), depth + 1, out)
+		if id >= 0 and not out.has(id):
+			out.append(id)
+	return out.filter(func(i): return i >= 1 and XDB.rec("Actors", i).size() > 0)
+
+
+func _snap(s: XState, watch: Array = []) -> Dictionary:
 	var sw := {}
 	for k in s.switches:
 		if s.switches[k]:
@@ -420,7 +446,11 @@ func _snap(s: XState) -> Dictionary:
 		var base := str(int(g.get("base", 0)))
 		table[base] = int(table.get(base, 0)) + 1
 	var actors := {}
-	for id in s.party:
+	var ids: Array = Array(s.party).duplicate()
+	for id in watch:
+		if not ids.has(id):
+			ids.append(id)
+	for id in ids:
 		var a := s.actor(id)
 		var skills := Array(a.skill_ids).duplicate()
 		skills.sort()
