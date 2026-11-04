@@ -1,0 +1,20 @@
+{
+ "sha": "63cf7f457d3c3cf33a7b25934195009e903e1baa",
+ "branch": "ci/main",
+ "mode": "affected",
+ "base": "415dd3f2f46b0dad31ae6e329af16d2da5775c8d",
+ "passed": true,
+ "scenes": 0,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 0,
+ "longestShardSeconds": 0,
+ "testSeconds": 0,
+ "generatedRef": "",
+ "generatedCommit": "",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41845862118",
+ "sceneNames": [],
+ "time": "2026-11-04T14:16:34+00:00"
+}
