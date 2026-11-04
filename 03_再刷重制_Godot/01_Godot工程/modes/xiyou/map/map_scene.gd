@@ -617,7 +617,7 @@ func _encounter() -> void:
 	if troop <= 0 or XConfig.flag("ydgb"):
 		return
 	_set_busy(true)
-	await start_battle(troop, true, false)
+	await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
 
 
@@ -1010,7 +1010,7 @@ func play_me(audio: Dictionary) -> void:
 		me.play()
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
-func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
+func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
 	me.stop()
 	bgm.stream_paused = true
@@ -1021,7 +1021,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 	difficulty_notice.hide()
 	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
-	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot)
+	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot, random_encounter)
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
 	_in_battle = true

@@ -28,7 +28,7 @@ static func freeze(value, logic: XBattleLogic):
 	return value
 
 static func record(logic: XBattleLogic, initial: Dictionary, commands: Array, logs: Array) -> Dictionary:
-	return {"identity": identity(), "initial": initial.duplicate(true), "troop": logic.troop_id,
+	return {"identity": identity(), "initial": initial.duplicate(true), "troop": logic.troop_id, "encounter": logic.encounter,
 		"initialRuntime": logic.replay_runtime_start.duplicate(true), "battleStart": logic.replay_battle_start.duplicate(true),
 		"finalRuntime": logic.state.runtime_random_snapshot(),
 		"rules": {"advanceLootOnCollapse": logic.advance_loot_on_collapse}, "commands": commands.duplicate(true),
@@ -46,6 +46,8 @@ static func replay(data: Dictionary) -> Dictionary:
 	state.restore_runtime_random(data.initialRuntime)
 	var logic := XBattleLogic.new()
 	logic.setup(int(data.troop), state, XBattleRandom.restore(data.battleStart))
+	if bool(data.get("encounter", false)):
+		logic.roll_encounter()  # 随机遇敌：先制／偷袭照原样再掷（旧记录没有这个字段＝事件战斗）
 	logic.advance_loot_on_collapse = bool(data.rules.advanceLootOnCollapse)
 	logic.auto = true
 	var logs := []

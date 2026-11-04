@@ -361,7 +361,7 @@ class WinHost:
 			return int(picks.pop_front()) if not picks.is_empty() else m.choices.size() - 1
 		return 0
 
-	func start_battle(troop: int, can_escape: bool, can_lose: bool) -> int:
+	func start_battle(troop: int, can_escape: bool, can_lose: bool, _random_encounter := false) -> int:
 		trace.append({"battle": troop, "escape": can_escape, "lose": can_lose})
 		var logic := XBattleLogic.new()
 		logic.setup(troop, XState.current)
