@@ -3,7 +3,7 @@ extends Node
 ## 隐藏成员 → 不显示；备注 <HIDE HP GAUGE> → 不显示（与 <SHOW HP GAUGE> 同写时 HIDE 先判）；
 ## <SHOW HP GAUGE> 与什么都不写在默认参数下等价。正式数据：HIDE 546 个敌人、SHOW 277 个、两个都写 2 个。
 ## 画面：HIDE 的敌人受伤／被选中时血条（12px 粗条、gradient）不画，名字（Olivia 窗口）照画。
-## 判断来自读源码（YEP_X_VisualHpGauge.js hpGaugeVisible／isShowWindow），没有 mv_oracle 探针。
+## 参照：mv_oracle/hp_gauge_probe.cjs 在真实原版里逐个敌人读 hpGaugeVisible()（夹具 tests/fixtures/hp_gauge_oracle.json），不再用「自己的正则比自己」。
 class QuietBattle extends XBattleScene:
 	func _main() -> void:
 		pass
@@ -39,38 +39,48 @@ func _run() -> void:
 			out_dir = arg.substr(6)
 	XSave.dir_override = "user://test_xiyou_hp_gauge_visible"
 	XConfig.path_override = XSave.dir().path_join("options.json")
-	var hide_re := RegEx.create_from_string("(?i)<HIDE HP GAUGE>")
-	var show_re := RegEx.create_from_string("(?i)<SHOW HP GAUGE>")
+	# 参照：tests/fixtures/hp_gauge_oracle.json（mv_oracle/hp_gauge_probe.cjs 在真实原版里逐个 new Game_Enemy 读 hpGaugeVisible()，审查 40 P3-8）
+	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/hp_gauge_oracle.json"))
+	check("oracle_present", ref is Dictionary and ref.cases is Array and ref.cases[0].errors.is_empty())
+	var rows: Array = ref.cases[0].observed.rows
+	check("oracle_params_default", ref.cases[0].observed.params.defeatFirst == "false", ref.cases[0].observed.params)
 	var hide_n := 0
 	var show_n := 0
 	var both_n := 0
 	var wrong := []
+	var wrong_hidden := []
+	var missing := []
 	var sample_hide := 0
 	var sample_show := 0
 	var sample_none := 0
-	for rec in XDB.table("Enemies"):
-		if not (rec is Dictionary):
-			continue
-		var note := str(rec.get("note", ""))
-		var h := hide_re.search(note) != null
-		var s := show_re.search(note) != null
+	for row in rows:
+		var h: bool = row.hideFlag
+		var s: bool = row.showFlag
 		hide_n += int(h)
 		show_n += int(s)
 		both_n += int(h and s)
+		if not XDB.rec("Enemies", int(row.id)) is Dictionary or XDB.rec("Enemies", int(row.id)).is_empty():
+			missing.append(row.id)
+			continue
 		var e := XEnemy.new()
-		e.enemy_id = int(rec.id)
-		if e.hp_gauge_visible() == h:
-			wrong.append(rec.id)
+		e.enemy_id = int(row.id)
+		if e.hp_gauge_visible() != bool(row.visible):
+			wrong.append(row.id)
+		e.hidden = true
+		if e.hp_gauge_visible() != bool(row.hiddenVisible):
+			wrong_hidden.append(row.id)
 		if h and sample_hide == 0:
-			sample_hide = int(rec.id)
+			sample_hide = int(row.id)
 		elif s and not h and sample_show == 0:
-			sample_show = int(rec.id)
+			sample_show = int(row.id)
 		elif not h and not s and sample_none == 0:
-			sample_none = int(rec.id)
+			sample_none = int(row.id)
 	check("counts_hide_546", hide_n == 546, hide_n)
 	check("counts_show_277", show_n == 277, show_n)
 	check("counts_both_2", both_n == 2, both_n)
-	check("visible_matches_note_for_all_enemies", wrong.is_empty(), wrong.slice(0, 8))
+	check("oracle_enemies_all_in_remake", missing.is_empty(), missing.slice(0, 8))
+	check("visible_matches_original_for_all_enemies", wrong.is_empty(), wrong.slice(0, 8))
+	check("hidden_matches_original_for_all_enemies", wrong_hidden.is_empty(), wrong_hidden.slice(0, 8))
 	var e2 := XEnemy.new()
 	e2.enemy_id = sample_none
 	e2.hidden = true
@@ -101,12 +111,13 @@ func _run() -> void:
 		e.hidden = false
 		rec.gradients = 0
 		rec.texts = 0
+		e.hp = maxf(1.0, e.hp)  # 活着：HP 为 0 时画面不画血条，会让下面的比较在 HIDE 之外也过
 		g.timer = 5.0   # 受伤后血条显示中
 		g.name_timer = 5.0
 		rec.queue_redraw()
 		await get_tree().process_frame
 		await get_tree().process_frame
-		check("paint_%s_gauge" % case[0], (rec.gradients > 0) == case[2] or e.hp <= 0, [rec.gradients, e.hp])
+		check("paint_%s_gauge" % case[0], (rec.gradients > 0) == case[2], [rec.gradients, e.hp])
 		if out_dir != "" and DisplayServer.get_name() != "headless" and case[0] != "show":
 			await get_tree().process_frame
 			RenderingServer.force_draw(false)
