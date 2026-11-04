@@ -1,0 +1,342 @@
+{
+ "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty）。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
+ "cases": [
+  {
+   "base": "m23e2p0",
+   "tag": "s1",
+   "preset": {
+    "items": {
+     "110": 1
+    }
+   }
+  },
+  {
+   "base": "m11e14p0",
+   "tag": "s1",
+   "preset": {
+    "items": {
+     "24": 1
+    }
+   }
+  },
+  {
+   "base": "m11e15p0",
+   "tag": "s1",
+   "preset": {
+    "items": {
+     "24": 1
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2496": true
+    }
+   }
+  },
+  {
+   "base": "m148e14p0",
+   "tag": "s1",
+   "preset": {
+    "weapons": {
+     "2024": 1
+    },
+    "items": {
+     "1450": 1,
+     "1451": 1,
+     "1452": 1,
+     "1453": 1,
+     "1454": 1,
+     "1455": 1,
+     "1456": 1,
+     "1457": 1,
+     "1458": 1
+    }
+   }
+  },
+  {
+   "base": "m146e2p0",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2302": true
+    },
+    "variables": {
+     "878": 1
+    }
+   }
+  },
+  {
+   "base": "m64e7p0",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m33e6p0",
+   "tag": "s1",
+   "preset": {
+    "party": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "m3e8p0",
+   "tag": "s1",
+   "preset": {
+    "party": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "m7e9p0",
+   "tag": "s1",
+   "preset": {
+    "party": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "m148e6p1",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "1109": 1
+    }
+   }
+  },
+  {
+   "base": "m3e11p0",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2283": true
+    }
+   }
+  },
+  {
+   "base": "m47e12p0",
+   "tag": "s1",
+   "preset": {
+    "items": {
+     "219": 1
+    }
+   }
+  },
+  {
+   "base": "m84e11p0",
+   "tag": "s1",
+   "preset": {
+    "armors": {
+     "1843": 1,
+     "1842": 1,
+     "1844": 1
+    }
+   }
+  },
+  {
+   "base": "m118e6p0",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "ce1160",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "350": 18
+    }
+   }
+  },
+  {
+   "base": "ce1194",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2221": true
+    }
+   }
+  },
+  {
+   "base": "ce1199",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "350": 18
+    }
+   }
+  },
+  {
+   "base": "ce1200",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "350": 18
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "s1",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1431",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2495": true
+    }
+   }
+  },
+  {
+   "base": "ce1432",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2495": true
+    }
+   }
+  },
+  {
+   "base": "ce1434",
+   "tag": "s1",
+   "preset": {
+    "switches": {
+     "2291": true
+    }
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "1482": 1
+    }
+   }
+  },
+  {
+   "base": "ce1614",
+   "tag": "s1",
+   "preset": {
+    "variables": {
+     "1232": 0
+    },
+    "party": [
+     88
+    ],
+    "actors": {
+     "88": {
+      "skills": [
+       5893
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce2495",
+   "tag": "s1",
+   "preset": {
+    "actors": {
+     "95": {
+      "skills": [
+       8122
+      ]
+     }
+    },
+    "variables": {
+     "752": 200
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "s1",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2518
+      ]
+     }
+    },
+    "party": [
+     71
+    ]
+   }
+  },
+  {
+   "base": "m11e14p0",
+   "tag": "s2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "actors": {
+     "38": {
+      "skills": [
+       1264
+      ]
+     }
+    },
+    "items": {
+     "24": 1
+    }
+   }
+  }
+ ]
+}

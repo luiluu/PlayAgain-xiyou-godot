@@ -9,6 +9,7 @@ extends Node
 ## 参数（-- 之后）：--out=<目录> 写对照报告；--update-baseline 用本次结果重写登记；--only=<前缀,…> 只跑部分用例。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
+const ORACLE_STATES := "res://modes/xiyou/generated/oracle/event_states.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
@@ -17,6 +18,7 @@ const KNOWN_ORACLE_ERRORS := []
 const RANDOM_SEQUENCES := {"ce1344": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05], "m221e3p0": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05]}
 
 var results := []
+var _saved_seal_fix := {}
 var out_dir := ""
 var update_baseline := false
 var only: Array = []
@@ -206,6 +208,9 @@ func _run() -> void:
 	XDungeon.restore_difficulty = false
 	XDungeon.restore_hang_up = false
 	XDungeon.battle_end_counts = false
+	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
+	_saved_seal_fix = MVInterpreter.seal_check_fix
+	MVInterpreter.seal_check_fix = {}
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -236,14 +241,28 @@ func _run() -> void:
 	add_child(host)
 	var report := []
 	var mismatched := {}
+	var states_started := false
 	var oracle_errors := []
-	for c in oracle.cases:
+	# 有状态变体（event_state_probe：同一批事件页，运行前按预设改好初始状态，让新游戏走不到的分支被量到；号为 基础号#tag）
+	var all_cases: Array = oracle.cases.duplicate()
+	if FileAccess.file_exists(ORACLE_STATES):
+		var st = JSON.parse_string(FileAccess.get_file_as_string(ORACLE_STATES))
+		check("states_loaded", st is Dictionary and st.has("cases"))
+		if st is Dictionary and st.has("cases"):
+			all_cases.append_array(st.cases)
+	for c in all_cases:
 		if not only.is_empty() and not only.any(func(p): return str(c.id).begins_with(p)):
 			continue
 		# 参照引擎出错或没跑完（如随机数固定后「抽到不同的为止」的循环）的用例不比较，只列出
 		if c.has("errors") or not bool(c.get("finished", true)):
 			oracle_errors.append(c.id)
 			continue
+		# 有状态变体另起一段：跨存档变量（899／900…）的全局存储只在进程内累积，参照里变体是单独一个进程从空存储起跑，
+		# 这边在第一个变体前清空存储，两边的累积历史才一致（基础用例的历史两边本来就同序）
+		if str(c.id).contains("#") and not states_started:
+			states_started = true
+			DirAccess.remove_absolute(XGlobalVars.path())
+			XGlobalVars._loaded_path = "<unloaded>"
 		var got := await _run_case(c, host)
 		var diffs := _compare(c, got)
 		var row := {"id": c.id, "ok": diffs.is_empty(), "diffs": diffs, "skipped": got.skipped, "aborted": got.aborted}
@@ -275,6 +294,9 @@ func _run() -> void:
 
 func _finish() -> void:
 	DirAccess.remove_absolute(XConfig.path_override)
+	DirAccess.remove_absolute(XGlobalVars.path())
+	XGlobalVars._loaded_path = "<unloaded>"
+	MVInterpreter.seal_check_fix = _saved_seal_fix
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0
 	MVInterpreter.fixed_random = -1.0
@@ -318,6 +340,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if str(cmd.parameters[0]).begins_with("PHWarehouse show "):
 				XWarehouse.create(s, str(cmd.parameters[0]).substr(len("PHWarehouse show ")))
 			break
+	_apply_preset(s, c.get("preset", {}))
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var before := _snap(s)
@@ -335,6 +358,37 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 		var key := "%d %s" % [int(k.code), str(k.text).left(40)]
 		skipped[key] = int(skipped.get(key, 0)) + 1
 	return {"trace": host.trace.duplicate(true), "delta": _delta(before, _snap(XState.current)), "skipped": skipped, "aborted": MVInterpreter.aborted}
+
+
+## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
+func _apply_preset(s: XState, p: Dictionary) -> void:
+	if p.is_empty():
+		return
+	if p.has("difficulty"):
+		s.difficulty = int(p.difficulty)
+	for id in p.get("party", []):
+		s.add_actor(int(id))
+	for id in p.get("actors", {}):
+		var a := s.actor(int(id))
+		var spec: Dictionary = p.actors[id]
+		if spec.has("level"):
+			a.change_level_mv(int(spec.level))
+		for sk in spec.get("skills", []):
+			a.learn_skill(int(sk))
+	if p.has("gold"):
+		s.gold = int(p.gold)
+	for id in p.get("items", {}):
+		s.gain_item(int(id), int(p.items[id]))
+	for id in p.get("weapons", {}):
+		s.gain_gear("weapon", int(id), int(p.weapons[id]))
+	for id in p.get("armors", {}):
+		s.gain_gear("armor", int(id), int(p.armors[id]))
+	for k in p.get("switches", {}):
+		s.set_switch(int(k), bool(p.switches[k]))
+	for k in p.get("variables", {}):
+		s.set_variable(int(k), float(p.variables[k]))
+	for k in p.get("selfSwitches", {}):
+		s.self_switches[str(k)] = bool(p.selfSwitches[k])
 
 
 # ---- 状态快照与变化（与 event_probe.cjs 的 snap/delta 同一结构） ----
