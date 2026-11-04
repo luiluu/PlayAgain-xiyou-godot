@@ -349,6 +349,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var watch := _watch_actors(list)
+	XConfig.designations().clear()   # 参照每例 ConfigManager.applyData({}) 重置称号
 	var before := _snap(s, watch)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
@@ -412,6 +413,10 @@ func _watch_actors(list: Array, depth: int = 0, out: Array = []) -> Array:
 		elif code in [129, 319, 320, 321, 324, 325]:
 			id = int(p[0])
 		elif code == 355 or code == 655:
+			if str(p[0]).contains("$dataActors.length") or str(p[0]).contains("$gameActors.length"):
+				for n in range(1, XDB.table("Actors").size()):
+					if not str(XDB.rec("Actors", n).get("name", "")).is_empty() and not out.has(n):
+						out.append(n)
 			for m in re.search_all(str(p[0])):
 				var n := int(m.get_string(1))
 				if not out.has(n):
@@ -459,7 +464,7 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		var a := s.actor(id)
 		var skills := Array(a.skill_ids).duplicate()
 		skills.sort()
-		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills}
+		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills, "states": _sorted_ints(a.state_ids)}
 	var flags := {}
 	for k in s.flags:
 		if str(k).begins_with("DCultyL"):
@@ -469,7 +474,24 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 	return {"switches": sw, "variables": vars, "selfSwitches": ss, "gold": s.gold, "items": items, "weapons": weapons, "armors": armors,
 		"party": Array(s.party).duplicate(), "actors": actors, "difficulty": s.difficulty, "encounter": s.encounter_enabled,
 		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags,
+		"designations": _true_keys(XConfig.designations()), "achievements": _true_keys(s.achievements, true),
 		"screen": s.screen.target_snapshot()}
+
+
+func _sorted_ints(a: Array) -> Array:
+	var out := Array(a).duplicate()
+	out.sort()
+	return out
+
+
+## 字典里值为真的键（字符串，按字符串序，同参照 Object.keys().sort()）；skip_time：丢掉「<ID>Time」
+func _true_keys(d: Dictionary, skip_time := false) -> Array:
+	var out := []
+	for k in d:
+		if d[k] and not (skip_time and str(k).ends_with("Time")):
+			out.append(str(k))
+	out.sort()
+	return out
 
 
 func _map_delta(a: Dictionary, b: Dictionary, empty) -> Dictionary:
@@ -516,6 +538,9 @@ func _delta(a: Dictionary, b: Dictionary) -> Dictionary:
 		if a[k] != b[k]:
 			d[k] = b[k]
 	put.call("flags", _map_delta(a.flags, b.flags, null))
+	for k in ["designations", "achievements"]:
+		if JSON.stringify(a[k]) != JSON.stringify(b[k]):
+			d[k] = b[k]
 	if JSON.stringify(a.screen) != JSON.stringify(b.screen):
 		d.screen = b.screen
 	return d

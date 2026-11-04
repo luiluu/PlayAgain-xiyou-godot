@@ -631,9 +631,8 @@
    "base": "m69e65p0",
    "tag": "b1",
    "preset": {
-    "variables": {
-     "5": 1,
-     "6": 20
+    "items": {
+     "397": 3
     }
    }
   },
@@ -1606,6 +1605,9 @@
    "preset": {
     "switches": {
      "2282": true
+    },
+    "variables": {
+     "20": 30
     }
    }
   },
