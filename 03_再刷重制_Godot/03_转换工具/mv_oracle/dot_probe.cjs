@@ -5,6 +5,7 @@
 // ⑥施加者 origin：角色、敌人、无、缺失、导入角色、读档（JsonEx 往返）⑦护盾下的持续伤害。只在内存里跑；产物 .sandbox/dot.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；关掉让参照不含成长修正
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprites = new Map();
 w.Game_Battler.prototype.battler = function () {
@@ -20,7 +21,7 @@ let ENV = null;
 function battle(troop) {
   if (ENV) {
     w.$gameParty._inBattle = true;
-    for (const x of [ENV.a, ENV.b, ENV.e, ENV.e2]) { x.clearStates(); if (x.appear) x.appear(); delete x.damagedot; x._hp = Math.min(x.mhp, 100000); x._shield = 0; x._stateOrigin = {}; x.need_refresh = true; x.refresh(); x.clearResult(); }
+    for (const x of [ENV.a, ENV.b, ENV.e, ENV.e2]) { x.clearStates(); if (x.appear) x.appear(); delete x.damagedot; delete x.__dotStats; x._hp = Math.min(x.mhp, 100000); x._shield = 0; x._stateOrigin = {}; x.need_refresh = true; x.refresh(); x.clearResult(); }
     return ENV;
   }
   ENV = battle0(troop);
@@ -86,23 +87,48 @@ function holderOf(kind, env) { return kind === 'actor' ? env.b : env.e; }
 function originOf(kind, env) { return kind === 'a1' ? env.a : kind === 'a8' ? env.b : kind === 'e0' ? env.e : kind === 'e1' ? env.e2 : null; }
 // krz_state_re 把 dotstates() 缓存起来，只有 refresh() 时 need_refresh 为真才失效；addState 在内层 refresh 之后才置脏。
 // 默认模拟「加状态之后战斗里总会有一次 refresh」（伤害结算、状态窗口刷新等）；staleCache 用例单独量不刷新时的缓存。
+const STAT_KEYS = ['hp', 'mp', 'tp', 'mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk', 'level'];
+const statsOf = x => x ? Object.fromEntries(STAT_KEYS.map(k => [k, x[k]])) : null;
 function giveState(holder, sid, originKind, env, noRefresh) {
   holder.addState(sid);
   if (!noRefresh) { holder.need_refresh = true; holder.refresh(); }
   if (originKind === 'none') holder.clearStateOrigin(sid);
   else if (originKind === 'missing') holder._stateOrigin[sid] = [1, 999];
   else holder.setStateOrigin(sid, originOf(originKind, env));
+  // 公式读到的能力值（供重制专项把同一组数代进公式程序）：a＝施加者（无记录＝持有者），b＝持有者
+  holder.__dotStats = holder.__dotStats || {};
+  const o = originKind === 'none' ? holder : originKind === 'missing' ? null : originOf(originKind, env);
+  holder.__dotStats[sid] = {a: statsOf(o), b: statsOf(holder), originKind};
 }
 function prep(env, kind, hp) { const h = holderOf(kind, env); h.clearStates(); h.clearResult(); h._hp = hp === undefined ? Math.min(h.mhp, 100000) : hp; h._shield = 0; h.refresh(); return h; }
 function runTurnEnd(h, env) {
   errors.length = 0;
   const before = snap(h);
   const log = capture(() => h.onTurnEnd());
-  return {before, after: snap(h), log, errors: errors.splice(0), draws, globalValue: globalValue()};
+  const rates = Array.from({length: 14}, (_, i) => h.elementRate(i));
+  const stats = h.__dotStats ? JSON.parse(JSON.stringify(h.__dotStats)) : null;
+  return {before, after: snap(h), log, errors: errors.splice(0), draws, globalValue: globalValue(), stats, rates};
 }
 
 const REAL = [33, 35, 43, 48, 54, 55, 57, 69, 70, 84, 89, 90, 91, 93, 95, 117, 132, 135, 160, 164, 168, 176, 177, 181, 185, 243, 261, 286, 347, 365, 473, 474, 487,
   619, 643, 644, 645, 828, 829, 834, 837, 902, 933, 1386, 2038];
+const SYN = {
+  fixed300: '<DoT Formula: 300>', variance0: '<DoT Formula: 300>\n<DoT Variance: 0%>', variance50: '<DoT Formula: 300>\n<DoT Variance: 50%>',
+  varianceRegen: '<Regen Formula: 300>\n<Regen Variance: 50%>', varianceFw: '<DoT Formula: 300>\n<DoT Variance: 50％>',
+  elem2: '<DoT Formula: 300>\n<DoT Variance: 0%>\n<DoT Element: 2>', elem2Regen: '<Regen Formula: 300>\n<Regen Variance: 0%>\n<Regen Element: 2>',
+  annoAfter: '<DoT Formula: 300>\n<DoT Animation: 7>', annoBefore: '<DoT Animation: 7>\n<DoT Formula: 300>', regenDefaultAni: '<Regen Formula: 300>',
+  dotLongTag: '<Damage Over Time Formula: 300>', regenLongTag: '<Regenerate Formula: 300>', lowerTag: '<dot formula: 300>',
+  twoFormulas: '<DoT Formula: 300>\n<Regen Formula: 200>', twoFormulasRev: '<Regen Formula: 200>\n<DoT Formula: 300>',
+  negative: '<DoT Formula: -300>', regenNeg: '<Regen Formula: -300>', zero: '<DoT Formula: 0>', fractional: '<DoT Formula: 2.5>', fractional2: '<DoT Formula: 3.5>',
+  fractionalRegen: '<Regen Formula: 2.5>', nan: '<DoT Formula: a.nothing * 2>', undef: '<DoT Formula: nothing_here>',
+  hpPct: '<DoT Formula: b.mhp * 0.03>', whole: '<DoT Formula: b.hp>', userAtk: '<DoT Formula: user.atk>', targetMat: '<DoT Formula: target.mat>',
+  originSame: '<DoT Formula: origin.atk * 2>', vars: '<DoT Formula: v[1] + s[1]>', trailingGt: '<DoT Formula: 3 > 2 ? 100 : 50>',
+  customDot: '<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>', customDotVar: '<Custom DoT Formula>\nvalue = 300;\nvariance = 0;\nelement = 2;\n</Custom DoT Formula>',
+  customRegen: '<Custom Regen Formula>\nvalue = 300;\n</Custom Regen Formula>', customNoValue: '<Custom DoT Formula>\nvariance = 0;\n</Custom DoT Formula>',
+  customHealOverride: '<Custom DoT Formula>\nvalue = 300;\nhealing = true;\n</Custom DoT Formula>', customAni: '<DoT Animation: 9>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>',
+  customThrow: '<Custom DoT Formula>\nthrow new Error("x");\n</Custom DoT Formula>', customCond: '<Custom DoT Formula>\nif (a.isActor()) { value = 100; } else { value = 200; }\n</Custom DoT Formula>',
+  customAfterFormula: '<DoT Formula: 100>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>', customBeforeFormula: '<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>\n<DoT Formula: 100>'
+};
 const cases = [];
 const mk = (id, setup, fn) => makeCase(id, setup, () => { ENV = null; return fn(); });
 
@@ -112,6 +138,7 @@ cases.push(mk('fixture', {states: REAL}, () => {
   return {defaults: {regenAni: w.Yanfly.Param.EDoTRegenAni, dotAni: w.Yanfly.Param.EDoTDamageAni, variance: w.Yanfly.Param.EDoTDefVariance, element: w.Yanfly.Param.EDoTDefElement},
     states: REAL.map(id => { const s = w.$dataStates[id]; return {id, name: s.name, formula: s.dotFormula, ani: s.dotAnimation, variance: s.dotVariance, element: s.dotElement,
       timing: s.autoRemovalTiming, minTurns: s.minTurns, maxTurns: s.maxTurns}; }),
+    syn: SYN,
     withFormula: w.$dataStates.map((s, i) => s && s.dotFormula ? i : 0).filter(Boolean).length,
     globalValueBoot: globalValue()};
 }));
@@ -151,23 +178,6 @@ for (const sid of REAL) {
 }
 
 // 3) 合成状态：波动／元素／标签／写法
-const SYN = {
-  fixed300: '<DoT Formula: 300>', variance0: '<DoT Formula: 300>\n<DoT Variance: 0%>', variance50: '<DoT Formula: 300>\n<DoT Variance: 50%>',
-  varianceRegen: '<Regen Formula: 300>\n<Regen Variance: 50%>', varianceFw: '<DoT Formula: 300>\n<DoT Variance: 50％>',
-  elem2: '<DoT Formula: 300>\n<DoT Variance: 0%>\n<DoT Element: 2>', elem2Regen: '<Regen Formula: 300>\n<Regen Variance: 0%>\n<Regen Element: 2>',
-  annoAfter: '<DoT Formula: 300>\n<DoT Animation: 7>', annoBefore: '<DoT Animation: 7>\n<DoT Formula: 300>', regenDefaultAni: '<Regen Formula: 300>',
-  dotLongTag: '<Damage Over Time Formula: 300>', regenLongTag: '<Regenerate Formula: 300>', lowerTag: '<dot formula: 300>',
-  twoFormulas: '<DoT Formula: 300>\n<Regen Formula: 200>', twoFormulasRev: '<Regen Formula: 200>\n<DoT Formula: 300>',
-  negative: '<DoT Formula: -300>', regenNeg: '<Regen Formula: -300>', zero: '<DoT Formula: 0>', fractional: '<DoT Formula: 2.5>', fractional2: '<DoT Formula: 3.5>',
-  fractionalRegen: '<Regen Formula: 2.5>', nan: '<DoT Formula: a.nothing * 2>', undef: '<DoT Formula: nothing_here>',
-  hpPct: '<DoT Formula: b.mhp * 0.03>', whole: '<DoT Formula: b.hp>', userAtk: '<DoT Formula: user.atk>', targetMat: '<DoT Formula: target.mat>',
-  originSame: '<DoT Formula: origin.atk * 2>', vars: '<DoT Formula: v[1] + s[1]>', trailingGt: '<DoT Formula: 3 > 2 ? 100 : 50>',
-  customDot: '<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>', customDotVar: '<Custom DoT Formula>\nvalue = 300;\nvariance = 0;\nelement = 2;\n</Custom DoT Formula>',
-  customRegen: '<Custom Regen Formula>\nvalue = 300;\n</Custom Regen Formula>', customNoValue: '<Custom DoT Formula>\nvariance = 0;\n</Custom DoT Formula>',
-  customHealOverride: '<Custom DoT Formula>\nvalue = 300;\nhealing = true;\n</Custom DoT Formula>', customAni: '<DoT Animation: 9>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>',
-  customThrow: '<Custom DoT Formula>\nthrow new Error("x");\n</Custom DoT Formula>', customCond: '<Custom DoT Formula>\nif (a.isActor()) { value = 100; } else { value = 200; }\n</Custom DoT Formula>',
-  customAfterFormula: '<DoT Formula: 100>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>', customBeforeFormula: '<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>\n<DoT Formula: 100>'
-};
 for (const [name, note] of Object.entries(SYN)) {
   cases.push(mk('syn.' + name, {note}, () => {
     const out = {};
@@ -189,7 +199,7 @@ cases.push(mk('element.rates', {}, () => {
   for (const rate of [0.5, 1, 2, 0, -1]) for (const el of [2, 9]) {
     const env = battle(2); const h = prep(env, 'enemy');
     const res = synth('', {traits: [{code: 11, dataId: el, value: rate}]});
-    h.addState(res);
+    h.addState(res); h.need_refresh = true; h.refresh();
     const sid = synth(`<DoT Formula: 300>\n<DoT Variance: 0%>\n<DoT Element: ${el}>`);
     setSeq([0.5]); giveState(h, sid, 'a1', env);
     out[`${rate}.${el}`] = {elementRate: h.elementRate(el), ...runTurnEnd(h, env)};
@@ -205,7 +215,8 @@ function multi(name, sids, hp, kind, originKind) {
       const env = battle(2); const h = prep(env, kind || 'enemy', hp);
       setSeq([r]); for (const s of sids) giveState(h, s, originKind || 'a1', env);
       out.run = {order: h.states().map(s => s.id), priorities: h.states().map(s => s.priority), ...runTurnEnd(h, env)};
-      // 下一回合再跑一次，看倒下后的状态
+      // 下一回合再跑一次，看倒下后的状态。真实回合开头必有 refresh（krz 的 dotstates 缓存靠它失效；不刷新时到期状态会多算一回合，见 cache.stale）
+      h.need_refresh = true; h.refresh();
       out.next = runTurnEnd(h, env);
     }
     return out;
@@ -274,7 +285,7 @@ cases.push(mk('origin', {}, () => {
   for (const aid of [141, 163]) {
     const env = battle(2); const h = prep(env, 'enemy'); setSeq([0.5]);
     const imp = w.$gameActors.actor(aid); imp.refresh();
-    h.addState(sid); h.setStateOrigin(sid, imp);
+    h.addState(sid); h.setStateOrigin(sid, imp); h.need_refresh = true; h.refresh();
     out['imported.' + aid] = {impAtk: imp.atk, ...runTurnEnd(h, env)};
   }
   return out;

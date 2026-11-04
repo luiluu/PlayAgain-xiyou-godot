@@ -1,0 +1,1339 @@
+{
+ "annoAfter": {
+  "dot": {
+   "animation": 7,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9000,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 300>\n<DoT Animation: 7>"
+ },
+ "annoBefore": {
+  "dot": {
+   "animation": 7,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9001,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Animation: 7>\n<DoT Formula: 300>"
+ },
+ "customAfterFormula": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9002,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 100>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>"
+ },
+ "customAni": {
+  "dot": {
+   "animation": 9,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9003,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Animation: 9>\n<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>"
+ },
+ "customBeforeFormula": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9004,
+     "sha256": "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 100.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>\n<DoT Formula: 100>"
+ },
+ "customCond": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": false,
+   "kind": "unresolved",
+   "source": "if (a.isActor()) { value = 100; } else { value = 200; }\nhealing = false",
+   "variance": 20
+  },
+  "note": "<Custom DoT Formula>\nif (a.isActor()) { value = 100; } else { value = 200; }\n</Custom DoT Formula>"
+ },
+ "customDot": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9006,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Custom DoT Formula>\nvalue = 300;\n</Custom DoT Formula>"
+ },
+ "customDotVar": {
+  "dot": {
+   "animation": 0,
+   "element": 2,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9007,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 0
+  },
+  "note": "<Custom DoT Formula>\nvalue = 300;\nvariance = 0;\nelement = 2;\n</Custom DoT Formula>"
+ },
+ "customHealOverride": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9008,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Custom DoT Formula>\nvalue = 300;\nhealing = true;\n</Custom DoT Formula>"
+ },
+ "customNoValue": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": false,
+   "kind": "unresolved",
+   "source": "variance = 0;\nhealing = false",
+   "variance": 0
+  },
+  "note": "<Custom DoT Formula>\nvariance = 0;\n</Custom DoT Formula>"
+ },
+ "customRegen": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9010,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Custom Regen Formula>\nvalue = 300;\n</Custom Regen Formula>"
+ },
+ "customThrow": {
+  "dot": {
+   "animation": 0,
+   "element": 0,
+   "healing": false,
+   "kind": "unresolved",
+   "source": "throw new Error(\"x\");\nhealing = false",
+   "variance": 20
+  },
+  "note": "<Custom DoT Formula>\nthrow new Error(\"x\");\n</Custom DoT Formula>"
+ },
+ "dotLongTag": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9012,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Damage Over Time Formula: 300>"
+ },
+ "elem2": {
+  "dot": {
+   "animation": 59,
+   "element": 2,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9013,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 0
+  },
+  "note": "<DoT Formula: 300>\n<DoT Variance: 0%>\n<DoT Element: 2>"
+ },
+ "elem2Regen": {
+  "dot": {
+   "animation": 46,
+   "element": 2,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9014,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 0
+  },
+  "note": "<Regen Formula: 300>\n<Regen Variance: 0%>\n<Regen Element: 2>"
+ },
+ "fixed300": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9015,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 300>"
+ },
+ "fractional": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9016,
+     "sha256": "b8736b999909049671d0ea075a42b308a5fbe2df1854899123fe09eb0ee9de61",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 2.5
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 2.5>"
+ },
+ "fractional2": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9017,
+     "sha256": "8a199b120cf400d69c300e1dd6eacdc8b0002353e3044bbab21e0125b32c9fd6",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 3.5
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 3.5>"
+ },
+ "fractionalRegen": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9018,
+     "sha256": "b8736b999909049671d0ea075a42b308a5fbe2df1854899123fe09eb0ee9de61",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 2.5
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Regen Formula: 2.5>"
+ },
+ "hpPct": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.battler"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9019,
+     "sha256": "8556c7fcf80dc4f82c2c35d117d819549ee4b754ac646d2c65150eab7c6c0d8b",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "left": {
+        "name": "mhp",
+        "op": "property",
+        "pos": 0,
+        "receiver": "b"
+       },
+       "op": "binary",
+       "operator": "*",
+       "pos": 0,
+       "right": {
+        "op": "literal",
+        "pos": 8,
+        "value": 0.03
+       }
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: b.mhp * 0.03>"
+ },
+ "lowerTag": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9020,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<dot formula: 300>"
+ },
+ "nan": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "unresolved",
+   "source": "value = Math.max(0, a.nothing * 2);\nhealing = false;",
+   "variance": 20
+  },
+  "note": "<DoT Formula: a.nothing * 2>"
+ },
+ "negative": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9022,
+     "sha256": "d948bf8d9aea54c39b53c5119afa078d7529334f702e4765c9a47d3ea9c04bb4",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "arg": {
+        "op": "literal",
+        "pos": 1,
+        "value": 300.0
+       },
+       "op": "unary",
+       "operator": "-",
+       "pos": 0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: -300>"
+ },
+ "originSame": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.battler"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9023,
+     "sha256": "322b455ce4f21318f0ce70b7d9839e12c75c7be51bb67d406b7b407c0cc5897f",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "left": {
+        "name": "atk",
+        "op": "property",
+        "pos": 0,
+        "receiver": "a"
+       },
+       "op": "binary",
+       "operator": "*",
+       "pos": 0,
+       "right": {
+        "op": "literal",
+        "pos": 8,
+        "value": 2.0
+       }
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: origin.atk * 2>"
+ },
+ "regenDefaultAni": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9024,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Regen Formula: 300>"
+ },
+ "regenLongTag": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9025,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Regenerate Formula: 300>"
+ },
+ "regenNeg": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9026,
+     "sha256": "d948bf8d9aea54c39b53c5119afa078d7529334f702e4765c9a47d3ea9c04bb4",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "arg": {
+        "op": "literal",
+        "pos": 1,
+        "value": 300.0
+       },
+       "op": "unary",
+       "operator": "-",
+       "pos": 0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Regen Formula: -300>"
+ },
+ "targetMat": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.battler"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9027,
+     "sha256": "2ef830db006bd569994aa3f6ca60ee51bc95e812882d5f4008b1050960ef6ea8",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "name": "mat",
+       "op": "property",
+       "pos": 0,
+       "receiver": "b"
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: target.mat>"
+ },
+ "trailingGt": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9028,
+     "sha256": "28973882a40a493006389ddc3810718192e8375bea4d7d55a4510f6ea49e8398",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "condition": {
+        "left": {
+         "op": "literal",
+         "pos": 0,
+         "value": 3.0
+        },
+        "op": "binary",
+        "operator": ">",
+        "pos": 0,
+        "right": {
+         "op": "literal",
+         "pos": 4,
+         "value": 2.0
+        }
+       },
+       "no": {
+        "op": "literal",
+        "pos": 14,
+        "value": 50.0
+       },
+       "op": "select",
+       "pos": 0,
+       "yes": {
+        "op": "literal",
+        "pos": 8,
+        "value": 100.0
+       }
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 3 > 2 ? 100 : 50>"
+ },
+ "twoFormulas": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9029,
+     "sha256": "27badc983df1780b60c2b3fa9d3a19a00e46aac798451f0febdca52920faaddf",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 200.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 300>\n<Regen Formula: 200>"
+ },
+ "twoFormulasRev": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9030,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<Regen Formula: 200>\n<DoT Formula: 300>"
+ },
+ "undef": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "unresolved",
+   "source": "value = Math.max(0, nothing_here);\nhealing = false;",
+   "variance": 20
+  },
+  "note": "<DoT Formula: nothing_here>"
+ },
+ "userAtk": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.battler"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9032,
+     "sha256": "7bfeeead46dfbaf8dd9cd1faf1fdf90a9b20ce7c9f8d83ce0d92a1fcf595d344",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "name": "atk",
+       "op": "property",
+       "pos": 0,
+       "receiver": "b"
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: user.atk>"
+ },
+ "variance0": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9033,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 0
+  },
+  "note": "<DoT Formula: 300>\n<DoT Variance: 0%>"
+ },
+ "variance50": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9034,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 50
+  },
+  "note": "<DoT Formula: 300>\n<DoT Variance: 50%>"
+ },
+ "varianceFw": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9035,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 50
+  },
+  "note": "<DoT Formula: 300>\n<DoT Variance: 50％>"
+ },
+ "varianceRegen": {
+  "dot": {
+   "animation": 46,
+   "element": 0,
+   "healing": true,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9036,
+     "sha256": "983bd614bb5afece5ab3b6023f71147cd7b6bc2314f9d27af7422541c6558389",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 300.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 50
+  },
+  "note": "<Regen Formula: 300>\n<Regen Variance: 50%>"
+ },
+ "vars": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.switches",
+     "read.variables"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9037,
+     "sha256": "2e45ecfdb42199e88a91eda84e63de74a5b0e36489ff49f95672de8a61f6454a",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "left": {
+        "index": {
+         "op": "literal",
+         "pos": 2,
+         "value": 1.0
+        },
+        "op": "lookup",
+        "pool": "v",
+        "pos": 0
+       },
+       "op": "binary",
+       "operator": "+",
+       "pos": 0,
+       "right": {
+        "index": {
+         "op": "literal",
+         "pos": 9,
+         "value": 1.0
+        },
+        "op": "lookup",
+        "pool": "s",
+        "pos": 7
+       }
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: v[1] + s[1]>"
+ },
+ "whole": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [
+     "read.battler"
+    ],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9038,
+     "sha256": "f4af46209ec8893ac2213849958cb74df7d051f4e67929437e1f203a835e8eea",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "name": "hp",
+       "op": "property",
+       "pos": 0,
+       "receiver": "b"
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: b.hp>"
+ },
+ "zero": {
+  "dot": {
+   "animation": 59,
+   "element": 0,
+   "healing": false,
+   "kind": "formula",
+   "program": {
+    "capabilities": [],
+    "locals": [],
+    "result": "completion",
+    "source": {
+     "custom": false,
+     "id": 9039,
+     "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+     "table": "States"
+    },
+    "status": "pure",
+    "steps": [
+     {
+      "op": "expr",
+      "pos": 0,
+      "value": {
+       "op": "literal",
+       "pos": 0,
+       "value": 0.0
+      }
+     }
+    ],
+    "version": 1
+   },
+   "variance": 20
+  },
+  "note": "<DoT Formula: 0>"
+ }
+}
