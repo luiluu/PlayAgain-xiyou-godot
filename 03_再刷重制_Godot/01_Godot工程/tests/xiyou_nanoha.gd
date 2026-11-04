@@ -165,7 +165,7 @@ func _field() -> void:
 ## 各敌行动后血量与死活（每个目标 max(1, _costmp) 段同值伤害）；extreme 超 512 段走 ACS 快速结算（96 段弹字＋合并尾段）
 func _cast() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/nanoha3_oracle.json"))
-	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 31):
+	if not check("cast.oracle_present", ref is Dictionary and ref.cases.size() == 41):
 		return
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
