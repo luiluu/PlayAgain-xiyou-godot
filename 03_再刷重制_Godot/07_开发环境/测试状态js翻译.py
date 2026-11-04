@@ -11,8 +11,10 @@ sys.path.insert(0, str(TOOLS))
 from xiyou_export import parse_state_effects, EFFECT_RE
 
 FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_js_translation.json'
-# 原文本身报错（读装备等级的 106／732、变量名拼成 damag 的 551）：不翻译
-POISON_JS = {106, 551, 732}
+# 原文本身报错（读装备等级的 106、变量名拼成 damag 的 551）：不翻译
+POISON_JS = {106, 551}
+# 毒奶 732：rules8 按探针量过的来源者法宝等级翻成效果程序
+POISON_PROGRAM = {732}
 
 
 def block(note, phase):
@@ -34,7 +36,7 @@ class PoisonTranslationTests(unittest.TestCase):
                 self.assertEqual(ops['apply']['op'], 'poison_stack')
                 self.assertEqual(ops['apply']['mode'], 'add')
                 self.assertEqual(ops['remove'], {'phase': 'remove', 'op': 'poison_stack', 'mode': 'reset'})
-                want = 'js' if row['state'] in POISON_JS else 'poison_tick'
+                want = 'js' if row['state'] in POISON_JS else 'effect_program' if row['state'] in POISON_PROGRAM else 'poison_tick'
                 self.assertEqual(ops['regenerate']['op'], want)
                 if want == 'poison_tick':
                     program = ops['regenerate']['program']
@@ -65,6 +67,9 @@ class PoisonTranslationTests(unittest.TestCase):
                          body.replace('|| 1', '|| 2'),
                          # 同一行接 var：原版是语法错误（靠换行补分号）
                          re.sub(r'(var stacks = target\._stackingPoison)[ \t]*\r?\n(?:[ \t]*//[^\n]*\n)*', r'\1 ', body)]:
+                # 732 走 token 整段比对，换行不是 token，分不出这一变体；冻结数据里原文带换行，碰不到
+                if row['state'] in POISON_PROGRAM and code.count('\n') < body.count('\n'):
+                    continue
                 with self.subTest(state=row['state'], code=code[-90:]):
                     self.assertEqual(one('Regenerate', code)['op'], 'js')
             self.assertEqual(one('Turn End', body)['op'], 'js')
