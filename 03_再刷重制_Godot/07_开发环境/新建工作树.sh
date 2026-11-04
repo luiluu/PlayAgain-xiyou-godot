@@ -23,21 +23,14 @@ GODOT_SUB=03_再刷重制_Godot
 
 usage() { print -u2 "用法：${0:t} <任务名> [cc|codex]   或   ${0:t} --补齐 <worktree 路径> [--branch <新分支名> [--from <提交或分支>]]"; exit 64; }
 
-# 参照副本按时间戳刷新：主工作区有、本分支没有或比主工作区旧的文件，克隆主工作区的；其余不动。
-# 合并 main 后若不刷新，worktree 会拿旧参照对新切片而误报。
+# 参照副本按内容刷新（tools64：原来只比 mtime，车道文件时间比主工作区新就永远不刷新）：见 参照批次.py refresh。
 ORACLE_COPIED=0
 refresh_oracle() {
-  local src=$1 dst=$2 f n=0 kept=()
-  [[ -d $src ]] || return 0
-  mkdir -p "$dst"
-  for f in "$src"/*(N.); do
-    if [[ ! -e $dst/${f:t} || $f -nt $dst/${f:t} ]]; then
-      cp -c -p "$f" "$dst/${f:t}"; (( n += 1 ))
-    fi
-  done
-  for f in "$dst"/*(N.); do [[ -e $src/${f:t} ]] || kept+=(${f:t}); done
-  ORACLE_COPIED=$n
-  print "== generated/oracle：从主工作区刷新 $n 个较新的文件${kept:+；保留本分支独有 ${(j:、:)kept}}"
+  local rc=0
+  python3 "$ENV_DIR/参照批次.py" refresh "$1" "$2" "${2:h}" || rc=$?
+  (( rc == 10 )) && ORACLE_COPIED=1
+  (( rc == 0 || rc == 10 )) || { print -u2 "✗ 参照刷新失败（参照批次.py refresh 退出 $rc）"; exit 1; }
+  return 0
 }
 
 prepare() {
@@ -66,9 +59,14 @@ prepare() {
   python3 "$ENV_DIR/参照批次.py" flux "$(git -C "$MAIN" rev-parse --path-format=absolute --git-common-dir)" || flux_rc=$?
   if [[ -e $gen ]]; then
     # 总装正在合并（主工作区 generated/ 带着未定稿的参照）：不刷新，免得拷走新 oracle 挡住车道同步（tools59）
-    (( flux_rc == 4 )) || refresh_oracle "$mgen/oracle" "$gen/oracle"
+    if (( flux_rc == 4 )); then
+      python3 "$ENV_DIR/参照批次.py" pending "$gen" set   # 留标记：之后 compare／云端选测会照旧比对参照，不把本树的同步戳当「自己同步过」
+    else
+      refresh_oracle "$mgen/oracle" "$gen/oracle"; python3 "$ENV_DIR/参照批次.py" pending "$gen" clear
+    fi
   else
     cp -cR "$mgen" "$gen"; ORACLE_COPIED=1
+    (( flux_rc != 4 )) || python3 "$ENV_DIR/参照批次.py" pending "$gen" set
   fi
   (( ORACLE_COPIED == 0 )) || python3 "$ENV_DIR/参照批次.py" record "$gen" "$mgen"
   [[ -e $proj/.godot ]] || cp -cR "$mproj/.godot" "$proj/.godot"
