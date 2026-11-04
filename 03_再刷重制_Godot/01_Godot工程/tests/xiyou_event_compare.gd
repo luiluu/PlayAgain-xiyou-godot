@@ -245,11 +245,14 @@ func _run() -> void:
 	var oracle_errors := []
 	# 有状态变体（event_state_probe：同一批事件页，运行前按预设改好初始状态，让新游戏走不到的分支被量到；号为 基础号#tag）
 	var all_cases: Array = oracle.cases.duplicate()
+	# 文件缺失不能静默跳过变体（审查 41 P2-1：测试通过但变体没比＝空绿）：缺就失败，补量用 07_开发环境/补跑事件状态探针.py（检查.sh／新建工作树.sh 会自动跑）
+	check("states_present", FileAccess.file_exists(ORACLE_STATES))
 	if FileAccess.file_exists(ORACLE_STATES):
 		var st = JSON.parse_string(FileAccess.get_file_as_string(ORACLE_STATES))
 		check("states_loaded", st is Dictionary and st.has("cases"))
 		if st is Dictionary and st.has("cases"):
 			all_cases.append_array(st.cases)
+			check("states_cases_present", st.cases.size() > 0)
 	for c in all_cases:
 		if not only.is_empty() and not only.any(func(p): return str(c.id).begins_with(p)):
 			continue

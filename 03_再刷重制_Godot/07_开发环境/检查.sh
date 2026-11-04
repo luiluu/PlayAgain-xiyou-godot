@@ -125,6 +125,8 @@ if (( FAIL && ! KEEP_GOING )); then
   exit 1
 fi
 
+# event_states.json 是同步才生成的产物，新工作树／没同步过的 main 里没有：先补量（缺失才跑，约 10 秒），免得对照专项与空绿扫描撞缺文件（审查 41 P2-1）
+python3 "$ENV_DIR/补跑事件状态探针.py" || FAIL=1
 print "== Godot 测试"
 (( SEL_FULL )) || TEST_ARGS+=(--reuse)
 CLOUD_FALLBACK=0
