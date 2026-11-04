@@ -49,11 +49,35 @@ static var FIX_ITACHI_1318 := true
 static var FIX_CRIMSON_1683 := true
 ## BattleManager.queueForceAction 的 339 参数，由战斗逻辑在事件阶段取走（take_forces）
 static var _forces: Array = []
+## fix2：审查 38 P2-1。开战时清掉上一场残留的强制行动与公共事件预约队列（原版 $gameTemp 跨战斗不清，残留会在下一场执行）
+static var FIX_QUEUE_CLEAR := true
+## fix2：审查 38 P2-1。一次事件检查里追加的强制行动跑到队列空（原版整队列当一个公共事件跑，跑的过程中排进来的紧接着下一轮跑，不等下次检查）
+static var FIX_FORCE_DRAIN := true
 ## 战斗双方（friendsUnit 用），XBattleLogic 开战时设
 static var battle_units := {}
 ## YEP_X_CriticalControl 的 $gameSystem._forceCritical（必爆 541、755）；force_previous 是 Game_Action._prevForcedCriticalHit，每次 apply 清
 static var force_critical := false
 static var force_previous = null
+## fix2 审查 38 P3-7：必爆 541、755 同时挂着时，原版 previous 被第二个状态盖成 true，整场强制暴击。按层数记，全部解除才回到最初值
+static var FIX_FORCE_CRIT_STACK := true
+static var force_depth := 0
+static var force_base := false
+## fix2：护体罡气 2562 说明写 9.9% 伤害由蓝代替，原版代码 1%（需要 FIX_QI_GUARD_2562 开着）
+static var FIX_QI_RATE_2562 := true
+## fix2：剑道争锋 2575 说明写用剑时伤害 +3.5%，fix1 按层数 0.5%×层、不限武器（需要 FIX_SWORD_2575 开着）
+static var FIX_SWORD_RATE_2575 := true
+## fix2 琼霄平衡（Kyo 授权 cc 调）：追加（金剪 1068）和反击（1072）打出的 5576／5577 不再触发追加和反击，防连锁
+static var FIX_CHAIN_GUARD := true
+## fix2 琼霄平衡：挨打反击 1072 每名持有者每回合最多反击 1 次（多个敌人同时打时不会连出多招）
+static var FIX_COUNTER_ONCE := true
+## 戮仙印记 1067 的倍率（备注写放大 400%，Kyo 定保持 ×4）
+static var MARK_FACTOR := 4.0
+static var chain_depth := 0
+static var battle_turn := 0
+static var _counter_turn := {}
+const CHAIN_SKILLS := [5576, 5577]
+## fix2：万古青天一株莲 7303 说明写回复所有队友（包括死亡），技能 scope 8 只打活的
+static var FIX_LOTUS_7303 := true
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -189,16 +213,29 @@ class PhaseValueProgram:
 				b.add_param(int(_number(args[0])), _number(args[1]))
 				resources.refresh(b)
 			"force_critical_on":
-				XStateEffects.force_previous = XStateEffects.force_critical
+				if XStateEffects.FIX_FORCE_CRIT_STACK:
+					if XStateEffects.force_depth == 0:
+						XStateEffects.force_base = XStateEffects.force_critical
+					XStateEffects.force_depth += 1
+				else:
+					XStateEffects.force_previous = XStateEffects.force_critical
 				XStateEffects.force_critical = true
 			"force_critical_restore":
-				if XStateEffects.force_previous != null:
+				if XStateEffects.FIX_FORCE_CRIT_STACK:
+					if XStateEffects.force_depth > 0:
+						XStateEffects.force_depth -= 1
+						if XStateEffects.force_depth == 0:
+							XStateEffects.force_critical = XStateEffects.force_base
+				elif XStateEffects.force_previous != null:
 					XStateEffects.force_critical = XStateEffects.force_previous
 			"set_hp":
 				resources.set_resource(b, "hp", _number(args[0]))
 			"queue_counter":
 				var foe: XBattler = effects.context.user
-				XStateEffects.queue_force_quiet(b, int(_number(args[0])), XStateEffects._unit_of(foe).find(foe))
+				var already: bool = XStateEffects.FIX_COUNTER_ONCE and XStateEffects._counter_turn.get(b, -1) == XStateEffects.battle_turn
+				if not already:
+					XStateEffects._counter_turn[b] = XStateEffects.battle_turn
+					XStateEffects.queue_force_quiet(b, int(_number(args[0])), XStateEffects._unit_of(foe).find(foe))
 			"queue_force_quiet":
 				XStateEffects.queue_force_quiet(b, int(_number(args[0])), int(_number(args[1])))
 			"queue_force":
@@ -287,7 +324,10 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	for raw in effects:
 		var e: Dictionary = raw
 		if e.has("fix") and fix_on(str(e.fix)):
-			e = {"phase": e.phase, "op": "effect_program", "program": e.fixed}
+			var program = e.fixed
+			if e.has("fix2") and fix_on(str(e.fix2)):
+				program = e.fixed2
+			e = {"phase": e.phase, "op": "effect_program", "program": program}
 		var op := str(e.get("op", ""))
 		if op == "mul":
 			if _active(e, c):
@@ -449,6 +489,8 @@ static func _unit_of(b: XBattler) -> Array:
 
 ## 修正版的强制行动：只排队，不像 queueForceAction 那样清所有结果（这一击的数字要留着）
 static func queue_force_quiet(b: XBattler, skill: int, target_index: int) -> void:
+	if FIX_CHAIN_GUARD and chain_depth > 0 and CHAIN_SKILLS.has(skill):
+		return
 	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else _unit_of(b).find(b), skill, target_index])
 
 
@@ -462,6 +504,8 @@ static func fix_on(name: String) -> bool:
 		"FIX_ELYSIUM_1301": return FIX_ELYSIUM_1301
 		"FIX_ORDER_TIERS": return FIX_ORDER_TIERS
 		"FIX_ITACHI_1318": return FIX_ITACHI_1318
+		"FIX_QI_RATE_2562": return FIX_QI_RATE_2562
+		"FIX_SWORD_RATE_2575": return FIX_SWORD_RATE_2575
 	return false
 
 
@@ -493,6 +537,15 @@ static func queue_force(b: XBattler, skill: int, target_index: int, resources: X
 	for side in ["actors", "enemies"]:
 		for m in battle_units.get(side, []):
 			resources.seed_result(m, XResourceContext.empty_result())
+
+
+static func clear_queues() -> void:
+	_forces.clear()
+	_reserves.clear()
+
+
+static func has_pending_forces() -> bool:
+	return not _forces.is_empty() or not _reserves.is_empty()
 
 
 static func take_forces() -> Array:

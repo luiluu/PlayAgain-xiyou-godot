@@ -209,7 +209,7 @@ func _action_effect(args: Array) -> void:
 	for t in list:
 		if t == null:
 			continue
-		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))):
+		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))) and not (XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303):
 			continue
 		logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
 

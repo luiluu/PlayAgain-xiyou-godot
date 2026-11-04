@@ -221,6 +221,12 @@ func _take_state_reserves() -> void:
 func _start_battle_effects() -> void:
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	XStateEffects.force_critical = false
+	XStateEffects.force_depth = 0
+	XStateEffects.chain_depth = 0
+	XStateEffects.battle_turn = 0
+	XStateEffects._counter_turn.clear()
+	if XStateEffects.FIX_QUEUE_CLEAR:
+		XStateEffects.clear_queues()
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
@@ -701,6 +707,8 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 			low.sort_custom(func(x, y): return x.hp_rate() < y.hp_rate())
 			return low.slice(0, 1)
 		8:
+			if _lotus_all(skill):
+				return friends.duplicate()  # 说明「回复所有队友（包括死亡）」
 			return alive(friends)
 		9:
 			if chosen and chosen.is_dead() and friends.has(chosen):
@@ -914,6 +922,7 @@ var _escape_ratio := -1.0
 
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
 func start_turn() -> void:
+	XStateEffects.battle_turn = turn + 1
 	XGuyu.start_turn(turn + 1)  # 谷雨 startTurn 包装（最外层）：原 startTurn 期间 round＝turnCount＋1
 	# Game_Troop.increaseTurn：span 1（回合）的页重新可执行
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
@@ -1147,6 +1156,7 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	if is_event_waiting():
 		return []
 	_check = {"first": first_subject, "turn_end": turn_end, "moment": {}, "guard": 0}
+	_drain_rounds = 0
 	return _drive_events()
 
 
@@ -1179,6 +1189,9 @@ func run_events(first_subject: XBattler = null, turn_end := false) -> Array:
 	return logs
 
 
+var _drain_rounds := 0
+
+
 func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
@@ -1197,6 +1210,11 @@ func _drive_events() -> Array:
 					found = i
 					break
 			if found < 0:
+				# 追加的强制行动／预约在这一轮里又排了新的：接着跑到队列空（上限防止暴击必追加的死循环）
+				if XStateEffects.FIX_FORCE_DRAIN and XStateEffects.has_pending_forces() and _drain_rounds < 50:
+					_drain_rounds += 1
+					_check.guard = int(_check.guard) - 1
+					continue
 				break
 			if int(pages[found].get("span", 0)) <= 1:
 				_event_flags[found] = true
@@ -1418,7 +1436,9 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XNanoha.begin(self)
+	XStateEffects.chain_depth += 1
 	logs.append_array(execute(u, skill, target, true))
+	XStateEffects.chain_depth -= 1
 	XNanoha.end_execute(self)
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
@@ -1686,6 +1706,11 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 
 
 ## 执行一次行动：消耗、目标、连击、命中、伤害、效果。
+## fix2：万古青天一株莲（7303）按说明作用于所有队友，含倒下的
+func _lotus_all(skill: Dictionary) -> bool:
+	return XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303
+
+
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
 	# 行动无效（原版没有退回攻击）：敌人走核心 processTurn，isValid 为假整次跳过（不 startAction、不付费）；
@@ -1756,7 +1781,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
 	for t in targets:
 		for i in range(maxi(1, repeats)):
-			if t.is_dead() and not [9, 10].has(int(skill.scope)):
+			if t.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
 				break
 			if u.is_dead():
 				break
@@ -1870,7 +1895,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var tt := substitute_for(skill, t)
 	XXuanBattle.note_target(tt)  # 璇 Game_Action.apply 包装：记主行动打到的敌人（棱光跟打）。记在这里不进 apply：子行动是新 Game_Action，黄泉扩散、镜流补段 oldApply 绕过（审查 35b P3-1）
 	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
-	var used := (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
+	var used := _lotus_all(skill) or (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
 	# 黄泉（modules.json 第 9 个）、甚尔（10）、宿傩（18）的 Game_Action.apply 包装在饿狼（19）、云裳（31）之内：
 	# 整次包装跑完再走外层的饿狼记帧与云裳指令／种针／觉醒引爆（沙僧二审 S2-1-03；镜流、渡鸦只管自己的行动，这里没有）
 	var wrapped := []
@@ -2084,12 +2109,13 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
 	XStateEffects.force_previous = null
+	XStateEffects.force_depth = 0
 	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
 	var user_was_alive := u.is_alive()
-	var used := not blocked and (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead()  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
+	var used := not blocked and (_lotus_all(skill) or (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead())  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
 	XAlienBattle.seal_last(self, u, skill, t, used and not r.missed and not r.evaded)  # 异化蚀术 apply 包装：命中后封印
@@ -2142,7 +2168,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var dmg: Dictionary = skill.damage
 	if XImportedBalance.blocks(u, skill):
 		return r  # 导入角色平衡：Game_Action.apply 对禁用角色／号角直接返回
-	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10]:
+	if t.is_dead() and not int(skill.get("scope", 0)) in [9, 10] and not _lotus_all(skill):
 		return r
 	var physical := XDamage.is_physical(skill)
 	var magical := XDamage.is_magical(skill)
@@ -2170,7 +2196,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			_action_resources.result(dt).critical = true
 		_damage_record = previous_record
 		if XStateEffects.FIX_MARK_5576 and int(skill.get("id", 0)) in [5576, 5577] and dt.is_state_affected(1067):
-			value *= 4.0  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
+			value *= XStateEffects.MARK_FACTOR  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
 		r.state_value = value
 		_action_resources.result(dt).success = true
 		match type:
