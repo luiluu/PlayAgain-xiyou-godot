@@ -689,6 +689,97 @@ cases.push(makeCase('hook.blocks', {}, () => {
   }
   return out;
 }));
+// 切片可达剩余几族（rules6）：换装、必爆、公共事件、再生、改属性。预期内的原版报错记 sourceErrors。
+cases.push(makeCase('rest.blocks', {}, () => {
+  const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
+  const sourceErrors = []; let popups = [], anims = [], collapses = [];
+  const statesBefore = w.$dataStates.length;
+  w.Yanfly.Util.displayError = error => sourceErrors.push(String(error).slice(0, 70));
+  const name = t => t === a ? 'a' : t === b ? 'b' : t === e ? 'e' : '?';
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: name(this), hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage}); };
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push([name(this), id]); };
+  const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses.push(name(this)); };
+  const units = [a, b, e];
+  const reset = () => { for (const t of units) { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1000; t._mp = 50; t._tp = 30; t.need_refresh = true; t.refresh(); t._hp = 1000; delete t._stateOrigin; }
+    popups = []; anims = []; collapses = []; sourceErrors.length = 0; w.$gameTemp.clearCommonEvent(); w.$gameSystem._forceCritical = false; w.$gameSystem._forceNoCritical = false; };
+  const place = (t, sid) => { t._states.push(sid); t.need_refresh = true; t.refresh(); t.clearResult(); };
+  const res = t => ({hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), states: t._states.slice().sort((x, y) => x - y)});
+  const snap = () => ({sourceErrors: sourceErrors.slice(), popups: popups.slice(), anims: anims.slice(), collapses: collapses.slice(), reserved: w.$gameTemp._commonEventId || 0, a: res(a), b: res(b), e: res(e)});
+  const action = (user, skillId) => { const act = new w.Game_Action(user); act.setSkill(skillId); return act; };
+  const out = {};
+  const oldRandom = w.Math.random;
+  try {
+    w.Math.random = () => 0.5;
+    // 换装：apply／remove 的字段；同时两个；敌人；没 apply 就 remove
+    out.costume = [];
+    const look = () => ({battlerName: a.battlerName(), raw: a._battlerName, prev: a._prevBattlerName === undefined ? null : a._prevBattlerName, priority: a._priorityBattlerName === undefined ? null : a._priorityBattlerName, errors: sourceErrors.slice()});
+    const base = a._battlerName;
+    reset(); a._prevBattlerName = undefined; a.customEffectEval(66, 'addState'); out.costume.push({step: 'apply66', ...look()});
+    a.customEffectEval(226, 'addState'); out.costume.push({step: 'apply226', ...look()});
+    a.customEffectEval(226, 'removeState'); out.costume.push({step: 'remove226', ...look()});
+    a.customEffectEval(66, 'removeState'); out.costume.push({step: 'remove66', ...look()});
+    a.setBattlerImage(base); a._prevBattlerName = undefined;
+    reset(); a.customEffectEval(66, 'removeState'); out.costume.push({step: 'remove_only', ...look()});
+    a.setBattlerImage(base); a._prevBattlerName = undefined;
+    reset(); e.customEffectEval(66, 'addState'); out.costume.push({step: 'enemy_apply', enemy: e.battlerName(), errors: sourceErrors.slice()});
+    reset(); e.customEffectEval(66, 'removeState'); out.costume.push({step: 'enemy_remove', enemy: e.battlerName(), errors: sourceErrors.slice()});
+    out.costumeBase = base;
+    // 必爆：真实 apply，状态在目标身上
+    out.crit = [];
+    for (const [sid, skill, extra] of [[541, 1, 0], [755, 1, 0], [541, 5, 0], [541, 1, 755]]) { reset(); place(e, sid); if (extra) place(e, extra); e.typestates('selectState'); e.typestates('deselectState');
+      const act = action(a, skill), itemCrit = !!act.item().damage.critical; const flags = []; const oldCri = w.Game_Action.prototype.itemCri;
+      w.Game_Action.prototype.itemCri = function (t) { const v = oldCri.call(this, t); flags.push([w.$gameSystem._forceCritical, v]); return v; };
+      act.apply(e); w.Game_Action.prototype.itemCri = oldCri;
+      out.crit.push({sid, skill, extra, itemCrit, critical: e.result().critical, flags, forceAfter: w.$gameSystem._forceCritical, noAfter: w.$gameSystem._forceNoCritical, prev: act._prevForcedCriticalHit === undefined ? 'undefined' : act._prevForcedCriticalHit, errors: sourceErrors.slice()}); }
+    // 公共事件预约
+    out.reserve = [];
+    const run = (sid, phase, holder, value, setup) => { reset(); place(holder, sid); if (setup) setup(); let got = null;
+      if (['turnStartState', 'removeState', 'victory'].includes(phase)) holder.customEffectEval(sid, phase); else got = action(a, 1).customEffectEval(e, sid, phase, holder, value);
+      return {sid, phase, value, got, v901: w.$gameVariables.value(901), ...snap()}; };
+    const VAR = (id, x) => () => w.$gameVariables.setValue(id, x);
+    out.reserve.push(run(1306, 'turnStartState', a, 0, VAR(901, 7)));
+    out.reserve.push(run(1306, 'turnStartState', e, 0, VAR(901, 7)));
+    out.troopSize = w.$gameTroop.members().length; out.mmpA = a.mmp;
+    out.reserve.push(run(1307, 'removeState', a, 0));
+    out.reserve.push({deadTroop: true, ...run(1307, 'removeState', a, 0, () => { for (const m of w.$gameTroop.members()) { m._hp = 0; m._states.length = 0; m._states.push(1); } })});
+    for (const m of w.$gameTroop.members()) { m._states.length = 0; m._hp = 1000; }
+    out.reserve.push(run(1317, 'deselectState', e, 0));
+    out.reserve.push(run(1317, 'deselectState', e, 0, () => { e._hp = 0; }));
+    out.reserve.push(run(1318, 'turnStartState', a, 0, VAR(1163, 0)));
+    out.reserve.push(run(1318, 'turnStartState', a, 0, VAR(1163, 1)));
+    out.reserve.push(run(1318, 'turnStartState', a, 0, VAR(1163, 2)));
+    w.$gameVariables.setValue(1163, 0);
+    for (const sid of [2007, 2009, 2011, 2026]) for (const value of [-1, 0, 7]) out.reserve.push(run(sid, 'reactState', e, value));
+    out.reserve.push(run(2568, 'confirmState', a, 5, VAR(1584, 9998)));
+    out.reserve.push(run(2568, 'confirmState', a, 5, VAR(1584, 9999)));
+    w.$gameVariables.setValue(1584, 0);
+    // 再生：来源是别人；来源倒下；来源是自己；有 207；打死
+    out.regen = [];
+    const setOrigin = (t, sid, src) => { t._stateOrigin = t._stateOrigin || {}; t._stateOrigin[sid] = src === 'self' ? undefined : (src.isActor() ? [0, src.actorId()] : [1, src.index()]); };
+    for (const sid of [260, 1006]) for (const [mode, hp207, ehp] of [['other', false, 1000000], ['other', true, 1000000], ['self', false, 1000000], ['deadOrigin', false, 1000000], ['other', false, 1]]) {
+      reset(); e._hp = ehp; e._states.push(sid); if (hp207) e._states.push(207); e.need_refresh = true; e.refresh(); e._hp = ehp;
+      setOrigin(e, sid, mode === 'self' ? 'self' : a); if (mode === 'deadOrigin') { a._hp = 0; a._states.push(1); }
+      const before = {amat: a.mat, emat: e.mat, ahp: a.hp, ehp: e.hp, el: e.elementRate(6), amhp: a.mhp};
+      e.customEffectEval(sid, 'regenerateState');
+      out.regen.push({sid, mode, hp207, ehpIn: ehp, before, ...snap()}); a._states.length = 0; a._hp = 1000;
+    }
+    // 改属性
+    reset(); w.$gameVariables.setValue(980, 3); const g0 = w.$gameParty.gold(); e.customEffectEval(1423, 'victory'); out.gold = {g0, after: w.$gameParty.gold(), errors: sourceErrors.slice()};
+    w.$gameParty.gainGold(g0 - w.$gameParty.gold()); w.$gameVariables.setValue(980, 0);
+    out.tp = []; for (const tp of [0, 30, 80, 100]) { reset(); a._tp = tp; a.customEffectEval(1840, 'addState'); out.tp.push({tp, after: a.tp, hpAffected: a.result().hpAffected, tpDamage: a.result().tpDamage, maxTp: a.maxTp()}); }
+    out.params = []; for (const who of ['a', 'e']) { reset(); const t = who === 'a' ? a : e; w.$gameVariables.setValue(1204, 2); const p3 = t.param(3), p5 = t.param(5), raw3 = t._paramPlus[3];
+      t.customEffectEval(2003, 'addState'); const mid = [t.param(3), t.param(5), t._paramPlus[3], t._paramPlus[5]]; t.customEffectEval(2003, 'removeState');
+      out.params.push({who, p3, p5, raw3, mid, end: [t.param(3), t.param(5), t._paramPlus[3], t._paramPlus[5]], v: w.$gameVariables.value(1204), errors: sourceErrors.slice()}); }
+    w.$gameVariables.setValue(1204, 0);
+  } finally {
+    w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA; w.$dataStates.length = statesBefore;
+    for (const t of units) { t._states.length = 0; t.clearResult(); delete t._stateOrigin; }
+    w.$gameTemp.clearCommonEvent(); w.$gameSystem._forceCritical = false; w.$gameSystem._forceNoCritical = false;
+  }
+  return JSON.parse(JSON.stringify(out, (k, v) => k === 'errors' ? (v.length ? v : undefined) : v).replace(/"errors":/g, '"sourceErrors":'));
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来

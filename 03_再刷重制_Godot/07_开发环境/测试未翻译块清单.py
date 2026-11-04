@@ -72,12 +72,11 @@ class KnownBlocksTests(unittest.TestCase):
 
     def test_known_families(self):
         self.assertEqual(self.one(377, 'react')['family'], '伤害 react／confirm')
-        self.assertEqual(self.one(1306, 'turn_start')['family'], 'reserveCommonEvent')
-        self.assertEqual(sum(r['family'] == '换装' for r in self.rows), 142)
+        self.assertEqual(self.one(1771, 'apply')['family'], 'reserveCommonEvent')
+        self.assertEqual(sum(r['family'] == '换装' for r in self.rows), 0)  # rules6 换装走模板
 
     def test_known_reach(self):
-        self.assertEqual(self.one(1306, 'turn_start')['tier'], '切片可达')  # 技能 7304 的 PushState
-        self.assertEqual(self.one(1840)['tier'], '切片可达')               # 技能 6042 的 StartPushState1840（rules1b 粗查漏了这类备注）
+        self.assertEqual(self.one(1771, 'apply')['tier'], '全游戏可达')
         self.assertEqual(self.one(377, 'react')['tier'], '不可达')          # 反伤物理：数据里查不到谁加
 
 

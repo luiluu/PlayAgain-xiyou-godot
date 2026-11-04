@@ -264,6 +264,9 @@ PHASE_CALLS = {'startDamagePopup': ('popup', 0), 'clearResult': ('clear_result',
                'addState': ('add_state', 1), 'isAlive': ('is_alive', 0), 'isBattleMember': ('is_battle_member', 0), 'isActor': ('is_actor', 0),
                'hasSkill': ('has_skill', 1), 'stateRate': ('state_rate', 1), 'isStateResist': ('state_resist', 1), 'deathStateId': ('death_state_id', 0),
                'startAnimation': ('animation', 1), 'setHp': ('set_hp', 1), 'queueForce': ('queue_force', 2), 'aliveFriends': ('alive_friends', 0),
+               'reserve': ('reserve', 1), 'troopSize': ('troop_size', 0), 'enemiesAlive': ('enemies_alive', 0), 'isNotOrigin': ('not_origin', 0),
+               'gainGold': ('gain_gold', 1), 'setTpRaw': ('set_tp', 1), 'addParam': ('add_param', 2), 'forceCriticalOn': ('force_critical_on', 0),
+               'forceCriticalRestore': ('force_critical_restore', 0),
                'firstWeaponType': ('first_weapon_type', 0), 'setCounter': ('set_counter', 2), 'addActorCounterLevel': ('add_actor_counter_level', 2)}
 
 
@@ -314,13 +317,14 @@ class Compiler:
             if callee['op'] != 'member' or callee['owner']['op'] != 'name':
                 raise Unsupported('unsupported_call', pos)
             owner, method = callee['owner']['name'], callee['name']
-            if self.phase_effects and owner == 'tar':
+            if self.phase_effects and owner in ('tar', 'origin'):
+                receiver = 't' if owner == 'tar' else 'o'
                 if method in ('gainHp', 'gainMp', 'gainTp') and len(args) == 1:
                     self.caps.add('write.' + method[4:].lower())
-                    return out('gain', receiver='t', resource=method[4:].lower(), amount=self.lower(args[0]))
+                    return out('gain', receiver=receiver, resource=method[4:].lower(), amount=self.lower(args[0]))
                 if method in PHASE_CALLS and len(args) == PHASE_CALLS[method][1]:
                     self.caps.add('write.phase')
-                    return out('phase_call', receiver='t', name=PHASE_CALLS[method][0], args=[self.lower(x) for x in args])
+                    return out('phase_call', receiver=receiver, name=PHASE_CALLS[method][0], args=[self.lower(x) for x in args])
             if self.phase_effects and owner in ALIASES and method in PHASE_CALLS:
                 name, arity = PHASE_CALLS[method]
                 if len(args) != arity:

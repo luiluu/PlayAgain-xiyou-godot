@@ -269,6 +269,17 @@ func weapon_unleash_objects() -> Array:
 	return out
 
 ## 敌人可用的技能对象（来自行动列表），伤害结算按 objects() 扫描标签时会用到。
+## Game_BattlerBase.addParam：敌人也有 _paramPlus（太极破坏 2003），只活在这场战斗
+var added_params := {}
+
+func param_plus(i: int) -> float:
+	return super.param_plus(i) + float(added_params.get(i, 0.0))
+
+func add_param(i: int, value: float) -> void:
+	added_params[i] = float(added_params.get(i, 0.0)) + value
+	param_mark_dirty()
+
+
 func skills() -> Array:
 	var out := []
 	for a in data().get("actions", []):

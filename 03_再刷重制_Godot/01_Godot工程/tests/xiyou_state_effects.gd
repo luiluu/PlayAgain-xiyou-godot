@@ -318,6 +318,9 @@ func _run() -> void:
 	check("hook.oracle_present", cases.has("hook.blocks"))
 	if cases.has("hook.blocks"):
 		_hook_blocks(cases["hook.blocks"].observed)
+	check("rest.oracle_present", cases.has("rest.blocks"))
+	if cases.has("rest.blocks"):
+		_rest_blocks(cases["rest.blocks"].observed)
 	check("revive.oracle_present", cases.has("revive.blocks"))
 	if cases.has("revive.blocks"):
 		_revive_blocks(cases["revive.blocks"].observed)
@@ -1089,6 +1092,208 @@ func _hook_1306(rows: Array) -> void:
 		has.sort()
 		check("hook.1306.%d.a" % index, a.hp == hp - ceilf(hp * 0.13) and has == wanted and pops.size() >= 1 and float(pops[0].hpDamage) == ceilf(hp * 0.13), [a.hp, hp, has, wanted, pops])
 		check("hook.1306.%d.b" % index, (b.is_dead() == bool(row.alone)) and (row.alone or b.hp < b.mhp or b.hp == 0.0), [b.hp, row.alone])
+
+
+## 切片可达剩余几族（rules6）：换装、必爆、公共事件预约、再生、改属性。
+func _rest_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	_rest_costume(o)
+	_rest_crit(o.crit)
+	_rest_reserve(o)
+	_rest_regen(o.regen)
+	_rest_attrs(o)
+	XState.current = null
+	XStateEffects.battle_units = {}
+	XStateEffects.force_critical = false
+
+
+func _rest_costume(o: Dictionary) -> void:
+	var s := XState.new_game(3, 1, [8])
+	XState.current = s
+	var a: XActor = s.actor(1)
+	var base := str(a.data().get("battlerName", ""))
+	var steps := {}
+	for row in o.costume:
+		steps[row.step] = row
+	var run := func(sid: int, phase: String): XStateEffects.run_one(phase, a, XDB.rec("States", sid), {"execute": true, "resources": XResourceContext.new()})
+	var look := func() -> String: return str(a.data().get("battlerName", ""))
+	check("rest.costume.base_note", str(steps.apply66.prev) == str(o.costumeBase) and str(steps.apply226.prev) == str(o.costumeBase) and steps.remove226.prev == null, steps)
+	run.call(66, "apply")
+	check("rest.costume.apply66", look.call() == str(steps.apply66.battlerName) and str(a.state_data.get("_prevBattlerName")) == base, [look.call(), a.state_data])
+	run.call(226, "apply")
+	check("rest.costume.apply226", look.call() == str(steps.apply226.battlerName) and str(a.state_data.get("_prevBattlerName")) == base, [look.call(), a.state_data])
+	run.call(226, "remove")
+	check("rest.costume.remove226", look.call() == base and not a.state_data.has("_prevBattlerName"), [look.call(), a.state_data])
+	# 原版这时把图设成 undefined（remove66、remove_only 的 battlerName 都没了），显示不出来；这边保留现状
+	check("rest.costume.undefined_note", not steps.remove66.has("battlerName") and not steps.remove_only.has("battlerName"), steps)
+	run.call(66, "remove")
+	check("rest.costume.remove_without_prev", look.call() == base, look.call())
+	# 敌人：apply 什么都不做；remove TypeError，也什么都不做
+	check("rest.costume.enemy_note", steps.enemy_apply.enemy == steps.enemy_remove.enemy and not steps.enemy_remove.sourceErrors.is_empty(), steps)
+	var enemy := _plain()
+	XStateEffects.run_one("apply", enemy, XDB.rec("States", 66), {"execute": true, "resources": XResourceContext.new()})
+	XStateEffects.run_one("remove", enemy, XDB.rec("States", 66), {"execute": true, "resources": XResourceContext.new()})
+	check("rest.costume.enemy", enemy.state_data.is_empty(), enemy.state_data)
+	# 换装卡状态归 XCostumes，这里不动外观
+	var card: int = XCostumes.registry().keys()[0]
+	check("rest.costume.card_translated", XDB.rec("States", card).effects.any(func(e): return e.op == "costume_image"))
+	run.call(card, "apply")
+	check("rest.costume.card_skipped", look.call() == base and not a.state_data.has("_prevBattlerName"), [look.call(), a.state_data])
+	# 切片可达的 6 个状态，图都在切片素材里
+	for sid in [66, 226, 270, 283, 284, 1223]:
+		var image := str(XDB.rec("States", sid).effects.filter(func(e): return e.op == "costume_image")[0].image)
+		check("rest.costume.asset.%d" % sid, ResourceLoader.exists("res://modes/xiyou/generated/img/sv_actors/%s.png" % image), image)
+
+
+func _rest_crit(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		XEnemy.force_roll = 100.0
+		var s := XState.new_game(3, 1, [8])
+		s.random_master = XRandomStream.hex64(4800 + index)
+		XState.current = s
+		var logic := ReviveLogic.new()
+		logic.elite_roll = 100.0
+		logic.setup(2, s)
+		var e: XBattler = logic.enemies[0]
+		e.state_ids.append(int(row.sid))
+		if int(row.extra) != 0:
+			e.state_ids.append(int(row.extra))
+		e.param_mark_dirty()
+		e.param_refresh()
+		var r := logic.apply(logic.actors[0], XDB.rec("Skills", int(row.skill)), e)
+		check("rest.crit.%d" % index, bool(r.critical) == bool(row.critical) and XStateEffects.force_critical == bool(row.forceAfter), [row, r.critical, XStateEffects.force_critical])
+	# 没有状态就不暴击（ShieldLogic 的暴击随机数是 1）
+	var s2 := XState.new_game(3, 1, [8])
+	XState.current = s2
+	var plain := ReviveLogic.new()
+	plain.elite_roll = 100.0
+	plain.setup(2, s2)
+	check("rest.crit.none", not bool(plain.apply(plain.actors[0], XDB.rec("Skills", 1), plain.enemies[0]).critical))
+
+
+func _rest_reserve(o: Dictionary) -> void:
+	var troop: Array = []
+	for i in range(int(o.troopSize)):
+		troop.append(_plain())
+	for index in range(o.reserve.size()):
+		var row: Dictionary = o.reserve[index]
+		var sid := int(row.sid)
+		var phase := str(row.phase).trim_suffix("State")
+		phase = {"turnStart": "turn_start", "deselect": "deselect", "react": "react", "confirm": "confirm", "remove": "remove"}[phase]
+		var s := XState.new_game_blank()
+		XState.current = s
+		s.set_variable(901, 7.0)
+		s.set_variable(1163, 1.0 if sid == 1318 and int(row.reserved) == 0 else 0.0)  # 参照 1、2 都不预约
+		s.set_variable(1584, 9999.0 if bool(row.e.dead) and sid == 2568 else 9998.0)
+		for m in troop:
+			m.hp = 0.0 if row.has("deadTroop") else 1000.0
+			m.state_ids.clear()
+			if row.has("deadTroop"):
+				m.state_ids.append(1)
+		XStateEffects.battle_units = {"enemies": troop}
+		var a := _plain()
+		a.values.mmp = float(o.mmpA)
+		a.mp = 50.0
+		var e := _plain(float(row.e.hp) if sid == 1317 else 1000.0)
+		e.resource_death_blocked = sid == 1317 and e.hp == 0.0
+		var holder: XBattler = a if not row.a.states.is_empty() or (sid == 1306 and row.popups[0].who == "a") else e
+		holder.state_ids.append(sid)
+		var ctx := _action_ctx(a, e, float(row.value))
+		XStateEffects.take_reserves()
+		var got := XStateEffects.run_one(phase, holder, XDB.rec("States", sid), ctx)
+		var taken := XStateEffects.take_reserves()
+		check("rest.reserve.%d" % index, (taken.back() if not taken.is_empty() else 0) == int(row.reserved) and (row.got == null or got == float(row.got)) and (row.has("deadTroop") or e.is_dead() == bool(row.e.dead)),
+			{"row": [sid, row.phase, row.value, row.reserved], "got": [taken, got, e.is_dead()]})
+		if sid == 1306:
+			check("rest.reserve.1306.%d" % index, s.variable(901) == float(row.v901) and (holder != a or a.mp == float(row.a.mp)), [s.variable(901), a.mp, row.a.mp])
+
+
+func _rest_regen(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		var sid := int(row.sid)
+		var f: Dictionary = row.before
+		var a := _plain(float(f.ahp))
+		a.values.mhp = float(f.amhp)
+		a.values.mat = float(f.amat)
+		if row.mode == "deadOrigin":
+			a.state_ids.append(1)
+		var e := _plain(float(f.ehp))
+		e.values.mhp = 100000000.0
+		e.state_ids.append(sid)
+		if row.hp207:
+			e.state_ids.append(207)
+		if row.mode != "self":
+			e.state_origins[sid] = weakref(a)
+		var logs := []
+		var ctx := {"execute": true, "resources": XResourceContext.new(), "emit": func(entry): logs.append(entry)}
+		XStateEffects.run_one("regenerate", e, XDB.rec("States", sid), ctx)
+		var anims: Array = logs.filter(func(l): return l.has("animation")).map(func(l): return ["a" if l.target == a else "e", int(l.animation)])
+		var want_anims: Array = row.anims.map(func(p): return [p[0], int(p[1])])
+		var pops: Array = logs.filter(func(l): return not l.has("animation") and float(l.hp) != 0.0).map(func(l): return ["a" if l.target == a else "e", float(l.hp)])
+		# 参照是直调块，没有外层 regenerateStateEffects 的目标弹字；这边多一条目标掉血
+		var want_pops: Array = row.popups.map(func(p): return [p.who, float(p.hpDamage)])
+		if float(row.e.hp) != float(f.ehp):
+			var damage := float(f.amat) * (5.0 if sid == 260 else 100.0)  # 元素率 1
+			want_pops.append(["e", -damage * 3.0 if row.hp207 and sid == 260 else damage])  # 结果槽记最后一次 gainHp，不截血量
+		check("rest.regen.%d" % index, a.hp == float(row.a.hp) and e.hp == float(row.e.hp) and e.is_dead() == bool(row.e.dead) and anims == want_anims and pops == want_pops,
+			{"row": [sid, row.mode, row.hp207], "want": [row.a.hp, row.e.hp, want_anims, want_pops], "got": [a.hp, e.hp, anims, pops]})
+
+
+func _rest_attrs(o: Dictionary) -> void:
+	var s := XState.new_game(3, 1, [8])
+	XState.current = s
+	s.set_variable(980, 3.0)
+	s.gold = 1000
+	var u := _plain()
+	XStateEffects.run_one("victory", u, XDB.rec("States", 1423), {"execute": true, "resources": XResourceContext.new()})
+	check("rest.gold", s.gold == 1000 + int(o.gold.after) - int(o.gold.g0), [s.gold, o.gold])
+	for index in range(o.tp.size()):
+		var row: Dictionary = o.tp[index]
+		var b := _plain()
+		b.tp = float(row.tp)
+		XStateEffects.run_one("apply", b, XDB.rec("States", 1840), {"execute": true, "resources": XResourceContext.new()})
+		check("rest.tp.%d" % index, b.tp == float(row.after), [row, b.tp])
+	s.set_variable(1204, 2.0)
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	XEnemy.force_roll = 100.0
+	logic.setup(2, s)
+	for index in range(o.params.size()):
+		var row: Dictionary = o.params[index]
+		var t: XBattler = logic.actors[0] if row.who == "a" else logic.enemies[0]
+		var before := t.param_plus(3)
+		XStateEffects.run_one("apply", t, XDB.rec("States", 2003), {"execute": true, "resources": XResourceContext.new()})
+		check("rest.param.%s.mid" % row.who, t.param_plus(3) - before == float(row.mid[2]) - float(row.raw3) and t.param_plus(5) - before == float(row.mid[3]) - float(row.raw3), [row, t.param_plus(3)])
+		XStateEffects.run_one("remove", t, XDB.rec("States", 2003), {"execute": true, "resources": XResourceContext.new()})
+		check("rest.param.%s.end" % row.who, t.param_plus(3) == before and float(row.end[2]) == float(row.raw3) and s.variable(1204) == float(row.v), [row, t.param_plus(3)])
+	# 真实战斗的回合、再生阶段不带 resources：块自己建（只传 resources 的单块例测不出这条）
+	var bare: XActor = logic.actors[0]
+	bare.hp = bare.mhp
+	bare.state_ids.append(1306)
+	bare.param_mark_dirty()
+	bare.param_refresh()
+	var bare_hp := bare.hp
+	XStateEffects.run("turn_end", bare, {"emit": func(_entry): pass})
+	check("rest.bare_turn_end", bare.hp < bare_hp, [bare_hp, bare.hp])
+	var victim: XBattler = logic.enemies[0]
+	victim.state_ids.append(260)
+	victim.state_origins[260] = weakref(bare)
+	victim.param_mark_dirty()
+	victim.param_refresh()
+	var victim_hp := victim.hp
+	var bare_logs := []
+	XStateEffects.run("regenerate", victim, {"random": logic._rule(), "variables": logic.vars(), "emit": func(entry): bare_logs.append(entry)})
+	check("rest.bare_regen", victim.hp < victim_hp and bare_logs.any(func(l): return l.target == victim and float(l.hp) > 0.0), [victim_hp, victim.hp, bare_logs.size()])
+	bare.state_ids.erase(1306)
+	victim.state_ids.erase(260)
+	# 回合开始的弹字经 ctx.emit 交给调用方（小爱莉被动扣蓝）
+	var a: XActor = logic.actors[0]
+	a.mp = a.mmp
+	XStateEffects.run_one("turn_start", a, XDB.rec("States", 1306), {"execute": true, "resources": XResourceContext.new(), "emit": logic._turn_start_emit})
+	var logs := logic.take_turn_start_logs()
+	check("rest.turn_start_emit", logs.size() == 1 and logs[0].target == a and float(logs[0].mp) > 0.0 and logic.take_turn_start_logs().is_empty(), logs)
 
 
 func _pop_row(p: Dictionary) -> Array:
