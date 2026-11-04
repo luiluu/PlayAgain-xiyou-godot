@@ -2730,6 +2730,54 @@ for name in filter(None, files):
         self.assertTrue(self.wt.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), pushed)
 
+    def gate_fixture(self, gate_rc):
+        """检查.sh 替身记一行；工具回归.py 替身按 gate_rc 退出并留一行，用来看顺序。"""
+        order = Path(self.tmp.name) / 'order'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "check $*" >> %s\n' % order); checker.chmod(0o755)
+        (self.root / merge.ENV / '工具回归.py').write_text('open(%r, "a").write("gate\\n")\nraise SystemExit(%d)\n' % (str(order), gate_rc))
+        self.g('add', '.'); self.g('commit', '-m', 'gate fixture')
+        self.g('merge', 'main', cwd=self.wt)
+        return order
+
+    def test_finish_affected_runs_tool_gate_before_checker(self):
+        """tools65：--finish --affected（含 --cloud）在开选测前先跑 工具回归.py，过了才跑 检查.sh。"""
+        self.github()
+        order = self.gate_fixture(0)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
+        self.assertEqual([l.split()[0] for l in order.read_text().splitlines()], ['gate', 'check'])
+
+    def test_finish_affected_stops_early_when_tool_gate_fails(self):
+        """工具快速回归失败：不开选测（不耗云端额度）、保留现场、不提交收尾、不清理。"""
+        bare = self.github()
+        order = self.gate_fixture(1)
+        pushed = self.g('rev-parse', 'main', cwd=bare)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertNotEqual(self.call('--finish', '--affected', '--cloud'), 0)
+        self.assertEqual(order.read_text().split(), ['gate'])             # 检查.sh 一次都没跑
+        self.assertIn('工具快速回归没过', self.last_output)
+        self.assertTrue(self.wt.exists())
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), pushed)
+
+    def test_tool_gate_not_run_for_full_check_and_can_be_switched_off(self):
+        """全量（不加 --affected）检查.sh 自己含工具回归，不重复跑；XIYOU_TOOL_GATE=0 可关。"""
+        order = self.gate_fixture(1)                                       # 门禁会失败：被跑到就整条失败
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual([l.split()[0] for l in order.read_text().splitlines()], ['check'])
+
+    def test_tool_gate_switch_off(self):
+        order = self.gate_fixture(1)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        with mock.patch.dict(os.environ, {'XIYOU_TOOL_GATE': '0'}):
+            self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
+        self.assertEqual([l.split()[0] for l in order.read_text().splitlines()], ['check'])
+
     def test_cloud_env_uploads_only_when_a_lane_refreshed_reference_or_slice(self):
         self.assertEqual(merge.cloud_env({'refresh': False}, {})['CHECK_CLOUD_NO_UPLOAD'], '1')
         self.assertNotEqual(merge.cloud_env({'refresh': False}, {'refresh': True}).get('CHECK_CLOUD_NO_UPLOAD'), '1')
