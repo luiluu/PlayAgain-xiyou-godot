@@ -78,6 +78,7 @@ baseline 本来就 5807／5808 一致（唯一不一致 `m4e73p0` 是 O-044 有�
 ## 验证
 
 - 本机：`语法检查.py` 通过；`xiyou_script_gaps` 56／56、`xiyou_script_census` 19／19、`xiyou_script` 26／26、`xiyou_event_compare` 5／5。
+- 云端选测（359ad50db1，310 场景 6 片）：306 个通过，4 个失败（`xiyou_flow`、`xiyou_floor_run`／`_b`／`_c`）——原因是我把存档读回的角色操作统一加了 `from: 0`，存读档往返不再逐字相同；已改成只有 `replace` 带 `from`，4 个场景本机复跑全过（flow 48／48、floor_run 273／273、b 332／332、c 560／560、save_events 31／31、script_gaps 56／56）。修复后没有再整批重跑云端（改动只在读档那几行）。
 - 选测：`选测.py main --list` 因 `xstate.gd` 改动列了 310 个场景，超 40 个，走 `云端选测.py`（见下「云端选测」一行）；`xiyou_determinism` 等战斗核心场景在列表里一并交云端。
 - 同步：`同步正式西游.py --accept-additions` 只多 script_gaps.json 19 个新用例，其余参照不变。
 - 反向：极尽升华 3 种从清单删掉之前，普查的 `known_still_unknown` 确实挂了并点名这 3 种（说明普查能咬住「已认得还留在清单」）；没装载插件 8 种是先改代码、再删清单、普查通过。没有另做 `反向验证.py` 清单；专项里漏 forgetSkill 的变体与 `itemslot toggle` 是反向用例。

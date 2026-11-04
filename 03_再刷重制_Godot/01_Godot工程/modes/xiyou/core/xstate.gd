@@ -911,8 +911,11 @@ static func from_dict(d: Dictionary) -> XState:
 	var dg = d.get("designation", {})
 	s.designation = {"name": str(dg.name), "icon": int(dg.icon), "color": str(dg.color)} if dg is Dictionary and dg.has("name") else {}
 	for op in d.get("actorOps", []):
-		s.actor_ops.append({"op": str(op.op), "skill": int(op.skill), "from": int(op.get("from", 0)), "ids": op.get("ids", []).map(func(v): return int(v)),
-			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})
+		var one := {"op": str(op.op), "skill": int(op.skill), "ids": op.get("ids", []).map(func(v): return int(v)),
+			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))}
+		if op.has("from"):   # 只有 replace 带 from；别的操作不加键，存读档往返保持逐字相同
+			one["from"] = int(op.from)
+		s.actor_ops.append(one)
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
 	s.hang_up = d.get("hangUp", {})
