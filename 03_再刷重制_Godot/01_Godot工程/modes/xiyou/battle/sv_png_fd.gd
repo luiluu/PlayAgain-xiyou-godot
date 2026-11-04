@@ -7,9 +7,9 @@ extends RefCounted
 
 static func scale(a: XActor) -> float:
 	var out := 1.0
+	# 技能读 skills()（原版 dsPassiveSkill 1318 行 equips.concat(this.skills(), this.states())）：带心钢／异化／谷雨／屠苏璇等包装增减的技能，不是原始 skill_ids
 	var objs: Array = a.equip_list().duplicate()
-	for sid in a.skill_ids:
-		objs.append(XDB.rec("Skills", int(sid)))
+	objs.append_array(a.skills())
 	objs.append_array(a.states())
 	for o in objs:
 		var v = o.get("meta", {}).get("SvPngFd")

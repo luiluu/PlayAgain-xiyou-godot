@@ -80,6 +80,45 @@ func _run() -> void:
 		fx.step()
 		n += 1
 	check("node.done_in_frames", fx.is_done() and n == total_frames, [n, total_frames])
+	# 反向验证补的三处（审查 41 P3-1）：水平速度/淡出速度范围、锚点偏移、边长除数 40（40 与 41 在 5 种参照尺寸上取整一致，另挑 40×40、41×40）
+	var sx_lo := 9.0
+	var sx_hi := 0.0
+	var op_lo := 9.0
+	var op_hi := 0.0
+	for fr in fx_frags(fx_range_probe(rng)):
+		sx_lo = minf(sx_lo, fr.sx)
+		sx_hi = maxf(sx_hi, fr.sx)
+		op_lo = minf(op_lo, fr.op)
+		op_hi = maxf(op_hi, fr.op)
+	check("rng.sx_range", sx_lo >= 1.0 and sx_hi < 1.5 and sx_lo < 1.1 and sx_hi > 1.4, [sx_lo, sx_hi])
+	check("rng.op_range", op_lo >= 2.5 and op_hi < 4.5 and op_lo < 2.7 and op_hi > 4.3, [op_lo, op_hi])
+	for dims in [Vector2i(40, 40), Vector2i(41, 40)]:
+		var im := Image.create(dims.x, dims.y, false, Image.FORMAT_RGBA8)
+		var t2 := ImageTexture.create_from_image(im)
+		var h2 := Node2D.new()
+		add_child(h2)
+		var b2 := Sprite2D.new()
+		b2.texture = t2
+		h2.add_child(b2)
+		var f2 := XCollapseFx.start(h2, b2, rng, true)
+		check("frag.divisor_%dx%d" % [dims.x, dims.y], f2 != null and (f2.get_child(0) as Sprite2D).region_rect.size.x == 2.0, f2.get_child(0).region_rect if f2 else null)
+		f2.clear()
+	# 锚点按裁剪后取图框：333×211 边长 13，右缘 333−13×25＝8、下缘 211−13×16＝3 的块比整块小，偏移跟着变小；整块仍是 (−frag/2, −frag)
+	var im3 := Image.create(333, 211, false, Image.FORMAT_RGBA8)
+	var b3 := Sprite2D.new()
+	b3.texture = ImageTexture.create_from_image(im3)
+	host.add_child(b3)
+	var f3 := XCollapseFx.start(host, b3, rng, true)
+	var edge := 0
+	var anchors_ok := true
+	for c in f3.get_children():
+		var sp3 := c as Sprite2D
+		if sp3.offset != Vector2(-sp3.region_rect.size.x / 2.0, -sp3.region_rect.size.y):
+			anchors_ok = false
+		if sp3.region_rect.size.x < 13.0 or sp3.region_rect.size.y < 13.0:
+			edge += 1
+	check("anchor.cropped_frame", anchors_ok and edge > 0, [anchors_ok, edge])
+	f3.clear()
 	# 镜像（SV 敌人整体翻转）：向右上飘
 	body.flip_h = true
 	var fx2 := XCollapseFx.start(host, body, rng, true)
@@ -112,6 +151,22 @@ func _run() -> void:
 	await get_tree().process_frame
 	check("sprite.revive_clears", bs._collapse_fx == null and bs.sprite.modulate == Color.WHITE)
 	_finish()
+
+
+func fx_range_probe(r: RandomNumberGenerator) -> XCollapseFx:
+	var im := Image.create(100, 120, false, Image.FORMAT_RGBA8)
+	var h := Node2D.new()
+	add_child(h)
+	var b := Sprite2D.new()
+	b.texture = ImageTexture.create_from_image(im)
+	h.add_child(b)
+	return XCollapseFx.start(h, b, r, true)
+
+
+func fx_frags(f: XCollapseFx) -> Array:
+	var out: Array = f._frags.duplicate()
+	f.clear()
+	return out
 
 
 func _finish() -> void:

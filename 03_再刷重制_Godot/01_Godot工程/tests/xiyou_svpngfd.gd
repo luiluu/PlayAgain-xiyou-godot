@@ -66,6 +66,23 @@ func _run() -> void:
 	check("scale.combo_last_wins", XSvPngFd.scale(a) == float(obs.combo.cache) and obs.combo.cache == 2, [XSvPngFd.scale(a), obs.combo])
 	_worn(a, [2937, 5203])
 	check("scale.combo2_last_wins", XSvPngFd.scale(a) == float(obs.combo2.cache) and obs.combo2.cache == 5, [XSvPngFd.scale(a), obs.combo2])
+	# 技能走 skills()（不是原始 skill_ids；审查 41 P3-4）：给一个技能临时挂 <SvPngFd>，放进技能表要读到，且和 skills() 逐项一致
+	_worn(a, [])
+	var sk_id := 0
+	for sid in a.native_skill_ids():
+		sk_id = int(sid)
+		break
+	if sk_id != 0:
+		var sk_meta: Dictionary = XDB.rec("Skills", sk_id).get("meta", {})
+		var had := sk_meta.has("SvPngFd")
+		sk_meta["SvPngFd"] = "7"
+		check("scale.skill_meta_read", XSvPngFd.scale(a) == 7.0, XSvPngFd.scale(a))
+		check("scale.skill_matches_skills", a.skills().any(func(x): return str(x.get("meta", {}).get("SvPngFd", "")) == "7"))
+		if not had:
+			sk_meta.erase("SvPngFd")
+		check("scale.skill_meta_restored", XSvPngFd.scale(a) == 1.0, XSvPngFd.scale(a))
+	else:
+		check("scale.skill_native_present", false)
 	# 开战后换装／加状态不刷新（原版 refreshPassiveCache 只在 Scene_Battle.start 调）：画面节点建好后倍数不变
 	_worn(a, [5203])
 	var sp := XBattlerSprite.new()
