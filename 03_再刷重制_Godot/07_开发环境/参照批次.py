@@ -5,6 +5,7 @@
 主工作区合进新楼层后再补齐，就会出现「参照是新切片、地图是旧切片」，xiyou_event_compare 的完整性检查因此假失败。
 
   record <车道 generated> <主工作区 generated>   补齐复制了主工作区的参照后记批次（主工作区 manifest 的切片指纹与同步戳）
+  flux   <主工作区 .git 目录>                    总装正在合并中（合并状态在「已合并…待收尾」阶段）时打印说明，退出 4；否则退出 0（tools59）
   check  <车道 generated>                        对比本分支 manifest 的切片指纹；不同批时打印提示，退出 3
 
 记批次时同时记下本树当时的同步戳（generated/sync_stamp.json 的 outputsDigest；补齐只刷新 oracle/，不动这个戳）。
@@ -16,6 +17,7 @@
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -123,11 +125,32 @@ def compare(gen, main_gen):
     return 3
 
 
+IN_FLUX_PHASES = ('merged', 'synced', 'numbering', 'versioned', 'prepared')
+
+
+def flux(git_common_dir):
+    """主工作区的合并走到「已合并、同步、编号、待收尾」之间时，它的 generated/ 带着还没验收提交的新参照和产物：
+    车道此时 --补齐 会拷走这些未定稿的参照，并行测试比对也会拿它当标准而拦车道（悟空 tail2、tail3 报，tools59）。
+    读 <git 目录>/lane-merge/state.json 的 phase；读不到、其它阶段（planned、committed）都不算。
+    回退：环境变量 XIYOU_IGNORE_MERGE_FLUX=1 当没在合并。"""
+    if os.environ.get('XIYOU_IGNORE_MERGE_FLUX') == '1':
+        return 0
+    state = _read(Path(git_common_dir) / 'lane-merge' / 'state.json')
+    phase = state.get('phase')
+    if phase not in IN_FLUX_PHASES:
+        return 0
+    print(f'  ⚠ 总装正在合并 {state.get("branch", "?")}（阶段 {phase}），主工作区的 generated/ 还没定稿；'
+          '本次不从它刷新参照、不拿它比对（等合并收尾后再 --补齐，或 XIYOU_IGNORE_MERGE_FLUX=1 照旧）。')
+    return 4
+
+
 def main(argv):
     if len(argv) == 3 and argv[0] == 'record':
         return record(argv[1], argv[2])
     if len(argv) == 2 and argv[0] == 'check':
         return check(argv[1])
+    if len(argv) == 2 and argv[0] == 'flux':
+        return flux(argv[1])
     if len(argv) == 3 and argv[0] == 'compare':
         return compare(argv[1], argv[2])
     print(__doc__.strip(), file=sys.stderr)

@@ -62,8 +62,11 @@ prepare() {
   [[ -e $tools/mv_oracle/node_modules ]] || cp -cR "$mtools/mv_oracle/node_modules" "$tools/mv_oracle/node_modules"
   # 起始种子与缓存必须配套携带；已有车道现场不覆盖。缓存仍逐文件核对 oracle 的 SHA。
   python3 "$tools/incremental_sync.py" --carry-cache "$mtools/mv_oracle/.sandbox" "$tools/mv_oracle/.sandbox"
+  local flux_rc=0
+  python3 "$ENV_DIR/参照批次.py" flux "$(git -C "$MAIN" rev-parse --path-format=absolute --git-common-dir)" || flux_rc=$?
   if [[ -e $gen ]]; then
-    refresh_oracle "$mgen/oracle" "$gen/oracle"
+    # 总装正在合并（主工作区 generated/ 带着未定稿的参照）：不刷新，免得拷走新 oracle 挡住车道同步（tools59）
+    (( flux_rc == 4 )) || refresh_oracle "$mgen/oracle" "$gen/oracle"
   else
     cp -cR "$mgen" "$gen"; ORACLE_COPIED=1
   fi

@@ -151,6 +151,27 @@ class BatchTests(unittest.TestCase):
     def test_compare_missing_manifest_is_silent(self):
         self.assertEqual(self.run_tool('compare', self.lane, self.main / 'nope').returncode, 0)
 
+    def flux_dir(self, phase):
+        git_dir = Path(self.temp.name) / 'gitdir'
+        if phase:
+            write(git_dir / 'lane-merge' / 'state.json', {'branch': 'cc/x', 'phase': phase})
+        return git_dir
+
+    def test_flux_blocks_only_while_merge_in_progress(self):
+        """tools59：总装合并在 merged～prepared 阶段，主工作区 generated/ 没定稿，退出 4；其它阶段、没有状态文件都放行。"""
+        for phase in ('merged', 'synced', 'numbering', 'versioned', 'prepared'):
+            r = self.run_tool('flux', self.flux_dir(phase))
+            self.assertEqual(r.returncode, 4, phase)
+            self.assertIn('cc/x', r.stdout)
+        for phase in ('planned', 'committed', None):
+            self.assertEqual(self.run_tool('flux', self.flux_dir(phase)).returncode, 0, phase)
+
+    def test_flux_rollback_env(self):
+        import os
+        env = dict(os.environ, XIYOU_IGNORE_MERGE_FLUX='1')
+        r = subprocess.run([sys.executable, str(TOOL), 'flux', str(self.flux_dir('synced'))], capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0)
+
     def test_bad_usage(self):
         self.assertEqual(self.run_tool('check').returncode, 64)
 
@@ -172,6 +193,12 @@ class WiringTests(unittest.TestCase):
         self.assertLess(record, export)
         self.assertLess(export, check)  # 先按本分支切片重生成 manifest 再比对
         self.assertIn('ORACLE_COPIED=$n', text)  # 一个文件都没复制时不改写已有批次
+
+    def test_flux_wired_into_refresh_and_parallel_tests(self):
+        text = (HERE / '新建工作树.sh').read_text(encoding='utf-8')
+        self.assertLess(text.index('参照批次.py" flux'), text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"'))
+        self.assertIn('flux_rc == 4', text)
+        self.assertIn("'flux'", (HERE / '并行测试.py').read_text(encoding='utf-8'))
 
     def test_check_script_warns_without_failing(self):
         text = (HERE / '检查.sh').read_text(encoding='utf-8')
