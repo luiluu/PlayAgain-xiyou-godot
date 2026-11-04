@@ -50,3 +50,7 @@
 - e2a37757 WIP 探针 dot_probe.cjs
 - deeede13 WIP 转换器、运行时、专项
 - 本期：合并 main、交付单
+
+## 云端结果
+
+- 云端选测（142 个场景、4 片，基准 6e4b7096d7，提交 d2c00b0211）：通过，<https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41856133551>。
