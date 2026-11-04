@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules2b
 
-- 车道／工作者：C 规则／八戒（cc，唐僧总装十八派）
-- 状态：进行中
+- 车道／工作者：C 规则／八戒（cc，唐僧总装十八派 rules2，总装十九派 rules2b 接手收尾）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -29,8 +29,21 @@
 
 ## 验证
 
-（待补）
+- 核草稿：逐项对过差异，转换器、运行时、`battle_scene`、探针、报数拆分、两处测试都真做了；生成数据 `op: js` 301 块，7 个盾的元素与动画号和草稿一致。
+- 专项（本机）：`xiyou_state_effects` 20885、`xiyou_state_effects_tp` 538、`xiyou_state_js` 1733、`xiyou_battle_events` 108、`xiyou_determinism` 372、`xiyou_param_states` 582，全过。
+- 云端选测：提交 04d567669c，209 个场景 7 片，全过（Actions run 41741941422）；`xiyou_rules` 按选测抽样，没关抽样。
+- 工具：`测试状态js翻译.py` 12 项过；`语法检查.py` 0 问题；`内容覆盖检查.py` hard 0、new 0（切片没改，不用 `--update-baseline`）。
+- 同步：`同步正式西游.py --accept-additions` 退出码 0，只新增 `query.shield_blocks` 一个用例，未跑探针复用 78 个。
+- 总装注意：这棵工作树的 `generated/` 之后被 rules3 改过（同一工作树接着做），产物指纹已不能用 `--from-worktree`；合并后照常重跑同步，只有 `state_effects_probe.cjs` 等少数探针要跑，本次约 3 分钟。
 
 ## 本分支提交
 
-（待补）
+- 34e0e8dc WIP: rules2 护盾一族：探针 query.shield_blocks、转换器签名、运行时破盾、对照测试
+- a24bb7b7 WIP: rules2 探针记出手前 dirty；破盾实战例按参照前置态布置
+- e5b305bd Merge branch 'main' into cc/bajie-rules2
+- 04d56766 WIP: rules2b 接手交付单草稿
+- 本交付单收尾提交
+
+## 待交叉核查（核心文件）
+
+- `state_effects.gd`（`value_query` 的 `remove_self`、`noop`、`_break_shield`）、`battle_scene.gd`（`state_anims`）。
