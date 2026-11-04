@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import time
 
 BATCH = 'oracle_batch.json'
 
@@ -126,6 +127,10 @@ def compare(gen, main_gen):
 
 
 IN_FLUX_PHASES = ('merged', 'synced', 'numbering', 'versioned', 'prepared')
+# 状态文件超过这么久没动，当作总装已中断／卡住、不再算「正在合并」，车道恢复正常比对（tools61，审查 38 P3-9：
+# 原来只看 phase，总装中断后停在 prepared，车道的陈旧产物检查会一直被跳过）。一次合并收尾全程约 13 分钟。
+# 环境变量 XIYOU_MERGE_FLUX_MAX_AGE=秒 可改，0＝不看时间（旧行为）。
+FLUX_MAX_AGE = 30 * 60
 
 
 def flux(git_common_dir):
@@ -139,8 +144,19 @@ def flux(git_common_dir):
     phase = state.get('phase')
     if phase not in IN_FLUX_PHASES:
         return 0
+    try:
+        max_age = float(os.environ.get('XIYOU_MERGE_FLUX_MAX_AGE', FLUX_MAX_AGE))
+    except ValueError:
+        max_age = FLUX_MAX_AGE
+    if max_age > 0:
+        try:
+            age = time.time() - (Path(git_common_dir) / 'lane-merge' / 'state.json').stat().st_mtime
+        except OSError:
+            return 0
+        if age > max_age:
+            return 0
     print(f'  ⚠ 总装正在合并 {state.get("branch", "?")}（阶段 {phase}），主工作区的 generated/ 还没定稿；'
-          '本次不从它刷新参照、不拿它比对（等合并收尾后再 --补齐，或 XIYOU_IGNORE_MERGE_FLUX=1 照旧）。')
+          '本次不从它刷新参照、不拿它比对，所以这次测试可能用着过期产物：等合并收尾后再 --补齐并补跑一次；XIYOU_IGNORE_MERGE_FLUX=1 照旧比对。')
     return 4
 
 

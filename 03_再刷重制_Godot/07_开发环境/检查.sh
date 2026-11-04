@@ -210,7 +210,7 @@ want tools && { if python3 "$ENV_DIR/测试公式程序.py"; then ok "结构化�
 want tools && { if python3 "$ENV_DIR/测试状态js翻译.py" >/dev/null 2>&1; then ok "状态效果 js 再翻译整块边界"; else bad "状态 js 翻译边界失败，单跑 07_开发环境/测试状态js翻译.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
-want tools && { if python3 "$ENV_DIR/测试云端准备.py"; then ok "云端导入失败保护"; else bad "云端导入保护回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试探针登记检查.py" >/dev/null 2>&1; then ok "探针五乘区检查"; else bad "探针五乘区检查回归失败，单跑 07_开发环境/测试探针登记检查.py 看详情"; fi; }

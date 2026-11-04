@@ -30,6 +30,9 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from 推送重试 import retry_push  # noqa: E402
+
 SUB = Path('03_再刷重制_Godot')
 ENV = SUB / '07_开发环境'
 TOOLS = SUB / '03_转换工具'
@@ -1559,7 +1562,7 @@ def push_github(root, remote='github'):
             if ahead:
                 print('警告：GitHub main 有本地 main 没有的提交，未推送（不强推，请人工核对）：\n' + ahead, flush=True)
                 return
-        remote_git('push', remote, 'refs/heads/main:refs/heads/main')
+        retry_push(lambda: remote_git('push', remote, 'refs/heads/main:refs/heads/main'), label='推 main', out=sys.stdout)
         print('已推送 main 到 ' + remote + '。', flush=True)
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         print('警告：推送 ' + remote + ' 失败，合并不受影响，下次合并会补推：' + ' '.join(str(error).split()), flush=True)

@@ -38,6 +38,8 @@ import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from 推送重试 import retry_push  # noqa: E402
 ROOT = HERE.parent.parent
 PROJECT_REL = '03_再刷重制_Godot/01_Godot工程'
 GENERATED_REL = PROJECT_REL + '/modes/xiyou/generated'
@@ -180,8 +182,13 @@ def snapshot_parent(bare, remote_has, ref):
     return (parent, depth) if depth < PARENT_MAX else (None, 0)
 
 
+def git_push(*args, **kw):
+    """git push 加服务端临时故障重试（tools61；见 推送重试.py）。"""
+    retry_push(lambda: git(*args, **kw), label='git push ' + ' '.join(a for a in args if not a.startswith('-'))[:60])
+
+
 def push_generated(url, bare, commit, ref):
-    git(*push_tuning(), 'push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
+    git_push(*push_tuning(), 'push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
 
 
 def cmd_upload(a):
@@ -369,15 +376,15 @@ def cmd_run(a):
         if base:
             log('选测基准：%s（%s）' % (base[:10], why))
             # 基准提交已在 GitHub 上（它有云端结果）；先推基准ref，计划步骤据它取 refs/ci/base/<HEAD>
-            git('push', '--force', '--no-verify', remote, '%s:%s%s' % (base, BASE_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
+            git_push('push', '--force', '--no-verify', remote, '%s:%s%s' % (base, BASE_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
     if a.skip and not a.full:
         blob = git('hash-object', '-w', '--stdin', input=json.dumps(sorted(a.skip.split()), ensure_ascii=False) + '\n')
         tree = git('mktree', input='100644 blob %s\tskip.json\n' % blob)
         commit = git('commit-tree', tree, input='ci skip %s\n' % head, env=BOT)
-        git('push', '--force', '--no-verify', remote, '%s:%s%s' % (commit, SKIP_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
+        git_push('push', '--force', '--no-verify', remote, '%s:%s%s' % (commit, SKIP_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
         log('沿用车道结果：%d 个场景不在云端重跑' % len(a.skip.split()))
     print_estimate(base or None, a.full)
-    git('push', '--force', '--no-verify', remote, 'HEAD:refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
+    git_push('push', '--force', '--no-verify', remote, 'HEAD:refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
     print('已推送 %s → %s，云端开始选测（基准 %s%s）' % (head[:10], target, base[:10] if base else 'GitHub main 的分叉点', '，整轮' if a.full else ''))
     print('等结果：python3 %s wait %s%s' % (Path(__file__).relative_to(ROOT), head, ' --mode full' if a.full else ''))
     return 0
@@ -848,7 +855,7 @@ def cmd_report(a):
                  (git('hash-object', '-w', '--stdin', input=text), 'summary.md')]
         tree = git('mktree', input=''.join('100644 blob %s\t%s\n' % b for b in blobs))
         commit = git('commit-tree', tree, input='ci result %s %s\n' % (sha, res['mode']), env=idx)
-        git('push', '-q', '--force', 'origin', '%s:%s%s/%s' % (commit, RESULT_PREFIX, sha, res['mode']))
+        git_push('push', '-q', '--force', 'origin', '%s:%s%s/%s' % (commit, RESULT_PREFIX, sha, res['mode']))
         shutil.rmtree(tmp, ignore_errors=True)
     return 0 if passed else 1
 
