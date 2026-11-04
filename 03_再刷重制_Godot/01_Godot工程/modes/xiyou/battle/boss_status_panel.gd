@@ -84,7 +84,7 @@ func locate():
 
 func _track_hits(list: Array) -> void:
 	for b in list:
-		var id := b.get_instance_id()
+		var id: int = b.get_instance_id()
 		if _hp.has(id) and b.hp < _hp[id]:
 			_last_hit = b
 		_hp[id] = b.hp
@@ -250,7 +250,7 @@ static func fit(c: XMVCanvas, text: String, width: float, size: int) -> String:
 	return text + "…"
 
 
-static func wrap(c: XMVCanvas, text: String, width: float, size: int) -> Array:
+static func wrap_text(c: XMVCanvas, text: String, width: float, size: int) -> Array:
 	var lines := []
 	var line := ""
 	for ch in text:
@@ -389,11 +389,11 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	if row.icon != 0:
 		c.icon(row.icon, 22, BODY_Y + 12.0, 1.0, 30.0)
 	var x := 63.0 if row.icon != 0 else 23.0
-	var names := wrap(c, row.name, w - x - 20.0, 18)
+	var names := wrap_text(c, row.name, w - x - 20.0, 18)
 	for i in mini(names.size(), 2):
 		c.text(names[i], x, BODY_Y + 3.0 + i * 22.0, w - x - 20.0, "left", INK, 18, 23)
 	c.text(_meta(row), 23, BODY_Y + 62.0, w - 46.0, "left", color, 13, 22)
-	var lines := wrap(c, str(row.description), w - 44.0, 16)
+	var lines := wrap_text(c, str(row.description), w - 44.0, 16)
 	var start := BODY_Y + 94.0
 	var per := maxi(1, floori((DETAIL_H - FOOTER_HEIGHT - start - 8.0) / 24.0))
 	var pages := maxi(1, ceili(lines.size() / float(per)))
