@@ -111,7 +111,7 @@ function watchActors(list, depth = 0, out = new Set()) {
     const p = cmd.parameters || [];
     if (WATCH_FIXED.has(cmd.code) && p[0] === 0) out.add(Number(p[1]));
     else if (WATCH_DIRECT.has(cmd.code)) out.add(Number(p[0]));
-    else if (cmd.code === 355 || cmd.code === 655) { for (const m of String(p[0]).matchAll(/\$gameActors\.actor\((\d+)\)/g)) out.add(Number(m[1])); }
+    else if (cmd.code === 355 || cmd.code === 655) { if (/\$dataActors\.length|\$gameActors\.length/.test(String(p[0]))) w.$dataActors.forEach((x, i) => { if (x && x.name) out.add(i); }); for (const m of String(p[0]).matchAll(/\$gameActors\.actor\((\d+)\)/g)) out.add(Number(m[1])); }
     else if (cmd.code === 117 && depth < 4 && w.$dataCommonEvents[p[0]]) watchActors(w.$dataCommonEvents[p[0]].list, depth + 1, out);
   }
   return [...out].filter(id => w.$dataActors[id]);
@@ -124,7 +124,7 @@ function snap(watch = []) {
   const actors = {};
   for (const id of new Set([...g.$gameParty._actors, ...watch])) {
     const a = g.$gameActors.actor(id);
-    actors[id] = {name: a.name(), level: a.level, classId: a._classId, skills: a._skills.slice().sort((x, y) => x - y)};
+    actors[id] = {name: a.name(), level: a.level, classId: a._classId, skills: a._skills.slice().sort((x, y) => x - y), states: a._states.slice().sort((x, y) => x - y)};
   }
   const flags = {};
   for (let i = 1; i <= 8; i++) if (g.$gameParty['DCultyL' + i] !== undefined) flags['DCultyL' + i] = !!g.$gameParty['DCultyL' + i];
@@ -134,6 +134,9 @@ function snap(watch = []) {
     party: g.$gameParty._actors.slice(), actors, difficulty: g.$gameSystem.difficultyId(), encounter: g.$gameSystem.isEncounterEnabled(),
     followers: g.$gamePlayer.followers().isVisible(), actorName: g.$gamePlayer.SaveActorName === undefined ? '' : String(g.$gamePlayer.SaveActorName),
     actorMaxLevel: Number(g.$gameParty.ActorMaxLevel || 0), flags,
+    // events4：称号解锁（ConfigManager.DesignationN，全局）与本局成就（$gameParty.SAchievementS，不含「<ID>Time」）
+    designations: Object.keys(g.ConfigManager.DesignationN || {}).filter(k => g.ConfigManager.DesignationN[k]).sort(),
+    achievements: Object.keys(g.$gameParty.SAchievementS || {}).filter(k => !/Time$/.test(k)).sort(),
     // 画面色调与天气只取指令设下的目标（223／236）：色调目标、天气强度目标，天气类型仅在目标强度不为 0 时记（渐弱中的旧类型不算）
     screen: {tone: g.$gameScreen._toneTarget.map(Number), weather: g.$gameScreen._weatherPowerTarget ? String(g.$gameScreen._weatherType) : 'none', power: Number(g.$gameScreen._weatherPowerTarget)}};
 }
@@ -163,6 +166,7 @@ function delta(a, b) {
   put('actors', actors);
   for (const k of ['difficulty', 'encounter', 'followers', 'actorName', 'actorMaxLevel']) if (a[k] !== b[k]) d[k] = b[k];
   put('flags', mapDelta(a.flags, b.flags, null));
+  for (const k of ['designations', 'achievements']) if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) d[k] = b[k];
   if (JSON.stringify(a.screen) !== JSON.stringify(b.screen)) d.screen = b.screen;
   return d;
 }

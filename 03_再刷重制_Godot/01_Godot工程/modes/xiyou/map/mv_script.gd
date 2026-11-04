@@ -96,6 +96,25 @@ static func _module_recruit(module: String) -> Callable:
 	return Callable()
 
 
+## 整段只由「var 名 = $gameActors.actor(数字)」和「名.addState(数字)」组成时返回 [[角色号, 状态号], …]；认不出返回空数组
+static func _actors_add_state(js: String) -> Array:
+	var vars := {}
+	var plan := []
+	for st in js.replace("\n", ";").split(";", false):
+		var t := st.strip_edges()
+		if t == "":
+			continue
+		var d := _re("^var\\s+(\\w+)\\s*=\\s*\\$gameActors\\.actor\\((\\d+)\\)$").search(t)
+		if d:
+			vars[d.get_string(1)] = int(d.get_string(2))
+			continue
+		var m := _re("^(\\w+)\\.addState\\((\\d+)\\)$").search(t)
+		if m == null or not vars.has(m.get_string(1)):
+			return []
+		plan.append([vars[m.get_string(1)], int(m.get_string(2))])
+	return plan
+
+
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
 static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
@@ -105,6 +124,13 @@ static func run(code: String, interp) -> Array:
 	# CE1317: selected actor is shared with the item-effect capacity check.
 	if js == "var actor = $gameActors.actor($gameParty._targetActorId);\n$.toaster({ message : ''+actor.name()+' 能学习的抽奖被动技能已经达到'+$gameVariables.value(9)+'上限！'});":
 		interp.host.toast(XPassiveBooks.limit_message(s))
+		return []
+	# 三结义「无双」祝福（CE43／92／236／904～906／911）：var actorN = $gameActors.actor(固定号); … actorN.addState(状态号);
+	# 刘备／关羽／张飞各自挂上状态 708／709／710。events4 的对照（快照加了角色状态）发现这段重制一直没执行
+	var states_plan := _actors_add_state(js)
+	if not states_plan.is_empty():
+		for pair in states_plan:
+			s.actor(int(pair[0])).add_state(int(pair[1]))
 		return []
 	# ---- 整段写法 ----
 	# 批量抽奖（installCasinoBatchRuntime，大厅 Map004 EV60「自定义单抽／自定义20连抽」）：else 支是没装运行时的旧版提示，正式版不走
