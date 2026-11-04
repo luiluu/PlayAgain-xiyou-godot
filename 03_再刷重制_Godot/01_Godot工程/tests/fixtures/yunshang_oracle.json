@@ -16851,6 +16851,788 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "p2.insulation.a",
+   "setup": {
+    "level": 50,
+    "stage": 2,
+    "robe": 8,
+    "allyRobe": 11
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10284,
+      "user": "a1",
+      "log": [],
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 1
+       }
+      ],
+      "tags": {
+       "174": [
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": 1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 1
+       }
+      ],
+      "tags": {
+       "8": [
+        "original",
+        "gift",
+        "gift"
+       ],
+       "174": [
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 1,
+       "a8": 3,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1,
+       "a174": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "p2.insulation.ally",
+   "setup": {
+    "level": 50,
+    "stage": 2,
+    "robe": 11,
+    "allyRobe": 8
+   },
+   "observed": {
+    "steps": [
+     {
+      "start": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       false,
+       false
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       false
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 0,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {},
+      "queue": {
+       "a1": 1,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "original",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 2,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": false,
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       },
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "original",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 2,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "cast": 10284,
+      "user": "a174",
+      "log": [],
+      "fg": -1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 1
+       },
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "original",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 2,
+       "a8": 1,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     },
+     {
+      "ok": true,
+      "fg": 1,
+      "has": true,
+      "round": 1,
+      "awake": [
+       true,
+       true
+      ],
+      "data": [
+       {
+        "key": 11,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 1
+       },
+       {
+        "key": 8,
+        "wakeUntil": 2,
+        "stored": 0,
+        "gifts": 0
+       }
+      ],
+      "tags": {
+       "1": [
+        "original",
+        "gift"
+       ],
+       "8": [
+        "original",
+        "gift",
+        "gift"
+       ]
+      },
+      "queue": {
+       "a1": 2,
+       "a8": 3,
+       "a9": 1,
+       "a10": 1,
+       "e0": 1,
+       "e1": 1,
+       "e2": 1
+      },
+      "afterglow": false
+     }
+    ]
+   },
+   "errors": []
   }
  ]
 }
