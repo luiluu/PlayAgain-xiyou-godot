@@ -130,6 +130,7 @@ PROBES = [
     (['barrier_probe.cjs'], ['barrier.json']),
     (['sve_probe.cjs'], ['sve.json']),
     (['svpng_probe.cjs'], ['svpng.json']),
+    (['vsfx_probe.cjs'], ['vsfx.json']),
     (['review135_probe.cjs'], ['review135.json']),
     (['stage50_review_probe.cjs'], ['stage50_review.json']),
     (['attack_element_probe.cjs'], ['attack_elements.json']),

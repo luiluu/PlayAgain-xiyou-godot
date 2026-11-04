@@ -36,6 +36,7 @@ KEYS = {
     'barrier.json': {'cases': ('id',)},
     'sve.json': {'cases': ('id',)},
     'svpng.json': {'cases': ('id',)},
+    'vsfx.json': {'cases': ('id',)},
     'qiyu.json': {'cases': ('id',)},
     'cat.json': {'cases': ('id',)},
     'enemy_book_defeat.json': {'cases': ('id',)},
