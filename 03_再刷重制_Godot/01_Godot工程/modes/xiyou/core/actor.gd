@@ -550,6 +550,10 @@ func action_plus_set() -> Array:
 	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
 	return out
 
+## dsPassiveSkill passiveGUARD（技能 10089 苍龙*破晓）：Game_Actor.isGuard 恒真，不看能不能行动；受伤按 ÷(2×grd)、战斗里一直摆防御姿势（passive_probe guard）
+func is_guard() -> bool:
+	return super.is_guard() or not passive_values("passiveGUARD").is_empty()
+
 ## dsPassiveSkill：passiveSUBS 掩护、passivePRETP 保留 TP（灵台、护法等技能）
 func is_substitute() -> bool:
 	return super.is_substitute() or not passive_values("passiveSUBS").is_empty()
@@ -587,6 +591,8 @@ func _condition(cond: String, value: float) -> bool:
 		"HPLW": return hp_rate() <= value * 0.01
 		"MPUP": return mp / maxf(mmp, 1.0) >= value * 0.01
 		"MPLW": return mp / maxf(mmp, 1.0) <= value * 0.01
+		"TPUP": return tp / maxf(max_tp(), 1.0) >= value * 0.01  # Game_Actor.evaluateCondition 也有 TPUP／TPLW（3219、4924、4925 的 passivePBSTEX2 用 TPUP）
+		"TPLW": return tp / maxf(max_tp(), 1.0) <= value * 0.01
 	return false
 
 ## 被动标签的编号只取一位（原插件 ('0'+id).slice(-1)）
@@ -729,6 +735,11 @@ func xparam(i: int) -> float:
 	var v := super.xparam(i)
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
+	# passiveXPBSTEX（968 暴击率、3886 TP 回复率）：<…EXn:上升量,条件,判定值>，条件满足才加（passive_probe xpbstex）
+	for m in passive_values(_tag("passiveXPBSTEX", i)):
+		var parts := str(m).split(",")
+		if parts.size() >= 3 and _condition(parts[1].strip_edges(), float(parts[2])):
+			v += _num(parts[0]) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
 	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
 	return maxf(0.9, v) if i == 0 else v
