@@ -257,6 +257,7 @@ func _check_manual_first(ref: Dictionary) -> void:
 
 
 func _ready() -> void:
+	XXuanBattle.YUHUI_SHIELD = false  # 参照比原版：余辉不给护盾（fix1 默认修好，修正支在 xiyou_xuan_battle）
 	_go.call_deferred()
 
 
