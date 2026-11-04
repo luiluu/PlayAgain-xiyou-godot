@@ -459,6 +459,8 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 		var name := str(local)
 		if name.begins_with("f_"):
 			extra[name] = _field_read(receivers[name[2]], name.substr(4))
+		elif name.begins_with("o_gearLevel_"):
+			extra[name] = XEquipmentView.first_armor_level(c.origin.equip_list(), int(name.substr(12))) if c.origin is XActor else 0.0
 		elif name.begins_with("o_elementRate_"):
 			extra[name] = c.origin.element_rate(int(name.substr(14)))
 		elif name.begins_with("o_"):

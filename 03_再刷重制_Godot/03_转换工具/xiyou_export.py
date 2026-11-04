@@ -586,6 +586,10 @@ MEASURED_EFFECT_SOURCES.update({
     ('initiate', 'if ( user . _reverenceMp !== undefined ) { var difference = user . _reverenceMp - user . mp ; if ( difference > 0 ) { var hp = Math . ceil ( difference * 3.00 ) ; user . gainHp ( hp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ; } user . _reverenceMp = undefined ; }'):  # 102（undefined 用没赋过值的局部量 gone 表示：运行时字段写回 undefined 即删除）
         'var gone; if (user._reverenceMp !== gone) { var difference = user._reverenceMp - user.mp; if (difference > 0) { var hp = Math.ceil(difference * 3.00); user.gainHp(hp); user.startDamagePopup(); user.clearResult(); } user._reverenceMp = gone; }',
 })
+MEASURED_EFFECT_SOURCES.update({
+    ('regenerate', 'var baseEquipId = 3590 ; let currentEquip = null ; var equips = origin . equips ( ) . filter ( ( equip ) => ! ! equip && DataManager . isArmor ( equip ) && equip . baseItemId === baseEquipId ) ; if ( equips . length > 0 ) currentEquip = equips [ 0 ] ; var mw = ! ! currentEquip ? origin . getEquipItemObject ( currentEquip ) : null ; var level = ! ! mw ? mw . level ( ) : 0 ; target . _stackingPoison = target . _stackingPoison || 1 ; var stacks = target . _stackingPoison var damage1 = origin . mmp ; var damage2 = v [ 320 ] ; var damage3 = origin . mat ; var damage = Math . round ( stacks * 0.5 * ( damage1 * 8 + damage2 * 1 + damage3 * 1 ) * ( 1 + level ) * ( 1 + damage2 / 3000 ) * ( 1 + damage2 / 3000 ) ) ; target . startAnimation ( 130 ) ; target . gainHp ( - damage ) ; target . startDamagePopup ( ) ; target . clearResult ( ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; }'):  # 732 毒奶：来源者不是角色时 origin.equips 不存在（TypeError，整块无效果），所以整块包在 isActor 里
+        'if (origin.isActor()) { var level = origin.gearLevel(3590); target._stackingPoison = target._stackingPoison || 1; var stacks = target._stackingPoison; var damage1 = origin.mmp; var damage2 = $gameVariables.value(320); var damage3 = origin.mat; var damage = Math.round(stacks * 0.5 * (damage1 * 8 + damage2 * 1 + damage3 * 1) * (1 + level) * (1 + damage2 / 3000) * (1 + damage2 / 3000)); target.startAnimation(130); target.gainHp(-damage); target.startDamagePopup(); target.clearResult(); if (target.isDead()) { target.performCollapse(); } }',
+})
 # 换装模板（rest.blocks costume）：图名可变，其余整句比对；换装卡状态由 XCostumes 管，运行时跳过
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
@@ -669,7 +673,7 @@ def _adapt_phase_tokens(tokens):
 def _compile_effect_tokens(tokens, signature):
     rewritten, declared, i = [], set(), 0
     while i < len(tokens):
-        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt', '_reverenceMp'):
+        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt', '_reverenceMp', '_stackingPoison'):
             name = 'f_%s_%s' % ('a' if tokens[i] == 'user' else 'b', tokens[i + 2].lstrip('_'))
             rewritten.append(name)
             declared.add(name)
@@ -679,6 +683,11 @@ def _compile_effect_tokens(tokens, signature):
             rewritten.append(name)
             declared.add(name)
             i += 1
+        elif tokens[i] == 'origin' and tokens[i + 1:i + 4] == ['.', 'gearLevel', '('] and tokens[i + 5:i + 6] == [')']:
+            name = 'o_gearLevel_' + tokens[i + 4]  # origin.gearLevel(基础防具号)：原文 equips().filter(baseItemId).getEquipItemObject().level() 的读法，块开头读
+            rewritten.append(name)
+            declared.add(name)
+            i += 6
         elif tokens[i] == 'origin' and tokens[i + 1:i + 4] == ['.', 'elementRate', '('] and tokens[i + 5:i + 6] == [')']:
             name = 'o_elementRate_' + tokens[i + 4]  # origin.elementRate(常数)：块开头读，运行时按状态来源者的属性倍率
             rewritten.append(name)

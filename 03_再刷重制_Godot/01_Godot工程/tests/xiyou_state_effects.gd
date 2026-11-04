@@ -337,6 +337,9 @@ func _run() -> void:
 	check("rest.oracle_present", cases.has("rest.blocks"))
 	if cases.has("rest.blocks"):
 		_rest_blocks(cases["rest.blocks"].observed)
+	check("poison.oracle_present", cases.has("poison.blocks"))
+	if cases.has("poison.blocks"):
+		_poison_blocks(cases["poison.blocks"].observed)
 	check("rest2.oracle_present", cases.has("rest2.blocks"))
 	if cases.has("rest2.blocks"):
 		_rest2_blocks(cases["rest2.blocks"].observed)
@@ -1726,3 +1729,63 @@ func _rest2_blocks(o: Dictionary) -> void:
 		t.add_param(4, before4 - t.param_plus(4))
 	XState.current = null
 	XStateEffects.battle_units = {}
+
+
+## 毒奶 732（rules8，state_effects_probe poison.blocks）：来源者角色的法宝等级与叠毒层数、变量 320 一起算伤害；来源者是敌人整块无效果。
+func _poison_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("poison.rows", o.rows.size() == 40, o.rows.size())
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	XState.current = s
+	logic.setup(2, s)
+	var rec := XDB.rec("States", 732)
+	check("poison.translated", rec.effects.any(func(e): return e.phase == "regenerate" and e.op == "effect_program") and not rec.effects.any(func(e): return e.phase == "regenerate" and e.op == "js"), rec.effects)
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		var stacks := 1.0 if row.stacks == null else float(row.stacks)
+		var v := float(row.v320)
+		# 先用参照行自己的数据验证公式：原文 damage = round(层数×0.5×(mmp×8+v320+mat)×(1+等级)×(1+v320/3000)²)
+		var native_damage := roundf(stacks * 0.5 * (float(row.pre.ommp) * 8.0 + v + float(row.pre.omat)) * (1.0 + float(row.pre.level)) * (1.0 + v / 3000.0) * (1.0 + v / 3000.0))
+		var native_hp_after := float(row.pre.ehp) - native_damage if row.mode != "enemy_origin" else float(row.pre.ehp)
+		check("poison.native.%d" % index, maxf(native_hp_after, 0.0) == float(row.ehp), [row, native_damage])
+		s.set_variable(320, v)
+		var e := ValueBattler.new()
+		e.values = {"mhp": 1e12, "mmp": 100.0}
+		e.hp = float(row.pre.ehp)
+		e.state_ids.append(732)
+		if row.stacks != null:
+			e.state_data["_stackingPoison"] = float(row.stacks)
+		var origin: XBattler = logic.actors[0]
+		var equip: Dictionary = XActor.make_equip("armor", 3590).duplicate(true)
+		equip["instanceLevel"] = float(row.pre.level)
+		var added: bool = row.mode != "actor_none"
+		if row.mode == "enemy_origin":
+			origin = ValueBattler.new()
+			origin.values = {"mhp": 100.0, "mmp": 6.0}
+		elif added:
+			origin.equips.append(equip)
+			origin.param_mark_dirty()
+			origin.param_refresh()
+		e.state_origins[732] = weakref(origin)
+		var logs := []
+		XStateEffects.run_one("regenerate", e, rec, {"execute": true, "resources": XResourceContext.new(), "emit": func(entry): logs.append(entry)})
+		var damage := float(row.pre.ehp) - e.hp
+		var want := 0.0
+		if row.mode != "enemy_origin":
+			want = roundf(stacks * 0.5 * (origin.mmp * 8.0 + v + origin.mat) * (1.0 + (float(row.pre.level))) * (1.0 + v / 3000.0) * (1.0 + v / 3000.0))
+			want = minf(want, float(row.pre.ehp))
+		var info := [row.mode, row.level, row.stacks, row.v320, row.ehpIn]
+		check("poison.damage.%d" % index, damage == want, [info, damage, want])
+		check("poison.dead.%d" % index, e.is_dead() == bool(row.dead), [info, e.hp, row.dead])
+		var field = e.state_data.get("_stackingPoison", null)
+		check("poison.field.%d" % index, field == (null if row.field == null else float(row.field)), [info, field, row.field])
+		var anims: Array = logs.filter(func(l): return l.has("animation")).map(func(l): return int(l.animation))
+		check("poison.anim.%d" % index, anims == row.anims.map(func(p): return int(p[1])), [info, anims, row.anims])
+		if added and row.mode != "enemy_origin":
+			origin.equips.erase(equip)
+			origin.param_mark_dirty()
+			origin.param_refresh()
+	XState.current = null

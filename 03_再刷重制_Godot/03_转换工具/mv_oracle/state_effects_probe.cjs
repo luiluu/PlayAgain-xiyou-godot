@@ -850,6 +850,56 @@ cases.push(makeCase('rest2.blocks', {}, () => {
   }
   return JSON.parse(JSON.stringify(out, (k, v) => k === 'errors' ? (v.length ? v : undefined) : v));
 }));
+// rules8 毒奶 732（regenerate）：来源者装备的法宝等级、叠毒字段 _stackingPoison、变量 320 一起算伤害。来源者是敌人时 origin.equips 不存在（TypeError）。
+cases.push(makeCase('poison.blocks', {state: 732, armor: 3590}, () => {
+  const {a, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
+  const errors = []; let popups = [], anims = [], collapses = 0;
+  w.Yanfly.Util.displayError = error => errors.push(String(error).slice(0, 70));
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: this === a ? 'a' : 'e', hpAffected: r.hpAffected, hpDamage: r.hpDamage}); };
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push([this === a ? 'a' : 'e', id]); };
+  const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses++; };
+  const rows = [];
+  try {
+    const before = w.$gameParty.equipItems().slice();
+    w.$gameParty.gainItem(w.$dataArmors[3590], 1);
+    const item = w.$gameParty.equipItems().find(x => before.indexOf(x) < 0);
+    const o16 = w.$gameActors.actor(16), slot = o16.equipSlots().indexOf(item.etypeId);  // 毒心专属克莱德（16），只有他有这个装备槽
+    if (slot < 0) throw new Error('actor 16 没有装备类型 ' + item.etypeId);
+    const gi = new w.Game_Item(); gi.setObject(item);
+    const setup = {actor_none: () => {}, actor_equipped: () => { o16.forceChangeEquip(slot, item); }, enemy_origin: () => {}};
+    const levels = [['none', 0], ['lv_init', 0], ['lv_up', 1e6]];
+    const reset = who => { for (const t of [a, e]) { t._states.length = 0; t.clearResult(); t._hp = 1; t.need_refresh = true; t.refresh(); t._hp = t.mhp; t._mp = 50; delete t._stackingPoison; }
+      o16.forceChangeEquip(slot, null); popups = []; anims = []; collapses = 0; errors.length = 0; };
+    for (const [mode, fn] of Object.entries(setup)) for (const [lname, exp] of levels) {
+      if (mode === 'actor_none' && lname !== 'none') continue;
+      if (mode !== 'actor_none' && lname === 'none') continue;
+      for (const stacks of [undefined, 3]) for (const v320 of [0, 500]) for (const ehp of ['full', 'low']) {
+        reset(mode); fn(); if (exp) gi.gainExp(exp);
+        w.$gameVariables.setValue(320, v320);
+        e._states.push(732); e.need_refresh = true; e.refresh(); e.clearResult(); e._hp = ehp === 'full' ? e.mhp : 1;
+        if (stacks !== undefined) e._stackingPoison = stacks;
+        const origin = mode === 'enemy_origin' ? e : o16;
+        e._stateOrigin = {732: origin === e ? undefined : [0, 16]};
+        if (mode === 'enemy_origin') { const e2 = w.$gameTroop.members()[1] || e; e._stateOrigin = {732: e2 === e ? undefined : [1, e2.index()]}; }
+        const org = mode === 'enemy_origin' ? (e._stateOrigin[732] === undefined ? e : w.$gameTroop.members()[e._stateOrigin[732][1]]) : o16;
+        const pre = {omat: org.mat, ommp: org.mmp, level: mode === 'actor_none' ? 0 : gi.level(), ehp: e.hp};
+        e.customEffectEval(732, 'regenerateState');
+        const r = e.result();
+        rows.push({mode, level: lname, stacks: stacks === undefined ? null : stacks, v320, ehpIn: ehp, pre, ehp: e.hp, dead: e.isDead(), field: e._stackingPoison === undefined ? null : e._stackingPoison,
+          hpDamage: r.hpDamage, popups: popups.slice(), anims: anims.slice(), collapses, sourceErrors: errors.slice()});
+        w.$gameVariables.setValue(320, 0);
+      }
+    }
+    o16.forceChangeEquip(slot, null);
+  } finally {
+    w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA;
+    for (const t of [a, e]) { t._states.length = 0; t.clearResult(); delete t._stackingPoison; delete t._stateOrigin; }
+    w.$gameVariables.setValue(320, 0);
+  }
+  return {rows};
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
