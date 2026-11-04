@@ -711,7 +711,33 @@ def _compile_effect_tokens(tokens, signature):
     return program
 
 
-def effect_state_effect(code, phase):
+# 靠换行补分号（ASI）才合法的整块：token 比对看不见换行，改成单行后原版是语法错误（整块没效果），转换器却会照翻（审查 40 P3-2）。
+# 这些块再比一层原文哈希：键＝sha256('阶段|token 串')[:16]，值＝sha256(按行去注释去缩进的原文)[:16]（冻结数据里各块仅此一份，2026-11-04 用 node 逐块确认单行化会报语法错误）。
+ASI_BLOCK_HASHES = {
+    '02af8bf0a4ed580d': '7841af1e9521d198',  # 224 regenerate
+    '8e4489ae02bdb701': '10c46fb4b59627fc',  # 260 regenerate
+    '600ec29d86cf14ef': 'be4f706501db0989',  # 381 react
+    '246f9f0017e5a664': 'f6e2c535dac6490a',  # 566 regenerate
+    '9676454ba667dd20': '6db81c4d79011c99',  # 577 regenerate
+    '3f57cb0c48c09427': '2ca5c9605b987b82',  # 732 regenerate
+    '96260ff0c50f9067': '8257614ff5166cf2',  # 1006 regenerate
+}
+
+
+def asi_form(body):
+    """保留换行的原文规范形：去注释、去 \r、每行去首尾空白、丢空行。"""
+    return '\n'.join(l.strip() for l in strip_js_comments(body).replace('\r', '').split('\n') if l.strip())
+
+
+def asi_ok(signature, body):
+    """签名不在 ASI 表里＝不受换行影响；在表里则原文的换行形状必须与测过的一致（没给原文按不一致算）。"""
+    key = hashlib.sha256(('%s|%s' % signature).encode()).hexdigest()[:16]
+    if key not in ASI_BLOCK_HASHES:
+        return True
+    return body is not None and hashlib.sha256(asi_form(body).encode()).hexdigest()[:16] == ASI_BLOCK_HASHES[key]
+
+
+def effect_state_effect(code, phase, body=None):
     """target._xmx 这类字段换成 f_接收者_字段 局部量（运行时读进来、跑完写回），origin.属性换成 o_属性（块开头读）。"""
     from formula_program import Parser, Unsupported
     plain = re.sub(r'\s+', ' ', re.sub(r'//[^\n]*', '', code)).strip()
@@ -734,6 +760,8 @@ def effect_state_effect(code, phase):
         return {'op': 'noop', 'reason': 'unread_field', **fixed}
     if signature in NO_EFFECT_BLOCKS:
         return {'op': 'noop', 'reason': 'no_effect', **fixed}
+    if (signature in MEASURED_EFFECT_SOURCES or signature in MEASURED_EFFECT_BLOCKS) and not asi_ok(signature, body):
+        return None
     if signature in MEASURED_EFFECT_SOURCES:
         tokens = [row[0] for row in Parser(MEASURED_EFFECT_SOURCES[signature]).tokens[:-1]]
     elif signature not in MEASURED_EFFECT_BLOCKS:
@@ -968,7 +996,7 @@ def parse_state_effects(note):
         if (phase, ' '.join(tokens)) == BUBBLE_WRAP_REMOVE:
             out.append({'phase': phase, 'op': 'noop', 'reason': 'bubble_wrap_cooldown_unread'})
             continue
-        effect = effect_state_effect(code, phase)
+        effect = effect_state_effect(code, phase, body)
         if effect:
             out.append({'phase': phase, **effect})
             continue

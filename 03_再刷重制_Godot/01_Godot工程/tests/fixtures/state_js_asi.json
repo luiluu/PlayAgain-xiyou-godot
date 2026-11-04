@@ -1,0 +1,39 @@
+{
+ "asi": [
+  {
+   "state": 224,
+   "phase": "regenerate",
+   "note": "<Custom Regenerate Effect>\nif (origin !== target && origin.isAlive()) {\n  var damage = origin.mat*5\n  var el=target.elementRate(6)\n  damage = Math.ceil(damage*el);\n  origin.startAnimation(41);//运行施法者恢复动画\n  origin.gainHp(damage);//恢复HP\n  origin.startDamagePopup();\n  origin.clearResult();\n  target.startAnimation(532);\n  target.gainHp(-damage);//目标减少HP\nif (target && target.isStateAffected(207)) {\n              target.gainHp(damage * 3);\n      }\n  if (target.isDead()) {\n    target.performCollapse();\n  }\n}\n</Custom Regenerate Effect>\n\n<BuffType:诅咒>\n<StateNote>\n回合结束时使其失去施法者魔法攻击力*5的伤害，并为施法者回复同等生命值\n</StateNote>\n<RightDownNote:\"不断的吞噬着你的气血！\">"
+  },
+  {
+   "state": 260,
+   "phase": "regenerate",
+   "note": "<DNShow>\n<Custom Regenerate Effect>\nif (origin !== target && origin.isAlive()) {\n  var damage = origin.mat*5\n  var el=target.elementRate(6)\n  damage = Math.ceil(damage*el);\n  origin.startAnimation(41);//运行施法者恢复动画\n  origin.gainHp(damage*4000);//恢复HP\n  origin.startDamagePopup();\n  origin.clearResult();\n  target.startAnimation(532);\n  target.gainHp(-damage);//目标减少HP\nif (target && target.isStateAffected(207)) {\n              target.gainHp(damage * 3);\n      }\n  if (target.isDead()) {\n    target.performCollapse();\n  }\n}\n</Custom Regenerate Effect>\n\n<BuffType:诅咒>\n<StateNote>\n回合结束时使其失去施法者魔法攻击力*5的伤害，并为施法者回复同等生命值\n</StateNote>\n<RightDownNote:\"不断的吞噬着你的气血！\">"
+  },
+  {
+   "state": 381,
+   "phase": "react",
+   "note": "<DNShow>\n<Permanent>\n<Custom React Effect>\nif (value >= 0) { \n//判断角色受到物理伤害\nvar damage1 = Math.ceil(value * 10);\nvar damage2 = origin.mhp*10;\nvar damage3 = origin.elementRate(4)  \n//定义变量，用于存储反弹的伤害，倍率为敌人伤害的 2 倍\nuser.gainHp((-1 * damage1-damage2) * (1 + damage3)) * 10;\n//给敌人造成伤害\nif (user.isDead()) { //如果反弹伤害将敌人杀死\nuser.performCollapse(); //播放敌人死亡动画\n}\n}\n</Custom React Effect>"
+  },
+  {
+   "state": 566,
+   "phase": "regenerate",
+   "note": "<Custom Regenerate Effect>\nif (origin !== target && origin.isAlive()) {\n  var damage = origin.mhp*1\n  var el=target.elementRate(6)\n  damage = Math.ceil(damage*el);\n  origin.startAnimation(41);//运行施法者恢复动画\n  origin.gainHp(damage);//恢复HP\n  origin.startDamagePopup();\n  origin.clearResult();\n  target.startAnimation(532);\n  target.gainHp(-damage);//目标减少HP\nif (target && target.isStateAffected(207)) {\n              target.gainHp(damage * 3);\n      }\n  if (target.isDead()) {\n    target.performCollapse();\n  }\n}\n</Custom Regenerate Effect>\n\n<BuffType:诅咒>\n<StateNote>\n回合结束时使其失去施法者魔法攻击力*5的伤害，并为施法者回复同等生命值\n</StateNote>\n<RightDownNote:\"不断的吞噬着你的气血！\">"
+  },
+  {
+   "state": 577,
+   "phase": "regenerate",
+   "note": "<Custom Regenerate Effect>\nif (origin !== target && origin.isAlive()) {\n  var damage = origin.mhp*5\n  var el=target.elementRate(6)\n  damage = Math.ceil(damage*el);\n  origin.startAnimation(41);//运行施法者恢复动画\n  origin.gainHp(damage);//恢复HP\n  origin.startDamagePopup();\n  origin.clearResult();\n  target.startAnimation(532);\n  target.gainHp(-damage);//目标减少HP\nif (target && target.isStateAffected(207)) {\n              target.gainHp(damage * 3);\n      }\n  if (target.isDead()) {\n    target.performCollapse();\n  }\n}\n</Custom Regenerate Effect>\n\n<BuffType:诅咒>\n<StateNote>\n回合结束时使其失去施法者魔法攻击力*5的伤害，并为施法者回复同等生命值\n</StateNote>\n<RightDownNote:\"不断的吞噬着你的气血！\">"
+  },
+  {
+   "state": 732,
+   "phase": "regenerate",
+   "note": "<BuffType:诅咒>\n<StateNote>\n毒奶\n</StateNote>\n<RightDownNote:\"这奶里有毒！\">\n<Custom Apply Effect>\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 0;\n// Increase the stack count.\ntarget._stackingPoison += 1;\n</Custom Apply Effect>\n\n<Custom Remove Effect>\n// Reset the stack count.\ntarget._stackingPoison = 0;\n</Custom Remove Effect>\n\n<Custom Regenerate Effect>\nvar baseEquipId = 3590;\nlet currentEquip = null;\nvar equips = origin.equips().filter((equip) => !!equip &&DataManager.isArmor(equip) && equip.baseItemId === baseEquipId);\nif(equips.length > 0)\n   currentEquip = equips[0];\nvar mw = !!currentEquip ?  origin.getEquipItemObject(currentEquip) : null;\nvar level = !!mw ? mw.level() : 0;\n// Make sure the stack count exists.\ntarget._stackingPoison = target._stackingPoison || 1;\n// Sets the stacks variable to the stack count.\nvar stacks = target._stackingPoison\n// The damage formula used per tick.\nvar damage1 = origin.mmp;\nvar damage2 = v[320];\nvar damage3 = origin.mat;\nvar damage = Math.round(stacks*0.5*(damage1 * 8 + damage2 * 1 + damage3 * 1)*(1+level)*(1+damage2/3000)*(1+damage2/3000));\n// Play poison animation on the target.\ntarget.startAnimation(130);\n// Target takes HP damage.\ntarget.gainHp(-damage);\n// Play the popup.\ntarget.startDamagePopup();\n// Clear the results.\ntarget.clearResult();\n// Check if the target is dead.\nif (target.isDead()) {\n  // If the target is dead, make it collapse.\n  target.performCollapse();\n}\n</Custom Regenerate Effect>"
+  },
+  {
+   "state": 1006,
+   "phase": "regenerate",
+   "note": "<BuffType:诅咒>\n<Custom Regenerate Effect>\nif (origin !== target && origin.isAlive()) {\nvar damage = origin.mat*100\nvar el=target.elementRate(6)\ndamage = Math.ceil(damage*el);\norigin.startAnimation(41);//运行施法者恢复动画\norigin.gainHp(damage*0.1);//恢复HP\norigin.startDamagePopup();\norigin.clearResult();\ntarget.startAnimation(532);\ntarget.gainHp(-damage);//目标减少HP\nif (target.isDead()) {\ntarget.performCollapse();\n}\n}\n</Custom Regenerate Effect>\n<StateNote>\n回合结束时使其失去施法者魔法攻击力*100的伤害，并为施法者回复10%同等生命值\n</StateNote>\n<RightDownNote:\"不断地吞噬着你的精血！\">"
+  }
+ ]
+}
