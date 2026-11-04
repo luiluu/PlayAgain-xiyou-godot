@@ -516,7 +516,8 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
 // confirm／establish 的持有者是行动者，react／respond 的持有者是目标（YEP onPreDamage／onReact／onRespond／onPostDamage）。
 const DAMAGE_BLOCKS = [[1060, 'react'], [1061, 'react'], [1299, 'establish'], [1302, 'react'], [1405, 'establish'], [1450, 'establish'], [1580, 'respond'], [1642, 'confirm'],
   [1666, 'confirm'], [1731, 'confirm'], [1828, 'react'], [2554, 'respond'], [2559, 'confirm'], [2562, 'react'], [2575, 'confirm']];
-cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
+// EXTRA：每行再乘一层的附加条件（rules8 的新块要变 v206／暴击率／本击是否暴击）；老块传 [{}]，行数与内容不变。
+function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
   const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
   const item = action.item(), originalDamage = Object.assign({}, item.damage), originalHit = item.hitType;
   const errors = [], oldError = w.Yanfly.Util.displayError, oldRandom = w.Math.random, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldInt = w.Math.randomInt;
@@ -536,7 +537,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
   try {
     w.Math.random = () => { const v = draws < script.length ? script[draws] : 0.5; draws++; return v; };
     for (const [sid, phase] of DAMAGE_BLOCKS) for (const [dmgType, hitType] of [[1, 1], [1, 2], [1, 0], [2, 1], [3, 2], [0, 0]]) for (const value of [-5, 0, 7, 1000])
-      for (const [hp, mp, shield, xmx, v1174, seq] of [['full', 50, 0, undefined, 0, [0.5, 0.5, 0.5]], [100, 50, 20, 6, 2, [0.1, 0.9, 0.5]], [0, 0, 5000, 7, 12, [0.9, 0.1, 0.9]], [3, 1, 0, 4, 1, [0, 0.99, 0.25]]]) {
+      for (const x of EXTRA) for (const [hp, mp, shield, xmx, v1174, seq] of [['full', 50, 0, undefined, 0, [0.5, 0.5, 0.5]], [100, 50, 20, 6, 2, [0.1, 0.9, 0.5]], [0, 0, 5000, 7, 12, [0.9, 0.1, 0.9]], [3, 1, 0, 4, 1, [0, 0.99, 0.25]]]) {
         const holder = TYPE[phase] === 'target' ? e : a;
         item.damage.type = dmgType; item.hitType = hitType;
         hard(a, 'full', 50, 0, undefined); hard(e, hp, mp, shield, xmx);
@@ -545,10 +546,13 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
         const keep = e._hp; e._hp = Math.max(1, keep); holder.addState(sid); holder.clearResult(); e.clearResult(); a.clearResult();
         e._hp = keep; if (keep === 0) e._states.push(1);
         w.$gameVariables.setValue(1174, v1174);
+        if (x.v206 !== undefined) w.$gameVariables.setValue(206, x.v206);
+        if (x.cri !== undefined) Object.defineProperty(a, 'cri', {get: () => x.cri, configurable: true});
+        if (x.crit !== undefined) e.result().critical = x.crit;
         script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
         const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
         const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
-        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
+        rows.push({...(Object.keys(x).length ? {x} : {}), state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
           a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
       }
     // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
@@ -573,10 +577,16 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
     w.Math.random = oldRandom; w.Math.randomInt = oldInt; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup;
     delete w.Game_Enemy.prototype.performCollapse; delete w.Game_Actor.prototype.performCollapse;
     a._states.length = 0; e._states.length = 0; a.clearResult(); e.clearResult(); delete a._Shield; delete e._Shield;
-    w.$gameVariables.setValue(1174, 0);
+    w.$gameVariables.setValue(1174, 0); w.$gameVariables.setValue(206, 0); delete a.cri;
   }
   return {rows, applies, actionStart};
-}));
+}
+cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => effectMeasure(DAMAGE_BLOCKS, [{}])));
+// rules8：全游戏可达的伤害 react／confirm 块（切片外的套装、技能、防具备注推状态）。1749 的 user.criticalRate() 原版没有这个方法，量出来就是 TypeError。
+const DAMAGE2_BLOCKS = [[38, 'confirm'], [50, 'confirm'], [97, 'confirm'], [250, 'react'], [381, 'react'], [720, 'react'], [908, 'react'], [1112, 'react'],
+  [1257, 'confirm'], [1394, 'react'], [1407, 'establish'], [1538, 'react'], [1661, 'confirm'], [1749, 'confirm']];
+const EXTRA2 = [{v206: 0, cri: 0.05, crit: false}, {v206: 50, cri: 0.4, crit: true}, {v206: 3, cri: 1, crit: true}];
+cases.push(makeCase('effect2.blocks', {blocks: DAMAGE2_BLOCKS, extra: EXTRA2}, () => effectMeasure(DAMAGE2_BLOCKS, EXTRA2)));
 // 其它／回合行动钩子两族（rules5）：直调 customEffectEval，看不抛错、改了什么。队友遍历、武器、字段、计数器都在这里。
 cases.push(makeCase('hook.blocks', {}, () => {
   const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
@@ -779,6 +789,116 @@ cases.push(makeCase('rest.blocks', {}, () => {
     w.$gameTemp.clearCommonEvent(); w.$gameSystem._forceCritical = false; w.$gameSystem._forceNoCritical = false;
   }
   return JSON.parse(JSON.stringify(out, (k, v) => k === 'errors' ? (v.length ? v : undefined) : v).replace(/"errors":/g, '"sourceErrors":'));
+}));
+// rules8 第二批：全游戏可达的 regenerate、回合／行动钩子、改属性／变量、公共事件预约、其它。每块直调 customEffectEval，记结局（含字段、计数器、变量、预约）。
+cases.push(makeCase('rest2.blocks', {}, () => {
+  const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
+  const sourceErrors = []; let popups = [], anims = [], collapses = [];
+  const statesBefore = w.$dataStates.length;
+  w.Yanfly.Util.displayError = error => sourceErrors.push(String(error).slice(0, 70));
+  const name = t => t === a ? 'a' : t === b ? 'b' : t === e ? 'e' : '?';
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: name(this), hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage}); };
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push([name(this), id]); };
+  const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses.push(name(this)); };
+  const units = [a, b, e], VARS = [320, 1129, 1130, 1136, 1138, 1139, 1140, 1214];
+  const reset = () => { for (const t of units) { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1000; t._mp = 50; t._tp = 30; t.need_refresh = true; t.refresh(); t._hp = 1000;
+      delete t._stateOrigin; delete t._lastUsedSkill; delete t._reverenceMp; delete t._stackingPoison; t._stateCounter = {}; t._paramPlus = t._paramPlus.map((x, i) => i === 0 ? x : 0); t.need_refresh = true; t.refresh(); t._hp = 1000; }
+    popups = []; anims = []; collapses = []; sourceErrors.length = 0; w.$gameTemp.clearCommonEvent(); for (const v of VARS) w.$gameVariables.setValue(v, 0); };
+  const place = (t, sid) => { t._states.push(sid); t.need_refresh = true; t.refresh(); t.clearResult(); };
+  const res = t => ({hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), states: t._states.slice().sort((x, y) => x - y), counter: JSON.parse(JSON.stringify(t._stateCounter || {})),
+    lastUsed: t._lastUsedSkill === undefined ? null : t._lastUsedSkill, rev: t._reverenceMp === undefined ? null : t._reverenceMp, plus: t._paramPlus.slice(), mmp: t.mmp, mhp: t.mhp, poison: t._stackingPoison === undefined ? null : t._stackingPoison});
+  const snap = () => ({sourceErrors: sourceErrors.slice(), popups: popups.slice(), anims: anims.slice(), collapses: collapses.slice(), reserved: w.$gameTemp._commonEventId || 0,
+    vars: VARS.map(v => w.$gameVariables.value(v)), a: res(a), b: res(b), e: res(e)});
+  const oldRandom = w.Math.random;
+  const out = {regen: [], hooks: []};
+  try {
+    w.Math.random = () => 0.5;
+    const setOrigin = (t, sid, src) => { t._stateOrigin = t._stateOrigin || {}; t._stateOrigin[sid] = src === 'self' ? undefined : (src.isActor() ? [0, src.actorId()] : [1, src.index()]); };
+    for (const sid of [224, 566, 577]) for (const [mode, hp207, ehp] of [['other', false, 1000000], ['other', true, 1000000], ['self', false, 1000000], ['deadOrigin', false, 1000000], ['other', false, 1]]) {
+      reset(); e._hp = ehp; e._states.push(sid); if (hp207) e._states.push(207); e.need_refresh = true; e.refresh(); e._hp = ehp;
+      setOrigin(e, sid, mode === 'self' ? 'self' : a); if (mode === 'deadOrigin') { a._hp = 0; a._states.push(1); }
+      const before = {amat: a.mat, emat: e.mat, ahp: a.hp, ehp: e.hp, el: e.elementRate(6), amhp: a.mhp};
+      e.customEffectEval(sid, 'regenerateState');
+      out.regen.push({sid, mode, hp207, ehpIn: ehp, before, ...snap()}); a._states.length = 0; a._hp = 1000;
+    }
+    // Battler 版（持有者＝a）与 Action 版（a 行动者、e 目标）各阶段
+    const hook = (sid, phase, holder, setup, label) => { reset(); place(holder, sid); if (setup) setup(); sourceErrors.length = 0;
+      const pre = {a: {mhp: a.mhp, mmp: a.mmp}, e: {mhp: e.mhp, mmp: e.mmp}};  // 块开始时的上限（状态特性会改上限，结尾读到的不是块用的）
+      let got = null;
+      if (['addState', 'removeState', 'leaveState', 'turnStartState', 'turnEndState', 'actionStartState', 'actionEndState', 'battle'].includes(phase)) holder.customEffectEval(sid, phase);
+      else { const act = new w.Game_Action(a); act.setSkill(1); got = act.customEffectEval(e, sid, phase, holder, 7); }
+      out.hooks.push({sid, phase, label: label || '', holder: name(holder), got, pre, ...snap()}); };
+    const VAR = (id, x) => () => w.$gameVariables.setValue(id, x);
+    const MULTI = fs => () => fs.forEach(f => f());
+    for (const who of [a, e]) for (const phase of ['actionStartState', 'turnStartState', 'turnEndState']) { hook(49, phase, who, null); }
+    hook(49, 'actionStartState', a, () => { a._lastUsedSkill = 5; }, 'prev');
+    for (const who of [a, e]) { hook(102, 'actionStartState', who, null); hook(102, 'initiateState', who, () => { who._reverenceMp = 80; }, 'rev80'); hook(102, 'initiateState', who, () => { who._reverenceMp = 20; }, 'rev20'); hook(102, 'initiateState', who, null, 'norev'); }
+    for (const who of [a, e]) { hook(1741, 'turnStartState', who, null); hook(1742, 'turnEndState', who, null); }
+    hook(1748, 'confirmState', a, null); hook(1748, 'confirmState', a, () => { a.attackCount = 3; }, 'count3'); delete a.attackCount;
+    hook(1315, 'deselectState', e, null);
+    for (const who of [a, e]) { hook(1778, 'battle', who, null); }
+    for (const sid of [1769, 1772, 1776]) for (const who of [a, e]) for (const [v1136, pre] of [[0, null], [2, null], [2, 123], [3, 0]]) {
+      hook(sid, 'addState', who, MULTI([VAR(1136, v1136), () => { if (pre !== null) who._stateCounter[sid] = pre; }]), 'v1136=' + v1136 + ',pre=' + pre); }
+    for (const sid of [1771, 2033]) for (const who of [a, e]) hook(sid, 'addState', who, null);
+    for (const who of [a, e]) for (const v1214 of [0, 5, 37]) { hook(2018, 'addState', who, VAR(1214, v1214), 'v=' + v1214); hook(2018, 'removeState', who, VAR(1214, v1214), 'v=' + v1214); hook(2018, 'leaveState', who, VAR(1214, v1214), 'v=' + v1214); }
+  } finally {
+    w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA; w.$dataStates.length = statesBefore;
+    for (const t of units) { t._states.length = 0; t.clearResult(); delete t._stateOrigin; t._stateCounter = {}; t._paramPlus = t._paramPlus.map((x, i) => i === 0 ? x : 0); }
+    w.$gameTemp.clearCommonEvent(); for (const v of VARS) w.$gameVariables.setValue(v, 0);
+  }
+  return JSON.parse(JSON.stringify(out, (k, v) => k === 'errors' ? (v.length ? v : undefined) : v));
+}));
+// rules8 毒奶 732（regenerate）：来源者装备的法宝等级、叠毒字段 _stackingPoison、变量 320 一起算伤害。来源者是敌人时 origin.equips 不存在（TypeError）。
+cases.push(makeCase('poison.blocks', {state: 732, armor: 3590}, () => {
+  const {a, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
+  const errors = []; let popups = [], anims = [], collapses = 0;
+  w.Yanfly.Util.displayError = error => errors.push(String(error).slice(0, 70));
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: this === a ? 'a' : 'e', hpAffected: r.hpAffected, hpDamage: r.hpDamage}); };
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push([this === a ? 'a' : 'e', id]); };
+  const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses++; };
+  const rows = [];
+  try {
+    const before = w.$gameParty.equipItems().slice();
+    w.$gameParty.gainItem(w.$dataArmors[3590], 1);
+    const item = w.$gameParty.equipItems().find(x => before.indexOf(x) < 0);
+    const o16 = w.$gameActors.actor(16), slot = o16.equipSlots().indexOf(item.etypeId);  // 毒心专属克莱德（16），只有他有这个装备槽
+    if (slot < 0) throw new Error('actor 16 没有装备类型 ' + item.etypeId);
+    const gi = new w.Game_Item(); gi.setObject(item);
+    const setup = {actor_none: () => {}, actor_equipped: () => { o16.forceChangeEquip(slot, item); }, enemy_origin: () => {}};
+    const levels = [['none', 0], ['lv_init', 0], ['lv_up', 1e6]];
+    const reset = who => { for (const t of [a, e]) { t._states.length = 0; t.clearResult(); t._hp = 1; t.need_refresh = true; t.refresh(); t._hp = t.mhp; t._mp = 50; delete t._stackingPoison; }
+      o16.forceChangeEquip(slot, null); popups = []; anims = []; collapses = 0; errors.length = 0; };
+    for (const [mode, fn] of Object.entries(setup)) for (const [lname, exp] of levels) {
+      if (mode === 'actor_none' && lname !== 'none') continue;
+      if (mode !== 'actor_none' && lname === 'none') continue;
+      for (const stacks of [undefined, 3]) for (const v320 of [0, 500]) for (const ehp of ['full', 'low']) {
+        reset(mode); fn(); if (exp) gi.gainExp(exp);
+        w.$gameVariables.setValue(320, v320);
+        e._states.push(732); e.need_refresh = true; e.refresh(); e.clearResult(); e._hp = ehp === 'full' ? e.mhp : 1;
+        if (stacks !== undefined) e._stackingPoison = stacks;
+        const origin = mode === 'enemy_origin' ? e : o16;
+        e._stateOrigin = {732: origin === e ? undefined : [0, 16]};
+        if (mode === 'enemy_origin') { const e2 = w.$gameTroop.members()[1] || e; e._stateOrigin = {732: e2 === e ? undefined : [1, e2.index()]}; }
+        const org = mode === 'enemy_origin' ? (e._stateOrigin[732] === undefined ? e : w.$gameTroop.members()[e._stateOrigin[732][1]]) : o16;
+        const pre = {omat: org.mat, ommp: org.mmp, level: mode === 'actor_none' ? 0 : gi.level(), ehp: e.hp};
+        e.customEffectEval(732, 'regenerateState');
+        const r = e.result();
+        rows.push({mode, level: lname, stacks: stacks === undefined ? null : stacks, v320, ehpIn: ehp, pre, ehp: e.hp, dead: e.isDead(), field: e._stackingPoison === undefined ? null : e._stackingPoison,
+          hpDamage: r.hpDamage, popups: popups.slice(), anims: anims.slice(), collapses, sourceErrors: errors.slice()});
+        w.$gameVariables.setValue(320, 0);
+      }
+    }
+    o16.forceChangeEquip(slot, null);
+  } finally {
+    w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA;
+    for (const t of [a, e]) { t._states.length = 0; t.clearResult(); delete t._stackingPoison; delete t._stateOrigin; }
+    w.$gameVariables.setValue(320, 0);
+  }
+  return {rows};
 }));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
