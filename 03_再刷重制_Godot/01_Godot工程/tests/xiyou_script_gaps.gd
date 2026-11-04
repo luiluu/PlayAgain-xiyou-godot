@@ -9,6 +9,8 @@ extends Node
 ##   没人时不学不提示；鲲拳 CE1160 只有一句声明的段无操作；大厅老妪头顶倒计时（Map004 EV005，画在看不见的名字条上）无操作；
 ##   战斗里按角色号加状态（CE43 脚本段，XBattleEventRunner._actor_states_script）：13～15 在队、不在队都加上 708。
 ## - 第三批（events3）：投石问路 CE2486 每个敌人一条暴闪提示（troopCev）；猛击 CE78 带 345 且穿着防具 506 时全体敌人加 43（setArmorState.*）。
+## - 第四批（八戒 events1）：极尽升华 CE1388～1390（Map047／147／182 守层者送原初火种后调）：会 A 的角色（在队、不在队都算）换成 B，
+##   对照 ascend.* 十二例；再核存读档后 actor_ops 带 from、读档后才建的角色同样套用；漏了 forgetSkill 的变体仍记认不出，无条件版本照普通循环认得。
 ## 反向：写法稍变（速度写成变量、击败数写成别的对象）仍记认不出。
 const REF := "oracle/script_gaps.json"
 
@@ -278,18 +280,58 @@ func _battle_batch3(ref: Dictionary) -> void:
 		_check("set_armor_state_" + tag, r.skipped.is_empty() and hit == c.observed.enemies, [r.skipped, hit, c.observed])
 
 
+## 极尽升华：对照 ascend.<CE>.<场景> 的 1／8／11 号 A、B 有无
+func _ascend(ref: Dictionary) -> void:
+	for ce in [1388, 1389, 1390]:
+		for tag in ["none", "party", "offParty", "both"]:
+			var c: Dictionary = ref["ascend.%d.%s" % [ce, tag]]
+			var a_id := int(c.setup["from"])
+			var b_id := int(c.setup.to)
+			var s := XState.new_game(3, 1, [8, 9, 10])
+			XState.current = s
+			for who in c.setup.who:
+				s.actor(int(who)).learn_skill(a_id)
+			var learned_ok: bool = c.setup.who.all(func(w): return s.actor(int(w)).skill_ids.has(a_id))
+			var it := MVInterpreter.new(self, 0, 0, XDB.rec("CommonEvents", ce).list)
+			await it.run()
+			var got := {}
+			for id in [1, 8, 11]:
+				var a := s.actor(id)
+				got["a%d" % id] = [a.skill_ids.has(a_id), a.skill_ids.has(b_id)]
+			var want: Dictionary = c.observed
+			var same: bool = true
+			for k in got:
+				same = same and got[k][0] == bool(want[k][0]) and got[k][1] == bool(want[k][1])
+			_check("ascend_%d_%s" % [ce, tag], learned_ok and it.skipped.is_empty() and same, [learned_ok, it.skipped, got, want])
+	# 存读档：actor_ops 带 from；读档后才建的角色（装着 A 的初始技能不会有，这里直接塞 A 再建？不——只核 op 回来）
+	var s2 := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s2
+	s2.actor(1).learn_skill(6133)
+	await MVInterpreter.new(self, 0, 0, XDB.rec("CommonEvents", 1388).list).run()
+	var s3 := XState.from_dict(JSON.parse_string(JSON.stringify(s2.to_dict())))
+	XState.current = s3
+	_check("ascend_save_roundtrip", s3.actor_ops.size() == s2.actor_ops.size() and s3.actor_ops.size() >= 1 and int(s3.actor_ops[-1].get("from", 0)) == 6133 and str(s3.actor_ops[-1].op) == "replace" and s3.actor(1).skill_ids.has(6236) and not s3.actor(1).skill_ids.has(6133),
+		[s3.actor_ops, s3.actor(1).skill_ids])
+	# 反向：去掉 hasSkill 判断的写法（会把没学过的人也学上 B）仍记认不出
+	var miss: Array = await script("for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nactor.forgetSkill(6133);\nactor.learnSkill(6236);\n}")
+	_check("ascend_unconditional_is_plain_loop", miss.is_empty(), miss)   # 无条件版本本来就是普通循环（forget＋learn 各一条），照旧认得
+	var miss2: Array = await script("for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6133)){\nactor.learnSkill(6236);\n}\n}")
+	_check("ascend_missing_forget_unknown", not miss2.is_empty(), miss2)
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_script_gaps"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 20, ref.size())
+	_check("ref_loaded", ref.size() == 32, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
 	await _cleanup(ref)
 	await _batch2(ref)
 	_battle_states(ref)
 	_battle_batch3(ref)
+	await _ascend(ref)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)

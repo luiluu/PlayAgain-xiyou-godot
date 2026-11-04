@@ -336,7 +336,11 @@ static func _apply_actor_op(a: XActor, op: Dictionary) -> void:
 		return
 	if bool(op.get("named", false)) and str(a.data().get("name", "")) == "":
 		return
-	if str(op.op) == "forget":
+	if str(op.op) == "replace":   # 会 from 的换成 skill（极尽升华：hasSkill 才忘旧学新）
+		if a.skill_ids.has(int(op.get("from", 0))):
+			a.forget_skill(int(op.from))
+			a.learn_skill(int(op.skill))
+	elif str(op.op) == "forget":
 		a.forget_skill(int(op.skill))
 	else:
 		a.learn_skill(int(op.skill))
@@ -907,7 +911,7 @@ static func from_dict(d: Dictionary) -> XState:
 	var dg = d.get("designation", {})
 	s.designation = {"name": str(dg.name), "icon": int(dg.icon), "color": str(dg.color)} if dg is Dictionary and dg.has("name") else {}
 	for op in d.get("actorOps", []):
-		s.actor_ops.append({"op": str(op.op), "skill": int(op.skill), "ids": op.get("ids", []).map(func(v): return int(v)),
+		s.actor_ops.append({"op": str(op.op), "skill": int(op.skill), "from": int(op.get("from", 0)), "ids": op.get("ids", []).map(func(v): return int(v)),
 			"exclude": op.get("exclude", []).map(func(v): return int(v)), "named": bool(op.get("named", false))})
 	for k in d.get("seen", []):
 		s.seen[str(k)] = true
