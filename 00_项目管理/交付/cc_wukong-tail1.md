@@ -1,7 +1,7 @@
 # 交付：cc/wukong-tail1
 
 - 车道／工作者：C 规则／悟空（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -49,7 +49,7 @@
 - 探针 `nanoha3`、`yunshang`、`xuan_auto` 都不进同步，夹具重生成后旧用例逐例比过没变；没动切片和转换器。
 - 改了共用核心文件：`battle_logic.gd`（`act`、`_invoke` 一带、`_auto_battle_action`），`smart_ai.gd`、`hang_up_auto.gd`。
 
-选测结果：待写
+选测结果：云端 134 个场景全过（提交 05ab259b，基准 6c79d5d3，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41750991261）。合并 main（含 xuan4c、tools57）之后跑的。
 
 ## 交接板
 
@@ -68,4 +68,8 @@
 
 ## 本分支提交
 
-待写
+- 7aec7bd0 WIP: tail1 交付单草稿
+- f1ce9ce2 璇：敌人跳过的回合不走 endAction；棱光目标只记主行动（审查 35b P2-1、P3-1）
+- eaa4884d 绝缘×云裳补原版实测：wake／addActions 只挡外来，freeGift 一律挡且不耗次数
+- 36997b38 奈叶预定小魔炮：参照 10 例进 nanoha3，专项比对
+- a0b00ddc WIP: 奈叶挂机预定小魔炮只在六档魔炮里挑（Codex_SmartBattleAI makeAction）
