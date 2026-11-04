@@ -197,8 +197,10 @@ const SCRIPTS = {
   // 角色不一样：OTB processTurn 对角色走 startOTBInput，不能输入也 makeActions＋startAction，照走 endAction 救援；只是没有行动，宿主被控也不放棱光
   skip_actor: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['state', 2, 10], ['skip', 2]]],
   skip_host: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['state', 1, 10], ['skip', 1]]],
-  // 回归当回合被控：startAction 包装照扣 1 点充能（binding.startAction）
+  // 被控角色的回合：外层 startAction 包装没有行动就直接 endAction，走不到绑定的 startAction，回归当回合不扣充能
   skip_return: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['use', XUAN, 'return', XUAN], ['state', XUAN, 10], ['skip', XUAN], ['skip', XUAN]]],
+  // endAction 的绑定包装照跑 validate：宿主倒下，被控队友这一回合结束就解绑
+  skip_validate: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['state', 8, 10], ['state', 1, 1], ['skip', 8]]],
   // 审查 35b P3-1：棱光打主行动最后的目标（Game_Action.apply 包装记在这个行动上）。甚尔万里锁溅射是子行动；黄泉扩散、镜流补段 oldApply 绕过璇的包装；都不改
   last_toji: [{party: [XUAN, 171, 8, 2]}, [['use', XUAN, 'jixing', 171], ['turn'], ['gain', XUAN, 3], ['learn', 171, 10217], ['act', 171, 10217, 'e1']]],
   last_jingliu: [{party: [XUAN, 170, 8, 2]}, [['use', XUAN, 'jixing', 170], ['turn'], ['gain', XUAN, 3], ['learn', 170, 10190], ['state', 'e1', 2629], ['act', 170, 10190, 'e1']]],

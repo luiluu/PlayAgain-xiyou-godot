@@ -66,17 +66,22 @@ func _read(b) -> Dictionary:
 
 
 func _sleep(b) -> void:
-	for id in [SLEEP, TICK]:
-		b.add_state(id)
+	for id in [SLEEP, TICK]:  # 参照 addNewState：甚尔免疫睡眠，这里只要它不能行动
+		if not b.state_ids.has(id):
+			b.state_ids.append(id)
 		b.state_turns[id] = 3
+	b.param_mark_dirty()
+	b.param_refresh()
 
 
-## 只看这一回合哪些键变了、变成什么：原版的 before→after 和重制的 before→after
+## 这一回合哪些读数变了；状态只看 10、303（重制开战状态和参照宿主不同）。参照的 before／after 同样过一遍
 func _delta(x: Dictionary, y: Dictionary) -> Dictionary:
 	var out := {}
 	for k in x:
-		if str(x[k]) != str(y[k]):
-			out[k] = y[k]
+		var a = x[k] if k != "states" else x[k].filter(func(r): return int(r[0]) in [SLEEP, TICK])
+		var b = y[k] if k != "states" else y[k].filter(func(r): return int(r[0]) in [SLEEP, TICK])
+		if JSON.stringify(_norm(a)) != JSON.stringify(_norm(b)):
+			out[k] = _norm(b)
 	return out
 
 
@@ -85,10 +90,7 @@ func _run() -> void:
 	check("oracle", ref is Dictionary and ref.cases.size() == 14 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		var o: Dictionary = c.observed
-		var want := {}
-		for k in o.before:
-			if JSON.stringify(o.before[k]) != JSON.stringify(o.after[k]):
-				want[k] = o.after[k]
+		var want := _delta(o.before, o.after)
 		var is_enemy: bool = str(c.id) == "enemy.sleep"
 		var l := _battle(1 if is_enemy else int(c.setup.id))
 		var u = l.enemies[0] if is_enemy else l.state.actor(int(c.setup.id))
@@ -100,7 +102,7 @@ func _run() -> void:
 		var f0: Array = l.enemies.map(func(e): return float(e.hp))
 		l.act(u, null if is_enemy else u.attack_skill(), null)
 		var got := _delta(a0, _read(u))
-		check(str(c.id) + ".delta", JSON.stringify(_norm(got)) == JSON.stringify(_norm(want)), [got, want])
+		check(str(c.id) + ".delta", JSON.stringify(got) == JSON.stringify(want), [got, want])
 		if not is_enemy:
 			check(str(c.id) + ".foes", l.enemies.map(func(e): return float(e.hp)) == f0, [f0])
 		l.end_battle(0)
