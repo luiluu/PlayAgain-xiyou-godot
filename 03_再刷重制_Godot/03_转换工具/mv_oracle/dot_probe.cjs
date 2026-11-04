@@ -342,7 +342,7 @@ cases.push(mk('apply2038', {}, () => {
     if (holderKind === 'actor') { h._skills = keep.filter(x => x !== 7520).concat(learned ? [7520] : []); h.need_refresh = true; h.refresh(); }
     w.$gameVariables.setValue(1218, v0); errors.length = 0;
     giveState(h, 2038, ok, env);
-    const applied = {damagedot: h.damagedot === undefined ? null : h.damagedot, v1218: w.$gameVariables.value(1218), mat: h.mat, errors: errors.splice(0)};
+    const applied = {damagedot: h.damagedot === undefined ? null : h.damagedot, v1218: w.$gameVariables.value(1218), mat: h.mat, sourceErrors: errors.splice(0)};
     out[`${holderKind}.${learned ? 'learned' : 'plain'}.${ok}.${v0}`] = {applied, ...runTurnEnd(h, env)};
     if (keep) { h._skills = keep; h.need_refresh = true; } w.$gameVariables.setValue(1218, 0); delete h.damagedot;
   }
