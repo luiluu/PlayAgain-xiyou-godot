@@ -37,6 +37,7 @@ KEYS = {
     'sve.json': {'cases': ('id',)},
     'svpng.json': {'cases': ('id',)},
     'vsfx.json': {'cases': ('id',)},
+    'collapse.json': {'cases': ('id',)},
     'passive.json': {'cases': ('id',)},
     'scan2.json': {'cases': ('id',)},
     'qiyu.json': {'cases': ('id',)},
