@@ -133,7 +133,7 @@ func _yuhui_fixed() -> void:
 	var low := _setup(60, {"yuhui": 3})
 	low.a.hp = 1.0
 	var healed: Dictionary = _use(low, "huiguang", low.a)
-	var part := -float(healed.hp) - (low.a.mhp - 1.0)
+	var part: float = -float(healed.hp) - (low.a.mhp - 1.0)
 	var got := 0.0
 	for r in XShieldLedger.rows(low.a):
 		got += float(r.amount)
