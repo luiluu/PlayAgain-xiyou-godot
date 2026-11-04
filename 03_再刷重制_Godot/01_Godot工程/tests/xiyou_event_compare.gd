@@ -19,6 +19,7 @@ const RANDOM_SEQUENCES := {"ce1344": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.
 
 var results := []
 var _saved_seal_fix := {}
+var _saved_floor12 := true
 var out_dir := ""
 var update_baseline := false
 var only: Array = []
@@ -211,6 +212,9 @@ func _run() -> void:
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
 	# 只对修正表里那几扇门的用例关（逐用例设，见循环里）；其余用例保持修正生效的真实路径（审查 41 P3-6）
 	_saved_seal_fix = MVInterpreter.seal_check_fix
+	# O-076 十二层守层者给 12 成就的修正（原版给 13）：对照原版语义，关掉；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
+	_saved_floor12 = XAchievement.FLOOR12_FIX
+	XAchievement.FLOOR12_FIX = false
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -302,6 +306,7 @@ func _finish() -> void:
 	DirAccess.remove_absolute(XGlobalVars.path())
 	XGlobalVars._loaded_path = "<unloaded>"
 	MVInterpreter.seal_check_fix = _saved_seal_fix
+	XAchievement.FLOOR12_FIX = _saved_floor12
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0
 	MVInterpreter.fixed_random = -1.0
@@ -349,6 +354,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var watch := _watch_actors(list)
+	XConfig.achievements().clear()   # 同上：全局成就记录（物品成就只在全局还没有时触发）
 	XConfig.designations().clear()   # 参照每例 ConfigManager.applyData({}) 重置称号
 	var before := _snap(s, watch)
 	MVInterpreter.max_steps = MAX_STEPS
