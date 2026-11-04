@@ -176,6 +176,9 @@ func _cast() -> void:
 		if c.id.begins_with("atk."):
 			_atk(c)
 			continue
+		if c.id.begins_with("sched."):
+			_sched(c)
+			continue
 		var b := _battle({"party": [108], "hp": o.hp0})
 		var logic: XBattleLogic = b[0]
 		var n: XActor = b[2]
@@ -247,6 +250,42 @@ func _ai(c: Dictionary) -> void:
 	var best := XSmartAI.choose(b[0], n)
 	var id := int(best.get("skill", {}).get("id", 0))
 	check(c.id, id == int(o.skill) and n.skill_ids.has(5692) == o.learned5692 and not n.has_meta("costmp"), [id, best.get("candidates"), o])
+
+
+## nanoha3_oracle sched.*：挂机顺序表预定 5692 时只在六档魔炮里挑（Codex_SmartBattleAI makeAction），不能用或没学会算没预定；智能 AI 关着照表放 5692
+func _sched(c: Dictionary) -> void:
+	var o: Dictionary = c.observed
+	var mate := bool(c.setup.get("mate", false))
+	var b := _battle({"party": [108, 1] if mate else [108], "hp": c.setup.hp})
+	var logic: XBattleLogic = b[0]
+	var s: XState = b[1]
+	var n: XActor = b[2]
+	n.add_param(1, 50000.0)
+	n.param_mark_dirty()
+	n.param_refresh()
+	if bool(c.setup.get("noCannon", false)):
+		n.forget_skill(5692)
+	elif not n.skill_ids.has(5692):
+		n.learn_skill(5692)
+	if mate:
+		n.learn_skill(8)
+		logic.actors[1].hp = 1.0
+	n.mp = float(c.setup.mp)
+	var was_smart := XConfig.smart_ai()
+	XConfig._values.codexSmartAI = not bool(c.setup.get("smartOff", false))  # 不落盘
+	logic.turn = 1
+	var table := XHangUpAuto.data(s, "ActSkill")
+	table.clear()
+	if int(c.setup.id) > 0:
+		table[n.display_name() + XHangUpAuto.three(1)] = int(c.setup.id)
+	var r := logic.auto_battle_action(n)
+	var id := int(r[0].get("id", 0))
+	table.clear()
+	XConfig._values.codexSmartAI = was_smart
+	check(c.id, id == int(o.skill) and n.mp == float(o.mp), [id, r[1], o])
+	var who: int = logic.actors.find(r[1]) if r[1] != null else -1
+	if int(o.target) >= 1:  # 参照 target 是目标序号；全体／自动是 -1。这里只有治愈队友这一例带序号
+		check(c.id + ".target", who == int(o.target), [who, o])
 
 
 ## 手动战斗：小魔炮 5692 的效果 44 预约 CE2483「魔炮选择」，102 六选一 → 339 强制奈叶放所选大招（目标 -2 上次目标）。

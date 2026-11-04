@@ -724,6 +724,13 @@ func _auto_battle_action(a: XActor) -> Array:
 		var id := int(XHangUpAuto.data(state, "ActSkill").get(a.display_name() + XHangUpAuto.three(turn), 0))
 		if id > 2 and a.skills().any(func(x): return int(x.id) == id) and can_use(a, XDB.rec("Skills", id)):
 			return [XDB.rec("Skills", id), null]
+	# 智能AI开着、表里预定小魔炮（只开六选一公共事件，自动战斗不能用）：只在六档魔炮里挑，没得挑退回普通智能选择（Codex_SmartBattleAI makeAction）
+	if XConfig.smart_ai() and XHangUpAuto.scheduled_id(state, self, a, turn) == XSmartAI.CANNON_SKILL:
+		var cannon := XSmartAI.choose(self, a, true)
+		if not cannon.has("skill"):
+			cannon = XSmartAI.choose(self, a)
+		if cannon.has("skill"):
+			return [cannon.skill, cannon.target]
 	var planned := XHangUpAuto.scheduled_skill(state, self, a, turn)
 	if not planned.is_empty():
 		return [planned, null]

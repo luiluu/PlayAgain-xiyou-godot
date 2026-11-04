@@ -164,6 +164,15 @@ static func move_earlier(s: XState, st: Dictionary, i: int) -> void:
 	renumber(s, st)
 
 
+## scheduledSkill（Codex_SmartBattleAI）：本回合预定的技能号，能用且学会（1、2 不看学会）才算；没有返回 0
+static func scheduled_id(s: XState, logic: XBattleLogic, a: XActor, turn: int) -> int:
+	var id := int(data(s, "ActSkill").get(a.display_name() + three(turn), 0))
+	var sk := XDB.rec("Skills", id)
+	if id <= 0 or sk.is_empty() or not logic.can_use(a, sk):
+		return 0
+	return id if id <= XBattleLogic.GUARD_SKILL or a.skills().any(func(x): return int(x.id) == id) else 0
+
+
 ## 战斗中轮到 a（第 turn 回合）时按顺序表定下的技能；没有排或用不了返回空（交给自动战斗）。
 ## Codex_SmartBattleAI.scheduledSkill（能用、且是攻击/防御或学会的技能）后接 XdRs_HangUp 的 makeAction：
 ## 原始 mpCost/tpCost 不超过当前值才用，否则普通攻击。
