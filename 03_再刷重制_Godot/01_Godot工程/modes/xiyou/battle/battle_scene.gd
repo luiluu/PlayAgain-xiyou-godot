@@ -1531,6 +1531,10 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 		# Game_Action.isMagicSkill：技能类型在 System.magicSkills 里
 		var magic: Array = XDB.system().get("magicSkills", [])
 		s.set_motion("spell" if magic.has(int(skill.get("stypeId", 0))) or magic.has(float(skill.get("stypeId", 0))) else "skill")
+	var xt := XXuanTusuArt.motion_for(a, skill)  # ArtPack performAction 包装：专属技能绑定动作（盖在上面）
+	if xt != "":
+		s.set_motion(xt)
+	XXuanTusuArt.note_cast(a, skill)
 	# 谷雨 performAction 包装（原 performAction 之后）：五个主动技换自己的动作（治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill）
 	var own := XGuyu.action_motion(a, skill)
 	if own != "":

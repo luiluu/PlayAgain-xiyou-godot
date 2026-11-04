@@ -251,6 +251,7 @@ func _process(delta: float) -> void:
 		var k := str(view.get("look", _look_key)) if not view.is_empty() else XAppearance.battler_key(battler)
 		if k != _look_key:
 			swap_look(k)
+		XXuanTusuArt.update(self)  # 璇、屠苏：绑定形态、持武、星魂
 	if cursor:
 		cursor.visible = selected and show_cursor
 	if selected:
@@ -505,7 +506,7 @@ var _last_pos := Vector2.INF
 func _guyu_planted() -> bool:
 	if _moving or not battler is XActor:
 		return false
-	return (XGuyu.own(battler) and _look_key == "Guyu") or XAppearance.cat_visual(battler)
+	return (XGuyu.own(battler) and _look_key == "Guyu") or XAppearance.cat_visual(battler) or XXuanTusuArt.planted(battler, _look_key)
 
 
 ## queueVisual 的画面反馈（只属于精灵，不进存档、不用战斗随机数）：归根 root 48 帧——脚下落八片金边瓷片、五片枯叶，
