@@ -1460,7 +1460,7 @@ func _shift(b: XBattler, change: int, current: bool) -> void:
 
 ## 技能付费时：下个回合位置按技能速度前移（Action Speed Convert）。
 func _otb_user_shift(u: XBattler, skill: Dictionary) -> void:
-	var change := int(skill.get("speed", 0)) + _note_int(skill, "OTB User Next Turn")
+	var change := int(skill.get("speed", 0)) + _note_int(skill, "OTB User Next Turn") + XXuanBattle.manual_first_shift(self, u, skill)
 	if change != 0:
 		_shift(u, change, false)
 
@@ -2071,6 +2071,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
 	XHubris.after_hp(self, u, t, value, hubris_before)  # 狂妄 executeHpDamage 包装：贡献、本方击杀、首领分段
 	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂
+	XXuanBattle.hp_after(u, t, value, item)  # 璇 60 级列星：归宿、星幕的消费
 	return out
 
 
