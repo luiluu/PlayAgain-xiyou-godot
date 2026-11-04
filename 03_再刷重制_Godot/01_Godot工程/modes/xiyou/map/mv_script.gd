@@ -170,6 +170,11 @@ static func run(code: String, interp) -> Array:
 		var picked = await _target_actor_script(js, interp)
 		if picked != null:
 			return picked
+	# plugins.js 没装载的插件：签到板 Star_SignBoard（CE6 签到、CE330／373 补签卡／补签信）、状态图鉴 Scene_StateBook（CE429）、
+	# 地图快捷栏 MKR_MapItemSlot（CE478）。原版读到未定义的名字抛错，被 YEP command355 吞掉，无操作；
+	# 对照 oracle script_gaps unloaded.*（存档内容与场景都不变）。
+	if _re("^(SceneManager\\.push\\(Scene_(StarSignBoard|StateBook)\\)|Star\\.SignBoard\\.ConductItemMakeUpSign\\((true|false)\\)|\\$gameParty\\.openItemSlotMenu\\(\\));?$").search(js):
+		return []
 	if js.contains("$gameActors.length+1") or js.contains("$gameActors.length + 1"):
 		return []
 	if js.contains("$gameParty.RomGet") and js.contains("Math.random"):
@@ -1004,6 +1009,10 @@ static func _actor_loop(js: String) -> Array:
 	if head == null:
 		return []
 	var body := head.get_string(2)
+	# 极尽升华（CE1388～1390）：if (actor.hasSkill(A)) { actor.forgetSkill(A); actor.learnSkill(B); }——会 A 的所有角色（在队不在队都算）换成 B
+	var upgrade := _re("^\\s*var\\s+actor\\s*=\\s*\\$gameActors\\.actor\\(j\\);\\s*if\\s*\\(\\s*actor\\.hasSkill\\((\\d+)\\)\\s*\\)\\s*\\{\\s*actor\\.forgetSkill\\(\\1\\);\\s*actor\\.learnSkill\\((\\d+)\\);\\s*\\}\\s*$").search(body)
+	if upgrade:
+		return [{"op": "replace", "from": int(upgrade.get_string(1)), "skill": int(upgrade.get_string(2)), "ids": [], "exclude": [], "named": false}]
 	var calls := _re("(forgetSkill|learnSkill)\\((\\d+)\\)").search_all(body)
 	# CE1431／1432 的 if(actor)：actor(j) 为空只在没有该角色数据时，角色操作本来就只落到有数据的角色（沙僧二审 S2-1-02）
 	# 名字检查有带空格与不带空格两种（CE1442 洪荒诅咒写 if($dataActors[j].name!='')）

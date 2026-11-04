@@ -4,7 +4,6 @@
   "script|$.toaster({ message : '难度开关已开启！可以自行选择是否开启or关闭！});": "A",
   "script|$.toaster({ message : '所有人获得了萨麦尔格的祝福！});": "A",
   "script|$.toaster({ message : '传承强化已上限请击败29层BOSS之后再来用10000肝帝积分最终强化！});": "A",
-  "script|SceneManager.push(Scene_StarSignBoard)": "F",
   "plugin|MobileUI hide DPad": "B",
   "plugin|MobileUI hide ok": "B",
   "plugin|MobileUI hide fh": "B",
@@ -29,16 +28,9 @@
   "script|HWGOE.save.cloudSaveGame(8);": "B",
   "script|HWGOE.save.cloudSaveGame(9);": "B",
   "script|HWGOE.save.cloudSaveGame(10);": "B",
-  "script|Star.SignBoard.ConductItemMakeUpSign(true);": "F",
-  "script|Star.SignBoard.ConductItemMakeUpSign(true); ": "D",
-  "script|SceneManager.push(Scene_StateBook) ": "F",
   "cond|HWGOE.save.saveStatus() === -1": "B",
   "cond|HWGOE.save.saveStatus() === 0": "B",
   "cond|HWGOE.save.saveStatus() === 1": "B",
-  "script|$gameParty.openItemSlotMenu();": "F",
-  "plugin|itemslot show": "F",
-  "plugin|itemslot hide": "F",
-  "plugin|pingbizhuangbei": "F",
   "script|<passivePBST0:1000>": "A",
   "script|if(window.StarGetRefLAM101Time) clearInterval(window.StarGetRefLAM101Time);\nif(window.StarGetRefLAM102Time) clearInterval(window.StarGetRefLAM102Time);\nif(window.StarGetRefLAM103Time) clearInterval(window.StarGetRefLAM103Time);\nif(window.StarGetRefLAM104Time) clearInterval(window.StarGetRefLAM104Time);\nif(window.StarGetRefLAM105Time) clearInterval(window.StarGetRefLAM105Time);\nif(window.StarGetRefLAM106Time) clearInterval(window.StarGetRefLAM106Time);\nif(window.StarGetRefLAM107Time) clearInterval(window.StarGetRefLAM107Time);\nif(window.StarGetRefLAM108Time) clearInterval(window.StarGetRefLAM108Time);\nif(window.StarGetRefLAM109Time) clearInterval(window.StarGetRefLAM109Time);\nif(window.StarGetRefLAM110Time) clearInterval(window.StarGetRefLAM110Time);\nif(window.StarGetRefLAM111Time) clearInterval(window.StarGetRefLAM111Time);\nif(window.StarGetRefLAM112Time) clearInterval(window.StarGetRefLAM112Time);\nif(window.StarGetRefLAM113Time) clearInterval(window.StarGetRefLAM113Time);\nif(window.StarGetRefLAM114Time) clearInterval(window.StarGetRefLAM114Time);\nif(window.StarGetRefLAM115Time) clearInterval(window.StarGetRefLAM115Time);\nif(window.StarGetRefLAM116Time) clearInterval(window.StarGetRefLAM116Time);\nif(window.StarGetRefLAM117Time) clearInterval(window.StarGetRefLAM117Time);\nif(window.StarGetRefLAM118Time) clearInterval(window.StarGetRefLAM118Time);\nif(window.StarGetRefLAM119Time) clearInterval(window.StarGetRefLAM119Time);\nif(window.StarGetRefLAM120Time) clearInterval(window.StarGetRefLAM120Time);\nif(window.StarGetRefLAM121Time) clearInterval(window.StarGetRefLAM121Time);\nif(window.StarGetRefLAM122Time) clearInterval(window.StarGetRefLAM122Time);\nif(window.StarGetRefLAM123Time) clearInterval(window.StarGetRefLAM123Time);\nif(window.StarGetRefLAM124Time) clearInterval(window.StarGetRefLAM124Time);\t": "F",
   "script|$.toaster({ message : '十三娘通过努力自学，心有所悟，缠意增加1点');": "A",
@@ -117,9 +109,6 @@
   "var|{\"code\":122.0,\"indent\":0.0,\"parameters\":[1346.0,1346.0,0.0,3.0,4.0,0.0,7.0]}": "E",
   "var|{\"code\":122.0,\"indent\":0.0,\"parameters\":[1347.0,1347.0,0.0,3.0,4.0,0.0,8.0]}": "E",
   "var|{\"code\":122.0,\"indent\":0.0,\"parameters\":[1348.0,1348.0,0.0,3.0,4.0,0.0,9.0]}": "E",
-  "script|for (var i = 0; i < $gameTroop.members().length; i++) {\n    $.toaster({ message: (i+1)+'号敌人暴闪为' + $gameTroop.members()[i].cev.toFixed(2)*100 + '%!' });\n}": "E",
-  "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6133)){\nactor.forgetSkill(6133);\nactor.learnSkill(6236);\n}\n}": "F",
-  "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6138)){\nactor.forgetSkill(6138);\nactor.learnSkill(6237);\n}\n}": "F",
-  "script|for (var j = 1; j < $dataActors.length; j++) {\nvar actor = $gameActors.actor(j);\nif(actor.hasSkill(6238)){\nactor.forgetSkill(6238);\nactor.learnSkill(6239);\n}\n}": "F"
+  "script|for (var i = 0; i < $gameTroop.members().length; i++) {\n    $.toaster({ message: (i+1)+'号敌人暴闪为' + $gameTroop.members()[i].cev.toFixed(2)*100 + '%!' });\n}": "E"
  }
 }

@@ -112,4 +112,42 @@ cases.push(makeCase('cleanupHeal', {map: 4, event: 24, script: 'DataManager.clea
   runList([cmd(355, ['DataManager.cleanupIndependentItems();']), cmd(0, [])]);
   return {members: w.$gameParty.members().map(a => ({id: a.actorId(), full: a.hp === a.mhp && a.mp === a.mmp, dead: a.isDead()}))};
 }));
+// 第四批（八戒 events1）：极尽升华（CE1388～1390，Map047／147／182 守层者送「原初火种」后调）：
+//   for (var j = 1; j < $dataActors.length; j++) { var actor = $gameActors.actor(j); if (actor.hasSkill(A)) { actor.forgetSkill(A); actor.learnSkill(B); } }
+//   场景：none＝没人会 A；party＝1 号（在队）会 A；offParty＝11 号（不在队）会 A；both＝两人都会；
+//   读 1、11、8 号的 A／B 有无，和循环之后 $gameActors 里建出了多少个角色对象。
+for (const [ce, A, B] of [[1388, 6133, 6236], [1389, 6138, 6237], [1390, 6238, 6239]]) {
+  for (const [tag, who] of [['none', []], ['party', [1]], ['offParty', [11]], ['both', [1, 11]]]) {
+    cases.push(makeCase('ascend.' + ce + '.' + tag, {ce, from: A, to: B, who}, () => {
+      newGame();
+      for (const id of who) w.$gameActors.actor(id).learnSkill(A);
+      const before = w.$gameActors._data.filter(x => x).length;
+      runList(w.JsonEx.makeDeepCopy(w.$dataCommonEvents[ce].list));
+      const out = {};
+      for (const id of [1, 8, 11]) { const a = w.$gameActors.actor(id); out['a' + id] = [a.hasSkill(A), a.hasSkill(B)]; }
+      out.createdBefore = before; out.createdAfter = w.$gameActors._data.filter(x => x).length;
+      return out;
+    }));
+  }
+}
+// - 没装载的插件（plugins.js 里没有 Star_SignBoard、Scene_StateBook、装备栏）：CE6 签到、CE330／373 补签、CE429 状态图鉴、CE478／485／486 快捷栏。
+//   原版这些脚本读到未定义的名字抛错，被 YEP command355 吞掉；未知插件指令忽略。读：存档内容没变、没换场景、解释器跑完。
+for (const [tag, lines, plugin] of [
+  ['signBoardScene', ['SceneManager.push(Scene_StarSignBoard)']],
+  ['makeUpSign', ['Star.SignBoard.ConductItemMakeUpSign(true);']],
+  ['stateBook', ['SceneManager.push(Scene_StateBook) ']],
+  ['openItemSlot', ['$gameParty.openItemSlotMenu();']],
+  ['itemslotShow', null, 'itemslot show'],
+  ['itemslotHide', null, 'itemslot hide'],
+  ['pingbizhuangbei', null, 'pingbizhuangbei'],
+]) {
+  cases.push(makeCase('unloaded.' + tag, {lines, plugin}, () => {
+    newGame();
+    const before = encode(), scene = w.SceneManager._scene && w.SceneManager._scene.constructor.name;
+    const list = lines ? scriptCmds(lines).concat([cmd(0, [])]) : [cmd(356, [plugin]), cmd(0, [])];
+    let threw = null, n = 0;
+    try { n = runList(list); } catch (e) { threw = String(e && e.message || e).slice(0, 80); }
+    return {sameState: encode() === before, sameScene: (w.SceneManager._scene && w.SceneManager._scene.constructor.name) === scene, finished: n < 100, threw};
+  }));
+}
 process.exit(finish(host, 'script_gaps.json', {hostScope: '新游戏（Math.random 0.5）；事件脚本普查：调速脚本、击败数条件（悟空 events1）；伙伴号角清理、按变量取人学技能、战斗里按角色号加状态（events2）；敌人暴闪提示、套装加敌人状态（events3）', cases}) ? 0 : 1);

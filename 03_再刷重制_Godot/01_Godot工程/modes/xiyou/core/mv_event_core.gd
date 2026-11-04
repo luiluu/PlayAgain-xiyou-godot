@@ -735,6 +735,10 @@ func _plugin_command(line: String) -> void:
 		"PHWarehouse":
 			if XWarehouse.plugin_command(state(), args):  # PH_Warehouse create／remove（show 交给宿主）
 				return
+		"itemslot":
+			# 地图快捷栏 MKR_MapItemSlot（itemslot show／hide，公共事件 485）：plugins.js 没装载，原版没有插件认它，无操作（oracle script_gaps unloaded.*）
+			if args.size() == 2 and args[1] in ["show", "hide"]:
+				return
 		"SceneManager.push(Scene_StarSaveWarehouse)":
 			# 黄金大厅 Map041 EV1「存放」误写成插件指令的一行：原版没有插件认它，无操作（紧跟的同句脚本才打开星级仓库）
 			return

@@ -22,6 +22,7 @@ class CensusHost:
 	func open_actor_book() -> void: pass
 	func open_enemy_book() -> void: pass
 	func open_pets() -> void: pass
+	func open_pingbi() -> void: pass   # SiShiTan-PingBi 屏蔽掉落页（CE486）：宿主有这个入口，普查不再把它记成认不出
 	func open_save() -> void: pass
 	func open_yunshang_shop(_a = null, _b = null) -> void: pass
 	func treasure_popup(_a = null, _b = null, _c = null) -> void: pass
