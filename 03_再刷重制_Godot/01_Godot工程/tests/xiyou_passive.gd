@@ -80,6 +80,11 @@ func _guard(o: Dictionary) -> void:
 	check("guard.command_still_works", b.is_guard())
 	var res2: Dictionary = XDamage.calculate(skill, l2.enemies[0], b, {"variance": false, "critical": false, "vars": l2.vars()})
 	check("guard.command_factor", is_equal_approx(float(res2.breakdown.row.guard), 1.0 / (2.0 * b.grd)), res2.breakdown.row.guard)
+	# 原版 isGuard = specialFlag(GUARD) && canMove()：防御后被挂不能行动状态，防御指令那支不再减伤（passiveGUARD 那支不看 canMove，上面已对原版比过）
+	b.add_state(rs)
+	check("guard.command_needs_can_move", not l2.can_move(b) and not b.is_guard())
+	var res3: Dictionary = XDamage.calculate(skill, l2.enemies[0], b, {"variance": false, "critical": false, "vars": l2.vars()})
+	check("guard.command_factor_stunned", is_equal_approx(float(res3.breakdown.row.guard), 1.0), res3.breakdown.row.guard)
 
 
 func _set_rates(a: XActor, hr: float, mr: float) -> void:

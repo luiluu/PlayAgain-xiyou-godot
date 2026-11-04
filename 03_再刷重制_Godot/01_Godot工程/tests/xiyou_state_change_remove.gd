@@ -50,5 +50,23 @@ func _run() -> void:
 	e3.add_state(1329)
 	var before := e3.state_ids.duplicate()
 	check("no_tag_nothing", e3.state_ids == before and not e3.state_ids.has(1328), e3.state_ids)
+	# 审查 40 P3-5 数据普查：原版 checkToRemoveStates 包了 removeStatesAuto／updateStateTurnTiming 整个调用，处理器里任何路径让状态消失都会触发；
+	# 重制只挂在 _tick_states。窄实现够用的前提：数据里只有 1328 带 SC 解除标签（且只有「自动解除」）、1328 只靠回合结束倒数消失、
+	# 别的状态的移除／离开效果不碰 1328（见交付单 cc_nezha-fix3：冻结源里 YEP 的 removeStatesAuto／updateStateTurnTiming 包装只切换自定义效果开关）。
+	var tagged := []
+	var touches_1328 := []
+	var rx := RegEx.create_from_string("(?<![0-9a-zA-Z])1328(?![0-9a-zA-Z])")
+	for st in XDB.table("States"):
+		if not st is Dictionary:
+			continue
+		for k in st.get("meta", {}):
+			if str(k).begins_with("SC"):
+				tagged.append([int(st.id), str(k)])
+		if int(st.id) != 1328 and rx.search(JSON.stringify(st.get("effects", []))) != null:  # 边界匹配：sha256 摘要里碰巧含 1328 不算
+			touches_1328.append(int(st.id))
+	check("census.only_1328_tagged", tagged == [[1328, "SC自动解除"]], tagged)
+	var st1328 := XDB.rec("States", 1328)
+	check("census.1328_timing_turn_end", int(st1328.autoRemovalTiming) == 2 and not bool(st1328.removeByDamage) and not bool(st1328.removeByRestriction), st1328)
+	check("census.no_state_effect_touches_1328", touches_1328.is_empty(), touches_1328)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)

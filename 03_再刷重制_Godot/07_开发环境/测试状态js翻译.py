@@ -8,9 +8,11 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
 sys.path.insert(0, str(TOOLS))
-from xiyou_export import parse_state_effects, EFFECT_RE
+from xiyou_export import parse_state_effects, EFFECT_RE, strip_js_comments
 
 FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_js_translation.json'
+ASI_FIXTURES = TOOLS.parent / '01_Godot工程/tests/fixtures/state_js_asi.json'
+PHASE_TAG = {'regenerate': 'Regenerate', 'react': 'React'}
 # 原文本身报错（读装备等级的 106、变量名拼成 damag 的 551）：不翻译
 POISON_JS = {106, 551}
 # 毒奶 732：rules8 按探针量过的来源者法宝等级翻成效果程序
@@ -67,12 +69,39 @@ class PoisonTranslationTests(unittest.TestCase):
                          body.replace('|| 1', '|| 2'),
                          # 同一行接 var：原版是语法错误（靠换行补分号）
                          re.sub(r'(var stacks = target\._stackingPoison)[ \t]*\r?\n(?:[ \t]*//[^\n]*\n)*', r'\1 ', body)]:
-                # 732 走 token 整段比对，换行不是 token，分不出这一变体；冻结数据里原文带换行，碰不到
-                if row['state'] in POISON_PROGRAM and code.count('\n') < body.count('\n'):
-                    continue
                 with self.subTest(state=row['state'], code=code[-90:]):
                     self.assertEqual(one('Regenerate', code)['op'], 'js')
             self.assertEqual(one('Turn End', body)['op'], 'js')
+
+
+class AsiBlockTests(unittest.TestCase):
+    """靠换行补分号才合法的 7 块（224 260 381 566 577 732 1006，审查 40 P3-2）：原文照翻；改成单行（原版语法错误、整块没效果）就退回 js。"""
+    rows = json.loads(ASI_FIXTURES.read_text())['asi']
+
+    def test_inventory(self):
+        self.assertEqual([r['state'] for r in self.rows], [224, 260, 381, 566, 577, 732, 1006])
+
+    def test_original_translates(self):
+        for row in self.rows:
+            with self.subTest(state=row['state']):
+                ops = {e['phase']: e['op'] for e in parse_state_effects(row['note'])}
+                self.assertEqual(ops[row['phase']], 'effect_program')
+
+    def test_single_line_falls_back(self):
+        for row in self.rows:
+            body = block(row['note'], row['phase'])
+            with self.subTest(state=row['state']):
+                self.assertIn('\n', body.strip())
+                one_line = re.sub(r'\s+', ' ', strip_js_comments(body)).strip()
+                self.assertEqual(one(PHASE_TAG[row['phase']], one_line)['op'], 'js')
+
+    def test_whitespace_only_changes_still_translate(self):
+        for row in self.rows:
+            body = block(row['note'], row['phase'])
+            variants = [body.replace('\n', '\r\n'), re.sub(r'\n', '\n\n   ', body), '  ' + body + '\n// 尾注释']
+            for code in variants:
+                with self.subTest(state=row['state'], code=code[-30:]):
+                    self.assertEqual(one(PHASE_TAG[row['phase']], code)['op'], 'effect_program')
 
 
 class Batch2TranslationTests(unittest.TestCase):
