@@ -195,6 +195,41 @@ func indicator_case(b: XBattleScene, a: XActor, other: XActor) -> void:
 	await frames(1)
 
 
+## installRavenSkillEffectsRuntime：六个技能换成施放特效，一次行动只放一组（全体画在一组里）、不放原动画和 slash／ring；到时间就消失；别的技能和别人照旧
+func raven_cast_case(b: XBattleScene, a: XActor, foes: Array) -> void:
+	await frames(30)
+	b.raven_fx.played.clear()
+	var sk := XDB.rec("Skills", 10124)
+	var logs := [{"type": "action", "user": a, "skill": sk},
+		hit(a, foes[0], sk, {"raven_fx": ["slash"]}), hit(a, foes[1], sk, {"raven_fx": ["slash"]})]
+	var fx_before: int = b.fx.get_child_count()
+	b._play(logs)
+	var ok := false
+	for i in 400:
+		await get_tree().physics_frame
+		if b.raven_fx.casts.size() > 0:
+			ok = true
+			break
+	check("raven.cast-started", ok, b.raven_fx.played)
+	check("raven.cast-no-mv-animation", b.fx.get_child_count() == fx_before, [fx_before, b.fx.get_child_count()])
+	await frames(120)
+	var kinds: Array = b.raven_fx.played.map(func(p): return p.type)
+	check("raven.cast-one-group", kinds == ["cast"] and int(b.raven_fx.played[0].spots) == 2, b.raven_fx.played)
+	check("raven.cast-ends", not b.raven_fx.busy())
+	# 有特效的技能 slash／ring 不画；harvest 照画；不是渡鸦的、没有样式的技能 slash 照画
+	b.raven_fx.played.clear()
+	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", 10127), {"raven_fx": ["ring", "slash", "harvest"]}))
+	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", 10128), {"raven_fx": ["slash"]}))
+	var left: Array = b.raven_fx.played.map(func(p): return p.type)
+	check("raven.legacy-filter", left == ["harvest", "slash"], left)
+	# 每种样式都能画（不报错，到时间就清掉）
+	for id in XRavenFx.STYLES:
+		b.raven_fx.play_cast(int(id), [Vector2(100, 100)], Vector2(300, 100))
+	check("raven.max-groups", b.raven_fx.casts.size() == XRavenFx.MAX_CASTS, b.raven_fx.casts.size())
+	await frames(60)
+	check("raven.all-styles-end", not b.raven_fx.busy())
+
+
 func raven_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	# 逻辑层：伤害技能每次 apply 记 slash（不看命中）；别人不记
 	var r := hit(a, foes[0], XDB.rec("Skills", XRaven.PECK), {"missed": true})
@@ -204,7 +239,7 @@ func raven_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	XRaven.applied(b.logic, b.logic.actors[0], XDB.rec("Skills", XRaven.PECK), foes[0], other, true)
 	check("raven.other-no-fx", not other.has("raven_fx"))
 	# 画面：命中记录上的特效、收割／回响 regen
-	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", XRaven.MYTH), {"raven_fx": ["ring", "slash"]}))
+	b._hit_visual(hit(a, foes[0], XDB.rec("Skills", 10128), {"raven_fx": ["ring", "slash"]}))  # 没有施放特效的技能走 R.Fx
 	check("raven.fx-layer", b.raven_fx != null and b.raven_fx.get_parent() == b.field)
 	var t: XBattler = foes[1]
 	await play_and_peek(b, [{"type": "regen", "target": t, "hp": 5.0, "raven": "harvest", "views": b.logic.views([t])},
@@ -213,6 +248,7 @@ func raven_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	var played: Array = b.raven_fx.played.map(func(p): return p.type)
 	check("raven.played", played == ["ring", "slash", "harvest", "echo"], played)
 	check("raven.targets", b.raven_fx.played[2].target == t and b.raven_fx.played[0].target == foes[0])
+	await raven_cast_case(b, a, foes)
 	# 4 个图形轮流用：四种都在放；位置在目标脚下往上 48；28／16 帧后隐藏
 	var shapes: Array = b.raven_fx.pool
 	check("raven.pool", shapes.size() == 4 and shapes.all(func(g): return not g.visible), shapes.map(func(g): return [g.kind, g.visible, g.frames]))
