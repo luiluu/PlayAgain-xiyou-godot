@@ -146,6 +146,20 @@ func _sprites(c: Dictionary) -> void:
 	check("sprite.sv_shadow", s.shadow != null and s.shadow.texture != null, null)
 	if s.shadow:
 		check("sprite.sv_shadow_scale", is_equal_approx(s.shadow.scale.x, s.look.cell.x / 64.0) and s.shadow.scale.x == s.shadow.scale.y, s.shadow.scale)
+	# 影子缩放随各自的一格宽（auto）：全部 SV 敌人逐个比，且宽度不止一种
+	var widths := {}
+	var bad_scale := 0
+	for r in c.rows:
+		if int(r.sv) != 1:
+			continue
+		var t := XBattlerSprite.new()
+		add_child(t)
+		t.setup(XEnemy.new().setup(int(r.id), 1), 1.0)
+		widths[t.look.cell.x] = true
+		if t.shadow == null or not is_equal_approx(t.shadow.scale.x, t.look.cell.x / 64.0):
+			bad_scale += 1
+		t.queue_free()
+	check("sprite.shadow_scale_all", bad_scale == 0 and widths.size() >= 2, [bad_scale, widths.keys()])
 	var p := XBattlerSprite.new()
 	add_child(p)
 	p.setup(XEnemy.new().setup(plain_id, 1), 1.0)
