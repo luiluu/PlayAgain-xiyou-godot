@@ -171,6 +171,7 @@ func _run() -> void:
 	_guards()
 	_timing()
 	_origin()
+	_lifecycle()
 	_shield()
 	_element_table()
 	XExtDot.test_hooks = {}
@@ -445,6 +446,35 @@ func _origin() -> void:
 	var expect := floorf(1025.0 + e2.atk * 7.0 - e2.def * 2.0)  # a＝b＝持有者
 	var ticks := ticks_of(got2.logs, [43])
 	check("origin.none_uses_holder", ticks.size() == 1 and absf(float(ticks[0].hp) - expect) <= expect * 0.2 + 1.0, [ticks, expect])
+
+
+# ---- 审查 40 P3-3／P3-4：施加者引用与 _damagedot 的生命周期 ----
+func _lifecycle() -> void:
+	# P3-3：原版 stateOrigin 存 [0, 角色号]／[1, 敌群下标]，每次现查；重制存弱引用。两者只在「敌群下标换了对象／角色对象被换」时分叉。
+	# 量法（静态）：战斗里 enemies 只在 setup 时 clear 后 append（battle_logic.gd），战斗中不删不换；角色对象由 XState.actors 长期持有。
+	# 这里断言口径：施加者的弱引用一直解析回「按下标／号现查」得到的同一个对象，回合结算前后都一样。
+	for ok in ["e0", "e1", "a1", "a8"]:
+		var l := battle(0.5)
+		hook({}, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+		var holder: XBattler = l.actors[1]
+		var got: Dictionary = replay(l, "actor", ok, [43])
+		var want = origin_of(l, ok, holder)
+		var w = holder.state_origins.get(43)
+		check("lifecycle.origin_ref." + ok, w is WeakRef and w.get_ref() == want, [ok, w])
+		l.turn_end_battler(got.holder, [])
+		w = holder.state_origins.get(43)
+		check("lifecycle.origin_ref_after_tick." + ok, w is WeakRef and w.get_ref() == want, [ok, w])
+	# P3-4：原版 damagedot 挂在 battler 上，状态移除后不清；重制放在 state_data._damagedot，同样不清（也不随移除变）
+	var l2 := battle(0.5)
+	hook({}, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+	XState.current.set_variable(1218, 0.0)
+	var got2 := replay(l2, "actor", "e0", [2038])
+	var holder2: XBattler = got2.holder
+	var kept = holder2.state_data.get("_damagedot")
+	check("lifecycle.damagedot_written", kept != null and float(kept) > 0.0, kept)
+	holder2.remove_state(2038)
+	check("lifecycle.damagedot_survives_remove", holder2.state_data.get("_damagedot") == kept, [holder2.state_data.get("_damagedot"), kept])
+	check("lifecycle.origin_cleared_on_remove", not holder2.state_origins.has(2038), holder2.state_origins)
 
 
 func _shield() -> void:
