@@ -235,6 +235,9 @@ want tools && { if python3 "$ENV_DIR/测试事件探针分段.py" >/dev/null 2>&
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi; }
 
+# 事件对照空绿（八戒 events2）：参照在新游戏里走不到效果分支的用例不得比基线多；有状态变体（event_presets.json）要对得上量出来的产物
+want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/事件空绿扫描.py" --check; then ok "事件对照空绿（无基线外新增，变体与产物对得上）"; else bad "事件对照空绿检查失败，单跑 03_转换工具/事件空绿扫描.py --check 看详情"; fi; }
+
 if (( ORACLE )); then
   print "== MV 参照引擎"
   oracle=$ROOT/03_再刷重制_Godot/03_转换工具/mv_oracle

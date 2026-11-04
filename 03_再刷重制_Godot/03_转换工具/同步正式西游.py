@@ -152,6 +152,7 @@ PROBES = [
     (['param_cache_probe.cjs'], ['param_cache.json']),
     (['common_script_probe.cjs'], ['common_scripts.json']),
     (['event_probe.cjs'], ['events.json']),       # 需要本次转换的 generated/maps，放在转换器之后
+    (['event_state_probe.cjs'], ['event_states.json']),   # 有状态变体（mv_oracle/event_presets.json），同样读 generated/maps
 ]
 
 

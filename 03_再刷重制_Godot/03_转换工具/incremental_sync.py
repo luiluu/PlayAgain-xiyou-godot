@@ -23,6 +23,8 @@ SHARDS = {
 }
 # 合并与缓存本身的代码：改了就让分片探针整体重跑
 TOOLING = ('incremental_sync.py', 'oracle_shard_merge.cjs')
+# 探针读的、不在 mv_oracle 里也不是转换产物的输入文件（相对 03_转换工具）：内容进该探针的键，改了只重跑它自己
+PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json',)}
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 # 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
 # 新读取法先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
@@ -272,6 +274,10 @@ class ProbeCache:
             converted = files(self.gen / 'maps') + files(self.gen / 'db') + [self.gen / 'manifest.json', self.gen / 'slice.json']
             value['converted'] = digest_files(converted, self.gen)
             detail['converted'] = self._file_details(converted, self.gen)
+        extra = [self.tools / n for n in PROBE_INPUTS.get(command[0], ())]
+        if extra:
+            value['extraInputs'] = digest_files(extra, self.tools)
+            detail['extraInputs'] = self._file_details(extra, self.tools)
         self.details[command[0]] = detail
         return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
