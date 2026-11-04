@@ -1953,6 +1953,9 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	result.critical = r.critical
 	r.result = result.duplicate(true)
 	r.started_popups = _action_resources.started_popups.get(t, [])  # 行动中途 startDamagePopup 的弹字（死而复燃），先于本次结果
+	shown.missed = r.missed
+	shown.evaded = r.evaded
+	shown.critical = r.critical
 	r.started_split = started_before
 	r.popupQueue = r.started_popups.slice(0, started_before) + XResourceContext.popup_queue(shown) + r.started_popups.slice(started_before)
 	r.shown = {"hp": r.hp if ESTABLISH_TRUE_POPUP and r.has("extra") else shown.hpDamage, "mp": shown.mpDamage, "tp": shown.tpDamage}

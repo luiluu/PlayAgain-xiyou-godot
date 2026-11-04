@@ -1602,9 +1602,10 @@ func _hit_visual(l: Dictionary) -> bool:
 		_show_result_popups(t, started.slice(split))
 		if t is XEnemy:
 			_show_enemy_gauge(t)
-	_show_result_popups(l.user, l.get("user_popups", []))
-	if l.get("user_died", false):
-		_collapse_visual(l.user)
+	if sprites.has(l.user):
+		_show_result_popups(l.user, l.get("user_popups", []))
+		if l.get("user_died", false):
+			_collapse_visual(l.user)
 	for kind in l.get("raven_fx", []):
 		_raven_fx(str(kind), t)  # 渡鸦 Game_Action.apply 包装：神话封解 ring、伤害技能每次 slash
 	if l.died:

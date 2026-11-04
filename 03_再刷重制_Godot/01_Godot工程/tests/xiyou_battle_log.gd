@@ -56,6 +56,7 @@ func _run() -> void:
 	await garou_case(b, garou, foes)
 	skill_types(b, [sukuna, raven, garou])
 	ledger(raven)
+	await popup_order_case(b, raven, foes)
 	b.queue_free()
 	await frames(3)
 	finish()
@@ -119,6 +120,44 @@ func sukuna_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	await frames(3)
 	for t in foes:
 		XSukuna.target_data(t).charged = false
+
+
+## 命中的弹字顺序（rules5）：deselect 之前的弹字、这一击、deselect 里的弹字；行动者弹字与倒下，没有形象的行动者跳过（审查 36 P3）
+func popup_order_case(b: XBattleScene, a: XActor, foes: Array) -> void:
+	var keep := XConfig.flag("CombatDamageShow")
+	XConfig.set_flag("CombatDamageShow", true)
+	var t: XBattler = foes[0]
+	var skill := XDB.rec("Skills", 1)
+	var row := func(hp: float) -> Dictionary: return {"hpAffected": true, "hpDamage": hp, "mpDamage": 0.0, "tpDamage": 0.0}
+	var heals := func(who: XBattler, from: int) -> Array:
+		var live: Array = b._popups.get(who, [])
+		return live.slice(from).map(func(p): return p.is_heal())
+	var n: int = b._popups.get(t, []).size()
+	b._hit_visual(hit(a, t, skill, {"hp": 0.0, "shown": {"hp": 5.0, "mp": 0.0, "tp": 0.0}, "started_popups": [row.call(-40.0)], "started_split": 0}))
+	check("popup_order.hit_then_revive", heals.call(t, n) == [false, true], heals.call(t, n))
+	n = b._popups.get(t, []).size()
+	b._hit_visual(hit(a, t, skill, {"hp": 0.0, "shown": {"hp": -5.0, "mp": 0.0, "tp": 0.0}, "started_popups": [row.call(3.0)], "started_split": 1}))
+	check("popup_order.before_then_hit", heals.call(t, n) == [false, true], heals.call(t, n))
+	n = b._popups.get(t, []).size()
+	b._hit_visual(hit(a, t, skill, {"hp": 7.0}))
+	check("popup_order.old_record", heals.call(t, n) == [false], heals.call(t, n))
+	# 行动者：弹字、倒下
+	var user: XBattler = foes[1] if foes.size() > 1 else foes[0]
+	var target: XBattler = a
+	b._popups.erase(user)
+	var sprite: XBattlerSprite = b.sprites[user]
+	b._hit_visual(hit(user, target, skill, {"user_popups": [row.call(9.0)], "user_died": true}))
+	check("user_popup.shown", b._popups.get(user, []).size() == 1, b._popups.get(user, []).size())
+	check("user_died.collapses", not sprite.appeared, sprite.appeared)
+	sprite.appeared = true
+	sprite.sprite.modulate = Color.WHITE
+	# 没有形象的行动者（替身、已摘除的敌人）：不报错，也不弹
+	var stray := XEnemy.new()
+	check("user_stray.no_sprite", not b.sprites.has(stray))
+	b._hit_visual(hit(stray, target, skill, {"user_popups": [row.call(9.0)], "user_died": true}))
+	check("user_stray.skipped", not b._popups.has(stray), b._popups.keys().size())
+	XConfig.set_flag("CombatDamageShow", keep)
+	await frames(1)
 
 
 ## 角色形象（CharacterVisual）甚尔命中动画：命中记录的 toji_anims 在目标身上放动画，延迟记在 wait（Sprite_Animation._delay）
