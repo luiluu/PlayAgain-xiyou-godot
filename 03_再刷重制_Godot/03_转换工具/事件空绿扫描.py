@@ -165,7 +165,9 @@ def scan():
     oracle, lists, conds, names = load()
     settable = settable_switches(lists)
     presets = json.load(open(PRESETS))['cases'] if PRESETS.exists() else []
-    covered = {p['base'] for p in presets}
+    # 只有「变体真的量到东西」的基础用例才算已补；变体仍无 delta 也无非文字 trace 的（观察面不够）继续留在空绿清单（审查 41 P3-5）
+    quiet_ids = set(check_variants()[2])
+    covered = {p['base'] for p in presets if '%s#%s' % (p['base'], p['tag']) not in quiet_ids}
     rows = []
     half = 0
     for c in oracle:
