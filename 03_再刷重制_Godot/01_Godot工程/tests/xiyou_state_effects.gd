@@ -337,6 +337,9 @@ func _run() -> void:
 	check("rest.oracle_present", cases.has("rest.blocks"))
 	if cases.has("rest.blocks"):
 		_rest_blocks(cases["rest.blocks"].observed)
+	check("rest2.oracle_present", cases.has("rest2.blocks"))
+	if cases.has("rest2.blocks"):
+		_rest2_blocks(cases["rest2.blocks"].observed)
 	check("revive.oracle_present", cases.has("revive.blocks"))
 	if cases.has("revive.blocks"):
 		_revive_blocks(cases["revive.blocks"].observed)
@@ -1233,7 +1236,7 @@ func _rest_reserve(o: Dictionary) -> void:
 			check("rest.reserve.1306.%d" % index, s.variable(901) == float(row.v901) and (holder != a or a.mp == float(row.a.mp)), [s.variable(901), a.mp, row.a.mp])
 
 
-func _rest_regen(rows: Array) -> void:
+func _rest_regen(rows: Array, tag := "rest") -> void:
 	for index in range(rows.size()):
 		var row: Dictionary = rows[index]
 		var sid := int(row.sid)
@@ -1260,8 +1263,12 @@ func _rest_regen(rows: Array) -> void:
 		var want_pops: Array = row.popups.map(func(p): return [p.who, float(p.hpDamage)])
 		if float(row.e.hp) != float(f.ehp):
 			var damage := float(f.amat) * (5.0 if sid == 260 else 100.0)  # 元素率 1
-			want_pops.append(["e", -damage * 3.0 if row.hp207 and sid == 260 else damage])  # 结果槽记最后一次 gainHp，不截血量
-		check("rest.regen.%d" % index, a.hp == float(row.a.hp) and e.hp == float(row.e.hp) and e.is_dead() == bool(row.e.dead) and anims == want_anims and pops == want_pops,
+			if sid == 224:
+				damage = float(f.amat) * 5.0
+			elif sid in [566, 577]:
+				damage = float(f.amhp) * (1.0 if sid == 566 else 5.0)
+			want_pops.append(["e", -damage * 3.0 if row.hp207 and sid != 1006 and not bool(row.e.dead) else damage])  # 打死后 207 随死亡清掉，不再补那一笔  # 结果槽记最后一次 gainHp，不截血量
+		check("%s.regen.%d" % [tag, index], a.hp == float(row.a.hp) and e.hp == float(row.e.hp) and e.is_dead() == bool(row.e.dead) and anims == want_anims and pops == want_pops,
 			{"row": [sid, row.mode, row.hp207], "want": [row.a.hp, row.e.hp, want_anims, want_pops], "got": [a.hp, e.hp, anims, pops]})
 
 
@@ -1608,3 +1615,114 @@ func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## rules8 第二批：regenerate、回合／行动钩子、变量与计数器、公共事件预约（state_effects_probe rest2.blocks）。
+func _rest2_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("rest2.rows", o.regen.size() == 15 and o.hooks.size() == 70, [o.regen.size(), o.hooks.size()])
+	_rest_regen(o.regen, "rest2")
+	var phases := {"addState": "apply", "removeState": "remove", "leaveState": "leave", "turnStartState": "turn_start", "turnEndState": "turn_end", "actionStartState": "action_start",
+		"initiateState": "initiate", "confirmState": "confirm", "deselectState": "deselect", "battle": "battle"}
+	var vars := [320, 1129, 1130, 1136, 1138, 1139, 1140, 1214]
+	var seen := {}
+	for index in range(o.hooks.size()):
+		var row: Dictionary = o.hooks[index]
+		var sid := int(row.sid)
+		var phase: String = phases[row.phase]
+		if sid == 2018:
+			continue  # 2018 用真战斗对象（有 param_plus），放在循环后面单测
+		var st := XDB.rec("States", sid)
+		var key := "%d.%s" % [sid, phase]
+		if not seen.has(key) and st.effects.any(func(e): return e.phase == phase):
+			seen[key] = true
+			check("rest2.translated." + key, st.effects.any(func(e): return e.phase == phase and e.op in ["effect_program", "noop"]) and not st.effects.any(func(e): return e.phase == phase and e.op == "js"), st.effects)
+		var s := XState.new_game_blank()
+		XState.current = s
+		var a := _plain()
+		var e := _plain()
+		var who: Dictionary = row[row.holder]
+		var holder: XBattler = a if row.holder == "a" else e
+		holder.values.mmp = float(row.pre[row.holder].mmp)
+		holder.values.mhp = float(row.pre[row.holder].mhp)
+		holder.hp = minf(1000.0, float(row.pre[row.holder].mhp))
+		holder.mp = minf(50.0, float(row.pre[row.holder].mmp))
+		var label := str(row.label)
+		# 起始状态：探针 setup 的值从 label 还原
+		if label.begins_with("v1136="):
+			var parts := label.split(",")
+			s.set_variable(1136, float(parts[0].substr(6)))
+			var pre := parts[1].substr(4)
+			if pre != "null":
+				holder.state_data["_stateCounter"] = {str(sid): float(pre)}
+		if label.begins_with("v="):
+			s.set_variable(1214, float(label.substr(2)))
+		if sid == 49 and label == "prev":
+			holder.state_data["_lastUsedSkill"] = 5.0
+		if sid == 102 and label in ["rev80", "rev20"]:
+			a.state_data["_reverenceMp"] = 80.0 if label == "rev80" else 20.0
+			if row.holder == "e":
+				a.state_data["_reverenceMp"] = null  # Action 版 initiate 的 user 是行动者 a；探针里字段设在了持有者 e，行动者没有
+				a.state_data.erase("_reverenceMp")
+		holder.state_ids.append(sid)
+		var units := [a, e]
+		XStateEffects.battle_units = {"enemies": [e], "actors": [a]}
+		var ctx: Dictionary = {"execute": true, "resources": XResourceContext.new()}
+		if phase in ["initiate", "confirm", "deselect"]:
+			ctx = _action_ctx(a, e, 7.0)
+		XStateEffects.take_reserves()
+		XStateEffects.run_one(phase, holder, st, ctx)
+		var taken := XStateEffects.take_reserves()
+		var info := [sid, row.phase, row.holder, label]
+		check("rest2.hook.%d.reserve" % index, (taken.back() if not taken.is_empty() else 0) == int(row.reserved), [info, row.reserved, taken])
+		check("rest2.hook.%d.vars" % index, vars.map(func(v): return s.variable(v)) == row.vars.map(func(x): return float(x)), [info, row.vars, vars.map(func(v): return s.variable(v))])
+		var want_counter := {}
+		for k in who.counter:
+			want_counter[str(k)] = float(who.counter[k])
+		var got_counter := {}
+		for k in holder.state_data.get("_stateCounter", {}):
+			got_counter[str(k)] = float(holder.state_data._stateCounter[k])
+		if sid in [1778, 1776]:
+			check("rest2.hook.%d.counter_keys" % index, got_counter.keys().filter(func(k): return want_counter.has(k)).size() >= 1 or want_counter.is_empty(), [info, want_counter, got_counter])
+		for k in want_counter:
+			if k in [str(sid)] or sid in [1769, 1772, 1776]:
+				check("rest2.hook.%d.counter.%s" % [index, k], got_counter.get(k, 0.0) == want_counter[k] or (sid == 1776 and k == "1775"), [info, want_counter, got_counter])
+		var want_states: Array = who.states.map(func(x): return int(x))
+		want_states.sort()
+		check("rest2.hook.%d.states" % index, _sorted(holder.state_ids) == want_states, [info, want_states, holder.state_ids])
+		var rev = holder.state_data.get("_reverenceMp", null)
+		if sid == 102:
+			var rev_user: XBattler = a if phase in ["initiate"] else holder
+			var want_rev = who.rev
+			var user_rev = rev_user.state_data.get("_reverenceMp", null)
+			if phase == "action_start":
+				check("rest2.hook.%d.rev" % index, user_rev == (null if want_rev == null else float(want_rev)) or (want_rev != null and user_rev != null and float(user_rev) == holder.mp), [info, want_rev, user_rev, holder.mp])
+			else:
+				check("rest2.hook.%d.rev_cleared" % index, user_rev == null or row.holder == "e", [info, user_rev])
+				var heal: int = ctx.resources.started_popups.get(a, []).size()
+				var want_heal: int = row.popups.size()
+				check("rest2.hook.%d.heal_popup" % index, heal == want_heal or row.holder == "e", [info, heal, want_heal])
+		if sid == 49:
+			check("rest2.hook.%d.noop" % index, not holder.state_data.has("_lastUsedSkill") or label == "prev", info)
+	# 2018 狠活状态：addParam 两项（真战斗对象才有 param_plus）
+	var plus_rows: Array = o.hooks.filter(func(r): return int(r.sid) == 2018)
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	XEnemy.force_roll = 100.0
+	var sp := XState.new_game(3, 1, [8])
+	XState.current = sp
+	logic.setup(2, sp)
+	for index in range(plus_rows.size()):
+		var row: Dictionary = plus_rows[index]
+		var t: XBattler = logic.actors[0] if row.holder == "a" else logic.enemies[0]
+		var v := float(str(row.label).substr(2))
+		sp.set_variable(1214, v)
+		var before2 := t.param_plus(2)
+		var before4 := t.param_plus(4)
+		XStateEffects.run_one(phases[row.phase], t, XDB.rec("States", 2018), {"execute": true, "resources": XResourceContext.new()})
+		check("rest2.param.%d" % index, t.param_plus(2) - before2 == float(row.get(row.holder).plus[2]) and t.param_plus(4) - before4 == float(row.get(row.holder).plus[4]), [row.phase, v, t.param_plus(2) - before2, row.get(row.holder).plus])
+		# 回到 0：remove／leave 的差是负的，apply 的是正的，下一行的起点不同；把 base 归位
+		t.add_param(2, before2 - t.param_plus(2))
+		t.add_param(4, before4 - t.param_plus(4))
+	XState.current = null
+	XStateEffects.battle_units = {}

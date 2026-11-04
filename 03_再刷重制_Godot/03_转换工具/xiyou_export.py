@@ -545,6 +545,47 @@ MEASURED_EFFECT_SOURCES.update({
 })
 # 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」，没写清暴击率口径，不修，等 Kyo
 NO_EFFECT_BLOCKS.add(('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'))  # 1749
+# rules8 第二批（state_effects_probe rest2.blocks）
+MEASURED_EFFECT_BLOCKS.update({
+    ('action_start', 'user . _reverenceMp = user . mp ;'),  # 102
+    ('initiate', 'if ( user . _reverenceMp !== undefined ) { var difference = user . _reverenceMp - user . mp ; if ( difference > 0 ) { var hp = Math . ceil ( difference * 3.00 ) ; user . gainHp ( hp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ; } user . _reverenceMp = undefined ; }'),  # 102
+    ('battle', 'user . addState ( 1769 ) ; user . addState ( 1772 ) ;'),  # 1778
+    ('apply', 'user . addParam ( 2 , $gameVariables . value ( 1214 ) ) ; user . addParam ( 4 , $gameVariables . value ( 1214 ) ) ;'),  # 2018
+    ('remove', 'user . addParam ( 2 , - $gameVariables . value ( 1214 ) ) ; user . addParam ( 4 , - $gameVariables . value ( 1214 ) ) ;'),  # 2018
+    ('leave', 'user . addParam ( 2 , - $gameVariables . value ( 1214 ) ) ; user . addParam ( 4 , - $gameVariables . value ( 1214 ) ) ;'),  # 2018
+})
+UNREAD_FIELD_BLOCKS.update({
+    ('action_start', 'var action = user . currentAction ( ) ; user . _lastUsedSkill = user . _lastUsedSkill || 1 ; if ( action && action . isSkill ( ) ) { user . _lastUsedSkill = action . item ( ) . id ; }'),  # 49 只写 _lastUsedSkill，冻结源 js 里没有谁读
+})
+# 原版一跑就没效果：1741／1742 的 this.user() 不存在（TypeError）；1748 的 user.attackCount 不存在（undefined > 1 为假）；1315 是空块
+NO_EFFECT_BLOCKS.update({
+    ('turn_start', 'var user = this . user ( ) ; var speed = user . speed ( ) ; var i = Math . random ( ) * 3000 ; var xaig = Math . floor ( i + speed ) ; if ( xaig > 3000 ) { user . addState ( 1744 ) ; }'),  # 1741
+    ('turn_end', 'var user = this . user ( ) ; var speed = user . speed ( ) ; var i = Math . random ( ) * 6000 ; var xaig = Math . floor ( i + speed ) ; if ( xaig > 6000 ) { user . addState ( 1745 ) ; }'),  # 1742
+    ('confirm', 'var attackCount = user . attackCount ; if ( value > 0 && attackCount > 1 && ! this . isAttack ( ) ) { value = value * attackCount * 0.1 ; }'),  # 1748
+    ('deselect', ''),  # 1315
+})
+MEASURED_EFFECT_SOURCES.update({
+    ('regenerate', 'if ( origin !== target && origin . isAlive ( ) ) { var damage = origin . mat * 5 var el = target . elementRate ( 6 ) damage = Math . ceil ( damage * el ) ; origin . startAnimation ( 41 ) ; origin . gainHp ( damage ) ; origin . startDamagePopup ( ) ; origin . clearResult ( ) ; target . startAnimation ( 532 ) ; target . gainHp ( - damage ) ; if ( target && target . isStateAffected ( 207 ) ) { target . gainHp ( damage * 3 ) ; } if ( target . isDead ( ) ) { target . performCollapse ( ) ; } }'):  # 224
+        'if (target.isNotOrigin() && origin.isAlive()) { var damage = origin.mat * 5; var el = target.elementRate(6); damage = Math.ceil(damage * el); origin.startAnimation(41); origin.gainHp(damage); origin.startDamagePopup(); origin.clearResult(); target.startAnimation(532); target.gainHp(-damage); if (target.isStateAffected(207)) { target.gainHp(damage * 3); } if (target.isDead()) { target.performCollapse(); } }',
+    ('regenerate', 'if ( origin !== target && origin . isAlive ( ) ) { var damage = origin . mhp * 1 var el = target . elementRate ( 6 ) damage = Math . ceil ( damage * el ) ; origin . startAnimation ( 41 ) ; origin . gainHp ( damage ) ; origin . startDamagePopup ( ) ; origin . clearResult ( ) ; target . startAnimation ( 532 ) ; target . gainHp ( - damage ) ; if ( target && target . isStateAffected ( 207 ) ) { target . gainHp ( damage * 3 ) ; } if ( target . isDead ( ) ) { target . performCollapse ( ) ; } }'):  # 566
+        'if (target.isNotOrigin() && origin.isAlive()) { var damage = origin.mhp * 1; var el = target.elementRate(6); damage = Math.ceil(damage * el); origin.startAnimation(41); origin.gainHp(damage); origin.startDamagePopup(); origin.clearResult(); target.startAnimation(532); target.gainHp(-damage); if (target.isStateAffected(207)) { target.gainHp(damage * 3); } if (target.isDead()) { target.performCollapse(); } }',
+    ('regenerate', 'if ( origin !== target && origin . isAlive ( ) ) { var damage = origin . mhp * 5 var el = target . elementRate ( 6 ) damage = Math . ceil ( damage * el ) ; origin . startAnimation ( 41 ) ; origin . gainHp ( damage ) ; origin . startDamagePopup ( ) ; origin . clearResult ( ) ; target . startAnimation ( 532 ) ; target . gainHp ( - damage ) ; if ( target && target . isStateAffected ( 207 ) ) { target . gainHp ( damage * 3 ) ; } if ( target . isDead ( ) ) { target . performCollapse ( ) ; } }'):  # 577
+        'if (target.isNotOrigin() && origin.isAlive()) { var damage = origin.mhp * 5; var el = target.elementRate(6); damage = Math.ceil(damage * el); origin.startAnimation(41); origin.gainHp(damage); origin.startDamagePopup(); origin.clearResult(); target.startAnimation(532); target.gainHp(-damage); if (target.isStateAffected(207)) { target.gainHp(damage * 3); } if (target.isDead()) { target.performCollapse(); } }',
+    ('apply', '$gameVariables . setValue ( 1129 , Math . floor ( user . mmp * 0.7 * $gameVariables . value ( 1136 ) ) ) ; $gameVariables . setValue ( 1130 , Math . floor ( user . mmp * 0.35 * $gameVariables . value ( 1136 ) ) ) ; user . _stateCounter [ 1769 ] = user . _stateCounter [ 1769 ] || $gameVariables . value ( 1130 ) ;'):  # 1769
+        '$gameVariables.setValue(1129, Math.floor(user.mmp * 0.7 * $gameVariables.value(1136))); $gameVariables.setValue(1130, Math.floor(user.mmp * 0.35 * $gameVariables.value(1136))); user.setCounterIfEmpty(1769, $gameVariables.value(1130));',
+    ('apply', '$gameVariables . setValue ( 1129 , Math . floor ( user . mmp * 0.7 * $gameVariables . value ( 1136 ) ) ) ; user . _stateCounter [ 1772 ] = user . _stateCounter [ 1772 ] || $gameVariables . value ( 1129 ) ;'):  # 1772
+        '$gameVariables.setValue(1129, Math.floor(user.mmp * 0.7 * $gameVariables.value(1136))); user.setCounterIfEmpty(1772, $gameVariables.value(1129));',
+    ('apply', '$gameVariables . setValue ( 1138 , Math . floor ( user . mhp * 0.8 ) ) ; $gameVariables . setValue ( 1139 , $gameVariables . value ( 1138 ) * 0.3 ) ; $gameVariables . setValue ( 1140 , $gameVariables . value ( 1138 ) * 0.25 ) ; user . _stateCounter [ 1776 ] = user . _stateCounter [ 1776 ] || $gameVariables . value ( 1139 ) ; user . addState ( 1775 ) ; user . addState ( 1789 ) ;'):  # 1776
+        '$gameVariables.setValue(1138, Math.floor(user.mhp * 0.8)); $gameVariables.setValue(1139, $gameVariables.value(1138) * 0.3); $gameVariables.setValue(1140, $gameVariables.value(1138) * 0.25); user.setCounterIfEmpty(1776, $gameVariables.value(1139)); user.addState(1775); user.addState(1789);',
+    ('apply', 'user . removeState ( 1770 ) ; $gameTemp . reserveCommonEvent ( 2482 ) ; $gameTemp . reserveCommonEvent ( 2479 ) ;'):  # 1771
+        'user.removeState(1770); user.reserve(2479);',
+    ('apply', '$gameTemp . reserveCommonEvent ( 1622 ) ;'):  # 2033
+        'user.reserve(1622);',
+})
+MEASURED_EFFECT_SOURCES.update({
+    ('initiate', 'if ( user . _reverenceMp !== undefined ) { var difference = user . _reverenceMp - user . mp ; if ( difference > 0 ) { var hp = Math . ceil ( difference * 3.00 ) ; user . gainHp ( hp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ; } user . _reverenceMp = undefined ; }'):  # 102（undefined 用没赋过值的局部量 gone 表示：运行时字段写回 undefined 即删除）
+        'var gone; if (user._reverenceMp !== gone) { var difference = user._reverenceMp - user.mp; if (difference > 0) { var hp = Math.ceil(difference * 3.00); user.gainHp(hp); user.startDamagePopup(); user.clearResult(); } user._reverenceMp = gone; }',
+})
 # 换装模板（rest.blocks costume）：图名可变，其余整句比对；换装卡状态由 XCostumes 管，运行时跳过
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
@@ -628,7 +669,7 @@ def _adapt_phase_tokens(tokens):
 def _compile_effect_tokens(tokens, signature):
     rewritten, declared, i = [], set(), 0
     while i < len(tokens):
-        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt'):
+        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt', '_reverenceMp'):
             name = 'f_%s_%s' % ('a' if tokens[i] == 'user' else 'b', tokens[i + 2].lstrip('_'))
             rewritten.append(name)
             declared.add(name)

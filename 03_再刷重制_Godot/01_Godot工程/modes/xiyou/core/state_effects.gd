@@ -204,6 +204,12 @@ class PhaseValueProgram:
 			"set_variable":
 				if XState.current != null and XStateEffects._variable_writable(int(_number(args[0]))):
 					XState.current.set_variable(int(_number(args[0])), _number(args[1]))
+					# 同一块里先写后读（1769／1776 的 setValue 后接 value(同号)）要读到新值：块开头拿的是快照
+					var written: float = XState.current.variable(int(_number(args[0])))
+					if _context.v is Array and int(_number(args[0])) < _context.v.size():
+						_context.v[int(_number(args[0]))] = written
+					elif _context.v is Dictionary:
+						_context.v[int(_number(args[0]))] = written
 			"add_state":
 				XStateEffects._add_state(b, int(_number(args[0])), effects.context)
 			"animation":
@@ -248,6 +254,10 @@ class PhaseValueProgram:
 				XStateEffects.queue_force(b, int(_number(args[0])), int(_number(args[1])), resources)
 			"set_counter":
 				XStateEffects._set_counter(b, int(_number(args[0])), _number(args[1]))
+			"set_counter_if_empty":  # user._stateCounter[s] = user._stateCounter[s] || x：没有或为 0 才写
+				var kept: float = float(b.state_data.get("_stateCounter", {}).get(str(int(_number(args[0]))), 0.0))
+				if kept == 0.0:
+					XStateEffects._set_counter(b, int(_number(args[0])), _number(args[1]))
 			"add_actor_counter_level":
 				XStateEffects._add_actor_counter_level(int(_number(args[0])), int(_number(args[1])))
 			"collapse":
@@ -586,6 +596,8 @@ static func _field_read(b: XBattler, field: String):
 static func _field_write(b: XBattler, field: String, value) -> void:
 	if not value is StringName:
 		b.state_data["_" + field] = value
+	elif b.state_data.has("_" + field):
+		b.state_data.erase("_" + field)  # 块里写了 = undefined（_reverenceMp）
 
 
 ## 自动复活一族（rules3，state_effects_probe revive.blocks）：Deselect 块的条件＋按原顺序的几步。
