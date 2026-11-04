@@ -1904,6 +1904,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		_reflecting = false
 		for r in rs:
 			r.reflected = true
+			XRaven.applied(self, u, skill, u, r, true)  # 渡鸦 Game_Action.apply 包装：反射回渡鸦自己时同一个 Game_Action 照样记帧（鸦啄回 MP、黑暗侵蚀、狩猎／回响追加伤害落在渡鸦身上），原版实测 raven_reflect_probe
 		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
 	if _float("counter") < cnt:
@@ -2220,6 +2221,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		if XStateEffects.FIX_MARK_5576 and int(skill.get("id", 0)) in [5576, 5577] and dt.is_state_affected(1067):
 			value *= XStateEffects.MARK_FACTOR  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
 		r.state_value = value
+		if value == 0.0:
+			r.critical = false  # Game_Action.executeDamage：伤害值恰为 0 时暴击标记清掉（饿狼拳法基伤 0 实测，参照 raven_reflect_probe garouzero）
+			_action_resources.result(dt).critical = false
 		_action_resources.result(dt).success = true
 		match type:
 			1, 3, 5:
