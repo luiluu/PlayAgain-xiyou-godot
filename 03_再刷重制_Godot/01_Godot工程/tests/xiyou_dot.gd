@@ -164,6 +164,7 @@ func _run() -> void:
 		cases[str(c.id)] = c
 	_fixture()
 	_real()
+	_apply2038()
 	_syn()
 	_multi()
 	_guards()
@@ -219,11 +220,50 @@ func _real() -> void:
 				check(tag + ".no_dot_no_change", ticks_of(got.logs, [sid]).is_empty(), got.logs)
 				continue
 			if sid == 2038:
-				# 角色施加：原版取泄漏的全局 value（起点 0）＝什么也不做；敌人施加要持有者有 damagedot（Apply Effect 写，本期不含）
-				check(tag + ".no_tick", ticks_of(got.logs, [sid]).is_empty(), got.logs)
+				# 角色施加：原版取泄漏的全局 value（起点 0）＝什么也不做；敌人施加才读持有者的 damagedot（Apply Effect 写，数值由 _apply2038 逐项对照，
+				# 这里持有者的 MAT 与原版不同，只比有没有 tick）
+				check(tag + ".tick_count", ticks_of(got.logs, [sid]).size() == expected_ticks(o.log).size(), [expected_ticks(o.log), got.logs])
 				continue
 			compare_ticks(tag, o, got, [sid])
 			hp_delta_ok(tag, o, got)
+
+
+# ---- 2038 整条链（dot2）：加状态跑 Apply Effect（写 _damagedot、变量 1218）→回合结束再生。参照 dot_probe apply2038 ----
+func _apply2038() -> void:
+	check("apply2038.present", cases.has("apply2038"))
+	if not cases.has("apply2038"):
+		return
+	var c: Dictionary = cases.apply2038
+	for key in c.observed:
+		var parts := str(key).split(".")  # 持有者.学没学.施加者.v0
+		var o: Dictionary = c.observed[key]
+		var l := battle(0.5)
+		hook({}, o.rates)
+		XState.current.set_variable(1218, float(parts[3]))
+		var holder := holder_of(l, parts[0])
+		if parts[1] == "learned":
+			(holder as XActor).learn_skill(7520)
+		var got := replay(l, parts[0], parts[2], [2038])
+		var tag := "apply2038." + str(key)
+		var want_dot = o.applied.damagedot
+		check(tag + ".v1218", XState.current.variable(1218) == float(o.applied.v1218), [XState.current.variable(1218), o.applied.v1218])
+		if want_dot == null:
+			check(tag + ".no_field", not holder.state_data.has("_damagedot"), holder.state_data.get("_damagedot"))
+		else:
+			var want_ratio: float = 50.0 * (1.0 + float(o.applied.v1218))
+			var mat: float = holder.mat
+			check(tag + ".field", is_equal_approx(float(holder.state_data.get("_damagedot", -1.0)), mat * want_ratio), [holder.state_data.get("_damagedot"), mat, want_ratio])
+			check(tag + ".native_ratio", is_equal_approx(float(want_dot), float(o.applied.mat) * want_ratio), [want_dot, o.applied.mat])
+		# 回合结束：原版有掉血（gainHp 有数）的才该有一次 tick；数值＝round(damagedot×火属性倍率)（波动 0，元素 2，再生）
+		var want := expected_ticks(o.log)
+		var ticks := ticks_of(got.logs, [2038])
+		check(tag + ".ticks_count", want.size() == ticks.size(), [want, ticks])
+		if want.size() == 1 and ticks.size() == 1 and want_dot != null:
+			var mat2: float = holder.mat
+			var expect_v := floorf(mat2 * 50.0 * (1.0 + float(o.applied.v1218)) * float(XExtDot.test_hooks.element_rate.call(holder, 2)) + 0.5)
+			check(tag + ".value", absf(float(ticks[0].hp) + expect_v) < 1.0, [ticks[0].hp, expect_v])  # 弹字 hp＝hpDamage，回复为负
+			var native_v := floorf(float(want_dot) * float(o.rates[2]) + 0.5)
+			check(tag + ".native_value", float(want[0].value) == native_v, [want[0].value, native_v])
 
 
 # ---- 合成备注：fixtures/ext_dot_syn.json（转换器输出）注入成状态 ----

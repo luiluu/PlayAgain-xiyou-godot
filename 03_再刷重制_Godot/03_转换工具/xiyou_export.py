@@ -543,6 +543,9 @@ MEASURED_EFFECT_SOURCES.update({
     ('confirm', 'target . _xmx = target . _xmx || 0 ; target . _xmx ++ ; let dmg = Math . ceil ( target . hp * 0.0002 ) ; target . gainHp ( - dmg ) ; target . startDamagePopup ( ) ; if ( Math . random ( ) * 10000 < 1 ) { target . setHp ( 0 ) ; target . _xmx = 0 ; target . startDamagePopup ( ) ; } if ( target . _xmx >= 2000 ) { target . _xmx = 0 ; target . setHp ( 0 ) ; target . startDamagePopup ( ) ; }'):  # 1257
         'target._xmx = target._xmx || 0; target._xmx += 1; var dmg = Math.ceil(target.hp * 0.0002); target.gainHp(-dmg); target.startDamagePopup(); if (Math.random() * 10000 < 1) { target.setHp(0); target._xmx = 0; target.startDamagePopup(); } if (target._xmx >= 2000) { target._xmx = 0; target.setHp(0); target.startDamagePopup(); }',
 })
+# dot2（state_effects_probe damagedot.apply）：2038 火遁初级燃烧 addState。customEffectEval 里 user＝target＝持有者，damagedot＝持有者自己的 MAT*50*(1+v1218)；
+# 先 v1218 +1（学过 7520 再 +3）后读；敌人没有 hasSkill（TypeError，整块中断）。字段 damagedot 由 YEP_X_ExtDoT 的 2038 自定义再生公式读（ext_dot.gd）。
+MEASURED_EFFECT_BLOCKS.add(('apply', 'if ( user . hasSkill ( 7520 ) ) { $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 3 ) } ; $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 1 ) ; user . damagedot = target . mat * 50 * ( 1 + $gameVariables . value ( 1218 ) ) ;'))  # 2038
 # 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」，没写清暴击率口径，不修，等 Kyo
 NO_EFFECT_BLOCKS.add(('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'))  # 1749
 # rules8 第二批（state_effects_probe rest2.blocks）
@@ -673,7 +676,7 @@ def _adapt_phase_tokens(tokens):
 def _compile_effect_tokens(tokens, signature):
     rewritten, declared, i = [], set(), 0
     while i < len(tokens):
-        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt', '_reverenceMp', '_stackingPoison'):
+        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt', '_reverenceMp', '_stackingPoison', 'damagedot'):
             name = 'f_%s_%s' % ('a' if tokens[i] == 'user' else 'b', tokens[i + 2].lstrip('_'))
             rewritten.append(name)
             declared.add(name)
