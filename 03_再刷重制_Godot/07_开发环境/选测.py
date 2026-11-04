@@ -27,7 +27,8 @@
   回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
 - 钩子行收窄（hookLines，tools54，Kyo 2026-11-03 同意）：车道常在 battle_logic／actor／xstate／resource_context 这几个核心文件里只加「调用某个角色专属模块」的钩子
   （如 XXuanBattle.take_logs()），按文件判会几乎全选（dev.294～296 一批选了 337／383 个场景）。对照表 hookLines.files 里的文件，若每个改动块（hunk）都含
-  X 模块调用（不含 excludeModules 里的核心设施，如 XDB、XState）且其余行只是注释、空行或胶水（return／else:／if not x.is_empty():），就改归 battle_hooks 组：
+  角色专属模块（hookLines.roleModules 白名单，新模块默认不算钩子）的独立调用，且整块是纯新增（tools57，审查 35 P2：只认 XMod.fn(...)、var x := XMod.fn(...) 加 if not x.is_empty(): return x、
+  if XMod.fn(...): 加一行调用或 return；有运算／赋值／分号／删改行／无条件 return 都退回），就改归 battle_hooks 组：
   冒烟场景（determinism、battle、combat、rules 抽样、存档类）＋引用了这些模块名的测试；有一块认不出就退回原组。回退：hookLines.enabled 设 false，或环境变量 XIYOU_HOOKS=0（O-153）。
 - 基准不存在、对照表无效时退出 2。
 """
@@ -211,31 +212,107 @@ def load_hooks(path=TABLE):
     return cfg if cfg.get('enabled') else None
 
 
+def code_part(line):
+    """去掉行尾注释（引号里的 # 不算）。"""
+    q = None
+    for i, ch in enumerate(line):
+        if q:
+            if ch == q and line[i - 1] != '\\':
+                q = None
+        elif ch in '"\'':
+            q = ch
+        elif ch == '#':
+            return line[:i]
+    return line
+
+
+def whole_call(text):
+    """text 是否「一个 XMod.fn(...) 调用占满整句」：第一个左括号的配对右括号正好是末尾。返回 (模块名) 或 None。"""
+    m = re.match(r'(X[A-Z]\w*)\.\w+\(', text)
+    if not m:
+        return None
+    depth, q = 0, None
+    for i in range(m.end() - 1, len(text)):
+        ch = text[i]
+        if q:
+            if ch == q and text[i - 1] != '\\':
+                q = None
+        elif ch in '"\'':
+            q = ch
+        elif ch in '([{':
+            depth += 1
+        elif ch in ')]}':
+            depth -= 1
+            if depth == 0:
+                return m.group(1) if text[i + 1:].strip() == '' else None
+    return None
+
+
+RETURN_LITERAL = re.compile(r'return( (false|true|null|\{\}|\[\]|-?\d+(\.\d+)?))?')
+
+
+def hook_block(lines, i, roles):
+    """lines[i:] 开头是不是一个完整的钩子块（缩进已量好的 (缩进, 代码) 列表）：是返回 (模块名, 用掉几行)，否返回 None。
+    只认三种（O-153 审查 35 P2-1，tools57）：
+    ① 独立调用 `XMod.fn(...)`；
+    ② `var x := XMod.fn(...)` 后紧跟同一层的 `if not x.is_empty():` 和更深一层的 `return x`；
+    ③ `if XMod.fn(...):` 后紧跟更深一层的一行：独立调用、`return`、`return 字面量` 或 `return XMod.fn(...)`。
+    赋值、运算、分号、无条件 return 都不是钩子。"""
+    ind, code = lines[i]
+    var = re.match(r'var (\w+)\s*:?=\s*(.*)$', code)
+    if var:
+        mod = whole_call(var.group(2).strip())
+        if mod in roles and i + 2 < len(lines):
+            (i1, c1), (i2, c2) = lines[i + 1], lines[i + 2]
+            if i1 == ind and c1 == 'if not %s.is_empty():' % var.group(1) and i2 > i1 and c2 == 'return ' + var.group(1):
+                return mod, 3
+        return None
+    mod = whole_call(code)
+    if mod in roles:
+        return mod, 1
+    cond = re.match(r'if (.*):$', code)
+    if cond:
+        mod = whole_call(cond.group(1).strip())
+        if mod in roles and i + 1 < len(lines):
+            i1, c1 = lines[i + 1]
+            if i1 > ind and (whole_call(c1) in roles or RETURN_LITERAL.fullmatch(c1)
+                             or (c1.startswith('return ') and whole_call(c1[7:].strip()) in roles)):
+                return mod, 2
+    return None
+
+
 def hook_modules(root, base, path, cfg, head=None):
-    """该文件改动是否只是「调用专属模块」的钩子：是返回模块名集合，否（或没改动）返回 None。
-    逐个 hunk 看：至少一行含非核心设施的 X 模块引用，其余行只能是同类引用行、注释、空行或胶水（cfg.glue）。"""
-    exclude = set(cfg.get('excludeModules', []))
-    glue = re.compile(cfg['glue'])
-    ref = re.compile(r'\b(X[A-Z]\w*)\.\w+')
+    """该文件改动是否只是「调用角色专属模块」的钩子：是返回模块名集合，否（或没改动）返回 None。
+    逐个 hunk 看（tools57，审查 35 P2）：只放行纯新增块（删行或改行里有代码就退回）；新增的代码行必须依次拼成 hook_block 认得的钩子块，
+    每块的模块必须在 cfg.roleModules 白名单（角色专属模块；新模块默认不算钩子）里；注释行、空行随便。有一块认不出就整个文件退回。"""
+    roles = set(cfg.get('roleModules', []))
     diff = git(root, 'diff', '-U0', base, *([head] if head else []), '--', path).splitlines()
     hunks, cur = [], None
     for l in diff:
         if l.startswith('@@'):
-            cur = []
+            cur = ([], [])
             hunks.append(cur)
         elif cur is not None and l[:1] in '+-' and not l.startswith(('+++', '---')):
-            cur.append(l[1:])
+            cur[l[:1] == '+'].append(l[1:])
     mods = set()
-    for lines in hunks:
-        found = False
-        for l in lines:
-            code = l.split('#', 1)[0]
-            names = {m for m in ref.findall(code) if m not in exclude}
-            if names:
-                found = True
-                mods |= names
-            elif code.strip() and not glue.match(code):
+    for removed, added in hunks:
+        if any(code_part(l).strip() for l in removed):
+            return None
+        lines = []
+        for l in added:
+            code = code_part(l).rstrip()
+            if code.strip():
+                if ';' in code:
+                    return None
+                lines.append((len(code) - len(code.lstrip()), code.strip()))
+        i, found = 0, False
+        while i < len(lines):
+            hit = hook_block(lines, i, roles)
+            if not hit:
                 return None
+            mods.add(hit[0])
+            i += hit[1]
+            found = True
         if not found:
             return None
     return mods or None

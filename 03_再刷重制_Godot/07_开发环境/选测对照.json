@@ -22,7 +22,7 @@
     "full": {"说明": "拿不准：整轮", "full": true}
   },
   "hookLines": {
-    "说明": "钩子行收窄（tools54，Kyo 2026-11-03 同意，O-153）：files 里的核心文件，改动的每个块都含非 excludeModules 的 X 模块调用、其余行只是注释／空行／glue 胶水时，改归 group（冒烟场景＋引用这些模块的测试）；认不出一块就退回规则里的原组。enabled 设 false（或环境变量 XIYOU_HOOKS=0）回到按文件整组选。依据见 00_项目管理/交付/cc_nezha-tools54.md。",
+    "说明": "钩子行收窄（tools54，Kyo 2026-11-03 同意，O-153；tools57 按审查 35 P2 收紧）：files 里的核心文件，改动的每个块都必须是纯新增、且只由「角色专属模块（roleModules 白名单）的独立调用」组成时，才改归 group（冒烟场景＋引用这些模块的测试）。认得的写法只有：独立调用 XMod.fn(...)；var x := XMod.fn(...) 后紧跟 if not x.is_empty(): 与 return x；if XMod.fn(...): 后一行独立调用或 return。同一行有运算／赋值／分号、删行改行、无条件 return、不在白名单的模块（新模块默认不算钩子，核心设施如 XBattleRandom／XShieldLedger／XFormula* 更不算）一律退回规则里的原组。白名单每一项都对过 core/ 下该文件的头注释（角色编号＋名字）；新增角色模块要手动加。enabled 设 false（或环境变量 XIYOU_HOOKS=0）回到按文件整组选。依据见 00_项目管理/交付/cc_nezha-tools54.md、cc_nezha-tools57.md。",
     "enabled": true,
     "group": "battle_hooks",
     "files": [
@@ -31,8 +31,25 @@
       "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/enemy.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
       "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xstate.gd", "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd"
     ],
-    "excludeModules": ["XDB", "XState", "XActor", "XBattler", "XEnemy", "XBattleLogic", "XResourceContext", "XRandomStream", "XDamage", "XStateEffects", "XEquipment", "XSave", "XFormula"],
-    "glue": "^\\s*(return( (false|true|null|\\{\\}|\\[\\]|-?\\d+(\\.\\d+)?|\\w+))?|pass|break|continue|else:|(el)?if not \\w+\\.is_empty\\(\\):)\\s*$"
+    "roleModules": [
+      "XRaven",
+      "XMira",
+      "XYomiJingliu",
+      "XToji",
+      "XSukuna",
+      "XGarou",
+      "XYunshang",
+      "XYunshangOrders",
+      "XGuyu",
+      "XTusu",
+      "XTusuXuan",
+      "XXuanBattle",
+      "XXuanChart",
+      "XCat",
+      "XCatDamageHooks",
+      "XQiyu",
+      "XNanoha"
+    ]
   },
   "mergeBase": true,
   "mergeBase说明": "true：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进）改用 merge-base(基准, HEAD)，只算本分支的改动；false：按基准本身比（2026-10-26 前的行为）。总装用批首 base 时两者相同。",
