@@ -25,27 +25,27 @@ static var _seen := {}
 ## $gameTemp.reserveCommonEvent 的编号（只存整数），由战斗逻辑在分发后 take_reserves 交给 XBattleCommonEvent.reserve
 static var _reserves: Array[int] = []
 ## fix1：原版笔误的修正，默认开，设 false 回原版
-## 优化 O-待定-1：不灭之躯 2554 RemoveState 笔误，复活不消耗状态
+## 优化 O-155：不灭之躯 2554 RemoveState 笔误，复活不消耗状态
 static var FIX_UNDYING_2554 := true
-## 优化 O-待定-2：护体罡气 2562 MP 归零时移除的是 1662 不是自己
+## 优化 O-156：护体罡气 2562 MP 归零时移除的是 1662 不是自己
 static var FIX_QI_GUARD_2562 := true
-## 优化 O-待定-3：永世乐土 1302 说明写每个队友减伤 4%（最高 13%），原版累进一个没人读的字段
+## 优化 O-157：永世乐土 1302 说明写每个队友减伤 4%（最高 13%），原版累进一个没人读的字段
 static var FIX_ELYSIA_GUARD_1302 := true
-## 优化 O-待定-4：剑道争锋 2575 叠层增伤，原版累进一个没人读的字段
+## 优化 O-158：剑道争锋 2575 叠层增伤，原版累进一个没人读的字段
 static var FIX_SWORD_2575 := true
-## 优化 O-待定-5：挨打反击 1072 isDamageAffected 不存在，永远不反击
+## 优化 O-159：挨打反击 1072 isDamageAffected 不存在，永远不反击
 static var FIX_SCALE_COUNTER_1072 := true
-## 优化 O-待定-6：金剪追加 1068 crit 阶段冻结版不触发，暴击不追加
+## 优化 O-160：金剪追加 1068 crit 阶段冻结版不触发，暴击不追加
 static var FIX_SCISSORS_CRIT_1068 := true
-## 优化 O-待定-7：往世乐土 1301 说明写不会死亡并放一株莲，原版倒下后强制行动放不出来
+## 优化 O-161：往世乐土 1301 说明写不会死亡并放一株莲，原版倒下后强制行动放不出来
 static var FIX_ELYSIUM_1301 := true
-## 优化 O-待定-8：秩序 1711、同谐 1716 else if 从小到大写，人多的分支永远到不了
+## 优化 O-162：秩序 1711、同谐 1716 else if 从小到大写，人多的分支永远到不了
 static var FIX_ORDER_TIERS := true
-## 优化 O-待定-9：戮仙印记 1067 加成写在不生效的 Custom Damage Formula 里
+## 优化 O-163：戮仙印记 1067 加成写在不生效的 Custom Damage Formula 里
 static var FIX_MARK_5576 := true
-## 优化 O-待定-10：鼬被动 1318 !v == 1 写法，改成本意 v != 1
+## 优化 O-164：鼬被动 1318 !v == 1 写法，改成本意 v != 1
 static var FIX_ITACHI_1318 := true
-## 优化 O-待定-11：绯红之夜 1683 变量号超范围写不进，永远不触发
+## 优化 O-165：绯红之夜 1683 变量号超范围写不进，永远不触发
 static var FIX_CRIMSON_1683 := true
 ## BattleManager.queueForceAction 的 339 参数，由战斗逻辑在事件阶段取走（take_forces）
 static var _forces: Array = []

@@ -45,7 +45,7 @@ const LIEXING_TURNS := 2
 static var _param_guard := false
 ## 【cc·悟空·未经审查】O-154：先照手动璃壁先制。false＝原版（OTB 下没效果）
 static var XIANZHAO_MANUAL_FIRST := true
-## 优化 O-待定-12：余辉（回光溢出转护盾）。原版钩子挂在 Game_Battler.gainHp，角色走 Game_Actor 自有方法跑不到，实测不给护盾；设 false 回原版
+## 优化 O-166：余辉（回光溢出转护盾）。原版钩子挂在 Game_Battler.gainHp，角色走 Game_Actor 自有方法跑不到，实测不给护盾；设 false 回原版
 static var YUHUI_SHIELD := true
 const YUHUI_RATE := [0.2, 0.35, 0.5]
 const LINES := {"transfer": "璇：「我去另一边，有事叫我。」"}
