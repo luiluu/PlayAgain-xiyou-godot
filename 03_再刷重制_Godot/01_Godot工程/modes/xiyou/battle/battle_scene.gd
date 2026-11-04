@@ -54,6 +54,7 @@ var ui: Control
 ## 战斗中的消息窗（BattleManager 的逃跑信息等走 $gameMessage，Scene_Battle 的 Window_Message）
 var message: XMessageBox
 var help_card: XHelpCard
+var boss_panel: XBossStatusPanel
 var log_canvas: XMVCanvas
 var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
@@ -380,6 +381,22 @@ func _build_ui(vs: Vector2) -> void:
 	otb.position = _origin + OTB_POS
 	ui.add_child(otb)
 	otb.setup(BOX.x - OTB_POS.x - STATUS_W - STATUS_MOVE - 32 * (STATES_MAX + 0.5))
+	# Boss 状态面板（Codex_BossStatusSummary）：只显示，不参与结算；最后加，盖在说明卡上
+	boss_panel = XBossStatusPanel.new()
+	boss_panel.position = _origin
+	boss_panel.enemies_source = func(): return logic.enemies
+	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
+	boss_panel.help_source = _boss_panel_help_rect
+	ui.add_child(boss_panel)
+
+
+## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空
+func _boss_panel_help_rect() -> Rect2:
+	if help_card == null or not is_instance_valid(help_card) or not help_card.visible:
+		return Rect2()
+	if list_win == null or not is_instance_valid(list_win) or not list_win.visible:
+		return Rect2()
+	return Rect2(help_card.position - _origin, help_card.size)
 
 
 func _small_button(text: String) -> Button:
