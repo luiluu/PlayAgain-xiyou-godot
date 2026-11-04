@@ -244,7 +244,11 @@ func _make_enemy_sprite(e: XEnemy) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	s.setup(e, 1.8 if e.elite else 1.0)
-	s.breathing = true
+	var br := XSvEnemy.breathing(e)  # 呼吸只给该给的敌人：非 SV 默认呼吸，SV 默认不呼吸；周期读备注（见 XSvEnemy）
+	s.breathing = br.on
+	s.breath_speed = br.speed
+	s.breath_rx = br.rx
+	s.breath_ry = br.ry
 	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
 	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
 	s.position = s.home
@@ -517,6 +521,7 @@ func update_gauges() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_update_state_animations()
 	if seq_player == null:
 		update_gauges()      # 行动序列演出中由 XSequencePlayer 每帧在精灵之后更新
 	if _camera.is_empty() and seq_player == null:
@@ -1750,9 +1755,43 @@ func _collapse_visual(t: XBattler) -> void:
 	finish.call()
 
 
+## YEP_X_VisualStateFX：每个战斗者按当前状态的 <State Animation> 循环放动画（见 XVisualStateFx）。
+## 号变了才换（含变 0 清掉）；播完同一帧接着播（updateLoop）；不透明度与可见跟着战斗者。不受"战斗技能动画"开关管（那是 Game_Battler.startAnimation 的开关，状态动画走 Sprite_Battler.startStateAnimation）。
+var _state_anims := {}   # XBattler -> {"id": int, "node": MVAnimation}
+
+
+func _update_state_animations() -> void:
+	for b in sprites.keys():
+		var s: XBattlerSprite = sprites[b]
+		if not is_instance_valid(s):
+			continue
+		var want := XVisualStateFx.animation_id(b)
+		var cur: Dictionary = _state_anims.get(b, {"id": 0, "node": null})
+		if int(cur.id) != want:
+			if cur.node != null and is_instance_valid(cur.node):
+				(cur.node as MVAnimation).finish()
+			cur = {"id": want, "node": null}
+			if want > 0:
+				var a := _start_animation(want, b, true)
+				if a:
+					a.external = true
+					cur.node = a
+			_state_anims[b] = cur
+		var n = cur.node
+		if n != null and is_instance_valid(n):
+			var node := n as MVAnimation
+			node.tick()
+			if not node.playing():  # Sprite_StateAnimation.updateLoop → setupDuration：同一帧接着重播
+				node.duration = node.anim.frames.size() * node.rate + 1
+				node.frame = 0
+			node.visible = s.visible and s.appeared
+			node.modulate.a = s.seq_opacity / 255.0
+
+
 ## 关闭时连动画音效也跳过（正式版 Game_Battler.startAnimation 直接返回）。地图动画不受这个开关影响。
-func _start_animation(id: int, target: XBattler) -> MVAnimation:
-	if id <= 0 or not XConfig.flag("CombatSkillAnimation"):
+## state_ani＝状态循环动画（Sprite_Battler.startStateAnimation），不看这个开关
+func _start_animation(id: int, target: XBattler, state_ani := false) -> MVAnimation:
+	if id <= 0 or (not state_ani and not XConfig.flag("CombatSkillAnimation")):
 		return null
 	var data := XDB.rec("Animations", id)
 	if not MVAnimation.usable(data):

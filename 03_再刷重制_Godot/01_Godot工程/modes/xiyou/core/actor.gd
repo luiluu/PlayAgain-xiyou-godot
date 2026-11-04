@@ -550,6 +550,11 @@ func action_plus_set() -> Array:
 	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
 	return out
 
+## dsPassiveSkill <SvPngFd: N>（防具 2937 巨人指环等、状态 1120 人鱼化身）：战斗里角色立绘（Sprite_Actor 主图）放大 N 倍。
+## 解析顺序 装备→技能→状态，后面的盖前面的；缓存在开战时刷新（战斗中途换装不更新，scan2_probe svpng），所以只在建立立绘时取一次。
+func sv_png_scale() -> float:
+	return XSvPngFd.scale(self)  # 与白龙 visual1 重复实现，统一到 XSvPngFd
+
 ## dsPassiveSkill passiveGUARD（技能 10089 苍龙*破晓）：Game_Actor.isGuard 恒真，不看能不能行动；受伤按 ÷(2×grd)、战斗里一直摆防御姿势（passive_probe guard）
 func is_guard() -> bool:
 	return super.is_guard() or not passive_values("passiveGUARD").is_empty()

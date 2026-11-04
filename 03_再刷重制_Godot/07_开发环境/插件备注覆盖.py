@@ -13,6 +13,7 @@
   已读   重制工程代码（.gd，不含 tests/）或转换器代码里按标签名出现（词边界、大小写／空格／下划线归一）
   没读   工程、转换器里都找不到，也没有任何子串命中
   拿不准 只在测试／探针里出现、只有子串命中、标签过短（<5 字符）、或读法可能是动态拼名
+  已核   在 插件备注豁免.json 里（已核实无运行效果、已由别处实现、暂缓或别的车道在做；必须写 reason 和 evidence）
 只读：不写任何文件。
 """
 import argparse
@@ -29,6 +30,17 @@ FROZEN = GODOT_ROOT / '02_内容与素材/冻结正式源/app.nw'
 PROJECT = GODOT_ROOT / '01_Godot工程'
 CONVERTER = GODOT_ROOT / '03_转换工具'
 GENERATED_DB = PROJECT / 'modes/xiyou/generated/db'
+
+EXEMPT_FILE = HERE / '插件备注豁免.json'
+
+
+def load_exemptions():
+    """插件备注豁免.json：已核实不用做／已由别处实现／别的车道在做的标签（键同报告里的 key）。"""
+    if not EXEMPT_FILE.exists():
+        return {}
+    data = json.loads(EXEMPT_FILE.read_text(encoding='utf-8'))
+    return {k: v for k, v in data.items() if isinstance(v, dict)}
+
 
 # 不是备注标签的 HTML／文本控制码
 HTML_NOISE = {
@@ -516,6 +528,7 @@ def build_report(use_generated=True, all_tags=False):
                 for e in usage.examples[dk]:
                     if len(h['examples']) < 3 and e not in h['examples']:
                         h['examples'].append(e)
+    exempt = load_exemptions()
     rows = []
     for k, t in tags.items():
         h = data_hits.get(k)
@@ -531,6 +544,8 @@ def build_report(use_generated=True, all_tags=False):
             hit = next((pat for pat, rx in remake_rx.items() if rx.search(sample)), None) if sample else None
             if hit:
                 verdict, why = '已读', '通用正则命中：' + hit[:40]
+        if verdict in ('没读', '拿不准') and k in exempt:
+            verdict, why = '已核', exempt[k]['reason'] + '：' + exempt[k]['evidence']
         gen_n = None
         if gen is not None and h:
             gen_n = sum(c for dk, c in gen.items() if pats[k].match(dk))
@@ -572,12 +587,14 @@ def build_report(use_generated=True, all_tags=False):
         else:
             res = corpus.find(norm_plain(c['raw']))
             verdict, why = judge(norm_plain(c['raw']), res, cnt)
+            if verdict in ('没读', '拿不准') and norm_plain(c['raw']) in exempt:
+                verdict, why = '已核', exempt[norm_plain(c['raw'])]['reason'] + '：' + exempt[norm_plain(c['raw'])]['evidence']
         rows.append({
             'kind': '插件命令', 'name': c['raw'], 'key': k, 'plugins': sorted(c['plugins']),
             'doc_only': False, 'data_count': cnt, 'data_kinds': {}, 'examples': ex[:3],
             'generated_count': None, 'verdict': verdict, 'why': why,
         })
-    order = {'没读': 0, '拿不准': 1, '已读': 2, '未用': 3}
+    order = {'没读': 0, '拿不准': 1, '已核': 2, '已读': 2, '未用': 3}
     rows.sort(key=lambda r: (0 if r['data_count'] > 0 else 1, order[r['verdict']], -r['data_count'], r['key']))
     return rows
 
