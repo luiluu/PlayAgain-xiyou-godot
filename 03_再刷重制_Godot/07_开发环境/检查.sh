@@ -212,6 +212,7 @@ want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换�
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试插件备注覆盖.py" >/dev/null 2>&1; then ok "插件备注覆盖工具"; else bad "插件备注覆盖工具回归失败，单跑 07_开发环境/测试插件备注覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试探针登记检查.py" >/dev/null 2>&1; then ok "探针五乘区检查"; else bad "探针五乘区检查回归失败，单跑 07_开发环境/测试探针登记检查.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
