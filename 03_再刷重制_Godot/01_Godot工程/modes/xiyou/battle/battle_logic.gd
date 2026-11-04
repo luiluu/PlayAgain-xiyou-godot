@@ -759,26 +759,29 @@ func _eval_targets(custom: Dictionary, foes: Array, friends: Array) -> Array:
 	return _v8_shuffle(hurt)
 
 
-## list.sort(function(){return Math.random()-0.5})：V8 TimSort 对短数组（22 个以内，队伍人数够不到）＝先找开头的连续段（降序就翻转），再二分插入。
-## 每比一次取一个随机数，次数和结果都跟比较结果走（原版运行的 nwjs 154 与探针的 node 同一算法）。
+## list.sort(function(){return Math.random()-0.5})：每比一次取一个随机数，次数和结果都跟比较结果走。
+## 对照 target_eval 夹具（node 探针，1～8 人 × 15 条磁带）按经验定：不足 8 个＝从第二个起逐个二分插入（pivot 与中点比，小于 0 取左）；
+## 8 个以上（夹具只到 8）＝V8 TimSort 的先找开头连续段（降序翻转）再二分插入。两段各自逐例吻合；为什么 8 个换了写法没查清，队伍上限 4 人，实际只用到前一段
 func _v8_shuffle(source: Array) -> Array:
 	var a := source.duplicate()
 	var n := a.size()
 	if n < 2:
 		return a
 	var order := func() -> float: return _float("target_eval") - 0.5
-	var run := 2
-	var descending: bool = order.call() < 0.0
-	while run < n:
-		var o: float = order.call()
-		if (o >= 0.0) if descending else (o < 0.0):
-			break
-		run += 1
-	if descending:
-		var head := a.slice(0, run)
-		head.reverse()
-		for i in run:
-			a[i] = head[i]
+	var run := 1
+	if n >= 8:
+		run = 2
+		var descending: bool = order.call() < 0.0
+		while run < n:
+			var o: float = order.call()
+			if (o >= 0.0) if descending else (o < 0.0):
+				break
+			run += 1
+		if descending:
+			var head := a.slice(0, run)
+			head.reverse()
+			for i in run:
+				a[i] = head[i]
 	for start in range(run, n):
 		var pivot = a[start]
 		var left := 0
