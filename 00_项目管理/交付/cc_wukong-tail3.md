@@ -1,7 +1,7 @@
 # 交付：cc/wukong-tail3
 
 - 车道／工作者：C 规则＋B 画面／悟空（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -53,7 +53,10 @@
 
 ### 六、验证
 
-选测结果：待写
+- 专项：`xiyou_stunned_turn` 50 项、`xiyou_xuan_auto` 4556 项、`xiyou_xuan_tusu_art` 74 项（新）、`xiyou_battle_log` 57 项全过。
+- 反向验证 2 项全咬住（`_cast` 不清 `_grants60`、跳过回合走收尾）。
+- 同步 `--accept-additions` 跑过；`内容覆盖检查` new 0，不用更新基线；探针登记检查过。
+- 选测：云端 239 个场景全过（提交 84d2980c，基准 c4c840aa，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41769219603）。
 
 ## 交接板
 
@@ -71,4 +74,8 @@
 
 ## 本分支提交
 
-待写
+- cdd903d2 xuan_auto 补 60 级列星回合末连放例；门外各模块跳过回合实测 gate.party；tail3 交付单草稿
+- 41bf3ab7 WIP: 璇屠苏美术专项 xiyou_xuan_tusu_art 全过
+- 7b42e2f3 WIP: 璇与屠苏美术（附身隐身、武具形态、星魂、持武、图标），探针 xuan_tusu_art
+- fa1a28af 渡鸦六个技能的施放特效（installRavenSkillEffectsRuntime）
+- e3f50683 敌人跳过的回合整段不走 endAction 收尾（屠苏、谷雨、狂妄、心钢、种族、小猫、异化）；连命不再多同步一次
