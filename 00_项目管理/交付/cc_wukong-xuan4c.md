@@ -12,6 +12,12 @@
 - 优化 O-待定（`XXuanBattle.XIANZHAO_MANUAL_FIRST`，false 回到原版）：先照手动璃壁付费时把璇排到下个回合最前，排序预览同样显示。
 - 测试：`xuan_auto_probe` 补 9 个 60 级例和 3 个 speed 例（17→29 例，hits、快照逐步对照）；定轨的序列扣血例换成真实动作序列（诸神黄昏 8048，`Hp -10%: actors`），两边都走真实路径，去掉手动包装次序的 `seqhit` 步骤。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 星纹先照「手动璃壁先制」（`core/xuan_battle.gd` `manual_first_shift`，`battle_logic.gd` `_otb_user_shift`、`battle_scene.gd` 排序预览；installNativeXuanRuntime.js:592） | 原版给 `Game_Action.speed` 加 100000，但 OTB 只在回合开始排序，这时行动是 `makeActions` 新建的空白行动，碰不到璃壁，手动模式下这条星纹实际没有效果（`xuan_auto_probe` speed_* 量过，硬塞璃壁才排到最前） | 手动璃壁付费时把璇排到下个回合最前（夹在眩晕醒来的人之后），预览同样显示 | 说明写着先制，手动模式却什么都不发生；OTB 下「下个回合最前」是最接近的落法 | `XXuanBattle.XIANZHAO_MANUAL_FIRST = false` | cc（悟空） | 待用户确认 |
+
 ## 交接板
 
 - 下一步：璇第三期收尾，无接续。
