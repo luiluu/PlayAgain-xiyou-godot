@@ -35,6 +35,10 @@
   角色专属模块（hookLines.roleModules 白名单，新模块默认不算钩子）的独立调用，且整块是纯新增（tools57，审查 35 P2：只认 XMod.fn(...)、var x := XMod.fn(...) 加 if not x.is_empty(): return x、
   if XMod.fn(...): 加一行调用或 return；有运算／赋值／分号／删改行／无条件 return 都退回），就改归 battle_hooks 组：
   冒烟场景（determinism、battle、combat、rules 抽样、存档类）＋引用了这些模块名的测试；有一块认不出就退回原组。回退：hookLines.enabled 设 false，或环境变量 XIYOU_HOOKS=0（O-153）。
+- 单个探针收窄（probeNarrow，tools62，悟空 tail5 提）：改动只落在 03_转换工具/mv_oracle/<名>_probe.cjs（单个探针源；shared/、node_modules、host.cjs、
+  slice_probe 等公共部分不算）时，找它的产物名（同步正式西游.py 的 PROBES 登记的产物；没登记就看夹具 tests/fixtures/<名>_oracle.json），
+  只选 tests/ 里引用探针文件名、产物名或「按产物名加载它的 modes/ 模块的 class_name」的场景，改归 probe_narrow 组（检查项同 converter）。
+  找不到任何引用、产物同时被转换器等工具脚本读取（影响所有生成物）时退回原组 converter。回退：probeNarrow.enabled 设 false，或环境变量 XIYOU_PROBE_NARROW=0。
 - 基准不存在、对照表无效时退出 2。
 """
 import argparse
@@ -89,6 +93,9 @@ def load_table(path=TABLE):
     hook = table.get('hookLines') or {}
     if hook and hook.get('group') not in groups:
         raise ValueError('hookLines.group 指向不存在的组：%s' % hook.get('group'))
+    pn = table.get('probeNarrow') or {}
+    if pn and (pn.get('group') not in groups or pn.get('from') not in groups):
+        raise ValueError('probeNarrow.group／from 指向不存在的组')
     for name, g in groups.items():
         if g.get('onlyLinesElse', 'full') not in groups or 'onlyLines' in groups[g.get('onlyLinesElse', 'full')]:
             raise ValueError('组 %s 的 onlyLinesElse 须指向没有 onlyLines 的已有组' % name)
@@ -218,6 +225,32 @@ def load_hooks(path=TABLE):
         return None
     cfg = json.loads(Path(path).read_text()).get('hookLines') or {}
     return cfg if cfg.get('enabled') else None
+
+
+def load_probe_narrow(path=TABLE):
+    """单个探针收窄设置；关着（对照表 enabled false 或 XIYOU_PROBE_NARROW=0）返回 None。"""
+    if os.environ.get('XIYOU_PROBE_NARROW', '') == '0':
+        return None
+    cfg = json.loads(Path(path).read_text()).get('probeNarrow') or {}
+    return cfg if cfg.get('enabled') else None
+
+
+def probe_outputs(root, base, probe, cfg, head=None):
+    """单个探针 <名>_probe.cjs 的产物文件名列表：先看同步脚本 PROBES 里这条命令的产物，没登记就看夹具 <名>_oracle.json；都没有返回 []。"""
+    sync = read_any(root, base, cfg['syncFile'], head)
+    for m in re.finditer(r"\(\[\s*'" + re.escape(probe) + r"'[^\]]*\]\s*,\s*(\[[^\]]*\])", sync):
+        outs = [Path(x).name for x in re.findall(r"'([^']+\.json)'", m.group(1))]
+        if outs:
+            return outs
+    fixture = probe[:-len('_probe.cjs')] + '_oracle.json'
+    return [fixture] if exists(root, str(TESTS / 'fixtures' / fixture), head) else []
+
+
+def single_probe(path, cfg):
+    """path 是不是单个探针源（mv_oracle 目录下直接放的 *_probe.cjs，不含 shared／node_modules、不含 excludeProbes）。"""
+    d = cfg['dir'].rstrip('/') + '/'
+    name = path[len(d):] if path.startswith(d) else ''
+    return name if name.endswith('_probe.cjs') and '/' not in name and name not in cfg.get('excludeProbes', []) else ''
 
 
 def code_part(line):
@@ -464,6 +497,7 @@ def select(root, base, table=TABLE, head=None, sample=True):
 
     narrow = sections.get('narrowFloorsByMap') or {}
     hooks = load_hooks(table)
+    probe_cfg = load_probe_narrow(table)
 
     def take(path, group, why, terms_extra=(), map_ids=None):
         nonlocal full
@@ -478,6 +512,18 @@ def select(root, base, table=TABLE, head=None, sample=True):
             # onlyLinesElse：改动行不全匹配时退回的组（缺省整轮）；xstate.gd 只加字段与存读档键时只跑存档类专项（哪吒_8）
             other = g.get('onlyLinesElse', 'full')
             group, g, why = other, groups[other], group + ' 但改了 onlyLines 以外的内容，按 ' + other
+        probe = single_probe(path, probe_cfg) if probe_cfg and group == probe_cfg['from'] else ''
+        if probe:
+            outs = probe_outputs(root, base, probe, probe_cfg, head)
+            # 产物同时被转换器等工具脚本读（排除探针自己、测试脚本、同步脚本里的登记）：影响所有生成物，不收窄
+            readers = [t for o in outs for t in tool_users(root, o, head)
+                       if '/mv_oracle/' not in t and not Path(t).name.startswith(('测试', 'test_'))
+                       and Path(t).name != Path(probe_cfg['syncFile']).name and Path(t).name not in probe_cfg.get('readerIgnore', [])]
+            terms = [probe] + outs + [c for o in outs for c in loaders(root, o, head)]
+            if outs and not readers and tests.refs(terms):
+                group, g = probe_cfg['group'], groups[probe_cfg['group']]
+                terms_extra = list(terms_extra) + terms[1:]
+                why = '%s（单个探针 %s，产物 %s）' % (group, probe, '、'.join(outs))
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))

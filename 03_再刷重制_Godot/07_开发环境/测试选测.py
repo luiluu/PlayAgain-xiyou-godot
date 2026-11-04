@@ -552,6 +552,99 @@ class MergeBaseTests(Fixture):
         self.assertEqual(sel.select(self.root, 'main')['notice'], '')
 
 
+class ProbeNarrowTests(Fixture):
+    """tools62：只改单个 mv_oracle 探针时，只选引用探针名／产物名的场景；公共部分、找不到引用、转换器读产物、开关关掉都退回整组 converter。"""
+
+    def setUp(self):
+        super().setUp()
+        self.put(TOOLS / '同步正式西游.py', "PROBES = [\n    (['orb_probe.cjs'], ['orbs.json']),\n    (['multi_probe.cjs'], ['a.json', 'b.json']),\n]\n")
+        self.put(TOOLS / 'mv_oracle/multi_probe.cjs', '// m\n')
+        self.put(TOOLS / 'mv_oracle/foo_probe.cjs', '// foo\n')
+        self.put(TOOLS / 'mv_oracle/lonely_probe.cjs', '// lonely\n')
+        self.put(TOOLS / 'mv_oracle/shared/util.cjs', '// shared\n')
+        self.put(TOOLS / 'mv_oracle/host.cjs', '// host\n')
+        self.put(TESTS / 'fixtures/foo_oracle.json', '{}\n')
+        self.put(TESTS / 'fixtures/lonely_oracle.json', '{}\n')
+        self.scene('xiyou_foo', 'const F = "res://tests/fixtures/foo_oracle.json"')
+        self.scene('xiyou_multi', 'const F = "res://modes/xiyou/generated/oracle/b.json"')
+        self.commit('probe fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def scenes(self, narrow='1', rel=None, text='// edit\n'):
+        self.put(TOOLS / (rel or 'mv_oracle/orb_probe.cjs'), text)
+        with mock.patch.dict(os.environ, {'XIYOU_PROBE_NARROW': narrow}):
+            return {x[:-5] for x in self.pick()['scenes']}
+
+    def test_registered_probe_selects_only_its_product_users(self):
+        new, old = self.scenes('1'), self.scenes('0')
+        self.assertEqual(new, {'xiyou_orbs'})
+        self.assertIn('xiyou_rules_d2', old)
+        self.assertEqual(self.pick()['checks'], ['content', 'guards', 'same_source', 'tools'])
+        self.assertIn('单个探针 orb_probe.cjs，产物 orbs.json', ' '.join(r[1] for r in self.pick()['reasons']))
+
+    def test_fixture_probe_selects_fixture_users(self):
+        self.assertEqual(self.scenes('1', 'mv_oracle/foo_probe.cjs'), {'xiyou_foo'})
+        self.assertIn('xiyou_rules_d2', self.scenes('0', 'mv_oracle/foo_probe.cjs'))
+
+    def test_second_output_of_multi_output_probe_counts(self):
+        self.assertEqual(self.scenes('1', 'mv_oracle/multi_probe.cjs'), {'xiyou_multi'})
+
+    def test_shared_and_host_stay_converter(self):
+        for rel in ('mv_oracle/shared/util.cjs', 'mv_oracle/host.cjs'):
+            self.assertIn('xiyou_rules_d2', self.scenes('1', rel), rel)
+
+    def test_no_reference_falls_back_to_converter(self):
+        self.assertEqual(sel.probe_outputs(self.root, self.base, 'lonely_probe.cjs', sel.load_probe_narrow()), ['lonely_oracle.json'])
+        self.assertIn('xiyou_rules_d2', self.scenes('1', 'mv_oracle/lonely_probe.cjs'))
+
+    def test_converter_script_reading_product_falls_back(self):
+        self.put(TOOLS / 'xiyou_convert.py', "x = 'orbs.json'\n")
+        self.commit('converter reads product')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.assertIn('xiyou_rules_d2', self.scenes('1'))
+
+    def test_read_only_checkers_do_not_block_narrowing(self):
+        self.put(TOOLS / 'oracle_additions.py', "x = 'orbs.json'\n")
+        self.commit('checker reads product')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.scenes('1'), {'xiyou_orbs'})
+
+    def test_excluded_probe_stays_converter(self):
+        self.put(TOOLS / 'mv_oracle/slice_probe.cjs', '// s\n')
+        self.commit('slice probe')
+        self.base = self.g('rev-parse', 'HEAD')
+        self.assertIn('xiyou_rules_d2', self.scenes('1', 'mv_oracle/slice_probe.cjs'))
+
+    def test_env_switch_off_restores_converter(self):
+        """tools62 回退开关之一：环境变量 XIYOU_PROBE_NARROW=0（回退开关覆盖.py 认字面量写法）。"""
+        with mock.patch.dict(os.environ, {'XIYOU_PROBE_NARROW': '0'}):
+            self.put(TOOLS / 'mv_oracle/orb_probe.cjs', '// edit\n')
+            self.assertIn('xiyou_rules_d2', {x[:-5] for x in self.pick()['scenes']})
+
+    def test_table_switch_off_restores_converter(self):
+        """tools62 回退开关之二：对照表 probeNarrow.enabled = false。"""
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['probeNarrow']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.put(TOOLS / 'mv_oracle/orb_probe.cjs', '// edit\n')
+        self.assertIn('xiyou_rules_d2', {x[:-5] for x in sel.select(self.root, self.base, table=off)['scenes']})
+
+    def test_real_table_probes_mostly_narrow(self):
+        """真实资料库：152 个探针里除公共名单外，只有无产物、无引用的少数退回整组。"""
+        root = HERE.parent.parent
+        cfg = sel.load_probe_narrow()
+        tests = sel.Tests(root)
+        fell = []
+        for p in sorted((root / TOOLS / 'mv_oracle').glob('*_probe.cjs')):
+            if p.name in cfg['excludeProbes']:
+                continue
+            outs = sel.probe_outputs(root, 'HEAD', p.name, cfg)
+            if not outs or not tests.refs([p.name] + outs):
+                fell.append(p.name)
+        self.assertLess(len(fell), 15, fell)
+
+
 class HookLineTests(Fixture):
     """tools54：核心文件里只加「调用专属模块」的钩子行时，只选冒烟场景＋引用这些模块的测试；改了别的逻辑、开关关掉、认不出就退回按文件整组。"""
 
