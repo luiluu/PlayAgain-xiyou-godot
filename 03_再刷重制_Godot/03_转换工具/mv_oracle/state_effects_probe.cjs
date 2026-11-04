@@ -516,7 +516,8 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
 // confirm／establish 的持有者是行动者，react／respond 的持有者是目标（YEP onPreDamage／onReact／onRespond／onPostDamage）。
 const DAMAGE_BLOCKS = [[1060, 'react'], [1061, 'react'], [1299, 'establish'], [1302, 'react'], [1405, 'establish'], [1450, 'establish'], [1580, 'respond'], [1642, 'confirm'],
   [1666, 'confirm'], [1731, 'confirm'], [1828, 'react'], [2554, 'respond'], [2559, 'confirm'], [2562, 'react'], [2575, 'confirm']];
-cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
+// EXTRA：每行再乘一层的附加条件（rules8 的新块要变 v206／暴击率／本击是否暴击）；老块传 [{}]，行数与内容不变。
+function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
   const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
   const item = action.item(), originalDamage = Object.assign({}, item.damage), originalHit = item.hitType;
   const errors = [], oldError = w.Yanfly.Util.displayError, oldRandom = w.Math.random, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldInt = w.Math.randomInt;
@@ -536,7 +537,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
   try {
     w.Math.random = () => { const v = draws < script.length ? script[draws] : 0.5; draws++; return v; };
     for (const [sid, phase] of DAMAGE_BLOCKS) for (const [dmgType, hitType] of [[1, 1], [1, 2], [1, 0], [2, 1], [3, 2], [0, 0]]) for (const value of [-5, 0, 7, 1000])
-      for (const [hp, mp, shield, xmx, v1174, seq] of [['full', 50, 0, undefined, 0, [0.5, 0.5, 0.5]], [100, 50, 20, 6, 2, [0.1, 0.9, 0.5]], [0, 0, 5000, 7, 12, [0.9, 0.1, 0.9]], [3, 1, 0, 4, 1, [0, 0.99, 0.25]]]) {
+      for (const x of EXTRA) for (const [hp, mp, shield, xmx, v1174, seq] of [['full', 50, 0, undefined, 0, [0.5, 0.5, 0.5]], [100, 50, 20, 6, 2, [0.1, 0.9, 0.5]], [0, 0, 5000, 7, 12, [0.9, 0.1, 0.9]], [3, 1, 0, 4, 1, [0, 0.99, 0.25]]]) {
         const holder = TYPE[phase] === 'target' ? e : a;
         item.damage.type = dmgType; item.hitType = hitType;
         hard(a, 'full', 50, 0, undefined); hard(e, hp, mp, shield, xmx);
@@ -545,10 +546,13 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
         const keep = e._hp; e._hp = Math.max(1, keep); holder.addState(sid); holder.clearResult(); e.clearResult(); a.clearResult();
         e._hp = keep; if (keep === 0) e._states.push(1);
         w.$gameVariables.setValue(1174, v1174);
+        if (x.v206 !== undefined) w.$gameVariables.setValue(206, x.v206);
+        if (x.cri !== undefined) Object.defineProperty(a, 'cri', {get: () => x.cri, configurable: true});
+        if (x.crit !== undefined) e.result().critical = x.crit;
         script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
         const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
         const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
-        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
+        rows.push({...(Object.keys(x).length ? {x} : {}), state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
           a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
       }
     // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
@@ -573,10 +577,16 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
     w.Math.random = oldRandom; w.Math.randomInt = oldInt; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup;
     delete w.Game_Enemy.prototype.performCollapse; delete w.Game_Actor.prototype.performCollapse;
     a._states.length = 0; e._states.length = 0; a.clearResult(); e.clearResult(); delete a._Shield; delete e._Shield;
-    w.$gameVariables.setValue(1174, 0);
+    w.$gameVariables.setValue(1174, 0); w.$gameVariables.setValue(206, 0); delete a.cri;
   }
   return {rows, applies, actionStart};
-}));
+}
+cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => effectMeasure(DAMAGE_BLOCKS, [{}])));
+// rules8：全游戏可达的伤害 react／confirm 块（切片外的套装、技能、防具备注推状态）。1749 的 user.criticalRate() 原版没有这个方法，量出来就是 TypeError。
+const DAMAGE2_BLOCKS = [[38, 'confirm'], [50, 'confirm'], [97, 'confirm'], [250, 'react'], [381, 'react'], [720, 'react'], [908, 'react'], [1112, 'react'],
+  [1257, 'confirm'], [1394, 'react'], [1407, 'establish'], [1538, 'react'], [1661, 'confirm'], [1749, 'confirm']];
+const EXTRA2 = [{v206: 0, cri: 0.05, crit: false}, {v206: 50, cri: 0.4, crit: true}, {v206: 3, cri: 1, crit: true}];
+cases.push(makeCase('effect2.blocks', {blocks: DAMAGE2_BLOCKS, extra: EXTRA2}, () => effectMeasure(DAMAGE2_BLOCKS, EXTRA2)));
 // 其它／回合行动钩子两族（rules5）：直调 customEffectEval，看不抛错、改了什么。队友遍历、武器、字段、计数器都在这里。
 cases.push(makeCase('hook.blocks', {}, () => {
   const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;

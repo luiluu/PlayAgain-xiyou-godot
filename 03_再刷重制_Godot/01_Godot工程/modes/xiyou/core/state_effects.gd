@@ -126,6 +126,7 @@ class PhaseValueProgram:
 
 	## 状态块 effect_program（rules4）：副作用只在 execute 时做，经行动资源上下文（结果槽、护盾、死亡结算）；预览只算 value。
 	var effects := {}
+	var _saved_results := {}
 
 	func _step(n: Dictionary) -> void:
 		if n.get("op") == "members_loop":
@@ -193,6 +194,11 @@ class PhaseValueProgram:
 				XStateEffects._emit_result(b, resources, effects.context)
 			"clear_result":
 				resources.seed_result(b, XResourceContext.empty_result())
+			"save_result":
+				_saved_results[b] = resources.result(b).duplicate(true)  # JsonEx.makeDeepCopy(target._result)
+			"restore_result":
+				if _saved_results.has(b):
+					resources.seed_result(b, _saved_results[b])  # target._result = result
 			"remove_state":
 				resources.remove_state(b, int(_number(args[0])))
 			"set_variable":
@@ -443,6 +449,8 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 		var name := str(local)
 		if name.begins_with("f_"):
 			extra[name] = _field_read(receivers[name[2]], name.substr(4))
+		elif name.begins_with("o_elementRate_"):
+			extra[name] = c.origin.element_rate(int(name.substr(14)))
 		elif name.begins_with("o_"):
 			extra[name] = float(c.origin.get(name.substr(2)))
 		elif name == "se_state_id":

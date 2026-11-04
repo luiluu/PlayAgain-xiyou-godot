@@ -519,6 +519,32 @@ MEASURED_EFFECT_BLOCKS.update({
     ('apply', 'user . addParam ( 3 , - 200 * $gameVariables . value ( 1204 ) ) ; user . addParam ( 5 , - 200 * $gameVariables . value ( 1204 ) ) ;'),  # 2003
     ('remove', 'user . addParam ( 3 , 200 * $gameVariables . value ( 1204 ) ) ; user . addParam ( 5 , 200 * $gameVariables . value ( 1204 ) ) ;'),  # 2003
 })
+# rules8（state_effects_probe effect2.blocks）：全游戏可达的伤害 react／confirm 块，整段 token 比对
+MEASURED_EFFECT_BLOCKS.update({
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.05 ; value + = Math . ceil ( value * bonusRate ) ; if ( target . result ( ) . critical ) { value + = 0 ; } target . startAnimation ( 2 ) ; }'),  # 38
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { var mpDmg = Math . floor ( value * 0.30 ) ; mpDmg = Math . min ( mpDmg , target . mp ) ; target . gainMp ( - mpDmg ) ; value - = mpDmg ; if ( target . mp === 0 ) { } }'),  # 250
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { var mpDmg = Math . floor ( value * 0.50 ) ; mpDmg = Math . min ( mpDmg , target . mp ) ; target . gainMp ( - mpDmg ) ; value - = mpDmg ; if ( target . mp === 0 ) { } }'),  # 720
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . atk ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 90 ) * ( 1 + v [ 206 ] * 0.01 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 908
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { value = Math . floor ( value ) ; var zhiliao = value ; value = 0 ; target . gainHp ( zhiliao ) ; target . startDamagePopup ( ) ; target . clearResult ( ) ; }'),  # 1112
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = target . def ; var damage3 = target . mdf ; var damage4 = user . def ; var damage5 = user . mdf ; user . gainHp ( Math . floor ( - 1 * ( ( damage2 + damage3 ) - ( damage4 + damage5 ) ) / 3000 * damage1 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1394
+    ('establish', 'if ( value > 0 && this . isHpEffect ( ) ) { target . gainHp ( - target . hp * 0.0015 ) ; target . startDamagePopup ( ) ; }'),  # 1407
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . def ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 120 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1538
+    ('confirm', 'target . gainHp ( - Math . ceil ( target . mhp * 0.0001 ) ) ; target . startDamagePopup ( ) ; target . _xmx = target . _xmx || 0 ; target . _xmx + = 1 ; if ( target . _xmx >= 8 ) { target . _xmx = 0 || 0 ; target . gainHp ( - Math . ceil ( target . mhp * 0.0001 ) ) ; target . startDamagePopup ( ) ; }'),  # 1661
+})
+
+# 原文写法 IR 表达不了的：50／97 存结果→清→扣血弹字→清→还原，381 末尾 `* 10` 是丢弃的表达式，1257 用 let 和 ++
+MEASURED_EFFECT_SOURCES.update({
+    ('confirm', 'if ( this . isHpEffect ( ) && this . isAttack ( ) && this . isPhysical ( ) ) { var elementId = 5 ; var baseDamage = 1250 ; var damage = Math . ceil ( target . elementRate ( elementId ) * baseDamage ) ; var result = JsonEx . makeDeepCopy ( target . _result ) ; target . clearResult ( ) ; target . startAnimation ( 10 ) ; target . gainHp ( - damage ) ; target . startDamagePopup ( ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; } target . clearResult ( ) ; target . _result = result ; }'):  # 50
+        'if (this.isHpEffect() && se_attack && this.isPhysical()) { var elementId = 5; var baseDamage = 1250; var damage = Math.ceil(target.elementRate(elementId) * baseDamage); target.saveResult(); target.clearResult(); target.startAnimation(10); target.gainHp(-damage); target.startDamagePopup(); if (target.isDead()) { target.performCollapse(); } target.clearResult(); target.restoreResult(); }',
+    ('confirm', 'if ( this . isHpEffect ( ) && this . isAttack ( ) && this . isPhysical ( ) ) { var elementId = 6 ; var baseDamage = 5250 ; var damage = Math . ceil ( target . elementRate ( elementId ) * baseDamage ) ; var result = JsonEx . makeDeepCopy ( target . _result ) ; target . clearResult ( ) ; target . startAnimation ( 198 ) ; target . gainHp ( - damage ) ; target . startDamagePopup ( ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; } target . clearResult ( ) ; target . _result = result ; }'):  # 97
+        'if (this.isHpEffect() && se_attack && this.isPhysical()) { var elementId = 6; var baseDamage = 5250; var damage = Math.ceil(target.elementRate(elementId) * baseDamage); target.saveResult(); target.clearResult(); target.startAnimation(198); target.gainHp(-damage); target.startDamagePopup(); if (target.isDead()) { target.performCollapse(); } target.clearResult(); target.restoreResult(); }',
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 10 ) ; var damage2 = origin . mhp * 10 ; var damage3 = origin . elementRate ( 4 ) user . gainHp ( ( - 1 * damage1 - damage2 ) * ( 1 + damage3 ) ) * 10 ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'):  # 381
+        'if (value >= 0) { var damage1 = Math.ceil(value * 10); var damage2 = origin.mhp * 10; var damage3 = origin.elementRate(4); user.gainHp((-1 * damage1 - damage2) * (1 + damage3)); if (user.isDead()) { user.performCollapse(); } }',
+    ('confirm', 'target . _xmx = target . _xmx || 0 ; target . _xmx ++ ; let dmg = Math . ceil ( target . hp * 0.0002 ) ; target . gainHp ( - dmg ) ; target . startDamagePopup ( ) ; if ( Math . random ( ) * 10000 < 1 ) { target . setHp ( 0 ) ; target . _xmx = 0 ; target . startDamagePopup ( ) ; } if ( target . _xmx >= 2000 ) { target . _xmx = 0 ; target . setHp ( 0 ) ; target . startDamagePopup ( ) ; }'):  # 1257
+        'target._xmx = target._xmx || 0; target._xmx += 1; var dmg = Math.ceil(target.hp * 0.0002); target.gainHp(-dmg); target.startDamagePopup(); if (Math.random() * 10000 < 1) { target.setHp(0); target._xmx = 0; target.startDamagePopup(); } if (target._xmx >= 2000) { target._xmx = 0; target.setHp(0); target.startDamagePopup(); }',
+})
+# 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」，没写清暴击率口径，不修，等 Kyo
+NO_EFFECT_BLOCKS.add(('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'))  # 1749
 # 换装模板（rest.blocks costume）：图名可变，其余整句比对；换装卡状态由 XCostumes 管，运行时跳过
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
@@ -612,6 +638,11 @@ def _compile_effect_tokens(tokens, signature):
             rewritten.append(name)
             declared.add(name)
             i += 1
+        elif tokens[i] == 'origin' and tokens[i + 1:i + 4] == ['.', 'elementRate', '('] and tokens[i + 5:i + 6] == [')']:
+            name = 'o_elementRate_' + tokens[i + 4]  # origin.elementRate(常数)：块开头读，运行时按状态来源者的属性倍率
+            rewritten.append(name)
+            declared.add(name)
+            i += 6
         elif tokens[i] == 'origin' and tokens[i + 1:i + 2] == ['.'] and tokens[i + 3:i + 4] != ['(']:
             name = 'o_' + tokens[i + 2]
             rewritten.append(name)

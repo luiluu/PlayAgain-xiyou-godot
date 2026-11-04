@@ -327,7 +327,10 @@ func _run() -> void:
 		_shield_blocks(cases["query.shield_blocks"].observed)
 	check("effect.oracle_present", cases.has("effect.blocks"))
 	if cases.has("effect.blocks"):
-		_effect_blocks(cases["effect.blocks"].observed)
+		_effect_blocks(cases["effect.blocks"].observed, 1440, 60, "effect")
+	check("effect2.oracle_present", cases.has("effect2.blocks"))
+	if cases.has("effect2.blocks"):
+		_effect_blocks(cases["effect2.blocks"].observed, 4032, 56, "effect2")
 	check("hook.oracle_present", cases.has("hook.blocks"))
 	if cases.has("hook.blocks"):
 		_hook_blocks(cases["hook.blocks"].observed)
@@ -811,9 +814,9 @@ func _revive_apply(index: int, row: Dictionary) -> void:
 
 
 ## 伤害 react／confirm 一族（rules4）：单块逐行比（value、两边资源、护盾、字段、状态、随机次数、弹字、变量）；实战比结局。
-func _effect_blocks(o: Dictionary) -> void:
+func _effect_blocks(o: Dictionary, want_rows: int, want_applies: int, tag: String) -> void:
 	XStateEffects.observer = Callable()
-	check("effect.rows", o.rows.size() == 1440 and o.applies.size() == 60, [o.rows.size(), o.applies.size()])
+	check(tag + ".rows", o.rows.size() == want_rows and o.applies.size() == want_applies, [o.rows.size(), o.applies.size()])
 	var seen := {}
 	for index in range(o.rows.size()):
 		var row: Dictionary = o.rows[index]
@@ -822,11 +825,14 @@ func _effect_blocks(o: Dictionary) -> void:
 		var key := "%d.%s" % [sid, row.phase]
 		if not seen.has(key):
 			seen[key] = true
-			check("effect.translated." + key, st.effects.any(func(e): return e.phase == row.phase and e.op in ["effect_program", "noop"])
+			check(tag + ".translated." + key, st.effects.any(func(e): return e.phase == row.phase and e.op in ["effect_program", "noop"])
 				and not st.effects.any(func(e): return e.phase == row.phase and e.op == "js"), st.effects)
 		var s := XState.new_game_blank()
 		XState.current = s
 		s.set_variable(1174, float(row.v1174))
+		var extra: Dictionary = row.get("x", {})
+		if extra.has("v206"):
+			s.set_variable(206, float(extra.v206))
 		var f: Dictionary = row.before
 		var a := ValueBattler.new()
 		a.values = {"mhp": float(f.amhp), "mmp": float(f.ammp), "atk": float(f.aatk), "mat": float(f.amat)}
@@ -844,7 +850,7 @@ func _effect_blocks(o: Dictionary) -> void:
 		stream.seq = row.seq
 		var resources := XResourceContext.new()
 		var ctx := {"attacker": a, "defender": e, "target": e, "item": {"id": 1, "hitType": row.hitType, "damage": {"type": row.dmgType, "elementId": 0}},
-			"value": float(row.value), "execute": true, "resources": resources, "record": {}, "random": stream}
+			"value": float(row.value), "execute": true, "resources": resources, "record": {}, "random": stream, "critical": bool(extra.get("crit", false))}
 		var got := XStateEffects.run_one(str(row.phase), holder, st, ctx)
 		var pops := []
 		for b in [a, e]:
@@ -857,16 +863,21 @@ func _effect_blocks(o: Dictionary) -> void:
 		var right := {"value": float(row.got), "ahp": float(row.a.hp), "amp": float(row.a.mp), "atp": float(row.a.tp), "ehp": float(row.e.hp), "emp": float(row.e.mp), "etp": float(row.e.tp),
 			"ashield": float(row.a.shield), "eshield": float(row.e.shield), "xmx": row.e.xmx, "astates": _sorted(row.a.states), "estates": _sorted(row.e.states),
 			"draws": int(row.draws), "pops": want_pops, "v": float(row.vars[0])}
-		check("effect.row.%d" % index, left == right, {"row": [sid, row.phase, row.dmgType, row.hitType, row.value, row.hpIn, row.seq], "want": right, "got": left})
+		for name in ["ahp", "amp", "ehp", "emp"]:  # 参照测量已按 6 位小数取整（host.cjs round）；小数血量（1407 按当前血 0.15%）这边按同样位数比
+			left[name] = "%.6f" % float(left[name])
+			right[name] = "%.6f" % float(right[name])
+		for side in [left, right]:  # 弹字里的小数同样按 6 位比
+			side["pops"] = side.pops.map(func(p): return p.map(func(x): return "%.6f" % x if x is float else x))
+		check("%s.row.%d" % [tag, index], left == right, {"row": [sid, row.phase, row.dmgType, row.hitType, row.value, row.hpIn, row.seq], "want": right, "got": left})
 	var starter := ValueBattler.new()
 	starter.values = {"mhp": 100.0, "mmp": float(o.actionStart[0].mmp)}
 	starter.state_ids.append(1450)
 	XState.current = XState.new_game_blank()
 	XState.current.set_variable(1174, 9.0)
 	XStateEffects.run_one("action_start", starter, XDB.rec("States", 1450), {"execute": true, "resources": XResourceContext.new()})
-	check("effect.action_start_1450", XState.current.variable(1174) == float(o.actionStart[0].v), [o.actionStart, XState.current.variable(1174)])
+	check(tag + ".action_start_1450", XState.current.variable(1174) == float(o.actionStart[0].v), [o.actionStart, XState.current.variable(1174)])
 	for index in range(o.applies.size()):
-		_effect_apply(index, o.applies[index])
+		_effect_apply(index, o.applies[index], tag)
 	XState.current = null
 
 
@@ -877,7 +888,7 @@ func _sorted(ids: Array) -> Array:
 
 
 ## 实战：Godot 这边生命、攻击都和参照不同，只比结局：状态、目标死没死、计数字段、变量、谁掉血。
-func _effect_apply(index: int, row: Dictionary) -> void:
+func _effect_apply(index: int, row: Dictionary, tag := "effect") -> void:
 	var sid := int(row.state)
 	XEnemy.force_roll = 100.0
 	var s := XState.new_game(3, 1, [8])
@@ -894,7 +905,7 @@ func _effect_apply(index: int, row: Dictionary) -> void:
 	var ctx := {"resources": XResourceContext.new(), "execute": true}
 	holder.add_state_with_context(sid, null, ctx)
 	if sid == 1060:
-		check("effect.apply.%d.shield_added" % index, e.state_data._Shield == float(row.shield) + e.mhp * 10.0 and float(row.before.eshield) > float(row.shield), [e.state_data._Shield, e.mhp])
+		check("%s.apply.%d.shield_added" % [tag, index], e.state_data._Shield == float(row.shield) + e.mhp * 10.0 and float(row.before.eshield) > float(row.shield), [e.state_data._Shield, e.mhp])
 	holder.param_refresh()
 	if bool(row.low):
 		e.hp = 1.0
@@ -902,7 +913,7 @@ func _effect_apply(index: int, row: Dictionary) -> void:
 	var e_hp := e.hp
 	var shield := float(e.state_data._Shield)
 	var r := logic.apply(a, XDB.rec("Skills", 1), e)
-	var label := "effect.apply.%d" % index
+	var label := "%s.apply.%d" % [tag, index]
 	var info := [sid, row.phase, row.shield, row.low]
 	check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
 	check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
