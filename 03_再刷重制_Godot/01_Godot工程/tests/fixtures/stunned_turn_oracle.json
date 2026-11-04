@@ -1646,6 +1646,33 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "gate.party",
+   "setup": {},
+   "observed": {
+    "bound": true,
+    "same": true,
+    "foes": true,
+    "own": [
+     [],
+     [
+      [
+       "_yunActionSource",
+       null,
+       "\"original\""
+      ]
+     ],
+     [],
+     [],
+     []
+    ],
+    "wait": [
+     2,
+     0
+    ]
+   },
+   "errors": []
   }
  ]
 }

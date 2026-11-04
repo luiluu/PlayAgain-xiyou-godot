@@ -201,6 +201,8 @@ const SCRIPTS = {
   skip_return: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['use', XUAN, 'return', XUAN], ['state', XUAN, 10], ['skip', XUAN], ['skip', XUAN]]],
   // endAction 的绑定包装照跑 validate：宿主倒下，被控队友这一回合结束就解绑
   skip_validate: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['state', 8, 10], ['state', 1, 1], ['skip', 8]]],
+  // 审查 36 P3：60 级列星后回合末连放：每次内部施放单独判「首次」（B.cast 清 _grants60），归宿只给第一次回光的目标（8 号），接着的璃壁给 1 号不再带
+  liexing60_roundend: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 5], ['act', 8, 1, 'e0'], ['hp', 8, 0.3], ['turn']]],
   // 审查 35b P3-1：棱光打主行动最后的目标（Game_Action.apply 包装记在这个行动上）。甚尔万里锁溅射是子行动；黄泉扩散、镜流补段 oldApply 绕过璇的包装；都不改
   last_toji: [{party: [XUAN, 171, 8, 2]}, [['use', XUAN, 'jixing', 171], ['turn'], ['gain', XUAN, 3], ['learn', 171, 10217], ['act', 171, 10217, 'e1']]],
   last_jingliu: [{party: [XUAN, 170, 8, 2]}, [['use', XUAN, 'jixing', 170], ['turn'], ['gain', XUAN, 3], ['learn', 170, 10190], ['state', 'e1', 2629], ['act', 170, 10190, 'e1']]],
