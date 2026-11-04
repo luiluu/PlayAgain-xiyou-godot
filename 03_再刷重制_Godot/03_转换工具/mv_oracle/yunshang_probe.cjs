@@ -763,4 +763,27 @@ cases.push(makeCase('p9.robeHelp', {}, () => {
   }
   return {out};
 }));
+// 异化绝缘（installAlienationAdvanced:194 包的 wake／addActions／freeGift，白龙 tails1 读码核对、这里实测）：绝缘者 t 穿异化武器，o 是赠行的同伴（同袍换日 11）。
+// wake、addActions 只挡外来（来源＝_subject 不是 t），自己来照常；freeGift 不看来源一律挡，且不耗每回合一次。最后真放赠行 10284、再赠不绝缘的 8 号作对照
+for (const insulated of ['a', 'ally']) cases.push(makeCase('p2.insulation.' + insulated, insulated === 'a' ? {level: 50, stage: 2, robe: 8, allyRobe: 11} : {level: 50, stage: 2, robe: 11, allyRobe: 8}, () => {
+  const {bm, a, ally} = battle2(insulated === 'a' ? {level: 50, stage: 2, robe: 8, allyRobe: 11} : {level: 50, stage: 2, robe: 11, allyRobe: 8});
+  const t = insulated === 'a' ? a : ally, o = insulated === 'a' ? ally : a;
+  const AL = w.CodexAlienation;
+  t._equips[0].setObject(AL.create('w', 1044, 'boss', 'insulation'));
+  AL.lockParty();
+  Y.data(a).wakeUntil = 0; Y.data(ally).wakeUntil = 0;
+  const from = (src, f) => { bm._subject = src; return f(); };
+  const row = x => step({...x, fg: Y.data(o).freeGiftRound, has: AL.has(t, 'insulation')}, a, ally);
+  const steps = [row({start: true})];
+  steps.push(row({ok: from(o, () => Y.wake(t))}));
+  steps.push(row({ok: from(o, () => Y.addActions(t, 1, 'gift'))}));
+  steps.push(row({ok: from(o, () => Y.wake(o))}));
+  steps.push(row({ok: from(o, () => Y.freeGift(o, t))}));
+  steps.push(row({ok: from(t, () => Y.wake(t))}));
+  steps.push(row({ok: from(t, () => Y.addActions(t, 1, 'gift'))}));
+  steps.push(row({ok: from(t, () => Y.freeGift(o, t))}));
+  steps.push(row(cast2(bm, o, 10284, insulated === 'a' ? 0 : 1)));
+  steps.push(row({ok: from(o, () => Y.freeGift(o, w.$gameActors.actor(8)))}));
+  return {steps};
+}));
 process.exit(finish(host, 'yunshang.json', {hostScope: '真实 BattleManager／Game_Action（Math.random 0.5）；云裳第一期＋第二期 A 批＋B 批', cases}) ? 0 : 1);

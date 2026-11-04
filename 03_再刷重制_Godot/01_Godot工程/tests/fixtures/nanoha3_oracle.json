@@ -2697,6 +2697,200 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "sched.5692.0",
+   "setup": {
+    "id": 5692,
+    "mp": 0,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 0,
+    "skill": 1,
+    "target": 0,
+    "cannonOnly": false
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.1",
+   "setup": {
+    "id": 5692,
+    "mp": 1,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 1,
+    "skill": 5703,
+    "target": -1,
+    "cannonOnly": true
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.1500",
+   "setup": {
+    "id": 5692,
+    "mp": 1500,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 1500,
+    "skill": 5703,
+    "target": -1,
+    "cannonOnly": true
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.23000",
+   "setup": {
+    "id": 5692,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 5704,
+    "target": -1,
+    "cannonOnly": true
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.lowfoe",
+   "setup": {
+    "id": 5692,
+    "mp": 23000,
+    "hp": [
+     5000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 5703,
+    "target": -1,
+    "cannonOnly": true
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.none.mate",
+   "setup": {
+    "id": 0,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ],
+    "mate": true
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 8,
+    "target": 1,
+    "cannonOnly": false
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.mate",
+   "setup": {
+    "id": 5692,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ],
+    "mate": true
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 5704,
+    "target": -1,
+    "cannonOnly": true
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.noCannon",
+   "setup": {
+    "id": 5692,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ],
+    "noCannon": true
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 5710,
+    "target": -1,
+    "cannonOnly": false
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.5692.smartOff",
+   "setup": {
+    "id": 5692,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ],
+    "smartOff": true
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 5692,
+    "target": -1,
+    "cannonOnly": false
+   },
+   "errors": []
+  },
+  {
+   "id": "sched.attack",
+   "setup": {
+    "id": 1,
+    "mp": 23000,
+    "hp": [
+     1000000000,
+     1000000000,
+     1000000000
+    ]
+   },
+   "observed": {
+    "mp": 23000,
+    "skill": 1,
+    "target": -1,
+    "cannonOnly": false
+   },
+   "errors": []
   }
  ]
 }

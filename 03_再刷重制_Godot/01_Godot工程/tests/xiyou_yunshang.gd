@@ -413,7 +413,7 @@ func _p2_compare(id: String, steps: Array, want: Array) -> void:
 		ws.q174 -= q0[2]
 		ws.q1 -= q0[3]
 		check(sid + ".state", gs == ws, [gs, ws])
-		for k in ["meets", "giftMeets", "storeMeets", "free", "again", "release", "cut", "skills"]:
+		for k in ["meets", "giftMeets", "storeMeets", "free", "again", "release", "cut", "skills", "ok", "fg", "has"]:
 			if w.has(k):
 				var wv = w[k]
 				var gv = g.get(k)
@@ -501,6 +501,32 @@ func _p2_case(c: Dictionary) -> void:
 			XYunshang.wake(logic, ally)
 			var free := XYunshang.free_gift(logic, ally, a)
 			snap.call({"free": free, "again": XYunshang.free_gift(logic, ally, a)})
+		"p2.insulation.a", "p2.insulation.ally":
+			# 异化绝缘挡 wake／addActions（只挡外来）、freeGift（一律挡且不耗次数）；来源：参照写 _subject，这里压一层行动帧（source_of 先看帧）
+			var t: XActor = a if str(c.id).ends_with(".a") else ally
+			var other: XActor = ally if t == a else a
+			t.equips[0] = XAlienation.create(logic.state, "w", 1044, "boss", "insulation").ok
+			t.param_mark_dirty()
+			XAlienBattle.lock_party(logic)
+			XYunshang.data(a).wake_until = 0
+			XYunshang.data(ally).wake_until = 0
+			var from := func(src, f: Callable) -> bool:
+				XAlienBattle._action_frames.append({"source": src, "item": {}})
+				var ok: bool = f.call()
+				XAlienBattle._action_frames.pop_back()
+				return ok
+			var row := func(x := {}) -> void:
+				snap.call(x.merged({"fg": int(XYunshang.data(other).free_gift_round), "has": XAlienBattle.has(t, "insulation")}, true))
+			row.call()
+			row.call({"ok": from.call(other, func(): return XYunshang.wake(logic, t))})
+			row.call({"ok": from.call(other, func(): return XYunshang.add_actions(logic, t, 1, "gift"))})
+			row.call({"ok": from.call(other, func(): return XYunshang.wake(logic, other))})
+			row.call({"ok": from.call(other, func(): return XYunshang.free_gift(logic, other, t))})
+			row.call({"ok": from.call(t, func(): return XYunshang.wake(logic, t))})
+			row.call({"ok": from.call(t, func(): return XYunshang.add_actions(logic, t, 1, "gift"))})
+			row.call({"ok": from.call(t, func(): return XYunshang.free_gift(logic, other, t))})
+			row.call(_cast2(logic, other, XYunshang.GIFT, 0 if t == a else 1))
+			row.call({"ok": from.call(other, func(): return XYunshang.free_gift(logic, other, logic.state.actor(8)))})
 		"p2.store":
 			snap.call({"storeMeets": logic.can_use(ally, XDB.rec("Skills", XYunshang.STORE))})
 			snap.call(_cast2(logic, ally, XYunshang.STORE, 0))
