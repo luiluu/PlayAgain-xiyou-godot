@@ -44,6 +44,10 @@ var field: Node2D
 var fx: Node2D
 ## 渡鸦特效层（XRavenFx，战场里），第一次放时才建
 var raven_fx: XRavenFx
+var _raven_action_serial := 0
+var _raven_cast_key := []
+## 这次行动里同技能的命中记录（施放特效画一组用）
+var _raven_hits: Array = []
 var combo: XComboCounter
 var record: XDamageRecord
 var ui: Control
@@ -1431,6 +1435,8 @@ func _play(logs: Array) -> void:
 				if acting:
 					await _finish_action(started)
 				started = Engine.get_physics_frames()
+				_raven_action_serial += 1
+				_raven_hits = logs.slice(i).filter(func(x): return x.type == "hit" and is_same(x.get("user"), l.user) and int(x.skill.get("id", 0)) == int(l.skill.get("id", 0)))
 				acting = true
 				combo.action_started()
 				var s: XBattlerSprite = sprites[l.user]
@@ -1528,6 +1534,10 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 		# Game_Action.isMagicSkill：技能类型在 System.magicSkills 里
 		var magic: Array = XDB.system().get("magicSkills", [])
 		s.set_motion("spell" if magic.has(int(skill.get("stypeId", 0))) or magic.has(float(skill.get("stypeId", 0))) else "skill")
+	var xt := XXuanTusuArt.motion_for(a, skill)  # ArtPack performAction 包装：专属技能绑定动作（盖在上面）
+	if xt != "":
+		s.set_motion(xt)
+	XXuanTusuArt.note_cast(a, skill)
 	# 谷雨 performAction 包装（原 performAction 之后）：五个主动技换自己的动作（治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill）
 	var own := XGuyu.action_motion(a, skill)
 	if own != "":
@@ -1545,6 +1555,10 @@ func _show_hit(l: Dictionary) -> void:
 	# 普通攻击动画（-1）照 showAttackAnimation：双持角色两把武器的动画同时放
 	var pairs := _attack_animations(l.user) if anim_id < 0 else [[anim_id, false]]
 	var started := []
+	if _raven_cast(l):  # 渡鸦 V.play：这几个技能换成矢量施放特效，同一次行动的其余目标画在同一组里
+		pairs = []
+		while raven_fx.busy():
+			await get_tree().physics_frame
 	for p in pairs:
 		var a := _start_animation(p[0], t)
 		if a:
@@ -1610,7 +1624,9 @@ func _hit_visual(l: Dictionary) -> bool:
 		if l.get("user_died", false):
 			_collapse_visual(l.user)
 	for kind in l.get("raven_fx", []):
-		_raven_fx(str(kind), t)  # 渡鸦 Game_Action.apply 包装：神话封解 ring、伤害技能每次 slash
+		# 渡鸦 Game_Action.apply 包装：神话封解 ring、伤害技能每次 slash；有施放特效的技能不再画（legacyFx 包装）
+		if not (str(kind) in ["slash", "ring"] and _raven_styled(l)):
+			_raven_fx(str(kind), t)
 	if l.died:
 		if gauges.has(t):
 			gauges[t].box.visible = false
@@ -1639,11 +1655,47 @@ func _perform_damage(t: XBattler) -> void:
 
 
 ## 渡鸦 R.Fx.play：特效层在战场里、战斗者之上，第一次用时才建
-func _raven_fx(kind: String, t: XBattler) -> void:
+func _raven_layer() -> XRavenFx:
 	if raven_fx == null:
 		raven_fx = XRavenFx.new()
 		field.add_child(raven_fx)
-	raven_fx.play(kind, sprites[t].position, t)
+	return raven_fx
+
+
+func _raven_fx(kind: String, t: XBattler) -> void:
+	_raven_layer().play(kind, sprites[t].position, t)
+
+
+func _raven_styled(l: Dictionary) -> bool:
+	return l.user is XActor and int(l.user.actor_id) == XRaven.ACTOR and XRavenFx.STYLES.has(int(l.skill.get("id", 0)))
+
+
+## 这次行动的所有目标画一组（Window_BattleLog.showNormalAnimation 收到整个目标表），只留动画的第一个音效；放过返回真，其余目标返回真但不再放
+func _raven_cast(l: Dictionary) -> bool:
+	if not _raven_styled(l):  # 不看「显示技能动画」：开关在里层 startAnimation，V.play 在外层
+		return false
+	var key := [l.user, int(l.skill.id), _raven_action_serial]
+	if _raven_cast_key == key:
+		return true
+	_raven_cast_key = key
+	var spots := []
+	var seen := []
+	for r in _raven_hits if not _raven_hits.is_empty() else [l]:
+		var t: XBattler = r.target
+		if seen.has(t) or not sprites.has(t):
+			continue
+		seen.append(t)
+		var s: XBattlerSprite = sprites[t]
+		spots.append(s.position - Vector2(0, clampf(s.height() * 0.45, 40.0, 100.0)))
+	if spots.is_empty():
+		return false
+	_raven_layer().play_cast(int(l.skill.id), spots, sprites[l.user].position - Vector2(0, 48))
+	for timing in XDB.rec("Animations", int(l.skill.animationId)).get("timings", []):
+		var cue = timing.get("se")
+		if cue is Dictionary and str(cue.get("name", "")) != "":
+			play_se(cue)
+			break
+	return true
 
 
 ## 行动序列里的倒下：不等倒下演完（正式版 performCollapse 只启动效果，WAIT FOR EFFECT 才等）

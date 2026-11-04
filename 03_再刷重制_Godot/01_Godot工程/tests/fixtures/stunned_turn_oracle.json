@@ -1630,6 +1630,49 @@
     }
    },
    "errors": []
+  },
+  {
+   "id": "gate.lifelink",
+   "setup": {},
+   "observed": {
+    "has": true,
+    "before": [
+     5215,
+     1
+    ],
+    "after": [
+     5215,
+     1
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "gate.party",
+   "setup": {},
+   "observed": {
+    "bound": true,
+    "same": true,
+    "foes": true,
+    "own": [
+     [],
+     [
+      [
+       "_yunActionSource",
+       null,
+       "\"original\""
+      ]
+     ],
+     [],
+     [],
+     []
+    ],
+    "wait": [
+     2,
+     0
+    ]
+   },
+   "errors": []
   }
  ]
 }

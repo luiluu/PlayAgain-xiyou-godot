@@ -243,6 +243,8 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return XCat.icon_texture(index)
 	if XYunshang.icon_slot(index) >= 0:  # 云裳的 HD 图集（技能、天衣、织神天梭、号角、天丝）
 		return XYunshang.icon_texture(index)
+	if not XXuanTusuArt.icon_slot(index).is_empty():  # 璇、屠苏的 HD 图集
+		return XXuanTusuArt.icon_texture(index)
 	if index == XDemonCrown.ICON:  # 魔冠自带的大图（CodexQualityIcons demonCrownArt）
 		return XDemonCrown.icon_texture()
 	var sheet := floori(index / 1600.0)

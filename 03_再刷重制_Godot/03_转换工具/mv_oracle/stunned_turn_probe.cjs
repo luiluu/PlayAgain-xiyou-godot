@@ -75,4 +75,45 @@ cases.push(makeCase('enemy.sleep', {}, () => {
   run(bm);
   return {canMove: e.canMove(), before: a0, after: read(e)};
 }));
+// 敌人跳过的回合不走 endAction：连命的 syncRelations 不跑。这里绕过 gainHp 直接写队友生命制造不同步，看这一回合会不会被拉回来
+cases.push(makeCase('gate.lifelink', {}, () => {
+  const {bm, u} = battle(1), AL = w.CodexAlienation, mate = w.$gameActors.actor(8), e = w.$gameTroop.members()[0];
+  const item = AL.create('w', 1044, 'boss', 'lifelink');
+  AL.mark(item).config = {actorId: 1, partnerId: 8};
+  u._equips[0].setObject(item);
+  AL.lockParty();
+  mate._hp = 1;
+  const a0 = [u.hp, mate.hp];
+  e._actions = []; bm._subject = e; bm._action = null; bm._phase = 'turn';
+  bm.processTurn();
+  run(bm);
+  return {has: AL.has(u, 'lifelink'), before: a0, after: [u.hp, mate.hp]};
+}));
+// 门外各模块（审查 36）：屠苏持武中、谷雨在场、小猫在场，1、8 号穿心钢 7900、狂妄 7902：敌人被控这一回合，全队读数和自身字段都不变
+cases.push(makeCase('gate.party', {}, () => {
+  const party = [176, 175, 178, 1, 8];
+  newGame();
+  w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  w.$gameSwitches.setValue(2494, true);
+  w.eval(`$gameParty._actors=[${party}]; $gameParty._battleMembers=[${party}];`);
+  for (const id of party) w.$gameActors.actor(id).changeLevel(60, false);
+  for (const [id, armor] of [[1, 7900], [8, 7902]]) { const x = w.$gameActors.actor(id), item = w.$dataArmors[armor]; w.$gameParty.gainItem(item, 1); x.forceChangeEquip(x.equipSlots().indexOf(item.etypeId), item); }
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  const bm = w.BattleManager; bm.setup(TROOP, false, false);
+  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  w.SceneManager._scene = {_otbDisplayWindow: stub};
+  for (const t of w.$gameTroop.members()) t._paramPlus[0] = 1e9;
+  const all = () => party.map(id => w.$gameActors.actor(id));
+  for (const b of [...all(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
+  bm.startBattle(); bm.startTurn(); bm._phase = 'turn';
+  const ts = all()[0], act = new w.Game_Action(ts);
+  act.setSkill(w.CodexTusu.ids().skill['huawu.sword']); act.setTarget(party.indexOf(1)); ts.setMp(ts.mmp); ts._actions = [act]; bm._subject = ts; bm._action = null; bm.startAction(); run(bm);
+  const e = w.$gameTroop.members()[0];
+  e.addNewState(SLEEP); e._stateTurns[SLEEP] = 3; e.addNewState(TICK); e._stateTurns[TICK] = 3; e.refresh();
+  const a0 = all().map(read), o0 = all().map(own), f0 = foes();
+  e._actions = []; bm._subject = e; bm._action = null; bm._phase = 'turn';
+  bm.processTurn(); run(bm);
+  return {bound: w.CodexBinding.isBound(ts), same: JSON.stringify(a0) === JSON.stringify(all().map(read)), foes: JSON.stringify(f0) === JSON.stringify(foes()),
+    own: all().map((x, i) => diffOwn(o0[i], own(x))), wait: [w.$gameActors.actor(1)._codexHeartsteelWait || 0, w.$gameActors.actor(8)._codexHubrisMoves || 0]};
+}));
 process.exit(finish(host, 'stunned_turn.json', {hostScope: '真实 processTurn 下被控角色与敌人的这一回合', cases}) ? 0 : 1);
