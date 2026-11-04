@@ -57,6 +57,7 @@ class KnownBlocksTests(unittest.TestCase):
     def setUpClass(cls):
         db, manifest, maps = mod.load(mod.GENERATED)
         g, _ = mod.build_graph(db, manifest, maps)
+        cls.db = db
         cls.rows = mod.blocks(db, g)
 
     def one(self, state, phase=None):
@@ -64,21 +65,20 @@ class KnownBlocksTests(unittest.TestCase):
         self.assertTrue(got, state)
         return got[0]
 
+    # 规则期每翻一族块数就变，这里不写死总数，也不拿快要翻掉的族举例（八戒 rules3）
     def test_inventory(self):
-        self.assertEqual(len(self.rows), 315)  # 同 xiyou_state_effects_tp 的 inventory.merged_315
+        count = sum(e.get('op') == 'js' for st in self.db['States'] if st for e in st.get('effects', []))
+        self.assertEqual(len(self.rows), count)
 
     def test_known_families(self):
-        self.assertEqual(self.one(1270)['family'], '复活')
-        self.assertEqual(self.one(105, 'react')['family'], '护盾')
-        self.assertEqual(self.one(105, 'remove')['family'], '护盾')
+        self.assertEqual(self.one(1060, 'react')['family'], '伤害 react／confirm')
+        self.assertEqual(self.one(1306, 'turn_start')['family'], 'reserveCommonEvent')
         self.assertEqual(sum(r['family'] == '换装' for r in self.rows), 142)
-        self.assertEqual(sum(r['family'] == '护盾' for r in self.rows), 14)
 
     def test_known_reach(self):
-        self.assertEqual(self.one(112, 'react')['tier'], '切片可达')       # 技能 1112
-        self.assertEqual(self.one(1270)['tier'], '切片可达')                # 诅咒技能 7208 的 StartAEPushState1270，7208 由切片公共事件 1442 教
-        self.assertEqual(self.one(1840)['tier'], '切片可达')               # 技能 6042 的 StartPushState1840（rules1b 粗查漏了这类备注标签）
-        self.assertEqual(self.one(494)['tier'], '不可达')                  # 九命：数据里查不到谁加
+        self.assertEqual(self.one(1060, 'react')['tier'], '切片可达')       # 技能 5571
+        self.assertEqual(self.one(1840)['tier'], '切片可达')               # 技能 6042 的 StartPushState1840（rules1b 粗查漏了这类备注）
+        self.assertEqual(self.one(377, 'react')['tier'], '不可达')          # 反伤物理：数据里查不到谁加
 
 
 if __name__ == '__main__':
