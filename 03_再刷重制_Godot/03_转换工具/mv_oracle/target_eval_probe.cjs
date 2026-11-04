@@ -4,6 +4,7 @@
 // 目标：真敌人走真 Game_Action.makeTargets，Math.random 按写好的带子给值、记调用次数；sort 的比较次数与次序靠这个量（node 的 V8 TimSort，短数组＝找连续段＋二分插入）。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044），探针宿主默认开着；本探针不读伤害，关掉与否产物一致
 const TAPES = [];
 { let x = 12345; for (let t = 0; t < 12; t++) { const a = []; for (let i = 0; i < 40; i++) { x = (x * 1103515245 + 12345) % 2147483648; a.push(+(x / 2147483648).toFixed(6)); } TAPES.push(a); } }
 TAPES.push(new Array(40).fill(0), new Array(40).fill(0.5), new Array(40).fill(0.9));
