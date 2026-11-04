@@ -68,8 +68,11 @@ static func start(host: Node2D, body: Sprite2D, rng: RandomNumberGenerator, left
 		sp.texture = tex
 		sp.centered = false
 		sp.region_enabled = true
-		sp.region_rect = Rect2(g.x, g.y, mini(frag, tw - g.x), mini(frag, th - g.y))
-		sp.offset = Vector2(-frag / 2.0, -frag)   # 锚点 (0.5, 1)
+		var rw := mini(frag, tw - g.x)
+		var rh := mini(frag, th - g.y)
+		sp.region_rect = Rect2(g.x, g.y, rw, rh)
+		# 锚点 (0.5, 1) 按裁剪后的取图框算：Sprite._refresh 把越界部分裁掉，PIXI 的 texture.orig 就是裁剪后的框，所以边缘块的偏移比整块小（审查 41 P3-2）
+		sp.offset = Vector2(-rw / 2.0, -rh)
 		sp.position = Vector2(g.px, g.py)
 		sp.material = body.material
 		fx.add_child(sp)

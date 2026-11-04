@@ -88,6 +88,7 @@ prepare() {
     print -r -- "$out" | grep -E 'ERROR|FAIL' | head -8
     print -u2 "✗ 导入失败 (rc=$rc)"; exit 1
   fi
+  python3 "$ENV_DIR/补跑事件状态探针.py" || true   # 有状态变体的产物同步才有，新工作树先补量（审查 41 P2-1）
   print "✓ 已补齐 $wt"
   print "  分支 $(git -C "$wt" rev-parse --abbrev-ref HEAD)；检查：$GODOT_SUB/07_开发环境/检查.sh（worktree 里自动只并行 2 个测试）"
   print "  注：generated/oracle 来自主工作区（合并 main 后再跑一次 --补齐 即刷新较旧的）；本车道改了参照探针时，刷新后在本 worktree 跑 同步正式西游.py（自动不登记）"

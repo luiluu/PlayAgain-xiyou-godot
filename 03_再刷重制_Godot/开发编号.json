@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.329",
-  "sequence": 329,
-  "next": "dev.330",
-  "nextSequence": 330,
+  "current": "dev.332",
+  "sequence": 332,
+  "next": "dev.333",
+  "nextSequence": 333,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bajie-events1",
+  "currentChange": "wukong-raven1",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

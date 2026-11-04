@@ -209,8 +209,8 @@ func _run() -> void:
 	XDungeon.restore_hang_up = false
 	XDungeon.battle_end_counts = false
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
+	# 只对修正表里那几扇门的用例关（逐用例设，见循环里）；其余用例保持修正生效的真实路径（审查 41 P3-6）
 	_saved_seal_fix = MVInterpreter.seal_check_fix
-	MVInterpreter.seal_check_fix = {}
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -245,11 +245,14 @@ func _run() -> void:
 	var oracle_errors := []
 	# 有状态变体（event_state_probe：同一批事件页，运行前按预设改好初始状态，让新游戏走不到的分支被量到；号为 基础号#tag）
 	var all_cases: Array = oracle.cases.duplicate()
+	# 文件缺失不能静默跳过变体（审查 41 P2-1：测试通过但变体没比＝空绿）：缺就失败，补量用 07_开发环境/补跑事件状态探针.py（检查.sh／新建工作树.sh 会自动跑）
+	check("states_present", FileAccess.file_exists(ORACLE_STATES))
 	if FileAccess.file_exists(ORACLE_STATES):
 		var st = JSON.parse_string(FileAccess.get_file_as_string(ORACLE_STATES))
 		check("states_loaded", st is Dictionary and st.has("cases"))
 		if st is Dictionary and st.has("cases"):
 			all_cases.append_array(st.cases)
+			check("states_cases_present", st.cases.size() > 0)
 	for c in all_cases:
 		if not only.is_empty() and not only.any(func(p): return str(c.id).begins_with(p)):
 			continue
@@ -263,6 +266,8 @@ func _run() -> void:
 			states_started = true
 			DirAccess.remove_absolute(XGlobalVars.path())
 			XGlobalVars._loaded_path = "<unloaded>"
+		var door := RegEx.create_from_string("^m(\\d+)e(\\d+)p").search(str(c.id))
+		MVInterpreter.seal_check_fix = {} if door != null and _saved_seal_fix.has("%s:%s" % [door.get_string(1), door.get_string(2)]) else _saved_seal_fix
 		var got := await _run_case(c, host)
 		var diffs := _compare(c, got)
 		var row := {"id": c.id, "ok": diffs.is_empty(), "diffs": diffs, "skipped": got.skipped, "aborted": got.aborted}
