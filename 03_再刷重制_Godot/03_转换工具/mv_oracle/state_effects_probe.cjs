@@ -548,7 +548,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
         script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
         const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
         const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
-        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, errors: errors.slice(),
+        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
           a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
       }
     // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
@@ -566,7 +566,7 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
       const act = new w.Game_Action(a); act.setSkill(1);
       const before = {ahp: a.hp, amhp: a.mhp, ehp: e.hp, emhp: e.mhp, eshield: e._Shield};
       act.apply(e);
-      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, errors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, sourceErrors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
     }
   } finally {
     Object.assign(item.damage, originalDamage); item.hitType = originalHit;

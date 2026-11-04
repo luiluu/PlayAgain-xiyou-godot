@@ -172,6 +172,88 @@ class CloudWaitTests(unittest.TestCase):
         self.git('push', '-q', '--delete', 'origin', 'refs/ci/results/%s/affected' % c2)
         self.assertEqual(mod.verified_base(str(self.remote), mod.cache_repo()), c1)
 
+    def commit_msg(self, name, msg, subdir=None):
+        path = self.repo / (subdir or '') / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+        self.git('add', str(path.relative_to(self.repo))); self.git('commit', '-q', '-m', msg)
+        return self.git('rev-parse', 'HEAD')
+
+    def test_local_verified_base_chain(self):
+        """tools58：带「验证: 选测」尾注、且基准链接得到云端通过提交的收尾提交可当选测基准；链断了、XIYOU_CI_BASE=cloud 退回云端。"""
+        mod = self.load_tool()
+        c1 = self.sha
+        self.publish('affected', sha=c1)
+        a = self.commit('a')                                           # 未验的改动
+        x1 = self.commit_msg('x1', '收尾 1\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % c1[:9])
+        docs = self.commit_msg('板.md', '交接板', subdir='00_项目管理')    # 只改文档的提交不断链
+        x2 = self.commit_msg('x2', '收尾 2\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % docs[:9])
+        broken = self.commit_msg('x3', '收尾 3\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % a[:9])  # 基准 a 没验过：断链
+        self.commit('tip')
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        url, bare = str(self.remote), mod.cache_repo()
+        os.environ.pop('XIYOU_CI_BASE', None)
+        self.assertEqual(mod.local_verified_base(url, bare), x2)
+        self.assertEqual(mod.verified_base_info(url, bare), (x2, '本机已验的合并'))
+        self.assertNotEqual(mod.local_verified_base(url, bare), broken)
+        os.environ['XIYOU_CI_BASE'] = 'cloud'
+        try:
+            self.assertIsNone(mod.local_verified_base(url, bare))
+            self.assertEqual(mod.verified_base_info(url, bare), (c1, '上次云端通过的祖先'))
+        finally:
+            os.environ.pop('XIYOU_CI_BASE')
+
+    def test_local_verified_base_prefers_newer_cloud_result(self):
+        mod = self.load_tool()
+        c1 = self.sha
+        self.publish('affected', sha=c1)
+        self.commit_msg('x1', '收尾\n\n验证: 选测（基准 %s，x）' % c1[:9])
+        c3 = self.commit('c3')
+        self.commit('tip')
+        self.publish('affected', sha=c3)
+        os.environ.pop('XIYOU_CI_BASE', None)
+        self.assertEqual(mod.verified_base_info(str(self.remote), mod.cache_repo()), (c3, '上次云端通过的祖先'))
+
+    def test_snapshot_parent_makes_push_incremental(self):
+        """tools58：快照提交挂在远端当前快照上，只改小文件时推送的包很小；无父提交（XIYOU_CI_PARENT=0）则整份重传。"""
+        mod = self.load_tool()
+        gen = Path(self.temp.name) / 'gen'
+        gen.mkdir()
+        (gen / 'big.bin').write_bytes(os.urandom(3_000_000))
+        (gen / 'small.json').write_text('1')
+        bare, url, ref = mod.cache_repo(), str(self.remote), mod.GEN_PREFIX + 'main'
+
+        def snap(parent):
+            tree, _ = mod.snapshot(gen, bare)
+            args = ['commit-tree', tree] + (['-p', parent[0]] if parent[0] else [])
+            c = mod.git(*args, git_dir=bare, env=mod.BOT, input='snap\n\n%s\n' % json.dumps({'depth': parent[1]}))
+            return c
+
+        def pack_size(commit, remote_tip):
+            return len(subprocess.run(['git', '--git-dir', str(bare), 'pack-objects', '--revs', '--thin', '--stdout'], capture_output=True,
+                                      input=('%s\n^%s\n' % (commit, remote_tip)).encode()).stdout)
+        os.environ.pop('XIYOU_CI_PARENT', None)
+        first = snap(mod.snapshot_parent(bare, {}, ref))
+        self.assertEqual(mod.snapshot_parent(bare, {}, ref), (None, 0))
+        mod.git('push', '-q', '--force', url, '%s:%s' % (first, ref), git_dir=bare)
+        remote_has = {ref: first}
+        (gen / 'small.json').write_text('2')
+        self.assertEqual(mod.snapshot_parent(bare, remote_has, 'refs/ci/generated/new-branch'), (first, 1))   # 新分支接 main
+        second = snap(mod.snapshot_parent(bare, remote_has, ref))
+        self.assertEqual(mod.git('rev-parse', second + '^', git_dir=bare), first)
+        self.assertLess(pack_size(second, first), 20_000)
+        os.environ['XIYOU_CI_PARENT'] = '0'
+        try:
+            self.assertEqual(mod.snapshot_parent(bare, remote_has, ref), (None, 0))
+            orphan = snap(mod.snapshot_parent(bare, remote_has, ref))
+        finally:
+            os.environ.pop('XIYOU_CI_PARENT')
+        self.assertGreater(pack_size(orphan, first), 2_000_000)
+        remote_has = {ref: mod.git('commit-tree', mod.git('rev-parse', first + '^{tree}', git_dir=bare), '-p', first, git_dir=bare, env=mod.BOT,
+                                   input='x\n\n{"depth": %d}\n' % (mod.PARENT_MAX - 1))}
+        self.assertEqual(mod.snapshot_parent(bare, remote_has, ref), (None, 0))                       # 链满了重起
+        self.assertEqual(mod.snapshot_parent(bare, {ref: '1' * 40}, ref), (None, 0))                    # 本地没有远端那个提交
+
     def load_tool(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location('cloud', self.tool)
