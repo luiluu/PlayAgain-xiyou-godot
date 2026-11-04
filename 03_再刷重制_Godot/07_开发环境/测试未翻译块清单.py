@@ -72,11 +72,11 @@ class KnownBlocksTests(unittest.TestCase):
 
     def test_known_families(self):
         self.assertEqual(self.one(377, 'react')['family'], '伤害 react／confirm')
-        self.assertEqual(self.one(1771, 'apply')['family'], 'reserveCommonEvent')
+        self.assertEqual(self.one(887, 'establish')['family'], 'reserveCommonEvent')  # 1771 已由 rules8 翻掉，剩这一块
         self.assertEqual(sum(r['family'] == '换装' for r in self.rows), 0)  # rules6 换装走模板
 
     def test_known_reach(self):
-        self.assertEqual(self.one(1771, 'apply')['tier'], '全游戏可达')
+        self.assertEqual(sum(r['tier'] == '全游戏可达' for r in self.rows), 0)   # rules8 把全游戏可达的都翻了
         self.assertEqual(self.one(377, 'react')['tier'], '不可达')          # 反伤物理：数据里查不到谁加
 
 

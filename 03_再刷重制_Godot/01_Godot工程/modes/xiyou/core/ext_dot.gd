@@ -11,7 +11,7 @@ extends RefCounted
 ## - 走资源上下文的 gainHp（护盾吸收、绑定、导入角色等都在那一层）；每次先清、后清结果槽，全部算完把原结果槽放回；
 ##   弹字与动画放进 regen 记录（hp＝结果槽 hpDamage，animation＝备注里的动画，没写按插件默认 59／46）。
 ## - 不做 maxSlipDamage（可以把持有者扣到 0，和 HP 再生率不同）；不播倒下（插件里 performCollapse 被注释掉），倒下由回合末结算统一演。
-## 没做：2038 的自定义再生公式里「施加者是角色」的分支（原版读全局泄漏的 value，实测起点 0＝什么也不做）；NaN 结果（原版把角色扣到 0，数据里没有）。
+## 没做：（2038 的 Apply Effect 已由 state_effects 翻译，dot2）2038 的自定义再生公式里「施加者是角色」的分支（原版读全局泄漏的 value，实测起点 0＝什么也不做）；NaN 结果（原版把角色扣到 0，数据里没有）。
 static var diagnostics: Array = []  ## 测试用：[{state, holder, reason}]
 ## 测试接缝（生产里为空）：context＝Callable(context, a, b, state_id) 改公式读到的能力值；element_rate＝Callable(b, element) -> float
 static var test_hooks := {}
@@ -82,12 +82,13 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 		return
 	var value := 0.0
 	if kind == "damagedot":
-		# 2038：施加者是角色→原版取全局泄漏值，起点 0＝什么也不做；否则读持有者的 damagedot（Apply Effect 写入）
-		if a is XActor or not b.state_data.has("damagedot"):
+		# 2038：施加者是角色→原版取全局泄漏值，起点 0＝什么也不做；否则读持有者的 damagedot（Apply Effect 写入 state_data._damagedot，
+		# 见 state_effects 2038 apply；敌人持有者 hasSkill 报错没写＝原版 value 是 undefined，gainHp(NaN) 对敌人什么也没改，只多一个 0 的弹字，这里不弹）
+		if a is XActor or not b.state_data.has("_damagedot"):
 			if not a is XActor:
 				_diag(st, b, "damagedot_unset")
 			return
-		value = maxf(0.0, float(b.state_data.damagedot))
+		value = maxf(0.0, float(b.state_data._damagedot))
 	else:
 		var program: Dictionary = d.program
 		var context := XFormulaContext.capture(a, b, logic.vars(), {}, 0, program)

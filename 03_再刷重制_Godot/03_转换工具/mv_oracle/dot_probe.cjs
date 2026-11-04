@@ -332,4 +332,21 @@ cases.push(mk('leak2038', {}, () => {
   return out;
 }));
 
+// 10) dot2：2038 的 Apply Effect（写 holder.damagedot、变量 1218）接上以后的整条链：加状态（真实 addState 跑 Apply Effect）→回合结束。
+// 持有者 角色（学过／没学 7520）／敌人 × 施加者 a1／e0／e1／无 × v1218 起点。敌人没有 hasSkill：Apply Effect 报错中断，damagedot 不写，再生公式读到 undefined。
+cases.push(mk('apply2038', {}, () => {
+  const out = {};
+  for (const holderKind of ['actor', 'enemy']) for (const learned of holderKind === 'actor' ? [false, true] : [false]) for (const ok of ['a1', 'e0', 'e1', 'none']) for (const v0 of [0, 3]) {
+    const env = battle(2); const h = prep(env, holderKind); setSeq([0.5]); delete w.value; w.eval('var __x=0');
+    const keep = h._skills ? h._skills.slice() : null;
+    if (holderKind === 'actor') { h._skills = keep.filter(x => x !== 7520).concat(learned ? [7520] : []); h.need_refresh = true; h.refresh(); }
+    w.$gameVariables.setValue(1218, v0); errors.length = 0;
+    giveState(h, 2038, ok, env);
+    const applied = {damagedot: h.damagedot === undefined ? null : h.damagedot, v1218: w.$gameVariables.value(1218), mat: h.mat, errors: errors.splice(0)};
+    out[`${holderKind}.${learned ? 'learned' : 'plain'}.${ok}.${v0}`] = {applied, ...runTurnEnd(h, env)};
+    if (keep) { h._skills = keep; h.need_refresh = true; } w.$gameVariables.setValue(1218, 0); delete h.damagedot;
+  }
+  return out;
+}));
+
 process.exit(finish(host, 'dot.json', {scope: 'YEP_X_ExtDoT processDamageOverTimeStates on frozen source; synthetic states only parsed by native processEDoTNotetags1', cases}) ? 0 : 1);

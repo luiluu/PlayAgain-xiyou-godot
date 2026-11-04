@@ -900,6 +900,38 @@ cases.push(makeCase('poison.blocks', {state: 732, armor: 3590}, () => {
   }
   return {rows};
 }));
+// dot2 火遁初级燃烧 2038（addState）：user＝target＝持有者（customEffectEval 里 var user = this），所以 damagedot＝持有者自己的 MAT*50*(1+v1218)。
+// v1218 先加（学过 7520 再 +3，再 +1）后读；敌人没有 hasSkill（TypeError，整块中断：变量与 damagedot 都不动）。重复加状态再写一遍（覆盖）。
+cases.push(makeCase('damagedot.apply', {state: 2038, skill: 7520}, () => {
+  const {a, e} = battle(2), oldError = w.Yanfly.Util.displayError, errors = [];
+  w.Yanfly.Util.displayError = error => errors.push(String(error).slice(0, 70));
+  const rows = [];
+  try {
+    for (const [who, learned, v0, matPlus, times] of [['a', false, 0, 0, 1], ['a', true, 0, 0, 1], ['a', false, 4, 0, 1], ['a', true, 4, 0, 1], ['a', false, 0, 77, 1],
+      ['a', true, 9, 123, 1], ['a', false, 2, 0, 2], ['a', true, 2, 0, 2], ['e', false, 0, 0, 1], ['e', false, 6, 0, 1], ['e', false, 3, 0, 2]]) {
+      const h = who === 'a' ? a : e; const keep = a._skills.slice();
+      h.clearStates(); delete h.damagedot; h._paramPlus[4] = matPlus; h.need_refresh = true; h.refresh(); errors.length = 0;
+      if (who === 'a') { a._skills.length = 0; for (const s of keep) if (s !== 7520) a._skills.push(s); if (learned) a._skills.push(7520); a.need_refresh = true; a.refresh(); }
+      w.$gameVariables.setValue(1218, v0);
+      const steps = [];
+      for (let i = 0; i < times; i++) { h.customEffectEval(2038, 'addState'); steps.push({damagedot: h.damagedot === undefined ? null : h.damagedot, v1218: w.$gameVariables.value(1218), mat: h.mat}); }
+      rows.push({who, learned, v0, matPlus, times, steps, hasSkill: who === 'a' ? a.hasSkill(7520) : null, sourceErrors: errors.slice()});
+      h._paramPlus[4] = 0; delete h.damagedot; a._skills.length = 0; for (const s of keep) a._skills.push(s); a.need_refresh = true; h.need_refresh = true; h.refresh();
+    }
+    // 实战：真实 addState（状态来源者在加状态之后才写，addState 里 customEffectEval 先于 setStateOrigin 之外的顺序也一并记）
+    const real = [];
+    for (const [who, v0] of [['a', 0], ['e', 0], ['a', 5]]) {
+      const h = who === 'a' ? a : e; h.clearStates(); delete h.damagedot; h.need_refresh = true; h.refresh(); w.$gameVariables.setValue(1218, v0); errors.length = 0;
+      const had = h.isStateAddable(2038); h.addState(2038);
+      real.push({who, v0, addable: had, has: h.isStateAffected(2038), damagedot: h.damagedot === undefined ? null : h.damagedot, v1218: w.$gameVariables.value(1218), mat: h.mat, sourceErrors: errors.slice()});
+      h.clearStates(); delete h.damagedot;
+    }
+    return {rows, real};
+  } finally {
+    w.Yanfly.Util.displayError = oldError; w.$gameVariables.setValue(1218, 0);
+    for (const t of [a, e]) { t._states.length = 0; t.clearResult(); delete t.damagedot; delete t._stateOrigin; }
+  }
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来

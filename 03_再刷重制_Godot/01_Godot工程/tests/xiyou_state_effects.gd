@@ -340,6 +340,9 @@ func _run() -> void:
 	check("poison.oracle_present", cases.has("poison.blocks"))
 	if cases.has("poison.blocks"):
 		_poison_blocks(cases["poison.blocks"].observed)
+	check("damagedot.oracle_present", cases.has("damagedot.apply"))
+	if cases.has("damagedot.apply"):
+		_damagedot_apply(cases["damagedot.apply"].observed)
 	check("rest2.oracle_present", cases.has("rest2.blocks"))
 	if cases.has("rest2.blocks"):
 		_rest2_blocks(cases["rest2.blocks"].observed)
@@ -1618,6 +1621,41 @@ func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## dot2：2038 火遁初级燃烧 apply（state_effects_probe damagedot.apply）。user＝target＝持有者；v1218 先 +1（学过 7520 再 +3）后读；
+## damagedot＝持有者 MAT×50×(1+v1218) 写进 state_data._damagedot；敌人没有 hasSkill（TypeError），整块不生效。
+func _damagedot_apply(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("damagedot.rows", o.rows.size() == 11 and o.real.size() == 3, [o.rows.size(), o.real.size()])
+	var rec := XDB.rec("States", 2038)
+	check("damagedot.translated", rec.effects.any(func(e): return e.phase == "apply" and e.op == "effect_program") and not rec.effects.any(func(e): return e.phase == "apply" and e.op == "js"), rec.effects)
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		XEnemy.force_roll = 100.0
+		var s := XState.new_game(3, 1, [8])
+		XState.current = s
+		var logic := ReviveLogic.new()
+		logic.elite_roll = 100.0
+		logic.setup(2, s)
+		var h: XBattler = logic.actors[0] if row.who == "a" else logic.enemies[0]
+		if row.who == "a" and row.learned:
+			(h as XActor).learn_skill(7520)
+		s.set_variable(1218, float(row.v0))
+		var plain_mat := h.mat
+		h.state_ids.append(2038)
+		var ctx := {"execute": true, "resources": XResourceContext.new()}
+		for step_index in range(row.steps.size()):
+			XStateEffects.run_one("apply", h, rec, ctx)
+			var step: Dictionary = row.steps[step_index]
+			var tag := "damagedot.row%d.step%d" % [index, step_index]
+			check(tag + ".v1218", s.variable(1218) == float(step.v1218), [s.variable(1218), step.v1218])
+			if step.damagedot == null:
+				check(tag + ".no_field", not h.state_data.has("_damagedot"), h.state_data.get("_damagedot"))
+			else:
+				var ratio: float = 50.0 * (1.0 + float(step.v1218))
+				check(tag + ".field", is_equal_approx(float(h.state_data.get("_damagedot", -1.0)), plain_mat * ratio), [h.state_data.get("_damagedot"), plain_mat, ratio])
+				check(tag + ".native", is_equal_approx(float(step.damagedot), float(step.mat) * ratio), [step.damagedot, step.mat, ratio])
 
 
 ## rules8 第二批：regenerate、回合／行动钩子、变量与计数器、公共事件预约（state_effects_probe rest2.blocks）。
