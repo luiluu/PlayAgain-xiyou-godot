@@ -2799,7 +2799,10 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertEqual(log.read_text().split(), ['--oracle'])
-        self.assertNotIn('验证:', self.g('log', '-1', '--format=%B'))
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('验证: 全量', body)             # tools60（审查 37 P3）：全量 finish 也写尾注，云端选测.py 的基准认它
+        self.assertNotIn('验证: 选测', body)
+        self.assertNotIn('手补:', body)
 
     def close(self, *args, **env):
         result = subprocess.run([sys.executable, str(HERE / '合并车道.py'), '--root', str(self.root), '--close-batch', *args],
@@ -3035,6 +3038,14 @@ sys.exit(0)
         self.assertEqual(self.call('--finish'), 1)
         self.assertEqual(self.call('--finish', '--also', 'AGENTS.md'), 0, self.last_output)
         self.assertIn('AGENTS.md', self.g('show', '--name-only', '--format=', 'HEAD'))
+        self.assertIn('手补: AGENTS.md', self.g('log', '-1', '--format=%B'))   # tools60：收尾带了非版本／登记／文档的改动就记下，基准函数据此退回合并提交
+
+    def test_release_only_path_matches_cloud_tool(self):
+        cloud = load('cloud_select_for_release', HERE / '云端选测.py')
+        for path, expect in [('03_再刷重制_Godot/开发编号.json', True), ('00_项目管理/变更记录.md', True), ('03_再刷重制_Godot/00_设计/优化登记.md', True),
+                             ('x.gd.uid', True), ('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd', False), ('AGENTS.md', False)]:
+            self.assertEqual(merge.release_only_path(path), expect, path)
+            self.assertEqual(cloud.release_only([path]), expect, path)
 
 
 if __name__ == '__main__':

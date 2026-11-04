@@ -75,6 +75,13 @@ def run(root, args, env=None):
     subprocess.run(list(map(str, args)), cwd=root, check=True, env=env)
 
 
+def release_only_path(path):
+    """版本号、登记、文档类文件（与 云端选测.py 的 release_only 同口径）：收尾提交里只有这些改动不算手补代码。"""
+    p = str(path)
+    return p in {str(SUB / '开发编号.json'), str(PROJECT / 'project.godot'), str(PROJECT / 'content/build_info.json')} \
+        or p.endswith('.uid') or (p.startswith(('00_项目管理/', str(SUB / '00_设计') + '/')) and p.endswith(('.md', '.json')))
+
+
 def cloud_env(*lanes):
     """--cloud 时给 检查.sh 的环境：本批各条都没带切片／参照刷新（refresh）时，转换产物与 GitHub 上 main 的快照一致，云端不必重传。"""
     env = dict(os.environ)
@@ -1405,6 +1412,12 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             note = reuse_note(root)
             reused = note.read_text().strip().splitlines() if note.is_file() else []
             trailer += ''.join('\n沿用: ' + line for line in reused)
+        elif not batch:
+            trailer += '\n验证: 全量'  # 不加 --affected 的 --finish 跑的是整轮；云端选测.py 的 local_verified_base 认它（tools60，审查 37 P3）
+        if not batch:
+            hand = sorted(p for p in changed if not release_only_path(p))
+            if hand:  # 收尾提交里手补的代码：云端选测.py 不把这样的收尾提交当基准，退回合并提交（tools60，审查 37 P2-3）
+                trailer += '\n手补: ' + '、'.join(hand)
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
