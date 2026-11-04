@@ -1,29 +1,20 @@
 # 交付：cc/wukong-custom1b（接自 98dabaed）
 
 - 车道／工作者：C 规则／悟空（cc）
-- 状态：**未完成，不可合并**。Kyo 11-04 说停手收工，停在写专项之前。下面的代码**一次都没跑过**，只跑了语法检查（结果见本分支提交说明）。
+- 状态：**可合并**（云端选测结果见「验证」）。接自 cc/wukong-custom1 头 98dabaed（那条代码一次没跑过，本期补专项、跑通、修了排序）。
 
-## 接续要点
+## 本期做了什么
 
-已提交（WIP）：
-
-- 探针 `03_转换工具/mv_oracle/target_eval_probe.cjs`，已跑，35 个用例无错，产物拷到 `tests/fixtures/target_eval_oracle.json`（不进同步，名字符合探针登记检查）。
-- `battle_logic.gd`：`target_eval`、`_eval_targets`、`_v8_shuffle` 接在 `_targets_for` 开头；`skill_item_costs`、`can_pay_items`、`pay_items`、`item_cost_rows` 接在 `can_use`、`pay_skill_cost`。
-- `skill_scene.gd`（菜单付费、费用显示）、`battle_scene.gd`（战斗列表费用显示）。
-- `battle_event_runner.gd`：`_freeze_followup_script`（CE1321）。
-
-还没做：
-
-1. 写专项 `tests/xiyou_target_eval.gd`＋`.tscn`，对照夹具：用 `XRandomStream.scripted`，带子条目 `{"kind":"float","value":v}`，夹具顶层 `tapes`；比目标和 `rule.draws`（对应 `calls`）。人数 1～8 时直接给 `l.actors` 赋值（没确认 `setup` 有没有人数上限）。回春术要 4 个敌人，`XEnemy.new().setup(...)` 塞进 `l.enemies`。
-2. 消耗物品断言：`cost.parsed`、`cost.pay.*`，再加菜单用 2610 扣物品、智能 AI 不选付不起的技能。
-3. 冻结追击断言：放 6171 且会 6175 → `pending_force` 是 6172；不会 6175、敌人放都不追。原版语义只读了代码，这条没有探针数据。
-4. 普查清单：见下，把 E 类改成断言全认得。
-5. 先跑 `选测.py main --list`，选测＋专项，`--oracle` 按需；`git merge main`（改了探针，可能要 `--补齐`）；写完本单「验证」改「可合并」。
+- 专项 `tests/xiyou_target_eval.gd`＋`.tscn`：对照夹具 35 例里的 gt2（965）、gt3（1303）人数 1～8 × 15 条磁带，倒下的不算、强制行动，回春术 1172 十例（比目标与取数次数）；写法解析计数（36＋9＋1）；消耗物品（解析 20 技能、付得起、扣物品、敌人不看不扣、物品技能不收、智能 AI 不选付不起的、费用显示行、菜单 2610 用后扣物品）；冻结追击（学 6175 追放 6172、不学不追、敌人放不追）。
+- `xiyou_script_census` 加「E 类全部战斗认得」断言；已知清单去掉冻结追击那条（实现后地图解释器也认得它，不去掉 `known_still_unknown` 会挂）。
+- 探针 `target_eval_probe.cjs` 补关五乘区（探针登记检查要求；产物 35 例不变）。
+- **修了代码**：`_v8_shuffle` 原写法（V8 TimSort 找连续段＋二分插入）对夹具 n≥3 大量对不上。按夹具拟合：不足 8 个＝从第二个起逐个二分插入（pivot 与中点比，小于 0 取左），8 个＝TimSort 找连续段（降序翻转）再二分插入。两段各自逐例吻合（1～8 人 × 15 条磁带，目标与取数次数都对）。**为什么 8 个换了写法没查清**，是经验拟合，不是对 V8 源码的推演；队伍最多 4 人，实际只用到前一段。
+- 回春术没人受伤：重制返回空目标，参照是三个 undefined，后面都不发生；`heal.none.run` 夹具已确认只付 200 MP，这里只比空目标。
 
 ## 探针量到的
 
 - Custom Target Eval 是**三种**写法，不是之前说的两种：36 个「活着多于 2 个取两个」，**9 个「多于 3 个取两个」**（龙息、狂怒冲撞、熔岩陨弹一族，3 个目标时全打），回春术 1172 另写。全库共 46。
-- 随机数：每比较一次取一次，n＝3 时 2～3 次，n＝4 时 4～5 次，随比较结果变。原版运行的 nwjs 154 和探针的 node 都是 V8 TimSort，短数组同一算法（nwjs 版本从正式 Mac 游戏的 Framework 目录看到；算法相同是按版本推断，没在 nwjs 里实测）。`_v8_shuffle` 照此写，**还没对过夹具**。
+- 随机数：每比较一次取一次，n＝3 时 2～3 次，n＝4 时 4～5 次，随比较结果变。原版运行的 nwjs 154 和探针的 node 都是 V8 TimSort，短数组同一算法（nwjs 版本从正式 Mac 游戏的 Framework 目录看到；算法相同是按版本推断，没在 nwjs 里实测）。（以上算法推断已被夹具否定一部分，见上「修了代码」。）
 - 回春术 1172 没人受伤：目标是三个 undefined，走完整行动不报错、扣 200 MP、无效果。全库敌人的行动表里没有它，没查事件强制的用法。
 - 消耗物品只有 `<Item n Cost: m>` 一种，20 个技能；费率、替换备注数据里没有（`cost.other_notes`）。敌人不看不扣。切片内角色能学的：2610、3760、3761、5765、5766。
 
@@ -36,7 +27,7 @@
 交接板和清单对不上的原因：清单 E 类是「地图解释器认不出」，不是真缺。跑 `xiyou_script_census`（改动前）：`CENSUS_BATTLE_KNOWN 20`，20 种战斗解释器认得。
 
 - 唯一没认的是冻结追击 CE1321，**真缺**：技能书物品 1951、1952 学得到 6171、6175。本分支补了，没跑过。
-- 打算：清单键留着（地图解释器仍认不出，删了 `no_new_unknown` 会挂），`xiyou_script_census.gd` 加一条断言「E 类全部战斗认得」（`battle_known` 等于 21）。**这步没做**，清单和普查测试都没改。
+- 已做：断言加上了；清单键实际要删（见「本期做了什么」）。
 - 以上 callers 是按冻结数据追的，没逐条进对局。
 
 ## 待交叉核查
@@ -45,8 +36,19 @@
 
 ## 变更记录草稿
 
-（完成后写）
+【cc·悟空·未经审查】custom1b：YEP_TargetCore `<Custom Target Eval>` 三种写法（46 个技能，敌人用）、YEP_X_SkillCostItems `<Item n Cost: m>`（20 个技能）、冻结追击 CE1321（6171→6172）。专项 xiyou_target_eval 对照 target_eval 夹具；排序按夹具拟合（见交付单）。混乱类状态未做。
 
 ## 本分支提交
 
-- WIP：见 `git log main..cc/wukong-custom1`
+- 见 `git log main..cc/wukong-custom1b`
+
+## 验证
+
+- 专项 `xiyou_target_eval`、`xiyou_script_census` 本机通过；`语法检查.py`、`探针登记检查.py` 通过。
+- 选测：`选测.py main --list` 226 个场景（battle_logic 核心），走云端选测。第一次云端 5 个失败（honghuang_curse、script_census、state_effects、state_effects_tp、xuan_tusu_art）：census 是本期的（已清单去掉那条）；其余是本工作树 generated 落后 main（oracle 旧）所致，合 main 后 `XIYOU_IGNORE_MERGE_FLUX=1 新建工作树.sh --补齐`（总装的合并阶段标记还停在 prepared）刷新后本机通过。第二次云端见下。
+- 云端选测第二次：（待填）
+
+## 待办／没做
+
+- 混乱类状态（restriction 1～3，13 个状态）疑似没实现，见「新发现」，本期不做。
+- 冻结追击原版语义只读了代码，没有探针数据。

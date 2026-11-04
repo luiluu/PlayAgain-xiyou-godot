@@ -711,7 +711,7 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 			return [a]
 	return []
 
-## YEP_TargetCore <Custom Target Eval> 的写法（备注原文，不跑 JS）：全库 46 个技能只有两种，见 _eval_targets。
+## YEP_TargetCore <Custom Target Eval> 的写法（备注原文，不跑 JS）：全库 46 个技能三种（多于 2 个取 2：36，多于 3 个取 2：9，回春术 1），见 _eval_targets。
 ## {"more": n}＝随机写法，{"wounded": true}＝回春术 1172；没有这段备注或写法认不出返回 {}（照 scope）
 static var _target_eval_cache := {}
 static func target_eval(skill: Dictionary) -> Dictionary:
