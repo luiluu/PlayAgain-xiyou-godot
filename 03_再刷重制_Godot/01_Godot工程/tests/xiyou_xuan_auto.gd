@@ -212,6 +212,12 @@ func _step(st: Array) -> Array:
 			logs = logic._force_action([0, i, int(st[2]), logic.state.battle_members().find(_who(st[3]))], null)
 		"learn":
 			_who(st[1]).learn_skill(int(st[2]))
+		"lv":
+			_who(st[1]).change_level(int(st[2]))
+		"tuse":
+			var u: XActor = _who(st[1])
+			u.mp = u.mmp
+			logs = logic.act(u, XDB.rec("Skills", XTusu.skill_id(str(st[2]))), _who(st[3]))
 		"end":
 			logic.end_battle(0)
 	return [ret, logs]
@@ -258,7 +264,7 @@ func _go() -> void:
 	GameApp.fast_headless_frames()
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("oracle", ref.cases.size() == 34 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
+	check("oracle", ref.cases.size() == 39 and ref.cases.all(func(c): return (c.errors as Array).is_empty()), ref.cases.size())
 	for c in ref.cases:
 		if str(c.id).begins_with("speed_"):
 			continue
