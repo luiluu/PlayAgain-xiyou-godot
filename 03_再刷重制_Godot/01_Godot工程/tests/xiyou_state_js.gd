@@ -54,7 +54,7 @@ func _run() -> void:
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		cases[c.id] = c
-	# 原文本身报错的块（106／732 读装备等级、551 变量名拼错）不翻译，参照里的报错只许来自这些状态
+	# 原文本身报错的块（106 读装备等级、551 变量名拼错）不翻译，参照里的报错只许来自这些状态（732 在 rules8 翻了，见 _translated_message）
 	var bad: Array = ref.get("nativeErrors", []).filter(func(e): return _translated_message(str(e.message)))
 	check("native_errors_untranslated_only", bad.is_empty(), bad)
 	_poison_translated(cases["poison.inventory"].observed)
@@ -93,7 +93,10 @@ func _translated_message(message: String) -> bool:
 	var m := RegEx.create_from_string("CUSTOM STATE (\\d+) CODE ERROR").search(message)
 	if m == null:
 		return true
-	return XDB.rec("States", int(m.get_string(1))).get("effects", []).all(func(e): return str(e.op) != "js")
+	var sid := int(m.get_string(1))
+	if sid == 732:
+		return false  # rules8：732 已翻译；来源者是敌人时原文 origin.equips 报 TypeError，译文整块包在 isActor 里等价于「报错、没效果」（state_effects poison.blocks 对过）
+	return XDB.rec("States", sid).get("effects", []).all(func(e): return str(e.op) != "js")
 
 
 func _stacks(b: XBattler):
