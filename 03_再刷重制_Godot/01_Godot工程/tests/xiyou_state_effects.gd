@@ -96,6 +96,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _ready() -> void:
+	_fixes_off()
 	_run.call_deferred()
 
 
@@ -1315,7 +1316,154 @@ func _want_pops(rows: Array, _sid: int) -> Array:
 	return out
 
 
+## 所有参照对比比的是原版，跑之前把 fix1 的修正关掉（这也是回退支的测试）；修正支在 _fix_blocks
+func _fixes_off() -> void:
+	XStateEffects.FIX_UNDYING_2554 = false
+	XStateEffects.FIX_QI_GUARD_2562 = false
+	XStateEffects.FIX_ELYSIA_GUARD_1302 = false
+	XStateEffects.FIX_SWORD_2575 = false
+	XStateEffects.FIX_SCALE_COUNTER_1072 = false
+	XStateEffects.FIX_SCISSORS_CRIT_1068 = false
+	XStateEffects.FIX_ELYSIUM_1301 = false
+	XStateEffects.FIX_ORDER_TIERS = false
+	XStateEffects.FIX_MARK_5576 = false
+	XStateEffects.FIX_ITACHI_1318 = false
+	XStateEffects.FIX_CRIMSON_1683 = false
+
+
+func _fixes_on() -> void:
+	XStateEffects.FIX_UNDYING_2554 = true
+	XStateEffects.FIX_QI_GUARD_2562 = true
+	XStateEffects.FIX_ELYSIA_GUARD_1302 = true
+	XStateEffects.FIX_SWORD_2575 = true
+	XStateEffects.FIX_SCALE_COUNTER_1072 = true
+	XStateEffects.FIX_SCISSORS_CRIT_1068 = true
+	XStateEffects.FIX_ELYSIUM_1301 = true
+	XStateEffects.FIX_ORDER_TIERS = true
+	XStateEffects.FIX_MARK_5576 = true
+	XStateEffects.FIX_ITACHI_1318 = true
+	XStateEffects.FIX_CRIMSON_1683 = true
+
+
+func _fix_blocks() -> void:
+	_fixes_on()
+	XStateEffects.observer = Callable()
+	XState.current = XState.new_game_blank()
+	var res := func(): return {"execute": true, "resources": XResourceContext.new()}
+	var st := func(id: int) -> Dictionary: return XDB.rec("States", id)
+	# 不灭之躯：复活一次，状态用掉
+	var a := _plain(0.0)
+	var e := _plain(0.0)
+	e.state_ids.append_array([1, 2554])
+	XStateEffects.run_one("respond", e, st.call(2554), _action_ctx(a, e, 7.0))
+	check("fix.2554", e.hp == e.mhp and not e.state_ids.has(2554) and not e.is_dead(), [e.hp, e.state_ids])
+	# 护体罡气：蓝打空，状态去掉
+	e = _plain(1000.0)
+	e.mp = 1.0
+	e.state_ids.append(2562)
+	var got := XStateEffects.run_one("react", e, st.call(2562), _action_ctx(a, e, 200.0))
+	check("fix.2562", got == 199.0 and e.mp == 0.0 and not e.state_ids.has(2562), [got, e.mp, e.state_ids])
+	# 永世乐土：每个存活队友减 4%，最高 13%
+	for row in [[1, 100.0], [2, 96.0], [3, 92.0], [4, 88.0], [6, 87.0]]:
+		e = _plain()
+		e.state_ids.append(1302)
+		var unit := [e]
+		for i in range(int(row[0]) - 1):
+			unit.append(_plain())
+		XStateEffects.battle_units = {"enemies": unit}
+		got = XStateEffects.run_one("react", e, st.call(1302), _action_ctx(a, e, 100.0))
+		check("fix.1302.%d" % row[0], got == row[1], [row, got])
+	# 剑道争锋：获得 1 层，回合结束加 1 最多 10，每层 0.5%
+	var u := _plain()
+	XStateEffects.run_one("apply", u, st.call(2575), res.call())
+	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
+	check("fix.2575.one", got == 1005.0, got)
+	for i in range(12):
+		XStateEffects.run_one("turn_end", u, st.call(2575), res.call())
+	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
+	check("fix.2575.ten", got == 1050.0, got)
+	XStateEffects.run_one("remove", u, st.call(2575), res.call())
+	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
+	check("fix.2575.removed", got == 1000.0, got)
+	# 挨打反击：受伤 50% 持有者打回去，不清这一击的结果
+	var hero := _plain()
+	var foe := _plain()
+	XStateEffects.battle_units = {"enemies": [foe, hero]}
+	for row in [[0.25, 7.0, true], [0.75, 7.0, false], [0.25, 0.0, false]]:
+		var ctx := _action_ctx(hero, foe, float(row[1]))
+		ctx.random.seq = [row[0]]
+		XStateEffects.take_forces()
+		got = XStateEffects.run_one("react", foe, st.call(1072), ctx)
+		var forces := XStateEffects.take_forces()
+		check("fix.1072.%s.%s" % [row[0], row[1]], got == float(row[1]) and forces == ([[0, 0, 5577, 1]] if row[2] else []), [row, forces])
+	# 往世乐土：不死，放一株莲，状态用掉
+	foe = _plain(0.0)
+	foe.resource_death_blocked = true
+	foe.state_ids.append(1301)
+	XStateEffects.battle_units = {"enemies": [foe, hero]}
+	var ctx1301 := _action_ctx(hero, foe, 0.0)
+	XStateEffects.take_forces()
+	XStateEffects.run_one("deselect", foe, st.call(1301), ctx1301)
+	check("fix.1301", foe.hp == 1.0 and not foe.is_dead() and not foe.state_ids.has(1301) and XStateEffects.take_forces() == [[0, 0, 7303, -2]], [foe.hp, foe.state_ids])
+	# 秩序、同谐：人数分档
+	for row in [[1711, 1, []], [1711, 2, [1712]], [1711, 3, [1713]], [1711, 4, [1714]], [1716, 1, [1717]], [1716, 2, [1718]], [1716, 3, [1719]], [1716, 4, [1720]]]:
+		var h := _plain()
+		var unit := [h]
+		for i in range(int(row[1]) - 1):
+			unit.append(_plain())
+		XStateEffects.battle_units = {"enemies": unit}
+		XStateEffects.run_one("turn_start", h, st.call(int(row[0])), res.call())
+		check("fix.tiers.%d.%d" % [row[0], row[1]], h.state_ids == row[2], [row, h.state_ids])
+	# 鼬被动：变量不是 1 就预约
+	for row in [[0.0, [1513]], [1.0, []], [2.0, [1513]]]:
+		XState.current.set_variable(1163, row[0])
+		XStateEffects.take_reserves()
+		XStateEffects.run_one("turn_start", _plain(), st.call(1318), res.call())
+		check("fix.1318.%d" % row[0], XStateEffects.take_reserves() == row[1], row)
+	# 绯红之夜 1683：开战写 10，抗 10 次
+	XState.current.set_variable(1683, 0.0)
+	var c := _plain(0.0)
+	c.resource_death_blocked = true
+	XStateEffects.run_one("battle", c, st.call(1683), res.call())
+	check("fix.1683.battle", XState.current.variable(1683) == 10.0, XState.current.variable(1683))
+	XStateEffects.run_one("deselect", c, st.call(1683), _action_ctx(a, c, 0.0))
+	check("fix.1683.revive", c.hp == 1.0 and XState.current.variable(1683) == 9.0, [c.hp, XState.current.variable(1683)])
+	# 金剪追加、戮仙印记走真实 apply
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	s.random_master = XRandomStream.hex64(4900)
+	XState.current = s
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(2, s)
+	var actor: XBattler = logic.actors[0]
+	var foe2: XBattler = logic.enemies[0]
+	actor.state_ids.append(1068)
+	XStateEffects.force_critical = true
+	XStateEffects.take_forces()
+	logic.apply(actor, XDB.rec("Skills", 1), foe2)
+	check("fix.1068.crit", XStateEffects.take_forces() == [[1, int(actor.actor_id), 5576, 0]])
+	XStateEffects.force_critical = false
+	logic.apply(actor, XDB.rec("Skills", 1), foe2)
+	check("fix.1068.no_crit", XStateEffects.take_forces().is_empty())
+	actor.state_ids.erase(1068)
+	var plain_hit := logic.apply(actor, XDB.rec("Skills", 5576), foe2)
+	foe2.state_ids.append(1067)
+	var marked_hit := logic.apply(actor, XDB.rec("Skills", 5576), foe2)
+	check("fix.5576", float(marked_hit.state_value) == float(plain_hit.state_value) * 4.0, [plain_hit.state_value, marked_hit.state_value])
+	XStateEffects.FIX_MARK_5576 = false
+	check("fix.5576.off", float(logic.apply(actor, XDB.rec("Skills", 5576), foe2).state_value) == float(plain_hit.state_value))
+	XStateEffects.FIX_MARK_5576 = true
+	foe2.state_ids.erase(1067)
+	# 排到的强制行动真能跑（一株莲）：逻辑取得走、有记录
+	var forced: Array = logic._force_action([1, int(actor.actor_id), 7303, -2], null)
+	check("fix.1301.force_runs", not forced.is_empty(), forced.size())
+	XState.current = null
+	XStateEffects.battle_units = {}
+
+
 func finish() -> void:
+	_fix_blocks()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

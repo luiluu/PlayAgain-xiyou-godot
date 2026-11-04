@@ -2,7 +2,7 @@ class_name XXuanBattle
 extends RefCounted
 ## 【cc·悟空·未经审查】璇的战斗效果第一期（正式 js/codex/runtime/installNativeXuanRuntime.js）：不靠绑定就成立的部分。
 ## 本场数据（fresh）、净化口径（isCleanseState）、MP 费用（按璇 MP 上限百分比）、技能条件、回光净化、定星、璃壁护盾、棱光减益、蚀辉、结束清标记。
-## 余辉不做：原版包在 Game_Battler.gainHp 上，而回光只打角色，角色的 gainHp 是 Game_Actor 自有方法，这层跑不到，实测溢出不转护盾（见交付单「需要用户决定」）。
+## 余辉（fix1 改成默认修好，见 YUHUI_SHIELD）：原版包在 Game_Battler.gainHp 上，而回光只打角色，角色的 gainHp 是 Game_Actor 自有方法，这层跑不到，实测溢出不转护盾（见交付单「需要用户决定」）。
 ## 第二期：绑定种类登记、寄星／转移／回身、星纹标记、默契结算、附身期间不掉血、移光、留辉、共宿（伤害、双防、并轨 3 级）、列星（星影、目标扩展、到期）、
 ## 星盾流转定轨（10 级）与接力（20 级，installThreeGrowthRelicRuntime）、护盾挡下计护主（mv_oracle/xuan_bind_probe.cjs → tests/xiyou_xuan_bind）。
 ## 先照手动先制（Game_Action.speed +100000）：量过（xuan_auto speed_* 例），OTB 只在回合开始 makeSpeed，这时行动是 makeActions 新建的空白行动，碰不到璃壁，原版实际没效果；
@@ -45,6 +45,9 @@ const LIEXING_TURNS := 2
 static var _param_guard := false
 ## 【cc·悟空·未经审查】O-154：先照手动璃壁先制。false＝原版（OTB 下没效果）
 static var XIANZHAO_MANUAL_FIRST := true
+## 优化 O-待定-12：余辉（回光溢出转护盾）。原版钩子挂在 Game_Battler.gainHp，角色走 Game_Actor 自有方法跑不到，实测不给护盾；设 false 回原版
+static var YUHUI_SHIELD := true
+const YUHUI_RATE := [0.2, 0.35, 0.5]
 const LINES := {"transfer": "璇：「我去另一边，有事叫我。」"}
 
 
@@ -319,12 +322,26 @@ static func meets(a, skill: Dictionary) -> bool:
 	return true
 
 
+## 余辉：这次回光的溢出（要回的减实际回的，只算目标身上生命的记录）按星纹等级转护盾
+static func _yuhui(logic, u, t: XBattler) -> void:
+	var lv: int = XXuanChart.mark_level(logic.state, u, "yuhui")
+	if not YUHUI_SHIELD or lv <= 0 or logic._action_resources == null:
+		return
+	var over := 0.0
+	for entry in logic._action_resources.journal:
+		if entry.get("resource") == "hp" and entry.get("receiver") == logic._action_resources.labels.get(t, "b") and float(entry.get("requestedDelta", 0.0)) > 0.0:
+			over += maxf(0.0, float(entry.requestedDelta) - float(entry.get("actualDelta", 0.0)))
+	if over > 0.0:
+		XShieldLedger.grant(t, "xuan.yuhui", over * float(YUHUI_RATE[lv - 1]), LIBI_TURNS, XUAN)
+
+
 ## applyItemUserEffect 包装（原效果之后）：回光净化、璃壁护盾、棱光减益与蚀辉
 static func user_effect(logic, u, skill: Dictionary, t: XBattler) -> void:
 	if not is_xuan(u):
 		return
 	match key_of(skill):
 		"huiguang":
+			_yuhui(logic, u, t)
 			var bad := first_cleansable(t)
 			if bad > 0:
 				logic._state_remove(t, bad)

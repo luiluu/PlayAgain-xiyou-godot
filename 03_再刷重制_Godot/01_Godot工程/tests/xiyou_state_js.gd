@@ -31,6 +31,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _ready() -> void:
+	XStateEffects.FIX_CRIMSON_1683 = false  # 参照比原版：1683 号变量写不进（fix1 默认修好，修正支在 xiyou_state_effects）
 	_run.call_deferred()
 
 

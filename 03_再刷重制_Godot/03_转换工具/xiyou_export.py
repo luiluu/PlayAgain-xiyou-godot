@@ -523,6 +523,36 @@ MEASURED_EFFECT_BLOCKS.update({
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
 
+# fix1：原版笔误的修正版（可回退，开关在 XStateEffects）。原版程序照旧留在 program，开关开时跑 fixed。
+EFFECT_FIXES = {
+    ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { target . gainHp ( target . mhp * 1 ) ; target . startDamagePopup ( ) ; target . RemoveState ( 1580 ) ; }'):  # 2554
+        ('FIX_UNDYING_2554', 'if (target.hp <= 0 || target.isDead()) { target.gainHp(target.mhp * 1); target.startDamagePopup(); target.removeState(2554); }'),
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { var mpDmg = Math . floor ( value * 0.01 ) ; mpDmg = Math . min ( mpDmg , target . mp ) ; target . gainMp ( - mpDmg ) ; value - = mpDmg ; if ( target . mp === 0 ) { target . removeState ( 1662 ) ; } }'):  # 2562
+        ('FIX_QI_GUARD_2562', 'if (value > 0 && this.isHpEffect()) { var mpDmg = Math.floor(value * 0.01); mpDmg = Math.min(mpDmg, target.mp); target.gainMp(-mpDmg); value -= mpDmg; if (target.mp === 0) { target.removeState(2562); } }'),
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.99 - 0.04 * user . friendsUnit ( ) . aliveMembers ( ) . length ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; }'):  # 1302
+        ('FIX_ELYSIA_GUARD_1302', 'if (this.isHpEffect() && value > 0) { value = value - Math.ceil(value * Math.min(0.13, 0.04 * (target.aliveFriends() - 1))); }'),
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.005 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }'):  # 2575
+        ('FIX_SWORD_2575', 'if (this.isHpEffect() && value > 0) { value += Math.ceil(value * 0.005 * (user.jqsbt || 0)); }'),
+    ('apply', 'user . jqsbt = 0 || 0 ; user . jqsbt = 1 ;'):  # 2575
+        ('FIX_SWORD_2575', 'user.jqsbt = 1;'),
+    ('battle', 'user . jqsbt = 0 ;'):  # 2575
+        ('FIX_SWORD_2575', 'user.jqsbt = 0;'),
+    ('remove', 'user . jqsbt = 0 ;'):  # 2575
+        ('FIX_SWORD_2575', 'user.jqsbt = 0;'),
+    ('turn_end', 'if ( user . jqsbt < 10 ) { user . jqsbt + = 1 ; }'):  # 2575
+        ('FIX_SWORD_2575', 'if (user.jqsbt < 10) { user.jqsbt += 1; }'),
+    ('react', 'if ( this . isDamageAffected ( ) ) { if ( Math . random ( ) < 0.5 ) { BattleManager . queueForceAction ( user , 5577 , target . index ( ) ) ; } }'):  # 1072
+        ('FIX_SCALE_COUNTER_1072', 'if (value > 0 && this.isHpEffect()) { if (Math.random() < 0.5) { target.queueCounter(5577); } }'),
+    ('deselect', 'if ( target . hp <= 0 || target . isDead ( ) ) { BattleManager . queueForceAction ( target , 7303 , - 2 ) ; target . removeState ( 1301 ) ; }'):  # 1301
+        ('FIX_ELYSIUM_1301', 'if (target.hp <= 0 || target.isDead()) { target.gainHp(1); target.queueForceQuiet(7303, -2); target.removeState(1301); }'),
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var allies = user . friendsUnit ( ) . aliveMembers ( ) ; if ( allies . length > 1 ) { user . addState ( 1712 ) ; user . removeState ( 1713 ) ; user . removeState ( 1714 ) ; } else if ( allies . length > 2 ) { user . removeState ( 1712 ) ; user . addState ( 1713 ) ; user . removeState ( 1714 ) ; } else if ( allies . length > 3 ) { user . removeState ( 1712 ) ; user . removeState ( 1713 ) ; user . addState ( 1714 ) ; } }'):  # 1711
+        ('FIX_ORDER_TIERS', 'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 3) { user.removeState(1712); user.removeState(1713); user.addState(1714); } else if (user.aliveFriends() > 2) { user.removeState(1712); user.addState(1713); user.removeState(1714); } else if (user.aliveFriends() > 1) { user.addState(1712); user.removeState(1713); user.removeState(1714); } }'),
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var allies = user . friendsUnit ( ) . aliveMembers ( ) ; if ( allies . length > 0 ) { user . addState ( 1717 ) ; user . removeState ( 1718 ) ; user . removeState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 1 ) { user . removeState ( 1717 ) ; user . addState ( 1718 ) ; user . removeState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 2 ) { user . removeState ( 1717 ) ; user . removeState ( 1718 ) ; user . addState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 3 ) { user . removeState ( 1717 ) ; user . removeState ( 1718 ) ; user . removeState ( 1719 ) ; user . addState ( 1720 ) ; } }'):  # 1716
+        ('FIX_ORDER_TIERS', 'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 3) { user.removeState(1717); user.removeState(1718); user.removeState(1719); user.addState(1720); } else if (user.aliveFriends() > 2) { user.removeState(1717); user.removeState(1718); user.addState(1719); user.removeState(1720); } else if (user.aliveFriends() > 1) { user.removeState(1717); user.addState(1718); user.removeState(1719); user.removeState(1720); } else if (user.aliveFriends() > 0) { user.addState(1717); user.removeState(1718); user.removeState(1719); user.removeState(1720); } }'),
+    ('turn_start', 'if ( ! $gameVariables . value ( 1163 ) == 1 ) { $gameTemp . reserveCommonEvent ( 1513 ) ; }'):  # 1318
+        ('FIX_ITACHI_1318', 'if ($gameVariables.value(1163) != 1) { user.reserve(1513); }'),
+}
+
 
 def _adapt_phase_tokens(tokens):
     """this.isHpEffect() 等换成 se_ 局部量，$gameVariables.value(常数) 换成 v[常数]，value 的复合赋值展开。"""
@@ -561,31 +591,10 @@ def _adapt_phase_tokens(tokens):
     return adapted
 
 
-def effect_state_effect(code, phase):
-    """target._xmx 这类字段换成 f_接收者_字段 局部量（运行时读进来、跑完写回），origin.属性换成 o_属性（块开头读）。"""
-    from formula_program import Parser, Unsupported
-    plain = re.sub(r'\s+', ' ', re.sub(r'//[^\n]*', '', code)).strip()
-    costume = COSTUME_APPLY.fullmatch(plain) if phase == 'apply' else None
-    if costume:
-        return {'op': 'costume_image', 'image': costume.group(1)}
-    if phase == 'remove' and plain == COSTUME_REMOVE:
-        return {'op': 'costume_restore'}
-    try:
-        tokens = [row[0] for row in Parser(code).tokens[:-1]]
-    except Unsupported:
-        return None
-    signature = (phase, ' '.join(tokens))
-    if signature in UNREAD_FIELD_BLOCKS:
-        return {'op': 'noop', 'reason': 'unread_field'}
-    if signature in NO_EFFECT_BLOCKS:
-        return {'op': 'noop', 'reason': 'no_effect'}
-    if signature in MEASURED_EFFECT_SOURCES:
-        tokens = [row[0] for row in Parser(MEASURED_EFFECT_SOURCES[signature]).tokens[:-1]]
-    elif signature not in MEASURED_EFFECT_BLOCKS:
-        return None
+def _compile_effect_tokens(tokens, signature):
     rewritten, declared, i = [], set(), 0
     while i < len(tokens):
-        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx'):
+        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx', 'jqsbt'):
             name = 'f_%s_%s' % ('a' if tokens[i] == 'user' else 'b', tokens[i + 2].lstrip('_'))
             rewritten.append(name)
             declared.add(name)
@@ -607,8 +616,34 @@ def effect_state_effect(code, phase):
     program = compile_formula(header + '\n' + ' '.join(_adapt_phase_tokens(rewritten)), custom=True, table='States', phase_effects=True)
     if program['status'] not in ('pure', 'effectful'):
         raise ValueError('实测块译不出来：%s %s' % (signature[0], program.get('diagnostic')))
-    return {'op': 'effect_program', 'program': program}
+    return program
 
+
+def effect_state_effect(code, phase):
+    """target._xmx 这类字段换成 f_接收者_字段 局部量（运行时读进来、跑完写回），origin.属性换成 o_属性（块开头读）。"""
+    from formula_program import Parser, Unsupported
+    plain = re.sub(r'\s+', ' ', re.sub(r'//[^\n]*', '', code)).strip()
+    costume = COSTUME_APPLY.fullmatch(plain) if phase == 'apply' else None
+    if costume:
+        return {'op': 'costume_image', 'image': costume.group(1)}
+    if phase == 'remove' and plain == COSTUME_REMOVE:
+        return {'op': 'costume_restore'}
+    try:
+        tokens = [row[0] for row in Parser(code).tokens[:-1]]
+    except Unsupported:
+        return None
+    signature = (phase, ' '.join(tokens))
+    fix = EFFECT_FIXES.get(signature)
+    fixed = {'fix': fix[0], 'fixed': _compile_effect_tokens([row[0] for row in Parser(fix[1]).tokens[:-1]], signature)} if fix else {}
+    if signature in UNREAD_FIELD_BLOCKS:
+        return {'op': 'noop', 'reason': 'unread_field', **fixed}
+    if signature in NO_EFFECT_BLOCKS:
+        return {'op': 'noop', 'reason': 'no_effect', **fixed}
+    if signature in MEASURED_EFFECT_SOURCES:
+        tokens = [row[0] for row in Parser(MEASURED_EFFECT_SOURCES[signature]).tokens[:-1]]
+    elif signature not in MEASURED_EFFECT_BLOCKS:
+        return None
+    return {'op': 'effect_program', 'program': _compile_effect_tokens(tokens, signature), **fixed}
 
 def permanent_state_effect(tokens, phase):
     """Four complete native-measured blocks; actor ledger capability only.
