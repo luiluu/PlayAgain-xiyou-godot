@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules7
 
 - 车道／工作者：C 规则／八戒（cc，Sonnet／medium）
-- 状态：进行中（云端选测结果待填；custom1b 合进 main 后需再 `git merge main` 一次）
+- 状态：可合并（已合 custom1b 进来的 main，云端选测通过）
 
 ## 变更记录草稿
 
@@ -39,11 +39,11 @@
 - `语法检查.py` 通过；`探针登记检查.py` 通过。
 - 选测（`选测.py main --list`，battle_logic 命中 battle 档 209 个场景，>40 走云端选测）：见下方云端结果。
 
-云端选测结果：（待填）
+云端选测（`云端选测.py`）：第一次（提交 2f0c0531c5，209 场景）只挂 `xiyou_state_effects`——不是本分支问题，是本工作树的 `generated/oracle/state_effects.json` 比主工作区旧（27 例对 31 例，缺 effect／hook／rest／revive 的 oracle_present 项），刷新后（`XIYOU_IGNORE_MERGE_FLUX=1 新建工作树.sh --补齐`，主工作区那份 09:05 起没变）本机通过。合 custom1b 后第二次（提交 52d1be31fd，基准 3e247fad9a，210 场景）**全部通过**；注：云端 report 任务没起来，汇总由本机用各片结果工件算出（6 片，最长 12.2 分钟）。本机另跑 xiyou_confusion 367/367、xiyou_target_eval 383/383、xiyou_determinism 372/372、xiyou_battle、xiyou_attack_query 通过。
 
 ## 交接板
 
-- 下一步：custom1b 合并后核对 `targets_for` 与 `_targets_for` 开头没有互相踩。
+- 下一步：无（custom1b 已合进来：`_targets_for` 开头的 Custom Target Eval 在混乱时不走，与原版一致，xiyou_target_eval 通过）。
 - 用户试玩说明：战斗里中了愤怒／混乱／魅惑的人（敌我都是）现在会只出普通攻击；混乱随机打敌我，魅惑打队友（可能包括自己），愤怒只打对方；角色不再弹指令窗。挂机时仍按自动战斗选技能，但目标按混乱。
 - 需要用户决定：无
 
@@ -64,3 +64,4 @@
 
 - afec7627 WIP: 混乱类状态（restriction 1～3）：探针、XConfusion 模块、钩子、专项
 - 2f0c0531 Merge main
+- 52d1be31 Merge main（custom1b 之后）
