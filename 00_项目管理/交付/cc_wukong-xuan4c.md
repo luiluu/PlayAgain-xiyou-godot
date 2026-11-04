@@ -1,7 +1,7 @@
 # 交付：cc/wukong-xuan4c
 
 - 车道／工作者：C 规则／悟空（cc，悟空 xuan4c，Opus）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -37,8 +37,11 @@
 - 反向验证（`反向验证.py`，`xiyou_xuan_auto`）：归宿不减伤、星幕不减伤（第一轮没咬住，伤害太小 ×0.81 和 ×0.9 取整同值，星幕例加 `enemyAtk` 后重验）、不消费归宿、额外净化只算硬控、列星不重置首次、不看法宝、先制不看开关、先制不看手动都咬住；内部施放不清资格没咬住（见上）。
 - 回退开关：`xiyou_xuan_auto` 里 `XXuanBattle.XIANZHAO_MANUAL_FIRST = false` 有断言。`回退开关覆盖.py` 新缺口 0。
 - `语法检查.py`：512 个 .gd，0 个问题。
-- 专项：`xiyou_xuan_auto`、`xiyou_xuan_bind`、`xiyou_xuan_battle` 全过。
+- 云端选测（`云端选测.py`，提交 92bd8431，选测 206 个场景、7 片）：通过，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41742233768 。之后只改了 xuan_auto 的探针、夹具、测试，并合了 main。
+- 合 main 后本地重跑（并行 2，全过）：`xiyou_xuan_auto`、`xiyou_xuan_bind`、`xiyou_xuan_battle`、`xiyou_xuan_chart`、`xiyou_binding`、`xiyou_shield`、`xiyou_otb`、`xiyou_determinism`、`xiyou_tusu_battle`。没跑全量、没跑同步（改的是 xuan_auto 探针，不进同步）。
 
 ## 本分支提交
 
-- 见 git log。
+- 92bd8431 60 级列星、手动先制 O-待定、序列扣血例换真实路径
+- 星幕例加强敌人攻击，交付单
+- 本提交：合 main 后验证，交付单定稿
