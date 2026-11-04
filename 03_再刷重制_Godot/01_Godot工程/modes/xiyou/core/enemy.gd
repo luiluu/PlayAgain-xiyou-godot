@@ -298,6 +298,15 @@ func gold_reward() -> int:
 func drop_rate_bonus() -> float:
 	return elite_param(4) if elite else 1.0
 
+## YEP_X_VisualHpGauge Game_Enemy.hpGaugeVisible（Defeat First=false，Show Always 不影响本判断）：
+## 隐藏成员 → 无；备注 <HIDE HP GAUGE> → 无（两个标签都写时 HIDE 先判，赢）；<SHOW HP GAUGE> → 有。
+## 默认参数下 SHOW 与不写等价（只在 Defeat First 打开时才有区别）。Olivia 名字窗口不看它，名字照常。
+func hp_gauge_visible() -> bool:
+	if hidden:
+		return false
+	return RegEx.create_from_string("(?i)<HIDE HP GAUGE>").search(str(data().get("note", ""))) == null
+
+
 func race_ids() -> Array:
 	var out := []
 	for m in RegEx.create_from_string("(?i)<EnemyRace\\s*:\\s*(\\d+)\\s*>").search_all(str(data().get("note", ""))):
