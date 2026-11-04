@@ -137,6 +137,28 @@ func _ready() -> void:
 	var artifact := XBattleReplay.record(logic, initial, commands, logs)
 	var replayed := XBattleReplay.replay(JSON.parse_string(JSON.stringify(artifact)))
 	check("actual_command_replay", replayed.available, replayed)
+	# 随机遇敌（roll_encounter 多抽两次战斗规则流，审查 41 P3-7）：抽取在 setup 之后、第一条指令之前，回放照 encounter 标志同序重掷，所以确定性不受影响；
+	# 这里用真实遇敌战斗录一遍再回放，并确认只位移规则流（抽数 +2）、不碰世界／装备／奖励流
+	var enc_state := XState.from_dict(initial.duplicate(true))
+	var enc_logic := XBattleLogic.new()
+	enc_logic.setup(2, enc_state)
+	var enc_draws0: Dictionary = enc_logic.random.snapshot()
+	enc_logic.roll_encounter()
+	var enc_draws1: Dictionary = enc_logic.random.snapshot()
+	check("encounter.rule_draws_plus_2", int(enc_draws1.rule.draws) == int(enc_draws0.rule.draws) + 2 and int(enc_draws1.reward.draws) == int(enc_draws0.reward.draws), [enc_draws0, enc_draws1])
+	enc_logic.auto = true
+	var enc_commands := []
+	var enc_logs := []
+	enc_logic.start_turn()
+	for i in 2:
+		var enc_user := enc_logic.next_subject()
+		if enc_user == null: break
+		var enc_cmd := enc_logic.decide(enc_user)
+		enc_commands.append({"turn": enc_logic.turn, "user": enc_logic.stable_id(enc_user), "skill": int(enc_cmd[0].id), "target": "", "automatic": true})
+		enc_logs.append_array(enc_logic.act(enc_user, enc_cmd[0], enc_cmd[1]))
+	var enc_artifact := XBattleReplay.record(enc_logic, initial, enc_commands, enc_logs)
+	var enc_replayed := XBattleReplay.replay(JSON.parse_string(JSON.stringify(enc_artifact)))
+	check("encounter.replay_available", bool(enc_artifact.encounter) and enc_replayed.available, enc_replayed)
 	check("replay_explicit_seed_and_boundary", artifact.battleStart.masterSeed == logic.random.master_seed and artifact.battleStart.rule.draws == 0 and artifact.initialRuntime.battleSerial == 2 and artifact.initialRuntime.world.draws == 1 and artifact.initialRuntime.equipment.draws == 1)
 	var wrong_replay := artifact.duplicate(true)
 	wrong_replay.identity.engine = "future-engine"
