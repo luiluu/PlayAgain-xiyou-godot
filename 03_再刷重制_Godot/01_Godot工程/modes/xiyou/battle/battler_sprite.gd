@@ -31,6 +31,8 @@ var prey := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
+## dsPassiveSkill SvPngFd：开战时算一次的身体放大倍数（XSvPngFd.scale），乘在身体缩放上
+var fd := 1.0
 ## setup 给的缩放（旧式角色 0.75、敌人 1／精英 1.8）；新增角色有归一档时改用档里的缩放（_show_frame）
 var _base_scale := 1.0
 ## Codex_MiraRavenMultiFrame 站姿归一档（XAppearance.profile，角色 ID ≥ 167 才有）：此刻这一帧的
@@ -101,7 +103,9 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
 	_base_scale = sprite_scale
-	body_scale = sprite_scale * look.scale
+	if b is XActor:
+		fd = XSvPngFd.scale(b as XActor)
+	body_scale = sprite_scale * look.scale * fd
 	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
 	var cp := XDB.img_path("pictures", cursor_name)
@@ -382,7 +386,7 @@ func _show_frame(f: Dictionary) -> void:
 		body.region_rect = r
 	_frame_h = r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
-	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale
+	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()
 	if weapon and _profile.get("multi", false):
 		weapon.visible = false
