@@ -50,6 +50,37 @@ def locate(item: dict) -> tuple[Path, str, str]:
     return path, text, text.replace(item['find'], item['replace'], 1)
 
 
+def validate(cfg, need_tests: bool) -> list[str]:
+    """开跑前校验清单字段（xuan4c 报：replace 写成 to 直接 KeyError，基线都跑完了才崩，tools59）。返回问题列表，空＝合格。"""
+    if not isinstance(cfg, dict):
+        return ['清单顶层必须是对象 {"tests": [...], "items": [...]}']
+    errs = []
+    tests = cfg.get('tests')
+    if need_tests and not (isinstance(tests, list) and tests and all(isinstance(t, str) and t for t in tests)):
+        errs.append('tests 必须是非空字符串列表（或命令行用 --tests 指定）')
+    items = cfg.get('items')
+    if not isinstance(items, list) or not items:
+        return errs + ['items 必须是非空列表']
+    for i, it in enumerate(items, 1):
+        label = '第 %d 项' % i
+        if not isinstance(it, dict):
+            errs.append('%s 必须是对象' % label); continue
+        label += '（%s）' % it['name'] if isinstance(it.get('name'), str) and it['name'] else ''
+        missing = [k for k in ('name', 'file', 'find', 'replace') if k not in it]
+        if missing:
+            hint = '；认的字段是 name、file、find、replace' + ('（"to" 应写成 "replace"）' if 'to' in it else '')
+            errs.append('%s 缺字段 %s%s' % (label, '、'.join(missing), hint))
+        wrong = [k for k in ('name', 'file', 'find', 'replace') if k in it and not isinstance(it[k], str)]
+        if wrong:
+            errs.append('%s 的 %s 必须是字符串' % (label, '、'.join(wrong)))
+        if isinstance(it.get('find'), str) and not it['find']:
+            errs.append('%s 的 find 不能为空' % label)
+        extra = sorted(set(it) - {'name', 'file', 'find', 'replace'})
+        if extra and not missing:  # 多余字段只提醒（可能是备注），缺字段时已在上面说清
+            print('⚠ %s 有不认的字段 %s，已忽略' % (label, '、'.join(extra)))
+    return errs
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('manifest', type=Path)
@@ -58,8 +89,15 @@ def main() -> int:
     ap.add_argument('--project', type=Path, default=REMAKE / '01_Godot工程')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
-    cfg = json.loads(a.manifest.read_text())
-    tests = a.tests or cfg['tests']
+    try:
+        cfg = json.loads(a.manifest.read_text())
+    except (OSError, ValueError) as e:
+        print('✗ 读不了清单 %s：%s' % (a.manifest, e)); return 64
+    errs = validate(cfg, need_tests=not a.tests and not a.dry_run)
+    if errs:
+        print('✗ 清单有问题，未开跑：\n  ' + '\n  '.join(errs))
+        return 64
+    tests = a.tests or cfg.get('tests')
     items = cfg['items']
     rows, bad = [], False
     if a.dry_run:

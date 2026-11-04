@@ -650,6 +650,44 @@ class HookLineTests(Fixture):
             head = '\n'.join(files[0].read_text().splitlines()[:8])
             self.assertTrue(re.search(r'\b1[0-9]{2}\b|璇|琦玉|奈叶|云裳|cat-sword', head), (mod, head))
 
+    def escape_table(self, escapes):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['escapes'] = escapes
+        path = self.root / 'esc.json'
+        path.write_text(json.dumps(table))
+        return path
+
+    def test_escapes_add_scenes_for_indirect_dependencies(self):
+        """tools59：静态引用看不到的间接依赖（改 lonely.gd 会坏 xiyou_shop）记进 escapes，改到该文件就带上，抽样不砍。"""
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\n# changed\n')
+        plain = sel.select(self.root, self.base, table=self.escape_table([]))
+        self.assertNotIn('xiyou_shop.tscn', plain['scenes'])
+        table = self.escape_table([{'files': [str(CORE / 'lonely.gd')], 'scenes': ['xiyou_shop.tscn'], '说明': '例'}])
+        s = sel.select(self.root, self.base, table=table)
+        self.assertIn('xiyou_shop.tscn', s['scenes'])
+        self.assertTrue(any(r[1].startswith('escapes') for r in s['reasons']))
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\n')                                    # 没改它就不带
+        self.put(CORE / 'orbs.gd', 'class_name XOrbs\n# changed\n')
+        self.assertNotIn('xiyou_shop.tscn', sel.select(self.root, self.base, table=table)['scenes'])
+
+    def test_escapes_table_validated_and_real_scenes_exist(self):
+        for bad in ([{'files': [], 'scenes': ['a']}], [{'files': ['x'], 'scenes': []}], [{'files': ['x']}]):
+            with self.assertRaises(ValueError):
+                sel.load_table(self.escape_table(bad))
+        real = json.loads((HERE / '选测对照.json').read_text()).get('escapes') or []
+        tests = HERE.parent / '01_Godot工程/tests'
+        if not tests.is_dir():
+            self.skipTest('没有工程目录')
+        for esc in real:
+            for pat in esc['scenes']:
+                self.assertTrue(list(tests.glob(pat)), '漏网回归集的场景没有对应测试：' + pat)
+
+    def test_real_escape_state_effects_selects_status_power_panel(self):
+        """rules4 漏网例：改 state_effects.gd 或其探针，必带 xiyou_status_power_panel（按文件，不靠 battle 组点名）。"""
+        esc = json.loads((HERE / '选测对照.json').read_text())['escapes']
+        self.assertTrue(any('xiyou_status_power_panel.tscn' in e['scenes'] and any(f.endswith('core/state_effects.gd') for f in e['files'])
+                            for e in esc))
+
     def test_switch_off_restores_file_level_selection(self):
         self.edit('\tXToji.go()\n')
         self.assertIn('xiyou_big', self.scenes('0'))

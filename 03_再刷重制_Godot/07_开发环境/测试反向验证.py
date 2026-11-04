@@ -58,6 +58,23 @@ class ReverseVerify(unittest.TestCase):
             self.assertEqual(self.run_main(str(m)), 1)
         self.assertEqual(self.f.read_bytes(), before)
 
+    def test_bad_manifest_fields_fail_before_any_run(self):
+        """tools59：字段写错（to 代替 replace、缺 file、tests 不是列表）开跑前一次说全，退出 64，不跑基线也不动文件。"""
+        before = self.f.read_bytes()
+        m = self.manifest([{'name': 'a', 'file': 'a.gd', 'find': 'x = 1', 'to': 'x = 0'}, {'name': 'b', 'find': 'x'}, 'oops'])
+        called = []
+        with mock.patch.object(rv, 'run_tests', lambda *a: called.append(1) or (True, '')):
+            self.assertEqual(self.run_main(str(m)), 64)
+            self.assertEqual(self.run_main(str(m), '--dry-run'), 64)
+        self.assertEqual(called, [])
+        self.assertEqual(self.f.read_bytes(), before)
+        errs = rv.validate({'tests': 'xiyou_a', 'items': [{'name': 'a', 'file': 'a.gd', 'find': 'x', 'to': 'y'}, {'name': 'b', 'file': 'f', 'find': '', 'replace': 3}]}, True)
+        text = '\n'.join(errs)
+        for want in ('tests 必须', '缺字段 replace', '"to" 应写成 "replace"', 'replace 必须是字符串', 'find 不能为空'):
+            self.assertIn(want, text)
+        self.assertEqual(rv.validate({'tests': ['t'], 'items': [{'name': 'a', 'file': 'f', 'find': 'x', 'replace': 'y'}]}, True), [])
+        self.assertEqual(rv.validate({'items': [{'name': 'a', 'file': 'f', 'find': 'x', 'replace': ''}]}, False), [])
+
     def test_failing_baseline_aborts_without_touching_files(self):
         before = self.f.read_bytes()
         m = self.manifest([{'name': 'x', 'file': 'a.gd', 'find': 'x = 1', 'replace': 'x = 0'}])

@@ -25,6 +25,11 @@
   （rules 每个难度 4 段、smart_ai 每 4 段）只留 1 段，留哪段按 --head 或 HEAD 沿第一父的合并提交数取余轮换（主线连续 4 次合并轮完一组；tools46 起只数合并提交，因为一次合并在主线上占「合并＋收尾」两个第一父提交，数全部提交会隔 2 取一）。改了测试本身（exemptGroups 里的组）
   选上的段照跑、并算作该组已有代表。段数不是 chunk 的整数倍时这一族不抽样。全量（不加 --affected、选测结论整轮）照跑全套。
   回退：对照表 sample.enabled 设 false，或环境变量 XIYOU_SAMPLE=0。
+- 漏网回归集（escapes，tools59）：静态引用（文件名、class_name）看不到的间接依赖——如改 state_effects.gd 会让 XPower 战力预演
+  （clone_battler → effect_program 预览）在 xiyou_status_power_panel 里崩，而该测试只引用 XPower——传递闭包又太宽（两层就选 264／299 个场景），
+  所以改成记账：云端、全量或合并抓到「选测没选到、改动却把它搞坏了」的场景时，把（改动文件通配, 场景通配）追加到对照表 escapes，
+  以后改到这些文件就一并选上（抽样不砍）。条目格式 {"files": ["仓库根相对路径通配"], "scenes": ["tests/ 下场景通配"], "说明": "哪次漏的"}。
+  load_table 校验 files、scenes 都非空；场景通配一个都匹配不到由 测试选测.py 报（防测试改名后悄悄失效）。
 - 钩子行收窄（hookLines，tools54，Kyo 2026-11-03 同意）：车道常在 battle_logic／actor／xstate／resource_context 这几个核心文件里只加「调用某个角色专属模块」的钩子
   （如 XXuanBattle.take_logs()），按文件判会几乎全选（dev.294～296 一批选了 337／383 个场景）。对照表 hookLines.files 里的文件，若每个改动块（hunk）都含
   角色专属模块（hookLines.roleModules 白名单，新模块默认不算钩子）的独立调用，且整块是纯新增（tools57，审查 35 P2：只认 XMod.fn(...)、var x := XMod.fn(...) 加 if not x.is_empty(): return x、
@@ -90,6 +95,9 @@ def load_table(path=TABLE):
         bad = set(g.get('checks', [])) - CHECKS
         if bad:
             raise ValueError('组 %s 有未知检查：%s' % (name, '、'.join(sorted(bad))))
+    for i, esc in enumerate(table.get('escapes') or [], 1):
+        if not (isinstance(esc.get('files'), list) and esc['files'] and isinstance(esc.get('scenes'), list) and esc['scenes']):
+            raise ValueError('escapes 第 %d 条须有非空的 files 和 scenes 列表' % i)
     sections = table.get('sliceSections') or {}
     bad = {g for g in (sections.get('keys') or {}).values() if g not in groups}
     if bad:
@@ -452,6 +460,7 @@ def select(root, base, table=TABLE, head=None, sample=True):
     full, scenes, checks, reasons = False, set(), set(), []
     pinned = set()  # 改了测试本身选上的场景：抽样时照跑
     sample_cfg = load_sample(table) if sample else None
+    escapes = json.loads(Path(table).read_text()).get('escapes') or []
 
     narrow = sections.get('narrowFloorsByMap') or {}
     hooks = load_hooks(table)
@@ -540,6 +549,13 @@ def select(root, base, table=TABLE, head=None, sample=True):
                 take(path, sub, '%s（切片键 %s）' % (sub, '、'.join(ks)), [] if sub == 'docs' else ['"%s"' % k for k in ks], extra)
             continue
         take(path, group, group)
+    for esc in escapes:  # 漏网回归集：改到这些文件就带上曾经漏掉的场景，抽样不砍
+        hit = [f for f in files if any(fnmatch.fnmatch(f[:-4] if f.endswith('.uid') else f, pat) for pat in esc['files'])]
+        if hit:
+            picked = {s for pat in esc['scenes'] for s in tests.glob(pat)}
+            scenes.update(picked)
+            pinned.update(picked)
+            reasons.append((hit[0], 'escapes（漏网回归集）', esc.get('说明', ''), sorted(picked), False))
     if not full and tests.scenes and scenes >= set(tests.scenes):
         full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))

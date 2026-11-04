@@ -74,6 +74,11 @@
       "extraAnimations": "converter", "weaponScan": "converter"
     }
   },
+  "escapes": [
+    {"files": ["03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd", "03_再刷重制_Godot/03_转换工具/mv_oracle/state_effects_probe.cjs"],
+     "scenes": ["xiyou_status_power_panel.tscn"],
+     "说明": "rules4（dev.304）改 state_effects 的 effect_program，战力预演 XPower→clone_battler 崩，只有云端 xiyou_status_power_panel 抓到；该场景只引用 XPower，文件名／class_name 引用选不到（rules5 已把它点名进 battle 组，这里按文件再兜一层，探针类改动也带上）"}
+  ],
   "sample": {
     "说明": "选测抽样（用户 2026-11-02 同意，tools43）：选测（不是整轮）选到下面各族时，族内按名字排序、每 chunk 段一组只留 1 段，留哪段按 HEAD 沿第一父的合并提交数取余轮换（主线连续 4 次合并轮完一组，审查 26 P3-2 改）；改了测试本身（exemptGroups）选上的段照跑并算作该组代表。全量（不加 --affected、选测结论整轮）照跑全套。enabled 设 false（或环境变量 XIYOU_SAMPLE=0）回到选到几段跑几段。依据见 00_项目管理/交付/cc_nezha-tools43.md。",
     "enabled": true,

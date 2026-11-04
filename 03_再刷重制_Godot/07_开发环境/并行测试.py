@@ -584,6 +584,10 @@ def stale_generated(project: str):
     tool = Path(__file__).resolve().parent / '参照批次.py'
     if not gen.is_dir() or not main_gen.is_dir() or not tool.is_file():
         return None
+    flux = subprocess.run([sys.executable, str(tool), 'flux', out[1]], capture_output=True, text=True)
+    if flux.returncode == 4:  # 总装正在合并同步，主工作区 generated/ 没定稿：不比对（tools59）
+        print(flux.stdout.strip())
+        return None
     p = subprocess.run([sys.executable, str(tool), 'compare', str(gen), str(main_gen)], capture_output=True, text=True)
     return p.stdout.strip() if p.returncode == 3 else None
 
