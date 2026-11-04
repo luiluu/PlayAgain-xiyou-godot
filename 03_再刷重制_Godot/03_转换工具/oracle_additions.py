@@ -34,6 +34,7 @@ KEYS = {
     'state_js.json': {'cases': ('id',)},
     'dot.json': {'cases': ('id',)},
     'barrier.json': {'cases': ('id',)},
+    'sve.json': {'cases': ('id',)},
     'qiyu.json': {'cases': ('id',)},
     'cat.json': {'cases': ('id',)},
     'enemy_book_defeat.json': {'cases': ('id',)},

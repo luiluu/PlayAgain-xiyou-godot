@@ -44,8 +44,11 @@ var _frame := 0
 var _tick := 0
 var home := Vector2.ZERO
 var facing_left := true
-## YEP_X_AnimatedSVEnemies 呼吸（Breathing Y Rate 0.02）
+## YEP_X_AnimatedSVEnemies 呼吸（Sprite_Enemy.updateBreathing：scale = 基础 + cos(帧 / Breathing Speed) × Rate；规则见 XSvEnemy.breathing）
 var breathing := false
+var breath_speed := 20.0
+var breath_rx := 0.001
+var breath_ry := 0.02
 var _breath_t := 0.0
 ## 身体材质：hue 是神话敌人色相（载入时改图，先做），blend 是 Sprite.setBlendColor（技能动画目标闪光：rgb 向 blend.rgb 混合 blend.a）
 const BODY_SHADER := """
@@ -82,7 +85,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	sv = look.animated()
 	if b is XEnemy and look.sideview:
 		facing_left = false
-	if b is XActor and not look.hide_shadow:
+	if (b is XActor or (b is XEnemy and XSvEnemy.shadow(b as XEnemy))) and not look.hide_shadow:
 		_make_shadow()
 	if look.kind == "scene" and look.scene:
 		sprite = look.scene.instantiate() as Node2D
@@ -124,6 +127,8 @@ func _make_shadow() -> void:
 		shadow = Sprite2D.new()
 		shadow.texture = load(sp)
 		shadow.position.y = -2
+		if battler is XEnemy:  # Sprite_Enemy.adjustSVShadowSettings：Shadow Scale auto = 侧视图一格宽 / 64（x、y 同）
+			shadow.scale = Vector2.ONE * (look.cell.x / 64.0)
 		add_child(shadow)
 		move_child(shadow, 0)
 
@@ -178,7 +183,8 @@ func start_weapon(id: int) -> void:
 		weapon = Sprite2D.new()
 		weapon.centered = true
 		weapon.region_enabled = true
-		weapon.position = Vector2(-16, 0)
+		weapon.position = Vector2(16 if battler is XEnemy else -16, 0)  # 敌人整体镜像（Sprite_Enemy.setMirror），武器挂在根上跟着翻
+		weapon.flip_h = battler is XEnemy
 		weapon.offset = Vector2(0, -32)
 		add_child(weapon)
 	var tex := _load("system", "Weapons%d" % (floori((id - 1) / 12.0) + 1)) if id > 0 else null
@@ -268,8 +274,10 @@ func _process(delta: float) -> void:
 			_float_px = f
 			_place_body()
 	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
-		_breath_t += delta * TAU / 2.4
-		sprite.scale.y = body_scale * (1.0 + sin(_breath_t) * 0.02)
+		_breath_t += delta * 60.0 / breath_speed  # 每帧相位 +1/Breathing Speed
+		sprite.scale.y = body_scale * (1.0 + cos(_breath_t) * breath_ry)
+		var fx := -1.0 if sprite.get_meta("flip", false) else 1.0
+		sprite.scale.x = body_scale * fx * (1.0 + cos(_breath_t) * breath_rx)
 		sprite.position.y = -_lift_px
 	_update_indicators()
 

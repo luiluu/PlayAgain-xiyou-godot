@@ -242,7 +242,11 @@ func _make_enemy_sprite(e: XEnemy) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	s.setup(e, 1.8 if e.elite else 1.0)
-	s.breathing = true
+	var br := XSvEnemy.breathing(e)  # 呼吸只给该给的敌人：非 SV 默认呼吸，SV 默认不呼吸；周期读备注（见 XSvEnemy）
+	s.breathing = br.on
+	s.breath_speed = br.speed
+	s.breath_rx = br.rx
+	s.breath_ry = br.ry
 	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
 	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
 	s.position = s.home

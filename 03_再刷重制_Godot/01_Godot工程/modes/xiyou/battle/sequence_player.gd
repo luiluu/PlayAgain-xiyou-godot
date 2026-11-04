@@ -637,6 +637,11 @@ func _motion(kind: String, args: Array, movers: Array) -> bool:
 					sp.set_motion("swing" if XAppearance.cat_visual(b) else v.motion)  # 小猫剑圣 performAttack 包装：改挥舞
 					if int(v.image) > 0:
 						sp.start_weapon(int(v.image))
+				elif b is XEnemy and XSvEnemy.is_sv(b as XEnemy):  # Game_Enemy.performAttack：forceMotion(attackMotion)＋startWeaponAnimation(weaponImageId)
+					var ev := XSvEnemy.attack_visual(b as XEnemy)
+					sp.set_motion(ev.motion)
+					if int(ev.image) > 0:
+						sp.start_weapon(int(ev.image))
 			"randattack":
 				var rng := RandomNumberGenerator.new()
 				rng.randomize()
@@ -647,6 +652,10 @@ func _motion(kind: String, args: Array, movers: Array) -> bool:
 					var v := (b as XActor).attack_visual()
 					if int(v.image) > 0:
 						sp.start_weapon(int(v.image))
+				elif b is XEnemy and weapon and XSvEnemy.is_sv(b as XEnemy):
+					var ev := XSvEnemy.attack_visual(b as XEnemy)
+					if int(ev.image) > 0:
+						sp.start_weapon(int(ev.image))
 			"walk", "move":
 				sp.set_motion("walk")
 			"damage", "hit":
