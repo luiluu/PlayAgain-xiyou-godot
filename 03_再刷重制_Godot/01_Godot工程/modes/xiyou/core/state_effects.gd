@@ -9,7 +9,7 @@ const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm",
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
-	"reserve_common_event", "noop", "revive", "effect_program"]
+	"reserve_common_event", "noop", "revive", "effect_program", "costume_image", "costume_restore"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -28,6 +28,9 @@ static var _reserves: Array[int] = []
 static var _forces: Array = []
 ## 战斗双方（friendsUnit 用），XBattleLogic 开战时设
 static var battle_units := {}
+## YEP_X_CriticalControl 的 $gameSystem._forceCritical（必爆 541、755）；force_previous 是 Game_Action._prevForcedCriticalHit，每次 apply 清
+static var force_critical := false
+static var force_previous = null
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -46,6 +49,7 @@ class PhaseValueProgram:
 		if a == null or b == null:
 			return {"available": false, "value": value}
 		_battlers = {"a": a, "b": b}
+		_battlers.merge(effects.get("battlers", {}), true)
 		var variables = ctx.variables if ctx.has("variables") else (XState.current.variable_array() if XState.current else {})
 		_context = {"v": variables, "s": ctx.get("switches", {})}
 		_random = ctx.get("random") if execute else null
@@ -119,6 +123,12 @@ class PhaseValueProgram:
 				return 1.0 if XAlienBattle.forced_state(b, int(_number(args[0]))) else b.traits_pi(XBattler.TRAIT_STATE_RATE, int(_number(args[0])))
 			"state_resist":
 				return b.traits_set(XBattler.TRAIT_STATE_RESIST).has(int(_number(args[0])))
+			"troop_size":
+				return float(XStateEffects.battle_units.get("enemies", []).size())
+			"enemies_alive":
+				return XStateEffects.battle_units.get("enemies", []).any(XStateEffects._counts_alive)
+			"not_origin":
+				return b != effects.context.origin
 			"first_weapon_type":
 				return float(b.first_weapon_type()) if b is XActor else 0.0
 			"has_skill":
@@ -133,6 +143,7 @@ class PhaseValueProgram:
 		match str(n.name):
 			"popup":
 				resources.start_damage_popup(b)
+				XStateEffects._emit_result(b, resources, effects.context)
 			"clear_result":
 				resources.seed_result(b, XResourceContext.empty_result())
 			"remove_state":
@@ -144,6 +155,22 @@ class PhaseValueProgram:
 				XStateEffects._add_state(b, int(_number(args[0])), effects.context)
 			"animation":
 				XStateEffects._note_anim(int(_number(args[0])), b, effects.context)
+			"reserve":
+				XStateEffects._reserves.append(int(_number(args[0])))
+			"gain_gold":
+				if XState.current != null:
+					XState.current.gain_gold(int(_number(args[0])))
+			"set_tp":
+				resources.set_resource(b, "tp", _number(args[0]))
+			"add_param":
+				b.add_param(int(_number(args[0])), _number(args[1]))
+				resources.refresh(b)
+			"force_critical_on":
+				XStateEffects.force_previous = XStateEffects.force_critical
+				XStateEffects.force_critical = true
+			"force_critical_restore":
+				if XStateEffects.force_previous != null:
+					XStateEffects.force_critical = XStateEffects.force_previous
 			"set_hp":
 				resources.set_resource(b, "hp", _number(args[0]))
 			"queue_force":
@@ -166,6 +193,8 @@ class PhaseValueProgram:
 		match str(node.name):
 			"states_count": return b.states().size()
 			"hp_rate": return _divide(b.hp, b.mhp)
+			"element": return b.element_rate(int(_number(_expr(node.args[0]))))
+			"has_state": return b.is_state_affected(int(_number(_expr(node.args[0]))))
 		return _fail("unsupported_phase_read")
 
 	func _math(node: Dictionary):
@@ -247,6 +276,10 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				c.value = out.value
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
+		elif op == "costume_image" and execute:
+			_costume_image(e, int(st.id), holder)
+		elif op == "costume_restore" and execute:
+			_costume_restore(int(st.id), holder)
 		elif op == "effect_program":
 			c.value = _effect_program(e, phase, int(st.id), holder, c, execute)
 		elif op == "value_query":
@@ -329,6 +362,10 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder: XBattler, c: Dictionary, execute: bool) -> float:
 	var vm := PhaseValueProgram.new()
 	vm.effects = {"execute": execute, "resources": c.get("resources"), "context": c}
+	vm.effects.battlers = {"o": c.origin}
+	var regenerating: bool = phase == "regenerate" and execute
+	if regenerating:
+		(c.resources as XResourceContext).seed_result(holder, XResourceContext.empty_result())  # regenerateStateEffects 每个状态先 clearResult
 	var extra := {}
 	var receivers := {"a": c.user, "b": c.target}
 	for local in e.program.locals:
@@ -341,7 +378,12 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 			extra[name] = float(_state_id)
 		elif name == "se_attack":
 			extra[name] = c.user.is_attack(c.get("item", {}))
+		elif name == "se_can_crit":
+			extra[name] = bool(c.get("item", {}).get("damage", {}).get("critical", false))
 	var out := vm.run_phase(e.program, c, c.value, execute, extra)
+	if regenerating:
+		_emit_result(holder, c.resources, c)  # 块后外层 startDamagePopup，这才是目标掉血的弹字
+		(c.resources as XResourceContext).seed_result(holder, XResourceContext.empty_result())
 	if execute:
 		for name in extra:
 			if str(name).begins_with("f_"):
@@ -355,7 +397,40 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 
 static func _alive_friends(b: XBattler) -> Array:
 	var unit: Array = battle_units.get("actors" if b is XActor else "enemies", [])
-	return unit.filter(func(m): return m.is_alive())
+	return unit.filter(_counts_alive)
+
+
+## Game_Battler.isAlive：isAppeared 且血不为 0；还没出现的隐藏敌人不算
+static func _counts_alive(m: XBattler) -> bool:
+	return m.is_alive() and not (m is XEnemy and (m as XEnemy).hidden)
+
+
+## 回合、再生这些阶段没有命中记录：弹字走 ctx.emit 进战斗记录
+static func _emit_result(b: XBattler, resources: XResourceContext, c: Dictionary) -> void:
+	if c.get("emit") is Callable and c.emit.is_valid():
+		var r := resources.result(b)
+		c.emit.call({"type": "regen", "target": b, "hp": r.hpDamage if r.hpAffected else 0.0, "mp": r.mpDamage, "state": int(c.get("state_id", 0))})
+
+
+## 换装（setBattlerImage）：只有角色有；换装卡状态由 XCostumes 管，不走这里。_prevBattlerName 已有就不盖，所以同时两个时记的是最初的图。
+static func _costume_image(e: Dictionary, state_id: int, holder: XBattler) -> void:
+	if not holder is XActor or XCostumes.registry().has(state_id):
+		return
+	var a := holder as XActor
+	if str(a.state_data.get("_prevBattlerName", "")) == "":
+		a.state_data["_prevBattlerName"] = str(a.data().get("battlerName", ""))
+	a.set_looks({"battlerName": str(e.image)})
+
+
+## 敌人没有 setBattlerImage（TypeError，什么都不做）。没有记过旧图时原版把图设成 undefined 显示不出来，这里保留现状。
+static func _costume_restore(state_id: int, holder: XBattler) -> void:
+	if not holder is XActor or XCostumes.registry().has(state_id):
+		return
+	var a := holder as XActor
+	var prev := str(a.state_data.get("_prevBattlerName", ""))
+	if prev != "":
+		a.set_looks({"battlerName": prev})
+	a.state_data.erase("_prevBattlerName")
 
 
 ## BattleManager.queueForceAction：排进预约（$gameTemp.forceActionQueue，事件阶段跑 339，那时倒下了就不行动），并 clearResults 清所有战斗成员的结果槽。
@@ -463,6 +538,8 @@ static func _note_anim(animation: int, holder: XBattler, c: Dictionary) -> void:
 	var record = c.get("record")
 	if record is Dictionary:
 		record["state_anims"] = record.get("state_anims", []) + [[animation, holder]]
+	elif c.get("emit") is Callable and c.emit.is_valid():
+		c.emit.call({"type": "regen", "target": holder, "hp": 0.0, "animation": animation, "state": int(c.get("state_id", 0))})  # 再生、回合阶段没有命中记录
 
 
 ## Game_Variables.setValue：编号不在 1..System.variables 长度-1 内的写入原版直接忽略（如 1683 号脚本）

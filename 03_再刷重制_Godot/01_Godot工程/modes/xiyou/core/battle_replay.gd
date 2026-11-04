@@ -59,6 +59,7 @@ static func replay(data: Dictionary) -> Dictionary:
 			if logic.turn > 0:
 				logs.append_array(logic.end_turn())
 			logic.start_turn()
+			logs.append_array(logic.take_turn_start_logs())
 		var user := logic.next_subject()
 		if user == null or logic.stable_id(user) != str(cmd.user):
 			diagnostic = "replay_subject_mismatch"

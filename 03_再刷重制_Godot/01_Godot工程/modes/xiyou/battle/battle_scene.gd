@@ -542,6 +542,7 @@ func _main() -> void:
 	await _play_troop_events(logic.troop_events())
 	while true:
 		logic.start_turn()
+		await _play(logic.take_turn_start_logs())
 		if not first:
 			otb.advance_turn()
 		otb.show_orders(logic.current_order, logic.next_order, first)
@@ -1474,6 +1475,8 @@ func _play(logs: Array) -> void:
 					_start_animation(int(l.animation), l.target)
 				if float(l.hp) != 0.0:
 					_popup(l.target, float(l.hp), false)  # regen 记录与 hpDamage 同号：正伤害、负回复
+				if float(l.get("mp", 0.0)) != 0.0:
+					_popup(l.target, float(l.mp), false, "", true)
 				if l.has("raven"):
 					# 渡鸦 directDamage：startDamagePopup＋performDamage（敌人闪烁、角色受伤动作），再放收割／回响特效
 					_perform_damage(l.target)

@@ -200,6 +200,19 @@ func _new_lifecycle_resources() -> XResourceContext:
 	return resources
 
 ## 状态效果里的 $gameTemp.reserveCommonEvent（奈叶身经百战 1780 行动开始预约 2481）：交给战斗公共事件单槽
+## 回合开始状态块的弹字（小爱莉被动扣蓝）：start_turn 没有记录列表，存着由调用方接上
+var turn_start_logs := []
+func take_turn_start_logs() -> Array:
+	var out := turn_start_logs
+	turn_start_logs = []
+	return out
+
+
+func _turn_start_emit(entry: Dictionary) -> void:
+	entry.views = views([entry.target])
+	turn_start_logs.append(entry)
+
+
 func _take_state_reserves() -> void:
 	for id in XStateEffects.take_reserves():
 		XBattleCommonEvent.reserve(self, id)
@@ -207,6 +220,7 @@ func _take_state_reserves() -> void:
 
 func _start_battle_effects() -> void:
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
+	XStateEffects.force_critical = false
 	_battle_resources = _new_lifecycle_resources()
 	for b in state.members() + enemies:
 		if not _ids.has(b):
@@ -786,7 +800,7 @@ func start_turn() -> void:
 	for e in enemies:
 		e.sync_boss_armor(turn % 2 == 0, _rule())
 	for b in actors + enemies:
-		XStateEffects.run("turn_start", b, {"random": _rule(), "variables": vars()})  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
+		XStateEffects.run("turn_start", b, {"random": _rule(), "variables": vars(), "emit": _turn_start_emit})  # Custom Turn Start Effect：onTurnStart 内，Unit.refresh 之前
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
 		b.param_refresh()
@@ -957,7 +971,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		collapse.call()
 	XStateEffects.run("regenerate", b, {"random": _rule(), "variables": vars(), "emit": emit})
 	collapse.call()
-	XStateEffects.run("turn_end", b)
+	XStateEffects.run("turn_end", b, {"emit": emit})
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
 	XMira.turn_end(self, b, logs)  # 米拉 Game_Actor.onTurnEnd 包装（之后）：不灭龙血回 5%
@@ -968,6 +982,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 func run_turn(commands: Dictionary) -> Array:
 	var logs := run_events() if turn == 0 else []
 	start_turn()
+	logs.append_array(take_turn_start_logs())
 	var first := true
 	while true:
 		var u := next_subject()
@@ -1032,6 +1047,7 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		_take_state_reserves()
 		for p in XStateEffects.take_forces():
 			logs.append_array(_force_action(p, _check.get("first")))  # queueForceAction：预约事件优先，跑 339（倒下了就不行动）
 		if _runner == null: _runner = XBattleCommonEvent.take(self)  # setupBattleEvent：预约的公共事件（技能／物品效果 44）先于敌群页
@@ -1930,6 +1946,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
+	XStateEffects.force_previous = null
 	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
@@ -2004,7 +2021,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r
 	var type := int(dmg.type)
 	if type > 0:
-		r.critical = _float("critical") < item_cri(u, skill, dt)
+		r.critical = _float("critical") < item_cri(u, skill, dt) or XStateEffects.force_critical  # 必爆：forceCritical 照样抽随机数
 		_action_resources.result(dt).critical = r.critical
 		var previous_record := _damage_record
 		_damage_record = r

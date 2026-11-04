@@ -482,6 +482,47 @@ NO_EFFECT_BLOCKS = {
     ('confirm', ''),  # 2548
 }
 
+MEASURED_EFFECT_SOURCES.update({
+    # rules6（state_effects_probe rest.blocks）
+    ('regenerate', 'if ( origin !== target && origin . isAlive ( ) ) { var damage = origin . mat * 5 var el = target . elementRate ( 6 ) damage = Math . ceil ( damage * el ) ; origin . startAnimation ( 41 ) ; origin . gainHp ( damage * 4000 ) ; origin . startDamagePopup ( ) ; origin . clearResult ( ) ; target . startAnimation ( 532 ) ; target . gainHp ( - damage ) ; if ( target && target . isStateAffected ( 207 ) ) { target . gainHp ( damage * 3 ) ; } if ( target . isDead ( ) ) { target . performCollapse ( ) ; } }'):  # 260
+        'if (target.isNotOrigin() && origin.isAlive()) { var damage = origin.mat * 5; var el = target.elementRate(6); damage = Math.ceil(damage * el); origin.startAnimation(41); origin.gainHp(damage * 4000); origin.startDamagePopup(); origin.clearResult(); target.startAnimation(532); target.gainHp(-damage); if (target.isStateAffected(207)) { target.gainHp(damage * 3); } if (target.isDead()) { target.performCollapse(); } }',
+    ('regenerate', 'if ( origin !== target && origin . isAlive ( ) ) { var damage = origin . mat * 100 var el = target . elementRate ( 6 ) damage = Math . ceil ( damage * el ) ; origin . startAnimation ( 41 ) ; origin . gainHp ( damage * 0.1 ) ; origin . startDamagePopup ( ) ; origin . clearResult ( ) ; target . startAnimation ( 532 ) ; target . gainHp ( - damage ) ; if ( target . isDead ( ) ) { target . performCollapse ( ) ; } }'):  # 1006
+        'if (target.isNotOrigin() && origin.isAlive()) { var damage = origin.mat * 100; var el = target.elementRate(6); damage = Math.ceil(damage * el); origin.startAnimation(41); origin.gainHp(damage * 0.1); origin.startDamagePopup(); origin.clearResult(); target.startAnimation(532); target.gainHp(-damage); if (target.isDead()) { target.performCollapse(); } }',
+    ('turn_start', '$gameVariables . setValue ( 901 , 0 ) ; $gameTemp . reserveCommonEvent ( 1506 ) ; var targets = $gameTroop . members ( ) ; var i = Math . ceil ( user . mmp * 0.013 * targets . length ) ; user . gainMp ( - i ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ;'):  # 1306
+        '$gameVariables.setValue(901, 0); user.reserve(1506); var i = Math.ceil(user.mmp * 0.013 * user.troopSize()); user.gainMp(-i); user.startDamagePopup(); user.clearResult();',
+    ('remove', 'if ( $gameTroop . members ( ) . some ( enemy => enemy . isAlive ( ) ) ) { $gameTemp . reserveCommonEvent ( 1505 ) ; }'):  # 1307
+        'if (user.enemiesAlive()) { user.reserve(1505); }',
+    ('deselect', 'if ( target . hp <= 0 || target . isDead ( ) ) { $gameTemp . reserveCommonEvent ( 1514 ) ; }'):  # 1317
+        'if (target.hp <= 0 || target.isDead()) { target.reserve(1514); }',
+    ('turn_start', 'if ( ! $gameVariables . value ( 1163 ) == 1 ) { $gameTemp . reserveCommonEvent ( 1513 ) ; }'):  # 1318
+        'if ($gameVariables.value(1163) == 0) { user.reserve(1513); }',
+    ('react', 'if ( value >= 0 ) { $gameTemp . reserveCommonEvent ( 1605 ) }'):  # 2007
+        'if (value >= 0) { target.reserve(1605); }',
+    ('react', 'if ( value >= 0 ) { $gameTemp . reserveCommonEvent ( 1607 ) }'):  # 2009
+        'if (value >= 0) { target.reserve(1607); }',
+    ('react', 'if ( value >= 0 ) { $gameTemp . reserveCommonEvent ( 1599 ) }'):  # 2011
+        'if (value >= 0) { target.reserve(1599); }',
+    ('react', 'if ( value >= 0 ) { $gameTemp . reserveCommonEvent ( 1621 ) }'):  # 2026
+        'if (value >= 0) { target.reserve(1621); }',
+    ('confirm', '$gameTemp . reserveCommonEvent ( 1725 ) ; if ( $gameVariables . value ( 1584 ) > 9998 ) { target . addState ( 1 ) ; }'):  # 2568
+        'target.reserve(1725); if ($gameVariables.value(1584) > 9998) { target.addState(1); }',
+    ('select', 'var skill = this . item ( ) ; if ( skill && skill . damage . critical ) { this . _prevForcedCriticalHit = $gameSystem . _forceCritical ; this . _prevForcedNoCriticalHit = $gameSystem . _forceNoCritical ; BattleManager . actionForceCritical ( ) ; }'):  # 541
+        'if (se_can_crit) { target.forceCriticalOn(); }',
+    ('deselect', 'if ( this . _prevForcedCriticalHit !== undefined ) { $gameSystem . _forceCritical = this . _prevForcedCriticalHit ; $gameSystem . _forceNoCritical = this . _prevForcedNoCriticalHit ; }'):  # 541
+        'target.forceCriticalRestore();',
+    ('victory', '$gameParty . gainGold ( - $gameVariables . value ( 980 ) * 100 ) ;'):  # 1423
+        'user.gainGold(-$gameVariables.value(980) * 100);',
+    ('apply', 'user . _tp = Math . min ( 100 , ( user . _tp || 0 ) + 50 ) ; user . refresh ( ) ;'):  # 1840
+        'user.setTpRaw(Math.min(100, user.tp + 50));',
+})
+MEASURED_EFFECT_BLOCKS.update({
+    ('apply', 'user . addParam ( 3 , - 200 * $gameVariables . value ( 1204 ) ) ; user . addParam ( 5 , - 200 * $gameVariables . value ( 1204 ) ) ;'),  # 2003
+    ('remove', 'user . addParam ( 3 , 200 * $gameVariables . value ( 1204 ) ) ; user . addParam ( 5 , 200 * $gameVariables . value ( 1204 ) ) ;'),  # 2003
+})
+# 换装模板（rest.blocks costume）：图名可变，其余整句比对；换装卡状态由 XCostumes 管，运行时跳过
+COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
+COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
+
 
 def _adapt_phase_tokens(tokens):
     """this.isHpEffect() 等换成 se_ 局部量，$gameVariables.value(常数) 换成 v[常数]，value 的复合赋值展开。"""
@@ -523,6 +564,12 @@ def _adapt_phase_tokens(tokens):
 def effect_state_effect(code, phase):
     """target._xmx 这类字段换成 f_接收者_字段 局部量（运行时读进来、跑完写回），origin.属性换成 o_属性（块开头读）。"""
     from formula_program import Parser, Unsupported
+    plain = re.sub(r'\s+', ' ', re.sub(r'//[^\n]*', '', code)).strip()
+    costume = COSTUME_APPLY.fullmatch(plain) if phase == 'apply' else None
+    if costume:
+        return {'op': 'costume_image', 'image': costume.group(1)}
+    if phase == 'remove' and plain == COSTUME_REMOVE:
+        return {'op': 'costume_restore'}
     try:
         tokens = [row[0] for row in Parser(code).tokens[:-1]]
     except Unsupported:
@@ -543,12 +590,12 @@ def effect_state_effect(code, phase):
             rewritten.append(name)
             declared.add(name)
             i += 3
-        elif tokens[i] in ('stateId', 'se_attack'):
-            name = 'se_state_id' if tokens[i] == 'stateId' else 'se_attack'
+        elif tokens[i] in ('stateId', 'se_attack', 'se_can_crit'):
+            name = 'se_state_id' if tokens[i] == 'stateId' else tokens[i]
             rewritten.append(name)
             declared.add(name)
             i += 1
-        elif tokens[i] == 'origin' and tokens[i + 1:i + 2] == ['.']:
+        elif tokens[i] == 'origin' and tokens[i + 1:i + 2] == ['.'] and tokens[i + 3:i + 4] != ['(']:
             name = 'o_' + tokens[i + 2]
             rewritten.append(name)
             declared.add(name)
@@ -1355,6 +1402,9 @@ class Exporter:
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
+        # 切片可达的换装状态 66、226 脚本里写死的战斗图（别的换装图已经因别的引用在切片里）
+        for name in ('ftzs', '2_Brown'):
+            self.ref_img('sv_actors', name)
         # 脚本里写死的逐帧图（Codex_MiraRavenMultiFrame 的米拉／渡鸦变身、小猫剑圣）：整个 sv_actors/sv/文件夹 带上
         for folder in cfg.get('extraSvFolders', []):
             for f in sorted((self.app / 'img' / 'sv_actors' / 'sv' / folder).glob('*.png')):

@@ -215,7 +215,7 @@ class ReviveTranslationTests(unittest.TestCase):
         b = self.body
         for tag, code in [('Select', b), ('Deselect', b.replace('> 0.60 ||', '> 0.50 ||')), ('Deselect', b.replace('target.gainTp(target.tp)', 'target.gainTp(user.tp)')),
                           ('Deselect', b.replace('target.clearResult();', 'user.clearResult();')), ('Deselect', b.replace('target.clearResult();', 'target.clearResult(); BattleManager.queueForceAction(target, 7303, -2);')),
-                          ('Deselect', 'if (target.hp <= 0 || target.isDead()) { $gameTemp.reserveCommonEvent(1514); }'),
+                          ('Deselect', 'if (target.hp <= 0 || target.isDead()) { $gameTemp.reserveCommonEvent(1515); }'),
                           ('Deselect', 'if (target.hp <= 0) { target.gainHp(1); }'),
                           ('Deselect', 'if (target.hp <= 0 && $gameVariables.value(966) > 1) { $gameVariables.setValue(966,$gameVariables.value(967)-1); }')]:
             with self.subTest(tag=tag, code=code[-70:]):
@@ -263,6 +263,26 @@ class HookBlockTranslationTests(unittest.TestCase):
         for tag, code in [('Confirm', self.bond), ('Respond', self.bond.replace('1451', '1452')), ('Respond', self.bond.replace('user.friendsUnit', 'target.friendsUnit')),
                           ('Remove', 'target._isMarked = true;'), ('React', 'if (this.isDamageAffected()) { BattleManager.queueForceAction(user, 5577, target.index()); }')]:
             with self.subTest(tag=tag, code=code[-70:]):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
+class RestBlockTranslationTests(unittest.TestCase):
+    """rules6：换装模板只有图名可变；预约、必爆、金币、再生整块比对，改一句就退回 js。"""
+    apply = "if (user.isActor()) { user._prevBattlerName = user._prevBattlerName || user._battlerName; var battlerName = 'abc'; user.setBattlerImage(battlerName); user.refresh(); }"
+    remove = 'var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();'
+
+    def test_exact(self):
+        self.assertEqual(one('Apply', self.apply), {'phase': 'apply', 'op': 'costume_image', 'image': 'abc'})
+        self.assertEqual(one('Remove', self.remove), {'phase': 'remove', 'op': 'costume_restore'})
+        self.assertEqual(one('React', 'if (value >= 0) { $gameTemp.reserveCommonEvent(1605) }')['op'], 'effect_program')
+        self.assertEqual(one('Victory', '$gameParty.gainGold(-$gameVariables.value(980) * 100);')['op'], 'effect_program')
+
+    def test_boundaries(self):
+        for tag, code in [('Remove', self.apply), ('Apply', self.remove), ('Apply', self.apply.replace('user.isActor()', 'user.isEnemy()')),
+                          ('Apply', self.apply + ' user.gainHp(1);'), ('Remove', self.remove.replace('_priorityBattlerName', '_other')),
+                          ('React', 'if (value >= 0) { $gameTemp.reserveCommonEvent(1606) }'), ('Confirm', 'if (value >= 0) { $gameTemp.reserveCommonEvent(1605) }'),
+                          ('Victory', '$gameParty.gainGold(-$gameVariables.value(981) * 100);')]:
+            with self.subTest(tag=tag, code=code[-60:]):
                 self.assertEqual(one(tag, code)['op'], 'js')
 
 
