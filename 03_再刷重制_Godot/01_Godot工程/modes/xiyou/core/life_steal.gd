@@ -1,5 +1,5 @@
 class_name XLifeSteal
-## 【cc·哪吒·未经审查】YEP_LifeSteal 技能吸血（O-待定）。参照 mv_oracle/life_steal_probe.cjs（tests/fixtures/life_steal_oracle.json，正式引擎）。
+## 【cc·哪吒·未经审查】YEP_LifeSteal 技能吸血。参照 mv_oracle/life_steal_probe.cjs（tests/fixtures/life_steal_oracle.json，正式引擎）。
 ##
 ## 原版：Game_Action.executeHpDamage 包装（装在 YEP_DamageCore 之外、AbsorptionBarrier／ShieldSystem／各 codex 运行时之内），内层扣完血后读
 ## target._result.hpDamage（＝护盾、真气等外层先减过的实际伤害，不被目标剩余生命夹住；内层没写结果就是 0），>0 时行动者 lifeSteal：
