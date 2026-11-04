@@ -175,6 +175,14 @@ class Parser:
             body = self.statement(depth + 1)
             return self.node('block', pos, steps=[self.node('declare', pos, name=name, kind='var', value=start, initialized=True),
                                                   self.node('loop', pos, name=name, limit=limit, body=body)])
+        if self.loops and self.accept('for_members'):
+            # 换写后的「遍历接收者队友里活着的（循环前取好名单）」，循环变量固定叫 tar
+            self.take('(')
+            receiver, p, _, k = self.take()
+            if k != 'name':
+                raise Unsupported('expected_receiver', p)
+            self.take(')')
+            return self.node('members_loop', pos, receiver=receiver, body=self.statement(depth + 1))
         if self.t in ('var', 'let', 'const'):
             kind = self.take()[0]
             name, p, _, k = self.take()
@@ -252,7 +260,11 @@ def walk(node):
 
 # 状态块（phase_effects）才认的调用：弹字、清结果、移状态、倒下动画、查死亡；RemoveState 原版没有这个方法，调用即 TypeError
 PHASE_CALLS = {'startDamagePopup': ('popup', 0), 'clearResult': ('clear_result', 0), 'removeState': ('remove_state', 1),
-               'performCollapse': ('collapse', 0), 'isDead': ('is_dead', 0), 'RemoveState': ('throw', 1)}
+               'performCollapse': ('collapse', 0), 'isDead': ('is_dead', 0), 'RemoveState': ('throw', 1),
+               'addState': ('add_state', 1), 'isAlive': ('is_alive', 0), 'isBattleMember': ('is_battle_member', 0), 'isActor': ('is_actor', 0),
+               'hasSkill': ('has_skill', 1), 'stateRate': ('state_rate', 1), 'isStateResist': ('state_resist', 1), 'deathStateId': ('death_state_id', 0),
+               'startAnimation': ('animation', 1), 'setHp': ('set_hp', 1), 'queueForce': ('queue_force', 2), 'aliveFriends': ('alive_friends', 0),
+               'firstWeaponType': ('first_weapon_type', 0), 'setCounter': ('set_counter', 2), 'addActorCounterLevel': ('add_actor_counter_level', 2)}
 
 
 class Compiler:
@@ -302,6 +314,13 @@ class Compiler:
             if callee['op'] != 'member' or callee['owner']['op'] != 'name':
                 raise Unsupported('unsupported_call', pos)
             owner, method = callee['owner']['name'], callee['name']
+            if self.phase_effects and owner == 'tar':
+                if method in ('gainHp', 'gainMp', 'gainTp') and len(args) == 1:
+                    self.caps.add('write.' + method[4:].lower())
+                    return out('gain', receiver='t', resource=method[4:].lower(), amount=self.lower(args[0]))
+                if method in PHASE_CALLS and len(args) == PHASE_CALLS[method][1]:
+                    self.caps.add('write.phase')
+                    return out('phase_call', receiver='t', name=PHASE_CALLS[method][0], args=[self.lower(x) for x in args])
             if self.phase_effects and owner in ALIASES and method in PHASE_CALLS:
                 name, arity = PHASE_CALLS[method]
                 if len(args) != arity:
@@ -345,6 +364,8 @@ class Compiler:
                 self.caps.add('write.shield')
                 return out('shield', receiver=ALIASES[owner], amount=self.lower(args[0]))
             raise Unsupported('unsupported_call:' + owner + '.' + method, pos)
+        if op == 'members_loop':
+            return out('members_loop', receiver=ALIASES[n['receiver']], body=self.lower(n['body']))
         if op == 'loop':
             return out('loop', name=n['name'], limit=self.lower(n['limit']), body=self.lower(n['body']))
         if op in ('declare', 'assign'):

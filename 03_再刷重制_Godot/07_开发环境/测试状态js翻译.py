@@ -249,5 +249,22 @@ class EffectBlockTranslationTests(unittest.TestCase):
                 self.assertEqual(one(tag, code)['op'], 'js')
 
 
+class HookBlockTranslationTests(unittest.TestCase):
+    """rules5：原文整块比对后换成等价写法；改一句就退回 js。"""
+    bond = 'if(target.hp<=0||target.isDead()){ var targets = user.friendsUnit().aliveMembers(); for(var a=0 ;a < targets.length ; a++){ var tar = targets[a]; tar.removeState(1451); } }'
+
+    def test_exact(self):
+        got = one('Respond', self.bond)
+        self.assertEqual(got['op'], 'effect_program')
+        self.assertEqual(one('Remove', 'target._isMarked = false;')['op'], 'noop')
+        self.assertEqual(one('React', 'if (this.isDamageAffected()) { if (Math.random() < 0.5) { BattleManager.queueForceAction(user, 5577, target.index()); } }')['reason'], 'no_effect')
+
+    def test_boundaries(self):
+        for tag, code in [('Confirm', self.bond), ('Respond', self.bond.replace('1451', '1452')), ('Respond', self.bond.replace('user.friendsUnit', 'target.friendsUnit')),
+                          ('Remove', 'target._isMarked = true;'), ('React', 'if (this.isDamageAffected()) { BattleManager.queueForceAction(user, 5577, target.index()); }')]:
+            with self.subTest(tag=tag, code=code[-70:]):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()
