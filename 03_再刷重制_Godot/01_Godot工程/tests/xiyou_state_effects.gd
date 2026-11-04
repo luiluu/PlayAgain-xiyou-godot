@@ -54,6 +54,13 @@ class FixedRule:
 		return 0.5
 
 
+class WeaponActor:
+	extends XActor
+	var weapon_type := 0
+	func first_weapon_type() -> int:
+		return weapon_type
+
+
 class ReviveLogic:
 	extends ShieldLogic
 	var stream: XRandomStream
@@ -308,6 +315,9 @@ func _run() -> void:
 	check("effect.oracle_present", cases.has("effect.blocks"))
 	if cases.has("effect.blocks"):
 		_effect_blocks(cases["effect.blocks"].observed)
+	check("hook.oracle_present", cases.has("hook.blocks"))
+	if cases.has("hook.blocks"):
+		_hook_blocks(cases["hook.blocks"].observed)
 	check("revive.oracle_present", cases.has("revive.blocks"))
 	if cases.has("revive.blocks"):
 		_revive_blocks(cases["revive.blocks"].observed)
@@ -776,6 +786,12 @@ func _revive_apply(index: int, row: Dictionary) -> void:
 	var pops: Array = r.started_popups.map(_pop_row)
 	var revived: Array = row.popups.filter(func(p): return float(p.hpDamage) < 0.0 or float(p.mpDamage) != 0.0 or float(p.tpDamage) != 0.0)
 	check(label + ".popups", pops.size() == _want_pops(revived, sid).size(), [info, revived, pops])
+	# BEC apply 在 deselect 之内：这一击的数字先弹，复活块的弹字在后；没清结果的块（1164、1837）也不多弹一次回血
+	var hp_rows: Array = r.popupQueue.filter(func(p): return p.hpAffected)
+	var want_hp_rows: Array = row.popups.filter(func(p): return bool(p.hpAffected))
+	check(label + ".hp_popup_count", hp_rows.size() == want_hp_rows.size(), [info, want_hp_rows, hp_rows])
+	if want_hp_rows.size() == 2:
+		check(label + ".hit_first", float(hp_rows[0].hpDamage) > 0.0 and float(hp_rows[1].hpDamage) < 0.0 and float(r.shown.hp) > 0.0, [info, hp_rows, r.shown])
 
 
 ## 伤害 react／confirm 一族（rules4）：单块逐行比（value、两边资源、护盾、字段、状态、随机次数、弹字、变量）；实战比结局。
@@ -884,6 +900,195 @@ func _effect_apply(index: int, row: Dictionary) -> void:
 	if sid == 1061:
 		check(label + ".user_died", bool(r.user_died) and bool(row.a.dead) and int(row.collapses) == 1, [info, r.user_died, row.a.dead, row.collapses])
 	check(label + ".result_sign", signf(float(r.result.hpDamage)) == signf(float(row.e.result.hpDamage)), [info, row.e.result.hpDamage, r.result.hpDamage])
+
+
+## 其它／回合行动钩子两族（rules5）。
+func _hook_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	for pair in [[1067, "apply"], [1067, "remove"], [1068, "apply"], [1068, "remove"], [1068, "crit"], [1072, "react"], [2548, "confirm"]]:
+		var effects: Array = XDB.rec("States", pair[0]).effects.filter(func(e): return e.phase == pair[1])
+		check("hook.noop.%d.%s" % pair, effects.size() == 1 and effects[0].op == "noop", effects)
+	# 这些 noop 的依据：标记、基础防御都没人读，def 赋值无效，isDamageAffected 直接报错，Custom Damage Formula 不改伤害
+	check("hook.no_effect_basis", o.s1067[0].e.marked == true and o.s1068[1].e.def == o.s1068[1].def0 and float(o.s1072.got) == 7.0 and not o.s1072.sourceErrors.is_empty()
+		and o.customFormula[0].v == o.customFormula[1].v and o.customFormula[2].v == o.customFormula[3].v, [o.s1067, o.s1072.sourceErrors, o.customFormula])
+	XState.current = XState.new_game_blank()
+	_hook_83(o.s83)
+	_hook_1452(o.s1452)
+	_hook_turn_start(o.turnStart)
+	_hook_weapon(o.weapon)
+	_hook_2574(o.s2574)
+	_hook_1301(o.s1301flow)
+	_hook_1306(o.s1306)
+	XState.current = null
+	XStateEffects.battle_units = {}
+
+
+func _action_ctx(a: XBattler, t: XBattler, value: float, item := {}) -> Dictionary:
+	return {"attacker": a, "defender": t, "target": t, "item": item if not item.is_empty() else {"id": 1, "damage": {"type": 1, "elementId": 0}}, "value": value, "execute": true,
+		"resources": XResourceContext.new(), "record": {}, "random": SeqStream.new()}
+
+
+func _plain(hp := 1000.0) -> ValueBattler:
+	var b := ValueBattler.new()
+	b.values = {"mhp": 100000.0, "mmp": 100.0}
+	b.hp = hp
+	b.mp = 10.0
+	b.tp = 20.0
+	return b
+
+
+func _hook_83(rows: Array) -> void:
+	var rate := _state("测试·死亡率0", [], {"traits": [{"code": 13, "dataId": 1, "value": 0.0}]})
+	var resist := _state("测试·死亡抵抗", [], {"traits": [{"code": 14, "dataId": 1, "value": 1.0}]})
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		var a := _plain()
+		var e := _plain(float(row.tHp))
+		e.state_ids.append(83)
+		if row.extra == "rate":
+			a.state_ids.append(rate)
+		elif row.extra == "resist":
+			a.state_ids.append(resist)
+		var ctx := _action_ctx(a, e, 7.0)
+		var got := XStateEffects.run_one("respond", e, XDB.rec("States", 83), ctx)
+		var anims: Array = ctx.record.get("state_anims", []).map(func(p): return [p[1] == a, int(p[0])])
+		var want_anims: Array = row.anims.map(func(p): return [p[0] == "a", int(p[1])])
+		check("hook.83.%d" % index, got == float(row.got) and a.hp == float(row.a.hp) and a.is_dead() == bool(row.a.dead) and e.state_ids.has(83) == row.e.states.has(83.0) and anims == want_anims,
+			{"row": row, "got": [got, a.hp, a.is_dead(), e.state_ids, anims]})
+
+
+func _hook_1452(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		var a := _plain()
+		var b := _plain()
+		var e := _plain(float(row.tHp))
+		e.resource_death_blocked = true
+		e.state_ids.append(1452)
+		a.state_ids.append(1451)
+		b.state_ids.append(1451)
+		XStateEffects.battle_units = {"enemies": [a, b]}
+		var ctx := _action_ctx(a, e, 7.0)
+		var got := XStateEffects.run_one("respond", e, XDB.rec("States", 1452), ctx)
+		check("hook.1452.%d" % index, got == float(row.got) and _sorted(a.state_ids) == _sorted(row.a.states) and _sorted(b.state_ids) == _sorted(row.b.states), {"row": row, "got": [a.state_ids, b.state_ids]})
+
+
+func _hook_turn_start(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		var sid := int(row.sid)
+		var h := _plain()
+		h.state_ids.append_array([sid, 1713, 1718])
+		var unit := [h]
+		for i in range(int(row.alive) - (0 if row.holderDead else 1)):
+			unit.append(_plain())
+		if row.holderDead:
+			h.hp = 0.0
+			h.state_ids.append(1)
+		XStateEffects.battle_units = {"enemies": unit}
+		XStateEffects.run_one("turn_start", h, XDB.rec("States", sid), {"execute": true, "resources": XResourceContext.new()})
+		var want: Array = row[row.holder].states
+		check("hook.turn_start.%d" % index, _sorted(h.state_ids) == _sorted(want), {"row": [sid, row.holder, row.alone, row.holderDead, row.alive], "want": want, "got": h.state_ids})
+
+
+func _hook_weapon(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		var item: Dictionary = XDB.rec("Skills", int(row.skill))
+		var u: XBattler
+		if row.who == "a":
+			var actor := WeaponActor.new()
+			actor.setup(1)
+			actor.weapon_type = int(row.wt)
+			u = actor
+		else:
+			u = _plain()
+		var t := _plain()
+		var st := XDB.rec("States", int(row.sid))
+		var got := [XStateEffects.run_one("confirm", u, st, _action_ctx(u, t, 7.0, item)), XStateEffects.run_one("confirm", u, st, _action_ctx(u, t, 99.0, item))]
+		check("hook.weapon.%d" % index, got == [float(row.got7), float(row.got99)], {"row": row, "got": got})
+
+
+func _hook_2574(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		XState.current = XState.new_game_blank()
+		var a108: XActor = XState.current.actor(108)
+		var u := _plain()
+		u.state_data["_stateCounter"] = {}
+		a108.state_data["_stateCounter"] = {}
+		if row.has("c") and row.c != null:
+			u.state_data._stateCounter["2401"] = float(row.c)
+		if row.has("c108") and row.c108 != null:
+			a108.state_data._stateCounter["2401"] = float(row.c108)
+		XStateEffects.run_one("apply", u, XDB.rec("States", 2574), {"execute": true, "resources": XResourceContext.new()})
+		var after108 = a108.state_data._stateCounter.get("2401")
+		var ok: bool = u.state_data._stateCounter["2401"] == float(row.after)
+		if str(row.after108) == "NaN":
+			ok = ok and after108 == null  # 原版 NaN，读的地方当 0；这边不写 NaN
+		else:
+			ok = ok and after108 == float(row.c108) + float(a108.level) and float(row.after108) == float(row.c108) + float(row.level)
+		check("hook.2574.%d" % index, ok, {"row": row, "got": [u.state_data, after108]})
+	XState.current = XState.new_game_blank()
+
+
+func _hook_1301(rows: Array) -> void:
+	var row: Dictionary = rows[0]
+	var e := _plain(0.0)
+	e.resource_death_blocked = true  # 序列 immortal：血为 0 未倒下
+	e.state_ids.append(1301)
+	var a := _plain()
+	XStateEffects.battle_units = {"enemies": [e, a]}
+	var ctx := _action_ctx(a, e, 0.0)
+	XStateEffects.take_forces()
+	XStateEffects.run_one("deselect", e, XDB.rec("States", 1301), ctx)
+	var forces := XStateEffects.take_forces()
+	var want: Array = row.queue[0].parameters.map(func(x): return int(x))
+	check("hook.1301.queue", forces == [want], [want, forces])
+	check("hook.1301.removed", not e.state_ids.has(1301) and ctx.resources.result(e).removedStates == row.e.removed.map(func(x): return int(x)) and not ctx.resources.result(e).hpAffected, [e.state_ids, ctx.resources.result(e), row.e])
+	# 解除 immortal 后才判定，倒下了 339 不行动（参照 after_event 没有强制行动）
+	check("hook.1301.after_event", rows[2].forced == null and bool(rows[1].e.dead), rows[2].forced)
+	var alive := _plain()
+	alive.state_ids.append(1301)
+	XStateEffects.run_one("deselect", alive, XDB.rec("States", 1301), _action_ctx(a, alive, 0.0))
+	check("hook.1301.alive_no_queue", XStateEffects.take_forces().is_empty() and alive.state_ids.has(1301))
+
+
+func _hook_1306(rows: Array) -> void:
+	for index in range(rows.size()):
+		var row: Dictionary = rows[index]
+		XEnemy.force_roll = 100.0
+		var s := XState.new_game(3, 1, [8])
+		s.random_master = XRandomStream.hex64(4700 + index)
+		XState.current = s
+		var logic := ReviveLogic.new()
+		logic.elite_roll = 100.0
+		logic.setup(2, s)
+		var a: XActor = logic.actors[0]
+		var b: XBattler = logic.actors[1]
+		var e: XBattler = logic.enemies[0]
+		for id in row.learned:
+			a.learn_skill(int(id))
+		var h: XBattler = a if row.holder == "a" else e
+		h.state_ids.append(1306)
+		var want_loss := ceilf(float(row.hp) * 0.13)
+		check("hook.1306.%d.formula" % index, row.sourceErrors.size() > 0 or float(row.hp) - float(row.a.hp) == want_loss, [row.hp, row.a.hp])
+		var hp := minf(float(row.hp), a.mhp)
+		a.hp = hp
+		if row.alone:
+			b.hp = 0.0
+			b.state_ids.append(1)
+		var ctx := {"execute": true, "resources": XResourceContext.new()}
+		XStateEffects.run_one("turn_end", h, XDB.rec("States", 1306), ctx)
+		if row.holder == "e":
+			check("hook.1306.%d.enemy_throws" % index, a.hp == hp and not row.sourceErrors.is_empty() and row.popups.is_empty(), [a.hp, row.sourceErrors])
+			continue
+		var pops: Array = ctx.resources.started_popups.get(a, [])
+		var wanted: Array = row.a.states.filter(func(x): return int(x) in [1307, 1312]).map(func(x): return int(x))
+		var has: Array = a.state_ids.filter(func(x): return int(x) in [1307, 1312])
+		has.sort()
+		check("hook.1306.%d.a" % index, a.hp == hp - ceilf(hp * 0.13) and has == wanted and pops.size() >= 1 and float(pops[0].hpDamage) == ceilf(hp * 0.13), [a.hp, hp, has, wanted, pops])
+		check("hook.1306.%d.b" % index, (b.is_dead() == bool(row.alone)) and (row.alone or b.hp < b.mhp or b.hp == 0.0), [b.hp, row.alone])
 
 
 func _pop_row(p: Dictionary) -> Array:

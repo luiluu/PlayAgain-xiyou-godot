@@ -425,6 +425,7 @@ def revive_state_effect(code, phase):
 
 # 伤害 react／confirm 一族（state_effects_probe effect.blocks）：整段 token 比对；只有表里的块才译成带副作用的小程序，别的一律退回 js。
 MEASURED_EFFECT_BLOCKS = {
+    ('respond', 'if ( target . hp <= 0 ) { target . removeState ( stateId ) ; var deathState = user . deathStateId ( ) ; if ( user . stateRate ( deathState ) > 0.01 && ! user . isStateResist ( deathState ) ) { user . startAnimation ( 65 ) ; user . setHp ( 0 ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } } }'),  # 83
     ('apply', 'user . _Shield = user . _Shield || 0 ; user . _Shield + = user . mhp * 10 ;'),  # 1060
     ('react', 'if ( this . isHpEffect ( ) && value > 0 && target . _Shield > 0 ) { var Shielda = target . _Shield ; target . _Shield - = value ; value - = Math . min ( Shielda , value ) ; }'),  # 1060
     ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . mat ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 100 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1061
@@ -449,6 +450,36 @@ UNREAD_FIELD_BLOCKS = {
     ('battle', 'user . jqsbt = 0 ;'),  # 2575
     ('remove', 'user . jqsbt = 0 ;'),  # 2575
     ('turn_end', 'if ( user . jqsbt < 10 ) { user . jqsbt + = 1 ; }'),  # 2575
+}
+
+# rules5（state_effects_probe hook.blocks）：原文要遍历队友、取武器、强制行动，公式 IR 表达不了；整块比对后换成下面的等价写法（else if 走不到的分支直接略去）。
+MEASURED_EFFECT_SOURCES = {
+    ('deselect', 'if ( target . hp <= 0 || target . isDead ( ) ) { BattleManager . queueForceAction ( target , 7303 , - 2 ) ; target . removeState ( 1301 ) ; }'):  # 1301
+        'if (target.hp <= 0 || target.isDead()) { target.queueForce(7303, -2); target.removeState(1301); }',
+    ('turn_end', 'var i = Math . ceil ( user . hp * 0.13 ) ; if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var targets = user . friendsUnit ( ) . aliveMembers ( ) ; for ( var a = 0 ; a < targets . length ; a ++ ) { var tar = targets [ a ] ; if ( user . hasSkill ( 7305 ) ) { tar . addState ( 1307 ) ; } if ( user . hasSkill ( 7326 ) ) { tar . addState ( 1312 ) ; } tar . gainHp ( - i ) ; tar . startDamagePopup ( ) ; tar . clearResult ( ) ; } }'):  # 1306
+        'var i = Math.ceil(user.hp * 0.13); if (user.isBattleMember() && user.isAlive()) { for_members (user) { if (user.hasSkill(7305)) { tar.addState(1307); } if (user.hasSkill(7326)) { tar.addState(1312); } tar.gainHp(-i); tar.startDamagePopup(); tar.clearResult(); } }',
+    ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { var targets = user . friendsUnit ( ) . aliveMembers ( ) ; for ( var a = 0 ; a < targets . length ; a ++ ) { var tar = targets [ a ] ; tar . removeState ( 1451 ) ; } }'):  # 1452
+        'if (target.hp <= 0 || target.isDead()) { for_members (user) { tar.removeState(1451); } }',
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var allies = user . friendsUnit ( ) . aliveMembers ( ) ; if ( allies . length > 1 ) { user . addState ( 1712 ) ; user . removeState ( 1713 ) ; user . removeState ( 1714 ) ; } else if ( allies . length > 2 ) { user . removeState ( 1712 ) ; user . addState ( 1713 ) ; user . removeState ( 1714 ) ; } else if ( allies . length > 3 ) { user . removeState ( 1712 ) ; user . removeState ( 1713 ) ; user . addState ( 1714 ) ; } }'):  # 1711
+        'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 1) { user.addState(1712); user.removeState(1713); user.removeState(1714); } }',
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var allies = user . friendsUnit ( ) . aliveMembers ( ) ; if ( allies . length > 0 ) { user . addState ( 1717 ) ; user . removeState ( 1718 ) ; user . removeState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 1 ) { user . removeState ( 1717 ) ; user . addState ( 1718 ) ; user . removeState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 2 ) { user . removeState ( 1717 ) ; user . removeState ( 1718 ) ; user . addState ( 1719 ) ; user . removeState ( 1720 ) ; } else if ( allies . length > 3 ) { user . removeState ( 1717 ) ; user . removeState ( 1718 ) ; user . removeState ( 1719 ) ; user . addState ( 1720 ) ; } }'):  # 1716
+        'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 0) { user.addState(1717); user.removeState(1718); user.removeState(1719); user.removeState(1720); } }',
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 2 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.01 ) ; } } }'):  # 2544
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 2) { value += Math.ceil(value * 0.01); }',
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 11 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.01 ) ; } } }'):  # 2545
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 11) { value += Math.ceil(value * 0.01); }',
+    ('apply', 'user . _stateCounter [ 2401 ] = user . _stateCounter [ 2401 ] || 0 ; user . _stateCounter [ 2401 ] = 0 ; $gameActors . actor ( 108 ) . _stateCounter [ 2401 ] + = $gameActors . actor ( 108 ) . level ;'):  # 2574
+        'user.setCounter(2401, 0); user.addActorCounterLevel(108, 2401);',
+}
+# 这些块在原版一跑就没效果：1067 标记只有不生效的 Custom Damage Formula 读；1068 def 只有 getter、_baseDef 没人读，暴击块 crit 不触发；1072 isDamageAffected 不存在直接 TypeError；2548 是空块。
+NO_EFFECT_BLOCKS = {
+    ('apply', 'target . _isMarked = true ;'),  # 1067
+    ('remove', 'target . _isMarked = false ;'),  # 1067
+    ('apply', 'target . _baseDef = target . def ; target . _baseMdef = target . mdef ;'),  # 1068
+    ('remove', 'target . def = target . _baseDef ; target . mdef = target . _baseMdef ;'),  # 1068
+    ('crit', 'if ( value ) { var action = new Game_Action ( user ) ; action . setSkill ( 5576 ) ; BattleManager . queueForceAction ( user , 5576 , target . index ( ) ) ; }'),  # 1068
+    ('react', 'if ( this . isDamageAffected ( ) ) { if ( Math . random ( ) < 0.5 ) { BattleManager . queueForceAction ( user , 5577 , target . index ( ) ) ; } }'),  # 1072
+    ('confirm', ''),  # 2548
 }
 
 
@@ -499,7 +530,11 @@ def effect_state_effect(code, phase):
     signature = (phase, ' '.join(tokens))
     if signature in UNREAD_FIELD_BLOCKS:
         return {'op': 'noop', 'reason': 'unread_field'}
-    if signature not in MEASURED_EFFECT_BLOCKS:
+    if signature in NO_EFFECT_BLOCKS:
+        return {'op': 'noop', 'reason': 'no_effect'}
+    if signature in MEASURED_EFFECT_SOURCES:
+        tokens = [row[0] for row in Parser(MEASURED_EFFECT_SOURCES[signature]).tokens[:-1]]
+    elif signature not in MEASURED_EFFECT_BLOCKS:
         return None
     rewritten, declared, i = [], set(), 0
     while i < len(tokens):
@@ -508,6 +543,11 @@ def effect_state_effect(code, phase):
             rewritten.append(name)
             declared.add(name)
             i += 3
+        elif tokens[i] in ('stateId', 'se_attack'):
+            name = 'se_state_id' if tokens[i] == 'stateId' else 'se_attack'
+            rewritten.append(name)
+            declared.add(name)
+            i += 1
         elif tokens[i] == 'origin' and tokens[i + 1:i + 2] == ['.']:
             name = 'o_' + tokens[i + 2]
             rewritten.append(name)

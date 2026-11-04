@@ -1596,36 +1596,30 @@ func _hit_visual(l: Dictionary) -> bool:
 		ts.set_motion("evade")
 	else:
 		# 行动中途 startDamagePopup 拷下的弹字（死而复燃的回血、回蓝、TP），先于本次结果
-		for p in l.get("started_popups", []):
-			if p.hpAffected:
-				_popup(t, float(p.hpDamage), false)
-			if float(p.mpDamage) != 0.0:
-				_popup(t, float(p.mpDamage), false, "", true)
-			if float(p.tpDamage) != 0.0:
-				_popup(t, float(p.tpDamage), false, "", false, true)
+		var started: Array = l.get("started_popups", [])
+		var split: int = l.get("started_split", started.size())
+		_show_result_popups(t, started.slice(0, split))
 		# 轮回困难 Establish 的附加伤害：先于本次伤害各弹一次（gainHp＋startDamagePopup）
 		for v in l.get("extra", []):
 			_popup(t, float(v), false)
-		if float(l.hp) != 0.0 or l.has("popup_hp"):
-			_popup(t, float(l.get("popup_hp", l.hp)), l.critical)
+		# 弹的是 deselect 之前的结果（复活块清了结果槽，这一击的数字照弹），复活块自己的弹字跟在后面
+		var shown: Dictionary = l.get("shown", {"hp": l.hp, "mp": l.mp, "tp": l.get("tp", 0.0)})
+		if float(shown.hp) != 0.0 or l.has("popup_hp"):
+			_popup(t, float(l.get("popup_hp", shown.hp)), l.critical)
 			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
-			if float(l.hp) > 0.0:
+			if float(shown.hp) > 0.0:
 				_perform_damage(t)
-		if float(l.mp) != 0.0:
-			_popup(t, float(l.mp), false, "", true)
-		if float(l.get("tp", 0.0)) != 0.0:
-			_popup(t, float(l.tp), false, "", false, true)
+		if float(shown.mp) != 0.0:
+			_popup(t, float(shown.mp), false, "", true)
+		if float(shown.tp) != 0.0:
+			_popup(t, float(shown.tp), false, "", false, true)
+		_show_result_popups(t, started.slice(split))
 		if t is XEnemy:
 			_show_enemy_gauge(t)
-	for p in l.get("user_popups", []):
-		if p.hpAffected:
-			_popup(l.user, float(p.hpDamage), false)
-		if float(p.mpDamage) != 0.0:
-			_popup(l.user, float(p.mpDamage), false, "", true)
-		if float(p.tpDamage) != 0.0:
-			_popup(l.user, float(p.tpDamage), false, "", false, true)
-	if l.get("user_died", false):
-		_collapse_visual(l.user)
+	if sprites.has(l.user):
+		_show_result_popups(l.user, l.get("user_popups", []))
+		if l.get("user_died", false):
+			_collapse_visual(l.user)
 	for kind in l.get("raven_fx", []):
 		# 渡鸦 Game_Action.apply 包装：神话封解 ring、伤害技能每次 slash；有施放特效的技能不再画（legacyFx 包装）
 		if not (str(kind) in ["slash", "ring"] and _raven_styled(l)):
@@ -1636,6 +1630,17 @@ func _hit_visual(l: Dictionary) -> bool:
 			gauges[t].timer = 0.0
 		return true
 	return false
+
+
+## startDamagePopup 拷下的结果逐行弹（血、蓝、TP，状态行不弹数字）
+func _show_result_popups(t: XBattler, rows: Array) -> void:
+	for p in rows:
+		if p.hpAffected:
+			_popup(t, float(p.hpDamage), false)
+		if float(p.mpDamage) != 0.0:
+			_popup(t, float(p.mpDamage), false, "", true)
+		if float(p.tpDamage) != 0.0:
+			_popup(t, float(p.tpDamage), false, "", false, true)
 
 
 ## MV Game_Battler.performDamage：敌人闪烁（requestEffect blink），角色做受伤动作

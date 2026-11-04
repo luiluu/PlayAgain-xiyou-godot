@@ -577,6 +577,118 @@ cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
   }
   return {rows, applies, actionStart};
 }));
+// 其它／回合行动钩子两族（rules5）：直调 customEffectEval，看不抛错、改了什么。队友遍历、武器、字段、计数器都在这里。
+cases.push(makeCase('hook.blocks', {}, () => {
+  const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;
+  const errors = []; let popups = [], anims = [];
+  w.Yanfly.Util.displayError = (error) => errors.push(String(error).slice(0, 70));
+  const name = t => t === a ? 'a' : t === b ? 'b' : t === e ? 'e' : '?';
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: name(this), hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}); };
+  w.Game_Battler.prototype.startAnimation = function (id) { anims.push([name(this), id]); };
+  const oldCollapseE = w.Game_Enemy.prototype.performCollapse, oldCollapseA = w.Game_Actor.prototype.performCollapse;
+  let collapses = [];
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses.push(name(this)); };
+  const statesBefore = w.$dataStates.length;  // 用完摘掉，后面用例新建的测试状态号不能变
+  const RES_RATE = fakeTrait(13, 1, 0, '测试·死亡率0'), RES_SET = fakeTrait(14, 1, 1, '测试·死亡抵抗');
+  const units = [a, b, e];
+  const reset = () => { for (const t of units) { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1000; t._mp = 10; t._tp = 20; t.need_refresh = true; t.refresh(); t._hp = 1000; }
+    popups = []; anims = []; collapses = []; errors.length = 0; for (const t of units) { delete t._isMarked; delete t._baseDef; delete t._baseMdef; } };
+  const snap = () => { const o = {sourceErrors: errors.slice(), popups: popups.slice(), anims: anims.slice(), collapses: collapses.slice()};
+    for (const t of units) { const r = t.result(); o[name(t)] = {hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), mhp: t.mhp, states: t._states.slice().sort((x, y) => x - y), marked: t._isMarked === undefined ? null : t._isMarked,
+      added: Array.from(r.addedStates), removed: Array.from(r.removedStates), hpAffected: r.hpAffected, hpDamage: r.hpDamage, def: t.def}; }
+    return o; };
+  const out = {};
+  const action = (user, skillId) => { const act = new w.Game_Action(user); act.setSkill(skillId); return act; };
+  const place = (t, sid) => { t._states.push(sid); t.need_refresh = true; t.refresh(); t.clearResult(); };
+  const hadWeapons = a.weapons;
+  try {
+    // 83 命之诅咒 respond：目标血为 0 才生效；行动者死亡率、抵抗
+    out.s83 = [];
+    for (const [tHp, extra] of [[1000, []], [0, []], [0, [RES_RATE]], [0, [RES_SET]]]) {
+      reset(); place(e, 83); for (const x of extra) place(a, x); e._hp = tHp;
+      const got = action(a, 1).customEffectEval(e, 83, 'respondState', e, 7);
+      out.s83.push({tHp, extra: extra.length ? (extra[0] === RES_RATE ? 'rate' : 'resist') : '', got, ...snap()});
+    }
+    // 1067 标记字段；1068 记防御、恢复防御（def 只有 getter）；Battler 版 target＝持有者
+    out.s1067 = []; reset(); place(e, 1067); e.customEffectEval(1067, 'addState'); out.s1067.push(snap()); e.customEffectEval(1067, 'removeState'); out.s1067.push(snap());
+    out.s1068 = []; reset(); place(e, 1068); const def0 = e.def; e.customEffectEval(1068, 'addState'); out.s1068.push({def0, base: e._baseDef, ...snap()}); e.customEffectEval(1068, 'removeState'); out.s1068.push({def0, ...snap()});
+    // 1072 挨打反击：this.isDamageAffected 不存在
+    reset(); place(e, 1072); out.s1072 = {got: action(a, 1).customEffectEval(e, 1072, 'reactState', e, 7), ...snap()};
+    // 1452 respond：user 是行动者，移的是行动者队友的 1451
+    out.s1452 = [];
+    for (const tHp of [1000, 0]) { reset(); place(e, 1452); place(a, 1451); place(b, 1451); e._hp = tHp;
+      const got = action(a, 1).customEffectEval(e, 1452, 'respondState', e, 7); out.s1452.push({tHp, got, ...snap()}); }
+    // 1711／1716 turn_start：else if 写法，后面的分支到不了；alone＝队里其他人都倒下
+    out.turnStart = [];
+    const others = h => h.friendsUnit().members().filter(m => m !== h);
+    const fall = h => { for (const m of others(h)) { m._hp = 0; m._states.length = 0; m._states.push(1); } };
+    const rise = h => { for (const m of others(h)) { m._states.length = 0; m._hp = 1000; } };
+    for (const sid of [1711, 1716]) for (const holder of ['a', 'e']) for (const alone of [false, true]) for (const holderDead of [false, true]) {
+      reset(); const h = holder === 'a' ? a : e; place(h, sid); if (alone) fall(h);
+      for (const pre of [1713, 1718]) place(h, pre);
+      if (holderDead) { h._hp = 0; h._states.push(1); }
+      const alive = h.friendsUnit().aliveMembers().length;
+      h.customEffectEval(sid, 'turnStartState');
+      out.turnStart.push({sid, holder, alone, holderDead, alive, ...snap()});
+      h._states.length = 0; rise(h);
+    }
+    // 1306 turn_end：每个活队友扣 ceil(hp*0.13)；学过 7305／7326 才加状态。敌人没有 hasSkill
+    out.s1306 = [];
+    for (const [holder, learned, alone, hp] of [['a', [], false, 1000], ['a', [7305], false, 1000], ['a', [7326], false, 77], ['a', [7305, 7326], true, 1000], ['e', [], false, 1000]]) {
+      reset(); const h = holder === 'a' ? a : e; place(h, 1306); h._hp = hp; if (alone) fall(h);
+      const alive = h.friendsUnit().aliveMembers().length;
+      const keep = a._skills.slice(); for (const s of learned) a._skills.push(s); a.need_refresh = true; a.refresh();
+      h.customEffectEval(1306, 'turnEndState');
+      out.s1306.push({holder, learned, alone, hp, alive, ...snap()});
+      rise(h);
+      a._skills.length = 0; for (const s of keep) a._skills.push(s); a.need_refresh = true;
+    }
+    // 2544／2545 confirm：武器类型与普攻（skill 1 是攻击）
+    out.weapon = [];
+    for (const sid of [2544, 2545]) for (const [who, wt, skill] of [['a', 2, 1], ['a', 11, 1], ['a', 2, 5], ['a', 0, 1], ['e', 2, 1]]) {
+      reset(); const u = who === 'a' ? a : e, t = who === 'a' ? e : a;
+      a.weapons = () => wt ? [{wtypeId: wt}] : [];
+      const act = action(u, skill); out.weapon.push({sid, who, wt, skill, isAttack: act.isAttack(), got7: act.customEffectEval(t, sid, 'confirmState', u, 7), got99: act.customEffectEval(t, sid, 'confirmState', u, 99), sourceErrors: errors.slice()});
+    }
+    delete a.weapons;
+    // 2574 apply：把用户的计数清零，再给 108 号角色加等级；108 不在队也有对象
+    out.s2574 = [];
+    const a108 = w.$gameActors.actor(108);
+    for (const [c, c108] of [[5, 7], [undefined, undefined]]) { reset(); a._stateCounter = a._stateCounter || {}; a108._stateCounter = a108._stateCounter || {};
+      delete a._stateCounter[2401]; delete a108._stateCounter[2401]; if (c !== undefined) a._stateCounter[2401] = c; if (c108 !== undefined) a108._stateCounter[2401] = c108;
+      a.customEffectEval(2574, 'addState'); out.s2574.push({c, c108, level: a108.level, after: a._stateCounter[2401], after108: String(a108._stateCounter[2401]), sourceErrors: errors.slice()}); }
+    // 5576／5577 的 Custom Damage Formula（YEP_DamageCore）：标记不标记时伤害式走哪条，a.atkRate 不存在
+    out.customFormula = [];
+    for (const skill of [5576, 5577]) for (const marked of [false, true]) { reset(); w.Math.__r = 0; if (marked) e._isMarked = true;
+      const act = action(a, skill), oldRnd = w.Math.random; w.Math.random = () => 0.5; let v = null, err = null;
+      try { v = act.makeDamageValue(e, false); } catch (x) { err = String(x).slice(0, 60); }
+      w.Math.random = oldRnd; out.customFormula.push({skill, marked, v, thrown: err, atk: a.atk, def: e.def, formula: w.$dataSkills[skill].damage.formula.slice(0, 60), sourceErrors: errors.slice()}); }
+    // 1301 真实流程：普通序列里目标不死（immortal），deselect 时 hp 0 未倒下；事件跑完强制行动 7303
+    out.s1301flow = [];
+    { reset(); const bm = w.BattleManager; for (const u of [a, b]) u._hp = 300; place(e, 1301); e._hp = 1;
+      const phase = runAction(bm, a, 1, 0);
+      const q = w.$gameTemp._forceActionQueue ? JSON.parse(JSON.stringify(w.$gameTemp._forceActionQueue.list)) : null;
+      out.s1301flow.push({step: 'after_action', phase, queue: q, ...snap(), immortalNow: e.isImmortal ? e.isImmortal() : null});
+      // 收尾：解除 immortal 后才判定倒下，再跑预约的强制行动
+      e.removeImmortal(); out.s1301flow.push({step: 'after_immortal', ...snap()});
+      for (const m of [a, b, e]) m.clearResult();
+      const troop = w.$gameTroop, inter = troop._interpreter;
+      if (w.$gameTemp.isCommonEventReserved && w.$gameTemp.isCommonEventReserved()) { const ce = w.$gameTemp.reservedCommonEvent(); inter.setup(ce.list); w.$gameTemp.clearCommonEvent(); }
+      for (let i = 0; i < 40; i++) { inter.update(); if (bm._phase === 'action' || bm._actionForcedBattler) break; }
+      out.s1301flow.push({step: 'after_event', forced: bm._actionForcedBattler ? name(bm._actionForcedBattler) : null, forcedSkill: (bm._actionForcedBattler && bm._actionForcedBattler.currentAction()) ? bm._actionForcedBattler.currentAction().item().id : null, ...snap()}); }
+    // 1301 deselect：实战打死持有者，看强制行动 7303 跑不跑（走 BattleManager 流程）
+    out.s1301 = [];
+    for (const low of [false, true]) { reset(); place(e, 1301); if (low) e._hp = 1; const bm = w.BattleManager; const before = e.hp;
+      const act = action(a, 1); act.apply(e); const q = (bm._forcedActionQueue || bm._actionForcedBattler ? 1 : 0);
+      out.s1301.push({low, before, queuedAny: q, ...snap()}); }
+  } finally {
+    delete a.weapons; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; w.Game_Battler.prototype.startAnimation = oldAnim;
+    w.$dataStates.length = statesBefore;
+    w.Game_Enemy.prototype.performCollapse = oldCollapseE; w.Game_Actor.prototype.performCollapse = oldCollapseA;
+    for (const t of units) { t._states.length = 0; t.clearResult(); }
+  }
+  return out;
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
