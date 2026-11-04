@@ -56,6 +56,8 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
+	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
+		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
 	XUI.menu_background(self)
 	win = XMVWindow.make(self, RECT, XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
@@ -93,6 +95,12 @@ func status_text(i: int) -> String:
 			return "ON" if _follow_on() else "OFF"
 		"codexCostumes":
 			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
+		"codexTestMode":
+			return ("ON" if XTestMode.enabled() else "OFF") if XTestMode.unlocked() else ""
+		"codexGM":
+			if not XTestMode.unlocked():
+				return ""
+			return "打开" if XTestMode.can_open(XState.current) else ("进入游戏" if XTestMode.enabled() else "需开启")
 	return ""
 
 
@@ -157,6 +165,14 @@ func ok() -> void:
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
+		"codexTestMode":
+			if XTestMode.unlocked():
+				_set_test_mode(not XTestMode.enabled())
+		"codexGM":
+			if XTestMode.can_open(XState.current):
+				_open_page(XTestModeScene.new())
+			else:
+				XSound.system(3)
 		"codexCostumes":
 			# C.open：Window_Options.processOk 被整个换掉，不播确定音；不能开时蜂鸣
 			if XCostumes.can_open(XState.current):
@@ -179,6 +195,9 @@ func _side(right: bool) -> void:
 			match symbol:
 				"codexFollow":
 					_set_follow(right)
+				"codexTestMode":
+					if XTestMode.unlocked():
+						_set_test_mode(right)
 				"battleAniSpeed":
 					_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
 
@@ -215,6 +234,14 @@ func _set_follow(v: bool) -> void:
 		return
 	XState.current.set_variable(24, 0 if v else 1)
 	XState.current.followers_visible = v
+	XSound.system(0)
+	_refresh()
+
+
+func _set_test_mode(v: bool) -> void:
+	if XTestMode.enabled() == v:
+		return
+	XTestMode.set_enabled(v)
 	XSound.system(0)
 	_refresh()
 

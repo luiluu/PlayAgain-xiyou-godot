@@ -236,6 +236,7 @@ static func record(b, skill: Dictionary) -> void:
 ## onAllActionsEnd 包装（原 onAllActionsEnd 之后）：逐个计一次使用；有升级返回升级动画编号，否则 0
 static func all_actions_end(b) -> int:
 	var up := false
+	var test_used := XTestMode.used_skills(b)  # 测试模式：这次付过费的技能，结算完直接升到当前上限
 	while not b.action_mastery.is_empty():
 		var id: int = b.action_mastery.pop_front()
 		if XDB.rec("Skills", id).is_empty() or is_maxed(b, id):
@@ -244,6 +245,8 @@ static func all_actions_end(b) -> int:
 		set_uses(b, id, uses(b, id) + 1)
 		if effective(b, id) > before:
 			up = true
+	if not test_used.is_empty():
+		XTestMode.train(b, test_used)
 	return int(XDB.plugin("YEP_SkillMasteryLevels").get("Level Up Animation", ANIMATION_DEFAULT)) if up else 0
 
 
