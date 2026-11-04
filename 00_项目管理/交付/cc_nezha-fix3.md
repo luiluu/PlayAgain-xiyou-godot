@@ -1,7 +1,7 @@
 # 交付：cc/nezha-fix3
 
 - 车道／工作者：C 规则·工具／哪吒（cc，nezha-fix3）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -40,7 +40,7 @@
 ## 验证
 
 - 本地：`xiyou_dot`（2259/2259）、`xiyou_passive`（257/257）、`xiyou_state_change_remove`（10/10）、`xiyou_hp_gauge_visible`（18/18）、`测试状态js翻译.py`（25 项）、`语法检查.py`、`探针登记检查.py`。
-- 云端选测（159 场景，含 `xiyou_determinism` 等战斗核心类）：见下方结果行。
+- 云端选测 52722aaccb（159 场景、4 片，含 `xiyou_determinism` 等战斗核心类）：全部通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41882774164 。`测试选测.py`（119/119）、`测试ext_dot.py`、`测试探针登记检查.py` 本地通过。无偶发。
 
 ## 本分支提交
 
