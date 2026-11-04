@@ -60,3 +60,8 @@
 
 - scan2 主提交：Max Item、SvPngFd、豁免清单、探针、专项
 - 本期：交付单
+
+## 云端结果
+
+- 同步 `--accept-additions` 退出码 0（scan2_probe 新增用例已接受）。
+- 云端选测（334 个场景、8 片，基准 038f9292e3，提交 a892be683b）：通过，<https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41882466501>。
