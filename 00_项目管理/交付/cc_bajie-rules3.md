@@ -40,22 +40,10 @@
 
 ## 本分支提交
 
-- adbe5adf 未翻译块清单测试不写死块数与快翻掉的族（rules2／rules3 合入后会挂）
-- 24a9e452 Merge branch 'main' into cc/bajie-rules3
 - 8ab3ba9a WIP: rules3 自动复活 17 块翻成 revive（条件＋步骤），探针 revive.blocks，死亡后列表按 krz 标脏重建
-- 64e3b4bf 合并 cc/review-35
-- e2ffc3d8 合并 cc/nezha-tools56（dev.298）收尾
-- 2ce429d2 合并 cc/nezha-tools56
-- f01c81e7 合并 cc/nezha-tools55（dev.298）收尾
-- e4c1a255 审查第 35 期报告：改正提交号与块数
-- f8e40b21 审查第 35 期：核 tools54、rules1b、tools53b（P2 两条、P3 两条、P4 四条）
-- a1e5edab 交付单：cc_nezha-tools56（可合并）
-- 07e06a52 云端选测：推产物带网络设置；回退开关覆盖认工具开关（JSON 字段／环境变量）
-- 5aad1d8b 合并 cc/nezha-tools55
-- f1f8eb54 合并 cc/wukong-xuan4b（dev.298）收尾
-- 0cd6c8bd tools55: 交付单措辞
-- a4313c26 tools55: 未翻译状态块 × 切片可达清单脚本、测试、交付单
-- 本交付单收尾提交
+- 24a9e452 Merge branch 'main' into cc/bajie-rules3
+- adbe5adf 未翻译块清单测试不写死块数与快翻掉的族（rules2／rules3 合入后会挂）
+- b0fa95c4 及之后：本交付单收尾
 
 ## 待交叉核查（核心文件）
 
