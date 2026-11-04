@@ -1,7 +1,7 @@
 # 交付：cc/nezha-steal1b
 
 - 车道／工作者：C 规则／哪吒（cc，Sonnet）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,7 +35,8 @@
 ## 验证
 
 - 专项 `xiyou_life_steal` 通过（341 项）；`语法检查.py`、`探针登记检查.py` 通过。
-- 云端选测（141 个场景，基准 6e4b7096d7）：待补。
+- 云端选测（提交 9d8e0da8，141 个场景、4 片，基准 6e4b7096d7）：140 个通过，`xiyou_state_effects` 1 个失败——不是本车道改动：车道的 `generated/oracle/state_effects.json` 是总装合并 rules8 之前复制的旧版（缺 effect2／poison／rest2 参照），换成主工作区合并后的版本，本地重跑 `xiyou_state_effects` 通过。云端没因此重跑。同时本地重跑 `xiyou_pushstate`、`xiyou_determinism` 通过。
+- 这次改了转换器，总装合并后按惯例重跑 `--补齐`／同步（`lifeSteal` 字段进 `db/Skills.json`、`db/Items.json`，转换产物不入 Git）。
 - 待交叉核查（改了的核心文件）：`battle_logic.gd`（`_execute_hp_damage_ledger` 末加一行钩子＋`_life_steal` 函数）、`xiyou_export.py`（`parse_life_steal`）。
 
 ## 进度账
