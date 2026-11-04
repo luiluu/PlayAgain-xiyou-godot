@@ -1928,6 +1928,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("initiate", u, ctx)
 		XStateEffects.run("select", t, ctx)
+	var user_was_alive := u.is_alive()
 	var used := not blocked and (int(skill.get("scope", 0)) in [9, 10]) == t.is_dead()  # result.used（testApply：isForDeadFriend() === target.isDead()，复活类打活目标不算）
 	var r := _apply(u, skill, t)
 	XAlienBattle.after_apply(self, u, skill, t, r)  # 异化 apply 包装：灾疫附加腐蚀
@@ -1946,6 +1947,10 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	r.result = result.duplicate(true)
 	r.started_popups = _action_resources.started_popups.get(t, [])  # 行动中途 startDamagePopup 的弹字（死而复燃），先于本次结果
 	r.popupQueue = r.started_popups + XResourceContext.popup_queue(result)
+	if u != t:
+		# YEP invokeAction 收尾：目标弹字后 subject().startDamagePopup()（反弹、均衡扣自己的血）；被反弹打死时状态块调 performCollapse
+		r.user_popups = XResourceContext.popup_queue(_action_resources.result(u))
+		r.user_died = user_was_alive and u.is_dead()
 	r.effectJournal = _action_resources.journal.duplicate(true)
 	r.formulaDiagnostic = _formula_outcome.get("diagnostic", "")
 	r.hp = r.hp if ESTABLISH_TRUE_POPUP and r.has("extra") else result.hpDamage

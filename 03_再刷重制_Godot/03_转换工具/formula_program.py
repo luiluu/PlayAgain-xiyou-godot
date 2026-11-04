@@ -25,7 +25,8 @@ class Unsupported(ValueError):
 
 
 class Parser:
-    def __init__(self, source):
+    def __init__(self, source, loops=False):
+        self.loops = loops
         self.source, self.tokens, self.i, self.depth = source, [], 0, 0
         pos = 0
         if len(source) > 16384:
@@ -154,6 +155,26 @@ class Parser:
             yes = self.statement(depth + 1)
             no = self.statement(depth + 1) if self.accept('else') else self.node('empty', pos)
             return self.node('if', pos, condition=condition, yes=yes, no=no)
+        if self.loops and self.accept('for'):
+            # 状态块的计次循环：for (var i = 0; i <= 上限; i++) 体（上限每轮重算，同 JS）
+            self.take('(')
+            self.take('var')
+            name, p, _, k = self.take()
+            if k != 'name':
+                raise Unsupported('expected_local_name', p)
+            self.take('=')
+            start = self.expression()
+            self.take(';')
+            if self.take(name)[0] != name or self.take('<=')[0] != '<=':
+                raise Unsupported('unsupported_loop', pos)
+            limit = self.expression()
+            self.take(';')
+            self.take(name)
+            self.take('++')
+            self.take(')')
+            body = self.statement(depth + 1)
+            return self.node('block', pos, steps=[self.node('declare', pos, name=name, kind='var', value=start, initialized=True),
+                                                  self.node('loop', pos, name=name, limit=limit, body=body)])
         if self.t in ('var', 'let', 'const'):
             kind = self.take()[0]
             name, p, _, k = self.take()
@@ -229,8 +250,14 @@ def walk(node):
                 yield from walk(value)
 
 
+# 状态块（phase_effects）才认的调用：弹字、清结果、移状态、倒下动画、查死亡；RemoveState 原版没有这个方法，调用即 TypeError
+PHASE_CALLS = {'startDamagePopup': ('popup', 0), 'clearResult': ('clear_result', 0), 'removeState': ('remove_state', 1),
+               'performCollapse': ('collapse', 0), 'isDead': ('is_dead', 0), 'RemoveState': ('throw', 1)}
+
+
 class Compiler:
-    def __init__(self, item_id, custom):
+    def __init__(self, item_id, custom, phase_effects=False):
+        self.phase_effects = phase_effects
         self.item_id, self.custom = item_id, custom
         self.locals, self.caps = {}, set()
 
@@ -275,6 +302,15 @@ class Compiler:
             if callee['op'] != 'member' or callee['owner']['op'] != 'name':
                 raise Unsupported('unsupported_call', pos)
             owner, method = callee['owner']['name'], callee['name']
+            if self.phase_effects and owner in ALIASES and method in PHASE_CALLS:
+                name, arity = PHASE_CALLS[method]
+                if len(args) != arity:
+                    raise Unsupported('invalid_arity:' + method, pos)
+                self.caps.add('write.phase')
+                return out('phase_call', receiver=ALIASES[owner], name=name, args=[self.lower(x) for x in args])
+            if self.phase_effects and owner == '$gameVariables' and method == 'setValue' and len(args) == 2:
+                self.caps.add('write.phase')
+                return out('phase_call', receiver='b', name='set_variable', args=[self.lower(x) for x in args])
             if owner == 'Math' and method in MATH:
                 lo, hi = MATH[method]
                 if not lo <= len(args) <= hi:
@@ -309,6 +345,8 @@ class Compiler:
                 self.caps.add('write.shield')
                 return out('shield', receiver=ALIASES[owner], amount=self.lower(args[0]))
             raise Unsupported('unsupported_call:' + owner + '.' + method, pos)
+        if op == 'loop':
+            return out('loop', name=n['name'], limit=self.lower(n['limit']), body=self.lower(n['body']))
         if op in ('declare', 'assign'):
             if n['name'] not in self.locals:
                 raise Unsupported('undeclared_assignment:' + n['name'], pos)
@@ -325,7 +363,7 @@ class Compiler:
         return result
 
     def compile(self, source):
-        tree = Parser(source).parse()
+        tree = Parser(source, loops=self.phase_effects).parse()
         if not tree and not self.custom:
             tree = [{'op': 'expr', 'pos': 0, 'value': {'op': 'undefined', 'pos': 0}}]
         nodes = list(walk(tree))
@@ -392,7 +430,7 @@ MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
     '(a.mat * 33333 + a.mmp * 3333) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10126))']})
 
 
-def compile_formula(source, item_id=0, custom=False, table='Skills'):
+def compile_formula(source, item_id=0, custom=False, table='Skills', phase_effects=False):
     source = source or ''
     result = {'version': VERSION, 'source': {'table': table, 'id': item_id, 'custom': custom,
                'sha256': hashlib.sha256(source.encode()).hexdigest()}}
@@ -401,7 +439,7 @@ def compile_formula(source, item_id=0, custom=False, table='Skills'):
         result.update(status='module', module=module, capabilities=[], locals=[], steps=[], result=None)
         return result
     try:
-        result.update(Compiler(item_id, custom).compile(source))
+        result.update(Compiler(item_id, custom, phase_effects).compile(source))
     except (Unsupported, RecursionError) as error:
         pos = error.pos if isinstance(error, Unsupported) else 0
         lines = re.split(r'\r\n|[\r\n\u2028\u2029]', source[:pos])

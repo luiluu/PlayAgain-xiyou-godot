@@ -222,5 +222,32 @@ class ReviveTranslationTests(unittest.TestCase):
                 self.assertEqual(one(tag, code)['op'], 'js')
 
 
+class EffectBlockTranslationTests(unittest.TestCase):
+    """rules4 伤害一族：整块白名单，改一个记号就退回 js；只写没人读字段的块译成 noop。"""
+    popup = 'if (value > 0 && this.isHpEffect()) { target.gainHp(-value); target.startDamagePopup(); target.removeState(960); }'
+    loop = ('var cishu = $gameVariables.value(1174); if(cishu >= 10){ cishu = 10} if (value > 0 && this.isMagical() || this.isPhysical()) { '
+            'for(var i = 0;i <= cishu;i++){ var bonus = Math.random() * 0.4 - 0.2; value += Math.round(value * bonus); target.gainHp(-value); target.startDamagePopup(); target.clearResult(); } } '
+            '$gameVariables.setValue(1174,0);')
+
+    def test_exact(self):
+        got = one('Establish', self.popup)
+        self.assertEqual(got['op'], 'effect_program')
+        self.assertEqual(got['program']['status'], 'effectful')
+        self.assertEqual(one('Establish', self.loop)['op'], 'effect_program')
+        shield = one('Apply', 'user._Shield = user._Shield || 0; user._Shield += user.mhp * 10;')
+        self.assertEqual(shield['op'], 'effect_program')
+        self.assertIn('f_a_Shield', shield['program']['locals'])
+        self.assertEqual(one('Battle', 'user.jqsbt = 0;'), {'phase': 'battle', 'op': 'noop', 'reason': 'unread_field'})
+
+    def test_boundaries(self):
+        p = self.popup
+        for tag, code in [('Confirm', p), ('Establish', p.replace('960', '961')), ('Establish', p.replace('value > 0', 'value >= 0')),
+                          ('Establish', p.replace('target.gainHp', 'user.gainHp')), ('Establish', p.replace(' target.startDamagePopup();', '')),
+                          ('Establish', self.loop.replace('<= cishu', '< cishu')), ('Turn End', 'user.jqsbt = 0;'),
+                          ('Battle', 'user.jqsbt = 1;'), ('Apply', 'user._Shield = 5;')]:
+            with self.subTest(tag=tag, code=code[-70:]):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()

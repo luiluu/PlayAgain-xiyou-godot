@@ -305,6 +305,9 @@ func _run() -> void:
 	check("shield.oracle_present", cases.has("query.shield_blocks"))
 	if cases.has("query.shield_blocks"):
 		_shield_blocks(cases["query.shield_blocks"].observed)
+	check("effect.oracle_present", cases.has("effect.blocks"))
+	if cases.has("effect.blocks"):
+		_effect_blocks(cases["effect.blocks"].observed)
 	check("revive.oracle_present", cases.has("revive.blocks"))
 	if cases.has("revive.blocks"):
 		_revive_blocks(cases["revive.blocks"].observed)
@@ -773,6 +776,114 @@ func _revive_apply(index: int, row: Dictionary) -> void:
 	var pops: Array = r.started_popups.map(_pop_row)
 	var revived: Array = row.popups.filter(func(p): return float(p.hpDamage) < 0.0 or float(p.mpDamage) != 0.0 or float(p.tpDamage) != 0.0)
 	check(label + ".popups", pops.size() == _want_pops(revived, sid).size(), [info, revived, pops])
+
+
+## 伤害 react／confirm 一族（rules4）：单块逐行比（value、两边资源、护盾、字段、状态、随机次数、弹字、变量）；实战比结局。
+func _effect_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	check("effect.rows", o.rows.size() == 1440 and o.applies.size() == 60, [o.rows.size(), o.applies.size()])
+	var seen := {}
+	for index in range(o.rows.size()):
+		var row: Dictionary = o.rows[index]
+		var sid := int(row.state)
+		var st := XDB.rec("States", sid)
+		var key := "%d.%s" % [sid, row.phase]
+		if not seen.has(key):
+			seen[key] = true
+			check("effect.translated." + key, st.effects.any(func(e): return e.phase == row.phase and e.op in ["effect_program", "noop"])
+				and not st.effects.any(func(e): return e.phase == row.phase and e.op == "js"), st.effects)
+		var s := XState.new_game_blank()
+		XState.current = s
+		s.set_variable(1174, float(row.v1174))
+		var f: Dictionary = row.before
+		var a := ValueBattler.new()
+		a.values = {"mhp": float(f.amhp), "mmp": float(f.ammp), "atk": float(f.aatk), "mat": float(f.amat)}
+		var e := ValueBattler.new()
+		e.values = {"mhp": float(f.emhp), "mmp": float(f.emmp), "atk": float(f.eatk), "mat": float(f.emat)}
+		a.hp = float(f.ahp); a.mp = float(f.amp); a.tp = 20.0; a.state_data["_Shield"] = float(f.ashield)
+		e.hp = float(f.ehp); e.mp = float(f.emp); e.tp = 20.0; e.state_data["_Shield"] = float(f.eshield)
+		if row.xmxIn != null:
+			e.state_data["_xmx"] = float(row.xmxIn)
+		var holder: XBattler = e if row.phase in ["react", "respond"] else a
+		holder.state_ids.append(sid)
+		if e.hp <= 0.0:
+			e.state_ids.append(1)
+		var stream := SeqStream.new()
+		stream.seq = row.seq
+		var resources := XResourceContext.new()
+		var ctx := {"attacker": a, "defender": e, "target": e, "item": {"id": 1, "hitType": row.hitType, "damage": {"type": row.dmgType, "elementId": 0}},
+			"value": float(row.value), "execute": true, "resources": resources, "record": {}, "random": stream}
+		var got := XStateEffects.run_one(str(row.phase), holder, st, ctx)
+		var pops := []
+		for b in [a, e]:
+			pops += resources.started_popups.get(b, []).map(_pop_row)
+		var want_pops := []
+		for who in ["a", "e"]:
+			want_pops += _want_pops(row.popups.filter(func(p): return p.who == who), sid)
+		var left := {"value": got, "ahp": a.hp, "amp": a.mp, "atp": a.tp, "ehp": e.hp, "emp": e.mp, "etp": e.tp, "ashield": a.state_data._Shield, "eshield": e.state_data._Shield,
+			"xmx": e.state_data.get("_xmx"), "astates": _sorted(a.state_ids), "estates": _sorted(e.state_ids), "draws": stream.floats, "pops": pops, "v": s.variable(1174)}
+		var right := {"value": float(row.got), "ahp": float(row.a.hp), "amp": float(row.a.mp), "atp": float(row.a.tp), "ehp": float(row.e.hp), "emp": float(row.e.mp), "etp": float(row.e.tp),
+			"ashield": float(row.a.shield), "eshield": float(row.e.shield), "xmx": row.e.xmx, "astates": _sorted(row.a.states), "estates": _sorted(row.e.states),
+			"draws": int(row.draws), "pops": want_pops, "v": float(row.vars[0])}
+		check("effect.row.%d" % index, left == right, {"row": [sid, row.phase, row.dmgType, row.hitType, row.value, row.hpIn, row.seq], "want": right, "got": left})
+	var starter := ValueBattler.new()
+	starter.values = {"mhp": 100.0, "mmp": float(o.actionStart[0].mmp)}
+	starter.state_ids.append(1450)
+	XState.current = XState.new_game_blank()
+	XState.current.set_variable(1174, 9.0)
+	XStateEffects.run_one("action_start", starter, XDB.rec("States", 1450), {"execute": true, "resources": XResourceContext.new()})
+	check("effect.action_start_1450", XState.current.variable(1174) == float(o.actionStart[0].v), [o.actionStart, XState.current.variable(1174)])
+	for index in range(o.applies.size()):
+		_effect_apply(index, o.applies[index])
+	XState.current = null
+
+
+func _sorted(ids: Array) -> Array:
+	var out: Array = ids.map(func(x): return int(x))
+	out.sort()
+	return out
+
+
+## 实战：Godot 这边生命、攻击都和参照不同，只比结局：状态、目标死没死、计数字段、变量、谁掉血。
+func _effect_apply(index: int, row: Dictionary) -> void:
+	var sid := int(row.state)
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	s.random_master = XRandomStream.hex64(4600 + index)
+	XState.current = s
+	s.set_variable(1174, 2.0)
+	var logic := ReviveLogic.new()
+	logic.elite_roll = 100.0
+	logic.setup(2, s)
+	var a: XBattler = logic.actors[0]
+	var e: XBattler = logic.enemies[0]
+	var holder: XBattler = e if row.phase in ["react", "respond"] else a
+	e.state_data["_Shield"] = float(row.shield)
+	var ctx := {"resources": XResourceContext.new(), "execute": true}
+	holder.add_state_with_context(sid, null, ctx)
+	if sid == 1060:
+		check("effect.apply.%d.shield_added" % index, e.state_data._Shield == float(row.shield) + e.mhp * 10.0 and float(row.before.eshield) > float(row.shield), [e.state_data._Shield, e.mhp])
+	holder.param_refresh()
+	if bool(row.low):
+		e.hp = 1.0
+	var a_hp := a.hp
+	var e_hp := e.hp
+	var shield := float(e.state_data._Shield)
+	var r := logic.apply(a, XDB.rec("Skills", 1), e)
+	var label := "effect.apply.%d" % index
+	var info := [sid, row.phase, row.shield, row.low]
+	check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
+	check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
+	check(label + ".xmx", e.state_data.get("_xmx") == row.e.xmx, [info, row.e.xmx, e.state_data.get("_xmx")])
+	check(label + ".var", s.variable(1174) == float(row.vars[0]), [info, row.vars, s.variable(1174)])
+	check(label + ".e_hp_dir", signf(e.hp - e_hp) == signf(float(row.e.hp) - float(row.before.ehp)), [info, row.before.ehp, row.e.hp, e_hp, e.hp])
+	check(label + ".a_hp_dir", signf(a.hp - a_hp) == signf(float(row.a.hp) - float(row.before.ahp)), [info, row.before.ahp, row.a.hp, a_hp, a.hp])
+	check(label + ".shield_dir", signf(float(e.state_data._Shield) - shield) == signf(float(row.e.shield) - float(row.before.eshield)), [info, row.e.shield, shield, e.state_data._Shield])
+	var user_hit: bool = row.popups.any(func(p): return p.who == "a" and bool(p.hpAffected))
+	check(label + ".user_popups", r.user_popups.any(func(p): return p.hpAffected) == user_hit, [info, row.popups, r.user_popups])
+	if sid == 1061:
+		check(label + ".user_died", bool(r.user_died) and bool(row.a.dead) and int(row.collapses) == 1, [info, r.user_died, row.a.dead, row.collapses])
+	check(label + ".result_sign", signf(float(r.result.hpDamage)) == signf(float(row.e.result.hpDamage)), [info, row.e.result.hpDamage, r.result.hpDamage])
 
 
 func _pop_row(p: Dictionary) -> Array:

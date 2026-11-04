@@ -9,10 +9,11 @@ const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm",
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
-	"reserve_common_event", "noop", "revive"]
+	"reserve_common_event", "noop", "revive", "effect_program"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
+const JS_TYPE_ERROR := "js_type_error"
 
 ## 测试观察者：每次某状态在某 phase 被分发时调用 (phase, state_id, holder, ctx)；ctx 是该状态这次调用的完整上下文
 static var observer := Callable()
@@ -34,7 +35,7 @@ class PhaseValueProgram:
 	var _tag := ""
 
 	func run_phase(program: Dictionary, ctx: Dictionary, value: float, execute: bool, extra := {}) -> Dictionary:
-		if program.get("version") != 1 or program.get("status") != "pure":
+		if program.get("version") != 1 or not (program.get("status") == "pure" or (program.get("status") == "effectful" and not effects.is_empty())):
 			return {"available": false, "value": value}
 		var a: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
 		var b: XBattler = a if ctx.user == ctx.target else (ctx.target if execute else XFormulaContext.clone_battler(ctx.target))
@@ -59,12 +60,59 @@ class PhaseValueProgram:
 		return {"available": _error.is_empty(), "value": _number(_locals.value), "diagnostic": _error}
 
 	func _expr(node: Dictionary):
+		if node.get("op") == "phase_call":
+			return _phase_call(node)
 		var value = super._expr(node)
 		# These measured blocks use Game_Variables.value(), whose missing value is 0.
 		# Keep the general formula VM's raw v[index]/undefined behavior unchanged.
 		if node.get("op") == "lookup" and node.get("pool") == "v" and value is StringName and value == UNDEFINED:
 			return 0.0
 		return value
+
+	## 状态块 effect_program（rules4）：副作用只在 execute 时做，经行动资源上下文（结果槽、护盾、死亡结算）；预览只算 value。
+	var effects := {}
+
+	func _step(n: Dictionary) -> void:
+		if n.get("op") != "loop":
+			super._step(n)
+			return
+		var name := str(n.name)
+		while _error.is_empty() and _number(_locals[name]) <= _number(_expr(n.limit)):
+			_step(n.body)
+			_locals[name] = _number(_locals[name]) + 1.0
+
+	func _gain(receiver: String, resource: String, amount: float):
+		if effects.get("execute", false):
+			(effects.resources as XResourceContext).gain(_battlers[receiver], resource, amount)
+		return UNDEFINED
+
+	func _phase_call(n: Dictionary):
+		var b: XBattler = _battlers[n.receiver]
+		var args: Array = n.args.map(func(a): return _expr(a))
+		if not _error.is_empty():
+			return UNDEFINED
+		if n.name == "is_dead":
+			return b.is_dead()
+		if n.name == "throw":
+			return _fail(JS_TYPE_ERROR)  # target.RemoveState 原版没有这个方法：TypeError，eval 外层接住，前面做过的留着、value 照常返回
+		if not effects.get("execute", false):
+			return UNDEFINED
+		var resources: XResourceContext = effects.resources
+		match str(n.name):
+			"popup":
+				resources.start_damage_popup(b)
+			"clear_result":
+				resources.seed_result(b, XResourceContext.empty_result())
+			"remove_state":
+				resources.remove_state(b, int(_number(args[0])))
+			"set_variable":
+				if XState.current != null and XStateEffects._variable_writable(int(_number(args[0]))):
+					XState.current.set_variable(int(_number(args[0])), _number(args[1]))
+			"collapse":
+				pass  # performCollapse 只放倒下动画和音效：战斗场景看到死亡状态自己播
+			_:
+				return _fail("unknown_phase_call")
+		return UNDEFINED
 
 	func _property(receiver: String, name: String):
 		return _battlers[receiver].get(name) if name in XFormulaContext.PROPERTIES.split(" ") else _fail("unknown_property")
@@ -155,6 +203,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				c.value = out.value
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
+		elif op == "effect_program":
+			c.value = _effect_program(e, phase, int(st.id), holder, c, execute)
 		elif op == "value_query":
 			# 护盾一族：HP 伤害>0 就破盾（先判，清零后 value 已是 0）；元素只决定这一击挡不挡
 			var breaks: bool = e.get("remove_self", false) and _active({"cond": "positive", "hpOnly": true}, c)
@@ -207,7 +257,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "syntax_error":
 			pass  # 原版这块解析失败（SyntaxError），customEffectEval 只报错，什么都不改
 		elif op == "noop":
-			pass  # 护盾 Remove 的 user._bubbleWrapCooldown = 3：冻结源 js 里没有任何地方读这个字段
+			pass  # 只写没人读的字段（user._bubbleWrapCooldown、_zuizhongshanghai、jqsbt）：冻结源 js 里没有任何地方读它们
 		elif op == "user_param_damage" and execute and ctx.get("resources") != null:
 			var r: Dictionary = ctx.record
 			for p in e.params:
@@ -229,6 +279,40 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	if owns_resources:
 		resources.publish()
 	return c.value
+
+
+## 伤害 react／confirm 一族（rules4）：整块小程序。字段 target._xmx 等读进局部量、跑完写回；origin.属性块开头读好。
+static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder: XBattler, c: Dictionary, execute: bool) -> float:
+	var vm := PhaseValueProgram.new()
+	vm.effects = {"execute": execute, "resources": c.get("resources")}
+	var extra := {}
+	var receivers := {"a": c.user, "b": c.target}
+	for local in e.program.locals:
+		var name := str(local)
+		if name.begins_with("f_"):
+			extra[name] = _field_read(receivers[name[2]], name.substr(4))
+		elif name.begins_with("o_"):
+			extra[name] = float(c.origin.get(name.substr(2)))
+	var out := vm.run_phase(e.program, c, c.value, execute, extra)
+	if execute:
+		for name in extra:
+			if str(name).begins_with("f_"):
+				_field_write(receivers[str(name)[2]], str(name).substr(4), vm._locals[name])
+	if out.available or out.get("diagnostic") == JS_TYPE_ERROR:
+		return out.value
+	if execute:
+		_diagnose(phase, _state_id, holder, "effect_program_unavailable")
+	return c.value
+
+
+## _Shield、_xmx 只有这些块自己读写（不是护盾系统的护盾），记在 state_data；没写过时 undefined，回写时跳过。
+static func _field_read(b: XBattler, field: String):
+	return b.state_data.get("_" + field, XFormulaProgram.UNDEFINED)
+
+
+static func _field_write(b: XBattler, field: String, value) -> void:
+	if not value is StringName:
+		b.state_data["_" + field] = value
 
 
 ## 自动复活一族（rules3，state_effects_probe revive.blocks）：Deselect 块的条件＋按原顺序的几步。

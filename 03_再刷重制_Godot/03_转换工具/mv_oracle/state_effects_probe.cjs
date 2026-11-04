@@ -512,6 +512,71 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
   if (errors.length) throw new Error('native revive errors: ' + JSON.stringify(errors));
   return {rows, applies};
 }));
+// 伤害 react／confirm 一族（rules4）：切片可达 15 块。单块：customEffectEval 直调，按序给随机数；实战：真实 apply 打一下。
+// confirm／establish 的持有者是行动者，react／respond 的持有者是目标（YEP onPreDamage／onReact／onRespond／onPostDamage）。
+const DAMAGE_BLOCKS = [[1060, 'react'], [1061, 'react'], [1299, 'establish'], [1302, 'react'], [1405, 'establish'], [1450, 'establish'], [1580, 'respond'], [1642, 'confirm'],
+  [1666, 'confirm'], [1731, 'confirm'], [1828, 'react'], [2554, 'respond'], [2559, 'confirm'], [2562, 'react'], [2575, 'confirm']];
+cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => {
+  const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
+  const item = action.item(), originalDamage = Object.assign({}, item.damage), originalHit = item.hitType;
+  const errors = [], oldError = w.Yanfly.Util.displayError, oldRandom = w.Math.random, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldInt = w.Math.randomInt;
+  const oldCollapse = w.Game_Battler.prototype.performCollapse;
+  w.Yanfly.Util.displayError = (error, code, message) => errors.push(String(error).slice(0, 60));
+  let draws = 0, script = [], popups = [], collapses = 0;
+  w.Math.randomInt = n => { const d = draws; try { return oldInt.call(w.Math, n); } finally { draws = d; } };
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: this === a ? 'a' : 'e', hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}); };
+  w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses++; };
+  const VARS = [1174];
+  const hard = (t, hp, mp, shield, xmx) => { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1; t.need_refresh = true; t.refresh();
+    t._hp = hp === 'full' ? t.mhp : hp; t._mp = Math.min(mp, t.mmp); t._tp = 20; t._Shield = shield; if (xmx === undefined) delete t._xmx; else t._xmx = xmx; };
+  const side = t => { const r = t.result(); return {hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), shield: t._Shield, xmx: t._xmx === undefined ? null : t._xmx, states: t._states.slice().sort((x, y) => x - y),
+    result: {hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}}; };
+  const rows = [], applies = [], actionStart = [];
+  const TYPE = {react: 'target', respond: 'target', confirm: 'user', establish: 'user'};
+  try {
+    w.Math.random = () => { const v = draws < script.length ? script[draws] : 0.5; draws++; return v; };
+    for (const [sid, phase] of DAMAGE_BLOCKS) for (const [dmgType, hitType] of [[1, 1], [1, 2], [1, 0], [2, 1], [3, 2], [0, 0]]) for (const value of [-5, 0, 7, 1000])
+      for (const [hp, mp, shield, xmx, v1174, seq] of [['full', 50, 0, undefined, 0, [0.5, 0.5, 0.5]], [100, 50, 20, 6, 2, [0.1, 0.9, 0.5]], [0, 0, 5000, 7, 12, [0.9, 0.1, 0.9]], [3, 1, 0, 4, 1, [0, 0.99, 0.25]]]) {
+        const holder = TYPE[phase] === 'target' ? e : a;
+        item.damage.type = dmgType; item.hitType = hitType;
+        hard(a, 'full', 50, 0, undefined); hard(e, hp, mp, shield, xmx);
+        if (holder === a) { a._hp = hp === 'full' ? a.mhp : Math.max(1, hp); }
+        e._hp = hp === 'full' ? e.mhp : hp;
+        const keep = e._hp; e._hp = Math.max(1, keep); holder.addState(sid); holder.clearResult(); e.clearResult(); a.clearResult();
+        e._hp = keep; if (keep === 0) e._states.push(1);
+        w.$gameVariables.setValue(1174, v1174);
+        script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
+        const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
+        const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
+        rows.push({state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, errors: errors.slice(),
+          a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+      }
+    // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
+    a._paramPlus[1] = 450000; a.need_refresh = true; a.refresh();
+    w.$gameVariables.setValue(1174, 9); a.customEffectEval(1450, 'actionStartState');
+    actionStart.push({mmp: a.mmp, v: w.$gameVariables.value(1174)});
+    a._paramPlus[1] = 0; a.need_refresh = true; a.refresh();
+    Object.assign(item.damage, originalDamage); item.hitType = originalHit;
+    w.Math.random = () => 0.5;
+    for (const [sid, phase] of DAMAGE_BLOCKS) for (const shield of [0, 5000]) for (const low of [false, true]) {
+      const holder = TYPE[phase] === 'target' ? e : a;
+      hard(a, 'full', 50, 0, undefined); hard(e, low ? 1 : 'full', 50, shield, undefined);
+      holder.addState(sid); holder.clearResult(); e.clearResult(); a.clearResult(); holder.need_refresh = true; holder.refresh(); holder.typestates(phase + 'State');
+      w.$gameVariables.setValue(1174, 2); popups = []; collapses = 0; errors.length = 0;
+      const act = new w.Game_Action(a); act.setSkill(1);
+      const before = {ahp: a.hp, amhp: a.mhp, ehp: e.hp, emhp: e.mhp, eshield: e._Shield};
+      act.apply(e);
+      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, errors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+    }
+  } finally {
+    Object.assign(item.damage, originalDamage); item.hitType = originalHit;
+    w.Math.random = oldRandom; w.Math.randomInt = oldInt; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup;
+    delete w.Game_Enemy.prototype.performCollapse; delete w.Game_Actor.prototype.performCollapse;
+    a._states.length = 0; e._states.length = 0; a.clearResult(); e.clearResult(); delete a._Shield; delete e._Shield;
+    w.$gameVariables.setValue(1174, 0);
+  }
+  return {rows, applies, actionStart};
+}));
 // Supplemental 2e boundaries are separately runnable without repeating native22.
 cases.push(...require('./state_effects_tp_context_probe.cjs').measureCases(host));
 // 反击放最后：跑完后参照引擎的 location 会变成 undefined（反击路径上有插件动它），之后的新局建不起来
