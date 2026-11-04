@@ -172,6 +172,59 @@ class BatchTests(unittest.TestCase):
         r = subprocess.run([sys.executable, str(TOOL), 'flux', str(self.flux_dir('synced'))], capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0)
 
+    def put_oracle(self, root, name, text, mtime=None):
+        f = root / 'oracle' / name
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(text, encoding='utf-8')
+        if mtime:
+            import os
+            os.utime(f, (mtime, mtime))
+
+    def test_refresh_overwrites_even_if_lane_file_is_newer_when_unchanged_since_copy(self):
+        """tools64：整份克隆后车道文件时间戳比主工作区新，原 mtime 比较永不刷新；按内容＋批次记录判断。"""
+        self.put_oracle(self.main, 'state_effects.json', 'v1', 1000)
+        self.put_oracle(self.lane, 'state_effects.json', 'v1', 5000)
+        write(self.lane / 'manifest.json', {'sliceConfigSHA256': 'new-slice'})
+        self.run_tool('record', self.lane, self.main)  # 记下 v1
+        self.put_oracle(self.main, 'state_effects.json', 'v2-longer', 2000)  # 主工作区更新，时间戳仍比车道旧
+        r = self.run_tool('refresh', self.main / 'oracle', self.lane / 'oracle', self.lane)
+        self.assertEqual(r.returncode, 10, r.stdout + r.stderr)
+        self.assertEqual((self.lane / 'oracle' / 'state_effects.json').read_text(encoding='utf-8'), 'v2-longer')
+
+    def test_refresh_keeps_lane_own_newer_oracle_and_reports_nothing_copied(self):
+        self.put_oracle(self.main, 'a.json', 'main', 1000)
+        self.put_oracle(self.lane, 'a.json', 'lane-own', 5000)  # 没有批次记录：当作本树自己的较新版
+        r = self.run_tool('refresh', self.main / 'oracle', self.lane / 'oracle', self.lane)
+        self.assertEqual(r.returncode, 0)
+        self.assertIn('没覆盖', r.stdout)
+        self.assertEqual((self.lane / 'oracle' / 'a.json').read_text(encoding='utf-8'), 'lane-own')
+
+    def test_refresh_copies_missing_and_newer_main_files(self):
+        self.put_oracle(self.main, 'new.json', 'x', 1000)
+        self.put_oracle(self.main, 'b.json', 'main-newer', 9000)
+        self.put_oracle(self.lane, 'b.json', 'old', 100)
+        self.assertEqual(self.run_tool('refresh', self.main / 'oracle', self.lane / 'oracle').returncode, 10)
+        self.assertEqual((self.lane / 'oracle' / 'new.json').read_text(encoding='utf-8'), 'x')
+        self.assertEqual((self.lane / 'oracle' / 'b.json').read_text(encoding='utf-8'), 'main-newer')
+        self.assertEqual(self.run_tool('refresh', self.main / 'oracle', self.lane / 'oracle').returncode, 0)  # 再刷没有变化
+
+    def test_pending_marker_makes_compare_check_oracle_even_with_lane_stamp(self):
+        """tools64（审查 38 P3-9）：补齐在合并期间跳过刷新、没记批次时，本树有同步戳也不能免比对参照。"""
+        for g in (self.main, self.lane):
+            write(g / 'manifest.json', {'sliceConfigSHA256': 'same'})
+        self.put_oracle(self.main, 'state_effects.json', 'new', 2000)
+        self.put_oracle(self.lane, 'state_effects.json', 'old', 1000)
+        self.assertEqual(self.run_tool('compare', self.lane, self.main).returncode, 0)  # 无标记、无批次、有效戳：当作自己同步过（原行为）
+        self.assertEqual(self.run_tool('pending', self.lane, 'set').returncode, 0)
+        self.assertEqual(self.run_tool('compare', self.lane, self.main).returncode, 3)
+        self.run_tool('pending', self.lane, 'clear')
+        self.assertFalse((self.lane / 'oracle_pending.json').exists())
+
+    def test_cloud_upload_warns_before_pushing(self):
+        text = (HERE / '云端选测.py').read_text(encoding='utf-8')
+        self.assertLess(text.index('warn_stale_generated(generated)'), text.index('tree_sha, parts = snapshot(generated, bare)'))
+        self.assertIn("'compare'", text)
+
     def test_bad_usage(self):
         self.assertEqual(self.run_tool('check').returncode, 64)
 
@@ -185,18 +238,19 @@ class WiringTests(unittest.TestCase):
 
     def test_new_worktree_records_after_copy_and_checks_after_export(self):
         text = (HERE / '新建工作树.sh').read_text(encoding='utf-8')
-        copy = text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"')
+        copy = text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"; python3')
         record = text.index('参照批次.py" record "$gen" "$mgen"')
         export = text.index('xiyou_export.py" --out "$gen"')
         check = text.index('参照批次.py" check "$gen" || true')
         self.assertLess(copy, record)
         self.assertLess(record, export)
         self.assertLess(export, check)  # 先按本分支切片重生成 manifest 再比对
-        self.assertIn('ORACLE_COPIED=$n', text)  # 一个文件都没复制时不改写已有批次
+        self.assertIn('ORACLE_COPIED=1', text)  # 一个文件都没复制时不改写已有批次
 
     def test_flux_wired_into_refresh_and_parallel_tests(self):
         text = (HERE / '新建工作树.sh').read_text(encoding='utf-8')
-        self.assertLess(text.index('参照批次.py" flux'), text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"'))
+        self.assertLess(text.index('参照批次.py" flux'), text.index('refresh_oracle "$mgen/oracle" "$gen/oracle"; python3'))
+        self.assertIn('参照批次.py" pending "$gen" set', text)  # 合并期间跳过刷新要留标记（tools64）
         self.assertIn('flux_rc == 4', text)
         self.assertIn("'flux'", (HERE / '并行测试.py').read_text(encoding='utf-8'))
 

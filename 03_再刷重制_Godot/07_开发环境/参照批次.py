@@ -7,6 +7,8 @@
   record <车道 generated> <主工作区 generated>   补齐复制了主工作区的参照后记批次（主工作区 manifest 的切片指纹与同步戳）
   flux   <主工作区 .git 目录>                    总装正在合并中（合并状态在「已合并…待收尾」阶段）时打印说明，退出 4；否则退出 0（tools59）
   check  <车道 generated>                        对比本分支 manifest 的切片指纹；不同批时打印提示，退出 3
+  refresh <主 oracle 目录> <车道 oracle 目录>     按内容刷新车道参照（不再只比 mtime）；刷新了文件退出 10，没有退出 0（tools64）
+  pending <车道 generated> [set|clear]           补齐因总装合并跳过了刷新时留标记；标记在时 compare 一律比对参照（tools64）
 
 记批次时同时记下本树当时的同步戳（generated/sync_stamp.json 的 outputsDigest；补齐只刷新 oracle/，不动这个戳）。
 之后本树自己跑过 同步正式西游.py（戳变了），参照就是本分支生成的，不再提示。
@@ -20,10 +22,12 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import time
 
 BATCH = 'oracle_batch.json'
+PENDING = 'oracle_pending.json'  # 补齐遇总装合并跳过了刷新：参照可能是旧的，等合并收尾后再补齐才清
 
 
 def _read(path):
@@ -61,6 +65,51 @@ def record(gen, main_gen):
     batch = {'from': str(Path(main_gen).resolve()), 'sliceConfigSHA256': src['sliceConfigSHA256'],
              'laneOutputsDigest': _identity(gen)['outputsDigest'], 'mainOracle': _oracle_digests(main_gen)}
     (Path(gen) / BATCH).write_text(json.dumps(batch, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    return 0
+
+
+def refresh(src, dst, gen=None):
+    """按内容刷新车道的 generated/oracle（tools64，原 shell 只比 mtime：车道的文件时间戳比主工作区新就永远不刷新，
+    例如整份克隆 generated/ 时文件时间被改成克隆时刻，之后主工作区更新参照也不会被拿过来）。
+    主工作区有、车道没有或内容不同时：车道那份与上次补齐记的主工作区版本相同（本树没自己改过）、或主工作区的更新，就覆盖；
+    否则（本树自己同步出的、且不比主工作区旧）保留，并列出来提醒。"""
+    src, dst = Path(src), Path(dst)
+    if not src.is_dir():
+        return 0
+    dst.mkdir(parents=True, exist_ok=True)
+    recorded = (_read(Path(gen) / BATCH) if gen else {}).get('mainOracle') or {}
+    copied, kept = [], []
+    for f in sorted(src.glob('*')):
+        if not f.is_file():
+            continue
+        t = dst / f.name
+        if t.exists():
+            if hashlib.sha256(t.read_bytes()).hexdigest() == hashlib.sha256(f.read_bytes()).hexdigest():
+                continue
+            mine_unchanged = recorded.get(f.name) == hashlib.sha256(t.read_bytes()).hexdigest()
+            if not mine_unchanged and t.stat().st_mtime_ns > f.stat().st_mtime_ns:
+                kept.append(f.name)
+                continue
+        tmp = t.with_name(t.name + '.refresh_tmp')
+        shutil.copy2(f, tmp)  # 保留时间戳
+        os.replace(tmp, t)
+        copied.append(f.name)
+    own = sorted(f.name for f in dst.glob('*') if f.is_file() and not (src / f.name).exists())
+    print(f'== generated/oracle：从主工作区刷新 {len(copied)} 个文件' + (f'（{"、".join(copied[:6])}{"等" if len(copied) > 6 else ""}）' if copied else '')
+          + (f'；保留本分支独有 {"、".join(own)}' if own else ''))
+    if kept:
+        print(f'  ⚠ {len(kept)} 份参照与主工作区不同，但本树自己改过且不比主工作区旧，没覆盖：{"、".join(kept[:6])}；'
+              '这些是你自己同步出来的就不用管，不是就删掉该文件再 --补齐。')
+    return 10 if copied else 0
+
+
+def pending(gen, action):
+    mark = Path(gen) / PENDING
+    if action == 'set':
+        mark.write_text(json.dumps({'time': time.strftime('%Y-%m-%d %H:%M:%S'),
+                                    'note': '补齐时总装正在合并，没刷新 generated/oracle；合并收尾后重跑 新建工作树.sh --补齐'}, ensure_ascii=False) + '\n', encoding='utf-8')
+    else:
+        mark.unlink(missing_ok=True)
     return 0
 
 
@@ -115,6 +164,8 @@ def compare(gen, main_gen):
     own = _identity(gen)['outputsDigest']
     batch = _read(gen / BATCH)
     self_synced = _valid_digest(own) and (not batch or own != batch.get('laneOutputsDigest'))
+    if (gen / PENDING).is_file():  # 上次补齐因总装合并跳过了刷新：没记批次时本树的同步戳不算「自己同步过」（tools64）
+        self_synced = self_synced and bool(batch) and own != batch.get('laneOutputsDigest')
     if not self_synced:
         now = _oracle_digests(gen)
         stale += ['oracle/' + n for n, d in sorted(_oracle_digests(main_gen).items()) if now.get(n) != d]
@@ -167,6 +218,10 @@ def main(argv):
         return check(argv[1])
     if len(argv) == 2 and argv[0] == 'flux':
         return flux(argv[1])
+    if len(argv) in (3, 4) and argv[0] == 'refresh':
+        return refresh(argv[1], argv[2], argv[3] if len(argv) == 4 else None)
+    if len(argv) in (2, 3) and argv[0] == 'pending':
+        return pending(argv[1], argv[2] if len(argv) == 3 else 'set')
     if len(argv) == 3 and argv[0] == 'compare':
         return compare(argv[1], argv[2])
     print(__doc__.strip(), file=sys.stderr)
