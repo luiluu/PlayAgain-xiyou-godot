@@ -8,6 +8,8 @@ extends Control
 ## - 多个 Boss：选目标时选中的、上一个掉血的、之前显示的、第一个。原版「上一个被打的」连没掉血的命中也算，这里只看掉血。
 ## - 和原版的差别：没有「战力」（Kyo 定不做敌人战力，折叠栏与详情都不画）；详情标题右边的「敌人属性」照做。
 
+## 折叠栏右上「战力 N」：已按原版做好，默认关（Kyo 2026-11-04：等重构战力系统后再开）。取数在 XPowerEnemy。回退开关写 static var，测试要开关两边都测。
+static var SHOW_POWER := false
 const BAR_HEIGHT := 96.0
 const CARD_HEIGHT := 68.0
 const BODY_Y := 82.0
@@ -137,7 +139,7 @@ func refresh(force := false) -> void:
 	page = clampi(page, 0, pages - 1)
 	if selected != null and not list.any(func(r): return str(r.id) == str(selected)):
 		selected = null
-	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", XBossStatus.entries(battler), page, filter, open, selected, description_page])
+	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", power_total(), XBossStatus.entries(battler), page, filter, open, selected, description_page])
 	if not force and stamp == _stamp:
 		return
 	_stamp = stamp
@@ -269,6 +271,18 @@ static func _meta(row: Dictionary) -> String:
 	return " · ".join([row.stack, row.turns].filter(func(s): return s != ""))
 
 
+## 战力（原版：展开时现算，折叠时只读缓存）；开关关着或战力显示关掉时为空
+func power_of() -> Dictionary:
+	if not SHOW_POWER or battler == null:
+		return {}
+	return XPowerEnemy.enemy(battler) if open else XPowerEnemy.cached(battler)
+
+
+func power_total() -> float:
+	var p := power_of()
+	return float(p.total) if not p.is_empty() else -1.0
+
+
 func _paint_bar(c: XMVCanvas) -> void:
 	if battler == null:
 		return
@@ -276,7 +290,11 @@ func _paint_bar(c: XMVCanvas) -> void:
 	_frame_box(c, WIDTH, BAR_HEIGHT, true)
 	c.text("BOSS", 12, 3, 44, "left", BLUE, 14, 24)
 	var name_text := XBossStatus.clean(battler.display_name())
-	c.text(fit(c, name_text, WIDTH - 148.0, 14), 63, 3, WIDTH - 148.0, "left", INK, 14, 24)
+	var power := power_of()
+	var pw := 118.0 if not power.is_empty() else 0.0
+	c.text(fit(c, name_text, WIDTH - 148.0 - pw, 14), 63, 3, WIDTH - 148.0 - pw, "left", INK, 14, 24)
+	if not power.is_empty():
+		c.text("战力 " + XPower.format(float(power.total)), WIDTH - 80.0 - pw, 3, pw, "right", Color8(255, 211, 115), 14, 24)
 	c.text("收起 ▴" if open else "详情 ▾", WIDTH - 76.0, 3, 62, "right", BLUE, 13, 24)
 	c.draw_rect(Rect2(12, 28, WIDTH - 24.0, 1), EDGE)
 	_preview(c, all.filter(func(r): return r.kind == "Debuff"), "Debuff", 32.0)
