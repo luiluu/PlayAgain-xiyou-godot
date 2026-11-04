@@ -1,7 +1,7 @@
 # 交付：cc/nezha-gauge1
 
 - 车道／工作者：C 规则／哪吒（cc，Sonnet）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -32,7 +32,8 @@
 ## 验证
 
 - 专项 `xiyou_hp_gauge_visible` 14 项通过。
-- 选测：见下（enemy.gd 判为战斗核心，238 个场景，走云端选测）。
+- 云端选测（提交 fc7d88f3，基准 731840ff，187 个场景、6 片）全部通过：[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41862540600)。
+- 待交叉核查：`enemy.gd`（新 `hp_gauge_visible`）、`battle_scene.gd`（`_paint_enemy` 加一行判断）。
 
 ## 本分支提交
 
