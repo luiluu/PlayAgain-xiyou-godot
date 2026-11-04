@@ -303,38 +303,7 @@ def pure_state_value_effect(code, phase):
         return None
     if (phase, ' '.join(tokens)) not in MEASURED_VALUE_BLOCKS:
         return None
-    aliases = [
-        (['this', '.', 'isHpEffect', '(', ')'], ['se_hp']),
-        (['this', '.', 'isMagical', '(', ')'], ['se_magic']),
-        (['this', '.', 'isPhysical', '(', ')'], ['se_physical']),
-        (['target', '.', 'result', '(', ')', '.', 'critical'], ['se_critical']),
-    ]
-    adapted, i = [], 0
-    while i < len(tokens):
-        for native, replacement in aliases:
-            if tokens[i:i + len(native)] == native:
-                adapted.extend(replacement)
-                i += len(native)
-                break
-        else:
-            if tokens[i:i + 4] == ['$gameVariables', '.', 'value', '(']:
-                # Every accepted native call has one constant index and closing ')'.
-                adapted.extend(['v', '[', tokens[i + 4], ']'])
-                i += 6
-            else:
-                adapted.append(tokens[i])
-                i += 1
-    # The shared parser accepts simple assignments only. These measured compound
-    # assignments all have a semicolon and write local value, without side effects.
-    tokens, adapted, i = adapted, [], 0
-    while i < len(tokens):
-        if tokens[i] == 'value' and tokens[i + 1:i + 3] in (['+', '='], ['-', '='], ['*', '=']):
-            end = tokens.index(';', i + 3)
-            adapted.extend(['value', '=', 'value', tokens[i + 1], '('] + tokens[i + 3:end] + [')', ';'])
-            i = end + 1
-        else:
-            adapted.append(tokens[i])
-            i += 1
+    adapted = _adapt_phase_tokens(tokens)
     source = 'var se_hp; var se_magic; var se_physical; var se_critical;\n' + ' '.join(adapted)
     program = compile_formula(source, custom=True, table='States')
     if program['status'] != 'pure' or not set(program['capabilities']) <= {'read.battler', 'read.variables', 'random.rule'}:
@@ -452,6 +421,106 @@ def revive_state_effect(code, phase):
         else:
             return None
     return {'op': 'revive', 'cond': cond, 'steps': steps}
+
+
+# 伤害 react／confirm 一族（state_effects_probe effect.blocks）：整段 token 比对；只有表里的块才译成带副作用的小程序，别的一律退回 js。
+MEASURED_EFFECT_BLOCKS = {
+    ('apply', 'user . _Shield = user . _Shield || 0 ; user . _Shield + = user . mhp * 10 ;'),  # 1060
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 && target . _Shield > 0 ) { var Shielda = target . _Shield ; target . _Shield - = value ; value - = Math . min ( Shielda , value ) ; }'),  # 1060
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . mat ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 100 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1061
+    ('establish', 'if ( value > 0 && this . isHpEffect ( ) ) { target . gainHp ( - value ) ; target . startDamagePopup ( ) ; target . removeState ( 960 ) ; }'),  # 1299
+    ('establish', 'if ( value > 0 && this . isHpEffect ( ) ) { target . gainHp ( - target . hp * 0.0012 ) ; target . startDamagePopup ( ) ; }'),  # 1405
+    ('action_start', '$gameVariables . setValue ( 1174 , Math . floor ( target . mmp / 150000 ) ) ;'),  # 1450
+    ('establish', 'var cishu = $gameVariables . value ( 1174 ) ; if ( cishu >= 10 ) { cishu = 10 } if ( value > 0 && this . isMagical ( ) || this . isPhysical ( ) ) { for ( var i = 0 ; i <= cishu ; i ++ ) { var bonus = Math . random ( ) * 0.4 - 0.2 ; value + = Math . round ( value * bonus ) ; target . gainHp ( - value ) ; target . startDamagePopup ( ) ; target . clearResult ( ) ; } } $gameVariables . setValue ( 1174 , 0 ) ;'),  # 1450
+    ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { target . gainHp ( target . mhp * 1 ) ; target . startDamagePopup ( ) ; target . removeState ( 1580 ) ; }'),  # 1580
+    ('confirm', 'target . gainHp ( - Math . ceil ( target . hp * 0.0012 ) ) ; target . startDamagePopup ( ) ; target . _xmx = target . _xmx || 0 ; target . _xmx + = 1 ; if ( target . _xmx >= 8 ) { target . _xmx = 0 || 0 ; target . gainHp ( - Math . ceil ( target . hp * 0.0035 ) ) ; target . startDamagePopup ( ) ; }'),  # 1642
+    ('confirm', 'if ( value > 0 && this . isHpEffect ( ) ) { target . gainHp ( - value ) ; target . removeState ( 1666 ) ; }'),  # 1666
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 && user . mhp >= user . hp * 0.5 ) { value = Math . floor ( value * 1.5 ) ; user . gainHp ( - user . mhp * 0.01 ) ; } else { value = Math . floor ( value * 0.5 ) ; user . gainHp ( user . mhp * 0.01 ) ; }'),  # 1731
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . atk ; var damage3 = origin . mat ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 500 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1828
+    ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { target . gainHp ( target . mhp * 1 ) ; target . startDamagePopup ( ) ; target . RemoveState ( 1580 ) ; }'),  # 2554
+    ('confirm', 'target . gainHp ( - Math . ceil ( target . hp * 0.00012 ) ) ; target . startDamagePopup ( ) ; target . _xmx = target . _xmx || 0 ; target . _xmx + = 1 ; if ( target . _xmx >= 5 ) { target . _xmx = 0 || 0 ; target . gainHp ( - Math . ceil ( target . mhp * 5e-05 ) ) ; target . startDamagePopup ( ) ; }'),  # 2559
+    ('react', 'if ( value > 0 && this . isHpEffect ( ) ) { var mpDmg = Math . floor ( value * 0.01 ) ; mpDmg = Math . min ( mpDmg , target . mp ) ; target . gainMp ( - mpDmg ) ; value - = mpDmg ; if ( target . mp === 0 ) { target . removeState ( 1662 ) ; } }'),  # 2562
+}
+# 只写 _zuizhongshanghai／jqsbt 这两个字段的块：冻结源 js 与数据里没有别处读它们，也不改 value，翻成空操作（只为不再记成未翻译）
+UNREAD_FIELD_BLOCKS = {
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.99 - 0.04 * user . friendsUnit ( ) . aliveMembers ( ) . length ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; }'),  # 1302
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.005 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }'),  # 2575
+    ('apply', 'user . jqsbt = 0 || 0 ; user . jqsbt = 1 ;'),  # 2575
+    ('battle', 'user . jqsbt = 0 ;'),  # 2575
+    ('remove', 'user . jqsbt = 0 ;'),  # 2575
+    ('turn_end', 'if ( user . jqsbt < 10 ) { user . jqsbt + = 1 ; }'),  # 2575
+}
+
+
+def _adapt_phase_tokens(tokens):
+    """this.isHpEffect() 等换成 se_ 局部量，$gameVariables.value(常数) 换成 v[常数]，value 的复合赋值展开。"""
+    aliases = [
+        (['this', '.', 'isHpEffect', '(', ')'], ['se_hp']),
+        (['this', '.', 'isMagical', '(', ')'], ['se_magic']),
+        (['this', '.', 'isPhysical', '(', ')'], ['se_physical']),
+        (['target', '.', 'result', '(', ')', '.', 'critical'], ['se_critical']),
+    ]
+    adapted, i = [], 0
+    while i < len(tokens):
+        for native, replacement in aliases:
+            if tokens[i:i + len(native)] == native:
+                adapted.extend(replacement)
+                i += len(native)
+                break
+        else:
+            if tokens[i:i + 4] == ['$gameVariables', '.', 'value', '(']:
+                # Every accepted native call has one constant index and closing ')'.
+                adapted.extend(['v', '[', tokens[i + 4], ']'])
+                i += 6
+            else:
+                adapted.append(tokens[i])
+                i += 1
+    # The shared parser accepts simple assignments only. These measured compound
+    # assignments all have a semicolon and write a local, without side effects.
+    tokens, adapted, i = adapted, [], 0
+    while i < len(tokens):
+        if (tokens[i] == 'value' or tokens[i].startswith('f_')) and tokens[i + 1:i + 3] in (['+', '='], ['-', '='], ['*', '=']):
+            end = tokens.index(';', i + 3)
+            adapted.extend([tokens[i], '=', tokens[i], tokens[i + 1], '('] + tokens[i + 3:end] + [')', ';'])
+            i = end + 1
+        else:
+            adapted.append(tokens[i])
+            i += 1
+    return adapted
+
+
+def effect_state_effect(code, phase):
+    """target._xmx 这类字段换成 f_接收者_字段 局部量（运行时读进来、跑完写回），origin.属性换成 o_属性（块开头读）。"""
+    from formula_program import Parser, Unsupported
+    try:
+        tokens = [row[0] for row in Parser(code).tokens[:-1]]
+    except Unsupported:
+        return None
+    signature = (phase, ' '.join(tokens))
+    if signature in UNREAD_FIELD_BLOCKS:
+        return {'op': 'noop', 'reason': 'unread_field'}
+    if signature not in MEASURED_EFFECT_BLOCKS:
+        return None
+    rewritten, declared, i = [], set(), 0
+    while i < len(tokens):
+        if tokens[i] in ('user', 'target') and tokens[i + 1:i + 2] == ['.'] and tokens[i + 2] in ('_Shield', '_xmx'):
+            name = 'f_%s_%s' % ('a' if tokens[i] == 'user' else 'b', tokens[i + 2].lstrip('_'))
+            rewritten.append(name)
+            declared.add(name)
+            i += 3
+        elif tokens[i] == 'origin' and tokens[i + 1:i + 2] == ['.']:
+            name = 'o_' + tokens[i + 2]
+            rewritten.append(name)
+            declared.add(name)
+            i += 3
+        else:
+            rewritten.append(tokens[i])
+            i += 1
+    header = ' '.join('var %s;' % name for name in ['se_hp', 'se_magic', 'se_physical', 'se_critical'] + sorted(declared))
+    program = compile_formula(header + '\n' + ' '.join(_adapt_phase_tokens(rewritten)), custom=True, table='States', phase_effects=True)
+    if program['status'] not in ('pure', 'effectful'):
+        raise ValueError('实测块译不出来：%s %s' % (signature[0], program.get('diagnostic')))
+    return {'op': 'effect_program', 'program': program}
 
 
 def permanent_state_effect(tokens, phase):
@@ -681,6 +750,10 @@ def parse_state_effects(note):
             continue
         if (phase, ' '.join(tokens)) == BUBBLE_WRAP_REMOVE:
             out.append({'phase': phase, 'op': 'noop', 'reason': 'bubble_wrap_cooldown_unread'})
+            continue
+        effect = effect_state_effect(code, phase)
+        if effect:
+            out.append({'phase': phase, **effect})
             continue
         revive = revive_state_effect(code, phase)
         if revive:
