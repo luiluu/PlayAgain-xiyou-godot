@@ -1268,6 +1268,26 @@ func _rest_attrs(o: Dictionary) -> void:
 		check("rest.param.%s.mid" % row.who, t.param_plus(3) - before == float(row.mid[2]) - float(row.raw3) and t.param_plus(5) - before == float(row.mid[3]) - float(row.raw3), [row, t.param_plus(3)])
 		XStateEffects.run_one("remove", t, XDB.rec("States", 2003), {"execute": true, "resources": XResourceContext.new()})
 		check("rest.param.%s.end" % row.who, t.param_plus(3) == before and float(row.end[2]) == float(row.raw3) and s.variable(1204) == float(row.v), [row, t.param_plus(3)])
+	# 真实战斗的回合、再生阶段不带 resources：块自己建（只传 resources 的单块例测不出这条）
+	var bare: XActor = logic.actors[0]
+	bare.hp = bare.mhp
+	bare.state_ids.append(1306)
+	bare.param_mark_dirty()
+	bare.param_refresh()
+	var bare_hp := bare.hp
+	XStateEffects.run("turn_end", bare, {"emit": func(_entry): pass})
+	check("rest.bare_turn_end", bare.hp < bare_hp, [bare_hp, bare.hp])
+	var victim: XBattler = logic.enemies[0]
+	victim.state_ids.append(260)
+	victim.state_origins[260] = weakref(bare)
+	victim.param_mark_dirty()
+	victim.param_refresh()
+	var victim_hp := victim.hp
+	var bare_logs := []
+	XStateEffects.run("regenerate", victim, {"random": logic._rule(), "variables": logic.vars(), "emit": func(entry): bare_logs.append(entry)})
+	check("rest.bare_regen", victim.hp < victim_hp and bare_logs.any(func(l): return l.target == victim and float(l.hp) > 0.0), [victim_hp, victim.hp, bare_logs.size()])
+	bare.state_ids.erase(1306)
+	victim.state_ids.erase(260)
 	# 回合开始的弹字经 ctx.emit 交给调用方（小爱莉被动扣蓝）
 	var a: XActor = logic.actors[0]
 	a.mp = a.mmp

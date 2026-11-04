@@ -235,7 +235,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	# Game_Battler.customEffectEval always shadows the enclosing action domain,
 	# including non-Boss/missing origins. Only native react1341/2550 override Action.
 	var resources: XResourceContext = c.get("resources")
-	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state"])
+	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state", "effect_program"])
 	if owns_resources:
 		resources = XResourceContext.new()
 		resources.random = c.get("random")
