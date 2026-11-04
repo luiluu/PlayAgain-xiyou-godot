@@ -131,6 +131,7 @@ PROBES = [
     (['sve_probe.cjs'], ['sve.json']),
     (['svpng_probe.cjs'], ['svpng.json']),
     (['vsfx_probe.cjs'], ['vsfx.json']),
+    (['collapse_probe.cjs'], ['collapse.json']),
     (['passive_probe.cjs'], ['passive.json']),
     (['review135_probe.cjs'], ['review135.json']),
     (['stage50_review_probe.cjs'], ['stage50_review.json']),
