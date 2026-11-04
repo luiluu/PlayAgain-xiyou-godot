@@ -1054,6 +1054,29 @@ def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def parse_life_steal(note):
+    """YEP_LifeSteal.processLSNotetags2（技能、物品层）：<HP Life Steal: N%>（hpRate=N×0.01）、<HP Life Steal: N>（hpFlat）、
+    <CANCEL (HP )?LIFE STEAL>（allNull／hpNull）。冻结数据里只有技能的 <HP Life Steal: N%>（112 个）；MP 吸血、CUSTOM 公式块没有数据，不转。
+    返回只含出现过的键；没有任何标签返回 None。同键后写的覆盖先写的（同插件逐行赋值）。"""
+    out = {}
+    for line in re.split(r'[\r\n]+', note or ''):
+        m = re.search(r'<(.*)[ ]LIFE STEAL:[ ](\d+)([%％])>', line, re.I)
+        if m:
+            if m.group(1).lower() == 'hp':
+                out['hpRate'] = float(m.group(2)) * 0.01
+            continue
+        m = re.search(r'<(.*)[ ]LIFE STEAL:[ ](\d+)>', line, re.I)
+        if m:
+            if m.group(1).lower() == 'hp':
+                out['hpFlat'] = int(m.group(2))
+            continue
+        if re.search(r'<CANCEL LIFE STEAL>', line, re.I):
+            out['allNull'] = True
+        elif re.search(r'<CANCEL HP LIFE STEAL>', line, re.I):
+            out['hpNull'] = True
+    return out or None
+
+
 def yep_action_effects(obj, animations):
     """YEP_BattleEngineCore 解析后 whole＋target 行动序列里「ACTION EFFECT」的条数（Codex_SmartBattleAI.sequenceHits）。
     默认序列按 isWholeAction 放在 whole 或 target，含 max(1, repeats) 条（addActionEffects 之后 repeats 被改成 1）；
@@ -1283,6 +1306,10 @@ class Exporter:
                         core_enemy_notetags(rec)
                     if name == 'Skills' and isinstance(rec, dict):
                         rec.update(cost_hit_blocks(rec.get('note')))
+                    if name in ('Skills', 'Items') and isinstance(rec, dict):
+                        life_steal = parse_life_steal(rec.get('note'))
+                        if life_steal:
+                            rec['lifeSteal'] = life_steal
                     if isinstance(rec, dict) and isinstance(rec.get('damage'), dict):
                         block = yep_damage_block(rec.get('note'))
                         rec['damage']['custom'] = block is not None

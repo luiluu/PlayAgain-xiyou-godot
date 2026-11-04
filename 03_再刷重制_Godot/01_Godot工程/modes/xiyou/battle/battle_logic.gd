@@ -2308,12 +2308,25 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	var sukuna_shield := XSukuna.strip_shield(u, t, item)  # 宿傩 executeHpDamage 包装：真伤免护盾
 	var sukuna_hp := t.hp
 	var out := _execute_hp_damage(u, t, value, drain)
+	_life_steal(u, out, item)  # YEP_LifeSteal executeHpDamage 包装（最内层之一：在护盾账本、各 codex 包装之内）：按实际扣量吸血
 	XBlackFlash.after_hp(u, t, sukuna_hp - t.hp, item)  # 黑闪 executeHpDamage 包装（宿傩之内）：记伤害、黑闪成功
 	XSukuna.restore_shield(u, t, sukuna_shield, sukuna_hp)
 	XYunshang.after_hp(self, u, t, value, item, sukuna_hp)  # 云裳 executeHpDamage 包装：记每段命中与 _yunTotal、山河作骨守势反击
 	_action_resources.boss_output.leave_settled()
 	XAlienBattle.record(self, u, t, maxf(0.0, alien_before - t.hp))
 	return out
+
+
+## YEP_LifeSteal：技能 <HP Life Steal: N%>，见 XLifeSteal。吸血量 ≤0 不掷 RecPushState 也不回血（原版 return）；
+## RecPushState 掷骰与挂状态在回血之前，已有的状态也再挂一次（原版直接 addState，参照 life_steal 的 rec.already）。
+func _life_steal(u: XBattler, damage: float, item: Dictionary) -> void:
+	var steal := XLifeSteal.amount(u, item, damage)
+	if steal <= 0.0:
+		return
+	for row in XLifeSteal.push_rows(u):
+		if _float("life_steal_push") * 100.0 < float(row.probability):
+			_state_add(u, int(row.stateId))
+	_action_resources.gain(u, "hp", floorf(steal))
 
 
 func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> float:
