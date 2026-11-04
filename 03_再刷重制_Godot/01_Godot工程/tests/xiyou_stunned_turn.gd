@@ -87,11 +87,14 @@ func _delta(x: Dictionary, y: Dictionary) -> Dictionary:
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref is Dictionary and ref.cases.size() == 16 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref is Dictionary and ref.cases.size() == 17 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		var o: Dictionary = c.observed
 		if str(c.id) == "gate.lifelink":
 			_gate_lifelink(o)
+			continue
+		if str(c.id) == "gate.mirror":
+			_gate_mirror(o)
 			continue
 		if str(c.id) == "gate.party":
 			_gate_party(o)
@@ -131,6 +134,48 @@ func _gate_lifelink(o: Dictionary) -> void:
 	var u0 := u.hp
 	l.act(l.enemies[0], null, null)
 	check("gate.lifelink", mate.hp == mate0 and u.hp == u0, [mate0, mate.hp, u0, u.hp])
+	l.end_battle(0)
+
+
+## 镜骸反噬：角色被控跳过、镜骸被控跳过的回合都没有反噬，也不留旧行动根（审查 38 P3-4）。序列同 stunned_turn_probe gate.mirror
+func _gate_mirror(o: Dictionary) -> void:
+	var l := _battle(1)
+	var u: XActor = l.state.actor(1)
+	var e: XEnemy = l.enemies[0]
+	XAlienBattle.setup_encounter(l, l._rule(), {"enemy": 0, "kind": "w", "baseId": 3980, "origin": "boss", "variant": "mirror", "affix": "inversebone"})
+	XAlienBattle.open(l)
+	for b in l.actors + l.enemies:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	var rows := []
+	var snap := func(tag: String): rows.append({"tag": tag, "hp": u.hp, "mhp": u.mhp, "charged": bool(e.alien.mirrorCharged), "foe": e.hp})
+	e.alien.mirrorCharged = true
+	u.hp = u.mhp
+	l.act(u, u.attack_skill(), e)
+	snap.call("hit1")
+	_sleep(u)
+	l.act(u, null, null)
+	snap.call("skip_actor")
+	u.state_ids.erase(SLEEP)
+	u.state_ids.erase(TICK)
+	_sleep(e)
+	l.act(e, null, null)
+	snap.call("skip_enemy")
+	e.state_ids.erase(SLEEP)
+	e.state_ids.erase(TICK)
+	e.alien.mirrorCharged = true
+	u.hp = u.mhp
+	l.act(u, u.attack_skill(), e)
+	snap.call("hit2")
+	# 敌人生命绝对值不比（重制的 1e9 加成取法不同）：只比每步的反噬后生命、充能位，和两次打击的伤害是否都发生了
+	var want: Array = o.rows
+	for i in rows.size():
+		var w: Dictionary = want[i]
+		check("gate.mirror." + str(w.tag) + ".hp", float(rows[i].hp) == float(w.hp) and float(rows[i].mhp) == float(w.mhp), [rows[i], w])
+		check("gate.mirror." + str(w.tag) + ".charged", rows[i].charged == bool(w.charged), [rows[i], w])
+	check("gate.mirror.foe", float(rows[1].foe) == float(rows[0].foe) and float(rows[2].foe) == float(rows[1].foe) and float(rows[3].foe) < float(rows[2].foe),
+		[rows.map(func(r): return r.foe)])
 	l.end_battle(0)
 
 

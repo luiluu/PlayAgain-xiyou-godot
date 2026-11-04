@@ -1648,6 +1648,43 @@
    "errors": []
   },
   {
+   "id": "gate.mirror",
+   "setup": {},
+   "observed": {
+    "rows": [
+     {
+      "tag": "hit1",
+      "hp": 5122,
+      "mhp": 5215,
+      "charged": false,
+      "foe": 112500020625
+     },
+     {
+      "tag": "skip_actor",
+      "hp": 5122,
+      "mhp": 5215,
+      "charged": false,
+      "foe": 112500020625
+     },
+     {
+      "tag": "skip_enemy",
+      "hp": 5122,
+      "mhp": 5215,
+      "charged": false,
+      "foe": 112500020625
+     },
+     {
+      "tag": "hit2",
+      "hp": 5122,
+      "mhp": 5215,
+      "charged": false,
+      "foe": 112500018750
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "gate.party",
    "setup": {},
    "observed": {
