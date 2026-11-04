@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dxed7mdj8yywe"
+path="res://.godot/imported/Caves of Altamira.ogg-873a95928a84a38c94f90397294705a1.oggvorbisstr"
+
+[deps]
+
+source_file="res://modes/xiyou/generated/audio/bgm/Caves of Altamira.ogg"
+dest_files=["res://.godot/imported/Caves of Altamira.ogg-873a95928a84a38c94f90397294705a1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
