@@ -95,6 +95,7 @@ class CloudWaitTests(unittest.TestCase):
         env_dir = self.repo / '03_再刷重制_Godot/07_开发环境'
         env_dir.mkdir(parents=True)
         shutil.copy2(HERE / '云端选测.py', env_dir)
+        shutil.copy2(HERE / '推送重试.py', env_dir)
         self.tool = env_dir / '云端选测.py'
         self.env = dict(os.environ, GIT_AUTHOR_NAME='f', GIT_AUTHOR_EMAIL='f@x.invalid', GIT_COMMITTER_NAME='f', GIT_COMMITTER_EMAIL='f@x.invalid')
         self.env.pop('GITHUB_ACTIONS', None)
