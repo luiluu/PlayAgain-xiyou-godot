@@ -1,0 +1,40 @@
+# 交付：cc/wukong-raven1
+
+- 车道／工作者：A 内容／悟空（cc）
+- 状态：可合并
+
+## 变更记录草稿
+
+## 2026-11-04 【cc·悟空·未经审查】渡鸦魔法反射支补记帧、伤害 0 清暴击标记（dev.待定）
+
+接白龙 visual2 的两条尾巴，都先用 mv_oracle 量原版（探针 `raven_reflect_probe.cjs`，24 例，拷成 `tests/fixtures/raven_reflect_oracle.json`，专项 `xiyou_raven_reflect` 147 项）。
+
+- **渡鸦反射：原版有差，已修。** 渡鸦技能 10122～10126 数据里是 hitType 2（魔法），不是必中，目标有魔法反射（mrf）时照样被反射回渡鸦自己（这条重制本来就对）。差异在反射之后：原版把同一个 Game_Action 再 apply 到渡鸦自己，渡鸦的 apply 包装照样记帧，所以鸦啄回 2% MP、二阶盛宴／万魂归鸦附加黑暗侵蚀、狩猎（×1，神话之力 ×1.5）与神话回响（×0.85）的追加伤害都会落在渡鸦自己身上（会把自己打死）。重制反射分支没调 `XRaven.applied`，这些全丢了。改法：`battle_logic.gd _invoke` 反射分支对每段结果补调 `XRaven.applied(self, u, skill, u, r, true)`（一行）。
+- **饿狼 critical 0 伤：applyCritical 本身无差，但量到别的真差，已修。** 原版 `applyCritical(0)` 对饿狼技能、饿狼用别的技能、普通角色都返回 0（YEP 的 critMult 是 value×1.5、flatCrit 为空），饿狼那层覆写在西游参数下是空操作，重制暴击是乘区，0 乘任何倍率也是 0，数值一致。但原版实战基伤 0、暴击率 1 时扣血 0 且**暴击标记为假**（MV `Game_Action.executeDamage`：value===0 清 critical），重制标记为真（会弹暴击字）。改法：`battle_logic.gd _apply` 伤害值恰为 0 时把 `r.critical` 与结果的 critical 清掉（通用，不限饿狼）。
+- 没查清（不进比对）：10124 亡者盛宴在神话形态里被反射，原版黑暗侵蚀的增伤晚一击生效（第三击才 ×1.5，普通形态第二击），重制两种都是第二击；已把这两例从探针里去掉，没动逻辑。
+
+改了战斗核心文件：`battle_logic.gd`（两处）。待交叉核查请重点看这两处。
+
+## 验证
+
+- 语法检查通过；本地专项 xiyou_raven_reflect 147/147、xiyou_raven_battle 356/356、xiyou_garou_battle 255/255。
+- 选测相对 main 共 153 个场景（超过 40），走云端选测：提交 05d18c8c79 全部通过（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41926221914）。之后只改了交付单。
+- 没跑全量 检查.sh（车道不跑）。
+
+## 交接板
+
+- 下一步：无（渡鸦、饿狼这两条尾巴收口）
+- 用户试玩说明：渡鸦技能被目标魔法反射时，鸦啄会回 MP、盛宴会给自己上黑暗侵蚀、狩猎／回响追加伤害落回渡鸦自己；伤害为 0 的暴击不再弹暴击字。
+- 需要用户决定：无
+
+## 进度账
+
+- 无变化
+
+## 可优化（流程／工具／效率）
+
+- 建议：反射、反击分支各专属模块的 Game_Action.apply 包装是否照样记帧，可再扫一遍（现在只核了渡鸦；归哪条车道：审查或悟空）。
+
+## 本分支提交
+
+- 05d18c8c79 渡鸦反射补记帧、伤害 0 清暴击、探针与专项
