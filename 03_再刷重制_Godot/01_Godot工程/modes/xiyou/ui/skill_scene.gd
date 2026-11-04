@@ -206,7 +206,7 @@ func _paint_list(c: XMVCanvas) -> void:
 			if int(cost.get("icon", 0)) > 0:
 				c.icon(int(cost.icon), x + dw - 32, y + 2, alpha)
 				dw -= 34
-			c.text(str(cost.text), x, y, dw, "right", cost.color, COST_SIZE, LH, alpha)
+			c.text(str(cost.text), x, y, dw, "right", cost.get("color", XUI.TEXT), COST_SIZE, LH, alpha)
 			dw -= c.text_width(str(cost.text), COST_SIZE) + 5
 
 
@@ -250,7 +250,7 @@ func _costs(a: XActor, s: Dictionary) -> Array:
 		return [{"text": "%dWU" % wu, "color": XUI.text_color(4), "icon": 1045}]
 	if cd > 0:
 		return [{"text": "%dCD" % cd, "color": XUI.text_color(6), "icon": 1045}]
-	var out := []
+	var out := XBattleLogic.item_cost_rows(s)
 	var c := logic.skill_cost(a, s)
 	if c.tp > 0:
 		out.append({"text": "%sTP" % XMenu._group(c.tp), "color": XUI.text_color(29), "icon": 1268})
@@ -339,6 +339,7 @@ func use_skill() -> void:
 	a.mp -= c.mp
 	a.tp -= c.tp
 	logic.pay_hp(a, s)
+	logic.pay_items(a, s)
 	for t in targets:
 		for e in s.get("effects", []):
 			logic._effect(a, t, e, {"skill": s, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})

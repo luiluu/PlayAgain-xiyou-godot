@@ -1062,6 +1062,7 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 	elif cd > 0:
 		row.costs = [{"text": "%dCD" % cd, "color": XUI.text_color(6), "icon": 1045}]
 	else:
+		row.costs = XBattleLogic.item_cost_rows(e)
 		var c := logic.skill_cost(a, e)
 		if c.tp > 0:
 			row.costs.append({"text": "%sTP" % XMenu._group(c.tp), "color": XUI.text_color(29), "icon": 1268})

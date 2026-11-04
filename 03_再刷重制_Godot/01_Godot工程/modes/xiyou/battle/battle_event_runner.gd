@@ -212,6 +212,18 @@ func _recast_script(code: String) -> bool:
 	return true
 
 
+## 零度*冻结术再释放（CE1321，技能 6171）：原版 applyGlobal 记下放 6171 的角色（只记角色），takeCaster 取出；学了极寒天地 6175、活着、敌人没死光就强制放一次 6172。
+## 只有 6171 预约这条公共事件，施放者就是预约它的行动者 ce_user。
+const FREEZE_FOLLOWUP := "varactor=window.CodexFreezeFollowup&&CodexFreezeFollowup.takeCaster();if(actor&&actor.isAlive()&&actor.hasSkill(6175)&&!$gameTroop.isAllDead()){varaction=newGame_Action(actor,true);action.setSkill(6172);action.decideRandomTarget();actor._actions.splice(1,0,action);BattleManager.forceAction(actor);}"
+func _freeze_followup_script(code: String) -> bool:
+	if _compact_js(code) != FREEZE_FOLLOWUP:
+		return false
+	var a = get_meta("ce_user") if has_meta("ce_user") else null
+	if a is XActor and a.is_alive() and _recast_meets(a, [["has_skill", 6175, 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+		logic.pending_force = {"user": a, "skill": 6172}
+	return true
+
+
 ## by_var 写法的角色号：变量号，或 _targetActorId（见 O_RECAST_CASTER）
 func _recast_actor_id(src: String) -> int:
 	if src != "_targetActorId":
@@ -403,7 +415,7 @@ func _execute_env(c: Dictionary):
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
 			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code) or _actor_states_script(code) \
-					or _troop_cev_script(code) or _set_armor_troop_state_script(code) or _recast_script(code):
+					or _troop_cev_script(code) or _set_armor_troop_state_script(code) or _recast_script(code) or _freeze_followup_script(code):
 				index = at
 				return null
 			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）
