@@ -1,7 +1,7 @@
 # 交付：cc/nezha-preempt1
 
 - 车道／工作者：C 规则／哪吒（cc，Sonnet）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -39,7 +39,7 @@
 ## 验证
 
 - 专项 `xiyou_preempt` 211 项通过；`xiyou_battle`、`xiyou_determinism`、`xiyou_flow` 通过；`语法检查.py`、`探针登记检查.py` 通过。
-- 云端选测：见下。
+- 云端选测（提交 b6f8cb39，基准 fc7d88f3，245 个场景、7 片）241 个通过，4 个失败（xiyou_barrier、xiyou_dot、xiyou_state_effects、xiyou_state_effects_tp）：不是本分支改动，是车道 generated/oracle 停在旧版（tools64 修的那个毛病，并行测试的落后检查也报了）；合并 main、重新 --补齐刷新 3 份参照后本地重跑这 4 个加 xiyou_preempt 全过。没有再跑云端。
 - 参照没登记 PROBES，走冻结夹具（同 steal1）：先制／偷袭公式是 v0.28 冻结源的，不随同步变，这样也不依赖 `generated/oracle`。
 - 待交叉核查（核心文件）：`battle_logic.gd`（`roll_encounter`、`_make_action_orders`、`end_turn`、`try_escape`）、`core/preempt.gd`、`battle_scene.gd`（开场文字）。
 
