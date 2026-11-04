@@ -485,6 +485,9 @@ static func _re(p: String) -> RegEx:
 ## YEP_BattleEngineCore Game_Actor.attackMotion：第一把武器的武器类型 → System attackMotions 的 type（0 突刺 1 挥舞 2 射击）；
 ## 敌人与无对应类型时为 thrust。
 static func attack_motion(b: XBattler) -> String:
+	if b is XEnemy:  # Game_Enemy.attackMotion：SV 敌人读 <Sideview Weapon>／Attack Motion，其余 thrust
+		var ev := XSvEnemy.attack_visual(b as XEnemy)
+		return ev.motion if ev.motion != "" else "thrust"
 	if not (b is XActor):
 		return "thrust"
 	var w := (b as XActor).first_weapon()
