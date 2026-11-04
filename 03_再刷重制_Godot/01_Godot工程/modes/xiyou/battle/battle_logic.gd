@@ -35,6 +35,10 @@ var random: XBattleRandom
 ## Debug replay boundaries, captured before enemy setup consumes any random value.
 var replay_runtime_start := {}
 var replay_battle_start := {}
+## 先制／偷袭（XPreempt）：只有随机遇敌掷（roll_encounter）；第一个回合结束清掉
+var preemptive := false
+var surprise := false
+var encounter := false   # 本场是随机遇敌（回放要照着再掷一次）
 var _ids := {}
 var _action_resources: XResourceContext
 var _battle_resources: XResourceContext
@@ -107,6 +111,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_ids.clear()
 	turn = 0
 	escaped = false
+	preemptive = false
+	surprise = false
+	encounter = false
 	drop_lock = false
 	_event_flags.clear()
 	_cleared.clear()
@@ -1062,6 +1069,8 @@ func act(u: XBattler, skill, target) -> Array:
 ## 回合结束（MV onTurnEnd）：解除防御、再生、状态回合 -1；恢复行动的人只补进下个回合。
 func end_turn() -> Array:
 	var logs := []
+	preemptive = false  # BattleManager.endTurn 开头清先制／偷袭（YEP Battle Engine Core 的 endTurn 包装里也清）
+	surprise = false
 	var before := _movable_snapshot()
 	_acted.clear()
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
@@ -1517,6 +1526,15 @@ func _restricted(b: XBattler) -> bool:
 	return false
 
 
+## BattleManager.onEncounter（随机遇敌，BattleManager.setup 之后）：两次随机数各取一次，先制与偷袭互斥。
+func roll_encounter() -> void:
+	encounter = true
+	var r := XPreempt.rates(state, enemies)
+	var rolled := XPreempt.roll(_float("encounter_preemptive"), _float("encounter_surprise"), r)
+	preemptive = rolled[0]
+	surprise = rolled[1]
+
+
 ## OTB makeActionOrdersOTB：当前回合 = 上回合排好的「下个回合」；再排新的「下个回合」。
 ## 首回合另排一次当前回合（速度重新随机）。排序稳定，同速时我方在前（JS sort 稳定）。
 func _make_action_orders() -> void:
@@ -1524,7 +1542,8 @@ func _make_action_orders() -> void:
 		current_order = next_order
 	next_order = _sorted_by_speed(alive(actors) + alive(enemies))
 	if not _orders_made:
-		current_order = _sorted_by_speed(actors + enemies)
+		# 原 makeActionOrders：偷袭不排我方、先制不排敌方（只首回合；「下个回合」仍是全员）
+		current_order = _sorted_by_speed((actors if not surprise else []) + (enemies if not preemptive else []))
 		_action_times_modification(current_order, true)
 	_clear_unable()
 	_action_times_modification(next_order)
@@ -2688,7 +2707,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 ## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
 	XBlackFlash.escape(self)  # 黑闪 processEscape 包装：连闪归 0
-	escaped = _float("escape") < _escape_ratio
+	escaped = preemptive or _float("escape") < _escape_ratio  # processEscape：先制必成功，不掷随机数
 	if not escaped:
 		_escape_ratio += 0.1
 	return escaped
