@@ -2576,6 +2576,16 @@ func _mastery_end(u: XBattler, logs: Array) -> void:
 		logs.append({"type": "mastery_up", "target": u, "animation": anim})
 
 
+## StateChangeIfRemove「SC自动解除」：状态因回合／行动数到期（removeStatesAuto／updateStateTurnTiming）被移除后，
+## 若该状态不在身上，改附加备注里的状态（数据里只有 1328 纵横→1329 联宇）。
+func _state_change_if_remove(b: XBattler, id: int) -> void:
+	if b.state_ids.has(id):
+		return
+	var text := str(XDB.rec("States", id).get("meta", {}).get("SC自动解除", "")).strip_edges()
+	if text.is_valid_int() and int(text) > 0:
+		_state_add(b, int(text))
+
+
 func _tick_states(b: XBattler, timing: int) -> void:
 	for id in b.state_ids.duplicate():
 		var s := XDB.rec("States", id)
@@ -2584,6 +2594,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
 			_state_remove(b, id, true)
+			_state_change_if_remove(b, id)
 	if timing == 2:
 		for i in range(8):
 			if b.buff_turns[i] > 0:

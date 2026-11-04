@@ -292,6 +292,7 @@ static func give_exp(s: XState, actor_id: int, n: float) -> Dictionary:
 		while a.level < a.max_level() and a.exp_total >= a.exp_for_level(a.level + 1):
 			a._level_up()
 		a.refresh_passive()
+		a.refresh_resources()  # changeExp 末尾 refresh()：HP／MP 夹回新上限、同步阵亡状态
 	return {"ok": true, "n": members.size(), "text": "已为 %d 名角色增加 %d 经验。" % [members.size(), v]}
 
 

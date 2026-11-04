@@ -153,6 +153,11 @@ func _run() -> void:
 	check("exp_exact", r.ok and a1.exp_total == exp0 + 1000 and r.n == 1, [r, a1.exp_total, exp0])
 	r = XTestMode.give_exp(s, 0, 999999999)
 	check("exp_all_levels_up", r.ok and a1.level > lv0, [a1.level, lv0])
+	# changeExp 末尾 refresh()：超上限的当前值被夹回（升级后 mhp／mmp 变大，当前值不得超过新上限）
+	a1.hp = a1.mhp + 5000.0
+	a1.mp = a1.mmp + 5000.0
+	r = XTestMode.give_exp(s, a1.actor_id, 1)
+	check("exp_refresh_clamps", r.ok and a1.hp == a1.mhp and a1.mp == a1.mmp, [a1.hp, a1.mhp, a1.mp, a1.mmp])
 	check("exp_bad_actor", not XTestMode.give_exp(s, 99999, 10).ok)
 	a1.hp = 1.0
 	a1.add_state(1) if a1.has_method("add_state") else null
