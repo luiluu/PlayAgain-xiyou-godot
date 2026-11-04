@@ -57,9 +57,20 @@ var state_data := {}
 var buffs: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var buff_turns: Array[int] = [0, 0, 0, 0, 0, 0, 0, 0]
 var guarding := false
-## Game_BattlerBase.isGuard 的结果：防御指令置的 guarding；角色另加 dsPassiveSkill passiveGUARD（见 XActor.is_guard）
+## Game_BattlerBase.isGuard 的结果：防御指令置的 guarding 且 canMove()（rpg_objects.js:2722：防御后又被挂不能行动状态就不再减伤）；
+## 角色另加 dsPassiveSkill passiveGUARD（见 XActor.is_guard，那支不看 canMove，与原版一致）
 func is_guard() -> bool:
-	return guarding
+	return guarding and can_move()
+
+
+## Game_BattlerBase.canMove：活着且身上没有「限制 ≥4」的状态（战斗逻辑的 can_move 照此）
+func can_move() -> bool:
+	if not is_alive():
+		return false
+	for s in states():
+		if int(s.restriction) >= 4:
+			return false
+	return true
 ## Game_Battler._lastTargetIndex：最近一次行动作用到的目标在其队伍里的序号（强制行动「上次目标」用）
 var last_target_index := 0
 ## YEP_X_SkillCooldowns：技能 ID → 剩余回合（冷却 / 预热）。冷却跨战斗保留（随存档），预热只在战斗内。

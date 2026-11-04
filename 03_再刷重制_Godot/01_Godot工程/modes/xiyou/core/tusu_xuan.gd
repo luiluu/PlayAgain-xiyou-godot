@@ -10,7 +10,8 @@ extends RefCounted
 ## - 招募：入队；首次赠送并装上专属法宝（记 s.flags 的 _codexTusuRelicGiven／_codexXuanRelicGiven，原版记在角色上）；
 ##   璇先建星谱（s.flags._codexXuanChart，原版 a._codexXuanChart）并按槽学星纹技能。
 ## 不做：屠苏旧名「【最终兵器】屠苏」改回（重制没有改名，名字直接读数据库）；说明卡伤害系数改写（HelpExtend，画面）。
-## 未移植：绑定框架、五相武具、支援、噬主、星谱菜单、战斗内全部机制（见交付单 cc_bailong-tusu1「盘点」）。招募的事件脚本还没接（等绑定框架）。
+## 本文件只管招募与等级成长；战斗内机制、绑定框架、五相武具等都已在别处移植：绑定 binding.gd、屠苏战斗 tusu.gd、璇战斗 xuan_battle.gd、
+## 星谱 xuan_chart.gd、璇／屠苏美术 xuan_tusu_art.gd（旧注释「未移植」一行已过时，2026-11-04 审查 40 P3-11 改）。
 ## 参照：mv_oracle/tusu_growth_probe.cjs（tests/fixtures/tusu_growth_oracle.json），测试 tests/xiyou_tusu.gd。
 
 const TUSU := 176

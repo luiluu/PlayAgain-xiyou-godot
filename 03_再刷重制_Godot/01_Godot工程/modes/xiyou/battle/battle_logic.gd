@@ -1517,7 +1517,7 @@ func cleared_action(b: XBattler) -> bool:
 
 
 func can_move(b: XBattler) -> bool:
-	return b.is_alive() and not _restricted(b)
+	return b.can_move()
 
 func _restricted(b: XBattler) -> bool:
 	for s in b.states():
