@@ -185,10 +185,10 @@ class CloudWaitTests(unittest.TestCase):
         c1 = self.sha
         self.publish('affected', sha=c1)
         a = self.commit('a')                                           # 未验的改动
-        x1 = self.commit_msg('x1', '收尾 1\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % c1[:9])
+        x1 = self.commit_msg('x1.md', '收尾 1\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % c1[:9], subdir='00_项目管理')
         docs = self.commit_msg('板.md', '交接板', subdir='00_项目管理')    # 只改文档的提交不断链
-        x2 = self.commit_msg('x2', '收尾 2\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % docs[:9])
-        broken = self.commit_msg('x3', '收尾 3\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % a[:9])  # 基准 a 没验过：断链
+        x2 = self.commit_msg('x2.md', '收尾 2\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % docs[:9], subdir='00_项目管理')
+        broken = self.commit_msg('x3.md', '收尾 3\n\n验证: 选测（基准 %s，当天全量前算选测已验）' % a[:9], subdir='00_项目管理')  # 基准 a 没验过：断链
         self.commit('tip')
         self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
         url, bare = str(self.remote), mod.cache_repo()
@@ -207,7 +207,7 @@ class CloudWaitTests(unittest.TestCase):
         mod = self.load_tool()
         c1 = self.sha
         self.publish('affected', sha=c1)
-        self.commit_msg('x1', '收尾\n\n验证: 选测（基准 %s，x）' % c1[:9])
+        self.commit_msg('x1.md', '收尾\n\n验证: 选测（基准 %s，x）' % c1[:9], subdir='00_项目管理')
         c3 = self.commit('c3')
         self.commit('tip')
         self.publish('affected', sha=c3)
@@ -253,6 +253,51 @@ class CloudWaitTests(unittest.TestCase):
                                    input='x\n\n{"depth": %d}\n' % (mod.PARENT_MAX - 1))}
         self.assertEqual(mod.snapshot_parent(bare, remote_has, ref), (None, 0))                       # 链满了重起
         self.assertEqual(mod.snapshot_parent(bare, {ref: '1' * 40}, ref), (None, 0))                    # 本地没有远端那个提交
+
+    def test_scenes_result_does_not_verify_a_commit(self):
+        """tools60（审查 37 P2-2）：refs/ci/results/<提交>/scenes 只是重跑了几个场景，两个基准函数都不能把它当已验证。"""
+        mod = self.load_tool()
+        c1 = self.sha
+        self.publish('affected', sha=c1)
+        a = self.commit('a')
+        self.commit('tip')
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        self.publish('scenes', sha=a)
+        url, bare = str(self.remote), mod.cache_repo()
+        os.environ.pop('XIYOU_CI_BASE', None)
+        self.assertEqual(mod.cloud_passed_base(url, bare), c1)
+        self.assertEqual(mod.local_verified_base(url, bare), c1)
+        self.assertEqual(mod.verified_base_info(url, bare)[0], c1)
+        self.publish('full', sha=a)                                   # full 才算
+        self.assertEqual(mod.cloud_passed_base(url, bare), a)
+
+    def test_finish_commit_with_hand_patched_code_falls_back_to_merge_commit(self):
+        """tools60（审查 37 P2-3）：收尾提交相对合并提交带了代码（如手补 power.gd）就不当基准，退回合并提交；只改版本／登记／文档照旧认。"""
+        mod = self.load_tool()
+        c1 = self.sha
+        self.publish('affected', sha=c1)
+        merge = self.commit_msg('m1', '合并 cc/x')
+        patched = self.commit_msg('power.gd', '合并 cc/x（dev.1）收尾\n\n验证: 选测（基准 %s，x）' % c1[:9], subdir='03_再刷重制_Godot/01_Godot工程/modes/xiyou/core')
+        self.commit('tip')
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        url, bare = str(self.remote), mod.cache_repo()
+        os.environ.pop('XIYOU_CI_BASE', None)
+        self.assertEqual(mod.local_verified_base(url, bare), merge)
+        self.assertNotEqual(mod.local_verified_base(url, bare), patched)
+        # 只改登记／文档的收尾提交照旧认
+        merge2 = self.commit_msg('m2', '合并 cc/y')
+        clean = self.commit_msg('变更记录.md', '合并 cc/y（dev.2）收尾\n\n验证: 选测（基准 %s，x）' % merge[:9], subdir='00_项目管理')
+        self.commit('tip2')
+        self.assertEqual(mod.local_verified_base(url, bare), merge)    # 基准 merge 本身只靠软回退，不接得上云端通过：clean 的链断
+        self.assertTrue(mod.release_only(['00_项目管理/变更记录.md', '03_再刷重制_Godot/开发编号.json', 'a.gd.uid']))
+        self.assertFalse(mod.release_only(['03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd']))
+
+    def test_plan_selection_ignores_untracked_files(self):
+        """tools60（审查 37 P2-1）：云端 plan 恢复的 .ci-timings 是未跟踪文件，选测必须带 head 只算已提交差异，并忽略该目录。"""
+        text = (HERE / '云端选测.py').read_text(encoding='utf-8')
+        self.assertIn('selector.select(ROOT, base, head=sha)', text)
+        ignore = (HERE.parent.parent / '.gitignore').read_text(encoding='utf-8')
+        self.assertIn('.ci-timings/', ignore)
 
     def load_tool(self):
         import importlib.util

@@ -46,6 +46,7 @@ CHUNK = 45 * 1024 * 1024  # GitHub 单个对象上限 100 MB，超过 50 MB 会�
 PART = '.ci-part-'  # 大文件分段名：<文件名>.ci-part-000、-001 …
 GEN_PREFIX = 'refs/ci/generated/'
 RESULT_PREFIX = 'refs/ci/results/'
+VERIFYING_MODES = ('affected', 'full')  # 只有这两种结果算「该提交已验证」；scenes 只是重跑了几个场景（tools60，审查 37 P2-2）
 BOT = {'GIT_AUTHOR_NAME': 'xiyou-ci', 'GIT_AUTHOR_EMAIL': 'xiyou-ci@localhost',
        'GIT_COMMITTER_NAME': 'xiyou-ci', 'GIT_COMMITTER_EMAIL': 'xiyou-ci@localhost'}
 TEST_TIMEOUT = 1200  # 云端单核比 Mac 慢，xiyou_rules 在 Mac 并行时已近 390 秒；本机 并行测试.py 仍是 600
@@ -223,10 +224,7 @@ SKIP_PREFIX = 'refs/ci/skip/'  # 合并沿用车道结果（tools43）：Mac 端
 def cloud_passed_base(url, bare, limit=300, results=None):
     """HEAD 的祖先里最近一个云端已通过的提交（refs/ci/results/<提交>/{affected,full} 里 passed）；没有返回 None。"""
     results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare) if results is None else results
-    by_sha = {}
-    for ref in results:
-        sha, _, mode = ref[len(RESULT_PREFIX):].partition('/')
-        by_sha.setdefault(sha, []).append(ref)
+    by_sha = verifying_results(results)
     head = git('rev-parse', 'HEAD')
     for sha in git('rev-list', '-n', str(limit), 'HEAD').splitlines():
         if sha == head or sha not in by_sha:
@@ -234,6 +232,16 @@ def cloud_passed_base(url, bare, limit=300, results=None):
         if result_passed(bare, url, by_sha[sha]):
             return sha
     return None
+
+
+def verifying_results(results):
+    """refs/ci/results/<提交>/<模式> → {提交: [ref…]}，只留 affected、full（scenes 不算验证过）。"""
+    by_sha = {}
+    for ref in results:
+        sha, _, mode = ref[len(RESULT_PREFIX):].partition('/')
+        if mode in VERIFYING_MODES:
+            by_sha.setdefault(sha, []).append(ref)
+    return by_sha
 
 
 def result_passed(bare, url, refs):
@@ -245,6 +253,16 @@ def result_passed(bare, url, refs):
         except (RuntimeError, ValueError):
             continue
     return False
+
+
+RELEASE_FILES = {'03_再刷重制_Godot/开发编号.json', '03_再刷重制_Godot/01_Godot工程/project.godot',
+                 '03_再刷重制_Godot/01_Godot工程/content/build_info.json'}
+
+
+def release_only(files):
+    """收尾提交相对合并提交只改了版本号、登记、文档（开发编号、project.godot、build_info.json，以及 00_项目管理/、03_再刷重制_Godot/00_设计/ 下的 .md／.json、.uid）。"""
+    return all(f in RELEASE_FILES or f.endswith('.uid') or (f.startswith(('00_项目管理/', '03_再刷重制_Godot/00_设计/')) and f.endswith(('.md', '.json')))
+               for f in files)
 
 
 VERIFIED_RE = re.compile(r'^验证: (选测|全量)(?:（基准 ([0-9a-f]{7,40})[，）])?', re.M)
@@ -260,10 +278,8 @@ def local_verified_base(url, bare, limit=300, results=None):
     if os.environ.get('XIYOU_CI_BASE') == 'cloud':
         return None
     results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare) if results is None else results
-    by_sha = {}
-    for ref in results:
-        by_sha.setdefault(ref[len(RESULT_PREFIX):].partition('/')[0], []).append(ref)
-    memo = {}
+    by_sha = verifying_results(results)
+    memo, soft = {}, set()
 
     def docs_only(c):
         parents = git('rev-list', '--parents', '-n', '1', c).split()[1:]
@@ -288,13 +304,19 @@ def local_verified_base(url, bare, limit=300, results=None):
             elif m and m.group(2):
                 base = git('rev-parse', '--verify', '-q', m.group(2) + '^{commit}', check=False)
                 ok = bool(base) and connected(base, depth + 1)
+                parents = git('rev-list', '--parents', '-n', '1', c).split()[1:]
+                if ok and (len(parents) != 1 or not release_only(git('diff', '--name-only', parents[0], c).splitlines())):
+                    # 收尾提交带了手补的代码（如 67dce91f 补 power.gd）：测的是「合并提交＋手补」，提交本身不当基准，
+                    # 退回它的第一父（合并提交）：基准取合并提交，手补的改动留在差异里会被再选测（tools60，审查 37 P2-3）
+                    soft.add(parents[0])
+                    ok = False
             elif docs_only(c):
                 ok = connected(git('rev-parse', c + '^'), depth + 1)
         memo[c] = ok
         return ok
     head = git('rev-parse', 'HEAD')
     for c in git('rev-list', '--first-parent', '-n', str(limit), 'HEAD').splitlines():
-        if c != head and connected(c):
+        if c != head and (connected(c) or c in soft):
             return c
     return None
 
@@ -677,7 +699,7 @@ def cmd_plan(a):
         if not base or set(base) == {'0'} or git('rev-parse', '--verify', '-q', base + '^{commit}', check=False) == '':
             base = 'HEAD~1'  # 新分支第一次推送时 before 全 0
         selector = load_module('selector', HERE / '选测.py')
-        sel = selector.select(ROOT, base)
+        sel = selector.select(ROOT, base, head=sha)  # 带 head：只算已提交的差异，不把工作区未跟踪文件（缓存的 .ci-timings）当改动（tools60）
         base = sel['base']
         scenes = all_scenes if sel['full'] else sel['scenes']
         if sel['full']:

@@ -33,3 +33,6 @@ export_credentials.cfg
 # 桌面 app 建的车道 worktree（AGENTS.md「多会话并行」）
 .claude/worktrees/
 03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw
+
+# 云端选测恢复的耗时缓存（未跟踪文件会被选测当成改动落到 * 规则，ci/main 因此每次整轮，tools60）
+.ci-timings/
