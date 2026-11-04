@@ -13,6 +13,7 @@
     "battle_hooks": {"说明": "战斗核心文件里只加／删角色专属模块的钩子调用（hookLines，tools54）：冒烟场景（determinism、battle、combat、rules 抽样、存档类）＋引用了这些模块名的测试（选测.py 按钩子行里的 X 模块名补）", "scenes": ["xiyou_determinism.tscn", "xiyou_battle.tscn", "xiyou_battle_log.tscn", "xiyou_battle_events.tscn", "xiyou_battle_drop.tscn", "xiyou_combat.tscn", "xiyou_rules*.tscn", "xiyou_*save*.tscn", "xiyou_autosave.tscn", "xiyou_*_load.tscn", "xiyou_event_compare.tscn"], "checks": ["guards", "content", "same_source"]},
     "slice_map": {"说明": "切片只加地图／保留事件：事件对照＋楼层专项＋引用该键的测试＋内容覆盖与工具回归（新增敌群的规则对照与测量接受单仍走同步那一路）", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "checks": ["guards", "tools", "content"]},
     "slice_asset": {"说明": "切片只改图像／音频／字体名单：事件对照＋界面专项＋导出＋引用该键的测试＋工具回归", "scenes": ["xiyou_event_compare.tscn", "ui_smoke.tscn", "xiyou_panels.tscn", "xiyou_*_ui.tscn", "xiyou_mac_export.tscn"], "checks": ["guards", "tools"]},
+    "probe_narrow": {"说明": "只改了单个 mv_oracle 探针（probeNarrow，tools62）：引用探针文件名／产物名／加载产物的模块的场景＋同 converter 的非 Godot 检查", "refs": true, "checks": ["guards", "tools", "content", "same_source"]},
     "converter": {"说明": "切片、转换器、oracle 探针、测量接受单：同战斗核心，另加工具回归", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare.tscn", "xiyou_status_power_panel.tscn"], "refs": true, "checks": ["guards", "tools", "content", "same_source"]},
     "map": {"说明": "地图解释器：事件对照＋楼层专项", "scenes": ["xiyou_event_compare.tscn", "xiyou_floor*.tscn", "xiyou_map*.tscn", "xiyou_flow.tscn"], "refs": true, "checks": ["guards"]},
     "game": {"说明": "其它游戏模块：引用它的专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "checks": ["guards"]},
@@ -50,6 +51,17 @@
       "XQiyu",
       "XNanoha"
     ]
+  },
+  "probeNarrow": {
+    "说明": "单个探针收窄（tools62，悟空 tail5 提）：改动落在 dir 下直接放的 *_probe.cjs（单个探针源）时，原本整组 converter（选 19 个以上规则场景），改归 group：只选引用该探针文件名、产物名（PROBES 登记的产物，或夹具 <名>_oracle.json）、按产物名加载它的 modes/ 模块 class_name 的场景。找不到引用、产物同时被转换器等脚本读（影响所有生成物）、探针在 excludeProbes、或是 shared／node_modules／host.cjs 等公共部分，一律退回原组。enabled 设 false（或环境变量 XIYOU_PROBE_NARROW=0）回到整组 converter。依据见 00_项目管理/交付/cc_nezha-tools62.md。",
+    "enabled": true,
+    "from": "converter",
+    "group": "probe_narrow",
+    "dir": "03_再刷重制_Godot/03_转换工具/mv_oracle",
+    "syncFile": "03_再刷重制_Godot/03_转换工具/同步正式西游.py",
+    "readerIgnore": ["oracle_additions.py", "验证西游来源.py", "内容覆盖检查.py", "事件指令统计.py", "共性参照验收.py", "角色模板预检.py", "common_oracle_contract.py", "battle_event_contract.py", "formula_effect_contract.py"],
+    "readerIgnore说明": "只读检查与完整性自检（产物不被它们改写）：读产物不算「影响所有生成物」。同步脚本里的 READ_ONLY_TOOLS 加上三个 *_contract.py。",
+    "excludeProbes": ["slice_probe.cjs", "event_probe.cjs", "map_probe.cjs"]
   },
   "mergeBase": true,
   "mergeBase说明": "true：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进）改用 merge-base(基准, HEAD)，只算本分支的改动；false：按基准本身比（2026-10-26 前的行为）。总装用批首 base 时两者相同。",

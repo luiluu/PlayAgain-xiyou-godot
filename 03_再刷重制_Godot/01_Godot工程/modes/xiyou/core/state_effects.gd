@@ -126,6 +126,7 @@ class PhaseValueProgram:
 
 	## 状态块 effect_program（rules4）：副作用只在 execute 时做，经行动资源上下文（结果槽、护盾、死亡结算）；预览只算 value。
 	var effects := {}
+	var _saved_results := {}
 
 	func _step(n: Dictionary) -> void:
 		if n.get("op") == "members_loop":
@@ -193,11 +194,22 @@ class PhaseValueProgram:
 				XStateEffects._emit_result(b, resources, effects.context)
 			"clear_result":
 				resources.seed_result(b, XResourceContext.empty_result())
+			"save_result":
+				_saved_results[b] = resources.result(b).duplicate(true)  # JsonEx.makeDeepCopy(target._result)
+			"restore_result":
+				if _saved_results.has(b):
+					resources.seed_result(b, _saved_results[b])  # target._result = result
 			"remove_state":
 				resources.remove_state(b, int(_number(args[0])))
 			"set_variable":
 				if XState.current != null and XStateEffects._variable_writable(int(_number(args[0]))):
 					XState.current.set_variable(int(_number(args[0])), _number(args[1]))
+					# 同一块里先写后读（1769／1776 的 setValue 后接 value(同号)）要读到新值：块开头拿的是快照
+					var written: float = XState.current.variable(int(_number(args[0])))
+					if _context.v is Array and int(_number(args[0])) < _context.v.size():
+						_context.v[int(_number(args[0]))] = written
+					elif _context.v is Dictionary:
+						_context.v[int(_number(args[0]))] = written
 			"add_state":
 				XStateEffects._add_state(b, int(_number(args[0])), effects.context)
 			"animation":
@@ -242,6 +254,10 @@ class PhaseValueProgram:
 				XStateEffects.queue_force(b, int(_number(args[0])), int(_number(args[1])), resources)
 			"set_counter":
 				XStateEffects._set_counter(b, int(_number(args[0])), _number(args[1]))
+			"set_counter_if_empty":  # user._stateCounter[s] = user._stateCounter[s] || x：没有或为 0 才写
+				var kept: float = float(b.state_data.get("_stateCounter", {}).get(str(int(_number(args[0]))), 0.0))
+				if kept == 0.0:
+					XStateEffects._set_counter(b, int(_number(args[0])), _number(args[1]))
 			"add_actor_counter_level":
 				XStateEffects._add_actor_counter_level(int(_number(args[0])), int(_number(args[1])))
 			"collapse":
@@ -443,6 +459,10 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 		var name := str(local)
 		if name.begins_with("f_"):
 			extra[name] = _field_read(receivers[name[2]], name.substr(4))
+		elif name.begins_with("o_gearLevel_"):
+			extra[name] = XEquipmentView.first_armor_level(c.origin.equip_list(), int(name.substr(12))) if c.origin is XActor else 0.0
+		elif name.begins_with("o_elementRate_"):
+			extra[name] = c.origin.element_rate(int(name.substr(14)))
 		elif name.begins_with("o_"):
 			extra[name] = float(c.origin.get(name.substr(2)))
 		elif name == "se_state_id":
@@ -578,6 +598,8 @@ static func _field_read(b: XBattler, field: String):
 static func _field_write(b: XBattler, field: String, value) -> void:
 	if not value is StringName:
 		b.state_data["_" + field] = value
+	elif b.state_data.has("_" + field):
+		b.state_data.erase("_" + field)  # 块里写了 = undefined（_reverenceMp）
 
 
 ## 自动复活一族（rules3，state_effects_probe revive.blocks）：Deselect 块的条件＋按原顺序的几步。

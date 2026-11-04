@@ -268,7 +268,7 @@ PHASE_CALLS = {'startDamagePopup': ('popup', 0), 'clearResult': ('clear_result',
                'reserve': ('reserve', 1), 'troopSize': ('troop_size', 0), 'enemiesAlive': ('enemies_alive', 0), 'isNotOrigin': ('not_origin', 0),
                'gainGold': ('gain_gold', 1), 'setTpRaw': ('set_tp', 1), 'addParam': ('add_param', 2), 'forceCriticalOn': ('force_critical_on', 0),
                'forceCriticalRestore': ('force_critical_restore', 0),
-               'firstWeaponType': ('first_weapon_type', 0), 'setCounter': ('set_counter', 2), 'addActorCounterLevel': ('add_actor_counter_level', 2)}
+               'firstWeaponType': ('first_weapon_type', 0), 'saveResult': ('save_result', 0), 'setCounterIfEmpty': ('set_counter_if_empty', 2), 'restoreResult': ('restore_result', 0), 'setCounter': ('set_counter', 2), 'addActorCounterLevel': ('add_actor_counter_level', 2)}
 
 
 class Compiler:
