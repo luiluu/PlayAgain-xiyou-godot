@@ -45,6 +45,7 @@ var popups: Array = []              # 出现过的获得提示文字（测试核
 var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 按帧成批，序号决定错开）
 var _bgm_name := ""
 var _menu_open := false
+var _hotkeys := XMapHotkeys.new()
 var _milestone_tick := 0
 var _backup_until := 0
 ## Scene_Map.create / update：变量 21（副本）为 0 时建出地图传送按钮，建出后到下次换场景前一直在
@@ -514,6 +515,7 @@ func _on_action() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_update_hotkeys()
 	_hang_up_physics()
 	_update_shake()
 	_update_flash()
@@ -1334,6 +1336,16 @@ func open_change_clothes() -> void:
 	refresh_party_sprites()
 
 
+## 屏蔽掉落（SiShiTan-PingBi「pingbizhuangbei」→ SceneManager.push(Scene_PingbiMenu)）：公共事件 486、P 键，关闭回到地图
+func open_pingbi() -> void:
+	hud.visible = false
+	var page := XPingbiScene.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
 ## 角色进阶（SceneManager.push(Scene_ActorAdvanced)）：奉神老妪「进阶」，关闭后回到地图
 func open_actor_advanced() -> void:
 	hud.visible = false
@@ -1520,6 +1532,17 @@ func toggle_hang_up() -> void:
 		_set_busy(true)
 		await message.show_text("", 0, [tip], 0, 1)
 		_set_busy(false)
+
+
+## YEP_ButtonCommonEvents（见 XMapHotkeys）：地图页面、没有事件和文字时按键预约公共事件；走动、挂机、载具都不挡
+func hotkeys_open() -> bool:
+	return XState.current != null and player != null and not busy and not _menu_open and transfer_page == null and can_start_local_events()
+
+
+func _update_hotkeys() -> void:
+	var id := _hotkeys.step(Input.is_physical_key_pressed)
+	if id > 0 and hotkeys_open():
+		XState.current.reserve_common_event(id)
 
 
 func _unhandled_input(event: InputEvent) -> void:

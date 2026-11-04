@@ -237,7 +237,8 @@ class EffectBlockTranslationTests(unittest.TestCase):
         shield = one('Apply', 'user._Shield = user._Shield || 0; user._Shield += user.mhp * 10;')
         self.assertEqual(shield['op'], 'effect_program')
         self.assertIn('f_a_Shield', shield['program']['locals'])
-        self.assertEqual(one('Battle', 'user.jqsbt = 0;'), {'phase': 'battle', 'op': 'noop', 'reason': 'unread_field'})
+        got = one('Battle', 'user.jqsbt = 0;')
+        self.assertEqual((got['op'], got['reason'], got['fix']), ('noop', 'unread_field', 'FIX_SWORD_2575'))
 
     def test_boundaries(self):
         p = self.popup
@@ -284,6 +285,15 @@ class RestBlockTranslationTests(unittest.TestCase):
                           ('Victory', '$gameParty.gainGold(-$gameVariables.value(981) * 100);')]:
             with self.subTest(tag=tag, code=code[-60:]):
                 self.assertEqual(one(tag, code)['op'], 'js')
+
+
+class EffectFixTests(unittest.TestCase):
+    """fix1：修正版和原版程序都带上，开关在运行时选。"""
+    def test_fixed_attached(self):
+        got = one('Respond', 'if(target.hp<=0||target.isDead()){ target.gainHp(target.mhp*1); target.startDamagePopup(); target.RemoveState(1580); }')
+        self.assertEqual(got['fix'], 'FIX_UNDYING_2554')
+        self.assertIn('fixed', got)
+        self.assertNotIn('fix', one('Respond', 'if(target.hp<=0||target.isDead()){ target.gainHp(target.mhp*1); target.startDamagePopup(); target.removeState(1580); }'))
 
 
 if __name__ == '__main__':

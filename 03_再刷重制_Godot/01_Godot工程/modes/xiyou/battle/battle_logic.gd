@@ -2028,6 +2028,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if type > 0:
 		r.critical = _float("critical") < item_cri(u, skill, dt) or XStateEffects.force_critical  # 必爆：forceCritical 照样抽随机数
 		_action_resources.result(dt).critical = r.critical
+		if r.critical and XStateEffects.FIX_SCISSORS_CRIT_1068 and u.is_state_affected(1068):
+			XStateEffects.queue_force_quiet(u, 5576, (enemies if t is XEnemy else actors).find(t))  # 金剪追加：暴击时追加金蛟剪·断魂
 		var previous_record := _damage_record
 		_damage_record = r
 		var value := _damage_value(XGuyu.owner(u), skill, dt, r.critical, true)  # 谷雨 makeDamageValue 包装：绽放按谷雨算（calcOwner）
@@ -2035,6 +2037,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true
 		_damage_record = previous_record
+		if XStateEffects.FIX_MARK_5576 and int(skill.get("id", 0)) in [5576, 5577] and dt.is_state_affected(1067):
+			value *= 4.0  # 戮仙印记：备注的公式写「放大 400%」，原版那段不生效
 		r.state_value = value
 		_action_resources.result(dt).success = true
 		match type:

@@ -120,6 +120,8 @@ func _execute_env(c: Dictionary):
 ## 插件指令 EnemyBook open 要打开图鉴画面；PHWarehouse show <名字> 要打开仓库画面
 func _host_plugin(line: String) -> bool:
 	var args := line.split(" ", false)
+	if args.size() >= 1 and args[0].to_lower() == "pingbizhuangbei":
+		return host.has_method("open_pingbi")
 	if args.size() >= 3 and args[0] == "PHWarehouse" and args[1] == "show":
 		return host.has_method("open_warehouse")
 	return args.size() >= 2 and args[0] == "EnemyBook" and args[1] == "open" and host.has_method("open_enemy_book")
@@ -298,6 +300,9 @@ func _host_command(c: Dictionary):
 				_jump_to_choice(leave, indent)
 		356:
 			var line := str(p[0])
+			if line.split(" ", false)[0].to_lower() == "pingbizhuangbei":
+				await host.open_pingbi()  # SiShiTan-PingBi：屏蔽掉落页（公共事件 486），关闭回地图
+				return true
 			if line.begins_with("PHWarehouse"):
 				# 仓库（PH_Warehouse PHWarehouse show <名字>）：设为当前仓库并打开 Scene_Warehouse，关闭回地图；仓库不存在时不打开
 				if XWarehouse.open(state(), " ".join(line.split(" ", false).slice(2))):
