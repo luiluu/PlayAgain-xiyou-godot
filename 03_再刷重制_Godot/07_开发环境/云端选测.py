@@ -156,6 +156,29 @@ def push_tuning():
     return [x for c in PUSH_TUNING for x in ('-c', c)]
 
 
+PARENT_MAX = 30  # 快照链最多连续挂这么多层，到了就重新起一个无父提交的快照（整份重传一次），免得远端把每个旧版本的对象都留着
+
+
+def snapshot_parent(bare, remote_has, ref):
+    """产物快照提交该挂在哪个父提交上（tools58）。返回 (父提交或 None, 新深度)。
+    原来每次都是无父提交：git push 打包时只有「新提交的父提交」才算边界，远端已有的树和文件不会被排除，
+    所以只改了 4 个文件，也把整份约 1.1 GB（压缩后约 381 MB）重新打包上传。挂上远端当前那份快照作父提交后，
+    只传变了的文件（同一份快照实测 381 MB → 25 KB）。父提交取远端这个 ref 当前指向的，新分支取远端 main 的；
+    本地裸库没有它（换了机器、被清掉）、链已满 PARENT_MAX、或 XIYOU_CI_PARENT=0 时回到无父提交。"""
+    if os.environ.get('XIYOU_CI_PARENT') == '0':
+        return None, 0
+    parent = remote_has.get(ref) or remote_has.get(GEN_PREFIX + 'main')
+    if not parent:
+        return None, 0
+    try:
+        git('cat-file', '-e', parent + '^{commit}', git_dir=bare)
+        body = git('cat-file', 'commit', parent, git_dir=bare).partition('\n\n')[2].partition('\n\n')[2]
+        depth = int(json.loads(body).get('depth', 0)) + 1
+    except (RuntimeError, ValueError):
+        return None, 0
+    return (parent, depth) if depth < PARENT_MAX else (None, 0)
+
+
 def push_generated(url, bare, commit, ref):
     git(*push_tuning(), 'push', '--force', '--no-verify', url, '%s:%s' % (commit, ref), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
 
@@ -181,10 +204,11 @@ def cmd_upload(a):
         return 0
     meta = {'branch': branch, 'source': git('rev-parse', 'HEAD'), 'time': datetime.datetime.now().astimezone().isoformat(timespec='seconds'),
             'syncStamp': stamp, 'parts': parts, 'chunk': CHUNK}
-    commit = git('commit-tree', tree_sha, git_dir=bare, env=BOT,
+    parent, meta['depth'] = snapshot_parent(bare, remote_has, ref)
+    commit = git('commit-tree', tree_sha, *(['-p', parent] if parent else []), git_dir=bare, env=BOT,
                  input='ci generated snapshot %s\n\n%s\n' % (branch, json.dumps(meta, ensure_ascii=False, indent=1)))
     git('update-ref', ref, commit, git_dir=bare)
-    log('推送 %s → %s（首次约 400 MB，之后只传改了的文件）' % (commit[:10], ref))
+    log('推送 %s → %s（%s）' % (commit[:10], ref, '接在远端当前快照上，只传改了的文件' if parent else '无父提交，整份重传（约 400 MB）'))
     push_generated(url, bare, commit, ref)
     # 只留每个分支最后一次快照：旧对象随 gc 清掉，裸库不会越攒越大
     git('-c', 'gc.pruneExpire=now', 'gc', '--auto', '--quiet', git_dir=bare, check=False)
@@ -196,11 +220,9 @@ BASE_PREFIX = 'refs/ci/base/'
 SKIP_PREFIX = 'refs/ci/skip/'  # 合并沿用车道结果（tools43）：Mac 端算出的不用再跑的场景，计划步骤从选测里去掉
 
 
-def verified_base(url, bare, limit=300):
-    """HEAD 的祖先里最近一个云端已通过的提交（refs/ci/results/<提交>/{affected,full} 里 passed）；没有返回 None。
-    选测基准取它，只测此后新增的改动。基准取 GitHub main 的分叉点时，本地 main 领先未推送的合并（早在云端测过）会全被算进来，
-    战斗核心之类的改动一多就扩成整轮（每轮约 140～155 分钟额度）。"""
-    results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare)
+def cloud_passed_base(url, bare, limit=300, results=None):
+    """HEAD 的祖先里最近一个云端已通过的提交（refs/ci/results/<提交>/{affected,full} 里 passed）；没有返回 None。"""
+    results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare) if results is None else results
     by_sha = {}
     for ref in results:
         sha, _, mode = ref[len(RESULT_PREFIX):].partition('/')
@@ -209,14 +231,93 @@ def verified_base(url, bare, limit=300):
     for sha in git('rev-list', '-n', str(limit), 'HEAD').splitlines():
         if sha == head or sha not in by_sha:
             continue
-        for ref in by_sha[sha]:
-            try:
-                git('fetch', '-q', '--no-tags', url, '+%s:%s' % (ref, ref), git_dir=bare)
-                if json.loads(git('cat-file', '-p', ref + ':result.json', git_dir=bare)).get('passed'):
-                    return sha
-            except (RuntimeError, ValueError):
-                continue
+        if result_passed(bare, url, by_sha[sha]):
+            return sha
     return None
+
+
+def result_passed(bare, url, refs):
+    for ref in refs:
+        try:
+            git('fetch', '-q', '--no-tags', url, '+%s:%s' % (ref, ref), git_dir=bare)
+            if json.loads(git('cat-file', '-p', ref + ':result.json', git_dir=bare)).get('passed'):
+                return True
+        except (RuntimeError, ValueError):
+            continue
+    return False
+
+
+VERIFIED_RE = re.compile(r'^验证: (选测|全量)(?:（基准 ([0-9a-f]{7,40})[，）])?', re.M)
+DOCS_DIR = '00_项目管理/'
+
+
+def local_verified_base(url, bare, limit=300, results=None):
+    """HEAD 第一父链上最近一个「本机已验」的提交（tools58，选测基准认本机已验的合并）。
+    合并车道.py 在 --finish --affected 通过后才写收尾提交的「验证: 选测（基准 B，…）」尾注（全量写「验证: 全量」），
+    所以带尾注的收尾提交 X 说明 B..X 的选测已在本机通过。基准链要能接上才算：
+    X 的 B 必须自己也是云端通过的提交、带尾注且 B 的基准又接上、或是只改 00_项目管理/ 下 .md 的文档提交落在这样的提交之上；
+    断了就不认（防漏）。找不到返回 None。回退：环境变量 XIYOU_CI_BASE=cloud 只认云端通过的提交。"""
+    if os.environ.get('XIYOU_CI_BASE') == 'cloud':
+        return None
+    results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare) if results is None else results
+    by_sha = {}
+    for ref in results:
+        by_sha.setdefault(ref[len(RESULT_PREFIX):].partition('/')[0], []).append(ref)
+    memo = {}
+
+    def docs_only(c):
+        parents = git('rev-list', '--parents', '-n', '1', c).split()[1:]
+        if len(parents) != 1:
+            return False
+        files = git('diff', '--name-only', parents[0], c).splitlines()
+        return bool(files) and all(f.startswith(DOCS_DIR) and f.endswith('.md') for f in files)
+
+    def connected(c, depth=0):
+        if c in memo:
+            return memo[c]
+        memo[c] = False  # 环或过深当作断开
+        if depth > limit:
+            return False
+        ok = False
+        if c in by_sha and result_passed(bare, url, by_sha[c]):
+            ok = True
+        else:
+            m = VERIFIED_RE.search(git('log', '-1', '--format=%B', c))
+            if m and m.group(1) == '全量':
+                ok = True
+            elif m and m.group(2):
+                base = git('rev-parse', '--verify', '-q', m.group(2) + '^{commit}', check=False)
+                ok = bool(base) and connected(base, depth + 1)
+            elif docs_only(c):
+                ok = connected(git('rev-parse', c + '^'), depth + 1)
+        memo[c] = ok
+        return ok
+    head = git('rev-parse', 'HEAD')
+    for c in git('rev-list', '--first-parent', '-n', str(limit), 'HEAD').splitlines():
+        if c != head and connected(c):
+            return c
+    return None
+
+
+def verified_base_info(url, bare, limit=300):
+    """选测基准：(提交, 来源)。云端通过的祖先与本机已验的合并取较新的那个（后者是前者的后代才取后者）；都没有返回 (None, '')。"""
+    results = ls_remote(url, RESULT_PREFIX + '*', git_dir=bare)
+    cloud = cloud_passed_base(url, bare, limit, results)
+    local = local_verified_base(url, bare, limit, results)
+    if local and local != cloud:
+        try:
+            if cloud:
+                git('merge-base', '--is-ancestor', cloud, local)
+            return local, '本机已验的合并'
+        except RuntimeError:  # 云端通过的提交更新：用它
+            pass
+    return (cloud, '上次云端通过的祖先') if cloud else (None, '')
+
+
+def verified_base(url, bare, limit=300):
+    """选测基准提交（见 verified_base_info）；基准取 GitHub main 的分叉点时，本地 main 领先未推送的合并（早在云端测过）会全被算进来，
+    战斗核心之类的改动一多就扩成整轮（每轮约 140～155 分钟额度），所以取已验证的祖先。"""
+    return verified_base_info(url, bare, limit)[0]
 
 
 def print_estimate(base, full):
@@ -241,9 +342,10 @@ def cmd_run(a):
     base = ''
     if not a.full:
         url = git('remote', 'get-url', remote)
-        base = a.base or verified_base(url, cache_repo()) or ''
+        base, why = (a.base, '指定') if a.base else verified_base_info(url, cache_repo())
+        base = base or ''
         if base:
-            log('选测基准：%s（%s）' % (base[:10], '指定' if a.base else '上次云端通过的祖先'))
+            log('选测基准：%s（%s）' % (base[:10], why))
             # 基准提交已在 GitHub 上（它有云端结果）；先推基准ref，计划步骤据它取 refs/ci/base/<HEAD>
             git('push', '--force', '--no-verify', remote, '%s:%s%s' % (base, BASE_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
     if a.skip and not a.full:
