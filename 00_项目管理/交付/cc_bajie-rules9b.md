@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules9b
 
 - 车道／工作者：C 规则／八戒（cc）
-- 状态：等云端选测
+- 状态：可合并
 
 （接着 `cc_bajie-rules9.md` 的任务一；原接续单的内容并在这里，接续单已删。）
 
@@ -23,7 +23,7 @@
 - 专项 `xiyou_multi_element`（新，675 项）、`xiyou_pushstate`（91 项）全部通过。
 - 反向验证（`反向验证.py`）4 项全咬住：多属性改成取第一个、反弹只认魔法、不读反弹、已带着也重挂。
 - `语法检查.py` 通过。
-- 云端选测：待填。
+- 云端选测通过：提交 a6f1758543，154 个场景，4 片（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41863913561）。偶发 1 个：`xiyou_battle_common_events`（并行失败、单跑通过）。之后只提交了交付单。
 - **同步没有干净退出**：`同步正式西游.py --accept-additions` 第一次卡在别的车道合入的 `dot.json`（见「可优化」）。我从 `cc/wukong-dot1` 工作树只读拷了一份 `dot.json`（用例与我本地探针结果逐字相同），之后同步跑完，但退出码 2、结果「有变化，请人工查看」，唯一的变化是 `dot.json` 新增参照，`issues` 为空。所以这条分支**没留下可免重跑的干净指纹**，合并时要看 `dot.json` 这一项。
 
 ## 交接板
