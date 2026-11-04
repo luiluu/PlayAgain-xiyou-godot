@@ -555,7 +555,8 @@ func _compare(c: Dictionary, got: Dictionary) -> Array:
 	var want_delta: Dictionary = _norm(c.delta)
 	# O-085：精魂下限是 0（原版可扣成负数）。两边每例都从新局 0 精魂起，原版净扣成负数的，重制夹在 0、差量为空
 	# （ce823／ce824 裴钱扣 500、m189e1p0 扣 99999999）。先扣成负数再加回来的写法会照旧报不一致，到时再看
-	if XState.GOLD_FLOOR_ZERO and float(want_delta.get("gold", 0.0)) < 0.0:
+	# 预设给了精魂的变体：起点不是 0，只有净扣后真的低于 0 才算夹在 0（m4e10p0#b2 预设 1000 精魂、扣 1000 并未触底）
+	if XState.GOLD_FLOOR_ZERO and float(want_delta.get("gold", 0.0)) + float(c.get("preset", {}).get("gold", 0.0)) < 0.0:
 		want_delta.erase("gold")
 	var got_delta: Dictionary = _norm(got.delta)
 	var keys := want_delta.keys()
