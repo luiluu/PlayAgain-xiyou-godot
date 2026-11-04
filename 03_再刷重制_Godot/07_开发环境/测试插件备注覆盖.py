@@ -68,10 +68,23 @@ class KnownCases(unittest.TestCase):
         return self.rows[key]
 
     def test_known_unread(self):
-        # 技能树 Kyo 10-31 定删，不会有人再去读这个标签；别选还在待做清单上的（dot1b 做完就把旧用例做挂了）
-        r = self.verdict('pstcatname#')
+        # 弱者挑战（installWeakChallengeRuntime）整套没做、也没人决定不做：scan2 2026-11-04 留下的唯一真缺；做完把它挪进豁免或改成已读，再换一个例子
+        r = self.verdict('codexweaknewgame')
         self.assertGreater(r['data_count'], 0)
         self.assertEqual(r['verdict'], '没读', r['why'])
+
+    def test_exempt_entries_valid(self):
+        exempt = cov.load_exemptions()
+        self.assertGreater(len(exempt), 10)
+        for k, v in exempt.items():
+            self.assertIn(k, self.rows, f'豁免键 {k} 不在插件标签／命令里（拼错或插件改名）')
+            self.assertTrue(v.get('reason') and v.get('evidence'), f'{k} 缺 reason／evidence')
+            self.assertIn(self.rows[k]['verdict'], ('已核', '已读'), f'{k} 豁免后应是已核（或代码里已读到）：{self.rows[k]["verdict"]}')
+
+    def test_exempt_shows_as_checked(self):
+        r = self.verdict('skillkillgoon')
+        self.assertEqual(r['verdict'], '已核', r['why'])
+        self.assertIn('永不成立', r['why'])
 
     def test_known_read(self):
         for k in ('customtargeteval', 'item#cost', 'sc自动解除', 'dotformula', 'regenformula'):
@@ -87,7 +100,7 @@ class KnownCases(unittest.TestCase):
     def test_unread_sorted_first(self):
         first_used = [r for r in self.list if r['data_count'] > 0]
         verdicts = [r['verdict'] for r in first_used]
-        self.assertEqual(verdicts, sorted(verdicts, key=lambda v: {'没读': 0, '拿不准': 1, '已读': 2}[v]))
+        self.assertEqual(verdicts, sorted(verdicts, key=lambda v: {'没读': 0, '拿不准': 1, '已核': 2, '已读': 2}[v]))
 
 
 if __name__ == '__main__':
