@@ -1568,6 +1568,9 @@ func _hit_visual(l: Dictionary) -> bool:
 		var a := _start_animation(int(p[0]), t)  # 角色形象 apply 包装：甚尔武器库／反弹／游云追加段命中时 target.startAnimation(动画, false, 延迟)
 		if a:
 			a.wait = int(p[1])
+	for p in l.get("state_anims", []):
+		if sprites.has(p[1]):
+			_start_animation(int(p[0]), p[1])  # 护盾 React：target.startAnimation（破盾动画，在本次弹字之前）
 	for c in l.get("custom_popups", []):
 		_custom_popup(c.target, str(c.text), int(c.format))  # 黑闪 announce：customPopup(label, 2)
 		_log_add(str(c.log))  # _logWindow.push('addText', 名字＋打出了＋label)

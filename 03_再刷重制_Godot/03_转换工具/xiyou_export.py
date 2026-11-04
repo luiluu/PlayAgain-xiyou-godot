@@ -357,7 +357,24 @@ def query_state_value_effect(code, phase):
     except Unsupported:
         return None
     query = MEASURED_QUERY_BLOCKS.get((phase, signature))
-    return {'op': 'value_query', **query} if query else None
+    if query:
+        return {'op': 'value_query', **query}
+    # 护盾一族（state_effects_probe query.shield_blocks）：整段 token 比对，只有元素号与动画号两处可变。
+    # HP 伤害>0 时：不含本盾元素就清零；含不含都播动画并移除自身（Remove 块随之触发）。
+    m = phase == 'react' and SHIELD_BLOCK.fullmatch(signature)
+    if m:
+        return {'op': 'value_query', 'query': 'element_contains', 'element': int(m.group(1)), 'present': False,
+                'remove_self': True, 'animation': int(m.group(2))}
+    return None
+
+
+SHIELD_BLOCK = re.compile(
+    re.escape('if ( this . isHpEffect ( ) && value > 0 ) { var elements = this . getItemElements ( ) ; '
+              'var lightningElementId = ELEMENT_ID ; if ( ! elements . contains ( lightningElementId ) ) { value = 0 ; } '
+              'target . startAnimation ( ANIMATION_ID ) ; target . removeState ( stateId ) ; }')
+    .replace('ELEMENT_ID', '([1-9][0-9]*)').replace('ANIMATION_ID', '([1-9][0-9]*)'))
+# 护盾 Remove 块：写持有者的 _bubbleWrapCooldown，冻结源 js 里没有任何地方读它，翻成空操作（只为不再记成未翻译）
+BUBBLE_WRAP_REMOVE = ('remove', 'user . _bubbleWrapCooldown = 3 ;')
 
 
 def permanent_state_effect(tokens, phase):
@@ -584,6 +601,9 @@ def parse_state_effects(note):
         poison = poison_stack_effect(body, code, phase) or simple_script_effect(body, code, phase)
         if poison:
             out.append({'phase': phase, **poison})
+            continue
+        if (phase, ' '.join(tokens)) == BUBBLE_WRAP_REMOVE:
+            out.append({'phase': phase, 'op': 'noop', 'reason': 'bubble_wrap_cooldown_unread'})
             continue
         query = query_state_value_effect(code, phase)
         if query:

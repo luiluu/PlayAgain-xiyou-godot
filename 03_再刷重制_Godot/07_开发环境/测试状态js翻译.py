@@ -171,5 +171,30 @@ class CounterTranslationTests(unittest.TestCase):
                 self.assertEqual(one(tag, code)['op'], 'js')
 
 
+class ShieldTranslationTests(unittest.TestCase):
+    """rules2 护盾一族：整段 token 比对，只有元素号与动画号可变；改一个记号就退回 js。"""
+    body = ('if (this.isHpEffect() && value > 0) { var elements = this.getItemElements(); var lightningElementId = 8; '
+            'if (!elements.contains(lightningElementId)) { value = 0; } target.startAnimation(204); target.removeState(stateId); }')
+
+    def test_exact(self):
+        self.assertEqual(one('React', self.body), {'phase': 'react', 'op': 'value_query', 'query': 'element_contains', 'element': 8,
+                                                   'present': False, 'remove_self': True, 'animation': 204})
+        self.assertEqual(one('React', '// 注释\n' + self.body.replace('8;', '10;').replace('204', '241'))['animation'], 241)
+        self.assertEqual(one('Remove', 'user._bubbleWrapCooldown = 3;'), {'phase': 'remove', 'op': 'noop', 'reason': 'bubble_wrap_cooldown_unread'})
+
+    def test_boundaries(self):
+        b = self.body
+        for tag, code in [('Confirm', b), ('React', b.replace('!elements', 'elements')), ('React', b.replace('removeState(stateId)', 'removeState(105)')),
+                          ('React', b.replace('value = 0', 'value = 1')), ('React', b.replace('= 8;', '= 0;')), ('React', b.replace('= 8;', '= v;')),
+                          ('React', b.replace('target.startAnimation', 'user.startAnimation')), ('React', b + ' user.gainHp(1);'),
+                          ('React', b.replace(' target.startAnimation(204);', '')), ('React', b.replace('value > 0', 'value >= 0'))]:
+            with self.subTest(tag=tag, code=code[-80:]):
+                self.assertEqual(one(tag, code)['op'], 'js')
+        for tag, code in [('Apply', 'user._bubbleWrapCooldown = 3;'), ('Remove', 'user._bubbleWrapCooldown = 2;'),
+                          ('Remove', 'target._bubbleWrapCooldown = 3;'), ('Remove', 'user._bubbleWrapCooldown = 3; user.gainHp(1);')]:
+            with self.subTest(tag=tag, code=code):
+                self.assertEqual(one(tag, code)['op'], 'js')
+
+
 if __name__ == '__main__':
     unittest.main()
