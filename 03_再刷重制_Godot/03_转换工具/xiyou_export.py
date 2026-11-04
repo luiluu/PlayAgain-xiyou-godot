@@ -985,6 +985,108 @@ def parse_state_effects(note):
     return out
 
 
+# ---- YEP_X_ExtDoT（持续伤害／再生，dot1）----
+# 插件参数（冻结正式源 plugins.js：Regen Animation 46、DoT Animation 59、Default Variance 20、Default Element 0；
+# dot_probe 的 fixture.defaults 逐项量过，专项 xiyou_dot 核对）。
+EDOT_REGEN_ANI, EDOT_DOT_ANI, EDOT_VARIANCE, EDOT_ELEMENT = 46, 59, 20, 0
+# 原版 DataManager.processEDoTNotetags1 逐行匹配（行内 search、不分首尾；冒号后恰一个空格，所以「<DoT Formula:300>」认不出）
+_EDOT_ANI = re.compile(r'<(?:REGEN|DOT) ANIMATION:[ ](\d+)>', re.I)
+_EDOT_REGEN = re.compile(r'<(?:REGEN|REGENERATE) FORMULA:[ ](.*)>', re.I)
+_EDOT_DOT = re.compile(r'<(?:DOT|DAMAGE OVER TIME) FORMULA:[ ](.*)>', re.I)
+_EDOT_VAR = re.compile(r'<(?:REGEN|DOT) VARIANCE:[ ](\d+)([%％])>', re.I)
+_EDOT_ELE = re.compile(r'<(?:REGEN|DOT) ELEMENT:[ ](\d+)>', re.I)
+_EDOT_CREGEN, _EDOT_CREGEN_END = re.compile(r'<(?:CUSTOM REGEN FORMULA)>', re.I), re.compile(r'<\/(?:CUSTOM REGEN FORMULA)>', re.I)
+_EDOT_CDOT, _EDOT_CDOT_END = re.compile(r'<(?:CUSTOM DOT FORMULA)>', re.I), re.compile(r'<\/(?:CUSTOM DOT FORMULA)>', re.I)
+EDOT_SIMPLE = re.compile(r'value = Math\.max\(0, ([\s\S]*)\);\nhealing = (true|false);')
+EDOT_ASSIGN = re.compile(r'(value|variance|element|healing) = ([^;\n]+?);?')
+# 2038「火遁初级燃烧」自定义再生公式整段（dot_probe leak2038／real.2038）：施加者是角色→什么都不做（value 取全局泄漏值，实测 0）；
+# 否则 value = 持有者的 damagedot（由 Apply Effect 写，见交付单），波动 0、元素 2、按再生算
+EDOT_2038 = 'if (a.isActor()) {\n} else {\n  value = user.damagedot\n  variance = 0;\n  element = 2;\n}\nhealing = true'
+EDOT_UNRESOLVED = []
+
+
+def _edot_program(expr, state_id):
+    """表达式 → 纯公式程序。DoT 上下文里 a／origin 是施加者、b／user／target 是持有者（和技能公式的 user＝a 相反）。"""
+    src = re.sub(r'(?<![\w.$])(user|target)(?![\w$])', 'b', expr)
+    src = re.sub(r'(?<![\w.$])origin(?![\w$])', 'a', src)
+    program = compile_formula(src, state_id, custom=False, table='States')
+    if program['status'] != 'pure':
+        return None
+    return program
+
+
+def _edot_number(text):
+    return int(text) if re.fullmatch(r'\d+', text.strip()) else None
+
+
+def parse_ext_dot(note, state_id):
+    """备注 → 持续伤害／再生描述，或 None（没有 dotFormula）。原文拼接与原版逐行一致，再把拼出的 JS 整段比对：
+    simple（value = Math.max(0, 式);）／assign（只含 value、variance、element、healing 赋值）／2038 特例；别的一律 unresolved 并报出。"""
+    animation, element, variance, formula, mode = 0, EDOT_ELEMENT, EDOT_VARIANCE, '', 'none'
+    for line in re.split(r'[\r\n]+', note or ''):
+        if m := _EDOT_ANI.search(line):
+            animation = int(m.group(1))
+        elif m := _EDOT_REGEN.search(line):
+            formula = 'value = Math.max(0, ' + m.group(1) + ');\nhealing = true;'
+            animation = animation or EDOT_REGEN_ANI
+        elif m := _EDOT_DOT.search(line):
+            formula = 'value = Math.max(0, ' + m.group(1) + ');\nhealing = false;'
+            animation = animation or EDOT_DOT_ANI
+        elif m := _EDOT_VAR.search(line):
+            variance = int(m.group(1))
+        elif m := _EDOT_ELE.search(line):
+            element = int(m.group(1))
+        elif _EDOT_CREGEN.search(line) or _EDOT_CDOT.search(line):
+            mode = 'custom'
+        elif _EDOT_CREGEN_END.search(line):
+            formula += 'healing = true'
+            mode = 'none'
+        elif _EDOT_CDOT_END.search(line):
+            formula += 'healing = false'
+            mode = 'none'
+        elif mode == 'custom':
+            formula += line + '\n'
+    if formula == '':
+        return None
+    out = {'animation': animation, 'variance': variance, 'element': element}
+    if formula == EDOT_2038:
+        return {**out, 'kind': 'damagedot', 'healing': True, 'variance': 0, 'element': 2}
+    m = EDOT_SIMPLE.fullmatch(formula)
+    if m and 'Math.max(0, ' not in m.group(1) and '\n' not in m.group(1):
+        program = _edot_program(m.group(1), state_id)
+        if program:
+            return {**out, 'kind': 'formula', 'healing': m.group(2) == 'true', 'program': program}
+    # assign：逐条赋值（自定义块，可接在 <DoT Formula> 之后；healing 以最后一次为准，原版收尾标签总排在最后）
+    statements = []
+    for part in re.split(r'[;\n]+', formula):
+        part = part.strip()
+        if part:
+            statements.append(part)
+    program, healing, ok = None, None, True
+    for part in statements:
+        m = re.fullmatch(r'(value|variance|element|healing) = (.+)', part)
+        if not m:
+            ok = False
+            break
+        name, expr = m.groups()
+        if name == 'healing':
+            healing = expr == 'true' if expr in ('true', 'false') else None
+            ok = ok and healing is not None
+        elif name == 'value':
+            expr = re.sub(r'^Math\.max\(0, (.*)\)$', r'\1', expr) if re.fullmatch(r'Math\.max\(0, [^()]*(?:\([^()]*\)[^()]*)*\)', expr) else expr
+            program = _edot_program(expr, state_id)
+            ok = ok and program is not None
+        else:
+            n = _edot_number(expr)
+            ok = ok and n is not None
+            if n is not None:
+                out[name] = n
+    if ok and program is not None and healing is not None:
+        return {**out, 'kind': 'formula', 'healing': healing, 'program': program}
+    EDOT_UNRESOLVED.append(state_id)
+    return {**out, 'kind': 'unresolved', 'healing': bool(re.search(r'healing = true\s*$', formula)), 'source': formula}
+
+
 # ---- YEP_ElementCore / YEP_X_CriticalControl 备注标签 → 结构化字段（按行匹配，与原插件一致）----
 YEP_C1 = re.compile(r'<(?:ELEMENT AMPLIFY) (\d+): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
 YEP_C2 = re.compile(r'<(?:ELEMENT AMPLIFY) (.*): ([+\-]\d+(?:\.\d+)?)([%％])>', re.I)
@@ -1279,6 +1381,8 @@ class Exporter:
                             rec['yep'] = yep
                     if name == 'States' and isinstance(rec, dict):
                         rec['effects'] = parse_state_effects(rec['note'])
+                        if dot := parse_ext_dot(rec['note'], rec['id']):
+                            rec['dot'] = dot
                     if name == 'Enemies' and isinstance(rec, dict):
                         core_enemy_notetags(rec)
                     if name == 'Skills' and isinstance(rec, dict):
