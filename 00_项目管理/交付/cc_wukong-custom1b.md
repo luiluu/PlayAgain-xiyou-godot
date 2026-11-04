@@ -46,7 +46,7 @@
 
 - 专项 `xiyou_target_eval`、`xiyou_script_census` 本机通过；`语法检查.py`、`探针登记检查.py` 通过。
 - 选测：`选测.py main --list` 226 个场景（battle_logic 核心），走云端选测。第一次云端 5 个失败（honghuang_curse、script_census、state_effects、state_effects_tp、xuan_tusu_art）：census 是本期的（已清单去掉那条）；其余是本工作树 generated 落后 main（oracle 旧）所致，合 main 后 `XIYOU_IGNORE_MERGE_FLUX=1 新建工作树.sh --补齐`（总装的合并阶段标记还停在 prepared）刷新后本机通过。第二次云端见下。
-- 云端选测第二次：（待填）
+- 云端选测第二次：**通过**，提交 3e247fad9a，215 个场景 6 片（[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41803490278)）。之后只改了 battle_logic 一行注释和交付单。
 
 ## 待办／没做
 
