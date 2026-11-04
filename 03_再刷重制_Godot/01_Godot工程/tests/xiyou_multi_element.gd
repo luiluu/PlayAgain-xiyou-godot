@@ -8,6 +8,7 @@ const ORACLE := "res://modes/xiyou/generated/oracle/multi_element.json"
 const WATCH_RULE_SKILLS := ["rule.7006", "rule.9956", "rule.10007"]
 var passed := 0
 var total := 0
+var _program := {}
 
 
 class RatedEnemy extends XEnemy:
@@ -36,19 +37,21 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func _actor(st: XState, id: int, level: int, states := []) -> XActor:
+## 用新局默认等级（参照 observed.actor 记了等级与攻防，比对前先核）
+func _actor(st: XState, id: int, states := []) -> XActor:
 	var a: XActor = st.actor(id)
-	a.change_level(level)
 	a.skill_ids.clear()
 	a.state_ids.clear()
 	for i in range(a.equips.size()):
 		a.equips[i] = null
-	for s in states:
+	a.param_mark_dirty()
+	a.refresh_passive()
+	a.recover_all()
+	for s in states:  # recover_all 会清状态，放在它后面
 		a.state_ids.append(int(s))
 		a.state_turns[int(s)] = 1
 	a.param_mark_dirty()
 	a.refresh_passive()
-	a.recover_all()
 	return a
 
 
@@ -68,10 +71,20 @@ func _value(id: int, a: XBattler, b: XBattler, fixed: bool) -> float:
 	var item := XDB.rec("Skills", id).duplicate(true)
 	item.damage.variance = 0
 	item.damage.critical = false
-	var options := {"variance": false, "critical": false}
-	if fixed:
-		options.rawValue = 1000.0
+	var options := {"variance": false, "critical": false, "vars": XState.current.variable_array()}
+	if fixed:  # 参照把公式改成 1000：物理／魔法权重也按新公式算（没有攻防项，各 0.5）
+		item.damage.formula = "1000"
+		item.damage.formulaGd = "1000"
+		item.damage.formulaProgram = _constant_program()
 	return XDamage.finish(XDamage.calculate(item, a, b, options), item, a, b)
+
+
+## tests/fixtures 的常量公式程序，把常量改成 1000
+func _constant_program() -> Dictionary:
+	if _program.is_empty():
+		_program = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_effect_programs.json"))["runtime.constant1000000"].program
+		_program.steps[0].value.value = 1000.0
+	return _program
 
 
 func _run() -> void:
@@ -81,7 +94,6 @@ func _run() -> void:
 		return
 	check("source", data.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	var default_enemy := int(XDB.rec("Troops", 1).members[0].enemyId)
-	var level := int(data.level)
 	for c in data.cases:
 		if not check(c.id + ".native_ok", c.errors.is_empty(), c.errors):
 			continue
@@ -89,19 +101,22 @@ func _run() -> void:
 		var id := str(c.id)
 		var st := XState.new_game(int(data.difficulty), 1, [])
 		XState.current = st
+		if o.has("actor"):
+			var who := _actor(st, 1, [c.setup.state] if c.setup.has("state") else [])
+			check(id + ".actor", who.level == int(o.actor.level) and who.atk == float(o.actor.atk) and who.mat == float(o.actor.mat), [who.level, who.atk, who.mat, o.actor])
 		if id.begins_with("elements."):
-			var a := _actor(st, 1, level)
+			var a := _actor(st, 1)
 			var got := XDamage.action_elements(XDB.rec("Skills", int(c.setup.skill)), a)
 			check(id, got == _ints(o.elements), [got, o.elements])
 		elif id.begins_with("multi."):
-			var got := _value(int(c.setup.skill), _actor(st, 1, level), _enemy(default_enemy, int(o.enemyLevel), c.setup.table), true)
+			var got := _value(int(c.setup.skill), _actor(st, 1), _enemy(default_enemy, int(o.enemyLevel), c.setup.table), true)
 			check(id, got == float(o.value), [got, o.value])
 		elif id.begins_with("amp."):
-			var a := _actor(st, 1, level, [c.setup.state])
+			var a := _actor(st, 1, [c.setup.state])
 			var got := _value(int(c.setup.skill), a, _enemy(default_enemy, int(o.enemyLevel), {}), true)
 			check(id, got == float(o.value), [got, o.value])
 		elif id.begins_with("native."):
-			var a := _actor(st, 1, level)
+			var a := _actor(st, 1)
 			var got := _value(int(c.setup.skill), a, _enemy(int(c.setup.enemy), int(o.enemyLevel)), false)
 			check(id, got == float(o.value), [got, o.value])
 		elif id.begins_with("rule."):
@@ -111,15 +126,15 @@ func _run() -> void:
 			var yep: Dictionary = XDB.rec("Armors", 4998).get("yep", {})
 			check(id, yep.get("elementReflect", {}) == o.elementReflect, [yep, o.elementReflect])
 		elif id.begins_with("reflect."):
-			_reflect_case(id, c, o, st, int(data.wearer), level)
+			_reflect_case(id, c, o, st, int(data.wearer))
 	# 参照要真的覆盖：规则改了不变、最优能换成每个属性、含属性 8 的物理／必中都反弹
 	check("rule_cases", WATCH_RULE_SKILLS.all(func(r): return data.cases.any(func(c): return c.id == r)))
 	check("best_covered", data.cases.filter(func(c): return str(c.id).begins_with("multi.7006.best")).size() == 3)
 	_finish()
 
 
-func _reflect_case(id: String, c: Dictionary, o: Dictionary, st: XState, wearer: int, level: int) -> void:
-	var a := _actor(st, wearer, level)
+func _reflect_case(id: String, c: Dictionary, o: Dictionary, st: XState, wearer: int) -> void:
+	var a := _actor(st, wearer)
 	if id != "reflect.unworn":
 		var slots := a.equip_slots()
 		var g := XGear.create("armor", 4998, st)

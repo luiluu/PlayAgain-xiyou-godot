@@ -2251,7 +2251,7 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 		XAlienBattle.pop_action()
 
 
-## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
+## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <State Can Added Floor>、<Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
 ## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层），重制不需要多层机制；说明「可无限叠加」与原版代码不符。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()

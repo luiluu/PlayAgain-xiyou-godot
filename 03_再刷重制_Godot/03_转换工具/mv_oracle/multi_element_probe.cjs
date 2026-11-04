@@ -9,12 +9,11 @@ const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 w.eval('CodexZones.ENABLED=false;');
 const SKILLS = [7006, 7007, 7057, 7063, 7319, 7327, 7471, 7472, 7473, 9956, 9959, 9962, 9963, 10007, 10008, 10070];
-const DIFFICULTY = 2, LEVEL = 50;
+const DIFFICULTY = 2;
 const realm = v => { const o = w.eval('[]'); for (const x of v) o.push(x); return o; };
 newGame(); w.$gameSystem.setDifficultyId(DIFFICULTY);  // 只开一局：makeDamageValue 不改全局，每例只重置角色，整份约半分钟
 function reset(actorId = 1) {
   const a = w.$gameActors.actor(actorId);
-  a.changeLevel(LEVEL, false);
   a._skills = realm([]); a._states = realm([]); a._equips.forEach(x => x.setObject(null));
   a.need_refresh = true; a.refresh(); if (a.initPassiveCache) a.initPassiveCache(); a.refreshPassiveCache(); a.recoverAll();
   return a;
@@ -40,6 +39,7 @@ function withRates(table, fn) {
   P.elementRate = function (e) { return table[e] === undefined ? 1 : table[e]; };
   try { return fn(); } finally { P.elementRate = nativeRate; }
 }
+const stats = a => ({level: a.level, atk: a.atk, mat: a.mat});
 const elementsOf = (a, id) => { const act = new w.Game_Action(a); act.setSkill(id); return act.getItemElements().slice(); };
 const TABLES = {
   absorb: {2: -1, 3: 0.5, 5: 1, 9: 1.5, 1: 0.5},   // 吸收属性不会胜过正伤害
@@ -56,25 +56,25 @@ for (const id of SKILLS) {
     const table = Object.fromEntries(es.map(e => [e, e === best ? 2 : 0.5]));
     cases.push(makeCase(`multi.${id}.best${best}`, {skill: id, table}, () => {
       const a = reset(), b = foe();
-      return {value: withRates(table, () => value(a, b, id, true)), enemyLevel: b.level};
+      return {value: withRates(table, () => value(a, b, id, true)), enemyLevel: b.level, actor: stats(a)};
     }));
   }
   for (const [name, table] of Object.entries(TABLES)) {
     cases.push(makeCase(`multi.${id}.${name}`, {skill: id, table}, () => {
       const a = reset(), b = foe();
-      return {value: withRates(table, () => value(a, b, id, true)), enemyLevel: b.level};
+      return {value: withRates(table, () => value(a, b, id, true)), enemyLevel: b.level, actor: stats(a)};
     }));
   }
   // 全抗性 1，增幅只有一项：带状态 122 炽魂（<Element Amplify 2: +15%>），含属性 2 的技能应高出 15%
   cases.push(makeCase(`amp.${id}.state122`, {skill: id, state: 122}, () => {
     const a = reset(), b = foe();
     a._states = realm([122]); a.need_refresh = true; a.refresh(); a.refreshPassiveCache();
-    return {value: withRates({}, () => value(a, b, id, true)), amp2: a.elementAmplifyRate(2), enemyLevel: b.level};
+    return {value: withRates({}, () => value(a, b, id, true)), amp2: a.elementAmplifyRate(2), enemyLevel: b.level, actor: stats(a)};
   }));
   for (const enemyId of [465, 947]) {
     cases.push(makeCase(`native.${id}.e${enemyId}`, {skill: id, enemy: enemyId}, () => {
       const a = reset(), b = foe(enemyId);
-      return {value: value(a, b, id, false), rates: es.map(e => b.elementRate(e)), enemyLevel: b.level};
+      return {value: value(a, b, id, false), rates: es.map(e => b.elementRate(e)), enemyLevel: b.level, actor: stats(a)};
     }));
   }
 }
@@ -126,4 +126,4 @@ cases.push(makeCase('reflect.unworn', {skill: 109}, () => {
   return {reflect8: a.elementReflectRate(8), itemMrf: act.itemMrf(a), branch: branch(act, b, a)};
 }));
 cases.push(makeCase('reflect.item_data', {armor: 4998}, () => ({elementReflect: JSON.parse(JSON.stringify(w.$dataArmors[4998].elementReflect || {}))})));
-process.exit(finish(host, 'multi_element.json', {difficulty: DIFFICULTY, level: LEVEL, skills: SKILLS, reflectSkills: REFLECT, wearer: WEARER, tables: TABLES, cases}) ? 0 : 1);
+process.exit(finish(host, 'multi_element.json', {difficulty: DIFFICULTY, skills: SKILLS, reflectSkills: REFLECT, wearer: WEARER, tables: TABLES, cases}) ? 0 : 1);

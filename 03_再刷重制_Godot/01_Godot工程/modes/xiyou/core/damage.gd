@@ -268,6 +268,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	incoming *= maxf(0.0, frame.incomingMultiplier)
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.guarding else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
+	# 多属性取最有利的一个候选（installDamageElementRuntime）。<Multi-Element Rule: …> 被它接管，原版改五种规则数值都不变（multi_element_probe）。
 	var best := {}
 	var cands := []
 	for e in es:
