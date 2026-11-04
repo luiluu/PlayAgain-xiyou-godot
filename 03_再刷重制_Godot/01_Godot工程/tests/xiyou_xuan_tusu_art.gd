@@ -187,7 +187,7 @@ func _scene() -> void:
 	check("scene.tusu_form", str(st.look.frame("wait", 0).get("asset", "")) == "Codex_Tusu_sword_v1", st.look.frame("wait", 0).get("asset"))
 	check("scene.tusu_attach", st.position == sh.position + Vector2(0, 1), [st.position, sh.position])
 	check("scene.tusu_no_shadow", st.shadow == null or not st.shadow.visible)
-	var held = sh.get_meta("xt_held", null)
+	var held = sh.get_meta("xt_held") if sh.has_meta("xt_held") else null
 	check("scene.held", held != null and held.visible and held.texture != null, held)
 	if held != null:
 		var hs: float = held.scale.x
@@ -195,7 +195,7 @@ func _scene() -> void:
 	l.act(a, XDB.rec("Skills", XTusuXuan.skill_id(XUAN, "jixing")), host)
 	await frames(4)
 	check("scene.xuan_hidden", not sa.sprite.visible)
-	var proj = sh.get_meta("xt_proj", null)
+	var proj = sh.get_meta("xt_proj") if sh.has_meta("xt_proj") else null
 	check("scene.proj", proj != null and proj.texture != null, proj)
 	await frames(12)
 	check("scene.proj_opacity", proj != null and is_equal_approx(proj.modulate.a, 208.0 / 255.0), proj.modulate.a if proj else null)

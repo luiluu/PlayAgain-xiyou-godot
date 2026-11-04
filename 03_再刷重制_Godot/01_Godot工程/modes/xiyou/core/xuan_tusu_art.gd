@@ -270,7 +270,7 @@ static func _host_sprite(s):
 
 
 static func _update_held(s, w: String) -> void:
-	var held = s.get_meta("xt_held", null)
+	var held = s.get_meta("xt_held") if s.has_meta("xt_held") else null
 	if w == "" or not HELD.has(w) or s.battler.is_dead():
 		if held != null:
 			held.visible = false
@@ -289,8 +289,8 @@ static func _update_held(s, w: String) -> void:
 		mat.shader = _held_shader
 		held.material = mat
 		s.add_child(held)
+		s.move_child(held, s.sprite.get_index() + 1)
 		s.set_meta("xt_held", held)
-	s.move_child(held, s.sprite.get_index() + 1)
 	var c: Dictionary = HELD[w]
 	var m: int = XAppearance.MOTIONS.find(s.motion)
 	var f: int = mini(2, int(s._frame))
@@ -320,7 +320,7 @@ static func _update_held(s, w: String) -> void:
 
 
 static func _update_projection(s, role: String) -> void:
-	var spr = s.get_meta("xt_proj", null)
+	var spr = s.get_meta("xt_proj") if s.has_meta("xt_proj") else null
 	if role == "":
 		if spr != null:
 			spr.modulate.a = maxf(0.0, spr.modulate.a - P_FADE / 255.0)
@@ -333,8 +333,8 @@ static func _update_projection(s, role: String) -> void:
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		spr.modulate.a = 0.0
 		s.add_child(spr)
+		s.move_child(spr, s.sprite.get_index())
 		s.set_meta("xt_proj", spr)
-	s.move_child(spr, s.sprite.get_index())
 	var x = XXuanBattle.xuan()
 	var t := Engine.get_physics_frames()
 	var started = _cast_ticks.get(int(x.actor_id) if x != null else 0)
