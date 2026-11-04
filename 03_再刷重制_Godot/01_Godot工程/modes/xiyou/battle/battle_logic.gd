@@ -2537,10 +2537,14 @@ func rewards() -> Dictionary:
 		# O-130：Vitsuno 的挂点是 Game_Enemy.exp／gold（每只敌人 floor(值×倍率)），在 expTotal／goldTotal、套装与 ×8／×5 之前
 		exp += floori(e.exp_reward() * float(rates[0]))
 		gold += floorf(e.gold_reward() * float(rates[1])) * gold_rate
-		drops.append_array(drops_of(e))
+		var rolled := drops_of(e)
+		if XTestMode.enabled() and not XEnemy.boss_id(e.enemy_id):
+			for d in rolled:
+				d["boost"] = true  # 测试模式：普通敌人掉的装备词缀加速（XTestMode.roll_affixes）
+		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
-	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8, "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
+	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 
 
 func _difficulty_rates() -> Array:
@@ -2608,10 +2612,14 @@ func drop_chances(e: XEnemy) -> Array:
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）
 func gain_drops(drops: Array) -> void:
 	for d in drops:
+		if d.get("boost", false):
+			XTestMode.boost_depth += 1
 		match int(d.kind):
 			1: state.gain_item(d.id, 1)
 			2: state.gain_gear("weapon", d.id, 1)
 			3: state.gain_gear("armor", d.id, 1)
+		if d.get("boost", false):
+			XTestMode.boost_depth -= 1
 
 
 ## YEP_ExtraEnemyDrops：<Enemy Drops> Item/Weapon/Armor x: y% </Enemy Drops>

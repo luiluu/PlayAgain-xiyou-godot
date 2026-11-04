@@ -96,7 +96,7 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	var table := "Weapons" if kind == "weapon" else "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseWeaponDatabase"): table = "Weapons"
-	for row in definition.get("affixes", []):
+	for row in ([] if XTestMode.boost_depth > 0 else definition.get("affixes", [])):
 		_pool_enter(true, owner)     # DreamX.RandomPrefixSuffix.choose
 		var dice := floori(_pool_next(owner) * 100) + 1
 		var choices: Array = row.choices.duplicate()
@@ -112,6 +112,8 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 			combine(item, XDB.rec(table,affix_id), str(row.kind))
 			item.affixIds.append({"table":table,"id":affix_id,"kind":row.kind})
 			break
+	if XTestMode.boost_depth > 0:
+		XTestMode.roll_affixes(item, definition.get("affixes", []), table)  # 测试模式：掉落装备词缀加速
 	# YEP_CoreEngine 备注参数覆盖合并值；原版处理完这些标签才掷属性浮动。
 	_apply_note_params(item)
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))

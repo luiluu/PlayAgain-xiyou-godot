@@ -36,3 +36,7 @@ export_credentials.cfg
 
 # 云端选测恢复的耗时缓存（未跟踪文件会被选测当成改动落到 * 规则，ci/main 因此每次整轮，tools60）
 .ci-timings/
+
+# 测试模式本机解锁文件（user:// 里本来就在工程之外，这里防误放进仓库）
+**/test_mode_unlock*
+**/test_mode_state*
