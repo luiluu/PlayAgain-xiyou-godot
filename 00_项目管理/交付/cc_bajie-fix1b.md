@@ -1,7 +1,8 @@
-# 交付：cc/bajie-fix1
+# 交付：cc/bajie-fix1b
 
-- 车道／工作者：C 规则／八戒（cc，唐僧总装十九派）
-- 状态：进行中（等云端选测）
+- 车道／工作者：C 规则／八戒（cc，唐僧总装派 fix1b）
+- 接：接自另一账号八戒的 cc/bajie-fix1（头 4930ef4b），代码和测试未改动，只收尾验证
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -66,7 +67,8 @@
 
 ## 验证
 
-（待补：云端选测）
+- 云端选测：提交 4930ef4b（ci/cc/bajie-fix1），138 个场景、4 片，全部通过（基准 951e3c60）。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41798649475
+- 合并 main（f27dc0aa，dev.309）：无冲突；main 新增的只有文档、版本号、开发编号，没碰本分支的代码／测试／转换器文件，按车道须知不重跑选测。
 
 - 专项（本机）：`xiyou_state_effects` 25062、`xiyou_state_effects_tp` 538、`xiyou_state_js` 1733、`xiyou_xuan_battle` 272、`xiyou_xuan_auto` 4556、`xiyou_battle_log` 64、`xiyou_determinism` 372，全过。
 - 工具：`测试状态js翻译.py`、`测试公式程序.py` 过；`语法检查.py` 0 问题；`回退开关覆盖.py` 无新缺口；`内容覆盖检查.py` hard 0、new 0。
@@ -75,7 +77,7 @@
 
 ## 本分支提交
 
-（待补）
+f0215845（代码＋测试）、6397789d（state_js 参照、余辉测试类型）、4930ef4b（交付单草稿）、fix1b 改名与合并 main。
 
 ## 待交叉核查（核心文件）
 
