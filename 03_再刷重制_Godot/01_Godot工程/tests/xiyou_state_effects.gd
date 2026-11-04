@@ -68,6 +68,25 @@ class ReviveLogic:
 		return stream if stream != null else super()
 
 
+## 记下开战时交给公共事件单槽的预约（rules9 P3-5）
+class ReserveLogic:
+	extends ReviveLogic
+	var seen := []
+	func _take_state_reserves() -> void:
+		for id in XStateEffects._reserves:
+			seen.append(int(id))
+		super._take_state_reserves()
+
+
+## 记下强制行动执行时的防连锁深度（rules9 P3-6）
+class DepthLogic:
+	extends ReviveLogic
+	var depths := []
+	func execute(u, skill, target = null, forced := false):
+		depths.append(XStateEffects.chain_depth)
+		return []
+
+
 ## 每执行一条强制行动就再排一条，直到排满 chain 条（模拟多代追加）
 class ChainLogic:
 	extends ReviveLogic
@@ -1567,6 +1586,13 @@ func _fix_blocks() -> void:
 	check("fix2.chain_guard.off", XStateEffects.take_forces().size() == 1)
 	XStateEffects.FIX_CHAIN_GUARD = true
 	XStateEffects.chain_depth = 0
+	# rules9 审查 39 P3-6：只有 5576／5577 自己打出的一击才算防连锁，别的强制行动命中琼霄时反击照常排队
+	var dl := DepthLogic.new()
+	dl.elite_roll = 100.0
+	dl.setup(2, s)
+	dl._forced_run(actor, XDB.rec("Skills", 7303), null, null)
+	dl._forced_run(actor, XDB.rec("Skills", 5577), null, null)
+	check("rules9.chain_depth.only_chain_skills", dl.depths == [0, 1] and XStateEffects.chain_depth == 0, [dl.depths, XStateEffects.chain_depth])
 	var holder := _plain()
 	XStateEffects.battle_units = {"enemies": [foe, holder]}
 	for flag in [true, false]:
@@ -1600,6 +1626,15 @@ func _fix_blocks() -> void:
 	next_logic.setup(2, s)
 	check("fix.queue_clear.off_keeps", XStateEffects.take_forces().size() == 1)
 	XStateEffects.FIX_QUEUE_CLEAR = true
+	# rules9 审查 39 P3-5：开战时带着 1307 崩坏能，它 remove 阶段预约的 CE1505 要进预约流（先清上一场遗留再移除状态）；
+	# 公共事件是单槽，随后开战预约的 1320 照原版盖掉它，所以只看预约流
+	XStateEffects._reserves.append(2)
+	actor.state_ids.append(1307)
+	var rl := ReserveLogic.new()
+	rl.elite_roll = 100.0
+	rl.setup(2, s)
+	check("rules9.queue_clear.keeps_remove_reserve", not actor.state_ids.has(1307) and rl.seen.has(1505) and not rl.seen.has(2), [actor.state_ids, rl.seen])
+	XStateEffects.clear_queues()
 	# 追加跑到队列空；关开关回到一次检查只走一代
 	for on in [true, false]:
 		XStateEffects.FIX_FORCE_DRAIN = on
