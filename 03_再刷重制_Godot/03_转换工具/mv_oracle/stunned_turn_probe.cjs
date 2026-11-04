@@ -75,4 +75,18 @@ cases.push(makeCase('enemy.sleep', {}, () => {
   run(bm);
   return {canMove: e.canMove(), before: a0, after: read(e)};
 }));
+// 敌人跳过的回合不走 endAction：连命的 syncRelations 不跑。这里绕过 gainHp 直接写队友生命制造不同步，看这一回合会不会被拉回来
+cases.push(makeCase('gate.lifelink', {}, () => {
+  const {bm, u} = battle(1), AL = w.CodexAlienation, mate = w.$gameActors.actor(8), e = w.$gameTroop.members()[0];
+  const item = AL.create('w', 1044, 'boss', 'lifelink');
+  AL.mark(item).config = {actorId: 1, partnerId: 8};
+  u._equips[0].setObject(item);
+  AL.lockParty();
+  mate._hp = 1;
+  const a0 = [u.hp, mate.hp];
+  e._actions = []; bm._subject = e; bm._action = null; bm._phase = 'turn';
+  bm.processTurn();
+  run(bm);
+  return {has: AL.has(u, 'lifelink'), before: a0, after: [u.hp, mate.hp]};
+}));
 process.exit(finish(host, 'stunned_turn.json', {hostScope: '真实 processTurn 下被控角色与敌人的这一回合', cases}) ? 0 : 1);

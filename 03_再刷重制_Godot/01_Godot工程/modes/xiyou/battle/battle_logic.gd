@@ -863,15 +863,16 @@ func act(u: XBattler, skill, target) -> Array:
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
-	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
-	# 敌人跳过的回合不走 endAction（审查 35b P2-1）；角色走 startOTBInput，不能行动也 startAction～endAction，只是没有行动（参照 xuan_auto skip_*）
-	if u.is_actor() or (started and not skipped):
+	# 敌人跳过的回合不走 endAction（审查 35b P2-1）；角色走 startOTBInput，不能行动也 startAction～endAction，只是没有行动（参照 xuan_auto skip_*、stunned_turn）
+	var ended: bool = u.is_actor() or (started and not skipped)
+	if ended:
+		logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（原 endAction 之前，在谷雨之外）：贯日消费锁定、敕令消费和鸣，持武者行动后剑气／镇魂（内部施放）
 		logs.append_array(XXuanBattle.end_action(self, u, skill))  # 璇 endAction 包装（屠苏之内、谷雨之外）：星契自律，救援回光、列星、宿主攻击后棱光（内部施放）
-	XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
-	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
-	# 狂妄 112、心钢 111 装得比谷雨 133、屠苏 137 早，在里层：前半段排在它们之后，狂妄（外）先于心钢（审查第 29 期 P3-1）
-	XHubris.end_action(self, u, false)  # 狂妄 endAction 包装：结算倒下的敌人、有效行动计数
-	XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
+		XGuyu.end_action()  # 谷雨 endAction 包装（原 endAction 之前）：结束行动事件，代命成立就归根
+		logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：本次行动里的归根反馈（画面）
+		# 狂妄 112、心钢 111 装得比谷雨 133、屠苏 137 早，在里层：前半段排在它们之后，狂妄（外）先于心钢（审查第 29 期 P3-1）
+		XHubris.end_action(self, u, false)  # 狂妄 endAction 包装：结算倒下的敌人、有效行动计数
+		XHeartsteel.end_action(u, false)  # 心钢 endAction 包装：不是巨人吞噬的行动减 1 蓄力
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
@@ -880,12 +881,15 @@ func act(u: XBattler, skill, target) -> Array:
 		XToji.finish(self, u, skill)  # 甚尔 endAction 包装（原 endAction 之后，镜流在里层）：切换技能换形态
 		logs.append_array(XRaven.finish(self, u, skill))  # 渡鸦 endAction 包装（各专属模块最内层，原 endAction 之前）：冥界收割、回响
 		logs.append_array(XYunshang.finish(self, u, skill))  # 云裳 endAction 包装（finishAction）：赊账还债、一身两世复演、衣魂计次
-	XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
-	XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
-	XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
+	if ended:
+		XRaceBattle.finish(self, logs)  # BattleManager.endAction 的种族包装：毒鸡汤、残响、反攻
+		XCat.end_action(self, u, skill)  # BattleManager.endAction 的小猫剑圣包装：剑技收尾、防御喵铃
+		XAlienBattle.finish(self, logs)  # 异化 endAction 包装（原 endAction 之后）：镜骸反噬
+	elif has_meta("xalien"):
+		XAlienBattle.release_seals(self)  # O-116 idle_window 列的封印（关着时没有可解的）
 	_acted[u] = int(_acted.get(u, 0)) + 1
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
-	if u.is_actor() or (started and not skipped):
+	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）
 	if started:
 		XMira.pay_hp(u, skill)  # 米拉 endAction 包装（原 endAction 之前）：禁忌生命代价

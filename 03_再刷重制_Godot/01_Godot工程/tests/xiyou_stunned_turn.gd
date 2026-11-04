@@ -87,9 +87,12 @@ func _delta(x: Dictionary, y: Dictionary) -> Dictionary:
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	check("oracle", ref is Dictionary and ref.cases.size() == 14 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
+	check("oracle", ref is Dictionary and ref.cases.size() == 15 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		var o: Dictionary = c.observed
+		if str(c.id) == "gate.lifelink":
+			_gate_lifelink(o)
+			continue
 		var want := _delta(o.before, o.after)
 		var is_enemy: bool = str(c.id) == "enemy.sleep"
 		var l := _battle(1 if is_enemy else int(c.setup.id))
@@ -107,6 +110,25 @@ func _run() -> void:
 			check(str(c.id) + ".foes", l.enemies.map(func(e): return float(e.hp)) == f0, [f0])
 		l.end_battle(0)
 	finish()
+
+
+## 敌人跳过的回合不走 endAction：连命不同步（绕过 gain 直接写队友生命，这一回合不被拉回）
+func _gate_lifelink(o: Dictionary) -> void:
+	var l := _battle(1)
+	var u: XActor = l.state.actor(1)
+	var mate: XActor = l.state.actor(8)
+	var item: Dictionary = XAlienation.create(l.state, "w", 1044, "boss", "lifelink").ok
+	item.alien.config = {"actorId": 1, "partnerId": 8}
+	u.equips[0] = item
+	XAlienBattle.lock_party(l)
+	mate.hp = 1.0
+	check("gate.lifelink.has", XAlienBattle.has(u, "lifelink") and bool(o.has))
+	check("gate.oracle_unchanged", o.before == o.after, o)
+	var mate0 := mate.hp
+	var u0 := u.hp
+	l.act(l.enemies[0], null, null)
+	check("gate.lifelink", mate.hp == mate0 and u.hp == u0, [mate0, mate.hp, u0, u.hp])
+	l.end_battle(0)
 
 
 func _norm(v):
