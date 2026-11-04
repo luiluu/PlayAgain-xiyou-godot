@@ -27,6 +27,7 @@ w.$.toaster = () => {};
 const lines = [];
 const logWin = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : k === 'push' ? ((m, t) => { if (m === 'addText') lines.push(t); }) : (() => false), set: () => true});
 const XUAN = 177, PARTY = [XUAN, 1, 8, 2], TROOP = 3;
+let current = PARTY;
 const I = X.ids(), K = k => I.skill[k], ST = k => I.state[k];
 const key = b => !b ? null : b.isActor() ? 'a' + b.actorId() : 'e' + b.index();
 const who = x => typeof x === 'number' ? w.$gameActors.actor(x) : w.$gameTroop.members()[+String(x).slice(1)];
@@ -35,7 +36,8 @@ function battle(o) {
   newGame();
   w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
   w.$gameSwitches.setValue(2494, true);
-  w.eval(`$gameParty._actors=[${PARTY}]; $gameParty._battleMembers=[${PARTY},0];`);
+  current = o.party || PARTY;
+  w.eval(`$gameParty._actors=[${current}]; $gameParty._battleMembers=[${current},0];`);
   const a = who(XUAN);
   a.changeLevel(o.level || 60, false);
   a._AdvancedNum = o.stage == null ? 3 : o.stage;
@@ -51,7 +53,7 @@ function battle(o) {
     else a.forceChangeEquip(slot, null);
   }
   a._codexXuanControl = o.manual ? 'manual' : 'auto';
-  for (const id of PARTY) { const x = who(id); x.refresh(); x.recoverAll(); }
+  for (const id of current) { const x = who(id); x.refresh(); x.recoverAll(); }
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
   w.Math.random = () => 0.5;
   const bm = w.BattleManager; bm.setup(TROOP, false, false);
@@ -88,7 +90,7 @@ const xs = b => L.rows(b).filter(r => /^xuan\./.test(r.source)).map(r => [r.sour
 function snap() {
   const a = who(XUAN), d = a._codexXuan || null, bd = B.data(a), h = B.host(a);
   const party = {};
-  for (const id of PARTY.slice(1)) {
+  for (const id of current.slice(1)) {
     const x = who(id);
     party['a' + id] = {hp: x.hp, shield: xs(x), states: x._states.filter(s => s === 10 || s === 35 || s === ST('shadow') || s === ST('hostmark') || s === ST('dingxing')).sort((p, q) => p - q),
       home: x._codex60Home ? x._codex60Home.until : null, mist: x._codex60StarMist ? x._codex60StarMist.until : null};
@@ -123,6 +125,19 @@ function step(bm, st) {
     ret = {skill: it ? (I.key[it.id] || it.id) : null, target: act ? act._targetIndex : null};
   }
   else if (op === 'libi') { L.revoke(who(x), 'xuan.libi'); L.grant(who(x), 'xuan.libi', y, 2, XUAN, {noBonus: true}); }
+  else if (op === 'skip') { const u = who(x); u._actions = []; bm._subject = u; bm._action = null; bm._phase = 'turn'; bm.processTurn(); bm._phase = 'turn'; }  // 没有行动或不能行动：真实 processTurn，不 startAction／endAction
+  else if (op === 'invalid') { const u = who(x), a2 = new w.Game_Action(u); u.setMp(0); a2.setSkill(y); a2.setTarget(tix(z)); u._actions = [a2]; bm._subject = u; bm._action = null; bm._phase = 'turn'; bm.processTurn(); run(bm); }  // isValid 假：processTurn 整次跳过
+  else if (op === 'force') {  // 事件强制行动：照走 startAction～endAction（同 guyu_battle_probe）
+    const u = who(x); u.forceAction(y, tix(z)); bm.forceAction(u); bm._subject = null;
+    for (let i = 0; i < 20000 && (bm._actionForcedBattler || bm._subject || ['action', 'actionList', 'actionTargetList', 'phaseChange'].includes(bm._phase)); i++) {
+      if (bm._actionForcedBattler && !bm._subject) { bm.processForcedAction(); continue; }
+      const ph = bm._phase;
+      if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
+      else if (ph === 'actionTargetList') bm.updateActionTargetList(); else break;
+    }
+    bm._phase = 'turn';
+  }
+  else if (op === 'learn') who(x).learnSkill(y);
   else if (op === 'end') bm.endBattle(0);
   else throw new Error('未知步骤 ' + op);
   return ret;
@@ -175,6 +190,14 @@ const SCRIPTS = {
   outside: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1]]],
   // 自律：敌人出手前内部璃壁也算首次（这一下就减）
   auto_mist: [{relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['hp', 1, 0.3], ['act', 8, 1, 'e0'], ['hp', 1, 1], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1]]],
+  // 审查 35b P2-1：敌人跳过的回合（没有行动、不能行动、行动无效）不走 endAction，不救援；同样残血，事件强制行动走 endAction 才救援
+  skip_turn: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['skip', 'e0'], ['state', 'e1', 10], ['skip', 'e1'], ['invalid', 'e2', 8, 'e2'], ['force', 'e0', 1, 8]]],
+  // 角色不一样：OTB processTurn 对角色走 startOTBInput，不能输入也 makeActions＋startAction，照走 endAction 救援；只是没有行动，宿主被控也不放棱光
+  skip_actor: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['hp', 1, 0.3], ['state', 2, 10], ['skip', 2]]],
+  skip_host: [{}, [['use', XUAN, 'jixing', 1], ['turn'], ['gain', XUAN, 3], ['state', 1, 10], ['skip', 1]]],
+  // 审查 35b P3-1：棱光打主行动最后的目标（Game_Action.apply 包装记在这个行动上）。甚尔万里锁溅射是子行动；黄泉扩散、镜流补段 oldApply 绕过璇的包装；都不改
+  last_toji: [{party: [XUAN, 171, 8, 2]}, [['use', XUAN, 'jixing', 171], ['turn'], ['gain', XUAN, 3], ['learn', 171, 10217], ['act', 171, 10217, 'e1']]],
+  last_yomi: [{party: [XUAN, 169, 8, 2]}, [['use', XUAN, 'jixing', 169], ['turn'], ['gain', XUAN, 3], ['learn', 169, 10172], ['act', 169, 10172, 'e1']]],
   autoact: [{roster: [8]}, [['auto', XUAN], ['hp', 2, 0.2], ['auto', XUAN], ['use', XUAN, 'jixing', 1], ['auto', XUAN], ['end']]]
 };
 const cases = [];
