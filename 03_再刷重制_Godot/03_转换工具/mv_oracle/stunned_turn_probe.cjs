@@ -89,6 +89,34 @@ cases.push(makeCase('gate.lifelink', {}, () => {
   run(bm);
   return {has: AL.has(u, 'lifelink'), before: a0, after: [u.hp, mate.hp]};
 }));
+// 镜骸反噬（审查 38 P3-4）：A.root 在 startAction 建、endAction 收；跳过的回合（角色 startAction 无行动→root=null，敌人不 startAction）不该有反噬，
+// 也不该留下旧 root 让后面的行动串账。序列：①角色打充能的镜骸（反噬一次）②角色被控跳过 ③镜骸被控跳过 ④重新充能后角色再打（反噬照常）
+cases.push(makeCase('gate.mirror', {}, () => {
+  const {bm, u} = battle(1), AL = w.CodexAlienation, e = w.$gameTroop.members()[0];
+  AL.setupEncounter({enemy: e, kind: 'w', baseId: 3980, origin: 'boss', variant: 'mirror', affix: 'inversebone'});
+  AL.lockParty();
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) b.recoverAll();
+  const hit = () => {
+    const a = new w.Game_Action(u); a.setAttack(); a.setTarget(0);
+    u._actions = [a]; bm._subject = u; bm._action = null; bm.startAction(); run(bm);
+    if (bm._phase === 'action' || bm._phase === 'actionList' || bm._phase === 'actionTargetList') bm.endAction();  // 同 alien_battle_probe 的 act
+    bm._phase = 'turn';
+  };
+  const skip = b => { b._actions = []; bm._subject = b; bm._action = null; bm._phase = 'turn'; bm.processTurn(); run(bm); };
+  const d = () => e._alienEnemy;
+  const rows = [], snap = tag => rows.push({tag, hp: u.hp, mhp: u.mhp, charged: !!d().mirrorCharged, foe: e.hp});
+  e._alienEnemy.mirrorCharged = true; u.setHp(u.mhp);
+  hit(); snap('hit1');
+  u.addNewState(SLEEP); u._stateTurns[SLEEP] = 3; u.addNewState(TICK); u._stateTurns[TICK] = 3; u.refresh();
+  skip(u); snap('skip_actor');
+  u.removeState(SLEEP); u.removeState(TICK);
+  e.addState(SLEEP); e._stateTurns[SLEEP] = 3; e.addState(TICK); e._stateTurns[TICK] = 3;
+  skip(e); snap('skip_enemy');
+  e.removeState(SLEEP); e.removeState(TICK);
+  d().mirrorCharged = true; u.setHp(u.mhp);
+  hit(); snap('hit2');
+  return {rows};
+}));
 // 门外各模块（审查 36）：屠苏持武中、谷雨在场、小猫在场，1、8 号穿心钢 7900、狂妄 7902：敌人被控这一回合，全队读数和自身字段都不变
 cases.push(makeCase('gate.party', {}, () => {
   const party = [176, 175, 178, 1, 8];
