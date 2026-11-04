@@ -57,7 +57,7 @@ function battle(o) {
   const bm = w.BattleManager; bm.setup(TROOP, false, false);
   bm._logWindow = logWin; bm._spriteset = stub; bm._statusWindow = stub;
   w.SceneManager._scene = {_otbDisplayWindow: stub};
-  for (const t of w.$gameTroop.members()) t._paramPlus[0] = 1e9;
+  for (const t of w.$gameTroop.members()) { t._paramPlus[0] = 1e9; t._paramPlus[2] += o.enemyAtk || 0; }
   for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
   bm.startBattle();
   bm.startTurn();
@@ -163,7 +163,7 @@ const SCRIPTS = {
   home: [{manual: true, relic: false}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['hit', 'e0', 1, 1], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1],
     ['use', XUAN, 'huiguang', 1], ['hit', 'e0', 1, 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'huiguang', 1], ['turn'], ['hit', 'e0', 1, 1]]],
   // 法宝：首次璃壁给星幕（和归宿同一次时 ×0.81）；被不带伤害的序列扣血不消费
-  mist: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'libi', 1], ['hit', 'e0', 8048, 'e0'], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1]]],
+  mist: [{manual: true, relic: true, enemyAtk: 5000}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'libi', 1], ['hit', 'e0', 8048, 'e0'], ['hit', 'e0', 1, 1], ['hit', 'e1', 1, 1], ['use', XUAN, 'libi', 1], ['hit', 'e0', 1, 1]]],
   // 法宝：回光后再璃壁：归宿给了回光目标，星幕给璃壁目标；两次都不重复
   mist_after_heal: [{manual: true, relic: true}, [['use', XUAN, 'jixing', 1], ['turn'], ['use', XUAN, 'liexing', XUAN], ['use', XUAN, 'huiguang', 1], ['use', XUAN, 'libi', 8], ['hit', 'e0', 1, 8], ['hit', 'e1', 1, 1], ['hit', 'e2', 1, 1]]],
   // 法宝：首次回光额外净化一个（含软状态）；第二次回光不额外；没戴法宝只净化硬控

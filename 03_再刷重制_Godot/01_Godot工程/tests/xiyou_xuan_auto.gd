@@ -75,6 +75,7 @@ func _battle(o: Dictionary) -> XBattleLogic:
 	for e in l.enemies:
 		var p: Array = (e.data().params as Array).map(func(v): return float(v))
 		p[0] += 1e9
+		p[2] += float(o.get("enemyAtk", 0))
 		e.zq_ref = {"p": p, "k": 1.0}
 		e.param_mark_dirty()
 		e.param_refresh()
