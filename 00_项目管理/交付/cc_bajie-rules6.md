@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules6
 
 - 车道／工作者：C 规则／八戒（cc，唐僧总装十九派）
-- 状态：进行中（等云端选测）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -39,19 +39,22 @@
 
 ## 验证
 
-（待补：云端选测）
-
-- 专项（本机）：`xiyou_state_effects` 25028、`xiyou_state_effects_tp` 538、`xiyou_state_js` 1733、`xiyou_status_power_panel` 11、`xiyou_battle_log` 57、`xiyou_battle_ui` 155、`xiyou_battle_events` 108、`xiyou_formula_effects` 908、`xiyou_honghuang_curse_battle` 344、`xiyou_determinism` 372、`xiyou_costumes` 27、`xiyou_costume_battle` 4、`xiyou_boss_state_origin` 15723，全过。
+- 云端（整轮）：提交 b7dd481432，386 个场景 13 片，全过（Actions run 41794204278）。上一轮 c88311a587 查出 `xiyou_troop_events_b／c` 崩：回合、再生阶段不带 resources 时 `effect_program` 用了空值，rules5 的 1306 回合结束块同样会崩。已让 `run_one` 自建上下文，并补不传 resources 的测试 `rest.bare_turn_end`、`rest.bare_regen`。
+- 专项（本机）：`xiyou_state_effects` 25030、`xiyou_state_effects_tp` 538、`xiyou_state_js` 1733、`xiyou_status_power_panel` 11、`xiyou_battle_log` 57、`xiyou_battle_ui` 155、`xiyou_battle_events` 108、`xiyou_formula_effects` 908、`xiyou_honghuang_curse_battle` 344、`xiyou_determinism` 372、`xiyou_costumes` 27、`xiyou_costume_battle` 4、`xiyou_boss_state_origin` 15723、`xiyou_troop_events_b` 3238、`xiyou_troop_events_c` 3271，全过。
 - 工具：`测试状态js翻译.py`、`测试未翻译块清单.py`、`测试公式程序.py` 过；`语法检查.py` 0 问题。
-- 同步：合 main、补齐后把主工作区的 `state_effects.json` 盖回做干净基线，`同步正式西游.py --accept-additions` 退出码 0，只新增 `hook.blocks`（rules5 还没进 main）、`rest.blocks`。
+- 同步：合 main、补齐后把主工作区的 `state_effects.json` 盖回做干净基线，`同步正式西游.py --accept-additions` 退出码 0，只新增 `rest.blocks`；之后只改本交付单，产物指纹仍有效。
 - 选测对照：`选测.py main --list` 已含 `xiyou_status_power_panel`、`xiyou_costumes`、`xiyou_costume_battle`；`state_effects.gd`、`enemy.gd`、`actor.gd` 都在 battle 组，`battle_replay.gd` 没有专门规则、按引用选。
 - 没测：换图的实际画面（只断言图在切片里、`battlerName` 对），回合开始弹字只测到 emit 和取走，`battle_scene` 的 `await _play` 没有专门断言。
 - 与原版不同：没记过旧图就移除换装时，原版图变 undefined 显示不出来，这边保留现状；必爆粘住的强制暴击每场开战清掉，原版跟存档走。
 
 ## 本分支提交
 
-（待补）
+- 951914ca WIP: rules6 切片可达 31 块翻完（换装模板 142 块、必爆、预约、再生、改属性），探针 rest.blocks
+- c88311a5 rules6 交付单草稿
+- rules6 回合、再生阶段不带 resources 时 effect_program 自己建（真实战斗会崩），补测试
+- b7dd4814 Merge branch 'main' into cc/bajie-rules6
+- 本交付单收尾提交
 
 ## 待交叉核查（核心文件）
 
-- `state_effects.gd`、`battle_logic.gd`（暴击判定、`_drive_events`、turn_start／turn_end 的 emit）、`battle_scene.gd`、`enemy.gd`（`param_plus` 影响所有敌人能力值读取）、`battle_replay.gd`。
+- `state_effects.gd`（含修 rules5 带进来的 resources 空值）、`battle_logic.gd`（暴击判定、`_drive_events`、turn_start／turn_end 的 emit）、`battle_scene.gd`、`enemy.gd`（`param_plus` 影响所有敌人能力值读取）、`battle_replay.gd`。
