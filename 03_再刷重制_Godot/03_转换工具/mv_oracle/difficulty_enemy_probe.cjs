@@ -34,10 +34,12 @@ function chances(e) {
 }
 const cases = [];
 for (let d = 1; d <= 9; d++) {
+  // 每个难度只开一次新局（newGame 约 0.7 秒，原来每例一次占了探针九成多的时间；diff2 提速）：
+  // 各例只建敌人、不改全局状态，难度、开关、出战成员每例照旧重设。
+  newGame();
   for (const id of enemyIds) {
     for (const elite of [false, true]) {
       cases.push(makeCase(`diffenemy.d${d}.e${id}.${elite ? 'elite' : 'plain'}`, {difficulty: d, enemy: id, elite}, () => {
-        newGame();
         w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
         w.$gameSwitches.setValue(2494, true);  // 同 battle_drop_probe：掉率链的开关
         w.$gameSystem.setDifficultyId(d);
