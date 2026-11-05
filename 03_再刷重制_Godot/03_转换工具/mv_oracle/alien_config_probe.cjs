@@ -5,7 +5,10 @@
 const fs=require('fs'),path=require('path');
 const {boot}=require('./hboot.cjs'),{sourceIdentity}=require('./source_identity.cjs');
 const APP=process.env.XIYOU_APP||'/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
-const identity=sourceIdentity(APP),r=boot(APP,{tolerant:true,log:false}),w=r.window;
+// 重制不跟 v0.58「深渊异化全部隐藏」（Kyo 2026-11-05）：启动时从 main.js 安装序列里去掉 installAlienationHide 再量；v0.28 的 main.js 没这一行，读到的内容不变
+const bootNoHide=()=>{const rf=fs.readFileSync,main=path.join(APP,'js/main.js');fs.readFileSync=function(p,...a){const t=rf.call(this,p,...a);return p===main&&typeof t==='string'?t.replace(/^[ \t]*window\.CodexRuntime\.install\("installAlienationHide"\);.*\n/m,''):t;};try{return boot(APP,{tolerant:true,log:false});}finally{fs.readFileSync=rf;}};
+const identity=sourceIdentity(APP),r=bootNoHide(),w=r.window;
+if(w.CodexAlienationHide)throw new Error('installAlienationHide 仍被安装');
 if(r.errors.length||!w.DataManager.isDatabaseLoaded()||!w.CodexAlienation)throw new Error('参照引擎启动失败');
 w.Star.Achievement.Manager.init();
 const A=w.CodexAlienation,C=A.config,T=C.templates,Y=w.CodexYunshang,toasts=[];

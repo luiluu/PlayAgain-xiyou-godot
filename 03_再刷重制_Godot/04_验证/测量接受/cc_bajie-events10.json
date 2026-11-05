@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p2#g3\"]]",
+      "fields": [
+        "delta",
+        "frames",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "a8820089250288bd",
+      "newDigest": "62178473e1736d13",
+      "reason": "审查 49 P3-1：m80e13p2#g3 预设键 random 改为 random_seq，随机序列这次真生效，原版轨迹随之改变"
+    }
+  ]
+}

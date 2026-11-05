@@ -133,7 +133,8 @@ def custom_params_code(note):
 def _linear(expr):
     """等级与变量的线性式 → {'k':常数,'level':系数,'vars':{编号:系数}}；认不出返回 None。"""
     out = {'k': 0.0, 'level': 0.0, 'vars': {}}
-    expr = expr.strip()
+    # (v[N]||0)：变量值是数，||0 只在 undefined／0 时取 0，与 v[N] 等价（v0.52 起 12.27 极品双持武器 74／75／1926／1927 这样写）
+    expr = re.sub(r'\(\s*v\[(\d+)\]\s*\|\|\s*0\s*\)', r'v[\1]', expr).strip()
     if not expr:
         return None
     for part in re.split(r'\s*\+\s*', expr):
@@ -158,7 +159,8 @@ def custom_params(rec):
     if not code.strip():
         return None
     assigned, ignored, bad = {}, [], []
-    for stmt in re.split(r'[;\n]', code):
+    # JS 行注释（v0.31／v0.44 专武成长在行尾加了「// KYO专武成长」）eval 时不算语句，先去掉；参数里没有字符串，不会误切
+    for stmt in re.split(r'[;\n]', re.sub(r'//[^\n]*', '', code)):
         stmt = stmt.strip()
         if not stmt:
             continue

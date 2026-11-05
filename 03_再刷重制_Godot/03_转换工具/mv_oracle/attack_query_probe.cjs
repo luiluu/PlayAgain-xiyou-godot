@@ -55,8 +55,10 @@ function measure(b, actor) {
 // spec: {actor, equips:[['w'|'a', id]], states:[id], skills:[id]}
 function actorCase(name, spec) {
   cases.push(makeCase('actor.' + name, spec, () => {
-    newGame(); w.$gameParty._inBattle = true;   // canAttack 看技能场合（战斗中）
-    w.$gameParty.addActor(spec.actor);
+    // 先入队再标战斗中（canAttack 看技能场合）：BattleManager 没 setup，OTB 行动条数组还是 undefined；v0.62.12 起空位入队的角色当场进出战成员，
+    // 战斗中入队会走 OTB otbAddBattler→otbInsertActionOrders(undefined) 崩（真战斗里 setup 先建好数组，不会这样）。v0.28 两种顺序量出来一样。
+    newGame(); w.$gameParty.addActor(spec.actor);
+    w.$gameParty._inBattle = true;
     const a = w.$gameActors.actor(spec.actor);
     bare(a);
     (spec.skills || []).forEach(id => a.learnSkill(id));

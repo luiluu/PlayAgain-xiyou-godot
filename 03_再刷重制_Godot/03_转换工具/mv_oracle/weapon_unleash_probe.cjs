@@ -53,7 +53,11 @@ function battle(actorId) {
 }
 // spec: {weapon, actor?, tp, rolls:[...], act: 'attack'|'skill1'|<技能号>|'item1'}
 function unleashCase(name, spec) {
-  cases.push(makeCase(name, spec, () => {
+  if (REENABLE[spec.weapon] && !spec.actor) spec = Object.assign({}, spec, {enabledDisabledActor: REENABLE[spec.weapon]});
+  cases.push(makeCase(name, spec, () => spec.enabledDisabledActor ? withEnabled(spec.enabledDisabledActor, () => runUnleash(spec)) : runUnleash(spec)));
+}
+function runUnleash(spec) {
+  {
     const actorId = spec.actor || EQUIPPER[spec.weapon];
     if (!actorId) throw new Error('没有能装备的角色 ' + spec.weapon);
     const bm = battle(actorId), a = w.$gameActors.actor(actorId);
@@ -83,13 +87,27 @@ function unleashCase(name, spec) {
     const moved = spec.state ? {state: a.isStateAffected(spec.state), canMove: a.canMove()} : {};
     return Object.assign(moved, {actor: actorId, level: a.level, equips: a.equips().map(e => e ? e.id : 0), tp: a.tp, attackSkillId, canAttack: a.canAttack(), unleashes,
       before, isItem: act.isItem(), started, rolls: t.used.length, otherRolls: t.other.length});
-  }));
+  }
 }
 
 // 先在任何战斗之前挑好角色（与战斗状态无关）
 const WEAPONS = [77, 83, 93, 207, 392, 393, 405, 412, 429, 680, 744, 1062, 1388, 1504, 1505, 1508, 1887];
 const EQUIPPER = {};
 for (const id of WEAPONS) EQUIPPER[id] = equipper(id);
+// v0.30 起停用的 12.27 角色（CodexImportedBalance.disabledActorIds，如 166 利姆露）上不了场、canMove 为假，专武（93）就没人能装。
+// 重制还没定跟不跟停用，这里只为量专武的解放：没人能装时临时从停用名单里拿掉装它的角色，量完放回；用例输入记 enabledDisabledActor。v0.28 没这份名单，不走这里。
+const IB = w.CodexImportedBalance, REENABLE = {};
+function withEnabled(actorId, fn) {
+  const list = IB.disabledActorIds, at = list.indexOf(actorId);
+  if (at >= 0) list.splice(at, 1);
+  try { return fn(); } finally { if (at >= 0) list.splice(at, 0, actorId); }
+}
+if (IB && Array.isArray(IB.disabledActorIds)) for (const id of WEAPONS) {
+  if (EQUIPPER[id]) continue;
+  for (const actorId of IB.disabledActorIds.slice()) {
+    if (withEnabled(actorId, () => equipper(id)) === actorId) { EQUIPPER[id] = actorId; REENABLE[id] = actorId; break; }
+  }
+}
 // 78 戮仙剑原版谁都装不上（refresh 卸下，见 attack_query 154-weapon78-unequippable），不列。
 // 每把：掷 0 必中第一条能用的；掷 0.999999 都不中（100% 仍中）；TP 0 与 100 两档（497／792／5636 要 TP）
 for (const id of WEAPONS) for (const tp of [0, 100]) {
