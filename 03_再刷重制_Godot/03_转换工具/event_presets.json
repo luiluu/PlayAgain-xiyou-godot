@@ -3,15 +3,6 @@
  "cases": [
   {
    "base": "ce821",
-   "tag": "e8c",
-   "preset": {
-    "variables": {
-     "366": 29999
-    }
-   }
-  },
-  {
-   "base": "ce821",
    "tag": "e8c2",
    "preset": {
     "actors": {
@@ -279,118 +270,6 @@
       "skills": [
        675,
        676
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3775
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c2",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3774
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c3",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3773
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c4",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3772
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c5",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3771
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c6",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3770
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8c7",
-   "preset": {
-    "variables": {
-     "316": 22500
-    },
-    "actors": {
-     "22": {
-      "skills": [
-       3769
       ]
      }
     }
@@ -7477,15 +7356,6 @@
    }
   },
   {
-   "base": "ce1431",
-   "tag": "e8",
-   "preset": {
-    "variables": {
-     "1197": 8888
-    }
-   }
-  },
-  {
    "base": "ce820",
    "tag": "e8",
    "preset": {
@@ -8004,33 +7874,6 @@
    "preset": {
     "switches": {
      "2222": true
-    }
-   }
-  },
-  {
-   "base": "ce683",
-   "tag": "e8",
-   "preset": {
-    "variables": {
-     "315": 500
-    }
-   }
-  },
-  {
-   "base": "ce684",
-   "tag": "e8",
-   "preset": {
-    "variables": {
-     "315": 500
-    }
-   }
-  },
-  {
-   "base": "ce687",
-   "tag": "e8",
-   "preset": {
-    "variables": {
-     "316": 22500
     }
    }
   },
