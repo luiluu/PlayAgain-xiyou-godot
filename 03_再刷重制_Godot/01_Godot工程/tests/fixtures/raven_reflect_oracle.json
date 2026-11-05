@@ -1181,6 +1181,139 @@
    "errors": []
   },
   {
+   "id": "reflect.10124.myth",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "myth"
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 8470880
+     }
+    ],
+    "myth": 3,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 81563377,
+     "erosion": true
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.10124.hunt+myth",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "hunt+myth"
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 14948613
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 8470880
+     }
+    ],
+    "myth": 3,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 66614764,
+     "erosion": true
+    }
+   },
+   "errors": []
+  },
+  {
    "id": "reflect.10125.plain",
    "setup": {
     "rank": 5,
@@ -1369,6 +1502,460 @@
      "hp": 29099585,
      "erosion": false
     }
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.0.01.plain",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "plain",
+    "tcr": 0.01
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     }
+    ],
+    "myth": 0,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 93306868,
+     "erosion": true
+    },
+    "tp": 0,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.1.1.plain",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "plain",
+    "tcr": 1.1
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     }
+    ],
+    "myth": 0,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 93306868,
+     "erosion": true
+    },
+    "tp": 2,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.1.5.plain",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "plain",
+    "tcr": 1.5
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     }
+    ],
+    "myth": 0,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 94143509,
+     "erosion": true
+    },
+    "tp": 3,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.2.plain",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "plain",
+    "tcr": 2
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 1673283,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2509924,
+      "critical": false
+     }
+    ],
+    "myth": 0,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 94143509,
+     "erosion": true
+    },
+    "tp": 4,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.0.01.myth",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "myth",
+    "tcr": 0.01
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 9681006
+     }
+    ],
+    "myth": 3,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 78929574,
+     "erosion": true
+    },
+    "tp": 0,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.1.myth",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "myth",
+    "tcr": 1
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 8470880
+     }
+    ],
+    "myth": 3,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 81563377,
+     "erosion": true
+    },
+    "tp": 4,
+    "mhp": 99999999
+   },
+   "errors": []
+  },
+  {
+   "id": "reflect.tcr.0.01.hunt+myth",
+   "setup": {
+    "rank": 5,
+    "level": 60,
+    "skill": 10124,
+    "mode": "hunt+myth",
+    "tcr": 0.01
+   },
+   "observed": {
+    "cast": 10124,
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 2847355,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a167",
+      "skill": 10124,
+      "target": "a167",
+      "value": 4271032,
+      "critical": false
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 17084128
+     },
+     {
+      "kind": "direct",
+      "target": "a167",
+      "value": 9681006
+     }
+    ],
+    "myth": 3,
+    "residue": 0,
+    "hunter": false,
+    "soul": 0,
+    "mp": 1016,
+    "dead": [
+     false,
+     false,
+     false
+    ],
+    "erosion": [
+     false,
+     false,
+     false
+    ],
+    "self": {
+     "dead": false,
+     "hp": 61845446,
+     "erosion": true
+    },
+    "tp": 0,
+    "mhp": 99999999
    },
    "errors": []
   },

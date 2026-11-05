@@ -84,15 +84,28 @@ function setupMode(bm, a, foes, mode) {
   if (mode === 'myth') a._codexRavenMythTurns = 3;
   if (mode === 'hunt') { a._codexRavenResidue = 3; a._codexRavenHunter = true; }
 }
-// 10124 在神话形态里原版的黑暗侵蚀增伤晚一击生效（第三击才 ×1.5，plain 是第二击），原因没查清，这两例不进比对
+// raven2：10124 神话形态两例恢复（原版黑暗侵蚀增伤晚一击，查因见交付单）
 for (const id of [10122, 10123, 10124, 10125]) for (const mode of ['plain', 'hunt', 'myth', 'hunt+myth']) {
-  if (id === 10124 && mode.includes('myth')) continue;
   cases.push(makeCase(`reflect.${id}.${mode}`, {rank: 5, level: 60, skill: id, mode}, () => {
     const {bm, a, foes} = battle(5, 60);
     reflectOn(foes);
     a._paramPlus[5] += 1e6; a.refresh();
     for (const m of mode.split('+')) setupMode(bm, a, foes, m);
     return cast(bm, a, foes, id);
+  }));
+}
+// raven2：黑暗侵蚀晚一击的原因＝krz 状态缓存时序。伤害充 TP（floor(50×伤害/mhp×tcr)≥1）会在同一击加侵蚀前消耗待刷新标记，
+// 侵蚀的 ×1.5 晚一击；与神话形态无关（神话只是伤害更大）。用 tcr 强设扫过 TP 加 0／1 的边界（普通形态、神话形态各几例）
+for (const [mode, tcr] of [['plain', 0.01], ['plain', 1.1], ['plain', 1.5], ['plain', 2], ['myth', 0.01], ['myth', 1], ['hunt+myth', 0.01]]) {
+  cases.push(makeCase(`reflect.tcr.${tcr}.${mode}`, {rank: 5, level: 60, skill: 10124, mode, tcr}, () => {
+    const {bm, a, foes} = battle(5, 60);
+    reflectOn(foes);
+    a._paramPlus[5] += 1e6; a.refresh();
+    for (const m of mode.split('+')) setupMode(bm, a, foes, m);
+    Object.defineProperty(a, 'tcr', {get: () => tcr, configurable: true});
+    const out = cast(bm, a, foes, 10124);
+    out.tp = a.tp; out.mhp = a.mhp;
+    return out;
   }));
 }
 // 对照：没有反射时同一施放（hunt／plain）
