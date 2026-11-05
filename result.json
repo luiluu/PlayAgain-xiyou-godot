@@ -1,0 +1,31 @@
+{
+ "sha": "c22cd45298dd2847db0accfdc433251c2878f8a7",
+ "branch": "ci/main",
+ "mode": "affected",
+ "base": "a9d06767c9a29d2de2b5689ffaa7f88f837ca6a7",
+ "passed": true,
+ "scenes": 10,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 121.9,
+ "testSeconds": 193,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "6ade7b38590d09573a8a55bb66f93d3a95280a71",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41957809739",
+ "sceneNames": [
+  "xiyou_actor_modules.tscn",
+  "xiyou_battle_log.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_skill_mastery.tscn",
+  "xiyou_skill_menu_events.tscn",
+  "xiyou_skill_page.tscn",
+  "xiyou_target_eval.tscn",
+  "xiyou_tusu_ui.tscn",
+  "xiyou_window_rects.tscn",
+  "xiyou_xuan_chart.tscn"
+ ],
+ "time": "2026-11-05T02:54:28+00:00"
+}
