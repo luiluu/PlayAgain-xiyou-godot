@@ -1,7 +1,7 @@
 # 交付：cc/bajie-rules10
 
 - 车道／工作者：C 规则／八戒（cc，派单第三批 AC）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -51,11 +51,16 @@
 
 - 语法检查通过；`工具回归.py` 7 项全过。
 - 专项 `xiyou_rules10` 58/58。
-- 选测（本机）：见下。
+- 选测（本机，`--skip-generated-check`，差异只是本分支自己的 States.json）30 个场景全部通过（1004 秒）：xiyou_rules10、xiyou_state_effects、xiyou_state_effects_tp、xiyou_pushstate、xiyou_error_data、xiyou_determinism、xiyou_qiongxiao_balance、xiyou_trait_stack、xiyou_param_cache、xiyou_param_states、xiyou_status_power_panel、xiyou_combat、xiyou_battle、xiyou_formula_effects、xiyou_state_js、xiyou_passive、xiyou_custom_damage、xiyou_review_regressions、xiyou_action_sequence、xiyou_actor_p0、xiyou_battle_common_events、xiyou_recover_permanent、xiyou_state_operation、xiyou_event_compare、xiyou_rules、xiyou_smart_ai_d、xiyou_power、xiyou_multi_element、xiyou_loose_fixes、xiyou_floor30_gifts。
+- 合 main（76a8341f，改了 actor.gd 与转换器／探针）后重跑 `--补齐`，再跑 xiyou_rules10、xiyou_state_effects、xiyou_pushstate、xiyou_error_data、xiyou_state_effects_tp、xiyou_determinism、xiyou_actor_p0，7 个全过。
+- 没跑的：`选测.py main --list` 列出 326 个场景（改了 battle_logic／battler／actor／enemy 等战斗核心，按规则要全部 xiyou_rules* 段、楼层与事件对照）。车道这边没开云端（协调者交代不跑付费云端 CI），本机跑了上面这些和改动直接相关的；其余请总装合并时 `--affected` 一起跑。没改切片和探针，不用重同步。
 
 ## 待交叉核查
 
 - 改了原沙僧核心文件：`battle_logic.gd`（`_push_rows`／`_push_row_state`、`execute` 两条路径的一株莲、`_lotus_hp`／`_lotus_strike`）、`battler.gd`（`state_floors`、`floor_states`、`add_state_floor`、`_add_state` 新附加清层）、`actor.gd`／`enemy.gd`（`trait_objects` 补层）、`state_effects.gd`（两个开关）；转换器 `xiyou_export.py`（`EFFECT_FIXES` 加 1749）。
 
 ## 本分支提交
+
+- c6a5a963 WIP: 三个开关与专项 xiyou_rules10
+- （本提交）回退支字面量赋值、交付单、合 main
 
