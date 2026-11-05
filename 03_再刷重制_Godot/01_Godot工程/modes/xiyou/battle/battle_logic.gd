@@ -1852,7 +1852,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	return logs
 
 
-## O-待定（rules10）一株莲 7303「对敌方全体造成伤害」（XStateEffects.LOTUS_DAMAGE_7303）：先记队友施放前的生命
+## O-180（rules10）一株莲 7303「对敌方全体造成伤害」（XStateEffects.LOTUS_DAMAGE_7303）：先记队友施放前的生命
 func _lotus_hp(skill: Dictionary, targets: Array) -> Dictionary:
 	if not (XStateEffects.LOTUS_DAMAGE_7303 and int(skill.get("id", 0)) == 7303):
 		return {}
@@ -2391,7 +2391,7 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 
 ## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <State Can Added Floor>、<Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
 ## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层）；说明「可无限叠加」与原版代码不符。
-## O-待定（rules10，Kyo 11-04「说明与代码不符一律按说明走」）：XBattler.FLOOR_YINYUE 开时，隐月已带着就再叠一层（不限层，每层同单层效果）；关回原版。
+## O-178（rules10，Kyo 11-04「说明与代码不符一律按说明走」）：XBattler.FLOOR_YINYUE 开时，隐月已带着就再叠一层（不限层，每层同单层效果）；关回原版。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):

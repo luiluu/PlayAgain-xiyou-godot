@@ -49,7 +49,7 @@ var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
 var state_turns := {}
-## O-待定（rules10）隐月叠层：CP_StateFloor 的层数（状态 → 层数，只记 >1 的）。原版 dsPassiveSkill 已带着就不再挂，恒 1 层；
+## O-178（rules10）隐月叠层：CP_StateFloor 的层数（状态 → 层数，只记 >1 的）。原版 dsPassiveSkill 已带着就不再挂，恒 1 层；
 ## FLOOR_YINYUE 开时 PushsubState 命中已带着的再加一层（见 XBattleLogic._push_rows），多出的层各按一份该状态的特性算
 ## （CP_StateFloor allFloorStates）。状态重新附加（中间解除、阵亡、战斗结束清掉过）时从 1 层算起。
 static var FLOOR_YINYUE := true
