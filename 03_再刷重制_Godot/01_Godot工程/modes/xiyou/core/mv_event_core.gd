@@ -13,7 +13,7 @@ extends RefCounted
 ## 地图的 MVInterpreter 在外面包一层 await；战斗的 XBattleEventRunner 由 XBattleLogic 逐步推进。
 
 ## 会让 MV 解释器等待（或在消息忙时停住）的指令：执行前先显示待显示的文字
-const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 230, 301, 302, 303, 353, 354]
+const FLUSH_BEFORE := [101, 102, 103, 104, 201, 205, 212, 213, 217, 221, 222, 230, 261, 301, 302, 303, 353, 354]
 ## 勾了「等待」才等的指令 → 等待参数下标（225 画面震动 wait(时间)）
 const FLUSH_IF_WAIT := {225: 3}
 ## 只是续行、注释或分支结尾，执行时什么也不做
@@ -353,8 +353,10 @@ func _execute(c: Dictionary):
 				state().remove_actor(int(p[0]))
 			_data_changed()
 		261:
-			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」，movies/*.webm）：Godot 不能放 WebM，重制不播放，只少一段画面
-			pass
+			# 播放电影 [文件名]（CE1514／1516 宇智波鼬的「血轮眼开」「幻术世界」）：command261 等文字放完才放（FLUSH_BEFORE），
+			# 解释器等到片子放完（waitMode 'video'）。画面交给环境：地图宿主 play_movie、战斗记 movie 记录，都由 XMoviePlayer 放
+			if str(p[0]) != "":
+				return _play_movie(str(p[0]))
 		323:
 			# 更改载具图像 [载具, 行走图, 序号]（飞艇改造包 CE487～500）：记进飞艇状态随档，地图上的飞艇精灵照它画（XMapScene._refresh_airship_sprite）
 			var v := state().vehicle(int(p[0]))
@@ -465,6 +467,11 @@ func _execute(c: Dictionary):
 # ---- 环境钩子（子类覆盖）----
 
 ## 本核心不认的指令：地图交给宿主，战斗处理敌人相关指令；默认记进 skipped
+## 播放电影（261）的环境钩子：返回 null 前进，字典为请求（见 advance）；核心本身没有画面，什么也不做
+func _play_movie(_name: String):
+	return null
+
+
 func _execute_env(c: Dictionary):
 	var p: Array = c.get("parameters", [])
 	var text := str(p[0]) if p.size() > 0 else ""
