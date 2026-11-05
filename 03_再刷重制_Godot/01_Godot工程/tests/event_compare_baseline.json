@@ -1,11 +1,17 @@
 {
-	"cases": 6692,
-	"match": 6691,
+	"cases": 11642,
+	"match": 11637,
 	"mismatch": {
 		"m4e60p0#g3": [
 			"trace"
 		],
 		"m4e60p2#g3": [
+			"trace"
+		],
+		"m4e69p0#o4_2": [
+			"trace"
+		],
+		"m4e69p0#o4_3": [
 			"trace"
 		],
 		"m4e73p0": [

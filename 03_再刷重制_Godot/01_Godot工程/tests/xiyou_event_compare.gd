@@ -392,6 +392,7 @@ func _run() -> void:
 		fc.close()
 	check("no_new_skipped", new_skips.is_empty() or update_baseline, new_skips.slice(0, 20))
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
+	check("preset_keys_known", bad_preset_keys.is_empty(), bad_preset_keys)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
 	check("cases_ran", report.size() > 0)
 	_finish()
@@ -490,9 +491,16 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 
 
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
+## 预设键白名单（同参照 event_state_probe.cjs PRESET_KEYS）：不认识的键记下来，测试红（审查 49）
+const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "playerDirection", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
+var bad_preset_keys := []
+
 func _apply_preset(s: XState, p: Dictionary) -> void:
 	if p.is_empty():
 		return
+	for k in p.keys():
+		if not PRESET_KEYS.has(k) and not bad_preset_keys.has(k):
+			bad_preset_keys.append(k)
 	if p.has("difficulty"):
 		s.difficulty = int(p.difficulty)
 	for id in p.get("party", []):
