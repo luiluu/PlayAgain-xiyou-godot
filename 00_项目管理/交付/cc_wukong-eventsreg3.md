@@ -3,7 +3,7 @@
 - 车道／工作者：A 内容·验收／悟空（cc）
 - 基线：从 accept5（6e121324）切，并入 cc/dead-eventsreg1（覆盖表）与 **cc/dead-eventsreg2 的 WIP 3f8998a1**（预设 `answers` 选项应答、`random` 随机序列），交付前合 main 845c5287。
 - **合并顺序：先合 cc/dead-eventsreg2，再合本分支**（我这几类写法几乎都在选项分支里，要用它的 answers；eventsreg2 之后若还改了 answers 写法，合时以它为准）。
-- 状态：进行中
+- 状态：可合并
 
 ## 做了什么
 
@@ -32,9 +32,10 @@
 
 ## 验证
 
-- 同步 `--accept-additions`：（待写）
+- 同步 `--accept-additions`：合 main 845c5287、`--补齐` 后「测量不变」；另对主工作区 generated/oracle 直接 `compare_file`：event_states 只多本期 12 个新键、改变 0，events 无变化。
 - `xiyou_event_compare`（全量，带 --coverage）：6847 例，6844 一致，3 例在登记里（m4e73p0 旧的＋抽奖两例），0 退步。
-- 选测：（待写）
+- 选测：`云端选测.py run` 判成整轮（基准 accept5），427 个场景、14 片：426 过，**`xiyou_panels` 云端挂了一次**（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42074484932）；本机单跑 35／35 过。本分支没碰界面面板相关的文件（只改事件对照测试、预设、基线），我判断是云端那一片的偶发或环境问题，但没下载云端日志确认，合并时请留意。
+- `语法检查.py`、`工具回归.py`：通过。
 
 ## 变更记录草稿
 
