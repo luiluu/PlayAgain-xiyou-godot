@@ -39,6 +39,24 @@ static func is_mobile() -> bool:
 static func is_android() -> bool:
 	return OS.has_feature("android")
 
+
+## 测试用：假装屏幕的安全区（屏幕像素）；size 为 0＝按真实 DisplayServer。
+static var safe_area_override := Rect2i()
+
+
+## 刘海／圆角安全区换成画面坐标（1280×720）后，四边各缩进多少（左、上、右、下；不缩是 0）。
+## 画面按 canvas_items＋keep 留黑边，安全区落在黑边里的部分不算；没有安全区信息（桌面、headless）时全是 0。
+static func safe_insets(viewport: Viewport) -> Array:
+	var safe := safe_area_override if safe_area_override.size != Vector2i.ZERO else DisplayServer.get_display_safe_area()
+	if safe.size.x <= 0 or safe.size.y <= 0 or viewport == null:
+		return [0.0, 0.0, 0.0, 0.0]
+	var win := Vector2(DisplayServer.window_get_position()) if safe_area_override.size == Vector2i.ZERO else Vector2.ZERO
+	var inv := viewport.get_final_transform().affine_inverse()
+	var a := inv * (Vector2(safe.position) - win)
+	var b := inv * (Vector2(safe.end) - win)
+	var size := viewport.get_visible_rect().size
+	return [maxf(0, a.x), maxf(0, a.y), maxf(0, size.x - b.x), maxf(0, size.y - b.y)]
+
 ## 触屏设备（显示虚拟按键）。
 static func is_touch() -> bool:
 	if force_mobile != null:
@@ -124,6 +142,10 @@ func is_top_level(scene: Node = null) -> bool:
 ## 返回键。返回做了什么（测试看）："quit" 退出、"hint" 提示再按一次、"cancel" 当取消键。
 func go_back(now_msec := Time.get_ticks_msec(), scene: Node = null) -> String:
 	virtual_keys_release_requested.emit()
+	var touch := get_node_or_null("TouchControls") as XTouchControls
+	if touch != null and touch.layout_editing:  # 原版：调位置时返回键＝完成
+		touch.finish_layout()
+		return "layout"
 	if BACK_EXIT_ON_TOP and is_top_level(scene):
 		if now_msec - _last_back_msec <= BACK_EXIT_WINDOW_MSEC:
 			_last_back_msec = -100000

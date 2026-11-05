@@ -111,6 +111,8 @@ func _title() -> void:
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.position = get_viewport_rect().size - Vector2(330, 40)
 	_layer.add_child(ver)
+	if XPlatform.is_touch():
+		_add_transfer_buttons()
 	var cp := XDB.img_path("titles2", "Cursor")
 	if cp != "":
 		_cursor = TextureRect.new()
@@ -240,6 +242,91 @@ func _add(b: Button, fn: Callable) -> void:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.pressed.connect(fn)
 	column.add_child(b)
+
+
+## 平台三期：原版二合一包标题右上的「导入存档」「导出存档」（只在触屏；虚拟按键「隐藏按键」在它们右边）。
+func _add_transfer_buttons() -> void:
+	var top := maxf(8.0, XPlatform.safe_insets(get_viewport())[1])
+	for spec in [["ImportSave", "导入存档", 940.0, _import_save], ["ExportSave", "导出存档", 1055.0, _export_save]]:
+		var b := Button.new()
+		b.name = spec[0]
+		b.text = spec[1]
+		b.position = Vector2(spec[2], top)
+		b.size = Vector2(105, 40)
+		b.add_theme_font_size_override("font_size", 16)
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(spec[3])
+		_layer.add_child(b)
+
+
+## 一句话结果页（导入导出用）
+func _notice(title: String, text: String) -> void:
+	_window(title)
+	column.add_child(XUI.label(text))
+	_add(XUI.button("返回"), _title)
+	_focus_first()
+
+
+## 导出：选已有存档 → 系统「另存为」（原版 exportSave）
+func _export_save() -> void:
+	var slots := range(1, XSave.SLOTS + 1).filter(func(n): return XSave.exists(n))
+	if slots.is_empty():
+		_notice("导出存档", "还没有可导出的存档，请先在游戏中保存。")
+		return
+	_window("导出存档：选择存档（导出最近一次保存的进度）")
+	for slot in slots:
+		_add(XUI.button(XSave.summary(slot)), _export_slot.bind(slot))
+	_add(XUI.button("取消"), _title)
+	_focus_first()
+
+
+func _export_slot(slot: int) -> void:
+	var out := XSaveTransfer.export_text(slot)
+	if out.has("error"):
+		_notice("导出存档", "存档未导出：" + str(out.error))
+		return
+	var opened := XSaveTransfer.pick(true, XSaveTransfer.file_name(slot), func(path: String):
+		if path == "":
+			_title()
+			return
+		var err := XSaveTransfer.write_file(path, out.text)
+		_notice("导出存档", "存档未导出：" + err if err != "" else "已导出存档 %d。" % slot))
+	if not opened:
+		_notice("导出存档", "这台设备打不开系统文件选择，导出不了。")
+
+
+## 导入：先选 JSON、检查格式，再选存档位（原版 importsavejson → prepareJSONImport）
+func _import_save() -> void:
+	var opened := XSaveTransfer.pick(false, "", func(path: String):
+		if path == "":
+			_title()
+			return
+		var got := XSaveTransfer.read_import(path)
+		if got.has("error"):
+			_notice("导入存档", "存档未导入：" + str(got.error))
+			return
+		_choose_import_slot(got.data))
+	if not opened:
+		_notice("导入存档", "这台设备打不开系统文件选择，导入不了。")
+
+
+func _choose_import_slot(data: Dictionary) -> void:
+	_window("导入存档：选择存档位（已有存档会先备份一份再覆盖）")
+	var grid := GridContainer.new()
+	grid.columns = 2
+	column.add_child(grid)
+	for slot in range(1, XSave.SLOTS + 1):
+		var b := XUI.button(XSave.summary(slot))
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(_import_slot.bind(slot, data))
+		grid.add_child(b)
+	_add(XUI.button("取消"), _title)
+	_focus_first()
+
+
+func _import_slot(slot: int, data: Dictionary) -> void:
+	var err := XSaveTransfer.import_to(slot, data)
+	_notice("导入存档", "存档未导入：" + err if err != "" else "已导入到存档 %d，可在「旧的回忆」读取。" % slot)
 
 
 ## 旧的回忆：YEP_SaveCore 的读档页（XSaveScene 读档模式）；读到档进地图，取消回标题

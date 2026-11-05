@@ -36,6 +36,9 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", true], ["待提交反馈", "codexFeedbackPending", false]]
 
+## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
+const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
+
 ## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
@@ -58,6 +61,8 @@ func _ready() -> void:
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
+	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
+		_list.append(TOUCH_OPTION)
 	XUI.menu_background(self)
 	win = XMVWindow.make(self, RECT, XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
@@ -93,6 +98,8 @@ func status_text(i: int) -> String:
 			return XConfig.notices_text()
 		"codexFollow":
 			return "ON" if _follow_on() else "OFF"
+		"codexAndroidControls":
+			return "调整"
 		"codexCostumes":
 			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
 		"codexTestMode":
@@ -165,6 +172,9 @@ func ok() -> void:
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
+		"codexAndroidControls":
+			XSound.system(1)
+			_open_page(XTouchOptionsScene.new())
 		"codexTestMode":
 			if XTestMode.unlocked():
 				_set_test_mode(not XTestMode.enabled())
