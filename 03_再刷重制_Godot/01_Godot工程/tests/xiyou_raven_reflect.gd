@@ -399,6 +399,39 @@ func _refzero(c: Dictionary) -> void:
 	check(c.id + ".dead", a.is_dead() == bool(want.dead), [a.is_dead(), want.dead])
 
 
+## fix6（审查 46 P3-1）：隐月 2521 陈旧时的暴击率（原版同一下加三次也只 1 层，pre 先加的也不叠）；参照取原版 0.2%，比时关 FIX_YINYUE_2521。
+## 另加重制独有的一步（O-178 才会叠层）：本体还陈旧时再叠一层，多出的层不进特性；下一击 refresh 后两层一起生效。
+func _reffloor(c: Dictionary) -> void:
+	var fix := XBattler.FIX_YINYUE_2521
+	XBattler.FIX_YINYUE_2521 = false
+	var r := _seq_battle(float(c.setup.tcr))
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var want: Dictionary = c.observed
+	for i in int(c.setup.pre):
+		a.add_state(2521)
+	a.refresh_passive()
+	var x := _state_skill({"state": true})
+	x["effects"] = [{"code": 21, "dataId": 2521, "value1": 1.0, "value2": 0.0}, {"code": 21, "dataId": 2521, "value1": 1.0, "value2": 0.0}, {"code": 21, "dataId": 2521, "value1": 1.0, "value2": 0.0}]
+	x.hitType = 2
+	var mrf := _fake_state(5, 1.0)
+	for e in logic.enemies:
+		e.add_state(mrf)
+	logic.act(a, x, logic.enemies[0])
+	for e in logic.enemies:
+		e.remove_state(mrf)
+	check(c.id + ".floor", a.state_floor(2521) == int(want.rates.floor), [a.state_floor(2521), want.rates.floor])
+	check(c.id + ".afterN", absf(a.xparam(2) - float(want.rates.afterN)) <= 1e-6, [a.xparam(2), want.rates.afterN])
+	var stacked := int(c.setup.pre) == 0 and a.stale_state_ids.has(2521)
+	if stacked:
+		a.add_state_floor(2521)
+		check(c.id + ".stale_layer_hidden", absf(a.xparam(2) - float(want.rates.afterN)) <= 1e-6, [a.xparam(2), want.rates.afterN])
+	logic.act(logic.enemies[1], _state_skill({}), a)
+	var expect := float(want.rates.after) + (0.002 if stacked else 0.0)
+	check(c.id + ".after", absf(a.xparam(2) - expect) <= 1e-6, [a.xparam(2), expect, want.rates.after])
+	XBattler.FIX_YINYUE_2521 = fix
+
+
 func s_actor(logic: XBattleLogic, id: int) -> XActor:
 	for b in logic.actors:
 		if b is XActor and b.actor_id == id:
@@ -618,8 +651,10 @@ func _run() -> void:
 				_refmid(c)
 			"refzero":
 				_refzero(c)
+			"reffloor":
+				_reffloor(c)
 	_rollback_branch(ref)
-	check("covers_all", seen.keys().size() == 9, seen.keys())
+	check("covers_all", seen.keys().size() == 10, seen.keys())
 	finish()
 
 

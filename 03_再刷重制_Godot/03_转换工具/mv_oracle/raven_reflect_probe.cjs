@@ -325,6 +325,23 @@ for (const mid of ['evnone', 'evstate', 'evbuff', 'evheal', 'evmp', 'evtp', 'evr
     return {first, second, rates, tp, tpEnd: a.tp, hp: a.hp, buffs: a._buffs.slice(), states: a._states.slice()};
   }));
 }
+// fix6（审查 46 P3-1）：隐月 2521（CP_StateFloor 可叠层，每层暴击 +0.2%）陈旧时多出的层算不算。行动 N 同 refseq.reflect（8 号反射回自己），
+// 同一下附加 2521 三次（原版同一下只加一次、不叠）；pre＝行动前先叠的层数（0／1／2），行动 N 再叠一层。看行动后、e1 下一击后 8 号的暴击率（cri，读缓存）与层数。
+for (const pre of [0, 1, 2]) cases.push(makeCase('reffloor.tcr2' + (pre ? '.pre' + pre : ''), {tcr: 2, pre}, () => {
+  const {bm, a, foes} = seqBattle(2);
+  for (let i = 0; i < pre; i++) { a.addState(2521); }  // 先叠 pre 层（行动前 refresh 过，不陈旧）
+  const sk = w.$dataSkills[10124], cri = () => a.cri, rates = {before: cri(), floorBefore: a.stateFloor(2521)};
+  stateSkill(sk, {state: true});
+  sk.effects = [{code: 21, dataId: 2521, value1: 1, value2: 0}, {code: 21, dataId: 2521, value1: 1, value2: 0}, {code: 21, dataId: 2521, value1: 1, value2: 0}];
+  sk.hitType = 2; reflectOn(foes);
+  const first = record(() => act(bm, a, 10124, 0));
+  reflectOn(foes, 0);
+  rates.afterN = cri(); rates.floor = a.stateFloor ? a.stateFloor(2521) : null;
+  stateSkill(sk, {repeats: 1});
+  const second = record(() => act(bm, foes[1], 10124, 0));
+  rates.after = cri();
+  return {first, second, rates, tp: a.tp, states: a._states.slice()};
+}));
 cases.push(makeCase('refzero.tcr2', {tcr: 2}, () => {
   const {bm, a, foes, rate} = seqBattle(2);
   a.setTp(99);
