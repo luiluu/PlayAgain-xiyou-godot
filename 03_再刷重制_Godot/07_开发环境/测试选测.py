@@ -690,6 +690,13 @@ class ToolNarrowTests(Fixture):
         self.assertIn('只读工具', ' '.join(r[1] for r in picked['reasons']))
         self.assertIn('xiyou_rules_d2', self.scenes('只读工具.py', '0')[0])
 
+    def test_content_check_tools_keep_content(self):
+        """fix7（审查 48 P2）：检查.sh 里挂在 content 下的空绿扫描、基线、补预设批量，收窄后仍带 content，不选整组 converter。"""
+        for rel in ('事件空绿扫描.py', '事件空绿基线.json', '补预设批量.py'):
+            got, picked = self.scenes(rel)
+            self.assertEqual(sorted(picked['checks']), ['content', 'guards', 'tools'], rel)
+            self.assertNotIn('xiyou_rules_d2', got, rel)
+
     def test_read_only_data_and_comment_mentions(self):
         self.assertNotIn('xiyou_rules_d2', self.scenes('只读基线.json')[0])   # 只被只读工具读
         self.assertNotIn('xiyou_rules_d2', self.scenes('另一只读.py')[0])     # 只在探针注释里提到
