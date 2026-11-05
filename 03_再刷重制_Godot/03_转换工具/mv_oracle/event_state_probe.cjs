@@ -43,11 +43,18 @@ for (const ce of MANIFEST.slice.commonEvents) {
 }
 const PRESETS = JSON.parse(fs.readFileSync(path.join(__dirname, '../event_presets.json'), 'utf8')).cases;
 const baseById = Object.fromEntries(cases.map(c => [c.id, c]));
+// goneIn：在这些冻结源版本里基础用例已经没了的预设（如 v0.30 深渊商人改成脚本 CodexAbyssMerchant.openCurrent，原第 3 页删掉），这一版跳过并记进 skippedPresets；
+// 没标却找不到、或标了却还在，都报错（预设要跟着核对）
+const skippedPresets = [];
 const variants = PRESETS.map(p => {
-  const base = baseById[p.base];
+  const base = baseById[p.base], gone = (p.goneIn || []).includes(identity.releaseVersion);
+  if (gone) {
+    if (base) throw new Error('预设标了 goneIn ' + identity.releaseVersion + '，基础用例却还在：' + p.base + '#' + p.tag);
+    skippedPresets.push(p.base + '#' + p.tag); return null;
+  }
   if (!base) throw new Error('预设的基础用例不存在：' + p.base);
   return Object.assign({}, base, {id: p.base + '#' + p.tag, base: p.base, preset: p.preset});
-});
+}).filter(Boolean);
 const only = process.argv.slice(2);
 const chosen = only.length ? variants.filter(c => only.some(p => c.id.startsWith(p))) : variants;
 
@@ -352,7 +359,7 @@ const setup = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prom
 // 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
 const OUT = process.env.XIYOU_EVENT_OUT || path.join(__dirname, '.sandbox/event_states.json');
 fs.mkdirSync(path.dirname(OUT), {recursive: true});
-fs.writeFileSync(OUT, JSON.stringify({sourceIdentity: identity, setup, cases: results}));
+fs.writeFileSync(OUT, JSON.stringify(Object.assign({sourceIdentity: identity, setup, cases: results}, skippedPresets.length ? {skippedPresets} : {})));
 console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, unfinished: results.filter(x => !x.finished).map(x => x.id),
   errors: results.filter(x => x.errors).map(x => x.id), ms: Date.now() - t0}));
 process.exit(0);
