@@ -85,6 +85,10 @@ const ESTABLISH_TRUE_POPUP := true
 ## 受伤 setHp／setMp（值变了）、回合末；嵌套 apply 同一角色时，进内层前先按外层的标记把外层已加的状态定下来（内层命中扣血再刷掉）。
 ## false 回到 raven3：每次行动开头清全体，嵌套不处理。
 static var STALE_TIMING := true
+## O-待定（交付单 cc_nezha-raven5 优化登记草稿「清陈旧刷新点」；raven5，审查 45 P3-1／P3-2，参照 raven_reflect_probe 的 refmid.*／refzero）：true 时不经行动的 refresh 也清陈旧——
+## 战斗里直接加减状态（313）、加减 buff、回 HP／MP／TP（XResourceContext 的 setHp／setMp／setTp refresh），原版这些都调 refresh；
+## 受伤 setHp 按请求的扣血量判（value != 0，原版先比请求值再 CodexRaces.limitHp），不看扣完后的值。false 回到 raven4（只在上面几处清）。
+static var STALE_REFRESH_POINTS := true
 var _stale_frames: Array = []  # 进行中的 apply（同一角色可嵌套）：{"t": 角色, "before": 进 apply 时的状态}
 
 
@@ -317,6 +321,8 @@ func _state_remove(b: XBattler, id: int, automatic := false) -> void:
 	_finish_lifecycle_operation(resources, b)
 
 func _refresh_battler(b: XBattler) -> void:
+	if STALE_REFRESH_POINTS:
+		stale_refreshed(b)  # raven5（审查 45 P3-2）：313 改状态、加减 buff 等的 Game_Battler.refresh 也重建特性缓存
 	var resources := _operation_resources(b)
 	b.refresh_with_context(_rule(), resources.state_context(b))
 	_finish_lifecycle_operation(resources, b)
@@ -2494,8 +2500,8 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	# 种族蛮骨（YEP setHp 里的 CodexRaces.limitHp）只限扣血量；受伤充 TP 仍按原值（onDamage(value)）
 	var hp_was: float = t.hp
 	_action_resources.gain(t, "hp", -XRaceBattle.limit_loss(self, t, value))
-	if t.hp != hp_was:
-		stale_refreshed(t)  # setHp 值变了就 refresh：之前陈旧的状态从这一击之后生效（本击伤害已算完）
+	if (value != 0.0) if STALE_REFRESH_POINTS else (t.hp != hp_was):
+		stale_refreshed(t)  # setHp 请求值与当前不同就 refresh（蛮骨限额在比较之后）：之前陈旧的状态从这一击之后生效（本击伤害已算完）
 	if value > 0.0:
 		var tp_before: float = t.tp
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))

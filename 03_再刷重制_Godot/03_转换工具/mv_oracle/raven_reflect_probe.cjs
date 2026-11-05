@@ -270,5 +270,72 @@ for (const [tcr, inner] of [[2, 'hit'], [2, 'small'], [2, 'none'], [0.01, 'hit']
     return {log, rates, nested, after: rate(), tp: a.tp, states: a._states.slice()};
   }));
 }
+// raven5（审查 45 P3-1、P3-2）：
+// mid.*：行动 N（同 refseq.reflect：8 号自己放魔法单体被反射回自己、加侵蚀，TP 先 refresh → 侵蚀陈旧，出手者不在收尾的 removeImmortal 里）之后，1 号队友对 8 号用一次不伤害的技能（10125 槽）：
+//   buff＝加攻击 buff（效果 31）、heal＝回 HP 1000（效果 11）、healmp＝回 MP 100（效果 12）、state＝加一个没有特性的状态（效果 21）、none＝什么效果都没有；
+//   再由 e1 打 8 号两段，看第一击读到旧缓存还是新状态（原版 addBuff／addState 自带 refresh、gainHp 走 setHp 的 refresh）。
+// zero：8 号 TP 先设 99（第一击充满后 TP 不再变，不触发 setTp 的 refresh），e0 三段、每段致死（immortal 夹 0 血）并加侵蚀：
+//   第二段请求的 hp 是负数、与 0 不同，原版 setHp 照样 refresh，第三段读新状态；只看扣完后的值变没变就不会清（审查 45 P3-1）。
+function neutralState() {
+  for (let i = 30; i < w.$dataStates.length; i++) {
+    const st = w.$dataStates[i];
+    if (st && st.name && !st.traits.length && !st.note && st.restriction === 0 && st.autoRemovalTiming === 0 && !st.removeAtBattleEnd) return i;
+  }
+  throw new Error('找不到没有特性的状态');
+}
+const NEUTRAL = neutralState();
+for (const mid of ['none', 'buff', 'heal', 'healmp', 'state']) {
+  cases.push(makeCase(`refmid.tcr2.${mid}`, {tcr: 2, mid, neutral: NEUTRAL}, () => {
+    const {bm, a, foes, rate} = seqBattle(2);
+    const sk = w.$dataSkills[10124], sk2 = w.$dataSkills[10125], rates = {before: rate()};
+    stateSkill(sk, {state: true});
+    sk.hitType = 2; reflectOn(foes);
+    const first = record(() => act(bm, a, 10124, 0));
+    reflectOn(foes, 0);
+    rates.afterN = rate(); const tp = a.tp;
+    stateSkill(sk2, {dmg: false, scope: 7});
+    sk2.effects = {none: [], buff: [{code: 31, dataId: 2, value1: 5, value2: 0}], heal: [{code: 11, dataId: 0, value1: 0, value2: 1000}],
+      healmp: [{code: 12, dataId: 0, value1: 0, value2: 100}], state: [{code: 21, dataId: NEUTRAL, value1: 1, value2: 0}]}[mid];
+    act(bm, w.$gameActors.actor(1), 10125, 0);
+    rates.between = rate();
+    stateSkill(sk, {repeats: 2});
+    const second = record(() => act(bm, foes[1], 10124, 0));
+    rates.after = rate();
+    return {first, second, rates, tp, tpEnd: a.tp, hp: a.hp, buffs: a._buffs.slice(), states: a._states.slice()};
+  }));
+}
+// ev.*：同上，中间不经行动、直接调（战斗事件 313 改状态／311 改 HP／插件脚本的 addBuff 走的路径）：
+//   evstate＝addState(没特性的状态)、evbuff＝addBuff(2,5)、evheal＝gainHp(1000)、evmp＝gainMp(100)、evtp＝gainTp(5)、evnone＝什么都不做
+for (const mid of ['evnone', 'evstate', 'evbuff', 'evheal', 'evmp', 'evtp', 'evremove']) {
+  cases.push(makeCase(`refmid.tcr2.${mid}`, {tcr: 2, mid, neutral: NEUTRAL}, () => {
+    const {bm, a, foes, rate} = seqBattle(2);
+    const sk = w.$dataSkills[10124], rates = {before: rate()};
+    if (mid === 'evremove') a.addState(NEUTRAL);
+    stateSkill(sk, {state: true});
+    sk.hitType = 2; reflectOn(foes);
+    const first = record(() => act(bm, a, 10124, 0));
+    reflectOn(foes, 0);
+    rates.afterN = rate(); const tp = a.tp;
+    ({evnone: () => {}, evstate: () => a.addState(NEUTRAL), evbuff: () => a.addBuff(2, 5), evheal: () => a.gainHp(1000), evmp: () => a.gainMp(100),
+      evtp: () => a.gainTp(5), evremove: () => a.removeState(NEUTRAL)})[mid]();
+    rates.between = rate();
+    stateSkill(sk, {repeats: 2});
+    const second = record(() => act(bm, foes[1], 10124, 0));
+    rates.after = rate();
+    return {first, second, rates, tp, tpEnd: a.tp, hp: a.hp, buffs: a._buffs.slice(), states: a._states.slice()};
+  }));
+}
+cases.push(makeCase('refzero.tcr2', {tcr: 2}, () => {
+  const {bm, a, foes, rate} = seqBattle(2);
+  a.setTp(99);
+  const sk = w.$dataSkills[10124];
+  stateSkill(sk, {state: true, repeats: 3, formula: '10000000'});
+  const rates = [];
+  const old = w.Game_Action.prototype.executeHpDamage;
+  w.Game_Action.prototype.executeHpDamage = function (target, value) { rates.push(rate()); return old.apply(this, arguments); };
+  let log;
+  try { log = record(() => act(bm, foes[0], 10124, 0)); } finally { w.Game_Action.prototype.executeHpDamage = old; }
+  return {log, rates, tp: a.tp, hp: a.hp, dead: a.isDead(), states: a._states.slice()};
+}));
 const ok0 = finish(host, 'raven_reflect.json', {cases});
 process.exit(ok0 ? 0 : 1);
