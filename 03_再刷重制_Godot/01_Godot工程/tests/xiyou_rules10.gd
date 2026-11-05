@@ -85,7 +85,10 @@ func _floor_run(skill_id: int, hits: int) -> Dictionary:
 
 func _floors() -> void:
 	for on in [true, false]:
-		XBattler.FLOOR_YINYUE = on
+		if on:
+			XBattler.FLOOR_YINYUE = true
+		else:
+			XBattler.FLOOR_YINYUE = false  # 回退支：原版
 		for skill_id in FLOOR_SKILLS:
 			var st: int = int(FLOOR_SKILLS[skill_id])
 			var per: float = float(XDB.rec("States", st).traits[0].value)
@@ -117,7 +120,10 @@ func _floors() -> void:
 func _crit_1749() -> void:
 	var out := {}
 	for on in [true, false]:
-		XStateEffects.FIX_CRIT_1749 = on
+		if on:
+			XStateEffects.FIX_CRIT_1749 = true
+		else:
+			XStateEffects.FIX_CRIT_1749 = false  # 回退支：原版
 		for crit in [true, false]:
 			var b := _battle([])
 			var a: XActor = b.a
@@ -155,7 +161,10 @@ func _lotus() -> void:
 func _lotus_at(lv: int) -> void:
 	var rows := {}
 	for on in [true, false]:
-		XStateEffects.LOTUS_DAMAGE_7303 = on
+		if on:
+			XStateEffects.LOTUS_DAMAGE_7303 = true
+		else:
+			XStateEffects.LOTUS_DAMAGE_7303 = false  # 回退支：原版
 		XEnemy.force_roll = 100.0
 		var s := XState.new_game(3, 101, [1, 8])
 		s.random_master = XRandomStream.hex64(4900)
