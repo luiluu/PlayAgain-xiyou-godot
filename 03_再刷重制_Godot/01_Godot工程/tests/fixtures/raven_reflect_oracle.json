@@ -3020,6 +3020,218 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "refstate.tcr0.01.plain",
+   "setup": {
+    "tcr": 0.01,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e0",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e1",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e2",
+      "value": 36709958,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 1856,
+    "states": [],
+    "foeStates": [
+     [
+      1663
+     ],
+     [
+      1663
+     ],
+     [
+      1663
+     ]
+    ],
+    "foeHp": [
+     74999963305042,
+     74999963305042,
+     74999963305042
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr0.01.reflect",
+   "setup": {
+    "tcr": 0.01,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     }
+    ],
+    "hp": 31939259,
+    "mp": 1856,
+    "states": [
+     1663
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr2.plain",
+   "setup": {
+    "tcr": 2,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e0",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e1",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e2",
+      "value": 36709958,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 1856,
+    "states": [],
+    "foeStates": [
+     [
+      1663
+     ],
+     [
+      1663
+     ],
+     [
+      1663
+     ]
+    ],
+    "foeHp": [
+     74999963305042,
+     74999963305042,
+     74999963305042
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr2.reflect",
+   "setup": {
+    "tcr": 2,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     }
+    ],
+    "hp": 41136655,
+    "mp": 1856,
+    "states": [
+     1663
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
   }
  ]
 }

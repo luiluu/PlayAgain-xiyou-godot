@@ -454,16 +454,16 @@ func all_traits() -> Array:
 	return XOrbs.filter_traits(super.all_traits(), equips)
 
 ## 渡鸦黑暗侵蚀的状态缓存时序（见 raven.gd on_tp_refresh）：tp_refreshed＝本次 apply 里伤害充 TP 已 refresh；
-## erosion_stale＝黑暗侵蚀已在身上，但特性缓存还没重建，元素有效度暂读不到它
+## stale_state_ids＝已在身上但特性缓存还没重建、特性暂读不到的状态（krz 状态缓存时序）
 var rv_tp_refreshed := false
-var rv_erosion_stale := false
+var stale_state_ids: Array = []
 
 func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(stat_equips())
-	if rv_erosion_stale:
+	if not stale_state_ids.is_empty():
 		for st in states():
-			if int(st.get("id", 0)) != XRaven.EROSION:
+			if not stale_state_ids.has(int(st.get("id", 0))):
 				out.append(st)
 	else:
 		out.append_array(states())

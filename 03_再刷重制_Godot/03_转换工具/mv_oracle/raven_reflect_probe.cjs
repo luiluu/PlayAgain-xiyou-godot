@@ -185,5 +185,21 @@ for (const [nm, id, sk] of [['yunshang', 174, 10270], ['yunshang', 174, 10271], 
     return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
   }));
 }
+// raven2→3：多段／反射加状态的通用情形（不限渡鸦）。借 10124 的数据槽临时改成「全体、魔法、黑暗、固定伤害 1e7、效果加黑暗侵蚀 1663」，
+// 普通角色 1 号出手，反射回自己；tcr 强设 0.01（受伤充 TP 加 0）与 2（加 ≥1）。量出：加状态前若同一次 apply 里 TP 已 refresh，
+// 状态特性晚一击（krz 状态缓存时序，与渡鸦无关，见交付单）。
+for (const [tcr, refl] of [[0.01, false], [0.01, true], [2, false], [2, true]]) {
+  cases.push(makeCase(`refstate.tcr${tcr}.${refl ? 'reflect' : 'plain'}`, {tcr, reflect: refl}, () => {
+    const {bm, a, foes} = xbattle(8, 60);
+    const sk = w.$dataSkills[10124];
+    sk.damage.formula = '10000000'; sk.damage.elementId = 9; sk.effects = [{code: 21, dataId: 1663, value1: 1, value2: 0}];
+    sk.scope = 2; sk.repeats = 1; sk.hitType = 2; sk.mpCost = 0; sk.tpCost = 0; sk.meta = {}; sk.note = '';
+    a.learnSkill(10124); a.setMp(a.mmp); a.setTp(0);
+    Object.defineProperty(a, 'tcr', {get: () => tcr, configurable: true});
+    if (refl) reflectOn(foes);
+    const log = record(() => act(bm, a, 10124, 0));
+    return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
+  }));
+}
 const ok0 = finish(host, 'raven_reflect.json', {cases});
 process.exit(ok0 ? 0 : 1);
