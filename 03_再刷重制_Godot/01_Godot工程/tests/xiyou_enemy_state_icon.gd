@@ -81,8 +81,11 @@ func _run() -> void:
 	check("name_fade_16_per_frame", fades[0] == 239.0 and fades[14] == 15.0 and fades[15] == 0.0 and fades[16] == 0.0, fades)
 	check("name_dead_fades_even_selected", XBattleScene.name_alpha_step(255.0, true, true, 1.0) == 239.0)
 	check("name_fade_switch_default", XBattleScene.NAME_FADE)
-	# 画在画布上不出错
-	XEnemyStateIcon.paint(cv, st, nw)
+	# 画在画布上不出错（走画布自己的 _draw）
+	cv.painter = func(c): XEnemyStateIcon.paint(c, st, nw)
+	cv.queue_redraw()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	cv.queue_free()
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
