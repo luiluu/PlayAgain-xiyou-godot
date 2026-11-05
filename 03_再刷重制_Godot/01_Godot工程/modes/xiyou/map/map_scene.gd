@@ -87,6 +87,7 @@ static func slice() -> Dictionary:
 
 
 func _ready() -> void:
+	XPlatform.idle_probe = XHangUp.current_active  # 跨平台二期：后台补跑、挂机不锁屏看这个
 	# MV 画面底色为黑：比画面小的地图（开局 Map001/002 为 17×13）四周是黑的
 	var backdrop := CanvasLayer.new()
 	backdrop.layer = -100

@@ -94,5 +94,35 @@ class WindowsLayoutTests(unittest.TestCase):
         self.assertIsNone(smoke.preset_template('没有这个预设'))
 
 
+class AndroidLayoutTests(unittest.TestCase):
+    BADGING = "package: name='local.kyo.remake.verification' versionCode='1'\nuses-permission: name='android.permission.WAKE_LOCK'\nnative-code: 'arm64-v8a'\n"
+    XML = "      A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=11\n"
+
+    def test_parse(self):
+        info = smoke.parse_android(self.BADGING, self.XML)
+        self.assertEqual(info, {'package': 'local.kyo.remake.verification', 'native': ['arm64-v8a'], 'orientation': 11,
+                                'permissions': ['android.permission.WAKE_LOCK']})
+        self.assertEqual(smoke.parse_android('', '')['orientation'], None)
+
+    def test_problems(self):
+        names = {'assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap',
+                 'assets/tests/xiyou_mac_export.tscn.remap'}
+        info = smoke.parse_android(self.BADGING, self.XML)
+        self.assertEqual(smoke.android_problems(info, names), [])
+        portrait = dict(info, orientation=1, native=['armeabi-v7a'])
+        probs = smoke.android_problems(portrait, names - {'assets/project.binary'})
+        self.assertEqual(len(probs), 3, probs)
+        self.assertEqual(smoke.android_problems(info, names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
+
+    def test_android_report(self):
+        with tempfile.TemporaryDirectory() as d:
+            info = {'time': 't', 'platform': 'android', 'preset': '安卓 验收', 'zip': 'x.apk', 'ok': False, 'layout': '通过',
+                    'archs': 'arm64-v8a', 'package': 'p', 'scenes': []}
+            text = smoke.report(Path(d), info).read_text(encoding='utf-8')
+            self.assertIn('# 安卓导出冒烟报告', text)
+            self.assertIn('apksigner', text)
+            self.assertIn('两指取消', text)
+
+
 if __name__ == '__main__':
     unittest.main()

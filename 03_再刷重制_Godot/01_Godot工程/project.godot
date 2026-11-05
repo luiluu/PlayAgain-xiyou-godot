@@ -8,6 +8,7 @@ config/version="dev.361"
 run/main_scene="res://scenes/entry_menu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="KYO/再刷重制_开发"
+config/custom_user_dir_name.release="KYO/再刷重制"
 
 [autoload]
 GameApp="*res://core/game_app.gd"
@@ -19,6 +20,7 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
+window/handheld/orientation=4
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
