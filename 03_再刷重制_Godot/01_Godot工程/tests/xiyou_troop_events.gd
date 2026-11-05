@@ -19,9 +19,9 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 	# accept4：160 控尸者第 1 回合在 864／865 里随机挑（865 一回合杀光全队时别的敌人轮不到）；
 	# 398 蚀世树第 2 回合的技能随机（参照 0.5 挑到打自己的 2565、没命中角色，别的种子会打到角色并带附加伤害）
 	160, 398]
-## 已知游戏差异（accept4 记在交付单，车道只改测试不改游戏）：这几项照原版参照会失败，不计入断言，输出打 KNOWN_DIFF 行
-## 321 六耳猕猴「模仿」856 的 <After Eval>（BattleManager.queueForceAction(user, target._lastUsedSkill || 1, -2)）重制没执行，少一次强制普通攻击
-const KNOWN_DIFF := {321: ["t1_enemy_actions", "t1_forced_all"]}
+## 已知游戏差异：这几项照原版参照会失败，不计入断言，输出打 KNOWN_DIFF 行（accept4 起；现在没有）。
+## 321 六耳猕猴「模仿」856 的 <After Eval> 强制普通攻击 fix5 已接上（XBattleLogic._after_eval_force），回退支见 _unit_checks
+const KNOWN_DIFF := {}
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
@@ -384,11 +384,22 @@ func _case(c: Dictionary, round: int) -> void:
 		check(name + ".t1_enemy_set", enemies_of.call(got[1]) == enemies_of.call(want[1]), [got[1], want[1]])
 	# 事件强制行动（339）逐条比 [行动者, 技能]：都在第 1 回合最先，含非首敌（军团 676 第 1 回合 e3 强制 3813，沙僧50 内容批 P2-C2）
 	var want_forced: Array = c.actions.filter(func(a): return int(a.turn) == 1 and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
+	# 强制行动不在回合开头、而是某次行动里排的（六耳猕猴 321「模仿」856 的 After Eval：856 之后紧接强制 1）：
+	# 比参照第 1 回合从头到最后一次强制行动为止的整段
+	var t1_ref: Array = c.actions.filter(func(a): return int(a.turn) == 1)
+	var last_forced := -1
+	for i in range(t1_ref.size()):
+		if bool(t1_ref[i].forced):
+			last_forced = i
+	if last_forced >= 0 and t1_ref.slice(0, last_forced + 1).any(func(a): return not bool(a.forced)):
+		want_forced = t1_ref.slice(0, last_forced + 1).map(func(a): return [str(a.subject), int(a.skill)])
 	if not want_forced.is_empty():
 		check(name + ".t1_forced_all", got[1].slice(0, want_forced.size()) == want_forced, [got[1], want_forced])
 	# 第 2 回合（战斗没结束时）：守层者照常行动一次（技能随机，不比）；有追加行动特性（61，几率）的敌人，每条特性最多再多一次（怨毒集合体 10%）
 	if not got[2].is_empty():
 		var times: int = got[2].filter(func(x): return x[0] == "e0").size()
+		# 「模仿」856 这类 After Eval 每用一次带出一次强制行动，不算守层者自己的行动
+		times -= got[2].filter(func(x): return x[0] == "e0" and not XBattleLogic.after_eval_force_of(XDB.rec("Skills", int(x[1]))).is_empty()).size() if XBattleLogic.SKILL_AFTER_EVAL_FORCE else 0
 		# Another enemy can kill the party before e0 acts; e0 can also die first.
 		var must_act := e0.is_alive() and not logic.is_lost() and t2_usable
 		check(name + ".t2_enemy_once", times >= (1 if must_act else 0) and times <= 1 + plus, [got[2], e0.is_alive(), logic.is_lost(), t2_usable, t2_tp])
@@ -430,6 +441,20 @@ func _case(c: Dictionary, round: int) -> void:
 
 ## 条件与目标的细项（不依赖参照数据）
 func _unit_checks() -> void:
+	# fix5：六耳猕猴 321「模仿」856 的 After Eval 强制普通攻击。开（默认）：第 1 回合 856 之后紧接强制 1 打同一目标；
+	# 回退（SKILL_AFTER_EVAL_FORCE = false）：只有 856，没有强制行动
+	for on in [true, false]:
+		if on:
+			XBattleLogic.SKILL_AFTER_EVAL_FORCE = true
+		else:
+			XBattleLogic.SKILL_AFTER_EVAL_FORCE = false
+		var lg := setup(321)
+		var cmds := {}
+		for a in lg.actors:
+			cmds[a] = [XDB.rec("Skills", 1), lg.enemies[0]]
+		var acts: Array = lg.run_turn(cmds).filter(func(l): return l.type == "action" and l.user == lg.enemies[0]).map(func(l): return int(l.skill.id))
+		check("mimic856.after_eval_%s" % ("on" if on else "off"), (acts.slice(0, 2) == [856, 1]) if on else (acts == [856]), acts)
+	XBattleLogic.SKILL_AFTER_EVAL_FORCE = true
 	var logic := setup(4)
 	var page := {"conditions": {"turnEnding": false, "turnValid": true, "turnA": 1, "turnB": 0, "enemyValid": false,
 		"actorValid": false, "switchValid": false}, "span": 0, "list": []}
