@@ -10772,6 +10772,276 @@
      }
     }
    }
+  },
+  {
+   "base": "m186e32p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "m7e4p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "m145e5p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "ce1597",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "m106e1p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m106e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m132e2p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m18e10p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 6
+   }
+  },
+  {
+   "base": "m69e47p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e52p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e56p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e70p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m71e10p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e5p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e6p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m80e3p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m80e6p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m92e1p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m93e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m97e3p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m4e12p1",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m4e13p1",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 6
+   }
+  },
+  {
+   "base": "m4e66p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m154e3p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "24": 1
+    }
+   }
+  },
+  {
+   "base": "m78e5p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "397": 1
+    }
+   }
+  },
+  {
+   "base": "m78e2p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "397": 1
+    }
+   }
+  },
+  {
+   "base": "m89e8p0",
+   "tag": "d2",
+   "preset": {
+    "dead": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m89e9p0",
+   "tag": "d2",
+   "preset": {
+    "dead": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m195e8p1",
+   "tag": "d2",
+   "preset": {
+    "selfSwitches": {
+     "195,8,A": true
+    }
+   }
+  },
+  {
+   "base": "ce1388",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6133
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1389",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6138
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1390",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6238
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1391",
+   "tag": "d3",
+   "preset": {
+    "items": {
+     "2701": 1
+    }
+   }
   }
  ]
 }
