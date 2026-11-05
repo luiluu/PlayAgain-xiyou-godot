@@ -55,9 +55,21 @@ func fast_forward(n := FAST_FORWARD) -> void:
 	Engine.max_physics_steps_per_frame = 8 * n
 	Engine.time_scale = float(n)
 
+## 默认跑 tests/xiyou_mac_export；加 --verify-scene=<场景名>（只认 tests/ 下的 xiyou_ 开头场景）改跑那一个，
+## 导出冒烟（07_开发环境/导出冒烟.py）用它在调试包里跑 xiyou_flow（入口→新游戏→进图→战斗→存读档）。发行包排除 tests/，跑不到。
 func _verify_export() -> void:
 	await get_tree().process_frame
-	get_tree().change_scene_to_file.call_deferred("res://tests/xiyou_mac_export.tscn")
+	var scene := "res://tests/xiyou_mac_export.tscn"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--verify-scene="):
+			var name := arg.substr(15)
+			if name.begins_with("xiyou_") and name.is_valid_filename() and ResourceLoader.exists("res://tests/%s.tscn" % name):
+				scene = "res://tests/%s.tscn" % name
+			else:
+				push_error("--verify-scene 找不到场景：" + name)
+				get_tree().quit(2)
+				return
+	get_tree().change_scene_to_file.call_deferred(scene)
 
 func get_mode(mode_id: String) -> Dictionary:
 	for mode in modes:
