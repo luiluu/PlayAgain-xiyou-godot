@@ -10669,15 +10669,6 @@
    }
   },
   {
-   "base": "m4e46p0",
-   "tag": "d1",
-   "preset": {
-    "variables": {
-     "1486": 20250826
-    }
-   }
-  },
-  {
    "base": "m106e1p0",
    "tag": "d1",
    "preset": {
@@ -10818,49 +10809,6 @@
    }
   },
   {
-   "base": "ce2470",
-   "tag": "d1",
-   "preset": {
-    "party": [
-     122
-    ]
-   }
-  },
-  {
-   "base": "ce2471",
-   "tag": "d1",
-   "preset": {
-    "party": [
-     122
-    ]
-   }
-  },
-  {
-   "base": "ce1407",
-   "tag": "d1",
-   "preset": {
-    "party": [
-     104
-    ],
-    "actors": {
-     "104": {
-      "skills": [
-       7502
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce2460",
-   "tag": "d1",
-   "preset": {
-    "party": [
-     106
-    ]
-   }
-  },
-  {
    "base": "m154e3p0",
    "tag": "d2",
    "preset": {
@@ -10911,6 +10859,54 @@
    "preset": {
     "selfSwitches": {
      "195,8,A": true
+    }
+   }
+  },
+  {
+   "base": "ce1388",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6133
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1389",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6138
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1390",
+   "tag": "d3",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       6238
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1391",
+   "tag": "d3",
+   "preset": {
+    "items": {
+     "2701": 1
     }
    }
   }
