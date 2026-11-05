@@ -1,0 +1,10 @@
+{"name": "raven_myth", "party": [167, 1], "level": 60, "troop": 1, "actor": 167,
+ "steps": [
+  {"tag": "normal", "wait": 1500, "shot": true},
+  {"tag": "myth", "js": "a._codexRavenMythTurns = 3; a.refresh();", "wait": 2000, "shot": true},
+  {"tag": "myth_damage", "js": "s.startMotion('damage');", "wait": 200},
+  {"tag": "myth_dead", "js": "a.addState(a.deathStateId()); a.refresh();", "wait": 1500, "shot": true},
+  {"tag": "myth_revive", "js": "a.removeState(a.deathStateId()); a.setHp(a.mhp); a.refresh();", "wait": 1500},
+  {"tag": "normal_again", "js": "a._codexRavenMythTurns = 0; a.refresh();", "wait": 2000, "shot": true},
+  {"tag": "normal_dead", "js": "a.addState(a.deathStateId()); a.refresh();", "wait": 1500}
+ ]}
