@@ -1422,6 +1422,50 @@
     "threw": "Cannot read properties of null (reading 'constructor')"
    },
    "errors": []
+  },
+  {
+   "id": "unloaded.cloudSave",
+   "setup": {
+    "lines": [
+     "HWGOE.save.cloudSaveGame(1);"
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.cloudSaveLatest",
+   "setup": {
+    "lines": [
+     "HWGOE.save.cloudSaveGame(HWGOE.save.latestSavefileId());"
+    ]
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
+  },
+  {
+   "id": "unloaded.mobileUI",
+   "setup": {
+    "lines": null,
+    "plugin": "MobileUI hide DPad"
+   },
+   "observed": {
+    "sameState": true,
+    "sameScene": true,
+    "finished": true,
+    "threw": null
+   },
+   "errors": []
   }
  ]
 }
