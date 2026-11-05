@@ -10909,6 +10909,139 @@
      "2701": 1
     }
    }
+  },
+  {
+   "base": "ce1431",
+   "tag": "r1",
+   "preset": {
+    "switches": {
+     "2495": true,
+     "2282": true
+    },
+    "variables": {
+     "1173": 100,
+     "1186": 7000
+    }
+   }
+  },
+  {
+   "base": "m186e3p1",
+   "tag": "r1",
+   "preset": {
+    "variables": {
+     "601": -100000
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r1",
+   "preset": {
+    "switches": {
+     "2492": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r2",
+   "preset": {
+    "switches": {
+     "2491": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r3",
+   "preset": {
+    "switches": {
+     "2500": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r4",
+   "preset": {
+    "switches": {
+     "2494": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r5",
+   "preset": {
+    "switches": {
+     "2483": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r6",
+   "preset": {
+    "switches": {
+     "2487": true
+    }
+   }
+  },
+  {
+   "base": "ce714",
+   "tag": "r7",
+   "preset": {
+    "switches": {
+     "2489": true
+    }
+   }
+  },
+  {
+   "base": "m4e50p0",
+   "tag": "r1",
+   "preset": {
+    "variables": {
+     "206": -1000
+    }
+   }
+  },
+  {
+   "base": "ce1313",
+   "tag": "r1",
+   "preset": {
+    "variables": {
+     "374": 5
+    }
+   }
+  },
+  {
+   "base": "m4e36p0",
+   "tag": "r1",
+   "preset": {
+    "switches": {
+     "2487": true,
+     "2489": true
+    },
+    "variables": {
+     "20": 21
+    }
+   }
+  },
+  {
+   "base": "ce334",
+   "tag": "r1",
+   "preset": {
+    "party": [
+     67
+    ],
+    "actors": {
+     "67": {
+      "skills": [
+       2379
+      ]
+     }
+    }
+   }
   }
  ]
 }
