@@ -181,6 +181,8 @@ func _domain_live() -> void:
 		rand.rule.domain = "rule"
 		var logic := XBattleLogic.new()
 		XNanoha.DOMAIN_LIVE = live
+		XDeadContent.DOMAIN_ALL_MATK = false  # 这里照 CE2478 原样（魔攻只给奈叶）；全队见 _domain_all_matk
+		XDeadContent.clear_cache()
 		logic.setup(2, s, rand)
 		XNanoha.DOMAIN_LIVE = true
 		var tag := "domain.%s" % ("live" if live else "off")
@@ -201,6 +203,27 @@ func _domain_live() -> void:
 		atk[live] = [s.actor(1).atk, s.actor(1).mhp]
 	# 队友的物攻／血量真被加上（G_ShuXing 按层数×1%，层数＝变量 1123／1120 起）
 	check("domain.mate_stronger", float(atk[true][0]) > float(atk[false][0]) and float(atk[true][1]) > float(atk[false][1]), atk)
+	_domain_all_matk()
+
+
+## O-185 魔法领域魔攻全队（XDeadContent.DOMAIN_ALL_MATK）：CE2478 的 1783 改给全队，队友也带魔攻加成
+func _domain_all_matk() -> void:
+	XDeadContent.DOMAIN_ALL_MATK = true
+	XDeadContent.clear_cache()
+	var s := _new_state()
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in [1, 108]:
+		s.actor(id).change_level_mv(10)
+		s.add_actor(id)
+	var rand := XBattleRandom.create("0000000000000108")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	var logic := XBattleLogic.new()
+	logic.setup(2, s, rand)
+	logic.troop_events()
+	check("domain.all_matk", s.actor(1).state_ids.has(1783) and s.actor(108).state_ids.has(1783), [s.actor(1).state_ids, s.actor(108).state_ids])
 
 
 ## nanoha3_oracle cast.*：奈叶单人、敌群 2、最大 MP 加 mmp、当前 MP 设 mp 后放大招；比实扣 MP（⌊mp×比例⌋×mcr）、付费后 _costmp（⌊付前 MP×比例/2000⌋）、

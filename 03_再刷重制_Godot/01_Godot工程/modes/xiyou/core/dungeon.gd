@@ -96,6 +96,7 @@ static func set_difficulty(s: XState, n: int, interp) -> void:
 			s.dungeon.pending = {"entryMap": interp.map_id, "entryEvent": interp.event_id, "baseDifficulty": s.difficulty,
 				"hangEnabled": XHangUp.enabled(s), "rune": spec.rune}
 	s.difficulty = n
+	XWeakChallenge.check(s)  # 弱者挑战 setDifficultyId 包装：最终战中改难度作废
 
 
 ## XdRs_HangUp「ProhibitHangUp / EnableHangUp」：只改开关

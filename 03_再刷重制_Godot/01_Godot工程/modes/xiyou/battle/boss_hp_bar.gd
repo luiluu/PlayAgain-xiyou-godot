@@ -201,7 +201,7 @@ func step() -> void:
 	var hp: float = r.hp
 	position.y = _base_y  # refresh_blue_meter 每帧把 y 归位
 	if hp_red != hp:
-		var d := 1.0 + absf(hp_red - hp) / 160.0
+		var d := red_step(hp)
 		if hp_red > hp:
 			hp_red = maxf(hp_red - d, hp)
 		else:
@@ -232,6 +232,28 @@ func _fade() -> void:
 		layout_alpha = 255
 		return
 	layout_alpha = clampi(layout_alpha + (-5 if _need_fade() else 5), 0, 255)
+
+
+## 优化 O-待定（ui11）：原版红条每帧走 1+差/160，差越大越慢收拢（千万级血量一下打掉要拖几十秒）。
+## 开着时每次目标血量变了重新计 RED_CAP_FRAMES 帧，每帧至少走「剩余差 ÷ 剩余帧」，所以最迟约 1.5 秒追上；
+## 小伤害原版本来就更快，照原版。RED_TRAIL_CAP = false 回到原版。
+static var RED_TRAIL_CAP := true
+const RED_CAP_FRAMES := 90
+var _red_target := INF
+var _red_left := 0
+
+
+func red_step(hp: float) -> float:
+	var diff := absf(hp_red - hp)
+	var d := 1.0 + diff / 160.0
+	if not RED_TRAIL_CAP:
+		return d
+	if hp != _red_target:
+		_red_target = hp
+		_red_left = RED_CAP_FRAMES
+	var cap := diff / maxf(1.0, float(_red_left))
+	_red_left = maxi(1, _red_left - 1)
+	return maxf(d, cap)
 
 
 ## refresh_all：条换到另一个 Boss

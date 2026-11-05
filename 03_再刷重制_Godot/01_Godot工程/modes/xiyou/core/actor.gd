@@ -411,6 +411,8 @@ func learn_skill(id: int) -> void:
 		return
 	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
 		id = STRONG_SKILL_REPLACE[id]
+	if not XWeakChallenge.can_learn(self, id):  # 弱者挑战 learnSkill 包装：10357 只给本局已通关的弱者
+		return
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
@@ -787,7 +789,7 @@ func sparam(i: int) -> float:
 		v += _num(m) * 0.01
 	v = (v + XEquipSuits.value(self,"sparam",i,false)/100) * XEquipSuits.value(self,"sparam",i,true)
 	if i == 6 or i == 7:
-		return XCat.sparam(self, i, additive_rate(TRAIT_SPARAM, i, v, []))
+		return XWeakChallenge.sparam(self, i, XCat.sparam(self, i, additive_rate(TRAIT_SPARAM, i, v, [])))  # 弱者挑战 sparam 包装：10357 承伤 ×0.5
 	return v
 
 func passive_element_values(e: int) -> Array:

@@ -86,6 +86,19 @@ func move(d: int, wrap := true) -> void:
 	_refresh()
 
 
+## Window_ChoiceList（Window_Command）不接管 pageup／pagedown，照 Window_Selectable.cursorPagedown／cursorPageup 翻页（ui11）
+func page(d: int) -> void:
+	if rows.is_empty():
+		return
+	var old := index
+	var r := XMenu.page(top, index, rows.size(), page_rows(), d)
+	top = r[0]
+	index = r[1]
+	if index != old:
+		XSound.system(0)
+	_refresh()
+
+
 func ok() -> void:
 	if index < 0 or index >= rows.size():
 		return
@@ -117,6 +130,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		move(1, not event.is_echo())
 	elif event.is_action_pressed("ui_up", true):
 		move(-1, not event.is_echo())
+	elif XMenu.page_dir(event) != 0:
+		page(XMenu.page_dir(event))
 	else:
 		handled = false
 	if handled:
