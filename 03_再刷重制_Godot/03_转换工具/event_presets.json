@@ -11203,6 +11203,137 @@
      "166": true
     }
    }
+  },
+  {
+   "base": "m4e41p1",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     2,
+     0
+    ]
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "g3",
+   "preset": {
+    "random": [
+     0.1,
+     0.5,
+     0.9
+    ]
+   }
+  },
+  {
+   "base": "ce1094",
+   "tag": "g3",
+   "preset": {
+    "party": [
+     82
+    ],
+    "actors": {
+     "82": {
+      "skills": [
+       4955
+      ]
+     }
+    },
+    "variables": {
+     "708": 1
+    }
+   }
+  },
+  {
+   "base": "m4e8p0",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     2,
+     0
+    ]
+   }
+  },
+  {
+   "base": "m195e23p0",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "variables": {
+     "1496": 20
+    }
+   }
+  },
+  {
+   "base": "m186e3p1",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "565": 1
+    }
+   }
+  },
+  {
+   "base": "m4e1p2",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e60p0",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "m4e60p2",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "m2e2p2",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "variables": {
+     "1": 3
+    }
+   }
+  },
+  {
+   "base": "m41e1p0",
+   "tag": "g3",
+   "preset": {
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e8p0",
+   "tag": "g4",
+   "preset": {
+    "answers": [
+     1
+    ]
+   }
   }
  ]
 }

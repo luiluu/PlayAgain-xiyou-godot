@@ -2,10 +2,16 @@
 	"cases": 6692,
 	"match": 6691,
 	"mismatch": {
+		"m4e60p0#g3": [
+			"trace"
+		],
+		"m4e60p2#g3": [
+			"trace"
+		],
 		"m4e73p0": [
 			"trace"
 		]
 	},
-	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写，说明保留）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。m4e1p2／p3（更换称号）已消：参照探针先补上标题画面才接的称号公共事件、当场跑完，选项里的 ESC 控制符比较前统一成反斜杠；m221e3p0／ce1344（随机伙伴）不再算参照出错：事件随机数改按固定序列取（悟空 dmg2）。",
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写，说明保留）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。m4e1p2／p3（更换称号）已消：参照探针先补上标题画面才接的称号公共事件、当场跑完，选项里的 ESC 控制符比较前统一成反斜杠；m221e3p0／ce1344（随机伙伴）不再算参照出错：事件随机数改按固定序列取（悟空 dmg2）。 m4e60p0#g3／m4e60p2#g3（eventsreg3，自定义单抽／20连抽券不足）：XCasinoBatch.open 只在地图场景（XMapScene）里开，事件对照的宿主不是地图场景，提示「抽奖券不足」不出；游戏里由 xiyou_casino_batch（自有原版参照）管。",
 	"source": "v0.28"
 }
