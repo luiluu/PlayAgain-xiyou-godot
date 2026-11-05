@@ -130,7 +130,10 @@ static func run(code: String, interp) -> Array:
 	var states_plan := _actors_add_state(js)
 	if not states_plan.is_empty():
 		for pair in states_plan:
-			s.actor(int(pair[0])).add_state(int(pair[1]))
+			var target := s.actor(int(pair[0]))
+			# Game_Battler.addState 先查 isStateAddable＝活着（带死亡状态 1 的不加；审查 42 P2-1，原版实测 setHp(0) 后 addState(708) 得 [1]）；313 走 resources.add_state 同样先查
+			if not target.state_ids.has(1):
+				target.add_state(int(pair[1]))
 		return []
 	# ---- 整段写法 ----
 	# 批量抽奖（installCasinoBatchRuntime，大厅 Map004 EV60「自定义单抽／自定义20连抽」）：else 支是没装运行时的旧版提示，正式版不走

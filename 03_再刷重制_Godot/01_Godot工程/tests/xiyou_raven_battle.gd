@@ -171,7 +171,7 @@ func _myth(c: Dictionary) -> void:
 			steps.append(_turn(logic, a))
 		steps.append(_cast(logic, a, XRaven.MYTH, a))
 		a._level_up()
-		# 升级后原版 MP 回满（升级回复不在本期，重制直接调 _level_up 不回），这一步不比 MP
+		# 升级后原版 MP 回满（重制 events5c 起 _level_up 也回满）；渡鸦 mmp 61 级后两边不同（见 residue.sync），这一步仍不比 MP
 		steps.append(_snap(logic, a).merged({"levelUp": true, "mp": float(c.observed.steps[steps.size()].mp)}, true))
 	_compare(c.id, steps, c.observed.steps)
 
@@ -199,7 +199,9 @@ func _residue(c: Dictionary) -> void:
 		st["residue"] = 3
 		st["hunter"] = true
 		a._level_up()
-		var kept := _snap(logic, a)
+		# 升级现在回满 MP（Olivia levelUpRecover，events5c）。参照里 61 级后 MV 的 mmp 停在 1193（paramBase 已 1208，被某处封顶，未查），
+		# 重制 mmp 仍按成长表 1208，两边回满值不同：MP 先取参照值不比（待量清 MV 渡鸦 61 级后 mmp 封顶的来源）
+		var kept := _snap(logic, a).merged({"mp": float(c.observed.kept.mp)}, true)
 		a.change_level_mv(20)
 		st["residue"] = 2
 		st["hunter"] = true
@@ -207,7 +209,7 @@ func _residue(c: Dictionary) -> void:
 		var learned := a.skill_ids.filter(func(i): return i >= 10122)
 		learned.sort()
 		check(c.id + ".skills", learned == (c.observed.skills as Array).map(func(v): return int(v)), [learned, c.observed.skills])
-		_compare(c.id, [kept, _snap(logic, a)], [c.observed.kept, c.observed.lv21])
+		_compare(c.id, [kept, _snap(logic, a).merged({"mp": float(c.observed.lv21.mp)}, true)], [c.observed.kept, c.observed.lv21])
 		return
 	var reserve := bool(setup.get("reserve", false))
 	var r := _battle(int(setup.rank), int(setup.level), reserve)

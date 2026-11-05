@@ -11,6 +11,8 @@ extends Node
 const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const ORACLE_STATES := "res://modes/xiyou/generated/oracle/event_states.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
+## 解释器跳过（认不出）的脚本／指令基线：用例 → {写法键: 次数}。新出现的跳过＝红（审查：解释器整段跳过不能无痕）；--update-baseline 重写
+const SKIPPED_BASELINE := "res://tests/event_skipped_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
 const KNOWN_ORACLE_ERRORS := []
@@ -69,6 +71,8 @@ class EventHost:
 	func transfer(id: int, x: int, y: int, d: int) -> void:
 		trace.append({"t": "transfer", "map": id, "x": x, "y": y, "d": d})
 		var s := XState.current
+		if id != s.map_id:
+			s.battleback = []  # 同 map_scene：换图清 283 的设定（MV Game_Map.setup 重设）
 		s.map_id = id
 		s.x = x
 		s.y = y
@@ -143,6 +147,10 @@ class EventHost:
 			return player
 		return null
 
+	## 指令 283：同 map_scene.change_battleback，写 XState.battleback（新观察面记它）
+	func change_battleback(name1: String, name2: String) -> void:
+		XState.current.battleback = [name1, name2]
+
 	func show_animation(_ch, _anim_id: int):
 		return null
 
@@ -212,9 +220,8 @@ func _run() -> void:
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
 	# 只对修正表里那几扇门的用例关（逐用例设，见循环里）；其余用例保持修正生效的真实路径（审查 41 P3-6）
 	_saved_seal_fix = MVInterpreter.seal_check_fix
-	# O-076 十二层守层者给 12 成就的修正（原版给 13）：对照原版语义，关掉；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
+	# O-076 十二层守层者给 12 成就的修正（原版给 13）：只对 m23e1p0／m65e2p0 两例关（逐用例设，见循环里）；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
 	_saved_floor12 = XAchievement.FLOOR12_FIX
-	XAchievement.FLOOR12_FIX = false
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -241,6 +248,11 @@ func _run() -> void:
 		var b = JSON.parse_string(FileAccess.get_file_as_string(BASELINE))
 		baseline = b if b is Dictionary else {}
 	var known: Dictionary = baseline.get("mismatch", {})
+	var skipped_baseline: Dictionary = {}
+	if FileAccess.file_exists(SKIPPED_BASELINE):
+		var sb = JSON.parse_string(FileAccess.get_file_as_string(SKIPPED_BASELINE))
+		skipped_baseline = sb.get("cases", {}) if sb is Dictionary else {}
+	check("skipped_baseline_present", FileAccess.file_exists(SKIPPED_BASELINE) or update_baseline)
 	var host := EventHost.new()
 	add_child(host)
 	var report := []
@@ -272,6 +284,8 @@ func _run() -> void:
 			XGlobalVars._loaded_path = "<unloaded>"
 		var door := RegEx.create_from_string("^m(\\d+)e(\\d+)p").search(str(c.id))
 		MVInterpreter.seal_check_fix = {} if door != null and _saved_seal_fix.has("%s:%s" % [door.get_string(1), door.get_string(2)]) else _saved_seal_fix
+		# O-076 只对两张十二层守层者的用例关（审查 42 P3-4），其余用例保持修正生效
+		XAchievement.FLOOR12_FIX = _saved_floor12 and not (str(c.id).begins_with("m23e1p0") or str(c.id).begins_with("m65e2p0"))
 		var got := await _run_case(c, host)
 		var diffs := _compare(c, got)
 		var row := {"id": c.id, "ok": diffs.is_empty(), "diffs": diffs, "skipped": got.skipped, "aborted": got.aborted}
@@ -279,6 +293,25 @@ func _run() -> void:
 		if not diffs.is_empty():
 			mismatched[c.id] = diffs.map(func(d): return d.split(":")[0])
 	var ok_count := report.filter(func(r): return r.ok).size()
+	# 跳过基线：本次各用例的跳过写法（键＝指令码＋原文前 40 字）；基线里没有的＝新增跳过
+	var skipped_now := {}
+	for r in report:
+		if not r.skipped.is_empty():
+			skipped_now[r.id] = r.skipped
+	var new_skips := []
+	for id in skipped_now:
+		for k in skipped_now[id]:
+			if not skipped_baseline.get(id, {}).has(k):
+				new_skips.append("%s | %s" % [id, k])
+	var gone_skips := 0
+	for id in skipped_baseline:
+		if report.any(func(r): return r.id == id):
+			for k in skipped_baseline[id]:
+				if not skipped_now.get(id, {}).has(k):
+					gone_skips += 1
+	print("EVENT_SKIPPED ", JSON.stringify({"cases": skipped_now.size(), "keys": skipped_now.values().reduce(func(a, v): return a + v.size(), 0), "new": new_skips.size(), "noLongerSkipped": gone_skips}))
+	for n in new_skips.slice(0, 30):
+		print("NEW_SKIP ", n)
 	# 退步：登记外的用例不一致，或登记内的用例出现登记外的不一致项目（trace/variables/…）
 	var regressions := mismatched.keys().filter(func(id):
 		return not known.has(id) or mismatched[id].any(func(k): return not known[id].has(k)))
@@ -293,8 +326,14 @@ func _run() -> void:
 		f.store_string(JSON.stringify({"note": str(baseline.get("note", "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。")),
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
+	if update_baseline and only.is_empty():
+		var fs := FileAccess.open(ProjectSettings.globalize_path(SKIPPED_BASELINE), FileAccess.WRITE)
+		fs.store_string(JSON.stringify({"note": "地图事件对照里解释器跳过（认不出）的脚本／指令（tests/xiyou_event_compare 写入；--update-baseline 重写）。键＝指令码＋原文前 40 字。新增＝红；补好解释器后用 --update-baseline 删。全库写法清单另见 tests/fixtures/script_census_known.json（脚本普查）。",
+			"cases": skipped_now}, "\t", true))
+		fs.close()
 	if out_dir != "":
 		_write_report(report, oracle_errors)
+	check("no_new_skipped", new_skips.is_empty() or update_baseline, new_skips.slice(0, 20))
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
 	check("cases_ran", report.size() > 0)
@@ -400,6 +439,13 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		s.set_switch(int(k), bool(p.switches[k]))
 	for k in p.get("variables", {}):
 		s.set_variable(int(k), float(p.variables[k]))
+	for id in p.get("defeats", {}):
+		for _i in int(p.defeats[id]):
+			XEnemyBook.add_defeat(s, int(id))
+	for id in p.get("dead", []):
+		var dead_actor := s.actor(int(id))
+		dead_actor.hp = 0.0
+		dead_actor.refresh_resources()  # 同 MV setHp(0)：refresh 挂死亡状态
 	for k in p.get("selfSwitches", {}):
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
 
@@ -470,7 +516,8 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		var a := s.actor(id)
 		var skills := Array(a.skill_ids).duplicate()
 		skills.sort()
-		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills, "states": _sorted_ints(a.state_ids)}
+		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills, "states": _sorted_ints(a.state_ids),
+			"hp": a.hp, "mp": a.mp, "paramPlus": _param_plus_row(s, id)}
 	var flags := {}
 	for k in s.flags:
 		if str(k).begins_with("DCultyL"):
@@ -481,7 +528,28 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		"party": Array(s.party).duplicate(), "actors": actors, "difficulty": s.difficulty, "encounter": s.encounter_enabled,
 		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags,
 		"designations": _true_keys(XConfig.designations()), "achievements": _true_keys(s.achievements, true),
-		"screen": s.screen.target_snapshot()}
+		"screen": s.screen.target_snapshot(),
+		"battleback": _effective_battleback(s)}
+
+
+## MV 的 $gameMap._battleback1Name／2Name：283 设过用设的；否则（Game_Map.setupBattleback）地图指定了战斗背景用地图的，没指定为空。
+## Godot 把「283 的覆盖」与「地图指定」分开存（开战时才合，map_scene.battle_map），这里按同样的优先级合成再比
+func _effective_battleback(s: XState) -> Array:
+	if s.battleback.size() == 2:
+		return [str(s.battleback[0]), str(s.battleback[1])]
+	var m := XDB.map(s.map_id)
+	if bool(m.get("specifyBattleback", false)):
+		return [str(m.get("battleback1Name", "")), str(m.get("battleback2Name", ""))]
+	return ["", ""]
+
+
+## 指令 317 累计的能力加成（八项；没改过＝全 0，同参照 _paramPlus 初值）
+func _param_plus_row(s: XState, id: int) -> Array:
+	var row = s.mv_param_plus.get(str(id))
+	var out := []
+	for i in 8:
+		out.append(float(row[i]) if row is Array and row.size() > i else 0.0)
+	return out
 
 
 func _sorted_ints(a: Array) -> Array:
@@ -544,7 +612,7 @@ func _delta(a: Dictionary, b: Dictionary) -> Dictionary:
 		if a[k] != b[k]:
 			d[k] = b[k]
 	put.call("flags", _map_delta(a.flags, b.flags, null))
-	for k in ["designations", "achievements"]:
+	for k in ["designations", "achievements", "battleback"]:
 		if JSON.stringify(a[k]) != JSON.stringify(b[k]):
 			d[k] = b[k]
 	if JSON.stringify(a.screen) != JSON.stringify(b.screen):

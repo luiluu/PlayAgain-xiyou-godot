@@ -318,11 +318,23 @@ func _level_up() -> void:
 	for l in class_data().get("learnings", []):
 		if int(l.level) == _lv:
 			learn_skill(int(l.skillId))
+	_level_up_recover()
 	var var_id := str(data().get("meta", {}).get("pSkillPointsVarId", "")).strip_edges()
 	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
 		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
 		XState.current.set_variable(int(var_id), XState.current.variable(int(var_id)) + (int(points) if points.is_valid_int() else 1))
 	XActorModules.level_up(self)  # 专属角色模块的 levelUp 包装
+
+## Olivia_AntiPlayerStress.levelUpRecover：每升一级（levelUp 包装，在基础 levelUp 之后）HP／MP 回满（西游参数 Recover Full HP／MP 都是 true），再 refresh。
+## 事件对照 events5c 的 HP／MP 观察面咬出：公共事件 231「升级药」原版升到 10 级 HP＝mhp，重制此前只夹不回
+func _level_up_recover() -> void:
+	var p := XDB.plugin("Olivia_AntiPlayerStress")
+	if str(p.get("Recover Full HP", "true")) == "true":
+		hp = mhp
+	if str(p.get("Recover Full MP", "true")) == "true":
+		mp = mmp
+	refresh_resources()
+
 
 ## Game_Actor.changeLevel（事件「增减等级」316）：夹在 1～上限，按 changeExp 逐级升降（降级不忘技能、不扣技能点），
 ## 返回新学会的技能 ID（displayLevelUp 用）
