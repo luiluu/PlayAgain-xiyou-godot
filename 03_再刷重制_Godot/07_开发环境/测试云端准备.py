@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 HERE = Path(__file__).resolve().parent
 
@@ -408,6 +409,28 @@ class CloudWaitTests(unittest.TestCase):
     def test_gh_unavailable_falls_back_to_timeout(self):
         self.gh.write_text('#!/bin/sh\nexit 1\n'); self.gh.chmod(0o755)
         self.assertEqual(self.wait(timeout=2).returncode, 124)
+
+
+class CloudDownloadTests(unittest.TestCase):
+    """fix8：下载 Godot 遇 GitHub 404／5xx，重试参数带 --retry-all-errors，都失败报「GitHub 下载暂不可用」而不是裸 curl 退出码。"""
+
+    def test_download_failure_message_and_retry_flags(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('cloud_dl', Path(__file__).with_name('云端选测.py'))
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory(prefix='xiyou_dl_') as d:
+            fake = Path(d) / 'curl'
+            fake.write_text('#!/bin/sh\necho "$@" > "%s/args"\nexit 22\n' % d)
+            fake.chmod(0o755)
+            env = {'PATH': d + os.pathsep + os.environ['PATH'], 'XIYOU_DL_DELAY': '0'}
+            with unittest.mock.patch.dict(os.environ, env):
+                with self.assertRaises(SystemExit) as cm:
+                    mod.download('https://example.invalid/SHA512-SUMS.txt')
+            self.assertIn('GitHub 下载暂不可用', str(cm.exception))
+            self.assertIn('稍后重跑', str(cm.exception))
+            args = (Path(d) / 'args').read_text()
+            for flag in ('--retry 5', '--retry-all-errors', '--retry-delay 0'):
+                self.assertIn(flag, args)
 
 
 if __name__ == '__main__':
