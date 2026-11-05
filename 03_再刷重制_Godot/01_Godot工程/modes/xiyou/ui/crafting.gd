@@ -600,6 +600,27 @@ func _move(d: int, wrap: bool) -> void:
 			change_amount(-10 if d > 0 else 10)
 
 
+## 通用翻页（制作列表、锻造原件窗都不接管 pageup／pagedown）
+func _page(d: int) -> void:
+	match mode:
+		"list":
+			if not list.is_empty():
+				var r := XMenu.page(top, index, list.size(), LIST_ROWS, d)
+				top = r[0]
+				if r[1] != index:
+					select(r[1])
+				else:
+					_refresh()
+		"pick":
+			if not picks.is_empty():
+				var r := XMenu.page(pick_top, pick_index, picks.size(), PICK_ROWS, d)
+				pick_top = r[0]
+				if r[1] != pick_index:
+					pick_index = r[1]
+					XSound.system(0)
+				_refresh()
+
+
 func _side(d: int) -> void:
 	match mode:
 		"category":
@@ -683,3 +704,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
 		get_viewport().set_input_as_handled()
 		_side(1 if event.is_action_pressed("ui_right", true) else -1)
+	elif mode in ["list", "pick"] and XMenu.page_dir(event) != 0:
+		get_viewport().set_input_as_handled()
+		_page(XMenu.page_dir(event))

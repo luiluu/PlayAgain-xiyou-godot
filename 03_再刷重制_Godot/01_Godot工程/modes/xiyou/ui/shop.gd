@@ -51,6 +51,7 @@ var _cmd := 0
 var _cat := 0
 var _cat_top := 0
 var _buy_index := 0
+var _buy_top := 0               # Window_ShopBuy 的 topRow（ui9：商品多于一页时滚动）
 var _sell_index := 0
 var _sell_top := 0
 var _number := 1
@@ -113,8 +114,9 @@ func _refresh() -> void:
 	cmd_win.down_arrow = cats and _cat_top < CATEGORIES.size() - 4
 	cmd_win.up_arrow = cats and _cat_top > 0
 	var n := _sell_data().size()
-	list_win.down_arrow = _mode == "sell" and _sell_top < n - _list_rows()
-	list_win.up_arrow = _mode == "sell" and _sell_top > 0
+	var nb := _buy_data().size() if _mode == "buy" else 0
+	list_win.down_arrow = (_mode == "sell" and _sell_top < n - _list_rows()) or (_mode == "buy" and _buy_top < nb - _list_rows())
+	list_win.up_arrow = (_mode == "sell" and _sell_top > 0) or (_mode == "buy" and _buy_top > 0)
 	onekey_win.visible = _mode == "onekey"
 	for w in [cmd_win, info_win, list_win, status_win, gold_win, onekey_win]:
 		w.refresh()
@@ -128,7 +130,7 @@ func _update_help() -> void:
 	var row := -1
 	match _mode:
 		"buy":
-			row = _buy_index
+			row = _buy_index - _buy_top
 		"sell":
 			row = _sell_index - _sell_top
 	var rec := _current_rec() if row >= 0 else {}
@@ -300,7 +302,9 @@ func _paint_list(c: XMVCanvas) -> void:
 		"buy":
 			var d := _buy_data()
 			for i in range(d.size()):
-				var y := i * LH
+				var y := (i - _buy_top) * LH
+				if y < 0 or y >= c.size.y:
+					continue
 				var w := c.size.x - 6
 				var a := 1.0 if _buy_enabled(d[i]) else XUI.DIM.a
 				if i == _buy_index:
@@ -556,6 +560,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_change_number(-1)
 		else:
 			_actor_index = (_actor_index - 1 + XState.current.members().size()) % XState.current.members().size()
+	elif XMenu.page_dir(event) != 0 and _mode in ["buy", "sell", "category"]:
+		_page(XMenu.page_dir(event))
 	else:
 		handled = false
 	if handled:
@@ -574,6 +580,7 @@ func _move(d: int, wrap: bool) -> void:
 			var n := _buy_data().size()
 			if n > 0:
 				_buy_index = XMenu._move(_buy_index, d, n, wrap)
+				_buy_top = XMenu._scroll_to(_buy_index, _buy_top, _list_rows())
 		"sell":
 			var n := _sell_data().size()
 			if n > 0:
@@ -583,6 +590,34 @@ func _move(d: int, wrap: bool) -> void:
 			_change_number(d)
 		"onekey":
 			_onekey = XMenu._move(_onekey, d, XItemMarks.onekey_grades().size(), wrap)
+
+
+## 通用翻页（Window_Selectable.cursorPagedown／cursorPageup）：买入、出售、分类三个列表
+func _page(d: int) -> void:
+	match _mode:
+		"buy":
+			var r := XMenu.page(_buy_top, _buy_index, _buy_data().size(), _list_rows(), d)
+			_buy_top = r[0]
+			_buy_index = r[1]
+		"sell":
+			var r := XMenu.page(_sell_top, _sell_index, _sell_data().size(), _list_rows(), d)
+			_sell_top = r[0]
+			_sell_index = r[1]
+		"category":
+			var r := XMenu.page(_cat_top, _cat, CATEGORIES.size(), 4, d)
+			_cat_top = r[0]
+			_cat = r[1]
+
+
+## 滚轮（Window_Selectable.processWheel）：只滚当前活动列表，光标不动
+func _wheel(d: int) -> void:
+	match _mode:
+		"buy":
+			_buy_top = XMenu.wheel(_buy_top, _buy_data().size(), _list_rows(), d)
+		"sell":
+			_sell_top = XMenu.wheel(_sell_top, _sell_data().size(), _list_rows(), d)
+		"category":
+			_cat_top = XMenu.wheel(_cat_top, CATEGORIES.size(), 4, d)
 
 
 ## MV Window_ShopNumber：上下 ±10、左右 ±1，范围 1～最大可买/可卖数
@@ -619,6 +654,7 @@ func _ok_inner() -> void:
 				"buy":
 					_mode = "buy"
 					_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
+					_buy_top = XMenu._scroll_to(_buy_index, _buy_top, _list_rows())
 				"sell":
 					_mode = "category"
 				"onekey":
@@ -693,6 +729,12 @@ func _cancel_inner() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
 		return
+	var wd := XMenu.wheel_dir(event)
+	if wd != 0:
+		_wheel(wd)
+		accept_event()
+		_refresh()
+		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel()
 		_refresh()
@@ -723,11 +765,11 @@ func _gui_input(event: InputEvent) -> void:
 				_cat = i + _cat_top
 	elif LIST_RECT.has_point(p):
 		var i := floori((p - LIST_RECT.position - pad).y / LH)
-		if _mode == "buy" and i >= 0 and i < _buy_data().size():
-			if i == _buy_index:
+		if _mode == "buy" and i >= 0 and i < _list_rows() and i + _buy_top < _buy_data().size():
+			if i + _buy_top == _buy_index:
 				_ok()
 			else:
-				_buy_index = i
+				_buy_index = i + _buy_top
 		elif _mode == "sell" and i + _sell_top < _sell_data().size() and i >= 0:
 			if i + _sell_top == _sell_index:
 				_ok()
