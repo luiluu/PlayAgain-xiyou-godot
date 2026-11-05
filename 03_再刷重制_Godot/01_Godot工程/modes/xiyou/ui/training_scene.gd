@@ -294,6 +294,21 @@ func _move(d: int, wrap: bool) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		cancel()
+	elif mode == "index" and XMenu.wheel_dir(event) != 0 and INDEX_RECT.has_point(event.position):
+		# Window_Selectable.processWheel：目录只滚窗口、光标不动（ui11）
+		top = XMenu.wheel(top, members().size(), INDEX_ROWS, XMenu.wheel_dir(event))
+		_refresh()
+
+
+## 队员目录是 Window_Selectable、不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻（ui11）
+func page(d: int) -> void:
+	var r := XMenu.page(top, index, members().size(), INDEX_ROWS, d)
+	top = r[0]
+	if r[1] != index:
+		index = r[1]
+		XSound.system(0)
+		_select_actor()
+	_refresh()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -306,3 +321,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
 		get_viewport().set_input_as_handled()
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
+	elif mode == "index" and XMenu.page_dir(event) != 0:
+		get_viewport().set_input_as_handled()
+		page(XMenu.page_dir(event))

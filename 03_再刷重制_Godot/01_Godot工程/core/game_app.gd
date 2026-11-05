@@ -5,8 +5,13 @@ const MODE_FILE := "res://content/modes.json"
 var modes: Array = []
 var current_mode: String = ""
 
+var key_repeat: XKeyRepeat
+
 func _ready() -> void:
 	_headless_frame_sleep()
+	key_repeat = XKeyRepeat.new()  # 按住键的连发照原版 24／6 帧（ui11）
+	key_repeat.name = "KeyRepeat"
+	add_child(key_repeat)
 	if OS.get_environment("XIYOU_TEST_FAST_FORWARD").is_valid_int():
 		fast_forward()
 	if WindowFit.should_apply(OS.get_cmdline_args()):
