@@ -99,11 +99,14 @@ func _case(c: Dictionary) -> void:
 	s.direction = int(c.get("dir", 2))
 	_apply(s, c)
 	_party()
+	# 固定随机数在进图前就设好：来源页是自动执行（深渊之门等）时进图即跑，用的也是这个值
+	MVInterpreter.fixed_random = float(c.get("random", -1.0))
 	get_tree().change_scene_to_file(MAP_SCENE)
 	var t0 := WaitBudget.new(CASE_MS)
 	while t0.waiting() and not (_map_ready(int(c.src_map)) and not _scene().busy):
 		await get_tree().process_frame
 	if not _check(tag + "_src_loaded", _map_ready(int(c.src_map)), [_scene().get("map_id")]):
+		MVInterpreter.fixed_random = -1.0
 		return
 	var map: XMapScene = _scene()
 	var e: MVEvent = null
@@ -111,13 +114,13 @@ func _case(c: Dictionary) -> void:
 		if x.event_id == int(c.ev):
 			e = x
 	if not _check(tag + "_event", e != null):
+		MVInterpreter.fixed_random = -1.0
 		return
 	if e.page_index != int(c.page):
 		forced.append([c.id, e.page_index])
 		e.page_index = int(c.page)
 		e.page = e.data.pages[int(c.page)]
 	XMessageBox.auto_answers = c.answers.duplicate()
-	MVInterpreter.fixed_random = float(c.get("random", -1.0))
 	var same_map := int(c.dest) == int(c.src_map)
 	var want: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [int(c.src_map), int(c.ev), int(c.dest), int(c.xy[0]), int(c.xy[1])],
 		Vector2i(int(c.xy[0]), int(c.xy[1])))
