@@ -14,7 +14,7 @@ const SHARED := 10168
 const ADAPT := 5683
 ## 魔法领域（技能 5682 的 StartPushState1774）：状态 1774 的 <Custom Battle Effect> 预约公共事件 2478（全队按奈叶等级加 1792～1799）
 const DOMAIN_STATE := 1774
-## O-待定（Kyo 11-05「死内容做活」）：原版 dsPassiveSkill 在 startBattle 跑完开战效果之后才加被动状态，领域的开战块从不触发，
+## O-183（Kyo 11-05「死内容做活」）：原版 dsPassiveSkill 在 startBattle 跑完开战效果之后才加被动状态，领域的开战块从不触发，
 ## 说明写的全员加成玩家永远拿不到。重制在开战被动状态加完后补跑一次领域的开战块，预约的 2478 排在 1320 之后跑（不顶掉 1320）。
 ## false 回到原版（不补跑）。
 static var DOMAIN_LIVE := true
@@ -104,7 +104,7 @@ static func post_damage(logic, u, t: XBattler, skill: Dictionary, value: float, 
 	r.extra = popups
 
 
-# ---- 魔法领域做活（O-待定） ----
+# ---- 魔法领域做活（O-183） ----
 ## XBattleLogic._start_battle_effects 里、_battle_start_states 之后（资源上下文还在）：出战成员身上有领域 1774 的，补跑它的开战块；
 ## 预约的公共事件先记在 logic 上，等 setup 末尾预约完 1320 再排到它后面（domain_queue）
 static func domain_start(logic, resources: XResourceContext) -> void:

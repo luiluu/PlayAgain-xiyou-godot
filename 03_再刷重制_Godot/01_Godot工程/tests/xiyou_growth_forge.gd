@@ -136,7 +136,7 @@ func _case_core(c: Dictionary) -> void:
 		{"origin": o.origin, "got": o.got, "again": o.again, "draws": o.draws, "hammers": o.hammers})
 
 
-## O-待定：放开魔王之渊（164）后，Map176 胜利、敌群 570～575 照样 20% 掉锻造锤；来源 0、关掉开关时仍不掉
+## O-183：放开魔王之渊（164）后，Map176 胜利、敌群 570～575 照样 20% 掉锻造锤；来源 0、关掉开关时仍不掉
 func _case_core_164() -> void:
 	for row in [[164, true, 0.1, true], [164, true, 0.5, false], [164, false, 0.1, false], [0, true, 0.1, false], [165, true, 0.1, true]]:
 		var s := _new_state()
