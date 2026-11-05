@@ -5,12 +5,12 @@ extends Node
 ## - 两指点按＝取消：照 MV TouchInput（第二指按下即 _onCancel，与鼠标右键同一路），这里转成一次右键点击；
 ##   第一指照 Godot 的触屏转鼠标（emulate_mouse_from_touch）当左键，第二指本身不再往下传，免得地图把它当成走路目标。
 ## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；入口菜单上按返回退出。
-## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-待定，BACKGROUND_IDLE）。
+## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-待定-2，BACKGROUND_IDLE）。
 ## - 挂机中手机不锁屏（原版要了 WAKE_LOCK）。
 
 ## 测试用：强制当成触屏／手机（null＝按真实平台）。
 static var force_mobile = null
-## O-待定：安卓后台挂机。原版用前台服务在后台按真实时间继续跑；Godot 切后台主循环就停了，这里改成回到前台时
+## O-待定-2：安卓后台挂机。原版用前台服务在后台按真实时间继续跑；Godot 切后台主循环就停了，这里改成回到前台时
 ## 把离开的时间加速补跑（最多 BACKGROUND_CAP_SEC 秒游戏时间，CATCH_UP_SPEED 倍速，点屏幕可停）。false＝切后台就停，回来接着玩。
 static var BACKGROUND_IDLE := true
 const BACKGROUND_CAP_SEC := 1800.0

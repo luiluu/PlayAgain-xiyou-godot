@@ -21,8 +21,10 @@
 
 ## 优化登记草稿（总装合并时换成实际 O 号）
 
-- O-待定 发行包存档目录去掉「_开发」：`project.godot` 的 `config/custom_user_dir_name.release="KYO/再刷重制"`，调试包与编辑器仍是 `KYO/再刷重制_开发`。恢复方法：删掉这一行。状态：已做（总装 14:55 定，Kyo 09:21 授权）。
-- O-待定 安卓后台挂机：`XPlatform.BACKGROUND_IDLE = true`，挂机中切后台、回前台按离开时间 8 倍速补跑，最多 30 分钟。原版是前台服务真在后台跑；重制没有原生插件，做不到一样。恢复方法：`XPlatform.BACKGROUND_IDLE = false`（切后台就停）。状态：已做（同上），测试 `xiyou_platform` 的 background_idle_off 覆盖回退支。
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定-1 | 发行包存档目录（`project.godot` `config/custom_user_dir_name.release`） | 原版无此区分；重制调试包、编辑器存档在 `KYO/再刷重制_开发` | 发行包存档目录去掉「_开发」，用 `KYO/再刷重制`；调试包与编辑器不变 | 总装 14:55 定（Kyo 09:21 授权），发行包与开发存档分开 | 删掉 `config/custom_user_dir_name.release` 这一行 | cc（BH） | 待用户确认 |
+| O-待定-2 | 安卓后台挂机（`core/platform.gd` `XPlatform.BACKGROUND_IDLE`） | 原版用前台服务在后台按真实时间继续跑 | 挂机中切后台、回前台按离开时间 8 倍速补跑，最多 30 分钟（没有原生插件，做不到真后台） | 照原版做到能做的程度（Kyo 09:21 授权）；测试 `xiyou_platform` background_idle_off 覆盖回退 | `XPlatform.BACKGROUND_IDLE = false`（切后台就停） | cc（BH） | 待用户确认 |
 
 ## 交接板
 
