@@ -1,7 +1,7 @@
 # 交付：cc/bajie-events7b
 
 - 车道／工作者：A 内容·事件／八戒（cc，派单第二批 X 二期：3 普查销号、4 黑作坊空绿）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,7 +35,7 @@
 ## 验证
 
 - 专项：`xiyou_script_census`（31 项）、`xiyou_script_gaps`、`xiyou_event_compare` 本机通过（`--skip-generated-check`）；`事件空绿扫描.py --check` 139 例均在基线内；`语法检查.py`、`工具回归.py` 通过。
-- 选测：待写
+- 选测：走 `云端选测.py`：提交 66026f3ae3 404 个场景 13 片全部通过（运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42017146048）。合 main（带难度探针改动）后在工作树重跑了补齐＋`同步正式西游.py --accept-additions`（只新增）。没跑全量 `检查.sh`（车道规则）。
 
 ## 待交叉核查
 
@@ -49,3 +49,5 @@
 - 51785f7d WIP 黑作坊计时门预设 27 条，空绿扫描按同图同页算补上
 - 7b1fa063 空绿基线 1099→139；script_gaps 对照；跳过基线删 HWGOE 三条
 - 5c606cb9 合并 main
+- 66026f3a 交付单（进行中）
+- （本提交）交付单可合并
