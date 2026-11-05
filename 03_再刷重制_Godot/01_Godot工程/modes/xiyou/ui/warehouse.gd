@@ -327,3 +327,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
 		get_viewport().set_input_as_handled()
 		_move(1 if event.is_action_pressed("ui_right", true) else -1, 0, not event.is_echo())
+	elif mode == "list" and XMenu.page_dir(event) != 0:
+		# 两列列表不接管 pageup／pagedown：走通用翻页（页项数＝行数×2）
+		get_viewport().set_input_as_handled()
+		if not data.is_empty():
+			var r := XMenu.page(top, index, data.size(), ROWS, XMenu.page_dir(event), 2)
+			top = r[0]
+			if r[1] != index:
+				XSound.system(0)
+				_select(r[1])
+			else:
+				_refresh()
