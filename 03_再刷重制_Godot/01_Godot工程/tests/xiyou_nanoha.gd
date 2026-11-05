@@ -111,6 +111,7 @@ func _run() -> void:
 			check(c.id + ".before", _same(before, o.before), [before, o.before])
 			check(c.id + ".after", _same(after, o.after), [after, o.after])
 	_field()
+	_domain_live()
 	_cast()
 	_manual()
 	# 本地断言：追击等 execute 之外的 apply 不记（目标表在 execute 结束时关闭）
@@ -142,7 +143,9 @@ func _field() -> void:
 	rand.rule = FixedMidStream.new()
 	rand.rule.domain = "rule"
 	var logic := XBattleLogic.new()
+	XNanoha.DOMAIN_LIVE = false  # 对原版参照：领域不补跑
 	logic.setup(2, s, rand)
+	XNanoha.DOMAIN_LIVE = true
 	var n := s.actor(108)
 	var taken := func() -> Array:
 		var id := XBattleCommonEvent.reserved(logic)
@@ -159,6 +162,45 @@ func _field() -> void:
 	check("field.mate.attack", taken.call() == ints.call(o[2].reserved), o[2])
 	logic.end_turn()
 	check("field.endTurn", taken.call() == ints.call(o[3].reserved), o[3])
+
+
+## O-待定 魔法领域做活：开战补跑领域开战块，1320 先跑、2478 排在其后；跑完事件后全队（含队友）带领域加成
+## （1782／1784 照 CE2478 原样，1783 只给奈叶），变量 1121 起按奈叶等级算；DOMAIN_LIVE 关掉时同原版，只有 1320
+func _domain_live() -> void:
+	var atk := {}
+	for live in [true, false]:
+		var s := _new_state()
+		s.switches[2494] = true
+		s.party.clear()
+		s.battle_slots.clear()
+		for id in [1, 108]:
+			s.actor(id).change_level_mv(10)
+			s.add_actor(id)
+		var rand := XBattleRandom.create("0000000000000108")
+		rand.rule = FixedMidStream.new()
+		rand.rule.domain = "rule"
+		var logic := XBattleLogic.new()
+		XNanoha.DOMAIN_LIVE = live
+		logic.setup(2, s, rand)
+		XNanoha.DOMAIN_LIVE = true
+		var tag := "domain.%s" % ("live" if live else "off")
+		check(tag + ".has1774", s.actor(108).state_ids.has(XNanoha.DOMAIN_STATE), s.actor(108).state_ids)
+		check(tag + ".first1320", XBattleCommonEvent.reserved(logic) == XBattleCommonEvent.START_EVENT, XBattleCommonEvent.reserved(logic))
+		logic.troop_events()
+		# CE2478 照原版：先全队去掉 1792～1799，再加 1792／1793／1794／1782／1784／1799／1798（全队）与 1783（只奈叶）
+		var buffs := [1782, 1783, 1784, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799]
+		for id in [1, 108]:
+			var a := s.actor(id)
+			var have: Array = buffs.filter(func(x): return a.state_ids.has(x))
+			var want: Array = ([1782, 1784, 1792, 1793, 1794, 1798, 1799] + ([1783] if id == 108 else [])) if live else []
+			want.sort()
+			check(tag + ".buffs.%d" % id, have == want, [have, want])
+		check(tag + ".var1121", (int(s.variables.get(1121, 0)) > 0) == live, s.variables.get(1121))
+		check(tag + ".drained", XBattleCommonEvent.reserved(logic) == 0, XBattleCommonEvent.reserved(logic))
+		s.actor(1).param_mark_dirty()
+		atk[live] = [s.actor(1).atk, s.actor(1).mhp]
+	# 队友的物攻／血量真被加上（G_ShuXing 按层数×1%，层数＝变量 1123／1120 起）
+	check("domain.mate_stronger", float(atk[true][0]) > float(atk[false][0]) and float(atk[true][1]) > float(atk[false][1]), atk)
 
 
 ## nanoha3_oracle cast.*：奈叶单人、敌群 2、最大 MP 加 mmp、当前 MP 设 mp 后放大招；比实扣 MP（⌊mp×比例⌋×mcr）、付费后 _costmp（⌊付前 MP×比例/2000⌋）、

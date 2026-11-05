@@ -223,6 +223,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
+	XNanoha.domain_queue(self)  # 奈叶魔法领域做活（O-待定）：领域预约的 2478 排在 1320 之后
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -276,6 +277,7 @@ func _start_battle_effects() -> void:
 			XStateEffects.run("battle", b, _battle_resources.state_context(b))
 	_take_state_reserves()
 	_battle_start_states()
+	XNanoha.domain_start(self, _battle_resources)  # 奈叶魔法领域做活（O-待定）：被动加的领域补跑开战块
 	var snapshots := {}
 	for b in state.members() + enemies:
 		snapshots[stable_id(b)] = _battle_resources.snapshot(b).duplicate(true)
