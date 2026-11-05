@@ -9,7 +9,7 @@
 #             选中的场景按工程指纹沿用上次通过结果（并行测试.py --reuse；--full 不沿用）
 #             rules／smart_ai 每 4 段抽 1 段（选测.py 抽样，XIYOU_SAMPLE=0 关）；车道交付测过、差异没波及的场景沿用车道结果
 #             （沿用车道.py，XIYOU_REUSE_LANE=0 关；tools43）
-#   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测已提交的 HEAD、
+#   --cloud   只和 --affected 用：选中的 Godot 场景改在 GitHub Actions 云端跑（云端选测.py run＋wait，只测提交（工作区未提交改动自动做成临时快照提交，BK）、
 #             基准是 GitHub 上的 main；文档、守卫、工具回归等非 Godot 检查照旧在本机跑）。云端不可用（推送失败、超时）直接判失败并提示
 #             去掉 --cloud 改本机跑，不静默降级。例外（tools29）：GitHub 根本没启动任务——账单问题（付款失败、花费上限）或本月额度用完——
 #             时明说原因（不是代码问题），自动改用本机跑同一批场景（CHECK_JOBS 默认 3）；CHECK_CLOUD_FALLBACK=0 回到判失败。
@@ -148,9 +148,24 @@ if (( ! SEL_FULL && ${#SEL_SCENES} == 0 )); then
   print "  （选测：没有要跑的 Godot 场景，跳过导入与测试）"
 elif (( CLOUD )); then
   # 云端选测：推 HEAD 到 ci/<分支> 触发 GitHub Actions，等结果（汇总里有失败场景）；只测已提交的 HEAD
-  print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的 HEAD）"
+  print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）"
   cloud_head=$(git -C "$ROOT" rev-parse HEAD)
   cloud_run=(python3 "$CLOUD_SCRIPT" run); (( ${CHECK_CLOUD_NO_UPLOAD:-0} )) && cloud_run+=(--no-upload)
+  # 工作区有未提交的手改（合并收尾的 --also、版本号等）：云端只认提交，所以把工作区做成临时快照提交（父为 HEAD，不动分支、不动索引），
+  # 推到 ci/<分支> 测它，wait 读它的结果；通过后收尾提交的内容与它一致（BK，总装二十五手工做过）
+  snap_idx=$(mktemp "${TMPDIR:-/tmp}/xiyou_snap_idx.XXXXXX")
+  cp "$(git -C "$ROOT" rev-parse --path-format=absolute --git-path index)" "$snap_idx" 2>/dev/null
+  snap_tree=$(cd "$ROOT" && GIT_INDEX_FILE=$snap_idx git add -A >/dev/null 2>&1 && GIT_INDEX_FILE=$snap_idx git write-tree 2>/dev/null)
+  rm -f "$snap_idx"
+  if [[ -n $snap_tree && $snap_tree != $(git -C "$ROOT" rev-parse 'HEAD^{tree}') ]]; then
+    snap_head=$(cd "$ROOT" && GIT_AUTHOR_NAME=ci-snapshot GIT_AUTHOR_EMAIL=ci@localhost GIT_COMMITTER_NAME=ci-snapshot GIT_COMMITTER_EMAIL=ci@localhost \
+      git commit-tree "$snap_tree" -p HEAD -m "ci snapshot of uncommitted changes")
+    if [[ -n $snap_head ]]; then
+      print "  （--cloud：工作区有未提交改动，做成临时快照提交 $snap_head[1,9] 推到云端测，不进 main）"
+      cloud_head=$snap_head
+      cloud_run+=(--commit "$snap_head")
+    fi
+  fi
   (( ${#REUSE_SKIP} )) && cloud_run+=(--skip "${REUSE_SKIP[*]}")
   if ! "${cloud_run[@]}"; then
     bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"

@@ -1307,13 +1307,34 @@ class CheckerTests(Fixture):
         self.assertNotIn('并行测试.py', self.names(ran))
         self.assertIn('guard_check.cjs', self.names(ran))                   # 非 Godot 检查仍在本机
         cloud = [l for l in ran if l.startswith('cloud')]
-        self.assertEqual(cloud[0], 'cloud run --no-upload')
-        self.assertRegex(cloud[1], r'^cloud wait [0-9a-f]{40} --mode affected --timeout 2700$')
+        # 夹具里 cloud_check 写了未提交的 shop.gd：做成临时快照提交推云端，wait 读它的结果（BK）
+        self.assertRegex(cloud[0], r'^cloud run --no-upload --commit [0-9a-f]{40}$')
+        snap = cloud[0].split()[-1]
+        self.assertNotEqual(snap, self.g('rev-parse', 'HEAD'))
+        self.assertEqual(self.g('rev-parse', snap + '^'), self.g('rev-parse', 'HEAD'))   # 父是 HEAD，分支不动
+        self.assertEqual(self.g('show', snap + ':' + str(UI / 'shop.gd')), 'class_name XShopScene\n# cloud')
+        self.assertEqual(cloud[1], 'cloud wait %s --mode affected --timeout 2700' % snap)
+        self.assertTrue(self.g('status', '--porcelain', '--untracked-files=no').startswith('M'))   # 工作区原样：不暂存、不提交
 
     def test_cloud_uploads_unless_told_not_to(self):
         rc, out, ran = self.cloud_check()
         self.assertEqual(rc, 0, out)
-        self.assertEqual([l for l in ran if l.startswith('cloud run')], ['cloud run'])
+        self.assertRegex([l for l in ran if l.startswith('cloud run')][0], r'^cloud run --commit [0-9a-f]{40}$')
+
+    def test_cloud_clean_tree_tests_head_itself(self):
+        # 工作区干净（没有手改）时不做快照，行为和以前一样：测 HEAD
+        self.put(UI / 'shop.gd', 'class_name XShopScene\n# cloud\n')
+        self.commit('shop')
+        stub = self.root / 'cloud_stub.py'
+        stub.write_text('import sys\nopen(%r, "a").write("cloud " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls))
+        with open(self.root / '.git/info/exclude', 'a') as f:                # 桩文件不算改动
+            f.write('cloud_stub.py\ncalls\n')
+        self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(stub))
+        rc, out, ran = self.check('--affected', self.base, '--cloud')
+        self.assertEqual(rc, 0, out)
+        cloud = [l for l in ran if l.startswith('cloud')]
+        self.assertEqual(cloud[0], 'cloud run')
+        self.assertEqual(cloud[1].split()[2], self.g('rev-parse', 'HEAD'))
 
     def test_cloud_failure_lists_failure(self):
         rc, out, _ = self.cloud_check(wait_rc=1)
@@ -1465,7 +1486,7 @@ class CheckerTests(Fixture):
         rc, out, ran = self.cloud_check(no_upload=True)
         self.assertIn('沿用车道.py', self.names(ran))
         self.assertEqual(rc, 0, out)
-        self.assertEqual([l for l in ran if l.startswith('cloud run')], ['cloud run --no-upload --skip xiyou_shop.tscn'])
+        self.assertRegex([l for l in ran if l.startswith('cloud run')][0], r'^cloud run --no-upload --commit [0-9a-f]{40} --skip xiyou_shop\.tscn$')
 
     def test_static_failure_stops_before_godot(self):
         # 文档与登记检查失败：默认在 Godot 测试前就退出；--keep-going 照旧全跑
