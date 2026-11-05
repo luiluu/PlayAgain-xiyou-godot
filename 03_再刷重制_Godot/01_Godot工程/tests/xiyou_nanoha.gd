@@ -206,7 +206,7 @@ func _domain_live() -> void:
 	_domain_all_matk()
 
 
-## O-待定 魔法领域魔攻全队（XDeadContent.DOMAIN_ALL_MATK）：CE2478 的 1783 改给全队，队友也带魔攻加成
+## O-185 魔法领域魔攻全队（XDeadContent.DOMAIN_ALL_MATK）：CE2478 的 1783 改给全队，队友也带魔攻加成
 func _domain_all_matk() -> void:
 	XDeadContent.DOMAIN_ALL_MATK = true
 	XDeadContent.clear_cache()

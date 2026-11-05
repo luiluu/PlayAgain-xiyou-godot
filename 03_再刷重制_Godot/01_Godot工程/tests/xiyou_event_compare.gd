@@ -222,7 +222,7 @@ func _run() -> void:
 	XDungeon.restore_difficulty = false
 	XDungeon.restore_hang_up = false
 	XDungeon.battle_end_counts = false
-	# 死内容做活的数据补丁（一护卍解 Map213、CE2508、CE2478 魔攻；O-待定）：对照原版语义，关掉；补丁本身由 xiyou_floor_odds、xiyou_nanoha 核
+	# 死内容做活的数据补丁（一护卍解 Map213、CE2508、CE2478 魔攻；O-184／O-185）：对照原版语义，关掉；补丁本身由 xiyou_floor_odds、xiyou_nanoha 核
 	XDeadContent.ICHIGO_BANKAI = false
 	XDeadContent.DOMAIN_ALL_MATK = false
 	XDeadContent.clear_cache()
