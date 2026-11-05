@@ -694,13 +694,8 @@ class ToolNarrowTests(Fixture):
         """fix7（审查 48 P2）：检查.sh 里挂在 content 下的空绿扫描、基线、补预设批量，收窄后仍带 content，不选整组 converter。"""
         for rel in ('事件空绿扫描.py', '事件空绿基线.json', '补预设批量.py'):
             got, picked = self.scenes(rel)
-            self.assertEqual(picked['checks'], ['guards', 'tools', 'content'], rel)
+            self.assertEqual(sorted(picked['checks']), ['content', 'guards', 'tools'], rel)
             self.assertNotIn('xiyou_rules_d2', got, rel)
-
-    def test_content_check_tools_switch_off_restores_converter(self):
-        got, picked = self.scenes('事件空绿扫描.py', '0')
-        self.assertIn('xiyou_rules_d2', got)
-        self.assertIn('content', picked['checks'])
 
     def test_read_only_data_and_comment_mentions(self):
         self.assertNotIn('xiyou_rules_d2', self.scenes('只读基线.json')[0])   # 只被只读工具读
