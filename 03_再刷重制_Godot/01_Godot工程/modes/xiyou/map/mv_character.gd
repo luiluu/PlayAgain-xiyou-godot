@@ -52,6 +52,12 @@ var _anim_hidden := false     # 动画 flashScope 3 隐藏目标（Sprite_Charac
 
 
 func set_image(name: String, index: int) -> void:
+	pose_original = name  # MOG_CharPoses setImage → setRealCharName：记原名（跑步保持帧数不清）
+	_set_image(name, index)
+
+
+## 换姿势图（不改记下的原名）
+func _set_image(name: String, index: int) -> void:
 	character_name = name
 	character_index = index
 	tile_id = 0
@@ -140,6 +146,40 @@ func step_by(off: Vector2i) -> void:
 
 func _physics_process(_delta: float) -> void:
 	update_character()
+	_update_pose()
+
+
+# ---- MOG_CharPoses 姿势（只有玩家与队伍跟随；正式参数只开了奔跑、跳跃，名单只有「角色奔跑-3」＝CXK-lan-qiu）----
+## setRealCharName 记下的原名；pose_dash 是 _poses.dash[1]（跑步姿势的保持帧数，跑着时每帧回到 3）
+var pose_original := ""
+var pose_dash := 0
+
+## 插件参数「角色奔跑-N」（N＝getActorId）；空＝照原图
+static func run_pose(actor_id: int) -> String:
+	return str(XDB.plugin("MOG_CharPoses").get("角色奔跑-%d" % actor_id, "")) if actor_id > 0 else ""
+
+## 玩家、跟随覆写；事件（getActorId 0、奔跑姿势关）不做
+func _update_pose() -> void:
+	pass
+
+## Game_CharacterBase.updateSetPose 的奔跑一支（跳跃名单为空＝原图，站立姿势关）：保持帧数没走完就不换；
+## 否则正在跑步姿势＝「角色奔跑-N」（没配就是原图）并把保持帧数设回 3，不然回原图
+func _apply_dash_pose(dashing: bool, actor_id: int) -> void:
+	if pose_original == "" or tile_id > 0:
+		return
+	if pose_dash > 0:
+		if dashing:
+			pose_dash = 3
+		pose_dash -= 1
+		return
+	var name := pose_original
+	if dashing:
+		pose_dash = 3
+		var run := run_pose(actor_id)
+		if run != "":
+			name = run
+	if name != character_name:
+		_set_image(name, character_index)
 
 func update_character() -> void:
 	if not is_moving() and not is_jumping() and _route_forcing:
