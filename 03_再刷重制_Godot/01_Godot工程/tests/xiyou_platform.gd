@@ -85,7 +85,7 @@ func _run() -> void:
 	platform.go_back()
 	await frames(3)
 	check("back_is_cancel", rec.cancels > before, [before, rec.cancels])
-	# 顶层按返回（O-待定）：第一次提示、两秒内再按退出；发行包跳过入口菜单时西游标题页也是顶层
+	# 顶层按返回（O-202）：第一次提示、两秒内再按退出；发行包跳过入口菜单时西游标题页也是顶层
 	platform.quit_on_back = false
 	var quits := [0]
 	platform.quit_requested.connect(func(): quits[0] += 1)

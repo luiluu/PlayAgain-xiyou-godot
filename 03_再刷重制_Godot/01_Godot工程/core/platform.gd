@@ -4,7 +4,7 @@ extends Node
 ## GameApp 建一个挂在自己下面；别的文件要按平台分支时问这里，不直接 OS.has_feature。
 ## - 两指点按＝取消：照 MV TouchInput（第二指按下即 _onCancel，与鼠标右键同一路），这里转成一次右键点击；
 ##   第一指照 Godot 的触屏转鼠标（emulate_mouse_from_touch）当左键，第二指本身不再往下传，免得地图把它当成走路目标。
-## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；顶层（入口菜单、发行包的西游标题页）两秒内按两次退出（O-待定）。
+## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；顶层（入口菜单、发行包的西游标题页）两秒内按两次退出（O-202）。
 ## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-201，BACKGROUND_IDLE）。
 ## - 挂机中手机不锁屏（原版要了 WAKE_LOCK）。
 
@@ -95,7 +95,7 @@ func _notification(what: int) -> void:
 			on_resumed()
 
 
-## O-待定：顶层（入口菜单；发行包跳过入口菜单时的西游标题页）按返回键，第一次提示「再按一次返回键退出」，
+## O-202：顶层（入口菜单；发行包跳过入口菜单时的西游标题页）按返回键，第一次提示「再按一次返回键退出」，
 ## 两秒内再按就退出。原版 MainActivity.onBackPressed 只执行 AndroidPort.back()（发 Esc），MV 标题不响应 Esc，
 ## 所以在标题上按返回没反应、也不退出（cc 2026-11-05 dexdump 看过）。false＝回到原版：顶层也只当取消键。
 static var BACK_EXIT_ON_TOP := true
