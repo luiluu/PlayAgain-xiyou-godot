@@ -32,6 +32,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 GEN = HERE.parent / '01_Godot工程/modes/xiyou/generated'
 BASELINE = HERE / '事件空绿基线.json'
+# accept5：逐个核过、事件对照（新开局＋预设）走不到效果的空绿，写明理由（id → 理由）；--check 报还没核的与已不再空绿的
+UNREACH = HERE / '事件空绿走不到.json'
 PRESETS = HERE / 'event_presets.json'
 
 # 效果指令：改状态或改世界（对照的 delta／trace 能看见的那类）
@@ -282,6 +284,12 @@ def main():
             print('✗ 新增空绿 %d 例（基线外）：%s' % (len(new), ', '.join(new[:20])))
             return 1
         print('空绿 %d 例，均在基线内' % len(cur))
+        why = json.load(open(UNREACH))['cases'] if UNREACH.exists() else {}
+        todo = sorted(set(cur) - set(why))
+        stale = sorted(set(why) - set(cur))
+        print('其中写明走不到理由的 %d 例，还没核的 %d 例%s' % (len(set(cur) & set(why)), len(todo), '：' + ', '.join(todo[:20]) if todo else ''))
+        if stale:
+            print('提示：走不到清单里 %d 例已不再空绿，可从 %s 删掉：%s' % (len(stale), UNREACH.name, ', '.join(stale[:20])))
     return 0
 
 

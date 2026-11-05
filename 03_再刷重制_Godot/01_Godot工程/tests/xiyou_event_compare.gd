@@ -6,7 +6,8 @@ extends Node
 ## - 不比较：移动路线、动画、气泡、画面效果、音频（替身不执行）；参照引擎本身出错或没跑完的用例只列出。
 ## - 已知不一致登记在 tests/event_compare_baseline.json（用例 → 不一致的项目）：新出现的不一致用例或项目（退步）使测试失败；
 ##   登记里的用例变一致时提示更新登记（--update-baseline）。
-## 参数（-- 之后）：--out=<目录> 写对照报告；--update-baseline 用本次结果重写登记；--only=<前缀,…> 只跑部分用例。
+## 参数（-- 之后）：--out=<目录> 写对照报告；--update-baseline 用本次结果重写登记；--only=<前缀,…> 只跑部分用例；
+## --coverage=<文件> 另记每例实际执行到的指令（「位置:下标」，位置＝mMeEpP 或 ceN），写成 JSON，给 03_转换工具/事件写法覆盖.py 统计哪些写法有原版对照（eventsreg1）。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const ORACLE_STATES := "res://modes/xiyou/generated/oracle/event_states.json"
@@ -25,6 +26,24 @@ var _saved_floor12 := true
 var out_dir := ""
 var update_baseline := false
 var only: Array = []
+var coverage_out := ""
+var coverage := {}
+
+
+## 记执行到的指令（只在 --coverage 时用）：根游标记用例的页（去掉 #变体），公共事件子游标记 ceN，别的子游标不记
+class CoverInterp:
+	extends MVInterpreter
+	var cover: Dictionary
+	var cover_label := ""
+	func _make_child(commands: Array) -> MVEventCore:
+		var sub := CoverInterp.new(host, map_id, event_id, commands)
+		sub.cover = cover
+		return sub
+	func _execute(c: Dictionary):
+		var where := cover_label if _depth == 0 else ("ce%d" % common_id if common_id > 0 else "")
+		if where != "":
+			cover["%s:%d" % [where, index]] = true
+		return super._execute(c)
 
 
 class FakePlayer:
@@ -84,9 +103,12 @@ class EventHost:
 		if d > 0:
 			s.direction = d
 
+	## 预设 battleResult（accept5）：战斗结果 0 胜、1 逃、2 败，同参照 event_state_probe 的战斗回调
+	var preset_battle_result := 0
+
 	func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 		trace.append({"t": "battle", "troop": troop_id, "escape": can_escape, "lose": can_lose})
-		return 0
+		return preset_battle_result
 
 	func open_shop(goods: Array, _purchase_only: bool) -> void:
 		trace.append({"t": "shop", "goods": goods.map(func(g): return [int(g[0]), int(g[1])])})
@@ -204,6 +226,8 @@ func _ready() -> void:
 			update_baseline = true
 		elif arg.begins_with("--only="):
 			only = Array(arg.substr(7).split(",", false))
+		elif arg.begins_with("--coverage="):
+			coverage_out = arg.substr(11)
 	_run.call_deferred()
 
 
@@ -342,6 +366,12 @@ func _run() -> void:
 		fs.close()
 	if out_dir != "":
 		_write_report(report, oracle_errors)
+	if coverage_out != "":
+		var fc := FileAccess.open(coverage_out, FileAccess.WRITE)
+		var keys := coverage.keys()
+		keys.sort()
+		fc.store_string(JSON.stringify({"note": "xiyou_event_compare --coverage：对照里实际执行到的指令（位置:下标）", "executed": keys}))
+		fc.close()
 	check("no_new_skipped", new_skips.is_empty() or update_baseline, new_skips.slice(0, 20))
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
@@ -399,6 +429,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 				XWarehouse.create(s, str(cmd.parameters[0]).substr(len("PHWarehouse show ")))
 			break
 	_apply_preset(s, c.get("preset", {}))
+	host.preset_battle_result = int(c.get("preset", {}).get("battleResult", 0))
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var watch := _watch_actors(list)
@@ -411,7 +442,14 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	MVInterpreter._sequence_at = 0
 	MVInterpreter.steps = 0
 	MVInterpreter.aborted = false
-	var interp := MVInterpreter.new(host, int(c.map), int(c.event), list)
+	var interp: MVInterpreter
+	if coverage_out != "":
+		var ci := CoverInterp.new(host, int(c.map), int(c.event), list)
+		ci.cover = coverage
+		ci.cover_label = str(c.id).get_slice("#", 0)
+		interp = ci
+	else:
+		interp = MVInterpreter.new(host, int(c.map), int(c.event), list)
 	host.start_frames(s)
 	await interp.run()
 	var skipped := {}
@@ -457,6 +495,8 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		dead_actor.refresh_resources()  # 同 MV setHp(0)：refresh 挂死亡状态
 	for k in p.get("selfSwitches", {}):
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
+	if p.has("playerDirection"):
+		s.direction = int(p.playerDirection)  # accept5：同参照 $gamePlayer.setDirection
 
 
 # ---- 状态快照与变化（与 event_probe.cjs 的 snap/delta 同一结构） ----

@@ -97,7 +97,9 @@ def scan_list(lst, N):
     calls = []
     wrote_v, wrote_s = set(), set()  # 本表前面改过的变量／开关（条件分歧读它们时预设无效）
     known_v = {}  # 本表前面代入了常量的变量
-    rand_v = {}  # 本表前面代入了随机数（122 操作数「随机」）的变量 -> (下限, 上限)：可用固定随机数解（accept4）
+    rand_v = {}  # 本表前面代入了随机数（122 操作数「随机」）的变量 -> (下限, 上限, 第几次随机)：可用固定随机数解（accept4）
+    n_rand = 0  # 本表按出现顺序的第几条随机代入（accept5：按抽取顺序给每次随机各一个值）
+    draws = []  # 每条随机代入：变量、范围、序号、所在的条件链（accept5：判断这一次随机实际执不执行）
     for cmd in lst:
         code, ind, p = cmd['code'], cmd['indent'], cmd['parameters']
         while stack and stack[-1][0] >= ind:
@@ -131,7 +133,9 @@ def scan_list(lst, N):
                 elif p[2] == 0 and p[3] == 2 and v not in rand_v:
                     known_v.pop(v, None)
                     wrote_v.discard(v)
-                    rand_v[v] = (p[4], p[5])
+                    rand_v[v] = (p[4], p[5], n_rand)
+                    draws.append({'v': v, 'lo': p[4], 'hi': p[5], 'n': n_rand, 'raw': [r for _, _t, r in stack]})
+                    n_rand += 1
                 else:
                     known_v.pop(v, None)
                     rand_v.pop(v, None)
@@ -140,7 +144,7 @@ def scan_list(lst, N):
             wrote_s.update(range(p[0], p[1] + 1))
         elif code == 201:
             conds = [t for _, t, _r in stack]
-            raw = [r for _, _t, r in stack]
+            raw = [r for _, _t, r in stack] + ([{'k': 'draws', 'list': list(draws)}] if draws else [])
             if p[0] == 0:
                 out.append((p[1], p[2], p[3], conds, '移动', raw))
             else:
@@ -190,6 +194,8 @@ def solve_reason(r):
     if c.get('actorValid'):
         rec['actors'].append(c['actorId'])
     for b in r['raw']:
+        if b['k'] == 'draws':
+            continue
         if b['k'] == 'choice':
             if b['i'] < 0:
                 return None, '在「取消」分支里（自动应答不按取消）'
@@ -213,7 +219,7 @@ def solve_reason(r):
             op = INV[p[4]] if neg else p[4]
             k = p[3]
             if b.get('rand'):
-                rand.append((b['rand'][0], b['rand'][1], op, k))
+                rand.append((b['rand'][0], b['rand'][1], op, k, b['rand'][2] if len(b['rand']) > 2 else 0))
                 continue
             want = {0: k, 1: k, 2: k, 3: k + 1, 4: k - 1, 5: k + 1}[op]
             cur = rec['vars'].get(str(p[1]))
@@ -248,14 +254,58 @@ def solve_reason(r):
             return None, {4: '角色条件（技能／装备／状态等）', 6: '角色朝向', 11: '按键', 12: '脚本条件', 9: '持有武器', 10: '持有防具',
                           3: '计时器', 5: '敌人条件', 13: '乘坐交通工具'}.get(t, '分歧类型 %d' % t) + '，工具不解'
     if rand:
-        cands = sorted({(v - lo + 0.5) / (hi - lo + 1) for lo, hi, _o, _k in rand for v in range(lo, hi + 1)} if
-                       all(hi - lo < 1000 for lo, hi, _o, _k in rand) else set())
+        cands = sorted({(v - lo + 0.5) / (hi - lo + 1) for lo, hi, _o, _k, _n in rand for v in range(lo, hi + 1)} if
+                       all(hi - lo < 1000 for lo, hi, _o, _k, _n in rand) else set())
         for x in cands:
-            if all(_cmp(lo + int((hi - lo + 1) * x), op, k) for lo, hi, op, k in rand):
+            if all(_cmp(lo + int((hi - lo + 1) * x), op, k) for lo, hi, op, k, _n in rand):
                 rec['random'] = round(x, 6)
                 break
         else:
-            return None, '随机分支在同一个固定随机数下互相矛盾'
+            # accept5：同一固定值走不到（「遇到深渊」与「深渊难度」两次随机要取不同值）：按实际执行的随机代入顺序
+            # 给每一次单独一个值（测试设 MVInterpreter.random_sequence，事件里按抽取顺序取）。所在条件链在开局状态下
+            # 不成立的那次（如 V156≥97 里的 V217 随机）不执行、不占序号；没约束的那次取 0.5
+            draws = next((b['list'] for b in r['raw'] if b['k'] == 'draws'), [])
+            row_choices = [b for b in r['raw'] if b['k'] == 'choice']
+            val = {}
+
+            def holds(b):
+                if b['k'] == 'choice':
+                    return b in row_choices
+                bp, ng = b.get('p'), b.get('neg')
+                if bp is None:
+                    return True
+                t = bp[0]
+                if t == 0:
+                    ok = rec['switches'].get(str(bp[1]), False) == (bp[2] == 0)
+                elif t == 1 and bp[2] == 0:
+                    cur = val.get(bp[1], rec['vars'].get(str(bp[1]), 0))
+                    ok = _cmp(cur, bp[4], bp[3])
+                elif t == 8:
+                    ok = rec['items'].get(str(bp[1]), 0) > 0
+                elif t == 2:
+                    ok = rec['self'].get(bp[1], False) == (bp[2] == 0)
+                elif t == 99:
+                    ok = bool(bp[1])
+                else:
+                    return True
+                return ok != bool(ng)
+
+            seq = []
+            for d in draws:
+                if not all(holds(b) for b in d['raw']):
+                    continue
+                cs = [x for x in rand if x[4] == d['n']]
+                lo, hi = d['lo'], d['hi']
+                if cs:
+                    ok = [v for v in range(lo, hi + 1) if all(_cmp(v, op, k) for _l, _h, op, k, _n in cs)] if hi - lo < 1000 else []
+                    if not ok:
+                        return None, '同一次随机的分支条件互相矛盾'
+                v = ok[0] if cs else lo + int((hi - lo + 1) * 0.5)
+                val[d['v']] = v
+                seq.append(0.5 if not cs else round((v - lo + 0.5) / (hi - lo + 1), 6))
+            if not seq or any(not any(d['n'] == x[4] and all(holds(b) for b in d['raw']) for d in draws) for x in rand):
+                return None, '分支要的随机代入按开局状态不执行'
+            rec['random_seq'] = seq
     return rec, None
 
 

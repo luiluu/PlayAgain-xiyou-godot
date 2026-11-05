@@ -2,6 +2,7 @@ class_name XGameEndPanel
 extends Control
 ## MV Scene_GameEnd：背景不透明度 128（底图变暗），指令窗 (520,310,240,100) 左对齐「回到标题 / 取消」。
 ## 参照截图 04_验证/本地结果/原版参照/14_game_end.png。
+## 系统音（ui14，原来无声）：Window_Command 换行光标音、确定音、取消音（右键同取消）。
 
 signal closed
 signal to_title
@@ -32,6 +33,7 @@ func _paint(c: XMVCanvas) -> void:
 
 
 func _choose() -> void:
+	XSound.system(1)
 	if _index == 0:
 		to_title.emit()
 	else:
@@ -41,6 +43,7 @@ func _choose() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
+			XSound.system(2)
 			closed.emit()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			var p: Vector2 = event.position - RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
@@ -50,12 +53,14 @@ func _gui_input(event: InputEvent) -> void:
 					_choose()
 				else:
 					_index = i
+					XSound.system(0)
 					_win.refresh()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
+		XSound.system(2)
 		closed.emit()
 	elif event.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
@@ -63,4 +68,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_down") or event.is_action_pressed("ui_up"):
 		get_viewport().set_input_as_handled()
 		_index = 1 - _index
+		XSound.system(0)
 		_win.refresh()

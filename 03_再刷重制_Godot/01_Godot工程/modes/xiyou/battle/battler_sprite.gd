@@ -181,6 +181,18 @@ func raven_motion(m: String) -> String:
 		return str(RAVEN_MOTIONS.get(m, m))
 	return m
 
+## installNativeRavenMonsterVisual 的 Sprite_Actor.update 包装（最外层）：渡鸦 167 神话形态阵亡时主图透明度 0.35，其余时候 1。
+## 它想换的静态大图 Raven_Mythic_Monster 实机被 Mx_SuperSV 多帧盖掉、从不出现（sprite_real 量具 raven_myth：最终画的是
+## UserSV_RavenMythic 逐帧图、缩放 0.4615、藏武器和影子），只剩这条透明度留了下来。
+## O-198（交付单「优化登记草稿」渡鸦神话阵亡半透明）：RAVEN_MYTH_DEAD_ALPHA = false 回到移植前（阵亡也不透明）。
+static var RAVEN_MYTH_DEAD_ALPHA := true
+
+func _raven_myth_alpha() -> void:
+	if not RAVEN_MYTH_DEAD_ALPHA or not battler is XActor or int(battler.actor_id) != XRaven.ACTOR:
+		return
+	var dead: bool = view.dead if not view.is_empty() else battler.is_dead()
+	sprite.modulate.a = 0.35 if dead and _look_key.contains("|form:RavenMythic") else 1.0
+
 func set_motion(m: String) -> void:
 	if m == "walk" and _guyu_planted():
 		m = "wait"
@@ -291,6 +303,7 @@ func _process(delta: float) -> void:
 		if f != _float_px:
 			_float_px = f
 			_place_body()
+	_raven_myth_alpha()
 	if breathing and not (view.dead if not view.is_empty() else battler.is_dead()):
 		_breath_t += delta * 60.0 / breath_speed  # 每帧相位 +1/Breathing Speed
 		sprite.scale.y = body_scale * (1.0 + cos(_breath_t) * breath_ry)

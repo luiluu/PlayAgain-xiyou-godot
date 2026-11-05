@@ -94,16 +94,20 @@ function applyPreset(p) {
   for (const [id, n] of Object.entries(p.defeats || {})) for (let i = 0; i < n; i++) w.$gameSystem.incrementDefeatNumber(Number(id));
   // 审查 42：先倒下的角色（setHp(0) 带死亡状态 1），看事件脚本 addState 对死者的处理
   for (const id of p.dead || []) w.$gameActors.actor(Number(id)).setHp(0);
+  // accept5：玩家朝向（条件分歧 6 [-1, 方向]：传送门、机关多要玩家面朝某方向）
+  if (p.playerDirection) w.$gamePlayer.setDirection(p.playerDirection);
   for (const [k, v] of Object.entries(p.selfSwitches || {})) { const [m, e, ch] = k.split(','); w.$gameSelfSwitches.setValue([Number(m), Number(e), ch], !!v); }
 }
 w.prompt = (msg, def) => { rec({t: 'prompt', text: String(msg || '')}); return PROMPT_TEXT; };
 if (w.$) w.$.toaster = o => rec({t: 'toast', text: String(o && (o.message || o.title) || '')});
 const realPush = w.SceneManager.push, realGoto = w.SceneManager.goto;
+// accept5：预设 battleResult（0 胜、1 逃、2 败）＝战斗回调给的结果；不写默认胜利（旧例逐字节不变）。看「输了」分支（301 can_lose 的 602／603）
+let battleResult = 0;
 function sceneCall(cls) {
   const name = cls && cls.name || String(cls);
   if (cls === w.Scene_Battle) {
     rec({t: 'battle', troop: w.$gameTroop._troopId, escape: !!w.BattleManager._canEscape, lose: !!w.BattleManager._canLose});
-    if (w.BattleManager._eventCallback) w.BattleManager._eventCallback(0);
+    if (w.BattleManager._eventCallback) w.BattleManager._eventCallback(battleResult);
   } else if (cls === w.Scene_Shop) {
     rec({t: 'shop', goods: []});      // 商品由随后的 prepareNextScene 填入（command302 先 push 后 prepare）
   } else {
@@ -243,6 +247,7 @@ function runCase(c) {
   w.$gamePlayer.refresh();
   w.SceneManager._scene = sceneStub;
   trace = []; choiceSeen = {};
+  battleResult = (c.preset && c.preset.battleResult) || 0;
   applyPreset(c.preset);
   const list = c.kind === 'common' ? w.$dataCommonEvents[c.common].list : w.$dataMap.events[c.event].pages[c.page].list;
   const watch = watchActors(list);

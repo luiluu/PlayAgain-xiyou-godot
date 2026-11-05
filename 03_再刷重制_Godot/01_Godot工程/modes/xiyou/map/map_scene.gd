@@ -955,7 +955,7 @@ func _update_shake() -> void:
 			k.dir = 1
 		k.duration -= 1
 	if camera:
-		camera.offset.x = roundf(k.value)
+		camera.offset = _zoom_offset + Vector2(roundf(k.value) / camera.zoom.x, 0)
 
 func fade(out: bool) -> void:
 	var t := create_tween()
@@ -1023,24 +1023,55 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	me.stop()
 	bgm.stream_paused = true
 	bgs.stream_paused = true
+	var transition := XBattleTransition.enabled()
+	if transition:
+		XSound.system(7)  # Scene_Map.launchBattle：SoundManager.playBattleStart（Battle1）
+	var hud_was := hud.visible
 	hud.visible = false
 	var shot := await _snapshot()
-	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
-	difficulty_notice.hide()
 	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot, random_encounter)
+	# 遇敌演出（XBattleTransition）：地图层拉近、第 30 帧放战斗 BGM 并淡出；窗口层（HUD）不缩放，照样在黑幕下
+	var fade: XSceneFade = null
+	if transition:
+		hud.visible = hud_was
+		fade = await _encounter_effect(battle)
+	# 原版战斗没有 _tipSpr；只保留快照里的那一帧，活提示在后台继续倒数。
+	difficulty_notice.hide()
+	hud.visible = false
+	battle.fade_in = transition
 	ui.add_child(battle)
 	ui.move_child(hang_overlay, -1)
+	if fade != null:
+		fade.queue_free()   # 战斗自己的黑幕接着从 255 淡入
 	_in_battle = true
 	# 战斗期间 Scene_Map 不更新（$gameMap／$gamePlayer.update 都不跑）：地图上的玩家、事件、跟随者不走动、不取随机数。
 	# 挂机计时在本场景 _physics_process，照常走。
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
+	if transition:
+		# Scene_Battle.stop：淡出 24 帧（全灭去结束画面 48 帧）；回地图后 Scene_Map.start 的淡入第 2 帧就被 Codex_MapSceneRecovery 清掉，只暗一帧
+		var out := XSceneFade.new()
+		out.mouse_filter = Control.MOUSE_FILTER_STOP
+		ui.add_child(out)
+		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and not can_lose else XBattleTransition.FADE_FRAMES)
+		while out.busy():
+			out.step()
+			XBattleTransition.note({"phase": "out", "fade": out.opacity})
+			await get_tree().physics_frame
+		_end_battle_bgm(battle)
+		battle.queue_free()
+		out.start_in(XBattleTransition.FADE_FRAMES)
+		out.step()
+		XBattleTransition.note({"phase": "back", "fade": out.opacity})
+		await get_tree().physics_frame
+		out.queue_free()
 	if is_instance_valid(chars):
 		chars.process_mode = Node.PROCESS_MODE_INHERIT
 	_in_battle = false
-	battle.queue_free()
+	if not transition:
+		battle.queue_free()
 	difficulty_notice.clock.paint()
 	# Scene_Battle.terminate → refrishHangUp：死亡停止；仍在挂机就自动吃药、按场数自动卖出
 	XHangUp.after_battle(XState.current)
@@ -1057,6 +1088,78 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	bgs.stream_paused = false
 	refresh_events()
 	return result
+
+## 遇敌演出要用的战斗 BGM（归地图；战斗拿去当自己的 bgm，打完由 _end_battle_bgm 收掉）
+var _battle_bgm: AudioStreamPlayer
+## 遇敌演出时地图镜头的额外偏移（世界坐标）；_update_shake 在它上面加震屏
+var _zoom_offset := Vector2.ZERO
+
+
+## Scene_Map.updateEncounterEffect（XBattleTransition）：60 帧，镜头以玩家为中心缩放，第 30 帧放战斗 BGM、开始 24 帧淡出。
+## 返回盖在画面最上层的黑幕（演出完是全黑），由调用方在战斗画面放好后移除。期间挡住鼠标（原版场景已停用、不收输入）。
+func _encounter_effect(battle: XBattleScene) -> XSceneFade:
+	var fade := XSceneFade.new()
+	fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(fade)
+	var base := encounter_zoom_base()
+	for n in range(1, XBattleTransition.ENCOUNTER_FRAMES + 1):
+		var q := XBattleTransition.zoom_at(n)
+		apply_encounter_zoom(base, q)
+		if n == XBattleTransition.BGM_FRAME:
+			_battle_bgm = XBattleScene.new_bgm_player(XBattleScene.battle_music())
+			add_child(_battle_bgm)
+			if _battle_bgm.stream != null:
+				_battle_bgm.play()
+			battle.prestarted_bgm = _battle_bgm
+			fade.start_out(XBattleTransition.FADE_FRAMES)
+		fade.step()
+		XBattleTransition.note({"phase": "encounter", "n": n, "zoom": q, "fade": fade.opacity, "bgm": _battle_bgm != null})
+		await get_tree().physics_frame
+	reset_encounter_zoom(base)  # Game_Screen.onBattleStart → clearZoom：战斗画面盖住后镜头复原
+	return fade
+
+
+## 遇敌演出开始时的镜头：缩放中心（$gamePlayer.screenX／screenY，非物件角色上移 6，再上移 24）、画面左上角的世界坐标、原来的镜头边界。
+## 演出期间放开边界，免得拉近时被地图边夹住（原版 spriteset 整体缩放，不看地图边）。
+func encounter_zoom_base() -> Dictionary:
+	var ct := get_viewport().get_canvas_transform()
+	var at := ct * player.global_position + Vector2(0, -(0.0 if player.is_object() else 6.0) - XBattleTransition.ZOOM_LIFT)
+	var base := {"at": Vector2(floorf(at.x + 0.5), floorf(at.y + 0.5)), "top_left": camera.get_screen_center_position() - Vector2(1280, 720) / 2.0,
+		"limits": [camera.limit_left, camera.limit_top, camera.limit_right, camera.limit_bottom]}
+	const FREE := 10000000
+	camera.limit_left = -FREE
+	camera.limit_top = -FREE
+	camera.limit_right = FREE
+	camera.limit_bottom = FREE
+	return base
+
+
+## 镜头缩放 q：画面坐标 s 变成 shift＋q·s（Spriteset_Base.updatePosition），Camera2D 画面左上角的世界坐标因此是 top_left − shift／q
+func apply_encounter_zoom(base: Dictionary, q: float) -> void:
+	var screen := Vector2(1280, 720)
+	var shift := XBattleTransition.zoom_shift(base.at, q)
+	camera.zoom = Vector2(q, q)
+	_zoom_offset = ((base.top_left as Vector2) - shift / q + screen / (2.0 * q)) - camera.global_position
+	camera.offset = _zoom_offset + Vector2(roundf(_shake.value) / q, 0)
+
+
+func reset_encounter_zoom(base: Dictionary) -> void:
+	camera.zoom = Vector2.ONE
+	_zoom_offset = Vector2.ZERO
+	camera.offset = Vector2(roundf(_shake.value), 0)
+	camera.limit_left = base.limits[0]
+	camera.limit_top = base.limits[1]
+	camera.limit_right = base.limits[2]
+	camera.limit_bottom = base.limits[3]
+
+
+func _end_battle_bgm(battle: XBattleScene) -> void:
+	if _battle_bgm != null and is_instance_valid(_battle_bgm):
+		_battle_bgm.stop()
+		_battle_bgm.queue_free()
+	_battle_bgm = null
+	battle.prestarted_bgm = null
+
 
 ## Scene_Map.snapForBattleBackground：隐藏窗口层（对话框、地图名、菜单按钮）后截取地图画面，
 ## 裁成 1280×720 画布范围。无画面（测试）时返回 null。
