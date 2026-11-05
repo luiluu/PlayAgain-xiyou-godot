@@ -36,6 +36,6 @@
 ## 验证
 
 - 本机：`语法检查.py` 0 问题；`工具回归.py` 通过；同步（`--accept-additions --accept-changes obs`）退出码 0；`xiyou_event_compare` 6231 例 6230 一致、1 例已知、0 回归，跳过基线 new=0。
-- 选测：`选测.py main --list` 220 个场景（actor.gd 牵动面大）→ 云端选测。首跑 c4285f99ea：219 过、1 红（xiyou_raven_battle，已按上修）；复跑结果见文末。
+- 选测：`选测.py main --list` 220 个场景（actor.gd 牵动面大）→ 云端选测。首跑 c4285f99ea：219 过、1 红（xiyou_raven_battle，已按上修）；复跑 318e5a0e1d：220 场景 6 片**全部通过**（运行页 actions/runs/41951389844）。
 - 没做：渡鸦 61 级后 mmp 封顶来源；`cc_bajie-events5b.json`＋obs 的 main 合并单（见合并提示）。
 
