@@ -126,6 +126,7 @@ PROBES = [
     (['achievement_probe.cjs'], ['achievements.json']),
     (['achievement_badge_probe.cjs'], ['achievement_badges.json']),
     (['weak_challenge_probe.cjs'], ['weak_challenge.json']),
+    (['raven_visual_probe.cjs'], ['raven_visual.json']),
     (['shield_probe.cjs'], ['shield.json']),
     (['imported_balance_probe.cjs'], ['imported_balance.json']),
     (['state_effects_probe.cjs'], ['state_effects.json']),

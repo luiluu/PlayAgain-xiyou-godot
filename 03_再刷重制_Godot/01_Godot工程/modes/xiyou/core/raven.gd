@@ -36,7 +36,8 @@ extends RefCounted
 ## 魔法反射支：原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（狩猎 ×1、回响 ×0.85，会倒下），重制照记帧（参照 raven_reflect_probe 的 reflect.*，
 ##   测试 tests/xiyou_raven_reflect）；收割／回响等 R.Fx 特效由 battle/raven_fx.gd 移植（dev.255、307）。
 ## 未移植：熟练度上限（重制无熟练度）、战斗里实际掉落的亡魂汲取 +100%（battle_logic._roll_drops 没走 team_drop_factor，待规则车道核）、
-## 插件指令 RavenAdd（冻结数据里没有事件用到；商店价格与限购字段转换器已从运行时记录导出）、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
+## 插件指令 RavenAdd（冻结数据里没有事件用到；商店价格与限购字段转换器已从运行时记录导出）、旧档迁移。
+## 表现模块：RavenSkillEffects 已移植（battle/raven_fx.gd）；地图步行帧 ×1.35 在 MVCharacter.animation_wait；RavenMonsterVisual 神话静态大图见 appearance.gd 注释。
 
 const ACTOR := 167
 const CLASS := 165

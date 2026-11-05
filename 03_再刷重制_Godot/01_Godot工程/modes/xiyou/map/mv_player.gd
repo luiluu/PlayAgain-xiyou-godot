@@ -131,6 +131,11 @@ func _toward(t: Vector2i) -> int:
 
 
 ## 走路速度（Game_CharacterBase.realMoveSpeed）：Game_Player._moveSpeed（XState.player_move_speed，默认 4）＋冲刺 1
+## 渡鸦 animationWait 包装里玩家取 $gameParty.leader()
+func walking_actor():
+	return XState.current.leader() if XState.current else null
+
+
 func walk_speed() -> int:
 	var base := XState.current.player_move_speed if XState.current != null else 4
 	return base + (1 if is_dashing() else 0)
