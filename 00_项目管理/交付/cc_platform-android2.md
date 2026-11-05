@@ -46,7 +46,7 @@
 - `工具回归.py` 全过；`语法检查.py` 0 问题；`测试导出冒烟.py`（10 例）、`测试导出过滤.py` 通过。
 - 安卓导出冒烟：签名（apksigner，调试证书）与包结构（arm64-v8a、横屏 userLandscape、WAKE_LOCK）通过，包内 xiyou_mac_export 12/12、xiyou_flow 49/49（报告 `04_验证/本地结果/导出冒烟/20261105_175905_android/`，验收包留在同目录）。
 - 接 BI 后：用调试签名导出「安卓 发行」预设看了一眼（发行签名没有，只验名字与图标）：标签「再刷一把：天启篇」、包名 `local.kyo.remake`、启动图标是天穹巨眼（自适应图标，解出 xxxhdpi 看过）；验收包再跑导出冒烟全过（报告 `20261105_181340_android/`，验收包留在同目录）。发行入口（直达西游标题）只有 release 模板才走，本机没有发行签名导不出 release 安卓包，`--report-entry` 留给有签名后或真机。
-- 接 BI 后补跑：（见下一行）
+- 接 BI 后补跑（`--补齐` 后）：xiyou_platform、ui_smoke、xiyou_entry_release、xiyou_flow 全过；`工具回归.py`、`语法检查.py`、`测试导出过滤.py` 过。
 - 测试期间总装在合并别的车道、BF 在跑探针同步，等槽约一小时；本分支没碰切片、转换器、探针。
 
 ## 待交叉核查
@@ -56,3 +56,5 @@
 ## 本分支提交
 
 - 77af07ef 安卓二期：平台模块、触屏按键、后台补跑、安卓预设、导出冒烟 --platform android
+- b40a2d21 安卓预设应用名改为「再刷一把：天启篇」
+- （xiyou_platform 测试修正、合 main、合 cc/entry-release1 接图标与 tianqi_release、交付单）
