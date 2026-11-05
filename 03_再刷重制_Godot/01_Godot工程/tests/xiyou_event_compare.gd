@@ -42,9 +42,16 @@ class CoverInterp:
 		return sub
 	func _execute(c: Dictionary):
 		var where := cover_label if _depth == 0 else ("ce%d" % common_id if common_id > 0 else "")
+		var start := index
+		var r = super._execute(c)
 		if where != "":
-			cover["%s:%d" % [where, index]] = true
-		return super._execute(c)
+			# 101 会把紧跟的 401（文字行）和 102／103 合成一条消息一起消费，这些续行下标也算执行到（BK）
+			var last := start
+			if int(c.code) == 101:
+				last = index
+			for i in range(start, last + 1):
+				cover["%s:%d" % [where, i]] = true
+		return r
 
 
 class FakePlayer:

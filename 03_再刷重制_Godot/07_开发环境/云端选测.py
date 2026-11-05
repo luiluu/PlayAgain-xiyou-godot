@@ -390,9 +390,9 @@ def cmd_run(a):
         cmd_upload(a)
     remote = remote_name()
     target = ('ci-full/' if a.full else 'ci/') + branch
-    head = git('rev-parse', 'HEAD')
-    if git('status', '--porcelain', '--untracked-files=no'):
-        log('注意：工作区有未提交改动，云端只测已提交的 HEAD')
+    head = git('rev-parse', a.commit) if a.commit else git('rev-parse', 'HEAD')
+    if not a.commit and git('status', '--porcelain', '--untracked-files=no'):
+        log('注意：工作区有未提交改动，云端只测已提交的 HEAD（检查.sh --cloud 会自动做临时快照提交，直接用 --commit）')
     base = ''
     if not a.full:
         url = git('remote', 'get-url', remote)
@@ -409,7 +409,7 @@ def cmd_run(a):
         git_push('push', '--force', '--no-verify', remote, '%s:%s%s' % (commit, SKIP_PREFIX, head), env={'GIT_TERMINAL_PROMPT': '0'})
         log('沿用车道结果：%d 个场景不在云端重跑' % len(a.skip.split()))
     print_estimate(base or None, a.full)
-    git_push('push', '--force', '--no-verify', remote, 'HEAD:refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
+    git_push('push', '--force', '--no-verify', remote, head + ':refs/heads/' + target, env={'GIT_TERMINAL_PROMPT': '0'})
     print('已推送 %s → %s，云端开始选测（基准 %s%s）' % (head[:10], target, base[:10] if base else 'GitHub main 的分叉点', '，整轮' if a.full else ''))
     print('等结果：python3 %s wait %s%s' % (Path(__file__).relative_to(ROOT), head, ' --mode full' if a.full else ''))
     return 0
@@ -907,6 +907,7 @@ def main(argv=None):
     p = sub.add_parser('run'); p.add_argument('--branch'); p.add_argument('--full', action='store_true')
     p.add_argument('--base', help='选测基准提交；默认取 HEAD 的祖先里最近一个云端已通过的，没有就用 GitHub main 的分叉点')
     p.add_argument('--no-upload', action='store_true', help='不传产物（用 GitHub 上已有的本分支或 main 的快照）')
+    p.add_argument('--commit', help='推这个提交而不是 HEAD（检查.sh --cloud 把工作区未提交改动做成临时快照提交，BK）')
     p.add_argument('--skip', default='', help='沿用车道结果、云端不再跑的场景（空格分隔，检查.sh 据 沿用车道.py 给；tools43）')
     p = sub.add_parser('estimate'); p.add_argument('--base', help='默认 <GitHub 远端>/main'); p.add_argument('--full', action='store_true')
     p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600); p.add_argument('--max-shards', type=int, default=16)
