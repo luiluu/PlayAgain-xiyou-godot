@@ -1,8 +1,8 @@
 # 交付：cc/wukong-accept3
 
 - 车道／工作者：A 内容·验收／悟空（cc）
-- 基线：main 028b4b27
-- 状态：进行中
+- 基线：main 028b4b27（交付前合到 a8e0e6f3，含 events6、raven4）
+- 状态：可合并
 
 ## 一、传送／解锁链表
 
@@ -44,17 +44,18 @@
 ## 三、公共事件空绿（accept1 可优化）
 
 - `补预设批量.py` 加 `--only-ce`：只吃公共事件的空绿。扫描给了建议的 36 个里，先用 `event_state_probe.cjs` 单跑，9 个一条效果都没走到（建议只给「队里有某角色」，还缺技能／等级条件：ce1307、618、620、679、1604、2470、2471、1407、2460）摘掉，留 **27 条**（tag c1）。
-- 公共事件空绿：99 →（同步后填）。
+- 公共事件空绿：99 → 74；全部空绿 1125 → 1099（`事件空绿扫描.py --update-baseline` 已重写，`--check` 通过）。ce1#c1、ce249#c1 走到了效果但没有可观察变化（存档相关），仍算变体；ce249#c1 走到云存档脚本 `HWGOE.save.cloudSaveGame`（Mac 版不移植），跳过基线照 ce249 补一条。
 
 ## 验证
 
 - `语法检查.py`：555 个 .gd，0 个问题。
 - `xiyou_unlock_chain*`：4 份全过（244 项）。
-- `xiyou_troop_events*`：5 份全过（本地先用新参照手工替换跑过；同步后重跑结果见下）。
-- 同步 `--accept-additions`：（待填）
-- `xiyou_event_compare`：（待填）
-- 选测 `选测.py main --list`：（待填）
-- `工具回归.py`：（待填）
+- `xiyou_troop_events*`：5 份全过（合 main、重同步后再跑一次，仍全过）。
+- 同步 `--accept-additions`：两次（合 main 前后各一次，后一次在 `--补齐` 之后），exit 0，结果「新增用例，已接受（不登记）」：只新增 troop_events 10 例、event_states c1 变体，已有用例没有变化。
+- `xiyou_event_compare`：6719 例，6718 一致，0 退步，跳过新增 0（旧基线 1 例 m4e73p0）。
+- 选测 `选测.py main --list` 列出的 27 个场景（event_compare、xiyou_rules 抽样 16 段、status_power_panel、troop_events 五份、unlock_chain 四份）合 main 前全跑：26 过，event_compare 因上面 ce249#c1 的跳过挂，补基线后过；合 main 后复跑 event_compare、unlock_chain*、troop_events*，全过。没跑 xiyou_determinism：选测没列（本期没改战斗核心）。
+- `工具回归.py`：全部通过（44 秒）。
+- `语法检查.py`：合 main 后再跑一次，通过。
 
 ## 变更记录草稿
 
@@ -93,4 +94,6 @@
 
 - WIP: 解锁链表工具与表驱动专项 xiyou_unlock_chain（80 个目标图）
 - WIP: Boss战清单.py、敌群事件参照加 10 个剧情／副本 Boss、补预设批量 --only-ce
+- 事件对照跳过基线加 ce249#c1
+- 合并 main（解冲突：事件预设取并集，空绿基线重扫）
 - 交付提交（本提交）
