@@ -22,6 +22,16 @@ class Recorder extends Node:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			unhandled_left += 1
 
+class FakeScene extends Node:
+	var on_title := true
+	func is_title_page() -> bool:
+		return on_title
+
+func fake(path: String) -> FakeScene:
+	var s := FakeScene.new()
+	s.scene_file_path = path
+	return s
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -75,6 +85,34 @@ func _run() -> void:
 	platform.go_back()
 	await frames(3)
 	check("back_is_cancel", rec.cancels > before, [before, rec.cancels])
+	# 顶层按返回（O-待定）：第一次提示、两秒内再按退出；发行包跳过入口菜单时西游标题页也是顶层
+	platform.quit_on_back = false
+	var quits := [0]
+	platform.quit_requested.connect(func(): quits[0] += 1)
+	var title := fake(XPlatform.XIYOU_TITLE)
+	var menu := fake("res://scenes/entry_menu.tscn")
+	var saved_release := ReleaseEntry.simulate_release
+	ReleaseEntry.simulate_release = false
+	check("debug_title_back_is_cancel", platform.go_back(1000, title) == "cancel" and quits[0] == 0)
+	check("menu_back_twice_quits", platform.go_back(1000, menu) == "hint" and platform.hint_text() != ""
+		and platform.go_back(2500, menu) == "quit" and quits[0] == 1)
+	ReleaseEntry.simulate_release = true
+	check("release_title_is_top", platform.is_top_level(title) and not platform.is_top_level(fake("res://modes/xiyou/map/map_scene.tscn")))
+	check("release_title_back_hint", platform.go_back(10000, title) == "hint" and platform.hint_text().contains("再按一次") and quits[0] == 1)
+	check("release_title_back_twice_quits", platform.go_back(11500, title) == "quit" and quits[0] == 2)
+	check("release_title_slow_second_press_hints_again", platform.go_back(20000, title) == "hint" and platform.go_back(23000, title) == "hint" and quits[0] == 2)
+	title.on_title = false
+	check("release_title_subpage_is_cancel", platform.go_back(23500, title) == "cancel" and quits[0] == 2)
+	title.on_title = true
+	ReleaseEntry.direct_title = false
+	check("release_with_menu_title_not_top", platform.go_back(30000, title) == "cancel")
+	ReleaseEntry.direct_title = true
+	XPlatform.BACK_EXIT_ON_TOP = false
+	check("back_exit_off_is_cancel", platform.go_back(40000, title) == "cancel" and platform.go_back(40500, title) == "cancel" and quits[0] == 2)
+	XPlatform.BACK_EXIT_ON_TOP = true
+	ReleaseEntry.simulate_release = saved_release
+	title.free()
+	menu.free()
 
 	# 切后台补跑
 	var idle := [true]

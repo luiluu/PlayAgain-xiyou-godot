@@ -56,6 +56,8 @@ func _run() -> void:
 	if XDB.available():
 		_check("release_title_has_no_version_select", _find("ReturnToMenu") == null)
 		_check("release_title_shows_app_name", _has_label(ReleaseEntry.APP_NAME))
+		# 安卓返回键：发行包的西游标题页是顶层（XPlatform 两秒内按两次退出，cc BH 续）
+		_check("release_title_is_back_top_level", get_tree().current_scene.is_title_page() and GameApp.platform.is_top_level())
 	# 发行分支下 return_to_menu 回到标题，不回模式选择
 	GameApp.return_to_menu()
 	await _frames(6)
