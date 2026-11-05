@@ -53,7 +53,7 @@ const EXTRA_GAP_NEAR := 24.0
 ## 优化 O-049：「出售价格」写实际卖出价（XItemMarks.selling_price：<Sell Price> 优先，否则半价向下取整，与商店付的钱一致）；
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
-## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪说明卡用，别的页留空
+## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
 
 var rows: Array = []          # content() 的结果
@@ -100,6 +100,8 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 		if (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3:
+		rows = XYomiJingliu.help_rows(obj, rows)  # 镜流 Sprite_ItemHelp.setItem 包装：10194 卡尾的星魂行
+		rows.append_array(XToji.help_rows(obj, scene_actor))  # 甚尔 Sprite_ItemHelp.setItem 包装：主技能卡尾两行熟练度（先并入，characterHelpView 再分组）
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
 		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况

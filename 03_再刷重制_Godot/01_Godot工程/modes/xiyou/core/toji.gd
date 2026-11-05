@@ -55,7 +55,7 @@ extends RefCounted
 ##   借万里锁每段 16% 溅射、借释魂刀物理穿透 0.33、借天逆鉾且 50% 掷中时附封印（武器库·天逆鉾本身同样掷中才封）；
 ##   武器库·万里锁自己也 16% 溅射。用了武器库就给 10211 记一次熟练度（_actionMastery），随机武器伤害 ×(1＋0.1×武器库等级)。随机数 rule 流 toji_armory／toji_pick／toji_spear。
 ## 第四期：智能 AI 档案（ai_profile、ai_damage，XSmartAI 的 profile 与估伤读）。
-## 未移植：说明框熟练度行（画面）；读档时 repair。
+## 说明框熟练度行：help_rows（Sprite_ItemHelp.setItem 包装，技能页／战斗技能窗里甚尔看主技能卡时，卡尾加两行）。未移植：读档时 repair。
 ##   原版 makeDamageValue 包装是死代码（installDamageElementRuntime 后装、整个换掉 makeDamageValue 不调旧链），不移植。
 ## 参照：slice_probe（切片角色行与伤害行）、toji_probe（等级／进阶／血量各档的能力值、公式、钩子帧，tests/xiyou_toji.gd）。
 
@@ -232,6 +232,17 @@ static func passive_cache(a, c: Dictionary) -> void:
 
 static func is_main(id: int) -> bool:
 	return MAIN.has(id)
+
+
+## T.masteryInfo＋Sprite_ItemHelp.setItem 包装（原版 395-403）：scene 里的角色是甚尔、技能是学会的主技能时，卡尾加「咒具熟练」两行（16 号白字）。
+## 在 characterHelpView 之前并入说明行（它按「咒具熟练」「当前咒具／切换至此咒具」分到基本信息组）。
+static func help_rows(skill: Dictionary, a) -> Array:
+	var id := int(skill.get("id", 0))
+	if not skill.has("stypeId") or not is_main(id) or not knows(a, id):
+		return []
+	var active: bool = a.attack_skill_id() == id
+	return [["咒具熟练：Lv%d；本级进度：%s/%s" % [XSkillMastery.level(a, id), XCharacterHelp.num(XSkillMastery.uses(a, id)), XCharacterHelp.num(XSkillMastery.usage_max(a, id))], 16, "#ffffff", false, 0],
+		["当前咒具；普通攻击使用此熟练度" if active else "切换至此咒具后，普通攻击使用此熟练度", 16, "#ffffff", false, 0]]
 
 
 static func is_random(id: int) -> bool:
