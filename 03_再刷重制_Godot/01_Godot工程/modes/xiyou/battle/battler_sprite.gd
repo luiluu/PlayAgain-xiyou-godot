@@ -172,7 +172,7 @@ func _apply_scale() -> void:
 
 ## installNativeRavenRuntime Sprite_Actor.startMotion 包装（最外层）：渡鸦 167 受击改播 evade、濒死改播 wait（战斗缩放后受击／濒死帧
 ## 看着一直趴着）；只换显示，伤害与死亡判定不变。参照 raven_visual 探针：普通与神话形态都换（多帧插件给神话留的原生受击／濒死帧
-## 被这一层挡在外面，实际用不上）。O-待定（交付单「优化登记草稿」渡鸦受击濒死动作）：RAVEN_MOTION_REMAP = false 回到移植前。
+## 被这一层挡在外面，实际用不上）。O-196（交付单「优化登记草稿」渡鸦受击濒死动作）：RAVEN_MOTION_REMAP = false 回到移植前。
 static var RAVEN_MOTION_REMAP := true
 const RAVEN_MOTIONS := {"damage": "evade", "dying": "wait"}
 
