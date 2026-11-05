@@ -9,7 +9,7 @@ extends RefCounted
 ## 回到地图：Scene_Map.start 照样 startFadeIn(24)，但 Codex_MapSceneRecovery 在第 2 帧把黑幕清掉，所以只暗一帧（244）就亮。
 ## 逐帧读数：tests/fixtures/battle_transition_oracle.json（03_转换工具/ui_reference/battle_transition_ref.cjs）。
 ## 重制原来没有这一层：进战斗直接切画面、没有开战音效。
-## 回退开关：ENABLED = false 回到原来（直接切、不放 Battle1）。O-待定
+## 回退开关：ENABLED = false 回到原来（直接切、不放 Battle1）。O-197
 static var ENABLED := true
 ## 无画面（headless 测试）时不走转场：地图快照本来就是空的，每场多 100 多帧会拖慢几十场战斗的楼层测试。
 ## 专项 xiyou_battle_transition 打开它在无画面下核逐帧读数。
