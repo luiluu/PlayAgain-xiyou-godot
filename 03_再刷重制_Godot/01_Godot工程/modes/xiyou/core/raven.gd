@@ -33,8 +33,9 @@ extends RefCounted
 ## - apply 包装：鸦啄 10122 每次施放第一次命中回 floor(2% 最大 MP)（至少 1）；盛宴 10124／万魂 10126 命中时学了 10134 直接附加黑暗侵蚀 1663，
 ##   否则二阶的盛宴按普通附加状态（效果 21）附加。numRepeats：冥羽连葬 10123 加 floor(额外攻击次数)。
 ## 第四期：法宝 4001 装着时的 paramPlus（param_plus，参照 raven_artifact_probe → tests/xiyou_raven_artifact）。
-## 未移植：魔法反射时原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（重制反射支不记帧）；（收割／回响等 R.Fx 特效已由 battle/raven_fx.gd 移植，dev.255、307；反射支原版量得：反射回渡鸦自己的那一击只记一条打自己的 hit，待核追加伤害，见 cc_bailong-visual2 交付单）
-## 熟练度上限（重制无熟练度）、战斗里实际掉落的亡魂汲取 +100%（battle_logic._roll_drops 没走 team_drop_factor，待规则车道核）、
+## 魔法反射支：原版同一行动对渡鸦自己累计伤害、行动结束对自己追加（狩猎 ×1、回响 ×0.85，会倒下），重制照记帧（参照 raven_reflect_probe 的 reflect.*，
+##   测试 tests/xiyou_raven_reflect）；收割／回响等 R.Fx 特效由 battle/raven_fx.gd 移植（dev.255、307）。
+## 未移植：熟练度上限（重制无熟练度）、战斗里实际掉落的亡魂汲取 +100%（battle_logic._roll_drops 没走 team_drop_factor，待规则车道核）、
 ## 插件指令 RavenAdd（冻结数据里没有事件用到；商店价格与限购字段转换器已从运行时记录导出）、表现模块（RavenSkillEffects／RavenMonsterVisual）、旧档迁移。
 
 const ACTOR := 167

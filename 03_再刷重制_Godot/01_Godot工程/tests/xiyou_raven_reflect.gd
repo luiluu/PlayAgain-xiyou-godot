@@ -339,6 +339,66 @@ func _refseq(c: Dictionary) -> void:
 		check(c.id + ".cross", absf(rg - rw) <= 1e-3 * maxf(1.0, rw), [rg, rw])
 
 
+## raven5（审查 45 P3-2）：行动 N 同 refseq.reflect（8 号反射回自己、侵蚀陈旧），中间夹一步再由 e1 打 8 号两段：
+## 队友 1 号对 8 号出一次不伤害的技能（none／buff／heal／healmp／state），或不经行动直接改（ev*：313 改状态、加 buff、回 HP／MP／TP）
+func _refmid(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var mid := str(setup.mid)
+	var neutral := int(setup.neutral)
+	var r := _seq_battle(float(setup.tcr))
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var want: Dictionary = c.observed
+	if mid == "evremove":
+		logic._change_actor_state([0, 8, 0, neutral])
+	var x := _state_skill({"state": true})
+	x.hitType = 2
+	var mrf := _fake_state(5, 1.0)
+	for e in logic.enemies:
+		e.add_state(mrf)
+	logic.act(a, x, logic.enemies[0])
+	for e in logic.enemies:
+		e.remove_state(mrf)
+	check(c.id + ".tp", absf(a.tp - float(want.tp)) <= 1e-6, [a.tp, want.tp])
+	var effects := {"none": [], "buff": [{"code": 31, "dataId": 2, "value1": 5.0, "value2": 0.0}], "heal": [{"code": 11, "dataId": 0, "value1": 0.0, "value2": 1000.0}],
+		"healmp": [{"code": 12, "dataId": 0, "value1": 0.0, "value2": 100.0}], "state": [{"code": 21, "dataId": neutral, "value1": 1.0, "value2": 0.0}]}
+	match mid:
+		"evnone":
+			pass
+		"evstate":
+			logic._change_actor_state([0, 8, 0, neutral])
+		"evremove":
+			logic._change_actor_state([0, 8, 1, neutral])
+		"evbuff":
+			logic.sequence_buff(a, 2, true, true, 5)
+		"evheal":
+			logic.gain_hp(a, 1000.0)
+		"evmp", "evtp":
+			var res := logic._operation_resources(a)
+			res.gain(a, "mp" if mid == "evmp" else "tp", 100.0 if mid == "evmp" else 5.0)
+			logic._finish_lifecycle_operation(res, a)
+		_:
+			var y := _state_skill({"dmg": false, "scope": 7})
+			y["effects"] = effects[mid]
+			logic.act(s_actor(logic, 1), y, a)
+	var second := _hits(logic, logic.act(logic.enemies[1], _state_skill({"repeats": 2}), a))
+	_ratio_check(c.id + ".second", second, want.second)
+	check(c.id + ".hp", absf(a.hp - float(want.hp)) <= 1e-6, [a.hp, want.hp])
+	check(c.id + ".buffs", Array(a.buffs).map(func(v): return int(v)) == (want.buffs as Array).map(func(v): return int(v)), [a.buffs, want.buffs])
+
+
+## raven5（审查 45 P3-1）：8 号 TP 99、e0 三段致死并加侵蚀；0 血之后再挨打，请求的 hp 与当前不同，原版照样 refresh（第三段读新状态）
+func _refzero(c: Dictionary) -> void:
+	var r := _seq_battle(float(c.setup.tcr))
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var want: Dictionary = c.observed
+	a.tp = 99.0
+	var hits := _hits(logic, logic.act(logic.enemies[0], _state_skill({"state": true, "repeats": 3, "formula": 10000000.0}), a))
+	_ratio_check(c.id + ".hits", hits, want.log)
+	check(c.id + ".dead", a.is_dead() == bool(want.dead), [a.is_dead(), want.dead])
+
+
 func s_actor(logic: XBattleLogic, id: int) -> XActor:
 	for b in logic.actors:
 		if b is XActor and b.actor_id == id:
@@ -402,6 +462,24 @@ func _rollback_branch(ref: Dictionary) -> void:
 			check("rollback.refnest.none", outer.size() == 2 and absf(float(outer[1].value) / float(outer[0].value) - 1.4 / 0.9) <= 1e-3,
 				outer.map(func(l): return l.value))
 	XBattleLogic.STALE_TIMING = true
+	# raven5 回退支：STALE_REFRESH_POINTS 关掉时战斗里直接加 buff 不清陈旧，e1 第一击仍读旧缓存（比值 ×1.4/0.9 出现，同 raven4）
+	XBattleLogic.STALE_REFRESH_POINTS = false
+	var r := _seq_battle(2.0)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var x := _state_skill({"state": true})
+	x.hitType = 2
+	var mrf := _fake_state(5, 1.0)
+	for e in logic.enemies:
+		e.add_state(mrf)
+	logic.act(a, x, logic.enemies[0])
+	for e in logic.enemies:
+		e.remove_state(mrf)
+	logic.sequence_buff(a, 2, true, true, 5)
+	var second := _hits(logic, logic.act(logic.enemies[1], _state_skill({"repeats": 2}), a))
+	check("rollback.refmid.evbuff", second.size() == 2 and absf(float(second[1].value) / float(second[0].value) - 1.4 / 0.9) <= 1e-3,
+		second.map(func(l): return l.value))
+	XBattleLogic.STALE_REFRESH_POINTS = true
 
 
 func _key(logic: XBattleLogic, b) -> String:
@@ -536,8 +614,12 @@ func _run() -> void:
 				_refseq(c)
 			"refnest":
 				_refnest(c)
+			"refmid":
+				_refmid(c)
+			"refzero":
+				_refzero(c)
 	_rollback_branch(ref)
-	check("covers_all", seen.keys().size() == 7, seen.keys())
+	check("covers_all", seen.keys().size() == 9, seen.keys())
 	finish()
 
 
