@@ -7,6 +7,7 @@ extends Node
 ## - garouzero.*：饿狼拳法基伤为 0（出手者攻魔强设 0）、暴击率 1 时伤害 0、暴击标记假（applyCritical v===0 返回 0 在原版链里与普通链一致）。
 ## 数值比本例第一段命中的比值；结构（谁挨打、直接扣血的目标与次序）、MP、神话回合、残响、狩猎、倒下、侵蚀逐项比。
 const FIXTURE := "res://tests/fixtures/raven_reflect_oracle.json"
+const PROGRAMS := "res://tests/fixtures/formula_effect_programs.json"
 const RATIO_TOLERANCE := 1e-6
 var results := []
 
@@ -202,6 +203,207 @@ func _refstate(c: Dictionary) -> void:
 	check(c.id + ".states", st_got == st_want, [st_got, st_want])
 
 
+## raven4：嵌套 apply 用（同参照在第一段的 applyItemUserEffect 之后对同一目标再 apply 一次）
+class NestLogic extends XBattleLogic:
+	var hook := Callable()
+	func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
+		var r := super(u, skill, t)
+		if hook.is_valid():
+			var h := hook
+			hook = Callable()
+			h.call(u, skill, t)
+		return r
+
+
+## 常量公式程序（借 formula_effect_programs 的 constant100 模板改字面量）
+func _const_program(v: float) -> Dictionary:
+	var p: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string(PROGRAMS))["runtime.constant100"].program as Dictionary).duplicate(true)
+	p.steps[0].value.value = v
+	return p
+
+
+## 同参照 stateSkill：借 10124 的槽，必中、黑暗、常量伤害，可选加黑暗侵蚀
+func _state_skill(o: Dictionary) -> Dictionary:
+	var sk: Dictionary = XDB.rec("Skills", 10124).duplicate(true)
+	var v := float(o.get("formula", 100.0 if o.get("small", false) else 1000000.0))
+	sk["damage"] = {"type": 0 if o.get("dmg", true) == false else 1, "elementId": 9, "formula": str(v), "formulaGd": str(v),
+		"formulaProgram": _const_program(v), "variance": 0, "critical": false}
+	sk["effects"] = [{"code": 21, "dataId": 1663, "value1": 1.0, "value2": 0.0}] if o.get("state", false) else []
+	sk.scope = int(o.get("scope", 1))
+	sk.repeats = int(o.get("repeats", 1))
+	sk.hitType = 0
+	sk.successRate = 100
+	sk.mpCost = 0
+	sk.tpCost = 0
+	sk.tpGain = 0
+	sk["meta"] = {}
+	sk["note"] = ""
+	sk.erase("yepSeq")  # 参照这两个槽是 YEP 默认序列（运行时改的 repeats 照样生效）；重制的序列路径段数写死在序列里，走普通路径（同默认序列）
+	return sk
+
+
+## 同参照 seqBattle：队伍 [8, 1] 60 级，1 号与敌人生命 +1e12，8 号生命上限 2e6、TP 0、tcr 强设
+func _seq_battle(tcr: float, nest := false) -> Array:
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	XState.current = s
+	s.actor_max_level = 99
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in [8, 1]:
+		s.actor(id).change_level_mv(60)
+		s.add_actor(id)
+	s.actor(1).add_param(0, 1e12)
+	for pid in s.party:
+		s.actor(pid).refresh_passive()
+	var rand := XBattleRandom.create("refseq")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	var logic: XBattleLogic = NestLogic.new() if nest else XBattleLogic.new()
+	logic.setup(3, s, rand)
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(v): return float(v))
+		p[0] += 1e12
+		e.zq_ref = {"p": p, "k": 1.0}
+		e.param_mark_dirty()
+		e.param_refresh()
+		e.recover_all()
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	var a: XActor = s.actor(8)
+	a.add_param(0, 2e6 - a.mhp)
+	a.param_mark_dirty()
+	a.param_refresh()
+	a.recover_all()
+	a.tp = 0.0
+	logic.start_turn()
+	a.add_state(_fake_state(5, tcr, 23))
+	return [logic, a]
+
+
+func _hits(logic: XBattleLogic, logs: Array) -> Array:
+	return _log(logic, logs).filter(func(l): return l.kind == "hit")
+
+
+func _ratio_check(id: String, got: Array, want: Array) -> void:
+	var gs: Array = got.map(func(l): return str(l.target))
+	var ws: Array = want.map(func(l): return str(l.target))
+	check(id + ".targets", gs == ws, [gs, ws])
+	if gs != ws or got.is_empty():
+		return
+	for k in got.size():
+		var rg: float = float(got[k].value) / float(got[0].value)
+		var rw: float = float(want[k].value) / float(want[0].value)
+		check("%s.ratio%d" % [id, k], absf(rg - rw) <= 1e-3 * maxf(1.0, rw), [got.map(func(l): return l.value), want.map(func(l): return l.value)])
+
+
+## raven4（审查 43 P3-1）：跨行动。行动 N 后 8 号身上的侵蚀陈旧与否，行动 N+1 别人打 8 号第一击读到哪个
+func _refseq(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var between := str(setup.between)
+	var r := _seq_battle(float(setup.tcr))
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var want: Dictionary = c.observed
+	var x := _state_skill({"state": true})
+	var first: Array
+	if between.begins_with("reflect"):
+		x.hitType = 2
+		var mrf := _fake_state(5, 1.0)
+		for e in logic.enemies:
+			e.add_state(mrf)
+		first = _hits(logic, logic.act(a, x, logic.enemies[0]))
+		for e in logic.enemies:
+			e.remove_state(mrf)
+	else:
+		first = _hits(logic, logic.act(logic.enemies[0], x, a))
+	check(c.id + ".tp", absf(a.tp - float(want.tp)) <= 1e-6, [a.tp, want.tp])
+	if between.ends_with("turn"):
+		logic.end_turn()
+		logic.start_turn()
+	if between.ends_with("self"):
+		logic.act(a, XDB.rec("Skills", 1), logic.enemies[0])
+	var y := _state_skill({"repeats": 2, "scope": 7, "formula": 100000.0} if between.ends_with("ally") else {"repeats": 2})
+	var second: Array
+	if between.ends_with("ally"):
+		second = _hits(logic, logic.act(s_actor(logic, 1), y, a))
+	else:
+		second = _hits(logic, logic.act(logic.enemies[1], y, a))
+	_ratio_check(c.id + ".second", second, want.second)
+	# 第一击读的是不是新状态：出手者同类（都是敌人、非反射）时再比第二次行动第一击对行动 N 那一击的比值
+	if not between.begins_with("reflect") and not between.ends_with("ally") and not first.is_empty() and not second.is_empty():
+		var rg: float = float(second[0].value) / float(first[0].value)
+		var rw: float = float(want.second[0].value) / float(want.first[0].value)
+		check(c.id + ".cross", absf(rg - rw) <= 1e-3 * maxf(1.0, rw), [rg, rw])
+
+
+func s_actor(logic: XBattleLogic, id: int) -> XActor:
+	for b in logic.actors:
+		if b is XActor and b.actor_id == id:
+			return b
+	return null
+
+
+## raven4（审查 43 P3-2）：e0 对 8 号两段加侵蚀，第一段 applyItemUserEffect 之后对 8 号再 apply 一次内层行动；看外层第二段
+func _refnest(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var inner := str(setup.inner)
+	var r := _seq_battle(float(setup.tcr), true)
+	var logic: NestLogic = r[0]
+	var a: XActor = r[1]
+	var want: Dictionary = c.observed
+	var x := _state_skill({"state": true, "repeats": 2})
+	var z := _state_skill({"dmg": inner != "none", "small": inner == "small"})
+	var inner_hits := []
+	logic.hook = func(_u, _sk, t):
+		if is_same(t, a):
+			inner_hits.append(logic.apply(logic.enemies[1], z, a))
+	var outer := _hits(logic, logic.act(logic.enemies[0], x, a))
+	var ow: Array = (want.log as Array).filter(func(l): return str(l.user) == "e0")
+	_ratio_check(c.id + ".outer", outer, ow)
+	check(c.id + ".nested", inner_hits.size() == int(want.nested), [inner_hits.size(), want.nested])
+	var iw: Array = (want.log as Array).filter(func(l): return str(l.user) == "e1")
+	var ig: Array = inner_hits.filter(func(l): return float(l.get("hp", 0.0)) != 0.0)
+	check(c.id + ".inner_hit", ig.size() == iw.size(), [ig.size(), iw.size()])
+	check(c.id + ".tp", absf(a.tp - float(want.tp)) <= 1e-6, [a.tp, want.tp])
+
+
+## 开关回退支：XBattleLogic.STALE_TIMING = false 时回到 raven3（每次行动开头清全体、嵌套不处理）。
+## 参照里会因此不一样的两例（refseq.tcr2.reflect 第二次行动第一击、refnest.tcr2.none 外层第二段）此时应读到新状态（比值 ×1.4/0.9 不出现）
+func _rollback_branch(ref: Dictionary) -> void:
+	XBattleLogic.STALE_TIMING = false
+	for c in ref.cases:
+		if c.id == "refseq.tcr2.reflect":
+			var r := _seq_battle(2.0)
+			var logic: XBattleLogic = r[0]
+			var a: XActor = r[1]
+			var x := _state_skill({"state": true})
+			x.hitType = 2
+			var mrf := _fake_state(5, 1.0)
+			for e in logic.enemies:
+				e.add_state(mrf)
+			logic.act(a, x, logic.enemies[0])
+			for e in logic.enemies:
+				e.remove_state(mrf)
+			var second := _hits(logic, logic.act(logic.enemies[1], _state_skill({"repeats": 2}), a))
+			check("rollback.refseq.reflect", second.size() == 2 and absf(float(second[1].value) / float(second[0].value) - 1.0) <= 1e-6,
+				second.map(func(l): return l.value))
+		elif c.id == "refnest.tcr2.none":
+			var r := _seq_battle(2.0, true)
+			var logic: NestLogic = r[0]
+			var a: XActor = r[1]
+			var z := _state_skill({"dmg": false})
+			logic.hook = func(_u, _sk, t):
+				if is_same(t, a):
+					logic.apply(logic.enemies[1], z, a)
+			var outer := _hits(logic, logic.act(logic.enemies[0], _state_skill({"state": true, "repeats": 2}), a))
+			check("rollback.refnest.none", outer.size() == 2 and absf(float(outer[1].value) / float(outer[0].value) - 1.4 / 0.9) <= 1e-3,
+				outer.map(func(l): return l.value))
+	XBattleLogic.STALE_TIMING = true
+
+
 func _key(logic: XBattleLogic, b) -> String:
 	return "a%d" % b.actor_id if b is XActor else "e%d" % logic.enemies.find(b)
 
@@ -330,7 +532,12 @@ func _run() -> void:
 				_refx(c)
 			"refstate":
 				_refstate(c)
-	check("covers_all", seen.keys().size() == 5, seen.keys())
+			"refseq":
+				_refseq(c)
+			"refnest":
+				_refnest(c)
+	_rollback_branch(ref)
+	check("covers_all", seen.keys().size() == 7, seen.keys())
 	finish()
 
 

@@ -3232,6 +3232,682 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "refseq.tcr0.01.direct",
+   "setup": {
+    "tcr": 0.01,
+    "between": "direct"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 0,
+    "tpEnd": 0,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.direct",
+   "setup": {
+    "tcr": 2,
+    "between": "direct"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 3,
+    "tpEnd": 11,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.turn",
+   "setup": {
+    "tcr": 2,
+    "between": "turn"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 3,
+    "tpEnd": 11,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.process",
+   "setup": {
+    "tcr": 2,
+    "between": "process"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 3,
+    "tpEnd": 11,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.self",
+   "setup": {
+    "tcr": 2,
+    "between": "self"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 3,
+    "tpEnd": 31,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.ally",
+   "setup": {
+    "tcr": 2,
+    "between": "ally"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "a1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 111720,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 111720,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 1.4,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 3,
+    "tpEnd": 13,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.reflect",
+   "setup": {
+    "tcr": 2,
+    "between": "reflect"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 0.8999999999999998,
+     "between": 0.8999999999999998,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 89,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.reflect.turn",
+   "setup": {
+    "tcr": 2,
+    "between": "reflect.turn"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.reflect.self",
+   "setup": {
+    "tcr": 2,
+    "between": "reflect.self"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 110,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refseq.tcr2.reflect.ally",
+   "setup": {
+    "tcr": 2,
+    "between": "reflect.ally"
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "a1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 71820,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 111720,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "states0": [],
+     "afterN": 0.8999999999999998,
+     "between": 0.8999999999999998,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refnest.tcr2.hit",
+   "setup": {
+    "tcr": 2,
+    "inner": "hit"
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10125,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": [
+     0.8999999999999998,
+     1.4
+    ],
+    "nested": 1,
+    "after": 1.4,
+    "tp": 10,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refnest.tcr2.small",
+   "setup": {
+    "tcr": 2,
+    "inner": "small"
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10125,
+      "target": "a8",
+      "value": 6,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": [
+     0.8999999999999998,
+     1.4
+    ],
+    "nested": 1,
+    "after": 1.4,
+    "tp": 7,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refnest.tcr2.none",
+   "setup": {
+    "tcr": 2,
+    "inner": "none"
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "rates": [
+     0.8999999999999998,
+     0.8999999999999998
+    ],
+    "nested": 1,
+    "after": 1.4,
+    "tp": 6,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refnest.tcr0.01.hit",
+   "setup": {
+    "tcr": 0.01,
+    "inner": "hit"
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10125,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": [
+     1.4,
+     1.4
+    ],
+    "nested": 1,
+    "after": 1.4,
+    "tp": 0,
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
   }
  ]
 }
