@@ -95,7 +95,8 @@ func _run() -> void:
 		if bar.flow == 0.0:
 			break
 	check("flow_wraps_at_928", bar.flow == 0.0)
-	# 扣血：红条拖尾（每帧 1+差/160）、蓝条即时、数字追赶（1+⌊差/30⌋）
+	# 扣血：红条拖尾（每帧 1+差/160）、蓝条即时、数字追赶（1+⌊差/30⌋）——原版节奏先关掉 O-待定 的拖尾封顶量
+	XBossHpBar.RED_TRAIL_CAP = false
 	var before := float(boss.hp)
 	var cut := floorf(boss.mhp * 0.4)
 	boss.hp -= cut
@@ -123,6 +124,25 @@ func _run() -> void:
 	await frames(2)
 	shot("bar_settled")
 	check("red_catches_up", bar.hp_red == boss.hp and bar.hp_number == boss.hp, [bar.hp_red, bar.hp_number, boss.hp])
+	# ui11 拖尾封顶：原版大差值要上千帧；开着时 90 帧内追上，小差值仍按原版（更快）
+	var big := floorf(boss.hp * 0.5)
+	var slow := 0
+	var r := float(boss.hp)
+	var tgt := r - big
+	while r > tgt and slow < 100000:
+		r = maxf(r - (1.0 + (r - tgt) / 160.0), tgt)
+		slow += 1
+	XBossHpBar.RED_TRAIL_CAP = true
+	boss.hp -= big
+	bar.applied(boss, boss.hp)
+	steps(bar, XBossHpBar.RED_CAP_FRAMES)
+	check("red_cap_90_frames", bar.hp_red == boss.hp and slow > 600, [bar.hp_red, boss.hp, slow])
+	steps(bar, 400)
+	var r1 := bar.hp_red
+	boss.hp -= 50
+	bar.applied(boss, boss.hp)
+	bar.step()
+	check("red_cap_small_hit_original", absf(bar.hp_red - (r1 - (1.0 + 50.0 / 160.0))) < 0.001, [bar.hp_red, r1])
 	# 回血不震动
 	boss.hp += 100
 	bar.applied(boss, boss.hp)

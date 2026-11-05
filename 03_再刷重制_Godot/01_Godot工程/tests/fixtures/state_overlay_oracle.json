@@ -1,0 +1,19 @@
+{
+  "source": "冻结 v0.28 app.nw，ui_reference/serve.py index.html?battle_ref=1 四人战斗夹具（地图 5、敌群 2），2026-11-05 白龙 ui11 用页面内 JS 逐帧（SceneManager.updateScene＋renderScene）读 Sprite_StateOverlay",
+  "ssep": {"StateOverlay": 8, "BattleSpeedDefault": 2, "wait": 4},
+  "overlay_state_count": 84,
+  "enemy": {
+    "enemy_id": 1, "sprite_height": 60, "states_in_order": [[10, 7, 90], [4, 1, 50]],
+    "overlay_index": 7, "y": 4, "anchor": [0.5, 1], "scale": [1, 1],
+    "parent_xy": [262, 331], "world_y": 334,
+    "note": "敌人在呼吸，父精灵缩放 (0.99908, 0.98156)，overlay 跟着缩（它是 Sprite_Enemy 的子精灵）",
+    "frames": [[7,2,7,672,576,4],[7,3,7,672,576,4],[0,0,7,0,576,4],[0,1,7,0,576,4],[0,2,7,0,576,4],[0,3,7,0,576,4],[1,0,7,96,576,4],[1,1,7,96,576,4],[1,2,7,96,576,4],[1,3,7,96,576,4],[2,0,7,192,576,4],[2,1,7,192,576,4],[2,2,7,192,576,4],[2,3,7,192,576,4],[3,0,7,288,576,4],[3,1,7,288,576,4],[3,2,7,288,576,4],[3,3,7,288,576,4],[4,0,7,384,576,4],[4,1,7,384,576,4]],
+    "frames_fields": ["pattern", "animationCount", "overlayIndex", "frame_x", "frame_y", "y"]
+  },
+  "actor": {
+    "actor_id": 1, "sprite_height": 64, "state": 4, "overlay_index": 1, "y": 0, "scale": [1, 1],
+    "main_sprite_scale": [0.75, 0.75], "frame_y": 0,
+    "children_order": ["Sprite", "Sprite_Weapon", "Sprite_Base", "Sprite_StateIcon", "Sprite_StateOverlay", "Sprite_BattleSelectCursor"]
+  },
+  "name_side_number": "敌人名右边的「4」是 Olivia_WeaknessDisplay 窗口里的状态图标（Sprite_StateIcon，图标 916 中毒）带的 YEP_BuffsStatesCore 剩余回合数；选敌时才看得到。重制目前没画这排图标（见 cc_bailong-ui11 交付单）"
+}

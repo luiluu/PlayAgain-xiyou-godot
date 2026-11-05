@@ -83,6 +83,16 @@ func select(i: int) -> void:
 	_refresh()
 
 
+## Window_CodexCostumes（Window_Command）不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻（ui11）
+func page(d: int) -> void:
+	var r := XMenu.page(top, index, actors.size(), ROWS, d)
+	top = r[0]
+	if r[1] != index:
+		index = r[1]
+		XSound.system(0)
+	_refresh()
+
+
 ## Scene_CodexCostumes.toggle
 func ok() -> void:
 	if actors.is_empty():
@@ -132,3 +142,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		select(XMenu._move(index, d, actors.size(), not event.is_echo()))
+	elif not actors.is_empty() and XMenu.page_dir(event) != 0:
+		get_viewport().set_input_as_handled()
+		page(XMenu.page_dir(event))
