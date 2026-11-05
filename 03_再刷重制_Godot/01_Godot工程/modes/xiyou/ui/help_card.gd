@@ -100,6 +100,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 		if (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 	if type == 3:
+		rows = XYomiJingliu.help_rows(obj, rows)  # 镜流 Sprite_ItemHelp.setItem 包装：10194 卡尾的星魂行
 		rows.append_array(XToji.help_rows(obj, scene_actor))  # 甚尔 Sprite_ItemHelp.setItem 包装：主技能卡尾两行熟练度（先并入，characterHelpView 再分组）
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
