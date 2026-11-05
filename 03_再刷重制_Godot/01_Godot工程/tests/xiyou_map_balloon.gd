@@ -18,7 +18,7 @@ func check(name: String, ok: bool, detail = null) -> bool:
 
 
 ## 照 rpg_sprites.js Sprite_Balloon 算的每帧画面（update 后剩余 d，d>0 才 updateFrame），独立于重制实现
-static func mv_frames(wait: int) -> Array:
+static func mv_frames(wait: float) -> Array:
 	var out := []
 	var d := 8 * 8 + wait
 	while d > 0:
@@ -29,6 +29,7 @@ static func mv_frames(wait: int) -> Array:
 
 
 func _run() -> void:
+	MVCharacter.speed_override = 4  # 变速 OFF（普通档）
 	var p := XDB.plugin("SSEP_BattleSpeedUp_v2")
 	check("ssep_params", str(p.get("Balloon", "")) == "12" and str(p.get("BattleSpeed (Default)", "")) == "2" and str(p.get("OkayKeyBoost", "")) == "false", p)
 	check("wait_is_3", MVCharacter.balloon_wait() == 3, MVCharacter.balloon_wait())
@@ -60,6 +61,24 @@ func _run() -> void:
 			got.append(ch.balloon_frame())
 	check("rollback_frames_mv_default", got == mv_frames(12), got)
 	MVCharacter.BALLOON_SSEP = true
+	# ui13：变速开着（O-006 四档里的四倍／三倍／二倍，对应原版 QuickMode）时 12÷2÷8＝0.75 帧，OFF 仍 3
+	check("boost_param_8", str(p.get("BattleSpeed (Boost)", "")) == "8", p.get("BattleSpeed (Boost)"))
+	var tiers := []
+	for t in [1, 2, 3, 4]:
+		MVCharacter.speed_override = t
+		tiers.append(MVCharacter.balloon_wait())
+	check("tier_waits", tiers == [0.75, 0.75, 0.75, 3.0], tiers)
+	MVCharacter.speed_override = 1
+	ch.start_balloon(1)
+	check("quick_duration_64_75", ch._balloon_t == 64.75, ch._balloon_t)
+	got = []
+	while ch.is_balloon_playing():
+		ch.update_character()
+		if ch.is_balloon_playing():
+			got.append(ch.balloon_frame())
+	var want_q := mv_frames(0.75)
+	check("quick_frames_match_mv", got == want_q and want_q.size() == 64 and want_q.count(7) == 8, [got.size(), want_q.size(), want_q.count(7)])
+	MVCharacter.speed_override = 0
 	ch.queue_free()
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

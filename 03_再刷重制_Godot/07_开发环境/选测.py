@@ -39,6 +39,10 @@
   slice_probe 等公共部分不算）时，找它的产物名（同步正式西游.py 的 PROBES 登记的产物；没登记就看夹具 tests/fixtures/<名>_oracle.json），
   只选 tests/ 里引用探针文件名、产物名或「按产物名加载它的 modes/ 模块的 class_name」的场景，改归 probe_narrow 组（检查项同 converter）。
   找不到任何引用、产物同时被转换器等工具脚本读取（影响所有生成物）时退回原组 converter。回退：probeNarrow.enabled 设 false，或环境变量 XIYOU_PROBE_NARROW=0。
+- 只读工具收窄（toolNarrow，fix6，悟空 accept4／fix5 提）：改动落在 03_转换工具/ 下直接放的文件（.py／.json 等），若从「产出 generated 的入口」
+  （toolNarrow.roots：同步正式西游.py、xiyou_export.py、新建工作树.sh）按文件名（.py 另认模块名）一路引用下去都碰不到它，就是只被工具读、不产生成物的
+  只读工具或其数据（如 解锁链表.py、补预设批量.py、事件空绿基线.json），改归 tool_readonly 组：工具回归＋引用它的测试，不再选整组 converter（65 个 xiyou_rules*）。
+  被入口链提到（含误中同名子串）一律留在 converter。回退：toolNarrow.enabled 设 false，或环境变量 XIYOU_TOOL_NARROW=0。
 - 基准不存在、对照表无效时退出 2。
 """
 import argparse
@@ -96,6 +100,9 @@ def load_table(path=TABLE):
     pn = table.get('probeNarrow') or {}
     if pn and (pn.get('group') not in groups or pn.get('from') not in groups):
         raise ValueError('probeNarrow.group／from 指向不存在的组')
+    tn = table.get('toolNarrow') or {}
+    if tn and (tn.get('group') not in groups or tn.get('from') not in groups or not tn.get('roots') or not tn.get('scan')):
+        raise ValueError('toolNarrow.group／from 指向不存在的组，或 roots／scan 为空')
     for name, g in groups.items():
         if g.get('onlyLinesElse', 'full') not in groups or 'onlyLines' in groups[g.get('onlyLinesElse', 'full')]:
             raise ValueError('组 %s 的 onlyLinesElse 须指向没有 onlyLines 的已有组' % name)
@@ -233,6 +240,63 @@ def load_probe_narrow(path=TABLE):
         return None
     cfg = json.loads(Path(path).read_text()).get('probeNarrow') or {}
     return cfg if cfg.get('enabled') else None
+
+
+def load_tool_narrow(path=TABLE):
+    """只读工具收窄设置；关着（enabled false 或 XIYOU_TOOL_NARROW=0）返回 None。"""
+    if os.environ.get('XIYOU_TOOL_NARROW', '') == '0':
+        return None
+    cfg = json.loads(Path(path).read_text()).get('toolNarrow') or {}
+    return cfg if cfg.get('enabled') else None
+
+
+def tool_tree(root, cfg, head=None):
+    """toolNarrow.scan 目录下的脚本与数据文件（相对仓库根）。"""
+    if head:
+        out = git(root, '-c', 'core.quotepath=false', 'ls-tree', '-r', '--name-only', head, '--', *cfg['scan'])
+    else:
+        out = git(root, '-c', 'core.quotepath=false', 'ls-files', '-co', '--exclude-standard', '--', *cfg['scan'])
+    return [x for x in out.splitlines() if x.endswith(tuple(cfg['suffixes'])) and '/node_modules/' not in x]
+
+
+def strip_comments(path, text):
+    """去掉注释再找引用（注释里提到文件名不算用它，如探针头注释「见 事件空绿扫描.py」）。字符串（含 docstring）都留着，宁可多认。"""
+    if path.endswith(('.cjs', '.js', '.mjs')):
+        text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+        return re.sub(r'(^|[^:\'"\\])//[^\n]*', r'\1', text)
+    if path.endswith(('.py', '.sh')):
+        return re.sub(r'(^|\s)#[^\n]*', r'\1', text)
+    return text
+
+
+def pipeline_files(root, base, cfg, head=None):
+    """从 roots 出发，按「文件里提到别的文件名（.py 另认模块名）」一路走到的文件集合（含 roots）。只算扫描目录里的文件；注释里的不算。"""
+    files = tool_tree(root, cfg, head)
+    names = {f: [Path(f).name] + ([Path(f).stem] if f.endswith('.py') else []) for f in files}
+    seen, todo = set(), [r for r in cfg['roots'] if r in names]
+    while todo:
+        f = todo.pop()
+        if f in seen:
+            continue
+        seen.add(f)
+        text = strip_comments(f, read_any(root, base, f, head))
+        for other, keys in names.items():
+            if other not in seen and any(k in text for k in keys):
+                todo.append(other)
+    return seen
+
+
+def read_only_tool(root, base, path, cfg, head=None, cache=None):
+    """path 是 dir 下直接放的、入口链碰不到的文件：返回 True。cache：同一次选测里共用的入口链结果（dict）。"""
+    d = cfg['dir'].rstrip('/') + '/'
+    name = path[len(d):] if path.startswith(d) else ''
+    if not name or '/' in name or not name.endswith(tuple(cfg['suffixes'])) or not exists(root, path, head):
+        return False
+    cache = {} if cache is None else cache
+    if 'pipe' not in cache:
+        cache['pipe'] = pipeline_files(root, base, cfg, head)
+    # 一个入口都不在（树不全、入口改名）就判不了，留在原组
+    return bool(cache['pipe']) and path not in cache['pipe']
 
 
 def probe_outputs(root, base, probe, cfg, head=None):
@@ -498,6 +562,8 @@ def select(root, base, table=TABLE, head=None, sample=True):
     narrow = sections.get('narrowFloorsByMap') or {}
     hooks = load_hooks(table)
     probe_cfg = load_probe_narrow(table)
+    tool_cfg = load_tool_narrow(table)
+    tool_cache = {}
 
     def take(path, group, why, terms_extra=(), map_ids=None):
         nonlocal full
@@ -524,6 +590,9 @@ def select(root, base, table=TABLE, head=None, sample=True):
                 group, g = probe_cfg['group'], groups[probe_cfg['group']]
                 terms_extra = list(terms_extra) + terms[1:]
                 why = '%s（单个探针 %s，产物 %s）' % (group, probe, '、'.join(outs))
+        if tool_cfg and group == tool_cfg['from'] and path != sections.get('file') and read_only_tool(root, base, path, tool_cfg, head, tool_cache):
+            group, g = tool_cfg['group'], groups[tool_cfg['group']]
+            why = '%s（只读工具：入口链 %s 都不引用它）' % (group, '、'.join(Path(r).name for r in tool_cfg['roots']))
         picked = set()
         for pattern in g.get('scenes', []):
             picked.update(tests.glob(pattern))

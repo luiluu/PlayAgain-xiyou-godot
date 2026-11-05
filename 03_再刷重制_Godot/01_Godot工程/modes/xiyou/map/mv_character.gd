@@ -42,9 +42,10 @@ var _jump_peak := 0
 var _jump_count := 0
 ## 气泡（Sprite_Balloon：8 帧 × 速度 8 ＋ 停留 waitTime 帧，图 Balloon.png 每格 48）。正式版 SSEP_BattleSpeedUp_v2
 ## 把 Sprite_Balloon.waitTime 改成 Balloon ÷ BattleSpeed(Default) ÷ BattleSpeed(Default)＝12÷2÷2＝3（地图上也生效；
-## OkayKeyBoost 参数 false，战斗加速开关 QuickMode 重制没有，所以总是 3），ui10 前照 MV 默认 12，气泡多停 9 帧。
+## OkayKeyBoost 参数 false），ui10 前照 MV 默认 12，气泡多停 9 帧。原版开了战斗加速（QuickMode，Shift／按钮切，模块级变量，地图上也一直生效）
+## 时是 12÷2÷8＝0.75 帧；重制用 O-006 的四档战斗变速代替 QuickMode，所以变速开着（四倍／三倍／二倍）时照 0.75，OFF 时 3（ui13，审查 46 P3-2）。
 var balloon_id := 0
-var _balloon_t := 0
+var _balloon_t := 0.0   # Sprite_Balloon._duration（waitTime 可能是小数 0.75）
 static var _balloon_tex: Texture2D
 var _balloon_layer: Node2D    # 气泡单独一层（MV 的 Sprite_Balloon 加在角色精灵的父节点上，不受闪光、隐藏影响）
 var _anim_hidden := false     # 动画 flashScope 3 隐藏目标（Sprite_Character.hide）
@@ -277,12 +278,16 @@ func start_balloon(id: int) -> void:
 
 ## Sprite_Balloon.waitTime（SSEP 覆写，见 balloon_id 处）；BALLOON_SSEP = false 回到 MV 默认 12（回退开关）
 static var BALLOON_SSEP := true
-static func balloon_wait() -> int:
+## 变速档（XConfig.battle_speed，1 四倍…4 OFF）；speed_override 非 0 时用它（测试用）
+static var speed_override := 0
+static func balloon_wait() -> float:
 	if not BALLOON_SSEP:
-		return 12
+		return 12.0
 	var p := XDB.plugin("SSEP_BattleSpeedUp_v2")
 	var base := maxf(float(p.get("BattleSpeed (Default)", "2")), 1.0)
-	return int(float(p.get("Balloon", "12")) / base / base)
+	var boost := maxf(float(p.get("BattleSpeed (Boost)", "8")), 1.0)
+	var tier := speed_override if speed_override != 0 else XConfig.battle_speed()
+	return float(p.get("Balloon", "12")) / base / (boost if tier < 4 else base)
 
 ## Sprite_Balloon.frameIndex；还没 updateFrame（帧号 −1）时返回 −1
 func balloon_frame() -> int:

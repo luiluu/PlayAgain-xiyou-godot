@@ -487,7 +487,13 @@ func trait_objects() -> Array:
 				out.append(st)
 	else:
 		out.append_array(states())
-	out.append_array(floor_states())  # CP_StateFloor traitObjects 包装：隐月多出的层
+	if stale_state_ids.is_empty() or not XBattleLogic.STALE_TIMING:
+		out.append_array(floor_states())  # CP_StateFloor traitObjects 包装：隐月多出的层
+	else:
+		# fix6（审查 46 P3-1）：本体还陈旧时多出的层也一起不算（原版隐月恒 1 层、量不到；O-178 叠层跟本体同进缓存，见 raven_reflect_probe reffloor.*）
+		for st in floor_states():
+			if not stale_state_ids.has(int(st.get("id", 0))):
+				out.append(st)
 	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):
