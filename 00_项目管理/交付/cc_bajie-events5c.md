@@ -15,6 +15,11 @@
 
    - 回满牵动 `xiyou_raven_battle`（云端首跑唯一红）：该测试 `residue.sync` 原来 MP 只是巧合相等（重制不回满，MP 停在 60 级的 1193）。回满后重制 61 级 mmp＝1208，而 mv_oracle 量到 MV 渡鸦 61 级后 `mmp` 停在 1193（`paramBase(1)` 已是 1224 / 1208，被某处封顶，**来源没查清**）。先把这两步的 MP 改取参照值不比（同该文件 l.175 的老办法），**留待量清**：渡鸦 60 级以上 mmp 封顶是原版哪段（YEP 参数公式／渡鸦运行时？），重制是否漏。影响仅限渡鸦 60 级以上。
 
+5. **审查 42 追加（总装转来）**：
+   - **P2 死者不加状态**：`mv_script.gd` 的三结义 `_actors_add_state` 执行前判 `state_ids.has(1)`（口径同 `resources.add_state`，313 指令走这条已有判断，不用改）。`event_presets.json` 加 3 个变体 `ce43#k13`／`ce43#k15`／`ce236#k13`（preset `dead`：先 setHp(0)），两个探针／测试 `_apply_preset` 同改；MV 量到死者保持不加（ce43#k13 只有 14、15 得 708，k15 只有 13，ce236#k13 空）。反向验证：把判断改成恒真，`no_regressions` 红这 3 例，改回全绿。
+   - **P3④ FLOOR12_FIX**：对照不再整轮关，改成只对 `m23e1p0`／`m65e2p0`（含其变体）逐用例关；其余 6200 多例在修正生效下仍一致。
+   - 同步提示：本分支 events.json／event_states.json 比主工作区新，同步基线改用主工作区版本，所以再次同步仍要给 obs 接受单（474 条，本轮新增 3 个变体由 `--accept-additions` 接受）。
+
 ## 二、合并提示（给总装）
 
 - main 的 generated 参照落后于 events4：同步 main 时需要把本分支的 `cc_bajie-events5b.json`（320，刷 events4 落后）与 obs 的**合并单**给 `--accept-changes`。重复键（两份都有的）要合成"main 旧摘要 → 最终新摘要"一条；我没有 main 的参照产物，没法本地验证合并单，故未提供。若总装从 `--from-worktree cc/bajie-events5c` 克隆本分支产物则无此问题。

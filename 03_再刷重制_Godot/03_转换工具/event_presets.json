@@ -1,5 +1,5 @@
 {
- "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}）。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
+ "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
  "cases": [
   {
    "base": "m23e2p0",
@@ -4132,6 +4132,36 @@
     "defeats": {
      "66": 999
     }
+   }
+  },
+  {
+   "base": "ce43",
+   "tag": "k13",
+   "preset": {
+    "dead": [
+     13
+    ]
+   }
+  },
+  {
+   "base": "ce43",
+   "tag": "k15",
+   "preset": {
+    "dead": [
+     14,
+     15
+    ]
+   }
+  },
+  {
+   "base": "ce236",
+   "tag": "k13",
+   "preset": {
+    "dead": [
+     13,
+     14,
+     15
+    ]
    }
   }
  ]

@@ -220,9 +220,8 @@ func _run() -> void:
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
 	# 只对修正表里那几扇门的用例关（逐用例设，见循环里）；其余用例保持修正生效的真实路径（审查 41 P3-6）
 	_saved_seal_fix = MVInterpreter.seal_check_fix
-	# O-076 十二层守层者给 12 成就的修正（原版给 13）：对照原版语义，关掉；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
+	# O-076 十二层守层者给 12 成就的修正（原版给 13）：只对 m23e1p0／m65e2p0 两例关（逐用例设，见循环里）；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
 	_saved_floor12 = XAchievement.FLOOR12_FIX
-	XAchievement.FLOOR12_FIX = false
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -285,6 +284,8 @@ func _run() -> void:
 			XGlobalVars._loaded_path = "<unloaded>"
 		var door := RegEx.create_from_string("^m(\\d+)e(\\d+)p").search(str(c.id))
 		MVInterpreter.seal_check_fix = {} if door != null and _saved_seal_fix.has("%s:%s" % [door.get_string(1), door.get_string(2)]) else _saved_seal_fix
+		# O-076 只对两张十二层守层者的用例关（审查 42 P3-4），其余用例保持修正生效
+		XAchievement.FLOOR12_FIX = _saved_floor12 and not (str(c.id).begins_with("m23e1p0") or str(c.id).begins_with("m65e2p0"))
 		var got := await _run_case(c, host)
 		var diffs := _compare(c, got)
 		var row := {"id": c.id, "ok": diffs.is_empty(), "diffs": diffs, "skipped": got.skipped, "aborted": got.aborted}
@@ -441,6 +442,10 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 	for id in p.get("defeats", {}):
 		for _i in int(p.defeats[id]):
 			XEnemyBook.add_defeat(s, int(id))
+	for id in p.get("dead", []):
+		var dead_actor := s.actor(int(id))
+		dead_actor.hp = 0.0
+		dead_actor.refresh_resources()  # 同 MV setHp(0)：refresh 挂死亡状态
 	for k in p.get("selfSwitches", {}):
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
 

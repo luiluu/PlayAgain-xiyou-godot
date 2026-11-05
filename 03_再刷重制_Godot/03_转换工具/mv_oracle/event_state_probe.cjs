@@ -92,6 +92,8 @@ function applyPreset(p) {
   for (const [k, v] of Object.entries(p.variables || {})) w.$gameVariables.setValue(Number(k), v);
   // events5：怪物图鉴击败数（AB_EnemyBook，$gameSystem.defeatNumber(敌人号)）；按 incrementDefeatNumber 逐次加
   for (const [id, n] of Object.entries(p.defeats || {})) for (let i = 0; i < n; i++) w.$gameSystem.incrementDefeatNumber(Number(id));
+  // 审查 42：先倒下的角色（setHp(0) 带死亡状态 1），看事件脚本 addState 对死者的处理
+  for (const id of p.dead || []) w.$gameActors.actor(Number(id)).setHp(0);
   for (const [k, v] of Object.entries(p.selfSwitches || {})) { const [m, e, ch] = k.split(','); w.$gameSelfSwitches.setValue([Number(m), Number(e), ch], !!v); }
 }
 w.prompt = (msg, def) => { rec({t: 'prompt', text: String(msg || '')}); return PROMPT_TEXT; };
