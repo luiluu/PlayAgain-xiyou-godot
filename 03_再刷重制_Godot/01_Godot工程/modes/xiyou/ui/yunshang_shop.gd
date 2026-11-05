@@ -86,12 +86,7 @@ func configure(a: XActor) -> void:
 	var k := XYunshang.key(a)
 	var conf := XYunshang.setting(a)
 	if k == 6:
-		var pool := []
-		for owner in XState.current.members():
-			for sk in owner.skills():
-				if XYunshang.borrowable(sk):
-					pool.append({"text": "%s：%s" % [owner.display_name(), str(sk.name)], "owner": int(owner.actor_id), "skill": int(sk.id)})
-		_borrow(conf, pool, [])
+		_borrow(conf, borrow_pool(a, XState.current.members()), [])
 		return
 	if k == 7:
 		# 原版条件里的 s.cooldown 是 YEP_X_SkillCooldowns 给每个技能都建的 {}，恒真，没有冷却的技能也列出；O-141 默认只列有冷却的（XYunshang.eye_candidate）
@@ -108,6 +103,37 @@ func configure(a: XActor) -> void:
 		return
 	XToast.show_text("这件天衣无需战前配置", true)
 	home()
+
+
+## 空袖藏星的可借技能（队员会的、可借的，「主人：技能」）。优化 O-待定（ui11）：原版不看穿天衣的人的武器，借来的技能
+## 多半因武器类型不符用不了（白龙_11）；开着时云裳（穿的人）当前武器用不了的行灰掉、选不了，行尾写缺什么武器。
+## 借来技能本身的武器要求不改。BORROW_WTYPE_FILTER = false 回到原版（全列、都能选）。
+static var BORROW_WTYPE_FILTER := true
+
+
+static func borrow_pool(wearer: XActor, members: Array) -> Array:
+	var pool := []
+	for owner in members:
+		for sk in owner.skills():
+			if not XYunshang.borrowable(sk):
+				continue
+			var row := {"text": "%s：%s" % [owner.display_name(), str(sk.name)], "owner": int(owner.actor_id), "skill": int(sk.id)}
+			if BORROW_WTYPE_FILTER and not XBattleLogic.wtype_ok(wearer, sk):
+				row.enabled = false
+				row.text += "（需装备%s）" % missing_wtypes(sk)
+			pool.append(row)
+	return pool
+
+
+## 技能要求的武器类型名（requiredWtypeId1／2，「或」的关系，用「／」连）
+static func missing_wtypes(sk: Dictionary) -> String:
+	var names: Array = XDB.system().get("weaponTypes", [])
+	var out := []
+	for k in ["requiredWtypeId1", "requiredWtypeId2"]:
+		var w := int(sk.get(k, 0))
+		if w > 0 and w < names.size() and str(names[w]) != "":
+			out.append(str(names[w]))
+	return "／".join(out)
 
 
 func _borrow(conf: Dictionary, pool: Array, chosen: Array) -> void:

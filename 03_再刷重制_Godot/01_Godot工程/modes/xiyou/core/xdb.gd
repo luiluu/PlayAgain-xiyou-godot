@@ -109,6 +109,8 @@ static func table(name: String) -> Variant:
 		_tables[name] = load_json("db/%s.json" % name)
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
+		if name == "CommonEvents":
+			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 	return _tables[name]
 
 
@@ -132,6 +134,7 @@ static func map(map_id: int) -> Dictionary:
 	var key := "map:%d" % map_id
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
+		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
 	return _tables[key] if _tables[key] != null else {}
 
 

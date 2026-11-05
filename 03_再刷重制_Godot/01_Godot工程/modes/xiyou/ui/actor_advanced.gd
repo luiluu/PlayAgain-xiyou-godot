@@ -388,6 +388,17 @@ func cancel() -> void:
 			_close_confirm()
 
 
+## 名单是 Window_Selectable、不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻，光标变了就重画状态（ui11）
+func page(d: int) -> void:
+	var r := XMenu.page(top, index, members.size(), rows(), d)
+	top = r[0]
+	if r[1] != index:
+		XSound.system(0)
+		index = r[1]
+		_draw_status()
+	_refresh()
+
+
 func _select(i: int) -> void:
 	index = i
 	top = XMenu._scroll_to(i, top, rows())
@@ -464,3 +475,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
 		get_viewport().set_input_as_handled()
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
+	elif mode == "list" and XMenu.page_dir(event) != 0:
+		get_viewport().set_input_as_handled()
+		page(XMenu.page_dir(event))

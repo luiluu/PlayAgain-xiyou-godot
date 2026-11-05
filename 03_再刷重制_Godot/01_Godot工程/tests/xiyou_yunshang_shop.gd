@@ -127,6 +127,8 @@ func _run() -> void:
 	wear(s, eight, 14)
 	wear(s, nine, 9)
 	XYunshang.o_eye_cooldown = false
+	# 原版参照对照时关掉 ui11 的空袖藏星武器过滤（O-待定），后面单独测
+	XYunshangShop.BORROW_WTYPE_FILTER = false
 	var shop := XYunshangShop.new()
 	add_child(shop)
 	await frames(3)
@@ -149,6 +151,24 @@ func _run() -> void:
 	await pick(1)
 	at.call("borrowed")
 	same_setting("borrowed", XYunshang.setting(a), want.borrowed.setting)
+	# ui11 过滤：同一池子开着时，云裳当前武器用不了的行灰掉、写缺什么武器；能用的照常；行数不变
+	var raw := XYunshangShop.borrow_pool(a, s.members())
+	XYunshangShop.BORROW_WTYPE_FILTER = true
+	var flt := XYunshangShop.borrow_pool(a, s.members())
+	var ok_rows := true
+	var greyed := 0
+	for i in flt.size():
+		var sk := XDB.rec("Skills", int(flt[i].skill))
+		var usable := XBattleLogic.wtype_ok(a, sk)
+		if usable:
+			ok_rows = ok_rows and flt[i].get("enabled", true) and flt[i].text == raw[i].text
+		else:
+			greyed += 1
+			ok_rows = ok_rows and flt[i].get("enabled", true) == false and str(flt[i].text).begins_with(raw[i].text + "（需装备") \
+				and XYunshangShop.missing_wtypes(sk) != ""
+	check("borrow_filter_rows", ok_rows and flt.size() == raw.size() and raw.all(func(r): return r.get("enabled", true)), [greyed, flt])
+	check("borrow_filter_has_greyed", greyed > 0, greyed)
+	XYunshangShop.BORROW_WTYPE_FILTER = false
 	await pick(3)
 	await pick(0)
 	at.call("eye")
@@ -628,4 +648,5 @@ func p9_display() -> void:
 func finish() -> void:
 	await get_tree().create_timer(0.3, true, false, true).timeout
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_yunshang_shop", "passed": checks - failures.size(), "total": checks, "failures": failures}))
+	XYunshangShop.BORROW_WTYPE_FILTER = true
 	get_tree().quit(0 if failures.is_empty() else 1)

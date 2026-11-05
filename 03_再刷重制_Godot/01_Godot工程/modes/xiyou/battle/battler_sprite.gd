@@ -100,6 +100,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	if sprite == null:
 		sprite = Sprite2D.new()
 	add_child(sprite)
+	_make_overlay()
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
 	_base_scale = sprite_scale
@@ -218,6 +219,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func motion_tick() -> void:
+	overlay_tick()
 	if weapon and weapon.visible:
 		_weapon_count += 1
 		if _weapon_count >= WEAPON_WAIT:
@@ -779,3 +781,88 @@ func seq_update() -> void:
 	if effect_left > 0:
 		effect_left -= 1
 	motion_tick()
+
+
+# ---- 状态 overlay（rpg_sprites Sprite_StateOverlay＋YEP_X_VisualStateFX＋YEP_X_ActSeqPack2 updateStateSprites，ui11） ----
+## 原版读数见 tests/fixtures/state_overlay_oracle.json（冻结 v0.28 战斗夹具，2026-11-05）。
+## 回退开关：false＝不画 overlay（回到重制原来没有这一层的样子）
+static var STATE_OVERLAY := true
+const OVERLAY_CELL := 96
+var overlay: Sprite2D
+var _ov_count := 0
+var _ov_pattern := 0
+var _ov_index := 0
+
+
+## Sprite_StateOverlay.animationWait（SSEP_BattleSpeedUp_v2 覆写）：StateOverlay ÷ BattleSpeed (Default)＝8÷2＝4 帧换一格
+static var _ov_wait := -1.0
+static func overlay_wait() -> float:
+	if _ov_wait < 0.0:
+		var p := XDB.plugin("SSEP_BattleSpeedUp_v2")
+		var d := float(str(p.get("BattleSpeed (Default)", "1")))
+		_ov_wait = float(str(p.get("StateOverlay", "8"))) / (d if d > 0.0 else 1.0)
+	return _ov_wait
+
+
+## Game_BattlerBase.stateOverlayIndex（VisualStateFX）：states() 顺序里第一个 overlay>0 的
+static func overlay_index_of(b: XBattler) -> int:
+	for st in b.states():
+		var o := int(st.get("overlay", 0))
+		if o > 0:
+			return o
+	return 0
+
+
+## VisualStateFX initChildStateSprites：插在主体精灵之后；锚点 (0.5, 1)，States.png 每格 96×96，初始空帧
+func _make_overlay() -> void:
+	var t := _load("system", "States")
+	if t == null:
+		return
+	overlay = Sprite2D.new()
+	overlay.texture = t
+	overlay.centered = true
+	overlay.offset = Vector2(0, -OVERLAY_CELL / 2.0)
+	overlay.region_enabled = true
+	overlay.region_rect = Rect2(0, 0, OVERLAY_CELL, OVERLAY_CELL)
+	overlay.visible = false
+	add_child(overlay)
+	move_child(overlay, sprite.get_index() + 1)
+
+
+## 原版 Sprite_Battler（敌人）的缩放：精英 1.8、备注倍率、呼吸都在 Sprite_Enemy 本身上，overlay 是它的子精灵所以跟着缩；
+## 角色 Sprite_Actor 本身不缩（0.75 只缩 _mainSprite），overlay 恒 1
+func overlay_scale() -> Vector2:
+	if battler is XActor:
+		return Vector2.ONE
+	return Vector2(absf(sprite.scale.x), absf(sprite.scale.y)) if sprite else Vector2.ONE
+
+
+## Sprite_StateOverlay.update：每帧计数，到 animationWait 换下一格（0～7 循环）并重读 overlay 号；位置每帧照 updateStateSprites
+func overlay_tick() -> void:
+	if overlay == null:
+		return
+	_ov_count += 1
+	if _ov_count >= overlay_wait():
+		_ov_pattern = (_ov_pattern + 1) % 8
+		_ov_index = overlay_index_of(battler) if battler else 0
+		_ov_count = 0
+	var sc := overlay_scale()
+	overlay.scale = sc
+	# 原版 updateStateSprites 在 updateScale（复位成备注倍率）之后、updateBreathing 之前算 y，所以 y 用不含呼吸的倍率，
+	# 画的时候再乘含呼吸的缩放（读数：父缩放 0.98 时 y 仍是 4）
+	var base_y := 1.0 if battler is XActor else _base_scale * look.scale
+	overlay.position = Vector2(0, overlay_local_y(base_y) * sc.y)
+	var shown := STATE_OVERLAY and _ov_index > 0
+	if shown and battler is XEnemy and XSvEnemy.is_sv(battler as XEnemy):
+		shown = XSvEnemy.state_overlay(battler as XEnemy)
+	overlay.visible = shown
+	if shown:
+		overlay.region_rect = Rect2(_ov_pattern * OVERLAY_CELL, (_ov_index - 1) * OVERLAY_CELL, OVERLAY_CELL, OVERLAY_CELL)
+
+
+## YEP_X_ActSeqPack2 updateStateSprites：y＝−(spriteHeight − 64×scale.y) − ceil((浮空＋跳跃)×spriteHeight)（Sprite_Battler 本地坐标）；
+## spriteHeight 同 anim_lift（敌人单图原图高、侧视取整一格；角色一格）。SV 敌人浮动（addFloatingHeight）在 ActSeqPack2
+## 里加上、又被 AnimatedSVEnemies updateFloatingStateSprite 减回去，净为 0，所以不算。
+func overlay_local_y(scale_y: float) -> float:
+	var h := floorf(look.cell.y if look.cell.y > 0 else 64.0)
+	return -(h - 64.0 * scale_y) + float(ceili((float_height + jump_height()) * -h))

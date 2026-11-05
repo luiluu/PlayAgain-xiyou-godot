@@ -57,6 +57,7 @@ func _run() -> void:
 	skill_types(b, [sukuna, raven, garou])
 	ledger(raven)
 	await popup_order_case(b, raven, foes)
+	await victory_text_case(b)
 	b.queue_free()
 	await frames(3)
 	finish()
@@ -368,6 +369,35 @@ func ledger(a: XActor) -> void:
 	check("ledger.text", lines == ["灵魂：12,345　进阶：%d/5　进阶印：%d" % [st, s.item_count(XRaven.SEAL)], "本阶达" + next + "魂得印；进阶后清零"], lines)
 	check("ledger.other-skill", XRaven.ledger_help(a, XDB.rec("Skills", XRaven.PECK)).is_empty())
 	check("ledger.other-actor", XRaven.ledger_help(s.actor(XSukuna.ACTOR), XDB.rec("Skills", XRaven.SOUL_LEDGER)).is_empty())
+
+
+## ui11（O-待定）：胜利提示（饿狼神之触媒等）在结算画面关后用消息窗显示，不会自己消失，按确定关；回退开关不显示
+func victory_text_case(b: XBattleScene) -> void:
+	XMessageBox.auto = false
+	b.logic.victory_texts = [XGarou.CATALYST_TEXT]
+	b.message.visible = false
+	var done := [false]
+	var run := func():
+		await b.victory_messages()
+		done[0] = true
+	run.call()
+	await frames(90)
+	check("victory_text.shown_and_waits", b.message.visible and b.message.is_busy() and not done[0], [b.message.visible, b.message.is_busy(), done[0]])
+	for i in 60:
+		if done[0]:
+			break
+		var ev := InputEventAction.new()
+		ev.action = "ui_accept"
+		ev.pressed = true
+		b.message._unhandled_input(ev)
+		await frames(3)
+	check("victory_text.closes_on_ok", done[0] and not b.message.is_busy(), [done[0], b.message.is_busy()])
+	XBattleScene.VICTORY_TEXT_MESSAGE = false
+	await b.victory_messages()
+	check("victory_text.rollback_none", not b.message.is_busy())
+	XBattleScene.VICTORY_TEXT_MESSAGE = true
+	b.logic.victory_texts = []
+	XMessageBox.auto = true
 
 
 func finish() -> void:

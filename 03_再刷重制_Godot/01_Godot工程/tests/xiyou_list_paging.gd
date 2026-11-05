@@ -80,6 +80,7 @@ func _run() -> void:
 	await _skill()
 	await _save_and_options()
 	await _actor_switch_keys()
+	await _ui11_pages()
 	_scan()
 	XMenu.LIST_PAGING = true
 	var passed := results.filter(func(x): return x.passed).size()
@@ -298,13 +299,100 @@ func _save_and_options() -> void:
 	await frames()
 
 
+## ui11：事件选项窗、更衣、角色进阶、修炼目录、图鉴掉落列表（原版都是 Window_Selectable／Window_Command，不接管 pageup／pagedown）
+func _ui11_pages() -> void:
+	var ids := []
+	for i in range(1, 41):
+		ids.append(i)
+	var s := XState.new_game(3, 1, ids)
+	XState.current = s
+	# 事件选项窗 30 行、一页 12 行
+	var cw := XChoiceWindow.new()
+	add_child(cw)
+	await frames()
+	var list := []
+	for i in range(30):
+		list.append({"label": "选项%d" % i})
+	cw.open(list, func(_r): pass, func(): pass)
+	var pr := cw.page_rows()
+	cw._unhandled_input(key(KEY_E))
+	check("choice_page_down", pr == 12 and cw.top == 12 and cw.index == 12, [pr, cw.top, cw.index])
+	cw._unhandled_input(key(KEY_E))  # 12→18（夹到 maxTopRow），光标 24
+	cw._unhandled_input(key(KEY_E))  # 末页再按不动（topRow＋页行数＝总行数）
+	check("choice_page_end_clamped", cw.top == 18 and cw.index == 24, [cw.top, cw.index])
+	cw._unhandled_input(key(KEY_Q))
+	check("choice_page_up", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
+	cw._unhandled_input(key(KEY_W))
+	check("choice_w_not_page", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
+	cw.queue_free()
+	# 更衣：名单换成 30 人（只测翻页算式落在页上）
+	var cs := XCostumesScene.new()
+	add_child(cs)
+	await frames()
+	cs.actors = s.members().slice(0, 30)
+	cs.index = 0
+	cs.top = 0
+	cs._unhandled_input(key(KEY_E))
+	check("costumes_page_down", cs.top == XCostumesScene.ROWS and cs.index == XCostumesScene.ROWS, [cs.top, cs.index])
+	cs._unhandled_input(action("ui_page_up"))
+	check("costumes_page_up", cs.top == 0 and cs.index == 0, [cs.top, cs.index])
+	cs.queue_free()
+	# 角色进阶：名单 40 人
+	var aa := XActorAdvancedScene.new()
+	add_child(aa)
+	await frames()
+	var ar := aa.rows()
+	var na: int = aa.members.size()
+	aa._unhandled_input(key(KEY_E))
+	check("advanced_page_down", na > ar and aa.top == mini(ar, na - ar) and aa.index == ar, [na, ar, aa.top, aa.index])
+	var w0 := XMenu.wheel_dir(wheel(true))
+	aa._unhandled_input(key(KEY_Q))
+	check("advanced_page_up", aa.top == 0 and aa.index == 0 and w0 == 1, [aa.top, aa.index])
+	aa.queue_free()
+	# 修炼目录：40 人、一页 19 行；滚轮只滚不动光标
+	var tr := XTrainingScene.new()
+	add_child(tr)
+	await frames()
+	tr._unhandled_input(key(KEY_E))
+	check("training_page_down", tr.top == XTrainingScene.INDEX_ROWS and tr.index == XTrainingScene.INDEX_ROWS, [tr.top, tr.index])
+	tr._unhandled_input(key(KEY_Q))
+	var wv := wheel(true)
+	wv.position = Vector2(100, 100)
+	tr._gui_input(wv)
+	check("training_wheel_scrolls_only", tr.top == 1 and tr.index == 0, [tr.top, tr.index])
+	tr.queue_free()
+	# 图鉴掉落列表：塞 60 行（复制一只敌人的掉落行），一页按 drop_rows_visible
+	var eb := XEnemyBookPage.new()
+	add_child(eb)
+	await frames()
+	var row0 := {}
+	for id in range(1, 200):
+		var dr := XEnemyBookPage.drop_rows(XEnemyBookPage.new_enemy(id))
+		if not dr.is_empty():
+			row0 = dr[0]
+			break
+	var fake := []
+	for i in range(60):
+		fake.append(row0)
+	eb.mode = "drops"
+	eb.drop_list = fake
+	eb.drop_index = 0
+	eb.drop_top = 0
+	var dv := eb.drop_rows_visible()
+	eb._unhandled_input(key(KEY_E))
+	check("book_drops_page_down", not row0.is_empty() and eb.drop_top == dv and eb.drop_index == dv, [dv, eb.drop_top, eb.drop_index])
+	var wb := wheel(true)
+	wb.position = XEnemyBookPage.STATUS_RECT.get_center()
+	eb._gui_input(wb)
+	check("book_drops_wheel", eb.drop_top == dv + 1 and eb.drop_index == dv, [eb.drop_top, eb.drop_index])
+	eb.mode = "index"
+	eb.queue_free()
+	await frames()
+
+
 ## 用 XMenu._scroll_to 的列表页都要接滚轮与翻页；豁免写原因
 const SCAN_EXEMPT := {
 	"forget_skill_scene.gd": "列表借 XChoiceWindow（它自己接滚轮），翻页随 choice_window",
-	"training_scene.gd": "一页 19 行，队员超过 19 人才会滚（ui8b：极少触发，暂不做）",
-	"choice_window.gd": "事件选项窗；ui8b 清单未列翻页，待核",
-	"actor_advanced.gd": "ui8b 清单未列翻页，待核",
-	"costumes_scene.gd": "ui8b 清单未列翻页，待核",
 }
 
 
