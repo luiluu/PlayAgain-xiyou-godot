@@ -43,3 +43,9 @@
 
 - 无
 
+
+## 验证
+
+- 全过：xiyou_cat_help 35、xiyou_cat 1033、xiyou_cat_trial、xiyou_help_card 1054、xiyou_list_paging 145、xiyou_actor_book、xiyou_battle_ui、xiyou_character_help_cost、xiyou_growth_help、xiyou_toji、xiyou_mira_battle、xiyou_battle_gaps、xiyou_ui_page_details、xiyou_guyu_ui、xiyou_black_flash_ui。
+- 选测列了 58 个场景，共用测试槽排队太慢（十个就等了 63 分钟），只跑了与说明卡、角色技能卡、翻页直接相关的 15 个；其余（floor_reach、shop、warehouse 等）未跑，合并时由总装全量／选测补。
+- 探针登记检查通过；`cat_help_probe.cjs` 夹具 `cat_help_oracle.json` 是 .sandbox 产物的手工拷贝（头注释写了命令）。
