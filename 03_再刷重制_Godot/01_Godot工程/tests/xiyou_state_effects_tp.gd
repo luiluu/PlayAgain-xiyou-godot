@@ -1,7 +1,9 @@
 extends Node
-## 2g: native TP resource/guard matrix and lifecycle-bound preview isolation.
-## Apply fixtures temporarily supply the future op; production Apply stays JS
-## until map/menu own an explicit operation result. No oracle values are edited.
+## 2g: native TP resource/guard matrix and lifecycle-bound preview isolation. No oracle values are edited.
+## 两个 Apply 类 TP 块（状态 1334／1336「横霸千峰」<Custom Apply Effect> user.gainTp(25／75)；YEP_BuffsStatesCore
+## customEffectEval 里 user＝持有者）：转换器译成 gain_steps，rules11 起矩阵直接用正式数据比参照（原先临时换成
+## gain_resource 替身比，正式那段没被核过）；另核开战路径：技能 7499／7516 <StartPushState1334／1336: 100%>
+## 在 dsPassiveSkill Scene_Battle.start（initTp 之后）加状态 → Apply → 加 TP。
 class NativeActor extends XActor:
 	var hp_cap := 485.0
 	func param(i: int) -> float:
@@ -119,17 +121,14 @@ func _ready() -> void:
 	check("inventory.untranslated_46", untranslated == 46, untranslated)
 	for id in [607, 609, 857]:
 		check("production.battle.%d" % id, XDB.rec("States", id).effects.any(func(e): return e.phase == "battle" and e.op == "gain_resource"))
-	var saved := {}
 	for id in [1334, 1336]:
 		var st := XDB.rec("States", id)
-		saved[id] = st.effects
-		check("production.apply.%d" % id, st.effects.any(func(e): return e.phase == "apply" and e.op == "gain_steps"))
-		st.effects = [{"phase": "apply", "op": "gain_resource", "recipient": "user", "resource": "tp", "amount": 25 if id == 1334 else 75}]
-	matrix(cases)
-	for id in saved:
-		XDB.rec("States", id).effects = saved[id]
+		check("production.apply.%d" % id, st.effects.size() == 1 and st.effects[0].phase == "apply" and st.effects[0].op == "gain_steps"
+			and st.effects[0].steps.size() == 1 and st.effects[0].steps[0].resource == "tp", st.effects)
+	matrix(cases)   # 正式数据（gain_steps），不换替身
 	preview_and_ownership()
 	battle_start(cases["tp.battle_initialization"])
+	start_push_tp()
 	XStateEffects.observer = Callable()
 	print("TEST_RESULT=" + JSON.stringify({"test": "xiyou_state_effects_tp", "total": checks, "passed": checks - failures.size(), "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
@@ -193,6 +192,22 @@ func matrix(cases: Dictionary) -> void:
 		r.refresh(b)
 		compare("resist.refresh", b, r, row.refreshed)
 		check("resist.draws", r.random.draws == int(row.draws))
+
+## 开战：学了横霸千峰（7499 推 1334、7516 推 1336）的角色，initTp（替身固定 12）之后加状态，Apply 再加 25／75
+func start_push_tp() -> void:
+	for pair in [[7499, 1334, 25.0], [7516, 1336, 75.0]]:
+		var s := XState.new_game(3, 1, [8])
+		var a: XActor = s.battle_members()[0]
+		a.learn_skill(int(pair[0]))
+		a.refresh_passive()
+		var logic := NativeStart.new()
+		logic.elite_roll = 100
+		logic.setup(2, s)
+		var b: XActor = logic.actors[0]
+		check("start_push.%d.state" % pair[1], b.state_ids.has(int(pair[1])), b.state_ids)
+		check("start_push.%d.tp" % pair[1], b.tp == minf(12.0 + float(pair[2]), b.max_tp()), [b.tp, b.max_tp()])
+		var other: XActor = logic.actors[1]
+		check("start_push.%d.only_self" % pair[1], other.tp == 12.0 and not other.state_ids.has(int(pair[1])), [other.tp, other.state_ids])
 
 func fingerprint(b: XBattler, r: XResourceContext) -> Array:
 	return [b.hp, b.mp, b.tp, b.state_ids.duplicate(), b.state_turns.duplicate(), b.param_cells.duplicate(), b.param_dirty,
