@@ -124,7 +124,9 @@ function snap(watch = []) {
   const actors = {};
   for (const id of new Set([...g.$gameParty._actors, ...watch])) {
     const a = g.$gameActors.actor(id);
-    actors[id] = {name: a.name(), level: a.level, classId: a._classId, skills: a._skills.slice().sort((x, y) => x - y), states: a._states.slice().sort((x, y) => x - y)};
+    actors[id] = {name: a.name(), level: a.level, classId: a._classId, skills: a._skills.slice().sort((x, y) => x - y), states: a._states.slice().sort((x, y) => x - y),
+      // events5：生命／魔法当前值与指令 317 的能力加成（_paramPlus 八项）
+      hp: a._hp, mp: a._mp, paramPlus: (a._paramPlus || []).slice(0, 8).map(Number)};
   }
   const flags = {};
   for (let i = 1; i <= 8; i++) if (g.$gameParty['DCultyL' + i] !== undefined) flags['DCultyL' + i] = !!g.$gameParty['DCultyL' + i];
@@ -138,6 +140,8 @@ function snap(watch = []) {
     designations: Object.keys(g.ConfigManager.DesignationN || {}).filter(k => g.ConfigManager.DesignationN[k]).sort(),
     achievements: Object.keys(g.$gameParty.SAchievementS || {}).filter(k => !/Time$/.test(k)).sort(),
     // 画面色调与天气只取指令设下的目标（223／236）：色调目标、天气强度目标，天气类型仅在目标强度不为 0 时记（渐弱中的旧类型不算）
+    // events5：指令 283 设的战斗背景（$gameMap._battleback1Name／2Name）
+    battleback: [String(g.$gameMap._battleback1Name || ''), String(g.$gameMap._battleback2Name || '')],
     screen: {tone: g.$gameScreen._toneTarget.map(Number), weather: g.$gameScreen._weatherPowerTarget ? String(g.$gameScreen._weatherType) : 'none', power: Number(g.$gameScreen._weatherPowerTarget)}};
 }
 function mapDelta(a, b, empty) {
@@ -166,7 +170,7 @@ function delta(a, b) {
   put('actors', actors);
   for (const k of ['difficulty', 'encounter', 'followers', 'actorName', 'actorMaxLevel']) if (a[k] !== b[k]) d[k] = b[k];
   put('flags', mapDelta(a.flags, b.flags, null));
-  for (const k of ['designations', 'achievements']) if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) d[k] = b[k];
+  for (const k of ['designations', 'achievements', 'battleback']) if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) d[k] = b[k];
   if (JSON.stringify(a.screen) !== JSON.stringify(b.screen)) d.screen = b.screen;
   return d;
 }

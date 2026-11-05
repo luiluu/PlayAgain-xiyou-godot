@@ -1,5 +1,5 @@
 {
- "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty）。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
+ "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}）。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
  "cases": [
   {
    "base": "m23e2p0",
@@ -4122,6 +4122,15 @@
    "preset": {
     "variables": {
      "106": 1
+    }
+   }
+  },
+  {
+   "base": "m17e4p0",
+   "tag": "d1",
+   "preset": {
+    "defeats": {
+     "66": 999
     }
    }
   }

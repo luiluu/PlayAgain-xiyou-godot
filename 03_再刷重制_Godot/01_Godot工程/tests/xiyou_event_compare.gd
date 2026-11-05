@@ -432,6 +432,9 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		s.set_switch(int(k), bool(p.switches[k]))
 	for k in p.get("variables", {}):
 		s.set_variable(int(k), float(p.variables[k]))
+	for id in p.get("defeats", {}):
+		for _i in int(p.defeats[id]):
+			XEnemyBook.add_defeat(s, int(id))
 	for k in p.get("selfSwitches", {}):
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
 
@@ -502,7 +505,8 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		var a := s.actor(id)
 		var skills := Array(a.skill_ids).duplicate()
 		skills.sort()
-		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills, "states": _sorted_ints(a.state_ids)}
+		actors[str(id)] = {"name": a.display_name(), "level": a.level, "classId": a.class_id, "skills": skills, "states": _sorted_ints(a.state_ids),
+			"hp": a.hp, "mp": a.mp, "paramPlus": _param_plus_row(s, id)}
 	var flags := {}
 	for k in s.flags:
 		if str(k).begins_with("DCultyL"):
@@ -513,7 +517,17 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		"party": Array(s.party).duplicate(), "actors": actors, "difficulty": s.difficulty, "encounter": s.encounter_enabled,
 		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags,
 		"designations": _true_keys(XConfig.designations()), "achievements": _true_keys(s.achievements, true),
-		"screen": s.screen.target_snapshot()}
+		"screen": s.screen.target_snapshot(),
+		"battleback": [str(s.battleback[0]), str(s.battleback[1])] if s.battleback.size() == 2 else ["", ""]}
+
+
+## 指令 317 累计的能力加成（八项；没改过＝全 0，同参照 _paramPlus 初值）
+func _param_plus_row(s: XState, id: int) -> Array:
+	var row = s.mv_param_plus.get(str(id))
+	var out := []
+	for i in 8:
+		out.append(float(row[i]) if row is Array and row.size() > i else 0.0)
+	return out
 
 
 func _sorted_ints(a: Array) -> Array:
@@ -576,7 +590,7 @@ func _delta(a: Dictionary, b: Dictionary) -> Dictionary:
 		if a[k] != b[k]:
 			d[k] = b[k]
 	put.call("flags", _map_delta(a.flags, b.flags, null))
-	for k in ["designations", "achievements"]:
+	for k in ["designations", "achievements", "battleback"]:
 		if JSON.stringify(a[k]) != JSON.stringify(b[k]):
 			d[k] = b[k]
 	if JSON.stringify(a.screen) != JSON.stringify(b.screen):
