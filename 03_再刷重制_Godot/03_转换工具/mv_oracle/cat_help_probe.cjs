@@ -32,7 +32,7 @@ function card(item) {
   return out;
 }
 // 小猫剑圣一族（note 含 <CodexCat:）的说明卡：characterHelpView 走 CodexCat.helpItem，分「没有 178」（预览）和「178 已建、10 级」两种。
-// 仅写 .sandbox/cat_help_cards.json。
+// 仅写 .sandbox/cat_help_cards.json；夹具 tests/fixtures/cat_help_oracle.json 是它的拷贝（cp .sandbox/cat_help_cards.json ../../01_Godot工程/tests/fixtures/cat_help_oracle.json），专项 xiyou_cat_help 读。
 const out = {sourceIdentity: identity, releaseVersion: identity.releaseVersion, states: {}};
 const targets = [];
 for (let id = 10437; id <= 10450; id++) targets.push(['skills', w.$dataSkills, id]);

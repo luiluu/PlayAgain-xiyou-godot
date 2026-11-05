@@ -82,6 +82,7 @@ func _run() -> void:
 	await _actor_switch_keys()
 	await _ui11_pages()
 	_scan()
+	_scan_cursor_sound()
 	XMenu.LIST_PAGING = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -412,3 +413,57 @@ func _scan() -> void:
 		check("scan_wheel_" + f, has_wheel)
 		check("scan_page_" + f, has_page)
 	check("scan_found_pages", listed >= 20, listed)
+
+
+## 光标音（ui15）：界面里「移动／翻页」函数（名叫 _move／move／_move_list／page／_page／_scroll）本身或它调到的同文件函数里要有 XSound.system(0)；
+## 原版 Window_Selectable 的 cursorUp／Down／pageup／pagedown／选项移动都响 SoundManager.playCursor。豁免写明原因。
+const CURSOR_FUNCS := ["_move", "move", "_move_list", "page", "_page", "_scroll"]
+const CURSOR_DIRS := ["res://modes/xiyou/ui/", "res://modes/xiyou/battle/"]
+## 文件 → 原因（整个文件不扫）／ 文件::函数 → 原因（只豁免这个函数）
+const CURSOR_EXEMPT := {
+	"sequence_player.gd": "战斗演出序列的 move 指令（移动精灵），不是列表光标",
+	"otb_bar.gd": "行动条图标位移，不是列表光标",
+	"menu.gd::_move": "静态纯函数（算新下标）；光标音在输入处理里响（index 变了才响，同 processCursorMove）",
+	"menu.gd::page": "静态纯函数（算翻页后的顶行、下标）；光标音在输入处理里响",
+	"achievement_scene.gd::_scroll": "鼠标滚轮只滚动显示、不移光标：Window_Selectable.processWheel 不响",
+	"battle_list.gd::_scroll": "鼠标滚轮只滚动显示、不移光标：Window_Selectable.processWheel 不响",
+	"battle_list.gd::page": "光标音在 _unhandled_input 末尾 if index != last 统一响（原版 processCursorMove 同样看下标变没变）",
+	"status_page.gd::_scroll": "JAH_Window_Status_PageSelect 是横排命令窗，上下键 cursorUp/Down 不改下标（index < maxCols）→ processCursorMove 不响；只有左右换页（set_page）响。2026-11-05 核对 JAH_StatusMenuCore.js:2105、rpg_windows.js:1018",
+}
+
+
+static func _func_bodies(src: String) -> Dictionary:
+	var out := {}
+	var re := RegEx.create_from_string("(?m)^(?:static )?func (\\w+)")
+	var ms := re.search_all(src)
+	for i in range(ms.size()):
+		var end := ms[i + 1].get_start() if i + 1 < ms.size() else src.length()
+		out[ms[i].get_string(1)] = out.get(ms[i].get_string(1), "") + src.substr(ms[i].get_start(), end - ms[i].get_start())
+	return out
+
+
+static func _plays_cursor(name: String, bodies: Dictionary, seen := {}) -> bool:
+	if seen.has(name) or not bodies.has(name):
+		return false
+	seen[name] = true
+	var body: String = bodies[name]
+	if body.contains("XSound.system(0)"):
+		return true
+	for callee in bodies.keys():
+		if callee != name and body.contains(callee + "(") and _plays_cursor(callee, bodies, seen):
+			return true
+	return false
+
+
+func _scan_cursor_sound() -> void:
+	var seen_funcs := 0
+	for dir in CURSOR_DIRS:
+		for f in DirAccess.get_files_at(dir):
+			if not f.ends_with(".gd") or f in CURSOR_EXEMPT:
+				continue
+			var bodies := _func_bodies(FileAccess.get_file_as_string(dir + f))
+			for fn in CURSOR_FUNCS:
+				if bodies.has(fn) and not CURSOR_EXEMPT.has(f + "::" + fn):
+					seen_funcs += 1
+					check("cursor_se_%s::%s" % [f, fn], _plays_cursor(fn, bodies))
+	check("cursor_scan_found", seen_funcs >= 30, seen_funcs)
