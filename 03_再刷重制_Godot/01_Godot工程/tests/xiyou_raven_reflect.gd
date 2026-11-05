@@ -22,10 +22,10 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func _fake_state(xparam_id: int, value: float) -> int:
+func _fake_state(xparam_id: int, value: float, code := 22) -> int:
 	var t: Array = XDB.table("States")
 	var id := t.size()
-	t.append({"id": id, "name": "测试状态%d" % xparam_id, "traits": [{"code": 22, "dataId": xparam_id, "value": value}],
+	t.append({"id": id, "name": "测试状态%d" % xparam_id, "traits": [{"code": code, "dataId": xparam_id, "value": value}],
 		"note": "", "meta": {}, "iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
 	return id
 
@@ -138,6 +138,7 @@ func _compare(id: String, got: Dictionary, want: Dictionary, with_state := true)
 			if base_w == 0.0:
 				check("%s.zero%d" % [id, k], float(gl[k].value) == 0.0 and float(wl[k].value) == 0.0, [gl[k].value, wl[k].value])
 				continue
+			check("%s.abs%d" % [id, k], absf(float(gl[k].value) - float(wl[k].value)) <= 1e-6 * maxf(1.0, absf(float(wl[k].value))), [gl[k].value, wl[k].value])  # 绝对值（raven2）
 			var rg: float = float(gl[k].value) / base_g
 			var rw: float = float(wl[k].value) / base_w
 			check("%s.ratio%d" % [id, k], absf(rg - rw) <= RATIO_TOLERANCE * maxf(1.0, absf(rw)), [gl[k].value, wl[k].value, rg, rw])
@@ -155,9 +156,10 @@ func _reflect(c: Dictionary) -> void:
 	var r := _raven(5, 60)
 	var logic: XBattleLogic = r[0]
 	var a: XActor = r[1]
-	a.add_param(5, 1e6)  # 同参照：魔防 +1e6，自伤远小于生命上限
-	a.param_mark_dirty()
-	a.param_refresh()
+	if not str(c.id).begins_with("reflect.edge"):  # 参照的 edge 两例没加魔防
+		a.add_param(5, 1e6)  # 同参照：魔防 +1e6，自伤远小于生命上限
+		a.param_mark_dirty()
+		a.param_refresh()
 	var mode := str(setup.get("mode", "plain"))
 	var mrf := 1.0
 	if c.id == "reflect.edge.0.5":
@@ -168,6 +170,8 @@ func _reflect(c: Dictionary) -> void:
 		var st := _fake_state(5, mrf)
 		for e in logic.enemies:
 			e.add_state(st)
+	if setup.has("tcr"):
+		a.add_state(_fake_state(5, float(setup.tcr), 23))  # 同参照强设 tcr（sparam 5 ＝ 受伤充 TP 倍率）
 	var store: Dictionary = XState.current.raven
 	if "myth" in mode:
 		store["myth"] = 3

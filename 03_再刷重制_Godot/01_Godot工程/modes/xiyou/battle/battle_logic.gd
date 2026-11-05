@@ -1069,6 +1069,10 @@ func act(u: XBattler, skill, target) -> Array:
 ## 回合结束（MV onTurnEnd）：解除防御、再生、状态回合 -1；恢复行动的人只补进下个回合。
 func end_turn() -> Array:
 	var logs := []
+	for a in actors:
+		if a is XActor:
+			a.rv_erosion_stale = false  # 回合末 onTurnEnd 标 need_refresh，随后的 refresh 重建特性缓存
+			a.rv_tp_refreshed = false
 	preemptive = false  # BattleManager.endTurn 开头清先制／偷袭（YEP Battle Engine Core 的 endTurn 包装里也清）
 	surprise = false
 	var before := _movable_snapshot()
@@ -2369,7 +2373,10 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	# 种族蛮骨（YEP setHp 里的 CodexRaces.limitHp）只限扣血量；受伤充 TP 仍按原值（onDamage(value)）
 	_action_resources.gain(t, "hp", -XRaceBattle.limit_loss(self, t, value))
 	if value > 0.0:
+		var tp_before: float = t.tp
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+		if t.tp != tp_before:
+			XRaven.on_tp_refresh(t)  # setTp 的 refresh：消耗待刷新标记，并让前一击留下的黑暗侵蚀特性缓存生效
 	if drain:
 		_action_resources.gain(u, "hp", value)
 	return value

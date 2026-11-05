@@ -401,6 +401,26 @@ static func begin(u, skill) -> void:
 	frame = {"user": u, "skill": skill, "peck": false, "targets": [], "handled": false}
 
 
+## krz_state_re 的状态缓存时序（raven2 量得，参照 raven_reflect_probe 的 reflect.10124.myth 与 reflect.stale 对照）：
+## Game_Actor 的特性来源 states() 读缓存，只在 refresh 且 need_refresh 为真时重建；加新状态本身会 refresh，但 need_refresh 已被前面的
+## refresh 消耗掉就不重建。同一次 apply 里伤害充 TP（受伤 floor(50×伤害/最大生命×tcr) ≥ 1，setTp 真的变了才 refresh）会把待刷新标记
+## 消耗在加黑暗侵蚀之前，于是黑暗侵蚀的元素有效度（特性 11×1.5）晚一击生效：反射回渡鸦自己的多段，第二击读不到，第三击才 ×1.5。
+## 伤害不足最大生命 2%（TP 加 0）时加状态当场重建，第二击就 ×1.5。神话形态只是伤害更大才触发，普通形态打到 2% 同样晚一击。
+## 只建模渡鸦自加的黑暗侵蚀，且只对角色目标（敌人的状态缓存路径不同；多段技能对敌人一段只有一次 apply）。
+static func on_tp_refresh(t) -> void:
+	if not (t is XActor):
+		return
+	t.rv_tp_refreshed = true
+	t.rv_erosion_stale = false  # 这次 refresh 在伤害之后：重建缓存，之前加的黑暗侵蚀从下一击起生效
+
+
+static func _mark_erosion_stale(t, had: bool) -> void:
+	if t is XActor and not had and t.state_ids.has(EROSION):
+		t.rv_erosion_stale = bool(t.rv_tp_refreshed)
+	if t is XActor:
+		t.rv_tp_refreshed = false
+
+
 ## Game_Action.apply 包装（原 apply 之后）
 static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -> void:
 	var meta := _meta(skill)
@@ -420,10 +440,12 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 		u.mp = minf(u.mmp, u.mp + maxf(1.0, floorf(u.mmp * 0.02)))  # gainMp
 		u.refresh_resources()
 	if (id == FEAST or id == SOULS) and hit:
+		var had_erosion: bool = t != null and t.state_ids.has(EROSION)
 		if has(u, EMBER):
 			logic._state_add(t, EROSION)
 		elif stage(u) == 2 and id == FEAST and has(u, FEAST):
 			logic._effect(u, t, {"code": 21, "dataId": EROSION, "value1": 1.0, "value2": 0.0}, r)  # itemEffectAddNormalState
+		_mark_erosion_stale(t, had_erosion)
 	if mine:
 		var row = null
 		for x in frame.targets:
