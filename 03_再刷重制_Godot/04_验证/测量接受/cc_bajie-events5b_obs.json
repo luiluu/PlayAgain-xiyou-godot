@@ -1,0 +1,5219 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m23e2p0#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8d3c54e5ae9ed649",
+      "newDigest": "ea2711e0905adc44",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e14p0#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0445c6c21ccac458",
+      "newDigest": "aef9c2fc44ff81dc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e15p0#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d981d28c22781d42",
+      "newDigest": "acd8fd251e8d92c3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e6p1#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6732670941fb40cb",
+      "newDigest": "c7bfcc5d00419743",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m146e3p0#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a16ad202806c7af8",
+      "newDigest": "bf072b86fde3d85f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m146e3p1#s1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8010525d2374de0a",
+      "newDigest": "60415bb8cfac2784",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e14p0#s2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b8ca3106d84db06e",
+      "newDigest": "145b9fd89b8e28bd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e65p0#b1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6ae3bcce162aeda5",
+      "newDigest": "dcd43a3f56dc5f92",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce236#b2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "af233d04567091f0",
+      "newDigest": "cd071c0797d746ae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "db0f9073b2d89a8e",
+      "newDigest": "076fb247cab8f8b4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c8e9c04d171e9f92",
+      "newDigest": "84fd2824c9f99f00",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9cd32854616739b7",
+      "newDigest": "8dc5f7c32f684f47",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8e42e17064b03c13",
+      "newDigest": "5fd3c64d26214319",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ca4a65270bc1e0ab",
+      "newDigest": "9b4efa027a69b106",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5316458134869118",
+      "newDigest": "97d8c45189a5b5e7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ba7adefdf7d68f79",
+      "newDigest": "32050ff6aad02ce6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b55b54e12be908b7",
+      "newDigest": "562d9b0b78402ebf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7b80a15b7db2afc8",
+      "newDigest": "b53e7539ceb3b2d5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "41577ea386c92c90",
+      "newDigest": "8e92eded67d56355",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d1ad4a4e3a92d14f",
+      "newDigest": "983f3cd7d4553fe2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "79324ac5144d1f5d",
+      "newDigest": "72d351aa17ec502f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ce36e9a523e6cffa",
+      "newDigest": "1d418a761316f049",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ec17498f1bcdab18",
+      "newDigest": "f5eff9136ace935d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "149e83e97281fa5b",
+      "newDigest": "8df6abbee1c9af18",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d48264bf4ea9e37d",
+      "newDigest": "59d6b33d946755b2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e305de9ab682fdba",
+      "newDigest": "b9e075fb1400cc91",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ab31daa367aff8ce",
+      "newDigest": "cd769ebb9ee096f0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1ea0d2c844a30940",
+      "newDigest": "e7018054506596aa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5727a99d211a7312",
+      "newDigest": "cc8272df28f79aed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a87afe976b9e0b22",
+      "newDigest": "f8a65e97a19988ed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "366e4f81f44cc1b2",
+      "newDigest": "4b0ef895e061bcbc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d3af2575eb7eac6",
+      "newDigest": "1dc94f7e458fcbef",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ba97df4321328179",
+      "newDigest": "c34a6cc6860da553",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "23db017257d1c9db",
+      "newDigest": "47462bc3949b0f5f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "942a842ce723c13c",
+      "newDigest": "f845e2b79ea46ded",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "96956e804ab336ef",
+      "newDigest": "fbd5852f717d8d58",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "72c2f17bc51fdbfd",
+      "newDigest": "169babe5d85e7a33",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "da2ad4bb51f340c5",
+      "newDigest": "d64cbfb0656b2ca7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5efe82461359de2c",
+      "newDigest": "c9c3b48917c18a80",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5598f77793152cc6",
+      "newDigest": "9a2eba5baa7d0782",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "18b1f352ab4fad37",
+      "newDigest": "b71e5f94f08d59f4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3cdf8c3adf93f78f",
+      "newDigest": "29c5451a1c2e8849",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5f423db9559dc0c3",
+      "newDigest": "f67b66259fec505f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e01c07d597e776e3",
+      "newDigest": "eea76883ce55676d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "24eb45c4b29d349c",
+      "newDigest": "c72d4c3e6f3df3c5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "280099d5c9f80a01",
+      "newDigest": "9e2eaebabe61715f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f4ffcf737f4ffe6c",
+      "newDigest": "e433f2ee8ace7c91",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c7c25c31d3593214",
+      "newDigest": "38749d26b6fcacae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b96cd07c58a94367",
+      "newDigest": "40d2dda79f544705",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p4#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4f44c33fd34962af",
+      "newDigest": "86f41d01a67d80e5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p5#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "71e9bd13c909708d",
+      "newDigest": "3a39e0c7af786754",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p6#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "79c4f5e71dd17ce2",
+      "newDigest": "f0a6c3d1dfc96879",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p7#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "01c3e9a6f44c9dcf",
+      "newDigest": "d72b39d66534a87a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p2#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "112b1b4fe2728a19",
+      "newDigest": "645219950d5454c9",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p3#h2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e15beb13d6b2bacc",
+      "newDigest": "0b10ac6f74efd552",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m18e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3e16510a7c521452",
+      "newDigest": "dc24b40f45707647",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m18e3p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bcba4392221bbd45",
+      "newDigest": "9951cf54dec478bd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m18e3p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "15de9cddf19af790",
+      "newDigest": "d3d4c08fc11e9439",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m196e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5c9ba4e97047718d",
+      "newDigest": "60f723aca5df1569",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e1p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d8f17cd7162a7409",
+      "newDigest": "48a5e6db08b3a0db",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "62eb189aa2e1d7b8",
+      "newDigest": "085b44db2471ff1b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bc605398549d8397",
+      "newDigest": "6ea39cc9863a719c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5ea8e2ca2523a7a3",
+      "newDigest": "0bab1bc13004195c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b9d096c2ba7b3941",
+      "newDigest": "1b1da67f2d7525ef",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c212546a422846af",
+      "newDigest": "3161e68eb30c4a6f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b48872ba310c97b4",
+      "newDigest": "2b24ccd57a4328b6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m197e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f9e0d1ff7ef9f012",
+      "newDigest": "141c4761e59257fa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "85c5e0ac74c918a6",
+      "newDigest": "f7bf479a4e76e9c0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "75637cbeade698e5",
+      "newDigest": "12f05b9414c2af3e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f9e4984dedbd0123",
+      "newDigest": "7929baa892ae4a15",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ac9e562a7042e672",
+      "newDigest": "991b76b112d4d0ef",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1746a6af7f93e1ea",
+      "newDigest": "90be0f6145f80f13",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m198e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2a97753168fe10ff",
+      "newDigest": "0510b617e7ef1a9e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m199e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b16b67d818ccb8bc",
+      "newDigest": "2c3f7d4cdba96d51",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m200e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b7dbb6443bdb906c",
+      "newDigest": "9d745d76374ee3a5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m201e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "60b294ceb2a932d7",
+      "newDigest": "20f3213a785a8466",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m202e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c662fc06d448b4a9",
+      "newDigest": "6b44d1455dd1e9b4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m203e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eb78239077fd9aa2",
+      "newDigest": "1d6223e7444c5b09",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m82e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f2b329917f0cd35d",
+      "newDigest": "ffb5e2ad939f653e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m84e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "07995efcbab3cfdd",
+      "newDigest": "c80e08ed35142caa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bed01b17f56ada7b",
+      "newDigest": "fde53ea576665f4c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7e4db1a542a1a968",
+      "newDigest": "bcbae99ca1a3c8eb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a37bed8cb8ef55bd",
+      "newDigest": "54bbb7f9705963c1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2a89eaac51eba83b",
+      "newDigest": "b92912491a87bbc1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p8\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "acd977def4f7371f",
+      "newDigest": "0f03425ab6520e7d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p9\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "88f6d4dffdcdff08",
+      "newDigest": "ee27f368d99fc142",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5c7c07b4a6bd3772",
+      "newDigest": "b86c90225cdfd29b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m37e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "225e4a673986f722",
+      "newDigest": "ddc0316efdb50922",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m38e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1ef9a249e318f40a",
+      "newDigest": "f3e56e1f63ec42dd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m174e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eba531a46a0916fd",
+      "newDigest": "4542b60d5e4665bd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m184e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5674580148d81762",
+      "newDigest": "d2ede85cc9f258f7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m186e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ec913c787344a989",
+      "newDigest": "a84404050d9b9f1a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m188e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6d2d1b5c266c0f16",
+      "newDigest": "c1a495592040a31a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m194e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ff135e619679266e",
+      "newDigest": "a83e1ec58d3d5e05",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e51p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "28afd149caf37580",
+      "newDigest": "f04da5fc40548e37",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e52p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "93793f0dce003846",
+      "newDigest": "439bb892a5b6d550",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e64p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "60943ac22d934c57",
+      "newDigest": "75a4d5a4b42302c4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e69p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5cbd57332f9b21f5",
+      "newDigest": "035b335c10cb7848",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m5e2p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "360636ca8790c43d",
+      "newDigest": "d61d4a87d1f7f619",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m5e2p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "75dfb957c056c193",
+      "newDigest": "fe375aefef45601d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m3e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "40e1a85065215f38",
+      "newDigest": "1724b63b9de30f28",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m6e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bc84cab8d634aae4",
+      "newDigest": "891ff7c65f7031f0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m6e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5ca68ea223e60aa0",
+      "newDigest": "c0d2ac755b169891",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m7e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bc2e17410e33f36d",
+      "newDigest": "a525400a9cdb6984",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m10e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3b27d8440f0dcb9e",
+      "newDigest": "e684ef24d2ab944e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m10e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f69aa169485aa9fc",
+      "newDigest": "56015f43f2b19585",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m13e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8951434a9b008ec2",
+      "newDigest": "f709cefef49a6ca1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m13e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8534d63ec7783484",
+      "newDigest": "ea7cfed2de89d7a5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m61e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cf5dc27fbefd7a76",
+      "newDigest": "4ce5caaf8f49b2be",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m61e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7a4c1aeba7793d1c",
+      "newDigest": "e7cb8c5b32ed62e0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e27p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4f606b63a94e13b7",
+      "newDigest": "50b931cd2253fb73",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e28p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a0c691b22d33cd4e",
+      "newDigest": "72dee2049381e522",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m15e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fe645f1e322db5fe",
+      "newDigest": "15776579c3741771",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m17e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c4e62e9aa64e8966",
+      "newDigest": "de6388c7e14c5ddf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m17e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8b3c8bfda161d877",
+      "newDigest": "6dc07a5871a49b09",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m20e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bf4e9fea5119a936",
+      "newDigest": "5057f7898de67a5e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m65e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "95ba359c422b9838",
+      "newDigest": "5bb250cef4055a66",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "efc02f065a72e7a1",
+      "newDigest": "d386f0e14c44fa1d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "af8223ab7644f529",
+      "newDigest": "0c29b158326ae2f0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6b67268a456fb774",
+      "newDigest": "0cecc00070462ace",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1bee9af7f083409e",
+      "newDigest": "bff141064f785739",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1dd33dd736e62466",
+      "newDigest": "54f3b4147cb715cc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e5bceeaff9ef7f3f",
+      "newDigest": "bd6bc1d18abfc92a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f999b55c976b8f36",
+      "newDigest": "01877a733cde83cb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4425a91dac16d8e1",
+      "newDigest": "e0a067fbbf0f59e4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bea2a78f483476a5",
+      "newDigest": "a50398c653af16a2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f6c492d41102ab37",
+      "newDigest": "8ebe51e15d4cf28d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m116e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f780874e36112fab",
+      "newDigest": "74c9c3ba87b72a31",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m116e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c6205167b8c8b8a5",
+      "newDigest": "5194beaf63bd0b4c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m117e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c1f736bd07167ecb",
+      "newDigest": "d6db6aa488d5a1a8",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m119e16p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2f77bfc705e3063e",
+      "newDigest": "1d2da14840098777",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m118e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "832c61203fc84d25",
+      "newDigest": "69cc286bdf0c645a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m120e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "44940b8cc3ebd303",
+      "newDigest": "f2ca8c901f3533d9",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m147e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6ab6530b976c5659",
+      "newDigest": "fa30d2636b6caf7e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m155e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dbc3bced4e4d3cd9",
+      "newDigest": "7bd99f115184ff72",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m155e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c9c9442d99913ba1",
+      "newDigest": "d3ac614b33344342",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m182e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "182878c0d79f33d5",
+      "newDigest": "034d31a634c73c43",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m145e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8ba2051822add9e7",
+      "newDigest": "9dd8b947e7839b09",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a57d39e910d8af0f",
+      "newDigest": "c637018b6d059f3d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "725fbbdc800a5e43",
+      "newDigest": "6dd4570608b28d0b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "07e69d636dba92cd",
+      "newDigest": "2397c32078d5d43c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6bd077db6fae2e4c",
+      "newDigest": "d9f2230a9669779c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "75190a7d3b77105c",
+      "newDigest": "c8d507a9133d7b59",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e8p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f919976ead649827",
+      "newDigest": "d49f4673d6c57332",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4cbd16d6e9c71e5e",
+      "newDigest": "d26aa5c057062ff4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m55e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2018bee818ab55f9",
+      "newDigest": "c2da2bc3f9312ca7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m55e1p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "24d9673f212bf827",
+      "newDigest": "cde590329d216fdf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m55e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8b884ac7fe3facd7",
+      "newDigest": "575e5764622d7b13",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m123e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "694a57f4748f3634",
+      "newDigest": "96c921310f3ea710",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m123e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "192aa69f1b296f9c",
+      "newDigest": "b10e319cde2b5c50",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m124e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fa6fef000a56fcf8",
+      "newDigest": "9714317097781611",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m124e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "617a41272fde8c3d",
+      "newDigest": "f300e9001720948e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m124e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "37748a7ac08cf712",
+      "newDigest": "f91f99e5f6db9ea8",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m124e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c8a635d52cf42f0a",
+      "newDigest": "a9f9f21afe3b132f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m124e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "50bbcde2173f6a25",
+      "newDigest": "056f62f2d82473ca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5168adba3f999e96",
+      "newDigest": "15ffd861c0888661",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8e72292add9d6bb1",
+      "newDigest": "f13659a824eb8d62",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c9331d888b2e6ce6",
+      "newDigest": "3883d19648f7aa9a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e5deea460d67473d",
+      "newDigest": "029d1a2d798efb7e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m220e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8858390e23360965",
+      "newDigest": "4aaab3408a9706ed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m8e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "803d90002e8d269b",
+      "newDigest": "da076fad6dec1a52",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a71ec317fcc89ffc",
+      "newDigest": "dc859cd5ae1c5c26",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0a605e9479ad6d6a",
+      "newDigest": "0bb2e40996d82f8c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2fe1b7a3c26df59d",
+      "newDigest": "20933d4204bac536",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d911444392ce9322",
+      "newDigest": "060a45e90117e9b6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2d575a6ece3b5b70",
+      "newDigest": "2a76d271d9465b86",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2592a44a73d3d65b",
+      "newDigest": "80237f7bbcc38fa8",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "27a42f0208e0a902",
+      "newDigest": "99e71c45637f5204",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "04bcaf78140d6048",
+      "newDigest": "1c4ca751ba07716d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e20p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4065cc979c5514d3",
+      "newDigest": "7d8f0d6d937a8f69",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e21p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4ab201e5dfe769e1",
+      "newDigest": "43c1a8778de0fc4b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e22p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e9a95b9e31356d22",
+      "newDigest": "06be4dbc99a8e7ed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m129e3p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "55abe3e586f03a9c",
+      "newDigest": "b4d38b57055f049a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m129e3p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dd1eabcca6ee5961",
+      "newDigest": "a816505a69614eef",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m129e3p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4f27e8a4f464029e",
+      "newDigest": "86baabd867638a0a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m129e3p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6cb71bbcd8f8dc12",
+      "newDigest": "9cb6b6a9560c74bd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m129e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d36c06972d35581c",
+      "newDigest": "b73464103c4caa84",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m130e11p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "349f28375e031bdd",
+      "newDigest": "edd8cbad77abf4f5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m130e11p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9857e72e8aab20dd",
+      "newDigest": "e80e485288af5335",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m130e11p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e66d83dcf99e71a9",
+      "newDigest": "712e9ea6b75af15f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m130e11p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e28529bb66b2c8b1",
+      "newDigest": "3dec760b9243fd53",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m130e17p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "516b0fc1668ff75d",
+      "newDigest": "a7a3bfa37ff59750",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m131e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f8efb7c870ad93c7",
+      "newDigest": "6ec11b06a7cd9ff1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m131e9p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "90a9de4526ac56ae",
+      "newDigest": "ce197771b7c72067",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m131e9p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6cbad3ea0b932afa",
+      "newDigest": "bc8d63ea5fedad39",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m131e9p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e3acc88cacecb58f",
+      "newDigest": "83a1145b88aa04c2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m131e9p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a031afa45d0603fe",
+      "newDigest": "44fe22028ea18083",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ac8d1571939a1fc7",
+      "newDigest": "b76e74156e0754ae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d8286b141a1577d5",
+      "newDigest": "514cc513e785e06a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d1cafc555afeb99",
+      "newDigest": "b8a4a9ae524aed3c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e3392dc5822b8523",
+      "newDigest": "d900f7656fb90eda",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f65c99b6435bd307",
+      "newDigest": "d83610657d4a32ca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b7416243b7206499",
+      "newDigest": "2ee50bdcc17cf20f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fb1a161ea48757b9",
+      "newDigest": "6f415880275e2775",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4a9bfc6279676b38",
+      "newDigest": "64f1c56ec66547d2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4803759dfb0b4430",
+      "newDigest": "4064982eebfaa643",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e18p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3651ebc7eed2cd39",
+      "newDigest": "8e093db861a8a150",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e20p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "500fc97a5c327bbb",
+      "newDigest": "e27a436045642069",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m190e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "94f02e804844c636",
+      "newDigest": "cd30ae78182f34b9",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m34e16p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7bf174ccee5e5b69",
+      "newDigest": "865992a13aaf4231",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m191e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5b8cc062e6da9134",
+      "newDigest": "51d7d842b58ccc2d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "16189b635bf10737",
+      "newDigest": "2c05fb71632ea9b2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "824ac52ba6055367",
+      "newDigest": "166ea116ba14634e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3855b4a321b65279",
+      "newDigest": "f6c61f46fabff2c3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "01ed66aaa0acd0a5",
+      "newDigest": "3e1a36fbe4c2e7ca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "56a99cd1abd7c5e6",
+      "newDigest": "2fb19633559afa0a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "50f82f072b26dc24",
+      "newDigest": "1cbd460402747748",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "af4b305ce21b12b7",
+      "newDigest": "1d84537dbf8d0205",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "83cec048d5d5fc3a",
+      "newDigest": "d72349736260d845",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9d37cf8012133633",
+      "newDigest": "0a1ec7e2fe3b37cb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "012d4ac81dabdcba",
+      "newDigest": "7b71a21516437ecd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "91c93ed7938c0aba",
+      "newDigest": "47ba4ca4c15f03ae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8d96846f7b222c40",
+      "newDigest": "eac3e01606bb7e25",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bd6b11998bb97bd7",
+      "newDigest": "7f30d00a5f7eca3b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c882fda322756126",
+      "newDigest": "c419c3adcdd127fc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "19006dad8c61740a",
+      "newDigest": "43c638e207ce262f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e17p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b26c2786209930db",
+      "newDigest": "4abca4d625938650",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m193e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "74d5a06895a9e6bd",
+      "newDigest": "d38a118c2a6d7bd3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b3d85700cb74a8ad",
+      "newDigest": "58033a0acc8d59c6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "28cce99b8d82eaaa",
+      "newDigest": "7fe4c8412694ba8e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "54c486536ec366a0",
+      "newDigest": "68ea8069d00e4e5c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "57777dc01a595211",
+      "newDigest": "2b418f76b4245264",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bd67dafc1df6768b",
+      "newDigest": "412b6abfb97035cc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a333f47e30fde339",
+      "newDigest": "46848c99029d966c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b45a9e7d5f1efc51",
+      "newDigest": "5fbea3d99b329095",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ab2514fe18158f6f",
+      "newDigest": "3e1eec35c10bde77",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "488b3bd696db6ac9",
+      "newDigest": "21f489f96fb41e33",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e31p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3e4c7cb0f173b83e",
+      "newDigest": "65c5b319d63e3412",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e32p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c2938e39e7635565",
+      "newDigest": "0a28a46e45392c1c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e33p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9e0e9ff508d0b853",
+      "newDigest": "82fc10aa094fc8be",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ae3f1d578113534c",
+      "newDigest": "ef38ce93a8b2b508",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f2babd572032e944",
+      "newDigest": "252def746bf2f50d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bacf586976a4a91b",
+      "newDigest": "27695ff830123a60",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "36afcbbaae539241",
+      "newDigest": "fcd5283edd7d9eb7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e91d54991441f50e",
+      "newDigest": "0df10779198d6e48",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f515119181d65d2a",
+      "newDigest": "9b6d61db8168a777",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7dfdafb1ba3fd0c9",
+      "newDigest": "6b3424fadfeb3f7b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b8c541b99b9658d3",
+      "newDigest": "d4696c0432708c0b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "db9badbf6c78bd88",
+      "newDigest": "bd7932fa7f3e4480",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1e9b399a394a618b",
+      "newDigest": "a984abe00eb25bc2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1d1d2cbc83996851",
+      "newDigest": "8bf340923e95acdf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7e5abe794a499e37",
+      "newDigest": "3bbb4577cbbac9ed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1ced4ebf6e486931",
+      "newDigest": "47f66162817b6c50",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "009b8917be26bd1e",
+      "newDigest": "05fd0a1986d99cb2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "97b08fe5d73bbc74",
+      "newDigest": "65354c5b911bddfd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "301ea8e1bb3d6766",
+      "newDigest": "18137b6d8443bd02",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b178210415e8a917",
+      "newDigest": "b2aa88d62fe5e826",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c70c695cacd769c1",
+      "newDigest": "b64edee2b598b79e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1bc27d2efd0e1695",
+      "newDigest": "c00dc0e548fd7ed6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d9b1dc677d3a979c",
+      "newDigest": "50275fe58483a724",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "07626816468ac74a",
+      "newDigest": "adc189d816ff1c48",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "89107644994a9690",
+      "newDigest": "99f832f4b6812ed7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b581fd47468fed58",
+      "newDigest": "3c62f6b49814e3bb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e2p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c4dd1601810cb7e9",
+      "newDigest": "645282a914554386",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m172e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b315060e15366aa6",
+      "newDigest": "5f8d426584aa8410",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m50e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "13c5d7b147ec1481",
+      "newDigest": "fd16a3a63f460edd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m51e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0196da7a3cc53e2a",
+      "newDigest": "89960df1b871fcd4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m52e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d93d7ae7a7d780fa",
+      "newDigest": "49e21781a8d0551b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m53e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ff7b1d0af2b2f242",
+      "newDigest": "d4ec1baa2e303a5f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m56e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "acacb6c6296cdd7a",
+      "newDigest": "279fd2e7d11edfaa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m57e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ba3f5f755cd4122c",
+      "newDigest": "f18156d47d80b749",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m58e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c51801da92381862",
+      "newDigest": "a19d0d40fe2de16f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m59e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c551d192ef336ea0",
+      "newDigest": "e29e1ea486598d7d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m164e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a29a298c14eadb35",
+      "newDigest": "2c908f5e140fc6e5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m165e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "640dbbf79cf898e1",
+      "newDigest": "b07717e5e0f9d14d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m167e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "789f46bd55e50068",
+      "newDigest": "d6413d5ea9e957c6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m168e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "310bd371e9e7455e",
+      "newDigest": "33d72738be5913a4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p8\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ffb85f2ebc602a24",
+      "newDigest": "ba3d21d756d53dc0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p9\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4763dfcd38f0f828",
+      "newDigest": "bd44852c1b686f1b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m121e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5018c843f074eadc",
+      "newDigest": "d00dc265682e6aee",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m121e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b5893c4b049dca0c",
+      "newDigest": "3a8d9d475529c4cf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m121e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65daa4321456c316",
+      "newDigest": "aeff34e00a6245a6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m121e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "95ff09c58aff657b",
+      "newDigest": "72a1a963b5f68f9b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m121e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8ede16c786607c42",
+      "newDigest": "eb23fb3967a9deb2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m212e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e2b710eb75635c39",
+      "newDigest": "5052e2a43143b7ff",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m214e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c7f972e8b6f08733",
+      "newDigest": "bd7a19f9b599c4c3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m214e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d1ca6a5564915ec8",
+      "newDigest": "6dee9f6d843e5deb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m214e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "09574ab7d2ef5883",
+      "newDigest": "cf6d82c70ead10b3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m214e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1d0e0aa295f86a4c",
+      "newDigest": "91f9d87420151baa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m215e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2fb939a1ea6b6577",
+      "newDigest": "d506f2f46e5c970e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m215e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4b7ce29091528593",
+      "newDigest": "c5c6b6a39136f946",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m215e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "55d851df22db883f",
+      "newDigest": "fea4aaeb6e4f0596",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m215e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b6e9375e0e2e1e0b",
+      "newDigest": "74140fec0fdbef43",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m180e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "51f3373010779d9d",
+      "newDigest": "1b49322d4611ab5a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m181e4p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e7ef52fe8816b95e",
+      "newDigest": "8ab51b37faf5446d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m181e4p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3b32f8bc20f15bb0",
+      "newDigest": "50e5dfb086562b79",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m181e4p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f11a00c8ed30f4cf",
+      "newDigest": "ce2ab760845ac8e3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m181e4p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "593d59031929b6ae",
+      "newDigest": "7289f7ac0b870bfd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7a2f3b66c31f1735",
+      "newDigest": "a8d87daee003f31e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4c5ab6bc0f24f024",
+      "newDigest": "15e5588cb7f1dd9d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0d872724d622ccac",
+      "newDigest": "301fd00a5c91a86c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "834ec8bd0d8c307e",
+      "newDigest": "fdb4cf6a5dc32fe2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bab0e60ede2017ad",
+      "newDigest": "569dc4d6e137a4d7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cbbb79f6bcd21f92",
+      "newDigest": "28caf45dd181689a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "61052c3c261e5ee1",
+      "newDigest": "c60da0bccc84b3c8",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f5b9e110ddfa7ed7",
+      "newDigest": "0b202fc312ff46ae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2fdcab5176fb0e34",
+      "newDigest": "dd06871b4590b1f5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c85a50de6f8d8aad",
+      "newDigest": "d609dd7a5621c940",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m211e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d0096dd0fd7706ad",
+      "newDigest": "e7016addadeeab16",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e4p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ed89f7ff62d90305",
+      "newDigest": "9b5fdf42188ece25",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e4p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8f95b3a1447a064f",
+      "newDigest": "26dd636b67abfeca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e4p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "300a0691222f12c5",
+      "newDigest": "b3873fbf7f12634f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ab9726b4835e8a48",
+      "newDigest": "c6a383d76e0f37bb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "055c7c8e435372ed",
+      "newDigest": "6036928ba1000865",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e16p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c1816c366a84d10d",
+      "newDigest": "cf521c8ec4fd8241",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e17p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "41f9fead02f28828",
+      "newDigest": "88cbad45ae7926d6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e21p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "26ab52a4edc6fa80",
+      "newDigest": "a3c5df198206c5ca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m25e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9c3badc12acf24d2",
+      "newDigest": "9c66f33c4447f994",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m26e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5d59ca1e921ed275",
+      "newDigest": "7f94d674c6915873",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m27e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "169dc2b9212a126b",
+      "newDigest": "b484583ae2b4d188",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m28e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5877ae8c1a4a8d04",
+      "newDigest": "5f02c4ecb16d660a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b67c5ac7bd312689",
+      "newDigest": "b39f88690425fe71",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "44fbadec77e2850a",
+      "newDigest": "432a4338c2793b73",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b80b676b26d65cef",
+      "newDigest": "4ffa44114eee19ff",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4cd8900d5a69d60f",
+      "newDigest": "7dc8376c65112f26",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e23p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "de5577c16d23ce51",
+      "newDigest": "a5805228a23d30bb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m29e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b41c246d9d4d773d",
+      "newDigest": "81e19e3f018a99f4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m23e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e74257ced0a76efa",
+      "newDigest": "d9b9c6c59812945a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m35e29p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0c09c18a19be39db",
+      "newDigest": "1182b787fcbe9be4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m35e30p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cc49fd4805993f75",
+      "newDigest": "c138d3949618dc39",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m35e31p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "96e9fa9369a77b3f",
+      "newDigest": "2c7e6fdc83b59924",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m36e2p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "767d8228f4a03ff7",
+      "newDigest": "ec7cc6c65af570f0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m139e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "10273c01675d94d9",
+      "newDigest": "8556797f1824080b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m139e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eb12544abe8dd31a",
+      "newDigest": "678f93d09279ed7f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m192e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bb59700ec3b174a3",
+      "newDigest": "de6fe4d1a0fb595c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m192e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4b293eab8b8898e5",
+      "newDigest": "3b3930e685f269d7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m222e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c6015a14566eb5d3",
+      "newDigest": "c5de773b5efdb0bf",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m222e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d41094e202ad1dd3",
+      "newDigest": "ffc0a8fc4ef31191",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m128e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0181c2f7c7dfbc64",
+      "newDigest": "86e5f008a2167165",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m136e1p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ab18f164e329707f",
+      "newDigest": "9de5548ad6529520",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m136e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7af94a33f8e27ef2",
+      "newDigest": "ea0ce3dbd0d4e76b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m136e1p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f543786a79664a4e",
+      "newDigest": "926a8667e6a9960d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m136e1p8\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cfe07dad82f18b78",
+      "newDigest": "42d38d98376b50fd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m136e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e96cb847abe20cd3",
+      "newDigest": "1e9841de0f544d85",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m125e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4e10b6af910baf7b",
+      "newDigest": "d9e87095d4395eed",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m126e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6f444ec37c9c77b4",
+      "newDigest": "1388333deec06629",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m126e15p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e03e9b6d6f683ca0",
+      "newDigest": "9f8d39397df29144",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m126e15p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "075450376d8f330e",
+      "newDigest": "f69125097b31cf04",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m126e15p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bd42a858e0abfe72",
+      "newDigest": "add311af2a431088",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m126e15p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0185c739697339b6",
+      "newDigest": "9fde70af4ff4a11c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m178e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "37a19fed5935b077",
+      "newDigest": "cf0c6aaf65766ce1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m40e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "054f6805804674e0",
+      "newDigest": "1760b0501bf779e1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m133e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "923ddb524369b4bc",
+      "newDigest": "b8145b310e5db834",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m171e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "979735fd1ecf7b4d",
+      "newDigest": "f5cb63723cae515c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m171e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f671b2da25ced7f2",
+      "newDigest": "fb44946da493e8b7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m171e1p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fd3ea7b22c06c31c",
+      "newDigest": "5846d4b33c687653",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m225e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a9b7384d4727403d",
+      "newDigest": "178b840a73b1a020",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m185e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cd4d013457f396d7",
+      "newDigest": "8945f4d7560c6d86",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m67e2p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "00e92dd60f3d515b",
+      "newDigest": "dad45c9f3412c38f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m67e2p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "04f16bb8a81144b3",
+      "newDigest": "e50d2d72436faf13",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3e987c97282bf2db",
+      "newDigest": "3ec0979289a115fa",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9d699f6b25dae5d4",
+      "newDigest": "9a207e99c4a304d5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "345724675af089aa",
+      "newDigest": "3457ef7ec034675b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "68c947ff554d1d1b",
+      "newDigest": "5909602c282c9944",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "97f305eb3f89101f",
+      "newDigest": "2fd86fc53c4c2317",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m138e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e3b525d2fda1e7f4",
+      "newDigest": "d50893d894a2cd8f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e18p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1d79d64a24f390bc",
+      "newDigest": "5eb4fd77d013f91a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e44p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "aacbd697ae6bb7dd",
+      "newDigest": "66040e4874f4a358",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e46p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b89e2ff2206dd703",
+      "newDigest": "d318bd12021d3296",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e53p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3b88bd398b63cdeb",
+      "newDigest": "d7792eee1ea993de",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e55p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cc5cc256fadfbd1d",
+      "newDigest": "96e7437fa095c889",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m69e57p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "57e45286994e28f5",
+      "newDigest": "a9ce45d8c15343ba",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m88e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0a29a775642dd1b8",
+      "newDigest": "8a9c9b522c3a9759",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m88e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f9899c3e7c75b0da",
+      "newDigest": "abc848a39f6c664c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m88e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f212621509216775",
+      "newDigest": "0eeccd202982a271",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m88e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a9a55cfc81349250",
+      "newDigest": "081fa17141061f78",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m89e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ce47471d415096a1",
+      "newDigest": "6268ad0d889bce3b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m94e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "89d5f1f4d35a5b2e",
+      "newDigest": "585ab91194888450",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m105e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b95da0afcce9766d",
+      "newDigest": "70a29bcd66f3bce9",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m87e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "edb5490c162ab660",
+      "newDigest": "0667e8bb47045b20",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m87e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5d1af948d5c9a6ee",
+      "newDigest": "1491f10a3752daae",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m87e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "90d7739b70855b5f",
+      "newDigest": "5a421b3182ec5903",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m115e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "775c45640f90f960",
+      "newDigest": "919e56852ed7caf7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m115e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "58344a8f5b6e30ce",
+      "newDigest": "8bbf93db961a1a40",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m115e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d0ffb4edef4ce898",
+      "newDigest": "dc5f937ae67d1cf6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m115e4p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0b684c1e074a2017",
+      "newDigest": "661be221717367ca",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m114e17p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bb83787305f3550a",
+      "newDigest": "a0f1b6feb69fad29",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m109e21p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "56b941688e4b1c2d",
+      "newDigest": "35ef16641d562c6e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m62e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "edd145f4801e1d6f",
+      "newDigest": "d39093eb754e9ad4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m62e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1f4564e44d6bd88c",
+      "newDigest": "e1b2d01b37dcdef9",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m154e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d2e972c64715b237",
+      "newDigest": "38e7cb75d5e0f765",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m153e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0cba8d121e46e3f5",
+      "newDigest": "e343e18cbf6ea7f3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m153e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "94bd0d5edf53bc2e",
+      "newDigest": "58a84b37ab38667c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "77dc7bde4647dd20",
+      "newDigest": "1ac2b1463f822db4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m142e3p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7da8f8d47652282f",
+      "newDigest": "b165a08bd1451281",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m142e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9e1033cd44fcf9dd",
+      "newDigest": "2b98dc4174cdc4ea",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m143e11p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "607a689f781b7da2",
+      "newDigest": "4fdae50c8ba8842c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m143e17p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c5262cce46708930",
+      "newDigest": "62836273f4984a82",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m75e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3048600046570dd3",
+      "newDigest": "818f6988762e93c2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m75e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9feb794afb6882c9",
+      "newDigest": "6731b2902b5b57cb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m75e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "38b69ce6140e6f12",
+      "newDigest": "8cb94bb73de56244",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "02e407ef79a8f2c8",
+      "newDigest": "4522ca480b2eca5c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "412a5cf1ba7b9877",
+      "newDigest": "c2f04651269539e4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "49a464043f34aa2b",
+      "newDigest": "665b121f50c391a6",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b909946a5058f862",
+      "newDigest": "401ef674709fc536",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0f9ea4d0d9f1a780",
+      "newDigest": "d8a23cdd2f43bc93",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fdcb28e8b28856ee",
+      "newDigest": "aedc19edc1ea044d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0c830a9463358532",
+      "newDigest": "f1a54396f52df356",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1821ce2a6347145c",
+      "newDigest": "9d49429cb8b06c94",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m76e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d197f00b022f8094",
+      "newDigest": "ed115d9f10370f15",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m78e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "641dee6561d3caea",
+      "newDigest": "10233bdb6e0c0fb2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m78e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ca5e5a0132137a69",
+      "newDigest": "b2385fc79db4a0c0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m78e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "915ed828a12dbfdd",
+      "newDigest": "f959cdfb837919e4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8d571cab68b8a0d4",
+      "newDigest": "944534d4122af447",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6d101f26de0c257a",
+      "newDigest": "74feb409d0586a3a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b0ca970730598661",
+      "newDigest": "124fcf94f6c28882",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4015fbb03ea1baa2",
+      "newDigest": "f0bd66e2bcb63138",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d24a37f911751e2",
+      "newDigest": "eec0c02cf0103fe4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2cff10a12eff5f2f",
+      "newDigest": "52a64ef143734619",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m86e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6444d3aab82c9fd2",
+      "newDigest": "e28c381c116149bd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m189e20p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "603efc0c8bfa88cc",
+      "newDigest": "3dd5e71ef4aee5ab",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e31p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1b66d018b53a8c7a",
+      "newDigest": "96452bf80290217b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e32p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "98f697d63c9b0702",
+      "newDigest": "f7bcd65830a36904",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e33p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "42adcbfd7db1df9b",
+      "newDigest": "ec255945f11663c5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e34p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b17db69aa2f594cd",
+      "newDigest": "6f42179801c982ea",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e35p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7749d3da08381906",
+      "newDigest": "0da88b0fd76e9a0f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e36p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65f90366636e9297",
+      "newDigest": "945fdd5c515a36a1",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e37p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9fd7f9e1c9d709e5",
+      "newDigest": "b74f1f383962fe5e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e38p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ccd54165f4d18bc4",
+      "newDigest": "9416a9a053825c33",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e39p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2a5961e6fe2e0bd9",
+      "newDigest": "97ac2ea9913eddb7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m173e40p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a3378845066a42c7",
+      "newDigest": "35367e0352a92e4e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6709e427208771f0",
+      "newDigest": "9343827e61d7e20a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65e00bd2d60078df",
+      "newDigest": "58ffcc131c78d2d7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1cb0746217c87810",
+      "newDigest": "aac7f3e5f31e1d34",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4503c3cb23928516",
+      "newDigest": "887e5d64b8a05789",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9f4d153de4351565",
+      "newDigest": "64fa18948b2e5f2a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f9a523bc81670cc4",
+      "newDigest": "3003619d8e9d2017",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2261e247a8beda4a",
+      "newDigest": "7270f006de0efdc2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dba8e461bbbbaea4",
+      "newDigest": "fefdc4c11d6b8166",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2836cde21a441b57",
+      "newDigest": "3447665a64176cf7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m175e30p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "542d82636efbd0a0",
+      "newDigest": "166950e0a0aa50a4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce14\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65244ea85e4bdc8e",
+      "newDigest": "0d7be327df58f8e4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce15\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c2d9e6bd572894cf",
+      "newDigest": "58b1f1cfcc399539",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce16\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "110bae38d7c401f5",
+      "newDigest": "dd8302361d4e05d7",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce29\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2b5da6915713d89e",
+      "newDigest": "ca48df051b75e970",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce41\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1d539ca1cf6f0d10",
+      "newDigest": "7c59dc68b8ecb360",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce44\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7f3513f56d880ba0",
+      "newDigest": "e34a833721a057cb",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce46\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6f7d695fc5352433",
+      "newDigest": "e82f6fb4670cde31",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce47\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c890efbd68bbc8f6",
+      "newDigest": "2d1e5e1cf7cabf7f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce77\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2f26e96c9282627b",
+      "newDigest": "ddb1e0fb54f657ba",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce79\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b6671043b414ff7b",
+      "newDigest": "f2cdafc2d5f8cb9b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce93\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4dcbd1bbd91d9005",
+      "newDigest": "560bfe21a1d3f058",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce98\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "597cb57c31aab0b3",
+      "newDigest": "052cebaa935179ad",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce111\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4d58afecfd2f877c",
+      "newDigest": "2e74687c407476f2",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce113\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a56e9670dd7827ea",
+      "newDigest": "8f9b7a230c23ae4b",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce114\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "41f95221369e2aa7",
+      "newDigest": "513426b5dab83745",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce115\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0a62085987464562",
+      "newDigest": "6d0da3853db69755",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce164\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "053d19ca652c5228",
+      "newDigest": "e7440b4c53499311",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce165\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f0a5dafb2c5a7226",
+      "newDigest": "1e68b3693e3cd1f0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce167\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f65e8ae167e5b7aa",
+      "newDigest": "a08b555903b6da5f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce168\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "62601dbab34bdc49",
+      "newDigest": "e04528a0e2534b7f",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce229\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9692a8bf5f3b2595",
+      "newDigest": "3cf78b70c94f06dc",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce230\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d59285b6f702b489",
+      "newDigest": "e948a090f68a28a8",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce231\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "61142437e8054b89",
+      "newDigest": "318983f352527527",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce250\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d9f40a9770b49107",
+      "newDigest": "b7d130a820dfd66a",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce514\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1cfd2a32f42d93ea",
+      "newDigest": "14d0e9538b905da0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce515\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "286f7a3b1781ce21",
+      "newDigest": "214196056093a5cd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce516\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a169e61c80ad7a02",
+      "newDigest": "d7c59a81dac517a5",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce517\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a5a7c1e359452fcf",
+      "newDigest": "f5e01540663aeab0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce518\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "710f205e29083ca3",
+      "newDigest": "92224db06886072d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce519\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "834b0b5fa4828661",
+      "newDigest": "0bf5f44758190248",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce520\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a7aef4fc45280ea0",
+      "newDigest": "3c0ccb04edb06798",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce521\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e420d67f285903b6",
+      "newDigest": "ea8f3f3f457713c3",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce522\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b0f03c3b03637c4b",
+      "newDigest": "3e0572415473790e",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce523\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0e8c2925716e2e20",
+      "newDigest": "48530774c50d3f47",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce525\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5f3d9730265887b8",
+      "newDigest": "495b63a9afb8a756",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce527\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f1d5550e2317c541",
+      "newDigest": "b814eb077a1c3d46",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce528\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "566dcfc3781554ed",
+      "newDigest": "436d7f492f02a8c4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1214\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "072020a7a4115799",
+      "newDigest": "f8b7f30d72153cbd",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1386\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "52061a1bc771aae1",
+      "newDigest": "3357c0a448981787",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1387\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e2ad49c3acd10285",
+      "newDigest": "f4ea1c701540f3a0",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce2487\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4e9e99380a3d25b8",
+      "newDigest": "c9e457bddc2bb96d",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce9005\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "752e15594432d40f",
+      "newDigest": "4b451cd1f69c90f4",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce9017\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2a854cf2ea3f4a38",
+      "newDigest": "2044e3a86d536e0c",
+      "reason": "events5 观察面扩充：角色 hp／mp／能力加成、战斗背景快照与击败数预设，旧用例此前看不见的变化现在记录；CE1386 不再跳过"
+    }
+  ]
+}
