@@ -54,9 +54,9 @@ var state_turns := {}
 ## （CP_StateFloor allFloorStates）。状态重新附加（中间解除、阵亡、战斗结束清掉过）时从 1 层算起。
 static var FLOOR_YINYUE := true
 const FLOOR_STATES := [1323, 1324, 1325, 1326, 1327, 2521]
-## O-待定（rules10b，总装定）：按说明能叠，但封顶 10 层（20 层暴击 +219%，叠 1749 溢出成暴击伤害太强）。设 0 回到 rules10 的不限层
+## O-181（rules10b，总装定）：按说明能叠，但封顶 10 层（20 层暴击 +219%，叠 1749 溢出成暴击伤害太强）。设 0 回到 rules10 的不限层
 static var FLOOR_YINYUE_MAX := 10
-## O-待定（rules10b）：剑饮空月 10119 说明「每层隐月 +2% 暴击」，它挂的隐月 2521 数据是 +0.2%（7489 的 1323 是 +2%）。按说明读成 +2%；false 回原版 0.2%
+## O-181（rules10b）：剑饮空月 10119 说明「每层隐月 +2% 暴击」，它挂的隐月 2521 数据是 +0.2%（7489 的 1323 是 +2%）。按说明读成 +2%；false 回原版 0.2%
 static var FIX_YINYUE_2521 := true
 var state_floors := {}
 ## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
