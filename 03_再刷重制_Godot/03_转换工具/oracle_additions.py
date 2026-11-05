@@ -105,6 +105,12 @@ def digest(row):
     return hashlib.sha256(canonical(row).encode()).hexdigest()[:16]
 
 
+def group_value(rows):
+    """一组同键用例（groups 的多重集）当一条比：单条就是那一条；多条按规范串排序展开成列表（「同键 N→M 条」也能接受，摘要取整组）。"""
+    items = [json.loads(r) for r, n in sorted(rows.items()) for _ in range(n)]
+    return items[0] if len(items) == 1 else items
+
+
 def changed_fields(old, new):
     if not isinstance(old, dict) or not isinstance(new, dict):
         return ['*']
@@ -242,8 +248,8 @@ def current_digest(name, data, collection, key):
             rows = groups(value, fields).get(key)
         except ValueError:
             return None
-        if rows and sum(rows.values()) == 1:
-            return digest(json.loads(next(iter(rows))))
+        if rows:
+            return digest(group_value(rows))
     return None
 
 
@@ -334,8 +340,9 @@ def compare_file(name, old, new, changes=None):
                                       'fields': extra})
                     continue
                 problems.append(field + ' 既有用例改变、删除或同键追加：' + key[:160])
-                if key in gb and sum(value.values()) == 1 and sum(gb[key].values()) == 1:
-                    change(field, key, json.loads(next(iter(value))), json.loads(next(iter(gb[key]))), problems[-1])
+                if key in gb:
+                    # 同键各 1 条按那一条比字段；同键 N→M 条（重号、追加或删掉其中几条）整组当一条，字段记 *（总装 11-05）
+                    change(field, key, group_value(value), group_value(gb[key]), problems[-1])
             for key in gb.keys() - ga.keys():
                 if any(has_error(json.loads(row)) for row in gb[key]):
                     problems.append(field + ' 新用例有错误：' + key[:160])

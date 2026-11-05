@@ -414,6 +414,26 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
         self.assertEqual(self.run_sync('--accept-additions')[0], 2)
 
+    def test_same_key_group_change_is_a_change_candidate(self):
+        """登记了 KEYS 的 events.json 同 id 多条（同键 N→M 条）：原来只报问题、不进 changeCandidates，接受单接不住（总装 11-05）。
+        现在整组当一条：字段记 *，摘要取整组；接受后放行，同一接受单不放行之后的变化。"""
+        (self.gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'stable', 'value': 1}, {'id': 'stable', 'value': 2}]}))
+        self.set_payload({'cases': [{'id': 'stable', 'value': 1}, {'id': 'stable', 'value': 2}, {'id': 'stable', 'value': 3}]})
+        result, report = self.run_sync('--accept-additions')
+        self.assertEqual(result, 2)
+        self.assertIn('/cases[id=stable] 同键 2→3 条', report['measurementChanges']['events.json'])
+        (candidate,) = report['changeCandidates']
+        self.assertEqual((candidate['collection'], candidate['key'], candidate['fields']), ('cases', '[["id","stable"]]', ['*']))
+        spec = self.acceptance(report)
+        result, report = self.run_sync('--accept-changes', str(spec))
+        self.assertEqual(result, 0, report['result'])
+        self.assertEqual(self.run_sync()[0], 0)
+        result, report = self.run_sync('--accept-changes', str(spec))   # 已在基线：只提示
+        self.assertEqual(result, 0, report['result'])
+        self.assertEqual(len(report['acceptChanges']['alreadyInBaseline']), 1)
+        self.set_payload({'cases': [{'id': 'stable', 'value': 1}, {'id': 'stable', 'value': 3}]})   # 3→2：同一接受单不放行
+        self.assertEqual(self.run_sync('--accept-changes', str(spec))[0], 2)
+
     def test_unregistered_cases_align_by_id_insert_reorder_delete(self):
         """没登记 KEYS 的探针 cases（如 alien_battle、shield）按 id 对齐（tools23，悟空交接的同步坑）：插在中间只算新增、
         重排不算变化、删一条照旧拒收；报告的测量变化按键列，不再是一串下标；改一条的接受单按 [["id",…]] 对上。"""
@@ -965,7 +985,8 @@ class ActorSampleGuardTests(unittest.TestCase):
                     {'cases': ok['cases'] + [{'id': 'a', 'v': 1}]}]:
             changes = []
             extra, bad = oracle_additions.compare_file('events.json', old, new, changes)
-            self.assertEqual((extra, bool(bad), changes), ([], True, []))
+            # 仍是问题（不算加字段）；同键多条整组记成一条可接受变化（总装 11-05，原来不记）
+            self.assertEqual((extra, bool(bad), [(c['key'], c['fields']) for c in changes]), ([], True, [('[["id","a"]]', ['*'])]))
 
 
 class StopAndHeartbeatTests(unittest.TestCase):
