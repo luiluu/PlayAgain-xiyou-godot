@@ -317,13 +317,13 @@ func _ui11_pages() -> void:
 	var pr := cw.page_rows()
 	cw._unhandled_input(key(KEY_E))
 	check("choice_page_down", pr == 12 and cw.top == 12 and cw.index == 12, [pr, cw.top, cw.index])
-	cw._unhandled_input(key(KEY_E))
-	cw._unhandled_input(key(KEY_E))
-	check("choice_page_end_clamped", cw.top == 18 and cw.index == 29, [cw.top, cw.index])
+	cw._unhandled_input(key(KEY_E))  # 12→18（夹到 maxTopRow），光标 24
+	cw._unhandled_input(key(KEY_E))  # 末页再按不动（topRow＋页行数＝总行数）
+	check("choice_page_end_clamped", cw.top == 18 and cw.index == 24, [cw.top, cw.index])
 	cw._unhandled_input(key(KEY_Q))
-	check("choice_page_up", cw.top == 6 and cw.index == 17, [cw.top, cw.index])
+	check("choice_page_up", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
 	cw._unhandled_input(key(KEY_W))
-	check("choice_w_is_up", cw.index == 16, cw.index)
+	check("choice_w_not_page", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
 	cw.queue_free()
 	# 更衣：名单换成 30 人（只测翻页算式落在页上）
 	var cs := XCostumesScene.new()
