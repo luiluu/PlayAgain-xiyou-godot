@@ -28,9 +28,16 @@ for(let grade=0;grade<7;grade++){
     {label:'reward',kind:'weapon',base:73,quality:0,price:0,locked:false});
   const records=specs.map(fixture),before=w.$gameParty.equipItems().slice(),g=w.$gameParty.gold(),v=w.$gameVariables.value(201);
   const sc=Object.create(w.Scene_Shop.prototype);sc.OnekeySellDe=()=>{};sc._goldWindow={refresh(){}};sc._statusWindow={refresh(){}};
-  sc.sellUnifiedQuality(grade);
+  // v0.40 起（installSafeSellRuntime）一键出售先弹确认窗：建出正式的一键出售窗与确认窗，按「确认出售」走正式交易，并记下确认窗列的保留原因；v0.28 没这一步，照旧直接卖
+  let confirm=null;
+  if(w.Window_SafeSellConfirm40){sc.addWindow=()=>{};sc.createShopOnekeySellWindow();sc.sellUnifiedQuality(grade);const c=sc._safeSellConfirm40;
+    confirm={rows:c._list.map(x=>({name:x.name,symbol:x.symbol,enabled:x.enabled})),index:c.index(),keep:c._plan40.keep.map(k=>({label:k.item._auditLabel,reason:k.reason})).sort((a,b)=>a.label<b.label?-1:a.label>b.label?1:0)};
+    if(c.isCommandEnabled(2))c.callHandler('sell40');}
+  else sc.sellUnifiedQuality(grade);
   const after=w.$gameParty.equipItems();
-  onekey.push({grade,specs,sold:before.filter(e=>after.indexOf(e)<0).map(e=>e._auditLabel).sort(),remaining:after.map(e=>e._auditLabel).sort(),gold:w.$gameParty.gold()-g,var201:w.$gameVariables.value(201)-v,worn:!!w.$gameActors.actor(1).equips().find(e=>e&&e._auditLabel==='worn')});
+  const row={grade,specs,sold:before.filter(e=>after.indexOf(e)<0).map(e=>e._auditLabel).sort(),remaining:after.map(e=>e._auditLabel).sort(),gold:w.$gameParty.gold()-g,var201:w.$gameVariables.value(201)-v,worn:!!w.$gameActors.actor(1).equips().find(e=>e&&e._auditLabel==='worn')};
+  if(confirm)row.confirm=confirm;
+  onekey.push(row);
 }
 setup();const scene=Object.create(w.Scene_Item.prototype);let current;
 scene.item=()=>current;scene._itemActionWindow={activate(){},refresh(){}};scene._itemWindow={refresh(){}};
