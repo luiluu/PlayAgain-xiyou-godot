@@ -3,6 +3,7 @@ config_version=5
 
 [application]
 config/name="再刷重制"
+config/name.tianqi_release="再刷一把：天启篇"
 config/description="西游改版优先重制，新版保留入口。"
 config/version="dev.363"
 run/main_scene="res://scenes/entry_menu.tscn"
