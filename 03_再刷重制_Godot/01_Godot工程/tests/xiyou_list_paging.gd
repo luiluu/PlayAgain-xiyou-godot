@@ -392,7 +392,6 @@ func _ui11_pages() -> void:
 
 ## 用 XMenu._scroll_to 的列表页都要接滚轮与翻页；豁免写原因
 const SCAN_EXEMPT := {
-	"forget_skill_scene.gd": "列表借 XChoiceWindow（它自己接滚轮），翻页随 choice_window",
 }
 
 

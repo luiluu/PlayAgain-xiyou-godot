@@ -77,6 +77,9 @@ def main():
                 for v in ACTOR_VAR_RE.findall(str(c['parameters'][0])):
                     preset.setdefault('variables', {})[v] = 1
             # accept4：指定角色「遗忘技能」（318 [0, 角色, 1, 技能]）在角色本来就没学时看不出变化：先让它学会
+            # accept5：条件分歧「玩家朝向」（111 [6, -1, 方向]）：扫描只记 cond6 不给建议，预设玩家面朝第一条要的方向
+            if c['code'] == 111 and c['parameters'][0] == 6 and c['parameters'][1] == -1 and 'playerDirection' not in preset:
+                preset['playerDirection'] = c['parameters'][2]
             if c['code'] == 318 and c['parameters'][0] == 0 and c['parameters'][2] == 1 and not r['suggest']:
                 ac = preset.setdefault('actors', {}).setdefault(str(c['parameters'][1]), {})
                 ac.setdefault('skills', []).append(c['parameters'][3])

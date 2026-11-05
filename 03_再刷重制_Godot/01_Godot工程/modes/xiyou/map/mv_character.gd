@@ -361,7 +361,7 @@ func is_balloon_playing() -> bool:
 
 ## Game_CharacterBase.animationWait：(9 − 速度) × 3。installNativeRavenRuntime 包装：队长（玩家）或跟随者是渡鸦 167 时
 ## ×1.35 四舍五入（披风三帧变化大，放慢步行帧；不改移动速度和别人）。事件没有对应角色，照旧。
-## O-待定（交付单「优化登记草稿」渡鸦地图步行帧）：RAVEN_WALK_SLOW = false 回到移植前（渡鸦和别人一样快）。
+## O-195（交付单「优化登记草稿」渡鸦地图步行帧）：RAVEN_WALK_SLOW = false 回到移植前（渡鸦和别人一样快）。
 static var RAVEN_WALK_SLOW := true
 
 func animation_wait() -> int:

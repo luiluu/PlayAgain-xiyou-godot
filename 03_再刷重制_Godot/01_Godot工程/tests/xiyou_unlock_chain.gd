@@ -101,12 +101,15 @@ func _case(c: Dictionary) -> void:
 	_party()
 	# 固定随机数在进图前就设好：来源页是自动执行（深渊之门等）时进图即跑，用的也是这个值
 	MVInterpreter.fixed_random = float(c.get("random", -1.0))
+	# accept5：random_seq＝事件里每一次随机代入各取一个值（按抽取顺序；「遇到深渊」与「深渊难度」要取不同值）
+	MVInterpreter.random_sequence = Array(c.get("random_seq", []))
+	MVInterpreter._sequence_at = 0
 	get_tree().change_scene_to_file(MAP_SCENE)
 	var t0 := WaitBudget.new(CASE_MS)
 	while t0.waiting() and not (_map_ready(int(c.src_map)) and not _scene().busy):
 		await get_tree().process_frame
 	if not _check(tag + "_src_loaded", _map_ready(int(c.src_map)), [_scene().get("map_id")]):
-		MVInterpreter.fixed_random = -1.0
+		_reset_random()
 		return
 	var map: XMapScene = _scene()
 	var e: MVEvent = null
@@ -114,7 +117,7 @@ func _case(c: Dictionary) -> void:
 		if x.event_id == int(c.ev):
 			e = x
 	if not _check(tag + "_event", e != null):
-		MVInterpreter.fixed_random = -1.0
+		_reset_random()
 		return
 	if e.page_index != int(c.page):
 		forced.append([c.id, e.page_index])
@@ -140,7 +143,7 @@ func _case(c: Dictionary) -> void:
 		if _map_ready(int(c.dest)) and (not same_map or _scene().player.grid == want):
 			landed = _scene().player.grid
 		await get_tree().process_frame
-	MVInterpreter.fixed_random = -1.0
+	_reset_random()
 	# 落点修正（O-062 等，MVInterpreter.TRANSFER_FIX）照游戏用的表
 	_check(tag + "_landed", landed == want,
 		{"want": c.xy, "got": landed, "scene_map": _scene().get("map_id"), "cond": c.cond})
@@ -148,6 +151,12 @@ func _case(c: Dictionary) -> void:
 	var t1 := WaitBudget.new(5000)
 	while t1.waiting() and not st.done:
 		await get_tree().process_frame
+
+
+func _reset_random() -> void:
+	MVInterpreter.fixed_random = -1.0
+	MVInterpreter.random_sequence = []
+	MVInterpreter._sequence_at = 0
 
 
 func _run() -> void:
