@@ -1,7 +1,8 @@
 # 交付：cc/platform-android2
 
 - 车道／工作者：跨平台（工程＋界面＋工具）／BH（cc，第九批 BH，接 BA 线程）
-- 状态：进行中（BI 接入中）
+- 状态：可合并
+- **合并顺序**：本分支已合进 `cc/entry-release1`（BI，安卓发行要它的图标与 `tianqi_release` 特性），请先并 BI 再并本分支；BI 的交付单不在本分支删。
 
 ## 变更记录草稿
 
@@ -15,6 +16,7 @@
 - 新 `core/touch_controls.gd`（XTouchControls，只在触屏设备由 GameApp 建）：摇杆、确定、取消、跑步、隐藏按键，按住 24／6 帧连发，按键上的触点和转出的鼠标事件都吃掉；补跑时显示剩余时间。
 - `导出冒烟.py --platform android`：导出「安卓 验收」→ apksigner verify、aapt2 看包名／arm64-v8a／横屏、包内关键文件 → apk 的 assets/ 用新的 `07_开发环境/打包pck.gd` 打成 pck，放到 macOS 调试模板旁跑 `xiyou_mac_export`、`xiyou_flow`。`测试导出冒烟.py` 加 3 个离线用例。
 - 新专项 `tests/xiyou_platform`（桌面上用 `XPlatform.force_mobile` 当成手机测）。
+- 接 BI（Kyo 16:06 定应用名、16:17 定图标）：安卓验收包名「再刷一把：天启篇（验收）」；安卓发行加 `custom_features="tianqi_release"`、`package/name="再刷一把：天启篇"`、导出文件 `builds/android/再刷一把_天启篇.apk`；两档都用 `content/app_icon/` 的天穹巨眼（`main_192`、自适应前景／背景 432）。合 BI 时 `export_presets.cfg` 冲突一处（Windows 发行的名字与图标），按 BI 的为准；合 main 时 `project.godot` 冲突一处（main 被编辑器重写过，去掉了几行默认值），取 main 版本加回本分支两行。
 - 设计与盘点更新在 [跨平台适配](../../03_再刷重制_Godot/00_设计/跨平台适配.md) 第五节。
 
 ## 优化登记草稿（总装合并时换成实际 O 号）
@@ -43,6 +45,8 @@
 - 没跑：`选测.py` 因 `project.godot` 改了版本号以外的两行判成「整轮」，`map_scene.gd` 一行列了 107 个场景；车道不跑全量，`map_scene` 那一行只是设一个静态回调（不改地图逻辑），地图、挂机、确定性专项已跑。请总装合并时按影响面补跑或并进当天全量。
 - `工具回归.py` 全过；`语法检查.py` 0 问题；`测试导出冒烟.py`（10 例）、`测试导出过滤.py` 通过。
 - 安卓导出冒烟：签名（apksigner，调试证书）与包结构（arm64-v8a、横屏 userLandscape、WAKE_LOCK）通过，包内 xiyou_mac_export 12/12、xiyou_flow 49/49（报告 `04_验证/本地结果/导出冒烟/20261105_175905_android/`，验收包留在同目录）。
+- 接 BI 后：用调试签名导出「安卓 发行」预设看了一眼（发行签名没有，只验名字与图标）：标签「再刷一把：天启篇」、包名 `local.kyo.remake`、启动图标是天穹巨眼（自适应图标，解出 xxxhdpi 看过）；验收包再跑导出冒烟全过（报告 `20261105_181340_android/`，验收包留在同目录）。发行入口（直达西游标题）只有 release 模板才走，本机没有发行签名导不出 release 安卓包，`--report-entry` 留给有签名后或真机。
+- 接 BI 后补跑：（见下一行）
 - 测试期间总装在合并别的车道、BF 在跑探针同步，等槽约一小时；本分支没碰切片、转换器、探针。
 
 ## 待交叉核查
