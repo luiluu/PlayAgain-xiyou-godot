@@ -10667,6 +10667,252 @@
    "preset": {
     "battleResult": 2
    }
+  },
+  {
+   "base": "m4e46p0",
+   "tag": "d1",
+   "preset": {
+    "variables": {
+     "1486": 20250826
+    }
+   }
+  },
+  {
+   "base": "m106e1p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m106e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m132e2p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m18e10p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 6
+   }
+  },
+  {
+   "base": "m69e47p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e52p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e56p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m69e70p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m71e10p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e5p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m75e6p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m80e3p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m80e6p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m92e1p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m93e4p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "m97e3p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m4e12p1",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 4
+   }
+  },
+  {
+   "base": "m4e13p1",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 6
+   }
+  },
+  {
+   "base": "m4e66p0",
+   "tag": "d1",
+   "preset": {
+    "playerDirection": 8
+   }
+  },
+  {
+   "base": "ce2470",
+   "tag": "d1",
+   "preset": {
+    "party": [
+     122
+    ]
+   }
+  },
+  {
+   "base": "ce2471",
+   "tag": "d1",
+   "preset": {
+    "party": [
+     122
+    ]
+   }
+  },
+  {
+   "base": "ce1407",
+   "tag": "d1",
+   "preset": {
+    "party": [
+     104
+    ],
+    "actors": {
+     "104": {
+      "skills": [
+       7502
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce2460",
+   "tag": "d1",
+   "preset": {
+    "party": [
+     106
+    ]
+   }
+  },
+  {
+   "base": "m154e3p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "24": 1
+    }
+   }
+  },
+  {
+   "base": "m78e5p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "397": 1
+    }
+   }
+  },
+  {
+   "base": "m78e2p0",
+   "tag": "d2",
+   "preset": {
+    "items": {
+     "397": 1
+    }
+   }
+  },
+  {
+   "base": "m89e8p0",
+   "tag": "d2",
+   "preset": {
+    "dead": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m89e9p0",
+   "tag": "d2",
+   "preset": {
+    "dead": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m195e8p1",
+   "tag": "d2",
+   "preset": {
+    "selfSwitches": {
+     "195,8,A": true
+    }
+   }
   }
  ]
 }

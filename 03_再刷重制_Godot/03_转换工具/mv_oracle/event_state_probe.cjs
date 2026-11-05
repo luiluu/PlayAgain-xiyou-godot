@@ -94,6 +94,8 @@ function applyPreset(p) {
   for (const [id, n] of Object.entries(p.defeats || {})) for (let i = 0; i < n; i++) w.$gameSystem.incrementDefeatNumber(Number(id));
   // 审查 42：先倒下的角色（setHp(0) 带死亡状态 1），看事件脚本 addState 对死者的处理
   for (const id of p.dead || []) w.$gameActors.actor(Number(id)).setHp(0);
+  // accept5：玩家朝向（条件分歧 6 [-1, 方向]：传送门、机关多要玩家面朝某方向）
+  if (p.playerDirection) w.$gamePlayer.setDirection(p.playerDirection);
   for (const [k, v] of Object.entries(p.selfSwitches || {})) { const [m, e, ch] = k.split(','); w.$gameSelfSwitches.setValue([Number(m), Number(e), ch], !!v); }
 }
 w.prompt = (msg, def) => { rec({t: 'prompt', text: String(msg || '')}); return PROMPT_TEXT; };
