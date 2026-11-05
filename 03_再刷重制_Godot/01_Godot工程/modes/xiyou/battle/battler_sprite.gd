@@ -184,7 +184,7 @@ func raven_motion(m: String) -> String:
 ## installNativeRavenMonsterVisual 的 Sprite_Actor.update 包装（最外层）：渡鸦 167 神话形态阵亡时主图透明度 0.35，其余时候 1。
 ## 它想换的静态大图 Raven_Mythic_Monster 实机被 Mx_SuperSV 多帧盖掉、从不出现（sprite_real 量具 raven_myth：最终画的是
 ## UserSV_RavenMythic 逐帧图、缩放 0.4615、藏武器和影子），只剩这条透明度留了下来。
-## O-待定（交付单「优化登记草稿」渡鸦神话阵亡半透明）：RAVEN_MYTH_DEAD_ALPHA = false 回到移植前（阵亡也不透明）。
+## O-198（交付单「优化登记草稿」渡鸦神话阵亡半透明）：RAVEN_MYTH_DEAD_ALPHA = false 回到移植前（阵亡也不透明）。
 static var RAVEN_MYTH_DEAD_ALPHA := true
 
 func _raven_myth_alpha() -> void:
