@@ -2,7 +2,7 @@
 """导出过滤保护：各导出预设都不带参照数据，发行预设另外不带测试；游戏数据不能被排除。
 
 「macOS 验收」「Windows 验收」保留 tests/（--verify-export 在包内跑 tests/xiyou_mac_export.tscn）；
-「macOS 发行」「Windows 发行」整个排除 tests/（Windows 两档 cc 2026-11-05 加）。Godot 的过滤只认 * 和 ?，不分大小写。
+「macOS 发行」「Windows 发行」整个排除 tests/（Windows 两档 cc 2026-11-05 加；安卓 验收／发行同理，cc BH 同日）。Godot 的过滤只认 * 和 ?，不分大小写。
 """
 import configparser
 import fnmatch
@@ -16,7 +16,7 @@ GAME = ['modes/xiyou/generated/db/System.json', 'modes/xiyou/generated/maps/Map0
         'modes/xiyou/generated/slice.json', 'modes/xiyou/generated/img/system/Window.png',
         'content/modes.json', 'scenes/entry_menu.tscn']
 TESTS = [p.relative_to(PROJECT).as_posix() for p in (PROJECT / 'tests').rglob('*') if p.is_file()]
-PRESETS = {'macOS 验收': [], 'macOS 发行': TESTS, 'Windows 验收': [], 'Windows 发行': TESTS}  # 预设名 → 另外必须排除的文件
+PRESETS = {'macOS 验收': [], 'macOS 发行': TESTS, 'Windows 验收': [], 'Windows 发行': TESTS, '安卓 验收': [], '安卓 发行': TESTS}  # 预设名 → 另外必须排除的文件
 
 cfg = configparser.ConfigParser(interpolation=None)
 cfg.read(PROJECT / 'export_presets.cfg', encoding='utf-8')
@@ -28,7 +28,7 @@ for sec in [s for s in cfg.sections() if s.startswith('preset.') and s.count('.'
     hit = lambda path: any(fnmatch.fnmatchcase(path.lower(), p.lower()) for p in pats)
     problems += [f'{name}: {p} 没被排除' for p in NOT_GAME + PRESETS.get(name, []) if not hit(p)]
     problems += [f'{name}: 游戏文件 {p} 被排除' for p in GAME if hit(p)]
-    if name in ('macOS 验收', 'Windows 验收') and hit('tests/xiyou_mac_export.tscn'):
+    if name in ('macOS 验收', 'Windows 验收', '安卓 验收') and hit('tests/xiyou_mac_export.tscn'):
         problems.append(f'{name}: 导出验收场景 tests/xiyou_mac_export.tscn 被排除')
 problems += [f'缺少导出预设「{n}」' for n in PRESETS if n not in seen]
 

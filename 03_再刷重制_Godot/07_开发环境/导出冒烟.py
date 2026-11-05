@@ -11,6 +11,11 @@
                                      本机不跑 exe，把这个 .pck 放到 macOS 调试模板旁边（同名，硬链接）跑下面几项包内检查
                                      （验的是 Windows 包里的内容与资源，不是 Windows 上的引擎行为）。
                                      --zip 这时给现成的 .exe。
+  python3 导出冒烟.py --platform android   导出「安卓 验收」（调试签名，cc BH 2026-11-05）：apksigner verify、aapt2 看
+                                     包名／arm64-v8a／横屏、包内关键文件；再把 apk 的 assets/ 用 打包pck.gd 打成 pck 放到 macOS 调试模板旁
+                                     跑包内检查（验内容；安卓贴图是 ETC2／ASTC，无头跑得起来就算，跑不起来报告里写明）。
+                                     要 ~/Library/Android/sdk（或 ANDROID_HOME）的 build-tools 和 JDK（JAVA_HOME 或 ~/Library/Android/jdk）。
+                                     --zip 这时给现成的 .apk。
 
 包内跑的（都是调试包里的 tests/，发行包排除 tests/、跑不到）：
   xiyou_mac_export  字体、中文换行、皮肤、角色图、音效资源、隔离存档的写读删（--verify-export 默认场景）
@@ -35,7 +40,8 @@ ROOT = HERE.parent
 PROJECT = ROOT / '01_Godot工程'
 GODOT = HERE / 'godot'
 PRESET = 'macOS 验收'
-PRESETS = {'macos': 'macOS 验收', 'windows': 'Windows 验收'}
+PRESETS = {'macos': 'macOS 验收', 'windows': 'Windows 验收', 'android': '安卓 验收'}
+LANDSCAPE = {0, 6, 8, 11}  # screenOrientation：横屏、传感器横屏、反向横屏、用户横屏
 PE_MACHINES = {0x8664: 'x86_64', 0xAA64: 'arm64', 0x14C: 'x86_32'}
 PE_SUBSYSTEMS = {2: '图形界面', 3: '控制台'}
 SCENES = ['xiyou_mac_export', 'xiyou_flow']
@@ -103,6 +109,63 @@ def windows_layout(exe: Path, debug: bool = True):
     return problems, info
 
 
+def android_tools():
+    """(apksigner, aapt2, JAVA_HOME)；找不到的是 None。只认用户目录（不动系统）。"""
+    sdk = Path(os.environ.get('ANDROID_HOME') or Path.home() / 'Library' / 'Android' / 'sdk')
+    tools = sorted((sdk / 'build-tools').glob('*/apksigner'))
+    java = os.environ.get('JAVA_HOME')
+    if not java:
+        homes = sorted((Path.home() / 'Library' / 'Android' / 'jdk').glob('*/Contents/Home'))
+        java = str(homes[-1]) if homes else None
+    if not tools:
+        return None, None, java
+    return tools[-1], tools[-1].with_name('aapt2'), java
+
+
+def parse_android(badging: str, xmltree: str) -> dict:
+    """aapt2 dump badging／xmltree 的输出 → 包名、原生架构、屏幕方向、权限。"""
+    import re as _re
+    pkg = _re.search(r"package: name='([^']+)'", badging)
+    native = _re.search(r"native-code: (.*)", badging)
+    orient = _re.search(r'screenOrientation\(0x[0-9a-f]+\)=(-?\d+)', xmltree)
+    return {'package': pkg.group(1) if pkg else None,
+            'native': _re.findall(r"'([^']+)'", native.group(1)) if native else [],
+            'orientation': int(orient.group(1)) if orient else None,
+            'permissions': _re.findall(r"uses-permission: name='([^']+)'", badging)}
+
+
+def android_layout(apk: Path, names, debug: bool = True):
+    """安卓包检查：签名、包信息（parse_android 的结果）、包内关键文件。返回 (问题列表, 包信息)。"""
+    problems = []
+    apksigner, aapt2, java = android_tools()
+    if apksigner is None or java is None:
+        return ['找不到安卓 build-tools 或 JDK（~/Library/Android/sdk、~/Library/Android/jdk）'], None
+    env = dict(os.environ, JAVA_HOME=java)
+    v = subprocess.run([str(apksigner), 'verify', str(apk)], capture_output=True, text=True, env=env)
+    if v.returncode != 0:
+        problems.append('apksigner verify 不通过：' + ((v.stderr or v.stdout).strip().splitlines() or ['?'])[-1])
+    badging = subprocess.run([str(aapt2), 'dump', 'badging', str(apk)], capture_output=True, text=True).stdout
+    xmltree = subprocess.run([str(aapt2), 'dump', 'xmltree', '--file', 'AndroidManifest.xml', str(apk)], capture_output=True, text=True).stdout
+    info = parse_android(badging, xmltree)
+    problems += android_problems(info, set(names), debug)
+    return problems, info
+
+
+def android_problems(info: dict, names: set, debug: bool = True):
+    problems = []
+    if 'arm64-v8a' not in info['native']:
+        problems.append(f'原生架构没有 arm64-v8a（{info["native"]}）')
+    if info['orientation'] not in LANDSCAPE:
+        problems.append(f'屏幕方向不是横屏（screenOrientation={info["orientation"]}）')
+    if not info['package']:
+        problems.append('读不出包名')
+    need = ['assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap']
+    if debug:
+        need.append('assets/tests/xiyou_mac_export.tscn.remap')
+    problems += [f'包里缺 {n}' for n in need if n not in names]
+    return problems
+
+
 def preset_template(preset: str, key: str = 'custom_template/debug'):
     """从 export_presets.cfg 读某个预设的模板路径（模板在主工作区，工作树里没有）。"""
     import configparser
@@ -116,7 +179,7 @@ def preset_template(preset: str, key: str = 'custom_template/debug'):
     return None
 
 
-def mac_runner(work: Path, pck: Path):
+def mac_runner(work: Path, pck: Path, link: bool = True):
     """解出 macOS 调试模板的可执行文件，旁边放同名的 Windows 包 .pck（导出模板不认 --main-pack，只认 exe 旁的同名 .pck）。"""
     zip_path = preset_template(PRESETS['macos'])
     member = 'macos_template.app/Contents/MacOS/godot_macos_debug.universal'
@@ -129,6 +192,9 @@ def mac_runner(work: Path, pck: Path):
     exe = dest / Path(member).name
     os.chmod(exe, 0o755)
     target = exe.with_suffix('.pck')
+    if not link:
+        shutil.move(str(pck), target)
+        return exe
     try:
         os.link(pck, target)
     except OSError:
@@ -167,11 +233,14 @@ def smoke_scene(exe: Path, scene: str, out_dir: Path) -> dict:
 
 
 def report(out_dir: Path, info: dict) -> Path:
-    windows = info.get('platform') == 'windows'
-    lines = ['# Windows 导出冒烟报告' if windows else '# Mac 导出冒烟报告', '',
+    platform = info.get('platform', 'macos')
+    windows = platform == 'windows'
+    title = {'windows': '# Windows 导出冒烟报告', 'android': '# 安卓导出冒烟报告'}.get(platform, '# Mac 导出冒烟报告')
+    lines = [title, '',
              f'- 时间：{info["time"]}；预设：{info["preset"]}；包：`{info["zip"]}`',
              f'- 工程提交：{info.get("commit", "?")}；Godot：{info.get("godot", "?")}',
              (f'- 架构：{info.get("archs", "?")}；包结构（PE 头、.pck、控制台包装）：{info.get("layout", "?")}；包内检查用 macOS 调试模板旁放同名 .pck 跑' if windows else
+              f'- 包名：{info.get("package", "?")}；架构：{info.get("archs", "?")}；签名与包结构（apksigner verify、aapt2）：{info.get("layout", "?")}；包内检查把 assets/ 打成 pck 放到 macOS 调试模板旁跑' if platform == 'android' else
               f'- 架构：{info.get("archs", "?")}；签名检查（codesign --verify，只读）：{info.get("codesign", "?")}'),
              f'- 结论：**{"全部通过" if info["ok"] else "有失败"}**'] + ([f'- 留下的验收包（--keep）：`{info["keptApp"]}`'] if info.get('keptApp') else []) + ['',
              '| 项目 | 结果 | 断言 | 用时（秒） | 退出码 |', '| --- | --- | --- | --- | --- |']
@@ -183,6 +252,7 @@ def report(out_dir: Path, info: dict) -> Path:
             lines += ['', f'## {r["scene"]} 失败项', ''] + [f'- `{f}`' for f in r['result']['fails']]
     lines += ['', '各项完整输出在同目录 `<场景>.log`；导出日志 `导出.log`。',
               ('没覆盖的（要 Windows 实机）：exe 真在 Windows 上启动、DPI 缩放与全屏（Alt+Enter）、中文输入法、存档目录 %APPDATA%、杀毒误报、SmartScreen。' if windows else
+               '没覆盖的（要安卓真机）：安装启动、触屏按键与两指取消、返回键、切后台与补跑、横屏与刘海、帧率与发热、ETC2／ASTC 贴图显示。' if platform == 'android' else
                '没覆盖的（要 Kyo 实机）：主观听音、Intel 实机、Developer ID 签名与公证、首次打开的 Gatekeeper，见 `00_项目管理/Mac实机验收清单.md`。')]
     p = out_dir / '报告.md'
     p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
@@ -241,6 +311,72 @@ def main_windows(a) -> int:
         shutil.rmtree(work, ignore_errors=True)
 
 
+def main_android(a) -> int:
+    preset = PRESETS['android']
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    out_dir = Path(a.out) if a.out else ROOT / '04_验证' / '本地结果' / '导出冒烟' / (stamp + '_android')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix='xiyou_export_smoke_'))
+    info = {'time': stamp, 'platform': 'android', 'preset': preset, 'scenes': [], 'ok': False}
+    try:
+        info['commit'] = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        info['godot'] = (subprocess.run([str(GODOT), '--version'], capture_output=True, text=True).stdout.strip().splitlines()[-1:] or ['?'])[0]
+        if a.zip:
+            apk = Path(a.zip).resolve()
+        else:
+            apk = work / '再刷重制_验收.apk'
+            print(f'== 导出「{preset}」（约 2～5 分钟）')
+            code, _, secs = run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-debug', preset, str(apk)],
+                                out_dir / '导出.log', 1800)
+            if code != 0 or not apk.is_file():
+                print(f'✗ 导出失败（退出码 {code}），见 {out_dir / "导出.log"}')
+                return 2
+            print(f'  导出完成 {secs} 秒，{apk.stat().st_size // (1 << 20)} MB')
+        info['zip'] = str(apk)
+        import zipfile
+        with zipfile.ZipFile(apk) as z:
+            names = z.namelist()
+            problems, pk = android_layout(apk, names)
+            info['package'] = pk['package'] if pk else '?'
+            info['archs'] = ','.join(pk['native']) if pk else '?'
+            info['layout'] = '通过' if not problems else '不通过：' + '；'.join(problems)
+            print(f'  签名与包结构：{info["layout"]}')
+            z.extractall(work / 'apk', [n for n in names if n.startswith('assets/')])
+        # assets/ 原样打成真 pck（导出模板不认 zip 包和 --main-pack），用编辑器跑 打包pck.gd
+        pck = work / 'assets.pck'
+        empty = work / 'empty_project'
+        empty.mkdir()
+        (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
+        code, log, secs = run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
+                               str(work / 'apk' / 'assets'), str(pck)], out_dir / '打包pck.log', 900)
+        shutil.rmtree(work / 'apk', ignore_errors=True)
+        if code != 0 or not pck.is_file():
+            print(f'✗ 把 apk 的 assets/ 打成 pck 失败（退出码 {code}），见 {out_dir / "打包pck.log"}')
+            return 2
+        print(f'  assets/ 打成 pck {secs} 秒')
+        runner = mac_runner(work, pck, link=False)
+        if runner is None:
+            print('✗ 找不到 macOS 调试模板，跑不了包内检查')
+            return 2
+        for scene in [s.strip() for s in a.scenes.split(',') if s.strip()]:
+            print(f'== 包内跑 {scene}（macOS 调试模板＋apk 的 assets/）')
+            r = smoke_scene(runner, scene, out_dir)
+            info['scenes'].append(r)
+            res = r['result']
+            print(f'  {"✓" if r["ok"] else "✗"} {scene} {f"{res["passed"]}/{res["total"]}" if res else "没有 TEST_RESULT"}，{r["seconds"]} 秒')
+        info['ok'] = bool(info['scenes']) and all(r['ok'] for r in info['scenes']) and not problems
+        if a.keep and not a.zip:
+            kept = out_dir / apk.name
+            shutil.move(str(apk), kept)
+            info['keptApp'] = str(kept)
+            print(f'  留下 {kept}')
+        p = report(out_dir, info)
+        print(f'{"✓ 导出冒烟全部通过" if info["ok"] else "✗ 导出冒烟有失败"}；报告 {p}')
+        return 0 if info['ok'] else 1
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--zip', help='不导出，冒烟这个现成的包')
@@ -251,6 +387,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     if a.platform == 'windows':
         return main_windows(a)
+    if a.platform == 'android':
+        return main_android(a)
     stamp = time.strftime('%Y%m%d_%H%M%S')
     out_dir = Path(a.out) if a.out else ROOT / '04_验证' / '本地结果' / '导出冒烟' / stamp
     out_dir.mkdir(parents=True, exist_ok=True)

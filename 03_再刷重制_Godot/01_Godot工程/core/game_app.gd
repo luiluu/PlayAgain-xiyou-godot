@@ -6,12 +6,20 @@ var modes: Array = []
 var current_mode: String = ""
 
 var key_repeat: XKeyRepeat
+var platform: XPlatform
 
 func _ready() -> void:
 	_headless_frame_sleep()
 	key_repeat = XKeyRepeat.new()  # 按住键的连发照原版 24／6 帧（ui11）
 	key_repeat.name = "KeyRepeat"
 	add_child(key_repeat)
+	platform = XPlatform.new()  # 平台差异（两指取消、返回键、切后台、触屏按键），跨平台二期
+	platform.name = "Platform"
+	add_child(platform)
+	if XPlatform.is_touch():
+		var touch := XTouchControls.new()
+		touch.name = "TouchControls"
+		platform.add_child(touch)
 	if OS.get_environment("XIYOU_TEST_FAST_FORWARD").is_valid_int():
 		fast_forward()
 	if WindowFit.should_apply(OS.get_cmdline_args()):

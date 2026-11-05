@@ -46,6 +46,10 @@ static func enabled(s: XState) -> bool:
 static func is_active(s: XState) -> bool:
 	return enabled(s) and s.hang_up_active and s.hang_up_origin.x >= 0
 
+## 当前存档在挂机（XPlatform.idle_probe 用：安卓后台补跑、挂机时不锁屏）。
+static func current_active() -> bool:
+	return XState.current != null and is_active(XState.current)
+
 
 static func inter_show(s: XState) -> bool:
 	return enabled(s) and bool(settings(s).showInter)

@@ -17,6 +17,7 @@ config/version="dev.367"
 run/main_scene="res://scenes/entry_menu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="KYO/再刷重制_开发"
+config/custom_user_dir_name.release="KYO/再刷重制"
 config/features=PackedStringArray("4.7")
 
 [autoload]
@@ -30,6 +31,7 @@ window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
+window/handheld/orientation=4
 
 [internationalization]
 
