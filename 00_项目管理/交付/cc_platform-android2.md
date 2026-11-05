@@ -9,7 +9,7 @@
 
 - 本分支从 cc/platform-pc-android1 切出（一期还没并进 main 时），合了 main；一期的交付单 `cc_platform-pc-android1.md` 也在本分支里，两张一起并。
 - 本机：引擎便携设置 `editor_settings-4.7.tres` 填了 `export/android/java_sdk_path`（`~/Library/Android/jdk/jdk-17.0.21+9/Contents/Home`；SDK 路径 Godot 自己认出了 `~/Library/Android/sdk`）；用 keytool 生成了 Godot 默认位置的调试 keystore（`引擎/4.7.2-stable/editor_data/keystores/debug.keystore`，CN=Android Debug、口令 android，在 .gitignore 的引擎目录里）。改前的设置备份在 `.git/tangseng/editor_settings-4.7.tres.bak-bh`。没建、没碰正式签名证书。
-- `export_presets.cfg` 加「安卓 验收」（调试签名、带 tests/、包名 `local.kyo.remake.verification`）、「安卓 发行」（排除 tests/、包名 `local.kyo.remake`、正式 keystore 留空）：arm64-v8a、不用 Gradle、沉浸全屏、只要 WAKE_LOCK。`测试导出过滤.py` 加这两档。
+- `export_presets.cfg` 加「安卓 验收」（调试签名、带 tests/、包名 `local.kyo.remake.verification`、应用名「再刷一把：天启篇（验收）」）、「安卓 发行」（排除 tests/、包名 `local.kyo.remake`、应用名「再刷一把：天启篇」（Kyo 16:06 定）、正式 keystore 留空）：arm64-v8a、不用 Gradle、沉浸全屏、只要 WAKE_LOCK。`测试导出过滤.py` 加这两档。
 - `project.godot`：`display/window/handheld/orientation=4`（横屏）；`application/config/custom_user_dir_name.release="KYO/再刷重制"`（O-待定，见优化登记草稿）。
 - 新 `core/platform.gd`（XPlatform，GameApp 建在自己下面）：两指点按转一次右键（游戏里右键＝取消，与 MV TouchInput 同一路），第二指不往下传；返回键当取消、入口菜单上退出；切后台松开虚拟键；挂机中不锁屏；挂机中切后台回来按离开时间 8 倍速补跑，最多 30 分钟游戏时间，点屏幕停（O-待定）。`XHangUp.current_active()` 新增，`map_scene._ready` 把它设成 `XPlatform.idle_probe`。
 - 新 `core/touch_controls.gd`（XTouchControls，只在触屏设备由 GameApp 建）：摇杆、确定、取消、跑步、隐藏按键，按住 24／6 帧连发，按键上的触点和转出的鼠标事件都吃掉；补跑时显示剩余时间。
