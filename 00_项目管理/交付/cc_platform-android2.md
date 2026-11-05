@@ -1,0 +1,50 @@
+# 交付：cc/platform-android2
+
+- 车道／工作者：跨平台（工程＋界面＋工具）／BH（cc，第九批 BH，接 BA 线程）
+- 状态：进行中
+
+## 变更记录草稿
+
+## 2026-11-05 【cc·BH·未经审查】安卓二期：触屏、返回键、切后台补跑、安卓导出（dev.待定）
+
+- 本分支从 cc/platform-pc-android1 切出（一期还没并进 main 时），合了 main；一期的交付单 `cc_platform-pc-android1.md` 也在本分支里，两张一起并。
+- 本机：引擎便携设置 `editor_settings-4.7.tres` 填了 `export/android/java_sdk_path`（`~/Library/Android/jdk/jdk-17.0.21+9/Contents/Home`；SDK 路径 Godot 自己认出了 `~/Library/Android/sdk`）；用 keytool 生成了 Godot 默认位置的调试 keystore（`引擎/4.7.2-stable/editor_data/keystores/debug.keystore`，CN=Android Debug、口令 android，在 .gitignore 的引擎目录里）。改前的设置备份在 `.git/tangseng/editor_settings-4.7.tres.bak-bh`。没建、没碰正式签名证书。
+- `export_presets.cfg` 加「安卓 验收」（调试签名、带 tests/、包名 `local.kyo.remake.verification`）、「安卓 发行」（排除 tests/、包名 `local.kyo.remake`、正式 keystore 留空）：arm64-v8a、不用 Gradle、沉浸全屏、只要 WAKE_LOCK。`测试导出过滤.py` 加这两档。
+- `project.godot`：`display/window/handheld/orientation=4`（横屏）；`application/config/custom_user_dir_name.release="KYO/再刷重制"`（O-待定，见优化登记草稿）。
+- 新 `core/platform.gd`（XPlatform，GameApp 建在自己下面）：两指点按转一次右键（游戏里右键＝取消，与 MV TouchInput 同一路），第二指不往下传；返回键当取消、入口菜单上退出；切后台松开虚拟键；挂机中不锁屏；挂机中切后台回来按离开时间 8 倍速补跑，最多 30 分钟游戏时间，点屏幕停（O-待定）。`XHangUp.current_active()` 新增，`map_scene._ready` 把它设成 `XPlatform.idle_probe`。
+- 新 `core/touch_controls.gd`（XTouchControls，只在触屏设备由 GameApp 建）：摇杆、确定、取消、跑步、隐藏按键，按住 24／6 帧连发，按键上的触点和转出的鼠标事件都吃掉；补跑时显示剩余时间。
+- `导出冒烟.py --platform android`：导出「安卓 验收」→ apksigner verify、aapt2 看包名／arm64-v8a／横屏、包内关键文件 → apk 的 assets/ 用新的 `07_开发环境/打包pck.gd` 打成 pck，放到 macOS 调试模板旁跑 `xiyou_mac_export`、`xiyou_flow`。`测试导出冒烟.py` 加 3 个离线用例。
+- 新专项 `tests/xiyou_platform`（桌面上用 `XPlatform.force_mobile` 当成手机测）。
+- 设计与盘点更新在 [跨平台适配](../../03_再刷重制_Godot/00_设计/跨平台适配.md) 第五节。
+
+## 优化登记草稿（总装合并时换成实际 O 号）
+
+- O-待定 发行包存档目录去掉「_开发」：`project.godot` 的 `config/custom_user_dir_name.release="KYO/再刷重制"`，调试包与编辑器仍是 `KYO/再刷重制_开发`。恢复方法：删掉这一行。状态：已做（总装 14:55 定，Kyo 09:21 授权）。
+- O-待定 安卓后台挂机：`XPlatform.BACKGROUND_IDLE = true`，挂机中切后台、回前台按离开时间 8 倍速补跑，最多 30 分钟。原版是前台服务真在后台跑；重制没有原生插件，做不到一样。恢复方法：`XPlatform.BACKGROUND_IDLE = false`（切后台就停）。状态：已做（同上），测试 `xiyou_platform` 的 background_idle_off 覆盖回退支。
+
+## 交接板
+
+- 下一步：安卓真机验收（装验收包、触屏按键、两指取消、返回键、切后台补跑、横屏、帧率）；三期：按键大小／透明度／位置、设置页触屏选项、存档导出导入、刘海安全区、原生前台服务（真后台挂机，要 Gradle 构建）。
+- 用户试玩说明：Mac 上没有变化。安卓验收包在 `04_验证/本地结果/导出冒烟/20261105_163345_android/再刷重制_验收.apk`（调试签名，和原版包名不同，可以并排装），`adb install` 或拷到手机装。
+- 需要用户决定：安卓真后台挂机（通知栏常驻）要不要做原生插件；发行签名用的 keystore 由 Kyo 自己建和保管。
+
+## 进度账
+
+- 跨平台：安卓 0% → 二期一轮（导出＋离线检查＋触屏一期）完成，待真机
+
+## 可优化（流程／工具／效率）
+
+- 已做：导出冒烟 `--platform android` 不用真机就能验安卓包的内容（回退：不带 `--platform` 行为不变）。
+- 建议：`project.godot` 改了版本号以外的行，选测按「整轮」处理；车道没跑全量，总装合并时按规矩跑（或在选测对照里给 `display/`、`config/custom_user_dir_name` 这类设置行分个窄档，归工具车道）。
+
+## 验证
+
+- （待写）
+
+## 待交叉核查
+
+- 甲：无（没改战斗、存档读写；存档目录只在发行包里换名）。乙：`core/platform.gd`、`core/touch_controls.gd`、`game_app.gd`、`map_scene.gd` 一行、`hang_up.gd` 一个函数、`project.godot` 两行、`tests/xiyou_platform`。丙：`导出冒烟.py`、`打包pck.gd`、`测试导出冒烟.py`、`测试导出过滤.py`、`export_presets.cfg`。
+
+## 本分支提交
+
+- 77af07ef 安卓二期：平台模块、触屏按键、后台补跑、安卓预设、导出冒烟 --platform android
