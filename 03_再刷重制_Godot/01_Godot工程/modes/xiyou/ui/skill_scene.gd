@@ -69,18 +69,18 @@ func actor() -> XActor:
 	return s.actor(s.party[actor_index])
 
 
-## Window_SkillType.makeCommandList：addedSkillTypes 升序；技能类型 3（呼吸法）一律不列（installNativeYomiJingliuRuntime 的 addCommand 包装）
+## Window_SkillType.makeCommandList：addedSkillTypes 升序；技能类型 3（呼吸法）一律不列（installNativeYomiJingliuRuntime 的 addCommand 包装）；167～177 再补「功法」6（menu_page_types）
 func types() -> Array:
 	var forced = XActorModules.menu_skill_types(actor())  # 渡鸦／宿傩／饿狼 addedSkillTypes 包装
 	if forced != null:
 		forced.sort()
-		return XActorModules.visible_skill_types(forced)
+		return XActorModules.menu_page_types(int(actor().actor_id), XActorModules.visible_skill_types(forced))
 	var ids := []
 	for t in actor().all_traits():
 		if int(t.code) == 41 and not ids.has(int(t.dataId)):
 			ids.append(int(t.dataId))
 	ids.sort()
-	return XActorModules.visible_skill_types(ids)
+	return XActorModules.menu_page_types(int(actor().actor_id), XActorModules.visible_skill_types(ids))
 
 
 func type_name(id: int) -> String:

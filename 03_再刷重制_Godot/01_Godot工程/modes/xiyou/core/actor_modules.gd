@@ -138,6 +138,23 @@ static func visible_skill_types(types: Array) -> Array:
 	return types.filter(func(t): return int(t) != HIDDEN_SKILL_TYPE)
 
 
+## 技能菜单（Window_SkillType.makeCommandList）对 167～177 号新角色固定多一页「功法」（技能类型 6，没学功法也列）：
+## 先去掉已有的 6，再插到被动 4 前面；没有 4 就插到 min(2, 长度) 位。只管技能菜单，战斗指令保持原样
+## （installV010UsabilityRuntime 的 newActor＋Window_SkillType.makeCommandList 包装，冻结源）。
+const GONGFA_SKILL_TYPE := 6
+const GONGFA_ACTOR_MIN := 167
+const GONGFA_ACTOR_MAX := 177
+
+
+static func menu_page_types(actor_id: int, types: Array) -> Array:
+	if actor_id < GONGFA_ACTOR_MIN or actor_id > GONGFA_ACTOR_MAX:
+		return types
+	var list := types.filter(func(t): return int(t) != GONGFA_SKILL_TYPE)
+	var at := list.find(4)
+	list.insert(minf(2, list.size()) as int if at < 0 else at, GONGFA_SKILL_TYPE)
+	return list
+
+
 static func menu_skill_types(a):
 	return (MENU_SKILL_TYPES[int(a.actor_id)] as Array).duplicate() if a is XActor and MENU_SKILL_TYPES.has(int(a.actor_id)) else null
 
