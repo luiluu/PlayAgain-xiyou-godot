@@ -21,6 +21,12 @@ func refresh_image() -> void:
 		set_image("", 0)
 
 
+## Game_Follower.actor：出战成员第 member_index 个（没有为空）
+func walking_actor():
+	var members := XState.current.battle_members() if XState.current else []
+	return members[member_index] if member_index < members.size() else null
+
+
 ## Game_Follower.chaseCharacter
 func chase(target: MVCharacter, speed: int) -> void:
 	var dl := tilemap.delta(grid, target.grid) if tilemap else grid - target.grid
