@@ -95,9 +95,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		closed.emit()
-	elif event is InputEventKey and event.pressed and event.keycode in [KEY_Q,KEY_W]:
+	elif XMenu.actor_key(event as InputEventKey, KEY_Q) or XMenu.actor_key(event as InputEventKey, KEY_E):
+		# 状态页 pageup／pagedown 换角色（JAH_StatusMenuCore）；正式版键位 Q＝pageup、E＝pagedown，W 是「上」（party.json keys）
 		get_viewport().set_input_as_handled()
-		switch_actor(-1 if event.keycode==KEY_Q else 1)
+		switch_actor(-1 if XMenu.actor_key(event as InputEventKey, KEY_Q) else 1)
 	elif event.is_action_pressed("ui_page_up") or event.is_action_pressed("ui_page_down"):
 		get_viewport().set_input_as_handled()
 		switch_actor(-1 if event.is_action_pressed("ui_page_up") else 1)
