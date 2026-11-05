@@ -1,8 +1,8 @@
 # 交付：cc/wukong-fix5
 
 - 车道／工作者：C 规则·战斗／悟空（cc）
-- 基线：main 198dac5b 切出，并入 cc/wukong-accept4，交付前合到 main 333411bf（含 accept4 合并）
-- 状态：进行中
+- 基线：建在 cc/wukong-accept4 返工后的 69c40dd9 上（它已合 main 3018b132）；**要先合 accept4 再合本分支**。原先合过一次 main 333411bf（总装那次后来撤掉的 accept4 合并），已改基重做、不带那次合并。
+- 状态：可合并
 
 ## 做了什么
 
@@ -16,9 +16,9 @@
 
 ## 验证
 
-- `xiyou_troop_events*` 五份全过（4839／4816／4796／4819／half 4306）；321 原来记成已知差异的两项现在严格比、全过。
+- `xiyou_troop_events*` 五份全过；改基到 accept4 返工后复跑仍全过（4870／4831／4830／4739／half 4306）；321 原来记成已知差异的两项现在严格比、全过。
 - `语法检查.py`、`工具回归.py`：通过。
-- 选测：改了 battle_logic，`选测.py` 选 287 个场景，走 `云端选测.py run`（提交 2f06d7ed）：（待写）
+- 选测：改了 battle_logic，`云端选测.py run` 选 287 个场景、14 片，**全过**（提交 2f06d7ed，基准 198dac5b，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42020192442）。改基后代码改动逐字相同，没再跑云端，只在本机复跑了 troop_events。
 
 ## 变更记录草稿
 
@@ -48,7 +48,6 @@
 
 ## 本分支提交
 
-- 并入 cc/wukong-accept4（快进）
-- WIP: 模仿 856 After Eval 接上、去 KNOWN_DIFF、回退支
-- 合并 main
+- 358e6520 WIP: 模仿 856 After Eval 接上、去 KNOWN_DIFF、回退支（改基后 cherry-pick）
+- 5721ca24 WIP: 交付单草稿
 - 交付提交（本提交）
