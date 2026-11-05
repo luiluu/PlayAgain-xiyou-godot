@@ -428,13 +428,50 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
 		get_viewport().set_input_as_handled()
 		_move(1 if event.is_action_pressed("ui_right", true) else -1, true, not event.is_echo())
+	elif mode in ["list", "actor"] and XMenu.page_dir(event) != 0:
+		# 技能列表、选人窗不接管 pageup／pagedown（原版只有技能类型窗设了换角色）：走通用翻页
+		get_viewport().set_input_as_handled()
+		_page(XMenu.page_dir(event))
 	elif event.is_action_pressed("ui_page_up") or event.is_action_pressed("ui_page_down") or (pressed and key.physical_keycode in [KEY_Q, KEY_E]):
 		get_viewport().set_input_as_handled()
 		change_actor(-1 if event.is_action_pressed("ui_page_up") or (pressed and key.physical_keycode == KEY_Q) else 1)
 
 
+## 通用翻页：技能列表两列（页项数＝行数×2），选人窗一列；全体对象的技能（光标盖全队）不动
+func _page(d: int) -> void:
+	var before := [index, actor_pick]
+	if mode == "list":
+		var r := XMenu.page(top, index, entries().size(), _list_rows(), d, 2)
+		top = r[0]
+		index = r[1]
+	elif mode == "actor" and not int(current().get("scope", 0)) in [8, 10]:
+		var r := XMenu.page(actor_top, actor_pick, XState.current.members().size(), ACTOR_ROWS, d)
+		actor_top = r[0]
+		actor_pick = r[1]
+	if before != [index, actor_pick]:
+		XSound.system(0)
+	_refresh()
+
+
+## 滚轮（Window_Selectable.processWheel）：只滚当前活动窗口，光标不动
+func _wheel(d: int) -> void:
+	match mode:
+		"type":
+			type_top = XMenu.wheel(type_top, types().size(), TYPE_ROWS, d)
+		"list":
+			top = XMenu.wheel(top, entries().size(), _list_rows(), d, 2)
+		"actor":
+			actor_top = XMenu.wheel(actor_top, XState.current.members().size(), ACTOR_ROWS, d)
+	_refresh()
+
+
 func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
+		return
+	var wd := XMenu.wheel_dir(event)
+	if wd != 0:
+		accept_event()
+		_wheel(wd)
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		cancel()

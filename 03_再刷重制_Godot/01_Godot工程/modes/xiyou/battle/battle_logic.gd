@@ -223,6 +223,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
+	XNanoha.domain_queue(self)  # 奈叶魔法领域做活（O-183）：领域预约的 2478 排在 1320 之后
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -276,6 +277,7 @@ func _start_battle_effects() -> void:
 			XStateEffects.run("battle", b, _battle_resources.state_context(b))
 	_take_state_reserves()
 	_battle_start_states()
+	XNanoha.domain_start(self, _battle_resources)  # 奈叶魔法领域做活（O-183）：被动加的领域补跑开战块
 	var snapshots := {}
 	for b in state.members() + enemies:
 		snapshots[stable_id(b)] = _battle_resources.snapshot(b).duplicate(true)
@@ -1825,7 +1827,9 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(mark_views(XToji.begin(self, u, skill, list)))  # 甚尔 startAction 包装（黑闪之内）：切换记形态；武器库追击；主技能收成单目标、记段数
 		XBlackFlash.begin(u, skill, list, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
+		var lotus_seq := _lotus_hp(skill, list)
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
+		logs.append_array(mark_views(_lotus_strike(u, skill, lotus_seq.keys(), lotus_seq)))
 		return logs
 	var repeats := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
 	var targets := targets_for(u, skill, chosen, not forcing)
@@ -1834,6 +1838,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 	XBlackFlash.begin(u, skill, targets, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
+	var lotus_before := _lotus_hp(skill, targets)
 	for t in targets:
 		for i in range(maxi(1, repeats)):
 			if t.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
@@ -1845,6 +1850,58 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	for t in targets:
 		t.param_refresh()
 		stale_refreshed(t)
+	logs.append_array(mark_views(_lotus_strike(u, skill, targets, lotus_before)))
+	return logs
+
+
+## O-180（rules10）一株莲 7303「对敌方全体造成伤害」（XStateEffects.LOTUS_DAMAGE_7303）：先记队友施放前的生命
+func _lotus_hp(skill: Dictionary, targets: Array) -> Dictionary:
+	if not (XStateEffects.LOTUS_DAMAGE_7303 and int(skill.get("id", 0)) == 7303):
+		return {}
+	var out := {}
+	for t in targets:
+		out[t] = t.hp
+	return out
+
+
+## 回复总量（各队友实际回复的生命之和，含拉起倒下的）× 50% × 各敌人的属性有效度（技能属性 6），不暴击；
+## 走 executeHpDamage（护盾、真气减伤、Boss 输出照常），每个敌人一行命中记录
+func _lotus_strike(u: XBattler, skill: Dictionary, targets: Array, before: Dictionary) -> Array:
+	if before.is_empty():
+		return []
+	var total := 0.0
+	for t in targets:
+		total += maxf(0.0, t.hp - float(before.get(t, t.hp)))
+	var base := floorf(total * XStateEffects.LOTUS_DAMAGE_RATE)
+	var logs := []
+	if base <= 0.0 or u.is_dead():
+		return logs
+	var element := int(skill.get("damage", {}).get("elementId", 0))
+	for e in alive(enemies if u.is_actor() else actors):
+		var previous := _action_resources
+		_action_resources = _new_lifecycle_resources()
+		if previous != null:
+			_action_resources.boss_output = previous.boss_output
+		_action_resources.boss_output.enter_action(u, e)
+		_action_resources.labels = {u: "a", e: "b"}
+		var value := floorf(base * (e.element_rate(element) if element > 0 else 1.0))
+		var r := {"type": "hit", "user": u, "target": e, "skill": skill, "missed": false, "evaded": false, "critical": false,
+			"success": true, "hp": 0.0, "mp": 0.0, "tp": 0.0, "record_hp": 0.0, "added": [], "removed": [], "died": false, "lotus": true}
+		execute_hp_damage(u, e, value, false)
+		var result := _action_resources.result(e)
+		result.success = true
+		r.result = result.duplicate(true)
+		r.hp = result.hpDamage
+		r.record_hp = floorf(maxf(0.0, float(r.hp)))
+		r.popupQueue = XResourceContext.popup_queue(result)
+		r.shown = {"hp": result.hpDamage, "mp": result.mpDamage, "tp": result.tpDamage}
+		_action_resources.publish()
+		_action_resources.boss_output.leave_action()
+		_action_resources = previous
+		if e.hp <= 0.0 and e.is_dead():
+			_die(e)
+			r.died = true
+		logs.append(r)
 	return logs
 
 
@@ -2335,16 +2392,24 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 
 
 ## 已带着的状态不重挂（dsPassiveSkill 第 2048 行）。所以 <State Can Added Floor>、<Max State Floor: 0> 的隐月 1323～1327、2521 原版也叠不上层（CP_StateFloor 的层数只在
-## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层），重制不需要多层机制；说明「可无限叠加」与原版代码不符。
+## addState 里涨，已带着的状态 isStateAddable 为假；实测恒 1 层）；说明「可无限叠加」与原版代码不符。
+## O-178（rules10，Kyo 11-04「说明与代码不符一律按说明走」）：XBattler.FLOOR_YINYUE 开时，隐月已带着就再叠一层（不限层，每层同单层效果）；关回原版。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
 	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
-		if _float("push_state") * 100.0 < float(row.probability) and not t.is_state_affected(int(row.stateId)):
-			_state_add(t, int(row.stateId))
+		if _float("push_state") * 100.0 < float(row.probability):
+			_push_row_state(t, int(row.stateId))
 	if sign > 0.0:
 		for row in cache.get("pushSelfStates", []):
-			if _float("push_self_state") * 100.0 < float(row.probability) and not u.is_state_affected(int(row.stateId)):
-				_state_add(u, int(row.stateId))
+			if _float("push_self_state") * 100.0 < float(row.probability):
+				_push_row_state(u, int(row.stateId))
+
+
+func _push_row_state(b: XBattler, id: int) -> void:
+	if not b.is_state_affected(id):
+		_state_add(b, id)
+	elif XBattler.floor_stackable(id):
+		b.add_state_floor(id)
 
 
 ## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）

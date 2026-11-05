@@ -78,6 +78,12 @@ static var _counter_turn := {}
 const CHAIN_SKILLS := [5576, 5577]
 ## fix2：万古青天一株莲 7303 说明写回复所有队友（包括死亡），技能 scope 8 只打活的
 static var FIX_LOTUS_7303 := true
+## O-180（rules10）：一株莲 7303 说明「对敌方全体造成伤害」没写数值，原版只回复。定为对敌方全体造成本次回复总量 50% 的伤害
+## （属性同技能 6，乘各自属性有效度，不暴击）；关回原版只回复
+static var LOTUS_DAMAGE_7303 := true
+const LOTUS_DAMAGE_RATE := 0.5
+## O-179（rules10）：数据错误:暴击 1749 原版调 user.criticalRate()（不存在）报错无效果。按说明：持有者每 1% 最终暴击率，暴击时伤害 +1%
+static var FIX_CRIT_1749 := true
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -526,6 +532,7 @@ static func fix_on(name: String) -> bool:
 		"FIX_ITACHI_1318": return FIX_ITACHI_1318
 		"FIX_QI_RATE_2562": return FIX_QI_RATE_2562
 		"FIX_SWORD_RATE_2575": return FIX_SWORD_RATE_2575
+		"FIX_CRIT_1749": return FIX_CRIT_1749
 	return false
 
 

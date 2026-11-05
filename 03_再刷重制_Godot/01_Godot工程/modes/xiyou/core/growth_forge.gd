@@ -3,7 +3,8 @@ extends RefCounted
 ## 【cc·八戒·未经审查】成长装备期二：利维坦锻造（installNativeLeviathanForge，冻结 v0.28 modules.json 第 16 个）与杰作无我锻造
 ## （installNativeHubrisRuntime 第 17 个的 forge 段）。参照 growth_forge_probe（tests/fixtures/growth_forge_oracle.json），专项 xiyou_growth_forge。
 ## - 锻造锤 2867：Map176 胜利、来源地图 108／165（没记来源按变量 107：1→164、2／3→165，其余 0）、敌群 570～575，20%、每场一次；
-##   掷在心钢 clearReward 之后、狂妄 clearReward 之前（同原版 endBattle 包装次序）。来源 164（魔王之渊）进去的永远不掉（原版如此，108 号地图不存在）。
+##   掷在心钢 clearReward 之后、狂妄 clearReward 之前（同原版 endBattle 包装次序）。原版来源 164（魔王之渊）进去的永远不掉（108 号地图不存在，疑似本想写 164）；
+##   重制放开 164（O-182，Kyo 11-05「死内容做活」）：`XGrowthForge.CORE_ALLOW_164 = false` 回到原版只认 108／165。
 ## - 解锁：第一次拥有（背包或穿着）心钢／利维坦实例设 _codexLeviathanUnlocked、学配方 457，狂妄／无我设 _codexAtaraxiaUnlocked、学 458；
 ##   失去装备后仍解锁。标记存在 XState.crafting（codexLeviathanUnlocked／codexAtaraxiaUnlocked，随存档）。
 ##   原版在 gainItem、读档、建配方时检查；重制在 gain_gear 时检查，另在查配方是否学会、能否锻造时补查（旧档读进来就补上）。
@@ -19,6 +20,8 @@ const FRAGMENT_COST := 200
 const HAMMER_COST := 5
 const CORE_MAP := 176
 const CORE_ORIGINS := [108, 165]
+## O-182：魔王之渊（164）进未知存在也掉锻造锤；false 回到原版（只认 108／165）
+static var CORE_ALLOW_164 := true
 const CORE_TROOPS := [570, 571, 572, 573, 574, 575]
 const CORE_RATE := 0.20
 const LEVIATHAN_RECIPE := 457
@@ -101,10 +104,14 @@ static func unknown_core_origin(s: XState) -> int:
 static func start_battle() -> void:
 	_core_rolled = false
 
-## H.awardCore（endBattle 包装，心钢掉落之后）：Map176 胜利、来源 108／165、敌群 570～575，20% 得锻造锤
+## 来源算不算：原版 108／165；CORE_ALLOW_164 开着时加 164
+static func core_origin_ok(origin: int) -> bool:
+	return origin in CORE_ORIGINS or (CORE_ALLOW_164 and origin == 164)
+
+## H.awardCore（endBattle 包装，心钢掉落之后）：Map176 胜利、来源 108／165（O-182 加 164）、敌群 570～575，20% 得锻造锤
 static func award_core(logic, result: int) -> bool:
 	var s: XState = logic.state
-	if result != 0 or s == null or s.map_id != CORE_MAP or not unknown_core_origin(s) in CORE_ORIGINS or not int(logic.troop_id) in CORE_TROOPS or _core_rolled:
+	if result != 0 or s == null or s.map_id != CORE_MAP or not core_origin_ok(unknown_core_origin(s)) or not int(logic.troop_id) in CORE_TROOPS or _core_rolled:
 		return false
 	_core_rolled = true
 	if logic._rule().next_float("growth_forge.core") >= CORE_RATE:

@@ -93,6 +93,12 @@ static func _module_recruit(module: String) -> Callable:
 					return false
 				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
 				return true
+		"CodexTusu", "CodexXuan":
+			# 公共事件 9013／9016：T.recruit／X.recruit（installNativeTusuRuntime 614 行、installNativeXuanRuntime 500 行）入队、
+			# 首次给并装上专属法宝、璇建星谱；没有提示。已在队返回 false（还号角）。events7 接上（原注释「模块没移植」时号角吞掉、人不入队）
+			var actor_id := XTusuXuan.TUSU if module == "CodexTusu" else XTusuXuan.XUAN
+			return func(s: XState, _interp) -> bool:
+				return XTusuXuan.recruit(s, actor_id)
 	return Callable()
 
 
@@ -231,7 +237,7 @@ static func run(code: String, interp) -> Array:
 		return []
 	# 专属角色号角（公共事件 9006～9016）：try { if (!X.recruit()) $gameParty.gainItem($dataItems[号角或 X.ids().horn],1); } catch(error) {…}
 	# 招募没成功（已在队、超强者门槛挡下）就还号角；catch 分支是脚本出错时的返还，重制不会走到。
-	# 模块没移植的（屠苏、璇）只有门槛挡下这一支能照做，放行时照旧算没认出
+	# 认不得的模块（_module_recruit 空、又不在 _RECRUITMENTS）照旧算没认出
 	var horn := _re("^try\\s*\\{\\s*if\\s*\\(\\s*!\\s*(\\w+)\\.recruit\\(\\)\\s*\\)\\s*\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+|\\1\\.ids\\(\\)\\.horn)\\]\\s*,\\s*1\\);?\\s*\\}\\s*catch\\s*\\(\\s*error\\s*\\)\\s*\\{.*\\}$").search(js)
 	if horn:
 		var module := horn.get_string(1)

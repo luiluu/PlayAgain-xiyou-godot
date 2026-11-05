@@ -49,6 +49,16 @@ var mp := 0.0
 var tp := 0.0
 var state_ids: Array[int] = []
 var state_turns := {}
+## O-178（rules10）隐月叠层：CP_StateFloor 的层数（状态 → 层数，只记 >1 的）。原版 dsPassiveSkill 已带着就不再挂，恒 1 层；
+## FLOOR_YINYUE 开时 PushsubState 命中已带着的再加一层（见 XBattleLogic._push_rows），多出的层各按一份该状态的特性算
+## （CP_StateFloor allFloorStates）。状态重新附加（中间解除、阵亡、战斗结束清掉过）时从 1 层算起。
+static var FLOOR_YINYUE := true
+const FLOOR_STATES := [1323, 1324, 1325, 1326, 1327, 2521]
+## O-181（rules10b，总装定）：按说明能叠，但封顶 10 层（20 层暴击 +219%，叠 1749 溢出成暴击伤害太强）。设 0 回到 rules10 的不限层
+static var FLOOR_YINYUE_MAX := 10
+## O-181（rules10b）：剑饮空月 10119 说明「每层隐月 +2% 暴击」，它挂的隐月 2521 数据是 +0.2%（7489 的 1323 是 +2%）。按说明读成 +2%；false 回原版 0.2%
+static var FIX_YINYUE_2521 := true
+var state_floors := {}
 ## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
 ## 用弱引用：自己给自己加状态、双方互相记来源都会成环，RefCounted 环在退出时泄漏
 var state_origins := {}
@@ -160,7 +170,7 @@ func param_plus(_i: int) -> float:
 
 ## 数据库对象（角色/职业/装备/敌人/状态），各自带 traits、note、meta。
 func trait_objects() -> Array:
-	return states()
+	return states() + floor_states()
 
 func skills() -> Array:
 	return []
@@ -282,10 +292,23 @@ func decay_shield() -> void:
 
 
 # ---- 状态 ----
+static var _yinyue_2521 := {}
+## 状态记录；FIX_YINYUE_2521 开时 2521 的暴击特性换成 +2%（复制一份，不改数据库）
+static func state_rec(id: int) -> Dictionary:
+	var s := XDB.rec("States", id)
+	if id != 2521 or not FIX_YINYUE_2521 or s.is_empty():
+		return s
+	if _yinyue_2521.is_empty():
+		_yinyue_2521 = s.duplicate(true)
+		for t in _yinyue_2521.get("traits", []):
+			if int(t.code) == TRAIT_XPARAM and int(t.dataId) == 2:
+				t.value = 0.02
+	return _yinyue_2521
+
 func states() -> Array:
 	var out := []
 	for id in state_ids:
-		var s := XDB.rec("States", id)
+		var s := state_rec(id)
 		if not s.is_empty():
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
@@ -306,6 +329,36 @@ func effect_states(phase: String, execute := true) -> Array:
 
 func is_state_affected(id: int) -> bool:
 	return state_ids.has(id)
+
+## CP_StateFloor stateFloor：没带着为 0
+func state_floor(id: int) -> int:
+	return int(state_floors.get(id, 1)) if state_ids.has(id) else 0
+
+## 能不能再叠一层（隐月 6 个状态，<Max State Floor: 0> 不限层）
+static func floor_stackable(id: int) -> bool:
+	return FLOOR_YINYUE and FLOOR_STATES.has(id)
+
+## CP_StateFloor addStateFloor：已带着的再加一层，特性当场重算
+func add_state_floor(id: int) -> void:
+	if not state_ids.has(id):
+		return
+	var cap := FLOOR_YINYUE_MAX if FLOOR_STATES.has(id) else 0
+	if cap > 0 and state_floor(id) >= cap:
+		return
+	state_floors[id] = state_floor(id) + 1
+	param_mark_dirty()
+	param_refresh()
+
+## CP_StateFloor allFloorStates：每个状态多出的层数各补一份状态对象（traitObjects 里）
+func floor_states() -> Array:
+	var out := []
+	for id in state_floors:
+		var n := state_floor(int(id)) - 1
+		if n > 0:
+			var st := state_rec(int(id))
+			for i in n:
+				out.append(st)
+	return out
 
 func add_state_with_context(id: int, random: XRandomStream, ctx: Dictionary) -> void:
 	var previous := lifecycle_context
@@ -402,6 +455,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 		zq_pojia_rate = 0.5
 	if not state_ids.has(id):
 		add_new_state(id)
+		state_floors.erase(id)  # 新附加从 1 层算起（之前的层数随解除失效）
 	var s := XDB.rec("States", id)
 	reset_state_counts(id, random)
 	if id == XAlienBattle.corrosion_id():

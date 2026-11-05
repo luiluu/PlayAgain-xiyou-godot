@@ -127,11 +127,42 @@ func _case_core(c: Dictionary) -> void:
 	l.state = s
 	l.troop_id = int(st.troop)
 	l.stream.value = float(st.r)
+	XGrowthForge.CORE_ALLOW_164 = false  # 对原版参照：回到原版只认 108／165
 	XGrowthForge.start_battle()
 	var got := XGrowthForge.award_core(l, int(st.result))
 	var again := XGrowthForge.award_core(l, int(st.result))
+	XGrowthForge.CORE_ALLOW_164 = true
 	_cmp(c.id, {"origin": XGrowthForge.unknown_core_origin(s), "got": got, "again": again, "draws": l.stream.draws, "hammers": s.item_count(XGrowthForge.HAMMER)},
 		{"origin": o.origin, "got": o.got, "again": o.again, "draws": o.draws, "hammers": o.hammers})
+
+
+## O-183：放开魔王之渊（164）后，Map176 胜利、敌群 570～575 照样 20% 掉锻造锤；来源 0、关掉开关时仍不掉
+func _case_core_164() -> void:
+	for row in [[164, true, 0.1, true], [164, true, 0.5, false], [164, false, 0.1, false], [0, true, 0.1, false], [165, true, 0.1, true]]:
+		var s := _new_state()
+		s.map_id = XGrowthForge.CORE_MAP
+		s.unknown_origin = int(row[0])
+		var l := RewardLogic.new()
+		l.state = s
+		l.troop_id = 570
+		l.stream.value = float(row[2])
+		XGrowthForge.CORE_ALLOW_164 = bool(row[1])
+		XGrowthForge.start_battle()
+		var got := XGrowthForge.award_core(l, 0)
+		var again := XGrowthForge.award_core(l, 0)
+		check("core164.%d.%s.%s" % [row[0], row[1], row[2]], got == bool(row[3]) and not again and s.item_count(XGrowthForge.HAMMER) == (1 if row[3] else 0), [got, again, s.item_count(XGrowthForge.HAMMER)])
+	XGrowthForge.CORE_ALLOW_164 = true
+	# 没记来源时变量 107＝1 推成 164，也算
+	var s2 := _new_state()
+	s2.map_id = XGrowthForge.CORE_MAP
+	s2.unknown_origin = null
+	s2.variables[107] = 1
+	var l2 := RewardLogic.new()
+	l2.state = s2
+	l2.troop_id = 575
+	l2.stream.value = 0.1
+	XGrowthForge.start_battle()
+	check("core164.v107", XGrowthForge.award_core(l2, 0) and s2.item_count(XGrowthForge.HAMMER) == 1, s2.item_count(XGrowthForge.HAMMER))
 
 
 func _case_unlock_flow(c: Dictionary) -> void:
@@ -348,6 +379,7 @@ func _ready() -> void:
 			_case_forge(c)
 		else:
 			check(id + ".unhandled", false)
+	_case_core_164()
 	_case_save()
 	_case_ui()
 	XHeartsteel.in_battle = false

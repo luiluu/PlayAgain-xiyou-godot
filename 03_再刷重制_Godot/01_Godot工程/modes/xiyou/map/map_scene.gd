@@ -982,6 +982,13 @@ func play_bgm(audio) -> void:
 		bgm.volume_db = linear_to_db(float(audio.get("volume", 90)) / 100.0)
 		bgm.play()
 
+## 事件指令 261 播放电影（MVInterpreter._host_command）：XMoviePlayer 盖在画面上，放完再接着执行
+func play_movie(name: String) -> void:
+	var movie := XMoviePlayer.start(name)
+	if movie != null:
+		await movie.finished
+
+
 func play_se(audio) -> void:
 	var p := XDB.audio_path("se", str(audio.get("name", ""))) if audio is Dictionary else ""
 	if p != "":

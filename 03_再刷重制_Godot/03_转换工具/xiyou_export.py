@@ -546,7 +546,8 @@ MEASURED_EFFECT_SOURCES.update({
 # dot2（state_effects_probe damagedot.apply）：2038 火遁初级燃烧 addState。customEffectEval 里 user＝target＝持有者，damagedot＝持有者自己的 MAT*50*(1+v1218)；
 # 先 v1218 +1（学过 7520 再 +3）后读；敌人没有 hasSkill（TypeError，整块中断）。字段 damagedot 由 YEP_X_ExtDoT 的 2038 自定义再生公式读（ext_dot.gd）。
 MEASURED_EFFECT_BLOCKS.add(('apply', 'if ( user . hasSkill ( 7520 ) ) { $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 3 ) } ; $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 1 ) ; user . damagedot = target . mat * 50 * ( 1 + $gameVariables . value ( 1218 ) ) ;'))  # 2038
-# 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」，没写清暴击率口径，不修，等 Kyo
+# 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」。
+# rules10（Kyo 拍板、总装定口径）：按说明做成 EFFECT_FIXES 的 FIX_CRIT_1749，持有者每 1% 最终暴击率，暴击时伤害 +1%；原版块仍是 no_effect
 NO_EFFECT_BLOCKS.add(('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'))  # 1749
 # rules8 第二批（state_effects_probe rest2.blocks）
 MEASURED_EFFECT_BLOCKS.update({
@@ -625,6 +626,9 @@ EFFECT_FIXES = {
         ('FIX_ORDER_TIERS', 'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 3) { user.removeState(1717); user.removeState(1718); user.removeState(1719); user.addState(1720); } else if (user.aliveFriends() > 2) { user.removeState(1717); user.removeState(1718); user.addState(1719); user.removeState(1720); } else if (user.aliveFriends() > 1) { user.removeState(1717); user.addState(1718); user.removeState(1719); user.removeState(1720); } else if (user.aliveFriends() > 0) { user.addState(1717); user.removeState(1718); user.removeState(1719); user.removeState(1720); } }'),
     ('turn_start', 'if ( ! $gameVariables . value ( 1163 ) == 1 ) { $gameTemp . reserveCommonEvent ( 1513 ) ; }'):  # 1318
         ('FIX_ITACHI_1318', 'if ($gameVariables.value(1163) != 1) { user.reserve(1513); }'),
+    # rules10：1749「数据错误:暴击」说明「每点暴击率提供 0.01 暴击伤害」：暴击时 value += ceil(value × 0.01 × 暴击率点数)＝ceil(value × 最终 cri)
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'):  # 1749
+        ('FIX_CRIT_1749', 'if (this.isHpEffect() && value > 0) { var bonusDamage = value * user.cri; if (target.result().critical) { value += Math.ceil(bonusDamage); } }'),
 }
 
 # fix2：在 fix1 修正之上再按技能说明改（Kyo 2026-11-04：说明与代码对不上的一律按说明走）。开关与 fix1 的开关都开时才用第二份程序。
@@ -1345,7 +1349,7 @@ class Exporter:
         if self.out.is_relative_to(self.app) or self.app.is_relative_to(self.out):
             raise ValueError('输出目录不能与正式应用重叠')
         self.inputs, self.outputs, self.issues = {}, {}, []
-        self.img, self.audio = set(), set()
+        self.img, self.audio, self.movies = set(), set(), set()
         self.db = {}
         self.pending_json = {}
         self.written = self.unchanged = self.deleted = 0
@@ -1387,8 +1391,8 @@ class Exporter:
             temp.unlink(missing_ok=True)
 
     def remove_stale(self):
-        """成功生成后清理五个自有子树；只给仍产出的文件保留 .import，oracle／同步指纹不动。"""
-        for sub in ('db', 'maps', 'img', 'audio', 'fonts'):
+        """成功生成后清理六个自有子树（含 movies）；只给仍产出的文件保留 .import，oracle／同步指纹不动。"""
+        for sub in ('db', 'maps', 'img', 'audio', 'fonts', 'movies'):
             directory = self.out / sub
             if directory.is_symlink():
                 raise ValueError('产物子目录不能是符号链接：' + sub)
@@ -1586,6 +1590,8 @@ class Exporter:
                         self.ref_img('characters', m['parameters'][0])
             elif code == 283:
                 self.ref_img('battlebacks1', p[0]); self.ref_img('battlebacks2', p[1])
+            elif code == 261 and p and p[0]:
+                self.movies.add(str(p[0]))
 
     def effect_common_events(self):
         """物品、技能效果 code 44（公共事件）引用的、存在且有指令的公共事件编号。"""
@@ -1736,6 +1742,12 @@ class Exporter:
                 self.ref_img('sv_actors', f'sv/{folder}/{f.stem}')
         for rel in cfg.get('extraAudio', []):
             self.audio.add(rel)
+        # 播放电影（261）：全部公共事件都扫一遍。宇智波鼬 CE1514 由状态 1317「亲朋好友」的 Deselect 块 reserveCommonEvent 叫起，
+        # 切片的公共事件爬取看不到状态脚本里的预约；原版只有 CE1514／1516 两处、两段片子
+        for ev in self.db['CommonEvents']:
+            for c in (ev or {}).get('list') or []:
+                if c.get('code') == 261 and c.get('parameters') and c['parameters'][0]:
+                    self.movies.add(str(c['parameters'][0]))
         self.collect_transfer_preview()
         self.slice_info = {'maps': cfg['maps'], 'actors': sorted(actors - event_actors), 'eventActors': sorted(event_actors), 'troops': self.slice_troops,
                            'enemies': sorted(enemies), 'skills': sorted(skills), 'animations': sorted(a for a in anims if a > 0),
@@ -1813,6 +1825,8 @@ class Exporter:
                 self.write_changed(f'{kind}/{rel}{ext}', out, source=src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{ext}'] = sha(out)
+        for name in sorted(self.movies):
+            self.export_movie(name, prev)
         # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
         for name in self.cfg.get('fonts', []):
             src = self.app / 'fonts' / name
@@ -1824,6 +1838,44 @@ class Exporter:
             digest = sha(data)
             self.inputs[f'fonts/{name}'] = digest
             self.outputs[f'fonts/{name}'] = digest
+
+    def export_movie(self, name, prev):
+        """原版 movies/<名>.webm（VP9＋Opus，3840×2160 30 帧）Godot 4 放不了（只认 Theora，本机 ffmpeg 又没有 Theora 编码器）：
+        转成 movies/<名>/0001.jpg… 逐帧图（缩到 1280×720 画面大小）＋ movies/<名>.ogg 音轨＋ movies/<名>.json {fps, frames}，
+        由 XMoviePlayer 按时间逐帧放。ffmpeg 加 bitexact，同一份源两次转出逐字节相同（增量同步与指纹要稳定）。
+        没有 ffmpeg（云端 Linux）时：源与上次产物都对得上就沿用上次的，否则记 issue 不出这段片子（重制照旧不放、只少画面）。"""
+        src = self.app / 'movies' / (name + '.webm')
+        rel_src = f'movies/{name}.webm'
+        if not src.exists():
+            self.issues.append({'missingAsset': rel_src})
+            return
+        data = src.read_bytes()
+        digest = sha(data)
+        files = {}
+        if shutil.which('ffmpeg'):
+            with tempfile.TemporaryDirectory(prefix='xiyou-movie-') as tmp:
+                base = ['ffmpeg', '-nostdin', '-v', 'error', '-i', str(src), '-fflags', '+bitexact']
+                subprocess.run(base + ['-an', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '3', '-flags:v', '+bitexact',
+                                       '-f', 'image2', str(Path(tmp) / '%04d.jpg')], check=True, capture_output=True)
+                subprocess.run(base + ['-vn', '-ac', '2', '-c:a', 'vorbis', '-strict', '-2', '-flags:a', '+bitexact',
+                                       str(Path(tmp) / 'a.ogg')], check=True, capture_output=True)
+                for f in sorted(Path(tmp).glob('*.jpg')):
+                    files[f'movies/{name}/{f.name}'] = f.read_bytes()
+                files[f'movies/{name}.ogg'] = (Path(tmp) / 'a.ogg').read_bytes()
+        else:
+            old_out = prev.get('outputs', {})
+            keys = sorted(k for k in old_out if k.startswith(f'movies/{name}/') or k == f'movies/{name}.ogg')
+            if prev.get('inputs', {}).get(rel_src) != digest or not keys \
+                    or any(not (self.out / k).is_file() or sha((self.out / k).read_bytes()) != old_out[k] for k in keys):
+                self.issues.append({'movieNeedsFfmpeg': rel_src})
+                return
+            files = {k: (self.out / k).read_bytes() for k in keys}
+        frames = sum(1 for k in files if k.endswith('.jpg'))
+        for rel, out in files.items():
+            self.write_changed(rel, out, source=None)
+            self.outputs[rel] = sha(out)
+        self.inputs[rel_src] = digest
+        self.write_json(f'movies/{name}.json', {'fps': 30, 'frames': frames, 'width': 1280, 'height': 720})
 
     def run(self):
         self.out.mkdir(parents=True, exist_ok=True)

@@ -171,7 +171,7 @@ func _myth(c: Dictionary) -> void:
 			steps.append(_turn(logic, a))
 		steps.append(_cast(logic, a, XRaven.MYTH, a))
 		a._level_up()
-		# 战斗中升级：原版 MP 回到升级前的上限（krz 能力值缓存，见 _residue_sync），重制 O-待定 按新上限回满，这一步 MP 取参照不比
+		# 战斗中升级：原版 MP 回到升级前的上限（krz 能力值缓存，见 _residue_sync），重制 O-177 按新上限回满，这一步 MP 取参照不比
 		check(c.id + ".full", a.mp == a.mmp, [a.mp, a.mmp])
 		steps.append(_snap(logic, a).merged({"levelUp": true, "mp": float(c.observed.steps[steps.size()].mp)}, true))
 	_compare(c.id, steps, c.observed.steps)
@@ -218,7 +218,7 @@ func _residue(c: Dictionary) -> void:
 
 
 ## residue.sync：战斗中升级。原版 krz 能力值缓存让 levelUpRecover 回到升级前的上限（60→61 级 MP 1193，新上限 1208；events6 量）。
-## 默认（O-待定）按新上限回满：MP 比「回满」，其余字段照参照；original（回退支）连 MP 也照参照比
+## 默认（O-177）按新上限回满：MP 比「回满」，其余字段照参照；original（回退支）连 MP 也照参照比
 func _residue_sync(c: Dictionary, original: bool) -> void:
 	var tag: String = c.id + (".original" if original else "")
 	var r := _battle(3, 60)

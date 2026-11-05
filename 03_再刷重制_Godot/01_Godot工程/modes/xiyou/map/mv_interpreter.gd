@@ -103,6 +103,11 @@ func _data_changed() -> void:
 	host.refresh_events()
 
 
+## 播放电影：宿主放完再接着执行（_host_command 261）
+func _play_movie(_name: String):
+	return _request("command", "command", {"command": list[index]})
+
+
 func _execute_env(c: Dictionary):
 	if HOST_CODES.has(int(c.code)):
 		return _request("command", "command", {"command": c})
@@ -178,6 +183,10 @@ func _host_command(c: Dictionary):
 	var p: Array = c.parameters
 	var indent := int(c.indent)
 	match int(c.code):
+		261:
+			# 播放电影（Graphics.playVideo）：地图画面上盖一层放片子，放完接着执行
+			if host.has_method("play_movie"):
+				await host.play_movie(str(p[0]))
 		283:
 			# 更改战斗背景 [背景1, 背景2]
 			if host.has_method("change_battleback"):

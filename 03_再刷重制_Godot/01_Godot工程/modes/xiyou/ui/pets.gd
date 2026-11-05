@@ -556,7 +556,56 @@ func _move(d: int, wrap: bool) -> void:
 				_refresh()
 
 
+## Star_PetSystem 的宠物列表、底部指令、喂养、技能窗都是 Window_Selectable，没接管 pageup／pagedown：走通用翻页
+func _page(d: int) -> void:
+	match mode:
+		"index":
+			var r := XMenu.page(top, index, pets().size(), ROWS, d)
+			top = r[0]
+			if r[1] != index:
+				select(r[1])
+			else:
+				_refresh()
+		"bottom":
+			var r := XMenu.page(cmd_top, cmd, COMMANDS.size(), BOTTOM_ROWS, d)
+			_page_set(r, "cmd_top", "cmd")
+		"feed":
+			var r := XMenu.page(feed_top, feed_index, XPets.food_items().size(), FEED_ROWS, d)
+			_page_set(r, "feed_top", "feed_index")
+		"skills":
+			var r := XMenu.page(skill_top, skill_index, skill_ids(current()).size(), SKILL_ROWS, d)
+			_page_set(r, "skill_top", "skill_index")
+			_update_help()
+
+
+func _page_set(r: Array, top_name: String, index_name: String) -> void:
+	set(top_name, r[0])
+	if get(index_name) != r[1]:
+		set(index_name, r[1])
+		XSound.system(0)
+	_refresh()
+
+
+## 滚轮（Window_Selectable.processWheel）：只滚当前活动窗口，光标不动
+func _wheel(d: int) -> void:
+	match mode:
+		"index":
+			top = XMenu.wheel(top, pets().size(), ROWS, d)
+		"bottom":
+			cmd_top = XMenu.wheel(cmd_top, COMMANDS.size(), BOTTOM_ROWS, d)
+		"feed":
+			feed_top = XMenu.wheel(feed_top, XPets.food_items().size(), FEED_ROWS, d)
+		"skills":
+			skill_top = XMenu.wheel(skill_top, skill_ids(current()).size(), SKILL_ROWS, d)
+	_refresh()
+
+
 func _gui_input(event: InputEvent) -> void:
+	var wd := XMenu.wheel_dir(event)
+	if wd != 0:
+		accept_event()
+		_wheel(wd)
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		cancel()
 
@@ -571,3 +620,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
 		get_viewport().set_input_as_handled()
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
+	elif mode in ["index", "bottom", "feed", "skills"] and XMenu.page_dir(event) != 0:
+		get_viewport().set_input_as_handled()
+		_page(XMenu.page_dir(event))
