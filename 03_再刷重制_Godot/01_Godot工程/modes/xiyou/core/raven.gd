@@ -411,12 +411,12 @@ static func on_tp_refresh(t) -> void:
 	if not (t is XActor):
 		return
 	t.rv_tp_refreshed = true
-	t.rv_erosion_stale = false  # 这次 refresh 在伤害之后：重建缓存，之前加的黑暗侵蚀从下一击起生效
+	t.stale_state_ids.clear()  # 这次 refresh 在伤害之后：重建缓存，之前加的黑暗侵蚀从下一击起生效
 
 
 static func _mark_erosion_stale(t, had: bool) -> void:
-	if t is XActor and not had and t.state_ids.has(EROSION):
-		t.rv_erosion_stale = bool(t.rv_tp_refreshed)
+	if t is XActor and not had and t.state_ids.has(EROSION) and bool(t.rv_tp_refreshed) and not t.stale_state_ids.has(EROSION):
+		t.stale_state_ids.append(EROSION)
 	if t is XActor:
 		t.rv_tp_refreshed = false
 

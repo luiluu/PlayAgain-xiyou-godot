@@ -95,6 +95,113 @@ func _garou(stage: int, level: int) -> Array:
 	return [logic, a]
 
 
+## raven2：云裳／饿狼的魔法技能被反射（refx.*）：同参照 xbattle()（队伍 [id, 1] 各 55 级、全员生命 +1e12）
+func _refx(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var id := int(setup.actor)
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	XState.current = s
+	s.actor_max_level = 99
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	var a: XActor = s.actor(id)
+	a.change_level_mv(55)
+	s.add_actor(id)  # 参照不招募（直接设队伍），所以不走 recruit（会换装备）
+	s.add_actor(1)
+	for pid in s.party:
+		s.actor(pid).add_param(0, 1e12)
+		s.actor(pid).refresh_passive()
+	var logic := _logic(s, "%016d" % id)
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	logic.start_turn()
+	a.learn_skill(int(setup.skill))
+	a.mp = a.mmp
+	a.tp = 0.0
+	var mrf_state := -1
+	if bool(setup.reflect):
+		mrf_state = _fake_state(5, 1.0)
+		for e in logic.enemies:
+			e.add_state(mrf_state)
+	var logs := _log(logic, logic.act(a, XDB.rec("Skills", int(setup.skill)), logic.enemies[0]))
+	var want: Dictionary = c.observed
+	var gs: Array = logs.map(func(l): return [l.kind, l.target, snappedf(l.value, 1.0)])
+	var ws: Array = (want.log as Array).map(func(l): return [str(l.kind), str(l.target), snappedf(float(l.value), 1.0)])
+	check(c.id + ".hits", gs == ws, [gs, ws])
+	check(c.id + ".hp", absf(a.hp - float(want.hp)) <= 1.0, [a.hp, want.hp])
+	check(c.id + ".mp", absf(a.mp - float(want.mp)) <= 1.0, [a.mp, want.mp])
+	var st_got := a.state_ids.duplicate()
+	st_got.sort()
+	var st_want: Array = (want.states as Array).map(func(v): return int(v))
+	st_want.sort()
+	check(c.id + ".states", st_got == st_want, [st_got, st_want])
+	var fs: Array = logic.enemies.map(func(e): var ids = e.state_ids.filter(func(v): return v != mrf_state); ids.sort(); return ids)
+	var fw: Array = (want.foeStates as Array).map(func(l): var ids = (l as Array).map(func(v): return int(v)); ids.sort(); return ids)
+	check(c.id + ".foeStates", fs == fw, [fs, fw])
+
+
+## raven2→3：普通角色（8 号）被自己的「全体魔法加黑暗侵蚀」反射：借 10124 的数据槽（同参照改写），tcr 强设 0.01／2
+func _refstate(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	XState.current = s
+	s.actor_max_level = 99
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	var a: XActor = s.actor(8)
+	a.change_level_mv(60)
+	s.add_actor(8)
+	s.add_actor(1)
+	for pid in s.party:
+		s.actor(pid).add_param(0, 1e12)
+		s.actor(pid).refresh_passive()
+	var logic := _logic(s, "refstate")
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	logic.start_turn()
+	var sk: Dictionary = XDB.rec("Skills", 10124).duplicate(true)
+	sk.damage.formula = "10000000"
+	sk.damage.elementId = 9
+	sk["effects"] = [{"code": 21, "dataId": 1663, "value1": 1.0, "value2": 0.0}]
+	sk.scope = 2
+	sk.repeats = 1
+	sk.hitType = 2
+	sk.mpCost = 0
+	sk.tpCost = 0
+	sk["meta"] = {}
+	sk["note"] = ""
+	a.mp = a.mmp
+	a.tp = 0.0
+	a.add_state(_fake_state(5, float(setup.tcr), 23))
+	var mrf_state := -1
+	if bool(setup.reflect):
+		mrf_state = _fake_state(5, 1.0)
+		for e in logic.enemies:
+			e.add_state(mrf_state)
+	var logs := _log(logic, logic.act(a, sk, logic.enemies[0]))
+	var want: Dictionary = c.observed
+	# 这个槽的伤害公式是转换器编好的程序，改写字符串公式不生效，所以只比结构与相对第一击的比值（一击 ×1 还是 ×1.555 正是要看的）
+	var gs: Array = logs.map(func(l): return [l.kind, l.target])
+	var ws: Array = (want.log as Array).map(func(l): return [str(l.kind), str(l.target)])
+	check(c.id + ".hits", gs == ws, [gs, ws])
+	if logs.size() == (want.log as Array).size() and not logs.is_empty():
+		for k in logs.size():
+			var rg: float = float(logs[k].value) / float(logs[0].value)
+			var rw: float = float(want.log[k].value) / float(want.log[0].value)
+			check("%s.ratio%d" % [c.id, k], absf(rg - rw) <= 1e-3 * maxf(1.0, rw), [rg, rw])
+	var st_got := a.state_ids.filter(func(v): return v != 0 and XDB.rec("States", v).get("name", "").begins_with("测试状态") == false)
+	st_got.sort()
+	var st_want: Array = (want.states as Array).map(func(v): return int(v))
+	st_want.sort()
+	check(c.id + ".states", st_got == st_want, [st_got, st_want])
+
+
 func _key(logic: XBattleLogic, b) -> String:
 	return "a%d" % b.actor_id if b is XActor else "e%d" % logic.enemies.find(b)
 
@@ -219,7 +326,11 @@ func _run() -> void:
 				_reflect(c)
 			"garouzero":
 				_garou_zero(c)
-	check("covers_all", seen.keys().size() == 3, seen.keys())
+			"refx":
+				_refx(c)
+			"refstate":
+				_refstate(c)
+	check("covers_all", seen.keys().size() == 5, seen.keys())
 	finish()
 
 

@@ -2412,6 +2412,826 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "refx.yunshang.10270.plain",
+   "setup": {
+    "actor": 174,
+    "level": 55,
+    "skill": 10270,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e0",
+      "value": 948980,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e0",
+      "value": 948980,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e1",
+      "value": 626327,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e1",
+      "value": 626327,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e2",
+      "value": 626327,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "e2",
+      "value": 626327,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 5646,
+    "states": [],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     74999998117040,
+     74999998762346,
+     74999998762346
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.yunshang.10270.reflect",
+   "setup": {
+    "actor": 174,
+    "level": 55,
+    "skill": 10270,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10270,
+      "target": "a174",
+      "value": 492235,
+      "critical": false
+     }
+    ],
+    "hp": 97046589,
+    "mp": 5646,
+    "states": [],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.yunshang.10271.plain",
+   "setup": {
+    "actor": 174,
+    "level": 55,
+    "skill": 10271,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e0",
+      "value": 1592738,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e0",
+      "value": 1592738,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e1",
+      "value": 1051207,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e1",
+      "value": 1051207,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e2",
+      "value": 1051207,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "e2",
+      "value": 1051207,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 5553,
+    "states": [],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     74999996829524,
+     74999997912586,
+     74999997912586
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.yunshang.10271.reflect",
+   "setup": {
+    "actor": 174,
+    "level": 55,
+    "skill": 10271,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a174",
+      "skill": 10271,
+      "target": "a174",
+      "value": 826151,
+      "critical": false
+     }
+    ],
+    "hp": 95043093,
+    "mp": 5553,
+    "states": [],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.garou.10259.plain",
+   "setup": {
+    "actor": 173,
+    "level": 55,
+    "skill": 10259,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 4827305,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 4827305,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 4827305,
+      "critical": false
+     }
+    ],
+    "hp": 999999999999,
+    "mp": 51796,
+    "states": [
+     2644
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     74999985533085,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.garou.10259.reflect",
+   "setup": {
+    "actor": 173,
+    "level": 55,
+    "skill": 10259,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 3027470,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 3027470,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 3027470,
+      "critical": false
+     }
+    ],
+    "hp": 999990917589,
+    "mp": 51796,
+    "states": [
+     2644
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.garou.10261.plain",
+   "setup": {
+    "actor": 173,
+    "level": 55,
+    "skill": 10261,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 2896383,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 2896383,
+      "critical": false
+     }
+    ],
+    "hp": 999999999999,
+    "mp": 46837,
+    "states": [
+     2644
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     74999991325851,
+     74999991325851,
+     74999991325851
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refx.garou.10261.reflect",
+   "setup": {
+    "actor": 173,
+    "level": 55,
+    "skill": 10261,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 1816482,
+      "critical": false
+     }
+    ],
+    "hp": 999983651661,
+    "mp": 46837,
+    "states": [
+     2644
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr0.01.plain",
+   "setup": {
+    "tcr": 0.01,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e0",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e1",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e2",
+      "value": 36709958,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 1856,
+    "states": [],
+    "foeStates": [
+     [
+      1663
+     ],
+     [
+      1663
+     ],
+     [
+      1663
+     ]
+    ],
+    "foeHp": [
+     74999963305042,
+     74999963305042,
+     74999963305042
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr0.01.reflect",
+   "setup": {
+    "tcr": 0.01,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     }
+    ],
+    "hp": 31939259,
+    "mp": 1856,
+    "states": [
+     1663
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr2.plain",
+   "setup": {
+    "tcr": 2,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e0",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e1",
+      "value": 36709958,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "e2",
+      "value": 36709958,
+      "critical": false
+     }
+    ],
+    "hp": 99999999,
+    "mp": 1856,
+    "states": [],
+    "foeStates": [
+     [
+      1663
+     ],
+     [
+      1663
+     ],
+     [
+      1663
+     ]
+    ],
+    "foeHp": [
+     74999963305042,
+     74999963305042,
+     74999963305042
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refstate.tcr2.reflect",
+   "setup": {
+    "tcr": 2,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 16555316,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 25752712,
+      "critical": false
+     }
+    ],
+    "hp": 41136655,
+    "mp": 1856,
+    "states": [
+     1663
+    ],
+    "foeStates": [
+     [],
+     [],
+     []
+    ],
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
   }
  ]
 }

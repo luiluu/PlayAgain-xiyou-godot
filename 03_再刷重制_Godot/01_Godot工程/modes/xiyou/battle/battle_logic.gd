@@ -983,6 +983,9 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
+	for a in actors:
+		if a is XActor:
+			a.stale_state_ids.clear()  # 上一个行动之后的 refresh 已重建特性缓存
 	var before := _movable_snapshot()
 	if is_won() or is_lost() or u.is_dead():
 		return logs
@@ -1071,7 +1074,7 @@ func end_turn() -> Array:
 	var logs := []
 	for a in actors:
 		if a is XActor:
-			a.rv_erosion_stale = false  # 回合末 onTurnEnd 标 need_refresh，随后的 refresh 重建特性缓存
+			a.stale_state_ids.clear()  # 回合末 onTurnEnd 标 need_refresh，随后的 refresh 重建特性缓存
 			a.rv_tp_refreshed = false
 	preemptive = false  # BattleManager.endTurn 开头清先制／偷袭（YEP Battle Engine Core 的 endTurn 包装里也清）
 	surprise = false
@@ -2091,6 +2094,9 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return xuan_cmd
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
+	var states_before: Array = t.state_ids.duplicate() if t is XActor else []
+	if t is XActor:
+		t.rv_tp_refreshed = false  # 本次 apply 的受伤充 TP 是否已 refresh（krz 状态缓存时序，见 raven.gd on_tp_refresh）
 	var blocked := [false]
 	var r: Dictionary = XGuyu.apply(self, u, skill, t, func() -> Dictionary:
 		# 心钢 Game_Action.apply 包装（在谷雨之内，谷雨已置行动执行标记）：巨人吞噬没放成或已结算过，整次不生效（审查第 29 期 P3-2）
@@ -2102,6 +2108,10 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return r  # 心钢拦下：里层的奈叶、心钢记账都不跑
 	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
 	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
+	if t is XActor and t.rv_tp_refreshed:
+		for sid in t.state_ids:
+			if not states_before.has(sid) and not t.stale_state_ids.has(sid):
+				t.stale_state_ids.append(sid)  # 伤害充 TP 已在加状态前 refresh：新状态的特性要到下一次 refresh 才进缓存
 	return r
 
 
