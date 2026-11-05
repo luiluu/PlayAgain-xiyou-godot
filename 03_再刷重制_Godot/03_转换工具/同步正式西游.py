@@ -125,6 +125,7 @@ PROBES = [
     (['actor_passive_probe.cjs'], ['actor_passive.json']),
     (['achievement_probe.cjs'], ['achievements.json']),
     (['achievement_badge_probe.cjs'], ['achievement_badges.json']),
+    (['weak_challenge_probe.cjs'], ['weak_challenge.json']),
     (['shield_probe.cjs'], ['shield.json']),
     (['imported_balance_probe.cjs'], ['imported_balance.json']),
     (['state_effects_probe.cjs'], ['state_effects.json']),
