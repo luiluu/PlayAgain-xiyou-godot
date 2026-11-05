@@ -281,10 +281,14 @@ def main():
         if r['src'].startswith('ce'):
             r['callers'] = ce_calls.get(int(r['src'][2:]), [])[:8]
     tidx = test_index()
+    chain = TESTS / 'fixtures/unlock_chain_cases.json'
+    chain_ids = {c['id'] for c in load(chain)['cases']} if chain.exists() else set()
 
     def covered(r):
         if r['dest'] is None:
             return []
+        if r['src'] in chain_ids:
+            return ['xiyou_unlock_chain']
         srcs = {r['src_map']} if r['src_map'] else {int(re.match(r'm(\d+)', c).group(1)) for c in r.get('callers', []) if c.startswith('m')}
         return sorted(t for t, (mentions, waits) in tidx.items() if r['dest'] in waits and (srcs & mentions or not srcs))
 
@@ -326,8 +330,8 @@ def main():
         out = []
         for d in sorted(by_dest):
             rs = by_dest[d]
-            if any(r['tests'] for r in rs):
-                continue
+            if any(t != 'xiyou_unlock_chain' for r in rs for t in r['tests']):
+                continue  # 重新生成时不把本专项自己算作已覆盖
             cand = []
             for r in rs:
                 if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['src_map'] == d:
