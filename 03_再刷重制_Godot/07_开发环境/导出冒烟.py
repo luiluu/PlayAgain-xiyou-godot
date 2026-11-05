@@ -6,6 +6,11 @@
   python3 导出冒烟.py --keep           留下解开的 .app（给 Kyo 实机验收用，见 00_项目管理/Mac实机验收清单.md）
   python3 导出冒烟.py --out <目录>     报告目录（默认 04_验证/本地结果/导出冒烟/<时间>/）
   python3 导出冒烟.py --scenes xiyou_mac_export,xiyou_flow   只跑这几项
+  python3 导出冒烟.py --platform windows   导出「Windows 验收」，离线检查（cc BA，2026-11-05）：
+                                     exe 的 PE 头（x86_64、图形界面）、旁边的 .pck 与控制台包装 exe；
+                                     本机不跑 exe，把这个 .pck 放到 macOS 调试模板旁边（同名，硬链接）跑下面几项包内检查
+                                     （验的是 Windows 包里的内容与资源，不是 Windows 上的引擎行为）。
+                                     --zip 这时给现成的 .exe。
 
 包内跑的（都是调试包里的 tests/，发行包排除 tests/、跑不到）：
   xiyou_mac_export  字体、中文换行、皮肤、角色图、音效资源、隔离存档的写读删（--verify-export 默认场景）
@@ -30,6 +35,9 @@ ROOT = HERE.parent
 PROJECT = ROOT / '01_Godot工程'
 GODOT = HERE / 'godot'
 PRESET = 'macOS 验收'
+PRESETS = {'macos': 'macOS 验收', 'windows': 'Windows 验收'}
+PE_MACHINES = {0x8664: 'x86_64', 0xAA64: 'arm64', 0x14C: 'x86_32'}
+PE_SUBSYSTEMS = {2: '图形界面', 3: '控制台'}
 SCENES = ['xiyou_mac_export', 'xiyou_flow']
 TIMEOUT = {'xiyou_mac_export': 180, 'xiyou_flow': 900}
 RESULT = re.compile(r'^TEST_RESULT=(\{.*\})\s*$', re.M)
@@ -55,6 +63,77 @@ def find_app(folder: Path):
     exe_dir = apps[0] / 'Contents' / 'MacOS'
     exes = sorted(p for p in exe_dir.iterdir() if p.is_file() and os.access(p, os.X_OK)) if exe_dir.is_dir() else []
     return apps[0], (exes[0] if exes else None)
+
+
+def pe_info(exe: Path):
+    """Windows exe 的 PE 头：{'machine': 'x86_64', 'subsystem': '图形界面'}；不是 PE 返回 None。只读文件头，不运行。"""
+    try:
+        with open(exe, 'rb') as f:
+            head = f.read(4096)
+    except OSError:
+        return None
+    if len(head) < 0x40 or head[:2] != b'MZ':
+        return None
+    off = int.from_bytes(head[0x3C:0x40], 'little')
+    if off + 24 + 70 > len(head) or head[off:off + 4] != b'PE\0\0':
+        return None
+    machine = int.from_bytes(head[off + 4:off + 6], 'little')
+    subsystem = int.from_bytes(head[off + 24 + 68:off + 24 + 70], 'little')
+    return {'machine': PE_MACHINES.get(machine, hex(machine)), 'subsystem': PE_SUBSYSTEMS.get(subsystem, str(subsystem))}
+
+
+def windows_layout(exe: Path, debug: bool = True):
+    """Windows 包结构检查（godot 导出 exe＋同名 .pck；调试包另有 .console.exe）。返回 (问题列表, PE 信息)。"""
+    problems = []
+    info = pe_info(exe)
+    if info is None:
+        return [f'{exe.name} 不是 Windows exe（PE 头不对）'], None
+    if info['machine'] != 'x86_64':
+        problems.append(f'架构是 {info["machine"]}，应为 x86_64')
+    if info['subsystem'] != '图形界面':
+        problems.append(f'子系统是 {info["subsystem"]}，应为图形界面')
+    pck = exe.with_suffix('.pck')
+    if not pck.is_file() or pck.stat().st_size < (1 << 20):
+        problems.append(f'缺 {pck.name}（或小于 1 MB）')
+    elif pck.read_bytes()[:4] != b'GDPC':
+        problems.append(f'{pck.name} 不是 Godot 资源包（文件头不是 GDPC）')
+    console = exe.with_name(exe.stem + '.console.exe')
+    if debug and not console.is_file():
+        problems.append(f'调试包缺 {console.name}')
+    return problems, info
+
+
+def preset_template(preset: str, key: str = 'custom_template/debug'):
+    """从 export_presets.cfg 读某个预设的模板路径（模板在主工作区，工作树里没有）。"""
+    import configparser
+    cfg = configparser.ConfigParser(interpolation=None)
+    cfg.read(PROJECT / 'export_presets.cfg', encoding='utf-8')
+    for sec in cfg.sections():
+        if sec.startswith('preset.') and sec.count('.') == 1 and cfg[sec].get('name', '').strip('"') == preset:
+            opts = cfg[sec + '.options'] if cfg.has_section(sec + '.options') else {}
+            value = opts.get(key, '').strip('"')
+            return Path(value) if value else None
+    return None
+
+
+def mac_runner(work: Path, pck: Path):
+    """解出 macOS 调试模板的可执行文件，旁边放同名的 Windows 包 .pck（导出模板不认 --main-pack，只认 exe 旁的同名 .pck）。"""
+    zip_path = preset_template(PRESETS['macos'])
+    member = 'macos_template.app/Contents/MacOS/godot_macos_debug.universal'
+    if zip_path is None or not zip_path.is_file():
+        return None
+    dest = work / 'runner'
+    dest.mkdir(exist_ok=True)
+    if subprocess.run(['unzip', '-q', '-o', '-j', str(zip_path), member, '-d', str(dest)]).returncode != 0:
+        return None
+    exe = dest / Path(member).name
+    os.chmod(exe, 0o755)
+    target = exe.with_suffix('.pck')
+    try:
+        os.link(pck, target)
+    except OSError:
+        shutil.copyfile(pck, target)
+    return exe
 
 
 def run(cmd, log_path: Path, timeout: int, env=None, cwd=None):
@@ -88,10 +167,12 @@ def smoke_scene(exe: Path, scene: str, out_dir: Path) -> dict:
 
 
 def report(out_dir: Path, info: dict) -> Path:
-    lines = ['# Mac 导出冒烟报告', '',
+    windows = info.get('platform') == 'windows'
+    lines = ['# Windows 导出冒烟报告' if windows else '# Mac 导出冒烟报告', '',
              f'- 时间：{info["time"]}；预设：{info["preset"]}；包：`{info["zip"]}`',
              f'- 工程提交：{info.get("commit", "?")}；Godot：{info.get("godot", "?")}',
-             f'- 架构：{info.get("archs", "?")}；签名检查（codesign --verify，只读）：{info.get("codesign", "?")}',
+             (f'- 架构：{info.get("archs", "?")}；包结构（PE 头、.pck、控制台包装）：{info.get("layout", "?")}；包内检查用 macOS 调试模板旁放同名 .pck 跑' if windows else
+              f'- 架构：{info.get("archs", "?")}；签名检查（codesign --verify，只读）：{info.get("codesign", "?")}'),
              f'- 结论：**{"全部通过" if info["ok"] else "有失败"}**'] + ([f'- 留下的验收包（--keep）：`{info["keptApp"]}`'] if info.get('keptApp') else []) + ['',
              '| 项目 | 结果 | 断言 | 用时（秒） | 退出码 |', '| --- | --- | --- | --- | --- |']
     for r in info['scenes']:
@@ -101,11 +182,63 @@ def report(out_dir: Path, info: dict) -> Path:
         if r['result'] and r['result']['fails']:
             lines += ['', f'## {r["scene"]} 失败项', ''] + [f'- `{f}`' for f in r['result']['fails']]
     lines += ['', '各项完整输出在同目录 `<场景>.log`；导出日志 `导出.log`。',
-              '没覆盖的（要 Kyo 实机）：主观听音、Intel 实机、Developer ID 签名与公证、首次打开的 Gatekeeper，见 `00_项目管理/Mac实机验收清单.md`。']
+              ('没覆盖的（要 Windows 实机）：exe 真在 Windows 上启动、DPI 缩放与全屏（Alt+Enter）、中文输入法、存档目录 %APPDATA%、杀毒误报、SmartScreen。' if windows else
+               '没覆盖的（要 Kyo 实机）：主观听音、Intel 实机、Developer ID 签名与公证、首次打开的 Gatekeeper，见 `00_项目管理/Mac实机验收清单.md`。')]
     p = out_dir / '报告.md'
     p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     (out_dir / '结果.json').write_text(json.dumps(info, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return p
+
+
+def main_windows(a) -> int:
+    preset = PRESETS['windows']
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    out_dir = Path(a.out) if a.out else ROOT / '04_验证' / '本地结果' / '导出冒烟' / (stamp + '_windows')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix='xiyou_export_smoke_'))
+    info = {'time': stamp, 'platform': 'windows', 'preset': preset, 'scenes': [], 'ok': False}
+    try:
+        info['commit'] = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        info['godot'] = (subprocess.run([str(GODOT), '--version'], capture_output=True, text=True).stdout.strip().splitlines()[-1:] or ['?'])[0]
+        if a.zip:
+            exe = Path(a.zip).resolve()
+        else:
+            exe = work / 'win' / '再刷重制_验收.exe'
+            exe.parent.mkdir()
+            print(f'== 导出「{preset}」（约 2～5 分钟）')
+            code, _, secs = run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-debug', preset, str(exe)],
+                                out_dir / '导出.log', 1800)
+            if code != 0 or not exe.is_file():
+                print(f'✗ 导出失败（退出码 {code}），见 {out_dir / "导出.log"}')
+                return 2
+            print(f'  导出完成 {secs} 秒，pck {exe.with_suffix(".pck").stat().st_size // (1 << 20) if exe.with_suffix(".pck").is_file() else 0} MB')
+        info['zip'] = str(exe)
+        problems, pe = windows_layout(exe)
+        info['archs'] = pe['machine'] if pe else '?'
+        info['layout'] = '通过' if not problems else '不通过：' + '；'.join(problems)
+        print(f'  包结构：{info["layout"]}')
+        pck = exe.with_suffix('.pck')
+        runner = mac_runner(work, pck)
+        if runner is None:
+            print('✗ 找不到 macOS 调试模板，跑不了包内检查')
+            return 2
+        for scene in [s.strip() for s in a.scenes.split(',') if s.strip()]:
+            print(f'== 包内跑 {scene}（macOS 调试模板＋{pck.name}）')
+            r = smoke_scene(runner, scene, out_dir)
+            info['scenes'].append(r)
+            res = r['result']
+            print(f'  {"✓" if r["ok"] else "✗"} {scene} {f"{res["passed"]}/{res["total"]}" if res else "没有 TEST_RESULT"}，{r["seconds"]} 秒')
+        info['ok'] = bool(info['scenes']) and all(r['ok'] for r in info['scenes']) and not problems
+        if a.keep and not a.zip:
+            kept = out_dir / 'windows'
+            shutil.move(str(exe.parent), kept)
+            info['keptApp'] = str(kept)
+            print(f'  留下 {kept}')
+        p = report(out_dir, info)
+        print(f'{"✓ 导出冒烟全部通过" if info["ok"] else "✗ 导出冒烟有失败"}；报告 {p}')
+        return 0 if info['ok'] else 1
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def main(argv=None) -> int:
@@ -114,7 +247,10 @@ def main(argv=None) -> int:
     ap.add_argument('--out', help='报告目录')
     ap.add_argument('--keep', action='store_true', help='留下解开的 .app 与导出的 zip')
     ap.add_argument('--scenes', default=','.join(SCENES))
+    ap.add_argument('--platform', choices=sorted(PRESETS), default='macos')
     a = ap.parse_args(argv)
+    if a.platform == 'windows':
+        return main_windows(a)
     stamp = time.strftime('%Y%m%d_%H%M%S')
     out_dir = Path(a.out) if a.out else ROOT / '04_验证' / '本地结果' / '导出冒烟' / stamp
     out_dir.mkdir(parents=True, exist_ok=True)
