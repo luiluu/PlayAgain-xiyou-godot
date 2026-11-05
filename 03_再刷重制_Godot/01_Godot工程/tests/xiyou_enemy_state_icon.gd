@@ -58,7 +58,7 @@ func _run() -> void:
 	dead.hp = 0
 	dead.add_state(1)
 	check("dead_no_icons", XEnemyStateIcon.group(dead).is_empty(), XEnemyStateIcon.group(dead))
-	# 层数 1323：原版字样画不出来（宽度写错）；O-待定 开着画「1层」，关了回原版
+	# 层数 1323：原版字样画不出来（宽度写错）；O-194 开着画「1层」，关了回原版
 	var f := XEnemy.new().setup(int(ref.enemy.enemy_id), 1)
 	f.add_state(int(ref.case_floor.state))
 	var fg := XEnemyStateIcon.group(f)

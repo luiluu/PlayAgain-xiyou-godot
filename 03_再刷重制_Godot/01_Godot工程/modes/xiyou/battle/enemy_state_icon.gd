@@ -10,7 +10,7 @@ extends RefCounted
 ## - 回合数（drawStateTurns）：状态 showTurns 且 autoRemovalTiming＞0 才画，ceil(剩余回合) 千分位；32×32 位图里 drawText(x−3, y−8, 宽 32, 行高 36, 右对齐)、
 ##   字号 16、颜色 0；强弱化（drawBuffTurns）同位置，强化色 24、弱化色 2。中毒（timing 0）不画数字，睡眠画。
 ## - 层数（CP_StateFloor drawStateFloor「%1层」(2, 6) 12 号 #ffffa0 左对齐）：原版把宽度写成 `Window_Base,_iconWidth`
-##   （逗号），宽度成了函数，canvas 一个字也不画——原版看不到层数。优化 O-待定（草稿表「敌人状态层数」）：FLOOR_TEXT 开着时照参数画出来，
+##   （逗号），宽度成了函数，canvas 一个字也不画——原版看不到层数。优化 O-194（草稿表「敌人状态层数」）：FLOOR_TEXT 开着时照参数画出来，
 ##   false 回原版不画。
 ## 整块回退开关 SHOW = false（草稿表「选敌状态图标」）：不画图标与数字（回到重制原来的样子）。
 
