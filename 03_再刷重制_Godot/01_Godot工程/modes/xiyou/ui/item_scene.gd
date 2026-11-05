@@ -531,6 +531,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 通用翻页（Scene_Item 的分类、物品列表与升级、强化材料窗都不接管 pageup／pagedown）
 func _page(d: int) -> void:
+	var before := _cursor_state()
+	_page_inner(d)
+	_cursor_se(before)
+
+
+func _page_inner(d: int) -> void:
 	match _mode:
 		"category":
 			var before := _cat
@@ -553,7 +559,26 @@ func _page(d: int) -> void:
 			_aug_index = r[1]
 
 
+## Window_Selectable.processCursorMove／onTouch：同一窗口里光标换了行才响光标音（ui14；原来物品页移动、翻页、点选都不响）
+var _clicked_ok := false
+
+
+func _cursor_state() -> Array:
+	return [_mode, _cat, _index, _act, _up_index, _aug_index, _actor]
+
+
+func _cursor_se(before: Array) -> void:
+	if before[0] == _mode and before != _cursor_state():
+		XSound.system(0)
+
+
 func _move(d: int, wrap: bool) -> void:
+	var before := _cursor_state()
+	_move_inner(d, wrap)
+	_cursor_se(before)
+
+
+func _move_inner(d: int, wrap: bool) -> void:
 	match _mode:
 		"category":
 			_cat = XMenu._move(_cat, d, XShop.CATEGORIES.size(), wrap)
@@ -1113,11 +1138,25 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _click(p: Vector2, pad: Vector2) -> void:
+	var before := _cursor_state()
+	_clicked_ok = false
+	_click_inner(p, pad)
+	if not _clicked_ok:
+		_cursor_se(before)
+
+
+## 点已选中的行＝确定（响确定音，不再算光标移动）
+func _click_ok() -> void:
+	_clicked_ok = true
+	_ok()
+
+
+func _click_inner(p: Vector2, pad: Vector2) -> void:
 	if _mode == "actor":
 		if ACTOR_RECT.has_point(p):
 			var i := _actor_top + floori((p - ACTOR_RECT.position - pad).y / ACTOR_ROW_H)
 			if i == _actor or _for_all():
-				_ok()
+				_click_ok()
 			elif i >= 0 and i < XState.current.members().size():
 				_actor = i
 		return
@@ -1125,7 +1164,7 @@ func _click(p: Vector2, pad: Vector2) -> void:
 		var i := _cat_top + floori((p - CAT_RECT.position - pad).y / LH)
 		if i >= 0 and i < XShop.CATEGORIES.size():
 			if _mode == "category" and i == _cat:
-				_ok()
+				_click_ok()
 			else:
 				_commit_seen()
 				_cat = i
@@ -1140,28 +1179,28 @@ func _click(p: Vector2, pad: Vector2) -> void:
 			var i := _top + row
 			if i >= 0 and i < entries().size():
 				if _mode == "list" and i == _index:
-					_ok()
+					_click_ok()
 				else:
 					_mode = "list"
 					_index = i
 		"action":
 			if row >= 0 and row < _actions.size():
 				if row == _act:
-					_ok()
+					_click_ok()
 				else:
 					_act = row
 		"upgrade":
 			var i := _up_top + row
 			if i >= 0 and i < materials().size():
 				if i == _up_index:
-					_ok()
+					_click_ok()
 				else:
 					_up_index = i
 		"augment":
 			var i := _aug_top + row
 			if i >= 0 and i < augments().size():
 				if i == _aug_index:
-					_ok()
+					_click_ok()
 				else:
 					_aug_index = i
 
