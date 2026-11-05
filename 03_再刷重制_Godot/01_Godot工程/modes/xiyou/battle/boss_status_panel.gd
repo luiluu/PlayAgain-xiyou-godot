@@ -10,6 +10,15 @@ extends Control
 
 ## 折叠栏右上「战力 N」：已按原版做好，默认关（Kyo 2026-11-04：等重构战力系统后再开）。取数在 XPowerEnemy。回退开关写 static var，测试要开关两边都测。
 static var SHOW_POWER := false
+## 冻结后跟进 v0.56（Codex_BossStatusSummary「选项菜单 Boss状态面板」）：设置页多一行「Boss状态面板」（ConfigManager.codexBossStatusPanel，
+## 默认开，旧配置视为开）；关掉后面板不显示、不拦截点击，Boss 血条（MOG_BossHP）照常。
+## 默认 false＝v0.28 的样子（没有这一行、面板一直在）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+static var TOGGLE := false
+
+
+static func panel_enabled() -> bool:
+	return not TOGGLE or XConfig.flag("codexBossStatusPanel")
+
 const BAR_HEIGHT := 96.0
 const CARD_HEIGHT := 68.0
 const BODY_Y := 82.0
@@ -100,7 +109,7 @@ func rows() -> Array:
 
 func _process(_delta: float) -> void:
 	_frame += 1
-	var found = locate()
+	var found = locate() if panel_enabled() else null  # enabled()&&scene instanceof Scene_Battle?locateBoss:null
 	var changed: bool = found != battler
 	battler = found
 	visible = battler != null

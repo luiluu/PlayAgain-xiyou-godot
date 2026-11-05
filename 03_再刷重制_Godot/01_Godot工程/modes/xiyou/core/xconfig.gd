@@ -20,7 +20,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
-	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true,
+	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
 	"codexWeakFiveClearV2": false}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
@@ -84,7 +84,7 @@ static func ensure_loaded() -> void:
 				elif key == "codexWeakFiveClearV2":
 					# installWeakChallengeRuntime applyData：!!(d && d.codexWeakFiveClearV2 === true)（XWeakChallenge）
 					_values[key] = data.get(key) is bool and data[key] == true
-				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled":
+				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
 				else:
