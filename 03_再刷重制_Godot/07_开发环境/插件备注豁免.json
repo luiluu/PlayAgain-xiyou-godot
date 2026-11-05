@@ -20,9 +20,9 @@
   "codexrandomweakaura": {"reason": "暂缓（已登记）", "evidence": "轮回「随机角色」模式整体暂缓，O-035；弱者协力 10453 只在该模式生效"},
   "multielementrule": {"reason": "已核（总装已量）", "evidence": "总装 2026-11-04 通知：Multi-Element Rule 已量，不用做"},
   "pstcatname#": {"reason": "已决定不做", "evidence": "Kyo 定删技能树（PKD_SimpleSkillsTree 的 pSTCatName）"},
-  "breathingspeed": {"reason": "别的车道在做", "evidence": "YEP_X_AnimatedSVEnemies 的 SV 敌人画面（白龙，总装 2026-11-04）；呼吸周期与 SV 敌人不呼吸见 cc_wukong-dot2 细查结论"},
-  "sideviewnocollapse": {"reason": "别的车道在做", "evidence": "同 Breathing Speed（白龙）"},
-  "sideviewshowshadow": {"reason": "别的车道在做", "evidence": "同 Breathing Speed（白龙）"},
-  "sideviewweapon": {"reason": "别的车道在做", "evidence": "同 Breathing Speed（白龙）"},
-  "stateanimation": {"reason": "别的车道在做", "evidence": "YEP_X_VisualStateFX 状态循环动画（白龙，总装 2026-11-04）"}
+  "breathingspeed": {"reason": "已由别处实现", "evidence": "battle/sv_enemy.gd breathing()（备注 Breathing Speed／Rate X／Rate Y 覆盖参数），专项 xiyou_sve_visual 对 oracle/sve.json 逐敌人核（bailong-visual1）"},
+  "sideviewnocollapse": {"reason": "无运行效果", "evidence": "实测 MOG_CollapseEffects 默认死亡效果接管 updateCollapse，SV／非 SV 倒下透明度一样；sv_enemy.gd 头注、专项 xiyou_sve_visual 守着"},
+  "sideviewshowshadow": {"reason": "已由别处实现", "evidence": "sv_enemy.gd shadow（Show／Hide Shadow 覆盖参数），专项 xiyou_sve_visual"},
+  "sideviewweapon": {"reason": "已由别处实现", "evidence": "sv_enemy.gd weapon（武器图＋攻击动作），专项 xiyou_sve_visual 核 186 个 SV 敌人"},
+  "stateanimation": {"reason": "已由别处实现", "evidence": "battle/vsfx.gd＋battle_scene._update_state_animations，状态 1297 动画 900 循环，专项 xiyou_vsfx；数据里无 State Overlay 标签，无需画（bailong-visual1）"}
 }

@@ -27,7 +27,10 @@ extends RefCounted
 ## - endBattle：删 2592／2597／2598／2599，清代价与劫火（end_battle）。
 ## 深渊掉落（makeRewards 包装，第 392～401 行；【cc·白龙_12·未经审查】）：MapInfos 名字以「深渊」开头的地图上胜利，每场判一次，
 ## 1/30（Math.randomInt(30)===0，重制取战斗奖励随机数）多给一个黑龙进阶石 2903（米拉三次进阶都要 1 个，原版只有这一处来源）。见 abyss_bonus。
-## 未移植：战斗图换成 sv_enemies/BlackDragon_Mira_Enemy（Sprite_Actor.updateBitmap 包装，缩 0.55、下移、藏武器）、名字与外观、旧档迁移。
+## 黑龙战斗图：原版 installNativeMiraRuntime 的 Sprite_Actor.updateBitmap 包装想换成 sv_enemies/BlackDragon_Mira_Enemy（缩 0.55、下移、藏武器），
+## 但实机（2026-11-05 白龙，冻结源无头 Chrome 开战斗量）被 Codex_MiraRavenMultiFrame／Mx_SuperSV 的多帧盖掉：黑龙形态显示的是 UserSV_MiraDragon 多帧、
+## 缩放按站姿高度 72 归一（与人形一致），这张敌人图从不出现，所以重制不做（appearance.gd 的 form MiraDragon 即实机结果）。
+## 未移植：名字与外观、旧档迁移。
 ## 共用的 MiraRavenNumberBoost 在 XNumberBoost。
 
 const ACTOR := 168

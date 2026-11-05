@@ -84,15 +84,28 @@ function setupMode(bm, a, foes, mode) {
   if (mode === 'myth') a._codexRavenMythTurns = 3;
   if (mode === 'hunt') { a._codexRavenResidue = 3; a._codexRavenHunter = true; }
 }
-// 10124 在神话形态里原版的黑暗侵蚀增伤晚一击生效（第三击才 ×1.5，plain 是第二击），原因没查清，这两例不进比对
+// raven2：10124 神话形态两例恢复（原版黑暗侵蚀增伤晚一击，查因见交付单）
 for (const id of [10122, 10123, 10124, 10125]) for (const mode of ['plain', 'hunt', 'myth', 'hunt+myth']) {
-  if (id === 10124 && mode.includes('myth')) continue;
   cases.push(makeCase(`reflect.${id}.${mode}`, {rank: 5, level: 60, skill: id, mode}, () => {
     const {bm, a, foes} = battle(5, 60);
     reflectOn(foes);
     a._paramPlus[5] += 1e6; a.refresh();
     for (const m of mode.split('+')) setupMode(bm, a, foes, m);
     return cast(bm, a, foes, id);
+  }));
+}
+// raven2：黑暗侵蚀晚一击的原因＝krz 状态缓存时序。伤害充 TP（floor(50×伤害/mhp×tcr)≥1）会在同一击加侵蚀前消耗待刷新标记，
+// 侵蚀的 ×1.5 晚一击；与神话形态无关（神话只是伤害更大）。用 tcr 强设扫过 TP 加 0／1 的边界（普通形态、神话形态各几例）
+for (const [mode, tcr] of [['plain', 0.01], ['plain', 1.1], ['plain', 1.5], ['plain', 2], ['myth', 0.01], ['myth', 1], ['hunt+myth', 0.01]]) {
+  cases.push(makeCase(`reflect.tcr.${tcr}.${mode}`, {rank: 5, level: 60, skill: 10124, mode, tcr}, () => {
+    const {bm, a, foes} = battle(5, 60);
+    reflectOn(foes);
+    a._paramPlus[5] += 1e6; a.refresh();
+    for (const m of mode.split('+')) setupMode(bm, a, foes, m);
+    Object.defineProperty(a, 'tcr', {get: () => tcr, configurable: true});
+    const out = cast(bm, a, foes, 10124);
+    out.tp = a.tp; out.mhp = a.mhp;
+    return out;
   }));
 }
 // 对照：没有反射时同一施放（hunt／plain）
@@ -142,6 +155,50 @@ for (const [name, stage, sid, zero] of [['s6.zero', 6, 10250, true], ['s0.zero',
     Object.defineProperty(a, 'cri', {get: () => 1, configurable: true});
     const log = record(() => act(bm, a, sid, 0));
     return {log, direct: [direct(a, sid, 0), direct(a, sid, 1000), direct(a, 1, 0), direct(a, 1, 1000)]};
+  }));
+}
+// raven2（审查 42 P3②）：别的有 Game_Action.apply／makeDamageValue 包装的角色被魔法反射时有没有同类差异：
+// 云裳 174（穿针 10270、断锦 10271）、饿狼 173（核分裂 10259、伽马射线暴 10261）；甚尔 171 的魔法技能 10224／10232／10233 伤害为 0（反弹／神灶），
+// 饿狼其余拳法与镜流 170 全是物理或必中（hitType 0／1），不会被魔法反射。量扣血各段（谁挨打、绝对值）、出手者生命／MP、身上状态。
+function xbattle(id, level) {
+  newGame();
+  w.$gameSwitches.setValue(2494, true);
+  w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  w.eval('$gameParty._actors=[' + id + ',1]; $gameParty._battleMembers=[' + id + ',1,0,0,0];');
+  for (const b of [id, 1]) { const x = w.$gameActors.actor(b); x.changeLevel(level, false); x.recoverAll(); }
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  const bm = w.BattleManager; bm.setup(TROOP, false, false);
+  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) b._paramPlus[0] = BIG_HP;
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
+  w.$gameParty._inBattle = true;
+  w.CodexYunshang._acted = [];
+  bm.startTurn();
+  return {bm, a: w.$gameActors.actor(id), foes: w.$gameTroop.members()};
+}
+for (const [nm, id, sk] of [['yunshang', 174, 10270], ['yunshang', 174, 10271], ['garou', 173, 10259], ['garou', 173, 10261]]) for (const refl of [false, true]) {
+  cases.push(makeCase(`refx.${nm}.${sk}.${refl ? 'reflect' : 'plain'}`, {actor: id, level: 55, skill: sk, reflect: refl}, () => {
+    const {bm, a, foes} = xbattle(id, 55);
+    a.learnSkill(sk); a.setMp(a.mmp); a.setTp(0);
+    if (refl) reflectOn(foes);
+    const log = record(() => act(bm, a, sk, 0));
+    return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
+  }));
+}
+// raven2→3：多段／反射加状态的通用情形（不限渡鸦）。借 10124 的数据槽临时改成「全体、魔法、黑暗、固定伤害 1e7、效果加黑暗侵蚀 1663」，
+// 普通角色 1 号出手，反射回自己；tcr 强设 0.01（受伤充 TP 加 0）与 2（加 ≥1）。量出：加状态前若同一次 apply 里 TP 已 refresh，
+// 状态特性晚一击（krz 状态缓存时序，与渡鸦无关，见交付单）。
+for (const [tcr, refl] of [[0.01, false], [0.01, true], [2, false], [2, true]]) {
+  cases.push(makeCase(`refstate.tcr${tcr}.${refl ? 'reflect' : 'plain'}`, {tcr, reflect: refl}, () => {
+    const {bm, a, foes} = xbattle(8, 60);
+    const sk = w.$dataSkills[10124];
+    sk.damage.formula = '10000000'; sk.damage.elementId = 9; sk.effects = [{code: 21, dataId: 1663, value1: 1, value2: 0}];
+    sk.scope = 2; sk.repeats = 1; sk.hitType = 2; sk.mpCost = 0; sk.tpCost = 0; sk.meta = {}; sk.note = '';
+    a.learnSkill(10124); a.setMp(a.mmp); a.setTp(0);
+    Object.defineProperty(a, 'tcr', {get: () => tcr, configurable: true});
+    if (refl) reflectOn(foes);
+    const log = record(() => act(bm, a, 10124, 0));
+    return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
   }));
 }
 const ok0 = finish(host, 'raven_reflect.json', {cases});

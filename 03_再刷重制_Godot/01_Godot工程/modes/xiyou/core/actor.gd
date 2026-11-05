@@ -465,10 +465,20 @@ func _skill_records(ids: Array[int]) -> Array:
 func all_traits() -> Array:
 	return XOrbs.filter_traits(super.all_traits(), equips)
 
+## 渡鸦黑暗侵蚀的状态缓存时序（见 raven.gd on_tp_refresh）：tp_refreshed＝本次 apply 里伤害充 TP 已 refresh；
+## stale_state_ids＝已在身上但特性缓存还没重建、特性暂读不到的状态（krz 状态缓存时序）
+var rv_tp_refreshed := false
+var stale_state_ids: Array = []
+
 func trait_objects() -> Array:
 	var out := [data(), class_data()]
 	out.append_array(stat_equips())
-	out.append_array(states())
+	if not stale_state_ids.is_empty():
+		for st in states():
+			if not stale_state_ids.has(int(st.get("id", 0))):
+				out.append(st)
+	else:
+		out.append_array(states())
 	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):

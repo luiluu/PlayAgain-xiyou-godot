@@ -264,7 +264,24 @@ func _run() -> void:
 	XYomiJingliu._blood[r[1].get_instance_id()] = 99.0
 	XYomiJingliu.start_battle(r[0])
 	check("start_battle.blood", not XYomiJingliu._blood.has(r[1].get_instance_id()))
+	_soul_help()
 	finish()
+
+
+## 10194 说明卡的星魂行（Sprite_ItemHelp.setItem 包装）：按镜流当前等级列已解锁的，去掉备注里原有的「特效:星魂」行；别的技能不动
+func _soul_help() -> void:
+	var s := _new_game()
+	var a := s.actor(XYomiJingliu.JINGLIU)
+	a.change_level_mv(37)
+	a.learn_skill(10194)
+	var sk := XDB.rec("Skills", 10194)
+	var base := [["名字", 20, "#fff", false, 0], ["特效:星魂 X：旧行", 18, "#fff", false, 0]]
+	var rows := XYomiJingliu.help_rows(sk, base)
+	var t := rows.map(func(r): return str(r[0]))
+	check("soul_help.rows", rows.size() == 5 and t[0] == "名字" and t[1] == "\\c[1]特效:星魂 I：月犯天关：最大生命＋100%" and t[4].begins_with("\\c[1]特效:星魂 IV") and int(rows[2][1]) == 18, t)
+	a.change_level_mv(10)
+	check("soul_help.none", XYomiJingliu.help_rows(sk, base).size() == 1)
+	check("soul_help.other_skill", XYomiJingliu.help_rows(XDB.rec("Skills", 10187), base) == base)
 
 
 func finish() -> void:

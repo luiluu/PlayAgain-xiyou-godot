@@ -329,9 +329,12 @@ func _chain(c: Dictionary) -> void:
 		a.tp = 100.0
 		XCat.trace = []
 		var hp0 := t.hp
-		logic.act(a, XDB.rec("Skills", int(row.skill)), t)
+		var lg = logic.act(a, XDB.rec("Skills", int(row.skill)), t)
 		var got: Array = XCat.trace
 		XCat.trace = null
+		if lg is Array and int(row.skill) != XBattleLogic.GUARD_SKILL and got.size() >= 2:
+			var waits := lg.filter(func(e): return e is Dictionary and e.has("wait_after")).size()  # 段间 WAIT 6：每打完一段且还有下一段记一次
+			check(step + ".wait_after", waits >= 1 and waits <= got.size() and lg.all(func(e): return not (e is Dictionary and e.has("wait_after")) or int(e.wait_after) == 6), [waits, got.size()])
 		var keys := got.map(func(x): return [str(x.key), bool(x.hit), bool(x.critical), bool(x.chain)])
 		var want := (row.trace as Array).map(func(x): return [str(x.key), bool(x.hit), bool(x.critical), bool(x.chain)])
 		check(step + ".segments", keys == want, [keys, want])

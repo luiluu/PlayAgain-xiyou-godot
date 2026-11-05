@@ -141,6 +141,14 @@ func _mira() -> void:
 	a.state_ids.append(XMira.DRAGON)
 	look = XAppearance.for_battler(a)
 	check("mira.dragon", XAppearance.battler_key(a) == "BlackDragon_Mira_SV|form:MiraDragon" and _all_from(look, "UserSV_MiraDragon"), XAppearance.battler_key(a))
+	# 原版实机（2026-11-05 白龙，冻结源 Chrome 无头开战斗量）：黑龙形态最终显示的仍是多帧 UserSV_MiraDragon1_0，
+	# installNativeMiraRuntime 的 BlackDragon_Mira_Enemy 换图被 Mx_SuperSV 的多帧盖掉、实际不出现；可见高度归一到 72（spriteHeight 72），武器藏着。
+	var dsp := XBattlerSprite.new()
+	add_child(dsp)
+	dsp.setup(a, 0.75)
+	dsp._process(0.0)
+	check("mira.dragon_sprite", absf(dsp.height() - 72.0) < 1.5 and (dsp.weapon == null or not dsp.weapon.visible), dsp.height())
+	dsp.queue_free()
 	# 开着换装卡：卡图那层在最外面，不变身、不按状态换图
 	var card: Dictionary = XCostumes.registry().values()[0]
 	a.learn_skill(int(card.skill))

@@ -13,7 +13,7 @@ extends RefCounted
 ## - 伤害钩子 cat-sword（持剑技加成、抱剑护身、巨龙减伤）在 cat_damage_hooks.gd（沙僧，模块挂接点），读这里的 advanced。
 ## 进阶 advanced() 读 XAdvance.rank（进阶后成长曲线、说明文字都随之变）。
 ## 守誓巨龙试炼、进阶速剑多一次行动、178 在队号角不可用：见文末「守誓巨龙试炼」（参照 mv_oracle/cat_trial_probe.cjs，夹具 tests/fixtures/cat_trial_oracle.json，测试 tests/xiyou_cat_trial.gd）。
-## 不做：进阶后终技说明品质 10（helpItem）——七档品质里 9 与 10 都是不朽，名字色、边框、品质行都一样。未移植：段间 WAIT 6 的画面节奏。（Map132 商店补号角已在 XItemMarks 的 LOBBY_CAT_HORN。）
+## 不做：进阶后终技说明品质 10（helpItem）——七档品质里 9 与 10 都是不朽，名字色、边框、品质行都一样。段间 WAIT 6 的画面节奏：cast 在非末段的最后一条记录上记 wait_after，sequence_player 排 wait 方法。（Map132 商店补号角已在 XItemMarks 的 LOBBY_CAT_HORN。）
 ## 参照：mv_oracle/cat_probe.cjs（generated/oracle/cat.json），测试 tests/xiyou_cat.gd。
 
 const ACTOR := 178
@@ -275,7 +275,7 @@ static func help_text(text: String, item: Dictionary, a) -> String:
 
 # ---- 剑技连携（processActionSequence 包装的 CAT BEGIN／CAT STRIKE、endAction、endTurn） ----
 ## 四个剑技的行动序列只有 CAT BEGIN：开招时按剑技排出剑段，每段是一个独立的 Game_Action（技能换成该段的剑技，经 invokeAction，
-## 有反射／反击／掩护），段间原版插 WAIT 6（画面）；一段剑技打完再按条件连携下一招（连携段伤害 ×0.6，连携招不再连携）。
+## 有反射／反击／掩护），段间原版插 WAIT 6（画面，见 wait_after）；一段剑技打完再按条件连携下一招（连携段伤害 ×0.6，连携招不再连携）。
 ## - 斩：1 段＋剑心≥1 时 1 段，打完给目标「识破」；十字斩：2 段＋剑心≥2 时 2 段，任一对相邻段都命中时给「剑痕」；
 ##   连斩：4 段＋剑心 3 层 2 段＋速度段（非连携：开招速度≥目标 1.5 倍 2 段、快于目标 1 段）＋剑痕 2 段，消费剑痕与识破；
 ##   至圣斩：1 段＋剑痕 2 段剑影（进阶后再加剑心层数段，并清空剑心），消费剑痕与识破，冷却到 回合＋4（进阶满层 3）。
@@ -547,6 +547,9 @@ static func _strike(logic, c: Dictionary, logs: Array) -> bool:
 	return not c.done and a.is_alive() and _alive(t)
 
 
+const WAIT_FRAMES := 6
+
+
 ## 行动序列的 CAT BEGIN：开招并依次打完全部剑段（原版逐条插 CAT STRIKE＋WAIT 6）；目标已倒下时什么都不做
 static func cast(logic, u, item: Dictionary, t) -> Array:
 	var logs := []
@@ -554,7 +557,11 @@ static func cast(logic, u, item: Dictionary, t) -> Array:
 		return logs
 	var c := _begin(logic, u, item, t)
 	while _strike(logic, c, logs):
-		pass
+		# 原版 processActionSequence：打完一段且还有下一段时，在 CAT STRIKE 前插 WAIT 6；记在这一段最后一条记录上，由 sequence_player 在它的日志之后排等待
+		for i in range(logs.size() - 1, -1, -1):
+			if logs[i] is Dictionary and str(logs[i].get("type", "")) == "hit":
+				logs[i]["wait_after"] = WAIT_FRAMES
+				break
 	return logs
 
 

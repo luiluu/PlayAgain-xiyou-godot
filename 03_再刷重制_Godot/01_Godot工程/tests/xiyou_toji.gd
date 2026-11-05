@@ -165,6 +165,7 @@ func _run() -> void:
 			_recruit(c)
 	check("covers_all", seen == 31, seen)
 	_meets()
+	_help_rows()
 	finish()
 
 
@@ -177,6 +178,21 @@ func _meets() -> void:
 	a.add_state(XToji.SHAPES[1])
 	check("meets.shape1", not XToji.meets(a, sk.call(10216)) and XToji.meets(a, sk.call(10217)) and XToji.meets(a, sk.call(10212)) and not XToji.meets(a, sk.call(10213)))
 	check("meets.unlearned", not XToji.meets(a, sk.call(10214)) and XToji.meets(s.actor(1), sk.call(10214)))
+
+
+## 说明框熟练度行（Sprite_ItemHelp.setItem 包装）：只给学会的主技能；当前形态的那把写「当前咒具」
+func _help_rows() -> void:
+	var s := _state()
+	var a := _toji(s, {"level": 20})
+	var sk := func(id): return XDB.rec("Skills", id)
+	var r0 := XToji.help_rows(sk.call(10216), a)
+	check("help.active", r0.size() == 2 and str(r0[0][0]) == "咒具熟练：Lv%d；本级进度：%s/%s" % [XSkillMastery.level(a, 10216), XCharacterHelp.num(XSkillMastery.uses(a, 10216)), XCharacterHelp.num(XSkillMastery.usage_max(a, 10216))]
+		and str(r0[1][0]) == "当前咒具；普通攻击使用此熟练度" and int(r0[0][1]) == 16 and r0[0][2] == "#ffffff", r0)
+	var r1 := XToji.help_rows(sk.call(10217), a)
+	check("help.other", r1.size() == 2 and str(r1[1][0]) == "切换至此咒具后，普通攻击使用此熟练度", r1)
+	check("help.not_main", XToji.help_rows(sk.call(10212), a).is_empty() and XToji.help_rows(sk.call(10216), s.actor(1)).is_empty() and XToji.help_rows(sk.call(10216), null).is_empty())
+	a.skill_ids.erase(10217)
+	check("help.unlearned", XToji.help_rows(sk.call(10217), a).is_empty())
 
 
 func finish() -> void:

@@ -21,7 +21,8 @@ extends RefCounted
 ## - apply 包装（XBattleLogic._invoke，掩护之后、目标是活着的敌人）：before_apply 本行动第一次（10174 除外）给目标施集真赤 2627 与
 ##   Y_RANDOM_DEBUFFS 随机一个（Math.randomInt(6)，rule 流 "yomi_debuff"；10173 学了 10185 再施一次）；after_apply 命中且目标有负面状态
 ##   残梦＋1（10174 不加），10172／10173／10174 再对其余活着的敌人各结算一次，伤害钩子 skillMultiplier × SPREAD（spread_rate）。
-## 未移植：隐藏呼吸技能分类、旧档迁移（图标 6400～6403 已由 core/quality_icons.gd 的 CUSTOM 接上）。
+## 隐藏呼吸技能分类：addCommand 对 skill＋ext 3 一律不加（技能菜单与战斗指令，所有角色），在 XActorModules.visible_skill_types／skill_scene.types／battle_scene 指令里做。
+## 未移植：旧档迁移（图标 6400～6403 已由 core/quality_icons.gd 的 CUSTOM 接上）。
 ## 镜流第一期（170，参照 mv_oracle/jingliu_probe → tests/xiyou_jingliu）：
 ## - 招募（公共事件 9005 的 CodexJingliu.recruit()）：同黄泉，装上月魄剑匣 4579。
 ## - 技能整理（setup 时 normalizeJingliuSkills）：10187～10196 按解锁等级学／忘，忘掉 10197～10199，进阶 ≥1 学 10200～10202、否则忘。
@@ -43,7 +44,7 @@ extends RefCounted
 ## - 裂隙演化：10189 命中时目标记下「学没学 10201」；演化过且有裂隙时 Game_Enemy.param(3) floor(×0.89)、elementRate(3) +0.0111。
 ## - 追加行动：月魄从 <2 涨到 ≥2（每回合一次）、10192 真放了血且学了 10202（每回合一次），行动结束后插到本回合行动队首（本回合行动不到 5 次）。
 ## - 读档（XState.from_dict 末尾）：重新整理技能、放血累计清零。
-## 镜流未移植：星魂说明行（界面）、追加段的战斗日志显示（记录带 supplemental）。
+## 镜流星魂说明行：help_rows（命途：毁灭 10194 的卡尾按镜流当前等级列已解锁的星魂，Sprite_ItemHelp.setItem 包装）。追加段的战斗日志显示：记录带 supplemental 进 logs，sequence_player 同走 displayActionResults（与原版 supplemental 里 startDamagePopup＋displayActionResults 一致），无缺口。
 
 ## 优化登记（O 号待总装分配；原版缺陷）：10185 说明写「暴击率＋999%」，原版包的是 Game_BattlerBase.prototype.xparam，但 dsPassiveSkill
 ## 在插件加载时已把 Game_Actor.prototype.xparam 存成别名（_Game_Actor_xparam），角色的 xparam 走不到这层包装，加成实际不生效
@@ -342,6 +343,28 @@ static func moon(a) -> int:
 ## soul(actor, level)：学了命途：毁灭 10194 且到级
 static func soul(a, level: int) -> bool:
 	return jingliu(a) and a.skill_ids.has(10194) and int(a.level) >= level
+
+
+const STAR_ROWS := [
+	[20, "特效:星魂 I：月犯天关：最大生命＋100%"],
+	[25, "特效:星魂 II：朔晕七星：寒冰伤害＋100%"],
+	[30, "特效:星魂 III：半璧迫望：普通战技伤害＋100%"],
+	[35, "特效:星魂 IV：持秉玄烛：物攻＋100%"],
+	[40, "特效:星魂 V：晦入三台：额外最大生命＋100%"],
+	[45, "特效:星魂 VI：蚀变于娄：强化战技伤害＋100%"]]
+
+
+## J.visibleSoulRows＋Sprite_ItemHelp.setItem 包装（原版 541-556）：10194 的卡去掉备注里原有的「特效:星魂」行，
+## 末尾按全局镜流（$gameActors.actor(170)，不看是谁在翻技能页）已解锁的星魂各加一行（18 号白字，\c[1]）。非 10194 或没有说明行返回 rows 原样。
+static func help_rows(skill: Dictionary, rows: Array) -> Array:
+	if int(skill.get("id", 0)) != 10194 or not skill.has("stypeId") or XState.current == null:
+		return rows
+	var out := rows.filter(func(r): return not XHelpCard.plain(str(r[0])).contains("特效:星魂"))
+	var who = XState.current.actors.get(JINGLIU)
+	for e in STAR_ROWS:
+		if soul(who, int(e[0])):
+			out.append(["\\c[1]" + str(e[1]), 18, "rgba(255,255,255,1)", false, 0])
+	return out
 
 
 ## normalizeJingliuSkills（Game_Actor.setup 包装；读档时 state 给读进来的那份，进阶次数从它取）

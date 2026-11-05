@@ -435,6 +435,8 @@ func _log_update() -> void:
 		"waitForNewLine":
 			if lines > (base_lines.back() if not base_lines.is_empty() else 0):
 				wait_count = MESSAGE_SPEED
+		"wait":
+			wait_count = _speed_frames(float(m[1]))
 
 
 func _waiting(mode: String) -> bool:
@@ -490,6 +492,8 @@ func _play_results(list: Array) -> void:
 					scene._collapse_visual(l.target)
 				# 倒下也算状态变化（MV 结算时附加了无法战斗状态，addedStateObjects 里有它）
 				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died)
+				if l.has("wait_after"):
+					methods.append(["wait", l.wait_after])  # 小猫剑圣段间 WAIT 6（XCat.cast）
 			"counter":
 				# displayCounter：addText 直接加一行并 wait()（等 messageSpeed），再放攻击动画、waitForAnimation
 				lines += 1
