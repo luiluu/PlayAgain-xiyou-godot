@@ -2,6 +2,8165 @@
  "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
  "cases": [
   {
+   "base": "ce821",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "366": 29999
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c2",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4427
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4415
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c3",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4426
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "367": 30000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "367": 25000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "367": 20000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "367": 15000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "367": 10000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "367": 5000
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c4",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    },
+    "variables": {
+     "366": 30000
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c5",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    },
+    "variables": {
+     "366": 25000
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c6",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    },
+    "variables": {
+     "366": 20000
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c7",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    },
+    "variables": {
+     "366": 15000
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8c8",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    },
+    "variables": {
+     "366": 10000
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "367": 2000
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2531
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2530
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2530
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8c2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2531
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2530
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8c2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2531
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1342",
+   "tag": "e8c",
+   "preset": {
+    "actors": {
+     "33": {
+      "skills": [
+       675,
+       676
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3775
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3774
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3773
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3772
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3771
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3770
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3769
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "316": 500
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4417
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4416
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4415
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4427
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4426
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m54e15p7",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 4,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4406
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4405
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4404
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4403
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4402
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4401
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4400
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "346": 3
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4423
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4422
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4421
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4420
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "366": 10000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4434
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4433
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4432
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4431
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "367": 10000
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 30
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 31
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 32
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "210": 3
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "210": 4
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "210": 5
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "210": 6
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "210": 7
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "210": 8
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "210": 9
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "210": 10
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 11
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 12
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 20
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 21
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 22
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8c8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 23
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 11
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 12
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 20
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 21
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 22
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8c8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 23
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m163e6p5",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m163e6p5",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m163e6p6",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m163e6p6",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m163e6p7",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m163e6p7",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m166e6p6",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m166e6p6",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m166e6p7",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m166e6p7",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "155": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 23
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 24
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 25
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 26
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 27
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 9
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 10
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 11
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 12
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 13
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 14
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 26
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 28
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "97": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "97": 2
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "97": 3
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 8
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 9
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 10
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 11
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 12
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m34e15p7",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 4,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 16
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 17
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 18
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 19
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 20
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 21
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 22
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8c8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 23
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 23
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 24
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 25
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 26
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 27
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 28
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 29
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 23
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 24
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 25
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 26
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 27
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 28
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 29
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m4e36p1",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "20": 26
+    },
+    "switches": {
+     "2487": true
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 22
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 23
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 24
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 25
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 26
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 12
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 13
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 14
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 15
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 16
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 17
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 18
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8c8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 19
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 11
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 12
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 13
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 14
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 15
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 16
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 17
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8c8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 18
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8c8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4420
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4421
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4422
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4423
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4424
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4430
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4431
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4432
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4433
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4434
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4435
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4418
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4429
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4417
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce821",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4428
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       4416
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "346": 11
+    },
+    "actors": {
+     "3": {
+      "skills": [
+       4407
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "96": 90
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2522
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2520
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2521
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2532
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2528
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2529
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2530
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce346",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2531
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2518
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2519
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2522
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2520
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2521
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2532
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2528
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce347",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2529
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2518
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2519
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2522
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2520
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2521
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2532
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2528
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce348",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2529
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2518
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2519
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2522
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2520
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2521
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2532
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2528
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce349",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2529
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2518
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2519
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2522
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2520
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b5",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2521
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b6",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2532
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b7",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2528
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce350",
+   "tag": "e8b8",
+   "preset": {
+    "actors": {
+     "71": {
+      "skills": [
+       2529
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m220e1p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 4,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "ce1342",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "33": {
+      "skills": [
+       675
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m163e6p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m163e6p6",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m163e6p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m166e6p6",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m166e6p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "155": 97
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "315": 500
+    },
+    "actors": {
+     "78": {
+      "skills": [
+       3741
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "315": 400
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "315": 300
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "315": 200
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "315": 100
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "315": 500
+    },
+    "actors": {
+     "78": {
+      "skills": [
+       3747
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "315": 400
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "315": 300
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "315": 200
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "315": 100
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "316": 22500
+    },
+    "actors": {
+     "22": {
+      "skills": [
+       3776
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "316": 18000
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "316": 14000
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "316": 10500
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "316": 7500
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "316": 5000
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "316": 3000
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "316": 1500
+    }
+   }
+  },
+  {
+   "base": "ce1053",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "1": {
+      "skills": [
+       3632
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1054",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "2": {
+      "skills": [
+       504
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1058",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "6": {
+      "skills": [
+       3519
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1078",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "8": {
+      "skills": [
+       3635
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1089",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "36": {
+      "skills": [
+       3219
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1090",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "37": {
+      "skills": [
+       3216
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1336",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "59": {
+      "skills": [
+       2199
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1364",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "19": {
+      "skills": [
+       4845
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1410",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "104": {
+      "skills": [
+       7493
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1614",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "88": {
+      "skills": [
+       5879
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1614",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "88": {
+      "skills": [
+       5880
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "366": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4418
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "366": 2000
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "366": 1000
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "366": 500
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "367": 5000
+    },
+    "actors": {
+     "79": {
+      "skills": [
+       4429
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "367": 2000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "367": 1000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "367": 500
+    }
+   }
+  },
+  {
+   "base": "m171e1p0",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     103
+    ],
+    "items": {
+     "2860": 1
+    }
+   }
+  },
+  {
+   "base": "m171e1p3",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     103
+    ],
+    "items": {
+     "2860": 1
+    }
+   }
+  },
+  {
+   "base": "m54e15p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 4
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     41
+    ],
+    "variables": {
+     "281": 35
+    }
+   }
+  },
+  {
+   "base": "ce1312",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "373": 6
+    }
+   }
+  },
+  {
+   "base": "ce1312",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "373": 12
+    }
+   }
+  },
+  {
+   "base": "ce1614",
+   "tag": "e8b3",
+   "preset": {
+    "actors": {
+     "88": {
+      "skills": [
+       5877
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1614",
+   "tag": "e8b4",
+   "preset": {
+    "actors": {
+     "88": {
+      "skills": [
+       5881
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "e8b",
+   "preset": {
+    "gold": 100000
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "346": 10
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "346": 9
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "346": 8
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "346": 7
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "346": 6
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "346": 5
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "346": 4
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "366": 30000
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "366": 25000
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "366": 20000
+    }
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "366": 15000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "367": 30000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "367": 25000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "367": 20000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "367": 15000
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m111e9p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m111e9p5",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m111e9p6",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m111e9p6",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m111e9p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m111e9p7",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 1
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 2
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 3
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 4
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 5
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 6
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "208": 1,
+     "209": 7
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "210": 2
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m136e1p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m136e1p5",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m139e19p0",
+   "tag": "e8b",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       6235
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m139e19p0",
+   "tag": "e8b2",
+   "preset": {
+    "actors": {
+     "79": {
+      "skills": [
+       6212
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m139e6p1",
+   "tag": "e8b",
+   "preset": {
+    "weapons": {
+     "1577": 1
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 1
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 2
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 3
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 4
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 5
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 6
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 8
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 1
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 2
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 3
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 4
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 5
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 6
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 8
+    }
+   }
+  },
+  {
+   "base": "m14e19p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m14e19p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 1
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 2
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 3
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 4
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 5
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 6
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 8
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m187e105p0",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "items": {
+     "1958": 1
+    }
+   }
+  },
+  {
+   "base": "m187e106p0",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "items": {
+     "1961": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m198e1p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m198e1p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p5",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m198e1p5",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m198e1p6",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p6",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m198e1p6",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m198e1p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p7",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m198e1p7",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 2
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 3
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 4
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 5
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 6
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 7
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 8
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 2
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 3
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 4
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 5
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 6
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "95": 7
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m34e15p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 4
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 11
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 12
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 13
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 14
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 15
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 15
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 16
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 19
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 20
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 21
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 13
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m4e36p1",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "20": 26
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 10
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 11
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 12
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 14
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 17
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 18
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     42
+    ]
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     43
+    ]
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     44
+    ]
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 4
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 5
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 6
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 8
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 11
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b2",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 4
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b3",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 5
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b4",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 6
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b5",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 7
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b6",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 8
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b7",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 9
+    }
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8b8",
+   "preset": {
+    "party": [
+     38
+    ],
+    "variables": {
+     "140": 10
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 7
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b7",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 8
+    }
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8b8",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 9
+    }
+   }
+  },
+  {
+   "base": "m85e1p5",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m85e1p5",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m85e1p5",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m85e1p6",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m85e1p6",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m85e1p6",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "156": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m85e1p7",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "94": 97,
+     "157": 1
+    }
+   }
+  },
+  {
+   "base": "m85e1p7",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "94": 97,
+     "157": 2
+    }
+   }
+  },
+  {
+   "base": "m85e1p7",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "94": 97,
+     "157": 3
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 1
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b2",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 2
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b3",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 3
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b4",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 4
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b5",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 5
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8b6",
+   "preset": {
+    "variables": {
+     "450": 1,
+     "94": 6
+    }
+   }
+  },
+  {
+   "base": "ce1431",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1197": 8888
+    }
+   }
+  },
+  {
+   "base": "ce820",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "367": 29999
+    }
+   }
+  },
+  {
+   "base": "m163e6p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m166e6p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m166e6p5",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m85e1p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m111e9p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m44e2p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m34e15p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m49e6p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m16e11p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p3",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m63e3p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m22e8p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m39e21p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m43e13p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m21e5p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m24e4p2",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m48e1p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m142e3p1",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m143e11p1",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m24e4p1",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m153e1p2",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "ce1560",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1178": 2
+    }
+   }
+  },
+  {
+   "base": "ce819",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "346": 11
+    }
+   }
+  },
+  {
+   "base": "m114e23p0",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "208": 1
+    }
+   }
+  },
+  {
+   "base": "m126e15p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m124e1p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m129e3p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m130e11p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m131e9p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m220e1p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m9e2p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m136e1p5",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m14e19p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 1
+    }
+   }
+  },
+  {
+   "base": "m4e54p3",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1476": 1
+    }
+   }
+  },
+  {
+   "base": "m4e54p2",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1476": 1
+    }
+   }
+  },
+  {
+   "base": "m198e1p4",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m198e1p5",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m198e1p6",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m198e1p7",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m220e1p7",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "450": 4
+    }
+   }
+  },
+  {
+   "base": "m85e1p5",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m85e1p6",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m85e1p7",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "94": 97
+    }
+   }
+  },
+  {
+   "base": "ce1600",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     86
+    ]
+   }
+  },
+  {
+   "base": "m111e9p5",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m111e9p6",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m111e9p7",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "156": 97
+    }
+   }
+  },
+  {
+   "base": "m4e54p1",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1476": 1
+    }
+   }
+  },
+  {
+   "base": "ce1194",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2222": true
+    }
+   }
+  },
+  {
+   "base": "ce1195",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2222": true
+    }
+   }
+  },
+  {
+   "base": "ce1196",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2222": true
+    }
+   }
+  },
+  {
+   "base": "ce1197",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2222": true
+    }
+   }
+  },
+  {
+   "base": "ce1198",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2222": true
+    }
+   }
+  },
+  {
+   "base": "ce683",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "315": 500
+    }
+   }
+  },
+  {
+   "base": "ce684",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "315": 500
+    }
+   }
+  },
+  {
+   "base": "ce687",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "316": 22500
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     45
+    ]
+   }
+  },
+  {
+   "base": "ce823",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "366": 5000
+    }
+   }
+  },
+  {
+   "base": "ce824",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "367": 5000
+    }
+   }
+  },
+  {
+   "base": "m109e19p1",
+   "tag": "e8",
+   "preset": {
+    "items": {
+     "179": 1
+    }
+   }
+  },
+  {
+   "base": "m171e1p0",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     103
+    ]
+   }
+  },
+  {
+   "base": "m171e1p3",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     103
+    ]
+   }
+  },
+  {
+   "base": "m187e105p0",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m187e106p0",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m18e2p0",
+   "tag": "e8",
+   "preset": {
+    "items": {
+     "405": 1
+    }
+   }
+  },
+  {
+   "base": "m18e2p1",
+   "tag": "e8",
+   "preset": {
+    "items": {
+     "405": 1
+    }
+   }
+  },
+  {
+   "base": "m18e2p2",
+   "tag": "e8",
+   "preset": {
+    "items": {
+     "405": 1
+    }
+   }
+  },
+  {
+   "base": "m4e63p1",
+   "tag": "e8",
+   "preset": {
+    "switches": {
+     "2483": true
+    }
+   }
+  },
+  {
+   "base": "m4e65p0",
+   "tag": "e8",
+   "preset": {
+    "variables": {
+     "1476": 1
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "e8",
+   "preset": {
+    "party": [
+     41
+    ]
+   }
+  },
+  {
    "base": "m23e2p0",
    "tag": "s1",
    "preset": {
