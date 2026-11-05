@@ -248,6 +248,8 @@ function runCase(c) {
   w.SceneManager._scene = sceneStub;
   trace = []; choiceSeen = {};
   battleResult = (c.preset && c.preset.battleResult) || 0;
+  // 预设 answers（eventsreg2）：依次应答选项（选第几项，从 0 数）与数值输入（填的数）；用完回到默认应答。Godot 侧 EventHost.answers 同
+  const answers = ((c.preset && c.preset.answers) || []).slice();
   applyPreset(c.preset);
   const list = c.kind === 'common' ? w.$dataCommonEvents[c.common].list : w.$dataMap.events[c.event].pages[c.page].list;
   const watch = watchActors(list);
@@ -260,7 +262,8 @@ function runCase(c) {
     if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
   }
   // 序列只给事件指令 122（变量操作·随机数）用，战斗等别处照旧 0.5（Godot 侧也只有事件随机数走序列）
-  const seq = RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
+  // 预设 random（eventsreg2）：这一例 122 随机数按这串循环取，覆盖 RANDOM_SEQUENCES；Godot 侧同（xiyou_event_compare 取 preset.random）
+  const seq = (c.preset && c.preset.random) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
   if (seq) {
     let at = 0;
     w.Game_Interpreter.prototype.command122 = function () {
@@ -284,14 +287,16 @@ function runCase(c) {
     if (m.isChoice()) {
       const sig = JSON.stringify(m.choices());
       choiceSeen[sig] = (choiceSeen[sig] || 0) + 1;
-      const pick = choiceSeen[sig] > 3 ? m.choices().length - 1 : m.choiceDefaultType() >= 0 ? m.choiceDefaultType() : 0;
+      const pick = answers.length ? Math.max(0, Math.min(m.choices().length - 1, Number(answers.shift())))
+        : choiceSeen[sig] > 3 ? m.choices().length - 1 : m.choiceDefaultType() >= 0 ? m.choiceDefaultType() : 0;
       Object.assign(e, {choices: m.choices().slice(), pick});
       rec(e);
       m.onChoice(pick);
     } else if (m.isNumberInput()) {
-      Object.assign(e, {number: m.numInputVariableId(), pick: 0});
+      const num = answers.length ? Number(answers.shift()) : 0;
+      Object.assign(e, {number: m.numInputVariableId(), pick: num});
       rec(e);
-      w.$gameVariables.setValue(m.numInputVariableId(), 0);
+      w.$gameVariables.setValue(m.numInputVariableId(), num);
     } else if (m.isItemChoice()) {
       Object.assign(e, {itemChoice: m.itemChoiceVariableId(), pick: 0});
       rec(e);

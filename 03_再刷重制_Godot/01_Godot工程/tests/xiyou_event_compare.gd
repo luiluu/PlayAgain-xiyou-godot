@@ -71,6 +71,8 @@ class EventHost:
 	var trace: Array = []
 	var seen := {}
 	var player := FakePlayer.new()
+	## 预设 answers（eventsreg2）：依次应答选项（第几项）与数值输入（填的数），用完回到默认；同 event_state_probe.cjs
+	var answers: Array = []
 
 	func show_message(msg: Dictionary) -> int:
 		var e := {"t": "msg", "face": str(msg.get("face", "")), "index": int(msg.get("index", 0)), "lines": msg.get("lines", [])}
@@ -79,11 +81,14 @@ class EventHost:
 			var sig := JSON.stringify(msg.choices)
 			seen[sig] = int(seen.get(sig, 0)) + 1
 			pick = msg.choices.size() - 1 if seen[sig] > 3 else (int(msg.default) if int(msg.get("default", -1)) >= 0 else 0)
+			if not answers.is_empty():
+				pick = clampi(int(answers.pop_front()), 0, msg.choices.size() - 1)
 			e.choices = msg.choices
 			e.pick = pick
 		elif msg.has("digits"):
 			e.number = true
-			e.pick = 0
+			pick = int(answers.pop_front()) if not answers.is_empty() else 0
+			e.pick = pick
 		if msg.has("choices") or msg.has("digits") or not e.lines.is_empty():
 			trace.append(e)
 		return pick
@@ -439,6 +444,10 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
 	MVInterpreter.random_sequence = RANDOM_SEQUENCES.get(str(c.id), [])  # 同参照 event_probe 的 RANDOM_SEQUENCES
+	var preset: Dictionary = c.get("preset", {})
+	if preset.has("random"):
+		MVInterpreter.random_sequence = (preset.random as Array).map(func(x): return float(x))  # 预设 random（eventsreg2），同参照
+	host.answers = (preset.get("answers", []) as Array).duplicate()
 	MVInterpreter._sequence_at = 0
 	MVInterpreter.steps = 0
 	MVInterpreter.aborted = false
