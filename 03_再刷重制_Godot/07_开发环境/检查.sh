@@ -38,7 +38,8 @@ while (( $# )); do
   esac
   shift
 done
-(( ! CLOUD )) || [[ -n $AFFECTED ]] || { print -r -- "--cloud 只和 --affected 一起用（云端只做选测；整轮请在本机跑）"; exit 2; }
+CLOUD_FULL=0
+(( ! CLOUD )) || [[ -n $AFFECTED ]] || CLOUD_FULL=1   # --cloud 不带 --affected＝整轮在云端跑（run --full，ci-full/<分支>；tools73）
 ok()   { print -r -- "  ✓ $1"; }
 bad()  { print -r -- "  ✗ $1"; FAIL=1; FAIL_ITEMS+=("$1"); }
 FAIL_ITEMS=()  # 收尾汇总用（哪吒_7 t4：失败项夹在长日志中间难找，Godot 场景带日志路径）
@@ -150,7 +151,8 @@ elif (( CLOUD )); then
   # 云端选测：推 HEAD 到 ci/<分支> 触发 GitHub Actions，等结果（汇总里有失败场景）；只测已提交的 HEAD
   print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）"
   cloud_head=$(git -C "$ROOT" rev-parse HEAD)
-  cloud_run=(python3 "$CLOUD_SCRIPT" run)
+  cloud_run=(python3 "$CLOUD_SCRIPT" run); cloud_mode=affected
+  (( CLOUD_FULL )) && { cloud_run+=(--full); cloud_mode=full; print "  （--cloud 整轮：全部 Godot 场景交给云端 ci-full/<分支>）"; }
   # 补跑事件状态探针.py 重量了 event_states.json 会留标记：产物变了，不管合并工具怎么设 CHECK_CLOUD_NO_UPLOAD 都要重传（BK2）
   upload_mark="$(git -C "$ROOT" rev-parse --path-format=absolute --git-dir)/xiyou_cloud_upload_needed"
   if [[ -e $upload_mark ]]; then print "  （--cloud：转换产物比云端新（补跑过事件状态探针），重传产物）"
@@ -175,7 +177,7 @@ elif (( CLOUD )); then
   (( ${#REUSE_SKIP} )) && cloud_run+=(--skip "${REUSE_SKIP[*]}")
   if ! "${cloud_run[@]}"; then
     bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"
-  elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-2700}; then
+  elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode $cloud_mode --timeout ${CHECK_CLOUD_TIMEOUT:-2700}; then
     ok "云端选测通过（$cloud_head[1,9]）"
     rm -f "$upload_mark"
   else

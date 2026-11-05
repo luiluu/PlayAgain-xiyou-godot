@@ -1449,9 +1449,9 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             reused = note.read_text().strip().splitlines() if note.is_file() else []
             trailer += ''.join('\n沿用: ' + line for line in reused)
         elif not batch:
-            trailer += '\n验证: 全量'  # 不加 --affected 的 --finish 跑的是整轮；云端选测.py 的 local_verified_base 认它（tools60，审查 37 P3）
+            trailer += '\n验证: 全量' + ('（云端）' if cloud else '')  # 不加 --affected 的 --finish 跑的是整轮（--cloud 时整轮在云端，tools73）；云端选测.py 的 local_verified_base 认它（tools60，审查 37 P3）
         snapshot = None
-        if cloud and affected and not batch:
+        if cloud and not batch:
             note = snapshot_note(root)
             if note.is_file():
                 snapshot = note.read_text().strip() or None
@@ -1631,8 +1631,8 @@ def main(argv=None):
                     help='--finish 时本条先不跑检查、不清理、不推送，记入本批；最后一条不加它统一检查')
     ap.add_argument('--branch', help='车道分支（任务名仍写交付单名）：app 自建的工作树常把车道建在 cc/<随机名> 上，名字与派单的 <前缀>/<任务> 对不上时用')
     ap.add_argument('--cloud', action='store_true',
-                    help='和 --affected 一起用（--finish 或 --close-batch）：选中的 Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait），'
-                         '非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（账单／额度没启动任务时 检查.sh 改本机跑）')
+                    help='--finish 或 --close-batch 时：Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait）；加 --affected 跑选中的场景，'
+                         '不加则跑整轮（run --full，尾注「验证: 全量（云端）」，tools73）；非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（账单／额度没启动任务时 检查.sh 改本机跑）')
     ap.add_argument('--affected', action='store_true',
                     help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',
@@ -1657,8 +1657,6 @@ def main(argv=None):
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')
-            if a.cloud and not a.affected:
-                raise RuntimeError('--cloud 只和 --affected 一起用（云端只做选测）')
             lock = take_lock(folder)
             close_batch(root, folder, a.affected, a.cloud)
             return 0
@@ -1676,8 +1674,10 @@ def main(argv=None):
             raise RuntimeError('--batch 只和 --finish 一起用')
         if a.affected and (not a.finish or a.batch):
             raise RuntimeError('--affected 只和 --finish 或 --close-batch 一起用，不配 --batch（批末那条不加 --batch 时加 --affected，覆盖整批）')
-        if a.cloud and not a.affected:
-            raise RuntimeError('--cloud 只和 --affected 一起用（云端只做选测）')
+        if a.cloud and not (a.finish or a.close_batch):
+            raise RuntimeError('--cloud 只和 --finish 或 --close-batch 一起用')
+        if a.cloud and a.batch:
+            raise RuntimeError('--cloud 不配 --batch（--batch 本条不跑检查；批末那条再加 --cloud）')
         if a.accept_doc_edits and not a.finish:
             raise RuntimeError('--accept-doc-edits 只和 --finish 一起用')
         if a.accept_changes and (a.finish or a.dry_run):

@@ -27,6 +27,55 @@ class SplitTests(unittest.TestCase):
         self.assertEqual(sync.split_balanced([('m1', 3)], 4), [['m1']])
 
 
+class PresetsMergeTests(unittest.TestCase):
+    """tools73：车道只改了 event_presets.json、main 又多了别的车道的预设行时，event_states.json 由车道结果＋main 结果按合并后预设顺序拼回。"""
+    HEAD = {'sourceIdentity': {'releaseVersion': 'v0'}, 'setup': {'party': [1]}}
+
+    def case(self, base, tag, preset, val=1):
+        return {'id': base + '#' + tag, 'base': base, 'preset': preset, 'trace': [val]}
+
+    def run_merge(self, tmp, order, lane, main, rows, head_main=None):
+        paths = {}
+        for name, doc in [('lane', dict(self.HEAD, cases=lane)), ('main', dict(head_main or self.HEAD, cases=main)),
+                          ('presets', {'cases': rows})]:
+            paths[name] = tmp / (name + '.json'); paths[name].write_text(json.dumps(doc, ensure_ascii=False))
+        out = tmp / 'out.json'
+        r = subprocess.run(['node', '-e', sync.PRESETS_MERGE_JS, str(out), json.dumps(order), str(paths['lane']), str(paths['main']), str(paths['presets'])],
+                           capture_output=True, text=True)
+        return r, out
+
+    def test_lane_and_main_rows_are_stitched_in_presets_order(self):
+        a, b, c = {'a': 1}, {'b': 2}, {'c': 3}
+        rows = [{'base': 'x', 'tag': 'a', 'preset': a}, {'base': 'y', 'tag': 'b', 'preset': b}, {'base': 'z', 'tag': 'c', 'preset': c}]
+        lane = [self.case('x', 'a', a), self.case('y', 'b', b, val=22)]          # 车道有 a、b
+        main = [self.case('x', 'a', a), self.case('z', 'c', c)]                # main 有 a、c（c 是别的车道合进来的）
+        with tempfile.TemporaryDirectory() as tmp:
+            r, out = self.run_merge(Path(tmp), ['x#a', 'y#b', 'z#c'], lane, main, rows)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            expect = [lane[0], lane[1], main[1]]
+            self.assertEqual(out.read_text(), json.dumps(dict(self.HEAD, cases=expect), ensure_ascii=False, separators=(',', ':')))
+
+    def test_rejects_when_a_row_has_no_matching_result(self):
+        a, b = {'a': 1}, {'b': 2}
+        rows = [{'base': 'x', 'tag': 'a', 'preset': a}, {'base': 'y', 'tag': 'b', 'preset': {'b': 3}}]   # 合并后 b 的预设与两边结果都对不上
+        with tempfile.TemporaryDirectory() as tmp:
+            r, _ = self.run_merge(Path(tmp), ['x#a', 'y#b'], [self.case('x', 'a', a), self.case('y', 'b', b)], [self.case('x', 'a', a)], rows)
+            self.assertEqual(r.returncode, 3)
+            self.assertIn('没有可用结果', r.stderr)
+
+    def test_rejects_when_source_or_setup_differs(self):
+        a = {'a': 1}
+        rows = [{'base': 'x', 'tag': 'a', 'preset': a}]
+        with tempfile.TemporaryDirectory() as tmp:
+            r, _ = self.run_merge(Path(tmp), ['x#a'], [self.case('x', 'a', a)], [self.case('x', 'a', a)], rows,
+                                  head_main={'sourceIdentity': {'releaseVersion': 'v1'}, 'setup': {'party': [1]}})
+            self.assertEqual(r.returncode, 3)
+
+    def test_tools_digest_can_skip_presets(self):
+        self.assertEqual(sync.tools_digest(skip={sync.PRESETS_REL}), sync.tools_digest(skip={sync.PRESETS_REL}))
+        self.assertNotEqual(sync.tools_digest(), sync.tools_digest(skip={sync.PRESETS_REL}))
+
+
 class MergeTests(unittest.TestCase):
     def test_merge_restores_single_process_order(self):
         cases = [{'id': 'm7e1p0', 'kind': 'map', 'map': 7}, {'id': 'm7e2p0', 'kind': 'map', 'map': 7},

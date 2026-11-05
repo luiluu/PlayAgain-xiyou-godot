@@ -1416,10 +1416,23 @@ class CheckerTests(Fixture):
         self.assertNotIn('cloud wait', '\n'.join(ran))
         self.assertNotIn('并行测试.py', self.names(ran))
 
-    def test_cloud_needs_affected_and_skips_when_no_scenes(self):
-        rc, out, _ = self.check('--cloud')
-        self.assertEqual(rc, 2, out)
-        self.assertIn('--cloud 只和 --affected', out)
+    def test_cloud_full_without_affected_runs_whole_suite_in_cloud(self):
+        # tools73：--cloud 不带 --affected＝整轮交给云端（run --full，wait --mode full），本机不跑 Godot
+        stub = self.root / 'cloud_stub.py'
+        stub.write_text('import sys\nopen(%r, "a").write("cloud " + " ".join(sys.argv[1:]) + "\\n")\n' % str(self.calls))
+        with open(self.root / '.git/info/exclude', 'a') as f:
+            f.write('cloud_stub.py\ncalls\n')
+        self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(stub), CHECK_CLOUD_NO_UPLOAD='1')
+        rc, out, ran = self.check('--cloud')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('云端选测通过', out)
+        cloud = [l for l in ran if l.startswith('cloud')]
+        self.assertEqual(cloud[0], 'cloud run --full --no-upload')
+        self.assertRegex(cloud[1], r'^cloud wait [0-9a-f]{40} --mode full --timeout 2700$')
+        self.assertNotIn('godot', self.names(ran))
+        self.assertNotIn('并行测试.py', self.names(ran))
+
+    def test_cloud_skips_when_no_scenes(self):
         self.put(Path('00_项目管理/交接板.md'), '# board 2\n')
         self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(self.root / 'nope.py'))
         rc, out, ran = self.check('--affected', self.base, '--cloud')
