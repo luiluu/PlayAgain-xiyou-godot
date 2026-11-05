@@ -529,3 +529,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
 		get_viewport().set_input_as_handled()
 		_page_jump(1 if event.is_action_pressed("ui_right", true) else -1)
+	elif mode == "index" and XMenu.page_dir(event) != 0:
+		# AB_EnemyBook 的索引窗不接管 pageup／pagedown：走通用翻页
+		get_viewport().set_input_as_handled()
+		var r := XMenu.page(top, index, ids.size(), ROWS, XMenu.page_dir(event))
+		top = r[0]
+		select(r[1])
+		_refresh()

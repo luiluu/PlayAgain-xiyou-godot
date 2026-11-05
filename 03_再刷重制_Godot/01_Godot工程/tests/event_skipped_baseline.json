@@ -227,6 +227,9 @@
 		"ce249": {
 			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
 		},
+		"ce249#c1": {
+			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
+		},
 		"ce325": {
 			"355 !$gameTroop.isAllDead() && BattleManager": 1,
 			"355 action.decideRandomTarget()": 1,

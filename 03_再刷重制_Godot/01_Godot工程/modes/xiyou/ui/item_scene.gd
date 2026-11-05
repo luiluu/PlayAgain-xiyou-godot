@@ -520,10 +520,37 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_up", true):
 		_move(-1, not event.is_echo())
 		_refresh()
+	elif XMenu.page_dir(event) != 0 and _mode in ["category", "list", "upgrade", "augment"]:
+		_page(XMenu.page_dir(event))
+		_refresh()
 	else:
 		handled = false
 	if handled:
 		get_viewport().set_input_as_handled()
+
+
+## 通用翻页（Scene_Item 的分类、物品列表与升级、强化材料窗都不接管 pageup／pagedown）
+func _page(d: int) -> void:
+	match _mode:
+		"category":
+			var before := _cat
+			var r := XMenu.page(_cat_top, _cat, XShop.CATEGORIES.size(), CAT_ROWS, d)
+			_cat_top = r[0]
+			_cat = r[1]
+			if _cat != before:
+				_top = 0
+		"list":
+			var r := XMenu.page(_top, _index, entries().size(), _rows(), d)
+			_top = r[0]
+			_index = r[1]
+		"upgrade":
+			var r := XMenu.page(_up_top, _up_index, materials().size(), _rows(), d)
+			_up_top = r[0]
+			_up_index = r[1]
+		"augment":
+			var r := XMenu.page(_aug_top, _aug_index, augments().size(), _rows(), d)
+			_aug_top = r[0]
+			_aug_index = r[1]
 
 
 func _move(d: int, wrap: bool) -> void:
