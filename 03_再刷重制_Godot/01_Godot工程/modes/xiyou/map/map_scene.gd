@@ -400,7 +400,7 @@ func _process(delta: float) -> void:
 				open_menu(back)
 		if not busy and transfer_page == null:
 			_check_milestone()
-	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame():
+	if not busy and Input.is_action_just_pressed("ui_cancel") and not XMessageBox.consumed_input_this_frame() and not XKeyMap.menu_call_blocked(_menu_closed_frame, Engine.get_process_frames()):
 		open_menu()
 
 
@@ -1572,6 +1572,9 @@ func relocate_race_guide() -> void:
 		guide.set_direction(2)
 
 
+var _menu_closed_frame := -1
+
+
 func open_menu(resume_items: Dictionary = {}) -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
@@ -1593,6 +1596,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
+	_menu_closed_frame = Engine.get_process_frames()  # 同一次 Esc 关菜单后本帧不再开（XKeyMap.menu_call_blocked）
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	hud.visible = true
 	_reset_transfer_button()
