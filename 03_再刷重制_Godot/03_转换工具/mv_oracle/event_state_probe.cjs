@@ -57,6 +57,10 @@ const variants = PRESETS.map(p => {
 }).filter(Boolean);
 const only = process.argv.slice(2);
 const chosen = only.length ? variants.filter(c => only.some(p => c.id.startsWith(p))) : variants;
+// 分段并行（BO）：XIYOU_PROBE_SHARD=i/n 只跑第 i 段（按变体序号轮转：序号 % n == i，各段难易搭配均衡），
+// 每个变体都从新局快照起跑、互不依赖，补跑事件状态探针.py 起 n 个进程各写自己的文件再按序号交错拼回，与单进程逐字相同
+const shardSpec = (process.env.XIYOU_PROBE_SHARD || '').match(/^(\d+)\/(\d+)$/);
+const shardOf = shardSpec ? chosen.filter((c, i) => i % Number(shardSpec[2]) === Number(shardSpec[1])) : chosen;
 
 // ---- 引擎占位：只跑指定解释器，等待类直接结束 ----
 w.eval(`
@@ -356,7 +360,7 @@ function runCase(c) {
 }
 
 const t0 = Date.now();
-const results = chosen.map(runCase);
+const results = shardOf.map(runCase);
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prompt: PROMPT_TEXT, maxFrames: MAX_FRAMES};
 // 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
