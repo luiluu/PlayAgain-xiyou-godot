@@ -149,22 +149,34 @@ func _run() -> void:
 				idle_before = true
 				break
 			await _wait_frame()
-		var acts := [0]
-		var count := func(): acts[0] += 1
-		map.player.action_pressed.connect(count)
-		Input.parse_input_event(_key(KEY_META, true))
-		Input.parse_input_event(_key(KEY_ENTER, true))
-		# 按住若干物理帧再松开：同一物理帧内按下又松开时 is_action_just_pressed 仍为真而 ⌘ 已松开，会误判（测试时序问题，非真人操作）
-		for i in range(3):
-			await get_tree().physics_frame
-			# 快时钟可在一个process帧里跑多次物理帧；组合键必须跨真实输入刷新周期。
-			await get_tree().process_frame
-		Input.parse_input_event(_key(KEY_ENTER, true, false))
-		Input.parse_input_event(_key(KEY_META, false, false))
-		await _frames(2)
-		map.player.action_pressed.disconnect(count)
-		get_window().mode = Window.MODE_WINDOWED
-		_check("cmd_enter_not_map_action", idle_before and acts[0] == 0 and not map.busy, [idle_before, acts[0], map.busy])
+		# macOS ⌘Enter 与 Windows Alt+Enter 两种写法都按一遍（WindowFit.fullscreen_uses_meta 切平台写法，不看测试机平台）。
+		var platform_meta := WindowFit.fullscreen_uses_meta
+		for use_meta in [true, false]:
+			WindowFit.fullscreen_uses_meta = use_meta
+			var mod_key := WindowFit.fullscreen_modifier_key()
+			var acts := [0]
+			var count := func(): acts[0] += 1
+			map.player.action_pressed.connect(count)
+			var mod_down := _key(mod_key, use_meta)
+			mod_down.alt_pressed = not use_meta
+			var enter_down := _key(KEY_ENTER, use_meta)
+			enter_down.alt_pressed = not use_meta
+			Input.parse_input_event(mod_down)
+			Input.parse_input_event(enter_down)
+			# 按住若干物理帧再松开：同一物理帧内按下又松开时 is_action_just_pressed 仍为真而修饰键已松开，会误判（测试时序问题，非真人操作）
+			for i in range(3):
+				await get_tree().physics_frame
+				# 快时钟可在一个process帧里跑多次物理帧；组合键必须跨真实输入刷新周期。
+				await get_tree().process_frame
+			var enter_up := _key(KEY_ENTER, use_meta, false)
+			enter_up.alt_pressed = not use_meta
+			Input.parse_input_event(enter_up)
+			Input.parse_input_event(_key(mod_key, false, false))
+			await _frames(2)
+			map.player.action_pressed.disconnect(count)
+			get_window().mode = Window.MODE_WINDOWED
+			_check("cmd_enter_not_map_action" if use_meta else "alt_enter_not_map_action", idle_before and acts[0] == 0 and not map.busy, [idle_before, acts[0], map.busy])
+		WindowFit.fullscreen_uses_meta = platform_meta
 	await _frames(10)
 	await _shot("03_方桌大厅.png")
 	# 玩家走几步（真实移动与碰撞）
