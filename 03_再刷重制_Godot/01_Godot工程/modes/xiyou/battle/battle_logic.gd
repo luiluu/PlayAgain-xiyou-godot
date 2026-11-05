@@ -79,6 +79,29 @@ var level_roll := -1.0
 ##（如普通伤害 380 弹成 70），true 时普通伤害照实显示；附加的 atk/mat 两次弹字不变。
 const ESTABLISH_TRUE_POPUP := true
 
+## krz 状态缓存时序（raven4，审查 43 P3-1／P3-2，参照 raven_reflect_probe 的 refseq.*／refnest.*）：受伤充 TP 在加状态前 refresh 时，
+## 新状态的特性要到这名角色下一次 refresh 才进缓存（stale_state_ids，见 raven.gd on_tp_refresh）。true：只在原版真会 refresh 的点清——
+## 出手者 useItem 付费后的 refresh、收尾 immortal: targets, false 的 removeImmortal（只刷目标，反射回自己的出手者不在内）、
+## 受伤 setHp／setMp（值变了）、回合末；嵌套 apply 同一角色时，进内层前先按外层的标记把外层已加的状态定下来（内层命中扣血再刷掉）。
+## false 回到 raven3：每次行动开头清全体，嵌套不处理。
+static var STALE_TIMING := true
+var _stale_frames: Array = []  # 进行中的 apply（同一角色可嵌套）：{"t": 角色, "before": 进 apply 时的状态}
+
+
+## 原版对这名角色 refresh 了一次（need_refresh 此时总为真：陈旧状态加上后 krz addState 已置位）：陈旧状态的特性进缓存
+static func stale_refreshed(b) -> void:
+	if STALE_TIMING and b is XActor and not b.stale_state_ids.is_empty():
+		b.stale_state_ids.clear()
+
+
+static func _mark_stale(t: XActor, before: Array) -> bool:
+	var marked := false
+	for sid in t.state_ids:
+		if not before.has(sid) and not t.stale_state_ids.has(sid):
+			t.stale_state_ids.append(sid)  # 伤害充 TP 已在加状态前 refresh：新状态的特性要到下一次 refresh 才进缓存
+			marked = true
+	return marked
+
 ## 敌群事件（Game_Troop._eventFlags）：页序号 → 已执行（span 0 战斗、1 回合各一次；1 在回合开始时清除）
 var _event_flags := {}
 ## 强制行动清掉的首位行动者（OTB startTurn 先取出首位并 makeActions，事件里 forceAction 的 clearActions 把它清空）
@@ -983,9 +1006,10 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
-	for a in actors:
-		if a is XActor:
-			a.stale_state_ids.clear()  # 上一个行动之后的 refresh 已重建特性缓存
+	if not STALE_TIMING:
+		for a in actors:
+			if a is XActor:
+				a.stale_state_ids.clear()  # raven3：上一个行动之后的 refresh 已重建特性缓存
 	var before := _movable_snapshot()
 	if is_won() or is_lost() or u.is_dead():
 		return logs
@@ -1010,6 +1034,7 @@ func act(u: XBattler, skill, target) -> Array:
 		_take_state_reserves()
 		# 防御技能在原版也对自己 Game_Action.apply 一次：initiate／select／deselect／conclude 四段都跑（无伤害段）
 		u.param_refresh()  # native useItem refresh precedes guard apply
+		stale_refreshed(u)
 		var gctx := {"attacker": u, "defender": u, "item": skill}
 		XStateEffects.run("initiate", u, gctx)
 		XStateEffects.run("select", u, gctx)
@@ -1776,6 +1801,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		u.param_refresh()
 	else:
 		u.refresh_resources()
+		stale_refreshed(u)  # YEP useItem 的 refresh：出手者自己的陈旧状态进缓存（被挡的 useItem 原版直接返回、不 refresh）
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	logs.append_array(XCat.start_action(u, skill))  # 小猫试炼 startAction 包装：巨龙蓄息时日志加一行
 	if blocked:
@@ -1818,6 +1844,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 默认收尾序列 immortal: targets, false → removeImmortal 逐个 refresh
 	for t in targets:
 		t.param_refresh()
+		stale_refreshed(t)
 	return logs
 
 
@@ -2095,8 +2122,24 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var hp_before := t.hp
 	var live := t is XEnemy and t.is_alive()
 	var states_before: Array = t.state_ids.duplicate() if t is XActor else []
+	var frame := {}
 	if t is XActor:
-		t.rv_tp_refreshed = false  # 本次 apply 的受伤充 TP 是否已 refresh（krz 状态缓存时序，见 raven.gd on_tp_refresh）
+		var outer := {}
+		if STALE_TIMING:
+			for f in _stale_frames:
+				if is_same(f.t, t):
+					outer = f
+		if outer.is_empty():
+			t.rv_tp_refreshed = false  # 本次 apply 的受伤充 TP 是否已 refresh（krz 状态缓存时序，见 raven.gd on_tp_refresh）
+		else:
+			# 嵌套（璇回光内置棱光那种 applyItemUserEffect 里再 apply）：外层已加的状态此刻按外层的标记定下来，
+			# 陈旧的话 krz addState 已置 need_refresh，内层命中扣血就会刷掉；外层收尾只再看内层之后新加的
+			if t.rv_tp_refreshed and _mark_stale(t, outer.before):
+				t.rv_tp_refreshed = false
+			outer.before = states_before
+		if STALE_TIMING:
+			frame = {"t": t, "before": states_before}
+			_stale_frames.append(frame)
 	var blocked := [false]
 	var r: Dictionary = XGuyu.apply(self, u, skill, t, func() -> Dictionary:
 		# 心钢 Game_Action.apply 包装（在谷雨之内，谷雨已置行动执行标记）：巨人吞噬没放成或已结算过，整次不生效（审查第 29 期 P3-2）
@@ -2104,14 +2147,15 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 			blocked[0] = true
 			return XBinding.unused_result(u, skill, t)
 		return _apply_core(u, skill, t))  # 谷雨 Game_Action.apply 包装：治疗来源、花期／终结生效（没生效整次不结算）、行动执行标记
+	if not frame.is_empty():
+		_stale_frames.erase(frame)
+		states_before = frame.before
 	if blocked[0]:
 		return r  # 心钢拦下：里层的奈叶、心钢记账都不跑
 	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
 	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
 	if t is XActor and t.rv_tp_refreshed:
-		for sid in t.state_ids:
-			if not states_before.has(sid) and not t.stale_state_ids.has(sid):
-				t.stale_state_ids.append(sid)  # 伤害充 TP 已在加状态前 refresh：新状态的特性要到下一次 refresh 才进缓存
+		_mark_stale(t, states_before)
 	return r
 
 
@@ -2381,7 +2425,10 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if drain:
 		value = minf(value, t.hp)
 	# 种族蛮骨（YEP setHp 里的 CodexRaces.limitHp）只限扣血量；受伤充 TP 仍按原值（onDamage(value)）
+	var hp_was: float = t.hp
 	_action_resources.gain(t, "hp", -XRaceBattle.limit_loss(self, t, value))
+	if t.hp != hp_was:
+		stale_refreshed(t)  # setHp 值变了就 refresh：之前陈旧的状态从这一击之后生效（本击伤害已算完）
 	if value > 0.0:
 		var tp_before: float = t.tp
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
@@ -2408,7 +2455,10 @@ func _execute_mp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 		value = XImportedBalance.reduced(value, u)
 	if value >= 0.0:
 		value = minf(t.mp, value)
+	var mp_was: float = t.mp
 	_action_resources.gain(t, "mp", -value)
+	if t.mp != mp_was:
+		stale_refreshed(t)  # setMp 同 setHp
 	if drain:
 		_action_resources.gain(u, "mp", value)
 	return value
