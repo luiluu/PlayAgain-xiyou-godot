@@ -1,7 +1,7 @@
 # 交付：cc/platform-android2
 
 - 车道／工作者：跨平台（工程＋界面＋工具）／BH（cc，第九批 BH，接 BA 线程）
-- 状态：进行中
+- 状态：进行中（BI 接入中）
 
 ## 变更记录草稿
 
@@ -25,7 +25,7 @@
 ## 交接板
 
 - 下一步：安卓真机验收（装验收包、触屏按键、两指取消、返回键、切后台补跑、横屏、帧率）；三期：按键大小／透明度／位置、设置页触屏选项、存档导出导入、刘海安全区、原生前台服务（真后台挂机，要 Gradle 构建）。
-- 用户试玩说明：Mac 上没有变化。安卓验收包在 `04_验证/本地结果/导出冒烟/20261105_163345_android/再刷重制_验收.apk`（调试签名，和原版包名不同，可以并排装），`adb install` 或拷到手机装。
+- 用户试玩说明：Mac 上没有变化。安卓验收包在 `04_验证/本地结果/导出冒烟/20261105_175905_android/再刷重制_验收.apk`（桌面名「再刷一把：天启篇（验收）」）（调试签名，和原版包名不同，可以并排装），`adb install` 或拷到手机装。
 - 需要用户决定：安卓真后台挂机（通知栏常驻）要不要做原生插件；发行签名用的 keystore 由 Kyo 自己建和保管。
 
 ## 进度账
@@ -39,7 +39,11 @@
 
 ## 验证
 
-- （待写）
+- 专项（`并行测试.py`）：xiyou_platform（新，29/29）、ui_smoke、xiyou_flow、xiyou_panels、xiyou_mac_export、xiyou_map、xiyou_map_hotkeys、xiyou_options_basic、xiyou_event_compare、xiyou_determinism、xiyou_airship_fly、xiyou_dungeon、xiyou_hangup、xiyou_hangup_auto 全过。xiyou_platform 第一轮挂了 8 项，是测试注入触摸没按无头窗口（64×64）换算坐标，改测试后通过；按键代码没改。
+- 没跑：`选测.py` 因 `project.godot` 改了版本号以外的两行判成「整轮」，`map_scene.gd` 一行列了 107 个场景；车道不跑全量，`map_scene` 那一行只是设一个静态回调（不改地图逻辑），地图、挂机、确定性专项已跑。请总装合并时按影响面补跑或并进当天全量。
+- `工具回归.py` 全过；`语法检查.py` 0 问题；`测试导出冒烟.py`（10 例）、`测试导出过滤.py` 通过。
+- 安卓导出冒烟：签名（apksigner，调试证书）与包结构（arm64-v8a、横屏 userLandscape、WAKE_LOCK）通过，包内 xiyou_mac_export 12/12、xiyou_flow 49/49（报告 `04_验证/本地结果/导出冒烟/20261105_175905_android/`，验收包留在同目录）。
+- 测试期间总装在合并别的车道、BF 在跑探针同步，等槽约一小时；本分支没碰切片、转换器、探针。
 
 ## 待交叉核查
 
