@@ -269,8 +269,19 @@ func _make_enemy_gauge(e: XEnemy) -> void:
 	c.clip_contents = false
 	c.z_index = 5
 	field.add_child(c)
-	gauges[e] = {"box": c, "timer": 0.0, "name_timer": 3.0, "cur": e.hp, "disp": e.hp, "drop": 0.0}
+	gauges[e] = {"box": c, "timer": 0.0, "name_timer": 3.0, "cur": e.hp, "disp": e.hp, "drop": 0.0, "icons": {}, "name_alpha": 255.0}
 	c.painter = func(canvas): _paint_enemy(canvas, e)
+
+
+## Window_WeaknessDisplay.updateOpacity（ui12）：隐藏或死了每帧 −16；选中或还在 Weakness Hide Duration（180 帧＝name_timer 3 秒）内直接 255；
+## 否则每帧 −16 淡出（原来重制是到点直接消失）。名字与名字旁的状态图标共用这个不透明度。NAME_FADE = false 回到直接消失。
+static var NAME_FADE := true
+
+
+static func name_alpha_step(a: float, gone: bool, showing: bool, frames: float) -> float:
+	if not gone and showing:
+		return 255.0
+	return maxf(0.0, a - 16.0 * frames)
 
 
 ## Olivia WeaknessDisplay 名字与 YEP VisualHpGauge 是两个独立窗口。
@@ -279,9 +290,11 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var g: Dictionary = gauges[e]
 	var v := view(e)
 	var rate: float = v.hp / maxf(v.mhp, 1.0)
-	if not v.dead and (g.name_timer > 0.0 or e == _hover):
+	var name_alpha: float = g.name_alpha / 255.0 if NAME_FADE else (1.0 if not v.dead and (g.name_timer > 0.0 or e == _hover) else 0.0)
+	if name_alpha > 0.0:
 		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
-		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36)
+		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
+		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
 	if not e.hp_gauge_visible():  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
 		return
 	if g.timer <= 0.0 and g.disp == g.cur and not (_target_mode == "enemy" and e == _hover):
@@ -563,6 +576,8 @@ func _process(delta: float) -> void:
 		g.box.position = sprites[e].position + Vector2(-320, -27)
 		g.timer = maxf(0, g.timer - delta)
 		g.name_timer = maxf(0, g.name_timer - delta)
+		XEnemyStateIcon.tick(g.icons, e, delta * 60.0)  # Sprite_StateIcon 每帧计数（按 60 帧／秒折算）
+		g.name_alpha = name_alpha_step(g.name_alpha, bool(view(e).dead) or e.hidden, g.name_timer > 0.0 or e == _hover, delta * 60.0)
 		g.box.queue_redraw()
 
 
