@@ -1,7 +1,7 @@
 # 交付：cc/rules-portrait1
 
 - 车道／工作者：C 规则／rules 线程（cc，派单第七批 AR2）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -49,7 +49,12 @@
 
 ## 验证
 
-- （跑完补）
+- 语法检查通过；`工具回归.py` 7 项全过；`内容覆盖检查.py` 无变化。
+- 新专项 `xiyou_portrait1` 15/15：云裳进阶页缩放、奔跑姿势（玩家、跟随、保持 3 帧）、状态写死战斗图 71 处全导出、换装卡 58 张、切片角色三类图都在、图名偏移。
+- 本机选测 19 个全部通过（361 秒，`--skip-generated-check`，差异是本分支多导出的 23 张图）：xiyou_actor_advanced、xiyou_actor_book、xiyou_actor_book_review、xiyou_airship_view、xiyou_appearance、xiyou_floor_run、xiyou_flow、xiyou_map_balloon、xiyou_map_hotkeys、xiyou_portrait1、xiyou_event_compare、xiyou_costumes、xiyou_costume_battle、xiyou_change_clothes、xiyou_determinism、xiyou_state_effects、xiyou_yunshang_ui、xiyou_floor16_dungeon、xiyou_status_power_panel。
+- 截图（窗口模式 `xiyou_actor_book -- --out=`）看过 167、168、171、173～178 的图鉴立绘，大小与脚底位置正常。
+- 合了 main（e6a706b1，含 fix6 收尾、equip1、mac1）。新提交没碰转换器和本车道的文件，没重跑。
+- 没跑的：`选测.py main --list` 共 140 个场景，主要是转换器改动带出来的 xiyou_rules* 段和楼层专项，请合并时 `--affected`。转换器只多导出图片，不改数据库和事件。没开云端。
 
 ## 待交叉核查
 
@@ -57,3 +62,4 @@
 
 ## 本分支提交
 
+- 53397036、6f698dea、aaee2655、477e0a7c、f1587678、bb7b42b3、d0b76b8c（WIP 各步），本提交收尾
