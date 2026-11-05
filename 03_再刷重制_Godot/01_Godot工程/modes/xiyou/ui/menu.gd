@@ -279,6 +279,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if before != [_cmd_index, _actor_index]:
 			XSound.system(0)
 		_refresh()
+	elif _mode == "command" and page_dir(event) != 0:
+		# Window_MenuCommand 不接管 pageup／pagedown：走通用翻页（队伍窗只 5 行，选人时不翻）
+		get_viewport().set_input_as_handled()
+		var before := _cmd_index
+		var r := page(_cmd_top, _cmd_index, COMMANDS.size(), CMD_VISIBLE, page_dir(event))
+		_cmd_top = r[0]
+		_cmd_index = r[1]
+		if before != _cmd_index:
+			XSound.system(0)
+		_refresh()
 
 
 static func _move(i: int, d: int, n: int, wrap: bool) -> int:
@@ -296,6 +306,67 @@ static func _scroll_to(i: int, top: int, visible: int) -> int:
 	if i >= top + visible:
 		return i - visible + 1
 	return top
+
+
+# ---- 列表滚轮、翻页（公共处理，ui9）----
+## 回退开关：false 回到 ui9 前（各列表不认 PageUp／PageDown／Q／W 翻页，商店、技能、宠物页不接滚轮）
+static var LIST_PAGING := true
+
+
+## Window_Selectable.processCursorMove 的翻页键：PageDown／E 返回 1，PageUp／Q 返回 -1，其余 0。
+## 原版 isTriggered（不连发）。键位照正式版运行时的 Input.keyMapper（YEP_ButtonCommonEvents 改写：Q＝pageup、E＝pagedown、
+## W＝up；generated/oracle/party.json 的 keys），不是 MK_Sanfu_KeyConfig 参数表里的 Q／W。
+static func page_dir(event: InputEvent) -> int:
+	if not LIST_PAGING or event == null:
+		return 0
+	if event.is_action_pressed("ui_page_down"):
+		return 1
+	if event.is_action_pressed("ui_page_up"):
+		return -1
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+		if k == KEY_E:
+			return 1
+		if k == KEY_Q:
+			return -1
+	return 0
+
+
+## 鼠标滚轮：下 1、上 -1、其余 0（Window_Selectable.processWheel 的方向）
+static func wheel_dir(event: InputEvent) -> int:
+	if not LIST_PAGING or not (event is InputEventMouseButton) or not event.pressed:
+		return 0
+	if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		return 1
+	if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+		return -1
+	return 0
+
+
+## Window_Selectable.scrollDown／scrollUp：只滚窗口（topRow ± 1，夹在 0～maxTopRow），光标不动。
+## total 是总项数，visible 是可见行数，cols 是列数。
+static func wheel(top: int, total: int, visible: int, d: int, cols := 1) -> int:
+	var rows := ceili(total / float(maxi(1, cols)))
+	return clampi(top + d, 0, maxi(0, rows - visible))
+
+
+## Window_Selectable.cursorPagedown／cursorPageup：返回 [top, index]。
+## 下：topRow + 页行数 < 总行数 时，topRow ＋ 页行数（夹到 maxTopRow），index ＋ 页项数（封顶末项）；
+## 上：topRow > 0 时对称；最后一页再按下、第一页再按上不动（不回绕）。select 再 ensureCursorVisible。
+static func page(top: int, index: int, total: int, visible: int, d: int, cols := 1) -> Array:
+	cols = maxi(1, cols)
+	if total <= 0:
+		return [top, index]
+	var rows := ceili(total / float(cols))
+	var max_top := maxi(0, rows - visible)
+	if d > 0 and top + visible < rows:
+		top = mini(top + visible, max_top)
+		index = mini(index + visible * cols, total - 1)
+	elif d < 0 and top > 0:
+		top = maxi(top - visible, 0)
+		index = maxi(index - visible * cols, 0)
+	top = _scroll_to(floori(index / float(cols)), top, visible)
+	return [top, index]
 
 
 func _ok() -> void:
