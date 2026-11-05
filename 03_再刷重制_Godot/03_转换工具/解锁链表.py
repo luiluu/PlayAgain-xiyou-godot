@@ -97,6 +97,7 @@ def scan_list(lst, N):
     calls = []
     wrote_v, wrote_s = set(), set()  # 本表前面改过的变量／开关（条件分歧读它们时预设无效）
     known_v = {}  # 本表前面代入了常量的变量
+    rand_v = {}  # 本表前面代入了随机数（122 操作数「随机」）的变量 -> (下限, 上限)：可用固定随机数解（accept4）
     for cmd in lst:
         code, ind, p = cmd['code'], cmd['indent'], cmd['parameters']
         while stack and stack[-1][0] >= ind:
@@ -106,12 +107,13 @@ def scan_list(lst, N):
             if p[0] == 1 and p[2] == 0 and p[1] in known_v:
                 kv, k = known_v[p[1]], p[3]
                 p = [99, [kv == k, kv >= k, kv <= k, kv > k, kv < k, kv != k][p[4]]]  # 静态：真／假
-            dirty = (p[0] == 1 and (p[1] in wrote_v or (p[2] == 1 and p[3] in wrote_v))) or (p[0] == 0 and p[1] in wrote_s)
-            last_branch[ind] = (txt, p, dirty)
-            stack.append((ind, txt, {'k': 'branch', 'p': p, 'neg': False, 'dirty': dirty}))
+            dirty = (p[0] == 1 and (p[1] in wrote_v or (p[2] == 1 and (p[3] in wrote_v or p[3] in rand_v)))) or (p[0] == 0 and p[1] in wrote_s)
+            rnd = rand_v.get(p[1]) if p[0] == 1 and p[2] == 0 and not dirty else None
+            last_branch[ind] = (txt, p, dirty, rnd)
+            stack.append((ind, txt, {'k': 'branch', 'p': p, 'neg': False, 'dirty': dirty, 'rand': rnd}))
         elif code == 411:
-            t, bp, dirty = last_branch.get(ind, ('?', None, False))
-            stack.append((ind, '否：' + t, {'k': 'branch', 'p': bp, 'neg': True, 'dirty': dirty}))
+            t, bp, dirty, rnd = last_branch.get(ind, ('?', None, False, None))
+            stack.append((ind, '否：' + t, {'k': 'branch', 'p': bp, 'neg': True, 'dirty': dirty, 'rand': rnd}))
         elif code == 102:
             choices[ind] = p[0]
         elif code == 402:
@@ -125,8 +127,14 @@ def scan_list(lst, N):
                 if p[2] == 0 and p[3] == 0:
                     known_v[v] = p[4]  # 代入常量：分歧可静态判定
                     wrote_v.discard(v)
+                    rand_v.pop(v, None)
+                elif p[2] == 0 and p[3] == 2 and v not in rand_v:
+                    known_v.pop(v, None)
+                    wrote_v.discard(v)
+                    rand_v[v] = (p[4], p[5])
                 else:
                     known_v.pop(v, None)
+                    rand_v.pop(v, None)
                     wrote_v.add(v)
         elif code == 121:
             wrote_s.update(range(p[0], p[1] + 1))
@@ -147,9 +155,21 @@ INV = {0: 5, 1: 4, 2: 3, 3: 2, 4: 1, 5: 0}  # 取反后的比较
 
 
 def solve(r):
-    """把页条件＋分歧链解成一份开局状态；解不出返回 None。"""
+    """把页条件＋分歧链解成一份开局状态；解不出返回 None（原因见 solve_reason）。"""
+    return solve_reason(r)[0]
+
+
+def _cmp(cur, op, k):
+    return [cur == k, cur >= k, cur <= k, cur > k, cur < k, cur != k][op]
+
+
+def solve_reason(r):
+    """返回 (开局状态, None) 或 (None, 解不出的原因)。
+    accept4：分歧读的变量在本事件前面被「随机」赋值（122 操作数随机）时，挑一个固定随机数 random（0～1）
+    让 lo + floor((hi−lo+1)·random) 落在要的分支上；测试把 MVInterpreter.fixed_random 设成它（同参照固定 Math.random）。"""
     rec = {'switches': {}, 'vars': {}, 'items': {}, 'self': {}, 'actors': [], 'gold': 0, 'answers': []}
     c = r['page_raw']
+    rand = []  # (lo, hi, op, k)
 
     def setv(k, d, v):
         if k in d and d[k] != v:
@@ -158,9 +178,9 @@ def solve(r):
         return True
 
     if c.get('switch1Valid') and not setv(str(c['switch1Id']), rec['switches'], True):
-        return None
+        return None, '页条件两个开关矛盾'
     if c.get('switch2Valid') and not setv(str(c['switch2Id']), rec['switches'], True):
-        return None
+        return None, '页条件两个开关矛盾'
     if c.get('variableValid'):
         rec['vars'][str(c['variableId'])] = c['variableValue']
     if c.get('selfSwitchValid'):
@@ -172,52 +192,71 @@ def solve(r):
     for b in r['raw']:
         if b['k'] == 'choice':
             if b['i'] < 0:
-                return None
+                return None, '在「取消」分支里（自动应答不按取消）'
             rec['answers'].append(b['i'])
             continue
         p, neg = b['p'], b['neg']
-        if p is None or b.get('dirty'):
-            return None
+        if p is None:
+            return None, '「否」分支找不到对应的条件分歧'
+        if b.get('dirty'):
+            return None, '分歧读的开关／变量在本事件前面被改过（非常量、非随机）'
         t = p[0]
         if t == 0:
             if not setv(str(p[1]), rec['switches'], (p[2] == 0) != neg):
-                return None
+                return None, '同一开关要求开又要求关'
         elif t == 2:
             if not setv(p[1], rec['self'], (p[2] == 0) != neg):
-                return None
+                return None, '同一独立开关要求开又要求关'
         elif t == 1:
             if p[2] != 0:
-                return None
+                return None, '变量和变量比较'
             op = INV[p[4]] if neg else p[4]
             k = p[3]
+            if b.get('rand'):
+                rand.append((b['rand'][0], b['rand'][1], op, k))
+                continue
             want = {0: k, 1: k, 2: k, 3: k + 1, 4: k - 1, 5: k + 1}[op]
             cur = rec['vars'].get(str(p[1]))
             if cur is not None:
-                okv = [cur == k, cur >= k, cur <= k, cur > k, cur < k, cur != k][op]
-                if not okv:
+                if not _cmp(cur, op, k):
                     if c.get('variableValid') and str(c['variableId']) == str(p[1]) and want >= c['variableValue']:
                         rec['vars'][str(p[1])] = want
                     else:
-                        return None
+                        return None, '同一变量的条件互相矛盾'
             else:
                 rec['vars'][str(p[1])] = want
         elif t == 7:
             if neg or p[2] != 0:
-                return None
+                return None, '金钱少于某数的分支'
             rec['gold'] = max(rec['gold'], p[1])
         elif t == 8:
             if neg:
                 if str(p[1]) in rec['items']:
-                    return None
+                    return None, '同一物品要求有又要求没有'
                 rec['items'][str(p[1])] = 0
             else:
                 rec['items'][str(p[1])] = max(1, rec['items'].get(str(p[1]), 0))
+        elif t == 6 and p[1] == -1 and not neg:
+            # 玩家朝向（accept4）：开局让玩家面朝这个方向
+            if rec.get('dir', p[2]) != p[2]:
+                return None, '玩家朝向要求互相矛盾'
+            rec['dir'] = p[2]
         elif t == 99:
             if p[1] == neg:
-                return None
+                return None, '前面代入的常量让这条分歧静态不成立（原版走不到）'
         else:
-            return None
-    return rec
+            return None, {4: '角色条件（技能／装备／状态等）', 6: '角色朝向', 11: '按键', 12: '脚本条件', 9: '持有武器', 10: '持有防具',
+                          3: '计时器', 5: '敌人条件', 13: '乘坐交通工具'}.get(t, '分歧类型 %d' % t) + '，工具不解'
+    if rand:
+        cands = sorted({(v - lo + 0.5) / (hi - lo + 1) for lo, hi, _o, _k in rand for v in range(lo, hi + 1)} if
+                       all(hi - lo < 1000 for lo, hi, _o, _k in rand) else set())
+        for x in cands:
+            if all(_cmp(lo + int((hi - lo + 1) * x), op, k) for lo, hi, op, k in rand):
+                rec['random'] = round(x, 6)
+                break
+        else:
+            return None, '随机分支在同一个固定随机数下互相矛盾'
+    return rec, None
 
 
 def test_index():
@@ -234,6 +273,24 @@ def test_index():
         starts |= {consts[k] for k in re.findall(r'(?:_start|_goto)\(\s*(\w+)\s*,', txt) if k in consts}
         if waits or starts:
             idx[f.stem] = (starts | waits, waits)
+    return idx
+
+
+def compare_index():
+    """事件对照（xiyou_event_compare：events.json＋event_states.json 的有状态变体）里每个用例的场所移动：
+    来源 → {(目标图, x, y)}。登记了不一致（event_compare_baseline.json mismatch）的用例不算（accept4）。"""
+    known = load(TESTS / 'event_compare_baseline.json').get('mismatch', {}) if (TESTS / 'event_compare_baseline.json').exists() else {}
+    idx = defaultdict(set)
+    for name in ('events.json', 'event_states.json'):
+        f = GEN / 'oracle' / name
+        if not f.exists():
+            continue
+        for c in load(f).get('cases', []):
+            if c['id'] in known:
+                continue
+            for t in c.get('trace', []):
+                if t.get('t') == 'transfer':
+                    idx[c['id'].split('#')[0]].add((t['map'], t['x'], t['y']))
     return idx
 
 
@@ -281,13 +338,15 @@ def main():
         if r['src'].startswith('ce'):
             r['callers'] = ce_calls.get(int(r['src'][2:]), [])[:8]
     tidx = test_index()
+    in_slice = set(load(HERE / 'xiyou_slice.json')['maps'])
     chain = TESTS / 'fixtures/unlock_chain_cases.json'
-    chain_ids = {c['id'] for c in load(chain)['cases']} if chain.exists() else set()
+    chain_ids = {(c['id'], c['dest'], tuple(c['xy'])) for c in load(chain)['cases']} if chain.exists() else set()
+    cidx = compare_index()
 
     def covered(r):
         if r['dest'] is None:
             return []
-        if r['src'] in chain_ids:
+        if (r['src'], r['dest'], tuple(r['xy'])) in chain_ids:
             return ['xiyou_unlock_chain']
         srcs = {r['src_map']} if r['src_map'] else {int(re.match(r'm(\d+)', c).group(1)) for c in r.get('callers', []) if c.startswith('m')}
         return sorted(t for t, (mentions, waits) in tidx.items() if r['dest'] in waits and (srcs & mentions or not srcs))
@@ -295,19 +354,30 @@ def main():
     for r in rows:
         r['tests'] = covered(r)
         r['gated'] = bool(r['page_conds'] or r['branch'])
+        r['compare'] = r['dest'] is not None and (r['dest'], r['xy'][0], r['xy'][1]) in cidx.get(r['src'], set())
+        r['why'] = None
+        if r['dest'] is not None and not r['tests'] and not r['compare']:
+            if not r['src_map']:
+                r['why'] = '公共事件里的移动，事件对照没走到这一跳（调用者见来源）'
+            elif r['src_map'] not in in_slice:
+                r['why'] = '来源图不在切片'
+            elif 'raw' in r:
+                r['why'] = solve_reason(r)[1]
     # 汇总到「来源图 → 目标图」
     pairs = defaultdict(list)
     for r in rows:
         key = (r['src_map'] if r['src_map'] else r['src'], r['dest'])
         pairs[key].append(r)
     gated = [r for r in rows if r['gated'] and r['dest'] is not None]
-    gaps = [r for r in gated if not r['tests']]
-    in_slice = set(load(HERE / 'xiyou_slice.json')['maps'])
+    gaps = [r for r in gated if not r['tests'] and not r['compare']]
+    nowalk = [r for r in gated if not r['tests']]
     lines = ['# 传送／解锁链表（自动生成，`03_转换工具/解锁链表.py`）', '',
-             '场所移动共 %d 处（地图事件页 %d、公共事件 %d），来源→目标对 %d；带条件的 %d 处，其中 %d 处没有地图场景专项真走过（`_wait_map(目标)` 且点名来源图）。' % (
-                 len(rows), sum(1 for r in rows if r['src_map']), sum(1 for r in rows if not r['src_map']), len(pairs), len(gated), len(gaps)), '',
+             '场所移动共 %d 处（地图事件页 %d、公共事件 %d），来源→目标对 %d；带条件的 %d 处，其中 %d 处没有地图场景专项真走过（`_wait_map(目标)` 且点名来源图）；'
+             '这些里 %d 处事件对照（`xiyou_event_compare`，参照逐条）走到了同一跳，剩 %d 处两边都没有，「专项」列写了原因（accept4）。' % (
+                 len(rows), sum(1 for r in rows if r['src_map']), sum(1 for r in rows if not r['src_map']), len(pairs), len(gated), len(nowalk),
+                 len(nowalk) - len(gaps), len(gaps)), '',
              '「重制在哪实现」：全部由地图事件解释器按原版页条件／条件分歧执行（`modes/xiyou/map`），逐页结果有 `xiyou_event_compare` 对照；本表的「测试」列只认真在地图场景里走过这一跳的专项。', '',
-             '## 按目标图汇总', '', '| 目标图 | 名称 | 入口数 | 带条件 | 有专项真走 | 专项 |', '| ---: | --- | ---: | ---: | ---: | --- |']
+             '## 按目标图汇总', '', '| 目标图 | 名称 | 入口数 | 带条件 | 有专项真走 | 事件对照走到 | 专项 |', '| ---: | --- | ---: | ---: | ---: | ---: | --- |']
     by_dest = defaultdict(list)
     for r in rows:
         if r['dest'] is not None:
@@ -315,8 +385,14 @@ def main():
     for d in sorted(by_dest):
         rs = by_dest[d]
         ts = sorted({t for r in rs for t in r['tests']})
-        lines.append('| %d | %s%s | %d | %d | %d | %s |' % (d, N.maps.get(d, ''), '' if d in in_slice else '（不在切片）', len(rs), sum(r['gated'] for r in rs),
-                                                         sum(1 for r in rs if r['tests']), '、'.join(ts[:3]) + ('…' if len(ts) > 3 else '') or '无'))
+        lines.append('| %d | %s%s | %d | %d | %d | %d | %s |' % (d, N.maps.get(d, ''), '' if d in in_slice else '（不在切片）', len(rs), sum(r['gated'] for r in rs),
+                                                         sum(1 for r in rs if r['tests']), sum(1 for r in rs if r['compare']),
+                                                         '、'.join(ts[:3]) + ('…' if len(ts) > 3 else '') or '无'))
+    why = defaultdict(int)
+    for r in gaps:
+        why[r['why'] or '可解，但不在本专项（重跑 --cases 会补上）'] += 1
+    lines += ['', '## 没有专项也没有事件对照的原因', '', '| 原因 | 处数 |', '| --- | ---: |']
+    lines += ['| %s | %d |' % (k, v) for k, v in sorted(why.items(), key=lambda kv: -kv[1])]
     lines += ['', '## 逐条（%s）' % ('只列带条件且无专项的' if a.gaps_only else '带条件的'), '',
               '| 来源 | 事件 | 触发 | → 目标 (x,y) | 原版条件（页条件；分歧链） | 专项 |', '| --- | --- | --- | --- | --- | --- |']
     for r in (gaps if a.gaps_only else gated):
@@ -324,7 +400,7 @@ def main():
         cond = '；'.join(r['page_conds']) + ('｜' if r['page_conds'] and r['branch'] else '') + ' → '.join(r['branch'])
         src = r['src'] + ('（调用者 %s）' % '、'.join(r['callers'][:3]) if r.get('callers') else '')
         lines.append('| %s | %s | %s | %s | %s | %s |' % (src, str(r['ev_name']).replace('|', '／'), r['trigger'], dest, cond.replace('|', '／') or '—',
-                                                    '、'.join(r['tests'][:2]) or '**无**'))
+                                                    '、'.join(r['tests'][:2]) or ('事件对照' if r['compare'] else '**无**：%s' % r['why'])))
     if a.cases:
         skip = set(x for x in a.skip.split(',') if x)
         out = []
@@ -346,9 +422,22 @@ def main():
             _, _, _, r, rec = cand[0]
             out.append(dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=d, xy=r['xy'],
                             cond='；'.join(r['page_conds'] + r['branch']), **rec))
+        # accept4：再给每条「带条件、没被别的专项真走过、事件对照也没走到」且解得出的入口各一例（同图移动也算：断言玩家落到目标坐标）
+        have = {(c['id'], c['dest'], tuple(c['xy'])) for c in out}
+        for r in gated:
+            if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['compare'] or r['kind'] == '移动（变量指定）':
+                continue
+            if any(t != 'xiyou_unlock_chain' for t in r['tests']) or (r['src'], r['dest'], tuple(r['xy'])) in have:
+                continue
+            rec = solve(r)
+            if rec is None:
+                continue
+            have.add((r['src'], r['dest'], tuple(r['xy'])))
+            out.append(dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'], xy=r['xy'],
+                            cond='；'.join(r['page_conds'] + r['branch']), **rec))
         Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改；跳过的入口写在 skip', 'skip': sorted(skip), 'cases': out},
                                             ensure_ascii=False, indent=1) + '\n')
-        print('用例 %d（目标图未被专项真走到且可解）' % len(out))
+        print('用例 %d（目标图未被专项真走到、或入口两边都没覆盖，且可解）' % len(out))
     md = '\n'.join(lines) + '\n'
     if a.md:
         Path(a.md).write_text(md)

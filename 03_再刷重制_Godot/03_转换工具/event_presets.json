@@ -9959,6 +9959,686 @@
      }
     }
    }
+  },
+  {
+   "base": "ce1347",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1348",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1349",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1351",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1352",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1353",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1357",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1358",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1359",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1361",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1362",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1363",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1367",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1368",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1369",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1510",
+   "tag": "c2",
+   "preset": {
+    "actors": {
+     "90": {
+      "skills": [
+       2807,
+       2808,
+       2809,
+       2810,
+       2811,
+       2812,
+       2813,
+       3224,
+       3225,
+       3226,
+       3227,
+       3228,
+       3229,
+       3230,
+       3231,
+       3232,
+       3233,
+       3234,
+       3235,
+       3236,
+       4701,
+       4702,
+       4703,
+       4704,
+       4705,
+       4706,
+       4707
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce505",
+   "tag": "c2",
+   "preset": {
+    "actors": {
+     "6": {
+      "skills": [
+       2767
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e15p3",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p3",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m105e3p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "744": 1,
+     "745": 1,
+     "746": 1,
+     "747": 1
+    }
+   }
+  },
+  {
+   "base": "m115e4p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "201": 88
+    }
+   }
+  },
+  {
+   "base": "m192e4p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m192e5p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m24e20p0",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "738": 1
+    },
+    "armors": {
+     "649": 1,
+     "651": 1,
+     "652": 1
+    }
+   }
+  },
+  {
+   "base": "m4e15p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m69e51p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "731": 1
+    }
+   }
+  },
+  {
+   "base": "m78e6p0",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "1347": 1
+    },
+    "armors": {
+     "1762": 1,
+     "1763": 1
+    }
+   }
+  },
+  {
+   "base": "m213e2p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "1311": 1,
+     "1309": 1
+    }
+   }
+  },
+  {
+   "base": "m213e2p2",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "807": 1
+    }
+   }
+  },
+  {
+   "base": "m4e15p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e36p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "20": 20
+    }
+   }
+  },
+  {
+   "base": "m4e45p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "1488": 1
+    }
+   }
+  },
+  {
+   "base": "m112e4p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "644": 1,
+     "645": 1,
+     "646": 1,
+     "647": 1,
+     "648": 1,
+     "649": 1,
+     "650": 1,
+     "651": 1,
+     "652": 1,
+     "653": 1
+    }
+   }
+  },
+  {
+   "base": "m139e6p0",
+   "tag": "a3",
+   "preset": {
+    "party": [
+     1
+    ],
+    "weapons": {
+     "1577": 1
+    }
+   }
+  },
+  {
+   "base": "m192e6p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m40e4p0",
+   "tag": "a3",
+   "preset": {
+    "switches": {
+     "170": true
+    }
+   }
+  },
+  {
+   "base": "m79e2p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e3p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e4p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e5p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m217e14p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "721": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e21p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "722": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e22p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "723": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e23p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "724": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e24p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "725": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e25p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "726": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e26p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "727": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e27p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "728": -100000
+    }
+   }
+  },
+  {
+   "base": "m217e28p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "729": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e14p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "731": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e21p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "732": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e22p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "733": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e23p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "734": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e24p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "735": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e25p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "736": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e26p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "737": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e27p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "738": -100000
+    }
+   }
+  },
+  {
+   "base": "m218e28p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "739": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e14p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "741": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e21p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "742": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e27p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "743": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e33p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "744": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e39p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "745": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e45p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "746": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e51p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "747": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e57p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "748": -100000
+    }
+   }
+  },
+  {
+   "base": "m219e63p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "749": -100000
+    }
+   }
   }
  ]
 }
