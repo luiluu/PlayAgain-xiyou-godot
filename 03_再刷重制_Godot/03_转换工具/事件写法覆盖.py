@@ -7,6 +7,13 @@
 续行（401／405／408／605 等）、分支尾（0／411／412／402／403／404／601～604 的结构行）不单算。
 
   事件写法覆盖.py --coverage <xiyou_event_compare --coverage 写的 JSON> [--out 报告.md] [--json 结果.json]
+  事件写法覆盖.py --coverage <JSON> --missed 126,128 [--missed-out 簇.md] [--missed-json 簇.json] [--suggest 候选预设.json]
+
+--missed（八戒 events8）：按实例列出这些写法「出现但没执行到」的位置，按「门」聚簇——门＝离它最近、本身执行到了的上层分支头
+（111 条件、402 选项、411 否则、601～603 战斗结果、403 取消、413 循环），门下没走进去的一串算一簇；整页没执行到的算「整页没进」。
+簇再按地图／公共事件归组，按簇里目标实例数排序，只列玩家走得到的。--suggest 给「简单门」（开关、变量比常量、物品、武器、防具、
+角色在队、角色学会技能、金钱、独立开关）写出能让门打开的预设候选（event_presets.json 的 cases 格式，tag 用 e8），要不要采用由人挑。
+选项（402）、取消（403）、随机、脚本条件这类门要新能力，列成「留给新能力」。
 
 位置可达：公共事件在 tests/fixtures/script_census_known.json 的 unreachable 里→「走不到」，在 battleRoots 或只被战斗调用的→不分（本工具不追调用方，只看 unreachable）。
 排序：没有对照例的写法按出现次数降序；有对照例的写法只计数。
@@ -101,13 +108,153 @@ def analyse(executed: set):
     return sorted(rows.values(), key=lambda r: (r['covered'] > 0, -r['reachableCount'], r['key']))
 
 
+GATE = {111, 402, 403, 411, 601, 602, 603, 413, 112}
+
+
+def gate_of(lst, i, executed, loc):
+    """挡住 i 的门：离它最近、本身执行到了的上层分支头；中间隔着没选中的选项（402／403 头没执行到）时，门是最外那个选项头。
+    整页没进返回 None。"""
+    ind = int(lst[i].get('indent', 0))
+    j = i - 1
+    choice = None
+    while j >= 0 and ind > 0:
+        cj = lst[j]
+        if int(cj.get('indent', 0)) == ind - 1:
+            if '%s:%d' % (loc, j) in executed:
+                return choice if choice is not None else j
+            if int(cj['code']) in (402, 403):
+                choice = j
+            ind -= 1
+        j -= 1
+    return choice
+
+
+def describe_gate(lst, j):
+    c = lst[j]
+    code, p = int(c['code']), c.get('parameters', [])
+    if code == 111:
+        return '111 ' + cond_text(p)
+    if code == 411:
+        k = j - 1
+        while k >= 0 and not (int(lst[k]['code']) == 111 and lst[k].get('indent', 0) == c.get('indent', 0)):
+            k -= 1
+        return '411 否则（%s）' % (cond_text(lst[k]['parameters']) if k >= 0 else '?')
+    if code == 402:
+        return '402 选项 %s「%s」（没选中）' % (p[0], p[1])
+    if code == 403:
+        return '403 取消（没选中）'
+    if code in (601, 602, 603):
+        return {601: '601 战胜', 602: '602 逃跑', 603: '603 战败'}[code]
+    return str(code)
+
+
+OPS = ['==', '>=', '<=', '>', '<', '!=']
+
+
+def cond_text(p):
+    t = int(p[0])
+    if t == 0:
+        return '开关 %s 为 %s' % (p[1], 'ON' if int(p[2]) == 0 else 'OFF')
+    if t == 1:
+        return '变量 %s %s %s%s' % (p[1], OPS[int(p[4])], '变量 ' if int(p[2]) else '', p[3])
+    if t == 2:
+        return '独立开关 %s 为 %s' % (p[1], 'ON' if int(p[2]) == 0 else 'OFF')
+    if t == 4:
+        return '角色 %s 子类 %s %s' % (p[1], p[2], p[3] if len(p) > 3 else '')
+    if t == 7:
+        return '金钱 %s %s' % (['>=', '<=', '<'][int(p[2])], p[1])
+    if t in (8, 9, 10):
+        return '%s %s 持有' % (COND[t], p[1])
+    if t == 12:
+        return '脚本 ' + str(p[1])[:60]
+    return COND.get(t, str(t)) + ' ' + str(p[1:])[:40]
+
+
+def open_preset(lst, j, loc):
+    """让门 j 打开的预设（只管简单门）；做不到返回 None。"""
+    c = lst[j]
+    code, p = int(c['code']), c.get('parameters', [])
+    want = True
+    if code == 411:
+        k = j - 1
+        while k >= 0 and not (int(lst[k]['code']) == 111 and lst[k].get('indent', 0) == c.get('indent', 0)):
+            k -= 1
+        if k < 0:
+            return None
+        p, want = lst[k]['parameters'], False
+    elif code != 111:
+        return None
+    t = int(p[0])
+    if t == 0:
+        on = int(p[2]) == 0
+        return {'switches': {str(p[1]): on == want}}
+    if t == 1 and not int(p[2]):
+        v, op = float(p[3]), int(p[4])
+        sat = {0: v, 1: v, 2: v, 3: v + 1, 4: v - 1, 5: v + 1}[op]
+        uns = {0: v + 1, 1: v - 1, 2: v + 1, 3: v, 4: v, 5: v}[op]
+        x = sat if want else uns
+        return {'variables': {str(p[1]): int(x) if x == int(x) else x}}
+    if t == 2 and loc.startswith('m'):
+        m, e = loc[1:].split('p')[0].split('e')
+        on = int(p[2]) == 0
+        return {'selfSwitches': {'%s,%s,%s' % (m, e, p[1]): on == want}} if on == want else None
+    if t in (8, 9, 10) and want:
+        return {{8: 'items', 9: 'weapons', 10: 'armors'}[t]: {str(p[1]): 1}}
+    if t == 4 and int(p[2]) == 0 and want:
+        return {'party': [int(p[1])]}
+    if t == 4 and int(p[2]) == 3 and want:   # 角色学会了技能
+        return {'actors': {str(p[1]): {'skills': [int(p[3])]}}}
+    if t == 7 and want and int(p[2]) == 0:
+        return {'gold': int(p[1])}
+    return None
+
+
+def missed(executed: set, targets: set, cases: set):
+    known = json.loads(KNOWN.read_text())
+    unreachable = set('ce' + k for k in known.get('unreachable', {}))
+    clusters = {}
+    entered = {x.split(':')[0] for x in executed}   # 开头的 101 常随 102 一起消费、不单记下标，所以按「本页有任何一条执行到」算进过
+    for loc, lst in locations():
+        if loc in unreachable:
+            continue
+        for i, c in enumerate(lst):
+            if int(c['code']) in SKIP:
+                continue
+            k = key_of(lst, i)
+            if k not in targets or '%s:%d' % (loc, i) in executed:
+                continue
+            g = gate_of(lst, i, executed, loc) if loc in entered else None
+            ck = (loc, g)
+            cl = clusters.get(ck)
+            if cl is None:
+                if g is None:
+                    why = '整页没进' if loc in cases else '不在对照用例里'
+                    gate, pre = why, None
+                else:
+                    gate, pre = describe_gate(lst, g), open_preset(lst, g, loc)
+                cl = clusters[ck] = {'loc': loc, 'gate': g, 'gateText': gate, 'preset': pre, 'hits': {}, 'first': i}
+            cl['hits'][k] = cl['hits'].get(k, 0) + 1
+    out = list(clusters.values())
+    for cl in out:
+        cl['n'] = sum(cl['hits'].values())
+        cl['group'] = cl['loc'].split('e')[0] if cl['loc'].startswith('m') else cl['loc']
+    out.sort(key=lambda c: (-c['n'], c['loc']))
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--coverage', required=True)
     ap.add_argument('--out')
     ap.add_argument('--json')
+    ap.add_argument('--missed', help='写法键（逗号分隔，可写指令码前缀如 126）')
+    ap.add_argument('--missed-out')
+    ap.add_argument('--missed-json')
+    ap.add_argument('--suggest')
     a = ap.parse_args(argv)
     executed = set(json.loads(Path(a.coverage).read_text())['executed'])
+    if a.missed:
+        return run_missed(a, executed)
     rows = analyse(executed)
     missing = [r for r in rows if r['covered'] == 0 and r['reachableCount'] > 0]
     dead = [r for r in rows if r['covered'] == 0 and r['reachableCount'] == 0]
@@ -129,6 +276,58 @@ def main(argv=None):
     if a.json:
         Path(a.json).write_text(json.dumps({'rows': rows}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     print(f'写法 {len(rows)} 类：有对照 {len(have)}，没有且走得到 {len(missing)}，只在走不到处 {len(dead)}')
+    return 0
+
+
+def run_missed(a, executed):
+    want = [w.strip() for w in a.missed.split(',') if w.strip()]
+    keys = {r['key'] for r in analyse(executed)}
+    targets = {k for k in keys if any(k == w or k.split(' ')[0] == w for w in want)}
+    oracle = json.loads((GEN / 'oracle/events.json').read_text())
+    cases = {str(c['id']) for c in oracle['cases']}
+    out = missed(executed, targets, cases)
+    groups = {}
+    for cl in out:
+        g = groups.setdefault(cl['group'], {'group': cl['group'], 'n': 0, 'clusters': []})
+        g['n'] += cl['n']
+        g['clusters'].append(cl)
+    gl = sorted(groups.values(), key=lambda g: -g['n'])
+    simple = [c for c in out if c['preset']]
+    need = {}
+    for c in out:
+        if not c['preset']:
+            kind = c['gateText'].split(' ')[0] if c['gate'] is not None else c['gateText']
+            if c['gateText'].startswith('111 脚本') or c['gateText'].startswith('411 否则（脚本'):
+                kind = '脚本条件'
+            need[kind] = need.get(kind, 0) + c['n']
+    total = sum(c['n'] for c in out)
+    lines = ['# 没执行到的实例（按门聚簇）', '', '写法：' + '、'.join('`%s`' % t for t in sorted(targets)), '',
+             f'玩家走得到、没执行到的实例 {total} 个，{len(out)} 簇；其中门是简单条件、能直接写预设的 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）。', '',
+             '## 门的种类（不能直接写预设的）', '', '| 门 | 实例 |', '| --- | --- |']
+    for k, n in sorted(need.items(), key=lambda x: -x[1]):
+        lines.append('| %s | %d |' % (k, n))
+    lines += ['', '## 按地图／公共事件（前 60 组）', '']
+    for g in gl[:60]:
+        lines.append('### %s（%d）' % (g['group'], g['n']))
+        lines.append('')
+        for c in g['clusters'][:12]:
+            hits = '、'.join('%s×%d' % (k.split(' ')[0], n) for k, n in c['hits'].items())
+            where = '%s:%s' % (c['loc'], c['gate']) if c['gate'] is not None else c['loc']
+            lines.append('- `%s` %s → %s%s' % (where, c['gateText'].replace('|', '\\|'), hits,
+                                                '　预设 `%s`' % json.dumps(c['preset'], ensure_ascii=False) if c['preset'] else ''))
+        if len(g['clusters']) > 12:
+            lines.append('- ……另 %d 簇' % (len(g['clusters']) - 12))
+        lines.append('')
+    text = '\n'.join(lines) + '\n'
+    if a.missed_out:
+        Path(a.missed_out).write_text(text, encoding='utf-8')
+    if a.missed_json:
+        Path(a.missed_json).write_text(json.dumps({'clusters': out}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    if a.suggest:
+        sug = [{'base': c['loc'], 'tag': 'e8', 'preset': c['preset'], 'gate': '%s:%s %s' % (c['loc'], c['gate'], c['gateText']), 'n': c['n']}
+               for c in simple if c['loc'] in cases]
+        Path(a.suggest).write_text(json.dumps(sug, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    print(f'没执行到 {total} 个，{len(out)} 簇；简单门 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）')
     return 0
 
 
