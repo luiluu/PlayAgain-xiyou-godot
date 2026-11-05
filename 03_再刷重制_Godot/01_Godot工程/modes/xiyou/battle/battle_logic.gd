@@ -1968,6 +1968,41 @@ func change_to_roll() -> float:
 	return _float("changeto")
 
 
+## YEP_SkillCore <After Eval>（Game_Action.apply 每个目标结算完后 eval）里认得的一种写法（cc 悟空 fix5）：
+##   var id = target._lastUsedSkill || 1;
+##   BattleManager.queueForceAction(user, id, -2);
+## 全库只有六耳猕猴的「模仿」856 这么写。_lastUsedSkill 原版没有任何代码写它（fix5 探针在 Object.prototype 上设拦截，整场 0 次），
+## 恒为 undefined，所以就是「行动者对上次目标（-2）强制普通攻击 1」：queueForceAction 排进 $gameTemp.forceActionQueue 并 clearResults，
+## 这次行动结束后的事件阶段（processForcedAction）立刻插队执行，先于本回合还没行动的人（探针：856 → 强制 1 打倒 a8 → 再轮到 a10）。
+## 回退：SKILL_AFTER_EVAL_FORCE = false 回到 fix5 前（不执行，少这一次强制行动）。
+static var SKILL_AFTER_EVAL_FORCE := true
+static var _after_eval_cache := {}
+static var _after_eval_re: RegEx = null
+
+
+## 技能 <After Eval> 认出的强制行动 [技能, 目标序号]；认不出返回 []（测试也用它数「模仿」带出的强制行动）
+static func after_eval_force_of(skill: Dictionary) -> Array:
+	var id := int(skill.get("id", 0))
+	if not _after_eval_cache.has(id):
+		if _after_eval_re == null:
+			_after_eval_re = RegEx.create_from_string("<After Eval>\\s*var id = target\\._lastUsedSkill \\|\\| (\\d+);\\s*BattleManager\\.queueForceAction\\(user, id, (-?\\d+)\\);\\s*</After Eval>")
+		var m := _after_eval_re.search(str(skill.get("note", "")))
+		_after_eval_cache[id] = [int(m.get_string(1)), int(m.get_string(2))] if m != null else []
+	return _after_eval_cache[id]
+
+
+func _after_eval_force(u: XBattler, skill: Dictionary) -> void:
+	if not SKILL_AFTER_EVAL_FORCE or is_item(skill):
+		return
+	var f := after_eval_force_of(skill)
+	if f.is_empty():
+		return
+	if _action_resources != null:
+		XStateEffects.queue_force(u, int(f[0]), int(f[1]), _action_resources)
+	else:
+		XStateEffects.queue_force_quiet(u, int(f[0]), int(f[1]))
+
+
 ## YEP_WeaponUnleash processUnleash（BattleManager.startAction 链）：这一招是此刻的普攻（物品、别的技能不换）时，
 ## 按 weapon_unleashes() 的顺序逐条试：技能此刻不能用就跳过（不掷），能用才掷一次（rule 流 "unleash"），掷数不大于几率就换成它。
 ## 「能用」照原版 canUse 含 meetsUsableItemConditions 的 canMove：不能行动（强制行动）时全跳过，原技能照常执行。
@@ -2217,6 +2252,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		states_before = frame.before
 	if blocked[0]:
 		return r  # 心钢拦下：里层的奈叶、心钢记账都不跑
+	_after_eval_force(u, skill)  # YEP_SkillCore Game_Action.apply 末尾的 <After Eval>（六耳猕猴「模仿」856）
 	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
 	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
 	if t is XActor and t.rv_tp_refreshed:
