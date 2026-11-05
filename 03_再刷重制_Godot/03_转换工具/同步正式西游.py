@@ -97,6 +97,7 @@ PROBES = [
     (['battle_drop_probe.cjs'], ['battle_drop.json']),
     (['difficulty_enemy_probe.cjs'], ['difficulty_enemy.json']),
     (['difficulty_actor_probe.cjs'], ['difficulty_actor.json']),
+    (['difficulty_troop_probe.cjs'], ['difficulty_troop.json']),
     (['actor1_damage_probe.cjs'], ['actor1_damage.json']),
     (['toji_eva_probe.cjs'], ['toji_eva.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
