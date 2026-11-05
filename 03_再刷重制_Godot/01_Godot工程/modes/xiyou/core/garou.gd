@@ -39,8 +39,8 @@ extends RefCounted
 ## 输入阶段预排（meetsSkillConditions 的 planned 分支）不移植：原版看 _actions.slice(0, _actionInputIndex)，但 OTB 的
 ## selectNextCommand 有 _subject 就直接 startAction，不调 Game_Actor.selectNextCommand，_actionInputIndex 恒为 0，分支在正式战斗里取不到
 ## （读源码确认，重制每次行动逐个选、模式：琦玉命中即开 saitama，同效）。
-## 未移植：applyCritical 0 伤不暴击、技能分类与指令窗 [2,1,5,4]、
-## 进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
+## 已在别处：applyCritical 0 伤不暴击（battle_logic 伤害值恰为 0 时通用清暴击标记，2026-11-05 白龙核实）、技能分类与指令窗 [2,1,5,4]（actor_modules MENU／BATTLE_SKILL_TYPES）。
+## 未移植：进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
 ## 图鉴立绘、旧档迁移（不迁移 MV 旧存档）。
 ## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
 ## 测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd、tests/xiyou_garou_battle.gd。
