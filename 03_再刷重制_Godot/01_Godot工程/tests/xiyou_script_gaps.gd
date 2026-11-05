@@ -325,7 +325,7 @@ func _ascend(ref: Dictionary) -> void:
 ## 没装载的插件：整段无操作、不记认不出，存档内容不变（同 oracle unloaded.*）
 func _unloaded(ref: Dictionary) -> void:
 	for pair in [["signBoardScene", 6], ["makeUpSign", 330], ["makeUpSign", 373], ["stateBook", 429], ["openItemSlot", 478],
-			["cloudSaveLatest", 249], ["mobileUI", 7]]:
+			["cloudSaveLatest", 249]]:
 		var c: Dictionary = ref["unloaded.%s" % pair[0]]
 		var s := XState.new_game(3, 1, [8, 9, 10])
 		XState.current = s
@@ -342,10 +342,12 @@ func _unloaded(ref: Dictionary) -> void:
 	for n in range(1, 11):
 		_check("cloud_save_%d" % n, (await script("HWGOE.save.cloudSaveGame(%d);" % n)).is_empty())
 	_check("cloud_save_other_unknown", (await script("HWGOE.save.cloudLoadGame(1);")).size() == 1)
-	for line in ["MobileUI hide ok", "MobileUI hide fh", "MobileUI hide Control"]:
+	# CE7 整段还改变量 29、开关 ghostButtons，不能整段比「状态不变」；只核插件指令本身（DPad 一条对 oracle unloaded.mobileUI）
+	var mu: Dictionary = ref["unloaded.mobileUI"]
+	for line in ["MobileUI hide DPad", "MobileUI hide ok", "MobileUI hide fh", "MobileUI hide Control"]:
 		var itm := MVInterpreter.new(self, 0, 0, [])
 		itm._plugin_command(line)
-		_check("mobile_ui_" + line.split(" ")[2], itm.skipped.is_empty(), itm.skipped)
+		_check("mobile_ui_" + line.split(" ")[2], itm.skipped.is_empty() and bool(mu.observed.sameState) and mu.observed.threw == null, [itm.skipped, mu.observed])
 	var it3 := MVInterpreter.new(self, 0, 0, [])
 	it3._plugin_command("itemslot toggle")
 	_check("itemslot_other_unknown", it3.skipped.size() == 1, it3.skipped)
