@@ -21,7 +21,8 @@ extends RefCounted
 ## - apply 包装（XBattleLogic._invoke，掩护之后、目标是活着的敌人）：before_apply 本行动第一次（10174 除外）给目标施集真赤 2627 与
 ##   Y_RANDOM_DEBUFFS 随机一个（Math.randomInt(6)，rule 流 "yomi_debuff"；10173 学了 10185 再施一次）；after_apply 命中且目标有负面状态
 ##   残梦＋1（10174 不加），10172／10173／10174 再对其余活着的敌人各结算一次，伤害钩子 skillMultiplier × SPREAD（spread_rate）。
-## 未移植：隐藏呼吸技能分类、旧档迁移（图标 6400～6403 已由 core/quality_icons.gd 的 CUSTOM 接上）。
+## 隐藏呼吸技能分类：addCommand 对 skill＋ext 3 一律不加（技能菜单与战斗指令，所有角色），在 XActorModules.visible_skill_types／skill_scene.types／battle_scene 指令里做。
+## 未移植：旧档迁移（图标 6400～6403 已由 core/quality_icons.gd 的 CUSTOM 接上）。
 ## 镜流第一期（170，参照 mv_oracle/jingliu_probe → tests/xiyou_jingliu）：
 ## - 招募（公共事件 9005 的 CodexJingliu.recruit()）：同黄泉，装上月魄剑匣 4579。
 ## - 技能整理（setup 时 normalizeJingliuSkills）：10187～10196 按解锁等级学／忘，忘掉 10197～10199，进阶 ≥1 学 10200～10202、否则忘。

@@ -122,10 +122,20 @@ static func passive_cache(a, c: Dictionary) -> void:
 
 ## Game_Actor.addedSkillTypes 包装（菜单技能分类；Window_SkillType 照 YEP_CoreEngine 再升序排）：渡鸦（不在战斗）［2,1,5,3,4］、
 ## 宿傩［2,1,5,3,4］、饿狼［2,1,5,4］、云裳［2,1,5,4］，没学到那类技能也列出；别的角色返回 null（照特性 41）。
+## 这是 addedSkillTypes 的原值，含「呼吸法」3；真正列出时 Window_SkillType／Window_ActorCommand 一律不加 3
+## （installNativeYomiJingliuRuntime 的 Window_Command.addCommand 包装，symbol=skill 且 ext=3 直接丢；2026-11-05 白龙在原版实机量过，
+## 33 个角色的技能菜单与战斗指令都没有 3），所以用 visible_skill_types 过一遍再显示。
 const MENU_SKILL_TYPES := {167: [2, 1, 5, 3, 4], 172: [2, 1, 5, 3, 4], 173: [2, 1, 5, 4], 174: [2, 1, 5, 4]}
+## 隐藏的技能分类（技能类型 3「呼吸法」：Window_Command.addCommand 对 skill＋ext 3 直接不加，对所有角色）
+const HIDDEN_SKILL_TYPE := 3
 ## Window_ActorCommand.addSkillCommands 包装（战斗指令，照这个次序、不排序、不再按 CP_MagicWeapon 去掉 3～6）：
-## 渡鸦［2,1,5］、宿傩［2,1,5,3］、饿狼［2,1,5］、云裳［2,1,5］（云裳原版直接包 addSkillCommands，固定 [2,1,5]、不列被动 4，参照 p6.cmd*；addedSkillTypes 的 [2,1,5,4] 只管技能菜单）；别的角色返回 null
-const BATTLE_SKILL_TYPES := {167: [2, 1, 5], 172: [2, 1, 5, 3], 173: [2, 1, 5], 174: [2, 1, 5]}
+## 渡鸦［2,1,5］、宿傩［2,1,5］（原值 addSkillCommands 含 3，但 addCommand 丢掉它）、饿狼［2,1,5］、云裳［2,1,5］（云裳原版直接包 addSkillCommands，固定 [2,1,5]、不列被动 4，参照 p6.cmd*；addedSkillTypes 的 [2,1,5,4] 只管技能菜单）；别的角色返回 null
+const BATTLE_SKILL_TYPES := {167: [2, 1, 5], 172: [2, 1, 5], 173: [2, 1, 5], 174: [2, 1, 5]}
+
+
+## 技能分类列表里实际显示的：去掉被 addCommand 丢掉的 3（保持次序）
+static func visible_skill_types(types: Array) -> Array:
+	return types.filter(func(t): return int(t) != HIDDEN_SKILL_TYPE)
 
 
 static func menu_skill_types(a):
