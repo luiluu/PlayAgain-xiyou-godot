@@ -1,51 +1,45 @@
 # 交付：cc/rules-ui15
 
-- 车道／工作者：B 界面／rules 线程（cc，ui15）
-- 状态：进行中（上下文到线，写接续；本分支除本文件外没有新改动）
+- 车道／工作者：B 界面／rules 线程（cc，ui15；接手会话完成）
+- 状态：可合并（选测结果见文末「验证」）
 
-## 接续要点（下一个会话从这里开始）
+## 做了什么
 
-分支 `cc/rules-ui15` 是从 `cc/rules-ui14`（15341fa5）切的，已 `--补齐`。ui14 合进 main 后先 `git merge main`。
+### ① 小猫剑圣一族说明卡改走 XCharacterHelp（17 个）
 
-### ① 技能说明卡完整版（派单 BD ①）
+- 新探针 `mv_oracle/cat_help_probe.cjs`（原版 Sprite_ItemHelp.setItem 实际画出的行），夹具 `tests/fixtures/cat_help_oracle.json`，量技能 10437～10450、物品 2899／2900、法宝 7999，分「没有 178」「178 在、10 级」两种，每种 17 个。
+- 实测：旧近似（help_card 里 `XCat.is_cat_item` 分支）只对得上 10 个，差在：10445 至圣剑影「段数／冷却」没拆开；10447／10449／10450 的「伤害属性」行原文带 `\C[200x]` 着色码，近似去掉了；物品 2899／2900、法宝 7999 的行结构（说明行留在抬头、消耗品标记、来源／专属行、成长行）都不对。
+- 改法：`XCharacterHelp.target／actor／current_text／view` 认 `<CodexCat:`（actor 取 `XCat.help_actor()`，行文取 `XCat.help_text`；技能才去掉「说明」行，物品、法宝留在抬头；不套 dyn2／nowGrowth）。`XHelpCard.content` 对物品、法宝也按 `XCat.is_cat_item` 走它。删掉 `_generic_view` 里三处小猫近似分支。
+- 新专项 `xiyou_cat_help`（35 项：夹具来源核对＋34 张卡逐行文字／字号／颜色／对齐／y／卡高）全过；`xiyou_cat`、`xiyou_cat_trial`、`xiyou_help_card` 照旧全过。
 
-- 已查清：characterHelpView **已经移植**了，在 `modes/xiyou/ui/character_help.gd`（XCharacterHelp），管专属角色技能 10122～10299。剩下的缺口只在**小猫剑圣**这一族。
-- 原版 `characterHelpTarget`（冻结源 `js/codex/runtime/installDisplayPreferencesRuntime.js:140`）：note 含 `<CodexCat:` 的也走 characterHelpView，先 `CodexCat.helpItem(item, actor)`（:367）。冻结 v0.28 里这样的有技能 14 个（10437～10450）、物品 2 个（2899、2900）、防具 1 个（7999）。
-- 重制现在的做法：这 17 个不走 XCharacterHelp，在 `help_card.gd` 里走 genericHelpView 再近似修补（:467 currentHelpText 换 C.helpText、:491 目标排在伤害属性前、:519～520 伤害属性行去掉 `\C[n]`、字号取 14）。只对照过参照里的 10437、10438。
-- 要做：
-  1. 用 `ui_reference` 浏览器夹具（静音）量原版这 17 个的 characterHelpView 结果，看文字、分行、高度、图标。可以照 `tests/fixtures/*_oracle.json` 已有的写法，比如 character_help 一类的探针；先 `rg characterHelp 03_再刷重制_Godot/01_Godot工程/tests mv_oracle` 看已有的夹具和探针能不能扩。小猫有没有 178 号角色会改变结果（`XCat.help_actor`），两种情况都要量。
-  2. 和重制比。差了就让 cat 物件改走 XCharacterHelp（前面加 `XCat.help_item`），删掉 help_card 里的近似分支，写一个新专项逐项对照夹具。
-- 先跑 `xiyou_cat`、`xiyou_actor_book*`、`xiyou_battle_ui` 等用到 help_card 的专项打底，`选测.py main --list` 会列全。
+### ② 光标音扫描
 
-### ② 光标音扫描（派单 BD ②，ui14 可优化）
-
-- 在 `tests/xiyou_list_paging.gd` 的 `_scan()` 旁边加一个扫描：`modes/xiyou/ui/*.gd` 里名叫 `_move`／`move`／`_move_list`／`page`／`_page` 的函数，函数体里要有 `XSound.system(0)`，或者调到的 `select`／`_select`／`_cursor_se`／`_page_set` 里有。豁免写明原因。
-- ui14 时扫过一遍（读码），各页结果：
-  - 都有光标音：achievement、actor_advanced、actor_warehouse、change_clothes、choice_window、costumes、crafting、equip、inlay_book、party、pets、save、skill、star_warehouse、training、warehouse。
-  - 经 select 间接响：actor_book、enemy_book、achievement。
-  - 在输入处响：menu.gd。
-  - ui14 补的：item_scene、shop。
-  - status_page 的 `_scroll` 没响，要核原版 JAH 状态页上下滚动响不响。
-  - `XBattleList`（战斗）在 `modes/xiyou/battle/`，也一起扫。
+- `tests/xiyou_list_paging.gd` 加 `_scan_cursor_sound`：`ui/`、`battle/` 下名叫 `_move／move／_move_list／page／_page／_scroll` 的函数，本身或同文件调到的函数里要有 `XSound.system(0)`；豁免写明原因（`CURSOR_EXEMPT`）。
+- 扫出 6 处，全部核对后是「本来就不该响」，没有漏项要补：menu.gd 的 `_move`／`page` 是静态纯函数、音在输入处；achievement／battle_list 的 `_scroll` 是鼠标滚轮（processWheel 不响）；battle_list `page` 在 `_unhandled_input` 末尾 `index != last` 统一响。
+- **status_page `_scroll` 核对原版**：JAH_StatusMenuCore.js:2105 的 PageSelect 是横排命令窗，上下键 cursorUp/Down 因 index < maxCols 不改下标，rpg_windows.js:1018 processCursorMove 只在下标变了才 playCursor → 上下滚动本来就不响，只有左右换页响（重制 `set_page` 已响）。所以不改，豁免写明。
 
 ## 变更记录草稿
 
-（待写）
+## 2026-11-05 【cc·rules·未经审查】ui15：小猫剑圣一族说明卡改走 characterHelpView、光标音扫描（dev.待定）
+
+- 小猫剑圣一族（备注含 `<CodexCat:`，技能 10437～10450、物品 2899／2900、法宝 7999）的说明卡用原版夹具量过（新探针 `cat_help_probe.cjs`），旧近似只对上 10 个；改成走 `XCharacterHelp`（原版 characterHelpTarget 就认它们），删掉 help_card 里的近似分支；新专项 `xiyou_cat_help` 34 张卡（有／无 178 两态）逐行对照。
+- 光标音扫描：`xiyou_list_paging` 加 `_scan_cursor_sound`，列表移动／翻页函数必须响光标音，6 处豁免都核对过原版（status_page 上下滚动在原版不响）。
+
+## 优化登记草稿
+
+无新增（说明卡是对齐原版，不是改行为）。
 
 ## 交接板
 
-- 下一步：照上面接续要点做 ui15 ①②；做完如有额度接地图事件，先问总装要哪一段（别和 dead eventsreg2、悟空 accept5 撞）。
-- 用户试玩说明：本分支暂无改动。
+- 下一步：ui15 两项完成。接地图事件的话先问总装要哪一段（别和 dead eventsreg2、悟空 accept5 撞）。
+- 用户试玩说明：看小猫剑圣的技能／号角／进阶石／抱剑喵铃说明卡，有没有 178 都应与原版一致。
 - 需要用户决定：无。
 
 ## 进度账
 
-- 部分：无新增（只做了范围核查）。
+- 部分：无新增。
 
 ## 可优化（流程／工具／效率）
 
 - 无
 
-## 本分支提交
-
-- （本文件）
