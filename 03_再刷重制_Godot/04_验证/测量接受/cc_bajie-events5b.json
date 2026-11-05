@@ -1,0 +1,3525 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m2e2p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3394c54af719668a",
+      "newDigest": "b58367f7ccc0db0b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "23d3c2adc08e2129",
+      "newDigest": "7b51de927bc2c2ba",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65ffb31c5c6dd402",
+      "newDigest": "a3ddf0d8d3cb39cf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a202f9b6bec410d0",
+      "newDigest": "51525897959cc8b4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e10p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9320d2d46964ac3d",
+      "newDigest": "b018db16c402be37",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e25980c9200b3d66",
+      "newDigest": "4b7d765dd0b30c74",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d9ad3c64d8d960bb",
+      "newDigest": "68f078f884d50d6c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4e4b1147e162cbf8",
+      "newDigest": "56cfebe549a7883a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "150352e9df67ffe3",
+      "newDigest": "dd7587a05f73319a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ba6934ffdada6f08",
+      "newDigest": "f99e5f4137ed62bf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m19e16p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cc2d755ef7f0f115",
+      "newDigest": "02b60d18eb04db79",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m31e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6af3275e73819949",
+      "newDigest": "e6c6a6a3abcd57b5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "523f752c0d1e782c",
+      "newDigest": "5b3e192bad108076",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "01113ac868d27063",
+      "newDigest": "ba6bb650ba532e91",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4a12d9c31799d86a",
+      "newDigest": "13ba272bc39a38d2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m85e1p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "546dafc855fbc823",
+      "newDigest": "5ce6537349481849",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m37e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "49a124afe560ad9a",
+      "newDigest": "225e4a673986f722",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m38e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2e3479c65e8454e9",
+      "newDigest": "1ef9a249e318f40a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m152e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "19986003d3e7dbf0",
+      "newDigest": "ed1009a65d6e650f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m141e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7ef3e36a08f1865d",
+      "newDigest": "1ba4d94d9ab91629",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m160e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a2008f28d274b5bf",
+      "newDigest": "20de79cb64d33851",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m161e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "459d9aa88ed53f9e",
+      "newDigest": "9de52157f48e9225",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m162e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2fc108f3b1c24cec",
+      "newDigest": "4f174afdb24322d8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m174e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e956c479c6ac4beb",
+      "newDigest": "eba531a46a0916fd",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m177e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5a33a8e5b2595517",
+      "newDigest": "260524338604fd53",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m184e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8ce2f90d9399e5ff",
+      "newDigest": "5674580148d81762",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m176e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "da2f198d140b42ff",
+      "newDigest": "e795b60cd17886e3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m210e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "90a572401abb6935",
+      "newDigest": "6f7008ef4d4918e0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m223e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d3f86f6c364ced2",
+      "newDigest": "2840e6ef5384c859",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m221e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4fc607d5ea568ca2",
+      "newDigest": "39ea5d739b85a0d3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e20p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "30ca71ebaec8ab1a",
+      "newDigest": "ed8f5020ed685f53",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e25p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bc6696a389876a8e",
+      "newDigest": "f0b3328d16df1f8f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e55p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0c8ac6d74e3f029a",
+      "newDigest": "e81ca7d8bb170fbb",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e64p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e036568a0c65c0b1",
+      "newDigest": "60943ac22d934c57",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m5e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "631d202b4d019311",
+      "newDigest": "a5e6a95462faf800",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m5e2p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "11bf093e378b043b",
+      "newDigest": "3d36153272374ab4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m5e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6202059affadf276",
+      "newDigest": "c05bed74e7d408c0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m3e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d5202f9d07c638a2",
+      "newDigest": "1ba8642c071ea56e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m3e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "603ebd18a3faa290",
+      "newDigest": "40e1a85065215f38",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m6e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e8dbe58f39bac7c6",
+      "newDigest": "cea3fb2ca61cd93b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m6e3p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0cbef0c55d5f0ce8",
+      "newDigest": "a2d617363551387c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m6e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "85877851b8db8010",
+      "newDigest": "bc84cab8d634aae4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m7e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e623f5537e672648",
+      "newDigest": "e3a2847a9ec34517",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m7e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cb834f8e60dcdf8e",
+      "newDigest": "d68ce021f31a36db",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m7e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "81d63dc7ba728206",
+      "newDigest": "bc2e17410e33f36d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m10e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b56c49b2acd49600",
+      "newDigest": "712cefb449d4cd30",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m10e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d28e852fc2589326",
+      "newDigest": "3b27d8440f0dcb9e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m10e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fba54c32a6c02e20",
+      "newDigest": "66c230cf88da8323",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m13e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a6cdeb2186f87b12",
+      "newDigest": "33cd758f44710f59",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m13e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "98e9713e42700954",
+      "newDigest": "8951434a9b008ec2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m61e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cf5ae874d230a1ca",
+      "newDigest": "0390442187d0c2c7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m61e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b9a54f5e3ec88edd",
+      "newDigest": "7a4c1aeba7793d1c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e7p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2f0d998b9b781770",
+      "newDigest": "0f7e11b1ec0e99d2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e23p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9ba6dcf5c2ba28b2",
+      "newDigest": "ff3f220dc1c45e4d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e24p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b30862a5c0e11d71",
+      "newDigest": "45477be76910d20c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e25p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d987d521c01b6b0d",
+      "newDigest": "6c65b64f9d72cd76",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e26p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3f4c052c07a7e6a7",
+      "newDigest": "adaf9777ad3add0c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m12e27p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "977069a04ac12882",
+      "newDigest": "4f606b63a94e13b7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m15e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9683edd05fb75e24",
+      "newDigest": "aba437ed03a3809b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m15e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bf7fbd713ba6a23f",
+      "newDigest": "fe645f1e322db5fe",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m17e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4d9058547b247b26",
+      "newDigest": "ab43133a51e39ca2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m17e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6ae018e374c4b7d3",
+      "newDigest": "c4e62e9aa64e8966",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m20e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f110db8882377c0b",
+      "newDigest": "09131053475fe424",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m20e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9350dbacfe40e01a",
+      "newDigest": "bf4e9fea5119a936",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m65e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7e308c5b5487fc9c",
+      "newDigest": "4ad7409eea3e422b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m65e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a49203e18bc8671e",
+      "newDigest": "95ba359c422b9838",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "51da9b407f97c7e9",
+      "newDigest": "fd617043e8c34aae",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "344fbed577cda4c7",
+      "newDigest": "da2400ff7b87c6b7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "30e2afe78d64b14f",
+      "newDigest": "8f4ebb5e5d4033fd",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "30aec7a495f0a1b2",
+      "newDigest": "34162f78b01696b2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "49c65da73c450784",
+      "newDigest": "d54a0dbaff283f15",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e70c45cfdcebac84",
+      "newDigest": "efc02f065a72e7a1",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cb39a1102e9c347d",
+      "newDigest": "1bee9af7f083409e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "608aed61e91befd1",
+      "newDigest": "1f4c464b90bdc0c5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f286af37547f4a2f",
+      "newDigest": "07f2ca6e64975ee3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b579910dd0b66186",
+      "newDigest": "e27e083cc45853d5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9437908175b14d2b",
+      "newDigest": "1c348f649d0eb2a9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e23b6748bf1f8ffa",
+      "newDigest": "c9ead5d43b76ab48",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a4f0fceecb183fe8",
+      "newDigest": "496538ede6f6bd06",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bbaca97d3980e077",
+      "newDigest": "2de64c0042059bd4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "efc3956b0f3d0be9",
+      "newDigest": "afd2755fc81f8abe",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p8\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "684ec7a98fda05a9",
+      "newDigest": "03e2c2117b73aa48",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "992ee3c9e19bcb0a",
+      "newDigest": "1dd33dd736e62466",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "132e1fc65888b9e6",
+      "newDigest": "5bc7fdae613bc762",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dcbb3d7297584741",
+      "newDigest": "074b0032d3bc0e75",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "69308c844a6fa0f4",
+      "newDigest": "2bcefc4a2421cf4d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "468bdbd44e043715",
+      "newDigest": "35649217a8453a14",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d20405cb49066a7",
+      "newDigest": "e5bceeaff9ef7f3f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f2cc43d9173448c9",
+      "newDigest": "43cf57e1735dbe8b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e4e17cc7d07faa86",
+      "newDigest": "66037193522fc1c3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6648cf5103bfacd3",
+      "newDigest": "a97bc628b67563e8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a475da77062a188a",
+      "newDigest": "2a340f6f3a255d5b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d0a70a88db5f6b70",
+      "newDigest": "f999b55c976b8f36",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0283fecfeee6ee6a",
+      "newDigest": "0846f5ed3fd79c60",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4de689a21c7d5665",
+      "newDigest": "18e1800c30f8a4ff",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "85bc24124b4e0fb0",
+      "newDigest": "f67e787888e71ee8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b7060ffbfee60de7",
+      "newDigest": "21af02f1c619f74f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "974d96050e0325de",
+      "newDigest": "4425a91dac16d8e1",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fd1c6db245d43273",
+      "newDigest": "aaebb650cb213f4e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d90ae02168208fbf",
+      "newDigest": "84893d32a34d215e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "050a4bacae0ea98b",
+      "newDigest": "9dc0ef712794a310",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "10394c806603e396",
+      "newDigest": "b6014a5d0007f0cc",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7ab5574334e52fcf",
+      "newDigest": "f6c492d41102ab37",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8a9ef6b06e4eff34",
+      "newDigest": "6b08a72f4861403d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m116e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e057a0a352c4f7cf",
+      "newDigest": "f780874e36112fab",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m117e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c93ff19f49445d68",
+      "newDigest": "c1f736bd07167ecb",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m119e16p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f5d1af9b298b5616",
+      "newDigest": "2f77bfc705e3063e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m118e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "be92ae763690a0bf",
+      "newDigest": "832c61203fc84d25",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m120e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "933f0f2c2a35bfc4",
+      "newDigest": "44940b8cc3ebd303",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m147e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a516fe42a2850e3b",
+      "newDigest": "6ab6530b976c5659",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m155e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a626a23bbb977e0e",
+      "newDigest": "c9c9442d99913ba1",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m182e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ff63bc197915d889",
+      "newDigest": "182878c0d79f33d5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m145e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6af63d04a98e8969",
+      "newDigest": "8ba2051822add9e7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m144e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ac2d5df87b94e583",
+      "newDigest": "ae832015c3a5a914",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m148e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "adcbe835c9c90f1f",
+      "newDigest": "75190a7d3b77105c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "68d797527063f5f3",
+      "newDigest": "960ceb3050ac5b45",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e7d256cd03065da0",
+      "newDigest": "ce73f3ea3fc6f998",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a510c01c9bf3c123",
+      "newDigest": "4836355f5e28a98e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m9e2p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c67e99eee8bd6abb",
+      "newDigest": "d7f2fa2a6c5090b0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bca6819a545e5fdb",
+      "newDigest": "acafc7e69d917f63",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9fe710cfb9f0f769",
+      "newDigest": "8291f43a36cfdb63",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c62752d4991e630d",
+      "newDigest": "921bb47fbce76340",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m14e19p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b39083343e11f5df",
+      "newDigest": "92c220f21b0cb0ce",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e3e2e6f05c6695f7",
+      "newDigest": "133ed1fb4655e354",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6ac4a04113240f7e",
+      "newDigest": "adf5c05606074baf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "070cc71afb2cf71b",
+      "newDigest": "1a01b01374ae6e8a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m22e8p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cd0937cff7201e40",
+      "newDigest": "6659cb428e1692d2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "de7fe240b7b6e772",
+      "newDigest": "f4b5783fde44db81",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7efa5e4a6e4ebfe6",
+      "newDigest": "5fd2de51d6679737",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "46ff2935a1a25df9",
+      "newDigest": "ea36116db96c8cef",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m16e11p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4a539a47396ba2c8",
+      "newDigest": "5e364aa94bd57068",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m21e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c5bfa1934bad87e4",
+      "newDigest": "cc5fe636b320e8e6",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m21e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6423965411d25801",
+      "newDigest": "35c97ef188e86d71",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m21e5p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8d8e518e4b575636",
+      "newDigest": "6c2daa8c49afdec3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m21e5p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1f84856d507f1330",
+      "newDigest": "7ff6a84bccd642bc",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m34e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "12bc8dcf806721f2",
+      "newDigest": "544a50f0ffc41ed9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m34e15p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "60c4892ba8087bba",
+      "newDigest": "62c3775b98beb0d9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m34e15p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "36ecc1f2b56dbf42",
+      "newDigest": "8ef31ffc4cc840f2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m34e15p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cbc30beecea082f3",
+      "newDigest": "24ef446c18ba0b83",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "84fee8932e727d06",
+      "newDigest": "2d9de1c7a3fb816c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1b82be2f0b9237c7",
+      "newDigest": "ad94719a686889e9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "16e11857d1438955",
+      "newDigest": "5c39765ab06c1705",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m63e3p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "17da692d8d04c90e",
+      "newDigest": "f14e28497dd2bfbf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8ca68e12821cd86e",
+      "newDigest": "db6240ca5dbb1e79",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "913e8b0f4f5a5856",
+      "newDigest": "6b2c857a0ebd1408",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f92d6212f0f4025f",
+      "newDigest": "769b542ba24c3a7a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m39e21p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ddfa72b6929e2ade",
+      "newDigest": "7d3389520fd2badc",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m43e13p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8bb3b9e1f7481bdf",
+      "newDigest": "e05da6e00a85720c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m43e13p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1600d80c8e3442fb",
+      "newDigest": "abcdc15773aba1c5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m43e13p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4d2fb940c2cd1d24",
+      "newDigest": "41585931ae81e2c7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m43e13p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d501a2c17a80da6",
+      "newDigest": "79ab9070c7babb70",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "43cca3bc009cfd76",
+      "newDigest": "7c08778c5f190b79",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fc1502109b4d0d8b",
+      "newDigest": "5019b875f31a72ec",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "41555d49059241b8",
+      "newDigest": "8647bac597aee315",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m48e1p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7bfad70a05ad236a",
+      "newDigest": "789e82eef2ceaf78",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e9e3c329a6d46e97",
+      "newDigest": "89449e4daac1b3b8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "74f4ba675bbcf0c8",
+      "newDigest": "d56e95f7d9bc6e76",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e5332fcc7f1fa1af",
+      "newDigest": "69e0f63856d8c9e1",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m49e6p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a214b852c41ef282",
+      "newDigest": "32e7c66e6de3d0b5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b81920f57133261a",
+      "newDigest": "c35c312ef69eb467",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2b31d09175a79109",
+      "newDigest": "87d66ce1da96785f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "83109854aee3d901",
+      "newDigest": "349a1f2d74c8719c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m54e15p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cc965babb776491a",
+      "newDigest": "7f8909c46dd2d277",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ffb20695b6dba798",
+      "newDigest": "f2babd572032e944",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e543b5fb50a246fd",
+      "newDigest": "bacf586976a4a91b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ba81e79e50758e2b",
+      "newDigest": "36afcbbaae539241",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m163e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "09512c9e14b0e609",
+      "newDigest": "e91d54991441f50e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p4\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fa25ea31942f77c8",
+      "newDigest": "f515119181d65d2a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p5\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7433532095f43a65",
+      "newDigest": "7dfdafb1ba3fd0c9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p6\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3dda76f3c6383915",
+      "newDigest": "b8c541b99b9658d3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m166e6p7\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b01d1141c9aee3b1",
+      "newDigest": "db9badbf6c78bd88",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "225c6876056e2a96",
+      "newDigest": "48924c62b01d88ad",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8f20568f5e9acde3",
+      "newDigest": "d01bc4ae30ad4d25",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4c12c40cc5d0c071",
+      "newDigest": "204f75d1c6abc262",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m169e1p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "186a4aad88ddd216",
+      "newDigest": "e1010e050dd74dd6",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "12750e797fce937d",
+      "newDigest": "f7492f6a712d10b0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b3f5cd76f933e9bd",
+      "newDigest": "28b46810ac446d1b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "19c805761b458635",
+      "newDigest": "fa3e46761db66ce6",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m170e5p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65d3b185c6d8b98d",
+      "newDigest": "0a7b3ac1b0b34824",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m50e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "39570141ee0db220",
+      "newDigest": "13c5d7b147ec1481",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m51e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bee09be3f0526b5a",
+      "newDigest": "0196da7a3cc53e2a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m52e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fbe2bc8c5aa92fdb",
+      "newDigest": "d93d7ae7a7d780fa",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m53e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cc3bc46c999ae986",
+      "newDigest": "ff7b1d0af2b2f242",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m56e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "54d374099a765dba",
+      "newDigest": "acacb6c6296cdd7a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m57e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e3b0a89ec1c91b86",
+      "newDigest": "ba3f5f755cd4122c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m58e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6b1e68da42296885",
+      "newDigest": "c51801da92381862",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m59e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ea93408f522b0e4c",
+      "newDigest": "c551d192ef336ea0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m164e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "70ad261ae61e5d07",
+      "newDigest": "a29a298c14eadb35",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m165e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b4c9e7b72707cdd9",
+      "newDigest": "640dbbf79cf898e1",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m167e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "99b10978257d997d",
+      "newDigest": "789f46bd55e50068",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m168e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "37a6a1c6ae1df289",
+      "newDigest": "310bd371e9e7455e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3d6575030549ee58",
+      "newDigest": "c2e0dc5640b2209c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0776b064dcda7c9c",
+      "newDigest": "761a8abd91204dd2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "270a9caa8edd2077",
+      "newDigest": "eb82b020aca0335f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m44e2p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c93ebbc72facb492",
+      "newDigest": "1d979e55b40d788d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e11p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4424851a11c8b1b4",
+      "newDigest": "bf74bee2488439f7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e12p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c1942162bb34debd",
+      "newDigest": "0beff3eb4425a0d7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e13p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f4f090cc79652304",
+      "newDigest": "7da7c14c5f15de18",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m208e14p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1c5acc092fa1c8bc",
+      "newDigest": "f6d9f2e8e6bfde69",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e11p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "704f50eeebb27de8",
+      "newDigest": "77a45833b9bffd44",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e12p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d7d3fbd5c08e050f",
+      "newDigest": "0a87c50bab4a4ffe",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e13p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f55706fd16f87e3c",
+      "newDigest": "dded851f17470c5d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m209e14p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dc3f4efce320ca48",
+      "newDigest": "38a68fdbb0914184",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m211e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eacd93649b89f70d",
+      "newDigest": "d0096dd0fd7706ad",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e4p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0f47060bc4252dea",
+      "newDigest": "300a0691222f12c5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fdb81f0643afef5e",
+      "newDigest": "d874728591f8650d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9b97b3a46ef93ceb",
+      "newDigest": "88210a809ce95051",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e5p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "7e994168045036d6",
+      "newDigest": "c4c6723c2ce3d065",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m24e5p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "da605246ee53165f",
+      "newDigest": "2151bcac569c1fb3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "4ac457c474ae47c8",
+      "newDigest": "2bb0110613800376",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eb0459fd7394a267",
+      "newDigest": "fd6eaa4f84660cb7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p2\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bcc17178bb5fd58f",
+      "newDigest": "1917412c530e2019",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m111e9p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b1570cd0a9980cf8",
+      "newDigest": "3abadcb97d698344",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m29e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2e76664d702f2251",
+      "newDigest": "87cdcb70feaa0fdf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m29e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f4939691ebf5a31d",
+      "newDigest": "eb7ea9e8256c2260",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m29e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8124ca311d9a604b",
+      "newDigest": "b41c246d9d4d773d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m23e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "355c79bc54b2f7a5",
+      "newDigest": "024d52eddb6b2058",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m23e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a2a9ecbf4d62b724",
+      "newDigest": "e74257ced0a76efa",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m36e2p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "93c4941450713987",
+      "newDigest": "cffb16bbcfc28048",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m132e14p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "789595d7e420f594",
+      "newDigest": "ec0a38445c896b90",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m185e1p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d2d233539d2394d3",
+      "newDigest": "cd4d013457f396d7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m109e19p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2945cee19ccc4b24",
+      "newDigest": "cc9a88073fdd594b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m110e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1f573fe94f36d9cf",
+      "newDigest": "023ebda2f8c120ae",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m113e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b37f6b88b3e676f4",
+      "newDigest": "483932ee83da1da2",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m62e3p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e9130c51f67158cd",
+      "newDigest": "edd145f4801e1d6f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m62e4p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "510622e088596fc5",
+      "newDigest": "afaedabd7e0d3e43",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m62e5p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3bcab45030f5ed36",
+      "newDigest": "c6a5ac7e12316245",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e11p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1483e51e315e7e67",
+      "newDigest": "b42eb2c3314d1a04",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m11e12p0\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e7b96f9047c00b4f",
+      "newDigest": "77dc7bde4647dd20",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m80e13p3\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "158da9aeb14dd1f5",
+      "newDigest": "2cff10a12eff5f2f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m107e5p1\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bb505aeb81667825",
+      "newDigest": "b517294dfa71fbf7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce10\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "51489831542815b3",
+      "newDigest": "fd73cf98c6e4f1ba",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce12\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "504913c583d4e11d",
+      "newDigest": "8c6a058e4cb1e92f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce14\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0fa0aa34681dde94",
+      "newDigest": "65244ea85e4bdc8e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce15\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c8349934ea10a72a",
+      "newDigest": "c2d9e6bd572894cf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce16\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "65dce492223fd730",
+      "newDigest": "110bae38d7c401f5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce41\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2d43da90498ee7f0",
+      "newDigest": "1d539ca1cf6f0d10",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce43\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "79467779678f973b",
+      "newDigest": "a2eda937f8353369",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce44\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a0aba321cb2f57d8",
+      "newDigest": "7f3513f56d880ba0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce46\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a6663ac1adbf12f7",
+      "newDigest": "6f7d695fc5352433",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce47\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1f5a848c9d55d212",
+      "newDigest": "c890efbd68bbc8f6",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce77\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5f7055567742819a",
+      "newDigest": "2f26e96c9282627b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce79\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a69b16ef7ecc5514",
+      "newDigest": "b6671043b414ff7b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce83\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "524759520fb0a623",
+      "newDigest": "235d667de529c540",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce92\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e621228efa1f799b",
+      "newDigest": "acd268e48ff2141d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce93\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "06618f31fcd3c26a",
+      "newDigest": "4dcbd1bbd91d9005",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce98\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8b39464ea41061ab",
+      "newDigest": "597cb57c31aab0b3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce111\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "72b29ce19e259052",
+      "newDigest": "4d58afecfd2f877c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce113\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "677d5521174f227f",
+      "newDigest": "a56e9670dd7827ea",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce114\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "efd62888b3490a0f",
+      "newDigest": "41f95221369e2aa7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce115\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "50cb07ec2f99a8be",
+      "newDigest": "0a62085987464562",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce167\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "baa827a15d42b7de",
+      "newDigest": "f65e8ae167e5b7aa",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce168\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8b1330b7305bc924",
+      "newDigest": "62601dbab34bdc49",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce174\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eb74d23bebbe56b8",
+      "newDigest": "7fef5d55828e5b30",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce175\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0a9ad6a71a9df276",
+      "newDigest": "1e564f6914607954",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce176\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a53572f90df59aaf",
+      "newDigest": "993179ae1a470557",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce177\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b04e0ed94d4afd3f",
+      "newDigest": "4d0cb9ec992a2dc5",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce178\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d57111b2592666cf",
+      "newDigest": "14ba984748297581",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce179\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "b37f0c0d7ef7dbbe",
+      "newDigest": "e7e64218a5f431d4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce180\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "311c5e49e9dfb4f0",
+      "newDigest": "66868a7355fb9651",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce181\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d8881ef4bc48a57e",
+      "newDigest": "6d1856c67fd3bc93",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce182\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d31b6bcb57b38552",
+      "newDigest": "340d5d1f7cdfc444",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce183\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "84876db20cf825f7",
+      "newDigest": "ff688a5ba33324dd",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce184\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8976a92cd2ec62a9",
+      "newDigest": "93c9da1946854f50",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce185\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ec50010f62c314fc",
+      "newDigest": "ccae7c0a3e8f40cc",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce186\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a162ae51d700691e",
+      "newDigest": "7a3e4fb1d3f1dc62",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce187\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3740f265b7cba3ca",
+      "newDigest": "e6a25fc1b93c4a0c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce188\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "22ff8a553ac9a3ec",
+      "newDigest": "f659c0971229507c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce189\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "3f67bd4e46bfc242",
+      "newDigest": "9eb30aff21e1d9b4",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce229\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "77ea486e5fefaccf",
+      "newDigest": "9692a8bf5f3b2595",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce230\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e77f077267bbd914",
+      "newDigest": "d59285b6f702b489",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce236\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c4ede97ad45b0194",
+      "newDigest": "908478f266ba6e62",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce240\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e6052193aaa729ed",
+      "newDigest": "13494c0653ffd524",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce250\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1fd4e7b5047b70b3",
+      "newDigest": "d9f40a9770b49107",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce487\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "36663da6f5432335",
+      "newDigest": "d3968eef4c40bf5b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce488\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a855588a1a476e43",
+      "newDigest": "bff8d9d83144e0e8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce489\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "20107c69cf2154b6",
+      "newDigest": "3a6e1e87fc4fbfba",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce490\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "aca1b38af277cd60",
+      "newDigest": "32a5ed8dd2896821",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce491\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "a3392e93d2b37058",
+      "newDigest": "90f5463936520b61",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce492\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "642d3ddf575926f9",
+      "newDigest": "13058765b3da3070",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce493\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0d0ae2171b366dfc",
+      "newDigest": "d83723902b16b3bf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce494\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "62d9599c582c5b36",
+      "newDigest": "dbceae9efcd8bb45",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce495\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f30f1d4502e8044f",
+      "newDigest": "297cf90e3abd0d1e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce496\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9ab5327a88359ec9",
+      "newDigest": "b3440da7942f6c91",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce497\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bf3fb0606610721b",
+      "newDigest": "68c16daadbd4e39c",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce498\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f4442cabc8e360d0",
+      "newDigest": "d29e6ef05d601211",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce500\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6a06a389d9bb2a05",
+      "newDigest": "3edd1882e1795844",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce514\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "8ce61cb72c4e8216",
+      "newDigest": "1cfd2a32f42d93ea",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce515\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "45d904da204a65d3",
+      "newDigest": "286f7a3b1781ce21",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce516\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0b5a5d54c374630e",
+      "newDigest": "a169e61c80ad7a02",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce517\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "19776179cc5f51fa",
+      "newDigest": "a5a7c1e359452fcf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce518\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d138e9a53ef780f8",
+      "newDigest": "710f205e29083ca3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce519\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5c9434307a8255fd",
+      "newDigest": "834b0b5fa4828661",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce520\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5aa9715dc57f521f",
+      "newDigest": "a7aef4fc45280ea0",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce521\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "c9c451c114a5d5a0",
+      "newDigest": "e420d67f285903b6",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce522\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "dd055f2ab930b464",
+      "newDigest": "b0f03c3b03637c4b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce523\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "220b845c0a25ded3",
+      "newDigest": "0e8c2925716e2e20",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce524\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "87a44f963df5ac29",
+      "newDigest": "debf47421ab7c678",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce525\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ec028f24fd02c48b",
+      "newDigest": "5f3d9730265887b8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce526\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "fe3f573ecfb51b24",
+      "newDigest": "d22c4e6266ef2bbb",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce527\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5ec7563a1928f2a1",
+      "newDigest": "f1d5550e2317c541",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce528\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "202e6cdbfe0fdcb6",
+      "newDigest": "566dcfc3781554ed",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce691\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "9da8e3cfdea8efcf",
+      "newDigest": "6b2c48f3630ff3f9",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce904\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "5c15e7f3b6e4af31",
+      "newDigest": "ffee08cab4d6996d",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce905\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "2b54a563f0fd6057",
+      "newDigest": "f4be9a569d1a747b",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce906\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "33f48cf55c195dd9",
+      "newDigest": "e526cc5530eb12bb",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce911\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "52870f9c7e397381",
+      "newDigest": "fb7ccd541bf9384e",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1022\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "ae7dcdbb942d514d",
+      "newDigest": "06f229ade279a9cf",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1214\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "6aae88a3d2f3102b",
+      "newDigest": "072020a7a4115799",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1323\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "0e3e160b52fcb016",
+      "newDigest": "d4399442c955cd27",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1324\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "50217450cbeb8d7d",
+      "newDigest": "962282d15915bcd8",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1325\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "db6bbfe580bf1a27",
+      "newDigest": "12b1d76d764299bc",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1326\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "1e5eff87c1b1204e",
+      "newDigest": "1133e151f0fea5b7",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1330\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "cf398e2e957b7dab",
+      "newDigest": "95e2252bbcd433a3",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce1345\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "e8183ac7aac4b34b",
+      "newDigest": "6104502b06db437a",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce2474\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "f2777ee247b54ebc",
+      "newDigest": "a48da2baf2e2cd70",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce2475\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "d571779710b77b87",
+      "newDigest": "c7135da8c62f28ca",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce2481\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "bd7368390ef585ad",
+      "newDigest": "e96d8040793ec3df",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce9005\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "eeaa3f4f09f533f2",
+      "newDigest": "752e15594432d40f",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"ce9017\"]]",
+      "fields": [
+        "delta"
+      ],
+      "oldDigest": "77e30872b3ae240b",
+      "newDigest": "2a854cf2ea3f4a38",
+      "reason": "main 的参照产物落后于已合并的 events4 探针观察面和预设；本工作树刷新参照后的变化（角色状态／成就／称号观察面、新增预设等），Godot 对照里一致"
+    }
+  ]
+}

@@ -1,0 +1,761 @@
+{
+	"cases": {
+		"ce100": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 3,
+			"355 action.decideRandomTarget()": 3,
+			"355 action.setSkill(352)": 1,
+			"355 action.setSkill(353)": 1,
+			"355 action.setSkill(354)": 1,
+			"355 actor._actions.splice(1, 0, action)": 3,
+			"355 for(let i = 1": 3,
+			"355 i < 30": 3,
+			"355 i++) {": 3,
+			"355 if(!actor.isDeathStateAffected() && ($ga": 3,
+			"355 var action = new Game_Action(actor, true": 3,
+			"355 var actor = $gameActors.actor(i)": 3
+		},
+		"ce1003": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1004": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1005": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1006": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1007": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1008": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1009": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1010": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1011": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1013": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1014": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1015": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1016": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1017": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1018": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce107": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(799)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce1084": {
+			"333 -1.0": 1
+		},
+		"ce110": {
+			"122 游戏数据 4,0,0": 1
+		},
+		"ce116": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(971)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce1160": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1160#s1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1162": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1162#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1163": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1163#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1164": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1164#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1165": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1165#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1166": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1166#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1167": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1167#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1168": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1168#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1169": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1169#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1170": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1170#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1171": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1171#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1172": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1172#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1173": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1173#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1174": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1174#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1175": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1175#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1176": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1176#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1177": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1177#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1178": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1178#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1179": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1179#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1180": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1180#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1181": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1181#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1182": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1182#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1183": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1183#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1184": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1184#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1185": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1185#b1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1199": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1199#s1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1200": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1200#s1": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce1202": {
+			"333 -1.0": 1
+		},
+		"ce1204": {
+			"333 -1.0": 1
+		},
+		"ce121": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(987)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce123": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(994)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce126": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(1045)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce128": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(1043)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce129": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(1046)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce130": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(1049)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce1321": {
+			"355 BattleManager.forceAction(actor)": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(6172)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 if (actor && actor.isAlive() && actor.ha": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = window.CodexFreezeFollowup &": 1
+		},
+		"ce1327": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(6182)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 if(actor.hasSkill(6184)){": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor($gameParty": 1
+		},
+		"ce1354": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 2,
+			"355 action.decideRandomTarget()": 2,
+			"355 action.setSkill(6230)": 1,
+			"355 action.setSkill(6231)": 1,
+			"355 actor._actions.splice(1, 0, action)": 2,
+			"355 if(actor.hasSkill(6232)){": 1,
+			"355 if(actor.hasSkill(6233)){": 1,
+			"355 var action = new Game_Action(actor, true": 2,
+			"355 var actor = $gameActors.actor($gameVaria": 1,
+			"355 }else{": 1
+		},
+		"ce1370": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(2827)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 if(actor.hasSkill(2829)){": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor($gameVaria": 1
+		},
+		"ce1395": {
+			"111 条件类型 5": 2
+		},
+		"ce1598#b1": {
+			"111 条件类型 5": 4
+		},
+		"ce161": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 2,
+			"355 action.decideRandomTarget()": 2,
+			"355 action.setSkill(1271)": 1,
+			"355 action.setSkill(1272)": 1,
+			"355 actor._actions.splice(1, 0, action)": 2,
+			"355 for(let i = 1": 2,
+			"355 i < 999": 2,
+			"355 i++) {": 2,
+			"355 if(actor && !actor.isDeathStateAffected(": 2,
+			"355 var action = new Game_Action(actor, true": 2,
+			"355 var actor = $gameActors.actor(i)": 2
+		},
+		"ce17": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(47)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce173": {
+			"355 Star.PetSystem.PetGet()": 1
+		},
+		"ce18": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(150)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce236#b2": {
+			"111 条件类型 5": 4
+		},
+		"ce2486": {
+			"122 游戏数据 4,0,0": 1,
+			"122 游戏数据 4,0,1": 1,
+			"122 游戏数据 4,0,4": 1,
+			"122 游戏数据 4,0,5": 1,
+			"122 游戏数据 4,0,6": 1,
+			"122 游戏数据 4,0,7": 1,
+			"122 游戏数据 4,0,8": 1,
+			"122 游戏数据 4,0,9": 1,
+			"355 $.toaster({ message: (i+1)+'号敌人暴闪为' + $g": 1,
+			"355 for (var i = 0": 1,
+			"355 i < $gameTroop.members().length": 1,
+			"355 i++) {": 1
+		},
+		"ce249": {
+			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
+		},
+		"ce325": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(2291)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce390": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(2633)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce423": {
+			"122 游戏数据 4,0,0": 1
+		},
+		"ce423#b2": {
+			"122 游戏数据 4,0,0": 1
+		},
+		"ce581": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(3622)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce623": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce627": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce628": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(3670)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce629": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(3674)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce630": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(3675)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce633": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce634": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce637": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce637#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce638": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce638#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce639": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce639#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce640": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce640#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce641": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce641#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce642": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce642#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce643": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce643#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce644": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce644#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce645": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce646": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce647": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce648": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce72": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(455)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce73": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(454)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce74": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 2,
+			"355 action.decideRandomTarget()": 2,
+			"355 action.setSkill(289)": 2,
+			"355 actor._actions.splice(1, 0, action)": 2,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 2,
+			"355 var action = new Game_Action(actor, true": 2,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce75": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(452)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce78": {
+			"355 for(let i = 0": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 30": 1,
+			"355 i < length": 1,
+			"355 i++)": 1,
+			"355 i++){members[i].addState(43)": 1,
+			"355 if(actor._states.includes(345) && actor.": 1,
+			"355 var actor = $gameActors.actor(i)": 1,
+			"355 var members = $gameTroop.members(), leng": 1
+		},
+		"ce840": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce840#b2": {
+			"355 $.toaster({ message : ''+$gameActors.act": 1
+		},
+		"ce859": {
+			"355 $.toaster({ message : '裴钱通过自学，心有所悟，练武增加1": 1,
+			"355 $.toaster({ message : '裴钱通过自学，心有所悟，练武增加2": 1
+		},
+		"ce859#h2": {
+			"355 $.toaster({ message : '裴钱通过自学，心有所悟，练武增加1": 1,
+			"355 $.toaster({ message : '裴钱通过自学，心有所悟，练武增加2": 1
+		},
+		"ce860": {
+			"355 $.toaster({ message : '裴钱通过自学，心有所悟，练武增加1": 1
+		},
+		"ce88": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(447)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce911#b2": {
+			"111 条件类型 5": 4
+		},
+		"ce942#b1": {
+			"111 条件类型 5": 4
+		},
+		"ce943#b1": {
+			"111 条件类型 5": 4
+		},
+		"ce944#b1": {
+			"111 条件类型 5": 4
+		},
+		"ce946#b1": {
+			"111 条件类型 5": 4
+		},
+		"ce976": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(4511)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"ce977": {
+			"355 !$gameTroop.isAllDead() && BattleManager": 1,
+			"355 action.decideRandomTarget()": 1,
+			"355 action.setSkill(4512)": 1,
+			"355 actor._actions.splice(1, 0, action)": 1,
+			"355 for(let i = 1": 1,
+			"355 i < 999": 1,
+			"355 i++) {": 1,
+			"355 if(actor && !actor.isDeathStateAffected(": 1,
+			"355 var action = new Game_Action(actor, true": 1,
+			"355 var actor = $gameActors.actor(i)": 1
+		},
+		"m145e5p0": {
+			"355 $.toaster({ message : '所有人获得了萨麦尔格的祝福！})": 1
+		},
+		"m171e1p2": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m171e1p3": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m18e3p1": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m18e3p2": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m44e2p8": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m44e2p9": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m4e62p2": {
+			"355 $.toaster({ message : '难度开关已开启！可以自行选择是否开": 1
+		},
+		"m5e2p4": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m5e2p5": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m67e2p4": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m67e2p5": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m72e2p0": {
+			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
+		},
+		"m85e1p8": {
+			"117 公共事件 1386（首期跳过）": 1
+		},
+		"m85e1p9": {
+			"117 公共事件 1386（首期跳过）": 1
+		}
+	},
+	"note": "地图事件对照里解释器跳过（认不出）的脚本／指令（tests/xiyou_event_compare 写入；--update-baseline 重写）。键＝指令码＋原文前 40 字。新增＝红；补好解释器后用 --update-baseline 删。全库写法清单另见 tests/fixtures/script_census_known.json（脚本普查）。"
+}

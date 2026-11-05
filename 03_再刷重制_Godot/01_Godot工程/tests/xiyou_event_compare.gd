@@ -11,6 +11,8 @@ extends Node
 const ORACLE := "res://modes/xiyou/generated/oracle/events.json"
 const ORACLE_STATES := "res://modes/xiyou/generated/oracle/event_states.json"
 const BASELINE := "res://tests/event_compare_baseline.json"
+## 解释器跳过（认不出）的脚本／指令基线：用例 → {写法键: 次数}。新出现的跳过＝红（审查：解释器整段跳过不能无痕）；--update-baseline 重写
+const SKIPPED_BASELINE := "res://tests/event_skipped_baseline.json"
 const PARTY := [1, 8, 10, 9]
 const MAX_STEPS := 20000
 const KNOWN_ORACLE_ERRORS := []
@@ -241,6 +243,11 @@ func _run() -> void:
 		var b = JSON.parse_string(FileAccess.get_file_as_string(BASELINE))
 		baseline = b if b is Dictionary else {}
 	var known: Dictionary = baseline.get("mismatch", {})
+	var skipped_baseline: Dictionary = {}
+	if FileAccess.file_exists(SKIPPED_BASELINE):
+		var sb = JSON.parse_string(FileAccess.get_file_as_string(SKIPPED_BASELINE))
+		skipped_baseline = sb.get("cases", {}) if sb is Dictionary else {}
+	check("skipped_baseline_present", FileAccess.file_exists(SKIPPED_BASELINE) or update_baseline)
 	var host := EventHost.new()
 	add_child(host)
 	var report := []
@@ -279,6 +286,25 @@ func _run() -> void:
 		if not diffs.is_empty():
 			mismatched[c.id] = diffs.map(func(d): return d.split(":")[0])
 	var ok_count := report.filter(func(r): return r.ok).size()
+	# 跳过基线：本次各用例的跳过写法（键＝指令码＋原文前 40 字）；基线里没有的＝新增跳过
+	var skipped_now := {}
+	for r in report:
+		if not r.skipped.is_empty():
+			skipped_now[r.id] = r.skipped
+	var new_skips := []
+	for id in skipped_now:
+		for k in skipped_now[id]:
+			if not skipped_baseline.get(id, {}).has(k):
+				new_skips.append("%s | %s" % [id, k])
+	var gone_skips := 0
+	for id in skipped_baseline:
+		if report.any(func(r): return r.id == id):
+			for k in skipped_baseline[id]:
+				if not skipped_now.get(id, {}).has(k):
+					gone_skips += 1
+	print("EVENT_SKIPPED ", JSON.stringify({"cases": skipped_now.size(), "keys": skipped_now.values().reduce(func(a, v): return a + v.size(), 0), "new": new_skips.size(), "noLongerSkipped": gone_skips}))
+	for n in new_skips.slice(0, 30):
+		print("NEW_SKIP ", n)
 	# 退步：登记外的用例不一致，或登记内的用例出现登记外的不一致项目（trace/variables/…）
 	var regressions := mismatched.keys().filter(func(id):
 		return not known.has(id) or mismatched[id].any(func(k): return not known[id].has(k)))
@@ -293,8 +319,14 @@ func _run() -> void:
 		f.store_string(JSON.stringify({"note": str(baseline.get("note", "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写）。值为不一致的项目。现存 1 例：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。")),
 			"source": str(oracle.get("sourceIdentity", {}).get("releaseVersion", "")), "match": ok_count, "cases": report.size(), "mismatch": mismatched}, "\t", true))
 		f.close()
+	if update_baseline and only.is_empty():
+		var fs := FileAccess.open(ProjectSettings.globalize_path(SKIPPED_BASELINE), FileAccess.WRITE)
+		fs.store_string(JSON.stringify({"note": "地图事件对照里解释器跳过（认不出）的脚本／指令（tests/xiyou_event_compare 写入；--update-baseline 重写）。键＝指令码＋原文前 40 字。新增＝红；补好解释器后用 --update-baseline 删。全库写法清单另见 tests/fixtures/script_census_known.json（脚本普查）。",
+			"cases": skipped_now}, "\t", true))
+		fs.close()
 	if out_dir != "":
 		_write_report(report, oracle_errors)
+	check("no_new_skipped", new_skips.is_empty() or update_baseline, new_skips.slice(0, 20))
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
 	check("cases_ran", report.size() > 0)
