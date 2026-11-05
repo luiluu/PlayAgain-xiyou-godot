@@ -2736,6 +2736,31 @@ for name in filter(None, files):
         self.assertEqual(self.g('rev-parse', 'main~1'), merge_commit)          # 收尾提交直接接在合并提交上
         self.assertIn(str(hand), self.g('-c', 'core.quotepath=off', 'show', '--name-only', '--format=', 'main'))
 
+    def test_finish_cloud_adopts_snapshot_result_and_marks_hand_patch(self):
+        """BK2：检查.sh --cloud 留了快照提交号时，收尾提交后把云端结果过户给它（云端选测.py adopt <快照> HEAD），
+        手补过代码就带「手补已验: 快照 …」尾注；便条用完删掉。过户失败只提示，不挡收尾。"""
+        self.github()
+        calls = Path(self.tmp.name) / 'adopt_calls'
+        stub = Path(self.tmp.name) / 'cloud_stub.py'
+        stub.write_text('import sys, subprocess\nopen(%r, "a").write(" ".join(sys.argv[1:]) + "\\n")\nsys.exit(int(open(%r + ".rc").read()) if sys.argv[1] == "adopt" else 0)\n' % (str(calls), str(calls)))
+        Path(str(calls) + '.rc').write_text('0')
+        os.environ['XIYOU_CLOUD_SCRIPT'] = str(stub)
+        self.addCleanup(os.environ.pop, 'XIYOU_CLOUD_SCRIPT', None)
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho deadbeefdeadbeefdeadbeefdeadbeefdeadbeef > "$(git rev-parse --path-format=absolute --git-dir)/xiyou_cloud_snapshot"\n'); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'snapshot checker')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        hand = merge.PROJECT / 'modes/手改测试.gd'
+        (self.root / hand).write_text('# 总装收尾手改\n')
+        self.g('add', '-N', '--', str(hand))
+        self.assertEqual(self.call('--finish', '--affected', '--cloud', '--also', str(hand)), 0, self.last_output)
+        self.assertEqual(calls.read_text().split(), ['adopt', 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'HEAD'])
+        body = self.g('log', '-1', '--format=%B', 'main')
+        self.assertIn('手补已验: 快照 deadbeefd', body)
+        self.assertFalse((self.root / '.git/xiyou_cloud_snapshot').exists())
+
     def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
         """云端判失败（检查.sh 非零，覆盖通过以外的失败、超时、不可用）：保留现场，不提交收尾、不清理、不推送。"""
         bare = self.github()

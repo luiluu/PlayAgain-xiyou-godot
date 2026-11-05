@@ -4,7 +4,7 @@ extends Node
 ## GameApp 建一个挂在自己下面；别的文件要按平台分支时问这里，不直接 OS.has_feature。
 ## - 两指点按＝取消：照 MV TouchInput（第二指按下即 _onCancel，与鼠标右键同一路），这里转成一次右键点击；
 ##   第一指照 Godot 的触屏转鼠标（emulate_mouse_from_touch）当左键，第二指本身不再往下传，免得地图把它当成走路目标。
-## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；入口菜单上按返回退出。
+## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；顶层（入口菜单、发行包的西游标题页）两秒内按两次退出（O-202）。
 ## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-201，BACKGROUND_IDLE）。
 ## - 挂机中手机不锁屏（原版要了 WAKE_LOCK）。
 
@@ -95,18 +95,75 @@ func _notification(what: int) -> void:
 			on_resumed()
 
 
-## 返回键：入口菜单上退出，其它地方当取消键（按下＋松开）。
-func go_back() -> void:
+## O-202：顶层（入口菜单；发行包跳过入口菜单时的西游标题页）按返回键，第一次提示「再按一次返回键退出」，
+## 两秒内再按就退出。原版 MainActivity.onBackPressed 只执行 AndroidPort.back()（发 Esc），MV 标题不响应 Esc，
+## 所以在标题上按返回没反应、也不退出（cc 2026-11-05 dexdump 看过）。false＝回到原版：顶层也只当取消键。
+static var BACK_EXIT_ON_TOP := true
+const BACK_EXIT_WINDOW_MSEC := 2000
+const XIYOU_TITLE := "res://modes/xiyou/entry.tscn"
+## 测试关掉，免得真的退出。
+var quit_on_back := true
+var _last_back_msec := -100000
+var _hint: Label
+
+signal quit_requested
+
+
+## 返回键到了顶层：入口菜单；或发行包跳过了入口菜单，且西游标题停在标题页（不在读档、设置子页）。
+func is_top_level(scene: Node = null) -> bool:
+	if scene == null:
+		scene = get_tree().current_scene
+	if scene == null:
+		return false
+	if scene.scene_file_path == "res://scenes/entry_menu.tscn":
+		return true
+	return ReleaseEntry.skips_menu() and scene.scene_file_path == XIYOU_TITLE \
+		and scene.has_method("is_title_page") and bool(scene.call("is_title_page"))
+
+
+## 返回键。返回做了什么（测试看）："quit" 退出、"hint" 提示再按一次、"cancel" 当取消键。
+func go_back(now_msec := Time.get_ticks_msec(), scene: Node = null) -> String:
 	virtual_keys_release_requested.emit()
-	var scene := get_tree().current_scene
-	if scene != null and scene.scene_file_path == "res://scenes/entry_menu.tscn":
-		get_tree().quit()
-		return
+	if BACK_EXIT_ON_TOP and is_top_level(scene):
+		if now_msec - _last_back_msec <= BACK_EXIT_WINDOW_MSEC:
+			_last_back_msec = -100000
+			quit_requested.emit()
+			if quit_on_back:
+				get_tree().quit()
+			return "quit"
+		_last_back_msec = now_msec
+		_show_hint("再按一次返回键退出")
+		return "hint"
+	_last_back_msec = -100000
 	for pressed in [true, false]:
 		var e := InputEventAction.new()
 		e.action = "ui_cancel"
 		e.pressed = pressed
 		Input.parse_input_event(e)
+	return "cancel"
+
+
+func _show_hint(text: String) -> void:
+	if _hint == null:
+		var layer := CanvasLayer.new()
+		layer.layer = 125
+		add_child(layer)
+		_hint = Label.new()
+		_hint.position = Vector2(440, 620)
+		_hint.size = Vector2(400, 40)
+		_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_hint.add_theme_font_size_override("font_size", 20)
+		_hint.add_theme_color_override("font_color", Color(1, 1, 1))
+		_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		_hint.add_theme_constant_override("outline_size", 6)
+		layer.add_child(_hint)
+	_hint.text = text
+	_hint.visible = true
+	get_tree().create_timer(BACK_EXIT_WINDOW_MSEC / 1000.0, true, false, true).timeout.connect(func(): _hint.visible = false)
+
+
+func hint_text() -> String:
+	return _hint.text if _hint != null and _hint.visible else ""
 
 
 func on_paused(now_msec := Time.get_ticks_msec()) -> void:

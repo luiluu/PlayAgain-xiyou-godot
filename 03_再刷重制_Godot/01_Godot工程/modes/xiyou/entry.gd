@@ -86,6 +86,11 @@ func _clear() -> void:
 
 
 ## 原版坐标（1280×720）换算到当前画面：横向居中对齐，纵向按比例。
+## 正在标题页（有图片指令），不在读档、设置等子页（XPlatform 判断返回键是不是到了顶层）。
+func is_title_page() -> bool:
+	return not _commands.is_empty()
+
+
 func _pos(p: Vector2) -> Vector2:
 	var vs := get_viewport_rect().size
 	return Vector2(p.x + (vs.x - 1280.0) / 2.0, p.y * vs.y / 720.0)

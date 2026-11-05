@@ -5,6 +5,7 @@
 // ② params.*：渡鸦（等级、进阶 rank、灵魂 soul）装上法宝、法宝等级 L 时 paramPlus(0..7) 与 param(0..7)，同条件不装时的同两项；
 //    Game_Actor.paramPlus 包装：装着 4001 加固定 ARTIFACT_BASE_BONUS，魔攻另加 artifactMagicAttackBonus（⌊阶×50＋魂×(0.02＋阶×0.006)⌋），
 //    生命另加 artifactHpBonus（⌊阶×400＋魂×(0.04＋阶×0.008)⌋）；CP_MagicWeapon 每级成长＝等级×paramPlusPerLevel。
+//    （v0.30 起改成魔法另加 artifactMpBonus，量出来写 mpBonus；v0.28 写 hpBonus。）
 // ③ 见下（掉率倍率）。
 // 真实新局、Math.random 0.5，只在内存；产物 .sandbox/raven_artifact.json（generated/oracle/raven_artifact.json，tests/xiyou_raven_artifact.gd 读）。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
@@ -60,8 +61,11 @@ for (const [level, rank, soul, lv] of [[1, 0, 0, 1], [30, 0, 500, 1], [45, 2, 20
     a.forceChangeEquip(slot, item);
     if (a.equips()[slot] !== item) throw new Error('没装上法宝');
     const worn = read(a);
-    return {slot, itemLevel: item.level, bare, worn,
-      matBonus: round(R.artifactMagicAttackBonus(a)), hpBonus: round(R.artifactHpBonus(a))};
+    const out = {slot, itemLevel: item.level, bare, worn, matBonus: round(R.artifactMagicAttackBonus(a))};
+    // v0.30 起法宝成长从生命改成魔法：旧源有 artifactHpBonus、新源换成 artifactMpBonus；有哪个量哪个（旧源产物不变）
+    if (typeof R.artifactHpBonus === 'function') out.hpBonus = round(R.artifactHpBonus(a));
+    if (typeof R.artifactMpBonus === 'function') out.mpBonus = round(R.artifactMpBonus(a));
+    return out;
   }));
 }
 // ③ drop.*：R.teamDropRateFactor（Game_Enemy.dropItemRate 与图鉴、地图详情共用）：亡魂汲取 10129（渡鸦 5 级起）在出战成员里时 +1（加在套装与 passiveIRUP 之后，不乘）；
