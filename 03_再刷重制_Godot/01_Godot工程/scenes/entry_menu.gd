@@ -5,6 +5,10 @@ const UI = preload("res://core/menu_ui.gd")
 var cards: GridContainer
 
 func _ready() -> void:
+	# 发行构建直达西游标题，不显示模式选择（BI；ReleaseEntry.direct_title=false 回退）。
+	if ReleaseEntry.skips_menu():
+		GameApp.enter_mode.call_deferred(ReleaseEntry.DIRECT_MODE)
+		return
 	theme = UI.make_theme()
 	var column := UI.layout(self)
 	column.add_child(UI.label("再刷一把", 58, Color("f0e5cc")))

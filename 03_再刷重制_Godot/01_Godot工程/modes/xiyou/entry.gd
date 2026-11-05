@@ -98,9 +98,11 @@ func _title() -> void:
 		any = any or XSave.exists(i)
 	_add_picture_command(0, "新的游戏", true, _new_game)
 	_add_picture_command(1, "旧的回忆", any, _choose_save)
-	var back := _add_picture_command(-1, "返回版本选择", true, GameApp.return_to_menu)
-	back.name = "ReturnToMenu"
-	var ver := XUI.label("重制开发版 · 首期：开局区域", 18, XUI.DIM)
+	# 发行构建没有版本选择，不放「返回版本选择」（BI）。
+	if not ReleaseEntry.skips_menu():
+		var back := _add_picture_command(-1, "返回版本选择", true, GameApp.return_to_menu)
+		back.name = "ReturnToMenu"
+	var ver := XUI.label(ReleaseEntry.APP_NAME if ReleaseEntry.is_release() else "重制开发版 · 首期：开局区域", 18, XUI.DIM)
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.position = get_viewport_rect().size - Vector2(330, 40)
 	_layer.add_child(ver)
