@@ -3,6 +3,8 @@ extends Node
 ## 原 update 之后按 CodexSV.profiles.Yunshang 缩放，scaleFor＝min(72／可见高 132, 129／可见宽 124)≈0.545）；别的角色照原生（格宽不超内容宽一半就 1 倍）。
 ## MOG_CharPoses 奔跑姿势：插件参数「角色奔跑-3」＝CXK-lan-qiu，3 号艾坤在玩家／跟随位置跑步时换这张，停下后保持 3 帧再换回；
 ## 别人（没配）跑步照原图。跟随看玩家的保持帧数。
+## 状态脚本里写死的战斗图（换装卡 var battlerName、setBattlerImage）都要导出：之前 18 张切片可达的换装卡、5 个变身状态没图，战斗中人物空白。
+## 切片角色的脸图、行走图、战斗图与 <sv:> 逐帧图都要在。
 var passed := 0
 var total := 0
 
@@ -41,6 +43,7 @@ func _run() -> void:
 	check("yunshang_scale", page.sprite.scale.is_equal_approx(Vector2(want, want)), page.sprite.scale)
 	page.queue_free()
 	_dash_pose()
+	_images()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total and total > 0 else 1)
 
@@ -78,3 +81,29 @@ func _dash_pose() -> void:
 		f._update_pose()
 	check("follower", on == "CXK-lan-qiu" and f.character_name == "RenWu_02", [on, f.character_name, s.party])
 	f.free()
+
+
+func _images() -> void:
+	var miss := []
+	for st in XCostumes.registry().values():
+		if XDB.img_path("sv_actors", str(st.image)) == "":
+			miss.append("卡 %d %s" % [st.state, st.image])
+	check("costume_count", XCostumes.registry().size() == 58, XCostumes.registry().size())
+	var re := RegEx.create_from_string("(?:setBattlerImage\\(\\s*|battlerName\\s*=\\s*)['\"]([^'\"]+)['\"]")
+	var n := 0
+	for st in XDB.table("States"):
+		if st is Dictionary and not st.is_empty():
+			for m in re.search_all(str(st.get("note", ""))):
+				n += 1
+				if XDB.img_path("sv_actors", m.get_string(1)) == "":
+					miss.append("状态 %d %s" % [int(st.id), m.get_string(1)])
+	check("state_images", n >= 71 and miss.is_empty(), [n, miss])
+	var bad := []
+	for a in XDB.table("Actors"):
+		if not (a is Dictionary) or str(a.get("name", "")) == "" or int(a.id) > 178:
+			continue
+		for pair in [["faces", "faceName"], ["characters", "characterName"], ["sv_actors", "battlerName"]]:
+			var nm := str(a.get(pair[1], ""))
+			if nm != "" and XDB.img_path(pair[0], nm) == "":
+				bad.append("%d %s %s" % [int(a.id), pair[0], nm])
+	check("actor_images", bad.is_empty(), bad)

@@ -34,6 +34,8 @@ HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
 DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
+## 状态备注脚本里写死的战斗图名（XCostumes 认 var battlerName，XStateEffects costume_image 认 setBattlerImage）
+STATE_BATTLER_IMAGE = re.compile(r"""(?:setBattlerImage\(\s*|battlerName\s*=\s*)['"]([^'"]+)['"]""")
 TABLES = ['Actors', 'Classes', 'Skills', 'Items', 'Weapons', 'Armors', 'Enemies', 'Troops', 'States',
           'Animations', 'CommonEvents', 'Tilesets', 'MapInfos', 'System',
           'CodexDamageElements', 'CodexOrbs', 'CodexRaces']  # 后三张是西游自定义表：伤害元素/克制、法珠、种族
@@ -1652,6 +1654,10 @@ class Exporter:
         for st in db['States']:
             if st:
                 self.ref_super_sv(st.get('meta', {}))
+                # 状态脚本里写死的战斗图（换装卡 var battlerName = '…'、Custom Apply Effect 的 setBattlerImage('…')）：
+                # 状态全表都导出，卡图与变身图跟着全带上（portrait1：之前只带了 66、226 两张，18 张切片可达的换装卡战斗中没图）
+                for m in STATE_BATTLER_IMAGE.finditer(st.get('note', '')):
+                    self.ref_img('sv_actors', m.group(1))
         enemies = set()
         for tid in troops:
             t = db['Troops'][tid]
@@ -1733,9 +1739,6 @@ class Exporter:
         # 界面用图（标题、菜单底图等），写成「文件夹/文件名」
         for rel in cfg.get('extraImages', []):
             self.img.add(rel)
-        # 切片可达的换装状态 66、226 脚本里写死的战斗图（别的换装图已经因别的引用在切片里）
-        for name in ('ftzs', '2_Brown'):
-            self.ref_img('sv_actors', name)
         # 脚本里写死的逐帧图（Codex_MiraRavenMultiFrame 的米拉／渡鸦变身、小猫剑圣）：整个 sv_actors/sv/文件夹 带上
         for folder in cfg.get('extraSvFolders', []):
             for f in sorted((self.app / 'img' / 'sv_actors' / 'sv' / folder).glob('*.png')):
