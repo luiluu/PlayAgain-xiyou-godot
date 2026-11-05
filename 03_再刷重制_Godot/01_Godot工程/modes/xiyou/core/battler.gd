@@ -54,6 +54,10 @@ var state_turns := {}
 ## （CP_StateFloor allFloorStates）。状态重新附加（中间解除、阵亡、战斗结束清掉过）时从 1 层算起。
 static var FLOOR_YINYUE := true
 const FLOOR_STATES := [1323, 1324, 1325, 1326, 1327, 2521]
+## O-待定（rules10b，总装定）：按说明能叠，但封顶 10 层（20 层暴击 +219%，叠 1749 溢出成暴击伤害太强）。设 0 回到 rules10 的不限层
+static var FLOOR_YINYUE_MAX := 10
+## O-待定（rules10b）：剑饮空月 10119 说明「每层隐月 +2% 暴击」，它挂的隐月 2521 数据是 +0.2%（7489 的 1323 是 +2%）。按说明读成 +2%；false 回原版 0.2%
+static var FIX_YINYUE_2521 := true
 var state_floors := {}
 ## YEP stateOrigin：状态 ID → 附加时行动者的 WeakRef（XImportedBalance.acting_battler）；导入角色平衡的持续伤害按来源判断。
 ## 用弱引用：自己给自己加状态、双方互相记来源都会成环，RefCounted 环在退出时泄漏
@@ -288,10 +292,23 @@ func decay_shield() -> void:
 
 
 # ---- 状态 ----
+static var _yinyue_2521 := {}
+## 状态记录；FIX_YINYUE_2521 开时 2521 的暴击特性换成 +2%（复制一份，不改数据库）
+static func state_rec(id: int) -> Dictionary:
+	var s := XDB.rec("States", id)
+	if id != 2521 or not FIX_YINYUE_2521 or s.is_empty():
+		return s
+	if _yinyue_2521.is_empty():
+		_yinyue_2521 = s.duplicate(true)
+		for t in _yinyue_2521.get("traits", []):
+			if int(t.code) == TRAIT_XPARAM and int(t.dataId) == 2:
+				t.value = 0.02
+	return _yinyue_2521
+
 func states() -> Array:
 	var out := []
 	for id in state_ids:
-		var s := XDB.rec("States", id)
+		var s := state_rec(id)
 		if not s.is_empty():
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
@@ -325,6 +342,9 @@ static func floor_stackable(id: int) -> bool:
 func add_state_floor(id: int) -> void:
 	if not state_ids.has(id):
 		return
+	var cap := FLOOR_YINYUE_MAX if FLOOR_STATES.has(id) else 0
+	if cap > 0 and state_floor(id) >= cap:
+		return
 	state_floors[id] = state_floor(id) + 1
 	param_mark_dirty()
 	param_refresh()
@@ -335,7 +355,7 @@ func floor_states() -> Array:
 	for id in state_floors:
 		var n := state_floor(int(id)) - 1
 		if n > 0:
-			var st := XDB.rec("States", int(id))
+			var st := state_rec(int(id))
 			for i in n:
 				out.append(st)
 	return out

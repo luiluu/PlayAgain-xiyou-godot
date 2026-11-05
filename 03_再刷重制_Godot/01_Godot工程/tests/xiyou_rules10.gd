@@ -91,14 +91,31 @@ func _floors() -> void:
 			XBattler.FLOOR_YINYUE = false  # 回退支：原版
 		for skill_id in FLOOR_SKILLS:
 			var st: int = int(FLOOR_SKILLS[skill_id])
-			var per: float = float(XDB.rec("States", st).traits[0].value)
-			for n in [1, 5, 20]:
+			var per: float = float(XBattler.state_rec(st).traits[0].value)
+			for n in [1, 5, 10, 11, 20]:
 				var r := _floor_run(skill_id, n)
-				var layers: int = n if on else 1
+				var layers: int = mini(n, XBattler.FLOOR_YINYUE_MAX) if on else 1  # rules10b 封顶 10 层
 				check("floor.%s.%d.%d" % [on, st, n], r.floor == layers and r.count == 1 and is_equal_approx(r.cri, r.base + per * layers), [r.floor, r.count, r.base, r.cri])
 				if on:
 					print("MEASURE floor %d 层数 %d 暴击率 %.4f → %.4f" % [st, n, r.base, r.cri])
 	XBattler.FLOOR_YINYUE = true
+	# rules10b 回退支：上限设 0 回到不限层
+	XBattler.FLOOR_YINYUE_MAX = 0
+	var unl := _floor_run(7506, 20)
+	check("floor.unlimited", unl.floor == 20 and is_equal_approx(unl.cri, unl.base + 2.0), [unl.floor, unl.cri])
+	XBattler.FLOOR_YINYUE_MAX = 10
+	# rules10b：10119 的隐月 2521 按说明每层 +2%；回退支原版 0.2%
+	for fix in [true, false]:
+		if fix:
+			XBattler.FIX_YINYUE_2521 = true
+		else:
+			XBattler.FIX_YINYUE_2521 = false  # 回退支：原版 0.2%
+		for n in [1, 5, 10]:
+			var y := _floor_run(10119, n)
+			check("floor.2521.%s.%d" % [fix, n], is_equal_approx(y.cri, y.base + (0.02 if fix else 0.002) * n), [y.cri, y.base])
+			print("MEASURE 2521 %s 层数 %d 暴击率 %.4f → %.4f" % ["按说明 2%" if fix else "原版 0.2%", n, y.base, y.cri])
+	XBattler.FIX_YINYUE_2521 = true
+	check("floor.2521.db_untouched", is_equal_approx(float(XDB.rec("States", 2521).traits[0].value), 0.002))
 	# 解除后重新附加从 1 层算起；阵亡清状态后同样
 	var r := _floor_run(7506, 5)
 	var a: XActor = r.a
