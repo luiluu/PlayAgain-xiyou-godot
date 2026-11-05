@@ -487,6 +487,7 @@ func trait_objects() -> Array:
 				out.append(st)
 	else:
 		out.append_array(states())
+	out.append_array(floor_states())  # CP_StateFloor traitObjects 包装：隐月多出的层
 	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):

@@ -254,6 +254,7 @@ func param_now(i: int) -> float:
 func trait_objects() -> Array:
 	var out := [data()]
 	out.append_array(states())
+	out.append_array(floor_states())  # CP_StateFloor：隐月多出的层
 	return out
 
 ## Game_Enemy.replaceAttackSkillId：状态 → 敌人

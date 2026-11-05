@@ -332,6 +332,14 @@ static func page_dir(event: InputEvent) -> int:
 	return 0
 
 
+## 换角色键：正式版运行时 Input.keyMapper（YEP_ButtonCommonEvents 改过）Q＝pageup、E＝pagedown、W＝up
+## （generated/oracle/party.json 的 keys）；装备指令窗、状态页 setHandler('pageup'/'pagedown') 换角色（YEP_EquipCore、JAH_StatusMenuCore）。按住不连发。
+static func actor_key(key: InputEventKey, code: Key) -> bool:
+	if key == null or not key.pressed or key.echo:
+		return false
+	return (key.physical_keycode if key.physical_keycode != 0 else key.keycode) == code
+
+
 ## 鼠标滚轮：下 1、上 -1、其余 0（Window_Selectable.processWheel 的方向）
 static func wheel_dir(event: InputEvent) -> int:
 	if not LIST_PAGING or not (event is InputEventMouseButton) or not event.pressed:

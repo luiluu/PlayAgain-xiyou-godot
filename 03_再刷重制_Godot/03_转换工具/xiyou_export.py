@@ -546,7 +546,8 @@ MEASURED_EFFECT_SOURCES.update({
 # dot2（state_effects_probe damagedot.apply）：2038 火遁初级燃烧 addState。customEffectEval 里 user＝target＝持有者，damagedot＝持有者自己的 MAT*50*(1+v1218)；
 # 先 v1218 +1（学过 7520 再 +3）后读；敌人没有 hasSkill（TypeError，整块中断）。字段 damagedot 由 YEP_X_ExtDoT 的 2038 自定义再生公式读（ext_dot.gd）。
 MEASURED_EFFECT_BLOCKS.add(('apply', 'if ( user . hasSkill ( 7520 ) ) { $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 3 ) } ; $gameVariables . setValue ( 1218 , $gameVariables . value ( 1218 ) + 1 ) ; user . damagedot = target . mat * 50 * ( 1 + $gameVariables . value ( 1218 ) ) ;'))  # 2038
-# 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」，没写清暴击率口径，不修，等 Kyo
+# 1749 原版 user.criticalRate() 不存在（TypeError，参照量到整块无效果）；说明只写了「每点暴击率提供 0.01 暴击伤害」。
+# rules10（Kyo 拍板、总装定口径）：按说明做成 EFFECT_FIXES 的 FIX_CRIT_1749，持有者每 1% 最终暴击率，暴击时伤害 +1%；原版块仍是 no_effect
 NO_EFFECT_BLOCKS.add(('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'))  # 1749
 # rules8 第二批（state_effects_probe rest2.blocks）
 MEASURED_EFFECT_BLOCKS.update({
@@ -625,6 +626,9 @@ EFFECT_FIXES = {
         ('FIX_ORDER_TIERS', 'if (user.isBattleMember() && user.isAlive()) { if (user.aliveFriends() > 3) { user.removeState(1717); user.removeState(1718); user.removeState(1719); user.addState(1720); } else if (user.aliveFriends() > 2) { user.removeState(1717); user.removeState(1718); user.addState(1719); user.removeState(1720); } else if (user.aliveFriends() > 1) { user.removeState(1717); user.addState(1718); user.removeState(1719); user.removeState(1720); } else if (user.aliveFriends() > 0) { user.addState(1717); user.removeState(1718); user.removeState(1719); user.removeState(1720); } }'),
     ('turn_start', 'if ( ! $gameVariables . value ( 1163 ) == 1 ) { $gameTemp . reserveCommonEvent ( 1513 ) ; }'):  # 1318
         ('FIX_ITACHI_1318', 'if ($gameVariables.value(1163) != 1) { user.reserve(1513); }'),
+    # rules10：1749「数据错误:暴击」说明「每点暴击率提供 0.01 暴击伤害」：暴击时 value += ceil(value × 0.01 × 暴击率点数)＝ceil(value × 最终 cri)
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonusRate = 0.01 ; var criticalRate = user . criticalRate ( ) ; var bonusDamage = value * bonusRate * criticalRate ; if ( target . result ( ) . critical ) { value + = Math . ceil ( bonusDamage ) ; } }'):  # 1749
+        ('FIX_CRIT_1749', 'if (this.isHpEffect() && value > 0) { var bonusDamage = value * user.cri; if (target.result().critical) { value += Math.ceil(bonusDamage); } }'),
 }
 
 # fix2：在 fix1 修正之上再按技能说明改（Kyo 2026-11-04：说明与代码对不上的一律按说明走）。开关与 fix1 的开关都开时才用第二份程序。
