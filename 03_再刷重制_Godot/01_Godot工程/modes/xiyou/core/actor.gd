@@ -329,7 +329,6 @@ func _level_up() -> void:
 ## 事件对照 events5c 的 HP／MP 观察面咬出：公共事件 231「升级药」原版升到 10 级 HP＝mhp，重制此前只夹不回
 func _level_up_recover() -> void:
 	var p := XDB.plugin("Olivia_AntiPlayerStress")
-	refresh_passive()  # 刚学的技能被动算进 mhp／mmp（MV 的 mhp 是现算的）
 	if str(p.get("Recover Full HP", "true")) == "true":
 		hp = mhp
 	if str(p.get("Recover Full MP", "true")) == "true":

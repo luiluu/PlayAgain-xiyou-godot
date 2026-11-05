@@ -13,6 +13,8 @@
    - 其余 6230/6231 一致，剩 1 例 m4e73p0 是登记里已知不一致。
 4. 两份基线重写：`event_compare_baseline.json`、`event_skipped_baseline.json`（跳过 148 例 424 条，CE1386 不再跳后 5b 写的 160/436 缩了 12 例）。
 
+   - 回满牵动 `xiyou_raven_battle`（云端首跑唯一红）：该测试 `residue.sync` 原来 MP 只是巧合相等（重制不回满，MP 停在 60 级的 1193）。回满后重制 61 级 mmp＝1208，而 mv_oracle 量到 MV 渡鸦 61 级后 `mmp` 停在 1193（`paramBase(1)` 已是 1224 / 1208，被某处封顶，**来源没查清**）。先把这两步的 MP 改取参照值不比（同该文件 l.175 的老办法），**留待量清**：渡鸦 60 级以上 mmp 封顶是原版哪段（YEP 参数公式／渡鸦运行时？），重制是否漏。影响仅限渡鸦 60 级以上。
+
 ## 二、合并提示（给总装）
 
 - main 的 generated 参照落后于 events4：同步 main 时需要把本分支的 `cc_bajie-events5b.json`（320，刷 events4 落后）与 obs 的**合并单**给 `--accept-changes`。重复键（两份都有的）要合成"main 旧摘要 → 最终新摘要"一条；我没有 main 的参照产物，没法本地验证合并单，故未提供。若总装从 `--from-worktree cc/bajie-events5c` 克隆本分支产物则无此问题。
@@ -34,5 +36,6 @@
 ## 验证
 
 - 本机：`语法检查.py` 0 问题；`工具回归.py` 通过；同步（`--accept-additions --accept-changes obs`）退出码 0；`xiyou_event_compare` 6231 例 6230 一致、1 例已知、0 回归，跳过基线 new=0。
-- 选测：`选测.py main --list` 220 个场景（actor.gd 牵动面大）→ 云端选测，结果见下。
+- 选测：`选测.py main --list` 220 个场景（actor.gd 牵动面大）→ 云端选测。首跑 c4285f99ea：219 过、1 红（xiyou_raven_battle，已按上修）；复跑结果见文末。
+- 没做：渡鸦 61 级后 mmp 封顶来源；`cc_bajie-events5b.json`＋obs 的 main 合并单（见合并提示）。
 
