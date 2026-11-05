@@ -1,34 +1,42 @@
-; 再刷重制：双入口（西游改版、新版）；开发编号见 config/version。
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
+
 config/name="再刷重制"
 config/name.tianqi_release="再刷一把：天启篇"
 config/description="西游改版优先重制，新版保留入口。"
-config/version="dev.363"
+config/version="dev.364"
 run/main_scene="res://scenes/entry_menu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="KYO/再刷重制_开发"
+config/features=PackedStringArray("4.7")
 
 [autoload]
+
 GameApp="*res://core/game_app.gd"
 
 [display]
+
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-
-[rendering]
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
-textures/default_filters/use_nearest_mipmap_filter=false
-textures/vram_compression/import_etc2_astc=true
-
-[audio]
-driver/enable_input=false
 
 [internationalization]
+
 locale/include_text_server_data=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
