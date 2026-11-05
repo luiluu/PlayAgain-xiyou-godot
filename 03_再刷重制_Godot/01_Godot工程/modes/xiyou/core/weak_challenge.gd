@@ -14,7 +14,8 @@ extends RefCounted
 ##   中途换回来也不恢复），强者行动也作废；胜利（result 0）且敌群全灭、仍是五名弱者 → 本局与全局标记开、全员同步、成就 142、写配置。
 ##   阵亡的出战队员照算，替补不算。
 ## 回退开关 ENABLED（O-待定，见 00_设计/优化登记.md）：false 时整个弱者挑战不生效，回到移植前（成就 142 拿不到、10357 没人学）。
-## 未移植（二期）：说明卡里 10357 的「品质：」行改成「品质：神话」（RJO.HE.getItemExtraDescParams2 包装）。
+## - 说明卡（二期）：技能 10357 且备注带 <CodexWeakNewGame> 时「品质：」行写「品质：神话」（RJO.HE.getItemExtraDescParams2 包装，
+##   不看标记）。冻结 v0.28 里 10357 品质 14 按七档本来就叫神话，参照 help.10357 两支与 10356 对照，所以现在显示不变，只防品质表再改。
 ## 不移植：command117 对旧存档解释器里 Map48／49／54／85 公共事件 1431 的跳过（重制存档不存解释器现场）。
 
 static var ENABLED := true
@@ -118,6 +119,15 @@ static func sparam(a, i: int, v: float) -> float:
 
 static func damage_ops(a) -> Array:
 	return [{"op": "mul", "field": "finalMultiplier", "value": 3.0}] if active(a) else []
+
+
+static var _desc_tag := RegEx.create_from_string("(?i)<CodexWeakNewGame>")
+
+
+static func quality_label(skill: Dictionary, label: String) -> String:
+	if ENABLED and int(skill.get("id", 0)) == SKILL and _desc_tag.search(str(skill.get("note", ""))) != null:
+		return "品质：神话"
+	return label
 
 
 static func _all_weak(s: XState) -> bool:
