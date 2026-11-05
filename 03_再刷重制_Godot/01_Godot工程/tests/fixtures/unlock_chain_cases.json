@@ -1,0 +1,2093 @@
+{
+ "note": "解锁链表.py --cases 生成，勿手改；跳过的入口写在 skip",
+ "skip": [],
+ "cases": [
+  {
+   "id": "m1e1p0",
+   "src_map": 1,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    3,
+    6
+   ],
+   "dest": 2,
+   "xy": [
+    8,
+    9
+   ],
+   "cond": "V1「选人」 >= 0",
+   "switches": {},
+   "vars": {
+    "1": 0
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m123e6p0",
+   "src_map": 123,
+   "ev": 6,
+   "page": 0,
+   "pos": [
+    14,
+    24
+   ],
+   "dest": 3,
+   "xy": [
+    41,
+    17
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m8e9p0",
+   "src_map": 8,
+   "ev": 9,
+   "page": 0,
+   "pos": [
+    13,
+    33
+   ],
+   "dest": 7,
+   "xy": [
+    16,
+    11
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m8e1p0",
+   "src_map": 8,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    30,
+    26
+   ],
+   "dest": 9,
+   "xy": [
+    9,
+    6
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m13e1p0",
+   "src_map": 13,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    31,
+    0
+   ],
+   "dest": 14,
+   "xy": [
+    31,
+    34
+   ],
+   "cond": "S1581「6层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {
+    "1581": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m131e7p0",
+   "src_map": 131,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    24,
+    38
+   ],
+   "dest": 15,
+   "xy": [
+    30,
+    1
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m190e2p0",
+   "src_map": 190,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    5,
+    17
+   ],
+   "dest": 16,
+   "xy": [
+    6,
+    19
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m21e14p0",
+   "src_map": 21,
+   "ev": 14,
+   "page": 0,
+   "pos": [
+    2,
+    2
+   ],
+   "dest": 20,
+   "xy": [
+    10,
+    13
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m20e10p0",
+   "src_map": 20,
+   "ev": 10,
+   "page": 0,
+   "pos": [
+    10,
+    14
+   ],
+   "dest": 21,
+   "xy": [
+    2,
+    1
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m17e2p0",
+   "src_map": 17,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    21,
+    35
+   ],
+   "dest": 22,
+   "xy": [
+    11,
+    41
+   ],
+   "cond": "S1597「10层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 64「中级副本挑战符文」",
+   "switches": {
+    "1597": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "64": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m24e14p0",
+   "src_map": 24,
+   "ev": 14,
+   "page": 0,
+   "pos": [
+    7,
+    11
+   ],
+   "dest": 25,
+   "xy": [
+    8,
+    11
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m24e15p0",
+   "src_map": 24,
+   "ev": 15,
+   "page": 0,
+   "pos": [
+    37,
+    11
+   ],
+   "dest": 26,
+   "xy": [
+    8,
+    11
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m24e16p0",
+   "src_map": 24,
+   "ev": 16,
+   "page": 0,
+   "pos": [
+    5,
+    27
+   ],
+   "dest": 27,
+   "xy": [
+    8,
+    11
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m24e17p0",
+   "src_map": 24,
+   "ev": 17,
+   "page": 0,
+   "pos": [
+    42,
+    27
+   ],
+   "dest": 28,
+   "xy": [
+    8,
+    11
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m30e6p0",
+   "src_map": 30,
+   "ev": 6,
+   "page": 0,
+   "pos": [
+    10,
+    9
+   ],
+   "dest": 39,
+   "xy": [
+    16,
+    37
+   ],
+   "cond": "S1613「14层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 110「高级副本挑战符文」",
+   "switches": {
+    "1613": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "110": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m32e4p0",
+   "src_map": 32,
+   "ev": 4,
+   "page": 0,
+   "pos": [
+    29,
+    0
+   ],
+   "dest": 43,
+   "xy": [
+    24,
+    46
+   ],
+   "cond": "S1617「15层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 171「特级副本挑战符文」",
+   "switches": {
+    "1617": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "171": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m161e1p0",
+   "src_map": 161,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    9,
+    5
+   ],
+   "dest": 45,
+   "xy": [
+    24,
+    7
+   ],
+   "cond": "选「是」；V6「副本号」 == 12",
+   "switches": {},
+   "vars": {
+    "6": 12
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m162e1p0",
+   "src_map": 162,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    9,
+    5
+   ],
+   "dest": 47,
+   "xy": [
+    14,
+    14
+   ],
+   "cond": "选「是」；V6「副本号」 == 14",
+   "switches": {},
+   "vars": {
+    "6": 14
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m193e1p0",
+   "src_map": 193,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    9,
+    1
+   ],
+   "dest": 48,
+   "xy": [
+    44,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m46e2p0",
+   "src_map": 46,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    21,
+    24
+   ],
+   "dest": 49,
+   "xy": [
+    19,
+    34
+   ],
+   "cond": "S1629「18层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 171「特级副本挑战符文」",
+   "switches": {
+    "1629": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "171": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m156e2p0",
+   "src_map": 156,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    8,
+    0
+   ],
+   "dest": 54,
+   "xy": [
+    15,
+    33
+   ],
+   "cond": "独立开关 D；选「挑战副本」；否：V5「副本开启」 == 14；持有物品 171「特级副本挑战符文」",
+   "switches": {},
+   "vars": {
+    "5": 15
+   },
+   "items": {
+    "171": 1
+   },
+   "self": {
+    "D": true
+   },
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m64e2p0",
+   "src_map": 64,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    14,
+    25
+   ],
+   "dest": 63,
+   "xy": [
+    15,
+    37
+   ],
+   "cond": "S1609「13层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 110「高级副本挑战符文」",
+   "switches": {
+    "1609": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "110": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m192e1p0",
+   "src_map": 192,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    5,
+    27
+   ],
+   "dest": 64,
+   "xy": [
+    38,
+    27
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m4e36p0",
+   "src_map": 4,
+   "ev": 36,
+   "page": 0,
+   "pos": [
+    14,
+    4
+   ],
+   "dest": 65,
+   "xy": [
+    21,
+    14
+   ],
+   "cond": "选「进入该层」；V20「神魔之塔层数」 == 12",
+   "switches": {},
+   "vars": {
+    "20": 12
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m71e14p0",
+   "src_map": 71,
+   "ev": 14,
+   "page": 0,
+   "pos": [
+    33,
+    59
+   ],
+   "dest": 73,
+   "xy": [
+    8,
+    12
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m71e18p0",
+   "src_map": 71,
+   "ev": 18,
+   "page": 0,
+   "pos": [
+    67,
+    60
+   ],
+   "dest": 74,
+   "xy": [
+    6,
+    16
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m78e1p0",
+   "src_map": 78,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    21,
+    34
+   ],
+   "dest": 76,
+   "xy": [
+    17,
+    26
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m82e2p0",
+   "src_map": 82,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    5,
+    7
+   ],
+   "dest": 83,
+   "xy": [
+    5,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m71e24p0",
+   "src_map": 71,
+   "ev": 24,
+   "page": 0,
+   "pos": [
+    34,
+    46
+   ],
+   "dest": 95,
+   "xy": [
+    12,
+    14
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m71e25p0",
+   "src_map": 71,
+   "ev": 25,
+   "page": 0,
+   "pos": [
+    25,
+    46
+   ],
+   "dest": 96,
+   "xy": [
+    8,
+    15
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m69e46p0",
+   "src_map": 69,
+   "ev": 46,
+   "page": 0,
+   "pos": [
+    104,
+    45
+   ],
+   "dest": 106,
+   "xy": [
+    11,
+    46
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m166e7p0",
+   "src_map": 166,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    14,
+    36
+   ],
+   "dest": 117,
+   "xy": [
+    35,
+    1
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m169e8p0",
+   "src_map": 169,
+   "ev": 8,
+   "page": 0,
+   "pos": [
+    0,
+    23
+   ],
+   "dest": 118,
+   "xy": [
+    43,
+    46
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m170e10p0",
+   "src_map": 170,
+   "ev": 10,
+   "page": 0,
+   "pos": [
+    8,
+    25
+   ],
+   "dest": 119,
+   "xy": [
+    38,
+    5
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m172e7p0",
+   "src_map": 172,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    23,
+    39
+   ],
+   "dest": 120,
+   "xy": [
+    41,
+    1
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m182e2p0",
+   "src_map": 182,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    18,
+    0
+   ],
+   "dest": 121,
+   "xy": [
+    24,
+    38
+   ],
+   "cond": "S1665「27层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 640「不朽灵魂」",
+   "switches": {
+    "1665": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "640": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m124e2p0",
+   "src_map": 124,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    9,
+    14
+   ],
+   "dest": 123,
+   "xy": [
+    11,
+    7
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m123e5p0",
+   "src_map": 123,
+   "ev": 5,
+   "page": 0,
+   "pos": [
+    10,
+    6
+   ],
+   "dest": 124,
+   "xy": [
+    9,
+    12
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m61e10p0",
+   "src_map": 61,
+   "ev": 10,
+   "page": 0,
+   "pos": [
+    0,
+    16
+   ],
+   "dest": 129,
+   "xy": [
+    9,
+    18
+   ],
+   "cond": "S1585「7层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {
+    "1585": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m61e11p0",
+   "src_map": 61,
+   "ev": 11,
+   "page": 0,
+   "pos": [
+    25,
+    16
+   ],
+   "dest": 130,
+   "xy": [
+    9,
+    18
+   ],
+   "cond": "S1585「7层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {
+    "1585": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m15e4p0",
+   "src_map": 15,
+   "ev": 4,
+   "page": 0,
+   "pos": [
+    30,
+    0
+   ],
+   "dest": 131,
+   "xy": [
+    24,
+    36
+   ],
+   "cond": "S1593「9层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {
+    "1593": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m204e2p0",
+   "src_map": 204,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    1,
+    8
+   ],
+   "dest": 132,
+   "xy": [
+    14,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m167e5p1",
+   "src_map": 167,
+   "ev": 5,
+   "page": 1,
+   "pos": [
+    19,
+    17
+   ],
+   "dest": 141,
+   "xy": [
+    9,
+    15
+   ],
+   "cond": "S75「深渊1」 开；选「继续解开封印」；选「前往未知存在」",
+   "switches": {
+    "75": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "m11e14p0",
+   "src_map": 11,
+   "ev": 14,
+   "page": 0,
+   "pos": [
+    1,
+    27
+   ],
+   "dest": 142,
+   "xy": [
+    9,
+    18
+   ],
+   "cond": "选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {},
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m11e15p0",
+   "src_map": 11,
+   "ev": 15,
+   "page": 0,
+   "pos": [
+    48,
+    28
+   ],
+   "dest": 143,
+   "xy": [
+    9,
+    18
+   ],
+   "cond": "选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {},
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m213e1p0",
+   "src_map": 213,
+   "ev": 1,
+   "page": 0,
+   "pos": [
+    13,
+    1
+   ],
+   "dest": 144,
+   "xy": [
+    13,
+    28
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m180e3p0",
+   "src_map": 180,
+   "ev": 3,
+   "page": 0,
+   "pos": [
+    35,
+    0
+   ],
+   "dest": 155,
+   "xy": [
+    32,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m4e36p0",
+   "src_map": 4,
+   "ev": 36,
+   "page": 0,
+   "pos": [
+    14,
+    4
+   ],
+   "dest": 156,
+   "xy": [
+    8,
+    22
+   ],
+   "cond": "选「进入该层」；V20「神魔之塔层数」 == 32",
+   "switches": {},
+   "vars": {
+    "20": 32
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m4e36p0",
+   "src_map": 4,
+   "ev": 36,
+   "page": 0,
+   "pos": [
+    14,
+    4
+   ],
+   "dest": 157,
+   "xy": [
+    24,
+    12
+   ],
+   "cond": "选「进入该层」；V20「神魔之塔层数」 == 33",
+   "switches": {},
+   "vars": {
+    "20": 33
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m4e36p0",
+   "src_map": 4,
+   "ev": 36,
+   "page": 0,
+   "pos": [
+    14,
+    4
+   ],
+   "dest": 158,
+   "xy": [
+    7,
+    33
+   ],
+   "cond": "选「进入该层」；V20「神魔之塔层数」 == 34",
+   "switches": {},
+   "vars": {
+    "20": 34
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m50e5p1",
+   "src_map": 50,
+   "ev": 5,
+   "page": 1,
+   "pos": [
+    19,
+    17
+   ],
+   "dest": 160,
+   "xy": [
+    9,
+    15
+   ],
+   "cond": "S75「深渊1」 开；选「继续解开封印」；选「前往未知存在」",
+   "switches": {
+    "75": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "m52e5p1",
+   "src_map": 52,
+   "ev": 5,
+   "page": 1,
+   "pos": [
+    19,
+    17
+   ],
+   "dest": 161,
+   "xy": [
+    9,
+    14
+   ],
+   "cond": "S75「深渊1」 开；选「继续解开封印」；选「前往未知存在」",
+   "switches": {
+    "75": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "m56e5p1",
+   "src_map": 56,
+   "ev": 5,
+   "page": 1,
+   "pos": [
+    19,
+    17
+   ],
+   "dest": 162,
+   "xy": [
+    9,
+    14
+   ],
+   "cond": "S75「深渊1」 开；选「继续解开封印」；选「前往未知存在」",
+   "switches": {
+    "75": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "m116e2p0",
+   "src_map": 116,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    17,
+    1
+   ],
+   "dest": 163,
+   "xy": [
+    14,
+    22
+   ],
+   "cond": "S1637「20层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 397「终极副本挑战符文」",
+   "switches": {
+    "1637": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "397": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m118e4p0",
+   "src_map": 118,
+   "ev": 4,
+   "page": 0,
+   "pos": [
+    44,
+    46
+   ],
+   "dest": 169,
+   "xy": [
+    0,
+    23
+   ],
+   "cond": "S1649「23层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 397「终极副本挑战符文」",
+   "switches": {
+    "1649": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "397": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m119e14p0",
+   "src_map": 119,
+   "ev": 14,
+   "page": 0,
+   "pos": [
+    38,
+    4
+   ],
+   "dest": 170,
+   "xy": [
+    8,
+    24
+   ],
+   "cond": "S1645「22层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 397「终极副本挑战符文」",
+   "switches": {
+    "1645": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "397": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m120e2p0",
+   "src_map": 120,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    41,
+    0
+   ],
+   "dest": 172,
+   "xy": [
+    23,
+    38
+   ],
+   "cond": "S1653「24层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 397「终极副本挑战符文」",
+   "switches": {
+    "1653": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "397": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m164e5p1",
+   "src_map": 164,
+   "ev": 5,
+   "page": 1,
+   "pos": [
+    19,
+    17
+   ],
+   "dest": 176,
+   "xy": [
+    9,
+    15
+   ],
+   "cond": "S75「深渊1」 开；选「继续解开封印」；选「前往未知存在」",
+   "switches": {
+    "75": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "m155e2p0",
+   "src_map": 155,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    32,
+    7
+   ],
+   "dest": 180,
+   "xy": [
+    35,
+    1
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m180e9p0",
+   "src_map": 180,
+   "ev": 9,
+   "page": 0,
+   "pos": [
+    22,
+    4
+   ],
+   "dest": 181,
+   "xy": [
+    22,
+    33
+   ],
+   "cond": "S1661「26层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 640「不朽灵魂」",
+   "switches": {
+    "1661": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "640": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m121e7p0",
+   "src_map": 121,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    24,
+    39
+   ],
+   "dest": 182,
+   "xy": [
+    18,
+    1
+   ],
+   "cond": "选「逃离」",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m121e1p4",
+   "src_map": 121,
+   "ev": 1,
+   "page": 4,
+   "pos": [
+    10,
+    5
+   ],
+   "dest": 184,
+   "xy": [
+    19,
+    24
+   ],
+   "cond": "S149「27圣兽boos」 开；V450「副本难度」 >= 1；选「是」",
+   "switches": {
+    "149": true
+   },
+   "vars": {
+    "450": 1
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m16e20p0",
+   "src_map": 16,
+   "ev": 20,
+   "page": 0,
+   "pos": [
+    6,
+    18
+   ],
+   "dest": 190,
+   "xy": [
+    5,
+    16
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m34e16p0",
+   "src_map": 34,
+   "ev": 16,
+   "page": 0,
+   "pos": [
+    33,
+    20
+   ],
+   "dest": 191,
+   "xy": [
+    9,
+    9
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m64e5p0",
+   "src_map": 64,
+   "ev": 5,
+   "page": 0,
+   "pos": [
+    39,
+    27
+   ],
+   "dest": 192,
+   "xy": [
+    6,
+    27
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m48e17p0",
+   "src_map": 48,
+   "ev": 17,
+   "page": 0,
+   "pos": [
+    44,
+    7
+   ],
+   "dest": 193,
+   "xy": [
+    9,
+    2
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m197e4p0",
+   "src_map": 197,
+   "ev": 4,
+   "page": 0,
+   "pos": [
+    0,
+    8
+   ],
+   "dest": 199,
+   "xy": [
+    10,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m197e5p0",
+   "src_map": 197,
+   "ev": 5,
+   "page": 0,
+   "pos": [
+    0,
+    14
+   ],
+   "dest": 200,
+   "xy": [
+    10,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m197e6p0",
+   "src_map": 197,
+   "ev": 6,
+   "page": 0,
+   "pos": [
+    26,
+    7
+   ],
+   "dest": 201,
+   "xy": [
+    2,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m197e7p0",
+   "src_map": 197,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    26,
+    14
+   ],
+   "dest": 202,
+   "xy": [
+    2,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m197e9p0",
+   "src_map": 197,
+   "ev": 9,
+   "page": 0,
+   "pos": [
+    23,
+    17
+   ],
+   "dest": 203,
+   "xy": [
+    6,
+    2
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m132e7p0",
+   "src_map": 132,
+   "ev": 7,
+   "page": 0,
+   "pos": [
+    15,
+    8
+   ],
+   "dest": 204,
+   "xy": [
+    2,
+    8
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m145e2p0",
+   "src_map": 145,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    9,
+    36
+   ],
+   "dest": 208,
+   "xy": [
+    19,
+    38
+   ],
+   "cond": "S1669「28层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 640「不朽灵魂」",
+   "switches": {
+    "1669": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "640": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m145e4p0",
+   "src_map": 145,
+   "ev": 4,
+   "page": 0,
+   "pos": [
+    14,
+    36
+   ],
+   "dest": 209,
+   "xy": [
+    19,
+    38
+   ],
+   "cond": "S1669「28层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 640「不朽灵魂」",
+   "switches": {
+    "1669": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "640": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m208e1p4",
+   "src_map": 208,
+   "ev": 1,
+   "page": 4,
+   "pos": [
+    19,
+    11
+   ],
+   "dest": 211,
+   "xy": [
+    19,
+    23
+   ],
+   "cond": "S1761「28如来死亡」 开；V450「副本难度」 >= 1；选「是」",
+   "switches": {
+    "1761": true
+   },
+   "vars": {
+    "450": 1
+   },
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  },
+  {
+   "id": "m214e2p0",
+   "src_map": 214,
+   "ev": 2,
+   "page": 0,
+   "pos": [
+    7,
+    9
+   ],
+   "dest": 212,
+   "xy": [
+    15,
+    27
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m144e3p0",
+   "src_map": 144,
+   "ev": 3,
+   "page": 0,
+   "pos": [
+    13,
+    29
+   ],
+   "dest": 213,
+   "xy": [
+    13,
+    2
+   ],
+   "cond": "",
+   "switches": {},
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m212e2p1",
+   "src_map": 212,
+   "ev": 2,
+   "page": 1,
+   "pos": [
+    15,
+    26
+   ],
+   "dest": 214,
+   "xy": [
+    7,
+    8
+   ],
+   "cond": "S1763「29层左门开启」 开",
+   "switches": {
+    "1763": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m212e3p1",
+   "src_map": 212,
+   "ev": 3,
+   "page": 1,
+   "pos": [
+    41,
+    26
+   ],
+   "dest": 215,
+   "xy": [
+    7,
+    8
+   ],
+   "cond": "S1764「29层右门开启」 开",
+   "switches": {
+    "1764": true
+   },
+   "vars": {},
+   "items": {},
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": []
+  },
+  {
+   "id": "m5e8p0",
+   "src_map": 5,
+   "ev": 8,
+   "page": 0,
+   "pos": [
+    4,
+    17
+   ],
+   "dest": 220,
+   "xy": [
+    16,
+    26
+   ],
+   "cond": "S1561「1层普通」 开；选「挑战副本」；否：V5「副本开启」 == 1；持有物品 24「初级副本挑战符文」",
+   "switches": {
+    "1561": true
+   },
+   "vars": {
+    "5": 2
+   },
+   "items": {
+    "24": 1
+   },
+   "self": {},
+   "actors": [],
+   "gold": 0,
+   "answers": [
+    0
+   ]
+  }
+ ]
+}
