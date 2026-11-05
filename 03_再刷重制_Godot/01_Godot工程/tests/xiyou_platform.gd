@@ -34,10 +34,14 @@ func frames(n := 2) -> void:
 	for i in n:
 		await get_tree().process_frame
 
+## 画面坐标（1280×720）→ 窗口坐标：注入的事件按窗口坐标算，无头窗口只有 64×64，要先换算。
+func to_window(pos: Vector2) -> Vector2:
+	return get_viewport().get_final_transform() * pos
+
 func touch(index: int, pos: Vector2, pressed: bool) -> void:
 	var e := InputEventScreenTouch.new()
 	e.index = index
-	e.position = pos
+	e.position = to_window(pos)
 	e.pressed = pressed
 	Input.parse_input_event(e)
 
@@ -46,8 +50,8 @@ func emulated_click(pos: Vector2, pressed: bool) -> void:
 	e.device = InputEvent.DEVICE_ID_EMULATION
 	e.button_index = MOUSE_BUTTON_LEFT
 	e.pressed = pressed
-	e.position = pos
-	e.global_position = pos
+	e.position = to_window(pos)
+	e.global_position = e.position
 	Input.parse_input_event(e)
 
 func _run() -> void:
@@ -122,11 +126,12 @@ func _run() -> void:
 	var ok_center: Vector2 = (XTouchControls.BUTTONS.ok.rect as Rect2).get_center()
 	var accepts := rec.accepts
 	var left_before := rec.unhandled_left
+	var touches_before := rec.unhandled_touches
 	emulated_click(ok_center, true)  # Godot 由第一指转出的鼠标事件先到
 	touch(0, ok_center, true)
 	await frames(2)
 	check("ok_button_presses_accept", Input.is_action_pressed("ui_accept") and rec.accepts > accepts, [rec.accepts, accepts])
-	check("ok_button_swallows_mouse", rec.unhandled_left == left_before and rec.unhandled_touches == 0, [rec.unhandled_left, rec.unhandled_touches])
+	check("ok_button_swallows_mouse", rec.unhandled_left == left_before and rec.unhandled_touches == touches_before, [rec.unhandled_left, left_before, rec.unhandled_touches, touches_before])
 	# 按着确定再用第二指按取消：不算两指取消
 	var rights := rec.right_clicks
 	var cancel_center: Vector2 = (XTouchControls.BUTTONS.cancel.rect as Rect2).get_center()
@@ -150,7 +155,7 @@ func _run() -> void:
 	touch(0, XTouchControls.STICK_CENTER, true)
 	var drag := InputEventScreenDrag.new()
 	drag.index = 0
-	drag.position = XTouchControls.STICK_CENTER + Vector2(-50, 10)
+	drag.position = to_window(XTouchControls.STICK_CENTER + Vector2(-50, 10))
 	Input.parse_input_event(drag)
 	await frames(2)
 	check("stick_drag_left", Input.is_action_pressed("ui_left") and not Input.is_action_pressed("ui_down"))
