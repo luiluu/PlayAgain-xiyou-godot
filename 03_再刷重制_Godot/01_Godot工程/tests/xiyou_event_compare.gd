@@ -39,6 +39,11 @@ class FakePlayer:
 		pass
 	func is_route_forcing() -> bool:
 		return false
+	## 事件里「显示气泡图标」作用在玩家身上（m158e1p1#a2）：气泡不比较，只别崩
+	func start_balloon(_id: int) -> void:
+		pass
+	func is_balloon_playing() -> bool:
+		return false
 
 
 ## 记录用宿主：接口同 XMapScene（MVInterpreter / MVScript 用到的部分）
