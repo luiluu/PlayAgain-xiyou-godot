@@ -121,6 +121,10 @@ static func run(code: String, interp) -> Array:
 	if js == "":
 		return []
 	var s := XState.current
+	# 原版本身就是语法错误的整段（YEP_CoreEngine command355 把 eval 包在 try 里，出错只 displayError、整段不执行）：无操作。
+	# 大厅难度开关 Map004 EV062、萨麦尔格祝福 Map145 EV005、传承强化 Map195 EV023、中级熟练度 CE859／860 的提示少引号或少 }，CE513 把备注 <passivePBST0:1000> 当脚本（events6）
+	if _js_syntax_error(js):
+		return []
 	# CE1317: selected actor is shared with the item-effect capacity check.
 	if js == "var actor = $gameActors.actor($gameParty._targetActorId);\n$.toaster({ message : ''+actor.name()+' 能学习的抽奖被动技能已经达到'+$gameVariables.value(9)+'上限！'});":
 		interp.host.toast(XPassiveBooks.limit_message(s))
@@ -517,11 +521,20 @@ static func _statements(js: String, interp) -> Array:
 			var text := _toaster_text(st)
 			if text != "":
 				interp.host.toast(text)
+			elif toaster_threw:
+				break  # 原版这句读 null 出错（YEP try 接住），整段 eval 到此为止，后面的语句也不执行（events6）
 			else:
 				unknown.append(st)
 			continue
 		unknown.append(st)
 	return unknown
+
+
+## 原版语法错误的整段脚本（见 run 开头）：$.toaster 的文字少收尾引号、少 }，或整段是一条 <标签:值> 备注
+static func _js_syntax_error(js: String) -> bool:
+	return _re("^\\$\\.toaster\\(\\{\\s*message\\s*:\\s*'[^']*\\}\\);?$").search(js) != null \
+		or _re("^\\$\\.toaster\\(\\{\\s*message\\s*:\\s*'[^']*'\\);?$").search(js) != null \
+		or _re("^<[^<>\\n]+>$").search(js) != null
 
 
 ## CodexGuide.advise：interp.setupChild 插入建议文字（每段一页），显示完回到原事件
@@ -589,7 +602,11 @@ static func _reincarnation_open(interp) -> void:
 
 ## $.toaster({ message : '…' })：字面文字与下列部分用 + 拼接（引号里的 + 不算）：
 ## $dataItems[$gameVariables.value(N)].name、$gameVariables.value(N)（JS 数字写法）
+## 上一次 _toaster_text 返回空，是因为原版这句会抛错（角色不存在时读 null 的 name()），不是认不出
+static var toaster_threw := false
+
 static func _toaster_text(js: String) -> String:
+	toaster_threw = false
 	var m := _re("\\$\\.toaster\\(\\s*\\{\\s*message\\s*:\\s*(.*?)\\s*\\}\\s*\\)").search(js)
 	if m == null:
 		return ""
@@ -609,6 +626,7 @@ static func _toaster_text(js: String) -> String:
 		if who:
 			var aid := int(XState.current.variable(int(who.get_string(1))))
 			if aid <= 0 or XDB.rec("Actors", aid).is_empty():
+				toaster_threw = true
 				return ""
 			out += XState.current.actor(aid).display_name()
 			continue
