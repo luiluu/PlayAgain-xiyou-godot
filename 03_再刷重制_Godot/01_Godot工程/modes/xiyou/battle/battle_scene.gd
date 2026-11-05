@@ -1502,6 +1502,10 @@ func _play(logs: Array) -> void:
 				_start_animation(int(l.animation), l.target)  # YEP_SkillMasteryLevels onAllActionsEnd：升级动画（不镜像，不等）
 			"se":
 				play_se(l.se)
+			"movie":
+				var movie := XMoviePlayer.start(str(l.name))   # 事件指令 261：放完再往下演（原版解释器等 video）
+				if movie != null:
+					await movie.finished
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
