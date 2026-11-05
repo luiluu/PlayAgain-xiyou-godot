@@ -84,9 +84,12 @@ class EventHost:
 		if d > 0:
 			s.direction = d
 
+	## 预设 battleResult（accept5）：战斗结果 0 胜、1 逃、2 败，同参照 event_state_probe 的战斗回调
+	var battle_result := 0
+
 	func start_battle(troop_id: int, can_escape: bool, can_lose: bool) -> int:
 		trace.append({"t": "battle", "troop": troop_id, "escape": can_escape, "lose": can_lose})
-		return 0
+		return battle_result
 
 	func open_shop(goods: Array, _purchase_only: bool) -> void:
 		trace.append({"t": "shop", "goods": goods.map(func(g): return [int(g[0]), int(g[1])])})
@@ -399,6 +402,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 				XWarehouse.create(s, str(cmd.parameters[0]).substr(len("PHWarehouse show ")))
 			break
 	_apply_preset(s, c.get("preset", {}))
+	host.battle_result = int(c.get("preset", {}).get("battleResult", 0))
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
 	s.orb_seed = 2147483648    # 参照固定 Math.random＝0.5 后开新局：宝珠随机流种子 floor(0.5×2³²)
 	var watch := _watch_actors(list)

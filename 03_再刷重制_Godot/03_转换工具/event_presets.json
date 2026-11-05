@@ -10639,6 +10639,34 @@
      "403": 1
     }
    }
+  },
+  {
+   "base": "m186e32p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "m7e4p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "m145e5p0",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
+  },
+  {
+   "base": "ce1597",
+   "tag": "l1",
+   "preset": {
+    "battleResult": 2
+   }
   }
  ]
 }
