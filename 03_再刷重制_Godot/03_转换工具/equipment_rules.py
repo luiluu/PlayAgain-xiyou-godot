@@ -158,7 +158,8 @@ def custom_params(rec):
     if not code.strip():
         return None
     assigned, ignored, bad = {}, [], []
-    for stmt in re.split(r'[;\n]', code):
+    # JS 行注释（v0.31／v0.44 专武成长在行尾加了「// KYO专武成长」）eval 时不算语句，先去掉；参数里没有字符串，不会误切
+    for stmt in re.split(r'[;\n]', re.sub(r'//[^\n]*', '', code)):
         stmt = stmt.strip()
         if not stmt:
             continue
