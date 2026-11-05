@@ -7,7 +7,7 @@
 
 输出（全部覆盖写到 01_Godot工程/content/app_icon/，该目录有 .gdignore，不进游戏包，只给导出预设读）：
   icon_source_1024.png      整理后的 1024 方图（以后都从它生成）
-  icon.icns                 macOS（16～1024 各档，iconutil 生成）
+  icon.icns                 macOS（16～1024 各档，照系统规格：画面 824 居中、圆角外透明，iconutil 生成）
   icon.ico                  Windows（16、32、48、64、128、256，PNG 内嵌）
   icon_256.png              窗口／通用
   android_main_192.png、android_foreground_432.png、android_background_432.png   安卓
@@ -77,7 +77,7 @@ def main() -> int:
         iconset = tmp / 'icon.iconset'
         iconset.mkdir()
         for n, name in ICNS:
-            shutil.copy(tmp / f'icon_{n}.png', iconset / f'{name}.png')
+            shutil.copy(tmp / f'icon_mac_{n}.png', iconset / f'{name}.png')
         subprocess.run(['iconutil', '-c', 'icns', str(iconset), '-o', str(tmp / 'icon.icns')], check=True)
         write_ico([(tmp / f'icon_{n}.png').read_bytes() for n in ICO_SIZES], tmp / 'icon.ico')
         out.mkdir(parents=True, exist_ok=True)

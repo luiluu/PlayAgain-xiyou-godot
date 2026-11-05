@@ -38,6 +38,17 @@ func _init() -> void:
 		var s := img.duplicate() as Image
 		s.resize(n, n, Image.INTERPOLATE_LANCZOS)
 		s.save_png(out.path_join("icon_%d.png" % n))
+	# macOS 版：照系统图标规格，画面缩到 824 居中、圆角（半径 185）外透明，和 Dock 里别的图标一样大。
+	var mac := Image.create(1024, 1024, false, Image.FORMAT_RGBA8)
+	mac.fill(Color(0, 0, 0, 0))
+	var body := img.duplicate() as Image
+	body.resize(824, 824, Image.INTERPOLATE_LANCZOS)
+	_round_corners(body, 185.0)
+	mac.blit_rect(body, Rect2i(0, 0, 824, 824), Vector2i(100, 100))
+	for n in SIZES:
+		var m := mac.duplicate() as Image
+		m.resize(n, n, Image.INTERPOLATE_LANCZOS)
+		m.save_png(out.path_join("icon_mac_%d.png" % n))
 	var main := img.duplicate() as Image
 	main.resize(192, 192, Image.INTERPOLATE_LANCZOS)
 	main.save_png(out.path_join("android_main_192.png"))
@@ -85,6 +96,16 @@ func _trim_light_border(img: Image) -> Image:
 		stack.append(p + Vector2i(-1, 0))
 		stack.append(p + Vector2i(0, 1))
 		stack.append(p + Vector2i(0, -1))
+	# 外边和画面之间有一两圈抗锯齿的灰边，灌不进去；把灌到的区域向里多吃约 0.3% 边长。
+	for _k in range(maxi(2, int(ceil(maxi(w, h) / 320.0)))):
+		var grow := PackedInt32Array()
+		for y in range(h):
+			for x in range(w):
+				var i := y * w + x
+				if hit[i] == 0 and ((x > 0 and hit[i - 1] == 1) or (x < w - 1 and hit[i + 1] == 1) or (y > 0 and hit[i - w] == 1) or (y < h - 1 and hit[i + w] == 1)):
+					grow.append(i)
+		for i in grow:
+			hit[i] = 1
 	# 内容外框：没被灌到的像素的包围盒。
 	var r := Rect2i()
 	var first := true
@@ -114,6 +135,21 @@ func _trim_light_border(img: Image) -> Image:
 			if hit[y * w + x] == 1:
 				img.set_pixel(x, y, fill)
 	return img.get_region(r)
+
+
+## 圆角外的像素改透明，边上一像素做抗锯齿。
+func _round_corners(img: Image, r: float) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	for y in range(h):
+		for x in range(w):
+			var cx := clampf(x + 0.5, r, w - r)
+			var cy := clampf(y + 0.5, r, h - r)
+			var d := Vector2(x + 0.5 - cx, y + 0.5 - cy).length()
+			if d > r - 1.0:
+				var c := img.get_pixel(x, y)
+				c.a *= clampf(r - d, 0.0, 1.0)
+				img.set_pixel(x, y, c)
 
 
 func _edge_color(img: Image) -> Color:
