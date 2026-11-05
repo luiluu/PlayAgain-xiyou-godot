@@ -9,6 +9,8 @@ extends Node
 ## - Map213 一护修炼卍解（2）：原版死内容，玩家走不到——变量 1309、1311 在冻结 v0.28 里无处写入，三页任何流程都没页；
 ##   下面强行置变量只为对页内指令：角色 109 在队、变量 1309≥1、1318≥1 时打敌群 962，胜后物品 2852、变量 1305／1306＝1、独立开关 B；
 ##   第 2 页（B 且 1306≥1）变量 1311、1309 都 ≥1 给武器 807。
+##   O-待定 做活（XDeadContent.ICHIGO_BANKAI，默认开）：一护 148 在队即出现（_kept 按做活后的条件），打敌群 733，奖励斩月-II 71／卍解-斩月-II 72；
+##   原版那支在 _ichigo_original 里关开关比。
 ## - Map119 天才灵魂（15）：「进行修炼」设修炼表项 25～32 并开修炼界面。
 ## - Map166 EV8：传到本图 (30,21)。
 ## - 十五层雷劫 Map032 EV9：开关 2285 时打敌群 823，99 号角色忘掉 8069、关开关 2285。
@@ -30,7 +32,7 @@ const OTHER_LANDINGS := {64: [Vector2i(14, 26)], 17: [Vector2i(21, 36)], 166: [V
 const SETUP := {
 	[10, 11]: {"self": "A"}, [12, 23]: {"self": "A"}, [47, 15]: {"self": "A"}, [64, 3]: {"self": "A"},
 	[64, 8]: {"actor": 127}, [17, 5]: {"switch": 172}, [17, 6]: {"actor": 128}, [46, 5]: {"actor": 104},
-	[213, 2]: {"actor": 109, "vars": {1309: 1}}, [32, 9]: {"switch": 2285}, [32, 10]: {"switch": 2285},
+	[213, 2]: {"actor": 148}, [32, 9]: {"switch": 2285}, [32, 10]: {"switch": 2285},
 }
 ## 原版也走不到的（图块通行与 MV checkPassage 一致，各入口都试过）：铃兰彩蛋 Map064 (4,1)、张楚岚彩蛋 Map017 (42,43)，照放、不改
 const UNREACHABLE := [[64, 8], [17, 6]]
@@ -294,10 +296,47 @@ func _map017() -> void:
 
 ## 一护修炼卍解（原版死内容，变量 1309 是测试强行置的，玩家走不到）：决心（变量 1318）不够不打；够了打敌群 962，再来第 2 页给斩月-II（武器 807）
 func _ichigo() -> void:
-	var s := await _play(213, 2, [])
+	XDeadContent.ICHIGO_BANKAI = false  # 先比原版（死内容）
+	XDeadContent.clear_cache()
+	await _ichigo_original()
+	XDeadContent.ICHIGO_BANKAI = true
+	XDeadContent.clear_cache()
+	await _ichigo_live()
+
+
+## O-待定 一护卍解做活（XDeadContent.ICHIGO_BANKAI）：一护 148 在队即可（不用 1309），页首置 1309；决心 1318 不够不打；
+## 够了打敌群 733【首领】清风，胜后斩月-II（武器 71）、1311＝1、变量 1305／1306、独立开关 B；第 2 页给卍解-斩月-II（武器 72）；
+## 第 3 页刷孔（有 72 才行）；招募 CE2508 加完 148 后置 1309
+func _ichigo_live() -> void:
+	var ce: Array = XDB.rec("CommonEvents", 2508).list
+	var j := ce.find_custom(func(c): return int(c.code) == 129)
+	_check("m213e2_live_recruit_1309", j >= 0 and int(ce[j + 1].code) == 122 and int(ce[j + 1].parameters[0]) == 1309, ce.slice(0, 3))
+	var s := await _play(213, 2, [], {"actor": 148, "vars": {}})
+	if s == null:
+		return
+	_check("m213e2_live_no_will", battles.is_empty() and s.gear_count("weapon", 71) == 0 and int(s.variable(1309)) == 1, [battles, s.variable(1309)])
+	s = await _play(213, 2, [], {"actor": 148, "vars": {1318: 1}})
+	if s == null:
+		return
+	_check("m213e2_live_battle", battles.size() == 1 and int(battles[0].troop) == 733 and int(battles[0].result) == 0, battles)
+	_check("m213e2_live_reward", s.gear_count("weapon", 71) == 1 and int(s.variable(1311)) == 1 and int(s.variable(1305)) == 1 and int(s.variable(1306)) == 1 and s.self_switch(213, 2, "B"),
+		[s.gear_count("weapon", 71), s.variable(1311), s.variable(1305), s.variable(1306)])
+	var e := _event(_scene(), 2)
+	_check("m213e2_live_page2", e != null and e.page_index == 1, e.page_index if e != null else null)
+	battles.clear()
+	await _run_event(_scene(), 2, [])
+	_check("m213e2_live_weapon", s.gear_count("weapon", 72) == 1 and s.self_switch(213, 2, "A") and battles.is_empty(), s.gear_count("weapon", 72))
+	e = _event(_scene(), 2)
+	_check("m213e2_live_page3", e != null and e.page_index == 2, e.page_index if e != null else null)
+	await _run_event(_scene(), 2, [])
+	_check("m213e2_live_reroll", s.gear_count("weapon", 72) == 1, s.gear_count("weapon", 72))
+
+
+func _ichigo_original() -> void:
+	var s := await _play(213, 2, [], {"actor": 109, "vars": {1309: 1}})
 	if s != null:
 		_check("m213e2_no_will", battles.is_empty() and s.item_count(2852) == 0, battles)
-	s = await _play(213, 2, [], {"vars": {1309: 1, 1318: 1}})
+	s = await _play(213, 2, [], {"actor": 109, "vars": {1309: 1, 1318: 1}})
 	if s == null:
 		return
 	_check("m213e2_battle", battles.size() == 1 and int(battles[0].troop) == 962 and int(battles[0].result) == 0, battles)
