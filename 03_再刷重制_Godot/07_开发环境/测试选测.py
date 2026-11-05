@@ -658,6 +658,67 @@ class ProbeNarrowTests(Fixture):
         self.assertLess(len(fell), 15, fell)
 
 
+class ToolNarrowTests(Fixture):
+    """fix6：03_转换工具 下只被工具读、入口链（同步、导出、新建工作树）不引用的文件，只跑工具回归＋引用它的测试；
+    入口链引用（注释里提到不算）、开关关掉都回到整组 converter。"""
+
+    def setUp(self):
+        super().setUp()
+        self.put(TOOLS / '同步正式西游.py', "import incremental_sync\nPROBES = [(['orb_probe.cjs'], ['orbs.json'])]\n# 见 只读工具.py\n")
+        self.put(TOOLS / 'xiyou_export.py', "rows = open('presets.json')\n")
+        self.put(TOOLS / 'incremental_sync.py', "x = 1\n")
+        self.put(TOOLS / 'presets.json', '{}\n')
+        self.put(TOOLS / '只读工具.py', "data = open('只读基线.json')\n")
+        self.put(TOOLS / '只读基线.json', '{}\n')
+        self.put(TOOLS / 'mv_oracle/orb_probe.cjs', '// 见 另一只读.py\n')
+        self.put(TOOLS / '另一只读.py', 'y = 2\n')
+        self.put(Path('03_再刷重制_Godot/07_开发环境/新建工作树.sh'), 'echo\n')
+        self.scene('xiyou_chain', '# 只读工具.py 的用例')
+        self.commit('tool fixture')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def scenes(self, rel, narrow='1'):
+        self.put(TOOLS / rel, '# edit\n')
+        with mock.patch.dict(os.environ, {'XIYOU_TOOL_NARROW': narrow}):
+            picked = self.pick()
+        return {x[:-5] for x in picked['scenes']}, picked
+
+    def test_read_only_tool_runs_tools_and_its_tests(self):
+        got, picked = self.scenes('只读工具.py')
+        self.assertEqual(got, {'xiyou_chain'})
+        self.assertEqual(picked['checks'], ['guards', 'tools'])
+        self.assertIn('只读工具', ' '.join(r[1] for r in picked['reasons']))
+        self.assertIn('xiyou_rules_d2', self.scenes('只读工具.py', '0')[0])
+
+    def test_read_only_data_and_comment_mentions(self):
+        self.assertNotIn('xiyou_rules_d2', self.scenes('只读基线.json')[0])   # 只被只读工具读
+        self.assertNotIn('xiyou_rules_d2', self.scenes('另一只读.py')[0])     # 只在探针注释里提到
+
+    def test_pipeline_files_stay_converter(self):
+        for rel in ('incremental_sync.py', 'presets.json', 'xiyou_export.py'):
+            self.assertIn('xiyou_rules_d2', self.scenes(rel)[0], rel)
+
+    def test_table_switch_off_restores_converter(self):
+        """fix6 回退开关：对照表 toolNarrow.enabled = false。"""
+        table = json.loads((HERE / '选测对照.json').read_text())
+        table['toolNarrow']['enabled'] = False
+        off = self.root / 'off.json'
+        off.write_text(json.dumps(table))
+        self.put(TOOLS / '只读工具.py', '# edit\n')
+        self.assertIn('xiyou_rules_d2', {x[:-5] for x in sel.select(self.root, self.base, table=off)['scenes']})
+
+    def test_real_repo_read_only_set(self):
+        """真实资料库：入口链碰不到的顶层文件里有悟空提的两个只读工具，转换器与同步本身不在里面。"""
+        root = HERE.parent.parent
+        cfg = sel.load_tool_narrow()
+        pipe = sel.pipeline_files(root, 'HEAD', cfg)
+        name = lambda n: str(TOOLS / n)
+        for n in ('解锁链表.py', '补预设批量.py', '事件空绿基线.json'):
+            self.assertNotIn(name(n), pipe, n)
+        for n in ('xiyou_export.py', '同步正式西游.py', 'incremental_sync.py', 'event_presets.json', 'xiyou_slice.json'):
+            self.assertIn(name(n), pipe, n)
+
+
 class HookLineTests(Fixture):
     """tools54：核心文件里只加「调用专属模块」的钩子行时，只选冒烟场景＋引用这些模块的测试；改了别的逻辑、开关关掉、认不出就退回按文件整组。"""
 
