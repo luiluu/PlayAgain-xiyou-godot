@@ -85,7 +85,7 @@ const ESTABLISH_TRUE_POPUP := true
 ## 受伤 setHp／setMp（值变了）、回合末；嵌套 apply 同一角色时，进内层前先按外层的标记把外层已加的状态定下来（内层命中扣血再刷掉）。
 ## false 回到 raven3：每次行动开头清全体，嵌套不处理。
 static var STALE_TIMING := true
-## O-待定（交付单 cc_nezha-raven5 优化登记草稿「清陈旧刷新点」；raven5，审查 45 P3-1／P3-2，参照 raven_reflect_probe 的 refmid.*／refzero）：true 时不经行动的 refresh 也清陈旧——
+## O-192（交付单 cc_nezha-raven5 优化登记草稿「清陈旧刷新点」；raven5，审查 45 P3-1／P3-2，参照 raven_reflect_probe 的 refmid.*／refzero）：true 时不经行动的 refresh 也清陈旧——
 ## 战斗里直接加减状态（313）、加减 buff、回 HP／MP／TP（XResourceContext 的 setHp／setMp／setTp refresh），原版这些都调 refresh；
 ## 受伤 setHp 按请求的扣血量判（value != 0，原版先比请求值再 CodexRaces.limitHp），不看扣完后的值。false 回到 raven4（只在上面几处清）。
 static var STALE_REFRESH_POINTS := true
