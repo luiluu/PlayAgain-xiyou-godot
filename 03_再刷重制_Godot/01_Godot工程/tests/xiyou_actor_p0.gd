@@ -25,6 +25,18 @@ const RECRUIT_7 := {2501: 141, 2502: 142, 2506: 146, 2507: 147, 2508: 148, 2509:
 ## 167 渡鸦 9002（CodexRaven.recruit()：入队、给冥河断罪镰 4001 进背包）、168 米拉 9003（CodexMira.recruit()：入队并装上黑龙心鳞 4577）
 ## 174 云裳 9010（CodexYunshang.recruit()：入队、本档第一次给织神天梭 7935 进背包）
 const RECRUIT_8 := {9017: 178, 9009: 173, 9002: 167, 9003: 168, 9007: 172, 9004: 169, 9006: 171, 9005: 170, 9010: 174}
+## 第九批（events7「专属号角路径」逐条对过补上）：开局角色 2～7 的「招聘」（物品 1731～1736／2774～2779 → CE692～697）；
+## 175 谷雨 9012（Guyu.recruit）、176 屠苏 9013、177 璇 9016（T.recruit／X.recruit → XTusuXuan.recruit：入队、首次给并装上法宝 4047／4048，
+## 璇建星谱；events7 前这两支没接上模块，号角被吞、人不入队）
+const RECRUIT_9 := {692: 2, 693: 3, 694: 4, 695: 5, 696: 6, 697: 7, 9012: 175, 9013: 176, 9016: 177}
+## 物品（效果 44 公共事件）→ 公共事件 → 入队：每个会让角色入队的物品，其公共事件要么在上面各表里跑过，要么在这里写明为什么不跑
+const HORN_EXEMPT := {
+	691: "招聘:狗逍遥（角色 1）：开局就在队（REGRESSION），入队路径同 692～697",
+	1205: "伙伴号角：修（角色 8）：开局就在队", 1206: "伙伴号角：美娜（角色 10）：开局就在队", 1207: "伙伴号角：罗琳（角色 9）：开局就在队",
+	374: "伙伴号角：阿语（召唤阿玉，角色 72）：与 399 同一个 129 指令入队，72 已由 399 跑过",
+	1670: "伙伴号角：南宫恨（角色 122＋123 一次给两人）：两人已由 1668／1669 跑过",
+	2503: "初代萌王 143：<CodexDisabledActor>，号角禁用（installImportedBalanceRuntime，xiyou_imported_balance 对照）",
+	2504: "赛维里昂圣剑 144：同上禁用", 2505: "人形自动人偶 145：同上禁用", 2517: "花橙 157：同上禁用", 2520: "落芸 160：同上禁用"}
 ## 猫猫 110～114 不走公共事件：Map004 事件 57 一次给齐五只（129 指令），参照行／装备／技能照验，招募路径另在地图事件里
 const CATS := [110, 111, 112, 113, 114]
 const REGRESSION := [1, 8, 9, 10]
@@ -50,13 +62,13 @@ func _run() -> void:
 		_check("oracle_present", false)
 		return _finish()
 	# ③ 参照行齐全
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + RECRUIT_9.values() + CATS:
 		var row = d.actors.get(str(id))
 		_check("oracle_row_%d" % id, row != null and row.has("lv1") and row.has("lv10Battle") and row.get("levelSamples", {}).size() == 3, id)
 		var dmg = d.damage.filter(func(r): return r.get("actor") != null and int(r.actor) == id)
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
-	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + CATS:
+	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + RECRUIT_9.values() + CATS:
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -88,6 +100,8 @@ func _run() -> void:
 	all_recruit.merge(RECRUIT_6)
 	all_recruit.merge(RECRUIT_7)
 	all_recruit.merge(RECRUIT_8)
+	all_recruit.merge(RECRUIT_9)
+	_horn_paths(all_recruit)
 	for ce in all_recruit:
 		var id: int = all_recruit[ce]
 		_check("not_in_party_before_%d" % id, not s.party.has(id))
@@ -101,9 +115,53 @@ func _run() -> void:
 		_check("recruit_%d" % id, s.party.has(id), [ce, s.party])
 		var want_class: int = RECRUIT_CLASS_CHANGE.get(id, int(XDB.rec("Actors", id).classId))
 		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == want_class, [id, s.actor(id).class_id, want_class])
+	# 屠苏／璇：首次招募给并装上专属法宝；璇建了星谱
+	for pair in [[176, 4047], [177, 4048]]:
+		var worn: Array = s.actor(pair[0]).equips.filter(func(e): return e is Dictionary and not e.is_empty() and str(e.kind) == "armor").map(func(e): return int(e.base))
+		_check("relic_%d" % pair[0], worn.has(pair[1]), worn)
+	_check("xuan_chart", s.flags.has("_codexXuanChart"))
+	# 已在队再用号角：recruit 返回 false，号角还回来（try { if (!X.recruit()) gainItem(号角) }）
+	var horns_before := s.item_count(2945)
+	await map.run_common_event(9013)
+	for i in 3:
+		await get_tree().process_frame
+	_check("tusu_horn_refund", s.item_count(2945) == horns_before + 1, [horns_before, s.item_count(2945)])
 	_check("regression_party_kept", [1, 8, 9, 10].all(func(i): return s.party.has(i)), s.party)
 	_check("battle_slots_five", s.battle_slots.size() == 5, s.battle_slots)
 	_finish()
+
+
+## 每个效果里有公共事件、而该公共事件（含 117 子事件）有 129 入队或 X.recruit() 脚本的物品：公共事件要在 all_recruit 或 HORN_EXEMPT 里
+func _horn_paths(all_recruit: Dictionary) -> void:
+	var ces: Array = XDB.table("CommonEvents")
+	var missing := []
+	var horns := 0
+	for rec in XDB.table("Items"):
+		if not rec is Dictionary:
+			continue
+		for e in rec.get("effects", []):
+			if int(e.code) != 44 or not _joins(ces, int(e.dataId), {}):
+				continue
+			horns += 1
+			if not all_recruit.has(int(e.dataId)) and not HORN_EXEMPT.has(int(e.dataId)):
+				missing.append([int(rec.id), str(rec.name), int(e.dataId)])
+	_check("horn_items_counted", horns >= 240, horns)
+	_check("horn_paths_all_covered", missing.is_empty(), missing)
+
+
+static func _joins(ces: Array, id: int, seen: Dictionary) -> bool:
+	if seen.has(id) or id <= 0 or id >= ces.size() or not ces[id] is Dictionary:
+		return false
+	seen[id] = true
+	for c in ces[id].list:
+		var code := int(c.code)
+		if code == 129 and int(c.parameters[1]) == 0:
+			return true
+		if code == 117 and _joins(ces, int(c.parameters[0]), seen):
+			return true
+		if code in [355, 655] and str(c.parameters[0]).contains(".recruit()"):
+			return true
+	return false
 
 
 ## 招募事件里用 321 改了职业的角色（原版参照见 fixtures/actor_change_oracle.json 的 recruit 组）：玛莎 CE29 16→21
