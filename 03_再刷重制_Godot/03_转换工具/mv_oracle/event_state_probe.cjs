@@ -75,8 +75,11 @@ const rec = e => trace && trace.push(e);
 const EFFECT = new Set([121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 137, 201, 223, 236, 301, 302, 303, 311, 312, 313, 314, 315, 316, 317,
   318, 319, 320, 321, 324, 325, 355, 356, 117, 352, 353, 354]);
 // 初始状态预设：开关、变量、独立开关、金钱、物品／武器／防具、队伍、角色技能和等级、难度
+const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'playerDirection', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
 function applyPreset(p) {
   if (!p) return;
+  // 不认识的预设键直接报错（审查 49：g3 用了 random 而不是 random_seq，悄悄没生效）
+  for (const k of Object.keys(p)) if (!PRESET_KEYS.includes(k)) throw new Error('event_presets 不认识的预设键: ' + k);
   if (p.difficulty !== undefined) w.$gameSystem._difficultyId = p.difficulty;
   for (const id of p.party || []) w.$gameParty.addActor(id);
   for (const [id, a] of Object.entries(p.actors || {})) {
