@@ -337,7 +337,8 @@ def local_verified_base(url, bare, limit=300, results=None):
                 base = git('rev-parse', '--verify', '-q', m.group(2) + '^{commit}', check=False)
                 ok = bool(base) and connected(base, depth + 1)
                 parents = git('rev-list', '--parents', '-n', '1', c).split()[1:]
-                if ok and (len(parents) != 1 or not release_only(git('diff', '--name-only', parents[0], c).splitlines())):
+                hand_tested = '手补已验:' in git('log', '-1', '--format=%B', c)   # 手补随快照在云端测过（BK2）
+                if ok and not hand_tested and (len(parents) != 1 or not release_only(git('diff', '--name-only', parents[0], c).splitlines())):
                     # 收尾提交带了手补的代码（如 67dce91f 补 power.gd）：测的是「合并提交＋手补」，提交本身不当基准，
                     # 退回它的第一父（合并提交）：基准取合并提交，手补的改动留在差异里会被再选测（tools60，审查 37 P2-3）
                     soft.add(parents[0])
@@ -507,6 +508,45 @@ def actions_finished(sha):
     except ValueError:
         return None
     return all(r.get('status') == 'completed' for r in runs) if runs else None
+
+
+def cmd_adopt(a):
+    """云端快照提交的通过结果过户给 main 上的收尾提交（BK2）。合并收尾时检查.sh --cloud 测的是工作区快照提交，收尾提交的 sha 没有云端结果，
+    下一轮 cloud_passed_base 就找不到它，基准一路退到更早的云端通过点（整轮 431 个、约 169 分钟）。
+    条件：快照有通过的 affected／full 结果，且收尾提交的树与快照一致（或只差版本号、登记、文档、.uid，即 release_only）；
+    满足就把 refs/ci/results/<快照>/<模式> 复制成 refs/ci/results/<收尾>/<模式>。不满足或出错只打印，返回 0（不挡收尾）。"""
+    snap, final = git('rev-parse', a.snapshot), git('rev-parse', a.commit)
+    bare, remote = cache_repo(), remote_name()
+    url = git('remote', 'get-url', remote)
+    if snap != final and git('rev-parse', snap + '^{tree}') != git('rev-parse', final + '^{tree}'):
+        files = git('diff', '--name-only', snap, final).splitlines()
+        if not release_only(files):
+            print('不过户：收尾提交 %s 相对快照 %s 还改了代码（%s…）' % (final[:9], snap[:9], '、'.join(files[:3])))
+            return 0
+    refs = [RESULT_PREFIX + snap + '/' + m for m in VERIFYING_MODES]
+    found = ls_remote(url, *refs, git_dir=bare)
+    ok = [r for r in refs if r in found and result_passed(bare, url, [r])]
+    if not ok:
+        print('不过户：快照 %s 没有通过的云端结果' % snap[:9])
+        return 0
+    for ref in ok:
+        mode = ref.rsplit('/', 1)[1]
+        git_push('push', '--force', '--no-verify', url, '%s:%s%s/%s' % (ref, RESULT_PREFIX, final, mode), git_dir=bare, env={'GIT_TERMINAL_PROMPT': '0'})
+    print('云端结果已过户：%s → %s（%s）' % (snap[:9], final[:9], '、'.join(r.rsplit('/', 1)[1] for r in ok)))
+    return 0
+
+
+def cmd_trust(a):
+    """人工锚点（总装确认过的提交）：写一条通过的 refs/ci/results/<提交>/affected，让选测基准从它起算。只在基准链断了、
+    而这个提交确实已经靠本机选测＋云端验证过时用，结果里带 manual 标记；不要拿来给没测过的提交放行。"""
+    sha = git('rev-parse', a.commit)
+    blob = git('hash-object', '-w', '--stdin', input=json.dumps({'passed': True, 'manual': True, 'reason': a.reason, 'sha': sha}, ensure_ascii=False) + '\n')
+    tree = git('mktree', input='100644 blob %s\tresult.json\n' % blob)
+    commit = git('commit-tree', tree, input='manual trust %s\n' % sha, env=BOT)
+    remote = remote_name()
+    git_push('push', '--force', '--no-verify', remote, '%s:%s%s/affected' % (commit, RESULT_PREFIX, sha), env={'GIT_TERMINAL_PROMPT': '0'})
+    print('已记人工锚点：%s（%s）' % (sha[:10], a.reason))
+    return 0
 
 
 def cmd_wait(a):
@@ -909,6 +949,8 @@ def main(argv=None):
     p.add_argument('--no-upload', action='store_true', help='不传产物（用 GitHub 上已有的本分支或 main 的快照）')
     p.add_argument('--commit', help='推这个提交而不是 HEAD（检查.sh --cloud 把工作区未提交改动做成临时快照提交，BK）')
     p.add_argument('--skip', default='', help='沿用车道结果、云端不再跑的场景（空格分隔，检查.sh 据 沿用车道.py 给；tools43）')
+    p = sub.add_parser('adopt'); p.add_argument('snapshot'); p.add_argument('commit', nargs='?', default='HEAD')
+    p = sub.add_parser('trust'); p.add_argument('commit'); p.add_argument('--reason', required=True)
     p = sub.add_parser('estimate'); p.add_argument('--base', help='默认 <GitHub 远端>/main'); p.add_argument('--full', action='store_true')
     p.add_argument('--jobs', type=int, default=2); p.add_argument('--target', type=int, default=600); p.add_argument('--max-shards', type=int, default=16)
     p = sub.add_parser('wait'); p.add_argument('commit', nargs='?'); p.add_argument('--mode', choices=['affected', 'full'])
