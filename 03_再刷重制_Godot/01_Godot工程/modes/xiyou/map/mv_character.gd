@@ -60,6 +60,7 @@ func set_image(name: String, index: int) -> void:
 func _set_image(name: String, index: int) -> void:
 	character_name = name
 	character_index = index
+	frames_offset = frames_offset_of(name)
 	tile_id = 0
 	var p := XDB.img_path("characters", name) if name != "" else ""
 	_tex = load(p) if p != "" else null
@@ -153,6 +154,26 @@ func _physics_process(_delta: float) -> void:
 ## setRealCharName 记下的原名；pose_dash 是 _poses.dash[1]（跑步姿势的保持帧数，跑着时每帧回到 3）
 var pose_original := ""
 var pose_dash := 0
+
+## MOG_CharPoses setCharacterFrames：图名里的 X数字／Y数字（不分大小写，任意位置）是行走图的偏移——朝右 +X、朝左 −X、上下不偏，
+## 竖向一律 +Y；气泡跟着偏，技能动画不偏（Sprite_Animation 再减回去）。正式数据里只有 103 波风水门 TZX01、146 苍龙破晓 TZX04、
+## 147 天剑 非天 TZX03 带 X。同一处的 S数字（动画加速）、(F数字)（多帧行走图）没有照做：只有一个楼梯事件 !fsm_Stairs01 被 S 误认，见交付单。
+var frames_offset := Vector2.ZERO
+
+static func frames_offset_of(name: String) -> Vector2:
+	var out := Vector2.ZERO
+	var ex := RegEx.create_from_string("(?i)X(\\d+\\.*\\d*)").search(name)
+	if ex:
+		out.x = float(ex.get_string(1))
+	var ey := RegEx.create_from_string("(?i)Y(\\d+\\.*\\d*)").search(name)
+	if ey:
+		out.y = float(ey.get_string(1))
+	return out
+
+## 此刻的偏移（updateCharPosesPosition）
+func frames_shift() -> Vector2:
+	var x := frames_offset.x if direction == 6 else (-frames_offset.x if direction == 4 else 0.0)
+	return Vector2(x, frames_offset.y)
 
 ## 插件参数「角色奔跑-N」（N＝getActorId）；空＝照原图
 static func run_pose(actor_id: int) -> String:
@@ -414,7 +435,8 @@ func _draw_balloon() -> void:
 	if frame < 0:
 		return
 	var shift := 0.0 if is_object() else 6.0
-	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
+	var off := frames_shift()
+	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(off.x - 24, off.y - sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
 
 
 func _draw_body() -> void:
@@ -431,7 +453,8 @@ func _draw_body() -> void:
 	var row: int = _walk.rows.get(direction, 0)
 	var src := Rect2(_walk.origin.x + pat * pw, _walk.origin.y + row * ph, pw, ph)
 	var shift := 0.0 if is_object() else 6.0
-	draw_texture_rect_region(_tex, Rect2(-pw / 2.0, -ph - shift, pw, ph), src, mod)
+	var off := frames_shift()
+	draw_texture_rect_region(_tex, Rect2(off.x - pw / 2.0, off.y - ph - shift, pw, ph), src, mod)
 
 func _draw_tile_image(mod: Color) -> void:
 	var set_number := 5 + floori(tile_id / 256.0)

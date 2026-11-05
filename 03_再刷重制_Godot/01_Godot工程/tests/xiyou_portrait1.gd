@@ -5,6 +5,7 @@ extends Node
 ## 别人（没配）跑步照原图。跟随看玩家的保持帧数。
 ## 状态脚本里写死的战斗图（换装卡 var battlerName、setBattlerImage）都要导出：之前 18 张切片可达的换装卡、5 个变身状态没图，战斗中人物空白。
 ## 切片角色的脸图、行走图、战斗图与 <sv:> 逐帧图都要在。
+## MOG setCharacterFrames 的图名偏移：TZX01／03／04 朝右 +1／3／4、朝左 −、上下不偏。
 var passed := 0
 var total := 0
 
@@ -44,6 +45,7 @@ func _run() -> void:
 	page.queue_free()
 	_dash_pose()
 	_images()
+	_frames_offset()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total and total > 0 else 1)
 
@@ -107,3 +109,16 @@ func _images() -> void:
 			if nm != "" and XDB.img_path(pair[0], nm) == "":
 				bad.append("%d %s %s" % [int(a.id), pair[0], nm])
 	check("actor_images", bad.is_empty(), bad)
+
+
+func _frames_offset() -> void:
+	var got := ["TZX01", "TZX03", "TZX04", "RenWu_02", "!fsm_Stairs01", "Actor1"].map(func(n): return MVCharacter.frames_offset_of(n))
+	check("frames_offset", got == [Vector2(1, 0), Vector2(3, 0), Vector2(4, 0), Vector2.ZERO, Vector2.ZERO, Vector2.ZERO], got)
+	var c := MVCharacter.new()
+	c.set_image("TZX04", 0)
+	var shifts := []
+	for d in [2, 4, 6, 8]:
+		c.direction = d
+		shifts.append(c.frames_shift())
+	check("frames_shift", shifts == [Vector2.ZERO, Vector2(-4, 0), Vector2(4, 0), Vector2.ZERO], shifts)
+	c.free()
