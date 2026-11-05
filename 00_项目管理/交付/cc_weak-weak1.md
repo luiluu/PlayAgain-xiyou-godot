@@ -1,7 +1,7 @@
 # 交付：cc/weak-weak1
 
 - 车道／工作者：C 规则·机制／weak1（cc，派单第三批 AF）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点：原版弱者挑战（`js/codex/runtime/installWeakChallengeRuntime.js`，CodexWeakChallenge v2）
 
@@ -57,9 +57,14 @@
 ## 验证
 
 - 专项：`xiyou_weak_challenge`（85/85）。
-- 选测：待写
+- 选测（本机，没走云端）：`选测.py main --list` 列 344 个（改了 actor／xstate／battle_logic，近乎全量），按影响面挑 40 个本机跑，全过：xiyou_determinism、xiyou_rules、xiyou_rules_d6、xiyou_smart_ai、xiyou_actor_p0、xiyou_actor1_damage、xiyou_actor_modules、xiyou_actor_bonus、xiyou_race_battle、xiyou_tusu_battle、xiyou_yunshang、xiyou_power、xiyou_status_power、xiyou_skill_mastery、xiyou_super_acquire、xiyou_super_deploy、xiyou_difficulty_inherit、xiyou_difficulty_inherit_battle、xiyou_difficulty_inherit_load、xiyou_dungeon、xiyou_floor_inherit、xiyou_unlock_chain、xiyou_achievement、xiyou_achievement_badge、xiyou_autosave、xiyou_save_page、xiyou_save_events、xiyou_battleback_save、xiyou_options_basic、xiyou_options_misc、xiyou_battle_options、xiyou_notice_options、xiyou_hangup_options、xiyou_hangup、xiyou_change_clothes、xiyou_drop_record、xiyou_review_regressions、xiyou_test_mode、xiyou_system_evidence、xiyou_weak_challenge。没跑的其余约 300 个留给总装合并选测（标记关时挂点都直接返回，预期不受影响）。
+- 合 main（rules10、ui10、accept3、review-45）后补齐、`同步正式西游.py --accept-additions`（测量不变，留了产物指纹），再跑 xiyou_weak_challenge、xiyou_rules10、xiyou_determinism、xiyou_actor1_damage、xiyou_achievement，全过。
+- `工具回归.py` 全过。
 - `语法检查.py` 通过；`回退开关覆盖.py` 新开关已覆盖（测试里字面量 `XWeakChallenge.ENABLED = false`）。
 
 ## 本分支提交
 
-- 待写
+- d62433a8 弱者挑战参照探针 weak_challenge_probe（20 例），进 PROBES
+- e8d40e14 XWeakChallenge 一期＋专项 xiyou_weak_challenge
+- 98261239 交付单、优化登记 O-待定
+- 最后一笔：合 main、交付单可合并
