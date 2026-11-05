@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.361",
-  "sequence": 361,
-  "next": "dev.362",
-  "nextSequence": 362,
+  "current": "dev.362",
+  "sequence": 362,
+  "next": "dev.363",
+  "nextSequence": 363,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bailong-ravenfx",
+  "currentChange": "rules-ui14",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
