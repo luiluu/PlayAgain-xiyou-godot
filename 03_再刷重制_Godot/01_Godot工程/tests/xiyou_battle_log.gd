@@ -337,14 +337,24 @@ func skill_types(b: XBattleScene, who: Array) -> void:
 	var page := XSkillScene.new()
 	add_child(page)
 	page.actor_index = XState.current.party.find(XGarou.ACTOR)
-	check("types.menu-sorted", page.types() == [1, 2, 4, 5], page.types())
+	check("types.menu-sorted", page.types() == [1, 2, 6, 4, 5], page.types())
 	# 隐藏呼吸分类（原版实机：Window_Command.addCommand 丢 skill＋ext 3，所有角色的技能菜单与战斗指令都没有 3）：
 	# 渡鸦／宿傩的 addedSkillTypes 原值仍含 3，列出来的不含
 	for id in [XSukuna.ACTOR, XRaven.ACTOR]:
 		page.actor_index = XState.current.party.find(id)
-		check("types.hide3.%d" % id, page.types() == [1, 2, 4, 5] and XActorModules.menu_skill_types(XState.current.actor(id)).has(3), page.types())
+		check("types.hide3.%d" % id, page.types() == [1, 2, 6, 4, 5] and XActorModules.menu_skill_types(XState.current.actor(id)).has(3), page.types())
 	check("types.hide3.fn", XActorModules.visible_skill_types([1, 2, 3, 4, 5, 6]) == [1, 2, 4, 5, 6]
 		and XActorModules.visible_skill_types([3]) == [])
+	# 167～177 技能菜单固定多「功法」6（排在被动 4 前；战斗指令不加）；167 以前的角色不加
+	check("types.gongfa.fn", XActorModules.menu_page_types(167, [1, 2, 4, 5]) == [1, 2, 6, 4, 5]
+		and XActorModules.menu_page_types(177, [1, 2, 4, 5]) == [1, 2, 6, 4, 5]
+		and XActorModules.menu_page_types(170, [1, 2, 4, 5, 6]) == [1, 2, 6, 4, 5]
+		and XActorModules.menu_page_types(170, [1]) == [1, 6] and XActorModules.menu_page_types(170, []) == [6]
+		and XActorModules.menu_page_types(166, [1, 2, 4, 5]) == [1, 2, 4, 5] and XActorModules.menu_page_types(178, [1]) == [1])
+	for id in range(167, 178):
+		if XState.current.party.has(id):
+			page.actor_index = XState.current.party.find(id)
+			check("types.gongfa.%d" % id, page.types().has(6) and page.types().find(6) < (page.types().find(4) if page.types().has(4) else 99), page.types())
 	page.queue_free()
 
 
