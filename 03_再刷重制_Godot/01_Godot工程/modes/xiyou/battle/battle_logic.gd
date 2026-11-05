@@ -158,6 +158,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	battle_start_effects.clear()
 	lifecycle_effects.clear()
 	troop_id = troop
+	XWeakChallenge.battle_setup(s, troop)  # 弱者挑战 BattleManager.setup 包装：同步 10357，记最终战判定
 	XImportedBalance.set_acting(null)
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
@@ -1015,6 +1016,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_won() or is_lost() or u.is_dead():
 		return logs
+	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
 	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
 	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
 	var started := true
@@ -3007,6 +3009,7 @@ func grant(r: Dictionary) -> Array:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	var weak_award := XWeakChallenge.before_end(self, result)  # 弱者挑战 endBattle 包装（原 endBattle 之前判定，之后发）
 	XAlienBattle.restore_gear(self)  # 异化 endBattle 包装（Adv:196，最外层，原 endBattle 之前）：吞器、献器空出的装备栏放回
 	XGuyu.end_battle(self, result)  # 谷雨 endBattle 包装（原 endBattle 之前）：清储备与花期、生命夹回，胜利掉谷种金缮石
 	for e in enemies:
@@ -3063,3 +3066,4 @@ func end_battle(result := -1) -> void:
 	XHubris.clear_reward(self, result)
 	XHonghuang.battle_ended(result)  # 洪荒 endBattle 包装：记胜负
 	XDemonCrown.finish(state, result)  # 魔冠 endBattle 包装（最外层，原 endBattle 之后）：胜利成长、掉落，遭遇序号＋1
+	XWeakChallenge.after_end(state, weak_award)  # 弱者挑战：五名弱者通关混沌鸿蒙老祖 → 本局／全局标记、全员 10357、成就 142

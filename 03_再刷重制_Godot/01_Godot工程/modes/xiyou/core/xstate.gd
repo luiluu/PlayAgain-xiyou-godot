@@ -251,11 +251,13 @@ static func _become_current(s: XState) -> void:
 static func new_game(difficulty_id: int, starter_id: int, companions: Array) -> XState:
 	var s := XState.new()
 	s.difficulty = difficulty_id
+	XWeakChallenge.new_game(s)  # 弱者挑战 setupNewGame 包装：本局标记取全局（建队前，建出的弱者按它学 10357）
 	for id in [starter_id] + companions:
 		s.add_actor(int(id))
 	s.followers_visible = bool(XDB.system().get("optFollowers", false))
 	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
+	XWeakChallenge.sync_actors(s)
 	return s
 
 
@@ -266,6 +268,7 @@ static func new_game_blank() -> XState:
 	var sys := XDB.system()
 	s.followers_visible = bool(sys.get("optFollowers", false))
 	s.difficulty = int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2))
+	XWeakChallenge.new_game(s)  # 弱者挑战 setupNewGame 包装：本局标记取全局
 	for id in sys.get("partyMembers", []):
 		s.add_actor(int(id))
 	s.map_id = int(sys.get("startMapId", 1))
@@ -275,6 +278,7 @@ static func new_game_blank() -> XState:
 	XSave.current_slot = 0
 	XGlobalVars.apply(s)  # Game_Map.initialize：跨存档变量盖到新局
 	_become_current(s)
+	XWeakChallenge.sync_actors(s)
 	return s
 
 
@@ -315,6 +319,7 @@ func actor(id: int) -> XActor:
 		for op in actor_ops:
 			_apply_actor_op(actors[id], op)
 		actors[id].refresh_passive()
+		XWeakChallenge.on_setup(self, actors[id])  # 弱者挑战 Game_Actor.setup 包装：同步 10357，新学到就回满
 		for e in actors[id].equip_list():register_gear(e)
 		XRace.on_actor_created(self, actors[id])  # installNativeRaceRuntime：Game_Actor.setup 包装建种族数据
 	return actors[id]
@@ -363,6 +368,7 @@ func add_actor(id: int, notice := Callable()) -> void:
 	XItemMarks.enforce_party(self)
 	_add_actor(id, notice)
 	XItemMarks.enforce_party(self)
+	XWeakChallenge.check(self)  # 弱者挑战 addActor 包装：最终战阵容重判
 
 
 func _add_actor(id: int, notice := Callable()) -> void:
@@ -554,6 +560,7 @@ func remove_actor(id: int) -> void:
 		return
 	battle_slots[battle_slots.find(id)] = 0
 	rearrange_actors()
+	XWeakChallenge.check(self)  # 弱者挑战 removeActor 包装
 
 
 ## initializeBattleMembers：按队伍前 5 人建立出战栏位（不足补 0）
@@ -579,6 +586,7 @@ func rearrange_actors() -> void:
 	_rearrange_actors()
 	XItemMarks.enforce_party(self)
 	XPets.sync_team_a(self)
+	XWeakChallenge.check(self)  # 弱者挑战 rearrangeActors 包装
 
 
 func _rearrange_actors() -> void:
@@ -1003,6 +1011,7 @@ static func from_dict(d: Dictionary) -> XState:
 	XGuyu.after_load(s)
 	XGarou.after_load(s)  # 饿狼 extractSaveContents 包装：clearBattle＋sync
 	XPets.loaded(s)
+	XWeakChallenge.after_load(s)  # 弱者挑战 extractSaveContents 包装：按本局标记学／忘 10357（不回满）
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():
 		a.param_mark_dirty()

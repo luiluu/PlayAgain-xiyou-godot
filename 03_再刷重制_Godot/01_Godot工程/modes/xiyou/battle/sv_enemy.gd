@@ -41,6 +41,21 @@ static func shadow(e: XEnemy) -> bool:
 	return on
 
 
+## 状态 overlay（updateSVStateSprite）：SV 敌人的可见性跟 sideviewStateOverlay＝参数 Show State Overlay，
+## 备注 <Sideview Show State Overlay>／<Sideview Hide State Overlay> 逐行覆盖（后写的算）；非 SV 敌人恒显示
+static func state_overlay(e: XEnemy) -> bool:
+	if not is_sv(e):
+		return true
+	var on := _param("Show State Overlay", "true") == "true"
+	for line in str(e.data().get("note", "")).split("\n"):
+		var l := line.to_lower()
+		if l.contains("<sideview show state overlay>"):
+			on = true
+		elif l.contains("<sideview hide state overlay>"):
+			on = false
+	return on
+
+
 ## 呼吸：{on, speed(帧), rx, ry}
 static func breathing(e: XEnemy) -> Dictionary:
 	var m := _meta(e)
