@@ -1,6 +1,6 @@
 class_name XKeyRepeat
 extends Node
-## 按住键的连发节奏（ui11，优化 O-待定）：原版 rpg_core Input.isRepeated——按下那帧触发，按住满 keyRepeatWait＝24 帧后
+## 按住键的连发节奏（ui11，优化 O-189）：原版 rpg_core Input.isRepeated——按下那帧触发，按住满 keyRepeatWait＝24 帧后
 ## 每 keyRepeatInterval＝6 帧再触发一次，只认最后按下的键（正式版没有插件改这两个数）。重制的菜单靠 Godot 的按键回显（echo），
 ## 节奏跟玩家系统的键盘设置走（各机不一样）。开着时由 GameApp 下的这个节点吞掉系统回显，按原版帧数自己补回显事件。
 ## 只管键盘；各页 _unhandled_input／_gui_input 收到的仍是「pressed＋echo」事件，写法不用改。用 _input 自己收键的页

@@ -371,7 +371,7 @@ func ledger(a: XActor) -> void:
 	check("ledger.other-actor", XRaven.ledger_help(s.actor(XSukuna.ACTOR), XDB.rec("Skills", XRaven.SOUL_LEDGER)).is_empty())
 
 
-## ui11（O-待定）：胜利提示（饿狼神之触媒等）在结算画面关后用消息窗显示，不会自己消失，按确定关；回退开关不显示
+## ui11（O-190）：胜利提示（饿狼神之触媒等）在结算画面关后用消息窗显示，不会自己消失，按确定关；回退开关不显示
 func victory_text_case(b: XBattleScene) -> void:
 	XMessageBox.auto = false
 	b.logic.victory_texts = [XGarou.CATALYST_TEXT]

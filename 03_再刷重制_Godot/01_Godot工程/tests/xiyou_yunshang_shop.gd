@@ -127,7 +127,7 @@ func _run() -> void:
 	wear(s, eight, 14)
 	wear(s, nine, 9)
 	XYunshang.o_eye_cooldown = false
-	# 原版参照对照时关掉 ui11 的空袖藏星武器过滤（O-待定），后面单独测
+	# 原版参照对照时关掉 ui11 的空袖藏星武器过滤（O-191），后面单独测
 	XYunshangShop.BORROW_WTYPE_FILTER = false
 	var shop := XYunshangShop.new()
 	add_child(shop)

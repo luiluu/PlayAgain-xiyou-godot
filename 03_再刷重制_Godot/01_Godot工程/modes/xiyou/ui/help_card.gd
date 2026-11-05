@@ -183,6 +183,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
 	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
 	var label := "品质：" + XQuality.label(obj, ["item", "weapon", "armor", "skill"][type])
+	if type == 3:
+		label = XWeakChallenge.quality_label(obj, label)  # 弱者挑战 getItemExtraDescParams2 包装：10357 写「品质：神话」
 	var color_code := RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
 	for r in rows:
 		var plain := color_code.sub(str(r[0]), "", true)
