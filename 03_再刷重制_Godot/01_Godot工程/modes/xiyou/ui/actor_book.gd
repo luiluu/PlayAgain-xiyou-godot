@@ -17,7 +17,7 @@ extends Control
 ##   公共事件 1442 里 learnSkill 的）、<CodexRetired> 与难度／轮回类名字；详情页另补特殊角色 167～174 的专属技能段。
 ## 与原版不同（O-084）：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏。
 ## 切片外角色（108、143～145、157、169～171）没导出 SV 图，状态页不画立绘（补图要扩切片）；
-## 168、173～177 的多帧图未移植，也不画（sprite_path）。
+## 167 号以后的立绘照 CodexSV 档缩放，168、173～177 换成逐帧图（sprite_spec）。
 
 signal closed
 
@@ -63,6 +63,7 @@ var list_win: XMVWindow
 var help_card: XHelpCard
 var _frame := 0
 var _sprite_tex: Texture2D
+var _sprite_spec := {}
 var _status_ops: Array = []
 static var _external: Dictionary = {}
 
@@ -88,9 +89,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	# Window_ActorBookStatus.update：每 12 帧换一格（0-1-2-1）
+	# Window_ActorBookStatus.update：每 12 帧换一格（0-1-2-1）；逐帧图整张不换格
 	_frame += 1
-	if _sprite_tex != null and _frame % 12 == 0 and mode == "index":
+	if _sprite_tex != null and (_frame % 12 == 0 or _sprite_spec.get("garou", false)) and mode == "index":  # 饿狼每帧呼吸
 		status_win.canvas.queue_redraw()
 
 
@@ -432,11 +433,9 @@ func _paint_index(c: XMVCanvas) -> void:
 
 func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
-		var cw := _sprite_tex.get_width() / 9.0
-		var ch := _sprite_tex.get_height() / 6.0
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
-		var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-		c.draw_texture_rect_region(_sprite_tex, Rect2(center - Vector2(cw, ch) / 2.0, Vector2(cw, ch)), Rect2(pattern * cw, 0, cw, ch))
+		var r := sprite_rect(index, _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
+		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
 
@@ -456,21 +455,72 @@ func _paint_list(c: XMVCanvas) -> void:
 func _select_actor() -> void:
 	_status_ops = status_ops(index, _measure)
 	_sprite_tex = null
-	var p := sprite_path(index)
+	_sprite_spec = sprite_spec(index)
+	var p := str(_sprite_spec.get("path", ""))
 	_sprite_tex = load(p) if p != "" else null
 	_refresh()
 
 
-## 状态页立绘：数据库 battlerName 的 9×6 侧视图；没导出、没登记的不画。
-## 米拉 168、饿狼 173、云裳 174、谷雨 175、屠苏 176、璇 177 在原版由运行模块（Codex_MiraRavenMultiFrame、installNativeGarouRuntime 等）
-## 换成多帧图（参照画 UserSV_MiraHuman1_0、Codex_Garou_QHuman1_0、yunshang1_0…），重制还没移植多帧图，先不画（画数据库那张会与原版不同）。
-const MULTI_FRAME_SV := [168, 173, 174, 175, 176, 177]
+## 状态页立绘：数据库 battlerName 的 9×6 侧视图（原版 Window_ActorBookStatus 画第 1 行第 0-1-2-1 格）；没导出、没登记的不画。
+## 167 号以后照 Codex_MiraRavenMultiFrame 的图鉴包装（drawAllContents／updateBookVisual）：有 CodexSV 档的图按档缩到可见高 72（宽 129），
+## 脚底锚在可见范围底边中点；168 米拉、174 云裳、175 谷雨、176 屠苏、177 璇（数据库 battlerName 没被改过时）换成逐帧图第 1 个动作第 0 帧整张；
+## 173 饿狼由 installNativeGarouRuntime garouBookPreview 接管：进阶 6＝Codex_Garou_QCosmic，否则 Codex_Garou_QHuman，整张、竖向带呼吸（±0.9%），
+## 脚底在 y＝宽/13＋72（比米拉那段低半个身高）。渡鸦地图上的 battlerName 恒为 Raven_Normal_SV（XRaven 包装）。
+const BOOK_MULTI := {168: ["", "UserSV_MiraHuman"], 174: ["", "yunshang"], 175: ["Guyu", "Codex_Guyu"],
+	176: ["Codex_Tusu_SV_v1", "Codex_Tusu_v1"], 177: ["Codex_Xuan_SV_v1", "Codex_Xuan_v1"]}
+
+
+## 此刻的 battlerName（建出来的角色带 322 改图等 looks；图鉴不在战斗里）
+static func _book_battler(id: int) -> String:
+	var a := _live(id)
+	var n := str(a.data().get("battlerName", "")) if a != null else str(XDB.rec("Actors", id).get("battlerName", ""))
+	return "Raven_Normal_SV" if id == 167 else n
+
+
+## 立绘的图：{path, key（档名＝图名或逐帧文件夹名）, multi（整张）, garou}；不画为空
+static func sprite_spec(id: int) -> Dictionary:
+	if id <= 0 or not named(id):
+		return {}
+	var name := _book_battler(id)
+	var multi := ""
+	if id == 173:
+		multi = "Codex_Garou_QCosmic" if XGarou.stage() >= 6 else "Codex_Garou_QHuman"
+	elif BOOK_MULTI.has(id) and (BOOK_MULTI[id][0] == "" or name == BOOK_MULTI[id][0]):
+		multi = BOOK_MULTI[id][1]
+	if multi != "":
+		var mp := XDB.img_path("sv_actors", "sv/%s/%s1_0" % [multi, multi])
+		return {"path": mp, "key": multi, "multi": true, "garou": id == 173, "name": multi + "1_0"} if mp != "" else {}
+	var p := XDB.img_path("sv_actors", name)
+	return {"path": p, "key": name, "multi": false, "garou": false, "name": name} if p != "" else {}
 
 
 static func sprite_path(id: int) -> String:
-	if id <= 0 or not named(id) or id in MULTI_FRAME_SV:
-		return ""
-	return XDB.img_path("sv_actors", str(XDB.rec("Actors", id).get("battlerName", "")))
+	return str(sprite_spec(id).get("path", ""))
+
+
+## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
+static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, frame := 0) -> Array:
+	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
+	var src := Rect2(Vector2.ZERO, tex_size) if spec.get("multi", false) else Rect2(pattern * tex_size.x / 9.0, 0, tex_size.x / 9.0, tex_size.y / 6.0)
+	var prof: Array = XAppearance.PROFILES.get(str(spec.get("key", "")), []) if id >= 167 else []
+	if prof.is_empty():
+		return [Rect2(center - src.size / 2.0, src.size), src]  # 原生：锚点居中、原尺寸
+	var w := float(prof[0])
+	var h := float(prof[1])
+	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
+	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x)
+	if spec.get("multi", false):
+		src = Rect2(0, 0, w, h)  # setFrame(0, 0, 档宽, 档高)
+	var sy := sc
+	var foot_x := center.x + (w / 2.0 - (b.position.x + b.end.x) / 2.0) * sc
+	var foot_y: float
+	if spec.get("garou", false):
+		sy = sc * (1.0 + 0.009 * (1.0 + sin((frame + id * 11) / 23.0)) / 2.0)
+		foot_y = center.y + 72.0 + (h - b.end.y) * sy
+	else:
+		foot_y = center.y + b.size.y * sc / 2.0 + (h - b.end.y) * sc
+	var size := Vector2(src.size.x * sc, src.size.y * sy)
+	return [Rect2(Vector2(foot_x - size.x / 2.0, foot_y - size.y), size), src]
 
 
 func _refresh() -> void:
