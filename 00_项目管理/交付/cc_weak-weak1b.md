@@ -35,6 +35,12 @@
 - **开关**：`XWeakChallenge.ENABLED = false` 回到移植前（O-待定）。
 - 改的共用核心文件：`actor.gd`（learn_skill 开头、sparam 6／7 外层）、`xstate.gd`（新局两处、角色建出、读档、入队／离队／重排）、`battle_logic.gd`（setup、act 开头、end_battle 首尾）、`actor_damage_hooks.gd`、`dungeon.gd`（Difficulty SetID 后重判）、`xconfig.gd`（新配置键）。标记关着时（所有现有存档与测试）这些挂点都直接返回，不改行为。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 弱者挑战移植（`core/weak_challenge.gd` `XWeakChallenge`，挂在 `xstate.gd`／`actor.gd`／`actor_damage_hooks.gd`／`battle_logic.gd`／`dungeon.gd`／`xconfig.gd`） | 原版 installWeakChallengeRuntime：五名弱者通关混沌鸿蒙老祖（Map157 敌群 469）得成就 142，之后新局弱者自动带 10357「你才是真正的强者」（八项属性 +500%、终伤 ×3、物理／魔法承伤 ×0.5）；重制移植前只有成就条目和徽章，成就拿不到、10357 没人学 | 照原版移植（判定、全局／本局标记、开局与读档同步、数值），参照探针 weak_challenge 逐例对上 | 原版有的玩法补齐（Kyo 11-05「待拍板按你分析的优化方向做」，派单第三批 AF） | `XWeakChallenge.ENABLED = false`（回到移植前：标记不写、技能不发、成就拿不到） | cc（weak1） | 待用户确认 |
+
 ## 交接板
 
 - 下一步：弱者挑战二期——说明卡 10357「品质：神话」（盘点 15）；做完把 `07_开发环境/测试插件备注覆盖.py` `test_known_unread` 的 `codexweaknewgame` 换一个例子（一期没读这个标签，测试照旧过）。
