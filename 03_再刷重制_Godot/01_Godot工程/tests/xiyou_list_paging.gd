@@ -6,6 +6,7 @@ extends Node
 ##   用 shop_buy 参照里商品最多的店（冻结 v0.28 有 84 家店整理后多于 14 件）。
 ## - 主菜单指令窗、技能列表（两列）、存档、设置：翻页一次 topRow ＋ 页行数、index ＋ 页项数，末页再按不动。
 ## - 技能类型窗的 Q／E 仍是换角色（原版 setHandler('pageup'…)），不改成翻页。
+## - 装备指令窗、状态页的换角色键也是 Q／E（ui10：原来写的 Q／W，W 在正式版是「上」）；按住不连发。
 ## - 回退开关 XMenu.LIST_PAGING = false：翻页键、滚轮都不认。
 ## - 扫描：modes/xiyou/ui 下用 XMenu._scroll_to 的列表页都要接滚轮与翻页，豁免的写明原因（防新页漏）。
 
@@ -78,6 +79,7 @@ func _run() -> void:
 	await _menu()
 	await _skill()
 	await _save_and_options()
+	await _actor_switch_keys()
 	_scan()
 	XMenu.LIST_PAGING = true
 	var passed := results.filter(func(x): return x.passed).size()
@@ -236,6 +238,39 @@ func _skill() -> void:
 	check("skill_list_rollback_changes_actor", page.actor_index == 2, page.actor_index)
 	XMenu.LIST_PAGING = true
 	page.queue_free()
+	await frames()
+
+
+## 装备指令窗（YEP_EquipCore setHandler pageup／pagedown）、状态页（JAH_StatusMenuCore）：Q 上一位、E 下一位、W 不换
+func _actor_switch_keys() -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	check("actor_key_helper", XMenu.actor_key(key(KEY_E), KEY_E) and not XMenu.actor_key(key(KEY_E, true), KEY_E) and not XMenu.actor_key(null, KEY_E))
+	var eq := XEquipScene.new()
+	add_child(eq)
+	await frames()
+	var i0 := eq.actor_index
+	eq._unhandled_input(key(KEY_W))
+	check("equip_w_not_switch", eq.actor_index == i0, [i0, eq.actor_index])
+	eq._unhandled_input(key(KEY_E))
+	check("equip_e_next_actor", eq.actor_index == i0 + 1, [i0, eq.actor_index])
+	eq._unhandled_input(key(KEY_E, true))
+	check("equip_e_echo_still", eq.actor_index == i0 + 1, eq.actor_index)
+	eq._unhandled_input(key(KEY_Q))
+	check("equip_q_prev_actor", eq.actor_index == i0, eq.actor_index)
+	eq.queue_free()
+	await frames()
+	var st := XStatusPage.new()
+	add_child(st)
+	await frames()
+	var j0 := st.actor_index
+	st._unhandled_input(key(KEY_W))
+	check("status_w_not_switch", st.actor_index == j0, [j0, st.actor_index])
+	st._unhandled_input(key(KEY_E))
+	check("status_e_next_actor", st.actor_index == j0 + 1, [j0, st.actor_index])
+	st._unhandled_input(key(KEY_Q))
+	check("status_q_prev_actor", st.actor_index == j0, st.actor_index)
+	st.queue_free()
 	await frames()
 
 

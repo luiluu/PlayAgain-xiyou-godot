@@ -380,9 +380,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		shift_lower()
 	elif event.is_action_pressed("ui_left", true):
 		shift_lower()
-	elif _mode == "command" and (event.is_action_pressed("ui_page_up") or (key and key.pressed and not key.echo and key.keycode == KEY_Q)):
+	elif _mode == "command" and (event.is_action_pressed("ui_page_up") or XMenu.actor_key(key, KEY_Q)):
 		switch_actor(-1)
-	elif _mode == "command" and (event.is_action_pressed("ui_page_down") or (key and key.pressed and not key.echo and key.keycode == KEY_W)):
+	elif _mode == "command" and (event.is_action_pressed("ui_page_down") or XMenu.actor_key(key, KEY_E)):
 		switch_actor(1)
 	else:
 		handled = false
