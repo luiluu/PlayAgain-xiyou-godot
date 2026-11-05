@@ -54,7 +54,14 @@ func _run() -> void:
 			_final(c, c.setup)
 		elif id == "after.newgame":
 			_after(c)
-	_rollback()
+		elif id.begins_with("help."):
+			_help(c)
+		elif id == "battle.sync":
+			_battle_sync(c)
+	var by_id := {}
+	for c in d.cases:
+		by_id[str(c.id)] = c
+	_rollback(by_id)
 	XState.current = null
 	XWeakChallenge.ENABLED = true
 	finish()
@@ -202,6 +209,8 @@ func _final(c: Dictionary, st: Dictionary) -> XState:
 	for id in st.party:
 		s.add_actor(int(id))
 	s.map_id = 157
+	if bool(st.get("already", false)):
+		s.achievements["142"] = true
 	var rand := XBattleRandom.create("0000000000000001")
 	rand.rule = FixedStream.new()
 	rand.rule.domain = "rule"
@@ -214,6 +223,13 @@ func _final(c: Dictionary, st: Dictionary) -> XState:
 		s.remove_actor(int(st.leave))
 	if st.has("back"):
 		s.add_actor(int(st.back))
+	if st.has("swap"):
+		for id in st.swap:
+			s.battle_slots[4] = int(id)
+			s.rearrange_actors()
+	if st.has("diff"):
+		for n in st.diff:
+			XDungeon.set_difficulty(s, int(n), null)
 	if st.has("dead"):
 		s.actor(int(st.dead)).add_new_state(1)
 	if int(st.result) == 0:
@@ -245,9 +261,67 @@ func _after(c: Dictionary) -> void:
 	_rows(c.id, s, c.observed.rows)
 
 
+## 二期：说明卡行（文字、字号、颜色、对齐，与 xiyou_help_card 同口径；战力行参照没有就不比）
+func _help(c: Dictionary) -> void:
+	_new_game(bool(c.setup.clear))
+	XState.current.difficulty = 3
+	var got := XHelpCard.content(XDB.rec("Skills", int(c.setup.skill)), "")
+	var want: Array = c.observed.rows
+	if not want.any(func(r): return str(r[0]).begins_with("战力")):
+		got = got.filter(func(r): return not str(r[0]).begins_with("战力"))
+	var g := got.map(func(r): return [str(r[0]), int(r[1]), str(r[2]), null if r[4] == null else int(r[4])])
+	var w := want.map(func(r): return [str(r[0]), int(r[1]), str(r[2]), null if r[4] == null else int(r[4])])
+	check(c.id + ".rows", g == w, [g, w])
+
+
+func _battle_sync(c: Dictionary) -> void:
+	var s := _new_game(true)
+	s.add_actor(2)
+	var a := s.actor(2)
+	a.forget_skill(XWeakChallenge.SKILL)
+	a.refresh_passive()
+	a.param_refresh()
+	a.hp = 1.0
+	a.mp = minf(a.mp, a.mmp)  # 探针 setHp(1) 走 Game_Battler.refresh，MP 夹回忘掉后的上限
+	var got := _snap(a)
+	check(c.id + ".before", got == _want_snap(c.observed.before), [got, c.observed.before])
+	var logic := XBattleLogic.new()
+	logic.setup(3, s)
+	got = _snap(a)
+	check(c.id + ".after", got == _want_snap(c.observed.after), [got, c.observed.after])
+
+
 ## 回退：ENABLED=false 时标记开着也不发 10357、承伤与终伤不变，最终战胜利不给成就（移植前的样子）
-func _rollback() -> void:
+## 零影响：全局标记开着、ENABLED=false 时，新局与伤害逐项等于参照的「关」支；试学 10357 不拦（移植前谁都能学）；
+## 带着本局标记与已学技能的存档读进来：没学的不补、学了的不忘，但承伤率、终伤不变；最终战胜利不写任何标记；说明卡原样。
+func _rollback(by_id: Dictionary) -> void:
 	XWeakChallenge.ENABLED = false
+	for pair in [["newgame.on", "newgame.off"], ["damage.on", "damage.off"]]:
+		var c: Dictionary = by_id[pair[0]].duplicate(true)
+		c.id = "rollback." + str(pair[0])
+		var off: Dictionary = by_id[pair[1]].observed.duplicate(true)
+		if pair[0] == "newgame.on":
+			off.flags.config = true  # 全局标记本身照写（只是没人读）
+			for k in off.learn:
+				off.learn[k] = true
+		c.observed = off
+		if pair[0] == "newgame.on":
+			_newgame(c)
+		else:
+			_damage(c)
+	var sl := _new_game(true)
+	sl.add_actor(2)
+	sl.add_actor(3)
+	sl.actor(3).learn_skill(XWeakChallenge.SKILL)
+	sl.flags[XWeakChallenge.FLAG] = true
+	var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(sl.to_dict())))
+	XState.current = loaded
+	var a3 := loaded.actor(3)
+	check("rollback.load", not loaded.actor(2).skill_ids.has(XWeakChallenge.SKILL) and a3.skill_ids.has(XWeakChallenge.SKILL), [loaded.actor(2).skill_ids, a3.skill_ids])
+	check("rollback.load.pdr", is_equal_approx(a3.sparam(6), 1.0) and is_equal_approx(a3.sparam(7), 1.0), [a3.sparam(6), a3.sparam(7)])
+	check("rollback.load.ops", XWeakChallenge.damage_ops(a3).is_empty(), XWeakChallenge.damage_ops(a3))
+	var rec := XDB.rec("Skills", XWeakChallenge.SKILL)
+	check("rollback.help", XWeakChallenge.quality_label(rec, "品质：传说") == "品质：传说", XWeakChallenge.quality_label(rec, "品质：传说"))
 	var s := _new_game(true)
 	s.add_actor(2)
 	var a := s.actor(2)
@@ -255,8 +329,12 @@ func _rollback() -> void:
 	check("rollback.pdr", is_equal_approx(a.sparam(6), 1.0), a.sparam(6))
 	XConfig.set_flag(KEY, false)
 	_final({"id": "rollback.final", "observed": {}}, {"party": [2, 3, 4, 5, 6], "difficulty": 9, "result": 0})
-	check("rollback.final", not XConfig.flag(KEY) and not XAchievement.global_has(142), [XConfig.flag(KEY), XAchievement.global_has(142)])
+	check("rollback.final", not XConfig.flag(KEY) and not XAchievement.global_has(142) and XWeakChallenge.final_battle == null,
+		[XConfig.flag(KEY), XAchievement.global_has(142), XWeakChallenge.final_battle])
 	XWeakChallenge.ENABLED = true
+	# 开着时说明卡包装只认 10357＋标签（品质表改了也写神话），别的技能原样
+	check("help.label", XWeakChallenge.quality_label(rec, "品质：传说") == "品质：神话"
+		and XWeakChallenge.quality_label(XDB.rec("Skills", 10356), "品质：传说") == "品质：传说", null)
 
 
 func finish() -> void:

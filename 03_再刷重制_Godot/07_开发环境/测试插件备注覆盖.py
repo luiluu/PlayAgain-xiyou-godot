@@ -68,10 +68,12 @@ class KnownCases(unittest.TestCase):
         return self.rows[key]
 
     def test_known_unread(self):
-        # 弱者挑战（installWeakChallengeRuntime）整套没做、也没人决定不做：scan2 2026-11-04 留下的唯一真缺；做完把它挪进豁免或改成已读，再换一个例子
+        # 原例 codexweaknewgame（弱者挑战）weak2 2026-11-05 做完、已读；真实数据里已没有「没读」的标签，
+        # 「没读」的判定由上面 extract／norm 的合成例覆盖。这里改成守住：不再冒出新的真缺。
         r = self.verdict('codexweaknewgame')
-        self.assertGreater(r['data_count'], 0)
-        self.assertEqual(r['verdict'], '没读', r['why'])
+        self.assertEqual(r['verdict'], '已读', r['why'])
+        unread = [x['key'] for x in self.list if x['verdict'] == '没读']
+        self.assertEqual(unread, [], unread)
 
     def test_exempt_entries_valid(self):
         exempt = cov.load_exemptions()
