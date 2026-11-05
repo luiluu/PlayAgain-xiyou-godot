@@ -1953,7 +1953,7 @@ func _victory() -> void:
 	await victory_messages()
 
 
-## 胜利后要提示的文字（饿狼「获得神之触媒」等，logic.victory_texts）。优化 O-待定（ui11）：原版在结算画面期间塞进
+## 胜利后要提示的文字（饿狼「获得神之触媒」等，logic.victory_texts）。优化 O-190（ui11）：原版在结算画面期间塞进
 ## 战斗日志，只露约半秒、还吞掉一次确定（battlelog2）；这里改成结算画面关掉后用消息窗正常显示一次，按确定关。
 ## VICTORY_TEXT_MESSAGE = false 回到重制原来的样子（不显示）。挂机直接回地图时不弹（不打断挂机）。
 static var VICTORY_TEXT_MESSAGE := true

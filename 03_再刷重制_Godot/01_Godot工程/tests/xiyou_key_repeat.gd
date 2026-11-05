@@ -1,5 +1,5 @@
 extends Node
-## 按住键的连发节奏（ui11，O-待定）：照 rpg_core Input.isRepeated，按下触发、满 24 帧后每 6 帧一次，只认最后按下的键；
+## 按住键的连发节奏（ui11，O-189）：照 rpg_core Input.isRepeated，按下触发、满 24 帧后每 6 帧一次，只认最后按下的键；
 ## 系统回显被吞掉。回退开关 XKeyRepeat.MV_REPEAT。
 
 var results := []
