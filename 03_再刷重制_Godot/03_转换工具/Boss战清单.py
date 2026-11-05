@@ -25,7 +25,8 @@ def probe_troops():
     src = (HERE / 'mv_oracle/troop_event_probe.cjs').read_text()
     m = re.search(r'TROOPS\s*=\s*\[(.*?)\];', src, re.S)
     body = re.sub(r'//[^\n]*', '', m.group(1))
-    return {int(x) for x in re.findall(r'\d+', body)}
+    # 不在 TROOPS 里、单独 run(敌群号, …) 的例（accept4：控尸者 160 的 preset／noPreset 两例）也算开场对照
+    return {int(x) for x in re.findall(r'\d+', body)} | {int(x) for x in re.findall(r'\brun\((\d+)', src)}
 
 
 def troop_pages(t):

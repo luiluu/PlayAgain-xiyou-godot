@@ -64,7 +64,9 @@ KEYS = {
     'alien_affix.json': {'cases': ('id',)},
     'param_cache.json': {'cases': ('id',)},
     # turnPreset 例（回合计数预置）与同敌群的开局例分开成组，新增这类例才算「新键」而非同键追加
-    'troop_events.json': {'cases': lambda row: ('troop', 'paid', 'turnPreset') if 'turnPreset' in row else ('troop', 'paid')},
+    # variant 例（accept4：控尸者 160 不预置 HP，与 preset 例同敌群同交礼）也单独成键
+    'troop_events.json': {'cases': lambda row: ('troop', 'paid', 'turnPreset') if 'turnPreset' in row
+                          else ('troop', 'paid', 'variant') if 'variant' in row else ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
     'shop_buy.json': {'shops': ('map', 'event', 'raw'), 'goods': ('goods',),

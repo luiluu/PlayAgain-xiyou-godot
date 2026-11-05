@@ -10202,6 +10202,443 @@
      "749": -100000
     }
    }
+  },
+  {
+   "base": "ce1347",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1348",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1349",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "857": 1
+    }
+   }
+  },
+  {
+   "base": "ce1351",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1352",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1353",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "881": 1
+    }
+   }
+  },
+  {
+   "base": "ce1357",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1358",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1359",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "882": 1
+    }
+   }
+  },
+  {
+   "base": "ce1361",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1362",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1363",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "883": 1
+    }
+   }
+  },
+  {
+   "base": "ce1367",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1368",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1369",
+   "tag": "c2",
+   "preset": {
+    "variables": {
+     "884": 1
+    }
+   }
+  },
+  {
+   "base": "ce1510",
+   "tag": "c2",
+   "preset": {
+    "actors": {
+     "90": {
+      "skills": [
+       2807,
+       2808,
+       2809,
+       2810,
+       2811,
+       2812,
+       2813,
+       3224,
+       3225,
+       3226,
+       3227,
+       3228,
+       3229,
+       3230,
+       3231,
+       3232,
+       3233,
+       3234,
+       3235,
+       3236,
+       4701,
+       4702,
+       4703,
+       4704,
+       4705,
+       4706,
+       4707
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce505",
+   "tag": "c2",
+   "preset": {
+    "actors": {
+     "6": {
+      "skills": [
+       2767
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e15p3",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p3",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m105e3p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "744": 1,
+     "745": 1,
+     "746": 1,
+     "747": 1
+    }
+   }
+  },
+  {
+   "base": "m115e4p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "201": 88
+    }
+   }
+  },
+  {
+   "base": "m192e4p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m192e5p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m24e20p0",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "738": 1
+    },
+    "armors": {
+     "649": 1,
+     "651": 1,
+     "652": 1
+    }
+   }
+  },
+  {
+   "base": "m4e15p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m69e51p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "731": 1
+    }
+   }
+  },
+  {
+   "base": "m78e6p0",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "1347": 1
+    },
+    "armors": {
+     "1762": 1,
+     "1763": 1
+    }
+   }
+  },
+  {
+   "base": "m213e2p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "1311": 1,
+     "1309": 1
+    }
+   }
+  },
+  {
+   "base": "m213e2p2",
+   "tag": "a3",
+   "preset": {
+    "weapons": {
+     "807": 1
+    }
+   }
+  },
+  {
+   "base": "m4e15p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "162": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e19p1",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "168": -100000
+    }
+   }
+  },
+  {
+   "base": "m4e36p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "20": 20
+    }
+   }
+  },
+  {
+   "base": "m4e45p2",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "1488": 1
+    }
+   }
+  },
+  {
+   "base": "m112e4p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "644": 1,
+     "645": 1,
+     "646": 1,
+     "647": 1,
+     "648": 1,
+     "649": 1,
+     "650": 1,
+     "651": 1,
+     "652": 1,
+     "653": 1
+    }
+   }
+  },
+  {
+   "base": "m139e6p0",
+   "tag": "a3",
+   "preset": {
+    "party": [
+     1
+    ],
+    "weapons": {
+     "1577": 1
+    }
+   }
+  },
+  {
+   "base": "m192e6p0",
+   "tag": "a3",
+   "preset": {
+    "variables": {
+     "14": 1
+    }
+   }
+  },
+  {
+   "base": "m40e4p0",
+   "tag": "a3",
+   "preset": {
+    "switches": {
+     "170": true
+    }
+   }
+  },
+  {
+   "base": "m79e2p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e3p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e4p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
+  },
+  {
+   "base": "m79e5p0",
+   "tag": "a3",
+   "preset": {
+    "items": {
+     "403": 1
+    }
+   }
   }
  ]
 }
