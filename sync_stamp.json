@@ -1,8 +1,8 @@
 {
-  "toolsDigest": "ec4bc5528a68f8d748e7908415ac779297c37681dc607bfb9a2ff233ede8a92e",
-  "outputsDigest": "142d393f1fab9a30ba1a35b1522cdfae07a9859985304d1184b02c3164626a3e",
+  "toolsDigest": "22d8b07135485f54b7ad947033a0af18c7df788fe9dde64538b9bc8ff5fccf4b",
+  "outputsDigest": "58c64eb999cc5dd2d80ba61d4d1d1f8fa006db7ab28a74e9928519b052c6d6d3",
   "releaseVersion": "v0.28",
-  "result": "新增用例、显式接受 381 条既有用例改变，已接受并登记",
-  "time": "2026-11-05T00:23:55",
-  "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261105_002153_649124_v0.28-v0.28"
+  "result": "新增用例、显式接受 332 条既有用例改变，已接受并登记",
+  "time": "2026-11-05T01:11:01",
+  "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261105_010858_318726_v0.28-v0.28"
 }
