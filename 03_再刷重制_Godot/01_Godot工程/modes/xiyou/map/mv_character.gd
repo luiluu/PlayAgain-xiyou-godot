@@ -40,7 +40,9 @@ var _route_ok := true
 ## 跳跃（Game_CharacterBase.jump / updateJump）
 var _jump_peak := 0
 var _jump_count := 0
-## 气泡（Sprite_Balloon：8 帧 × 速度 8 ＋ 停留 12 帧，图 Balloon.png 每格 48）
+## 气泡（Sprite_Balloon：8 帧 × 速度 8 ＋ 停留 waitTime 帧，图 Balloon.png 每格 48）。正式版 SSEP_BattleSpeedUp_v2
+## 把 Sprite_Balloon.waitTime 改成 Balloon ÷ BattleSpeed(Default) ÷ BattleSpeed(Default)＝12÷2÷2＝3（地图上也生效；
+## OkayKeyBoost 参数 false，战斗加速开关 QuickMode 重制没有，所以总是 3），ui10 前照 MV 默认 12，气泡多停 9 帧。
 var balloon_id := 0
 var _balloon_t := 0
 static var _balloon_tex: Texture2D
@@ -265,13 +267,28 @@ func jump(dx: int, dy: int) -> void:
 # ---- 气泡 ----
 func start_balloon(id: int) -> void:
 	balloon_id = id
-	_balloon_t = 8 * 8 + 12
+	_balloon_t = 8 * 8 + balloon_wait()
 	if _balloon_layer == null:
 		_balloon_layer = Node2D.new()
 		_balloon_layer.draw.connect(_draw_balloon)
 		add_child(_balloon_layer)
 	_balloon_layer.queue_redraw()
 	queue_redraw()
+
+## Sprite_Balloon.waitTime（SSEP 覆写，见 balloon_id 处）；BALLOON_SSEP = false 回到 MV 默认 12（回退开关）
+static var BALLOON_SSEP := true
+static func balloon_wait() -> int:
+	if not BALLOON_SSEP:
+		return 12
+	var p := XDB.plugin("SSEP_BattleSpeedUp_v2")
+	var base := maxf(float(p.get("BattleSpeed (Default)", "2")), 1.0)
+	return int(float(p.get("Balloon", "12")) / base / base)
+
+## Sprite_Balloon.frameIndex；还没 updateFrame（帧号 −1）时返回 −1
+func balloon_frame() -> int:
+	if balloon_id <= 0:
+		return -1
+	return 7 - maxi(floori((_balloon_t - balloon_wait()) / 8.0), 0)
 
 func is_balloon_playing() -> bool:
 	return balloon_id > 0
@@ -336,9 +353,11 @@ func sprite_height() -> float:
 	return _walk.cell.y
 
 
-## Sprite_Balloon：帧号 = 7 − floor((剩余 − 12) / 8)，画在角色头顶（行走图高度处）
+## Sprite_Balloon：帧号 = 7 − floor((剩余 − waitTime) / 8)，画在角色头顶（行走图高度处）。
+## 气泡精灵加在角色精灵的父节点上，透明、不透明度 0 的角色照样画气泡（Sprite_Character.updateBalloon 不看可见性）；
+## setup 那一帧还没 updateFrame（loadBitmap 的 setFrame(0,0,0,0)），帧号算出 −1 时不画。
 func _draw_balloon() -> void:
-	if balloon_id <= 0 or transparent or opacity <= 0:
+	if balloon_id <= 0:
 		return
 	if _balloon_tex == null:
 		var p := XDB.img_path("system", "Balloon")
@@ -346,7 +365,9 @@ func _draw_balloon() -> void:
 			_balloon_tex = load(p)
 	if _balloon_tex == null:
 		return
-	var frame := 7 - maxi(floori((_balloon_t - 12) / 8.0), 0)
+	var frame := balloon_frame()
+	if frame < 0:
+		return
 	var shift := 0.0 if is_object() else 6.0
 	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
 
