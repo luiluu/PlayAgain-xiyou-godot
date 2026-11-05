@@ -1,7 +1,7 @@
 # 交付：cc/bailong-ravenfx
 
 - 车道／工作者：B 界面／ravenfx（cc；白龙盘点后上下文到线，接手做一期）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点表（原版 = 冻结正式源 app.nw/js；来自白龙接续单，接手后按实测更新）
 
@@ -60,9 +60,12 @@
 ## 验证
 
 - 专项：`xiyou_raven_visual` 51/51。
-- 待写
+- 选测（本机，没走云端）：`选测.py main --list` 列 158 个（改了 mv_character 牵出全部楼层专项、改 raven.gd 注释牵出 xiyou_rules*），挑 37 个跑，全过：xiyou_actor_looks、xiyou_actor_modules、xiyou_airship_view、xiyou_appearance、xiyou_battle_events、xiyou_battle_log、xiyou_cat、xiyou_collapse_fx、xiyou_costume_battle、xiyou_costumes、xiyou_flow、xiyou_guyu_ui、xiyou_jingliu2、xiyou_map、xiyou_map132_shop、xiyou_map186、xiyou_map_balloon、xiyou_map_hotkeys、xiyou_mira_abyss、xiyou_mira_battle、xiyou_mv_animation、xiyou_options_basic、xiyou_raven_artifact、xiyou_raven_battle、xiyou_raven_reflect、xiyou_raven_soul、xiyou_raven_visual、xiyou_review_fixes、xiyou_rules、xiyou_sequence_visual、xiyou_state_overlay、xiyou_sve_visual、xiyou_svpngfd、xiyou_vsfx、xiyou_xuan_tusu_art、xiyou_floor_run、xiyou_determinism。其余楼层／规则场景只因 mv_character、raven.gd 注释被牵出：非渡鸦的步行帧值不变，raven.gd 只改了注释，留给合并选测。
+- `同步正式西游.py --accept-additions`（新增用例已接受，留了指纹）；`语法检查.py`、`工具回归.py` 全过。验收后又合了一次 main（mac1、equip1），没碰本分支文件，没重跑。
 
 ## 本分支提交
 
 - cf17bee3 白龙接续单（盘点）
-- 待写
+- 17b9b0c1 步行帧 ×1.35、受击濒死替换，探针 raven_visual＋专项
+- 5c58829f 交付单（接续单并入后删除）
+- 最后一笔：合 main、交付单可合并
