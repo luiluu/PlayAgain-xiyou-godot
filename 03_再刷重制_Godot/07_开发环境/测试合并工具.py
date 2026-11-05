@@ -2716,6 +2716,26 @@ for name in filter(None, files):
         self.assertFalse(self.wt.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
 
+    def test_finish_cloud_with_also_hand_edit_checker_sees_uncommitted_edit(self):
+        """BK：--finish --affected --cloud --also：手改在检查.sh 运行时还是未提交（检查.sh 据此做临时快照提交给云端测，见 测试选测.py），
+        通过后手改进收尾提交；不另起提交、不动 main 历史。"""
+        self.github()
+        log = Path(self.tmp.name) / 'dirty_at_check'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\ngit -C %s -c core.quotepath=off status --porcelain --untracked-files=no >> %s\n' % (self.root, log)); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'dirty checker')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        hand = merge.PROJECT / 'modes/手改测试.gd'
+        (self.root / hand).write_text('# 总装收尾手改\n')
+        self.g('add', '-N', '--', str(hand))
+        merge_commit = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call('--finish', '--affected', '--cloud', '--also', str(hand)), 0, self.last_output)
+        self.assertIn(str(hand), log.read_text())                             # 检查.sh 运行时手改还没提交
+        self.assertEqual(self.g('rev-parse', 'main~1'), merge_commit)          # 收尾提交直接接在合并提交上
+        self.assertIn(str(hand), self.g('-c', 'core.quotepath=off', 'show', '--name-only', '--format=', 'main'))
+
     def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
         """云端判失败（检查.sh 非零，覆盖通过以外的失败、超时、不可用）：保留现场，不提交收尾、不清理、不推送。"""
         bare = self.github()
