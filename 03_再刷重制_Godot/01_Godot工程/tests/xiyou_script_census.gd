@@ -4,6 +4,9 @@ extends Node
 ## 看 skipped 里有没有它（认不出的运行时会照原文记 skipped、跳过；内容覆盖检查只看指令码，看不出这一层）。
 ## 结果按写法去重，带出现位置（Map/EV/页、CE），写到 user://script_census.json 并逐条打印 CENSUS 行；
 ## 断言：认不出的写法都在 KNOWN 里（新出现的认不出写法会挂），KNOWN 里已经认得的也挂（提醒删掉）。
+## events7b：按调用方销号——只出现在「走不到的公共事件」（清单 unreachable，测试核切片数据里确实没有调用方）里的写法不算；
+## 只出现在「只在战斗里跑的公共事件」（调用方全是战斗场合的技能／物品效果、敌群页、battleRoots 及其子事件，由数据算出）里、
+## 战斗事件解释器又认得的写法也不算（原 E 类；位置里另有走不到的公共事件也行，如变量 318 在 CE110／423 战斗里、CE124 走不到）。KNOWN 清到 0。
 ## 只读数据；跑脚本的副作用落在一局空白新游戏上，每条写法前重开。
 const EC := preload("res://tests/xiyou_event_compare.gd")
 const OUT := "user://script_census.json"
@@ -160,14 +163,26 @@ func _run() -> void:
 	XShop.auto_close = true
 	host = CensusHost.new()
 	add_child(host)
-	var KNOWN: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(KNOWN_FILE)).known
+	var known_file: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(KNOWN_FILE))
+	var KNOWN: Dictionary = known_file.known
+	var callers := _callers()
+	var unreachable := {}
+	for k in known_file.get("unreachable", {}):
+		unreachable[int(k)] = true
+		_check("unreachable_ce%s_no_callers" % k, (callers.get(int(k), []) as Array).is_empty(), callers.get(int(k), []))
+	var roots := {}
+	for k in known_file.get("battleRoots", {}):
+		roots[int(k)] = true
 	var rows := _collect()
 	var unknown := {}
 	var native := 0
+	var by_unreachable := 0
+	var by_battle := 0
 	for key in rows:
 		var miss: Array = await _try(rows[key])
 		if not miss.is_empty():
 			var r: Dictionary = rows[key]
+			var ces := _where_ces(r)
 			# 「再次释放」一族（Game_Action＋forceAction，CE345 等）：战斗事件解释器 XBattleEventRunner._recast_script 原生处理
 			# （xiyou_battle_common_events 的 recast_* 与 battle_common_event_oracle 参照），战斗里认得就不算认不出；
 			# 地图解释器本来不跑它（只在战斗里触发）。认不出的变体（正则对不上）仍会进 unknown。
@@ -176,6 +191,13 @@ func _run() -> void:
 					or str(r.code).strip_edges() == "Star.PetSystem.PetGet()")
 			if battle_only and (await _try_battle(r)).is_empty():
 				native += 1
+				continue
+			if not ces.is_empty() and ces.all(func(id): return unreachable.has(id)):
+				by_unreachable += 1
+				continue
+			if not ces.is_empty() and ces.all(func(id): return unreachable.has(id) or _battle_only(id, callers, roots, {})) and (await _try_battle(r)).is_empty():
+				by_battle += 1
+				print("CENSUS_BATTLE_ONLY ", JSON.stringify({"key": key.left(80), "where": r.where}))
 				continue
 			r["miss"] = miss
 			unknown[key] = r
@@ -188,19 +210,11 @@ func _run() -> void:
 	var new_keys := unknown.keys().filter(func(k): return not KNOWN.has(k))
 	_check("no_new_unknown", new_keys.is_empty(), new_keys.slice(0, 20))
 	var fixed := KNOWN.keys().filter(func(k): return rows.has(k) and not unknown.has(k))
-	# 战斗里跑的（清单分类 E）：再按战斗事件解释器跑一遍，分出战斗里其实认得的与真缺的
-	var battle_known := 0
-	var e_total := 0
-	for key in unknown:
-		if str(KNOWN.get(key, "")) != "E":
-			continue
-		e_total += 1
-		var bm: Array = await _try_battle(unknown[key])
-		if bm.is_empty():
-			battle_known += 1
-		print("CENSUS_BATTLE ", JSON.stringify({"key": key, "miss": bm.slice(0, 3)}))
-	print("CENSUS_BATTLE_KNOWN ", battle_known)
-	_check("e_class_all_battle_known", e_total > 0 and battle_known == e_total, [battle_known, e_total])   # E 类全部战斗认得（冻结追击 CE1321 custom1b 补上）
+	# 按调用方销号的两类都真被用到（防口径悄悄失效）：events7b 时走不到 25 种、只在战斗里跑且战斗认得 14 种
+	print("CENSUS_BY_CALLERS unreachable ", by_unreachable, " battle_only ", by_battle)
+	_check("by_unreachable_seen", by_unreachable >= 20, by_unreachable)
+	_check("by_battle_only_seen", by_battle >= 14, by_battle)
+	_check("known_empty", KNOWN.is_empty(), KNOWN.size())
 	# 变量操作读敌人游戏数据（122 操作数 游戏数据 4＝敌人，序号 0；原版 gameDataOperand case 4：0 HP、1 MP、2～9＝param(0～7)）：
 	# 认得之外再看读出的值对不对（取 0 说明序号或类型走歪了）；只在战斗里有敌人，地图解释器不跑
 	var enemy_reads := 0
@@ -223,6 +237,93 @@ func _run() -> void:
 	_check("enemy_reads_seen", enemy_reads >= 9, enemy_reads)   # 9 种（变量 318、1341～1348）都被看到
 	_check("known_still_unknown", fixed.is_empty(), fixed)
 	_finish()
+
+
+## 公共事件 → 调用方（切片里导出的数据）：117（公共事件、地图事件页、敌群页）、物品／技能效果 44、自动／并行触发（条件开关有地方打开才算）
+func _callers() -> Dictionary:
+	var out := {}
+	var add := func(ce: int, who: Dictionary):
+		if not out.has(ce):
+			out[ce] = []
+		out[ce].append(who)
+	var switch_on := {}
+	var lists := []   # [列表, 调用方]
+	var ces = XDB.table("CommonEvents")
+	for ce in ces:
+		if ce is Dictionary:
+			lists.append([ce.get("list", []), {"kind": "ce", "id": int(ce.id)}])
+	for id in range(1, 260):
+		if not FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % id):
+			continue
+		for e in XDB.map(id).get("events", []):
+			if e is Dictionary:
+				for pg in e.get("pages", []):
+					lists.append([pg.get("list", []), {"kind": "map", "id": id}])
+	for t in XDB.table("Troops"):
+		if t is Dictionary:
+			for pg in t.get("pages", []):
+				lists.append([pg.get("list", []), {"kind": "troop", "id": int(t.id)}])
+	for pair in lists:
+		for c in pair[0]:
+			var p: Array = c.get("parameters", [])
+			match int(c.code):
+				117:
+					add.call(int(p[0]), pair[1])
+				121:
+					if int(p[2]) == 0:
+						for sw in range(int(p[0]), int(p[1]) + 1):
+							switch_on[sw] = true
+				355, 655:
+					var m := RegEx.create_from_string("\\$gameSwitches\\.setValue\\(\\s*(\\d+)\\s*,\\s*true").search(str(p[0]))
+					if m:
+						switch_on[int(m.get_string(1))] = true
+	for table in ["Items", "Skills"]:
+		for rec in XDB.table(table):
+			if rec is Dictionary:
+				for e in rec.get("effects", []):
+					if int(e.code) == 44:
+						add.call(int(e.dataId), {"kind": table, "id": int(rec.id), "occasion": int(rec.get("occasion", 0))})
+	for ce in ces:
+		if ce is Dictionary and int(ce.get("trigger", 0)) != 0 and switch_on.has(int(ce.switchId)):
+			add.call(int(ce.id), {"kind": "trigger", "switch": int(ce.switchId)})
+	return out
+
+
+## 只在战斗里跑：有调用方，且每个调用方都是战斗场合（occasion 1）的物品／技能、敌群页、battleRoots，或本身只在战斗里跑的公共事件
+static func _battle_only(id: int, callers: Dictionary, roots: Dictionary, seen: Dictionary) -> bool:
+	if roots.has(id):
+		return true
+	if seen.has(id):
+		return false
+	seen[id] = true
+	var list: Array = callers.get(id, [])
+	if list.is_empty():
+		return false
+	for who in list:
+		match str(who.kind):
+			"troop":
+				pass
+			"Items", "Skills":
+				if int(who.occasion) != 1:
+					return false
+			"ce":
+				if not _battle_only(int(who.id), callers, roots, seen.duplicate()):
+					return false
+			_:
+				return false
+	return true
+
+
+## 写法出现的位置全是公共事件时返回编号表（位置记满 12 处时可能没记全，返回空表＝不按调用方销号）
+static func _where_ces(r: Dictionary) -> Array:
+	var out := []
+	if int(r.get("n", 0)) > (r.where as Array).size():
+		return out
+	for w in r.where:
+		if not str(w).begins_with("CE"):
+			return []
+		out.append(int(str(w).substr(2)))
+	return out
 
 
 func _finish() -> void:

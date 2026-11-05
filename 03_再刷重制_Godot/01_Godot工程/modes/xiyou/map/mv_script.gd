@@ -210,9 +210,9 @@ static func run(code: String, interp) -> Array:
 		if picked != null:
 			return picked
 	# plugins.js 没装载的插件：签到板 Star_SignBoard（CE6 签到、CE330／373 补签卡／补签信）、状态图鉴 Scene_StateBook（CE429）、
-	# 地图快捷栏 MKR_MapItemSlot（CE478）。原版读到未定义的名字抛错，被 YEP command355 吞掉，无操作；
-	# 对照 oracle script_gaps unloaded.*（存档内容与场景都不变）。
-	if _re("^(SceneManager\\.push\\(Scene_(StarSignBoard|StateBook)\\)|Star\\.SignBoard\\.ConductItemMakeUpSign\\((true|false)\\)|\\$gameParty\\.openItemSlotMenu\\(\\));?$").search(js):
+	# 地图快捷栏 MKR_MapItemSlot（CE478）、手机端云存档 HWGOE（CE249「存档不提示」，Map072 附魔武器店买完东西调；Mac 版没有 HWGOE）。
+	# 原版读到未定义的名字抛错，被 YEP command355 吞掉，无操作；对照 oracle script_gaps unloaded.*（存档内容与场景都不变）。
+	if _re("^(SceneManager\\.push\\(Scene_(StarSignBoard|StateBook)\\)|Star\\.SignBoard\\.ConductItemMakeUpSign\\((true|false)\\)|\\$gameParty\\.openItemSlotMenu\\(\\)|HWGOE\\.save\\.cloudSaveGame\\((\\d+|HWGOE\\.save\\.latestSavefileId\\(\\))\\));?$").search(js):
 		return []
 	if js.contains("$gameActors.length+1") or js.contains("$gameActors.length + 1"):
 		return []

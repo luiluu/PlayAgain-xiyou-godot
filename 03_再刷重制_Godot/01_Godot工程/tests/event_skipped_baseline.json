@@ -224,12 +224,6 @@
 			"355 i < $gameTroop.members().length": 1,
 			"355 i++) {": 1
 		},
-		"ce249": {
-			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
-		},
-		"ce249#c1": {
-			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
-		},
 		"ce325": {
 			"355 !$gameTroop.isAllDead() && BattleManager": 1,
 			"355 action.decideRandomTarget()": 1,
@@ -417,9 +411,6 @@
 			"355 if(actor && !actor.isDeathStateAffected(": 1,
 			"355 var action = new Game_Action(actor, true": 1,
 			"355 var actor = $gameActors.actor(i)": 1
-		},
-		"m72e2p0": {
-			"355 HWGOE.save.cloudSaveGame(HWGOE.save.late": 1
 		}
 	},
 	"note": "地图事件对照里解释器跳过（认不出）的脚本／指令（tests/xiyou_event_compare 写入；--update-baseline 重写）。键＝指令码＋原文前 40 字。新增＝红；补好解释器后用 --update-baseline 删。全库写法清单另见 tests/fixtures/script_census_known.json（脚本普查）。"
