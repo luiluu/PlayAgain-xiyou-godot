@@ -165,6 +165,7 @@ func _command(name: String, args: Array) -> void:
 				t.immortal = true
 				continue
 			t.param_refresh()  # removeImmortal 对每个目标都 refresh
+			XBattleLogic.stale_refreshed(t)  # krz 状态缓存：陈旧状态这时进缓存（raven4）
 			if t.immortal:
 				t.immortal = false
 				if t.hp <= 0.0 and not t.state_ids.has(XBattleLogic.DEATH_STATE):

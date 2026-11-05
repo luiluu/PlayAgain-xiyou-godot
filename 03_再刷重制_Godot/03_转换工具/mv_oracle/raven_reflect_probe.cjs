@@ -45,6 +45,9 @@ function act(bm, user, skillId, targetIndex) {
   const action = new w.Game_Action(user); action.setSkill(skillId); action.setTarget(targetIndex);
   user._actions = [action]; bm._subject = user; bm._action = null;
   bm.startAction();
+  runPhases(bm);
+}
+function runPhases(bm) {
   for (let i = 0; i < 20000; i++) {
     const ph = bm._phase;
     if (ph === 'phaseChange') bm.updatePhase(); else if (ph === 'actionList') bm.updateActionList();
@@ -199,6 +202,72 @@ for (const [tcr, refl] of [[0.01, false], [0.01, true], [2, false], [2, true]]) 
     if (refl) reflectOn(foes);
     const log = record(() => act(bm, a, 10124, 0));
     return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
+  }));
+}
+// raven4（审查 43 P3-1）：跨行动。敌人 e0 在行动 N 打 8 号（必中、黑暗 1e6、加黑暗侵蚀 1663），tcr 0.01／2 决定受伤充 TP 是否在加状态前 refresh；
+// 行动 N+1 由别人打 8 号（同槽、两段、不加状态），看第一击读到的是旧缓存（×1）还是新状态（×1.5）。between：direct＝直接下一次 startAction，
+// turn＝中间 endTurn／startTurn，process＝e1 走真实 processTurn，self＝8 号自己先普攻一次，ally＝1 号队友打 8 号（单体友方），
+// reflect＝行动 N 改成 8 号自己放魔法单体被反射回自己（reflect.turn／self／ally 同上面的 between）。
+// rate＝各步之后 8 号对黑暗（9）的有效度（读缓存）。
+function stateSkill(sk, o) {
+  sk.damage.formula = o.formula || (o.small ? '100' : '1000000'); sk.damage.elementId = 9; sk.damage.critical = false; sk.damage.variance = 0; sk.damage.type = o.dmg === false ? 0 : 1;
+  sk.effects = o.state ? [{code: 21, dataId: 1663, value1: 1, value2: 0}] : [];
+  sk.scope = o.scope || 1; sk.repeats = o.repeats || 1; sk.hitType = 0; sk.successRate = 100; sk.mpCost = 0; sk.tpCost = 0; sk.tpGain = 0; sk.meta = {}; sk.note = '';
+}
+function seqBattle(tcr) {
+  const {bm, a, foes} = xbattle(8, 60);
+  a._paramPlus[0] = 2e6 - a.paramBase(0); a.need_refresh = true; a.refresh(); a.recoverAll(); a.setTp(0);  // 生命上限 2e6：受伤充 TP＝floor(50×伤害/2e6×tcr)，tcr 2 时 ≥1
+  Object.defineProperty(a, 'tcr', {get: () => tcr, configurable: true});
+  w.SceneManager._scene = {_otbDisplayWindow: stub};
+  return {bm, a, foes, rate: () => a.elementRate(9)};
+}
+for (const [tcr, between] of [[0.01, 'direct'], [2, 'direct'], [2, 'turn'], [2, 'process'], [2, 'self'], [2, 'ally'], [2, 'reflect'], [2, 'reflect.turn'], [2, 'reflect.self'], [2, 'reflect.ally']]) {
+  cases.push(makeCase(`refseq.tcr${tcr}.${between}`, {tcr, between}, () => {
+    const {bm, a, foes, rate} = seqBattle(tcr);
+    const sk = w.$dataSkills[10124], rates = {before: rate(), states0: a._states.slice()};
+    stateSkill(sk, {state: true});
+    let first;
+    if (between.startsWith('reflect')) {  // 行动 N 是 8 号自己放魔法单体被反射回自己：自己是出手者，不在收尾 immortal: targets 的 refresh 里
+      sk.hitType = 2; reflectOn(foes);
+      first = record(() => act(bm, a, 10124, 0));
+      reflectOn(foes, 0);
+    } else first = record(() => act(bm, foes[0], 10124, 0));
+    rates.afterN = rate(); const tp = a.tp;
+    if (between.endsWith('turn')) { bm.endTurn(); bm.startTurn(); }
+    if (between.endsWith('self')) act(bm, a, 1, 0);
+    rates.between = rate();
+    stateSkill(sk, between.endsWith('ally') ? {repeats: 2, scope: 7, formula: '100000'} : {repeats: 2});  // 队友出手不乘敌人的输出倍率，基伤小一档免得打倒 8 号
+    let second;
+    if (between === 'process') {
+      const e = foes[1], x = new w.Game_Action(e); x.setSkill(10124); x.setTarget(0);
+      second = record(() => { e._actions = [x]; bm._subject = e; bm._action = null; bm._phase = 'turn'; bm.processTurn(); runPhases(bm); });
+    } else if (between.endsWith('ally')) second = record(() => act(bm, w.$gameActors.actor(1), 10124, 0));
+    else second = record(() => act(bm, foes[1], 10124, 0));
+    rates.after = rate();
+    return {first, second, rates, tp, tpEnd: a.tp, states: a._states.slice()};
+  }));
+}
+// raven4（审查 43 P3-2）：嵌套 apply 同一目标。e0 对 8 号的两段行动（加侵蚀），第一段的 applyItemUserEffect 里（同璇回光内置棱光的位置）
+// 对 8 号再 apply 一次内层行动：hit＝内层黑暗伤害（不加状态），small＝内层伤害很小（TP 加 0），none＝内层不伤害也不加状态（不 refresh）。
+// 看外层第二段读到的侵蚀（×1 晚一击还是 ×1.5）。
+for (const [tcr, inner] of [[2, 'hit'], [2, 'small'], [2, 'none'], [0.01, 'hit']]) {
+  cases.push(makeCase(`refnest.tcr${tcr}.${inner}`, {tcr, inner}, () => {
+    const {bm, a, foes, rate} = seqBattle(tcr);
+    const sk = w.$dataSkills[10124], sk2 = w.$dataSkills[10125];
+    stateSkill(sk, {state: true, repeats: 2});
+    stateSkill(sk2, {dmg: inner !== 'none', small: inner === 'small'});
+    const old = w.Game_Action.prototype.applyItemUserEffect, rates = [];
+    let nested = 0;
+    w.Game_Action.prototype.applyItemUserEffect = function (target) {
+      old.apply(this, arguments);
+      if (nested || this.item().id !== 10124 || target !== a) return;
+      nested++;
+      rates.push(rate());
+      try { const x = new w.Game_Action(foes[1]); x.setSkill(10125); x.apply(a); } finally { rates.push(rate()); }
+    };
+    let log;
+    try { log = record(() => act(bm, foes[0], 10124, 0)); } finally { w.Game_Action.prototype.applyItemUserEffect = old; }
+    return {log, rates, nested, after: rate(), tp: a.tp, states: a._states.slice()};
   }));
 }
 const ok0 = finish(host, 'raven_reflect.json', {cases});
