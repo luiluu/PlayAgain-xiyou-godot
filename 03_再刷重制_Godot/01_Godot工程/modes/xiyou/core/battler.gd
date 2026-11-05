@@ -642,18 +642,18 @@ func param(i: int) -> float:
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
 ## G_StateParam paramState：各状态 <G_ShuXing> 的固定值 × 层数之和。层数取 YEP 状态计数（state_data._stateCounter，
-## 状态脚本写入）；原版层数变量在循环外，某状态计数为真后排在后面的状态都沿用它（state_js_probe counter.carry）。
+## 状态脚本写入）；v0.62.05 起每个状态只乘自己的层数（state_js_probe counter.carry；v0.28 的层数变量在循环外，会连带后面的状态）。
 static var _state_param_cache := {}
 func param_state(i: int) -> float:
+	# G_StateParam（v0.62.05）：每个状态只乘自己的层数（_stateCounter），没有层数按 1 层（旧版 ceng 放在循环外会连带后面的状态）
 	var v := 0.0
-	var ceng := 1.0
 	var counters: Dictionary = state_data.get("_stateCounter", {})
 	for id in state_ids:
 		if not _state_param_cache.has(id):
 			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
-		var c := XStateEffects._truthy_number(counters.get(str(id)))
-		if c != 0.0:
-			ceng = c
+		var ceng := XStateEffects._truthy_number(counters.get(str(id)))
+		if ceng == 0.0:
+			ceng = 1.0
 		v += float(_state_param_cache[id][i]) * ceng
 	return v
 
