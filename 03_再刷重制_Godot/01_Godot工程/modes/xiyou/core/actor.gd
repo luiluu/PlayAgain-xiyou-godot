@@ -314,11 +314,13 @@ func max_tp() -> float:
 
 ## Game_Actor.levelUp：等级 +1，学会该等级的职业技能；PKD_SimpleSkillsTree 给备注 pSkillPointsVarId 指定的变量加技能点（每级 1）
 func _level_up() -> void:
+	# O-待定 回退支：照原版，战斗中 krz 能力值缓存还是升级前的上限，回满只回到旧上限
+	var stale := [] if FIX_BATTLE_LEVELUP_MAX or not XBinding.in_battle() else [mhp, mmp]
 	_lv += 1
 	for l in class_data().get("learnings", []):
 		if int(l.level) == _lv:
 			learn_skill(int(l.skillId))
-	_level_up_recover()
+	_level_up_recover(stale)
 	var var_id := str(data().get("meta", {}).get("pSkillPointsVarId", "")).strip_edges()
 	if var_id.is_valid_int() and int(var_id) > 0 and XState.current:
 		var points := str(XDB.plugin("PKD_SimpleSkillsTree").get("skillPointsPerLevelUpGain:i", "1"))
@@ -326,13 +328,17 @@ func _level_up() -> void:
 	XActorModules.level_up(self)  # 专属角色模块的 levelUp 包装
 
 ## Olivia_AntiPlayerStress.levelUpRecover：每升一级（levelUp 包装，在基础 levelUp 之后）HP／MP 回满（西游参数 Recover Full HP／MP 都是 true），再 refresh。
+## 这里不调 refresh_passive：回满直接取当时的 mhp／mmp，之后只 refresh_resources 夹值（events5c 交付单曾写「先 refresh_passive 再回满」，与代码不符，审查 43 P3-3 订正；实机 566/566、806/806 一致）。
 ## 事件对照 events5c 的 HP／MP 观察面咬出：公共事件 231「升级药」原版升到 10 级 HP＝mhp，重制此前只夹不回
-func _level_up_recover() -> void:
+## 原版战斗中（$gameParty.inBattle()，含胜利结算 gainExp）krz_state_re 的 Game_Actor.param 走 _ParamCache2，levelUp 不标 need_refresh，
+## 读到的 mhp／mmp 还是升级前的值：回满只回到旧上限，战斗结束后上限变新，HP／MP 差一级的成长（渡鸦 60→61 级 MP 1193／1208，events6 量）。
+## O-待定：重制按新上限回满；stale 非空（回退支，见 FIX_BATTLE_LEVELUP_MAX）时回到传入的旧上限 [mhp, mmp]。
+func _level_up_recover(stale: Array = []) -> void:
 	var p := XDB.plugin("Olivia_AntiPlayerStress")
 	if str(p.get("Recover Full HP", "true")) == "true":
-		hp = mhp
+		hp = float(stale[0]) if stale.size() == 2 else mhp
 	if str(p.get("Recover Full MP", "true")) == "true":
-		mp = mmp
+		mp = float(stale[1]) if stale.size() == 2 else mmp
 	refresh_resources()
 
 
@@ -724,6 +730,9 @@ func param_before_alien(i: int) -> float:
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
 	var v := XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i)))))  # 心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
+
+## O-待定：战斗中升级按新上限回满 HP／MP（原版 krz 能力值缓存让它回到升级前的上限）。false＝照原版
+static var FIX_BATTLE_LEVELUP_MAX := true
 
 ## 云裳 installNativeYunshangRuntime 的 Game_Actor.param 包装（modules.json 第 31 个，在米拉、黄泉、甚尔、宿傩、饿狼之后，异化、种族之前）：
 ## 对所有角色最后 round(max(HP?1:0, min(paramMax, v)))，专属倍率乘过上限的压回上限（八戒 toji2；参照 param_max_probe）。

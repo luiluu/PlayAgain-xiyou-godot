@@ -171,7 +171,8 @@ func _myth(c: Dictionary) -> void:
 			steps.append(_turn(logic, a))
 		steps.append(_cast(logic, a, XRaven.MYTH, a))
 		a._level_up()
-		# 升级后原版 MP 回满（重制 events5c 起 _level_up 也回满）；渡鸦 mmp 61 级后两边不同（见 residue.sync），这一步仍不比 MP
+		# 战斗中升级：原版 MP 回到升级前的上限（krz 能力值缓存，见 _residue_sync），重制 O-待定 按新上限回满，这一步 MP 取参照不比
+		check(c.id + ".full", a.mp == a.mmp, [a.mp, a.mmp])
 		steps.append(_snap(logic, a).merged({"levelUp": true, "mp": float(c.observed.steps[steps.size()].mp)}, true))
 	_compare(c.id, steps, c.observed.steps)
 
@@ -192,24 +193,10 @@ func _power(c: Dictionary) -> void:
 func _residue(c: Dictionary) -> void:
 	var setup: Dictionary = c.setup
 	if c.id == "residue.sync":
-		var r := _battle(3, 60)
-		var logic: XBattleLogic = r[0]
-		var a: XActor = r[1]
-		var st: Dictionary = XState.current.raven
-		st["residue"] = 3
-		st["hunter"] = true
-		a._level_up()
-		# 升级现在回满 MP（Olivia levelUpRecover，events5c）。参照里 61 级后 MV 的 mmp 停在 1193（paramBase 已 1208，被某处封顶，未查），
-		# 重制 mmp 仍按成长表 1208，两边回满值不同：MP 先取参照值不比（待量清 MV 渡鸦 61 级后 mmp 封顶的来源）
-		var kept := _snap(logic, a).merged({"mp": float(c.observed.kept.mp)}, true)
-		a.change_level_mv(20)
-		st["residue"] = 2
-		st["hunter"] = true
-		a._level_up()
-		var learned := a.skill_ids.filter(func(i): return i >= 10122)
-		learned.sort()
-		check(c.id + ".skills", learned == (c.observed.skills as Array).map(func(v): return int(v)), [learned, c.observed.skills])
-		_compare(c.id, [kept, _snap(logic, a).merged({"mp": float(c.observed.lv21.mp)}, true)], [c.observed.kept, c.observed.lv21])
+		_residue_sync(c, false)
+		XActor.FIX_BATTLE_LEVELUP_MAX = false  # 回退支照原版：战斗中升级 MP 回到旧上限，与参照逐项比（含 MP）
+		_residue_sync(c, true)
+		XActor.FIX_BATTLE_LEVELUP_MAX = true
 		return
 	var reserve := bool(setup.get("reserve", false))
 	var r := _battle(int(setup.rank), int(setup.level), reserve)
@@ -228,6 +215,31 @@ func _residue(c: Dictionary) -> void:
 		steps.append(_turn(logic, a))
 		steps.append(_kill(logic, a, 1))
 	_compare(c.id, steps, c.observed.steps)
+
+
+## residue.sync：战斗中升级。原版 krz 能力值缓存让 levelUpRecover 回到升级前的上限（60→61 级 MP 1193，新上限 1208；events6 量）。
+## 默认（O-待定）按新上限回满：MP 比「回满」，其余字段照参照；original（回退支）连 MP 也照参照比
+func _residue_sync(c: Dictionary, original: bool) -> void:
+	var tag: String = c.id + (".original" if original else "")
+	var r := _battle(3, 60)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	var st: Dictionary = XState.current.raven
+	st["residue"] = 3
+	st["hunter"] = true
+	a._level_up()
+	check(tag + ".full", original or a.mp == a.mmp, [a.mp, a.mmp])
+	var kept := _snap(logic, a) if original else _snap(logic, a).merged({"mp": float(c.observed.kept.mp)}, true)
+	a.change_level_mv(20)
+	st["residue"] = 2
+	st["hunter"] = true
+	a._level_up()
+	check(tag + ".full21", original or a.mp == a.mmp, [a.mp, a.mmp])
+	var learned := a.skill_ids.filter(func(i): return i >= 10122)
+	learned.sort()
+	check(tag + ".skills", learned == (c.observed.skills as Array).map(func(v): return int(v)), [learned, c.observed.skills])
+	var lv21 := _snap(logic, a) if original else _snap(logic, a).merged({"mp": float(c.observed.lv21.mp)}, true)
+	_compare(tag, [kept, lv21], [c.observed.kept, c.observed.lv21])
 
 
 func _hunt(c: Dictionary) -> void:
