@@ -32,6 +32,8 @@ const COPIES := {10168: {"rows": ["生效条件：奈叶出场", "效果：队�
 
 
 static func target(obj: Dictionary) -> bool:
+	if XCat.is_cat_item(obj):  # characterHelpTarget：window.CodexCat 且备注含 <CodexCat: 的技能／物品／法宝（17 个）也走 characterHelpView
+		return true
 	var id := int(obj.get("id", 0))
 	return obj.has("stypeId") and id >= 10122 and id <= 10299
 
@@ -60,6 +62,8 @@ static func owner(obj: Dictionary) -> int:
 
 ## 所属角色；没有时返回 null（预览）
 static func actor(obj: Dictionary):
+	if XCat.is_cat_item(obj):  # characterHelpActor：已有 178 就用它，否则是预览替身（null：1 级、没学技能）
+		return XCat.help_actor()
 	var s := XState.current
 	var who := owner(obj)
 	return s.actors[who] if s != null and s.actors.has(who) else null
@@ -112,6 +116,8 @@ static func _cost(a, item: Dictionary, kind: String) -> int:
 
 ## currentHelpText；返回 null 表示这一行不显示
 static func current_text(text: String, item: Dictionary, a):
+	if XCat.is_cat_item(item):  # CodexCat.helpItem 换过的 currentHelpText：C.helpText，没有角色技能的等级／阶位换算
+		return XCat.help_text(text, item, a)
 	var id := int(item.get("id", 0))
 	var lv := _level(item, a)
 	var rank := _rank(item, a)
@@ -224,14 +230,15 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	var actual_segments := texts.any(func(t): return _re("^实际段数[：:]", t))
 	var name := str(obj.get("name", ""))
 	var desc := str(obj.get("description", ""))
+	var skill := obj.has("stypeId")   # 物品、法宝（小猫一族）的说明行留在抬头，不像技能那样去掉
 	for row in rows:
 		var text := XHelpCard.plain(str(row[0]))
 		if extra.has(text):
 			authored.append(row)
 			continue
-		if str(row[0]) == desc:
+		if skill and str(row[0]) == desc:
 			continue
-		if str(row[0]) == name or _re("^品质[：:]", text):
+		if str(row[0]) == name or (not skill and str(row[0]) == desc) or _re("^品质[：:]", text):
 			header.append(row)
 			continue
 		if _re("^(?:伤害属性|攻击属性|触发攻击属性)[：:]", text):
@@ -277,7 +284,7 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 		if _re("^实际段数[：:]", raw) and texts.any(func(t): return _re("^攻击次数[：:]", t) and t.contains("追加伤害另计")):
 			text += "（追加伤害另计）"
 		text = current_text(text, obj, a)
-		if not _keep(text, true, list_costs):
+		if not _keep(text, skill, list_costs):
 			continue
 		if _re("^消耗[：:]\\s*(?:自己)?[一二三四五六七八九十\\d]+次?", text) and text.contains("行动"):
 			text = _sub("^消耗[：:]", text, "代价：")
@@ -352,6 +359,8 @@ static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	var out := []
 	for g in groups:
 		out.append_array(g)
+	if XCat.is_cat_item(obj):
+		return out
 	return _now_growth_view(obj, _dyn2_view(obj, out, a), a)
 
 
