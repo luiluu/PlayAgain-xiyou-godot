@@ -4644,6 +4644,129 @@
    "errors": []
   },
   {
+   "id": "reffloor.tcr2",
+   "setup": {
+    "tcr": 2,
+    "pre": 0
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.03,
+     "floorBefore": 0,
+     "afterN": 0.03,
+     "floor": 1,
+     "after": 0.032
+    },
+    "tp": 85,
+    "states": [
+     2521
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reffloor.tcr2.pre1",
+   "setup": {
+    "tcr": 2,
+    "pre": 1
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.03,
+     "floorBefore": 1,
+     "afterN": 0.032,
+     "floor": 1,
+     "after": 0.032
+    },
+    "tp": 85,
+    "states": [
+     2521
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "reffloor.tcr2.pre2",
+   "setup": {
+    "tcr": 2,
+    "pre": 2
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.03,
+     "floorBefore": 1,
+     "afterN": 0.032,
+     "floor": 1,
+     "after": 0.032
+    },
+    "tp": 85,
+    "states": [
+     2521
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "refzero.tcr2",
    "setup": {
     "tcr": 2

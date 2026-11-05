@@ -6,6 +6,7 @@
     "registry": {"说明": "合并递增的开发编号（只改版本行）", "onlyLines": "^\\s*(config/version=|\"developmentVersion\")"},
     "test": {"说明": "改了测试本身：跑那个测试（辅助脚本就跑引用它的测试）", "refs": true, "self": true, "fallback": ["FULL"], "checks": ["guards"]},
     "test_data": {"说明": "测试夹具与基线：跑引用它的测试；只有工具脚本用它时跑工具回归", "refs": true, "toolRefs": true, "fallback": ["FULL"], "checks": ["guards"]},
+    "tool_readonly": {"说明": "只读工具（toolNarrow）：03_转换工具 下只被工具读、不产出 generated 的脚本与数据：工具回归＋引用它的测试", "refs": true, "toolRefs": true, "checks": ["guards", "tools"]},
     "coverage_baseline": {"说明": "内容覆盖基线", "checks": ["content"]},
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},
@@ -62,6 +63,16 @@
     "readerIgnore": ["oracle_additions.py", "验证西游来源.py", "内容覆盖检查.py", "事件指令统计.py", "共性参照验收.py", "角色模板预检.py", "common_oracle_contract.py", "battle_event_contract.py", "formula_effect_contract.py"],
     "readerIgnore说明": "只读检查与完整性自检（产物不被它们改写）：读产物不算「影响所有生成物」。同步脚本里的 READ_ONLY_TOOLS 加上三个 *_contract.py。",
     "excludeProbes": ["slice_probe.cjs", "event_probe.cjs", "map_probe.cjs"]
+  },
+  "toolNarrow": {
+    "说明": "只读工具收窄（fix6，悟空 accept4／fix5 交付单「可优化」提）：改动落在 dir 下直接放的文件，且从 roots（产出 generated 的入口）按文件名（.py 另认模块名）在 scan 里一路引用下去都碰不到它，改归 group（工具回归＋引用它的测试），不再选整组 converter。被入口链提到（含同名子串误中）一律留在 from。enabled 设 false（或环境变量 XIYOU_TOOL_NARROW=0）回到整组 converter。依据见 00_项目管理/交付/cc_nezha-fix6.md。",
+    "enabled": true,
+    "from": "converter",
+    "group": "tool_readonly",
+    "dir": "03_再刷重制_Godot/03_转换工具",
+    "scan": ["03_再刷重制_Godot/03_转换工具", "03_再刷重制_Godot/07_开发环境/新建工作树.sh"],
+    "suffixes": [".py", ".json", ".cjs", ".js", ".sh"],
+    "roots": ["03_再刷重制_Godot/03_转换工具/同步正式西游.py", "03_再刷重制_Godot/03_转换工具/xiyou_export.py", "03_再刷重制_Godot/07_开发环境/新建工作树.sh"]
   },
   "mergeBase": true,
   "mergeBase说明": "true：基准不是 HEAD 的祖先时（车道跑 --affected main 而 main 已前进）改用 merge-base(基准, HEAD)，只算本分支的改动；false：按基准本身比（2026-10-26 前的行为）。总装用批首 base 时两者相同。",
