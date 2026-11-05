@@ -373,7 +373,7 @@ func _refnest(c: Dictionary) -> void:
 ## 开关回退支：XBattleLogic.STALE_TIMING = false 时回到 raven3（每次行动开头清全体、嵌套不处理）。
 ## 参照里会因此不一样的两例（refseq.tcr2.reflect 第二次行动第一击、refnest.tcr2.none 外层第二段）此时应读到新状态（比值 ×1.4/0.9 不出现）
 func _rollback_branch(ref: Dictionary) -> void:
-	XBattleLogic.STALE_TIMING = true
+	XBattleLogic.STALE_TIMING = false
 	for c in ref.cases:
 		if c.id == "refseq.tcr2.reflect":
 			var r := _seq_battle(2.0)

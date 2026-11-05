@@ -1,7 +1,7 @@
 # 交付：cc/nezha-raven4
 
 - 车道／工作者：C 规则·机制／哪吒（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -34,7 +34,7 @@
 
 - 专项：`xiyou_raven_reflect` 457/457。反向验证：把 `STALE_TIMING` 默认改成 false 后，`refseq.tcr2.reflect`、`refseq.tcr2.reflect.ally`、`refnest.tcr2.hit`、`refnest.tcr2.none` 4 例比值和 1 例 TP 失败，共 5 项，还原后全过。
 - 语法检查 554 个 .gd 0 问题；`工具回归.py` 全过（63 秒）。
-- 选测：`选测.py main --list` 149 个场景（改了 battle_logic），走 `云端选测.py run`（提交 efb0bd65），结果：待写
+- 选测：`选测.py main --list` 149 个场景（改了 battle_logic），走 `云端选测.py run`（提交 efb0bd65，run 41995848818）：148 个过；`xiyou_raven_reflect` 只挂回退支 2 项。原因是我做反向验证还原开关时，sed 把 `_rollback_branch` 开头的 `= false` 也改成了 true（测试自身的错，不是游戏代码）。改回后本机单跑 457/457，只改了测试，没重跑云端
 
 ## 待交叉核查
 
@@ -44,3 +44,6 @@
 ## 本分支提交
 
 - 5c4f83bb WIP：状态缓存时序清除点、探针 refseq／refnest、开关
+- efb0bd65 合并 main（只有文档）
+- e5a23bfd WIP：交付单草稿
+- （本提交）回退支开关赋值改回 false、交付单可合并
