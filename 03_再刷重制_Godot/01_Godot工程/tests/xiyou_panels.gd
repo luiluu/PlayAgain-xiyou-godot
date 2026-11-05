@@ -151,7 +151,7 @@ func _run() -> void:
 	_check("victory_zoom", battle.field.scale.x > 1.0 and battle.field.scale.x < 2.0 and battle._camera.get("to") == Vector2(700, 460), battle.field.scale.x)
 	if screens.size() == 1:
 		var screen: XVictoryScreen = screens[0]
-		var cmd_enter := InputEventKey.new(); cmd_enter.keycode = KEY_ENTER; cmd_enter.meta_pressed = true; cmd_enter.pressed = true
+		var cmd_enter := InputEventKey.new(); cmd_enter.keycode = KEY_ENTER; cmd_enter.meta_pressed = WindowFit.fullscreen_uses_meta; cmd_enter.alt_pressed = not WindowFit.fullscreen_uses_meta; cmd_enter.pressed = true
 		var closing_before: bool = screen._ready_to_close
 		screen._input(cmd_enter)
 		_check("victory_ignores_fullscreen_key", screen._ready_to_close == closing_before and done.is_empty())
