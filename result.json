@@ -1,0 +1,32 @@
+{
+ "sha": "e6a706b1a157fa29f1b81e0db6c0b1f8abd706d7",
+ "branch": "ci/main",
+ "mode": "affected",
+ "base": "e9c52d607a180782a07f6fbbc9f0f8eebc2c62a9",
+ "passed": true,
+ "scenes": 11,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 128.0,
+ "testSeconds": 195,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "30ebd9eac5c380d836570a5b2b104b737d2bcb53",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42038983968",
+ "sceneNames": [
+  "ui_smoke.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_guyu_battle.tscn",
+  "xiyou_guyu_ui.tscn",
+  "xiyou_item_marks.tscn",
+  "xiyou_orb_shop.tscn",
+  "xiyou_orb_ui.tscn",
+  "xiyou_orbs.tscn",
+  "xiyou_review_fixes.tscn",
+  "xiyou_state_effects_tp.tscn",
+  "xiyou_three_growth.tscn"
+ ],
+ "time": "2026-11-05T13:52:11+00:00"
+}
