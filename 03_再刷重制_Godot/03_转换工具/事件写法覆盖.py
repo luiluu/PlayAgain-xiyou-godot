@@ -13,7 +13,7 @@
 （111 条件、402 选项、411 否则、601～603 战斗结果、403 取消、413 循环），门下没走进去的一串算一簇；整页没执行到的算「整页没进」。
 簇再按地图／公共事件归组，按簇里目标实例数排序，只列玩家走得到的。--suggest 给「简单门」（开关、变量比常量、物品、武器、防具、
 角色在队、角色学会技能、金钱、独立开关）写出能让门打开的预设候选（event_presets.json 的 cases 格式，tag 用 e8），要不要采用由人挑。
-选项（402）、取消（403）、随机、脚本条件这类门要新能力，列成「留给新能力」。
+没选中的选项（402）出 answers（外层选项项号＋本项号，events9）；取消（403）、随机、脚本条件这类门列成「留给新能力」。
 
 位置可达：公共事件在 tests/fixtures/script_census_known.json 的 unreachable 里→「走不到」，在 battleRoots 或只被战斗调用的→不分（本工具不追调用方，只看 unreachable）。
 排序：没有对照例的写法按出现次数降序；有对照例的写法只计数。
@@ -170,6 +170,41 @@ def cond_text(p):
     return COND.get(t, str(t)) + ' ' + str(p[1:])[:40]
 
 
+def choice_index(lst, j):
+    """402（下标 j）在玩家看到的选项里是第几项：紧挨着的几个 102（中间只隔 404）会并成一个菜单（再刷的选项扩展），
+    后面 102 的项号要加上前面 102 的项数（m187 种植 14 项分三段）。"""
+    ind = lst[j].get('indent', 0)
+    k = j - 1
+    while k >= 0 and not (int(lst[k]['code']) == 102 and lst[k].get('indent', 0) == ind):
+        k -= 1
+    off = 0
+    while k > 0 and int(lst[k - 1]['code']) == 404 and lst[k - 1].get('indent', 0) == ind:
+        k2 = k - 2
+        while k2 >= 0 and not (int(lst[k2]['code']) == 102 and lst[k2].get('indent', 0) == ind):
+            k2 -= 1
+        if k2 < 0:
+            break
+        off += len(lst[k2]['parameters'][0])
+        k = k2
+    return off + int(lst[j]['parameters'][0])
+
+
+def choice_path(lst, j):
+    """选到 402（下标 j）要的应答串：外层每个 402 祖先的项号（从外到里），最后是 j 自己的项号（八戒 events9）。
+    同一页里在它前面还先问过别的选项时会错位，由对照覆盖核实。"""
+    picks = [choice_index(lst, j)]
+    ind = int(lst[j].get('indent', 0))
+    k = j - 1
+    while k >= 0 and ind > 0:
+        ck = lst[k]
+        if int(ck.get('indent', 0)) == ind - 1:
+            if int(ck['code']) == 402:
+                picks.insert(0, choice_index(lst, k))
+            ind -= 1
+        k -= 1
+    return picks
+
+
 def open_preset(lst, j, loc):
     """让门 j 打开的预设（只管简单门）；做不到返回 None。"""
     c = lst[j]
@@ -182,6 +217,8 @@ def open_preset(lst, j, loc):
         if k < 0:
             return None
         p, want = lst[k]['parameters'], False
+    elif code == 402:
+        return {'answers': choice_path(lst, j)}
     elif code != 111:
         return None
     t = int(p[0])
