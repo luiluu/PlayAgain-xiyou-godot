@@ -302,6 +302,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		move(1, not event.is_echo())
 	elif event.is_action_pressed("ui_left", true) and _phase == "action":
 		move(-1, not event.is_echo())
+	elif _phase == "list" and XMenu.page_dir(event) != 0:
+		page(XMenu.page_dir(event))
 	else:
 		handled = false
 	if handled:
@@ -375,6 +377,17 @@ func move(d: int, wrap := true) -> void:
 		"confirm":
 			confirm_index = XMenu._move(confirm_index, d, 2, wrap)
 			XSound.system(0)
+	_refresh()
+
+
+## 通用翻页（YEP_SaveCore 的存档列表不接管 pageup／pagedown）
+func page(d: int) -> void:
+	var old := index
+	var r := XMenu.page(top, index, XSave.SLOTS, page_rows(), d)
+	top = r[0]
+	index = r[1]
+	if old != index:
+		XSound.system(0)
 	_refresh()
 
 
