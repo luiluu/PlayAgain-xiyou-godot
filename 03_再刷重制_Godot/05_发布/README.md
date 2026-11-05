@@ -5,3 +5,5 @@
 导出结果放 `导出包/`，不进入 Git。签名凭据单独保存，不写进资料、日志或公开包。旧西游 MOD 的编号登记本轮保持；新项目编号方案在首个运行候选前明确。
 
 导出预设两个：「macOS 验收」是调试包，保留 `tests/`（`--verify-export` 在包内跑 `tests/xiyou_mac_export.tscn`）；「macOS 发行」是给玩家的包，另外整个排除 `tests/`。两个都排除不进游戏的参照数据（`generated/oracle`、`manifest.json`、`sync_stamp.json`）和 `builds/`。`检查.sh` 的「导出包排除测试与参照数据」检查这些排除项，并确认游戏数据没被误排除。
+
+导出冒烟（2026-11-05 mac1）：`python3 07_开发环境/导出冒烟.py` 一条命令导出「macOS 验收」、解包、只读查签名与架构，在隔离临时 HOME 里无头跑包内 `xiyou_mac_export`（字体、资源、存档写读）和 `xiyou_flow`（入口→新游戏→进一层→自动战斗→存读档），报告写到 `04_验证/本地结果/导出冒烟/<时间>/报告.md`；`--keep` 留下 .app 给实机验收。调试包里用 `-- --verify-export --verify-scene=<tests 下的 xiyou_ 场景名>` 换跑别的场景。要 Kyo 本人做的（听音、Intel、签名公证）见 `00_项目管理/Mac实机验收清单.md`。不签名、不公证、不上传。
