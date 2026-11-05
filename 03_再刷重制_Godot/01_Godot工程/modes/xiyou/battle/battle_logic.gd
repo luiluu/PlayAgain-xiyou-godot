@@ -23,7 +23,7 @@ var drop_lock := false
 var _treasure := {}
 var _drop_granted := {}
 var _rewards_granted := false
-## 开战时出战栏里的饿狼（G._battleGarou）、是否 Boss 战（G._bossBattle）与胜利结算要提示的文字（神之触媒；画面还没接）
+## 开战时出战栏里的饿狼（G._battleGarou）、是否 Boss 战（G._bossBattle）与胜利结算要提示的文字（神之触媒；ui11 起结算画面关后用消息窗显示，见 XBattleScene.victory_messages）
 var _garou = null
 var _garou_boss := false
 var victory_texts: Array = []

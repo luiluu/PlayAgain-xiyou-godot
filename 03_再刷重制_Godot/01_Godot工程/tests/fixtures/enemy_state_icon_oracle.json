@@ -1,0 +1,28 @@
+{
+  "source": "冻结 v0.28 app.nw，ui_reference/serve.py index.html?battle_ref=1 四人战斗夹具（敌群 2），2026-11-05 白龙 ui12 页面内 JS 逐帧读 Window_WeaknessDisplay._stateIconSprite，并包住 Bitmap.drawText 记它子位图的字",
+  "window": [-58, 304, 640, 72],
+  "enemy": {"enemy_id": 1, "name": "嘤嘤怪Ａ宝宝", "name_font": 18},
+  "icon_sprite": {"x": 392, "y": 16, "anchor": [0.5, 0.5], "children": 2, "child_bitmap": [32, 32]},
+  "wait": 20,
+  "case_states": {
+    "add": [[4, "state"], [10, "state"], [2, "buff+1 5 回合"]],
+    "statesAndBuffs": [10, 4, "b2"],
+    "allIcons": [942, 916, 34],
+    "turns": {"4": 1, "10": 4, "buff2": 5},
+    "cycle_index_icon_every_5_frames": [[0,0],[0,0],[1,916],[1,916],[1,916],[1,916],[2,34],[2,34],[2,34],[2,34],[0,942],[0,942],[0,942],[0,942]],
+    "draws": [
+      {"t": "5", "x": -3, "y": -8, "w": 32, "h": 36, "align": "right", "size": 16, "color": "#80ff80", "child": 0, "of": "buff2"},
+      {"t": "4", "x": -3, "y": -8, "w": 32, "h": 36, "align": "right", "size": 16, "color": "#ffffff", "child": 0, "of": "state10"}
+    ],
+    "note": "中毒 4 的 autoRemovalTiming 是 0，不画回合数；睡眠 10 timing 2 画"
+  },
+  "case_floor": {
+    "state": 1323, "floor": 1, "icon": 1287,
+    "draw": {"t": "1层", "x": 2, "y": 6, "w": "function（原版 `Window_Base,_iconWidth` 写成逗号）", "h": 36, "align": "left", "size": 12, "color": "#ffffa0", "child": 1},
+    "pixels_drawn": 0,
+    "note": "drawText 调了但宽度是函数，canvas 不画：原版层数字样看不到"
+  },
+  "params": {"Olivia_WeaknessDisplay": {"Weakness Show Name": "true", "Weakness Show HP Gauge": "false", "Weakness Show States": "true", "Name Font Size": "18", "Element Icons": "全 0", "Unknown Weakness Icon": "0"},
+    "YEP_BuffsStatesCore": {"Font Size": "16", "Turn Alignment": "right", "Turn Buffer X": "-3", "Turn Buffer Y": "-6", "State Color": "0", "Buff Color": "24", "Debuff Color": "2"},
+    "CP_StateFloor": {"text": "%1层", "x": 2, "y": 6, "size": 12}}
+}
