@@ -13,6 +13,7 @@ extends Node
 ##   对照 ascend.* 十二例；再核存读档后 actor_ops 带 from、读档后才建的角色同样套用；漏了 forgetSkill 的变体仍记认不出，无条件版本照普通循环认得。
 ## - 没装载的插件（八戒 events1）：签到板／补签（CE6、330、373）、状态图鉴 CE429、地图快捷栏 CE478／485：原版抛错被吞，无操作，
 ##   对照 unloaded.* 七例（存档内容、场景都不变）；`itemslot` 只认 show／hide，别的写法仍记认不出。
+##   events7b 加三例：手机端云存档 HWGOE.save.cloudSaveGame（CE249）、虚拟按键 MobileUI hide（CE7），Mac 版都没有，同样无操作。
 ## 反向：写法稍变（速度写成变量、击败数写成别的对象）仍记认不出。
 const REF := "oracle/script_gaps.json"
 
@@ -323,7 +324,8 @@ func _ascend(ref: Dictionary) -> void:
 
 ## 没装载的插件：整段无操作、不记认不出，存档内容不变（同 oracle unloaded.*）
 func _unloaded(ref: Dictionary) -> void:
-	for pair in [["signBoardScene", 6], ["makeUpSign", 330], ["makeUpSign", 373], ["stateBook", 429], ["openItemSlot", 478]]:
+	for pair in [["signBoardScene", 6], ["makeUpSign", 330], ["makeUpSign", 373], ["stateBook", 429], ["openItemSlot", 478],
+			["cloudSaveLatest", 249]]:
 		var c: Dictionary = ref["unloaded.%s" % pair[0]]
 		var s := XState.new_game(3, 1, [8, 9, 10])
 		XState.current = s
@@ -336,6 +338,16 @@ func _unloaded(ref: Dictionary) -> void:
 		var it2 := MVInterpreter.new(self, 0, 0, [])
 		it2._plugin_command(line)
 		_check("itemslot_cmd_" + line.split(" ")[1], it2.skipped.is_empty(), it2.skipped)
+	# 云存档另外九个存档位的写法、虚拟按键其余三条（与 oracle unloaded.cloudSave／mobileUI 同一类）
+	for n in range(1, 11):
+		_check("cloud_save_%d" % n, (await script("HWGOE.save.cloudSaveGame(%d);" % n)).is_empty())
+	_check("cloud_save_other_unknown", (await script("HWGOE.save.cloudLoadGame(1);")).size() == 1)
+	# CE7 整段还改变量 29、开关 ghostButtons，不能整段比「状态不变」；只核插件指令本身（DPad 一条对 oracle unloaded.mobileUI）
+	var mu: Dictionary = ref["unloaded.mobileUI"]
+	for line in ["MobileUI hide DPad", "MobileUI hide ok", "MobileUI hide fh", "MobileUI hide Control"]:
+		var itm := MVInterpreter.new(self, 0, 0, [])
+		itm._plugin_command(line)
+		_check("mobile_ui_" + line.split(" ")[2], itm.skipped.is_empty() and bool(mu.observed.sameState) and mu.observed.threw == null, [itm.skipped, mu.observed])
 	var it3 := MVInterpreter.new(self, 0, 0, [])
 	it3._plugin_command("itemslot toggle")
 	_check("itemslot_other_unknown", it3.skipped.size() == 1, it3.skipped)
@@ -346,7 +358,7 @@ func _run() -> void:
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
 	var ref := _ref()
-	_check("ref_loaded", ref.size() == 39, ref.size())
+	_check("ref_loaded", ref.size() == 42, ref.size())
 	await _speed(ref)
 	await _defeat(ref)
 	await _cleanup(ref)

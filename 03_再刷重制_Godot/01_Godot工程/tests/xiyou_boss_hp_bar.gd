@@ -95,7 +95,7 @@ func _run() -> void:
 		if bar.flow == 0.0:
 			break
 	check("flow_wraps_at_928", bar.flow == 0.0)
-	# 扣血：红条拖尾（每帧 1+差/160）、蓝条即时、数字追赶（1+⌊差/30⌋）——原版节奏先关掉 O-待定 的拖尾封顶量
+	# 扣血：红条拖尾（每帧 1+差/160）、蓝条即时、数字追赶（1+⌊差/30⌋）——原版节奏先关掉 O-188 的拖尾封顶量
 	XBossHpBar.RED_TRAIL_CAP = false
 	var before := float(boss.hp)
 	var cut := floorf(boss.mhp * 0.4)

@@ -20,7 +20,7 @@ CommonEvents 里的指令列表，找出这些用例，按「玩家可达＋影�
 用法：事件空绿扫描.py [--top N] [--out 报告.json] [--check] [--update-baseline]
   --check            与 事件空绿基线.json 比：空绿用例新增（基线外）→ 退出 1；已补上的提示更新基线
   --update-baseline  用本次结果重写基线（只存用例号与分类）
-预设里补过的用例（event_presets.json 里有 base）算已补，不进空绿清单。
+预设里补过的用例（event_presets.json 里有 base）算已补，不进空绿清单；同图里指令列表逐条相同的页跟着代表页算已补（events7b）。
 """
 import argparse
 import json
@@ -168,6 +168,12 @@ def scan():
     # 只有「变体真的量到东西」的基础用例才算已补；变体仍无 delta 也无非文字 trace 的（观察面不够）继续留在空绿清单（审查 41 P3-5）
     quiet_ids = set(check_variants()[2])
     covered = {p['base'] for p in presets if '%s#%s' % (p['base'], p['tag']) not in quiet_ids}
+    # 同一张图里指令列表逐条相同的页（黑作坊 Map217～219 每台机器 6 种晶石共用一页计时门）：代表页的预设量到东西，其余几页同样算补上
+    # （补预设批量.py 按同样的口径只给代表页写预设）。公共事件各自独立，不参与。events7b
+    def same_page(cid):
+        m = re.match(r'm(\d+)e\d+p\d+$', cid)
+        return (m[1], json.dumps(lists[cid], sort_keys=True)) if m and cid in lists else None
+    covered_pages = {same_page(b) for b in covered} - {None}
     rows = []
     half = 0
     for c in oracle:
@@ -189,7 +195,7 @@ def scan():
             status = '挡住'
         else:
             continue  # delta 空但 trace 里有场所移动／战斗／商店等可观察效果，不算空
-        if cid in covered:
+        if cid in covered or same_page(cid) in covered_pages:
             continue
         mapname = names.get(c.get('map'), '') if c['kind'] == 'map' else ''
         r = reach(conds.get(cid), settable)

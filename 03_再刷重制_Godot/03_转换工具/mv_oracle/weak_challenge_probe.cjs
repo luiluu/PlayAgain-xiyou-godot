@@ -131,12 +131,15 @@ function final(o) {
   const slots = o.party.concat([0, 0, 0, 0, 0]).slice(0, 5);
   w.eval('$gameParty._actors=[' + o.party + '];$gameParty._battleMembers=[' + slots + '];');
   w.$gameMap._mapId = 157;
+  if (o.already) w.eval('$gameParty.SAchievementS={142:true};');
   w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
   const bm = w.BattleManager; bm.setup(o.troop || 469, true, true);
   bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
   if (o.visit) { w.$gameParty.addActor(o.visit); w.$gameParty.removeActor(o.visit); }
   if (o.leave) w.$gameParty.removeActor(o.leave);
   if (o.back) w.$gameParty.addActor(o.back);
+  if (o.swap) { w.eval('$gameParty._battleMembers[4]=' + o.swap[0] + ';$gameParty.rearrangeActors();$gameParty._battleMembers[4]=' + o.swap[1] + ';$gameParty.rearrangeActors();'); }
+  if (o.diff) for (const n of o.diff) w.$gameSystem.setDifficultyId(n);
   if (o.dead) w.$gameActors.actor(o.dead).addState(w.$gameActors.actor(o.dead).deathStateId());
   if (o.result === 0) for (const e of w.$gameTroop.members()) e.addNewState(e.deathStateId());
   const members = w.$gameParty.battleMembers().map(b => b.actorId());
@@ -153,10 +156,28 @@ const FINALS = [
   ['visit', {party: WEAK5, difficulty: 9, result: 0, visit: 8}],  // 满五人时 8 号只进替补，仍给
   ['leave', {party: WEAK5, difficulty: 9, result: 0, leave: 6}],
   ['leave.back', {party: WEAK5, difficulty: 9, result: 0, leave: 6, back: 6}],
+  ['swap', {party: WEAK5.concat([8]), difficulty: 9, result: 0, swap: [8, 6]}],
+  ['diffchange', {party: WEAK5, difficulty: 9, result: 0, diff: [8, 9]}],
+  ['already', {party: WEAK5, difficulty: 9, result: 0, already: true}],
+  ['defeat', {party: WEAK5, difficulty: 9, result: 2}],
   ['escape', {party: WEAK5, difficulty: 9, result: 1}],
   ['troop', {party: WEAK5, difficulty: 9, result: 0, troop: 468}],
 ];
 for (const [id, o] of FINALS) cases.push(makeCase('final.' + id, o, () => final(o)));
+
+// 每场 BattleManager.setup 前同步：本局标记开着、技能被忘掉的弱者开战时补学（不回满）
+cases.push(makeCase('battle.sync', {}, () => {
+  newGame(true);
+  w.$gameParty.addActor(2);
+  const a = w.$gameActors.actor(2);
+  a.forgetSkill(SK); a.setHp(1);
+  const before = snap(a);
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  w.BattleManager.setup(3, true, true);
+  const after = snap(a);
+  w.$gameParty._inBattle = false;
+  return {before, after};
+}));
 
 // 通关后（全局标记已开）再开新局：弱者入队即带技能并回满
 cases.push(makeCase('after.newgame', {}, () => {
@@ -166,5 +187,32 @@ cases.push(makeCase('after.newgame', {}, () => {
   w.$gameParty.addActor(2);
   return {flags: flags(), rows: [1, 2].map(i => snap(w.$gameActors.actor(i)))};
 }));
+
+// 二期：说明卡（同 help_probe 记 Sprite_ItemHelp.setItem 画出的行）。10357 带 <CodexWeakNewGame>，「品质：」行改成「品质：神话」；
+// 对照 10356（同为 stype 4、无此标签）看包装只动 10357。全局标记开关两支。
+const SW = w.RJO.SW;
+let tsize = 0, tcolor = '', trows = null;
+const cs = SW.changeTextSize; SW.changeTextSize = function (v) { tsize = v; return cs.apply(this, arguments); };
+const cc = SW.changeTextColor; SW.changeTextColor = function (v) { tcolor = v; return cc.apply(this, arguments); };
+const dc = SW.drawContentText;
+SW.drawContentText = function (text, x, y, width, align) {
+  if (trows) trows.push([String(text), Number(tsize), String(tcolor), Number(y), align === undefined || align === null || align === '' ? null : Number(align)]);
+  return dc.apply(this, arguments);
+};
+function card(item) {
+  trows = [];
+  const h = new w.Sprite_ItemHelp(w.RJO.HE.ItemDescWidth);
+  h.setItem(item);
+  const out = {width: h.width, height: h.visible ? h.height : 0, rows: trows};
+  trows = null;
+  return out;
+}
+for (const clear of [false, true]) for (const sid of [SK, 10356]) {
+  cases.push(makeCase('help.' + sid + '.' + (clear ? 'on' : 'off'), {clear, skill: sid}, () => {
+    newGame(clear);
+    w.$gameSystem.setDifficultyId(3);
+    return {name: w.$dataSkills[sid].name, ...card(w.$dataSkills[sid])};
+  }));
+}
 
 process.exit(finish(host, 'weak_challenge.json', {hostScope: '正式 CodexWeakChallenge（新局、存读档、BattleManager.setup／startAction／endBattle）', cases}) ? 0 : 1);

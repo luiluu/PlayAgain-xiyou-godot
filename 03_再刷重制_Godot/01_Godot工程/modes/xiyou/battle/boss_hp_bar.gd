@@ -234,7 +234,7 @@ func _fade() -> void:
 	layout_alpha = clampi(layout_alpha + (-5 if _need_fade() else 5), 0, 255)
 
 
-## 优化 O-待定（ui11）：原版红条每帧走 1+差/160，差越大越慢收拢（千万级血量一下打掉要拖几十秒）。
+## 优化 O-188（ui11）：原版红条每帧走 1+差/160，差越大越慢收拢（千万级血量一下打掉要拖几十秒）。
 ## 开着时每次目标血量变了重新计 RED_CAP_FRAMES 帧，每帧至少走「剩余差 ÷ 剩余帧」，所以最迟约 1.5 秒追上；
 ## 小伤害原版本来就更快，照原版。RED_TRAIL_CAP = false 回到原版。
 static var RED_TRAIL_CAP := true

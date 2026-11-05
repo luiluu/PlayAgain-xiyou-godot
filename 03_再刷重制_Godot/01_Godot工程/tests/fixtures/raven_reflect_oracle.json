@@ -3908,6 +3908,786 @@
     ]
    },
    "errors": []
+  },
+  {
+   "id": "refmid.tcr2.none",
+   "setup": {
+    "tcr": 2,
+    "mid": "none",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.buff",
+   "setup": {
+    "tcr": 2,
+    "mid": "buff",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.heal",
+   "setup": {
+    "tcr": 2,
+    "mid": "heal",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 156705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.healmp",
+   "setup": {
+    "tcr": 2,
+    "mid": "healmp",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.state",
+   "setup": {
+    "tcr": 2,
+    "mid": "state",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     367,
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evnone",
+   "setup": {
+    "tcr": 2,
+    "mid": "evnone",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 60674,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 0.8999999999999998,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 89,
+    "hp": 189413,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evstate",
+   "setup": {
+    "tcr": 2,
+    "mid": "evstate",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     367,
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evbuff",
+   "setup": {
+    "tcr": 2,
+    "mid": "evbuff",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evheal",
+   "setup": {
+    "tcr": 2,
+    "mid": "evheal",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 156705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evmp",
+   "setup": {
+    "tcr": 2,
+    "mid": "evmp",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evtp",
+   "setup": {
+    "tcr": 2,
+    "mid": "evtp",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 95,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refmid.tcr2.evremove",
+   "setup": {
+    "tcr": 2,
+    "mid": "evremove",
+    "neutral": 367
+   },
+   "observed": {
+    "first": [
+     {
+      "kind": "hit",
+      "user": "a8",
+      "skill": 10124,
+      "target": "a8",
+      "value": 1655531,
+      "critical": false
+     }
+    ],
+    "second": [
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e1",
+      "skill": 10124,
+      "target": "a8",
+      "value": 94382,
+      "critical": false
+     }
+    ],
+    "rates": {
+     "before": 0.8999999999999998,
+     "afterN": 0.8999999999999998,
+     "between": 1.4,
+     "after": 1.4
+    },
+    "tp": 82,
+    "tpEnd": 90,
+    "hp": 155705,
+    "buffs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "states": [
+     1663
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refzero.tcr2",
+   "setup": {
+    "tcr": 2
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 606742,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 606742,
+      "critical": false
+     },
+     {
+      "kind": "hit",
+      "user": "e0",
+      "skill": 10124,
+      "target": "a8",
+      "value": 943820,
+      "critical": false
+     }
+    ],
+    "rates": [
+     0.8999999999999998,
+     0.8999999999999998,
+     1.4
+    ],
+    "tp": 200,
+    "hp": 0,
+    "dead": true,
+    "states": [
+     1
+    ]
+   },
+   "errors": []
   }
  ]
 }

@@ -140,6 +140,10 @@ for (const [tag, lines, plugin] of [
   ['itemslotShow', null, 'itemslot show'],
   ['itemslotHide', null, 'itemslot hide'],
   ['pingbizhuangbei', null, 'pingbizhuangbei'],
+  // events7b：手机端云存档 HWGOE（CE249）、虚拟按键 MobileUI（CE7），Mac 版都没有
+  ['cloudSave', ['HWGOE.save.cloudSaveGame(1);']],
+  ['cloudSaveLatest', ['HWGOE.save.cloudSaveGame(HWGOE.save.latestSavefileId());']],
+  ['mobileUI', null, 'MobileUI hide DPad'],
 ]) {
   cases.push(makeCase('unloaded.' + tag, {lines, plugin}, () => {
     newGame();
