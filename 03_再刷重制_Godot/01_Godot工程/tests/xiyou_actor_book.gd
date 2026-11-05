@@ -8,12 +8,8 @@ extends Node
 const FIXTURE := "res://tests/fixtures/actor_book_oracle.json"
 ## 坐标与宽的容差（XActorBook.js_width 与浏览器 measureText 一致到 0.01）
 const POS_TOL := 0.05
-## 不画立绘的角色：168、173～177 在原版由运行模块换成多帧图（未移植，XActorBook.sprite_path 返回空）。
-const NO_SPRITE := [168, 173, 174, 175, 176, 177]
-## 原版照画数据库 battlerName（参照里 108 奈叶战斗、143 bbxy、144 ast、145 yy、157 mzzd4、170、171 都有 sprite，停用的导入角色也画），
-## 重制有没有图要看切片导没导出：导出了（如事件里入队带出战斗图）就必须和原版同名，没导出就不画。
-## 160（mzzd3）、167 渡鸦、172 宿傩已导出，照常对照。
-const SLICE_SPRITE := [108, 143, 144, 145, 157, 170, 171]
+## 立绘图名逐个与参照相同：167 号以后照 CodexSV 档缩放，168、173～177 是逐帧图第 1 个动作第 0 帧（XActorBook.sprite_spec）。
+## 原来豁免的 108、143、144、145、157、170、171（当时切片没导出战斗图）现在都已导出，不再豁免。
 
 var results := []
 var out_dir := ""
@@ -102,6 +98,28 @@ static func diff(got: Array, want: Array) -> String:
 	return ""
 
 
+## 167 号以后有档的立绘：可见范围缩到高 72（或宽 129，取小），脚底中点在 x＝宽/10、
+## y＝宽/13＋可见高/2（饿狼 y＝宽/13＋72，呼吸只拉竖向）；内容层坐标（窗口坐标减内边距）
+func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
+	var prof: Array = XAppearance.PROFILES.get(str(sp.key), [])
+	var tex: Texture2D = load(str(sp.path))
+	if prof.is_empty() or tex == null:
+		bad.sprite.append("%d 没有档 %s" % [id, sp.key])
+		return
+	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1, 0)
+	var dst: Rect2 = r[0]
+	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
+	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x)
+	var sx := dst.size.x / float(r[1].size.x)
+	var sy := dst.size.y / float(r[1].size.y)
+	var vis_bottom := dst.position.y + b.end.y * sy
+	var vis_mid := dst.position.x + (b.position.x + b.end.x) / 2.0 * sx
+	var cx := 932.0 / 10.0 - XMVWindow.PADDING
+	var want_y := 932.0 / 13.0 - XMVWindow.PADDING + (72.0 if bool(sp.garou) else b.size.y * sc / 2.0)
+	if not (is_equal_approx(sx, sc) and absf(vis_mid - cx) < 0.01 and absf(vis_bottom - want_y) < 0.01 and (bool(sp.garou) or is_equal_approx(sy, sc))):
+		bad.sprite.append("%d 立绘位置 %s 缩放 %s／%s 档 %s 脚底 %s,%s 应 %s,%s" % [id, dst, sx, sy, sc, vis_mid, vis_bottom, cx, want_y])
+
+
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("fixture_loaded", ref is Dictionary and ref.get("actors", {}).size() == 179, FIXTURE):
@@ -119,14 +137,12 @@ func _run() -> void:
 		var d := diff(no_icons(got), no_icons(drawn_ref(a.status))) if id >= 167 else diff(got, drawn_ref(a.status))
 		if d != "":
 			bad.status.append("%d %s" % [id, d])
-		var p := XActorBook.sprite_path(id)
-		if id in NO_SPRITE:
-			if p != "":
-				bad.sprite.append("%d 多帧图未移植，不该画 %s" % [id, p])
-		elif id in SLICE_SPRITE and p == "":
-			pass  # 切片没导出这张战斗图
-		elif str(a.get("sprite", "")) != (str(XDB.rec("Actors", id).get("battlerName", "")) if p != "" else ""):
+		var sp := XActorBook.sprite_spec(id)
+		var p := str(sp.get("path", ""))
+		if str(a.get("sprite", "")) != str(sp.get("name", "")) or (str(a.get("sprite", "")) != "") != (p != ""):
 			bad.sprite.append("%d %s 图 %s" % [id, a.get("sprite", ""), p])
+		elif id >= 167 and p != "":
+			_sprite_geometry(id, sp, bad)
 		if not a.has("header"):
 			continue
 		d = diff(to_ref(XActorBook.header_ops(id)), a.header)
@@ -177,6 +193,13 @@ func _flow(ref: Dictionary) -> void:
 	await frames()
 	check("select_1", book.index == 1 and not book._status_ops.is_empty() and book._sprite_tex != null)
 	await shot("actor_book_1")
+	if out_dir != "":
+		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178]:  # 只在存截图时：167 号以后的立绘
+			book.index = sid
+			book._select_actor()
+			await shot("actor_book_%d" % sid)
+		book.index = 1
+		book._select_actor()
 	book.ok()
 	await frames()
 	check("details_open", book.mode == "skills" and book.list_win.visible and book.header_win.visible

@@ -21,6 +21,18 @@ func refresh_image() -> void:
 		set_image("", 0)
 
 
+## MOG isDashingPoseFollower：玩家的跑步保持帧数 > 0；getActorId＝$gameParty._actors[memberIndex]（队伍顺序，出战成员在前）
+func _update_pose() -> void:
+	var s := XState.current
+	_apply_dash_pose(MVPlayer.dash_pose > 0, int(s.party[member_index]) if s != null and member_index < s.party.size() else 0)
+
+
+## Game_Follower.actor：出战成员第 member_index 个（没有为空）
+func walking_actor():
+	var members := XState.current.battle_members() if XState.current else []
+	return members[member_index] if member_index < members.size() else null
+
+
 ## Game_Follower.chaseCharacter
 func chase(target: MVCharacter, speed: int) -> void:
 	var dl := tilemap.delta(grid, target.grid) if tilemap else grid - target.grid

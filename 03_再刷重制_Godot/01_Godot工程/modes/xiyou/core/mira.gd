@@ -30,7 +30,8 @@ extends RefCounted
 ## 黑龙战斗图：原版 installNativeMiraRuntime 的 Sprite_Actor.updateBitmap 包装想换成 sv_enemies/BlackDragon_Mira_Enemy（缩 0.55、下移、藏武器），
 ## 但实机（2026-11-05 白龙，冻结源无头 Chrome 开战斗量）被 Codex_MiraRavenMultiFrame／Mx_SuperSV 的多帧盖掉：黑龙形态显示的是 UserSV_MiraDragon 多帧、
 ## 缩放按站姿高度 72 归一（与人形一致），这张敌人图从不出现，所以重制不做（appearance.gd 的 form MiraDragon 即实机结果）。
-## 未移植：名字与外观、旧档迁移。
+## 名字：installNativeMiraRuntime 的 name() 覆盖返回的就是数据库名字「米拉」（两种形态同名），与重制一致，不用改。
+## 外观：战斗多帧与归一框见 appearance.gd；状态页立绘见 actor_book.gd。未移植：旧档迁移。
 ## 共用的 MiraRavenNumberBoost 在 XNumberBoost。
 
 const ACTOR := 168

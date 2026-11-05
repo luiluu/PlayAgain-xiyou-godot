@@ -142,8 +142,16 @@ func _physics_process(_delta: float) -> void:
 	var cw := sprite.texture.get_width() / 9.0
 	var half := status_win.canvas.size.x / 2.0
 	var k := half / cw if cw > half else 1.0
+	if shown_actor != null and XYunshang.own(shown_actor):
+		k = yunshang_scale()  # 云裳 Window_ActorAdvancedStatus.update 包装（原 update 之后）：按 CodexSV 档 Yunshang 缩放
 	sprite.scale = Vector2(k, k)
 	sprite_count += 1
+
+
+## CodexSV.scaleFor(profiles.Yunshang)：可见高缩到 72、宽 129，取小
+static func yunshang_scale() -> float:
+	var p: Array = XAppearance.PROFILES.Yunshang
+	return minf(XAppearance.PROFILE_H / float(p[5] - p[3]), XAppearance.PROFILE_W / float(p[4] - p[2]))
 
 
 # ---- 绘制 ----

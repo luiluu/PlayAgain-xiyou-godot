@@ -52,8 +52,15 @@ var _anim_hidden := false     # 动画 flashScope 3 隐藏目标（Sprite_Charac
 
 
 func set_image(name: String, index: int) -> void:
+	pose_original = name  # MOG_CharPoses setImage → setRealCharName：记原名（跑步保持帧数不清）
+	_set_image(name, index)
+
+
+## 换姿势图（不改记下的原名）
+func _set_image(name: String, index: int) -> void:
 	character_name = name
 	character_index = index
+	frames_offset = frames_offset_of(name)
 	tile_id = 0
 	var p := XDB.img_path("characters", name) if name != "" else ""
 	_tex = load(p) if p != "" else null
@@ -140,6 +147,60 @@ func step_by(off: Vector2i) -> void:
 
 func _physics_process(_delta: float) -> void:
 	update_character()
+	_update_pose()
+
+
+# ---- MOG_CharPoses 姿势（只有玩家与队伍跟随；正式参数只开了奔跑、跳跃，名单只有「角色奔跑-3」＝CXK-lan-qiu）----
+## setRealCharName 记下的原名；pose_dash 是 _poses.dash[1]（跑步姿势的保持帧数，跑着时每帧回到 3）
+var pose_original := ""
+var pose_dash := 0
+
+## MOG_CharPoses setCharacterFrames：图名里的 X数字／Y数字（不分大小写，任意位置）是行走图的偏移——朝右 +X、朝左 −X、上下不偏，
+## 竖向一律 +Y；气泡跟着偏，技能动画不偏（Sprite_Animation 再减回去）。正式数据里只有 103 波风水门 TZX01、146 苍龙破晓 TZX04、
+## 147 天剑 非天 TZX03 带 X。同一处的 S数字（动画加速）、(F数字)（多帧行走图）没有照做：只有一个楼梯事件 !fsm_Stairs01 被 S 误认，见交付单。
+var frames_offset := Vector2.ZERO
+
+static func frames_offset_of(name: String) -> Vector2:
+	var out := Vector2.ZERO
+	var ex := RegEx.create_from_string("(?i)X(\\d+\\.*\\d*)").search(name)
+	if ex:
+		out.x = float(ex.get_string(1))
+	var ey := RegEx.create_from_string("(?i)Y(\\d+\\.*\\d*)").search(name)
+	if ey:
+		out.y = float(ey.get_string(1))
+	return out
+
+## 此刻的偏移（updateCharPosesPosition）
+func frames_shift() -> Vector2:
+	var x := frames_offset.x if direction == 6 else (-frames_offset.x if direction == 4 else 0.0)
+	return Vector2(x, frames_offset.y)
+
+## 插件参数「角色奔跑-N」（N＝getActorId）；空＝照原图
+static func run_pose(actor_id: int) -> String:
+	return str(XDB.plugin("MOG_CharPoses").get("角色奔跑-%d" % actor_id, "")) if actor_id > 0 else ""
+
+## 玩家、跟随覆写；事件（getActorId 0、奔跑姿势关）不做
+func _update_pose() -> void:
+	pass
+
+## Game_CharacterBase.updateSetPose 的奔跑一支（跳跃名单为空＝原图，站立姿势关）：保持帧数没走完就不换；
+## 否则正在跑步姿势＝「角色奔跑-N」（没配就是原图）并把保持帧数设回 3，不然回原图
+func _apply_dash_pose(dashing: bool, actor_id: int) -> void:
+	if pose_original == "" or tile_id > 0:
+		return
+	if pose_dash > 0:
+		if dashing:
+			pose_dash = 3
+		pose_dash -= 1
+		return
+	var name := pose_original
+	if dashing:
+		pose_dash = 3
+		var run := run_pose(actor_id)
+		if run != "":
+			name = run
+	if name != character_name:
+		_set_image(name, character_index)
 
 func update_character() -> void:
 	if not is_moving() and not is_jumping() and _route_forcing:
@@ -298,6 +359,22 @@ func balloon_frame() -> int:
 func is_balloon_playing() -> bool:
 	return balloon_id > 0
 
+## Game_CharacterBase.animationWait：(9 − 速度) × 3。installNativeRavenRuntime 包装：队长（玩家）或跟随者是渡鸦 167 时
+## ×1.35 四舍五入（披风三帧变化大，放慢步行帧；不改移动速度和别人）。事件没有对应角色，照旧。
+## O-待定（交付单「优化登记草稿」渡鸦地图步行帧）：RAVEN_WALK_SLOW = false 回到移植前（渡鸦和别人一样快）。
+static var RAVEN_WALK_SLOW := true
+
+func animation_wait() -> int:
+	var wait := (9 - move_speed) * 3
+	var a = walking_actor()
+	if RAVEN_WALK_SLOW and a is XActor and int(a.actor_id) == XRaven.ACTOR:
+		return roundi(wait * 1.35)
+	return wait
+
+## 地图上「走着的角色」（Game_Follower.actor／玩家取队长）；事件没有
+func walking_actor():
+	return null
+
 func _update_animation() -> void:
 	if is_moving() and walk_anime or step_anime:
 		_anime_count += 1.5 if is_moving() else 1.0
@@ -307,7 +384,7 @@ func _update_animation() -> void:
 			pattern = int(_walk.stand)
 			_anime_count = 0
 			queue_redraw()
-	var wait := (9 - move_speed) * 3
+	var wait := animation_wait()
 	if _anime_count >= wait:
 		_anime_count = 0
 		_stop_count = 0
@@ -374,7 +451,8 @@ func _draw_balloon() -> void:
 	if frame < 0:
 		return
 	var shift := 0.0 if is_object() else 6.0
-	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(-24, -sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
+	var off := frames_shift()
+	_balloon_layer.draw_texture_rect_region(_balloon_tex, Rect2(off.x - 24, off.y - sprite_height() - shift - 48, 48, 48), Rect2(frame * 48, (balloon_id - 1) * 48, 48, 48))
 
 
 func _draw_body() -> void:
@@ -391,7 +469,8 @@ func _draw_body() -> void:
 	var row: int = _walk.rows.get(direction, 0)
 	var src := Rect2(_walk.origin.x + pat * pw, _walk.origin.y + row * ph, pw, ph)
 	var shift := 0.0 if is_object() else 6.0
-	draw_texture_rect_region(_tex, Rect2(-pw / 2.0, -ph - shift, pw, ph), src, mod)
+	var off := frames_shift()
+	draw_texture_rect_region(_tex, Rect2(off.x - pw / 2.0, off.y - ph - shift, pw, ph), src, mod)
 
 func _draw_tile_image(mod: Color) -> void:
 	var set_number := 5 + floori(tile_id / 256.0)

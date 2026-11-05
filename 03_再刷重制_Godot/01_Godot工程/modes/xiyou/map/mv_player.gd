@@ -37,6 +37,17 @@ func click_cell(c: Vector2i) -> void:
 		action_pressed.emit()
 
 
+## Game_Player 的跑步姿势保持帧数（跟随用 isDashingPoseFollower 读它）
+static var dash_pose := 0
+
+
+## MOG isDashingPose：在移动且跑步；getActorId＝$gameParty._actors[0]
+func _update_pose() -> void:
+	var s := XState.current
+	_apply_dash_pose(is_moving() and is_dashing(), int(s.party[0]) if s != null and not s.party.is_empty() else 0)
+	dash_pose = pose_dash
+
+
 func update_character() -> void:
 	super.update_character()
 	if not is_moving() and auto_step.is_valid():
@@ -120,6 +131,11 @@ func _toward(t: Vector2i) -> int:
 
 
 ## 走路速度（Game_CharacterBase.realMoveSpeed）：Game_Player._moveSpeed（XState.player_move_speed，默认 4）＋冲刺 1
+## 渡鸦 animationWait 包装里玩家取 $gameParty.leader()
+func walking_actor():
+	return XState.current.leader() if XState.current else null
+
+
 func walk_speed() -> int:
 	var base := XState.current.player_move_speed if XState.current != null else 4
 	return base + (1 if is_dashing() else 0)
