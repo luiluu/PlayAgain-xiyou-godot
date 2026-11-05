@@ -1,5 +1,5 @@
 extends Node
-## 跨平台二期（cc BH 2026-11-05）：XPlatform 两指取消、返回键、切后台补跑（O-待定-2 开与关）、XTouchControls 虚拟按键，
+## 跨平台二期（cc BH 2026-11-05）：XPlatform 两指取消、返回键、切后台补跑（O-201 开与关）、XTouchControls 虚拟按键，
 ## 发行版存档目录与横屏设置。桌面上用 XPlatform.force_mobile 当成手机测，不依赖测试机平台。
 var results := []
 
@@ -107,7 +107,7 @@ func _run() -> void:
 	await frames(2)
 	touch(0, Vector2(640, 200), false)
 	check("tap_stops_catch_up", not platform.is_catching_up())
-	# O-待定-2 回退：关掉后台挂机就不补跑
+	# O-201 回退：关掉后台挂机就不补跑
 	XPlatform.BACKGROUND_IDLE = false
 	platform.on_paused(0)
 	check("background_idle_off", platform.on_resumed(60_000) == 0.0 and not platform.is_catching_up())
@@ -190,7 +190,7 @@ func _run() -> void:
 	check("show_again", not pad.hidden and pad.hit(ok_center) == "ok")
 	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
 
-	# 设置：发行版存档目录去掉「_开发」（O-待定-1），横屏
+	# 设置：发行版存档目录去掉「_开发」（O-200），横屏
 	check("release_user_dir", str(ProjectSettings.get_setting("application/config/custom_user_dir_name.release", "")) == "KYO/再刷重制"
 		and str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")) == "KYO/再刷重制_开发")
 	check("landscape", int(ProjectSettings.get_setting("display/window/handheld/orientation", -1)) == 4)
