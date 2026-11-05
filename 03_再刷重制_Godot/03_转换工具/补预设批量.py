@@ -4,7 +4,8 @@
 在 `事件空绿扫描.py` 的建议（开关、变量、物品…）之外，把「$gameSystem.playtime() - $gameVariables.value(N) >= K」
 这类计时门补成「变量 N ＝ -100000」（水栽培 Map187 的菜地全靠它，扫描建议里没有）。
 同一张图里页面内容和建议完全相同的事件只留一个代表（dedupe），避免上千条等价变体。
-用法：补预设批量.py --map 187 [--tag a1] [--dry-run] [--limit N] [--only 前缀,…]
+用法：补预设批量.py --map 187 [--tag a1] [--dry-run] [--limit N]
+      补预设批量.py --only-ce [--tag c1]   只吃公共事件（ceN）的空绿（cc 悟空 accept3）
 """
 import argparse, hashlib, json, re, subprocess, sys
 from pathlib import Path
@@ -21,6 +22,10 @@ def scan_rows():
 
 
 def page_of(rid):
+    mc = re.match(r'ce(\d+)$', rid)
+    if mc:
+        ces = json.loads((GEN / 'db/CommonEvents.json').read_text())
+        return ces[int(mc[1])]
     m = re.match(r'm(\d+)e(\d+)p(\d+)$', rid)
     if not m:
         return None
@@ -35,13 +40,17 @@ def main():
     ap.add_argument('--tag', default='a1')
     ap.add_argument('--limit', type=int, default=10 ** 9)
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--only-ce', action='store_true', help='只补公共事件空绿（不看 --map）')
     a = ap.parse_args()
     data = json.loads(PRESETS.read_text())
     have = {(c['base'], c['tag']) for c in data['cases']}
     new = []
     seen = set()
     for r in scan_rows():
-        if a.map and r['map'] not in a.map or not r['id'].startswith('m'):
+        if a.only_ce:
+            if not r['id'].startswith('ce'):
+                continue
+        elif a.map and r['map'] not in a.map or not r['id'].startswith('m'):
             continue
         pg = page_of(r['id'])
         preset = json.loads(json.dumps(r['suggest']))
@@ -51,7 +60,7 @@ def main():
                     preset.setdefault('variables', {})[v] = -100000
         if not preset:
             continue
-        key = (r['map'], hashlib.md5(json.dumps(pg['list'], sort_keys=True).encode()).hexdigest(), json.dumps(preset, sort_keys=True))
+        key = ('ce' if a.only_ce else r['map'], hashlib.md5(json.dumps(pg['list'], sort_keys=True).encode()).hexdigest(), json.dumps(preset, sort_keys=True))
         if key in seen or (r['id'], a.tag) in have:
             continue
         seen.add(key)
