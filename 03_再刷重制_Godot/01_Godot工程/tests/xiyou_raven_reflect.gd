@@ -95,6 +95,54 @@ func _garou(stage: int, level: int) -> Array:
 	return [logic, a]
 
 
+## raven2：云裳／饿狼的魔法技能被反射（refx.*）：同参照 xbattle()（队伍 [id, 1] 各 55 级、全员生命 +1e12）
+func _refx(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var id := int(setup.actor)
+	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
+	XState.current = s
+	s.actor_max_level = 99
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+	var a: XActor = s.actor(id)
+	a.change_level_mv(55)
+	s.add_actor(id)  # 参照不招募（直接设队伍），所以不走 recruit（会换装备）
+	s.add_actor(1)
+	for pid in s.party:
+		s.actor(pid).add_param(0, 1e12)
+		s.actor(pid).refresh_passive()
+	var logic := _logic(s, "%016d" % id)
+	for b in logic.actors:
+		b.param_mark_dirty()
+		b.param_refresh()
+		b.recover_all()
+	logic.start_turn()
+	a.learn_skill(int(setup.skill))
+	a.mp = a.mmp
+	a.tp = 0.0
+	var mrf_state := -1
+	if bool(setup.reflect):
+		mrf_state = _fake_state(5, 1.0)
+		for e in logic.enemies:
+			e.add_state(mrf_state)
+	var logs := _log(logic, logic.act(a, XDB.rec("Skills", int(setup.skill)), logic.enemies[0]))
+	var want: Dictionary = c.observed
+	var gs: Array = logs.map(func(l): return [l.kind, l.target, snappedf(l.value, 1.0)])
+	var ws: Array = (want.log as Array).map(func(l): return [str(l.kind), str(l.target), snappedf(float(l.value), 1.0)])
+	check(c.id + ".hits", gs == ws, [gs, ws])
+	check(c.id + ".hp", absf(a.hp - float(want.hp)) <= 1.0, [a.hp, want.hp])
+	check(c.id + ".mp", absf(a.mp - float(want.mp)) <= 1.0, [a.mp, want.mp])
+	var st_got := a.state_ids.duplicate()
+	st_got.sort()
+	var st_want: Array = (want.states as Array).map(func(v): return int(v))
+	st_want.sort()
+	check(c.id + ".states", st_got == st_want, [st_got, st_want])
+	var fs: Array = logic.enemies.map(func(e): var ids = e.state_ids.filter(func(v): return v != mrf_state); ids.sort(); return ids)
+	var fw: Array = (want.foeStates as Array).map(func(l): var ids = (l as Array).map(func(v): return int(v)); ids.sort(); return ids)
+	check(c.id + ".foeStates", fs == fw, [fs, fw])
+
+
 func _key(logic: XBattleLogic, b) -> String:
 	return "a%d" % b.actor_id if b is XActor else "e%d" % logic.enemies.find(b)
 
@@ -219,7 +267,9 @@ func _run() -> void:
 				_reflect(c)
 			"garouzero":
 				_garou_zero(c)
-	check("covers_all", seen.keys().size() == 3, seen.keys())
+			"refx":
+				_refx(c)
+	check("covers_all", seen.keys().size() == 4, seen.keys())
 	finish()
 
 

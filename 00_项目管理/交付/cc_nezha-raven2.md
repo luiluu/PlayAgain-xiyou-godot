@@ -10,18 +10,29 @@
 - **查清（raven1「没查清」那条）：原因不是神话形态，是 krz_state_re 的状态缓存时序。** Game_Actor 的特性来源 `states()` 读缓存，只有 `refresh()` 且 `need_refresh` 为真时才重建；`addState` 自己会 refresh，但如果 `need_refresh` 已被前面的 refresh 消耗掉，就不重建。同一次 apply 里「伤害充 TP」（`onDamage→chargeTpByDamage→gainSilentTp`，`floor(50×伤害/最大生命×tcr) ≥ 1`，setTp 值真变了才 refresh）会把待刷新标记消耗在渡鸦 apply 包装加黑暗侵蚀**之前**，于是黑暗侵蚀（特性 11：全元素有效度 ×1.5，经 YEP_ElementCore 加算池）要到再下一个 refresh（下一击伤害后）才进元素有效度，增伤晚一击：第二击读到 ×1，第三击才 ×1.5。TP 加 0（伤害不到最大生命 2%）时加状态当场重建，第二击就 ×1.5。
 - 为什么神话形态才触发：探针里渡鸦最大生命被 paramMax 夹在 99999999，普通形态一击 1.67M（1.7%，TP 加 0），神话形态一击 2.85M（2.8%，TP 加 1）。用 tcr 强设扫过边界证实：普通形态 tcr 1.5／2 同样晚一击，神话形态 tcr 0.01 同样第二击生效（`reflect.tcr.*` 七例）。真实对局里渡鸦最大生命小得多，普通形态被反射打到 2% 也会晚一击。
 - 重制照做（`modes/xiyou/core/raven.gd`、`core/actor.gd`、`battle/battle_logic.gd`）：`_execute_hp_damage` 里受伤充 TP 且 TP 真变时调 `XRaven.on_tp_refresh`（记「本次 apply 已 refresh」，并解除之前遗留的陈旧标记）；渡鸦 apply 包装新加黑暗侵蚀后，若本次已 refresh，则标 `rv_erosion_stale`；`XActor.trait_objects` 在陈旧期间不把黑暗侵蚀算进特性（只影响元素有效度这一类读取）；回合末清标记。只建模渡鸦自加的黑暗侵蚀、只对角色目标（敌人的缓存路径不同，多段技能对敌人每段只一次 apply，用不上）。
-- 探针 `raven_reflect_probe.cjs`：恢复 10124 神话 `myth`、`hunt+myth` 两例，加 `reflect.tcr.*` 七例（记 TP、最大生命）。专项 `xiyou_raven_reflect` 加**绝对值**逐段比（原来只比比例），并让 `reflect.edge.*` 与参照一样不加魔防（原先 edge 两例靠比例掩盖了设置不一致）。300／300。
+- 探针 `raven_reflect_probe.cjs`：恢复 10124 神话 `myth`、`hunt+myth` 两例，加 `reflect.tcr.*` 七例（记 TP、最大生命）。专项 `xiyou_raven_reflect` 加**绝对值**逐段比（原来只比比例），并让 `reflect.edge.*` 与参照一样不加魔防（原先 edge 两例靠比例掩盖了设置不一致）。加上云裳／饿狼反射八例共 348/348。
 
 ## 验证
 
-- 语法检查通过；本地专项 `xiyou_raven_reflect` 300/300（含 tcr 七例、神话两例、全部绝对值）；反向验证：把陈旧标记改成永不置位后该专项 8 项失败，改回后通过。
+- 语法检查通过；本地专项 `xiyou_raven_reflect` 348/348（含 tcr 七例、神话两例、全部绝对值）；反向验证：把陈旧标记改成永不置位后该专项 8 项失败，改回后通过。
 - `工具回归.py` 全部通过。
-- 选测相对 main 249 个场景（超过 40），走云端选测：提交 fc6fdf639c 全部通过（7 片，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41947513695）。之后只改了交付单。
+- 选测相对 main 249 个场景（超过 40），走云端选测：提交 fc6fdf639c 全部通过（之后追加只改了该专项、夹具和探针，本地 348/348 通过，未再开云端）（7 片，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/41947513695）。之后只改了交付单。
 - 同步 `--accept-additions` 已在本工作树跑完（exit 0）。
 
 ## 待交叉核查
 
 - 改了战斗核心：`battle_logic.gd`（`_execute_hp_damage` 加 7 行）、`actor.gd`（`trait_objects` 陈旧期间滤掉黑暗侵蚀）、`core/raven.gd`。请重点看：(1) `_execute_hp_damage` 的 TP 判定 `t.tp != tp_before` 与原版 `old + amount != old` 一致；(2) 陈旧标记只在渡鸦自加黑暗侵蚀、目标为角色时置位，回合末清；(3) 绝对值比对新加后 edge 两例改成不加魔防。
+
+## 追加（总装转来的审查 42 两条 P3）
+
+- **P3①（专项只比比例）：已做。** `xiyou_raven_reflect` 逐段比绝对值；`reflect.edge.*` 两例改成与探针一致（不加魔防）。审查说的 `reflect.edge.0.51` 不等就是这个设置不一致。
+- **P3②（别的角色被魔法反射）：已核，没差。** 逐角色：
+  - 云裳 174：魔法技能 10270、10271；反射／不反射各量一例（出手者生命、MP、身上状态、敌人状态、扣血各段目标与绝对值），重制逐项相等。
+  - 饿狼 173：魔法技能 10259（核分裂）、10261（伽马射线暴）；同上，逐项相等（原版 `apply` 包装只按目标累计伤害，反射时记在饿狼自己身上，行动结束没有可见的追加，重制一致）。
+  - 镜流 170：技能全是物理或必中（hitType 0／1），不会被魔法反射，已核无此情形。
+  - 甚尔 171：魔法技能 10224、10232、10233 伤害值 0（反弹、神灶），原版反射后打自己 0；这三个重制侧未逐项比（0 伤害，无可见差异），其余技能物理。
+  - 探针新增 `refx.*` 八例，专项 `xiyou_raven_reflect` 现 348/348。
+  - 未量：属性反弹（YEP_ElementCore，任何命中类型都可被反弹）下物理技能的这几位，数据里只有 Armors#4998 带 `ELEMENT REFLECT`，没做。
 
 ## 原版疑似缺陷
 

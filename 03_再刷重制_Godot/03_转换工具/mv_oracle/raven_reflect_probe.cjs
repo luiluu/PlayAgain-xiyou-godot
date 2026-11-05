@@ -157,5 +157,33 @@ for (const [name, stage, sid, zero] of [['s6.zero', 6, 10250, true], ['s0.zero',
     return {log, direct: [direct(a, sid, 0), direct(a, sid, 1000), direct(a, 1, 0), direct(a, 1, 1000)]};
   }));
 }
+// raven2（审查 42 P3②）：别的有 Game_Action.apply／makeDamageValue 包装的角色被魔法反射时有没有同类差异：
+// 云裳 174（穿针 10270、断锦 10271）、饿狼 173（核分裂 10259、伽马射线暴 10261）；甚尔 171 的魔法技能 10224／10232／10233 伤害为 0（反弹／神灶），
+// 饿狼其余拳法与镜流 170 全是物理或必中（hitType 0／1），不会被魔法反射。量扣血各段（谁挨打、绝对值）、出手者生命／MP、身上状态。
+function xbattle(id, level) {
+  newGame();
+  w.$gameSwitches.setValue(2494, true);
+  w.eval('$gameParty.ActorMaxLevel = 99; $dataActors.forEach(function(x){ if (x) x.maxLevel = 99; });');
+  w.eval('$gameParty._actors=[' + id + ',1]; $gameParty._battleMembers=[' + id + ',1,0,0,0];');
+  for (const b of [id, 1]) { const x = w.$gameActors.actor(b); x.changeLevel(level, false); x.recoverAll(); }
+  w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  const bm = w.BattleManager; bm.setup(TROOP, false, false);
+  bm._logWindow = stub; bm._spriteset = stub; bm._statusWindow = stub;
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) b._paramPlus[0] = BIG_HP;
+  for (const b of [...w.$gameParty.members(), ...w.$gameTroop.members()]) { b.need_refresh = true; b.refresh(); b.recoverAll(); }
+  w.$gameParty._inBattle = true;
+  w.CodexYunshang._acted = [];
+  bm.startTurn();
+  return {bm, a: w.$gameActors.actor(id), foes: w.$gameTroop.members()};
+}
+for (const [nm, id, sk] of [['yunshang', 174, 10270], ['yunshang', 174, 10271], ['garou', 173, 10259], ['garou', 173, 10261]]) for (const refl of [false, true]) {
+  cases.push(makeCase(`refx.${nm}.${sk}.${refl ? 'reflect' : 'plain'}`, {actor: id, level: 55, skill: sk, reflect: refl}, () => {
+    const {bm, a, foes} = xbattle(id, 55);
+    a.learnSkill(sk); a.setMp(a.mmp); a.setTp(0);
+    if (refl) reflectOn(foes);
+    const log = record(() => act(bm, a, sk, 0));
+    return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
+  }));
+}
 const ok0 = finish(host, 'raven_reflect.json', {cases});
 process.exit(ok0 ? 0 : 1);
