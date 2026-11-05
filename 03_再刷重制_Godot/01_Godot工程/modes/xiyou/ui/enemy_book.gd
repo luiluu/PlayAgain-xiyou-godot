@@ -402,12 +402,16 @@ func select(i: int) -> void:
 	_select_enemy()
 
 
+func drop_rows_visible() -> int:
+	return floori((STATUS_RECT.size.y - XMVWindow.PADDING * 2) / LH)
+
+
 func select_drop(i: int) -> void:
 	if i == drop_index:
 		return
 	drop_index = i
 	XSound.system(0)
-	drop_top = XMenu._scroll_to(drop_index, drop_top, floori((STATUS_RECT.size.y - XMVWindow.PADDING * 2) / LH))
+	drop_top = XMenu._scroll_to(drop_index, drop_top, drop_rows_visible())
 	_update_help()
 	_refresh()
 
@@ -496,6 +500,10 @@ func _gui_input(event: InputEvent) -> void:
 			if mode == "index" and rect.has_point(p):
 				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, ids.size() - ROWS))
 				_refresh()
+			elif mode == "drops" and rect.has_point(p):
+				# Window_EnemyBookItemList.processWheel：只滚窗口、光标不动（ui11）
+				drop_top = XMenu.wheel(drop_top, drop_list.size(), drop_rows_visible(), 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1)
+				_refresh()
 		MOUSE_BUTTON_LEFT:
 			if not rect.has_point(p):
 				return
@@ -535,4 +543,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var r := XMenu.page(top, index, ids.size(), ROWS, XMenu.page_dir(event))
 		top = r[0]
 		select(r[1])
+		_refresh()
+	elif mode == "drops" and not drop_list.is_empty() and XMenu.page_dir(event) != 0:
+		# 掉落列表 Window_EnemyBookItemList 也不接管 pageup／pagedown：走通用翻页（ui11）
+		get_viewport().set_input_as_handled()
+		var r := XMenu.page(drop_top, drop_index, drop_list.size(), drop_rows_visible(), XMenu.page_dir(event))
+		drop_top = r[0]
+		select_drop(r[1])
 		_refresh()

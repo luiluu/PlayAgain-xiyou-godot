@@ -1946,6 +1946,21 @@ func _victory() -> void:
 	screen.setup(r, before, logic.actors, logic.auto)
 	ui.add_child(screen)
 	await screen.continued
+	await victory_messages()
+
+
+## 胜利后要提示的文字（饿狼「获得神之触媒」等，logic.victory_texts）。优化 O-待定（ui11）：原版在结算画面期间塞进
+## 战斗日志，只露约半秒、还吞掉一次确定（battlelog2）；这里改成结算画面关掉后用消息窗正常显示一次，按确定关。
+## VICTORY_TEXT_MESSAGE = false 回到重制原来的样子（不显示）。挂机直接回地图时不弹（不打断挂机）。
+static var VICTORY_TEXT_MESSAGE := true
+
+
+func victory_messages() -> void:
+	if not VICTORY_TEXT_MESSAGE or logic.victory_texts.is_empty():
+		return
+	message.visible = true
+	for t in logic.victory_texts:
+		await message.run({"lines": [str(t)]})
 
 
 ## 事件指令 250 播放音效（战斗里的公共事件）：同地图 XMapScene.play_se，音量／音调不读
