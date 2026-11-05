@@ -27,6 +27,36 @@ class SplitTests(unittest.TestCase):
         self.assertEqual(sync.split_balanced([('m1', 3)], 4), [['m1']])
 
 
+class StateShardMergeTests(unittest.TestCase):
+    """BO：补跑事件状态探针.py 的分段拼回（序号轮转 i % n）与单进程顺序逐字相同；段数或来源对不上就失败。"""
+    def load(self):
+        spec = importlib.util.spec_from_file_location('state_probe', Path(__file__).resolve().parent / '补跑事件状态探针.py')
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        return mod
+
+    def test_round_robin_merge_restores_order(self):
+        mod = self.load()
+        cases = [{'id': 'v%d' % i, 'finished': True} for i in range(7)]
+        head = {'sourceIdentity': {'releaseVersion': 'v0'}, 'setup': {'party': [1]}}
+        single = json.dumps(dict(head, cases=cases), ensure_ascii=False, separators=(',', ':'))
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            paths = []
+            for i in range(3):
+                p = tmp / ('p%d.json' % i)
+                p.write_text(json.dumps(dict(head, cases=[c for k, c in enumerate(cases) if k % 3 == i]), ensure_ascii=False))
+                paths.append(str(p))
+            out = tmp / 'o.json'
+            r = subprocess.run(['node', '-e', mod.SHARD_MERGE_JS, str(out)] + paths, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(out.read_text(), single)
+            # 少一个用例（某段被截断）：拼不回就报错
+            short = json.loads(Path(paths[1]).read_text()); short['cases'].pop()
+            Path(paths[1]).write_text(json.dumps(short))
+            r = subprocess.run(['node', '-e', mod.SHARD_MERGE_JS, str(out)] + paths, capture_output=True, text=True)
+            self.assertNotEqual(r.returncode, 0)
+
+
 class MergeTests(unittest.TestCase):
     def test_merge_restores_single_process_order(self):
         cases = [{'id': 'm7e1p0', 'kind': 'map', 'map': 7}, {'id': 'm7e2p0', 'kind': 'map', 'map': 7},
