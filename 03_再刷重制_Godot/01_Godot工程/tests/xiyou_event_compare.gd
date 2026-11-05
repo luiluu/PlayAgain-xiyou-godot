@@ -262,7 +262,6 @@ func _run() -> void:
 	add_child(host)
 	var report := []
 	var mismatched := {}
-	var states_started := false
 	var oracle_errors := []
 	# 有状态变体（event_state_probe：同一批事件页，运行前按预设改好初始状态，让新游戏走不到的分支被量到；号为 基础号#tag）
 	var all_cases: Array = oracle.cases.duplicate()
@@ -281,10 +280,11 @@ func _run() -> void:
 		if c.has("errors") or not bool(c.get("finished", true)):
 			oracle_errors.append(c.id)
 			continue
-		# 有状态变体另起一段：跨存档变量（899／900…）的全局存储只在进程内累积，参照里变体是单独一个进程从空存储起跑，
-		# 这边在第一个变体前清空存储，两边的累积历史才一致（基础用例的历史两边本来就同序）
-		if str(c.id).contains("#") and not states_started:
-			states_started = true
+		# 有状态变体：跨存档变量（899／900／1000／1476…）的全局存储，参照侧每例都从第一次开局的快照起跑（event_state_probe
+		# NEW_GAME_SNAPSHOT 只在第一例真开局，之后换回开局时的 $gameVariables），前一例设的跨存档变量带不进下一例；
+		# 这边每个变体前都清空存储，两边才一致（accept1 可优化，events6：之前只在第一个变体前清，m4e56p0#b1 预设 1476 带进 m158e1p1#a2）。
+		# 基础用例的历史两边本来就同序，不清
+		if str(c.id).contains("#"):
 			DirAccess.remove_absolute(XGlobalVars.path())
 			XGlobalVars._loaded_path = "<unloaded>"
 		var door := RegEx.create_from_string("^m(\\d+)e(\\d+)p").search(str(c.id))
