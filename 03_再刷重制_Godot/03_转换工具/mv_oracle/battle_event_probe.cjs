@@ -320,7 +320,10 @@ const result = {schemaVersion: 1, hostScope: 'headless-rule-timing', sourceIdent
     actorInput: 'guard', messageClose: 'after 3 real BattleManager.update calls; UI frames are not measured'},
   cases: [caseRun('scan.inventory', o => {
     const scan = scanSource(); o.troops = scan.troops.length; o.pages = scan.troops.reduce((n,t) => n+t.pages.length, 0);
-    assert.equal(o.troops, 35); assert.equal(o.pages, 47);
+    // 各冻结源版本带战斗事件的敌群／页数（v0.54 一护剧情、v0.52 12.27 补齐加了敌群事件）；没登记的版本先核对再补，不放行
+    const want = {'v0.28': [35, 47], 'v0.62.12': [51, 73]}[identity.releaseVersion];
+    assert.ok(want, '没登记的冻结源版本 ' + identity.releaseVersion + '：核对敌群事件数后补进 want');
+    assert.equal(o.troops, want[0]); assert.equal(o.pages, want[1]);
   }), caseRun('troop165.real-turns1-4', realFourTurns), caseRun('command334.revive-and-recover', recoverCase), caseRun('command334.living-and-hidden', livingHiddenRecoverCase),
     caseRun('command336.no-queued-action', o => transformCase(o, false)), caseRun('command336.rebuild-queued-action', o => transformCase(o, true)),
     caseRun('troop824.variable1178-5-hidden', o => appearCase(o, 5)), caseRun('troop824.variable1178-6-appear', o => appearCase(o, 6)),
