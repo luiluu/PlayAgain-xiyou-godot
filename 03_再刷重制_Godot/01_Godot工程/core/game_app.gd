@@ -21,6 +21,8 @@ func _ready() -> void:
 		push_error("Invalid mode registry")
 		return
 	modes = data["modes"]
+	if ReleaseEntry.is_release():
+		get_window().title = ReleaseEntry.APP_NAME  # 发行包窗口标题（BI）
 	# 官方导出模板不允许用命令行覆盖场景路径；调试包通过显式验收参数在包内跳转。
 	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--verify-export"):
 		_verify_export.call_deferred()
@@ -90,10 +92,16 @@ func enter_mode(mode_id: String) -> bool:
 	if result != OK:
 		current_mode = previous
 		return false
+	# 发行包冒烟（发行入口冒烟.py）靠这一行确认进的是哪个场景；只打印，不改流程。
+	if OS.get_cmdline_user_args().has("--report-entry"):
+		print("ENTRY_SCENE=" + scene)
 	return true
 
 func return_to_menu() -> void:
 	current_mode = ""
+	# 发行构建没有模式选择：回到西游标题（BI）。
+	if ReleaseEntry.skips_menu() and enter_mode(ReleaseEntry.DIRECT_MODE):
+		return
 	get_tree().change_scene_to_file("res://scenes/entry_menu.tscn")
 
 func save_directory() -> String:
