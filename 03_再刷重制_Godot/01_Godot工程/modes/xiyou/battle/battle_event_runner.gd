@@ -389,6 +389,12 @@ func _plugin_env(args: PackedStringArray, line: String) -> bool:
 	return false
 
 
+## 播放电影（CE1514 亲朋好友倒下时、CE1516 万花筒血轮眼技能）：记一条 movie，画面层 XBattleScene._play 放完再往下演
+func _play_movie(name: String):
+	logs.append({"type": "movie", "name": name})
+	return null
+
+
 func _execute_env(c: Dictionary):
 	var p: Array = c.get("parameters", [])
 	match int(c.code):

@@ -53,6 +53,8 @@ func _run() -> void:
 		XState.current = states[diff]
 		_case(c, states[diff])
 	XState.current = null
+	# 每例 9 项断言；总数对不上说明有例漏比（diff2：探针提速后防止悄悄少比）
+	check("assert_count", results.size() == d.cases.size() * 9, [results.size(), d.cases.size() * 9])
 	finish()
 
 

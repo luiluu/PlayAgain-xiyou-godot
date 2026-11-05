@@ -50,7 +50,29 @@ static func reserve_action(logic, user, item: Dictionary, targets: Array) -> voi
 			reserve(logic, int(e.dataId), user)
 
 
+## 排在当前预约之后的公共事件（奈叶领域做活 O-183 用：2478 排在开战 1320 之后，不顶掉单槽）：
+## 单槽空了（预约的跑完、它自己接着预约的也跑完）才轮到队首
+static func reserve_after(logic, id: int) -> void:
+	if id <= 0:
+		return
+	var q: Array = logic.get_meta("battle_ce_after", [])
+	q.append(id)
+	logic.set_meta("battle_ce_after", q)
+
+static func _promote_after(logic) -> void:
+	if int(logic.get_meta("battle_ce", 0)) > 0 or not logic.has_meta("battle_ce_after"):
+		return
+	var q: Array = logic.get_meta("battle_ce_after")
+	if q.is_empty():
+		logic.remove_meta("battle_ce_after")
+		return
+	logic.set_meta("battle_ce", int(q.pop_front()))
+	if q.is_empty():
+		logic.remove_meta("battle_ce_after")
+
+
 static func reserved(logic) -> int:
+	_promote_after(logic)
 	return int(logic.get_meta("battle_ce", 0))
 
 
