@@ -1,7 +1,7 @@
 # 交付：cc/bajie-events7
 
 - 车道／工作者：A 内容·事件／八戒（cc，派单第二批 X，一期：电影＋专属号角路径）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -33,7 +33,8 @@
 ## 验证
 
 - 专项：`xiyou_movie`（新，18 项）、`xiyou_actor_p0`（加号角覆盖与 RECRUIT_9）、`xiyou_event_compare`、`xiyou_script_census`、`xiyou_script_gaps`、`xiyou_skill_menu_events`、`xiyou_tusu`、`xiyou_imported_balance` 本机通过（`--skip-generated-check`，原因见可优化）；`语法检查.py`、`工具回归.py` 通过。
-- 选测：待写
+- 选测：`选测.py main --list` 183 个场景（转换器改动归 converter 组），走 `云端选测.py`：提交 e718611db1 282 个场景 8 片全部通过（运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42007154610）。没跑全量 `检查.sh`（车道规则）。合并 main 时总装 review-45 还在 prepared，补齐沿用了主工作区当时的参照。
+- 总装注意：本分支多产出 `generated/movies/`（168 个文件，转换器新产物），主工作区合并后要重跑转换器（或同步）才有；合并前 `并行测试.py` 的产物比对会把它报成「落后」。
 
 ## 待交叉核查
 
@@ -46,3 +47,4 @@
 - 87c1e98f 播放电影 261（转换器抽帧＋OGG，XMoviePlayer 地图／战斗都放、放完再往下）
 - 621bdf4e 屠苏／璇号角接上 XTusuXuan.recruit；招募测试补 2～7、175～177 与物品→公共事件全量覆盖
 - 2bd21c2c 合并 main
+- （本提交）交付单可合并
