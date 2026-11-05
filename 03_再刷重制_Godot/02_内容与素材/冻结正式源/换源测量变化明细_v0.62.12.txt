@@ -1,0 +1,493 @@
+# 换源测量变化明细（v0.28 → v0.62.12，cc BF 2026-11-05）
+# 每份参照：差异路径数；下面是按顶层键／用例归并的前 8 类（数字＝该类差异路径数）。slice 六份的差异数到 100000 封顶。
+
+## slice/slice_d1.json 变 (100000)
+     718 /actors
+      12 /damage[troop=106,actor=162,skill=1]
+      12 /damage[troop=108,actor=162,skill=1]
+      12 /damage[troop=131,actor=162,skill=1]
+      12 /damage[troop=135,actor=162,skill=1]
+      12 /damage[troop=142,actor=162,skill=1]
+      12 /damage[troop=145,actor=158,skill=1]
+      12 /damage[troop=148,actor=158,skill=1]
+## slice/slice_d2.json 变 (100000)
+     718 /actors
+      12 /damage[troop=100,actor=162,skill=1]
+      12 /damage[troop=101,actor=162,skill=1]
+      12 /damage[troop=102,actor=162,skill=1]
+      12 /damage[troop=104,actor=162,skill=1]
+      12 /damage[troop=105,actor=162,skill=1]
+      12 /damage[troop=106,actor=162,skill=1]
+      12 /damage[troop=10,actor=162,skill=1]
+## slice/slice_d3.json 变 (100000)
+     718 /actors
+      12 /damage[troop=100,actor=162,skill=1]
+      12 /damage[troop=101,actor=162,skill=1]
+      12 /damage[troop=104,actor=162,skill=1]
+      12 /damage[troop=105,actor=162,skill=1]
+      12 /damage[troop=106,actor=162,skill=1]
+      12 /damage[troop=10,actor=162,skill=1]
+      12 /damage[troop=112,actor=162,skill=1]
+## slice/slice_d4.json 变 (100000)
+     718 /actors
+      12 /damage[troop=10,actor=162,skill=1]
+      12 /damage[troop=11,actor=162,skill=1]
+      12 /damage[troop=12,actor=162,skill=1]
+      12 /damage[troop=13,actor=162,skill=1]
+      12 /damage[troop=14,actor=162,skill=1]
+      12 /damage[troop=15,actor=162,skill=1]
+      12 /damage[troop=16,actor=162,skill=1]
+## slice/slice_d5.json 变 (100000)
+     718 /actors
+      12 /damage[troop=10,actor=162,skill=1]
+      12 /damage[troop=11,actor=162,skill=1]
+      12 /damage[troop=12,actor=162,skill=1]
+      12 /damage[troop=13,actor=162,skill=1]
+      12 /damage[troop=14,actor=162,skill=1]
+      12 /damage[troop=15,actor=162,skill=1]
+      12 /damage[troop=16,actor=162,skill=1]
+## slice/slice_d6.json 变 (100000)
+     718 /actors
+      12 /damage[troop=10,actor=162,skill=1]
+      12 /damage[troop=11,actor=162,skill=1]
+      12 /damage[troop=12,actor=162,skill=1]
+      12 /damage[troop=13,actor=162,skill=1]
+      12 /damage[troop=14,actor=162,skill=1]
+      12 /damage[troop=17,actor=162,skill=1]
+      12 /damage[troop=18,actor=162,skill=1]
+## equipment.json 变 (130)
+      70 /runewords[i]
+      41 /gear[i]
+      14 /upgrades[i]
+       2 /sourceHashes
+       1 /sequenced[i]
+       1 /sets[i]
+       1 /suitDefinitions[i]
+## maps.json 变 (8)
+       8 /4
+## maps_source.json 变 (151)
+      78 /runtimeInputs
+      73 /inputs
+## help_cards.json 变 (26055)
+     756 /gear[i]
+      73 /weapons[id=53]
+      71 /weapons[id=52]
+      66 /armors[id=54]
+      66 /armors[id=55]
+      66 /armors[id=56]
+      66 /armors[id=57]
+      66 /armors[id=58]
+## hang_up.json 变 (20)
+      15 /sell
+       5 /windows
+## smart_ai.json 变 (28)
+       1 /cases[troop=818,scene=ally_dead,actor=1,state={"actors": [{"dead": false, "hp": 1207, "id
+       1 /cases[troop=818,scene=ally_low,actor=1,state={"actors": [{"dead": false, "hp": 1207, "id"
+       1 /cases[troop=818,scene=foes_low,actor=1,state={"actors": [{"dead": false, "hp": 1207, "id"
+       1 /cases[troop=818,scene=full,actor=1,state={"actors": [{"dead": false, "hp": 1207, "id": 1,
+       1 /damage[troop=793,actor=10,skill=3644,target=0]
+       1 /damage[troop=793,actor=1,skill=101,target=0]
+       1 /damage[troop=793,actor=1,skill=160,target=0]
+       1 /damage[troop=793,actor=9,skill=3641,target=0]
+## options.json 变 (24)
+      21 /rows[i]
+       2 /notices
+       1 /rows 长度 33→34
+## sequences.json 变 (465)
+     254 /rules[i]
+     188 /skills
+      19 /items
+       3 /ruleGroups
+       1 /rules 长度 88→90
+## troop_events.json 变 (54)
+      27 /cases[troop=380,paid=false]
+      27 /cases[troop=384,paid=false]
+## battle_events.json 变 (437)
+     405 /scan
+      29 /cases[id=actor104.seal-release-1691]
+       3 /cases[id=scan.inventory]
+## sell_rewards.json 变 (6)
+       6 /cases[i]
+## power.json 变 (113)
+      16 /gear[kind=armor,id=116,why=npassiveELUP]
+      15 /gear[kind=armor,id=77,why=t21:0]
+      15 /gear[kind=weapon,id=92,why=t22:3]
+       9 /gear[kind=armor,id=133,why=t22:5]
+       7 /gear[kind=weapon,id=79,why=t21:0]
+       5 /gear[kind=armor,id=137,why=nAgainUse]
+       5 /gear[kind=armor,id=139,why=nSkETypeHarmRi]
+       5 /gear[kind=weapon,id=53,why=t21:2]
+## wtype.json 变 (593)
+       2 /cases[actor=141,variant=wtype9,weapon=8,skill=164]
+       2 /cases[actor=146,variant=default,weapon=null,skill=10092]
+       2 /cases[actor=146,variant=naked,weapon=0,skill=10092]
+       2 /cases[actor=146,variant=wtype1,weapon=14,skill=10092]
+       2 /cases[actor=146,variant=wtype10,weapon=4,skill=10092]
+       2 /cases[actor=146,variant=wtype11,weapon=11,skill=10092]
+       2 /cases[actor=146,variant=wtype12,weapon=12,skill=10092]
+       2 /cases[actor=146,variant=wtype2,weapon=2,skill=10092]
+## dual_wield.json 变 (18)
+      16 /flows[name=liubei]
+       2 /inits[actor=13,ids=[2005, 70]
+## magic_weapon.json 变 (64)
+      64 /cases[name=zhuxian_mixed]
+## custom_params.json 变 (433)
+     145 /cases[name=vars_then_level_override]
+     121 /cases[name=magic_vars_only]
+      94 /cases[name=tp_ignored]
+      73 /cases[name=mhp_mmp_eight]
+## shop_buy.json 变 (5423)
+      51 /shops[map=132,event=16,raw=[[0, 2791, 0, 0]
+      19 /cases[goods=[0, 2464, 0, 0]
+      19 /cases[goods=[0, 2466, 0, 0]
+      19 /cases[goods=[0, 2468, 0, 0]
+      19 /cases[goods=[0, 2470, 0, 0]
+      19 /cases[goods=[0, 2472, 0, 0]
+      19 /cases[goods=[0, 2474, 0, 0]
+      19 /cases[goods=[0, 2475, 0, 0]
+## map132_shops.json 变 (141)
+      30 /cases[id=ev16_p0_i7_m132]
+      30 /cases[id=ev16_p1_i7_m132]
+      30 /cases[id=ev16_p2_i8_m132]
+      17 /cases[id=ev16_p0_i7_m131]
+      17 /cases[id=ev16_p1_i7_m131]
+      17 /cases[id=ev16_p2_i8_m131]
+## yomi_battle.json 变 (16)
+       1 /cases[id=rates.a1.s10171.eva]
+       1 /cases[id=rates.a1.s10171.plain]
+       1 /cases[id=rates.a1.s10172.eva]
+       1 /cases[id=rates.a1.s10172.plain]
+       1 /cases[id=rates.a1.s10173.eva]
+       1 /cases[id=rates.a1.s10173.plain]
+       1 /cases[id=rates.a1.s10174.eva]
+       1 /cases[id=rates.a1.s10174.plain]
+## guyu_battle.json 变 (2)
+       2 /cases[id=script.sub]
+## xuan_chart.json 变 (38)
+       8 /cases[id=flow.learn-equip]
+       5 /cases[id=flow.poor]
+       4 /cases[id=flow.roster2]
+       4 /cases[id=flow.slot]
+       3 /cases[id=flow.auto-on]
+       3 /cases[id=flow.element]
+       3 /cases[id=flow.lv5]
+       3 /cases[id=flow.partner]
+## guyu_ui.json 变 (322)
+     162 /cases[id=script.lv35]
+      69 /cases[id=script.sub]
+      52 /cases[id=script.lv60]
+      31 /cases[id=script.lv5]
+       8 /cases[id=window]
+## raven_artifact.json 变 (18)
+       8 /cases[id=module]
+       2 /cases[id=params.l1.r0.s0.m1]
+       2 /cases[id=params.l30.r0.s500.m1]
+       2 /cases[id=params.l45.r2.s20000.m10]
+       2 /cases[id=params.l60.r3.s123457.m37]
+       2 /cases[id=params.l99.r5.s300000.m888]
+## difficulty_enemy.json 变 (573)
+      15 /enemyIds[i]
+       1 /cases[id=diffenemy.d1.e126.elite]
+       1 /cases[id=diffenemy.d1.e126.plain]
+       1 /cases[id=diffenemy.d1.e132.elite]
+       1 /cases[id=diffenemy.d1.e132.plain]
+       1 /cases[id=diffenemy.d1.e197.elite]
+       1 /cases[id=diffenemy.d1.e197.plain]
+       1 /cases[id=diffenemy.d1.e2027.elite]
+## difficulty_actor.json 变 (147)
+      48 /cases[id=diffactor.d8.honghuang]
+      48 /cases[id=diffactor.d9.chaos]
+      48 /cases[id=diffactor.d9.chaos_miemie_debuff]
+       1 /cases[id=diffactor.d6.opening]
+       1 /cases[id=diffactor.d7.miemie]
+       1 /cases[id=diffactor.d9.from_tianzai]
+## difficulty_troop.json 变 (4)
+       1 /cases[id=difftroop.d6.t854]
+       1 /cases[id=difftroop.d7.t854]
+       1 /cases[id=difftroop.d8.t854]
+       1 /cases[id=difftroop.d9.t854]
+## orbs.json 变 (24)
+      24 /layout[i]
+## module_hooks.json 变 (524)
+      18 /cases[id=frame.categoryMax]
+      18 /cases[id=frame.clamps]
+      18 /cases[id=frame.elements]
+      18 /cases[id=frame.fixed]
+      18 /cases[id=frame.healing]
+      18 /cases[id=frame.magical]
+      18 /cases[id=frame.mixed]
+      18 /cases[id=frame.noElement]
+## dungeon.json 变 (664)
+       6 /cases[id=ab164.seal-1]
+       6 /cases[id=ab164.seal-2]
+       6 /cases[id=ab165.seal-1]
+       6 /cases[id=ab165.seal-2]
+       6 /cases[id=ab167.seal-1]
+       6 /cases[id=ab167.seal-2]
+       6 /cases[id=ab167.seal-3]
+       6 /cases[id=ab168.seal-1]
+## shop_stock.json 变 (63)
+      25 /locations[i]
+      23 /catalog[i]
+       5 /cases[id=stock.floor-shop.1912]
+       5 /cases[id=stock.floor-shop.1916]
+       2 /cases[id=stock.group-scope]
+       1 /cases[id=stock.pending-overwrite]
+       1 /cases[id=stock.purchase-reopen-sell]
+       1 /catalog 长度 400→402
+## challenge_passives.json 变 (16)
+       4 /skills[i]
+       3 /cases[id=challenge.f11.d6]
+       3 /cases[id=challenge.f21.d5]
+       3 /cases[id=challenge.f21.d6]
+       3 /cases[id=challenge.f26.d4]
+## zhenqi.json 变 (261)
+      26 /cases[id=page.daozu]
+      25 /cases[id=weapon.masters]
+      20 /cases[id=weapon.fight.f0]
+      16 /cases[id=page.canBreak]
+      16 /cases[id=page.hard.f20]
+      11 /cases[id=page.capped]
+      11 /cases[id=page.default]
+      11 /cases[id=page.qi2000]
+## guide.json 变 (32)
+       4 /cases[id=advice.default]
+       4 /cases[id=advice.f3]
+       4 /cases[id=advice.f6.capped]
+       3 /cases[id=atlas]
+       2 /cases[id=milestone.a]
+       2 /cases[id=milestone.d]
+       2 /cases[id=milestone.g]
+       2 /cases[id=shopGuide.event]
+## formula_programs.json 变 (1782)
+       3 /cases[id=Skills.10006.actor_enemy.edge]
+       3 /cases[id=Skills.10006.actor_enemy.full]
+       3 /cases[id=Skills.10006.edge]
+       3 /cases[id=Skills.10006.enemy_actor.edge]
+       3 /cases[id=Skills.10006.enemy_actor.full]
+       3 /cases[id=Skills.10006.full]
+       3 /cases[id=Skills.10007.actor_enemy.edge]
+       3 /cases[id=Skills.10007.actor_enemy.full]
+## formula_equipment.json 变 (154)
+       2 /cases[id=s10116.different_base.false]
+       2 /cases[id=s10116.different_base.true]
+       2 /cases[id=s10116.first.false]
+       2 /cases[id=s10116.first.true]
+       2 /cases[id=s10116.high.false]
+       2 /cases[id=s10116.high.true]
+       2 /cases[id=s10116.none.false]
+       2 /cases[id=s10116.none.true]
+## review_fix.json 变 (4)
+       2 /cases[id=flush.225.nowait]
+       2 /cases[id=flush.225.wait]
+## star_warehouse.json 变 (152)
+     152 /steps[i]
+## actor_passive.json 变 (295)
+      18 /cases[setup={"actor": 149, "level": 99}]
+      17 /cases[setup={"actor": 149, "level": 65}]
+      13 /cases[setup={"actor": 162, "level": 65}]
+      13 /cases[setup={"actor": 162, "level": 99}]
+      12 /cases[setup={"actor": 149, "level": 35}]
+      12 /cases[setup={"actor": 159, "level": 65}]
+      12 /cases[setup={"actor": 159, "level": 99}]
+      10 /cases[setup={"actor": 162, "level": 10}]
+## weak_challenge.json 变 (57)
+      15 /cases[id=help.10356.off]
+      15 /cases[id=help.10356.on]
+      13 /cases[id=help.10357.off]
+      13 /cases[id=help.10357.on]
+       1 /cases[id=classify]
+## imported_balance.json 变 (449)
+     102 /cases[id=action.a142.s10098]
+      58 /cases[id=action.a142.s10100]
+      34 /cases[id=action.a142.s10099]
+      30 /cases[id=item.a163.all]
+      25 /cases[id=module.rates]
+      20 /cases[id=dot.rec.a141.mixed]
+      16 /cases[id=shield.a163]
+      14 /cases[id=item.a163.drain]
+## state_effects.json 变 (2555)
+     989 /cases[id=effect.blocks]
+     547 /cases[id=value.native_blocks]
+     408 /cases[id=revive.blocks]
+     248 /cases[id=battle.start]
+      94 /cases[id=bonus.native_blocks]
+      61 /cases[id=action.counter]
+      31 /cases[id=hook.blocks]
+      27 /cases[id=lifecycle.actor]
+## state_js.json 变 (2)
+       2 /cases[id=counter.carry]
+## dot.json 变 (2998)
+     278 /cases[id=origin]
+     170 /cases[id=element.rates]
+      80 /cases[id=shield]
+      66 /cases[id=syn.customThrow]
+      66 /cases[id=syn.undef]
+      60 /cases[id=syn.annoAfter]
+      60 /cases[id=syn.annoBefore]
+      60 /cases[id=syn.customAfterFormula]
+## sve.json 变 (3)
+       2 /cases[id=census]
+       1 /cases[id=weapon]
+## svpng.json 变 (4)
+       3 /cases[id=scale]
+       1 /cases[id=census]
+## vsfx.json 变 (6)
+       3 /cases[id=order]
+       2 /cases[id=census]
+       1 /cases[id=loop]
+## review135.json 变 (3)
+       3 /cases[id=preview.variables]
+## stage50_review.json 变 (3)
+       3 /cases[id=counter.state_origin]
+## attack_elements.json 变 (21)
+       3 /cases[id=a154-naked]
+       3 /cases[id=a154-physical]
+       3 /cases[id=a158-fire]
+       3 /cases[id=a158-naked]
+       3 /cases[id=a158-noElement]
+       3 /cases[id=a158-physical]
+       3 /cases[id=a158-thunder]
+## multi_element.json 变 (14)
+       1 /cases[id=native.10007.e465]
+       1 /cases[id=native.10007.e947]
+       1 /cases[id=native.10008.e465]
+       1 /cases[id=native.10008.e947]
+       1 /cases[id=native.10070.e465]
+       1 /cases[id=native.10070.e947]
+       1 /cases[id=native.9956.e465]
+       1 /cases[id=native.9956.e947]
+## qiyu.json 变 (81)
+       6 /cases[id=invoke.a162.s9934.cnt]
+       6 /cases[id=invoke.a164.s9934.cnt]
+       5 /cases[id=rates.a162.skill9934.all]
+       4 /cases[id=invoke.a162.s1.mrf]
+       4 /cases[id=rates.a162.skill1.all]
+       4 /cases[id=relic124]
+       3 /cases[id=rates.a162.skill9938.all]
+       3 /cases[id=rates.a162.skill9939.all]
+## cat.json 变 (209)
+      49 /cases[id=chain.full]
+      39 /cases[id=chain.sword92]
+      30 /cases[id=chain.heart30]
+      24 /cases[id=chain.atkk1817]
+      23 /cases[id=chain.speed35]
+      20 /cases[id=chain.slow20]
+      18 /cases[id=chain.agiEven]
+       6 /cases[id=chain.agiNear]
+## alien_battle.json 变 (232)
+      55 /cases[id=battle.plague]
+      40 /cases[id=battle.mirror]
+      35 /cases[id=battle.drain]
+      24 /cases[id=battle.grant]
+      19 /cases[id=battle.flare]
+      19 /cases[id=battle.shell]
+      14 /cases[id=battle.mob]
+       6 /cases[id=encounter.boss_150]
+## alien_affix.json 变 (4)
+       3 /cases[id=battle.sacrifice.sethp]
+       1 /cases[id=battle.insulation.sethp]
+## attack_query.json 变 (32)
+       2 /cases[id=actor.154-bare]
+       2 /cases[id=actor.154-skill2071]
+       2 /cases[id=actor.154-skill2071-weapon77]
+       2 /cases[id=actor.154-skills2071-2419]
+       2 /cases[id=actor.154-state120]
+       2 /cases[id=actor.154-state125]
+       2 /cases[id=actor.154-state41]
+       2 /cases[id=actor.154-state41-weapon77]
+## weapon_unleash.json 变 (8)
+       2 /cases[id=w93.tp0.hit]
+       2 /cases[id=w93.tp0.miss]
+       2 /cases[id=w93.tp100.hit]
+       2 /cases[id=w93.tp100.miss]
+## skill_change_to.json 变 (8)
+       1 /cases[id=s10499.first]
+       1 /cases[id=s10499.last]
+       1 /cases[id=s10499.miss]
+       1 /cases[id=s10501.first]
+       1 /cases[id=s10501.last]
+       1 /cases[id=s10501.miss]
+       1 /random 长度 66→68
+       1 /skills 长度 67→69
+## enemy_book_defeat.json 变 (27)
+       2 /cases[id=cost.sum.1]
+       2 /cases[id=cost.sum.2]
+       2 /cases[id=cost.sum.3]
+       1 /cases[id=cost.all.1]
+       1 /cases[id=cost.all.2]
+       1 /cases[id=cost.all.3]
+       1 /cases[id=cost.cap.1]
+       1 /cases[id=cost.cap.2]
+## script_gaps.json 变 (24)
+       2 /cases[id=ascend.1388.both]
+       2 /cases[id=ascend.1388.none]
+       2 /cases[id=ascend.1388.offParty]
+       2 /cases[id=ascend.1388.party]
+       2 /cases[id=ascend.1389.both]
+       2 /cases[id=ascend.1389.none]
+       2 /cases[id=ascend.1389.offParty]
+       2 /cases[id=ascend.1389.party]
+## lobby_shops.json 变 (32)
+       3 /cases[id=e54p3_base_1]
+       3 /cases[id=e54p3_v1476_1]
+       3 /cases[id=e54p3_v1476_s2466_1]
+       3 /cases[id=e54p3_v1476_s2467_1]
+       3 /cases[id=e65p0_base_1]
+       3 /cases[id=e65p0_v1476_1]
+       3 /cases[id=e65p0_v1476_s2466_1]
+       3 /cases[id=e65p0_v1476_s2467_1]
+## param_cache.json 变 (2)
+       1 /cases[id=actor_cache.equip_x]
+       1 /cases[id=outside_battle]
+## common_scripts.json 变 (286)
+       6 /cases[id=map.174.alldug-away]
+       6 /cases[id=map.174.dug-here]
+       6 /cases[id=super.2514.d3]
+       5 /cases[id=gen.1308.all]
+       5 /cases[id=gen.1308.first]
+       5 /cases[id=gen.1308.none]
+       5 /cases[id=map.117.away]
+       5 /cases[id=map.1381.away]
+## events.json 变 (743)
+     163 /cases[id=ce1330]
+      35 /cases[id=ce1323]
+      35 /cases[id=ce1324]
+      35 /cases[id=ce1325]
+      35 /cases[id=ce1326]
+      35 /cases[id=m148e8p0]
+      35 /cases[id=m2e2p3]
+      19 /cases[id=ce1345]
+
+## 不变（31 份）
+  party.json
+  drop_record.json
+  sukuna_battle.json
+  toji.json
+  toji_battle.json
+  guyu.json
+  three_growth.json
+  mira_battle.json
+  raven_soul.json
+  battle_drop.json
+  actor1_damage.json
+  toji_eva.json
+  settlement.json
+  orb_shop.json
+  race_menu.json
+  training.json
+  gold.json
+  battle_messages.json
+  custom_damage.json
+  formula_effects.json
+  formula_actions.json
+  global_vars.json
+  achievements.json
+  achievement_badges.json
+  raven_visual.json
+  shield.json
+  barrier.json
+  collapse.json
+  passive.json
+  scan2.json
+  race_battle.json
