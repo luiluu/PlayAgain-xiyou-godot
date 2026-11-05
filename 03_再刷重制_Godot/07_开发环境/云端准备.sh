@@ -23,7 +23,7 @@ if [ ! -x "$GODOT" ]; then
   mkdir -p "$GDIR"
   base="https://github.com/godotengine/godot-builds/releases/download/${VERSION}-stable"
   zip="Godot_v${VERSION}-stable_linux.x86_64.zip"
-  (cd "$GDIR" && curl -fsSLO "$base/$zip" && curl -fsSLO "$base/SHA512-SUMS.txt" \
+  (cd "$GDIR" && curl -fsSLO --retry 5 --retry-all-errors --retry-delay 10 "$base/$zip" && curl -fsSLO --retry 5 --retry-all-errors --retry-delay 10 "$base/SHA512-SUMS.txt" \
     && grep " $zip\$" SHA512-SUMS.txt | sha512sum -c - >/dev/null && unzip -oq "$zip" && rm -f "$zip")
 fi
 "$GODOT" --headless --version >/dev/null
