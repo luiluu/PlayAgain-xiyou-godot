@@ -294,6 +294,91 @@ class CloudWaitTests(unittest.TestCase):
         self.assertTrue(mod.release_only(['00_项目管理/变更记录.md', '03_再刷重制_Godot/开发编号.json', 'a.gd.uid']))
         self.assertFalse(mod.release_only(['03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd']))
 
+    def repo_tool(self):
+        """进程内加载云端选测.py，git 默认在测试仓库里跑（模块自带的 ROOT 是真实工作树）。"""
+        mod = self.load_tool()
+        orig = mod.git
+        def git(*a, **k):
+            if 'git_dir' not in k and 'cwd' not in k:
+                k['cwd'] = self.repo
+            return orig(*a, **k)
+        mod.git = git
+        return mod
+
+    def run_tool(self, *args):
+        """adopt／trust 在进程内跑，返回类似 subprocess 结果（returncode／stdout）。"""
+        import argparse, contextlib, io
+        mod = self.repo_tool()
+        ns = argparse.Namespace()
+        if args[0] == 'adopt':
+            ns = argparse.Namespace(snapshot=args[1], commit=args[2])
+        else:
+            ns = argparse.Namespace(commit=args[1], reason=args[3])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = getattr(mod, 'cmd_' + args[0])(ns)
+        return argparse.Namespace(returncode=rc, stdout=buf.getvalue(), stderr='')
+
+    def results(self):
+        return subprocess.run(['git', '--git-dir', str(self.remote), 'for-each-ref', '--format=%(refname)', 'refs/ci/results/'],
+                              capture_output=True, text=True, check=True).stdout.split()
+
+    def test_adopt_moves_snapshot_result_to_finish_commit(self):
+        """BK2：收尾提交与云端快照的树一致（或只差版本／文档）时，快照的通过结果过户给收尾提交；改了代码就不过户。"""
+        snap = self.commit('snap_code.gd')
+        self.publish('affected', sha=snap)
+        self.git('commit', '-q', '--amend', '-m', 'final')                   # 同树不同提交号＝收尾提交
+        final = self.git('rev-parse', 'HEAD')
+        self.assertNotEqual(snap, final)
+        r = self.run_tool('adopt', snap, final)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('refs/ci/results/%s/affected' % final, self.results())
+        mod = self.repo_tool()
+        self.assertTrue(mod.result_passed(mod.cache_repo(), str(self.remote), ['refs/ci/results/%s/affected' % final]))
+        # 版本号／文档差异照旧过户
+        (self.repo / '00_项目管理').mkdir(exist_ok=True)
+        (self.repo / '00_项目管理/板.md').write_text('docs')
+        self.git('add', '.'); self.git('commit', '-q', '-m', 'docs')
+        docs = self.git('rev-parse', 'HEAD')
+        self.run_tool('adopt', snap, docs)
+        self.assertIn('refs/ci/results/%s/affected' % docs, self.results())
+        # 多了代码：不过户（也不报错）
+        code = self.commit('extra.gd')
+        r = self.run_tool('adopt', snap, code)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('不过户', r.stdout)
+        self.assertNotIn('refs/ci/results/%s/affected' % code, self.results())
+
+    def test_adopt_needs_a_passed_snapshot_result(self):
+        snap = self.commit('s.gd')
+        self.publish('affected', passed=False, sha=snap)
+        r = self.run_tool('adopt', snap, snap)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('没有通过', r.stdout)
+        self.assertEqual([x for x in self.results() if snap in x and x.endswith('/full')], [])
+
+    def test_hand_patch_verified_by_snapshot_is_trusted_as_base(self):
+        """BK2：收尾提交带「手补已验」尾注（手补的代码随快照在云端测过）时，本机已验的基准链认它，不再退回合并提交。"""
+        mod = self.repo_tool()
+        c1 = self.sha
+        self.publish('affected', sha=c1)
+        self.commit_msg('m1', '合并 cc/x')
+        patched = self.commit_msg('power.gd', '合并 cc/x（dev.1）收尾\n\n验证: 选测（基准 %s，x）\n手补已验: 快照 abc' % c1[:9], subdir='03_再刷重制_Godot/01_Godot工程/modes/xiyou/core')
+        self.commit('tip')
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        os.environ.pop('XIYOU_CI_BASE', None)
+        self.assertEqual(mod.local_verified_base(str(self.remote), mod.cache_repo()), patched)
+
+    def test_trust_writes_manual_anchor(self):
+        sha = self.commit('anchor.gd')
+        r = self.run_tool('trust', sha, '--reason', '总装确认')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn('refs/ci/results/%s/affected' % sha, self.results())
+        mod = self.repo_tool()
+        self.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        self.commit('tip')
+        self.assertEqual(mod.cloud_passed_base(str(self.remote), mod.cache_repo()), sha)
+
     def test_plan_selection_ignores_untracked_files(self):
         """tools60（审查 37 P2-1）：云端 plan 恢复的 .ci-timings 是未跟踪文件，选测必须带 head 只算已提交差异，并忽略该目录。"""
         text = (HERE / '云端选测.py').read_text(encoding='utf-8')

@@ -54,6 +54,13 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SRC, OUT)
     print('✓ 已补跑 event_states.json：' + r.stdout.strip()[-120:])
+    # 产物变了而云端快照还是旧的：留个标记，检查.sh --cloud 看到就不能沿用 CHECK_CLOUD_NO_UPLOAD（合并工具只看切片／转换器判 refresh，
+    # 只改 event_presets.json 的合并 refresh=false，云端拿旧参照会挂；BK2）。云端传完后由 检查.sh 删标记
+    try:
+        gd = subprocess.run(['git', '-C', str(ENV), 'rev-parse', '--path-format=absolute', '--git-dir'], capture_output=True, text=True, check=True).stdout.strip()
+        (Path(gd) / 'xiyou_cloud_upload_needed').write_text('event_states.json 已补跑，云端需重传产物\n')
+    except (subprocess.CalledProcessError, OSError):
+        pass
     return 0
 
 

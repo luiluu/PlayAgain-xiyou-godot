@@ -1296,6 +1296,7 @@ class CheckerTests(Fixture):
                         'if sys.argv[1] == "wait": print("云端汇总：" + ("通过" if rc == 0 else "失败 xiyou_shop.tscn" if rc == 1 else "超时"))\n'
                         'sys.exit(rc)\n' % (str(self.calls), run_rc, wait_rc))
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# cloud\n')
+        self.g('add', '-N', str(UI / 'shop.gd'))       # 新文件要先 add -N 才进快照提交（未跟踪文件不进，见 test_cloud_snapshot_skips_untracked）
         self.env = dict(self.env, XIYOU_CLOUD_SCRIPT=str(stub), **({'CHECK_CLOUD_NO_UPLOAD': '1'} if no_upload else {}))
         return self.check('--affected', self.base, '--cloud', *args)
 
@@ -1315,6 +1316,26 @@ class CheckerTests(Fixture):
         self.assertEqual(self.g('show', snap + ':' + str(UI / 'shop.gd')), 'class_name XShopScene\n# cloud')
         self.assertEqual(cloud[1], 'cloud wait %s --mode affected --timeout 2700' % snap)
         self.assertTrue(self.g('status', '--porcelain', '--untracked-files=no').startswith('M'))   # 工作区原样：不暂存、不提交
+
+    def test_cloud_snapshot_skips_untracked(self):
+        # 总装补：快照提交只收已跟踪（含 add -N）的改动，不带未跟踪的临时文件；快照提交的提交号也写进 .git 下的便条给合并工具过户用
+        self.put(Path('notes_untracked.txt'), 'scratch\n')
+        rc, out, ran = self.cloud_check(no_upload=True)
+        self.assertEqual(rc, 0, out)
+        snap = [l for l in ran if l.startswith('cloud run')][0].split()[-1]
+        self.assertEqual(self.g('ls-tree', '--name-only', snap, 'notes_untracked.txt'), '')
+        self.assertEqual(self.g('show', '%s:%s' % (snap, UI / 'shop.gd')).strip(), 'class_name XShopScene\n# cloud')
+        self.assertEqual((self.root / '.git/xiyou_cloud_snapshot').read_text().strip(), snap)
+
+    def test_cloud_upload_mark_forces_upload(self):
+        # BK2：补跑事件状态探针留的标记让 --cloud 不沿用 CHECK_CLOUD_NO_UPLOAD；云端通过后删标记
+        mark = self.root / '.git/xiyou_cloud_upload_needed'
+        mark.write_text('x\n')
+        rc, out, ran = self.cloud_check(no_upload=True)
+        self.assertEqual(rc, 0, out)
+        self.assertIn('重传产物', out)
+        self.assertNotIn('--no-upload', [l for l in ran if l.startswith('cloud run')][0])
+        self.assertFalse(mark.exists())
 
     def test_cloud_uploads_unless_told_not_to(self):
         rc, out, ran = self.cloud_check()

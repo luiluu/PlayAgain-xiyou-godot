@@ -1339,6 +1339,20 @@ def reuse_note(root):
     return Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'xiyou_reuse_note.txt'
 
 
+def snapshot_note(root):
+    """检查.sh --cloud 把未提交改动做成快照提交时写下的提交号（BK2）；收尾提交后把云端结果过户给收尾提交。"""
+    return Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'xiyou_cloud_snapshot'
+
+
+def adopt_cloud_result(root, snapshot):
+    """收尾提交的树与快照一致（或只差版本号、文档）时，快照的云端通过结果过户给它，下一轮选测基准就是它，不再退回很早的云端通过点。失败只提示。"""
+    try:
+        run(root, [sys.executable, os.environ.get('XIYOU_CLOUD_SCRIPT') or ENV / '云端选测.py', 'adopt', snapshot, 'HEAD'])
+    except subprocess.CalledProcessError:
+        print('⚠ 云端结果没能过户给收尾提交（不影响收尾）；下一轮选测基准会退到更早的云端通过点', flush=True)
+    snapshot_note(root).unlink(missing_ok=True)
+
+
 def finish(root, state, state_file, executor, batch=False, affected=False, cloud=False):
     if state['phase'] not in ['prepared', 'committed']:
         raise RuntimeError('先运行准备合并，再手工登记，最后 --finish')
@@ -1436,13 +1450,22 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             trailer += ''.join('\n沿用: ' + line for line in reused)
         elif not batch:
             trailer += '\n验证: 全量'  # 不加 --affected 的 --finish 跑的是整轮；云端选测.py 的 local_verified_base 认它（tools60，审查 37 P3）
+        snapshot = None
+        if cloud and affected and not batch:
+            note = snapshot_note(root)
+            if note.is_file():
+                snapshot = note.read_text().strip() or None
         if not batch:
             hand = sorted(p for p in changed if not release_only_path(p))
             if hand:  # 收尾提交里手补的代码：云端选测.py 不把这样的收尾提交当基准，退回合并提交（tools60，审查 37 P2-3）
                 trailer += '\n手补: ' + '、'.join(hand)
+                if snapshot:   # 手补的代码随快照提交在云端测过：云端选测.py 的基准链可以认这个收尾提交（BK2）
+                    trailer += '\n手补已验: 快照 ' + snapshot[:9]
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
+        if snapshot:
+            adopt_cloud_result(root, snapshot)
     folder = state_file.parent
     pending = load_batch(folder)
     if state.get('batch'):

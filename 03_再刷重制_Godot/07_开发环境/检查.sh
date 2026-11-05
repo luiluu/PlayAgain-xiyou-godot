@@ -150,12 +150,17 @@ elif (( CLOUD )); then
   # 云端选测：推 HEAD 到 ci/<分支> 触发 GitHub Actions，等结果（汇总里有失败场景）；只测已提交的 HEAD
   print "  （--cloud：选中的 ${#SEL_SCENES} 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）"
   cloud_head=$(git -C "$ROOT" rev-parse HEAD)
-  cloud_run=(python3 "$CLOUD_SCRIPT" run); (( ${CHECK_CLOUD_NO_UPLOAD:-0} )) && cloud_run+=(--no-upload)
-  # 工作区有未提交的手改（合并收尾的 --also、版本号等）：云端只认提交，所以把工作区做成临时快照提交（父为 HEAD，不动分支、不动索引），
+  cloud_run=(python3 "$CLOUD_SCRIPT" run)
+  # 补跑事件状态探针.py 重量了 event_states.json 会留标记：产物变了，不管合并工具怎么设 CHECK_CLOUD_NO_UPLOAD 都要重传（BK2）
+  upload_mark="$(git -C "$ROOT" rev-parse --path-format=absolute --git-dir)/xiyou_cloud_upload_needed"
+  if [[ -e $upload_mark ]]; then print "  （--cloud：转换产物比云端新（补跑过事件状态探针），重传产物）"
+  elif (( ${CHECK_CLOUD_NO_UPLOAD:-0} )); then cloud_run+=(--no-upload); fi
+  # 工作区有未提交的手改（合并收尾的 --also、版本号等；只收已跟踪的，新文件要先 git add -N，未跟踪文件不进快照）：云端只认提交，所以把工作区做成临时快照提交（父为 HEAD，不动分支、不动索引），
   # 推到 ci/<分支> 测它，wait 读它的结果；通过后收尾提交的内容与它一致（BK，总装二十五手工做过）
+  snap_note="$(git -C "$ROOT" rev-parse --path-format=absolute --git-dir)/xiyou_cloud_snapshot"; rm -f "$snap_note"
   snap_idx=$(mktemp "${TMPDIR:-/tmp}/xiyou_snap_idx.XXXXXX")
   cp "$(git -C "$ROOT" rev-parse --path-format=absolute --git-path index)" "$snap_idx" 2>/dev/null
-  snap_tree=$(cd "$ROOT" && GIT_INDEX_FILE=$snap_idx git add -A >/dev/null 2>&1 && GIT_INDEX_FILE=$snap_idx git write-tree 2>/dev/null)
+  snap_tree=$(cd "$ROOT" && GIT_INDEX_FILE=$snap_idx git add -u >/dev/null 2>&1 && GIT_INDEX_FILE=$snap_idx git write-tree 2>/dev/null)
   rm -f "$snap_idx"
   if [[ -n $snap_tree && $snap_tree != $(git -C "$ROOT" rev-parse 'HEAD^{tree}') ]]; then
     snap_head=$(cd "$ROOT" && GIT_AUTHOR_NAME=ci-snapshot GIT_AUTHOR_EMAIL=ci@localhost GIT_COMMITTER_NAME=ci-snapshot GIT_COMMITTER_EMAIL=ci@localhost \
@@ -163,6 +168,7 @@ elif (( CLOUD )); then
     if [[ -n $snap_head ]]; then
       print "  （--cloud：工作区有未提交改动，做成临时快照提交 $snap_head[1,9] 推到云端测，不进 main）"
       cloud_head=$snap_head
+      print -r -- "$snap_head" > "$snap_note"   # 合并工具收尾提交后据它把云端结果过户给收尾提交（云端选测.py adopt，BK2）
       cloud_run+=(--commit "$snap_head")
     fi
   fi
@@ -171,6 +177,7 @@ elif (( CLOUD )); then
     bad "云端选测触发失败（网络、权限或额度）；去掉 --cloud 改用本机跑"
   elif python3 "$CLOUD_SCRIPT" wait "$cloud_head" --mode affected --timeout ${CHECK_CLOUD_TIMEOUT:-2700}; then
     ok "云端选测通过（$cloud_head[1,9]）"
+    rm -f "$upload_mark"
   else
     cloud_rc=$?
     if (( cloud_rc == 124 )); then bad "云端选测超时没有结果（$cloud_head[1,9]）；看 GitHub Actions「云端选测」，或去掉 --cloud 改用本机跑"
