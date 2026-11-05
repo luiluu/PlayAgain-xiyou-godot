@@ -6,6 +6,8 @@ extends Node
 ## 用例页不是按表状态自然选中的页时（更高页恰好也满足），强制用该页执行，并在输出里记 forced（页选取另由 xiyou_event_compare 逐页对照）。
 ## 落点按 MVInterpreter.TRANSFER_FIX 的优化修正（如 O-062 三十三层 (24,12)→(24,13)）。
 ## 已知不走的入口写在表的 skip（原因见交付单 cc_wukong-accept3）。part 分片（并行测试 300 秒上限）。
+## accept4：用例另含「入口两边都没覆盖」的每一条（不只每个目标图一条）；random 字段＝分歧读的变量在事件里先被随机赋值，
+## 本例把 MVInterpreter.fixed_random 固定成它（同参照固定 Math.random）；dir＝分歧要玩家朝向；同图移动断言玩家落到目标坐标。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const CASES := "res://tests/fixtures/unlock_chain_cases.json"
 const PARTS := 4
@@ -88,13 +90,13 @@ func _apply(s: XState, c: Dictionary) -> void:
 
 
 func _case(c: Dictionary) -> void:
-	var tag := "%s_to%d" % [c.id, int(c.dest)]
+	var tag := "%s_to%d_%d_%d" % [c.id, int(c.dest), int(c.xy[0]), int(c.xy[1])]
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
 	s.map_id = int(c.src_map)
 	s.x = int(c.pos[0])
 	s.y = int(c.pos[1])
-	s.direction = 2
+	s.direction = int(c.get("dir", 2))
 	_apply(s, c)
 	_party()
 	get_tree().change_scene_to_file(MAP_SCENE)
@@ -115,6 +117,10 @@ func _case(c: Dictionary) -> void:
 		e.page_index = int(c.page)
 		e.page = e.data.pages[int(c.page)]
 	XMessageBox.auto_answers = c.answers.duplicate()
+	MVInterpreter.fixed_random = float(c.get("random", -1.0))
+	var same_map := int(c.dest) == int(c.src_map)
+	var want: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [int(c.src_map), int(c.ev), int(c.dest), int(c.xy[0]), int(c.xy[1])],
+		Vector2i(int(c.xy[0]), int(c.xy[1])))
 	var st := {"done": false}
 	(func():
 		await map.run_event(e)
@@ -128,12 +134,11 @@ func _case(c: Dictionary) -> void:
 				if en.is_alive():
 					en.hp = 0.0
 					en.add_state(1)
-		if _map_ready(int(c.dest)) and (int(c.dest) != int(c.src_map)):
+		if _map_ready(int(c.dest)) and (not same_map or _scene().player.grid == want):
 			landed = _scene().player.grid
 		await get_tree().process_frame
+	MVInterpreter.fixed_random = -1.0
 	# 落点修正（O-062 等，MVInterpreter.TRANSFER_FIX）照游戏用的表
-	var want: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [int(c.src_map), int(c.ev), int(c.dest), int(c.xy[0]), int(c.xy[1])],
-		Vector2i(int(c.xy[0]), int(c.xy[1])))
 	_check(tag + "_landed", landed == want,
 		{"want": c.xy, "got": landed, "scene_map": _scene().get("map_id"), "cond": c.cond})
 	# 目标图的自动事件（过场）跑完再换下一例，免得旧解释器挂在已释放的场景上
