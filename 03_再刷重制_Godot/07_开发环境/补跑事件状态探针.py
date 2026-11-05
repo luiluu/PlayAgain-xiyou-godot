@@ -24,7 +24,11 @@ def needs(force):
     if force or not OUT.exists():
         return True
     stamp = OUT.stat().st_mtime
-    deps = [ORACLE / 'event_presets.json', ORACLE / 'event_state_probe.cjs', GEN / 'oracle/events.json']
+    # 预设在 03_转换工具/ 下（event_state_probe.cjs 读 ../event_presets.json）；原先写成 mv_oracle/ 下，找不到就永远不补跑（八戒 events8 发现）
+    deps = [TOOLS / 'event_presets.json', ORACLE / 'event_state_probe.cjs', GEN / 'oracle/events.json']
+    missing = [str(p.relative_to(ENV.parent)) for p in deps if not p.exists()]
+    if missing:
+        print('⚠ 判断要不要补跑时找不到：' + '、'.join(missing))
     return any(p.exists() and p.stat().st_mtime > stamp for p in deps)
 
 
