@@ -192,7 +192,7 @@ class ProbeCache:
         self.pending = {}
         self.details, self.misses, self.reuse = {}, {}, {}
         self.source_sha = digest_files(files(self.app), self.app)
-        helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in ('.sandbox', 'node_modules'))
+        helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in ('.sandbox', 'node_modules', 'real'))  # real/：无头 Chrome 量具，探针不 require，不进公共键
                    and p.suffix in ('.cjs', '.js', '.json') and not p.name.endswith('_probe.cjs')]
         self.helpers = helpers
         runtime = digest_files(files(self.oracle / 'node_modules'), self.oracle)

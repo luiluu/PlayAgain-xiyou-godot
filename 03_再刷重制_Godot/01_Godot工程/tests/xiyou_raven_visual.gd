@@ -37,6 +37,7 @@ func _run() -> void:
 			_walk(c, false)
 	XBattlerSprite.RAVEN_MOTION_REMAP = true
 	MVCharacter.RAVEN_WALK_SLOW = true
+	_myth_alpha()
 	XState.current = null
 	finish()
 
@@ -80,6 +81,36 @@ func _walk(c: Dictionary, on: bool) -> void:
 		check("%s%s.speed%d" % ["" if on else "rollback.", c.id, int(r.speed)], got == want, [got, want])
 	for ch in [player, f1, f2, ev]:
 		ch.free()
+
+
+## ravenfx2：神话形态阵亡主图透明度 0.35（sprite_real 量具 raven_myth：myth_dead alpha 0.35，其余 1；普通形态阵亡 1）
+func _myth_alpha() -> void:
+	for on in [true, false]:
+		XBattlerSprite.RAVEN_MYTH_DEAD_ALPHA = on
+		for myth in [true, false]:
+			var s := XState.new_game(2, 1, [8])
+			XState.current = s
+			s.switches[2494] = true
+			s.add_actor(167)
+			s.raven["myth"] = 3 if myth else 0
+			var a := s.actor(167)
+			var sp := XBattlerSprite.new()
+			add_child(sp)
+			sp.setup(a, 1.0)
+			sp._process(1.0 / 60.0)
+			var alive := sp.sprite.modulate.a
+			a.add_new_state(1)
+			sp._process(1.0 / 60.0)
+			var dead := sp.sprite.modulate.a
+			a.remove_state(1)
+			a.hp = a.mhp
+			sp._process(1.0 / 60.0)
+			var back := sp.sprite.modulate.a
+			var want := [1.0, 0.35 if myth and on else 1.0, 1.0]
+			var got := [snappedf(alive, 0.001), snappedf(dead, 0.001), snappedf(back, 0.001)]
+			check("myth_alpha.%s.%s" % ["on" if on else "rollback", "myth" if myth else "normal"], range(3).all(func(i): return absf(got[i] - want[i]) < 0.001) and (sp._look_key.contains("RavenMythic") == myth), [got, want, sp._look_key])
+			sp.queue_free()
+	XBattlerSprite.RAVEN_MYTH_DEAD_ALPHA = true
 
 
 func finish() -> void:
