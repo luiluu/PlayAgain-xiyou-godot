@@ -23,6 +23,7 @@ const RANDOM_SEQUENCES := {"ce1344": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.
 var results := []
 var _saved_seal_fix := {}
 var _saved_floor12 := true
+var _saved_gate_fix := {}
 var out_dir := ""
 var update_baseline := false
 var only: Array = []
@@ -257,6 +258,8 @@ func _run() -> void:
 	_saved_seal_fix = MVInterpreter.seal_check_fix
 	# O-076 十二层守层者给 12 成就的修正（原版给 13）：只对 m23e1p0／m65e2p0 两例关（逐用例设，见循环里）；修正本身由成就专项核（events4 快照加了本局成就后咬出 m23e1p0／m65e2p0）
 	_saved_floor12 = XAchievement.FLOOR12_FIX
+	# O-120（B2）深渊之门已移除那支改走「离开」（removed_gate_fix）：对照原版语义，只对表里那几个事件的用例关（eventsreg2 的 m80e13p2#s1 用随机序列走到了它）
+	_saved_gate_fix = MVInterpreter.removed_gate_fix
 	var oracle = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("oracle_loaded", oracle is Dictionary and oracle.has("cases"))
 	if not (oracle is Dictionary):
@@ -321,6 +324,7 @@ func _run() -> void:
 		MVInterpreter.seal_check_fix = {} if door != null and _saved_seal_fix.has("%s:%s" % [door.get_string(1), door.get_string(2)]) else _saved_seal_fix
 		# O-076 只对两张十二层守层者的用例关（审查 42 P3-4），其余用例保持修正生效
 		XAchievement.FLOOR12_FIX = _saved_floor12 and not (str(c.id).begins_with("m23e1p0") or str(c.id).begins_with("m65e2p0"))
+		MVInterpreter.removed_gate_fix = {} if str(c.get("kind", "")) == "map" and _saved_gate_fix.has("%d:%d" % [int(c.get("map", 0)), int(c.get("event", 0))]) else _saved_gate_fix
 		var got := await _run_case(c, host)
 		var diffs := _compare(c, got)
 		var row := {"id": c.id, "ok": diffs.is_empty(), "diffs": diffs, "skipped": got.skipped, "aborted": got.aborted}
@@ -387,6 +391,7 @@ func _finish() -> void:
 	XGlobalVars._loaded_path = "<unloaded>"
 	MVInterpreter.seal_check_fix = _saved_seal_fix
 	XAchievement.FLOOR12_FIX = _saved_floor12
+	MVInterpreter.removed_gate_fix = _saved_gate_fix
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0
 	MVInterpreter.fixed_random = -1.0
@@ -441,8 +446,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	MVInterpreter.fixed_random = 0.5
 	MVInterpreter.random_sequence = RANDOM_SEQUENCES.get(str(c.id), [])  # 同参照 event_probe 的 RANDOM_SEQUENCES
 	var preset: Dictionary = c.get("preset", {})
-	if preset.has("random"):
-		MVInterpreter.random_sequence = (preset.random as Array).map(func(x): return float(x))  # 预设 random（eventsreg2），同参照
+	if preset.has("random_seq"):
+		MVInterpreter.random_sequence = (preset.random_seq as Array).map(func(x): return float(x))  # 预设 random_seq（eventsreg2，键名同 accept5），同参照
 	host.answers = (preset.get("answers", []) as Array).duplicate()
 	MVInterpreter._sequence_at = 0
 	MVInterpreter.steps = 0

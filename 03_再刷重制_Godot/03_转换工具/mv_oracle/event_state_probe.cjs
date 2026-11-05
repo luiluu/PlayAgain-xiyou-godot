@@ -257,8 +257,9 @@ function runCase(c) {
     if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
   }
   // 序列只给事件指令 122（变量操作·随机数）用，战斗等别处照旧 0.5（Godot 侧也只有事件随机数走序列）
-  // 预设 random（eventsreg2）：这一例 122 随机数按这串循环取，覆盖 RANDOM_SEQUENCES；Godot 侧同（xiyou_event_compare 取 preset.random）
-  const seq = (c.preset && c.preset.random) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
+  // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）：这一例 122 随机数按这串循环取，覆盖 RANDOM_SEQUENCES；
+  // Godot 侧同（xiyou_event_compare 取 preset.random_seq 给 MVInterpreter.random_sequence）
+  const seq = (c.preset && c.preset.random_seq) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
   if (seq) {
     let at = 0;
     w.Game_Interpreter.prototype.command122 = function () {
