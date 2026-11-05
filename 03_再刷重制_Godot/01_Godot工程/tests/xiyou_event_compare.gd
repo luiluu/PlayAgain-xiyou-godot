@@ -71,6 +71,8 @@ class EventHost:
 	func transfer(id: int, x: int, y: int, d: int) -> void:
 		trace.append({"t": "transfer", "map": id, "x": x, "y": y, "d": d})
 		var s := XState.current
+		if id != s.map_id:
+			s.battleback = []  # 同 map_scene：换图清 283 的设定（MV Game_Map.setup 重设）
 		s.map_id = id
 		s.x = x
 		s.y = y
@@ -144,6 +146,10 @@ class EventHost:
 			player.grid = Vector2i(XState.current.x, XState.current.y)
 			return player
 		return null
+
+	## 指令 283：同 map_scene.change_battleback，写 XState.battleback（新观察面记它）
+	func change_battleback(name1: String, name2: String) -> void:
+		XState.current.battleback = [name1, name2]
 
 	func show_animation(_ch, _anim_id: int):
 		return null
@@ -518,7 +524,18 @@ func _snap(s: XState, watch: Array = []) -> Dictionary:
 		"followers": s.followers_visible, "actorName": s.actor_name, "actorMaxLevel": s.actor_max_level, "flags": flags,
 		"designations": _true_keys(XConfig.designations()), "achievements": _true_keys(s.achievements, true),
 		"screen": s.screen.target_snapshot(),
-		"battleback": [str(s.battleback[0]), str(s.battleback[1])] if s.battleback.size() == 2 else ["", ""]}
+		"battleback": _effective_battleback(s)}
+
+
+## MV 的 $gameMap._battleback1Name／2Name：283 设过用设的；否则（Game_Map.setupBattleback）地图指定了战斗背景用地图的，没指定为空。
+## Godot 把「283 的覆盖」与「地图指定」分开存（开战时才合，map_scene.battle_map），这里按同样的优先级合成再比
+func _effective_battleback(s: XState) -> Array:
+	if s.battleback.size() == 2:
+		return [str(s.battleback[0]), str(s.battleback[1])]
+	var m := XDB.map(s.map_id)
+	if bool(m.get("specifyBattleback", false)):
+		return [str(m.get("battleback1Name", "")), str(m.get("battleback2Name", ""))]
+	return ["", ""]
 
 
 ## 指令 317 累计的能力加成（八项；没改过＝全 0，同参照 _paramPlus 初值）
