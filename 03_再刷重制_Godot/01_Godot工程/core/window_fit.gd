@@ -18,11 +18,25 @@ static func apply(window: Window) -> void:
 	window.size = rect.size
 	window.position = rect.position
 
-## F11 或 ⌘Enter 切换全屏。⌘Enter 同时也匹配 ui_accept（Godot 动作匹配不看多余的修饰键），
+## 全屏组合键的修饰键按平台：macOS 是 ⌘，Windows／其它是 Alt（各平台惯例）。static var 让测试能切到另一平台的写法。
+static var fullscreen_uses_meta := OS.has_feature("macos")
+
+## 当前平台全屏组合键的修饰键（KEY_META 或 KEY_ALT）。
+static func fullscreen_modifier_key() -> Key:
+	return KEY_META if fullscreen_uses_meta else KEY_ALT
+
+## 全屏组合键的修饰键是否按着（地图轮询确定键时排除用）。
+static func fullscreen_modifier_held() -> bool:
+	return Input.is_key_pressed(fullscreen_modifier_key())
+
+## F11，或 ⌘Enter（macOS）／Alt+Enter（其它平台）切换全屏。组合键同时也匹配 ui_accept（Godot 动作匹配不看多余的修饰键），
 ## 轮询 ui_accept 或在 _input 里处理确定键的地方要先排除它，否则会同时触发调查/翻页。
 static func is_fullscreen_shortcut(event: InputEvent) -> bool:
-	return event is InputEventKey and event.pressed and not event.echo \
-		and (event.keycode == KEY_F11 or (event.keycode in [KEY_ENTER, KEY_KP_ENTER] and event.meta_pressed))
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return false
+	var key := event as InputEventKey
+	var modifier := key.meta_pressed if fullscreen_uses_meta else key.alt_pressed
+	return key.keycode == KEY_F11 or (key.keycode in [KEY_ENTER, KEY_KP_ENTER] and modifier)
 
 static func should_apply(args: PackedStringArray) -> bool:
 	for arg in args:

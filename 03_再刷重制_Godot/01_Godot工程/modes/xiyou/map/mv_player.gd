@@ -72,8 +72,8 @@ func update_character() -> void:
 			if front_cell(d) == touch_target and vehicle_speed <= 0:
 				action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
-	elif Input.is_action_just_pressed("ui_accept") and not Input.is_key_pressed(KEY_META):
-		# ⌘Enter 是切全屏（GameApp），轮询不受 set_input_as_handled 影响，这里排除
+	elif Input.is_action_just_pressed("ui_accept") and not WindowFit.fullscreen_modifier_held():
+		# ⌘Enter（macOS）／Alt+Enter（其它平台）是切全屏（GameApp），轮询不受 set_input_as_handled 影响，这里排除
 		action_pressed.emit()
 
 

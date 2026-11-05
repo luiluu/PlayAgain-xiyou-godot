@@ -574,6 +574,21 @@ def godot_version():
     return json.loads((HERE / '环境登记.json').read_text())['version']
 
 
+DOWNLOAD_DOWN = 'GitHub 下载暂不可用（下载服务临时故障，不是代码问题），稍后重跑即可：%s'
+
+
+def download(url, dest=None):
+    """curl 下载：404／5xx 等一律重试 5 次，间隔 XIYOU_DL_DELAY 秒（默认 10）；都失败就报清楚，不抛一串 curl 退出码。
+    dest 给了就落盘、返回 None；没给就返回内容字节。"""
+    cmd = ['curl', '-fsSL', '--retry', '5', '--retry-all-errors', '--retry-delay', os.environ.get('XIYOU_DL_DELAY', '10')]
+    if dest:
+        cmd += ['-o', str(dest)]
+    r = subprocess.run(cmd + [url], stdout=None if dest else subprocess.PIPE)
+    if r.returncode:
+        raise SystemExit(DOWNLOAD_DOWN % url)
+    return r.stdout
+
+
 def cmd_godot(a):
     """与 云端准备.sh 相同：官方 Linux 版，按官方 SHA512 清单校验。"""
     ver = godot_version()
@@ -583,8 +598,8 @@ def cmd_godot(a):
         gdir.mkdir(parents=True, exist_ok=True)
         base = 'https://github.com/godotengine/godot-builds/releases/download/%s-stable/' % ver
         z = 'Godot_v%s-stable_linux.x86_64.zip' % ver
-        subprocess.run(['curl', '-fsSL', '--retry', '3', '-o', str(gdir / z), base + z], check=True)
-        sums = subprocess.run(['curl', '-fsSL', '--retry', '3', base + 'SHA512-SUMS.txt'], check=True, capture_output=True, text=True).stdout
+        download(base + z, gdir / z)
+        sums = download(base + 'SHA512-SUMS.txt').decode()
         want = next(l.split()[0] for l in sums.splitlines() if l.endswith(' ' + z))
         if hashlib.sha512((gdir / z).read_bytes()).hexdigest() != want:
             raise RuntimeError('Godot 下载包 SHA512 不符')

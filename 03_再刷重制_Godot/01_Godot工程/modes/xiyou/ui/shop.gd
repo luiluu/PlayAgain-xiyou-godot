@@ -16,6 +16,10 @@ extends Control
 ## - 限购（KMS_ShopInventory，XShopStock）：stock_group 非空时，售完的商品画名字＋右侧「售完」（宽 96、白字、按不可买半透明）且不可买，
 ##   数量上限再与库存取小；状态窗第 2 行画「库存 剩余/上限」（插件参数名不符，按默认只画在状态窗，数量窗不画）。
 ##   装备商品原版这一行与「<< 队员 >>」重叠，改画在能力表下方（O-043，STOCK_GEAR_BELOW 设 false 回到原版）。
+## - 系统音（ui14，原来整页无声）：照 Window_Selectable／Scene_Shop——换行光标音、确定音、不可选蜂鸣、取消音；
+##   数量窗确定不响确定音（Window_ShopNumber.playOkSound 为空）、改为商店音（onNumberOk 的 playShop）；
+##   数量窗取消响两次取消音（processCancel 一次、onNumberCancel 又一次）；数量变了才响光标音；
+##   装备商品左右换队员响光标音（YEP Window_ShopStatus.updateParamSwitch，只对装备）。
 
 signal closed
 
@@ -554,12 +558,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _mode == "number":
 			_change_number(1)
 		else:
-			_actor_index = (_actor_index + 1) % XState.current.members().size()
+			_switch_actor(1)
 	elif event.is_action_pressed("ui_left", true):
 		if _mode == "number":
 			_change_number(-1)
 		else:
-			_actor_index = (_actor_index - 1 + XState.current.members().size()) % XState.current.members().size()
+			_switch_actor(-1)
 	elif XMenu.page_dir(event) != 0 and _mode in ["buy", "sell", "category"]:
 		_page(XMenu.page_dir(event))
 	else:
@@ -569,7 +573,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		_refresh()
 
 
+## YEP Window_ShopStatus.updateParamSwitch：装备商品时左右换队员并响光标音（物品不响）
+func _switch_actor(d: int) -> void:
+	var n := XState.current.members().size()
+	_actor_index = (_actor_index + d + n) % n
+	var rec := _current_rec()
+	if not rec.is_empty() and not rec.has("itypeId"):
+		XSound.system(0)
+
+
+## 同一窗口里光标换了行才响光标音（Window_Selectable.processCursorMove／onTouch）
+var _clicked_ok := false
+
+
+func _cursor_state() -> Array:
+	return [_mode, _cmd, _cat, _buy_index, _sell_index, _onekey]
+
+
+func _cursor_se(before: Array) -> void:
+	if before[0] == _mode and before != _cursor_state():
+		XSound.system(0)
+
+
 func _move(d: int, wrap: bool) -> void:
+	var before := _cursor_state()
+	_move_inner(d, wrap)
+	_cursor_se(before)
+
+
+func _move_inner(d: int, wrap: bool) -> void:
 	match _mode:
 		"command":
 			_cmd = XMenu._move(_cmd, d, COMMANDS.size(), wrap)
@@ -594,6 +626,12 @@ func _move(d: int, wrap: bool) -> void:
 
 ## 通用翻页（Window_Selectable.cursorPagedown／cursorPageup）：买入、出售、分类三个列表
 func _page(d: int) -> void:
+	var before := _cursor_state()
+	_page_inner(d)
+	_cursor_se(before)
+
+
+func _page_inner(d: int) -> void:
 	match _mode:
 		"buy":
 			var r := XMenu.page(_buy_top, _buy_index, _buy_data().size(), _list_rows(), d)
@@ -622,7 +660,10 @@ func _wheel(d: int) -> void:
 
 ## MV Window_ShopNumber：上下 ±10、左右 ±1，范围 1～最大可买/可卖数
 func _change_number(d: int) -> void:
+	var before := _number
 	_number = clampi(_number + d, 1, maxi(1, _max_number()))
+	if _number != before:
+		XSound.system(0)
 
 
 func _max_number() -> int:
@@ -649,7 +690,9 @@ func _ok_inner() -> void:
 	match _mode:
 		"command":
 			if not _cmd_enabled(_cmd):
+				XSound.system(3)
 				return
+			XSound.system(1)
 			match COMMANDS[_cmd][1]:
 				"buy":
 					_mode = "buy"
@@ -662,18 +705,25 @@ func _ok_inner() -> void:
 				"cancel":
 					closed.emit()
 		"category":
+			XSound.system(1)
 			_mode = "sell"
 			_sell_index = 0
 			_sell_top = 0
 		"buy":
 			var d := _buy_data()
-			if _buy_index < d.size() and _buy_enabled(d[_buy_index]) and _max_number() > 0:
+			if not (_buy_index < d.size() and _buy_enabled(d[_buy_index]) and _max_number() > 0):
+				XSound.system(3)
+			else:
+				XSound.system(1)
 				_number_from = "buy"
 				_number = 1
 				_mode = "number"
 		"sell":
 			var d := _sell_data()
-			if _sell_index < d.size() and XItemMarks.can_sell(d[_sell_index].rec):
+			if not (_sell_index < d.size() and XItemMarks.can_sell(d[_sell_index].rec)):
+				XSound.system(3)
+			else:
+				XSound.system(1)
 				# Star_ShopOnekey onSellOk：名字带「[锁定]」的不能卖
 				if str(d[_sell_index].rec.get("name", "")).contains(XItemMarks.LOCK):
 					XToast.show_text("已锁定 无法出售", true)
@@ -684,6 +734,7 @@ func _ok_inner() -> void:
 		"number":
 			_trade()
 		"onekey":
+			XSound.system(1)
 			var rows := XItemMarks.onekey_grades()
 			XItemMarks.onekey_sell(s, int(rows[_onekey].grade))
 			_mode = "command"
@@ -695,6 +746,8 @@ func _trade() -> void:
 	if _number_from == "buy":
 		if _number < 1 or _number > _max_buy(e):
 			return
+	XSound.system(21)   # Scene_Shop.onNumberOk：SoundManager.playShop（数量窗本身不响确定音）
+	if _number_from == "buy":
 		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
 		XItemMarks.buy(s, e.item, int(e.price), _number)
 		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
@@ -714,6 +767,9 @@ func _cancel() -> void:
 
 
 func _cancel_inner() -> void:
+	XSound.system(2)
+	if _mode == "number":
+		XSound.system(2)   # onNumberCancel 再响一次
 	match _mode:
 		"command":
 			closed.emit()
@@ -741,6 +797,8 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
+	var before := _cursor_state()
+	_clicked_ok = false
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	if _mode == "onekey":
@@ -748,40 +806,47 @@ func _gui_input(event: InputEvent) -> void:
 		var i := floori((p - r.position - pad).y / LH)
 		if r.has_point(p) and i >= 0 and i < XItemMarks.onekey_grades().size():
 			if i == _onekey:
-				_ok()
+				_click_ok()
 			else:
 				_onekey = i
 	elif CMD_RECT.has_point(p) and _mode in ["command", "category"]:
 		var i := floori((p - CMD_RECT.position - pad).y / LH)
 		if _mode == "command" and i >= 0 and i < COMMANDS.size():
 			if i == _cmd:
-				_ok()
+				_click_ok()
 			else:
 				_cmd = i
 		elif _mode == "category" and i + _cat_top >= 0 and i + _cat_top < CATEGORIES.size():
 			if i + _cat_top == _cat:
-				_ok()
+				_click_ok()
 			else:
 				_cat = i + _cat_top
 	elif LIST_RECT.has_point(p):
 		var i := floori((p - LIST_RECT.position - pad).y / LH)
 		if _mode == "buy" and i >= 0 and i < _list_rows() and i + _buy_top < _buy_data().size():
 			if i + _buy_top == _buy_index:
-				_ok()
+				_click_ok()
 			else:
 				_buy_index = i + _buy_top
 		elif _mode == "sell" and i + _sell_top < _sell_data().size() and i >= 0:
 			if i + _sell_top == _sell_index:
-				_ok()
+				_click_ok()
 			else:
 				_sell_index = i + _sell_top
 		elif _mode == "number":
-			_ok()
+			_click_ok()
 	elif STATUS_RECT.has_point(p):
 		var x := (p - STATUS_RECT.position - pad).x
-		var n := XState.current.members().size()
 		if x < 60:
-			_actor_index = (_actor_index - 1 + n) % n
+			_switch_actor(-1)
 		elif x > STATUS_RECT.size.x - 88:
-			_actor_index = (_actor_index + 1) % n
+			_switch_actor(1)
+	if not _clicked_ok:
+		_cursor_se(before)
 	_refresh()
+
+
+## 点已选中的行＝确定（响确定音，不再算光标移动）
+func _click_ok() -> void:
+	_clicked_ok = true
+	_ok()

@@ -88,6 +88,11 @@ var _cam_base := {}
 var _cam_applied := false
 ## 正在演出的行动序列（它自己逐帧推进镜头）
 var seq_player: XSequencePlayer
+## 开战转场（XBattleTransition，battlefx1）：地图在转场开着时设 fade_in，开战 24 帧黑幕淡入；
+## prestarted_bgm 是地图在遇敌演出第 30 帧放起的战斗 BGM（节点归地图，战斗结束由地图收掉）
+var fade_in := false
+var prestarted_bgm: AudioStreamPlayer = null
+var _fade: XSceneFade
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
 ## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
@@ -150,21 +155,42 @@ func _ready() -> void:
 	for visual in get_children():
 		if visual != ui and visual != record and (visual is Control or visual is Node2D):
 			_cam_base[visual] = visual.position
-	bgm = AudioStreamPlayer.new()
-	XAudio.bind(bgm, "BGM")
-	add_child(bgm)
 	se = AudioStreamPlayer.new()
 	XAudio.bind(se, "SE")
 	add_child(se)
+	if prestarted_bgm != null:
+		bgm = prestarted_bgm   # 开战转场第 30 帧已由地图放起（Scene_Map.updateEncounterEffect → BattleManager.playBattleBgm），接着放
+	else:
+		bgm = new_bgm_player(battle_music())
+		add_child(bgm)
+		if bgm.stream != null:
+			bgm.play()
+	# Scene_Battle.start → startFadeIn(fadeSpeed)：黑幕盖在所有东西（含窗口）之上，淡入期间战斗流程等着（isBusy）
+	if fade_in:
+		_fade = XSceneFade.new()
+		_fade.z_index = 100
+		add_child(_fade)
+		_fade.start_in(XBattleTransition.FADE_FRAMES)
+	_main.call_deferred()
+
+
+## BattleManager.playBattleBgm 放的 $gameSystem.battleBgm()（指令 132 深渊封印战斗前后换歌时用换的）
+static func battle_music() -> Dictionary:
 	var music: Dictionary = XDB.system().battleBgm
 	if XState.current and not XState.current.battle_bgm.is_empty():
-		music = XState.current.battle_bgm    # 指令 132（深渊封印战斗前后换歌）
-	var p := XDB.audio_path("bgm", str(music.name))
+		music = XState.current.battle_bgm
+	return music
+
+
+## 战斗 BGM 播放器（还没进树、没开始放；stream 为空表示没有这首）
+static func new_bgm_player(music: Dictionary) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	XAudio.bind(player, "BGM")
+	var p := XDB.audio_path("bgm", str(music.get("name", "")))
 	if p != "":
-		bgm.stream = load(p)
-		bgm.volume_db = linear_to_db(float(music.volume) / 100.0)
-		bgm.play()
-	_main.call_deferred()
+		player.stream = load(p)
+		player.volume_db = linear_to_db(float(music.get("volume", 90)) / 100.0)
+	return player
 
 
 # ---- 布局 ----
@@ -534,6 +560,9 @@ func update_gauges() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if _fade != null and _fade.busy():
+		_fade.step()
+		XBattleTransition.note({"phase": "in", "fade": _fade.opacity})
 	_update_state_animations()
 	if seq_player == null:
 		update_gauges()      # 行动序列演出中由 XSequencePlayer 每帧在精灵之后更新
@@ -591,6 +620,9 @@ func _main() -> void:
 		for a in logic.actors:
 			var sp: XBattlerSprite = sprites[a]
 			sp.position = sp.home + Vector2(300.0 * (entry_frames - f) / entry_frames, 0)
+		await get_tree().physics_frame
+	# 开战淡入没走完时战斗流程照原版等着（Scene_Battle.update：isBusy 时不 updateBattleProcess）；入场移动和淡入同时走
+	while _fade != null and _fade.busy():
 		await get_tree().physics_frame
 	# BattleManager.displayStartMessages：先制「%1先发制人！」／偷袭「%1被偷袭了！」（YEP Show Pre-Emptive／Surprise Text 开；
 	# 快速战斗的 XdRs_HangUp 包装跳过开场文字）。原版文字与入场移动同时进行，这里入场后再显示

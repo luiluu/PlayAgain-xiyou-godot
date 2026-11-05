@@ -67,8 +67,20 @@ func _run() -> void:
 	_check("unknown_mode_refused", not GameApp.enter_mode("missing"))
 	_check("menu_two_columns_wide", _find("XiyouEntry").get_parent().get_parent().columns == 2)
 	_check("menu_keyboard_focus", get_viewport().gui_get_focus_owner() == xiyou)
+	# 全屏组合键按平台：macOS ⌘Enter，Windows／其它 Alt+Enter；两种写法都在本机测（不看测试机是什么平台）。
+	var platform_meta := WindowFit.fullscreen_uses_meta
+	_check("fullscreen_platform_default", platform_meta == OS.has_feature("macos"))
+	var alt_enter := _key(KEY_ENTER)
+	alt_enter.alt_pressed = true
+	WindowFit.fullscreen_uses_meta = true
 	_check("fullscreen_shortcut", WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true)) and WindowFit.is_fullscreen_shortcut(_key(KEY_F11))
-		and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER)) and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true, false)))
+		and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER)) and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true, false))
+		and not WindowFit.is_fullscreen_shortcut(alt_enter) and WindowFit.fullscreen_modifier_key() == KEY_META)
+	WindowFit.fullscreen_uses_meta = false
+	_check("fullscreen_shortcut_windows", WindowFit.is_fullscreen_shortcut(alt_enter) and WindowFit.is_fullscreen_shortcut(_key(KEY_F11))
+		and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER, true)) and not WindowFit.is_fullscreen_shortcut(_key(KEY_ENTER))
+		and WindowFit.fullscreen_modifier_key() == KEY_ALT)
+	WindowFit.fullscreen_uses_meta = platform_meta
 	await _shot("01_入口_宽屏.png")
 	# 只用键盘：回车进入有焦点的西游入口
 	Input.parse_input_event(_key(KEY_ENTER))
