@@ -13,9 +13,10 @@ extends RefCounted
 ##   其余 YEP 效果行（攻击属性、状态、技能、改名、改图标……）数据未用，未移植。卸下行照 reverseAugmentAutoLine 反转。
 ##   新宝珠加的特性带「类:阶」标记（_codexOrb），角色身上同类只保留阶位最高的 3 件装备的标记特性（capDrops，阶位同则装备栏靠前优先）。
 ## - <继承词缀>：原作宝珠把这段备注接到装备备注、标签并入 meta（正式 re 带 g 标志跨行续用 lastIndex，照搬：
-##   紧接一次命中的下一行从上次位置起找，通常落空）。其中 ShareLearnSkill（Star_SkilsShare 共享学技能）尚未移植，所以原作宝珠的技能效果暂不生效。
+##   紧接一次命中的下一行从上次位置起找，通常落空）。其中 ShareLearnSkill 由 XSkillShare 读实例备注（含接进来的这段），原作宝珠的技能效果照常生效。
 ## - 套装（activeSets）：全身装备集齐某套的 2／3 种组件（同类取最高阶）按最低阶位算，通用效果只取最高一套（全部伤害 ×(1+x%)）。
-## 未移植：神秘珠掉落、宝珠坊（鉴定、兑换、分解、暂存）、旧档孔位重排（Godot 存档从来没有旧孔位）、套装伤害钩子（见 general_set）。
+## 神秘珠掉落在 XDungeon.boss_reward，宝珠坊在本文件下半与 ui/orb_shop.gd，套装伤害钩子在 damage.gd（general_set）。
+## 未移植：旧档孔位重排（Godot 存档从来没有旧孔位）。
 
 const NONE := "none"
 const WEAPON_TYPE := "武器宝珠"
