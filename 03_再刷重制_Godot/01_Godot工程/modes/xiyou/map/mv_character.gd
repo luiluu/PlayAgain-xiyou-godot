@@ -359,6 +359,22 @@ func balloon_frame() -> int:
 func is_balloon_playing() -> bool:
 	return balloon_id > 0
 
+## Game_CharacterBase.animationWait：(9 − 速度) × 3。installNativeRavenRuntime 包装：队长（玩家）或跟随者是渡鸦 167 时
+## ×1.35 四舍五入（披风三帧变化大，放慢步行帧；不改移动速度和别人）。事件没有对应角色，照旧。
+## O-待定（交付单「优化登记草稿」渡鸦地图步行帧）：RAVEN_WALK_SLOW = false 回到移植前（渡鸦和别人一样快）。
+static var RAVEN_WALK_SLOW := true
+
+func animation_wait() -> int:
+	var wait := (9 - move_speed) * 3
+	var a = walking_actor()
+	if RAVEN_WALK_SLOW and a is XActor and int(a.actor_id) == XRaven.ACTOR:
+		return roundi(wait * 1.35)
+	return wait
+
+## 地图上「走着的角色」（Game_Follower.actor／玩家取队长）；事件没有
+func walking_actor():
+	return null
+
 func _update_animation() -> void:
 	if is_moving() and walk_anime or step_anime:
 		_anime_count += 1.5 if is_moving() else 1.0
@@ -368,7 +384,7 @@ func _update_animation() -> void:
 			pattern = int(_walk.stand)
 			_anime_count = 0
 			queue_redraw()
-	var wait := (9 - move_speed) * 3
+	var wait := animation_wait()
 	if _anime_count >= wait:
 		_anime_count = 0
 		_stop_count = 0

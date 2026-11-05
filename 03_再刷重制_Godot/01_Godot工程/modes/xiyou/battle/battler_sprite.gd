@@ -170,9 +170,21 @@ func _apply_scale() -> void:
 	sprite.scale = Vector2(body_scale * fx, body_scale)
 
 
+## installNativeRavenRuntime Sprite_Actor.startMotion 包装（最外层）：渡鸦 167 受击改播 evade、濒死改播 wait（战斗缩放后受击／濒死帧
+## 看着一直趴着）；只换显示，伤害与死亡判定不变。参照 raven_visual 探针：普通与神话形态都换（多帧插件给神话留的原生受击／濒死帧
+## 被这一层挡在外面，实际用不上）。O-待定（交付单「优化登记草稿」渡鸦受击濒死动作）：RAVEN_MOTION_REMAP = false 回到移植前。
+static var RAVEN_MOTION_REMAP := true
+const RAVEN_MOTIONS := {"damage": "evade", "dying": "wait"}
+
+func raven_motion(m: String) -> String:
+	if RAVEN_MOTION_REMAP and battler is XActor and int(battler.actor_id) == XRaven.ACTOR:
+		return str(RAVEN_MOTIONS.get(m, m))
+	return m
+
 func set_motion(m: String) -> void:
 	if m == "walk" and _guyu_planted():
 		m = "wait"
+	m = raven_motion(m)
 	motion = m
 	_frame = 0
 	_tick = 0
@@ -363,8 +375,9 @@ func _idle_motion() -> String:
 
 
 func refresh_idle() -> void:
-	if LOOP.has(motion) and motion != _idle_motion():
-		set_motion(_idle_motion())
+	var idle := raven_motion(_idle_motion())  # 渡鸦濒死照 wait，不然每次刷新都重设动作、帧卡在 0
+	if LOOP.has(motion) and motion != idle:
+		set_motion(idle)
 
 
 func _apply() -> void:
