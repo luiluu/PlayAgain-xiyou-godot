@@ -1,11 +1,11 @@
 # 交付：cc/bajie-events5c（接自 cc/bajie-events5b 头 68925f5d，已收尾）
 
 - 车道：A 内容·事件解释器／八戒（cc）。分支 cc/bajie-events5c。
-- 状态：**可合并**（云端选测结果见文末「验证」）
+- 状态：可合并
 
 ## 一、本分支做的（接 5b 之后）
 
-1. **接受单逐字段理由**：`04_验证/测量接受/cc_bajie-events5b_obs.json`（474 条）分布：战斗背景 461（events 407＋event_states 54）、能力加成 4、HP 2、HP＋MP 3、HP＋MP＋能力加成 2、HP＋能力加成 1、MP＋能力加成 1。hp／mp 只有 9 例，**不是初值差噪声**：观察面本来就是"快照差"，只有指令改了才进 delta，所以不用改成"只记指令改过的角色"；9 例都是 316 升级药（CE231、m4e64p0、m4e69p0）、死亡状态置 0（CE46）、转职（CE29）等。理由已按字段重写（战斗背景分"设成空串／设成某两张图"，能力加成写角色号，HP／MP 写成因）。
+1. **接受单逐字段理由**：`04_验证/测量接受/cc_bajie-events5c.json`（474 条）分布：战斗背景 461（events 407＋event_states 54）、能力加成 4、HP 2、HP＋MP 3、HP＋MP＋能力加成 2、HP＋能力加成 1、MP＋能力加成 1。hp／mp 只有 9 例，**不是初值差噪声**：观察面本来就是"快照差"，只有指令改了才进 delta，所以不用改成"只记指令改过的角色"；9 例都是 316 升级药（CE231、m4e64p0、m4e69p0）、死亡状态置 0（CE46）、转职（CE29）等。理由已按字段重写（战斗背景分"设成空串／设成某两张图"，能力加成写角色号，HP／MP 写成因）。
 2. **同步**：先 `--accept-additions` 退出码 2（474 条候选，与草稿一致），再 `--accept-changes obs.json` 重跑，退出码 0。**注意：`cc_bajie-events5b.json`（320 条）与 obs 有重复键，两份不能同时给**（"接受单有重复条目"）；本工作树的基线已含 5b 那 320 条，所以这里只给 obs。**main 合并时**参照落后，见下"合并提示"。
 3. **事件对照咬出的三类差异，逐个量原版再修**：
    - 战斗背景 Godot 全是 null（464 例）：① 测试宿主 `EventHost` 没有 `change_battleback`（283 被丢）→ 补上（同 map_scene）；② MV 的 `_battleback1Name` 在换图时由 Game_Map.setup 设成目标地图指定的背景，Godot 分开存（283 覆盖＋地图指定，开战才合）→ 测试快照改成 `_effective_battleback`（覆盖优先，否则地图 specifyBattleback，否则空），宿主 transfer 换图清覆盖（同 map_scene l.241）。**游戏本体行为没改**，只是测试口径对齐。
@@ -20,10 +20,11 @@
    - **P3④ FLOOR12_FIX**：对照不再整轮关，改成只对 `m23e1p0`／`m65e2p0`（含其变体）逐用例关；其余 6200 多例在修正生效下仍一致。
    - 同步提示：本分支 events.json／event_states.json 比主工作区新，同步基线改用主工作区版本，所以再次同步仍要给 obs 接受单（474 条，本轮新增 3 个变体由 `--accept-additions` 接受）。
 
-## 二、合并提示（给总装）
+## 二、合并提示（接受单已换，总装 11-05 退回后重做）
 
-- main 的 generated 参照落后于 events4：同步 main 时需要把本分支的 `cc_bajie-events5b.json`（320，刷 events4 落后）与 obs 的**合并单**给 `--accept-changes`。重复键（两份都有的）要合成"main 旧摘要 → 最终新摘要"一条；我没有 main 的参照产物，没法本地验证合并单，故未提供。若总装从 `--from-worktree cc/bajie-events5c` 克隆本分支产物则无此问题。
-- 本分支产物指纹已留（同步退出码 0 带 `--accept-additions`）。
+- 接受单只剩 `04_验证/测量接受/cc_bajie-events5c.json`（474 条，原 obs 单改名）；旧的 `cc_bajie-events5b.json`（320）已删。原因：两份有 97 个重复键（5b 的新摘要＝obs 的旧摘要）被同步拒收；main 此后已刷新过参照，在合并 main 后的本分支上 `--accept-additions` 看到的候选恰好就是这 474 条（既不含 5b 单独的 223 条，也无多余），旧摘要／新摘要逐条与单一致。
+- 验证：`git merge main`（aee4baed）后 `同步正式西游.py --accept-additions --accept-changes cc_bajie-events5c.json` 退出码 0（"新增用例、显式接受 474 条"，main 带来的 difficulty_enemy 新参照由 --accept-additions 接受）；`xiyou_event_compare` 全通过。
+- 状态保持可合并。
 
 ## 变更记录草稿
 
