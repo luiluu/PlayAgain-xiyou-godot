@@ -63,9 +63,33 @@
 - 之后 merge 集成分支 1eae323d（哪吒 newsrc2 新夹具），合并提交 62388d6c；冲突两处（item_use 计数注释、module_equipment_view.json）都取集成分支版（夹具改用哪吒重出的 cat_probe 版，内容同）。合并后本机重跑 module_hooks、xuan_battle、book_capacity_ui、item_use、xuan_auto、power_books、imported_balance 全过；actor_p0 只剩流萤号角 1 项；raven_reflect 夹具仍是 v0.28，reffloor 5 项待重出。
 - 云端：fdde72b1（合并前）跑选测 310 个场景（运行 42199064992）：72 个失败。对比改动前：66 个在集成分支各交付单的失败表里；另 6 个（actor_change、party_skills、qiyu、vsfx、weapon_unleash 和本机复查的 guyu_battle 等）本机把四个核心文件换回 31d0628a 版重跑，只有 actor_change、party_skills 是本单带出来的（已修，见表），qiyu（state2626 两项）、vsfx、weapon_unleash、guyu_battle（revive 两项）、life_steal、state_effects、honghuang_curse 改前改后一样挂，不归本单。
 
+## CW「角色技能」18 个场景（第三轮，基于集成分支 34d486ad）
+
+本机先跑一遍（新源产物，`--skip-generated-check`），日志样本如下。**已过 3 个**：attack_element、attack_query、cat（第二轮之后本来就过，不用改）。其余 15 个初步分类：
+
+| 场景 | 失败 | 样本 | 初判分类 |
+|---|---|---|---|
+| action_sequence | 1/117 | `conditions_translated ["user.hp < user.mhp * N.N"]` | 新写法没翻译（派单已知） |
+| actor_advanced | 1/33 | `rows_count 490` | 计数断言（数据量变化），先核来源再改 |
+| custom_params | 2/160 | `covers_aliases [atk,mat,maxhp,maxmp,def,mdf,luk,agi,tp]`、`converter_all_parsed [274,[]]` | 新源自定义参数写法多了别名 → 要翻译 |
+| element_ternary、formulas | 2+2 | `ternary_10020_* [null,null,…]`（10020 三元公式取值空、大数超 64 位） | 新写法没翻译／公式求值（派单已知） |
+| param_states、nanoha | 15、1 | 1768「杀敌加属性」：目标 hp0 的 conclude 原版 +10/+30，Godot 0（新源 1768 备注 271→381 字，改了条件）；param_states 另有 `source`（夹具旧） | 状态 JS 新写法没跟 |
+| state_effects | 1097/30129 | 集中在几个状态：2558（value×0.9→×0）234、2561（×0.91→×0.1）195、1451 108、1726 87、2583 12、effect.row 200、revive.row 16＋1725 不朽1 复活条件改写（`hp<=0 && random>0.6` → `(hp<=0‖isDead()) && random<0.6`）、hook.turn_start 1714≠1713、fix.tiers 1716/1711、hook.weapon、fix.2575 | 新源改了这些状态的 Custom Effect 备注，产物数据已是新的（generated/db/States.json 2558 已是 ×0），Godot 结果还是旧值 → 先查状态 JS 的翻译是从哪份缓存／手写表来的，多半一处根因 |
+| state_effects_tp | 2/544 | `inventory.costume_0 8`、`inventory.untranslated_46 77` | 未翻译清单计数（随新源变），要看是不是新写法 |
+| state_overlay | 1/18 | `overlay_states_84 85` | 计数（新源多一个叠加状态） |
+| life_steal | 5/341 | `source`；2570 急速冷却 `<DBHPLSteal:8%>`→`80%` 等 4 项 | 夹具旧（source）＋新源数据数值（重出夹具后再看） |
+| qiyu | 2/231 | `state2626.a164／a162` 原版不挂 2626 | 新源机制（琦玉相关），要查 |
+| skill_mastery | 2/306 | `table.count 6983≠6804`；10169、10457、10463…首项 0≠100000 | 新源熟练度表新增技能＋首项口径 |
+| guyu_battle | 2/1637 | `script.sub.6.revive.party` 原版复活到满血，Godot 0 | 新源复活口径（可能与 1725 同源） |
+| wtype | 1/17367 | `native_cache_source null` | 夹具来源旧 → 重出 |
+
+新机制（要实现的）明显超过 3 个：三元公式／大数、自定义参数别名、行动序列条件写法、1768 conclude、state_effects 一批状态备注、1725 复活、2626、熟练度表。按派单先报计划，**还没动代码**。
+
+建议顺序：① state_effects 先找翻译缓存根因（一处修好可能连带 param_states、nanoha、guyu_battle）；② 公式三元／大数（element_ternary、formulas）；③ action_sequence 条件、custom_params 别名；④ 计数类与夹具重出（actor_advanced、state_overlay、state_effects_tp、life_steal、wtype、param_states source）；⑤ qiyu 2626、skill_mastery 表。
+
 ## 接续
 
-- 本分支已推 GitHub；合回集成分支前看云端结果。
+- 第二轮已合进集成分支（34d486ad）。第三轮 CW 只做了分类，见上节；下一位从「建议顺序」①开始。日志样本在本机 scratchpad，不进库，重跑一遍 18 个场景即可拿到。
 
 ## 没做、留给下一单
 
