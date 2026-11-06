@@ -72,6 +72,40 @@
 
 - `xiyou_slice.json`、`event_presets.json`（m234 五条）、`事件空绿走不到.json`／`事件空绿基线.json`、`tests/event_compare_baseline.json`、`tests/xiyou_casino_batch.gd`（rift1 与临时目录）。
 
+## DG：深渊／不朽商人（协调 11-06 14:14 派，Kyo 定修）
+
+### 变更记录草稿
+
+#### 【cc·八戒·未经审查】深渊／不朽商人做活（MERCHANT29_FIX，可回退）
+
+- **根因**：新源 v0.62.12 有 33 条 355 的 parameters 存成了字符串：CE1439 末条 `if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);`，以及 32 张商人地图 NPC 第 2 页的 `CodexAbyssMerchant.openCurrent(this);`。YEP command355 只 eval 第一个字符，所以战利品点从没发过，商人也从没出现过（v0.62.13 正式 MOD 已修）。切片里有 30 张商人地图（159、216 不在切片）。
+- **开关**：`MVEvent.MERCHANT29_FIX`，默认 true，`MVInterpreter` 的 355 改取转换器留下的 `mvStringParameters`，整段执行；false 回到 v0.62.12 原版，只执行第一个字符、商人页不成立。登「O-待定·深渊商人」。原来的 `MERCHANT29_PAGE_GATE` 保留（false＝只看页面条件），`merchant29_present()` 改成看 `XAbyssMerchant.has_merchant`。
+- **运行时** `core/abyss_merchant.gd`（XAbyssMerchant，照 installAbyssMerchantRuntime v30）：
+  - 每轮记录：进商人路线地图时开新一轮（`Game_Map.setup` 包装，挂在 `XMapScene._load_map`，换图才算），记 sequence、claimed、appeared、used、seed。本轮记录存 `XState.flags._merchantRun29`，点数账存 `flags._codexMerchants29`，都随存档。
+  - 开战／结束：`battle_logic` 在洪荒那两处旁边，记本场地图、敌群合不合格、身份、本轮序号、胜负。
+  - `complete`：领 10 点。出现条件是 Math.random < 0.5，或该身份已经连续两次没出现（保底 3）。提示原文，出现了就打开商人。
+  - 身份：未知存在地图按来源地图分开，不朽通关用 `immortal:` 键，其余用 `abyss:` 键。
+  - `draw`：线性同余种子（本轮种子＋已抽次数×104729），先等概率选基础装备，再选本档特效（同库优先）。装备本身照 DreamX 生成：模板词缀表换成「这条前缀 100%」，随机数全用种子，预掷池这次从空开始、用完还原（`XGear.roll_fn` 新加的临时替换）。扣点，次数＋1，错误照原版文字。
+- **转换器**：`xiyou_export.py` 新加 `export_merchants`，把 `data/CodexMerchants.json` 原样导成 `db/CodexMerchants.json`（旧源没有这个文件就写空表）。
+- **界面** `ui/merchant29_page.gd`（XMerchant29Page，`XMapScene.open_merchant29`）：首页、完整装备池、三档抽取三页的行、标题与能否选照原版。**期一用 XYunChoicesWindow 单列加标题行**，原版左边列表、右边装备详情的两栏布局和详情翻页还没做。专武·特效吸取（openAbsorb，技能菜单里的入口）原来就没移植，不在本单。
+- **参照** `mv_oracle/merchant29_probe.cjs`（不进同步，手工复制为 `tests/fixtures/merchant29_oracle.json`，26 例）：在新源上把那几条参数改回数组（等于 v0.62.13 修法），用真实的 Game_Map.setup、BattleManager.setup／startBattle／endBattle，Math.random 按用例给定。
+- **测试** `tests/xiyou_merchant29`：65/65。覆盖 complete（各种胜负、敌群、换图、领两次、再进图、保底四轮、未知存在三种身份）、draw（三档、三个分组、生成的基础装备、名字、八项属性、特效、孔数、扣点、次数上限、点数不足、没有商人、档位无效）、装备池、回退开关、界面行。
+
+### 验证（DG）
+
+- 本机新源：`xiyou_merchant29` 65/65；`xiyou_floor_abyss037`、`floor_reach107`、`dungeon`、`floor_abyss211`、`floor_abyss174`、`honghuang_reward`、`determinism`、`equipment` 全过（9 个场景，并行测试）；event_compare `--only` CE1439 加 30 张商人地图的商人页，31/31。
+- `事件空绿扫描.py --check` 过；`语法检查.py` 0 问题；`回退开关覆盖.py`：MERCHANT29_FIX 有字面量回退测试。
+- 没测：真地图里打完 Boss 进 CE1439、商人出现后点开界面的整条流程（界面只测了行和标题文字，没截图）。
+
+### 待交叉核查（DG）
+
+- `abyss_merchant.gd`、`merchant29_page.gd`、`mv_event.gd`（MERCHANT29_FIX）、`mv_interpreter.gd`（355）、`mv_script.gd`（两句）、`map_scene.gd`（on_map_setup、open_merchant29）、`battle_logic.gd`（两处钩子）、`gear.gd`（roll_fn）、`xiyou_export.py`（export_merchants）、`merchant29_probe.cjs`、`tests/xiyou_merchant29.gd`、`优化登记.md`。
+
+### 给总装（DG）
+
+- 合并后集成树要重跑转换器（多出 `db/CodexMerchants.json`），`xiyou_merchant29` 才读得到数据。
+- 需要用户决定：O-待定·深渊商人。Kyo 已定修，只等编号；界面两栏布局要不要做成原版样子，可以下一期再定。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
