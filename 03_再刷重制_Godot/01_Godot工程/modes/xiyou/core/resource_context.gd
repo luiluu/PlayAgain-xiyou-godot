@@ -197,8 +197,8 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 		error = unsupported
 		return {}
 	if resource == "hp" and not preview:
-		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
-			return {}  # 谷雨 setHp 包装：归根中抬不起生命
+		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0 and (XGuyu.ROOTED_ACTOR_SET_HP or not b is XActor):
+			return {}  # 谷雨 setHp 包装：归根中抬不起生命（O-待定·谷雨替倒 setHp 回退支：角色绕过）
 		if value < b.hp:
 			value = b.hp - XShieldLedger.hp_gain(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收
 	if resource == "hp" and XAlienBattle.routes_set_hp(b):

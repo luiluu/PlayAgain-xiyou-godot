@@ -86,6 +86,11 @@ const RECRUIT_TEXT := "谷雨加入队伍，已装备百谷生。"
 const RECRUIT_TEXT_PLAIN := "谷雨加入队伍。"
 ## G._notifiedRelic：本次运行里已提示过送法宝（不存档）
 static var _notified_relic := false
+## O-待定·谷雨替倒 setHp：新源 v0.62 流萤运行时（main.js 第 144 行装）在 Game_Actor.prototype 上自定义 setHp，捕获的是谷雨（152）、
+## 护盾账本（153，同 O-212）、异化（146／148）包装之前的 Game_BattlerBase.setHp，角色的 setHp 从此绕过谷雨「替倒中抬不起生命」。
+## 谷雨自己的 entrances 注释写明要封住角色上的重写入口，setHp 漏了，是装载次序的副作用：默认照谷雨本意，替倒中 setHp 抬不起。
+## false 照原版：角色 setHp 不看替倒（替倒中的谷雨被直接设满血，死亡仍去不掉；参照 guyu_battle script.sub 的 revive）。
+static var ROOTED_ACTOR_SET_HP := true
 const BLOOM := 10299
 const CAP_CURVE := [1.0, 1.25, 1.5, 1.75]
 const BLOOM_RATIO := 0.25
