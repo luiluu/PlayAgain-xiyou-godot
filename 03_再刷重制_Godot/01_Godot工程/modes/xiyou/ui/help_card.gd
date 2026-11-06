@@ -115,6 +115,9 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
 		if (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
+		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
+		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
+			sort_effects(obj, rows)
 	if type != 3 and XCat.is_cat_item(obj):
 		rows = XCharacterHelp.view(obj, rows)  # 小猫一族的物品、法宝：characterHelpTarget 认 <CodexCat:，走 CodexCat.helpItem＋characterHelpView
 	if type == 3:
@@ -212,8 +215,6 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 		r[0] = _terms(str(r[0]))
 	if WHITE_STATS_FIRST and (type == 1 or type == 2):
 		rows = equipment_rows(rows)
-	if EFFECT_SORT_V041 and (type == 1 or type == 2):
-		sort_effects(obj, rows)
 	if type == 1 or type == 2:
 		unique_mark(obj, rows)  # 跟到 v0.62.12：installUniqueEffectMarkRuntime（v0.56）getDescParams 包装，只改显示文字
 	if XDemonCrown.is_gear(obj):  # 魔冠的 getDescParams 包装：小数取整（describe 在发放／重放时已做）
@@ -559,7 +560,7 @@ static func sort_effects(obj: Dictionary, rows: Array) -> void:
 	var at := []
 	var effects := []
 	for n in rows.size():
-		var text := _plain41(rows[n][0])
+		var text := _plain41(str(rows[n][0]).replace(UNIQUE_MARK, ""))
 		if kind_re.search(text) == null and blue_re.search(str(rows[n][0])) == null:
 			continue
 		var rank: int = source.get(text, base_rank)

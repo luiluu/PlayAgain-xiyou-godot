@@ -432,8 +432,8 @@ static func _aura_columns(ops: Array, skills: Array, y: float, initial_y: float)
 		longest = maxi(longest, list.size())
 		for row in mini(max_rows, list.size()):
 			_item_name(ops, list[row], k * cw, initial_y + row * row_h, cw - 8, 22)
-		if list.size() > max_rows:  # 文字色沿用上一个 drawItemName 设的色
-			ops.append(_t("确认查看全部", k * cw, initial_y + max_rows * row_h, cw - 8, _skill_color(list[max_rows - 1]), 22))
+		if list.size() > max_rows:  # drawItemName 画完已 resetTextColor，白字
+			ops.append(_t("确认查看全部", k * cw, initial_y + max_rows * row_h, cw - 8, XUI.TEXT, 22))
 	return initial_y + (mini(max_rows, longest) + 1) * row_h
 
 
