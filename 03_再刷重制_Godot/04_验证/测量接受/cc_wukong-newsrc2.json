@@ -1,0 +1,1072 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "actor_passive.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "07a7d29c95674009",
+      "newDigest": "f841dee94918d0b9",
+      "reason": "换源 v0.28→v0.62.12：角色被动与学会的技能：v0.52 祈求者进阶、v0.30 拳一、v0.30 停用六角色"
+    },
+    {
+      "file": "alien_affix.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ad5b8a1ad9cee543",
+      "newDigest": "2df96b9f123edc68",
+      "reason": "换源 v0.28→v0.62.12：异化献祭／绝缘数值随 v0.58 穿透改动（异化本身不跟隐藏，Kyo 2026-11-05 定）"
+    },
+    {
+      "file": "alien_battle.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "8cd154c92cc9bb39",
+      "newDigest": "5d529b9da36871f9",
+      "reason": "换源 v0.28→v0.62.12：异化战斗的瘟疫、镜像、吸取：v0.58 穿透 ×0.30（异化不跟隐藏，Kyo 定）"
+    },
+    {
+      "file": "alien_config.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "22845a2f948691be",
+      "newDigest": "2ec921ef6d5732a5",
+      "reason": "换源 v0.28→v0.62.12：独立装备编号整体后移 3（v0.62.12 Weapons 比 v0.28 多 3 条，独立装备号排在数据库之后，4080→4083）；量前不装 installAlienationHide（Kyo 定），配置本身不变"
+    },
+    {
+      "file": "alien_workshop.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "604f61972602556a",
+      "newDigest": "7d8de5452f2d082f",
+      "reason": "换源 v0.28→v0.62.12：独立装备编号整体后移 3（v0.62.12 Weapons 比 v0.28 多 3 条，独立装备号排在数据库之后，4080→4083）；量前不装 installAlienationHide（Kyo 定），工坊流程不变"
+    },
+    {
+      "file": "attack_elements.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "e4646faf6a45115e",
+      "newDigest": "ba8db0d18a029e19",
+      "reason": "换源 v0.28→v0.62.12：攻击属性：v0.39 星级分类（154、158）、v0.58 穿透"
+    },
+    {
+      "file": "attack_query.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "df55b50037ffea67",
+      "newDigest": "6f7a3ea0d482e22c",
+      "reason": "换源 v0.28→v0.62.12：普攻查询：v0.39 星级分类（夏娜 154）；v0.62.12 空位入队即进出战成员"
+    },
+    {
+      "file": "battle_events.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "bf831cc38a16e085",
+      "newDigest": "f1d6821110fa1d95",
+      "reason": "换源 v0.28→v0.62.12：带战斗事件的敌群 35→51、页 47→73：v0.54 一护剧情、v0.52 12.27 补齐加了敌群事件"
+    },
+    {
+      "file": "battle_events.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "154cb8b727998b9b",
+      "newDigest": "e2edfb90d2b67422",
+      "reason": "换源 v0.28→v0.62.12：带战斗事件的敌群 35→51、页 47→73：v0.54 一护剧情、v0.52 12.27 补齐加了敌群事件"
+    },
+    {
+      "file": "cat.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "6a3d0408a3d5b88f",
+      "newDigest": "4e66ef4ba742e0c8",
+      "reason": "换源 v0.28→v0.62.12：猫：v0.53 武器 92 解禁、v0.35 心之钢"
+    },
+    {
+      "file": "challenge_passives.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "af729024ef7a9e31",
+      "newDigest": "5e843aa12de3fc62",
+      "reason": "换源 v0.28→v0.62.12：挑战被动说明与弱者名单：v0.34／v0.44 弱者名单、天道注视"
+    },
+    {
+      "file": "challenge_passives.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "69265b7dde1a5482",
+      "newDigest": "ffe0e5846cc36bd8",
+      "reason": "换源 v0.28→v0.62.12：挑战被动说明与弱者名单：v0.34／v0.44 弱者名单、天道注视"
+    },
+    {
+      "file": "common_scripts.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "a1e7e341fa5c59f0",
+      "newDigest": "b329a514fa2a6b0f",
+      "reason": "换源 v0.28→v0.62.12：公共脚本（地图 174 挖宝等）：盘点里没对上的一项，推断为 v0.33 藏宝图奖励表或 CE 改动连带，期一核对"
+    },
+    {
+      "file": "custom_params.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "99af1bf25d5c9688",
+      "newDigest": "89aa64516f253c3d",
+      "reason": "换源 v0.28→v0.62.12：自定义参数：v0.31／v0.44 专武成长（Custom Parameters 加了按等级成长与注释行）"
+    },
+    {
+      "file": "difficulty_actor.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "be176cbe713cde9e",
+      "newDigest": "a98634e215af958d",
+      "reason": "换源 v0.28→v0.62.12：难度角色修正：v0.52 洪荒诅咒、v0.44 KyoTier 强弱分类"
+    },
+    {
+      "file": "difficulty_enemy.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b2ff2ed7175aa05a",
+      "newDigest": "e2b5aa6ac9ba428b",
+      "reason": "换源 v0.28→v0.62.12：难度敌人：v0.58 全吸收首领去 <Element Absorb>、v0.52 洪荒诅咒档位；敌人表变化带来的用例增删"
+    },
+    {
+      "file": "difficulty_enemy.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "93b011f3139770d2",
+      "newDigest": "85473f0653c92260",
+      "reason": "换源 v0.28→v0.62.12：难度敌人：v0.58 全吸收首领去 <Element Absorb>、v0.52 洪荒诅咒档位；敌人表变化带来的用例增删"
+    },
+    {
+      "file": "difficulty_troop.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "2e92322b5a674675",
+      "newDigest": "1aa43958b250e754",
+      "reason": "换源 v0.28→v0.62.12：难度敌群 854：v0.58 首领改动（推断）"
+    },
+    {
+      "file": "dot.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "2841e1fc26705132",
+      "newDigest": "335441854284721c",
+      "reason": "换源 v0.28→v0.62.12：持续伤害：v0.50 穿透作用于元素抗性、v0.52 护盾反伤"
+    },
+    {
+      "file": "dual_wield.json",
+      "collection": "flows",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "6c0865ac0e574522",
+      "newDigest": "ddc82c8982e4dab8",
+      "reason": "换源 v0.28→v0.62.12：双持：v0.62.10 双持专武只能装一把（更新日志没写这项）"
+    },
+    {
+      "file": "dual_wield.json",
+      "collection": "inits",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ef97fcbde28b3256",
+      "newDigest": "4f453cc8ea71b309",
+      "reason": "换源 v0.28→v0.62.12：双持：v0.62.10 双持专武只能装一把（更新日志没写这项）"
+    },
+    {
+      "file": "dungeon.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "9421c8f102cb2285",
+      "newDigest": "90b390d8827824c0",
+      "reason": "换源 v0.28→v0.62.12：秘境：v0.30 非天／麒麟星挑战（164／165 封印等）"
+    },
+    {
+      "file": "enemy_book_defeat.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "8db57906bd2bf935",
+      "newDigest": "a05f7d91a1878579",
+      "reason": "换源 v0.28→v0.62.12：图鉴击败消耗合计：v0.35 图鉴改动"
+    },
+    {
+      "file": "equipment.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "08d543a969a2cfbe",
+      "newDigest": "48c05527353cd4c0",
+      "reason": "换源 v0.28→v0.62.12：装备与强化：v0.33 DreamX 随机前后缀、v0.62 词条难度浮动、套装状态"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "32d07e0ff8e99272",
+      "newDigest": "56fdcbcfaddc7b1d",
+      "reason": "换源 v0.28→v0.62.12：有状态事件变体：v0.30 起深渊商人改成脚本，旧第 3 页预设已删（BM 交付单）；其余随地图事件与公共事件改动（v0.30、v0.38、v0.52、v0.62.12）"
+    },
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "5186e193388e6aac",
+      "newDigest": "4dad0ff57a1e506e",
+      "reason": "换源 v0.28→v0.62.12：地图事件：v0.30 挑战事件与深渊商人改脚本、v0.38、v0.52 补齐、v0.52.01、v0.62.12 剑心书"
+    },
+    {
+      "file": "formula_equipment.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "3eabe5174f355c81",
+      "newDigest": "e53bbb59320795dc",
+      "reason": "换源 v0.28→v0.62.12：读装备等级的技能公式：v0.39～v0.44 系数、新增技能 10503～10505"
+    },
+    {
+      "file": "formula_programs.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "4cbb7677e64ffbc1",
+      "newDigest": "644e7424b659dd39",
+      "reason": "换源 v0.28→v0.62.12：技能公式：v0.39～v0.44、v0.53、v0.57、v0.62.03 系数调整与新技能"
+    },
+    {
+      "file": "guide.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "3cd949128507fe42",
+      "newDigest": "688f7c549d0c7272",
+      "reason": "换源 v0.28→v0.62.12：修行建议：v0.56 修行面板"
+    },
+    {
+      "file": "guyu_battle.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "c530c7deac76ca96",
+      "newDigest": "fa95106e31f7f49c",
+      "reason": "换源 v0.28→v0.62.12：谷雨战斗子脚本：v0.58 谷雨技能改动"
+    },
+    {
+      "file": "guyu_ui.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "575a244552f3f010",
+      "newDigest": "5a05f485025cc94b",
+      "reason": "换源 v0.28→v0.62.12：谷雨 35／60 级脚本说明：v0.58 谷雨技能说明换词"
+    },
+    {
+      "file": "hang_up.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ae84bf5d661c0b57",
+      "newDigest": "f38aa8dd62935dc5",
+      "reason": "换源 v0.28→v0.62.12：挂机出售窗：v0.40～v0.46 出售改动（保留词条品质一行）"
+    },
+    {
+      "file": "help_cards.json",
+      "collection": "armors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "d4f507d139645736",
+      "newDigest": "94816813586a871b",
+      "reason": "换源 v0.28→v0.62.12：说明卡：v0.36 白字在上、v0.43 说明重排、v0.57 穿透提示、v0.56 ◆唯一、v0.31／v0.44 专武成长"
+    },
+    {
+      "file": "help_cards.json",
+      "collection": "items",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "3a09e4f253e2d03b",
+      "newDigest": "b1459eae849ffa99",
+      "reason": "换源 v0.28→v0.62.12：说明卡：v0.36 白字在上、v0.43 说明重排、v0.57 穿透提示、v0.56 ◆唯一、v0.31／v0.44 专武成长"
+    },
+    {
+      "file": "help_cards.json",
+      "collection": "skills",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "7ce5e2f626c6140d",
+      "newDigest": "9afd66af668a7e94",
+      "reason": "换源 v0.28→v0.62.12：说明卡：v0.36 白字在上、v0.43 说明重排、v0.57 穿透提示、v0.56 ◆唯一、v0.31／v0.44 专武成长"
+    },
+    {
+      "file": "help_cards.json",
+      "collection": "weapons",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "d2fd0f0fa5d553f8",
+      "newDigest": "8e05da4e0930f760",
+      "reason": "换源 v0.28→v0.62.12：说明卡：v0.36 白字在上、v0.43 说明重排、v0.57 穿透提示、v0.56 ◆唯一、v0.31／v0.44 专武成长"
+    },
+    {
+      "file": "help_cards.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "32d3ced34de3aeda",
+      "newDigest": "9e0cf5cdaf10c655",
+      "reason": "换源 v0.28→v0.62.12：说明卡：v0.36 白字在上、v0.43 说明重排、v0.57 穿透提示、v0.56 ◆唯一、v0.31／v0.44 专武成长"
+    },
+    {
+      "file": "imported_balance.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "18cf56be83b0da76",
+      "newDigest": "b540826f595c7033",
+      "reason": "换源 v0.28→v0.62.12：12.27 导入平衡：v0.52 12.27 补齐（麒麟星 142 技能 10098～10100）、v0.30 停用角色"
+    },
+    {
+      "file": "item_marks.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "264fe4dda86171f9",
+      "newDigest": "fb59daef376c09c8",
+      "reason": "换源 v0.28→v0.62.12：一键出售走 v0.40 确认窗（installSafeSellRuntime）与保留规则；Map004 回城格通行随 v0.62.12 地图改动"
+    },
+    {
+      "file": "lobby_shops.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "7f2e509851bb904f",
+      "newDigest": "b7e967f328707221",
+      "reason": "换源 v0.28→v0.62.12：大厅商店 EV054 柜：v0.53 武器 78／92 上架、v0.62.12 剑心书"
+    },
+    {
+      "file": "magic_weapon.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "635c981667447e06",
+      "newDigest": "949db39423a06b08",
+      "reason": "换源 v0.28→v0.62.12：法宝：v0.41 诛仙混合"
+    },
+    {
+      "file": "map132_shops.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "78505e833f7955f2",
+      "newDigest": "1d7b54c2ac612272",
+      "reason": "换源 v0.28→v0.62.12：Map132 不朽号角柜：v0.60.02 流萤号角上架"
+    },
+    {
+      "file": "maps.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "37158f9c67f41f1e",
+      "newDigest": "488ba740f83ba75f",
+      "reason": "换源 v0.28→v0.62.12：Map004 通行：v0.62.12 剑心书、v0.52 日志页改动"
+    },
+    {
+      "file": "maps_source.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "0cc024c8a190d87c",
+      "newDigest": "033c49f2be3936c1",
+      "reason": "换源 v0.28→v0.62.12：来源清单：换源本身（输入与运行脚本摘要）"
+    },
+    {
+      "file": "module_hooks.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "96a91bd86c04b4b0",
+      "newDigest": "30a38a00c7423b8e",
+      "reason": "换源 v0.28→v0.62.12：运行时挂钩框架：29 个新运行时登记（modules.json）"
+    },
+    {
+      "file": "multi_element.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "7ce079f37be5462a",
+      "newDigest": "dc5a6c15ad70c7ea",
+      "reason": "换源 v0.28→v0.62.12：多属性 10007／10008：v0.58 首领去吸收"
+    },
+    {
+      "file": "options.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "d4254d0f037a983d",
+      "newDigest": "da64aeee32ab4880",
+      "reason": "换源 v0.28→v0.62.12：设置页多一行（33→34）：v0.56 Boss 状态面板开关"
+    },
+    {
+      "file": "orbs.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "97d437f8d19e1e3a",
+      "newDigest": "6eac270bcab15fc0",
+      "reason": "换源 v0.28→v0.62.12：独立装备编号整体后移 3（v0.62.12 Weapons 比 v0.28 多 3 条，独立装备号排在数据库之后，4080→4083）；镶嵌槽布局随 v0.62.01 吸取镶嵌（推断）"
+    },
+    {
+      "file": "param_cache.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b1a36fffa3ba4168",
+      "newDigest": "2a20215dc76049cd",
+      "reason": "换源 v0.28→v0.62.12：装备参数缓存：v0.51 被动缓存刷新"
+    },
+    {
+      "file": "power.json",
+      "collection": "gear",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "c467ec3557ff700e",
+      "newDigest": "00f7063ea3cccce3",
+      "reason": "换源 v0.28→v0.62.12：威能：v0.58 ELUP、v0.53 武器 92 解禁（法宝 116、92、77）"
+    },
+    {
+      "file": "qiyu.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "605280d0b02545ea",
+      "newDigest": "6d312af1f49fa6a8",
+      "reason": "换源 v0.28→v0.62.12：奇遇：v0.39～v0.44 拳一 9934 改动"
+    },
+    {
+      "file": "raven_artifact.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "43ee05c6d1ada3b3",
+      "newDigest": "dc66412a44f05632",
+      "reason": "换源 v0.28→v0.62.12：渡鸦法宝：v0.30 法宝成长生命→魔法（artifactHpBonus→artifactMpBonus）"
+    },
+    {
+      "file": "review135.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "0ab25c19ffa23de5",
+      "newDigest": "6f15bd1204b488c8",
+      "reason": "换源 v0.28→v0.62.12：第 135 号审查用例：v0.62.05 预览变量（推断）"
+    },
+    {
+      "file": "review_fix.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "bc8b54bb03474781",
+      "newDigest": "69647886f8913d24",
+      "reason": "换源 v0.28→v0.62.12：Map225 刷新：v0.62.12 Map225 EV010"
+    },
+    {
+      "file": "script_gaps.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "6971c1b8e678f22f",
+      "newDigest": "5450b0557291a4bd",
+      "reason": "换源 v0.28→v0.62.12：脚本缺口 1388 进阶：v0.52 补齐"
+    },
+    {
+      "file": "sell_rewards.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "3b30f8e7e611ba40",
+      "newDigest": "9364e128804856d4",
+      "reason": "换源 v0.28→v0.62.12：独立装备编号整体后移 3（v0.62.12 Weapons 比 v0.28 多 3 条，独立装备号排在数据库之后，4080→4083）；出售所得 v0.45 其他货币出售"
+    },
+    {
+      "file": "sequences.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "6c95cf97367c697f",
+      "newDigest": "263b3b42472b6c11",
+      "reason": "换源 v0.28→v0.62.12：动作序列：v0.53.01 斩天再释放、v0.39 拳一八段动作"
+    },
+    {
+      "file": "shop_buy.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "717ae3af8ad9be7c",
+      "newDigest": "ea77c79501d94859",
+      "reason": "换源 v0.28→v0.62.12：商店购买：v0.41 被动书价格 +30%、当铺库存，v0.60.02 流萤号角上架 Map132，v0.53 78／92 上架；商品增删"
+    },
+    {
+      "file": "shop_buy.json",
+      "collection": "goods",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "7b1301560eb5adea",
+      "newDigest": "d0103e13cff47bc7",
+      "reason": "换源 v0.28→v0.62.12：商店购买：v0.41 被动书价格 +30%、当铺库存，v0.60.02 流萤号角上架 Map132，v0.53 78／92 上架；商品增删"
+    },
+    {
+      "file": "shop_buy.json",
+      "collection": "shops",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "2a5e6d2793be55c2",
+      "newDigest": "bc435b3625839a5d",
+      "reason": "换源 v0.28→v0.62.12：商店购买：v0.41 被动书价格 +30%、当铺库存，v0.60.02 流萤号角上架 Map132，v0.53 78／92 上架；商品增删"
+    },
+    {
+      "file": "shop_stock.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "befe6552cb042e89",
+      "newDigest": "5f0b3fa48bbe5dec",
+      "reason": "换源 v0.28→v0.62.12：商店库存：v0.41 当铺／人族功法取消库存"
+    },
+    {
+      "file": "shop_stock.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "a5c6633b128a88ae",
+      "newDigest": "c3617ac2eeb25bb5",
+      "reason": "换源 v0.28→v0.62.12：商店库存：v0.41 当铺／人族功法取消库存"
+    },
+    {
+      "file": "skill_change_to.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "4ef4b972a5ab9e64",
+      "newDigest": "ba2733c1927cf941",
+      "reason": "换源 v0.28→v0.62.12：技能替换 10499 等：v0.52 补齐（推断）"
+    },
+    {
+      "file": "slice_d1.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "19a52177a36828e7",
+      "newDigest": "2458c0f3dd871fd8",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（宝宝）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d1.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "0f3066dbdebe0556",
+      "newDigest": "3296e8d21a5d72e0",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（宝宝）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d1.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "c254f3e95a817b5c",
+      "newDigest": "40825fc91c1dd46d",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（宝宝）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d2.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "eeeebd02137e852b",
+      "newDigest": "2027ebb79a2725e0",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 2）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d2.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "16c18e626906909f",
+      "newDigest": "ac3eb44d8a5dffee",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 2）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d2.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "5ef26f737746086f",
+      "newDigest": "fa99d7d7d54dc3c6",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 2）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d3.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "64683bb245cd6863",
+      "newDigest": "07d84c1799a04fb7",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 3）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d3.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "60b115118a8c8358",
+      "newDigest": "3d0f6b0850d24491",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 3）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d3.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ad1395df69b3863d",
+      "newDigest": "f36261694a09128a",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 3）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d4.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "4c2f92835dc2d499",
+      "newDigest": "5ca3fd83779963a0",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 4）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d4.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "a85d896cab07e610",
+      "newDigest": "9f353523f96faa90",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 4）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d4.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "a8125dde831da50b",
+      "newDigest": "d157adf859410ca3",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 4）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d5.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ab22568b68c685b7",
+      "newDigest": "d8b91a456acbc9b1",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 5）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d5.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b268633dbcbd393e",
+      "newDigest": "6ce74f934646610a",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 5）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d5.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b8a1da9e5664d748",
+      "newDigest": "f03982f8df25d3a6",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 5）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d6.json",
+      "collection": "actors",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "597cc4a97d0b36de",
+      "newDigest": "f04beb944bf26e2e",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 6）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d6.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "fe520a4283abfc3e",
+      "newDigest": "75f4efed47cf9e07",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 6）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "slice_d6.json",
+      "collection": "enemies",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "346ab1d4dff77012",
+      "newDigest": "47c7b29aca69c392",
+      "reason": "换源 v0.28→v0.62.12：切片面板与伤害（难度 6）：v0.39／v0.44 强弱分类与难度补强、v0.31／v0.44 专武成长、v0.58 ELUP 与穿透，伤害随 v0.50／v0.51／v0.57／v0.58 穿透与 v0.39～v0.44、v0.62.03 系数"
+    },
+    {
+      "file": "smart_ai.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "1d8dc1bd71f738b3",
+      "newDigest": "866b583bd24f0f07",
+      "reason": "换源 v0.28→v0.62.12：智能 AI（敌群 818 各场景）：v0.62.03／04 平衡、v0.39 系数"
+    },
+    {
+      "file": "smart_ai.json",
+      "collection": "damage",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "f0aa8eaebfa99aa7",
+      "newDigest": "e3375a7b127905e7",
+      "reason": "换源 v0.28→v0.62.12：智能 AI（敌群 818 各场景）：v0.62.03／04 平衡、v0.39 系数"
+    },
+    {
+      "file": "stage50_review.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "5e1d53c8d423b324",
+      "newDigest": "fb9dc7184d4389d0",
+      "reason": "换源 v0.28→v0.62.12：50 层审查：v0.35 反击状态来源（推断）"
+    },
+    {
+      "file": "star_warehouse.json",
+      "collection": "顶层",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ebfef49467e5c19b",
+      "newDigest": "ca9a75bb6ec1dee3",
+      "reason": "换源 v0.28→v0.62.12：独立装备编号整体后移 3（v0.62.12 Weapons 比 v0.28 多 3 条，独立装备号排在数据库之后，4080→4083）；仓库步骤 v0.31 PH_Warehouse 按需刷新"
+    },
+    {
+      "file": "state_effects.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "1ee8006b069e429d",
+      "newDigest": "18b22bc77de78474",
+      "reason": "换源 v0.28→v0.62.12：状态效果：v0.62.10 命途护符、v0.59 三霄、v0.62.03 平衡、v0.62.05 层数只乘自身"
+    },
+    {
+      "file": "state_js.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ae54eefe0ed3d63a",
+      "newDigest": "45746537caa904d7",
+      "reason": "换源 v0.28→v0.62.12：状态层数：v0.62.05 G_StateParam 每个状态只乘自己的层数（counter.carry 2420→220，重制 param_state 同批改）"
+    },
+    {
+      "file": "sve.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "ea07186c9980ff1a",
+      "newDigest": "f5eeaaed509b5c2f",
+      "reason": "换源 v0.28→v0.62.12：普查：v0.35 反击（推断）"
+    },
+    {
+      "file": "svpng.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "aebabe9d78540ebb",
+      "newDigest": "afc09275c6e5273b",
+      "reason": "换源 v0.28→v0.62.12：SV 放大比例：v0.62 SV 变大对新角色生效"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "8bf246fd1fa07a52",
+      "newDigest": "bc8b5bd4099c06d7",
+      "reason": "换源 v0.28→v0.62.12：敌群 380／384 事件：v0.52 补齐（推断）"
+    },
+    {
+      "file": "vsfx.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "d213d0ad2f8d9b9e",
+      "newDigest": "020c60eaa87d621c",
+      "reason": "换源 v0.28→v0.62.12：特效顺序：v0.53.02 贝吉特图、v0.60 流萤状态（推断）"
+    },
+    {
+      "file": "weak_challenge.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "1036b671a23ad7ff",
+      "newDigest": "55c658f473b6f2fa",
+      "reason": "换源 v0.28→v0.62.12：弱者挑战 10356／10357 说明：v0.34 天道注视"
+    },
+    {
+      "file": "weapon_unleash.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "8e41386f54a7c659",
+      "newDigest": "c4a337b43831765c",
+      "reason": "换源 v0.28→v0.62.12：武器解放：v0.30 停用利姆露 166，专武 93 临时解除停用再量（BL）"
+    },
+    {
+      "file": "wtype.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "e2a1e85efc048735",
+      "newDigest": "77b9810de972a901",
+      "reason": "换源 v0.28→v0.62.12：武器类型与技能可用：v0.30 停用角色、专武归属调整"
+    },
+    {
+      "file": "xuan_chart.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "49b4c717147eb743",
+      "newDigest": "96f7f70d278116b7",
+      "reason": "换源 v0.28→v0.62.12：学装流程：v0.48 化武目标"
+    },
+    {
+      "file": "yomi_battle.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "e02dd4e9f1d3e1d4",
+      "newDigest": "ec3d23cb6c5884bc",
+      "reason": "换源 v0.28→v0.62.12：黄泉 10171／10172：v0.58 穿透（推断）"
+    },
+    {
+      "file": "zhenqi.json",
+      "collection": "cases",
+      "key": "*",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "61c9b96098713e50",
+      "newDigest": "4b1a9ab56d24f6e4",
+      "reason": "换源 v0.28→v0.62.12：真气：v0.43（含原 v0.45）真气本命兵挑战（道祖页、本命兵）"
+    }
+  ]
+}
