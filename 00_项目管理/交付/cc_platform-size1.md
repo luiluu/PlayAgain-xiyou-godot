@@ -1,7 +1,7 @@
 # 交付：cc/platform-size1
 
 - 车道／工作者：平台 DH／cc（第十四批 DH 单）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -26,7 +26,7 @@
 ## 验证
 
 - `事件空绿扫描.py --check`：空绿 55 例，均在基线内、都写明走不到理由。
-- `选测.py main --list`：改了 project.godot（判整轮），所以整轮放云端：`云端选测.py run --full`（提交 ac4257c5，437 场景 15 片）——结果见下。6451130d 只改了转换器写文件时的修改时间一行，产物字节与 ac4257c5 那份快照相同。
+- `选测.py main --list`：改了 project.godot（判整轮），整轮放云端：`云端选测.py run --full` 提交 42277bbd，437 个场景 15 片**全部通过**（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42252025319）。前两次没跑成：ac4257c5 那次 prepare 从零导入 WebP 最高档超时（取消），0af39489 用 override.cfg 仍超时（override.cfg 对导入不生效），改成删 CI 检出里那两行后通过。之后合了 main（cc/input-crash，动了 map_scene／touch_controls 的按键标已处理），本机重跑 `xiyou_platform`、`xiyou_input_handled`、`xiyou_key_map` 通过、语法检查 0 问题。
 - 本机：`xiyou_platform` 通过；`工具回归.py` 全过；`语法检查.py` 0 问题；`贴图无损核对.gd` 见上；安卓导出冒烟两次都通过（改前改后各一次）。
 
 ## 交接板
@@ -48,3 +48,5 @@
 
 - ac4257c5 商店等事件页隐藏存档键、BGM 96k 重编码、O-210 WebP 无损最高档
 - 6451130d 重编码音频不沿用源文件修改时间
+- 0af39489、42277bbd 云端导入用默认 WebP 档；交付单
+- 01140852 合并 main
