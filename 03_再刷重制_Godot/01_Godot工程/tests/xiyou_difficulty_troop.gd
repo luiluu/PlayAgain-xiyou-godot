@@ -61,7 +61,7 @@ func _case(c: Dictionary) -> int:
 		var states: Array = Array(e.state_ids)
 		states.sort()
 		check(tag + ".states", states == (m.states as Array).map(func(v): return int(v)), [states, m.states])
-		var mine := {"param": range(8).map(func(k): return e.param(k)), "xparam": range(10).map(func(k): return e.xparam(k)),
+		var mine := {"param": range(8).map(func(k): return e.param(k)), "xparam": range(10).map(func(k): return e.cnt if k == 6 else e.xparam(k)),
 			"sparam": range(10).map(func(k): return e.sparam(k)), "elementRates": ELEMENTS.map(func(k): return e.element_rate(k))}
 		for k in ["param", "xparam", "sparam", "elementRates"]:
 			var ok: bool = mine[k].size() == m[k].size()

@@ -18,7 +18,7 @@ func check(label: String, ok: bool, detail = null) -> void:
   if failures.size() < 8: print("FAIL ", label, " ", detail)
 func _ready() -> void:
  var reference = XDB.load_json("oracle/formula_equipment.json")
- check("source_24x14", reference is Dictionary and reference.cases.size() == 336)
+ check("source_27x14", reference is Dictionary and reference.cases.size() == 378)  # v0.62.12 27 个技能（v0.28 是 24）
  var ids := {}
  for c in reference.cases:
   check(c.id + ".clean", c.errors.is_empty())
@@ -43,14 +43,14 @@ func _ready() -> void:
   check(c.id + ".value", out.available and is_equal_approx(float(out.value), float(c.observed.value)) and out.sourceValueKind == c.observed.valueKind, [out, c.observed])
   check(c.id + ".level", XEquipmentView.first_armor_level(a.equip_list(), int(item.damage.formulaProgram.steps[0].steps[0].value.value)) == c.observed.firstLevel)
   check(c.id + ".preview", before == JSON.stringify([a.equips, a.hp, a.mp, b.hp, variables]) and out.randomDraws == 0)
- check("all24", ids.size() == 24)
+ check("all27", ids.size() == 27)
  enemy_queries()
  print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
  get_tree().quit(0 if failures.is_empty() else 1)
 
 func enemy_queries() -> void:
  var reference: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_equipment_enemy_oracle.json"))
- check("enemy_source_24", reference.cases.size() == 24)
+ check("enemy_source_27", reference.cases.size() == 27)
  check("enemy_source_identity", reference.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
  for c in reference.cases:
   var item := XDB.rec("Skills", int(c.skill))

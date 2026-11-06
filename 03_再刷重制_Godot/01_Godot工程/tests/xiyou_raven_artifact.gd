@@ -98,8 +98,8 @@ func _params(c: Dictionary) -> void:
 	var worn := _read(a)
 	check(c.id + ".worn_plus", worn.plus == _nums(o.worn.plus), [worn.plus, o.worn.plus])
 	check(c.id + ".worn_param", worn.param == _nums(o.worn.param), [worn.param, o.worn.param])
-	check(c.id + ".bonus", XRaven.artifact_mat_bonus(a) == float(o.matBonus) and XRaven.artifact_hp_bonus(a) == float(o.hpBonus),
-		[XRaven.artifact_mat_bonus(a), XRaven.artifact_hp_bonus(a), o.matBonus, o.hpBonus])
+	check(c.id + ".bonus", XRaven.artifact_mat_bonus(a) == float(o.matBonus) and XRaven.artifact_mp_bonus(a) == float(o.mpBonus),
+		[XRaven.artifact_mat_bonus(a), XRaven.artifact_mp_bonus(a), o.matBonus, o.mpBonus])
 
 
 ## 全队掉率（同参照：新局、挑战开关、入队名单 party、渡鸦 level 级、招募）
@@ -126,7 +126,7 @@ func _drop(c: Dictionary) -> void:
 func _reverse() -> void:
 	var r := _setup(60, 3, 123457.0)
 	var a: XActor = r[1]
-	check("reverse.unequipped", XRaven.param_plus(a, 4, 7.0) == 7.0 and XRaven.artifact_hp_bonus(a) == 0.0)
+	check("reverse.unequipped", XRaven.param_plus(a, 4, 7.0) == 7.0 and XRaven.artifact_mp_bonus(a) == 0.0)
 	var other: XActor = (r[0] as XState).actor(1)
 	check("reverse.other", XRaven.param_plus(other, 0, 5.0) == 5.0)
 
