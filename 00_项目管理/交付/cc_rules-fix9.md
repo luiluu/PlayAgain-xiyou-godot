@@ -1,7 +1,7 @@
 # 交付：cc/rules-fix9
 
 - 车道／工作者：C 规则／cc（rules，接 BZ；修 BN 八戒 events11 查出的两处事件差异）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -28,9 +28,15 @@
 
 ## 验证
 
-（见下，交付前补全）
+- `xiyou_event_compare`（本地，合 main 前）：11 项过，m4e69p0#o4_2／o4_3 列入 nowMatching，regressions 空。
+- `xiyou_troop_condition`（本地）16/16；`反向验证.py` 4 项：地图不认敌人条件、战斗结束不记敌群、212 照旧先出文字三处咬住，第 4 处（临时取消隐藏）没咬住、查明走不到后删掉。
+- `选测.py main --list` 列 301 个（>40），走云端：合 main、再 `--补齐` 后 `云端选测.py run`，结论整轮 436 场景 15 片，**全部通过**（提交 5dc4d56107，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42153332638）。之后只改了本交付单。
+- `工具回归.py` 全过（80 秒，含探针登记检查：新探针按夹具 troop_condition_oracle.json 认）；`语法检查.py` 0 问题。
+- 没跑同步：新探针是冻结参照夹具式，不进 PROBES；没改切片、转换器或已登记探针。
 
 ## 本分支提交
 
 - 61414ef5 212/213 不勾等待不先出文字；地图上条件分歧敌人读上一场敌群
 - 65c4fb0a 专项读冻结参照夹具；baseline 去掉 m4e69p0 两例
+- 1ad37d50 合并 main
+- 5dc4d561 交付单草稿（云端选测通过的提交）
