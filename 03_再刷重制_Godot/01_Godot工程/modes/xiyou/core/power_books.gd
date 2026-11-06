@@ -33,10 +33,14 @@ static func is_power(id: int) -> bool:
 static func learned(a: XActor) -> Array:
 	return skills().filter(func(id): return a.skill_ids.has(id)) if a != null else []
 
+## 强者名单（CodexBossDifficulty.strongIds）：v0.44 起由 <KyoTier:强者> 原地重建；产物没标签（旧源）用 STRONG_IDS
+static func strong_ids() -> Array:
+	return XTier.ids(XTier.STRONG) if XTier.tagged() else STRONG_IDS
+
 static func actor_class(a: XActor) -> String:
 	if XItemMarks.is_super_strong(a.actor_id):
 		return "超强者"
-	return "强者" if STRONG_IDS.has(a.actor_id) else "弱者"
+	return "强者" if strong_ids().has(a.actor_id) else "弱者"
 
 static func limit(a: XActor) -> int:
 	return {"超强者":3, "强者":4, "弱者":6}[actor_class(a)]

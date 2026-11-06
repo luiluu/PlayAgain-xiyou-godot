@@ -445,12 +445,20 @@ static func difficulty_native_ids(event_id: int, list_name: String) -> Array:
 	return _native_ids_cache[key]
 
 func _difficulty_strong(a: XActor, event_id: int, list_name: String) -> bool:
+	if XTier.tagged():
+		return XTier.is_non_weak(a)  # v0.44：strong(actor) = CodexTier.isNonWeak，不再读公共事件名单
 	var id := a.actor_id
 	if DIFFICULTY_NEW_STRONG.has(id):
 		return true
 	if id >= 167 and a.skill_ids.has(6216):
 		return true
 	return difficulty_native_ids(event_id, list_name).has(id)
+
+## lateActor（v0.44）：167 号以后、有分类的角色入队时直接按分类给强者／弱者压制；旧源是写死的新增超强者 167～173／175
+func _difficulty_late(a: XActor) -> bool:
+	if XTier.tagged():
+		return a.actor_id >= 167 and XTier.tier_of(a) != ""
+	return DIFFICULTY_NEW_STRONG.has(a.actor_id)
 
 ## profile()：主角（没有就找一名 <167 带难度技能的队员）的档位；没有任何档位返回空字典
 func _difficulty_profile() -> Dictionary:
@@ -491,7 +499,7 @@ func inherit_difficulty(a: XActor) -> void:
 		return
 	var managed := difficulty_managed_skills()
 	var desired: Array = current.skills.duplicate()
-	if current.classification or DIFFICULTY_NEW_STRONG.has(id):
+	if current.classification or _difficulty_late(a):
 		desired.append(6216 if _difficulty_strong(a, 1345, "actorIds") else 6235)
 	for i in 3:
 		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
@@ -506,7 +514,7 @@ func inherit_difficulty(a: XActor) -> void:
 			system_states[int(m.get_string(1))] = true
 	for sid in tracked:
 		# 分档技能：没有分档档位、也不是新增超强者时不碰（未跑强弱者事件前不给无关角色加）
-		if (sid == 6216 or sid == 6235) and not current.classification and not DIFFICULTY_NEW_STRONG.has(id):
+		if (sid == 6216 or sid == 6235) and not current.classification and not _difficulty_late(a):
 			continue
 		if desired.has(sid):
 			a.learn_skill(int(sid))
@@ -533,7 +541,8 @@ func sync_native_tier(a: XActor) -> void:
 		if not switch(DIFFICULTY_TIER_SWITCHES[i]) or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
 			continue
 		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
-		var want: int = pair[1] if difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]).has(id) else pair[0]
+		var strong: bool = XTier.is_non_weak(a) if XTier.tagged() else difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]).has(id)
+		var want: int = pair[1] if strong else pair[0]
 		var other: int = pair[0] if want == pair[1] else pair[1]
 		if a.skill_ids.has(other):
 			a.forget_skill(other)
