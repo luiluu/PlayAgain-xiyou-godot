@@ -255,7 +255,7 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(self.run_sync('--accept-additions')[0], 0)
 
     def acceptance(self, report, reason='有意修正探针口径', **override):
-        rows = [dict(c, reason=reason, **override) for c in report['changeCandidates']]
+        rows = [dict({k: v for k, v in c.items() if k != 'switchOnly'}, reason=reason, **override) for c in report['changeCandidates']]
         path = self.root / ('accept_%d.json' % len(list(self.root.glob('accept_*.json'))))
         path.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
         return path
@@ -490,10 +490,13 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(self.run_sync('--accept-changes', str(spec), '--accept-additions')[0], 2)
         self.manifest['runtimeInputs']['js/a.js'] = 'r'
         self.assertEqual(self.run_sync('--accept-changes', str(spec), '--accept-additions')[0], 0)
-        # 删除用例没有候选，不能接受；新行带错误在比较层也不给候选
+        # 删除用例只有换源时才认的候选（switchOnly），不换源写进接受单也拒收；新行带错误在比较层也不给候选
         self.set_payload({'cases': [{'id': 'new', 'value': 3}]})
         result, report = self.run_sync()
-        self.assertEqual((result, report['changeCandidates']), (2, []))
+        self.assertEqual(result, 2)
+        self.assertEqual([(c['key'], c['newDigest'], c.get('switchOnly')) for c in report['changeCandidates']],
+                         [('[["id","stable"]]', oracle_additions.DELETED, True)])
+        self.assertEqual(self.run_sync('--accept-changes', str(self.acceptance(report)))[0], 2)
         changes = []
         oracle_additions.compare_file('events.json', {'cases': [{'id': 'a', 'v': 1}]},
                                       {'cases': [{'id': 'a', 'v': 2, 'error': 'x'}]}, changes)
