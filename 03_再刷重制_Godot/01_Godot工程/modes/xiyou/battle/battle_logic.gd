@@ -226,6 +226,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
+	XLiuying.start_battle(self)  # 流萤 startBattle／onBattleStart 包装（原 startBattle 之后，开战移除状态之后）：萨姆形态、负面免疫、免死；萤火清零
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 	XNanoha.domain_queue(self)  # 奈叶魔法领域做活（O-183）：领域预约的 2478 排在 1320 之后
@@ -613,6 +614,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if not wtype_ok(a, skill):
 		return false
 	if not XGarou.meets(a, skill):  # 饿狼 meetsSkillConditions：未到形态、追击不能用，认真一拳要琦玉模式
+		return false
+	if not XLiuying.meets(a, skill):  # 流萤 meetsSkillConditions：完全燃烧按自然回合冷却
 		return false
 	if not XYomiJingliu.meets(a, skill):  # 黄泉 meetsSkillConditions：残梦不满 9 不能用 10174
 		return false
@@ -1089,6 +1092,8 @@ func act(u: XBattler, skill, target) -> Array:
 	elif has_meta("xalien"):
 		XAlienBattle.release_seals(self)  # O-116 idle_window 列的封印（关着时没有可解的）
 	_acted[u] = int(_acted.get(u, 0)) + 1
+	if started:
+		XLiuying.end_action(self, u, skill)  # 流萤 endAction 包装（原 endAction 之后）：燃烧后刷新负面免疫与免死
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）
@@ -2067,6 +2072,8 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var wrapped := []
 	if XTusu.segments(skill) > 1:
 		wrapped = XTusu.apply_segments(self, u, skill, tt)  # 止戈环 60 级 apply 包装（最外层）：点射 2 段、贯日 3 段、敕令 2 段
+	elif XLiuying.wraps(u, skill, tt):
+		wrapped = XLiuying.apply(self, u, skill, tt)  # 流萤（第 34 个，在云裳、饿狼之外）：付费、护盾、冷却、印记、扩散、单目标额外段、再释放
 	elif XYomiJingliu.wraps(u, skill, tt):
 		# 黄泉：施集真赤、充残梦、扩散到其余敌人（扩散各次接在主目标之后）
 		XYomiJingliu.before_apply(self, u, skill, tt)
@@ -3093,6 +3100,7 @@ func end_battle(result := -1) -> void:
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
+	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
 	XHubris.end_battle(self, result)  # 狂妄 endBattle 包装（在心钢外层）：胜利存盛名，清扬名
 	XHeartsteel.end_battle(result)  # 心钢 endBattle 包装：胜利存层数
