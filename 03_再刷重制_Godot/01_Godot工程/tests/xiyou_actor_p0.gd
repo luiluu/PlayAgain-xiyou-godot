@@ -112,6 +112,10 @@ func _run() -> void:
 		await map.run_common_event(ce)
 		for i in 3:
 			await get_tree().process_frame
+		if XImportedBalance.is_disabled_actor(id):
+			# 新源 141、146、152、161、166 进了停用名单（CodexV029.hiddenActors，读档／刷新时滤出队伍），同 143～145 不入队
+			_check("recruit_disabled_%d" % id, not s.party.has(id), [ce, s.party])
+			continue
 		_check("recruit_%d" % id, s.party.has(id), [ce, s.party])
 		var want_class: int = RECRUIT_CLASS_CHANGE.get(id, int(XDB.rec("Actors", id).classId))
 		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == want_class, [id, s.actor(id).class_id, want_class])

@@ -104,18 +104,19 @@ func _floors() -> void:
 	var unl := _floor_run(7506, 20)
 	check("floor.unlimited", unl.floor == 20 and is_equal_approx(unl.cri, unl.base + 2.0), [unl.floor, unl.cri])
 	XBattler.FLOOR_YINYUE_MAX = 10
-	# rules10b：10119 的隐月 2521 按说明每层 +2%；回退支原版 0.2%
+	# rules10b：10119 的隐月 2521 按说明每层 +2%。新源 v0.62.12 的 2521 数据本身已改成 +2%（旧源 v0.28 是 +0.2%），
+	# O-181 回退支（FIX_YINYUE_2521 = false）读数据库，两支现在同值
 	for fix in [true, false]:
 		if fix:
 			XBattler.FIX_YINYUE_2521 = true
 		else:
-			XBattler.FIX_YINYUE_2521 = false  # 回退支：原版 0.2%
+			XBattler.FIX_YINYUE_2521 = false  # 回退支：读数据库原值（新源也是 +2%）
 		for n in [1, 5, 10]:
 			var y := _floor_run(10119, n)
-			check("floor.2521.%s.%d" % [fix, n], is_equal_approx(y.cri, y.base + (0.02 if fix else 0.002) * n), [y.cri, y.base])
-			print("MEASURE 2521 %s 层数 %d 暴击率 %.4f → %.4f" % ["按说明 2%" if fix else "原版 0.2%", n, y.base, y.cri])
+			check("floor.2521.%s.%d" % [fix, n], is_equal_approx(y.cri, y.base + 0.02 * n), [y.cri, y.base])
+			print("MEASURE 2521 %s 层数 %d 暴击率 %.4f → %.4f" % ["按说明 2%" if fix else "数据库原值", n, y.base, y.cri])
 	XBattler.FIX_YINYUE_2521 = true
-	check("floor.2521.db_untouched", is_equal_approx(float(XDB.rec("States", 2521).traits[0].value), 0.002))
+	check("floor.2521.db_untouched", is_equal_approx(float(XDB.rec("States", 2521).traits[0].value), 0.02))
 	# 解除后重新附加从 1 层算起；阵亡清状态后同样
 	var r := _floor_run(7506, 5)
 	var a: XActor = r.a
