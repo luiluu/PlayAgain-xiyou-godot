@@ -206,8 +206,9 @@ func _paint_list(c: XMVCanvas) -> void:
 			if int(cost.get("icon", 0)) > 0:
 				c.icon(int(cost.icon), x + dw - 32, y + 2, alpha)
 				dw -= 34
-			c.text(str(cost.text), x, y, dw, "right", cost.get("color", XUI.TEXT), COST_SIZE, LH, alpha)
-			dw -= c.text_width(str(cost.text), COST_SIZE) + 5
+			var fs := int(cost.get("size", COST_SIZE))  # 自定义消耗文字是窗口标准字号
+			c.text(str(cost.text), x, y, dw, "right", cost.get("color", XUI.TEXT), fs, LH, alpha)
+			dw -= c.text_width(str(cost.text), fs) + 5
 
 
 ## YEP_SkillMasteryLevels 包过的 Window_Base.drawItemName（菜单技能窗有 _actor；战斗技能窗被 Olivia_SideBattleUI 整个换掉，不画）：
@@ -259,7 +260,57 @@ func _costs(a: XActor, s: Dictionary) -> Array:
 	var hp := XBattleLogic.skill_hp_cost(a, s)
 	if hp > 0:
 		out.append({"text": "%sHP" % XMenu._group(hp), "color": XUI.text_color(18), "icon": 1266})
+	var custom := custom_cost_row(s, XUI.FONT_SIZE)
+	if not custom.is_empty():
+		out.append(custom)
 	return out
+
+
+## YEP_SkillCore <Custom Cost Display>：两行标签之间的各行直接相连成 customCostText（v0.28 起插件就开着，重制原先漏了，补缺不设开关）；
+## 流萤 10623 完全燃烧三阶起清空（installLiuyingRuntime L.refreshText，新源行为，随流萤）
+static func custom_cost_text(s: Dictionary) -> String:
+	if int(s.get("id", 0)) == XLiuying.RANSHAO and XLiuyingHelp.rank_now() >= 3:
+		return ""
+	var out := ""
+	var on := false
+	var open := RegEx.create_from_string("(?i)<(?:CUSTOM COST DISPLAY|custom display cost)>")
+	var close := RegEx.create_from_string("(?i)</(?:CUSTOM COST DISPLAY|custom display cost)>")
+	for line in str(s.get("note", "")).split("\n"):
+		if open.search(line) != null:
+			on = true
+		elif close.search(line) != null:
+			on = false
+		elif on:
+			out += line
+	return out
+
+
+## drawCustomDisplayCost：TP／MP／HP 之后、ItemCost 等其它消耗之前，drawTextEx（resetFontSettings：窗口标准字号，颜色按 \c[n]），
+## 右对齐，之后留 SCCCostPadding 5。数据里只有整段一种颜色的写法，按第一段有字的颜色画一整段（别的转义码去掉）。
+static func custom_cost_row(s: Dictionary, size: int) -> Dictionary:
+	var raw := custom_cost_text(s)
+	if raw == "":
+		return {}
+	var color := XUI.text_color(0)
+	var plain := ""
+	var code := RegEx.create_from_string("(?i)\\\\c\\[(\\d+)\\]|\\\\[A-Za-z]+(?:\\[[^\\]]*\\])?")
+	var at := 0
+	var cur := color
+	var picked := false
+	for m in code.search_all(raw):
+		var seg := raw.substr(at, m.get_start() - at)
+		if seg != "" and not picked:
+			color = cur
+			picked = true
+		plain += seg
+		if m.get_string(1) != "":
+			cur = XUI.text_color(int(m.get_string(1)))
+		at = m.get_end()
+	var tail := raw.substr(at)
+	if tail != "" and not picked:
+		color = cur
+	plain += tail
+	return {} if plain == "" else {"text": plain, "color": color, "size": size}
 
 
 func _paint_actors(c: XMVCanvas) -> void:

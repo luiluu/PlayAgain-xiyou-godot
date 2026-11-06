@@ -42,6 +42,25 @@ for (const rank of [0, 1, 2, 3, 0]) {
   }
   ranks.push(one);
 }
+// YEP_SkillCore drawSkillCost（技能页 Window_SkillList）：自定义消耗文字 customCostText（10623 三阶清空）。逐字记 contents.drawText 的
+// 文字、x、颜色、字号，与 drawSkillCost 返回的剩余宽（宽 300）
+const costs = [];
+{
+  const sw = new w.Window_SkillList(0, 0, 400, 200);
+  sw.setActor(a);
+  for (const rank of [0, 3]) {
+    a._AdvancedNum = rank;
+    w.CodexLiuying && w.CodexLiuying.refreshText && w.CodexLiuying.refreshText(true);
+    for (const id of [10622, 10623]) {
+      const calls = [], bm = sw.contents, dt = bm.drawText;
+      bm.drawText = function (text, x, y, mw, lh, align) { calls.push([String(text), Number(x), String(this.textColor), Number(this.fontSize)]); return dt.apply(this, arguments); };
+      const left = sw.drawSkillCost(w.$dataSkills[id], 0, 0, 300);
+      bm.drawText = dt;
+      costs.push({rank, id, customCostText: w.$dataSkills[id].customCostText || '', left, calls: calls.filter(c => c[1] < 1000 && c[0] !== '')});
+    }
+  }
+  a._AdvancedNum = 0;
+}
 // 13：drawItemName 实际用的颜色（包住 changeTextColor 看画名字前最后一次设的颜色）
 const win = new w.Window_Base(new w.Rectangle(0, 0, 400, 100));
 const bwin = new w.Window_BattleSkill(0, 0, 400, 100);
@@ -68,6 +87,6 @@ for (const sk of w.$dataSkills) {
 }
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(OUT, {recursive: true});
-fs.writeFileSync(path.join(OUT, 'liuying_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, ranks, names}));
+fs.writeFileSync(path.join(OUT, 'liuying_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, ranks, names, costs, standardFontSize: new w.Window_Base(0, 0, 10, 10).standardFontSize()}));
 console.log(JSON.stringify({ranks: ranks.map(x => x.cards.map(c => c.rows.length)), names: names.length}));
 process.exit(0);

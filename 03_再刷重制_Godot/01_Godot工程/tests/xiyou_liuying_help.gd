@@ -1,6 +1,7 @@
 extends Node
 ## 【cc·界面·未经审查】流萤技能卡（总装追加，流萤运行时清单 13、15）：照 liuying_help_probe（tests/fixtures/liuying_help_oracle.json，v0.62.12）比——
 ## 15：10622／10623 的说明卡按流萤进阶 0～3 阶（再回 0）逐行比文字、字号、颜色、对齐、y 与卡高（XLiuyingHelp.view 接在 XHelpCard._content 开头）；
+## 自定义消耗文字：XSkillScene.custom_cost_row（YEP <Custom Cost Display>，10623 三阶清空），比参照 costs 的字、颜色码、字号；
 ## 13：10622～10632 与带 <CodexLiuyingPassive: 的技能名颜色＝列表名字色 XQuality.list_color（drawItemName 包装的 QualitiesColor[品质]）。
 const FIXTURE := "res://tests/fixtures/liuying_help_oracle.json"
 var checks := 0
@@ -64,6 +65,22 @@ func _ready() -> void:
 	var other := XDB.rec("Skills", XLiuying.PIAN_SHI)
 	check("other_same", is_same(XLiuyingHelp.view(other), other))
 	s.actor_advance.erase(XLiuying.ACTOR)
+	# YEP drawCustomDisplayCost：技能页右侧的自定义消耗文字（10623 三阶清空）。参照逐字记了画的字（量宽一遍、实画一遍，取后一半）
+	check("standard_font_size", int(data.standardFontSize) == XUI.FONT_SIZE, data.standardFontSize)
+	for c in data.costs:
+		s.actor_advance[XLiuying.ACTOR] = int(c.rank)
+		var rec := XDB.rec("Skills", int(c.id))
+		var row := XSkillScene.custom_cost_row(rec, XUI.FONT_SIZE)
+		var calls: Array = c.calls
+		var drawn := "".join(calls.slice(calls.size() / 2).map(func(x): return str(x[0])))
+		var tag := "cost.r%d.%d" % [int(c.rank), int(c.id)]
+		check(tag + ".text", str(row.get("text", "")) == drawn and XSkillScene.custom_cost_text(rec) == str(c.customCostText), [row, drawn, c.customCostText])
+		if drawn != "":
+			var m := RegEx.create_from_string("^\\\\c\\[(\\d+)\\]").search(str(c.customCostText))
+			check(tag + ".color", m != null and row.color == XUI.text_color(int(m.get_string(1))) and int(row.size) == int(calls[0][3]), [row, c.customCostText])
+	s.actor_advance.erase(XLiuying.ACTOR)
+	# 没有标签的技能不画
+	check("cost.none", XSkillScene.custom_cost_row(XDB.rec("Skills", XLiuying.PIAN_SHI), 26).is_empty())
 	# 13 技能名颜色
 	var bad := []
 	for c in data.names:

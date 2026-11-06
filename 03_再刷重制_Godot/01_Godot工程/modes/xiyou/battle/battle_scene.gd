@@ -1131,6 +1131,9 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 		var hp := XBattleLogic.skill_hp_cost(a, e)
 		if hp > 0:
 			row.costs.append({"text": "%sHP" % XMenu._group(hp), "color": XUI.text_color(18), "icon": 1266})  # YEP drawHpCost
+		var custom := XSkillScene.custom_cost_row(e, XBattleList.FS)  # YEP drawCustomDisplayCost（Olivia 缩放后的标准字号）
+		if not custom.is_empty():
+			row.costs.append(custom)
 	return row
 
 
