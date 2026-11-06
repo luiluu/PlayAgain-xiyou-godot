@@ -1,0 +1,63 @@
+{
+ "troop": 2,
+ "queries": {
+  "appear0": [
+   5,
+   0,
+   0
+  ],
+  "dead0": [
+   5,
+   0,
+   1,
+   1
+  ],
+  "appear1": [
+   5,
+   1,
+   0
+  ],
+  "state0_4": [
+   5,
+   0,
+   1,
+   4
+  ],
+  "dead5": [
+   5,
+   5,
+   1,
+   1
+  ]
+ },
+ "fresh": {
+  "appear0": false,
+  "dead0": false,
+  "appear1": false,
+  "state0_4": false,
+  "dead5": false
+ },
+ "won": {
+  "appear0": false,
+  "dead0": true,
+  "appear1": false,
+  "state0_4": false,
+  "dead5": false
+ },
+ "wonMembers": 3,
+ "escaped": {
+  "appear0": true,
+  "dead0": false,
+  "appear1": true,
+  "state0_4": true,
+  "dead5": false
+ },
+ "state4RemoveAtBattleEnd": true,
+ "hidden1": {
+  "appear0": true,
+  "dead0": false,
+  "appear1": true,
+  "state0_4": false,
+  "dead5": false
+ }
+}

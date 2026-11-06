@@ -150,8 +150,16 @@ func _jump_to_choice(choice: int, indent: int) -> void:
 			return
 
 
+## 敌人 [5, 序号, 0 出现／1 状态, 状态]：地图上 $gameTroop 是上一场战斗的敌群（XState.last_troop，没打过或读档后为空 → false）；
+## 出现＝isAlive（战斗结束后都已出现，即没死）。战斗里由 XBattleEventRunner 读当场敌人。
 ## 角色朝向 [6, 角色, 方向]
 func _condition_env(p: Array):
+	if int(p[0]) == 5:
+		var troop: Array = state().last_troop
+		var i := int(p[1])
+		if i < 0 or i >= troop.size():
+			return false
+		return not bool(troop[i].dead) if int(p[2]) == 0 else Array(troop[i].states).has(int(p[3]))
 	if int(p[0]) == 6:
 		var ch = host.character(int(p[1]), event_id)
 		return ch != null and int(ch.direction) == int(p[2])
