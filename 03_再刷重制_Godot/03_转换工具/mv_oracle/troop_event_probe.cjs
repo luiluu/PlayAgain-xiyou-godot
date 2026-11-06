@@ -49,6 +49,10 @@ const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39, 52, 53, 67, 69, 109, 110
   584, 585, 586, 587, 588, 589, 640, 641, 642, 643, 644, 645, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 901, 902,
   // 清单里还没开场对照的守层者／传承者：七层海明威 22、驯龙猎手 245、秃头男 270、传承者 772～775／780～784／786、求道者斯盖和齐格鲁德 787
   22, 245, 270, 772, 773, 774, 775, 780, 781, 782, 783, 784, 786, 787];
+const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
+  599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
+  772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797,
+  798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 816, 817, 818, 825, 830, 831, 901, 902];
 const stub = new Proxy(function () {}, {get: (t, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprite = () => {
   const store = {x: 0, y: 0, _homeX: 0, _homeY: 0, width: 64, height: 64, scale: {x: 1, y: 1}, anchor: {x: 0.5, y: 1}, opacity: 255};
@@ -68,10 +72,32 @@ w.Game_Battler.prototype.startDamagePopup = function () {
 const alterBattleback = w.BattleManager.alterBattleback;
 w.BattleManager.alterBattleback = function (line) { return w.SceneManager._scene ? alterBattleback.call(this, line) : undefined; };
 
+// 覆盖记录（cc events13，环境变量 XIYOU_COVER=1 才开，默认不记、troop_events.json 逐字节不变）：每例记解释器实际执行到的
+// 「位置:下标」（敌群页 tTpP、公共事件 ceN，按 _list 对象认），101 连带消费的 401／102 续行也算；另写 .sandbox/troop_events_cover.json，
+// byCase 以 cases 序号为键，给 03_转换工具/敌群页覆盖.py 和 Godot 侧 xiyou_troop_events --coverage 对照。
+const COVER = process.env.XIYOU_COVER === '1', coverByCase = [];
+let ran = null;
+if (COVER) {
+  const where = new Map();
+  w.$dataTroops.forEach(t => t && t.pages.forEach((pg, p) => where.set(pg.list, 't' + t.id + 'p' + p)));
+  w.$dataCommonEvents.forEach(ce => ce && where.set(ce.list, 'ce' + ce.id));
+  const exec = w.Game_Interpreter.prototype.executeCommand;
+  w.Game_Interpreter.prototype.executeCommand = function () {
+    const at = ran && where.get(this._list), start = this._index, cmd = at && this.currentCommand();
+    const res = exec.apply(this, arguments);
+    if (cmd) {
+      ran.add(at + ':' + start);
+      if (cmd.code === 101) for (let i = start + 1; i < this._index; i++) ran.add(at + ':' + i);
+    }
+    return res;
+  };
+}
+
 // hpRate：开战前把敌人 0 的 HP 设为上限的这个比例（向下取整），照常跑两回合；消息忙时直接关掉（模拟玩家读完），
 // 记录 messages（每条的回合与文字）与回合结束时各敌人的 enemyId（三十层敌群 466：HP≤25% 第 3 页 101 对话、336 变身 538、1399、强制 6070／6105）。
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
 function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0) {
+  if (COVER) { ran = new Set(); coverByCase.push(ran); }
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
@@ -151,6 +177,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
     }
   } catch (e) { out.errors.push(String(e && e.stack || e).slice(0, 800)); }
   BM.invokeAction = inv; BM.startAction = sa; BM.startTurn = st0;
+  ran = null;
   for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members()))
     out.battlers[key(b)] = {hp: b.hp, mhp: b.mhp, atk: b.atk, mat: b.mat, agi: b.agi, states: b._states.slice()};
   if (hpRate) out.enemyIds = w.$gameTroop.members().map(e => e.enemyId());
@@ -176,9 +203,15 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat([125, 126, 816, 817, 830, 831].map(id => run(id, false, null, 0, 0.2)))
     .concat([run(818, false, null, 0, 0.1), run(818, false, null, 0, 0.05, [2])])
     // 金之巨人 830 第 20 回合（第 4 页：101 对话＋强制 8203「毁灭」）：回合计数预置 19，跑到第 20 回合
-    .concat([run(830, false, null, 0, 0, null, 19)])};
+    .concat([run(830, false, null, 0, 0, null, 19)])
+    // t1（cc events13，敌群页覆盖.py 实例最多的簇「页条件：回合 3+3·X」）：守层者／首领第 1 页第 3 回合起每 3 回合随机强制（变量 844），
+    // 开战两回合跑不到。回合计数预置 2、跑第 3 回合；Godot 侧只比开战检查与第 3 回合的对话、强制行动［行动者, 技能］（variant t1）
+    .concat(T1_TURN3.map(id => Object.assign(run(id, false, null, 0, 0, null, 2), {variant: 't1'})))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
+if (COVER) fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events_cover.json'), JSON.stringify({sourceIdentity: identity,
+  note: 'troop_event_probe XIYOU_COVER=1：原版解释器实际执行到的敌群页／公共事件指令（位置:下标）',
+  byCase: Object.fromEntries(coverByCase.map((s, i) => [String(i), [...s].sort()]))}));
 process.stdout.write(JSON.stringify(result.cases.map(c => ({troop: c.troop, actions: c.actions.length, invokes: c.invokes.length, errors: c.errors.length, turn: c.turnCount, phase: c.phase}))) + '\n');
 process.exit(0);
