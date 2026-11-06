@@ -24,5 +24,11 @@
   "sideviewnocollapse": {"reason": "无运行效果", "evidence": "实测 MOG_CollapseEffects 默认死亡效果接管 updateCollapse，SV／非 SV 倒下透明度一样；sv_enemy.gd 头注、专项 xiyou_sve_visual 守着"},
   "sideviewshowshadow": {"reason": "已由别处实现", "evidence": "sv_enemy.gd shadow（Show／Hide Shadow 覆盖参数），专项 xiyou_sve_visual"},
   "sideviewweapon": {"reason": "已由别处实现", "evidence": "sv_enemy.gd weapon（武器图＋攻击动作），专项 xiyou_sve_visual 核 186 个 SV 敌人"},
-  "stateanimation": {"reason": "已由别处实现", "evidence": "battle/vsfx.gd＋battle_scene._update_state_animations，状态 1297 动画 900 循环，专项 xiyou_vsfx；数据里无 State Overlay 标签，无需画（bailong-visual1）"}
+  "stateanimation": {"reason": "已由别处实现", "evidence": "battle/vsfx.gd＋battle_scene._update_state_animations，状态 1297 动画 900 循环，专项 xiyou_vsfx；数据里无 State Overlay 标签，无需画（bailong-visual1）"},
+  "codexaura": {"reason": "暂缓（已登记）", "evidence": "v0.30 角色图鉴／技能详情「光环独立栏」的分组标签（Star_ActorsBook、Codex_ActorBookSkillDetails 按 <CodexAura> 把技能分到第 2 栏，installIntegratedV029Runtime 读同一标签），只影响图鉴排版；冻结后改动盘点_v0.29-v0.62.12.md v0.30 行，待图鉴界面跟进"},
+  "disassemblepool": {"reason": "暂缓（已登记）", "evidence": "installIntegratedV029Runtime 内嵌的新版武器／防具备注（38 件）带 <Disassemble Pool> 分解产物池，重制分解还按 v0.28 规则；冻结后改动盘点_v0.29-v0.62.12.md 第 142 行「要移植：IntegratedV029」"},
+  "codexliuyingcoredrop": {"reason": "暂缓（已登记）", "evidence": "换源后新角色流萤（179）整套还没移植：冻结后改动盘点_v0.29-v0.62.12.md v0.60～v0.62 各行标「跟」，归流萤车道；installLiuyingRuntime 萨姆残核掉落（神魔之塔 15～27 层深渊敌人，11-01 补丁行）"},
+  "codexliuyingpassive": {"reason": "暂缓（已登记）", "evidence": "换源后新角色流萤（179）整套还没移植：冻结后改动盘点_v0.29-v0.62.12.md v0.60～v0.62 各行标「跟」，归流萤车道；installLiuyingRuntime 被动「梦应归于何处」（技能 10633，v0.61 行）"},
+  "codexliuyingstate": {"reason": "暂缓（已登记）", "evidence": "换源后新角色流萤（179）整套还没移植：冻结后改动盘点_v0.29-v0.62.12.md v0.60～v0.62 各行标「跟」，归流萤车道；installLiuyingRuntime 萤火状态（状态 2791）"},
+  "codexqiyuweapon#": {"reason": "暂缓（已登记）", "evidence": "installIntegratedV029Runtime 用 <CodexQiyuWeapon29> 把武器 90 从可得名单里藏起（隐藏装备名单）；冻结后改动盘点_v0.29-v0.62.12.md 第 142 行「要移植：IntegratedV029（停用角色、隐藏装备名单）」"}
 }
