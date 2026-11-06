@@ -2,6 +2,7 @@
 """event_probe 分段并行：分组均衡且不拆单元、拼回与单进程顺序逐字相同；仅用临时夹具。"""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -103,6 +104,39 @@ class StateShardMergeTests(unittest.TestCase):
             Path(paths[1]).write_text(json.dumps(short))
             r = subprocess.run(['node', '-e', mod.SHARD_MERGE_JS, str(out)] + paths, capture_output=True, text=True)
             self.assertNotEqual(r.returncode, 0)
+
+
+ORACLE = TOOLS / 'mv_oracle'
+APP = TOOLS.parent / '02_内容与素材/冻结正式源/app.nw'
+
+
+@unittest.skipUnless((ORACLE / 'node_modules').exists() and APP.exists() and (TOOLS.parent / '01_Godot工程/modes/xiyou/generated/maps').exists(),
+                     '需要参照引擎依赖、冻结正式源和转换产物（云端等没有就跳过）')
+class StateIncrementalTests(unittest.TestCase):
+    """BV：事件状态探针增量——摘要没变的变体原样取回，结果与整份重跑逐字节相同；旁边的 .keys.json 对不上就整份重跑。"""
+    def run_probe(self, out, **env):
+        e = dict(os.environ, XIYOU_EVENT_OUT=str(out), **env)
+        e.pop('XIYOU_PROBE_SHARD', None)
+        r = subprocess.run(['node', 'event_state_probe.cjs', 'm163e6p7#e8c', 'm163e6p7#e8d'], cwd=ORACLE, env=e, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        return json.loads(r.stdout.strip().splitlines()[-1])
+
+    def test_reuse_is_byte_identical_and_tampering_forces_rerun(self):
+        sandbox = ORACLE / '.sandbox'
+        sandbox.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=sandbox) as tmp:
+            out = Path(tmp) / 'states.json'
+            first = self.run_probe(out, XIYOU_STATE_INCREMENTAL='0')
+            self.assertEqual(first['reused'], 0)
+            full = out.read_bytes()
+            second = self.run_probe(out)
+            self.assertEqual(second['reused'], second['cases'])
+            self.assertGreaterEqual(second['sampled'], 1)                     # 1% 自检至少抽 1 个
+            self.assertEqual(out.read_bytes(), full)
+            out.write_bytes(full.replace(b'"finished":true', b'"finished":false', 1))   # 上次的文件被改过：文件摘要对不上，整份重跑
+            third = self.run_probe(out)
+            self.assertEqual(third['reused'], 0)
+            self.assertEqual(out.read_bytes(), full)
 
 
 class MergeTests(unittest.TestCase):

@@ -6,7 +6,7 @@
 // 变体用例号 = 基础用例号 + '#' + tag；快照 before 在预设之后取，delta 只含事件自己造成的变化；
 // 额外记 reached：[实际执行到的效果指令数, 该页效果指令总数]，证明变体比基础用例走得更深。
 // 用法：node event_state_probe.cjs [变体号前缀…]；XIYOU_EVENT_OUT 改输出路径，默认 .sandbox/event_states.json
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const GEN = process.env.XIYOU_GENERATED || path.resolve(__dirname, '../../01_Godot工程/modes/xiyou/generated');
@@ -26,6 +26,7 @@ w.Input.clear();   // 参照启动不走 Scene_Boot 的 Input.initialize；玩�
 }
 const TITLE_CE = w.Star.Designation.ComLen;
 
+const sha = v => crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
 // ---- 用例：Godot 实际导出的事件（generated/maps）的每一页 ＋ 切片公共事件 ----
 const cases = [];
 for (const id of SLICE.maps) {
@@ -33,13 +34,13 @@ for (const id of SLICE.maps) {
   (map.events || []).forEach(ev => {
     if (!ev) return;
     ev.pages.forEach((pg, p) => {
-      if ((pg.list || []).some(c => c.code !== 0)) cases.push({id: `m${id}e${ev.id}p${p}`, kind: 'map', map: id, event: ev.id, page: p, x: ev.x, y: ev.y});
+      if ((pg.list || []).some(c => c.code !== 0)) cases.push({id: `m${id}e${ev.id}p${p}`, kind: 'map', map: id, event: ev.id, page: p, x: ev.x, y: ev.y, listHash: sha(pg.list)});
     });
   });
 }
 for (const ce of MANIFEST.slice.commonEvents) {
   const rec = w.$dataCommonEvents[ce];
-  if (rec && (rec.list || []).some(c => c.code !== 0)) cases.push({id: `ce${ce}`, kind: 'common', map: COMMON_MAP, event: 0, common: ce, x: 0, y: 0});
+  if (rec && (rec.list || []).some(c => c.code !== 0)) cases.push({id: `ce${ce}`, kind: 'common', map: COMMON_MAP, event: 0, common: ce, x: 0, y: 0, listHash: sha(rec.list)});
 }
 const PRESETS = JSON.parse(fs.readFileSync(path.join(__dirname, '../event_presets.json'), 'utf8')).cases;
 const baseById = Object.fromEntries(cases.map(c => [c.id, c]));
@@ -360,13 +361,42 @@ function runCase(c) {
 }
 
 const t0 = Date.now();
-const results = shardOf.map(runCase);
-if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
-const setup = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prompt: PROMPT_TEXT, maxFrames: MAX_FRAMES};
-// 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
+// ---- 增量（BV）：变体的结果只由「用例号＋预设＋基础事件页指令＋来源＋探针代码」决定（每例从同一新局快照起跑、互不依赖），
+// 摘要没变的变体从上次的 event_states.json 原样取回；上次的文件由旁边的 .keys.json 认领（含文件摘要，改过就不认）。
+// 取回的变体抽 1% 重跑比对，有不同就整份重跑。XIYOU_STATE_INCREMENTAL=0 关闭；XIYOU_STATE_PREV 指定上次的文件（默认就是输出路径）。
+const SETUP = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prompt: PROMPT_TEXT, maxFrames: MAX_FRAMES};
 const OUT = process.env.XIYOU_EVENT_OUT || path.join(__dirname, '.sandbox/event_states.json');
+const KEYS_OUT = process.env.XIYOU_STATE_KEYS_OUT || OUT.replace(/\.json$/, '.keys.json');
+const PREV = process.env.XIYOU_STATE_PREV || OUT, PREV_KEYS = PREV.replace(/\.json$/, '.keys.json');
+const fileSha = f => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const probeFingerprint = sha([identity, SETUP, SLICE.maps, MANIFEST.slice.commonEvents, ['event_state_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs']
+  .map(f => fileSha(path.join(__dirname, f))), fileSha(path.join(__dirname, '../xiyou_slice.json')), (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })()]);
+const keyOf = c => sha([probeFingerprint, c.id, c.preset, c.listHash]);
+const keys = Object.fromEntries(variants.map(c => [c.id, keyOf(c)]));
+let reuse = new Map();
+if (process.env.XIYOU_STATE_INCREMENTAL !== '0' && fs.existsSync(PREV) && fs.existsSync(PREV_KEYS)) {
+  try {
+    const pk = JSON.parse(fs.readFileSync(PREV_KEYS, 'utf8')), prev = JSON.parse(fs.readFileSync(PREV, 'utf8'));
+    if (pk.fileSha === fileSha(PREV) && JSON.stringify(prev.sourceIdentity) === JSON.stringify(identity) && JSON.stringify(prev.setup) === JSON.stringify(SETUP)) {
+      for (const c of prev.cases) if (pk.keys[c.id] && pk.keys[c.id] === keys[c.id]) reuse.set(c.id, c);
+    }
+  } catch (e) { reuse = new Map(); }
+}
+let reused = 0, sampled = 0, mismatched = 0;
+const todo = shardOf.filter(c => reuse.has(c.id));
+if (todo.length) {
+  const picks = todo.filter((c, i) => i % 100 === 0);   // 1% 自检
+  for (const c of picks) { sampled++; if (JSON.stringify(runCase(c)) !== JSON.stringify(reuse.get(c.id))) mismatched++; }
+  if (mismatched) { console.error('增量自检：' + mismatched + '/' + sampled + ' 个取回的变体与重跑不同，整份重跑'); reuse = new Map(); }
+}
+const results = shardOf.map(c => reuse.has(c.id) ? (reused++, reuse.get(c.id)) : runCase(c));
+if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
+const setup = SETUP;
+// 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
 fs.mkdirSync(path.dirname(OUT), {recursive: true});
 fs.writeFileSync(OUT, JSON.stringify(Object.assign({sourceIdentity: identity, setup, cases: results}, skippedPresets.length ? {skippedPresets} : {})));
-console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, unfinished: results.filter(x => !x.finished).map(x => x.id),
+// 旁边的 .keys.json：全部变体的摘要；分段时各段只写摘要（没有 fileSha），由补跑事件状态探针.py 拼回后补上整份文件的摘要
+fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({keys, probeFingerprint}, shardSpec ? {} : {fileSha: fileSha(OUT)})));
+console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, reused, sampled, unfinished: results.filter(x => !x.finished).map(x => x.id),
   errors: results.filter(x => x.errors).map(x => x.id), ms: Date.now() - t0}));
 process.exit(0);
