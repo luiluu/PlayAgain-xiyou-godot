@@ -244,6 +244,7 @@ want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试导出冒烟.py" >/dev/null 2>&1; then ok "导出冒烟工具（结果解析与报告）"; else bad "导出冒烟工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/null 2>&1; then ok "切场景后调用扫描工具"; else bad "切场景后调用扫描工具回归失败，单跑 07_开发环境/测试切场景后调用扫描.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; then ok "补齐整轮重导入走长任务"; else bad "导入超时工具回归失败，单跑 07_开发环境/测试导入超时.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试插件备注覆盖.py" >/dev/null 2>&1; then ok "插件备注覆盖工具"; else bad "插件备注覆盖工具回归失败，单跑 07_开发环境/测试插件备注覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
