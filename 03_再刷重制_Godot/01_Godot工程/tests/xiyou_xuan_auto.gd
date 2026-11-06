@@ -258,7 +258,7 @@ func _check_manual_first(ref: Dictionary) -> void:
 
 ## O-212 修正支（默认）：角色 gainHp／setHp 的掉血照旧先进护盾账本（旧源 v0.28 参照的值）
 func _check_actor_hp_ledger(ref: Dictionary) -> void:
-	XShieldLedger.ACTOR_HP_LEDGER = true
+	XResourceContext.o_actor_hp_wrappers = true
 	var want := {"dinggui_seq": [3, "a1", {"hp": 466, "shield": []}], "mist": [5, "a1", {"hp": 485, "shield": [["xuan.libi", 210792, 3]]}],
 		"binggui2": [5, "a8", {"hp": 450, "shield": [["xuan.libi", 124057, 3]]}]}
 	for c in ref.cases:
@@ -273,12 +273,12 @@ func _check_actor_hp_ledger(ref: Dictionary) -> void:
 		check("ledger_on.%s.%s" % [c.id, w[1]], got == _norm(w[2]), [got, w[2]])
 		if XBinding.in_battle():
 			logic.end_battle(0)
-	XShieldLedger.ACTOR_HP_LEDGER = false
+	XResourceContext.o_actor_hp_wrappers = false
 
 
 func _ready() -> void:
 	XXuanBattle.YUHUI_SHIELD = false  # 参照比原版：余辉不给护盾（fix1 默认修好，修正支在 xiyou_xuan_battle）
-	XShieldLedger.ACTOR_HP_LEDGER = false  # 参照比原版：新源角色 gainHp／setHp 绕过账本（O-212；修正支见 _check_actor_hp_ledger）
+	XResourceContext.o_actor_hp_wrappers = false  # 参照比原版：新源角色 gainHp／setHp 绕过账本（O-212；修正支见 _check_actor_hp_ledger）
 	_go.call_deferred()
 
 

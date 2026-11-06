@@ -75,7 +75,7 @@ func _run() -> void:
 	XAlienBattle.o115_mimic_cycle = false
 	XAlienBattle.o116_idle_release = false
 	XAlienBattle.o_prayer_counter = false
-	XResourceContext.o_actor_sethp_wrappers = false
+	XResourceContext.o_actor_hp_wrappers = false
 	var by_id := {}
 	for c in ref.cases:
 		by_id[str(c.id)] = c
@@ -87,7 +87,7 @@ func _run() -> void:
 	XAlienBattle.o115_mimic_cycle = true
 	XAlienBattle.o116_idle_release = true
 	XAlienBattle.o_prayer_counter = true
-	XResourceContext.o_actor_sethp_wrappers = true
+	XResourceContext.o_actor_hp_wrappers = true
 	# O-待定·流萤遮住角色 setHp 开时（默认）：异化 setHp 包装对角色照旧生效——绝缘挡下别人给的回血，舍身把它转给搭档
 	if by_id.has("battle.insulation.sethp"):
 		var rows := _battle(by_id["battle.insulation.sethp"], false)
