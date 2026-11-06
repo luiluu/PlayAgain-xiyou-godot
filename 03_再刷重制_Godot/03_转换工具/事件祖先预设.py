@@ -47,6 +47,30 @@ def chain(lst, i, loc):
     return heads
 
 
+def trace_var(lst, j, p):
+    """条件变量若在门前被 122 从游戏数据（物品／武器／防具数量、金钱）赋值，直接设预设变量会被覆盖：
+    改成设那个数据（物品 items、武器 weapons、防具 armors、金钱 gold）。"""
+    vs = p.get('variables')
+    if not vs or len(vs) != 1:
+        return p
+    vid, val = int(next(iter(vs))), next(iter(vs.values()))
+    for k in range(j - 1, -1, -1):
+        c = lst[k]
+        if int(c['code']) != 122:
+            continue
+        q = c['parameters']
+        if int(q[0]) <= vid <= int(q[1]):
+            if int(q[2]) == 0 and int(q[3]) == 3:
+                t = int(q[4])
+                if t in (0, 1, 2) and int(val) >= 0:
+                    key = {0: 'items', 1: 'weapons', 2: 'armors'}[t]
+                    return {key: {str(q[5]): int(val)}}
+                if t == 7 and int(q[5]) == 2:
+                    return {'gold': int(val)}
+            return p
+    return p
+
+
 def synth(lst, first, loc):
     """cluster 第一个实例 first 的祖先链合成预设；返回 (预设, 没法开的门数)。"""
     pre, bad = {}, 0
@@ -54,6 +78,8 @@ def synth(lst, first, loc):
         code = int(lst[j]['code'])
         if code in (111, 411, 402):
             p = cov.open_preset(lst, j, loc)
+            if p is not None and code in (111, 411):
+                p = trace_var(lst, j, p)
             if p is None:
                 bad += 1
             else:
@@ -68,6 +94,8 @@ def main(argv=None):
     ap.add_argument('--min', type=int, default=3)
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--skip-bad', action='store_true', help='祖先链上有开不了的门（playtime、敌人条件等）的簇不出变体')
+    ap.add_argument('--tried-presets', action='append', default=[], help='往轮的 event_presets.json（含后来剪掉的）：其中的 (页, 预设) 不再出')
     ap.add_argument('--prune', action='store_true')
     ap.add_argument('--tried', action='append', default=[], help='往轮的簇 JSON：按同法合成过（含后来剪掉的）的 (页, 预设) 不再出')
     ap.add_argument('--targets', help='生成时写出／剪枝时读入：变体号→目标位置')
@@ -90,6 +118,9 @@ def main(argv=None):
     clusters.sort(key=lambda c: (-c['n'], c['loc']))
     have = {(c['base'], json.dumps(c['preset'], sort_keys=True)) for c in cases}
     new, seen, bad_n = [], set(), 0
+    for pj in a.tried_presets:
+        for c in json.loads(Path(pj).read_text())['cases']:
+            seen.add((c['base'], json.dumps(c['preset'], sort_keys=True)))
     for tj in a.tried:
         for c in json.loads(Path(tj).read_text())['clusters']:
             if c['preset'] and c['n'] >= a.min and c['loc'] in lists:
@@ -103,6 +134,8 @@ def main(argv=None):
         pre, bad = synth(lst, c['first'], c['loc'])
         if bad:
             bad_n += 1
+            if a.skip_bad:
+                continue
         if not pre:
             continue
         key = (c['loc'], json.dumps(pre, sort_keys=True))
