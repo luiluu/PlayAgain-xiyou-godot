@@ -12,7 +12,8 @@
 // ④ 第④批 battle.swallow／offer：装备类；另记双方装备栏、能力值、命中／回避／暴击与背包件数，步骤 end 照 endBattle（还原装备栏）。
 // 新游戏（Math.random 0.5），只在内存；产物 .sandbox/alien_affix.json。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
-const host = start(), {w, newGame} = host;
+// 异化 v0.58 被正式版整套隐藏（installAlienationHide）；Kyo 11-05 定重制保留，参照量没装隐藏模块的原版行为（旧源没有这个模块，产物不变）
+const host = start({skipModules: ['installAlienationHide']}), {w, newGame} = host;
 const A = w.CodexAlienation, C = A && A.config;
 if (!A || !C || !A.advanced) throw new Error('异化词条模块未安装');
 const r = v => round(v);

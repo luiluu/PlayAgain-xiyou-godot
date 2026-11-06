@@ -58,7 +58,15 @@ static func _toast(logic, text: String) -> void:
 	XToast.show_text(text)
 
 
+## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制保持开启。
+## HIDDEN_V058＝true 时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、工坊打不开（O-待定·异化隐藏，默认 false）。
+## 还没跟的另外三件（物品不可得／不可见／不可装备、商店、读档把异化实例还原成普通装备）见优化登记 O-待定·异化隐藏。
+static var HIDDEN_V058 := false
+
+
 static func encounter(logic):
+	if HIDDEN_V058:
+		return null
 	return _store(logic).encounter if logic != null and logic.has_meta("xalien") else null
 
 
@@ -120,6 +128,8 @@ static func variant_info(key: String) -> Dictionary:
 static func setup_encounter(logic, rng: XRandomStream, forced := {}):
 	var st := _store(logic)
 	st.encounter = null
+	if HIDDEN_V058:
+		return null
 	var s: XState = logic.state
 	var enemies: Array = logic.enemies
 	var candidates := []
@@ -275,6 +285,8 @@ static func locked(a):
 
 ## A.grant：异化敌人倒下才发
 static func grant(logic) -> bool:
+	if HIDDEN_V058:
+		return false
 	var x = encounter(logic)
 	if x == null or bool(x.granted) or not x.enemy.is_dead():
 		return false

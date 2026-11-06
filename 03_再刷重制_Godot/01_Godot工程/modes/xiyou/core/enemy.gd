@@ -194,6 +194,8 @@ func setup_level(highest: int, r := -1.0, random: XRandomStream = null) -> void:
 var zq_ref := {}
 ## 幻化的敌人不掉落（makeDropItems／makeRewards 的物品清空）
 var zq_trial_loot := false
+## 神兵试炼的敌人（原版 _codexZqWeaponTrial，v0.45）：经验、金钱为 0
+var zq_weapon_trial := false
 ## 异化敌人（XAlienBattle，原版 _alienEnemy）：{variant, boss, shieldGranted, mirrorRound, mirrorCharged, plagueRound, drainRound}
 var alien := {}
 
@@ -290,9 +292,13 @@ func skills() -> Array:
 	return out
 
 func exp_reward() -> int:
+	if zq_weapon_trial:
+		return 0
 	return int(float(data().get("exp", 0)) * (elite_param(2) if elite else 1.0))
 
 func gold_reward() -> int:
+	if zq_weapon_trial:
+		return 0
 	return int(float(data().get("gold", 0)) * (elite_param(3) if elite else 1.0))
 
 ## 掉率倍数（神话 ×5）

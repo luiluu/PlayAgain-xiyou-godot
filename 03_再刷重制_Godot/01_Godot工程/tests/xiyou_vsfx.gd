@@ -1,6 +1,6 @@
 extends Node
 ## YEP_X_VisualStateFX 状态循环动画守卫（bailong-visual1）。参照 oracle/vsfx.json（mv_oracle/vsfx_probe.cjs 量冻结正式源）：
-## 全游戏只有状态 1297「刻印环身盾」带 <State Animation: 900>（动画 900「光环(中间呼吸)」60 帧，无闪光无音效）。
+## v0.28 全游戏只有状态 1297「刻印环身盾」带 <State Animation: 900>；v0.62.12 另有 2756「道翼」带 994（动画 900「光环(中间呼吸)」60 帧，无闪光无音效）。
 ## 规则：号取 states() 顺序第一个；号变才换；播完同一帧接着播；去状态立刻清；不透明度跟战斗者；角色敌人都放。
 class QuietBattle extends XBattleScene:
 	func _main() -> void:
@@ -38,7 +38,9 @@ func _run() -> void:
 	for s in XDB.table("States"):
 		if s is Dictionary and (s.get("meta", {}).has("State Animation") or s.get("meta", {}).has("State Ani")):
 			ours.append(int(s.id))
-	check("census.states", ours == [1297] and census.states.size() == 1 and int(census.states[0].ani) == 900, [ours, census.states])
+	# v0.62.12 多了状态 2756「道翼」带动画 994（v0.28 只有 1297）
+	check("census.states", ours == [1297, 2756] and census.states.size() == 2 and int(census.states[0].ani) == 900 and int(census.states[1].ani) == 994, [ours, census.states])
+	check("census.anim994", MVAnimation.usable(XDB.rec("Animations", 994)))
 	var anim := XDB.rec("Animations", 900)
 	check("census.anim900", MVAnimation.usable(anim) and anim.frames.size() == 60 and anim.timings.is_empty() and int(anim.get("position", 1)) == 1, anim.get("frames", []).size())
 	check("census.params", census.params.actorAni == true and census.params.enemyAni == true and census.params.screen == false and census.params.sound == false, census.params)
@@ -47,6 +49,9 @@ func _run() -> void:
 	check("id.none", XVisualStateFx.animation_id(e) == 0)
 	e.state_ids.append(1297)
 	check("id.1297", XVisualStateFx.animation_id(e) == 900, XVisualStateFx.animation_id(e))
+	e.state_ids.assign([2756])
+	check("id.2756", XVisualStateFx.animation_id(e) == 994, XVisualStateFx.animation_id(e))
+	e.state_ids.assign([1297])
 	var st := XDB.rec("States", 2)
 	var old_meta = st.get("meta", {}).duplicate()
 	st["meta"] = old_meta.duplicate()
