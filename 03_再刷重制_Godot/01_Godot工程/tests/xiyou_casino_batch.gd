@@ -28,6 +28,9 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	XSave.dir_override = "user://test_xiyou_casino_batch"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76，自动执行、223 改色调等待）当作播过：本测不测过场；不记的话过场挂在色调等待上，地图释放后接着跑，退出时报 3 条 SCRIPT ERROR（过场本身见 xiyou_opening_branches）
 	XPetCapture.clock = func(): return {"day": 1, "hour": 12, "minute": 15}
 	XMessageBox.auto = true
 	MVEventCore.fixed_random = 0.5
@@ -295,6 +298,10 @@ func close_map() -> void:
 
 
 func finish() -> void:
+	DirAccess.remove_absolute(XConfig.path_override)
+	DirAccess.remove_absolute(XSave.dir())
+	XConfig.path_override = ""
+	XSave.dir_override = ""
 	XPetCapture.clock = Callable()
 	XMessageBox.auto = false
 	await get_tree().create_timer(0.3, true, false, true).timeout
