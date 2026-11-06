@@ -103,6 +103,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
+	obj = XLiuyingHelp.view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按流萤当前进阶重写（L.refreshText）
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
@@ -113,7 +114,10 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	var binding_copy := type == 3 and int(XTusuXuan.owner_of(int(obj.get("id", 0)))[0]) != 0
 	# 心钢技能卡 H.skillHelpView 传的是深拷贝（XGrowthHelp.skill_view 标 skill_copy），同上
 	binding_copy = binding_copy or bool(obj.get("skill_copy", false))
-	if not growth or XGrowthHelp.HELP_FIX:
+	# 流萤 10622／10623：原版流萤的 setItem 包装在元素包装之内，拿到的是元素包装的代理（不是 $dataSkills 本身），
+	# 就把 descParams 换回 refreshText 重算的那份，元素包装删插的「伤害属性」行被冲掉（照原版：卡上留备注里的写法）
+	var liuying := type == 3 and XLiuying.lb_skill(int(obj.get("id", 0)))
+	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
 		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
 		if (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
