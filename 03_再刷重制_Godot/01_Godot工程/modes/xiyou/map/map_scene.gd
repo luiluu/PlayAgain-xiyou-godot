@@ -88,6 +88,7 @@ static func slice() -> Dictionary:
 
 func _ready() -> void:
 	XPlatform.idle_probe = XHangUp.current_active  # 跨平台二期：后台补跑、挂机不锁屏看这个
+	XPlatform.pause_hook = _on_app_pause  # 安卓切后台自动存档（XAutoSave）
 	# MV 画面底色为黑：比画面小的地图（开局 Map001/002 为 17×13）四周是黑的
 	var backdrop := CanvasLayer.new()
 	backdrop.layer = -100
@@ -148,6 +149,8 @@ func _difficulty_notice_active() -> bool:
 
 
 func _exit_tree() -> void:
+	if XPlatform.pause_hook == Callable(self, "_on_app_pause"):
+		XPlatform.pause_hook = Callable()
 	# 地图销毁前解除全局计时器的回调，不能留到下一帧再检测已释放的闭包。
 	if is_instance_valid(difficulty_notice) and is_instance_valid(difficulty_notice.clock):
 		var clock := difficulty_notice.clock
@@ -1335,6 +1338,11 @@ func _event_screen_pos(id: int):
 		if ev is Dictionary and int(ev.id) == id:
 			return Vector2((float(ev.x) + 0.5) * TS, (float(ev.y) + 1.0) * TS - 6.0)
 	return null
+
+
+## 切后台（XPlatform.pause_hook）：能存就存一份自动存档
+func _on_app_pause(now_msec: int) -> void:
+	XAutoSave.on_pause(self, now_msec)
 
 
 ## DataManager.saveGame(固定存档位)

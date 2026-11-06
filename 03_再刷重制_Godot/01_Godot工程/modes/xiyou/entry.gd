@@ -113,6 +113,38 @@ func _title() -> void:
 	_layer.add_child(ver)
 	if XPlatform.is_touch():
 		_add_transfer_buttons()
+	if XSave.exists_auto():
+		_add_auto_button()
+
+
+## 切后台时自动存的档（XAutoSave）：有就在左上角放一个「继续」，手动存档后那份就删了、按钮也就没了
+func _add_auto_button() -> void:
+	var insets := XPlatform.safe_insets(get_viewport())
+	var b := Button.new()
+	b.name = "ContinueAuto"
+	b.text = "继续（切后台时自动存的档）"
+	b.position = Vector2(maxf(8.0, insets[0]), maxf(8.0, insets[1]))
+	b.size = Vector2(280, 40)
+	b.add_theme_font_size_override("font_size", 16)
+	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(_confirm_auto)
+	_layer.add_child(b)
+
+
+func _confirm_auto() -> void:
+	_window("继续切后台时自动存的档")
+	column.add_child(XUI.label(XSave.auto_summary()))
+	column.add_child(XUI.label("读的是切到后台那一刻的进度；你的存档位不受影响。手动存一次档后，这份自动存档就作废。", 18, XUI.DIM))
+	_add(XUI.button("读取"), _load_auto)
+	_add(XUI.button("取消"), _title)
+	_focus_first()
+
+
+func _load_auto() -> void:
+	if XSave.load_auto():
+		get_tree().change_scene_to_file(MAP_SCENE)
+	else:
+		_notice("自动存档", "这份自动存档读不出来。")
 	var cp := XDB.img_path("titles2", "Cursor")
 	if cp != "":
 		_cursor = TextureRect.new()
