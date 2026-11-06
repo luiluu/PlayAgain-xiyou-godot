@@ -2537,6 +2537,49 @@ for name in filter(None, files):
         self.assertIn(str(self.receipt), err.getvalue())
         self.assertIn('已在 main 删除', err.getvalue())
 
+    def test_lane_edit_of_sheet_deleted_in_main_merges_as_delete(self):
+        """tools76（11-06 总装）：shop1 改了 main 已归并删除的 keys3 交付单，准备时 modify/delete 冲突，按删除解决后
+        versionPaths 还记着它，报「编号占位文件已改变类型」。现在：plan 不收进 versionPaths，冲突自动按删除处理、提示一句。"""
+        lane2 = Path(self.tmp.name) / 'lane2'
+        self.g('worktree', 'add', '-b', 'claude/task2', str(lane2), 'claude/task')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        # 期二车道没合 main，就改了期一交付单（带开发编号占位）
+        (lane2 / self.receipt).write_text((lane2 / self.receipt).read_text() + '- 期二补记\n')
+        (lane2 / '00_项目管理/交付/claude_task2.md').write_text(
+            '# 期二\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】期二（' + merge.VERSION_MARKER + '）\n\n- phase 2\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'phase 2 touches old sheet', cwd=lane2)
+        with contextlib.redirect_stderr(io.StringIO()):
+            state = merge.plan(self.root, 'task2')
+        self.assertNotIn(str(self.receipt), state['versionPaths'])
+        self.assertEqual(state['goneSheets'], [str(self.receipt)])
+        result = subprocess.run([sys.executable, str(HERE / '合并车道.py'), 'task2', '--root', str(self.root)], capture_output=True, text=True)
+        out = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, out)
+        self.assertIn('modify/delete 冲突），按删除处理', out)   # 真走到了自动解冲突
+        self.assertFalse((self.root / self.receipt).exists())
+        self.assertIn('phase 2', (self.root / merge.LOG).read_text())
+
+    def test_old_state_with_gone_sheet_in_version_paths_is_dropped(self):
+        """tools76：旧状态文件（或总装手解冲突删掉）里 versionPaths 还记着 main 已删的旧交付单：从 versionPaths 去掉、提示，不报改变类型。"""
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        state = {'delivery': '00_项目管理/交付/claude_new.md', 'extraDeliveries': [], 'base': self.g('rev-parse', 'HEAD'),
+                 'versionPaths': [str(self.receipt)], 'optAdded': {}, 'version': 'dev.002'}
+        sf = Path(self.tmp.name) / 'state.json'
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            merge.replace_versions(self.root, state, sf)
+        self.assertEqual(state['versionPaths'], [])
+        self.assertIn('按删除处理', out.getvalue())
+        # 本期交付单自己不见了照旧报错（不是旧交付单）
+        state = dict(state, delivery=str(self.receipt), versionPaths=[str(self.receipt)])
+        state.pop('versionEdits')
+        with self.assertRaisesRegex(RuntimeError, '改变类型'):
+            merge.replace_versions(self.root, state, sf)
+
     def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
         # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
         self.assertEqual(self.call(), 0, self.last_output)

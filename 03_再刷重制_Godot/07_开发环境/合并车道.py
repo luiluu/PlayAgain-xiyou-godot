@@ -510,7 +510,7 @@ def plan(root, task, branch=None):
     # 同一分支带来的其它交付单（如接手者另写的一张）：标了可合并的一并归并删除；没标的提示唐僧处理。
     # 已随前几批并入、在 main 删掉的旧交付单不算：车道从上一期交付点切出又合过 main 时与 main 有两个合并基点（交叉合并），
     # merge-base 可能取到旧的那个，diff 会带出期一等交付单，到归并时报「交付单已不存在」停下（哪吒_7 t4，八戒 attack-query2）
-    extra = []
+    extra, gone = [], []
     for p in sorted(changed):
         if (p.startswith('00_项目管理/交付/') and p.endswith('.md') and p not in (str(delivery), '00_项目管理/交付/README.md')
                 and read(p) is not None):
@@ -520,7 +520,10 @@ def plan(root, task, branch=None):
                                         capture_output=True, text=True).stdout.strip()
                 if git(root, 'rev-parse', target + ':' + p) != before:
                     print('提示：%s 已在 main 删除（%s 归并过），车道上的版本与删前不同；不再并入，车道补写的内容请写进本期交付单'
-                          % (p, removed[:9]), file=sys.stderr, flush=True)
+                          '（合并时这处 modify/delete 冲突按删除处理）' % (p, removed[:9]), file=sys.stderr, flush=True)
+                    # 11-06 shop1 改了已归并的 keys3 交付单：没剔掉就进了 versionPaths（交付单都带开发编号占位），
+                    # 冲突按删除解决后报「编号占位文件已改变类型」，总装手改 state 才过（tools76）
+                    gone.append(p)
                 continue
             try:
                 draft(read(p))
@@ -530,6 +533,7 @@ def plan(root, task, branch=None):
                 continue
             check_opt_drafts(read(p), p)        # 接续交付单的优化草稿照本期的查（tools39）
             extra.append(p)
+    changed = [p for p in changed if p not in gone]
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
@@ -554,7 +558,7 @@ def plan(root, task, branch=None):
                 opt_added[p] = lines
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
-                versionPaths=version_paths, optAdded=opt_added, evidenceFiles=evidence,
+                versionPaths=version_paths, optAdded=opt_added, evidenceFiles=evidence, goneSheets=gone,
                 mainAdvancedAfterDelivery=fork != base)
 
 
@@ -855,12 +859,27 @@ def substitute_body(text, state, sheet_texts):
     return '\n'.join(substitute_opt(x, state) if keyed(x, keys) else substitute_opt(x, rest) for x in text.split('\n'))
 
 
+def gone_sheet(root, state, rel):
+    """rel 是不是「main 已归并删除的旧交付单」：plan 记过的，或交付目录下、合并前的 main 上已删掉的（不是本期交付单）。"""
+    if rel in state.get('goneSheets', []):
+        return True
+    if not (rel.startswith('00_项目管理/交付/') and rel.endswith('.md')) or rel in sheets(state):
+        return False
+    return bool(git(root, 'log', '--diff-filter=D', '--format=%H', '-1', state['base'], '--', rel))
+
+
 def replace_versions(root, state, state_file):
     if 'versionEdits' not in state:
         state['optNumbers'] = assign_opt_numbers(root, state)
         edits = {}
-        for rel in state.get('versionPaths', []):
+        for rel in list(state.get('versionPaths', [])):
             path = root / rel
+            if not path.exists() and not path.is_symlink() and gone_sheet(root, state, rel):
+                # 旧状态文件（tools76 之前 plan 的）或总装手解冲突按删除处理的旧交付单：从 versionPaths 去掉，提示一句
+                state['versionPaths'].remove(rel)
+                state.get('optAdded', {}).pop(rel, None)
+                print('提示：%s 已按删除处理（main 归并过、车道又改），不再替换编号占位' % rel, flush=True)
+                continue
             if path.is_symlink() or not path.is_file():
                 raise RuntimeError('编号占位文件已改变类型：' + rel)
             before = path.read_bytes()
@@ -927,6 +946,19 @@ def fold_into_merge(root, state, changed, also):
     print('已把修正并进合并提交：' + '、'.join(sorted(changed)), flush=True)
 
 
+def resolve_gone_sheets(root, state):
+    """合并冲突只是车道改了 main 已归并删除的旧交付单（modify/delete，plan 记在 goneSheets）：按删除处理、git rm，返回 True 让合并照常提交；
+    还有别的冲突返回 False，现场留给总装。"""
+    gone = set(state.get('goneSheets', []))
+    unmerged = set(git(root, 'diff', '--name-only', '--diff-filter=U').splitlines())
+    if not gone or not unmerged or not unmerged <= gone:
+        return False
+    for p in sorted(unmerged):
+        git(root, 'rm', '-q', '--', p)
+        print('提示：%s 在 main 已归并删除、车道又改过（modify/delete 冲突），按删除处理；车道补写的内容没并入' % p, flush=True)
+    return True
+
+
 def prepare(root, state, state_file, executor, also=()):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
@@ -958,8 +990,11 @@ def prepare(root, state, state_file, executor, also=()):
             try:
                 run(root, ['git', 'merge', '--no-ff', state['target'], *message], env=MAIN_COMMIT_ENV)
             except subprocess.CalledProcessError:
-                raise RuntimeError('合并有冲突，现场保留：解决后 git add，再运行同一命令接续（工具会提交合并）；'
-                                   '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
+                if resolve_gone_sheets(root, state):
+                    run(root, ['git', 'commit', *message], env=MAIN_COMMIT_ENV)
+                else:
+                    raise RuntimeError('合并有冲突，现场保留：解决后 git add，再运行同一命令接续（工具会提交合并）；'
+                                       '放弃就 git merge --abort，让车道 git merge main 后重新交付，再运行即按新提交重排')
         elif subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', state['target'], 'HEAD']).returncode:
             raise RuntimeError('main 已改变且尚未包含目标车道；请人工核对状态文件')
         else:
