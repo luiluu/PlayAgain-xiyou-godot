@@ -1617,6 +1617,14 @@ class Exporter:
                 entries.insert(0, {'version': d.get('version'), 'pages': [str(x) for x in d['pages']]})
         self.write_json('db/PlayerChangelog.json', {'releaseNumber': release, 'entries': entries})
 
+    def export_merchants(self):
+        """深渊／不朽商人（v0.30 起 installAbyssMerchantRuntime，$dataCodexMerchants）：data/CodexMerchants.json 原样导出
+        （routes 每个副本地图的名字、装备池、可领点数的敌群；affixes 三档特效；costs／reward／encounterRate／pity／visitLimit）。
+        旧源没有这个文件时写空表，XAbyssMerchant 当作没有商人路线。"""
+        rel = 'data/CodexMerchants.json'
+        data = self.read(rel) if (self.app / rel).is_file() else {}
+        self.write_json('db/CodexMerchants.json', data)
+
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
         rel = 'js/plugins.js'
@@ -2025,6 +2033,7 @@ class Exporter:
         self.export_db()
         self.export_plugins()
         self.export_changelog()
+        self.export_merchants()
         self.collect_slice()
         self.copy_assets()
         untranslated = []
