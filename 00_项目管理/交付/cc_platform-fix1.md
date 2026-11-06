@@ -1,7 +1,7 @@
 # 交付：cc/platform-fix1
 
 - 车道／工作者：平台／CJ（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,8 +35,9 @@
 - 新代码：`xiyou_platform` 83/83（新增：存档键在非地图页不显示不吃触摸、地图上显示、战斗／子页面不显示、回退开关；标题页真触摸 `InputEventScreenTouch`＋模拟鼠标点「导出存档」「导入存档」中心各收到一次、不按下 ~；刘海右缩进 80 时两个按钮不和隐藏键重叠）。`xiyou_map_hotkeys` 36/36（新增：真地图上真触摸点存档键＝存进 1 号位并提示；`_in_battle` 时隐藏；打开菜单在主菜单时显示，进状态子页面隐藏）。
 - `语法检查.py` 591 个 .gd 0 问题。`xiyou_event_compare` 通过。
 - 选测：`选测.py main --list` 因 entry.gd 结论是整轮；车道不跑整轮，改跑引用 XMenu／XTouchControls／标题页的 29 个专项（结果见下）。map_scene.gd 只新增一个只被触屏调用的函数，没跑它对应的 110 个地图场景，交总装整轮覆盖。
-- 相关专项：待写
+- 相关专项：引用 XMenu／XTouchControls／标题页的 29 个场景（ui_smoke、xiyou_actor_book、xiyou_alien_workshop、xiyou_book_capacity_ui、xiyou_crafting、xiyou_enemy_book、xiyou_entry_release、xiyou_floor_run、xiyou_flow、xiyou_gear_ui、xiyou_gold_cap、xiyou_hangup_options、xiyou_hud、xiyou_item_bag、xiyou_item_use、xiyou_list_paging、xiyou_notice_options、xiyou_options_misc、xiyou_orb_shop_ui、xiyou_panels、xiyou_party、xiyou_pets、xiyou_race_menu、xiyou_review135、xiyou_save_page、xiyou_shop_stat_mode、xiyou_skill_page、xiyou_ui_page_details、xiyou_zhenqi_break）全部通过，无偶发。已合 main 5d8a9bf2（只带进文档与合并工具，没碰 Godot 文件）。`工具回归.py` 全过（68 秒）。
 
 ## 本分支提交
 
-- 待写
+- 2e895608 触屏存档键照原版只在地图与主菜单显示，标题导入/导出按钮避开隐藏键
+- 7966151c 合并 main
