@@ -283,9 +283,10 @@ static func _extra_row(rows: Array, pos: Array, line: String, normal: String) ->
 	rows.insert(clampi(at, 0, rows.size()), row)
 
 
-## CodexDisplay.text
+## CodexDisplay.text；跟到 v0.62.12 另套 installEquipmentDetailV041Runtime（v0.43）：「（全）武器伤（害）＋N%」写成「装备武器时，技能伤害＋N%」
 static func _terms(text: String) -> String:
-	return RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
+	text = RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
+	return RegEx.create_from_string("(?:全)?武器伤(?:害)?(?=[＋+]\\s*[\\d.]+%)").sub(text, "装备武器时，技能伤害", true)
 
 
 # ---- installDamageElementRuntime ----
