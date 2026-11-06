@@ -31,6 +31,29 @@ static func eligible(subject) -> XActor:
 	return n if members.has(n) and members.has(subject) else null
 
 
+## 【cc·哪吒·未经审查】newsrc3：window.CodexNanohaAdapt(a, share)（v0.62.03 适应成长软上限，状态 1768 Conclude 调用）。
+## 累计次数 n 前 2000 次每次 +10 生命、+30 魔法；之后乘 2000/n；队友击杀 share＝0.5。
+## 次数第一次用时按已得魔法加值（_paramPlus[1]）÷30 取整估算，存档 flags["codexNanohaAdapt"]{"角色ID": n}（原版挂在 Game_Actor._codexNanohaAdapt）。
+const ADAPT_FLAG := "codexNanohaAdapt"
+
+static func adapt(a: XActor, share: float = 1.0) -> void:
+	var s := XState.current
+	if a == null or s == null:
+		return
+	if share == 0.0:
+		share = 1.0  # 原版 Number(share)||1
+	var book: Dictionary = s.flags.get(ADAPT_FLAG, {})
+	var key := str(a.actor_id)
+	if not book.has(key):
+		book[key] = maxf(0.0, floorf(XParamPlus.bonus(a, 1) / 30.0))
+	var n := maxf(0.0, float(book[key]))
+	var f := (1.0 if n < 2000.0 else 2000.0 / n) * share
+	a.add_param(0, 10.0 * f)
+	a.add_param(1, 30.0 * f)
+	book[key] = n + share
+	s.flags[ADAPT_FLAG] = book
+
+
 ## 本次行动开表（startAction 之后的 execute 之前）
 static func begin(logic) -> void:
 	logic.nanoha_frame = {"open": true, "targets": []}
