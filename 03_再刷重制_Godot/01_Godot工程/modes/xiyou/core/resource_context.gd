@@ -39,6 +39,8 @@ func add_state(b: XBattler, id: int, inputs := {}) -> void:
 		return
 	if result(b).removedStates.has(id) and not forced:
 		return
+	if XLiuying.blocks_state(b, id):
+		return  # 流萤 addState／isStateAddable 包装：负面免疫
 	var context := state_context(b)
 	context.merge(inputs, true)
 	context.resources = self
@@ -121,6 +123,7 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}  # 绑定 gainHp 包装：璇附身期间不掉血
 	if amount > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 		return {}  # 归根中不回血
+	amount = XLiuying.heal_value(b, amount)  # 流萤 gainHp 包装（第 34 个）：击破印记受治疗 −10%/层
 	var temp := XGuyu.isolated_begin() if amount < 0.0 else {}  # 不在行动里的扣血包一个临时事件（代命）
 	amount = XGuyu.heal_value(amount)
 	if amount < 0.0:
@@ -236,6 +239,8 @@ func _set_resource(b: XBattler, resource: String, value: float) -> void:
 	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
 	if value != old:
 		b.set(resource, value)
+		if resource == "hp" and value < old:
+			XLiuying.note_hp_loss(b)  # 流萤 setHp 包装：掉血叠萤火印记
 		if resource == "tp" and not in_battle:
 			_refresh_base(b)
 		else:
@@ -279,6 +284,7 @@ func refresh(b: XBattler) -> void:
 			b.effect_lists.clear()
 			b.effect_snapshot_valid = false
 	_refresh_type_after(b)
+	XLiuying.after_refresh(b)  # 流萤 refresh 包装：负面免疫中清掉绕过 addState 的负面状态
 	b.lifecycle_context = previous
 
 func _refresh_type_before(b: XBattler) -> void:
@@ -289,7 +295,7 @@ func _refresh_type_before(b: XBattler) -> void:
 func _refresh_base(b: XBattler) -> void:
 	var resisted := b.traits_set(XBattler.TRAIT_STATE_RESIST)
 	for id in b.state_ids.duplicate():
-		if resisted.has(id):
+		if resisted.has(id) and not XLiuying.keeps_resisted(b, id):  # 流萤 stateResistSet 包装：强制眩晕期间不抹
 			b.state_ids.erase(id)
 			b.state_turns.erase(id)
 	b.hp = clampf(b.hp, 0.0, b.mhp)

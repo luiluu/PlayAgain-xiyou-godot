@@ -447,6 +447,8 @@ static func _tusu_xuan_growth_rows(obj: Dictionary, a) -> Variant:
 			return ["成长：额外提高" + pct.call(c.call([1, 1.2], [40, 60]) - 1.0 if lv >= 40 else 0.0)]
 		10335:
 			return ["成长：" + hg + "；保底比例" + hgf]
+		10326:  # 铸环守（屠苏本体）：新源 v0.62.12 nowGrowthRows 新加的一条，按屠苏等级，同 10321（悟空 newsrc9；其余「成长：」措辞归界面）
+			return ["成长：护盾系数" + pct.call(w) + "；保底比例" + pct.call(c.call([0.1, 0.3], [1, 60]))]
 		10336:
 			return ["成长：护盾系数" + pct.call(w) + "；保底比例" + lbf]
 		10337:

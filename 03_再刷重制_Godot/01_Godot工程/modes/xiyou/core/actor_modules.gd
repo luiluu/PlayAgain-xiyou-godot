@@ -25,8 +25,9 @@ extends RefCounted
 ##   云裳云丝展幅的暴伤／终伤与织神天梭终伤（原版包的是 refreshPassiveCache，按差值增减，与每次重算后加上等价）。
 ## - 屠苏 176／璇 177（XTusuXuan）：levelUp／levelDown 后按职业习得表同步专属技能（bindGrowth）。
 ## - 云裳 174（XYunshang）：setup、levelUp、changeLevel 后 Y.sync；param 最大生命／魔攻／敏捷按等级与进阶的倍率。
+## - 流萤 179（XLiuying）：levelUp、changeLevel 后 L.sync；paramPlus 逐火与专武、actionPlusSet。param 在云裳夹值之外（XActor.param），learnSkill 连带见 XActor.learn_skill。
 
-const IDS := [167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+const IDS := [167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 179]
 
 
 static func _module(a) -> bool:
@@ -60,6 +61,7 @@ static func level_up(a) -> void:
 	XYunshang.sync(a)  # 云裳包的是 levelUp 与 changeLevel
 	XGuyu.sync(a)  # 谷雨 levelUp／changeLevel 包装：syncSkills
 	XTusuXuan.sync(a)  # 屠苏／璇 bindGrowth levelUp 包装：专属技能按习得表同步
+	XLiuying.sync(a)  # 流萤 levelUp／changeLevel 包装：按等级、进阶学忘
 
 
 static func level_down(a) -> void:
@@ -71,6 +73,7 @@ static func level_down(a) -> void:
 	XYunshang.sync(a)  # 云裳同宿傩（changeLevel）
 	XGuyu.sync(a)  # 谷雨同样包 changeLevel（不包 levelDown），同宿傩
 	XTusuXuan.sync(a)  # 屠苏／璇 bindGrowth 包 levelDown
+	XLiuying.sync(a)  # 流萤包 changeLevel：逐级降级每步都同步，同宿傩
 
 
 static func level_changed(a, before: int) -> void:
@@ -104,12 +107,13 @@ static func param_base(a, i: int, v: float) -> float:
 
 
 static func param_plus(a, i: int, v: float) -> float:
-	return XRaven.param_plus(a, i, XYomiJingliu.param_plus(a, i, v)) if _module(a) else v
+	return XLiuying.param_plus(a, i, XRaven.param_plus(a, i, XYomiJingliu.param_plus(a, i, v))) if _module(a) else v
 
 
 static func action_plus_set(a, rates: Array) -> void:
 	if _module(a):
 		XYomiJingliu.action_plus_set(a, rates)
+		XLiuying.action_plus_set(a, rates)  # 流萤：过载 0.3、法宝 1、一阶 1
 
 
 static func passive_cache(a, c: Dictionary) -> void:

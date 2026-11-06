@@ -375,7 +375,8 @@
     175,
     176,
     177,
-    178
+    178,
+    179
   ],
   "troops": [
     2,
@@ -2078,6 +2079,7 @@
     "codex_achievements/KYO",
     "sv_actors/Raven_Mythic_SV",
     "sv_actors/Garou_Cosmic",
+    "sv_actors/Codex_Sam_SV",
     "faces/Garou_Cosmic",
     "pictures/Raven_Artifact_Icon",
     "tusu_weapons/book_0",
