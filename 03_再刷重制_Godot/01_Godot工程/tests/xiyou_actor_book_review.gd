@@ -55,8 +55,8 @@ func shot(name: String) -> void:
 		"help": rect.call(book.help_card), "lineHeight": XActorBook.LH,
 		"visible": [book.index_win.visible, book.status_win.visible, book.header_win.visible,
 			book.list_win.visible, book.help_card.visible],
-		"actor": book.index, "skill": int(book.skill_list[book.skill_index].id) if book.skill_index >= 0 else 0,
-		"statusOps": to_ref(book._status_ops), "headerOps": to_ref(book.header_ops(book.index))}
+		"actor": book.actor_id(), "skill": int(book.skill_list[book.skill_index].id) if book.skill_index >= 0 else 0,
+		"statusOps": to_ref(book._status_ops), "headerOps": to_ref(book.header_ops(book.actor_id()))}
 	# 内联取图，避免父类窗口shot的异步分派与状态推进交错；取数和图像来自同一状态。
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))

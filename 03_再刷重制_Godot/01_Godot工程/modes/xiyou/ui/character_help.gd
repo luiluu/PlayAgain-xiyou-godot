@@ -369,7 +369,7 @@ static func now_growth(obj: Dictionary, rows: Array) -> Array:
 	return _now_growth_view(obj, rows, actor(obj))
 
 
-## nowGrowthRows（谷雨部分；屠苏、璇在 _tusu_xuan_growth_rows）：按技能所属角色当前等级／阶位算的「成长：」行；null＝不换
+## nowGrowthRows（跟到 v0.62.12 的措辞：受赠消耗、追加伤害、护盾系数、治疗系数等；新源另加的 10326 一行归角色车道，未加）（谷雨部分；屠苏、璇在 _tusu_xuan_growth_rows）：按技能所属角色当前等级／阶位算的「成长：」行；null＝不换
 static func _now_growth_rows(obj: Dictionary, a) -> Variant:
 	var note := str(obj.get("note", ""))
 	if note.contains("<CodexTusu:") or note.contains("<CodexXuan:"):
@@ -383,15 +383,15 @@ static func _now_growth_rows(obj: Dictionary, a) -> Variant:
 	var x := func(n: float) -> String: return num(roundf(n * 100.0) / 100.0)
 	match int(obj.get("id", 0)):
 		10290:
-			return ["成长：转移比例可选25%／50%／75%" if lv >= 10 else "成长：转移比例50%"]
+			return ["成长：转移比例25%／50%／75%" if lv >= 10 else "成长：转移比例50%"]
 		10298:
-			return ["成长：待绽比例" + ("50%" if lv >= 60 else "35%") + "；花荫倍率×" + ("1.2" if lv >= 60 else "1.1" if lv >= 20 else "1")]
+			return ["成长：受赠消耗比例" + ("50%" if lv >= 60 else "35%") + "；追加伤害倍率×" + ("1.2" if lv >= 60 else "1.1" if lv >= 20 else "1")]
 		10288:
 			return ["成长：治疗比例" + pct.call(c.call([0.25, 0.30, 0.35, 0.40]))]
 		10293:
-			return ["成长：队友储备比例" + pct.call(c.call([1, 1.25, 1.5, 1.75]) + 0.15 * rank), "成长：绽放系数" + x.call(c.call([5, 6, 7, 8]))]
+			return ["成长：队友储备比例" + pct.call(c.call([1, 1.25, 1.5, 1.75]) + 0.15 * rank), "成长：追加伤害系数" + x.call(c.call([5, 6, 7, 8]))]
 		10292:
-			return ["成长：归春系数" + x.call(c.call([33, 50], [40, 60]))]
+			return ["成长：伤害系数" + x.call(c.call([33, 50], [40, 60]))]
 	return null
 
 
@@ -412,7 +412,7 @@ static func _tusu_xuan_growth_rows(obj: Dictionary, a) -> Variant:
 	var lock: String = "锁定倍率×" + x.call(c.call([1.3, 1.5], [20, 60]))
 	var heming: String = "和鸣倍率×" + x.call(c.call([1.2, 1.5], [20, 60]))
 	var huzhen: String = "护阵倍率×" + x.call(c.call([0.85, 0.70], [20, 60]))
-	var hg: String = "回光系数" + x.call(c.call([10, 20], [1, 60]))
+	var hg: String = "治疗系数" + x.call(c.call([10, 20], [1, 60]))
 	var hgf: String = pct.call(c.call([0.20, 0.35], [1, 60]))
 	var lbf: String = pct.call(c.call([0.15, 0.35], [1, 60]))
 	# X.gongsuDefenseRate／gongsuDamageRate：学会共宿且 10 级解锁才有
@@ -426,37 +426,39 @@ static func _tusu_xuan_growth_rows(obj: Dictionary, a) -> Variant:
 		var tr := func(at: int, keep := false) -> String: return "×" + x.call(1.0 if lv < at else 1.1 if lv < 60 or keep else 1.2)
 		return ["成长：剑气纵横伤害" + tr.call(10, true), "成长：横扫、点射、贯日伤害" + tr.call(20), "成长：金汤护盾量、敕令伤害" + tr.call(30), "成长：震击、镇魂重击伤害" + tr.call(40)]
 	if passive == "passive.relay":
-		return ["成长：接力比例" + pct.call(0.3 if lv >= 60 else 0.2 if lv >= 20 else 0.0)]
+		return ["成长：护盾转移比例" + pct.call(0.3 if lv >= 60 else 0.2 if lv >= 20 else 0.0)]
 	match id:
 		10316:
 			return ["成长：" + huzhen]
 		10320:
 			return ["成长：" + lock]
 		10321:
-			return ["成长：成长权重" + pct.call(w) + "；保底比例" + pct.call(c.call([0.1, 0.3], [1, 60]))]
+			return ["成长：护盾系数" + pct.call(w) + "；保底比例" + pct.call(c.call([0.1, 0.3], [1, 60]))]
 		10322:
 			return ["成长：" + heming]
 		10358:
-			return ["成长：成长权重" + pct.call(w)]
+			return ["成长：技能倍率" + pct.call(w)]
 		10359:
-			return ["成长：" + lock + "；" + heming, "成长：" + huzhen, "成长：挫势－" + pct.call(1.0 - c.call([0.90, 0.80], [20, 60])) + "（霸体目标－" + pct.call(1.0 - c.call([0.85, 0.70], [20, 60])) + "）",
+			return ["成长：贯日伤害×" + x.call(c.call([1.3, 1.5], [20, 60])) + "；敕令伤害×" + x.call(c.call([1.2, 1.5], [20, 60])),
+				"成长：盾形态的持有者受到伤害×" + x.call(c.call([0.85, 0.70], [20, 60])),
+				"成长：目标造成的伤害降低" + pct.call(1.0 - c.call([0.90, 0.80], [20, 60])) + "（霸体目标降低" + pct.call(1.0 - c.call([0.85, 0.70], [20, 60])) + "）",
 				"成长：横扫对后续目标增伤" + pct.call(c.call([1, 1.2], [20, 60]) - 1.0)]
 		10360:
 			return ["成长：额外提高" + pct.call(c.call([1, 1.2], [40, 60]) - 1.0 if lv >= 40 else 0.0)]
 		10335:
 			return ["成长：" + hg + "；保底比例" + hgf]
 		10336:
-			return ["成长：成长权重" + pct.call(w) + "；保底比例" + lbf]
+			return ["成长：护盾系数" + pct.call(w) + "；保底比例" + lbf]
 		10337:
 			return ["成长：伤害系数" + coef.call(XTusuXuan.XUAN, "lengguang")]
 		10338, 10363:
 			return [shadow]
 		10339:
-			return ["成长：" + gs, "成长：" + offense]
+			return ["成长：" + gs.replace("双防共享比例", "物防、魔防共享比例"), "成长：" + offense]
 		10361:
-			return ["成长：" + hg + "；回光保底比例" + hgf, "成长：璃壁成长权重" + pct.call(w) + "；璃壁保底比例" + lbf]
+			return ["成长：" + hg + "；治疗保底比例" + hgf, "成长：璃壁护盾系数" + pct.call(w) + "；璃壁护盾保底比例" + lbf]
 		10362:
-			return ["成长：" + gs.replace("双防共享比例", "共宿比例") + "；额外默契" + str(floori(c.call([1, 3], [20, 60])) if lv >= 20 else 0) + "点"]
+			return ["成长：" + gs.replace("双防共享比例", "物防、魔防共享") + "；触发加快" + str(floori(c.call([1, 3], [20, 60])) if lv >= 20 else 0)]
 	return null
 
 

@@ -8,7 +8,8 @@ extends Node
 const FIXTURE := "res://tests/fixtures/actor_book_oracle.json"
 ## 坐标与宽的容差（XActorBook.js_width 与浏览器 measureText 一致到 0.01）
 const POS_TOL := 0.05
-## 立绘图名逐个与参照相同：167 号以后照 CodexSV 档缩放，168、173～177 是逐帧图第 1 个动作第 0 帧（XActorBook.sprite_spec）。
+## 立绘图名逐个与参照相同：167 号以后照 CodexSV 档缩放（流萤图鉴再乘 bookScale 0.8），168、173～177 是逐帧图第 1 个动作第 0 帧（XActorBook.sprite_spec）。
+## v0.30 起目录去掉隐藏角色（XActorBook.HIDDEN_ACTORS），目录位置≠角色号，按 index_ids 换算。
 ## 原来豁免的 108、143、144、145、157、170、171（当时切片没导出战斗图）现在都已导出，不再豁免。
 
 var results := []
@@ -109,7 +110,7 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1, 0)
 	var dst: Rect2 = r[0]
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
-	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x)
+	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x) * XActorBook.book_scale(str(sp.key))
 	var sx := dst.size.x / float(r[1].size.x)
 	var sy := dst.size.y / float(r[1].size.y)
 	var vis_bottom := dst.position.y + b.end.y * sy
@@ -140,8 +141,11 @@ func _run() -> void:
 			bad.status.append("%d %s" % [id, d])
 		var sp := XActorBook.sprite_spec(id)
 		var p := str(sp.get("path", ""))
-		if str(a.get("sprite", "")) != str(sp.get("name", "")) or (str(a.get("sprite", "")) != "") != (p != ""):
-			bad.sprite.append("%d %s 图 %s" % [id, a.get("sprite", ""), p])
+		# 参照的 bitmap 是状态窗实际画的图，sprite 是 battlerName
+		if str(a.get("bitmap", "")) != str(sp.get("name", "")) or (str(a.get("bitmap", "")) != "") != (p != ""):
+			bad.sprite.append("%d %s 图 %s" % [id, a.get("bitmap", ""), p])
+		elif str(a.get("sprite", "")) != XActorBook._book_battler(id):
+			bad.sprite.append("%d battlerName %s≠%s" % [id, a.get("sprite", ""), XActorBook._book_battler(id)])
 		elif id >= 167 and p != "":
 			_sprite_geometry(id, sp, bad)
 		if not a.has("header"):
@@ -195,8 +199,8 @@ func _flow(ref: Dictionary) -> void:
 	check("select_1", book.index == 1 and not book._status_ops.is_empty() and book._sprite_tex != null)
 	await shot("actor_book_1")
 	if out_dir != "":
-		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178]:  # 只在存截图时：167 号以后的立绘
-			book.index = sid
+		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178, 179]:  # 只在存截图时：167 号以后的立绘
+			book.index = XActorBook.index_ids().find(sid)
 			book._select_actor()
 			await shot("actor_book_%d" % sid)
 		book.index = 1
