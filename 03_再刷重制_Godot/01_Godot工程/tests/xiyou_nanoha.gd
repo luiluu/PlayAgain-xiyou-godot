@@ -130,7 +130,18 @@ func _run() -> void:
 	logic.apply(b[1].actor(1), XDB.rec("Skills", 1), logic.enemies[0])
 	XNanoha.finish(logic, b[1].actor(1))
 	check("local.closed_frame", _snap(logic, b[1], b[2]).plus == [0.0, 0.0], _snap(logic, b[1], b[2]))
+	# 回退开关 O-待定·奈叶队友击杀：ADAPT_V062＝false 回到 v0.28 固定 +10／+30，不计适应次数（AOE 杀两只＝+20／+60）
+	XNanoha.ADAPT_V062 = false
+	var rb := _battle({"party": [1, 108], "hp": [1, 1, BIG_HP]})
+	_act(rb[0], rb[1], 1, 160)
+	var rs := _snap(rb[0], rb[1], rb[2])
+	XNanoha.ADAPT_V062 = true
+	check("rollback.v028_fixed", _same_plus(rs.plus, [20.0, 60.0]) and rs.count == null, rs)
 	finish()
+
+
+func _same_plus(got: Array, want: Array) -> bool:
+	return got.size() == want.size() and range(got.size()).all(func(i): return absf(float(got[i]) - float(want[i])) < 1e-6)
 
 
 ## nanoha2_oracle field.flow：真实开战后奈叶带 1708／1768／1774／1780；开战只预约 1320（领域 1774 的 battle 效果在被动状态之前跑过，
