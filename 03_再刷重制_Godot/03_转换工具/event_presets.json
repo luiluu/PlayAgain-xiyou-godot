@@ -202036,63 +202036,6 @@
    }
   },
   {
-   "base": "m221e3p0",
-   "tag": "w13_1521",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "switches": {
-     "2500": true
-    }
-   }
-  },
-  {
-   "base": "m221e3p0",
-   "tag": "w13_1522",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "switches": {
-     "2494": true
-    }
-   }
-  },
-  {
-   "base": "m221e3p0",
-   "tag": "w13_1523",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "switches": {
-     "2489": true
-    }
-   }
-  },
-  {
-   "base": "m221e3p0",
-   "tag": "w13_1524",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "switches": {
-     "2496": true
-    }
-   }
-  },
-  {
-   "base": "m221e3p0",
-   "tag": "w13_2",
-   "preset": {
-    "answers": [
-     1
-    ]
-   }
-  },
-  {
    "base": "m223e4p0",
    "tag": "w13_506",
    "preset": {

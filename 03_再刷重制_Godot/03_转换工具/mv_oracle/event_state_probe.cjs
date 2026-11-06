@@ -295,17 +295,19 @@ function runCase(c) {
   // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）／RANDOM_SEQUENCES：这一例的 Math.random 全部按这串循环取。
   // 口径（八戒 DR，总装二十九）：原来只包 command122、脚本里的 Math.random 仍是 0.5；MV 里 122 与脚本（秘境抽奖、随机伙伴、
   // 掉落等）共用同一条 Math.random，重制 MVEventCore.random_float／random_int 也是 122 与脚本共用 random_sequence。
-  // 改成整例都吃序列，两边按同一调用顺序取数；多值序列不再因脚本随机错位（w7／w11／w13 删掉的 124 例）。
+  // 改成事件指令执行期间（含 355 脚本、356 插件指令、子公共事件）的 Math.random 都吃序列；逐帧更新（地图、角色移动等）照旧 0.5——
+  // 整例全换时这些逐帧调用也吃掉序列、首个 122 就错位（试过：66 例不一致），而重制那边逐帧随机不走 random_sequence。
+  // 两边按同一事件调用顺序取数；多值序列不再因脚本随机错位（w7／w11／w13 删掉的 124 例）。
   const seq = (c.preset && c.preset.random_seq) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
-  if (seq) {
-    let at = 0;
-    w.Math.random = () => seq[at++ % seq.length];
-  }
+  let at = 0;
+  const seqRandom = seq ? () => seq[at++ % seq.length] : null;
   const it = new w.Game_Interpreter();
   const ran = new Set(), execute = w.Game_Interpreter.prototype.executeCommand;
   w.Game_Interpreter.prototype.executeCommand = function () {
     if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(this._index); }
-    return execute.apply(this, arguments);
+    if (!seqRandom) return execute.apply(this, arguments);
+    const old = w.Math.random; w.Math.random = seqRandom;
+    try { return execute.apply(this, arguments); } finally { w.Math.random = old; }
   };
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
   const errors = [];

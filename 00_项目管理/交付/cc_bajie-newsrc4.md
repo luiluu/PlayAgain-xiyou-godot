@@ -364,6 +364,14 @@ B 类（要新源参照才能判）：这组没有。
 - **DR③ 到此停**：剩 3434 个（1288 簇），按类：有预设但往轮试过没走到 2917（随机覆盖、脚本随机口径、要战斗或运行时状态）、多随机 189、敌人 155（含敌人／角色 33）、战败／逃跑 80、脚本条件 40、整页没进 20、角色在队「否则」16、循环 9、金钱 8。前四类都不到 200；多随机余下的要先对齐 random_seq 口径（可优化待办，换源失败表清完再看）。
 - 待交叉核查：\`事件祖先预设.py\`（随机位置、actors 深合并）、\`事件写法覆盖.py\`（open_preset 新门）、\`mv_oracle/event_state_probe.cjs\` 与 \`tests/xiyou_event_compare.gd\`（armors／weapons 预设键两边同法）、\`event_presets.json\`（w13_～w15_）。
 
+### random_seq 口径对齐（总装二十九追加，进行中，11-07 停在这里）
+
+- 起因：w7／w11／w13 一共删了 124 例多值随机序列的不一致。参照只让 command122 吃序列，重制的 \`MVEventCore.random_float／random_int\` 让 122 和脚本一起吃。
+- 第一次试：参照整例 Math.random 都吃序列（1da0763a）。重测 2579 个 random_seq 用例后，全量 22491 例里 66 例不一致，首个 122 就错位。原因是参照的逐帧更新也吃掉了序列，重制那边的逐帧随机不走 random_sequence。
+- 现在（本 WIP）：参照只在 \`Game_Interpreter.executeCommand\` 执行期间吃序列，包括 355 脚本、356 插件、子公共事件；逐帧照旧 0.5。改了 \`event_state_probe.cjs\`，**还没重测**。
+- 下一步：用 rs_ids（预设里全部带 random_seq 的，加 ce1344、m221e3p0）六路重跑参照探针，约 20 分钟。替换 event_states 后跑全量对照，regressions 要空。还不一致的单列出来看是不是游戏本身的问题。m221e3p0 的 w13 五例两种口径下参照都没跑完，已经删掉。m4e60p1#w13_1530 是券不足，和随机无关，没放回。
+- 预设里已经放回 124 例（w7 三例、w11 三例、w13 118 例）。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`，到 59b8a8b1），w13 起在 `cc/funny-wing-249563`（`git log 59b8a8b1..cc/funny-wing-249563`）
