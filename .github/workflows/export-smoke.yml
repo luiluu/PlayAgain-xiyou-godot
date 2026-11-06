@@ -93,6 +93,9 @@ jobs:
       - env:
           GODOT: ${{ steps.godot.outputs.godot }}
         run: |
+          # O-210 的 WebP 无损最高档全量导入本机要 38 分钟，云端从零导入会超时；云端只验内容（贴图仍无损、像素相同），
+          # 用 override.cfg 换回 Godot 默认档（只在 CI 检出里写，不入库、不进缓存键）。cc DH 2026-11-06
+          printf '[rendering]\ntextures/webp_compression/compression_method=2\ntextures/webp_compression/lossless_compression_factor=25.0\n' > "$PROJECT/override.cfg"
           rc=0; timeout 1500 "$GODOT" --headless --path "$PROJECT" --import > import.log 2>&1 || rc=$?
           if [ "$rc" -ne 0 ] || grep -qE 'SCRIPT ERROR' import.log; then grep -E 'ERROR|FAIL' import.log | head -40; exit 1; fi
       - name: 导出并冒烟
