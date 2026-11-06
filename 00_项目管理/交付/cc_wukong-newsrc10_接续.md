@@ -94,7 +94,7 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 ### 验证（EC′ ②）
 
 - 本机：advance_v108 9、actor_advanced 33、baby_all_actors 36、alien_workshop 45、imported_balance 233、item_marks 136、map132_shop 102、orb_shop 22、orb_shop_ui 27、shop_auto_close 10、shop_buy 8479、shop_stat_mode 11、shop_stock 56、super_acquire 31、weak_challenge 125、yunshang_shop 421 全过。lobby_shops 93/94：`case_e54p0_base_0-0` 挂，把 `XBabyAllActors.ENABLED` 默认关掉也一样挂（与本单无关，没查）。
-- 云端（上面几项，运行 42300559977）：见回报。语法检查通过。
+- 云端（advance_v108、actor_advanced、baby_all_actors、shop_buy、item_marks、super_acquire、map132_shop、lobby_shops，运行 42300559977）：8 个全过；lobby_shops 云端也过，本机那条挂像是本机残留状态（同 recruit_11 那类），没深查。语法检查通过。
 
 ## 本分支提交（EB）
 
