@@ -110459,6 +110459,130 @@
      "962": 10
     }
    }
+  },
+  {
+   "base": "ce1598",
+   "tag": "w1_1080",
+   "preset": {
+    "party": [
+     86,
+     87
+    ],
+    "actors": {
+     "87": {
+      "skills": [
+       5845
+      ]
+     },
+     "86": {
+      "skills": [
+       5861
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce618",
+   "tag": "w1_292",
+   "preset": {
+    "party": [
+     76
+    ],
+    "actors": {
+     "76": {
+      "skills": [
+       3497
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce620",
+   "tag": "w1_293",
+   "preset": {
+    "party": [
+     76
+    ],
+    "actors": {
+     "76": {
+      "skills": [
+       3497
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce679",
+   "tag": "w1_1083",
+   "preset": {
+    "party": [
+     27
+    ],
+    "actors": {
+     "27": {
+      "skills": [
+       5154
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce942",
+   "tag": "w1_243",
+   "preset": {
+    "variables": {
+     "521": 2
+    }
+   }
+  },
+  {
+   "base": "ce943",
+   "tag": "w1_244",
+   "preset": {
+    "variables": {
+     "521": 2
+    }
+   }
+  },
+  {
+   "base": "ce944",
+   "tag": "w1_245",
+   "preset": {
+    "variables": {
+     "521": 2
+    }
+   }
+  },
+  {
+   "base": "ce945",
+   "tag": "w1_246",
+   "preset": {
+    "variables": {
+     "521": 1
+    }
+   }
+  },
+  {
+   "base": "ce945",
+   "tag": "w1_247",
+   "preset": {
+    "variables": {
+     "521": 2
+    }
+   }
+  },
+  {
+   "base": "ce946",
+   "tag": "w1_248",
+   "preset": {
+    "variables": {
+     "521": 2
+    }
+   }
   }
  ]
 }

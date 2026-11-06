@@ -67,6 +67,10 @@ def trace_var(lst, j, p):
                     return {key: {str(q[5]): int(val)}}
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
+                if t == 7 and int(q[5]) == 4 and int(val) >= 0:
+                    return {'playtime': int(val)}
+            if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:
+                return {'playtime': int(val)}   # events14：122 脚本「$gameSystem.playtime();」
             return p
     return p
 
