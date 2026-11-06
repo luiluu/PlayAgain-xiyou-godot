@@ -496,7 +496,8 @@ func _help(entry = null) -> void:
 		help_card.visible = false
 		return
 	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
-	help_card.show_for(entry)
+	# 心钢 Window_BattleSkill.updateHelp 包装：巨人吞噬换成 H.skillHelpView（带就绪／冷却状态行）
+	help_card.show_for(XGrowthHelp.skill_view(entry, _active) if XHelpCard.kind_of(entry) == "skill" else entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
 	var row := Rect2(list_win.position - _origin + Vector2(0, list_win.padding + (list_win.index - list_win.top) * XBattleList.LH),

@@ -1,5 +1,6 @@
 extends Node
 ## 【cc·八戒·未经审查】成长装备说明（growth3）XGrowthHelp：照参照 growth_help_probe（tests/fixtures/growth_help_oracle.json）逐行比。
+## 尾项三（DL ③）：心钢技能说明卡（skills，XGrowthHelp.skill_view）同样逐行比。
 ## 每例拿参照实例刚建好时的备注 note0／说明 description0，加层数／盛名字段，HELP_FIX 关（原版口径）走 XHelpCard.content，
 ## 文字、字号、颜色、对齐、行 y 与卡高同 xiyou_help_card；装备评分（总分、逐行）比参照 power；再开 HELP_FIX（O-151，默认）看「本场成长」「当前增益」「装备战力」三行。
 const FIXTURE := "res://tests/fixtures/growth_help_oracle.json"
@@ -114,7 +115,54 @@ func _fixed(c: Dictionary, obj: Dictionary, s: XState) -> void:
 	XHubris._logic = null
 	XHeartsteel.in_battle = false
 	if c.buff != null:
-		XEquipment.change(s, a, a.equip_slots().find(int(obj.etypeId)), {})
+		XEquipment.change(s, a, a.equip_slots().find(int(obj.etypeId)), null)
+
+
+## 尾项三：心钢技能说明卡 H.skillHelpView（XGrowthHelp.skill_view）。参照 skills：装上的心钢／利维坦、战斗中的回合与就绪回合、施放过没有
+func _skill(c: Dictionary, s: XState) -> void:
+	var a: XActor = s.actor(1)
+	var obj := {}
+	if c.gear != null:
+		obj = XDB.rec("Armors", int(c.gear.base)).duplicate(true)
+		obj.kind = "armor"
+		obj.base = int(c.gear.base)
+		obj.id = 9100 + int(c.gear.base)
+		for k in c.gear.fields:
+			obj[k] = c.gear.fields[k]
+		s.gear.append(obj)
+		XEquipment.change(s, a, a.equip_slots().find(int(obj.etypeId)), obj)
+	var logic := FakeLogic.new()
+	logic.state = s
+	if c.battle != null:
+		XHeartsteel.in_battle = true
+		XHeartsteel._logic_ref = weakref(logic)
+		logic.turn = int(c.battle.turn)
+		if c.battle.has("ready"):
+			XHeartsteel._ready_turn[a.actor_id] = int(c.battle.ready)
+		XHeartsteel._casted[a.actor_id] = bool(c.battle.get("casted", false))
+	var view := XGrowthHelp.skill_view(XDB.rec("Skills", int(c.skill)), null if c.noActor else a)
+	var got := XHelpCard.content(view)
+	var want: Array = c.rows
+	var tag := "skill." + str(c.id).trim_prefix("skill.")
+	var lay := XHelpCard.layout(got, 0, XHelpCard.note_width(view), func(t: String, sz: int): return t.length() * sz * 0.6)
+	var ok := got.size() == want.size()
+	var bad = null
+	for i in range(mini(got.size(), want.size())):
+		var g: Array = got[i]
+		var w: Array = want[i]
+		if not (str(g[0]) == str(w[0]) and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) \
+				and (null if g[4] == null else int(g[4])) == (null if w[4] == null else int(w[4])) and is_equal_approx(float(lay.lines[i].y), float(w[3]))):
+			ok = false
+			bad = {"row": i, "got": [g[0], g[1], g[2], g[4], lay.lines[i].y], "want": w}
+			break
+	check(tag, ok, bad if bad != null else {"got": _texts(got), "want": _texts(want)})
+	check(tag + ".height", is_equal_approx(float(lay.height), float(c.height)), [lay.height, c.height])
+	XHeartsteel.in_battle = false
+	XHeartsteel._logic_ref = null
+	XHeartsteel._ready_turn.clear()
+	XHeartsteel._casted.clear()
+	if not obj.is_empty():
+		XEquipment.change(s, a, a.equip_slots().find(int(obj.etypeId)), null)
 
 
 func _ready() -> void:
@@ -125,6 +173,14 @@ func _ready() -> void:
 		_faithful(c, _obj(c))
 		_power(c, _obj(c))
 		_fixed(c, _obj(c), s)
+	for c in data.get("skills", []):
+		_skill(c, s)
+	check("skill.count", data.get("skills", []).size() >= 11)
+	# 回退：TURN_CD_V035 关（v0.28）＝没有这张卡，原样返回
+	XHeartsteel.TURN_CD_V035 = false
+	var raw := XDB.rec("Skills", XHeartsteel.SKILL)
+	check("skill.v028", is_same(XGrowthHelp.skill_view(raw, s.actor(1)), raw))
+	XHeartsteel.TURN_CD_V035 = true
 	# 渡鸦／米拉／甚尔专属法宝的装备评分（XPower._exclusive_gear）
 	for c in data.powerOnly:
 		_power({"id": c.id, "power": c}, XDB.rec("Armors", int(c.id)))

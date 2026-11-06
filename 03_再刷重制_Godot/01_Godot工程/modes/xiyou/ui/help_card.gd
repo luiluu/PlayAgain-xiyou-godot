@@ -111,6 +111,8 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	var rows := XGrowthHelp.rows(obj, type) if growth else desc_params(obj, type)
 	# 屠苏／璇的技能：bindGrowth 的 setItem 包装（最外层）把技能换成浅拷贝再往里传，元素包装看 isSkill 为假，同 skill_copy
 	var binding_copy := type == 3 and int(XTusuXuan.owner_of(int(obj.get("id", 0)))[0]) != 0
+	# 心钢技能卡 H.skillHelpView 传的是深拷贝（XGrowthHelp.skill_view 标 skill_copy），同上
+	binding_copy = binding_copy or bool(obj.get("skill_copy", false))
 	if not growth or XGrowthHelp.HELP_FIX:
 		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
 		if (type == 1 or type == 2) and XPower.enabled():

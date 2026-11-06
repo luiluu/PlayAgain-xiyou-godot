@@ -142,7 +142,7 @@ func _update_help() -> void:
 		help_card.show_for({})
 		return
 	XHelpCard.scene_actor = actor()  # 黑闪说明卡读 scene._actor
-	help_card.show_for(current())
+	help_card.show_for(XGrowthHelp.skill_view(current(), actor()))  # 心钢 Window_SkillList.updateHelp 包装（巨人吞噬）
 	var soul := XRaven.ledger_help(actor(), current())
 	if not soul.is_empty():
 		_paint_text(soul)
