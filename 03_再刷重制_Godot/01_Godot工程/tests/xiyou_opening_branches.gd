@@ -62,6 +62,7 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XSave.dir_override = "user://test_xiyou_branches"
+	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76）：本测只看开局分支，过场当作播过（测完退出时过场的动画还挂着会报资源未释放）
 	Engine.time_scale = 6.0
 	seed(20261013)
 	# A：攻击他？
