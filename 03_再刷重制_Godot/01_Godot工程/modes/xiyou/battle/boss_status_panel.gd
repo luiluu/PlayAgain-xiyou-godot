@@ -12,7 +12,7 @@ extends Control
 static var SHOW_POWER := false
 ## 冻结后跟进 v0.56（Codex_BossStatusSummary「选项菜单 Boss状态面板」）：设置页多一行「Boss状态面板」（ConfigManager.codexBossStatusPanel，
 ## 默认开，旧配置视为开）；关掉后面板不显示、不拦截点击，Boss 血条（MOG_BossHP）照常。
-## 默认 false＝v0.28 的样子（没有这一行、面板一直在）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+## 默认 false＝v0.28 的样子（没有这一行、面板一直在）；换源（v0.62.12）后翻成 true（O-204，回退＝改回 false）。
 static var TOGGLE := false
 
 

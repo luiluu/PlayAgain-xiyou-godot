@@ -54,7 +54,7 @@ const EXTRA_GAP_NEAR := 24.0
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
 ## 冻结后跟进 v0.36（CodexDisplay D.equipmentRows）：装备说明里的白字属性行排在第一条蓝字「特效／效果／成长：」之前。
-## 默认 false＝v0.28 的排法（白字按备注原位）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+## 默认 false＝v0.28 的排法（白字按备注原位）；换源（v0.62.12）后翻成 true（O-205，回退＝改回 false）。
 static var WHITE_STATS_FIRST := false
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null

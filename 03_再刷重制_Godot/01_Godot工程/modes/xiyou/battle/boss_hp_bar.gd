@@ -17,7 +17,7 @@ extends Node2D
 ## 心魔训练敌群（770）里的敌人，和神兵试炼的神兵之仙（Z.WEAPON_BOSS 或备注 <CodexZhenqi: weapon N>）也显示首领血条。
 ## 只走显示层：名单里的 Boss 优先（敌群里最后一个且未隐藏）；名单里一个也没有时才取这类敌人里最后一个未隐藏的。
 ## 它们的头像为空（face_name 返回 ""）、小血条不出现（原版 hpGaugeVisible 对它们返回 false）。
-## 默认 false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+## 默认 false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）后翻成 true（O-203，回退＝改回 false）。
 static var RANGE_V037 := false
 
 const LIST_LENGTH := 569
