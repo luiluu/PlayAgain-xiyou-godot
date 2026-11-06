@@ -56,8 +56,8 @@ func _ready() -> void:
 	var reference: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/formula_rest_oracle.json"))
 	check("source_identity", reference.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("scope", reference.hostScope == "plan12-custom-formula-execution")
-	check("inventory_31", reference.inventory.size() == 31)
-	check("native_cases_135", reference.cases.size() == 135)
+	check("inventory_34", reference.inventory.size() == 34)  # v0.62.12（v0.28 是 31／135）
+	check("native_cases_147", reference.cases.size() == 147)
 	var covered := {}
 	for c in reference.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty() and c.observed.diagnostics.is_empty(), c.errors)
@@ -88,6 +88,6 @@ func _ready() -> void:
 			var context := XFormulaContext.capture(a, b, variables, {}, int(item.id), item.damage.formulaProgram)
 			var readonly := XFormulaProgram.evaluate(item.damage.formulaProgram, context, int(item.damage.type))
 			check(c.id + ".readonly_matches", readonly.available and readonly.value == actual.value, readonly)
-	check("covered_31", covered.size() == 31)
+	check("covered_34", covered.size() == 34)
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit(0 if failures.is_empty() else 1)
