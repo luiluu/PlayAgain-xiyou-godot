@@ -58,7 +58,7 @@ jobs:
           print('java_dist=' + c['java']['distribution'])
           print('template_version=' + d['templateVersion'])
           EOF
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: matrix.platform == 'android'
         with:
           distribution: ${{ steps.reg.outputs.java_dist }}
