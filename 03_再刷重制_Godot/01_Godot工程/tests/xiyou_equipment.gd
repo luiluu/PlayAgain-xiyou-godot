@@ -65,6 +65,30 @@ func _run() -> void:
 		XRunewords.check(e)
 		check("runeword_%d_%s"%[int(row.recipeId),row.kind],close_array(e.params,row.params) and e.traits==row.traits and e.get("yep",{}).get("elementAmplify",{})==row.elementAmplify and e.name==row.name and e.get("runewords",[])==row.runewords.map(func(v):return int(v)),{"godot":e,"mv":row})
 		check("runeword_%d_once"%int(row.recipeId),once==JSON.stringify(e))
+	# 两个跟到 v0.62.12 的开关关掉时回到 v0.28：专武 67 照样抽成「卍解-斩月」前缀；单颗符石的配方镶上就结算，不挂起
+	XGear.EXCLUSIVE_V056 = false
+	XGear.force_roll = 0.0
+	XGear.reset_pool()
+	var old_affix := XGear.create("weapon", 56)
+	check("v028_exclusive_affix", old_affix.affixIds.size() == 1 and int(old_affix.affixIds[0].id) == 67 and str(old_affix.name).begins_with("卍解-斩月"), old_affix.affixIds)
+	XGear.EXCLUSIVE_V056 = true
+	XGear.reset_pool()
+	check("exclusive_affix_skipped", XGear.create("weapon", 56).affixIds.is_empty())
+	var one: Dictionary = {}
+	for row in ref.runewords:
+		if (row.materials as Array).size() == 1:
+			one = row
+			break
+	check("runeword_single_present", not one.is_empty())
+	if not one.is_empty():
+		for pending in [true, false]:
+			XRunewords.PENDING_V062 = pending
+			XGear.force_roll = 0.5
+			var g := XGear.create(one.kind, int(one.id))
+			g.upgrades = one.materials.map(func(id): return {"item": int(id), "name": "", "cost": 1})
+			XRunewords.check(g)
+			check("runeword_pending_%s" % pending, g.get("runewords", []).is_empty() == pending and g.has("runewordPending") == pending, [g.get("runewords"), g.get("runewordPending")])
+		XRunewords.PENDING_V062 = true
 	for row in ref.sets:
 		var a := XActor.new().setup(1);a.change_level(30);a.equips.fill(null);a.refresh_passive()
 		var before: Array = range(8).map(func(i):return a.param(i))

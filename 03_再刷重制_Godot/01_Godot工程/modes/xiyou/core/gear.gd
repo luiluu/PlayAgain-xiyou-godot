@@ -134,9 +134,11 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 
 ## DreamX.RandomPrefixSuffix.isValidItem：记录存在，且不是角色专武（v0.37 起「天外天·」开头、v0.56.01 起备注带 <req_actors:>
 ## 的装备不再当词缀，见 v0.62.12 installIntegratedV029Runtime.js exclusiveAffix；已生成的旧装备不改）
+## O-待定·专武不当词缀（跟到 v0.62.12）：false＝回到 v0.28，专武照样能被抽成词缀
+static var EXCLUSIVE_V056 := true
 static func valid_affix(table: String, id: int) -> bool:
 	var r := XDB.rec(table, id)
-	return not r.is_empty() and not exclusive_affix(r)
+	return not r.is_empty() and not (EXCLUSIVE_V056 and exclusive_affix(r))
 
 static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
 static func exclusive_affix(r: Dictionary) -> bool:
