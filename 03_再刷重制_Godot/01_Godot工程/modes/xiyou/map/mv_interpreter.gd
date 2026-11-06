@@ -42,7 +42,26 @@ func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
 
 
 func _notice(text: String) -> void:
-	host.toast(text)
+	if host_alive():
+		host.toast(text)
+
+
+## 【cc·八戒 DJ】宿主（地图画面）还在：地图／场景释放后，挂在 await 上的事件醒来时不再往下跑（原来接着调已释放的 host，
+## 报 get_tree／show_message／character on previously freed）。只看释放，不看在不在树上：打开存档等界面时地图可能暂时摘下，事件要照常接着跑。
+func host_alive() -> bool:
+	return is_instance_valid(host) and not host.is_queued_for_deletion()
+
+
+## 等 n 帧（physics＝物理帧，否则空闲帧）。用主循环的 SceneTree：宿主暂时不在树上时 host.get_tree() 是 null；宿主释放了就不再等
+func _frames(n: int, physics := true) -> void:
+	for i in range(n):
+		if not host_alive():
+			return
+		var tree := Engine.get_main_loop() as SceneTree
+		if physics:
+			await tree.physics_frame
+		else:
+			await tree.process_frame
 
 
 ## 游标逐步推进；文字交给 host.show_message，宿主指令由发出请求的那一层（可能是公共事件子游标）执行
@@ -54,7 +73,7 @@ func run() -> void:
 			receipt = {"rows": []}
 	while await _step():
 		pass
-	if _depth == 0:
+	if _depth == 0 and host_alive():
 		if receipt != null and not receipt.rows.is_empty():
 			host.toast("宝箱收获：<br>" + "<br>".join(PackedStringArray(receipt.rows.map(func(r): return "%s ×%d" % [str(r.name).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;"), int(r.amount)]))))
 		XDungeon.event_finished(state())
@@ -63,14 +82,21 @@ func run() -> void:
 
 ## 推进到下一个请求并等它处理完；本列表执行完返回 false。
 ## 跨 await 不留指向游标的局部变量（Godot 4.7 宿主先释放时，带着它的挂起协程会让游标留在内存里，退出时报资源未释放）
+## 宿主释放了（地图关掉）就停：不再取下一条，也不把等到的结果交回核心
 func _step() -> bool:
+	if not host_alive():
+		return false
 	var r := advance()
 	if r.kind == "message":
 		var response = await host.show_message(r.msg)
+		if not host_alive():
+			return false
 		waiting_frame().resume(response)
 		return true
 	if r.kind == "command":
 		var go = await waiting_frame()._host_command(r.command)
+		if not host_alive():
+			return false
 		waiting_frame().resume(go)
 		return true
 	return false
@@ -78,7 +104,7 @@ func _step() -> bool:
 
 ## 立即显示待显示的文字（MVScript 等在执行中途需要时用）
 func flush_message() -> void:
-	if pending_lines.is_empty():
+	if pending_lines.is_empty() or not host_alive():
 		return
 	var lines := pending_lines.duplicate()
 	pending_lines.clear()
@@ -100,7 +126,8 @@ func _event_id() -> int:
 
 
 func _data_changed() -> void:
-	host.refresh_events()
+	if host_alive():
+		host.refresh_events()
 
 
 ## 播放电影：宿主放完再接着执行（_host_command 261）
@@ -214,21 +241,18 @@ func _host_command(c: Dictionary):
 			# 更改画面色调 [色调, 帧数, 等待]
 			state().screen.start_tint(p[0], int(p[1]))
 			if bool(p[2]):
-				for i in range(int(p[1])):
-					await host.get_tree().physics_frame
+				await _frames(int(p[1]))
 		236:
 			# 设置天气 [类型, 强度, 帧数, 等待]；战斗中无效（地图解释器不在战斗里）
 			state().screen.change_weather(str(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
-				for i in range(int(p[2])):
-					await host.get_tree().physics_frame
+				await _frames(int(p[2]))
 		224:
 			# 画面闪烁 [颜色 r,g,b,强度, 帧数, 等待]（Game_Screen.startFlash）
 			if host.has_method("flash_screen"):
 				host.flash_screen(p[0], int(p[1]))
 			if bool(p[2]):
-				for i in range(int(p[1])):
-					await host.get_tree().physics_frame
+				await _frames(int(p[1]))
 		352:
 			# 打开存档画面（SceneManager.push(Scene_Save)；公共事件 9「炉石」），关闭后回到地图接着执行
 			if host.has_method("open_save"):
@@ -238,11 +262,9 @@ func _host_command(c: Dictionary):
 			if host.has_method("shake_screen"):
 				host.shake_screen(int(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
-				for i in range(int(p[2])):
-					await host.get_tree().process_frame
+				await _frames(int(p[2]), false)
 		230:
-			for i in range(int(p[0])):
-				await host.get_tree().process_frame
+			await _frames(int(p[0]), false)
 		241:
 			host.play_bgm(p[0])
 		245:
@@ -274,8 +296,8 @@ func _host_command(c: Dictionary):
 				ch.force_move_route(p[1])
 				if bool(p[1].get("wait", false)):
 					# 等待中若场所移动，旧地图的角色已释放
-					while is_instance_valid(ch) and ch.is_route_forcing():
-						await host.get_tree().physics_frame
+					while host_alive() and is_instance_valid(ch) and ch.is_route_forcing():
+						await _frames(1)
 		211:
 			host.player.transparent = int(p[0]) == 0
 			host.player.queue_redraw()
@@ -297,8 +319,8 @@ func _host_command(c: Dictionary):
 			if ch:
 				ch.start_balloon(int(p[1]))
 				if bool(p[2]):
-					while is_instance_valid(ch) and ch.is_balloon_playing():
-						await host.get_tree().physics_frame
+					while host_alive() and is_instance_valid(ch) and ch.is_balloon_playing():
+						await _frames(1)
 		216:
 			# 更改队伍跟随 [0 显示 1 隐藏]
 			host.set_followers_visible(int(p[0]) == 0)

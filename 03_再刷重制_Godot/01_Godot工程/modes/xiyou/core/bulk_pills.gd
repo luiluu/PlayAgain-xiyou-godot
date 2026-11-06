@@ -188,7 +188,7 @@ static func run(host: Node, s: XState, item: Dictionary, requested: int, targets
 			reason = DEFERRED
 			break
 		budget += 1
-		if budget >= FRAME_BUDGET and host.is_inside_tree():
+		if budget >= FRAME_BUDGET and is_instance_valid(host) and host.is_inside_tree():  # DJ：上一个公共事件里地图可能已释放
 			budget = 0
 			await host.get_tree().process_frame
 	return {"used": used, "reason": reason, "remaining": stock(s, item), "events": ran}

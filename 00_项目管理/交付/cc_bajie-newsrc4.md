@@ -170,6 +170,29 @@
 
 - `事件空绿扫描.py`（zero_effect／TEXT_TRACE_COUNTS）、`事件祖先预设.py`（--states／--old-zero-effect）、`event_presets.json`（加回 31 条）。
 
+## DJ：地图释放后事件解释器还在跑（协调 11-06 16:27 派，DD② 的 Godot 侧）
+
+开工先合了 cc/newsrc-switch 21cd90eb（2c79f4e4）。
+
+### 变更记录草稿
+
+#### 【cc·八戒·未经审查】地图释放后挂起的事件不再往下跑
+
+- **归类**：本机跑 empress_draw、skill_menu_events、casino_batch、save_events、transfer、party，断言全过，报错全是同一个根因：事件挂在 await 上（223／224／236 等帧、230 等待、205／213 等走完、文字），测试结束释放地图后它醒来接着调宿主：`host.get_tree()` on freed（mv_interpreter 218／245）、`host.show_message`（69）、`host.character`（272）；save_events 是宿主还在但不在树上，`host.get_tree()` 为 null（278）。casino_batch 上一棒在测试里绕开过，这次本机已不报。
+- **修法**（`map/mv_interpreter.gd`）：新加 `host_alive()`（宿主没释放、没排队释放）。`_step` 开头和每次 await 回来都先看，宿主没了就返回 false，事件停下、照常发 finished；收尾的宝箱收获提示与 `XDungeon.event_finished` 只在宿主还在时做；`_notice`、`flush_message`、`_data_changed` 同样判。帧等待统一走 `_frames(n, physics)`：用 `Engine.get_main_loop()` 的 SceneTree 等帧（宿主暂时摘下树时照常等完，原来报 null），每帧前看宿主还在不在；205／213 的循环同样加判。
+- **不改正常事件流**：只在宿主已释放时停；宿主在树上或暂时摘下（打开存档等界面）时行为不变。没加回退开关（修崩溃，不是改原版行为）。
+- **全量 grep**：`host.get_tree()` 别处只有 `core/bulk_pills.gd` 一处，它在跑完一个公共事件后用 `host.is_inside_tree()`，地图已释放时会报错，改成先 `is_instance_valid(host)`。其余 `await get_tree().…_frame` 都是节点自己等自己（自己释放后协程不会再醒），不是同类。协调说的 151 处 set_input_as_handled／get_viewport 那类这次没碰。
+- **测试** `tests/xiyou_interp_host_freed`（新，5 项）：223 等 30 帧时释放宿主 → 停下、发 finished、后一句不显示；230 等待时释放 → 第二句不显示；宿主摘下树但没释放 → 230 照常等完、第二句照常显示。用旧 mv_interpreter.gd 跑这个测试会报 `get_tree on previously freed` 而失败。
+
+### 验证（DJ）
+
+- 本机新源：上面 6 个＋`xiyou_interp_host_freed`、`screen_fx`、`opening_branches`、`bulk_pills`、`dungeon` 全过，日志 0 条 SCRIPT ERROR；`xiyou_event_compare` 全量 15660 例，一致 15652，8 例是原来登记的，regressions 空。
+- `语法检查.py` 0 问题；`事件空绿扫描.py --check` 过。
+
+### 待交叉核查（DJ）
+
+- `map/mv_interpreter.gd`（host_alive／_frames／_step）、`core/bulk_pills.gd`、`tests/xiyou_interp_host_freed.*`。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
