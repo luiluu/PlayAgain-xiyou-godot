@@ -66,6 +66,16 @@ class ReviveLogic:
 	var stream: XRandomStream
 	func _rule() -> XRandomStream:
 		return stream if stream != null else super()
+	## 固定 7 点照真实链扣目标的固定减伤（harmRe，finish 里 apply_fixed_mitigation）：参照是真实 apply，
+	## 「七星续命」252 的 passiveHarmRe 500 把这一击扣到 0（rules-newsrc3）。没有 harmRe 的状态 flat 为 0，跟原来一样。
+	func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
+		var res := super(u, skill, t, critical)
+		var es := XDamage.action_elements(skill, u)
+		var e: int = es[0] if not es.is_empty() else 0
+		var flat := XDamage._flat_mitigation(u, t, e, {"flatMitigationAdd": {}, "flatMitigationRate": 1.0}) if e > 0 else 0.0
+		var v := float(res.value)
+		res.breakdown = {"row": {"value": v, "resistance": 1.0}, "candidates": [{"gross": v, "flat": flat, "resistance": 1.0}]}
+		return res
 
 
 ## 记下开战时交给公共事件单槽的预约（rules9 P3-5）

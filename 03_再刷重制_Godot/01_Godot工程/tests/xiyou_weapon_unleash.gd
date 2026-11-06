@@ -45,7 +45,10 @@ func _run() -> void:
 			continue
 		var want: Dictionary = norm(c.observed)
 		want.erase("otherRolls")  # 别的 startAction 包装的取数，不归本功能
+		# 参照临时从停用名单拿掉装专武的角色（CodexImportedBalance.disabledActorIds），这边同样拿掉，量完放回
+		XImportedBalance.probe_enabled = [int(c.setup.enabledDisabledActor)] if c.setup.has("enabledDisabledActor") else []
 		var got := _measure(c.setup, c.observed)
+		XImportedBalance.probe_enabled = []
 		if want.started != [want.before]:
 			triggered += 1
 		for k in want:

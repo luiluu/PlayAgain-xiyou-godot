@@ -39,8 +39,12 @@ static func outgoing_rate(_b) -> float:
 	return 1.0  # v0.36：B.outgoingRate = function(actor) { return 1; }
 
 
+## 测试用：临时当作没停用的角色（weapon_unleash 参照量 166 专武 93 时把 166 从停用名单拿掉，用例输入 enabledDisabledActor）
+static var probe_enabled: Array = []
+
 static func is_disabled_actor(b) -> bool:
-	return DISABLED_ACTORS.has(_actor_id(b))
+	var id := _actor_id(b)
+	return DISABLED_ACTORS.has(id) and not probe_enabled.has(id)
 
 
 static func is_disabled_horn(item: Dictionary) -> bool:

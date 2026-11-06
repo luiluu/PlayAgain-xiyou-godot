@@ -10,11 +10,13 @@ const DIFFICULTY := 2
 const ACTIVE := [10288, 10289, 10290, 10291, 10292]
 const MEETS_COMPARED := [0, 1, 4]
 var results := []
+var fix_hp := -1.0  # revive 步之后谷雨的生命（修正支断言用）
+var replaying := false  # 修正支重放：逐步比参照预期会不同，不打印
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
 	results.append({"name": name, "passed": ok})
-	if not ok and results.filter(func(r): return not r.passed).size() <= 25:
+	if not ok and not replaying and results.filter(func(r): return not r.passed).size() <= 25:
 		print("FAIL ", name, " ", JSON.stringify(detail).left(800))
 	return ok
 
@@ -176,6 +178,7 @@ func _script(c: Dictionary) -> void:
 				rc.set_resource(a, "hp", a.mhp)
 				logic._finish_lifecycle_operation(rc, a)
 				a.recover_all()
+				fix_hp = a.hp
 			"ai":
 				var got := XGuyu.auto_action(logic, s.actor(XGuyu.ACTOR))
 				var ai = null if got.is_empty() else {"skill": int(got[0].id), "target": logic.enemies.find(got[1]) if got[1] != null else -1}
@@ -285,6 +288,7 @@ func _run() -> void:
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
 	var seen := 0
+	XGuyu.ROOTED_ACTOR_SET_HP = false  # 参照比原版：新源角色 setHp 绕过谷雨替倒（流萤重写，O-待定·谷雨替倒 setHp）
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
@@ -294,6 +298,18 @@ func _run() -> void:
 			else:
 				_script(c)
 	check("covers_all", seen == 17, seen)
+	# 修正支（默认）：同一 sub 例重放，替倒中 setHp 抬不起，revive 之后谷雨生命还是 0（原版这里被设满血）
+	XGuyu.ROOTED_ACTOR_SET_HP = true
+	for c in ref.cases:
+		if str(c.id) == "script.sub" and c.errors.is_empty():
+			var saved := results
+			results = []
+			fix_hp = -1.0
+			replaying = true
+			_script(c)
+			replaying = false
+			results = saved
+			check("fix.rooted_set_hp", fix_hp == 0.0, fix_hp)
 	_local()
 	finish()
 
