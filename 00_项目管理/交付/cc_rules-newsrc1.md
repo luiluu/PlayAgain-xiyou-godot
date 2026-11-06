@@ -26,11 +26,22 @@
 
 - `语法检查.py` 通过。
 - `xiyou_rules`：61678/61678（本机，新源产物，`--skip-generated-check`：本树产物克隆自集成分支，跟主工作区旧源产物本来就不同）。
-- 全部 `xiyou_rules*`（65 片）＋`xiyou_imported_balance`、`xiyou_item_use`、`xiyou_multi_element`、`xiyou_module_hooks`：待写
+- 云端（运行 42193458592，提交 c35a3d00 之上的交付单 WIP 提交，产物快照 `refs/ci/generated/cc/rules-newsrc1`＝集成分支新源产物）跑 69 个场景：**`xiyou_rules`～`xiyou_rules_d6*` 全部 64 片通过**，`xiyou_multi_element` 通过。没过的 4 个都不是本单改坏的，见下：
+  - `xiyou_rules10` 86/90：`floor.2521.false.1/5/10`（开关关时隐月 2521 暴击率 Godot 0.21／0.29／0.39，参照 0.19）与 `floor.2521.db_untouched`。即派单说的「rules10 那 4 项」，样本已拿到，没修（留下一单，见「没做」）。
+  - `xiyou_imported_balance` 224/230：6 项都是 141 的持续伤害例（`dot.a141.*`、`dot.rec.a141.*`）。参照里 hrg 为 0、HP 不掉：新源 141 进了禁用名单，它的行动对目标无效，中毒根本挂不上；测试是按夹具直接给 Godot 挂状态再重放，所以 Godot 照常掉血。要改测试（禁用角色的 DOT 例按「挂不上」比，或探针换一个未禁用的导入角色），不是倍率问题。
+  - `xiyou_item_use` 11/12：`ce_items_count` 1037≠1029，测试里写死的公共事件物品数，新源多了 8 件（内容数量变化，改断言即可）。
+  - `xiyou_module_hooks` 1309/1311：`view.same_source`、`oracle.native_registry`，来源身份夹具还是旧源（同集成分支表一的「只挂 source」一类），要在新源上重出夹具。
 
 ## rules10
 
-待写
+样本见「验证」第一条：4 项都在 2521（镜流 10119 的隐月）开关「关」那一支：关时应恒 1 层（0.19），Godot 随层数涨。初判是新源里 2521 本身的数据／`PushsubState` 口径变了，`XBattler.FLOOR_YINYUE` 关闭分支没跟上；没在本单修。
+
+## 接续（本会话到 40% 线停手，下一位接着做）
+
+- 本分支已 merge 集成分支 020aab89（新夹具），合并提交 0e126d7d，还没在合并后重跑任何测试。
+- 待做（总装补单「CM 补」）：power_books×4（新源开局多技能 10455）；passive_content 书 1652／2237 伤害 +3.75%；xuan_auto 力壁护盾；battle_gaps 新增 10462 百分比 MP（计数断言要改）；pushstate 6706 不再上 1561。另加本单留下的：rules10 四项、imported_balance 141 DOT 六项、item_use 计数、module_hooks 来源夹具。
+- 本机测试槽挤时走云端：`gh workflow run godot-tests.yml -R luiluu/PlayAgain-xiyou-godot --ref cc/rules-newsrc1 -f mode=affected -f force=true -f scenes="<场景名.tscn 空格分隔>"`（**场景名要带 .tscn**，不带会被过滤成 0 个、整轮空跑）；推之前先 `python3 03_再刷重制_Godot/07_开发环境/云端选测.py upload --branch cc/rules-newsrc1`。
+- 工作树环境是手搭的（没跑 `--补齐`，因为它会拿主工作区旧源产物覆盖）：冻结正式源链接指向 `v0.62.12/app.nw`，`generated`、`.godot`、`node_modules`、`.sandbox` 克隆自集成分支工作树。本机跑测试要加 `--skip-generated-check`。
 
 ## 没做、留给下一单
 
@@ -47,7 +58,7 @@
 
 ## 交接板
 
-- 下一步：C 规则另 43 个（见「没做」）。
+- 下一步：见「接续」。
 - 用户试玩说明：新源口径下，穿透装备／被动对有抗性的敌人更有效；导入角色（141～166）伤害不再被压到 1%；停用角色多了 5 个。
 - 需要用户决定：无
 
@@ -58,6 +69,7 @@
 ## 可优化（流程／工具／效率）
 
 - 建议：`xiyou_rules` 失败只打印前 12 条，按角色归类要临时改测试；加个环境变量（如 `RULES_DUMP=<路径>`）把全部不符写成 JSON，省一轮手改（C 规则车道，小）。
+- 建议：`云端选测.py` 的 `--scenes` 只认带 `.tscn` 的名字，不带时静默变成 0 个场景、运行显示成功；改成自动补后缀或空选时报错（工具／哪吒，小）。
 - 建议：集成分支的 189 失败表初判按日志前几条样本写，rules 这行就判错了方向；以后初判最好标「未在本机重跑」并附一条样本的分项对比（已在表头注明过，这里再提一次）。
 
 ## 本分支提交
