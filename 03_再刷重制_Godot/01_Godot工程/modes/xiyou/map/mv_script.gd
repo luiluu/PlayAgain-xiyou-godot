@@ -192,7 +192,7 @@ static func run(code: String, interp) -> Array:
 	# 藏宝图（Star.RomGetItems.RunGetFun，CE117、174～189、1381～1384）：见 XTreasureMap
 	var dig := _re("^Star\\.RomGetItems\\.RunGetFun\\((\\d+)\\s*,\\s*(\\d+)\\);?$").search(js)
 	if dig:
-		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)))
+		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)), int(interp.get("common_id")) if interp.get("common_id") != null else 0)
 		for t in r.toasts:
 			interp.host.toast(t)
 		if int(r.reserve) > 0:
