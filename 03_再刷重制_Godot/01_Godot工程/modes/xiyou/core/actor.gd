@@ -937,8 +937,19 @@ func refresh_passive() -> void:
 				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
 	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
+	_passive_states_sig = _passive_states_signature()
+
+## v0.62 dsPassiveSkill 被动缓存生命周期（v0.51 起）：addState／removeState／eraseState／clearStates 置脏，下一次 refresh 前
+## 按签名（状态、技能、装备）重建；角色只在开战构建阶段（Scene_Battle.start 里 okadd 置真之前）不重建，随后统一 refresh。
+## 技能、装备变化这边各处本来就直接 refresh_passive；这里补状态：读缓存时比状态列表，变了就重建（同敌人，rules-newsrc3）。
+var _passive_states_sig := ""
+
+func _passive_states_signature() -> String:
+	return ",".join(state_ids.map(func(x): return str(x)))
 
 func passive_cache() -> Dictionary:
+	if _passive_states_sig != _passive_states_signature():
+		refresh_passive()
 	return _passive_cache
 
 static func _scan(text: String, pattern: String) -> Array:
