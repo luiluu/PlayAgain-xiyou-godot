@@ -134,8 +134,18 @@ static func zhenqi_rows(s: XState, a: XActor) -> Array:
 	return rows
 
 
-## 整页：真气、（五个乘区不移植）、难度对照、建议
+## 修行页两页（v0.62 起 installNativeGuidanceRuntime：第一页 G.panelRows 精简成路线／挑战评估／境界／必备属性／建议，
+## 原「真气」「难度对照」挪到第二页「修行·详细」G.detailRows）。O-待定·修行两页：关＝v0.28 一页写法（真气、难度对照、建议）。
+static var PANEL_V062 := true
+
+
+## 第一页「修行」的行
 static func page_rows(s: XState, a: XActor) -> Array:
+	return panel_rows(s, a) if PANEL_V062 else page_rows_v028(s, a)
+
+
+## v0.28 一页写法：真气、（五个乘区不移植）、难度对照、建议
+static func page_rows_v028(s: XState, a: XActor) -> Array:
 	var rows := zhenqi_rows(s, a)
 	var c := compare(a)
 	var ctx := context(s)
@@ -154,6 +164,185 @@ static func page_rows(s: XState, a: XActor) -> Array:
 	rows.append(_head("建议"))
 	for t in tips(s, a, c):
 		rows.append(_line(t))
+	return rows
+
+
+# ---- v0.62 两页写法（G.panelRows／G.detailRows）----
+## 面板专用格式（原版注释：整数不加千分位；×N 一律换成伤害 +N%／−N%）
+static func _abs_pct(p: float) -> String:
+	var a := absf(p)
+	if a >= 100:
+		return str(int(XPower.js_round(a)))
+	if a >= 99:
+		return XZhenqi._fixed(minf(99.9, a), 1)
+	return str(int(XPower.js_round(a)))
+
+
+static func pct0(v: float) -> String:
+	var p := v * 100
+	return ("−" if p < 0 else "") + _abs_pct(p) + "%"
+
+
+static func signed_pct0(v: float) -> String:
+	var t := pct0(v)
+	return "+" + t if v > 0 else t
+
+
+## 倍率换成伤害 +N%／−N%
+static func dmg_pct(v: float) -> String:
+	if not (v > 0):
+		return "−100%"
+	if v >= 1:
+		return "+" + str(int(XPower.js_round((v - 1) * 100))) + "%"
+	return "−" + _abs_pct((1 - v) * 100) + "%"
+
+
+static func stat_pct(v: float) -> String:
+	var p := v * 100
+	if p < 0 and absf(p) >= 999.5:
+		return "−" + XZhenqi._fixed(absf(p) / 100, 1) + "点"
+	return pct0(v)
+
+
+static func mult1(v: float) -> String:
+	if not (v > 0):
+		return "×0"
+	return "×" + (XZhenqi._fixed(v, 1) if v >= 1 else XZhenqi._fixed(v, 2))
+
+
+static func big_panel(v: float) -> String:
+	var a := absf(v)
+	if a >= 1e12:
+		return XZhenqi._fixed(v / 1e12, 1) + "万亿"
+	if a >= 1e8:
+		return XZhenqi._fixed(v / 1e8, 1) + "亿"
+	if a >= 1e4:
+		return XZhenqi._fixed(v / 1e4, 1) + "万"
+	return str(int(XPower.js_round(v)))
+
+
+## 秘境抽奖被动：每类四级，返回下一本的名字，学满返回空
+const MIJING_IDS := {"爆伤": [6309, 6310, 6311, 6312], "结算伤害": [6325, 6326, 6327, 6328]}
+const MIJING_LV := ["Lv1", "Lv2", "Lv3", "LvMax"]
+
+
+static func next_mijing(a: XActor, key: String) -> String:
+	var lv := 0
+	var ids: Array = MIJING_IDS.get(key, [])
+	for i in ids.size():
+		if a.skill_ids.has(int(ids[i])):
+			lv = i + 1
+	if lv >= 4:
+		return ""
+	return "秘境抽奖·" + key + "·" + MIJING_LV[lv]
+
+
+## G.panelSuggestions：按优先级给出全部适用项，页面只显示前两条
+static func panel_suggestions(s: XState, a: XActor, c: Dictionary) -> Array:
+	var out := []
+	var st := XZhenqi.state_of(s, a)
+	if st.pending:
+		out.append({"key": "pending", "text": "选择突破奖励（菜单「真气」）"})
+	if st.canBreak and st.next != null:
+		out.append({"key": "break", "text": "挑战「%s」突破境界（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial})
+	if c.now.cri < 1 or c.now.hit < 1:
+		out.append({"key": "crit", "text": "镶嵌「宝珠·鹰眼」（菜单「宝珠坊」）"})
+	if 1.5 + c.now.crit <= 1:
+		var b := next_mijing(a, "爆伤")
+		out.append({"key": "critHarm", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b if b != "" else "服用加暴伤的丹药（来源见物品说明）"})
+	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
+		out.append({"key": "atk", "text": "服用「%s」（蜜雪冰城·洪荒女皇）" % ("裂山霸力丹" if c.now.atk >= c.now.mat else "九霄焚天丹")})
+	if c.now.settle < 0.5:
+		var b2 := next_mijing(a, "结算伤害")
+		out.append({"key": "settle", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b2 if b2 != "" else "服用加结算伤害的丹药（来源见物品说明）"})
+	if out.is_empty():
+		out.append({"key": "ok", "text": "挑战副本Boss获取真气"})
+	return out
+
+
+## G.challenge
+static func challenge(c: Dictionary) -> String:
+	var n := 0
+	if c.now.cri < 1:
+		n += 1
+	if 1.5 + c.now.crit <= 1:
+		n += 1
+	if c.now.hit < 1:
+		n += 1
+	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
+		n += 1
+	if n:
+		return "属性不足（%d项）" % n
+	return "属性达标，伤害偏低" if c.now.settle < 0.5 else "可以挑战"
+
+
+## G.panelRows：第一页「修行」
+static func panel_rows(s: XState, a: XActor) -> Array:
+	var c := compare(a)
+	var ctx := context(s)
+	var st := XZhenqi.state_of(s, a)
+	var rows := [_head("%s·第%d层" % [ctx.route.name, ctx.floor]), _line("挑战评估：" + challenge(c))]
+	rows.append(_line("境界：\\C[6]%s\\C[0]　真气：伤害 \\C[3]%s\\C[0]" % [st.name, dmg_pct(st.rate)]))
+	if st.next == null:
+		rows.append(_line("境界：已至道祖"))
+	elif st.capped and st.canBreak:
+		rows.append(_line("突破条件：挑战「%s」（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial))
+	elif st.capped:
+		rows.append(_line("突破条件：通关第%d层（已通关%d层）" % [int(st.gate.required), int(st.gate.passed)]))
+	else:
+		rows.append(_line("下一境所需真气：%s点" % big_panel(st.need)))
+	if st.pending:
+		rows.append(_line("\\C[17]待选突破奖励：%d项（菜单「真气」）\\C[0]" % int(st.pending)))
+	if ctx.comp > 1.0001:
+		rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
+	var low: bool = c.now.settle < 0.5
+	rows.append(_line(("\\C[2]" if low else "") + "结算伤害：" + dmg_pct(c.now.settle) + ("" if c.now.settle >= 1 else "（本层难度削弱）") + ("\\C[0]" if low else "")))
+	var req := PackedStringArray()
+	req.append("暴击率 " + ("√" if c.now.cri >= 1 else "\\C[2]×（差%s）\\C[0]" % pct0(1 - c.now.cri)))
+	var cm: float = 1.5 + c.now.crit
+	req.append("暴伤 " + ("√" if cm > 1 else "\\C[2]×（差%s）\\C[0]" % pct0(1 - cm)))
+	req.append("命中 " + ("√" if c.now.hit >= 1 else "\\C[2]×（差%s）\\C[0]" % pct0(1 - c.now.hit)))
+	var ar := maxf(c.diff.atk, c.diff.mat)
+	req.append("攻击 " + ("√" if ar >= 0.5 else "\\C[2]×（压至%d%%）\\C[0]" % int(XPower.js_round(ar * 100))))
+	rows.append(_line("必备属性：" + "　".join(req)))
+	var sug := panel_suggestions(s, a, c)
+	rows.append(_line("建议：1. " + str(sug[0].text)))
+	if sug.size() > 1:
+		rows.append(_line("　2. " + str(sug[1].text)))
+	rows.append(_line("详细数据：见「修行·详细」页"))
+	return rows
+
+
+static func _ratio(base: float, now: float) -> float:
+	return now / base if base else 1.0
+
+
+## G.detailRows：第二页「修行·详细」。「战力构成」一段（CodexZones 五乘区预算）照 O-044 不移植，连同其后的空行整段不显示。
+static func detail_rows(s: XState, a: XActor) -> Array:
+	var st := XZhenqi.state_of(s, a)
+	var d := XZhenqi.data(a)
+	var rows := [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line("真气：伤害 " + dmg_pct(st.rate))]
+	var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
+	rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
+	rows.append(_line("来源：守层者（每层一次）、副本Boss、神兵试炼、溢出再动（每场最多10次）"))
+	rows.append({"type": "blank"})
+	var c := compare(a)
+	var ctx := context(s)
+	rows.append(_head("难度对照　%s·第%d层" % [ctx.route.name, ctx.floor]))
+	rows.append(_cols(["项目", "难度影响", "不含难度", "实际"], true))
+	rows.append(_cols(["暴击率", dmg_pct(_ratio(c.base.cri, c.now.cri)), stat_pct(c.base.cri), stat_pct(c.now.cri)], false, c.now.cri < 1))
+	var bm: float = 1.5 + c.base.crit
+	var nm: float = 1.5 + c.now.crit
+	rows.append(_cols(["暴伤", mult1(nm / bm if bm else 1.0), mult1(bm), mult1(nm)], false, nm <= 1))
+	rows.append(_cols(["命中", dmg_pct(_ratio(c.base.hit, c.now.hit)), stat_pct(c.base.hit), stat_pct(c.now.hit)], false, c.now.hit < 1))
+	rows.append(_cols(["终伤", dmg_pct(_ratio(c.base.fin, c.now.fin)), signed_pct0(c.base.fin), signed_pct0(c.now.fin)]))
+	rows.append(_cols(["物攻", dmg_pct(c.diff.atk), big_panel(c.base.atk), big_panel(c.now.atk)], false, c.diff.atk < 0.5))
+	rows.append(_cols(["魔攻", dmg_pct(c.diff.mat), big_panel(c.base.mat), big_panel(c.now.mat)], false, c.diff.mat < 0.5))
+	rows.append(_line("结算伤害·本层难度：" + dmg_pct(c.diff.settle)))
+	rows.append(_line("结算伤害·你的被动：" + dmg_pct(c.base.settle)))
+	rows.append(_line("结算伤害·合计：" + dmg_pct(c.now.settle)))
+	rows.append(_line("\\C[8]暴击率：还需减去敌人暴击闪避\\C[0]"))
+	rows.append(_line("\\C[8]结算伤害：开战时获得的状态合计\\C[0]"))
 	return rows
 
 
@@ -220,9 +409,9 @@ static func milestone_intro(seg: Dictionary) -> String:
 		"c":
 			return "首通守层者可以获得真气；副本Boss可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
 		"d":
-			return "打开状态界面「修行」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。"
+			return "打开状态界面「%s」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。" % ("修行·详细" if PANEL_V062 else "修行")
 		"g":
-			return intro.replace("五个乘区和难度对照", "难度对照")
+			return intro.replace("五个乘区和难度对照", "难度对照").replace("战力构成和难度对照", "难度对照")
 	return intro
 
 
