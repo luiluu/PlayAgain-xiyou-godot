@@ -328,6 +328,12 @@ B 类（要新源参照才能判）：这组没有。
 - generated/oracle/event_states.json 仍是本树手拼（备份在会话临时目录）；集成树同步会按预设重量这 1139 个。
 - 待交叉核查：\`event_presets.json\`（w8_ 变体）、\`事件空绿走不到.json\`／\`事件空绿基线.json\`（删 5 例）。
 
+### ③ 续：w9 再挖一层（11-06）
+
+- 同 w8 做法，对 missed4（5011 簇）页形去重 1357 簇，\`--tried\` 再加 missed3_allu，出 284 个；探针约 80 秒，全量无退化；剪掉没走到 22，**留 262 个**。
+- 结果：event_compare 全量 18466 例，一致 18458，8 例原登记，regressions 空，11/11；没执行到 8636→**8289**（4776 簇）。
+- 空绿：ce2471 补上，从走不到清单删掉、基线 94→93，\`--check\` 过。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`）
