@@ -84,6 +84,14 @@ class DirsTests(unittest.TestCase):
                              sorted(['dev384_三平台发行', 'dev390_三平台发行', '再刷一把：天启篇_dev380备份.zip', '再刷一把：天启篇_dev377备份.app']))
             self.assertEqual(M.tidy_old(p, 384), [])
 
+    def test_notes_audit(self):
+        log = ('## 2026-11-06 【cc·平台·未经审查】商店页存档键（dev.385）\n\n- 玩家可见：商店页不再显示存档键\n\n'
+               '## 2026-11-06 【cc·悟空·未经审查】流萤可以招募了（dev.386）\n\n- 做了什么\n\n'
+               '## 2026-11-06 【cc·哪吒·未经审查】探针提速（dev.386）\n\n- 工具\n')
+        rows = M.notes_audit(log, 384, 386)
+        self.assertEqual([(n, line) for n, _, line in rows], [(386, '流萤可以招募了')])
+        self.assertEqual(M.release_notes(log, 384, 386), ['商店页不再显示存档键', '流萤可以招募了'])
+
     def test_old_kept_when_smoke_fails(self):
         src = (HERE / '发行出包.py').read_text(encoding='utf-8')
         tail = src[src.index('ok = all(r[1] for r in rows)'):]

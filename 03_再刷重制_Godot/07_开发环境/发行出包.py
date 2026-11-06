@@ -4,6 +4,7 @@
   python3 发行出包.py                  导出 → 冒烟 → SHA256SUMS.txt、体积.md、发行说明.txt → 冒烟全过就删掉旧发行目录
   python3 发行出包.py --no-smoke       不跑冒烟（只导包、写清单）
   python3 发行出包.py --notes-only     只重写当前发行目录的发行说明（不导包）
+  python3 发行出包.py --notes-audit    列出会进发行说明、但没写「- 玩家可见：」行的变更记录条目（只读，出包前补）
   python3 发行出包.py --out <目录>     发行目录的上一级（默认主工作区 03_再刷重制_Godot/05_发布/导出包）
   python3 发行出包.py --dry-run        只打印会做什么
   python3 发行出包.py --keep-old       出完不删旧发行目录
@@ -141,6 +142,18 @@ def release_notes(text: str, since: int, upto: int) -> list:
         if line and line not in lines:
             lines.append(line)
     return lines
+
+
+def notes_audit(text: str, since: int, upto: int) -> list:
+    """本次会进发行说明、但没写「- 玩家可见：」行（说明里用的是标题凑的句子）的条目：[(dev 号, 标题, 凑出来的句子)]。"""
+    out = []
+    for dev, title, body in entries(text):
+        if dev is None or not since < dev <= upto or re.search(r'^- 玩家可见[：:]', body, re.M):
+            continue
+        line = player_line(title, body)
+        if line:
+            out.append((dev, title, line))
+    return out
 
 
 def notes_text(dev: int, since: int, lines: list) -> str:
@@ -290,6 +303,7 @@ def main(argv=None) -> int:
     ap.add_argument('--out', help='发行目录的上一级')
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--notes-only', action='store_true')
+    ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
@@ -307,6 +321,12 @@ def main(argv=None) -> int:
         return 0
     since = a.since if a.since is not None else (prev_dev or 0)
     notes = notes_text(dev, since, release_notes(CHANGELOG.read_text(encoding='utf-8'), since, dev))
+    if a.notes_audit:
+        rows = notes_audit(CHANGELOG.read_text(encoding='utf-8'), since, dev)
+        print(f'0.{since} 之后到 0.{dev}：会进发行说明、没写「- 玩家可见：」的条目 {len(rows)} 条' + ('（都写了）' if not rows else '：'))
+        for n, title, line in rows:
+            print(f'  dev.{n}  {title}\n      现在会写成：{line}')
+        return 0
     if a.notes_only:
         out.mkdir(parents=True, exist_ok=True)
         (out / '发行说明.txt').write_text(notes, encoding='utf-8')
