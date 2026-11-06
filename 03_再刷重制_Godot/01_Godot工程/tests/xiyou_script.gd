@@ -50,6 +50,85 @@ func script(code: String) -> Array:
 	return await MVScript.run(code, MVInterpreter.new(self, 0, 0, []))
 
 
+## 新源整段写法（bajie-newsrc2，MVScript._cut_misc）：剑心图鉴开关、等级上限道具三条、改版向导更新日志注入；脚本原文直接取新源事件
+func _newsrc_misc() -> void:
+	var g := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = g
+	var first_355 := func(list: Array, contains: String) -> int:
+		return list.find_custom(func(c): return int(c.code) == 355 and str(c.parameters[0]).contains(contains))
+	var ev61: Array = XDB.map(4).events[61].pages[0].list
+	var head: String = ev61[first_355.call(ev61, "_kyoJianxinBookUnlocked")].parameters[0]
+	check("jianxin_off", MVScript.eval_expr("!!$gameSystem._kyoJianxinBookUnlocked") == false)
+	check("jianxin_head_absent", (await script(head)).is_empty() and MVScript.eval_expr("!!$gameSystem._kyoJianxinBookUnlocked") == false, g.flags)
+	g.saved_actors.append(147)   # 在角色仓库里也算
+	check("jianxin_head_warehouse", (await script(head)).is_empty() and MVScript.eval_expr("!!$gameSystem._kyoJianxinBookUnlocked") == true, g.flags)
+	g.flags.erase("_kyoJianxinBookUnlocked")
+	var ce2507: Array = XDB.rec("CommonEvents", 2507).list
+	check("jianxin_recruit_line", (await script(ce2507[first_355.call(ce2507, "_kyoJianxinBookUnlocked")].parameters[0])).is_empty() and g.flags.get("_kyoJianxinBookUnlocked") == true, g.flags)
+	# 破限之志 CE1385：上限 70 → 75 并提示；已是 75 就还道具 1069
+	var ce1385: Array = XDB.rec("CommonEvents", 1385).list
+	var cap: String = ce1385[first_355.call(ce1385, "maxlevel")].parameters[0]
+	g.actor_max_level = 70
+	toasts.clear()
+	check("maxlevel_cap_raise", (await script(cap)).is_empty() and g.max_level() == 75 and toasts == ["等级上限变为75级！"], [g.max_level(), toasts])
+	var before := g.item_count(1069)
+	toasts.clear()
+	check("maxlevel_cap_refund", (await script(cap)).is_empty() and g.max_level() == 75 and g.item_count(1069) == before + 1 and toasts == ["等级上限已是75级，无需使用，道具已退回。"], [g.max_level(), toasts])
+	# 卡尔突破 CE1685 整段：149 级 80、上限 80 → 临时抬到 81、升一级、放回 80；上限已 90 时不动
+	g.add_actor(149)
+	g.actor(149).change_level(80)
+	g.actor_max_level = 80
+	var it := await run_list(XDB.rec("CommonEvents", 1685).list)
+	check("maxlevel_lift_restore", it.skipped.is_empty() and g.actor(149).level == 81 and g.max_level() == 80, [it.skipped, g.actor(149).level, g.max_level()])
+	g.actor_max_level = 90
+	it = await run_list(XDB.rec("CommonEvents", 1685).list)
+	check("maxlevel_lift_high", it.skipped.is_empty() and g.actor(149).level == 82 and g.max_level() == 90, [it.skipped, g.actor(149).level, g.max_level()])
+	# 没跑抬上限那句（this._kyoMaxLevel 未定义）时放回那句不动
+	g.actor_max_level = 70
+	check("maxlevel_back_undefined", (await script("if(this._kyoMaxLevel<81)this.pluginCommand('maxlevel',['equal',String(this._kyoMaxLevel)]);")).is_empty() and g.max_level() == 70)
+	# 改版向导「更新日志」：在本句后插入日志页（新版在前），头像取后面第一条 101，原地图列表不动
+	var ev71: Array = XDB.map(4).events[71].pages[0].list
+	var at: int = first_355.call(ev71, "injectChangelog")
+	var size0 := ev71.size()
+	var gi := MVInterpreter.new(self, 4, 71, ev71)
+	gi.index = at
+	var log_data: Dictionary = XDB.load_json("db/PlayerChangelog.json")
+	var first_page := str(log_data.entries[0].pages[0])
+	check("changelog_inject", (await MVScript.run(ev71[at].parameters[0], gi)).is_empty() and ev71.size() == size0 and gi.list.size() > size0
+		and int(gi.list[at + 1].code) == 101 and gi.list[at + 1].parameters == ev71[at + 1].parameters
+		and str(gi.list[at + 2].parameters[0]) == first_page.split("\n")[0] and gi.list[gi.list.size() - (size0 - at - 1)] == ev71[at + 1], [gi.list.size(), size0])
+	# 肉山 Map186 EV34：按变量 1349 改内存里的敌人 2027 能力值与状态 2781 第 12 条特性（不进存档，同一次运行累加）
+	var ev34: Array = XDB.map(186).events[34].pages[0].list
+	var at34: int = ev34.find_custom(func(c): return int(c.code) == 355)
+	var code34 := ""
+	for k in range(at34, ev34.size()):
+		if k > at34 and int(ev34[k].code) != 655:
+			break
+		code34 += ("\n" if k > at34 else "") + str(ev34[k].parameters[0])
+	var en: Dictionary = XDB.rec("Enemies", 2027)
+	var st: Dictionary = XDB.rec("States", 2781)
+	var p0: Array = (en.params as Array).duplicate()
+	var t0 := float(st.traits[11].value)
+	g.set_variable(1349, 3)
+	check("roshan_patch", (await script(code34)).is_empty() and float(en.params[0]) == float(p0[0]) * 3 and float(en.params[2]) == float(p0[2]) + 3000
+		and float(en.params[7]) == float(p0[7]) + 300 and is_equal_approx(float(st.traits[11].value), t0 + 0.9) and float(en.params[1]) == float(p0[1]), [en.params, p0, st.traits[11]])
+	en.params = p0
+	st.traits[11].value = t0
+	# 大厅漩涡过场 Map4 EV76（CodexWhisper）：配置里没记过才播，mark 记进配置（不跟存档），再判断就是播过
+	var cfg0 := XConfig.path_override
+	XConfig.path_override = "user://test_xiyou_script_whisper/options.json"
+	if FileAccess.file_exists(XConfig.path_override):
+		DirAccess.remove_absolute(XConfig.path_override)
+	XConfig.ensure_loaded()
+	var ev76: Array = XDB.map(4).events[76].pages[0].list
+	var wc := MVInterpreter.new(self, 4, 76, [])
+	check("whisper_unseen", wc._condition(ev76[0].parameters) == true and wc.skipped.is_empty(), wc.skipped)
+	check("whisper_mark", (await script(ev76[1].parameters[0])).is_empty() and wc._condition(ev76[0].parameters) == false
+		and (JSON.parse_string(FileAccess.get_file_as_string(XConfig.path_override)).get("codexWhisperSeen") as Array) == ["rift1"], wc.skipped)
+	XConfig.path_override = cfg0
+	check("changelog_newest_first", str(log_data.entries[0].version) == "v0.62" and not log_data.entries.any(func(e): return (e.pages as Array).is_empty()), log_data.entries.map(func(e): return e.version))
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -151,16 +230,17 @@ func _run() -> void:
 	var d: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
 	var r := XState.from_dict(d)
 	check("save_roundtrip_ops", r.actor_ops.size() == s.actor_ops.size() and r.actor_name == "测试名" and r.flags.get("DCultyL3") == true and r.actor(30).skill_ids.has(6168))
-	# 破阵·投影名单（CodexBossDifficulty.showRoster，大厅 Map004 EV41）：strong 37 人（含哈基米），super 49 人（含备注带 <CodexSuperStrong> 的 174／176／177），
+	# 破阵·投影名单（CodexBossDifficulty.showRoster，大厅 Map004 EV41）：strong 37 人（含哈基米），super 49 人（新源 <KyoTier> 分档后按 XTier 的超强者数）（含备注带 <CodexSuperStrong> 的 174／176／177），
 	# 停用角色（143／144／145／157／160）加「（停用）」，每行不超过 24 字
 	var roster_js := "if(window.CodexBossDifficulty){CodexBossDifficulty.showRoster('%s');}else{$gameMessage.add(\"x\");}this.setWaitMode('message');"
 	messages.clear()
 	check("roster_strong", (await script(roster_js % "strong")).is_empty() and messages.size() == 1 and messages[0].face == "SF_People2" and int(messages[0].index) == 5
 		and str(messages[0].lines[0]).ends_with("强者名单（37人）") and messages[0].lines.any(func(l): return str(l).ends_with("镜流、哈基米")), messages)
 	messages.clear()
-	check("roster_super", (await script(roster_js % "super")).is_empty() and messages.size() == 1 and str(messages[0].lines[0]).ends_with("超强者名单（49人）")
+	check("roster_super", (await script(roster_js % "super")).is_empty() and messages.size() == 1 and str(messages[0].lines[0]).ends_with("超强者名单（%d人）" % (XTier.ids(XTier.SUPER).size() if XTier.tagged() else 49))
 		and messages[0].lines.any(func(l): return str(l).contains("（停用）")) and messages[0].lines.all(func(l): return str(l).length() <= 24 or not str(l).contains("、")), messages)
 	_gear_conditions()
+	await _newsrc_misc()
 	XState.current = s
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

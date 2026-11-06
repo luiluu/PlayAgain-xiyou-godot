@@ -335,8 +335,19 @@ func refresh_passive() -> void:
 		for m in XActor._scan(str(o.get("note", "")), "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
 	_passive_cache = c
+	_passive_sig = _passive_signature()
+
+## v0.62 dsPassiveSkill 被动缓存生命周期（v0.51 起）：addState／removeState／eraseState／clearStates 置脏，
+## 下一次 refresh 前按签名（状态列表＋敌人编号）重建；敌人没有角色那道 okadd 门。这里读缓存时比签名，
+## 状态变了就重建（v0.28 敌人只在开战时建一次，战斗中挂的「七星续命」passiveHarmRe 不生效）。
+var _passive_sig := ""
+
+func _passive_signature() -> String:
+	return "%d|%s" % [enemy_id, ",".join(state_ids.map(func(x): return str(x)))]
 
 func passive_cache() -> Dictionary:
+	if _passive_cache.is_empty() or _passive_sig != _passive_signature():
+		refresh_passive()
 	return _passive_cache
 
 

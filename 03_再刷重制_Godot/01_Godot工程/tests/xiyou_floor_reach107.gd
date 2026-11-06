@@ -201,7 +201,10 @@ func _shop() -> void:
 		XMessageBox.transcript.clear()
 		await _run_event(map, 6, [0, 1], "")
 		shops[k] = XMessageBox.transcript.any(func(t): return str(t).contains("嘿嘿嘿"))
-	_check("shop_talks", shops.values().all(func(v): return v), [shops, XMessageBox.transcript])
+	# 新源（v0.30 起）EV6 换成深渊商人 <CodexMerchant29>：第 2 页只在 CodexAbyssMerchant.hasMerchant() 时成立，原版 v0.62.12 也走不到
+	# （见 MVEvent.merchant29_present），第 1 页是空的：一句话都不说、不开店
+	var merchant29 := str(XDB.map(ABYSS).events[6].get("note", "")).contains("<CodexMerchant29>")
+	_check("shop_talks", shops.values().all(func(v): return v != merchant29), [merchant29, shops, XMessageBox.transcript])
 
 
 func _exit() -> void:

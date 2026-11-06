@@ -192,7 +192,7 @@ static func run(code: String, interp) -> Array:
 	# 藏宝图（Star.RomGetItems.RunGetFun，CE117、174～189、1381～1384）：见 XTreasureMap
 	var dig := _re("^Star\\.RomGetItems\\.RunGetFun\\((\\d+)\\s*,\\s*(\\d+)\\);?$").search(js)
 	if dig:
-		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)))
+		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)), int(interp.get("common_id")) if interp.get("common_id") != null else 0)
 		for t in r.toasts:
 			interp.host.toast(t)
 		if int(r.reserve) > 0:
@@ -290,6 +290,8 @@ static func run(code: String, interp) -> Array:
 				if not joined:
 					s.gain_item(horn_id, 1)
 				return []
+	if await _cut_misc(js, interp):
+		return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
 	var at := js.find("DataManager.saveGame(")
@@ -312,6 +314,128 @@ static func run(code: String, interp) -> Array:
 		unknown.append_array(await _statements(js.substr(end), interp))
 		return unknown
 	return await _statements(js, interp)
+
+
+## 新源（v0.4x～v0.62）几样整段写法（bajie-newsrc2，script_census 销号）：认得返回 true。
+## - 剑心图鉴开关 $gameSystem._kyoJianxinBookUnlocked（天剑·非天 147 的招募 CE2507 打开；大厅 Map4 EV61、Map225 EV10「专精书兑换」
+##   先补开：147 在队或在角色仓库就开），存进 s.flags 同名键；条件 `!!$gameSystem._kyoJianxinBookUnlocked` 见 eval_expr 的 jianxin()。
+## - 等级上限道具（YEP_CoreEngine maxlevel，走 _plugin_command 同一条路）：破限之志 CE1385（上限不到 N 就设成 N，否则还道具）；
+##   卡尔突破 CE1685、破限之志【剑道】CE9041 先把上限临时抬到 81、升一级、再放回（this._kyoMaxLevel 记在本层解释器上，原版同是解释器属性）。
+## - 改版向导「更新日志」CodexGuide.injectChangelog（Map4 EV71）：见 _inject_changelog。
+const _JIANXIN := "$gameSystem._kyoJianxinBookUnlocked"
+
+
+static func _cut_misc(js: String, interp) -> bool:
+	var s := XState.current
+	if _re("^\\$gameSystem\\._kyoJianxinBookUnlocked\\s*=\\s*true;?$").search(js):
+		s.flags[_JIANXIN.trim_prefix("$gameSystem.")] = true
+		return true
+	var jx := _re("^if\\s*\\(\\s*!\\$gameSystem\\._kyoJianxinBookUnlocked\\s*&&\\s*\\(\\s*\\(\\$gameParty\\._actors\\s*\\|\\|\\s*\\[\\]\\)\\.indexOf\\((\\d+)\\)\\s*>=\\s*0\\s*\\|\\|\\s*\\(\\$gameParty\\._saveactors\\s*\\|\\|\\s*\\[\\]\\)\\.indexOf\\(\\1\\)\\s*>=\\s*0\\s*\\)\\s*\\)\\s*\\$gameSystem\\._kyoJianxinBookUnlocked\\s*=\\s*true;?$").search(js)
+	if jx:
+		var aid := int(jx.get_string(1))
+		if s.party.has(aid) or s.saved_actors.has(aid):
+			s.flags[_JIANXIN.trim_prefix("$gameSystem.")] = true
+		return true
+	const CAP := "var c=\\$gameParty\\.ActorMaxLevel\\|\\|Yanfly\\.Param\\.MaxLevel;"
+	var cap := _re("^" + CAP + "if\\(c<(\\d+)\\)\\{this\\.pluginCommand\\('maxlevel',\\['equal','\\1'\\]\\);\\$\\.toaster\\(\\{message:'([^']*)'\\}\\);\\}else\\{\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\],1\\);\\$\\.toaster\\(\\{message:'([^']*)'\\+c\\+'([^']*)'\\}\\);\\}$").search(js)
+	if cap:
+		var c := s.max_level()
+		if c < int(cap.get_string(1)):
+			interp._plugin_command("maxlevel equal " + cap.get_string(1))
+			interp.host.toast(cap.get_string(2))
+		else:
+			s.gain_item(int(cap.get_string(3)), 1)
+			interp.host.toast(cap.get_string(4) + str(c) + cap.get_string(5))
+		return true
+	var lift := _re("^" + CAP + "this\\._kyoMaxLevel=c;if\\(c<(\\d+)\\)this\\.pluginCommand\\('maxlevel',\\['equal','\\1'\\]\\);?$").search(js)
+	if lift:
+		var c := s.max_level()
+		interp.set_meta("_kyoMaxLevel", c)
+		if c < int(lift.get_string(1)):
+			interp._plugin_command("maxlevel equal " + lift.get_string(1))
+		return true
+	var back := _re("^if\\(this\\._kyoMaxLevel<(\\d+)\\)this\\.pluginCommand\\('maxlevel',\\['equal',String\\(this\\._kyoMaxLevel\\)\\]\\);?$").search(js)
+	if back:
+		# 没先跑过抬上限那句时 this._kyoMaxLevel 是 undefined，undefined<81 为假，不动
+		if interp.has_meta("_kyoMaxLevel") and int(interp.get_meta("_kyoMaxLevel")) < int(back.get_string(1)):
+			interp._plugin_command("maxlevel equal " + str(int(interp.get_meta("_kyoMaxLevel"))))
+		return true
+	if _data_patch(js):
+		return true
+	var whisper := _re("^CodexWhisper\\.mark\\('([^'\\\\]*)'\\);?$").search(js)
+	if whisper:
+		XConfig.whisper_mark(whisper.get_string(1))
+		return true
+	if _re("^if\\(window\\.CodexGuide&&CodexGuide\\.injectChangelog\\)CodexGuide\\.injectChangelog\\(this\\);?$").search(js):
+		_inject_changelog(interp)
+		return true
+	return false
+
+
+## 改数据库里的敌人能力值、状态特性值（肉山 Map186 EV34：按变量 1349 打过的次数给敌人 2027 加血加攻、给状态 2781 第 12 条特性加值）：
+## 每行 `$dataEnemies[N].params[K] *=|+= 式子;` 或 `$dataStates[N].traits[K].value +=|*= 式子;`，式子交 eval_expr。
+## 原版改的是内存里的 $dataEnemies／$dataStates：不进存档、重开游戏才回到数据库原值，同一次运行里一直累加（倍乘那条也叠乘）；
+## 重制同样改 XDB 缓存里的那份记录（同一进程内一直有效、不写盘），照原版。有一行认不出就整段不认
+static func _data_patch(js: String) -> bool:
+	var ops := []
+	for raw in js.split("\n"):
+		var line := raw.strip_edges()
+		if line == "":
+			continue
+		var m := _re("^\\$data(Enemies|States)\\[(\\d+)\\]\\.(?:params\\[(\\d+)\\]|traits\\[(\\d+)\\]\\.value)\\s*([*+])=\\s*(.+?);?$").search(line)
+		if m == null:
+			return false
+		var table := m.get_string(1)
+		if (table == "Enemies") == (m.get_string(3) == ""):   # 敌人只认 params、状态只认 traits
+			return false
+		var v = eval_expr(m.get_string(6))
+		if not (v is float or v is int):
+			return false
+		var rec := XDB.rec(table, int(m.get_string(2)))
+		var key := "params" if table == "Enemies" else "traits"
+		var k := int(m.get_string(3) if table == "Enemies" else m.get_string(4))
+		if rec.is_empty() or k >= (rec.get(key, []) as Array).size():
+			return false
+		ops.append([rec, key, k, m.get_string(5), float(v)])
+	if ops.is_empty():
+		return false
+	for op in ops:
+		var arr: Array = op[0][op[1]]
+		if op[1] == "params":
+			arr[op[2]] = float(arr[op[2]]) * op[4] if op[3] == "*" else float(arr[op[2]]) + op[4]
+		else:
+			var t: Dictionary = arr[op[2]]
+			t.value = float(t.value) * op[4] if op[3] == "*" else float(t.value) + op[4]
+	return true
+
+
+## G.injectChangelog（installNativeGuidanceRuntime）：把玩家更新日志（转换器 db/PlayerChangelog.json，新版在前、空页跳号已去掉）
+## 每页拼成「文字＋选项（更早的更新／返回→跳主菜单）」插在本句之后，头像取本句之后第一条 101（没有用 People5_mvt 7）；
+## 原版换成新数组（list.slice＋concat），这里同样换新数组，不改地图数据里的原列表
+static func _inject_changelog(interp) -> void:
+	var data = XDB.load_json("db/PlayerChangelog.json") if FileAccess.file_exists(XDB.BASE + "db/PlayerChangelog.json") else null
+	if not data is Dictionary:
+		return
+	var list: Array = interp.list
+	var at: int = interp.index
+	var ind := int(list[at].get("indent", 0)) if at < list.size() else 0
+	var face := ["People5_mvt", 7, 0, 2]
+	for i in range(at + 1, list.size()):
+		if int(list[i].code) == 101:
+			face = (list[i].parameters as Array).duplicate()
+			break
+	var cmds := []
+	for d in data.get("entries", []):
+		for page in d.get("pages", []):
+			cmds.append({"code": 101, "indent": ind, "parameters": face.duplicate()})
+			for line in str(page).split("\n"):
+				cmds.append({"code": 401, "indent": ind, "parameters": [line]})
+			cmds.append_array([{"code": 102, "indent": ind, "parameters": [["更早的更新", "返回"], 1, 0, 2, 0]},
+				{"code": 402, "indent": ind, "parameters": [0, "更早的更新"]}, {"code": 0, "indent": ind + 1, "parameters": []},
+				{"code": 402, "indent": ind, "parameters": [1, "返回"]}, {"code": 119, "indent": ind + 1, "parameters": ["主菜单"]},
+				{"code": 0, "indent": ind + 1, "parameters": []}, {"code": 404, "indent": ind, "parameters": []}])
+	if not cmds.is_empty():
+		interp.list = list.slice(0, at + 1) + cmds + list.slice(at + 1)
 
 
 ## O-147（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
@@ -747,6 +871,10 @@ static func js_number(v: float) -> String:
 ## $gameMap.mapId()、$gameParty.numItems($dataItems[N])、Math.floor/ceil/max/min/abs。认不出返回 null（调用方记进 skipped）。
 static func eval_expr(js: String) -> Variant:
 	var e := js.strip_edges()
+	# 大厅漩涡过场（CodexWhisper，见 XConfig.whisper_seen）：模块总在，window.CodexWhisper 为真；seen('键') 当场取值
+	e = e.replace("window.CodexWhisper", "true")
+	for m in _re("CodexWhisper\\.seen\\('([^'\\\\]*)'\\)").search_all(e):
+		e = e.replace(m.get_string(), "true" if XConfig.whisper_seen(m.get_string(1)) else "false")
 	while e.ends_with(";"):
 		e = e.left(-1).strip_edges()
 	if e == "" or e.contains("%") or e.contains("=>") or e.contains("\"") or e.contains("'"):
@@ -756,13 +884,13 @@ static func eval_expr(js: String) -> Variant:
 		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
 		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "],
 		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"],
-		["$gameSystem.defeatNumber(", "defeats("]]
+		["$gameSystem.defeatNumber(", "defeats("], [_JIANXIN, "jianxin()"]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
 	e = _re("ConfigManager\\.DesignationN\\[(\\d+)\\]").sub(e, "designation($1)", true)  # 称号解锁（Map2 EV2 条件）
 	e = _re("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "defeats", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "defeats", "jianxin", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -782,6 +910,8 @@ class ExprEnv:
 	## AB_EnemyBook Game_System.defeatNumber：该敌人被打倒的次数（Map017 EV004 牛头人／纯爱战士认证）
 	func defeats(id: float) -> float: return float(XEnemyBook.defeat_number(XState.current, int(id)))
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
+	## 剑心图鉴开关（$gameSystem._kyoJianxinBookUnlocked，见 _cut_misc）：没设过是 undefined，!! 后为 false
+	func jianxin() -> bool: return bool(XState.current.flags.get("_kyoJianxinBookUnlocked", false))
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)
 	func steps() -> float: return float(XState.current.steps)
