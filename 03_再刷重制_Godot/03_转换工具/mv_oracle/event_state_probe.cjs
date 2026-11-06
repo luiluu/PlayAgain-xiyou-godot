@@ -98,6 +98,15 @@ function applyPreset(p) {
     const ac = w.$gameActors.actor(Number(id));
     if (a.level !== undefined) ac.changeLevel(a.level, false);
     for (const sk of a.skills || []) ac.learnSkill(sk);
+    // 八戒 DR：actors.N.armors＝给这名角色直接穿上的防具底材（forceChangeEquip 到 etype 对应的第一个槽），开「角色 N 装备防具」门（ce1213）
+    for (const ar of a.armors || []) {
+      const item = w.$dataArmors[ar], slot = ac.equipSlots().indexOf(item.etypeId);
+      if (slot >= 0) ac.forceChangeEquip(slot, item);
+    }
+    for (const wp of a.weapons || []) {   // actors.N.weapons：同上，武器（etype 1）
+      const item = w.$dataWeapons[wp], slot = ac.equipSlots().indexOf(item.etypeId);
+      if (slot >= 0) ac.forceChangeEquip(slot, item);
+    }
   }
   if (p.gold !== undefined) w.$gameParty.gainGold(p.gold - w.$gameParty.gold());
   for (const [id, n] of Object.entries(p.items || {})) w.$gameParty.gainItem(w.$dataItems[Number(id)], n);

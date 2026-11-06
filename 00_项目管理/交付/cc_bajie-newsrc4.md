@@ -349,6 +349,21 @@ B 类（要新源参照才能判）：这组没有。
 
 - missed7（2416 簇）去掉往轮后只合成出 92 个，剪 1，**留 91 个**。全量 21044 例，一致 21036，8 例原登记，regressions 空，11/11；没执行到 5436→**5344**（2414 簇）；空绿 93 例 \`--check\` 过。简单门的预设能合成的基本出完了。
 
+### ③ 续：w13～w15 开新门（总装二十九：四类门估算后只做 ≥200 的；11-06）
+
+- **换工作树**：本会话的写保护钩子不让写别的工作树，w13 起改在 \`.claude/worktrees/funny-wing-249563\`、分支 \`cc/funny-wing-249563\`（从 59b8a8b1 续；generated、.godot、mv_oracle/node_modules 从 busy-engelbart 克隆，\`07_开发环境/当前Godot.app\` 补了软链）。\`cc/bajie-newsrc4\` 停在 59b8a8b1。
+- 估算（w12 后 5344 个）：多随机约 2000（多是往轮变量被随机覆盖、剪掉的）、角色 684、敌人 155、战败 80、脚本 40；「否则没持有物品」门 630 也开不了。敌人、战败、脚本不到 200，按总装不做。
+- **工具**：
+  - \`事件祖先预设.py\` trace_var 随机门按执行顺序排位置：只数祖先链在门的祖先链里的 122 随机（每条按变量个数），目标前的位置填 0.5，两道随机门同位置要不同值当开不了；原来「门前只有一条随机」的变体序列不变。merge_into 对 actors 按角色深合并（原来同一角色的 skills 会被后面的键整个盖掉）。
+  - \`事件写法覆盖.py\` open_preset：「否则没持有物品／武器／防具」给 0 个；角色装备防具／武器给 \`actors.N.armors\`／\`weapons\`；「否则没学会技能／没装备」给空的 \`actors.N\`。
+  - 预设新键 \`actors.N.armors\`／\`weapons\`：参照 \`event_state_probe.cjs\` 用 forceChangeEquip 穿到 etype 对应的第一个槽；重制 \`tests/xiyou_event_compare.gd\` 同法直接放进 equips 槽、refresh_passive＋release_unequippable。
+- **w13**（多随机＋否则物品，规则改了不喂 \`--tried\`）：出 1542。删 127：**118 例多随机对不上是对照工具随机口径**——重制 \`MVEventCore.random_float／random_int\` 让脚本随机也吃序列，参照只让 122 吃；单值序列循环取同一个数看不出，多值序列一被脚本吃掉就错位（咒王／甚尔进阶石、秘境抽奖、变量 1483 等），清单另存会话临时目录，口径对齐后可以重出；m221e3p0 五例参照没跑完（随机伙伴）；ce976／977／631／325／978／1503／1619 七例战斗专用新增跳过；m4e60p1#w13_1530 券不足同 g3。剪 133，**留 1278**（多随机 409、否则物品 630）。没执行到 5344→**3677**。
+- **w14**（角色装备防具，ce1213 命运之手、ce422、ce91 等）：14 个，剪 1，**留 13**。3677→**3473**。
+- **w15**（角色装备武器、否则没学会技能／没装备，ce2495、ce682 等）：44 个，剪 12，**留 32**。3473→**3434**。
+- 验证（w15 后）：event_compare 全量 22367 例，一致 22359，8 例原登记，regressions 空、oracleErrors 空，11/11；空绿 93 例 \`--check\` 过；\`语法检查.py\` 0 问题。
+- **DR③ 到此停**：剩 3434 个（1288 簇），按类：有预设但往轮试过没走到 2917（随机覆盖、脚本随机口径、要战斗或运行时状态）、多随机 189、敌人 155（含敌人／角色 33）、战败／逃跑 80、脚本条件 40、整页没进 20、角色在队「否则」16、循环 9、金钱 8。前四类都不到 200；多随机余下的要先对齐 random_seq 口径（可优化待办，换源失败表清完再看）。
+- 待交叉核查：\`事件祖先预设.py\`（随机位置、actors 深合并）、\`事件写法覆盖.py\`（open_preset 新门）、\`mv_oracle/event_state_probe.cjs\` 与 \`tests/xiyou_event_compare.gd\`（armors／weapons 预设键两边同法）、\`event_presets.json\`（w13_～w15_）。
+
 ## 本分支提交
 
-- 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`）
+- 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`，到 59b8a8b1），w13 起在 `cc/funny-wing-249563`（`git log 59b8a8b1..cc/funny-wing-249563`）
