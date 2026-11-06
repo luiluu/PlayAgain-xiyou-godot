@@ -88,9 +88,23 @@ var _gold_buy := true
 
 
 func setup(g: Array, only: bool, group := "") -> void:
-	goods = g
+	# installBabyAllActorsRuntime（Scene_Shop.prepare 最外层）：宝宝路线的号角店改列全部可用角色、免费
+	var baby := XBabyAllActors.prepare(XState.current, g)
+	goods = baby[0]
+	_baby_free = baby[1]
+	if _baby_free:
+		XBabyAllActors.free_open = true
 	purchase_only = only
 	stock_group = group
+
+
+var _baby_free := false
+
+
+## Scene_Shop.terminate 包装：免费期间清空的号角货币价还原
+func _exit_tree() -> void:
+	if _baby_free:
+		XBabyAllActors.free_open = false
 
 
 func _ready() -> void:
@@ -889,6 +903,9 @@ func _trade() -> void:
 		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
 		XItemMarks.buy(s, e.item, int(e.price), _number)
 		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
+		if _baby_free and XBabyAllActors.is_horn(e.item):
+			goods = XBabyAllActors.bought(s, e.item, goods)  # 领过的记下、从列表拿掉
+			_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
 		_mode = "buy"
 	else:
 		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
