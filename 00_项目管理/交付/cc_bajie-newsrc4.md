@@ -310,6 +310,14 @@ B 类（要新源参照才能判）：这组没有。
 - \`事件祖先预设.py\` 的 \`--tried\` 和 \`--min\` 共用一个门槛，往轮用别的门槛剪过的簇认不准；以后剪枝时把剪掉的 (页, 预设) 存一份，下轮用 \`--tried-presets\` 喂回去更稳。
 - 大块里的同形格子（矿洞每格一个变量号）可以考虑在覆盖统计里按页形合并计数，数字更能反映「还有多少种没验证过的写法」。
 
+## 接续要点三（DR 八戒交接，11-06 19:50）
+
+- 本棒（工作树 \`busy-engelbart-02a39c\`，分支 \`cc/bajie-newsrc4\`）：DR ①②③ 与 w7，提交 3df5ce24、3a9586b7、7f8ca091（总装已记合并点）、78de61fd。没执行到 11645→9909。
+- 本树 generated 是从 quizzical-neumann-d318e5 克隆的新源产物，\`generated/oracle/event_states.json\` 手拼了 w5～w7（备份在会话临时目录，不入库）；接手的人如果另开工作树，要么复制本树 generated，要么对 w5_～w7_ 变体重跑 \`XIYOU_APP=…/v0.62.12/app.nw node event_state_probe.cjs <变体号…>\` 再合进去。
+- 一轮的做法：\`xiyou_event_compare -- --coverage=本轮.json\`（直接 godot --headless 跑 tscn，带 XIYOU_APP）→ \`事件写法覆盖.py --coverage 本轮.json --missed 121,122,123,125,127,129,201,301,311,312,313,314,315,316,317,355 --missed-json 簇.json\` → 按页形（数字归一）＋目标下标去重 → \`事件祖先预设.py --missed-json … --tag wN --skip-bad --min 1 --targets 目标.json\` → 参照探针只跑新变体 → 合进 event_states → 全量对照 → \`--prune --cur … --states …\`、删掉的同步从 event_states 去掉 → 再全量对照、重数。注意 \`--tried\` 会用当前 synth 重算往轮的簇，工具改了合成规则后别再喂往轮簇。
+- 下一步候选：ce1213 命运之手 216 个挡在「角色 94 子类 5」；ce1098～1106 打工位九个同形（411 否则开关）；random_seq 两边口径对齐后补秘境抽奖类页面；多条 122 随机的页按执行顺序出序列。
+- DD②（换源失败表）还没到，没开始。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`）
