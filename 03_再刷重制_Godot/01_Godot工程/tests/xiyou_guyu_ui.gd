@@ -246,6 +246,8 @@ func _relic(c: Dictionary) -> void:
 		for k in want:
 			check("relic.lv%d.%s" % [lv, k], got[k] == want[k], [got[k], want[k]])
 	# 说明卡：实例显示改写后的条目（逆序插在 APs 位置）；数据库原件不改
+	# 比的是 v0.43 排版（XHelpCard.LAYOUT_V043）之前的说明行
+	XHelpCard.LAYOUT_V043 = false
 	var rows := XHelpCard.content(g.equips[slot], "armor")
 	var texts := rows.map(func(r): return str(r[0]))
 	check("relic.help_card_rows", texts.has("万象长春盏") and texts.has("\\c[2]专属：谷雨") and texts.find("\\c[2]专属：谷雨") < texts.find("等级需求：1"), texts)
@@ -253,6 +255,7 @@ func _relic(c: Dictionary) -> void:
 	var db := XDB.rec("Armors", XGuyu.RELIC)
 	check("relic.database_untouched", str(db.name) == "百谷生" and not str(db.note).contains("专属：谷雨"), db.name)
 	var db_rows := XHelpCard.content(db, "armor").map(func(r): return str(r[0]))
+	XHelpCard.LAYOUT_V043 = true
 	check("relic.database_card_by_owner_level", db_rows.has("万象长春盏") and db_rows.has("\\c[2]专属：谷雨"), db_rows)
 
 
@@ -333,7 +336,7 @@ func _scene() -> void:
 		[sp._profile, sp.body_scale])
 	b.status_rows[g].refresh()
 	await _shot("guyu_ui_side")
-	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 生长" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
+	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 平时" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
 	# 技能（类型 2）→ 借一枝春色
 	b._picked.emit("stype:2")
 	await _frames(3)
@@ -377,7 +380,7 @@ func _scene() -> void:
 	b._select_target(hero)
 	var hs: XBattlerSprite = b.sprites[hero]
 	var card_x := b.help_card.position.x - b._origin.x
-	check("scene.help_near_left", card_x + b.help_card.size.x <= hs.position.x and b.help_card.rows[0][0] == "还春 25%：狗逍遥 → 谷雨，储备 200。\n转移不回复HP。",
+	check("scene.help_near_left", card_x + b.help_card.size.x <= hs.position.x and b.help_card.rows[0][0] == "收回储备 25%：狗逍遥 → 谷雨，储备 200。\n转移不回复HP。",
 		[card_x, b.help_card.size.x, hs.position.x, b.help_card.rows[0][0]])
 	await _shot("guyu_ui_help")
 	# 原版：每次换目标都在上一张卡的位置上再修正一次

@@ -19,7 +19,9 @@ func _ready() -> void:
 		check(c.id+".mmp",a.mmp == float(c.observed.mmp),[a.mmp,c.observed.mmp])
 		check(c.id+".mp",XCharacterHelp._cost(a,item,"MP") == int(c.observed.mp))
 		check(c.id+".tp",XCharacterHelp._cost(a,item,"TP") == int(c.observed.tp))
+		XHelpCard.LAYOUT_V043 = false  # 参照量的是 characterHelpView，v0.43 排版（readableView）之前
 		var got: Array = XHelpCard.content(item).filter(func(r):return str(r[0]).contains("消耗")).map(func(r):return r[0])
+		XHelpCard.LAYOUT_V043 = true
 		check(c.id+".rows",JSON.stringify(got) == JSON.stringify(c.observed.rows),[got,c.observed.rows])
 	print("TEST_RESULT="+JSON.stringify({"passed":passed,"total":total}))
 	get_tree().quit(0 if passed == total else 1)

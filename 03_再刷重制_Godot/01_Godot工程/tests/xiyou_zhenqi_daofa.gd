@@ -348,6 +348,15 @@ func _extra() -> void:
 	check("save_weapon_trials", back.zhenqi_spec.w.has("3") and back.zhenqi_spec.weaponTrials.has("3"), back.zhenqi_spec)
 	XState._become_current(back)
 	check("load_clears_weapon_trial", XZhenqi.pending_scale.is_empty())
+	# v0.45：神兵试炼不结算经验、金钱（_codexZqWeaponTrial），瓶颈之战照旧只清物品
+	_fresh()
+	s.set_variable(20, 13)
+	h._go({"page": "weapon"})
+	h._pick(0)
+	var logic: XBattleLogic = h._logic(int(XZhenqi.weapon_masters()[0].troopId))
+	var rw := logic.rewards()
+	check("weapon_no_exp_gold", logic.enemies.all(func(e): return e.zq_weapon_trial) and int(rw.exp) == 0 and int(rw.gold) == 0 and rw.drops.is_empty(), rw)
+	XZhenqi.battle = {}
 
 
 ## 固定应答宿主：开战时打倒全部敌人再按胜利结算

@@ -116,10 +116,16 @@ func _replay(c: Dictionary) -> void:
 							by = subject if str(src) == "a%d" % int(c.setup.actor) else bs.get(str(src))
 							if by == null:
 								by = _battler(str(src))
+						if by != null and XImportedBalance.is_disabled_actor(by):
+							# 新源 141 等进禁用名单：参照里这条是禁用角色的行动（applyItem）附加的，对目标无效、挂不上（真实入口见 _disabled）
+							check(name + ".blocked." + str(pair[0]), XImportedBalance.blocks(by, {}))
+							continue
 						XImportedBalance.set_acting(by)
 						t.add_state(_fake_state(str(pair[0]), c.setup.fake) if pair[0] is String else int(pair[0]))
 					XImportedBalance.set_acting(null)
 					check(name + ".rec", is_equal_approx(t.rec, float(o.rec)), [t.rec, o.rec])
+				elif subject != null and XImportedBalance.is_disabled_actor(subject):
+					check(name + ".blocked", XImportedBalance.blocks(subject, {}))  # 禁用角色的行动附加不上中毒（同上）
 				else:
 					XImportedBalance.set_acting(subject)
 					t.add_state(int(c.setup.state))

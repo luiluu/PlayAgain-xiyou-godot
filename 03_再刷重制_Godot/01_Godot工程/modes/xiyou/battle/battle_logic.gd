@@ -2423,7 +2423,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 
 
 ## dsPassiveSkill 被动缓存的 PushState／RecPushState／PushsubState，由 installDamageElementRuntime 在结算时按 makeDamageValue 的正负挂：
-## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（不看阵营，同原版）；只认角色行动者，异化虚空的攻击伤害除外；
+## 正 → pushStates 给目标、pushSelfStates 给自己；负 → recPushStates 给目标（新源 v0.62.02 起只给友方）；只认角色行动者，异化虚空的攻击伤害除外；
 ## 每条按概率掷（Math.random()*100 < p），目标已有就不挂。由 XDamage.finish 在 Confirm／固定减伤之后、React 之前调（参照 pushstate order.1580）。
 var _push_sign := 0.0
 ## O-134（审查 17 P2）：归墟（异化 void）的攻击类伤害（类型 1／2／5／6）不挂 PushState／PushsubState。原版 installDamageElementRuntime
@@ -2449,7 +2449,9 @@ func _push_states(u: XBattler, skill: Dictionary, t: XBattler, sign: float) -> v
 ## O-178（rules10，Kyo 11-04「说明与代码不符一律按说明走」）：XBattler.FLOOR_YINYUE 开时，隐月已带着就再叠一层（不限层，每层同单层效果）；关回原版。
 func _push_rows(u: XBattler, t: XBattler, sign: float) -> void:
 	var cache: Dictionary = u.passive_cache()
-	for row in cache.get("recPushStates" if sign < 0.0 else "pushStates", []):
+	# 新源 v0.62.02：负值（治疗）时 recPushStates 只给行动者的友方（target.isActor()===subject.isActor()）；打到吸收属性回血的敌人不挂，也不掷
+	var rows: Array = cache.get("pushStates", []) if sign > 0.0 else (cache.get("recPushStates", []) if (t is XActor) == (u is XActor) else [])
+	for row in rows:
 		if _float("push_state") * 100.0 < float(row.probability):
 			_push_row_state(t, int(row.stateId))
 	if sign > 0.0:
@@ -2728,7 +2730,7 @@ func sequence_gain(t: XBattler, kind: String, value: float, subject: XBattler = 
 		"HP":
 			var applied := value
 			if value < 0.0:
-				applied = -t.absorb_shield(XShieldLedger.hp(t, -value))  # 护盾账本 gainHp／setHp 包装先吸收，再原生护盾
+				applied = -t.absorb_shield(XShieldLedger.hp_gain(t, -value))  # 护盾账本 gainHp／setHp 包装先吸收，再原生护盾
 				if not t is XActor:
 					shown = applied
 			applied = XSukuna.heal(t, applied)  # 宿傩 gainHp 包装：带伤口的受治疗减半
@@ -2869,7 +2871,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		if dh < 0.0:
 			# regenerateHp：先按 maxSlipDamage 夹到 hp−1，再吸收护盾、减半（弹字同 gainHp：角色记夹后原值，敌人记减免后）
 			shown = maxf(dh, -maxf(b.hp - 1.0, 0.0))
-			dh = -b.absorb_shield(XShieldLedger.hp(b, -shown))  # 护盾账本 setHp 包装先吸收，再原生护盾
+			dh = -b.absorb_shield(XShieldLedger.hp_gain(b, -shown))  # 护盾账本 setHp 包装先吸收，再原生护盾
 			if not b is XActor:
 				shown = dh
 		dh = XSukuna.heal(b, dh)  # 宿傩 gainHp 包装：带伤口的再生回复减半
@@ -2940,7 +2942,14 @@ func rewards() -> Dictionary:
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
-	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
+	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
+	# 真气 makeRewards 包装（装在奖励插件之后）：幻化之战清掉物品（含地图额外掉落）；v0.45 神兵试炼经验、金钱也为 0
+	if enemies.any(func(e): return e.zq_trial_loot):
+		out.drops = []
+	if enemies.any(func(e): return e.zq_weapon_trial):
+		out.exp = 0
+		out.gold = 0
+	return out
 
 
 func _difficulty_rates() -> Array:

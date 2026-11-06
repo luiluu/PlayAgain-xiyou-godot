@@ -54,8 +54,14 @@ const EXTRA_GAP_NEAR := 24.0
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
 ## 冻结后跟进 v0.36（CodexDisplay D.equipmentRows）：装备说明里的白字属性行排在第一条蓝字「特效／效果／成长：」之前。
-## 默认 false＝v0.28 的排法（白字按备注原位）；换源（v0.62.12）后翻成 true（O-205，回退＝改回 false）。
-static var WHITE_STATS_FIRST := false
+## false＝v0.28 的排法（白字按备注原位）；换源（v0.62.12）集成分支已翻成 true（O-205，回退＝改回 false）。
+static var WHITE_STATS_FIRST := true
+## 跟到 v0.62.12 的说明卡排版（installPanelLayoutV043Runtime，v0.43 起 D.readableView＝P.view）：品质与类别合成一行（17 号）、
+## 白字属性两列（\col[50]）、施放信息两列（17 号 #e3eaf3）、正文（18 号；技能按 伤害→效果→条件→成长）、装备条件两列、
+## 背景说明挪到最后（15 号 #a9b4c2）、价格两列（15 号）；块间 4 号空行；除居中标题外每行加 \lock[1]（之后忽略 \c[n]）。
+## 原版 tidy 去掉「防御按攻防比例结算」、DROP 去掉「纯粹伤害：否」「武器／装备限制：无」：是原版有意不画，不是漏。
+## 只改显示副本。默认开（O-待定·说明卡排版）；关＝v0.28 排法。
+static var LAYOUT_V043 := true
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
 
@@ -86,7 +92,14 @@ var _frame_style: XWindowStyle
 ## obj：数据库条目或装备实例；kind：item / weapon / armor / skill（省略时自动判断）
 ## skill_copy：人物图鉴技能详情（Codex_ActorBookSkillDetails）传的是技能的浅拷贝，DataManager.isSkill 为假——
 ## installDamageElementRuntime 只删备注里的「伤害属性」行，不插技能的伤害属性
-static func content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
+static func content(obj: Dictionary, kind := "", skill_copy := false, width := -1.0) -> Array:
+	var rows := _content(obj, kind, skill_copy)
+	if LAYOUT_V043 and not rows.is_empty():
+		rows = panel_view(obj, rows, width if width > 0 else note_width(obj) - PAD * 2)
+	return rows
+
+
+static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
@@ -199,9 +212,280 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 		r[0] = _terms(str(r[0]))
 	if WHITE_STATS_FIRST and (type == 1 or type == 2):
 		rows = equipment_rows(rows)
+	if type == 1 or type == 2:
+		unique_mark(obj, rows)  # 跟到 v0.62.12：installUniqueEffectMarkRuntime（v0.56）getDescParams 包装，只改显示文字
 	if XDemonCrown.is_gear(obj):  # 魔冠的 getDescParams 包装：小数取整（describe 在发放／重放时已做）
 		XDemonCrown.desc_rows(obj, rows)
 	return rows
+
+
+# ---- installPanelLayoutV043Runtime（P.view） ----
+const P43_SIZE := {"head": 17, "body": 18, "meta": 17, "small": 15, "gap": 4}
+const P43_META_COLOR := "#e3eaf3"
+const P43_TAG_COLOR := "#9fb3c8"
+const P43_FLAVOR_COLOR := "#a9b4c2"
+const P43_META := ["^(?:伤害属性|攻击属性)[：:]", "^(?:目标|对象)[：:]", "^(?:命中类型|命中)[：:]", "^(?:能否暴击|暴击)[：:]",
+	"^(?:攻击次数|段数)[：:]", "^(?:冷却时间|冷却|准备时间)[：:]", "^(?:消耗|.{1,4}消耗)[：:]", "^(?:武器限制)[：:]",
+	"^(?:纯粹伤害)[：:]", "^分类[：:]"]
+const P43_COND := "^(?:装备类型|武器类型|防具类型|装备位置|装备限制|等级需求|专属角色|使用角色|武器限制)[：:]"
+const P43_DROP := "^(?:纯粹伤害[：:]否|(?:武器|装备)限制[：:]无)$"
+const P43_ESC := "(?i)(?:\\\\|\u001b)c\\[\\d+\\]"
+
+
+static func _p43_plain(t) -> String:
+	return _js_trim(RegEx.create_from_string(P43_ESC).sub(str(t) if t != null else "", "", true))
+
+
+## String.prototype.trim：连全角空格 U+3000、不换行空格等一起去掉
+static func _js_trim(t: String) -> String:
+	return RegEx.create_from_string("^[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$").sub(t, "", true)
+
+
+static func _p43_lead(t: String) -> String:
+	var m := RegEx.create_from_string("(?i)^(?:(?:\\\\|\u001b)c\\[\\d+\\])+").search(t)
+	return m.get_string() if m != null else ""
+
+
+static func _p43_rgb(c) -> int:
+	var s := str(c if c != null else "").replace(" ", "")
+	var m := RegEx.create_from_string("(?i)^rgba?\\((\\d+),(\\d+),(\\d+)").search(s)
+	if m != null:
+		return (int(m.get_string(1)) << 16) + (int(m.get_string(2)) << 8) + int(m.get_string(3))
+	m = RegEx.create_from_string("(?i)^#([0-9a-f]{3}|[0-9a-f]{6})$").search(s)
+	if m == null:
+		return 0xffffff
+	var h := m.get_string(1)
+	if h.length() == 3:
+		h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]
+	return h.hex_to_int()
+
+
+## tidy：去掉通用的「防御按攻防比例结算」，行首标签的半角冒号换全角
+static func _p43_tidy(t) -> String:
+	var s := RegEx.create_from_string("[；;，,]?\\s*防御按攻防比例结算").sub(str(t) if t != null else "", "", true)
+	return RegEx.create_from_string("^((?:(?:\\\\|\u001b)c\\[\\d+\\])*[^：:\\s\\\\\u001b]{1,8}):").sub(s, "$1：")
+
+
+## units：全角（码位 > 0x2e80）算 1，其余 0.56
+static func _p43_units(t: String) -> float:
+	var s := RegEx.create_from_string("(?i)(?:\\\\|\u001b)(?:col|rgb|lock)\\[\\d+\\]").sub(_p43_plain(t), "", true)
+	var n := 0.0
+	for i in s.length():
+		n += 1.0 if s.unicode_at(i) > 0x2e80 else 0.56
+	return n
+
+
+static func _p43_row(text: String, size: int, color, align := 0) -> Array:
+	return [text, size, color if color != null and str(color) != "" else "#ffffff", false, align]
+
+
+static func _p43_pairs(fields: Array, size: int, color: String, width: float) -> Array:
+	var mx := floorf((width / 2.0 - 10.0) / size)
+	var out := []
+	var i := 0
+	while i < fields.size():
+		var a: String = fields[i]
+		if i + 1 < fields.size() and _p43_units(a) <= mx and _p43_units(fields[i + 1]) <= mx:
+			out.append(_p43_row(a + "\\col[50]" + str(fields[i + 1]), size, color))
+			i += 2
+		else:
+			out.append(_p43_row(a, size, color))
+			i += 1
+	return out
+
+
+static func _p43_meta_rank(t: String) -> int:
+	for i in P43_META.size():
+		if RegEx.create_from_string(P43_META[i]).search(t) != null:
+			return i
+	return -1
+
+
+static func _p43_body_rank(t: String) -> int:
+	if _re("^(?:基础)?伤害[：:]", t):
+		return 0
+	if _re("^(?:条件|限制|代价|时点)[：:]", t):
+		return 2
+	if _re("^成长[：:]", t):
+		return 3
+	return 1
+
+
+## P.view(item, width)：rows 是已经过各层包装的说明行（相当于 characterHelpView 之后的 descParams）
+static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
+	var kind := kind_of(obj)
+	var gear := kind == "weapon" or kind == "armor"
+	width = maxf(200.0, width)
+	var names: Array = XDB.system().get("terms", {}).get("params", [])
+	var title = null
+	var quality = null
+	var tags := []
+	var params := []
+	var meta := []
+	var body := []
+	var cond := []
+	var flavor := []
+	var price := []
+	var desc := str(obj.get("description", ""))
+	var esc_re := RegEx.create_from_string(P43_ESC)
+	for index in rows.size():
+		var src = rows[index]
+		if not src is Array:
+			continue
+		var raw := _p43_tidy(src[0])
+		var t := _p43_plain(raw)
+		if index == 0:
+			title = _p43_row(str(src[0]) if src[0] != null else "", NAME_SIZE, src[2], 1)
+			continue
+		if t == "":
+			continue
+		if str(src[0]) == desc or (index == 1 and src[1] != null and int(src[1]) == DESC_SIZE):
+			var lines := Array(str(src[0]).replace("\r\n", "\n").split("\n")).map(func(x): return _js_trim(str(x))).filter(func(x): return x != "")
+			if lines.size() > 1 and str(lines[0]).length() <= 8 and RegEx.create_from_string("[。，！？,.!?：:]").search(lines[0]) == null:
+				tags.append(lines.pop_front())
+			if not lines.is_empty():
+				flavor.append(_p43_row("\n".join(lines), P43_SIZE.small, P43_FLAVOR_COLOR))
+			continue
+		if _re("^品质[：:]", t):
+			quality = src
+			continue
+		if _re("^(?:购买价格|出售价格|无法出售)", t):
+			price.append(t)
+			continue
+		if t == "消耗品":
+			tags.append(t)
+			continue
+		if _re(P43_DROP, t):
+			continue
+		if gear:
+			var p := RegEx.create_from_string("^(.+?)[：:]\\s*(-?\\d+(?:\\.\\d+)?)$").search(t)
+			if p != null and _p43_lead(str(src[0])) == "" and names.has(p.get_string(1)) and src[1] != null and int(src[1]) <= OTHER_SIZE:
+				params.append({"name": p.get_string(1), "value": p.get_string(2), "color": src[2]})
+				continue
+			if _re(P43_COND, t):
+				cond.append(t)
+				continue
+		else:
+			var parts: Array = Array(RegEx.create_from_string("[；;](?=[^；;]{1,6}[：:])").sub(t, "\u0001", true).split("\u0001"))
+			var ranks := parts.map(func(x): return _p43_meta_rank(x))
+			if ranks.all(func(r): return r >= 0):
+				for k in parts.size():
+					meta.append({"text": parts[k], "rank": ranks[k], "at": index * 10 + k})
+				continue
+		var head := _p43_lead(raw)
+		var single := head + esc_re.sub(raw.substr(head.length()), "", true)
+		body.append({"row": _p43_row(single, P43_SIZE.body, src[2], int(src[4]) if src[4] != null else 0), "rank": 1 if gear else _p43_body_rank(t), "at": index, "text": t})
+	if meta.any(func(m): return _re("^消耗[：:]", m.text)):
+		meta = meta.filter(func(m): return not _re("^.{1,4}消耗[：:]\\s*\\d+$", m.text) or _re("^消耗", m.text))
+	if not params.is_empty():
+		body = body.filter(func(b): return not _re("^基础[：:]", b.text))
+	var by := func(a, b): return a.rank < b.rank or (a.rank == b.rank and a.at < b.at)
+	meta.sort_custom(by)
+	body.sort_custom(by)
+	var blocks := []
+	var head_block := []
+	if title != null:
+		head_block.append(title)
+	if quality != null or not tags.is_empty():
+		var label := (_p43_plain(quality[0]) if quality != null else "") + (("　" if quality != null else "") + "·".join(tags) if not tags.is_empty() else "")
+		head_block.append(_p43_row(label, P43_SIZE.head, quality[2] if quality != null else P43_TAG_COLOR))
+	blocks.append(head_block)
+	var grid := []
+	var cell := func(p): return "\\rgb[%d]%s：%s" % [_p43_rgb(p.color), p.name, p.value]
+	for i in range(0, params.size(), 2):
+		grid.append(_p43_row(cell.call(params[i]) + ("\\col[50]" + cell.call(params[i + 1]) if i + 1 < params.size() else ""), P43_SIZE.body, params[i].color))
+	blocks.append(grid)
+	blocks.append(_p43_pairs(meta.map(func(m): return m.text), P43_SIZE.meta, P43_META_COLOR, width))
+	blocks.append(body.map(func(b): return b.row))
+	blocks.append(_p43_pairs(cond, P43_SIZE.meta, P43_META_COLOR, width))
+	blocks.append(flavor)
+	blocks.append(_p43_pairs(price, P43_SIZE.small, PRICE_COLOR, width) if not price.is_empty() else [])
+	var out := []
+	for b in blocks:
+		if b.is_empty():
+			continue
+		if not out.is_empty():
+			out.append([" ", P43_SIZE.gap, "#000000", false, 0])
+		out.append_array(b)
+	for r in out:
+		if str(r[0]) != " " and int(r[4]) == 0:
+			var h := _p43_lead(str(r[0]))
+			r[0] = h + "\\lock[1]" + str(r[0]).substr(h.length())
+	return out
+
+
+# ---- installUniqueEffectMarkRuntime（v0.56，CodexUnique）：备注 <KyoUnique: 特效名> 的特效行前加「◆唯一 」 ----
+const UNIQUE_MARK := "◆唯一 "
+static var _unique_global = null
+
+
+static func _unique_tags(note: String) -> Array:
+	var out := []
+	for m in RegEx.create_from_string("(?i)<KyoUnique\\s*:\\s*([^>\\r\\n]+)>").search_all(note):
+		var k := m.get_string(1).strip_edges()
+		if k != "" and not out.has(k):
+			out.append(k)
+	return out
+
+
+## U.globalKeys：只取数据库原型（武器、防具）的标签，长的在前
+static func unique_global_keys() -> Array:
+	if _unique_global == null:
+		var keys := []
+		for t in ["Weapons", "Armors"]:
+			for d in XDB.table(t):
+				if d is Dictionary:
+					for k in _unique_tags(str(d.get("note", ""))):
+						if not keys.has(k):
+							keys.append(k)
+		keys.sort_custom(func(a, b): return a.length() > b.length())
+		_unique_global = keys
+	return _unique_global
+
+
+static func _unique_canon(t: String) -> String:
+	return RegEx.create_from_string("全伤(?:害)?").sub(t, "全属性伤害", true)
+
+
+## U.keysOf：本件备注＋原型备注的标签；独立实例另认备注里出现的全局键；数据库已撤的不算
+static func unique_keys(obj: Dictionary) -> Array:
+	var keys := _unique_tags(str(obj.get("note", "")))
+	var base_id := int(obj.get("base", 0))
+	if base_id > 0:
+		var base := XDB.rec("Weapons" if kind_of(obj) == "weapon" else "Armors", base_id)
+		if base != obj:
+			for k in _unique_tags(str(base.get("note", ""))):
+				if not keys.has(k):
+					keys.append(k)
+		var note := _unique_canon(str(obj.get("note", "")))
+		for k in unique_global_keys():
+			if note.contains(_unique_canon(k)) and not keys.has(k):
+				keys.append(k)
+	var live := unique_global_keys()
+	return keys.filter(func(k): return live.has(k))
+
+
+static func unique_mark(obj: Dictionary, rows: Array) -> void:
+	var keys := unique_keys(obj)
+	if keys.is_empty():
+		return
+	var color := RegEx.create_from_string("^(?:(?:\\\\|\u001b)c\\[\\d+\\])+")
+	var effect := RegEx.create_from_string("^(?:混沌神话特效|神话特效|太古特效|mod特效|Mod特效|特效|效果|光环|连击|符石|被动|技能|套装(?:\\(\\d+\\))?)(?:[:：]|[（(])")
+	for r in rows:
+		var text := str(r[0]) if r[0] != null else ""
+		if text == "" or text.contains(UNIQUE_MARK) or text == str(obj.get("name", "")) or text == str(obj.get("description", "")):
+			continue
+		var stripped := text.lstrip(" \t")
+		var cm := color.search(stripped)
+		var head := cm.get_string() if cm != null else ""
+		if effect.search(stripped.substr(head.length()).strip_edges()) == null:
+			continue
+		for k in keys:
+			if _unique_canon(text).contains(_unique_canon(k)):
+				var lead := text.substr(0, text.length() - stripped.length())
+				var body := RegEx.create_from_string("^([^：:\\s\\\\\u001b]{1,8}):").sub(stripped.substr(head.length()), "$1：")
+				r[0] = lead + head + UNIQUE_MARK + body
+				break
 
 
 static var _white_stat_re: RegEx
@@ -283,9 +567,10 @@ static func _extra_row(rows: Array, pos: Array, line: String, normal: String) ->
 	rows.insert(clampi(at, 0, rows.size()), row)
 
 
-## CodexDisplay.text
+## CodexDisplay.text；跟到 v0.62.12 另套 installEquipmentDetailV041Runtime（v0.43）：「（全）武器伤（害）＋N%」写成「装备武器时，技能伤害＋N%」
 static func _terms(text: String) -> String:
-	return RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
+	text = RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
+	return RegEx.create_from_string("(?:全)?武器伤(?:害)?(?=[＋+]\\s*[\\d.]+%)").sub(text, "装备武器时，技能伤害", true)
 
 
 # ---- installDamageElementRuntime ----
@@ -604,6 +889,7 @@ static func layout(rows: Array, min_size := 0, width := WIDTH, measure := Callab
 		var cur := size
 		var line_max := size
 		var i := 0
+		var locked := false
 		if text == "":
 			# RJO.SW.setupTextState：空文字不排版，行高 0（分隔照加，如分组占位装备「------」的空描述）
 			lines.append({"glyphs": glyphs, "y": y, "h": 0.0, "line": bool(r[3])})
@@ -651,7 +937,14 @@ static func layout(rows: Array, min_size := 0, width := WIDTH, measure := Callab
 					if cur >= 24:
 						cur -= 6
 				elif code == "C":
-					color = Color(ELEMENT_COLORS[param - 2000]) if param >= 2000 and param <= 2015 else XUI.text_color(param)
+					if not locked:  # v0.43 \lock[1]：之后本行忽略 \c[n]
+						color = Color(ELEMENT_COLORS[param - 2000]) if param >= 2000 and param <= 2015 else XUI.text_color(param)
+				elif code == "LOCK":
+					locked = true
+				elif code == "COL":  # v0.43 \col[N]：跳到本行 N% 处，至少前进 12
+					x = maxf(PAD + cw * param / 100.0, x + 12.0)
+				elif code == "RGB":  # v0.43 \rgb[N]：十进制 RRGGBB
+					color = Color.hex(param * 256 + 255)
 				elif code == "I":
 					glyphs.append({"icon": param, "x": x + 2, "y": line_y - 3})
 					x += 36
@@ -749,7 +1042,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		visible = false
 		_set_extras({})
 		return
-	rows = content(obj, kind, skill_copy)
+	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
 	quality = _quality(obj)
 	robe_card = XYunshang.is_robe(obj)
 	_apply(note_width(obj, card_width))

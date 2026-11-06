@@ -36,9 +36,66 @@ func setup(id: int) -> XActor:
 			learn_skill(int(l.skillId))
 	init_equips(d.get("equips", []))
 	_fix_strong_classification()
+	if is_absorb_actor(id):  # installIntegratedV029Runtime setup 包装：开放专武的所属角色开局学「专武·特效吸取」
+		learn_skill(AFFIX_ABSORB_SKILL)
 	recover_all()
 	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
 	return self
+
+
+## 专武·特效吸取（CodexV029.absorb）。吸取界面（CodexAbyssMerchant.openAbsorb）重制未移植：技能照原版学、照原版列，点了没有吸取窗口。
+const AFFIX_ABSORB_SKILL := 10455
+static var _absorb_src = null
+static var _absorb_owners := {}  # 武器号 → 所属角色号
+static var _absorb_ids := {}
+
+## CodexAbyssMerchant.absorbOwners：武器（有名字、非 <CodexHiddenEquipment>；CodexV029.hiddenGear 恒假）备注 <req_actors: …> 里
+## 有名字、不在隐藏／禁用名单的角色（CodexV029.hiddenActors 都在 XImportedBalance 禁用名单里）
+static func absorb_owners(weapon_id: int) -> Array:
+	var weapons = XDB.table("Weapons")
+	if not is_same(weapons, _absorb_src):
+		_absorb_src = weapons
+		_absorb_owners = {}
+		_absorb_ids = {}
+		var re := RegEx.create_from_string("(?i)<req_actors\\s*:\\s*([^>]+)>")
+		var num := RegEx.create_from_string("\\d+")
+		for w in (weapons if weapons is Array else []):
+			if not (w is Dictionary) or str(w.get("name", "")).is_empty():
+				continue
+			var note := str(w.get("note", ""))
+			if note.to_lower().contains("<codexhiddenequipment>"):
+				continue
+			var m := re.search(note)
+			if m == null:
+				continue
+			var ids := []
+			for n in num.search_all(m.get_string(1)):
+				var aid := int(n.get_string())
+				if not str(XDB.rec("Actors", aid).get("name", "")).is_empty() and not XImportedBalance.is_disabled_actor(aid):
+					ids.append(aid)
+					_absorb_ids[aid] = true
+			if not ids.is_empty():
+				_absorb_owners[int(w.id)] = ids
+	return _absorb_owners.get(weapon_id, [])
+
+## CodexAbyssMerchant.isAbsorbActor
+static func is_absorb_actor(id: int) -> bool:
+	absorb_owners(0)
+	return _absorb_ids.has(id)
+
+## CodexBalance41.hasWeapon：背包武器或任一角色身上的武器里有这个角色的开放专武
+func has_absorb_weapon() -> bool:
+	var list: Array = equip_list()
+	var s = XState.current
+	if s != null:
+		list = list + s.gear
+		for other in s.actors.values():
+			if other != self and other is XActor:
+				list = list + other.equip_list()
+	for e in list:
+		if e is Dictionary and e.get("kind") == "weapon" and absorb_owners(int(e.get("base", e.get("id", 0)))).has(actor_id):
+			return true
+	return false
 
 
 ## installNativeMiraRuntime 的 fixStrongClassification（Game_Actor.setup 之后）：141～172 号角色一律算强者——
@@ -389,6 +446,8 @@ const STRONG_SKILL_REPLACE := {5968: 5969, 5970: 5971, 5972: 5973, 6235: 6216}
 const STRONG_WEAK_STATES := [1035, 1273, 1274, 1276, 1277, 1279, 1280]
 
 func is_strong_classified() -> bool:
+	if XTier.tagged():
+		return XTier.is_non_weak(self)  # v0.44：CodexTier.isNonWeak（超强者和强者都用强者版技能）
 	var note := str(data().get("note", ""))
 	return (actor_id >= 167 and actor_id <= 174) or note.contains("<GuyuActor>") or note.contains("<CodexSuperStrong>")
 
@@ -457,6 +516,8 @@ func skills() -> Array:
 	ids.assign(XTusuXuan.skill_ids(self, ids))  # 屠苏／璇 bindGrowth skills 包装：专属技能按本体等级解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
 		ids.append(XAlienBattle.devour_id())
+	if ids.has(AFFIX_ABSORB_SKILL) and not has_absorb_weapon():
+		ids.erase(AFFIX_ABSORB_SKILL)  # installBalanceShopV041Runtime skills 包装：背包和全体角色身上都没有本人开放专武时不列
 	return _skill_records(ids)
 
 func _skill_records(ids: Array[int]) -> Array:

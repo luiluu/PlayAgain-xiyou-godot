@@ -186,11 +186,13 @@ func _run() -> void:
 	XHangUp.stop(s)
 	map.queue_free()
 	await frames()
-	# 冻结后跟进 v0.56：设置页「Boss状态面板」（XBossStatusPanel.TOGGLE，默认关＝没有这一行；开着时排在「步步遇敌」后、「消息提醒」前，状态 ON/OFF，默认 ON）
+	# 冻结后跟进 v0.56：设置页「Boss状态面板」（XBossStatusPanel.TOGGLE；换源 v0.62.12 后默认开（O-204），关＝v0.28 没有这一行；开着时排在「步步遇敌」后、「消息提醒」前，状态 ON/OFF，默认 ON）
+	check("boss_panel_toggle_default_on", XBossStatusPanel.TOGGLE)
+	XBossStatusPanel.TOGGLE = false
 	var plain := XOptionsScene.new()
 	add_child(plain)
 	await frames()
-	check("boss_panel_row_absent_by_default", not XBossStatusPanel.TOGGLE and not plain.symbols().has("codexBossStatusPanel"))
+	check("boss_panel_row_absent_when_off", not plain.symbols().has("codexBossStatusPanel"))
 	plain.queue_free()
 	XBossStatusPanel.TOGGLE = true
 	var tog := XOptionsScene.new()
@@ -210,7 +212,7 @@ func _run() -> void:
 	check("boss_panel_off_persists", not XConfig.flag("codexBossStatusPanel"))
 	XConfig.set_flag("codexBossStatusPanel", true)
 	tog.queue_free()
-	XBossStatusPanel.TOGGLE = false
+	XBossStatusPanel.TOGGLE = true
 	DirAccess.remove_absolute(XConfig.path())
 	finish()
 

@@ -84,7 +84,15 @@ function boot(root, opts = {}) {
   function run(rel, src) {
     if (src === undefined) src = fs.readFileSync(path.join(root, rel), 'utf8');
     if (process.env.HB_TRACE) fs.writeSync(2, '> ' + rel + '\n');
-    try { w.eval(src + '\n//# sourceURL=' + rel); loaded.push(rel); }
+    try {
+      w.eval(src + '\n//# sourceURL=' + rel); loaded.push(rel);
+      // opts.skipModules：这些内容模块注册成空工厂（装了等于没装），探针要量「没有这个模块的原版行为」时用（CS：异化 v0.58 隐藏，Kyo 定重制保留）
+      if (opts.skipModules && w.CodexRuntime && !w.CodexRuntime.__skipWrapped) {
+        const reg = w.CodexRuntime.register, skip = new Set(opts.skipModules);
+        w.CodexRuntime.register = function (name, factory) { return reg.call(this, name, skip.has(name) ? function () { return null; } : factory); };
+        w.CodexRuntime.__skipWrapped = true;
+      }
+    }
     catch (e) { e.message = rel + ': ' + e.message; if (opts.tolerant) errors.push(e.message); else throw e; }
   }
   // ---- 按 index.html 顺序 ----

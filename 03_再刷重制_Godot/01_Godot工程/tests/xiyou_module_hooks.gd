@@ -272,7 +272,7 @@ func _ready() -> void:
 		var data=JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 		check("oracle.same_source",data.sourceIdentity.runtimeInputs==XDB.load_json("manifest.json").runtimeInputs)
 		check("oracle.case_count",data.cases.size()==30)
-		check("oracle.native_registry",data.cases[0].observed.hooks[9].id=="cat-sword" and data.cases[0].observed.hooks[19].id=="orb-sets")
+		check("oracle.native_registry",data.cases[0].observed.hooks[9].id=="cat-sword" and data.cases[0].observed.hooks[20].id=="orb-sets")  # 新源 v0.62.12 在 11 位多了 liuying
 		for c in data.cases.slice(1):
 			check(c.id+".native_errors",c.errors.is_empty(),c.errors)
 			if c.errors.is_empty():run_native(c)
