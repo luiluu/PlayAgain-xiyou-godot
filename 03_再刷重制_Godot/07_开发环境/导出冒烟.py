@@ -308,6 +308,30 @@ def smoke_scene(exe: Path, scene: str, out_dir: Path) -> dict:
     return {'scene': scene, 'ok': ok, 'exit': code, 'seconds': secs, 'result': res}
 
 
+def runner_name() -> str:
+    return 'Linux 调试模板' if os.environ.get('XIYOU_SMOKE_RUNNER') else 'macOS 调试模板'
+
+
+def apk_sizes(infos) -> list:
+    """apk 各部分占多少（压缩后）：[(部分, 压缩字节, 解开字节, 个数)]，大的在前。assets/.godot/imported 按源文件类型再分。"""
+    import collections
+    import re as _re
+    packed, raw, count = collections.Counter(), collections.Counter(), collections.Counter()
+    for i in infos:
+        parts = i.filename.split('/')
+        if i.filename.startswith('assets/.godot/imported/'):
+            m = _re.match(r'.*\.([^.]+)-[0-9a-f]{32}\.([^.]+)$', parts[-1])
+            key = 'assets/.godot/imported（%s→%s）' % (m.group(1).lower(), m.group(2)) if m else 'assets/.godot/imported（其它）'
+        elif parts[0] == 'assets':
+            key = '/'.join(parts[:2]) if len(parts) > 2 else 'assets（根）'
+        else:
+            key = parts[0] if len(parts) > 1 else '（根）'
+        packed[key] += i.compress_size
+        raw[key] += i.file_size
+        count[key] += 1
+    return [(k, v, raw[k], count[k]) for k, v in packed.most_common()]
+
+
 def report(out_dir: Path, info: dict) -> Path:
     platform = info.get('platform', 'macos')
     windows = platform == 'windows'
@@ -315,8 +339,8 @@ def report(out_dir: Path, info: dict) -> Path:
     lines = [title, '',
              f'- 时间：{info["time"]}；预设：{info["preset"]}；包：`{info["zip"]}`',
              f'- 工程提交：{info.get("commit", "?")}；Godot：{info.get("godot", "?")}',
-             (f'- 架构：{info.get("archs", "?")}；包结构（PE 头、.pck、控制台包装）：{info.get("layout", "?")}；包内检查用 macOS 调试模板旁放同名 .pck 跑' if windows else
-              f'- 包名：{info.get("package", "?")}；架构：{info.get("archs", "?")}；签名与包结构（apksigner verify、aapt2）：{info.get("layout", "?")}；包内检查把 assets/ 打成 pck 放到 macOS 调试模板旁跑' if platform == 'android' else
+             (f'- 架构：{info.get("archs", "?")}；包结构（PE 头、.pck、控制台包装）：{info.get("layout", "?")}；包内检查用 {runner_name()}旁放同名 .pck 跑' if windows else
+              f'- 包名：{info.get("package", "?")}；架构：{info.get("archs", "?")}；签名与包结构（apksigner verify、aapt2）：{info.get("layout", "?")}；包内检查把 assets/ 打成 pck 放到 {runner_name()}旁跑' if platform == 'android' else
               f'- 架构：{info.get("archs", "?")}；签名检查（codesign --verify，只读）：{info.get("codesign", "?")}'),
              f'- 版本与图标：{info.get("versionText", "?")}',
              f'- 结论：**{"全部通过" if info["ok"] else "有失败"}**'] + ([f'- 留下的验收包（--keep）：`{info["keptApp"]}`'] if info.get('keptApp') else []) + ['',
@@ -324,6 +348,10 @@ def report(out_dir: Path, info: dict) -> Path:
     for r in info['scenes']:
         res = r['result']
         lines.append(f'| {r["scene"]} | {"通过" if r["ok"] else "失败"} | {f"{res["passed"]}/{res["total"]}" if res else "没有 TEST_RESULT"} | {r["seconds"]} | {r["exit"]} |')
+    if info.get('sizes'):
+        total = sum(x[1] for x in info['sizes']) or 1
+        lines += ['', '## 包体积（压缩后，大的在前）', '', '| 部分 | 压缩后 MB | 占比 | 解开 MB | 个数 |', '| --- | --- | --- | --- | --- |']
+        lines += [f'| {k} | {v / 2**20:.1f} | {100 * v / total:.1f}% | {u / 2**20:.1f} | {n} |' for k, v, u, n in info['sizes'][:15]]
     for r in info['scenes']:
         if r['result'] and r['result']['fails']:
             lines += ['', f'## {r["scene"]} 失败项', ''] + [f'- `{f}`' for f in r['result']['fails']]
@@ -414,6 +442,8 @@ def main_android(a) -> int:
         import zipfile
         with zipfile.ZipFile(apk) as z:
             names = z.namelist()
+            info['sizes'] = apk_sizes(z.infolist())
+            info['apkBytes'] = apk.stat().st_size
             problems, pk = android_layout(apk, names)
             info['package'] = pk['package'] if pk else '?'
             info['archs'] = ','.join(pk['native']) if pk else '?'

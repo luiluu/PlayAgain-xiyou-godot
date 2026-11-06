@@ -151,6 +151,24 @@ class AndroidLayoutTests(unittest.TestCase):
         self.assertEqual(len(smoke.android_problems(bumped, names)), 2, smoke.android_problems(bumped, names))
         self.assertEqual(smoke.android_problems(dict(info, package=smoke.preset_template('安卓 发行', 'package/unique_name')), names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
 
+    def test_apk_sizes(self):
+        import zipfile
+        with tempfile.TemporaryDirectory() as d:
+            apk = Path(d) / 'a.apk'
+            with zipfile.ZipFile(apk, 'w', zipfile.ZIP_STORED) as z:
+                z.writestr('assets/.godot/imported/Bg.png-' + '0' * 32 + '.ctex', b'x' * 300)
+                z.writestr('assets/.godot/imported/Bgm.ogg-' + '1' * 32 + '.oggvorbisstr', b'x' * 200)
+                z.writestr('assets/tests/a.gdc', b'x' * 50)
+                z.writestr('lib/arm64-v8a/libgodot.so', b'x' * 100)
+            with zipfile.ZipFile(apk) as z:
+                sizes = smoke.apk_sizes(z.infolist())
+            self.assertEqual([k for k, *_ in sizes], ['assets/.godot/imported（png→ctex）', 'assets/.godot/imported（ogg→oggvorbisstr）', 'lib', 'assets/tests'])
+            info = {'time': 't', 'platform': 'android', 'preset': '安卓 验收', 'zip': 'x.apk', 'ok': True, 'layout': '通过',
+                    'archs': 'arm64-v8a', 'package': 'p', 'scenes': [], 'sizes': sizes}
+            text = smoke.report(Path(d), info).read_text(encoding='utf-8')
+            self.assertIn('## 包体积', text)
+            self.assertIn('| lib | 0.0 | 15.4% |', text)
+
     def test_android_report(self):
         with tempfile.TemporaryDirectory() as d:
             info = {'time': 't', 'platform': 'android', 'preset': '安卓 验收', 'zip': 'x.apk', 'ok': False, 'layout': '通过',

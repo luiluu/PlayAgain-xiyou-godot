@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 PROJECT = Path(__file__).resolve().parent.parent / '01_Godot工程'
-NOT_GAME = ['modes/xiyou/generated/oracle/zhenqi.json', 'modes/xiyou/generated/manifest.json',
+NOT_GAME = ['modes/xiyou/generated/oracle/zhenqi.json', 'modes/xiyou/generated/oracle_batch.json', 'modes/xiyou/generated/oracle_pending.json', 'modes/xiyou/generated/manifest.json',
             'modes/xiyou/generated/sync_stamp.json', 'builds/再刷重制_验收.zip']
 GAME = ['modes/xiyou/generated/db/System.json', 'modes/xiyou/generated/maps/Map001.json',
         'modes/xiyou/generated/slice.json', 'modes/xiyou/generated/img/system/Window.png',
