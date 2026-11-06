@@ -5,7 +5,7 @@
 - 说明：①②③ 已做（第二棒补了 gear_search 重量、power_panel 重取，另写了新源 DOM 取数驱动）；④ 失败表认领、help_card 10622／10623（总装二十八加）等第二次同步后再做（见「接续要点」）。
 - 第二棒工作树 `.claude/worktrees/fervent-shirley-617455`，本地分支 `cc/fervent-shirley-617455`（`cc/ui-newsrc3` 还挂在上一棒的工作树上，没动它），推到 GitHub 的 `cc/ui-newsrc3`。交回集成分支 `cc/newsrc-switch`（不合 main）。
 - **合并顺序**：先合 `cc/wukong-newsrc9`（54ae6b10，切片加 179，导出流萤 SV／脸图／行走图），再合本单并重同步；否则 `xiyou_actor_book` 的 179 立绘一项会挂。
-- 依据：派单第十四批 DE 节＋协调追加的 gear_search 三项。从 `cc/newsrc-switch` 21cd90eb 切。
+- 依据：派单第十四批 DE 节＋协调追加的 gear_search 三项；总装二十八 11-06 追加 DL 单（手量夹具换无头重取＋说明卡 v0.43 版式），①② 已做，③ 心钢技能说明卡冷却没做（到 40% 停手）。从 `cc/newsrc-switch` 21cd90eb 切。
 - 工作树 `.claude/worktrees/peaceful-lalande-9fc698`：`generated/`、`.godot`、`mv_oracle/.sandbox`、`node_modules` 用 APFS 克隆自集成树（21cd90eb，**集成分支重同步之前**的产物）；同步完要重克隆一次再复测。本机测试槽被同步占满，测试全在云端跑（workflow_dispatch 指定场景，产物快照 `refs/ci/generated/cc/ui-newsrc3`）。
 
 ## 变更记录草稿
@@ -22,6 +22,12 @@
 - **DOM 面板参照重取**（第二棒）：新写 `ui_reference/dom_ref.cjs`（只读服务＋本机无头 Chrome，在 `?battle_ref=1` 页面里执行一个取数脚本，结果写到给定文件）和两份页面脚本：
   - `gear_search_ref.js`：内存新局，背包按旧夹具的 21 件模板各得一件（得装备时随机数固定 0.5，不出随机词缀；带 `<Prefixes>` 的取再生成的那件），名字／描述／能力照旧夹具覆盖，备注用新源实例自己的；面板「仅背包」逐项操作读 sorts／cats／queries／quality／type／term／small／detail／itemList。v0.28 上重跑与旧手量夹具**逐键相同**。新源上变的不止死霸装：解放前的斩月、麒麟对剑两把、绣冬、贽殿遮那、真我之钥、斩月、斩月-虚、花与鸟之矢、队员死霸装 10 件模板都改了（专武成长、数值×10、KyoUnique 等），备注随之换新；`gear_search_oracle.json` 重出。
   - `power_panel_ref.js`：队伍 1/2/23/85，状态页 openPower，读 #cq-modal 带文字的元素（自身文字节点）与工具条按钮、面板／详情／底栏框。v0.28 上与旧手取逐行同文字、坐标差 ≤0.52（strong 行内框）；新源读数文字与 v0.28 完全相同；`power_panel_oracle.json` 重出。
+- **DL 单（第二棒）**：
+  - 状态页（`status_page_oracle.json`）、修行页（`zhenqi_page_ui_oracle.json`）夹具在 v0.62.12 无头重取：新页面脚本 `ui_reference/status_page_ref.js`（包住 drawText／drawFace／drawIcon／drawGauge／drawHorzLine 记调用；条的填充宽取实际画的渐变条宽，YEP 描边时少 2；可选 pageList／variables／zhenqi 与逐屏滚动）。v0.28 上重跑与两份旧手量夹具逐键相同。
+  - 状态页测试：选页窗 5 项（240／252）改成直接比夹具（项矩形、光标、文字），不再按 Window_HorzCommand 公式推；v0.28 的 4 项常量另断言。
+  - **武器类型加成「生效／未持有」**（`XStatusPage.WTYPE_HOLD_V041`，默认开，**O-待定·武器类型生效**，已写进优化登记）：新源 installEquipmentDetailV041Runtime 包 calcWeaponBonus，加成后缀「 生效」（isWtypeEquipped，用 `XBattleLogic.wtype_equipped`）／「 未持有」；重取的夹具第 2 页因此挂 4 项，已跟。
+  - 修行页测试：抬头、文字行起点、表头四列改比新源第 5 页「修行·详细」（「项目／难度影响／不含难度／实际」），另比橙色 warn、第 4 页抬头 panelHead；旧一页写法的四列位置照同一份夹具比。
+  - growth_help：心钢／狂妄说明卡也按品质排特效行（原版 H.describe 末尾调 RJO.HE.getDescParams，v0.41 排序在里面），放在 `XGrowthHelp.rows` 分组之前，挂在 `EFFECT_SORT_V041` 下（O-待定·特效排序，这次也补进优化登记）。测试 `fix.*` 段自 v0.43 起找「成长：」行越界（行首多了 `\lock[1]`），一直没跑到断言、只报 SCRIPT ERROR；改成去掉 lock 再找，外层包装的装备战力／穿透行另核。现在 77/77、无 SCRIPT ERROR。
 - **参照**：`ui_reference/review_actor_book.js` 多记 `bitmap`（状态窗实际画的图，URL 末段）；上一棒在新源重取时 `sprite` 记的是 battlerName，168、173～177 的逐帧图因此对不上。`actor_book_oracle.json` 只补了 `bitmap` 一键（其余与重取的一致），测试改为图名比 `bitmap`、battlerName 比 `sprite`。
 - 测试：`xiyou_actor_book` 跟目录换算（`index_ids().find`）、立绘几何乘 bookScale、截图加 179；`xiyou_actor_book_review` 记 `actor_id()`；`xiyou_help_card` 的 O-049 出售价断言改成量排版之前的行（v0.43 排版把两种价格并成一行两列，原断言一直挂）。
 
@@ -37,6 +43,8 @@
 
 ## 优化登记
 
+- O-待定·武器类型生效：`XStatusPage.WTYPE_HOLD_V041`（关＝只写百分比），测试 `xiyou_status_page` `wtype_hold_switch`。已写进 `00_设计/优化登记.md`（连同特效排序）。
+
 - O-待定·特效排序：`XHelpCard.EFFECT_SORT_V041`（关＝不排序），测试 `xiyou_help_card` 的 gear 段（v0.62.12 参照）。是跟新源的显示改动，开关只为回退。
 
 ## 接续要点（给下一位）
@@ -45,6 +53,13 @@
 2. **status_power_panel**：`power_panel_oracle.json` 已重取；本机只挂 `coverage_all_actors` 的 179「天火轰击」（原版记「当前条件不可用」，重制记成未完整评估，归角色车道／悟空 DF）。
 3. **pets**：本分支云端 `xiyou_pets` 通过（上一棒已在新源重取核过，夹具不用换）。
 4. **④ 界面失败项认领**：总装还没发整轮失败表，未认领。候选 hud、party、hangup、hangup_options、item_bag。
+5a. **DL ③ 心钢技能说明卡**（没做）：原版 H.skillHelpView（已就绪／冷却还需 n 回合、第 2 回合起可用），重制没有；照新源做，挂 `XHeartsteel.TURN_CD_V035`。
+5b. **zhenqi page.* 12 项**（本机仍挂，失败表「真气页新源改版」，界面域）：`page.<例>.has_detail` 缺 rows／strip／stripWarn／context 等键，是参照 zhenqi.json 新源结构与测试读法不对，没在这单里查。
+5c. **还是手量／v0.28 的界面夹具清单**（DL ① 要求列）：
+   - 已有按钮页面脚本、可直接用 `headless_button.cjs` 在新源重取：actor_advanced、actor_warehouse、battle_costume、star_warehouse、warehouse（review_system_pages.js）。
+   - 已有自己的驱动（加 XIYOU_APP／参数即可）：battle_transition（battle_transition_ref.cjs）、popup_anchor（popup_anchor_ref.py）。
+   - 页面里手点或手敲 JS 量的，可写 dom_ref 页面脚本（调现成的 `__ilr`／`__dhRef`）：item_list、orb_ui、orb_shop_ui、shop_stock_ui、save_page（要 localStorage 存档两份，临时 Chrome 目录里可做）、window_rects、drop_dh、enemy_state_icon、state_overlay、status_power（战力条 fillRect／drawText，照 status_page_ref 的包法）。
+   - 故意留 v0.28 的：zhenqi_page_rows_v028（PANEL_V062 关的回退参照），不重取。
 5. **help_card 10622／10623**（总装二十八 11-06 加）：流萤技能卡，新源说明按进阶阶数生成；等第二次同步（切片加 179 之后的增量同步）完成再按实际挂的对。
 6. 集成分支同步完成后：重克隆 `generated/` 等，重跑 `云端选测.py upload`，再复测本单场景与 `事件空绿扫描.py --check`。
 
@@ -56,6 +71,9 @@
 - 建议：本机测试槽被同步（4 槽）占几个小时时，车道只能走云端；`并行测试.py` 排队时可提示「共用槽被同步占用，预计 X 分钟，可改云端」。
 
 ## 验证
+
+- DL（提交见本分支，本机，产物克隆自集成树 21cd90eb）：`xiyou_status_page` 47/47、`xiyou_growth_help` 77/77、`xiyou_gear_search` 60/60；`xiyou_help_card` 只挂 10326（角色车道）；`xiyou_status_power_panel` 只挂 179 天火轰击；`xiyou_zhenqi` 本单的 page_ui_* 全过，仍挂 page.* 12 项（失败表原有，见接续 5b）。`语法检查.py` 通过；`回退开关覆盖.py` 没报本单两个开关（缺口只有 O-209，人工确认几项都是旧的）。
+
 
 - 第二棒（提交 4e0c7e5d，本机，产物克隆自集成树 21cd90eb）：`xiyou_gear_search` 60/60；`xiyou_status_power_panel` 10/11（只挂 179 天火轰击，角色车道）。`语法检查.py` 通过；`事件空绿扫描.py --check` 同上一棒（空绿 96 在基线内，m234 五个预设没量，产物克隆于同步前）。
 
@@ -71,6 +89,7 @@
 
 ## 待交叉核查
 
+- DL：`ui_reference/status_page_ref.js`、`ui/status_page.gd`（WTYPE_HOLD_V041）、`ui/growth_help.gd`（rows 里排序）、`tests/xiyou_status_page.gd`、`tests/xiyou_zhenqi.gd`（_page_ui）、`tests/xiyou_growth_help.gd`（_fixed）、两份夹具。
 - 第二棒：`ui_reference/dom_ref.cjs`、`gear_search_ref.js`、`power_panel_ref.js`，`tests/fixtures/gear_search_oracle.json`、`power_panel_oracle.json`（重出）。
 - `ui/actor_book.gd`（index_ids、actor_id、_aura_columns、is_aura_note、179 技能、BOOK_SCALE）、`core/appearance.gd`（Codex_Liuying_SV 档）、`ui/help_card.gd`（sort_effects、_plain41、调用位置）、`ui/character_help.gd`（成长措辞）、`ui_reference/review_actor_book.js`（bitmap）、`tests/fixtures/actor_book_oracle.json`（只加 bitmap）。
 
