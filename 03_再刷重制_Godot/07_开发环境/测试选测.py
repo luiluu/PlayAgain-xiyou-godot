@@ -1440,7 +1440,7 @@ class CheckerTests(Fixture):
         self.assertIn('跳过导入与测试', out)
 
     def test_default_runs_everything(self):
-        rc, out, ran = self.check('--oracle')
+        rc, out, ran = self.check('--oracle', '--release-keys')  # 发行包按键冒烟默认不跑，这里打开让每个检查脚本都被调用到
         self.assertEqual(rc, 0, out)
         self.assertIn('全部通过', out)
         # 期望名单也从 检查.sh 解析（tools65）：新加的检查脚本不用改这里
