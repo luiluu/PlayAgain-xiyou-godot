@@ -59,7 +59,7 @@ static func _write(target: String, data: Dictionary) -> bool:
 	return true
 
 
-## 安卓切后台自动存档（XAutoSave，O-待定·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
+## 安卓切后台自动存档（XAutoSave，O-215·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
 ## 不加保存次数、不改 current_slot（一键存档仍存回玩家自己的档位）；记下当时的档位，读回来时接着用那一格。
 static func auto_path() -> String:
 	return dir().path_join("save_auto.json")

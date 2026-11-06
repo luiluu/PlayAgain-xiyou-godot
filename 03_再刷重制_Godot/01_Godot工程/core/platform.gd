@@ -7,7 +7,7 @@ extends Node
 ## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；顶层（入口菜单、发行包的西游标题页）两秒内按两次退出（O-202）。
 ## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-201，BACKGROUND_IDLE）。
 ## - 挂机中手机不锁屏（原版要了 WAKE_LOCK）。
-## - 切后台自动存档：调 pause_hook（西游地图挂 XAutoSave，O-待定·安卓切后台存档）。
+## - 切后台自动存档：调 pause_hook（西游地图挂 XAutoSave，O-215·安卓切后台存档）。
 
 ## 测试用：强制当成触屏／手机（null＝按真实平台）。
 static var force_mobile = null
