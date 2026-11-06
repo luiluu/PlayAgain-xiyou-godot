@@ -80,7 +80,7 @@ static func battle_started(s: XState, troop: int) -> void:
 		battle = {}
 		return
 	var cur = run(s)
-	battle = {"map": int(s.map_id), "troop": troop, "eligible": (r.get("troops", []) as Array).has(troop), "identity": identity(s, troop),
+	battle = {"map": int(s.map_id), "troop": troop, "eligible": (r.get("troops", []) as Array).any(func(t): return int(t) == troop), "identity": identity(s, troop),
 		"won": false, "run": int(cur.sequence) if cur != null else -1}
 
 
