@@ -1,7 +1,7 @@
 # 交付：cc/ui-newsrc1（换源追平：B 界面 18 个＋说明卡新排版）
 
 - 车道／工作者：界面 CV（cc）
-- 状态：**进行中，交回集成分支 `cc/newsrc-switch`（不合 main，不标可合并）**。本单是第一段：分类表＋数据／文案类追平；页面改版只出计划，等总装批。
+- 状态：**进行中（到 40% 交接线停手），交回集成分支 `cc/newsrc-switch`（不合 main，不标可合并）**。第一段：分类表＋数据／文案类追平；第二段：总装二十七批了三项改版，①说明卡已做，②③未动（见「接续要点」）。中途合了集成分支 3ac4cc74。
 - 依据：派单第十四批 CV 节、`cc_newsrc-switch.md` 失败表「三」B 界面 18 个。从 `cc/newsrc-switch` 81cfd9af 切。
 - 工作树 `.claude/worktrees/ui-newsrc1`：`generated/`、`.godot`、`mv_oracle/.sandbox` 用 APFS 克隆自集成分支工作树（新源产物，manifest v0.62.12，同提交 81cfd9af，未重跑同步）；跑测试带 `--skip-generated-check`。探针一律 `XIYOU_APP=…/冻结正式源/v0.62.12/app.nw`。
 
@@ -17,12 +17,12 @@
 | guyu_ui | 归根／待绽／生长→替倒／待发／平时；赠春／还春→交出储备／收回储备；给出说明改写 | 文案 | ✓ 已追平（只改文字） |
 | options_basic | 设置页多「Boss状态面板」一行 | 开关翻转 | ✓ O-204 `XBossStatusPanel.TOGGLE` 翻成 true（集成分支；回退改回 false），boss_status 测试同改 |
 | growth_forge | 夹具 v0.28；新源狂妄原件备注写「物理伤害忽略18%」，原版开机时 U.describe 才改成「物防穿透18%」 | 夹具重出＋移植缺口 | ◐ 夹具重出；`XDB.table("Armors")` 开机对四件成长装备原件做 describe（原版 isDatabaseLoaded 包装，v0.28 起就有，只是旧数据看不出）。**剩 forge.0 心之钢 6 项：v0.35 巨人吞噬改成「第 2 回合可用、冷却 2 回合」（按回合，不再按行动次数），是战斗机制，归 C** |
-| status_power_panel | 角色 148 技能改名「碧天独行」等；两份夹具是 v0.28 浏览器手取、无脚本 | 参照重取 | ○ 待做（要写取数驱动） |
-| actor_book | 角色名、技能列表、图标都随新源变；夹具 v0.28 浏览器手取（`review_actor_book.js` 只有按钮，无无头驱动） | 参照重取 | ○ 待做（照 `review_system_pages.cjs` 写无头驱动） |
+| status_power_panel | 角色 148 技能改名「碧天独行」等；两份夹具是 v0.28 浏览器手取、无脚本 | 参照重取 | ○ 待做（可用新加的 `headless_button.cjs` 思路，但原取数没有页面按钮，要先写取数脚本） |
+| actor_book | 夹具 v0.28 浏览器手取 | 参照重取＋图鉴跟新源 | ◐ 参照已在新源重取（新加 `ui_reference/headless_button.cjs`，`?battle_ref=1&actor_book_review=1`）。剩 5 项是重制图鉴没跟上：目录名单（index_names）、被动标签「【光环】」、状态页「主动」列宽 225、新角色 168／173～179 的立绘、179 技能表 |
 | enemy_book | 目录多 850／823、百分比 99%→299%；两份夹具由 `item_list_ref` 手工拼 | 参照重取（百分比要看是不是口径变） | ○ 待做 |
 | svpngfd | 原版 v0.51 dsPassiveSkill 每次 refresh 先清缓存再解析，战斗中加状态 SvPngFd 会生效（cache 2）；重制仍「只在开战时算一次」 | 机制（被动缓存刷新） | → 转 C（会碰 passive 缓存，不是界面） |
 | gear_search | 战力排序／战力数 | 等 rules 穿透口径 | ⏸ 派单要求等 |
-| help_card | 说明卡新排版（`installPanelLayoutV043Runtime`） | 页面改版 | 📋 计划见下，待批 |
+| help_card | 说明卡新排版（`installPanelLayoutV043Runtime`） | 页面改版 | ✓ 已做（1057/1073）。剩 10 个角色专属技能的「成长：」措辞（谷雨、云裳等，10326 还有数值不同，归角色技能／C）和 2 件随机词缀装备（穿透行与 v0.41 特效按品质排序，等穿透口径） |
 | zhenqi | 修行页改版（`installNativeGuidanceRuntime` 240→365 行：挑战评估、必备属性、建议编号、「修行·详细」第二页） | 页面改版 | 📋 待批 |
 | guide | 向导里程碑／修行建议改写、区段表 ATLAS 变（同一个 Guidance 运行时） | 页面改版（随 zhenqi） | 📋 待批 |
 | hangup_auto | 挂机卖出页多「保留词条品质」 | 页面＋机制（`installSafeSellRuntime` v0.40～v0.53.01：九档词条门槛、专属法宝可卖、0 金币带别的货币可卖等） | 📋 待批 |
@@ -51,6 +51,21 @@
 
 跟 `installSafeSellRuntime`（v0.40～v0.53.01）：保留词条门槛九档（含神话★／★★／★★★）、专属法宝按普通装备卖、0 金币带其他货币可卖、只筛装备等。是**卖不卖哪件装备**的规则，玩家可见、会影响背包；建议当机制做（登 O 号），界面两处跟着加行。
 
+## 第二段已做（总装二十七批）
+
+- ① 说明卡：`XHelpCard.LAYOUT_V043`（默认开，**O-待定·说明卡排版**，关＝v0.28 排法），照 `P.view` 一一移植（`panel_view`）；`layout()` 认 `\lock`（之后忽略 `\c[n]`）、`\col[N]`、`\rgb[N]`；`content()` 多一个 width 参数（`show_for` 传卡宽−8）。万剑诀少的两行**是原版有意不画**：`tidy()` 删「防御按攻防比例结算」（注释写明「游戏内文字规则：不显示通用的…」），`DROP` 删「纯粹伤害：否」「武器／装备限制：无」。
+- 另跟了两处只改显示的：`installUniqueEffectMarkRuntime`（v0.56，备注 `<KyoUnique:…>` 的特效行前加「◆唯一 」，`XHelpCard.unique_mark`）；`_js_trim` 照 JS trim 去全角空格。
+- O-205 `WHITE_STATS_FIRST`、O-203 `XBossHpBar.RANGE_V037` 都翻成 true（测试两头测）。O-204 第一段已翻。
+- 比「排版之前的行」的专项（black_flash_ui、character_help_cost、guyu_ui 的法宝两项、help_card 白字块）在调用处临时关 `LAYOUT_V043`：它们的参照量的是 characterHelpView，在 readableView 之前。
+
+## 接续要点（给下一位）
+
+1. ② zhenqi＋guide：跟 `installNativeGuidanceRuntime`（新 365 行／旧 240 行，先 `diff` 冻结源两版）。修行页第一页改成新版（挑战评估、必备属性、编号建议、「详细数据见第二页」），旧对照表挪到「修行·详细」第二页；旧两页写法留回退开关（总装要求）。参照 `generated/oracle/zhenqi.json`（新源）、`guide.json`；`tests/fixtures/zhenqi_page_ui_oracle.json` 是 v0.28 手取，也要重取。
+2. ③ item_marks＋hangup_auto：跟 `installSafeSellRuntime`（v0.40～v0.53.01，文件头逐版注释），当机制登 **O-待定·安全出售**、带回退开关；挂机卖出页加「保留词条品质」行、一键出售加「保留词条：…」档。参照 `oracle/item_marks.json`、`oracle/sell_rewards.json`、`oracle/hang_up.json`。
+3. 参照重取：pets（新排版让说明卡位置变了，`review_system_pages.cjs … pet` 重取 `pet_oracle.json`；本树 pets 只挂 skill_list 的卡位置）、status_power_panel 两份、enemy_book 两份；actor_book 剩 5 项图鉴代码。
+4. 交付前：`事件空绿扫描.py --check`、`工具回归.py`、`语法检查.py`、`选测.py cc/newsrc-switch --list` 的场景；本树测试带 `--skip-generated-check`。
+5. 已知与本单无关：yunshang_shop 在集成分支 27ccba6a 上也挂（p8 清层账本），不是这里引起的。
+
 ## 转出
 
 - C：心之钢 v0.35 巨人吞噬按回合冷却（growth_forge forge.0 的 6 项、growth_help 的心钢行同因）；svpngfd（dsPassiveSkill v0.51 refresh 先清后解析）。
@@ -63,12 +78,12 @@
 
 ## 验证
 
-- 本机：`并行测试.py --skip-generated-check`：sve_visual、vsfx、change_clothes、costumes、guyu_ui、options_basic、boss_status、inlay_book 全过；growth_forge 538/544（剩心之钢 6 项，见上）；help_card、cat_help 只挂新排版（预期）。
+- 本机：`并行测试.py --skip-generated-check`：sve_visual、vsfx、change_clothes、costumes、guyu_ui、options_basic、boss_status、boss_hp_bar、inlay_book、cat_help、black_flash_ui、character_help_cost 全过；growth_forge 538/544、growth_help 只挂心之钢（C）；help_card 1057/1073（见表）；actor_book 17/22（见表）；pets 挂 skill_list 卡位置（待重取参照）。
 - 未跑：事件空绿扫描、工具回归、选测（交付前补）。
 
 ## 待交叉核查
 
-- `xdb.gd`（开机 describe 四件成长装备）、`guyu.gd` 文字、`boss_status_panel.gd` 开关默认、`help_card.gd` `_terms`。
+- `xdb.gd`（开机 describe 四件成长装备）、`guyu.gd` 文字、`boss_status_panel.gd`／`boss_hp_bar.gd` 开关默认、`help_card.gd`（`_terms`、`panel_view`、`unique_mark`、`layout()` 新转义、`WHITE_STATS_FIRST` 默认）、`ui_reference/headless_button.cjs`。
 
 ## 本分支提交
 
