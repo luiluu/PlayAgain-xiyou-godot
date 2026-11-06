@@ -81,6 +81,21 @@
 
 - 建议：别的在 Map004 起跑、用 `XSave.dir_override` 的测试也会吃同一个过场（首跑与再跑结果不同）；可以在测试公共初始化里统一标记 rift1，或让云端与本机一样每次清测试目录。归工具车道。
 
+## EC′ ②（剩余清单前 5 条：做了 2 条，到接力线停下）
+
+EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用）和 V029 隐藏角色暂存位置玩家看不到；按「冻结后改动盘点」补找玩家看得到的缺口后排序：
+
+1. ✓ **进阶界面大图（v0.62 v1.08）**：`ui/actor_advanced.gd` `_v108`，O-待定·进阶界面大图（`XActorAdvancedScene.ADV_V108`，已登记）。登记了归一档、格宽大于 64（与档宽差不超过 1）的 9×6 战斗图，在进阶界面按图鉴同尺寸（归一缩放×bookScale，只缩小）显示、左上锚点、平滑、中线 w/10+32、脚底 w/10+64。流萤 179：0.4966 倍（原来 128px 格原尺寸，约老角色两倍大）。云裳包装照旧在外层。专项 xiyou_advance_v108 9/9（开、关两组；老角色 1 不动）；actor_advanced 33/33。
+2. ✓ **宝宝路线号角商店全部角色免费（v0.62 installBabyAllActorsRuntime）**：新模块 `core/baby_all_actors.gd`（XBabyAllActors），O-待定·宝宝号角免费（`ENABLED`，已登记）。宝宝路线（开关 2496）下卖号角的店改列全部可用角色号角（停用、V029 隐藏、没名字的不列；已在队伍／仓库／背包、招募变量 ≥1、领过的不列）、价格 0、额外货币价清空（`XItemMarks.sell_rewards` 在免费店开着时返回去掉买入价的副本）、每次最多 1 支、领过记 `flags._codexBabyHornActors`；超强者视同开放（`XItemMarks.super_enabled`）。商店 `setup` 改商品表、`_exit_tree` 还原、`_trade` 记领取并从列表拿掉。新探针 `mv_oracle/baby_all_actors_probe.cjs`（真实 Scene_Shop.prepare 整条链，新源）→ `tests/fixtures/baby_all_actors_oracle.json`；专项 xiyou_baby_all_actors 36/36（商品表 137／133 行逐行一致、号角→角色 228 支全对、领取一次、关店还原、开关关掉回 v0.28）。
+3. ○ 流萤头像、改版向导流萤三页、流萤技能说明按阶数生成（盘点 v0.62.06／08 行）：没逐项核是否已做，下一单先 rg 再做。
+4. ○ 图鉴立绘逐张比量具（DW 建议：`real/actor_book_real.cjs`）。
+5. ○ v0.62 神话／混沌神话词条概率随难度浮动（installAffixDifficultyRate，盘点 v0.62 行）：玩家看得到掉落，没核重制是否已跟。
+
+### 验证（EC′ ②）
+
+- 本机：advance_v108 9、actor_advanced 33、baby_all_actors 36、alien_workshop 45、imported_balance 233、item_marks 136、map132_shop 102、orb_shop 22、orb_shop_ui 27、shop_auto_close 10、shop_buy 8479、shop_stat_mode 11、shop_stock 56、super_acquire 31、weak_challenge 125、yunshang_shop 421 全过。lobby_shops 93/94：`case_e54p0_base_0-0` 挂，把 `XBabyAllActors.ENABLED` 默认关掉也一样挂（与本单无关，没查）。
+- 云端（上面几项，运行 42300559977）：见回报。语法检查通过。
+
 ## 本分支提交（EB）
 
 - 73dfc8ca v0.62 SV 归一平滑＋专项 xiyou_sv_smooth
