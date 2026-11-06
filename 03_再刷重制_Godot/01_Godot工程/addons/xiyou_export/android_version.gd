@@ -1,7 +1,7 @@
 @tool
 class_name XAndroidVersion
 extends RefCounted
-## 安卓版本号按开发编号生成（cc 平台 DZ 2026-11-06，O-待定·安卓版本号）：预设里一直是 versionCode 1、versionName 0.0.0，
+## 安卓版本号按开发编号生成（cc 平台 DZ 2026-11-06，O-216·安卓版本号）：预设里一直是 versionCode 1、versionName 0.0.0，
 ## 每个包都一样，手机上分不出新旧，也装不上更新（系统要 versionCode 变大才肯覆盖安装）。这里导出时改成
 ## versionCode＝开发编号的数字（dev.383 → 383）、versionName＝「0.<数字>」（0.383）。正式上架的版本号要 Kyo 定。
 ## 回退：AUTO = false，用 export_presets.cfg 里填的 version/code、version/name。
