@@ -107,5 +107,30 @@
   "androidSigningConfigured": false,
   "engineUpdatedAutomatically": false,
   "templateFilesNotInstalled": "icudt_godot.dat 及 iOS/Linux/Web 模板只在 tpz 内",
-  "macExportNote": "macOS debug/release 模板未内嵌 ICU 断行数据（编辑器内嵌）；导出前开启 internationalization/locale/include_text_server_data 并实测中文自动换行"
+  "macExportNote": "macOS debug/release 模板未内嵌 ICU 断行数据（编辑器内嵌）；导出前开启 internationalization/locale/include_text_server_data 并实测中文自动换行",
+  "cloudExport": {
+    "note": "GitHub Actions「导出冒烟」（.github/workflows/export-smoke.yml，手动触发）在 ubuntu-latest 上导出 Windows／安卓验收包并跑 导出冒烟.py（cc BW 2026-11-06）。模板从 downloads 里的官方 tpz 下载，按其 sha256／sha512 校验后只解出下列文件；只用调试签名（每次运行现生成的一次性 keystore），不放发行 keystore。",
+    "templates": [
+      "windows_debug_x86_64.exe",
+      "windows_debug_x86_64_console.exe",
+      "android_debug.apk",
+      "linux_debug.x86_64"
+    ],
+    "presets": {
+      "Windows 验收": {
+        "debug": "windows_debug_x86_64.exe"
+      },
+      "安卓 验收": {
+        "debug": "android_debug.apk"
+      }
+    },
+    "runner": "linux_debug.x86_64",
+    "androidBuildTools": "35.0.1",
+    "androidPlatform": "android-35",
+    "java": {
+      "distribution": "temurin",
+      "version": "17"
+    },
+    "artifactRetentionDays": 3
+  }
 }
