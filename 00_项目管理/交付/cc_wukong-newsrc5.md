@@ -1,7 +1,7 @@
 # 交付：cc/wukong-newsrc5
 
 - 车道／工作者：CS C 规则·强弱分类＋异化开关＋真气差异清单（cc，悟空）
-- 状态：**进行中（先别合）**：XTier 在云端选测多挂了 8 个场景，见「接续要点」；异化开关与差异清单已完成
+- 状态：**①② 返修完成，可交总装合集成分支；④ 真气没动手，转下一位**（见「接续要点」）
 - 基线：从 `cc/newsrc-switch` 4e72d5cc 切出；工作树 `.claude/worktrees/wukong-newsrc4`（沿用，分支已换），`冻结正式源/app.nw` 指 v0.62.12，跑测试和探针都设 `XIYOU_APP=…/冻结正式源/v0.62.12/app.nw`。
 
 ## 变更记录草稿
@@ -41,7 +41,19 @@
 6. 闭关菜单多一项「神兵试炼（指定本命兵武器）」。
 - 对应场景：zhenqi_break 7 条（1、3、4）、zhenqi_daofa 13 条（1、2、6）；5 属界面（`battle/boss_hp_bar.gd`）。估计 `zhenqi.gd` 一批，约半天。
 
-## 接续要点（给下一位）
+## 返修（2026-11-06 第二棒，提交 55bd84a8）
+
+- 对照办法：本树先跑现码，再临时让 `XTier.tagged()` 返回 false 跑同一组（已还原）。关掉后变绿的＝XTier 带的：floor_run、floor_run_b、floor_run_c、flow、yunshang；关掉照挂的＝别的车道带的：reincarnation_entry（`source null`、`skill8105 [167,166]`）、weapon_unleash（w93 解放技 5636 用不了）；floor_reach080 本机两次都过（云端那次疑偶发或别的车道，待 81cfd9af 整轮对照）。
+- floor_run×3、flow 根因：`XYunshang.burst` 不管身上有没有针都 `state.actor(174)`，把没入队的云裳建出来（建出时被全员学技能操作带上难度技能，但没走入队同步）；读档 `sync_difficulty_after_load` 对 ≥167 走 `inherit_difficulty`，按标签 174 是超强者、属 lateActor，多学 6216，读档前后不一致。原版 `burst` 是 `source=$gameActors.actor(n.owner)`，只在有针可引爆时取。改成 `take > 0` 才取（`yunshang.gd`）。这是重制的写法错，不是原版行为，不用开关。
+- yunshang `p4.borrow`：用 node 在 v0.62.12 实测，`addActor(174)` 后原版就是 `[5562,6216,10270]`，174 入队即带 6216；参照 `tests/fixtures/yunshang_oracle.json` 还是冻结 v0.28 出的（探针不接入同步）。按 v0.62.12 重跑 `yunshang_probe.cjs` 换掉参照：81 例里只有 p4.borrow（多 6216）、p8.clear（订单奖励 2942 翻倍 1→2）两例变，重制 1675/1675 全过。p8.clear 新旧参照重制都过，说明这条断言没比到奖励数量，**可疑，归云裳口径待查**。
+- 异化开关：`HIDDEN_V058` 默认 false（异化照常出现，Kyo 11-05），原有 `hidden_v058.default_off`；补 `hidden_v058.default_encounter`：开关关时同一例照常遇到异化。alien_battle 335/335。
+
+## 接续要点（给下一位，④ 真气）
+
+- 差异清单见上「④」节，一条没做。本机现状：zhenqi_break 76/83（挂 `break.spec.linggen.c0～c2`、`break.spec.benming.c0～c2`：缺「指定道法」分页菜单；`flow_weapon_menu`），zhenqi_daofa 55/68（挂 `weapon.masters`、`weapon.menu.*`、`weapon.fromRetreat`、`weapon.start.k3／k6`、`weapon.fight.*`：十二类神兵试炼）。原版 `js/codex/runtime/installNativeZhenqiRuntime.js`（v0.62.12），重制 `modes/xiyou/core/zhenqi.gd`（888 行）。
+- 先读失败日志：`并行测试.py … xiyou_zhenqi_break.tscn xiyou_zhenqi_daofa.tscn`（设 XIYOU_APP）。首领血条（第 5 条）归界面车道。
+
+## 接续要点（第一棒留，已处理）
 
 - 先在集成分支头 4e72d5cc 上云端跑一次这 8 个（或本机 `并行测试.py`，记得 `XIYOU_APP`），分清是 XTier 带的还是别的车道带的。
 - 已知线索：
@@ -60,6 +72,9 @@
 - `tier.gd`（新）、`item_marks.gd`、`power_books.gd`、`weak_challenge.gd`、`xstate.gd`（难度传承）、`actor.gd`（`is_strong_classified`，原沙僧核心文件）、`alien_battle.gd`、`ui/menu.gd`、`hboot.cjs`／`shared/host.cjs`（`skipModules`，只在传了才生效）、两个异化探针、`xiyou_alien_battle.gd`、优化登记一行。
 
 ## 验证
+
+- 第二棒本机新源：floor_run 273/273、floor_run_b 332/332、floor_run_c 560/560、flow 49/49、yunshang 1675/1675、yunshang_wraps 214/214、alien_battle 335/335；语法检查 0 问题。
+- `事件空绿扫描.py --check` 不过：4739 条「event_states.json 没量／预设已删（产物过期）」，本树事件状态产物落后，本分支没碰预设和事件；`工具回归.py` 挂 `插件备注覆盖`（`test_known_unread` 多出 codexaura、disassemblepool 等，新源备注），同样不是本分支改动。两项请总装在集成分支同步后看。
 
 - 本机新源：上表各场景；`xiyou_alien_workshop` 过；语法检查 0 问题。
 - 云端选测（提交 468eab56，XTier 那次，基准 b5449f06）：409 个场景挂 94 个，其中 86 个在换源失败表（189）里本来就挂；**新挂 8 个**：floor_reach080、floor_run、floor_run_b、floor_run_c、flow、reincarnation_entry、weapon_unleash、yunshang。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42198464348 。集成分支头（4e72d5cc）没有云端整轮记录，8 个里哪些是别的车道合进来带的还没分清。
