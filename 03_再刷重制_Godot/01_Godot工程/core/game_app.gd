@@ -14,6 +14,10 @@ func _ready() -> void:
 	key_repeat = XKeyRepeat.new()  # 按住键的连发照原版 24／6 帧（ui11）
 	key_repeat.name = "KeyRepeat"
 	add_child(key_repeat)
+	if XVersionLabel.SHOW:
+		var ver := XVersionLabel.new()  # 右下角版本号（正式版也显示）
+		ver.name = "VersionLabel"
+		add_child(ver)
 	platform = XPlatform.new()  # 平台差异（两指取消、返回键、切后台、触屏按键），跨平台二期
 	platform.name = "Platform"
 	add_child(platform)
