@@ -444,6 +444,14 @@ func _atom(a: String):
 	if m:
 		var b := _who(m.get_string(1), target)
 		return null if b == null else _compare(float(b.states().size()), m.get_string(2), float(m.get_string(3)))
+	# 新源 v0.62.x 舍身剑等：`user.hp < user.mhp * 0.5`（右边能力值乘常数；JS 按 double 算）
+	m = _re("^(user|target)\\.(agi|atk|def|mat|mdf|luk|hp|mp|mhp|mmp|tp)\\s*(>=|<=|>|<|==|===)\\s*(user|target)\\.(agi|atk|def|mat|mdf|luk|hp|mp|mhp|mmp|tp)\\s*\\*\\s*(\\d+(?:\\.\\d+)?)$").search(a)
+	if m:
+		var lb := _who(m.get_string(1), target)
+		var rb2 := _who(m.get_string(4), target)
+		if lb == null or rb2 == null:
+			return null
+		return _compare(float(lb.get(m.get_string(2))), m.get_string(3), float(rb2.get(m.get_string(5))) * float(m.get_string(6)))
 	m = _re("^(user|target)\\.(agi|atk|def|mat|mdf|luk|hp|mp|mhp|mmp|tp)\\s*(>=|<=|>|<|==|===)\\s*(user|target)?\\.?(agi|atk|def|mat|mdf|luk|hp|mp|mhp|mmp|tp)?(\\d+(?:\\.\\d+)?)?$").search(a)
 	if m:
 		var left := _who(m.get_string(1), target)

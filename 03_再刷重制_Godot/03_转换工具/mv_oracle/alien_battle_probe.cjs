@@ -9,7 +9,8 @@
 //    回合开始照抄 startTurn 包装的镜骸充能，回合末调 A.drain 与 A.tickCorrosion；每步记双方生命、法力、护盾、腐蚀状态与回合、敌人的 _alienEnemy、提示。
 // 新游戏（Math.random 0.5），只在内存；产物 .sandbox/alien_battle.json。
 const {start, makeCase, finish, round} = require('./shared/host.cjs');
-const host = start(), {w, newGame} = host;
+// 异化 v0.58 被正式版整套隐藏（installAlienationHide）；Kyo 11-05 定重制保留，参照量没装隐藏模块的原版行为（旧源没有这个模块，产物不变）
+const host = start({skipModules: ['installAlienationHide']}), {w, newGame} = host;
 const A = w.CodexAlienation, C = A && A.config;
 if (!A || !C) throw new Error('异化模块未安装');
 const r = v => round(v);

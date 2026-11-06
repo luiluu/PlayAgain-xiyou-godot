@@ -52,7 +52,7 @@ func _obj(cat: String, card: Dictionary) -> Dictionary:
 
 
 func _expected(card: Dictionary) -> Dictionary:
-	return {"rows": card.rows, "height": float(card.height), "power": card.rows.any(func(r): return str(r[0]).begins_with(POWER_PREFIX))}
+	return {"rows": card.rows, "height": float(card.height), "power": card.rows.any(func(r): return str(r[0]).replace("\\lock[1]", "").begins_with(POWER_PREFIX))}
 
 
 func _compare(cat: String, card: Dictionary) -> void:
@@ -63,7 +63,16 @@ func _compare(cat: String, card: Dictionary) -> void:
 	var exp := _expected(card)
 	var got := XHelpCard.content(obj, "" if cat != "gear" else str(card.kind))
 	if not exp.power:
-		got = got.filter(func(r): return not str(r[0]).begins_with(POWER_PREFIX))
+		got = got.filter(func(r): return not str(r[0]).replace("\\lock[1]", "").begins_with(POWER_PREFIX))  # v0.43 排版行首带 \lock[1]
+		if XHelpCard.LAYOUT_V043:  # 战力行单独成块时，拿掉后留下的空行并成一个（原版没开战力时本来就没有这一块）
+			var kept := []
+			for r in got:
+				if str(r[0]) == " " and (kept.is_empty() or str(kept.back()[0]) == " "):
+					continue
+				kept.append(r)
+			if not kept.is_empty() and str(kept.back()[0]) == " ":
+				kept.pop_back()
+			got = kept
 	var lay := XHelpCard.layout(got, 0, XHelpCard.note_width(obj), oracle_measure)
 	var want: Array = exp.rows
 	if got.size() != want.size():
@@ -162,7 +171,11 @@ func _run() -> void:
 	_check("quality_window", XQuality.window_skin(10) == 8 and XQuality.window_skin(12) == 10 and XQuality.window_skin(5) == 7 and XQuality.window_skin(16) == 16)
 	_check("quality_list_color", XQuality.list_color({"meta": {"quality": "13", "ici": "12"}}) == Color8(255, 214, 90)
 		and XQuality.list_color({"meta": {"ici": "6"}}) == Color("ff8000") and XQuality.list_color({}) == Color.WHITE)
-	# 冻结后跟进 v0.36（D.equipmentRows）：白字属性排到第一条蓝字「特效：」前（WHITE_STATS_FIRST，默认关＝备注原位）
+	# 冻结后跟进 v0.36（D.equipmentRows）：白字属性排到第一条蓝字「特效：」前（WHITE_STATS_FIRST；集成分支默认开，关＝备注原位）
+	# 下面比的是排版前的行（v0.43 排版 LAYOUT_V043 另测），先关掉排版、白字开关两头测
+	_check("white_stats_default_on_v062", XHelpCard.WHITE_STATS_FIRST and XHelpCard.LAYOUT_V043)
+	XHelpCard.LAYOUT_V043 = false
+	XHelpCard.WHITE_STATS_FIRST = false
 	var white := "rgba(255,255,255,1)"
 	var wnote := ["<pos=AP text=暴击率：＋5% size=normalsize color=" + white + " line=false align=0>",
 		"<pos=AP text=\\c[2]攻击力：＋9 size=normalsize color=" + white + " line=false align=0>",
@@ -173,7 +186,7 @@ func _run() -> void:
 	var texts := func(rows: Array) -> Array: return rows.map(func(r): return str(r[0]))
 	var off_rows := XHelpCard.content(wgear, "weapon")
 	var off_t: Array = texts.call(off_rows)
-	_check("white_stats_default_off", not XHelpCard.WHITE_STATS_FIRST and off_t.find("\\c[1]特效：测试") < off_t.find("暴击率：＋5%"), off_t)
+	_check("white_stats_off", not XHelpCard.WHITE_STATS_FIRST and off_t.find("\\c[1]特效：测试") < off_t.find("暴击率：＋5%"), off_t)
 	XHelpCard.WHITE_STATS_FIRST = true
 	var on_t: Array = texts.call(XHelpCard.content(wgear, "weapon"))
 	var bi := on_t.find("\\c[1]特效：测试")
@@ -190,6 +203,14 @@ func _run() -> void:
 	var skill_on: Array = texts.call(XHelpCard.content(skill_obj, "skill"))
 	XHelpCard.WHITE_STATS_FIRST = false
 	_check("white_stats_skill_untouched", skill_on == texts.call(XHelpCard.content(skill_obj, "skill")), skill_on)
+	XHelpCard.WHITE_STATS_FIRST = true
+	# v0.43 排版开关两头：关＝v0.28 排法（没有 \lock、描述在第二行），开＝品质类别合行、块间 4 号空行
+	var potion := XDB.rec("Items", 1)
+	var old_rows := XHelpCard.content(potion, "item")
+	XHelpCard.LAYOUT_V043 = true
+	var new_rows := XHelpCard.content(potion, "item")
+	_check("layout_v043_off_is_v028", not old_rows.any(func(r): return str(r[0]).contains("\\lock[1]")) and int(old_rows[1][1]) == XHelpCard.DESC_SIZE, old_rows)
+	_check("layout_v043_on", str(new_rows[1][0]).begins_with("\\lock[1]品质：") and new_rows.any(func(r): return str(r[0]) == " " and int(r[1]) == 4), new_rows.map(func(r): return r[0]))
 	await get_tree().process_frame
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

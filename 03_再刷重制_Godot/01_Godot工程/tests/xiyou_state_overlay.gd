@@ -30,7 +30,8 @@ func _run() -> void:
 	for st in XDB.table("States"):
 		if st is Dictionary and int(st.get("overlay", 0)) > 0:
 			n += 1
-	check("overlay_states_84", n == int(ref.overlay_state_count), n)
+	# 夹具是 v0.28 实测（84 个）；新源 v0.62.12 多了 2763 致命诱惑一个，其余不变
+	check("overlay_states_85", n == int(ref.overlay_state_count) + 1 and XDB.rec("States", 2763).get("overlay", 0) > 0, n)
 	# 敌人 1（单图高 60）：睡眠 10（overlay 7）＋中毒 4（overlay 1）→ 取睡眠
 	var e := XEnemy.new().setup(int(ref.enemy.enemy_id), 1)
 	e.add_state(4)

@@ -426,6 +426,8 @@ static var _super_ids: Array = []
 ## B.syncSuperStrong 在开战（BattleManager.setup）和读档时把后者并进 D.superStrongIds，之后出战、获取、招募、Boss 加成都按它算；
 ## 重制总是算进去（原版只有新局后还没打过仗、也没读过档的那一段不算）。
 static func super_strong_ids() -> Array:
+	if _super_ids.is_empty() and XTier.tagged():
+		_super_ids = XTier.ids(XTier.SUPER)  # v0.44 起名单就是 <KyoTier:超强者>（CodexTier 原地重建 superStrongIds）
 	if _super_ids.is_empty():
 		_super_ids = SUPER_STRONG_IDS.duplicate()
 		for a in XDB.table("Actors"):

@@ -36,7 +36,8 @@ func _run() -> void:
 
 ## 每个敌人：XSvEnemy 的规则等于原版 Game_Enemy 读数；全库计数
 func _census(c: Dictionary) -> void:
-	check("census.total", int(c.total) == 2000, c.total)
+	# 计数跟到 v0.62.12（v0.28：2000 个敌人、SV 186、呼吸 1814、武器 44／刺 142）
+	check("census.total", int(c.total) == 2027, c.total)
 	var p: Dictionary = c.params
 	check("census.params", p.shadow == false and int(p.breathing) == 1 and int(p.speed) == 20 and p.collapse == false and int(p.mogDefault) == 0, p)
 	var sv := 0
@@ -67,13 +68,13 @@ func _census(c: Dictionary) -> void:
 			if br.speed == 11.0:
 				breath11 += 1
 	check("census.rows_match", bad.is_empty(), bad.slice(0, 5))
-	check("census.sv_186", sv == 186, sv)
-	check("census.shadow_186", shadow == 186, shadow)
-	check("census.breath_1814", breath == 1814 and breath11 == 9, [breath, breath11])
+	check("census.sv_202", sv == 202, sv)
+	check("census.shadow_202", shadow == 202, shadow)
+	check("census.breath_1825", breath == 1825 and breath11 == 9, [breath, breath11])
 
 
 func _weapons(rows: Array) -> void:
-	check("weapon.rows", rows.size() == 186, rows.size())
+	check("weapon.rows", rows.size() == 202, rows.size())
 	var bad := []
 	var armed := 0
 	var thrust := 0
@@ -89,7 +90,7 @@ func _weapons(rows: Array) -> void:
 		elif v.motion == "thrust":
 			thrust += 1
 	check("weapon.rows_match", bad.is_empty(), bad.slice(0, 5))
-	check("weapon.armed_44_thrust_142", armed == 44 and thrust == 142, [armed, thrust])
+	check("weapon.armed_50_thrust_152", armed == 50 and thrust == 152, [armed, thrust])
 	# 非 SV 敌人没有动作与武器
 	var plain := XSvEnemy.attack_visual(XEnemy.new().setup(1, 1))
 	check("weapon.plain_none", plain.motion == "" and int(plain.image) == 0, plain)
