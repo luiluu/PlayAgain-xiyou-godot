@@ -183,14 +183,8 @@ static func _revert_one(item: Dictionary) -> int:
 	var b := template("weapon", int(item.get("base", 0)))
 	if b.is_empty() or exclusive_affix(b):
 		return 0
-	var t := b.duplicate(true)
-	for affix in item.affixIds:
-		var rec := XDB.rec(str(affix.get("table", "Weapons")), int(affix.get("id", 0)))
-		if rec.is_empty():
-			return 0
-		combine(t, rec, str(affix.get("kind", "prefix")))
-	_apply_note_params(t)
-	if _req_actors_re.search(str(t.note)) == null:
+	var t := affix_template(item, b)
+	if t.is_empty() or _req_actors_re.search(str(t.note)) == null:
 		return 0
 	var own_note := str(item.get("note", ""))
 	var own_desc := str(item.get("description", ""))
@@ -255,6 +249,25 @@ static func _revert_one(item: Dictionary) -> int:
 		item.equipment.suits = (b_suits as Array).duplicate(true)
 	item.affixIds = []
 	return 1
+
+## DreamX 生成时的模板（getBaseItem 取到的那份）：底装备＋affixIds 里各词缀＋备注参数，不掷浮动。没有词缀就是底装备；
+## 词缀记录找不到返回空。b 可传已备好的底装备模板。
+static func affix_template(item: Dictionary, b := {}) -> Dictionary:
+	if b.is_empty():
+		b = template(str(item.get("kind", "")), int(item.get("base", 0)))
+	if b.is_empty():
+		return {}
+	var affixes: Array = item.get("affixIds", [])
+	if affixes.is_empty():
+		return b
+	var t := b.duplicate(true)
+	for affix in affixes:
+		var rec := XDB.rec(str(affix.get("table", "Weapons")), int(affix.get("id", 0)))
+		if rec.is_empty():
+			return {}
+		combine(t, rec, str(affix.get("kind", "prefix")))
+	_apply_note_params(t)
+	return t
 
 ## 原版 affixPrefix：名字开头最长的专武词缀名（只看数据库里的武器）
 static func _affix_prefix(name: String) -> String:
