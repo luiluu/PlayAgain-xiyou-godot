@@ -1305,14 +1305,11 @@ func _clear_event_cursor() -> void:
 
 
 ## Scene_Battle.terminate → $gameTroop.onBattleEnd：敌群留在 $gameTroop 里，onBattleEnd 让隐藏成员出现（appear），状态不动；
-## 地图上的条件分歧「敌人」读这份（XState.last_troop，不存档）
+## 地图上的条件分歧「敌人」读这份（XState.last_troop，不存档）。隐藏成员 is_dead 为 false，原版隐藏时也加不上状态（isStateAddable 要 isAlive），出现后即活着
 func _record_last_troop() -> void:
 	var out := []
 	for e in enemies:
-		var was_hidden: bool = e.hidden
-		e.hidden = false
 		out.append({"dead": e.is_dead(), "states": e.state_ids.duplicate()})
-		e.hidden = was_hidden
 	state.last_troop = out
 
 
