@@ -26,6 +26,12 @@ const DRAWS_PER_FRAME := 4
 static var frame_budget_ms := 8
 ## O-132：一抽没跑就结束时说明原因；false 恢复原版（不出消息）
 static var notify_unstarted := true
+## O-待定·深渊赌场二阶段（跟新源 v0.62.10 installCasinoBatchRuntime 的 fixAbyssStage2）：深渊赌场公共事件 1434 二阶段原先「先把
+## v1191～1195 读进 1197、再重抽那一格」，20 连后这几格残留约 ±30000；新源读入公共事件时把每对「读、抽」换成「先抽、再读」。
+## true（默认）照新源换序；false 回到 v0.28 的数据原序。
+static var ABYSS_STAGE2_ROLL_FIRST := true
+const ABYSS_EVENT := 1434
+
 ## 进行中的一局（原版 C.session）；没有为空字典
 static var session: Dictionary = {}
 static var last_result: Dictionary = {}
@@ -193,3 +199,23 @@ static func native_list(event_id: int) -> Array:
 				copy.parameters[0] = line.replace("actor.learnSkill(", "if(actor)actor.learnSkill(")
 		out.append(copy)
 	return out
+
+
+## 原版 fixAbyssStage2（XDB.table("CommonEvents") 读入时调）：相邻两条 122，前一条「1197 = 变量 v(1191～1195)」、后一条「同一格 = 随机」就对调。
+static func fix_abyss_stage2(events: Array) -> void:
+	if not ABYSS_STAGE2_ROLL_FIRST or ABYSS_EVENT >= events.size() or not events[ABYSS_EVENT] is Dictionary:
+		return
+	var list: Array = events[ABYSS_EVENT].get("list", [])
+	var i := 0
+	while i + 1 < list.size():
+		var read: Dictionary = list[i]
+		var roll: Dictionary = list[i + 1]
+		var rp: Array = read.get("parameters", [])
+		var lp: Array = roll.get("parameters", [])
+		if int(read.get("code", 0)) == 122 and int(roll.get("code", 0)) == 122 and rp.size() > 4 and lp.size() > 3 \
+				and int(rp[0]) == 1197 and int(rp[2]) == 0 and int(rp[3]) == 1 and int(rp[4]) >= 1191 and int(rp[4]) <= 1195 \
+				and int(lp[0]) == int(rp[4]) and int(lp[3]) == 2:
+			list[i] = roll
+			list[i + 1] = read
+			i += 1
+		i += 1

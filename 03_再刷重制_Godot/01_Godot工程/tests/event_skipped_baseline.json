@@ -153,19 +153,13 @@
 			"355 }else{": 1
 		},
 		"ce1370": {
-			"355 !$gameTroop.isAllDead() && BattleManager": 1,
 			"355 action.decideRandomTarget()": 1,
 			"355 action.setSkill(2827)": 1,
-			"355 actor._actions.splice(1, 0, action)": 1,
-			"355 if(actor.hasSkill(2829)){": 1,
+			"355 actor._actions.push(action)": 1,
+			"355 if(actor && actor.hasSkill(2829)){": 1,
 			"355 var action = new Game_Action(actor, true": 1,
-			"355 var actor = $gameActors.actor($gameVaria": 1
-		},
-		"ce1395": {
-			"111 条件类型 5": 2
-		},
-		"ce1598#b1": {
-			"111 条件类型 5": 4
+			"355 var actor = (s && s.isActor && s.isActor": 1,
+			"355 var s = BattleManager._subject": 1
 		},
 		"ce161": {
 			"355 !$gameTroop.isAllDead() && BattleManager": 2,
@@ -206,9 +200,6 @@
 			"355 if(actor && !actor.isDeathStateAffected(": 1,
 			"355 var action = new Game_Action(actor, true": 1,
 			"355 var actor = $gameActors.actor(i)": 1
-		},
-		"ce236#b2": {
-			"111 条件类型 5": 4
 		},
 		"ce2486": {
 			"122 游戏数据 4,0,0": 1,
@@ -373,20 +364,8 @@
 			"355 var action = new Game_Action(actor, true": 1,
 			"355 var actor = $gameActors.actor(i)": 1
 		},
-		"ce911#b2": {
-			"111 条件类型 5": 4
-		},
-		"ce942#b1": {
-			"111 条件类型 5": 4
-		},
-		"ce943#b1": {
-			"111 条件类型 5": 4
-		},
-		"ce944#b1": {
-			"111 条件类型 5": 4
-		},
-		"ce946#b1": {
-			"111 条件类型 5": 4
+		"ce9043": {
+			"355 CodexLiuying.recruit()": 1
 		},
 		"ce976": {
 			"355 !$gameTroop.isAllDead() && BattleManager": 1,

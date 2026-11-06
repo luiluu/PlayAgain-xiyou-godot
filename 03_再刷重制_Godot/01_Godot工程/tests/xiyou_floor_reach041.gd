@@ -167,6 +167,7 @@ func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_floor_reach041"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76，自动执行、223 改色调）当作播过：本测不测过场，过场会占住地图、改掉色调（过场本身见 xiyou_opening_branches）
 	XMessageBox.auto = true
 	XShop.auto_close = true
 	XBattleScene.force_auto = true

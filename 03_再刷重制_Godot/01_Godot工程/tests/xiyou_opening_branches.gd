@@ -62,7 +62,6 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XSave.dir_override = "user://test_xiyou_branches"
-	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76）：本测只看开局分支，过场当作播过（测完退出时过场的动画还挂着会报资源未释放）
 	Engine.time_scale = 6.0
 	seed(20261013)
 	# A：攻击他？
@@ -105,6 +104,10 @@ func _run() -> void:
 	_check("c_hub", ok)
 	_check("c_switches", s.switch(2307) and s.switch(2282) and not s.switch(2303), [s.switch(2307), s.switch(2282)])
 	_check("c_hard_skill", s.actor(1).skill_ids.has(8105) and s.actor(8).skill_ids.has(8105))
+	# 新源大厅首次进入的漩涡过场（Map4 EV76，自动执行，记 CodexWhisper rift1）：等它播完再退出。
+	# 退出时它的协程若还挂在等帧上（223 色调等待），Godot 报「2 resources still in use」（解释器与挂起协程互相引用，宿主释放也收不回）
+	ok = await _wait(func(): return XConfig.whisper_seen("rift1") and _map_idle(4) and s.self_switch(4, 76, "A"))
+	_check("c_rift_cutscene", ok, [XConfig.whisper_seen("rift1"), s.self_switch(4, 76, "A")])
 	DirAccess.remove_absolute(XSave.path(1))
 	DirAccess.remove_absolute(XSave.dir())
 	Engine.time_scale = 1.0
