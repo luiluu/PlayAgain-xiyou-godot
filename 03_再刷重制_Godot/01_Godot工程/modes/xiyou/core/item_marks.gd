@@ -199,8 +199,8 @@ static func selling_price(rec: Dictionary) -> int:
 
 # ---- 买入 ----
 
-## 停用的伙伴号角（installImportedBalanceRuntime：Scene_Shop.prepare 从商品里滤掉，Window_ShopBuy.isEnabled 也拦下）
-const DISABLED_HORNS := [255, 256, 257, 394, 440]
+## 停用的伙伴号角（installImportedBalanceRuntime：Scene_Shop.prepare 从商品里滤掉，Window_ShopBuy.isEnabled 也拦下）：
+## 名单只在 XImportedBalance.DISABLED_HORNS 一处（新源 v0.29／v0.36 扩成 10 个，原来这里另有一份旧的 5 个）
 const MAX_ITEMS := 9999         # $gameParty.maxItems（物品）；独立装备每件单独，maxItems 为 1
 static var _proxy := {}
 
@@ -228,7 +228,7 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 		if not mapped.has(g):
 			mapped.append(g)
 	var horn_before := mapped.any(_is_horn_row)
-	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and DISABLED_HORNS.has(g[1])))
+	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.DISABLED_HORNS.has(g[1])))
 	if map_id == LOBBY_MAP:
 		_lobby_additions(out, horn_before)
 	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
@@ -261,6 +261,7 @@ const LOBBY_MIRA_HORN := 2904
 const LOBBY_MIRA_HEART := 4577
 const LOBBY_RAVEN_HORN := 2902
 const LOBBY_RAVEN_ARTIFACT := 4001
+const LOBBY_LIUYING_HORN := 3063   # installLiuyingRuntime v0.60.02：有 2788 的不朽号角货架追加流萤号角（库里要真有这个号角，旧源没有）
 static var _binding_horns: Array = []
 static var _guyu_horn := -1
 
@@ -295,6 +296,10 @@ static func _lobby_additions(out: Array, horn_before: bool) -> void:
 		for id in _binding_horns:
 			_push(out, 0, id)
 		_push(out, 0, _guyu_horn)
+	# 流萤的 prepare 包装在谷雨与云裳之间（参照里 3063 排在 2943 之后、2941 之前）
+	if out.any(func(g): return g[0] == 0 and g[1] == LOBBY_LINK_HORN) and str(XDB.rec("Items", LOBBY_LIUYING_HORN).get("name", "")) == "伙伴号角：流萤":
+		_push(out, 0, LOBBY_LIUYING_HORN)
+	if horn_before:
 		_push(out, 0, LOBBY_YUNSHANG_HORN)
 	var horn := out.any(_is_horn_row)
 	if horn:
@@ -544,7 +549,7 @@ static func flush_deploy_notice(s: XState) -> void:
 static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 	if rec.is_empty():
 		return false
-	if not is_gear(rec) and DISABLED_HORNS.has(int(rec.get("id", 0))):
+	if not is_gear(rec) and XImportedBalance.DISABLED_HORNS.has(int(rec.get("id", 0))):
 		return false
 	if not is_gear(rec) and not can_acquire_item(s, rec):
 		return false
