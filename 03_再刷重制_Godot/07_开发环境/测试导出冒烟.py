@@ -45,13 +45,36 @@ class AppAndReportTests(unittest.TestCase):
             self.assertTrue((d / '结果.json').is_file())
 
 
-def fake_pe(machine=0x8664, subsystem=2) -> bytes:
-    head = bytearray(512)
+def fake_pe(machine=0x8664, subsystem=2, resources=False, version='0.0.0.0') -> bytes:
+    head = bytearray(0x800 if resources else 512)
     head[:2] = b'MZ'
     head[0x3C:0x40] = (0x80).to_bytes(4, 'little')
     head[0x80:0x84] = b'PE\0\0'
     head[0x84:0x86] = machine.to_bytes(2, 'little')
     head[0x80 + 24 + 68:0x80 + 24 + 70] = subsystem.to_bytes(2, 'little')
+    if resources:  # PE32+：一个 .rsrc 节，资源根目录有图标组（14）和版本（16），后面跟版本字符串
+        opt = 0x80 + 24
+        head[0x86:0x88] = (1).to_bytes(2, 'little')
+        head[0x94:0x96] = (240).to_bytes(2, 'little')
+        head[opt:opt + 2] = (0x20B).to_bytes(2, 'little')
+        head[opt + 112 + 16:opt + 112 + 20] = (0x1000).to_bytes(4, 'little')
+        sec = opt + 240
+        head[sec:sec + 8] = b'.rsrc\0\0\0'
+        head[sec + 8:sec + 12] = (0x400).to_bytes(4, 'little')
+        head[sec + 12:sec + 16] = (0x1000).to_bytes(4, 'little')
+        head[sec + 20:sec + 24] = (0x400).to_bytes(4, 'little')
+        head[0x40E:0x410] = (2).to_bytes(2, 'little')
+        head[0x410:0x414] = (14).to_bytes(4, 'little')
+        head[0x418:0x41C] = (16).to_bytes(4, 'little')
+        at = 0x500
+        for key in ('FileVersion', 'ProductVersion'):
+            tag = (key + '\0').encode('utf-16-le')
+            head[at:at + len(tag)] = tag
+            at += len(tag)
+            at += (-at) % 4
+            val = (version + '\0').encode('utf-16-le')
+            head[at:at + len(val)] = val
+            at += len(val) + 4
     return bytes(head)
 
 
@@ -63,6 +86,9 @@ class WindowsLayoutTests(unittest.TestCase):
             self.assertEqual(smoke.pe_info(exe), {'machine': 'x86_64', 'subsystem': '图形界面'})
             exe.write_bytes(fake_pe(0xAA64, 3))
             self.assertEqual(smoke.pe_info(exe), {'machine': 'arm64', 'subsystem': '控制台'})
+            self.assertEqual(smoke.pe_resources(fake_pe(resources=True, version='9.8.7.6')),
+                             {'icon': True, 'versionInfo': True, 'fileVersion': '9.8.7.6', 'productVersion': '9.8.7.6'})
+            self.assertEqual(smoke.pe_resources(fake_pe())['icon'], False)
             exe.write_bytes(b'\x7fELF' + bytes(200))
             self.assertIsNone(smoke.pe_info(exe))
 
@@ -74,7 +100,13 @@ class WindowsLayoutTests(unittest.TestCase):
             self.assertTrue(any('.pck' in p for p in problems) and any('console' in p for p in problems), problems)
             exe.with_suffix('.pck').write_bytes(b'GDPC' + bytes(1 << 20))
             exe.with_name('再刷重制_验收.console.exe').write_bytes(fake_pe(subsystem=3))
+            probs = smoke.windows_layout(exe)[0]
+            self.assertTrue(any('图标' in p for p in probs) and any('fileVersion' in p for p in probs), probs)
+            exe.write_bytes(fake_pe(resources=True))
             self.assertEqual(smoke.windows_layout(exe)[0], [])
+            exe.write_bytes(fake_pe(resources=True, version='1.2.3.4'))
+            self.assertEqual(len(smoke.windows_layout(exe)[0]), 2)
+            exe.write_bytes(fake_pe(resources=True))
             self.assertEqual(smoke.windows_layout(exe.with_name('x.exe'), debug=False)[0][0], 'x.exe 不是 Windows exe（PE 头不对）')
             exe.with_suffix('.pck').write_bytes(b'ZZZZ' + bytes(1 << 20))
             self.assertIn('不是 Godot 资源包', smoke.windows_layout(exe)[0][0])
@@ -92,16 +124,19 @@ class WindowsLayoutTests(unittest.TestCase):
         self.assertTrue(str(smoke.preset_template('Windows 验收')).endswith('windows_debug_x86_64.exe'))
         self.assertTrue(str(smoke.preset_template('macOS 验收')).endswith('macos.zip'))
         self.assertIsNone(smoke.preset_template('没有这个预设'))
+        self.assertEqual(smoke.preset_template('安卓 验收', 'version/code'), '1')
+        self.assertIsNone(smoke.preset_template('安卓 验收', '没有这个键'))
 
 
 class AndroidLayoutTests(unittest.TestCase):
-    BADGING = "package: name='local.kyo.remake.verification' versionCode='1'\nuses-permission: name='android.permission.WAKE_LOCK'\nnative-code: 'arm64-v8a'\n"
+    BADGING = "package: name='local.kyo.remake.verification' versionCode='1' versionName='0.0.0'\napplication: label='x' icon='res/mipmap/icon.png'\nuses-permission: name='android.permission.WAKE_LOCK'\nnative-code: 'arm64-v8a'\n"
     XML = "      A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=11\n"
 
     def test_parse(self):
         info = smoke.parse_android(self.BADGING, self.XML)
         self.assertEqual(info, {'package': 'local.kyo.remake.verification', 'native': ['arm64-v8a'], 'orientation': 11,
-                                'permissions': ['android.permission.WAKE_LOCK']})
+                                'permissions': ['android.permission.WAKE_LOCK'], 'versionCode': '1', 'versionName': '0.0.0',
+                                'icon': 'res/mipmap/icon.png'})
         self.assertEqual(smoke.parse_android('', '')['orientation'], None)
 
     def test_problems(self):
@@ -112,7 +147,9 @@ class AndroidLayoutTests(unittest.TestCase):
         portrait = dict(info, orientation=1, native=['armeabi-v7a'])
         probs = smoke.android_problems(portrait, names - {'assets/project.binary'})
         self.assertEqual(len(probs), 3, probs)
-        self.assertEqual(smoke.android_problems(info, names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
+        bumped = dict(info, versionName='9.9', icon=None)
+        self.assertEqual(len(smoke.android_problems(bumped, names)), 2, smoke.android_problems(bumped, names))
+        self.assertEqual(smoke.android_problems(dict(info, package=smoke.preset_template('安卓 发行', 'package/unique_name')), names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
 
     def test_android_report(self):
         with tempfile.TemporaryDirectory() as d:
@@ -123,6 +160,34 @@ class AndroidLayoutTests(unittest.TestCase):
             self.assertIn('apksigner', text)
             self.assertIn('两指取消', text)
 
+
+
+class CloudExportTests(unittest.TestCase):
+    """云端导出.py：预设模板路径改写只动指定预设、登记段齐全（不联网）。"""
+    def setUp(self):
+        spec2 = importlib.util.spec_from_file_location('cloud_export', HERE / '云端导出.py')
+        self.ce = importlib.util.module_from_spec(spec2)
+        spec2.loader.exec_module(self.ce)
+
+    def test_rewrite_presets(self):
+        text = (HERE.parent / '01_Godot工程' / 'export_presets.cfg').read_text(encoding='utf-8')
+        conf = self.ce.cloud_export()
+        out = self.ce.rewrite_presets(text, Path('/c/t'), conf['presets'])
+        self.assertIn('custom_template/debug="/c/t/windows_debug_x86_64.exe"', out)
+        self.assertIn('custom_template/debug="/c/t/android_debug.apk"', out)
+        self.assertEqual(out.count('/c/t/'), 2)
+        self.assertEqual(len(out.splitlines()), len(text.splitlines()))
+        self.assertIn('Windows 发行', out)
+
+    def test_registry(self):
+        conf = self.ce.cloud_export()
+        self.assertTrue({'windows_debug_x86_64.exe', 'windows_debug_x86_64_console.exe', 'android_debug.apk', conf['runner']} <= set(conf['templates']))
+        for files in conf['presets'].values():
+            self.assertTrue(set(files.values()) <= set(conf['templates']))
+        entry = self.ce.tpz_entry(self.ce.registry())
+        self.assertEqual(len(entry['sha512']), 128)
+        self.assertEqual(len(entry['sha256']), 64)
+        self.assertEqual(conf['artifactRetentionDays'], 3)
 
 if __name__ == '__main__':
     unittest.main()

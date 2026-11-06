@@ -21,6 +21,9 @@
   xiyou_mac_export  字体、中文换行、皮肤、角色图、音效资源、隔离存档的写读删（--verify-export 默认场景）
   xiyou_flow        入口 → 西游 → 新游戏开局事件 → 大厅存档 → 进一层 → 遇敌自动战斗获胜 → 守层者战败回大厅 → 存档／读档一致
 每项各用一个新建的临时 HOME（xiyou_export_home_*，在系统临时目录），跑完删掉；不碰真实玩家存档。
+云端（cc BW 2026-11-06）：GitHub Actions「导出冒烟」工作流在 Linux 上跑 --platform windows／android：
+  XIYOU_GODOT＝Linux 版 godot，XIYOU_SMOKE_RUNNER＝Linux 调试模板（包内检查用它代替 macOS 调试模板），模板与预设由 云端导出.py 准备。
+  两个平台都另核版本号与图标（exe 的 VERSIONINFO／RT_GROUP_ICON；apk 的 versionCode／versionName／application-icon），与预设比。
 签名只做 codesign --verify（只读）；不签名、不公证、不上传，不动钥匙串（派单 AS 第 3 条）。
 退出码：全过 0，有失败 1，导出或解包出错 2。
 """
@@ -38,7 +41,7 @@ import time
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 PROJECT = ROOT / '01_Godot工程'
-GODOT = HERE / 'godot'
+GODOT = Path(os.environ.get('XIYOU_GODOT') or HERE / 'godot')
 PRESET = 'macOS 验收'
 PRESETS = {'macos': 'macOS 验收', 'windows': 'Windows 验收', 'android': '安卓 验收'}
 LANDSCAPE = {0, 6, 8, 11}  # screenOrientation：横屏、传感器横屏、反向横屏、用户横屏
@@ -88,6 +91,45 @@ def pe_info(exe: Path):
     return {'machine': PE_MACHINES.get(machine, hex(machine)), 'subsystem': PE_SUBSYSTEMS.get(subsystem, str(subsystem))}
 
 
+def pe_resources(data: bytes) -> dict:
+    """PE 资源：有没有图标组（RT_GROUP_ICON＝14）、版本信息（RT_VERSION＝16），以及 FileVersion／ProductVersion 字符串。只读字节。"""
+    out = {'icon': False, 'versionInfo': False, 'fileVersion': None, 'productVersion': None}
+    try:
+        off = int.from_bytes(data[0x3C:0x40], 'little')
+        nsec = int.from_bytes(data[off + 6:off + 8], 'little')
+        opt = int.from_bytes(data[off + 20:off + 22], 'little')
+        magic = int.from_bytes(data[off + 24:off + 26], 'little')
+        dirs = off + 24 + (112 if magic == 0x20B else 96)
+        rva = int.from_bytes(data[dirs + 16:dirs + 20], 'little')  # 第 3 个数据目录＝资源
+        base = None
+        sec = off + 24 + opt
+        for i in range(nsec):
+            h = sec + 40 * i
+            va, vsize = int.from_bytes(data[h + 12:h + 16], 'little'), int.from_bytes(data[h + 8:h + 12], 'little')
+            raw = int.from_bytes(data[h + 20:h + 24], 'little')
+            if rva and va <= rva < va + max(vsize, 1):
+                base = raw + (rva - va)
+        if base is not None:
+            named = int.from_bytes(data[base + 12:base + 14], 'little')
+            ids = int.from_bytes(data[base + 14:base + 16], 'little')
+            types = {int.from_bytes(data[base + 16 + 8 * i:base + 20 + 8 * i], 'little') for i in range(named, named + ids)}
+            out['icon'], out['versionInfo'] = 14 in types, 16 in types
+    except (IndexError, ValueError):
+        pass
+    for key, name in (('fileVersion', 'FileVersion'), ('productVersion', 'ProductVersion')):
+        tag = (name + '\0').encode('utf-16-le')
+        i = data.find(tag)
+        if i < 0:
+            continue
+        j = i + len(tag)
+        j += (-j) % 4  # 值按 4 字节对齐
+        end = j
+        while end + 1 < len(data) and data[end:end + 2] != b'\0\0':
+            end += 2
+        out[key] = data[j:end].decode('utf-16-le', 'replace')
+    return out
+
+
 def windows_layout(exe: Path, debug: bool = True):
     """Windows 包结构检查（godot 导出 exe＋同名 .pck；调试包另有 .console.exe）。返回 (问题列表, PE 信息)。"""
     problems = []
@@ -106,6 +148,15 @@ def windows_layout(exe: Path, debug: bool = True):
     console = exe.with_name(exe.stem + '.console.exe')
     if debug and not console.is_file():
         problems.append(f'调试包缺 {console.name}')
+    res = pe_resources(exe.read_bytes())
+    info.update(res)
+    preset = PRESETS['windows'] if debug else 'Windows 发行'
+    if not res['icon']:
+        problems.append('exe 里没有图标（RT_GROUP_ICON）')
+    for key, opt in (('fileVersion', 'application/file_version'), ('productVersion', 'application/product_version')):
+        want = preset_template(preset, opt)
+        if want is not None and res[key] != str(want):
+            problems.append(f'{key} 是 {res[key]}，预设是 {want}')
     return problems, info
 
 
@@ -126,12 +177,17 @@ def parse_android(badging: str, xmltree: str) -> dict:
     """aapt2 dump badging／xmltree 的输出 → 包名、原生架构、屏幕方向、权限。"""
     import re as _re
     pkg = _re.search(r"package: name='([^']+)'", badging)
+    vcode = _re.search(r"versionCode='([^']*)'", badging)
+    vname = _re.search(r"versionName='([^']*)'", badging)
+    icon = _re.search(r"application: .*icon='([^']+)'", badging)
     native = _re.search(r"native-code: (.*)", badging)
     orient = _re.search(r'screenOrientation\(0x[0-9a-f]+\)=(-?\d+)', xmltree)
     return {'package': pkg.group(1) if pkg else None,
             'native': _re.findall(r"'([^']+)'", native.group(1)) if native else [],
             'orientation': int(orient.group(1)) if orient else None,
-            'permissions': _re.findall(r"uses-permission: name='([^']+)'", badging)}
+            'permissions': _re.findall(r"uses-permission: name='([^']+)'", badging),
+            'versionCode': vcode.group(1) if vcode else None, 'versionName': vname.group(1) if vname else None,
+            'icon': icon.group(1) if icon else None}
 
 
 def android_layout(apk: Path, names, debug: bool = True):
@@ -159,6 +215,13 @@ def android_problems(info: dict, names: set, debug: bool = True):
         problems.append(f'屏幕方向不是横屏（screenOrientation={info["orientation"]}）')
     if not info['package']:
         problems.append('读不出包名')
+    preset = PRESETS['android'] if debug else '安卓 发行'
+    for key, opt in (('package', 'package/unique_name'), ('versionCode', 'version/code'), ('versionName', 'version/name')):
+        want = preset_template(preset, opt)
+        if want is not None and info.get(key) is not None and str(info[key]) != str(want):
+            problems.append(f'{key} 是 {info[key]}，预设是 {want}')
+    if not info.get('icon'):
+        problems.append('读不出应用图标（application-icon）')
     need = ['assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap']
     if debug:
         need.append('assets/tests/xiyou_mac_export.tscn.remap')
@@ -175,12 +238,25 @@ def preset_template(preset: str, key: str = 'custom_template/debug'):
         if sec.startswith('preset.') and sec.count('.') == 1 and cfg[sec].get('name', '').strip('"') == preset:
             opts = cfg[sec + '.options'] if cfg.has_section(sec + '.options') else {}
             value = opts.get(key, '').strip('"')
+            if not key.startswith('custom_template'):
+                return value if key in opts else None
             return Path(value) if value else None
     return None
 
 
 def mac_runner(work: Path, pck: Path, link: bool = True):
-    """解出 macOS 调试模板的可执行文件，旁边放同名的 Windows 包 .pck（导出模板不认 --main-pack，只认 exe 旁的同名 .pck）。"""
+    """解出 macOS 调试模板的可执行文件，旁边放同名的 Windows 包 .pck（导出模板不认 --main-pack，只认 exe 旁的同名 .pck）。
+    设了 XIYOU_SMOKE_RUNNER（云端 Linux：linux_debug.x86_64 模板）就用它。"""
+    linux = os.environ.get('XIYOU_SMOKE_RUNNER')
+    if linux:
+        dest = work / 'runner'
+        dest.mkdir(exist_ok=True)
+        exe = dest / Path(linux).name
+        shutil.copyfile(linux, exe)
+        os.chmod(exe, 0o755)
+        target = exe.with_suffix('.pck')
+        shutil.move(str(pck), target) if not link else shutil.copyfile(pck, target)
+        return exe
     zip_path = preset_template(PRESETS['macos'])
     member = 'macos_template.app/Contents/MacOS/godot_macos_debug.universal'
     if zip_path is None or not zip_path.is_file():
@@ -242,6 +318,7 @@ def report(out_dir: Path, info: dict) -> Path:
              (f'- 架构：{info.get("archs", "?")}；包结构（PE 头、.pck、控制台包装）：{info.get("layout", "?")}；包内检查用 macOS 调试模板旁放同名 .pck 跑' if windows else
               f'- 包名：{info.get("package", "?")}；架构：{info.get("archs", "?")}；签名与包结构（apksigner verify、aapt2）：{info.get("layout", "?")}；包内检查把 assets/ 打成 pck 放到 macOS 调试模板旁跑' if platform == 'android' else
               f'- 架构：{info.get("archs", "?")}；签名检查（codesign --verify，只读）：{info.get("codesign", "?")}'),
+             f'- 版本与图标：{info.get("versionText", "?")}',
              f'- 结论：**{"全部通过" if info["ok"] else "有失败"}**'] + ([f'- 留下的验收包（--keep）：`{info["keptApp"]}`'] if info.get('keptApp') else []) + ['',
              '| 项目 | 结果 | 断言 | 用时（秒） | 退出码 |', '| --- | --- | --- | --- | --- |']
     for r in info['scenes']:
@@ -285,6 +362,7 @@ def main_windows(a) -> int:
         info['zip'] = str(exe)
         problems, pe = windows_layout(exe)
         info['archs'] = pe['machine'] if pe else '?'
+        info['versionText'] = f'FileVersion {pe.get("fileVersion")}、ProductVersion {pe.get("productVersion")}、图标{"有" if pe.get("icon") else "无"}' if pe else '?'
         info['layout'] = '通过' if not problems else '不通过：' + '；'.join(problems)
         print(f'  包结构：{info["layout"]}')
         pck = exe.with_suffix('.pck')
@@ -339,6 +417,7 @@ def main_android(a) -> int:
             problems, pk = android_layout(apk, names)
             info['package'] = pk['package'] if pk else '?'
             info['archs'] = ','.join(pk['native']) if pk else '?'
+            info['versionText'] = f'versionCode {pk.get("versionCode")}、versionName {pk.get("versionName")}、图标 {pk.get("icon")}' if pk else '?'
             info['layout'] = '通过' if not problems else '不通过：' + '；'.join(problems)
             print(f'  签名与包结构：{info["layout"]}')
             z.extractall(work / 'apk', [n for n in names if n.startswith('assets/')])

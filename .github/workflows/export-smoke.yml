@@ -1,0 +1,125 @@
+# 导出冒烟：在 Linux 上导出 Windows 与安卓「验收」包并跑 导出冒烟.py（cc BW 2026-11-06，唐僧派单）。
+# 只在明确要跑时触发，普通推送不跑，省分钟：手动（Actions 页 Run workflow，或 gh workflow run export-smoke.yml -r <分支>），
+# 或推 ci-export/<分支>（工作流还没进默认分支时也能试跑；两个平台都跑、不留包）。
+# Mac 包照旧在 Mac 本机：python3 03_再刷重制_Godot/07_开发环境/导出冒烟.py。
+# 做的事：解包、文件清单、PE 头／apksigner verify／aapt2、版本号、图标、包名，再用 Linux 调试模板载入包里的 pck 跑 xiyou_mac_export、xiyou_flow。
+# 签名：安卓只用每次现生成的一次性调试 keystore；不放、不读任何发行 keystore 或签名密钥。
+# 模板与安卓工具版本见 07_开发环境/环境登记.json 的 cloudExport；模板 tpz 按登记的 SHA256／SHA512 校验。
+# 附件：报告每次都留 3 天；包本身默认不留（仓库公开，附件登录 GitHub 的人都能下），要留就勾 upload_packages。
+name: 导出冒烟
+
+on:
+  push:
+    branches: ['ci-export/**']
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 导哪几个平台
+        type: choice
+        options: [both, windows, android]
+        default: both
+      upload_packages:
+        description: 把导出的包也作附件留 3 天（仓库公开，谁都能下；默认只留报告）
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT: 03_再刷重制_Godot/01_Godot工程
+  GENERATED: 03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated
+  TOOLS: 03_再刷重制_Godot/07_开发环境
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((inputs.platforms == '' || inputs.platforms == 'both') && '["windows","android"]' || format('["{0}"]', inputs.platforms)) }}
+    name: 导出冒烟（${{ matrix.platform }}）
+    steps:
+      - uses: actions/checkout@v5
+      - id: reg
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json
+          d = json.load(open('03_再刷重制_Godot/07_开发环境/环境登记.json', encoding='utf-8'))
+          c = d['cloudExport']
+          print('build_tools=' + c['androidBuildTools'])
+          print('platform=' + c['androidPlatform'])
+          print('java=' + c['java']['version'])
+          print('java_dist=' + c['java']['distribution'])
+          print('template_version=' + d['templateVersion'])
+          EOF
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: ${{ steps.reg.outputs.java_dist }}
+          java-version: ${{ steps.reg.outputs.java }}
+      - if: matrix.platform == 'android'
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "build-tools;${{ steps.reg.outputs.build_tools }}" "platforms;${{ steps.reg.outputs.platform }}" > /dev/null
+          # 导出冒烟.py 取 build-tools 下排最后的版本：只留登记的那一个
+          for d in "$ANDROID_HOME"/build-tools/*; do [ "$(basename "$d")" = "${{ steps.reg.outputs.build_tools }}" ] || rm -rf "$d"; done
+          ls "$ANDROID_HOME/build-tools"; java -version 2>&1 | head -1
+      # Godot（与 云端选测 同一把缓存）
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/xiyou-godot
+          key: godot-v2-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}
+      - id: godot
+        run: python3 "$TOOLS/云端选测.py" godot
+      # 导出模板（只解出要用的几个，约 200 MB 进缓存）
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/xiyou-templates
+          key: templates-v1-${{ steps.reg.outputs.template_version }}-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}
+      - id: tpl
+        run: python3 "$TOOLS/云端导出.py" templates
+      - run: python3 "$TOOLS/云端导出.py" presets --templates "${{ steps.tpl.outputs.dir }}"
+      - if: matrix.platform == 'android'
+        run: python3 "$TOOLS/云端导出.py" keystore
+      # 转换产物（不入 Git，取 refs/ci/generated/<分支>，没有就 main 的）＋导入
+      - id: gen
+        run: python3 "$TOOLS/云端导出.py" gen-ref --branch "${GITHUB_REF_NAME#ci-export/}"
+      - run: python3 "$TOOLS/云端选测.py" fetch --ref "${{ steps.gen.outputs.ref }}"
+      - env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          rc=0; timeout 1500 "$GODOT" --headless --path "$PROJECT" --import > import.log 2>&1 || rc=$?
+          if [ "$rc" -ne 0 ] || grep -qE 'SCRIPT ERROR' import.log; then grep -E 'ERROR|FAIL' import.log | head -40; exit 1; fi
+      - name: 导出并冒烟
+        env:
+          XIYOU_GODOT: ${{ steps.godot.outputs.godot }}
+          XIYOU_SMOKE_RUNNER: ${{ steps.tpl.outputs.dir }}/linux_debug.x86_64
+        run: |
+          python3 "$TOOLS/导出冒烟.py" --platform "${{ matrix.platform }}" --out "$RUNNER_TEMP/smoke" ${{ inputs.upload_packages && '--keep' || '' }}
+      - if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/smoke/报告.md" ] && cat "$RUNNER_TEMP/smoke/报告.md" >> "$GITHUB_STEP_SUMMARY" || echo "没有报告（导出前就失败了，看上面的日志）" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-smoke-${{ matrix.platform }}-report
+          path: |
+            ${{ runner.temp }}/smoke/*.md
+            ${{ runner.temp }}/smoke/*.json
+            ${{ runner.temp }}/smoke/*.log
+          retention-days: 3
+          if-no-files-found: ignore
+      - if: inputs.upload_packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-smoke-${{ matrix.platform }}-package
+          path: |
+            ${{ runner.temp }}/smoke/windows
+            ${{ runner.temp }}/smoke/*.apk
+          retention-days: 3
+          if-no-files-found: ignore
