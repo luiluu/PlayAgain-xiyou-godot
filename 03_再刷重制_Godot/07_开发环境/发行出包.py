@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """出包一条龙（cc 平台 EA 2026-11-06）：一条命令出三平台发行包，各跑发行入口冒烟，写校验和、体积表、发行说明，整理旧发行目录。
 
-  python3 发行出包.py                  导出 → 冒烟 → SHA256SUMS.txt、体积.md、发行说明.txt → 旧目录压 zip
+  python3 发行出包.py                  导出 → 冒烟 → SHA256SUMS.txt、体积.md、发行说明.txt → 冒烟全过就删掉旧发行目录
   python3 发行出包.py --no-smoke       不跑冒烟（只导包、写清单）
   python3 发行出包.py --notes-only     只重写当前发行目录的发行说明（不导包）
   python3 发行出包.py --out <目录>     发行目录的上一级（默认主工作区 03_再刷重制_Godot/05_发布/导出包）
   python3 发行出包.py --dry-run        只打印会做什么
+  python3 发行出包.py --keep-old       出完不删旧发行目录
   python3 发行出包.py --since <号>     发行说明从这个开发编号之后算（默认上一个发行目录的号）
 
 产物：<上一级>/dev<号>_三平台发行/
@@ -16,7 +17,8 @@
 三个包都在这台 Mac 上导（Godot 在 Mac 上能直接导 Windows 和安卓，不用虚拟机）。不走云端：云端导入为了不超时去掉了 WebP 最高档，
 包会大约 150 MB；下载包要把完整游戏包作公开附件；云端每次现生成的调试 keystore 跟本机签名不同，手机上不能覆盖安装。
 冒烟：Mac `--keys` 和 `--arch x86_64 --keys`；Windows `--win-dir --keys`（macOS 发行模板当替身）；安卓 `--apk --keys`（静态检查＋替身）。
-旧发行目录：dev*_三平台发行 只留号最大的 KEEP 个，其余各压成同名 .zip（已有就跳过）；目录本身不删（删要 Kyo 定），列在输出里。
+旧发行目录：新包导出成功、冒烟全过后，dev*_三平台发行 只留本次这一个，号更小的目录和以前压的同名 .zip 直接删
+（Kyo 11-06「直接删」，平台 EC；原来是留两个、其余压 zip）。导出或冒烟失败时不删，旧包还能用。号比本次大的、别的备份不碰。
 发行说明：变更记录里「上一个发行目录的号 < dev 号 ≤ 本号」的条目，去掉工具／流程／审查类，标题去掉内部编号、路径、掉率后一条一行。
 条目正文里有「- 玩家可见：……」的行时用那一行代替标题（没有就用标题）。
 """
@@ -39,7 +41,6 @@ PROJECT = REMAKE / '01_Godot工程'
 GODOT = Path(os.environ.get('XIYOU_GODOT') or HERE / 'godot')
 SMOKE = HERE / '发行入口冒烟.py'
 CHANGELOG = ROOT / '00_项目管理' / '变更记录.md'
-KEEP = 2
 APP_NAME = '再刷一把：天启篇'
 DIR_RE = re.compile(r'^dev(\d+)_三平台发行$')
 MAC_ZIP = '再刷一把_天启篇_mac.zip'
@@ -259,22 +260,29 @@ def size_table(dev: int, now: dict, prev_dev, prev: dict) -> str:
     return '\n'.join(lines) + '\n'
 
 
-def tidy_old(parent: Path, keep=KEEP, dry=False) -> list:
-    """旧发行目录压 zip（不删目录），返回 [(目录, zip, 新压的?)]。"""
-    dirs = release_dirs(parent)
-    done = []
-    for _, d in dirs[:-keep] if len(dirs) > keep else []:
-        z = d.with_name(d.name + '.zip')
-        new = not z.exists()
-        if new and not dry:
-            tmp = z.with_name(z.name + '.tmp')
-            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_STORED) as zf:  # 包本身已经压过，不再压
-                for f in sorted(d.rglob('*')):
-                    if f.is_file():
-                        zf.write(f, f.relative_to(d.parent))
-            tmp.rename(z)
-        done.append((d, z, new))
-    return done
+def tidy_old(parent: Path, current: int, dry=False) -> list:
+    """删掉号比 current 小的旧发行目录和它们以前压的同名 .zip（只留最新一版），返回删了的路径。dry 只列不删。"""
+    gone = []
+    for n, d in release_dirs(parent):
+        if n >= current:
+            continue
+        for t in (d, d.with_name(d.name + '.zip')):
+            if not t.exists():
+                continue
+            if not dry:
+                if t.is_dir() and not t.is_symlink():
+                    shutil.rmtree(t)
+                else:
+                    t.unlink()
+            gone.append(t)
+    # 只剩 zip、目录已经不在的旧版（以前的做法留下的）
+    for z in parent.glob('dev*_三平台发行.zip') if parent.is_dir() else []:
+        m = DIR_RE.match(z.name[:-4])
+        if m and int(m.group(1)) < current and z not in gone:
+            if not dry:
+                z.unlink()
+            gone.append(z)
+    return gone
 
 
 def main(argv=None) -> int:
@@ -283,6 +291,7 @@ def main(argv=None) -> int:
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'
@@ -293,8 +302,8 @@ def main(argv=None) -> int:
     print(f'本次 0.{dev} → {out}；上一个发行目录：{prev_dir or "无"}')
     if a.dry_run:
         print('会导出：macOS 发行、Windows 发行、安卓 发行；' + ('不跑冒烟' if a.no_smoke else '冒烟：' + '、'.join(n for n, _ in SMOKES)))
-        for d, z, new in tidy_old(parent, dry=True):
-            print(f'会压缩旧目录：{d.name} → {z.name}' + ('' if new else '（已有 zip，跳过）'))
+        for t in ([] if a.keep_old else tidy_old(parent, dev, dry=True)):
+            print(f'冒烟全过后会删旧发行：{t.name}')
         return 0
     since = a.since if a.since is not None else (prev_dev or 0)
     notes = notes_text(dev, since, release_notes(CHANGELOG.read_text(encoding='utf-8'), since, dev))
@@ -333,10 +342,16 @@ def main(argv=None) -> int:
     (out / '发行说明.txt').write_text(notes, encoding='utf-8')
     print((out / '体积.md').read_text(encoding='utf-8'))
     print('\n'.join(smoke_md))
-    old = tidy_old(parent)
-    for d, z, new in old:
-        print(f'旧发行目录 {d.name}：{"新压成 " if new else "已有 "}{z.name}，目录还在（删不删要 Kyo 定）')
     ok = all(r[1] for r in rows)
+    if a.keep_old:
+        print('--keep-old：旧发行目录没删')
+    elif not rows:
+        print('没跑冒烟（--no-smoke）：旧发行目录没删')
+    elif not ok:
+        print('冒烟有失败：旧发行目录留着没删')
+    else:
+        for t in tidy_old(parent, dev):
+            print(f'删掉旧发行：{t.name}')
     print(f'结论：{"通过" if ok else "冒烟有失败"}；发行目录 {out}')
     return 0 if ok else 1
 

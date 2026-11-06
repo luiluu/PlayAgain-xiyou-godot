@@ -19,6 +19,8 @@
 
 查的：
   - 包名、CFBundleName／CFBundleDisplayName 是「再刷一把：天启篇」，包里有 icns 图标且和 content/app_icon/icon.icns 一致
+  - 版本号（平台 EC）：Mac CFBundleShortVersionString／CFBundleVersion＝0.<号>／<号>，Windows exe 资源里有 0.<号>.0.0；
+    号取当前工程的 build_info（查旧包时号对不上会报失败）；XDesktopVersion.AUTO 关着就不查
   - 包内运行（--headless --quit-after，加 --report-entry 让游戏打印进了哪个场景）：只出现 ENTRY_SCENE=res://modes/xiyou/entry.tscn
 发行包排除了 tests/、不认 --verify-export，所以这里只看入口，不跑包内测试（那是 导出冒烟.py 对「macOS 验收」调试包做的）。
 按键冒烟（--keys）：发行模板的 GDScript 对 null 调方法不查空、直接 SIGSEGV（11-06 标题按空格/J 闪退），调试版只报错，
@@ -86,11 +88,20 @@ def windows(work: Path, check, keys=False, win_dir=None) -> int:
     n = struct.unpack('<H', ico[4:6])[0]
     size, off = struct.unpack('<II', ico[6 + 16 * (n - 1) + 8:6 + 16 * (n - 1) + 16])
     check('exe_icon_256', ico[off:off + size] in blob)
+    want_v = desktop_version('windows')
+    if want_v:
+        check('exe_version', want_v.encode('utf-16-le') in blob, f'资源里{"有" if want_v.encode("utf-16-le") in blob else "没有"} {want_v}')
     runner = release_runner(work, pck)
     if runner is None:
         return 2
     run_entry(work, runner, check)
     return run_keys(work, runner, check) if keys else 0
+
+
+def desktop_version(platform: str):
+    sys.path.insert(0, str(HERE))
+    import 导出冒烟 as smoke
+    return smoke.expected_desktop_version(platform)
 
 
 def release_runner(work: Path, pck: Path):
@@ -414,6 +425,10 @@ def main() -> int:
         check('app_bundle_name', app.stem == APP_NAME, app.name)
         info = plistlib.loads((app / 'Contents' / 'Info.plist').read_bytes())
         check('bundle_name', info.get('CFBundleName') == APP_NAME, str(info.get('CFBundleName')))
+        want_v = desktop_version('macos')
+        if want_v:
+            got = (info.get('CFBundleShortVersionString'), info.get('CFBundleVersion'))
+            check('bundle_version', got == want_v, f'{got[0]}／{got[1]}（应是 {want_v[0]}／{want_v[1]}）')
         icon = app / 'Contents' / 'Resources' / (str(info.get('CFBundleIconFile', 'icon')).removesuffix('.icns') + '.icns')
         want = PROJECT / 'content' / 'app_icon' / 'icon.icns'
         check('icon_from_app_icon', icon.is_file() and want.is_file() and icon.read_bytes() == want.read_bytes(), icon.name)

@@ -66,21 +66,29 @@ class DirsTests(unittest.TestCase):
         (d / M.APK).write_bytes(b'a' * 5)
         return d
 
-    def test_tidy_keeps_two_zips_rest_without_deleting(self):
+    def test_tidy_keeps_only_current(self):
+        # 平台 EC（Kyo 11-06「直接删」）：只留本次这一版；旧目录和以前压的 zip 都删；号更大的、备份不碰
         with tempfile.TemporaryDirectory() as t:
             p = Path(t)
-            for n in (99, 380, 383, 384):
+            for n in (99, 380, 383, 384, 390):
                 self.make(p, n)
-            (p / '再刷一把：天启篇_dev380备份.zip').write_bytes(b'x')  # 不是发行目录，不碰
-            done = M.tidy_old(p)
-            self.assertEqual([d.name for d, _, _ in done], ['dev99_三平台发行', 'dev380_三平台发行'])
-            for d, z, new in done:
-                self.assertTrue(new and z.is_file() and d.is_dir())
-                with zipfile.ZipFile(z) as zf:
-                    self.assertIn(f'{d.name}/windows/{M.WIN_FILES[1]}', zf.namelist())
-            self.assertFalse((p / 'dev383_三平台发行.zip').exists())
-            # 再跑一次：已有 zip 就跳过
-            self.assertEqual([new for _, _, new in M.tidy_old(p)], [False, False])
+            (p / 'dev380_三平台发行.zip').write_bytes(b'z')
+            (p / 'dev377_三平台发行.zip').write_bytes(b'z')  # 目录早就不在、只剩 zip
+            (p / '再刷一把：天启篇_dev380备份.zip').write_bytes(b'x')
+            (p / '再刷一把：天启篇_dev377备份.app').mkdir()
+            dry = M.tidy_old(p, 384, dry=True)
+            self.assertTrue((p / 'dev99_三平台发行').is_dir())  # dry 不动
+            gone = M.tidy_old(p, 384)
+            self.assertEqual(sorted(x.name for x in gone), sorted(x.name for x in dry))
+            self.assertEqual(sorted(x.name for x in p.iterdir()),
+                             sorted(['dev384_三平台发行', 'dev390_三平台发行', '再刷一把：天启篇_dev380备份.zip', '再刷一把：天启篇_dev377备份.app']))
+            self.assertEqual(M.tidy_old(p, 384), [])
+
+    def test_old_kept_when_smoke_fails(self):
+        src = (HERE / '发行出包.py').read_text(encoding='utf-8')
+        tail = src[src.index('ok = all(r[1] for r in rows)'):]
+        self.assertLess(tail.index('elif not ok'), tail.index('tidy_old(parent, dev)'))
+        self.assertLess(tail.index('elif not rows'), tail.index('tidy_old(parent, dev)'))
 
     def test_sizes_and_table(self):
         with tempfile.TemporaryDirectory() as t:
@@ -102,8 +110,8 @@ class DirsTests(unittest.TestCase):
                 self.make(Path(t), n)
             out = subprocess.run([sys.executable, str(HERE / '发行出包.py'), '--dry-run', '--out', t], capture_output=True, text=True)
             self.assertEqual(out.returncode, 0, out.stderr)
-            self.assertIn('会压缩旧目录：dev1_三平台发行', out.stdout)
-            self.assertFalse((Path(t) / 'dev1_三平台发行.zip').exists())
+            self.assertIn('冒烟全过后会删旧发行：dev1_三平台发行', out.stdout)
+            self.assertTrue(all((Path(t) / f'dev{n}_三平台发行').is_dir() for n in (1, 2, 3)))
 
 
 if __name__ == '__main__':
