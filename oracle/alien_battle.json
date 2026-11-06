@@ -980,9 +980,22 @@
     ]
    },
    "observed": {
-    "encounter": null,
-    "draws": 0,
-    "sequenceGain": 0,
+    "encounter": {
+     "enemyIndex": 2,
+     "variant": "mob",
+     "boss": false,
+     "probability": 0.01,
+     "reward": {
+      "kind": "a",
+      "baseId": 7980,
+      "origin": "mob",
+      "affix": "sacrifice",
+      "uid": "alien-1",
+      "plainName": "深渊残甲"
+     }
+    },
+    "draws": 25,
+    "sequenceGain": 1,
     "enemies": [
      {
       "id": 107,
@@ -1000,9 +1013,9 @@
      },
      {
       "id": 107,
-      "name": "铠甲训狼Ｃ",
-      "mhp": 825000,
-      "hp": 825000,
+      "name": "【异化】铠甲训狼Ｃ",
+      "mhp": 1031250,
+      "hp": 1031250,
       "boss": false
      }
     ]
@@ -1021,7 +1034,7 @@
    },
    "observed": {
     "encounter": null,
-    "draws": 0,
+    "draws": 2,
     "sequenceGain": 0,
     "enemies": [
      {
@@ -1143,15 +1156,28 @@
     ]
    },
    "observed": {
-    "encounter": null,
-    "draws": 0,
-    "sequenceGain": 0,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "plague",
+     "boss": true,
+     "probability": 0.0023940000000000003,
+     "reward": {
+      "kind": "a",
+      "baseId": 1020,
+      "origin": "boss",
+      "affix": "sacrifice",
+      "uid": "alien-1",
+      "plainName": "世界树之枝"
+     }
+    },
+    "draws": 45,
+    "sequenceGain": 1,
     "enemies": [
      {
       "id": 150,
-      "name": "【被封印者】基克洛普斯之影",
-      "mhp": 20850000000,
-      "hp": 20850000000,
+      "name": "【异化·灾疫】【被封印者】基克洛普斯之影",
+      "mhp": 31275000000,
+      "hp": 31275000000,
       "boss": true
      }
     ]
@@ -1169,7 +1195,7 @@
    },
    "observed": {
     "encounter": null,
-    "draws": 0,
+    "draws": 1,
     "sequenceGain": 0,
     "enemies": [
      {
@@ -1195,15 +1221,28 @@
     ]
    },
    "observed": {
-    "encounter": null,
-    "draws": 0,
-    "sequenceGain": 0,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "flare",
+     "boss": true,
+     "probability": 0.00532,
+     "reward": {
+      "kind": "w",
+      "baseId": 1047,
+      "origin": "boss",
+      "affix": "sacrifice",
+      "uid": "alien-1",
+      "plainName": "小李飞刀"
+     }
+    },
+    "draws": 45,
+    "sequenceGain": 1,
     "enemies": [
      {
       "id": 153,
-      "name": "【被封印者】黝石巨人",
-      "mhp": 31635000000,
-      "hp": 31635000000,
+      "name": "【异化·烈变】【被封印者】黝石巨人",
+      "mhp": 47452500000,
+      "hp": 47452500000,
       "boss": true
      }
     ]
@@ -1223,15 +1262,28 @@
     ]
    },
    "observed": {
-    "encounter": null,
-    "draws": 0,
-    "sequenceGain": 0,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "shell",
+     "boss": true,
+     "probability": 0.000532,
+     "reward": {
+      "kind": "w",
+      "baseId": 1523,
+      "origin": "boss",
+      "affix": "sacrifice",
+      "uid": "alien-1",
+      "plainName": "奇怪的法杖"
+     }
+    },
+    "draws": 45,
+    "sequenceGain": 1,
     "enemies": [
      {
       "id": 539,
-      "name": "【未知存在】哼~！",
-      "mhp": 245587500000,
-      "hp": 245587500000,
+      "name": "【异化·蜕壳】【未知存在】哼~！",
+      "mhp": 368381250000,
+      "hp": 368381250000,
       "boss": true
      }
     ]
@@ -1495,17 +1547,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·烈变】嘤嘤怪Ａ：生命×1.5；主动攻击生命伤害+15%。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "flare",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·烈变】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -1528,15 +1586,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -1562,7 +1628,7 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1677,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -1590,15 +1656,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -1624,7 +1698,7 @@
        }
       ],
       "a": {
-       "hp": 838,
+       "hp": 691,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -1651,15 +1725,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000006383,
+        "hp": 112500000010133,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -1685,7 +1767,7 @@
        }
       ],
       "a": {
-       "hp": 838,
+       "hp": 691,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -1733,12 +1815,18 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化】嘤嘤怪Ｂ：生命×1.25；主动攻击生命伤害+10%。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 1,
+     "variant": "mob",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
@@ -1747,8 +1835,8 @@
      },
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ｂ"
+      "mhp": 93750000009375,
+      "name": "【异化】嘤嘤怪Ｂ"
      },
      {
       "id": 1,
@@ -1777,15 +1865,23 @@
         "alien": null
        },
        {
-        "hp": 75000000007500,
+        "hp": 93750000009375,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 93750000009375,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ｂ",
-        "alien": null
+        "name": "【异化】嘤嘤怪Ｂ",
+        "alien": {
+         "variant": "mob",
+         "boss": false,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -1800,7 +1896,7 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1726,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -1839,15 +1935,23 @@
         "alien": null
        },
        {
-        "hp": 75000000007500,
+        "hp": 93750000009375,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 93750000009375,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ｂ",
-        "alien": null
+        "name": "【异化】嘤嘤怪Ｂ",
+        "alien": {
+         "variant": "mob",
+         "boss": false,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -1862,7 +1966,7 @@
        }
       ],
       "a": {
-       "hp": 838,
+       "hp": 740,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -1913,17 +2017,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·蜕壳】嘤嘤怪Ａ：生命×1.5；开场10%生命护盾，仅一次。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "shell",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·蜕壳】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -1945,15 +2055,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000006383,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
-        "shield": 0,
+        "mhp": 112500000011250,
+        "shield": 11250000000008,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蜕壳】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "shell",
+         "boss": true,
+         "shieldGranted": true,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2006,15 +2124,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000006383,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
-        "shield": 0,
+        "mhp": 112500000011250,
+        "shield": 11250000000008,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蜕壳】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "shell",
+         "boss": true,
+         "shieldGranted": true,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000006383,
@@ -2068,15 +2194,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000006383,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
-        "shield": 0,
+        "mhp": 112500000011250,
+        "shield": 11250000000008,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蜕壳】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "shell",
+         "boss": true,
+         "shieldGranted": true,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000006383,
@@ -2163,17 +2297,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·蚀能】嘤嘤怪Ａ：生命×1.5；偶数自然回合结束吸取MP并恢复生命。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "drain",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·蚀能】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -2193,15 +2333,23 @@
       },
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 56250000005625,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2251,15 +2399,23 @@
       },
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 56250000005625,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2307,15 +2463,23 @@
       "roundEnd": 1,
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 56250000005625,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2364,15 +2528,23 @@
       "roundEnd": 2,
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 58500000005850,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": 2
+        }
        },
        {
         "hp": 75000000007500,
@@ -2408,7 +2580,7 @@
       },
       "b": {
        "hp": 2785,
-       "mp": 1114,
+       "mp": 1003,
        "mhp": 2785,
        "shield": 0,
        "corrosion": false,
@@ -2421,15 +2593,23 @@
       "roundEnd": 2,
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 58500000005850,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": 2
+        }
        },
        {
         "hp": 75000000007500,
@@ -2465,7 +2645,7 @@
       },
       "b": {
        "hp": 2785,
-       "mp": 1114,
+       "mp": 1003,
        "mhp": 2785,
        "shield": 0,
        "corrosion": false,
@@ -2480,15 +2660,23 @@
       },
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 58500000005850,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": 2
+        }
        },
        {
         "hp": 75000000007500,
@@ -2536,15 +2724,23 @@
       "roundEnd": 4,
       "enemies": [
        {
-        "hp": 37500000003750,
+        "hp": 60750000006075,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·蚀能】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "drain",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": 4
+        }
        },
        {
         "hp": 75000000007500,
@@ -2571,7 +2767,7 @@
       ],
       "a": {
        "hp": 2810,
-       "mp": 330,
+       "mp": 220,
        "mhp": 2810,
        "shield": 0,
        "corrosion": false,
@@ -2632,17 +2828,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·灾疫】嘤嘤怪Ａ：生命×1.5；每自然回合首次伤害技能附加两回合腐蚀。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "plague",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·灾疫】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -2665,15 +2867,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2703,9 +2913,9 @@
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 2,
+       "corrosionUntil": 2
       },
       "b": {
        "hp": 2785,
@@ -2727,15 +2937,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2765,9 +2983,9 @@
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 2,
+       "corrosionUntil": 2
       },
       "b": {
        "hp": 1799,
@@ -2784,15 +3002,23 @@
       "roundEnd": 1,
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2818,13 +3044,13 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1768,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 1,
+       "corrosionUntil": 2
       },
       "b": {
        "hp": 1799,
@@ -2846,15 +3072,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 2,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2880,22 +3114,22 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1768,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 1,
+       "corrosionUntil": 2
       },
       "b": {
        "hp": 813,
        "mp": 1114,
        "mhp": 2785,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 2,
+       "corrosionUntil": 3
       },
       "toasts": []
      },
@@ -2903,15 +3137,23 @@
       "roundEnd": 2,
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 2,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2937,22 +3179,22 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1712,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
        "corrosion": false,
        "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosionUntil": 2
       },
       "b": {
-       "hp": 813,
+       "hp": 758,
        "mp": 1114,
        "mhp": 2785,
        "shield": 0,
-       "corrosion": false,
-       "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosion": true,
+       "corrosionTurns": 1,
+       "corrosionUntil": 3
       },
       "toasts": []
      },
@@ -2960,15 +3202,23 @@
       "roundEnd": 3,
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·灾疫】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "plague",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": 2,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -2994,22 +3244,22 @@
        }
       ],
       "a": {
-       "hp": 1824,
+       "hp": 1712,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
        "corrosion": false,
        "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosionUntil": 2
       },
       "b": {
-       "hp": 813,
+       "hp": 703,
        "mp": 1114,
        "mhp": 2785,
        "shield": 0,
        "corrosion": false,
        "corrosionTurns": null,
-       "corrosionUntil": null
+       "corrosionUntil": 3
       },
       "toasts": []
      }
@@ -3061,17 +3311,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·镜骸】嘤嘤怪Ａ：生命×1.5；每自然回合首次主动生命伤害触发有限反噬。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "mirror",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·镜骸】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -3089,15 +3345,23 @@
       "roundStart": 1,
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3150,15 +3414,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000006383,
+        "hp": 112500000010133,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 1,
+         "mirrorCharged": false,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3184,7 +3456,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3211,15 +3483,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000005266,
+        "hp": 112500000009016,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 1,
+         "mirrorCharged": false,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3245,7 +3525,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3273,15 +3553,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000004935,
+        "hp": 112500000008685,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 1,
+         "mirrorCharged": false,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3307,7 +3595,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3330,15 +3618,23 @@
       "roundStart": 2,
       "enemies": [
        {
-        "hp": 75000000004935,
+        "hp": 112500000008685,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 2,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3364,7 +3660,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3392,15 +3688,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000004604,
+        "hp": 112500000008354,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 2,
+         "mirrorCharged": false,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3426,7 +3730,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3435,7 +3739,7 @@
        "corrosionUntil": null
       },
       "b": {
-       "hp": 2785,
+       "hp": 2769,
        "mp": 1114,
        "mhp": 2785,
        "shield": 0,
@@ -3453,15 +3757,23 @@
       },
       "enemies": [
        {
-        "hp": 75000000004604,
+        "hp": 112500000008354,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·镜骸】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "mirror",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": 2,
+         "mirrorCharged": false,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000006383,
@@ -3487,7 +3799,7 @@
        }
       ],
       "a": {
-       "hp": 2810,
+       "hp": 2755,
        "mp": 1100,
        "mhp": 2810,
        "shield": 0,
@@ -3496,7 +3808,7 @@
        "corrosionUntil": null
       },
       "b": {
-       "hp": 2785,
+       "hp": 2769,
        "mp": 1114,
        "mhp": 2785,
        "shield": 0,
@@ -3535,17 +3847,23 @@
     ]
    },
    "observed": {
-    "startToasts": [],
+    "startToasts": [
+     "【异化·烈变】嘤嘤怪Ａ：生命×1.5；主动攻击生命伤害+15%。 胜利保证异化装备。"
+    ],
     "locked": [
      null,
      null
     ],
-    "encounter": null,
+    "encounter": {
+     "enemyIndex": 0,
+     "variant": "flare",
+     "probability": 0.01
+    },
     "enemies": [
      {
       "id": 1,
-      "mhp": 75000000007500,
-      "name": "嘤嘤怪Ａ"
+      "mhp": 112500000011250,
+      "name": "【异化·烈变】嘤嘤怪Ａ"
      },
      {
       "id": 1,
@@ -3567,15 +3885,23 @@
       "granted": false,
       "enemies": [
        {
-        "hp": 75000000007500,
+        "hp": 112500000011250,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3628,13 +3954,21 @@
        {
         "hp": 0,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3680,21 +4014,35 @@
      },
      {
       "grant": true,
-      "ok": false,
-      "weapons": 0,
-      "recent": [],
-      "granted": false,
+      "ok": true,
+      "weapons": 1,
+      "recent": [
+       {
+        "origin": "boss",
+        "uid": "alien-1",
+        "kind": "w"
+       }
+      ],
+      "granted": true,
       "enemies": [
        {
         "hp": 0,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,
@@ -3737,25 +4085,41 @@
        "corrosionTurns": null,
        "corrosionUntil": null
       },
-      "toasts": []
+      "toasts": [
+       "获得 逆骨·深渊残刃"
+      ]
      },
      {
       "grant": true,
       "ok": false,
       "weapons": 0,
-      "recent": [],
-      "granted": false,
+      "recent": [
+       {
+        "origin": "boss",
+        "uid": "alien-1",
+        "kind": "w"
+       }
+      ],
+      "granted": true,
       "enemies": [
        {
         "hp": 0,
         "mp": 6,
-        "mhp": 75000000007500,
+        "mhp": 112500000011250,
         "shield": 0,
         "corrosion": false,
         "corrosionTurns": null,
         "corrosionUntil": null,
-        "name": "嘤嘤怪Ａ",
-        "alien": null
+        "name": "【异化·烈变】嘤嘤怪Ａ",
+        "alien": {
+         "variant": "flare",
+         "boss": true,
+         "shieldGranted": false,
+         "mirrorRound": -1,
+         "mirrorCharged": true,
+         "plagueRound": -1,
+         "drainRound": -1
+        }
        },
        {
         "hp": 75000000007500,

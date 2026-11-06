@@ -1701,288 +1701,273 @@
   },
   {
    "name": "mhp_mmp_eight",
-   "actor": 1,
-   "kind": "weapon",
-   "base": 1925,
+   "actor": 2,
+   "kind": "armor",
+   "base": 4472,
    "direct": true,
-   "code": "atk += user.level * 10; mat += user.level * 10; // KYO专武成长\n",
+   "code": "mhp = user.level * 80;\nmmp = user.level * 35;\natk = user.level * 15;\nmat = user.level * 15;\ndef = user.level * 15;\nmdf = user.level * 15;\n",
    "rows": [
     {
      "label": "lv1",
      "level": 1,
-     "slot": 0,
+     "slot": 15,
      "equips": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       {
-       "kind": "weapon",
-       "base": 1925,
+       "kind": "armor",
+       "base": 4472,
        "params": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        10,
+        10,
+        50,
+        10,
+        50,
+        10,
+        10,
+        10
        ],
        "traits": [
         {
-         "code": 31,
-         "dataId": 1,
-         "value": 0
-        },
-        {
-         "code": 22,
+         "code": 61,
          "dataId": 0,
-         "value": 0.35
+         "value": 0.1
+        },
+        {
+         "code": 22,
+         "dataId": 9,
+         "value": 0.1
         },
         {
          "code": 22,
          "dataId": 2,
-         "value": 0.35
-        },
-        {
-         "code": 54,
-         "dataId": 2,
-         "value": 1
+         "value": 0.1
         }
        ],
        "level": -1
       },
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
       null
      ],
      "evalPlus": [
-      0,
-      0,
-      10,
-      0,
-      10,
-      0,
+      80,
+      35,
+      15,
+      15,
+      15,
+      15,
       0,
       0
      ],
      "paramPlus": [
-      0,
-      0,
+      90,
+      45,
+      65,
+      25,
+      65,
+      25,
       10,
-      0,
-      10,
-      0,
-      0,
-      0
+      10
      ],
      "params": [
-      485,
-      200,
-      40,
-      20,
+      610,
+      245,
+      89,
+      45,
+      93,
+      45,
       30,
-      20,
-      0,
-      20
+      30
      ],
      "vars": null
     },
     {
      "label": "lv20",
      "level": 20,
-     "slot": 0,
+     "slot": 15,
      "equips": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       {
-       "kind": "weapon",
-       "base": 1925,
+       "kind": "armor",
+       "base": 4472,
        "params": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        10,
+        10,
+        50,
+        10,
+        50,
+        10,
+        10,
+        10
        ],
        "traits": [
         {
-         "code": 31,
-         "dataId": 1,
-         "value": 0
-        },
-        {
-         "code": 22,
+         "code": 61,
          "dataId": 0,
-         "value": 0.35
+         "value": 0.1
+        },
+        {
+         "code": 22,
+         "dataId": 9,
+         "value": 0.1
         },
         {
          "code": 22,
          "dataId": 2,
-         "value": 0.35
-        },
-        {
-         "code": 54,
-         "dataId": 2,
-         "value": 1
+         "value": 0.1
         }
        ],
        "level": -1
       },
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
       null
      ],
      "evalPlus": [
-      0,
-      0,
-      200,
-      0,
-      200,
-      0,
+      1600,
+      700,
+      300,
+      300,
+      300,
+      300,
       0,
       0
      ],
      "paramPlus": [
-      0,
-      0,
-      200,
-      0,
-      200,
-      0,
-      0,
-      0
+      1610,
+      710,
+      350,
+      310,
+      350,
+      310,
+      10,
+      10
      ],
      "params": [
-      2008,
-      790,
-      287,
-      94,
-      294,
-      58,
-      0,
-      77
+      3647,
+      1500,
+      432,
+      404,
+      435,
+      404,
+      87,
+      87
      ],
      "vars": null
     },
     {
      "label": "lv60",
      "level": 60,
-     "slot": 0,
+     "slot": 15,
      "equips": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       {
-       "kind": "weapon",
-       "base": 1925,
+       "kind": "armor",
+       "base": 4472,
        "params": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        10,
+        10,
+        50,
+        10,
+        50,
+        10,
+        10,
+        10
        ],
        "traits": [
         {
-         "code": 31,
-         "dataId": 1,
-         "value": 0
-        },
-        {
-         "code": 22,
+         "code": 61,
          "dataId": 0,
-         "value": 0.35
+         "value": 0.1
+        },
+        {
+         "code": 22,
+         "dataId": 9,
+         "value": 0.1
         },
         {
          "code": 22,
          "dataId": 2,
-         "value": 0.35
-        },
-        {
-         "code": 54,
-         "dataId": 2,
-         "value": 1
+         "value": 0.1
         }
        ],
        "level": -1
       },
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
       null
      ],
      "evalPlus": [
-      0,
-      0,
-      600,
-      0,
-      600,
-      0,
+      4800,
+      2100,
+      900,
+      900,
+      900,
+      900,
       0,
       0
      ],
      "paramPlus": [
-      0,
-      0,
-      600,
-      0,
-      600,
-      0,
-      0,
-      0
+      4810,
+      2110,
+      950,
+      910,
+      950,
+      910,
+      10,
+      10
      ],
      "params": [
-      5215,
-      2031,
-      804,
-      249,
-      849,
-      138,
-      0,
-      197
+      10038,
+      4141,
+      1152,
+      1159,
+      1154,
+      1159,
+      207,
+      207
      ],
      "vars": null
     }
