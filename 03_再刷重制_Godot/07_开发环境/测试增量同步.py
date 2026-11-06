@@ -682,6 +682,68 @@ class CacheTests(unittest.TestCase):
             self.assertNotIn('a_probe.cjs', json.loads(c.path.read_text())['probes'])
             self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
 
+    def stash_run(self, behave, force=False):
+        """跑 a、b 两个探针：behave[探针名] 为产物文本（退出 0）或 None（退出 7、不写产物）；返回实际执行了哪些探针与异常。"""
+        ran, real = [], subprocess.run
+        def fake(cmd, *args, **kwargs):
+            if cmd[0] != 'node' or not str(cmd[1]).endswith('_probe.cjs'):
+                return real(cmd, *args, **kwargs)
+            name = Path(cmd[1]).name.split('_probe')[0]
+            ran.append(name)
+            text = behave[name]
+            if text is not None:
+                (self.oracle / '.sandbox' / (name + '.json')).write_text(text)
+            return subprocess.CompletedProcess(cmd, 0 if text is not None else 7, '', '' if text is not None else 'boom')
+        c = self.cache(force)
+        error = None
+        with mock.patch.multiple(sync, PROBES=self.probes[:2], ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+             mock.patch.object(sync.subprocess, 'run', fake), mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
+            try:
+                sync.run_probes(io.StringIO(), c)
+                c.commit()
+            except RuntimeError as e:
+                error = e
+        return sorted(ran), error
+
+    def test_successful_probes_are_kept_when_another_probe_fails(self):
+        """tools79：同一轮里 b 挂了，已成功的 a 的产物留进暂存（generated 不动、缓存不发布）；下一轮输入没变就不重跑 a，
+        直接用暂存产物，跟 b 的新结果一起照常核验、发布、记缓存。"""
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-new"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('探针失败', str(error))
+        self.assertIn('"ok"', (self.gen / 'oracle/a.json').read_text())          # 失败时 generated 不动
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"should-not-run"}]}', 'b': '{"cases":[{"id":"b-new"}]}'})
+        self.assertIsNone(error)
+        self.assertEqual(ran, ['b'])
+        self.assertIn('a-new', (self.gen / 'oracle/a.json').read_text())
+        self.assertIn('b-new', (self.gen / 'oracle/b.json').read_text())
+        self.assertEqual(self.hits()[:2], [True, True])
+        self.assertFalse((self.oracle / '.sandbox/probe-stash/index.json').exists() and
+                         json.loads((self.oracle / '.sandbox/probe-stash/index.json').read_text()))   # 发布后暂存清掉
+
+    def test_stash_is_not_used_when_inputs_change_or_full_or_output_is_bad(self):
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-new"}]}', 'b': None})
+        (self.oracle / 'a_probe.cjs').write_text('// changed after the failed run')   # a 的输入变了：暂存作废，照跑
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-2"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-3"}]}', 'b': '{"cases":[{"id":"b"}]}'}, force=True)   # --full 不用暂存
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('a-3', (self.gen / 'oracle/a.json').read_text())
+        # 带新错误的产物不进暂存（先让两个探针都失效，免得上一轮发布的缓存直接命中）
+        for n in ('a', 'b'):
+            (self.oracle / (n + '_probe.cjs')).write_text('// v3 ' + n)
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"x","error":"sampling failed"}]}', 'b': None})
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-4"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        # 暂存文件被改动：不认，照跑
+        for n in ('a', 'b'):
+            (self.oracle / (n + '_probe.cjs')).write_text('// v4 ' + n)
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-5"}]}', 'b': None})
+        (self.oracle / '.sandbox/probe-stash/a.json').write_text('{"cases":[{"id":"tampered"}]}')
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-6"}]}', 'b': '{"cases":[{"id":"b"}]}'})
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('a-6', (self.gen / 'oracle/a.json').read_text())
+
     def test_failed_forced_run_cannot_reuse_last_success(self):
         self.prime()
         c = self.cache(True)
