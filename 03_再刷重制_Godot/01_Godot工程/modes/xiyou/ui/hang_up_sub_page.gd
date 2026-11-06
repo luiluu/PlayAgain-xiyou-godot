@@ -7,6 +7,8 @@ extends Control
 ## - kind：actors_count/actors_order（出战成员）→ counts（技能次数）/ order（技能顺序）；medication（自动吃药）→ hp/mp（药品开关）；sell（自动卖出）。
 ## - 确定都是各页自己的处理，不播确定音（原版覆盖了 processOk）；只有卖出页的七档切换播确定音。上下移动播光标音，取消播取消音。
 ##   技能次数页 →/← 加减（0～20 循环），顺序页 → 与确定一样把该项提前一位；没有内容的页一打开就退回（药品页另提示「没药了」）。
+## - 安全出售（XSafeSell，O-待定·安全出售）开着时卖出页：窗宽 680、状态宽 250，末行「保留词条品质」（确定往后一档、播确定音，←/→ 前后一档、播光标音），
+##   上方加两行说明窗（Window_Help(2)，(0,0,1280,100)）。
 
 signal closed
 
@@ -14,6 +16,8 @@ const W := 400.0
 const LH := 36.0
 const MAX_ROWS := 12
 const STATUS_W := 120.0
+const SAFE_W := 680.0
+const SAFE_STATUS_W := 250.0
 
 var kind := ""
 var actor: XActor
@@ -25,6 +29,19 @@ var _skills: Array = []
 var _order := {}
 var _potions: Array = []
 var _child: Control
+var help_win: XMVWindow
+
+
+func _safe() -> bool:
+	return kind == "sell" and XSafeSell.ENABLED
+
+
+func _w() -> float:
+	return SAFE_W if _safe() else W
+
+
+func _status_w() -> float:
+	return SAFE_STATUS_W if _safe() else STATUS_W
 
 
 func setup(k: String, a: XActor = null) -> XHangUpSubPage:
@@ -47,8 +64,10 @@ func _ready() -> void:
 	XUI.menu_background(self)
 	var n := mini(rows().size(), MAX_ROWS)
 	var h := n * LH + XMVWindow.PADDING * 2
-	win = XMVWindow.make(self, Rect2((1280 - W) / 2.0, (720 - h) / 2.0, W, h), XUI.MENU_WINDOW_OPACITY, _paint)
+	win = XMVWindow.make(self, Rect2((1280 - _w()) / 2.0, (720 - h) / 2.0, _w(), h), XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
+	if _safe():
+		help_win = XMVWindow.make(self, Rect2(0, 0, 1280, 2 * LH + XMVWindow.PADDING * 2), XUI.MENU_WINDOW_OPACITY, _paint_help)
 	_refresh()
 	if rows().is_empty():
 		if kind in ["hp", "mp"]:
@@ -101,6 +120,8 @@ func rows() -> Array:
 			var names: Array = XQuality.config().names
 			for g in names.size():
 				out.append([str(names[g]), {"none": "不卖", "all": "卖", "partial": "部分"}[XHangUpAuto.grade_state(s, g)]])
+			if XSafeSell.ENABLED:
+				out.append(["保留词条品质", XSafeSell.label(s)])
 			return out
 	return []
 
@@ -114,13 +135,19 @@ func _refresh() -> void:
 
 func _paint(c: XMVCanvas) -> void:
 	var list := rows()
-	var title_w := c.size.x - 12.0 - STATUS_W
+	var title_w := c.size.x - 12.0 - _status_w()
 	for i in range(top, mini(top + MAX_ROWS, list.size())):
 		var y := (i - top) * LH
 		if i == index:
 			c.cursor(Rect2(0, y, c.size.x, LH))
 		c.text(list[i][0], 6, y, title_w, "left", XUI.TEXT, XUI.FONT_SIZE, LH)
-		c.text(list[i][1], title_w, y, STATUS_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH)
+		c.text(list[i][1], title_w, y, _status_w(), "right", XUI.TEXT, XUI.FONT_SIZE, LH)
+
+
+func _paint_help(c: XMVCanvas) -> void:
+	var lines := XSafeSell.HELP.split("\n")
+	for i in lines.size():
+		c.text(lines[i], 6, i * LH, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, LH)
 
 
 # ---- 操作 ----
@@ -158,6 +185,9 @@ func ok() -> void:
 		"sell":
 			if index == 0:
 				XHangUpAuto.change_sell_every(s)
+			elif _safe() and index == rows().size() - 1:
+				XSafeSell.cycle(s, 1)
+				XSound.system(1)
 			else:
 				XHangUpAuto.toggle_grade(s, index - 1)
 				XSound.system(1)
@@ -174,6 +204,11 @@ func side(right: bool) -> void:
 		"order":
 			if right:
 				XHangUpAuto.move_earlier(_s(), _order, index)
+		"sell":
+			if not (_safe() and index == rows().size() - 1):
+				return
+			XSafeSell.cycle(_s(), 1 if right else -1)
+			XSound.system(0)
 		_:
 			return
 	_refresh()
