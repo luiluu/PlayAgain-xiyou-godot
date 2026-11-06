@@ -232,8 +232,61 @@
         shots: {
             enemy_book_0: async function () {},
             enemy_book_0_drops: async function () { scene().onRangeOk(); }
-        }
+        },
+        // CV 2026-11-06 换源重取：enemy_book_oracle.json 原是 v0.28 浏览器手拼（item_list_ref），这里在同一场面按原格式整份重出
+        // （extra.fixture；文字 [t,文字,x,y,宽,对齐,字号,颜色]、图标 [i,图标号,x,y]，记在 Bitmap.drawText／Window_Base.drawIcon 上，颜色为改色前）
+        extra: function (shot) { return shot === 'enemy_book_0' ? {fixture: enemyBookFixture()} : null; }
     };
+    function enemyBookFixture() {
+        var sc = scene(), idx = sc._indexWindow, st = sc._statusWindow, dl = sc._statusWindow3, target = null, ops = [];
+        var dt = Bitmap.prototype.drawText, di = Window_Base.prototype.drawIcon;
+        Bitmap.prototype.drawText = function (text, x, y, w, lh, align) {
+            if (target && this === target.contents) ops.push(['t', String(text), round(x), round(y), round(w), align === 'center' || align === 'right' ? align : 'left', this.fontSize, this.textColor]);
+            return dt.apply(this, arguments);
+        };
+        Window_Base.prototype.drawIcon = function (icon, x, y) {
+            if (target === this) ops.push(['i', icon, round(x), round(y)]);
+            return di.apply(this, arguments);
+        };
+        function rec(win, fn) { target = win; ops = []; try { fn(); } finally { target = null; } return ops; }
+        function status(e) { return rec(st, function () { st._enemy = null; st.setEnemy(e); }); }
+        function drops(i) {
+            var draws = rec(dl, function () { idx.select(i); dl.refresh(); });
+            // 每行单独重画一次取名字（有的行除名字外还画数量等）
+            return [dl._data.map(function (it, n) { var t = rec(dl, function () { dl.drawItem(n); }).filter(function (o) { return o[0] === 't'; });
+                return [it.id, t.length ? t[0][1] : it.name, it.isAItem ? 'item' : DataManager.isWeapon(it) || it.wtypeId ? 'weapon' : 'armor']; }), draws];
+        }
+        try {
+            var list = idx._list, out = {difficulty: $gameSystem._difficultyId, removed: [3, 5, 40], record: {enemy: 2, maps: ['草原', '新手村'], defeat: 5}};
+            out.geo = {index: [idx.x, idx.y, idx.width, idx.height], status: [st.x, st.y, st.width, st.height],
+                percent: [sc._percentWindow.x, sc._percentWindow.y, sc._percentWindow.width, sc._percentWindow.height], drops: [dl.x, dl.y, dl.width, dl.height], rows: idx.maxPageRows()};
+            out.names = list.map(function (e, i) { var d = rec(idx, function () { idx.drawItem(i); }).filter(function (o) { return o[0] === 't'; }); return [e.enemyId(), d.length > 1 ? d[1][1] : '']; });
+            idx.select(0); idx.setTopRow(0);
+            out.index0 = rec(idx, function () { idx.refresh(); });
+            list = idx._list;  // refresh 重建了目录（新的 Game_Enemy）
+            out.percent = rec(sc._percentWindow, function () { sc._percentWindow.refresh(); });
+            out.status = {};
+            for (var i = 0; i < list.length; i += 8) out.status[i] = [list[i].enemyId(), status(list[i])];
+            out.drops = {};
+            for (i = 0; i < list.length; i += 41) out.drops[i] = [list[i].enemyId()].concat(drops(i));
+            out.elite = {};
+            var rnd = Math.random, oe = Game_Enemy.prototype.onElite;
+            [0, 8, 41].forEach(function (k) {
+                Math.random = function () { return 0; }; Game_Enemy.prototype.onElite = function () { return true; };
+                var e = new Game_Enemy(list[k].enemyId(), 0, 0);
+                Math.random = rnd; Game_Enemy.prototype.onElite = oe;
+                // 掉落窗按 SceneManager._scene._indexWindow 的当前项取敌人：换成只含这只神话的替身目录
+                var sd = status(e), real = sc._indexWindow;
+                sc._indexWindow = {_list: [e], index: function () { return 0; }, select: function () {}};
+                var d;
+                try { d = drops(0); } finally { sc._indexWindow = real; }
+                out.elite[k] = [e.enemyId(), e.isElite(), sd, d[0].map(function (r) { return [r[0], r[1]]; })];
+            });
+            idx.select(0); st._enemy = null; st.setEnemy(list[0]);
+            out['说明'] = '冻结正式源（版本见同目录 source_before.json）怪物图鉴（AB_EnemyBook）参照：review_system_pages.cjs enemy_book（同 v0.28 版 item_list_ref 手拼的场面：四人新局 1/8/9/10、难度 2；completeEnemyBook 后去掉敌人 3/5/40；敌人 2 出没「草原、新手村」击败 5；onElite 关掉不随机神话）无头重出。status 每 8 项、drops 每 41 项取一只，elite 是目录 0/8/41 强制神话（Math.random 0、onElite 真）。文字 [t,文字,x,y,宽,对齐,字号,颜色(改色前)]，图标 [i,图标号,x,y]。CV 2026-11-06。';
+            return out;
+        } finally { Bitmap.prototype.drawText = dt; Window_Base.prototype.drawIcon = di; }
+    }
 
     // 修炼（八戒_64）：training_ui_oracle.json 的 setup（精魂 1234567890、XiuLian=[8,9,14,15]）；目录确定后的底部「修炼」，
     // 读数另记 44 个空格与「修炼」在原版字体下的实测宽（Godot 按它定「修炼」的横坐标）
