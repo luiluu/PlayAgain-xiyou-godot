@@ -562,6 +562,7 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 	var h := float(prof[1])
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
 	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x)
+	sc *= float(XAppearance.BOOK_SCALE.get(str(spec.get("key", "")), 1.0))  # v1.07 bookScale 只作用于图鉴
 	if spec.get("multi", false):
 		src = Rect2(0, 0, w, h)  # setFrame(0, 0, 档宽, 档高)
 	var sy := sc

@@ -109,12 +109,14 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1, 0)
 	var dst: Rect2 = r[0]
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
-	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x)
+	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x) * float(XAppearance.BOOK_SCALE.get(str(sp.key), 1.0))
 	var sx := dst.size.x / float(r[1].size.x)
 	var sy := dst.size.y / float(r[1].size.y)
 	var vis_bottom := dst.position.y + b.end.y * sy
 	var vis_mid := dst.position.x + (b.position.x + b.end.x) / 2.0 * sx
 	var cx := 932.0 / 10.0 - XMVWindow.PADDING
+	if id == 179:
+		check("liuying_book_scale", is_equal_approx(sc, 72.0 / 116.0 * 0.8), sc)
 	var want_y := 932.0 / 13.0 - XMVWindow.PADDING + (72.0 if bool(sp.garou) else b.size.y * sc / 2.0)
 	if not (is_equal_approx(sx, sc) and absf(vis_mid - cx) < 0.01 and absf(vis_bottom - want_y) < 0.01 and (bool(sp.garou) or is_equal_approx(sy, sc))):
 		bad.sprite.append("%d 立绘位置 %s 缩放 %s／%s 档 %s 脚底 %s,%s 应 %s,%s" % [id, dst, sx, sy, sc, vis_mid, vis_bottom, cx, want_y])
@@ -148,8 +150,10 @@ func _run() -> void:
 			bad.status.append("%d %s" % [id, d])
 		var sp := XActorBook.sprite_spec(id)
 		var p := str(sp.get("path", ""))
-		if str(a.get("sprite", "")) != str(sp.get("name", "")) or (str(a.get("sprite", "")) != "") != (p != ""):
-			bad.sprite.append("%d %s 图 %s" % [id, a.get("sprite", ""), p])
+		# 参照的 sprite 是 a.battlerName()（ui_reference/review_actor_book.js），不是画出来的图；168、173～177 图鉴改画逐帧图
+		# （Codex_MiraRavenMultiFrame drawAllContents 包装），所以比战斗图名，画的那张由 sprite_spec 的 key／_sprite_geometry 管
+		if str(a.get("sprite", "")) != XActorBook._book_battler(id) or (str(a.get("sprite", "")) != "") != (p != ""):
+			bad.sprite.append("%d %s 战斗图名 %s 图 %s" % [id, a.get("sprite", ""), XActorBook._book_battler(id), p])
 		elif id >= 167 and p != "":
 			_sprite_geometry(id, sp, bad)
 		if not a.has("header"):
