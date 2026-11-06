@@ -518,5 +518,54 @@ class CloudDownloadTests(unittest.TestCase):
                 self.assertIn(flag, args)
 
 
+class SceneListAndAppDefaultTests(unittest.TestCase):
+    """tools80：--scenes 写错（不带 .tscn、不存在）直接报错，不再空跑显示成功；xiyou_export 默认来源先认 XIYOU_APP，再用本树冻结正式源。"""
+    def load(self, path, name):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+        return mod
+
+    def plan_with(self, scenes):
+        mod = self.load(HERE / '云端选测.py', 'cloud_scenes')
+        tmp = tempfile.TemporaryDirectory(prefix='xiyou_cloud_scenes_'); self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name); tests = root / mod.PROJECT_REL / 'tests'; tests.mkdir(parents=True)
+        for n in ('xiyou_a.tscn', 'xiyou_b.tscn'):
+            (tests / n).write_text('')
+        mod.ROOT = root
+        mod.git = lambda *a, **k: 'f' * 40
+        mod.ls_remote = lambda *a, **k: []
+        out = root / 'plan.json'
+        import argparse
+        a = argparse.Namespace(branch='ci/x', mode='', base='origin/main', force=False, scenes=scenes, timings=None, jobs=2, target=600, max_shards=16, out=str(out))
+        os.environ.pop('GITHUB_OUTPUT', None)
+        return mod, a, out
+
+    def test_scenes_without_tscn_or_missing_fail_instead_of_empty_pass(self):
+        for spec, word in [('xiyou_a', '.tscn'), ('xiyou_a.tscn xiyou_nope.tscn', 'xiyou_nope.tscn'), ('   ', '没给')]:
+            mod, a, out = self.plan_with(spec)
+            with self.assertRaises(RuntimeError) as cm:
+                mod.cmd_plan(a)
+            self.assertIn(word, str(cm.exception), spec)
+            self.assertFalse(out.exists(), spec)          # 不写空计划
+
+    def test_valid_scene_list_is_kept_in_order_given(self):
+        mod, a, out = self.plan_with('xiyou_b.tscn xiyou_a.tscn')
+        self.assertEqual(mod.requested_scenes(a.scenes, ['xiyou_a.tscn', 'xiyou_b.tscn']), ['xiyou_a.tscn', 'xiyou_b.tscn'])
+
+    def test_export_default_app_prefers_env_then_this_tree(self):
+        tools = HERE.parent / '03_转换工具'
+        tmp = tempfile.TemporaryDirectory(prefix='xiyou_export_app_'); self.addCleanup(tmp.cleanup)
+        copy = Path(tmp.name) / '03_转换工具'; copy.mkdir()
+        shutil.copy2(tools / 'xiyou_export.py', copy / 'xiyou_export.py')
+        sys.path.insert(0, str(tools)); self.addCleanup(sys.path.remove, str(tools))
+        with unittest.mock.patch.dict(os.environ, {'XIYOU_APP': '/somewhere/else/app.nw'}):
+            self.assertEqual(self.load(copy / 'xiyou_export.py', 'export_env').DEFAULT_APP, Path('/somewhere/else/app.nw'))
+        env = {k: v for k, v in os.environ.items() if k != 'XIYOU_APP'}
+        with unittest.mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(self.load(copy / 'xiyou_export.py', 'export_tree').DEFAULT_APP,
+                             Path(tmp.name).resolve() / '02_内容与素材/冻结正式源/app.nw')
+
+
 if __name__ == '__main__':
     unittest.main()
