@@ -36,13 +36,15 @@ static var _bad_note := RegEx.create_from_string("(?i)<GuyuActor>|<CodexSuperStr
 static func is_weak(a) -> bool:
 	if not a is XActor:
 		return false
+	if XTier.tagged():
+		return XTier.is_weak(a)  # v0.44：CodexTier.isWeak（有名字且没有 <KyoTier>）
 	var d: Dictionary = a.data()
 	var id := int(a.actor_id)
 	if d.is_empty() or str(d.get("name", "")) == "" or XState.difficulty_native_ids(1345, "actorIds").has(id):
 		return false
 	if (id >= 167 and id <= 174) or _bad_note.search(str(d.get("note", ""))) != null:
 		return false
-	return not XItemMarks.is_super_strong(id) and not XPowerBooks.STRONG_IDS.has(id)
+	return not XItemMarks.is_super_strong(id) and not XPowerBooks.strong_ids().has(id)
 
 
 static func enabled(s: XState) -> bool:

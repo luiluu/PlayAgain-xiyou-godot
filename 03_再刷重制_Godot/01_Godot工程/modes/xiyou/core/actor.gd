@@ -446,6 +446,8 @@ const STRONG_SKILL_REPLACE := {5968: 5969, 5970: 5971, 5972: 5973, 6235: 6216}
 const STRONG_WEAK_STATES := [1035, 1273, 1274, 1276, 1277, 1279, 1280]
 
 func is_strong_classified() -> bool:
+	if XTier.tagged():
+		return XTier.is_non_weak(self)  # v0.44：CodexTier.isNonWeak（超强者和强者都用强者版技能）
 	var note := str(data().get("note", ""))
 	return (actor_id >= 167 and actor_id <= 174) or note.contains("<GuyuActor>") or note.contains("<CodexSuperStrong>")
 
