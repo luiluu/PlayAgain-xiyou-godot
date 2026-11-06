@@ -1,7 +1,7 @@
 # 交付：cc/rules-newsrc2
 
 - 车道／工作者：C 规则／rules（cc）
-- 状态：进行中（第一段已交，见下；总装追加的敌人复活、weapon_unleash 在做）
+- 状态：第一段可合（回集成分支）；总装追加的两项到 40% 线交接，见「接续」
 - 基于 `cc/rules-newsrc1` 的 dce20d67（已在集成分支里），交付合回集成分支 `cc/newsrc-switch`，**不合 main**。工作树就是 rules-newsrc1 那棵，产物是集成分支的新源产物；探针一律 `XIYOU_APP=…/冻结正式源/v0.62.12/app.nw`。
 
 ## 做了什么
@@ -30,10 +30,18 @@
 - `事件空绿扫描.py --check`：rc=1、4747 条 ✗，全是 event_states 产物与预设对不上（产物克隆自集成分支）；本单没碰事件。
 - `工具回归.py`：2 项挂，跟本单无关：插件备注覆盖（新源 7 个备注标签 codexaura、codexliuying* 等没读，转换器）、探针登记检查（`death_admission_probe.cjs` 没关五乘区，本单没碰这个探针）。
 
-## 接续（总装追加，还没做完）
+## 接续（总装追加，到 40% 线停手）
 
-- 敌人复活：revive.apply 173 项全是敌人行，参照里敌人复活与否跟着 dirtyWarm 变（见 cc_nezha-newsrc3.md）；guyu_battle 两项复活可能同源。
-- weapon_unleash：w93 解放 5636 用不了。
+已合集成分支 451012b6（合并提交 17cb0ea8，无冲突）；`generated/` 用 APFS 克隆换成集成分支工作树 recursing-shamir 11:57 重出的新源产物（旧的挪到会话临时目录，不入库），已 `godot --import`。合并后本机：state_effects 只剩 revive.apply 173＋action.counter.sequence（2792）＋rest.costume 1；guyu_battle 2；weapon_unleash 8。
+
+**敌人复活（revive.apply 173）**，查到一半：
+- 失败行几乎全是「敌人 × dirtyBefore=false」（30 行）＋252 的 2 行；角色行、敌人脏缓存行都过。参照里这些行 draws=0、敌人死、复活状态留着：复活块里 `target.hp <= 0 && Math.random() > 0.6` 一次随机都没抽，说明 deselect 时块看到的 hp 不是 0（短路）或块没进 typestates。
+- 我写了一个单例追踪 `mv_oracle/.sandbox/rn2_revive_trace.cjs`（不入库；`XIYOU_APP=…v0.62.12/app.nw node .sandbox/rn2_revive_trace.cjs 1099`）：照探针同样的 reset／预热，单独跑和按探针顺序（脏→不脏、r=0.05→0.95）连跑，新源里**不脏的敌人照样复活**（r=0.95 时 hp 回满 75000007500、draws 1）。所以参照这 30 行很可能是探针里前面用例留下的现场（同一场战斗、直接改 `_states` 绕过缓存），不是原版机制。
+- 下一步：在 `state_effects_probe.cjs` 的不脏分支 deselect 入口打一行 `t.hp`／`typestates` 看是哪一样（探针归哪吒，改探针前跟哪吒说一声）；确认是探针现场就由哪吒修探针重出，Godot 不用改。
+- 252（「再活五百年」，`<passiveHarmRe01～09:500>`）另一回事：参照敌人吃 500 固定减伤、这一击 0 伤害不死；Godot 打 7 点打死。要查敌人身上状态的 passiveHarmRe 在 Godot 有没有算进固定减伤（`damage.gd` 固定减伤、敌人 passive_cache）。
+- guyu_battle `script.sub.6.revive.party`／`7.turn.party`：参照复活到满血、Godot 0，没查；等上面结论出来再看是否同源。
+
+**weapon_unleash w93 5636**：没动。失败 8 项：tp0／tp100 的 `started` 空（参照 [5636]）、tp100 `canAttack` false（参照 true）、`unleashes.canUse` false。先查 5636 的 canUse 在新源为什么为真（费用、武器类型、<Hide in Battle>、新源 v0.29 以后的技能限制）。
 
 ## 变更记录草稿
 
@@ -48,4 +56,6 @@
 ## 本分支提交
 
 - cc943917 三份夹具重出＋wtype_cache_probe.cjs
-- （下一条）2626 扩到 141～166、熟练度夹具
+- 381a806a 2626 扩到 141～166、熟练度夹具
+- 7eeadb57 交付单第一段
+- 17cb0ea8 合集成分支 451012b6
