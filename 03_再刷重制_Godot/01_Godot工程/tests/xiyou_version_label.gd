@@ -27,7 +27,9 @@ func _run() -> void:
 		var vs := get_viewport().get_visible_rect().size
 		check("bottom_right", r.end.x > vs.x - 40 and r.end.x <= vs.x and r.end.y > vs.y - 40 and r.end.y <= vs.y, [r, vs])
 		check("ignores_mouse", v.label.mouse_filter == Control.MOUSE_FILTER_IGNORE)
-		check("above_touch_layer", v.layer > XTouchControls.new().layer or v.layer >= 121)
+		var tc := XTouchControls.new()
+		check("above_touch_layer", v.layer > tc.layer or v.layer >= 121)
+		tc.free()
 	ReleaseEntry.simulate_release = true
 	check("shows_in_release", XVersionLabel.SHOW and get_node_or_null("/root/GameApp/VersionLabel") != null)
 	ReleaseEntry.simulate_release = false
