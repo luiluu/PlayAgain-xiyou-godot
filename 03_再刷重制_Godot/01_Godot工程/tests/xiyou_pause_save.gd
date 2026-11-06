@@ -112,16 +112,16 @@ func _run() -> void:
 
 	# 写不进去：只记日志，不弹窗，不改状态
 	_fresh()
+	# 临时文件的位置被同名文件夹占着，写不进去
 	var good_dir := XSave.dir_override
-	var blocker := good_dir.path_join("blocker")
-	var bf := FileAccess.open(blocker, FileAccess.WRITE)
-	bf.store_string("x")
-	bf.close()
-	XSave.dir_override = blocker.path_join("sub")
+	var bad_dir := good_dir.path_join("blocked")
+	XSave.dir_override = bad_dir
+	DirAccess.make_dir_recursive_absolute(XSave.auto_path() + ".tmp")
 	platform.on_paused()
-	check("fail_logged_no_popup", XAutoSave.last_result == "fail" and not map.busy and XSave.current_slot == 1, XAutoSave.last_result)
+	check("fail_logged_no_popup", XAutoSave.last_result == "fail" and not XSave.exists_auto() and not map.busy and XSave.current_slot == 1, XAutoSave.last_result)
+	DirAccess.remove_absolute(XSave.auto_path() + ".tmp")
+	DirAccess.remove_absolute(bad_dir)
 	XSave.dir_override = good_dir
-	DirAccess.remove_absolute(blocker)
 
 	# 手动存档之后自动存档作废；读自动存档回到原来的档位
 	_fresh()
