@@ -82,6 +82,11 @@ KEYS = {
 
 
 TOP_LEVEL = '顶层'  # 接受单 collection：参照文件顶层的非用例字段
+# 接受单 newDigest：这条既有用例（或地图、角色）在新参照里删掉了（换源时用例跟着正式版删，BM 11-06）
+DELETED = '已删除'
+# 接受单 key：换源时按「文件＋集合」整组接受（该集合本轮全部改变一条写一个理由）；摘要是全部条目 [键, 摘要] 排序后的摘要，
+# 所以整组里多一条、少一条或任何一条值不同都对不上（BM 11-06：换源有 33 万条单条改变，逐条写接受单八十多 MB）
+ALL_KEYS = '*'
 # 探针顶层纯说明文字（哪吒_8 10-29 盘点 generated/oracle：hostScope 二十多个探针、scope 两个，都是写给人看的取值范围说明，
 # 每期加词条都改写）。新旧都是字符串时不算测量改变；别的类型、新增或删掉仍照常报。机器标签式的 hostScope
 #（如 headless-rule-timing）另由各探针契约（battle_event_contract 等）核对，不靠这里。
@@ -261,10 +266,18 @@ def compare_file(name, old, new, changes=None):
     old, new = payload(old), payload(new)
     changes = [] if changes is None else changes
 
-    def change(collection, key, a, b, problem):
+    def change(collection, key, a, b, problem, switch_only=False):
         if not has_error(b):
-            changes.append({'collection': collection, 'key': key, 'fields': changed_fields(a, b),
-                            'oldDigest': digest(a), 'newDigest': digest(b), 'problem': problem})
+            row = {'collection': collection, 'key': key, 'fields': changed_fields(a, b),
+                   'oldDigest': digest(a), 'newDigest': digest(b), 'problem': problem}
+            if switch_only:
+                row['switchOnly'] = True
+            changes.append(row)
+
+    def deleted(collection, key, a, problem):
+        # 删除平时照旧不放行，只在换源时可接受（同顶层列表）
+        changes.append({'collection': collection, 'key': key, 'fields': ['*'],
+                        'oldDigest': digest(a), 'newDigest': DELETED, 'problem': problem, 'switchOnly': True})
     additions, problems = [], []
     if old == new:
         return additions, problems
@@ -274,6 +287,11 @@ def compare_file(name, old, new, changes=None):
         for key, value in old.items():
             if key not in new or new[key] != value:
                 problems.append('既有地图改变或删除：' + key)
+                # 地图按图号整张接受（collection 写「顶层」、key 写图号）
+                if key in new:
+                    change(TOP_LEVEL, key, value, new[key], problems[-1], switch_only=True)
+                else:
+                    deleted(TOP_LEVEL, key, value, problems[-1])
         for key in new.keys() - old.keys():
             row = new[key]
             valid = (isinstance(row, dict) and type(row.get('width')) is int and row['width'] > 0
@@ -323,6 +341,8 @@ def compare_file(name, old, new, changes=None):
                     problems.append('既有' + ('敌人' if field == 'enemies' else '角色') + '改变或删除：' + key)
                     if key in b:
                         change(field, key, value, b[key], problems[-1])
+                    else:
+                        deleted(field, key, value, problems[-1])
             for key in b.keys() - a.keys():
                 if has_error(b[key]):
                     problems.append('新增' + ('敌人' if field == 'enemies' else '角色') + '有错误：' + key)
@@ -345,6 +365,8 @@ def compare_file(name, old, new, changes=None):
                 if key in gb:
                     # 同键各 1 条按那一条比字段；同键 N→M 条（重号、追加或删掉其中几条）整组当一条，字段记 *（总装 11-05）
                     change(field, key, group_value(value), group_value(gb[key]), problems[-1])
+                else:
+                    deleted(field, key, group_value(value), problems[-1])
             for key in gb.keys() - ga.keys():
                 if any(has_error(json.loads(row)) for row in gb[key]):
                     problems.append(field + ' 新用例有错误：' + key[:160])
@@ -355,9 +377,10 @@ def compare_file(name, old, new, changes=None):
         else:
             problems.append('非新增用例字段改变：' + field)
             # 探针顶层说明字段（如 scope）：不是列表的可凭接受单显式放行（collection 写「顶层」、key 写字段名）；
-            # 列表仍不放行，整组用例的改变要按稳定键登记进 KEYS 再逐条接受
-            if not isinstance(a, list) and not isinstance(b, list):
-                change(TOP_LEVEL, field, a, b, problems[-1])
+            # 列表平时不放行，整组用例的改变要按稳定键登记进 KEYS 再逐条接受；换源（同步 --accept-source-switch）时
+            # 整个字段当一条接受（switchOnly），因为没有稳定键的列表换源后只能整组对账（BM 11-06）
+            list_field = isinstance(a, list) or isinstance(b, list)
+            change(TOP_LEVEL, field, a, b, problems[-1], switch_only=list_field)
     return additions, problems
 
 
@@ -432,17 +455,39 @@ def load_acceptances(paths):
     return entries, sources
 
 
-def apply_acceptances(check, entries, current=None):
+def apply_acceptances(check, entries, current=None, source_switch=False):
     """逐条对上 changes 里的单条既有用例改变，被接受的从问题里去掉；对不上的条目留在 unused。
     current(条目)：本轮参照里该条现在的摘要。对不上本轮变化、但现值已等于条目 newDigest 的（基线早已接受过，如车道基线旧、
     把 main 已接受的 hostScope 变化又写了一张接受单，飞艇甲二 10-30），记进 alreadyInBaseline 只提示、不算 unused；
-    它不去掉任何问题，真实对不上的照旧拒收（哪吒_8）。"""
+    它不去掉任何问题，真实对不上的照旧拒收（哪吒_8）。
+    source_switch：换源（同步 --accept-source-switch）时才放行 switchOnly 的整字段列表改变。"""
     problems = {k: list(v) for k, v in check['problems'].items()}
     accepted, unused, already = [], [], []
     for e in entries:
+        if e['key'] == ALL_KEYS:
+            rows = [c for c in check.get('changes', {}).get(e['file'], []) if c['collection'] == e['collection']]
+            group = collection_digests(rows)
+            # 整组几十万条：按计数一次扣掉（逐条 list.remove 是平方级）
+            have, need = collections.Counter(problems.get(e['file'], [])), collections.Counter(c['problem'] for c in rows)
+            if (not source_switch or not rows or e['fields'] != ['*'] or (e['oldDigest'], e['newDigest']) != group
+                    or any(have[p] < n for p, n in need.items())):
+                unused.append({k: e[k] for k in ACCEPT_FIELDS[:6]})
+                continue
+            left = []
+            for p in problems[e['file']]:
+                if need[p] > 0:
+                    need[p] -= 1
+                else:
+                    left.append(p)
+            problems[e['file']] = left
+            if not problems[e['file']]:
+                del problems[e['file']]
+            accepted.append({k: e[k] for k in ACCEPT_FIELDS + ('source',)})
+            continue
         hit = next((c for c in check.get('changes', {}).get(e['file'], [])
                     if c['collection'] == e['collection'] and c['key'] == e['key'] and c['fields'] == e['fields']
                     and c['oldDigest'] == e['oldDigest'] and c['newDigest'] == e['newDigest']
+                    and (source_switch or not c.get('switchOnly'))
                     and c['problem'] in problems.get(e['file'], [])), None)
         if hit is None:
             row = {k: e[k] for k in ACCEPT_FIELDS[:6]}
@@ -456,6 +501,25 @@ def apply_acceptances(check, entries, current=None):
             del problems[e['file']]
         accepted.append({k: e[k] for k in ACCEPT_FIELDS + ('source',)})
     return {'problems': problems, 'accepted': accepted, 'unused': unused, 'alreadyInBaseline': already}
+
+
+def collection_digests(rows):
+    """一组改变（同一文件同一集合）的整组摘要 (旧, 新)：按键排序后的 [键, 摘要] 列表的摘要。"""
+    rows = sorted(rows, key=lambda c: c['key'])
+    return digest([[c['key'], c['oldDigest']] for c in rows]), digest([[c['key'], c['newDigest']] for c in rows])
+
+
+def grouped_candidates(candidates):
+    """把 change_candidates 按（文件, 集合）合成整组条目（key 写 *、fields 写 *），只给换源用。"""
+    by = collections.defaultdict(list)
+    for c in candidates:
+        by[(c['file'], c['collection'])].append(c)
+    out = []
+    for (name, collection), rows in sorted(by.items()):
+        old, new = collection_digests(rows)
+        out.append({'file': name, 'collection': collection, 'key': ALL_KEYS, 'fields': ['*'], 'oldDigest': old, 'newDigest': new,
+                    'count': len(rows)})
+    return out
 
 
 def change_candidates(check):
