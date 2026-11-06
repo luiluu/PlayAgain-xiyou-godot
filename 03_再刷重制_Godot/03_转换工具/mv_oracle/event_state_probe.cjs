@@ -87,7 +87,7 @@ const rec = e => trace && trace.push(e);
 const EFFECT = new Set([121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 137, 201, 223, 236, 301, 302, 303, 311, 312, 313, 314, 315, 316, 317,
   318, 319, 320, 321, 324, 325, 355, 356, 117, 352, 353, 354]);
 // 初始状态预设：开关、变量、独立开关、金钱、物品／武器／防具、队伍、角色技能和等级、难度
-const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'playerDirection', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
+const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
 function applyPreset(p) {
   if (!p) return;
   // 不认识的预设键直接报错（审查 49：g3 用了 random 而不是 random_seq，悄悄没生效）
@@ -112,6 +112,13 @@ function applyPreset(p) {
   // accept5：玩家朝向（条件分歧 6 [-1, 方向]：传送门、机关多要玩家面朝某方向）
   if (p.playerDirection) w.$gamePlayer.setDirection(p.playerDirection);
   for (const [k, v] of Object.entries(p.selfSwitches || {})) { const [m, e, ch] = k.split(','); w.$gameSelfSwitches.setValue([Number(m), Number(e), ch], !!v); }
+  // tools75：游玩秒数（$gameSystem.playtime() = floor(Graphics.frameCount / 60)）。此时 frameCount 刚清 0，之后每帧照常 +1，
+  // 所以第一条指令看到 playtime 秒＋1 帧；Godot 侧 _apply_preset 设 play_seconds，start_frames 以它为起点，同
+  if (p.playtime !== undefined) {
+    // 只收非负整数秒：小数秒两边浮点取整可能差一帧
+    if (!Number.isInteger(p.playtime) || p.playtime < 0) throw new Error('event_presets playtime 要非负整数秒: ' + p.playtime);
+    w.Graphics.frameCount = p.playtime * 60;
+  }
 }
 w.prompt = (msg, def) => { rec({t: 'prompt', text: String(msg || '')}); return PROMPT_TEXT; };
 if (w.$) w.$.toaster = o => rec({t: 'toast', text: String(o && (o.message || o.title) || '')});

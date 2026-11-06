@@ -5,6 +5,7 @@ import copy
 import importlib.util
 import io
 import json
+import re
 import os
 from pathlib import Path
 import shutil
@@ -1651,6 +1652,75 @@ for name in filter(None, files):
         self.assertIn('对不上是哪条', self.last_output)
         self.assertNotIn(tok, '\n'.join(x for x in (self.root / gd).read_text().split('\n') if 'O-119' in x))
 
+    def located_lane(self, rows, files):
+        """tools76：草稿首格写 O-待定-N、代码注释写别的占位写法；rows＝[(后缀, 位置, 恢复方法)]，files＝{相对 PROJECT 的路径: 内容（TOK 代占位）}。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        body = ''.join('| %s%s | %s | 问题 | 做法 | 理由 | %s | cc | 已做 |\n' % (tok, suf, loc, back) for suf, loc, back in rows)
+        self.sheet_with(self.HEAD8 + body)
+        for rel, text in files.items():
+            f = self.wt / merge.PROJECT / rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(text.replace('TOK', tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'code placeholders', cwd=self.wt)
+        return tok
+
+    def number_of(self, word):
+        reg = (self.root / merge.OPT_REGISTRY).read_text()
+        return re.search(r'^\| (O-\d{3}) \|[^\n]*' + word, reg, re.M).group(1)
+
+    def test_bare_comment_placeholder_numbered_by_location_column(self):
+        """11-06 ui16：草稿 O-待定-1～3 各在一个文件，三处注释都写「（O-待定，回退＝改回 false）」，工具没认出、收尾 opt_audit 才拦。
+        现在按草稿行「位置」列的文件认：一个文件一条就换成那条的号。"""
+        tok = self.located_lane(
+            [('-1', '`battle/boss_hp_bar.gd` `RANGE_V037`', '`XBossHpBar.RANGE_V037 = false`'),
+             ('-2', '`battle/boss_status_panel.gd` `TOGGLE`、设置页', '`XBossStatusPanel.TOGGLE = false`'),
+             ('-3', '`ui/help_card.gd` `WHITE_STATS_FIRST`', '`XHelpCard.WHITE_STATS_FIRST = false`')],
+            {'modes/xiyou/battle/boss_hp_bar.gd': '## 换源后翻成 true（TOK，回退＝改回 false）。\nstatic var RANGE_V037 := false\n',
+             'modes/xiyou/battle/boss_status_panel.gd': '## 换源后翻成 true（TOK，回退＝改回 false）。\nstatic var TOGGLE := false\n',
+             'modes/xiyou/ui/help_card.gd': '## 换源后翻成 true（TOK，回退＝改回 false）。\nstatic var WHITE_STATS_FIRST := false\n'})
+        self.assertEqual(self.call(), 0, self.last_output)
+        for rel, word in [('battle/boss_hp_bar.gd', 'RANGE_V037'), ('battle/boss_status_panel.gd', 'TOGGLE'), ('ui/help_card.gd', 'WHITE_STATS_FIRST')]:
+            code = (self.root / merge.PROJECT / 'modes/xiyou' / rel).read_text()
+            self.assertIn('（%s，回退' % self.number_of(word), code)
+            self.assertNotIn(tok, code)
+        self.assertEqual(len({self.number_of(w) for w in ('RANGE_V037', 'TOGGLE', 'WHITE_STATS_FIRST')}), 3)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)     # 收尾 opt_audit 也过
+
+    SAVE_ROWS = [('-2', '`modes/xiyou/core/save_transfer.gd` import_to', '`XSaveTransfer.BACKUP_BEFORE_IMPORT = false`'),
+                 ('-3', '`modes/xiyou/core/save_transfer.gd`', '无开关（规矩所定）')]
+
+    def test_same_file_two_drafts_bare_comment_stops_at_plan_and_lists(self):
+        """11-06 android4：save_transfer.gd 两条草稿（-2 导入前备份、-3 不带 aux），注释两处都写 O-待定。注在开关上的那处认得出
+        （开关名是 -2 独有的键）；aux 那处后面是空行、分不出：准备前就停下列出，要车道写成 O-待定-N，main 不动。"""
+        tok = self.located_lane(self.SAVE_ROWS, {'modes/xiyou/core/save_transfer.gd':
+            '## 原版还会带 aux，这里没做：只搬存档本身（TOK）。\n\nconst FORMAT := "x"\n## TOK：导入覆盖已有存档前先备份。\nstatic var BACKUP_BEFORE_IMPORT := true\n'})
+        head = self.g('rev-parse', 'HEAD')
+        self.assertEqual(self.call(), 1)
+        self.assertIn('save_transfer.gd:1', self.last_output)
+        self.assertIn('分不出是哪条', self.last_output)
+        self.assertIn(tok + '-N', self.last_output)
+        self.assertNotIn('save_transfer.gd:4', self.last_output)     # 注在开关上的那处认得出，不列
+        self.assertEqual(self.g('rev-parse', 'HEAD'), head)
+        self.assertFalse(merge.dirty(self.root))
+
+    def test_same_file_two_drafts_numbered_when_lane_writes_suffix(self):
+        """同上，车道把 aux 那处写成 O-待定-3：它按首格换号，注在开关上的裸占位按开关名认成 -2。"""
+        self.located_lane(self.SAVE_ROWS, {'modes/xiyou/core/save_transfer.gd':
+            '## 只搬存档本身（TOK-3）。\n\n## TOK：导入覆盖已有存档前先备份。\nstatic var BACKUP_BEFORE_IMPORT := true\n'})
+        self.assertEqual(self.call(), 0, self.last_output)
+        code = (self.root / merge.PROJECT / 'modes/xiyou/core/save_transfer.gd').read_text().split('\n')
+        self.assertIn('（%s）' % self.number_of('无开关'), code[0])
+        self.assertTrue(code[2].startswith('## %s：' % self.number_of('BACKUP_BEFORE_IMPORT')), code[2])
+        self.assertNotEqual(self.number_of('无开关'), self.number_of('BACKUP_BEFORE_IMPORT'))
+
+    def test_comment_placeholder_in_file_no_draft_mentions_stops(self):
+        self.located_lane(self.SAVE_ROWS[:1], {'modes/xiyou/core/other.gd': '## 另一处（TOK）\nstatic var X := true\n'})
+        self.assertEqual(self.call(), 1)
+        self.assertIn('都没写这个文件', self.last_output)
+
     def test_draft_written_as_list_is_refused(self):
         tok = 'O-' + '待定'
         self.realistic_checker()
@@ -2536,6 +2606,49 @@ for name in filter(None, files):
         self.assertEqual(state['extraDeliveries'], [])
         self.assertIn(str(self.receipt), err.getvalue())
         self.assertIn('已在 main 删除', err.getvalue())
+
+    def test_lane_edit_of_sheet_deleted_in_main_merges_as_delete(self):
+        """tools76（11-06 总装）：shop1 改了 main 已归并删除的 keys3 交付单，准备时 modify/delete 冲突，按删除解决后
+        versionPaths 还记着它，报「编号占位文件已改变类型」。现在：plan 不收进 versionPaths，冲突自动按删除处理、提示一句。"""
+        lane2 = Path(self.tmp.name) / 'lane2'
+        self.g('worktree', 'add', '-b', 'claude/task2', str(lane2), 'claude/task')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertFalse((self.root / self.receipt).exists())
+        # 期二车道没合 main，就改了期一交付单（带开发编号占位）
+        (lane2 / self.receipt).write_text((lane2 / self.receipt).read_text() + '- 期二补记\n')
+        (lane2 / '00_项目管理/交付/claude_task2.md').write_text(
+            '# 期二\n- 状态：可合并\n\n## 变更记录草稿\n\n## 日期 【Claude】期二（' + merge.VERSION_MARKER + '）\n\n- phase 2\n')
+        self.g('add', '.', cwd=lane2); self.g('commit', '-m', 'phase 2 touches old sheet', cwd=lane2)
+        with contextlib.redirect_stderr(io.StringIO()):
+            state = merge.plan(self.root, 'task2')
+        self.assertNotIn(str(self.receipt), state['versionPaths'])
+        self.assertEqual(state['goneSheets'], [str(self.receipt)])
+        result = subprocess.run([sys.executable, str(HERE / '合并车道.py'), 'task2', '--root', str(self.root)], capture_output=True, text=True)
+        out = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, out)
+        self.assertIn('modify/delete 冲突），按删除处理', out)   # 真走到了自动解冲突
+        self.assertFalse((self.root / self.receipt).exists())
+        self.assertIn('phase 2', (self.root / merge.LOG).read_text())
+
+    def test_old_state_with_gone_sheet_in_version_paths_is_dropped(self):
+        """tools76：旧状态文件（或总装手解冲突删掉）里 versionPaths 还记着 main 已删的旧交付单：从 versionPaths 去掉、提示，不报改变类型。"""
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish'), 0, self.last_output)
+        state = {'delivery': '00_项目管理/交付/claude_new.md', 'extraDeliveries': [], 'base': self.g('rev-parse', 'HEAD'),
+                 'versionPaths': [str(self.receipt)], 'optAdded': {}, 'version': 'dev.002'}
+        sf = Path(self.tmp.name) / 'state.json'
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            merge.replace_versions(self.root, state, sf)
+        self.assertEqual(state['versionPaths'], [])
+        self.assertIn('按删除处理', out.getvalue())
+        # 本期交付单自己不见了照旧报错（不是旧交付单）
+        state = dict(state, delivery=str(self.receipt), versionPaths=[str(self.receipt)])
+        state.pop('versionEdits')
+        with self.assertRaisesRegex(RuntimeError, '改变类型'):
+            merge.replace_versions(self.root, state, sf)
 
     def test_lane_on_new_branch_skips_worktree_but_deletes_delivery_branch(self):
         # 车道交付后在同一工作树换新分支接着做（会话绑在路径上）：工作树保留，交付分支照删。
