@@ -523,8 +523,9 @@ def grouped_candidates(candidates):
 
 
 def change_candidates(check):
-    """报告里给人看的可接受变化（不含理由）；只列出，不自动生成接受单。"""
-    return [{'file': name, **{k: c[k] for k in ACCEPT_FIELDS[1:6]}}
+    """报告里给人看的可接受变化（不含理由）；只列出，不自动生成接受单。
+    只在换源时才认的（删除、无稳定键的整字段列表）带 switchOnly: true，平时写进接受单也会被拒（生成接受单 不抄这个标记）。"""
+    return [{'file': name, **{k: c[k] for k in ACCEPT_FIELDS[1:6]}, **({'switchOnly': True} if c.get('switchOnly') else {})}
             for name, rows in sorted(check.get('changes', {}).items()) for c in rows]
 
 
