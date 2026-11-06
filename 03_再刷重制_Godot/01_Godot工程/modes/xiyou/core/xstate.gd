@@ -437,10 +437,19 @@ static func difficulty_managed_skills() -> Array:
 ## 角色备注 <KyoTier:超强者>／<KyoTier:强者> 的有名字角色，按编号升序（原版超强者、强者两份拼起来再排序）。MVScript.run 里把调用换成字面数组；difficulty_native_ids 认 `var 名单 = CodexTier.nonWeakIds()`，
 ## 后面照旧按「var ids = [..]; ids.forEach(...)」的写法认（v0.28 这几段就是写死的数组）
 static func tier_non_weak_ids() -> Array:
+	return tier_ids(["超强者", "强者"])
+
+
+## CodexTier.ids：备注里第一个 <KyoTier:…> 是 tiers 之一的有名字角色，编号升序（原版 TAG.exec 只取第一处）。
+## 悟空的 XTier（cc/wukong-newsrc5）进来后改成调它
+static func tier_ids(tiers: Array) -> Array:
 	var ids := []
 	var tag := RegEx.create_from_string("<KyoTier\\s*:\\s*(超强者|强者)\\s*>")
 	for a in XDB.table("Actors"):
-		if a is Dictionary and str(a.get("name", "")) != "" and tag.search(str(a.get("note", ""))) != null:
+		if not a is Dictionary or str(a.get("name", "")) == "":
+			continue
+		var m := tag.search(str(a.get("note", "")))
+		if m != null and tiers.has(m.get_string(1)):
 			ids.append(int(a.id))
 	ids.sort()
 	return ids
