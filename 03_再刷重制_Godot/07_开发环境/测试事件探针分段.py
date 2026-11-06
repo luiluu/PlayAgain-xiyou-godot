@@ -214,7 +214,8 @@ class PresetKeysTests(unittest.TestCase):
         cases = json.loads((TOOLS / 'event_presets.json').read_text())['cases']
         got = {c['tag']: c['preset'] for c in cases if c['base'] == 'm187e3p1'}
         self.assertEqual(got.get('t75'), {'playtime': 30})   # 边界：30－0≥30，进收获分支，变量 321＝playtime
-        self.assertEqual(got.get('t75b'), {'playtime': 29})  # 差一秒：走「30 秒后再来」
+        # 29－(－1)≥30：游玩秒数和变量一起进脚本条件（单 29 秒走「30 秒后再来」，一条效果都不走，空绿扫描 --check 不收）
+        self.assertEqual(got.get('t75b'), {'playtime': 29, 'variables': {'321': -1}})
 
 
 class PresetContributionReportTests(unittest.TestCase):
