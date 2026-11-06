@@ -39,7 +39,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 ## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
-	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled"]
+	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel"]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
@@ -56,6 +56,8 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
+	if XBossStatusPanel.TOGGLE:  # v0.56：「Boss状态面板」在「步步遇敌」后、「消息提醒」前（v0.62.12 options_probe 的行序）
+		_list.insert(_list.find_custom(func(o): return o[1] == "codexNotices"), ["Boss状态面板", "codexBossStatusPanel", true])
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
 	XUI.menu_background(self)
