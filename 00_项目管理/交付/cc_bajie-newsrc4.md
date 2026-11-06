@@ -106,6 +106,17 @@
 - 合并后集成树要重跑转换器（多出 `db/CodexMerchants.json`），`xiyou_merchant29` 才读得到数据。
 - 需要用户决定：O-待定·深渊商人。Kyo 已定修，只等编号；界面两栏布局要不要做成原版样子，可以下一期再定。
 
+## 接续要点（40% 交接，给下一棒）
+
+- 工作树 `.claude/worktrees/quizzical-neumann-d318e5`，分支 `cc/bajie-newsrc3`，generated 是新源（手补过参照，别当指纹）。探针要显式设 `XIYOU_APP=/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/v0.62.12/app.nw`，新开 shell 会丢。
+- **商人界面期二**（协调 11-06 16:06 派）：照 `installAbyssMerchantRuntime.js` 的 Scene_Merchant29 做原版布局。
+  - 窗口：上方 Window_Help(2) 标题；左边 Window_Merchant29，宽 boxWidth×0.43；右边 Window_MerchantDetail29 装备详情，用 RJO.HE.getDescParams 的行，字号与颜色按行给，可翻页；最下面 Window_Help(1) 翻页条「◀ 上一页     n／m     下一页 ▶」，字号 20，点左半往前、点右半往后，滚轮也翻页。
+  - 左边列表的帮助：有装备就显示 setEquipment29，没有就显示 help 文字，默认「确认选择；取消返回上一级。」。pageup／pagedown 翻详情页。
+  - 装备池那一页的 help 用 detail(d)：名字＋分组＋「基础属性：…」＋说明＋三档说明那句。
+  - 现有 `ui/merchant29_page.gd` 的 home_rows／tier_rows／pool_rows／home_info 可以留着当数据层，换掉 XYunChoicesWindow 就行。重制里找已有的装备详情绘制（RJO.HE 对应的）复用：`rg -n "getDescParams|desc_params" modes`。
+  - 测试 `tests/xiyou_merchant29` 的 ui.* 照旧要过；界面参照（ui_reference）可以考虑加截图对照。
+- **DD②**：等总装发同步后的失败表，再认领事件／地图领域还挂的项（候选：casino_batch、empress_draw、save_events、transfer、floor_fortress029、skill_menu_events）。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
