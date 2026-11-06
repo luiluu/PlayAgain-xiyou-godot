@@ -97,6 +97,35 @@ func _newsrc_misc() -> void:
 	check("changelog_inject", (await MVScript.run(ev71[at].parameters[0], gi)).is_empty() and ev71.size() == size0 and gi.list.size() > size0
 		and int(gi.list[at + 1].code) == 101 and gi.list[at + 1].parameters == ev71[at + 1].parameters
 		and str(gi.list[at + 2].parameters[0]) == first_page.split("\n")[0] and gi.list[gi.list.size() - (size0 - at - 1)] == ev71[at + 1], [gi.list.size(), size0])
+	# 肉山 Map186 EV34：按变量 1349 改内存里的敌人 2027 能力值与状态 2781 第 12 条特性（不进存档，同一次运行累加）
+	var ev34: Array = XDB.map(186).events[34].pages[0].list
+	var at34: int = ev34.find_custom(func(c): return int(c.code) == 355)
+	var code34 := ""
+	for k in range(at34, ev34.size()):
+		if k > at34 and int(ev34[k].code) != 655:
+			break
+		code34 += ("\n" if k > at34 else "") + str(ev34[k].parameters[0])
+	var en: Dictionary = XDB.rec("Enemies", 2027)
+	var st: Dictionary = XDB.rec("States", 2781)
+	var p0: Array = (en.params as Array).duplicate()
+	var t0 := float(st.traits[11].value)
+	g.set_variable(1349, 3)
+	check("roshan_patch", (await script(code34)).is_empty() and float(en.params[0]) == float(p0[0]) * 3 and float(en.params[2]) == float(p0[2]) + 3000
+		and float(en.params[7]) == float(p0[7]) + 300 and is_equal_approx(float(st.traits[11].value), t0 + 0.9) and float(en.params[1]) == float(p0[1]), [en.params, p0, st.traits[11]])
+	en.params = p0
+	st.traits[11].value = t0
+	# 大厅漩涡过场 Map4 EV76（CodexWhisper）：配置里没记过才播，mark 记进配置（不跟存档），再判断就是播过
+	var cfg0 := XConfig.path_override
+	XConfig.path_override = "user://test_xiyou_script_whisper/options.json"
+	if FileAccess.file_exists(XConfig.path_override):
+		DirAccess.remove_absolute(XConfig.path_override)
+	XConfig.ensure_loaded()
+	var ev76: Array = XDB.map(4).events[76].pages[0].list
+	var wc := MVInterpreter.new(self, 4, 76, [])
+	check("whisper_unseen", wc._condition(ev76[0].parameters) == true and wc.skipped.is_empty(), wc.skipped)
+	check("whisper_mark", (await script(ev76[1].parameters[0])).is_empty() and wc._condition(ev76[0].parameters) == false
+		and (JSON.parse_string(FileAccess.get_file_as_string(XConfig.path_override)).get("codexWhisperSeen") as Array) == ["rift1"], wc.skipped)
+	XConfig.path_override = cfg0
 	check("changelog_newest_first", str(log_data.entries[0].version) == "v0.62" and not log_data.entries.any(func(e): return (e.pages as Array).is_empty()), log_data.entries.map(func(e): return e.version))
 
 

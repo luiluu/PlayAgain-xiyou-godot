@@ -360,10 +360,53 @@ static func _cut_misc(js: String, interp) -> bool:
 		if interp.has_meta("_kyoMaxLevel") and int(interp.get_meta("_kyoMaxLevel")) < int(back.get_string(1)):
 			interp._plugin_command("maxlevel equal " + str(int(interp.get_meta("_kyoMaxLevel"))))
 		return true
+	if _data_patch(js):
+		return true
+	var whisper := _re("^CodexWhisper\\.mark\\('([^'\\\\]*)'\\);?$").search(js)
+	if whisper:
+		XConfig.whisper_mark(whisper.get_string(1))
+		return true
 	if _re("^if\\(window\\.CodexGuide&&CodexGuide\\.injectChangelog\\)CodexGuide\\.injectChangelog\\(this\\);?$").search(js):
 		_inject_changelog(interp)
 		return true
 	return false
+
+
+## 改数据库里的敌人能力值、状态特性值（肉山 Map186 EV34：按变量 1349 打过的次数给敌人 2027 加血加攻、给状态 2781 第 12 条特性加值）：
+## 每行 `$dataEnemies[N].params[K] *=|+= 式子;` 或 `$dataStates[N].traits[K].value +=|*= 式子;`，式子交 eval_expr。
+## 原版改的是内存里的 $dataEnemies／$dataStates：不进存档、重开游戏才回到数据库原值，同一次运行里一直累加（倍乘那条也叠乘）；
+## 重制同样改 XDB 缓存里的那份记录（同一进程内一直有效、不写盘），照原版。有一行认不出就整段不认
+static func _data_patch(js: String) -> bool:
+	var ops := []
+	for raw in js.split("\n"):
+		var line := raw.strip_edges()
+		if line == "":
+			continue
+		var m := _re("^\\$data(Enemies|States)\\[(\\d+)\\]\\.(?:params\\[(\\d+)\\]|traits\\[(\\d+)\\]\\.value)\\s*([*+])=\\s*(.+?);?$").search(line)
+		if m == null:
+			return false
+		var table := m.get_string(1)
+		if (table == "Enemies") == (m.get_string(3) == ""):   # 敌人只认 params、状态只认 traits
+			return false
+		var v = eval_expr(m.get_string(6))
+		if not (v is float or v is int):
+			return false
+		var rec := XDB.rec(table, int(m.get_string(2)))
+		var key := "params" if table == "Enemies" else "traits"
+		var k := int(m.get_string(3) if table == "Enemies" else m.get_string(4))
+		if rec.is_empty() or k >= (rec.get(key, []) as Array).size():
+			return false
+		ops.append([rec, key, k, m.get_string(5), float(v)])
+	if ops.is_empty():
+		return false
+	for op in ops:
+		var arr: Array = op[0][op[1]]
+		if op[1] == "params":
+			arr[op[2]] = float(arr[op[2]]) * op[4] if op[3] == "*" else float(arr[op[2]]) + op[4]
+		else:
+			var t: Dictionary = arr[op[2]]
+			t.value = float(t.value) * op[4] if op[3] == "*" else float(t.value) + op[4]
+	return true
 
 
 ## G.injectChangelog（installNativeGuidanceRuntime）：把玩家更新日志（转换器 db/PlayerChangelog.json，新版在前、空页跳号已去掉）
@@ -828,6 +871,10 @@ static func js_number(v: float) -> String:
 ## $gameMap.mapId()、$gameParty.numItems($dataItems[N])、Math.floor/ceil/max/min/abs。认不出返回 null（调用方记进 skipped）。
 static func eval_expr(js: String) -> Variant:
 	var e := js.strip_edges()
+	# 大厅漩涡过场（CodexWhisper，见 XConfig.whisper_seen）：模块总在，window.CodexWhisper 为真；seen('键') 当场取值
+	e = e.replace("window.CodexWhisper", "true")
+	for m in _re("CodexWhisper\\.seen\\('([^'\\\\]*)'\\)").search_all(e):
+		e = e.replace(m.get_string(), "true" if XConfig.whisper_seen(m.get_string(1)) else "false")
 	while e.ends_with(";"):
 		e = e.left(-1).strip_edges()
 	if e == "" or e.contains("%") or e.contains("=>") or e.contains("\"") or e.contains("'"):

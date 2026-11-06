@@ -121,6 +121,34 @@ func _recast(id: String) -> void:
 	check(id + ".no_pending", l.pending_force.is_empty())
 
 
+## 新源 CE1370 斩天拔剑术再释放（2826 → 会天魔星 2829 时 push 一个 2827）：参照里公共事件造了 2827 的行动（made2827）却从不出手。
+## O_PUSH_RECAST＝false 逐例比参照（没有强制行动）；默认补成强制行动：会 2829 时 8 号强制放 2827，不会时不放
+func _push_recast(id: String) -> void:
+	var c := _case(id)
+	var st: Dictionary = c.setup
+	for fix in [false, true]:
+		XBattleEventRunner.O_PUSH_RECAST = fix
+		var l := battle(st.party)
+		var a := l.state.actor(int(st.user))
+		l.state.set_variable(884, int(st.variable884))
+		for k in st.learn:
+			a.learn_skill(int(k))
+		if not (st.learn as Array).map(func(x): return int(x)).has(2829):   # JSON 数字是浮点，[2829.0].has(2829) 为假
+			a.forget_skill(2829)
+		a.mp = a.mmp
+		a.tp = 100
+		l.act(a, XDB.rec("Skills", int(st.use[0])), l.enemies[int(st.use[2])])
+		var tag := id + (".fix" if fix else ".orig")
+		check(tag + ".reserved", XBattleCommonEvent.reserved(l) == 1370, XBattleCommonEvent.reserved(l))
+		var got := actions(l.run_events()).map(func(x): return [("a%d" % x[0].actor_id) if x[0] is XActor else "?", x[1]])
+		var want: Array = c.observed.actions.filter(func(x): return bool(x.forcing)).map(func(x): return [x.subject, int(x.item[1])])
+		if fix and int(c.observed.made2827) > 0:
+			want = [["a%d" % int(st.user), 2827]]
+		check(tag + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
+		check(tag + ".no_pending", l.pending_force.is_empty())
+	XBattleEventRunner.O_PUSH_RECAST = true
+
+
 ## CE1327 三千烦恼风再释放（百八烦恼风 6181）：原版角色取 $gameParty._targetActorId（重制 item_target_actor_id）。
 ## 回退（O_RECAST_CASTER＝false）逐例比参照；默认按放 6181 的人（8 号）：8 号会 6184 就再放，与 target 无关。
 ## other_holder：原版 9 号还没行动，forceAction 让它先做自己的防御、6182 留在队尾没放；重制回退支直接给 9 号强制 6182（已知差异，只在回退支）。
@@ -233,6 +261,8 @@ func _run() -> void:
 	_recast_target("recast_target_other", true)
 	_recast_target("recast_target_zero", true)
 	_recast_target("recast_target_other_holder", false)
+	_push_recast("push_recast_with")
+	_push_recast("push_recast_without")
 	_net()
 	_slot()
 	_inventory()

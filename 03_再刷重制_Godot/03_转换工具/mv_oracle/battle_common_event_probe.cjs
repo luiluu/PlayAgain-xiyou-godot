@@ -140,6 +140,18 @@ recastTarget('recast_target_caster', 8, 8);
 recastTarget('recast_target_other', 9, 8);
 recastTarget('recast_target_zero', 0, 8);
 recastTarget('recast_target_other_holder', 9, 9);
+// 新源 CE1370 斩天拔剑术再释放（2826 的公共事件，会天魔星 2829 时 actor._actions.push 一个 2827）：OTB 在行动结束后才跑公共事件，
+// _subject 已清空、取变量 884 的角色；push 的行动没人取，轮到时 makeActions 先清掉（bajie-newsrc2；重制 O_PUSH_RECAST 默认补成强制行动）
+for (const [id, learn] of [['push_recast_with', true], ['push_recast_without', false]]) {
+  caseRun(id, {party: [1, 8, 9, 10], troop: 2, user: 8, use: [2826, false, 0], learn: learn ? [2826, 2829] : [2826], variable884: 8}, o => {
+    setup([1, 8, 9, 10], 2); const a = w.$gameActors.actor(8); w.$gameVariables.setValue(884, 8);
+    a.learnSkill(2826); if (learn) a.learnSkill(2829); else a.forgetSkill(2829); a._mp = a.mmp; a._tp = 100;
+    const setSkill = w.Game_Action.prototype.setSkill; o.made2827 = 0;   // 公共事件里确实造了 2827 的行动（push 了），只是没出手
+    w.Game_Action.prototype.setSkill = function (id) { if (id === 2827) o.made2827++; return setSkill.apply(this, arguments); };
+    try { run(o, 8, [2826, false, 0], 16); } finally { w.Game_Action.prototype.setSkill = setSkill; }
+    o.leftActions = a._actions.length;
+  });
+}
 // 打倒最后一只敌人：checkBattleEnd 先成立，预约的 84 不跑
 caseRun('thunder_battle_end', {party: [23, 8, 9, 10], troop: 2, learn: [217, 5083], use: [217, false, 0], enemiesHp: 1, othersHidden: true}, o => {
   setup([23, 8, 9, 10], 2); const a = w.$gameActors.actor(23); a.learnSkill(217); a.learnSkill(5083); a._mp = a.mmp;
