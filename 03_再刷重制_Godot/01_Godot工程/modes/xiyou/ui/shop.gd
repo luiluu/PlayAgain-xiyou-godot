@@ -230,7 +230,7 @@ func _stock_row() -> Array:
 		var d := _buy_data()
 		if e.is_empty() and _buy_index < d.size():
 			e = d[_buy_index]
-		if e.is_empty() or not XShopStock.managed(int(e.kind), int(e.gid)):
+		if e.is_empty() or not XShopStock.shop_managed(int(e.kind), int(e.gid)):
 			return []
 		return [int(e.kind), int(e.gid), XShopStock.remaining(s, stock_group, int(e.kind), int(e.gid))]
 	if from == "sell":
@@ -240,7 +240,7 @@ func _stock_row() -> Array:
 		var e: Dictionary = d[_sell_index]
 		var kind := int(e.kind)
 		var id := int(e.rec.get("base", e.rec.get("id", 0)))
-		if not XShopStock.managed(kind, id):
+		if not XShopStock.shop_managed(kind, id):
 			return []
 		return [kind, id, XShopStock.remaining(s, stock_group, kind, id) if kind == 0 else XShopStock.stock_max(kind, id)]
 	return []

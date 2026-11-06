@@ -306,6 +306,7 @@ func _abyss(map_id: int, troops: Array, box_ev: int, exit_ev: int) -> void:
 	MVEventCore.fixed_random = -1.0
 	await _wait_map(map_id)
 	# 商人 EV6：变量 109＝k 卖第 k 件
+	var merchant29 := str(XDB.map(map_id).events[6].get("note", "")).contains("<CodexMerchant29>")
 	for k in SHOP110_EV6:
 		_sw(s, [76, 78], false)
 		s.set_switch(77, true)
@@ -315,6 +316,10 @@ func _abyss(map_id: int, troops: Array, box_ev: int, exit_ev: int) -> void:
 		await _wait_map(map_id)
 		await _run_event(map, 6, [0], "")
 		var want: Array = SHOP110_EV6[k]
+		if merchant29:   # 新源 EV6 是深渊商人 <CodexMerchant29>，原版同样走不到（见 xiyou_floor_reach107 shop_talks）：不开店
+			if XShop.auto_log.size() != n:
+				_check("%s_shop%d" % [tag, k], false, ["merchant29", XShop.auto_log.slice(n)])
+			continue
 		if not _shop_ok(n, want):
 			_check("%s_shop%d" % [tag, k], false, [want, XShop.auto_log.slice(n)])
 	_check(tag + "_shop_all", true)

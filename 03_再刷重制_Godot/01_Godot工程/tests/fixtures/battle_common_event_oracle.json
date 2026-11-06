@@ -1335,6 +1335,575 @@
    }
   },
   {
+   "id": "push_recast_with",
+   "setup": {
+    "party": [
+     1,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "user": 8,
+    "use": [
+     2826,
+     false,
+     0
+    ],
+    "learn": [
+     2826,
+     2829
+    ],
+    "variable884": 8
+   },
+   "errors": [],
+   "observed": {
+    "made2827": 1,
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2826
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a9",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e0",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e1",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e2",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a1",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a1",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a9",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e0",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e1",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e2",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1370,
+      "afterActions": 2,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "leftActions": 0
+   }
+  },
+  {
+   "id": "push_recast_without",
+   "setup": {
+    "party": [
+     1,
+     8,
+     9,
+     10
+    ],
+    "troop": 2,
+    "user": 8,
+    "use": [
+     2826,
+     false,
+     0
+    ],
+    "learn": [
+     2826
+    ],
+    "variable884": 8
+   },
+   "errors": [],
+   "observed": {
+    "made2827": 0,
+    "actions": [
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2826
+      ],
+      "target": 0,
+      "forcing": false,
+      "enemyHp": [
+       100000009900,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a9",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e0",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e1",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e2",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a1",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a1",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a9",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e0",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e1",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "e2",
+      "item": [
+       "skill",
+       1
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a8",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     },
+     {
+      "subject": "a10",
+      "item": [
+       "skill",
+       2
+      ],
+      "target": -1,
+      "forcing": false,
+      "enemyHp": [
+       99999938062,
+       100000009900,
+       100000009900
+      ]
+     }
+    ],
+    "events": [
+     {
+      "commonEvent": 1320,
+      "afterActions": 0,
+      "marked": []
+     },
+     {
+      "commonEvent": 1370,
+      "afterActions": 2,
+      "marked": []
+     }
+    ],
+    "toasts": [],
+    "phase": "input",
+    "enemies": [
+     {
+      "index": 0,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 1,
+      "alive": true,
+      "hidden": false
+     },
+     {
+      "index": 2,
+      "alive": true,
+      "hidden": false
+     }
+    ],
+    "leftActions": 0
+   }
+  },
+  {
    "id": "thunder_battle_end",
    "setup": {
     "party": [

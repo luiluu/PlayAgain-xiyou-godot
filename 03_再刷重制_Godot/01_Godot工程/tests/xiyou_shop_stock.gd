@@ -9,6 +9,11 @@ extends Node
 ## 窗口模式加 -- --out=<目录> 保存与正式版截图（codex_shop_stock_reference.png）同一夹具的 Godot 画面。
 
 const ORACLE := "res://modes/xiyou/generated/oracle/shop_stock.json"
+## 新源 v0.41（installBalanceShopV041Runtime）起每次开店都给库存套一层新外观（Object.create(组库存)，没有组时是
+## new Game_ShopInventory('__codexUnmanaged41')）：参照里「同一个对象」「没组时库存为 null」两项就此恒为假、待用组取完后第二家店拿到的是空外观。
+## 这是对象身份，不是玩法；重制的组名不变，按「有外观」改成同样的读数。旧源（没有这个运行时）的参照照旧比
+var FACADE := false
+const UNMANAGED_FACADE := {"_abilityOrbStock": {}, "_armorStock": {}, "_id": "__codexUnmanaged41", "_itemStock": {}, "_supplySpeed": 1.0, "_weaponStock": {}}
 const UI_ORACLE := "res://tests/fixtures/shop_stock_ui_oracle.json"
 var results := []
 var out_dir := ""
@@ -41,6 +46,7 @@ class Shop:
 		s = st
 		if g != null:
 			XShopStock.apply_group(s, str(g))
+		XShopStock.prepare_policy([goods])   # 同 map_scene.open_shop：v0.41 外层先套库存外观；价格照参照夹具取原商品表（stock.cjs 的 wb._price 不经 prepare）
 		group = XShopStock.open(s)
 		kind = int(goods[0])
 		id = int(goods[1])
@@ -125,7 +131,7 @@ func _case(id: String) -> Dictionary:
 			Shop.new(s, "shared_B", [0, 1911, 1, 10])
 			var again := Shop.new(s, "shared_A", [0, 1911, 1, 10])
 			return {"a": XShopStock.remaining(s, "shared_A", 0, 1911), "b": XShopStock.remaining(s, "shared_B", 0, 1911),
-				"sameObject": again.group == "shared_A", "nextConsumed": s.shop_pending == "", "ungrouped": Shop.new(s, null, [0, 1911, 1, 10]).group == ""}
+				"sameObject": again.group == "shared_A" and not FACADE, "nextConsumed": s.shop_pending == "", "ungrouped": Shop.new(s, null, [0, 1911, 1, 10]).group == "" and not FACADE}
 		"stock.cancel-preview":
 			var sc := Shop.new(s, "cancel", [0, 1911, 1, 10])
 			var before := sc.snap()
@@ -185,7 +191,7 @@ func _case(id: String) -> Dictionary:
 			XShopStock.plugin_command(s, PackedStringArray(["ShopInventory", "apply", "pending_B"]))
 			var first := XShopStock.open(s)
 			var second := XShopStock.open(s)
-			return {"first": first, "second": null if second == "" else second, "nextInventory": null if s.shop_pending == "" else s.shop_pending}
+			return {"first": first, "second": (UNMANAGED_FACADE if FACADE else null) if second == "" else second, "nextInventory": null if s.shop_pending == "" else s.shop_pending}
 		"stock.timer-memory-roundtrip":
 			s.play_seconds = 0
 			XShopStock._set_stock(s, "saved_timer", 0, 77, 0)
@@ -270,8 +276,49 @@ func _strip(v):
 	return v
 
 
+## v0.41 商店规则（installBalanceShopV041Runtime，XShopStock.prepare_policy）：被动书指定价×1.3 向上取整、非被动书不变；
+## 左右互搏术 1914 全局 8 本（换组、没组都一样，卖回不还名额）；当铺全店不限购；大厅 EV54 有被动书时全店不限购、否则只有被动书不限购
+func _v041() -> void:
+	var s := _fixture()
+	XShopStock.shop_context = {}
+	var g := XShopStock.prepare_policy([[0, 1911, 1, 10], [0, 1, 1, 10], [0, 1911, 0, 0]])
+	check("v041.passive_price", g == [[0, 1911, 1, 13], [0, 1, 1, 10], [0, 1911, 0, 0]] and XShopStock.passive_book(0, 1911) and not XShopStock.passive_book(0, 1), g)
+	check("v041.left_unmanaged_shop", XShopStock.shop_managed(0, 1914) and XShopStock.remaining(s, "", 0, 1914) == 8 and XShopStock.max_buy(s, "", 0, 1914, 99) == 8)
+	XShopStock.record_purchase(s, "", 0, 1914, 3)
+	XShopStock.record_sale(s, "", 0, 1914, 1)
+	XShopStock.close_policy()
+	XShopStock.apply_group(s, "左右互搏术购买")
+	XShopStock.prepare_policy([[0, 1914, 0, 0]])
+	var grp := XShopStock.open(s)
+	check("v041.left_global", XShopStock.remaining(s, grp, 0, 1914) == 5 and XShopStock.max_buy(s, grp, 0, 1914, 99) == 5 and not s.shop_stock.get("inv", {}).has(grp), [XShopStock.remaining(s, grp, 0, 1914), s.shop_stock])
+	XShopStock.record_purchase(s, grp, 0, 1914, 5)
+	check("v041.left_sold_out", XShopStock.remaining(s, grp, 0, 1914) == 0 and not XShopStock.available(s, grp, 0, 1914) and int(s.flags._codexLeftBought41) == 8)
+	XShopStock.close_policy()
+	check("v041.closed_native", XShopStock.remaining(s, "左右互搏术购买", 0, 1914) == 8 and XShopStock.policy.is_empty())
+	# 旧档：flags 里没有名额时按各组 1914 已卖数（5−剩余）补，合计不超过 8
+	var old := _fixture()
+	XShopStock._set_stock(old, "左右互搏术购买", 0, 1914, 3)
+	check("v041.left_old_save", XShopStock.left_bought(old) == 2, old.flags)
+	# 当铺、大厅 EV54
+	XShopStock.set_context(204, 1)
+	XShopStock.prepare_policy([[0, 1911, 1, 10]])
+	check("v041.pawn_unlimited", not XShopStock.shop_managed(0, 1911) and XShopStock.remaining(s, "x", 0, 1911) == XShopStock.MAX_ITEMS)
+	XShopStock.set_context(4, 54)
+	XShopStock.prepare_policy([[0, 1911, 1, 10], [2, 133, 0, 0]])
+	check("v041.chief_passive_all", not XShopStock.shop_managed(2, 133) and not XShopStock.shop_managed(0, 1911))
+	XShopStock.prepare_policy([[2, 133, 0, 0]])
+	check("v041.chief_no_passive", XShopStock.shop_managed(2, 133) == XShopStock.managed(2, 133) and not XShopStock.shop_managed(0, 1911))
+	XShopStock.set_context(4, 53)
+	XShopStock.prepare_policy([[0, 1911, 1, 10]])
+	check("v041.other_event_native", XShopStock.shop_managed(0, 1911) == XShopStock.managed(0, 1911))
+	XShopStock.shop_context = {}
+	XShopStock.close_policy()
+
+
 func _run() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
+	var manifest = XDB.load_json("manifest.json")
+	FACADE = manifest is Dictionary and (manifest.get("runtimeInputs", {}) as Dictionary).has("js/codex/runtime/installBalanceShopV041Runtime.js")
 	if check("stock_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 19, ORACLE):
 		for c in data.cases:
 			if not c.errors.is_empty():
@@ -307,6 +354,7 @@ func _run() -> void:
 		check("locations_apply_%d_groups_%d" % [data.locations.size(), groups.size()], bad.is_empty(), bad.slice(0, 5))
 	await _interpreter()
 	_old_save()
+	_v041()
 	await _ui()
 	var failed := results.filter(func(r): return not r.passed)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_shop_stock", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))

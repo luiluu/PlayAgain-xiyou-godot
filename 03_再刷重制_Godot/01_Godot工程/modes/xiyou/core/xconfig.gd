@@ -22,7 +22,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
-	"codexWeakFiveClearV2": false}
+	"codexWeakFiveClearV2": false, "codexWhisperSeen": []}
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -81,6 +81,10 @@ static func ensure_loaded() -> void:
 					# Star_ChangeClothes applyData：config.ChangeClothesLite || []（更衣解锁表，见 XChangeClothes）
 					var saved = data.get(key)
 					_values[key] = Array(saved).map(func(v): return int(v)) if saved is Array else []
+				elif key == "codexWhisperSeen":
+					# installRemakeWhisperRuntime applyData：数组才认，每项转字符串（大厅漩涡过场播过的键）
+					var saved = data.get(key)
+					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
 				elif key == "codexWeakFiveClearV2":
 					# installWeakChallengeRuntime applyData：!!(d && d.codexWeakFiveClearV2 === true)（XWeakChallenge）
 					_values[key] = data.get(key) is bool and data[key] == true
@@ -240,6 +244,19 @@ static func save_designations() -> bool:
 static func clothes_unlocked() -> Array:
 	ensure_loaded()
 	return _values.ChangeClothesLite
+
+
+## 大厅漩涡过场（installRemakeWhisperRuntime 的 CodexWhisper）：播过的键记在配置 codexWhisperSeen（不跟存档），mark 立即写盘
+static func whisper_seen(key: String) -> bool:
+	ensure_loaded()
+	return (_values.codexWhisperSeen as Array).has(key)
+
+
+static func whisper_mark(key: String) -> bool:
+	ensure_loaded()
+	if not (_values.codexWhisperSeen as Array).has(key):
+		_values.codexWhisperSeen.append(key)
+	return _write()
 
 
 static func save_clothes() -> bool:

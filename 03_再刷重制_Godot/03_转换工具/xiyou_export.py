@@ -1584,6 +1584,36 @@ class Exporter:
         for name in ['Skills', 'Items']:
             self.write_json(f'db/{name}.json', self.db[name])
 
+    def export_changelog(self):
+        """玩家更新日志（installNativeGuidanceRuntime 的 G.changelogEntries，改版向导 Map004 EV71「更新日志」的
+        CodexGuide.injectChangelog 用）：data/ContentVersion.json 合法时读 v0.37～releaseNumber，否则读到 v0.37+899；
+        缺文件或格式不对就停，pages 为空的（已登记的跳号）跳过；新版在前。旧源没有这些文件时写空表。"""
+        first, release = 37, None
+        rel = 'data/ContentVersion.json'
+        if (self.app / rel).is_file():
+            try:
+                d = self.read(rel)
+                if re.fullmatch(r'v\d+\.\d{2}(?:\.\d{2})?', str(d.get('releaseVersion'))) and isinstance(d.get('releaseNumber'), int) \
+                        and not isinstance(d.get('releaseNumber'), bool) and d['releaseNumber'] >= 0:
+                    release = d['releaseNumber']
+            except (ValueError, AttributeError):
+                release = None
+        end = min(release, first + 899) if release is not None else first + 899
+        entries = []
+        for seq in range(first, end + 1):
+            rel = 'data/PlayerChangelog/v%d.%02d.json' % (seq // 100, seq % 100)
+            if not (self.app / rel).is_file():
+                break
+            try:
+                d = self.read(rel)
+            except ValueError:
+                break
+            if not isinstance(d, dict) or not isinstance(d.get('pages'), list):
+                break
+            if d['pages']:
+                entries.insert(0, {'version': d.get('version'), 'pages': [str(x) for x in d['pages']]})
+        self.write_json('db/PlayerChangelog.json', {'releaseNumber': release, 'entries': entries})
+
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
         rel = 'js/plugins.js'
@@ -1991,6 +2021,7 @@ class Exporter:
                           for p in sorted((self.app / 'js').rglob('*.js'))}
         self.export_db()
         self.export_plugins()
+        self.export_changelog()
         self.collect_slice()
         self.copy_assets()
         untranslated = []

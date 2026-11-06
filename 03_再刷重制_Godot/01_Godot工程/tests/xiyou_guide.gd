@@ -234,6 +234,7 @@ func _count(text: String) -> int:
 func _map_milestone() -> void:
 	XSave.dir_override = "user://test_xiyou_guide"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76）另测（xiyou_floor_reach004），这里当作播过，免得盖住里程碑提示
 	XMessageBox.auto = true
 	XMessageBox.transcript.clear()
 	_fresh()
