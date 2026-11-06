@@ -792,14 +792,28 @@ func _revive_blocks(o: Dictionary) -> void:
 			"added": row.result.added.map(func(x): return int(x)), "removed": row.result.removed.map(func(x): return int(x)), "pops": want_pops,
 			"vars": row.vars.map(func(x): return float(x))}
 		check("revive.row.%d" % index, got == want, {"row": [sid, row.hpMode, row.seq, row.varv], "want": want, "got": got})
+	XBattler.o_hot_cache_revive = false  # 参照比原版：热缓存的敌人死亡时 typestates 成空表，不复活（O-待定·热缓存复活）
+	var hot_rows := []
 	for index in range(o.applies.size()):
 		XActor.passive_state_rebuild = false  # 探针没跑 Scene_Battle.start：角色 okadd 假，252 的 passiveHarmRe 不进角色缓存（敌人照建）
 		_revive_apply(index, o.applies[index])
 		XActor.passive_state_rebuild = true
+		var row: Dictionary = o.applies[index]
+		if row.who == "enemy" and not bool(row.dirtyBefore) and bool(row.dead) and o.applies.any(func(x): return x.state == row.state and x.who == "enemy" and x.r == row.r and bool(x.dirtyBefore) and not bool(x.dead)):
+			hot_rows.append(index)
+	XBattler.o_hot_cache_revive = true
+	# 修正支（默认）：同样的热缓存敌人行照常复活
+	check("revive.hot_cache.rows", hot_rows.size() == 13, hot_rows.size())  # 新源参照：敌人热缓存倒着、同状态同抽数的脏行复活的 13 行
+	for index in hot_rows:
+		XActor.passive_state_rebuild = false
+		var dead := _revive_apply(index, o.applies[index], false)
+		XActor.passive_state_rebuild = true
+		check("revive.hot_cache.default.%d" % index, not dead, [o.applies[index].state, o.applies[index].r])
 	XState.current = null
 
 
-func _revive_apply(index: int, row: Dictionary) -> void:
+## compare＝false：只跑不比，返回目标是否还倒着（热缓存修正支的默认断言用）
+func _revive_apply(index: int, row: Dictionary, compare := true) -> bool:
 	var sid := int(row.state)
 	XEnemy.force_roll = 100.0
 	var s := XState.new_game(3, 1, [8])
@@ -826,6 +840,8 @@ func _revive_apply(index: int, row: Dictionary) -> void:
 	t.tp = 20.0
 	var mhp := t.mhp
 	var r := logic.apply(u, XDB.rec("Skills", 1), t)
+	if not compare:
+		return t.is_dead()
 	var states: Array = t.state_ids.duplicate()
 	states.sort()
 	var want_states: Array = row.states.map(func(x): return int(x))
@@ -851,6 +867,7 @@ func _revive_apply(index: int, row: Dictionary) -> void:
 	check(label + ".hp_popup_count", hp_rows.size() == want_hp_rows.size(), [info, want_hp_rows, hp_rows])
 	if want_hp_rows.size() == 2:
 		check(label + ".hit_first", float(hp_rows[0].hpDamage) > 0.0 and float(hp_rows[1].hpDamage) < 0.0 and float(r.shown.hp) > 0.0, [info, hp_rows, r.shown])
+	return t.is_dead()
 
 
 ## 伤害 react／confirm 一族（rules4）：单块逐行比（value、两边资源、护盾、字段、状态、随机次数、弹字、变量）；实战比结局。

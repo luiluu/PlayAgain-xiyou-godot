@@ -39,6 +39,12 @@ var effect_dirty := true
 var effect_snapshot: Array = []
 var effect_snapshot_valid := false
 var effect_lists := {}
+## O-待定·热缓存复活（rules-newsrc5）：新源 dsPassiveSkill v0.51 被动缓存在死亡那次 clearStates 按新签名重建，krz 的 typestates
+## 表随之算成空表且不脏；出手前持有者没标脏（热，need_refresh 假）时，之后的 refresh 不再重算，deselect 读到空表，复活状态失灵。
+## 原版代码错误（失效是缓存副作用）。true（默认）＝照常复活；false＝照原版：热的持有者死亡时冻成空表，直到下一次脏刷新。
+static var o_hot_cache_revive := true
+## 本次 Game_Action.apply 开始时 effect_dirty 为假（battle_logic.apply 记、用完清）
+var hot_at_apply := false
 static var _adding_state := false
 static var _leaving_state := false
 static var _outside_random: XRandomStream
@@ -422,6 +428,11 @@ func add_new_state(id: int) -> void:
 				buffs[pid] = 0
 				buff_turns[pid] = 0
 		XAlienBattle.dying = null
+		if not o_hot_cache_revive and hot_at_apply and (self is XEnemy or XActor.passive_state_rebuild):
+			# 回退支：被动缓存按新签名重建，krz typestates 表成空表、不脏（角色只在开战后 okadd 真时重建）
+			effect_lists.clear()
+			effect_snapshot = []
+			effect_snapshot_valid = true
 		if self is XEnemy:
 			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
 			XRaven.on_enemy_death(self)  # 渡鸦 Game_Enemy.die 包装：得魂、判铸印
