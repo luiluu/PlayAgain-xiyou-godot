@@ -230,14 +230,14 @@ func _run() -> void:
 	var d: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
 	var r := XState.from_dict(d)
 	check("save_roundtrip_ops", r.actor_ops.size() == s.actor_ops.size() and r.actor_name == "测试名" and r.flags.get("DCultyL3") == true and r.actor(30).skill_ids.has(6168))
-	# 破阵·投影名单（CodexBossDifficulty.showRoster，大厅 Map004 EV41）：strong 37 人（含哈基米），super 49 人（含备注带 <CodexSuperStrong> 的 174／176／177），
+	# 破阵·投影名单（CodexBossDifficulty.showRoster，大厅 Map004 EV41）：strong 37 人（含哈基米），super 49 人（新源 <KyoTier> 分档后按 XTier 的超强者数）（含备注带 <CodexSuperStrong> 的 174／176／177），
 	# 停用角色（143／144／145／157／160）加「（停用）」，每行不超过 24 字
 	var roster_js := "if(window.CodexBossDifficulty){CodexBossDifficulty.showRoster('%s');}else{$gameMessage.add(\"x\");}this.setWaitMode('message');"
 	messages.clear()
 	check("roster_strong", (await script(roster_js % "strong")).is_empty() and messages.size() == 1 and messages[0].face == "SF_People2" and int(messages[0].index) == 5
 		and str(messages[0].lines[0]).ends_with("强者名单（37人）") and messages[0].lines.any(func(l): return str(l).ends_with("镜流、哈基米")), messages)
 	messages.clear()
-	check("roster_super", (await script(roster_js % "super")).is_empty() and messages.size() == 1 and str(messages[0].lines[0]).ends_with("超强者名单（49人）")
+	check("roster_super", (await script(roster_js % "super")).is_empty() and messages.size() == 1 and str(messages[0].lines[0]).ends_with("超强者名单（%d人）" % (XTier.ids(XTier.SUPER).size() if XTier.tagged() else 49))
 		and messages[0].lines.any(func(l): return str(l).contains("（停用）")) and messages[0].lines.all(func(l): return str(l).length() <= 24 or not str(l).contains("、")), messages)
 	_gear_conditions()
 	await _newsrc_misc()
