@@ -4153,11 +4153,11 @@
         "user": "e0",
         "skill": 1,
         "target": "a179",
-        "value": 5,
+        "value": 4,
         "critical": false
        }
       ],
-      "hp": 205627,
+      "hp": 205628,
       "mhp": 205632,
       "shield": 0,
       "states": [
@@ -4209,11 +4209,11 @@
         "user": "e0",
         "skill": 1,
         "target": "a179",
-        "value": 5,
+        "value": 4,
         "critical": false
        }
       ],
-      "hp": 205622,
+      "hp": 205624,
       "mhp": 205632,
       "shield": 0,
       "states": [
@@ -4261,7 +4261,7 @@
      {
       "step": "cap",
       "out": null,
-      "hp": 205622,
+      "hp": 205624,
       "mhp": 205632,
       "shield": 0,
       "states": [

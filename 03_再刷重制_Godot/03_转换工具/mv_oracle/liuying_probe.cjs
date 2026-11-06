@@ -7,7 +7,7 @@
 // ⑥ 战斗：必中、段数（天火 5／8、燃烧 9）、天火要剑；伤害钩子比值（每次新开一场，只取天火第一段：印记、付费、再释放是第二期）。
 // 真实 BattleManager／Game_Action（Math.random 0.5：再释放 0.2 不触发）；只在内存，产物 .sandbox/liuying.json，拷成 tests/fixtures/liuying_oracle.json。
 // 跑法：XIYOU_APP=…/冻结正式源/v0.62.12/app.nw node liuying_probe.cjs
-const {start, makeCase, finish} = require('./shared/host.cjs');
+const {start, makeCase, finish, superReference} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
 const L = w.CodexLiuying;
 if (!L || typeof L.damage !== 'function') throw new Error('流萤模块未安装');
@@ -23,6 +23,7 @@ w.BattleManager.actionBattleHud = () => true;
 w.BattleManager.otbDisplayWindow = () => stub;
 w.Math.random = () => 0.5;
 w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044）：关掉让参照不含成长修正（专武品质 9 会改它）
+superReference(w);  // O-050：超强者路线压制（流萤是超强者：承伤 ×1.5 等）重制不移植，去掉让参照对得上
 const ACTOR = 179, WEAPON = 4004, ARMOR = 4582, BIG_HP = 1e12, TROOP = 3;
 const P = L.passives, MENG = L.mengYingId();
 const LIST = [10622, 10623, 10624, 10625, 10626, 10627, 10628, 10629, 10630, 10631, 10632, MENG];

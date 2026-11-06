@@ -251,10 +251,6 @@ func _case(c: Dictionary) -> void:
 			check("firefly.ratio", v1 > 0.0 and absf(v2 / v1 - float(o.boosted.value) / float(o.plain.value)) < 1e-6, [v1, v2, o.plain.value, o.boosted.value])
 		"cast.rerelease":
 			steps.append(_cast(logic, a, 10622, 0))
-	if id == "firefly":
-		# 敌人普攻打流萤的扣血：基础 72×防御 0.05＝3.6，重制 4、原版 5（与流萤无关的通用低伤害取整，交 rules 查）；这里只比萤火，生命按参照
-		for i in mini(steps.size(), (o.steps as Array).size()):
-			steps[i].hp = float(o.steps[i].hp)
 	_compare(id, steps, o.steps)
 
 
