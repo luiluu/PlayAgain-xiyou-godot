@@ -33,8 +33,16 @@ static func save(slot: int) -> bool:
 	XDemonCrown.before_save(XState.current)  # 魔冠 makeSaveContents 包装：收编、重放
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
-	# 先写同目录临时文件，成功后替换；失败不截断原有存档。
-	var temp := path(slot) + ".tmp"
+	if not _write(path(slot), data):
+		return false
+	current_slot = slot
+	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
+	return true
+
+
+## 先写同目录临时文件，成功后替换；失败不截断原有存档。
+static func _write(target: String, data: Dictionary) -> bool:
+	var temp := target + ".tmp"
 	var f := FileAccess.open(temp, FileAccess.WRITE)
 	if f == null:
 		return false
@@ -45,10 +53,54 @@ static func save(slot: int) -> bool:
 	if not ok:
 		DirAccess.remove_absolute(temp)
 		return false
-	if DirAccess.rename_absolute(temp, path(slot)) != OK:
+	if DirAccess.rename_absolute(temp, target) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
-	current_slot = slot
+	return true
+
+
+## 安卓切后台自动存档（XAutoSave，O-待定·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
+## 不加保存次数、不改 current_slot（一键存档仍存回玩家自己的档位）；记下当时的档位，读回来时接着用那一格。
+static func auto_path() -> String:
+	return dir().path_join("save_auto.json")
+
+static func save_auto() -> bool:
+	if XState.current == null:
+		return false
+	if DirAccess.make_dir_recursive_absolute(dir()) != OK:
+		return false
+	XDemonCrown.before_save(XState.current)
+	var data := XState.current.to_dict()
+	data["savedAt"] = Time.get_datetime_string_from_system()
+	data["autoFromSlot"] = current_slot
+	return _write(auto_path(), data)
+
+static func exists_auto() -> bool:
+	return FileAccess.file_exists(auto_path())
+
+static func remove_auto() -> void:
+	if exists_auto():
+		DirAccess.remove_absolute(auto_path())
+
+## 标题页按钮上的一句话
+static func auto_summary() -> String:
+	var d = JSON.parse_string(FileAccess.get_file_as_string(auto_path())) if exists_auto() else null
+	if not valid_data(d):
+		return ""
+	return "自动存档（切后台时）：%s" % str(d.get("savedAt", "")).replace("T", " ")
+
+## 读切后台的自动存档；读完文件留着（直到下次手动存档），档位回到存它时玩家在用的那一格。
+static func load_auto() -> bool:
+	if not exists_auto():
+		return false
+	var text := FileAccess.get_file_as_string(auto_path())
+	var d = JSON.parse_string(text)
+	if not valid_data(d):
+		return false
+	var from := int(d.get("autoFromSlot", 0))
+	if not _load_data(d, from, text):
+		return false
+	current_slot = from if from >= 1 and from <= SLOTS else 0
 	return true
 
 
@@ -167,6 +219,13 @@ static func load_slot(slot: int) -> bool:
 	var d = JSON.parse_string(text)
 	if not valid_data(d):
 		return false
+	if not _load_data(d, slot, text):
+		return false
+	current_slot = slot
+	return true
+
+
+static func _load_data(d: Dictionary, slot: int, text: String) -> bool:
 	XState.from_dict(d)
 	XYunshangOrders.after_load(XState.current, XYunshangOrders.identity(slot, text))  # 云裳 extractSaveContents 包装：订单账本重放
 	XDemonCrown.after_load(XState.current, XDemonCrown.identity(text))  # 魔冠 extractSaveContents 包装（在云裳外层）：收编、重放成长账本
@@ -176,5 +235,4 @@ static func load_slot(slot: int) -> bool:
 	# 已有配置（包括显式 false）始终优先，不从存档回滚局外选项，不读取 MV 存档。
 	if not XConfig.has_map_xy() and XState.current.self_switch(4, 20, "A"):
 		XConfig.set_map_xy(true)
-	current_slot = slot
 	return true

@@ -7,6 +7,7 @@ extends Node
 ## - 返回键＝取消（原版 android-integration 的 AndroidPort.back 发 escape）；顶层（入口菜单、发行包的西游标题页）两秒内按两次退出（O-202）。
 ## - 切后台：松开虚拟按键；挂机中切后台、回来时按离开的时间补跑（O-201，BACKGROUND_IDLE）。
 ## - 挂机中手机不锁屏（原版要了 WAKE_LOCK）。
+## - 切后台自动存档：调 pause_hook（西游地图挂 XAutoSave，O-待定·安卓切后台存档）。
 
 ## 测试用：强制当成触屏／手机（null＝按真实平台）。
 static var force_mobile = null
@@ -20,6 +21,8 @@ const CATCH_UP_MIN_SEC := 5.0
 
 ## 挂机是否进行中：GameApp 不认识各模式，由模式（西游地图）在 _ready 里设；没设当成没挂机。
 static var idle_probe := Callable()
+## 切后台时调一次（参数：当前毫秒）：西游地图挂上自动存档（XAutoSave）；离开地图失效。
+static var pause_hook := Callable()
 
 signal virtual_keys_release_requested
 signal catch_up_changed(active: bool)
@@ -109,6 +112,10 @@ func _notification(what: int) -> void:
 			go_back()
 		NOTIFICATION_APPLICATION_PAUSED:
 			on_paused()
+		NOTIFICATION_APPLICATION_FOCUS_OUT:
+			# 安卓切后台时 FOCUS_OUT 和 PAUSED 都会来、先后不定；只给切后台存档用，桌面切窗口不算
+			if is_mobile():
+				_call_pause_hook(Time.get_ticks_msec())
 		NOTIFICATION_APPLICATION_RESUMED:
 			on_resumed()
 
@@ -192,6 +199,12 @@ func on_paused(now_msec := Time.get_ticks_msec()) -> void:
 	virtual_keys_release_requested.emit()
 	_paused_at_msec = now_msec
 	_paused_idle = idle_active()
+	_call_pause_hook(now_msec)
+
+
+func _call_pause_hook(now_msec: int) -> void:
+	if pause_hook.is_valid():
+		pause_hook.call(now_msec)
 
 
 ## 回到前台。返回补跑的游戏秒数（0＝不补跑）。
