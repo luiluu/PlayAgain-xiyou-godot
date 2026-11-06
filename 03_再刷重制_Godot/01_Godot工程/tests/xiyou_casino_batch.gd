@@ -49,6 +49,7 @@ func _run() -> void:
 			fixed.messages = ["自定义单抽未开始：肝帝积分低于原单抽门槛\n积分 -30001；剩余券 5"]
 			await run_case(c, fixed, ".o-unstarted")
 	await random_draws()
+	abyss_stage2()
 	XCasinoBatch.notify_unstarted = true
 	XCasinoBatch.frame_budget_ms = 8
 	MVEventCore.fixed_random = -1.0
@@ -259,6 +260,30 @@ func random_draws() -> void:
 	check("random.skipped", parent.skipped.is_empty(), parent.skipped)
 	print("random draws: used %d, second %d, proof %d, %s" % [int(r.used), int(r.second), int(r.proof), str(r.reason)])
 	await close_map()
+
+
+## O-待定·深渊赌场二阶段（新源 v0.62.10 fixAbyssStage2）：读入后 1434 的五对「读 v1191～1195、抽那一格」换成先抽再读；
+## event_compare ce1434#o5_3 量到参照按换序后的次序跑。回退开关 false＝数据原序（v0.28）。
+func abyss_stage2() -> void:
+	var raw: Array = XDB.load_json("db/CommonEvents.json")
+	var pairs := func(list: Array) -> Array:
+		var out := []
+		for c in list:
+			if int(c.code) == 122 and (int(c.parameters[0]) in [1191, 1192, 1193, 1194, 1195] or (int(c.parameters[0]) == 1197 and int(c.parameters[3]) == 1 and int(c.parameters[4]) >= 1191 and int(c.parameters[4]) <= 1195)):
+				out.append("roll%d" % int(c.parameters[0]) if int(c.parameters[3]) == 2 else "read%d" % int(c.parameters[4]))
+		return out
+	var raw_order: Array = pairs.call(raw[XCasinoBatch.ABYSS_EVENT].list)
+	check("abyss2.raw", raw_order.size() == 10 and raw_order[0] == "read1191" and raw_order[1] == "roll1191", raw_order)
+	var live: Array = pairs.call(XDB.rec("CommonEvents", XCasinoBatch.ABYSS_EVENT).list)
+	var want := []
+	for v in range(1191, 1196):
+		want.append_array(["roll%d" % v, "read%d" % v])
+	check("abyss2.roll_first", live == want, live)
+	XCasinoBatch.ABYSS_STAGE2_ROLL_FIRST = false
+	var copy: Array = raw.duplicate(true)
+	XCasinoBatch.fix_abyss_stage2(copy)
+	check("abyss2.o-off", pairs.call(copy[XCasinoBatch.ABYSS_EVENT].list) == raw_order, pairs.call(copy[XCasinoBatch.ABYSS_EVENT].list))
+	XCasinoBatch.ABYSS_STAGE2_ROLL_FIRST = true
 
 
 func close_map() -> void:
