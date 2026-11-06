@@ -10,6 +10,7 @@ var platform: XPlatform
 
 func _ready() -> void:
 	_headless_frame_sleep()
+	XKeyMap.apply()  # 照正式版补 Z／J 确认、X／K／Insert 取消、WASD 与小键盘方向（platform-keys1）
 	key_repeat = XKeyRepeat.new()  # 按住键的连发照原版 24／6 帧（ui11）
 	key_repeat.name = "KeyRepeat"
 	add_child(key_repeat)
