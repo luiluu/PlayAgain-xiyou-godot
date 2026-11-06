@@ -10,6 +10,13 @@ const host = start(), {w, newGame} = host;
 const H = w.CodexHeartsteel, U = w.CodexHubris;
 if (!H || !U || !H.unknownHeartOrigin) throw new Error('心钢／狂妄模块未安装');
 const SR = superReference(w);
+// v0.35 起冷却按回合（_codexHeartsteelReadyTurn、H.remaining）；v0.28 按行动（_codexHeartsteelWait）。两版都能量。
+const BY_TURN = typeof H.round === 'function';
+function setWait(a, wait) {
+  if (BY_TURN) { if (wait === undefined) delete a._codexHeartsteelReadyTurn; else a._codexHeartsteelReadyTurn = H.round() + wait; }
+  else if (wait === undefined) delete a._codexHeartsteelWait; else a._codexHeartsteelWait = wait;
+}
+function waitOf(a) { return BY_TURN ? H.remaining(a) : a._codexHeartsteelWait; }
 if (!w.$) w.$ = {};
 const toasts = [];
 w.$.toaster = o => { toasts.push(o.message); };
@@ -54,8 +61,8 @@ for (const base of [7900, 7901]) for (const [stacks, hp] of [[0, 0], [100, 0], [
       paramPlus0: a.paramPlus(0), listed: listed(a), effectiveHp: H.effectiveHp(a)};
     out.meetsOut = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id]));
     w.$gameParty._inBattle = true;
-    for (const wait of [2, 1, 0]) { a._codexHeartsteelWait = wait; out['meets' + wait] = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id])); }
-    delete a._codexHeartsteelWait; out.meetsUnset = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id]));
+    for (const wait of [2, 1, 0]) { setWait(a, wait); out['meets' + wait] = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id])); }
+    setWait(a, undefined); out.meetsUnset = SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id]));
     a.addBuff(0, 5); out.effectiveHpBuffed = H.effectiveHp(a); out.mhpBuffed = a.mhp;
     w.$gameParty._inBattle = false;
     return out;
@@ -167,7 +174,7 @@ function act(bm, user, skillId, target) {
 function turn(bm) { bm._enteredEndPhase = false; bm._phase = 'turn'; bm.endTurn(); bm.startTurn(); bm._phase = 'turn'; }
 function heartSnap(ctx) {
   const {a, it} = ctx;
-  return {hp: a.hp, mhp: a.mhp, wait: a._codexHeartsteelWait, casted: !!a._codexHeartsteelCasted, pending: H.pending(it), stacks: H.stacks(it),
+  return {hp: a.hp, mhp: a.mhp, wait: waitOf(a), casted: !!a._codexHeartsteelCasted, pending: H.pending(it), stacks: H.stacks(it),
     meets: SKILLS.map(id => a.meetsSkillConditions(w.$dataSkills[id])), round: w.$gameTroop.turnCount()};
 }
 for (const [base, stacks] of [[7900, 100], [7901, 0]]) {
@@ -383,7 +390,7 @@ for (const [base, fields] of [[7900, {_codexHeartsteelStacks: 0}], [7902, {_code
 }
 cases.push(makeCase('suppress.cast', {base: 7900}, () => {
   const ctx = battle(7900, {_codexHeartsteelStacks: 0}), {bm, a, it} = ctx, sid = H.skillFor(it), rows = [];
-  a._codexHeartsteelWait = 0; a.addState(2634); a._tojiSealCharges = 1;
+  setWait(a, 0); a.addState(2634); a._tojiSealCharges = 1;
   rows.push(['start', heartSnap(ctx), {inst: inst(it)}]);
   rows.push(['cast', act(bm, a, sid, 0).length, heartSnap(ctx), a.isStateAffected(2634)]);
   return {rows};

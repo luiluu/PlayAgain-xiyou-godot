@@ -40,7 +40,7 @@ static func heart_rows(item: Dictionary) -> Array:
 		"伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", number(1.0 + 0.1 * n)],
 		"效果：每回合结束回复%d%%最大生命" % (5 if lev else 3),
 		"战技：巨人吞噬；物理，单体，不可暴击",
-		"冷却：巨人吞噬开战后行动2次可用；施放后行动3次恢复",
+		"冷却：巨人吞噬第2回合可用；冷却2回合" if XHeartsteel.TURN_CD_V035 else "冷却：巨人吞噬开战后行动2次可用；施放后行动3次恢复",
 		"效果：巨人吞噬命中积累心钢，胜利后保留"]
 	if XHeartsteel.growth(item) > 0:
 		rows.insert(2, "成长：额外最大生命＋%d" % XHeartsteel.growth(item))
