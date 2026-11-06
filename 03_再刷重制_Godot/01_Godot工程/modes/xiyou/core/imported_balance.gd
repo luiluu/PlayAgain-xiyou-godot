@@ -17,6 +17,44 @@ const DISABLED_ACTORS := [141, 143, 144, 145, 146, 152, 157, 160, 161, 166]
 const DISABLED_HORNS := [245, 255, 256, 257, 274, 359, 394, 440, 456, 494]
 const DOT_RATE := 0.01
 
+## v0.62.12 installIntegratedV029Runtime（v0.30 起，CodexV029.hiddenActors）：这 7 名从队伍、仓库、出战栏移走（新局／读档 U.sync），
+## 仓库列表（Star_Window_PartyList.createActorOrder）与人物图鉴目录（Window_ActorBookIndex.refresh）里不出现。
+## 都在 DISABLED_ACTORS 里（add_actor 本来就不让入队），所以出战栏两边都没有；差的是图鉴目录和仓库列表。
+## O-待定（交付单「优化登记草稿」V029 隐藏角色）：V029_HIDE_ACTORS = false 回到 v0.28（图鉴目录照列全部角色槽）。
+const HIDDEN_ACTORS := [141, 146, 152, 157, 160, 161, 166]
+static var V029_HIDE_ACTORS := true
+
+
+static func is_hidden_actor(id: int) -> bool:
+	return V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id)
+
+
+## B.migrateParty（读档 extractSaveContents 包装；新局、initializeBattleMembers 等时也跑，重制 add_actor 本来就拦，只剩读档要做）：
+## 停用角色从队伍挪进仓库末尾（只挪编号，角色数据不动），出战栏里的清成 0；队伍挪空了按 仓库里第一名可用的 → 角色 1 补一名
+## （从仓库拿走）；出战栏全空就放队伍第一名。返回有没有改动。（V029 隐藏的 7 名之后在仓库列表里滤掉，见 XActorWarehouse.stored）
+static func migrate_party(s: XState) -> bool:
+	var retired: Array[int] = []
+	for id in s.party + s.battle_slots:
+		if int(id) > 0 and is_disabled_actor(int(id)) and not retired.has(int(id)):
+			retired.append(int(id))
+	if retired.is_empty():
+		return false
+	for id in retired:
+		if not s.saved_actors.has(id):
+			s.saved_actors.append(id)
+	s.party.assign(s.party.filter(func(id): return not is_disabled_actor(int(id))))
+	if s.party.is_empty():
+		var stored := s.saved_actors.filter(func(id): return int(id) > 0 and not is_disabled_actor(int(id)) and not XDB.rec("Actors", int(id)).is_empty())
+		var rep := int(stored[0]) if not stored.is_empty() else 1
+		s.party.append(rep)
+		s.saved_actors.erase(rep)
+	for i in s.battle_slots.size():
+		if is_disabled_actor(int(s.battle_slots[i])):
+			s.battle_slots[i] = 0
+	if not s.battle_slots.is_empty() and not s.battle_slots.any(func(id): return int(id) > 0):
+		s.battle_slots[0] = s.party[0]
+	return true
+
 ## 当前行动者（弱引用）：YEP 附加状态时把它记成状态来源（stateOrigin），持续伤害据此判断。用 set_acting／acting_battler 读写。
 static var _acting: WeakRef
 

@@ -130,6 +130,14 @@ func _run() -> void:
 	for id in [1, 8, 9, 10]:
 		s.add_actor(id)
 	check("index_names", XActorBook.index_names() == ref.index, XActorBook.index_names().slice(0, 5))
+	# v0.62 V029 隐藏角色（141、146、152、157、160、161、166）不进目录，之后的行往上挪；开关关掉回到 v0.28 每槽一行
+	var rows := XActorBook.row_ids()
+	check("v029_hidden_rows", rows.size() == XActorBook.actor_count() - 7 and not rows.has(141) and not rows.has(166)
+		and rows.has(162) and rows.find(142) == 141 and rows.find(147) == 145, [rows.size(), rows.find(142), rows.find(147)])
+	XImportedBalance.V029_HIDE_ACTORS = false
+	check("v029_off_all_slots", XActorBook.row_ids().size() == XActorBook.actor_count() and XActorBook.index_names()[141] == XActorBook.actor_name(141),
+		XActorBook.row_ids().size())
+	XImportedBalance.V029_HIDE_ACTORS = true
 	var bad := {"status": [], "sprite": [], "header": [], "list": [], "skills": []}
 	for key in ref.actors:
 		var id := int(key)
@@ -196,7 +204,7 @@ func _flow(ref: Dictionary) -> void:
 	await shot("actor_book_1")
 	if out_dir != "":
 		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178]:  # 只在存截图时：167 号以后的立绘
-			book.index = sid
+			book.index = XActorBook.row_ids().find(sid)
 			book._select_actor()
 			await shot("actor_book_%d" % sid)
 		book.index = 1
@@ -233,7 +241,8 @@ func _flow(ref: Dictionary) -> void:
 	# 目录首按上循环到最后一槽；翻页 19 行
 	book._move(-1, true)
 	book._move(-1, true)
-	check("index_wrap", book.index == XActorBook.actor_count() - 1 and book.top == XActorBook.actor_count() - XActorBook.INDEX_ROWS, [book.index, book.top])
+	check("index_wrap", book.index == XActorBook.row_count() - 1 and book.top == XActorBook.row_count() - XActorBook.INDEX_ROWS, [book.index, book.top])
+	check("index_wrap_last_id", book.cur_id() == XActorBook.actor_count() - 1, book.cur_id())
 	book._move(1, true)
 	book._page(1)
 	check("index_page", book.index == XActorBook.INDEX_ROWS and book.top == XActorBook.INDEX_ROWS, [book.index, book.top])

@@ -115,12 +115,31 @@ static func actor_name(id: int) -> String:
 	return a.display_name() if a != null else str(XDB.rec("Actors", id).get("name", ""))
 
 
-## Window_ActorBookIndex.refresh：有名角色写名字，否则「？？？」
-static func index_names() -> Array:
+## Window_ActorBookIndex.refresh：有名角色写名字，否则「？？？」；v0.62 V029 包装再滤掉隐藏角色（XImportedBalance.is_hidden_actor，
+## 只滤真角色行，「？？？」占位行留着），之后目录第 i 行对应 row_ids()[i]
+static func row_ids() -> Array:
 	var out := []
 	for i in actor_count():
-		out.append(actor_name(i) if named(i) else "？？？")
+		if not (named(i) and XImportedBalance.is_hidden_actor(i)):
+			out.append(i)
 	return out
+
+
+static func row_count() -> int:
+	return row_ids().size()
+
+
+static func index_names() -> Array:
+	return row_ids().map(func(i): return actor_name(i) if named(i) else "？？？")
+
+
+## 目录当前行的角色编号
+var _rows: Array = []
+
+func cur_id() -> int:
+	if _rows.is_empty():
+		_rows = row_ids()
+	return int(_rows[index]) if index >= 0 and index < _rows.size() else 0
 
 
 static func class_id(id: int) -> int:
@@ -434,28 +453,28 @@ func _paint_index(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
-		var r := sprite_rect(index, _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
+		var r := sprite_rect(cur_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
 
 func _paint_header(c: XMVCanvas) -> void:
-	paint_ops(c, header_ops(index))
+	paint_ops(c, header_ops(cur_id()))
 
 
 func _paint_list(c: XMVCanvas) -> void:
 	if skill_index >= skill_top and skill_index < skill_top + LIST_ROWS:
 		c.cursor(Rect2(0, (skill_index - skill_top) * LH, c.size.x, LH), mode == "skills")
 	for i in range(skill_top, mini(skill_top + LIST_ROWS, skill_list.size())):
-		paint_ops(c, list_row_ops(index, skill_list[i], (i - skill_top) * LH, _measure))
+		paint_ops(c, list_row_ops(cur_id(), skill_list[i], (i - skill_top) * LH, _measure))
 
 
 # ---- 操作 ----
 ## Scene_ActorBook.update：目录选中项变了就刷新状态窗（空槽清空）
 func _select_actor() -> void:
-	_status_ops = status_ops(index, _measure)
+	_status_ops = status_ops(cur_id(), _measure)
 	_sprite_tex = null
-	_sprite_spec = sprite_spec(index)
+	_sprite_spec = sprite_spec(cur_id())
 	var p := str(_sprite_spec.get("path", ""))
 	_sprite_tex = load(p) if p != "" else null
 	_refresh()
@@ -525,7 +544,7 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + INDEX_ROWS < actor_count()
+	index_win.down_arrow = top + INDEX_ROWS < row_count()
 	list_win.up_arrow = skill_top > 0
 	list_win.down_arrow = skill_top + LIST_ROWS < skill_list.size()
 	for w in [index_win, status_win, header_win, list_win]:
@@ -578,12 +597,12 @@ func _update_help() -> void:
 func ok() -> void:
 	if mode != "index":
 		return
-	if index <= 0 or not named(index):
+	if cur_id() <= 0 or not named(cur_id()):
 		XSound.system(3)
 		return
 	XSound.system(1)
 	mode = "skills"
-	skill_list = book_skills(index, false)
+	skill_list = book_skills(cur_id(), false)
 	skill_top = 0
 	skill_index = 0 if not skill_list.is_empty() else -1
 	_show_skills(true)
@@ -603,14 +622,14 @@ func cancel() -> void:
 
 func _move(d: int, wrap: bool) -> void:
 	if mode == "index":
-		select(XMenu._move(index, d, actor_count(), wrap))
+		select(XMenu._move(index, d, row_count(), wrap))
 	elif not skill_list.is_empty():
 		select_skill(XMenu._move(skill_index, d, skill_list.size(), wrap))
 
 
 ## Window_Selectable.cursorPagedown/up
 func _page(d: int) -> void:
-	var n := actor_count() if mode == "index" else skill_list.size()
+	var n := row_count() if mode == "index" else skill_list.size()
 	var rows := INDEX_ROWS if mode == "index" else LIST_ROWS
 	var cur := index if mode == "index" else skill_index
 	var t := top if mode == "index" else skill_top
@@ -644,7 +663,7 @@ func _gui_input(event: InputEvent) -> void:
 			if rect.has_point(p):
 				var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 				if mode == "index":
-					top = clampi(top + d, 0, maxi(0, actor_count() - INDEX_ROWS))
+					top = clampi(top + d, 0, maxi(0, row_count() - INDEX_ROWS))
 				else:
 					skill_top = clampi(skill_top + d, 0, maxi(0, skill_list.size() - LIST_ROWS))
 				_refresh()
@@ -654,7 +673,7 @@ func _gui_input(event: InputEvent) -> void:
 			var row := floori((p.y - rect.position.y - XMVWindow.PADDING) / LH)
 			if mode == "index":
 				var i := top + row
-				if row >= 0 and row < INDEX_ROWS and i < actor_count():
+				if row >= 0 and row < INDEX_ROWS and i < row_count():
 					if i == index:
 						ok()
 					else:
