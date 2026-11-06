@@ -10,8 +10,9 @@
 - 原版实际键位（冻结正式源 v0.28 与 v0.62.12 的 rpg_core keyMapper 相同；游戏启用的 YEP_ButtonCommonEvents 每个场景开头 `_revertButton('ALL')` 再改写）：确认＝回车／空格／Z／J；取消＝Esc／Insert／X／K／小键盘0；方向＝方向键／WASD／小键盘 8246；翻页＝PageUp／Q、PageDown／E（W 不再翻页）。地图快捷键 ~ 1 2 3 R T P L 与 G 挂机早已做过。
 - 新增 `core/key_map.gd`（XKeyMap）：启动时把缺的 Z／J、X／K／Insert／小键盘0、WASD、小键盘方向补进 ui_accept／ui_cancel／ui_up…，各页不用改。原版小键盘 2468 在地图上因插件参数写成按钮名而不能走路，这里不照搬（地图上也能走）。
 - Esc 关不掉菜单：菜单收到 Esc 关闭后，同一帧地图的 `_process` 仍看到「Esc 刚按下」，立刻重开菜单。`map_scene.gd` 记下关菜单的帧号，该帧不再开（`XKeyMap.menu_call_blocked`）。
+- 高分屏文字（Kyo 反馈 Retina 上字偏粗偏软）：主菜单等窗口文字本来就是原生分辨率直接画，没有低分辨率纹理放大；原因是为对上 Mac 原版加粗而画的同色 1 逻辑像素描边，窗口缩放 ≥1.5 时变成两个多物理像素。`XMVCanvas` 在缩放 ≥1.5 时不再画这一圈（1280×720 窗口不变）。回退 `XMVCanvas.CRISP_HIDPI_TEXT = false`。优化登记待总装编号 O-待定：高分屏文字不加粗描边。底图、立绘本身是原版低分辨率素材，没改。
 - 回退：`XKeyMap.MV_KEYS = false`（键位）；Esc 保护无开关，删 `map_scene.gd` 里一个条件即可。
-- 测试：新增 `xiyou_key_map`（29 项）。
+- 测试：新增 `xiyou_key_map`（30 项，含高分屏开关）。
 
 ## 交接板
 

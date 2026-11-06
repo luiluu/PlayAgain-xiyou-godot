@@ -50,6 +50,8 @@ func _run() -> void:
 	# Esc 关菜单同一帧不重开
 	check("menu_call_blocked_same_frame", XKeyMap.menu_call_blocked(100, 100))
 	check("menu_call_ok_next_frame", not XKeyMap.menu_call_blocked(100, 101) and not XKeyMap.menu_call_blocked(-1, 0))
+	# 高分屏文字不加同色描边的开关（platform-keys1）
+	check("crisp_switch", XMVCanvas.CRISP_HIDPI_TEXT and XMVCanvas.HIDPI_SCALE > 1.0 and XMVCanvas.HIDPI_SCALE < 2.0)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
