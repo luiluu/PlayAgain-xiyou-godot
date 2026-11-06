@@ -188,6 +188,18 @@ for (const [nm, id, sk] of [['yunshang', 174, 10270], ['yunshang', 174, 10271], 
     return {log, hp: a.hp, mp: a.mp, states: a._states.slice(), foeStates: foes.map(e => e._states.slice()), foeHp: foes.map(e => e.hp)};
   }));
 }
+// DV（审查 42 P3-2）：饿狼招募后、有进化／解析被动的形态（3、6）放魔法拳被反射：原版 apply 包装照样给饿狼自己记帧，
+// 行动结束时对自己加解析、进化 +1（refx 用的 xbattle 不招募、形态 0，没有这两个被动，量不到）。
+for (const stage of [3, 6]) for (const sk of [10259, 10261]) for (const refl of [false, true]) {
+  cases.push(makeCase(`refg.s${stage}.${sk}.${refl ? 'reflect' : 'plain'}`, {stage, skill: sk, reflect: refl}, () => {
+    const {bm, a, foes} = gbattle(stage, 60, true);
+    a.learnSkill(sk); a.setMp(a.mmp); a.setTp(0);
+    if (refl) reflectOn(foes);
+    const log = record(() => act(bm, a, sk, 0));
+    return {log, evolution: a._garouEvolution || 0, analysis: (a._garouAnalysis || []).map(r => key(r.target)).sort(),
+      hp: a.hp, mp: a.mp, tp: a.tp, foeHp: foes.map(e => e.hp)};
+  }));
+}
 // raven2→3：多段／反射加状态的通用情形（不限渡鸦）。借 10124 的数据槽临时改成「全体、魔法、黑暗、固定伤害 1e7、效果加黑暗侵蚀 1663」，
 // 普通角色 1 号出手，反射回自己；tcr 强设 0.01（受伤充 TP 加 0）与 2（加 ≥1）。量出：加状态前若同一次 apply 里 TP 已 refresh，
 // 状态特性晚一击（krz 状态缓存时序，与渡鸦无关，见交付单）。

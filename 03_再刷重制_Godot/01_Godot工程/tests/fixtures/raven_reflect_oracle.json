@@ -3059,6 +3059,538 @@
    "errors": []
   },
   {
+   "id": "refg.s3.10259.plain",
+   "setup": {
+    "stage": 3,
+    "skill": 10259,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 5298526754,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 5298526754,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 5298526754,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "e0"
+    ],
+    "hp": 999999999999,
+    "mp": 56606,
+    "tp": 0,
+    "foeHp": [
+     74984104434738,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s3.10259.reflect",
+   "setup": {
+    "stage": 3,
+    "skill": 10259,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 4040906912,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 4040906912,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 4040906912,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "a173"
+    ],
+    "hp": 987877279263,
+    "mp": 56606,
+    "tp": 0,
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s3.10261.plain",
+   "setup": {
+    "stage": 3,
+    "skill": 10261,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 3066336056,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 3066336056,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "e0",
+     "e1",
+     "e2"
+    ],
+    "hp": 999999999999,
+    "mp": 51187,
+    "tp": 0,
+    "foeHp": [
+     74990801006832,
+     74990801006832,
+     74990801006832
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s3.10261.reflect",
+   "setup": {
+    "stage": 3,
+    "skill": 10261,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 2304947563,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "a173"
+    ],
+    "hp": 979255471932,
+    "mp": 51187,
+    "tp": 0,
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s6.10259.plain",
+   "setup": {
+    "stage": 6,
+    "skill": 10259,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 624913437936,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 624913437936,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "e0",
+      "value": 624913437936,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "e0"
+    ],
+    "hp": 999999999999,
+    "mp": 56613,
+    "tp": 0,
+    "foeHp": [
+     73125259701192,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s6.10259.reflect",
+   "setup": {
+    "stage": 6,
+    "skill": 10259,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 623923463898,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10259,
+      "target": "a173",
+      "value": 623923463898,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "a173"
+    ],
+    "hp": 0,
+    "mp": 56613,
+    "tp": 62,
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s6.10261.plain",
+   "setup": {
+    "stage": 6,
+    "skill": 10261,
+    "reflect": false
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e0",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e1",
+      "value": 371800666794,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "e2",
+      "value": 371800666794,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "e0",
+     "e1",
+     "e2"
+    ],
+    "hp": 999999999999,
+    "mp": 51193,
+    "tp": 0,
+    "foeHp": [
+     73884598014618,
+     73884598014618,
+     73884598014618
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "refg.s6.10261.reflect",
+   "setup": {
+    "stage": 6,
+    "skill": 10261,
+    "reflect": true
+   },
+   "observed": {
+    "log": [
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 370577069779,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 370577069779,
+      "critical": true
+     },
+     {
+      "kind": "hit",
+      "user": "a173",
+      "skill": 10261,
+      "target": "a173",
+      "value": 370577069779,
+      "critical": true
+     }
+    ],
+    "evolution": 1,
+    "analysis": [
+     "a173"
+    ],
+    "hp": 0,
+    "mp": 51193,
+    "tp": 54,
+    "foeHp": [
+     75000000015000,
+     75000000015000,
+     75000000015000
+    ]
+   },
+   "errors": []
+  },
+  {
    "id": "refstate.tcr0.01.plain",
    "setup": {
     "tcr": 0.01,
