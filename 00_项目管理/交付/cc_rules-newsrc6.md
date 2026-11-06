@@ -105,7 +105,7 @@ DN 伤害取整口径：流萤二期 firefly 例里敌人普攻打流萤，基�
 ### 验证
 
 - 本地：`xiyou_raven_reflect` 609/609、`xiyou_raven_battle` 368/368；`语法检查.py` 通过。
-- 选测（基准 21cd90eb）85 个场景，走云端：见下一行结果。
+- 选测（基准 21cd90eb）85 个场景，云端 fff41261（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42269599710）：82 过，**3 个红**：`xiyou_actor_p0`（`recruit_11`、`horn_paths_all_covered`：伙伴号角流萤 3063／CE9043）、`xiyou_save_events`（同两项）、`xiyou_event_compare`（`oracle_cases_complete` 5959／5900、`no_regressions` ce9039#n2、ce9026#n2）。**与本分支无关**：本地把 `battle_logic.gd` 换回 21cd90eb 的版本重跑，这 3 个照样红（同样的失败项）；是集成树上新源流萤招募／新公共事件还没跟上，归换源车道。
 - `事件空绿扫描.py --check`：**红 5 项**，都是「在预设里但 event_states.json 没量」（m234e26p0#a1 等），与本分支无关：本分支没碰 `event_presets.json`，是本树 generated 从集成树克隆来的 `event_states.json` 比预设旧。总装合并时用集成树最新产物再跑一次即可。
 
 ### 变更记录草稿
