@@ -56,6 +56,7 @@ func _run() -> void:
 		elif id == "lock":
 			_lock(c)
 	XAlienation.force_roll = -1.0
+	_hidden_v058(ref)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
@@ -290,3 +291,32 @@ func _lock(c: Dictionary) -> void:
 	XAlienBattle.end(logic, -1)
 	check("lock.after_end", XAlienBattle.locked(a) == null)
 	XState.current = null
+
+
+
+## O-待定·异化隐藏：默认保持开启（Kyo 11-05）；开关打开时照正式 v0.58 installAlienationHide，遭遇与奖励都没有（参照量的是没装隐藏模块的原版）
+func _hidden_v058(ref: Dictionary) -> void:
+	check("hidden_v058.default_off", XAlienBattle.HIDDEN_V058 == false)
+	var c: Dictionary = {}
+	for x in ref.cases:
+		if str(x.id).begins_with("encounter.") and x.observed.encounter != null:
+			c = x
+			break
+	if not check("hidden_v058.has_hit_case", not c.is_empty()):
+		return
+	var st: Dictionary = c.setup
+	var s := XState.new_game_blank()
+	XState.current = s
+	s.party.clear()
+	s.battle_slots.clear()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	s.map_id = int(st.map)
+	s.unknown_origin = int(st.origin) if st.has("origin") else null
+	XAlienBattle.HIDDEN_V058 = true
+	var logic := _logic(s, int(st.troop))
+	var rng := SeqStream.new()
+	rng.seq = st.get("random", [])
+	check("hidden_v058.no_encounter", XAlienBattle.setup_encounter(logic, rng) == null and XAlienBattle.encounter(logic) == null)
+	check("hidden_v058.no_grant", XAlienBattle.grant(logic) == false)
+	XAlienBattle.HIDDEN_V058 = false
