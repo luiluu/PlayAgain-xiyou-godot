@@ -121,15 +121,46 @@ static func _actors_add_state(js: String) -> Array:
 	return plan
 
 
+## 裸标识符整段当无操作（见 run）；回退开关
+static var BARE_IDENTIFIER_NOOP := true
+
+
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
 static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
 	if js == "":
 		return []
+	if js.contains("CodexTier.nonWeakIds()"):
+		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(XState.tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current
 	# 原版本身就是语法错误的整段（YEP_CoreEngine command355 把 eval 包在 try 里，出错只 displayError、整段不执行）：无操作。
 	# 大厅难度开关 Map004 EV062、萨麦尔格祝福 Map145 EV005、传承强化 Map195 EV023、中级熟练度 CE859／860 的提示少引号或少 }，CE513 把备注 <passivePBST0:1000> 当脚本（events6）
 	if _js_syntax_error(js):
+		return []
+	# 整段只是一个裸标识符：原版 eval 它没有任何效果（未定义就 ReferenceError 被上面那层 try 吞掉，定义了只取值）。
+	# 新源 355 的 parameters 写成了字符串，MV 读 parameters[0] 只拿到第一个字符（深渊商人事件页的 `C`、公共事件 1439 的 `i`），
+	# 转换器已把它拆成逐字符数组（mv_string_parameters），这里就是那一个字符（bajie-newsrc1）。BARE_IDENTIFIER_NOOP 设 false 回到交给后面逐句处理
+	if BARE_IDENTIFIER_NOOP and _re("^[A-Za-z_$][A-Za-z0-9_$]*;?$").search(js) != null:
+		return []
+	# 一线生机与天道注视（公共事件 1330，v0.34 起 CodexHeavenGaze.apply，installStrongActorClassificationRuntime）：
+	# 有名字的角色逐个（$gameActors.actor 会把角色建出来）：弱者在 apply(true) 时学一线生机 6212；
+	# 非弱者先 repair（会 6212 的忘掉、学天道注视 6213），再学 6213。弱者判定用 XWeakChallenge.is_weak（原版 CodexWeakChallenge.isWeak）
+	var gaze := _re("^CodexHeavenGaze\\.apply\\((true|false)\\);?$").search(js)
+	if gaze:
+		var table: Array = XDB.table("Actors")
+		for id in range(1, table.size()):
+			if not table[id] is Dictionary or str(table[id].get("name", "")) == "":
+				continue
+			var who: XActor = s.actor(id)
+			if XWeakChallenge.is_weak(who):
+				if gaze.get_string(1) == "true":
+					who.learn_skill(6212)
+			else:
+				if who.skill_ids.has(6212):
+					who.forget_skill(6212)
+					who.learn_skill(6213)
+				who.learn_skill(6213)
+			who.refresh_passive()
 		return []
 	# CE1317: selected actor is shared with the item-effect capacity check.
 	if js == "var actor = $gameActors.actor($gameParty._targetActorId);\n$.toaster({ message : ''+actor.name()+' 能学习的抽奖被动技能已经达到'+$gameVariables.value(9)+'上限！'});":
