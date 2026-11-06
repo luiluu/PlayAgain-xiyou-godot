@@ -1,0 +1,38 @@
+{
+ "sha": "605d1a9c988a2687eaabe54083849398291a6704",
+ "branch": "cc/wukong-newsrc10",
+ "mode": "scenes",
+ "base": "",
+ "passed": false,
+ "scenes": 15,
+ "failed": [
+  "xiyou_actor_p0.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 1,
+ "longestShardSeconds": 139.1,
+ "testSeconds": 195,
+ "generatedRef": "refs/ci/generated/cc/wukong-newsrc10",
+ "generatedCommit": "22c66aa026257a138ffce78e567758b23e1bc707",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42295374006",
+ "sceneNames": [
+  "xiyou_actor_advanced.tscn",
+  "xiyou_actor_book.tscn",
+  "xiyou_actor_book_review.tscn",
+  "xiyou_actor_p0.tscn",
+  "xiyou_actor_warehouse.tscn",
+  "xiyou_appearance.tscn",
+  "xiyou_hidden_actors.tscn",
+  "xiyou_imported_balance.tscn",
+  "xiyou_liuying.tscn",
+  "xiyou_pets.tscn",
+  "xiyou_raven_visual.tscn",
+  "xiyou_save_page.tscn",
+  "xiyou_sequence_visual.tscn",
+  "xiyou_sv_smooth.tscn",
+  "xiyou_svpngfd.tscn"
+ ],
+ "time": "2026-11-06T21:26:13+00:00"
+}
