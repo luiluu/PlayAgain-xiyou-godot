@@ -23,7 +23,7 @@ extends RefCounted
 ## - 招募 CodexLiuying.recruit()（公共事件 9043，号角 3063）：已在队返回 false；入队，专武 4004、法宝 4582 有就装、没有就生成后装；三条提示。
 ##   超强者门槛同别的角色（XMvScript._recruit_blocked）。
 ## 第二期（参照 mv_oracle/liuying2_probe.cjs → tests/fixtures/liuying2_oracle.json，tests/xiyou_liuying2）：见文末「第二期」各节。
-## 第三期：说明按阶生成与技能名品质色（界面）、萨姆残核掉落。
+## 第三期：说明按阶生成与技能名品质色（交界面）；萨姆残核掉落见文末「第三期」。
 
 const ACTOR := 179
 const TIANHUO := 10622
@@ -471,7 +471,7 @@ static func _pay_hp(a) -> float:
 	var cost := minf(floorf(hp * HP_COST_RATE), maxf(0.0, hp - 1.0))
 	if cost <= 0.0:
 		return 0.0
-	a.hp = hp - cost
+	a.hp = hp - cost  # 原版直写 _hp：不经护盾账本与原生护盾（总装 11-06 定照原版）
 	a.param_mark_dirty()
 	note_hp_loss(a)
 	return cost
@@ -650,3 +650,58 @@ static func note_hp_loss(a) -> void:
 		return
 	_firefly_act = _action_serial
 	add_firefly(logic)
+
+
+# ==== 第三期：萨姆残核掉落（v0.62.08，第 16 节） ====
+## BattleManager.makeRewards 包装（在原奖励之后）：被击败的、备注带 <CodexLiuyingCoreDrop[:下限%]> 的敌人每只独立掷一次，
+## 中了就把残核 3062 加进奖励（不吃队伍掉落率、不经掉落件数上限与品质屏蔽）。只在深渊地图（地图名以「深渊」开头）或
+## 地图备注带 <CodexLiuyingCoreDrop> 的地图里掉。概率按路线：洪荒按诅咒倍率在两端之间插值，灭世一档，其余（含未选路线）一档；
+## 敌人备注写了下限就取较大值。具体数值见下面常量（照新源）。
+const CORE_ITEM := 3062
+const CORE_RATES := {"base": 0.03, "doom": 0.05, "primordialMin": 0.06, "primordialMax": 0.18}
+const HH_MAX := 6.075
+const PRIMORDIAL_SW := [2483, 2463]
+const DOOM_SW := [2487, 2462]
+## O-待定·萨姆残核掉落：false＝不掉（回到没有这段运行时）
+static var CORE_DROP := true
+static var _core_re: RegEx = null
+
+
+static func core_rate(s: XState) -> float:
+	if PRIMORDIAL_SW.any(func(id): return s.switch(id)):
+		var holder := XHonghuang.curse_holder(s)
+		var h := minf(HH_MAX, maxf(1.0, XHonghuang.curse_bonus(holder) if holder != null else 1.0))
+		return CORE_RATES.primordialMin + (CORE_RATES.primordialMax - CORE_RATES.primordialMin) * (h - 1.0) / (HH_MAX - 1.0)
+	if DOOM_SW.any(func(id): return s.switch(id)):
+		return CORE_RATES.doom
+	return CORE_RATES.base
+
+
+static func core_map_ok(s: XState) -> bool:
+	if str(XDB.rec("MapInfos", s.map_id).get("name", "")).begins_with("深渊"):
+		return true
+	return str(XDB.map(s.map_id).get("note", "")).to_lower().contains("<codexliuyingcoredrop>")
+
+
+static func core_rate_for(s: XState, enemy_note: String) -> float:
+	if _core_re == null:
+		_core_re = RegEx.create_from_string("(?i)<CodexLiuyingCoreDrop(?::\\s*(\\d+(?:\\.\\d+)?))?>")
+	var m := _core_re.search(enemy_note)
+	if m == null or not core_map_ok(s):
+		return 0.0
+	return maxf(core_rate(s), float(m.get_string(1)) / 100.0 if m.get_string(1) != "" else 0.0)
+
+
+## 奖励里追加的残核（每只倒下的标记敌人掷一次，奖励随机流 liuying_core）
+static func core_drops(logic) -> Array:
+	var out := []
+	var s: XState = logic.state
+	if not CORE_DROP or s == null or logic.random == null or XDB.rec("Items", CORE_ITEM).is_empty():
+		return out
+	for e in logic.enemies:
+		if e.hidden or e.is_alive():
+			continue  # deadMembers
+		var rate := core_rate_for(s, str(e.data().get("note", "")))
+		if rate > 0.0 and logic.random.reward.next_float("liuying_core", "0") < rate:
+			out.append({"kind": 1, "id": CORE_ITEM})
+	return out

@@ -2932,6 +2932,13 @@ func _avg_agi(list: Array) -> float:
 ## 金钱：dsPassiveSkill 的 goldTotal 按出战成员的每个 passiveGRUP 依次 rate += v×0.01×rate，floor(Σ gold×rate × 金钱双倍)。
 ## O-130（Kyo 10-31 定：加回来）：难度表的经验／金钱倍率照 Vitsuno 本来的挂点乘在每只敌人的 exp／gold 上；false＝原版（被 EliteEnemy 盖掉、不生效）
 static var o_difficulty_reward := true
+## 萨姆残核只掷一次（rewards() 会被多处调用）
+func _liuying_core() -> Array:
+	if not has_meta("liuying_core"):
+		set_meta("liuying_core", XLiuying.core_drops(self))
+	return get_meta("liuying_core")
+
+
 func rewards() -> Dictionary:
 	var exp := 0
 	var gold := 0.0
@@ -2955,6 +2962,7 @@ func rewards() -> Dictionary:
 				d["boost"] = true  # 测试模式：普通敌人掉的装备词缀加速（XTestMode.roll_affixes）
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
+	drops.append_array(_liuying_core())  # 流萤 makeRewards 包装（第 34 个，奖励最后）：萨姆残核
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 	# 真气 makeRewards 包装（装在奖励插件之后）：幻化之战清掉物品（含地图额外掉落）；v0.45 神兵试炼经验、金钱也为 0
