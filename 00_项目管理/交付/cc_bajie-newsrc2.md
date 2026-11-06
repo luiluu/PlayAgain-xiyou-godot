@@ -1,7 +1,7 @@
 # 交付：cc/bajie-newsrc2
 
 - 车道／工作者：A 内容·楼层／八戒（cc，第十四批 CT）
-- 状态：进行中（集成分支用，不合 main；做到一半按 40% 线交接，已完成部分可先由总装在集成分支树里 merge）
+- 状态：到 40% 线交接（集成分支用，不合 main，不标可合并）。CT 除 event_compare 重出基线外都做完；分支已合集成分支 6e403442、已推 github，头见 git log
 - 从 `cc/newsrc-switch`（43efc26a）切出；工作树 `.claude/worktrees/bajie-newsrc1`（沿用上一单的树，generated 是新源产物，`generated/oracle/event_states.json` 是新源 9665 个用例的结果）。
 
 ## 变更记录草稿
@@ -81,7 +81,7 @@
 ### 进度（本单后半）
 
 - 未登记脚本：做完（剩流萤）。商店三项：做完。挖宝运行时：做完。Map213：做完。大厅 74～76（含 77）：做完。nonWeakIds 对接：做完。
-- **event_compare 重出基线：没做**（交接给下一位，见下）。
+- **event_compare 重出基线：没做**（交接给下一位，见下）。本机全量跑超时（rc=142，机器挤），没拿到差异表；要推分支上云跑（`--scenes xiyou_event_compare.tscn`）。
 
 ### 接续要点（后半）
 
