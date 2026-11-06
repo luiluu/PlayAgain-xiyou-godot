@@ -109,7 +109,7 @@
 ## 接续要点（40% 交接，给下一棒）
 
 - 工作树 `.claude/worktrees/quizzical-neumann-d318e5`，分支 `cc/bajie-newsrc3`，generated 是新源（手补过参照，别当指纹）。探针要显式设 `XIYOU_APP=/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/v0.62.12/app.nw`，新开 shell 会丢。
-- **商人界面期二**（协调 11-06 16:06 派）：照 `installAbyssMerchantRuntime.js` 的 Scene_Merchant29 做原版布局。
+- ~~**商人界面期二**~~ 已交（见「DG 期二」节，9f3bf894）。原派单要点留作核查参照：（协调 11-06 16:06 派）照 `installAbyssMerchantRuntime.js` 的 Scene_Merchant29 做原版布局。
   - 窗口：上方 Window_Help(2) 标题；左边 Window_Merchant29，宽 boxWidth×0.43；右边 Window_MerchantDetail29 装备详情，用 RJO.HE.getDescParams 的行，字号与颜色按行给，可翻页；最下面 Window_Help(1) 翻页条「◀ 上一页     n／m     下一页 ▶」，字号 20，点左半往前、点右半往后，滚轮也翻页。
   - 左边列表的帮助：有装备就显示 setEquipment29，没有就显示 help 文字，默认「确认选择；取消返回上一级。」。pageup／pagedown 翻详情页。
   - 装备池那一页的 help 用 detail(d)：名字＋分组＋「基础属性：…」＋说明＋三档说明那句。
