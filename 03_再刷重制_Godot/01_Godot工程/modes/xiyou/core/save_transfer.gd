@@ -8,7 +8,7 @@ extends RefCounted
 ## 所以 format／game 另取名字；原版 MV 的 JSON 存档认得出来，但照规矩不读（不迁移 MV 旧存档）。
 ## 文件选择走 DisplayServer.file_dialog_show（安卓是系统 SAF，返回的 content:// 可以直接给 FileAccess）。
 ## 导入到已有存档的格时，先把那格原样复制成 save_N.json.before_import_<时间>.json 再写（可找回）。
-## 原版导入还会带 aux（魔冠、云裳在存档外的成长记录），这里没做：只搬存档本身（O-待定）。
+## 原版导入还会带 aux（魔冠、云裳在存档外的成长记录），这里没做：只搬存档本身（O-208）。
 
 const FORMAT := "kyo-remake-save-json-v1"
 const GAME := "org.kyo.xiyou.remake"
@@ -16,7 +16,7 @@ const GAME := "org.kyo.xiyou.remake"
 const MV_FORMAT := "kyo-save-json-v1"
 const FILTERS := ["*.json;JSON 存档;application/json"]
 
-## O-待定：导入覆盖已有存档前先备份那一格（原版直接覆盖）。false＝照原版直接覆盖。
+## O-206：导入覆盖已有存档前先备份那一格（原版直接覆盖）。false＝照原版直接覆盖。
 static var BACKUP_BEFORE_IMPORT := true
 ## 测试用：代替 DisplayServer.file_dialog_show（参数同它的 mode、filename、callback）。
 static var dialog_override := Callable()
