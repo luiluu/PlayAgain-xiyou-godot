@@ -1773,10 +1773,18 @@ func _raven_cast(l: Dictionary) -> bool:
 	if _raven_cast_key == key:
 		return true
 	_raven_cast_key = key
+	return raven_cast(l.user, l.skill, (_raven_hits if not _raven_hits.is_empty() else [l]).map(func(r): return r.target))
+
+
+## CodexRavenEffects.play（installRavenSkillEffectsRuntime）：渡鸦放 10122～10127 时换成矢量施放特效，一次调用一组（目标去重、
+## 每个目标脚下往上 clamp(高×0.45, 40, 100)），从施放者头上 48 处飞出；只留动画的第一个音效。不是渡鸦、技能没有样式、没有目标精灵返回假
+## （照原动画）。行动序列的 showNormalAnimation（XSequencePlayer._normal_animation）与非序列的命中显示都走这里
+func raven_cast(user, skill: Dictionary, targets: Array) -> bool:
+	if not (user is XActor and int(user.actor_id) == XRaven.ACTOR and XRavenFx.STYLES.has(int(skill.get("id", 0)))):
+		return false
 	var spots := []
 	var seen := []
-	for r in _raven_hits if not _raven_hits.is_empty() else [l]:
-		var t: XBattler = r.target
+	for t in targets:
 		if seen.has(t) or not sprites.has(t):
 			continue
 		seen.append(t)
@@ -1784,8 +1792,9 @@ func _raven_cast(l: Dictionary) -> bool:
 		spots.append(s.position - Vector2(0, clampf(s.height() * 0.45, 40.0, 100.0)))
 	if spots.is_empty():
 		return false
-	_raven_layer().play_cast(int(l.skill.id), spots, sprites[l.user].position - Vector2(0, 48))
-	for timing in XDB.rec("Animations", int(l.skill.animationId)).get("timings", []):
+	var origin: Vector2 = sprites[user].position - Vector2(0, 48) if sprites.has(user) else Vector2(1280 * 0.67, 720 * 0.45)
+	_raven_layer().play_cast(int(skill.id), spots, origin)
+	for timing in XDB.rec("Animations", int(skill.animationId)).get("timings", []):
 		var cue = timing.get("se")
 		if cue is Dictionary and str(cue.get("name", "")) != "":
 			play_se(cue)

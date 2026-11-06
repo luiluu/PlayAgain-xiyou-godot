@@ -445,7 +445,8 @@ func _waiting(mode: String) -> bool:
 			return scene.sprites.values().any(func(s): return s.move_left > 0)
 		"animation":
 			anims = anims.filter(func(a): return is_instance_valid(a) and a.is_inside_tree())
-			return not anims.is_empty()
+			# Spriteset_Battle.isAnimationPlaying 包装：渡鸦施放特效没放完也算
+			return not anims.is_empty() or (scene.raven_fx != null and scene.raven_fx.busy())
 		"effect":
 			return scene.sprites.values().any(func(s): return s.effect_left > 0)
 		"float":
@@ -512,9 +513,11 @@ func _play_results(list: Array) -> void:
 				lines += 1
 				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
-				var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
-				if a:
-					anims.append(a)
+				# 技能动画走 showNormalAnimation，渡鸦施放特效包装同样换掉
+				if not scene.raven_cast(user, skill, [l.user]):
+					var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
+					if a:
+						anims.append(a)
 				wait_mode = "animation"
 			"collapse":
 				scene.show_views(l.get("views", {}))
@@ -526,6 +529,9 @@ func _play_results(list: Array) -> void:
 ## Window_BattleLog.showNormalAnimation：画面中央的动画每个目标都放（不延迟），其余按目标依次延迟
 func _normal_animation(targets: Array, id: int, mirror := false) -> void:
 	if id <= 0:
+		return
+	# installRavenSkillEffectsRuntime 的 showNormalAnimation 包装：本次行动技能的动画、渡鸦放 10122～10127 时换成施放特效，不放原动画
+	if id == int(skill.get("animationId", 0)) and scene.raven_cast(user, skill, targets):
 		return
 	var data := XDB.rec("Animations", id)
 	var delay := ANIM_BASE_DELAY
