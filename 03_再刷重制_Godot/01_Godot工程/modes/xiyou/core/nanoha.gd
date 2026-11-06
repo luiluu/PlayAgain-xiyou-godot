@@ -3,7 +3,7 @@ extends RefCounted
 ## 【cc·悟空·未经审查】108 奈叶共享击杀（js/codex/runtime/installNanohaSharedKillRuntime.js）：
 ## - Game_Action.apply 包装：行动者是出战队伍里别的角色、奈叶学会并肩适应 10168 与适应 5683 且活着、也在出战队伍里时，
 ##   打中（isHit）一个 apply 前还活着的敌人，就记进本次行动的目标表（同一目标只记一次）；
-## - BattleManager.endAction 包装（原 endAction 之后）：目标表里每个已死的敌人给奈叶 addParam(0,10)、addParam(1,30)（永久，存档）。
+## - BattleManager.endAction 包装（原 endAction 之后）：目标表里每个已死的敌人给奈叶 CodexNanohaAdapt(nanoha, 0.5)（v0.62.03 起；v0.28 是 addParam(0,10)、addParam(1,30)）。
 ## 奈叶自己的击杀不走这里（actorId===108 排除），由状态 1768 Conclude 给。
 ## 目标表挂在本次行动的 Game_Action 上：追击、反击等另建的行动不算；重制只在 act／强制行动的 execute 期间开表（begin／end_execute）。
 ## 读档补学 10168（ensureLearned）是给旧存档的，重制不迁移 MV 旧存档、新局按职业 1 级习得，不移植。
@@ -86,8 +86,7 @@ static func finish(logic, subject) -> void:
 		return
 	for e in f.targets:
 		if e != null and e.is_dead():
-			n.add_param(0, 10.0)
-			n.add_param(1, 30.0)
+			adapt(n, 0.5)  # v0.62.03 起 CodexNanohaAdapt(nanoha, 0.5)：队友击杀给一半、计入同一软上限（v0.28 是固定 +10／+30，newsrc4）
 
 
 ## ---- 二期①：大招 5703～5709 的自定义 MP 消耗与伤害后多段（参照 mv_oracle/nanoha3_probe.cjs，tests/fixtures/nanoha3_oracle.json）----
