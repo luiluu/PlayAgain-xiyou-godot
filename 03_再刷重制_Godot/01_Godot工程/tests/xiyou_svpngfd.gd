@@ -1,7 +1,7 @@
 extends Node
 ## dsPassiveSkill SvPngFd（角色战斗立绘放大）守卫（bailong-visual1）。参照 oracle/svpng.json（mv_oracle/svpng_probe.cjs 量冻结正式源）：
 ## 全库带 SvPngFd 的：防具 8 件（2937、4279、5198、5200~5203、8017）、状态 1120、敌人 850／938（敌人备注没人读）；
-## 多件取装备顺序里最后一件（不取最大）；只在开战时算一次；放大的是身体，影子不放大。
+## 多件取装备顺序里最后一件（不取最大）；v0.28 只在开战时算一次，v0.51 起变了就重算（XSvPngFd.REFRESH_V051）；放大的是身体，影子不放大。
 var passed := 0
 var total := 0
 
@@ -83,7 +83,8 @@ func _run() -> void:
 		check("scale.skill_meta_restored", XSvPngFd.scale(a) == 1.0, XSvPngFd.scale(a))
 	else:
 		check("scale.skill_native_present", false)
-	# 开战后换装／加状态不刷新（原版 refreshPassiveCache 只在 Scene_Battle.start 调）：画面节点建好后倍数不变
+	# v0.28：开战后换装／加状态不刷新（refreshPassiveCache 只在 Scene_Battle.start 调），画面节点建好后倍数不变（开关 REFRESH_V051 关）
+	XSvPngFd.REFRESH_V051 = false
 	_worn(a, [5203])
 	var sp := XBattlerSprite.new()
 	add_child(sp)
@@ -91,12 +92,30 @@ func _run() -> void:
 	check("sprite.fd_5", sp.fd == 5.0, sp.fd)
 	var base_scale := sp.body_scale
 	_worn(a, [])
-	check("sprite.frozen", sp.fd == 5.0 and sp.body_scale == base_scale, [sp.fd, sp.body_scale])
+	sp._process(0.0)
+	check("sprite.frozen_v028", sp.fd == 5.0 and sp.body_scale == base_scale, [sp.fd, sp.body_scale])
 	var plain := XBattlerSprite.new()
 	add_child(plain)
 	plain.setup(a, 1.0)
 	check("sprite.scales_body", is_equal_approx(base_scale / plain.body_scale, 5.0), [base_scale, plain.body_scale])
-	check("sprite.mid_battle_unequip_oracle", int(obs.unequipMidBattle.after) == int(obs.unequipMidBattle.before) and int(obs.stateMidBattle.cache) == 1, [obs.unequipMidBattle, obs.stateMidBattle])
+	# v0.51 起（默认）：refresh 先复位再解析，加状态后 refresh 就跟着变（参照 stateMidBattle）；原版换装 changeEquip 也会 refresh，
+	# 参照里 unequipMidBattle 只 setObject 不 refresh，所以没变（重制换装总会刷新，不比这一条）
+	XSvPngFd.REFRESH_V051 = true
+	check("sprite.mid_battle_oracle", int(obs.unequipMidBattle.after) == int(obs.unequipMidBattle.before) and int(obs.stateMidBattle.cache) == int(obs.state.cache) and bool(obs.stateMidBattle.has), [obs.unequipMidBattle, obs.stateMidBattle])
+	_worn(a, [])
+	var live := XBattlerSprite.new()
+	add_child(live)
+	live.setup(a, 1.0)
+	var live_base := live.body_scale
+	a.add_state(int(obs.state.id))
+	live._process(0.0)
+	check("sprite.state_mid_battle", live.fd == float(obs.stateMidBattle.cache) and is_equal_approx(live.body_scale, live_base * float(obs.stateMidBattle.cache)), [live.fd, live.body_scale, live_base])
+	a.state_ids.clear()
+	live._process(0.0)
+	check("sprite.state_removed_resets", live.fd == 1.0 and is_equal_approx(live.body_scale, live_base), [live.fd, live.body_scale])
+	_worn(a, [5203])
+	live._process(0.0)
+	check("sprite.equip_mid_battle", live.fd == 5.0 and is_equal_approx(live.body_scale, live_base * 5.0), [live.fd, live.body_scale])
 	_finish()
 
 
