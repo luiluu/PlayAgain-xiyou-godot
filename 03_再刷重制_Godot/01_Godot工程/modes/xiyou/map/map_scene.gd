@@ -36,8 +36,8 @@ var transfer_page: XMapTransferScene
 ## 事件打开的独立页面（商店、存档页、仓库、图鉴……，原版各是 SceneManager.push 出去的单独场景），存档键看它决定显示与否。
 var _scene_pages: Array = []
 ## 安卓商店页存档键按了没反应：原版 Mehmet_GhostButtons 只在 Scene_Map／Scene_Menu 建存档键，Scene_Shop 等页面没有；
-## 重制这些页面挂在地图下，O-211 只排除了战斗与菜单子页面，漏了事件打开的页面，而事件进行中一键存档热键不响应，
-## 于是键在、按了没反应。回退开关 = false：回到 O-211 原样（这些页面也显示存档键）（cc DH 2026-11-06，O-待定）。
+## 重制这些页面挂在地图下，触屏存档键原规则只排除了战斗与菜单子页面，漏了事件打开的页面，而事件进行中一键存档热键不响应，
+## 于是键在、按了没反应。回退开关 = false：回到原规则（这些页面也显示存档键）（cc DH 2026-11-06，O-待定）。
 static var SCENE_PAGE_HIDES_SAVE := true
 var hang_overlay: XHangUpOverlay
 var difficulty_notice: XDifficultyNoticeCanvas
