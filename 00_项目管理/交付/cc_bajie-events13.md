@@ -1,7 +1,7 @@
 # 交付：cc/bajie-events13
 
 - 车道／工作者：tests／预设／八戒（cc，派单 CE）
-- 状态：可合并（t1 一轮）。分支从 main 切出并 merge 了 cc/bajie-events12（已随本批合进 main）。
+- 状态：可合并（t1 一轮）。已合 main 12ba39f3，无冲突。
 
 ## 变更记录草稿
 
@@ -36,12 +36,15 @@
 ## 发现的不一致（只记，没改游戏代码）
 
 - t1 新例无不一致。
-- **既有失败（非本分支引入）**：`xiyou_troop_events_c` 里 troop321（六耳猕猴）10 项 FAIL：参照第 1 回合「模仿」856 后紧接强制 1，Godot 没出这次强制
-  （t1_enemy_actions／t1_forced_all，5 轮）。COVER 关着、不加 --coverage 时同样失败；疑与 main 上 358e6520「WIP: 六耳猕猴 模仿 856 After Eval 强制普通攻击接上」有关。请总装或该车道看一下。
+- 合 main 前本地跑 `xiyou_troop_events_c` 时 troop321（六耳猕猴「模仿」856 后的强制 1）有 10 项 FAIL，COVER 关着也一样，属当时分支底子的问题；
+  合 main（12ba39f3）后云端同场景通过，已不复现。
 
 ## 验证
 
-- （跑完补）
+- 原版：`XIYOU_COVER=1` 跑 troop_event_probe，旧 375 例与 generated 逐字节相同（SHA 724cf0d6），新 100 例无报错；不设变量时不写覆盖文件。
+- Godot：四份 `xiyou_troop_events*` 带 `--coverage` 本地全量（合 main 前），新增 600 项全过；覆盖报告原版／Godot 执行集合一致。
+- 合 main（12ba39f3）后：`同步正式西游.py --accept-additions` 退出 0（只新增 troop_events 100 例）；`工具回归.py` 全过（73 秒）；
+  `选测.py main --list` 79 个场景 → 云端选测全过（提交 7e958e9a，8 片，含 xiyou_event_compare、xiyou_troop_events 四份与 _half、rules 各片）。
 
 ## 待交叉核查
 
