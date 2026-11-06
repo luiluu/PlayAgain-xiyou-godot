@@ -95,6 +95,27 @@
 
 处理：要在转换器里把这 19 个新写法加进白名单／模式，并按「实测过才收」的规矩补量具（state_effect 探针重出），属于工具车道（总装 11-06 定，本车道不改转换器）。新增的 15 个是新内容，另排。转换器改完、产物重出之后，本车道再跑 state_effects、param_states、nanoha、guyu_battle 看剩余。
 
+### 第三轮进度（到 40% 线停手时）
+
+已做（本车道 Godot 侧，均本机跑过）：
+- action_sequence：`action_sequence.gd` `_atom` 补 `user.hp < user.mhp * 0.5` 这类「能力值 比较 能力值×常数」写法（新源舍身剑等），按 double 算 → 117/117。
+- element_ternary：新源把 10020 爱之惩罚改写成 `(a.atk*588000+a.luk*588000)*(b.hpRate()<.25?3:1)*(1+熟练度*.13)`，没有 formulaGd（战斗走 formulaProgram，pure），v0.28 量值不再适用；夹具是旧源实测不改，这两例改成确认新公式、跳过 → 33/33。
+- formulas：10020 两例换成仍是 hp 三元的 3512 → 7/7 全过，**但日志有两条 ERROR**（见下「大数」），并行测试按 ERROR 判失败。
+- actor_advanced：进阶表新源 485 行＋渡鸦 5 行＝490（v0.28 462＋5）→ 计数改 490。
+- state_overlay：新源多 2763 致命诱惑一个叠加状态（84→85，用 node 对新旧 States.json 数过），测试改「夹具 +1 且 2763 有 overlay」。
+- custom_params：`converter_all_parsed` 新源 274 件（数过 274）。
+
+归工具车道（本车道不改转换器／探针）：
+- **① state_effects 根因**（见上节，19＋15 个状态）。连带：state_effects_tp 的 `inventory.costume_0 8`（新增 2771～2774 超赛的 apply/remove 换装块没走模板）和 `untranslated_46 77`、param_states／nanoha 的 1768、guyu_battle 复活，都等转换器补完重出产物再看。
+- **② 大数**：原版 10037 死神领域、10060 作者之力 的公式是整数字面量 `99999999999999999999999`／`9999…`（41 位）。JS 里这是 double（1e23／1e41），**不是 BigInt**；转换器的 formulaProgram 已经存成 double（1e+23），战斗算对。只有旧式 formulaGd 原样抄了整数字面量，Godot Expression 解析时报「Cannot represent … as a 64-bit signed integer」。要转换器在 formulaGd 里把超过 int64 的整数字面量写成浮点（如 `1e+23`），照 double 精度。
+- **custom_params `covers_aliases`**：探针 `custom_params_probe.cjs` 的 `mhp_mmp_eight` 挑的 1925／2019／2020／2021 在新源改成 `atk += …; mat += …`（KYO专武成长），不再有 mhp／mmp；新源还有 mhp／mmp 的是防具 129、4472、4473、4476…（20 件）。要改探针 PICKS 重出 generated/oracle/custom_params.json。Godot 对 `+=` 的结果逐行都对上了。
+
+还没做（下一位接着）：
+- life_steal（`source` 夹具旧；2570 急速冷却 `<DBHPLSteal:8%>`→`80%`，夹具重出后再看是否只剩数值）、wtype（`native_cache_source` 夹具来源）、param_states 的 `source`：先看有没有探针，能像 actor_change 那样 `XIYOU_APP=…/v0.62.12/app.nw node <探针>` 在本树重出就重出，重出不了的报工具。
+- qiyu `state2626.a164／a162`（新源不挂 2626 欢迎来到异次元，状态备注没变，要查挂的入口）。
+- skill_mastery `table.count 6983≠6804`、新技能 10169／10457／10463… 首项 0≠100000。
+- 最后做改前改后对比（像第二轮那样，四个改过的文件换回基线重跑）。
+
 建议顺序：① state_effects 先找翻译缓存根因（一处修好可能连带 param_states、nanoha、guyu_battle）；② 公式三元／大数（element_ternary、formulas）；③ action_sequence 条件、custom_params 别名；④ 计数类与夹具重出（actor_advanced、state_overlay、state_effects_tp、life_steal、wtype、param_states source）；⑤ qiyu 2626、skill_mastery 表。
 
 ## 接续

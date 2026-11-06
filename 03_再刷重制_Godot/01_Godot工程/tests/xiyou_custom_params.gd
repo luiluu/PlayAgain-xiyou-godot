@@ -92,7 +92,7 @@ func _run() -> void:
 					parsed += 1
 				else:
 					bad.append([table, rec.id])
-	check("converter_all_parsed", parsed == 224 and bad.is_empty(), [parsed, bad])
+	check("converter_all_parsed", parsed == 274 and bad.is_empty(), [parsed, bad])  # v0.62.12 新源 274 件（v0.28 是 224）
 	_finish()
 
 
