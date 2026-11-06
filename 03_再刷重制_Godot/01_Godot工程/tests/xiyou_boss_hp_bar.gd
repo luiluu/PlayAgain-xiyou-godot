@@ -254,5 +254,47 @@ func _run() -> void:
 	b3.queue_free()
 	await frames(3)
 
+	# 10. 冻结后跟进 v0.37 的血条范围（RANGE_V037，默认关＝v0.28 只认插件名单）
+	var ext_ids := []
+	for wid in XZhenqi.WEAPON_BOSS:
+		if not XBossHpBar.is_listed(int(wid)):
+			ext_ids.append(int(wid))
+	for tid in [XZhenqi.TRIAL_TROOP["心魔"], XZhenqi.TRIAL_TROOP["天劫"], XZhenqi.HEART_TROOP[1]]:
+		for m in XDB.rec("Troops", int(tid)).get("members", []):
+			var mid := int(m.enemyId)
+			if not XBossHpBar.is_listed(mid) and not ext_ids.has(mid):
+				ext_ids.append(mid)
+	check("v037_candidates_exist", not ext_ids.is_empty(), ext_ids)
+	var ext_id: int = ext_ids[0]
+	check("v037_default_off", not XBossHpBar.RANGE_V037)
+	var ext_e := XEnemy.new().setup(ext_id, 1)
+	var listed_e := XEnemy.new().setup(6, 1)
+	var plain_e := XEnemy.new().setup(1, 1)
+	check("v037_off_not_extended", not XBossHpBar.is_extended(ext_id))
+	check("v037_off_no_bar", make_bar([plain_e, ext_e]).battler == null)
+	check("v037_off_gauge_kept", XBossHpBar.small_gauge_visible(ext_e) == ext_e.hp_gauge_visible())
+	XBossHpBar.RANGE_V037 = true
+	XBossHpBar._ext_cache.clear()
+	check("v037_on_extended", XBossHpBar.is_extended(ext_id))
+	check("v037_on_listed_not_extended", not XBossHpBar.is_extended(6) and not XBossHpBar.is_extended(1))
+	var vbar2 := make_bar([plain_e, ext_e])
+	check("v037_on_picks_extended", vbar2.battler == ext_e)
+	check("v037_on_face_empty", XBossHpBar.face_name(ext_id) == "" and vbar2._face_tex == null)
+	check("v037_on_gauge_hidden", not XBossHpBar.small_gauge_visible(ext_e) and XBossHpBar.small_gauge_visible(plain_e) == plain_e.hp_gauge_visible())
+	var vbar3 := make_bar([ext_e, listed_e, plain_e])
+	check("v037_listed_wins", vbar3.battler == listed_e)
+	var vbar4 := make_bar([listed_e, ext_e])
+	check("v037_listed_wins_even_if_first", vbar4.battler == listed_e)
+	ext_e.hidden = true
+	check("v037_hidden_skipped", make_bar([plain_e, ext_e]).battler == null)
+	ext_e.hidden = false
+	var ext2 := XEnemy.new().setup(ext_ids[ext_ids.size() - 1], 1)
+	check("v037_last_extended", make_bar([ext_e, ext2]).battler == ext2)
+	vbar2.applied(ext_e, ext_e.hp - 1.0)
+	check("v037_apply_tracks_extended", vbar2._temp_target == ext_e and vbar2._temp_shake == 80)
+	XBossHpBar.RANGE_V037 = false
+	XBossHpBar._ext_cache.clear()
+	check("v037_off_again", not XBossHpBar.is_extended(ext_id) and make_bar([plain_e, ext_e]).battler == null)
+
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit.call_deferred(0 if failures.is_empty() else 1)

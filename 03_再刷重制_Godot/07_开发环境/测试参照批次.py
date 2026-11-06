@@ -166,6 +166,26 @@ class BatchTests(unittest.TestCase):
         for phase in ('planned', 'committed', None):
             self.assertEqual(self.run_tool('flux', self.flux_dir(phase)).returncode, 0, phase)
 
+    def test_flux_old_state_counts_while_merge_tool_still_runs(self):
+        """tools76：11-06 tools74 合并同步了一个小时。状态文件超过 30 分钟没动：合并工具没在跑（锁里的进程不在）算中断、放行；
+        还在跑（锁里是活着的进程、启动时间对得上）照旧算正在合并，提示里写明。"""
+        import os, time
+        git_dir = self.flux_dir('merged')
+        st = git_dir / 'lane-merge' / 'state.json'
+        old = time.time() - 3600
+        os.utime(st, (old, old))
+        self.assertEqual(self.run_tool('flux', git_dir).returncode, 0)
+        lock = git_dir / 'lane-merge' / 'running.lock'
+        started = subprocess.run(['ps', '-o', 'lstart=', '-p', str(os.getpid())], capture_output=True, text=True,
+                                 env=dict(os.environ, LC_ALL='C')).stdout.strip()
+        write(lock, {'pid': os.getpid(), 'startedAt': started})
+        r = self.run_tool('flux', git_dir)
+        self.assertEqual(r.returncode, 4, r.stdout)
+        self.assertIn('合并工具在跑（pid %d）' % os.getpid(), r.stdout)
+        self.assertIn('60 分钟前', r.stdout)
+        write(lock, {'pid': os.getpid(), 'startedAt': 'Thu Jan  1 00:00:00 1970'})   # pid 被复用：不算在跑
+        self.assertEqual(self.run_tool('flux', git_dir).returncode, 0)
+
     def test_flux_rollback_env(self):
         import os
         env = dict(os.environ, XIYOU_IGNORE_MERGE_FLUX='1')

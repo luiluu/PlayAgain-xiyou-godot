@@ -186,6 +186,31 @@ func _run() -> void:
 	XHangUp.stop(s)
 	map.queue_free()
 	await frames()
+	# 冻结后跟进 v0.56：设置页「Boss状态面板」（XBossStatusPanel.TOGGLE，默认关＝没有这一行；开着时排在「步步遇敌」后、「消息提醒」前，状态 ON/OFF，默认 ON）
+	var plain := XOptionsScene.new()
+	add_child(plain)
+	await frames()
+	check("boss_panel_row_absent_by_default", not XBossStatusPanel.TOGGLE and not plain.symbols().has("codexBossStatusPanel"))
+	plain.queue_free()
+	XBossStatusPanel.TOGGLE = true
+	var tog := XOptionsScene.new()
+	add_child(tog)
+	await frames()
+	var at: int = tog.symbols().find("codexBossStatusPanel")
+	check("boss_panel_row_order", at >= 0 and at == tog.symbols().find("yd100") + 1 and tog.symbols()[at + 1] == "codexNotices", tog.symbols())
+	check("boss_panel_row_name", tog._list[at][0] == "Boss状态面板" and tog._list[at][2])
+	check("boss_panel_default_on", XConfig.flag("codexBossStatusPanel") and tog.status_text(at) == "ON", tog.status_text(at))
+	tog.index = at
+	tog.ok()
+	check("boss_panel_ok_off", not XConfig.flag("codexBossStatusPanel") and tog.status_text(at) == "OFF")
+	tog._side(true)
+	check("boss_panel_right_on", XConfig.flag("codexBossStatusPanel") and tog.status_text(at) == "ON")
+	tog._side(false)
+	XConfig._loaded_path = "<unloaded>"  # 重读配置：存成 false 的读回关闭
+	check("boss_panel_off_persists", not XConfig.flag("codexBossStatusPanel"))
+	XConfig.set_flag("codexBossStatusPanel", true)
+	tog.queue_free()
+	XBossStatusPanel.TOGGLE = false
 	DirAccess.remove_absolute(XConfig.path())
 	finish()
 

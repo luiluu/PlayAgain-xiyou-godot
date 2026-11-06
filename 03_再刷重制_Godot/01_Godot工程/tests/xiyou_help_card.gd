@@ -162,6 +162,34 @@ func _run() -> void:
 	_check("quality_window", XQuality.window_skin(10) == 8 and XQuality.window_skin(12) == 10 and XQuality.window_skin(5) == 7 and XQuality.window_skin(16) == 16)
 	_check("quality_list_color", XQuality.list_color({"meta": {"quality": "13", "ici": "12"}}) == Color8(255, 214, 90)
 		and XQuality.list_color({"meta": {"ici": "6"}}) == Color("ff8000") and XQuality.list_color({}) == Color.WHITE)
+	# 冻结后跟进 v0.36（D.equipmentRows）：白字属性排到第一条蓝字「特效：」前（WHITE_STATS_FIRST，默认关＝备注原位）
+	var white := "rgba(255,255,255,1)"
+	var wnote := ["<pos=AP text=暴击率：＋5% size=normalsize color=" + white + " line=false align=0>",
+		"<pos=AP text=\\c[2]攻击力：＋9 size=normalsize color=" + white + " line=false align=0>",
+		"<pos=AP text=\\c[1]特效：测试 size=normalsize color=normalcolor line=false align=0>",
+		"<pos=AP text=闪避率：＋3% size=normalsize color=rgba(255,0,0,1) line=false align=0>",
+		"<pos=AP text=说明：不是属性 size=normalsize color=" + white + " line=false align=0>"]
+	var wgear := {"kind": "weapon", "name": "白字测试剑", "description": "", "note": "\n".join(wnote), "params": [0, 0, 0, 0, 0, 0, 0, 0], "wtypeId": 1, "meta": {}}
+	var texts := func(rows: Array) -> Array: return rows.map(func(r): return str(r[0]))
+	var off_rows := XHelpCard.content(wgear, "weapon")
+	var off_t: Array = texts.call(off_rows)
+	_check("white_stats_default_off", not XHelpCard.WHITE_STATS_FIRST and off_t.find("\\c[1]特效：测试") < off_t.find("暴击率：＋5%"), off_t)
+	XHelpCard.WHITE_STATS_FIRST = true
+	var on_t: Array = texts.call(XHelpCard.content(wgear, "weapon"))
+	var bi := on_t.find("\\c[1]特效：测试")
+	_check("white_stats_before_blue", on_t.find("暴击率：＋5%") >= 0 and on_t.find("暴击率：＋5%") < bi, on_t)
+	_check("white_stats_keep_colored", on_t.find("\\c[2]攻击力：＋9") > bi and on_t.find("闪避率：＋3%") == off_t.find("闪避率：＋3%") and on_t.find("说明：不是属性") == off_t.find("说明：不是属性"), [off_t, on_t])
+	var a1 := off_t.duplicate()
+	var a2 := on_t.duplicate()
+	a1.sort()
+	a2.sort()
+	_check("white_stats_same_rows", a1 == a2 and off_t.size() == on_t.size(), [off_t, on_t])
+	var no_blue := {"kind": "weapon", "name": "无特效", "description": "", "note": wnote[0], "params": [0, 0, 0, 0, 0, 0, 0, 0], "wtypeId": 1, "meta": {}}
+	_check("white_stats_no_blue_unchanged", texts.call(XHelpCard.content(no_blue, "weapon")) == texts.call(XHelpCard.equipment_rows(XHelpCard.content(no_blue, "weapon"))))
+	var skill_obj := {"kind": "skill", "name": "技", "description": "", "note": "\n".join(wnote), "stypeId": 1, "mpCost": 0, "tpCost": 0, "meta": {}}
+	var skill_on: Array = texts.call(XHelpCard.content(skill_obj, "skill"))
+	XHelpCard.WHITE_STATS_FIRST = false
+	_check("white_stats_skill_untouched", skill_on == texts.call(XHelpCard.content(skill_obj, "skill")), skill_on)
 	await get_tree().process_frame
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

@@ -46,7 +46,7 @@ for (let k = 0; k < total; k++) {
   if (!c) throw new Error('分段的用例数对不上（第 ' + k + ' 个）');
   cases.push(c);
 }
-fs.writeFileSync(out, JSON.stringify({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}));
+fs.writeFileSync(out, JSON.stringify(Object.assign({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}, docs[0].skippedPresets ? {skippedPresets: docs[0].skippedPresets} : {})));
 console.log(JSON.stringify({cases: cases.length, shards: n}));
 '''
 
@@ -67,7 +67,8 @@ def run_probe(env):
         for name in ['save', 'macport']:
             if (ORACLE / '.sandbox' / name).is_dir():
                 shutil.copytree(ORACLE / '.sandbox' / name, sub / name)
-        e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_EVENT_OUT=str(sub / 'part.json'))
+        e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_EVENT_OUT=str(sub / 'part.json'),
+                 XIYOU_STATE_PREV=str(SRC), XIYOU_STATE_KEYS_OUT=str(sub / 'part.keys.json'))
         return subprocess.run([sys.executable, str(slot), '--label', 'event_state_probe %d/%d' % (i + 1, shards), '--',
                                'node', 'event_state_probe.cjs'], cwd=ORACLE, env=e, capture_output=True, text=True)
     with concurrent.futures.ThreadPoolExecutor(shards) as pool:
@@ -76,7 +77,13 @@ def run_probe(env):
     if bad:
         return subprocess.CompletedProcess(bad[0].args, bad[0].returncode, bad[0].stdout, bad[0].stderr)
     parts = [str(box / ('state-shard-%d' % i) / 'part.json') for i in range(shards)]
+    keys_part = box / 'state-shard-0' / 'part.keys.json'
+    keys_doc = json.loads(keys_part.read_text()) if keys_part.is_file() else None
     m = subprocess.run(['node', '-e', SHARD_MERGE_JS, str(SRC)] + parts, cwd=ORACLE, capture_output=True, text=True)
+    if m.returncode == 0 and keys_doc is not None:   # 增量用的摘要：各段的全部变体摘要相同，取第 0 段的，补上拼回后整份文件的摘要（BV）
+        import hashlib
+        keys_doc['fileSha'] = hashlib.sha256(SRC.read_bytes()).hexdigest()
+        SRC.with_suffix('.keys.json').write_text(json.dumps(keys_doc))
     for i in range(shards):
         shutil.rmtree(box / ('state-shard-%d' % i), ignore_errors=True)
     return m
@@ -97,6 +104,8 @@ def main():
         if link.exists():
             env['XIYOU_APP'] = str(link)
     env.pop('XIYOU_EVENT_OUT', None)
+    if force:
+        env['XIYOU_STATE_INCREMENTAL'] = '0'   # --force＝整份重量（增量取回上次结果的路径关掉，BV）
     r = run_probe(env)
     if r.returncode or not SRC.exists():
         print('✗ event_state_probe 失败：' + (r.stderr or r.stdout).strip()[-300:])

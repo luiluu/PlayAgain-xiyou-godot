@@ -14,6 +14,10 @@ var _reserved_common_event_id := 0
 var _reserve_capture = null
 var _deferred_common_events: Array = []
 
+## $gameTroop 在地图上的样子（条件分歧 111 类型 5 敌人）：战斗结束不清空敌群，地图上读到的是上一场的敌人（Game_Battler.onBattleEnd 只让隐藏成员出现，
+## 死亡与其余状态都留着）；不存档，新局与读档后为空（正式引擎实测，mv_oracle/troop_condition_probe.cjs）。每项 {"dead": bool, "states": [状态]}，序号同 members()。
+var last_troop: Array = []
+
 func reserve_common_event(id: int) -> void:
 	if _reserve_capture != null:
 		if id > 0:

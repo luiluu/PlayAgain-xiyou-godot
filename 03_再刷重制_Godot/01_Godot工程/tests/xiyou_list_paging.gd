@@ -324,7 +324,8 @@ func _ui11_pages() -> void:
 	cw._unhandled_input(key(KEY_Q))
 	check("choice_page_up", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
 	cw._unhandled_input(key(KEY_W))
-	check("choice_w_not_page", cw.top == 6 and cw.index == 12, [cw.top, cw.index])
+	# W 不翻页；原版运行时 W＝上（YEP_ButtonCommonEvents），platform-keys 起 W 是 ui_up，光标上移一格、页不变
+	check("choice_w_not_page", cw.top == 6 and cw.index == 11, [cw.top, cw.index])
 	cw.queue_free()
 	# 更衣：名单换成 30 人（只测翻页算式落在页上）
 	var cs := XCostumesScene.new()

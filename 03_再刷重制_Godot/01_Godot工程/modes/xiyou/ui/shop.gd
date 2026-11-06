@@ -61,6 +61,14 @@ var _sell_top := 0
 var _number := 1
 var _number_from := "buy"
 var _actor_index := 0
+## YEP_ShopMenuCore Window_ShopStatus 的「默认」显示模式（Tab 切换，开店默认 actor）：逐项属性 + 每个队员一行；
+## ←→ 换属性（paramId，初始 2），Shift 翻队员页（每页 4 人）。回退开关 STAT_DEFAULT_MODE = false。
+static var STAT_DEFAULT_MODE := true
+var _stat_default := false
+var _param_id := 2
+var _page_index := 0
+const PAGE_SIZE := 4
+const STAT_FONT := 20
 var cmd_win: XMVWindow
 var info_win: XMVWindow
 var list_win: XMVWindow
@@ -474,15 +482,18 @@ func _paint_status(c: XMVCanvas) -> void:
 		_paint_stock(c, 6, LH * 10 if below else LH, w, 20 if gear and not below else XUI.FONT_SIZE, int(row[2]), XShopStock.stock_max(row[0], row[1]))
 	if not gear:
 		return
-	# 「<< 队员 >>」与 8 项能力增减（actor 模式；左右键切换队员）
 	var members := s.members()
+	var item := rec if rec.has("kind") else XGear.template("weapon" if rec.has("wtypeId") else "armor", int(rec.id))
+	if _stat_default and STAT_DEFAULT_MODE:
+		_paint_status_default(c, members, item)
+		return
+	# 「<< 队员 >>」与 8 项能力增减（actor 模式；左右键切换队员）
 	_actor_index = clampi(_actor_index, 0, members.size() - 1)
 	var a: XActor = members[_actor_index]
 	c.text(a.display_name(), 0, LH, c.size.x, "center")
 	c.text("<<", 0, LH, c.size.x, "left", XUI.SYSTEM)
 	c.text(">>", 0, LH, c.size.x, "right", XUI.SYSTEM)
 	var half := floorf(c.size.x / 2.0)
-	var item := rec if rec.has("kind") else XGear.template("weapon" if rec.has("wtypeId") else "armor", int(rec.id))
 	var slot: int = a.equip_slots().find(int(item.etypeId))
 	var cur = a.equips[slot] if slot >= 0 and slot < a.equips.size() else null
 	var can := a.can_equip(item)
@@ -544,6 +555,56 @@ func _alt_currency_at(c: XMVCanvas, x: float, value: String, unit: String, icon:
 
 
 # ---- 操作 ----
+## 默认模式（drawDefaultData）：第 2 行属性名居中并带 <<、>>；第 3 行起每个队员一行（Window_ShopStatus.drawEquipInfo，YEP 版）：
+## 名字在 x+220（x＝textPadding 6）、装得了写属性增减（20 号、右对齐、涨绿降红）、装不了写「Can't Equip」（20 号、半透明）。
+func _paint_status_default(c: XMVCanvas, members: Array, item: Dictionary) -> void:
+	c.text(XItemStatusPainter.param_name(_param_id), 0, LH, c.size.x, "center")
+	c.text("<<", 0, LH, c.size.x, "left", XUI.SYSTEM)
+	c.text(">>", 0, LH, c.size.x, "right", XUI.SYSTEM)
+	var pages := maxi(1, ceili(float(members.size()) / PAGE_SIZE))
+	_page_index = clampi(_page_index, 0, pages - 1)
+	var start := _page_index * PAGE_SIZE
+	var pad := 6.0
+	for i in range(mini(PAGE_SIZE, members.size() - start)):
+		var a: XActor = members[start + i]
+		var y := LH * 2 + i * LH
+		var can := a.can_equip(item)
+		var alpha := 1.0 if can else XUI.DIM.a
+		c.text(a.display_name(), pad + 220, y, c.size.x - pad, "left", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
+		if can:
+			var change := int(item.params[_param_id]) - _worst_equipped_param(a, int(item.etypeId), _param_id)
+			c.text(("+" if change > 0 else "") + XMenu._group(change), pad, y, c.size.x - pad * 2, "right",
+				XItemStatusPainter.change_color(change), STAT_FONT, LH)
+		else:
+			c.text("Can't Equip", pad, y, c.size.x - pad, "right", XUI.TEXT, STAT_FONT, LH, alpha)
+
+
+## currentEquippedItem：同类型装备栏里该属性最低的那件（没有为 0）
+static func _worst_equipped_param(a: XActor, etype: int, param_id: int) -> int:
+	var worst := 0
+	var found := false
+	var slots: Array = a.equip_slots()
+	for i in range(slots.size()):
+		if int(slots[i]) != etype or i >= a.equips.size() or a.equips[i] == null:
+			continue
+		var v := int(a.equips[i].params[param_id])
+		if not found or v < worst:
+			worst = v
+			found = true
+	return worst
+
+
+## Window_ShopStatus.updateParamSwitch：装备商品时 Tab／点窗口上沿中间换模式、默认模式下左右换属性（响光标音）
+func _toggle_stat_mode() -> void:
+	if not STAT_DEFAULT_MODE:
+		return
+	var rec := _current_rec()
+	if rec.is_empty() or rec.has("itypeId"):
+		return
+	_stat_default = not _stat_default
+	XSound.system(0)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -564,6 +625,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_change_number(-1)
 		else:
 			_switch_actor(-1)
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_TAB:
+		_toggle_stat_mode()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT:
+		_change_stat_page()
 	elif XMenu.page_dir(event) != 0 and _mode in ["buy", "sell", "category"]:
 		_page(XMenu.page_dir(event))
 	else:
@@ -575,11 +640,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## YEP Window_ShopStatus.updateParamSwitch：装备商品时左右换队员并响光标音（物品不响）
 func _switch_actor(d: int) -> void:
+	var rec := _current_rec()
+	var gear := not rec.is_empty() and not rec.has("itypeId")
+	if _stat_default and STAT_DEFAULT_MODE:
+		_param_id = (_param_id + d + 8) % 8
+		if gear:
+			XSound.system(0)
+		return
 	var n := XState.current.members().size()
 	_actor_index = (_actor_index + d + n) % n
-	var rec := _current_rec()
-	if not rec.is_empty() and not rec.has("itypeId"):
+	if gear:
 		XSound.system(0)
+
+
+## Window_ShopStatus.updatePage：队员多于 4 人时 Shift 翻页（两种模式都翻，默认模式才看得到），响光标音
+func _change_stat_page() -> void:
+	var n := XState.current.members().size()
+	var pages := ceili(float(n) / PAGE_SIZE)
+	if pages < 2:
+		return
+	_page_index = (_page_index + 1) % pages
+	XSound.system(0)
 
 
 ## 同一窗口里光标换了行才响光标音（Window_Selectable.processCursorMove／onTouch）
@@ -841,6 +922,8 @@ func _gui_input(event: InputEvent) -> void:
 			_switch_actor(-1)
 		elif x > STATUS_RECT.size.x - 88:
 			_switch_actor(1)
+		elif (p - STATUS_RECT.position).y <= 12 + LH * 2:
+			_toggle_stat_mode()  # isTouched(0)：上沿两行内不在 << >> 上的点按＝换模式
 	if not _clicked_ok:
 		_cursor_se(before)
 	_refresh()

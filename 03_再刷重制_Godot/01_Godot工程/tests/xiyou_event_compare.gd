@@ -492,7 +492,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
 ## 预设键白名单（同参照 event_state_probe.cjs PRESET_KEYS）：不认识的键记下来，测试红（审查 49）
-const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "playerDirection", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
+const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
 var bad_preset_keys := []
 
 func _apply_preset(s: XState, p: Dictionary) -> void:
@@ -535,6 +535,13 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
 	if p.has("playerDirection"):
 		s.direction = int(p.playerDirection)  # accept5：同参照 $gamePlayer.setDirection
+	if p.has("playtime"):
+		# tools75：游玩秒数，同参照 Graphics.frameCount＝秒×60；host.start_frames 以它为起点。只收非负整数秒（参照侧报错），别的记成坏键
+		var pt := float(p.playtime)
+		if pt < 0.0 or pt != floorf(pt):
+			bad_preset_keys.append("playtime=%s" % p.playtime)
+		else:
+			s.play_seconds = pt
 
 
 # ---- 状态快照与变化（与 event_probe.cjs 的 snap/delta 同一结构） ----
