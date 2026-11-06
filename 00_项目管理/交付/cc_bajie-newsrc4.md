@@ -193,6 +193,33 @@
 
 - `map/mv_interpreter.gd`（host_alive／_frames／_step）、`core/bulk_pills.gd`、`tests/xiyou_interp_host_freed.*`。
 
+## DM：楼层跑图一组（协调 11-06 16:53 派）
+
+### 分类表（本机新源，XIYOU_APP=v0.62.12、XIYOU_SKIP_GENERATED_CHECK=1）
+
+| 场景 | 修前 | 分类 | 处理 | 修后 |
+| --- | --- | --- | --- | --- |
+| xiyou_floor_run | 挂 2 项（f1_door_walk_step、floors_cleared） | C（测试） | 见下 ① | 273/273 |
+| xiyou_floor_run_b | 挂 2 项（f13_door_walk_step、floors_cleared） | C（测试） | 同 ① | 332/332 |
+| xiyou_floor_run_c | 挂 2 项（f21_door_walk_step、floors_cleared） | C（测试） | 同 ① | 560/560 |
+| xiyou_floor_fortress029 | 71/71，退出时 2 resources still in use | C（测试） | 见下 ② | 71/71，无报错 |
+| xiyou_floor_reach041 | 本机复跑已过 12/12 | A | 合并 DJ 后复跑即过，没再改 | 12/12 |
+
+B 类（要新源参照才能判）：这组没有。
+
+- ① 新源大厅首次进入多了漩涡过场（Map4 EV76，自动执行），接在开场 EV20 之后。前一个自动执行事件结束到下一个启动之间，地图有一帧 busy 是 false；测试 `_wait_idle` 只看一帧，就在过场开始前按方向键，过场一开走不动，判成 walk_step 失败、整段中断。`tests/xiyou_floor_run.gd` 的 `_wait_idle` 改成连续两帧空闲才算，过场照常放完再走。原有 walk_step 断言就是在旧代码上会挂的那条，没另加。
+- ② 同一个过场：本测最后辛德瑞回大厅，过场接着开场，测试收尾退出时它还挂在 223 等待上，退出报 MVInterpreter 资源未释放。照 xiyou_screen_fx、casino_batch 的做法把 rift1 记成看过（本测不测过场，过场由 opening_branches、floor_run 覆盖）。退出资源检查是在旧代码上会挂的那条。
+- 观察（没改游戏代码）：自动执行接自动执行之间那一帧，重制 busy 为 false（MV 同一帧里接上）。这次实测玩家按着方向键也没走出去（同帧 _process 先启动了下一个自动执行），没发现可见影响，记下不修。
+
+### 验证（DM）
+
+- 上表 5 个本机全过，日志 0 条 SCRIPT ERROR；只改了两个测试文件，没改游戏代码，event_compare 沿用 DJ 的全量结果（15660 例，regressions 空）。
+- `语法检查.py` 0 问题；`事件空绿扫描.py --check` 过。
+
+### 待交叉核查（DM）
+
+- `tests/xiyou_floor_run.gd`（_wait_idle）、`tests/xiyou_floor_fortress029.gd`（rift1）。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`

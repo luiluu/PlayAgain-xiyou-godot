@@ -143,6 +143,9 @@ func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
 	XSave.dir_override = "user://test_xiyou_floor_fortress029"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# DM：新源大厅首次进入的漩涡过场（Map4 EV76，自动执行、223 色调等待）记成看过：本测最后辛德瑞回大厅时它会接着开场，
+	# 测试收尾退出时还挂在等待上，报 MVInterpreter 资源未释放（同 xiyou_screen_fx、casino_batch；过场本身见 xiyou_opening_branches、floor_run）
+	XConfig.whisper_mark("rift1")
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

@@ -157,15 +157,22 @@ func _wait_map(map_id: int, timeout := WAIT_MAP) -> bool:
 	return false
 
 
+## 连续两帧空闲才算：一个自动执行事件刚结束、下一个（新源大厅首次进入的漩涡过场 Map4 EV76 接在开场 EV20 之后）
+## 要到下一帧地图 _process 的 setupStartingEvent 才启动，中间那一帧 busy 是 false（DM：只看一帧会在过场开始前按方向键，走不动）
 func _wait_idle(map: XMapScene, timeout := WAIT_EVENT) -> bool:
 	var t0 := Time.get_ticks_msec()
 	var i := 0
+	var idle := 0
 	while _within(i, timeout, t0):
 		i += 1
 		if not is_instance_valid(map):
 			return false
 		if not map.busy and not map._menu_open and not map.player.is_moving():
-			return true
+			idle += 1
+			if idle >= 2:
+				return true
+		else:
+			idle = 0
 		await get_tree().process_frame
 	return false
 
