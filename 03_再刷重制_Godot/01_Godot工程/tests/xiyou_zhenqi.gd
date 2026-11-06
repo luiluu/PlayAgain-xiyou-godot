@@ -366,11 +366,11 @@ func _page_ui() -> void:
 		ok = ok and cols[j][2] == float(w[1]) and cols[j][4] == float(w[2]) and cols[j][6] == w[3]
 	check("page_ui_cols", ok, cols)
 	var dops := XStatusPage.page_ops(s.actor(1), 4)
-	var dcols := dops.filter(func(op): return op[1] in ["项目", "难度影响", "不含难度", "实际"])
+	var dcols := dops.filter(func(op): return op[0] == "text" and op[1] in ["项目", "难度影响", "不含难度", "实际"])
 	var dok: bool = dcols.size() == 4
 	for j in range(mini(4, dcols.size())):
 		var w: Array = o.colsHeader[j]
 		dok = dok and dcols[j][2] == float(w[1]) and dcols[j][4] == float(w[2]) and dcols[j][6] == w[3]
 	check("page_ui_detail_cols", dok, dcols)
 	var pops := XStatusPage.page_ops(s.actor(1), 3)
-	check("page_ui_panel_head", pops.any(func(op): return op[1] == "【普通·第4层】" and op[2] == 6.0), pops.slice(0, 3))
+	check("page_ui_panel_head", pops.any(func(op): return op[0] == "text" and op[1] == "【普通·第4层】" and op[2] == 6.0), pops.slice(0, 3))
