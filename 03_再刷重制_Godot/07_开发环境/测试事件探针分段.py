@@ -172,5 +172,93 @@ class MergeTests(unittest.TestCase):
             self.assertNotEqual(r.returncode, 0)
 
 
+ROUND = importlib.util.spec_from_file_location('preset_round', TOOLS / '事件预设加一轮.py')
+preset_round = importlib.util.module_from_spec(ROUND)
+ROUND.loader.exec_module(preset_round)
+PROBE = TOOLS / 'mv_oracle/event_state_probe.cjs'
+COMPARE = TOOLS.parent / '01_Godot工程/tests/xiyou_event_compare.gd'
+
+
+class PresetKeysTests(unittest.TestCase):
+    """tools75：两边预设键白名单一致（含 playtime），参照侧 playtime 按 秒×60 设 frameCount、只收非负整数。"""
+
+    def test_whitelists_match_and_have_playtime(self):
+        import re
+        js = re.search(r"const PRESET_KEYS = \[([^\]]*)\]", PROBE.read_text())[1]
+        gd = re.search(r'const PRESET_KEYS := \[([^\]]*)\]', COMPARE.read_text())[1]
+        keys = lambda t: sorted(re.findall(r"""['"]([A-Za-z_]+)['"]""", t))
+        self.assertEqual(keys(js), keys(gd))
+        self.assertIn('playtime', keys(js))
+
+    def run_apply(self, preset):
+        src = PROBE.read_text()
+        start = src.index('function applyPreset(p) {')
+        body = src[start:src.index('\n}\n', start) + 3]
+        keys = src[src.index('const PRESET_KEYS'):src.index('\n', src.index('const PRESET_KEYS'))]
+        js = keys + '\nconst w = {Graphics: {frameCount: 0}};\n' + body + (
+            '\ntry { applyPreset(%s); console.log(JSON.stringify({fc: w.Graphics.frameCount, pt: Math.floor(w.Graphics.frameCount / 60)})); }'
+            ' catch (e) { console.log(JSON.stringify({err: e.message})); }\nprocess.exit(0);' % json.dumps(preset))
+        r = subprocess.run(['node', '-e', js], capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return json.loads(r.stdout)
+
+    def test_probe_playtime_sets_frame_count(self):
+        self.assertEqual(self.run_apply({'playtime': 30}), {'fc': 1800, 'pt': 30})
+        self.assertEqual(self.run_apply({}), {'fc': 0, 'pt': 0})
+
+    def test_probe_playtime_rejects_fraction_and_negative(self):
+        self.assertIn('playtime', self.run_apply({'playtime': 1.5}).get('err', ''))
+        self.assertIn('playtime', self.run_apply({'playtime': -1}).get('err', ''))
+
+    def test_regression_variants_present(self):
+        cases = json.loads((TOOLS / 'event_presets.json').read_text())['cases']
+        got = {c['tag']: c['preset'] for c in cases if c['base'] == 'm187e3p1'}
+        self.assertEqual(got.get('t75'), {'playtime': 30})   # 边界：30－0≥30，进收获分支，变量 321＝playtime
+        # 29－(－1)≥30：游玩秒数和变量一起进脚本条件（单 29 秒走「30 秒后再来」，一条效果都不走，空绿扫描 --check 不收）
+        self.assertEqual(got.get('t75b'), {'playtime': 29, 'variables': {'321': -1}})
+
+
+class PresetContributionReportTests(unittest.TestCase):
+    """tools75：事件预设加一轮.py --report 按 tag 前缀统计新增与独有，列零贡献，不改预设。"""
+    BY_CASE = {
+        'm1e1p0': ['m1e1p0:0', 'm1e1p0:1'],
+        'm1e1p0#o4': ['m1e1p0:0', 'm1e1p0:1', 'm1e1p0:5'],
+        'm1e1p0#o4_2': ['m1e1p0:0', 'm1e1p0:1', 'm1e1p0:5'],      # 新增 1、被 o4 覆盖 → 独有 0
+        'm1e1p0#o4_3': ['m1e1p0:0'],                              # 零贡献
+        'ce9': ['ce9:0'],
+        'ce9#e8b2': ['ce9:0', 'ce9:3', 'ce9:4'],
+        'ce7#a1': ['ce7:0'],                                      # 基础用例不在覆盖里
+    }
+
+    def test_groups(self):
+        self.assertEqual([preset_round.tag_group(t) for t in ('o4_3', 'o4', 'e8b2', 'e8b', 'a1', 'e8', 't75b')],
+                         ['o4', 'o4', 'e8b', 'e8b', 'a1', 'e8', 't75b'])
+
+    def test_contribution_and_report(self):
+        rows = {r['id']: r for r in preset_round.contribution(self.BY_CASE)}
+        self.assertEqual((rows['m1e1p0#o4']['new'], rows['m1e1p0#o4']['own']), (1, 0))
+        self.assertEqual((rows['m1e1p0#o4_2']['new'], rows['m1e1p0#o4_2']['own']), (1, 0))
+        self.assertEqual(rows['m1e1p0#o4_3']['new'], 0)
+        self.assertEqual((rows['ce9#e8b2']['new'], rows['ce9#e8b2']['own']), (2, 2))
+        self.assertTrue(rows['ce7#a1']['base_missing'])
+        groups = {g['group']: g for g in preset_round.report(list(rows.values()))}
+        self.assertEqual(groups['o4'], {'group': 'o4', 'variants': 3, 'new': 2, 'own': 0, 'zero': 1, 'zero_own': 3})
+        self.assertEqual(groups['e8b']['own'], 2)
+        only = preset_round.contribution(self.BY_CASE, ('e8',))
+        self.assertEqual([r['id'] for r in only], ['ce9#e8b2'])
+
+    def test_report_cli_does_not_touch_presets(self):
+        before = (TOOLS / 'event_presets.json').read_bytes()
+        with tempfile.TemporaryDirectory() as td:
+            cov, out = Path(td) / 'cov.json', Path(td) / 'rep.json'
+            cov.write_text(json.dumps({'executed': [], 'byCase': self.BY_CASE}))
+            r = subprocess.run(['python3', str(TOOLS / '事件预设加一轮.py'), '--report', str(cov), '--json', str(out)],
+                               capture_output=True, text=True, timeout=60)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('m1e1p0#o4_3', r.stdout)
+            self.assertEqual(json.loads(out.read_text())['groups'][0]['group'], 'o4')
+        self.assertEqual((TOOLS / 'event_presets.json').read_bytes(), before)
+
+
 if __name__ == '__main__':
     unittest.main()
