@@ -85,8 +85,20 @@ for (const sk of w.$dataSkills) {
   const m = /<quality:\s*(\d+)>/i.exec(sk.note || '');
   names.push({id: sk.id, name: sk.name, battle: drawn(bwin, sk), table: String(w.RJO.IQ.QualitiesColor[Number(sk.meta && sk.meta.quality) || (m ? Number(m[1]) : 0)]), metaQuality: Number(sk.meta && sk.meta.quality) || 0, noteQuality: m ? Number(m[1]) : 0, color: String(last)});
 }
+const SFS = new w.Window_Base(0, 0, 10, 10).standardFontSize();  // 先取：下面画物品消耗后再建窗口会崩（无头 document 丢了）
+// 两种消耗同时有：3760（<Item 1722 Cost: 1>，MP 1500）的拷贝再加一段自定义文字，看 drawSkillCost 的先后（物品包在 drawTpCost 里最先画）
+const mix = w.JsonEx.makeDeepCopy(w.$dataSkills[3760]);
+mix.customCostText = '\\c[1]测试消耗\\c[0]';
+const mixWin = new w.Window_SkillList(0, 0, 500, 200);
+mixWin.setActor(a);
+const calls = [], bm = mixWin.contents, dt = bm.drawText, di = mixWin.drawIcon;
+bm.drawText = function (text, x) { calls.push(['t', String(text), Number(x), Number(this.fontSize)]); return dt.apply(this, arguments); };
+mixWin.drawIcon = function (icon, x) { calls.push(['i', Number(icon), Number(x)]); };  // 只记，不真画（无头环境取图标位图会崩）
+const left = mixWin.drawSkillCost(mix, 0, 0, 400);
+bm.drawText = dt; mixWin.drawIcon = di;
+costs.push({id: 'mix3760', base: 3760, customCostText: mix.customCostText, mp: a.skillMpCost(mix), left, calls: calls.filter(c => c[0] === 'i' || (c[2] < 1000 && c[1] !== ''))});
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(OUT, {recursive: true});
-fs.writeFileSync(path.join(OUT, 'liuying_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, ranks, names, costs, standardFontSize: new w.Window_Base(0, 0, 10, 10).standardFontSize()}));
+fs.writeFileSync(path.join(OUT, 'liuying_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, ranks, names, costs, standardFontSize: SFS}));
 console.log(JSON.stringify({ranks: ranks.map(x => x.cards.map(c => c.rows.length)), names: names.length}));
 process.exit(0);

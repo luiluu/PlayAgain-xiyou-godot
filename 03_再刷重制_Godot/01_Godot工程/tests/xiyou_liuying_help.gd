@@ -42,6 +42,40 @@ func _color_text(c: Color) -> String:
 	return "rgba(%d,%d,%d,%s)" % [roundi(c.r8), roundi(c.g8), roundi(c.b8), XGrowthHelp.number(snappedf(c.a, 0.001))]
 
 
+## 两种消耗同时有（总装 11-06 追加）：3760（<Item 1722 Cost: 1>、MP 1500）加一段自定义文字，技能页 _costs 的先后＝原版 drawSkillCost 由右往左
+## 物品（包在 drawTpCost 里）→ TP → MP → HP → 自定义文字；比图标、文字、字号
+func _mix(s: XState, c: Dictionary) -> void:
+	var rec := XDB.rec("Skills", int(c.base)).duplicate(true)
+	rec.note = str(rec.note) + "\n<Custom Cost Display>\n" + str(c.customCostText) + "\n</Custom Cost Display>"
+	var page := XSkillScene.new()
+	page.logic = XBattleLogic.new()
+	page.logic.state = s
+	var a := s.actor(1)
+	a.recover_all()
+	var got := []
+	for r in page._costs(a, rec):
+		if int(r.get("icon", 0)) > 0:
+			got.append(["i", int(r.icon)])
+		got.append(["t", str(r.text), int(r.get("size", XSkillScene.COST_SIZE))])
+	# 参照：图标 [i, 号, x]、字 [t, 字, x, 字号]；drawTextEx 逐字画（量宽一遍、实画一遍），自定义文字取实画那遍拼起来
+	var want := []
+	var ex := ""
+	var ex_size := 0
+	var calls: Array = c.calls
+	for i in calls.size():
+		var k: Array = calls[i]
+		if k[0] == "i":
+			want.append(["i", int(k[1])])
+		elif int(k[3]) == XSkillScene.COST_SIZE:
+			want.append(["t", str(k[1]), int(k[3])])
+		else:
+			ex += str(k[1])
+			ex_size = int(k[3])
+	want.append(["t", ex.substr(ex.length() / 2), ex_size])
+	check("cost.mix_order", got == want, {"got": got, "want": want})
+	page.free()
+
+
 func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var s := XState.new_game(2, 1, [8, 9, 10])
@@ -68,6 +102,9 @@ func _ready() -> void:
 	# YEP drawCustomDisplayCost：技能页右侧的自定义消耗文字（10623 三阶清空）。参照逐字记了画的字（量宽一遍、实画一遍，取后一半）
 	check("standard_font_size", int(data.standardFontSize) == XUI.FONT_SIZE, data.standardFontSize)
 	for c in data.costs:
+		if str(c.id) == "mix3760":
+			_mix(s, c)
+			continue
 		s.actor_advance[XLiuying.ACTOR] = int(c.rank)
 		var rec := XDB.rec("Skills", int(c.id))
 		var row := XSkillScene.custom_cost_row(rec, XUI.FONT_SIZE)
