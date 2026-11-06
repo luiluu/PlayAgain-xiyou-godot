@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent / '01_Godot工程'
@@ -39,6 +40,7 @@ PRESET = 'macOS 发行'
 APP_NAME = '再刷一把：天启篇'
 TITLE = 'res://modes/xiyou/entry.tscn'
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
+CRASH_WAIT = 40
 CRASH_DIR = Path.home() / 'Library' / 'Logs' / 'DiagnosticReports'
 # (名字, 按键序列, 最后应在的场景或 None)。每组新开进程：新游戏后就离开标题了。
 KEY_RUNS = [
@@ -105,6 +107,7 @@ def crash_reports(stem: str) -> set:
 def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     """发行包里按键冒烟：每组一个新进程、新临时 HOME；看活着、按完、场景对、没有新崩溃报告。"""
     before = crash_reports(exe.name)
+    crashed = False
     for name, seq, want in runs:
         home = Path(tempfile.mkdtemp(prefix='xiyou_keys_home_'))
         try:
@@ -121,10 +124,18 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
         steps = sum(1 for l in out.splitlines() if l.startswith('SMOKE_KEY='))
         note = f'退出码 {rc}，按完 {steps}/{len(seq.split(","))} 步' + (f'，最后在 {done[0]}' if done else '，没有 SMOKE_DONE')
         if rc < 0 or rc > 128:
+            crashed = True
             note += '（被信号结束，多半是闪退）'
         ok = rc == 0 and bool(done) and (want is None or done[0] == want)
         check('keys_' + name, ok, note)
-    new = sorted(crash_reports(exe.name) - before)
+    # 崩溃报告由系统 ReportCrash 事后写，闪退后要过几秒到十几秒才出现：有进程被信号结束时最多等 CRASH_WAIT 秒
+    deadline = time.time() + (CRASH_WAIT if crashed else 3)
+    new = []
+    while time.time() < deadline:
+        new = sorted(crash_reports(exe.name) - before)
+        if new:
+            break
+        time.sleep(1)
     check('keys_no_new_crash_report', not new, '新增 ' + '、'.join(new) if new else f'{CRASH_DIR} 没有新增')
     return 0
 

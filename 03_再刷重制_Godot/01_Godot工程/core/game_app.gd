@@ -39,6 +39,13 @@ func _ready() -> void:
 	# 官方导出模板不允许用命令行覆盖场景路径；调试包通过显式验收参数在包内跳转。
 	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--verify-export"):
 		_verify_export.call_deferred()
+	# 发行包按键冒烟（发行入口冒烟.py --keys）：带 --smoke-keys=… 才挂上，按完一串键自己退出
+	var smoke := XKeySmoke.sequence(OS.get_cmdline_user_args())
+	if not smoke.is_empty():
+		var ks := XKeySmoke.new()
+		ks.name = "KeySmoke"
+		ks.steps = smoke
+		add_child(ks)
 
 ## 无窗口（--headless，只有测试与工具这样跑）时 Godot 每帧固定睡 low_processor_mode_sleep_usec（默认 6900 微秒），
 ## 只等帧推进的测试大半时间在睡。设了 XIYOU_HEADLESS_SLEEP_USEC（微秒）就对所有 headless 运行改用这个值（实验与回退用）。
