@@ -21,6 +21,7 @@
 - `modes/xiyou/core/actor.gd` `refresh_passive`：穿透标签带正负号、同对象去重。
 - `modes/xiyou/core/battler.gd` `cnt`。
 - `modes/xiyou/core/imported_balance.gd`：倍率、÷10、禁用名单。
+- 第二轮：`modes/xiyou/core/shield_ledger.gd`（`ACTOR_HP_LEDGER`、`hp_gain`）、`core/resource_context.gd`（gainHp／setHp 两处改调 `hp_gain`）、`battle/battle_logic.gd`（`_push_rows`、`sequence_gain`、`_regenerate` 一处）、`core/actor.gd`（10455）。
 
 ## 验证
 
@@ -34,14 +35,36 @@
 
 ## rules10
 
-样本见「验证」第一条：4 项都在 2521（镜流 10119 的隐月）开关「关」那一支：关时应恒 1 层（0.19），Godot 随层数涨。初判是新源里 2521 本身的数据／`PushsubState` 口径变了，`XBattler.FLOOR_YINYUE` 关闭分支没跟上；没在本单修。
+（第二轮更正）上面的初判不对：不是层数口径，是新源把 2521 的数据改成了 +2%，见第二轮表。
 
-## 接续（本会话到 40% 线停手，下一位接着做）
+## 第二轮（CM 补 8 项＋上轮遗留 4 项，基于集成分支 31d0628a）
 
-- 本分支已 merge 集成分支 020aab89（新夹具），合并提交 0e126d7d，还没在合并后重跑任何测试。
-- 待做（总装补单「CM 补」）：power_books×4（新源开局多技能 10455）；passive_content 书 1652／2237 伤害 +3.75%；xuan_auto 力壁护盾；battle_gaps 新增 10462 百分比 MP（计数断言要改）；pushstate 6706 不再上 1561。另加本单留下的：rules10 四项、imported_balance 141 DOT 六项、item_use 计数、module_hooks 来源夹具。
-- 本机测试槽挤时走云端：`gh workflow run godot-tests.yml -R luiluu/PlayAgain-xiyou-godot --ref cc/rules-newsrc1 -f mode=affected -f force=true -f scenes="<场景名.tscn 空格分隔>"`（**场景名要带 .tscn**，不带会被过滤成 0 个、整轮空跑）；推之前先 `python3 03_再刷重制_Godot/07_开发环境/云端选测.py upload --branch cc/rules-newsrc1`。
-- 工作树环境是手搭的（没跑 `--补齐`，因为它会拿主工作区旧源产物覆盖）：冻结正式源链接指向 `v0.62.12/app.nw`，`generated`、`.godot`、`node_modules`、`.sandbox` 克隆自集成分支工作树。本机跑测试要加 `--skip-generated-check`。
+| 项 | 结论 | 改了什么 |
+|---|---|---|
+| power_books／_boundary／_menu、book_capacity | 新源 `installIntegratedV029Runtime` 的 `Game_Actor.setup` 包装：开放专武（武器备注 `<req_actors>` 列着、角色有名字且不在停用名单）的所属角色开局学 10455「专武·特效吸取」；`installBalanceShopV041Runtime` 的 `skills()` 包装在背包和全体角色身上都没有本人开放专武时不列 | `actor.gd`：`AFFIX_ABSORB_SKILL`、`absorb_owners`、`is_absorb_actor`、`has_absorb_weapon`，`setup` 末尾学、`skills()` 过滤。顺带修好 actor_p0 的 passive_104／163、skills_104 |
+| passive_content（书 1652／2237 +3.75%） | 合并第一轮（growth 等）后本机重跑已全过（113142/113142），不用另改 | 无 |
+| battle_gaps | 新源多 10462 诛天（`<MP Cost: 15%>`），百分比 MP 技能 43→44，这 5 例本身都过 | 测试计数 44、cost 44×5+2 |
+| pushstate 6706 | 新源 v0.62.02：治疗（结算值为负）时 recPushStates 只给行动者友方（`target.isActor()===subject.isActor()`），打吸收属性回血的敌人不挂也不掷 | `battle_logic.gd` `_push_rows` |
+| xuan_auto 力壁 | **新源原版代码错误**：流萤运行时（模块序 33）在 `Game_Actor.prototype` 上自定义 `setHp`，捕获的是护盾账本（序 41）包装前的函数；krz 的 `Game_Actor.gainHp` 也捕获插件期原函数。角色的 gainHp／setHp 两条都绕过账本：行动序列 HP -x%、持续伤害、直接设生命不扣璃壁等期限护盾，原生 ShieldSystem 读到子类 getter 的合计、按合计白挡、只扣原生那份（同 O-144 的白挡）。executeHpDamage 和敌人不受影响 | 可撤回开关 **O-212** `XShieldLedger.ACTOR_HP_LEDGER`（默认 true 照旧源经账本；false 照新源）。`shield_ledger.gd` `hp_gain`，gainHp／setHp 四个入口改调它。xuan_auto 比参照时设 false，另加 `_check_actor_hp_ledger` 三例自查默认支（值取旧源 v0.28 参照）。登记状态「待用户确认」 |
+| imported_balance 141 DOT 6 项 | 141 进停用名单，参照里 141 的行动（applyItem）附加不上中毒；测试原来直接给 Godot 挂状态 | 测试：禁用角色作附加者时改查 `blocks` 并跳过挂状态 |
+| item_use | 新源公共事件物品 1029→1037（数据实数，新源 Items.json 数出来 1037） | 测试计数 |
+| rules10 2521 关闭支 | 不是层数问题：新源 2521 的数据本身已从 +0.2% 改成 +2%，O-181 的回退支（读数据库）现在也是 +2% | 测试两支都按 +2%、`db_untouched` 改 0.02；O-181 登记注明两支同值、可考虑退役 |
+| module_hooks | `oracle.native_registry`：新源钩子表 11 位多了 liuying，orb-sets 19→20；`view.same_source`：`module_equipment_view.json` 六档 elementBonus 跟新源 cat.json `stats.sword671` 逐项相同，只换 runtimeInputs | 测试下标、夹具来源 |
+| 顺带 | actor_p0 的 recruit_141／146／152／161／166：新源这 5 人进停用名单（V029 hiddenActors），重制 `add_actor` 本来就拦停用角色，测试改成「不入队」；raven_reflect 的 0.002 写死改读数据库 | 测试 |
+
+### 验证（本机，新源产物，`--skip-generated-check`）
+
+- `语法检查.py` 通过。
+- 目标 11 个场景（power_books×3、book_capacity、passive_content、xuan_auto、battle_gaps、pushstate、imported_balance、item_use、rules10）＋ module_hooks、shield_ledger、item_bag、xuan_bind 全过。
+- actor_p0 剩 1 项 `horn_paths_all_covered`（伙伴号角：流萤 3063，新角色流萤没移植，A 内容）。
+- 改前改后同样失败、不是本单造成的：`xuan_battle`（source＋cleanse.hard／soft）、`book_capacity_ui`（source）、`raven_reflect`（reffloor 5 项）：三份夹具都还是 v0.28，要在新源上重出（工具／哪吒）；raven_reflect 重出后 0.002 那处已改读数据库。
+- `事件空绿扫描.py --check`：退出 1、4739 条 ✗，跟改动前（stash 后同命令）输出逐字相同；全是 event_states 产物与预设对不上（本树产物克隆自集成分支），本单没碰事件。
+- 之后 merge 集成分支 1eae323d（哪吒 newsrc2 新夹具），合并提交 62388d6c；冲突两处（item_use 计数注释、module_equipment_view.json）都取集成分支版（夹具改用哪吒重出的 cat_probe 版，内容同）。合并后本机重跑 module_hooks、xuan_battle、book_capacity_ui、item_use、xuan_auto、power_books、imported_balance 全过；actor_p0 只剩流萤号角 1 项；raven_reflect 夹具仍是 v0.28，reffloor 5 项待重出。
+- 云端：fdde72b1（合并前）跑选测 310 个场景（运行 42199064992），结果见下。
+
+## 接续
+
+- 本分支已推 GitHub；合回集成分支前看云端结果。
 
 ## 没做、留给下一单
 
@@ -56,11 +79,15 @@
 
 见本交付单「结论」四条；`xiyou_rules` d1 第 0 份 49142 → 61678/61678。云端集成分支 189 失败表里 rules 那行「成长乘区」的初判更正为上面四条。核查：待 Codex。
 
+## 2026-11-06 【cc·rules·未经审查】新源补单：专武·特效吸取开局学、治疗挂状态只给友方、角色掉血绕过护盾账本做成可撤回开关 O-212（dev.待定）
+
+见本交付单「第二轮」表。O-212 待 Kyo 确认（默认照旧源：角色持续伤害／行动序列扣血先扣璃壁等护盾）。核查：待 Codex。
+
 ## 交接板
 
 - 下一步：见「接续」。
 - 用户试玩说明：新源口径下，穿透装备／被动对有抗性的敌人更有效；导入角色（141～166）伤害不再被压到 1%；停用角色多了 5 个。
-- 需要用户决定：无
+- 需要用户决定：O-212（新源里角色的持续伤害、行动序列按比例扣血、直接设生命绕过了璇的璃壁等护盾，看起来是流萤更新的装载次序副作用；重制默认保留「护盾照挡」，开关可回原版）
 
 ## 进度账
 
@@ -72,6 +99,10 @@
 - 建议：`云端选测.py` 的 `--scenes` 只认带 `.tscn` 的名字，不带时静默变成 0 个场景、运行显示成功；改成自动补后缀或空选时报错（工具／哪吒，小）。
 - 建议：集成分支的 189 失败表初判按日志前几条样本写，rules 这行就判错了方向；以后初判最好标「未在本机重跑」并附一条样本的分项对比（已在表头注明过，这里再提一次）。
 
+- 建议：`has_absorb_weapon` 每次 `skills()` 都扫背包和全体角色装备（只对学了 10455 的角色），原版按背包修订号缓存；背包很大时可加同样的缓存（rules，小）。
+- 建议：`事件空绿扫描.py --check` 在工作树里因 event_states 产物克隆自集成分支恒报 4739 条，车道交付时只能比对改前改后；可加 `--baseline <文件>` 只报新增（工具，小）。
+
 ## 本分支提交
 
 - c35a3d00 rules 新源追平：穿透作用于元素抗性、导入角色解除缩放与禁用名单更新、属性转换攻守分算、反击概率夹 0～1
+- fdde72b1 rules 新源补单：10455、RecPushState 只给友方、O-212 角色掉血绕过护盾账本、测试口径与来源夹具
