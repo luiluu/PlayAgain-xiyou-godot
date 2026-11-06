@@ -125,6 +125,7 @@ func _run() -> void:
 	await draw_cases()
 	pool_cases()
 	await fix_switch()
+	await ui_layout()
 	ui_rows()
 	MVEventCore.fixed_random = -1.0
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks, "failures": failures}))
@@ -280,3 +281,42 @@ func ui_rows() -> void:
 	check("ui.tiers", tiers == [["30点　必出1条Mod特效", true], ["90点　必出1条神话特效", true], ["150点　必出1条混沌神话特效", false]], tiers)
 	var pool := XMerchant29Page.pool_rows(37)
 	check("ui.pool", pool.size() == 21 and pool[0].text == "冰霜之王的泪滴　饰品", pool.slice(0, 2))
+
+
+## 期二版面（Scene_Merchant29.create／list29／updateHelp／render29／turn29）
+func ui_layout() -> void:
+	var s: XState = await present(37, 100)
+	var page := XMerchant29Page.new()
+	add_child(page)
+	check("ui2.rects", page.header.position == Vector2(0, 0) and page.header.size == Vector2(1280, 100)
+		and page.list.position == Vector2(0, 100) and page.list.size == Vector2(550, 620)
+		and page.detail.position == Vector2(550, 100) and page.detail.size == Vector2(730, 556)
+		and page.nav.position == Vector2(550, 656) and page.nav.size == Vector2(730, 64), [page.list.size, page.detail.size])
+	check("ui2.home", page.title_lines == XMerchant29Page.home_info(s) and page.detail_rows == [["确认选择；取消返回上一级。", 22, "#ffffff", false, 0]]
+		and page.nav_text() == "◀ 上一页     1／1     下一页 ▶", [page.detail_rows, page.nav_text()])
+	page.list.select(1)
+	page._home_pick(page.rows[1])
+	check("ui2.tier.help", page.title_lines[0] == "武器抽奖　深渊:无垠虚空" and str(page.detail_rows[0][0]) == "消耗本路线战利品点30；装备本体和具体特效随机。", page.detail_rows)
+	page.list.select(2)
+	page._ok.call(page.rows[2])
+	check("ui2.tier.error", page.detail_key.begins_with("text:") and str(page.detail_rows[0][0]) != "" and int(XAbyssMerchant.run(s).used) == 0, page.detail_rows)
+	page._back.call()
+	page._home_pick(page.rows[0])
+	var it: Dictionary = page.rows[0].item
+	var want := XHelpCard.desc_params(it, 1 if XHelpCard.kind_of(it) == "weapon" else 2)
+	check("ui2.pool.detail", page.title_lines[0] == "深渊:无垠虚空　完整装备池（21件）" and page.detail_rows == want and page.page == 0, page.detail_rows.slice(0, 2))
+	# 详情分页：内容高 528，每页 488；长文字超出一屏时 1＋ceil(溢出／488) 页，翻到末页不越界
+	page.set_text("\n".join(range(40).map(func(i): return "第%d行" % i)))
+	var ch := 556.0 - 28.0
+	var want_pages := maxi(1, 1 + ceili(maxf(0.0, page.full_h - ch) / (ch - 40.0)))
+	check("ui2.pages", page.pages == want_pages and page.pages >= 2, [page.full_h, page.pages])
+	page.turn(1)
+	check("ui2.turn", page.page == 1 and page.origin_y == minf(page.full_h - ch, ch - 40.0) and page.nav_text() == "◀ 上一页     2／%d     下一页 ▶" % page.pages, [page.origin_y, page.nav_text()])
+	page.turn(99)
+	page.turn(1)
+	check("ui2.turn.end", page.page == page.pages - 1 and page.origin_y == page.full_h - ch, page.origin_y)
+	page.turn(-99)
+	check("ui2.turn.start", page.page == 0 and page.origin_y == 0.0)
+	page._pool_pick(page.rows[1])
+	check("ui2.pool.pick", page.detail_key.begins_with("item:") and page.page == mini(1, page.pages - 1), [page.page, page.pages])
+	page.queue_free()

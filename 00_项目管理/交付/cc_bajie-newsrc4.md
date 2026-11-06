@@ -117,6 +117,28 @@
   - 测试 `tests/xiyou_merchant29` 的 ui.* 照旧要过；界面参照（ui_reference）可以考虑加截图对照。
 - **DD②**：等总装发同步后的失败表，再认领事件／地图领域还挂的项（候选：casino_batch、empress_draw、save_events、transfer、floor_fortress029、skill_menu_events）。
 
+## DG 期二：商人界面照原版两栏（协调 11-06 16:06 派）
+
+### 变更记录草稿
+
+#### 【cc·八戒·未经审查】深渊／不朽商人界面换成原版左列表＋右侧装备详情
+
+- `ui/merchant29_page.gd` 照 Scene_Merchant29.create 换掉期一的 XYunChoicesWindow 单列：上方两行标题 (0,0,1280,100)；左列表 (0,100,550,620)，16 行可见；右详情 (550,100,730,556)；右下翻页条 (550,656,730,64)「◀ 上一页     n／m     下一页 ▶」（20 号）。
+- 列表的说明（updateHelp）：装备池那一页显示该装备的 getDescParams 行（`XHelpCard.desc_params`，武器 1、防具 2；池里是原件，没有吸取，absorbView 不改），其余显示 help 文字（22 号白），默认「确认选择；取消返回上一级。」；抽取那一页的三行补上原版说明「消耗本路线战利品点N；装备本体和具体特效随机。」。
+- 详情分页照 render29／turn29：行间再加 8，页数 1＋ceil(溢出÷(内容高−40))，换内容回第一页；PageUp／PageDown 翻详情（列表不翻页）、详情上滚轮、点翻页条左半／右半。装备池那一页确定＝翻到下一页（equipmentDetail29）；抽取出错时详情也显示错误文字。
+- 详情字号沿用说明卡 O-007（`XHelpCard.MIN_FONT`，0＝原版）。没有加新的回退开关：这一步是把期一的简化版补成原版样子，不是优化，回退等于退回不像原版的版面。
+- 行距按 XHelpCard.layout（每行 字号＋8，分隔加 3）再加 8，不是逐像素对过 RJO.SW.textHeight；没和原版截图逐像素比。
+
+### 验证（期二）
+
+- 本机新源：`xiyou_merchant29` 75/75（新加 ui2.* 10 项：四个窗口矩形、首页标题与默认说明、抽取页说明、点数不足时的错误显示且不扣次数、装备池详情行＝desc_params、长文字分页页数、翻页 origin、首末不越界、装备池确定翻页）；`语法检查.py` 0 问题；`事件空绿扫描.py --check` 过（99 例都在基线内）。
+- 非 headless 截了首页与装备池两张图（本机临时脚本，没进仓库），两栏、标题、详情颜色与翻页条都正常。
+- 没测：真地图里从 CE1439 到商人打开这一整条流程的点击操作。
+
+### 待交叉核查（期二）
+
+- `ui/merchant29_page.gd`、`tests/xiyou_merchant29.gd`（ui_layout）。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
