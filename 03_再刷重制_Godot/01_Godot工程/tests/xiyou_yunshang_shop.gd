@@ -448,6 +448,22 @@ func p8_clear() -> void:
 		same(tag + ".got", got, want.got)
 		same(tag + ".origin", s.flags.get(XYunshangOrders.ORIGIN_FLAG), want.origin)
 		same(tag + ".ledger", ledger_sum(s), want.ledger)
+	# 回退 XYunshangOrders.V062 = false：回到 v0.28，不朽天丝每场 1 份（天丝成锦偶数次多 1）
+	XYunshangOrders.V062 = false
+	var w0: Dictionary = cases["p8.clear"].out[0]
+	var s0 := new_cloud(45)
+	set_stage(s0, int(w0.get("stage", 1)))
+	XYunshangOrders.on_map_setup(s0, s0.map_id, int(w0.from))
+	s0.map_id = int(w0.from)
+	XYunshangOrders.on_map_setup(s0, s0.map_id, int(w0.to))
+	s0.map_id = int(w0.to)
+	var got0 := []
+	for r in int(w0.get("runs", 1)):
+		var logic := _logic(s0, int(w0.troop))
+		logic.end_battle(int(w0.result))
+		got0.append(s0.item_count(SILK))
+	XYunshangOrders.V062 = true
+	same("p8.clear.v028", got0, (w0.got as Array).map(func(n): return int(n) / 2))
 
 
 ## 进阶页按键走云裳的进阶
