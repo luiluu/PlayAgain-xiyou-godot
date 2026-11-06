@@ -6346,7 +6346,7 @@
   "js/rpg_windows.js": "4c5c65c5c80170bd9898f1f94ad5e7e5f31282e81c898f5201473f80b940f15f",
   "js/rpg_οbjects.js": "44a492f6a9b742a68a3768cdf7c6bab8294f5a177f595ab562cc47a80809ce89"
  },
- "sliceConfigSHA256": "6d0efaee89f7ce1227c21bfee8b93c624dd669b59bd0a65d808e5d55c81e8b8f",
+ "sliceConfigSHA256": "f240205bd77079c916d9c6bea7a8994399fb683aa9c1b7440dc5c682ac4cb808",
  "formulaUntranslatedInSlice": [],
  "formulaUntranslatedAllSkills": 4,
  "formulaPrograms": {
@@ -8065,6 +8065,7 @@
   "img/sv_actors/CatSwordSaint_SV_v3.png": "9a10a2b8f6a497eb25e345372b253a7c5557d723c49c4d82b9447ae0c90959f2",
   "img/sv_actors/Codex_Jingliu_SV.png": "e8a63a07f4ad0a71aed59ef78f88ab16bd19af67781730c45e6a93646d0497e7",
   "img/sv_actors/Codex_Liuying_SV.png": "01ed055096c2725cdf5a7094d16b9ddd31a6e6cd5181ae67fc6331fdf9ac1f78",
+  "img/sv_actors/Codex_Sam_SV.png": "b0c15aefc57d549f70ad54809368773b96e5733b86b4f6d952181439fa789ab7",
   "img/sv_actors/Codex_Sukuna_SV.png": "8b4b6981d9961db66f711612ca0218bcb71db721f06d2d345bb7f0429c67f076",
   "img/sv_actors/Codex_Toji_SV.png": "07de6ef63843f5e2b15f3b8ac796c7c50c815a515977f58f73de5e6a21db2e4b",
   "img/sv_actors/Codex_Tusu_SV_v1.png": "1cbc9bc9ca22b55fb6fc4b551c689916edb262a64a9f6cebbeb3450d760d7995",
@@ -11498,6 +11499,7 @@
   "img/sv_actors/CatSwordSaint_SV_v3.png": "9a10a2b8f6a497eb25e345372b253a7c5557d723c49c4d82b9447ae0c90959f2",
   "img/sv_actors/Codex_Jingliu_SV.png": "e8a63a07f4ad0a71aed59ef78f88ab16bd19af67781730c45e6a93646d0497e7",
   "img/sv_actors/Codex_Liuying_SV.png": "01ed055096c2725cdf5a7094d16b9ddd31a6e6cd5181ae67fc6331fdf9ac1f78",
+  "img/sv_actors/Codex_Sam_SV.png": "b0c15aefc57d549f70ad54809368773b96e5733b86b4f6d952181439fa789ab7",
   "img/sv_actors/Codex_Sukuna_SV.png": "8b4b6981d9961db66f711612ca0218bcb71db721f06d2d345bb7f0429c67f076",
   "img/sv_actors/Codex_Toji_SV.png": "07de6ef63843f5e2b15f3b8ac796c7c50c815a515977f58f73de5e6a21db2e4b",
   "img/sv_actors/Codex_Tusu_SV_v1.png": "1cbc9bc9ca22b55fb6fc4b551c689916edb262a64a9f6cebbeb3450d760d7995",
@@ -13602,6 +13604,6 @@
   "movies/血轮眼开.ogg": "651fc3b90f56f0dd742b187ce3018ba43029e83c5407aed3ef3e1f7b16b85a9f",
   "movies/血轮眼开.json": "6c05e49eed2534075e4166ad3cf9100bec71dbec184198dd23cbe661ae189b9f",
   "fonts/FZLanTYJW_ZhongCu.TTF": "db0fe73bff1d05a1ddb4eac5bd31b9fc971a30285cb9c14b81464ab697195f79",
-  "slice.json": "1626d533f6a020bd3f7d53742acc970554b271513991ffcb8cb5696cbc344de2"
+  "slice.json": "4b905ed294754f43ee559953088d70fc8e7284379b389b66d526a4b04ff75e5a"
  }
 }
