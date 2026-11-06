@@ -472,6 +472,11 @@ func _show_status() -> void:
 func _show_equip() -> void:
 	_open_detail(XEquipScene.new())
 
+## 还在主菜单（指令窗或选人），没进子页面：Scene_Menu 本身（触屏存档键只在这里和地图显示）。
+func is_top_level() -> bool:
+	return _mode != "page"
+
+
 ## 子页面盖在菜单上；关闭后回到指令窗（MV 返回 Scene_Menu 时指令窗活动、选中上次指令）。
 func _open_detail(page: Control) -> void:
 	_mode = "page"

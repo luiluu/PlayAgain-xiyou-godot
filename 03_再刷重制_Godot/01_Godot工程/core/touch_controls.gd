@@ -23,10 +23,16 @@ const BUTTONS := {
 	"run": {"rect": Rect2(1150, 640, 110, 64), "text": "跑步", "key": KEY_SHIFT},
 	"hide": {"rect": Rect2(1170, 8, 100, 40), "text": "隐藏按键", "toggle": true},
 	# Mehmet_GhostButtons 的「Save」键（原版虚拟按键只在手机上有，按下＝键盘 ~，YEP_ButtonCommonEvents 428 一键存档，地图与菜单才有）。
-	# 这里在所有页面都显示，在地图以外按了没反应（地图快捷键只认地图页面）。回退开关 SAVE_BUTTON = false。
+	# 显示在哪见 SAVE_MAP_MENU_ONLY。回退开关 SAVE_BUTTON = false（整个不要存档键）。
 	"save": {"rect": Rect2(1050, 8, 100, 40), "text": "存档", "key": KEY_QUOTELEFT},
 }
 static var SAVE_BUTTON := true
+## 存档键照原版只在地图与主菜单显示、才吃触摸（Mehmet_GhostButtons 第 672 行 [Scene_Map, Scene_Menu]；标题页整套虚拟键都不建，
+## 战斗、菜单的子页面也没有）。当前场景有 touch_save_visible() 且返回 true 才算（XMapScene：不在战斗、菜单没开或停在主菜单）。
+## 审查 50 P2-1：keys3 原先所有页面都显示，标题页「导出存档」被它盖住。回退开关 = false：回到所有页面都显示（cc CJ 2026-11-06，O-211 待总装确认）。
+static var SAVE_MAP_MENU_ONLY := true
+## 测试用：当成当前场景。
+static var scene_override: Node = null
 
 ## 原版 limits：大小百分比与透明度的范围，步长 5。
 const LIMITS := {"stick": [70, 170], "buttons": [70, 160], "tools": [80, 140], "transparency": [0, 80]}
@@ -143,11 +149,21 @@ func hit(pos: Vector2) -> String:
 	if pos.distance_to(stick_center) <= stick_radius * 1.2:
 		return "stick"
 	for name in BUTTONS:
-		if name == "save" and not SAVE_BUTTON:
+		if name == "save" and not save_shown():
 			continue
 		if rects.has(name) and (rects[name] as Rect2).has_point(pos):
 			return name
 	return ""
+
+
+## 存档键现在该不该出现（不看隐藏状态）。
+func save_shown() -> bool:
+	if not SAVE_BUTTON or not _buttons.has("save"):
+		return false
+	if not SAVE_MAP_MENU_ONLY:
+		return true
+	var scene: Node = scene_override if is_instance_valid(scene_override) else (get_tree().current_scene if is_inside_tree() else null)
+	return scene != null and scene.has_method("touch_save_visible") and bool(scene.touch_save_visible())
 
 
 ## 布局编辑时某点落在哪一组上。
@@ -312,6 +328,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	if _buttons.has("save"):
+		var want := (not hidden or layout_editing) and (layout_editing or save_shown())
+		if (_buttons.save as Panel).visible != want:
+			(_buttons.save as Panel).visible = want
 	var platform := get_parent() as XPlatform
 	var catching := platform != null and platform.is_catching_up()
 	_catch_label.visible = catching
@@ -323,7 +343,7 @@ func _process(_delta: float) -> void:
 func _apply_hidden() -> void:
 	var shown := not hidden or layout_editing
 	for name in _buttons:
-		(_buttons[name] as Panel).visible = name == "hide" or shown
+		(_buttons[name] as Panel).visible = name == "hide" or (shown and (name != "save" or layout_editing or save_shown()))
 	_stick_base.visible = shown
 	_stick_knob.visible = shown
 	var label := (_buttons.hide as Panel).get_node("Label") as Label

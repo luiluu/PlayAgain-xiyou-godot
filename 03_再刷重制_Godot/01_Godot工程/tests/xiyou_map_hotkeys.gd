@@ -45,8 +45,63 @@ func tap(code: int) -> void:
 	await frames(1)
 
 
+## 真触摸（画面坐标 → 窗口坐标）
+func touch(pos: Vector2, pressed: bool) -> void:
+	var e := InputEventScreenTouch.new()
+	e.index = 0
+	e.position = get_viewport().get_final_transform() * pos
+	e.pressed = pressed
+	Input.parse_input_event(e)
+	Input.flush_buffered_events()
+
+
 func settled(map: XMapScene) -> bool:
 	return await until(func(): return not map.busy and XState.current.peek_common_event() == 0)
+
+
+func test_touch_save(map: XMapScene, s: XState) -> void:
+	XTouchControls.SETTINGS_PATH = "user://test_map_hotkeys_touch.json"
+	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+	var pad := XTouchControls.new()
+	add_child(pad)
+	XTouchControls.scene_override = map
+	await frames(2)
+	var center: Vector2 = pad.rects.save.get_center()
+	check("touch_save_shown_on_map", map.touch_save_visible() and pad.hit(center) == "save")
+	XSave.remove(1)
+	XToast.shown.clear()
+	touch(center, true)
+	await frames(2)
+	touch(center, false)
+	await frames(1)
+	await settled(map)
+	check("touch_save_slot1", XSave.exists(1) and XToast.shown.has("存档成功，储存到了1号存档！"), XToast.shown)
+	map._in_battle = true
+	await frames(1)
+	check("touch_save_hidden_in_battle", not map.touch_save_visible() and pad.hit(center) == "" and not (pad._buttons.save as Panel).visible)
+	map._in_battle = false
+	map.open_menu()
+	var menu_up := await until(func(): return _menu(map) != null, 120)
+	check("touch_save_shown_on_main_menu", menu_up and map.touch_save_visible() and pad.hit(center) == "save")
+	if menu_up:
+		var menu := _menu(map)
+		menu._show_status()
+		await frames(1)
+		check("touch_save_hidden_on_subpage", not map.touch_save_visible() and pad.hit(center) == "")
+		menu.closed.emit()
+		await until(func(): return _menu(map) == null and not map._menu_open, 120)
+	await frames(2)
+	XTouchControls.scene_override = null
+	pad.queue_free()
+	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+	await frames(1)
+
+
+func _menu(map: XMapScene) -> XMenu:
+	for c in map.ui.get_children():
+		if c is XMenu:
+			return c
+	return null
 
 
 func test_timing() -> void:
@@ -150,6 +205,9 @@ func _run() -> void:
 	await tap(KEY_L)
 	await settled(map)
 	check("hangup_enable", XHangUp.enabled(s) and XToast.shown.has("摆烂功能已开启~！"), XToast.shown)
+
+	# 触屏存档键（fix1）：地图上真触摸点存档键＝按 ~ 存档；战斗中、菜单子页面不显示（原版只在 Scene_Map／Scene_Menu）
+	await test_touch_save(map, s)
 
 	# 屏蔽：开屏蔽页，取消回地图
 	key(KEY_P, true)

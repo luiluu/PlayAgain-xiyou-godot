@@ -1575,6 +1575,17 @@ func relocate_race_guide() -> void:
 var _menu_closed_frame := -1
 
 
+## 触屏存档键（XTouchControls.SAVE_MAP_MENU_ONLY）：照原版只在地图与主菜单（Scene_Map／Scene_Menu）显示；战斗中、菜单进了子页面不显示。
+func touch_save_visible() -> bool:
+	if _in_battle:
+		return false
+	if _menu_open:
+		for c in ui.get_children():
+			if c is XMenu:
+				return (c as XMenu).is_top_level()
+	return true
+
+
 func open_menu(resume_items: Dictionary = {}) -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
