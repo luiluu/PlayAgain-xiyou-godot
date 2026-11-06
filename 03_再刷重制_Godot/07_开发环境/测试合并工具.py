@@ -3128,10 +3128,129 @@ for name in filter(None, files):
         self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
         self.assertIn('本批 2 条收口', self.last_output)
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
-        self.assertEqual(self.cloud_lines(), [])  # --batch 攒的收尾没有「验证:」尾注：不立锚点（tools77）
-        self.assertIn('未立云端锚点：收尾提交没有「验证: 选测／全量」尾注', self.last_output)
+        # 收口检查通过的就是 HEAD 本身（收口前工作区干净），推送后照样立锚点（tools78；tools77 时这里不立）
+        self.assertEqual(self.cloud_lines(), ['trust %s --reason 收口推送后自动' % self.g('rev-parse', 'main')])
+        self.assertIn('立云端锚点（收口推送后自动）', self.last_output)
         self.assertEqual(self.close(), 1)  # 已收口
         self.assertTrue(base)
+
+    def test_close_batch_without_push_does_not_anchor(self):
+        """收口没推出去（无 github 远端）就不立；收口检查失败更不立（tools78）。"""
+        self.cloud_stub()
+        wt2, checks = self.batch_two()
+        self.assertEqual(self.close(CHECK_RC='1'), 1)
+        self.assertEqual(self.close(), 0, self.last_output)
+        self.assertIn('无 github 远端', self.last_output)
+        self.assertEqual(self.cloud_lines(), [])
+
+    def lane_board(self, extra_rows=''):
+        """交接板写成真交接板的样子：「需要用户决定」有 O 行、待核查有表头；正在进行登记两条车道（清理时认得出）。"""
+        self.put(str(merge.BOARD), '# board\n## 正在进行\n| claude/task |\n| D | `lane2` |\n%s\n## 需要用户决定\n\n- O-001 旧项（默认保留）\n- O-118 最后一项（默认保留）\n- 别的决定\n\n'
+                 '## 待交叉核查\n\n| 提交 | 执行者 | 内容 | 核查者 |\n| --- | --- | --- | --- |\n| old/branch | cc | 旧 | 待审查 |\n## end\n' % extra_rows)
+        self.g('add', '.'); self.g('commit', '-m', 'board')
+
+    def tool(self, *args):
+        result = subprocess.run([sys.executable, str(HERE / '合并车道.py'), '--root', str(self.root), *args], capture_output=True, text=True)
+        self.last_output = result.stdout + result.stderr
+        return result.returncode
+
+    def test_lane_one_step_prepares_fills_board_and_batches(self):
+        """--lane：准备→交接板补新优化的「需要用户决定」行（插在最后一条 O 行后）与待核查首行→--finish --batch（tools78，原总装 lane.sh＋addrow.py）。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-001 | 旧项 | a | b | c | d | e | f |\n| O-118 | 最后一项 | a | b | c | d | e | f |')
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt)
+        row = '| %s | 甲项 | 问题 | 做法 | 理由 | 回退 | 车道 | 待用户决定 |' % tok
+        self.sheet_with('\n## 优化登记草稿\n\n| 编号 | 项目 | 原版问题 | 重制做法 | 理由 | 回退 | 提出 | 状态 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n' + row + '\n')
+        before = self.g('rev-parse', 'main')
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc（哪吒）', '--desc', 'CK：一步合'), 0, self.last_output)
+        board = (self.root / merge.BOARD).read_text().split('\n')
+        i = board.index('- O-118 最后一项（默认保留）')
+        self.assertEqual(board[i + 1], '- O-119 甲项（默认保留，重制完成后由用户逐条决定）')
+        j = board.index('| --- | --- | --- | --- |')
+        self.assertEqual(board[j + 1], '| claude/task | cc（哪吒） | CK：一步合 | 待审查 |')
+        self.assertEqual(board[j + 2], '| old/branch | cc | 旧 | 待审查 |')
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertEqual([x['task'] for x in json.loads((self.root / '.git/lane-merge/batch.json').read_text())], ['task'])
+        self.assertIn('收尾', self.g('log', '-1', '--format=%s', 'main'))
+        self.assertNotEqual(self.g('rev-parse', 'main'), before)
+        self.assertFalse(merge.dirty(self.root))
+        self.assertTrue(self.wt.exists())                  # --batch：工作树等收口再清
+
+    def test_lane_rerun_after_prepare_does_not_duplicate_rows(self):
+        """准备过了（如上次 --finish --batch 没过）重跑同一条 --lane：不重复准备、交接板不重插。"""
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)               # 已准备
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        merge.board_add(self.root, state, 'cc（哪吒）', '内容')            # 上次已补过
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc（哪吒）', '--desc', '内容'), 0, self.last_output)
+        self.assertEqual((self.root / merge.BOARD).read_text().count('| claude/task | cc（哪吒） | 内容 | 待审查 |'), 1)
+        self.assertEqual(self.g('log', '-1', '--format=%B', 'main').count('核查:'), 1)
+
+    def test_new_placeholders_counts_only_lines_new_since_base(self):
+        tok = 'O-' + '待定'
+        self.put(str(merge.PROJECT / 'modes/旧.gd'), '# 旧 %s 原有\n' % tok)
+        self.g('add', '.'); self.g('commit', '-m', 'old placeholder')
+        base = self.g('rev-parse', 'HEAD')
+        self.assertEqual(merge.new_placeholders(self.root, base), [])
+        self.put(str(merge.PROJECT / 'modes/新.gd'), '# 新 %s 没换号\n' % tok)
+        self.g('add', '.')
+        self.assertEqual(merge.new_placeholders(self.root, base), ['# 新 %s 没换号' % tok])
+
+    def test_lane_stops_on_new_placeholder_and_keeps_board(self):
+        tok = 'O-' + '待定'
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.put(str(merge.PROJECT / 'modes/漏.gd'), '# %s 漏换\n' % tok)        # 模拟准备后工程里还留着没换号的占位
+        board = (self.root / merge.BOARD).read_text()
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc', '--desc', 'x'), 1)
+        self.assertIn('留了没换号的 ' + tok, self.last_output)
+        self.assertEqual((self.root / merge.BOARD).read_text(), board)
+        self.assertTrue((self.root / '.git/lane-merge/state.json').exists())
+
+    def test_queue_rerun_skips_lanes_already_in_batch(self):
+        """--queue 中途停下（第二条没过）后重跑同一条：已攒进本批的第一条跳过，接着合第二条再收口。"""
+        self.cloud_stub()
+        wt2, checks = self.batch_fixture()
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt)                          # 第二条不合 main：准备时交接板冲突前先看第一条
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc', '--desc', '第一条'), 0, self.last_output)
+        self.g('merge', 'main', cwd=wt2)
+        self.assertEqual(self.tool('--queue', 'task,task2=claude/task2', '--who', 'cc', '--desc', '第一条', '--desc', '第二条'), 0, self.last_output)
+        self.assertIn('task 已在本批，跳过', self.last_output)
+        self.assertIn('本批 2 条收口', self.last_output)
+        self.assertEqual((self.root / merge.BOARD).read_text().count('| claude/task | cc | 第一条 | 待审查 |'), 1)
+
+    def test_lane_and_queue_argument_errors(self):
+        self.assertEqual(self.tool('--lane', 'task', '--desc', 'x'), 1)
+        self.assertIn('--lane 要各给一个 --who、--desc', self.last_output)
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'a|b', '--desc', 'x'), 1)
+        self.assertIn('不能有「|」', self.last_output)
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'a', '--desc', 'x', '--finish'), 1)
+        self.assertEqual(self.tool('--queue', 'task,task2', '--who', 'a', '--desc', 'x', '--desc', 'y', '--desc', 'z'), 1)
+        self.assertIn('--desc 要给 1 个或 2 个', self.last_output)
+        self.assertEqual(self.tool('--queue', 'task', '--branch', 'claude/task', '--who', 'a', '--desc', 'x'), 1)
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+
+    def test_queue_merges_in_order_then_closes_and_anchors(self):
+        """--queue a,b：逐条 --lane，最后自动 --close-batch（一次检查、清理、推送、立锚点）。"""
+        bare = self.github()
+        wt2, checks = self.batch_fixture()
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt); self.g('merge', 'main', cwd=wt2)
+        self.assertEqual(self.tool('--queue', 'task,task2=claude/task2', '--who', 'cc（哪吒）', '--desc', '第一条', '--desc', '第二条'), 0, self.last_output)
+        board = (self.root / merge.BOARD).read_text().split('\n')
+        j = board.index('| --- | --- | --- | --- |')
+        self.assertEqual(board[j + 1:j + 3], ['| claude/task2 | cc（哪吒） | 第二条 | 待审查 |', '| claude/task | cc（哪吒） | 第一条 | 待审查 |'])
+        self.assertEqual(checks.read_text().split(), ['run'])            # 只在收口检查一次
+        self.assertIn('本批 2 条收口', self.last_output)
+        self.assertFalse(self.wt.exists()); self.assertFalse(wt2.exists())
+        head = self.g('rev-parse', 'main')
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), head)
+        self.assertEqual(self.cloud_lines(), ['trust %s --reason 收口推送后自动' % head])
 
     def test_close_batch_failure_keeps_everything_and_reports(self):
         bare = self.github()
