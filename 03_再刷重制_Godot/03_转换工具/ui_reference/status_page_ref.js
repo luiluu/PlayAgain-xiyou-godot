@@ -1,9 +1,11 @@
 /* 状态页参照（界面 DL 2026-11-06，换源重取 tests/fixtures/status_page_oracle.json，原为 v0.28 浏览器手取）：由 dom_ref.cjs 在页面里执行。
  * 新开局队伍 1/2/23/85（初始装备），Scene_Status（JAH_StatusMenuCore）各窗口矩形与每页 contents 上的绘制调用：
  * text=[文字,x,y,宽,行高,对齐,字号,颜色]；face=[文件,序号,x,y]；icon=[序号,x,y]；gauge=[x,y,宽,填充宽,色1,色2]；line=[0,y,宽]（drawHorzLine）。
- * 空文字不列。参数：{"pages": 3}（每个角色取前几页，缺省 3）。 */
+ * 空文字不列。参数（都可缺省）：{"pages": 3（每个角色取前几页）, "pageList": [页序号…]（给了就只取这几页）, "party": [1,2,23,85],
+ *   "actors": [只取这几个角色], "variables": {"20": 4}, "zhenqi": {"1": {"qi": 700}}（写进 CodexZhenqi.data(角色)）}；修行页参照（zhenqi_page_ui_oracle）用后几项。 */
 async function (arg) {
-    var r = {errors: []}, nPages = (arg && arg.pages) || 3, party = [1, 2, 23, 85];
+    arg = arg || {};
+    var r = {errors: []}, nPages = arg.pages || 3, party = arg.party || [1, 2, 23, 85];
     function check(ok, msg) { if (!ok) throw new Error(msg); }
     var pump = function (until, ms) { return __dhRef.pump({until: until, ms: ms || 30000}); };
     function frames(n) { var k = 0; return pump(function () { return ++k > n; }); }
@@ -46,6 +48,8 @@ async function (arg) {
     }
     ConfigManager.applyData({}); DataManager.setupNewGame();
     $gameParty._actors = party.slice(); $gameParty._battleMembers = party.slice();
+    Object.keys(arg.variables || {}).forEach(function (k) { $gameVariables.setValue(Number(k), arg.variables[k]); });
+    Object.keys(arg.zhenqi || {}).forEach(function (k) { Object.assign(CodexZhenqi.data($gameActors.actor(Number(k))), arg.zhenqi[k]); });
     Game_Map.prototype.updateInterpreter = function () {};
     if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
     $gameScreen.clear(); $gameMessage.clear(); $gamePlayer.clearTransferInfo();
@@ -66,11 +70,24 @@ async function (arg) {
     r.page = {rect: rect(p0), contents: [p0.contents.width, p0.contents.height], maxPageRows: p0.maxPageRows(),
         opacity: p0.opacity, backOpacity: p0.backOpacity, downArrow: !!p0.downArrowVisible, upArrow: !!p0.upArrowVisible};
     r.actors = [];
-    for (var k = 0; k < party.length; k++) {
-        var a = $gameActors.actor(party[k]), out = {actorId: a.actorId(), name: a.name(), pages: []};
-        for (var p = 0; p < nPages; p++) {
-            var w = pages[p]; w.setActor(a); w.resetScroll && w.resetScroll();
-            out.pages.push({maxItems: w.maxItems(), maxTopRow: w.maxTopRow(), ops: capture(w, function () { w.refresh(); })});
+    var pageList = arg.pageList || Array.from({length: nPages}, function (_, i) { return i; }), who = arg.actors || party;
+    for (var k = 0; k < who.length; k++) {
+        var a = $gameActors.actor(who[k]), out = {actorId: a.actorId(), name: a.name(), pages: []};
+        for (var q = 0; q < pageList.length; q++) {
+            var p = pageList[q], w = pages[p]; w.setActor(a); w.resetScroll && w.resetScroll();
+            var pg = {maxItems: w.maxItems(), maxTopRow: w.maxTopRow(), ops: capture(w, function () { w.refresh(); })};
+            if (arg.pageList) {
+                pg.index = p; pg.rect = rect(w); pg.colors = {C3: color(w.textColor(3)), C6: color(w.textColor(6))};
+                // 往下逐屏滚（每次一页行数），记各屏调用（y 是滚动后的），看得到表头等在首屏以下的行
+                pg.screens = [];
+                for (var top = w.maxPageRows(); top <= w.maxTopRow() + w.maxPageRows() - 1; top += w.maxPageRows()) {
+                    w.setTopRow(Math.min(top, w.maxTopRow()));
+                    pg.screens.push({topRow: w.topRow(), ops: capture(w, function () { w.refresh(); })});
+                    if (w.topRow() >= w.maxTopRow()) break;
+                }
+                w.resetScroll && w.resetScroll(); w.refresh();
+            }
+            out.pages.push(pg);
         }
         r.actors.push(out);
     }
