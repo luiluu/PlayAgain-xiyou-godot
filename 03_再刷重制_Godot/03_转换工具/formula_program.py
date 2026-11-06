@@ -447,6 +447,8 @@ MODULE_FORMULAS['CodexYunshang.formula(this,a,b)'] = 'yunshang'
 # 求值等屠苏三期／璇六期接上，现在 XFormulaExecution 按 unsupported_program 不可用，跟进切片前一样）
 MODULE_FORMULAS.update({f"CodexTusu.damage(a,b,'{k}')": 'tusu' for k in ['zhanfeng', 'hengsao', 'dianshe', 'guanri', 'chiling', 'zhenji', 'jianqi', 'zhenhun', 'body_phys', 'body_mag']})
 MODULE_FORMULAS.update({"CodexXuan.damage(a,b,'lengguang')": 'xuan', 'CodexXuan.heal(a,b)': 'xuan'})
+# 179 流萤 CodexLiuying.damage(a,b,id)：天火轰击 10622、完全燃烧 10623（XLiuying.formula）
+MODULE_FORMULAS.update({f'CodexLiuying.damage(a,b,{i})': 'liuying' for i in (10622, 10623)})
 # 167 渡鸦 5 个伤害技能：整条公式含 CodexRaven.legionStrikeRate／skillCoefficient（XRaven.formula 照原文逐技能写）
 MODULE_FORMULAS.update({re.sub(r'\s+', '', f): 'raven' for f in [
     '(a.mat * 78 + a.mmp * 39) * (CodexRaven.legionStrikeRate(a) * CodexRaven.skillCoefficient(a, 10122))',

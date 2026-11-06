@@ -266,7 +266,7 @@ func shield_effect_bonus() -> float:
 		var m := _shield_effect_re.search(str(obj.get("note", "")))
 		if m:
 			bonus += int(m.get_string(1)) / 100.0
-	return bonus + XZhenqi.shield_effect_bonus(self)
+	return bonus + XZhenqi.shield_effect_bonus(self) + XLiuying.shield_effect_bonus(self)  # 流萤自限装甲 +1
 
 ## addShield：正数乘 (1＋加成)，负数直接扣；不取整，不低于 0。非有限数按 0。
 func add_shield(value: float) -> void:
@@ -404,6 +404,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return  # 异化归墟 addState 包装：归墟者攻击期间不给别人附加状态
 	if XAlienBattle.route_state(self, id):
 		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
+	if XLiuying.blocks_state(self, id):
+		return  # 流萤 addState 包装：负面免疫
 	var alien_rev := XAlienBattle.revision(self, id)
 	_adding_state = true
 	_add_state(id, random)
@@ -505,6 +507,8 @@ func remove_state_auto(id: int) -> void:
 func remove_state(id: int) -> void:
 	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
 		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
+	if XLiuying.mark_locked(self, id):
+		return  # 流萤 Game_Enemy.removeState／eraseState 包装：击破印记不可驱散
 	if XAlienBattle.blocks_removal(self, id, _leaving_state):
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
@@ -516,6 +520,7 @@ func remove_state(id: int) -> void:
 	state_turns.erase(id)
 	if had:
 		XRaceBattle.on_state_removed(self, id)  # 种族：去掉毒鸡汤时清待结算记录
+		XLiuying.mark_removed(self, id)  # 流萤：印记被移除时清层
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
 	# YEP_BuffsStatesCore removeState：不论有没有该状态都清掉它的状态计数（死亡、抵抗等直接去状态的路径不清）
@@ -913,6 +918,8 @@ func buff_limit(pid: int, positive: bool) -> int:
 ## Game_BattlerBase.clearStates（PermanentState 保留 <Permanent>）：不 refresh、不标 dirty
 func clear_states() -> void:
 	for sid in state_ids.duplicate():
+		if XLiuying.mark_locked(self, sid):
+			continue  # 流萤 Game_Enemy.clearStates 包装：战斗中击破印记与层数保留
 		if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)
