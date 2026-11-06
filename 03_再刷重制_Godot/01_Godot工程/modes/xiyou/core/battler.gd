@@ -266,7 +266,7 @@ func shield_effect_bonus() -> float:
 		var m := _shield_effect_re.search(str(obj.get("note", "")))
 		if m:
 			bonus += int(m.get_string(1)) / 100.0
-	return bonus + XZhenqi.shield_effect_bonus(self)
+	return bonus + XZhenqi.shield_effect_bonus(self) + XLiuying.shield_effect_bonus(self)  # 流萤自限装甲 +1
 
 ## addShield：正数乘 (1＋加成)，负数直接扣；不取整，不低于 0。非有限数按 0。
 func add_shield(value: float) -> void:

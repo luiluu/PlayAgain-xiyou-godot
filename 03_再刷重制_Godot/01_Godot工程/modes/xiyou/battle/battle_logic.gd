@@ -1833,7 +1833,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1))))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
+		var times := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1)))))  # 黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
 		for t in targets_for(u, skill, chosen, not forcing):
 			for i in range(maxi(1, times)):
@@ -1848,7 +1848,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		logs.append_array(mark_views(_lotus_strike(u, skill, lotus_seq.keys(), lotus_seq)))
 		return logs
-	var repeats := XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层
+	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1)))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
 	var targets := targets_for(u, skill, chosen, not forcing)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
@@ -2123,6 +2123,8 @@ static func certain_hit(u: XBattler, skill: Dictionary) -> bool:
 ## userHitRate 物理 user.hit、魔法 user.hit*1.1、必中 10000000；targetEvadeRate 物理 target.eva、魔法 target.mev、必中 0）；
 ## 最后 installDamageElementRuntime 夹到 0～1。Olivia_AntiPlayerStress 的命中修正在西游关闭（Hit Rate Stacking=false）。
 func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XLiuying.sure(u, skill):  # 流萤两招 itemHit 包装（新源第 34 个，在谷雨之内、云裳之外；谷雨只管谷雨的技能）：必中
+		return 1.0
 	if XGuyu.sure(skill):  # 谷雨 itemHit 包装：绽放、终结、治疗必中
 		return 1.0
 	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
@@ -2143,6 +2145,8 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 
 ## itemEva：YEP「Evade Formula」（西游为 0）夹到 0～1。原版闪避已并入命中公式。
 func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
+	if XLiuying.sure(u, skill):  # 流萤两招 itemEva 包装：不闪避（在甚尔外层，影速不加）
+		return 0.0
 	if XGuyu.sure(skill) or XCat.sure_segment(u):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避；哈基米必中剑段（导入角色平衡在甚尔外层，影速也不加）
 		return 0.0
 	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
@@ -3066,6 +3070,7 @@ func grant(r: Dictionary) -> Array:
 			ups.append({"actor": a, "levels": n})
 	# CP_MagicWeapon 包在 gainRewards 之后：法宝经验（$gameTroop.members()：enemies 已含没出场的隐藏成员）
 	XMagicWeapon.gain_victory_exp(state.members(), actors, enemies)
+	XLiuying.gain_rewards(actors)  # 流萤 gainRewards 包装：出战且戴专武，逐火
 	return ups
 
 

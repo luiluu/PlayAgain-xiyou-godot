@@ -513,7 +513,7 @@ static func formula_ok(skill: Dictionary) -> bool:
 	if not custom:
 		var s := _js_formula(str(d.get("formula", "0")))
 		for p in ["Codex(?:Raven\\.(?:legionStrikeRate|skillCoefficient|defenseFactor|defenseDeduction)|Mira\\.damage|Yomi\\.damage|Jingliu\\.damage|Toji\\.damage|Sukuna\\.damage|Garou\\.base)\\b",
-				"CodexYunshang\\.formula\\b", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
+				"CodexYunshang\\.formula\\b", "CodexLiuying\\.damage\\(a,\\s*b,\\s*\\d+\\)", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
 				"(?:a|b|user|target|subject)\\.(?:skillMasteryLevel|isStateAffected|hpRate|mpRate|tpRate|param|xparam|sparam)\\b",
 				"(?:a|b|user|target|subject)\\.(?:mhp|mmp|hp|mp|tp|atk|def|mat|mdf|agi|luk|level|hit|cri|pdr|mdr|rec)\\b",
 				"Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt|log)\\b", "item\\.id", "v\\[\\d+\\]", "\\b(?:a|b|user|target|subject|this|true|false)\\b"]:

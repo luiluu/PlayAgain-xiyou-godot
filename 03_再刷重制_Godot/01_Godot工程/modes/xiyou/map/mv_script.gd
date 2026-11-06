@@ -50,7 +50,7 @@ static func _re(pattern: String) -> RegEx:
 ## 谷雨／屠苏／璇的号角脚本写 X.ids().horn（模块按物品名现找），这里取同一张表里的号角号。
 const _RECRUITMENTS := {"CodexRaven": [167, 2902], "CodexMira": [168, 2904], "CodexYomi": [169, 2931], "CodexJingliu": [170, 2932],
 	"CodexToji": [171, 2936], "CodexSukuna": [172, 2938], "CodexGarou": [173, 2940], "CodexYunshang": [174, 2941], "Guyu": [175, 2943],
-	"CodexTusu": [176, 2945], "CodexXuan": [177, 2946]}
+	"CodexTusu": [176, 2945], "CodexXuan": [177, 2946], "CodexLiuying": [179, 3063]}
 
 
 ## 包装那一层：挡下时提示并返回 true（recruit() 视为返回 false）
@@ -93,6 +93,12 @@ static func _module_recruit(module: String) -> Callable:
 					return false
 				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
 				return true
+		"CodexLiuying":
+			return func(s: XState, interp) -> bool:
+				var lines := XLiuying.recruit(s)
+				for line in lines:
+					interp.host.toast(line)
+				return not lines.is_empty()
 		"CodexTusu", "CodexXuan":
 			# 公共事件 9013／9016：T.recruit／X.recruit（installNativeTusuRuntime 614 行、installNativeXuanRuntime 500 行）入队、
 			# 首次给并装上专属法宝、璇建星谱；没有提示。已在队返回 false（还号角）。events7 接上（原注释「模块没移植」时号角吞掉、人不入队）
@@ -588,7 +594,7 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexCat.recruit()":  # 公共事件 9017：178 哈基米入队（见 XCat.recruit）
 			XCat.recruit(s)
 			continue
-		if st in ["CodexMira.recruit()", "CodexYomi.recruit()", "CodexJingliu.recruit()", "CodexRaven.recruit()", "CodexYunshang.recruit()"] \
+		if st in ["CodexMira.recruit()", "CodexYomi.recruit()", "CodexJingliu.recruit()", "CodexRaven.recruit()", "CodexYunshang.recruit()", "CodexLiuying.recruit()"] \
 				and _recruit_blocked(st.get_slice(".", 0), interp):
 			continue  # 超强者门槛（见 _RECRUITMENTS）
 		if st == "CodexMira.recruit()":  # 公共事件 9003：168 米拉入队（见 XMira.recruit）
@@ -596,6 +602,10 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		if st == "CodexYomi.recruit()" or st == "CodexJingliu.recruit()":  # 公共事件 9004／9005：169 黄泉、170 镜流入队并装上专属法宝（见 XYomiJingliu.recruit；两条 $.toaster 提示）
 			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI if st.begins_with("CodexYomi") else XYomiJingliu.JINGLIU):
+				interp.host.toast(line)
+			continue
+		if st == "CodexLiuying.recruit()":  # 公共事件 9043（号角 3063）：179 流萤入队，装上专武与法宝（见 XLiuying.recruit；三条 $.toaster 提示）
+			for line in XLiuying.recruit(s):
 				interp.host.toast(line)
 			continue
 		if st == "CodexYunshang.recruit()":  # 公共事件 9010：174 云裳入队（见 XYunshang.recruit；$.toaster 提示）

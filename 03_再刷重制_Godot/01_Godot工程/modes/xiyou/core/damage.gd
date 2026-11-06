@@ -226,7 +226,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 		"physicalDefenseRate": 1.0, "magicalDefenseRate": 1.0, "physicalDamageMultiplier": 1.0, "magicalDamageMultiplier": 1.0,
 		"flatMitigationRate": 1.0, "healingMultiplier": 1.0, "physicalIncomingPierce": 0.0, "magicalIncomingPierce": 0.0,
 		"resistancePierce": 0.0, "incomingMultiplier": 1.0, "elements": null, "noElement": false, "categoryMax": false,
-		"resistancePierceByElement": _resistance_pierce_by_element(a)}
+		"resistancePierceByElement": XLiuying.pierce_by_element(item, a, _resistance_pierce_by_element(a))}  # 流萤赤染之茧：火穿透取 max(原值, 33)
 	var registry: XModuleRegistry = options.get("moduleRegistry", XModuleRegistry.standard())
 	var facts := {"orbMultiplier": orb_set_multiplier(item, a) if not dmg_type in [3, 4] else 1.0}
 	# Extra module facts are explicitly supplied value snapshots. The registered
