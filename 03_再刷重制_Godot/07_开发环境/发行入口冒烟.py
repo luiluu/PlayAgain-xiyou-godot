@@ -59,15 +59,25 @@ KEY_RUNS = [
 ]
 
 
-def windows(work: Path, check, keys=False) -> int:
+def windows(work: Path, check, keys=False, win_dir=None) -> int:
     exe = work / 'win' / '再刷一把_天启篇.exe'
     exe.parent.mkdir()
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
-                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
-    (work / '导出.log').write_text(p.stdout, encoding='utf-8')
+    if win_dir:
+        # 现成的包（发行出包.py）：exe 和 pck 拷进工作目录再跑，替身模板写在 pck 旁边，不往发行目录里放东西
+        src = Path(win_dir)
+        for f in ('再刷一把_天启篇.exe', '再刷一把_天启篇.pck'):
+            if not (src / f).is_file():
+                print(f'{src} 里没有 {f}')
+                return 2
+            shutil.copy(src / f, exe.parent / f)
+    else:
+        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
+        (work / '导出.log').write_text(p.stdout, encoding='utf-8')
+        if p.returncode != 0:
+            print(p.stdout[-3000:])
     pck = exe.with_suffix('.pck')
-    if p.returncode != 0 or not exe.is_file() or not pck.is_file():
-        print(p.stdout[-3000:])
+    if not exe.is_file() or not pck.is_file():
         print('导出失败')
         return 2
     blob = exe.read_bytes()
@@ -327,6 +337,7 @@ def main() -> int:
     ap.add_argument('--keep', action='store_true')
     ap.add_argument('--platform', choices=['macos', 'windows', 'android'], default='macos')
     ap.add_argument('--apk', help='--platform android：不导出，直接查现成的 apk')
+    ap.add_argument('--win-dir', help='--platform windows：不导出，直接查这个目录里现成的 再刷一把_天启篇.exe／.pck')
     ap.add_argument('--keys', action='store_true', help='另外跑按键冒烟')
     ap.add_argument('--keys-only', action='store_true', help='只跑按键冒烟（配合 --zip 验证现成的包）')
     a = ap.parse_args()
@@ -350,7 +361,7 @@ def main() -> int:
 
     def run() -> int:
         if a.platform in ('windows', 'android'):
-            code = windows(work, check, a.keys) if a.platform == 'windows' else \
+            code = windows(work, check, a.keys, a.win_dir) if a.platform == 'windows' else \
                 android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None)
             if code:
                 return code
