@@ -27,6 +27,12 @@ class FakeScene extends Node:
 	func is_title_page() -> bool:
 		return on_title
 
+## 当成地图页（XMapScene.touch_save_visible）：存档键只在地图与主菜单显示（fix1）
+class FakeMap extends Node:
+	var allow := true
+	func touch_save_visible() -> bool:
+		return allow
+
 func fake(path: String) -> FakeScene:
 	var s := FakeScene.new()
 	s.scene_file_path = path
@@ -213,12 +219,34 @@ func _run() -> void:
 	check("run_releases_shift", not Input.is_physical_key_pressed(KEY_SHIFT))
 	# 存档键＝键盘 ~（Mehmet_GhostButtons 的 Save，一键存档公共事件 428）
 	var save_center: Vector2 = (XTouchControls.BUTTONS.save.rect as Rect2).get_center()
+	# 照原版只在地图与主菜单（[Scene_Map, Scene_Menu]）：别的页面不显示、不吃触摸（fix1）
+	var not_map := fake(XPlatform.XIYOU_TITLE)
+	XTouchControls.scene_override = not_map
+	await frames(1)
+	check("save_hidden_off_map", pad.hit(save_center) == "" and not (pad._buttons.save as Panel).visible, pad.hit(save_center))
+	var fake_map := FakeMap.new()
+	XTouchControls.scene_override = fake_map
+	await frames(1)
+	check("save_shown_on_map", pad.hit(save_center) == "save" and (pad._buttons.save as Panel).visible)
+	fake_map.allow = false
+	await frames(1)
+	check("save_hidden_in_battle_or_subpage", pad.hit(save_center) == "" and not (pad._buttons.save as Panel).visible)
+	XTouchControls.SAVE_MAP_MENU_ONLY = false
+	XTouchControls.scene_override = not_map
+	check("save_rollback_all_pages", pad.hit(save_center) == "save")
+	XTouchControls.SAVE_MAP_MENU_ONLY = true
+	fake_map.allow = true
+	XTouchControls.scene_override = fake_map
+	await frames(1)
 	touch(0, save_center, true)
 	await frames(2)
 	check("save_holds_tilde", Input.is_physical_key_pressed(KEY_QUOTELEFT))
 	touch(0, save_center, false)
 	await frames(2)
 	check("save_releases_tilde", not Input.is_physical_key_pressed(KEY_QUOTELEFT))
+	XTouchControls.scene_override = null
+	not_map.free()
+	fake_map.free()
 	# 隐藏按键
 	var hide_center: Vector2 = (XTouchControls.BUTTONS.hide.rect as Rect2).get_center()
 	touch(0, hide_center, true)
@@ -380,6 +408,48 @@ func _run() -> void:
 	await frames(1)
 	var import_btn := title_page.find_child("ImportSave", true, false) as Button
 	check("title_transfer_buttons", import_btn != null and title_page.find_child("ExportSave", true, false) != null)
+	# 真触摸点按钮中心（审查 50 P2-1：存档键曾盖住「导出存档」）：按钮收到、存档键没收到 ~
+	# 每个按钮用一个新标题页（按下去会换页，盖住另一个）
+	title_page.queue_free()
+	await frames(1)
+	var title_hits := {}
+	for n in ["ExportSave", "ImportSave"]:
+		var tp: Control = load("res://modes/xiyou/entry.tscn").instantiate()
+		add_child(tp)
+		XTouchControls.scene_override = tp
+		await frames(1)
+		var btn := tp.find_child(n, true, false) as Button
+		title_hits[n] = 0
+		btn.pressed.connect(func(): title_hits[n] += 1)
+		var c: Vector2 = btn.get_global_rect().get_center()
+		emulated_click(c, true)
+		touch(0, c, true)
+		await frames(1)
+		check("title_touch_no_tilde_" + n, not Input.is_physical_key_pressed(KEY_QUOTELEFT) and pad.hit(c) == "")
+		emulated_click(c, false)
+		touch(0, c, false)
+		await frames(1)
+		tp.queue_free()
+		await frames(1)
+	check("title_touch_export_pressed", title_hits.ExportSave == 1, title_hits)
+	check("title_touch_import_pressed", title_hits.ImportSave == 1, title_hits)
+	# 刘海机：右缩进 80 把「隐藏按键」推到左边，标题两个按钮跟着往左让，不重叠
+	pad.set_insets([0.0, 0.0, 80.0, 0.0])
+	var notch_page: Control = load("res://modes/xiyou/entry.tscn").instantiate()
+	add_child(notch_page)
+	await frames(1)
+	var notch_ok := true
+	for n in ["ImportSave", "ExportSave"]:
+		var r := (notch_page.find_child(n, true, false) as Button).get_global_rect()
+		notch_ok = notch_ok and not r.intersects(pad.rects.hide) and pad.hit(r.get_center()) == ""
+	check("title_buttons_clear_notch", notch_ok, [pad.rects.hide, (notch_page.find_child("ExportSave", true, false) as Button).get_global_rect()])
+	notch_page.queue_free()
+	pad.set_insets([0.0, 0.0, 0.0, 0.0])
+	XTouchControls.scene_override = null
+	title_page = load("res://modes/xiyou/entry.tscn").instantiate()
+	add_child(title_page)
+	await frames(1)
+	import_btn = title_page.find_child("ImportSave", true, false) as Button
 	XSaveTransfer.dialog_override = func(_mode, _filename, done): done.call(true, PackedStringArray([file]), 0)
 	if import_btn != null:
 		import_btn.pressed.emit()

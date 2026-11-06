@@ -245,9 +245,17 @@ func _add(b: Button, fn: Callable) -> void:
 
 
 ## 平台三期：原版二合一包标题右上的「导入存档」「导出存档」（只在触屏；虚拟按键「隐藏按键」在它们右边）。
+## 刘海机右缩进或调过按键位置，「隐藏按键」（存档键回退成所有页面显示时连同存档键）挡在这一行时，两个按钮整体往左让（审查 50 P2-1）。
 func _add_transfer_buttons() -> void:
 	var top := maxf(8.0, XPlatform.safe_insets(get_viewport())[1])
-	for spec in [["ImportSave", "导入存档", 940.0, _import_save], ["ExportSave", "导出存档", 1055.0, _export_save]]:
+	var right := 1160.0
+	var pad := XTouchControls.instance
+	if pad != null:
+		var row := Rect2(940.0, top, 220.0, 40.0)
+		for key in ["hide", "save"]:
+			if pad.rects.has(key) and (key == "hide" or pad.save_shown()) and (pad.rects[key] as Rect2).intersects(row):
+				right = minf(right, (pad.rects[key] as Rect2).position.x - 10.0)
+	for spec in [["ImportSave", "导入存档", right - 220.0, _import_save], ["ExportSave", "导出存档", right - 105.0, _export_save]]:
 		var b := Button.new()
 		b.name = spec[0]
 		b.text = spec[1]
