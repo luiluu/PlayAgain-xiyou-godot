@@ -63,6 +63,24 @@
 - 已做：`xiyou_export.py` 遇到 valid=false 的 .import 自动删掉重导；`xiyou_sv_smooth` 里加了全 generated/img 坏导入扫描。
 - 建议：`新建工作树.sh --补齐` 克隆 generated 时也扫一遍 `valid=false` 的 .import（这次三棵树都带着坏导入），归工具车道。
 
+## EC′（接 EB，同分支；在工作树 priceless-hofstadter-fa63e4 做，generated／.godot 从 competent-ishizaka 克隆）
+
+### 变更记录草稿
+
+## 2026-11-06 【cc·悟空·未经审查】actor_p0 只在云端挂的 recruit_11 查清；179 切片参照在新源上补跑（dev.待定）
+
+- **① recruit_11 的根**：大厅 Map004 有漩涡过场（`CodexWhisper.seen('rift1')` 为假时自动播，播完 `mark`），配置 `codexWhisperSeen` 存在测试目录的 options.json 里、不跟存档。本机 `user://test_xiyou_actor_p0/options.json` 留着上次运行记下的 rift1，所以不播；云端每次全新目录，过场占住地图 600 帧以上，测试等满 600 帧后照样调第一个招募公共事件 13，`run_common_event` 见地图忙直接返回 → 里德没进队。属于测试依赖残留状态（不是环境或工具差异）。复现：本机把测试目录挪开再跑，挂同一条；改后：测试开头删掉旧 options.json、按默认值重读、标记 rift1 已看（只验招募），并在每次调事件前加 `map_idle_before_<id>` 断言，地图还忙时明确记挂，不再算成「没招进来」。反向验证：去掉标记那行 → `map_idle_before_11 [13,600]` 与 recruit_11 一起挂。没加豁免。
+- **③ 179 两条缺参照**：探针本来就有（`mv_oracle/slice_probe.cjs`，`xiyou_slice.json` 已含 179，dev 之前流萤第一期加的），缺的只是参照没在新源上重跑。在新源上 `XIYOU_PROBE_ACTORS=179 node slice_probe.cjs 2`（14 秒，1264 行伤害，0 错误）跑出 179，并进本分支 generated/oracle/slice_d2.json（本机与云端快照 refs/ci/generated/cc/wukong-newsrc10），actor_p0 本机 3680/3680。集成那边整份同步跑新源时会自然带上 179，不用另改探针。
+
+### 验证（EC′）
+
+- actor_p0 本机 3680/3680（179 并进参照后；只改测试时 3676/3678，剩两条 179）；清空测试目录连跑两次都过。
+- 云端（actor_p0、actor_book、hidden_actors、sv_smooth，运行 42298148899，带并进 179 的快照）：4 个全过。
+
+### 可优化
+
+- 建议：别的在 Map004 起跑、用 `XSave.dir_override` 的测试也会吃同一个过场（首跑与再跑结果不同）；可以在测试公共初始化里统一标记 rift1，或让云端与本机一样每次清测试目录。归工具车道。
+
 ## 本分支提交（EB）
 
 - 73dfc8ca v0.62 SV 归一平滑＋专项 xiyou_sv_smooth
