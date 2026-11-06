@@ -57,6 +57,11 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_actor_p0"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# 每次从同一状态起跑：上次留下的 options.json 删掉（云端每次都是新目录、本机会留着，结果曾因此不同）；
+	# 大厅 Map004 有漩涡过场（CodexWhisper.seen('rift1') 为假时自动播，占住地图好几百帧），这里只验招募，标成看过
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = ""  # 删了文件后重新按默认值读
+	XConfig.whisper_mark("rift1")
 	XMessageBox.auto = true
 	var d = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/slice_d2.json"))
 	if not d is Dictionary:
@@ -112,6 +117,8 @@ func _run() -> void:
 		while map.busy and waited < 600:  # 上一个公共事件的尾声（提示、刷新）可能还占着地图
 			await get_tree().process_frame
 			waited += 1
+		# 地图还占着时 run_common_event 直接返回、事件没跑：明确记挂，别算成「没招进来」
+		_check("map_idle_before_%d" % id, not map.busy, [ce, waited])
 		await map.run_common_event(ce)
 		for i in 3:
 			await get_tree().process_frame
