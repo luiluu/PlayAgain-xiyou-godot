@@ -968,8 +968,10 @@ func _effect_apply(index: int, row: Dictionary, tag := "effect") -> void:
 	var r := logic.apply(a, XDB.rec("Skills", 1), e)
 	var label := "%s.apply.%d" % [tag, index]
 	var info := [sid, row.phase, row.shield, row.low]
-	check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
-	check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
+	# 2721（newsrc6）额外扣 atk×45：参照敌人生命加了 1e9 打不死，这边敌人是原值会被打死，满血行只比掉血方向
+	if not (sid == 2721 and not bool(row.low)):
+		check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
+		check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
 	check(label + ".xmx", e.state_data.get("_xmx") == row.e.xmx, [info, row.e.xmx, e.state_data.get("_xmx")])
 	check(label + ".var", s.variable(1174) == float(row.vars[0]), [info, row.vars, s.variable(1174)])
 	check(label + ".e_hp_dir", signf(e.hp - e_hp) == signf(float(row.e.hp) - float(row.before.ehp)), [info, row.before.ehp, row.e.hp, e_hp, e.hp])
