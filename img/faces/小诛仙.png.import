@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bf04x5uhi300i"
-valid=false
+uid="uid://baoawuk4bsbmn"
+path="res://.godot/imported/小诛仙.png-0ad72d9572ef2e5355c1c079a4d4ddf8.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://modes/xiyou/generated/img/faces/小诛仙.png"
+dest_files=["res://.godot/imported/小诛仙.png-0ad72d9572ef2e5355c1c079a4d4ddf8.ctex"]
 
 [params]
 
