@@ -246,6 +246,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	map_data = XDB.map(id)
 	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
 	XYunshangOrders.on_map_setup(s, s.map_id, id)  # 云裳 Game_Map.setup 包装：未知战斗记来源地图（不朽天丝用）
+	XAbyssMerchant.on_map_setup(s, s.map_id, id)  # 深渊商人 Game_Map.setup 包装：商人路线地图开新一轮
 	s.map_id = id
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
@@ -1486,6 +1487,16 @@ func open_forget_skill(actor_id: int) -> void:
 func open_inlay_book() -> void:
 	hud.visible = false
 	var page := XInlayBook.new()
+	ui.add_child(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
+## 深渊／不朽商人：CodexAbyssMerchant.openCurrent → SceneManager.push(Scene_Merchant29)，关闭后回到地图（事件等它关掉，见 XAbyssMerchant）
+func open_merchant29() -> void:
+	hud.visible = false
+	var page := XMerchant29Page.new()
 	ui.add_child(page)
 	await page.closed
 	page.queue_free()

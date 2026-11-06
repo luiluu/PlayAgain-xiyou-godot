@@ -182,6 +182,14 @@ static func run(code: String, interp) -> Array:
 	if casino:
 		await XCasinoBatch.open(interp, "twenty" if casino.get_string(1) == "twenty" else "single")
 		return []
+	# 深渊／不朽商人（installAbyssMerchantRuntime，XAbyssMerchant）：CE1439 末条领战利品点、商人事件第 2 页打开商人。
+	# 只在 MVEvent.MERCHANT29_FIX 时能整段走到这里（原版字符串参数只剩第一个字符，见 MVInterpreter 355）
+	if js == "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);":
+		await XAbyssMerchant.complete(s, interp)
+		return []
+	if js == "CodexAbyssMerchant.openCurrent(this);":
+		await XAbyssMerchant.open_current(interp)
+		return []
 	# 洪荒诅咒自选（公共事件 1442，见 XHonghuang）：开头列候选、连问 5 次、写变量 1468～1472 三段
 	if await _honghuang_curse(js, interp):
 		return []
