@@ -49,3 +49,9 @@
 - cacd36c4 WIP：发行入口冒烟加安卓、安卓版本号
 - WIP：优化登记 O-待定·安卓版本号
 - 交付单 cc_platform-tools1（本提交）
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 安卓版本号按开发编号（`addons/xiyou_export` 导出插件、`XAndroidVersion.AUTO`；`project.godot` 启用插件） | 原版没有安卓包；导出预设写死 versionCode 1／versionName 0.0.0 | 导出安卓时 versionCode 取开发编号数字（dev.383→383），versionName 写「0.<数字>」 | 每次出包版本号自增，装新包能覆盖旧包、看得出是哪一版；正式上架版本号等 Kyo 定（DZ 交付单「需要用户决定」） | `XAndroidVersion.AUTO = false`（回到预设里的 1／0.0.0） | cc（平台 DZ） | 待用户决定 |
