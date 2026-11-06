@@ -2708,8 +2708,8 @@ for name in filter(None, files):
         base = self.g('rev-parse', 'main')
         self.assertEqual(self.call(), 0, self.last_output)
         self.register()
-        self.assertEqual(self.call('--finish', '--cloud'), 1)
-        self.assertIn('--cloud 只和 --affected', self.last_output)
+        self.assertEqual(self.call('--finish', '--cloud', '--batch'), 1)
+        self.assertIn('--cloud 不配 --batch', self.last_output)
         self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
         self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base, '--cloud', 'upload_skip=1'])
         self.assertIn('验证: 选测（基准 ' + base[:9], self.g('log', '-1', '--format=%B', 'main'))  # tools43：原来写成「基准 --cloud」
@@ -2760,6 +2760,20 @@ for name in filter(None, files):
         body = self.g('log', '-1', '--format=%B', 'main')
         self.assertIn('手补已验: 快照 deadbeefd', body)
         self.assertFalse((self.root / '.git/xiyou_cloud_snapshot').exists())
+
+    def test_finish_cloud_without_affected_is_full_run_in_cloud(self):
+        """tools73：--finish --cloud 不加 --affected＝整轮在云端（检查.sh --oracle --cloud，不带 --affected），尾注「验证: 全量（云端）」。"""
+        self.github()
+        log = Path(self.tmp.name) / 'check_args'
+        checker = self.root / merge.ENV / '检查.sh'
+        checker.write_text('#!/bin/zsh\necho "$*" >> %s\n' % log); checker.chmod(0o755)
+        self.g('add', '.'); self.g('commit', '-m', 'args checker')
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        self.assertEqual(self.call('--finish', '--cloud'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle', '--cloud'])
+        self.assertIn('验证: 全量（云端）', self.g('log', '-1', '--format=%B', 'main'))
 
     def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
         """云端判失败（检查.sh 非零，覆盖通过以外的失败、超时、不可用）：保留现场，不提交收尾、不清理、不推送。"""

@@ -177,7 +177,7 @@ def file_digest(path: Path) -> bytes:
     return h.digest()
 
 
-def tools_digest(root: Path = None) -> str:
+def tools_digest(root: Path = None, skip=()) -> str:
     """决定转换产物的本库文件：03_转换工具 下受 Git 跟踪的文件（ui_reference、.md 与只读检查工具除外），按路径与内容摘要。"""
     root = root or ROOT
     tools = TOOLS_REL
@@ -186,7 +186,7 @@ def tools_digest(root: Path = None) -> str:
     h = hashlib.sha256()
     for rel in sorted(x for x in out.split('\0') if x.startswith(tools + '/')):
         if ('/ui_reference/' in rel or rel.endswith('.md') or Path(rel).name in READ_ONLY_TOOLS
-                or not (root / rel).is_file()):
+                or rel in skip or not (root / rel).is_file()):
             continue
         h.update(rel.encode() + b'\0' + file_digest(root / rel))
     return h.hexdigest()
@@ -199,6 +199,53 @@ def outputs_digest(gen: Path) -> str:
         if p.is_file() and p.name != STAMP and p.suffix != '.import':
             h.update(p.relative_to(gen).as_posix().encode() + b'\0' + file_digest(p))
     return h.hexdigest()
+
+
+PRESETS_REL = TOOLS_REL + '/event_presets.json'
+# 事件状态探针的结果是「每个预设变体一条」，互相独立（BO 分段并行也靠这点）。车道只改了 event_presets.json、合并时 main 又多了别的车道的预设行，
+# 车道产物里缺那几行的结果；这里把车道结果和 main 现有产物里的对应结果按合并后预设文件的顺序拼起来，逐字等于整份重跑的输出（tools73）。
+PRESETS_MERGE_JS = r'''
+const fs = require('fs'), [out, order, laneFile, mainFile, presets] = process.argv.slice(1);
+const lane = JSON.parse(fs.readFileSync(laneFile, 'utf8')), main = JSON.parse(fs.readFileSync(mainFile, 'utf8'));
+const head = d => JSON.stringify([d.sourceIdentity, d.setup]);
+if (head(lane) !== head(main)) { console.error('来源或设置不同'); process.exit(3); }
+const rows = Object.fromEntries(JSON.parse(fs.readFileSync(presets, 'utf8')).cases.map(p => [p.base + '#' + p.tag, p]));
+const pick = (doc, id) => doc.cases.find(c => c.id === id);
+const cases = [], skipped = [], version = lane.sourceIdentity.releaseVersion;
+for (const id of JSON.parse(order)) {
+  // goneIn：这一版基础用例已没了的预设，探针跳过并记进 skippedPresets（同 event_state_probe.cjs）
+  if ((rows[id].goneIn || []).includes(version)) { skipped.push(id); continue; }
+  const want = JSON.stringify(rows[id].preset), base = rows[id].base;
+  const hit = [lane, main].map(d => pick(d, id)).find(c => c && JSON.stringify(c.preset) === want && c.base === base);
+  if (!hit) { console.error('没有可用结果：' + id); process.exit(3); }
+  cases.push(hit);
+}
+fs.writeFileSync(out, JSON.stringify(Object.assign({sourceIdentity: lane.sourceIdentity, setup: lane.setup, cases}, skipped.length ? {skippedPresets: skipped} : {})));
+console.log(JSON.stringify({cases: cases.length}));
+'''
+
+
+def presets_merge_plan(worktree: Path, gen: Path, lane_gen: Path):
+    """车道与合并后 main 的转换工具只差 event_presets.json 时的拼接方案：先在临时文件里拼好并核对（此时不动任何产物）；
+    认不出（任何一处拿不准）返回 (None, 原因)，调用方照旧完整同步。"""
+    try:
+        if tools_digest(skip={PRESETS_REL}) != tools_digest(worktree, skip={PRESETS_REL}):
+            return None, '转换工具除预设外也不同'
+        main_cases = json.loads((ROOT / PRESETS_REL).read_text())['cases']
+        order = [c['base'] + '#' + c['tag'] for c in main_cases]
+        if len(set(order)) != len(order):
+            return None, '预设行的 base#tag 不唯一'
+        lane_file, main_file = lane_gen / 'oracle/event_states.json', gen / 'oracle/event_states.json'
+        if not lane_file.is_file() or not main_file.is_file():
+            return None, '车道或 main 缺 event_states.json'
+        merged = Path(tempfile.mkdtemp(prefix='xiyou_presets_merge_')) / 'event_states.json'
+        p = subprocess.run(['node', '-e', PRESETS_MERGE_JS, str(merged), json.dumps(order), str(lane_file), str(main_file),
+                            str(ROOT / PRESETS_REL)], capture_output=True, text=True)
+        if p.returncode:
+            return None, (p.stderr.strip() or p.stdout.strip() or '拼接被拒')[:120]
+        return {'merged': str(merged)}, None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None, '预设方案读取失败'
 
 
 def clone_from_worktree(worktree: Path, gen: Path):
@@ -215,12 +262,16 @@ def clone_from_worktree(worktree: Path, gen: Path):
         return None, '车道同步指纹无法读取'
     if not isinstance(stamp, dict):
         return None, '车道同步指纹格式无效'
-    if stamp.get('toolsDigest') != tools_digest():
-        return None, '合并后 main 的转换工具文件与车道同步时不同'
     if stamp.get('toolsDigest') != tools_digest(worktree):
         return None, '车道同步后又改了转换工具文件'
     if outputs_digest(lane_gen) != stamp.get('outputsDigest'):
         return None, '车道产物在同步后被改动'
+    if stamp.get('toolsDigest') != tools_digest():
+        # main 合并后的转换工具与车道同步时不同：只差 event_presets.json（多了别的车道已合进来的预设行）时拼接复用，否则完整同步（tools73）
+        plan, why = presets_merge_plan(worktree, gen, lane_gen)
+        if plan is None:
+            return None, '合并后 main 的转换工具文件与车道同步时不同（' + why + '）'
+        return (lane_gen, dict(stamp, presetsMerge=plan)), None
     return (lane_gen, stamp), None
 
 
@@ -960,7 +1011,11 @@ def _main() -> int:
             if subprocess.run(['cp', '-c', '-R', str(lane_gen), str(gen)]).returncode or not (gen / 'manifest.json').exists():
                 shutil.rmtree(gen, ignore_errors=True)
                 shutil.copytree(lane_gen, gen)
-            if outputs_digest(gen) != stamp.get('outputsDigest'):
+            if stamp.get('presetsMerge'):
+                # 只差预设行：event_states.json 用方案阶段在临时文件里拼好的那份（克隆前已核对）；其余产物与车道指纹一致
+                shutil.copyfile(stamp['presetsMerge']['merged'], gen / 'oracle/event_states.json')
+                log.write('只差预设行：event_states.json 由车道结果与 main 现有结果按预设顺序拼成\n')
+            elif outputs_digest(gen) != stamp.get('outputsDigest'):
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
         else:
