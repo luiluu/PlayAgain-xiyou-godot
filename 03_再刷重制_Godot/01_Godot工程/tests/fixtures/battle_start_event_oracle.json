@@ -1,7 +1,7 @@
 {
  "source": "data/CommonEvents.json",
- "sha256": "9ac8c1d2b97ec9c48e44f1172b5d51344e81702a7043d2cfc57fb379cb8c7a80",
- "managers": "906d0a32e2d3a7d5a1fb095f71f3e554b3e311a95bd69f0afeac85aa17166513",
+ "sha256": "f88d9030a88fc442d8c64cb63f523ca9cd657a6a49f21f1cd19170f76177d8ff",
+ "managers": "c024b2d9555cf3686e4153b36a0e919aa3d2f6c91720fc3ba2f2f98a1cfebcf9",
  "cases": [
   {
    "id": "plain",
