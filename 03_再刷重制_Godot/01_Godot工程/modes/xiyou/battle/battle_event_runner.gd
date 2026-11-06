@@ -21,6 +21,35 @@ func _init(l: XBattleLogic = null, commands: Array = [], first: XBattler = null,
 		logs = shared_logs
 
 
+## 覆盖记录（只给对照测试用，默认 null＝关，不改游戏行为；cc events13）：设成字典后每执行一条指令记「位置:下标」——
+## 敌群页根游标记 tTpP（T 敌群号、P 页号），公共事件（117 子游标或预约公共事件的根游标）记 ceN，其余子游标不记。
+## 101 连带消费的 401／102 续行下标也算执行到（同 xiyou_event_compare 的 CoverInterp）。
+static var COVER = null
+
+
+func _execute(c: Dictionary):
+	if COVER == null:
+		return super._execute(c)
+	var where := _cover_where()
+	var start := index
+	var r = super._execute(c)
+	if where != "":
+		var last := index if int(c.code) == 101 else start
+		for i in range(start, last + 1):
+			COVER["%s:%d" % [where, i]] = true
+	return r
+
+
+func _cover_where() -> String:
+	if common_id > 0:
+		return "ce%d" % common_id
+	if has_meta("common_event"):
+		return "ce%d" % int(get_meta("common_event"))
+	if _depth == 0 and has_meta("page") and int(get_meta("page")) >= 0 and logic != null:
+		return "t%dp%d" % [int(logic.troop_id), int(get_meta("page"))]
+	return ""
+
+
 func state() -> XState:
 	return logic.state
 

@@ -31,7 +31,16 @@ const KNOWN_DIFF := {}
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
 
+## --coverage=<文件>（cc events13）：另记每例实际执行到的敌群页／公共事件指令（XBattleEventRunner.COVER，「tTpP:下标」或「ceN:下标」），
+## 写成 JSON 给 03_转换工具/敌群页覆盖.py；byCase 以参照用例序号为键（五轮随机种子的并集）。不加时 COVER 保持 null，测试行为不变。
+var coverage_out := ""
+var coverage_by_case := {}
+
+
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--coverage="):
+			coverage_out = arg.substr(11)
 	_run.call_deferred()
 
 
@@ -126,24 +135,68 @@ func _run() -> void:
 	MVInterpreter.fixed_random = 0.5
 	for k in range(part, ref.cases.size(), parts):
 		var c: Dictionary = ref.cases[k]
-		check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
-		if c.has("preset"):
-			_preset_case(c)
+		if coverage_out != "":
+			XBattleEventRunner.COVER = {}
+			_case_dispatch(c)
+			coverage_by_case[str(k)] = XBattleEventRunner.COVER.keys()
+			XBattleEventRunner.COVER = null
 			continue
-		if c.has("turnPreset"):
-			_turn_preset_case(c)
-			continue
-		if c.has("hpRate"):
-			for round in range(1 if oracle_half else 3):
-				_transform_case(c, round)
-			continue
-		for round in range(1 if oracle_half else 5):
-			_case(c, round)
+		_case_dispatch(c)
 	if _seen739:
 		check("troop739.extra_hit_exists", _extra_hits > 0, _extra_hits)
 	if part == 0:
 		_unit_checks()
+	if coverage_out != "":
+		var all := {}
+		for k in coverage_by_case:
+			for x in coverage_by_case[k]:
+				all[x] = true
+		var fc := FileAccess.open(coverage_out, FileAccess.WRITE)
+		fc.store_string(JSON.stringify({"note": "xiyou_troop_events --coverage：对照里实际执行到的敌群页／公共事件指令（位置:下标）",
+			"part": part, "parts": parts, "executed": all.keys(), "byCase": coverage_by_case}))
+		fc.close()
 	finish()
+
+
+func _case_dispatch(c: Dictionary) -> void:
+	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
+	if c.has("preset"):
+		_preset_case(c)
+		return
+	if c.has("turnPreset"):
+		_turn_preset_case(c)
+		return
+	if c.has("hpRate"):
+		for round in range(1 if oracle_half else 3):
+			_transform_case(c, round)
+		return
+	for round in range(1 if oracle_half else 5):
+		_case(c, round)
+
+
+## t1（cc events13，敌群页覆盖.py 的「页条件：回合 3+3·X」簇）：回合计数预置 N，先跑开战检查（第 N 回合）再跑第 N+1 回合。
+## 只比两段各自的对话与强制行动［行动者, 技能］（强制行动排在该段行动最前）；守层者第 1 页按随机变量 844 选强制技能，
+## 事件里的随机同参照取 0.5（_half_events），伤害与目标随机不比。
+func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
+	if not oracle_half:
+		logic.random.rule = _half_events(logic.random.rule)
+	var n := int(c.turnPreset)
+	logic.turn = n
+	var phases := {n: logic.run_events(), n + 1: []}
+	if not (logic.is_won() or logic.is_lost()):
+		var cmds := {}
+		for a in logic.actors:
+			cmds[a] = [XDB.rec("Skills", 1), logic.enemies[0]]
+		phases[n + 1] = logic.run_turn(cmds)
+	for t in phases:
+		var tag := "start" if t == n else "turn"
+		var msgs: Array = phases[t].filter(func(l): return l.type == "message").map(func(l): return [str(l.msg.face), "\n".join(l.msg.lines)])
+		var want_msgs: Array = c.messages.filter(func(m): return int(m.turn) == t).map(func(m): return [str(m.faceName), "\n".join(m.texts)])
+		check(name + ".t1_%s_messages" % tag, msgs == want_msgs, [msgs, want_msgs])
+		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
+		var got: Array = phases[t].filter(func(l): return l.type == "action").map(func(l): return [key(l.user, logic), int(l.skill.id)])
+		check(name + ".t1_%s_forced" % tag, got.slice(0, want.size()) == want, [got, want])
+	check(name + ".t1_skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 
 
 ## 开战前改敌人 HP（参照 preset），只比开场敌群事件后的敌人 HP 与状态（十五层副本敌群 160：控尸者 HP≤1% 时两只丧尸战斗不能）
@@ -166,6 +219,9 @@ func _preset_case(c: Dictionary) -> void:
 func _turn_preset_case(c: Dictionary) -> void:
 	var name := "troop%d.turn%d" % [int(c.troop), int(c.turnPreset) + 1]
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 3000)
+	if str(c.get("variant", "")) == "t1":
+		_turn_page_case(c, name, logic)
+		return
 	var mhp := {}
 	for a in logic.actors:
 		mhp[key(a, logic)] = a.mhp
