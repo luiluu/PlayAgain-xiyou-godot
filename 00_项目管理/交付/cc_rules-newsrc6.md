@@ -1,7 +1,7 @@
 # 交付：cc/rules-newsrc6
 
 - 车道／工作者：C 规则／rules（cc）。从集成头 21cd90eb 切出，交回集成分支。
-- 状态：可合并（只有本交付单，没有代码改动）
+- 状态：可合并（第三单 DV 有一处战斗核心钩子改动，见下）
 
 ## 任务（总装定）
 
@@ -54,7 +54,7 @@ DN 伤害取整口径：流萤二期 firefly 例里敌人普攻打流萤，基�
 
 ---
 
-# 第三单：DV 旧核查开着的战斗项逐条销账（总装加派，同分支）——未开始，40% 线交接
+# 第三单：DV 旧核查开着的战斗项逐条销账（总装加派，同分支）——已交（第二棒）
 
 ## 接续（给下一棒）
 
@@ -63,3 +63,65 @@ DN 伤害取整口径：流萤二期 firefly 例里敌人普攻打流萤，基�
 - 每条：读原报告 → 新源复现（探针显式 `XIYOU_APP=…/冻结正式源/v0.62.12/app.nw`；临时脚本放 `mv_oracle/.sandbox/`，`require('../shared/host.cjs')`，结尾 `process.exit`）→ 三选一：早已修（写提交＋覆盖测试）／现在修（测试先在旧代码上挂，原版代码错误放开关后）／不修（写理由）。
 - 产出：本节下面加一张销账表（报告｜编号｜结论｜依据）。
 - 小坑：node 宿主里的数组用 `length = 0`／`push` 改，别整个替换成 node 数组（`contains` 不在，会抛）；`makeCase` 吞异常，临时打点自己包 try/catch。
+
+## DV 结论（第二棒，cc rules）
+
+全部 20 项都定了性：**现在修 1 项**（饿狼被反射不记帧），**不修 1 项**（只在回退支），其余 18 项早已修或核过一致。另外顺手把两份渡鸦夹具在新源上重量了。
+
+### 销账表
+
+| 报告 | 编号 | 结论 | 依据 |
+|---|---|---|---|
+| 审查 42 | P2-1 三结义给死者加状态 | 早已修 | `7031eb04`（events5c，dev.339）：`mv_script.gd` 加状态前跳过带死亡状态 1 的；审查 43 甲 2 已复核。新源：generated `event_states.json`（v0.62.12）里 3 个 dead 变体（ce43×2、ce236）死者不得 708，`xiyou_event_compare` 覆盖 |
+| 审查 42 | P3-1 渡鸦反射只比比例 | 早已修 | raven2（`fc6fdf63`，dev.334）：`xiyou_raven_reflect` 加逐段绝对值，edge 两例不加魔防，同参照。新源：探针在 v0.62.12 重量（见下），专项全过 |
+| 审查 42 | P3-2 反射分支只补渡鸦 `applied` | **现在修** | 云裳、饿狼的 refx 八例（`86a98b04`，raven3，dev.336）只比了扣血、生命、MP、状态，用的是没招募、形态 0 的饿狼，没有进化／解析被动。这次在新源上量了形态 3、6：原版魔法拳（10259 核分裂、10261 伽马射线暴）被反射回饿狼时，apply 包装照样记帧，行动结束**对自己加解析、进化 +1**；重制反射支不调 `XGarou.applied`，进化 0、解析空。探针加 `refg.*` 八例，专项加 `_refg`：旧代码上 8 项红（4 个 reflect 例的 evolution、analysis 各一项），`battle_logic._invoke` 反射支补一行 `XGarou.applied(u, skill, u, r, true)` 后 609/609。这是照原版补漏移植，不是原版错误，没加开关。镜流、黄泉的技能全是物理（不会被魔法反射）；甚尔唯一的魔法技能 10224 伤害为 0；云裳 refx 四例已对上，没再改 |
+| 审查 42 | P3-3 神话形态晚一击 | 早已修 | raven2（dev.334）查清是 krz 状态缓存时序（受伤充 TP 先消耗待刷新标记），照做；神话两例恢复进探针。新源重量后一致 |
+| 审查 43 | P3-1 `act()` 开头清陈旧偏早 | 早已修 | raven4（`a07f94cd`，dev.340）改清除点，探针 `refseq.*`；新源重量后一致 |
+| 审查 43 | P3-2 嵌套 apply 冲掉外层标记 | 早已修 | raven4（dev.340），探针 `refnest.*`；新源重量后一致 |
+| 审查 45 | P3-1 setHp「值变了」判早了 | 早已修 | raven5（`e60d54ce`，dev.352），O-192 `STALE_REFRESH_POINTS`，探针 `refmid.*`／`refzero`；审查 47 甲 1 已销账。新源重量后一致 |
+| 审查 45 | P3-2 跨行动清除点偏少 | 早已修 | 同上（raven5，dev.352；审查 47 确认） |
+| 审查 45 | P3-3 回退支连升多级 | 不修 | 新源复现：战斗中一次 `gainExp` 连升两级（60→62），原版两级都回到**进战斗时缓存**的上限（1 号：5215／2031，战后上限 5375／2093；渡鸦 167：4698／1193，战后 4826／1224），连续两次 `levelUp()` 也一样。重制回退支第二级取的是 61 级的上限，会不同。**只在 O-177 回退支**（`FIX_BATTLE_LEVELUP_MAX=false`），默认支按新上限回满，玩家碰不到。将来真要切回原版时，把「旧上限」改成整条升级链开始前取一次（`gain_exp`／`change_class`／`change_level_mv` 的循环外），再按上面数字补一例 |
+| 审查 41 | P3-4 `XSvPngFd.scale` 读 `skill_ids` | 早已修 | `cf248aab`（fix4，dev.331）改读 `skills()`，`xiyou_svpngfd` 的 `scale.skill_matches_skills` 覆盖。新源：v0.62.12 仍没有技能带 `<SvPngFd>`；新增了武器 4002／4003 带它，generated `svpng.json`（v0.62.12）已含这两件 |
+| 审查 40 | P3-1 `xiyou_dot` 两处恒真断言 | 早已修 | nezha-fix3（dev.328）改成真比较；审查 41 甲档「通过」 |
+| 审查 40 | P3-2 转换器对换行不敏感（732 等） | 早已修 | fix3：`ASI_BLOCK_HASHES`＋`AsiBlockTests`，去掉 732 跳过 |
+| 审查 40 | P3-3 施加者弱引用 | 核过一致 | fix3 量过无差异（敌群战斗中不删不换），加 `lifecycle.origin_ref*` |
+| 审查 40 | P3-4 `_damagedot` 生命周期 | 核过一致 | fix3：原版移除状态后也不清，加 `damagedot_survives_remove` |
+| 审查 40 | P3-5 状态改变只挂在 `_tick_states` | 不修（核过） | fix3：数据里只有 1328 带标签、只靠回合倒数消失，加 3 条普查断言盯数据 |
+| 审查 40 | P3-6 探针收窄靠文本引用 | 早已修 | tools62 自带 `test_no_reference_falls_back_to_converter`（`10446f95`，dev.317）盯住「没人引用就退回整组」 |
+| 审查 40 | P3-7 必中被动＋防具 4998 没测试 | 不修 | 代码与原版一致（审查 40 已对 `dsPassiveSkill` 1914～1927 核）。新源全库属性反弹只有防具 4998（角色穿），必中只看出手的角色，两者同时成立只在混乱时角色打角色；覆盖缺口，不影响玩家 |
+| 审查 40 | P3-8 血条显隐自证 | 早已修 | fix3：新探针 `hp_gauge_probe.cjs` 逐敌人比原版，去掉 `or e.hp <= 0` |
+| 审查 40 | P3-9 `is_guard` 缺 `canMove` | 早已修 | fix3：`guarding and can_move()`，`xiyou_passive` 加 2 条 |
+| 审查 40 | P3-10、P3-11、P3-12 | 早已修／无问题 | P3-10 报告自己写「无遗漏」；P3-11 头注释 fix3 已改；P3-12 报告写无问题 |
+
+### 新源复跑（顺手）
+
+- 两份渡鸦夹具原来是 v0.28 量的（`raven_reflect_oracle.json`、`raven_battle_oracle.json`）。在 v0.62.12 上重量：`raven_battle` 观测值逐例相同；`raven_reflect` 75 例里只有 `reffloor.*` 三例的 `rates.after` 不同（隐月 2521 每层暴击 0.2% → 2%，数据改动；专项本来就按数据库读每层值）。换成新源夹具后 `xiyou_raven_battle` 368/368、`xiyou_raven_reflect` 561/561（加 refg 前）。
+
+### 改动
+
+- `modes/xiyou/battle/battle_logic.gd`：`_invoke` 反射支加一行 `XGarou.applied`（**战斗核心，只加钩子行**）。
+- `mv_oracle/raven_reflect_probe.cjs`：加 `refg.*` 八例；`tests/xiyou_raven_reflect.gd`：加 `_refg`、`covers_all` 10→11；两份夹具换成 v0.62.12。
+
+### 验证
+
+- 本地：`xiyou_raven_reflect` 609/609、`xiyou_raven_battle` 368/368；`语法检查.py` 通过。
+- 选测（基准 21cd90eb）85 个场景，走云端：见下一行结果。
+- `事件空绿扫描.py --check`：**红 5 项**，都是「在预设里但 event_states.json 没量」（m234e26p0#a1 等），与本分支无关：本分支没碰 `event_presets.json`，是本树 generated 从集成树克隆来的 `event_states.json` 比预设旧。总装合并时用集成树最新产物再跑一次即可。
+
+### 变更记录草稿
+
+## 2026-11-06 【cc·rules·未经审查】旧核查战斗项销账；饿狼魔法拳被反射回自己照样记帧（dev.待定）
+
+- 审查 40～45 开着的 20 项战斗相关项逐条在新源 v0.62.12 上定性：18 项早已修或核过一致，45 P3-3（O-177 回退支连升多级）只在回退支、不修，42 P3-2 现在修。销账表在交付单 `cc_rules-newsrc6.md`。
+- 修：饿狼（173）形态 3 起的魔法拳（核分裂、伽马射线暴）被魔法反射回自己时，原版 apply 包装照样记帧，行动结束对自己加解析、进化 +1；重制反射支补调 `XGarou.applied`。探针 `raven_reflect_probe` 加 `refg.*` 八例。
+- 渡鸦反射、战斗两份夹具在 v0.62.12 重量（只差隐月每层 2%）。
+
+## 交接板
+
+- 用户试玩说明：饿狼的魔法拳被敌人反射回自己时，进化层数照样 +1（与原版一致）。
+- 需要用户决定：无。
+- 下一步：请审查线程把审查 40～45 这些项按上表销账；`重制步骤清单.md` 那行旧依据（第二单）仍请转审查线程改。
+
+## 待交叉核查
+
+- `battle_logic.gd` `_invoke` 反射支新加的 `XGarou.applied`：放在 `XRaven.applied` 之前，与常规路径（`_invoke` 末尾 `XGarou.applied` 在 `XRaven.applied` 前）同序；饿狼只在出手者是饿狼时记帧，别的角色被反射不受影响。
