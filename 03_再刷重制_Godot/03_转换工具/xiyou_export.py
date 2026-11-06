@@ -1850,7 +1850,8 @@ class Exporter:
                     dst = '.mp3'
                 if kind == 'audio' and dst == '.ogg':
                     out = self.audio_96k(f'{kind}/{rel}{dst}', data, prev)
-                self.write_changed(f'{kind}/{rel}{dst}', out, source=src)
+                # 重编码过的音频不能沿用源文件的修改时间：Godot 先看修改时间，时间没变就不重新导入，包里还是旧的高码率
+                self.write_changed(f'{kind}/{rel}{dst}', out, source=None if kind == 'audio' and out is not data else src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):
