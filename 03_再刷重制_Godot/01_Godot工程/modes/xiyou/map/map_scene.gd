@@ -33,6 +33,12 @@ var me: AudioStreamPlayer
 var hud: Control
 var map_hud: XMapHUD
 var transfer_page: XMapTransferScene
+## 事件打开的独立页面（商店、存档页、仓库、图鉴……，原版各是 SceneManager.push 出去的单独场景），存档键看它决定显示与否。
+var _scene_pages: Array = []
+## 安卓商店页存档键按了没反应：原版 Mehmet_GhostButtons 只在 Scene_Map／Scene_Menu 建存档键，Scene_Shop 等页面没有；
+## 重制这些页面挂在地图下，触屏存档键原规则只排除了战斗与菜单子页面，漏了事件打开的页面，而事件进行中一键存档热键不响应，
+## 于是键在、按了没反应。回退开关 = false：回到原规则（这些页面也显示存档键）（cc DH 2026-11-06，O-待定）。
+static var SCENE_PAGE_HIDES_SAVE := true
 var hang_overlay: XHangUpOverlay
 var difficulty_notice: XDifficultyNoticeCanvas
 ## O-015：事件、对话、战斗之外才挂机走动与自动存档（原版事件进行中角色也会继续随机走动，存档可能存进半段剧情）。
@@ -1303,7 +1309,7 @@ func input_text(prompt: String, default := "") -> String:
 		return str(box[0])
 	var dlg := XTextPrompt.new()
 	dlg.setup(prompt, default)
-	ui.add_child(dlg)
+	_add_scene_page(dlg)
 	var text: String = await dlg.closed
 	dlg.queue_free()
 	return text
@@ -1350,6 +1356,18 @@ func save_game(slot: int) -> bool:
 	return slot > 0 and XSave.save(slot)
 
 
+## 把事件打开的独立页面挂到 ui 上并记下（见 _scene_pages）。
+func _add_scene_page(page: Node) -> void:
+	ui.add_child(page)
+	_scene_pages.append(page)
+
+
+## 有没有事件打开的独立页面还开着（关掉、已排队释放的不算）。
+func scene_page_open() -> bool:
+	_scene_pages = _scene_pages.filter(func(p): return is_instance_valid(p) and p.is_inside_tree() and not p.is_queued_for_deletion())
+	return not _scene_pages.is_empty()
+
+
 func open_shop(goods: Array, purchase_only: bool) -> void:
 	# KMS_ShopInventory 在 Scene_Shop.prepare 补货并取走 apply 的库存组（先于宝珠商店的 start 关店）
 	var stock_group := XShopStock.open(XState.current)
@@ -1359,7 +1377,7 @@ func open_shop(goods: Array, purchase_only: bool) -> void:
 		return
 	var shop := XShop.new()
 	shop.setup(goods, purchase_only, stock_group)
-	ui.add_child(shop)
+	_add_scene_page(shop)
 	await shop.closed
 	shop.queue_free()
 
@@ -1374,7 +1392,7 @@ func open_save() -> void:
 	hud.visible = false
 	var page := XSaveScene.new()
 	page.mode = "save"
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1384,7 +1402,7 @@ func open_save() -> void:
 func open_achievements() -> void:
 	hud.visible = false
 	var page := XAchievementScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1394,7 +1412,7 @@ func open_achievements() -> void:
 func open_actor_book() -> void:
 	hud.visible = false
 	var page := XActorBook.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1404,7 +1422,7 @@ func open_actor_book() -> void:
 func open_enemy_book() -> void:
 	hud.visible = false
 	var page := XEnemyBookPage.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1414,7 +1432,7 @@ func open_enemy_book() -> void:
 func open_warehouse() -> void:
 	hud.visible = false
 	var page := XWarehouseScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1425,7 +1443,7 @@ func open_warehouse() -> void:
 func open_actor_warehouse() -> void:
 	hud.visible = false
 	var page := XActorWarehouseScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1437,7 +1455,7 @@ func open_star_warehouse(save_mode: bool) -> void:
 	hud.visible = false
 	var page := XStarWarehouseScene.new()
 	page.save_mode = save_mode
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1448,7 +1466,7 @@ func open_star_warehouse(save_mode: bool) -> void:
 func open_change_clothes() -> void:
 	hud.visible = false
 	var page := XChangeClothesScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1459,7 +1477,7 @@ func open_change_clothes() -> void:
 func open_pingbi() -> void:
 	hud.visible = false
 	var page := XPingbiScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1469,7 +1487,7 @@ func open_pingbi() -> void:
 func open_actor_advanced() -> void:
 	hud.visible = false
 	var page := XActorAdvancedScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1481,7 +1499,7 @@ func open_forget_skill(actor_id: int) -> void:
 		return
 	hud.visible = false
 	var page := XForgetSkillScene.new().setup(XState.current.actor(actor_id))
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1491,7 +1509,7 @@ func open_forget_skill(actor_id: int) -> void:
 func open_inlay_book() -> void:
 	hud.visible = false
 	var page := XInlayBook.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1501,7 +1519,7 @@ func open_inlay_book() -> void:
 func open_yunshang_shop() -> void:
 	hud.visible = false
 	var page := XYunshangShop.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1511,7 +1529,7 @@ func open_yunshang_shop() -> void:
 func open_tusu_forge() -> void:
 	hud.visible = false
 	var page := XTusuForge.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1521,7 +1539,7 @@ func open_tusu_forge() -> void:
 func open_xuan_chart() -> void:
 	hud.visible = false
 	var page := XXuanChartPage.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1531,7 +1549,7 @@ func open_xuan_chart() -> void:
 func open_pets() -> void:
 	hud.visible = false
 	var page := XPetScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1541,7 +1559,7 @@ func open_pets() -> void:
 func open_training() -> void:
 	hud.visible = false
 	var page := XTrainingScene.new()
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1552,7 +1570,7 @@ func open_race_menu(rank := 0) -> void:
 	hud.visible = false
 	var page := XRaceMenu.new()
 	page.rank = rank
-	ui.add_child(page)
+	_add_scene_page(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true
@@ -1586,6 +1604,8 @@ var _menu_closed_frame := -1
 ## 触屏存档键（XTouchControls.SAVE_MAP_MENU_ONLY）：照原版只在地图与主菜单（Scene_Map／Scene_Menu）显示；战斗中、菜单进了子页面不显示。
 func touch_save_visible() -> bool:
 	if _in_battle:
+		return false
+	if SCENE_PAGE_HIDES_SAVE and scene_page_open():
 		return false
 	if _menu_open:
 		for c in ui.get_children():
@@ -1738,7 +1758,7 @@ func open_transfer() -> void:
 	hud.visible = false
 	var page := XMapTransferScene.new()
 	page.background = shot
-	ui.add_child(page)
+	_add_scene_page(page)
 	transfer_page = page
 	var target: Dictionary = await page.closed
 	page.queue_free()

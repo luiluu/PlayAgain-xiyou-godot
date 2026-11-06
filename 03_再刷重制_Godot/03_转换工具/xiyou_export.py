@@ -35,6 +35,23 @@ HERE = Path(__file__).resolve().parent
 # 默认来源（tools80）：先认 XIYOU_APP（换源车道指向新源），没设就用本树的冻结正式源（车道工作树里是 --补齐 建的链接）；原来写死主工作区那份。
 DEFAULT_APP = Path(os.environ['XIYOU_APP']) if os.environ.get('XIYOU_APP') else HERE.parent / '02_内容与素材/冻结正式源/app.nw'
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
+# BGM 码率降到 96k（O-待定，见 Exporter.audio_96k）；XIYOU_AUDIO_96K=0 回到原样复制
+AUDIO_96K = os.environ.get('XIYOU_AUDIO_96K', '1') != '0'
+AUDIO_TARGET_KBPS = 96
+AUDIO_REENCODE_ABOVE = 112  # 96～112k 之间的不重编码：省不了多少，反而再损一次音质
+
+
+def ogg_vorbis_kbps(data):
+    """Ogg Vorbis 平均码率（kbps）：文件大小 ÷（最后一页的 granule 位置 ÷ 采样率）；不是 Vorbis 或读不出返回 None。"""
+    head = data.find(b'\x01vorbis')
+    last = data.rfind(b'OggS')
+    if head < 0 or last < 0 or len(data) < last + 14 or len(data) < head + 16:
+        return None
+    rate = struct.unpack_from('<I', data, head + 12)[0]
+    granule = struct.unpack_from('<q', data, last + 6)[0]
+    if rate <= 0 or granule <= 0:
+        return None
+    return len(data) * 8 / (granule / rate) / 1000
 ## 状态备注脚本里写死的战斗图名（XCostumes 认 var battlerName，XStateEffects costume_image 认 setBattlerImage）
 STATE_BATTLER_IMAGE = re.compile(r"""(?:setBattlerImage\(\s*|battlerName\s*=\s*)['"]([^'"]+)['"]""")
 TABLES = ['Actors', 'Classes', 'Skills', 'Items', 'Weapons', 'Armors', 'Enemies', 'Troops', 'States',
@@ -1831,7 +1848,10 @@ class Exporter:
                 dst = ext
                 if kind == 'audio' and ext == '.ogg' and not data.startswith(b'OggS') and (data.startswith(b'ID3') or data[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2')):
                     dst = '.mp3'
-                self.write_changed(f'{kind}/{rel}{dst}', out, source=src)
+                if kind == 'audio' and dst == '.ogg':
+                    out = self.audio_96k(f'{kind}/{rel}{dst}', data, prev)
+                # 重编码过的音频不能沿用源文件的修改时间：Godot 先看修改时间，时间没变就不重新导入，包里还是旧的高码率
+                self.write_changed(f'{kind}/{rel}{dst}', out, source=None if kind == 'audio' and out is not data else src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):
@@ -1847,6 +1867,43 @@ class Exporter:
             digest = sha(data)
             self.inputs[f'fonts/{name}'] = digest
             self.outputs[f'fonts/{name}'] = digest
+
+    def audio_96k(self, rel, data, prev):
+        """O-待定（DH 2026-11-06，Kyo「合理调整，目前音乐不太重要」）：BGM 平均码率高于 AUDIO_REENCODE_ABOVE 的重编码到
+        AUDIO_TARGET_KBPS（libvorbis 的 oggenc ABR，44.1k 采样率不变，LOOPSTART 等注释原样带上），三平台包体都小约 47 MB；
+        BGS／ME 本来就在 96k 以下，SE 短音不动。ffmpeg 解码加 bitexact、oggenc 固定流序号，同一份源两次转出逐字节相同。
+        没有 ffmpeg／oggenc（云端 Linux）时：源与上次产物都对得上就沿用上次的，否则原样复制并记 issue。
+        回退：环境变量 XIYOU_AUDIO_96K=0（或把 AUDIO_96K 改 False）后重跑同步＝原样复制。"""
+        if not AUDIO_96K or not rel.startswith('audio/bgm/') or not data.startswith(b'OggS'):
+            return data
+        kbps = ogg_vorbis_kbps(data)
+        if kbps is None or kbps <= AUDIO_REENCODE_ABOVE:
+            return data
+        digest = sha(data)
+        old = prev.get('outputs', {}).get(rel)
+        target = self.out / rel
+        if prev.get('inputs', {}).get(rel) == digest and old and old != digest and target.is_file() \
+                and sha(target.read_bytes()) == old and prev.get('audio96k') == AUDIO_TARGET_KBPS:
+            return target.read_bytes()
+        if not (shutil.which('ffmpeg') and shutil.which('oggenc')):
+            self.issues.append({'audioNeedsOggenc': rel})
+            return data
+        with tempfile.TemporaryDirectory(prefix='xiyou-audio-') as tmp:
+            src = Path(tmp) / 'in.ogg'
+            src.write_bytes(data)
+            tags = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'stream_tags', '-of', 'json', str(src)],
+                                  check=True, capture_output=True, text=True).stdout
+            comments = []
+            for st in json.loads(tags).get('streams', []):
+                for k, v in (st.get('tags') or {}).items():
+                    if k.lower() not in ('encoder',):
+                        comments += ['-c', f'{k.upper()}={v}']
+            wav = subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i', str(src), '-fflags', '+bitexact',
+                                  '-flags:a', '+bitexact', '-f', 'wav', '-'], check=True, capture_output=True).stdout
+            dst = Path(tmp) / 'out.ogg'
+            subprocess.run(['oggenc', '-Q', '-b', str(AUDIO_TARGET_KBPS), '-s', '1', *comments, '-o', str(dst), '-'],
+                           input=wav, check=True, capture_output=True)
+            return dst.read_bytes()
 
     def export_movie(self, name, prev):
         """原版 movies/<名>.webm（VP9＋Opus，3840×2160 30 帧）Godot 4 放不了（只认 Theora，本机 ffmpeg 又没有 Theora 编码器）：
@@ -1922,6 +1979,7 @@ class Exporter:
                     'sliceConfigSHA256': sha(json.dumps(self.cfg, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()),
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'formulaPrograms': {'version': 1, 'execution': 'explicit-runtime', 'tables': program_stats},
+                    'audio96k': AUDIO_TARGET_KBPS if AUDIO_96K else 0,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
         # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。
         changed = [rel for hashes in [self.inputs, runtime_inputs] for rel, digest in hashes.items()
