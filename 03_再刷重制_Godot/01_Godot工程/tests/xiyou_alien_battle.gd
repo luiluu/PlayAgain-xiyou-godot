@@ -320,3 +320,8 @@ func _hidden_v058(ref: Dictionary) -> void:
 	check("hidden_v058.no_encounter", XAlienBattle.setup_encounter(logic, rng) == null and XAlienBattle.encounter(logic) == null)
 	check("hidden_v058.no_grant", XAlienBattle.grant(logic) == false)
 	XAlienBattle.HIDDEN_V058 = false
+	# 默认（开关关）同一例照常遇到异化：Kyo 11-05「异化在重制里保持开启」
+	var logic2 := _logic(s, int(st.troop))
+	var rng2 := SeqStream.new()
+	rng2.seq = st.get("random", [])
+	check("hidden_v058.default_encounter", XAlienBattle.setup_encounter(logic2, rng2) != null)

@@ -901,7 +901,8 @@ static func burst(logic, t, all: bool) -> Array:
 	var logs := []
 	var list: Array = needles.get(t, [])
 	var take := list.size() if all else mini(1, list.size())
-	var src: XActor = logic.state.actor(ACTOR) if logic.state != null else null
+	# 原版 source=$gameActors.actor(n.owner) 只在有针可引爆时取；身上没针时不建 174 号对象（否则没入队的云裳被建出来，读档难度同步多学 6216）
+	var src: XActor = logic.state.actor(ACTOR) if logic.state != null and take > 0 else null
 	for i in range(take):
 		var n: Dictionary = list.pop_front()
 		for p in range(int(n.parts)):
