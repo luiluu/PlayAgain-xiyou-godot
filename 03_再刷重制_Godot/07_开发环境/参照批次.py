@@ -24,6 +24,7 @@ from pathlib import Path
 import re
 import shutil
 import sys
+import subprocess
 import time
 
 BATCH = 'oracle_batch.json'
@@ -199,16 +200,31 @@ def flux(git_common_dir):
         max_age = float(os.environ.get('XIYOU_MERGE_FLUX_MAX_AGE', FLUX_MAX_AGE))
     except ValueError:
         max_age = FLUX_MAX_AGE
-    if max_age > 0:
-        try:
-            age = time.time() - (Path(git_common_dir) / 'lane-merge' / 'state.json').stat().st_mtime
-        except OSError:
-            return 0
-        if age > max_age:
-            return 0
-    print(f'  ⚠ 总装正在合并 {state.get("branch", "?")}（阶段 {phase}），主工作区的 generated/ 还没定稿；'
+    try:
+        age = time.time() - (Path(git_common_dir) / 'lane-merge' / 'state.json').stat().st_mtime
+    except OSError:
+        return 0
+    # tools76：合并工具还在跑（running.lock 的持锁进程在、启动时间对得上）就算正在合并，不看时间。11-06 tools74 的合并同步
+    # 整份重量 event_state 一个小时，状态文件中途被改过（接受单等）又没超 30 分钟，车道一直看到提示却以为是没清的旧标记；
+    # 反过来同步超过 30 分钟时只看时间会把仍在同步的主工作区当成定稿。工具没在跑时照旧按时间认中断（tools61）。
+    holder = merge_tool_running(Path(git_common_dir) / 'lane-merge' / 'running.lock')
+    if not holder and max_age > 0 and age > max_age:
+        return 0
+    how = f'合并工具在跑（pid {holder}）' if holder else '合并工具没在跑，多半是总装在手改或解冲突'
+    print(f'  ⚠ 总装正在合并 {state.get("branch", "?")}（阶段 {phase}，状态 {int(age // 60)} 分钟前更新，{how}），主工作区的 generated/ 还没定稿；'
           '本次不从它刷新参照、不拿它比对，所以这次测试可能用着过期产物：等合并收尾后再 --补齐并补跑一次；XIYOU_IGNORE_MERGE_FLUX=1 照旧比对。')
     return 4
+
+
+def merge_tool_running(lock):
+    """running.lock 的持锁进程还在且启动时间对得上（同 合并车道.py take_lock 的判定）时返回 pid，否则 None。"""
+    owner = _read(lock)
+    pid = owner.get('pid') if isinstance(owner, dict) else None
+    if type(pid) is not int:
+        return None
+    started = subprocess.run(['ps', '-o', 'lstart=', '-p', str(pid)], capture_output=True, text=True,
+                             env=dict(os.environ, LC_ALL='C')).stdout.strip()
+    return pid if started and started == owner.get('startedAt') else None
 
 
 def main(argv):
