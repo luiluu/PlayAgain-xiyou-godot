@@ -659,7 +659,9 @@ static func _revive_cond(cond: Dictionary, t: XBattler, c: Dictionary) -> bool:
 static func _revive_amount(step: Dictionary, t: XBattler) -> float:
 	if step.has("amount"):
 		return float(step.amount)
-	var value := float(t.get(str(step.param))) * float(step.rate)
+	# 1725 新源 gainTp(target.maxTp())：max_tp 是方法，不是字段
+	var base: float = t.max_tp() if str(step.param) == "max_tp" else float(t.get(str(step.param)))
+	var value := base * float(step.rate)
 	match str(step.get("round", "")):
 		"floor":
 			return floorf(value)
@@ -713,6 +715,11 @@ static func _add_params(effect: Dictionary, ctx: Dictionary) -> void:
 		return
 	var previous := user.lifecycle_context
 	user.lifecycle_context = ctx
+	if effect.scale == "nanoha_adapt":
+		# 1768 新源：CodexNanohaAdapt(user, share) 的适应成长软上限（steps 只作说明，数值见 XNanoha.adapt）
+		XNanoha.adapt(user, float(effect.get("share", 1)))
+		user.lifecycle_context = previous
+		return
 	for step in effect.steps:
 		var amount := float(step.amount)
 		if effect.scale == "level":

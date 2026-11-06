@@ -98,6 +98,17 @@ def _top_ternary(js):
     return [js[:q[0]].strip(), js[q[0] + 1:c[0]].strip(), js[c[0] + 1:].strip()]
 
 
+_GD_BIG_INT = re.compile(r'(?<![\w.])([0-9]{19,})(?![\w.])')
+
+
+def _gd_big_ints(gd):
+    """formulaGd 里超过 int64 的整数字面量写成浮点（JS 原文本来就是 double：10037／10060 的 1e23／1e41）。
+    Godot Expression 遇到这类整数会报「Cannot represent … as a 64-bit signed integer」；formulaProgram 已经存 double，不受影响。"""
+    if not isinstance(gd, str):
+        return gd
+    return _GD_BIG_INT.sub(lambda m: m.group(1) if int(m.group(1)) <= 2 ** 63 - 1 else repr(float(int(m.group(1)))), gd)
+
+
 def translate_formula(js, item_id=0):
     js = (js or '').strip()
     # MV 公式里 user/target 与 a/b 同义；item.id 在转换时就能确定
@@ -359,7 +370,7 @@ REVIVE_CONDS = [
     (re.compile(r'if \( target \. hp <= 0 && \$gameVariables \. value \( ([1-9][0-9]*) \) > ([0-9]+) \) \{ (.*) \}'),
      lambda m: {'kind': 'hp_zero_variable', 'variable': int(m.group(1)), 'above': int(m.group(2))}),
 ]
-REVIVE_GAIN = re.compile(r'target \. gain(Hp|Mp|Tp) \( (?:([0-9]+)|target \. (mhp|mmp|tp)(?: \* ([0-9.]+))?|Math \. (floor|ceil) \( target \. (mhp) \* ([0-9.]+) \)) \)')
+REVIVE_GAIN = re.compile(r'target \. gain(Hp|Mp|Tp) \( (?:([0-9]+)|target \. (mhp|mmp|tp|maxTp \( \))(?: \* ([0-9.]+))?|Math \. (floor|ceil) \( target \. (mhp) \* ([0-9.]+) \)) \)')
 REVIVE_STEP_RE = [
     (re.compile(r'target \. startAnimation \( ([1-9][0-9]*) \)'), lambda m: {'do': 'animation', 'id': int(m.group(1))}),
     (re.compile(r'target \. removeState \( stateId \)'), lambda m: {'do': 'remove_self'}),
@@ -411,7 +422,7 @@ def revive_state_effect(code, phase):
             if gain.group(2):
                 steps.append({'do': 'gain', 'resource': resource, 'amount': int(gain.group(2))})
             elif gain.group(3):
-                steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(3), 'rate': float(gain.group(4) or 1)})
+                steps.append({'do': 'gain', 'resource': resource, 'param': 'max_tp' if gain.group(3).startswith('maxTp') else gain.group(3), 'rate': float(gain.group(4) or 1)})  # 1725 新源 gainTp(maxTp())
             else:
                 steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(6), 'rate': float(gain.group(7)), 'round': gain.group(5)})
             continue
@@ -642,6 +653,60 @@ EFFECT_FIXES2 = {
 }
 
 
+# ---- newsrc3（v0.62.12 改写的 19 个状态，state_effects_probe 在新源上量过；旧源 v0.28 的签名照旧保留、不受影响）----
+# 原样可译的整段：数值或条件改了，IR 原本就表达得了，按整段 token 收进白名单。
+MEASURED_VALUE_BLOCKS = MEASURED_VALUE_BLOCKS | frozenset([
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.9 ) ; value - = bonus ; }'),  # 1451 存护1（0.1→0.9）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * ( 1 + $gameVariables . value ( 965 ) * 0.1 ) ) ; }'),  # 1726 不朽2（×v965×0.1→×(1+v965×0.1)）
+    ('react', 'value = Math . floor ( value * 0 ) ;'),  # 2558 蝶引来生（×0.9→×0）
+    ('react', 'value = Math . floor ( value * 0.1 ) ;'),  # 2561 减伤90%（×0.91→×0.1）
+    ('confirm', 'if ( this . isPhysical ( ) && this . isHpEffect ( ) && value > 0 ) { if ( target . hp > target . mhp * 0.7 ) { var xs = Math . min ( ( target . mhp * 0.00001 / user . mhp * 10000 ) , 1.3 ) ; value = Math . ceil ( value * xs ) ; } }'),  # 2583 雷道之威（去掉 ×0.1）
+])
+MEASURED_EFFECT_BLOCKS.update({
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . mat ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 88 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1061 混元护体（×100→×88）
+    ('turn_start', 'var tiers = Math . min ( 10 , Math . floor ( user . agi / 10000 ) ) ; for ( var k = 2 ; k <= 10 ; k ++ ) { if ( k <= tiers ) { if ( ! user . isStateAffected ( 1430 + k ) ) user . addState ( 1430 + k ) ; } else user . removeState ( 1430 + k ) ; } if ( tiers < 1 ) user . removeState ( 1431 ) ;'),  # 1431 巡猎1（新增：每 10000 速度一层）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { if ( user . hp >= user . mhp * 0.5 ) { value = Math . floor ( value * 1.5 ) ; user . gainHp ( - Math . floor ( user . mhp * 0.01 ) ) ; } else { value = Math . floor ( value * 0.5 ) ; user . gainHp ( Math . floor ( user . mhp * 0.01 ) ) ; } }'),  # 1731 均衡
+    ('confirm', 'target . gainHp ( - Math . ceil ( target . hp * 0.0012 ) ) ; target . startDamagePopup ( ) ; target . _xmx = target . _xmx || 0 ; target . _xmx + = 1 ; if ( target . _xmx >= 5 ) { target . _xmx = 0 || 0 ; target . gainHp ( - Math . ceil ( target . mhp * 0.0005 ) ) ; target . startDamagePopup ( ) ; }'),  # 2559 血梅香
+})
+# 2574 非天逆斩 Apply：v0.62.03 删成只剩注释的空块（原来写奈叶计数，本就不生效）
+NO_EFFECT_BLOCKS.add(('apply', ''))  # 2574
+# IR 表达不了原文写法的：整段比对后换成等价写法（forEach 回调、三元链、aliveMembers().length、i < 变量 的 for 循环、数组 push/contains）
+MEASURED_EFFECT_SOURCES.update({
+    # 1450 智识1：for 条件「i < cishu && 目标活着」→ 固定 10 轮、每轮先判（目标一死后续轮全跳过，与提前退出等价）
+    ('establish', 'if ( value > 0 && ( this . isPhysical ( ) || this . isMagical ( ) ) && target . isActor ( ) !== user . isActor ( ) ) { var cishu = Math . min ( 10 , Math . floor ( user . mmp / 150000 ) ) ; for ( var i = 0 ; i < cishu && target . isAlive ( ) ; i ++ ) { target . gainHp ( - Math . round ( value * ( 0.8 + Math . random ( ) * 0.4 ) ) ) ; target . startDamagePopup ( ) ; target . clearResult ( ) ; } }'):
+        'if (value > 0 && (this.isPhysical() || this.isMagical()) && target.isActor() !== user.isActor()) { var cishu = Math.min(10, Math.floor(user.mmp / 150000)); for (var i = 1; i <= 10; i++) { if (i <= cishu && target.isAlive()) { target.gainHp(-Math.round(value * (0.8 + Math.random() * 0.4))); target.startDamagePopup(); target.clearResult(); } } }',
+    # 1711 秩序0：存活队友（不含自己）n＝aliveFriends−1；三元链展开成 if 链，forEach 按 1712→1714 顺序展开
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var n = user . friendsUnit ( ) . aliveMembers ( ) . length - 1 ; var pick = n >= 3 ? 1714 : n === 2 ? 1713 : n === 1 ? 1712 : 0 ; [ 1712 , 1713 , 1714 ] . forEach ( function ( id ) { if ( id === pick ) { if ( ! user . isStateAffected ( id ) ) user . addState ( id ) ; } else user . removeState ( id ) ; } ) ; }'):
+        'if (user.isBattleMember() && user.isAlive()) { var n = user.aliveFriends() - 1; var pick = 0; if (n >= 3) { pick = 1714; } else if (n === 2) { pick = 1713; } else if (n === 1) { pick = 1712; } '
+        'if (pick === 1712) { if (!user.isStateAffected(1712)) { user.addState(1712); } } else { user.removeState(1712); } '
+        'if (pick === 1713) { if (!user.isStateAffected(1713)) { user.addState(1713); } } else { user.removeState(1713); } '
+        'if (pick === 1714) { if (!user.isStateAffected(1714)) { user.addState(1714); } } else { user.removeState(1714); } }',
+    # 1716 同谐0：n＝aliveFriends（含自己）
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var n = user . friendsUnit ( ) . aliveMembers ( ) . length ; var pick = n >= 4 ? 1720 : n === 3 ? 1719 : n === 2 ? 1718 : n >= 1 ? 1717 : 0 ; [ 1717 , 1718 , 1719 , 1720 ] . forEach ( function ( id ) { if ( id === pick ) { if ( ! user . isStateAffected ( id ) ) user . addState ( id ) ; } else user . removeState ( id ) ; } ) ; }'):
+        'if (user.isBattleMember() && user.isAlive()) { var n = user.aliveFriends(); var pick = 0; if (n >= 4) { pick = 1720; } else if (n === 3) { pick = 1719; } else if (n === 2) { pick = 1718; } else if (n >= 1) { pick = 1717; } '
+        'if (pick === 1717) { if (!user.isStateAffected(1717)) { user.addState(1717); } } else { user.removeState(1717); } '
+        'if (pick === 1718) { if (!user.isStateAffected(1718)) { user.addState(1718); } } else { user.removeState(1718); } '
+        'if (pick === 1719) { if (!user.isStateAffected(1719)) { user.addState(1719); } } else { user.removeState(1719); } '
+        'if (pick === 1720) { if (!user.isStateAffected(1720)) { user.addState(1720); } } else { user.removeState(1720); } }',
+    # 1714 秩序3：Math.max(3, 存活队友−1)（原文就是 max，最少按 3 人算）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * ( 1 + 0.4 * Math . max ( 3 , user . friendsUnit ( ) . aliveMembers ( ) . length - 1 ) ) ) ; }'):
+        'if (this.isHpEffect() && value > 0) { value = Math.floor(value * (1 + 0.4 * Math.max(3, user.aliveFriends() - 1))); }',
+    # 2544／2545 剑终伤／太刀终伤：0.01→0.1
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 2 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.1 ) ; } } }'):  # 2544
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 2) { value += Math.ceil(value * 0.1); }',
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 11 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.1 ) ; } } }'):  # 2545
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 11) { value += Math.ceil(value * 0.1); }',
+})
+# 2575 剑道争锋 Confirm：0.005→0.05，仍写没人读的 _zuizhongshanghai（原版无效果），修正版照旧口径换系数
+_SWORD_2575_NEW = ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.05 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }')
+UNREAD_FIELD_BLOCKS.add(_SWORD_2575_NEW)
+EFFECT_FIXES[_SWORD_2575_NEW] = ('FIX_SWORD_2575', 'if (this.isHpEffect() && value > 0) { value += Math.ceil(value * 0.05 * (user.jqsbt || 0)); }')
+EFFECT_FIXES2[_SWORD_2575_NEW] = EFFECT_FIXES2[next(k for k in EFFECT_FIXES2 if k[0] == 'confirm' and '0.005 * user . jqsbt' in k[1])]
+# 1768 杀敌加属性 Conclude：v0.62.03 走 CodexNanohaAdapt（installNanohaSharedKillRuntime.js，适应成长软上限），
+# 该函数在新源恒存在，else 分支走不到。累计前 2000 次每次 +10 生命／+30 魔法，之后乘 2000/累计次数（见 nanoha.gd adapt）。
+NANOHA_ADAPT_1768 = 'if ( target . hp <= 0 || target . isDead ( ) ) { if ( window . CodexNanohaAdapt ) CodexNanohaAdapt ( user , 1 ) ; else { user . addParam ( 0 , 10 ) ; user . addParam ( 1 , 30 ) ; } }'
+
+
 def _adapt_phase_tokens(tokens):
     """this.isHpEffect() 等换成 se_ 局部量，$gameVariables.value(常数) 换成 v[常数]，value 的复合赋值展开。"""
     aliases = [
@@ -790,6 +855,9 @@ def permanent_state_effect(tokens, phase):
                     'requires': ['persistent_actor']}
     if phase == 'conclude' and signature == 'if ( target . hp <= 0 || target . isDead ( ) ) { user . addParam ( 0 , 10 ) ; user . addParam ( 1 , 30 ) ; }':
         return {'op': 'param_add', 'recipient': 'user', 'scale': 'constant', 'when': 'target_dead',
+                'steps': [{'param': 0, 'amount': 10}, {'param': 1, 'amount': 30}], 'requires': ['persistent_actor']}
+    if phase == 'conclude' and signature == NANOHA_ADAPT_1768:
+        return {'op': 'param_add', 'recipient': 'user', 'scale': 'nanoha_adapt', 'share': 1, 'when': 'target_dead',
                 'steps': [{'param': 0, 'amount': 10}, {'param': 1, 'amount': 30}], 'requires': ['persistent_actor']}
     return None
 
@@ -1484,7 +1552,7 @@ class Exporter:
                             gd, why = translate_custom_block(block, rec.get('id', 0))
                         else:
                             gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
-                        rec['damage']['formulaGd'] = gd
+                        rec['damage']['formulaGd'] = _gd_big_ints(gd)
                         rec['damage']['formulaProgram'] = compile_formula(rec['damage'].get('formula'), rec.get('id', 0), block is not None, name)
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
@@ -1515,6 +1583,36 @@ class Exporter:
         yep_action_copy(self.db['Items'], self.db['Skills'], self.db['Items'])
         for name in ['Skills', 'Items']:
             self.write_json(f'db/{name}.json', self.db[name])
+
+    def export_changelog(self):
+        """玩家更新日志（installNativeGuidanceRuntime 的 G.changelogEntries，改版向导 Map004 EV71「更新日志」的
+        CodexGuide.injectChangelog 用）：data/ContentVersion.json 合法时读 v0.37～releaseNumber，否则读到 v0.37+899；
+        缺文件或格式不对就停，pages 为空的（已登记的跳号）跳过；新版在前。旧源没有这些文件时写空表。"""
+        first, release = 37, None
+        rel = 'data/ContentVersion.json'
+        if (self.app / rel).is_file():
+            try:
+                d = self.read(rel)
+                if re.fullmatch(r'v\d+\.\d{2}(?:\.\d{2})?', str(d.get('releaseVersion'))) and isinstance(d.get('releaseNumber'), int) \
+                        and not isinstance(d.get('releaseNumber'), bool) and d['releaseNumber'] >= 0:
+                    release = d['releaseNumber']
+            except (ValueError, AttributeError):
+                release = None
+        end = min(release, first + 899) if release is not None else first + 899
+        entries = []
+        for seq in range(first, end + 1):
+            rel = 'data/PlayerChangelog/v%d.%02d.json' % (seq // 100, seq % 100)
+            if not (self.app / rel).is_file():
+                break
+            try:
+                d = self.read(rel)
+            except ValueError:
+                break
+            if not isinstance(d, dict) or not isinstance(d.get('pages'), list):
+                break
+            if d['pages']:
+                entries.insert(0, {'version': d.get('version'), 'pages': [str(x) for x in d['pages']]})
+        self.write_json('db/PlayerChangelog.json', {'releaseNumber': release, 'entries': entries})
 
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
@@ -1923,6 +2021,7 @@ class Exporter:
                           for p in sorted((self.app / 'js').rglob('*.js'))}
         self.export_db()
         self.export_plugins()
+        self.export_changelog()
         self.collect_slice()
         self.copy_assets()
         untranslated = []

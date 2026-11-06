@@ -92,7 +92,9 @@ func _run() -> void:
 					parsed += 1
 				else:
 					bad.append([table, rec.id])
-	check("converter_all_parsed", parsed == 274 and bad.is_empty(), [parsed, bad])  # v0.62.12 新源 274 件（v0.28 是 224）
+	# 带标签的件数随来源：v0.28 224，v0.62.12 274（新增 50 件，newsrc4）
+	var want_parsed: int = {"v0.28": 224, "v0.62.12": 274}.get(str(data.get("sourceIdentity", {}).get("releaseVersion", "")), -1)
+	check("converter_all_parsed", parsed == want_parsed and bad.is_empty(), [parsed, want_parsed, bad])
 	_finish()
 
 

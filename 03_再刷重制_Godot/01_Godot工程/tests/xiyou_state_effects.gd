@@ -66,6 +66,16 @@ class ReviveLogic:
 	var stream: XRandomStream
 	func _rule() -> XRandomStream:
 		return stream if stream != null else super()
+	## 固定 7 点照真实链扣目标的固定减伤（harmRe，finish 里 apply_fixed_mitigation）：参照是真实 apply，
+	## 「七星续命」252 的 passiveHarmRe 500 把这一击扣到 0（rules-newsrc3）。没有 harmRe 的状态 flat 为 0，跟原来一样。
+	func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
+		var res := super(u, skill, t, critical)
+		var es := XDamage.action_elements(skill, u)
+		var e: int = es[0] if not es.is_empty() else 0
+		var flat := XDamage._flat_mitigation(u, t, e, {"flatMitigationAdd": {}, "flatMitigationRate": 1.0}) if e > 0 else 0.0
+		var v := float(res.value)
+		res.breakdown = {"row": {"value": v, "resistance": 1.0}, "candidates": [{"gross": v, "flat": flat, "resistance": 1.0}]}
+		return res
 
 
 ## 记下开战时交给公共事件单槽的预约（rules9 P3-5）
@@ -1078,11 +1088,14 @@ func _hook_2574(rows: Array) -> void:
 			a108.state_data._stateCounter["2401"] = float(row.c108)
 		XStateEffects.run_one("apply", u, XDB.rec("States", 2574), {"execute": true, "resources": XResourceContext.new()})
 		var after108 = a108.state_data._stateCounter.get("2401")
-		var ok: bool = u.state_data._stateCounter["2401"] == float(row.after)
+		var ok: bool = u.state_data._stateCounter.get("2401") == (null if row.get("after") == null else float(row.after))
 		if str(row.after108) == "NaN":
 			ok = ok and after108 == null  # 原版 NaN，读的地方当 0；这边不写 NaN
+		elif row.get("after108") == null or str(row.after108) == "undefined":
+			ok = ok and after108 == null
 		else:
-			ok = ok and after108 == float(row.c108) + float(a108.level) and float(row.after108) == float(row.c108) + float(row.level)
+			# v0.28 是 c108＋等级；v0.62.12 删成空块，原值不动（newsrc3）。都按参照量到的值比
+			ok = ok and after108 == float(row.after108) and (row.c108 == null or float(row.after108) == float(row.c108) + float(row.level) or float(row.after108) == float(row.c108))
 		check("hook.2574.%d" % index, ok, {"row": row, "got": [u.state_data, after108]})
 	XState.current = XState.new_game_blank()
 
@@ -1457,15 +1470,16 @@ func _fix_blocks() -> void:
 		XStateEffects.battle_units = {"enemies": unit}
 		got = XStateEffects.run_one("react", e, st.call(1302), _action_ctx(a, e, 100.0))
 		check("fix.1302.%d" % row[0], got == row[1], [row, got])
-	# 剑道争锋：获得 1 层，回合结束加 1 最多 10，每层 0.5%
+	# 剑道争锋：获得 1 层，回合结束加 1 最多 10，每层 0.5%（v0.62.12 原文改成每层 5%，newsrc3）
+	var sword_rate := 0.05 if str(XDB.rec("States", 2575).get("note", "")).contains("0.05 * user.jqsbt") else 0.005
 	var u := _plain()
 	XStateEffects.run_one("apply", u, st.call(2575), res.call())
 	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
-	check("fix.2575.one", got == 1005.0, got)
+	check("fix.2575.one", got == 1000.0 + ceilf(1000.0 * sword_rate), got)
 	for i in range(12):
 		XStateEffects.run_one("turn_end", u, st.call(2575), res.call())
 	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
-	check("fix.2575.ten", got == 1050.0, got)
+	check("fix.2575.ten", got == 1000.0 + ceilf(1000.0 * sword_rate * 10.0), got)
 	XStateEffects.run_one("remove", u, st.call(2575), res.call())
 	got = XStateEffects.run_one("confirm", u, st.call(2575), _action_ctx(u, a, 1000.0))
 	check("fix.2575.removed", got == 1000.0, got)

@@ -211,6 +211,14 @@ func _kept() -> void:
 				n += p.list.size()
 			if n > e.pages.size():
 				want.append(int(e.id))
+		# 空页事件但被别的事件的移动路线（205）点名的也要放（大厅漩涡过场 76 移动的流萤立绘 77）
+		for e in XDB.map(m).get("events", []):
+			if not e is Dictionary or not want.has(int(e.id)):
+				continue
+			for p in e.pages:
+				for c in p.list:
+					if int(c.code) == 205 and int(c.parameters[0]) > 0 and not want.has(int(c.parameters[0])):
+						want.append(int(c.parameters[0]))
 		want.sort()
 		var got: Array = keep.get(str(m), []).map(func(v): return int(v))
 		got.sort()

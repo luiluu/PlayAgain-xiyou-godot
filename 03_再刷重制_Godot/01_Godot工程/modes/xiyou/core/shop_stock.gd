@@ -18,6 +18,86 @@ const TABLES := ["Items", "Weapons", "Armors"]
 
 static var _spec_cache := {}
 
+## ---- v0.41 商店规则（installBalanceShopV041Runtime，新源）----
+## Scene_Shop.prepare 外层：① 指定价格（价格类型 1）的被动书价格×1.3 向上取整；② 不论有没有 apply 组，都套一层库存外观：
+##   左右互搏术 1914 全局限购 8 本（剩余＝8−已买 $gameSystem._codexLeftBought41，存 s.flags 同名；买卖都不改组库存、卖回不还名额）；
+##   当铺（地图 204）全部不限购；方桌大厅 EV54（地图 4）的商品里有被动书时全店不限购，否则只有被动书不限购；其余照原组。
+## 「哪家店」看打开商店的那条事件（command302 的 _mapId／_eventId）：解释器在 302 时写 shop_context，map_scene.open_shop 用它算 policy，
+## 关店后清空；policy 为空（测试直接调、商店外）时全照 KMS 原样。旧档第一次用到时按各组 1914 已卖数（5−剩余，合计不超过 8）补名额，同原版
+const LEFT_BOOK := 1914
+const LEFT_BOOK_MAX := 8
+const PAWN_MAP := 204
+const CHIEF := [4, 54]
+static var shop_context := {}
+static var policy := {}
+
+
+## R.passiveBook：物品，效果里有「学会技能」且技能类型 4（或类型 6 且备注 <Hide in Battle>），或名字带「被动书」
+static func passive_book(kind: int, id: int) -> bool:
+	if kind != 0:
+		return false
+	var it := XDB.rec("Items", id)
+	if it.is_empty():
+		return false
+	for e in it.get("effects", []):
+		if int(e.get("code", 0)) == 43:
+			var sk := XDB.rec("Skills", int(e.get("dataId", 0)))
+			if not sk.is_empty() and (int(sk.get("stypeId", 0)) == 4 or (int(sk.get("stypeId", 0)) == 6 and str(sk.get("note", "")).to_lower().contains("<hide in battle>"))):
+				return true
+	return str(it.get("name", "")).contains("被动书")
+
+
+## Scene_Shop.prepare 外层：返回改过价格的商品表，并按 shop_context 定下本次商店的 policy
+static func prepare_policy(goods: Array) -> Array:
+	var out := goods.map(func(g):
+		var r: Array = (g as Array).duplicate()
+		if int(r[0]) == 0 and int(r[2]) == 1 and passive_book(0, int(r[1])):
+			r[3] = ceili(float(r[3]) * 13.0 / 10.0)
+		return r)
+	var chief := bool(shop_context.get("chief", false))
+	policy = {"active": true, "pawn": bool(shop_context.get("pawn", false)), "chief": chief,
+		"chief_passive": chief and out.any(func(g): return int(g[0]) == 0 and passive_book(0, int(g[1])))}
+	return out
+
+
+static func close_policy() -> void:
+	policy = {}
+
+
+## 302 时记下是哪条事件开的店
+static func set_context(map_id: int, event_id: int) -> void:
+	shop_context = {"pawn": map_id == PAWN_MAP, "chief": map_id == CHIEF[0] and event_id == CHIEF[1]}
+
+
+static func _left_book(kind: int, id: int) -> bool:
+	return not policy.is_empty() and kind == 0 and id == LEFT_BOOK
+
+
+## 外观让这件不限购（当铺、大厅 EV54）
+static func _policy_unmanaged(kind: int, id: int) -> bool:
+	return not policy.is_empty() and (bool(policy.pawn) or bool(policy.chief_passive) or (bool(policy.chief) and passive_book(kind, id)))
+
+
+## R.leftBought：已买的左右互搏术本数（全局）
+static func left_bought(s: XState) -> int:
+	if not s.flags.has("_codexLeftBought41"):
+		var consumed := 0
+		for g in s.shop_stock.get("inv", {}):
+			var n = s.shop_stock.inv[g].get("stock", {}).get("item", {}).get(str(LEFT_BOOK))
+			if n != null:
+				consumed += maxi(0, 5 - int(n))
+		s.flags["_codexLeftBought41"] = mini(LEFT_BOOK_MAX, consumed)
+	return int(s.flags["_codexLeftBought41"])
+
+
+## 商店界面用：这件在本店算不算受管（画库存行）
+static func shop_managed(kind: int, id: int) -> bool:
+	if _left_book(kind, id):
+		return true
+	if _policy_unmanaged(kind, id):
+		return false
+	return managed(kind, id)
+
 
 ## 解析备注（parseNotesForStock）：返回 {max, interval, mode}，不受管返回 {}
 static func spec(kind: int, id: int) -> Dictionary:
@@ -46,6 +126,8 @@ static func managed(kind: int, id: int) -> bool:
 
 
 static func stock_max(kind: int, id: int) -> int:
+	if _left_book(kind, id):
+		return LEFT_BOOK_MAX
 	return int(spec(kind, id).max) if managed(kind, id) else MAX_ITEMS
 
 
@@ -94,6 +176,10 @@ static func reset_all(s: XState) -> void:
 
 ## Game_ShopInventory.getStock：不限购的店或不受管的商品为持有上限 9999
 static func remaining(s: XState, group: String, kind: int, id: int) -> int:
+	if _left_book(kind, id):
+		return maxi(0, LEFT_BOOK_MAX - left_bought(s))
+	if _policy_unmanaged(kind, id):
+		return MAX_ITEMS
 	if group == "" or not managed(kind, id):
 		return MAX_ITEMS
 	var inv = _inv(s, group, false)
@@ -109,14 +195,17 @@ static func available(s: XState, group: String, kind: int, id: int) -> bool:
 
 ## Scene_Shop.maxBuy：原上限（持有余量、金钱与各货币）再与库存取小
 static func max_buy(s: XState, group: String, kind: int, id: int, base_max: int) -> int:
-	return base_max if group == "" else mini(base_max, remaining(s, group, kind, id))
+	return base_max if group == "" and not _left_book(kind, id) else mini(base_max, remaining(s, group, kind, id))
 
 
 # ---- 记账 ----
 
 ## Scene_Shop.doBuy 之后：扣库存并登记补货（货币与物品已由 XItemMarks.buy 记过）
 static func record_purchase(s: XState, group: String, kind: int, id: int, number: int) -> void:
-	if group == "":
+	if _left_book(kind, id):
+		s.flags["_codexLeftBought41"] = left_bought(s) + number
+		return
+	if group == "" or _policy_unmanaged(kind, id):
 		return
 	_set_stock(s, group, kind, id, remaining(s, group, kind, id) - number)
 	_register(s, group, kind, id)
@@ -125,7 +214,7 @@ static func record_purchase(s: XState, group: String, kind: int, id: int, number
 ## Scene_Shop.doSell 之后：卖回的商品补回该组库存（不超过上限）。独立装备卖的是实例（另有 ID），原版记在实例上、
 ## 不回商品库存（stock.gear-buy-sell），这里不记。
 static func record_sale(s: XState, group: String, kind: int, id: int, number: int) -> void:
-	if group == "" or kind != 0:
+	if group == "" or kind != 0 or _left_book(kind, id) or _policy_unmanaged(kind, id):
 		return
 	_set_stock(s, group, kind, id, remaining(s, group, kind, id) + number)
 

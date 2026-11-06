@@ -264,7 +264,9 @@ func _host_command(c: Dictionary):
 			while index + 1 < list.size() and int(list[index + 1].code) == 605:
 				index += 1
 				goods.append(list[index].parameters)
+			XShopStock.set_context(map_id, event_id)   # installBalanceShopV041Runtime 包 command302：当铺／大厅 EV54 的商店规则
 			await host.open_shop(goods, bool(p[4]))
+			XShopStock.shop_context = {}
 		205:
 			# 设置移动路线 [角色, 路线]；路线勾选「等待完成」时等角色走完
 			var ch = host.character(int(p[0]), event_id)
