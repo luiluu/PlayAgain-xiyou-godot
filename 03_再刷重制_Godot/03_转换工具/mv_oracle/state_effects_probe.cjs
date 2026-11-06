@@ -496,8 +496,13 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
     let at = 0.5;
     w.Game_Action.prototype.onDeselectStateEffects = function (...args) { const save = w.Math.random; draws = 0; w.Math.random = () => { draws++; return at; };
       try { return oldSel.apply(this, args); } finally { w.Math.random = save; } };
+    // 每例独立现场（newsrc5）：新开一场战斗，并照 dsPassiveSkill 的 Scene_Battle.start 给双方建被动缓存（实战里敌我开战就有）。
+    // 原来整段共用一场战斗：第一个状态的角色行里敌人当行动者，云裳运行时 prepareAction 才给它建缓存，于是 114 的敌人行没有、其后的都有，
+    // 新源里「有被动缓存＋死亡 clearStates 重建」决定热缓存的敌人复活不复活，参照就成了前后用例留下的现场。
     for (const sid of REVIVES) for (const who of ['enemy', 'actor']) for (const r of [0.05, 0.95]) for (const dirtyWarm of [true, false]) {
-      const t = who === 'enemy' ? e : a, u = who === 'enemy' ? a : e; const act = new w.Game_Action(u); act.setSkill(1);
+      const fresh = battle(2), A = fresh.a, E = fresh.e;
+      for (const m of [...w.$gameParty.battleMembers(), ...w.$gameTroop.members()]) if (m.refreshPassiveCache) m.refreshPassiveCache();
+      const t = who === 'enemy' ? E : A, u = who === 'enemy' ? A : E; const act = new w.Game_Action(u); act.setSkill(1);
       reset(t, sid, 0, 2); t._hp = 1; at = r; w.Math.random = () => 0.5;
       if (!dirtyWarm) { t.need_refresh = true; t.refresh(); t.typestates('deselectState'); }
       const dirty = !!t.need_refresh, mhp = t.mhp, mmp = t.mmp; t.clearResult(); act.apply(t);

@@ -75,6 +75,11 @@ static func applied(logic, u, t, live: bool, r: Dictionary) -> void:
 		f.targets.append(t)
 
 
+## ADAPT_V062＝true（默认，O-待定·奈叶队友击杀）：跟 v0.62.03 起的 CodexNanohaAdapt(nanoha, 0.5)，队友击杀给一半、计入适应软上限与累计次数；
+## false 回到 v0.28 的固定 +10 最大生命／+30 最大魔法（不计次数）。
+static var ADAPT_V062 := true
+
+
 ## endAction 包装（原 endAction 之后）：subject 是 BattleManager._subject
 static func finish(logic, subject) -> void:
 	var f: Dictionary = logic.nanoha_frame
@@ -86,7 +91,11 @@ static func finish(logic, subject) -> void:
 		return
 	for e in f.targets:
 		if e != null and e.is_dead():
-			adapt(n, 0.5)  # v0.62.03 起 CodexNanohaAdapt(nanoha, 0.5)：队友击杀给一半、计入同一软上限（v0.28 是固定 +10／+30，newsrc4）
+			if ADAPT_V062:
+				adapt(n, 0.5)  # v0.62.03 起 CodexNanohaAdapt(nanoha, 0.5)：队友击杀给一半、计入同一软上限（newsrc4）
+			else:
+				n.add_param(0, 10.0)  # v0.28：固定 +10／+30
+				n.add_param(1, 30.0)
 
 
 ## ---- 二期①：大招 5703～5709 的自定义 MP 消耗与伤害后多段（参照 mv_oracle/nanoha3_probe.cjs，tests/fixtures/nanoha3_oracle.json）----

@@ -7,6 +7,7 @@ const fs = require('fs'), path = require('path');
 const {start, makeCase} = require('./shared/host.cjs');
 const {sourceIdentity} = require('./source_identity.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区不移植（O-050）：本探针没有伤害计算，关掉后新旧源产物逐字节不变（newsrc5）
 const row = (label, e) => {
   const r = e.result();
   return {label, hp: e._hp, states: Array.from(e._states), turns: {...e._stateTurns}, alive: e.isAlive(), dead: e.isDead(), hidden: e.isHidden(),
