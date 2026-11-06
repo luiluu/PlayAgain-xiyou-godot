@@ -28,7 +28,7 @@
 - 判定节奏（按下触发，按住 24 帧后每 6 帧一次、只认最后按下的键、BCE 列表顺序先到先得）、可用场景（只在地图页面、没有事件与文字时）：`XMapHotkeys` 头注释已按插件源码逐条写明，`xiyou_map_hotkeys` 31 项覆盖，本轮没改。
 - 与 `XKeyMap.MV_KEYS` 无冲突：新补的 Z/J/X/K/Insert/小键盘0、WASD、小键盘方向没有一个出现在 BCE 的公共事件键里。
 - 其它启用插件里的专用键（顺便核）：G 挂机 `XdRs_HangUp`（重制已有）、F 传送确认 `MapTransferPlugin`（已有）、Tab 切装备页下窗 `YEP_EquipCore`（已有）、Q／E 翻页（`MOG_BossHP` 的 Boss 血条翻页、`PKD_SimpleSkillsTree` 等，翻页键已通）。
-- **缺口（本轮没做）**：`YEP_ShopMenuCore` 商店里装备的状态窗按 **Tab** 在「队员对比」与「默认（逐项属性）」两种显示间切换（`adjustMode`，Default Mode 参数是 actor，Stat Switching 开）；重制商店只有队员对比，没有默认模式那一页（要画 `drawStatDisplayed` 单项属性＋`drawEquipInfo` 装备信息，并让 ←→ 在默认模式下换属性）。这是一整页的画法而不是键位接线，建议另开一单做（商店车道）。同文件里的 Shift（`isPageChangeRequested`）原版没有任何调用，没有缺。
+- **缺口（本轮没做）**：`YEP_ShopMenuCore` 商店里装备的状态窗按 **Tab** 在「队员对比」与「默认（逐项属性）」两种显示间切换（`adjustMode`，Default Mode 参数是 actor，Stat Switching 开）；重制商店只有队员对比，没有默认模式那一页（要画 `drawStatDisplayed` 单项属性＋`drawEquipInfo` 装备信息，并让 ←→ 在默认模式下换属性）。这是一整页的画法而不是键位接线，建议另开一单做（商店车道）。（更正，见 `cc_platform-shop1.md`）同文件里 Shift 在基础 MV `Window_ShopStatus.updatePage` 里有效：队员多于 4 人时翻队员页，shop1 一并补上。
 
 ### ②Mehmet_GhostButtons
 
