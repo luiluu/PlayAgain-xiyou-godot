@@ -333,7 +333,7 @@ func _scene() -> void:
 		[sp._profile, sp.body_scale])
 	b.status_rows[g].refresh()
 	await _shot("guyu_ui_side")
-	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 生长" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
+	check("scene.side_text", b.status_rows[g]._v().guyu_text == "储3000 平时" and b.status_rows[hero]._v().guyu_text == "储0", [b.status_rows[g]._v().guyu_text, b.status_rows[hero]._v().guyu_text])
 	# 技能（类型 2）→ 借一枝春色
 	b._picked.emit("stype:2")
 	await _frames(3)
@@ -377,7 +377,7 @@ func _scene() -> void:
 	b._select_target(hero)
 	var hs: XBattlerSprite = b.sprites[hero]
 	var card_x := b.help_card.position.x - b._origin.x
-	check("scene.help_near_left", card_x + b.help_card.size.x <= hs.position.x and b.help_card.rows[0][0] == "还春 25%：狗逍遥 → 谷雨，储备 200。\n转移不回复HP。",
+	check("scene.help_near_left", card_x + b.help_card.size.x <= hs.position.x and b.help_card.rows[0][0] == "收回储备 25%：狗逍遥 → 谷雨，储备 200。\n转移不回复HP。",
 		[card_x, b.help_card.size.x, hs.position.x, b.help_card.rows[0][0]])
 	await _shot("guyu_ui_help")
 	# 原版：每次换目标都在上一张卡的位置上再修正一次

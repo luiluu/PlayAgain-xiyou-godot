@@ -64,7 +64,8 @@ extends RefCounted
 ##   不在花期且有人储备≥上限一半：花期打生命最多的敌人；否则治疗。储备比的上限对谷雨也按 referenceCap。
 ## 战斗界面（参照 guyu_ui_probe；画面在 battle_scene／side_status／battler_sprite／guyu_transfer_window）：
 ## - 状态字 statusText（侧栏名字行）：谷雨在队的战斗中每人「储」＋shortNumber(储备)，归根加「 归根N」（N＝归根到期回合−当前回合，
-##   不小于 0），待绽加「 待绽」，谷雨本人另加「 花期N」（剩几回合，含本回合）或「 生长」。shortNumber：亿／万一位小数，以下取整。
+##   不小于 0），待绽加「 待绽」，谷雨本人另加「 花期N」（剩几回合，含本回合）或「 生长」。
+##   跟到 v0.62.12：「归根／待绽／生长」显示成「替倒／待发／平时」，选择窗「赠春／还春」改「交出储备／收回储备」，给出时说明「目标下次追加伤害消耗35%（60 级 50%）储备」（只改文字）。shortNumber：亿／万一位小数，以下取整。
 ## - 护盾合计 totalShield：原生护盾（b.shield）＋账本（XShieldLedger.total；重制账本不并进 b.shield，所以相加；原版账本就是 b.shield）。
 ## - 转移说明 transferText 与 transferPreview 的原因：请选择存活的出战队友／当前装备不支持此转移方式／供给者生命储备不足／接收者储备已满。
 ## - 动作 G.visuals.motions：治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill（归根中、内部行动不换）。
@@ -834,9 +835,9 @@ static func transfer_text(b, t, mode := "give", ratio := 0.5) -> String:
 	var p := transfer_preview(b, t, mode, ratio)
 	if not bool(p.valid):
 		return str(p.reason)
-	return ("还春" if p.mode == "back" else "赠春") + " " + str(roundi(float(p.ratio) * 100.0)) + "%：" + p.from.display_name() + " → " + p.to.display_name() \
+	return ("收回储备" if p.mode == "back" else "交出储备") + " " + str(roundi(float(p.ratio) * 100.0)) + "%：" + p.from.display_name() + " → " + p.to.display_name() \
 		+ "，储备 " + short_number(float(p.amount)) + ("（受接收上限限制）" if bool(p.capped) else "") + "。\n转移不回复HP" \
-		+ ("；赋予一次待绽。" if has_spring(b) and p.mode == "give" else "。")
+		+ ("；目标下次追加伤害消耗" + ("50%" if int(b.level) >= 60 else "35%") + "储备。" if has_spring(b) and p.mode == "give" else "。")
 
 
 ## shortNumber：亿／万一位小数（toFixed(1)），以下取整
@@ -854,11 +855,11 @@ static func status_text(b) -> String:
 		return ""
 	var text := "储" + short_number(reserve(b))
 	if rooted(b):
-		text += " 归根" + str(maxi(0, int(rows[b.actor_id].root_until) - round))
+		text += " 替倒" + str(maxi(0, int(rows[b.actor_id].root_until) - round))
 	elif has_bud(b):
-		text += " 待绽"
+		text += " 待发"
 	elif own(b):
-		text += " 花期" + str(flower_until - round + 1) if blooming() else " 生长"
+		text += " 花期" + str(flower_until - round + 1) if blooming() else " 平时"
 	return text
 
 
@@ -887,8 +888,8 @@ static func transfer_commands(a) -> Array:
 	var out := []
 	for r in transfer_ratios(a):
 		var pct := roundi(float(r) * 100.0)
-		out.append({"text": "赠春（%d%%）" % pct, "enabled": can_transfer(a, "give", r), "mode": "give", "ratio": r})
-		out.append({"text": "还春（%d%%）" % pct, "enabled": can_transfer(a, "back", r), "mode": "back", "ratio": r})
+		out.append({"text": "交出储备（%d%%）" % pct, "enabled": can_transfer(a, "give", r), "mode": "give", "ratio": r})
+		out.append({"text": "收回储备（%d%%）" % pct, "enabled": can_transfer(a, "back", r), "mode": "back", "ratio": r})
 	return out
 
 
