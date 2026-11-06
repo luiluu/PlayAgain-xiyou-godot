@@ -226,7 +226,174 @@ func _run() -> void:
 	touch(0, hide_center, false)
 	await frames(2)
 	check("show_again", not pad.hidden and pad.hit(ok_center) == "ok")
+
+	# 三期：大小／透明度／位置（原版 limits、步长 5）、安全区
+	XTouchControls.instance = pad
+	pad.name = "TouchControls"
+	check("layout_default_same", pad.rects.ok == XTouchControls.BUTTONS.ok.rect and pad.rects.hide == XTouchControls.BUTTONS.hide.rect
+		and pad.stick_center == XTouchControls.STICK_CENTER and pad.stick_radius == XTouchControls.STICK_RADIUS, [pad.rects, pad.stick_center])
+	pad.set_value("buttons", 150)
+	var actions: Rect2 = pad.group_rects.actions
+	check("buttons_scale_keep_corner", pad.rects.ok.size.is_equal_approx(Vector2(165, 108)) and actions.end.is_equal_approx(Vector2(1260, 704)), [pad.rects.ok, actions])
+	pad.set_value("buttons", 999)
+	pad.set_value("stick", 123)
+	pad.set_value("transparency", 40)
+	check("value_limits", pad.settings.buttons == 160 and pad.settings.stick == 125 and is_equal_approx(pad.root.modulate.a, 0.6), pad.settings)
+	pad.set_value("stick", 150)
+	check("stick_scale", is_equal_approx(pad.stick_radius, 108.0) and pad.hit(pad.stick_center + Vector2(120, 0)) == "stick"
+		and is_equal_approx(pad.group_rects.movement.position.x, 24.0) and is_equal_approx(pad.group_rects.movement.end.y, 696.0), pad.group_rects.movement)
+	touch(0, pad.stick_center + Vector2(0, -60), true)
+	await frames(1)
+	check("stick_scaled_dir", Input.is_action_pressed("ui_up"))
+	touch(0, pad.stick_center + Vector2(0, -60), false)
+	await frames(1)
+	var pad3 := XTouchControls.new()
+	platform.add_child(pad3)
+	await frames(1)
+	check("sizes_remembered", pad3.settings.stick == 150 and pad3.settings.buttons == 160 and pad3.settings.transparency == 40, pad3.settings)
+	pad3.queue_free()
+	await frames(1)
+	XTouchControls.instance = pad
+	pad.set_insets([60.0, 0.0, 80.0, 30.0])
+	check("insets_push_defaults", is_equal_approx(pad.group_rects.movement.position.x, 60.0) and is_equal_approx(pad.group_rects.movement.end.y, 690.0)
+		and is_equal_approx(pad.group_rects.actions.end.x, 1200.0) and is_equal_approx(pad.group_rects.top.end.x, 1200.0)
+		and is_equal_approx(pad.group_rects.top.position.y, 8.0), pad.group_rects)
+	# 调整位置：拖 movement 到右上角之外，限制在安全区内
+	pad.start_layout()
+	check("layout_shows_all", pad.layout_editing and is_equal_approx(pad.root.modulate.a, 1.0) and pad.hit(pad.rects.ok.get_center()) == "ok")
+	var grab: Vector2 = pad.group_rects.movement.get_center()
+	touch(0, grab, true)
+	var mv := InputEventScreenDrag.new()
+	mv.index = 0
+	mv.position = to_window(Vector2(1270, 5))
+	Input.parse_input_event(mv)
+	touch(0, Vector2(1270, 5), false)
+	await frames(2)
+	var moved: Rect2 = pad.group_rects.movement
+	check("layout_drag_clamped", pad.positions.has("movement") and is_equal_approx(moved.end.x, 1280.0 - 12.0 - 80.0) and is_equal_approx(moved.position.y, 6.0)
+		and not Input.is_action_pressed("ui_up") and not Input.is_action_pressed("ui_right"), [moved, pad.positions])
+	check("back_finishes_layout", platform.go_back(999_999_000) == "layout" and not pad.layout_editing and is_equal_approx(pad.root.modulate.a, 0.6))
+	var pad4 := XTouchControls.new()
+	platform.add_child(pad4)
+	await frames(1)
+	pad4.set_insets([60.0, 0.0, 80.0, 30.0])
+	check("position_remembered", pad4.group_rects.movement.is_equal_approx(moved), [pad4.group_rects.movement, moved])
+	pad4.queue_free()
+	await frames(1)
+	XTouchControls.instance = pad
+	pad.set_insets([0.0, 0.0, 0.0, 0.0])
+	pad.reset_defaults()
+	check("reset_defaults", pad.rects.ok == XTouchControls.BUTTONS.ok.rect and pad.stick_center == XTouchControls.STICK_CENTER
+		and pad.positions.is_empty() and is_equal_approx(pad.root.modulate.a, 1.0))
+	# 安全区换算：64×64 无头窗口里画面是 64×36（上下各 14 黑边），左右各缩进 4 像素＝画面 80
+	XPlatform.safe_area_override = Rect2i(4, 0, 56, 64)
+	var ins := XPlatform.safe_insets(get_viewport())
+	XPlatform.safe_area_override = Rect2i()
+	check("safe_insets_canvas", is_equal_approx(ins[0], 80.0) and is_equal_approx(ins[2], 80.0) and ins[1] == 0.0 and ins[3] == 0.0, ins)
+	check("safe_insets_none", XPlatform.safe_insets(get_viewport()) == [0.0, 0.0, 0.0, 0.0])
+	# 设置页：触屏时设置列表末尾有「手机按键设置」，页里改大小、开关显示
+	var opts := XOptionsScene.new()
+	add_child(opts)
+	await frames(1)
+	var syms := opts.symbols()
+	check("options_touch_row", syms[-1] == "codexAndroidControls" and opts.status_text(syms.size() - 1) == "调整", syms.slice(-3))
+	opts.queue_free()
+	XPlatform.force_mobile = false
+	var opts2 := XOptionsScene.new()
+	add_child(opts2)
+	await frames(1)
+	check("options_no_touch_row", not opts2.symbols().has("codexAndroidControls"))
+	opts2.queue_free()
+	XPlatform.force_mobile = true
+	var page := XTouchOptionsScene.new()
+	add_child(page)
+	await frames(1)
+	page.index = 1
+	page.side(true)
+	page.index = 0
+	page.ok()
+	check("touch_page_edits", pad.settings.stick == 105 and pad.hidden and page.status_text(0) == "关" and page.status_text(1) == "105%")
+	page.index = 4
+	page.side(false)
+	check("touch_page_floor", pad.settings.transparency == 0)
+	page.index = 6
+	page.ok()
+	check("touch_page_reset", not pad.hidden and pad.settings.stick == 100)
+	page.queue_free()
 	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+
+	# 存档导出导入（原版二合一包 exportSave／prepareJSONImport 的做法）
+	var save_dir := "user://test_xiyou_platform_saves"
+	var saved_dir := XSave.dir_override
+	XSave.dir_override = save_dir
+	DirAccess.make_dir_recursive_absolute(save_dir)
+	for f in DirAccess.get_files_at(save_dir):
+		DirAccess.remove_absolute(save_dir.path_join(f))
+	var saved_state = XState.current
+	XState.new_game_blank()
+	check("transfer_make_save", XSave.save(1))
+	var out := XSaveTransfer.export_text(1)
+	var wrapped = JSON.parse_string(str(out.get("text", "")))
+	check("transfer_export", wrapped is Dictionary and wrapped.format == XSaveTransfer.FORMAT and int(wrapped.slot) == 1
+		and XSave.valid_data(wrapped.data), out.get("error"))
+	check("transfer_export_empty", XSaveTransfer.export_text(3).has("error"))
+	var file := save_dir.path_join("exported.json")
+	var picked := []
+	XSaveTransfer.dialog_override = func(mode, filename, done):
+		picked.append([mode, filename])
+		done.call(true, PackedStringArray([file]), 0)
+	XSaveTransfer.pick(true, XSaveTransfer.file_name(1), func(path): picked.append(XSaveTransfer.write_file(path, out.text)))
+	check("transfer_pick_save", picked.size() == 2 and picked[0][0] == DisplayServer.FILE_DIALOG_MODE_SAVE_FILE and picked[1] == ""
+		and str(picked[0][1]).begins_with("再刷重制存档01_") and FileAccess.file_exists(file), picked)
+	XSaveTransfer.dialog_override = func(_mode, _filename, done): done.call(false, PackedStringArray(), 0)
+	var cancelled := ["unset"]
+	XSaveTransfer.pick(false, "", func(path): cancelled[0] = path)
+	check("transfer_pick_cancel", cancelled[0] == "")
+	XSaveTransfer.dialog_override = Callable()
+	var got := XSaveTransfer.read_import(file)
+	check("transfer_read_back", got.has("data") and JSON.stringify(got.data) == JSON.stringify(wrapped.data), got.get("error"))
+	check("transfer_bare_save_ok", XSaveTransfer.parse_import(FileAccess.get_file_as_string(XSave.path(1))).has("data"))
+	var mv_err := str(XSaveTransfer.parse_import(JSON.stringify({"format": "kyo-save-json-v1", "game": "org.kyo.xiyou", "data": {}})).get("error", ""))
+	check("transfer_rejects_mv", mv_err.contains("原版"), mv_err)
+	check("transfer_rejects_junk", XSaveTransfer.parse_import("not json").has("error") and XSaveTransfer.parse_import("{\"format\":\"x\"}").has("error")
+		and XSaveTransfer.parse_import(JSON.stringify({"format": XSaveTransfer.FORMAT, "game": XSaveTransfer.GAME, "data": {"mode": "xiyou"}})).has("error"))
+	check("transfer_import_empty_slot", XSaveTransfer.import_to(2, got.data) == "" and XSave.exists(2) and XSave.summary(2) != "存档 2：无法读取")
+	var before_files := DirAccess.get_files_at(save_dir).size()
+	var old_text := FileAccess.get_file_as_string(XSave.path(1))
+	var import_ok := XSaveTransfer.import_to(1, got.data) == ""
+	var kept := false
+	for f in DirAccess.get_files_at(save_dir):
+		if f.begins_with("save_1.json.before_import_") and FileAccess.get_file_as_string(save_dir.path_join(f)) == old_text:
+			kept = true
+	check("transfer_import_backs_up", import_ok and kept and DirAccess.get_files_at(save_dir).size() == before_files + 1)
+	# 标题页：触屏时右上有两个按钮；导入走「选文件 → 选存档位」
+	var title_page: Control = load("res://modes/xiyou/entry.tscn").instantiate()
+	add_child(title_page)
+	await frames(1)
+	var import_btn := title_page.find_child("ImportSave", true, false) as Button
+	check("title_transfer_buttons", import_btn != null and title_page.find_child("ExportSave", true, false) != null)
+	XSaveTransfer.dialog_override = func(_mode, _filename, done): done.call(true, PackedStringArray([file]), 0)
+	if import_btn != null:
+		import_btn.pressed.emit()
+	await frames(1)
+	var slot_btn: Button = null
+	for b in title_page.find_children("*", "Button", true, false):
+		if (b as Button).text.begins_with("存档 3："):
+			slot_btn = b
+	check("title_import_slot_page", slot_btn != null and not title_page.is_title_page())
+	if slot_btn != null:
+		slot_btn.pressed.emit()
+	await frames(1)
+	check("title_import_done", XSave.exists(3))
+	XSaveTransfer.dialog_override = Callable()
+	title_page.queue_free()
+	await frames(1)
+	check("transfer_bad_slot", XSaveTransfer.import_to(0, got.data) != "" and XSaveTransfer.import_to(XSave.SLOTS + 1, got.data) != "")
+	for f in DirAccess.get_files_at(save_dir):
+		DirAccess.remove_absolute(save_dir.path_join(f))
+	DirAccess.remove_absolute(save_dir)
+	XSave.dir_override = saved_dir
+	XState.current = saved_state
 
 	# 设置：发行版存档目录去掉「_开发」（O-200），横屏
 	check("release_user_dir", str(ProjectSettings.get_setting("application/config/custom_user_dir_name.release", "")) == "KYO/再刷重制"

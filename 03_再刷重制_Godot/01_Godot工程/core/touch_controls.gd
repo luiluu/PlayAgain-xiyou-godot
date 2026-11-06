@@ -5,6 +5,9 @@ extends CanvasLayer
 ## 按键都转成 InputEventAction（方向、确定、取消）或 Shift 物理键（跑步，MV updateDashing 看 Shift），按住照 XKeyRepeat 的 24／6 帧连发。
 ## 按到这些按键的触点（含 Godot 由第一指转出的鼠标事件）在这里吃掉，不再传给地图和界面，也不算两指取消。
 ## 只在 XPlatform.is_touch() 时由 GameApp 建；切后台、返回键时全部松开。隐藏状态存 user://touch_controls.json。
+## 三期（cc BP 2026-11-06）：照原版 Codex_AndroidTouchSettings.js「手机按键设置」，轮盘／右侧按键／顶部按钮大小、透明度、
+## 三组位置（movement／actions／top，拖动后存成安全区内的 0～1 比例）可调，存同一文件；默认值与二期一样。
+## 按键避开刘海／圆角：默认位置的边距取 max(原边距, 安全区缩进)（原版 max(12px, env(safe-area-inset-*))）；拖过的位置也限制在安全区内。
 
 const REPEAT_WAIT := 24
 const REPEAT_INTERVAL := 6
@@ -21,7 +24,38 @@ const BUTTONS := {
 	"hide": {"rect": Rect2(1170, 8, 100, 40), "text": "隐藏按键", "toggle": true},
 }
 
+## 原版 limits：大小百分比与透明度的范围，步长 5。
+const LIMITS := {"stick": [70, 170], "buttons": [70, 160], "tools": [80, 140], "transparency": [0, 80]}
+const STEP := 5
+const DEFAULTS := {"hidden": false, "stick": 100, "buttons": 100, "tools": 100, "transparency": 0}
+## 三组：成员、缩放用哪个大小、100% 时的外框、默认贴哪两条边（与上面常量的位置一致）。
+const GROUPS := {
+	"movement": {"members": ["stick"], "size": "stick", "rect": Rect2(24, 552, 144, 144), "anchor": [SIDE_LEFT, SIDE_BOTTOM]},
+	"actions": {"members": ["ok", "cancel", "run"], "size": "buttons", "rect": Rect2(1030, 560, 230, 144), "anchor": [SIDE_RIGHT, SIDE_BOTTOM]},
+	"top": {"members": ["hide"], "size": "tools", "rect": Rect2(1170, 8, 100, 40), "anchor": [SIDE_RIGHT, SIDE_TOP]},
+}
+## 拖过的位置的可放范围：安全区再往里留的边（原版 bounds：左右 12、上 6、下 12）。
+const DRAG_MARGIN := [12.0, 6.0, 12.0, 12.0]  # 左、上、右、下
+const SCREEN := Vector2(1280, 720)
+## 当前这一个（设置页找它）。
+static var instance: XTouchControls
+
 var hidden := false
+var settings := {}
+## {"movement": {"x":, "y":} 或 null, ...}
+var positions := {}
+var layout_editing := false
+## 现在实际的位置（按大小、位置、安全区算出来的）
+var rects := {}
+var stick_center := STICK_CENTER
+var stick_radius := STICK_RADIUS
+var group_rects := {}
+var _insets := [0.0, 0.0, 0.0, 0.0]
+var _drag := {}  # 布局编辑：{"index":, "group":, "offset":}
+var _layout_bar: Control
+var _insets_overridden := false
+
+signal layout_finished
 var root: Control
 var _stick_base: Panel
 var _stick_knob: Panel
@@ -34,6 +68,7 @@ var _catch_label: Label
 
 
 func _ready() -> void:
+	instance = self
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	root = Control.new()
@@ -53,6 +88,7 @@ func _ready() -> void:
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.add_theme_font_size_override("font_size", 20 if name != "hide" else 15)
 		l.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+		l.name = "Label"
 		p.add_child(l)
 		_buttons[name] = p
 	_catch_label = Label.new()
@@ -66,7 +102,15 @@ func _ready() -> void:
 	if platform != null:
 		platform.virtual_keys_release_requested.connect(release_all)
 	_load()
+	_build_layout_bar()
+	get_viewport().size_changed.connect(apply_layout)
+	apply_layout()
 	_apply_hidden()
+
+
+func _exit_tree() -> void:
+	if instance == self:
+		instance = null
 
 
 func _panel(rect: Rect2, radius: float, color: Color) -> Panel:
@@ -86,19 +130,53 @@ func _panel(rect: Rect2, radius: float, color: Color) -> Panel:
 
 ## 某点落在哪个按键上（"stick"、按键名或 ""）。隐藏时只剩「隐藏按键」能点（照原版 compact）。
 func hit(pos: Vector2) -> String:
-	if (BUTTONS.hide.rect as Rect2).has_point(pos):
+	if (rects.hide as Rect2).has_point(pos):
 		return "hide"
 	if hidden:
 		return ""
-	if pos.distance_to(STICK_CENTER) <= STICK_RADIUS * 1.2:
+	if pos.distance_to(stick_center) <= stick_radius * 1.2:
 		return "stick"
 	for name in BUTTONS:
-		if (BUTTONS[name].rect as Rect2).has_point(pos):
+		if (rects[name] as Rect2).has_point(pos):
 			return name
 	return ""
 
 
+## 布局编辑时某点落在哪一组上。
+func group_at(pos: Vector2) -> String:
+	for g in GROUPS:
+		if (group_rects[g] as Rect2).has_point(pos):
+			return g
+	return ""
+
+
+func _layout_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		if _layout_bar.get_global_rect().has_point(t.position):
+			return  # 交给「恢复位置」「完成」两个按钮
+		get_viewport().set_input_as_handled()
+		if t.pressed and _drag.is_empty():
+			var g := group_at(t.position)
+			if g != "":
+				_drag = {"index": t.index, "group": g, "offset": t.position - (group_rects[g] as Rect2).position}
+		elif not t.pressed and _drag.get("index", -1) == t.index:
+			_drag = {}
+			_save()
+	elif event is InputEventScreenDrag:
+		var d := event as InputEventScreenDrag
+		get_viewport().set_input_as_handled()
+		if _drag.get("index", -1) == d.index:
+			move_group(_drag.group, d.position - _drag.offset)
+	elif event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION:
+		if not _layout_bar.get_global_rect().has_point((event as InputEventMouse).position):
+			get_viewport().set_input_as_handled()
+
+
 func _input(event: InputEvent) -> void:
+	if layout_editing:
+		_layout_input(event)
+		return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
 		if t.pressed:
@@ -148,7 +226,7 @@ func _release(what: String) -> void:
 	match what:
 		"stick":
 			_set_dir("")
-			_stick_knob.position = STICK_CENTER - _stick_knob.size / 2
+			_stick_knob.position = stick_center - _stick_knob.size / 2
 		"hide":
 			pass
 		_:
@@ -162,8 +240,8 @@ func _release(what: String) -> void:
 
 
 ## 摇杆：只取一个轴（横竖哪个大取哪个），中心 16% 内不动。
-static func stick_direction(offset: Vector2) -> String:
-	if offset.length() <= STICK_RADIUS * DEAD_ZONE:
+static func stick_direction(offset: Vector2, radius := STICK_RADIUS) -> String:
+	if offset.length() <= radius * DEAD_ZONE:
 		return ""
 	if absf(offset.x) > absf(offset.y):
 		return "ui_left" if offset.x < 0 else "ui_right"
@@ -171,11 +249,11 @@ static func stick_direction(offset: Vector2) -> String:
 
 
 func _move_stick(pos: Vector2) -> void:
-	var offset := pos - STICK_CENTER
-	var travel := STICK_RADIUS - 26.0
+	var offset := pos - stick_center
+	var travel := stick_radius - _stick_knob.size.x / 2
 	var shown := offset.limit_length(travel)
-	_stick_knob.position = STICK_CENTER + shown - _stick_knob.size / 2
-	_set_dir(stick_direction(offset))
+	_stick_knob.position = stick_center + shown - _stick_knob.size / 2
+	_set_dir(stick_direction(offset, stick_radius))
 
 
 func _set_dir(action: String) -> void:
@@ -235,20 +313,182 @@ func _process(_delta: float) -> void:
 
 
 func _apply_hidden() -> void:
+	var shown := not hidden or layout_editing
 	for name in _buttons:
-		(_buttons[name] as Panel).visible = name == "hide" or not hidden
-	_stick_base.visible = not hidden
-	_stick_knob.visible = not hidden
-	var label := (_buttons.hide as Panel).get_child(0) as Label
+		(_buttons[name] as Panel).visible = name == "hide" or shown
+	_stick_base.visible = shown
+	_stick_knob.visible = shown
+	var label := (_buttons.hide as Panel).get_node("Label") as Label
 	label.text = "显示按键" if hidden else "隐藏按键"
+	# 原版 node.style.opacity = 1 - 透明度/100，调位置时不透明
+	root.modulate.a = 1.0 if layout_editing else 1.0 - float(settings.transparency) / 100.0
+
+
+## 安全区缩进（画面坐标，左上右下）：测试可以直接给。
+func set_insets(insets: Array) -> void:
+	_insets_overridden = true
+	_insets = insets.duplicate()
+	apply_layout()
+
+
+## 按大小、位置、安全区把三组摆好。
+func apply_layout() -> void:
+	if root == null:
+		return
+	if is_inside_tree() and not _insets_overridden:
+		_insets = XPlatform.safe_insets(get_viewport())
+	for g in GROUPS:
+		var spec: Dictionary = GROUPS[g]
+		var base: Rect2 = spec.rect
+		var s := float(settings[spec.size]) / 100.0
+		var size := base.size * s
+		var pos := default_position(g, size)
+		var saved = positions.get(g)
+		if saved is Dictionary:
+			var box := drag_bounds(size)
+			pos = box.position + Vector2(clampf(float(saved.x), 0, 1) * box.size.x, clampf(float(saved.y), 0, 1) * box.size.y)
+		group_rects[g] = Rect2(pos, size)
+		for name in spec.members:
+			if name == "stick":
+				stick_center = pos + (STICK_CENTER - base.position) * s
+				stick_radius = STICK_RADIUS * s
+				_place(_stick_base, Rect2(stick_center - Vector2.ONE * stick_radius, Vector2.ONE * stick_radius * 2), stick_radius)
+				var knob := 26.0 * s
+				_place(_stick_knob, Rect2(stick_center - Vector2.ONE * knob, Vector2.ONE * knob * 2), knob)
+			else:
+				var r: Rect2 = BUTTONS[name].rect
+				rects[name] = Rect2(pos + (r.position - base.position) * s, r.size * s)
+				_place(_buttons[name], rects[name], 12.0 * s)
+				var label := (_buttons[name] as Panel).get_node("Label") as Label
+				label.add_theme_font_size_override("font_size", maxi(10, roundi((15 if name == "hide" else 20) * s)))
+	_apply_hidden()
+
+
+
+func _place(p: Panel, r: Rect2, radius: float) -> void:
+	p.position = r.position
+	p.size = r.size
+	(p.get_theme_stylebox("panel") as StyleBoxFlat).set_corner_radius_all(int(radius))
+
+
+## 没拖过时：贴原来那两条边，边距取 max(原边距, 安全区缩进)。
+func default_position(g: String, size: Vector2) -> Vector2:
+	var spec: Dictionary = GROUPS[g]
+	var base: Rect2 = spec.rect
+	var margin := [base.position.x, base.position.y, SCREEN.x - base.end.x, SCREEN.y - base.end.y]
+	var pos := Vector2.ZERO
+	pos.x = maxf(margin[0], _insets[0]) if spec.anchor.has(SIDE_LEFT) else SCREEN.x - maxf(margin[2], _insets[2]) - size.x
+	pos.y = maxf(margin[1], _insets[1]) if spec.anchor.has(SIDE_TOP) else SCREEN.y - maxf(margin[3], _insets[3]) - size.y
+	return pos
+
+
+## 拖过的位置的放置范围（左上角能落的矩形）。
+func drag_bounds(size: Vector2) -> Rect2:
+	var left: float = DRAG_MARGIN[0] + _insets[0]
+	var top: float = DRAG_MARGIN[1] + _insets[1]
+	var w := maxf(0, SCREEN.x - left - DRAG_MARGIN[2] - _insets[2] - size.x)
+	var h := maxf(0, SCREEN.y - top - DRAG_MARGIN[3] - _insets[3] - size.y)
+	return Rect2(left, top, w, h)
+
+
+## 把一组的左上角移到 pos（限制在安全区内），记成比例。
+func move_group(g: String, pos: Vector2) -> void:
+	var box := drag_bounds((group_rects[g] as Rect2).size)
+	positions[g] = {"x": 0.0 if box.size.x <= 0 else clampf((pos.x - box.position.x) / box.size.x, 0, 1),
+		"y": 0.0 if box.size.y <= 0 else clampf((pos.y - box.position.y) / box.size.y, 0, 1)}
+	apply_layout()
+
+
+## 设置页用：改大小或透明度（夹在原版范围内、对齐 5），立即生效并保存。
+func set_value(key: String, value: int) -> void:
+	var lim: Array = LIMITS[key]
+	settings[key] = clampi(roundi(value / float(STEP)) * STEP, lim[0], lim[1])
+	apply_layout()
+	_save()
+
+
+func set_hidden(value: bool) -> void:
+	if hidden == value:
+		return
+	hidden = value
+	release_all()
+	_apply_hidden()
+	_save()
+
+
+## 原版「恢复默认」：大小、透明度回默认、显示按键，位置清掉。
+func reset_defaults() -> void:
+	settings = DEFAULTS.duplicate()
+	hidden = false
+	positions = {}
+	apply_layout()
+	_save()
+
+
+## 原版「调整UI位置」：拖三组按键，上方「恢复位置」「完成」；返回键也算完成。
+func start_layout() -> void:
+	release_all()
+	layout_editing = true
+	_drag = {}
+	_layout_bar.visible = true
+	_apply_hidden()
+
+
+func finish_layout() -> void:
+	if not layout_editing:
+		return
+	layout_editing = false
+	_drag = {}
+	_layout_bar.visible = false
+	_apply_hidden()
+	_save()
+	layout_finished.emit()
+
+
+
+func _build_layout_bar() -> void:
+	_layout_bar = HBoxContainer.new()
+	_layout_bar.name = "LayoutBar"
+	_layout_bar.position = Vector2(470, 300)
+	_layout_bar.size = Vector2(340, 56)
+	_layout_bar.add_theme_constant_override("separation", 20)
+	_layout_bar.visible = false
+	root.add_child(_layout_bar)
+	for spec in [["恢复位置", func():
+			positions = {}
+			apply_layout()
+			_save()], ["完成", finish_layout]]:
+		var b := Button.new()
+		b.text = spec[0]
+		b.custom_minimum_size = Vector2(160, 56)
+		b.add_theme_font_size_override("font_size", 22)
+		b.pressed.connect(spec[1])
+		_layout_bar.add_child(b)
 
 
 func _load() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(SETTINGS_PATH)) if FileAccess.file_exists(SETTINGS_PATH) else null
-	hidden = data is Dictionary and bool(data.get("hidden", false))
+	if not (data is Dictionary):
+		data = {}
+	hidden = bool(data.get("hidden", false))
+	settings = DEFAULTS.duplicate()
+	for key in LIMITS:
+		var v = data.get(key)
+		if v is float or v is int:
+			settings[key] = clampi(int(v), LIMITS[key][0], LIMITS[key][1])
+	positions = {}
+	var saved = data.get("positions")
+	if saved is Dictionary:
+		for g in GROUPS:
+			var p = saved.get(g)
+			if p is Dictionary and (p.get("x") is float or p.get("x") is int) and (p.get("y") is float or p.get("y") is int):
+				positions[g] = {"x": clampf(float(p.x), 0, 1), "y": clampf(float(p.y), 0, 1)}
 
 
 func _save() -> void:
+	var data := {"hidden": hidden, "positions": positions}
+	for key in LIMITS:
+		data[key] = settings[key]
 	var f := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
 	if f != null:
-		f.store_string(JSON.stringify({"hidden": hidden}))
+		f.store_string(JSON.stringify(data))
