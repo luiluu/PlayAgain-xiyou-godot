@@ -13,6 +13,13 @@ extends Node2D
 ## - 状态图标：原版被 Codex_BossStatusSummary 藏起（换成下方状态面板），所以这里不画。
 ## - 和原版的差别：敌人变身（transform）不会把血条切到新编号；追加 Boss 现身不会补建血条（原版同样不会）。
 
+## 冻结后跟进 v0.37（installNativeZhenqiRuntime「首领血条」Z.bossHpEnemy）：除插件名单外，心魔／天劫瓶颈之战（敌群 901／823）、
+## 心魔训练敌群（770）里的敌人，和神兵试炼的神兵之仙（Z.WEAPON_BOSS 或备注 <CodexZhenqi: weapon N>）也显示首领血条。
+## 只走显示层：名单里的 Boss 优先（敌群里最后一个且未隐藏）；名单里一个也没有时才取这类敌人里最后一个未隐藏的。
+## 它们的头像为空（face_name 返回 ""）、小血条不出现（原版 hpGaugeVisible 对它们返回 false）。
+## 默认 false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+static var RANGE_V037 := false
+
 const LIST_LENGTH := 569
 const SHAKE_FRAMES := 80
 const UNITS := ["", "万", "亿", "兆", "京"]
@@ -38,6 +45,7 @@ var _temp_target = null
 var _temp_hp := 0.0
 var _temp_shake := 0
 var _known := {}          # 敌人 → 上一帧读到的血量（命中前的血量）
+var _ext_flags := {}      # 敌人 → 是否 v0.37 范围内（开战时定，不随变身变）
 var _meter_flags := {}    # 敌人 → 曾经算过 Boss（_bosshp_meter 一旦为真不再清）
 var _rng := RandomNumberGenerator.new()
 var _name_canvas: XMVCanvas
@@ -82,6 +90,39 @@ static func is_listed(enemy_id: int) -> bool:
 	return boss_list().has(enemy_id)
 
 
+## Z.bossHpEnemy：神兵之仙（WEAPON_BOSS 或备注标签）或在心魔／天劫／心魔训练敌群里；插件名单里的不算（_codexZqBossHp＝没有 _bosshp_meter）
+static func is_extended(enemy_id: int) -> bool:
+	if not RANGE_V037 or is_listed(enemy_id):
+		return false
+	if not _ext_cache.has(enemy_id):
+		_ext_cache[enemy_id] = _in_extended_range(enemy_id)
+	return bool(_ext_cache[enemy_id])
+
+
+static var _ext_cache := {}
+
+
+static func _in_extended_range(enemy_id: int) -> bool:
+	if XZhenqi.WEAPON_BOSS.has(enemy_id):
+		return true
+	var tag := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+\\d+>")
+	if tag.search(str(XDB.rec("Enemies", enemy_id).get("note", ""))) != null:
+		return true
+	var troops := []
+	troops.append_array(XZhenqi.TRIAL_TROOP.values())
+	troops.append_array(XZhenqi.HEART_TROOP.values())
+	for tid in troops:
+		for m in XDB.rec("Troops", int(tid)).get("members", []):
+			if int(m.get("enemyId", 0)) == enemy_id:
+				return true
+	return false
+
+
+## 敌人头上的小血条：YEP 的 hpGaugeVisible，再加上 v0.37 的 hpGaugeVisible 包装（显示首领血条的敌人不出小血条）
+static func small_gauge_visible(e) -> bool:
+	return e.hp_gauge_visible() and not is_extended(int(e.enemy_id))
+
+
 static func face_name(enemy_id: int) -> String:
 	return str(boss_list().get(enemy_id, ""))
 
@@ -109,12 +150,26 @@ func is_meter(e) -> bool:
 	return false
 
 
-## checkBossHpEnemies：敌群里最后一个是 Boss 且未隐藏的
+## v0.37 _codexZqBossHp：非名单、但属于上面范围的敌人
+func is_extended_enemy(e) -> bool:
+	if not (e is XEnemy):
+		return false
+	if _ext_flags.has(e):
+		return bool(_ext_flags[e])
+	_ext_flags[e] = not is_meter(e) and is_extended(int(e.enemy_id))
+	return bool(_ext_flags[e])
+
+
+## checkBossHpEnemies：敌群里最后一个是 Boss 且未隐藏的（v0.37 起名单里没有时再取范围内最后一个）
 func pick(enemies: Array):
 	var found = null
 	for e in enemies:
 		if is_meter(e) and not e.hidden:
 			found = e
+	if found == null and RANGE_V037:
+		for e in enemies:
+			if is_extended_enemy(e) and not e.hidden:
+				found = e
 	return found
 
 
@@ -155,7 +210,7 @@ func _enemy_name(e) -> String:
 
 ## Game_Action.apply：命中 Boss 时记目标、命中前血量、是否掉血（掉血 → 震动 80 帧）
 func applied(target, hp_after: float) -> void:
-	if battler == null or not is_meter(target):
+	if battler == null or not (is_meter(target) or is_extended_enemy(target)):
 		return
 	_temp_target = target
 	_temp_hp = float(_known.get(target, hp_after))
