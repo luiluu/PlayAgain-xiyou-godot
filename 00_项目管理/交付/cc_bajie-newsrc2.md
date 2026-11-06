@@ -99,3 +99,9 @@
 ### 待交叉核查（后半）
 
 - `mv_script.gd`（`_cut_misc`、`_data_patch`、`_inject_changelog`、eval_expr 的 jianxin／CodexWhisper）、`xconfig.gd`（codexWhisperSeen）、`battle_event_runner.gd`（`_push_recast_script`、O_PUSH_RECAST）、`battle_common_event_probe.cjs`＋夹具、`shop_stock.gd`（v0.41）、`shop.gd`、`map_scene.gd`、`mv_interpreter.gd`（302 记事件）、`treasure_map.gd`（v0.29）、`dead_content.gd`（ichigo_old_source）、`xstate.gd`（tier 对接）、`xiyou_export.py`（export_changelog）、`xiyou_slice.json`，以及各测试改动。
+
+### 空绿扫描「4747 条产物过期」（总装二十七派给本单）
+
+- 原因：集成分支树（`recursing-shamir-4cd3d8`，6e403442）的 `generated/oracle/event_states.json` 是 07:42 的旧结果（2.6 MB），预设早已换成新源那套；本树的是新源 9665 例全量补跑结果（5.3 MB）。两边 `event_presets.json` 逐字节相同、generated 都是 v0.62.12。
+- 处理：集成树原文件备份为 `event_states.json.bak-0742-before-bajie`，换成本树这份（gitignore 产物，不入库）；集成树里 `事件空绿扫描.py --check` 重跑：空绿 96 例均在基线内、理由齐，过期 0。
+- 以后合并改了预设的分支，集成树都要补跑 `补跑事件状态探针.py`（增量）或从车道树拷这份，否则 --check 会报过期。
