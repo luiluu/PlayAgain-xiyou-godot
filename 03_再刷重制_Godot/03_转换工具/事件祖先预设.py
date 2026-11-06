@@ -7,7 +7,9 @@
 随机门（122 随机）不在这里管，另用 random_seq 变体。
 
   事件祖先预设.py --missed-json 簇.json --tag w1 [--min 3] [--limit N] [--dry-run]
-  事件祖先预设.py --prune --cur 本.json --tag w1 --targets 目标.json   删掉 --tag 变体里目标位置本轮仍没执行到的（生成时用 --targets 写出）
+  事件祖先预设.py --prune --cur 本.json --tag w1 --targets 目标.json [--states event_states.json]
+      删掉 --tag 变体里目标位置本轮仍没执行到的（生成时用 --targets 写出）。给了 --states 时口径同 事件空绿扫描.zero_effect：
+      目标没执行到、但文字轨迹和基础用例不同（走进了别的对话）的变体留下当文字对照（审查 50 P3-1；--old-zero-effect 回到旧口径）。
 """
 import argparse
 import importlib.util
@@ -19,6 +21,9 @@ P = HERE / 'event_presets.json'
 spec = importlib.util.spec_from_file_location('cov', HERE / '事件写法覆盖.py')
 cov = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cov)
+_spec = importlib.util.spec_from_file_location('empty_scan', HERE / '事件空绿扫描.py')
+scan = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(scan)
 
 
 def merge_into(out, add):
@@ -100,14 +105,22 @@ def main(argv=None):
     ap.add_argument('--tried', action='append', default=[], help='往轮的簇 JSON：按同法合成过（含后来剪掉的）的 (页, 预设) 不再出')
     ap.add_argument('--targets', help='生成时写出／剪枝时读入：变体号→目标位置')
     ap.add_argument('--cur')
+    ap.add_argument('--states', help='剪枝时读入：本轮量出的 event_states.json；文字轨迹与基础用例不同的变体不剪')
+    ap.add_argument('--old-zero-effect', action='store_true', help='回到旧口径：只看目标有没有执行到')
     a = ap.parse_args(argv)
     d = json.loads(P.read_text())
     cases = d['cases']
     if a.prune:
         c1 = set(json.loads(Path(a.cur).read_text())['executed'])
         tg = json.loads(Path(a.targets).read_text())
+        states = {c['id']: c for c in json.loads(Path(a.states).read_text())['cases']} if a.states else {}
+        traces = scan.base_traces() if states and not a.old_zero_effect else {}
+
+        def text_kept(c):  # 同 事件空绿扫描.zero_effect 的文字半边：走进了别的对话就留下
+            v = states.get(c['base'] + '#' + c['tag'])
+            return bool(traces) and v is not None and traces.get(c['base']) is not None and v.get('trace') != traces[c['base']]
         keep = [c for c in cases if not c['tag'].startswith(a.tag + '_') or tg.get(c['base'] + '#' + c['tag']) in c1
-                or c['base'] + '#' + c['tag'] not in tg]
+                or c['base'] + '#' + c['tag'] not in tg or text_kept(c)]
         print('删掉目标仍没执行到的变体', len(cases) - len(keep))
         d['cases'] = keep
         P.write_text(json.dumps(d, ensure_ascii=False, indent=1) + '\n')

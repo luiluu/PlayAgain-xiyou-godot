@@ -139,6 +139,37 @@
 
 - `ui/merchant29_page.gd`、`tests/xiyou_merchant29.gd`（ui_layout）。
 
+## DI：保住 31 段 o 变体的原版文字对照（协调 11-06 16:16 派，审查 50 P3-1）
+
+### 变更记录草稿
+
+#### 【cc·八戒·未经审查】零效果判定加「文字轨迹相同」，加回 31 个走进别的对话的 o 变体
+
+- **判定**：`事件空绿扫描.py` 新加 `zero_effect(v, base_trace)`：效果指令一条都没走到（`reached[0]==0` 且该页有效果指令），**并且** trace 与基础用例（`generated/oracle/events.json`）相同，才算「预设没生效」。`check_variants` 改用它。
+- **剪枝同口径**：`事件祖先预设.py --prune` 新加 `--states event_states.json`：目标没执行到、但文字轨迹和基础用例不同的变体留下；不给 `--states` 时行为不变。
+- **回退**：`事件空绿扫描.TEXT_TRACE_COUNTS = False` 回到旧判定（只看 reached）；剪枝加 `--old-zero-effect`。工具开关，不是游戏行为，没登 O 项。
+- **加回的 31 条**（4c60db31 删的 82 条里 trace 与基础用例不同的；和审查给的一致）：插回 `event_presets.json` 原来的位置（9670 → 9701 例）。每条差在第一个选项框的 pick（走了另一个选项），后面跟出的对话不同：
+  - 守层者「有什么需要的吗？」选第 2 项（索要礼物等）：m116e1p1、m117e1p1、m118e3p1、m119e13p1、m120e1p1、m144e1p1、m145e1p1、m147e1p1、m155e1p1、m182e1p1 的 #o2；m30e8p1、m32e1p1、m33e3p1、m45e1p1、m47e13p1、m64e1p1 的 #o4。
+  - 心法选项公共事件：ce1088#o2、ce1089#o2／o2_2、ce1090#o2／o2_2、ce1092#o2。
+  - 其他：m225e9p0#o2（福利助手）、m18e2p0#o2、m18e2p2#o2（知识贤者，少一句）、m4e56p0#o2／o2_2／o2_3（第 3 个选项框）、m220e10p0#o4（小毒，多两句）、m195e23p1#o4（传承强化说明，少一句）、m66e3p0#o4（符石师）。
+- 新源 v0.62.12 上 31 条的基础用例都在，没有 goneIn；和现有预设不撞号。
+
+### 验证（DI）
+
+- 探针：`XIYOU_APP=…/v0.62.12/app.nw node event_state_probe.cjs <31 个>`（前缀多带出 6 个已有变体，和现有结果逐字相同），31 例都是 `reached[0]==0`、delta 空、trace 与基础用例不同；只把这 31 例按预设顺序补进本树 `generated/oracle/event_states.json`（9701 例）。
+- `xiyou_event_compare --only=<31 个>`：37 例全一致（31＋前缀带出的 6），11/11。
+- `事件空绿扫描.py --check` 过（空绿 99 例都在基线内，基线没动）；把 `TEXT_TRACE_COUNTS` 改成 False 时正好报这 31 条，旧判定可回。
+- 剪枝：临时预设文件造 4 个变体（3 个文字不同、1 个文字相同）、目标都没执行到：新口径只剪掉文字相同的那个，`--old-zero-effect` 和不给 `--states` 都剪掉 4 个。
+- `工具回归.py`：6 项过，`插件备注覆盖` 1 项挂（豁免键 codexaura 找不到）：本树 generated 是新源导出的，同分支同提交的 charming-chatterjee 工作树（旧 generated）跑同一测试是过的，跟本单无关，算 DD 的换源问题。没改 .gd，`语法检查.py` 沿用期二的 0 问题。
+
+### 给总装（DI）
+
+- 集成树下次同步会重量 event_states.json（9701 例），不用手补。
+
+### 待交叉核查（DI）
+
+- `事件空绿扫描.py`（zero_effect／TEXT_TRACE_COUNTS）、`事件祖先预设.py`（--states／--old-zero-effect）、`event_presets.json`（加回 31 条）。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
