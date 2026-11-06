@@ -211,14 +211,16 @@ const head = d => JSON.stringify([d.sourceIdentity, d.setup]);
 if (head(lane) !== head(main)) { console.error('来源或设置不同'); process.exit(3); }
 const rows = Object.fromEntries(JSON.parse(fs.readFileSync(presets, 'utf8')).cases.map(p => [p.base + '#' + p.tag, p]));
 const pick = (doc, id) => doc.cases.find(c => c.id === id);
-const cases = [];
+const cases = [], skipped = [], version = lane.sourceIdentity.releaseVersion;
 for (const id of JSON.parse(order)) {
+  // goneIn：这一版基础用例已没了的预设，探针跳过并记进 skippedPresets（同 event_state_probe.cjs）
+  if ((rows[id].goneIn || []).includes(version)) { skipped.push(id); continue; }
   const want = JSON.stringify(rows[id].preset), base = rows[id].base;
   const hit = [lane, main].map(d => pick(d, id)).find(c => c && JSON.stringify(c.preset) === want && c.base === base);
   if (!hit) { console.error('没有可用结果：' + id); process.exit(3); }
   cases.push(hit);
 }
-fs.writeFileSync(out, JSON.stringify({sourceIdentity: lane.sourceIdentity, setup: lane.setup, cases}));
+fs.writeFileSync(out, JSON.stringify(Object.assign({sourceIdentity: lane.sourceIdentity, setup: lane.setup, cases}, skipped.length ? {skippedPresets: skipped} : {})));
 console.log(JSON.stringify({cases: cases.length}));
 '''
 

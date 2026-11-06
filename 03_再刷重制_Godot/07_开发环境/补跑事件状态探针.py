@@ -46,7 +46,7 @@ for (let k = 0; k < total; k++) {
   if (!c) throw new Error('分段的用例数对不上（第 ' + k + ' 个）');
   cases.push(c);
 }
-fs.writeFileSync(out, JSON.stringify({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}));
+fs.writeFileSync(out, JSON.stringify(Object.assign({sourceIdentity: docs[0].sourceIdentity, setup: docs[0].setup, cases}, docs[0].skippedPresets ? {skippedPresets: docs[0].skippedPresets} : {})));
 console.log(JSON.stringify({cases: cases.length, shards: n}));
 '''
 
