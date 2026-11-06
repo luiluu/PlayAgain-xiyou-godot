@@ -103,6 +103,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
+	obj = XLiuying.text_view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按当前进阶生成（refreshText）
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)

@@ -343,6 +343,7 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 	rows.append(_line("结算伤害·合计：" + dmg_pct(c.now.settle)))
 	rows.append(_line("\\C[8]暴击率：还需减去敌人暴击闪避\\C[0]"))
 	rows.append(_line("\\C[8]结算伤害：开战时获得的状态合计\\C[0]"))
+	rows.append_array(XAffixRate.detail_rows(s))  # v0.62 installAffixDifficultyRateRuntime 的 G.detailRows 包装（O-待定·词条难度浮动）
 	return rows
 
 

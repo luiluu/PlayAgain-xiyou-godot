@@ -705,3 +705,69 @@ static func core_drops(logic) -> Array:
 		if rate > 0.0 and logic.random.reward.next_float("liuying_core", "0") < rate:
 			out.append({"kind": 1, "id": CORE_ITEM})
 	return out
+
+
+# ==== 第三期：技能说明按当前进阶生成（v0.62.08，第 15 节 L.skillLines／L.refreshText） ====
+## 原版在显示说明前（Sprite_ItemHelp.setItem、Window_SkillList.refresh）按流萤（$gameActors 里的 179，没建为 0）的进阶次数，
+## 把 10622、10623 备注里的 <pos=APs …> 行整组换掉（HelpExtend 倒序插入，所以写进备注时反过来）；燃烧三阶起 customCostText 清空。
+## 重制在说明卡入口（XHelpCard._content）换成同样备注的副本，不改数据库。hiddenRate、逐火递减等暗改项照原版不写。
+## O-待定·流萤说明按阶：false＝照 v0.28 数据库原文（等于 0 阶的写法，「解锁：进阶2阶」一直在）
+static var TEXT_BY_RANK := true
+
+
+static func _aps_line(t: String) -> String:
+	return "<pos=APs text=" + t + " size=18 color=rgba(255,255,255,1) line=false align=0>"
+
+
+static func _formula_text(id: int) -> String:
+	return "伤害：每段[%d＋己·最大生命×%d＋己·物理攻击×%d＋己·敏捷＋施放前护盾×%d]×[1+技能等级×0.1]" % [
+		int(BASE.get(id, 0.0)), int(HP_N), int(DAMAGE_N), int(DAMAGE_N)]
+
+
+## L.skillLines(id, r)：不是这两招返回空
+static func skill_lines(id: int, r: int) -> Array:
+	var rr := int(roundf(RE_RELEASE * 100.0))
+	if id == TIANHUO:
+		return [_formula_text(id), "伤害属性：火焰·物理", "目标：敌方单体", "命中类型：必中", "能否暴击：是",
+			"攻击次数：%d" % (5 + (3 if r >= 2 else 0)),
+			"消耗：5%当前生命",
+			"装备限制：剑",
+			"效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
+			"效果：除主目标外，其余敌人受到50%扩散伤害",
+			"效果：只有一个目标时，伤害结算×1.2",
+			"效果：有%d%%概率再释放一次（不再消耗）" % rr,
+			"效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）"]
+	if id == RANSHAO:
+		var top := r >= 3
+		var cd := RS_COOLDOWN - (1 if top else 0)
+		var lines := [_formula_text(id), "伤害属性：火焰·物理", "目标：敌方全体", "命中类型：必中", "能否暴击：是",
+			"攻击次数：9（只有一个目标时13）",
+			"冷却时间：%d回合（按自然回合计，再动不缩短）%s" % [cd, "；施放后33%概率不进入冷却" if top else ""]]
+		if not top:
+			lines.append("消耗：当前全部护盾")
+		lines.append("装备限制：剑")
+		lines.append("效果：增加与施放前护盾等量的护盾（上限为最大生命%d%%）" % int(roundf(SHIELD_CAP * 100.0)) if top else "效果：消耗当前全部护盾")
+		lines.append_array(["效果：施放后回复全部生命", "效果：只有一个目标时，伤害结算×1.5",
+			"效果：有%d%%概率再释放一次（不再消耗、不进冷却）" % rr,
+			"效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）"])
+		if r < 2:
+			lines.append("解锁：进阶2阶")
+		return lines
+	return []
+
+
+## 说明卡用的技能副本：备注里的 APs 行换成当前阶的（refreshText）；不是这两招或开关关着原样返回
+static func text_view(obj: Dictionary, s: XState = null) -> Dictionary:
+	if not TEXT_BY_RANK:
+		return obj
+	var id := int(obj.get("id", 0))
+	if (id != TIANHUO and id != RANSHAO) or not obj.has("stypeId"):
+		return obj
+	if s == null:
+		s = XState.current
+	var lines := skill_lines(id, XAdvance.rank(s, ACTOR))
+	var keep := Array(str(obj.get("note", "")).replace("\r\n", "\n").split("\n")).filter(func(t): return not str(t).begins_with("<pos=APs "))
+	lines.reverse()
+	var out := obj.duplicate()
+	out.note = "\n".join(PackedStringArray(keep + lines.map(_aps_line)))
+	return out
