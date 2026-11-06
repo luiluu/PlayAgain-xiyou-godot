@@ -70,6 +70,8 @@ func _run() -> void:
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
 	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + RECRUIT_9.values() + CATS:
+		if not d.actors.has(str(id)):  # 参照里没有这名（新源 179 要等整份同步），上面 oracle_row 已记挂，这里跳过免得脚本出错停住
+			continue
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))

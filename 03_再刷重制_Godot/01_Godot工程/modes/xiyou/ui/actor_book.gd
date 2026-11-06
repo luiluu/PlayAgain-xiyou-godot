@@ -33,6 +33,7 @@ const INDEX_ROWS := 19                     # floor((720 − 28) / 36)
 const LIST_ROWS := 16                      # floor((620 − 28) / 36)
 const BOX_W := 1280.0
 const CONTENT_W := 932.0                   # 状态窗内容宽
+const CONTENT_H := 692.0                   # 状态窗内容高（720 − 内边距 14×2）
 const SPRITE_CENTER := Vector2(93.2, 932.0 / 13.0)   # 窗口坐标（精灵是窗口子节点，不含内边距）
 const PARAM_LABELS := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运"]
 ## installUnifiedQualityRuntime actorGrades：人物原生品质 → 七档（12 按 10 处理，未列出的为 0）
@@ -43,7 +44,7 @@ const RAVEN_SKILLS := [10122, 10123, 10124, 10125, 10126, 10127, 10129, 10130, 1
 	10136, 10137, 10138, 10139, 10170]
 const TOJI_SKILLS := [10203, 10205, 10206, 10207, 10208, 10209, 10210, 10211, 10212, 10213, 10214, 10215, 10216,
 	10217, 10218, 10219, 10225, 10226]
-const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174]
+const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174, 179]  # 179：v0.62 起
 ## installNativeRavenRuntime 的 [等级, 进阶] 解锁表里要进阶的技能：新建的渡鸦（进阶 0）没有学会
 const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 10139, 10170]
 const ATTR_INK := Color("c1c9d5")
@@ -175,6 +176,11 @@ static func _external_skill(skill: Dictionary) -> bool:
 	return RegEx.create_from_string(EXTERNAL_NAME).search(str(skill.get("name", ""))) != null
 
 
+## v0.29 光环技能（备注 <CodexAura>）：状态页单列一栏、详情页类型写「光环」
+static func is_aura(s: Dictionary) -> bool:
+	return str(s.get("note", "")).contains("<CodexAura>")
+
+
 ## CodexActorBookSkills(actor, baseOnly)：主动（stypeId 1～3）、被动（4）、其他（5）依次排
 static func book_skills(id: int, base_only: bool) -> Array:
 	var active := []
@@ -229,6 +235,12 @@ static func book_skills(id: int, base_only: bool) -> Array:
 		elif id == 171:
 			for sid in TOJI_SKILLS:
 				add.call(sid)
+		if id == 179:  # v0.62 流萤：10622 天火轰击、10623 完全燃烧、10624～10632 被动，再加全库备注带 <CodexLiuyingPassive:> 的
+			for sid in range(10622, 10633):
+				add.call(sid)
+			for sk in XDB.table("Skills"):
+				if sk is Dictionary and str(sk.get("note", "")).contains("<CodexLiuyingPassive:"):
+					add.call(int(sk.id))
 		if id == 174:
 			for sid in range(10270, 10282):
 				add.call(sid)
@@ -338,23 +350,45 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	var note_y := y + LH * 10
 	var initial_y := y + LH
 	var raven_w := floorf(CONTENT_W / 3.0) - 12
-	ops.append(_t("主动", 0, y, BOX_W, XUI.SYSTEM))
-	ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
-	ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
-	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
 	var skills := book_skills(id, true)
-	for col in 3:
-		var ry := initial_y
-		for s in skills:
-			var t := int(s.stypeId)
-			if (col == 0 and t >= 1 and t <= 3) or (col == 1 and t == 4) or (col == 2 and t == 5):
-				if raven:
-					_item_name(ops, s, offsets[col], ry, raven_w, 20)
-				else:
-					_item_name(ops, s, offsets[col], ry, BOX_W)
-				ry += skill_lh
-	y = initial_y if raven else note_y
-	var mx: float = offsets[2] if raven else 0.0
+	# v0.29 光环独立栏（v0.62 Star_ActorsBook drawAllContents）：本角色有 <CodexAura> 技能时改四栏「主动／被动／光环／其他」，
+	# 栏宽 floor(内容宽／4)，22 号、行高 30，每栏最多 maxRows 行，多出的写「确认查看全部」；武器掌握从最长一栏下一行起、靠左
+	var aura := skills.any(func(sk): return is_aura(sk))
+	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
+	if aura:
+		var cw4 := floorf(CONTENT_W / 4.0)
+		var labels := ["主动", "被动", "光环", "其他"]
+		for k in 4:
+			ops.append(_t(labels[k], k * cw4, y, cw4 - 8, XUI.SYSTEM))
+		var max_rows := maxi(1, floori((CONTENT_H - initial_y - LH * 6) / minf(30.0, LH)))
+		var groups := [[], [], [], []]
+		for sk in skills:
+			groups[2 if is_aura(sk) else 1 if int(sk.stypeId) == 4 else 3 if int(sk.stypeId) == 5 else 0].append(sk)
+		var longest := 0
+		for k in 4:
+			var list: Array = groups[k]
+			longest = maxi(longest, list.size())
+			for r in mini(list.size(), max_rows):
+				_item_name(ops, list[r], k * cw4, initial_y + r * 30, cw4 - 8, 22)
+			if list.size() > max_rows:
+				ops.append(_t("确认查看全部", k * cw4, initial_y + max_rows * 30, cw4 - 8, XUI.TEXT, 22))
+		note_y = initial_y + (mini(max_rows, longest) + 1) * 30
+	else:
+		ops.append(_t("主动", 0, y, BOX_W, XUI.SYSTEM))
+		ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
+		ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
+		for col in 3:
+			var ry := initial_y
+			for s in skills:
+				var t := int(s.stypeId)
+				if (col == 0 and t >= 1 and t <= 3) or (col == 1 and t == 4) or (col == 2 and t == 5):
+					if raven:
+						_item_name(ops, s, offsets[col], ry, raven_w, 20)
+					else:
+						_item_name(ops, s, offsets[col], ry, BOX_W)
+					ry += skill_lh
+	y = initial_y if raven and not aura else note_y
+	var mx: float = offsets[2] if raven and not aura else 0.0
 	var mw: float = CONTENT_W - mx - 4 if raven else BOX_W
 	var sys: Dictionary = XDB.system()
 	var traits: Array = XDB.rec("Classes", class_id(id)).get("traits", [])
@@ -410,7 +444,7 @@ static func list_row_ops(id: int, s: Dictionary, y: float, measure: Callable) ->
 	var sid := int(s.id)
 	var dragon := mira and ((sid >= 10148 and sid <= 10154) or (sid >= 10161 and sid <= 10164) or sid == 10167)
 	var t := int(s.stypeId)
-	var type_name := "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
+	var type_name := "光环" if is_aura(s) else "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
 	var label := "【" + ("黑龙·" if dragon else "") + type_name + "】"
 	var color := XUI.text_color(14) if t == 4 else XUI.text_color(3) if t >= 1 and t <= 3 else XUI.text_color(6)
 	var lw: float = measure.call(label, XUI.FONT_SIZE)
