@@ -19,6 +19,10 @@ CASE_IDS = frozenset({
 })
 
 
+# 各冻结源版本带战斗事件的敌群／页数（同 battle_event_probe.cjs 的 want；v0.62.12 多的来自 v0.54 一护剧情、v0.52 12.27 补齐）
+INVENTORY = {'v0.28': (35, 47), 'v0.62.12': (51, 73)}
+
+
 def validate_battle_events(data, manifest):
     name = 'battle_events.json'
     issues = []
@@ -39,9 +43,12 @@ def validate_battle_events(data, manifest):
         else:
             troops = scan['troops']
             pages = [p for troop in troops for p in troop['pages']]
-            if (len(troops) != 35 or len({troop['id'] for troop in troops}) != 35 or len(pages) != 47
-                    or rows.get('scan.inventory') != {'troops': 35, 'pages': 47}):
-                issues.append(name + ' 冻结源35敌群47页目录不完整')
+            want = INVENTORY.get(manifest.get('releaseVersion'))
+            if want is None:
+                issues.append(name + ' 冻结源版本 %s 没登记敌群事件目录数（核对后补进 INVENTORY）' % manifest.get('releaseVersion'))
+            elif (len(troops) != want[0] or len({troop['id'] for troop in troops}) != want[0] or len(pages) != want[1]
+                    or rows.get('scan.inventory') != {'troops': want[0], 'pages': want[1]}):
+                issues.append(name + ' 冻结源%d敌群%d页目录不完整' % want)
         issues.extend(identity_issues(name, data.get('sourceIdentity'), manifest))
     except (KeyError, TypeError, ValueError, AttributeError) as error:
         issues.append(name + ' 参照结构异常：' + str(error))
