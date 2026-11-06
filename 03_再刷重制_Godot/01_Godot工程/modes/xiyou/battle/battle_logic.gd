@@ -1304,6 +1304,18 @@ func _clear_event_cursor() -> void:
 	pending_force = {}
 
 
+## Scene_Battle.terminate → $gameTroop.onBattleEnd：敌群留在 $gameTroop 里，onBattleEnd 让隐藏成员出现（appear），状态不动；
+## 地图上的条件分歧「敌人」读这份（XState.last_troop，不存档）
+func _record_last_troop() -> void:
+	var out := []
+	for e in enemies:
+		var was_hidden: bool = e.hidden
+		e.hidden = false
+		out.append({"dead": e.is_dead(), "states": e.state_ids.duplicate()})
+		e.hidden = was_hidden
+	state.last_troop = out
+
+
 ## $gameTroop.members()[i]（含隐藏成员）
 func enemy_at(i: int) -> XEnemy:
 	return enemies[i] if i >= 0 and i < enemies.size() else null
@@ -3085,6 +3097,7 @@ func end_battle(result := -1) -> void:
 	for e in enemies:
 		e.shield = 0.0
 		e.param_cache_end()
+	_record_last_troop()
 	for b in state.members():
 		b.runtime_result = XResourceContext.empty_result()  # Game_Battler.onBattleEnd 首句 clearResult，再 removeBattleStates
 		b.shield = 0.0
