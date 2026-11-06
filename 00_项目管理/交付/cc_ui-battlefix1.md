@@ -26,7 +26,7 @@
 ## 接续要点（给下一位）
 
 1. **多段伤害数字同时出现、叠在一起**（Kyo 实机 2；协调：原版错开显示，以原版为准）：没查完。弹数字在 `battle_scene.gd` `_popup`／`_show_hit`；`damage_popup.gd` 头注写了原版 LGP_BetterDamagePopup 读数，YEP Popup Overlap Rate 0.9「实际不起作用」（`tests/fixtures/popup_anchor_oracle.json`）。要先在原版量一个多段技能（如 repeats>1 的普通技能、带动作序列的多段技能）各段弹数字的出现帧和位置：现成驱动 `popup_anchor_ref.py`（加 XIYOU_APP＝v0.62.12）。确认原版是按时间错开（逐段 wait）还是按位置错开，再改；和原版不同的部分挂开关登记 O-待定。
-2. **手感不如原版流畅**（Kyo 实机 3）：没查。可先看 project.godot 的 physics_ticks_per_second／max_fps／vsync、`_wait_frames` 用 physics_frame 等待、弹数字与 side_status 在 `_physics_process` 里每帧整块 queue_redraw、动画补间是否逐 physics 帧跳（60Hz 物理＋高刷屏会抖）。需要先和 Kyo 确认是哪种「不流畅」（掉帧、动作生硬、还是等待长）。
+2. **手感不如原版流畅**（Kyo 实机 3）：没查。可先看 project.godot 的 physics_ticks_per_second／max_fps／vsync、`_wait_frames` 用 physics_frame 等待、弹数字与 side_status 在 `_physics_process` 里每帧整块 queue_redraw、动画补间是否逐 physics 帧跳（60Hz 物理＋高刷屏会抖）。Kyo 11-07 答：「感觉是原版动作稍快一点的原因」——先在原版逐帧对行动节奏（`ACT_*` 帧常数、动作序列 wait、倍速档位、SV 动作帧速），再改。第 1 条 Kyo 同意去原版量（「去吧」）。
 
 ## 可优化（流程／工具／效率）
 
