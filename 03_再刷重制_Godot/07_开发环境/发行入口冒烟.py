@@ -393,7 +393,7 @@ def cleanup(work: Path, ok: bool, keep: bool) -> str:
         shutil.rmtree(work, ignore_errors=True)
         return '临时目录已删'
     for t in work.iterdir():
-        if t.is_file() and t.suffix == '.log':
+        if t.is_file() and (t.suffix == '.log' or t.name == PID_FILE):  # 留 .pid：下次运行认得出是死进程的残留、清掉
             continue
         if t.is_dir() and not t.is_symlink():
             shutil.rmtree(t, ignore_errors=True)

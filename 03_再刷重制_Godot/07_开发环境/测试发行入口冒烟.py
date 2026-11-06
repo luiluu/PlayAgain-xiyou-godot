@@ -81,7 +81,15 @@ class CleanupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             w = self.make_work(Path(d), 'a', os.getpid())
             M.cleanup(w, False, False)
-            self.assertEqual(sorted(p.name for p in w.iterdir()), ['运行.log'])
+            self.assertEqual(sorted(p.name for p in w.iterdir()), sorted([M.PID_FILE, '运行.log']))
+
+    def test_failed_logs_swept_next_run(self):
+        with tempfile.TemporaryDirectory() as d:
+            dead = subprocess.Popen([sys.executable, '-c', 'pass'])
+            dead.wait()
+            w = self.make_work(Path(d), 'failed', dead.pid)
+            M.cleanup(w, False, False)
+            self.assertEqual(M.sweep_stale(Path(d)), [w.name])
 
     def test_keep_keeps_all(self):
         with tempfile.TemporaryDirectory() as d:
