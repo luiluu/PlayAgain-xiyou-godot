@@ -41,7 +41,22 @@ func _run() -> void:
 	_guard(cases.guard.observed)
 	_xpbstex(cases.xpbstex.observed)
 	_tp(cases.pbstex_tp.observed)
+	_state_rebuild()
 	_finish()
+
+
+## v0.62 dsPassiveSkill：状态增删后按签名重建被动缓存（角色、敌人都是）。七星续命 252 带 passiveHarmRe01～09:500。
+func _state_rebuild() -> void:
+	var l := battle()
+	for b: XBattler in [l.actors[0], l.enemies[0]]:
+		var tag := "state_rebuild.%s" % ("actor" if b is XActor else "enemy")
+		b.state_ids.clear()
+		b.refresh_passive()
+		check(tag + ".before", float(b.passive_cache().harmRe.get(1, 0.0)) == 0.0, b.passive_cache().harmRe)
+		b.add_state(252)
+		check(tag + ".added", b.state_ids.has(252) and float(b.passive_cache().harmRe.get(1, 0.0)) == 500.0, b.passive_cache().harmRe)
+		b.remove_state(252)
+		check(tag + ".removed", float(b.passive_cache().harmRe.get(1, 0.0)) == 0.0, b.passive_cache().harmRe)
 
 
 func _restrict_state() -> int:

@@ -2299,6 +2299,8 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	# 未命中也四段齐全；导入平衡禁用的行动在更外层直接返回，不跑
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
+	var hot_before := t.hot_at_apply
+	t.hot_at_apply = not t.effect_dirty  # O-待定·热缓存复活：apply 开始时 krz need_refresh 假
 	XStateEffects.force_previous = null
 	XStateEffects.force_depth = 0
 	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态
@@ -2317,6 +2319,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if not blocked:
 		XStateEffects.run("deselect", t, ctx)
 		XStateEffects.run("conclude", u, ctx)
+	t.hot_at_apply = hot_before
 	r.died = bool(r.died) and t.is_dead()  # 自动复活（deselect）当场复活：这一击不算击杀
 	if ctx.record.has("state_anims"):
 		r.state_anims = r.get("state_anims", []) + ctx.record.state_anims  # 复活块的 startAnimation
