@@ -41,3 +41,9 @@
 - 21a086f2 按键标已处理走 XKeyMap.handled（含优化登记 O-待定）
 - 5d962ba6 测试 xiyou_input_handled
 - 改动的 .gd（48 个＋测试）：core/game_app、key_map、key_repeat、platform、touch_controls；modes/xiyou/entry；battle/battle_list、battle_scene、boss_status_panel；map/map_scene；ui/ 下 achievement_scene、actor_advanced、actor_book、actor_page、actor_warehouse、alien_workshop、casino_dialog、change_clothes、choice_window、costumes_scene、crafting、enemy_book、equip_scene、forget_skill_scene、game_end_panel、hang_up_options、hang_up_sub_page、inlay_book、item_scene、map_transfer、menu、message_box、notice_options、options_scene、party_scene、pets、pingbi_options、save_scene、shop、skill_scene、star_warehouse、status_page、test_mode_scene、text_prompt、touch_options、training_scene、victory_screen、warehouse、web_panel
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `core/key_map.gd` `XKeyMap.handled`、`XKeyMap.SAFE_HANDLED`；全工程 151 处按键标已处理 | 原版 MV 无此问题（重制自身缺陷）：按键处理里切场景后 `get_viewport()` 为 null，发行模板直接闪退 | 节点不在树上时跳过标已处理 | 修发行版空格/J 闪退（Kyo 11-06） | `XKeyMap.SAFE_HANDLED = false` | cc（闪退修复） | 已采用（修缺陷） |
