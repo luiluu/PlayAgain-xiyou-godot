@@ -147,4 +147,10 @@ static func group(rows: Array) -> Array:
 
 ## 说明卡行：describe 后的视图算 descParams，再按色分组
 static func rows(obj: Dictionary, type: int) -> Array:
-	return group(XHelpCard.desc_params(view(obj), type))
+	var v := view(obj)
+	var r := XHelpCard.desc_params(v, type)
+	# H.describe 末尾调 RJO.HE.getDescParams(item,2)，v0.41 特效排序（CodexDisplay.equipmentRows 的 D 包装）在里面，
+	# 所以心钢／狂妄也按品质排特效行，再按颜色分组（O-待定·特效排序，XHelpCard.EFFECT_SORT_V041 关＝不排）
+	if XHelpCard.EFFECT_SORT_V041 and (type == 1 or type == 2):
+		XHelpCard.sort_effects(v, r)
+	return group(r)

@@ -87,18 +87,26 @@ func _fixed(c: Dictionary, obj: Dictionary, s: XState) -> void:
 		XHubris._logic = weakref(logic)
 		XHubris._buff[a.actor_id] = {"item": obj, "rate": float(c.buff.rate), "round": 2 if c.buff.sameRound else 1, "remaining": int(c.buff.remaining)}
 	var t := _texts(XHelpCard.content(obj, "armor"))
-	var base := _texts(c.rows)
+	# HELP_FIX 开：比照原版行（参照 rows）再加本场成长／当前增益行（插在「成长：」行前，后插的在前）；
+	# 外层包装加的行（装备战力一行、元素／穿透行）另核：v0.43 版式把它们挪到属性块之后，不按原位置比
+	var lk := "\\lock[1]" if XHelpCard.LAYOUT_V043 else ""
+	var outer := func(x) -> bool: return str(x).contains("装备战力：") or str(x).contains("穿透")
+	var base := _texts(c.rows).filter(func(x): return not outer.call(x))
 	var extra := []
 	if pend:
-		extra.append("本场成长：%s＋%d层，胜利后保存" % ["心钢" if heart else "盛名", pend])
+		extra.append(lk + "本场成长：%s＋%d层，胜利后保存" % ["心钢" if heart else "盛名", pend])
 	if c.buff != null:
-		extra.append("当前增益：扬名使物理攻击×%s；剩余%d个完整回合%s" % [XGrowthHelp.number(float(c.buff.rate)), int(c.buff.remaining), "（本回合不计）" if c.buff.sameRound else ""])
-	var at := base.find(base.filter(func(x): return x.begins_with("成长："))[0])
+		extra.append(lk + "当前增益：扬名使物理攻击×%s；剩余%d个完整回合%s" % [XGrowthHelp.number(float(c.buff.rate)), int(c.buff.remaining), "（本回合不计）" if c.buff.sameRound else ""])
+	# v0.43 版式每行带 \lock[1]，找「成长：」行时去掉再比；找不到记失败，不越界
+	var grow := base.filter(func(x): return str(x).trim_prefix("\\lock[1]").begins_with("成长："))
+	check("fix." + str(c.id) + ".growth_row", not grow.is_empty(), base)
+	var at := base.find(grow[0]) if not grow.is_empty() else 0
 	var want := base.duplicate()
 	for x in extra:  # APs 同位置后插的在前：增益行在待结算行前
 		want.insert(at, x)
-	if XPower.enabled():
-		want.insert(1, t[1] if t.size() > 1 and str(t[1]).begins_with(POWER_PREFIX) else POWER_PREFIX + "?")
+	var power_rows := t.filter(func(x): return str(x).contains("装备战力："))
+	check("fix." + str(c.id) + ".power_row", power_rows.size() == (1 if XPower.enabled() else 0), power_rows)
+	t = t.filter(func(x): return not outer.call(x))
 	check("fix." + str(c.id), t == want, {"got": t, "want": want})
 	XHeartsteel._ledger.clear()
 	XHubris._ledger.clear()
