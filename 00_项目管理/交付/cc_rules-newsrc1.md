@@ -50,6 +50,7 @@
 | item_use | 新源公共事件物品 1029→1037（数据实数，新源 Items.json 数出来 1037） | 测试计数 |
 | rules10 2521 关闭支 | 不是层数问题：新源 2521 的数据本身已从 +0.2% 改成 +2%，O-181 的回退支（读数据库）现在也是 +2% | 测试两支都按 +2%、`db_untouched` 改 0.02；O-181 登记注明两支同值、可考虑退役 |
 | module_hooks | `oracle.native_registry`：新源钩子表 11 位多了 liuying，orb-sets 19→20；`view.same_source`：`module_equipment_view.json` 六档 elementBonus 跟新源 cat.json `stats.sword671` 逐项相同，只换 runtimeInputs | 测试下标、夹具来源 |
+| 云端带出的 2 个（改动前过、改后挂） | `actor_change`、`party_skills` 的夹具还是 v0.28（没有 10455，不查来源所以以前一直过）。用 `XIYOU_APP=…/v0.62.12/app.nw` 在本树重跑 `actor_change_probe.cjs`、`party_skills_probe.cjs` 重出：actor_change 只差 10455；party_skills 另有新源 v0.29 `Star_SkilsShare` 的新提示「光环生效：…」（前 4 个名字、多了加「等 N 项」，不以「技能共享：」开头，V019 的吞提示拦不住，原版两条都弹）、羁绊技能 ID 从字符串变整数（测试本来就归一） | 两份夹具重出；`skill_share.gd` 补「光环生效」提示 |
 | 顺带 | actor_p0 的 recruit_141／146／152／161／166：新源这 5 人进停用名单（V029 hiddenActors），重制 `add_actor` 本来就拦停用角色，测试改成「不入队」；raven_reflect 的 0.002 写死改读数据库 | 测试 |
 
 ### 验证（本机，新源产物，`--skip-generated-check`）
@@ -60,7 +61,7 @@
 - 改前改后同样失败、不是本单造成的：`xuan_battle`（source＋cleanse.hard／soft）、`book_capacity_ui`（source）、`raven_reflect`（reffloor 5 项）：三份夹具都还是 v0.28，要在新源上重出（工具／哪吒）；raven_reflect 重出后 0.002 那处已改读数据库。
 - `事件空绿扫描.py --check`：退出 1、4739 条 ✗，跟改动前（stash 后同命令）输出逐字相同；全是 event_states 产物与预设对不上（本树产物克隆自集成分支），本单没碰事件。
 - 之后 merge 集成分支 1eae323d（哪吒 newsrc2 新夹具），合并提交 62388d6c；冲突两处（item_use 计数注释、module_equipment_view.json）都取集成分支版（夹具改用哪吒重出的 cat_probe 版，内容同）。合并后本机重跑 module_hooks、xuan_battle、book_capacity_ui、item_use、xuan_auto、power_books、imported_balance 全过；actor_p0 只剩流萤号角 1 项；raven_reflect 夹具仍是 v0.28，reffloor 5 项待重出。
-- 云端：fdde72b1（合并前）跑选测 310 个场景（运行 42199064992），结果见下。
+- 云端：fdde72b1（合并前）跑选测 310 个场景（运行 42199064992）：72 个失败。对比改动前：66 个在集成分支各交付单的失败表里；另 6 个（actor_change、party_skills、qiyu、vsfx、weapon_unleash 和本机复查的 guyu_battle 等）本机把四个核心文件换回 31d0628a 版重跑，只有 actor_change、party_skills 是本单带出来的（已修，见表），qiyu（state2626 两项）、vsfx、weapon_unleash、guyu_battle（revive 两项）、life_steal、state_effects、honghuang_curse 改前改后一样挂，不归本单。
 
 ## 接续
 
