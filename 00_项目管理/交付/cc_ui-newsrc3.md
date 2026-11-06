@@ -2,9 +2,9 @@
 
 - 车道／工作者：界面 DE（cc）
 - 状态：可合并
-- 说明：DL ③ 心钢技能卡与 zhenqi page.* 第三棒已做（工作树 `.claude/worktrees/musing-mclaren-41e4ab`，本地分支 `cc/musing-mclaren-41e4ab`，推到 GitHub `cc/ui-newsrc3`）；m234 与 help_card 10622／10623 仍等第二次同步。①②③ 已做（第二棒补了 gear_search 重量、power_panel 重取，另写了新源 DOM 取数驱动）；④ 失败表认领、help_card 10622／10623（总装二十八加）等第二次同步后再做（见「接续要点」）。
+- 说明：DL ③ 心钢技能卡与 zhenqi page.* 第三棒已做（工作树 `.claude/worktrees/musing-mclaren-41e4ab`，本地分支 `cc/musing-mclaren-41e4ab`，推到 GitHub `cc/ui-newsrc3`）；流萤说明按阶生成与技能名色也做了（总装追加，先合了 wukong-newsrc9 fd0f53b4）；m234 等第二次同步后复查。①②③ 已做（第二棒补了 gear_search 重量、power_panel 重取，另写了新源 DOM 取数驱动）；④ 失败表认领、help_card 10622／10623（总装二十八加）等第二次同步后再做（见「接续要点」）。
 - 第二棒工作树 `.claude/worktrees/fervent-shirley-617455`，本地分支 `cc/fervent-shirley-617455`（`cc/ui-newsrc3` 还挂在上一棒的工作树上，没动它），推到 GitHub 的 `cc/ui-newsrc3`。交回集成分支 `cc/newsrc-switch`（不合 main）。
-- **合并顺序**：先合 `cc/wukong-newsrc9`（54ae6b10，切片加 179，导出流萤 SV／脸图／行走图），再合本单并重同步；否则 `xiyou_actor_book` 的 179 立绘一项会挂。
+- **合并顺序**：本分支已合 `cc/wukong-newsrc9` fd0f53b4，总装照旧先合悟空、再合本单即可（原写：先合 `cc/wukong-newsrc9`（54ae6b10，切片加 179，导出流萤 SV／脸图／行走图），再合本单并重同步；否则 `xiyou_actor_book` 的 179 立绘一项会挂。
 - 依据：派单第十四批 DE 节＋协调追加的 gear_search 三项；总装二十八 11-06 追加 DL 单（手量夹具换无头重取＋说明卡 v0.43 版式），①② 已做，③ 心钢技能说明卡冷却没做（到 40% 停手）。从 `cc/newsrc-switch` 21cd90eb 切。
 - 工作树 `.claude/worktrees/peaceful-lalande-9fc698`：`generated/`、`.godot`、`mv_oracle/.sandbox`、`node_modules` 用 APFS 克隆自集成树（21cd90eb，**集成分支重同步之前**的产物）；同步完要重克隆一次再复测。本机测试槽被同步占满，测试全在云端跑（workflow_dispatch 指定场景，产物快照 `refs/ci/generated/cc/ui-newsrc3`）。
 
@@ -30,6 +30,11 @@
   - growth_help：心钢／狂妄说明卡也按品质排特效行（原版 H.describe 末尾调 RJO.HE.getDescParams，v0.41 排序在里面），放在 `XGrowthHelp.rows` 分组之前，挂在 `EFFECT_SORT_V041` 下（O-待定·特效排序，这次也补进优化登记）。测试 `fix.*` 段自 v0.43 起找「成长：」行越界（行首多了 `\lock[1]`），一直没跑到断言、只报 SCRIPT ERROR；改成去掉 lock 再找，外层包装的装备战力／穿透行另核。现在 77/77、无 SCRIPT ERROR。
 - **DL ③ 心钢技能说明卡**（第三棒，`XGrowthHelp.skill_view`，跟 `XHeartsteel.TURN_CD_V035`，O-待定·心钢按回合冷却，关＝v0.28 没有这张卡）：照新源 H.skillHelpView（Window_BattleSkill／Window_SkillList.updateHelp 包装），巨人吞噬 10227／利维坦 10228 的说明卡换成深拷贝，备注 APs 行全删、重写：目标／命中／消耗、伤害（按角色身上对应的心钢／利维坦的阶，没装或装的是另一件就按原件）、战斗中「状态：巨人吞噬已就绪／冷却，还需 n 回合／蓄力，还需 n 回合」、效果／条件「第2回合起可用」／冷却 2 回合。拷贝标 `skill_copy`，元素包装不插技能的伤害属性（同原版 isSkill 为假）。战斗技能窗 `battle_scene._help`、技能页 `skill_scene._update_help` 接上。参照：`growth_help_probe.cjs` 加 `skills` 11 例（v0.62.12 量），`growth_help_oracle.json` 只多 `skills` 一键（cases／powerOnly 不变）；`xiyou_growth_help` 逐行比文字／字号／颜色／对齐／y／卡高，另断言开关关时原样返回。顺手修测试里卸装写成 `change(…, {})`（实际不卸，`{}` 在背包里找不到）→ `null`。
 - **zhenqi page.* 12 项**（第三棒，不改代码）：集成分支 `generated/oracle/zhenqi.json` 的 6 个 `page.*` 用例是探针加「修行·详细」（0250eacc）之前出的，没有 `detail`；本机用 v0.62.12 重跑 `zhenqi_probe.cjs`（24 分钟），只这 6 例变了、多出 `detail`，换上后 `xiyou_zhenqi` 200/200。第二次同步重出 zhenqi.json 后自然消失（同步后复查一眼 `page.default` 有 `detail`）。
+- **流萤技能卡**（第三棒，总装追加：流萤运行时清单 13、15；先合了 `cc/wukong-newsrc9` fd0f53b4，冲突只在优化登记两边各加的行，全留）：
+  - 15 说明按进阶生成：新 `ui/liuying_help.gd`（`XLiuyingHelp`，照 L.skillLines／refreshText）：10622 天火轰击、10623 完全燃烧按流萤（179）当前进阶重写备注 APs 行（2 阶起天火 8 段；完全燃烧 3 阶冷却 3 回合、加 33% 不进冷却、去掉「消耗：当前全部护盾」、效果改增盾上限 50%；2 阶前加「解锁：进阶2阶」）。接在 `XHelpCard._content` 开头，只改出卡用的拷贝（原版改 $dataSkills，看的也是 179 的阶，结果相同）。原版流萤的 setItem 包装在元素包装之内，会把元素包装删插的「伤害属性」行冲掉，卡上留备注写法「伤害属性：火焰·物理」；照搬（这两张卡跳过 `_element_wrapper`）。新源行为，不设开关。
+  - 13 技能名品质色：重制技能页／图鉴的名字本来就按 `XQuality.list_color`（品质）上色，与包装的 QualitiesColor[品质] 逐个相同（14 个技能），不用改；专项里断言。战斗技能窗照旧白字（重制原有口径）。
+  - 没跟：10623 三阶清空 customCostText——重制技能列表还没有 `<Custom Cost Display>`（所有技能都没有，不只流萤），列表右侧只画 MP／TP／HP 等，另算一项。
+  - 参照：新探针 `mv_oracle/liuying_help_probe.cjs`（进阶 0、1、2、3、再回 0 各量两张卡＋14 个技能名颜色），`tests/fixtures/liuying_help_oracle.json`，新专项 `xiyou_liuying_help` 34/34。
 - **参照**：`ui_reference/review_actor_book.js` 多记 `bitmap`（状态窗实际画的图，URL 末段）；上一棒在新源重取时 `sprite` 记的是 battlerName，168、173～177 的逐帧图因此对不上。`actor_book_oracle.json` 只补了 `bitmap` 一键（其余与重取的一致），测试改为图名比 `bitmap`、battlerName 比 `sprite`。
 - 测试：`xiyou_actor_book` 跟目录换算（`index_ids().find`）、立绘几何乘 bookScale、截图加 179；`xiyou_actor_book_review` 记 `actor_id()`；`xiyou_help_card` 的 O-049 出售价断言改成量排版之前的行（v0.43 排版把两种价格并成一行两列，原断言一直挂）。
 
@@ -64,7 +69,8 @@
    - 已有自己的驱动（加 XIYOU_APP／参数即可）：battle_transition（battle_transition_ref.cjs）、popup_anchor（popup_anchor_ref.py）。
    - 页面里手点或手敲 JS 量的，可写 dom_ref 页面脚本（调现成的 `__ilr`／`__dhRef`）：item_list、orb_ui、orb_shop_ui、shop_stock_ui、save_page（要 localStorage 存档两份，临时 Chrome 目录里可做）、window_rects、drop_dh、enemy_state_icon、state_overlay、status_power（战力条 fillRect／drawText，照 status_page_ref 的包法）。
    - 故意留 v0.28 的：zhenqi_page_rows_v028（PANEL_V062 关的回退参照），不重取。
-5. **help_card 10622／10623**（总装二十八 11-06 加）：流萤技能卡，新源说明按进阶阶数生成；等第二次同步（切片加 179 之后的增量同步）完成再按实际挂的对。
+5. **help_card 10622／10623**：说明按阶生成已做（第三棒，`XLiuyingHelp`，新源 0～3 阶逐行对上）。第二次同步出了含 179 的 help_cards 参照后再跑一次 `xiyou_help_card` 确认（参照是新局 0 阶）。
+5d. **m234 五个预设**：`事件空绿扫描.py --check` 仍报 m234e22／e26／e45／e46／e49 的 `#a1`「event_states.json 没量」，产物来自同步之前；第二次同步完成、重克隆产物后复跑即可（不是本单改动）。
 6. 集成分支同步完成后：重克隆 `generated/` 等，重跑 `云端选测.py upload`，再复测本单场景与 `事件空绿扫描.py --check`。
 
 ## 可优化（流程／工具／效率）
@@ -91,8 +97,11 @@
 - `事件空绿扫描.py --check`：空绿 96 在基线内；另报 5 个预设用例「event_states.json 没量」，是产物克隆于同步之前（八戒三的预设已合、产物还没跟上），重克隆后复跑。
 - `语法检查.py`：通过。
 
+- 第三棒（本机，产物克隆自集成树 21cd90eb，合 wukong-newsrc9 后按 v0.62.12 重跑转换器＋导入；zhenqi.json 用本机新源重跑的）：`xiyou_growth_help` 101/101、`xiyou_liuying_help` 34/34、`xiyou_help_card` 1073/1073、`xiyou_actor_book` 22/22、`xiyou_zhenqi` 200/200、`xiyou_liuying` 144/144、`xiyou_liuying2` 188/188、`xiyou_liuying3` 50/50、`xiyou_heartsteel` 676/676、`xiyou_battle_ui` 155/155、`xiyou_skill_page`、`xiyou_cat_help`、`xiyou_character_help_cost`、`xiyou_status_power_panel` 11/11 全过；合并前另跑过 `xiyou_battle_log`、`xiyou_black_flash_ui`、`xiyou_determinism` 372/372、`xiyou_list_paging`、`xiyou_skill_mastery` 全过。`xiyou_skill_menu_events` 10/10 但有 SCRIPT ERROR（mv_interpreter 调已释放的对象），去掉本单改动（f4daf906 两个文件）一样有，不是本单引起。`选测.py` 列 118 个（battle_scene 一行改动带出整片楼层／地图场景），没全跑：改动只是技能说明卡的入口（只对 10227／10228 换卡），楼层与地图事件不经过它。`语法检查.py` 通过。`事件空绿扫描.py --check`：空绿 96 在基线内，另报 m234 五条没量（见接续 5d）。
+
 ## 待交叉核查
 
+- 第三棒：`ui/growth_help.gd`（`skill_view`、`damage_text`）、`ui/help_card.gd`（skill_copy 标记、XLiuyingHelp 接入、流萤跳过元素包装）、`ui/liuying_help.gd`、`battle/battle_scene.gd` `_help`、`ui/skill_scene.gd` `_update_help`、`mv_oracle/growth_help_probe.cjs`（skills）、`mv_oracle/liuying_help_probe.cjs`、`tests/xiyou_growth_help.gd`（_skill）、`tests/xiyou_liuying_help.gd`、两份夹具。
 - DL：`ui_reference/status_page_ref.js`、`ui/status_page.gd`（WTYPE_HOLD_V041）、`ui/growth_help.gd`（rows 里排序）、`tests/xiyou_status_page.gd`、`tests/xiyou_zhenqi.gd`（_page_ui）、`tests/xiyou_growth_help.gd`（_fixed）、两份夹具。
 - 第二棒：`ui_reference/dom_ref.cjs`、`gear_search_ref.js`、`power_panel_ref.js`，`tests/fixtures/gear_search_oracle.json`、`power_panel_oracle.json`（重出）。
 - `ui/actor_book.gd`（index_ids、actor_id、_aura_columns、is_aura_note、179 技能、BOOK_SCALE）、`core/appearance.gd`（Codex_Liuying_SV 档）、`ui/help_card.gd`（sort_effects、_plain41、调用位置）、`ui/character_help.gd`（成长措辞）、`ui_reference/review_actor_book.js`（bitmap）、`tests/fixtures/actor_book_oracle.json`（只加 bitmap）。
