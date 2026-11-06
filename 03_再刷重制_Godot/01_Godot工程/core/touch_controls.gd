@@ -19,7 +19,11 @@ const BUTTONS := {
 	"cancel": {"rect": Rect2(1030, 620, 110, 72), "text": "取消", "action": "ui_cancel"},
 	"run": {"rect": Rect2(1150, 640, 110, 64), "text": "跑步", "key": KEY_SHIFT},
 	"hide": {"rect": Rect2(1170, 8, 100, 40), "text": "隐藏按键", "toggle": true},
+	# Mehmet_GhostButtons 的「Save」键（原版虚拟按键只在手机上有，按下＝键盘 ~，YEP_ButtonCommonEvents 428 一键存档，地图与菜单才有）。
+	# 这里在所有页面都显示，在地图以外按了没反应（地图快捷键只认地图页面）。回退开关 SAVE_BUTTON = false。
+	"save": {"rect": Rect2(1050, 8, 100, 40), "text": "存档", "key": KEY_QUOTELEFT},
 }
+static var SAVE_BUTTON := true
 
 var hidden := false
 var root: Control
@@ -44,6 +48,8 @@ func _ready() -> void:
 	_stick_base = _panel(Rect2(STICK_CENTER - Vector2.ONE * STICK_RADIUS, Vector2.ONE * STICK_RADIUS * 2), STICK_RADIUS, Color(0.08, 0.15, 0.24, 0.45))
 	_stick_knob = _panel(Rect2(STICK_CENTER - Vector2(26, 26), Vector2(52, 52)), 26.0, Color(0.45, 0.62, 0.76, 0.75))
 	for name in BUTTONS:
+		if name == "save" and not SAVE_BUTTON:
+			continue
 		var spec: Dictionary = BUTTONS[name]
 		var p := _panel(spec.rect, 12.0, Color(0.07, 0.15, 0.24, 0.72))
 		var l := Label.new()
@@ -93,6 +99,8 @@ func hit(pos: Vector2) -> String:
 	if pos.distance_to(STICK_CENTER) <= STICK_RADIUS * 1.2:
 		return "stick"
 	for name in BUTTONS:
+		if name == "save" and not SAVE_BUTTON:
+			continue
 		if (BUTTONS[name].rect as Rect2).has_point(pos):
 			return name
 	return ""

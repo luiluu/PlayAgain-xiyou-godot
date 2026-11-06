@@ -211,6 +211,14 @@ func _run() -> void:
 	touch(0, run_center, false)
 	await frames(2)
 	check("run_releases_shift", not Input.is_physical_key_pressed(KEY_SHIFT))
+	# 存档键＝键盘 ~（Mehmet_GhostButtons 的 Save，一键存档公共事件 428）
+	var save_center: Vector2 = (XTouchControls.BUTTONS.save.rect as Rect2).get_center()
+	touch(0, save_center, true)
+	await frames(2)
+	check("save_holds_tilde", Input.is_physical_key_pressed(KEY_QUOTELEFT))
+	touch(0, save_center, false)
+	await frames(2)
+	check("save_releases_tilde", not Input.is_physical_key_pressed(KEY_QUOTELEFT))
 	# 隐藏按键
 	var hide_center: Vector2 = (XTouchControls.BUTTONS.hide.rect as Rect2).get_center()
 	touch(0, hide_center, true)
