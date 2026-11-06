@@ -236,7 +236,8 @@ def smoke_all(out: Path, logs: Path) -> list:
         text = log.read_text(encoding='utf-8')
         verdict = ([l for l in text.splitlines() if l.startswith('结论：')] or ['结论：没有结论行'])[-1]
         note = [l for l in text.splitlines() if l.startswith('没有在跑的安卓模拟器')]
-        rows.append((name, rc == 0, verdict.split('；')[0].removeprefix('结论：') + ('；' + note[0] if note else '')))
+        note += [l.split('（', 1)[1].rstrip('）') for l in text.splitlines() if l.startswith(('INFO startup_time', 'WARN startup_time'))]
+        rows.append((name, rc == 0, verdict.split('；')[0].removeprefix('结论：') + ''.join('；' + n for n in note)))
     return rows
 
 

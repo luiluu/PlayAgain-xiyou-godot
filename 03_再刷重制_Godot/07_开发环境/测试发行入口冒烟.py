@@ -120,5 +120,32 @@ class CleanupTests(unittest.TestCase):
             self.assertFalse((work / 'app').exists())
 
 
+class BaselineTests(unittest.TestCase):
+    """平台 EC：启动到标题的用时跟基线比，只提示不算失败。"""
+
+    def test_compare(self):
+        base = {'macos': {'seconds': 4.0}}
+        self.assertTrue(M.compare_baseline('macos', 4.5, base).startswith('启动到标题 4.5 秒，基线 4.0'))
+        self.assertTrue(M.compare_baseline('macos', 9.0, base).startswith('变慢'))
+        self.assertFalse(M.compare_baseline('macos', 1.0, {'macos': {'seconds': 0.4}}).startswith('变慢'))  # 翻倍但只多 0.6 秒：抖动
+        self.assertIn('还没有基线', M.compare_baseline('windows', 3.0, base))
+        self.assertEqual(M.compare_baseline('macos', None, base), '没量到启动用时')
+
+    def test_timed_run_sees_entry_and_kills_hang(self):
+        out, rc, secs = M.timed_run([sys.executable, '-c', 'print("x");print("ENTRY_SCENE=res://a",flush=True)'], env=None, cwd=None)
+        self.assertEqual(rc, 0)
+        self.assertIsNotNone(secs)
+        self.assertIn('ENTRY_SCENE=res://a', out)
+        _, rc, secs = M.timed_run([sys.executable, '-c', 'import time;time.sleep(30)'], env=None, cwd=None, timeout=1)
+        self.assertNotEqual(rc, 0)
+        self.assertIsNone(secs)
+
+    def test_baseline_file_shape(self):
+        import json
+        if M.BASELINE.is_file():
+            for k, v in json.loads(M.BASELINE.read_text(encoding='utf-8')).items():
+                self.assertGreater(v['seconds'], 0, k)
+
+
 if __name__ == '__main__':
     unittest.main()
