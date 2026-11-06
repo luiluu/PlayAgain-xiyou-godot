@@ -122,7 +122,8 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	if not check("fixture_loaded", ref is Dictionary and ref.get("actors", {}).size() == 179, FIXTURE):
+	# v0.62.12 的图鉴取数 0～179 号（v0.28 到 178）
+	if not check("fixture_loaded", ref is Dictionary and ref.get("actors", {}).size() == 180, FIXTURE):
 		get_tree().quit.call_deferred(1)
 		return
 	var s := XState.new_game_blank()

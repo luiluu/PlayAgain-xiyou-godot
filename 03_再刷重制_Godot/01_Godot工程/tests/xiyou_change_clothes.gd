@@ -277,7 +277,8 @@ func _empty_list() -> void:
 func _tabs() -> void:
 	var myth := XChangeClothes.list(6)
 	var dian := XChangeClothes.list(7)
-	check("fix_myth_actors", myth.size() == 64 and myth.all(func(d): return int(d.id) > 0 and XChangeClothes.actor_grade(d) == 6), myth.size())
+	# v0.62.12 多了神话角色 179 流萤（v0.28 是 64 个）
+	check("fix_myth_actors", myth.size() == 65 and myth.all(func(d): return int(d.id) > 0 and XChangeClothes.actor_grade(d) == 6), myth.size())
 	check("fix_dian_entries", dian.size() == 95 and int(dian[0].id) == -9 and int(dian.back().id) == -117, dian.size())
 	check("grades_unchanged", XChangeClothes.list(1).map(func(d): return int(d.id)) == [8, 9, 10, 11, 16, 21, 22])
 	check("entry_fields", XChangeClothes.entries()[3] == {"id": -12, "name": "牛头人酋长", "characterName": "Monster", "characterIndex": 3, "GetFs": "形象卡片"},
