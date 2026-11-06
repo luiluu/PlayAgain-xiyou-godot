@@ -52,6 +52,9 @@ const APPLY_TO_DAMAGE := false
 ## 神兵试炼：没有 <CodexZhenqi: weapon N> 标签时按敌人编号认的神兵 Boss（Z.WEAPON_BOSS）；对手强度＝修行进度层守层者 ×2
 const WEAPON_BOSS := {20: 11, 40: 2, 51: 5, 52: 2, 419: 2, 420: 2, 421: 2, 655: 4, 664: 9, 667: 4}
 const WEAPON_TRIAL_SCALE := 2
+## 真气 v0.45 五条（换源跟到 v0.62.12，O-待定·真气 v0.45）：神兵试炼每类一位、分页；试炼不给真气、经验金钱为 0；
+## 指定道法分页并保留掷出结果；灵根新备注 <CodexZhenqiLinggen>。false＝回到 v0.28 行为（文件末尾 _v028 各函数）
+static var V045 := true
 ## 破甲·真气（道法「破甲」passiveATKST2705）
 const POJIA_STATE := 2705
 
@@ -295,7 +298,7 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 	battle = {}
 	if b.is_empty():
 		return []
-	if not b.scaled.is_empty():
+	if V045 and not b.scaled.is_empty():
 		# v0.45：神兵试炼只记试炼完成（有人活着），不记真气
 		if actors.any(func(a): return a.is_alive()):
 			unlock_specs(s, enemies, b)
@@ -532,6 +535,8 @@ static func troop_members(troop_id: int, enemies: Array, difficulty: int) -> Arr
 ## Z.weaponMasters（v0.45）：敌人备注 <CodexZhenqi: weapon N> 的神兵之仙，每类武器（weapon_types）只取第一位；
 ## 敌群须只有它一个、且不隐藏；按武器类型排序
 static func weapon_masters() -> Array:
+	if not V045:
+		return _weapon_masters_v028()
 	var out := []
 	var seen := {}
 	var pool := weapon_types()
@@ -722,7 +727,7 @@ static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0, ran
 	for e in enemies:
 		e.zq_ref = {"p": p, "k": float(t.ref.scale)}
 		e.zq_trial_loot = true
-		e.zq_weapon_trial = not battle.get("scaled", {}).is_empty()  # v0.45：神兵试炼经验、金钱为 0
+		e.zq_weapon_trial = V045 and not battle.get("scaled", {}).is_empty()  # v0.45：神兵试炼经验、金钱为 0
 		e.recover_all()
 
 
@@ -738,6 +743,9 @@ static func on_battle_end() -> void:
 ## 本命兵（.w）只由神兵试炼解锁：本场是神兵试炼、打倒的是那位神兵之仙、武器类型相符；第一次完成记 weaponTrials 并提示。
 ## enemies 含没出场的隐藏成员（troop_members）：原版 $gameTroop.members() 也算它们。
 static func unlock_specs(s: XState, enemies: Array, b := {}) -> void:
+	if not V045:
+		_unlock_specs_v028(s, enemies, b)
+		return
 	var sp := s.zhenqi_spec
 	spec_state(s)
 	# v0.45 第六段：旧 <Element Absorb> 照认，再加只给灵根的 <CodexZhenqiLinggen>；同元素只解锁、只提示一次
@@ -786,18 +794,25 @@ static func menu(s: XState, node: Dictionary) -> Dictionary:
 		"attr":
 			var a: XActor = s.actors[int(node.id)]
 			var d := data(a)
-			if d.pending.is_empty() or int(d.pending[0]) != int(node.get("i", d.pending[0])) or not skill_key(str(node.key)):
+			if V045 and (d.pending.is_empty() or int(d.pending[0]) != int(node.get("i", d.pending[0])) or not skill_key(str(node.key))):
 				return {}
 			learn_key(a, str(node.key))
 			d.pending.pop_front()
-			d.erase("pendingDaofaRoll")
+			if V045:
+				d.erase("pendingDaofaRoll")
 			refresh_rewards(a)
 			return _pick_flow(s, a)
 		"daofa": return _roll_daofa(s, s.actors[int(node.id)], int(node.i))
 		"daofa_spec": return _pick_specialization(s, s.actors[int(node.id)], int(node.i), str(node.k), int(node.get("p", 0)))
-		"daofa_done": return _finish_daofa(s, s.actors[int(node.id)], int(node.i), str(node.k), int(node.get("value", 0)), str(node.get("mode", "")))
+		"daofa_done":
+			if not V045:
+				return _daofa_done_v028(s, s.actors[int(node.id)], node)
+			return _finish_daofa(s, s.actors[int(node.id)], int(node.i), str(node.k), int(node.get("value", 0)), str(node.get("mode", "")))
 		"weapon": return _weapon_menu(s, int(node.get("p", 0)))
-		"weapon_start": return _start_weapon(s, node.get("m", {}))
+		"weapon_start":
+			if not V045:
+				return _start_weapon_v028(s, int(node.k))
+			return _start_weapon(s, node.get("m", {}))
 	return {}
 
 
@@ -904,6 +919,8 @@ static func _pick_flow(s: XState, a: XActor) -> Dictionary:
 ## Z.rollDaofa（v0.45）：在没领悟的道法里随机一项；掷出的结果记在 pendingDaofaRoll，选定前返回、读档都不重掷。
 ## 本命兵／灵根转 Z.pickSpecialization，其余直接 Z.finishDaofa
 static func _roll_daofa(s: XState, a: XActor, i: int) -> Dictionary:
+	if not V045:
+		return _roll_daofa_v028(s, a, i)
 	var d := data(a)
 	if d.pending.is_empty() or int(d.pending[0]) != i or i < 0 or i >= REALMS.size() or i > int(d.realm):
 		return {}
@@ -989,6 +1006,8 @@ static func _finish_daofa(s: XState, a: XActor, i: int, k: String, value: int, m
 
 ## Z.weaponMenu（v0.45）：神兵之仙每页 4 个（［试炼完成］／［已领悟］），翻页、返回闭关首页、离开
 static func _weapon_menu(s: XState, page := 0) -> Dictionary:
+	if not V045:
+		return _weapon_menu_v028(s)
 	var sp := spec_state(s)
 	var f := maxi(1, progress_floor(s))
 	var names: Array = XDB.system().weaponTypes
@@ -1024,3 +1043,118 @@ static func _start_weapon(s: XState, m: Dictionary) -> Dictionary:
 	ref.scale = WEAPON_TRIAL_SCALE
 	pending_scale = {"ref": ref, "master": int(m.enemyId), "wtype": int(m.wtype), "troopId": int(m.troopId)}
 	return {"lines": ["\\C[6]%s\\C[0]：「来，让我看看你配不配用%s。」" % [m.name, XDB.system().weaponTypes[int(m.wtype)]]], "options": [], "battle": int(m.troopId), "next": null}
+
+
+# ---- v0.28 行为（XZhenqi.V045 = false 时用；照换源前 d1b41749 原样保留）----
+
+## Z.weaponMasters：敌人备注 <CodexZhenqi: weapon N> 的神兵之仙，取首个成员是它的敌群
+static func _weapon_masters_v028() -> Array:
+	var out := []
+	var re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	for e in XDB.table("Enemies"):
+		if not e is Dictionary:
+			continue
+		var m := re.search(str(e.get("note", "")))
+		if m == null:
+			continue
+		for t in XDB.table("Troops"):
+			if t is Dictionary and not t.get("members", []).is_empty() and int(t.members[0].enemyId) == int(e.id):
+				out.append({"enemyId": int(e.id), "name": str(e.name), "wtype": int(m.get_string(1)), "troopId": int(t.id)})
+				break
+	return out
+
+
+## 灵根可指定的元素：击败带 <Element Absorb: …> 的 Boss（1～9 号元素，第一次提示）。$gameSystem._codexZhenqiSpec.e
+## 本命兵（.w）只由神兵试炼解锁：本场是神兵试炼、打倒的是那位神兵之仙、武器类型相符；第一次完成记 weaponTrials 并提示。
+## enemies 含没出场的隐藏成员（troop_members）：原版 $gameTroop.members() 也算它们。
+static func _unlock_specs_v028(s: XState, enemies: Array, b := {}) -> void:
+	var sp := s.zhenqi_spec
+	var re := RegEx.create_from_string("(?i)<Element Absorb:\\s*([\\d,\\s]+)>")
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var scaled: Dictionary = b.get("scaled", {})
+	for e in enemies:
+		var tm := tag_re.search(str(e.data().get("note", "")))
+		var w := int(tm.get_string(1)) if tm else int(WEAPON_BOSS.get(e.enemy_id, 0))
+		if not scaled.is_empty() and e.enemy_id == int(scaled.master) and w == int(scaled.wtype) and e.is_dead() and w:
+			if not sp.has("weaponTrials"):
+				sp.weaponTrials = {}
+			sp.w[str(w)] = 1
+			if not sp.weaponTrials.has(str(w)):
+				sp.weaponTrials[str(w)] = 1
+				_toast("神兵试炼完成：本命兵可指定「%s」" % str(XDB.system().weaponTypes[w]))
+		if not is_boss_enemy(e):
+			continue
+		for m in re.search_all(str(e.data().get("note", ""))):
+			for x in m.get_string(1).split(","):
+				var n := int(x.strip_edges()) if x.strip_edges().is_valid_int() else 0
+				if LINGGEN_ELEMENTS.has(n) and not sp.e.has(str(n)):
+					sp.e[str(n)] = 1
+					# e.originalName()：神话敌人带「【神话】」前缀（EliteEnemy），不含同名后缀字母
+					var oname: String = (XEnemy.elite_title() if e.elite else "") + str(e.data().get("name", ""))
+					_toast("降服 %s：灵根可指定「%s」" % [oname, str(XDB.system().elements[n])])
+
+
+## Z.rollDaofa：在没领悟的道法里随机一项；本命兵／灵根有已降服的武器类型／元素时可指定，否则随机
+static func _roll_daofa_v028(s: XState, a: XActor, i: int) -> Dictionary:
+	var d := data(a)
+	var left := DAOFA.filter(func(k): return not int(d.daofa.get(k, 0)))
+	var k: String = left[_random_int(s, left.size())]
+	var id := a.actor_id
+	if k == "benming" or k == "linggen":
+		var is_w := k == "benming"
+		var pool: Array = range(1, 13) if is_w else LINGGEN_ELEMENTS
+		var names: Array = XDB.system().weaponTypes if is_w else XDB.system().elements
+		var known_d: Dictionary = s.zhenqi_spec.w if is_w else s.zhenqi_spec.e
+		var known := []
+		for x in known_d:
+			if pool.has(int(x)):
+				known.append(int(x))
+		known.sort()
+		var rnd: int = pool[_random_int(s, pool.size())]
+		var done := func(x: int) -> Dictionary:
+			return {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:%s:%d" % [k, x], "label": "%s·%s" % [DAOFA_NAME[k], names[x]]}
+		if known.is_empty():
+			return _daofa_done_v028(s, a, done.call(rnd))
+		var opts := known.map(func(x): return {"label": "指定「%s」" % names[x], "next": done.call(x)})
+		opts.append({"label": "随机（%s）" % names[rnd], "next": done.call(rnd)})
+		return _ask(["领悟道法「%s」：" % DAOFA_NAME[k], "已降服过的Boss可让你指定%s。" % ("武器类型" if is_w else "元素")], opts)
+	return _daofa_done_v028(s, a, {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:" + k, "label": DAOFA_NAME[k]})
+
+
+static func _daofa_done_v028(_s: XState, a: XActor, node: Dictionary) -> Dictionary:
+	var d := data(a)
+	d.daofa[str(node.k)] = 1
+	if not d.has("daofaStages"):
+		d.daofaStages = {}
+	d.daofaStages[str(node.k)] = int(node.i)
+	learn_key(a, str(node.key))
+	d.pending.pop_front()
+	refresh_rewards(a)
+	return _tell(["%s 领悟道法「%s」！" % [a.display_name(), node.label]], {"page": "pick", "id": a.actor_id})
+
+
+## Z.weaponMenu：神兵之仙列表（［试炼完成］／［已领悟·未完成试炼］）、返回闭关首页、离开
+static func _weapon_menu_v028(s: XState) -> Dictionary:
+	var sp := s.zhenqi_spec
+	var f := maxi(1, progress_floor(s))
+	var names: Array = XDB.system().weaponTypes
+	var opts := []
+	var ms := weapon_masters()
+	for k in range(ms.size()):
+		var m: Dictionary = ms[k]
+		var w := str(m.wtype)
+		var tag := "［试炼完成］" if sp.get("weaponTrials", {}).has(w) else ("［已领悟·未完成试炼］" if sp.w.has(w) else "")
+		opts.append({"label": "%s（%s）%s" % [m.name, names[m.wtype], tag], "next": {"page": "weapon_start", "k": k}})
+	opts.append({"label": "返回", "next": {"page": "retreat"}})
+	opts.append({"label": "离开", "next": null})
+	return _ask(["\\C[6]神兵试炼\\C[0]：降服神兵之仙，领悟道法「本命兵」时即可指定该武器类型。",
+		"对手强度＝第%d层守层者 ×%d。须在此主动挑战并获胜，野外击败同名Boss不算完成。" % [f, WEAPON_TRIAL_SCALE]], opts)
+
+
+## Z.startWeaponTrial：对手＝修行进度层守层者 ×2（不能逃、可以输）；打完不回菜单
+static func _start_weapon_v028(s: XState, k: int) -> Dictionary:
+	var m: Dictionary = weapon_masters()[k]
+	var ref := trial_ref(s, 1)
+	ref.scale = WEAPON_TRIAL_SCALE
+	pending_scale = {"ref": ref, "master": m.enemyId, "wtype": m.wtype, "troopId": m.troopId}
+	return {"lines": ["\\C[6]%s\\C[0]：「来，让我看看你配不配用%s。」" % [m.name, XDB.system().weaponTypes[m.wtype]]], "options": [], "battle": int(m.troopId), "next": null}
