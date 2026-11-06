@@ -2140,7 +2140,23 @@ for name in filter(None, files):
         self.g('remote', 'add', 'github', url)
         if url == str(bare):
             self.g('push', 'github', 'main')
+        if 'XIYOU_CLOUD_SCRIPT' not in os.environ:
+            self.cloud_stub()  # 推送成功后自动立锚点会调 云端选测.py trust（tools77）：夹具一律换替身，不碰真脚本
         return bare
+
+    def cloud_stub(self, rc=0):
+        """云端选测.py 替身：每次调用记一行参数到 self.cloud_calls，按 rc 退出（adopt 照旧读 <calls>.rc，没有就 0）。"""
+        self.cloud_calls = Path(self.tmp.name) / 'cloud_calls'
+        stub = Path(self.tmp.name) / 'cloud_stub.py'
+        stub.write_text('import os, sys\nc = %r\nopen(c, "a").write(" ".join(sys.argv[1:]) + "\\n")\n'
+                        'rc = %d\nif sys.argv[1] == "adopt" and os.path.exists(c + ".rc"): rc = int(open(c + ".rc").read())\n'
+                        'if rc: print("trust 替身失败", file=sys.stderr)\nsys.exit(rc)\n' % (str(self.cloud_calls), rc))
+        os.environ['XIYOU_CLOUD_SCRIPT'] = str(stub)
+        self.addCleanup(os.environ.pop, 'XIYOU_CLOUD_SCRIPT', None)
+        return self.cloud_calls
+
+    def cloud_lines(self):
+        return self.cloud_calls.read_text().splitlines() if self.cloud_calls.exists() else []
 
     def merge_and_finish(self):
         self.assertEqual(self.call(), 0, self.last_output)
@@ -2154,6 +2170,63 @@ for name in filter(None, files):
         self.merge_and_finish()
         self.assertIn('已推送 main', self.last_output)
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_finish_push_anchors_verified_closing_commit(self):
+        """tools77：推送成功后，带「验证: 全量／选测」尾注的收尾提交自动 云端选测.py trust <收尾提交> --reason 合并推送后自动。"""
+        bare = self.github()
+        self.merge_and_finish()
+        head = self.g('rev-parse', 'main')
+        self.assertIn('验证: 全量', self.g('log', '-1', '--format=%B', 'main'))
+        self.assertEqual(self.cloud_lines(), ['trust %s --reason 合并推送后自动' % head])
+        self.assertIn('已给收尾提交 %s 立云端锚点' % head[:9], self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), head)
+
+    def test_hand_patched_closing_commit_without_tested_mark_is_not_anchored(self):
+        """tools60 规矩：收尾提交手补了代码、没有「手补已验」的不立锚点；推送照常。"""
+        bare = self.github()
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        hand = merge.PROJECT / 'modes/手改测试.gd'
+        (self.root / hand).write_text('# 总装收尾手改\n')
+        self.g('add', '-N', '--', str(hand))
+        self.assertEqual(self.call('--finish', '--also', str(hand)), 0, self.last_output)
+        body = self.g('log', '-1', '--format=%B', 'main')
+        self.assertIn('手补: ', body); self.assertNotIn('手补已验', body)
+        self.assertEqual(self.cloud_lines(), [])
+        self.assertIn('未立云端锚点：收尾提交手补了代码、没有「手补已验」', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_anchor_failure_only_warns(self):
+        """立锚点失败（trust 退出非零）只警告：合并、推送照常，退出码 0。"""
+        bare = self.github()
+        self.cloud_stub(rc=1)
+        self.merge_and_finish()
+        self.assertEqual(len(self.cloud_lines()), 1)
+        self.assertIn('警告：给收尾提交', self.last_output)
+        self.assertIn('trust 替身失败', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+
+    def test_no_anchor_without_successful_push(self):
+        """没推出去（无 github 远端；GitHub 有本地没有的提交）就不立锚点。"""
+        self.cloud_stub()
+        self.merge_and_finish()
+        self.assertIn('无 github 远端', self.last_output)
+        self.assertEqual(self.cloud_lines(), [])
+        self.assertEqual(merge.anchor_target(self.root)[0], self.g('rev-parse', 'main'))  # 尾注本身够格，是没推才没立
+        bare = Path(self.tmp.name) / 'ahead.git'
+        subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(bare)], check=True)
+        self.g('push', '-q', str(bare), 'main')
+        other = Path(self.tmp.name) / 'other'
+        subprocess.run(['git', 'clone', '-q', str(bare), str(other)], check=True)
+        self.g('commit', '-q', '--allow-empty', '-m', 'remote only', cwd=other)
+        self.g('push', '-q', 'origin', 'main', cwd=other)
+        self.g('remote', 'add', 'github', str(bare))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            merge.push_github(self.root)
+        self.assertIn('未推送', out.getvalue())
+        self.assertEqual(self.cloud_lines(), [])
 
     def batch_fixture(self, check_rc=0):
         """第二条车道 task2，检查.sh 换成每跑一次记一行、按 check_rc 退出的替身。"""
@@ -2869,9 +2942,11 @@ for name in filter(None, files):
         (self.root / hand).write_text('# 总装收尾手改\n')
         self.g('add', '-N', '--', str(hand))
         self.assertEqual(self.call('--finish', '--affected', '--cloud', '--also', str(hand)), 0, self.last_output)
-        self.assertEqual(calls.read_text().split(), ['adopt', 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'HEAD'])
         body = self.g('log', '-1', '--format=%B', 'main')
         self.assertIn('手补已验: 快照 deadbeefd', body)
+        # 手补已验的收尾提交推送后照常立锚点（tools77）
+        self.assertEqual(calls.read_text().split(), ['adopt', 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'HEAD',
+                                                     'trust', self.g('rev-parse', 'main'), '--reason', '合并推送后自动'])
         self.assertFalse((self.root / '.git/xiyou_cloud_snapshot').exists())
 
     def test_finish_cloud_without_affected_is_full_run_in_cloud(self):
@@ -3053,6 +3128,8 @@ for name in filter(None, files):
         self.assertFalse((self.root / '.git/lane-merge/batch.json').exists())
         self.assertIn('本批 2 条收口', self.last_output)
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
+        self.assertEqual(self.cloud_lines(), [])  # --batch 攒的收尾没有「验证:」尾注：不立锚点（tools77）
+        self.assertIn('未立云端锚点：收尾提交没有「验证: 选测／全量」尾注', self.last_output)
         self.assertEqual(self.close(), 1)  # 已收口
         self.assertTrue(base)
 

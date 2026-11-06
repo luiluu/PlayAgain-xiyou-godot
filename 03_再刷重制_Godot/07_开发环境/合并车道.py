@@ -11,6 +11,8 @@
 白天合并可用 --finish --affected 只跑选测（三级检查②，基准为本次（或本批第一条）合并前的 main），通过后照常提交、清理、推送；
 收尾提交带「验证: 选测」尾注，当天全量前算选测已验；全量仍是不加 --affected 的 --finish。
 加 --cloud（与 --affected 同用，--close-batch 同理）则选中的 Godot 场景交给 云端选测.py 在 GitHub Actions 上跑，非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（GitHub 因账单／额度没启动任务时 检查.sh 明说原因并改本机跑，tools29）。
+推送 GitHub 成功后，main 顶上的收尾提交带「验证: 选测／全量」尾注（--close-batch 收口的没有）、且没有「手补:」或另带「手补已验:」时，
+自动 云端选测.py trust <收尾提交> --reason 合并推送后自动 立云端锚点，选测基准跟上 main；立失败只警告，不影响推送（tools77）。
 
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
 清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
@@ -1710,8 +1712,45 @@ def cleanup_lane(root, lane):
           ('提示：交付分支 %s 有未并入 main 的提交，保留：%s' % (lane['branch'], p.stderr.strip())), flush=True)
 
 
+ANCHOR_REASON = '合并推送后自动'
+
+
+def anchor_target(root):
+    """推送成功后可立云端锚点的收尾提交（tools77）：main 顶上的提交带「验证: 选测／全量」尾注才算（--batch 攒着的、
+    --close-batch 收口的没有这行，不立）；手补了代码而没有「手补已验」的不立（tools60：测的是合并提交＋手补，提交本身不当基准）。
+    返回 (提交, '')，不立返回 (None, 原因)。"""
+    body = git(root, 'log', '-1', '--format=%B', 'refs/heads/main')
+    if not re.search(r'^验证: (选测|全量)', body, re.M):
+        return None, '收尾提交没有「验证: 选测／全量」尾注'
+    if re.search(r'^手补: ', body, re.M) and not re.search(r'^手补已验: ', body, re.M):
+        return None, '收尾提交手补了代码、没有「手补已验」'
+    return git(root, 'rev-parse', 'refs/heads/main'), ''
+
+
+def anchor_after_push(root):
+    """推送成功后给收尾提交立云端锚点（云端选测.py trust <提交> --reason 合并推送后自动），选测基准跟着 main 走，
+    不再一直停在很早的云端通过点、每次退成整轮。立失败只警告，不影响推送。"""
+    sha, why = anchor_target(root)
+    if not sha:
+        print('未立云端锚点：' + why + '。', flush=True)
+        return
+    script = os.environ.get('XIYOU_CLOUD_SCRIPT') or str(root / ENV / '云端选测.py')
+    cmd = [sys.executable, script, 'trust', sha, '--reason', ANCHOR_REASON]
+    try:
+        p = subprocess.run(cmd, cwd=root, capture_output=True, text=True, timeout=180,
+                           env=dict(os.environ, GIT_TERMINAL_PROMPT='0'))
+        error = (p.stderr.strip() or p.stdout.strip() or '退出码 %d' % p.returncode) if p.returncode else ''
+    except (OSError, subprocess.TimeoutExpired) as e:
+        error = str(e)
+    if error:
+        print('警告：给收尾提交 %s 立云端锚点失败（推送不受影响；下次选测基准照旧）：%s' % (sha[:9], ' '.join(error.split())[-300:]), flush=True)
+    else:
+        print('已给收尾提交 %s 立云端锚点（%s）。' % (sha[:9], ANCHOR_REASON), flush=True)
+
+
 def push_github(root, remote='github'):
-    """用户 2026-10-18：每次合并后把 main 推到 GitHub。失败只警告，下次合并补推；GitHub 有本地没有的提交时不推。"""
+    """用户 2026-10-18：每次合并后把 main 推到 GitHub。失败只警告，下次合并补推；GitHub 有本地没有的提交时不推。
+    推送成功后给够格的收尾提交立云端锚点（anchor_after_push，tools77）；没推出去不立。"""
     def remote_git(*args):
         env = dict(os.environ, GIT_TERMINAL_PROMPT='0')
         p = subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, env=env, timeout=120)
@@ -1732,6 +1771,8 @@ def push_github(root, remote='github'):
         print('已推送 main 到 ' + remote + '。', flush=True)
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         print('警告：推送 ' + remote + ' 失败，合并不受影响，下次合并会补推：' + ' '.join(str(error).split()), flush=True)
+        return
+    anchor_after_push(root)
 
 
 def main(argv=None):
