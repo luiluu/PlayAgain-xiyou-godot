@@ -23,7 +23,7 @@
   "ce1356": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
   "ce1360": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
   "ce1366": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
-  "ce1370": "斩天拔剑术追加释放：同 ce1354，战斗中 forceAction",
+  "ce1370": "斩天拔剑术追加释放：新源改成取 BattleManager._subject（本次出手者）、把行动 push 进 _actions 末尾（不再 forceAction），仍只在战斗里有意义；战斗外 _subject 为空、行动队列不执行（DR 新源复核）",
   "ce1378": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
   "ce1379": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
   "ce1380": "物品使用时由物品效果（公共事件）调用，读 $gameParty._targetActorId（使用对象）；事件对照单跑公共事件时没有使用对象（0），$gameActors.actor(0) 为空，原版这样跑也走不到效果",
