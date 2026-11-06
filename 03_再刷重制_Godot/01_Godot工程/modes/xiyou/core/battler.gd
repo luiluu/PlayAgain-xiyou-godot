@@ -121,7 +121,7 @@ var mev: float:
 var mrf: float:
 	get: return xparam(5)
 var cnt: float:
-	get: return xparam(6)
+	get: return clampf(xparam(6), 0.0, 1.0)  # v0.35 引擎核心 Game_BattlerBase cnt：反击概率夹到 0～1（xparam(6) 本身不夹）
 var hrg: float:
 	get: return xparam(7)
 var mrg: float:
