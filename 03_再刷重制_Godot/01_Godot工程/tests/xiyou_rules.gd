@@ -77,7 +77,7 @@ func _arr_close(a: Array, b: Array, rel := 1e-6) -> bool:
 
 func _snap(b: XBattler) -> Dictionary:
 	return {"param": range(8).map(func(i): return b.param(i)),
-		"xparam": range(10).map(func(i): return b.xparam(i)),
+		"xparam": range(10).map(func(i): return b.cnt if i == 6 else b.xparam(i)),  # 参照读 b.cnt（v0.35 起夹到 0～1）
 		"sparam": range(10).map(func(i): return b.sparam(i)),
 		"elementRates": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15].map(func(e): return b.element_rate(e))}
 
