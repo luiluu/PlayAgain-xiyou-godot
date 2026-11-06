@@ -121,6 +121,19 @@ static func _actors_add_state(js: String) -> Array:
 	return plan
 
 
+## CodexTier.nonWeakIds（installTierTagsV044Runtime，v0.44 起公共事件 1345、1443～1445 的名单）：
+## 角色备注 <KyoTier:超强者>／<KyoTier:强者> 的有名字角色，按编号升序（原版超强者、强者两份拼起来再排序）。run 里把调用换成字面数组，
+## 后面照旧按「var ids = [..]; ids.forEach(...)」的写法认（v0.28 这几段就是写死的数组）
+static func tier_non_weak_ids() -> Array:
+	var ids := []
+	var tag := _re("<KyoTier\\s*:\\s*(超强者|强者)\\s*>")
+	for a in XDB.table("Actors"):
+		if a is Dictionary and str(a.get("name", "")) != "" and tag.search(str(a.get("note", ""))) != null:
+			ids.append(int(a.id))
+	ids.sort()
+	return ids
+
+
 ## 裸标识符整段当无操作（见 run）；回退开关
 static var BARE_IDENTIFIER_NOOP := true
 
@@ -130,6 +143,8 @@ static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
 	if js == "":
 		return []
+	if js.contains("CodexTier.nonWeakIds()"):
+		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current
 	# 原版本身就是语法错误的整段（YEP_CoreEngine command355 把 eval 包在 try 里，出错只 displayError、整段不执行）：无操作。
 	# 大厅难度开关 Map004 EV062、萨麦尔格祝福 Map145 EV005、传承强化 Map195 EV023、中级熟练度 CE859／860 的提示少引号或少 }，CE513 把备注 <passivePBST0:1000> 当脚本（events6）
