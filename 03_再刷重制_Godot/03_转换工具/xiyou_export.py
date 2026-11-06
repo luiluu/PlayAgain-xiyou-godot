@@ -98,6 +98,17 @@ def _top_ternary(js):
     return [js[:q[0]].strip(), js[q[0] + 1:c[0]].strip(), js[c[0] + 1:].strip()]
 
 
+_GD_BIG_INT = re.compile(r'(?<![\w.])([0-9]{19,})(?![\w.])')
+
+
+def _gd_big_ints(gd):
+    """formulaGd 里超过 int64 的整数字面量写成浮点（JS 原文本来就是 double：10037／10060 的 1e23／1e41）。
+    Godot Expression 遇到这类整数会报「Cannot represent … as a 64-bit signed integer」；formulaProgram 已经存 double，不受影响。"""
+    if not isinstance(gd, str):
+        return gd
+    return _GD_BIG_INT.sub(lambda m: m.group(1) if int(m.group(1)) <= 2 ** 63 - 1 else repr(float(int(m.group(1)))), gd)
+
+
 def translate_formula(js, item_id=0):
     js = (js or '').strip()
     # MV 公式里 user/target 与 a/b 同义；item.id 在转换时就能确定
@@ -1541,7 +1552,7 @@ class Exporter:
                             gd, why = translate_custom_block(block, rec.get('id', 0))
                         else:
                             gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
-                        rec['damage']['formulaGd'] = gd
+                        rec['damage']['formulaGd'] = _gd_big_ints(gd)
                         rec['damage']['formulaProgram'] = compile_formula(rec['damage'].get('formula'), rec.get('id', 0), block is not None, name)
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
