@@ -39,7 +39,7 @@
 ## 验证
 
 - 本机 `并行测试.py --skip-generated-check`（XIYOU_APP＝v0.62.12）：xiyou_zhenqi、xiyou_guide、xiyou_status_page、xiyou_item_marks、xiyou_hangup_auto、xiyou_enemy_book、xiyou_pets 全过；xiyou_status_power_panel 只挂 179（见上）。
-- 选测（`选测.py cc/newsrc-switch --list`，126 个）：见下方结果。
+- 选测（`选测.py cc/newsrc-switch --list`，126 个，云端 workflow_dispatch 指定场景，run 42220606308）：挂 18 个，和集成分支 7520680b 整轮（refs/ci/results/…/full，挂 111 个）对过，只有 xiyou_gear_ui 是本单引起（断言旧修行页的「【真气】」），已改成第 4 页查挑战评估、第 5 页查真气与难度对照，本机单跑通过；其余 17 个集成分支上同样挂。xiyou_status_power_panel 由挂 6 处变成只挂 179。
 - `事件空绿扫描.py --check`：空绿 96 例均在基线内。
 - `工具回归.py`：只挂「探针登记检查」的 `death_admission_probe.cjs 读伤害却没关五乘区`，这个探针是 96169c95 之前的提交 1f32c8ed 加的，集成分支上同样挂，不是本单引起。
 - `语法检查.py`：通过。

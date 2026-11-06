@@ -32,7 +32,10 @@ func _run() -> void:
 	check("suit_threshold_visible",info.contains("狼魂") and info.contains("已装备") and info.contains("队伍掉率"),info)
 	box.queue_free()
 	var status := XStatusPage.new();status.page=3;add_child(status);await frames()
-	check("status_page4_xiuxing",status.all_text().contains("【真气】") and status.all_text().contains("难度对照"),status.all_text().left(200))
+	# v0.62 起修行拆两页（XGuide.PANEL_V062）：第 4 页是挑战评估与建议，真气与难度对照在第 5 页「修行·详细」
+	check("status_page4_xiuxing",status.all_text().contains("挑战评估") and status.all_text().contains("必备属性"),status.all_text().left(200))
+	status.set_page(4);await frames()
+	check("status_page5_detail",status.all_text().contains("【真气】") and status.all_text().contains("难度对照"),status.all_text().left(200))
 	await shot("11_套装状态");status.queue_free();await frames()
 	# 物品页（XItemScene，参照 70～74）：窗口矩形、分类五项、列表/信息/状态、NEW、装备序号与装备者、说明卡、升级、选人使用
 	var page:=XItemScene.new();add_child(page);await frames()
