@@ -153,10 +153,50 @@ class AdditionTests(unittest.TestCase):
             self.assertEqual([(c['collection'], c['key'], c['fields']) for c in cand], [('顶层', 'plainState', ['*'])])
             entry = dict(cand[0], reason='状态号改了', source='x')
             self.assertFalse(additions.apply_acceptances(check, [entry])['problems'])
-            # 列表字段（未登记稳定键的整组用例）仍不出候选
+            # 列表字段（未登记稳定键的整组用例）平时不放行：候选里有（switchOnly），只有换源时接受单才认
             (b / 'attack_query.json').write_text(json.dumps(dict(old, extra=[1])))
             (a / 'attack_query.json').write_text(json.dumps(dict(old, extra=[2])))
-            self.assertFalse(additions.change_candidates(additions.compare_directories(a, b)))
+            check = additions.compare_directories(a, b)
+            cand = additions.change_candidates(check)
+            self.assertEqual([(c['collection'], c['key']) for c in cand], [('顶层', 'extra')])
+            entry = dict(cand[0], reason='换源整组对账', source='x')
+            self.assertEqual(len(additions.apply_acceptances(check, [entry])['unused']), 1)
+            self.assertFalse(additions.apply_acceptances(check, [entry], source_switch=True)['problems'])
+
+    def test_deleted_cases_and_maps_only_accepted_on_source_switch(self):
+        """BM 11-06 换源：正式版删掉的用例、地图、角色记成 newDigest「已删除」的候选，只在 --accept-source-switch 时可接受。"""
+        old = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 1}, {'id': 'b', 'v': 1}]}
+        new = {'schemaVersion': 1, 'cases': [{'id': 'a', 'v': 1}]}
+        changes = []
+        _, bad = additions.compare_file('events.json', old, new, changes)
+        self.assertEqual(len(bad), 1)
+        self.assertEqual([(c['newDigest'], c.get('switchOnly')) for c in changes], [(additions.DELETED, True)])
+        changes = []
+        _, bad = additions.compare_file('maps.json', {'4': {'w': 1}, '5': {'w': 1}}, {'4': {'w': 2}}, changes)
+        self.assertEqual(sorted((c['key'], c['newDigest'] == additions.DELETED) for c in changes), [('4', False), ('5', True)])
+        self.assertTrue(all(c['collection'] == additions.TOP_LEVEL and c['switchOnly'] for c in changes))
+        changes = []
+        additions.compare_file('slice_d1.json', {'actors': {'1': {'hp': 1}, '2': {'hp': 1}}}, {'actors': {'1': {'hp': 1}}}, changes)
+        self.assertEqual([(c['collection'], c['key'], c['newDigest']) for c in changes], [('actors', '2', additions.DELETED)])
+
+    def test_grouped_acceptance_needs_exact_group_and_source_switch(self):
+        """换源整组接受（key「*」）：同文件同集合本轮全部改变一条接受；多一条、少一条、值不同或不在换源时都对不上。"""
+        old = {'schemaVersion': 1, 'cases': [{'id': i, 'v': 1} for i in range(4)]}
+        new = {'schemaVersion': 1, 'cases': [{'id': i, 'v': 2} for i in range(3)]}
+        with tempfile.TemporaryDirectory() as folder:
+            a, b = Path(folder) / 'old', Path(folder) / 'new'
+            a.mkdir(); b.mkdir()
+            (a / 'events.json').write_text(json.dumps(old)); (b / 'events.json').write_text(json.dumps(new))
+            check = additions.compare_directories(a, b)
+            grouped = additions.grouped_candidates(additions.change_candidates(check))
+            self.assertEqual([(g['file'], g['collection'], g['key'], g['count']) for g in grouped], [('events.json', 'cases', '*', 4)])
+            entry = dict({k: grouped[0][k] for k in additions.ACCEPT_FIELDS[:6]}, reason='换源整组', source='x')
+            self.assertFalse(additions.apply_acceptances(check, [entry], source_switch=True)['problems'])
+            self.assertEqual(len(additions.apply_acceptances(check, [entry])['unused']), 1)
+            # 新参照多改一条：整组摘要对不上
+            (b / 'events.json').write_text(json.dumps(dict(new, cases=new['cases'][:2] + [{'id': 2, 'v': 3}])))
+            r = additions.apply_acceptances(additions.compare_directories(a, b), [entry], source_switch=True)
+            self.assertEqual((len(r['unused']), bool(r['problems'])), (1, True))
 
     def test_top_level_note_text_is_not_a_measurement(self):
         """10-29 两次：每期加词条 hostScope 说明都改写，同步按既有用例改变拒收、要手写接受单。"""
@@ -1053,6 +1093,14 @@ class AcceptanceDraftTests(unittest.TestCase):
         self.assertEqual([e['file'] for e in entries], ['slice_d1.json', 'slice_d2.json'])
         self.assertEqual(r['needReason'], 0)
 
+    def test_grouped_draft_one_entry_per_file_and_collection(self):
+        out = self.tmp / 'grouped.json'
+        r = self.gen.build(self.report, out, '换源整组理由', grouped=True)
+        self.assertEqual((r['added'], r['needReason']), (2, 0))
+        entries, _ = additions.load_acceptances([out])
+        self.assertEqual([(e['file'], e['key'], e['fields']) for e in entries],
+                         [('slice_d1.json', '*', ['*']), ('slice_d2.json', '*', ['*'])])
+
     def test_append_skips_existing_and_only_filters(self):
         out = self.tmp / 'accept.json'
         self.gen.build(self.report, out, '第一轮理由', {'slice_d1.json'})
@@ -1119,10 +1167,10 @@ class ProgressTests(unittest.TestCase):
 
 
 class SyncRegistrationTests(unittest.TestCase):
-    def simulate(self, accept=False, verify=True, changed_source=False, import_error=None):
+    def simulate(self, accept=False, verify=True, changed_source=False, import_error=None, new_version=None, switch=None):
         with tempfile.TemporaryDirectory(prefix='xiyou_sync_fixture_') as tmp:
             root = Path(tmp); gen = root / 'generated'; app = root / 'app'
-            app.mkdir(); (app / 'package.json').write_text('{"releaseVersion":"v0.28"}')
+            app.mkdir(); (app / 'package.json').write_text(json.dumps({'releaseVersion': new_version or 'v0.28'}))
             for name in ['oracle', 'db', 'maps']:
                 (gen / name).mkdir(parents=True, exist_ok=True)
             manifest = {'releaseVersion': 'v0.28', 'inputs': {'data/A.json': 'a'},
@@ -1140,6 +1188,9 @@ class SyncRegistrationTests(unittest.TestCase):
                 new_manifest['inputs']['data/B.json'] = 'b'
                 if changed_source:
                     new_manifest['runtimeInputs']['js/a.js'] = 'changed'
+                if new_version:
+                    new_manifest['releaseVersion'] = new_version
+                    new_manifest['inputs']['data/A.json'] = 'a2'
                 (gen / 'manifest.json').write_text(json.dumps(new_manifest))
                 (gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'trace': []}, {'id': 'b', 'trace': []}]}))
 
@@ -1148,7 +1199,8 @@ class SyncRegistrationTests(unittest.TestCase):
                     return subprocess.CompletedProcess(args, 0, '/fixture/.git\n/fixture/.git\n', '')
                 return subprocess.CompletedProcess(args, 0 if verify else 1, '{"issues":[]}\n', '')
 
-            argv = ['sync', '--app', str(app), '--generated', str(gen)] + (['--accept-additions'] if accept else [])
+            argv = (['sync', '--app', str(app), '--generated', str(gen)] + (['--accept-additions'] if accept else [])
+                    + (['--accept-source-switch', switch] if switch else []))
             with mock.patch.object(sync, 'ROOT', root), mock.patch.object(sync, 'PROBES', []), \
                  mock.patch.object(sync, 'run', export), mock.patch.object(sync.subprocess, 'run', external), \
                  mock.patch.object(sync, 'godot_import', side_effect=import_error), \
@@ -1169,6 +1221,14 @@ class SyncRegistrationTests(unittest.TestCase):
 
     def test_changed_runtime_never_auto_accepts(self):
         self.assertEqual(self.simulate(accept=True, changed_source=True)[:2], (2, False))
+
+    def test_source_switch_needs_explicit_matching_version(self):
+        """BM 11-06：换正式版本（旧输入也变了）只有 --accept-source-switch 给对版本号时才接受并登记。"""
+        self.assertEqual(self.simulate(accept=True, new_version='v0.29')[:2], (2, False))
+        self.assertEqual(self.simulate(accept=True, new_version='v0.29', switch='v0.30')[:2], (2, False))
+        self.assertEqual(self.simulate(accept=True, new_version='v0.29', switch='v0.29')[:2], (0, True))
+        # 版本没变时给了也不生效，照旧按同源规则（改了运行脚本仍拒收）
+        self.assertEqual(self.simulate(accept=True, changed_source=True, switch='v0.28')[:2], (2, False))
 
     def test_import_failure_never_registers(self):
         self.assertEqual(self.simulate(accept=True, import_error=RuntimeError('fixture import error'))[:2], (2, False))

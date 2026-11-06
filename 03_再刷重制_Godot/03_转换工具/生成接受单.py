@@ -8,6 +8,7 @@
 - reason：--reason 给全部条目同一句；--reason-from 读交付单「预期测量变化」节（没有就「变更记录草稿」节第一条）的正文；
   都不给就留空，草稿此时还不能用（接受单要求理由至少 4 字），打开文件逐条填上。
 - --out 已存在就只追加还没有的条目（按 file／collection／key 判断），不改已有条目。
+- --grouped（换源）：每个（文件, 集合）合成一条整组条目（key「*」），理由按组写；同步要带 --accept-source-switch 才认。
 - 只生成草稿，不放行任何东西：同步时每条仍要和本轮变化的摘要、字段逐项对上、每条都用上，否则整轮拒收。
 """
 import argparse
@@ -19,7 +20,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
-from oracle_additions import ACCEPT_FIELDS  # noqa: E402
+from oracle_additions import ACCEPT_FIELDS, grouped_candidates  # noqa: E402
 
 BACKUPS = ROOT / '03_再刷重制_Godot/04_验证/本地结果/自动同步'
 
@@ -47,10 +48,12 @@ def reason_from_sheet(path):
     return ''
 
 
-def build(report, out, reason='', only=()):
+def build(report, out, reason='', only=(), grouped=False):
     candidates = json.loads(Path(report).read_text()).get('changeCandidates') or []
     if only:
         candidates = [c for c in candidates if c['file'] in only]
+    if grouped:
+        candidates = grouped_candidates(candidates)
     if not candidates:
         raise ValueError('报告里没有 changeCandidates（或 --only 过滤后为空）：' + str(report))
     data = json.loads(Path(out).read_text()) if Path(out).exists() else {'schema': 1, 'accept': []}
@@ -77,6 +80,8 @@ def main(argv=None):
     g.add_argument('--reason', default='')
     g.add_argument('--reason-from', type=Path)
     ap.add_argument('--only', nargs='*', default=[], help='只收这些产物文件的变化，如 slice_d1.json')
+    ap.add_argument('--grouped', action='store_true',
+                    help='换源用：每个（文件, 集合）合成一条（key 写 *），整组摘要对上才接受；只在同步 --accept-source-switch 时生效')
     a = ap.parse_args(argv)
     report = a.report or latest_report()
     if report is None:
@@ -84,7 +89,7 @@ def main(argv=None):
         return 2
     reason = reason_from_sheet(a.reason_from) if a.reason_from else a.reason
     try:
-        result = build(report, a.out, reason, set(a.only))
+        result = build(report, a.out, reason, set(a.only), a.grouped)
     except (OSError, ValueError, KeyError) as error:
         print('生成失败：' + str(error), file=sys.stderr)
         return 2
