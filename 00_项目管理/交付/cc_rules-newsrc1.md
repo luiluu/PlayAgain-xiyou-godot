@@ -85,6 +85,16 @@
 
 新机制（要实现的）明显超过 3 个：三元公式／大数、自定义参数别名、行动序列条件写法、1768 conclude、state_effects 一批状态备注、1725 复活、2626、熟练度表。按派单先报计划，**还没动代码**。
 
+### ① state_effects 根因（只查不改，归工具车道）
+
+转换器 `03_转换工具/xiyou_export.py` 的 `parse_state_effects` 只认「原版实测过」的固定写法：`MEASURED_VALUE_BLOCKS`（按 v0.28 的整段 token 序列逐字匹配）、`revive_state_effect`、`permanent_state_effect`、`constant_bonus_effect` 等。新源改了这些状态 Custom Effect 的写法（数值或条件），整段对不上白名单，就落到 `op: js`（「尚未翻译」，运行时只记诊断、不生效），Godot 结果停在原值。例：2558 蝶引来生 v0.28 `value * 0.9` → 新源 `value * 0`、1725 不朽1 复活条件 `hp <= 0 && Math.random() > 0.6 ‖ …` → `(hp <= 0 ‖ isDead()) && Math.random() < 0.6`。
+
+本机用转换器函数对新旧两份 States.json 逐条比：新源比旧源多出 `op: js` 的有 34 个状态。
+- 改写的 19 个（正好覆盖 state_effects 的失败，以及 param_states／nanoha 的 1768、guyu_battle 的复活）：1061 混元护体（react）、1431 巡猎1（turn_start）、1450 智识1（establish）、1451 存护1（react）、1711 秩序0（turn_start）、1714 秩序3（confirm）、1716 同谐0（turn_start）、1725 不朽1（deselect）、1726 不朽2（confirm）、1731 均衡（confirm）、1768 杀敌加属性（conclude）、2544 剑终伤（confirm）、2545 太刀终伤（confirm）、2558 蝶引来生（react）、2559 血梅香（confirm）、2561 减伤90%（react）、2574 非天逆斩（apply）、2575 剑道争锋（confirm）、2583 雷道之威（confirm）
+- 新源新增、本来就没翻译的 15 个：2720 舍身剑·燃血、2721 凝气成罡、2723 用剑终伤+150%、2724 诛仙剑主、2747 全知全能、2748 全知全能 -1、2750 全知全能-2、2751 全知全能-3、2771 超赛1、2772 超赛2、2773 超赛3、2774 超蓝、2775 自在极意功、2776 自我极意功、2777 自我终伤
+
+处理：要在转换器里把这 19 个新写法加进白名单／模式，并按「实测过才收」的规矩补量具（state_effect 探针重出），属于工具车道（总装 11-06 定，本车道不改转换器）。新增的 15 个是新内容，另排。转换器改完、产物重出之后，本车道再跑 state_effects、param_states、nanoha、guyu_battle 看剩余。
+
 建议顺序：① state_effects 先找翻译缓存根因（一处修好可能连带 param_states、nanoha、guyu_battle）；② 公式三元／大数（element_ternary、formulas）；③ action_sequence 条件、custom_params 别名；④ 计数类与夹具重出（actor_advanced、state_overlay、state_effects_tp、life_steal、wtype、param_states source）；⑤ qiyu 2626、skill_mastery 表。
 
 ## 接续
