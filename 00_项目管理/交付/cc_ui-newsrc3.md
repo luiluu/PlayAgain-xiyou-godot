@@ -33,7 +33,8 @@
 - **流萤技能卡**（第三棒，总装追加：流萤运行时清单 13、15；先合了 `cc/wukong-newsrc9` fd0f53b4，冲突只在优化登记两边各加的行，全留）：
   - 15 说明按进阶生成：新 `ui/liuying_help.gd`（`XLiuyingHelp`，照 L.skillLines／refreshText）：10622 天火轰击、10623 完全燃烧按流萤（179）当前进阶重写备注 APs 行（2 阶起天火 8 段；完全燃烧 3 阶冷却 3 回合、加 33% 不进冷却、去掉「消耗：当前全部护盾」、效果改增盾上限 50%；2 阶前加「解锁：进阶2阶」）。接在 `XHelpCard._content` 开头，只改出卡用的拷贝（原版改 $dataSkills，看的也是 179 的阶，结果相同）。原版流萤的 setItem 包装在元素包装之内，会把元素包装删插的「伤害属性」行冲掉，卡上留备注写法「伤害属性：火焰·物理」；照搬（这两张卡跳过 `_element_wrapper`）。新源行为，不设开关。
   - 13 技能名品质色：重制技能页／图鉴的名字本来就按 `XQuality.list_color`（品质）上色，与包装的 QualitiesColor[品质] 逐个相同（14 个技能），不用改；专项里断言。战斗技能窗照旧白字（重制原有口径）。
-  - 没跟：10623 三阶清空 customCostText——重制技能列表还没有 `<Custom Cost Display>`（所有技能都没有，不只流萤），列表右侧只画 MP／TP／HP 等，另算一项。
+  - 10623 三阶清空 customCostText：随 DY① 一起做了（见下）。
+- **DY① 技能列表自定义消耗文字**（第三棒续，`XSkillScene.custom_cost_text／custom_cost_row`）：YEP_SkillCore `<Custom Cost Display>` 标签间各行相连成 customCostText，drawSkillCost 在 TP／MP／HP 之后右对齐画（drawTextEx：窗口标准字号，颜色按 `\c[n]`），之后留 5。v0.28 起插件就启用、插件文件新旧相同，重制原先漏了，补缺不设开关；数据里只有 10622「5%生命」、10623「全部护盾」两个。技能页 `_costs` 与战斗技能窗 `_list_entry` 都接上（战斗窗用 Olivia 缩放后的字号 21）；技能页的消耗循环改为认 `size`。10623 在流萤三阶起清空（L.refreshText）。参照：`liuying_help_probe.cjs` 加 Window_SkillList.drawSkillCost 逐字记录（0、3 阶），`xiyou_liuying_help` 43/43。已知差：重制把 ItemCost 的物品消耗排在 TP 之前，原版在自定义文字之后；两者同时出现的技能目前没有，没动。
   - 参照：新探针 `mv_oracle/liuying_help_probe.cjs`（进阶 0、1、2、3、再回 0 各量两张卡＋14 个技能名颜色），`tests/fixtures/liuying_help_oracle.json`，新专项 `xiyou_liuying_help` 34/34。
 - **参照**：`ui_reference/review_actor_book.js` 多记 `bitmap`（状态窗实际画的图，URL 末段）；上一棒在新源重取时 `sprite` 记的是 battlerName，168、173～177 的逐帧图因此对不上。`actor_book_oracle.json` 只补了 `bitmap` 一键（其余与重取的一致），测试改为图名比 `bitmap`、battlerName 比 `sprite`。
 - 测试：`xiyou_actor_book` 跟目录换算（`index_ids().find`）、立绘几何乘 bookScale、截图加 179；`xiyou_actor_book_review` 记 `actor_id()`；`xiyou_help_card` 的 O-049 出售价断言改成量排版之前的行（v0.43 排版把两种价格并成一行两列，原断言一直挂）。
