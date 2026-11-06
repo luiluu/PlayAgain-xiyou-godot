@@ -2,7 +2,7 @@
 // 【cc·悟空·未经审查】108 奈叶共享击杀（js/codex/runtime/installNanohaSharedKillRuntime.js）：
 // Game_Action.apply 包装：行动者是在出战队伍里的别的角色、奈叶学会并肩适应 10168 与适应 5683 且活着时，
 //   打中（result().isHit()）一个原本活着的敌人就记进本次行动的目标表（同一目标只记一次）；
-// BattleManager.endAction 包装：原 endAction 之后，目标表里每个已死的敌人给奈叶 addParam(0,10)、addParam(1,30)。
+// BattleManager.endAction 包装：原 endAction 之后，目标表里每个已死的敌人给奈叶 CodexNanohaAdapt(nanoha, 0.5)（v0.62.03 起；v0.28 是 addParam(0,10)、addParam(1,30)）；observed 里 count 是 _codexNanohaAdapt（旧源恒 null）。
 // 奈叶自己的击杀不走这里（actorId===108 排除），由状态 1768 Conclude 给（本探针也量一例，确认不会重复给）。
 // 真实 BattleManager／Game_Action（Math.random 0.5）；只在内存，产物 .sandbox/nanoha_kill.json，
 // 拷成 tests/fixtures/nanoha_kill_oracle.json（不接入全量同步）。
@@ -48,6 +48,7 @@ function battle(party, hp, opts = {}) {
   foes.forEach((e, i) => e.setHp(hp[i]));
   if (opts.nanohaDead) n.addState(n.deathStateId());
   if (opts.conclude) n.addState(1768);
+  if (opts.adapt != null) n._codexNanohaAdapt = opts.adapt;  // v0.62.03 起的适应累计次数（CodexNanohaAdapt 软上限，newsrc4）
   return {bm, n, foes};
 }
 function act(bm, user, skillId, targetIndex) {
@@ -63,7 +64,8 @@ function act(bm, user, skillId, targetIndex) {
   }
 }
 const snap = (n, foes) => ({members: w.$gameParty.battleMembers().map(m => m.actorId()), plus: [n._paramPlus[0], n._paramPlus[1]], dead: foes.map(e => e.isDead()),
-  learned: [10168, 5683].map(id => n.isLearnedSkill(id))});
+  learned: [10168, 5683].map(id => n.isLearnedSkill(id)),
+  count: n._codexNanohaAdapt == null ? null : n._codexNanohaAdapt});  // 旧源没有这个字段，恒为 null
 
 const cases = [];
 cases.push(makeCase('learn', {actor: NANOHA, level: 1}, () => {
@@ -77,6 +79,7 @@ const SPECS = [
   ['mate.attack.nokill', [MATE, NANOHA], [BIG_HP, BIG_HP, BIG_HP], MATE, 1, 0, {}],
   ['mate.aoe.kill2', [MATE, NANOHA], [1, 1, BIG_HP], MATE, 160, -1, {}],
   ['mate.aoe.kill3', [MATE, NANOHA], [1, 1, 1], MATE, 160, -1, {}],
+  ['mate.aoe.softcap', [MATE, NANOHA], [1, 1, BIG_HP], MATE, 160, -1, {adapt: 3000}],  // 累计 3000 次后队友击杀：每只 ×2000/n×0.5
   ['nanoha.absent', [MATE], [1, 1, 1], MATE, 160, -1, {}],
   ['nanoha.locked', [MATE, NANOHA], [1, 1, 1], MATE, 160, -1, {locked: true}],
   ['nanoha.dead', [MATE, NANOHA], [1, 1, 1], MATE, 160, -1, {nanohaDead: true}],
