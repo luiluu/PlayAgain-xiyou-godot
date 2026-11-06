@@ -225,6 +225,25 @@ func _run() -> void:
 	XBossStatusPanel.SHOW_POWER = false
 	panel.refresh(true)
 
+	# 8b. 冻结后跟进 v0.56：设置页开关（XBossStatusPanel.TOGGLE，默认关＝面板一直在）；关掉后面板不显示，Boss 血条不受影响
+	check("toggle_default_off_panel_enabled", not XBossStatusPanel.TOGGLE and XBossStatusPanel.panel_enabled())
+	var old_dir := XSave.dir_override
+	XSave.dir_override = "user://test_xiyou_boss_status"  # 配置只在内存，不写本机 options.json
+	var hp_before = b.boss_hp.battler
+	XConfig.set_flag("codexBossStatusPanel", false)
+	await frames(10)
+	check("toggle_off_flag_ignored_when_switch_off", panel.visible and panel.battler == boss)
+	XBossStatusPanel.TOGGLE = true
+	check("toggle_on_flag_false_disabled", not XBossStatusPanel.panel_enabled())
+	await frames(10)
+	check("toggle_hides_panel", not panel.visible and panel.battler == null and not panel.open and not panel.detail.visible)
+	check("toggle_keeps_boss_hp_bar", b.boss_hp != null and b.boss_hp.battler == hp_before)
+	XConfig.set_flag("codexBossStatusPanel", true)
+	await frames(10)
+	check("toggle_back_on_shows_panel", panel.visible and panel.battler == boss)
+	XBossStatusPanel.TOGGLE = false
+	XSave.dir_override = old_dir
+
 	# 9. 死亡后消失
 	boss.hp = 0
 	await frames(10)

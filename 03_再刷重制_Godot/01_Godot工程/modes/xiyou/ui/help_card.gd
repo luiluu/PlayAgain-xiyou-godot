@@ -53,6 +53,9 @@ const EXTRA_GAP_NEAR := 24.0
 ## 优化 O-049：「出售价格」写实际卖出价（XItemMarks.selling_price：<Sell Price> 优先，否则半价向下取整，与商店付的钱一致）；
 ## false 照原版 HelpExtend 写 Math.round(价格/2)，奇数价格比实卖多 1。
 static var REAL_SELL_PRICE := true
+## 冻结后跟进 v0.36（CodexDisplay D.equipmentRows）：装备说明里的白字属性行排在第一条蓝字「特效／效果／成长：」之前。
+## 默认 false＝v0.28 的排法（白字按备注原位）；换源（v0.62.12）后翻成 true（O-待定，回退＝改回 false）。
+static var WHITE_STATS_FIRST := false
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
 
@@ -194,9 +197,45 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			r[0] = label
 	for r in rows:
 		r[0] = _terms(str(r[0]))
+	if WHITE_STATS_FIRST and (type == 1 or type == 2):
+		rows = equipment_rows(rows)
 	if XDemonCrown.is_gear(obj):  # 魔冠的 getDescParams 包装：小数取整（describe 在发放／重放时已做）
 		XDemonCrown.desc_rows(obj, rows)
 	return rows
+
+
+static var _white_stat_re: RegEx
+static var _blue_head_re: RegEx
+static var _color_code_re: RegEx
+
+## v0.36 D.equipmentRows：白字属性（行内没有 \c[1-9]、行颜色空或纯白，名字是基础属性类）按原顺序提到
+## 第一条以 \c[1] 开头的「特效／效果／成长：」前面；没有蓝字特效或没有白字属性就原样。只动顺序，不增删行。
+static func equipment_rows(rows: Array) -> Array:
+	if _white_stat_re == null:
+		_white_stat_re = RegEx.create_from_string("^(?:最大生命值|最大魔法值|生命值|魔法值|物理攻击力?|魔法攻击力?|攻击力|防御力|魔法防御|敏捷|幸运|命中率?|暴击(?:率|伤害)?|反击率?|闪避率?|魔法闪避率?|攻击速度|全属性(?:伤害)?|全闪避|暴击闪避率?|魔法反射率?|魔法反击率?|物理魔法闪避|爆闪|爆伤|攻击次数|(?:物|魔|火|冰|雷|暗|光|水|土|风|毒)伤|每级全属性|进化后每级全属性)[：:＋+－\\-\\d、， ,/]")
+		_blue_head_re = RegEx.create_from_string("(?i)^\\\\c\\[1\\](?:特效|效果|成长)[：:]")
+		_color_code_re = RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
+	var any_color := RegEx.create_from_string("(?i)\\\\c\\[[1-9]\\d*\\]")
+	var stats := []
+	var kept := []
+	var first := -1
+	for r in rows:
+		var raw := str(r[0])
+		var plain := _color_code_re.sub(raw, "", true)
+		var color := str(r[2]).replace(" ", "").replace("\t", "").to_lower() if r.size() > 2 and r[2] != null else ""
+		var white := any_color.search(raw) == null and (color == "" or color in ["#fff", "#ffffff", "white", "rgba(255,255,255)", "rgba(255,255,255,1)", "rgb(255,255,255)"])
+		if white and _white_stat_re.search(plain) != null:
+			stats.append(r)
+			continue
+		if first < 0 and _blue_head_re.search(raw) != null:
+			first = kept.size()
+		kept.append(r)
+	if first < 0 or stats.is_empty():
+		return rows
+	var out := kept.slice(0, first)
+	out.append_array(stats)
+	out.append_array(kept.slice(first))
+	return out
 
 
 ## 云裳 getDescParams 包装：织神天梭在「等级需求：1」后面（没有就在 APs 位置）插等级与法宝经验两行

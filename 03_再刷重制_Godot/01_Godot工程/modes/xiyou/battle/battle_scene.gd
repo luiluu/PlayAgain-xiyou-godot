@@ -321,7 +321,7 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
 		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
-	if not e.hp_gauge_visible():  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
+	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
 		return
 	if g.timer <= 0.0 and g.disp == g.cur and not (_target_mode == "enemy" and e == _hover):
 		return
