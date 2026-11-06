@@ -1,11 +1,13 @@
 extends Node
 ## 【cc·悟空·未经审查】v0.62 SV 归一平滑（Codex_MiraRavenMultiFrame v1.06 applyVisual：bitmap.smooth = scale < 1）守卫。
 ## 参照 mv_oracle/real/actor_sv.result.json（actor_sv_real.cjs 在无头 Chrome 量 v0.62.12）：168、174、175、179 归一缩小 → 平滑；
-## 167、169～173、176～178 放大或原尺寸、163～165 旧角色 → 不平滑。开关 XBattlerSprite.SV_NORM_SMOOTH（O-待定）开、关各一组：
+## 167、169～173、176～178 放大或原尺寸、162～165 旧角色 → 不平滑。
+## 162 诛仙另守：原版图 guanxi7_1 是 .png 扩展名的 JPEG，早年导入失败留下 valid=false 的 .import，转成真 PNG 后 Godot 不重导，战斗图是空的；
+## 这里查 generated/img 下没有 valid=false 的 .import（xiyou_export.py 遇到会删掉重导）。开关 XBattlerSprite.SV_NORM_SMOOTH（O-待定）开、关各一组：
 ## 身体采样方式；画的那一帧与源 PNG 逐像素相同（开关只换采样，不换图、不改像素）；变大装备（fd）把缩放推到 ≥1 时回到最近邻。
 ## 无头跑没有真实渲染，画到屏幕上的像素这里量不到，靠 tests/xiyou_actor_sv_compare.tscn 对原版量具比采样标记。
 const SMOOTH := [168, 174, 175, 179]
-const CRISP := [163, 165, 167, 169, 170, 172, 173, 176, 178]
+const CRISP := [162, 163, 165, 167, 169, 170, 172, 173, 176, 178]
 var passed := 0
 var total := 0
 
@@ -115,10 +117,22 @@ func _diff(a: PackedByteArray, b: PackedByteArray) -> Dictionary:
 	return {"alpha": da, "rgb": dc}
 
 
+func _invalid_imports(dir: String) -> Array:
+	var out := []
+	for f in DirAccess.get_files_at(dir):
+		if f.ends_with(".import") and FileAccess.get_file_as_string(dir + "/" + f).contains("valid=false"):
+			out.append(dir.trim_prefix("res://modes/xiyou/generated/") + "/" + f)
+	for d in DirAccess.get_directories_at(dir):
+		out.append_array(_invalid_imports(dir + "/" + d))
+	return out
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	var ids: Array = SMOOTH + CRISP
 	check("switch_default_on", XBattlerSprite.SV_NORM_SMOOTH == true)
+	var bad := _invalid_imports("res://modes/xiyou/generated/img")
+	check("imports_valid", bad.is_empty(), bad)
 	XBattlerSprite.SV_NORM_SMOOTH = true
 	var on := await _measure(ids)
 	XBattlerSprite.SV_NORM_SMOOTH = false

@@ -1962,6 +1962,12 @@ class Exporter:
                 if kind == 'audio' and ext == '.ogg' and not data.startswith(b'OggS') and (data.startswith(b'ID3') or data[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2')):
                     dst = '.mp3'
                 self.write_changed(f'{kind}/{rel}{dst}', out, source=src)
+                # 以前按原样复制过的伪 PNG（JPEG／WebP 内容）导入失败，留下 valid=false 的 .import；现在转成真 PNG 了，
+                # Godot 认 .import 里的旧记录不重导（162 诛仙战斗图、脸图因此是空的）。产物已对的情况下也删掉坏 .import，下次导入重做
+                bad = self.out / f'{kind}/{rel}{dst}.import'
+                if bad.is_file() and 'valid=false' in bad.read_text(encoding='utf-8', errors='replace'):
+                    bad.unlink()
+                    self.issues.append({'resetInvalidImport': f'{kind}/{rel}{dst}'})
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):
