@@ -163,7 +163,7 @@ func _input(event: InputEvent) -> void:
 		open = false
 		detail.visible = false
 		refresh(true)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 func _on_bar_input(event: InputEvent) -> void:

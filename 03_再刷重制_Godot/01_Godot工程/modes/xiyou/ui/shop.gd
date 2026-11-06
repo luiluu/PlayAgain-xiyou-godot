@@ -634,7 +634,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		handled = false
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_refresh()
 
 

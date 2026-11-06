@@ -260,13 +260,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _mode == "page":
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		var wrap := not event.is_echo()
 		var before := [_cmd_index, _actor_index]
@@ -281,7 +281,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_refresh()
 	elif _mode == "command" and page_dir(event) != 0:
 		# Window_MenuCommand 不接管 pageup／pagedown：走通用翻页（队伍窗只 5 行，选人时不翻）
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var before := _cmd_index
 		var r := page(_cmd_top, _cmd_index, COMMANDS.size(), CMD_VISIBLE, page_dir(event))
 		_cmd_top = r[0]

@@ -1675,13 +1675,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Scene_Map.isMenuCalled：TouchInput.isCancelled（右键、两指点按）也呼出菜单。回退开关 XKeyMap.MV_MAP_RIGHT_MENU
 	if XKeyMap.MV_MAP_RIGHT_MENU and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if not busy and not XMessageBox.consumed_input_this_frame() and not XKeyMap.menu_call_blocked(_menu_closed_frame, Engine.get_process_frames()):
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 			open_menu()
 		return
 	var key := event as InputEventKey
 	if key and key.pressed and not key.echo and key.physical_keycode == KEY_G:
 		toggle_hang_up()
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## Game_Player.updateHangUp：有遇敌表时在范围内随机走、出范围往回走；没有遇敌表时回原点

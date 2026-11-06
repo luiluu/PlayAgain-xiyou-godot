@@ -796,7 +796,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		handled = false
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## Window_Message.isTriggered：确定/取消（含连发）或点击

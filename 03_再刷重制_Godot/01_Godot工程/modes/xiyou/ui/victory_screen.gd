@@ -197,16 +197,16 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_DOWN,MOUSE_BUTTON_WHEEL_UP]:
 		_drop_top = clampi(_drop_top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0,_drops.size()-11))
 		canvas.queue_redraw()
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if event.is_action_pressed("ui_down",true) or event.is_action_pressed("ui_up",true):
 		_drop_top = clampi(_drop_top + (1 if event.is_action_pressed("ui_down",true) else -1),0,maxi(0,_drops.size()-11))
 		canvas.queue_redraw()
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	var confirm: bool = event.is_action_pressed("ui_cancel") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)
 	if confirm:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if _ready_to_close:
 			set_process(false)
 			continued.emit()

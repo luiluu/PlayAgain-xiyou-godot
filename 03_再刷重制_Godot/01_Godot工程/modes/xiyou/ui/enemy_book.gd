@@ -526,27 +526,27 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_page_jump(1 if event.is_action_pressed("ui_right", true) else -1)
 	elif mode == "index" and XMenu.page_dir(event) != 0:
 		# AB_EnemyBook 的索引窗不接管 pageup／pagedown：走通用翻页
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var r := XMenu.page(top, index, ids.size(), ROWS, XMenu.page_dir(event))
 		top = r[0]
 		select(r[1])
 		_refresh()
 	elif mode == "drops" and not drop_list.is_empty() and XMenu.page_dir(event) != 0:
 		# 掉落列表 Window_EnemyBookItemList 也不接管 pageup／pagedown：走通用翻页（ui11）
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var r := XMenu.page(drop_top, drop_index, drop_list.size(), drop_rows_visible(), XMenu.page_dir(event))
 		drop_top = r[0]
 		select_drop(r[1])

@@ -75,16 +75,16 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).index >= 1:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if event.pressed:
 			two_finger_cancel((event as InputEventScreenTouch).position)
 		return
 	if event is InputEventScreenDrag and (event as InputEventScreenDrag).index >= 1:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if is_catching_up() and (event is InputEventScreenTouch or event is InputEventMouseButton) and event.pressed:
 		stop_catch_up()
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## 两指点按：把第一指正按着的左键挪出画面（按钮松开时就不算点中），再在第一指处点一下右键。

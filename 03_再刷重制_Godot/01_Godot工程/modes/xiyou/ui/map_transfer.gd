@@ -530,7 +530,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_arrow(dir, not event.is_echo())
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 func _page_key(d: int) -> void:

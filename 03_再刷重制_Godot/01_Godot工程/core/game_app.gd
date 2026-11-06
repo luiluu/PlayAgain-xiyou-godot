@@ -131,4 +131,4 @@ func _input(event: InputEvent) -> void:
 			WindowFit.apply(window)
 		else:
 			window.mode = Window.MODE_FULLSCREEN
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)

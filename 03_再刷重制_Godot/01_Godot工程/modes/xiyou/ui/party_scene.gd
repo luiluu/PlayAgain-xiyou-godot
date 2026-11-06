@@ -324,21 +324,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var pressed := key != null and key.pressed
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true) or (pressed and key.physical_keycode in [KEY_W, KEY_S]):
 		# 出战栏是一行 5 列：上下不动（Window_Selectable.cursorDown/Up 需要多行）
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if mode != "slot":
 			_move(1 if event.is_action_pressed("ui_down", true) or (pressed and key.physical_keycode == KEY_S) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true) or (pressed and key.physical_keycode in [KEY_A, KEY_D]):
 		# 只有出战栏横向移动（isHorizontal 时首按可首尾循环）；指令窗与名单单列不动
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if mode == "slot":
 			_move(1 if event.is_action_pressed("ui_right", true) or (pressed and key.physical_keycode == KEY_D) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_page_up", true) or event.is_action_pressed("ui_page_down", true) or (pressed and key.physical_keycode in [KEY_Q, KEY_E]):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		page(-1 if event.is_action_pressed("ui_page_up", true) or (pressed and key.physical_keycode == KEY_Q) else 1)

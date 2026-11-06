@@ -37,14 +37,14 @@ static func repeats_at(t: int) -> bool:
 
 func _input(event: InputEvent) -> void:
 	if MV_PAD and not _pushing and _pad_input(event):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if _pushing or not (event is InputEventKey):
 		return
 	var k := event as InputEventKey
 	if k.echo:
 		if MV_REPEAT:
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 		return
 	if k.pressed:
 		_key = k.duplicate()
