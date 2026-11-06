@@ -556,6 +556,8 @@ def plan(root, task, branch=None):
             version_paths.append(p)
             if lines:
                 opt_added[p] = lines
+    check_orphan_placeholders([dict(token=tok, row=row, keys=sorted(ks)) for tok, row, ks in opt_row_entries([text] + [read(p) for p in extra])],
+                              {p: (read(p) or '', lines) for p, lines in opt_added.items()})
     return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths, optAdded=opt_added, evidenceFiles=evidence, goneSheets=gone,
@@ -649,6 +651,72 @@ def opt_row_entries(texts):
             if m:
                 out.append((m.group(0), row, opt_row_keys(row)))
     return out
+
+
+def opt_row_paths(row):
+    """草稿表行「位置」列里写的文件（`battle/boss_hp_bar.gd` 这类，可以是工程内的相对后半段）。"""
+    cells = row.split('|')
+    return re.findall(r'[\w./-]*\w\.(?:gd|py|json|sh|tscn|cjs)\b', cells[2] if len(cells) > 2 else '')
+
+
+def comment_context(lines, i):
+    """第 i 行注释管到的下文：接着的注释行，加注释块后第一条非空代码行（开关声明）；遇空行就停（那段注释不注哪条声明）。"""
+    out = []
+    for x in lines[i + 1:i + 12]:
+        if not x.strip():
+            break
+        out.append(x)
+        if not x.lstrip().startswith('#'):
+            break
+    return '\n'.join(out)
+
+
+def pick_by_location(line, rel, rows, after=''):
+    """车道代码注释里的占位和草稿表行对不上号（11-06 ui16：草稿 O-待定-1～3、注释都写 O-待定）：按草稿行「位置」列的文件认；
+    同一文件有几条时再看本行和它注的声明里有没有哪条独有的识别键（开关名等）。返回 (那条, 该文件的候选)；分不出时第一项是 None。"""
+    cand = [r for r in rows if any(rel == f or rel.endswith('/' + f) for f in opt_row_paths(r['row']))]
+    if len(cand) <= 1:
+        return (cand[0] if cand else None), cand
+    ctx = line + '\n' + after
+    hit = [r for r in cand if any(k in ctx for k in r['keys'] if sum(k in o['keys'] for o in cand) == 1)]
+    return (hit[0] if len(hit) == 1 else None), cand
+
+
+def orphan_problem(rel, n, line, tok, cand, rows):
+    each = 'O-' + '待定' + '-N'
+    if not cand:
+        return ('%s:%d 注释写 %s，本批草稿（%s）的「位置」列都没写这个文件：%s——草稿表行的「位置」写上文件，或注释改成对应草稿首格的写法'
+                % (rel, n, tok, '、'.join(r['token'] for r in rows), line.strip()[:60]))
+    return ('%s:%d 注释写 %s，「位置」列写这个文件的草稿有 %d 条（%s），这一行分不出是哪条：%s'
+            '——同一文件有几条时，车道把注释写成对应的 %s（与草稿表首格一致）'
+            % (rel, n, tok, len(cand), '、'.join(r['token'] for r in cand), line.strip()[:60], each))
+
+
+def orphan_tokens(line, known):
+    return [m.group(0) for m in OPT_TOKEN.finditer(line) if m.group(0) not in known]
+
+
+def check_orphan_placeholders(rows, files):
+    """plan 阶段：车道新增代码行里和草稿首格对不上的占位，都要能按「位置」认出唯一一条；认不出的一次列全、停下（tools76）。
+    files：{相对路径: (全文, 新增行)}。没有草稿表行时不查（照旧提示未换号）。"""
+    if not rows:
+        return
+    known = {r['token'] for r in rows}
+    problems = []
+    for rel, (text, added) in files.items():
+        if rel.endswith('.md'):
+            continue
+        lines = text.split('\n')
+        added = set(added)
+        for i, line in enumerate(lines):
+            if line not in added:
+                continue
+            for tok in orphan_tokens(line, known):
+                hit, cand = pick_by_location(line, rel, rows, comment_context(lines, i))
+                if hit is None:
+                    problems.append(orphan_problem(rel, i + 1, line, tok, cand, rows))
+    if problems:
+        raise RuntimeError('代码注释里的优化号占位对不上草稿表（合并后会原样留着、收尾 opt_audit 才拦）：\n  ' + '\n  '.join(problems))
 
 
 def substitute_ambiguous(line, state, after=''):
@@ -785,6 +853,11 @@ def assign_opt_numbers(root, state):
             keys[tok] = sorted(rows[tok][0][1]) if tok in rows else []
     state['optEntries'] = ambiguous
     state['optKeys'] = keys
+    # 每条草稿行和它发到的号：代码注释的占位写法和草稿首格对不上时按「位置」列认（tools76）
+    state['optRows'] = [dict(token=tok, row=e['row'], keys=sorted(opt_row_keys(e['row'])), number=e['number'])
+                        for tok, es in ambiguous.items() for e in es]
+    state['optRows'] += [dict(token=tok, row=row, keys=sorted(ks), number=numbers[tok])
+                         for tok, lst in rows.items() if tok in numbers for row, ks in lst]
     return numbers
 
 
@@ -805,9 +878,23 @@ def substitute(text, state, rel=''):
                 # 文档（报告、设计说明）新增行讲到占位却不带本批草稿的识别键：多半是「建议登记一条」之类的字样，不换（审查第 23 期 P3-1）
                 out.append(substitute_opt(line, unkeyed_state(state)))
             else:
-                out.append(substitute_opt(line, state, after))
+                done = substitute_opt(line, state, after)
+                if keys is None and state.get('optRows'):
+                    done = substitute_orphans(done, rel, state, comment_context(lines, i), i + 1)
+                out.append(done)
         return '\n'.join(out)
     return substitute_opt(text, state)
+
+
+def substitute_orphans(line, rel, state, after, n):
+    """代码行换完号还留着的占位（草稿首格里没有这个写法）：按「位置」列认出唯一那条换成它的号，认不出就停（plan 已先查过）。"""
+    rows = state['optRows']
+    for tok in orphan_tokens(line, set()):
+        hit, cand = pick_by_location(line, rel, rows, after)
+        if hit is None:
+            raise RuntimeError(orphan_problem(rel, n, line, tok, cand, rows))
+        line = re.sub(re.escape(tok) + r'(?!-?\d)', hit['number'], line)
+    return line
 
 
 def draft_keys(state):
