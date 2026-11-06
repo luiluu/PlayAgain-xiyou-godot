@@ -9,6 +9,7 @@
   python3 发行入口冒烟.py --keys         另外按键冒烟（platform-crash1）：每组新开一个进程、新临时 HOME，
                                          标题按空格／J／回车开新游戏，再按一串确认、取消键，看进程活着、没有新崩溃报告
   python3 发行入口冒烟.py --keys-only --zip <包>   只做按键冒烟（不查名字图标），给验证旧包／修后包用
+  python3 发行入口冒烟.py --arch x86_64 [--keys]  macOS 包在 Rosetta 下跑 x86_64 切片（arch -x86_64；包是 universal 才有这个切片）
   python3 发行入口冒烟.py --keys-only --app <.app>  同上，直接跑一个已解开的 .app（只执行、不改它；HOME 照旧是临时的）
 
 查的：
@@ -41,6 +42,7 @@ APP_NAME = '再刷一把：天启篇'
 TITLE = 'res://modes/xiyou/entry.tscn'
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
 CRASH_WAIT = 40
+RUN_PREFIX: list = []  # --arch x86_64 时是 ['arch', '-x86_64']
 CRASH_DIR = Path.home() / 'Library' / 'Logs' / 'DiagnosticReports'
 # (名字, 按键序列, 最后应在的场景或 None)。每组新开进程：新游戏后就离开标题了。
 KEY_RUNS = [
@@ -85,7 +87,7 @@ def windows(work: Path, check, keys=False) -> int:
 def run_entry(work: Path, exe: Path, check) -> int:
     home = Path(tempfile.mkdtemp(prefix='xiyou_export_home_'))
     try:
-        p = subprocess.run([str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'],
+        p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
                            timeout=300, env=dict(os.environ, HOME=str(home)), cwd=str(home))
     finally:
@@ -111,7 +113,7 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     for name, seq, want in runs:
         home = Path(tempfile.mkdtemp(prefix='xiyou_keys_home_'))
         try:
-            p = subprocess.run([str(exe), '--headless', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
+            p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
                                timeout=300, env=dict(os.environ, HOME=str(home)), cwd=str(home))
             out, rc = p.stdout, p.returncode
@@ -143,6 +145,7 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--zip')
+    ap.add_argument('--arch', choices=['x86_64', 'arm64'], help='用 arch -<架构> 跑 macOS 包的某个切片（x86_64 走 Rosetta）')
     ap.add_argument('--app', help='已解开的 .app（只配 --keys-only）')
     ap.add_argument('--keep', action='store_true')
     ap.add_argument('--platform', choices=['macos', 'windows'], default='macos')
@@ -150,6 +153,11 @@ def main() -> int:
     ap.add_argument('--keys-only', action='store_true', help='只跑按键冒烟（配合 --zip 验证现成的包）')
     a = ap.parse_args()
     a.keys = a.keys or a.keys_only
+    if a.arch:
+        if a.platform != 'macos':
+            print('--arch 只配 macOS 包')
+            return 2
+        RUN_PREFIX[:] = ['arch', '-' + a.arch]
     work = Path(tempfile.mkdtemp(prefix='xiyou_release_entry_'))
     checks = []
 
