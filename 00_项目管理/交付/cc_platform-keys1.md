@@ -14,6 +14,12 @@
 - 回退：`XKeyMap.MV_KEYS = false`（键位）；Esc 保护无开关，删 `map_scene.gd` 里一个条件即可。
 - 测试：新增 `xiyou_key_map`（30 项，含高分屏开关）。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 高分屏文字（`XMVCanvas.CRISP_HIDPI_TEXT`） | 为对上 Mac 原版加粗，文字画同色 1 逻辑像素描边 | 窗口缩放 ≥1.5 时不画描边，Retina 上字不再偏粗偏软 | Kyo 反馈 Retina 字偏粗偏软 | `XMVCanvas.CRISP_HIDPI_TEXT = false` | cc（键位） | 待用户确认 |
+
 ## 验证
 
 - 工具回归全过；语法检查 0 问题；xiyou_key_map（30 项）、xiyou_key_repeat、xiyou_map_hotkeys 通过。
