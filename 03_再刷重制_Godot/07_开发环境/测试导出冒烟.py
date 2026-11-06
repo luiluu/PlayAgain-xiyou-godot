@@ -4,6 +4,7 @@ import importlib.util
 import os
 from pathlib import Path
 import tempfile
+import json
 import unittest
 
 HERE = Path(__file__).resolve().parent
@@ -136,13 +137,13 @@ class AndroidLayoutTests(unittest.TestCase):
         info = smoke.parse_android(self.BADGING, self.XML)
         self.assertEqual(info, {'package': 'local.kyo.remake.verification', 'native': ['arm64-v8a'], 'orientation': 11,
                                 'permissions': ['android.permission.WAKE_LOCK'], 'versionCode': '1', 'versionName': '0.0.0',
-                                'icon': 'res/mipmap/icon.png'})
+                                'icon': 'res/mipmap/icon.png', 'label': None})
         self.assertEqual(smoke.parse_android('', '')['orientation'], None)
 
     def test_problems(self):
         names = {'assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap',
                  'assets/tests/xiyou_mac_export.tscn.remap'}
-        info = smoke.parse_android(self.BADGING, self.XML)
+        info = dict(smoke.parse_android(self.BADGING, self.XML), **smoke.expected_android_version('安卓 验收'))
         self.assertEqual(smoke.android_problems(info, names), [])
         portrait = dict(info, orientation=1, native=['armeabi-v7a'])
         probs = smoke.android_problems(portrait, names - {'assets/project.binary'})
@@ -150,6 +151,15 @@ class AndroidLayoutTests(unittest.TestCase):
         bumped = dict(info, versionName='9.9', icon=None)
         self.assertEqual(len(smoke.android_problems(bumped, names)), 2, smoke.android_problems(bumped, names))
         self.assertEqual(smoke.android_problems(dict(info, package=smoke.preset_template('安卓 发行', 'package/unique_name')), names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
+
+    def test_expected_version_from_dev(self):
+        # 导出插件开着（XAndroidVersion.AUTO）：versionCode＝开发编号数字、versionName＝0.数字；预设里的 1／0.0.0 不再是对的
+        info = json.loads((smoke.PROJECT / 'content' / 'build_info.json').read_text(encoding='utf-8'))
+        n = int(info['developmentVersion'].removeprefix('dev.'))
+        self.assertEqual(smoke.expected_android_version('安卓 发行'), {'versionCode': str(n), 'versionName': '0.%d' % n})
+        stale = dict(smoke.parse_android(self.BADGING, self.XML), package=smoke.preset_template('安卓 发行', 'package/unique_name'))
+        probs = smoke.android_problems(stale, {'assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap'}, debug=False)
+        self.assertEqual(len(probs), 2, probs)
 
     def test_apk_sizes(self):
         import zipfile

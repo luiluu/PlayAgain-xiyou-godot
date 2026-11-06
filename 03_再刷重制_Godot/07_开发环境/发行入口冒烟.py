@@ -6,6 +6,11 @@
   python3 发行入口冒烟.py --keep         留下解开的 .app
   python3 发行入口冒烟.py --platform windows   导出「Windows 发行」：查 exe 资源里的名字和 256 图标，
                                          再把 macOS 发行模板改成同名、放在 .pck 旁边跑一次（发行模板不认 --main-pack）
+  python3 发行入口冒烟.py --platform android [--keys] [--apk <包>]   导出「安卓 发行」（发行 keystore 没配就用本机 Godot 调试
+                                         keystore 签，只给冒烟和试装）：静态查签名、包名、应用名、版本号（按开发编号，O-待定·安卓版本号）、
+                                         入口与资源、没有 tests/；apk 的 assets/ 打成 pck 放到 macOS 发行模板旁跑入口（和按键）；
+                                         有在跑的模拟器（emulator-*）就装上启动、20 秒后看进程活着；没有就在输出里写明只做了静态检查。
+                                         真机不碰（cc 平台 DZ 2026-11-06）
   python3 发行入口冒烟.py --keys         另外按键冒烟（platform-crash1）：每组新开一个进程、新临时 HOME，
                                          标题按空格／J／回车开新游戏，再按一串确认、取消键，看进程活着、没有新崩溃报告
   python3 发行入口冒烟.py --keys-only --zip <包>   只做按键冒烟（不查名字图标），给验证旧包／修后包用
@@ -70,18 +75,132 @@ def windows(work: Path, check, keys=False) -> int:
     n = struct.unpack('<H', ico[4:6])[0]
     size, off = struct.unpack('<II', ico[6 + 16 * (n - 1) + 8:6 + 16 * (n - 1) + 16])
     check('exe_icon_256', ico[off:off + size] in blob)
+    runner = release_runner(work, pck)
+    if runner is None:
+        return 2
+    run_entry(work, runner, check)
+    return run_keys(work, runner, check) if keys else 0
+
+
+def release_runner(work: Path, pck: Path):
+    """macOS 发行模板的可执行文件，改成和 pck 同名、放在它旁边（发行模板不认 --main-pack，只认同名 .pck）。"""
     cfg = (PROJECT / 'export_presets.cfg').read_text(encoding='utf-8')
     tpl = Path(re.search(r'custom_template/release="([^"]*macos[^"]*)"', cfg).group(1))
     tdir = work / 'tpl'
     if subprocess.run(['ditto', '-x', '-k', str(tpl), str(tdir)]).returncode != 0:
         print('解不开 macOS 模板')
-        return 2
+        return None
     rel = next(tdir.rglob('godot_macos_release*'))
     runner = pck.with_suffix('')
     shutil.copy(rel, runner)
     runner.chmod(0o755)
+    return runner
+
+
+ANDROID_PRESET = '安卓 发行'
+ANDROID_NEED = ['assets/project.binary', 'assets/modes/xiyou/entry.tscn.remap', 'assets/content/build_info.json',
+                'assets/modes/xiyou/generated/db/System.json']
+
+
+def editor_debug_keystore():
+    """本机 Godot 编辑器设置里的调试 keystore（路径, 密码）；没有返回 (None, None)。只在发行 keystore 没配时用来签冒烟包。"""
+    for f in sorted((HERE / '当前Godot.app').resolve().parent.glob('editor_data/editor_settings-*.tres')):
+        text = f.read_text(encoding='utf-8', errors='replace')
+        path = re.search(r'^export/android/debug_keystore = "([^"]*)"', text, re.M)
+        pw = re.search(r'^export/android/debug_keystore_pass = "([^"]*)"', text, re.M)
+        if path and pw and Path(path.group(1)).is_file():
+            return path.group(1), pw.group(1)
+    return None, None
+
+
+def emulators(adb: Path) -> tuple:
+    """adb devices 里的（模拟器, 真机）序列号。真机不碰（装到 Kyo 手机上要他同意）。"""
+    out = subprocess.run([str(adb), 'devices'], capture_output=True, text=True, timeout=30).stdout
+    rows = [l.split('\t') for l in out.splitlines()[1:] if '\t' in l]
+    online = [s for s, st in rows if st.strip() == 'device']
+    return [s for s in online if s.startswith('emulator-')], [s for s in online if not s.startswith('emulator-')]
+
+
+def android(work: Path, check, keys=False, apk=None) -> int:
+    """安卓发行包：静态查 apk（签名、包名、应用名、版本号、入口和资源、没有 tests/）；
+    把 apk 的 assets/ 打成 pck 放到 macOS 发行模板旁跑入口（和按键）；有模拟器就装机启动，没有就写明只做了静态检查。"""
+    import zipfile
+    sys.path.insert(0, str(HERE))
+    import 导出冒烟 as smoke
+    if apk is None:
+        apk = work / 'android' / '再刷一把_天启篇.apk'
+        apk.parent.mkdir()
+        env = dict(os.environ)
+        if not env.get('GODOT_ANDROID_KEYSTORE_RELEASE_PATH'):
+            ks, pw = editor_debug_keystore()
+            if ks is None:
+                print('没配发行 keystore，本机也找不到 Godot 调试 keystore，导不了安卓发行包')
+                return 2
+            env.update(GODOT_ANDROID_KEYSTORE_RELEASE_PATH=ks, GODOT_ANDROID_KEYSTORE_RELEASE_USER='androiddebugkey',
+                       GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=pw)
+            print('发行 keystore 没配：用本机 Godot 调试 keystore 签名（只给冒烟和真机试装，不能上架）')
+        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', ANDROID_PRESET, str(apk)],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=1800, env=env)
+        (work / '导出.log').write_text(p.stdout, encoding='utf-8')
+        if p.returncode != 0 or not apk.is_file():
+            print(p.stdout[-3000:])
+            print('导出失败')
+            return 2
+    with zipfile.ZipFile(apk) as z:
+        names = z.namelist()
+        problems, info = smoke.android_layout(apk, names, debug=False)
+        check('apk_layout', not problems, '；'.join(problems) or f'apksigner、包名 {info["package"]}、arm64-v8a、横屏')
+        if info is None:
+            return 2
+        check('apk_label', info.get('label') == APP_NAME, str(info.get('label')))
+        want = smoke.expected_android_version(ANDROID_PRESET)
+        check('apk_version', str(info.get('versionCode')) == str(want['versionCode']) and str(info.get('versionName')) == str(want['versionName']),
+              f'versionCode {info.get("versionCode")}、versionName {info.get("versionName")}（应是 {want["versionCode"]}、{want["versionName"]}）')
+        missing = [n for n in ANDROID_NEED if n not in names]
+        check('apk_entry_files', not missing, '缺 ' + '、'.join(missing) if missing else '、'.join(n.removeprefix('assets/') for n in ANDROID_NEED))
+        check('apk_no_tests', not any(n.startswith('assets/tests/') for n in names))
+        z.extractall(work / 'apk', [n for n in names if n.startswith('assets/')])
+    # 桌面替身：assets/ 打成 pck（打包pck.gd），放到 macOS 发行模板旁跑——查的是包里的数据能不能进标题、按键闪不闪退，不是安卓本身
+    pck = work / 'run' / '再刷一把_天启篇.pck'
+    pck.parent.mkdir()
+    empty = work / 'empty_project'
+    empty.mkdir()
+    (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
+    p = subprocess.run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
+                        str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       text=True, errors='replace', timeout=900)
+    (work / '打包pck.log').write_text(p.stdout, encoding='utf-8')
+    shutil.rmtree(work / 'apk', ignore_errors=True)
+    if p.returncode != 0 or not pck.is_file():
+        print('把 apk 的 assets/ 打成 pck 失败，见 ' + str(work / '打包pck.log'))
+        return 2
+    runner = release_runner(work, pck)
+    if runner is None:
+        return 2
     run_entry(work, runner, check)
-    return run_keys(work, runner, check) if keys else 0
+    if keys:
+        run_keys(work, runner, check)
+    # 模拟器：有就装上、启动、看进程活着；没有（或只有真机）就只写明
+    sdk = Path(os.environ.get('ANDROID_HOME') or Path.home() / 'Library' / 'Android' / 'sdk')
+    adb = sdk / 'platform-tools' / 'adb'
+    emus, phones = emulators(adb) if adb.is_file() else ([], [])
+    if phones:
+        print(f'注意：连着 {len(phones)} 台真机，冒烟不往真机上装（要装请手动 adb install）')
+    if not emus:
+        print('没有在跑的安卓模拟器：只做了静态检查和桌面替身运行，没在安卓上装机启动' + ('' if adb.is_file() else f'（找不到 {adb}）'))
+        return 0
+    serial, pkg = emus[0], info['package']
+    inst = subprocess.run([str(adb), '-s', serial, 'install', '-r', str(apk)], capture_output=True, text=True, timeout=600)
+    check('emulator_install', inst.returncode == 0, (inst.stdout + inst.stderr).strip().splitlines()[-1:] and (inst.stdout + inst.stderr).strip().splitlines()[-1])
+    if inst.returncode != 0:
+        return 0
+    subprocess.run([str(adb), '-s', serial, 'shell', 'monkey', '-p', pkg, '-c', 'android.intent.category.LAUNCHER', '1'],
+                   capture_output=True, text=True, timeout=60)
+    time.sleep(20)
+    pid = subprocess.run([str(adb), '-s', serial, 'shell', 'pidof', pkg], capture_output=True, text=True, timeout=30).stdout.strip()
+    check('emulator_alive_20s', bool(pid), f'{serial} 上 {pkg} pid={pid or "无"}')
+    subprocess.run([str(adb), '-s', serial, 'shell', 'am', 'force-stop', pkg], capture_output=True, timeout=30)
+    return 0
 
 
 def run_entry(work: Path, exe: Path, check) -> int:
@@ -148,7 +267,8 @@ def main() -> int:
     ap.add_argument('--arch', choices=['x86_64', 'arm64'], help='用 arch -<架构> 跑 macOS 包的某个切片（x86_64 走 Rosetta）')
     ap.add_argument('--app', help='已解开的 .app（只配 --keys-only）')
     ap.add_argument('--keep', action='store_true')
-    ap.add_argument('--platform', choices=['macos', 'windows'], default='macos')
+    ap.add_argument('--platform', choices=['macos', 'windows', 'android'], default='macos')
+    ap.add_argument('--apk', help='--platform android：不导出，直接查现成的 apk')
     ap.add_argument('--keys', action='store_true', help='另外跑按键冒烟')
     ap.add_argument('--keys-only', action='store_true', help='只跑按键冒烟（配合 --zip 验证现成的包）')
     a = ap.parse_args()
@@ -166,8 +286,9 @@ def main() -> int:
         print(('PASS ' if ok else 'FAIL ') + name + (f'（{note}）' if note else ''))
 
     try:
-        if a.platform == 'windows':
-            code = windows(work, check, a.keys)
+        if a.platform in ('windows', 'android'):
+            code = windows(work, check, a.keys) if a.platform == 'windows' else \
+                android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None)
             if code:
                 return code
             ok = all(c[1] for c in checks)
@@ -232,7 +353,7 @@ def main() -> int:
         return 0 if ok else 1
     finally:
         if not a.keep:
-            for name in ['app', 'release.zip', 'win', 'tpl']:
+            for name in ['app', 'release.zip', 'win', 'tpl', 'android', 'run', 'empty_project']:
                 t = work / name
                 if t.is_dir():
                     shutil.rmtree(t, ignore_errors=True)

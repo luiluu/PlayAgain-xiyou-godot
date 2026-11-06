@@ -180,6 +180,7 @@ def parse_android(badging: str, xmltree: str) -> dict:
     vcode = _re.search(r"versionCode='([^']*)'", badging)
     vname = _re.search(r"versionName='([^']*)'", badging)
     icon = _re.search(r"application: .*icon='([^']+)'", badging)
+    label = _re.search(r"application-label:'([^']*)'", badging)
     native = _re.search(r"native-code: (.*)", badging)
     orient = _re.search(r'screenOrientation\(0x[0-9a-f]+\)=(-?\d+)', xmltree)
     return {'package': pkg.group(1) if pkg else None,
@@ -187,7 +188,7 @@ def parse_android(badging: str, xmltree: str) -> dict:
             'orientation': int(orient.group(1)) if orient else None,
             'permissions': _re.findall(r"uses-permission: name='([^']+)'", badging),
             'versionCode': vcode.group(1) if vcode else None, 'versionName': vname.group(1) if vname else None,
-            'icon': icon.group(1) if icon else None}
+            'icon': icon.group(1) if icon else None, 'label': label.group(1) if label else None}
 
 
 def android_layout(apk: Path, names, debug: bool = True):
@@ -216,10 +217,11 @@ def android_problems(info: dict, names: set, debug: bool = True):
     if not info['package']:
         problems.append('读不出包名')
     preset = PRESETS['android'] if debug else '安卓 发行'
+    want_version = expected_android_version(preset)
     for key, opt in (('package', 'package/unique_name'), ('versionCode', 'version/code'), ('versionName', 'version/name')):
-        want = preset_template(preset, opt)
+        want = want_version[key] if key in want_version else preset_template(preset, opt)
         if want is not None and info.get(key) is not None and str(info[key]) != str(want):
-            problems.append(f'{key} 是 {info[key]}，预设是 {want}')
+            problems.append(f'{key} 是 {info[key]}，应是 {want}')
     if not info.get('icon'):
         problems.append('读不出应用图标（application-icon）')
     need = ['assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap']
@@ -227,6 +229,24 @@ def android_problems(info: dict, names: set, debug: bool = True):
         need.append('assets/tests/xiyou_mac_export.tscn.remap')
     problems += [f'包里缺 {n}' for n in need if n not in names]
     return problems
+
+
+def expected_android_version(preset: str) -> dict:
+    """安卓包该有的版本号：导出插件 addons/xiyou_export 的 XAndroidVersion.AUTO 开着时按 build_info 的开发编号
+    （versionCode＝数字、versionName＝0.数字，O-待定·安卓版本号）；关着或读不出就用预设里填的。"""
+    gd = PROJECT / 'addons' / 'xiyou_export' / 'android_version.gd'
+    cfg = (PROJECT / 'project.godot').read_text(encoding='utf-8')
+    auto = gd.is_file() and re.search(r'^static var AUTO := true', gd.read_text(encoding='utf-8'), re.M) \
+        and 'res://addons/xiyou_export/plugin.cfg' in cfg
+    if auto:
+        try:
+            dev = json.loads((PROJECT / 'content' / 'build_info.json').read_text(encoding='utf-8')).get('developmentVersion', '')
+        except (OSError, ValueError):
+            dev = ''
+        m = re.fullmatch(r'dev\.(\d+)', str(dev))
+        if m and int(m.group(1)) > 0:
+            return {'versionCode': str(int(m.group(1))), 'versionName': '0.%d' % int(m.group(1))}
+    return {'versionCode': preset_template(preset, 'version/code'), 'versionName': preset_template(preset, 'version/name')}
 
 
 def preset_template(preset: str, key: str = 'custom_template/debug'):

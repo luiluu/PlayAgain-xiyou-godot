@@ -33,6 +33,10 @@ window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/handheld/orientation=4
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/xiyou_export/plugin.cfg")
+
 [internationalization]
 
 locale/include_text_server_data=true
