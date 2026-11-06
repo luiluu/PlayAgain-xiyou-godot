@@ -943,12 +943,15 @@ func refresh_passive() -> void:
 ## 按签名（状态、技能、装备）重建；角色只在开战构建阶段（Scene_Battle.start 里 okadd 置真之前）不重建，随后统一 refresh。
 ## 技能、装备变化这边各处本来就直接 refresh_passive；这里补状态：读缓存时比状态列表，变了就重建（同敌人，rules-newsrc3）。
 var _passive_states_sig := ""
+## 测试用：false＝不按状态重建，模拟原版开战构建阶段（okadd 假）。state_effects 探针只 BattleManager.setup、不跑
+## Scene_Battle.start，角色 okadd 一直假，战斗中挂的状态不进缓存；正式游戏开战后 okadd 为真，照常重建
+static var passive_state_rebuild := true
 
 func _passive_states_signature() -> String:
 	return ",".join(state_ids.map(func(x): return str(x)))
 
 func passive_cache() -> Dictionary:
-	if _passive_states_sig != _passive_states_signature():
+	if passive_state_rebuild and _passive_states_sig != _passive_states_signature():
 		refresh_passive()
 	return _passive_cache
 

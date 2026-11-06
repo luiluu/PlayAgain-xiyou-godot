@@ -793,7 +793,9 @@ func _revive_blocks(o: Dictionary) -> void:
 			"vars": row.vars.map(func(x): return float(x))}
 		check("revive.row.%d" % index, got == want, {"row": [sid, row.hpMode, row.seq, row.varv], "want": want, "got": got})
 	for index in range(o.applies.size()):
+		XActor.passive_state_rebuild = false  # 探针没跑 Scene_Battle.start：角色 okadd 假，252 的 passiveHarmRe 不进角色缓存（敌人照建）
 		_revive_apply(index, o.applies[index])
+		XActor.passive_state_rebuild = true
 	XState.current = null
 
 
