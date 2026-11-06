@@ -22,7 +22,11 @@ const BUTTONS := {
 	"cancel": {"rect": Rect2(1030, 620, 110, 72), "text": "取消", "action": "ui_cancel"},
 	"run": {"rect": Rect2(1150, 640, 110, 64), "text": "跑步", "key": KEY_SHIFT},
 	"hide": {"rect": Rect2(1170, 8, 100, 40), "text": "隐藏按键", "toggle": true},
+	# Mehmet_GhostButtons 的「Save」键（原版虚拟按键只在手机上有，按下＝键盘 ~，YEP_ButtonCommonEvents 428 一键存档，地图与菜单才有）。
+	# 这里在所有页面都显示，在地图以外按了没反应（地图快捷键只认地图页面）。回退开关 SAVE_BUTTON = false。
+	"save": {"rect": Rect2(1050, 8, 100, 40), "text": "存档", "key": KEY_QUOTELEFT},
 }
+static var SAVE_BUTTON := true
 
 ## 原版 limits：大小百分比与透明度的范围，步长 5。
 const LIMITS := {"stick": [70, 170], "buttons": [70, 160], "tools": [80, 140], "transparency": [0, 80]}
@@ -32,7 +36,7 @@ const DEFAULTS := {"hidden": false, "stick": 100, "buttons": 100, "tools": 100, 
 const GROUPS := {
 	"movement": {"members": ["stick"], "size": "stick", "rect": Rect2(24, 552, 144, 144), "anchor": [SIDE_LEFT, SIDE_BOTTOM]},
 	"actions": {"members": ["ok", "cancel", "run"], "size": "buttons", "rect": Rect2(1030, 560, 230, 144), "anchor": [SIDE_RIGHT, SIDE_BOTTOM]},
-	"top": {"members": ["hide"], "size": "tools", "rect": Rect2(1170, 8, 100, 40), "anchor": [SIDE_RIGHT, SIDE_TOP]},
+	"top": {"members": ["hide", "save"], "size": "tools", "rect": Rect2(1050, 8, 220, 40), "anchor": [SIDE_RIGHT, SIDE_TOP]},  # 存档键（keys3）与隐藏键同组
 }
 ## 拖过的位置的可放范围：安全区再往里留的边（原版 bounds：左右 12、上 6、下 12）。
 const DRAG_MARGIN := [12.0, 6.0, 12.0, 12.0]  # 左、上、右、下
@@ -79,6 +83,8 @@ func _ready() -> void:
 	_stick_base = _panel(Rect2(STICK_CENTER - Vector2.ONE * STICK_RADIUS, Vector2.ONE * STICK_RADIUS * 2), STICK_RADIUS, Color(0.08, 0.15, 0.24, 0.45))
 	_stick_knob = _panel(Rect2(STICK_CENTER - Vector2(26, 26), Vector2(52, 52)), 26.0, Color(0.45, 0.62, 0.76, 0.75))
 	for name in BUTTONS:
+		if name == "save" and not SAVE_BUTTON:
+			continue
 		var spec: Dictionary = BUTTONS[name]
 		var p := _panel(spec.rect, 12.0, Color(0.07, 0.15, 0.24, 0.72))
 		var l := Label.new()
@@ -137,7 +143,9 @@ func hit(pos: Vector2) -> String:
 	if pos.distance_to(stick_center) <= stick_radius * 1.2:
 		return "stick"
 	for name in BUTTONS:
-		if (rects[name] as Rect2).has_point(pos):
+		if name == "save" and not SAVE_BUTTON:
+			continue
+		if rects.has(name) and (rects[name] as Rect2).has_point(pos):
 			return name
 	return ""
 
@@ -355,7 +363,7 @@ func apply_layout() -> void:
 				_place(_stick_base, Rect2(stick_center - Vector2.ONE * stick_radius, Vector2.ONE * stick_radius * 2), stick_radius)
 				var knob := 26.0 * s
 				_place(_stick_knob, Rect2(stick_center - Vector2.ONE * knob, Vector2.ONE * knob * 2), knob)
-			else:
+			elif _buttons.has(name):
 				var r: Rect2 = BUTTONS[name].rect
 				rects[name] = Rect2(pos + (r.position - base.position) * s, r.size * s)
 				_place(_buttons[name], rects[name], 12.0 * s)

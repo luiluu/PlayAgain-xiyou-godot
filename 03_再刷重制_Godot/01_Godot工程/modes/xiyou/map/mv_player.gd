@@ -13,6 +13,11 @@ var input_enabled := true
 ## 挂机（XdRs_HangUp）：不在移动时调用，返回要依次尝试的方向；空数组为不动
 var auto_step := Callable()
 var touch_target := Vector2i(-1, -1)
+## 按住左键（platform-keys2）：原版 Scene_Map.processMapTouch 按住满 15 帧后每帧把目的地更新到鼠标所在格，边按边拖就能带着人走。
+## 这里只在鼠标换了一格时更新（不重复触发脚下／前方一格的确认）。回退开关 MV_HOLD_MOVE = false。
+static var MV_HOLD_MOVE := true
+var _hold_count := 0
+var _hold_cell := Vector2i(-1, -1)
 var dash := true
 ## 乘载具时的移动速度（Game_Player.updateVehicleGetOn 设成 Game_Vehicle.moveSpeed：飞艇 6）；0＝走路。乘载具时不跑步
 var vehicle_speed := 0
@@ -22,7 +27,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		click_cell(_touch_cell(get_global_mouse_position()))
+		_hold_cell = _touch_cell(get_global_mouse_position())
+		_hold_count = 1
+		click_cell(_hold_cell)
 	elif event is InputEventScreenTouch and event.pressed:
 		var p2: Vector2 = get_canvas_transform().affine_inverse() * (event as InputEventScreenTouch).position
 		touch_target = _touch_cell(p2)
@@ -48,8 +55,23 @@ func _update_pose() -> void:
 	dash_pose = pose_dash
 
 
+func _update_hold() -> void:
+	if not MV_HOLD_MOVE or _hold_count <= 0:
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or not input_enabled:
+		_hold_count = 0
+		return
+	_hold_count += 1
+	if _hold_count >= 15:
+		var c := _touch_cell(get_global_mouse_position())
+		if c != _hold_cell:
+			_hold_cell = c
+			touch_target = c if c != grid else Vector2i(-1, -1)
+
+
 func update_character() -> void:
 	super.update_character()
+	_update_hold()
 	if not is_moving() and auto_step.is_valid():
 		for d in auto_step.call():
 			if move_straight(d):
@@ -85,7 +107,7 @@ func move_straight(d: int) -> bool:
 
 ## MV updateDashing：始终跑步时 Shift 反转；鼠标目标始终跑步，地图禁跑时、乘载具时为 false。
 func is_dashing(shift = null) -> bool:
-	var pressed := Input.is_physical_key_pressed(KEY_SHIFT) if shift == null else bool(shift)
+	var pressed := (Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_action_pressed("mv_dash")) if shift == null else bool(shift)
 	return dash and vehicle_speed <= 0 and (touch_target.x >= 0 or (not pressed if XConfig.flag("alwaysDash") else pressed))
 
 
