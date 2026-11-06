@@ -926,6 +926,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
 	s.raven = XRaven.from_save(d.get("codexRaven"))
 	s.garou = XGarou.from_save(d.get("codexGarou"))
+	XGear.revert_exclusive_affixes(s)  # v0.57 extractSaveContents 包装：旧专武前缀武器转回普通装备（开关 XGear.EXCLUSIVE_V056）
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
 	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
 	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态

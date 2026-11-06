@@ -660,11 +660,7 @@ static func _element_wrapper(obj: Dictionary, type: int, rows: Array) -> Array:
 					continue
 				resist[e] = 0.0 if float(t.value) == 0.0 else float(resist.get(e, 1.0)) + float(t.value) - 1.0
 		_group(lines, active, resist, "承伤", _percent, 1.0)
-		var pierce := {}
-		for m in RegEx.create_from_string("(?i)<DepassiveHarmRe(\\d+)\\s*:\\s*([^>]+)>").search_all(str(obj.get("note", ""))):
-			if active.has(int(m.get_string(1))):
-				pierce[int(m.get_string(1))] = m.get_string(2)
-		_group(lines, active, pierce, "减伤穿透", func(v): return str(v), 0.0)
+		_pierce_lines(lines, str(obj.get("note", "")))
 		var attack := []
 		for t in obj.get("traits", []):
 			if int(t.code) == 31 and not attack.has(int(t.dataId)):
@@ -674,6 +670,50 @@ static func _element_wrapper(obj: Dictionary, type: int, rows: Array) -> Array:
 	for i in range(lines.size() - 1, -1, -1):
 		rows.insert(1, [lines[i], 14, ELEMENT_ROW_COLOR, false, 0])
 	return rows
+
+
+## v0.51／v0.57 installDamageElementRuntime 说明卡穿透段（同被动缓存口径）：只认带元素号的 <DepassiveHarmReNN: ±X[%]>，
+## 同一对象里元素号＋值写法完全相同的只计一次，可负；百分比一组「X穿透 N%」、固定一组「X固定减伤穿透 N」，每行三个元素，
+## 全部元素（1～15 去掉 10 与无名元素）同值写「全部穿透 N%」；两位小数；有百分比穿透时末尾提示破免疫门槛（rules-newsrc4）
+static func _pierce_lines(lines: Array, note: String) -> void:
+	var all := []
+	var names: Array = XDB.system().get("elements", [])
+	for i in range(1, names.size() if not names.is_empty() else 16):
+		if i == 10 or (not names.is_empty() and str(names[i]) == ""):
+			continue
+		all.append(i)
+	if all.is_empty():
+		all = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+	var pct := {}
+	var fixed := {}
+	var seen := {}
+	for m in RegEx.create_from_string("(?i)<DepassiveHarmRe(\\d+)\\s*:\\s*([+-]?[\\d.]+%?)>").search_all(note):
+		var e := int(m.get_string(1))
+		var key := "%d|%s" % [e, m.get_string(2)]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		var text := m.get_string(2)
+		var v := float(text.trim_suffix("%"))
+		var pool: Dictionary = pct if text.contains("%") else fixed
+		pool[e] = float(pool.get(e, 0.0)) + v
+	var fmt := func(v: float) -> String:  # JS Math.round(v*100)/100 转字符串（整数不带 .0）
+		var r := floorf(v * 100.0 + 0.5) / 100.0
+		return str(int(r)) if r == floorf(r) else String.num(r)
+	for pair in [[pct, "穿透", "%"], [fixed, "固定减伤穿透", ""]]:
+		var map: Dictionary = pair[0]
+		var ids := all.filter(func(e): return map.has(e))
+		if ids.is_empty():
+			continue
+		if ids.size() == all.size() and ids.all(func(e): return map[e] == map[ids[0]]):
+			lines.append("全部" + pair[1] + " " + fmt.call(map[ids[0]]) + pair[2])
+			continue
+		var i := 0
+		while i < ids.size():
+			lines.append(" · ".join(ids.slice(i, i + 3).map(func(e): return rich([e]) + pair[1] + " " + fmt.call(map[e]) + pair[2])))
+			i += 3
+	if not pct.is_empty():
+		lines.append("穿透合计≥100%才能击破完全免疫")
 
 
 static func _migrated_element(skill: Dictionary) -> int:

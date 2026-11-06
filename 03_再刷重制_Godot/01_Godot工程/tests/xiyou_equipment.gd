@@ -74,6 +74,48 @@ func _run() -> void:
 	XGear.EXCLUSIVE_V056 = true
 	XGear.reset_pool()
 	check("exclusive_affix_skipped", XGear.create("weapon", 56).affixIds.is_empty())
+	# v0.57 读档还原专武前缀：照 v0.28 造出旧装备（有的再强化一次），存档往返后与原版 revertExclusiveAffixes 的结果比
+	var revert_rows: Array = ref.get("affixRevert", [])
+	check("affix_revert_reference_present", revert_rows.size() == 3)
+	for row in revert_rows:
+		var tag := "affix_revert_%d_%.1f_%d" % [int(row.id), float(row.roll), int(row.upgradeItem)]
+		var s := XState.new_game(3, 1, [])
+		XGear.EXCLUSIVE_V056 = false
+		# roll<0：同探针，前两个随机数 0（抽中第一个专武词缀）、其余 0.5（浮动为 0）
+		XGear.force_roll = float(row.roll) if float(row.roll) >= 0 else -1.0
+		XGear.roll_seq = [] if float(row.roll) >= 0 else [0.0, 0.0] + range(300).map(func(_i): return 0.5)
+		XGear.roll_count = 0
+		XGear.reset_pool()
+		var g := XGear.create("weapon", int(row.id))
+		XGear.roll_seq = []
+		s.register_gear(g)
+		s.gear.append(g)
+		if int(row.upgradeItem) > 0:
+			XGear.force_roll = 0.5
+			s.gain_item(int(row.upgradeItem), 1)
+			XGearUpgrade.apply(s, g, int(row.upgradeItem))
+		var b: Dictionary = row.before
+		check(tag + "_before", g.name == b.name and close_array(g.params, b.params) and g.traits == b.traits and int(g.price) == int(b.price), {"godot": [g.name, g.params, g.traits.size(), g.price], "mv": [b.name, b.params, b.traits.size(), b.price]})
+		var saved: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
+		var id := str(g.instanceId)
+		# 开关关着＝v0.28：读档不动
+		var kept := XState.from_dict(saved.duplicate(true))
+		var k: Dictionary = kept.gear.filter(func(e): return str(e.instanceId) == id)[0]
+		check(tag + "_v028_kept", k.name == b.name and not k.has("_affixRevert") and XGear.last_affix_revert.items.is_empty())
+		XGear.EXCLUSIVE_V056 = true
+		var loaded := XState.from_dict(saved.duplicate(true))
+		var e: Dictionary = loaded.gear.filter(func(x): return str(x.instanceId) == id)[0]
+		var a: Dictionary = row.after
+		check(tag + "_reverted", XGear.last_affix_revert.items.has(id) == bool(row.reverted) and XGear.last_affix_revert.skipped.has(id) == bool(row.skipped), XGear.last_affix_revert)
+		check(tag + "_after", e.name == a.name and close_array(e.params, a.params) and e.traits == a.traits and int(e.price) == int(a.price) and str(e.description) == str(a.description) and XGear.quality(e) == int(a.quality),
+			{"godot": [e.name, e.params, e.traits, e.price, e.description], "mv": [a.name, a.params, a.traits, a.price, a.description]})
+		if bool(row.reverted):
+			check(tag + "_backup", e.has("_affixRevert") and e._affixRevert.name == b.name and e.affixIds.is_empty() and not str(e.note).to_lower().contains("<req_actors") and int(e.get("boostCount", 0)) == int(row.before.boost))
+			# 只跑一次：存档里已带备份的再读一遍不变
+			var once := JSON.stringify(e)
+			var again := XState.from_dict(JSON.parse_string(JSON.stringify(loaded.to_dict())))
+			var e2: Dictionary = again.gear.filter(func(x): return str(x.instanceId) == id)[0]
+			check(tag + "_once", XGear.last_affix_revert.items.is_empty() and e2.name == e.name and close_array(e2.params, e.params) and e2.traits == e.traits, [once.length(), XGear.last_affix_revert])
 	var one: Dictionary = {}
 	for row in ref.runewords:
 		if (row.materials as Array).size() == 1:

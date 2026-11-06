@@ -145,6 +145,147 @@ static func valid_affix(table: String, id: int) -> bool:
 	var r := XDB.rec(table, id)
 	return not r.is_empty() and not (EXCLUSIVE_V056 and exclusive_affix(r))
 
+## v0.57 读档还原专武前缀（v0.62.12 installIntegratedV029Runtime.js U.revertExclusiveAffixes，extractSaveContents 包装）：
+## v0.37 前掉落、抽到了专武词缀的武器（如「卍解-斩月练习剑」）读档时转回普通装备。原版拿存档里的模板比对；重制不存模板，
+## 按 affixIds 用现在的数据重拼一份模板 t（底装备＋各词缀＋备注参数，就是掉落时那份），底装备 b 是现在的底装备：
+## 特效／备注／说明＝b 的那段＋实例在 t 之后追加的，属性＝b＋实例−t（底值不为负的夹到 0），价格同理；名字去掉专武前缀。
+## 属性浮动：原版掉落掷两次（makeItem 给模板一次、gainItem 给实例一次），还原丢掉模板那次、留实例那次；重制只掷一次，
+## t 取不带浮动的模板，所以留下的是这一次（幅度同原版，是专武词缀的 Random Variance），强化加的照留。
+## 原版把整份模板换掉，同一件上的其它词缀（属性、特效）也一起没了、名字里的后缀字留着，照搬。备注解析出的 meta／yep／套装：
+## 被词缀改过的项换回 b 的，其余（强化加的等）不动。对不上（实例备注、说明不以 t 开头，特效开头不是 t 的）的不动，记进 skipped。
+## 只跑一次：还原前把改动的字段整份存进 _affixRevert，有这个键的不再处理。只管武器（原版 _independentWeapons）。
+## 开关同 EXCLUSIVE_V056（false＝v0.28，读档不还原）。
+static var last_affix_revert := {}
+const AFFIX_REVERT_FIELDS := ["name", "baseName", "note", "description", "traits", "params", "price", "meta", "yep", "affixIds", "equipment"]
+
+static func revert_exclusive_affixes(s: XState) -> Dictionary:
+	var stat := {"items": [], "skipped": []}
+	last_affix_revert = stat
+	if not EXCLUSIVE_V056 or s == null:
+		return stat
+	var all := s.gear.duplicate()
+	for a in s.actors.values():
+		all.append_array(a.equip_list())
+	for w in s.warehouses.values():
+		for list in w.get("items", {}).values():
+			for v in list:
+				if v is Dictionary:
+					all.append(v)
+	var seen := []
+	for item in all:
+		if not item is Dictionary or seen.any(func(x): return is_same(x, item)):
+			continue
+		seen.append(item)
+		match _revert_one(item):
+			1: stat.items.append(str(item.get("instanceId", "")))
+			-1: stat.skipped.append(str(item.get("instanceId", "")))
+	return stat
+
+## 1＝还原了，-1＝像旧专武前缀装备但对不上（不动），0＝不相干
+static func _revert_one(item: Dictionary) -> int:
+	if str(item.get("kind", "")) != "weapon" or item.has("_affixRevert") or (item.get("affixIds", []) as Array).is_empty():
+		return 0
+	var b := template("weapon", int(item.get("base", 0)))
+	if b.is_empty() or exclusive_affix(b):
+		return 0
+	var t := affix_template(item, b)
+	if t.is_empty() or _req_actors_re.search(str(t.note)) == null:
+		return 0
+	var own_note := str(item.get("note", ""))
+	var own_desc := str(item.get("description", ""))
+	var own_traits: Array = item.get("traits", [])
+	var t_traits: Array = t.traits
+	if not own_note.begins_with(str(t.note)) or not own_desc.begins_with(str(t.description)) or own_traits.size() < t_traits.size() \
+			or range(t_traits.size()).any(func(k): return JSON.stringify(own_traits[k]) != JSON.stringify(t_traits[k])):
+		return -1
+	var backup := {}
+	for k in AFFIX_REVERT_FIELDS:
+		if item.has(k):
+			backup[k] = item[k].duplicate(true) if (item[k] is Dictionary or item[k] is Array) else item[k]
+	item["_affixRevert"] = backup
+	# 名字：去掉专武前缀（最长的专武名），找不到就把 t 的名字里底装备名之前那段当前缀
+	var t_name := str(t.name)
+	var prefix := _affix_prefix(t_name)
+	var plain := t_name.substr(prefix.length()) if prefix != "" else ""
+	var b_name := str(b.name)
+	if prefix == "" and t_name.ends_with(b_name):
+		prefix = t_name.left(t_name.length() - b_name.length())
+		plain = b_name
+	if plain == "":
+		plain = b_name
+	var rename := func(x: String) -> String:
+		if prefix != "" and x.begins_with(prefix):
+			return x.substr(prefix.length())
+		var at := x.find(t_name)
+		return x if at < 0 else x.left(at) + plain + x.substr(at + t_name.length())
+	item.traits = (b.traits as Array).duplicate(true) + own_traits.slice(t_traits.size()).duplicate(true)
+	var params: Array = item.params
+	for k in range(8):
+		var v := float(b.params[k]) + float(params[k]) - float(t.params[k])
+		params[k] = maxf(0.0, v) if float(b.params[k]) >= 0 else v
+	item.price = maxi(0, int(b.price) + int(item.get("price", 0)) - int(t.price))
+	item.description = str(b.description) + own_desc.substr(str(t.description).length())
+	item.note = str(b.note) + "\n" + own_note.substr(str(t.note).length())
+	item.name = rename.call(str(item.name))
+	if item.has("baseName"):
+		item.baseName = rename.call(str(item.baseName))
+	# 备注解析出的：meta 照原版取 b 的、再留实例上不是备注来的键；yep、套装只换回被词缀改过的项
+	var meta: Dictionary = (b.get("meta", {}) as Dictionary).duplicate(true)
+	var own_meta: Dictionary = item.get("meta", {})
+	for k in own_meta:
+		if not (t.get("meta", {}) as Dictionary).has(k):
+			meta[k] = own_meta[k]
+	item.meta = meta
+	var yep: Dictionary = item.get("yep", {})
+	var b_yep: Dictionary = b.get("yep", {})
+	var t_yep: Dictionary = t.get("yep", {})
+	for k in t_yep.keys() + b_yep.keys():
+		if JSON.stringify(t_yep.get(k)) == JSON.stringify(b_yep.get(k)):
+			continue
+		if b_yep.has(k):
+			yep[k] = b_yep[k] if not (b_yep[k] is Dictionary or b_yep[k] is Array) else b_yep[k].duplicate(true)
+		else:
+			yep.erase(k)
+	if item.has("yep") or not yep.is_empty():
+		item.yep = yep
+	var t_suits = t.get("equipment", {}).get("suits", [])
+	var b_suits = b.get("equipment", {}).get("suits", [])
+	if JSON.stringify(t_suits) != JSON.stringify(b_suits) and item.get("equipment") is Dictionary:
+		item.equipment.suits = (b_suits as Array).duplicate(true)
+	item.affixIds = []
+	return 1
+
+## DreamX 生成时的模板（getBaseItem 取到的那份）：底装备＋affixIds 里各词缀＋备注参数，不掷浮动。没有词缀就是底装备；
+## 词缀记录找不到返回空。b 可传已备好的底装备模板。
+static func affix_template(item: Dictionary, b := {}) -> Dictionary:
+	if b.is_empty():
+		b = template(str(item.get("kind", "")), int(item.get("base", 0)))
+	if b.is_empty():
+		return {}
+	var affixes: Array = item.get("affixIds", [])
+	if affixes.is_empty():
+		return b
+	var t := b.duplicate(true)
+	for affix in affixes:
+		var rec := XDB.rec(str(affix.get("table", "Weapons")), int(affix.get("id", 0)))
+		if rec.is_empty():
+			return {}
+		combine(t, rec, str(affix.get("kind", "prefix")))
+	_apply_note_params(t)
+	return t
+
+## 原版 affixPrefix：名字开头最长的专武词缀名（只看数据库里的武器）
+static func _affix_prefix(name: String) -> String:
+	var best := ""
+	var weapons = XDB.table("Weapons")
+	for x in (weapons if weapons is Array else []):
+		if not x is Dictionary or not exclusive_affix(x):
+			continue
+		var n := str(x.get("meta", {}).get("prefixSuffixName", x.get("name", "")))
+		if n != "" and name.begins_with(n) and n.length() > best.length():
+			best = n
+	return best
+
 static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
 static func exclusive_affix(r: Dictionary) -> bool:
 	if not (r.has("wtypeId") or r.has("atypeId")):

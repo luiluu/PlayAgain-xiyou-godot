@@ -609,6 +609,17 @@ static func onekey_grades() -> Array:
 	return out
 
 
+## 一键出售窗的指令（installSafeSellRuntime 改写 makeCommandList）：开着安全出售时先一行「保留词条：门槛」（grade −1，确定循环门槛），
+## 各档改叫「出售X装备」；关着时同 onekey_grades
+static func onekey_commands(s: XState) -> Array:
+	var out := onekey_grades()
+	if not XSafeSell.ENABLED:
+		return out
+	out = out.map(func(r): return {"grade": r.grade, "text": str(r.text).trim_suffix("品质") + "装备"})
+	out.push_front({"grade": -1, "text": "保留词条：" + XSafeSell.label(s)})
+	return out
+
+
 static func onekey_members(g: int) -> Array:
 	var grades: Array = XQuality.config().itemGrades
 	var out := []
@@ -635,7 +646,10 @@ static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 
 ## Scene_Shop.sellUnifiedQuality：sellable_gear（该档旧档 0～14）逐件 doSell(1)。
 ## 卖价为 0 的也卖掉（原版现行代码不查价格）。返回 [件数, 金额]。
+## 安全出售开着时（O-待定·安全出售）改走 XSafeSell.plan（七档成员含旧档 15、没品质备注按旧档 1、按保留原因留下）。
 static func onekey_sell(s: XState, g: int) -> Array:
+	if XSafeSell.ENABLED:
+		return XSafeSell.sell_plan(s, XSafeSell.plan(s, g))
 	var gold := 0
 	var list := sellable_gear(s, onekey_members(g), true)
 	for e in list:

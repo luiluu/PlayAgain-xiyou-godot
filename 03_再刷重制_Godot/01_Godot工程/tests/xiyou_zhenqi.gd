@@ -192,8 +192,44 @@ func _case(id: String, setup: Dictionary):
 		var a := s.actor(1)
 		var st := XGuide.strip_text(s, a)
 		var ctx := XGuide.context(s)
-		return {"rows": XGuide.page_rows(s, a), "strip": st[0], "stripWarn": st[1], "context": {"route": ctx.route.key, "floor": ctx.floor, "comp": ctx.comp}}
+		var out := {"rows": XGuide.page_rows(s, a), "strip": st[0], "stripWarn": st[1], "context": {"route": ctx.route.key, "floor": ctx.floor, "comp": ctx.comp}}
+		if XGuide.PANEL_V062:
+			out.detail = XGuide.detail_rows(s, a)
+		return out
 	return null
+
+
+## 「修行·详细」：参照去掉「战力构成」一段（CodexZones，不移植，O-044），连同段后的空行
+func _strip_power(rows: Array) -> Array:
+	var out := []
+	var skipping := false
+	for r in rows:
+		if r.type == "head" and str(r.text) == "战力构成":
+			skipping = true
+			continue
+		if skipping:
+			if r.type == "blank":
+				skipping = false
+			continue
+		out.append(r)
+	return out
+
+
+## O-待定·修行两页 回退：关掉时页行回到 v0.28 一页写法（tests/fixtures/zhenqi_page_rows_v028.json，旧源参照摘出）。
+## 只比与数据无关的骨架（行类型、标题、表头、文字行的前缀），数值随换源的数据变了不算。
+func _panel_rollback() -> void:
+	var fx = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/zhenqi_page_rows_v028.json"))
+	if not check("v028_fixture", fx is Dictionary and fx.cases.size() == 6):
+		return
+	var shape := func(rows: Array) -> Array:
+		return rows.map(func(r): return [r.type, str(r.get("text", "")).get_slice("：", 0).get_slice("　", 0).left(6), r.cells[0] if r.type == "cols" else ""])
+	XGuide.PANEL_V062 = false
+	for c in fx.cases:
+		var got = _case(c.id, c.setup)
+		check("v028." + c.id, got != null and not got.has("detail") and _same(shape.call(got.rows), shape.call(_strip_zones(c.rows))), [got.rows if got else null, _strip_zones(c.rows)])
+	check("v028.pages", XStatusPage.page_names() == XStatusPage.PAGE_NAMES and XStatusPage.item_w() == XStatusPage.ITEM_W and XStatusPage.item_step() == XStatusPage.ITEM_STEP)
+	XGuide.PANEL_V062 = true
+	check("v062.pages", XStatusPage.page_names().size() == 5 and XStatusPage.page_names()[4] == "修行·详细" and XStatusPage.item_w() == 240.0 and XStatusPage.item_step() == 252.0)
 
 
 ## 修行页：参照去掉「五个乘区」一段（不移植，O-044）后逐行比
@@ -228,6 +264,9 @@ func _run() -> void:
 			if c.id.begins_with("page."):
 				want = want.duplicate(true)
 				want.rows = _strip_zones(want.rows)
+				if want.has("detail"):
+					want.detail = _strip_power(want.detail)
+				check(c.id + ".has_detail", want.has("detail") == XGuide.PANEL_V062, want.keys())
 			check(c.id, got != null and _same(got, want), [got, want])
 		for c in data.cases:
 			if c.id == "map.floor":
@@ -258,6 +297,7 @@ func _run() -> void:
 	_hooks()
 	_old_save()
 	_page_ui()
+	_panel_rollback()
 	var failed := results.filter(func(r): return not r.passed)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_zhenqi", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
 	get_tree().quit(0 if failed.is_empty() else 1)
@@ -311,7 +351,10 @@ func _page_ui() -> void:
 	s.set_variable(20, 4)
 	_set_zq(s.actor(1), {"qi": 700})
 	XState.current = s
+	# 夹具是 v0.28 一页写法（真气、难度对照同页）：画法 drawPanelRows 新旧一样，按旧行比位置；新的第 5 页另比表头四列
+	XGuide.PANEL_V062 = false
 	var ops := XStatusPage._guide_ops(s.actor(1))
+	XGuide.PANEL_V062 = true
 	var h: Array = o.head
 	check("page_ui_head", ops[0][1] == h[0] and ops[0][2] == float(h[1]) and ops[0][3] == float(h[2]) and ops[0][4] == float(h[3]) and ops[0][8] == h[6], ops[0])
 	var line := ops.filter(func(op): return float(op[3]) == 252.0)
@@ -322,3 +365,12 @@ func _page_ui() -> void:
 		var w: Array = o.colsHeader[j]
 		ok = ok and cols[j][2] == float(w[1]) and cols[j][4] == float(w[2]) and cols[j][6] == w[3]
 	check("page_ui_cols", ok, cols)
+	var dops := XStatusPage.page_ops(s.actor(1), 4)
+	var dcols := dops.filter(func(op): return op[0] == "text" and op[1] in ["项目", "难度影响", "不含难度", "实际"])
+	var dok: bool = dcols.size() == 4
+	for j in range(mini(4, dcols.size())):
+		var w: Array = o.colsHeader[j]
+		dok = dok and dcols[j][2] == float(w[1]) and dcols[j][4] == float(w[2]) and dcols[j][6] == w[3]
+	check("page_ui_detail_cols", dok, dcols)
+	var pops := XStatusPage.page_ops(s.actor(1), 3)
+	check("page_ui_panel_head", pops.any(func(op): return op[0] == "text" and op[1] == "【普通·第4层】" and op[2] == 6.0), pops.slice(0, 3))

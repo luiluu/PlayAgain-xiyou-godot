@@ -293,7 +293,7 @@ func _run() -> void:
 		return finish()
 	var seen := 0
 	# 参照是 v0.62.12：流萤的 Game_Actor.setHp 遮住了谷雨的 setHp 包装（归根中照样被抬起生命），按原版比
-	XResourceContext.o_actor_sethp_wrappers = false
+	XResourceContext.o_actor_hp_wrappers = false
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
@@ -302,7 +302,7 @@ func _run() -> void:
 				_stone(c)
 			else:
 				_script(c)
-	XResourceContext.o_actor_sethp_wrappers = true
+	XResourceContext.o_actor_hp_wrappers = true
 	check("covers_all", seen == 17, seen)
 	# O-待定·流萤遮住角色 setHp 开时（默认）：归根中 setHp 抬不起生命，revive 后谷雨仍是 0
 	for c in ref.cases:

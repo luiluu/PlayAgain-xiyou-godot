@@ -131,7 +131,10 @@ static func record(item: Dictionary) -> Dictionary:
 	var c = _cache.get(sig)
 	if c != null:
 		return c
-	var base := XGear.template(str(item.get("kind", "")), int(item.get("base", 0))) if item.has("base") else item
+	# getBaseItem：随机词缀装备的底是 DreamX 生成时的模板（底装备＋词缀），词缀那几行算「固定」，之后加的才是「随机 / 附加」
+	var base := XGear.affix_template(item) if item.has("base") else item
+	if base.is_empty():
+		base = XGear.template(str(item.get("kind", "")), int(item.get("base", 0)))
 	var remaining := raw_lines(str(base.get("note", "")))
 	var rows := []
 	for line in raw_lines(str(item.get("note", ""))):
