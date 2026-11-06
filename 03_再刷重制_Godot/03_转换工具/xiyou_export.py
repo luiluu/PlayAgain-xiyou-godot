@@ -1441,10 +1441,13 @@ class Exporter:
         self.pending_json = {}
         self.written = self.unchanged = self.deleted = 0
 
-    def read(self, rel):
+    def read(self, rel, record=True):
+        """record=False：读了但不记进 manifest.inputs（来源指纹）。玩家更新日志只给改版向导显示，不影响规则；
+        探针的 source_identity 也不算它，两边口径一致，换源后改日志不会让参照身份失效（总装 11-06 定，newsrc5）。"""
         p = self.app / rel
         b = p.read_bytes()
-        self.inputs[rel] = sha(b)
+        if record:
+            self.inputs[rel] = sha(b)
         return json.loads(b.decode('utf-8'))
 
     def write_json(self, rel, data):
@@ -1605,7 +1608,7 @@ class Exporter:
             if not (self.app / rel).is_file():
                 break
             try:
-                d = self.read(rel)
+                d = self.read(rel, record=False)  # 更新日志不进来源指纹（见 read）
             except ValueError:
                 break
             if not isinstance(d, dict) or not isinstance(d.get('pages'), list):

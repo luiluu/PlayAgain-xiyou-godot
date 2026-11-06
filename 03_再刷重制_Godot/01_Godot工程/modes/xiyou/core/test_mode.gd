@@ -126,7 +126,7 @@ static func roll_affixes(item: Dictionary, rows: Array, table: String) -> void:
 	for row in rows:
 		var weight := 0.0
 		for c in row.choices:
-			if float(c.chance) > 0.0 and (c.ids as Array).any(func(n): return not XDB.rec(table, int(n)).is_empty()):
+			if float(c.chance) > 0.0 and (c.ids as Array).any(func(n): return XGear.valid_affix(table, int(n))):
 				weight += float(c.chance)
 		pending.append({"row": row, "weight": weight})
 	var ordered := []
@@ -152,7 +152,7 @@ static func roll_affixes(item: Dictionary, rows: Array, table: String) -> void:
 		var groups := []
 		var total := 0.0
 		for c in row.choices:
-			var ids: Array = (c.ids as Array).filter(func(n): return not XDB.rec(table, int(n)).is_empty())
+			var ids: Array = (c.ids as Array).filter(func(n): return XGear.valid_affix(table, int(n)))
 			if float(c.chance) > 0.0 and not ids.is_empty():
 				groups.append({"chance": float(c.chance), "ids": ids})
 				total += float(c.chance)
