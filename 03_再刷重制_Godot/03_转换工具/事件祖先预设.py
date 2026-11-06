@@ -73,6 +73,12 @@ def trace_var(lst, j, p):
                     return {key: {str(q[5]): int(val)}}
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
+            if int(q[2]) == 0 and int(q[3]) == 2 and isinstance(val, (int, float)):
+                # 随机赋值（DR）：门前只有这一条 122 随机时，用 random_seq 让它抽到 val（MV：min + floor(random × (max−min+1))）
+                lo, hi = int(q[4]), int(q[5])
+                n_rand = sum(1 for x in lst[:j] if int(x['code']) == 122 and int(x['parameters'][3]) == 2)
+                if n_rand == 1 and lo <= int(val) <= hi and int(val) == val:
+                    return {'random_seq': [round((int(val) - lo + 0.5) / (hi - lo + 1), 6)]}
             return p
     return p
 
@@ -92,6 +98,9 @@ def synth(lst, first, loc):
                 merge_into(pre, p)
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
     # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
+    if len(pre.get('random_seq', [])) > 1:   # 两道随机门合到一起，顺序认不准：当开不了
+        pre.pop('random_seq')
+        bad += 1
     if 'difficulty' not in pre and any(i in super_ids() for i in pre.get('party', [])):
         pre['difficulty'] = 9
     return pre, bad
