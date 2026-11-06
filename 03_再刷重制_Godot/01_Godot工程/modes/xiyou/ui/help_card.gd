@@ -516,7 +516,7 @@ static func equipment_rows(rows: Array) -> Array:
 		var raw := str(r[0])
 		var plain := _color_code_re.sub(raw, "", true)
 		var color := str(r[2]).replace(" ", "").replace("\t", "").to_lower() if r.size() > 2 and r[2] != null else ""
-		var white := any_color.search(raw) == null and (color == "" or color in ["#fff", "#ffffff", "white", "rgba(255,255,255)", "rgba(255,255,255,1)", "rgb(255,255,255)"])
+		var white := any_color.search(raw) == null and (color == "" or color in ["#fff", "#ffffff", "white", "rgba(255,255,255)", "rgba(255,255,255,1)", "rgb(255,255,255)", "rgb(255,255,255,1)"])  # 原版正则 rgba?\(255,255,255(?:,1)?\) 也认 rgb(…,1)（审查 50 乙档注）
 		if white and _white_stat_re.search(plain) != null:
 			stats.append(r)
 			continue
