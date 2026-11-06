@@ -1,7 +1,7 @@
 # 交付：cc/platform-android4
 
 - 车道／工作者：平台／cc（BP，总装二十五派单第十一批）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -38,8 +38,15 @@
 
 ## 验证
 
-（待写）
+- `语法检查.py`：584 个 .gd，0 个问题。
+- 合 main（b17637aa）并重新 `--补齐` 后：`xiyou_event_compare`、`xiyou_platform`（72/72）、`xiyou_entry_release`、`ui_smoke` 全部通过（日志 `04_验证/本地结果/并行测试/20261106_010158_gva5j8qf`）。
+- 合 main 前跑过的界面选测（`选测.py main --list` 判整轮，因 `entry.gd` 拿不准；按引用改动类的测试挑）：ui_smoke、xiyou_battle_options、xiyou_costumes、xiyou_entry_release、xiyou_floor_run、xiyou_flow、xiyou_hangup_options、xiyou_hud、xiyou_list_paging、xiyou_notice_options、xiyou_options_basic、xiyou_options_misc、xiyou_platform、xiyou_power、xiyou_smart_ai*（全部分段）、xiyou_test_mode、xiyou_window_rects 共 32 个通过；当时 `xiyou_event_compare` 挂 `preset_keys_known ["random"]`，是分支起点的事件状态产物与 events10 白名单不配，合 main、补齐后重跑已过。没跑整轮（车道不跑全量）。
+- `工具回归.py` 全部通过（77 秒）。
+- `导出冒烟.py --platform windows`：全部通过（只读核对，不签名；报告 `04_验证/本地结果/导出冒烟/20261106_002227_windows/报告.md`）；包内 xiyou_flow 49/49。exe 真机启动等要 Windows 实机，没覆盖。
+- 没测：安卓真机（SAF 选文件、content:// 读写、刘海机的真实安全区），只在桌面用 `force_mobile`、`safe_area_override`、`dialog_override` 模拟。
 
 ## 本分支提交
 
-- 2fc6478e WIP：触屏按键大小／透明度／位置、安全区、设置页、存档导入导出
+- 2fc6478e 触屏按键大小／透明度／位置、安全区、设置页、存档导入导出
+- b17637aa 合并 main
+- （本提交）交付单可合并
