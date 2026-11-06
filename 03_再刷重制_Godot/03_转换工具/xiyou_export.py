@@ -611,6 +611,42 @@ MEASURED_EFFECT_SOURCES.update({
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
 
+# 超赛 2771～2774（v0.62.12，newsrc6 newsrc6.blocks costume）：Apply 多一层「|| 角色本身战斗图」（_battlerName 建档就有，等价于老模板）；
+# 2771～2773 Remove 只在当前图还是自己那张（或空）时动：剩下的超赛形态里编号最大的接上，一个不剩才还原；2774 Remove 直接还原再 addState(1)。
+COSTUME_APPLY2 = re.compile(r"if \(user\.isActor\(\)\) \{ var baseName = user\.actor\(\) \? user\.actor\(\)\.battlerName : ''; user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName \|\| baseName; user\.setBattlerImage\('([^']+)'\); user\.refresh\(\); \}")
+COSTUME_FORMS = {2771: 'bjtc1', 2772: 'cjbjt2', 2773: 'cjbjt3', 2774: 'clbjt'}
+COSTUME_FORM_REMOVE = ("if (user.isActor()) { var forms = {2771:'bjtc1',2772:'cjbjt2',2773:'cjbjt3',2774:'clbjt'}; "
+                       "var remaining = [2771,2772,2773,2774].filter(function(id) { return user.isStateAffected(id); }); "
+                       "if (user._battlerName === forms[%d] || !user._battlerName) { if (remaining.length) { user.setBattlerImage(forms[Math.max.apply(null, remaining)]); } "
+                       "else { user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : '')); user._prevBattlerName = undefined; } } "
+                       "user._priorityBattlerName = undefined; user.refresh(); }")
+COSTUME_REMOVE_DEATH = ("if (user.isActor()) { user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : '')); "
+                        "user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh(); user.addState(1); }")
+
+# newsrc6：v0.62.12 新状态（effect3.blocks／newsrc6.blocks 量过）
+MEASURED_EFFECT_BLOCKS.update({
+    ('remove', 'user . gainHp ( - user . mhp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ;'),  # 2720
+    ('leave', 'user . gainHp ( - user . mhp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ;'),  # 2720
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { target . gainHp ( - Math . ceil ( user . atk * 45 ) ) ; target . startDamagePopup ( ) ; }'),  # 2721
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { $gameVariables . setValue ( 2 , $gameVariables . value ( 2 ) + 300 ) ; $gameVariables . setValue ( 3 , $gameVariables . value ( 3 ) + 0 ) ; }'),  # 2724
+    ('leave', '$gameVariables . setValue ( 1565 , $gameVariables . value ( 1566 ) ) ;'),  # 2748
+    ('react', 'value = 0 ;'),  # 2750、2751
+})
+MEASURED_EFFECT_SOURCES.update({
+    # 2723：weapons()[0] 是第一把武器，undefined 时整段不进；rangedTypes 只有 2
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 2 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isHpEffect ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { $gameVariables . setValue ( 2 , $gameVariables . value ( 2 ) + 150 ) ; $gameVariables . setValue ( 3 , $gameVariables . value ( 3 ) + 0 ) ; } } }'):
+        'if (user.isActor()) { if (user.firstWeaponType() === 2 && this.isHpEffect()) { $gameVariables.setValue(2, $gameVariables.value(2) + 150); $gameVariables.setValue(3, $gameVariables.value(3) + 0); } }',
+    # 2747：this.item().id 是本招编号；user 是行动者（2748 加在行动者身上）
+    ('react', '$gameVariables . setValue ( 1566 , this . item ( ) . id ) ; user . addState ( 2748 ) ; if ( $gameVariables . value ( 1566 ) == $gameVariables . value ( 1565 ) ) { value = 0 ; }'):
+        '$gameVariables.setValue(1566, se_item_id); user.addState(2748); if ($gameVariables.value(1566) == $gameVariables.value(1565)) { value = 0; }',
+    ('react', '$gameTemp . reserveCommonEvent ( 1721 ) ; if ( this . isHpEffect ( ) && value > 0 ) { if ( $gameVariables . value ( 1586 ) >= 10 ) { value = Math . ceil ( value * 0 ) ; } }'):  # 2775
+        'target.reserve(1721); if (this.isHpEffect() && value > 0) { if ($gameVariables.value(1586) >= 10) { value = Math.ceil(value * 0); } }',
+    ('react', '$gameTemp . reserveCommonEvent ( 1722 ) ;'): 'target.reserve(1722);',  # 2776
+    # 2777：var finalRate 那行没有分号，靠换行补（ASI 表里认原文换行）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 1.5 * $gameVariables . value ( 1543 ) value + = Math . ceil ( value * finalRate ) ; }'):
+        'if (this.isHpEffect() && value > 0) { var finalRate = 1.5 * $gameVariables.value(1543); value += Math.ceil(value * finalRate); }',
+})
+
 # fix1：原版笔误的修正版（可回退，开关在 XStateEffects）。原版程序照旧留在 program，开关开时跑 fixed。
 EFFECT_FIXES = {
     ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { target . gainHp ( target . mhp * 1 ) ; target . startDamagePopup ( ) ; target . RemoveState ( 1580 ) ; }'):  # 2554
@@ -752,7 +788,7 @@ def _compile_effect_tokens(tokens, signature):
             rewritten.append(name)
             declared.add(name)
             i += 3
-        elif tokens[i] in ('stateId', 'se_attack', 'se_can_crit'):
+        elif tokens[i] in ('stateId', 'se_attack', 'se_can_crit', 'se_item_id'):
             name = 'se_state_id' if tokens[i] == 'stateId' else tokens[i]
             rewritten.append(name)
             declared.add(name)
@@ -792,6 +828,7 @@ ASI_BLOCK_HASHES = {
     '9676454ba667dd20': '6db81c4d79011c99',  # 577 regenerate
     '3f57cb0c48c09427': '2ca5c9605b987b82',  # 732 regenerate
     '96260ff0c50f9067': '8257614ff5166cf2',  # 1006 regenerate
+    '67f970afd1685aa7': '797d8acabd0143f1',  # 2777 confirm（newsrc6）
 }
 
 
@@ -817,6 +854,15 @@ def effect_state_effect(code, phase, body=None):
         return {'op': 'costume_image', 'image': costume.group(1)}
     if phase == 'remove' and plain == COSTUME_REMOVE:
         return {'op': 'costume_restore'}
+    costume = COSTUME_APPLY2.fullmatch(plain) if phase == 'apply' else None
+    if costume:
+        return {'op': 'costume_image', 'image': costume.group(1)}
+    if phase == 'remove':
+        own = next((sid for sid in COSTUME_FORMS if plain == COSTUME_FORM_REMOVE % sid), None)
+        if own:
+            return {'op': 'costume_form_remove', 'own': own, 'forms': {str(k): v for k, v in COSTUME_FORMS.items()}}
+        if plain == COSTUME_REMOVE_DEATH:
+            return {'op': 'costume_restore', 'addState': 1}
     try:
         tokens = [row[0] for row in Parser(code).tokens[:-1]]
     except Unsupported:

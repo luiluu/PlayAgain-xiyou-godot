@@ -9,7 +9,7 @@ const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm",
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
 const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
-	"reserve_common_event", "noop", "revive", "effect_program", "costume_image", "costume_restore"]
+	"reserve_common_event", "noop", "revive", "effect_program", "costume_image", "costume_restore", "costume_form_remove"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
 const NEVER_FIRED := {"action_end": "OTB 行动结束绕过 YEP_BuffsStatesCore 的 endAction 包装", "crit": "冻结版没有触发 crit 的插件"}
 const DIAGNOSTIC_LIMIT := 500
@@ -322,7 +322,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	# Game_Battler.customEffectEval always shadows the enclosing action domain,
 	# including non-Boss/missing origins. Only native react1341/2550 override Action.
 	var resources: XResourceContext = c.get("resources")
-	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state", "effect_program"])
+	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state", "effect_program"] or e.has("addState"))
 	if owns_resources:
 		resources = XResourceContext.new()
 		resources.random = c.get("random")
@@ -372,7 +372,9 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "costume_image" and execute:
 			_costume_image(e, int(st.id), holder)
 		elif op == "costume_restore" and execute:
-			_costume_restore(int(st.id), holder)
+			_costume_restore(int(st.id), holder, e, c)
+		elif op == "costume_form_remove" and execute:
+			_costume_form_remove(e, int(st.id), holder)
 		elif op == "effect_program":
 			c.value = _effect_program(e, phase, int(st.id), holder, c, execute)
 		elif op == "value_query":
@@ -475,6 +477,9 @@ static func _effect_program(e: Dictionary, phase: String, _state_id: int, holder
 			extra[name] = float(_state_id)
 		elif name == "se_attack":
 			extra[name] = c.user.is_attack(c.get("item", {}))
+		elif name == "se_item_id":
+			var it = c.get("item")
+			extra[name] = float(it.get("id", 0)) if it is Dictionary else 0.0  # this.item().id（2747，newsrc6）
 		elif name == "se_can_crit":
 			extra[name] = bool(c.get("item", {}).get("damage", {}).get("critical", false))
 	var out := vm.run_phase(e.program, c, c.value, execute, extra)
@@ -547,13 +552,37 @@ static func _costume_image(e: Dictionary, state_id: int, holder: XBattler) -> vo
 
 
 ## 敌人没有 setBattlerImage（TypeError，什么都不做）。没有记过旧图时原版把图设成 undefined 显示不出来，这里保留现状。
-static func _costume_restore(state_id: int, holder: XBattler) -> void:
+## addState（超蓝 2774，newsrc6）：没记旧图时退回角色本身的战斗图（user._prevBattlerName || user.actor().battlerName），还原后 addState(1)。
+static func _costume_restore(state_id: int, holder: XBattler, e := {}, c := {}) -> void:
 	if not holder is XActor or XCostumes.registry().has(state_id):
 		return
 	var a := holder as XActor
 	var prev := str(a.state_data.get("_prevBattlerName", ""))
+	if prev == "" and e.has("addState"):
+		prev = str(XDB.rec("Actors", a.actor_id).get("battlerName", ""))
 	if prev != "":
 		a.set_looks({"battlerName": prev})
+	a.state_data.erase("_prevBattlerName")
+	if e.has("addState"):
+		_add_state(a, int(e.addState), c)
+
+
+## 超赛 2771～2773 移除（newsrc6）：移除效果在状态去掉之后跑。当前图还是自己那张（或空）才动：
+## 剩下的形态里编号最大的接上；一个不剩就还原旧图（没记就用角色本身的图）并清掉记录。别的形态的图不碰。
+static func _costume_form_remove(e: Dictionary, state_id: int, holder: XBattler) -> void:
+	if not holder is XActor or XCostumes.registry().has(state_id):
+		return
+	var a := holder as XActor
+	var forms: Dictionary = e.forms
+	var current := str(a.data().get("battlerName", ""))
+	if current != str(forms.get(str(int(e.own)), "")) and current != "":
+		return
+	var remaining: Array = forms.keys().map(func(k): return int(k)).filter(func(id): return a.is_state_affected(id))
+	if not remaining.is_empty():
+		a.set_looks({"battlerName": str(forms[str(remaining.max())])})
+		return
+	var prev := str(a.state_data.get("_prevBattlerName", ""))
+	a.set_looks({"battlerName": prev if prev != "" else str(XDB.rec("Actors", a.actor_id).get("battlerName", ""))})
 	a.state_data.erase("_prevBattlerName")
 
 
