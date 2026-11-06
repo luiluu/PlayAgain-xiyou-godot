@@ -64702,7 +64702,8 @@
     ],
     "variables": {
      "1576": 1
-    }
+    },
+    "difficulty": 9
    }
   },
   {
@@ -117325,6 +117326,139 @@
      "849": false,
      "850": false,
      "851": true
+    }
+   }
+  },
+  {
+   "base": "ce9039",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     142
+    ],
+    "actors": {
+     "142": {
+      "skills": [
+       10110
+      ]
+     }
+    },
+    "variables": {
+     "1540": 120
+    }
+   }
+  },
+  {
+   "base": "ce9030",
+   "tag": "n2",
+   "preset": {
+    "variables": {
+     "1569": 1
+    }
+   }
+  },
+  {
+   "base": "m144e15p0",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     148
+    ],
+    "difficulty": 9
+   }
+  },
+  {
+   "base": "m45e10p0",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     148
+    ],
+    "difficulty": 9
+   }
+  },
+  {
+   "base": "ce9026",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     147
+    ],
+    "actors": {
+     "147": {
+      "skills": [
+       10481,
+       10484,
+       10547,
+       10489
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "m45e10p1",
+   "tag": "n2",
+   "preset": {
+    "variables": {
+     "1570": 1,
+     "1575": 1
+    }
+   }
+  },
+  {
+   "base": "m145e11p0",
+   "tag": "n2",
+   "preset": {
+    "weapons": {
+     "71": 1
+    }
+   }
+  },
+  {
+   "base": "m45e10p2",
+   "tag": "n2",
+   "preset": {
+    "weapons": {
+     "67": 1
+    }
+   }
+  },
+  {
+   "base": "ce1438",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     142
+    ],
+    "random_seq": [
+     0.12
+    ],
+    "difficulty": 9
+   }
+  },
+  {
+   "base": "m43e23p1",
+   "tag": "n2",
+   "preset": {
+    "weapons": {
+     "53": 1
+    }
+   }
+  },
+  {
+   "base": "ce9023",
+   "tag": "n2",
+   "preset": {
+    "party": [
+     93
+    ],
+    "actors": {
+     "93": {
+      "skills": [
+       7502
+      ]
+     }
     }
    }
   }

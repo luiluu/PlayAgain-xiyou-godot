@@ -9,9 +9,15 @@ extends RefCounted
 ## 参照 mv_oracle/honghuang_reward_probe.cjs → tests/fixtures/honghuang_reward_oracle.json（tests/xiyou_honghuang_reward）。
 
 const FACTOR := {"轻": 1.0, "中": 1.2, "重": 1.5}
-const TIER := {7211: "轻", 7206: "轻", 7203: "轻", 7208: "轻",
+## 诅咒分档：v0.52 起用户重排（只改分档与显示／倍率，不改诅咒实际效果），跟到 v0.62.12（bajie-newsrc2，O 号待分配）。
+## 回退：XHonghuang.TIER 设回 TIER_V028
+const TIER_V028 := {7211: "轻", 7206: "轻", 7203: "轻", 7208: "轻",
 	7210: "中", 7205: "中", 7207: "中", 7204: "中", 7209: "中", 7215: "中",
 	7201: "重", 7202: "重", 7214: "重", 7212: "重", 7213: "重"}
+const TIER_V052 := {7205: "轻", 7206: "轻", 7209: "轻", 7210: "轻", 7211: "轻", 7214: "轻",
+	7203: "中", 7207: "中", 7208: "中", 7212: "中", 7213: "中",
+	7201: "重", 7202: "重", 7204: "重", 7215: "重"}
+static var TIER: Dictionary = TIER_V052
 const PICKS := 5
 const FIRST_VARIABLE := 1468
 const POWER_RATE := 0.03
