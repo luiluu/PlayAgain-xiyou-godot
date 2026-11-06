@@ -8,7 +8,7 @@ extends RefCounted
 ## 回退开关 MV_KEYS = false：不补，回到只有 Godot 默认键位（只影响开关关之后的 apply，已补的键靠 remove 撤）。
 
 static var MV_KEYS := true
-## 按键标成已处理（O-待定）：确认键开新游戏、读档、回大厅这类处理里，change_scene 会立刻把当前场景摘下树，
+## 按键标成已处理（O-212）：确认键开新游戏、读档、回大厅这类处理里，change_scene 会立刻把当前场景摘下树，
 ## 之后再 get_viewport() 是 null。调试版只报「Cannot call method 'set_input_as_handled' on a null value」，
 ## 发行模板的 GDScript 不查空，直接对空指针调用、闪退（11-06 天启篇标题按空格/J 退出，崩溃报告 SIGSEGV 0x450）。
 ## 回退开关 SAFE_HANDLED = false：照旧直接调用（不在树上时发行版仍会闪退）。

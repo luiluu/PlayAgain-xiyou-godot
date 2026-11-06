@@ -1,5 +1,5 @@
 extends Node
-## 按键标已处理不闪退（O-待定，11-06）：标题按空格/J 开新游戏，change_scene 立刻把标题摘下树，
+## 按键标已处理不闪退（O-212，11-06）：标题按空格/J 开新游戏，change_scene 立刻把标题摘下树，
 ## 原来的 get_viewport().set_input_as_handled() 对 null 调用——调试版报错，发行版空指针闪退。
 ## 现在统一走 XKeyMap.handled(self)：不在树上就跳过。回退开关 XKeyMap.SAFE_HANDLED。
 ## 测试里按的是「返回版本选择」（同一条路径）。标题只用独立空存档目录，不读写玩家存档。
