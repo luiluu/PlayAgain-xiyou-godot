@@ -815,7 +815,13 @@ func refresh_passive() -> void:
 		var meta: Dictionary = o.get("meta", {})
 		for m in _scan(note, "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
-		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([\\d.]+%?)>"):
+		# v0.62 parseDepassiveHarmRe：带正负号；同一对象内完全相同的标签只计一次
+		var pen_seen := {}
+		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([+-]?[\\d.]+%?)>"):
+			var pen_key := "%d|%s" % [int(m[0]), m[1]]
+			if pen_seen.has(pen_key):
+				continue
+			pen_seen[pen_key] = true
 			var key := "penetratePercent" if m[1].contains("%") else "penetrateFixed"
 			c[key][int(m[0])] = c[key].get(int(m[0]), 0.0) + _num(m[1])
 		for k in meta:
