@@ -2940,7 +2940,14 @@ func rewards() -> Dictionary:
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
-	return {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
+	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
+	# 真气 makeRewards 包装（装在奖励插件之后）：幻化之战清掉物品（含地图额外掉落）；v0.45 神兵试炼经验、金钱也为 0
+	if enemies.any(func(e): return e.zq_trial_loot):
+		out.drops = []
+	if enemies.any(func(e): return e.zq_weapon_trial):
+		out.exp = 0
+		out.gold = 0
+	return out
 
 
 func _difficulty_rates() -> Array:

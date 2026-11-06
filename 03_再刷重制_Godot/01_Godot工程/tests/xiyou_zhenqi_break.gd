@@ -338,6 +338,21 @@ func _extra() -> void:
 	check("save_spec", back.zhenqi_spec.e.has("2"), back.zhenqi_spec)
 	XState._become_current(back)
 	check("load_clears_trial", XZhenqi.pending_trial.is_empty())
+	# v0.45 指定道法：掷出的本命兵与随机武器在「稍后再选」、读档后都不重掷（pendingDaofaRoll 随存档）
+	_fresh()
+	var b := s.actor(1)
+	_set_zq(b, {"qi": 3000, "realm": 1, "pending": [1]})
+	s.zhenqi_spec.w["2"] = 1
+	XZhenqi.rand_seq = [3, 6]
+	var v1 := XZhenqi.menu(s, {"page": "daofa", "id": 1, "i": 1})
+	var roll = b.zhenqi.get("pendingDaofaRoll", {}).duplicate()
+	var back2 := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	XZhenqi.rand_seq = [0, 0]
+	var v2 := XZhenqi.menu(back2, {"page": "daofa", "id": 1, "i": 1})
+	check("daofa_roll_kept", str(roll.get("key", "")) == "benming" and int(roll.get("random", 0)) == 7 and _same(back2.actor(1).zhenqi.get("pendingDaofaRoll"), roll)
+		and v1.options.map(func(o): return o.label) == v2.options.map(func(o): return o.label), [roll, v1, v2])
+	var done := XZhenqi.menu(back2, v2.options[0].next)
+	check("daofa_roll_cleared", not back2.actor(1).zhenqi.has("pendingDaofaRoll") and back2.actor(1).zhenqi.spec.get("benming") == 2 and not done.is_empty(), back2.actor(1).zhenqi)
 
 
 ## 固定应答宿主：选项按 picks 依次回答（用完取最后一项＝取消）；开战时真跑 BattleLogic.setup 并按胜利结算
@@ -377,4 +392,4 @@ func _flow() -> void:
 	var h2 := FakeHost.new()
 	h2.picks = [4]
 	await XZhenqiRetreat.run(h2)
-	check("flow_weapon_menu", h2.trace.size() == 2 and str(h2.trace[1].lines[0]).contains("神兵试炼") and h2.trace[1].choices.size() == 9, h2.trace)
+	check("flow_weapon_menu", h2.trace.size() == 2 and str(h2.trace[1].lines[0]).contains("神兵试炼") and h2.trace[1].choices.size() == 7, h2.trace)
