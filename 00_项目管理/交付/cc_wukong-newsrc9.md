@@ -1,7 +1,7 @@
 # 交付：cc/wukong-newsrc9
 
 - 车道／工作者：DF 流萤与角色零散（换源 v0.62.12；cc，悟空）
-- 状态：可合并（流萤一期＋二期；三期的说明按阶生成已交界面，残核掉落未做）
+- 状态：可合并（流萤一期～三期；说明按阶生成已交界面）
 - 基线：从 `cc/newsrc-switch` 21cd90eb 切出；工作树 `.claude/worktrees/relaxed-cori-c96dcd`。`generated/` 先克隆集成分支工作树（recursing-shamir-4cd3d8）那份，再 `xiyou_export.py --app …/冻结正式源/v0.62.12/app.nw` 重出（切片加了 179 与 Codex_Sam_SV）。探针显式设 `XIYOU_APP=…/v0.62.12/app.nw`。
 - 本分支的 `新建工作树.sh --补齐` 转换那步不认 `XIYOU_APP`，读到旧源 `冻结正式源/app.nw` 后报 Map234 缺失失败；转换要显式传 `--app`。
 - **依赖**：切片加了角色 179，`generated/oracle` 要按新切片同步一次才完整（slice_d2、actor_passive、help_card 等通用参照会自动覆盖 179）。本分支没跑整份同步，见「交接板」。
@@ -23,7 +23,7 @@
 | 9 | 读档／升级学忘同步、学 10628 连带梦应 | 一 ✓ |
 | 10 | 梦应归于何处·萤火印记 | 二 ✓ |
 | 11 | 说明按阶生成、技能名品质色 | 三（界面） |
-| 12 | 萨姆残核掉落 | 三（掉落或 rules） |
+| 12 | 萨姆残核掉落 | 三 ✓ |
 
 ## 变更记录草稿
 
@@ -46,19 +46,53 @@
 
 - 跟到 v0.62.12 `installLiuyingRuntime.js` 第 4～10、14 节，都在 `core/liuying.gd` 第二期一节。参照 `liuying2_probe.cjs` → `tests/fixtures/liuying2_oracle.json`，测试 `xiyou_liuying2`（188 项；挂点没接时 80/188）。
 - 施放流程（Game_Action.apply 包装，原版第 34 个，在云裳、饿狼之外）：`XBattleLogic._invoke` 加 `XLiuying.wraps／apply` 分支；本次行动第一次结算时记施放前护盾（`XShieldLedger.total`，原版 a.shield getter 含账本）；天火扣 5% 当前生命（直接改生命，不经账本与原生护盾，同原版 `_hp` 直写）、按实扣量 ×(1＋护盾加成) 加原生护盾；燃烧：三阶加等量护盾（上限 50% 最大生命、不吃加成），否则 `add_shield(−快照)` 只扣原生护盾、账本里队友给的期限护盾保留；回满生命；冷却按自然回合 4（三阶 3、随机 <0.33 免冷却，规则流 `liuying_cooldown`），`meetsSkillConditions` 挡；再释放随机 <0.2（`liuying_rerelease`）整次重放。每段：命中且本行动还没施印就给主目标施印（天火 1、燃烧 5）；天火对其余活着的敌人各结算一次（×0.5）；燃烧只剩一个敌人时额外 4 段（重放再补 4 段）；单目标天火 ×1.2、燃烧 ×1.5。行动帧在 numRepeats（`XLiuying.repeats`）开新帧。
-  - 协调说「天火付费转护盾要用护盾账本」：原版付费不经账本（直写生命）、转出的是原生护盾，读护盾才含账本；照原版做，账本只用在读施放前护盾上。如果本意是让付费走账本吸收，要另定。
+  - 天火付费：总装 11-06 定照原版直接写生命、不走护盾账本（代码注释已写）；账本只用在读施放前护盾上。
 - 击破印记：层数记在 `state_data._codexLbMark`，只在带着状态 2787 时有效；满 12 引爆：最大生命×6 真伤（`set_resource`，原生护盾照 setHp 吸收）、强制眩晕 29（`add_new_state` 无视抵抗；霸体＝首领难度霸体免疫；同一目标 2 个自然回合内不再眩晕；眩晕期间 `_refresh_base` 不按抵抗抹掉，`keeps_resisted`）；战斗中、目标没死时移除／清状态挡下（`XBattler.remove_state`／`clear_states`），引爆放行；全队对带印记的目标技能倍率 ×(1＋0.1×层)；受治疗 −10%/层（`XResourceContext.gain` 最外层）。原版另弹「击破印记引爆！」提示，重制战斗日志没有这类提示，没做。
 - 萨姆形态与免疫：开战（`setup` 末尾，原 startBattle 移除战斗状态之后）戴法宝加 2788、学了飞萤加 2789／2790；战斗图 `XCostumes.battler_name` 里换 Codex_Sam_SV；负面免疫按 `<BuffType>`（没有时按行动限制或状态名）挡 addState（`XResourceContext.add_state`、`XBattler.add_state`）并在 refresh 末尾清掉绕过的；燃烧后刷新（`end_action`，原 endAction 之后）；结束战斗去掉三个状态、清燃烧冷却（施放前护盾快照原版不清，照搬）。
 - 萤火印记（学了梦应 10633）：流萤每次行动第一次掉血（`_set_resource` 生命变少、天火付费）全队叠 1 层（上限 30，开战清零），出战成员加状态 2791，角色行动者终伤 +10%/层。「一次行动」按行动序号比（原版比 BattleManager._action，行动结束不清，同样照搬：行动之外的掉血跟最后一次行动算同一次）。
 - **O-待定·流萤燃烧后免死刷新**（原版代码错误，`XLiuying.FIX_UNDYING_REFRESH`，默认 true）：原版 refreshUndying 先移除再附加，同一次行动的结果记着「刚移除」，加不回，燃烧后负面免疫与免死反倒没了（下次燃烧才又加上）。true＝已有的重置回合数；false＝照原版。参照是原版行为，测试关着比参照、开着另查两个状态还在。已登进优化登记。
-- 参照里 firefly 例敌人普攻打流萤扣 5，重制扣 4（基础 72×防御 0.05＝3.6，与流萤无关的低伤害取整；去掉赤染减伤也一样），测试这一例只比萤火层数，交 rules 查。
+- firefly 例原来敌人普攻打流萤参照扣 5、重制扣 4：rules 查明是探针没去掉超强者路线压制（承伤 ×1.5，O-050 不移植）。两份探针都加了 `superReference(w)` 重出参照（一期参照没变，二期 5 处改），firefly 例改回逐步比生命，一期 144／二期 188 重跑全过。
+
+
+## 2026-11-06 【cc·悟空·未经审查】换源集成：流萤 179 第三期（萨姆残核掉落）、战力条件复核、运行时清单收口（dev.待定）
+
+- 跟到 v0.62.12 `installLiuyingRuntime.js` 第 16 节（v0.62.08＋11-01 补丁）：`XLiuying.core_drops`，接在 `XBattleLogic.rewards` 末尾（`_liuying_core`，每场只掷一次，奖励随机流 `liuying_core`）。倒下的、备注带 `<CodexLiuyingCoreDrop[:下限]>` 的敌人各掷一次；只在地图名以「深渊」开头、或地图备注带同名标签的地图掉；概率按路线（洪荒按诅咒倍率插值），敌人写了下限取较大；不吃掉落率、不经件数上限与品质屏蔽；幻化之战照真气包装整份清掉。具体数值只在代码常量与夹具里。
+- 开关 **O-待定·萨姆残核掉落**（`XLiuying.CORE_DROP`，默认 true；false＝不掉），已登进优化登记。
+- 参照 `liuying3_probe.cjs` → `tests/fixtures/liuying3_oracle.json`（4 条路线 × 3 张地图 × 3 个敌人的概率），测试 `xiyou_liuying3` 50/50（另查倒下才掷、活着／普通地图不掷、开关关掉不掉）。这一期没动存档字段，测试是和实现同一提交写的，没先单独挂一次。
+- ② status_power_panel 179「天火轰击」：一期已顺带修好（`XPower.formula_ok` 认 `CodexLiuying.damage`，新开局没剑记「当前条件不可用」），本期复跑 11/11。
+
+## 流萤运行时清单收口（installLiuyingRuntime.js 1.2.0 全部 16 节）
+
+| 节 | 内容 | 状态 |
+|---|---|---|
+| 1 | 公式 damage、AI 估值 | 做了（一期） |
+| 2 | 伤害钩子（含赤染穿透／减伤、印记易伤、萤火终伤、单目标、扩散） | 做了（一期＋二期） |
+| 3 | 必中、不闪避、段数；爆伤沿用原生 | 做了（一期） |
+| 4 | 击破印记：叠层、引爆真伤与强制眩晕、锁、不可驱散、stateResistSet | 做了（二期）；原版「击破印记引爆！」toast 不做：重制战斗没有右上角提示，日志也不记这类提示 |
+| 5 | 护盾与生命费用 | 做了（二期，付费照原版直写生命） |
+| 6 | 主结算流程（首段准备、冷却、再释放、扩散、单目标额外段） | 做了（二期） |
+| 6 末 | 印记减疗（gainHp） | 做了（二期） |
+| 7 | param／shieldEffectBonus／actionPlusSet | 做了（一期） |
+| 8 | 萨姆形态（battlerName、进出形态、免死刷新） | 做了（二期）；免死刷新的原版错误挂 O-待定·流萤燃烧后免死刷新 |
+| 9 | 负面免疫（addState、isStateAddable、refresh 兜底） | 做了（二期） |
+| 10 | 战斗生命周期（setup／startBattle／onBattleStart／makeActions 首次／endBattle／endAction）、逐火、专武 paramPlus | 做了（一期＋二期）；四处开战入口重制合成一处（原 startBattle 移除战斗状态之后），结果相同 |
+| 11 | 招募、号角上架 Map132 | 做了（一期；上架是八戒 bajie-newsrc3） |
+| 12 | 读档／升级学忘同步、燃烧冷却条件 | 做了（一期＋二期） |
+| 13 | 技能名品质色（10622～10632 与带 CodexLiuyingPassive 的） | 不归本车道：界面（技能列表画名字）；没做 |
+| 14 | 梦应归于何处（自动学、萤火） | 做了（一期学、二期萤火） |
+| 15 | 说明按当前进阶生成（skillLines／refreshText，图鉴副本同步 descParams） | 已交界面（总装 11-06 定）；help_card 10622／10623 同步后会挂，归界面 |
+| 16 | 萨姆残核掉落 | 做了（三期） |
+| — | 流萤遮住角色 setHp 的装载副作用 | O-212 管（rules，Kyo 11-06 定修正），本车道没加开关 |
 
 ## 结果（本机，新源）
 
 | 场景 | 前（21cd90eb） | 后 |
 |---|---|---|
 | liuying（新） | 89/153（旧代码上：学忘、能力值、逐火、招募、战力挂） | 144/144 |
-| liuying2（新） | 80/188（挂点没接） | 188/188 |
+| liuying2（新） | 80/188（挂点没接） | 188/188（加 superReference 重出参照后仍全过） |
+| liuying3（新） | — | 50/50 |
+| status_power_panel | 179 天火「尚未完整评估」 | 11/11 |
+| mira_abyss、reward_branches、drop_dh、drop_record（奖励改动邻近） | — | 41/41、26/26、4/4、12/12 |
 | help_card | 934/1073 | 935/1073（10326 对上；其余是界面措辞、装备战力行） |
 | actor_p0 | horn_paths_all_covered 挂 3063 | 号角路径与招募装备过；剩 `oracle_row_179`／`oracle_damage_179`：slice_d2 参照没有 179，要同步 |
 | actor_p0（本机把 `XIYOU_PROBE_ACTORS=179 slice_probe.cjs 2` 的 179 行并进 slice_d2 临时验） | — | 3527/3527（验完换回原参照） |
@@ -79,8 +113,8 @@
 
 - 下一步：
   - 同步：本分支切片加了 179，合并后的整份同步会给 slice_d2、actor_passive、help_card 等参照加上 179。之后预计：actor_p0 两条过；help_card 会多出 10622／10623 两张卡挂（新源说明由 `L.refreshText` 按阶生成，是三期 11），wtype 等通用参照也可能带出 179 的项。三期的「说明按阶生成」建议提到二期之前做，或先交界面。
-  - 萨姆残核掉落（三期 12）没做，归掉落或 rules；敌人普攻低伤害差 1（见二期末条）交 rules。
-- 需要用户决定：O-待定·流萤燃烧后免死刷新的默认值（现在开着＝修正）。
+  - 技能名品质色（运行时第 13 节）归界面，还没做。
+- 需要用户决定：O-待定·流萤燃烧后免死刷新、O-待定·萨姆残核掉落的默认值（都开着）。
 - 用户试玩说明：无（集成分支）。
 
 ## 进度账
@@ -89,7 +123,7 @@
 
 ## 可回退
 
-- `XLiuying.FIX_UNDYING_REFRESH`（static var，xiyou_liuying2 两头都有字面量赋值）。其余照搬原版新行为；setHp 遮挡已由 O-212 管，没加开关。
+- `XLiuying.FIX_UNDYING_REFRESH`（xiyou_liuying2 两头）、`XLiuying.CORE_DROP`（xiyou_liuying3 两头），都是 static var、测试里有字面量赋值。其余照搬原版新行为；setHp 遮挡已由 O-212 管，没加开关。
 
 ## 可优化（流程／工具／效率）
 
