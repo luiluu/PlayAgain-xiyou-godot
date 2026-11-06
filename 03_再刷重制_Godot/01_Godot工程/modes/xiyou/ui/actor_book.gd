@@ -43,7 +43,7 @@ const RAVEN_SKILLS := [10122, 10123, 10124, 10125, 10126, 10127, 10129, 10130, 1
 	10136, 10137, 10138, 10139, 10170]
 const TOJI_SKILLS := [10203, 10205, 10206, 10207, 10208, 10209, 10210, 10211, 10212, 10213, 10214, 10215, 10216,
 	10217, 10218, 10219, 10225, 10226]
-const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174]
+const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174, 179]  # v0.6x 加 179 流萤
 ## installNativeRavenRuntime 的 [等级, 进阶] 解锁表里要进阶的技能：新建的渡鸦（进阶 0）没有学会
 const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 10139, 10170]
 const ATTR_INK := Color("c1c9d5")
@@ -88,6 +88,12 @@ func _ready() -> void:
 	_select_actor()
 
 
+## 目录当前槽的角色号（空槽 0）
+func actor_id() -> int:
+	var ids := index_ids()
+	return int(ids[index]) if index >= 0 and index < ids.size() else 0
+
+
 func _process(_delta: float) -> void:
 	# Window_ActorBookStatus.update：每 12 帧换一格（0-1-2-1）；逐帧图整张不换格
 	_frame += 1
@@ -96,8 +102,25 @@ func _process(_delta: float) -> void:
 
 
 # ---- 数据 ----
+## 目录槽数（隐藏角色去掉之后）
 static func actor_count() -> int:
-	return (XDB.table("Actors") as Array).size()
+	return index_ids().size()
+
+
+## installIntegratedV029Runtime（v0.30）Window_ActorBookIndex.refresh 包装：目录里去掉 CodexV029.hiddenActors（有名字的才去；
+## 「？？？」占位没有 actorId，留着），之后目录位置不再等于角色号，状态页与详情按 Window_ActorBookIndex.actor()（v0.35）取角色
+const HIDDEN_ACTORS := [141, 146, 152, 157, 160, 161, 166]
+
+
+## 目录每一槽的角色号（「？？？」槽为 0）
+static func index_ids() -> Array:
+	var out := []
+	for i in (XDB.table("Actors") as Array).size():
+		var nm := i > 0 and named(i)
+		if nm and i in HIDDEN_ACTORS:
+			continue
+		out.append(i if nm else 0)
+	return out
 
 
 static func named(id: int) -> bool:
@@ -117,10 +140,7 @@ static func actor_name(id: int) -> String:
 
 ## Window_ActorBookIndex.refresh：有名角色写名字，否则「？？？」
 static func index_names() -> Array:
-	var out := []
-	for i in actor_count():
-		out.append(actor_name(i) if named(i) else "？？？")
-	return out
+	return index_ids().map(func(i): return actor_name(i) if i > 0 else "？？？")
 
 
 static func class_id(id: int) -> int:
@@ -214,6 +234,13 @@ static func book_skills(id: int, base_only: bool) -> Array:
 			for sid in range(10270, 10282):
 				add.call(sid)
 			add.call(10287)
+		if id == 179:  # 流萤：10622 天火轰击、10623 完全燃烧、10624～10632 被动，再加备注 <CodexLiuyingPassive:…> 的技能
+			for sid in range(10622, 10633):
+				add.call(sid)
+			var all_skills: Array = XDB.table("Skills")
+			for sid in range(1, all_skills.size()):
+				if all_skills[sid] is Dictionary and str(all_skills[sid].get("note", "")).contains("<CodexLiuyingPassive:"):
+					add.call(sid)
 	return active + passive + other
 
 
@@ -319,12 +346,16 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	var note_y := y + LH * 10
 	var initial_y := y + LH
 	var raven_w := floorf(CONTENT_W / 3.0) - 12
-	ops.append(_t("主动", 0, y, BOX_W, XUI.SYSTEM))
-	ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
-	ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
-	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
 	var skills := book_skills(id, true)
-	for col in 3:
+	var aura_book := skills.any(is_aura_note)
+	if aura_book:
+		note_y = _aura_columns(ops, skills, y, initial_y)
+	else:
+		ops.append(_t("主动", 0, y, BOX_W, XUI.SYSTEM))
+		ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
+		ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
+	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
+	for col in (0 if aura_book else 3):
 		var ry := initial_y
 		for s in skills:
 			var t := int(s.stypeId)
@@ -334,8 +365,8 @@ static func status_ops(id: int, measure: Callable) -> Array:
 				else:
 					_item_name(ops, s, offsets[col], ry, BOX_W)
 				ry += skill_lh
-	y = initial_y if raven else note_y
-	var mx: float = offsets[2] if raven else 0.0
+	y = initial_y if raven and not aura_book else note_y
+	var mx: float = offsets[2] if raven and not aura_book else 0.0
 	var mw: float = CONTENT_W - mx - 4 if raven else BOX_W
 	var sys: Dictionary = XDB.system()
 	var traits: Array = XDB.rec("Classes", class_id(id)).get("traits", [])
@@ -376,6 +407,36 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	return ops
 
 
+## 备注带 <CodexAura> 的技能（光环）
+static func is_aura_note(s: Dictionary) -> bool:
+	return str(s.get("note", "")).contains("<CodexAura>")
+
+
+## Star_ActorsBook v0.29 光环独立栏（本角色基础技能里有光环时）：主动／被动／光环／其他四列，列宽 floor(932/4)，文字宽列宽−8；
+## 技能 22 号、行距 30，每列最多 maxRows＝floor((内容高 684 − 首行 y − 行高×6) / 30) 行，多出的写「确认查看全部」；返回掌握段的 y
+static func _aura_columns(ops: Array, skills: Array, y: float, initial_y: float) -> float:
+	var cw := floorf(CONTENT_W / 4.0)
+	var labels := ["主动", "被动", "光环", "其他"]
+	for k in 4:
+		ops.append(_t(labels[k], k * cw, y, cw - 8, XUI.SYSTEM))
+	var content_h := STATUS_RECT.size.y - XMVWindow.PADDING * 2
+	var row_h := minf(30.0, LH)
+	var max_rows := maxi(1, floori((content_h - initial_y - LH * 6) / row_h))
+	var groups := [[], [], [], []]
+	for sk in skills:
+		var t := int(sk.stypeId)
+		groups[2 if is_aura_note(sk) else 1 if t == 4 else 3 if t == 5 else 0].append(sk)
+	var longest := 0
+	for k in 4:
+		var list: Array = groups[k]
+		longest = maxi(longest, list.size())
+		for row in mini(max_rows, list.size()):
+			_item_name(ops, list[row], k * cw, initial_y + row * row_h, cw - 8, 22)
+		if list.size() > max_rows:  # drawItemName 画完已 resetTextColor，白字
+			ops.append(_t("确认查看全部", k * cw, initial_y + max_rows * row_h, cw - 8, XUI.TEXT, 22))
+	return initial_y + (mini(max_rows, longest) + 1) * row_h
+
+
 ## 技能详情抬头（Window_ActorBookSkillHeader.refresh，内容宽 509）
 static func header_ops(id: int) -> Array:
 	var w := HEADER_RECT.size.x - XMVWindow.PADDING * 2
@@ -391,7 +452,7 @@ static func list_row_ops(id: int, s: Dictionary, y: float, measure: Callable) ->
 	var sid := int(s.id)
 	var dragon := mira and ((sid >= 10148 and sid <= 10154) or (sid >= 10161 and sid <= 10164) or sid == 10167)
 	var t := int(s.stypeId)
-	var type_name := "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
+	var type_name := "光环" if is_aura_note(s) else "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
 	var label := "【" + ("黑龙·" if dragon else "") + type_name + "】"
 	var color := XUI.text_color(14) if t == 4 else XUI.text_color(3) if t >= 1 and t <= 3 else XUI.text_color(6)
 	var lw: float = measure.call(label, XUI.FONT_SIZE)
@@ -434,28 +495,28 @@ func _paint_index(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
-		var r := sprite_rect(index, _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
+		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
 
 func _paint_header(c: XMVCanvas) -> void:
-	paint_ops(c, header_ops(index))
+	paint_ops(c, header_ops(actor_id()))
 
 
 func _paint_list(c: XMVCanvas) -> void:
 	if skill_index >= skill_top and skill_index < skill_top + LIST_ROWS:
 		c.cursor(Rect2(0, (skill_index - skill_top) * LH, c.size.x, LH), mode == "skills")
 	for i in range(skill_top, mini(skill_top + LIST_ROWS, skill_list.size())):
-		paint_ops(c, list_row_ops(index, skill_list[i], (i - skill_top) * LH, _measure))
+		paint_ops(c, list_row_ops(actor_id(), skill_list[i], (i - skill_top) * LH, _measure))
 
 
 # ---- 操作 ----
 ## Scene_ActorBook.update：目录选中项变了就刷新状态窗（空槽清空）
 func _select_actor() -> void:
-	_status_ops = status_ops(index, _measure)
+	_status_ops = status_ops(actor_id(), _measure)
 	_sprite_tex = null
-	_sprite_spec = sprite_spec(index)
+	_sprite_spec = sprite_spec(actor_id())
 	var p := str(_sprite_spec.get("path", ""))
 	_sprite_tex = load(p) if p != "" else null
 	_refresh()
@@ -498,6 +559,14 @@ static func sprite_path(id: int) -> String:
 	return str(sprite_spec(id).get("path", ""))
 
 
+## Codex_MiraRavenMultiFrame v1.07 profile.bookScale：只在人物图鉴里再乘的倍率（战斗大小不变；Kyo 2026-10-31「图鉴里的精灵有点大」）
+const BOOK_SCALE := {"Codex_Liuying_SV": 0.8}
+
+
+static func book_scale(key: String) -> float:
+	return float(BOOK_SCALE.get(key, 1.0))
+
+
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
 static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, frame := 0) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
@@ -508,7 +577,7 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 	var w := float(prof[0])
 	var h := float(prof[1])
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
-	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x)
+	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x) * book_scale(str(spec.get("key", "")))
 	if spec.get("multi", false):
 		src = Rect2(0, 0, w, h)  # setFrame(0, 0, 档宽, 档高)
 	var sy := sc
@@ -578,12 +647,12 @@ func _update_help() -> void:
 func ok() -> void:
 	if mode != "index":
 		return
-	if index <= 0 or not named(index):
+	if actor_id() <= 0:
 		XSound.system(3)
 		return
 	XSound.system(1)
 	mode = "skills"
-	skill_list = book_skills(index, false)
+	skill_list = book_skills(actor_id(), false)
 	skill_top = 0
 	skill_index = 0 if not skill_list.is_empty() else -1
 	_show_skills(true)

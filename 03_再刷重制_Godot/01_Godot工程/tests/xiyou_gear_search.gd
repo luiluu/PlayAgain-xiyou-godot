@@ -1,5 +1,5 @@
 extends Node
-## 装备检索／排序（XGearQuery、XGearSearch、XZhCollation）对照正式 v0.28 参照：
+## 装备检索／排序（XGearQuery、XGearSearch、XZhCollation）对照正式 v0.62.12 参照（ui_reference/dom_ref.cjs＋gear_search_ref.js 重量）：
 ## tests/fixtures/gear_search_oracle.json 是参照浏览器里正式版「装备词条检索」面板（仅背包）的读数——21 件实例的
 ## 8 种排序、分类／搜索／品质／部位／指定词条筛选、列表摘要与详情各行；实例能力值照参照覆盖（消掉随机浮动）。
 ## 另测拼音比较、物品页／装备页按检索条件筛选排序、工具条文字、面板几何（运行时读数）与配置保存。

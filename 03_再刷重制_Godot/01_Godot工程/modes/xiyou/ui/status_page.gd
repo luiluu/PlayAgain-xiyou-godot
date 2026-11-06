@@ -29,6 +29,9 @@ const LH := 36.0
 const PAD := 14.0
 const PAGE_NAMES := ["状态", "加成与抗性", "掌握", "修行"]
 const PAGE_NAMES_V062 := ["状态", "加成与抗性", "掌握", "修行", "修行·详细"]
+## installEquipmentDetailV041Runtime 包 JAH_Window_Status_Resistances.calcWeaponBonus：武器类型加成后缀「 生效」（isWtypeEquipped）／「 未持有」。
+## O-待定·武器类型生效（跟新源的显示改动，关＝v0.28 只写百分比）
+static var WTYPE_HOLD_V041 := true
 ## 修行页四列（drawPageBlock：availableWidth＝contents 宽 1252）
 const GUIDE_COLS := [200.0, 350.0, 325.0, 325.0]
 ## 4 页时的项宽、间距（Window_HorzCommand：itemWidth＝floor((宽−2×14＋12)/maxCols−12)，项距＝项宽＋12）
@@ -367,7 +370,10 @@ static func _resist_ops(a: XActor) -> Array:
 		var x := left + name_w + passive_w + pen_w + resist_w + gap * 4 + 170
 		ops.append(_t(str(wtypes[i]) if str(wtypes[i]) != "" else "武器类型%d" % i, x, wy, wt_w, "center", XUI.SYSTEM))
 		x += wt_w + gap
-		ops.append(_t(_num(float(cache.get("SkETypeHarmRi", {}).get(i, 0.0)) * 100) + "%", x, wy, wbonus_w, "center"))
+		var wtext := _num(float(cache.get("SkETypeHarmRi", {}).get(i, 0.0)) * 100) + "%"
+		if WTYPE_HOLD_V041:
+			wtext += " 生效" if XBattleLogic.wtype_equipped(a, i) else " 未持有"
+		ops.append(_t(wtext, x, wy, wbonus_w, "center"))
 		wy += LH
 	var qy := LH * (HEADER_LINES + 1)
 	for row in global_bonuses(a):

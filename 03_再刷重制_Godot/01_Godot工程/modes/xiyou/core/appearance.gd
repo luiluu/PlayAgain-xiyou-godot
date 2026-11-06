@@ -220,6 +220,8 @@ const PROFILES := {
 	"CatSwordSaint_v3": [192, 160, 65, 72, 128, 144], "CatSwordSaint_SV_v3": [128, 128, 43, 64, 85, 113],
 	# 谷雨的档由 installNativeGuyuRuntime installVisualHooks（Scene_Boot.start）登记进同一张表，不走 inferProfile
 	"Codex_Guyu": [160, 160, 23, 45, 137, 145],
+	# Codex_MiraRavenMultiFrame v1.06：流萤换原作者 128px 格 9×6 侧视图（1152×768），站姿可见高 116 归一到 72（图鉴另乘 bookScale 0.8，见 XActorBook.BOOK_SCALE）
+	"Codex_Liuying_SV": [128, 128, 19, 12, 111, 128],
 }
 const PROFILE_H := 72.0
 const PROFILE_W := 129.0

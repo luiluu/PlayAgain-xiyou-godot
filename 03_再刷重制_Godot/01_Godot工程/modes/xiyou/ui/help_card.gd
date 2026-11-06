@@ -103,6 +103,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
+	obj = XLiuyingHelp.view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按流萤当前进阶重写（L.refreshText）
 	if kind == "":
 		kind = kind_of(obj)
 	var type: int = {"item": 0, "weapon": 1, "armor": 2, "skill": 3}.get(kind, 0)
@@ -111,10 +112,18 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	var rows := XGrowthHelp.rows(obj, type) if growth else desc_params(obj, type)
 	# 屠苏／璇的技能：bindGrowth 的 setItem 包装（最外层）把技能换成浅拷贝再往里传，元素包装看 isSkill 为假，同 skill_copy
 	var binding_copy := type == 3 and int(XTusuXuan.owner_of(int(obj.get("id", 0)))[0]) != 0
-	if not growth or XGrowthHelp.HELP_FIX:
+	# 心钢技能卡 H.skillHelpView 传的是深拷贝（XGrowthHelp.skill_view 标 skill_copy），同上
+	binding_copy = binding_copy or bool(obj.get("skill_copy", false))
+	# 流萤 10622／10623：原版流萤的 setItem 包装在元素包装之内，拿到的是元素包装的代理（不是 $dataSkills 本身），
+	# 就把 descParams 换回 refreshText 重算的那份，元素包装删插的「伤害属性」行被冲掉（照原版：卡上留备注里的写法）
+	var liuying := type == 3 and XLiuying.lb_skill(int(obj.get("id", 0)))
+	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
 		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
 		if (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
+		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
+		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
+			sort_effects(obj, rows)
 	if type != 3 and XCat.is_cat_item(obj):
 		rows = XCharacterHelp.view(obj, rows)  # 小猫一族的物品、法宝：characterHelpTarget 认 <CodexCat:，走 CodexCat.helpItem＋characterHelpView
 	if type == 3:
@@ -507,7 +516,7 @@ static func equipment_rows(rows: Array) -> Array:
 		var raw := str(r[0])
 		var plain := _color_code_re.sub(raw, "", true)
 		var color := str(r[2]).replace(" ", "").replace("\t", "").to_lower() if r.size() > 2 and r[2] != null else ""
-		var white := any_color.search(raw) == null and (color == "" or color in ["#fff", "#ffffff", "white", "rgba(255,255,255)", "rgba(255,255,255,1)", "rgb(255,255,255)"])
+		var white := any_color.search(raw) == null and (color == "" or color in ["#fff", "#ffffff", "white", "rgba(255,255,255)", "rgba(255,255,255,1)", "rgb(255,255,255)", "rgb(255,255,255,1)"])  # 原版正则 rgba?\(255,255,255(?:,1)?\) 也认 rgb(…,1)（审查 50 乙档注）
 		if white and _white_stat_re.search(plain) != null:
 			stats.append(r)
 			continue
@@ -520,6 +529,60 @@ static func equipment_rows(rows: Array) -> Array:
 	out.append_array(stats)
 	out.append_array(kept.slice(first))
 	return out
+
+
+## installEquipmentDetailV041Runtime 的 CodexDisplay.equipmentRows 包装（跟到 v0.62.12）：装备的特效行按品质从高到低排，
+## 只换特效所在的那几个位置（名字、基础属性、条件、价格不动）。特效行＝去色码、空白与冒号后以「混沌神话／混沌／神话／太古／mod特效」
+## 或「特效／效果／成长」开头，或行内有 \c[1-9]。品质：备注里这一行（<pos=… text=…>）前最近的 <quality:N> 的 rank（XSafeSell.rank），
+## 不是备注带来的行按模板（originalBaseItemId／baseItemId／id）的品质；混沌（神话）特效 111、神话特效 110、mod特效 93、太古特效 91。
+## 同品质照原顺序。另去掉 v0.41 旧存档里留的「效果：持有…时，造成的技能伤害＋」「效果：持武增伤作用于」说明行。
+static var EFFECT_SORT_V041 := true
+
+
+static func _plain41(t) -> String:
+	var t2 := RegEx.create_from_string("(?i)(?:\\\\|\u001b)c\\[\\d+\\]").sub(_terms(str(t)), "", true)
+	return RegEx.create_from_string("[\\s:：]").sub(t2, "", true)
+
+
+static func sort_effects(obj: Dictionary, rows: Array) -> void:
+	var drop := RegEx.create_from_string("^效果：(?:持有.+时，造成的技能伤害[＋+]|持武增伤作用于)")
+	for i in range(rows.size() - 1, -1, -1):
+		if drop.search(str(rows[i][0])) != null:
+			rows.remove_at(i)
+	var source := {}
+	var q := 0
+	var re := RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>|<pos=\\S+\\s+text=([\\s\\S]*?)\\s+size=")
+	for m in re.search_all(str(obj.get("note", ""))):
+		if m.get_string(1) != "":
+			q = int(m.get_string(1))
+		else:
+			source[_plain41(m.get_string(2))] = XSafeSell.rank(q)
+	var table := "Weapons" if obj.has("wtypeId") else "Armors"
+	var base_id := int(obj.get("originalBaseItemId", obj.get("baseItemId", obj.get("base", obj.get("id", 0)))))
+	var b := XDB.rec(table, base_id)
+	var base_rank := XSafeSell.rank(XQuality.legacy(b)) if not b.is_empty() else 0
+	var kind_re := RegEx.create_from_string("(?i)^(?:混沌神话|混沌|神话|太古|mod)特效|^(?:特效|效果|成长)")
+	var blue_re := RegEx.create_from_string("(?i)(?:\\\\|\u001b)c\\[[1-9]\\d*\\]")
+	var at := []
+	var effects := []
+	for n in rows.size():
+		var text := _plain41(str(rows[n][0]).replace(UNIQUE_MARK, ""))
+		if kind_re.search(text) == null and blue_re.search(str(rows[n][0])) == null:
+			continue
+		var rank: int = source.get(text, base_rank)
+		if RegEx.create_from_string("^混沌(?:神话)?特效").search(text) != null:
+			rank = 111
+		elif text.begins_with("神话特效"):
+			rank = 110
+		elif RegEx.create_from_string("(?i)^mod特效").search(text) != null:
+			rank = 93
+		elif text.begins_with("太古特效"):
+			rank = 91
+		at.append(n)
+		effects.append([rows[n], rank, n])
+	effects.sort_custom(func(x, y): return x[1] > y[1] or (x[1] == y[1] and x[2] < y[2]))
+	for k in at.size():
+		rows[at[k]] = effects[k][0]
 
 
 ## 云裳 getDescParams 包装：织神天梭在「等级需求：1」后面（没有就在 APs 位置）插等级与法宝经验两行
