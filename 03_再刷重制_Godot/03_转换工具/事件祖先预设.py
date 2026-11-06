@@ -14,6 +14,7 @@
 import argparse
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -89,7 +90,24 @@ def synth(lst, first, loc):
                 bad += 1
             else:
                 merge_into(pre, p)
+    # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
+    # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
+    if 'difficulty' not in pre and any(i in super_ids() for i in pre.get('party', [])):
+        pre['difficulty'] = 9
     return pre, bad
+
+
+_SUPER = None
+
+
+def super_ids():
+    """角色备注带 <KyoTier:超强者>／<CodexSuperStrong> 的（同 XItemMarks.super_strong_ids 认标签的那一支）。"""
+    global _SUPER
+    if _SUPER is None:
+        rows = json.loads((cov.GEN / 'db/Actors.json').read_text())
+        pat = re.compile(r'<KyoTier:\s*超强者>|<CodexSuperStrong>', re.I)
+        _SUPER = {int(a['id']) for a in rows if a and pat.search(a.get('note') or '')}
+    return _SUPER
 
 
 def main(argv=None):
