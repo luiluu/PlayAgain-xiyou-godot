@@ -285,13 +285,13 @@ func close() -> void:
 ## Esc 先于输入框处理；其余按键交给控件（Tab 移动焦点），没被控件用掉的也不再传给游戏窗口
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		close()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey or event is InputEventAction:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## 进场景树前的最小宽度：PanelContainer 的缓存尺寸要进树才更新，这里按「子项＋面板样式」自己算

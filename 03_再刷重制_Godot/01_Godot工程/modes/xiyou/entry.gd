@@ -216,10 +216,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _commands[i].enabled:
 				break
 		_select(i)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 	elif event.is_action_pressed("ui_accept"):
 		_activate(_sel)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## 标题以外的页面：居中的 MV 窗口，标题用系统色。

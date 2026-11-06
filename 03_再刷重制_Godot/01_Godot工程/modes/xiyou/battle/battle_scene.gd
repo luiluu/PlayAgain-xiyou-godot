@@ -1436,7 +1436,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and _target_mode == "" and not logic.auto:
 		var w: XBattleList = list_win if list_win != null and list_win.active else (cmd_win if cmd_win != null and cmd_win.active else null)
 		if w != null and w.is_visible_in_tree():
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 			_open_battle_book(w)
 			return
 	if _target_mode != "":
@@ -1451,7 +1451,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_picked.emit("cancel")
 		else:
 			return
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 	elif event.is_action_pressed("ui_cancel"):
 		_picked.emit("cancel" if list_win != null else "back")
 

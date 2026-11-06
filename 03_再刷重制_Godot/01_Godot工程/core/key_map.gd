@@ -8,6 +8,11 @@ extends RefCounted
 ## 回退开关 MV_KEYS = false：不补，回到只有 Godot 默认键位（只影响开关关之后的 apply，已补的键靠 remove 撤）。
 
 static var MV_KEYS := true
+## 按键标成已处理（O-待定）：确认键开新游戏、读档、回大厅这类处理里，change_scene 会立刻把当前场景摘下树，
+## 之后再 get_viewport() 是 null。调试版只报「Cannot call method 'set_input_as_handled' on a null value」，
+## 发行模板的 GDScript 不查空，直接对空指针调用、闪退（11-06 天启篇标题按空格/J 退出，崩溃报告 SIGSEGV 0x450）。
+## 回退开关 SAFE_HANDLED = false：照旧直接调用（不在树上时发行版仍会闪退）。
+static var SAFE_HANDLED := true
 ## 地图上右键（两指点按）呼出菜单（platform-keys2，原版 isMenuCalled 含 TouchInput.isCancelled）
 static var MV_MAP_RIGHT_MENU := true
 
@@ -95,3 +100,11 @@ static func remove() -> void:
 ## 菜单收到 Esc 关掉的同一帧，地图的 _process 还看得到「Esc 刚按下」，会立刻又开菜单；关菜单那帧不许开
 static func menu_call_blocked(closed_frame: int, frame: int) -> bool:
 	return closed_frame == frame
+
+
+## 代替 get_viewport() 再 set_input_as_handled()：节点已不在树上（刚切走场景）时跳过（不标已处理，和调试版报错后的表现一样，测试一直跑的就是这种情况）。
+static func handled(node: Node) -> void:
+	var vp := node.get_viewport()
+	if vp == null and SAFE_HANDLED:
+		return
+	vp.set_input_as_handled()
