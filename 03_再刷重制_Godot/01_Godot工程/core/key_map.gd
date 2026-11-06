@@ -8,6 +8,8 @@ extends RefCounted
 ## 回退开关 MV_KEYS = false：不补，回到只有 Godot 默认键位（只影响开关关之后的 apply，已补的键靠 remove 撤）。
 
 static var MV_KEYS := true
+## 地图上右键（两指点按）呼出菜单（platform-keys2，原版 isMenuCalled 含 TouchInput.isCancelled）
+static var MV_MAP_RIGHT_MENU := true
 
 const EXTRA := {
 	"ui_accept": [KEY_Z, KEY_J],
@@ -19,6 +21,20 @@ const EXTRA := {
 }
 
 
+## 手柄：LB／RB 翻页；X（冲刺）与 Y（菜单）给地图轮询用的动作（MV 的 shift／menu）。A、B、十字键、左摇杆用 Godot 默认的 ui_*。
+static func _joy(button: JoyButton) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = button
+	return e
+
+
+static func _has_joy(action: String, button: JoyButton) -> bool:
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == button:
+			return true
+	return false
+
+
 static func _has(action: String, code: Key) -> bool:
 	for e in InputMap.action_get_events(action):
 		if e is InputEventKey and (e as InputEventKey).physical_keycode == code:
@@ -27,6 +43,7 @@ static func _has(action: String, code: Key) -> bool:
 
 
 static func apply() -> void:
+	apply_pad()
 	if not MV_KEYS:
 		return
 	for action in EXTRA:
@@ -40,7 +57,33 @@ static func apply() -> void:
 			InputMap.action_add_event(action, e)
 
 
+static func apply_pad() -> void:
+	for name in ["mv_dash", "mv_menu"]:  # 动作本身总是有（地图轮询它们），键位随开关
+		if not InputMap.has_action(name):
+			InputMap.add_action(name)
+	if not MV_KEYS:
+		return
+	# A 确认、B 取消：先清掉 Godot 默认的手柄键（平台设置可能把两个对调），再按原版 gamepadMapper 0／1 加
+	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+		for e in InputMap.action_get_events(pair[0]).duplicate():
+			if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index != pair[1]:
+				InputMap.action_erase_event(pair[0], e)
+		if not _has_joy(pair[0], pair[1]):
+			InputMap.action_add_event(pair[0], _joy(pair[1]))
+	for pair in [["ui_page_up", JOY_BUTTON_LEFT_SHOULDER], ["ui_page_down", JOY_BUTTON_RIGHT_SHOULDER], ["mv_dash", JOY_BUTTON_X], ["mv_menu", JOY_BUTTON_Y]]:
+		if not _has_joy(pair[0], pair[1]):
+			InputMap.action_add_event(pair[0], _joy(pair[1]))
+
+
 static func remove() -> void:
+	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+		for e in InputMap.action_get_events(pair[0]).duplicate():
+			if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == pair[1]:
+				InputMap.action_erase_event(pair[0], e)
+	for pair in [["ui_page_up", JOY_BUTTON_LEFT_SHOULDER], ["ui_page_down", JOY_BUTTON_RIGHT_SHOULDER], ["mv_dash", JOY_BUTTON_X], ["mv_menu", JOY_BUTTON_Y]]:
+		for e in InputMap.action_get_events(pair[0]).duplicate():
+			if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == pair[1]:
+				InputMap.action_erase_event(pair[0], e)
 	for action in EXTRA:
 		if not InputMap.has_action(action):
 			continue

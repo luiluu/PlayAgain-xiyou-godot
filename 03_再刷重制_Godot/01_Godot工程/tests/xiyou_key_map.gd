@@ -52,6 +52,7 @@ func _run() -> void:
 	check("menu_call_ok_next_frame", not XKeyMap.menu_call_blocked(100, 101) and not XKeyMap.menu_call_blocked(-1, 0))
 	# 高分屏文字不加同色描边的开关（platform-keys1）
 	check("crisp_switch", XMVCanvas.CRISP_HIDPI_TEXT and XMVCanvas.HIDPI_SCALE > 1.0 and XMVCanvas.HIDPI_SCALE < 2.0)
+	check("switches_exist", XKeyMap.MV_MAP_RIGHT_MENU and MVPlayer.MV_HOLD_MOVE and XKeyRepeat.MV_PAD)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
