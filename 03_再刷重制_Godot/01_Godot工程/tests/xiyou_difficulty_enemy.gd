@@ -66,7 +66,7 @@ func _case(c: Dictionary, s: XState) -> void:
 	check(c.id + ".elite", e.elite == bool(o.isElite), [e.elite, o.isElite])
 	check(c.id + ".level", e.level == int(o.level), [e.level, o.level])
 	check(c.id + ".param", near_arr(range(8).map(func(i): return e.param(i)), o.param), [range(8).map(func(i): return e.param(i)), o.param])
-	check(c.id + ".xparam", near_arr(range(10).map(func(i): return e.xparam(i)), o.xparam))
+	check(c.id + ".xparam", near_arr(range(10).map(func(i): return e.cnt if i == 6 else e.xparam(i)), o.xparam))  # 探针读 b.cnt（v0.35 起夹到 0～1），第 6 项比 cnt
 	check(c.id + ".sparam", near_arr(range(10).map(func(i): return e.sparam(i)), o.sparam))
 	check(c.id + ".exp", e.exp_reward() == int(o.exp), [e.exp_reward(), o.exp])
 	check(c.id + ".gold", e.gold_reward() == int(o.gold), [e.gold_reward(), o.gold])

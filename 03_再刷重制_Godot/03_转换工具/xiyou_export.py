@@ -1201,6 +1201,22 @@ def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def mv_string_parameters(lst, where, found):
+    """新源（v0.62.12）有事件指令的 parameters 是整段字符串而不是数组（深渊商人 32 个事件页的
+    `CodexAbyssMerchant.openCurrent(this);`、公共事件 1439 的 `if(window.CodexAbyssMerchant)…complete(this);`，都是 355）。
+    MV 的 command355 读 `parameters[0]`，对字符串就是第一个字符，原版实际 eval 的是 `C`／`i`：前者 ReferenceError 被
+    YEP_CoreEngine 的 try 吞掉，后者是插件漏出来的全局变量、只取值，都没有效果（新源参照引擎实测，bajie-newsrc1）。
+    这里换成逐字符的数组：任意下标读到的都和原版对字符串取下标相同，Godot 侧各处按数组读 parameters 不用再各自容错；
+    原字符串留在 `mvStringParameters`。XIYOU_MV_STRING_PARAMS=keep 时不换（回到原样，Godot 解释器会报 String 赋给 Array）。"""
+    for c in lst or []:
+        if isinstance(c, dict) and isinstance(c.get('parameters'), str):
+            raw = c['parameters']
+            found.append({'where': where, 'code': c.get('code'), 'text': raw[:80]})
+            if os.environ.get('XIYOU_MV_STRING_PARAMS', '') != 'keep':
+                c['mvStringParameters'] = raw
+                c['parameters'] = list(raw)
+
+
 def parse_life_steal(note):
     """YEP_LifeSteal.processLSNotetags2（技能、物品层）：<HP Life Steal: N%>（hpRate=N×0.01）、<HP Life Steal: N>（hpFlat）、
     <CANCEL (HP )?LIFE STEAL>（allNull／hpNull）。冻结数据里只有技能的 <HP Life Steal: N%>（112 个）；MP 吸血、CUSTOM 公式块没有数据，不转。
@@ -1351,6 +1367,7 @@ class Exporter:
         if self.out.is_relative_to(self.app) or self.app.is_relative_to(self.out):
             raise ValueError('输出目录不能与正式应用重叠')
         self.inputs, self.outputs, self.issues = {}, {}, []
+        self.string_parameters = []  # mv_string_parameters 找到的字符串 parameters，写进 manifest issues
         self.img, self.audio, self.movies = set(), set(), set()
         self.db = {}
         self.pending_json = {}
@@ -1471,6 +1488,15 @@ class Exporter:
                         rec['damage']['formulaProgram'] = compile_formula(rec['damage'].get('formula'), rec.get('id', 0), block is not None, name)
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
+            if name == 'CommonEvents':
+                for rec in data:
+                    if isinstance(rec, dict):
+                        mv_string_parameters(rec.get('list'), f'CE{rec.get("id")}', self.string_parameters)
+            elif name == 'Troops':
+                for rec in data:
+                    if isinstance(rec, dict):
+                        for i, pg in enumerate(rec.get('pages') or []):
+                            mv_string_parameters(pg.get('list'), f'T{rec.get("id")} p{i}', self.string_parameters)
             self.db[name] = data
             if name in ('Skills', 'States', 'Items', 'Armors'):
                 self.apply_xuan_tusu_icons(name, data)
@@ -1621,6 +1647,10 @@ class Exporter:
             rel = f'data/Map{mid:03d}.json'
             m = self.read(rel)
             m['meta'] = extract_meta(m.get('note'))
+            for ev in m.get('events') or []:
+                if ev:
+                    for i, pg in enumerate(ev.get('pages') or []):
+                        mv_string_parameters(pg.get('list'), f'Map{mid:03d} EV{ev.get("id")} p{i}', self.string_parameters)
             self.write_json(f'maps/Map{mid:03d}.json', m)
             ts = db['Tilesets'][m['tilesetId']]
             for n in ts['tilesetNames']:
@@ -1921,6 +1951,7 @@ class Exporter:
                     'sliceConfigSHA256': sha(json.dumps(self.cfg, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()),
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'formulaPrograms': {'version': 1, 'execution': 'explicit-runtime', 'tables': program_stats},
+                    'mvStringParameters': self.string_parameters,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
         # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。
         changed = [rel for hashes in [self.inputs, runtime_inputs] for rel, digest in hashes.items()

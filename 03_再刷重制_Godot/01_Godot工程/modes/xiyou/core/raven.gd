@@ -281,9 +281,10 @@ static func growth_rate(a) -> float:
 
 
 ## 冥河断罪镰 4001 装着时的 paramPlus（installNativeRavenRuntime 的 Game_Actor.paramPlus 包装；参照 raven_artifact_probe）：
-## 固定 ARTIFACT_BASE_BONUS，魔攻另加 ⌊阶×50＋魂×(0.02＋阶×0.006)⌋，生命另加 ⌊阶×400＋魂×(0.04＋阶×0.008)⌋。
+## 固定 ARTIFACT_BASE_BONUS，魔攻另加 ⌊阶×50＋魂×(0.02＋阶×0.006)⌋，魔法另加 ⌊阶×400＋魂×(0.04＋阶×0.008)⌋。
+## v0.29（正式 v0.30 起）生命／魔法对调：固定值 350／100 → 100／350，另加的那份从生命（artifactHpBonus）改到魔法（artifactMpBonus）。
 ## 每级成长 R.ARTIFACT_LEVEL_GROWTH 与备注的 <… Param +n per Level> 相同、上限 888 同 <Max Level>，照 CP_MagicWeapon 原路算（XActor.magic_param）。
-const ARTIFACT_BASE_BONUS := [350, 100, 0, 80, 150, 80, 90, 35]
+const ARTIFACT_BASE_BONUS := [100, 350, 0, 80, 150, 80, 90, 35]
 ## 亡魂汲取：出战时全队掉率 +100%（XMapTransfer.team_drop_factor）
 const SOUL_DRAIN := 10129
 
@@ -294,8 +295,8 @@ static func param_plus(a, i: int, v: float) -> float:
 	v += ARTIFACT_BASE_BONUS[i]
 	if i == 4:
 		v += artifact_mat_bonus(a)
-	elif i == 0:
-		v += artifact_hp_bonus(a)
+	elif i == 1:
+		v += artifact_mp_bonus(a)
 	return v
 
 
@@ -303,7 +304,7 @@ static func artifact_mat_bonus(a) -> float:
 	return floorf(stage(a) * 50 + soul(a) * (0.02 + stage(a) * 0.006)) if artifact_equipped(a) else 0.0
 
 
-static func artifact_hp_bonus(a) -> float:
+static func artifact_mp_bonus(a) -> float:
 	return floorf(stage(a) * 400 + soul(a) * (0.04 + stage(a) * 0.008)) if artifact_equipped(a) else 0.0
 
 

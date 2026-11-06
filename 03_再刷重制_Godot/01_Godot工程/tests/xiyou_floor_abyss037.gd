@@ -3,7 +3,8 @@ extends Node
 ## - 入口：十一层 Map039 EV21 宝箱「进入此门」→ Map037／038 (19,23)。
 ## - 深渊封印 EV5：第 1 页「解开封印」开关 75；第 2 页变量 108 取 1～4（Map037 敌群 145／147／146／148，Map038 150～153），
 ##   胜后开关 76、成就 76、肝帝积分（变量 214 的 2～5），再问「前往未知存在」→ Map152 (9,15)。
-## - 深渊商人 EV6：开关 76 的自动页按变量 110 开开关 77（商人）或 78。
+## - 深渊商人 EV6：v0.28 是开关 76 的自动页按变量 110 开开关 77（商人）或 78；v0.30 起换成 CodexAbyssMerchant，那一页没了，
+##   第 2 页只在商人出现时成立（MVEvent.merchant29_present）。新源上开关 76 后 77／78 都不开、商人页不出（原版 v0.62.12 同，bajie-newsrc1）。
 ## - 出口 EV7：按变量 6（8／15／9）传 Map029（未接）／Map064／Map030，重置变量 5／6／21 与开关 75～78。
 ## - Map152：封印 EV4 变量 244 取 1～2（敌群 454／455）开关 79；主席 EV7（开关 2225 起，敌群 661）；出口 EV1 同上并关开关 79。
 ## 队伍生命攻击都很大（只查流程）；用 MVEventCore.fixed_random 固定事件随机数。
@@ -188,9 +189,11 @@ func _void_seal(m: int) -> void:
 		_check("void%d_points_%d" % [m, k], int(s.variable(214)) >= 2 and int(s.variable(206)) - j0 >= int(s.variable(214)), [s.variable(214), int(s.variable(206)) - j0])
 		_check("void%d_stay_%d" % [m, k], s.switch(76) and map.map_id == m)
 	MVEventCore.fixed_random = -1.0
-	# 开关 76 后商人自动页按变量 110 开开关 77 或 78
+	# 开关 76 后：新源没有旧的自动页，77／78 不开；商人页（下标 1）不出
 	await _frames(10)
-	_check("void%d_merchant" % m, s.switch(77) or s.switch(78), [s.switch(77), s.switch(78), s.variable(110)])
+	var merchant := _event(map, 6)
+	_check("void%d_merchant" % m, not s.switch(77) and not s.switch(78) and merchant != null and merchant.page_index != 1,
+		[s.switch(77), s.switch(78), s.variable(110), merchant.page_index if merchant != null else null])
 
 
 func _void_exit(m: int) -> void:

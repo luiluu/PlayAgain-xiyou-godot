@@ -1,10 +1,9 @@
 {
  "provenance": {
   "probe": "cat_probe.cjs",
-  "commit": "4ea173d",
-  "sha256": "43d12ff8a0cca3dd400050c64080fb416fbfd4e48deb567c9fb88b10deec211d",
-  "case": "stats.sword671",
-  "reconfirmed": "v0.62.12 cat.json stats.sword671 elementBonus 六档逐项相同（cc rules-newsrc1 2026-11-06）"
+  "commit": "49600fac",
+  "sha256": "5886046416b139ab02b5c7d0d1449aa82684c7fbbffa17b8890db61a4d41099a",
+  "case": "stats.sword671"
  },
  "runtimeInputs": {
   "js/codex/runtime/CodexFeedbackConfig.js": "c665f2821097ec63b07c8311b034d656edcecf5f3e2867427361b953572e6c1a",

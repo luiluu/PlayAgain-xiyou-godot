@@ -55,7 +55,7 @@ func _run() -> void:
 	# 这里扫「持有时能不能用」要先放开超强者（挑战开关 2494），否则 45 件号角灰着
 	s.set_switch(2494, true)
 	var items := ce_items()
-	check("ce_items_count", items.size() == 1037, items.size())  # v0.62.12 新源：1029 → 1037（新增 8 件公共事件物品）
+	check("ce_items_count", items.size() == 1037, items.size())  # v0.62.12；v0.28 是 1029
 	var page := XItemScene.new()
 	add_child(page)
 	await frames()
