@@ -766,6 +766,54 @@ def run(cmd, cwd, log):
         raise RuntimeError('命令失败（%d）：%s' % (p.returncode, ' '.join(cmd)))
 
 
+def stash_dir():
+    return SANDBOX / 'probe-stash'
+
+
+def file_sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def load_stash():
+    """探针暂存（tools79）：某轮有探针失败时，同轮已成功、产物核验通过的探针把产物与缓存键存在 .sandbox/probe-stash/，
+    下一轮键没变就不重跑、直接拿暂存产物走核验与发布；generated 照旧不动、增量缓存照旧不发布（失败时不把半轮当新结果）。"""
+    try:
+        data = json.loads((stash_dir() / 'index.json').read_text())
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_stash(index):
+    d = stash_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    (d / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1))
+
+
+def stash_usable(entry, command, outputs, key):
+    if not entry or entry.get('key') != key or entry.get('command') != command or entry.get('outputs') != outputs:
+        return False
+    try:
+        return all(file_sha(stash_dir() / rel) == entry['sha'][rel] for rel in outputs)
+    except (OSError, KeyError, TypeError):
+        return False
+
+
+def output_acceptable(rel):
+    """与发布前的核验同口径：产物在、能读、没有新增或变化的错误。"""
+    output = SANDBOX / rel
+    if not output.is_file():
+        return False
+    try:
+        data = json.loads(output.read_text())
+    except ValueError:
+        return False
+    if has_error(data):
+        previous = Path(os.environ['XIYOU_GENERATED']) / 'oracle' / Path(rel).name
+        return previous.is_file() and retained_errors_unchanged(previous.name, json.loads(previous.read_text()), data)
+    return True
+
+
 def run_probes(log, cache=None):
     """互不依赖的探针并行跑（AGENTS.md「省额度约定」同步提速）。每个探针一个独立存档目录
     .sandbox/run/<探针>（开跑前复制 .sandbox 现有的 save／macport，各探针看到同样的起始状态），
@@ -801,11 +849,16 @@ def run_probes(log, cache=None):
                 log.write('CACHE_PARTIAL %s %d/%d %s\n' % (command[0], len(partial[command[0]]), len(units[command[0]]),
                                                          ' '.join(partial[command[0]][:20])))
             plan.append((command, outputs))
+    stash = load_stash() if cache and not cache.force else {}
+    stashed = {command[0] for command, outputs in plan
+               if command[0] not in partial and stash_usable(stash.get(command[0]), command, outputs, keys[command[0]])}
+    for name in sorted(stashed):
+        log.write('STASH_HIT ' + name + '（上轮别的探针失败时已成功，输入没变，用暂存产物）\n')
     log.flush()
-    print('PROBE_PLAN=' + json.dumps({'executed': len(plan) - len(partial), 'partial': {k: len(v) for k, v in partial.items()},
-                                      'reused': len(reused)}), flush=True)
+    print('PROBE_PLAN=' + json.dumps({'executed': len(plan) - len(partial) - len(stashed), 'partial': {k: len(v) for k, v in partial.items()},
+                                      'reused': len(reused), 'stashed': len(stashed)}), flush=True)
     if not plan:
-        return {'executed': [], 'partial': {}, 'reused': reused, 'seconds': {}, 'missReasons': misses}
+        return {'executed': [], 'partial': {}, 'reused': reused, 'stashed': [], 'seconds': {}, 'missReasons': misses}
     gen_oracle = Path(os.environ['XIYOU_GENERATED']) / 'oracle'
     # 合并要用上次产物：作废缓存前先存一份（作废后 generated/oracle 仍是上次产物，失败时也不会被当作新结果发布）
     previous = SANDBOX / 'run-previous'
@@ -818,6 +871,11 @@ def run_probes(log, cache=None):
         cache.invalidate([command for command, _ in plan])
     runs = SANDBOX / 'run'
     shutil.rmtree(runs, ignore_errors=True)
+    for command, outputs in plan:
+        if command[0] in stashed:
+            for rel in outputs:
+                (SANDBOX / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(stash_dir() / rel, SANDBOX / rel)
 
     running = {}  # 正在跑的探针命令 → 开始时间（含等槽），心跳用
     running_lock = threading.Lock()
@@ -875,6 +933,8 @@ def run_probes(log, cache=None):
 
     work = []
     for cmd, outputs in plan:
+        if cmd[0] in stashed:
+            continue
         if cmd[0] == 'slice_probe.cjs' and cmd[1:] == [str(d) for d in range(1, 7)]:
             expected = ['slice/slice_d%d.json' % d for d in range(1, 7)]
             if outputs != expected:
@@ -915,6 +975,24 @@ def run_probes(log, cache=None):
             failed.append(' '.join(cmd))
     log.flush()
     if failed:
+        # 同轮已成功的整探针（分片增量的不算）存进暂存，下一轮输入没变就不用重跑（tools79）
+        bad = {cmd[0] for cmd, code, _, _ in results if code != 0}
+        index = load_stash()
+        kept = []
+        for command, outputs in plan:
+            name = command[0]
+            if name in bad or name in partial or not keys.get(name) or not all(output_acceptable(rel) for rel in outputs):
+                index.pop(name, None)
+                continue
+            for rel in outputs:
+                (stash_dir() / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(SANDBOX / rel, stash_dir() / rel)
+            index[name] = {'key': keys[name], 'command': command, 'outputs': outputs, 'sha': {rel: file_sha(stash_dir() / rel) for rel in outputs}}
+            kept.append(name)
+        save_stash(index)
+        if kept:
+            log.write('STASH_SAVED ' + ' '.join(kept) + '\n')
+            print('PROBE_STASHED=' + json.dumps(kept), flush=True)
         raise RuntimeError('探针失败：' + '；'.join(failed))
     # Validate every new output before publishing any group. Exit 0 alone is insufficient.
     for command, outputs in plan:
@@ -935,8 +1013,15 @@ def run_probes(log, cache=None):
         if cache:
             cache.record(command, outputs, keys[command[0]], units[command[0]])
     shutil.rmtree(previous, ignore_errors=True)
-    return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial],
-            'partial': {k: v for k, v in partial.items()}, 'reused': reused,
+    index = load_stash()
+    if any(command[0] in index for command, _ in plan):   # 已发布进 generated、记进缓存：暂存用不着了
+        for command, outputs in plan:
+            if index.pop(command[0], None):
+                for rel in outputs:
+                    (stash_dir() / rel).unlink(missing_ok=True)
+        save_stash(index)
+    return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial and cmd[0] not in stashed],
+            'partial': {k: v for k, v in partial.items()}, 'reused': reused, 'stashed': sorted(stashed),
             'missReasons': misses,
             # 多命令探针的合计为子进程用时之和；墙钟由同步报告 start/end 记录。
             'seconds': {name: round(sum(r[3] for r in results if r[0][0] == name), 3) for name, _, _ in work},
