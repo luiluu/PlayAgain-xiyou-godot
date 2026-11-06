@@ -57,10 +57,24 @@ func refresh() -> void:
 
 
 func _find_page() -> int:
+	var merchant29 := str(data.get("note", "")).contains("<CodexMerchant29>")
 	for i in range(data.pages.size() - 1, -1, -1):
+		if merchant29 and i == 1 and not merchant29_present():
+			continue
 		if _meets(data.pages[i].conditions):
 			return i
 	return -1
+
+
+## 深渊／不朽商人（v0.30 起 installAbyssMerchantRuntime）：备注带 <CodexMerchant29> 的事件，第 2 页（下标 1）只在
+## CodexAbyssMerchant.hasMerchant()（本副本已领战利品点且商人出现）时成立，不看页面条件。重制还没跟这个运行时，恒为否；
+## 原版 v0.62.12 也一样走不到：唯一调 complete 的公共事件 1439 那条 355 的 parameters 是字符串，实际只 eval 了 `i`（bajie-newsrc1 实测）。
+## 跟商人运行时的时候改这里。MERCHANT29_PAGE_GATE 设 false 回到只看页面条件
+static var MERCHANT29_PAGE_GATE := true
+
+
+static func merchant29_present() -> bool:
+	return not MERCHANT29_PAGE_GATE
 
 
 func _meets(c: Dictionary) -> bool:
