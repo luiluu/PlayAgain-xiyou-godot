@@ -292,16 +292,14 @@ function runCase(c) {
     const named = String(firstWarehouse.parameters[0]).match(/<([^>:]*)/);
     if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
   }
-  // 序列只给事件指令 122（变量操作·随机数）用，战斗等别处照旧 0.5（Godot 侧也只有事件随机数走序列）
-  // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）：这一例 122 随机数按这串循环取，覆盖 RANDOM_SEQUENCES；
-  // Godot 侧同（xiyou_event_compare 取 preset.random_seq 给 MVInterpreter.random_sequence）
+  // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）／RANDOM_SEQUENCES：这一例的 Math.random 全部按这串循环取。
+  // 口径（八戒 DR，总装二十九）：原来只包 command122、脚本里的 Math.random 仍是 0.5；MV 里 122 与脚本（秘境抽奖、随机伙伴、
+  // 掉落等）共用同一条 Math.random，重制 MVEventCore.random_float／random_int 也是 122 与脚本共用 random_sequence。
+  // 改成整例都吃序列，两边按同一调用顺序取数；多值序列不再因脚本随机错位（w7／w11／w13 删掉的 124 例）。
   const seq = (c.preset && c.preset.random_seq) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
   if (seq) {
     let at = 0;
-    w.Game_Interpreter.prototype.command122 = function () {
-      const old = w.Math.random; w.Math.random = () => seq[at++ % seq.length];
-      try { return command122.apply(this, arguments); } finally { w.Math.random = old; }
-    };
+    w.Math.random = () => seq[at++ % seq.length];
   }
   const it = new w.Game_Interpreter();
   const ran = new Set(), execute = w.Game_Interpreter.prototype.executeCommand;
@@ -372,6 +370,7 @@ function runCase(c) {
   out.base = c.base; out.preset = c.preset;
   out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
+  w.Math.random = () => 0.5;
   trace = null;
   return out;
 }
