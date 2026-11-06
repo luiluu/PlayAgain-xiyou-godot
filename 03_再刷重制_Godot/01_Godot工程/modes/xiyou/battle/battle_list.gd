@@ -178,4 +178,4 @@ func _unhandled_input(event: InputEvent) -> void:
 	if index != last:
 		XSound.system(0)
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)

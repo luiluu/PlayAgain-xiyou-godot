@@ -475,14 +475,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mode == "yun":
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
 	elif mode == "list" and XMenu.page_dir(event) != 0:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		page(XMenu.page_dir(event))

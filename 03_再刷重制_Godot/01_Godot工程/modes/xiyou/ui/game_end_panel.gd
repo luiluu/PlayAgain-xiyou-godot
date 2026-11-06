@@ -59,14 +59,14 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		XSound.system(2)
 		closed.emit()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_choose()
 	elif event.is_action_pressed("ui_down") or event.is_action_pressed("ui_up"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_index = 1 - _index
 		XSound.system(0)
 		_win.refresh()

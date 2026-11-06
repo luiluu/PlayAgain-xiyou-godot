@@ -331,21 +331,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _page:
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		_select(XMenu._move(index, d, _list.size(), not event.is_echo()))
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_side(event.is_action_pressed("ui_right", true))
 	elif XMenu.page_dir(event) != 0:
 		# Window_Options 不接管 pageup／pagedown：走通用翻页
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var r := XMenu.page(top, index, _list.size(), ROWS, XMenu.page_dir(event))
 		top = r[0]
 		if r[1] != index:

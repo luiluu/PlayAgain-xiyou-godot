@@ -207,11 +207,11 @@ func set_status(text: String) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if not cancel_button.disabled:
 			XCasinoBatch.cancel()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey or event is InputEventAction:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
