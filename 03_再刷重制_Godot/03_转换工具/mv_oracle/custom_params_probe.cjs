@@ -23,9 +23,10 @@ const LEVELS=[1,20,60],VAR_LEVEL=20;
 // [写法, kind, 基础编号]：覆盖全部出现过的别名（maxhp／maxmp／mhp／mmp／atk／mat／def／mdf／agi／luk）、无效的 tp、
 // 等级＋变量、变量后又被等级覆盖（最后一次赋值为准）、法宝同时读变量
 // 每种写法给几件候选，取第一件有切片角色能装的（104 天虎令进切片前的挑选不变：千古啸等专属装备有等级需求，用 104 一级时装不上，仍直接写槽位）
+// mhp_mmp_eight：v0.28 的 1925／2019～2021（千古啸等专武）写 mhp／mmp，v0.62.12 改成只 atk／mat += 等级×10；改挑写 mhp＋mmp 的防具（春雷、白马、嘶风逐日驹、团子；团子 4476 正常与直写槽位都装不上，排最后），两版都有（newsrc4）
 const PICKS=[['atk_only','weapon',[1595,1596,1600,1601]],['mat_only','weapon',[1598,1599]],
   ['maxhp_maxmp_def_mdf','armor',[130,131,132,133,134,135,4160,4161,4164,4165]],['luk_agi_def_mdf','armor',[4162,4166,4170,4174]],
-  ['mhp_mmp_eight','weapon',[1925,2019,2020,2021]],['maxhp_atk_mat_agi','armor',[4188,4190,4192]],['tp_ignored','weapon',[78]],
+  ['mhp_mmp_eight','armor',[129,4472,4473,4476]],['maxhp_atk_mat_agi','armor',[4188,4190,4192]],['tp_ignored','weapon',[78]],
   ['level_plus_vars','weapon',[1706,1707,1708,1709,1710]],['vars_then_level_override','weapon',[1926,1927]],['magic_vars_only','weapon',[74,75]]];
 const SLICE_ACTORS=JSON.parse(fs.readFileSync(path.join(__dirname,'../xiyou_slice.json'),'utf8')).actors;
 function snap(a,item,slot,label){
@@ -60,7 +61,10 @@ for(const [name,kind,bases] of PICKS){
   const item=w.$gameParty.equipItems().find(x=>before.indexOf(x)<0);
   if(!item)throw new Error('未生成装备 '+kind+base);
   // 专属给切片外角色的（如千古啸 req_actors 104）：本角色实例上停掉 releaseUnequippableItems，免得 refresh 又卸下
-  if(direct){a.releaseUnequippableItems=function(){};a._equips[slot].setObject(item);a.refresh();}else a.forceChangeEquip(slot,item);
+  if(!direct){a.forceChangeEquip(slot,item);
+    // 挑的时候别的角色能装、换成新建的角色后等级需求不够（白马 4472 等 req_level 45）：改成直接写槽位（newsrc4）
+    if(a.equips()[slot]!==item)direct=true;}
+  if(direct){a.releaseUnequippableItems=function(){};a._equips[slot].setObject(item);a.refresh();}
   if(a.equips()[slot]!==item)throw new Error('没装上 '+kind+base);
   const vars=[...new Set((src.parameterEval.match(/v\[(\d+)\]/g)||[]).map(s=>+s.slice(2,-1)))];
   const rows=[];
