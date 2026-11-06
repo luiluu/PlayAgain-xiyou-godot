@@ -2047,6 +2047,7 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		_reflecting = false
 		for r in rs:
 			r.reflected = true
+			XGarou.applied(u, skill, u, r, true)  # 饿狼 apply 包装：反射回饿狼自己照样记帧，行动结束对自己加解析、进化 +1（DV，审查 42 P3-2，参照 raven_reflect_probe refg.*）
 			XRaven.applied(self, u, skill, u, r, true)  # 渡鸦 Game_Action.apply 包装：反射回渡鸦自己时同一个 Game_Action 照样记帧（鸦啄回 MP、黑暗侵蚀、狩猎／回响追加伤害落在渡鸦身上），原版实测 raven_reflect_probe
 		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
