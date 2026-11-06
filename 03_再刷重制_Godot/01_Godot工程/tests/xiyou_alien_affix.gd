@@ -75,6 +75,7 @@ func _run() -> void:
 	XAlienBattle.o115_mimic_cycle = false
 	XAlienBattle.o116_idle_release = false
 	XAlienBattle.o_prayer_counter = false
+	XResourceContext.o_actor_sethp_wrappers = false
 	var by_id := {}
 	for c in ref.cases:
 		by_id[str(c.id)] = c
@@ -86,6 +87,14 @@ func _run() -> void:
 	XAlienBattle.o115_mimic_cycle = true
 	XAlienBattle.o116_idle_release = true
 	XAlienBattle.o_prayer_counter = true
+	XResourceContext.o_actor_sethp_wrappers = true
+	# O-待定·流萤遮住角色 setHp 开时（默认）：异化 setHp 包装对角色照旧生效——绝缘挡下别人给的回血，舍身把它转给搭档
+	if by_id.has("battle.insulation.sethp"):
+		var rows := _battle(by_id["battle.insulation.sethp"], false)
+		check("oliuying.insulation_blocks_heal", float(rows[1].a.hp) == float(rows[0].a.hp) and float(rows[2].a.hp) < float(rows[1].a.hp), [rows[0].a, rows[1].a, rows[2].a])
+	if by_id.has("battle.sacrifice.sethp"):
+		var rows := _battle(by_id["battle.sacrifice.sethp"], false)
+		check("oliuying.sacrifice_transfers_heal", float(rows[1].a.hp) == float(rows[0].a.hp) and float(rows[1].b.hp) > float(rows[0].b.hp), [rows[0], rows[1]])
 	if by_id.has("battle.prayer.counter"):  # O-119 开时逆祷者的反击不治疗敌人（敌人生命停在反击前）
 		var rows := _battle(by_id["battle.prayer.counter"], false)
 		check("o_prayer_counter.no_enemy_heal", rows[2].enemies[0].hp == rows[1].enemies[0].hp and rows[2].a.hp == rows[1].a.hp, [rows[1].enemies[0].hp, rows[2].enemies[0].hp])

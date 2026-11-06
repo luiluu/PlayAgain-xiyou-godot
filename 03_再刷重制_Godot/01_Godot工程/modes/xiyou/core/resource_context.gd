@@ -185,6 +185,11 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	XAlienBattle.after_gain(b, resource)  # 异化 hpChange 末尾：同步生命池与嫁祸者
 	return entry
 
+## O-待定·流萤遮住角色 setHp（v0.62.12 原版代码错误）：installLiuyingRuntime（模块 33）在 Game_Actor.prototype 上另定义了 setHp，
+## 之后装的 Game_BattlerBase.setHp 包装（异化 Runtime 35、Advanced 37、谷雨 40、护盾账本 41）对角色全都走不到。
+## true＝这些包装照旧对角色生效（v0.62.03 加流萤之前的行为）；false＝照 v0.62.12 原版，角色 setHp 跳过它们
+static var o_actor_sethp_wrappers := true
+
 ## 原版 setHp／setMp：护盾在 setter 内处理；不写伤害槽、不做 gain 末尾 dirty。
 func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not error.is_empty():
@@ -196,17 +201,19 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not unsupported.is_empty():
 		error = unsupported
 		return {}
-	if resource == "hp" and not preview:
-		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0 and (XGuyu.ROOTED_ACTOR_SET_HP or not b is XActor):
-			return {}  # 谷雨 setHp 包装：归根中抬不起生命（O-待定·谷雨替倒 setHp 回退支：角色绕过）
+	var wrapped := o_actor_sethp_wrappers or not b is XActor
+	if resource == "hp" and not preview and wrapped:
+		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
+			return {}  # 谷雨 setHp 包装：归根中抬不起生命
 		if value < b.hp:
 			value = b.hp - XShieldLedger.hp_gain(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收
-	if resource == "hp" and XAlienBattle.routes_set_hp(b):
-		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
-	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):
-		value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
-	elif resource == "hp" and value < b.hp and not boss_output.is_settled(b, "hp"):
-		value = b.hp - XAlienBattle.frame_outgoing(b.hp - value)  # 同一包装：帧里压低生命按烈变／小怪异化加成
+	if resource == "hp" and wrapped:
+		if XAlienBattle.routes_set_hp(b):
+			return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
+		if value < b.hp and XAlienBattle.frame_blocks_hp(b):
+			value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
+		elif value < b.hp and not boss_output.is_settled(b, "hp"):
+			value = b.hp - XAlienBattle.frame_outgoing(b.hp - value)  # 同一包装：帧里压低生命按烈变／小怪异化加成
 	var before := snapshot(b)
 	var old: float = b.get(resource)
 	_set_resource(b, resource, value)

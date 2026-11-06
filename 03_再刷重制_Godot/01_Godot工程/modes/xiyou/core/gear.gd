@@ -102,7 +102,7 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 		var choices: Array = row.choices.duplicate()
 		choices.sort_custom(func(a,b):return a.chance < b.chance)
 		for choice in choices:
-			var ids: Array = choice.ids.filter(func(n): return not XDB.rec(table,int(n)).is_empty())
+			var ids: Array = choice.ids.filter(func(n): return valid_affix(table, int(n)))
 			if ids.is_empty(): continue
 			if dice > int(choice.chance):
 				dice -= int(choice.chance)
@@ -131,6 +131,20 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	item.originalUpgradeSlots = slots
 	item.baseName = str(item.name)
 	return item
+
+## DreamX.RandomPrefixSuffix.isValidItem：记录存在，且不是角色专武（v0.37 起「天外天·」开头、v0.56.01 起备注带 <req_actors:>
+## 的装备不再当词缀，见 v0.62.12 installIntegratedV029Runtime.js exclusiveAffix；已生成的旧装备不改）
+## O-待定·专武不当词缀（跟到 v0.62.12）：false＝回到 v0.28，专武照样能被抽成词缀
+static var EXCLUSIVE_V056 := true
+static func valid_affix(table: String, id: int) -> bool:
+	var r := XDB.rec(table, id)
+	return not r.is_empty() and not (EXCLUSIVE_V056 and exclusive_affix(r))
+
+static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
+static func exclusive_affix(r: Dictionary) -> bool:
+	if not (r.has("wtypeId") or r.has("atypeId")):
+		return false
+	return str(r.get("name", "")).begins_with("天外天·") or _req_actors_re.search(str(r.get("note", ""))) != null
 
 static func combine(item: Dictionary, affix: Dictionary, kind: String) -> void:
 	var meta: Dictionary = affix.get("meta", {})
