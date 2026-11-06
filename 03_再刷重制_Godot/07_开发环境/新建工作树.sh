@@ -7,7 +7,7 @@
 #                                           车道开工用这条：app 给的工作树在 cc/<随机名> 上，先在该工作树里从 --from（默认 main）
 #                                           切出派单的分支（如 cc/nezha-tools22）再补齐；工作树须无已跟踪改动，新分支不能已存在。
 #                                           交付后总装照派单的任务名合并；分支名与任务名对不上时 合并车道.py --branch <分支> 指定。
-# 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
+# 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接（设了 XIYOU_APP 就链它）、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
 # 已有 generated 时，generated/oracle 里主工作区较新的文件会覆盖进来（本分支自己生成、主工作区没有或比主工作区新的保留）。
 # 复制了主工作区的参照就记批次（generated/oracle_batch.json，参照批次.py）；转换器跑完、以及 检查.sh 都比对本分支切片，不同批时提示。
@@ -48,9 +48,39 @@ prepare() {
   [[ -e $env/当前Godot.app ]] || ln -s "$menv/当前Godot.app" "$env/当前Godot.app"
   local lib=$wt/02_再刷西游/现有资料库
   [[ -e $lib || ! -L $MAIN/02_再刷西游/现有资料库 ]] || ln -s "$(readlink "$MAIN/02_再刷西游/现有资料库")" "$lib"
-  # 冻结正式源（只读，不入 Git）：工具默认用主工作区的绝对路径；按相对路径找它（如 serve.py）时也能找到
+  # 冻结正式源（只读，不入 Git）：工具默认用主工作区的绝对路径；按相对路径找它（如 serve.py）时也能找到。
+  # 设了 XIYOU_APP（换源车道、集成树指向新源）就链接它，已有的链接指向别处时改指过来（tools81：原来不认，集成树里链的还是旧源）；
+  # 没设就不动已有链接（免得上次按新源补齐的树被改回旧源）
+  local app_src=$MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw app_set=0
+  if [[ -n ${XIYOU_APP:-} ]]; then
+    [[ -d $XIYOU_APP ]] || { print -u2 "✗ XIYOU_APP 不是目录：$XIYOU_APP"; exit 1; }
+    app_src=${XIYOU_APP:A} app_set=1
+  fi
   local frozen=$wt/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw
-  [[ -e $frozen || ! -d $MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw ]] || ln -s "$MAIN/$GODOT_SUB/02_内容与素材/冻结正式源/app.nw" "$frozen"
+  if (( app_set )) && [[ -L $frozen && $(readlink "$frozen") != $app_src ]]; then
+    ln -sfn "$app_src" "$frozen"; print "  冻结正式源链接改指 XIYOU_APP：$app_src"
+  elif (( app_set )) && [[ -e $frozen && ! -L $frozen ]]; then
+    print -u2 "⚠ $frozen 不是链接，没改；本树工具按 XIYOU_APP 取源"
+  fi
+  [[ -e $frozen || ! -d $app_src ]] || ln -s "$app_src" "$frozen"
+  # 主工作区的参照（generated/oracle）量自哪一版：和本树要用的源版本不同时，不拿它覆盖本树已有的参照（tools81）
+  local oracle_skew=''
+  if (( app_set )); then
+    oracle_skew=$(python3 - "$app_src/package.json" "$mgen/oracle/events.json" <<'PY'
+import json, re, sys
+try:
+    want = json.load(open(sys.argv[1])).get('releaseVersion')
+    with open(sys.argv[2], 'rb') as f:
+        head = f.read(65536).decode('utf-8', 'replace')
+    m = re.search(r'"releaseVersion"\s*:\s*"([^"]*)"', head)
+    have = m and m[1]
+except (OSError, ValueError):
+    sys.exit(0)
+if want and have and want != have:
+    print('%s→%s' % (have, want))
+PY
+)
+  fi
   # 会被写或按路径解析的：克隆一份（链接到主工作区的目录会被 git 当成未跟踪文件，也会让 worktree 改到主工作区）
   [[ -e $tools/mv_oracle/node_modules ]] || cp -cR "$mtools/mv_oracle/node_modules" "$tools/mv_oracle/node_modules"
   # 起始种子与缓存必须配套携带；已有车道现场不覆盖。缓存仍逐文件核对 oracle 的 SHA。
@@ -59,13 +89,16 @@ prepare() {
   python3 "$ENV_DIR/参照批次.py" flux "$(git -C "$MAIN" rev-parse --path-format=absolute --git-common-dir)" || flux_rc=$?
   if [[ -e $gen ]]; then
     # 总装正在合并（主工作区 generated/ 带着未定稿的参照）：不刷新，免得拷走新 oracle 挡住车道同步（tools59）
-    if (( flux_rc == 4 )); then
+    if [[ -n $oracle_skew ]]; then
+      print "  参照不刷新：主工作区的参照量自 ${oracle_skew%%→*}，本树按 XIYOU_APP 用 ${oracle_skew##*→}（保留本树自己的参照；要新源参照在本树跑同步）"
+    elif (( flux_rc == 4 )); then
       python3 "$ENV_DIR/参照批次.py" pending "$gen" set   # 留标记：之后 compare／云端选测会照旧比对参照，不把本树的同步戳当「自己同步过」
     else
       refresh_oracle "$mgen/oracle" "$gen/oracle"; python3 "$ENV_DIR/参照批次.py" pending "$gen" clear
     fi
   else
     cp -cR "$mgen" "$gen"; ORACLE_COPIED=1
+    [[ -z $oracle_skew ]] || print -u2 "⚠ generated/ 是从主工作区拷的，参照量自 ${oracle_skew%%→*}，本树用 ${oracle_skew##*→}：参照对不上新源，在本树跑一次 同步正式西游.py 再比对"
     (( flux_rc != 4 )) || python3 "$ENV_DIR/参照批次.py" pending "$gen" set
   fi
   (( ORACLE_COPIED == 0 )) || python3 "$ENV_DIR/参照批次.py" record "$gen" "$mgen"
@@ -108,6 +141,7 @@ prepare() {
   python3 "$ENV_DIR/补跑事件状态探针.py" || true   # 有状态变体的产物同步才有，新工作树先补量（审查 41 P2-1）
   print "✓ 已补齐 $wt"
   print "  分支 $(git -C "$wt" rev-parse --abbrev-ref HEAD)；检查：$GODOT_SUB/07_开发环境/检查.sh（worktree 里自动只并行 2 个测试）"
+  (( app_set == 0 )) || print "  正式源：XIYOU_APP=$app_src（转换器与探针都按它取源；以后在本树跑工具也要带着这个环境变量）"
   print "  注：generated/oracle 来自主工作区（合并 main 后再跑一次 --补齐 即刷新较旧的）；本车道改了参照探针时，刷新后在本 worktree 跑 同步正式西游.py（自动不登记）"
 }
 

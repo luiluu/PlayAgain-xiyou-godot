@@ -24,7 +24,8 @@ SHARDS = {
 # 合并与缓存本身的代码：改了就让分片探针整体重跑
 TOOLING = ('incremental_sync.py', 'oracle_shard_merge.cjs')
 # 探针读的、不在 mv_oracle 里也不是转换产物的输入文件（相对 03_转换工具）：内容进该探针的键，改了只重跑它自己
-PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json',)}
+# event_state_shards.py：同步里分段跑、拼回 event_state 结果的代码（tools81），改了要让它重跑
+PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json', 'event_state_shards.py')}
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 # 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
 # 新读取法先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
@@ -111,7 +112,8 @@ def atomic_json(path, value):
 def carry_cache(source, target):
     """只携带初始种子与已发布缓存；不覆盖车道现场，不跟随种子符号链接。"""
     source, target = Path(source), Path(target)
-    names = ('save', 'macport', 'incremental-cache.json')
+    # event_state_keys.json：事件状态探针的摘要账（event_state_shards.KeyHistory，tools81）；按结果文件摘要认领，带过去不会冒充
+    names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json')
     for base in (source, target):
         if base.is_symlink():
             raise RuntimeError('探针种子目录不能是符号链接：' + str(base))
@@ -137,6 +139,11 @@ def carry_cache(source, target):
                 shutil.copytree(src, stage) if src.is_dir() else shutil.copy2(src, stage)
             stage.rename(dst)
             copied.append(name)
+    keys_src, keys_dst = source / 'event_state_keys.json', target / 'event_state_keys.json'
+    if 'event_state_keys.json' not in copied and keys_src.is_file() and keys_dst.is_file():
+        from event_state_shards import KeyHistory
+        if KeyHistory(keys_dst).absorb(keys_src):
+            copied.append('event_state_keys-merged')
     # 车道已有缓存时也带上主工作区的单元摘要账（carried）：只在逐单元核对 generated 里的记录与账上相同、
     # 且输入键相同时才复用，不会让旧结果冒充新结果（木吒 2026-10-26）
     src_cache, dst_cache = source / 'incremental-cache.json', target / 'incremental-cache.json'

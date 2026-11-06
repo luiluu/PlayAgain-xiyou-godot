@@ -1144,6 +1144,49 @@ class TaskWatchTests(unittest.TestCase):
                 w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
                 self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
 
+    def test_start_fallback_without_launchd_still_detaches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / 'fallback.log'
+            env = dict(os.environ, XIYOU_LONG_TASK_LAUNCHD='0')
+            p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'start', str(log), '--', sys.executable, '-c', 'print("ok")'],
+                               capture_output=True, text=True, timeout=35, env=env)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertNotIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
+
+    def test_start_survives_killing_the_session_that_started_it(self):
+        """哪吒 tools81：发起 start 的「会话」整棵进程树被杀后任务照跑完；macOS 上任务的责任进程是它自己，
+        不再挂在发起它的 claude 上（原来 claude 会话一关，app 按责任进程连带 SIGTERM，换源同步 143）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            log, marker = Path(tmp) / 'survive.log', Path(tmp) / 'done.txt'
+            child = 'import time,pathlib; time.sleep(2.5); pathlib.Path(%r).write_text("ok"); print("ok")' % str(marker)
+            session = ('import subprocess,sys,time; p=subprocess.run(sys.argv[1:], capture_output=True); print("STARTED", p.returncode, flush=True); '
+                       'time.sleep(60)')
+            fake = subprocess.Popen([sys.executable, '-c', session, sys.executable, str(HERE / '长任务.py'), 'start', str(log),
+                                     '--', sys.executable, '-c', child], stdout=subprocess.PIPE, text=True, start_new_session=True)
+            try:
+                self.assertEqual(fake.stdout.readline().split(), ['STARTED', '0'])
+                wrapper = json.loads(Path(str(log) + '.status.json').read_text())['pid']
+                row = subprocess.run(['ps', '-o', 'ppid=', '-p', str(wrapper)], capture_output=True, text=True).stdout.strip()
+                self.assertEqual(row, '1')   # 不在发起者的进程树里
+                if sys.platform == 'darwin':
+                    import ctypes
+                    resp = ctypes.CDLL(None).responsibility_get_pid_responsible_for_pid
+                    resp.restype, resp.argtypes = ctypes.c_int, [ctypes.c_int]
+                    self.assertNotEqual(resp(wrapper), resp(fake.pid))
+                    self.assertEqual(resp(wrapper), wrapper)
+                os.killpg(fake.pid, signal.SIGKILL)   # 「会话」连同它的进程组整个被杀
+                fake.wait(timeout=5)
+            finally:
+                if fake.poll() is None:
+                    fake.kill()
+                fake.stdout.close()
+            self.assertFalse(marker.exists())     # 杀的时候任务还没跑完
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, text=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertEqual(marker.read_text(), 'ok')
+
     def test_non_utf8_output_does_not_hide_valid_completion_marker(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / 'binary.log'

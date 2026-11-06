@@ -5,7 +5,8 @@
 // 运行方式、应答、随机数、状态快照与变化都与 event_probe.cjs 相同（改那边的运行逻辑时这里要同步改）；
 // 变体用例号 = 基础用例号 + '#' + tag；快照 before 在预设之后取，delta 只含事件自己造成的变化；
 // 额外记 reached：[实际执行到的效果指令数, 该页效果指令总数]，证明变体比基础用例走得更深。
-// 用法：node event_state_probe.cjs [变体号前缀…]；XIYOU_EVENT_OUT 改输出路径，默认 .sandbox/event_states.json
+// 用法：node event_state_probe.cjs [变体号前缀…]；XIYOU_EVENT_OUT 改输出路径，默认 .sandbox/event_states.json；
+// 增量见文末（XIYOU_STATE_PREV／XIYOU_STATE_PREV_KEYS 指定上次的结果与摘要，XIYOU_STATE_KEYS_OUT 指定本次摘要写到哪）
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_identity.cjs');
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
@@ -15,6 +16,21 @@ const MANIFEST = JSON.parse(fs.readFileSync(path.join(GEN, 'manifest.json'), 'ut
 const MAX_FRAMES = 6000, PROMPT_TEXT = '测试', COMMON_MAP = 4, PARTY = [1, 8, 10, 9], DIFFICULTY = 3;
 
 const identity = sourceIdentity(APP);
+// 按地图增量（哪吒 tools81）：记下每例读了冻结源的哪些 data/MapNNN.json（所在地图、场所移动去的地图、插件自己读的），
+// 摘要只含这几张地图＋冻结源其余部分；换源只改了几张地图时，别的地图上的变体照旧取回。在 sourceIdentity 之后装（它读全部地图）。
+const APP_DATA = path.resolve(APP, 'data') + path.sep;
+const bootMaps = new Set(), snapshotMaps = new Set();
+let readSink = bootMaps;
+{
+  const realRead = fs.readFileSync;
+  fs.readFileSync = function (file) {
+    if (readSink && typeof file === 'string') {
+      const f = path.resolve(file), m = f.startsWith(APP_DATA) && path.basename(f).match(/^Map(\d{3})\.json$/);
+      if (m) readSink.add(Number(m[1]));
+    }
+    return realRead.apply(this, arguments);
+  };
+}
 const r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
 w.Input.clear();   // 参照启动不走 Scene_Boot 的 Input.initialize；玩家移动路线（门事件）的 isDebugThrough 要读 Input._currentState
@@ -235,7 +251,10 @@ const RANDOM_SEQUENCES = {ce1344: [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 
 const NEW_GAME_SNAPSHOT = true;
 let newGameSave = null;
 const SNAPSHOT_GLOBALS = ['$gameSystem', '$gameScreen', '$gameTimer', '$gameSwitches', '$gameVariables', '$gameSelfSwitches', '$gameActors', '$gameParty', '$gameMap', '$gamePlayer'];
+const mapsOf = {};
 function runCase(c) {
+  const caseMaps = new Set();
+  readSink = caseMaps;
   // 随机数先固定再开新局：宝珠随机流的种子（setupNewGame 时取 Math.random）每例都是 0.5×2³²
   // 提速（唐僧 2026-10-25）：新开局每次约 0.6 秒（全部角色的独立装备、头顶／云裳成长记录落盘），占整轮九成以上；
   // 只在第一例真开一局，把开局后的各游戏对象序列化存下，之后每例重建游戏对象、再把这些对象换回开局时的副本。
@@ -252,7 +271,9 @@ function runCase(c) {
     // 不随游戏对象复位，前一例的等级上限会带到下一例（CE231 升级药单跑 10、整轮跟在 Map011 后得 25，哪吒 2026-10-27）
     saved.dataActorMaxLevel.forEach((v, i) => { if (w.$dataActors[i]) w.$dataActors[i].maxLevel = v; });
   } else {
+    readSink = snapshotMaps;   // 开局快照每例都用：它读的地图记进每例的摘要
     w.eval('DataManager.setupNewGame();');
+    readSink = caseMaps;
     if (NEW_GAME_SNAPSHOT) {
       const o = {independent: [w.DataManager._independentItems, w.DataManager._independentWeapons, w.DataManager._independentArmors],
         dataActorMaxLevel: w.$dataActors.map(a => a ? a.maxLevel : null)};
@@ -364,6 +385,8 @@ function runCase(c) {
   out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
   trace = null;
+  readSink = null;
+  mapsOf[c.id] = [...caseMaps];
   return out;
 }
 
@@ -374,18 +397,28 @@ const t0 = Date.now();
 const SETUP = {party: PARTY, difficulty: DIFFICULTY, commonMap: COMMON_MAP, prompt: PROMPT_TEXT, maxFrames: MAX_FRAMES};
 const OUT = process.env.XIYOU_EVENT_OUT || path.join(__dirname, '.sandbox/event_states.json');
 const KEYS_OUT = process.env.XIYOU_STATE_KEYS_OUT || OUT.replace(/\.json$/, '.keys.json');
-const PREV = process.env.XIYOU_STATE_PREV || OUT, PREV_KEYS = PREV.replace(/\.json$/, '.keys.json');
+const PREV = process.env.XIYOU_STATE_PREV || OUT, PREV_KEYS = process.env.XIYOU_STATE_PREV_KEYS || PREV.replace(/\.json$/, '.keys.json');
 const fileSha = f => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-const probeFingerprint = sha([identity, SETUP, SLICE.maps, MANIFEST.slice.commonEvents, ['event_state_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs']
-  .map(f => fileSha(path.join(__dirname, f))), fileSha(path.join(__dirname, '../xiyou_slice.json')), (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })()]);
-const keyOf = c => sha([probeFingerprint, c.id, c.preset, c.listHash]);
-const keys = Object.fromEntries(variants.map(c => [c.id, keyOf(c)]));
-let reuse = new Map();
+// 摘要（tools81 起第 2 版）：冻结源除 data/MapNNN.json 以外的全部＋开局设定＋探针代码＋引擎外壳为公共部分；每例再加
+// 用例号、预设、基础页指令与坐标、本例读到的那几张地图（含开局快照与启动时读的）。不再含整份切片与切片地图表：
+// 那只决定有哪些用例，不改变单个用例的结果（原来切片改任何字段、换源改任何文件都让 1 万个变体全部重跑）。
+const MAP_INPUT = /^data\/Map\d{3}\.json$/;
+const restInputs = Object.fromEntries(Object.entries(identity.inputs).filter(([k]) => !MAP_INPUT.test(k)));
+const mapDigest = m => identity.inputs['data/Map' + String(m).padStart(3, '0') + '.json'] || null;
+const coreFingerprint = sha([2, identity.releaseVersion, restInputs, identity.runtimeInputs, SETUP,
+  ['event_state_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs'].map(f => fileSha(path.join(__dirname, f))),
+  (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })(), [...bootMaps].sort((a, b) => a - b).map(m => [m, mapDigest(m)])]);
+const keyOf = (c, maps) => sha([coreFingerprint, c.id, c.preset, c.listHash, c.x, c.y, maps.map(m => [m, mapDigest(m)])]);
+const byId = Object.fromEntries(variants.map(c => [c.id, c]));
+let reuse = new Map(), reuseMaps = {};
 if (process.env.XIYOU_STATE_INCREMENTAL !== '0' && fs.existsSync(PREV) && fs.existsSync(PREV_KEYS)) {
   try {
     const pk = JSON.parse(fs.readFileSync(PREV_KEYS, 'utf8')), prev = JSON.parse(fs.readFileSync(PREV, 'utf8'));
-    if (pk.fileSha === fileSha(PREV) && JSON.stringify(prev.sourceIdentity) === JSON.stringify(identity) && JSON.stringify(prev.setup) === JSON.stringify(SETUP)) {
-      for (const c of prev.cases) if (pk.keys[c.id] && pk.keys[c.id] === keys[c.id]) reuse.set(c.id, c);
+    if (pk.version === 2 && pk.fileSha === fileSha(PREV) && JSON.stringify(prev.setup) === JSON.stringify(SETUP)) {
+      for (const c of prev.cases) {
+        const v = byId[c.id], maps = pk.maps && pk.maps[c.id];
+        if (v && Array.isArray(maps) && pk.keys[c.id] && pk.keys[c.id] === keyOf(v, maps)) { reuse.set(c.id, c); reuseMaps[c.id] = maps; }
+      }
     }
   } catch (e) { reuse = new Map(); }
 }
@@ -393,17 +426,28 @@ let reused = 0, sampled = 0, mismatched = 0;
 const todo = shardOf.filter(c => reuse.has(c.id));
 if (todo.length) {
   const picks = todo.filter((c, i) => i % 100 === 0);   // 1% 自检
-  for (const c of picks) { sampled++; if (JSON.stringify(runCase(c)) !== JSON.stringify(reuse.get(c.id))) mismatched++; }
+  for (const c of picks) {
+    sampled++;
+    const again = runCase(c), got = [...new Set([...mapsOf[c.id], ...snapshotMaps])].sort((a, b) => a - b);
+    // 结果相同、读到的地图也要相同（摘要漏了某张地图的依赖就会在这里露出来）
+    if (JSON.stringify(again) !== JSON.stringify(reuse.get(c.id)) || JSON.stringify(got) !== JSON.stringify(reuseMaps[c.id])) mismatched++;
+  }
   if (mismatched) { console.error('增量自检：' + mismatched + '/' + sampled + ' 个取回的变体与重跑不同，整份重跑'); reuse = new Map(); }
 }
 const results = shardOf.map(c => reuse.has(c.id) ? (reused++, reuse.get(c.id)) : runCase(c));
+readSink = null;
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = SETUP;
 // 同步按地图分几个进程并行时，各进程由 XIYOU_EVENT_OUT 写到自己的存档目录下，再按原顺序拼回 .sandbox/events.json
 fs.mkdirSync(path.dirname(OUT), {recursive: true});
 fs.writeFileSync(OUT, JSON.stringify(Object.assign({sourceIdentity: identity, setup, cases: results}, skippedPresets.length ? {skippedPresets} : {})));
-// 旁边的 .keys.json：全部变体的摘要；分段时各段只写摘要（没有 fileSha），由补跑事件状态探针.py 拼回后补上整份文件的摘要
-fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({keys, probeFingerprint}, shardSpec ? {} : {fileSha: fileSha(OUT)})));
+// 旁边的 .keys.json：本次输出的每个变体的摘要和读到的地图；分段时各段只写自己那段（没有 fileSha），由拼回的一方合并后补上整份文件的摘要
+const keys = {}, maps = {};
+for (const c of shardOf) {
+  const m = reuse.has(c.id) ? reuseMaps[c.id] : [...new Set([...mapsOf[c.id], ...snapshotMaps])].sort((a, b) => a - b);
+  maps[c.id] = m; keys[c.id] = keyOf(c, m);
+}
+fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({version: 2, coreFingerprint, keys, maps}, shardSpec ? {} : {fileSha: fileSha(OUT)})));
 console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, reused, sampled, unfinished: results.filter(x => !x.finished).map(x => x.id),
   errors: results.filter(x => x.errors).map(x => x.id), ms: Date.now() - t0}));
 process.exit(0);
