@@ -25,7 +25,8 @@
 所以只有发行包里真按键才看得到。游戏带 `-- --smoke-keys=<序列>` 时自己注入按键（core/key_smoke.gd，经 Input.parse_input_event），
 按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
 发行构建直达西游标题、没有「返回版本选择」（BI），那一项只有调试构建有（tests/xiyou_input_handled 覆盖）。
-每次运行用新建的临时 HOME，跑完删掉；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
+每次运行用新建的临时 HOME，跑完删掉；临时目录 xiyou_release_entry_* 通过就整个删、失败只留 .log、
+被 SIGTERM 结束也收尾，下次运行清掉上次被杀残留的（cc 平台 EC 2026-11-06，以前每次留 0.5～1 GB）；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
 """
 import argparse
 import os
@@ -261,7 +262,64 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     return 0
 
 
+WORK_PREFIX = 'xiyou_release_entry_'
+PID_FILE = '.pid'
+
+
+def pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def sweep_stale(tmp: Path = None) -> list:
+    """删掉上次被杀（SIGKILL、断电）没走到收尾的 xiyou_release_entry_* 目录：.pid 里的进程已不在、或没有 .pid 且超过 6 小时。"""
+    tmp = Path(tmp or tempfile.gettempdir())
+    removed = []
+    for d in tmp.glob(WORK_PREFIX + '*'):
+        if not d.is_dir():
+            continue
+        pf = d / PID_FILE
+        try:
+            stale = not pid_alive(int(pf.read_text().strip())) if pf.is_file() else time.time() - d.stat().st_mtime > 6 * 3600
+        except (ValueError, OSError):
+            stale = True
+        if stale:
+            shutil.rmtree(d, ignore_errors=True)
+            removed.append(d.name)
+    return removed
+
+
+def cleanup(work: Path, ok: bool, keep: bool) -> str:
+    """跑完收尾：--keep 全留；通过就整个目录删掉；失败只留 *.log（几百 KB）方便查，大件全删。返回给用户看的一句话。"""
+    if keep:
+        return f'日志和产物留在 {work}（--keep，用完请自己删）'
+    if ok:
+        shutil.rmtree(work, ignore_errors=True)
+        return '临时目录已删'
+    for t in work.iterdir():
+        if t.is_file() and t.suffix == '.log':
+            continue
+        if t.is_dir() and not t.is_symlink():
+            shutil.rmtree(t, ignore_errors=True)
+        else:
+            t.unlink(missing_ok=True)
+    return f'失败日志留在 {work}（只有 .log，看完可删；下次运行本脚本时自动清掉）'
+
+
+def _raise_on_signal(signum, _frame):
+    raise SystemExit(128 + signum)
+
+
 def main() -> int:
+    import signal
+    # 被 SIGTERM／SIGHUP 结束（超时、会话关闭）时也走 finally 收尾，不留 0.5～1 GB 的解包目录
+    for s in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(s, _raise_on_signal)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--zip')
     ap.add_argument('--arch', choices=['x86_64', 'arm64'], help='用 arch -<架构> 跑 macOS 包的某个切片（x86_64 走 Rosetta）')
@@ -278,21 +336,26 @@ def main() -> int:
             print('--arch 只配 macOS 包')
             return 2
         RUN_PREFIX[:] = ['arch', '-' + a.arch]
-    work = Path(tempfile.mkdtemp(prefix='xiyou_release_entry_'))
+    gone = sweep_stale()
+    if gone:
+        print(f'清掉上次残留的临时目录 {len(gone)} 个：' + '、'.join(gone))
+    work = Path(tempfile.mkdtemp(prefix=WORK_PREFIX))
+    (work / PID_FILE).write_text(str(os.getpid()))
     checks = []
+    code = 2
 
     def check(name, ok, note=''):
         checks.append((name, ok))
         print(('PASS ' if ok else 'FAIL ') + name + (f'（{note}）' if note else ''))
 
-    try:
+    def run() -> int:
         if a.platform in ('windows', 'android'):
             code = windows(work, check, a.keys) if a.platform == 'windows' else \
                 android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None)
             if code:
                 return code
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         if a.app:
             if not a.keys_only:
@@ -304,7 +367,7 @@ def main() -> int:
                 return 2
             run_keys(work, exes[0], check)
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         if a.zip:
             pkg = Path(a.zip).resolve()
@@ -335,7 +398,7 @@ def main() -> int:
         if a.keys_only:
             run_keys(work, exes[0], check)
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         check('app_bundle_name', app.stem == APP_NAME, app.name)
         info = plistlib.loads((app / 'Contents' / 'Info.plist').read_bytes())
@@ -347,18 +410,15 @@ def main() -> int:
         if a.keys:
             run_keys(work, exes[0], check)
         ok = all(c[1] for c in checks)
-        print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+        print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
         if a.keep:
             print(f'留下的包：{app}')
         return 0 if ok else 1
+    try:
+        code = run()
+        return code
     finally:
-        if not a.keep:
-            for name in ['app', 'release.zip', 'win', 'tpl', 'android', 'run', 'empty_project']:
-                t = work / name
-                if t.is_dir():
-                    shutil.rmtree(t, ignore_errors=True)
-                elif t.exists():
-                    t.unlink()
+        print(cleanup(work, code == 0, a.keep))
 
 
 if __name__ == '__main__':
