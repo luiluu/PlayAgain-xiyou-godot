@@ -220,6 +220,13 @@ B 类（要新源参照才能判）：这组没有。
 
 - `tests/xiyou_floor_run.gd`（_wait_idle）、`tests/xiyou_floor_fortress029.gd`（rift1）。
 
+## 接续要点二（接班八戒 40% 交接，11-06 18:10）
+
+- 本棒交了 DG 期二（647abfa2）、DI（2bb94754）、DJ（a45f4383，之前合了 newsrc-switch 21cd90eb）、DM（0f753038），各节见上。
+- 工作树仍是 quizzical-neumann-d318e5，generated 是新源（DI 手补了 31 例 event_states）。测试跑法：`XIYOU_APP=…/冻结正式源/v0.62.12/app.nw XIYOU_SKIP_GENERATED_CHECK=1 python3 并行测试.py ./godot ../01_Godot工程 --full <场景>`；zsh 里变量当多个参数要写 `${=VAR}`；mv_oracle 探针只写 `.sandbox/`。
+- 已知与本棒无关：`测试插件备注覆盖.py` 在新源 generated 下挂（豁免键 codexaura），旧 generated 过。
+- 还没做：DD②（等总装同步后的失败表）；深渊商人界面没在真地图上点过整条流程；专武·特效吸取（openAbsorb）、路线预览（openPreview）没移植。
+
 ## 本分支提交
 
 - 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`
