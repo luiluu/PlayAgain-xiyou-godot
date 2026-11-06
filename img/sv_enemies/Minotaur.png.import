@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fofgeyk88alq"
-path="res://.godot/imported/!$fishing.png-2d5eba99f934ad9d80b233237f832952.ctex"
+uid="uid://da6xkxlysprma"
+path="res://.godot/imported/Minotaur.png-44d225fc69fbcc76b2c84c368487063a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://modes/xiyou/generated/img/characters/!$fishing.png"
-dest_files=["res://.godot/imported/!$fishing.png-2d5eba99f934ad9d80b233237f832952.ctex"]
+source_file="res://modes/xiyou/generated/img/sv_enemies/Minotaur.png"
+dest_files=["res://.godot/imported/Minotaur.png-44d225fc69fbcc76b2c84c368487063a.ctex"]
 
 [params]
 
