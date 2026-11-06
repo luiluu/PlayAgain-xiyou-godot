@@ -1,4 +1,5 @@
 extends Node
+const ADD_STATE_TRAITS := false  # v0.28 参照开战读数是上状态前的缓存值，要补加；v0.62.12 不用
 ## 困难／地狱／天灾挑战被动（技能 2872～2897 的层门学习结果）逐例对冻结 v0.28 参照 challenge_passives.json：
 ## 层门之后六名队员所学挑战技能的八维、附加／特殊能力值、状态、技能消耗，开战后（敌群 4）出战队员、首个敌人的状态与能力，
 ## （伤害比对因五乘区未移植暂不做，见下）。层门事件本身（学技能脚本）由 xiyou_event_compare 逐页对照，这里把参照学到的技能直接装上。
@@ -98,8 +99,9 @@ func run_case(c: Dictionary) -> void:
 	# 4) 敌人带 1657／1658（天灾·加爆闪）时，参照开战读数还是上状态前的缓存值（探针实测：原版 e.hit／xparam 在 Scene_Battle.start 之后是 0.95，
 	#    e.refresh() 之后 1.45／0.75／0.5，即状态的 22 号特性加上去）；之后任何一次刷新（回合开始等）都会读到加后的值，重制按加后值算。
 	#    所以有状态时的期望值＝参照读数＋各状态 22 号特性（hit＝dataId 0、cri＝2、cev＝3）
+	#    v0.62.12 参照的开战读数已经含状态特性（新源探针实测 hit／cri／cev 与重制同值），不再补加；ADD_STATE_TRAITS 留着回旧源对照用。
 	var add := {0: 0.0, 2: 0.0, 3: 0.0}
-	for sid in o.enemy.states:
+	for sid in (o.enemy.states if ADD_STATE_TRAITS else []):
 		for tr in XDB.rec("States", int(sid)).get("traits", []):
 			if int(tr.code) == 22 and add.has(int(tr.dataId)):
 				add[int(tr.dataId)] += float(tr.value) * e.warehouse_rate()  # Star_Warehouse 倍率乘在特性之和外面
