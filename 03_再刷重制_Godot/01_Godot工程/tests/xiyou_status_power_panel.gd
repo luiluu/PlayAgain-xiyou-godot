@@ -1,7 +1,7 @@
 extends Node
 ## 状态页「战力 N」按钮与角色战力面板（XPowerPanel，installEquipmentStatusRuntime renderPower）：
 ## - 覆盖说明：新开局各角色初始状态的「尚未完整评估的技能」「战力未计入」与正式版逐角色一致（tests/fixtures/power_coverage_oracle.json）。
-## - 面板：各行文字与几何对照 tests/fixtures/power_panel_oracle.json（正式 v0.28 浏览器 DOM 读数）。
+## - 面板：各行文字与几何对照 tests/fixtures/power_panel_oracle.json（正式 v0.62.12 无头浏览器 DOM 读数，ui_reference/dom_ref.cjs＋power_panel_ref.js）。
 ## 数值由 XPower 计算（xiyou_power 与 mv_oracle 比对；正式版浏览器开着五乘区成长修正，数字不同，面板只比结构与位置）。
 ## 加 -- --out=<目录> 时保存截图。
 
