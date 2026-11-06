@@ -82,8 +82,25 @@ prepare() {
   python3 "$tools/xiyou_export.py" --out "$gen" | tail -1 | cut -c1-160
   python3 "$ENV_DIR/参照批次.py" check "$gen" || true
   print "== godot --import"
-  local out rc=0
-  out=$(python3 "$ENV_DIR/占槽.py" --label "godot --import" --notice-fd 3 -- perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 3>&2 2>&1) || rc=$?
+  local out rc=0 mode
+  # 整轮重导入（删过 ctex、没带缓存）要 25～40 分钟，300 秒上限会掐断（DX 11-06）：改走长任务，不设 300 秒上限（导入超时.py 判断）
+  mode=(${(z)$(python3 "$ENV_DIR/导入超时.py" "$proj")})
+  if [[ ${mode[1]} == full ]]; then
+    local ilog="$(git -C "$wt" rev-parse --absolute-git-dir)/xiyou_import_full.log" wrc st
+    print "  整轮重导入：缺 ${mode[2]}/${mode[3]} 张贴图缓存，约 25～40 分钟；用 长任务.py 脱离会话跑（日志 $ilog），这里每 540 秒等一次"
+    print "  （这一步超过 Bash 十分钟上限被掐也不要紧：导入在后台接着跑，导完再跑一次 --补齐 就是普通导入）"
+    python3 "$ENV_DIR/长任务.py" start "$ilog" -- python3 "$ENV_DIR/占槽.py" --label "godot --import（整轮）" -- "$env/godot" --headless --path "$proj" --import
+    while true; do
+      wrc=0; python3 "$ENV_DIR/长任务.py" wait "$ilog" --timeout 540 >/dev/null 2>&1 || wrc=$?
+      st=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1] + ".status.json")).get("status", ""))' "$ilog" 2>/dev/null || true)
+      (( wrc == 124 )) && [[ $st == running ]] && continue
+      break
+    done
+    rc=$wrc
+    out=$(cat "$ilog")
+  else
+    out=$(python3 "$ENV_DIR/占槽.py" --label "godot --import" --notice-fd 3 -- perl -e 'alarm 300; exec @ARGV' "$env/godot" --headless --path "$proj" --import 3>&2 2>&1) || rc=$?
+  fi
   if (( rc != 0 )) || grep -qE 'SCRIPT ERROR|^ERROR:' <<< "$out"; then
     print -r -- "$out" | grep -E 'ERROR|FAIL' | head -8
     print -u2 "✗ 导入失败 (rc=$rc)"; exit 1
