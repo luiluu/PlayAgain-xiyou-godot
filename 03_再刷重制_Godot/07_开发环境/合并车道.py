@@ -13,6 +13,10 @@
 加 --cloud（与 --affected 同用，--close-batch 同理）则选中的 Godot 场景交给 云端选测.py 在 GitHub Actions 上跑，非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（GitHub 因账单／额度没启动任务时 检查.sh 明说原因并改本机跑，tools29）。
 推送 GitHub 成功后，main 顶上的收尾提交带「验证: 选测／全量」尾注（--close-batch 收口的没有）、且没有「手补:」或另带「手补已验:」时，
 自动 云端选测.py trust <收尾提交> --reason 合并推送后自动 立云端锚点，选测基准跟上 main；立失败只警告，不影响推送（tools77）。
+--close-batch 收口推送成功后，给收口刚检查通过的提交立锚点（--reason 收口推送后自动；收口前工作区干净、手补都已提交，检查测的就是它，tools78）。
+总装一步合一条：--lane <任务> --who <执行者> --desc <内容> [--branch <分支>]＝准备→查工程／设计文档里新冒出来的 O-待定→交接板移走「正在进行」里
+本车道的行、补新优化号的「需要用户决定」行与待核查首行→--finish --batch；--queue a,b=分支,c 按序逐条 --lane，全过再自动 --close-batch
+（可加 --affected、--cloud；--who／--desc 给一个全队同用或每条一个）。哪步停下都留现场，修好后重跑同一命令接着做（tools78）。
 
 车道交付后在同一工作树接着做（换新分支、新提交或未提交改动）不拦合并：只跳过该工作树的清理，交付分支不再是当前分支就照删。
 清理前还要过两道（哪吒 2026-10-27，曾误清另一账号会话的干净工作树）：有进程的当前目录在该工作树里（活动会话）或工作树被
@@ -1656,11 +1660,12 @@ def close_batch(root, folder, affected=False, cloud=False):
         raise
     if dirty(root):
         raise RuntimeError('检查后 main 出现未提交改动，先人工处理：' + '、'.join(sorted(dirty(root))))
+    checked = git(root, 'rev-parse', 'HEAD')
     for lane in pending:
         cleanup_lane(root, lane)
     (folder / 'batch.json').unlink()
     print('本批 %d 条收口：检查通过（%s）、工作树已清理。' % (len(pending), '选测' if affected else '全量'), flush=True)
-    push_github(root)
+    push_github(root, verified=checked)
 
 
 def lane_moved(lane):
@@ -1713,6 +1718,7 @@ def cleanup_lane(root, lane):
 
 
 ANCHOR_REASON = '合并推送后自动'
+CLOSE_ANCHOR_REASON = '收口推送后自动'
 
 
 def anchor_target(root):
@@ -1727,15 +1733,23 @@ def anchor_target(root):
     return git(root, 'rev-parse', 'refs/heads/main'), ''
 
 
-def anchor_after_push(root):
+def anchor_after_push(root, verified=None):
     """推送成功后给收尾提交立云端锚点（云端选测.py trust <提交> --reason 合并推送后自动），选测基准跟着 main 走，
-    不再一直停在很早的云端通过点、每次退成整轮。立失败只警告，不影响推送。"""
-    sha, why = anchor_target(root)
+    不再一直停在很早的云端通过点、每次退成整轮。立失败只警告，不影响推送。
+    verified：--close-batch 收口刚检查通过的提交（tools78）。收口前工作区必须干净，手补也都已提交，检查测的就是这个提交本身，
+    不看尾注、不排除手补（tools60 防的是 --finish 时手补未提交、云端只测了合并提交）；main 已不是它就不立。"""
+    reason = ANCHOR_REASON
+    if verified:
+        sha, why, reason = verified, '', CLOSE_ANCHOR_REASON
+        if git(root, 'rev-parse', 'refs/heads/main') != sha:
+            sha, why = None, '收口检查后 main 又有新提交'
+    else:
+        sha, why = anchor_target(root)
     if not sha:
         print('未立云端锚点：' + why + '。', flush=True)
         return
     script = os.environ.get('XIYOU_CLOUD_SCRIPT') or str(root / ENV / '云端选测.py')
-    cmd = [sys.executable, script, 'trust', sha, '--reason', ANCHOR_REASON]
+    cmd = [sys.executable, script, 'trust', sha, '--reason', reason]
     try:
         p = subprocess.run(cmd, cwd=root, capture_output=True, text=True, timeout=180,
                            env=dict(os.environ, GIT_TERMINAL_PROMPT='0'))
@@ -1745,12 +1759,12 @@ def anchor_after_push(root):
     if error:
         print('警告：给收尾提交 %s 立云端锚点失败（推送不受影响；下次选测基准照旧）：%s' % (sha[:9], ' '.join(error.split())[-300:]), flush=True)
     else:
-        print('已给收尾提交 %s 立云端锚点（%s）。' % (sha[:9], ANCHOR_REASON), flush=True)
+        print('已给收尾提交 %s 立云端锚点（%s）。' % (sha[:9], reason), flush=True)
 
 
-def push_github(root, remote='github'):
+def push_github(root, remote='github', verified=None):
     """用户 2026-10-18：每次合并后把 main 推到 GitHub。失败只警告，下次合并补推；GitHub 有本地没有的提交时不推。
-    推送成功后给够格的收尾提交立云端锚点（anchor_after_push，tools77）；没推出去不立。"""
+    推送成功后给够格的收尾提交立云端锚点（anchor_after_push，tools77；verified 见那里，tools78）；没推出去不立。"""
     def remote_git(*args):
         env = dict(os.environ, GIT_TERMINAL_PROMPT='0')
         p = subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, env=env, timeout=120)
@@ -1772,12 +1786,120 @@ def push_github(root, remote='github'):
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         print('警告：推送 ' + remote + ' 失败，合并不受影响，下次合并会补推：' + ' '.join(str(error).split()), flush=True)
         return
-    anchor_after_push(root)
+    anchor_after_push(root, verified)
+
+
+REVIEW_HEAD = '| 提交 | 执行者 | 内容 | 核查者 |\n| --- | --- | --- | --- |\n'
+OPT_ROW_RE = re.compile(r'^- O-\d+ ', re.M)
+
+
+def new_placeholders(root, base):
+    """工程与设计文档里本条合并后新冒出来的 O-待定（与合并前的 main 比，按行内容计数；旧有的原样留着不算）。"""
+    paths = [str(PROJECT), str(SUB / '00_设计')]
+    def lines(*rev):
+        p = subprocess.run(['git', '-C', str(root), 'grep', *([] if rev else ['--untracked']), '-h', '-F', '-e', 'O-待定', *rev, '--', *paths], capture_output=True, text=True)
+        return p.stdout.splitlines() if p.returncode == 0 else []
+    before = {}
+    for x in lines(base):
+        before[x] = before.get(x, 0) + 1
+    out = []
+    for x in lines():
+        if before.get(x):
+            before[x] -= 1
+        else:
+            out.append(x.strip())
+    return out
+
+
+def board_add(root, state, who, desc):
+    """总装每条都手补的交接板（原 .git/tangseng/lane.sh＋addrow.py，tools78）：「正在进行」表里本车道的行移走；新优化号的「需要用户决定」行
+    插到最后一条「- O-NNN 」行后；待核查表首行插「| 分支 | 执行者 | 内容 | 待审查 |」。已有就不重插（重跑同一命令不重复）。"""
+    path = root / BOARD
+    text = path.read_text()
+    lines = text.split('\n')
+    # 「正在进行」表里本车道那行（--finish 要求先移走）：表格行提到交付分支或工作树路径就删
+    names = [state['branch']] + ([state['worktree']] if state.get('worktree') else [])
+    inside, kept = False, []
+    for l in lines:
+        if l.startswith('## '):
+            inside = l.startswith('## 正在进行')
+        if inside and l.startswith('|') and any(mentions(l, n) for n in names):
+            print('正在进行移走一行：' + l[:80], flush=True)
+            continue
+        kept.append(l)
+    lines = kept
+    for number, name in state.get('optAppended', []):
+        row = '- %s %s（默认保留，重制完成后由用户逐条决定）' % (number, name)
+        if any(l.startswith('- %s ' % number) for l in lines):
+            continue
+        spots = [i for i, l in enumerate(lines) if OPT_ROW_RE.match(l)]
+        if not spots:
+            raise RuntimeError('交接板没有「- O-NNN 」行，%s 的「需要用户决定」行不知道插哪，先手补' % number)
+        lines.insert(spots[-1] + 1, row)
+        print('交接板加一行：' + row, flush=True)
+    text = '\n'.join(lines)
+    if REVIEW_HEAD not in text:
+        raise RuntimeError('交接板找不到待核查表头「| 提交 | 执行者 | 内容 | 核查者 |」，先手补')
+    if not re.search(r'^\| %s \|' % re.escape(state['branch']), text, re.M):
+        text = text.replace(REVIEW_HEAD, REVIEW_HEAD + '| %s | %s | %s | 待审查 |\n' % (state['branch'], who, desc), 1)
+        print('待核查加一行：' + state['branch'], flush=True)
+    path.write_text(text)
+
+
+def lane_one(root, task, branch, who, desc, executor):
+    """--lane：准备→查新冒出来的 O-待定→补交接板（board_add）→--finish --batch，一步做完；哪步停下就停在那，修好后重跑同一命令接着做。"""
+    if '|' in who + desc or '\n' in who + desc:
+        raise RuntimeError('--who／--desc 里不能有「|」或换行（会弄坏交接板的表）')
+    base_args = [task, '--root', str(root), '--executor', executor] + (['--branch', branch] if branch else [])
+    folder = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'lane-merge'
+    state_file = folder / 'state.json'
+    state = json.loads(state_file.read_text()) if state_file.exists() else None
+    if not (state and state.get('task') == task and state.get('phase') == 'prepared'):
+        if main(base_args):
+            raise RuntimeError('%s 准备没过（见上），修好后重跑同一条 --lane' % task)
+        state = json.loads(state_file.read_text())
+    if state.get('phase') != 'prepared':
+        raise RuntimeError('%s 没走到「已准备合并」（阶段 %s）' % (task, state.get('phase')))
+    # 只拦工程与设计文档里新冒出来的（总装原 lane.sh 的 git grep）；optLeftover 里变更记录正文讲占位写法的字样可以原样留（准备时已打提示）
+    left = new_placeholders(root, state['base'])
+    if left:
+        raise RuntimeError('%s 留了没换号的 O-待定，先手改再重跑：\n  ' % task + '\n  '.join(left[:12]))
+    board_add(root, state, who, desc)
+    if main(base_args + ['--finish', '--batch']):
+        raise RuntimeError('%s --finish --batch 没过（见上），修好后重跑同一条 --lane' % task)
+
+
+def queue_items(spec, branches, whos, descs):
+    """--queue a,b,c：每条的 --who／--desc（各给一个＝全队同用，或按顺序每条一个）；分支写成「任务=分支」，不写照 --branch（只一条时）或默认。"""
+    tasks = [x.strip() for x in spec.split(',') if x.strip()]
+    if not tasks:
+        raise RuntimeError('--queue 没给任务')
+    def spread(values, name):
+        if len(values) == 1:
+            return values * len(tasks)
+        if len(values) != len(tasks):
+            raise RuntimeError('%s 要给 1 个或 %d 个（与 --queue 条数相同），现在 %d 个' % (name, len(tasks), len(values)))
+        return values
+    out = []
+    for t, w, d in zip(tasks, spread(whos, '--who'), spread(descs, '--desc')):
+        task, _, br = t.partition('=')
+        out.append((task, br or None, w, d))
+    if branches:
+        raise RuntimeError('--queue 时分支写成「任务=分支」，不用 --branch')
+    return out
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('task', nargs='?')
+    ap.add_argument('--lane', metavar='任务',
+                    help='一步合一条（tools78，原总装 lane.sh）：准备→查新冒出来的 O-待定→交接板补「需要用户决定」O 行与待核查行→--finish --batch；'
+                         '配 --who（执行者，如 cc（哪吒））、--desc（待核查表「内容」），可加 --branch')
+    ap.add_argument('--queue', metavar='a,b,c',
+                    help='按顺序逐条 --lane，全部过了再自动 --close-batch（可加 --affected、--cloud）；分支写「任务=分支」；'
+                         '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口')
+    ap.add_argument('--who', action='append', default=[], help='--lane／--queue：待核查表的执行者')
+    ap.add_argument('--desc', action='append', default=[], help='--lane／--queue：待核查表的内容')
     ap.add_argument('--root', type=Path, help='主工作区；默认从当前工具所属资料库定位')
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
@@ -1817,6 +1939,28 @@ def main(argv=None):
             raise RuntimeError('只能操作 main 主工作区')
         folder = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-dir')) / 'lane-merge'
         state_file = folder / 'state.json'
+        if a.lane or a.queue:
+            if a.task or a.finish or a.batch or a.close_batch or a.dry_run or a.abort or a.abort_batch or (a.lane and a.queue):
+                raise RuntimeError('--lane／--queue 不带任务名，不和 --finish、--batch、--close-batch、--dry-run、--abort 同用，两者也不同用')
+            if a.lane:
+                if len(a.who) != 1 or len(a.desc) != 1:
+                    raise RuntimeError('--lane 要各给一个 --who、--desc')
+                if a.affected or a.cloud:
+                    raise RuntimeError('--lane 只攒进本批（--finish --batch）；--affected、--cloud 给收口用（--queue 或 --close-batch）')
+                lane_one(root, a.lane, a.branch, a.who[0], a.desc[0], a.executor)
+                print('%s 已合并并攒进本批；没有别的要合时运行 --close-batch。' % a.lane, flush=True)
+                return 0
+            items = queue_items(a.queue, [a.branch] if a.branch else [], a.who, a.desc)
+            done = {x['task'] for x in load_batch(folder)}
+            for task, branch, who, desc in items:
+                if task in done:   # 上次 --queue 中途停下：已攒进本批的那几条不再合（重跑同一条命令接着做）
+                    print('== %s 已在本批，跳过' % task, flush=True)
+                    continue
+                print('== 串合 %s' % task, flush=True)
+                lane_one(root, task, branch, who, desc, a.executor)
+            lock = take_lock(folder)
+            close_batch(root, folder, a.affected, a.cloud)
+            return 0
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')
