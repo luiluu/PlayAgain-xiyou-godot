@@ -72,6 +72,10 @@ def verify_formula_effects(directory, manifest):
         return ['formula_effects.json 缺少或不可读：' + str(error)]
 
 
+# 各冻结源版本读装备等级的公式块数（v0.62.12 多技能 10503～10505）
+EQUIPMENT_BLOCKS = {'v0.28': 24, 'v0.62.12': 27}
+
+
 def verify_formula_equipment(directory, manifest):
     name = 'formula_equipment.json'
     path = directory / name
@@ -84,8 +88,11 @@ def verify_formula_equipment(directory, manifest):
         expected = {f's{sid}.{mode}.{str(edge).lower()}' for sid in ids
                     for mode in ('none', 'wrong_kind', 'zero', 'high', 'first', 'different_base', 'nonmagic') for edge in (False, True)}
         issues = identity_issues(name, data.get('sourceIdentity'), manifest)
-        if len(ids) != 24 or set(rows) != expected:
-            issues.append('装备等级公式须覆盖24块×14种边界')
+        blocks = EQUIPMENT_BLOCKS.get(manifest.get('releaseVersion'))
+        if blocks is None:
+            issues.append('装备等级公式：冻结源版本 %s 没登记公式块数（核对后补进 EQUIPMENT_BLOCKS）' % manifest.get('releaseVersion'))
+        elif len(ids) != blocks or set(rows) != expected:
+            issues.append('装备等级公式须覆盖%d块×14种边界' % blocks)
         for key, row in rows.items():
             if not {'value', 'valueKind', 'firstLevel', 'randomDraws', 'formulaSHA256'} <= set(row):
                 issues.append('装备等级公式参照失败或缺字段：' + key)

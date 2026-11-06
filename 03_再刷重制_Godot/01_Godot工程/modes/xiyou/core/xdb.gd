@@ -146,6 +146,10 @@ static func img_path(folder: String, name: String) -> String:
 	return ""
 
 
+## 原版有几首 .ogg 其实是 MP3（如 bgm「fade to black」「Number One」，浏览器按内容播），转换器按内容存成 .mp3
 static func audio_path(folder: String, name: String) -> String:
-	var p := "%saudio/%s/%s.ogg" % [BASE, folder, name]
-	return p if ResourceLoader.exists(p) else ""
+	for ext in [".ogg", ".mp3"]:
+		var p := "%saudio/%s/%s%s" % [BASE, folder, name, ext]
+		if ResourceLoader.exists(p):
+			return p
+	return ""

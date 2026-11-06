@@ -1039,6 +1039,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help='显式接受接受单逐条列出的既有用例改变（须写理由、摘要逐项对上，每条都要用上）')
     ap.add_argument('--accept-withdrawal', action='append', default=[], metavar='地图号',
                     help='切片撤出地图后显式接受（可多次，如 41 或 Map041）：须恰好等于本轮少掉的地图，去掉旧基线里已没有的条目再比较')
+    ap.add_argument('--accept-source-switch', metavar='版本',
+                    help='换源：允许正式版本从基线换到这个版本（如 v0.62.12），仍须接受单逐条接受全部测量变化；没有稳定键的整字段列表改变也只在这时可接受')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
     ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
@@ -1164,6 +1166,15 @@ def _main() -> int:
     report['additionCheck'] = compare_directories(old_oracle, gen / 'oracle', probe_outputs())
     report['sameExistingSource'] = withdrawn_ok and (withdrawn_source_preserved(old_manifest, new_manifest, withdraw) if withdraw
                                                      else source_preserved(old_manifest, new_manifest))
+    # 换源（BM 11-06）：显式给出新版本号、且本轮确实从别的版本换到它时，不要求旧输入原样存在；测量变化照旧逐条接受
+    switch = bool(a.accept_source_switch and not withdraw and new_version == a.accept_source_switch
+                  and old_version != new_version)
+    if a.accept_source_switch:
+        report['sourceSwitch'] = {'from': old_version, 'to': new_version, 'requested': a.accept_source_switch, 'allowed': switch}
+        if not switch:
+            print('--accept-source-switch %s 不生效：本轮 %s → %s' % (a.accept_source_switch, old_version, new_version), flush=True)
+    if switch:
+        report['sameExistingSource'] = True
     v = subprocess.run([sys.executable, str(HERE / '验证西游来源.py'), '--app', str(app), '--generated', str(gen)], capture_output=True, text=True)
     report['verify'] = (v.stdout.strip().splitlines() or [''])[-1]
     report['verifyOk'] = v.returncode == 0
@@ -1175,7 +1186,7 @@ def _main() -> int:
             return current_digest(entry['file'], json.loads(f.read_text()), entry['collection'], entry['key'])
         except (OSError, ValueError):
             return None
-    resolved = apply_acceptances(check, acceptances, current)
+    resolved = apply_acceptances(check, acceptances, current, source_switch=switch)
     if acceptances:
         report['acceptChanges'] = {'sources': acceptance_sources, 'accepted': resolved['accepted'], 'unused': resolved['unused'],
                                    'alreadyInBaseline': resolved['alreadyInBaseline'], 'remainingProblems': resolved['problems']}
