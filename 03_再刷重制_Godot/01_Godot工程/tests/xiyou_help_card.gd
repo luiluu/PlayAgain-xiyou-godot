@@ -204,7 +204,13 @@ func _run() -> void:
 	XHelpCard.WHITE_STATS_FIRST = false
 	_check("white_stats_skill_untouched", skill_on == texts.call(XHelpCard.content(skill_obj, "skill")), skill_on)
 	XHelpCard.WHITE_STATS_FIRST = true
+	# v0.43 排版开关两头：关＝v0.28 排法（没有 \lock、描述在第二行），开＝品质类别合行、块间 4 号空行
+	var potion := XDB.rec("Items", 1)
+	var old_rows := XHelpCard.content(potion, "item")
 	XHelpCard.LAYOUT_V043 = true
+	var new_rows := XHelpCard.content(potion, "item")
+	_check("layout_v043_off_is_v028", not old_rows.any(func(r): return str(r[0]).contains("\\lock[1]")) and int(old_rows[1][1]) == XHelpCard.DESC_SIZE, old_rows)
+	_check("layout_v043_on", str(new_rows[1][0]).begins_with("\\lock[1]品质：") and new_rows.any(func(r): return str(r[0]) == " " and int(r[1]) == 4), new_rows.map(func(r): return r[0]))
 	await get_tree().process_frame
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
