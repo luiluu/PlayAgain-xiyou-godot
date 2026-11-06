@@ -1825,9 +1825,14 @@ class Exporter:
                     continue
                 data = src.read_bytes()
                 out = as_png(src, data, f'{kind}/{rel}{ext}') if kind == 'img' and ext == '.png' else data
-                self.write_changed(f'{kind}/{rel}{ext}', out, source=src)
+                # 原版有 .ogg 其实是 MP3（ID3 头或 MPEG 帧同步）：浏览器按内容播，Godot 按扩展名导入会失败，按内容存成 .mp3
+                # （来源键仍记原名 .ogg；XDB.audio_path 先找 .ogg 再找 .mp3）
+                dst = ext
+                if kind == 'audio' and ext == '.ogg' and not data.startswith(b'OggS') and (data.startswith(b'ID3') or data[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2')):
+                    dst = '.mp3'
+                self.write_changed(f'{kind}/{rel}{dst}', out, source=src)
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
-                self.outputs[f'{kind}/{rel}{ext}'] = sha(out)
+                self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):
             self.export_movie(name, prev)
         # 界面字体（原版 fonts/gamefont.css 指向的 GameFont）连同授权文件原样复制
