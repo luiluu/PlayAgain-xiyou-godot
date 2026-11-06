@@ -39,7 +39,7 @@ static func patch_map(map_id: int, data) -> void:
 static func patch_common_events(t) -> void:
 	if not (t is Array):
 		return
-	if ICHIGO_BANKAI and t.size() > 2508 and t[2508] is Dictionary:
+	if ICHIGO_BANKAI and ichigo_old_source() and t.size() > 2508 and t[2508] is Dictionary:
 		var list: Array = t[2508].get("list", [])
 		var i := list.find_custom(func(c): return int(c.code) == 129 and int(c.parameters[0]) == ICHIGO)
 		if i >= 0:
@@ -48,6 +48,22 @@ static func patch_common_events(t) -> void:
 		for c in t[2478].get("list", []):
 			if int(c.code) == 313 and int(c.parameters[1]) == XNanoha.ACTOR and int(c.parameters[3]) == 1783:
 				c.parameters[1] = 0
+
+
+## 来源还是冻结 v0.28 那版死内容（Map213 EV2 第 1 页条件角色 109）才打 O-184 的补丁。新源（v0.6x，事件备注 <ClaudeShuangEvent:213:2>）
+## 已由原作把这条线做成活内容（43 层置 1570 → 45 层置 1575 → 116 层置 1576 → 这里打敌群 2026、给卍解-斩月-II 72），O-184 在新源上不动任何数据
+static var _ichigo_old = null
+
+
+static func ichigo_old_source() -> bool:
+	if _ichigo_old == null:
+		var raw = XDB.load_json("maps/Map213.json") if FileAccess.file_exists(XDB.BASE + "maps/Map213.json") else null
+		_ichigo_old = false
+		if raw is Dictionary:
+			for e in raw.get("events", []):
+				if e is Dictionary and int(e.get("id", 0)) == 2 and (e.pages as Array).size() >= 1:
+					_ichigo_old = int(e.pages[0].conditions.actorId) == 109
+	return bool(_ichigo_old)
 
 
 static func _set_var(id: int, indent: int) -> Dictionary:
