@@ -1,12 +1,73 @@
-# 交付：cc/wukong-newsrc10（EB 接续，没开工）
+# 交付：cc/wukong-newsrc10（EB 角色旧账二）
 
-- 车道／工作者：EB 角色旧账二（cc，悟空）
-- 状态：进行中
-- 交接原因：上一会话上下文过 40%，EB 没开工，新会话从 b3687538 接着做（同分支、同工作树 competent-ishizaka-ae6e7c）。
+- 车道／工作者：EB 角色旧账二（cc，悟空）；接 DW（`cc_wukong-newsrc10.md`），同分支。代码提交在工作树 competent-ishizaka-ae6e7c 做的，本交付单提交在另一会话工作树里接在 605d1a9c 上推的（那棵工作树要先 `git pull` 才跟得上）。
+- 状态：可合并（①②③ 都交了；交回换源集成分支，不合 main）
+- 基线：ce1fddf3。探针、量具、选测都显式设 `XIYOU_APP=…/冻结正式源/v0.62.12/app.nw`。
 
-## 接续要点
+## 变更记录草稿
 
-- 工作树已备好：`modes/xiyou/generated` 是从 relaxed-cori-c96dcd 克隆的（v0.62.12 重出）；`.godot` 也克隆了；`07_开发环境/当前Godot.app` 手动链好（gitignore）。jsdom 探针要 `NODE_PATH=/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/03_转换工具/mv_oracle/node_modules`，跑完脚本要 `process.exit`，不然 jsdom 不退。
-- ① 平滑（168、174、175、179）：原版 v0.62 `js/plugins/Codex_MiraRavenMultiFrame.js` 的 SV 归一（167 号以后），缩小时 bitmap.smooth＝true；还有 `<CodexSVNativeSize>`、「不再覆盖变大装备」两项，见冻结后改动盘点第 106 行。重制在 `battle/battler_sprite.gd`：`setup` 里 `texture_filter = NEAREST`，归一档在 `_show_frame` 的 `XAppearance.profile`（≥167）。开关照前例写成 static var，登记 O-待定（出处 v0.62 SV 归一）。量法：`real/actor_sv_real.cjs`（结果快照 `real/actor_sv.result.json`，字段 smooth）＋`tests/xiyou_actor_sv_compare.tscn`（设 XIYOU_SV_REAL／XIYOU_APP／XIYOU_SV_OUT）。逐像素的开、关断言写进新专项。
-- ② 没进出战栏的 141、146、152、161、166：量具做法是新局→开 2494→`$gameParty._actors=[id]`→initializeBattleMembers→进战斗，原版出战栏里没有它们（重制有）。要查新源里为什么（数据开关、解锁、事件加入，或 battleMembers 包装），出定性表；162 诛仙的重制外观是 scene 类，量具不认，要另写量法。
-- ③ 候选清单在 `cc_wukong-newsrc10.md` 末尾，都还没核是否已销账；先 rg 变更记录和核查报告，只留真缺的，先做前 5 条。
+## 2026-11-06 【cc·悟空·未经审查】角色旧账二：SV 归一平滑、停用／隐藏角色、162 诛仙战斗图、人物图鉴跟 v0.62（dev.待定）
+
+- **① SV 归一平滑**（`battle/battler_sprite.gd` `_apply_smooth`，O-待定·SV 归一平滑，`XBattlerSprite.SV_NORM_SMOOTH`）：照 v0.62 `Codex_MiraRavenMultiFrame` v1.06 applyVisual（`bitmap.smooth = !crispScaling || scale<1`，CrispScaling 默认开）：167 号以后有归一档的角色，归一缩放×SvPngFd 小于 1 时身体改 LINEAR，否则最近邻。量具 v0.62 实测正好 168、174、175、179 平滑（0.55～0.72 倍），其余（167、169～173、176～178 放大或原尺寸）不平滑。关掉开关回 v0.28（一律最近邻）。重跑逐张比 `xiyou_actor_sv_compare`：平滑四条差异清零。
+- **② 没进出战栏的 5 名定性**（见下表）：不是漏实现，出战栏两边一致。顺带跟进同一批新源插件里重制没做的两处（O-待定·V029 隐藏角色，`XImportedBalance.V029_HIDE_ACTORS`）：人物图鉴目录、角色仓库列表滤掉 V029 隐藏的 7 名（仓库只滤显示，编号留着不丢）；读档时照 `B.migrateParty` 把停用角色挪出队伍与出战栏（`XImportedBalance.migrate_party`，`XState.from_dict` 调）。图鉴目录改成按行取角色（`XActorBook.row_ids`／`cur_id`），仓库取出改按编号删（列表滤过后行号不等于仓库下标）。
+- **162 诛仙战斗图是空的（查出来的）**：原版 `guanxi7_1.png`、`小诛仙.png`、`characters/guanxi7_1 (1).png` 是扩展名 .png 的 JPEG，早年原样复制时导入失败留下 `valid=false` 的 `.import`；转换器后来转成真 PNG 了，但 Godot 认旧记录不重导，战斗里 162 没有身体贴图、脸图也空。`xiyou_export.py` 复制图时遇到 `valid=false` 的 `.import` 就删掉（记 issue `resetInvalidImport`），下次导入重做；专项查 generated/img 下没有坏导入。EB 工作树已删掉重导：162 逐张比几何与逐像素都对上（比对场景按内容读原版伪 PNG）。主工作区、集成树那 3 个 .import 由总装处理。
+- **③ 零星清单**：DW 交付单末尾的候选（审查 40 P3-11、41 P3-4、42 P3-1～3、45 raven.gd 头注释）**全部已销账**（变更记录 4517、4562、dev.334、dev.336，审查 48 第 36 行）。另找真缺的，做了前 5 条：
+  1. 人物图鉴状态页「光环独立栏」（v0.29，Star_ActorsBook drawAllContents）：有 `<CodexAura>` 技能的角色四栏「主动／被动／光环／其他」、栏宽 floor(932/4)、22 号行高 30、超出写「确认查看全部」，武器掌握接在最长一栏下（`status_ops`）。
+  2. 技能详情类型「【光环】」（`skillTypeName`，`XActorBook.is_aura`）。
+  3. 流萤 179 详情专属段（10622～10632＋全库 `<CodexLiuyingPassive:>`）与「未解锁」灰字（PREVIEW_ACTORS 加 179）。
+  4. 流萤图鉴立绘：179 归一档登记 `[128,128,19,12,111,128]`（与战斗 inferProfile 量出的一致）＋图鉴 bookScale 0.8（v1.07，`XAppearance.BOOK_SCALE`，只作用于图鉴）；actor_book 立绘名改按参照记的战斗图名比（参照 `review_actor_book.js` 记的是 `battlerName()`，168、173～177 图鉴画逐帧图）。
+  5. `xiyou_actor_p0`：参照 slice_d2 没有 179 时第②段 `d.actors[str(id)]` 脚本出错、测试停住不出结果（基线就这样）；改成跳过，oracle_row_179 两条照记挂，等整份同步。
+  - actor_book 从 17/22（CV 重取参照后挂的 5 项：光环标签、主动列宽、新角色立绘、179 技能表、目录名单）到 26/26。
+
+## ② 定性表
+
+| 角色 | 原版为什么不在出战栏 | 重制 | 结论 |
+| --- | --- | --- | --- |
+| 141 女儿国王、146 苍龙破晓、152 徐凤年、161 胡桃、166 利姆露 | **数据开关（停用名单）**，不是解锁条件或事件：v0.62 `installImportedBalanceRuntime` `disabledActorIds`（10 人：141、143～146、152、157、160、161、166）；量具设 `_actors=[id]` 后调 `initializeBattleMembers`，包装先跑 `B.migrateParty`，停用的挪进仓库、出战栏清 0。另 `installIntegratedV029Runtime`（v0.30）`hiddenActors` 7 名（141、146、152、157、160、161、166）新局／读档从队伍和仓库移走，图鉴目录、仓库列表滤掉 | `XImportedBalance.DISABLED_ACTORS` 同 10 人，`add_actor` 拦（rules-newsrc1 已跟）；逐张比里重制也没让它们出战 | 出战栏一致，不是漏实现。缺的图鉴目录、仓库列表隐藏与读档迁移本单补上 |
+| 143～145、157、160 | 同上停用（157、160 还隐藏） | 不在切片里（没导出），逐张比不量 | — |
+| 162 诛仙 | 正常进栏（guanxi7_1，9×6 64px，×0.75，不平滑） | 外观本来就是普通侧视图；量不到是因为图导入坏了，身体没贴图 | 已修（见上），逐张比对上 |
+
+## 优化登记
+
+已直接写进 `03_再刷重制_Godot/00_设计/优化登记.md` 末尾两行（总装通知要求），编号待总装分配：
+- O-待定·SV 归一平滑：`XBattlerSprite.SV_NORM_SMOOTH = false` 回 v0.28。
+- O-待定·V029 隐藏角色：`XImportedBalance.V029_HIDE_ACTORS = false` 回 v0.28（图鉴、仓库列全部）。读档迁移没挂开关（照新源；停用角色本来就进不了队）。
+`回退开关覆盖.py`：两条都认到、有回退支测试。
+
+## 交接板
+
+- 下一步：③ 剩下的真缺（下面「剩余清单」）；整份同步给 slice_d2 加 179 后 actor_p0 两条自然过。
+- 用户试玩说明：米拉、云裳、谷雨、流萤的战斗图边缘变柔（跟 v0.62）；人物图鉴里女儿国王等 7 名停用角色不再出现，角色仓库也不列；有光环技能的角色图鉴状态页多一栏「光环」；流萤图鉴立绘小一些（×0.8）；诛仙战斗图能看到了（之前是空的）。
+- 需要用户决定：无（两条 O-待定照「冻结后改动逐项跟进」默认开）。
+
+## 剩余清单（③ 没做的真缺）
+
+- v0.62 v1.08 进阶窗口：格子大于 64px 的 9×6 图（流萤）在进阶界面按图鉴同尺寸、平滑、脚底中线对齐 64px 格（`Window_ActorAdvancedStatus.update` 包装）；重制 actor_advanced 没跟（没逐行核，先列）。
+- v1.06 `<CodexSVNativeSize>`：v0.62.12 数据里没有角色带这个标签，暂不用做。
+- V029 读档把隐藏角色挪进 `_codexHiddenActors29`（记原位置）：重制只滤显示、编号留在仓库；以后要「恢复隐藏角色」再补。
+
+## 验证
+
+- 专项：xiyou_sv_smooth 144/144（开、关各一组：采样方式；画的那帧与源 PNG 逐像素比（alpha 全比、alpha≥20 比 RGB，fix_alpha_border 改过 alpha<20 的 RGB）；变大装备推到 ≥1 回最近邻；无坏 .import，守卫先挂后过已验）；xiyou_hidden_actors 24/24；xiyou_actor_book 26/26（改前 17/22）。
+- 邻近（本机）：actor_book_review 6、actor_warehouse 26、appearance 34、autosave 10、imported_balance 233、pets 29、raven_visual 55、save_events 31、save_page 42、svpngfd 33、sve_visual 31、sequence_visual 70、actor_advanced 33、advance_reads 8、liuying 144、liuying2 188、liuying3 50，全过。actor_p0 改前基线就脚本出错停住（参照缺 179）。
+- 逐张比工具场景重跑：平滑差异清零；162 几何与像素对上。
+- 云端选测（15 个场景，--scenes 带 .tscn）：[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42295374006)，结果在回报里。
+- `事件空绿扫描.py --check`：挂 5 条 m234 状态没量，同 newsrc9（克隆产物没有新地图 234 的状态探针，不是本单）。语法检查通过。没跑全量。
+
+## 可回退
+
+- 两个开关见上；162 的转换器守卫要撤就撤 cfa4db94 里 xiyou_export.py 那段（只删坏 .import，不改产物）。
+
+## 可优化（流程／工具／效率）
+
+- 已做：`xiyou_export.py` 遇到 valid=false 的 .import 自动删掉重导；`xiyou_sv_smooth` 里加了全 generated/img 坏导入扫描。
+- 建议：`新建工作树.sh --补齐` 克隆 generated 时也扫一遍 `valid=false` 的 .import（这次三棵树都带着坏导入），归工具车道。
+
+## 本分支提交（EB）
+
+- 73dfc8ca v0.62 SV 归一平滑＋专项 xiyou_sv_smooth
+- cfa4db94 162 诛仙坏导入：转换器守卫、专项扫描、逐张比按内容读图
+- 8cba908b V029 隐藏角色、读档停用角色迁移、专项 xiyou_hidden_actors、优化登记两条
+- 72955961 人物图鉴光环栏／光环标签／179 详情；actor_p0 不再停住
+- 605d1a9c 流萤图鉴立绘档与 bookScale；actor_book 26/26
+- （本提交）交付单
