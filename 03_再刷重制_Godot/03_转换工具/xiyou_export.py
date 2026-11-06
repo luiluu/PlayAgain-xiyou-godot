@@ -32,7 +32,8 @@ from pathlib import Path
 TOOL_VERSION = 20
 HERE = Path(__file__).resolve().parent
 # 用户 2026-10-15：重制期间冻结在 v0.28 的只读副本（不入 Git，见 02_内容与素材/冻结正式源/README.md），重制完成后再统一同步正式版
-DEFAULT_APP = Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw')
+# 默认来源（tools80）：先认 XIYOU_APP（换源车道指向新源），没设就用本树的冻结正式源（车道工作树里是 --补齐 建的链接）；原来写死主工作区那份。
+DEFAULT_APP = Path(os.environ['XIYOU_APP']) if os.environ.get('XIYOU_APP') else HERE.parent / '02_内容与素材/冻结正式源/app.nw'
 DEFAULT_OUT = HERE.parent / '01_Godot工程/modes/xiyou/generated'
 ## 状态备注脚本里写死的战斗图名（XCostumes 认 var battlerName，XStateEffects costume_image 认 setBattlerImage）
 STATE_BATTLER_IMAGE = re.compile(r"""(?:setBattlerImage\(\s*|battlerName\s*=\s*)['"]([^'"]+)['"]""")
