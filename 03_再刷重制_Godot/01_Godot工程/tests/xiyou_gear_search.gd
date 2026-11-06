@@ -195,6 +195,22 @@ func _run() -> void:
 	check("equip_filtered", cands.size() >= 1 and cands.slice(0, -1).all(func(e): return XQuality.grade(e.rec) == 6) and (cands.back().rec as Dictionary).is_empty(), cands.map(func(e): return e.rec.get("name", "卸载")))
 	eq.queue_free()
 
+	# 词条来源：原版 getBaseItem 对 DreamX 装备返回生成时的模板（底装备＋词缀；v0.62.12 布腰带实测 baseItemId 指向模板、
+	# 备注带词缀），所以词缀那几行算「固定」，模板之后加的才算「随机 / 附加」
+	var s2 := XState.new_game(3, 1, [8, 9, 10])
+	s2.gear.clear()
+	XGear.force_roll = 0.0
+	s2.gain_gear("armor", 12, 1)
+	var aff: Dictionary = s2.gear.back()
+	var plain := XGearQuery.raw_lines(str(XGear.template("armor", 12).get("note", "")))
+	var affix_lines := XGearQuery.raw_lines(str(aff.note)).filter(func(l): return not plain.has(l))
+	aff.note = str(aff.note) + "\n<pos=APs text=附加测试行 size=18>"
+	var rr := XGearQuery.record(aff)
+	var src_of := func(t): return rr.rows.filter(func(r): return r.text == t).map(func(r): return r.source)
+	check("affix_lines_fixed", not (aff.get("affixIds", []) as Array).is_empty() and not affix_lines.is_empty()
+		and affix_lines.all(func(l): return src_of.call(l) == ["固定"]), [aff.get("affixIds"), affix_lines, rr.rows])
+	check("added_line_random", rr.rows.any(func(r): return r.source == "随机 / 附加"), rr.rows)
+
 	XConfig.path_override = ""
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	XGear.force_roll = -1

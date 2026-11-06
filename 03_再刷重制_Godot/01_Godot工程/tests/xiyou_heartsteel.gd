@@ -3,7 +3,11 @@ extends Node
 ## 新装备实例的随机词条照参照记下的实例属性与特性设（重制自己的词条掷法另有专项）。
 ## 战斗例：新局队伍 [1, 8, 9, 10]，角色 1 穿上；打 3 号敌群（敌人生命加 1e9），规则流全取 0.5，推进到第一回合，照参照的步骤逐步比。
 ## hubris.battle.* 是原版口径（KILL_FIX 关：击杀记不上），hubris.fix.* 是修复口径（O-150，默认开）。
+## heartsteel_oracle.json 量的是正式源（v0.62.12，心钢 v0.35 起按回合冷却）；heartsteel_oracle_v028.json 是 v0.28 那份，
+## 关掉 XHeartsteel.TURN_CD_V035 后只比心钢几例（heart.*、suppress.*），标签前加 v028.
 const FIXTURE := "res://tests/fixtures/heartsteel_oracle.json"
+const FIXTURE_V028 := "res://tests/fixtures/heartsteel_oracle_v028.json"
+var tag_prefix := ""
 const PARTY := [1, 8, 9, 10]
 ## 参照里量了、不在这里比的（draws 由各掉落例自己比）。recipes／unlocked 期二锻造解锁已做，掉落例里比；desc 胜利后的说明（describe）在胜利行比
 const PENDING_FIELDS := ["draws"]
@@ -14,6 +18,7 @@ var logic: XBattleLogic
 
 func check(tag: String, ok: bool, detail = null) -> void:
 	checks += 1
+	tag = tag_prefix + tag
 	if not ok:
 		failures.append(tag)
 		if failures.size() <= 30:
@@ -102,9 +107,10 @@ func _case_heart_param(c: Dictionary) -> void:
 	check(c.id + ".meetsOut", _meets(a) == o.meetsOut, [_meets(a), o.meetsOut])
 	XHeartsteel.in_battle = true
 	for w in [2, 1, 0]:
-		XHeartsteel._wait[1] = w
+		_set_wait(w)
 		check(c.id + ".meets%d" % w, _meets(a) == o["meets%d" % w], [_meets(a), o["meets%d" % w]])
 	XHeartsteel._wait.erase(1)
+	XHeartsteel._ready_turn.erase(1)
 	check(c.id + ".meetsUnset", _meets(a) == o.meetsUnset)
 	XHeartsteel.in_battle = false
 
@@ -340,7 +346,7 @@ func _case_suppress_cast(c: Dictionary) -> void:
 	var rows: Array = c.observed.rows
 	var ctx := _battle(int(c.setup.base), rows[0][2].inst, {XHeartsteel.STACKS: 0})
 	var a: XActor = ctx.a
-	XHeartsteel._wait[1] = 0
+	_set_wait(0)
 	a.add_state(XToji.SEAL)
 	XToji.seal_charges[a] = 1
 	_cmp(c.id + ".start", _heart_snap(ctx), rows[0][1])
@@ -587,11 +593,35 @@ func _case_save(inst: Dictionary) -> void:
 		and XHubris.growth(old.gear.filter(func(e): return XHubris.is_gear(e))[0]) == 0)
 
 
+## 探针 setWait：按回合时就绪回合＝当前回合＋w，按行动时剩余行动数＝w
+func _set_wait(w: int) -> void:
+	if XHeartsteel.TURN_CD_V035:
+		XHeartsteel._ready_turn[1] = XHeartsteel.round_now() + w
+	else:
+		XHeartsteel._wait[1] = w
+
+
 func _ready() -> void:
 	await get_tree().process_frame  # 得到装备会弹提示（XToast 挂在根节点上），_ready 里根节点还在忙
-	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
+	XHeartsteel.TURN_CD_V035 = true
+	var heart_inst := _run_fixture(FIXTURE, false)
+	_case_save(heart_inst)
+	XHeartsteel.TURN_CD_V035 = false
+	tag_prefix = "v028."
+	_run_fixture(FIXTURE_V028, true)
+	tag_prefix = ""
+	XHeartsteel.TURN_CD_V035 = true
+	XHeartsteel.in_battle = false
+	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_heartsteel", "passed": checks - failures.size(), "total": checks, "failures": failures}))
+	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+func _run_fixture(path: String, heart_only: bool) -> Dictionary:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	var heart_inst := {}
 	for c in data.cases:
+		if heart_only and not (str(c.id).begins_with("heart.") or str(c.id).begins_with("suppress.")):
+			continue
 		check(c.id + ".oracle", (c.errors as Array).is_empty(), c.errors)
 		var id := str(c.id)
 		if id == "math":
@@ -634,7 +664,4 @@ func _ready() -> void:
 			_case_order_guyu(c)
 		else:
 			check(id + ".unhandled", false)
-	_case_save(heart_inst)
-	XHeartsteel.in_battle = false
-	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_heartsteel", "passed": checks - failures.size(), "total": checks, "failures": failures}))
-	get_tree().quit(0 if failures.is_empty() else 1)
+	return heart_inst

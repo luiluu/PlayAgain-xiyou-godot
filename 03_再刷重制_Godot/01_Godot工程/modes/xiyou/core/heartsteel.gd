@@ -6,6 +6,8 @@ extends RefCounted
 ## - 阶数 n＝⌊(√(1+8k/100)−1)/2⌋，第 n 阶要 50n(n+1) 层；最大生命 ×(利维坦 1.1、心钢 1)＋0.1n（param 包装：取整、夹上限）。
 ## - 技能：穿着时技能表里的巨人吞噬换成对应的一招（心钢 10227、利维坦 10228）；战斗外、蓄力没满（开战行动 2 次、施放后 3 次）、错配都不能用。
 ##   蓄力按行动计：带着它的人每次行动结束（不是巨人吞噬、活着、不是强制行动）减 1。
+##   v0.35 起改按回合（跟到 v0.62.12，O-待定·心钢按回合冷却，开关 TURN_CD_V035）：第 2 回合可用，施放后冷却 2 回合
+##   （_codexHeartsteelReadyTurn＝施放回合＋2，剩余＝就绪回合−max(1, 回合数)，开战就绪回合 2）；行动结束不再减。false＝回到上面 v0.28 按行动。
 ## - 巨人吞噬：施放时按常态最大生命定基础 ⌊(700／1000＋常态最大生命×6%／8%)×(1＋0.1n)⌋，公式值＝基础−min(max(0, 物防), 基础一半)；
 ##   一次行动只结算一次；命中且打前活着，按敌人权重（未知存在 10、首领／被封印者 5、其余 1；分身、召唤物、木桩等 0，1 号敌群 0）记本场待结算，胜利才加进层数。
 ## - 回合末（每个全局回合一次）出战且活着的回复最大生命 3%／5%。
@@ -26,7 +28,11 @@ const REWARD_RATE := 0.10
 ## 战斗中的数据（原版存在角色、行动与 BattleManager 上，不随存档）
 static var in_battle := false
 static var _ledger: Array = []  # [{item, gain}] 本场待结算
-static var _wait := {}  # 角色号 → 蓄力剩余行动数（没有＝2）
+static var _wait := {}  # 角色号 → 蓄力剩余行动数（没有＝2；v0.28 按行动）
+static var _ready_turn := {}  # 角色号 → 巨人吞噬就绪的回合（没有＝2；v0.35 按回合）
+static var _logic_ref: WeakRef = null  # 本场战斗（取回合数；弱引用，不让静态变量留住战斗对象）
+## O-待定·心钢按回合冷却：true＝v0.35 起按回合，false＝v0.28 按行动
+static var TURN_CD_V035 := true
 static var _casted := {}  # 角色号 → 施放过
 static var _started := {}  # 角色号 → 本次行动开始时带着它（_codexHeartsteelStarted）
 static var _cast := {}  # 角色号 → 本次巨人吞噬 {gear, valid, base, grown, applied}
@@ -87,7 +93,14 @@ static func cast_scale(a) -> float:
 	return 1.0 + 0.1 * stage(g) if not g.is_empty() else 1.0
 
 static func remaining(a) -> int:
+	if TURN_CD_V035:
+		return maxi(0, int(_ready_turn.get(a.actor_id, 2)) - round_now())
 	return maxi(0, int(_wait.get(a.actor_id, 2)))
+
+## H.round：max(1, $gameTroop.turnCount())
+static func round_now() -> int:
+	var l = _logic_ref.get_ref() if _logic_ref != null else null
+	return maxi(1, int(l.turn) if l != null else 0)
 
 static func pending(item) -> int:
 	for r in _ledger:
@@ -176,8 +189,10 @@ static func start_battle(logic) -> void:
 	_started.clear()
 	_healed_turn = null
 	_reward_rolled = false
+	_logic_ref = weakref(logic)
 	for a in logic.state.members():
 		_wait[a.actor_id] = 2
+		_ready_turn[a.actor_id] = 2
 		_casted[a.actor_id] = false
 
 ## BattleManager.startAction 包装：带着它的人开始行动；巨人吞噬记下这一次的施放（基础伤害按此刻常态最大生命），放得出就进冷却 3
@@ -193,7 +208,10 @@ static func start_action(u, skill: Dictionary) -> void:
 	var base := floorf(((1000.0 if lev else 700.0) + effective_hp(u) * (0.08 if lev else 0.06)) * cast_scale(u))
 	_cast[u.actor_id] = {"gear": g, "valid": valid, "base": base, "grown": false, "applied": false}
 	if valid:
-		_wait[u.actor_id] = 3
+		if TURN_CD_V035:
+			_ready_turn[u.actor_id] = round_now() + 2
+		else:
+			_wait[u.actor_id] = 3
 		_casted[u.actor_id] = true
 
 ## 甚尔封印让这次行动失效（_tojiSuppressed）：endAction 不减蓄力；失效的巨人吞噬已在 start_action 进了冷却，不退
@@ -245,7 +263,7 @@ static func end_action(u, forcing: bool) -> void:
 	_started.erase(u.actor_id)
 	var cast = _cast.get(u.actor_id)
 	_cast.erase(u.actor_id)
-	if cast == null and not gear(u).is_empty() and not u.is_dead() and not forcing:
+	if not TURN_CD_V035 and cast == null and not gear(u).is_empty() and not u.is_dead() and not forcing:
 		_wait[u.actor_id] = maxi(0, remaining(u) - 1)
 
 ## BattleManager.endTurn 包装（原 endTurn 之后）：每个全局回合一次，出战且活着的回复最大生命 3%／5%

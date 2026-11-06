@@ -64,6 +64,31 @@ for(const ids of [[235],[235,236],[240],[336,337],[637]]){
  a.refreshEquipSuit();a.initPassiveCache();a.refreshPassiveCache();a.refresh();
  out.sets.push({armorIds:ids,before,activeStates:Array.from(a._equipSuitsStateIDs||[]),equips:Array.from(a.equips(),e=>e&&{id:e.id,base:e.originalBaseItemId||e.baseItemId,params:Array.from(e.params)}),params:Array.from({length:8},(_,i)=>a.param(i)),xparams:Array.from({length:10},(_,i)=>a.xparam(i)),sparams:Array.from({length:10},(_,i)=>a.sparam(i)),states:Array.from(a.states(),s=>s.id),skills:Array.from(a.skills(),s=>s.id),bResult:Array.from({length:3},(_,i)=>[a.equipSuitBonusParamEdit('bResult',i,0),a.equipSuitBonusParamEdit('bResult',i,1)])});
 }
+// v0.57 读档还原专武前缀（CodexV029.revertExclusiveAffixes）：临时放开 isValidItem 造出旧装备（v0.37 前能抽到专武词缀），
+// 有的再加一次强化（模板之后追加的属性／特效），然后照读档调用还原，记还原前后。
+// 原版掉落是 makeItem 先给模板掷一次浮动、gainItem 登记实例再掷一次；重制只掷一次。为了两边可比，roll<0 时前两个随机数取 0
+// （抽中第一个专武词缀）、其余取 0.5（浮动为 0），gainItem 也取 0.5，模板与实例属性相同。
+if(w.CodexV029&&w.CodexV029.revertExclusiveAffixes){
+ const PS=w.DreamX.RandomPrefixSuffix,valid=PS.isValidItem;
+ const W56=w.$dataWeapons[56];
+ const mat=w.$dataItems.find(it=>it&&it.upgradeWeaponEffect&&it.upgradeWeaponEffect.some(l=>l.trim())&&!it.upgradeWeaponEffect.some(l=>/random /i.test(l))&&(it.upgradeWeaponType.includes(0)||it.upgradeWeaponType.includes(W56.wtypeId)));
+ out.affixRevert=[];
+ for(const [id,roll,upgrade] of [[56,-1,false],[56,-1,true],[56,0.5,false]]){
+  PS.isValidItem=function(i){return !!i;};
+  let n=0;const made=make('weapon',id,roll<0?()=>(n++<2?0:0.5):roll);w.Math.random=()=>0.5;
+  PS.isValidItem=valid;
+  // makeItem 返回的是模板的拷贝；照掉落 gainItem 进背包，取真正登记的实例
+  w.$gameParty.gainItem(made,1);
+  const list=w.DataManager._independentWeapons,e=list[list.length-1];
+  if(!w.$gameParty.weapons().includes(e))throw new Error('没找到背包里的实例');
+  if(upgrade&&mat){w.Math.random=()=>0.5;w.$gameParty._items[mat.id]=1;w.ItemManager.applyIUSEffects(e,mat);}
+  const before=brief(e);
+  const stat=w.CodexV029.revertExclusiveAffixes();
+  out.affixRevert.push({id,roll,upgradeItem:upgrade&&mat?mat.id:0,before,reverted:stat.items.includes(e.id),skipped:stat.skipped.includes(e.id),after:{...brief(e),description:e.description,meta:w.JSON.parse(w.JSON.stringify(e.meta))}});
+  const again=JSON.stringify(brief(e));w.CodexV029.revertExclusiveAffixes();
+  if(again!==JSON.stringify(brief(e)))throw new Error('revertExclusiveAffixes 重复执行结果变了');
+ }
+}
 if(JSON.stringify(out.sourceIdentity)!==JSON.stringify(sourceIdentity(APP)))throw new Error('测量期间来源改变');
 fs.writeFileSync(path.join(__dirname,'.sandbox/equipment.json'),JSON.stringify(out,null,2));
 console.log(JSON.stringify({gear:out.gear.length,upgrades:out.upgrades.length,materials:new Set(out.upgrades.map(r=>r.itemId)).size,sets:out.sets.length}));process.exit(0);
