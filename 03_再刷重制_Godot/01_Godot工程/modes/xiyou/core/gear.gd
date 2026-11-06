@@ -19,8 +19,13 @@ static var roll_count := 0
 static var _fallback := {}
 static var _fallback_random := XRandomStream.create("68fcb84301a4a9e1", "equipment")
 
+## 临时换掉 Math.random（深渊商人抽取 M.generate 把 Math.random 换成本轮种子的随机数；见 XAbyssMerchant.generate）
+static var roll_fn := Callable()
+
 ## 相当于 Math.random
 static func roll(owner: XState = null) -> float:
+	if roll_fn.is_valid():
+		return float(roll_fn.call())
 	if not roll_seq.is_empty():
 		roll_count += 1
 		if roll_count > roll_seq.size():
