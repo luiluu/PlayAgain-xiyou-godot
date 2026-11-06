@@ -29,7 +29,7 @@ const BUTTONS := {
 static var SAVE_BUTTON := true
 ## 存档键照原版只在地图与主菜单显示、才吃触摸（Mehmet_GhostButtons 第 672 行 [Scene_Map, Scene_Menu]；标题页整套虚拟键都不建，
 ## 战斗、菜单的子页面也没有）。当前场景有 touch_save_visible() 且返回 true 才算（XMapScene：不在战斗、菜单没开或停在主菜单）。
-## 审查 50 P2-1：keys3 原先所有页面都显示，标题页「导出存档」被它盖住。回退开关 = false：回到所有页面都显示（cc CJ 2026-11-06，O-211 待总装确认）。
+## 审查 50 P2-1：keys3 原先所有页面都显示，标题页「导出存档」被它盖住。回退开关 = false：回到所有页面都显示（cc CJ 2026-11-06，O-211）。
 static var SAVE_MAP_MENU_ONLY := true
 ## 测试用：当成当前场景。
 static var scene_override: Node = null
