@@ -427,7 +427,7 @@ func _reffloor(c: Dictionary) -> void:
 		a.add_state_floor(2521)
 		check(c.id + ".stale_layer_hidden", absf(a.xparam(2) - float(want.rates.afterN)) <= 1e-6, [a.xparam(2), want.rates.afterN])
 	logic.act(logic.enemies[1], _state_skill({}), a)
-	var expect := float(want.rates.after) + (0.002 if stacked else 0.0)
+	var expect := float(want.rates.after) + (float(XDB.rec("States", 2521).traits[0].value) if stacked else 0.0)  # 每层按数据库值（旧源 0.2%，新源 v0.62.12 2%）
 	check(c.id + ".after", absf(a.xparam(2) - expect) <= 1e-6, [a.xparam(2), expect, want.rates.after])
 	XBattler.FIX_YINYUE_2521 = fix
 

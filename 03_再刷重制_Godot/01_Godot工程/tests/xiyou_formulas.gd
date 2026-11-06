@@ -36,7 +36,7 @@ func _ready() -> void:
 	var value = e.execute([Stub.new(), Stub.new(), []], null, false) if ok else null
 	check("skill_1065_unary_plus", ok and is_equal_approx(float(value), 750.0 + 100.0 * 38.5), [sk.damage.get("formulaGd"), value])
 	# 三元式 c ? x : y 译成 [y, x][int(bool(c))]（进度审查 25%）：按条件取一支，未取的一支不参与运算
-	for row in [[75, 100.0, 1800.0 + 100.0 * 14], [75, 900.0, 900.0 + 100.0 * 7], [10020, 100.0, 1000.0 * 1000000], [10020, 900.0, 100.0 * 0.2]]:
+	for row in [[75, 100.0, 1800.0 + 100.0 * 14], [75, 900.0, 900.0 + 100.0 * 7], [3512, 100.0, (10000.0 + 0.0 * 50) * 10], [3512, 900.0, 5000.0 + 0.0 * 25]]:  # 新源 10020 改写成非 hp 三元（带熟练度，走 formulaProgram），换 3512
 		var tb := Stub.new()
 		tb.hp = row[1]
 		var tsk: Dictionary = XDB.rec("Skills", row[0])

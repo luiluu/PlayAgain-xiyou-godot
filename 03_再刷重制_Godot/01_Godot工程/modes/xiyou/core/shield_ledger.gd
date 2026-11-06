@@ -166,6 +166,29 @@ static func _on_absorb(b, _got: float, list: Array) -> void:
 static var o_skip_unshielded := true
 
 
+## O-212：角色的 gainHp／setHp 掉血也经账本。新源 v0.62.03 起流萤运行时（installLiuyingRuntime，模块序 33）在 Game_Actor.prototype 上
+## 自定义 setHp，捕获的是账本（序 41）包装之前的 Game_BattlerBase.setHp；krz_state_re 的 Game_Actor.gainHp 又捕获的是插件期的
+## Game_Battler.gainHp。结果角色的 gainHp／setHp 两条都绕过账本：行动序列 HP -x%、持续伤害、直接设生命不再被璃壁等期限护盾挡
+## （executeHpDamage 照常吸收；敌人不受影响）。流萤只想记掉血，绕过账本是装载次序的副作用，按原意保留吸收。false 照原版：
+## 账本不扣，但原生 ShieldSystem 读到的 shield 是子类 getter 的合计，按合计「吸收」、只扣原生那份，剩下的再按 damageReduction 减
+## （参照 xuan_auto dinggui_seq／mist／binggui2：璃壁量不动，掉血照合计挡；同 O-144 回退支的白挡）。
+static var ACTOR_HP_LEDGER := true
+
+
+## gainHp／setHp 包装（resource_context、行动序列 HP、regenerateHp）：O-212 回退支下角色不经账本
+static func hp_gain(b, damage: float) -> float:
+	if ACTOR_HP_LEDGER or not b is XActor:
+		return hp(b, damage)
+	var phantom := amount(b)
+	if damage <= 0.0 or phantom <= 0.0:
+		return damage
+	var native := maxf(0.0, float(b.shield))
+	var take := minf(native + phantom, damage)
+	b.shield = maxf(0.0, native - take)
+	var remaining := damage - take
+	return floorf(remaining * (1.0 - reduction())) if remaining > 0.0 else 0.0
+
+
 ## executeHpDamage／gainHp／setHp 的最外层：返回剩下的伤害（afterLedger：需要时减半一次）
 static func hp(b, damage: float) -> float:
 	if damage <= 0.0 or _list(b).is_empty():

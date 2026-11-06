@@ -21,6 +21,11 @@ func _ready() -> void:
 	var d = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/element_ternary_oracle.json"))
 	check("frozen_reference", d is Dictionary and d.get("releaseVersion") == "v0.28" and d.ternary.size() == 10 and d.element.size() == 6 and d.get("hit", []).size() == 16)
 	for row in d.ternary:
+		if int(row.skill) == 10020:
+			# 新源 v0.62.12 把 10020 爱之惩罚改写成 (atk+luk)×588000×(hpRate<.25?3:1)×熟练度，没有 formulaGd（走 formulaProgram），
+			# v0.28 的量值不再适用；夹具是旧源实测，不改，这两例跳过，三元覆盖由其余 8 例
+			check("ternary_10020_new_formula", str(XDB.rec("Skills", 10020).damage.formula).begins_with("(a.atk*588000"), XDB.rec("Skills", 10020).damage.formula)
+			continue
 		var sk := XDB.rec("Skills", int(row.skill))
 		var a := Stub.new()
 		a.atk = float(row.atk)
