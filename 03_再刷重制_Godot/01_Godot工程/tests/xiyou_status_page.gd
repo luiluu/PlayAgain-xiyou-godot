@@ -140,6 +140,9 @@ func _scene(o: Dictionary, s: XState) -> void:
 	var want_texts: Array = o.select.texts.duplicate(true)
 	compare("select_items", texts, want_texts)
 	check("select_item_rects", o.select.items.size() == 4 and range(4).all(func(i): return Rect2(o.select.items[i][0], 0, o.select.items[i][2], 36) == Rect2(i * XStatusPage.ITEM_STEP, 0, XStatusPage.ITEM_W, 36)))
+	# 夹具是 v0.28 的 4 页；v0.62 起 5 页（O-待定·修行两页），项宽照 Window_HorzCommand 公式由 4 页的 304／316 推到 5 页的 240／252
+	check("select_v062_five", XStatusPage.page_names().size() == (5 if XGuide.PANEL_V062 else 4) and XStatusPage.item_w() == floorf((1280.0 - 28 + 12) / XStatusPage.page_names().size() - 12)
+		and floorf((1280.0 - 28 + 12) / 4 - 12) == XStatusPage.ITEM_W, XStatusPage.page_names())
 	await shot("status_1_p0")
 	# 滚动到底：最大滚动行与滚动后的调用（整体上移 top×36）
 	var a := s.actor(1)
@@ -153,7 +156,7 @@ func _scene(o: Dictionary, s: XState) -> void:
 	check("scroll_up", page.tops[0] == int(o.scrolled.topRow) - 1)
 	# 左右换页（按下循环）
 	_key(page, "ui_left")
-	check("page_wrap_left", page.page == 3)
+	check("page_wrap_left", page.page == XStatusPage.page_names().size() - 1)
 	_key(page, "ui_right")
 	check("page_wrap_right", page.page == 0 and page.tops[0] == int(o.scrolled.topRow) - 1)
 	_key(page, "ui_right")
@@ -165,11 +168,16 @@ func _scene(o: Dictionary, s: XState) -> void:
 	_key(page, "ui_right")
 	await frames()
 	await shot("status_1_p3")
+	if XGuide.PANEL_V062:
+		_key(page, "ui_right")
+		await frames()
+		check("detail_page", page.page == 4 and page.all_text().contains("【难度对照") and page.all_text().contains("结算伤害·合计"), page.page)
+		await shot("status_1_p4")
 	# 换角色：滚动复位，战力条与按钮跟着换
 	page.page = 0
 	page.switch_actor(2)
 	await frames()
-	check("switch_actor_resets_scroll", page.actor().actor_id == 23 and page.tops == [0, 0, 0, 0] and page.power_strip.actor == page.actor())
+	check("switch_actor_resets_scroll", page.actor().actor_id == 23 and page.tops == [0, 0, 0, 0, 0] and page.power_strip.actor == page.actor())
 	await shot("status_23_p0")
 	page.page = 1
 	page._scroll(0)

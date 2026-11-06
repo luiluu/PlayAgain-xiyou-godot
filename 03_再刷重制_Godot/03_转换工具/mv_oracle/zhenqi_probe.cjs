@@ -99,12 +99,16 @@ cases.push(makeCase('boss.enemies', {}, () => { fresh(); const out = []; for (co
 
 // 状态页「修行」页（JAH_Window_Status_Zhenqi.buildRows）与战力条旁的真气文字
 function pageRows(a) { const W = w.JAH_Window_Status_Zhenqi; return W.prototype.buildRows.call({_actor: a, _rows: []}); }
+// v0.62 起「修行」拆两页：第二页「修行·详细」（JAH_Window_Status_ZhenqiDetail，G.detailRows）；旧源没有这一页时不记
+function detailRows(a) { const W = w.JAH_Window_Status_ZhenqiDetail; return W ? W.prototype.buildRows.call({_actor: a, _rows: []}) : null; }
+const colsOf = r => r.type === 'cols' ? {type: 'cols', cells: r.cells, system: !!r.system, warn: !!r.warn} : r;
 for (const [id, opts] of [['default', {}], ['qi2000', {data: {1: {qi: 2000}}}], ['capped', {data: {1: {qi: 700}}, progress: 3}], ['canBreak', {data: {1: {qi: 700}}, progress: 6}],
   ['hard.f20', {data: {1: {qi: 26000, realm: 4}}, progress: 20, route: 2500}], ['daozu', {data: {1: {qi: 777777, realm: 13, daofa: {lianji: 1, hufa: 1}, pending: [13]}}, progress: 33}]])
   cases.push(makeCase('page.' + id, opts, () => { fresh(); if (opts.route) w.$gameSwitches.setValue(opts.route, true); if (opts.progress !== undefined) w.$gameVariables.setValue(20, opts.progress + 1);
     for (const [aid, d] of Object.entries(opts.data || {})) setData(actor(+aid), d);
     const a = actor(1), s = Z.state(a);
-    return {rows: pageRows(a).map(r => r.type === 'cols' ? {type: 'cols', cells: r.cells, system: !!r.system, warn: !!r.warn} : r),
+    const det = detailRows(a);
+    return {rows: pageRows(a).map(colsOf), ...(det ? {detail: det.map(colsOf)} : {}),
       strip: '真气·' + s.name + ' ' + G.format.mult(s.rate) + (s.pending ? '（待选）' : s.capped ? '（瓶颈）' : ''), stripWarn: !!(s.capped || s.pending), context: (c => ({route: c.route.key, floor: c.floor, comp: r6(c.comp)}))(G.context())}; }));
 cases.push(makeCase('format.mult', {}, () => [0, 0.00004, 0.0003, 0.05, 0.123, 0.99, 1, 1.04, 1.05, 9.96, 123.4, 999.9, 1000, 12345.6].map(v => [v, G.format.mult(v)])));
 

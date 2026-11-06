@@ -102,6 +102,8 @@ func rules(ref: Dictionary) -> void:
 	s.gear.append({"name": "无品质", "kind": "armor", "meta": {}, "price": 100})
 	var equipped: Array = s.actor(8).equips.duplicate(true)
 	XHangUpAuto.better_frequency = 0
+	# 这段的装备是手拼的、没有模板（安全出售会判「装备来源待确认」），按换源前的筛法测（O-待定·安全出售 关）；新筛法见 safe_after_battle
+	XSafeSell.ENABLED = false
 	check("sell_waits", XHangUpAuto.after_battle_sell(s) == -1 and s.gear.size() == 6)
 	check("sell_groups_and_locked", XHangUpAuto.after_battle_sell(s) == 3 and s.gold == 150 and s.gear.size() == 3 and s.actor(8).equips == equipped)
 	s.hang_up.SellWeapon.SellQuality = 0
@@ -113,6 +115,21 @@ func rules(ref: Dictionary) -> void:
 	s.gear = [{"name": "自定卖价", "meta": {"quality": "12"}, "price": 100, "sellPrice": 7}]
 	var gold_before := s.gold
 	check("sell_explicit_price", XHangUpAuto.after_battle_sell(s) == 1 and s.gold == gold_before + 7)
+	XSafeSell.ENABLED = true
+	# 安全出售：挂机按 SellWA 开着的旧档、用同一套保留原因（真模板装备：一件普通、一件锁定、一件 0 价无报酬）
+	s.gear.clear()
+	s.hang_up.SellWeapon = {"SellQuality": 1, "quality1": true}
+	for spec in [["ok", 50], ["[锁定]锁", 50], ["零价", 0]]:
+		var e := XGear.create("weapon", 1)
+		s.register_gear(e)
+		e.meta = e.meta.duplicate()
+		e.meta.quality = "1"
+		e.name = spec[0]
+		e.price = spec[1]
+		s.gear.append(e)
+	XHangUpAuto.better_frequency = 0
+	gold_before = s.gold
+	check("safe_after_battle", XHangUpAuto.after_battle_sell(s) == 1 and s.gold == gold_before + 25 and s.gear.map(func(e): return e.name) == ["[锁定]锁", "零价"], s.gear.map(func(e): return e.name))
 
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_hangup_auto"
@@ -159,6 +176,22 @@ func _run() -> void:
 			p.select(0)
 			p.ok()
 			check("sell_frequency_wraps", int(s.hang_up.SellWeapon.SellQuality) == 0)
+			# 安全出售（O-待定·安全出售）：末行「保留词条品质」确定往后、←/→ 前后循环（-1 关闭～8），说明窗两行
+			var last := p.rows().size() - 1
+			p.select(last)
+			p.ok()
+			check("safe_keep_ok_next", p.rows()[last] == ["保留词条品质", "神话★及以上"] and int(s.hang_up.SellWeapon.keepAffixTier41) == 6, p.rows()[last])
+			p.side(false)
+			p.side(false)
+			check("safe_keep_left", p.rows()[last][1] == "传说及以上", p.rows()[last])
+			for i in 5:
+				p.side(false)
+			check("safe_keep_off", p.rows()[last][1] == "关闭" and XSafeSell.threshold(s) == -1, p.rows()[last])
+			p.side(false)
+			check("safe_keep_wrap", p.rows()[last][1] == "混沌神话★★★", p.rows()[last])
+			p.side(true)
+			check("safe_keep_wrap_right", p.rows()[last][1] == "关闭", p.rows()[last])
+			check("safe_help", p.help_win != null and Rect2(p.help_win.position, p.help_win.size) == Rect2(0, 0, 1280, 100))
 		elif kind == "hp":
 			p.ok()
 			check("potion_switch_rebuilds", s.hang_up.RecoveryHMP.GetHpArrItems[0] == [true, 1, "ZL"])
