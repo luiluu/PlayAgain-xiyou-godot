@@ -1,7 +1,7 @@
 # 交付：cc/platform-release1
 
 - 车道／工作者：平台／cc（BW，总装派单）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -35,8 +35,16 @@
 
 ## 验证
 
-（待写）
+- 云端实跑两次（推 `ci-export/platform-release1`）：run 42142882155（首次，含 tpz 下载校验）Windows 约 3 分钟、安卓约 4 分钟，两平台全部通过，包内 xiyou_mac_export 12/12、xiyou_flow 49/49，报告写明用的是 Linux 调试模板、读出版本号与图标；run 42144244668（setup-java v5 后）Windows 2 分钟、安卓 4 分钟，全部通过。
+- 本机：`导出冒烟.py --platform windows` 通过（真 exe 读出 FileVersion／ProductVersion 0.0.0.0、有图标）；`--platform android --keep` 通过（versionCode 1、versionName 0.0.0、图标），量体积用的就是这个包。
+- 选测（`选测.py main --list`：只 xiyou_mac_export）＋必跑：xiyou_platform、xiyou_entry_release、ui_smoke、xiyou_mac_export 全部通过（日志 `04_验证/本地结果/并行测试/20261106_021831_mgco4khj`）。
+- `工具回归.py` 全部通过（71 秒）；第一次跑时「选测替身与 检查.sh 解析」挂了一次，当时本机同时在跑 4 个场景，单跑 31/31 通过、再跑整套通过，算偶发。`测试导出冒烟.py` 13/13、`测试导出过滤.py` 通过。
+- 没测：Windows 实机、安卓真机启动耗时。
 
 ## 本分支提交
 
-（待写）
+- 3bdfc385 导出冒烟上云：手动工作流、云端导出.py、版本号与图标检查
+- 819c8ec1 安卓包体积表、剔除参照批次文件、报告写明模板
+- 1def1a92 setup-java v5、云端测试说明、交付单草稿
+- （本提交）交付单可合并
+- 远端留着试跑分支 `ci-export/platform-release1`（总装合并后可删）
