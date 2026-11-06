@@ -1,0 +1,29 @@
+{
+ "sha": "ed1cc205f61efca30c0000afdff74ec814891936",
+ "branch": "cc/wukong-newsrc10",
+ "mode": "scenes",
+ "base": "",
+ "passed": true,
+ "scenes": 8,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 31.4,
+ "testSeconds": 56,
+ "generatedRef": "refs/ci/generated/cc/wukong-newsrc10",
+ "generatedCommit": "15d3bf9c566ad0ded9714318b5f1a533410be710",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42300559977",
+ "sceneNames": [
+  "xiyou_actor_advanced.tscn",
+  "xiyou_advance_v108.tscn",
+  "xiyou_baby_all_actors.tscn",
+  "xiyou_item_marks.tscn",
+  "xiyou_lobby_shops.tscn",
+  "xiyou_map132_shop.tscn",
+  "xiyou_shop_buy.tscn",
+  "xiyou_super_acquire.tscn"
+ ],
+ "time": "2026-11-06T21:57:15+00:00"
+}
