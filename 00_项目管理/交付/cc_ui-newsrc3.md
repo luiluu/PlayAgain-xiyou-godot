@@ -2,7 +2,7 @@
 
 - 车道／工作者：界面 DE（cc）
 - 状态：可合并
-- 说明：①②③ 已做（第二棒补了 gear_search 重量、power_panel 重取，另写了新源 DOM 取数驱动）；④ 失败表认领、help_card 10622／10623（总装二十八加）等第二次同步后再做（见「接续要点」）。
+- 说明：DL ③ 心钢技能卡与 zhenqi page.* 第三棒已做（工作树 `.claude/worktrees/musing-mclaren-41e4ab`，本地分支 `cc/musing-mclaren-41e4ab`，推到 GitHub `cc/ui-newsrc3`）；m234 与 help_card 10622／10623 仍等第二次同步。①②③ 已做（第二棒补了 gear_search 重量、power_panel 重取，另写了新源 DOM 取数驱动）；④ 失败表认领、help_card 10622／10623（总装二十八加）等第二次同步后再做（见「接续要点」）。
 - 第二棒工作树 `.claude/worktrees/fervent-shirley-617455`，本地分支 `cc/fervent-shirley-617455`（`cc/ui-newsrc3` 还挂在上一棒的工作树上，没动它），推到 GitHub 的 `cc/ui-newsrc3`。交回集成分支 `cc/newsrc-switch`（不合 main）。
 - **合并顺序**：先合 `cc/wukong-newsrc9`（54ae6b10，切片加 179，导出流萤 SV／脸图／行走图），再合本单并重同步；否则 `xiyou_actor_book` 的 179 立绘一项会挂。
 - 依据：派单第十四批 DE 节＋协调追加的 gear_search 三项；总装二十八 11-06 追加 DL 单（手量夹具换无头重取＋说明卡 v0.43 版式），①② 已做，③ 心钢技能说明卡冷却没做（到 40% 停手）。从 `cc/newsrc-switch` 21cd90eb 切。
@@ -28,6 +28,8 @@
   - **武器类型加成「生效／未持有」**（`XStatusPage.WTYPE_HOLD_V041`，默认开，**O-待定·武器类型生效**，已写进优化登记）：新源 installEquipmentDetailV041Runtime 包 calcWeaponBonus，加成后缀「 生效」（isWtypeEquipped，用 `XBattleLogic.wtype_equipped`）／「 未持有」；重取的夹具第 2 页因此挂 4 项，已跟。
   - 修行页测试：抬头、文字行起点、表头四列改比新源第 5 页「修行·详细」（「项目／难度影响／不含难度／实际」），另比橙色 warn、第 4 页抬头 panelHead；旧一页写法的四列位置照同一份夹具比。
   - growth_help：心钢／狂妄说明卡也按品质排特效行（原版 H.describe 末尾调 RJO.HE.getDescParams，v0.41 排序在里面），放在 `XGrowthHelp.rows` 分组之前，挂在 `EFFECT_SORT_V041` 下（O-待定·特效排序，这次也补进优化登记）。测试 `fix.*` 段自 v0.43 起找「成长：」行越界（行首多了 `\lock[1]`），一直没跑到断言、只报 SCRIPT ERROR；改成去掉 lock 再找，外层包装的装备战力／穿透行另核。现在 77/77、无 SCRIPT ERROR。
+- **DL ③ 心钢技能说明卡**（第三棒，`XGrowthHelp.skill_view`，跟 `XHeartsteel.TURN_CD_V035`，O-待定·心钢按回合冷却，关＝v0.28 没有这张卡）：照新源 H.skillHelpView（Window_BattleSkill／Window_SkillList.updateHelp 包装），巨人吞噬 10227／利维坦 10228 的说明卡换成深拷贝，备注 APs 行全删、重写：目标／命中／消耗、伤害（按角色身上对应的心钢／利维坦的阶，没装或装的是另一件就按原件）、战斗中「状态：巨人吞噬已就绪／冷却，还需 n 回合／蓄力，还需 n 回合」、效果／条件「第2回合起可用」／冷却 2 回合。拷贝标 `skill_copy`，元素包装不插技能的伤害属性（同原版 isSkill 为假）。战斗技能窗 `battle_scene._help`、技能页 `skill_scene._update_help` 接上。参照：`growth_help_probe.cjs` 加 `skills` 11 例（v0.62.12 量），`growth_help_oracle.json` 只多 `skills` 一键（cases／powerOnly 不变）；`xiyou_growth_help` 逐行比文字／字号／颜色／对齐／y／卡高，另断言开关关时原样返回。顺手修测试里卸装写成 `change(…, {})`（实际不卸，`{}` 在背包里找不到）→ `null`。
+- **zhenqi page.* 12 项**（第三棒，不改代码）：集成分支 `generated/oracle/zhenqi.json` 的 6 个 `page.*` 用例是探针加「修行·详细」（0250eacc）之前出的，没有 `detail`；本机用 v0.62.12 重跑 `zhenqi_probe.cjs`（24 分钟），只这 6 例变了、多出 `detail`，换上后 `xiyou_zhenqi` 200/200。第二次同步重出 zhenqi.json 后自然消失（同步后复查一眼 `page.default` 有 `detail`）。
 - **参照**：`ui_reference/review_actor_book.js` 多记 `bitmap`（状态窗实际画的图，URL 末段）；上一棒在新源重取时 `sprite` 记的是 battlerName，168、173～177 的逐帧图因此对不上。`actor_book_oracle.json` 只补了 `bitmap` 一键（其余与重取的一致），测试改为图名比 `bitmap`、battlerName 比 `sprite`。
 - 测试：`xiyou_actor_book` 跟目录换算（`index_ids().find`）、立绘几何乘 bookScale、截图加 179；`xiyou_actor_book_review` 记 `actor_id()`；`xiyou_help_card` 的 O-049 出售价断言改成量排版之前的行（v0.43 排版把两种价格并成一行两列，原断言一直挂）。
 
@@ -43,6 +45,8 @@
 
 ## 优化登记
 
+- O-待定·心钢按回合冷却（已登记，悟空 newsrc8）：总装合并时把「技能说明卡」补进该行：位置加 `ui/growth_help.gd` `skill_view`，新行为加「技能说明卡照 H.skillHelpView 带就绪／冷却／蓄力状态行」，关＝没有这张卡（同 v0.28）。测试 `xiyou_growth_help` 的 `skill.*` 与 `skill.v028`。
+
 - O-待定·武器类型生效：`XStatusPage.WTYPE_HOLD_V041`（关＝只写百分比），测试 `xiyou_status_page` `wtype_hold_switch`。已写进 `00_设计/优化登记.md`（连同特效排序）。
 
 - O-待定·特效排序：`XHelpCard.EFFECT_SORT_V041`（关＝不排序），测试 `xiyou_help_card` 的 gear 段（v0.62.12 参照）。是跟新源的显示改动，开关只为回退。
@@ -53,8 +57,8 @@
 2. **status_power_panel**：`power_panel_oracle.json` 已重取；本机只挂 `coverage_all_actors` 的 179「天火轰击」（原版记「当前条件不可用」，重制记成未完整评估，归角色车道／悟空 DF）。
 3. **pets**：本分支云端 `xiyou_pets` 通过（上一棒已在新源重取核过，夹具不用换）。
 4. **④ 界面失败项认领**：总装还没发整轮失败表，未认领。候选 hud、party、hangup、hangup_options、item_bag。
-5a. **DL ③ 心钢技能说明卡**（没做）：原版 H.skillHelpView（已就绪／冷却还需 n 回合、第 2 回合起可用），重制没有；照新源做，挂 `XHeartsteel.TURN_CD_V035`。
-5b. **zhenqi page.* 12 项**（本机仍挂，失败表「真气页新源改版」，界面域）：`page.<例>.has_detail` 缺 rows／strip／stripWarn／context 等键，是参照 zhenqi.json 新源结构与测试读法不对，没在这单里查。
+5a. **DL ③ 心钢技能说明卡**：已做（第三棒，见变更草稿）。
+5b. **zhenqi page.* 12 项**：已查（第三棒）：参照旧，不是代码问题；第二次同步后复查。
 5c. **还是手量／v0.28 的界面夹具清单**（DL ① 要求列）：
    - 已有按钮页面脚本、可直接用 `headless_button.cjs` 在新源重取：actor_advanced、actor_warehouse、battle_costume、star_warehouse、warehouse（review_system_pages.js）。
    - 已有自己的驱动（加 XIYOU_APP／参数即可）：battle_transition（battle_transition_ref.cjs）、popup_anchor（popup_anchor_ref.py）。
