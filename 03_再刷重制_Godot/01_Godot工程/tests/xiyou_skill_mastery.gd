@@ -1,5 +1,5 @@
 extends Node
-## 【cc·八戒·未经审查】技能熟练度期一（XSkillMastery）：与 mv_oracle/skill_mastery_probe.cjs 的冻结 v0.28 参照
+## 【cc·八戒·未经审查】技能熟练度期一（XSkillMastery）：与 mv_oracle/skill_mastery_probe.cjs 的冻结参照（newsrc2 起 v0.62.12）
 ## （tests/fixtures/skill_mastery_oracle.json，真实 BattleManager）逐例比。
 ## - table：全部技能的熟练度上限、升级所需次数（等级 1／2／5）、伤害公式（1000，等级 0／1／3）；
 ## - gain.*：每次行动后的等级、本级已用次数、本级所需次数、升级动画（普攻、魔法、自定义次数公式、治疗、防御（上限 0），
