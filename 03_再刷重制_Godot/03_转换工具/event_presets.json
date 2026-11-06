@@ -96506,6 +96506,14688 @@
      "2489": true
     }
    }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_1",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_2",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_3",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_4",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_5",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_6",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_7",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_8",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_9",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_10",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_11",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_12",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_13",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_14",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_15",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_16",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_17",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_18",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_19",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_20",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_21",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_22",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_23",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_24",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_25",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_26",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_27",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_28",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_29",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_30",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_31",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_32",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_33",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_34",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_35",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_36",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_37",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_38",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_39",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_40",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_41",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_42",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_43",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_44",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_45",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_46",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_47",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_48",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_49",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_50",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_51",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_52",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_53",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_54",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_55",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_56",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_57",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1802": false,
+     "1822": false,
+     "1842": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_58",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1803": false,
+     "1823": false,
+     "1843": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_59",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1804": false,
+     "1824": false,
+     "1844": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_60",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1805": false,
+     "1825": false,
+     "1845": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_61",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1806": false,
+     "1826": false,
+     "1846": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_62",
+   "preset": {
+    "answers": [
+     6
+    ],
+    "switches": {
+     "1807": false,
+     "1827": false,
+     "1847": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_63",
+   "preset": {
+    "answers": [
+     7
+    ],
+    "switches": {
+     "1808": false,
+     "1828": false,
+     "1848": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_64",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_65",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "w3_66",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_67",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_68",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1099",
+   "tag": "w3_69",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_70",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_71",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1100",
+   "tag": "w3_72",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_73",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_74",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1101",
+   "tag": "w3_75",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_76",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_77",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1102",
+   "tag": "w3_78",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_79",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_80",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1103",
+   "tag": "w3_81",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_82",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_83",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1104",
+   "tag": "w3_84",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_85",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_86",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1105",
+   "tag": "w3_87",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_88",
+   "preset": {
+    "answers": [
+     8
+    ],
+    "switches": {
+     "1809": false,
+     "1829": false,
+     "1849": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_89",
+   "preset": {
+    "answers": [
+     9
+    ],
+    "switches": {
+     "1810": false,
+     "1830": false,
+     "1850": true
+    }
+   }
+  },
+  {
+   "base": "ce1106",
+   "tag": "w3_90",
+   "preset": {
+    "answers": [
+     10
+    ],
+    "switches": {
+     "1811": false,
+     "1831": false,
+     "1851": true
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_93",
+   "preset": {
+    "variables": {
+     "676": 9,
+     "206": 200
+    },
+    "items": {
+     "936": 200
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_94",
+   "preset": {
+    "variables": {
+     "676": 8,
+     "206": 190
+    },
+    "items": {
+     "936": 190
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_95",
+   "preset": {
+    "variables": {
+     "676": 7,
+     "206": 180
+    },
+    "items": {
+     "936": 180
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_96",
+   "preset": {
+    "variables": {
+     "676": 6,
+     "206": 170
+    },
+    "items": {
+     "936": 170
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_97",
+   "preset": {
+    "variables": {
+     "676": 5,
+     "206": 160
+    },
+    "items": {
+     "936": 160
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_98",
+   "preset": {
+    "variables": {
+     "676": 4,
+     "206": 150
+    },
+    "items": {
+     "936": 150
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_99",
+   "preset": {
+    "variables": {
+     "676": 3,
+     "206": 140
+    },
+    "items": {
+     "936": 140
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_100",
+   "preset": {
+    "variables": {
+     "676": 2,
+     "206": 130
+    },
+    "items": {
+     "936": 130
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_101",
+   "preset": {
+    "variables": {
+     "676": 1,
+     "206": 120000
+    },
+    "items": {
+     "936": 120
+    }
+   }
+  },
+  {
+   "base": "ce991",
+   "tag": "w3_102",
+   "preset": {
+    "variables": {
+     "676": 0,
+     "206": 110
+    },
+    "items": {
+     "936": 110
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_103",
+   "preset": {
+    "variables": {
+     "677": 9,
+     "206": 200
+    },
+    "items": {
+     "938": 200
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_104",
+   "preset": {
+    "variables": {
+     "677": 8,
+     "206": 190
+    },
+    "items": {
+     "938": 190
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_105",
+   "preset": {
+    "variables": {
+     "677": 7,
+     "206": 180
+    },
+    "items": {
+     "938": 180
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_106",
+   "preset": {
+    "variables": {
+     "677": 6,
+     "206": 170
+    },
+    "items": {
+     "938": 170
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_107",
+   "preset": {
+    "variables": {
+     "677": 5,
+     "206": 160
+    },
+    "items": {
+     "938": 160
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_108",
+   "preset": {
+    "variables": {
+     "677": 4,
+     "206": 150
+    },
+    "items": {
+     "938": 150
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_109",
+   "preset": {
+    "variables": {
+     "677": 3,
+     "206": 140
+    },
+    "items": {
+     "938": 140
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_110",
+   "preset": {
+    "variables": {
+     "677": 2,
+     "206": 130
+    },
+    "items": {
+     "938": 130
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_111",
+   "preset": {
+    "variables": {
+     "677": 1,
+     "206": 120000
+    },
+    "items": {
+     "938": 120
+    }
+   }
+  },
+  {
+   "base": "ce992",
+   "tag": "w3_112",
+   "preset": {
+    "variables": {
+     "677": 0,
+     "206": 110
+    },
+    "items": {
+     "938": 110
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_113",
+   "preset": {
+    "variables": {
+     "678": 9,
+     "206": 200
+    },
+    "items": {
+     "940": 200
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_114",
+   "preset": {
+    "variables": {
+     "678": 8,
+     "206": 190
+    },
+    "items": {
+     "940": 190
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_115",
+   "preset": {
+    "variables": {
+     "678": 7,
+     "206": 180
+    },
+    "items": {
+     "940": 180
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_116",
+   "preset": {
+    "variables": {
+     "678": 6,
+     "206": 170
+    },
+    "items": {
+     "940": 170
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_117",
+   "preset": {
+    "variables": {
+     "678": 5,
+     "206": 160
+    },
+    "items": {
+     "940": 160
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_118",
+   "preset": {
+    "variables": {
+     "678": 4,
+     "206": 150
+    },
+    "items": {
+     "940": 150
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_119",
+   "preset": {
+    "variables": {
+     "678": 3,
+     "206": 140
+    },
+    "items": {
+     "940": 140
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_120",
+   "preset": {
+    "variables": {
+     "678": 2,
+     "206": 130
+    },
+    "items": {
+     "940": 130
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_121",
+   "preset": {
+    "variables": {
+     "678": 1,
+     "206": 120000
+    },
+    "items": {
+     "940": 120
+    }
+   }
+  },
+  {
+   "base": "ce993",
+   "tag": "w3_122",
+   "preset": {
+    "variables": {
+     "678": 0,
+     "206": 110
+    },
+    "items": {
+     "940": 110
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_123",
+   "preset": {
+    "variables": {
+     "679": 9,
+     "206": 200
+    },
+    "items": {
+     "942": 200
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_124",
+   "preset": {
+    "variables": {
+     "679": 8,
+     "206": 190
+    },
+    "items": {
+     "942": 190
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_125",
+   "preset": {
+    "variables": {
+     "679": 7,
+     "206": 180
+    },
+    "items": {
+     "942": 180
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_126",
+   "preset": {
+    "variables": {
+     "679": 6,
+     "206": 170
+    },
+    "items": {
+     "942": 170
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_127",
+   "preset": {
+    "variables": {
+     "679": 5,
+     "206": 160
+    },
+    "items": {
+     "942": 160
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_128",
+   "preset": {
+    "variables": {
+     "679": 4,
+     "206": 150
+    },
+    "items": {
+     "942": 150
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_129",
+   "preset": {
+    "variables": {
+     "679": 3,
+     "206": 140
+    },
+    "items": {
+     "942": 140
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_130",
+   "preset": {
+    "variables": {
+     "679": 2,
+     "206": 130
+    },
+    "items": {
+     "942": 130
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_131",
+   "preset": {
+    "variables": {
+     "679": 1,
+     "206": 120000
+    },
+    "items": {
+     "942": 120
+    }
+   }
+  },
+  {
+   "base": "ce994",
+   "tag": "w3_132",
+   "preset": {
+    "variables": {
+     "679": 0,
+     "206": 110
+    },
+    "items": {
+     "942": 110
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_133",
+   "preset": {
+    "variables": {
+     "680": 9,
+     "206": 200
+    },
+    "items": {
+     "944": 200
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_134",
+   "preset": {
+    "variables": {
+     "680": 8,
+     "206": 190
+    },
+    "items": {
+     "944": 190
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_135",
+   "preset": {
+    "variables": {
+     "680": 7,
+     "206": 180
+    },
+    "items": {
+     "944": 180
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_136",
+   "preset": {
+    "variables": {
+     "680": 6,
+     "206": 170
+    },
+    "items": {
+     "944": 170
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_137",
+   "preset": {
+    "variables": {
+     "680": 5,
+     "206": 160
+    },
+    "items": {
+     "944": 160
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_138",
+   "preset": {
+    "variables": {
+     "680": 4,
+     "206": 150
+    },
+    "items": {
+     "944": 150
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_139",
+   "preset": {
+    "variables": {
+     "680": 3,
+     "206": 140
+    },
+    "items": {
+     "944": 140
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_140",
+   "preset": {
+    "variables": {
+     "680": 2,
+     "206": 130
+    },
+    "items": {
+     "944": 130
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_141",
+   "preset": {
+    "variables": {
+     "680": 1,
+     "206": 120000
+    },
+    "items": {
+     "944": 120
+    }
+   }
+  },
+  {
+   "base": "ce995",
+   "tag": "w3_142",
+   "preset": {
+    "variables": {
+     "680": 0,
+     "206": 110
+    },
+    "items": {
+     "944": 110
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_143",
+   "preset": {
+    "variables": {
+     "681": 9,
+     "206": 200
+    },
+    "items": {
+     "946": 200
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_144",
+   "preset": {
+    "variables": {
+     "681": 8,
+     "206": 190
+    },
+    "items": {
+     "946": 190
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_145",
+   "preset": {
+    "variables": {
+     "681": 7,
+     "206": 180
+    },
+    "items": {
+     "946": 180
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_146",
+   "preset": {
+    "variables": {
+     "681": 6,
+     "206": 170
+    },
+    "items": {
+     "946": 170
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_147",
+   "preset": {
+    "variables": {
+     "681": 5,
+     "206": 160
+    },
+    "items": {
+     "946": 160
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_148",
+   "preset": {
+    "variables": {
+     "681": 4,
+     "206": 150
+    },
+    "items": {
+     "946": 150
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_149",
+   "preset": {
+    "variables": {
+     "681": 3,
+     "206": 140
+    },
+    "items": {
+     "946": 140
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_150",
+   "preset": {
+    "variables": {
+     "681": 2,
+     "206": 130
+    },
+    "items": {
+     "946": 130
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_151",
+   "preset": {
+    "variables": {
+     "681": 1,
+     "206": 120000
+    },
+    "items": {
+     "946": 120
+    }
+   }
+  },
+  {
+   "base": "ce996",
+   "tag": "w3_152",
+   "preset": {
+    "variables": {
+     "681": 0,
+     "206": 110
+    },
+    "items": {
+     "946": 110
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_153",
+   "preset": {
+    "variables": {
+     "682": 9,
+     "206": 200
+    },
+    "items": {
+     "948": 200
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_154",
+   "preset": {
+    "variables": {
+     "682": 8,
+     "206": 190
+    },
+    "items": {
+     "948": 190
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_155",
+   "preset": {
+    "variables": {
+     "682": 7,
+     "206": 180
+    },
+    "items": {
+     "948": 180
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_156",
+   "preset": {
+    "variables": {
+     "682": 6,
+     "206": 170
+    },
+    "items": {
+     "948": 170
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_157",
+   "preset": {
+    "variables": {
+     "682": 5,
+     "206": 160
+    },
+    "items": {
+     "948": 160
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_158",
+   "preset": {
+    "variables": {
+     "682": 4,
+     "206": 150
+    },
+    "items": {
+     "948": 150
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_159",
+   "preset": {
+    "variables": {
+     "682": 3,
+     "206": 140
+    },
+    "items": {
+     "948": 140
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_160",
+   "preset": {
+    "variables": {
+     "682": 2,
+     "206": 130
+    },
+    "items": {
+     "948": 130
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_161",
+   "preset": {
+    "variables": {
+     "682": 1,
+     "206": 120000
+    },
+    "items": {
+     "948": 120
+    }
+   }
+  },
+  {
+   "base": "ce997",
+   "tag": "w3_162",
+   "preset": {
+    "variables": {
+     "682": 0,
+     "206": 110
+    },
+    "items": {
+     "948": 110
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_163",
+   "preset": {
+    "variables": {
+     "683": 9,
+     "206": 200
+    },
+    "items": {
+     "950": 200
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_164",
+   "preset": {
+    "variables": {
+     "683": 8,
+     "206": 190
+    },
+    "items": {
+     "950": 190
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_165",
+   "preset": {
+    "variables": {
+     "683": 7,
+     "206": 180
+    },
+    "items": {
+     "950": 180
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_166",
+   "preset": {
+    "variables": {
+     "683": 6,
+     "206": 170
+    },
+    "items": {
+     "950": 170
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_167",
+   "preset": {
+    "variables": {
+     "683": 5,
+     "206": 160
+    },
+    "items": {
+     "950": 160
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_168",
+   "preset": {
+    "variables": {
+     "683": 4,
+     "206": 150
+    },
+    "items": {
+     "950": 150
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_169",
+   "preset": {
+    "variables": {
+     "683": 3,
+     "206": 140
+    },
+    "items": {
+     "950": 140
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_170",
+   "preset": {
+    "variables": {
+     "683": 2,
+     "206": 130
+    },
+    "items": {
+     "950": 130
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_171",
+   "preset": {
+    "variables": {
+     "683": 1,
+     "206": 120000
+    },
+    "items": {
+     "950": 120
+    }
+   }
+  },
+  {
+   "base": "ce998",
+   "tag": "w3_172",
+   "preset": {
+    "variables": {
+     "683": 0,
+     "206": 110
+    },
+    "items": {
+     "950": 110
+    }
+   }
+  },
+  {
+   "base": "m218e21p0",
+   "tag": "w3_173",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e22p0",
+   "tag": "w3_174",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e23p0",
+   "tag": "w3_175",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e24p0",
+   "tag": "w3_176",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e25p0",
+   "tag": "w3_177",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e26p0",
+   "tag": "w3_178",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e27p0",
+   "tag": "w3_179",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e28p0",
+   "tag": "w3_180",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e29p0",
+   "tag": "w3_181",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e30p0",
+   "tag": "w3_182",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e31p0",
+   "tag": "w3_183",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e32p0",
+   "tag": "w3_184",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e33p0",
+   "tag": "w3_185",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e34p0",
+   "tag": "w3_186",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e35p0",
+   "tag": "w3_187",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e36p0",
+   "tag": "w3_188",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e37p0",
+   "tag": "w3_189",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e38p0",
+   "tag": "w3_190",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e39p0",
+   "tag": "w3_191",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e40p0",
+   "tag": "w3_192",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e41p0",
+   "tag": "w3_193",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e42p0",
+   "tag": "w3_194",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e43p0",
+   "tag": "w3_195",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e44p0",
+   "tag": "w3_196",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e45p0",
+   "tag": "w3_197",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e46p0",
+   "tag": "w3_198",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e47p0",
+   "tag": "w3_199",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e48p0",
+   "tag": "w3_200",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e49p0",
+   "tag": "w3_201",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e50p0",
+   "tag": "w3_202",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e51p0",
+   "tag": "w3_203",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e52p0",
+   "tag": "w3_204",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e53p0",
+   "tag": "w3_205",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e54p0",
+   "tag": "w3_206",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e55p0",
+   "tag": "w3_207",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e56p0",
+   "tag": "w3_208",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e57p0",
+   "tag": "w3_209",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e58p0",
+   "tag": "w3_210",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e59p0",
+   "tag": "w3_211",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e60p0",
+   "tag": "w3_212",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e61p0",
+   "tag": "w3_213",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e62p0",
+   "tag": "w3_214",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e63p0",
+   "tag": "w3_215",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e64p0",
+   "tag": "w3_216",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e65p0",
+   "tag": "w3_217",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e66p0",
+   "tag": "w3_218",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e67p0",
+   "tag": "w3_219",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e68p0",
+   "tag": "w3_220",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_222",
+   "preset": {
+    "variables": {
+     "675": 9,
+     "206": 200
+    },
+    "items": {
+     "934": 200
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_223",
+   "preset": {
+    "variables": {
+     "675": 8,
+     "206": 190
+    },
+    "items": {
+     "934": 190
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_224",
+   "preset": {
+    "variables": {
+     "675": 7,
+     "206": 180
+    },
+    "items": {
+     "934": 180
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_225",
+   "preset": {
+    "variables": {
+     "675": 6,
+     "206": 170
+    },
+    "items": {
+     "934": 170
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_226",
+   "preset": {
+    "variables": {
+     "675": 5,
+     "206": 160
+    },
+    "items": {
+     "934": 160
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_227",
+   "preset": {
+    "variables": {
+     "675": 4,
+     "206": 150
+    },
+    "items": {
+     "934": 150
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_228",
+   "preset": {
+    "variables": {
+     "675": 3,
+     "206": 140
+    },
+    "items": {
+     "934": 140
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_229",
+   "preset": {
+    "variables": {
+     "675": 2,
+     "206": 130
+    },
+    "items": {
+     "934": 130
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_230",
+   "preset": {
+    "variables": {
+     "675": 1,
+     "206": 120000
+    },
+    "items": {
+     "934": 120
+    }
+   }
+  },
+  {
+   "base": "ce990",
+   "tag": "w3_231",
+   "preset": {
+    "variables": {
+     "675": 0,
+     "206": 110
+    },
+    "items": {
+     "934": 110
+    }
+   }
+  },
+  {
+   "base": "m218e14p0",
+   "tag": "w3_237",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e14p0",
+   "tag": "w3_238",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e14p0",
+   "tag": "w3_239",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e14p0",
+   "tag": "w3_240",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e15p0",
+   "tag": "w3_241",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e15p0",
+   "tag": "w3_242",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e15p0",
+   "tag": "w3_243",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e15p0",
+   "tag": "w3_244",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e16p0",
+   "tag": "w3_245",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e16p0",
+   "tag": "w3_246",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e16p0",
+   "tag": "w3_247",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e16p0",
+   "tag": "w3_248",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e17p0",
+   "tag": "w3_249",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e17p0",
+   "tag": "w3_250",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e17p0",
+   "tag": "w3_251",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e17p0",
+   "tag": "w3_252",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e18p0",
+   "tag": "w3_253",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e18p0",
+   "tag": "w3_254",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e18p0",
+   "tag": "w3_255",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e18p0",
+   "tag": "w3_256",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e19p0",
+   "tag": "w3_257",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 50,
+     "900": 50
+    }
+   }
+  },
+  {
+   "base": "m218e19p0",
+   "tag": "w3_258",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e19p0",
+   "tag": "w3_259",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e19p0",
+   "tag": "w3_260",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e21p0",
+   "tag": "w3_261",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e21p0",
+   "tag": "w3_262",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e21p0",
+   "tag": "w3_263",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e22p0",
+   "tag": "w3_264",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e22p0",
+   "tag": "w3_265",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e22p0",
+   "tag": "w3_266",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e23p0",
+   "tag": "w3_267",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e23p0",
+   "tag": "w3_268",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e23p0",
+   "tag": "w3_269",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e24p0",
+   "tag": "w3_270",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e24p0",
+   "tag": "w3_271",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e24p0",
+   "tag": "w3_272",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e25p0",
+   "tag": "w3_273",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e25p0",
+   "tag": "w3_274",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e25p0",
+   "tag": "w3_275",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e26p0",
+   "tag": "w3_276",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e26p0",
+   "tag": "w3_277",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e26p0",
+   "tag": "w3_278",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e27p0",
+   "tag": "w3_279",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e27p0",
+   "tag": "w3_280",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e27p0",
+   "tag": "w3_281",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e28p0",
+   "tag": "w3_282",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e28p0",
+   "tag": "w3_283",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e28p0",
+   "tag": "w3_284",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e29p0",
+   "tag": "w3_285",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e29p0",
+   "tag": "w3_286",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e29p0",
+   "tag": "w3_287",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e30p0",
+   "tag": "w3_288",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e30p0",
+   "tag": "w3_289",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e30p0",
+   "tag": "w3_290",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e31p0",
+   "tag": "w3_291",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e31p0",
+   "tag": "w3_292",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e31p0",
+   "tag": "w3_293",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e32p0",
+   "tag": "w3_294",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e32p0",
+   "tag": "w3_295",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e32p0",
+   "tag": "w3_296",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e33p0",
+   "tag": "w3_297",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e33p0",
+   "tag": "w3_298",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e33p0",
+   "tag": "w3_299",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e34p0",
+   "tag": "w3_300",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e34p0",
+   "tag": "w3_301",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e34p0",
+   "tag": "w3_302",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e35p0",
+   "tag": "w3_303",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e35p0",
+   "tag": "w3_304",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e35p0",
+   "tag": "w3_305",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e36p0",
+   "tag": "w3_306",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e36p0",
+   "tag": "w3_307",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e36p0",
+   "tag": "w3_308",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e37p0",
+   "tag": "w3_309",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e37p0",
+   "tag": "w3_310",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e37p0",
+   "tag": "w3_311",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e38p0",
+   "tag": "w3_312",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e38p0",
+   "tag": "w3_313",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e38p0",
+   "tag": "w3_314",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e39p0",
+   "tag": "w3_315",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e39p0",
+   "tag": "w3_316",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e39p0",
+   "tag": "w3_317",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e40p0",
+   "tag": "w3_318",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e40p0",
+   "tag": "w3_319",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e40p0",
+   "tag": "w3_320",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e41p0",
+   "tag": "w3_321",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e41p0",
+   "tag": "w3_322",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e41p0",
+   "tag": "w3_323",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e42p0",
+   "tag": "w3_324",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e42p0",
+   "tag": "w3_325",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e42p0",
+   "tag": "w3_326",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e43p0",
+   "tag": "w3_327",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e43p0",
+   "tag": "w3_328",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e43p0",
+   "tag": "w3_329",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e44p0",
+   "tag": "w3_330",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e44p0",
+   "tag": "w3_331",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e44p0",
+   "tag": "w3_332",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e45p0",
+   "tag": "w3_333",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e45p0",
+   "tag": "w3_334",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e45p0",
+   "tag": "w3_335",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e46p0",
+   "tag": "w3_336",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e46p0",
+   "tag": "w3_337",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e46p0",
+   "tag": "w3_338",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e47p0",
+   "tag": "w3_339",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e47p0",
+   "tag": "w3_340",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e47p0",
+   "tag": "w3_341",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e48p0",
+   "tag": "w3_342",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e48p0",
+   "tag": "w3_343",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e48p0",
+   "tag": "w3_344",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e49p0",
+   "tag": "w3_345",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e49p0",
+   "tag": "w3_346",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e49p0",
+   "tag": "w3_347",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e50p0",
+   "tag": "w3_348",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e50p0",
+   "tag": "w3_349",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e50p0",
+   "tag": "w3_350",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e51p0",
+   "tag": "w3_351",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e51p0",
+   "tag": "w3_352",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e51p0",
+   "tag": "w3_353",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e52p0",
+   "tag": "w3_354",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e52p0",
+   "tag": "w3_355",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e52p0",
+   "tag": "w3_356",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e53p0",
+   "tag": "w3_357",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e53p0",
+   "tag": "w3_358",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e53p0",
+   "tag": "w3_359",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e54p0",
+   "tag": "w3_360",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e54p0",
+   "tag": "w3_361",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e54p0",
+   "tag": "w3_362",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e55p0",
+   "tag": "w3_363",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e55p0",
+   "tag": "w3_364",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e55p0",
+   "tag": "w3_365",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e56p0",
+   "tag": "w3_366",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e56p0",
+   "tag": "w3_367",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e56p0",
+   "tag": "w3_368",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e57p0",
+   "tag": "w3_369",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e57p0",
+   "tag": "w3_370",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e57p0",
+   "tag": "w3_371",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e58p0",
+   "tag": "w3_372",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e58p0",
+   "tag": "w3_373",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e58p0",
+   "tag": "w3_374",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e59p0",
+   "tag": "w3_375",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e59p0",
+   "tag": "w3_376",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e59p0",
+   "tag": "w3_377",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e60p0",
+   "tag": "w3_378",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e60p0",
+   "tag": "w3_379",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e60p0",
+   "tag": "w3_380",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e61p0",
+   "tag": "w3_381",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e61p0",
+   "tag": "w3_382",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e61p0",
+   "tag": "w3_383",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e62p0",
+   "tag": "w3_384",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e62p0",
+   "tag": "w3_385",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e62p0",
+   "tag": "w3_386",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e63p0",
+   "tag": "w3_387",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e63p0",
+   "tag": "w3_388",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e63p0",
+   "tag": "w3_389",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e64p0",
+   "tag": "w3_390",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e64p0",
+   "tag": "w3_391",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e64p0",
+   "tag": "w3_392",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e65p0",
+   "tag": "w3_393",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e65p0",
+   "tag": "w3_394",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e65p0",
+   "tag": "w3_395",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e66p0",
+   "tag": "w3_396",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e66p0",
+   "tag": "w3_397",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e66p0",
+   "tag": "w3_398",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e67p0",
+   "tag": "w3_399",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e67p0",
+   "tag": "w3_400",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e67p0",
+   "tag": "w3_401",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m218e68p0",
+   "tag": "w3_402",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 100,
+     "900": 100
+    }
+   }
+  },
+  {
+   "base": "m218e68p0",
+   "tag": "w3_403",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 150,
+     "900": 150
+    }
+   }
+  },
+  {
+   "base": "m218e68p0",
+   "tag": "w3_404",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "898": 200,
+     "900": 200
+    }
+   }
+  },
+  {
+   "base": "m219e14p0",
+   "tag": "w3_405",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e14p0",
+   "tag": "w3_406",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e14p0",
+   "tag": "w3_407",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e14p0",
+   "tag": "w3_408",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e16p0",
+   "tag": "w3_409",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e16p0",
+   "tag": "w3_410",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e16p0",
+   "tag": "w3_411",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e16p0",
+   "tag": "w3_412",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e17p0",
+   "tag": "w3_413",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e17p0",
+   "tag": "w3_414",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e17p0",
+   "tag": "w3_415",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e17p0",
+   "tag": "w3_416",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e18p0",
+   "tag": "w3_417",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e18p0",
+   "tag": "w3_418",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e18p0",
+   "tag": "w3_419",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e18p0",
+   "tag": "w3_420",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e19p0",
+   "tag": "w3_421",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e19p0",
+   "tag": "w3_422",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e19p0",
+   "tag": "w3_423",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e19p0",
+   "tag": "w3_424",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e20p0",
+   "tag": "w3_425",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e20p0",
+   "tag": "w3_426",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e20p0",
+   "tag": "w3_427",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e20p0",
+   "tag": "w3_428",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e21p0",
+   "tag": "w3_429",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e21p0",
+   "tag": "w3_430",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e21p0",
+   "tag": "w3_431",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e21p0",
+   "tag": "w3_432",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e22p0",
+   "tag": "w3_433",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e22p0",
+   "tag": "w3_434",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e22p0",
+   "tag": "w3_435",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e22p0",
+   "tag": "w3_436",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e23p0",
+   "tag": "w3_437",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e23p0",
+   "tag": "w3_438",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e23p0",
+   "tag": "w3_439",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e23p0",
+   "tag": "w3_440",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e24p0",
+   "tag": "w3_441",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e24p0",
+   "tag": "w3_442",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e24p0",
+   "tag": "w3_443",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e24p0",
+   "tag": "w3_444",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e25p0",
+   "tag": "w3_445",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e25p0",
+   "tag": "w3_446",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e25p0",
+   "tag": "w3_447",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e25p0",
+   "tag": "w3_448",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e26p0",
+   "tag": "w3_449",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e26p0",
+   "tag": "w3_450",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e26p0",
+   "tag": "w3_451",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e26p0",
+   "tag": "w3_452",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e27p0",
+   "tag": "w3_453",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e27p0",
+   "tag": "w3_454",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e27p0",
+   "tag": "w3_455",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e27p0",
+   "tag": "w3_456",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e28p0",
+   "tag": "w3_457",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e28p0",
+   "tag": "w3_458",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e28p0",
+   "tag": "w3_459",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e28p0",
+   "tag": "w3_460",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e29p0",
+   "tag": "w3_461",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e29p0",
+   "tag": "w3_462",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e29p0",
+   "tag": "w3_463",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e29p0",
+   "tag": "w3_464",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e30p0",
+   "tag": "w3_465",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e30p0",
+   "tag": "w3_466",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e30p0",
+   "tag": "w3_467",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e30p0",
+   "tag": "w3_468",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e31p0",
+   "tag": "w3_469",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e31p0",
+   "tag": "w3_470",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e31p0",
+   "tag": "w3_471",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e31p0",
+   "tag": "w3_472",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e32p0",
+   "tag": "w3_473",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e32p0",
+   "tag": "w3_474",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e32p0",
+   "tag": "w3_475",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e32p0",
+   "tag": "w3_476",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e33p0",
+   "tag": "w3_477",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e33p0",
+   "tag": "w3_478",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e33p0",
+   "tag": "w3_479",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e33p0",
+   "tag": "w3_480",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e34p0",
+   "tag": "w3_481",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e34p0",
+   "tag": "w3_482",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e34p0",
+   "tag": "w3_483",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e34p0",
+   "tag": "w3_484",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e35p0",
+   "tag": "w3_485",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e35p0",
+   "tag": "w3_486",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e35p0",
+   "tag": "w3_487",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e35p0",
+   "tag": "w3_488",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e36p0",
+   "tag": "w3_489",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e36p0",
+   "tag": "w3_490",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e36p0",
+   "tag": "w3_491",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e36p0",
+   "tag": "w3_492",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e37p0",
+   "tag": "w3_493",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e37p0",
+   "tag": "w3_494",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e37p0",
+   "tag": "w3_495",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e37p0",
+   "tag": "w3_496",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e38p0",
+   "tag": "w3_497",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e38p0",
+   "tag": "w3_498",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e38p0",
+   "tag": "w3_499",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e38p0",
+   "tag": "w3_500",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e39p0",
+   "tag": "w3_501",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e39p0",
+   "tag": "w3_502",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e39p0",
+   "tag": "w3_503",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e39p0",
+   "tag": "w3_504",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e40p0",
+   "tag": "w3_505",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e40p0",
+   "tag": "w3_506",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e40p0",
+   "tag": "w3_507",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e40p0",
+   "tag": "w3_508",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e41p0",
+   "tag": "w3_509",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e41p0",
+   "tag": "w3_510",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e41p0",
+   "tag": "w3_511",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e41p0",
+   "tag": "w3_512",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e42p0",
+   "tag": "w3_513",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e42p0",
+   "tag": "w3_514",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e42p0",
+   "tag": "w3_515",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e42p0",
+   "tag": "w3_516",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e43p0",
+   "tag": "w3_517",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e43p0",
+   "tag": "w3_518",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e43p0",
+   "tag": "w3_519",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e43p0",
+   "tag": "w3_520",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e44p0",
+   "tag": "w3_521",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e44p0",
+   "tag": "w3_522",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e44p0",
+   "tag": "w3_523",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e44p0",
+   "tag": "w3_524",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e45p0",
+   "tag": "w3_525",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e45p0",
+   "tag": "w3_526",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e45p0",
+   "tag": "w3_527",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e45p0",
+   "tag": "w3_528",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e46p0",
+   "tag": "w3_529",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e46p0",
+   "tag": "w3_530",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e46p0",
+   "tag": "w3_531",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e46p0",
+   "tag": "w3_532",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e47p0",
+   "tag": "w3_533",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e47p0",
+   "tag": "w3_534",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e47p0",
+   "tag": "w3_535",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e47p0",
+   "tag": "w3_536",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e48p0",
+   "tag": "w3_537",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e48p0",
+   "tag": "w3_538",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e48p0",
+   "tag": "w3_539",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e48p0",
+   "tag": "w3_540",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e49p0",
+   "tag": "w3_541",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e49p0",
+   "tag": "w3_542",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e49p0",
+   "tag": "w3_543",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e49p0",
+   "tag": "w3_544",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e50p0",
+   "tag": "w3_545",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e50p0",
+   "tag": "w3_546",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e50p0",
+   "tag": "w3_547",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e50p0",
+   "tag": "w3_548",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e51p0",
+   "tag": "w3_549",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e51p0",
+   "tag": "w3_550",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e51p0",
+   "tag": "w3_551",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e51p0",
+   "tag": "w3_552",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e52p0",
+   "tag": "w3_553",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e52p0",
+   "tag": "w3_554",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e52p0",
+   "tag": "w3_555",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e52p0",
+   "tag": "w3_556",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e53p0",
+   "tag": "w3_557",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e53p0",
+   "tag": "w3_558",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e53p0",
+   "tag": "w3_559",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e53p0",
+   "tag": "w3_560",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e54p0",
+   "tag": "w3_561",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e54p0",
+   "tag": "w3_562",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e54p0",
+   "tag": "w3_563",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e54p0",
+   "tag": "w3_564",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e55p0",
+   "tag": "w3_565",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e55p0",
+   "tag": "w3_566",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e55p0",
+   "tag": "w3_567",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e55p0",
+   "tag": "w3_568",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e56p0",
+   "tag": "w3_569",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e56p0",
+   "tag": "w3_570",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e56p0",
+   "tag": "w3_571",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e56p0",
+   "tag": "w3_572",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e57p0",
+   "tag": "w3_573",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e57p0",
+   "tag": "w3_574",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e57p0",
+   "tag": "w3_575",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e57p0",
+   "tag": "w3_576",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e58p0",
+   "tag": "w3_577",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e58p0",
+   "tag": "w3_578",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e58p0",
+   "tag": "w3_579",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e58p0",
+   "tag": "w3_580",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e59p0",
+   "tag": "w3_581",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e59p0",
+   "tag": "w3_582",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e59p0",
+   "tag": "w3_583",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e59p0",
+   "tag": "w3_584",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e60p0",
+   "tag": "w3_585",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e60p0",
+   "tag": "w3_586",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e60p0",
+   "tag": "w3_587",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e60p0",
+   "tag": "w3_588",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e61p0",
+   "tag": "w3_589",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e61p0",
+   "tag": "w3_590",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e61p0",
+   "tag": "w3_591",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e61p0",
+   "tag": "w3_592",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e62p0",
+   "tag": "w3_593",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e62p0",
+   "tag": "w3_594",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e62p0",
+   "tag": "w3_595",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e62p0",
+   "tag": "w3_596",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e63p0",
+   "tag": "w3_597",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e63p0",
+   "tag": "w3_598",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e63p0",
+   "tag": "w3_599",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e63p0",
+   "tag": "w3_600",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e64p0",
+   "tag": "w3_601",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e64p0",
+   "tag": "w3_602",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e64p0",
+   "tag": "w3_603",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e64p0",
+   "tag": "w3_604",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e65p0",
+   "tag": "w3_605",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e65p0",
+   "tag": "w3_606",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e65p0",
+   "tag": "w3_607",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e65p0",
+   "tag": "w3_608",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e66p0",
+   "tag": "w3_609",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e66p0",
+   "tag": "w3_610",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e66p0",
+   "tag": "w3_611",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e66p0",
+   "tag": "w3_612",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e67p0",
+   "tag": "w3_613",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e67p0",
+   "tag": "w3_614",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e67p0",
+   "tag": "w3_615",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e67p0",
+   "tag": "w3_616",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e68p0",
+   "tag": "w3_617",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e68p0",
+   "tag": "w3_618",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e68p0",
+   "tag": "w3_619",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m219e68p0",
+   "tag": "w3_620",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "1810": 10,
+     "1811": 10
+    }
+   }
+  },
+  {
+   "base": "m69e65p0",
+   "tag": "w3_652",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "variables": {
+     "5": 21
+    },
+    "items": {
+     "397": 3
+    },
+    "party": [
+     38
+    ]
+   }
+  },
+  {
+   "base": "m111e25p0",
+   "tag": "w3_653",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "weapons": {
+     "1107": 3
+    }
+   }
+  },
+  {
+   "base": "m13e5p0",
+   "tag": "w3_654",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "armors": {
+     "240": 7
+    }
+   }
+  },
+  {
+   "base": "m13e5p0",
+   "tag": "w3_655",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "armors": {
+     "473": 5
+    }
+   }
+  },
+  {
+   "base": "m186e24p1",
+   "tag": "w3_656",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 25,
+     "1811": 25
+    }
+   }
+  },
+  {
+   "base": "m186e24p2",
+   "tag": "w3_657",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 75,
+     "1811": 75
+    }
+   }
+  },
+  {
+   "base": "m186e25p1",
+   "tag": "w3_658",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 25,
+     "1811": 25
+    }
+   }
+  },
+  {
+   "base": "m186e25p2",
+   "tag": "w3_659",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 75,
+     "1811": 75
+    }
+   }
+  },
+  {
+   "base": "m186e26p1",
+   "tag": "w3_660",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 75,
+     "1813": 75
+    }
+   }
+  },
+  {
+   "base": "m186e26p2",
+   "tag": "w3_661",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 25,
+     "1813": 25
+    }
+   }
+  },
+  {
+   "base": "m186e27p1",
+   "tag": "w3_662",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 75,
+     "1813": 75
+    }
+   }
+  },
+  {
+   "base": "m186e27p2",
+   "tag": "w3_663",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 25,
+     "1813": 25
+    }
+   }
+  },
+  {
+   "base": "m186e28p1",
+   "tag": "w3_664",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 75,
+     "1813": 75
+    }
+   }
+  },
+  {
+   "base": "m186e28p2",
+   "tag": "w3_665",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1812": 25,
+     "1813": 25
+    }
+   }
+  },
+  {
+   "base": "m186e29p1",
+   "tag": "w3_666",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 75,
+     "1815": 75
+    }
+   }
+  },
+  {
+   "base": "m186e29p2",
+   "tag": "w3_667",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 25,
+     "1815": 25
+    }
+   }
+  },
+  {
+   "base": "m186e2p1",
+   "tag": "w3_668",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 25,
+     "1811": 25
+    }
+   }
+  },
+  {
+   "base": "m186e2p2",
+   "tag": "w3_669",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1810": 75,
+     "1811": 75
+    }
+   }
+  },
+  {
+   "base": "m186e30p1",
+   "tag": "w3_670",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 75,
+     "1815": 75
+    }
+   }
+  },
+  {
+   "base": "m186e30p2",
+   "tag": "w3_671",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 25,
+     "1815": 25
+    }
+   }
+  },
+  {
+   "base": "m186e31p1",
+   "tag": "w3_672",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 75,
+     "1815": 75
+    }
+   }
+  },
+  {
+   "base": "m186e31p2",
+   "tag": "w3_673",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1814": 25,
+     "1815": 25
+    }
+   }
+  },
+  {
+   "base": "m194e3p0",
+   "tag": "w3_675",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "weapons": {
+     "1105": 3
+    }
+   }
+  },
+  {
+   "base": "m204e5p0",
+   "tag": "w3_676",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1027": 2
+    }
+   }
+  },
+  {
+   "base": "m204e5p0",
+   "tag": "w3_677",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "items": {
+     "1027": 2
+    }
+   }
+  },
+  {
+   "base": "m204e5p0",
+   "tag": "w3_678",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "items": {
+     "1027": 2
+    }
+   }
+  },
+  {
+   "base": "m204e5p0",
+   "tag": "w3_679",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "items": {
+     "1027": 2
+    }
+   }
+  },
+  {
+   "base": "m204e5p0",
+   "tag": "w3_680",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "items": {
+     "1027": 2
+    }
+   }
+  },
+  {
+   "base": "m204e5p1",
+   "tag": "w3_681",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1027": 20
+    }
+   }
+  },
+  {
+   "base": "m204e5p1",
+   "tag": "w3_682",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "items": {
+     "1027": 20
+    }
+   }
+  },
+  {
+   "base": "m204e5p1",
+   "tag": "w3_683",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "items": {
+     "1027": 20
+    }
+   }
+  },
+  {
+   "base": "m204e5p1",
+   "tag": "w3_684",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "items": {
+     "1027": 20
+    }
+   }
+  },
+  {
+   "base": "m204e5p1",
+   "tag": "w3_685",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "items": {
+     "1027": 20
+    }
+   }
+  },
+  {
+   "base": "m204e5p2",
+   "tag": "w3_686",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "items": {
+     "1027": 200
+    }
+   }
+  },
+  {
+   "base": "m204e5p2",
+   "tag": "w3_687",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "items": {
+     "1027": 200
+    }
+   }
+  },
+  {
+   "base": "m204e5p2",
+   "tag": "w3_688",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "items": {
+     "1027": 200
+    }
+   }
+  },
+  {
+   "base": "m204e5p2",
+   "tag": "w3_689",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "items": {
+     "1027": 200
+    }
+   }
+  },
+  {
+   "base": "m204e5p2",
+   "tag": "w3_690",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "items": {
+     "1027": 200
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_691",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_692",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_693",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_694",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_695",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e14p0",
+   "tag": "w3_696",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_697",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_698",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_699",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_700",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_701",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e15p0",
+   "tag": "w3_702",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_703",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_704",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_705",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_706",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_707",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e16p0",
+   "tag": "w3_708",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_709",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_710",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_711",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_712",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_713",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e17p0",
+   "tag": "w3_714",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_715",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_716",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_717",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_718",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_719",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e18p0",
+   "tag": "w3_720",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_721",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_722",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_723",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_724",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_725",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e19p0",
+   "tag": "w3_726",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_727",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_728",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_729",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_730",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_731",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e21p0",
+   "tag": "w3_732",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_733",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_734",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_735",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_736",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_737",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e22p0",
+   "tag": "w3_738",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_739",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_740",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_741",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_742",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_743",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e23p0",
+   "tag": "w3_744",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_745",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_746",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_747",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_748",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_749",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e24p0",
+   "tag": "w3_750",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_751",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_752",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_753",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_754",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_755",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e25p0",
+   "tag": "w3_756",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_757",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_758",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_759",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_760",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_761",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e26p0",
+   "tag": "w3_762",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_763",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_764",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_765",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_766",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_767",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e27p0",
+   "tag": "w3_768",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_769",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_770",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_771",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_772",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_773",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e28p0",
+   "tag": "w3_774",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_775",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_776",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_777",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_778",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_779",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e29p0",
+   "tag": "w3_780",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1820": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_781",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_782",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_783",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_784",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_785",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e30p0",
+   "tag": "w3_786",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_787",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_788",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_789",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_790",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_791",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e31p0",
+   "tag": "w3_792",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_793",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_794",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_795",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_796",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_797",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e32p0",
+   "tag": "w3_798",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_799",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_800",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_801",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_802",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_803",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e33p0",
+   "tag": "w3_804",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1840": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_805",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_806",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_807",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_808",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_809",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e34p0",
+   "tag": "w3_810",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_811",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_812",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_813",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_814",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_815",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e35p0",
+   "tag": "w3_816",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_817",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_818",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_819",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_820",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_821",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e36p0",
+   "tag": "w3_822",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_823",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_824",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_825",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_826",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_827",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e37p0",
+   "tag": "w3_828",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_829",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_830",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_831",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_832",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_833",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e38p0",
+   "tag": "w3_834",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1860": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_835",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_836",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_837",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_838",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_839",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e39p0",
+   "tag": "w3_840",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_841",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_842",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_843",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_844",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_845",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e40p0",
+   "tag": "w3_846",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_847",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_848",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_849",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_850",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_851",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e41p0",
+   "tag": "w3_852",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_853",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_854",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_855",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_856",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_857",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e42p0",
+   "tag": "w3_858",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_859",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_860",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_861",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_862",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_863",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e43p0",
+   "tag": "w3_864",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_865",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_866",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_867",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_868",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_869",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e44p0",
+   "tag": "w3_870",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_871",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_872",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_873",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_874",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_875",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e45p0",
+   "tag": "w3_876",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_877",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_878",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_879",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_880",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_881",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e46p0",
+   "tag": "w3_882",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_883",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_884",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_885",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_886",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_887",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e47p0",
+   "tag": "w3_888",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_889",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_890",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_891",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_892",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_893",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e48p0",
+   "tag": "w3_894",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_895",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_896",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_897",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_898",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_899",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e49p0",
+   "tag": "w3_900",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_901",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_902",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_903",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_904",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_905",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e50p0",
+   "tag": "w3_906",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_907",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_908",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_909",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_910",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_911",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e51p0",
+   "tag": "w3_912",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_913",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_914",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_915",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_916",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_917",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e52p0",
+   "tag": "w3_918",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_919",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_920",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_921",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_922",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_923",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e53p0",
+   "tag": "w3_924",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_925",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_926",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_927",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_928",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_929",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e54p0",
+   "tag": "w3_930",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_931",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_932",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_933",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_934",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_935",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e55p0",
+   "tag": "w3_936",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_937",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_938",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_939",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_940",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_941",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e56p0",
+   "tag": "w3_942",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_943",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_944",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_945",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_946",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_947",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e57p0",
+   "tag": "w3_948",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_949",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_950",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_951",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_952",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_953",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e58p0",
+   "tag": "w3_954",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_955",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_956",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_957",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_958",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_959",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e59p0",
+   "tag": "w3_960",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_961",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_962",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_963",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_964",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_965",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e60p0",
+   "tag": "w3_966",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_967",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_968",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_969",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_970",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_971",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e61p0",
+   "tag": "w3_972",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_973",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_974",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_975",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_976",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_977",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e62p0",
+   "tag": "w3_978",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_979",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_980",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_981",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_982",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_983",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e63p0",
+   "tag": "w3_984",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1880": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_985",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_986",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_987",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_988",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_989",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e64p0",
+   "tag": "w3_990",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1900": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_991",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_992",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_993",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_994",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_995",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e65p0",
+   "tag": "w3_996",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1920": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_997",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_998",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_999",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_1000",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_1001",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e66p0",
+   "tag": "w3_1002",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1980": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1003",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1004",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1005",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1006",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1007",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e67p0",
+   "tag": "w3_1008",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1960": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1009",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "957": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1010",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "958": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1011",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "959": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1012",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "960": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1013",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "961": 10
+    }
+   }
+  },
+  {
+   "base": "m217e68p0",
+   "tag": "w3_1014",
+   "preset": {
+    "answers": [
+     5
+    ],
+    "switches": {
+     "1940": false
+    },
+    "items": {
+     "962": 10
+    }
+   }
   }
  ]
 }
