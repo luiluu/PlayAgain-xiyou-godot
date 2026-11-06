@@ -1,7 +1,7 @@
 {
  "from": "/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated",
  "sliceConfigSHA256": "37cc3f806d481aef6010b5ab8358f0ac4803f2c41f03c5a1d67bd2ff91e2741b",
- "laneOutputsDigest": "420db086f075a73d2cce7d6e55d7ebe1f9c18775f58d91a7dd57373feff8b27d",
+ "laneOutputsDigest": "bca69727532430cd07bc0602d782bf3ca5288e1307b242937ad02f8327012560",
  "mainOracle": {
   "achievement_badges.json": "cec49a0e2801a8178d8ee17fbeacca0422eccb2f591b37b84377f6257e73809a",
   "achievements.json": "33730c3936c8781ee26ee76258f763b14e5e26c675efce14eefb0c2c836a36c3",
@@ -32,7 +32,7 @@
   "dungeon.json": "816d751184519f0824059627dfe3299106b8f441ee34fd707c2daa281f99c90e",
   "enemy_book_defeat.json": "d1178fd1ce93b62257b715d0c92fdbf77c74154bed4a7983cf138f6d2fc64669",
   "equipment.json": "7304aea8bffe384428381a0df5570a153ed986ba6ba87c1a53ccf7908e523fc2",
-  "event_states.json": "ffcc69a2c0e639d5503737e298af77b0d78590aaa4aec629299ef1adacf6373f",
+  "event_states.json": "e61a5a8194f4a0b7b7c59fcc7204bad1bc2b0cb1807a0bf3fdc4975d0288feb0",
   "events.json": "990a53b0304bdc9b338bbea1e714c18708275bcc9ad67ed58072692900aa3a8f",
   "formula_actions.json": "0035d738f08027b8f90ab7d0c64f5450bb67f5f1c18b829a2e758cacca532a97",
   "formula_effects.json": "b30056d6e556aaabf4d7f14fd4784040ef586173647326d1be3583b746e968af",
@@ -99,7 +99,7 @@
   "toji_battle.json": "4849fa06bcf1fd4d212e638183dcca0ec3fa0751430ee8ded1aa29eab7aade05",
   "toji_eva.json": "29c880c7793a3109d1c07015f3147834671dd2f09ecd8cd3998a2e4bb6e492e3",
   "training.json": "7f3e8d51b09bcf8756bcf47087fcb71eae78410a5d806d7bf78bf4e947181263",
-  "troop_events.json": "ac9555a6220619010bb731119bf83756b98bebe7fc98eebf05288b0a13f1ceb2",
+  "troop_events.json": "d8f0f1930c1ae5660bfdfd0484f64c7f36c0f057fa5ba48d83ec3d1ba911fcc2",
   "vsfx.json": "2bc4a3d7fd162946080bafccce68837697c192543e2c0c23356f511e49b83bda",
   "weak_challenge.json": "cedcb2c937d9fc6ad371dd85641995711eeccf45e8abd348fb99fadc8d2eafc9",
   "weapon_unleash.json": "1c7b5c8bba6300789a0ae3cb3f06bdc9a415409f39439af864a782b8864a73ce",
