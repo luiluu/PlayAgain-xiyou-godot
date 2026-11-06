@@ -40,7 +40,9 @@
 
 ## 验证
 
-- （跑完补）
+- `补跑事件状态探针.py --force` 两次（加 10 个后 9332 例、加 w4 后 10429 例，无报错）；`xiyou_event_compare` 全量带 `--coverage` 两次都 11/11，regressions 只有上面 3 例既有项。
+- `同步正式西游.py --accept-additions` 退出 0（只新增 event_states 用例）；`工具回归.py` 全过（82 秒）；
+  `选测.py main --list` 67 个场景 → 云端选测全过（提交 8695cc63，7 片）。
 
 ## 待交叉核查
 
