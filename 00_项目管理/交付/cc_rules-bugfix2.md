@@ -2,7 +2,7 @@
 
 - 车道／工作者：规则（cc，项目线程「完成再刷西游Godot引擎重制」），总装派单：Codex 审查报告第 8、9 项；追加天衣订单词缀、gear 重掷序号登记
 - 状态：可合并（验证见文末）
-- 基于：cc/rules-bugfix1 头 47e6270c（bugfix1 当时没进 main），交付前已 merge main。
+- 基于：cc/rules-bugfix1 头 47e6270c（bugfix1 当时没进 main），交付前已 merge main（ec877cb6，含 bugfix1）。
 - 改了战斗核心：`battle/battle_logic.gd`（受伤解除一处调用＋新函数）、`core/battler.gd`（is_guard、is_restricted、on_restrict、change_state_if_removed、add_new_state 一段、_add_state 一行）；`core/yunshang_orders.gd` submit 一段。
 
 ## 逐条
@@ -40,7 +40,8 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | O-待定-3 | 受限解除（`modes/xiyou/core/battler.gd` `add_new_state`／`on_restrict`） | krz_state_re 的 states() 缓存让 addNewState 判不出「从未受限变受限」，onRestrict 从不触发：防御、凌波舞、鸣贝在被晕、混乱后照留，防御后被晕醒来仍减伤 | 第一次受限时去掉 removeByRestriction 的状态，防御失效 | 原版缺陷（Kyo 2026-11-07「原版的 bug 要修」） | `XBattler.FIX_RESTRICT_REMOVE = false`（参照 state_remove_probe 在关时逐例比） | cc（规则 bugfix2） | 默认修 |
 | O-待定-4 | 天衣订单开工（`modes/xiyou/core/yunshang_orders.gd` `submit`） | 往备注补模板的 `<Prefixes>`，但词缀表读库时已解析，天衣从不掷词缀 | 照作者注释本意掷模板的前缀，品质、图标档保持天衣自己的 | 原版缺陷（补了却没生效） | `XYunshangOrders.FIX_TEMPLATE_PREFIXES = false`（参照 yunshang p8 在关时逐项比） | cc（规则 bugfix2） | 默认修 |
-| （不编号） | `core/gear.gd` 同几率词缀排序 | gear 重掷序号：已知原版缺陷，无可见影响，不修 | — | 当前数据没有同几率的词缀 | — | cc（规则 bugfix2） | 不修 |
+
+另请总装在优化登记表末尾（不编号、不发 O 号）补一行：「gear 重掷序号：已知原版缺陷，无可见影响，不修」（`core/gear.gd` 同几率词缀排序用的序号重掷后不归零；当前数据没有同几率的词缀）。
 
 ## 变更记录草稿
 
@@ -71,8 +72,17 @@
 
 ## 验证
 
-（待填）
+- 参照：新探针 `state_remove_probe.cjs` 106 例（冻结 v0.28），存成夹具 `tests/fixtures/state_remove_oracle.json`（不进同步，探针登记按同名夹具认）；探针里关了 CodexZones。
+- 语法检查：602 个 .gd，0 个问题。
+- 专项（本地）：xiyou_state_remove 387/387、xiyou_yunshang_shop 428/428。
+- 旧代码上会挂（逐条把修复行改成 pass 后跑）：去掉受伤解除调用 → `damage.*`、`sc.damage_changes` 挂；去掉 on_restrict → `fixed.*` 挂；去掉 isStateRestrict → `restrict.*.8+2`／`8+525` 挂；去掉模板前缀 → `prefix_fix.on_rolled` 挂。
+- `事件空绿扫描.py --check` 通过（空绿 55 例，均在基线内）。
+- 云端选测通过：merge main 后 db9a3dce，344 个场景、13 片（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42325215002）。
+- 临时产物已清（.sandbox 的 state_remove.json、scratchpad 备份）。工作树是 app 自建的，没有另建 clone。
 
 ## 本分支提交
 
-（待填）
+- 4d8a47db WIP：代码、探针、专项
+- e0954e72 专项通过、旧代码上挂已核
+- db9a3dce 合并 main
+- 交付单 cc_rules-bugfix2（本提交）
