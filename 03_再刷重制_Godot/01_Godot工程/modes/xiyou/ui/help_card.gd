@@ -108,6 +108,11 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 	if rows.is_empty():
 		return rows
 	rows[0][0] = XGearSearch.star_name(obj)
+	# 独立装备登记时 CodexElements.normalizeGear 已把备注、说明里作元素用的别名改掉（暗黑→黑暗等），详情读的是改过的实例
+	var kind := kind_of(obj)
+	if kind == "weapon" or kind == "armor":
+		for r in rows:
+			r[0] = gear_text(str(r[0]))
 	return panel_view(obj, rows, width)
 
 

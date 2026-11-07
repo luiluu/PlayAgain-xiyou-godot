@@ -114,7 +114,10 @@ func _run() -> void:
 	await frames()
 	check("tab_to_sockets", gd.mode == 2 and gd.detail.visible and not equip.lower_win.visible and gd.tab_text() == _win("equip_detail_3_sockets", "Window_Help").text)
 	var want_sock: Array = _shot_ref("equip_detail_3_sockets").detail.rows
-	check("socket_rows_shape", gd.rows.size() == want_sock.size() and str(gd.rows[0][2]) == "#ffe499" and str(gd.rows[1][0]).begins_with("宝珠插槽：")
+	# 孔数是每件实例按存档种子掷的（原版那件 1 孔），只比行的结构：标题、孔数、每孔一行、符文、记录、提示
+	var holes: Array = equip._slot_item().get("augmentSlots", [])
+	check("socket_rows_shape", gd.rows.size() == 5 + holes.size() and str(gd.rows[1][0]) == "宝珠插槽：%d个" % holes.size()
+		and (holes.is_empty() or str(gd.rows[2][0]) == str(want_sock[2][0])) and str(gd.rows[0][2]) == "#ffe499" and str(gd.rows[1][0]).begins_with("宝珠插槽：")
 		and str(gd.rows[gd.rows.size() - 3][0]).begins_with("符文镶嵌：剩余 ") and str(gd.rows.back()[0]) == str(want_sock.back()[0])
 		and str(gd.rows[gd.rows.size() - 2][0]) == "尚无符文镶嵌记录。", [gd.rows, want_sock])
 	await shot("gear_detail_04_sockets")
