@@ -230,7 +230,7 @@ func _run() -> void:
 				var got := await _erase_case(c.id)
 				_check(c.id, JSON.stringify(got) == JSON.stringify(want), [got, want])
 			else:
-				# 新源 v0.62.12 的 316 不出升级文字（流萤运行时丢了「显示升级」，O-待定·升级文字）：参照文字为空时按回退支比文字；
+				# 新源 v0.62.12 的 316 不出升级文字（流萤运行时丢了「显示升级」，O-236）：参照文字为空时按回退支比文字；
 				# 等待时序照旧用默认支（显示文字）比参照的帧号（旧源 v0.28 量的就是这个）
 				var wait: bool = c.id == "flush.225.wait"
 				var keep := MVEventCore.LEVEL_UP_SHOW_316

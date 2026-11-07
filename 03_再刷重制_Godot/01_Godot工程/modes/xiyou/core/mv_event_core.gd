@@ -23,7 +23,7 @@ const PASS_CODES := [401, 405, 408, 655, 404, 412, 604, 0, 108, 505]
 ## O-100：大厅「更改形象80」（CE463）最后一条 322 写的是 93 号（炭治郎），图像却是天虎令的（与招募天虎令 CE1405 给 104 号的相同），
 ## 原版用过后炭治郎变成天虎令的样子、天虎令不变。改成写给 104 号。键「公共事件:角色」；设为空字典 {} 恢复原版。
 const ACTOR_IMAGE_FIX := {"463:93": 104}
-## O-待定·升级文字：新源 v0.62.12 的流萤运行时（installLiuyingRuntime）把 Game_Actor.changeLevel 包成只传 level，
+## O-236：新源 v0.62.12 的流萤运行时（installLiuyingRuntime）把 Game_Actor.changeLevel 包成只传 level，
 ## 316 增减等级勾的「显示升级」被丢掉，原版不再出「升到了 等级」文字（v0.28 有；大厅 EV69 实测）。默认照旧显示，设 false 回到新源原版。
 static var LEVEL_UP_SHOW_316 := true
 static var skip_common_events := []   # 原为 [1386]（战斗背景，首期无对应系统）：283 更改战斗背景已有宿主入口，events5 起不再跳过
