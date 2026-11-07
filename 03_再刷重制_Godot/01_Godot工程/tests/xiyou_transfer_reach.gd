@@ -63,17 +63,54 @@ func _map(m: int, landings: Array, exits: Dictionary, known: Dictionary) -> void
 	var map: XMapScene = _scene()
 	var ex: Dictionary = exits.get(str(m), {"walk": [], "auto": []})
 	for l in landings:
-		var at := Vector2i(int(l.xy[0]), int(l.xy[1]))
+		var at := _fixed_landing(m, Vector2i(int(l.xy[0]), int(l.xy[1])), l.from)
 		var tag := "m%d_%d_%d" % [m, at.x, at.y]
-		if not _check(tag + "_in_map", map.lower.is_valid(at), {"size": [map.lower.width, map.lower.height], "from": l.from}):
+		var why = known.get("%d:%d:%d" % [m, at.x, at.y], known.get(str(m)))
+		if not map.lower.is_valid(at):
+			print("OUTSIDE ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from}))
+			_check(tag + "_in_map", why != null, {"size": [map.lower.width, map.lower.height], "from": l.from})
 			continue
 		var ok: bool = not ex.auto.is_empty()
 		if not ok and not ex.walk.is_empty():
 			ok = REACH.unreachable(map, at, ex.walk).size() < ex.walk.size()
+			# 同层事件挡路（守关的精英、首领）：只看图块走得到出口的，打过它就让开，记 BLOCKED 不算卡死
+			if not ok and _tiles_reach(map, at, ex.walk):
+				ok = true
+				print("BLOCKED ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk}))
 		if not ok:
 			print("STUCK ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk}))
-			var why = known.get("%d:%d:%d" % [m, at.x, at.y], known.get(str(m)))
 			_check(tag + "_exit", why != null, {"from": l.from, "exits": ex.walk})
+
+
+## 只看图块（不算事件挡路）从 from 走不走得到任一出口事件（同层的站到四邻，其余踩上去）
+func _tiles_reach(map: XMapScene, from: Vector2i, ids: Array) -> bool:
+	var seen := {from: true}
+	var q := [from]
+	while not q.is_empty():
+		var c: Vector2i = q.pop_front()
+		for d in REACH.DIRS:
+			var n: Vector2i = c + REACH.DIRS[d]
+			if seen.has(n) or not map.lower.is_valid(n):
+				continue
+			if map.lower.is_passable(c.x, c.y, d) and map.lower.is_passable(n.x, n.y, 10 - d):
+				seen[n] = true
+				q.append(n)
+	for e in map.events:
+		if ids.has(e.event_id) and (seen.has(e.grid) or REACH.DIRS.values().any(func(o): return seen.has(e.grid + o))):
+			return true
+	return false
+
+
+## 落点修正（MVInterpreter.TRANSFER_FIX，如三十三层 (24,12)→(24,13)）：来源写成「MapNNN EVn pK」
+func _fixed_landing(m: int, at: Vector2i, from: Array) -> Vector2i:
+	for f in from:
+		var r := RegEx.create_from_string("^Map(\\d+) EV(\\d+)").search(str(f))
+		if r == null:
+			continue
+		var key := "%d:%d:%d:%d:%d" % [int(r.get_string(1)), int(r.get_string(2)), m, at.x, at.y]
+		if MVInterpreter.TRANSFER_FIX.has(key):
+			return MVInterpreter.TRANSFER_FIX[key]
+	return at
 
 
 func _run() -> void:
