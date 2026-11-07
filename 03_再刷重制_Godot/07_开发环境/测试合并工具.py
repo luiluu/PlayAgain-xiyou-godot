@@ -3349,6 +3349,56 @@ for name in filter(None, files):
         self.g('add', '.')
         self.assertEqual(merge.new_placeholders(self.root, base), ['# 新 %s 没换号' % tok])
 
+    def test_lane_passes_registered_named_placeholder_in_code(self):
+        """tools-merge-args4：代码里新冒出来的「O-待定·名字」，优化登记已有同名行就放行（与交付单检查同一规则）；
+        登记里没有的、不带名字的照旧拦；本批另有不带名字的草稿号时，带名字的不被换掉前半。"""
+        tok = 'O-' + '待定'
+        self.lane_board()
+        self.g('merge', 'main', cwd=self.wt)
+        self.assertEqual(self.call(), 0, self.last_output)
+        reg = self.root / merge.OPT_REGISTRY
+        reg.parent.mkdir(parents=True, exist_ok=True)
+        reg.write_text('# 优化登记\n\n| 编号 | 项目 |\n| --- | --- |\n| %s·升级文字 | 位置 |\n' % tok)
+        self.put(str(merge.PROJECT / 'modes/升级.gd'), '# %s·升级文字：开关\n' % tok)
+        self.put(str(merge.PROJECT / 'modes/漏.gd'), '# %s·别的名字\n' % tok)
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc', '--desc', 'x'), 1)
+        self.assertIn('别的名字', self.last_output)
+        self.assertIn('放行（优化登记已有同名行）', self.last_output)
+        self.assertNotIn('# %s·升级文字' % tok, self.last_output.split('留了没换号')[-1])
+        (self.root / merge.PROJECT / 'modes/漏.gd').unlink()
+        self.tool('--lane', 'task', '--who', 'cc', '--desc', 'x')                          # 只剩登记过的：不再停在占位检查
+        self.assertNotIn('留了没换号', self.last_output)
+        self.assertIn('放行（优化登记已有同名行）', self.last_output)
+        state = {'optNumbers': {tok: 'O-236'}}
+        self.assertEqual(merge.substitute_opt('a %s b %s·升级文字' % (tok, tok), state), 'a O-236 b %s·升级文字' % tok)
+        self.assertEqual(merge.orphan_tokens('x %s·升级文字 y' % tok, set()), [])
+        self.assertEqual(merge.orphan_tokens('x %s y' % tok, set()), [tok])
+
+    def test_lane_numbers_newly_registered_named_placeholders(self):
+        """审查 60 P3-1／P3-2：本次合并新登记的「O-待定·名字」行（名字可带空格）发正式号，首格、代码、交接板一起换；
+        早先就在登记里的具名行只列出来不动。"""
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.lane_board()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |\n| %s·旧名字 | 旧 | a | b | c | d | e | 待分配 |' % tok)
+        reg = self.wt / merge.OPT_REGISTRY
+        reg.write_text(reg.read_text().rstrip('\n') + '\n| %s·Sv 先清再解析 | 甲项 | a | b | c | `XFoo.FIX = false` | e | 待用户确认 |\n' % tok)
+        code = self.wt / merge.PROJECT / 'modes/sv.gd'
+        code.write_text('## %s·Sv 先清再解析：回退开关\nstatic var FIX := true\n' % tok)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'named opt', cwd=self.wt)
+        self.assertEqual(self.tool('--lane', 'task', '--who', 'cc', '--desc', 'x'), 0, self.last_output)
+        self.assertIn('具名占位发号：%s·Sv 先清再解析 → O-119' % tok, self.last_output)
+        self.assertIn('早先登记、没发号的具名占位（旧名字）', self.last_output)
+        text = (self.root / merge.OPT_REGISTRY).read_text()
+        self.assertIn('| O-119 | 甲项 |', text)
+        self.assertIn('| %s·旧名字 |' % tok, text)
+        self.assertEqual((self.root / merge.PROJECT / 'modes/sv.gd').read_text().split('\n')[0], '## O-119：回退开关')
+        self.assertIn('- O-119 甲项（默认保留，重制完成后由用户逐条决定）', (self.root / merge.BOARD).read_text())
+        self.assertFalse(merge.dirty(self.root))
+        # 名字只对上一半（空格前）：照拦，并说明要逐字同名
+        self.assertEqual(merge.unregistered_named('x %s·Sv 别的' % tok, '| %s·Sv 先清再解析 | a |' % tok), ['%s·Sv' % tok])
+        self.assertTrue(merge.opt_tokens_registered('x %s·Sv 先清再解析。' % tok, '| %s·Sv 先清再解析 | a |' % tok))
+
     def test_lane_stops_on_new_placeholder_and_keeps_board(self):
         tok = 'O-' + '待定'
         self.lane_board()

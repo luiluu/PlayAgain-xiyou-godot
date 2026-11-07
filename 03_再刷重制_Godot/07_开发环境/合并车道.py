@@ -751,7 +751,7 @@ def opt_draft_list_items(text):
     return [x.strip() for x in block.splitlines() if re.match(r'^\s*[-*]\s+.*' + OPT_TOKEN.pattern, x)]
 
 
-OPT_NAMED = re.compile(OPT_TOKEN.pattern + r'·([^\s|｜，。、；（）()`*]+)')
+OPT_NAMED = re.compile(OPT_TOKEN.pattern + r'·([^\s|｜，,。、；;：:（）()\[\]【】「」`*"\']+)')
 
 
 def opt_section_none(text):
@@ -763,14 +763,72 @@ def opt_section_none(text):
     return bool(re.fullmatch(r'(?:[-*]\s*)?[（(]?无[）)]?[。.]?(?:\s*[（(].*[）)])?', first))
 
 
+def registered_named(registry):
+    """优化登记里首格是「O-待定·名字」的行的整个首格（名字可带空格，如「O-待定·SvPngFd 先清再解析」），长的在前。"""
+    rows = set(re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', registry or '', re.M))
+    return sorted(rows, key=len, reverse=True)
+
+
+def unregistered_named(text, registry):
+    """正文里每个 O-待定 占位：不带名字的记成「O-待定」，带名字但登记里没有逐字同名首格的记成它在正文里的样子；都对上返回空。
+    名字按登记首格逐字比（含空格），不再按字符截断（审查 60 P3-2：「SvPngFd 先清再解析」只认出「SvPngFd」）。"""
+    rows, bad = registered_named(registry), []
+    for m in OPT_TOKEN.finditer(text):
+        if not text.startswith('·', m.end()):
+            bad.append(m.group(0))
+        elif not any(text.startswith(r, m.start()) for r in rows):
+            n = OPT_NAMED.match(text, m.start())
+            bad.append(n.group(0) if n else m.group(0) + '·')
+    return bad
+
+
 def opt_tokens_registered(text, registry):
     """正文里的优化号占位都写成「O-待定·名字」、且优化登记里已有「| O-待定·名字 |」行（车道直接写进登记表的）：登记有人写了，不用草稿表。"""
-    if not registry:
-        return False
-    rows = set(re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', registry, re.M))
-    tokens = OPT_TOKEN.findall(text)
-    named = [m.group(0) for m in OPT_NAMED.finditer(text)]
-    return len(named) == len(tokens) and all(n in rows for n in named)
+    return bool(registry) and bool(OPT_TOKEN.search(text)) and not unregistered_named(text, registry)
+
+
+def number_named(root, base):
+    """--lane 时给本次合并新登记的具名占位发正式号（审查 60 P3-1）：优化登记首格「O-待定·名字」、合并前的 main 登记里没有的，
+    按登记里最大的 O-NNN 顺延，首格与工程、设计文档、交接板里的同名占位一起换。工具源码（07_开发环境、03_转换工具）照旧不换号。
+    返回 ([(编号, 项目)], [改过的文件])；早先就在登记里、还没发号的只列出来，不动（总装手编或另行处理）。XIYOU_NUMBER_NAMED=0 关掉。"""
+    reg = root / OPT_REGISTRY
+    if os.environ.get('XIYOU_NUMBER_NAMED', '1') == '0' or not reg.is_file():
+        return [], []
+    text = reg.read_text()
+    old = subprocess.run(['git', '-C', str(root), 'show', '%s:%s' % (base, OPT_REGISTRY)], capture_output=True, text=True).stdout
+    before = set(registered_named(old))
+    rows = [r for r in re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', text, re.M)]
+    todo = [r for r in rows if r in before]
+    if todo:
+        print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）' % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
+    fresh = list(dict.fromkeys(r for r in rows if r not in before))
+    if not fresh:
+        return [], []
+    nxt = max([int(n) for n in OPT_NUMBERED.findall(text)] + [0]) + 1
+    numbers = {}
+    for tok in fresh:
+        numbers[tok] = 'O-%03d' % nxt
+        nxt += 1
+    out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l', '-F', '-e', 'O-' + '待定·', '--',
+                          str(PROJECT), str(SUB / '00_设计'), str(BOARD)], capture_output=True, text=True).stdout.split()
+    changed = []
+    for rel in dict.fromkeys(out + [str(OPT_REGISTRY)]):
+        f = root / rel
+        if not f.is_file() or rel.startswith(OPT_SKIP):
+            continue
+        old_text = f.read_text()
+        new_text = old_text
+        for tok in sorted(numbers, key=len, reverse=True):
+            new_text = new_text.replace(tok, numbers[tok])
+        if new_text != old_text:
+            f.write_text(new_text)
+            changed.append(rel)
+    added = []
+    for tok, num in numbers.items():
+        row = next((l for l in reg.read_text().split('\n') if re.match(r'^\|\s*' + re.escape(num) + r'\s*\|', l)), '')
+        added.append((num, row.split('|')[2].strip() if row else tok.split('·', 1)[1]))
+        print('具名占位发号：%s → %s' % (tok, num), flush=True)
+    return added, changed
 
 
 def check_opt_drafts(text, name, registry=''):
@@ -853,7 +911,8 @@ def orphan_problem(rel, n, line, tok, cand, rows):
 
 
 def orphan_tokens(line, known):
-    return [m.group(0) for m in OPT_TOKEN.finditer(line) if m.group(0) not in known]
+    # 「O-待定·名字」是直接写进优化登记表的那种，不按草稿表换号（--lane 按登记表放行，tools-merge-args4）
+    return [m.group(0) for m in OPT_TOKEN.finditer(line) if m.group(0) not in known and not line.startswith('·', m.end())]
 
 
 def check_orphan_placeholders(rows, files):
@@ -883,7 +942,7 @@ def substitute_ambiguous(line, state, after=''):
     """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；本行没有就看紧跟的两行
     （after：代码注释写在开关声明上一行，「## 优化 O-待定：…」下一行才是 static var FIT_ROWS，tools39）；对不上或对上几条就停下，让总装手改。"""
     for tok, entries in state.get('optEntries', {}).items():
-        pat = re.compile(re.escape(tok) + r'(?!-?\d)')
+        pat = re.compile(re.escape(tok) + r'(?!-?\d|·)')
         if not pat.search(line):
             continue
         hit = [e for e in entries if line.strip() == e['row']]
@@ -1053,7 +1112,7 @@ def substitute_orphans(line, rel, state, after, n):
         hit, cand = pick_by_location(line, rel, rows, after)
         if hit is None:
             raise RuntimeError(orphan_problem(rel, n, line, tok, cand, rows))
-        line = re.sub(re.escape(tok) + r'(?!-?\d)', hit['number'], line)
+        line = re.sub(re.escape(tok) + r'(?!-?\d|·)', hit['number'], line)
     return line
 
 
@@ -1090,7 +1149,7 @@ def substitute_opt(text, state, after=''):
         text = '\n'.join(substitute_ambiguous(x, state, tail(i)) for i, x in enumerate(lines))
     for tok, num in state.get('optNumbers', {}).items():
         # 只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
-        text = re.sub(re.escape(tok) + r'(?!-?\d)', num, text)
+        text = re.sub(re.escape(tok) + r'(?!-?\d|·)', num, text)
     return text
 
 
@@ -2019,8 +2078,24 @@ def lane_one(root, task, branch, who, desc, executor, prep_extra=(), finish_extr
         raise RuntimeError('%s 没走到「已准备合并」（阶段 %s）' % (task, state.get('phase')))
     # 只拦工程与设计文档里新冒出来的（总装原 lane.sh 的 git grep）；optLeftover 里变更记录正文讲占位写法的字样可以原样留（准备时已打提示）
     left = new_placeholders(root, state['base'])
+    # 写成「O-待定·名字」、优化登记里已有同名行的（车道直接写进登记表的）放行，与交付单检查（opt_tokens_registered）同一规则；
+    # 11-07 八戒「O-待定·升级文字」在代码与对照基线说明里被拦，总装手编 O-236（tools-merge-args4）
+    reg = root / OPT_REGISTRY
+    registry = reg.read_text() if reg.is_file() else ''
+    passed = [x for x in left if opt_tokens_registered(x, registry)]
+    for x in passed:
+        print('放行（优化登记已有同名行）：' + x[:80], flush=True)
+    left = [x for x in left if x not in passed]
     if left:
+        named = sorted({t for x in left for t in unregistered_named(x, registry) if '·' in t})
+        if named:
+            left.append('（带名字的占位要与优化登记首格逐字相同、含空格才放行，没对上的：%s）' % '、'.join(named[:8]))
         raise RuntimeError('%s 留了没换号的 O-待定，先手改再重跑：\n  ' % task + '\n  '.join(left[:12]))
+    added, changed = number_named(root, state['base'])
+    if added:
+        state['optAppended'] = state.get('optAppended', []) + [list(x) for x in added]
+        save(state_file, state)
+        finish_extra = list(finish_extra) + sum((['--also', x] for x in changed), [])
     board_add(root, state, who, desc)
     if main(base_args + ['--finish', '--batch'] + list(finish_extra)):
         raise RuntimeError('%s --finish --batch 没过（见上），修好后重跑同一条 --lane' % task)
