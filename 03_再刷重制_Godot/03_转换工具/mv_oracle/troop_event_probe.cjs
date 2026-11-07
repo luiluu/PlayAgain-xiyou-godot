@@ -64,6 +64,8 @@ const HP_V062 = {2011: [[0.1, []]], 2013: [[0.2, []], [0.1, [2]], [0.05, [2, 3]]
 // 敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）hpRate 只设敌人 0，不在这里
 const HP_GAPS4 = [[270, 0.2], [417, 0.5], [418, 0.5], [456, 0.2], [457, 0.2], [458, 0.2], [661, 0.2], [755, 0.2], [756, 0.2], [757, 0.2],
   [765, 0.25], [791, 0.2], [792, 0.2], [793, 0.2], [795, 0.2], [796, 0.2], [797, 0.2], [805, 0.2], [806, 0.2], [807, 0.2], [814, 0.25]];
+// rules-gaps5：敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）：[敌群, hpRate]，hpEnemy＝1 预置敌人 1 的 HP（玩家照旧打敌人 0）
+const HP_ENEMY1 = [[805, 0.35], [806, 0.35], [807, 0.35], [814, 0.4]];
 const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
 const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
   599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
@@ -93,6 +95,30 @@ w.BattleManager.alterBattleback = function (line) { return w.SceneManager._scene
 // 覆盖记录（cc events13，环境变量 XIYOU_COVER=1 才开，默认不记、troop_events.json 逐字节不变）：每例记解释器实际执行到的
 // 「位置:下标」（敌群页 tTpP、公共事件 ceN，按 _list 对象认），101 连带消费的 401／102 续行也算；另写 .sandbox/troop_events_cover.json，
 // byCase 以 cases 序号为键，给 03_转换工具/敌群页覆盖.py 和 Godot 侧 xiyou_troop_events --coverage 对照。
+// rules-gaps5：事件里的随机变量（122 操作数「随机」）逐支预置。EVENT_R 非空时 122 随机取 floor(n·EVENT_R)（只在这条指令里换 Math.random，
+// 别处照旧 0.5）。T1_TURN3 第 1 页「回合 3+3·X」按变量 844 随机四选一强制（2018 是二选一），旧 t1 例取 0.5 只走一支；
+// 这里给其余每支各跑一例（eventRandom＝k/n），从 $dataTroops 的 122 读取值域，不手写分支表。
+let EVENT_R = null;
+const c122 = w.Game_Interpreter.prototype.command122;
+w.Game_Interpreter.prototype.command122 = function (params) {
+  if (EVENT_R === null || Number((params || this._params)[3]) !== 2) return c122.apply(this, arguments);
+  const mr = w.Math.random;
+  w.Math.random = () => EVENT_R;
+  try { return c122.apply(this, arguments); } finally { w.Math.random = mr; }
+};
+function eventRandomBranches(troopId) {
+  const out = [];
+  for (const pg of w.$dataTroops[troopId].pages) for (const c of pg.list)
+    if (c.code === 122 && c.parameters[0] <= 844 && 844 <= c.parameters[1] && c.parameters[3] === 2) {
+      const n = c.parameters[5] - c.parameters[4] + 1;
+      for (let k = 0; k < n; k++) if (k !== Math.floor(n * 0.5) && !out.includes(k / n)) out.push(k / n);
+    }
+  return out;
+}
+function runEventRandom(troopId, r) {
+  EVENT_R = r;
+  try { return Object.assign(run(troopId, false, null, 0, 0, null, 2), {variant: 't1', eventRandom: r}); } finally { EVENT_R = null; }
+}
 const COVER = process.env.XIYOU_COVER === '1', coverByCase = [];
 let ran = null;
 if (COVER) {
@@ -114,7 +140,8 @@ if (COVER) {
 // hpRate：开战前把敌人 0 的 HP 设为上限的这个比例（向下取整），照常跑两回合；消息忙时直接关掉（模拟玩家读完），
 // 记录 messages（每条的回合与文字）与回合结束时各敌人的 enemyId（三十层敌群 466：HP≤25% 第 3 页 101 对话、336 变身 538、1399、强制 6070／6105）。
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
-function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0) {
+// hpEnemy：hpRate 预置的敌人序号（默认 0 不写字段）。
+function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0) {
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
@@ -138,7 +165,8 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   if (flags) { out.flags = flags; for (const i of flags) w.$gameTroop._eventFlags[i] = true; }
   if (hpRate) {
     out.hpRate = hpRate; out.messages = [];
-    const e0 = w.$gameTroop.members()[0];
+    if (hpEnemy) out.hpEnemy = hpEnemy;
+    const e0 = w.$gameTroop.members()[hpEnemy];
     e0.setHp(Math.floor(e0.mhp * hpRate));
     out.hpPreset = e0.hp;
   }
@@ -229,7 +257,11 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat(PAID_V062.map(id => run(id, true)))
     .concat(Object.entries(HP_V062).flatMap(([id, rows]) => rows.map(([rate, fl]) => run(Number(id), false, null, 0, rate, fl.length ? fl : null))))
     .concat(LATE_V062.map(([id, n]) => Object.assign(run(id, false, null, 0, 0, null, n), {variant: 't1'})))
-    .concat(HP_GAPS4.map(([id, rate]) => run(id, false, null, 0, rate)))};
+    .concat(HP_GAPS4.map(([id, rate]) => run(id, false, null, 0, rate)))
+    // rules-gaps5：敌人 1 的血线页（variant hpE1 单独成键）
+    .concat(HP_ENEMY1.map(([id, rate]) => Object.assign(run(id, false, null, 0, rate, null, 0, 1), {variant: 'hpE1'})))
+    // rules-gaps5：t1 例的变量 844 其余各支（见 EVENT_R）
+    .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
