@@ -1,6 +1,7 @@
 extends Node
 ## 整队（YEP_PartySystem Scene_Party）与出战栏位模型。预期值来自正式 v0.22 浏览器实测（原版参照/claude_party_*）：
 ## 队伍 1,8,9,10,2,3,4 → 出战栏 [1,8,9,10,2]；整队把名单第 6 行（3）放进第 0 格 → [3,8,9,10,2]，队伍 [3,8,9,10,2,1,4]。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results := []
 var out_dir := ""
 var formal := {}
@@ -69,7 +70,7 @@ func shot(name: String) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_party"
+	TestEnv.isolate("xiyou_party")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	formal = XDB.load_json("oracle/party.json")
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	for id in [2, 3, 4]:

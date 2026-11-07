@@ -227,13 +227,16 @@ class ReviewListTests(unittest.TestCase):
         left = lambda: {i['label'] for i in review.pending(self.repo.root)}
         for name in ['cc/platform-android3', 'cc/platform-keys1', 'cc/platform-keys3', 'cc/nezha-tools71', 'cc/nezha-tools72', 'cc/platform-release2']:
             self.assertIn(f'合并 {name}', left())
+        # 审查 52 P3-4：短名只在范围行认，标题里顺口提到的不销
         self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 android3、platform-keys1～3、tools71／72、release2（审查第 50 期）\n')
+        self.assertIn('合并 cc/platform-android3', left())
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查（审查第 50 期）\n\n- 核查覆盖：android3、platform-keys1～3、tools71／72、release2\n')
         got = left()
         for name in ['cc/platform-android3', 'cc/platform-keys1', 'cc/platform-keys2', 'cc/platform-keys3', 'cc/nezha-tools71', 'cc/nezha-tools72', 'cc/platform-release2']:
             self.assertNotIn(f'合并 {name}', got, name)
         self.assertIn('合并 cc/other-android30', got)       # android3 不是 android30 的后缀
         # release1 同时对上 platform-release1 和 entry-release1：不自动认，警告；别名表指定后才销
-        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 release1\n')
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查\n\n- 核查覆盖：release1\n')
         warns = []
         with mock.patch.object(review, 'load_aliases', return_value={}):     # 不受真实别名表影响
             got = {i['label'] for i in review.pending(self.repo.root, warnings=warns)}
@@ -247,9 +250,10 @@ class ReviewListTests(unittest.TestCase):
 
     def test_unknown_short_name_warns_but_noise_does_not(self):
         self.merge_lane('cc/platform-android3', 1)
-        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 android9（cc/lane2、dev.003、m4e69p0、ce942、a1b2c3d、xiyou_rules）\n\n- 核查覆盖：fb31ab0\n')
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 android3 顺口一提\n\n- 核查覆盖：fb31ab0、android9（cc/lane2、dev.003、m4e69p0、ce942、a1b2c3d、xiyou_rules）\n')
         warns = []
-        review.pending(self.repo.root, warnings=warns)
+        got = {i['label'] for i in review.pending(self.repo.root, warnings=warns)}
+        self.assertIn('合并 cc/platform-android3', got)        # 标题里顺口提到的短名不销（审查 52 P3-4）
         self.assertEqual(len(warns), 1, warns)
         self.assertIn('android9', warns[0])
         # 命令行：警告走 stderr，清单照常

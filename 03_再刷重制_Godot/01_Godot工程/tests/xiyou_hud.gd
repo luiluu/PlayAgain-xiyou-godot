@@ -1,6 +1,7 @@
 extends Node
 ## 地图 HUD 集成：实际备份文件隔离，验证空位递增/满档保护/读档/冷却，回城事件与副本限制，配置与输入隔离。
 ## 窗口模式加 -- --out=<目录> 保存实际绘制截图。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
 var out_dir := ""
@@ -34,8 +35,7 @@ func shot(name: String) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_hud"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_hud")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	Engine.time_scale = 6.0
 	var s := XState.new_game(3, 1, [8, 10, 9])

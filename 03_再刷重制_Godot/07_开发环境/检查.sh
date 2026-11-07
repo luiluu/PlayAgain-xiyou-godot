@@ -247,6 +247,8 @@ want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/nu
 want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; then ok "补齐整轮重导入走长任务"; else bad "导入超时工具回归失败，单跑 07_开发环境/测试导入超时.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试Windows实机冒烟.py" >/dev/null 2>&1; then ok "Windows 实机冒烟（假 exe：入口、按键、存档目录）"; else bad "Windows 实机冒烟工具回归失败，单跑 07_开发环境/测试Windows实机冒烟.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试安卓实机冒烟.py" >/dev/null 2>&1; then ok "安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）"; else bad "安卓实机冒烟工具回归失败，单跑 07_开发环境/测试安卓实机冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试插件备注覆盖.py" >/dev/null 2>&1; then ok "插件备注覆盖工具"; else bad "插件备注覆盖工具回归失败，单跑 07_开发环境/测试插件备注覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
@@ -268,7 +270,7 @@ if want tools; then
   rm -f "$sel_log"
 fi
 want tools && { if python3 "$ENV_DIR/测试角色同步提速.py" >/dev/null 2>&1; then ok "扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）"; else bad "扩角色同步提速回归失败，单跑 07_开发环境/测试角色同步提速.py 看详情"; fi; }
-want tools && { if python3 "$ENV_DIR/测试事件探针分段.py" >/dev/null 2>&1; then ok "事件探针分段并行（均衡分组、拼回顺序逐字相同）"; else bad "事件探针分段回归失败，单跑 07_开发环境/测试事件探针分段.py 看详情"; fi; }
+want tools && { es_log=$(mktemp -t es_probe_test); if python3 "$ENV_DIR/测试事件探针分段.py" >"$es_log" 2>&1; then ok "事件探针分段并行（均衡分组、拼回顺序逐字相同）"; else grep -A8 "^FAIL:\|^ERROR:" "$es_log" | head -24 | sed "s/^/    /"; bad "事件探针分段回归失败，单跑 07_开发环境/测试事件探针分段.py 看详情"; fi; rm -f "$es_log"; }
 # 内容覆盖（沙僧协助计划第 8 项）：缺素材／无效引用／未翻译不得出现基线外的新问题；修好或接受后 --update-baseline
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/内容覆盖检查.py" --check; then ok "内容覆盖（无基线外新问题）"; else bad "内容覆盖出现新问题，见 04_验证/本地结果/内容覆盖/报告.json"; fi; }
 

@@ -86,4 +86,58 @@ cases.push(makeCase('pbstex_tp', {skills: [3219, 4924]}, () => {
   out.notes = [3219, 4924].map(id => ({id, note: w.$dataSkills[id].note.split('\n').filter(l => /passive/i.test(l))}));
   return out;
 }));
-process.exit(finish(host, 'passive.json', {scope: 'dsPassiveSkill passiveGUARD / passiveXPBSTEX on frozen source', cases}) ? 0 : 1);
+// passiveSTREG 状态无效化（rules-gaps1）：Game_Actor.stateResistSet 追加被动缓存里 passiveSTREG 后缀的数值（007／0007／00010 都按数值）。
+// 量：学各技能后的 stateResistSet、isStateResist、addState 能不能挂上；状态 686 经特性 43 给 5500（refresh 后）；防具 4088 备注里的同名标签（装上）。
+const STREG_IDS = [4, 5, 6, 7, 8, 9, 10, 29, 30, 85, 124, 234, 377, 381, 382, 908, 1061, 1101, 1102, 1394, 1789];
+cases.push(makeCase('streg', {stateIds: STREG_IDS}, () => {
+  const out = {rows: []};
+  const view = a => ({resistSet: a.stateResistSet().filter(i => STREG_IDS.includes(i)).sort((x, y) => x - y), resist: STREG_IDS.filter(i => a.isStateResist(i))});
+  for (const ids of [[], [38], [84], [88], [1174], [5568], [5979], [5699], [2366], [3206], [38, 1174]]) {
+    const {a} = battle(true); sourceErrors.length = 0;
+    for (const id of ids) a.learnSkill(id);
+    a.need_refresh = true; a.refresh();
+    const row = {kind: 'learn', ids, ...view(a), added: {}};
+    for (const st of [7, 8, 9]) { a.addState(st); row.added[st] = a.isStateAffected(st); a.removeState(st); a.need_refresh = true; a.refresh(); }
+    row.sourceErrors = sourceErrors.slice();
+    out.rows.push(row);
+  }
+  { const {a} = battle(true); sourceErrors.length = 0;
+    a.addState(686); a.need_refresh = true; a.refresh();
+    out.rows.push({kind: 'state686', ids: [], has5500: a.skills().some(s => s.id === 5500), ...view(a), sourceErrors: sourceErrors.slice()}); }
+  { const {a} = battle(true); sourceErrors.length = 0;
+    const arm = w.$dataArmors[4088], slot = a.equipSlots().indexOf(arm.etypeId);
+    a.canEquip = () => true;  // 角色 1 本不能装这件，只为量备注标签读不读
+    a.forceChangeEquip(slot, arm); a.need_refresh = true; a.refresh();
+    out.rows.push({kind: 'armor4088', ids: [], slot, equipped: a.equips().includes(arm), ...view(a), sourceErrors: sourceErrors.slice()}); }
+  out.notes = [38, 1174, 5979, 5699].map(id => ({id, keys: Object.keys(w.$dataSkills[id].meta).filter(k => k.startsWith('passiveSTREG'))}));
+  return out;
+}));
+// SkillCriPush 暴击率增加与 v0.62.12 installCritFloor（rules-gaps1）：
+// ① 装上带 <SkillCriPushAll: 15%> 等的防具、学带 <SkillCriPushMf: n%> 的技能后，_passiveCache.critPush 与 itemCri（数据全写成 n%，原版正则对不上）；
+// ② 攻击方暴击率 ≤0、目标暴击回避 >1 时 itemCri（负负得正被下限挡掉）。cri／cev 用 getter 钉住。
+cases.push(makeCase('cripush', {}, () => {
+  const out = {rows: [], floor: []};
+  const pick = (table, re) => table.find(x => x && re.test(x.note || ''));
+  const arm = pick(w.$dataArmors, /<SkillCriPushAll:/), mfSkill = pick(w.$dataSkills, /<SkillCriPushMf:/), idSkill = pick(w.$dataSkills, /<SkillCriPush\d+:/);
+  out.objs = [['Armors', arm], ['Skills', mfSkill], ['Skills', idSkill]].map(([t, o]) => ({table: t, id: o.id, tags: o.note.match(/<SkillCriPush[^>]*>/g)}));
+  for (const which of ['none', 'armor', 'mf', 'id']) {
+    const {a, e} = battle(true); sourceErrors.length = 0;
+    if (which === 'armor') { a.canEquip = () => true; a.forceChangeEquip(a.equipSlots().indexOf(arm.etypeId), arm); }
+    if (which === 'mf') a.learnSkill(mfSkill.id);
+    if (which === 'id') a.learnSkill(idSkill.id);
+    a.need_refresh = true; a.refresh(); if (a.refreshPassiveCache) a.refreshPassiveCache();
+    const row = {which, critPush: JSON.parse(JSON.stringify(a._passiveCache.critPush)), cri: a.cri, itemCri: {}};
+    for (const sid of [1, mfSkill.id, idSkill.id]) { const act = new w.Game_Action(a); act.setSkill(sid); row.itemCri[sid] = act.itemCri(e); }
+    row.cev = e.cev; row.sourceErrors = sourceErrors.slice();
+    out.rows.push(row);
+  }
+  for (const [cri, cev] of [[-0.5, 2], [-0.5, 0.5], [0, 2], [0.3, 2], [0.3, 0.5]]) {
+    const {a, e} = battle(true); sourceErrors.length = 0;
+    Object.defineProperty(a, 'cri', {get: () => cri, configurable: true});
+    Object.defineProperty(e, 'cev', {get: () => cev, configurable: true});
+    const act = new w.Game_Action(a); act.setSkill(1);
+    out.floor.push({cri, cev, itemCri: act.itemCri(e), sourceErrors: sourceErrors.slice()});
+  }
+  return out;
+}));
+process.exit(finish(host, 'passive.json', {scope: 'dsPassiveSkill passiveGUARD / passiveXPBSTEX / passiveSTREG / SkillCriPush / CritFloor on frozen source', cases}) ? 0 : 1);

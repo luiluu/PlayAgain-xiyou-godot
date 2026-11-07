@@ -246,7 +246,7 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var v := 0.0
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
-		var crit := clampf(a.cri * (1.0 - t.cev * XToji.cev_rate(a, rec)), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # itemCri（含甚尔五感包装）
+		var crit := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # 原版 action.itemCri(target)：整条包装链（甚尔、critPush、暴击下限等）
 		v = damage * hit * (1.0 + crit * 0.5)
 	_damage_cache[key] = v
 	return v

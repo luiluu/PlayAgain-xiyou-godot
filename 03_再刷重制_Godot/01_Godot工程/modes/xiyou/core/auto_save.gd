@@ -13,9 +13,15 @@ extends RefCounted
 ## 置 busy 前；事件战斗（指令 301）、小猫试炼、真气闭关在开打前，这三处是事件里开的战斗，busy 不算阻挡（读回来
 ## 事件会从头再跑，总装定接受）。挂机中跳过（挂机已有定时存）；不挂机时两次战斗检查点至少隔 BATTLE_GAP_MSEC。
 ## 回退：CHECKPOINTS = false（只在切后台时存）。
+## 事件里开的战斗不存检查点（cc 平台 FB 2026-11-07，审查第 52 期 P2-1，并入 O-221）：存档不带解释器进度，
+## 读回来事件不会重跑；可事件常是「先扣东西再开打」（Map207 奇兽地事件 3 先扣奇兽捕捉许可证再打 319，Map046／Map147
+## 连战中间扣奖碑），301 那一刻存下的是「扣了、没打」，战斗里被杀、读回来东西没了、仗也没了。所以 in_event 的三处
+## （301、小猫试炼、真气闭关）一律跳过，自动存档留在更早那份（事件开始前），只有随机遇敌开战前存。
+## 回退：EVENT_BATTLES = true（事件里开的战斗也存，busy 不算阻挡，即 11-07 dev.393 的做法）。
 
 static var ON_PAUSE := true
 static var CHECKPOINTS := true
+static var EVENT_BATTLES := false
 ## 这么久之内再来的切后台通知当成同一次（PAUSED 和 FOCUS_OUT 前后脚到）。
 const DEDUP_MSEC := 3000
 ## 两次战斗检查点至少隔这么久（总装定 60 秒）
@@ -91,9 +97,12 @@ static func checkpoint(map, what: String, in_event := false) -> String:
 	return last_result
 
 
-## 开战前的检查点：各开战入口在置 busy／开打之前调（in_event＝事件里开的战斗，busy 不算阻挡）。
+## 开战前的检查点：各开战入口在置 busy／开打之前调（in_event＝事件里开的战斗：默认跳过；EVENT_BATTLES 开着时 busy 不算阻挡）。
 ## 挂机中跳过；距上次战斗检查点不到 BATTLE_GAP_MSEC 也跳过。返回 last_result。
 static func battle_checkpoint(map, in_event := false, now_msec := Time.get_ticks_msec()) -> String:
+	if in_event and not EVENT_BATTLES:
+		last_result = "skip:in_event"
+		return last_result
 	if XState.current != null and XHangUp.is_active(XState.current):
 		last_result = "skip:hangup"
 		return last_result

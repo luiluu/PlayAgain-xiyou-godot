@@ -224,7 +224,10 @@ class ProgressTests(unittest.TestCase):
         import io, time
         buf = io.StringIO()
         with self.ess.Progress(3, interval=0.05, out=buf) as prog:
-            time.sleep(0.3)
+            # 等到至少 3 拍再收（最多 5 秒）：launchd 后台低优先级调度时 0.3 秒固定等待只出 2 拍（总装三十一 11-07 复现）
+            deadline = time.monotonic() + 5
+            while buf.getvalue().count('还在跑') < 3 and time.monotonic() < deadline:
+                time.sleep(0.05)
             prog.done(0)
         lines = buf.getvalue().splitlines()
         self.assertIn('开始，3 段并行', lines[0])

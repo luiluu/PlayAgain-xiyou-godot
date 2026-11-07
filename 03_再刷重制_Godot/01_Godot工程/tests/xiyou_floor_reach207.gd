@@ -6,6 +6,7 @@ extends Node
 ## - Map195 EV21 → Map207 奇兽捕捉 (8,35)：EV3 要变量 14≥1、开关 2303，扣物品 1974 奇兽捕捉许可证，
 ##   按变量 755（随机 1～13，固定住逐个试）开战敌群 319～327、334、335、337、338；EV1／EV2 回 Map004 (14,15)。
 ## 队伍生命攻击都很大（只查流程）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -138,8 +139,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
-	XSave.dir_override = "user://test_xiyou_floor_reach207"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach207")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

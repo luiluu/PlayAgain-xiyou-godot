@@ -1297,9 +1297,47 @@ class SyncStampTests(unittest.TestCase):
              mock.patch.object(sys, 'argv', argv), mock.patch.dict(os.environ), contextlib.redirect_stdout(io.StringIO()):
             return sync.main()
 
-    def lane_stamp(self, tools='same'):
+    def lane_stamp(self, tools='same', pending=False):
         stamp = {'toolsDigest': tools, 'outputsDigest': sync.outputs_digest(self.lane_gen)}
+        if pending:
+            stamp['pendingAcceptance'] = True
         (self.lane_gen / sync.STAMP).write_text(json.dumps(stamp))
+
+    def last_report(self):
+        backups = sorted((self.root / '03_再刷重制_Godot/04_验证/本地结果/自动同步').iterdir())
+        return json.loads((backups[-1] / '同步报告.json').read_text())
+
+    def test_pending_lane_stamp_is_reused_but_main_still_needs_acceptance(self):
+        """车道同步只差测量接受（待接受指纹）：main 复用车道产物，但照样按自己的基线比较，没接受单退出 2，带接受单才 0（11-07 换源合并）。"""
+        (self.lane_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'trace': ['改了']}]}))
+        self.lane_stamp(pending=True)
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 2)
+        report = self.last_report()
+        self.assertTrue(report.get('fromWorktreePending'), report)
+        self.assertNotIn('probes', report)                      # 没重跑转换与探针
+        self.assertIn('events.json', report['measurementChanges'])
+        self.assertFalse((self.gen / sync.STAMP).exists())        # main 没接受，不留指纹
+        state = json.loads((self.root / '00_项目管理/当前状态.json').read_text())
+        self.assertNotIn('fingerprint', state['remakeSource'])   # 也没登记
+        rows = [dict({k: v for k, v in c.items() if k != 'switchOnly'}, reason='有意修正探针口径') for c in report['changeCandidates']]
+        self.assertTrue(rows)
+        spec = Path(self.tmp.name) / 'accept.json'
+        spec.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane), '--accept-changes', str(spec)), 0)
+        self.assertTrue(self.last_report().get('fromWorktreePending'))
+        self.assertEqual(sync.outputs_digest(self.gen), sync.outputs_digest(self.lane_gen))
+
+    def test_pending_lane_stamp_keeps_tool_and_output_checks_and_switch(self):
+        before = sync.outputs_digest(self.gen)
+        self.lane_stamp(tools='other', pending=True)
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 转换工具不同
+        self.lane_stamp(pending=True)
+        (self.lane_gen / 'slice.json').write_text('{"x":1}')
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 同步后产物被改
+        self.lane_stamp(pending=True)
+        with mock.patch.dict(os.environ, {'XIYOU_REUSE_PENDING_STAMP': '0'}):
+            self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)    # 回退开关：不认待接受指纹
+        self.assertEqual(sync.outputs_digest(self.gen), before)
 
     def test_comparison_rules_do_not_change_tools_digest(self):
         """oracle_additions.py 只管接不接受测量变化：改它不让车道同步指纹失效；改转换器照旧失效。"""
@@ -2591,6 +2629,13 @@ for name in filter(None, files):
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
         self.assertIn('res://modes/broken.gd：Parse Error', r.stdout)
         self.assertNotIn('GameApp', r.stdout)
+        # 第十五批 FG：await 碰上三元式（11-07 mapev1 主事件文字全被跳过）也在这里报出文件与行号，不用等场景
+        self.put(str(merge.PROJECT / 'modes/interp.gd'), 'func _step():\n\tvar ok = await f() if c else null\n'
+                 '\tvar response = await (host.a(r) if p else host.b(r))\n')
+        r = run()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn('res://modes/interp.gd:3：await 与三元式', r.stdout)
+        self.assertNotIn('interp.gd:2', r.stdout)
 
     def test_parse_check_flags_import_and_load_process_failures(self):
         # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
@@ -3539,6 +3584,37 @@ sys.exit(0)
                              ('x.gd.uid', True), ('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd', False), ('AGENTS.md', False)]:
             self.assertEqual(merge.release_only_path(path), expect, path)
             self.assertEqual(cloud.release_only([path]), expect, path)
+
+
+class AwaitTernaryTests(unittest.TestCase):
+    """第十五批 FG：await 的优先级高于三元式，三元式两边的异步调用会被静默跳过（Godot 只报错不中断）。"""
+    def lines(self, body):
+        return [no for no, _ in merge.await_ternaries('func f():\n' + body)]
+
+    def test_flags_unawaited_branch_calls(self):
+        for body in ['\tvar r = await (host.show_parallel_message(m) if parallel else host.show_message(m))\n',   # mapev1 原句
+                     '\tvar r = await a() if c else b()\n',             # (await a()) if c else b()：b() 没 await
+                     '\tif ok: x = await a() if c else obj.b(1)\n',     # 一行写完的 if
+                     '\tvar q = (await (a()\n\t\tif c else b()))\n',   # 跨行
+                     '\treturn await (a() if c else b())\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [2])
+
+    def test_ignores_safe_forms(self):
+        for body in ['\tawait f(a if b else c())\n',                    # 三元式只在实参里
+                     '\tvar n = await f() if c else null\n',             # else 那边没有调用
+                     '\tvar cmd = [null] if d else await g()\n',          # await 在分支里
+                     '\tvar r = await (sig_a if c else sig_b)\n',         # 只是挑信号
+                     '\t_check(await w(1) and z, [m.id if m else -1])\n',
+                     '\tvar s = "await (a() if b else c())"  # await (a() if b else c())\n',
+                     '\tvar ok = await a() if c else b()  # await-ternary-ok\n',
+                     '\tawait get_tree().process_frame\n\tvar t = a if b else c()\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [])
+
+    def test_real_project_has_none(self):
+        project = HERE.parent / '01_Godot工程'
+        self.assertEqual(merge.gd_await_ternary_problems(project), [])
 
 
 if __name__ == '__main__':
