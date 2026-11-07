@@ -121,6 +121,18 @@ static var _mc_res: Array = []
 ## 按名字的 <Item 名字 Buy Price> 正式数据里解析不到物品，不算；<Weapon/Armor x Buy Price> 的目标是独立装备，插件跳过。
 static func sell_rewards(rec: Dictionary) -> Dictionary:
 	var base := _base_rec(rec)
+	if XBabyAllActors.free_open and XBabyAllActors.is_horn(base):
+		# 宝宝免费号角店开着：号角的额外货币买入价清空（installBabyAllActorsRuntime makeFree），卖出那部分不变
+		var free: Dictionary = sell_rewards_raw(base).duplicate(true)
+		free.buy_vars = {}
+		free.buy_items = {}
+		free.buy = false
+		return free
+	return sell_rewards_raw(rec)
+
+
+static func sell_rewards_raw(rec: Dictionary) -> Dictionary:
+	var base := _base_rec(rec)
 	var key := "%s:%d" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0))]
 	if _rewards.has(key):
 		return _rewards[key]
@@ -446,7 +458,8 @@ static func is_super_strong(actor_id: int) -> bool:
 
 
 static func super_enabled(s: XState) -> bool:
-	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9
+	# installBabyAllActorsRuntime：宝宝路线视同已开放超强者
+	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9 or XBabyAllActors.active(s)
 
 
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
@@ -573,6 +586,8 @@ static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 ## Scene_Shop.maxBuy：持有上限余量（物品 9999−持有，独立装备 1），有价格时再受金钱限制，MoreCurrencies 再按各变量/物品取整
 static func max_buy(s: XState, rec: Dictionary, price: int) -> int:
 	var mx := 1 if is_gear(rec) else MAX_ITEMS - s.item_count(int(rec.get("id", 0)))
+	if XBabyAllActors.free_open and XBabyAllActors.is_horn(rec):
+		mx = mini(mx, 1)  # 宝宝免费号角店：每次最多 1 支
 	if price > 0:
 		mx = mini(mx, s.gold / price)
 	var r := sell_rewards(rec)

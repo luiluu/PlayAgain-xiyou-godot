@@ -2037,6 +2037,12 @@ class Exporter:
                     out = self.audio_96k(f'{kind}/{rel}{dst}', data, prev)
                 # 重编码过的音频不能沿用源文件的修改时间：Godot 先看修改时间，时间没变就不重新导入，包里还是旧的高码率
                 self.write_changed(f'{kind}/{rel}{dst}', out, source=None if kind == 'audio' and out is not data else src)
+                # 以前按原样复制过的伪 PNG（JPEG／WebP 内容）导入失败，留下 valid=false 的 .import；现在转成真 PNG 了，
+                # Godot 认 .import 里的旧记录不重导（162 诛仙战斗图、脸图因此是空的）。产物已对的情况下也删掉坏 .import，下次导入重做
+                bad = self.out / f'{kind}/{rel}{dst}.import'
+                if bad.is_file() and 'valid=false' in bad.read_text(encoding='utf-8', errors='replace'):
+                    bad.unlink()
+                    self.issues.append({'resetInvalidImport': f'{kind}/{rel}{dst}'})
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):

@@ -108,8 +108,8 @@ static func actor_count() -> int:
 
 
 ## installIntegratedV029Runtime（v0.30）Window_ActorBookIndex.refresh 包装：目录里去掉 CodexV029.hiddenActors（有名字的才去；
-## 「？？？」占位没有 actorId，留着），之后目录位置不再等于角色号，状态页与详情按 Window_ActorBookIndex.actor()（v0.35）取角色
-const HIDDEN_ACTORS := [141, 146, 152, 157, 160, 161, 166]
+## 「？？？」占位没有 actorId，留着），之后目录位置不再等于角色号，状态页与详情按 Window_ActorBookIndex.actor()（v0.35）取角色。
+## 名单与开关在 XImportedBalance（HIDDEN_ACTORS、V029_HIDE_ACTORS，O-待定·V029 隐藏角色；角色仓库列表同一名单）
 
 
 ## 目录每一槽的角色号（「？？？」槽为 0）
@@ -117,7 +117,7 @@ static func index_ids() -> Array:
 	var out := []
 	for i in (XDB.table("Actors") as Array).size():
 		var nm := i > 0 and named(i)
-		if nm and i in HIDDEN_ACTORS:
+		if nm and XImportedBalance.is_hidden_actor(i):
 			continue
 		out.append(i if nm else 0)
 	return out
@@ -559,12 +559,10 @@ static func sprite_path(id: int) -> String:
 	return str(sprite_spec(id).get("path", ""))
 
 
-## Codex_MiraRavenMultiFrame v1.07 profile.bookScale：只在人物图鉴里再乘的倍率（战斗大小不变；Kyo 2026-10-31「图鉴里的精灵有点大」）
-const BOOK_SCALE := {"Codex_Liuying_SV": 0.8}
-
-
+## Codex_MiraRavenMultiFrame v1.07 profile.bookScale：只在人物图鉴里再乘的倍率（战斗大小不变；Kyo 2026-10-31「图鉴里的精灵有点大」）；
+## 表在 XAppearance.BOOK_SCALE（进阶界面大图 XActorAdvancedScene._v108 也用）
 static func book_scale(key: String) -> float:
-	return float(BOOK_SCALE.get(key, 1.0))
+	return float(XAppearance.BOOK_SCALE.get(key, 1.0))
 
 
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格

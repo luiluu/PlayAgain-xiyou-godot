@@ -142,7 +142,7 @@ func _compare(w, g: Dictionary, app: String) -> Array:
 
 func _pixels(out: Array, app: String, name: String) -> void:
 	var img := name.get_file()
-	var src := Image.load_from_file(app.path_join("img").path_join(name))
+	var src := _load_by_content(app.path_join("img").path_join(name))
 	var dst := Image.load_from_file(ProjectSettings.globalize_path("res://modes/xiyou/generated/img/" + name))
 	if src == null or dst == null:
 		out.append({"image": img, "what": "读不出图（原版 %s，重制 %s）" % [src != null, dst != null], "verdict": "待查"})
@@ -158,6 +158,22 @@ func _pixels(out: Array, app: String, name: String) -> void:
 					if src.get_pixel(x, y) != dst.get_pixel(x, y):
 						n += 1
 			out.append({"image": img, "what": "像素不同 %d 个（共 %d）" % [n, src.get_width() * src.get_height()], "verdict": "待查"})
+
+
+## 原版有 .png 扩展名、内容是 JPEG／WebP 的图（162 诛仙 guanxi7_1）：NW.js 按内容解码，这里也按内容读
+func _load_by_content(path: String) -> Image:
+	var buf := FileAccess.get_file_as_bytes(path)
+	if buf.size() < 12:
+		return null
+	var img := Image.new()
+	var err := ERR_FILE_UNRECOGNIZED
+	if buf[0] == 0xFF and buf[1] == 0xD8:
+		err = img.load_jpg_from_buffer(buf)
+	elif buf.slice(0, 4).get_string_from_ascii() == "RIFF" and buf.slice(8, 12).get_string_from_ascii() == "WEBP":
+		err = img.load_webp_from_buffer(buf)
+	else:
+		err = img.load_png_from_buffer(buf)
+	return img if err == OK else null
 
 
 func _fmt(v: Array) -> String:

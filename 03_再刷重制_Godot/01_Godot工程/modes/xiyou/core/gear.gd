@@ -102,21 +102,10 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseWeaponDatabase"): table = "Weapons"
 	for row in ([] if XTestMode.boost_depth > 0 else definition.get("affixes", [])):
-		_pool_enter(true, owner)     # DreamX.RandomPrefixSuffix.choose
-		var dice := floori(_pool_next(owner) * 100) + 1
-		var choices: Array = row.choices.duplicate()
-		choices.sort_custom(func(a,b):return a.chance < b.chance)
-		for choice in choices:
-			var ids: Array = choice.ids.filter(func(n): return valid_affix(table, int(n)))
-			if ids.is_empty(): continue
-			if dice > int(choice.chance):
-				dice -= int(choice.chance)
-				continue
-			_pool_enter(false, owner)         # DreamX.randomArrayElement
-			var affix_id := int(ids[mini(floori(_pool_next(owner)*ids.size()),ids.size()-1)])
-			combine(item, XDB.rec(table,affix_id), str(row.kind))
-			item.affixIds.append({"table":table,"id":affix_id,"kind":row.kind})
-			break
+		var affix_id := choose_affix(row.choices, table, owner)
+		if affix_id > 0:
+			combine(item, XDB.rec(table, affix_id), str(row.kind))
+			item.affixIds.append({"table": table, "id": affix_id, "kind": row.kind})
 	if XTestMode.boost_depth > 0:
 		XTestMode.roll_affixes(item, definition.get("affixes", []), table)  # 测试模式：掉落装备词缀加速
 	# YEP_CoreEngine 备注参数覆盖合并值；原版处理完这些标签才掷属性浮动。
@@ -136,6 +125,33 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	item.originalUpgradeSlots = slots
 	item.baseName = str(item.name)
 	return item
+
+## DreamX.RandomPrefixSuffix.choose（Star_RomGetItems 版，外面再包 v0.62 CodexAffixRate）：一行词条选项掷一次，返回词条编号，不中为 0。
+## 先取一个预掷随机数 r；高阶行且难度倍率≠1 走 XAffixRate.pick（roll＝r×100 比浮动后的概率），否则原掷法（整数骰 floor(r×100)+1）。
+## 中了再取一个预掷随机数挑行内词条（DreamX.randomArrayElement）。
+static func choose_affix(row_choices: Array, table: String, owner: XState = null) -> int:
+	_pool_enter(true, owner)
+	var r := _pool_next(owner)
+	var route_state := owner if owner != null else XState.current
+	var hit := []
+	if XAffixRate.applies(route_state, row_choices, table):
+		hit = XAffixRate.pick(route_state, row_choices, table, r)
+	else:
+		var dice := floori(r * 100) + 1
+		var choices: Array = row_choices.duplicate()
+		choices.sort_custom(func(a, b): return a.chance < b.chance)
+		for choice in choices:
+			var ids: Array = choice.ids.filter(func(n): return valid_affix(table, int(n)))
+			if ids.is_empty(): continue
+			if dice > int(choice.chance):
+				dice -= int(choice.chance)
+				continue
+			hit = ids
+			break
+	if hit.is_empty():
+		return 0
+	_pool_enter(false, owner)         # DreamX.randomArrayElement
+	return int(hit[mini(floori(_pool_next(owner) * hit.size()), hit.size() - 1)])
 
 ## DreamX.RandomPrefixSuffix.isValidItem：记录存在，且不是角色专武（v0.37 起「天外天·」开头、v0.56.01 起备注带 <req_actors:>
 ## 的装备不再当词缀，见 v0.62.12 installIntegratedV029Runtime.js exclusiveAffix；已生成的旧装备不改）

@@ -180,6 +180,7 @@ func refresh_fd() -> void:
 		body_scale = body_scale / maxf(fd, 0.0001) * next
 		fd = next
 		_apply_scale()
+		_apply_smooth()
 
 
 ## 身体缩放（场景外观用负的 x 表示翻转）
@@ -436,12 +437,26 @@ func _show_frame(f: Dictionary) -> void:
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
 	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()
+	_apply_smooth()
 	if weapon and _profile.get("multi", false):
 		weapon.visible = false
 	_place_body()
 
 
 var _frame_h := 0.0
+
+
+## Codex_MiraRavenMultiFrame v1.06 applyVisual：有归一档（167 号以后）的角色，归一缩放（含 SvPngFd 变大）小于 1 时主图改平滑采样，
+## 放大或原尺寸仍最近邻（CrispScaling 默认开：bitmap.smooth = scale < 1）。v0.62 量具：168、174、175、179 平滑，其余 NEAREST。
+## O-待定（交付单「优化登记草稿」v0.62 SV 归一平滑）：SV_NORM_SMOOTH = false 回到 v0.28（归一角色一律最近邻）。
+static var SV_NORM_SMOOTH := true
+
+func _apply_smooth() -> void:
+	var body := sprite as Sprite2D
+	if body == null:
+		return
+	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0
+	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 
 
 ## 身体以脚底为原点；有归一档时可见范围的底边中点落在原点（anchor 0.5,1 再挪 ((宽／2−可见中线), (高−可见底边))×缩放），浮空往上
