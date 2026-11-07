@@ -54,14 +54,8 @@ func check(label: String, ok: bool, detail = null) -> void:
 		print("FAIL ", label, " ", JSON.stringify(detail))
 
 
-func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_battle_pace"
-	XConfig.path_override = XSave.dir().path_join("options.json")
-	XEnemy.force_roll = 100.0
-	var oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
-	seed(20261018)
-	XConfig.set_battle_speed(int(oracle.speed))
-	XConfig.set_flag("CombatSkillAnimation", bool(oracle.anim))
+## 照原版夹具开一场（学夹具技能、规则流恒 0.5、敌人加 100 万血），跑到记下 n 条起止
+func _battle(n: int) -> PaceBattle:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	# 同原版夹具（mac-preload-shim fixture）：每人学天道诅咒 6168（敏捷 ×80%）、难度适应 5980、普通难度 5548，1 号另学 2571、2786
 	for a in s.members():
@@ -85,9 +79,21 @@ func _run() -> void:
 		e.param_mark_dirty()  # krz 能力值缓存：不标脏 mhp 还是旧值，敌人只有原来的血，第 2 回合 e1 被打倒（rules-pace1 查出）
 		e.param_refresh()
 		e.hp = e.mhp
-	var want: Array = oracle.log.filter(func(r): return r[1] != "firstInput")
-	while scene.log.size() < want.size() and Engine.get_physics_frames() - scene.t0 < 4000:
+	while scene.log.size() < n and Engine.get_physics_frames() - scene.t0 < 4000:
 		await get_tree().physics_frame
+	return scene
+
+
+func _run() -> void:
+	XSave.dir_override = "user://test_xiyou_battle_pace"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XEnemy.force_roll = 100.0
+	var oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
+	seed(20261018)
+	XConfig.set_battle_speed(int(oracle.speed))
+	XConfig.set_flag("CombatSkillAnimation", bool(oracle.anim))
+	var want: Array = oracle.log.filter(func(r): return r[1] != "firstInput")
+	var scene: PaceBattle = await _battle(want.size())
 	print("PACE_GODOT=", JSON.stringify(scene.log))
 	# 行动先后（rules-pace1）：原版敏捷 a1 0、a8／a9 16、a10 24、敌人 20，速度 agi＋randomInt(5＋agi/4)＝2／20／29／25，
 	# 三回合都是 a10、e0、e1、e2、a8、a9、a1；重制同一夹具逐次比行动者
@@ -125,6 +131,19 @@ func _run() -> void:
 		for i in range(mini(w.size(), g.size())):
 			ok = ok and absi(int(w[i]) - int(g[i])) <= 1
 		check("action_frames_%s" % ("actor" if actor else "enemy"), ok, [g, w])
+	# 行动之间、回合交界的空帧（ui-pace2，XBattleScene.PACE_GAPS）：逐次比「行动序列第一条」之间的帧数。原版 startAction 之后
+	# 角色隔 1 帧、敌人隔 2 帧才出第一条（battle_pace_ref 逐帧：DISPLAY ACTION），重制 act 当帧就出，所以原版起点各加这个偏移再比。
+	# 改之前（不留空帧）敌人之间 55 对 56，回合交界也短
+	var seq_starts := func(log: Array, mv: bool) -> Array:
+		return log.filter(func(r): return r[1] == "start").map(func(r): return int(r[0]) + ((1 if str(r[2]).begins_with("a") else 2) if mv else 0))
+	var cyc := func(v: Array) -> Array:
+		var out := []
+		for i in range(1, v.size()):
+			out.append(int(v[i]) - int(v[i - 1]))
+		return out
+	var cw: Array = cyc.call(seq_starts.call(want, true))
+	var cg: Array = cyc.call(seq_starts.call(scene.log, false)).slice(0, cw.size())
+	check("pace_cycles", cg == cw, [cg, cw])
 	var gaps := []
 	for i in range(1, mini(want.size(), scene.log.size())):
 		var w = [int(want[i][0]) - int(want[i - 1][0]), want[i][1], want[i][2]]
@@ -133,6 +152,14 @@ func _run() -> void:
 			gaps.append([i, g, w])
 	print("PACE_DIFF=", JSON.stringify(gaps))
 	scene.queue_free()
+	await get_tree().physics_frame
+	# 回退：PACE_GAPS = false 回到不留空帧，敌人之间 55
+	XBattleScene.PACE_GAPS = false
+	var raw: PaceBattle = await _battle(6)
+	var rs: Array = cyc.call(seq_starts.call(raw.log, false))
+	check("pace_gaps_off", rs.size() >= 2 and int(rs[1]) == 55, rs)
+	XBattleScene.PACE_GAPS = true
+	raw.queue_free()
 	await get_tree().create_timer(0.5, true, false, true).timeout
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())

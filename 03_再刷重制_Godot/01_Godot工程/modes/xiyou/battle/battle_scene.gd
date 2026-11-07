@@ -637,6 +637,12 @@ func _main() -> void:
 	await _play_troop_events(logic.troop_events())
 	while true:
 		logic.start_turn()
+		if PACE_GAPS:
+			# Window_BattleLog.startTurn：push('wait')，等 messageSpeed 16（SSEP 每帧减 2＝8 帧）；下一帧 updateTurn 才取第一位，
+			# 原版再过 2 帧行动序列才出第一条（角色 actionList 一帧＋DISPLAY ACTION 一帧，敌人 phaseChange 两帧）。
+			# 重制 act 当帧就开序列，这 2 帧在重制里算在每次行动的尾巴上（行动之间两边总帧数一样）；回合交界的等待
+			# 从「伤害数字飘完」算起，不经过上一次行动的尾巴，所以在这里补上
+			await _pace_frames(int(16.0 / XSequencePlayer.LOG_WAIT_STEP) + 3)
 		await _play(logic.take_turn_start_logs())
 		if not first:
 			otb.advance_turn()
@@ -663,6 +669,8 @@ func _main() -> void:
 			_set_active(null)
 			var logs := logic.act(u, cmd[0], cmd[1])
 			await _play(logs)
+			if PACE_GAPS:
+				await _pace_frames(1)  # endAction 之后那一帧阶段是 turn，下一帧 updateTurn 才取下一位（逐次行动起点间隔与原版一样，见 battle_pace）
 			if (logic.is_won() or logic.is_lost()) and XBattleCommonEvent.reserved(logic) > 0: await _play_troop_events(logic.troop_events())  # 打完最后一击，预约的公共事件照样跑（YEP checkBattleEnd）
 			otb.clear_subject()
 			otb.show_orders(logic.current_order, logic.next_order)
@@ -689,12 +697,30 @@ func _main() -> void:
 						member.refresh_resources()
 			finished.emit(2)
 			return
+		if PACE_GAPS:
+			# YEP endTurn：场上还有伤害数字（isPopupPlaying）就先不结束回合，每帧再试
+			while popups_pending() or _popups.values().any(func(l): return l.any(func(p): return is_instance_valid(p) and not p.is_queued_for_deletion())):
+				await get_tree().physics_frame
 		await _play(logic.end_turn())
+		if PACE_GAPS:
+			# MV endTurn 给每个战斗成员（我方＋敌群全员）push 一条 popupDamage，日志窗一帧执行一条；之后一帧 updateTurnEnd → startTurn
+			await _pace_frames(logic.actors.size() + logic.enemies.size())
 		await _play_troop_events(logic.troop_events(null, true))
 		otb.show_orders(logic.current_order, logic.next_order)
 		_refresh_status()
 		# 全员不能行动时也交还一帧，保留自动/速度按钮与窗口响应。
 		await get_tree().process_frame
+
+
+## 原版战斗流程里行动之间、回合交界的空帧（ui_reference/battle_pace_ref.cjs 逐帧：行动之间 1 帧、轮到角色再 1 帧；回合末
+## 等伤害数字飘完，再按战斗成员数逐帧执行 popupDamage，回合开始日志窗等 8 帧）。复现原版，不登 O 号；
+## PACE_GAPS = false 回到不留空帧（tests/xiyou_battle_pace 两支都测）
+static var PACE_GAPS := true
+
+
+func _pace_frames(n: int) -> void:
+	for i in n:
+		await get_tree().physics_frame
 
 
 ## 敌群事件的记录：强制行动（同普通行动）、敌人回复／出现／变身；101 文字停住规则，消息窗确认后续上游标再播后面的记录。

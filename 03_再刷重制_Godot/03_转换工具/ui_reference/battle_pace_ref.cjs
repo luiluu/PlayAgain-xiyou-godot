@@ -1,7 +1,8 @@
 'use strict';
 // 战斗节奏逐帧（rules-pace1）：无头 Chrome 打开 serve.py 的只读服务（127.0.0.1:8766，冻结正式源），战斗夹具 4 人、敌群 2，
 // 角色指令窗一出就普通攻击敌人 1（同 battle_pace_oracle）。记每次 makeActionOrders 前后各人的 agi／speed／行动、
-// startAction／endAction 的 updateScene 帧、行动序列逐条（帧、行动者、指令名）、对战斗者放的动画。只建内存新局，不读写存档。
+// startAction／endAction 的 updateScene 帧、行动序列逐条（帧、行动者、指令名）、对战斗者放的动画；frames／calls（ui-pace2）
+// 逐帧记 BattleManager 阶段、日志窗等待与方法队列、各种 isBusy，以及本帧调到的 BattleManager 方法。只建内存新局，不读写存档。
 // 用法：python3 -I serve.py <app.nw> <输出目录> &  然后  node battle_pace_ref.cjs <输出.json>
 const fs = require('fs'), os = require('os'), path = require('path'), {spawn} = require('child_process');
 const outFile = path.resolve(process.argv[2] || 'battle_pace_ref.json');
@@ -39,6 +40,16 @@ const PAGE = `(async function(){
   BattleManager.processActionSequence=function(name,args){out.seq.push([n,tag(this._subject),name,(args||[]).join(',').slice(0,60)]);return pas.apply(this,arguments);};
   const sanim=Game_Battler.prototype.startAnimation;
   Game_Battler.prototype.startAnimation=function(id,m,d){out.anims.push([n,tag(BattleManager._subject),tag(this),id]);return sanim.apply(this,arguments);};
+  // 逐帧状态（ui-pace2）：BattleManager 阶段、是否忙、谁让它忙（日志窗等待／方法队列、精灵组、消息），以及本帧调到的 BattleManager 方法
+  out.frames=[];out.calls=[];
+  ['startTurn','endTurn','updateTurnEnd','updateTurn','processTurn','getNextSubject','updateEvent','startInput','updateAction','makeActionOrders','isBusy'].forEach(k=>{
+    const f=BattleManager[k];if(typeof f!=='function')return;
+    BattleManager[k]=function(){const r=f.apply(this,arguments);if(k!=='isBusy'||r)out.calls.push([n,k,k==='getNextSubject'?tag(r):(k==='isBusy'?1:null)]);return r;};});
+  const up2=SceneManager.updateScene;
+  SceneManager.updateScene=function(){up2.apply(this,arguments);const s=SceneManager._scene;if(!(s instanceof Scene_Battle))return;
+    const lw=s._logWindow,ss=s._spriteset;
+    out.frames.push([n,BattleManager._phase,lw._waitMode,lw._waitCount,lw._methods.map(m=>m.name).join('/'),lw.isBusy()?1:0,ss.isBusy()?1:0,$gameMessage.isBusy()?1:0,
+      ss.isAnimationPlaying()?1:0,ss.isAnyoneMoving()?1:0,ss.isEffecting?(ss.isEffecting()?1:0):-1,tag(BattleManager._subject),$gameTroop.isEventRunning()?1:0,s._statusWindow&&s._statusWindow.isClosing&&s._statusWindow.isClosing()?1:0]);};
   for(const e of $gameTroop.members()){e._paramPlus[0]+=1000000;e.need_refresh=true;e.refresh();e.recoverAll();}
   await until(()=>out.log.filter(r=>r[1]==='end').length>=21||n>4000,600000);
   out.n=n;out.errors=window.__refErrors||[];
