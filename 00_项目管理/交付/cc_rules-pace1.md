@@ -60,8 +60,14 @@
 
 ## 验证
 
-（待填）
+- 原版：`battle_pace_ref.cjs` 连跑三次，行动先后、各次行动帧数、OTB 速度三次完全一致（serve.py 只读冻结正式源，内存新局，不读写存档）。
+- 专项（本地）：xiyou_battle_pace 4/4（otb_speeds、action_order、action_frames_actor、action_frames_enemy）。
+- 语法检查通过。
+- 云端选测通过：781cbdf6（merge main 后），2 个场景（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42342942249）。
+- 临时产物已清（scratchpad 里的原版读数与调试脚本）。
 
 ## 本分支提交
 
-（待填）
+- b22e5db8 专项、夹具、量具
+- 781cbdf6 合并 main
+- 交付单 cc_rules-pace1（本提交）
