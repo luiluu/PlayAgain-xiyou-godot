@@ -12,6 +12,14 @@
 - 测试：新 `测试Windows实机冒烟.py` 9 项（假 exe：全过、写进 `_开发` 判失败、按键闪退判失败、标准输出收不到时读 godot.log、缺 pck、不改本进程 APPDATA、按键组／标题／地图与发行入口冒烟一致、存档目录名与 project.godot 一致、Windows 闪退码识别），进 `检查.sh` tools 组和 `工具回归.py`；`测试导出冒烟.py` 的预设改写断言 2→3 处。
 - 验证：（待写）
 
+## 2026-11-07 【cc·平台·未经审查】事件里开的战斗不再存开战前检查点：读回自动存档不会「东西扣了、仗没打」（审查第 52 期 P2-1，dev.待定）
+
+- 问题（审查 52 P2-1，来源 cc/platform-fix3）：解释器 301、小猫试炼、真气闭关开打前调 `XAutoSave.battle_checkpoint(host, true)`，存在事件做了一半的时刻；存档不带解释器进度，读回来事件不会重跑。Map207 奇兽地事件 3 先扣奇兽捕捉许可证再打敌群 319，战斗里被杀、从标题「继续」读回来：证没了、仗也没了；Map046、Map147 事件 1 连战中间扣奖碑同理。
+- 修法（审查给的二选一里取第二种）：`modes/xiyou/core/auto_save.gd` 加 `XAutoSave.EVENT_BATTLES`（默认 false）：`in_event` 的检查点一律跳过（`skip:in_event`），自动存档留在更早那份（事件开始前，如进主菜单时的检查点、切后台那份）；随机遇敌开战前照旧存。只改 auto_save.gd，三个调用处（`mv_interpreter.gd`、`mv_script.gd`、`zhenqi_retreat.gd`，八戒车道独占）不动。没选「事件开始时拍快照」：要在 run_event 里插钩子、改八戒车道的文件，收益只是事件战斗前多一个存档点。
+- 回退：`XAutoSave.EVENT_BATTLES = true`（同 dev.393，事件里开的战斗也存、busy 不算阻挡）。并在优化登记 O-221 行（说明与恢复方法），不另开号。
+- 测试 `xiyou_pause_save`：原 event_battle_checkpoint_saves 改成真跑「先扣 100 金、再 301」的事件：开打时 `skip:in_event`、金钱已扣到 400，自动存档里还是事件前的 500（event_battle_no_checkpoint、event_battle_auto_keeps_pre_event）；回退开关打开同一事件，存下的是 400（event_battle_rollback_saves_after_deduct，证明断言咬得住）；in_event_skipped_by_default、event_battles_default_off；in_event_ignores_busy 改在回退开关下测。
+- 玩家可见：手机上在事件里开的战斗（奇兽地、连战、小猫试炼、真气闭关）中被系统杀掉，从标题「继续」读回来是事件开始前的进度，扣掉的许可证、奖碑都还在。
+
 ## 交接板
 - 下一步：平台第二批——云端 Linux（KVM）起 x86_64 安卓模拟器装 apk 跑入口、返回键、切后台；apk 只有 arm64-v8a，靠镜像的 ARM 转译，不行就云端单独导一份带 x86_64 的冒烟包。
 - 用户试玩说明：无（只有工具和文档）。Kyo 有 Windows 机器或安卓手机时照两份新清单点。

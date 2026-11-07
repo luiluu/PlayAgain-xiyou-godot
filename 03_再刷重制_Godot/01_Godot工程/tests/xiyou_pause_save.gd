@@ -153,6 +153,7 @@ func _run() -> void:
 	# Codex 报告第 5 项（平台 EH，O-221·自动存档检查点）：切后台碰上菜单／战斗时跳过，杀进程就丢进度；
 	# 改成进主菜单、开战前各存一份安全检查点（地图上、事件没在跑时；不存战斗中间态）
 	check("checkpoint_default_on", XAutoSave.CHECKPOINTS)
+	check("event_battles_default_off", not XAutoSave.EVENT_BATTLES)
 	_fresh()
 	check("checkpoint_on_map_saves", XAutoSave.checkpoint(map, "battle") == "checkpoint:battle" and XSave.exists_auto(), XAutoSave.last_result)
 	# 检查点不占切后台的去重窗口：紧接着切后台照样存
@@ -182,19 +183,45 @@ func _run() -> void:
 	check("encounter_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:battle", XAutoSave.last_result)
 	await _end_battle(map)
 	map.map_data.encounterList = []
+	# 事件里开的战斗不存（平台 FB，审查第 52 期 P2-1）：事件先扣东西再开打（Map207 奇兽地先扣许可证再打 319），
+	# 301 那一刻存下的是「扣了、没打」，读回来事件不会重跑。这里事件先扣 100 金再开打：自动存档要停在事件开始前那份。
 	_fresh()
+	var gs := XState.current
+	var gold_was := gs.gold
+	gs.gold = 500
+	check("event_battle_pre_save", XSave.save_auto())  # 事件开始前的那份（如进主菜单时的检查点）
+	XAutoSave.reset()
+	var ev := [{"code": 125, "indent": 0, "parameters": [1, 0, 100]}, {"code": 301, "indent": 0, "parameters": [0, 1, false, true]}, {"code": 0, "indent": 0, "parameters": []}]
 	map._set_busy(true)  # 同 run_event：事件跑着
-	var interp := MVInterpreter.new(map, map.map_id, 0, [{"code": 301, "indent": 0, "parameters": [0, 1, false, true]}, {"code": 0, "indent": 0, "parameters": []}])
+	var interp := MVInterpreter.new(map, map.map_id, 0, ev)
 	var done := {"v": false}
 	var go := func():
 		await interp.run()
 		done.v = true
 	go.call()
 	await _until(func(): return _battle(map) != null)
-	check("event_battle_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:battle", XAutoSave.last_result)
+	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	check("event_battle_no_checkpoint", XAutoSave.last_result == "skip:in_event" and gs.gold == 400, "%s gold=%d" % [XAutoSave.last_result, gs.gold])
+	check("event_battle_auto_keeps_pre_event", saved is Dictionary and int(saved.get("gold", -1)) == 500, str(saved.get("gold", null) if saved is Dictionary else saved))
 	await _end_battle(map)
 	await _until(func(): return done.v)
 	map._set_busy(false)
+	# 回退 EVENT_BATTLES = true：照 dev.393 存（存下的是扣完之后），确认断言咬得住这个差别
+	_fresh()
+	gs.gold = 500
+	XAutoSave.EVENT_BATTLES = true
+	map._set_busy(true)
+	interp = MVInterpreter.new(map, map.map_id, 0, ev)
+	done.v = false
+	go.call()
+	await _until(func(): return _battle(map) != null)
+	saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	check("event_battle_rollback_saves_after_deduct", XAutoSave.last_result == "checkpoint:battle" and saved is Dictionary and int(saved.get("gold", -1)) == 400, XAutoSave.last_result)
+	await _end_battle(map)
+	await _until(func(): return done.v)
+	map._set_busy(false)
+	XAutoSave.EVENT_BATTLES = false
+	gs.gold = gold_was
 	# 限频：60 秒内第二次战斗检查点跳过，过了就存
 	var t := Time.get_ticks_msec()
 	XSave.remove_auto()
@@ -212,7 +239,11 @@ func _run() -> void:
 	# 事件里开的战斗不受 busy 阻挡，事件外 busy 照旧挡
 	_fresh()
 	map.busy = true
+	check("in_event_skipped_by_default", XAutoSave.battle_checkpoint(map, true) == "skip:in_event" and not XSave.exists_auto(), XAutoSave.last_result)
+	XAutoSave.reset()
+	XAutoSave.EVENT_BATTLES = true
 	check("in_event_ignores_busy", XAutoSave.battle_checkpoint(map, true) == "checkpoint:battle")
+	XAutoSave.EVENT_BATTLES = false
 	XAutoSave.reset()
 	XSave.remove_auto()
 	check("not_in_event_busy_skips", XAutoSave.battle_checkpoint(map, false) == "skip:event" and not XSave.exists_auto(), XAutoSave.last_result)
