@@ -19,6 +19,9 @@ const TRAIT_STYPE_ADD := 41
 const TRAIT_STYPE_SEAL := 42
 const TRAIT_SKILL_ADD := 43
 const TRAIT_SKILL_SEAL := 44
+## O-待定-3：原版 addNewState 从「未受限」变「受限」时调 onRestrict（去掉 removeByRestriction 的状态：防御 2／170／235、凌波舞 525、鸣贝 569／580），
+## 但 krz_state_re 的 states() 缓存让加状态后的 isRestricted 读到旧值，onRestrict 从不触发（参照 state_remove_probe）。true＝修成触发；false 重现原版。
+static var FIX_RESTRICT_REMOVE := true
 
 var hp := 0.0
 ## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
@@ -70,7 +73,41 @@ var guarding := false
 ## Game_BattlerBase.isGuard 的结果：防御指令置的 guarding 且 canMove()（rpg_objects.js:2722：防御后又被挂不能行动状态就不再减伤）；
 ## 角色另加 dsPassiveSkill passiveGUARD（见 XActor.is_guard，那支不看 canMove，与原版一致）
 func is_guard() -> bool:
-	return guarding and can_move()
+	return (guarding or traits_set(62).has(1)) and can_move()
+
+
+## Game_BattlerBase.isRestricted：身上有 restriction > 0 的状态（混乱类 1～3、不能行动 4）
+func is_restricted() -> bool:
+	for id in state_ids:
+		if int(XDB.rec("States", id).get("restriction", 0)) > 0:
+			return true
+	return false
+
+
+## Game_Battler.onRestrict（O-待定-3 开时才调）：clearActions（重制在轮到时当场决定行动，没有预存的行动可清；OTB 也是轮到时 makeActions，
+## 行动队列的移除只看 canMove，在 addState 包装里），去掉 removeByRestriction 的状态，防御指令（原版的防御状态 2）一并失效；
+## StateChangeIfRemove「行动限制解除」的换状态在 addState 里面，被 _Fix_StackOverflow 的全局锁挡住（与原版同）。
+func on_restrict() -> void:
+	guarding = false
+	for id in state_ids.duplicate():
+		if bool(XDB.rec("States", id).get("removeByRestriction", false)):
+			remove_state(id)
+			change_state_if_removed(id, "行动限制解除")
+
+
+## StateChangeIfRemove changeState：状态因 tag 这种解除没了时，换成备注 <SC{tag}:N> 的状态；原状态不再记入本次解除（deleteRemovedStates）
+func change_state_if_removed(id: int, tag: String) -> void:
+	if state_ids.has(id):
+		return
+	var text := str(XDB.rec("States", id).get("meta", {}).get("SC" + tag, "")).strip_edges()
+	if not text.is_valid_int() or int(text) <= 0:
+		return
+	var resources: XResourceContext = lifecycle_context.get("resources")
+	if resources != null:
+		resources.result(self).removedStates.erase(id)
+		resources.add_state(self, int(text))
+	else:
+		add_state(int(text))
 
 
 ## Game_BattlerBase.canMove：活着且身上没有「限制 ≥4」的状态（战斗逻辑的 can_move 照此）
@@ -428,9 +465,12 @@ func add_new_state(id: int) -> void:
 		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
 		XSukuna.on_death(self)  # 宿傩 Game_Actor.die 包装：清战斗数据（领域、适应等状态已随 die 清掉）
 		XBlackFlash.on_death(self)  # 黑闪 die 包装：清集中、连闪、觉醒
+	var restricted := is_restricted()
 	if not state_ids.has(id):
 		state_ids.append(id)
 		_sort_states()
+	if FIX_RESTRICT_REMOVE and not restricted and is_restricted():
+		on_restrict()
 	if id == 1 and not was_dead and state_ids.has(1):
 		XDemonCrown.on_death(XState.current, self)  # 魔冠 addNewState 包装：穿着的人新倒下，成长减半
 
@@ -445,6 +485,8 @@ func reset_state_counts(id: int, random: XRandomStream = null) -> void:
 func _add_state(id: int, random: XRandomStream = null) -> void:
 	if XDB.rec("States", id).is_empty():
 		return
+	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and is_restricted():
+		return  # isStateAddable 的 isStateRestrict：受限时防御、凌波舞、鸣贝这类加不上
 	var fresh := not state_ids.has(id)
 	var alien_before = state_turns.get(id) if not fresh else null
 	if id == XZhenqi.POJIA_STATE:
