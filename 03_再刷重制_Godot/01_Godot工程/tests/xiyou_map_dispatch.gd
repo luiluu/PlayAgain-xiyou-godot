@@ -107,6 +107,11 @@ func _run() -> void:
 		_check(c.id + ":oracle_ok", c.errors.is_empty(), c.errors)
 		if str(c.id).begins_with("par."):
 			await _parallel_case(c)
+		elif str(c.id) == "auto3.m149e33.forced":
+			# 强制路线结束后原版跳过一条（这里跳过的是走不通的随机移动，开着修复时晚一帧起跳），逐行对照按原版比
+			MVCharacter.route_resume_fix = false
+			await _auto_case(c, c.id)
+			MVCharacter.route_resume_fix = true
 		elif str(c.id) == "auto3.m149e33.skip":
 			MVCharacter.route_resume_fix = false
 			await _auto_case(c, c.id + "#original")
@@ -260,11 +265,14 @@ func _parallel_case(c: Dictionary) -> void:
 			var hub := await _wait_map(4)
 			if not _check(c.id + ":arrived", hub != null):
 				return
+			# 淡出期间旧图还在更新（原版 Scene_Map 淡出时 $gameMap 照常 update），只看到达之后
+			var arrived := Engine.get_physics_frames()
 			_check(c.id + ":old_interp_cancelled", interp != null and interp.is_cancelled())
 			var t0 := Engine.get_physics_frames()
 			while Engine.get_physics_frames() < t0 + 400:
 				await get_tree().physics_frame
-			_check(c.id + ":no_anim_after", hub.animations_shown.is_empty() and hub.map_id == int(c.observed.mapNow), hub.animations_shown)
+			var after := hub.animations_shown.filter(func(a): return int(a.frame) >= arrived)
+			_check(c.id + ":no_anim_after", after.is_empty() and hub.map_id == int(c.observed.mapNow), after)
 
 
 func _anim_frames(map: XMapScene) -> Array:
