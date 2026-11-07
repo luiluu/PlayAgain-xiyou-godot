@@ -146,6 +146,79 @@ func _run() -> void:
 	title_page.queue_free()
 	await frames(1)
 
+	# Codex 报告第 5 项（平台 EH，O-221·自动存档检查点）：切后台碰上菜单／战斗时跳过，杀进程就丢进度；
+	# 改成进主菜单、开战前各存一份安全检查点（地图上、事件没在跑时；不存战斗中间态）
+	check("checkpoint_default_on", XAutoSave.CHECKPOINTS)
+	_fresh()
+	check("checkpoint_on_map_saves", XAutoSave.checkpoint(map, "battle") == "checkpoint:battle" and XSave.exists_auto(), XAutoSave.last_result)
+	# 检查点不占切后台的去重窗口：紧接着切后台照样存
+	XSave.remove_auto()
+	check("checkpoint_not_dedup_pause", XAutoSave.on_pause(map) == "saved" and XSave.exists_auto(), XAutoSave.last_result)
+	for spec in [["battle", "_in_battle"], ["event", "busy"], ["menu", "_menu_open"]]:
+		_fresh()
+		map.set(spec[1], true)
+		XAutoSave.checkpoint(map, "menu")
+		check("checkpoint_skip_in_" + spec[0], not XSave.exists_auto() and XAutoSave.last_result == "skip:" + spec[0], XAutoSave.last_result)
+		map.set(spec[1], false)
+	_fresh()
+	XAutoSave.CHECKPOINTS = false
+	XAutoSave.checkpoint(map, "menu")
+	check("checkpoint_switch_off", not XSave.exists_auto() and XAutoSave.last_result == "skip:checkpoints_off", XAutoSave.last_result)
+	XAutoSave.CHECKPOINTS = true
+	_fresh()
+	XPlatform.force_mobile = false
+	XAutoSave.checkpoint(map, "menu")
+	check("checkpoint_desktop_no_save", not XSave.exists_auto(), XAutoSave.last_result)
+	XPlatform.force_mobile = true
+	# 开战前检查点（平台 EJ，审查第 51 期 P2-1）：原来写在 start_battle 里，入口都先置 busy，永远被当成「事件」跳过。
+	# 真走一次随机遇敌、一次事件战斗（指令 301），开打那一刻要有检查点
+	_fresh()
+	map.map_data.encounterList = [{"troopId": 1, "weight": 1, "regionSet": []}]
+	map._encounter()
+	check("encounter_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:battle", XAutoSave.last_result)
+	await _end_battle(map)
+	map.map_data.encounterList = []
+	_fresh()
+	map._set_busy(true)  # 同 run_event：事件跑着
+	var interp := MVInterpreter.new(map, map.map_id, 0, [{"code": 301, "indent": 0, "parameters": [0, 1, false, true]}, {"code": 0, "indent": 0, "parameters": []}])
+	var done := {"v": false}
+	var go := func():
+		await interp.run()
+		done.v = true
+	go.call()
+	await _until(func(): return _battle(map) != null)
+	check("event_battle_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:battle", XAutoSave.last_result)
+	await _end_battle(map)
+	await _until(func(): return done.v)
+	map._set_busy(false)
+	# 限频：60 秒内第二次战斗检查点跳过，过了就存
+	var t := Time.get_ticks_msec()
+	XSave.remove_auto()
+	check("battle_checkpoint_rate_limited", XAutoSave.battle_checkpoint(map, false, t) == "skip:recent" and not XSave.exists_auto(), XAutoSave.last_result)
+	check("battle_checkpoint_after_gap", XAutoSave.battle_checkpoint(map, false, t + XAutoSave.BATTLE_GAP_MSEC + 1) == "checkpoint:battle" and XSave.exists_auto(), XAutoSave.last_result)
+	# 挂机中跳过（挂机已有定时存）
+	_fresh()
+	var hs := XState.current
+	var hang_was := [hs.hang_up_active, hs.hang_up_origin]
+	hs.hang_up_active = true
+	hs.hang_up_origin = Vector2i(1, 1)
+	check("battle_checkpoint_skip_hangup", XAutoSave.battle_checkpoint(map) == "skip:hangup" and not XSave.exists_auto(), XAutoSave.last_result)
+	hs.hang_up_active = hang_was[0]
+	hs.hang_up_origin = hang_was[1]
+	# 事件里开的战斗不受 busy 阻挡，事件外 busy 照旧挡
+	_fresh()
+	map.busy = true
+	check("in_event_ignores_busy", XAutoSave.battle_checkpoint(map, true) == "checkpoint:battle")
+	XAutoSave.reset()
+	XSave.remove_auto()
+	check("not_in_event_busy_skips", XAutoSave.battle_checkpoint(map, false) == "skip:event" and not XSave.exists_auto(), XAutoSave.last_result)
+	map.busy = false
+	# 进主菜单：真开一次菜单，开的那一刻就有检查点
+	_fresh()
+	map.open_menu()
+	check("menu_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:menu", XAutoSave.last_result)
+	await frames(3)
+
 	# 离开地图：钩子失效，切后台不存也不报错
 	_fresh()
 	map.queue_free()
@@ -153,6 +226,32 @@ func _run() -> void:
 	platform.on_paused()
 	check("off_map_no_save", not XSave.exists_auto() and not XPlatform.pause_hook.is_valid(), XAutoSave.last_result)
 	_finish()
+
+
+func _until(cond: Callable, n := 3000) -> bool:
+	for i in range(n):
+		if cond.call():
+			return true
+		await get_tree().process_frame
+	return false
+
+
+func _battle(map: XMapScene) -> XBattleScene:
+	for c in map.ui.get_children():
+		if c is XBattleScene and not c.is_queued_for_deletion():
+			return c
+	return null
+
+
+## 等战斗起来，当逃跑结束（同 xiyou_battle_transition 的收尾），再等回到地图
+func _end_battle(map: XMapScene) -> void:
+	await _until(func(): return _battle(map) != null and _battle(map).logic != null)
+	var b := _battle(map)
+	if b != null:
+		b.logic.escaped = true
+		b.finished.emit(1)
+	await _until(func(): return not map._in_battle and _battle(map) == null)
+	await frames(2)
 
 
 func _finish() -> void:

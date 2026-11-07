@@ -151,6 +151,36 @@ func _run() -> void:
 	await frames(2)
 	touch(0, Vector2(640, 200), false)
 	check("tap_stops_catch_up", not platform.is_catching_up())
+	# Codex 报告第 6 项（平台 EH）：补跑自然耗尽要恢复倍速——旧代码先把剩余减到 0 以下、stop 又以「剩余>0」判断在补跑，直接返回，一直八倍速
+	platform.start_catch_up(1.0)
+	platform._process(2.0)
+	check("catch_up_natural_end_restores", not platform.is_catching_up() and Engine.time_scale == 1.0
+		and Engine.physics_ticks_per_second == 60 and Engine.max_physics_steps_per_frame == 8,
+		[Engine.time_scale, Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame])
+	# 自然耗尽后再补跑一次：存下的「原始设置」不能是八倍速
+	platform.start_catch_up(1.0)
+	platform._process(2.0)
+	check("catch_up_twice_natural_end_restores", Engine.time_scale == 1.0 and Engine.physics_ticks_per_second == 60, [Engine.time_scale, Engine.physics_ticks_per_second])
+	# 补跑中又补跑（续时）：不重存原始设置，停下回到 1 倍
+	platform.start_catch_up(5.0)
+	platform.start_catch_up(5.0)
+	check("catch_up_repeat_extends", platform.is_catching_up() and is_equal_approx(platform.catch_up_left(), 5.0))
+	platform._process(2.0)
+	platform.stop_catch_up()
+	check("catch_up_repeat_stop_restores", not platform.is_catching_up() and Engine.time_scale == 1.0 and Engine.physics_ticks_per_second == 60, [Engine.time_scale])
+	platform.stop_catch_up()
+	check("catch_up_stop_twice_harmless", Engine.time_scale == 1.0)
+	# 基准倍率不是 1（变速齿轮 1.6：96 帧、time_scale 1.6）：补跑按基准×8，耗尽后回到基准而不是 1 倍
+	Engine.physics_ticks_per_second = 96
+	Engine.time_scale = 1.6
+	platform.start_catch_up(1.0)
+	check("catch_up_relative_to_base", Engine.physics_ticks_per_second == 96 * XPlatform.CATCH_UP_SPEED
+		and is_equal_approx(Engine.time_scale, 1.6 * XPlatform.CATCH_UP_SPEED), [Engine.physics_ticks_per_second, Engine.time_scale])
+	platform._process(20.0)
+	check("catch_up_restores_base_gear", not platform.is_catching_up() and Engine.physics_ticks_per_second == 96
+		and is_equal_approx(Engine.time_scale, 1.6) and Engine.max_physics_steps_per_frame == 8, [Engine.physics_ticks_per_second, Engine.time_scale])
+	Engine.physics_ticks_per_second = 60
+	Engine.time_scale = 1.0
 	# O-201 回退：关掉后台挂机就不补跑
 	XPlatform.BACKGROUND_IDLE = false
 	platform.on_paused(0)
@@ -187,12 +217,12 @@ func _run() -> void:
 	touch(0, ok_center, false)
 	await frames(2)
 	check("buttons_release", not Input.is_action_pressed("ui_accept") and not Input.is_action_pressed("ui_cancel"))
-	# 按住连发：24 帧后再按
+	# 按住确定不连发（审查报告第 13 项，O-225；方向的回显连发见 xiyou_ui_input）
 	accepts = rec.accepts
 	touch(0, ok_center, true)
 	for i in 40:
 		await get_tree().physics_frame
-	check("hold_repeats", rec.accepts >= accepts + 2, [rec.accepts, accepts])
+	check("hold_ok_no_repeat", rec.accepts == accepts + 1, [rec.accepts, accepts])
 	touch(0, ok_center, false)
 	await frames(2)
 	# 摇杆
@@ -422,6 +452,12 @@ func _run() -> void:
 		if f.begins_with("save_1.json.before_import_") and FileAccess.get_file_as_string(save_dir.path_join(f)) == old_text:
 			kept = true
 	check("transfer_import_backs_up", import_ok and kept and DirAccess.get_files_at(save_dir).size() == before_files + 1)
+	# O-206 回退：BACKUP_BEFORE_IMPORT = false 时覆盖有档的格子不留 .before_import 备份（照样导入）
+	XSaveTransfer.BACKUP_BEFORE_IMPORT = false
+	var files_off := DirAccess.get_files_at(save_dir).size()
+	var import_off := XSaveTransfer.import_to(1, got.data) == ""
+	XSaveTransfer.BACKUP_BEFORE_IMPORT = true
+	check("transfer_import_rollback_no_backup", import_off and XSave.exists(1) and DirAccess.get_files_at(save_dir).size() == files_off)
 	# 标题页：触屏时右上有两个按钮；导入走「选文件 → 选存档位」
 	var title_page: Control = load("res://modes/xiyou/entry.tscn").instantiate()
 	add_child(title_page)

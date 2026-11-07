@@ -35,6 +35,10 @@ func frames(n := 1) -> void:
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--child-ledger-submit":   # 「写不完整」用例的子进程（见 ledger_short_write）
+			_child_submit.call_deferred()
+			return
 	_run.call_deferred()
 
 
@@ -214,8 +218,11 @@ func _run() -> void:
 	shop.queue_free()
 	XYunshang.o_eye_cooldown = true
 	await save_load(s)
+	XYunshangOrders.FIX_TEMPLATE_PREFIXES = false  # 参照是原版：O-224 关着逐项比
 	for roll in [0.5, 0.1]:
 		await p8_craft(roll)
+	XYunshangOrders.FIX_TEMPLATE_PREFIXES = true
+	p8_prefix_fix()
 	await p8_gates()
 	p8_progress(true)
 	p8_progress(false)
@@ -225,6 +232,8 @@ func _run() -> void:
 	for how in ["sell", "base", "warehouse", "star"]:
 		p8_lose(how)
 	p9_display()
+	ledger_short_write()
+	ledger_backup()
 	XGear.force_roll = -1.0
 	finish()
 
@@ -321,6 +330,42 @@ func shop_step(id: String, w: Dictionary, tag: String, shop: XYunshangShop, extr
 	same("%s.%s.ledger" % [id, tag], ledger_sum(s), want.ledger)
 	for k in extra:
 		same("%s.%s.%s" % [id, tag, k], extra[k], want[k])
+
+
+## O-224：开着时天衣掷模板（XYunshangOrders.model）的前缀，词缀都出自模板的前缀表；品质、图标档照天衣自己的；关着时同一随机数不掷
+func p8_prefix_fix() -> void:
+	var tpl := XGear.template("armor", XYunshangOrders.model())
+	var allowed := {}
+	var rows := (tpl.equipment.affixes as Array).filter(func(r): return str(r.kind) == "prefix")
+	for row in rows:
+		for c in row.choices:
+			for n in c.ids:
+				allowed[int(n)] = true
+	check("prefix_fix.template_rows", not rows.is_empty(), tpl.equipment)
+	var got := {}
+	for on in [false, true]:
+		XYunshangOrders.FIX_TEMPLATE_PREFIXES = on
+		var s := new_cloud(45)
+		XState.current = s
+		s.gain_item(SILK, 20)
+		XGear.force_roll = 0.1
+		XGear.reset_pool()
+		var err := XYunshangOrders.submit(s)
+		XGear.force_roll = 0.5
+		var o = XYunshangOrders.order(s)
+		check("prefix_fix.%s.submit" % on, err == "" and o != null, err)
+		if o != null:
+			got[on] = o.spec
+	XYunshangOrders.FIX_TEMPLATE_PREFIXES = true
+	if got.size() < 2:
+		return
+	var ids: Array = (got[true].affixIds as Array).map(func(a): return int(a.id))
+	check("prefix_fix.off_none", (got[false].affixIds as Array).is_empty(), got[false].affixIds)
+	check("prefix_fix.on_rolled", not ids.is_empty() and ids.all(func(n): return allowed.has(n)), got[true].affixIds)
+	check("prefix_fix.on_kind", (got[true].affixIds as Array).all(func(a): return str(a.kind) == "prefix"), got[true].affixIds)
+	check("prefix_fix.quality_kept", str(got[true].meta.quality) == str(got[false].meta.quality) and str(got[true].meta.ici) == str(got[false].meta.ici),
+		[got[true].meta.get("quality"), got[false].meta.get("quality"), got[true].meta.get("ici"), got[false].meta.get("ici")])
+	check("prefix_fix.name_kept", str(got[true].name) == str(got[false].name), [got[true].name, got[false].name])
 
 
 ## 制作→读开工前的档→进度→领取→再读最早的档
@@ -650,3 +695,74 @@ func finish() -> void:
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_yunshang_shop", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	XYunshangShop.BORROW_WTYPE_FILTER = true
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+# ---- Codex 审查报告第 2 项：账本写不完整（哪吒 save1）----
+
+const LEDGER_DIR := "user://test_xiyou_yunshang_shop"
+## 子进程里的文件大小上限（ulimit -f 的块数）：比账本小，写账本时被截断（EFBIG）；Godot 自己的日志远小于它
+const FSIZE_BLOCKS := 256
+
+
+## 子进程：同一个目录、同一份账本，交一次订单，打印结果后正常退出
+func _child_submit() -> void:
+	XSave.dir_override = LEDGER_DIR
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XYunshangOrders.path_override = XSave.dir().path_join(XYunshangOrders.FILE)
+	XYunshangOrders.reload()
+	var s := new_cloud(45)
+	XState.current = s
+	s.gain_item(SILK, 15)
+	var why := XYunshangOrders.submit(s)
+	print("CHILD " + JSON.stringify({"submit": why, "silk": s.item_count(SILK)}))
+	get_tree().quit(0)
+
+
+## 真实的短写：子进程在 ulimit -f 下跑（忽略 SIGXFSZ，写超了只返回错误），账本比上限大。
+## 旧代码 store_string／close 不查，截断的账本照样换上去、订单照扣天丝；现在写不完整就不替换、不扣材料、不留临时文件
+func ledger_short_write() -> void:
+	var file := XSave.dir().path_join(XYunshangOrders.FILE)
+	var pad := "x".repeat(FSIZE_BLOCKS * 1024 + 4096)   # sh 的 ulimit -f 在 macOS 上按 1024 字节一块
+	var original := JSON.stringify({"version": 2, "profiles": {}, "legacyProfiles": {"pad": pad}})
+	var f := FileAccess.open(file, FileAccess.WRITE)
+	f.store_string(original)
+	f.close()
+	XYunshangOrders.reload()
+	var out := []
+	# 包一层小脚本（OS.execute 自己会再套一层 sh，"$@" 写在命令行里会被外层先展开）
+	var wrapper := ProjectSettings.globalize_path(XSave.dir().path_join("fsize_limit.sh"))
+	var w := FileAccess.open(wrapper, FileAccess.WRITE)
+	w.store_string("trap '' XFSZ\nulimit -f %d\nexec \"$@\"\n" % FSIZE_BLOCKS)
+	w.close()
+	var code := OS.execute("/bin/sh", [wrapper, OS.get_executable_path(), "--headless", "--path",
+		ProjectSettings.globalize_path("res://"), "res://tests/xiyou_yunshang_shop.tscn", "--", "--child-ledger-submit"], out, true)
+	var log := "".join(out)
+	var at := log.find("CHILD ")
+	var got = JSON.parse_string(log.substr(at + 6).get_slice("\n", 0)) if at >= 0 else null
+	check("ledger.short.child_ran", code == 0 and got is Dictionary, [code, log.right(600)])
+	if got is Dictionary:
+		check("ledger.short.refused", str(got.submit) != "" and int(got.silk) == 15, got)
+	check("ledger.short.file_unchanged", FileAccess.get_file_as_string(file) == original, FileAccess.get_file_as_string(file).length())
+	var leftovers := Array(DirAccess.get_files_at(XSave.dir())).filter(func(n): return n.ends_with(".tmp"))
+	check("ledger.short.no_tmp", leftovers.is_empty(), leftovers)
+	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(wrapper)
+	XYunshangOrders.reload()
+
+
+## 正常写：替换前留一份上一版 <账本>.bak，内容就是替换前那份
+func ledger_backup() -> void:
+	var file := XSave.dir().path_join(XYunshangOrders.FILE)
+	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(file + ".bak")
+	XYunshangOrders.reload()
+	var s := new_cloud(45)
+	XState.current = s
+	s.gain_item(SILK, 15)
+	check("ledger.bak.profile", XYunshangOrders.profile(s) != null)
+	var before := FileAccess.get_file_as_string(file)
+	check("ledger.bak.submit", XYunshangOrders.submit(s) == "" and s.item_count(SILK) == 0)
+	check("ledger.bak.previous_kept", FileAccess.get_file_as_string(file + ".bak") == before and FileAccess.get_file_as_string(file) != before)
+	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(file + ".bak")
+	XYunshangOrders.reload()

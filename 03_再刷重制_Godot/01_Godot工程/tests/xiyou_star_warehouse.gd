@@ -50,6 +50,9 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		if arg.begins_with("--child-withdraw="):   # 「进程被杀」用例的子进程：取出一件后自杀（见 _txn_killed）
+			_child_withdraw.call_deferred(arg.get_slice("=", 1))
+			return
 	_run.call_deferred()
 
 
@@ -123,6 +126,12 @@ func _fresh_store() -> void:
 	XStarWarehouse.o_save_now = true
 	XStarWarehouse.o_alien_reset = true
 	XStarWarehouse.o_block_bound = true
+	XStarWarehouse.o_withdraw_txn = true
+	XStarWarehouse._pending = []
+	XStarWarehouse._owners = {}
+	XStarWarehouse.last_error = ""
+	for slot in [1, 2]:
+		DirAccess.remove_absolute(XSave.path(slot))
 
 
 func _pet(enemy: int) -> Dictionary:
@@ -186,6 +195,9 @@ func _run() -> void:
 	_renumber(int(probe.swallowBase))
 	_store()
 	_ph_donor(int(probe.swallowBase))
+	await _txn_killed(false)
+	await _txn_killed(true)
+	await _write_fail()
 	await _interpreter()
 	_fresh_store()
 	XSave.dir_override = ""
@@ -312,6 +324,7 @@ func _probe(probe: Dictionary, optimized: bool) -> void:
 	XStarWarehouse.o_block_bound = optimized
 	XStarWarehouse.o_alien_reset = optimized
 	XStarWarehouse.o_save_now = optimized
+	XStarWarehouse.o_withdraw_txn = optimized
 	var roles := _setup_probe(int(probe.swallowBase))
 	var s0 := XState.current
 	var tag := "probe_%s_" % ("opt" if optimized else "orig")
@@ -497,3 +510,117 @@ func _interpreter() -> void:
 	await interp.run()
 	check("interpreter_opens", host.opened == [true, false], host.opened)
 	host.queue_free()
+
+
+# ---- Codex 审查报告第 1、4 项（哪吒 save1）----
+
+func _key(action: String) -> void:
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await frames(2)
+	ev = InputEventAction.new()
+	ev.action = action
+	ev.pressed = false
+	Input.parse_input_event(ev)
+	await frames(2)
+
+
+## 子进程：读 1 号档 → 打开「取出」画面 → 按键取出第一件装备（save＝取完再存一次档）→ 自己 SIGKILL，不走任何收尾
+func _child_withdraw(arg: String) -> void:
+	var save_after := arg.ends_with("+save")
+	XSave.dir_override = DIR
+	XStarWarehouse._loaded_path = "<unloaded>"
+	if not XSave.load_slot(1):
+		print("CHILD load failed")
+		OS.kill(OS.get_process_id())
+	var page := XStarWarehouseScene.new()
+	page.save_mode = false
+	add_child(page)
+	await frames(3)
+	var before := XStarWarehouse.gear().size()
+	await _key("ui_accept")   # 分类「装备」
+	await _key("ui_accept")   # 取出第一件
+	for i in 60:   # 机器忙时输入晚几帧才到：等取出真的发生再往下
+		if XStarWarehouse.gear().size() != before:
+			break
+		await frames(1)
+	print("CHILD bag=%d warehouse=%d" % [XState.current.gear.size(), XStarWarehouse.gear().size()])
+	if save_after:
+		print("CHILD saved=%s" % XSave.save(1))
+	OS.kill(OS.get_process_id())
+
+
+## 报告第 1 项：取出后进程被杀，再读档。旧代码取出时先从仓库删掉并写盘，角色档没存，东西两边都没了。
+## 现在：没存档就被杀 → 读档后东西回到仓库；取出后存了档再被杀 → 东西在档里、仓库里没有（不复制）
+func _txn_killed(saved: bool) -> void:
+	_fresh_store()
+	var s := XState.new_game_blank()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	XState.current = s
+	var w := _gain(s, "weapon", 2)
+	var base := int(w.base)
+	check("txn_deposit_setup", XStarWarehouse.deposit_gear(s, w) == "" and XSave.save(1))
+	var bag_before := s.gear.filter(func(e): return int(e.base) == base).size()
+	var out := []
+	var code := OS.execute(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"),
+		"res://tests/xiyou_star_warehouse.tscn", "--", "--child-withdraw=" + ("1+save" if saved else "1")], out, true)
+	var log := "".join(out)
+	var tag := "txn_killed_" + ("saved" if saved else "unsaved")
+	check(tag + "_child_withdrew", log.contains("CHILD bag=") and not log.contains("warehouse=1") and code != 0, [code, log.right(600)])
+	# 新进程：静态状态清空，读同一个档
+	XStarWarehouse._loaded_path = "<unloaded>"
+	XStarWarehouse._pending = []
+	XStarWarehouse._owners = {}
+	XState.current = null
+	check(tag + "_load", XSave.load_slot(1))
+	var in_bag := XState.current.gear.filter(func(e): return int(e.base) == base).size() - bag_before
+	var in_wh := XStarWarehouse.gear().filter(func(e): return int(e.base) == base).size()
+	check(tag + "_exactly_once", [in_bag, in_wh] == ([1, 0] if saved else [0, 1]), {"bag": in_bag, "warehouse": in_wh})
+	check(tag + "_no_pending_left", XStarWarehouse._pending.is_empty() and not FileAccess.get_file_as_string(XStarWarehouse.path()).contains("pending"), XStarWarehouse._pending)
+	check(tag + "_token_stripped", not JSON.stringify(XState.current.gear).contains("whToken"))
+
+
+## 报告第 4 项：写盘失败要把失败交给调用方、这次转移整个退回、脏标记留着、提示玩家。
+## 真实写盘失败：仓库文件的位置是个目录，临时文件写得出、替换不了。经画面按键存入／取出
+func _write_fail() -> void:
+	_fresh_store()
+	var s := XState.new_game_blank()
+	for id in [1, 8, 9, 10]:
+		s.add_actor(id)
+	XState.current = s
+	var w := _gain(s, "weapon", 2)
+	var stored := _gain(s, "weapon", 3)
+	check("wf_setup", XStarWarehouse.deposit_gear(s, stored) == "")
+	var blocker := XStarWarehouse.path()
+	DirAccess.remove_absolute(blocker)
+	DirAccess.make_dir_recursive_absolute(blocker)   # 文件位置被目录占着：rename 失败
+	XStarWarehouse._dirty = true                      # 之前有没写出的改动：失败后要留着
+	var shown := XToast.shown.size()
+	var page := XStarWarehouseScene.new()
+	add_child(page)
+	await frames(3)
+	var at := page.data.find_custom(func(e): return is_same(e, w))
+	await _key("ui_accept")
+	page._select(at)
+	await _key("ui_accept")
+	check("wf_deposit_rolled_back", s.gear.has(w) and not XStarWarehouse.gear().has(w) and XStarWarehouse.gear().size() == 1, XStarWarehouse.gear().size())
+	check("wf_deposit_toast", XToast.shown.slice(shown).has(XStarWarehouse.WRITE_FAILED), XToast.shown.slice(shown))
+	check("wf_dirty_kept", XStarWarehouse._dirty)
+	page.queue_free()
+	await frames()
+	var load := XStarWarehouseScene.new()
+	load.save_mode = false
+	add_child(load)
+	await frames(3)
+	shown = XToast.shown.size()
+	await _key("ui_accept")
+	await _key("ui_accept")
+	check("wf_withdraw_rolled_back", not s.gear.has(stored) and XStarWarehouse.gear().has(stored) and XStarWarehouse._pending.is_empty())
+	check("wf_withdraw_toast", XToast.shown.slice(shown).has(XStarWarehouse.WRITE_FAILED), XToast.shown.slice(shown))
+	load.queue_free()
+	await frames()
+	DirAccess.remove_absolute(blocker)
+	_fresh_store()

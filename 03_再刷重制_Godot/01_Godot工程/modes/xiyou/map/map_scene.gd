@@ -692,6 +692,7 @@ func _encounter() -> void:
 	# 设置「禁用遇敌」：仍重置步数并抽敌群，只是不进战斗（executeEncounter 返回 false）
 	if troop <= 0 or XConfig.flag("ydgb"):
 		return
+	XAutoSave.battle_checkpoint(self)  # 开战前检查点（O-221），要在置 busy 之前
 	_set_busy(true)
 	await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
@@ -1685,6 +1686,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
+	XAutoSave.checkpoint(self, "menu")  # 进主菜单的安全检查点（O-221·自动存档检查点）
 	_menu_open = true
 	var owner := XState.current
 	XSound.system(1)  # Scene_Map.callMenu：SoundManager.playOk

@@ -6,7 +6,9 @@ extends Control
 ##   字号 18「开启/关闭挂机:G」rgb(0,200,0) 在 (64,28) 宽 136 行高 44；字号 14「挂机时间:」同色右对齐到 (0,12,120)、
 ##   时长白色在 (126,12) 宽 120 行高 18（不在挂机时「---」）。点击范围：按钮中心 ±27 的开区间。
 ## - 挂机提示 HangUp_Tip（挂机中）：取图 (0,0,560,88)，实际 546×88，放在 ((1280−560)/2, 100)，不透明度 160。
-##   原版 drawWord 把「摆烂中.....」画进图的离屏画布，精灵贴图仍是原图，文字从不显示，照做。
+##   原版 drawWord 把「摆烂中.....」（huWord，颜色 huColor）画进图的离屏画布，精灵贴图仍是原图，文字从不显示。
+##   原版缺陷，修好（O-227，rules-bugfix1 照搬清单第 1 条）：照 drawWord 把字画在提示上（0,30 宽 560 行高 30 居中，Bitmap 默认 28 号），
+##   跟提示一起 160 不透明度。回退开关 TIP_WORD = false：照原版不显示字。
 ## drawHMPU：240×222 画布，药品 (5,80) 宽120/行高18，每行下移20；卖出标题宽200，
 ## 七档摘要 (10,y) 宽190/行高18，按测量宽度换行。O-022：状态变化先清画布，避免原版旧字残留。
 
@@ -21,9 +23,11 @@ const TIP_POS := Vector2(360, 100)
 const TEXT_COLOR := Color8(0, 200, 0)
 ## O-022：摘要随状态清除。false 按状态保留并叠画旧文字，恢复原版残留。
 static var CLEAR_SUMMARY := true
+static var TIP_WORD := true
 
 var inter: Control
 var tip: TextureRect
+var tip_text: XMVCanvas
 var button: Button
 var _button_sprite: TextureRect
 var _text: XMVCanvas
@@ -44,6 +48,10 @@ func _ready() -> void:
 	tip.modulate.a = 160.0 / 255.0
 	tip.visible = false
 	add_child(tip)
+	tip_text = XMVCanvas.new()
+	tip_text.size = Vector2(560, 88)
+	tip_text.painter = paint_tip
+	tip.add_child(tip_text)
 	inter = Control.new()
 	inter.position = INTER_POS
 	inter.size = Vector2(240, 74)
@@ -96,6 +104,16 @@ func _paint(c: XMVCanvas) -> void:
 	c.text(str(XHangUp.params().get("tipWord", "")), 64, 28, 136, "left", TEXT_COLOR, 18, 44)
 	c.text("挂机时间:", 0, 12, 120, "right", TEXT_COLOR, 14, 16)
 	c.text(_time, 126, 12, 120, "left", XUI.TEXT, 14, 18)
+
+
+## HangUp_Tip.drawWord
+func paint_tip(c: XMVCanvas) -> void:
+	if not TIP_WORD:
+		return
+	var p := XHangUp.params()
+	var rgb := str(p.get("huColor", "255,255,255")).split(",")
+	var color := Color8(int(rgb[0]), int(rgb[1]), int(rgb[2])) if rgb.size() >= 3 else Color.WHITE
+	c.text(str(p.get("huWord", "")), 0, 30, 560, "center", color, 28, 30)
 
 
 func press() -> void:

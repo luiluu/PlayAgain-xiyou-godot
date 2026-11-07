@@ -16,8 +16,8 @@ extends RefCounted
 ##   「云裳订单记录不可用，制作/进阶及天丝奖励暂停」，本局之后不再写（原版 optionalJournal、Y._storageError；新局、读档重放成功时清掉）。
 ## - 制作 Y.submit：战斗外、没有订单、制作池非空（按等级与进阶开放，C.robes）、不朽天丝 2942 至少 15 份；随机选一件（Math.randomInt，重制取装备随机数 XGear.roll），
 ##   底子是那件天衣，八项能力换成最高需求等级的布衣模板（Y.equipmentCap／model：需求等级最高、带 <Prefixes> 的 1 号防具类型身体装备，
-##   同级取编号小的＝4282 如来的袈裟）的、特性清空，属性浮动用模板的 Random Variance；词缀表还是天衣自己的（空）——原版往备注里补了模板的
-##   <Prefixes>，但 DreamX 的词缀表在读数据库时就解析好了，补在备注里不生效（参照 roll 0.1 也没掷出词缀）。掷完名字改回天衣名、记 _yunUid；
+##   同级取编号小的＝4282 如来的袈裟）的、特性清空，属性浮动用模板的 Random Variance；原版往备注里补了模板的
+##   <Prefixes>，但 DreamX 的词缀表在读数据库时就解析好了，补在备注里不生效（参照 roll 0.1 也没掷出词缀）；O-224 默认照作者本意掷模板的前缀。掷完名字改回天衣名、记 _yunUid；
 ##   开工时就排好镶嵌孔（XOrbs.layout，同一个实例号算法），领取不重排。扣 15 份天丝、记订单 {id, spec, progress 0, roundTokens []}。
 ## - 回合进度 Y.progress：云裳在出战成员里时，每回合末（endTurn 包装，同一回合只记一次）用「本场编号:敌群回合数」记 1 格，满 10 格可领；同一个 token 不重记。
 ## - 领取 Y.claim：满 10 格；把订单那件天衣发进背包（grant）、清订单。
@@ -113,27 +113,19 @@ static func load_ledger():
 		next.legacyProfiles = {}
 	next.erase("active")
 	_ledger = next
-	_loaded_path = p
+	_loaded_path = path()
 	return _ledger
 
 
 ## saveLedger：先写临时文件再改名
 static func save_ledger(next: Dictionary) -> bool:
-	var p := path()
-	DirAccess.make_dir_recursive_absolute(p.get_base_dir())
-	var tmp := "%s.%s.tmp" % [p, uuid()]
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
-	if f == null:
-		_fail("云裳订单记录无法写入")
-		return false
-	f.store_string(JSON.stringify(next))
-	f.close()
-	if DirAccess.rename_absolute(tmp, p) != OK:
-		DirAccess.remove_absolute(tmp)
+	# Codex 审查第 2 项：原来 store_string／close 不查写没写完整，截断的文件照样换上去；现在写不完整就不替换、返回 false
+	#（调用方的扣材料都在写成之后的重放里，失败就不扣），替换前留一份上一版 .bak（XSave.write_text_safely）
+	if not XSave.write_text_safely(path(), JSON.stringify(next)):
 		_fail("云裳订单记录无法写入")
 		return false
 	_ledger = next
-	_loaded_path = p
+	_loaded_path = path()
 	return true
 
 
@@ -331,6 +323,10 @@ static func model() -> int:
 	return _model
 
 
+## O-224：原版 Y.submit 往天衣备注补模板的 <Prefixes> 再 processYanflyTags，注释写「保留原生的基础属性／词缀分布」，
+## 但 DreamX 的词缀表只在读库时解析，补的不生效，天衣从不掷词缀（参照 p8 roll 0.1）。true＝照作者本意掷模板的前缀（normalizeRobe 保住品质）；false 重现原版。
+static var FIX_TEMPLATE_PREFIXES := true
+
 ## submit：成功返回 ""，否则返回原因
 static func submit(s: XState) -> String:
 	error = ""
@@ -355,7 +351,20 @@ static func submit(s: XState) -> String:
 		locked.meta["Random Variance"] = variance
 	else:
 		locked.meta.erase("Random Variance")
+	var keep := {"quality": locked.get("meta", {}).get("quality"), "ici": locked.get("meta", {}).get("ici")}
+	if FIX_TEMPLATE_PREFIXES:
+		var eq: Dictionary = (locked.get("equipment", {}) as Dictionary).duplicate(true)
+		var rows: Array = (eq.get("affixes", []) as Array).duplicate(true)
+		rows.append_array(((tpl.get("equipment", {}) as Dictionary).get("affixes", []) as Array).filter(func(row): return str(row.kind) == "prefix").duplicate(true))
+		eq.affixes = rows
+		locked.equipment = eq
 	var spec := XGear.roll_item(locked, s)
+	if FIX_TEMPLATE_PREFIXES:
+		for k in keep:  # normalizeRobe：普通词缀的品质不顶掉天衣自己的品质
+			if keep[k] == null:
+				spec.meta.erase(k)
+			else:
+				spec.meta[k] = keep[k]
 	spec.name = str(r[1])
 	spec.baseName = str(r[1])
 	spec._yunUid = uuid()
