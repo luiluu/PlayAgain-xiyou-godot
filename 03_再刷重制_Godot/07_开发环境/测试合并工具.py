@@ -1297,9 +1297,47 @@ class SyncStampTests(unittest.TestCase):
              mock.patch.object(sys, 'argv', argv), mock.patch.dict(os.environ), contextlib.redirect_stdout(io.StringIO()):
             return sync.main()
 
-    def lane_stamp(self, tools='same'):
+    def lane_stamp(self, tools='same', pending=False):
         stamp = {'toolsDigest': tools, 'outputsDigest': sync.outputs_digest(self.lane_gen)}
+        if pending:
+            stamp['pendingAcceptance'] = True
         (self.lane_gen / sync.STAMP).write_text(json.dumps(stamp))
+
+    def last_report(self):
+        backups = sorted((self.root / '03_再刷重制_Godot/04_验证/本地结果/自动同步').iterdir())
+        return json.loads((backups[-1] / '同步报告.json').read_text())
+
+    def test_pending_lane_stamp_is_reused_but_main_still_needs_acceptance(self):
+        """车道同步只差测量接受（待接受指纹）：main 复用车道产物，但照样按自己的基线比较，没接受单退出 2，带接受单才 0（11-07 换源合并）。"""
+        (self.lane_gen / 'oracle/events.json').write_text(json.dumps({'cases': [{'id': 'a', 'trace': ['改了']}]}))
+        self.lane_stamp(pending=True)
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 2)
+        report = self.last_report()
+        self.assertTrue(report.get('fromWorktreePending'), report)
+        self.assertNotIn('probes', report)                      # 没重跑转换与探针
+        self.assertIn('events.json', report['measurementChanges'])
+        self.assertFalse((self.gen / sync.STAMP).exists())        # main 没接受，不留指纹
+        state = json.loads((self.root / '00_项目管理/当前状态.json').read_text())
+        self.assertNotIn('fingerprint', state['remakeSource'])   # 也没登记
+        rows = [dict({k: v for k, v in c.items() if k != 'switchOnly'}, reason='有意修正探针口径') for c in report['changeCandidates']]
+        self.assertTrue(rows)
+        spec = Path(self.tmp.name) / 'accept.json'
+        spec.write_text(json.dumps({'schema': 1, 'accept': rows}, ensure_ascii=False))
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane), '--accept-changes', str(spec)), 0)
+        self.assertTrue(self.last_report().get('fromWorktreePending'))
+        self.assertEqual(sync.outputs_digest(self.gen), sync.outputs_digest(self.lane_gen))
+
+    def test_pending_lane_stamp_keeps_tool_and_output_checks_and_switch(self):
+        before = sync.outputs_digest(self.gen)
+        self.lane_stamp(tools='other', pending=True)
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 转换工具不同
+        self.lane_stamp(pending=True)
+        (self.lane_gen / 'slice.json').write_text('{"x":1}')
+        self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)        # 同步后产物被改
+        self.lane_stamp(pending=True)
+        with mock.patch.dict(os.environ, {'XIYOU_REUSE_PENDING_STAMP': '0'}):
+            self.assertEqual(self.sync_main('--from-worktree', str(self.lane)), 3)    # 回退开关：不认待接受指纹
+        self.assertEqual(sync.outputs_digest(self.gen), before)
 
     def test_comparison_rules_do_not_change_tools_digest(self):
         """oracle_additions.py 只管接不接受测量变化：改它不让车道同步指纹失效；改转换器照旧失效。"""
