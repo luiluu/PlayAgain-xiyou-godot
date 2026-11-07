@@ -49052,5 +49052,364 @@
       "note": "<dh:179>\n<req_level:23>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Random Variance: 46>\n<ici:4>\n<quality:4>\n<pos=APs text=等级需求:23 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:橡树之心(能量获取率x160%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:防御者(受到攻击率x120%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度-5 size=18 color=rgba(255,255,255,1) line=false align=0>\n\n",
       "runewords": []
     }
+  ],
+  "affixRevert": [
+    {
+      "id": 56,
+      "roll": -1,
+      "upgradeItem": 0,
+      "before": {
+        "name": "卍解-斩月练习剑",
+        "params": [
+          500,
+          500,
+          800,
+          1,
+          800,
+          1,
+          100,
+          100
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          },
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 1
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 1
+          },
+          {
+            "code": 21,
+            "dataId": 2,
+            "value": 1.15
+          },
+          {
+            "code": 21,
+            "dataId": 4,
+            "value": 1.15
+          },
+          {
+            "code": 54,
+            "dataId": 2,
+            "value": 1
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 6,
+        "slots": 6,
+        "originalSlots": 6,
+        "boost": 0,
+        "elementAmplify": {
+          "1": 1.5,
+          "9": 1.5
+        },
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n<PushDct>\n<req_level:1>\n<Random Variance: 100>\n<quality:6>\n<ici:6>\n<req_actors: 148>\n<pos=APs text=\\c[1]专属 黑崎一护 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(物理，黑暗伤害+150%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(双攻*115%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(所有敌人种类增伤+10%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:成长(物攻、魔攻随人物等级提升，每级+20) size=18 color=rgba(255,255,255,1) line=false align=0>\n<Element Amplify 1: +150%>\n<Element Amplify 9: +150%>\n<hp: +500>\n<mp: +500>\n<atk: +800>\n<mat: +800>\n<agi: +100>\n<luk: +100>\n<EnemyRaceBo01: 10%>\n<EnemyRaceBo02: 10%>\n<EnemyRaceBo03: 10%>\n<EnemyRaceBo04: 10%>\n<EnemyRaceBo05: 10%>\n<EnemyRaceBo06: 10%>\n<EnemyRaceBo07: 10%>\n<EnemyRaceBo08: 10%>\n<EnemyRaceBo09: 10%>\n<EnemyRaceBo10: 10%>\n<Prefixes> \n141-159 10%\n<Custom Parameters>\natk += user.level * 20; mat += user.level * 20; // KYO专武成长\n</Custom Parameters>\n\n",
+        "runewords": []
+      },
+      "reverted": true,
+      "skipped": false,
+      "after": {
+        "name": "练习剑",
+        "params": [
+          0,
+          0,
+          12,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 2,
+        "slots": 6,
+        "originalSlots": 6,
+        "boost": 0,
+        "elementAmplify": {},
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n",
+        "runewords": [],
+        "description": "武器种类:刀/剑\n一般用来练习剑术",
+        "meta": {
+          "Weapon Image": " 145",
+          "req_level": "3",
+          "ici": "2",
+          "quality": "2",
+          "Random Variance": " 10",
+          "pos=APs text=等级需求": "3 size=18 color=rgba(255,255,255,1) line=false align=0",
+          "pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+          "Prefixes": true,
+          "/Prefixes": true
+        }
+      }
+    },
+    {
+      "id": 56,
+      "roll": -1,
+      "upgradeItem": 258,
+      "before": {
+        "name": "卍解-斩月练习剑 (+1)",
+        "params": [
+          500,
+          500,
+          802,
+          1,
+          800,
+          1,
+          100,
+          100
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          },
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 1
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 1
+          },
+          {
+            "code": 21,
+            "dataId": 2,
+            "value": 1.15
+          },
+          {
+            "code": 21,
+            "dataId": 4,
+            "value": 1.15
+          },
+          {
+            "code": 54,
+            "dataId": 2,
+            "value": 1
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 6,
+        "slots": 5,
+        "originalSlots": 6,
+        "boost": 1,
+        "elementAmplify": {
+          "1": 1.5,
+          "9": 1.5
+        },
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n<PushDct>\n<req_level:1>\n<Random Variance: 100>\n<quality:6>\n<ici:6>\n<req_actors: 148>\n<pos=APs text=\\c[1]专属 黑崎一护 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(物理，黑暗伤害+150%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(双攻*115%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:卍解-斩月(所有敌人种类增伤+10%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:成长(物攻、魔攻随人物等级提升，每级+20) size=18 color=rgba(255,255,255,1) line=false align=0>\n<Element Amplify 1: +150%>\n<Element Amplify 9: +150%>\n<hp: +500>\n<mp: +500>\n<atk: +800>\n<mat: +800>\n<agi: +100>\n<luk: +100>\n<EnemyRaceBo01: 10%>\n<EnemyRaceBo02: 10%>\n<EnemyRaceBo03: 10%>\n<EnemyRaceBo04: 10%>\n<EnemyRaceBo05: 10%>\n<EnemyRaceBo06: 10%>\n<EnemyRaceBo07: 10%>\n<EnemyRaceBo08: 10%>\n<EnemyRaceBo09: 10%>\n<EnemyRaceBo10: 10%>\n<Prefixes> \n141-159 10%\n<Custom Parameters>\natk += user.level * 20; mat += user.level * 20; // KYO专武成长\n</Custom Parameters>\n\n",
+        "runewords": []
+      },
+      "reverted": true,
+      "skipped": false,
+      "after": {
+        "name": "练习剑 (+1)",
+        "params": [
+          0,
+          0,
+          14,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 2,
+        "slots": 5,
+        "originalSlots": 6,
+        "boost": 1,
+        "elementAmplify": {},
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n",
+        "runewords": [],
+        "description": "武器种类:刀/剑\n一般用来练习剑术",
+        "meta": {
+          "Weapon Image": " 145",
+          "req_level": "3",
+          "ici": "2",
+          "quality": "2",
+          "Random Variance": " 10",
+          "pos=APs text=等级需求": "3 size=18 color=rgba(255,255,255,1) line=false align=0",
+          "pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+          "Prefixes": true,
+          "/Prefixes": true
+        }
+      }
+    },
+    {
+      "id": 56,
+      "roll": 0.5,
+      "upgradeItem": 0,
+      "before": {
+        "name": "练习剑",
+        "params": [
+          0,
+          0,
+          12,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 2,
+        "slots": 6,
+        "originalSlots": 6,
+        "boost": 0,
+        "elementAmplify": {},
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n\n",
+        "runewords": []
+      },
+      "reverted": false,
+      "skipped": false,
+      "after": {
+        "name": "练习剑",
+        "params": [
+          0,
+          0,
+          12,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "traits": [
+          {
+            "code": 31,
+            "dataId": 1,
+            "value": 0
+          },
+          {
+            "code": 22,
+            "dataId": 0,
+            "value": 0.02
+          },
+          {
+            "code": 22,
+            "dataId": 2,
+            "value": 0.02
+          }
+        ],
+        "price": 150,
+        "icon": 160,
+        "quality": 2,
+        "slots": 6,
+        "originalSlots": 6,
+        "boost": 0,
+        "elementAmplify": {},
+        "note": "<Weapon Image: 145>\n<req_level:3>\n<ici:2>\n<quality:2>\n<Random Variance: 10>\n<pos=APs text=等级需求:3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n67-83 3%\n</Prefixes>\n\n",
+        "runewords": [],
+        "description": "武器种类:刀/剑\n一般用来练习剑术",
+        "meta": {
+          "Weapon Image": " 145",
+          "req_level": "3",
+          "ici": "2",
+          "quality": "2",
+          "Random Variance": " 10",
+          "pos=APs text=等级需求": "3 size=18 color=rgba(255,255,255,1) line=false align=0",
+          "pos=APs text=攻击速度+3 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+          "Prefixes": true,
+          "/Prefixes": true
+        }
+      }
+    }
   ]
 }

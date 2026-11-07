@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b8mxfe4asjc5p"
-valid=false
+uid="uid://c88goyrcwaevd"
+path="res://.godot/imported/guanxi7_1.png-f17f5b06a7d10a19067c3fcdf9e5f03e.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://modes/xiyou/generated/img/sv_actors/guanxi7_1.png"
+dest_files=["res://.godot/imported/guanxi7_1.png-f17f5b06a7d10a19067c3fcdf9e5f03e.ctex"]
 
 [params]
 
