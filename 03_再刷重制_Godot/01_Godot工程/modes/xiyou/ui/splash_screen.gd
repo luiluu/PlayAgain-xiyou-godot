@@ -128,7 +128,7 @@ func _input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_accept") or (e is InputEventScreenTouch and e.pressed):
 		_pressed = true
 	if e is InputEventKey or e is InputEventJoypadButton or e is InputEventScreenTouch:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 func _physics_process(_delta: float) -> void:
