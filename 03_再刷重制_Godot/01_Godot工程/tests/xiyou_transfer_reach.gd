@@ -56,7 +56,12 @@ func _map(m: int, landings: Array, exits: Dictionary, known: Dictionary) -> void
 	s.y = int(first[1])
 	get_tree().change_scene_to_file(MAP_SCENE)
 	var t0 := WaitBudget.new(CASE_MS)
-	while t0.waiting() and not _map_ready(m):
+	while t0.waiting() and not (_map_ready(m) and not _scene().busy):
+		await get_tree().process_frame
+	# 进图自动事件（副本图的同图移动等）会重载场景：多等几帧，取稳定后的场景
+	for i in 10:
+		await get_tree().process_frame
+	while t0.waiting() and not (_map_ready(m) and not _scene().busy):
 		await get_tree().process_frame
 	if not _check("m%d_loaded" % m, _map_ready(m), _scene().get("map_id")):
 		return
