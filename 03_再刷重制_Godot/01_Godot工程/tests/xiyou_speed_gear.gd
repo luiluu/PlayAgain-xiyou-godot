@@ -94,6 +94,7 @@ func _run() -> void:
 	# ① 真实事件：地图解释器「等待 60 帧」按物理帧走（原来按渲染帧，headless 下几乎不等、带窗口时 60 帧要 1 秒）
 	var host := Node.new()
 	add_child(host)
+	MVInterpreter.HEADLESS_RENDER_WAIT = false  # 带窗口时的走法；改之前（按渲染帧等）这里 headless 几十毫秒就等完、对不上 0.625 秒
 	t0 = Time.get_ticks_msec()
 	f0 = Engine.get_physics_frames()
 	await MVInterpreter.new(host, 0, 0, [{"code": 230, "indent": 0, "parameters": [60]}, {"code": 0, "indent": 0, "parameters": []}]).run()
@@ -102,6 +103,7 @@ func _run() -> void:
 	print("SPEED_GEAR wait60 frames=%d ms=%d" % [wf, ms])
 	check("event.wait60_frames", wf >= 59 and wf <= 62, wf)
 	check("event.wait60_ms", ms > 540 and ms < 760, ms)
+	MVInterpreter.HEADLESS_RENDER_WAIT = true
 	host.queue_free()
 	# ② 地图上走 10 格
 	var st := XState.new_game(3, 1, [8, 9, 10])

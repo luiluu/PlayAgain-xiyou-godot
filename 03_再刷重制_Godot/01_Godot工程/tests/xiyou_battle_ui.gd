@@ -184,10 +184,14 @@ func _run() -> void:
 		var idx0 := lw.index
 		await _mouse(row_at.call(lw, lw.top), MOUSE_BUTTON_WHEEL_DOWN)
 		_check("mouse_wheel_list", (lw.top > top0) if many else (lw.index == idx0 and b.list_win == lw), [many, top0, lw.top, idx0, lw.index])
-		# 列表里左键点第 1 行选中（再点才确定）
-		await _mouse(row_at.call(lw, lw.top), MOUSE_BUTTON_LEFT)
-		_check("mouse_pick_list_row", b.list_win == lw and lw.index == lw.top, [lw.index, lw.top])
-		await _press("ui_cancel")
+		# 列表里左键点另一行：只选中（再点才确定）；点的是光标所在行会直接确定，所以挑一行光标不在的
+		var row := lw.top if lw.index != lw.top else mini(lw.top + 1, lw.entries.size() - 1)
+		if row != lw.index:
+			await _mouse(row_at.call(lw, row), MOUSE_BUTTON_LEFT)
+			var still := is_instance_valid(lw) and b.list_win == lw
+			_check("mouse_pick_list_row", still and lw.index == row, [still, lw.index if still else -1, row])
+		if is_instance_valid(lw) and b.list_win == lw:
+			await _press("ui_cancel")
 		await _frames(3)
 	cw = b.cmd_win  # 关列表后指令窗是新建的
 	if cw != null:

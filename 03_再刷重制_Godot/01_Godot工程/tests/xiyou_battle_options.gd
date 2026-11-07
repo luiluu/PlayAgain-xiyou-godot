@@ -126,6 +126,7 @@ func _run() -> void:
 			var before := b.fx.get_child_count()
 			var result: Dictionary = row.result
 			b._popup(enemy, float(result.get("hpDamage", result.get("mpDamage", 0))), false, "miss" if result.get("missed", false) else "", result.has("mpDamage"))
+			b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE）：同帧第二个在排队，这里只数出没出
 			check("popup_%s_%s" % [str(row.enabled), JSON.stringify(result)], b.fx.get_child_count() - before == int(row.popups))
 		else:
 			var animation := b._start_animation(1, enemy)

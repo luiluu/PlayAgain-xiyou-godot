@@ -40,6 +40,7 @@ func _run() -> void:
 	_check("formal_message_rect", mr == Rect2(0, 274, 1280, 172), [mr.position, mr.size])
 	await _shot("popup_baseline")
 	b._popup(b.logic.enemies[0], 9876.0, false)
+	b.drain_popups()  # 同帧已出过弹数时这一个在排队（POPUP_QUEUE）
 	var p: XDamagePopup = b._popups[b.logic.enemies[0]][-1]
 	# 保留真实生成位置与真实5帧轨迹（建出当帧已更新一次，同原版），只停此弹数的物理更新以获得同帧控制图。
 	p.set_physics_process(false)

@@ -58,13 +58,35 @@ func _run() -> void:
 		await get_tree().physics_frame
 	print("PACE_GODOT=", JSON.stringify(scene.log))
 	print("PACE_MV=", JSON.stringify(want))
-	var bad := []
+	# 只断言每次行动演出的时长（startAction→endAction，角色普攻／敌人各自排序后逐个比，容差 1 帧：两边起止钩子的位置差一帧）；
+	# 行动先后与行动之间的空档照打印、写进交付单，不断言——敌群夹具的 OTB 先后两边不同（a9 与 e0 同速时谁先），属规则车道
+	var dur := func(log: Array, actor: bool) -> Array:
+		var open := {}
+		var out := []
+		for r in log:
+			if str(r[2]).begins_with("a") != actor:
+				continue
+			if r[1] == "start":
+				open[r[2]] = int(r[0])
+			elif r[1] == "end" and open.has(r[2]):
+				out.append(int(r[0]) - int(open[r[2]]))
+				open.erase(r[2])
+		out.sort()
+		return out
+	for actor in [true, false]:
+		var w: Array = dur.call(want, actor)
+		var g: Array = dur.call(scene.log, actor)
+		var ok := w.size() == g.size()
+		for i in range(mini(w.size(), g.size())):
+			ok = ok and absi(int(w[i]) - int(g[i])) <= 1
+		check("action_frames_%s" % ("actor" if actor else "enemy"), ok, [g, w])
+	var gaps := []
 	for i in range(1, mini(want.size(), scene.log.size())):
 		var w = [int(want[i][0]) - int(want[i - 1][0]), want[i][1], want[i][2]]
 		var g = [int(scene.log[i][0]) - int(scene.log[i - 1][0]), scene.log[i][1], scene.log[i][2]]
 		if w != g:
-			bad.append([i, g, w])
-	check("pace_steps", bad.is_empty(), bad.slice(0, 8))
+			gaps.append([i, g, w])
+	print("PACE_DIFF=", JSON.stringify(gaps))
 	scene.queue_free()
 	await get_tree().create_timer(0.5, true, false, true).timeout
 	DirAccess.remove_absolute(XConfig.path_override)

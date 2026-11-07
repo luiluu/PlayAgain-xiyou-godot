@@ -1969,6 +1969,8 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 ## 排队的弹数。先后照原版 Spriteset 里战斗者精灵的更新顺序（YEP 按画面 y 排，同 y 敌人在前），新弹数加进 Spriteset
 ## 的先后决定了谁被「摘掉后跳一次更新」影响（XDamagePopup.skip）。
 func flush_popups() -> void:
+	if not XConfig.flag("CombatDamageShow"):
+		return  # LGP setupDamagePopup：伤害数字关着时不出，队列留着
 	var now := Engine.get_physics_frames()
 	var due := []
 	for b in _popup_queue.keys():
