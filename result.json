@@ -1,0 +1,22 @@
+{
+ "sha": "9072a5e44ed2535e6fab802b42233a80582cf86b",
+ "branch": "ci/cc/ui-gaps1",
+ "mode": "affected",
+ "base": "01329855a445bfcca4dc93c6ee8514fc27a7448e",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 9.7,
+ "testSeconds": 8,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "4ac61382277309bd87b05a3fb91e918b6c3d9545",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42394227958",
+ "sceneNames": [
+  "xiyou_gear_detail.tscn"
+ ],
+ "time": "2026-11-07T17:03:29+00:00"
+}
