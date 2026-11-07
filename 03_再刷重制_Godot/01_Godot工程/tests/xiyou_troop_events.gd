@@ -286,7 +286,9 @@ func _transform_case(c: Dictionary, round: int) -> void:
 				if int(eff.code) == 44 and int(eff.dataId) == 1401:
 					want_hp0 = minf(want_hp0 + 1e16, e0.mhp)
 			break
-	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
+	# floor1：参照第 0 回合没有「e0 以自己为目标」的出手（v0.62 死神觉醒 2015 等血线页只对话／强制打玩家）时没有这个时点可比，跳过
+	if want_hp0 >= 0.0:
+		check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
 	var t1_states: Array = []
 	for t in range(1, 3):
 		if logic.is_won() or logic.is_lost():

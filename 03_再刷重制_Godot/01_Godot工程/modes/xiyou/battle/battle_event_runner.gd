@@ -459,6 +459,8 @@ func _execute_env(c: Dictionary):
 			logic._change_enemy_state(p)
 		331:
 			_change_enemy_hp(p)
+		241:
+			logs.append({"type": "bgm", "bgm": p[0]})  # 播放 BGM（v0.62 死神觉醒敌群页换战斗曲）：画面层 XBattleScene 换 bgm
 		250:
 			logs.append({"type": "se", "se": p[0]})  # 播放音效（CE46 一掷千金，战斗场合）：画面层 XBattleScene.play_se 放
 		334:
