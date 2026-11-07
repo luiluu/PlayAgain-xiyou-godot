@@ -55,7 +55,7 @@
   - 修后按上次提交为基准只重跑受影响的：74ac88f5／01329855（17 个场景，运行 42392166502、42393026180）——专项对着原版读数又改了三处：详情不带 installDamageElementRuntime（setItem 层）的攻击属性／元素增伤行、文字照 normalizeGear 换元素别名（暗黑→黑暗）、插槽行按实例孔数比结构；其余 16 个全过。
   - 9072a5e4（运行 42394227958）：`xiyou_gear_detail` 55/55。
 - 新专项：`xiyou_gear_detail` 55 条、`xiyou_treasure_batch`（首轮即过）；`xiyou_speed_gear` 新断言 `map.play_seconds_real_time` 在首轮里过。
-- 没在 Mac 上跑 Godot（Kyo 11-07 定重测试走云端）；`--补齐` 的导入在等槽时让位，后续本机要跑时再补齐一次。
+- 没在 Mac 上跑 Godot（Kyo 11-07 定重测试走云端）；`--补齐` 已完成（等槽约 50 分钟后导入完）。
 
 ## 本分支提交
 
