@@ -485,9 +485,27 @@ def main():
             have.add((r['src'], r['dest'], tuple(r['xy'])))
             out.append(dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'], xy=r['xy'],
                             cond='；'.join(r['page_conds'] + r['branch']), **rec))
+        # floor1：旧表里的入口只要原版还在、仍解得出就留着（重算条件、顺序不变，分片不变），新挑出的接在后面；
+        # 不因为别的专项或事件对照后来覆盖了就从本专项掉出去（换源 v0.62.12 后事件对照基线重出，原先 272 例被判「对照已走到」，重新生成会整批掉）
+        old = load(Path(a.cases)) if Path(a.cases).exists() else {}
+        by_key = {(r['src'], r['dest'], tuple(r['xy'])): r for r in rows}
+        fresh = {(c['id'], c['dest'], tuple(c['xy'])): c for c in out}
+        kept = []
+        for c in old.get('cases', []):
+            k = (c['id'], c['dest'], tuple(c['xy']))
+            r = by_key.get(k)
+            if r is None or r['src'] in skip or k in {(x['id'], x['dest'], tuple(x['xy'])) for x in kept}:
+                continue
+            rec = solve(r)
+            if rec is None:
+                # 解法变保守了（如换源后兄弟分支里也改了同一变量，被判「前面被改过」）：旧例已由专项在地图场景真走过，原样留着
+                kept.append(c)
+                continue
+            kept.append(fresh.pop(k, None) or dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'],
+                                                   xy=r['xy'], cond='；'.join(r['page_conds'] + r['branch']), **rec))
+        out = kept + list(fresh.values())
         # 审查 45 P3-4：已知要强制改页的用例（用例页之上还有页按表状态也满足）手写在 known_forced（用例号→自然选中的页），重新生成时沿用；
         # 专项收尾断言实际 forced 与它一致，重制页选取退步不会被强制改页藏住
-        old = load(Path(a.cases)) if Path(a.cases).exists() else {}
         ids = {c['id'] for c in out}
         kf = {k: v for k, v in old.get('known_forced', {}).items() if k in ids}
         Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改（known_forced 除外）；跳过的入口写在 skip', 'skip': sorted(skip),
