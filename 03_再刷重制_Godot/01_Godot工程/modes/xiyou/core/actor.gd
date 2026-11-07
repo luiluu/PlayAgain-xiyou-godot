@@ -971,7 +971,7 @@ func refresh_passive() -> void:
 	_passive_cache = c
 	_passive_states_sig = _passive_states_signature()
 
-## O-待定·暴击率增加（rules-gaps1）：原版 refreshPassiveCache 用 /<SkillCriPush(\w+):\s*(\d+)>/ 读，数据里 80 条全写成「n%」，
+## O-231·暴击率增加（rules-gaps1）：原版 refreshPassiveCache 用 /<SkillCriPush(\w+):\s*(\d+)>/ 读，数据里 80 条全写成「n%」，
 ## 数字后面跟着 % 一条都对不上，critPush 恒 0（passive_probe cripush 实测；按 meta 读、认技能号的那版被注释掉了）。
 ## 默认修好：% 可写可不写、带正负号，技能号后缀也认（注释掉那版的意思）；FIX_CRIT_PUSH = false 回到原版（恒 0）。
 static var FIX_CRIT_PUSH := true
