@@ -15,9 +15,15 @@ const EMBOLDEN := 1
 ## 高分屏（窗口缩放 ≥1.5，如 Retina 全屏）上不加这圈同色描边：它按逻辑 1 像素算，放大后成两个多物理像素，字显得粗而软。
 ## 回退开关 CRISP_HIDPI_TEXT = false：回到任何缩放都加。1280×720 窗口（缩放 1）不受影响。
 static var CRISP_HIDPI_TEXT := true
+
 const HIDPI_SCALE := 1.5
 const ARROW_DOWN := Rect2(132, 60, 24, 12)
 const ARROW_UP := Rect2(132, 24, 24, 12)
+
+
+## 这一缩放下文字要不要加同色描边加粗（CRISP_HIDPI_TEXT 开时高分屏不加）
+static func embolden_at(scale: float) -> bool:
+	return EMBOLDEN > 0 and not (CRISP_HIDPI_TEXT and scale >= HIDPI_SCALE)
 
 var painter: Callable
 var font: Font
@@ -74,7 +80,7 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 		xf = Transform2D(0.0, Vector2(zoom, zoom), 0.0, pivot - pivot * zoom) * xf
 	draw_set_transform_matrix(xf)
 	draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(outline, outline.a * alpha))
-	if EMBOLDEN > 0 and not (CRISP_HIDPI_TEXT and get_viewport().get_final_transform().get_scale().x >= HIDPI_SCALE):
+	if embolden_at(get_viewport().get_final_transform().get_scale().x):
 		draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, EMBOLDEN, c)
 	draw_string(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)
 	draw_set_transform(Vector2.ZERO)
