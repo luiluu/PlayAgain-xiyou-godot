@@ -87,6 +87,11 @@ func _apply(s: XState, c: Dictionary) -> void:
 	for id in c.actors:
 		if not s.party.has(int(id)):
 			s.add_actor(int(id))
+		# 超强者（如一护 148）在默认难度被 add_actor 拦下：来源页要的是「已在队」，照已入队的存档直接放进队伍，
+		# 不开地狱等难度开关（免得改动来源图别的页）
+		if not s.party.has(int(id)) and not XItemMarks.can_acquire_actor(s, int(id)):
+			s.actor(int(id))
+			s.party.append(int(id))
 	if int(c.gold) > 0:
 		s.gain_gold(int(c.gold))
 
