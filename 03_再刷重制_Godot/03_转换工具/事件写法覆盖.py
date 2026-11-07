@@ -256,13 +256,28 @@ def open_preset(lst, j, loc):
         return {'actors': {str(p[1]): {}}}
     if t == 4 and int(p[2]) == 5 and not want:   # 「否则（没装备）」：新开局默认没穿，空预设占位（角色本来就穿着的，目标走不到会被剪掉）
         return {'actors': {str(p[1]): {}}}
+    if t == 1 and int(p[2]) and int(p[3]) != int(p[1]):
+        # 变量比变量（八戒 interp4）：右边变量设 0，左边按比常量 0 取值
+        op = int(p[4])
+        sat = {0: 0, 1: 0, 2: 0, 3: 1, 4: -1, 5: 1}[op]
+        uns = {0: 1, 1: -1, 2: 1, 3: 0, 4: 0, 5: 0}[op]
+        return {'variables': {str(p[1]): sat if want else uns, str(p[3]): 0}}
+    if t == 6 and int(p[1]) == -1:
+        # 玩家朝向（八戒 interp4）：预设 playerDirection 两边都认（accept5）；「否则」取别的方向
+        d = int(p[2])
+        return {'playerDirection': d if want else (8 if d == 2 else 2)}
     if t == 7 and want and int(p[2]) == 0:
         return {'gold': int(p[1])}
+    if t == 12 and want:
+        m = VAR_OR.match(str(p[1]))
+        if m:   # 「$gameVariables.value(V) === N || …」：取第一项（八戒 interp4）
+            return {'variables': {m.group(1): int(m.group(2))}}
     if t == 12:
         return playtime_preset(str(p[1]), want)
     return None
 
 
+VAR_OR = re.compile(r'^\s*\$gameVariables\.value\((\d+)\)\s*===?\s*(-?\d+)\s*(?:\|\|.*)?;?\s*$')
 PLAYTIME = re.compile(r'^\s*\$gameSystem\.playtime\(\)\s*(?:-\s*\$gameVariables\.value\((\d+)\)\s*)?(>=|>|<=|<)\s*(\d+)\s*;?\s*$')
 
 
