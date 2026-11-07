@@ -65,6 +65,9 @@ func _frame() -> void:
 		await host.get_tree().process_frame
 		return
 	await host.get_tree().physics_frame
+	# 等的这一帧里地图可能已经释放（换场景、回标题）：已叫停，不再碰宿主
+	if is_cancelled() or not is_instance_valid(host):
+		return
 	if host.has_method("parallel_active"):
 		while not is_cancelled() and is_instance_valid(host) and not host.parallel_active():
 			await host.get_tree().physics_frame
