@@ -146,6 +146,39 @@ func _run() -> void:
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
 	_check("command_entries", cw.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑"], cw.entries.map(func(e): return e.text))
+	# Kyo 11-06 实机：鼠标左键点指令窗第 2 行先选中、再点一次确定→打开技能列表；右键回指令窗
+	var row_at := func(w: XBattleList, i: int) -> Vector2:
+		return (w.get_parent() as CanvasItem).get_global_transform() * (w.position + Vector2(w.padding + 20, w.padding + (i - w.top + 0.5) * XBattleList.LH))
+	for n in 2:
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		click.global_position = row_at.call(cw, 1)
+		click.position = click.global_position
+		b._gui_input(click)
+		await _frames(2)
+	_check("mouse_pick_command", b.list_win != null, b.list_win != null)
+	if b.list_win != null:
+		var wheel := InputEventMouseButton.new()
+		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		wheel.pressed = true
+		b._gui_input(wheel)
+		await _press("ui_cancel")
+		await _frames(3)
+	cw = b.cmd_win  # 关列表后指令窗是新建的
+	if cw != null:
+		cw.select(0)
+	# 自动、变速按钮不拿键盘焦点（拿了的话空格／J 会先按到它们）
+	_check("speed_auto_no_focus", b.auto_btn.focus_mode == Control.FOCUS_NONE and b.speed_btn.focus_mode == Control.FOCUS_NONE)
+	# O-218·空列表一行高：没有技能时也按一行高；关掉照原版只剩内边距
+	var empty := XBattleList.create(b.ui, [], 450)
+	_check("empty_list_one_row", empty.rows == 1 and empty.size.y == XBattleList.LH + empty.padding * 2, [empty.rows, empty.size])
+	empty.queue_free()
+	XBattleList.EMPTY_ONE_ROW = false
+	var raw := XBattleList.create(b.ui, [], 450)
+	_check("empty_list_v028", raw.rows == 0 and raw.size.y == raw.padding * 2, [raw.rows, raw.size])
+	raw.queue_free()
+	XBattleList.EMPTY_ONE_ROW = true
 	# 战技 → 技能列表（原版：830,478,450,51）
 	await _press("ui_down")
 	await _press("ui_accept")

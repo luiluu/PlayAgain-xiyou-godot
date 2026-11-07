@@ -1,0 +1,17 @@
+{
+  "android": {
+    "date": "2026-11-07",
+    "host": "arm64",
+    "seconds": 8.57
+  },
+  "macos": {
+    "date": "2026-11-06",
+    "host": "arm64",
+    "seconds": 11.4
+  },
+  "windows": {
+    "date": "2026-11-06",
+    "host": "arm64",
+    "seconds": 8.65
+  }
+}
