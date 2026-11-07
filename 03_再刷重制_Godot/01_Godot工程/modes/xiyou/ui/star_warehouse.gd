@@ -49,6 +49,8 @@ func _ready() -> void:
 	help_card = XHelpCard.new()
 	add_child(help_card)
 	help_card.show_for({})
+	XStarWarehouse.ensure_loaded()
+	XStarWarehouse.resolve_pending()   # 别的局取出、没存档的退回仓库（O-222·仓库取出事务）
 	_reload()
 
 
@@ -162,6 +164,9 @@ func _move_item() -> void:
 			XStarWarehouse.deposit_pet(s, XPets.list(s).find_custom(func(p): return is_same(p, e)))
 		else:
 			XStarWarehouse.withdraw_pet(s, e)
+		# 写盘失败（Codex 审查第 4 项）：这次存取已整个退回，提示玩家；存入装备的失败上面已经提示过
+		if XStarWarehouse.last_error != "" and not (save_mode and _symbol() == "equip"):
+			XToast.show_text(XStarWarehouse.last_error, true)
 	_reload()
 
 
