@@ -1,0 +1,22 @@
+{
+ "sha": "205a81381a149b6fe75d6d01da109cdd4cebc3f7",
+ "branch": "ci/cc/bajie-walk1",
+ "mode": "affected",
+ "base": "4db3bbd199308655b25a0684e5047b272175a6e3",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 8.7,
+ "testSeconds": 7,
+ "generatedRef": "refs/ci/generated/cc/bajie-walk1",
+ "generatedCommit": "837beefe846e0ab1aa6222ef10515a20c513a990",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42342548270",
+ "sceneNames": [
+  "xiyou_walk_speed.tscn"
+ ],
+ "time": "2026-11-07T05:27:11+00:00"
+}
