@@ -118,13 +118,8 @@ func _run() -> void:
 			check(tag + "_once", XGear.last_affix_revert.items.is_empty() and e2.name == e.name and close_array(e2.params, e.params) and e2.traits == e.traits, [once.length(), XGear.last_affix_revert])
 	# 审查 53 P3-1：专武前缀＋另一个普通词缀的武器，读档只去掉专武那段，普通词缀（属性、特效、名字、affixIds）留着；
 	# 回退开关 REVERT_KEEP_OTHER_AFFIXES = false 照原版整份换回底装备
-	var other_id := 0
-	for row in XGear.template("weapon", 56).get("equipment", {}).get("affixes", []):
-		for choice in row.choices:
-			for n in choice.ids:
-				var r := XDB.rec("Weapons", int(n))
-				if other_id == 0 and XGear.valid_affix("Weapons", int(n)) and not r.get("meta", {}).has("prefixSuffixDontAddName") and (r.get("traits", []) as Array).size() > 0:
-					other_id = int(n)
+	# 现有数据里没有「专武行＋普通行」同时在的武器（专武只和专武同一行），这里手拼：普通词缀取带名字、带特效的「（传家宝）」1500
+	var other_id := 1500 if XGear.valid_affix("Weapons", 1500) and not str(XDB.rec("Weapons", 1500).get("name", "")).is_empty() else 0
 	check("affix_revert_other_present", other_id > 0)
 	if other_id > 0:
 		var mixed_ids := [{"table": "Weapons", "id": 67, "kind": "prefix"}, {"table": "Weapons", "id": other_id, "kind": "suffix"}]
@@ -143,9 +138,11 @@ func _run() -> void:
 			var e: Dictionary = loaded.gear.filter(func(x): return str(x.instanceId) == id)[0]
 			var expect_e: Dictionary = want if keep else plain
 			var tag := "affix_revert_mixed_" + ("keep" if keep else "orig")
-			check(tag, XGear.last_affix_revert.items.has(id) and e.name == expect_e.name and close_array(e.params, expect_e.params) and e.traits == expect_e.traits and int(e.price) == int(expect_e.price) \
+			# 原版整份换掉时名字里的后缀字留着（P3-1 说的那种），属性特效回到底装备
+			var want_name := str(want.name) if keep else str(plain.name) + str(XDB.rec("Weapons", other_id).name)
+			check(tag, XGear.last_affix_revert.items.has(id) and e.name == want_name and close_array(e.params, expect_e.params) and e.traits == expect_e.traits and int(e.price) == int(expect_e.price) \
 					and str(e.description) == str(expect_e.description) and not str(e.note).to_lower().contains("<req_actors") and e.affixIds.size() == (1 if keep else 0) and e._affixRevert.affixIds.size() == 2,
-				{"godot": [e.name, e.params, e.traits, e.price, e.affixIds], "want": [expect_e.name, expect_e.params, expect_e.traits, expect_e.price]})
+				{"godot": [e.name, e.params, e.traits, e.price, e.affixIds], "want": [want_name, expect_e.params, expect_e.traits, expect_e.price]})
 			if keep:
 				var again := XState.from_dict(JSON.parse_string(JSON.stringify(loaded.to_dict())))
 				var e2: Dictionary = again.gear.filter(func(x): return str(x.instanceId) == id)[0]
