@@ -137,8 +137,12 @@ func _census(o: Dictionary) -> void:
 			dmg.append([int(st.id), int(st.chanceByDamage), int(st.restriction)])
 		if bool(st.get("removeByRestriction", false)):
 			res.append([int(st.id), int(st.restriction)])
-	check("census.damage", JSON.stringify(dmg) == JSON.stringify(o.damage) and dmg.size() == 15, [dmg, o.damage])
-	check("census.restriction", JSON.stringify(res) == JSON.stringify(o.restriction), [res, o.restriction])
+	check("census.damage", dmg == _ints(o.damage) and dmg.size() == 15, [dmg, o.damage])
+	check("census.restriction", res == _ints(o.restriction), [res, o.restriction])
+
+
+func _ints(rows: Array) -> Array:
+	return rows.map(func(r): return (r as Array).map(func(v): return int(v)))
 
 
 func _damage(c: Dictionary) -> void:
