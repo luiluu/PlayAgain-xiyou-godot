@@ -48,6 +48,7 @@ var encounter_count := 0.0
 var skipped_log: Array = []
 var toasts: Array = []              # 出现过的提示文字（测试核对用）
 var popups: Array = []              # 出现过的获得提示文字（测试核对用）
+var animations_shown: Array = []    # 播过的动画 {target: 事件号（玩家 0）, anim, frame: 物理帧号}（测试核对用）
 var _pending_popups: Array = []     # 本帧获得的物品（MOG_TreasurePopup 按帧成批，序号决定错开）
 var _bgm_name := ""
 var _menu_open := false
@@ -155,6 +156,9 @@ func _difficulty_notice_active() -> bool:
 
 
 func _exit_tree() -> void:
+	# 叫停并行解释器后再发一帧：等着 parallel_frame 的协程当场醒来、看到已叫停就收尾，不留挂起的协程到退出（资源未释放）
+	_stop_parallels()
+	parallel_frame.emit()
 	if XPlatform.pause_hook == Callable(self, "_on_app_pause"):
 		XPlatform.pause_hook = Callable()
 	# 地图销毁前解除全局计时器的回调，不能留到下一帧再检测已释放的闭包。
@@ -243,6 +247,8 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 				c.queue_free()
 		_place_party(x, y, d)
 		return
+	# 换图：旧图事件的并行解释器随 $gameMap.setup 丢弃，这里先叫停，免得等待中的协程在节点释放前后接着执行
+	_stop_parallels()
 	for n in [lower, upper, chars]:
 		if n:
 			n.queue_free()
@@ -524,7 +530,13 @@ func _on_action() -> void:
 			return
 
 
+## 并行事件解释器的帧（MVInterpreter._frame／_tick）：先于事件节点更新（父节点先处理），同原版 Game_Map.update 里事件依次 update
+signal parallel_frame
+
+
 func _physics_process(_delta: float) -> void:
+	if parallel_active():
+		parallel_frame.emit()
 	_update_hotkeys()
 	_hang_up_physics()
 	_update_shake()
@@ -582,10 +594,62 @@ func _check_autorun() -> void:
 			return
 
 
+## 并行事件（触发 4，Game_Event.updateParallel）：每个并行页一个独立的解释器，由 MVEvent 每帧在没有解释器时调来起一个。
+## 不占 busy：不锁玩家、不挡确定键／接触／自动执行事件，也不触发 XDungeon.event_finished（那是顶层事件的收尾）。
+## 跑完置空，下一帧从头再跑；换页、消除（MVEvent.stop_parallel）、换图（load_map）时 cancel，在下一个等待点结束。
+func start_parallel(e: MVEvent) -> void:
+	if not parallel_active() or e.command_list().size() <= 1 or not is_instance_valid(e):
+		return
+	var interp := MVInterpreter.new(self, map_id, e.event_id, e.command_list())
+	interp.parallel = true
+	e.parallel_interp = interp
+	await interp.run()
+	if not interp.skipped.is_empty():
+		skipped_log.append_array(interp.skipped)
+	if is_instance_valid(e) and e.parallel_interp == interp:
+		e.parallel_interp = null
+		e.parallel_done_frame = Engine.get_physics_frames()
+
+
+## Scene_Map 在最上层、$gameMap 照常更新的时候（菜单、战斗、各种画面、传送页开着时并行事件停住）
+func parallel_active() -> bool:
+	return not _menu_open and not _in_battle and transfer_page == null and not scene_page_open()
+
+
+func _stop_parallels() -> void:
+	for e in events:
+		if is_instance_valid(e):
+			e.stop_parallel()
+
+
+## 并行事件里的文字：等别的文字、事件结束再显示，显示期间同样锁住玩家（Game_Message 忙时玩家不能动）
+func show_parallel_message(msg: Dictionary) -> int:
+	while busy:
+		await get_tree().process_frame
+	_set_busy(true)
+	var r := await show_message(msg)
+	_set_busy(false)
+	return r
+
+
+## Game_CharacterBase.isNearTheScreen：角色中心离画面中心横竖都不超过一屏（1280×720）
+func near_screen(c: MVCharacter) -> bool:
+	if camera == null or not camera.is_inside_tree():
+		return true
+	var at := c.real
+	if lower and (lower.loop_x or lower.loop_y):
+		at += lower.loop_shift(c.real)
+	var d := (at + Vector2(0.5, 0.5)) * TS - camera.get_screen_center_position()
+	return absf(d.x) <= 1280.0 and absf(d.y) <= 720.0
+
+
 func run_event(e: MVEvent) -> void:
 	if busy or e.command_list().is_empty():
 		return
 	_set_busy(true)
+	# Game_Event.start → lock：确定键／接触启动的事件执行期间，该事件停下自主移动（强制路线照走）
+	if [0, 1, 2].has(e.trigger()):
+		e.locked = true
 	if not e.direction_fix and e.trigger() == 0:
 		e.set_direction(MVCharacter.reverse_dir(player.direction))
 	var ev_id := e.event_id
@@ -596,6 +660,8 @@ func run_event(e: MVEvent) -> void:
 	if not interp.skipped.is_empty():
 		skipped_log.append_array(interp.skipped)
 		print("[xiyou] 事件 %d 跳过 %d 条：%s" % [ev_id, interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
+	if is_instance_valid(e):
+		e.locked = false
 	_set_busy(false)
 	refresh_events()
 	if RERUN_AFTER_PAGE.has(rerun_key) and is_instance_valid(e) and "%d:%d:%d" % [map_id, ev_id, e.page_index] != rerun_key:
@@ -1273,6 +1339,7 @@ func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
 			at.y -= ch.sprite_height() / 2.0
 		3:
 			at = camera.get_screen_center_position()
+	animations_shown.append({"target": ch.event_id if ch is MVEvent else 0, "anim": anim_id, "frame": Engine.get_physics_frames()})
 	var anim := MVAnimation.play(self, anim_id, at)
 	if anim:
 		anim.z_index = 50
