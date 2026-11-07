@@ -4,7 +4,7 @@
 它是 gitignore 的产物，只有同步会生成；新工作树、没同步过的 main 里没有，于是 xiyou_event_compare 的变体段和
 事件空绿扫描 --check 要么报红要么（旧版）静默跳过。检查.sh 在 Godot 测试前、新建工作树.sh --补齐 在收尾时调用它。
 探针只许写 mv_oracle/.sandbox（守卫），量完再拷进 generated/oracle。参照引擎或冻结正式源不在（云端等）就跳过，不算失败，
-缺文件由对照专项与空绿扫描照实报红。用法：补跑事件状态探针.py [--force]
+缺文件由对照专项与空绿扫描照实报红。用法：补跑事件状态探针.py [--force]（--force 关增量、整份重量，约 1 小时，开跑时会提示）
 """
 import json
 import os
@@ -81,6 +81,9 @@ def main():
     env.pop('XIYOU_EVENT_OUT', None)
     if force:
         env['XIYOU_STATE_INCREMENTAL'] = '0'   # --force＝整份重量（增量取回上次结果的路径关掉，BV）
+        # 11-07：车道以为 --force 只是「强制补跑」，结果关了增量整份重量，占满槽一小时；先说清楚
+        print('⚠ --force 会关掉增量、整份重量全部预设（本机约 1 小时、占测试槽）；只想补跑缺的，去掉 --force（默认增量，'
+              'XIYOU_STATE_SHARDS=2 约 12 分钟）', flush=True)
     r = run_probe(env)
     if r.returncode or not SRC.exists():
         print('✗ event_state_probe 失败：' + (r.stderr or r.stdout).strip()[-300:])

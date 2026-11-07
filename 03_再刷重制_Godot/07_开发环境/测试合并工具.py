@@ -793,6 +793,13 @@ class SlotWeightTests(unittest.TestCase):
         t.start()
         return t
 
+    def live_pid(self):
+        """一个确定活着、归本用户的进程号（假等候者用）。原来用 os.getppid()：测试从后台子壳启动、父进程先退出时
+        ppid 变成 1（launchd），os.kill(1, 0) 报 PermissionError，earlier_waiter 当它不存在，2 项必挂（tools-slot-flaky）。"""
+        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'])
+        self.addCleanup(lambda: (child.kill(), child.wait()))
+        return child.pid
+
     def wait_for(self, cond, seconds=5):
         import time
         t0 = time.monotonic()
@@ -896,7 +903,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         import threading, time as _t
         pdir = self.state / 'slots/priority'
         pdir.mkdir(parents=True)
-        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), self.live_pid()))
         boss.touch()
         got, release = {}, threading.Event()
         t = self.hold(1, 2, release, got, 'lane')
@@ -911,7 +918,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         import threading, time as _t
         pdir = self.state / 'slots/priority'
         pdir.mkdir(parents=True)
-        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))  # 活着的进程登记的优先等候者
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), self.live_pid()))  # 活着的进程登记的优先等候者
         boss.touch()
         got, release = {}, threading.Event()
         h = self.hold(2, 2, release, got, 'heavy')
@@ -940,7 +947,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         q.mkdir(parents=True)
         dead = q / ('%d_%d_1' % (_t.time_ns() - 10**9, 999999))  # 不存在的 pid
         dead.touch()
-        old = q / ('%d_%d_1' % (_t.time_ns() - 10**9, os.getppid()))  # 活着的 pid，但很久没刷新
+        old = q / ('%d_%d_1' % (_t.time_ns() - 10**9, self.live_pid()))  # 活着的 pid，但很久没刷新
         old.touch(); os.utime(old, (_t.time() - 120, _t.time() - 120))
         t0 = _t.monotonic()
         with self.par.global_slot(self.state, 2):
@@ -1863,6 +1870,27 @@ for name in filter(None, files):
         self.sheet_with('\n优化登记草稿：无\n')                            # 确无新优化：声明后放行
         self.assertEqual(self.call(), 0, self.last_output)
         self.assertNotIn(tok, (self.root / merge.OPT_REGISTRY).read_text())
+
+    def test_optimization_none_under_heading_and_registered_named_tokens_pass(self):
+        """tools-merge-args3（11-07 拦了四条）：「## 优化登记草稿」下单写「无」也认；正文的占位都写成「O-待定·名字」、
+        优化登记里已有同名行（车道直接写进登记表的）也认；别的照拦。"""
+        tok = 'O-' + '待定'
+        body = '\n- 开关 %s·角色HP包装（XFoo.fix）\n' % tok
+        reg = '| %s·角色HP包装 | 位置 | 问题 | 做法 | 理由 | 回退 | 车道 | 待用户确认 |\n' % tok
+        for text in [body + '\n## 优化登记草稿\n\n无\n', body + '\n## 优化登记草稿\n\n- 无（工具改动）\n\n## 下一节\n']:
+            merge.check_opt_drafts(text, 'x.md')
+        merge.check_opt_drafts(body, 'x.md', reg)
+        for text, registry in [(body, ''), (body, reg.replace('角色HP包装', '别的')), (body + '另有 %s 没名字\n' % tok, reg),
+                               (body + '\n## 优化登记草稿\n\n无关的说明，不是无\n', '')]:
+            with self.assertRaisesRegex(RuntimeError, '优化登记草稿'):
+                merge.check_opt_drafts(text, 'x.md', registry)
+
+    def test_registered_named_token_passes_prepare(self):
+        tok = 'O-' + '待定'
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |\n| %s·甲项 | 位置 | a | b | c | d | e | 待用户确认 |' % tok)
+        self.sheet_with('\n- 新开关 %s·甲项（XFoo.fix）\n' % tok)
+        self.assertEqual(self.call(), 0, self.last_output)
 
     def test_optimization_placeholder_in_tool_source_is_not_numbered(self):
         """唐僧 10-30：合并车道.py 自己注释里的占位被换成 O-122；工具源码（07_开发环境、03_转换工具）里的不换号，文档照换。"""

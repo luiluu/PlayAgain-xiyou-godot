@@ -624,7 +624,8 @@ def plan(root, task, branch=None):
         raise RuntimeError('车道分支上有 %d 份交付单（%s），须只留一份：车道删掉多的那份再交' % (len(found), '、'.join(map(str, found))))
     (delivery, text), = found.items()
     draft(text)
-    check_opt_drafts(text, str(delivery))
+    registry = '\n'.join(x for x in [(root / OPT_REGISTRY).read_text() if (root / OPT_REGISTRY).is_file() else '', read(OPT_REGISTRY) or ''] if x)
+    check_opt_drafts(text, str(delivery), registry)
     # 只认相对本次合并前 main 真有改动的文件：交叉合并时 merge-base 可能取到旧基点，基点 diff 会把 main 早就有的
     # 文件（如别期的测量接受单）当成本期带来，gameplay 误判为真、文档期白递增开发编号（哪吒_8，10-29 八戒 attack-query2）
     real = set(git(root, 'diff', '--name-only', base, target).splitlines())
@@ -666,7 +667,7 @@ def plan(root, task, branch=None):
                 print('提示：另有交付单 ' + p + ' 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also ' + p,
                       file=sys.stderr, flush=True)
                 continue
-            check_opt_drafts(read(p), p)        # 接续交付单的优化草稿照本期的查（tools39）
+            check_opt_drafts(read(p), p, registry)        # 接续交付单的优化草稿照本期的查（tools39）
             extra.append(p)
     changed = [p for p in changed if p not in gone]
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
@@ -750,16 +751,40 @@ def opt_draft_list_items(text):
     return [x.strip() for x in block.splitlines() if re.match(r'^\s*[-*]\s+.*' + OPT_TOKEN.pattern, x)]
 
 
-def check_opt_drafts(text, name):
-    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」。
+OPT_NAMED = re.compile(OPT_TOKEN.pattern + r'·([^\s|｜，。、；（）()`*]+)')
+
+
+def opt_section_none(text):
+    """「## 优化登记草稿」标题下第一段非空内容只写「无」（或「- 无」「（无）」）：同「优化登记草稿：无」（11-07 拦了四条，tools-merge-args3）。"""
+    m = OPT_DRAFT_HEAD.search(text)
+    if not m:
+        return False
+    first = next((x.strip() for x in text[m.end():].splitlines() if x.strip()), '')
+    return bool(re.fullmatch(r'(?:[-*]\s*)?[（(]?无[）)]?[。.]?(?:\s*[（(].*[）)])?', first))
+
+
+def opt_tokens_registered(text, registry):
+    """正文里的优化号占位都写成「O-待定·名字」、且优化登记里已有「| O-待定·名字 |」行（车道直接写进登记表的）：登记有人写了，不用草稿表。"""
+    if not registry:
+        return False
+    rows = set(re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', registry, re.M))
+    tokens = OPT_TOKEN.findall(text)
+    named = [m.group(0) for m in OPT_NAMED.finditer(text)]
+    return len(named) == len(tokens) and all(n in rows for n in named)
+
+
+def check_opt_drafts(text, name, registry=''):
+    """正文提到 O-待定 却没有草稿表：登记没人写（总装只能手补），拦下让车道补表；确无新优化可写「优化登记草稿：无」
+    （或标题下单写「无」）；提到的都是「O-待定·名字」且优化登记里已有同名行也放行（registry：优化登记.md 的文字）。
     草稿写成列表（「- O-待定 …」）也拦下：登记表要 8 列，列表对不上，不静默丢掉。"""
     items = opt_draft_list_items(text)
     if items:
         raise RuntimeError('交付单 %s 的「## 优化登记草稿」是列表不是表格（%s…）：改成表格行（表头照优化登记.md，8 列，首格写占位），合并工具只认表行'
                            % (name, items[0][:40]))
-    if OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text):
+    if (OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text) and not opt_section_none(text)
+            and not opt_tokens_registered(text, registry)):
         raise RuntimeError('交付单 %s 提到优化号占位却没有「## 优化登记草稿」表行：车道补一张表（表头照优化登记.md，首格写占位），'
-                           '确无新优化就写一行「优化登记草稿：无」' % name)
+                           '确无新优化就写一行「优化登记草稿：无」（或标题下单写「无」）；已直接写进优化登记表的，正文写成「O-待定·名字」与登记行同名' % name)
 
 
 def opt_row_keys(row):
