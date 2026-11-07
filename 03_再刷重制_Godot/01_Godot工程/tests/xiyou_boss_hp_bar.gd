@@ -296,7 +296,7 @@ func _run() -> void:
 	XBossHpBar._ext_cache.clear()
 	check("v037_off_again", not XBossHpBar.is_extended(ext_id) and make_bar([plain_e, ext_e]).battler == null)
 
-	# 原版缺陷修好（rules-bugfix1 照搬清单第 2 条，O-待定）：变身换名字头像；开战没有 Boss、之后现身时补建条
+	# 原版缺陷修好（rules-bugfix1 照搬清单第 2 条，O-228）：变身换名字头像；开战没有 Boss、之后现身时补建条
 	for rebuild in [true, false]:
 		XBossHpBar.REBUILD = rebuild
 		var tag := "rebuild" if rebuild else "rebuild_off"

@@ -133,7 +133,7 @@ func _run() -> void:
 	map.encounter_count = 999
 	await key_g()
 	check("start", XHangUp.is_active(s) and s.hang_up_origin == Vector2i(11, 13) and ov.tip.visible and not map.player.input_enabled, [s.hang_up_active, s.hang_up_origin])
-	# 提示上的字（原版 drawWord 画进离屏画布从不显示；rules-bugfix1 照搬清单第 1 条修好，O-待定）
+	# 提示上的字（原版 drawWord 画进离屏画布从不显示；rules-bugfix1 照搬清单第 1 条修好，O-227）
 	var tip_rec := TextRec.new()
 	ov.tip_text.painter.call(tip_rec)
 	check("tip_word_drawn", ov.tip_text.is_visible_in_tree() and tip_rec.texts == [["摆烂中.....", 0.0, 30.0, 560.0, "center", "ff6400", 28, 30]], tip_rec.texts)

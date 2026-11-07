@@ -217,7 +217,7 @@ func _run() -> void:
 	touch(0, ok_center, false)
 	await frames(2)
 	check("buttons_release", not Input.is_action_pressed("ui_accept") and not Input.is_action_pressed("ui_cancel"))
-	# 按住确定不连发（审查报告第 13 项，O-待定；方向的回显连发见 xiyou_ui_input）
+	# 按住确定不连发（审查报告第 13 项，O-225；方向的回显连发见 xiyou_ui_input）
 	accepts = rec.accepts
 	touch(0, ok_center, true)
 	for i in 40:

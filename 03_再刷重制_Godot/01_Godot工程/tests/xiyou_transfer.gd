@@ -153,7 +153,7 @@ func _run() -> void:
 	await physics(10)
 	check("detail_open", page.mode == "detail" and page.detail_win.visible and page.detail_win.is_open() and int(page._detail.id) == 53)
 	await shot("04_掉落详情.png")
-	# 详情开着时方向键、Q/E 不再动后面的掉落框（rules-bugfix1 照搬清单第 3 条，O-待定）；走真实按键分发
+	# 详情开着时方向键、Q/E 不再动后面的掉落框（rules-bugfix1 照搬清单第 3 条，O-229）；走真实按键分发
 	var behind := page.drop_index
 	var behind_page := page.page
 	for code in [KEY_DOWN, KEY_LEFT, KEY_E]:

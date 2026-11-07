@@ -13,7 +13,7 @@ static var MV_KEYS := true
 ## 发行模板的 GDScript 不查空，直接对空指针调用、闪退（11-06 天启篇标题按空格/J 退出，崩溃报告 SIGSEGV 0x450）。
 ## 回退开关 SAFE_HANDLED = false：照旧直接调用（不在树上时发行版仍会闪退）。
 static var SAFE_HANDLED := true
-## Codex 审查报告第 14 项（O-待定）：自己用 _input 收键的弹层（网页面板 XWebPanel、批量抽奖窗 XCasinoDialog）原先只认 Esc，
+## Codex 审查报告第 14 项（O-226）：自己用 _input 收键的弹层（网页面板 XWebPanel、批量抽奖窗 XCasinoDialog）原先只认 Esc，
 ## 虚拟取消键、安卓返回键（都发 ui_cancel 动作）、手柄 B、X／K／Insert 都关不掉，手机上只能点「关闭」。现在认 ui_cancel 全部来源。
 ## 优先级：输入框（LineEdit／TextEdit）有焦点时，会打出字的取消键（X、K、小键盘 0）归输入框；Esc、虚拟取消键、返回键、手柄 B 照样关。
 ## 回退开关 POPUP_CANCEL_ACTION = false：回到只认 Esc。
