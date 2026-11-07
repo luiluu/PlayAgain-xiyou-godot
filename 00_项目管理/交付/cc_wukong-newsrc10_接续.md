@@ -103,7 +103,8 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 - 8cba908b V029 隐藏角色、读档停用角色迁移、专项 xiyou_hidden_actors、优化登记两条
 - 72955961 人物图鉴光环栏／光环标签／179 详情；actor_p0 不再停住
 - 605d1a9c 流萤图鉴立绘档与 bookScale；actor_book 26/26
-- （本提交）交付单
+- d6707f23 交付单
+- （本提交）原版 bug：高阶行封顶不压低（FIX_CAP_BASE）；交付单补云端结果
 
 ## ED（接 EC′ ②，同分支；在工作树 funny-poitras-4e3474 做，分支从 priceless-hofstadter 的 cc/wukong-newsrc10-ec 头 357980b3 续过来，generated／.godot 克隆自 priceless）
 
@@ -118,11 +119,11 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 ## 2026-11-06 【cc·悟空·未经审查】流萤技能说明按阶生成；神话／混沌神话词条概率随难度浮动（dev.待定）
 
 - **流萤说明按阶**（O-待定·流萤说明按阶，`XLiuying.TEXT_BY_RANK`）：照 v0.62.12 `installLiuyingRuntime` 第 15 节 `L.skillLines`／`refreshText`（v0.62.08）。说明卡入口 `XHelpCard._content` 先过 `XLiuying.text_view`：10622 天火轰击、10623 完全燃烧的副本里 `<pos=APs …>` 行整组换成流萤当前进阶次数（`XAdvance.rank(…, 179)`，没建为 0）的写法，数据库不动。2 阶起天火攻击次数 8、燃烧去掉「解锁：进阶2阶」；3 阶起燃烧冷却 3 回合＋「施放后33%概率不进入冷却」、效果改写「增加与施放前护盾等量的护盾（上限为最大生命50%）」、去掉消耗行。原版 3 阶起还清空 `customCostText`（技能列表右侧「全部护盾」），重制技能列表本来就不画 `<Custom Cost Display>`，这处没有对应（另列）。新探针 `mv_oracle/liuying_text_probe.cjs`（新源，没建／0～4 阶，记备注、customCostText、`RJO.HE.getDescParams` 行）→ `tests/fixtures/liuying_text_oracle.json`；专项 xiyou_liuying_text 34/34（备注逐字、说明卡行文字／字号／颜色逐行、content 走到副本、开关关掉回数据库原文）。
-- **神话词条概率随难度**（O-待定·词条难度浮动，`XAffixRate.ENABLED`）：照 v0.62.12 `installAffixDifficultyRateRuntime`（CodexAffixRate v1）。新模块 `core/affix_rate.gd`（XAffixRate）：整行都是 14／15 品质词条的行（`line_tier`），概率 ×路线倍率（按路线开关取第一个开着的：洪荒 2～5 按诅咒倍率、灭世 1.5、天灾 1、地狱 0.75、困难 0.55、普通 0.4、简单 0.3、宝宝 25），单行封顶 50%；M＝1 或普通行照原掷法。原版浮动后用 `r×100` 连续比较（不再取整），按配置概率升序逐项减，都不中不出词条，照搬。`XGear.roll_item` 里掷一行词条那段抽成 `XGear.choose_affix`（原掷法逐字未改）。修行·详细页（`XGuide.detail_rows`）末尾加「高阶词条概率」一段（G.detailRows 包装）。注意：原版对 100% 的高阶行在 M≠1 时也封顶 50%（落芸之力等 100% 行在灭世、地狱都变 50%），照搬未改。新探针 `mv_oracle/affix_rate_probe.cjs`（新源，68 例：13 种路线开关、6 档诅咒、7 件装备×7 条路线×21 个预掷随机数）→ `tests/fixtures/affix_rate_oracle.json`；专项 xiyou_affix_rate 321/321（选出的词条与用掉的随机数个数逐个对上、lineTier、修行页那段逐行、开关关掉灭世等于 M＝1 原掷法、修行页不加）。
+- **神话词条概率随难度**（O-待定·词条难度浮动，`XAffixRate.ENABLED`）：照 v0.62.12 `installAffixDifficultyRateRuntime`（CodexAffixRate v1）。新模块 `core/affix_rate.gd`（XAffixRate）：整行都是 14／15 品质词条的行（`line_tier`），概率 ×路线倍率（按路线开关取第一个开着的：洪荒 2～5 按诅咒倍率、灭世 1.5、天灾 1、地狱 0.75、困难 0.55、普通 0.4、简单 0.3、宝宝 25），单行封顶 50%；M＝1 或普通行照原掷法。原版浮动后用 `r×100` 连续比较（不再取整），按配置概率升序逐项减，都不中不出词条，照搬。`XGear.roll_item` 里掷一行词条那段抽成 `XGear.choose_affix`（原掷法逐字未改）。修行·详细页（`XGuide.detail_rows`）末尾加「高阶词条概率」一段（G.detailRows 包装）。**原版 bug 修了**（O-待定·高阶行封顶不压低，`XAffixRate.FIX_CAP_BASE`，Kyo 11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置高于 50% 的高阶行（落芸之力等 100% 行）在 M≠1 时压到 50%，灭世、洪荒、宝宝反而低于天灾的 100%；修成封顶取 max(50, 配置)，配置不超过 50% 的行不受影响。新探针 `mv_oracle/affix_rate_probe.cjs`（新源，68 例：13 种路线开关、6 档诅咒、7 件装备×7 条路线×21 个预掷随机数）→ `tests/fixtures/affix_rate_oracle.json`；专项 xiyou_affix_rate 371/371（参照比对时修 bug 开关关着；选出的词条与用掉的随机数个数逐个对上、lineTier、修行页那段逐行、开关关掉灭世等于 M＝1 原掷法、修行页不加）。
 
 ### 优化登记
 
-已写进 `03_再刷重制_Godot/00_设计/优化登记.md` 末尾两行，编号待总装分配：O-待定·流萤说明按阶、O-待定·词条难度浮动。`回退开关覆盖.py` 两条都认到、有回退支测试。
+已写进 `03_再刷重制_Godot/00_设计/优化登记.md` 末尾三行，编号待总装分配：O-待定·流萤说明按阶、O-待定·词条难度浮动、O-待定·高阶行封顶不压低（修原版 bug）。`回退开关覆盖.py` 三条都认到、有回退支测试。
 
 ### 交接板
 
@@ -131,8 +132,12 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 
 ### 验证（ED）
 
-- 本机：xiyou_liuying_text 34/34、xiyou_affix_rate 321/321。语法检查通过（607 个 .gd）。
-- 云端选测（基准 357980b3，143 个场景：gear.gd／help_card.gd／guide.gd 的引用面）：见回报。
+- 本机：xiyou_liuying_text 34/34、xiyou_affix_rate 371/371。语法检查通过（607 个 .gd）。工具回归通过。
+- 云端选测（[运行 42308091218](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42308091218)，提交 7032b5b4，基准 357980b3，143 个场景）：130 过、13 挂，查过都不是本单：
+  - growth_help（8 条心钢／狂妄词条行）、gear_search（3 条战力排序）、equipment（affix_revert 参照缺）：本机把 gear.gd 换回 357980b3 原样、XAffixRate 关掉也一样挂（新源数据配 v0.28 旧参照；测试状态没开路线开关，M＝1 本来就不走新掷法）。
+  - zhenqi 12 条 page.*：旧参照没有「修行·详细」detail（已知，同步后才有）。
+  - help_card 4 条：10290、10293、10298、10358 成长行新源换了词，参照是旧的；不涉及 10622／10623。
+  - floor_run、floor_run_b／_c（楼层行走）、event_compare（ce9039／ce9026 参照条数 5959 对 5900）、floor_fortress029（重跑过）、item_bag、empress_draw、save_events（测试过了但退出时 get_tree 报错）：与本单改动的文件无关。
 - `事件空绿扫描.py --check`：同 EB、EC′，只挂 5 条 m234 状态没量（不是本单）。`探针登记检查.py`：新探针都有夹具；挂的两条（module_equipment_view、recover_permanent）不是本单。
 - 没跑全量。
 
@@ -145,4 +150,5 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 ### 本分支提交（ED）
 
 - 7032b5b4 流萤说明按阶、神话词条概率随难度＋新源探针与专项；O-待定两条
-- （本提交）交付单
+- d6707f23 交付单
+- （本提交）原版 bug：高阶行封顶不压低（FIX_CAP_BASE）；交付单补云端结果

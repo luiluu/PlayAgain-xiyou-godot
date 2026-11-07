@@ -9,8 +9,12 @@ extends RefCounted
 ##   否则每行仍取一个预掷随机数 roll＝r×100，各选项概率改成 min(配置×M, 50)，按配置概率升序逐项减，roll 小于该项就中；都不中＝不出词条。
 ## - 修行·详细页（G.detailRows 包装）末尾加一段「高阶词条概率」（detail_rows，XGuide.detail_rows 调）。
 ## O-待定·词条难度浮动：ENABLED＝false 回 v0.28（一律原掷法，修行页不加这段）。
-
+## O-待定·高阶行封顶不压低（原版 bug，Kyo 2026-11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置本来就超过 50% 的行
+## （落芸之力等 100% 行）在 M≠1 时一律压到 50%——灭世、洪荒、宝宝反而比天灾（M＝1 走原掷法、100%）低，地狱 75% 也被压到 50%。
+## 修好：封顶取 max(50, 配置)，即 min(配置×M, max(50, 配置))，高于 50% 的行只会被低难度按倍率降低、不会被高难度压低。
+## FIX_CAP_BASE＝false 照原版。
 static var ENABLED := true
+static var FIX_CAP_BASE := true
 const CAP := 50.0
 const HH_MAX := 6.075
 const ROUTES := [
@@ -113,7 +117,8 @@ static func pick(s: XState, choices: Array, table: String, r: float) -> Array:
 	for c in choices:
 		var ids: Array = c.ids.filter(func(n): return XGear.valid_affix(table, int(n)))
 		if not ids.is_empty():
-			list.append({"chance": minf(CAP, float(c.chance) * m), "base": float(c.chance), "ids": ids})
+			var cap := maxf(CAP, float(c.chance)) if FIX_CAP_BASE else CAP
+			list.append({"chance": minf(cap, float(c.chance) * m), "base": float(c.chance), "ids": ids})
 	list.sort_custom(func(a, b): return a.base < b.base)
 	for c in list:
 		if roll < c.chance:

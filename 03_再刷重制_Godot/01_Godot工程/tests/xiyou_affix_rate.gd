@@ -5,6 +5,8 @@ extends Node
 ## - curse.*：洪荒按诅咒倍率的倍率、标签数字、rate(1)／rate(20)；
 ## - choose.*：7 件装备的词条行在 7 条路线、21 个预掷随机数下选出的词条与用掉的随机数个数、lineTier、行内概率；
 ## - 开关 ENABLED 关掉：灭世也照原掷法（等于天灾 M＝1 的参照），修行页不加这段。
+## - 参照比对时 FIX_CAP_BASE 关（照原版）；fixed.*：开着时配置 100% 的行（落芸之力 121）按 min(100×M, 100) 掷，
+##   配置不超过 50% 的样本行与参照完全一样。
 const FIXTURE := "res://tests/fixtures/affix_rate_oracle.json"
 var results := []
 
@@ -59,8 +61,10 @@ func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
+	XAffixRate.FIX_CAP_BASE = false
 	var calamity := {}
 	var choose_n := 0
+	var fixed_cases := []
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		if not c.errors.is_empty():
@@ -94,11 +98,35 @@ func _run() -> void:
 			var want: Array = o.rows.map(func(x): return [int(x.id), int(x.used)])
 			var got := _choose_rows(s, choices, table, rolls)
 			check(c.id + ".rows", got == want, [got, want])
+			fixed_cases.append([c, s, choices, table, rolls, want])
 			if c.id.begins_with("choose.calamity."):
 				calamity[c.id.trim_prefix("choose.calamity.")] = want
 			if c.id.begins_with("choose.doom."):
 				calamity["doom:" + c.id.trim_prefix("choose.doom.")] = [s, choices, table, rolls]
 	check("choose_cases", choose_n == 49, choose_n)
+	XAffixRate.FIX_CAP_BASE = true
+	var high := 0
+	for f in fixed_cases:
+		var c: Dictionary = f[0]
+		var s: XState = f[1]
+		XState.current = s
+		var got := _choose_rows(s, f[2], f[3], f[4])
+		var top: float = c.observed.chances.map(func(x): return float(x)).max()
+		if top <= 50.0:
+			check("fixed.same." + c.id, got == f[5], [got, f[5]])
+			continue
+		high += 1
+		var m := XAffixRate.factor(s)
+		var chance := minf(top * m, top) if m != 1.0 else top
+		var bad := []
+		for i in got.size():
+			var r := float(f[4][i])
+			var hit := int(got[i][0]) > 0
+			var expect := (r * 100.0 < chance) if m != 1.0 else (floori(r * 100.0) + 1 <= int(top))
+			if hit != expect:
+				bad.append([r, got[i], chance])
+		check("fixed.high." + c.id, bad.is_empty(), bad)
+	check("fixed.high_cases", high == 7, high)
 	XAffixRate.ENABLED = false
 	for k in calamity.keys().filter(func(k): return str(k).begins_with("doom:")):
 		var key := str(k).trim_prefix("doom:")
