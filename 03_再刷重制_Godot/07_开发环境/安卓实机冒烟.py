@@ -38,7 +38,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 75.0}
+WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0}
 
 
 class Report:
@@ -192,9 +192,10 @@ def key_runs(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Re
         v.unlink(missing_ok=True)
 
 
-# 开新游戏，再连按 40 次确认把开场剧情（Map001 自动事件，有对话和选项）点过去，最后在地图上等着，由 adb 按 HOME 切后台。
-# 开场没点完时 PAUSE_SAVE 是 skip:event，只记 INFO
-AUTOSAVE_SEQ = 'accept' + ',wait:30,accept' * 40 + ',wait:7200'
+# 开新游戏后在地图上等着，由 adb 按 HOME 切后台。新游戏一进地图就是 Map001 的开场自动事件（312 条指令，有对话、选项、循环），
+# 云端试过连按 40 次确认也没点完，所以切后台那一刻是 skip:event（同原版：事件中不存），只验钩子在真安卓上会触发；
+# 真存一份要等开场走完，留给真机清单第 16 步
+AUTOSAVE_SEQ = 'accept,wait:7200'
 
 
 def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work: Path, rep: Report) -> None:
