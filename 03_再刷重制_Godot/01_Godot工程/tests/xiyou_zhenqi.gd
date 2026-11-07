@@ -259,8 +259,18 @@ func _run() -> void:
 				continue
 			if (SECOND + THIRD).any(func(p): return c.id.begins_with(p)):
 				continue   # 第二批（突破、瓶颈之战、奖励与道法）由 tests/xiyou_zhenqi_break、第三批（道法运行时、神兵试炼、隐藏成员）由 tests/xiyou_zhenqi_daofa 比
+			# 原版「修行·详细」窗口抓的是没包装的 G.detailRows，高阶词条概率那段不显示（O-待定·高阶词条概率页）：照原版比
+			if c.id.begins_with("page."):
+				XAffixRate.DETAIL_SHOWN = false
 			var got = _case(c.id, c.setup)
+			XAffixRate.DETAIL_SHOWN = true
 			var want = c.observed
+			if c.id.begins_with("page.") and c.id == "page.default" and XGuide.PANEL_V062:
+				# 修好的一支：页末多出「高阶词条概率」一段，其余与原版相同
+				var fixed = _case(c.id, c.setup)
+				var tail: Array = fixed.detail.slice(got.detail.size())
+				check("page.affix_section", fixed.detail.slice(0, got.detail.size()) == got.detail and tail.size() >= 3
+					and tail[0].type == "blank" and str(tail[1].text).begins_with("高阶词条概率"), tail)
 			if c.id.begins_with("page."):
 				want = want.duplicate(true)
 				want.rows = _strip_zones(want.rows)

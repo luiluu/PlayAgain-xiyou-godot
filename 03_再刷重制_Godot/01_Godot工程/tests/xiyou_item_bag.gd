@@ -29,6 +29,11 @@ func _ready() -> void:
 func _run() -> void:
 	XPetCapture.clock = func(): return {"day": 1, "hour": 12, "minute": 15}
 	XMessageBox.auto = true
+	# 存档与配置放测试目录，不碰本机开发档；新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：
+	# 过场占住地图，开菜单被忽略，tp.* 用例拿不到菜单（集成分支 run 42343228257；本机开发档里看过过场才过）
+	XSave.dir_override = "user://test_xiyou_item_bag"
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.whisper_mark("rift1")
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/item_bag_oracle.json"))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("complete", f.cases.size() == 11)
