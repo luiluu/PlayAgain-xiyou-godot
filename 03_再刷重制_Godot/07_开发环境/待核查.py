@@ -13,6 +13,8 @@
     验证、结论、证据、问题等其余行里提到的提交号、分支名与开发编号不算（沙僧 2026-10-21：验证行写「开发编号（dev.118）通过」曾误销 dev.118 整批）。
   - 范围里写到的提交号（7 位以上）销该提交；写到合并提交号、分支名或开发编号（dev.NNN、dev.A～B、dev.A／B）时销整批。
   - 分支名与开发编号只销核查当天及以前的批，避免早先的核查盖住同一分支后来的合并。
+  - 短分支名（tools83）：核查条目的范围里写不带 `cc/` 前缀的名字（`android3`、`platform-keys1～3`、`release1／2`），按「合并到 main 的分支名等于它、或以 `-它` 结尾」认，
+    只有唯一一批对得上才销；对不上或对上多批的打警告（审查 50 写短名，旧版一批都没销掉，漏销 15 批）。
 批的划分：main 第一父链上的每个 `合并 <分支>` 合并提交连同它带进来的分支提交、紧随其后的同分支「收尾／登记」提交算一批，其余提交各自一批。
 """
 import argparse
@@ -36,6 +38,11 @@ DEV = re.compile(r'dev\.(\d{3})((?:\s*[～~至到\-]\s*(?:dev\.)?\d{3})?)((?:[�
 # 核查条目里的销账范围行（标题行另算）：列表行开头是这些标签，后面不紧跟别的汉字（「核查结果」不算）
 SCOPE_LINE = re.compile(r'^\s*[-*]\s*(?:\*\*)?(?:核查覆盖|核查范围|范围|核查文档登记|核查|提交)(?![\u4e00-\u9fff])')
 MERGE = re.compile(r'^(?:合并|并入)\s+((?:claude|cc|codex)/[^\s（(]+)')
+SHORT = re.compile(r'(?<![A-Za-z0-9_/.\-#])[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?![A-Za-z0-9_\-/.])')   # 不带 cc/ 前缀的小写名字
+SHORT_SPLIT = re.compile(r'^(.*?)(\d+)([a-z]?)$')
+SHORT_RANGE = re.compile(r'^\s*[～~至到]\s*(\d+)')
+SHORT_MORE = re.compile(r'^((?:\s*(?:[／/、])\s*\d+)+)')
+ALIASES_FILE = Path(__file__).resolve().parent / '待核查别名.json'
 TIERS_FILE = Path(__file__).resolve().parent / '待核查分档.json'
 TIER_ORDER = {'甲': 0, '乙': 1, '丙': 2}
 DOC_ONLY = re.compile(r'^(?:00_项目管理/|AGENTS\.md$|CLAUDE\.md$|README[^/]*\.md$)|\.md$')
@@ -90,6 +97,46 @@ def scope_text(text):
     """核查条目里用来销账的部分：标题行加范围行（见模块说明）。"""
     lines = text.split('\n')
     return '\n'.join(lines[:1] + [l for l in lines[1:] if SCOPE_LINE.match(l)])
+
+
+def short_names(text):
+    """范围文字里的短分支名候选：[('android3', True), ('platform-keys2', False), …]，第二项＝是不是文字里直接写出的（区间、并列展开出来的是 False，对不上不警告）。数字后跟 ～N 展开成区间，跟 ／N、、N 展开成并列。
+    纯小写字母数字加连字符；至少有连字符或结尾数字（普通英文词不算）；十六进制提交号不算。"""
+    out = []
+    for m in SHORT.finditer(text):
+        tok = m.group(0)
+        if HASH.fullmatch(tok) or tok == 'dev':
+            continue
+        sp = SHORT_SPLIT.match(tok)
+        if '-' not in tok and not sp:
+            continue
+        if not sp:
+            out.append((tok, True))
+            continue
+        base, num, letter = sp.group(1), int(sp.group(2)), sp.group(3)
+        out.append((base + sp.group(2) + letter, True))
+        rest = text[m.end():]
+        rng, more = SHORT_RANGE.match(rest), SHORT_MORE.match(rest)
+        if rng and not letter and num < int(rng.group(1)) <= num + 30:
+            out.extend((f'{base}{n}', False) for n in range(num + 1, int(rng.group(1)) + 1))
+        elif more and not letter:
+            out.extend((f'{base}{n}', False) for n in re.findall(r'\d+', more.group(1)))
+    return out
+
+
+def load_aliases():
+    """短名别名表（待核查别名.json）：{短名: 完整分支名}，短名对上多批、无法自动认时用；读不到就当没有。"""
+    try:
+        return {k: v for k, v in json.loads(ALIASES_FILE.read_text(encoding='utf-8')).items() if not k.startswith('_')}
+    except (OSError, ValueError):
+        return {}
+
+
+def resolve_short(name, branches, aliases=None):
+    """短名对上的完整分支名：别名表优先；否则等于去掉 cc/ 前缀的名字，或以 -短名 结尾。"""
+    if aliases and aliases.get(name) in branches:
+        return [aliases[name]]
+    return [b for b in branches if b.split('/', 1)[-1] == name or b.split('/', 1)[-1].endswith('-' + name)]
 
 
 def reviews(root):
@@ -154,9 +201,13 @@ def changed_files(root, c):
     return [f for f in git(root, 'diff', '--name-only', '--no-renames', c['parent'], c['sha']).split('\n') if f]
 
 
-def pending(root, rules=None):
+def pending(root, rules=None, warnings=None):
+    """warnings 传一个 list，认不出的短分支名会追加进去（一条一句话）。"""
     rules = load_tiers()[0] if rules is None else rules
     batches = commits(root)
+    known = sorted({b['branch'] for b in batches if b['branch']})
+    aliases = load_aliases()
+    families = {re.sub(r'\d+[a-z]?$', '', k.split('/', 1)[-1]) for k in known}
     revs = reviews(root)
     for b in batches:
         b['dev'] = set().union(*(c['dev'] for c in b['commits']))
@@ -164,6 +215,14 @@ def pending(root, rules=None):
         text = scope_text(text)
         hashes = HASH.findall(text)
         branches = set(BRANCH.findall(text))
+        for name, explicit in dict.fromkeys(short_names(BRANCH.sub(' ', text))):
+            hit = resolve_short(name, known, aliases)
+            if len(hit) == 1:
+                branches.add(hit[0])
+                continue
+            base = re.sub(r'\d+[a-z]?$', '', name)
+            if warnings is not None and explicit and any(f == base or f.endswith('-' + base) for f in families):
+                warnings.append(f'{date} 核查条目写了短分支名 {name}，' + (f'对上了多批（{"、".join(hit)}），没销' if hit else '没对上任何已合并的批，没销') + '；要写 cc/ 全名或合并提交号')
         devs = dev_numbers(text)
         for b in batches:
             whole = b['merge'] and any(b['merge'].startswith(h) for h in hashes) or b['date'] <= date and (
@@ -191,7 +250,10 @@ def main(argv=None):
     ap.add_argument('--json', action='store_true')
     ap.add_argument('--limit', type=int, default=10)
     a = ap.parse_args(argv)
-    items = pending(a.root)
+    warns = []
+    items = pending(a.root, warnings=warns)
+    for w in warns:
+        print('  ⚠ ' + w, file=sys.stderr)
     if a.json:
         print(json.dumps(items, ensure_ascii=False, indent=1))
         return 0
