@@ -127,7 +127,8 @@ func _run() -> void:
 		var want := XGear.affix_template({"kind": "weapon", "base": 56, "affixIds": kept_ids})
 		var plain := XGear.template("weapon", 56)
 		for keep in [true, false]:
-			XGear.REVERT_KEEP_OTHER_AFFIXES = keep
+			if keep: XGear.REVERT_KEEP_OTHER_AFFIXES = true
+			else: XGear.REVERT_KEEP_OTHER_AFFIXES = false  # 回退支（字面量，回退开关覆盖.py 认）
 			var s := XState.new_game(3, 1, [])
 			var g := XGear.affix_template({"kind": "weapon", "base": 56, "affixIds": mixed_ids})
 			g.affixIds = mixed_ids.duplicate(true)
