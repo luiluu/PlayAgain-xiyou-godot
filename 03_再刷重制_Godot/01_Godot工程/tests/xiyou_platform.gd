@@ -176,6 +176,10 @@ func _run() -> void:
 	platform.start_catch_up(1.0)
 	check("catch_up_relative_to_base", Engine.physics_ticks_per_second == 96 * XPlatform.CATCH_UP_SPEED
 		and is_equal_approx(Engine.time_scale, 1.6 * XPlatform.CATCH_UP_SPEED), [Engine.physics_ticks_per_second, Engine.time_scale])
+	# 补跑按平常速度的秒数扣：齿轮 1.6 下一帧 delta＝1.6×8＝12.8，只算 8 秒（以前扣 12.8，开齿轮只补离开时长的 1/1.6）
+	platform.start_catch_up(10.0)
+	platform._process(1.6 * XPlatform.CATCH_UP_SPEED)
+	check("catch_up_counts_base_seconds", platform.is_catching_up() and is_equal_approx(platform.catch_up_left(), 10.0 - XPlatform.CATCH_UP_SPEED), platform.catch_up_left())
 	platform._process(20.0)
 	check("catch_up_restores_base_gear", not platform.is_catching_up() and Engine.physics_ticks_per_second == 96
 		and is_equal_approx(Engine.time_scale, 1.6) and Engine.max_physics_steps_per_frame == 8, [Engine.physics_ticks_per_second, Engine.time_scale])
