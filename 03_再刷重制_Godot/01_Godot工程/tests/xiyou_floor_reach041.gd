@@ -1,7 +1,7 @@
 extends Node
 ## 可达图收尾：空图 Map102，以及期七遗留的 Map062 正式入口（地图场景里真走一遍）。
 ## 黄金大厅 Map041 暂不收（星级仓库画面未做，见交付单）。
-## - 69 EV47 第二页（开关 21 开）→ 空图 102 (29,22)。
+## - 69 EV47 第二页（开关 21 开）→ 空图 102 (29,22)（回退支：MVEvent.page_switch_ignore = {}，O-待定·天之上入口）。
 ## - 指路灯物品 247 → 公共事件 164 → 传送到 62 (23,19)（不经 Map127）：普通情形传送；在副本中（变量 21≠0）只提示不传送。
 ## 队伍生命攻击都很大（只查流程）。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -181,7 +181,15 @@ func _run() -> void:
 
 
 ## 空图 102：Map69 EV47 第二页（开关 21 开）进入
+## O-待定·天之上入口修后这一页不再被选（人会落在图外）：这里测回退支，照原版进空图（修好的一支见 xiyou_map_audit）
 func _empty() -> void:
+	var saved_ignore := MVEvent.page_switch_ignore
+	MVEvent.page_switch_ignore = {}
+	await _empty_orig()
+	MVEvent.page_switch_ignore = saved_ignore
+
+
+func _empty_orig() -> void:
 	var s := _start(69, 38, 78, 2)
 	s.set_switch(21, true)
 	if not _check("empty_start", await _wait_map(69)):
