@@ -17,7 +17,7 @@
 - 甲档待核查 33 → 8（剩 newsrc3、version1、input-crash、size1、crash1、android6、tools1、meta1）。
 
 ## 已核／未核清单
-已核：派单点名的 tonight 各批（platform-fix2 的 O-221、nezha-save1 的 O-222 与 write_text_safely、rules-bugfix1／2 的 O-219／220／223／224、tools81／82、ui-battlefix1、ui-input1），以及 bailong-ui11、bajie-battlefx1、platform-pc-android1、platform-fix1（含 fb31ab0）、bajie-events13。补销审查 50 已核的 15 批。
+已核：派单点名的今晚各批（platform-fix2 的 O-221、nezha-save1 的 O-222 与 write_text_safely、rules-bugfix1／2 的 O-219／220／223／224、tools81／82、ui-battlefix1、ui-input1），以及 bailong-ui11、bajie-battlefx1、platform-pc-android1、platform-fix1（含 fb31ab0）、bajie-events13。补销审查 50 已核的 15 批。
 未核（甲 8）：cc/wukong-newsrc3、cc/platform-version1、cc/input-crash、cc/platform-size1、cc/platform-crash1、cc/platform-android6、cc/platform-tools1、cc/platform-meta1。ui-battlefix2 还没合进 main，不在本期。
 
 ## 交接板
