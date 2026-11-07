@@ -1187,6 +1187,47 @@ class TaskWatchTests(unittest.TestCase):
             self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
             self.assertEqual(marker.read_text(), 'ok')
 
+    @unittest.skipUnless(sys.platform == 'darwin' and shutil.which('launchctl'), '只在 macOS 上有 launchd')
+    def test_start_with_log_under_documents_uses_launchd(self):
+        """tools82：日志在本工作树（~/Documents 下）时 launchd 也起得来——它的 stderr 不再落在日志旁边
+        （launchd 打不开 Documents 里已存在的文件，作业 EX_CONFIG 一起来就消失），run 起来后自己接回 <日志>.start.err。"""
+        base = HERE.parent / '04_验证/本地结果/任务'
+        base.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=base, prefix='test-tools82-') as tmp:
+            log = Path(tmp) / 'docs.log'
+            script = 'import sys; print("ok"); print("to-err", file=sys.stderr)'
+            p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'start', str(log), '--', sys.executable, '-c', script],
+                               capture_output=True, text=True, timeout=35)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertNotIn('退回子进程方式', p.stderr)
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
+            self.assertIn(b'to-err', log.read_bytes())
+
+    @unittest.skipUnless(sys.platform == 'darwin' and shutil.which('launchctl'), '只在 macOS 上有 launchd')
+    def test_launchd_job_that_vanishes_falls_back_to_subprocess(self):
+        """tools82：launchd 作业没写出状态就结束时，start 打印原因（last exit code、作业 stderr）并退回子进程方式，任务照样跑完。
+        真实的 launchd 作业，只是换成一个一起来就报错退出的程序（Documents 下 EX_CONFIG 那种失败本机时有时无，不拿它做固定用例）。"""
+        task = load('long_task_fallback', HERE / '长任务.py')
+        real = task.submit_launchd
+        dying = [sys.executable, '-c', 'import sys; print("launchd-side boom", file=sys.stderr); sys.exit(3)']
+        base = HERE.parent / '04_验证/本地结果/任务'
+        base.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=base, prefix='test-tools82-') as tmp:
+            log = Path(tmp) / 'fallback.log'
+            err = io.StringIO()
+            with mock.patch.object(task, 'submit_launchd', lambda label, argv, e: real(label, dying, e)), \
+                    contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                code = task.start(log, [sys.executable, '-c', 'print("ok")'])
+            self.assertEqual(code, 0, err.getvalue())
+            self.assertIn('退回子进程方式', err.getvalue())
+            self.assertIn('last exit code = 3', err.getvalue())
+            self.assertIn('launchd-side boom', err.getvalue())
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertNotIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
+
     def test_non_utf8_output_does_not_hide_valid_completion_marker(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / 'binary.log'

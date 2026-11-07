@@ -113,27 +113,19 @@ static func load_ledger():
 		next.legacyProfiles = {}
 	next.erase("active")
 	_ledger = next
-	_loaded_path = p
+	_loaded_path = path()
 	return _ledger
 
 
 ## saveLedger：先写临时文件再改名
 static func save_ledger(next: Dictionary) -> bool:
-	var p := path()
-	DirAccess.make_dir_recursive_absolute(p.get_base_dir())
-	var tmp := "%s.%s.tmp" % [p, uuid()]
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
-	if f == null:
-		_fail("云裳订单记录无法写入")
-		return false
-	f.store_string(JSON.stringify(next))
-	f.close()
-	if DirAccess.rename_absolute(tmp, p) != OK:
-		DirAccess.remove_absolute(tmp)
+	# Codex 审查第 2 项：原来 store_string／close 不查写没写完整，截断的文件照样换上去；现在写不完整就不替换、返回 false
+	#（调用方的扣材料都在写成之后的重放里，失败就不扣），替换前留一份上一版 .bak（XSave.write_text_safely）
+	if not XSave.write_text_safely(path(), JSON.stringify(next)):
 		_fail("云裳订单记录无法写入")
 		return false
 	_ledger = next
-	_loaded_path = p
+	_loaded_path = path()
 	return true
 
 

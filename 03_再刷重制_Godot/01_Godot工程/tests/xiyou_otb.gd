@@ -79,7 +79,7 @@ func _run() -> void:
 	l.next_order = [a,b,l.actors[2],l.actors[3]]
 	l._otb_target_shift({"note":"","effects":[{"code":31,"dataId":6}]},l.actors[3])
 	_check("agi_buff_shift", l.next_order == [a,b,l.actors[3],l.actors[2]])
-	# O-待定-2：敏捷减益后移 1 格（默认）；关掉回到原版不移
+	# O-219：敏捷减益后移 1 格（默认）；关掉回到原版不移
 	l.next_order = [a,b,l.actors[2],l.actors[3]]
 	l._otb_target_shift({"note":"","effects":[{"code":32,"dataId":6}]},b)
 	_check("agi_debuff_shift", l.next_order == [a,l.actors[2],b,l.actors[3]], l.next_order)
