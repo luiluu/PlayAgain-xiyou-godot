@@ -677,7 +677,7 @@
    "js/rpg_οbjects.js": "44a492f6a9b742a68a3768cdf7c6bab8294f5a177f595ab562cc47a80809ce89"
   }
  },
- "scope": "dsPassiveSkill passiveGUARD / passiveXPBSTEX on frozen source",
+ "scope": "dsPassiveSkill passiveGUARD / passiveXPBSTEX / passiveSTREG / SkillCriPush / CritFloor on frozen source",
  "cases": [
   {
    "id": "guard",
@@ -1970,6 +1970,515 @@
       "note": [
        "<passivePBSTEX2:50%,TPUP,100>",
        "<passivePRETP>"
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "streg",
+   "setup": {
+    "stateIds": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     29,
+     30,
+     85,
+     124,
+     234,
+     377,
+     381,
+     382,
+     908,
+     1061,
+     1101,
+     1102,
+     1394,
+     1789
+    ]
+   },
+   "observed": {
+    "rows": [
+     {
+      "kind": "learn",
+      "ids": [],
+      "resistSet": [],
+      "resist": [],
+      "added": {
+       "7": true,
+       "8": true,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       38
+      ],
+      "resistSet": [
+       7,
+       8,
+       9
+      ],
+      "resist": [
+       7,
+       8,
+       9
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": false
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       84
+      ],
+      "resistSet": [
+       7,
+       8
+      ],
+      "resist": [
+       7,
+       8
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       88
+      ],
+      "resistSet": [
+       7,
+       8
+      ],
+      "resist": [
+       7,
+       8
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       1174
+      ],
+      "resistSet": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       30,
+       124
+      ],
+      "resist": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       30,
+       124
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": false
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       5568
+      ],
+      "resistSet": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       124,
+       1101,
+       1102
+      ],
+      "resist": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       124,
+       1101,
+       1102
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": false
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       5979
+      ],
+      "resistSet": [
+       377,
+       381,
+       382,
+       908,
+       1061,
+       1394
+      ],
+      "resist": [
+       377,
+       381,
+       382,
+       908,
+       1061,
+       1394
+      ],
+      "added": {
+       "7": true,
+       "8": true,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       5699
+      ],
+      "resistSet": [
+       1789
+      ],
+      "resist": [
+       1789
+      ],
+      "added": {
+       "7": true,
+       "8": true,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       2366
+      ],
+      "resistSet": [
+       234
+      ],
+      "resist": [
+       234
+      ],
+      "added": {
+       "7": true,
+       "8": true,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       3206
+      ],
+      "resistSet": [
+       85
+      ],
+      "resist": [
+       85
+      ],
+      "added": {
+       "7": true,
+       "8": true,
+       "9": true
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "learn",
+      "ids": [
+       38,
+       1174
+      ],
+      "resistSet": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       30,
+       124
+      ],
+      "resist": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       30,
+       124
+      ],
+      "added": {
+       "7": false,
+       "8": false,
+       "9": false
+      },
+      "sourceErrors": []
+     },
+     {
+      "kind": "state686",
+      "ids": [],
+      "has5500": true,
+      "resistSet": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       124
+      ],
+      "resist": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       29,
+       124
+      ],
+      "sourceErrors": []
+     },
+     {
+      "kind": "armor4088",
+      "ids": [],
+      "slot": 2,
+      "equipped": true,
+      "resistSet": [],
+      "resist": [],
+      "sourceErrors": []
+     }
+    ],
+    "notes": [
+     {
+      "id": 38,
+      "keys": [
+       "passiveSTREG007",
+       "passiveSTREG008",
+       "passiveSTREG009"
+      ]
+     },
+     {
+      "id": 1174,
+      "keys": [
+       "passiveSTREG0029",
+       "passiveSTREG0124",
+       "passiveSTREG0030",
+       "passiveSTREG0006",
+       "passiveSTREG0007",
+       "passiveSTREG0008",
+       "passiveSTREG0009",
+       "passiveSTREG0010"
+      ]
+     },
+     {
+      "id": 5979,
+      "keys": [
+       "passiveSTREG0377",
+       "passiveSTREG0381",
+       "passiveSTREG0382",
+       "passiveSTREG0908",
+       "passiveSTREG1061",
+       "passiveSTREG1394"
+      ]
+     },
+     {
+      "id": 5699,
+      "keys": [
+       "passiveSTREG1789"
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "cripush",
+   "setup": {},
+   "observed": {
+    "rows": [
+     {
+      "which": "none",
+      "critPush": {
+       "bySkill": {},
+       "byType": {
+        "Zj": 0,
+        "Mf": 0
+       },
+       "all": 0
+      },
+      "cri": 0.19,
+      "itemCri": {
+       "1": 0.19,
+       "1282": 0,
+       "1730": 0
+      },
+      "cev": 0,
+      "sourceErrors": []
+     },
+     {
+      "which": "armor",
+      "critPush": {
+       "bySkill": {},
+       "byType": {
+        "Zj": 0,
+        "Mf": 0
+       },
+       "all": 0
+      },
+      "cri": 0.26,
+      "itemCri": {
+       "1": 0.26,
+       "1282": 0,
+       "1730": 0
+      },
+      "cev": 0,
+      "sourceErrors": []
+     },
+     {
+      "which": "mf",
+      "critPush": {
+       "bySkill": {},
+       "byType": {
+        "Zj": 0,
+        "Mf": 0
+       },
+       "all": 0
+      },
+      "cri": 0.19,
+      "itemCri": {
+       "1": 0.19,
+       "1282": 0,
+       "1730": 0
+      },
+      "cev": 0,
+      "sourceErrors": []
+     },
+     {
+      "which": "id",
+      "critPush": {
+       "bySkill": {},
+       "byType": {
+        "Zj": 0,
+        "Mf": 0
+       },
+       "all": 0
+      },
+      "cri": 0.19,
+      "itemCri": {
+       "1": 0.19,
+       "1282": 0,
+       "1730": 0
+      },
+      "cev": 0,
+      "sourceErrors": []
+     }
+    ],
+    "floor": [
+     {
+      "cri": -0.5,
+      "cev": 2,
+      "itemCri": 0,
+      "sourceErrors": []
+     },
+     {
+      "cri": -0.5,
+      "cev": 0.5,
+      "itemCri": 0,
+      "sourceErrors": []
+     },
+     {
+      "cri": 0,
+      "cev": 2,
+      "itemCri": 0,
+      "sourceErrors": []
+     },
+     {
+      "cri": 0.3,
+      "cev": 2,
+      "itemCri": 0,
+      "sourceErrors": []
+     },
+     {
+      "cri": 0.3,
+      "cev": 0.5,
+      "itemCri": 0.15,
+      "sourceErrors": []
+     }
+    ],
+    "objs": [
+     {
+      "table": "Armors",
+      "id": 1736,
+      "tags": [
+       "<SkillCriPushAll: 15%>"
+      ]
+     },
+     {
+      "table": "Skills",
+      "id": 1282,
+      "tags": [
+       "<SkillCriPushMf: 10%>"
+      ]
+     },
+     {
+      "table": "Skills",
+      "id": 1730,
+      "tags": [
+       "<SkillCriPush1339: 20%>",
+       "<SkillCriPush1347: 20%>",
+       "<SkillCriPush1687: 20%>"
       ]
      }
     ]
