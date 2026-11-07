@@ -1,6 +1,9 @@
 {
- "note": "解锁链表.py --cases 生成，勿手改；跳过的入口写在 skip",
+ "note": "解锁链表.py --cases 生成，勿手改（known_forced 除外）；跳过的入口写在 skip",
  "skip": [],
+ "known_forced": {
+  "m156e2p0": 1
+ },
  "cases": [
   {
    "id": "m1e1p0",

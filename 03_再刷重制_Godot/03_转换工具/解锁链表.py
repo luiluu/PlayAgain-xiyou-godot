@@ -485,7 +485,13 @@ def main():
             have.add((r['src'], r['dest'], tuple(r['xy'])))
             out.append(dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'], xy=r['xy'],
                             cond='；'.join(r['page_conds'] + r['branch']), **rec))
-        Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改；跳过的入口写在 skip', 'skip': sorted(skip), 'cases': out},
+        # 审查 45 P3-4：已知要强制改页的用例（用例页之上还有页按表状态也满足）手写在 known_forced（用例号→自然选中的页），重新生成时沿用；
+        # 专项收尾断言实际 forced 与它一致，重制页选取退步不会被强制改页藏住
+        old = load(Path(a.cases)) if Path(a.cases).exists() else {}
+        ids = {c['id'] for c in out}
+        kf = {k: v for k, v in old.get('known_forced', {}).items() if k in ids}
+        Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改（known_forced 除外）；跳过的入口写在 skip', 'skip': sorted(skip),
+                                             'known_forced': kf, 'cases': out},
                                             ensure_ascii=False, indent=1) + '\n')
         print('用例 %d（目标图未被专项真走到、或入口两边都没覆盖，且可解）' % len(out))
     md = '\n'.join(lines) + '\n'
