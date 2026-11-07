@@ -22,12 +22,25 @@ static var o_alien_reset := true
 ## true＝这两种挡下（「不可存放」）；false＝照原版放行
 static var o_block_bound := true
 
+## O-待定·仓库取出事务（Codex 审查报告第 1 项）：原来取出时先从仓库删掉并写盘，角色档要等玩家存档才有这件，
+## 中途退出就两边都没有、永久丢了。true＝取出先记成「取出中」（带 whToken 记在仓库文件的 pending 里），
+## 玩家存档（手动／自动，XSave.save／save_auto）成功才算取走；没存就退出、读别的档、开新局，下次打开仓库或读档时退回仓库。
+## 存档写好后仓库没来得及记（进程被杀），按存档文件里有没有这个 whToken 补记取走。false＝照旧，取出即从仓库删掉。
+static var o_withdraw_txn := true
+
 ## 测试改路径；空则跟 XSave.dir()
 static var path_override := ""
 static var _loaded_path := "<unloaded>"
 static var _gear: Array = []
 static var _pets: Array = []
 static var _dirty := false
+## 取出中的记录：[{token, kind: "gear"|"pet", index: 原位置, rec: 取出前的整份}]；随仓库文件写盘
+static var _pending: Array = []
+## token → WeakRef(取出时的 XState)：本进程里还是那一局就不退回
+static var _owners := {}
+## 最近一次存取失败的原因（写盘失败时画面提示用）；成功为空
+static var last_error := ""
+const WRITE_FAILED := "仓库写盘失败，这次没有存取"
 
 
 static func path() -> String:
@@ -41,6 +54,7 @@ static func ensure_loaded() -> void:
 	_loaded_path = p
 	_gear = []
 	_pets = []
+	_pending = []
 	_dirty = false
 	if not FileAccess.file_exists(p):
 		return
@@ -54,6 +68,10 @@ static func ensure_loaded() -> void:
 	for e in (d.get("pets") if d.get("pets") is Array else []):
 		if e is Dictionary and e.has("enemy"):
 			_pets.append(e)
+	for e in (d.get("pending") if d.get("pending") is Array else []):
+		if e is Dictionary and str(e.get("token", "")) != "" and e.get("rec") is Dictionary and str(e.get("kind")) in ["gear", "pet"]:
+			_pending.append(e)
+	resolve_pending()
 
 
 ## 取出列表（原版 ConfigManager.GetEq／GetPet，按存入先后）
@@ -84,78 +102,210 @@ static func push_dct(rec: Dictionary) -> bool:
 
 ## 存入一件；返回 "" 成功，否则返回提示文字（「不可存放」），东西不动
 static func deposit_gear(s: XState, rec: Dictionary) -> String:
+	last_error = ""
 	var i := s.gear.find_custom(func(e): return is_same(e, rec))
 	if i < 0:
 		return "不可存放"
 	if push_dct(rec) or o_block_bound and (XAlienation.reserved(s, rec) or XAlienation.is_pending(s, rec)):
 		return "不可存放"
-	s.lose_gear(rec, false)  # 原版直接改 $gameParty._armors，不经 gainItem，不记云裳账本
+	ensure_loaded()
+	# Codex 审查第 4 项：先写盘、写好了才从背包拿掉；写盘失败什么都不动（异化配置也还原），把原因交给画面
+	var config = XAlienation.mark(rec).get("config") if not XAlienation.mark(rec).is_empty() else null
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		XAlienation.mark(rec).config = {}
-	ensure_loaded()
+	var token := str(rec.get("whToken", ""))
+	var undo := _take_pending(token)   # 取出还没存档又存回来：取消那笔取出
+	rec.erase("whToken")
 	_gear.append(rec)
-	_changed()
+	if not _changed():
+		_gear.pop_back()
+		_restore_pending(undo, rec, token)
+		if config != null:
+			XAlienation.mark(rec).config = config
+		last_error = WRITE_FAILED
+		return WRITE_FAILED
+	s.lose_gear(rec, false)  # 原版直接改 $gameParty._armors，不经 gainItem，不记云裳账本
 	return ""
 
 
-## 取出一件：按本档重编号（O-126 开时异化装备另换 uid），放回背包
+## 取出一件：按本档重编号（O-126 开时异化装备另换 uid），放回背包。写盘失败返回 false、仓库与背包都不动（last_error 说明）
 static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
+	last_error = ""
 	ensure_loaded()
 	var i := _gear.find_custom(func(e): return is_same(e, rec))
 	if i < 0:
 		return false
+	var token := _begin_withdraw("gear", i, rec)
 	_gear.remove_at(i)
+	if not _changed():
+		_gear.insert(i, rec)
+		_take_pending(token)
+		last_error = WRITE_FAILED
+		return false
 	rec.erase("instanceId")
 	s.register_gear(rec)
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		var led := XAlienation.ledger(s)
 		led.sequence = int(led.sequence) + 1
 		XAlienation.mark(rec).uid = "alien-%d" % int(led.sequence)
+	_own(token, s, rec)
 	s.gear.append(rec)
-	_changed()
 	return true
 
 
 ## 存入一只宠物（序号）；出战宠物返回 false、不动
 static func deposit_pet(s: XState, index: int) -> bool:
+	last_error = ""
 	var list := XPets.list(s)
 	if index < 0 or index >= list.size() or index == XPets.war_index(s):
 		return false
 	var pet: Dictionary = list[index]
-	XPets.release(s, index)
 	ensure_loaded()
+	var token := str(pet.get("whToken", ""))
+	var undo := _take_pending(token)
+	pet.erase("whToken")
 	_pets.append(pet)
-	_changed()
+	if not _changed():
+		_pets.pop_back()
+		_restore_pending(undo, pet, token)
+		last_error = WRITE_FAILED
+		return false
+	XPets.release(s, index)
 	return true
 
 
 static func withdraw_pet(s: XState, pet: Dictionary) -> bool:
+	last_error = ""
 	ensure_loaded()
 	var i := _pets.find_custom(func(e): return is_same(e, pet))
 	if i < 0:
 		return false
+	var token := _begin_withdraw("pet", i, pet)
 	_pets.remove_at(i)
+	if not _changed():
+		_pets.insert(i, pet)
+		_take_pending(token)
+		last_error = WRITE_FAILED
+		return false
+	_own(token, s, pet)
 	XPets.list(s).append(pet)
-	_changed()
 	return true
 
 
-static func _changed() -> void:
+## 写盘成功（或 o_save_now 关时记脏、等 XConfig 写盘）返回 true；写盘失败返回 false，脏标记不清
+static func _changed() -> bool:
 	if o_save_now:
-		_save()
-	else:
-		_dirty = true
+		return _save()
+	_dirty = true
+	return true
 
 
-## XConfig 写盘时一起写（o_save_now 关时照原版的落盘时机）
-static func flush_pending() -> void:
+# ---- 取出事务（o_withdraw_txn）----
+static func _begin_withdraw(kind: String, index: int, rec: Dictionary) -> String:
+	if not o_withdraw_txn:
+		return ""
+	var token := "wh-%d-%d" % [Time.get_unix_time_from_system(), randi()]
+	_pending.append({"token": token, "kind": kind, "index": index, "rec": rec.duplicate(true)})
+	return token
+
+
+static func _own(token: String, s: XState, rec: Dictionary) -> void:
+	if token == "":
+		return
+	rec["whToken"] = token
+	_owners[token] = weakref(s)
+
+
+static func _take_pending(token: String) -> Dictionary:
+	if token == "":
+		return {}
+	var i := _pending.find_custom(func(e): return str(e.token) == token)
+	if i < 0:
+		return {}
+	var e: Dictionary = _pending[i]
+	_pending.remove_at(i)
+	return e
+
+
+static func _restore_pending(entry: Dictionary, rec: Dictionary, token: String) -> void:
+	if entry.is_empty():
+		return
+	_pending.append(entry)
+	rec["whToken"] = token
+
+
+static func _owned_by(token: String, s) -> bool:
+	var w = _owners.get(token)
+	return s != null and w is WeakRef and is_same(w.get_ref(), s)
+
+
+## 存档写好之后（XSave.save／save_auto）：这一局取出的都算取走（还在身上的、已经卖掉用掉的都是），记进仓库文件；
+## 写盘失败就留着，下次按存档文件里的 whToken 补记
+static func after_save(s: XState) -> void:
+	ensure_loaded()
+	if _pending.is_empty():
+		return
+	var before := _pending.size()
+	_pending = _pending.filter(func(e): return not _owned_by(str(e.token), s))
+	if _pending.size() != before:
+		_strip_tokens(s)
+		_changed()
+
+
+## 读档之后（XSave._load_data）：存档里带着的 whToken 都算取走（存档写好、仓库没来得及记的那种），去掉标记；
+## 其余不属于当前这一局的取出按存档文件补记或退回仓库
+static func after_load(s: XState, text: String) -> void:
+	ensure_loaded()
+	var before := _pending.size()
+	_pending = _pending.filter(func(e): return not text.contains(str(e.token)))
+	_strip_tokens(s)
+	var changed := _pending.size() != before
+	if resolve_pending(false) or changed:
+		_changed()
+
+
+## 取出中、又不属于当前这一局的：哪个存档文件里有这个 whToken 就算取走，都没有就退回仓库原位。返回有没有变化（write 真时顺手写盘）
+static func resolve_pending(write := true) -> bool:
+	var loose := _pending.filter(func(e): return not _owned_by(str(e.token), XState.current))
+	if loose.is_empty():
+		return false
+	var texts := []
+	for slot in range(1, XSave.SLOTS + 1):
+		if XSave.exists(slot):
+			texts.append(FileAccess.get_file_as_string(XSave.path(slot)))
+	if XSave.exists_auto():
+		texts.append(FileAccess.get_file_as_string(XSave.auto_path()))
+	for e in loose:
+		_pending.erase(e)
+		var token := str(e.token)
+		if texts.any(func(t): return t.contains(token)):
+			continue   # 存档里有：取走
+		var into: Array = _gear if e.kind == "gear" else _pets
+		into.insert(clampi(int(e.get("index", into.size())), 0, into.size()), e.rec)
+	if write:
+		_changed()
+	return true
+
+
+static func _strip_tokens(s: XState) -> void:
+	var all: Array = s.gear.duplicate()
+	for a in s.actors.values():
+		all.append_array(a.equip_list())
+	all.append_array(XPets.list(s))
+	for e in all:
+		if e is Dictionary and e.has("whToken") and not _pending.any(func(p): return str(p.token) == str(e.whToken)):
+			e.erase("whToken")
+
+
+## XConfig 写盘时一起写（o_save_now 关时照原版的落盘时机）；写盘失败返回 false、脏标记留着
+static func flush_pending() -> bool:
 	if _dirty:
-		_save()
+		return _save()
+	return true
 
 
-## 同 XGlobalVars：先写临时文件再替换；写盘失败只丢这一次（内存里仍有）
+## 同 XGlobalVars：先写临时文件再替换。写盘失败返回 false，脏标记不清（Codex 审查第 4 项：原来写盘前就清了）
 static func _save() -> bool:
-	_dirty = false
 	var p := path()
 	if DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
 		return false
@@ -163,11 +313,15 @@ static func _save() -> bool:
 	var f := FileAccess.open(temp, FileAccess.WRITE)
 	if f == null:
 		return false
-	f.store_string(JSON.stringify({"version": 1, "mode": "xiyou", "gear": _gear, "pets": _pets}))
+	var data := {"version": 1, "mode": "xiyou", "gear": _gear, "pets": _pets}
+	if not _pending.is_empty():
+		data["pending"] = _pending
+	f.store_string(JSON.stringify(data))
 	f.flush()
 	var ok := f.get_error() == OK
 	f.close()
 	if not ok or DirAccess.rename_absolute(temp, p) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
+	_dirty = false
 	return true
