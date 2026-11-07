@@ -42,7 +42,7 @@ class List29 extends XYunChoicesWindow:
 		if active and is_visible_in_tree():
 			if event.is_action_pressed("ui_page_down") or event.is_action_pressed("ui_page_up"):
 				turn.emit(1 if event.is_action_pressed("ui_page_down") else -1)
-				get_viewport().set_input_as_handled()
+				XKeyMap.handled(self)
 				return
 			if event is InputEventMouseButton and event.pressed and detail_rect.has_point(event.position):
 				var b: int = event.button_index
@@ -193,7 +193,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and NAV_RECT.has_point(event.position):
 		turn(-1 if event.position.x < NAV_RECT.position.x + NAV_RECT.size.x / 2.0 else 1)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 static func _run_of() -> Dictionary:
