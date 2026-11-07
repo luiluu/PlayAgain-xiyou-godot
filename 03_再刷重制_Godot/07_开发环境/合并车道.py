@@ -256,6 +256,133 @@ def duplicate_funcs(text):
     return [('.'.join(scope + (name,)), lines) for (scope, name), lines in seen.items() if len(lines) > 1]
 
 
+AWAIT_TERNARY_OK = '# await-ternary-ok'   # 写在该句（首行）末尾：确认三元式两边都不是异步函数
+
+
+def _gd_logical_lines(text):
+    """去掉字符串与注释后按逻辑行拼起来：括号没合上或行尾反斜杠续行的并成一句。返回 [(起始行号, 首行原文, 去掉字符串注释后的句子)]。"""
+    out, buf, start, depth, triple = [], '', 0, 0, None
+    lines = text.splitlines()
+    for no, line in enumerate(lines, 1):
+        clean, i = [], 0
+        while i < len(line):
+            if triple:
+                end = line.find(triple, i)
+                if end < 0:
+                    break
+                i, triple = end + 3, None
+                clean.append('""')
+                continue
+            c = line[i]
+            if c == '#':
+                break
+            if line[i:i + 3] in ('"' * 3, "'" * 3):
+                triple, i = line[i:i + 3], i + 3
+                continue
+            if c in '"\'':
+                j = i + 1
+                while j < len(line) and line[j] != c:
+                    j += 2 if line[j] == '\\' else 1
+                clean.append('""')
+                i = j + 1
+                continue
+            depth += (c in '([{') - (c in ')]}')
+            clean.append(c)
+            i += 1
+        if not buf:
+            start = no
+        body = ''.join(clean).rstrip()
+        cont = body.endswith('\\')
+        buf += ' ' + body.rstrip('\\')
+        if depth <= 0 and not cont and not triple:
+            out.append((start, lines[start - 1], buf.strip()))
+            buf, depth = '', 0
+    return out
+
+
+def _group_end(s, i):
+    """s[i] 是开括号：返回配对的闭括号之后的位置（没配上返回 len(s)）。"""
+    depth = 0
+    for j in range(i, len(s)):
+        depth += (s[j] in '([{') - (s[j] in ')]}')
+        if depth == 0:
+            return j + 1
+    return len(s)
+
+
+def _await_operand_end(s, i):
+    """s[i:] 是 await 的操作数：取一个基本式加后缀（.名、(…)、[…]）的结束位置（await 的优先级高于三元式与二元运算）。"""
+    m = re.match(r'\s*', s[i:])
+    i += m.end()
+    if i < len(s) and s[i] in '([{':
+        i = _group_end(s, i)
+    else:
+        m = re.match(r'[\w$@^&"]+', s[i:])
+        i += m.end() if m else 0
+    while True:
+        m = re.match(r'\s*(\.\s*\w+|[(\[])', s[i:])
+        if not m:
+            return i
+        if m.group(1) in '([':
+            i = _group_end(s, i + m.end() - 1)
+        else:
+            i += m.end()
+
+
+def _top_level(s, i):
+    """从 s[i] 起到本层结束（逗号、闭括号或句尾）的片段，括号里的内容换成空格，只留本层。"""
+    out, depth = [], 0
+    for c in s[i:]:
+        if c in ')]}' and depth == 0 or c == ',' and depth == 0:
+            break
+        depth -= c in ')]}'
+        out.append(c if depth == 0 else ' ')   # 括号本身留着（认得出调用），里面的内容换成空格
+        depth += c in '([{'
+    return ''.join(out)
+
+
+TERNARY = re.compile(r'\S.*?\bif\b.+?\belse\b')
+CALL = re.compile(r'[\w)\]]\s*\(')
+
+
+def await_ternaries(text):
+    """await 碰上三元式、有异步调用会被跳过的句子 [(行号, 首行原文)]。GDScript 里 await 的优先级高于三元式：
+    ①`await (a() if c else b())`：括号里的三元式两边的调用都不算被 await（两边都没调用、只是挑信号的不报）；
+    ②`await a() if c else b()`＝`(await a()) if c else b()`：else 那边有调用时它没被 await。
+    Godot 只报「Trying to call an async function without await」不中断，结果被静默跳过（11-07 八戒 mapev1：主事件文字全被跳过）。
+    三元式只在实参里（`await f(x if c else y)`）、或 else 那边没有调用（`await f() if c else null`）的不报。
+    该句首行末尾写 # await-ternary-ok 的不报（确认两边都不是异步函数）。"""
+    found = []
+    for no, raw, stmt in _gd_logical_lines(text):
+        if AWAIT_TERNARY_OK in raw:
+            continue
+        for m in re.finditer(r'\bawait\b', stmt):
+            op = m.end() + len(re.match(r'\s*', stmt[m.end():]).group())
+            end = _await_operand_end(stmt, m.end())
+            inner = _top_level(stmt, op + 1) if stmt[op:op + 1] == '(' and end == _group_end(stmt, op) else ''
+            bad = bool(TERNARY.search(inner) and CALL.search(inner))   # 只是挑信号（await (a if c else b)）不报
+            if not bad:
+                rest = re.match(r'\s*if\b(.*?)\belse\b(.*)', _top_level(stmt, end))
+                bad = bool(rest and CALL.search(rest.group(2)))
+            if bad:
+                found.append((no, raw.strip()))
+                break
+    return found
+
+
+def gd_await_ternary_problems(project):
+    """工程里全部 .gd（.godot 缓存除外）的 await 三元式问题（纯文本扫描，不要 godot）。"""
+    problems = []
+    for f in sorted(project.rglob('*.gd')):
+        rel = f.relative_to(project)
+        if '.godot' in rel.parts:
+            continue
+        for no, line in await_ternaries(f.read_text(errors='replace')):
+            problems.append('res://%s:%d：await 与三元式写在同一句，异步调用会被跳过，拆成 if/else 各自 await'
+                            '（确认两边都不是异步函数可在句末写 %s）：%s' % (rel.as_posix(), no, AWAIT_TERNARY_OK, line[:120]))
+    return problems
+
+
 PARSE_CHECK_GD = """extends SceneTree
 func _init() -> void:
 	for p in OS.get_environment("XIYOU_PARSE_CHECK_FILES").split("\\n", false):
@@ -281,7 +408,7 @@ def parse_errors(log, autoloads):
 
 
 def parse_check(root, base):
-    """合并后、同步与检查前的快速解析检查（1 分钟内）：①本次合并改动的 .gd 有没有同名 func；②godot --import 刷新类缓存后
+    """合并后、同步与检查前的快速解析检查（1 分钟内）：①本次合并改动的 .gd 有没有同名 func，工程全部 .gd 有没有 await 三元式；②godot --import 刷新类缓存后
     用外置脚本逐个 load 工程里全部 .gd，日志里有算数的 SCRIPT ERROR 就列出。没有 godot 或工程时只做①。返回问题列表。"""
     problems = []
     for rel in git(root, 'diff', '--name-only', '--diff-filter=AM', base, 'HEAD', '--', '*.gd').splitlines():
@@ -290,8 +417,10 @@ def parse_check(root, base):
             for name, lines in duplicate_funcs(f.read_text(errors='replace')):
                 problems.append('%s：func %s 重复定义（第 %s 行）' % (rel, name, '、'.join(map(str, lines))))
     godot, project = root / ENV / 'godot', root / PROJECT
+    if project.is_dir():
+        problems += gd_await_ternary_problems(project)
     if not (os.access(godot, os.X_OK) and (project / 'project.godot').is_file()):
-        print('提示：没有 godot 或工程，解析检查只扫了同名 func', flush=True)
+        print('提示：没有 godot 或工程，解析检查只扫了同名 func 与 await 三元式', flush=True)
         return problems
     text = (project / 'project.godot').read_text(errors='replace')
     section = text.split('[autoload]', 1)[1].split('\n[', 1)[0] if '[autoload]' in text else ''

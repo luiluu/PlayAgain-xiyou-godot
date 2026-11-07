@@ -7,7 +7,8 @@ godot --import 刷新类缓存，再用外置脚本逐个 load 工程里全部 .
 
   语法检查.py [--root 资料库根] [--base 提交]
 
---base 给了时另查 base..HEAD 改过的 .gd 有没有同名 func（合并时 git 自动合进两份同名函数的那类）。有问题退出 1。
+--base 给了时另查 base..HEAD 改过的 .gd 有没有同名 func（合并时 git 自动合进两份同名函数的那类）。
+另扫工程全部 .gd 的 await 三元式（`await (a() if c else b())`、`await a() if c else b()` 里的异步调用会被静默跳过，第十五批 FG），报文件与行号。有问题退出 1。
 """
 import argparse
 import importlib.util
