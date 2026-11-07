@@ -167,11 +167,15 @@ static func valid_affix(table: String, id: int) -> bool:
 ## 特效／备注／说明＝b 的那段＋实例在 t 之后追加的，属性＝b＋实例−t（底值不为负的夹到 0），价格同理；名字去掉专武前缀。
 ## 属性浮动：原版掉落掷两次（makeItem 给模板一次、gainItem 给实例一次），还原丢掉模板那次、留实例那次；重制只掷一次，
 ## t 取不带浮动的模板，所以留下的是这一次（幅度同原版，是专武词缀的 Random Variance），强化加的照留。
-## 原版把整份模板换掉，同一件上的其它词缀（属性、特效）也一起没了、名字里的后缀字留着，照搬。备注解析出的 meta／yep／套装：
-## 被词缀改过的项换回 b 的，其余（强化加的等）不动。对不上（实例备注、说明不以 t 开头，特效开头不是 t 的）的不动，记进 skipped。
+## 原版把整份模板换掉，同一件上的其它词缀（属性、特效）也一起没了、名字里的后缀字留着（原版 bug，审查 53 P3-1）。
+## 重制默认只去掉专武那段：b 取「底装备＋其余非专武词缀」重拼的模板（affix_template 只带非专武的 affixIds），
+## 下面各项都对这个 b 算，其余词缀的属性、特效、名字、affixIds 照留；REVERT_KEEP_OTHER_AFFIXES = false 回到原版整份换掉。
+## 备注解析出的 meta／yep／套装：被词缀改过的项换回 b 的，其余（强化加的等）不动。对不上（实例备注、说明不以 t 开头，特效开头不是 t 的）的不动，记进 skipped。
 ## 只跑一次：还原前把改动的字段整份存进 _affixRevert，有这个键的不再处理。只管武器（原版 _independentWeapons）。
 ## 开关同 EXCLUSIVE_V056（false＝v0.28，读档不还原）。
 static var last_affix_revert := {}
+## O-待定·读档还原只去专武词缀：false＝照 v0.62.12 原版整份换回底装备（同件其它词缀一起没了）
+static var REVERT_KEEP_OTHER_AFFIXES := true
 const AFFIX_REVERT_FIELDS := ["name", "baseName", "note", "description", "traits", "params", "price", "meta", "yep", "affixIds", "equipment"]
 
 static func revert_exclusive_affixes(s: XState) -> Dictionary:
@@ -207,6 +211,13 @@ static func _revert_one(item: Dictionary) -> int:
 	var t := affix_template(item, b)
 	if t.is_empty() or _req_actors_re.search(str(t.note)) == null:
 		return 0
+	var kept_affixes: Array = []
+	if REVERT_KEEP_OTHER_AFFIXES:
+		kept_affixes = (item.get("affixIds", []) as Array).filter(func(x): return not exclusive_affix(XDB.rec(str(x.get("table", "Weapons")), int(x.get("id", 0)))))
+		if not kept_affixes.is_empty():
+			b = affix_template({"kind": "weapon", "base": item.get("base", 0), "affixIds": kept_affixes}, b)
+			if b.is_empty():
+				return 0
 	var own_note := str(item.get("note", ""))
 	var own_desc := str(item.get("description", ""))
 	var own_traits: Array = item.get("traits", [])
@@ -229,7 +240,12 @@ static func _revert_one(item: Dictionary) -> int:
 		plain = b_name
 	if plain == "":
 		plain = b_name
+	if not kept_affixes.is_empty():
+		plain = b_name
 	var rename := func(x: String) -> String:
+		if not kept_affixes.is_empty() and x.find(t_name) >= 0:
+			var at0 := x.find(t_name)
+			return x.left(at0) + plain + x.substr(at0 + t_name.length())
 		if prefix != "" and x.begins_with(prefix):
 			return x.substr(prefix.length())
 		var at := x.find(t_name)
@@ -268,7 +284,7 @@ static func _revert_one(item: Dictionary) -> int:
 	var b_suits = b.get("equipment", {}).get("suits", [])
 	if JSON.stringify(t_suits) != JSON.stringify(b_suits) and item.get("equipment") is Dictionary:
 		item.equipment.suits = (b_suits as Array).duplicate(true)
-	item.affixIds = []
+	item.affixIds = kept_affixes.duplicate(true)
 	return 1
 
 ## DreamX 生成时的模板（getBaseItem 取到的那份）：底装备＋affixIds 里各词缀＋备注参数，不掷浮动。没有词缀就是底装备；
