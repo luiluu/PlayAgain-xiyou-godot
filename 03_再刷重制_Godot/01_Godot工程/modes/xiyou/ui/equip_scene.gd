@@ -284,7 +284,8 @@ func _paint_list(c: XMVCanvas) -> void:
 			if d[i].rec.is_empty():
 				_paint_remove(c, y)
 			else:
-				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), 1.0, XItemRow.shows_new(XState.current, d[i].rec))
+				var alpha := XUI.DIM.a if XEquipment.dual_blocked(actor(), _slot, d[i].rec) else 1.0  # Window_EquipItem.isEnabled：双持专武变灰
+				XItemRow.paint(c, d[i].rec, y, XItemRow.right_text(d[i]), alpha, XItemRow.shows_new(XState.current, d[i].rec))
 		return
 	var a := actor()
 	var nw := slot_name_width(c)
@@ -450,6 +451,9 @@ func _ok() -> void:
 			_item_top = 0
 		"item":
 			var e := _candidate()
+			if XEquipment.dual_blocked(actor(), _slot, e):
+				XSound.system(3)  # 不可用的项：蜂鸣、不换（双持专武）
+				return
 			XSound.system(1)
 			XSound.system(4)
 			_commit_seen()

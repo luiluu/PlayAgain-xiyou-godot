@@ -244,6 +244,7 @@ func release_unequippable() -> Array:
 				removed.append(e)
 				equips[i] = null
 				changed = true
+	removed.append_array(XEquipment.release_dual_exclusive(self))  # 双持专武只留一把（installDualExclusiveRuntime）
 	return removed
 
 ## Game_Actor.refresh 开头 releaseUnequippableItems(false)：不能再装的卸下、退回队伍背包，之后不自动穿回。
