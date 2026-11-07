@@ -35,6 +35,10 @@ func frames(n := 1) -> void:
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--child-ledger-submit":   # 「写不完整」用例的子进程（见 ledger_short_write）
+			_child_submit.call_deferred()
+			return
 	_run.call_deferred()
 
 
@@ -225,6 +229,8 @@ func _run() -> void:
 	for how in ["sell", "base", "warehouse", "star"]:
 		p8_lose(how)
 	p9_display()
+	ledger_short_write()
+	ledger_backup()
 	XGear.force_roll = -1.0
 	finish()
 
@@ -650,3 +656,69 @@ func finish() -> void:
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_yunshang_shop", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	XYunshangShop.BORROW_WTYPE_FILTER = true
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+# ---- Codex 审查报告第 2 项：账本写不完整（哪吒 save1）----
+
+const LEDGER_DIR := "user://test_xiyou_yunshang_shop"
+## 子进程里的文件大小上限（512 字节一块）：比账本小，写账本时被截断（EFBIG）；Godot 自己的日志远小于它
+const FSIZE_BLOCKS := 256
+
+
+## 子进程：同一个目录、同一份账本，交一次订单，打印结果后正常退出
+func _child_submit() -> void:
+	XSave.dir_override = LEDGER_DIR
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	XYunshangOrders.path_override = XSave.dir().path_join(XYunshangOrders.FILE)
+	XYunshangOrders.reload()
+	var s := new_cloud(45)
+	XState.current = s
+	s.gain_item(SILK, 15)
+	var why := XYunshangOrders.submit(s)
+	print("CHILD " + JSON.stringify({"submit": why, "silk": s.item_count(SILK)}))
+	get_tree().quit(0)
+
+
+## 真实的短写：子进程在 ulimit -f 下跑（忽略 SIGXFSZ，写超了只返回错误），账本比上限大。
+## 旧代码 store_string／close 不查，截断的账本照样换上去、订单照扣天丝；现在写不完整就不替换、不扣材料、不留临时文件
+func ledger_short_write() -> void:
+	var file := XSave.dir().path_join(XYunshangOrders.FILE)
+	var pad := "x".repeat(FSIZE_BLOCKS * 512 + 4096)
+	var original := JSON.stringify({"version": 2, "profiles": {}, "legacyProfiles": {"pad": pad}})
+	var f := FileAccess.open(file, FileAccess.WRITE)
+	f.store_string(original)
+	f.close()
+	XYunshangOrders.reload()
+	var out := []
+	var cmd := "trap '' XFSZ; ulimit -f %d; exec \"$0\" \"$@\"" % FSIZE_BLOCKS
+	var code := OS.execute("/bin/sh", ["-c", cmd, OS.get_executable_path(), "--headless", "--path",
+		ProjectSettings.globalize_path("res://"), "res://tests/xiyou_yunshang_shop.tscn", "--", "--child-ledger-submit"], out, true)
+	var log := "".join(out)
+	var at := log.find("CHILD ")
+	var got = JSON.parse_string(log.substr(at + 6).get_slice("\n", 0)) if at >= 0 else null
+	check("ledger.short.child_ran", code == 0 and got is Dictionary, [code, log.right(600)])
+	if got is Dictionary:
+		check("ledger.short.refused", str(got.submit) != "" and int(got.silk) == 15, got)
+	check("ledger.short.file_unchanged", FileAccess.get_file_as_string(file) == original, FileAccess.get_file_as_string(file).length())
+	var leftovers := Array(DirAccess.get_files_at(XSave.dir())).filter(func(n): return n.ends_with(".tmp"))
+	check("ledger.short.no_tmp", leftovers.is_empty(), leftovers)
+	DirAccess.remove_absolute(file)
+	XYunshangOrders.reload()
+
+
+## 正常写：替换前留一份上一版 <账本>.bak，内容就是替换前那份
+func ledger_backup() -> void:
+	var file := XSave.dir().path_join(XYunshangOrders.FILE)
+	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(file + ".bak")
+	XYunshangOrders.reload()
+	var s := new_cloud(45)
+	XState.current = s
+	s.gain_item(SILK, 15)
+	check("ledger.bak.profile", XYunshangOrders.profile(s) != null)
+	var before := FileAccess.get_file_as_string(file)
+	check("ledger.bak.submit", XYunshangOrders.submit(s) == "" and s.item_count(SILK) == 0)
+	check("ledger.bak.previous_kept", FileAccess.get_file_as_string(file + ".bak") == before and FileAccess.get_file_as_string(file) != before)
+	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(file + ".bak")
+	XYunshangOrders.reload()
