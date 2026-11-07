@@ -104,7 +104,28 @@ func lifecycle(c: Dictionary, bound := false) -> void:
 	check(c.id + ".domain", resources.error.is_empty() and (not bound or a.lifecycle_context.resources == resources))
 	a.lifecycle_context = {}
 
-func conclude(c: Dictionary) -> void:
+## 1768.self：新源死亡那次 refresh 把 krz states 缓存算成空表、不脏（O-待定·热缓存复活）。fallback＝回退支照参照只加一次；
+## 默认支照常再加一次（repeat、save 是 conclude 的两倍）
+func conclude(c: Dictionary, fallback := false) -> void:
+	var revive_before := XBattler.o_hot_cache_revive
+	if fallback:
+		XBattler.o_hot_cache_revive = false
+	else:
+		XBattler.o_hot_cache_revive = true
+	_conclude(c, fallback)
+	XBattler.o_hot_cache_revive = revive_before
+
+func _self_default_rows(rows: Array) -> Array:
+	var out: Array = rows.duplicate(true)
+	var once: Dictionary = rows[1]
+	for i in [2, 3]:
+		var r: Dictionary = out[i]
+		r.plus = range(8).map(func(k): return once.plus[k] * 2)
+		r.param = range(8).map(func(k): return once.param[k] + once.plus[k])
+	out[2].trace = once.trace.duplicate(true)
+	return out
+
+func _conclude(c: Dictionary, fallback: bool) -> void:
 	var s := fresh()
 	var a: XActor = s.actor(1)
 	a.add_state(1768)
@@ -119,17 +140,22 @@ func conclude(c: Dictionary) -> void:
 	if c.id.begins_with("1768.hidden"):
 		b.hidden = true
 	var rows: Array = c.observed.rows
-	compare(c.id + ".before", a, rows[0])
+	var tag: String = c.id + (".fallback" if fallback else "")
+	if c.id == "1768.self" and not fallback:
+		rows = _self_default_rows(rows)
+	a.hot_at_apply = true  # 原版 offApplyStateEffects 在 Game_Action.apply 里，持有者此刻热（krz need_refresh 假）
+	compare(tag + ".before", a, rows[0])
 	var r := XResourceContext.new()
 	var ctx := {"attacker": a, "defender": b, "item": XDB.rec("Skills", 1), "resources": r}
 	XStateEffects.run("conclude", a, ctx)
-	compare(c.id + ".conclude", a, rows[1])
+	compare(tag + ".conclude", a, rows[1])
 	XStateEffects.run("conclude", a, ctx)
-	compare(c.id + ".repeat", a, rows[2])
+	compare(tag + ".repeat", a, rows[2])
 	s = XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
-	compare(c.id + ".save", s.actor(1), rows[3])
-	check(c.id + ".context_restored", a.lifecycle_context.is_empty())
-	check(c.id + ".resource_error", r.error.is_empty(), r.error)
+	compare(tag + ".save", s.actor(1), rows[3])
+	check(tag + ".context_restored", a.lifecycle_context.is_empty())
+	check(tag + ".resource_error", r.error.is_empty(), r.error)
+	a.hot_at_apply = false
 
 func miss_case(c: Dictionary) -> void:
 	var s := fresh()
@@ -232,6 +258,7 @@ func _run() -> void:
 			miss_case(c)
 		else:
 			conclude(c)
+			conclude(c, true)
 	isolation()
 	print("TEST_RESULT=" + JSON.stringify({"total": checks, "passed": checks - failures.size(), "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
