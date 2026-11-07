@@ -182,7 +182,7 @@ func _streg(c: Dictionary) -> void:
 		var want := (row.resist as Array).map(func(i): return int(i))
 		check(tag + ".resist", got == want, [got, want])
 		for st in row.get("added", {}):
-			a.add_state(int(st))
+			l.sequence_add_state(a, int(st))  # Game_Battler.addState（查 isStateAddable／抵抗）；重制 add_state 本身不查抵抗
 			check(tag + ".added.%s" % st, a.state_ids.has(int(st)) == bool(row.added[st]), [a.state_ids, row.added])
 			a.remove_state(int(st))
 
@@ -230,7 +230,7 @@ func _cripush(o: Dictionary) -> void:
 		check("cripush.fixed.%s.cache" % which, float(c.byType.Zj) == w[0] and float(c.byType.Mf) == w[1] and float(c.all) == w[2] and c.bySkill == w[3], c)
 		var attack := XDB.rec("Skills", 1)
 		var magic := {"id": 999999, "stypeId": 2}
-		check("cripush.fixed.%s.push" % which, is_equal_approx(a.crit_push(attack), w[2] / 100.0) and is_equal_approx(a.crit_push(magic), (w[1] + w[2]) / 100.0) and is_equal_approx(a.crit_push({"id": 1339, "stypeId": 0}), float(w[3].get(1339, 0.0)) / 100.0), [a.crit_push(attack), a.crit_push(magic)])
+		check("cripush.fixed.%s.push" % which, is_equal_approx(a.crit_push(attack), w[2] / 100.0) and is_equal_approx(a.crit_push(magic), (w[1] + w[2]) / 100.0) and is_equal_approx(a.crit_push({"id": 1339, "stypeId": 0}), (float(w[3].get(1339, 0.0)) + w[2]) / 100.0), [a.crit_push(attack), a.crit_push(magic)])
 		var e: XBattler = l.enemies[0]
 		check("cripush.fixed.%s.itemCri1" % which, is_equal_approx(l.item_cri(a, attack, e), clampf((a.cri + w[2] / 100.0) * (1.0 - e.cev), 0.0, 1.0)))
 	# 暴击下限：攻击方暴击率 ≤0 时记 0（负负得正不再成立）

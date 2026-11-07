@@ -1703,7 +1703,7 @@ func _insert_orders(b: XBattler, order: Array) -> void:
 	if order.has(b):
 		return
 	var acted := int(_acted.get(b, 0))
-	var room := OTB_MAX_ACTIONS - acted if order == current_order else OTB_MAX_ACTIONS
+	var room := OTB_MAX_ACTIONS - acted if is_same(order, current_order) else OTB_MAX_ACTIONS  # 按引用比：两个空数组 == 也相等
 	if room <= 0:
 		return
 	var times := mini(maxi(make_action_times(b) - acted, 1), room)
