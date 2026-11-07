@@ -79,6 +79,16 @@ func _run() -> void:
 	l.next_order = [a,b,l.actors[2],l.actors[3]]
 	l._otb_target_shift({"note":"","effects":[{"code":31,"dataId":6}]},l.actors[3])
 	_check("agi_buff_shift", l.next_order == [a,b,l.actors[3],l.actors[2]])
+	# O-待定-2：敏捷减益后移 1 格（默认）；关掉回到原版不移
+	l.next_order = [a,b,l.actors[2],l.actors[3]]
+	l._otb_target_shift({"note":"","effects":[{"code":32,"dataId":6}]},b)
+	_check("agi_debuff_shift", l.next_order == [a,l.actors[2],b,l.actors[3]], l.next_order)
+	XBattleLogic.FIX_AGI_DEBUFF_SHIFT = false
+	l.next_order = [a,b,l.actors[2],l.actors[3]]
+	l._otb_target_shift({"note":"","effects":[{"code":32,"dataId":6}]},b)
+	_check("agi_debuff_original_no_shift", l.next_order == [a,b,l.actors[2],l.actors[3]], l.next_order)
+	XBattleLogic.FIX_AGI_DEBUFF_SHIFT = true
+	_check("agi_note_wins", XBattleLogic.agi_convert_shift({"note":"<OTB Target Next Turn: +2>","effects":[{"code":32,"dataId":6}]}) == 0)
 	l.state.gain_item(1,1)
 	var order_before := l.next_order.duplicate()
 	l.execute(a,XDB.rec("Items",1),a)
