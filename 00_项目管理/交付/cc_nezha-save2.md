@@ -24,11 +24,18 @@
   2. 新源上起跑在 Map004 的再逐个确认要不要标 rift1：验过场本身的（opening_branches、guide）不标；只验别的（lobby_shops 的 `case_e54p0_base_0-0`、招募）标上。`xiyou_lobby_shops` 现在只在第 118 行结尾删 options.json。
   3. 复现法：同一场景本机连跑两次（第二次不删 `user://test_xiyou_lobby_shops`），结果要和云端新目录一致。
 
+### 总装追加：O-206、O-209 回退值补测试
+
+- O-206 `XSaveTransfer.BACKUP_BEFORE_IMPORT = false`：`xiyou_platform` 新断言 `transfer_import_rollback_no_backup`，真写盘导入到有档的第 1 格，断言照样导入、目录里不多出 `.before_import` 备份（开着时同一流程多一个，已有 `transfer_import_backs_up`）。
+- O-209 `XMVCanvas.CRISP_HIDPI_TEXT = false`：把画字时「要不要加同色描边」的判断抽成 `XMVCanvas.embolden_at(scale)`（画字照用它，行为不变）；`xiyou_key_map` 新断言 `crisp_hidpi_no_embolden`（默认：缩放 1 加、1.5／2 不加）和 `crisp_rollback_always_embolden`（关掉后 1 与 2 都加）。
+- `回退开关覆盖.py`：缺口 新 2 → 新 0（覆盖 127 → 129）。
+
 ## 改动文件
 
 - 新：`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_check.gd`（＋.uid）
 - 改：`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xsave.gd`（valid_data 两处调用）
 - 新：`03_再刷重制_Godot/01_Godot工程/tests/xiyou_save_corrupt.gd`／`.tscn`（＋.uid）
+- 改：`modes/xiyou/ui/mv_canvas.gd`（抽出 embolden_at）、`tests/xiyou_platform.gd`、`tests/xiyou_key_map.gd`（O-206／O-209 回退断言）
 
 ## 验证
 
