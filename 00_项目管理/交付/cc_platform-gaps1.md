@@ -20,6 +20,12 @@
 - 测试 `xiyou_pause_save`：原 event_battle_checkpoint_saves 改成真跑「先扣 100 金、再 301」的事件：开打时 `skip:in_event`、金钱已扣到 400，自动存档里还是事件前的 500（event_battle_no_checkpoint、event_battle_auto_keeps_pre_event）；回退开关打开同一事件，存下的是 400（event_battle_rollback_saves_after_deduct，证明断言咬得住）；in_event_skipped_by_default、event_battles_default_off；in_event_ignores_busy 改在回退开关下测。
 - 玩家可见：手机上在事件里开的战斗（奇兽地、连战、小猫试炼、真气闭关）中被系统杀掉，从标题「继续」读回来是事件开始前的进度，扣掉的许可证、奖碑都还在。
 
+## 2026-11-07 【cc·平台·未经审查】安卓后台挂机补跑：开变速齿轮时补够离开的时长（dev.待定）
+
+- 界面车道 FD 发现（cc/ui-gaps1 交付单「可优化」）：`core/platform.gd` 补跑时 `_catch_up_left -= delta`，delta 含变速齿轮的 1.6，开齿轮时只补了离开时长的 1/1.6。改成按平常速度的秒数扣：`delta / 基准倍率`（基准是开始补跑时记下的 time_scale）。没用 FD 的 `XSpeedGear.real_seconds`：那个函数在 cc/ui-gaps1，还没进 main，这里只用补跑自己记的基准，结果一样。
+- 测试 `xiyou_platform` 加 catch_up_counts_base_seconds（齿轮 1.6、补 10 秒，一帧 delta＝12.8 只扣 8 秒）。
+- 玩家可见：手机开着变速齿轮挂机、切后台再回来，补跑补够离开的时间（以前只补约六成）。
+
 ## 交接板
 - 下一步：平台第二批——云端 Linux（KVM）起 x86_64 安卓模拟器装 apk 跑入口、返回键、切后台；apk 只有 arm64-v8a，靠镜像的 ARM 转译，不行就云端单独导一份带 x86_64 的冒烟包。
 - 用户试玩说明：无（只有工具和文档）。Kyo 有 Windows 机器或安卓手机时照两份新清单点。
