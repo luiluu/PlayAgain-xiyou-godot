@@ -793,6 +793,13 @@ class SlotWeightTests(unittest.TestCase):
         t.start()
         return t
 
+    def live_pid(self):
+        """一个确定活着、归本用户的进程号（假等候者用）。原来用 os.getppid()：测试从后台子壳启动、父进程先退出时
+        ppid 变成 1（launchd），os.kill(1, 0) 报 PermissionError，earlier_waiter 当它不存在，2 项必挂（tools-slot-flaky）。"""
+        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'])
+        self.addCleanup(lambda: (child.kill(), child.wait()))
+        return child.pid
+
     def wait_for(self, cond, seconds=5):
         import time
         t0 = time.monotonic()
@@ -896,7 +903,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         import threading, time as _t
         pdir = self.state / 'slots/priority'
         pdir.mkdir(parents=True)
-        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), self.live_pid()))
         boss.touch()
         got, release = {}, threading.Event()
         t = self.hold(1, 2, release, got, 'lane')
@@ -911,7 +918,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         import threading, time as _t
         pdir = self.state / 'slots/priority'
         pdir.mkdir(parents=True)
-        boss = pdir / ('%d_%d_1' % (_t.time_ns(), os.getppid()))  # 活着的进程登记的优先等候者
+        boss = pdir / ('%d_%d_1' % (_t.time_ns(), self.live_pid()))  # 活着的进程登记的优先等候者
         boss.touch()
         got, release = {}, threading.Event()
         h = self.hold(2, 2, release, got, 'heavy')
@@ -940,7 +947,7 @@ with p.global_slot(state, limit, weight, priority=p.slot_priority('.')):
         q.mkdir(parents=True)
         dead = q / ('%d_%d_1' % (_t.time_ns() - 10**9, 999999))  # 不存在的 pid
         dead.touch()
-        old = q / ('%d_%d_1' % (_t.time_ns() - 10**9, os.getppid()))  # 活着的 pid，但很久没刷新
+        old = q / ('%d_%d_1' % (_t.time_ns() - 10**9, self.live_pid()))  # 活着的 pid，但很久没刷新
         old.touch(); os.utime(old, (_t.time() - 120, _t.time() - 120))
         t0 = _t.monotonic()
         with self.par.global_slot(self.state, 2):
