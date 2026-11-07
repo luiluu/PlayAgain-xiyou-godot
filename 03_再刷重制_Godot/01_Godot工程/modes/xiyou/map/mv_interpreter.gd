@@ -93,7 +93,11 @@ func run() -> void:
 func _step() -> bool:
 	var r := advance()
 	if r.kind == "message":
-		var response = await (host.show_parallel_message(r.msg) if parallel and host.has_method("show_parallel_message") else host.show_message(r.msg))
+		var response
+		if parallel and host.has_method("show_parallel_message"):
+			response = await host.show_parallel_message(r.msg)
+		else:
+			response = await host.show_message(r.msg)
 		if is_cancelled():
 			return false
 		waiting_frame().resume(response)
