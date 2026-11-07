@@ -52,9 +52,10 @@ var _motion_rng: RandomNumberGenerator
 ## 每被强制一次就跳过一条（左右来回的路线被强制一次后一路往一边偏）；换页时也不清记下的原路线，之后的强制路线结束会还原成旧页的路线。
 ## 重制默认修好：还原后不再加一、换页时清掉记下的原路线。设为 false 恢复原版（专项两边都跑，所以是 static var）。
 static var route_resume_fix := true
-## 走一格每帧的距离倍数。正式版 rpg_objects 的 distancePerFrame 是 2×2^速度÷256（比 MV 默认快一倍），重制一直按 MV 默认算；
-## 对照测试设 2.0 量原版节奏。默认 1.0 不改现有手感（是否跟原版改快一倍交总装定，见交付单 cc_bajie-mapev1）
-static var move_distance_scale := 1.0
+## 走一格每帧的距离倍数（复现原版，不是优化）：正式版 js/rpg_οbjects.js（文件名里是希腊字母 ο，index.html 载入的就是它）的
+## Game_CharacterBase.distancePerFrame 写成 2×2^速度÷256，比 MV 默认快一倍（冻结 v0.28 第 6549 行、v0.62.12 第 6550 行都是）。
+## 作者有意改的，和 Drill_SpeedGear 的全局 1.6 倍帧率相乘才是原版实际速度，两边各自对齐。设为 1.0 回到 MV 默认（回退开关）。
+static var move_distance_scale := 2.0
 ## 跳跃（Game_CharacterBase.jump / updateJump）
 var _jump_peak := 0
 var _jump_count := 0

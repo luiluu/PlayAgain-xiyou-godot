@@ -7,8 +7,8 @@ extends Node
 ##   动画按真实长度等（参照里动画立即结束），所以 Map152 只比最终状态与动画次数；Map032 比动画相隔的帧数（允许差 1 帧）。
 ## - auto*：事件节点进树时就停掉 _physics_process，由本测试逐帧调 update_character（同参照逐帧 $gameMap.update，事件按编号依次更新），
 ##   逐帧记格子、朝向、页、图像、速度、频率、是否在跳，与参照的「变了才记一行」逐行比（含帧号与这一行之前停了几帧）。
-##   参照的随机数固定 0.5，这里设 MVCharacter.fixed_random＝0.5；正式版走一格比 MV 默认快一倍（distancePerFrame 翻倍），
-##   这里设 MVCharacter.move_distance_scale＝2 量原版节奏。
+##   参照的随机数固定 0.5，这里设 MVCharacter.fixed_random＝0.5；走路速度用默认值（move_distance_scale＝2，同正式版 distancePerFrame 翻倍），
+##   另断言速度 3 走一格 16 帧（参照 Map093 事件 3）。
 ## - auto3.m149e33.skip：原版强制路线结束后自定义路线跳过一条（O-待定，MVCharacter.route_resume_fix）。关掉开关逐行等于参照；
 ##   开着（默认）时左右来回不偏：强制路线之后仍在 10↔11 两格之间走。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -100,10 +100,9 @@ func _run() -> void:
 	var oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	_check("oracle_loaded", oracle != null and oracle.get("cases", []).size() >= 10)
 	var old_random := MVCharacter.fixed_random
-	var old_scale := MVCharacter.move_distance_scale
 	var old_fix := MVCharacter.route_resume_fix
 	MVCharacter.fixed_random = 0.5
-	MVCharacter.move_distance_scale = 2.0
+	_tile_frames()
 	for c in oracle.get("cases", []):
 		_check(c.id + ":oracle_ok", c.errors.is_empty(), c.errors)
 		if str(c.id).begins_with("par."):
@@ -116,9 +115,21 @@ func _run() -> void:
 		else:
 			await _auto_case(c, c.id)
 	MVCharacter.fixed_random = old_random
-	MVCharacter.move_distance_scale = old_scale
 	MVCharacter.route_resume_fix = old_fix
 	await _finish()
+
+
+## 默认速度下走一格的帧数：正式版速度 3 走一格 16 帧（参照 auto2.m93e3：开步那帧起 16 次更新走完），MV 默认是 32 帧
+func _tile_frames() -> void:
+	var ch := MVCharacter.new()
+	ch.move_speed = 3
+	ch.grid = Vector2i(1, 0)
+	var n := 0
+	while ch.is_moving() and n < 100:
+		ch.update_character()
+		n += 1
+	_check("tile_frames_speed3", n == 16, n)
+	ch.free()
 
 
 # ---- 自主移动：逐帧手动更新，逐行对照 ----
