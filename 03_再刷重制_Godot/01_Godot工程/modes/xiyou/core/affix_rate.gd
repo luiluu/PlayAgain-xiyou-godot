@@ -15,6 +15,11 @@ extends RefCounted
 ## FIX_CAP_BASE＝false 照原版。
 static var ENABLED := true
 static var FIX_CAP_BASE := true
+## O-待定·高阶词条概率页（原版 bug）：原版这段包装 G.detailRows 装在 main.js 第 201 行，而「修行·详细」窗口
+## （installNativeGuidanceRuntime 第 201 行 panelWindow(JAH_Window_Status_ZhenqiDetail, G.detailRows)）在第 160 行装引导模块时
+## 就把旧的 G.detailRows 抓走了，包装从来到不了页面：v0.62.12 实机与 zhenqi_probe 的「修行·详细」都没有这一段。
+## 作者本意是显示（方案 v0.3「修行页末尾加一段」），修好＝显示；DETAIL_SHOWN＝false 照原版不显示。
+static var DETAIL_SHOWN := true
 const CAP := 50.0
 const HH_MAX := 6.075
 const ROUTES := [
@@ -129,7 +134,7 @@ static func pick(s: XState, choices: Array, table: String, r: float) -> Array:
 
 ## G.detailRows 包装：末尾加的几行（开关关着返回空）
 static func detail_rows(s: XState) -> Array:
-	if not ENABLED:
+	if not ENABLED or not DETAIL_SHOWN:
 		return []
 	var m := factor(s)
 	var r := route(s)

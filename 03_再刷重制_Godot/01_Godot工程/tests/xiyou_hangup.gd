@@ -64,6 +64,7 @@ func key_g() -> void:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_hangup"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	XConfig.whisper_mark("rift1")   # 新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：过场占住地图，按挂机键被忽略、no_enemy 挂（集成分支 run 42343228257；本机留着上次的 options.json 才过）
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	# 计时实测的最慢项是等待物理帧（约139秒）。沿用楼层流程的headless快时钟，
