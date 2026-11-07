@@ -60,10 +60,10 @@ func _same(name: String, got: Dictionary, want: Dictionary) -> void:
 	var w: Dictionary = _norm(want)
 	for k in w:
 		if k == "rates":
-			continue  # 重制的实例不改特性（原表就是这三条）；原版重复的那一例见 _case
-		if k == "params" and w.get("rates", []).size() != 3:
-			# O-137：原版刚招募、没改过等级的实例倍率特性重复（生命 ×1.6、物防 ×1.4），重制不重现；这一例只比其余六项
-			check(name + ".params_dup", g.params[0] < w.params[0] and g.params[3] < w.params[3] and g.params.slice(1, 3) == w.params.slice(1, 3)
+			continue  # 实例特性不改（原表就是这三条）；原版重复的两条在 O-137 关着时由 XThreeGrowth.recruit_dup_objects 另给
+		if k == "params" and w.get("rates", []).size() != 3 and XThreeGrowth.FIX_RECRUIT_DUP:
+			# O-137 开（默认）：原版刚招募、没改过等级的实例倍率特性重复（生命 ×1.6、物防 ×1.4），修好后生命、物防低于原版，其余六项相同
+			check(name + ".params_dup_fixed", g.params[0] < w.params[0] and g.params[3] < w.params[3] and g.params.slice(1, 3) == w.params.slice(1, 3)
 				and g.params.slice(4) == w.params.slice(4), [g.params, w.params])
 			continue
 		check(name + "." + k, g.get(k) == w[k], [g.get(k), w[k]])
@@ -103,12 +103,18 @@ func _run() -> void:
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
 	var seen := 0
+	XThreeGrowth.FIX_RECRUIT_DUP = false  # O-137 关：逐例和原版比（含招募后倍率重复的 relic.lv1.r1）
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
 			seen += 1
 			_case(c)
 	check("covers_all", seen == 9, seen)
+	XThreeGrowth.FIX_RECRUIT_DUP = true  # O-137 开（默认）：招募后不重复
+	for c in ref.cases:
+		if str(c.id) == "relic.lv1.r1":
+			c.id = "fixed.relic.lv1.r1"
+			_case(c)
 	_local()
 	finish()
 
