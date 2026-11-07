@@ -129,9 +129,9 @@ static func relic_lines(spec: Dictionary, evolved: bool, unit: int) -> Array:
 	return rows
 
 
-## O-137：招募时新生成的法宝实例记下（人物等级, 法宝等级）（XGuyu.recruit 调）
+## O-137：招募时新生成的法宝实例记下（人物等级, 法宝等级）（XGuyu.recruit 调）；开关开着（默认修）时不写，存档里不留这个记号
 static func mark_recruit(a: XActor, e: Dictionary) -> void:
-	if RECRUIT_DUP.has(int(e.get("base", e.get("id", 0)))):
+	if not FIX_RECRUIT_DUP and RECRUIT_DUP.has(int(e.get("base", e.get("id", 0)))):
 		e[RECRUIT_DUP_KEY] = [int(a.level), int(XEquipmentView.level(e))]
 
 

@@ -116,7 +116,28 @@ func _run() -> void:
 			c.id = "fixed.relic.lv1.r1"
 			_case(c)
 	_local()
+	_mark_save_roundtrip()
 	finish()
+
+
+## 审查 51 P3-1：O-137 开着时招募不写 _o137Dup，存档往返后也没有；关着时照写、往返后还在
+func _mark_save_roundtrip() -> void:
+	for fix in [true, false]:
+		XThreeGrowth.FIX_RECRUIT_DUP = fix
+		var r := _setup()
+		var a: XActor = r[0]
+		var slot := int(r[1])
+		var tag := "mark.%s" % ("on" if fix else "off")
+		check(tag + ".slot", slot >= 0, slot)
+		if slot < 0:
+			continue
+		check(tag + ".written", (a.equips[slot] as Dictionary).has(XThreeGrowth.RECRUIT_DUP_KEY) == (not fix), a.equips[slot].keys())
+		check(tag + ".save", XSave.save(3))
+		check(tag + ".load", XSave.load_slot(3))
+		var b := XState.current.actor(XGuyu.ACTOR)
+		var e = b.equips[slot]
+		check(tag + ".roundtrip", e is Dictionary and e.has(XThreeGrowth.RECRUIT_DUP_KEY) == (not fix), e.keys() if e is Dictionary else e)
+	XThreeGrowth.FIX_RECRUIT_DUP = true
 
 
 func finish() -> void:

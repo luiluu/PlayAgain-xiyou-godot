@@ -248,7 +248,21 @@ func _change_state_tag() -> void:
 	check("sc.damage_changes", got.states.has(1329) and not got.states.has(10) and not got.removed.has(10), got)
 	l.end_battle(0)
 	st["meta"] = had
-	# 行动限制解除的 SC 标签：onRestrict 在 addState 里面，_Fix_StackOverflow 的全局锁挡住嵌套 addState，换不上（与原版锁一致；数据里也没有这种标签）
+	# 审查 51 P3-2：行动限制解除不走 SC 换状态（原版 onRestrict 在 addState 里面，_Fix_StackOverflow 的全局锁挡住嵌套 addState）。
+	# 数据里没有这个标签；临时给凌波舞 525 写一条，第一次受限时照样去掉 525、记进解除，但不换成 1329
+	var tagged := []
+	for row in XDB.table("States"):
+		if row is Dictionary and (row.get("meta", {}) as Dictionary).has("SC行动限制解除"):
+			tagged.append(int(row.id))
+	check("sc.restrict_no_tag_in_data", tagged.is_empty(), tagged)
+	var r := XDB.rec("States", 525)
+	var rmeta: Dictionary = r.get("meta", {})
+	var rhad := rmeta.duplicate()
+	rmeta["SC行动限制解除"] = "1329"
+	r["meta"] = rmeta
+	var got2 := _restrict_run("enemy", [525], 8)
+	check("sc.restrict_no_change", not got2.states.has(525) and not got2.states.has(1329) and got2.removed.has(525), got2)
+	r["meta"] = rhad
 
 func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
