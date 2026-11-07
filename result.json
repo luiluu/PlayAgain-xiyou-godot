@@ -1,0 +1,28 @@
+{
+ "sha": "3e1afc8efabb0033bcedb489c810bb4b33b220ac",
+ "branch": "ci/cc/ui6",
+ "mode": "affected",
+ "base": "4dc7448525fddb634d239d0f224f3338a48b533e",
+ "passed": false,
+ "scenes": 5,
+ "failed": [
+  "xiyou_platform.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 1,
+ "longestShardSeconds": 506.2,
+ "testSeconds": 526,
+ "generatedRef": "refs/ci/generated/cc/ui6",
+ "generatedCommit": "dcfbd17e513883469db500ad2b04b56430e7de43",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42426254817",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_map_hotkeys.tscn",
+  "xiyou_platform.tscn",
+  "xiyou_ui_input.tscn",
+  "xiyou_version_label.tscn"
+ ],
+ "time": "2026-11-07T23:51:34+00:00"
+}
