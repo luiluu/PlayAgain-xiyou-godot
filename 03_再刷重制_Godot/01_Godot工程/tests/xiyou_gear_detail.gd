@@ -153,7 +153,9 @@ func _run() -> void:
 	await frames()
 
 	# ---- 分页（render43）与翻页／滚动（turn41／scroll41／syncPage43）：用一份长内容 ----
-	var probe := XGearDetail.new(self, Rect2(640, 173, 640, 547), 255)
+	var ui_host := Control.new()
+	add_child(ui_host)
+	var probe := XGearDetail.new(ui_host, Rect2(640, 173, 640, 547), 255)
 	await frames()
 	var long_rows := []
 	for i in range(40):
@@ -208,7 +210,7 @@ func _run() -> void:
 	# 原版 fullHeight（MIN_FONT 0＝原版字号）：练习剑 259、无极西瓜刀 389、卍解-斩月 404
 	var keep_min := XHelpCard.MIN_FONT
 	XHelpCard.MIN_FONT = 0
-	var probe2 := XGearDetail.new(self, Rect2(640, 173, 640, 547), 255)
+	var probe2 := XGearDetail.new(ui_host, Rect2(640, 173, 640, 547), 255)
 	await frames()
 	for pair in [["equip_detail_1_slot", 2], ["equip_detail_4_item", 1706], ["item_detail_0_weapon", 67]]:
 		probe2.key = ""

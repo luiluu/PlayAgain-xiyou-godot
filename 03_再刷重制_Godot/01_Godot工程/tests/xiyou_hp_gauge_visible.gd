@@ -64,10 +64,12 @@ func _run() -> void:
 			continue
 		var e := XEnemy.new()
 		e.enemy_id = int(row.id)
-		if e.hp_gauge_visible() != bool(row.visible):
+		# 最终的小血条（战斗画面用的 XBossHpBar.small_gauge_visible）：新源 v0.37 起真气首领血条范围里的神兵之仙
+		# （984～990、2005～2009 等）原版 hpGaugeVisible 也返回 false
+		if XBossHpBar.small_gauge_visible(e) != bool(row.visible):
 			wrong.append(row.id)
 		e.hidden = true
-		if e.hp_gauge_visible() != bool(row.hiddenVisible):
+		if XBossHpBar.small_gauge_visible(e) != bool(row.hiddenVisible):
 			wrong_hidden.append(row.id)
 		if h and sample_hide == 0:
 			sample_hide = int(row.id)
