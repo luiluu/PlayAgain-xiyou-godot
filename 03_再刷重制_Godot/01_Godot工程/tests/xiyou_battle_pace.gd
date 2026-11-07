@@ -1,6 +1,6 @@
 extends Node
 ## 战斗节奏对照（Kyo 11-06 实机：原版动作稍快）：正式版读数 tests/fixtures/battle_pace_oracle.json
-## （ui_reference 战斗夹具 4 人、敌群 2，角色都普通攻击敌人 1，记每次 startAction／endAction 的 Scene_Battle.update 帧）。
+## （ui_reference battle_pace_ref.cjs：战斗夹具 4 人、敌群 2，角色都普通攻击敌人 1，记每次 startAction／endAction 的帧与 OTB 速度）。
 ## 这里跑同一场战斗的主循环（OTB），角色指令直接给普通攻击，记每次行动演出开始、结束的物理帧，比每次行动的时长与行动之间的空档。
 class PaceBattle extends XBattleScene:
 	var log := []
@@ -19,6 +19,26 @@ class PaceBattle extends XBattleScene:
 		log.append([Engine.get_physics_frames() - t0, "start", key])
 		await super._play(logs)
 		log.append([Engine.get_physics_frames() - t0, "end", key])
+
+## 原版夹具（mac-preload-shim battle_ref）把 Math.random 固定成 0.5（「稳定 OTB 同速顺序」）：重制的规则流同样每次给 0.5，
+## 按 MV 的 floor(n×0.5) 映射（randomInt／取序号），同速、随机速度、伤害浮动都跟原版取同一个值
+class HalfStream extends XRandomStream:
+	var reasons := {}
+	func _note(reason: String) -> void:
+		draws += 1
+		reasons[reason] = int(reasons.get(reason, 0)) + 1
+	func next_float(reason: String, _event_key := "") -> float:
+		_note(reason)
+		return 0.5
+	func next_uint(reason: String, _event_key := "") -> int:
+		_note(reason)
+		return 2147483648
+	func next_index_mod(n: int, reason: String, _event_key := "") -> int:
+		_note(reason)
+		return floori(n * 0.5) if n > 0 else 0
+	func next_int_inclusive(lo: int, hi: int, reason: String, _event_key := "") -> int:
+		_note(reason)
+		return lo + floori((hi - lo + 1) * 0.5)
 
 const ORACLE := "res://tests/fixtures/battle_pace_oracle.json"
 var results := []
@@ -43,23 +63,47 @@ func _run() -> void:
 	XConfig.set_battle_speed(int(oracle.speed))
 	XConfig.set_flag("CombatSkillAnimation", bool(oracle.anim))
 	var s := XState.new_game(3, 1, [8, 9, 10])
+	# 同原版夹具（mac-preload-shim fixture）：每人学天道诅咒 6168（敏捷 ×80%）、难度适应 5980、普通难度 5548，1 号另学 2571、2786
+	for a in s.members():
+		for id in [6168, 5980, 5548] + ([2571, 2786] if a.actor_id in [1, 2, 3, 4, 5, 6, 7, 52] else []):
+			a.learn_skill(id)
+		a.refresh_passive()
+		a.param_mark_dirty()
+		a.recover_all()
 	s.random_master = XRandomStream.hex64(20261018)
 	var scene := PaceBattle.new()
 	scene.t0 = Engine.get_physics_frames()
 	scene.setup(2, true, false, {})
+	var half := HalfStream.new()
+	half.domain = "rule"
+	scene.logic.random.rule = half
 	add_child(scene)
 	for e in scene.logic.enemies:
 		var p: Array = (e as XEnemy).data().params.duplicate()
 		p[0] = float(p[0]) + 1000000.0
 		(e as XEnemy).zq_ref = {"p": p, "k": 1}
+		e.param_mark_dirty()  # krz 能力值缓存：不标脏 mhp 还是旧值，敌人只有原来的血，第 2 回合 e1 被打倒（rules-pace1 查出）
+		e.param_refresh()
 		e.hp = e.mhp
 	var want: Array = oracle.log.filter(func(r): return r[1] != "firstInput")
 	while scene.log.size() < want.size() and Engine.get_physics_frames() - scene.t0 < 4000:
 		await get_tree().physics_frame
 	print("PACE_GODOT=", JSON.stringify(scene.log))
+	# 行动先后（rules-pace1）：原版敏捷 a1 0、a8／a9 16、a10 24、敌人 20，速度 agi＋randomInt(5＋agi/4)＝2／20／29／25，
+	# 三回合都是 a10、e0、e1、e2、a8、a9、a1；重制同一夹具逐次比行动者
+	var key := func(b: XBattler) -> String:
+		return ("a%d" % (b as XActor).actor_id) if b is XActor else ("e%d" % scene.logic.enemies.find(b))
+	var speeds := []
+	for b in scene.logic.actors + scene.logic.enemies:
+		speeds.append([key.call(b), int(b.agi), int(scene.logic._speed.get(b, -1))])
+	var want_speeds: Array = oracle.orders[0].speeds.map(func(r): return [str(r[0]), int(r[1]), int(r[2])])
+	check("otb_speeds", speeds == want_speeds, [speeds, want_speeds])
+	var order_g: Array = scene.log.filter(func(r): return r[1] == "start").map(func(r): return r[2])
+	var order_w: Array = want.filter(func(r): return r[1] == "start").map(func(r): return r[2])
+	check("action_order", order_g.slice(0, order_w.size()) == order_w, [order_g, order_w])
 	print("PACE_MV=", JSON.stringify(want))
-	# 只断言每次行动演出的时长（startAction→endAction，角色普攻／敌人各自排序后逐个比，容差 1 帧：两边起止钩子的位置差一帧）；
-	# 行动先后与行动之间的空档照打印、写进交付单，不断言——敌群夹具的 OTB 先后两边不同（a9 与 e0 同速时谁先），属规则车道
+	# 每次行动演出的时长（startAction→endAction，角色普攻／敌人各自排序后逐个比，容差 1 帧：两边起止钩子的位置差一帧）；
+	# 行动之间的空档照打印（PACE_DIFF），不断言
 	var dur := func(log: Array, actor: bool) -> Array:
 		var open := {}
 		var out := []
@@ -74,11 +118,10 @@ func _run() -> void:
 		out.sort()
 		return out
 	for actor in [true, false]:
-		# 正式版第 3 回合 a9 的一次行动 111 帧（1154→1265，别的都是 54），重制没有对应的长行动：原因未查，不比，打成 PACE_LONG 写进交付单
-		var w: Array = dur.call(want, actor).filter(func(v): return v <= 100)
+		# 原 battlefix2 夹具第 3 回合 a9 那次 111 帧是录制卡顿：重录三次都是 54（battle_pace_ref.cjs），夹具已换
+		var w: Array = dur.call(want, actor)
 		var g: Array = dur.call(scene.log, actor)
-		print("PACE_LONG=", JSON.stringify(dur.call(want, actor).filter(func(v): return v > 100)))
-		var ok := w.size() > 0 and g.size() >= w.size()  # 重制可多出那次长行动对应的一次
+		var ok := w.size() > 0 and g.size() >= w.size()
 		for i in range(mini(w.size(), g.size())):
 			ok = ok and absi(int(w[i]) - int(g[i])) <= 1
 		check("action_frames_%s" % ("actor" if actor else "enemy"), ok, [g, w])
