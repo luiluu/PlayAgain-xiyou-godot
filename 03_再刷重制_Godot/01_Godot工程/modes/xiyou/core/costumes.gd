@@ -70,9 +70,24 @@ static func current(a: XActor):
 static func battler_name(s: XState, a: XActor, in_battle := true) -> String:
 	var own := XLiuying.battler_name(a, XRaven.battler_name(a, str(a.data().get("battlerName", "")), in_battle))  # 渡鸦、流萤（萨姆形态）的 battlerName 包装在卡图那层里面
 	var card = current(a)
-	if card == null or not in_battle:
-		return own
-	return str(card.image) if enabled(s, a.actor_id) else own
+	var name := own if card == null or not in_battle else (str(card.image) if enabled(s, a.actor_id) else own)
+	return vegetto_form(s, a, name, in_battle)
+
+
+## installVegettoFormRuntime（battlerName 最外层包装）：超赛 2771～2774 的移除或旧档可能把图还原成本体／留空，
+## 这时按剩下的最高形态补图（2774 clbjt → 2773 cjbjt3 → 2772 cjbjt2 → 2771 bjtc1）。换装卡生效且有图、或图名已不是数据库原图的保留。
+const VEGETTO_FORMS := [[2774, "clbjt"], [2773, "cjbjt3"], [2772, "cjbjt2"], [2771, "bjtc1"]]
+
+static func vegetto_form(s: XState, a: XActor, name: String, in_battle := true) -> String:
+	if name != "" and active(s, a, in_battle):
+		return name
+	var original := str(XDB.rec("Actors", a.actor_id).get("battlerName", ""))
+	if name != "" and name != original:
+		return name
+	for f in VEGETTO_FORMS:
+		if a.state_ids.has(int(f[0])):
+			return str(f[1])
+	return name if name != "" else original
 
 
 ## C.active：启用、在战斗中、有卡状态
