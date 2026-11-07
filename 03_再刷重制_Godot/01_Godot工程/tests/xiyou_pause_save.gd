@@ -3,6 +3,7 @@ extends Node
 ## 收到 APPLICATION_PAUSED（或手机上的 FOCUS_OUT）时，只在地图上、事件不在跑、不在战斗／主菜单／传送页、开关开着才存，
 ## 存到单独的自动存档文件（不碰手动存档位 1～30，也不动保存次数和「最近用过的档位」）；同一次切后台的两个通知只写一次；
 ## 写失败只记日志不弹窗；手动存档之后自动存档作废；桌面不触发。桌面上用 XPlatform.force_mobile 当成手机。只写测试目录。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results := []
 
 
@@ -37,9 +38,8 @@ func _fresh() -> void:
 
 func _run() -> void:
 	GameApp.fast_headless_frames()
-	XSave.dir_override = "user://test_xiyou_pause_save"
-	_clean(XSave.dir())
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	_clean(TestEnv.isolate("xiyou_pause_save"))   # 清掉上一轮的存档（isolate 已设好测试目录与配置路径、按默认值重读）
+	XConfig.whisper_mark("rift1")   # _clean 连 options.json 一起删了，重写一次：新源大厅漩涡过场当作看过
 	XMessageBox.auto = true
 	XPlatform.force_mobile = true
 	var s := XState.new_game(3, 1, [8, 10, 9])

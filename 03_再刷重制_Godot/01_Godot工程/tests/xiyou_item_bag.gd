@@ -4,6 +4,7 @@ extends Node
 ## 比：当场的结果提示（主说明卡／toaster）、是否回地图、事件跑完后回到物品页的分类与选中、回来后的提示、队伍与数量。
 ## 「换画面」一例在物品页关掉后往地图 ui 里加一个页面（原版 Scene_Map.stop 时下一个是 Scene_Battle）。
 ## O-133（快照记 TP）：回 TP 两例先关掉开关对原版，再开着看改成「已生效」。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var checks := 0
 var failures: Array = []
 var map: XMapScene
@@ -31,9 +32,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	# 存档与配置放测试目录，不碰本机开发档；新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：
 	# 过场占住地图，开菜单被忽略，tp.* 用例拿不到菜单（集成分支 run 42343228257；本机开发档里看过过场才过）
-	XSave.dir_override = "user://test_xiyou_item_bag"
-	XConfig.path_override = XSave.dir().path_join("options.json")
-	XConfig.whisper_mark("rift1")
+	TestEnv.isolate("xiyou_item_bag")
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/item_bag_oracle.json"))
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("complete", f.cases.size() == 11)

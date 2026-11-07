@@ -3,6 +3,7 @@ extends Node
 ## 本测试补三件事：①招募——原版「召唤…」公共事件真的能让该角色入队、占出战栏；②初始装备与已学技能与 mv_oracle
 ## 参照行一致；③每个声明可用的角色在参照里都有独立行（等级采样 35／65／99 与伤害行），没有就不算可用。
 ## 完整养成（技能树、进阶、羁绊）不在 P0 范围：本测试不验也不声明。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 ## 公共事件 → 角色（由 db/CommonEvents 里的 129 指令得出；斯盖＝召唤苍龙骑士，克莱德＝召唤祭祀，克洛什＝召唤绿色游侠，雪清寒＝召唤雪山）
 const RECRUIT := {13: 11, 23: 12, 20: 13, 21: 14, 22: 15, 19: 16, 24: 17, 25: 18}
@@ -55,13 +56,9 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_actor_p0"
-	XConfig.path_override = XSave.dir().path_join("options.json")
 	# 每次从同一状态起跑：上次留下的 options.json 删掉（云端每次都是新目录、本机会留着，结果曾因此不同）；
 	# 大厅 Map004 有漩涡过场（CodexWhisper.seen('rift1') 为假时自动播，占住地图好几百帧），这里只验招募，标成看过
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
-	XConfig._loaded_path = ""  # 删了文件后重新按默认值读
-	XConfig.whisper_mark("rift1")
+	TestEnv.isolate("xiyou_actor_p0")
 	XMessageBox.auto = true
 	var d = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/slice_d2.json"))
 	if not d is Dictionary:
