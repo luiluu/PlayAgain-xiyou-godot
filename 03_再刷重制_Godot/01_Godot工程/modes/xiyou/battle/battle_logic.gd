@@ -1697,10 +1697,16 @@ func _sync_orders(before: Dictionary, allow_current: bool) -> void:
 		_clear_unable()
 
 
+## otbInsertActionOrders＋v0.62.11 installOtbRestoreCap：插回「行动次数－本回合已行动」次（至少 1），当前回合最多补到 5 次（含已行动），
+## 下个回合最多 5 次（已行动照原插件也扣，按本回合的数；otb_probe restore_cap）
 func _insert_orders(b: XBattler, order: Array) -> void:
 	if order.has(b):
 		return
-	var times := maxi(mini(make_action_times(b), OTB_MAX_ACTIONS) - int(_acted.get(b, 0)), 1)
+	var acted := int(_acted.get(b, 0))
+	var room := OTB_MAX_ACTIONS - acted if order == current_order else OTB_MAX_ACTIONS
+	if room <= 0:
+		return
+	var times := mini(maxi(make_action_times(b) - acted, 1), room)
 	for i in range(times):
 		order.append(b)
 

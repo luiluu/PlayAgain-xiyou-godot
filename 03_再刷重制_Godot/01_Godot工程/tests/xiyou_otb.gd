@@ -93,7 +93,17 @@ func _run() -> void:
 	var order_before := l.next_order.duplicate()
 	l.execute(a,XDB.rec("Items",1),a)
 	_check("item_no_user_shift", l.next_order == order_before)
-	# 正式插件复活插入未再钳制次数；Godot 保持每回合五次上限，不让复活绕过。
+	# v0.62.11 installOtbRestoreCap：解除不能行动后插回守每回合 5 次（otb_probe restore_cap，两边同一夹具）
+	_check("restore_cap_rows", fixture.rows.get("restore_cap", []).size() == 8)
+	for row in fixture.rows.get("restore_cap", []):
+		l.current_order.clear(); l.next_order.clear(); l._acted.clear()
+		l.repeats[b] = int(row.times)
+		l._acted[b] = int(row.acted)
+		var snap := {b: false}
+		l._sync_orders(snap, true)
+		_check("restore_cap.%d.%d" % [int(row.times), int(row.acted)], l.current_order.count(b) == int(row.current) and l.next_order.count(b) == int(row.next), [l.current_order.count(b), l.next_order.count(b), row])
+	l.repeats.erase(b); l._acted.clear(); l.current_order.clear(); l.next_order.clear()
+	# 复活插入也守每回合五次上限（v0.62.11 起正式版也守）。
 	l.repeats[b] = 8
 	l._acted[b] = 5
 	before = l._movable_snapshot(); b.hp = 0; l._sync_orders(before,true)
