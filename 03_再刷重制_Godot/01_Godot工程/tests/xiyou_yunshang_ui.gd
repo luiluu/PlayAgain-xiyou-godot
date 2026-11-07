@@ -74,7 +74,11 @@ func _run() -> void:
 		e.param_mark_dirty()
 		e.param_refresh()
 		e.recover_all()
-	await frames(30)
+	# 开战到第一个指令窗：本机约 30 帧，云端满载时会更久（11-07 整轮偶发 _active 还是 null），最多等 600 帧
+	for _i in 600:
+		await frames(1)
+		if b._active != null and b.cmd_win != null:
+			break
 	check("cloud_first", b._active == a and b.cmd_win != null, null if b._active == null else b._active.actor_id)
 	if b._active == a:
 		for k in b.logic.actors:
