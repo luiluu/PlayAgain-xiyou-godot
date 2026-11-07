@@ -443,6 +443,10 @@ func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, n
 		if done.v:
 			break
 		if by_click:
+			# 停住后消息窗还有几帧等待（Window_Message.updateWait，这期间不收输入，原版同）；一次点击要 6 帧，等它走完再点
+			await _until(func(): return done.v or (b.message.win.pause and b.message._wait == 0), 120)
+			if done.v:
+				break
 			await _mouse(rect.get_center(), MOUSE_BUTTON_LEFT)  # 审查报告第 7 项：战斗消息用鼠标左键翻页（真实事件分发）
 		else:
 			await _press("ui_accept")

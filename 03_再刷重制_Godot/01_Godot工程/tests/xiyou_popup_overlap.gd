@@ -98,6 +98,7 @@ func _check_anchor_oracle(b: XBattleScene) -> void:
 		var made := []
 		for row in oracle.cases[key]:
 			b._popup(t, float(row.value), false)
+			b.drain_popups()  # 同帧第二个起在排队（POPUP_QUEUE）；这里逐个摆好、停住物理更新，只比锚点
 			var q: XDamagePopup = b._popups[t][-1]
 			q.set_physics_process(false)
 			made.append(q)
@@ -107,7 +108,7 @@ func _check_anchor_oracle(b: XBattleScene) -> void:
 				bad.append([key, i, made[i].anchor_y(), want])
 		if key == "enemy_damage":
 			var q: XDamagePopup = made[0]
-			for i in range(oracle.after_frames * 2):
+			for i in range(oracle.after_frames * 2 - 1):  # 建出当帧已更新一次（_spawn_popup，同原版）
 				q._update()
 			var top: float = q.global_position.y + q._y - q.FONT_SIZE * q.anchor_y()
 			_check("popup_anchor_damage_top", absf(top - float(oracle.cases[key][0].bounds[1])) < 0.5, [top, oracle.cases[key][0].bounds])
