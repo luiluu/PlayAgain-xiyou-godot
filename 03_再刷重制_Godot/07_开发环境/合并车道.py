@@ -1117,6 +1117,8 @@ def prepare(root, state, state_file, executor, also=()):
             sync = [sys.executable, TOOLS / '同步正式西游.py', '--accept-additions']
             for spec in state.get('acceptChanges', []):
                 sync += ['--accept-changes', spec]
+            if os.environ.get('XIYOU_ACCEPT_SOURCE_SWITCH'):  # 换源合并（总装三十 11-07）：同步带 --accept-source-switch <版本>，接受单用 生成接受单.py --grouped 出
+                sync += ['--accept-source-switch', os.environ['XIYOU_ACCEPT_SOURCE_SWITCH']]
             cmd = list(map(str, sync + ['--from-worktree', state['worktree']]))
             if state['worktree']:
                 print('== ' + ' '.join(cmd), flush=True)
