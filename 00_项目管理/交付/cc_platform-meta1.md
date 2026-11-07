@@ -48,3 +48,9 @@
 - 并入 cc/platform-release3
 - WIP：冒烟临时目录自清；桌面版本号；出包删旧版；--notes-audit；启动基线；优化登记 O-待定
 - 交付单 cc_platform-meta1（本提交）
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | Mac／Windows 发行包版本号按开发编号（`addons/xiyou_export/desktop_version.gd` `XDesktopVersion.AUTO`；同一个导出插件） | 原版桌面包版本号由 NW.js 包定；重制的 Windows 预设一直是 0.0.0.0，Mac 预设没填（Info.plist 是 Godot 默认值），看不出是哪一版 | 导出时覆盖：Windows file_version／product_version＝「0.<号>.0.0」，Mac CFBundleShortVersionString＝「0.<号>」、CFBundleVersion＝「<号>」；读不出开发编号就用预设的值 | 跟安卓 O-216 同一套「0.<号>」，exe 属性和 Mac「显示简介」能看出版本；正式版本号等正式发布再定（Kyo 11-06）；测试 `xiyou_android_version` 的 desktop_* 项含回退，`发行入口冒烟.py` 查 bundle_version／exe_version | `XDesktopVersion.AUTO = false`（用 export_presets.cfg 的值） | cc（平台 EC） | 已做，待用户决定 |
