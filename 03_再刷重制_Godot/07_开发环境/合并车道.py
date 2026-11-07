@@ -793,7 +793,7 @@ def number_named(root, base, state=None, state_file=None):
     返回 ([(编号, 项目)], [可能改过的文件])；早先就在登记里、还没发号的只列出来，不动；总装想顺带一次清掉旧的，这条合并设
     XIYOU_NUMBER_NAMED=all（旧的按登记表顺序一起发号）。XIYOU_NUMBER_NAMED=0 关掉。
     给了 state 时：先把发号计划（namedNumbers、namedRows、namedFiles）存进合并状态再写文件，重跑同一条 --lane 照计划接着换（幂等）；
-    换过的文件若在 versionEdits 里（同一文件也有 dev.待定，准备阶段已记下替换后的摘要），把那份摘要更新成发号之后的，
+    换过的文件若在 versionEdits 里（同一文件也有 dev.406，准备阶段已记下替换后的摘要），把那份摘要更新成发号之后的，
     免得 --finish 的 validate_version_edits 报「编号替换文件还有其它改动」（审查 63 P2-1）。"""
     reg = root / OPT_REGISTRY
     plan = state.get('namedNumbers') if state is not None else None
