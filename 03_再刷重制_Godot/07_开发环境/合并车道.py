@@ -1977,8 +1977,9 @@ def board_add(root, state, who, desc):
     path.write_text(text)
 
 
-def lane_one(root, task, branch, who, desc, executor):
-    """--lane：准备→查新冒出来的 O-待定→补交接板（board_add）→--finish --batch，一步做完；哪步停下就停在那，修好后重跑同一命令接着做。"""
+def lane_one(root, task, branch, who, desc, executor, prep_extra=(), finish_extra=()):
+    """--lane：准备→查新冒出来的 O-待定→补交接板（board_add）→--finish --batch，一步做完；哪步停下就停在那，修好后重跑同一命令接着做。
+    prep_extra／finish_extra：转给准备／收尾那一步的参数（--also、--accept-changes、--no-parse-check／--also、--accept-doc-edits）。"""
     if '|' in who + desc or '\n' in who + desc:
         raise RuntimeError('--who／--desc 里不能有「|」或换行（会弄坏交接板的表）')
     base_args = [task, '--root', str(root), '--executor', executor] + (['--branch', branch] if branch else [])
@@ -1986,7 +1987,7 @@ def lane_one(root, task, branch, who, desc, executor):
     state_file = folder / 'state.json'
     state = json.loads(state_file.read_text()) if state_file.exists() else None
     if not (state and state.get('task') == task and state.get('phase') == 'prepared'):
-        if main(base_args):
+        if main(base_args + list(prep_extra)):
             raise RuntimeError('%s 准备没过（见上），修好后重跑同一条 --lane' % task)
         state = json.loads(state_file.read_text())
     if state.get('phase') != 'prepared':
@@ -1996,7 +1997,7 @@ def lane_one(root, task, branch, who, desc, executor):
     if left:
         raise RuntimeError('%s 留了没换号的 O-待定，先手改再重跑：\n  ' % task + '\n  '.join(left[:12]))
     board_add(root, state, who, desc)
-    if main(base_args + ['--finish', '--batch']):
+    if main(base_args + ['--finish', '--batch'] + list(finish_extra)):
         raise RuntimeError('%s --finish --batch 没过（见上），修好后重跑同一条 --lane' % task)
 
 
@@ -2005,14 +2006,23 @@ def queue_items(spec, branches, whos, descs):
     tasks = [x.strip() for x in spec.split(',') if x.strip()]
     if not tasks:
         raise RuntimeError('--queue 没给任务')
-    def spread(values, name):
+    def spread(values, name, sep):
+        if len(values) == 1 and len(tasks) > 1 and sep in values[0]:
+            # 三十一 11-07：--who "a,b,c,d" 被当成一条，四行待核查都写成同一串。--who 按英文逗号拆；--desc 正文常带英文逗号，
+            # 按「｜」拆（审查 57 P3-1：全队同用的 --desc 逗号数碰巧等于条数−1 时会被悄悄拆开）。段数要等于条数
+            parts = [x.strip() for x in values[0].split(sep)]
+            if len(parts) != len(tasks) or not all(parts):
+                raise RuntimeError('%s 「%s」按「%s」拆成 %d 段，与 --queue 的 %d 条对不上；要每条一个就按条数用「%s」分隔（或重复写 %s），'
+                                   '全队同用的不要带「%s」' % (name, values[0], sep, len(parts), len(tasks), sep, name, sep))
+            print('%s 按「%s」拆成每条一个：%s' % (name, sep, ' / '.join(parts)), flush=True)
+            return parts
         if len(values) == 1:
             return values * len(tasks)
         if len(values) != len(tasks):
             raise RuntimeError('%s 要给 1 个或 %d 个（与 --queue 条数相同），现在 %d 个' % (name, len(tasks), len(values)))
         return values
     out = []
-    for t, w, d in zip(tasks, spread(whos, '--who'), spread(descs, '--desc')):
+    for t, w, d in zip(tasks, spread(whos, '--who', ','), spread(descs, '--desc', '｜')):
         task, _, br = t.partition('=')
         out.append((task, br or None, w, d))
     if branches:
@@ -2027,10 +2037,13 @@ def main(argv=None):
                     help='一步合一条（tools78，原总装 lane.sh）：准备→查新冒出来的 O-待定→交接板补「需要用户决定」O 行与待核查行→--finish --batch；'
                          '配 --who（执行者，如 cc（哪吒））、--desc（待核查表「内容」），可加 --branch')
     ap.add_argument('--queue', metavar='a,b,c',
-                    help='按顺序逐条 --lane，全部过了再自动 --close-batch（可加 --affected、--cloud）；分支写「任务=分支」；'
-                         '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口')
-    ap.add_argument('--who', action='append', default=[], help='--lane／--queue：待核查表的执行者')
-    ap.add_argument('--desc', action='append', default=[], help='--lane／--queue：待核查表的内容')
+                    help='按顺序逐条 --lane，全部过了再自动 --close-batch（可加 --affected、--cloud、--no-parse-check）；分支写「任务=分支」；'
+                         '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口。--also、--accept-changes、--accept-doc-edits 只对一条：'
+                         '停在哪条就用 --lane <那条> 带上它们修好合完，再重跑同一条 --queue（已攒进本批的跳过）')
+    ap.add_argument('--who', action='append', default=[],
+                    help='--lane／--queue：待核查表的执行者。--queue 时给一个全队同用，或每条一个：重复写 --who，或一个值里用英文逗号「,」分隔（段数＝条数）')
+    ap.add_argument('--desc', action='append', default=[],
+                    help='--lane／--queue：待核查表的内容。--queue 时给一个全队同用，或每条一个：重复写 --desc，或一个值里用「｜」分隔（段数＝条数；英文逗号不拆）')
     ap.add_argument('--root', type=Path, help='主工作区；默认从当前工具所属资料库定位')
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
@@ -2073,14 +2086,21 @@ def main(argv=None):
         if a.lane or a.queue:
             if a.task or a.finish or a.batch or a.close_batch or a.dry_run or a.abort or a.abort_batch or (a.lane and a.queue):
                 raise RuntimeError('--lane／--queue 不带任务名，不和 --finish、--batch、--close-batch、--dry-run、--abort 同用，两者也不同用')
+            prep_extra = sum((['--also', x] for x in a.also), []) + sum((['--accept-changes', x] for x in a.accept_changes), []) \
+                + (['--no-parse-check'] if a.no_parse_check else [])
+            finish_extra = sum((['--also', x] for x in a.also), []) + (['--accept-doc-edits'] if a.accept_doc_edits else [])
             if a.lane:
                 if len(a.who) != 1 or len(a.desc) != 1:
                     raise RuntimeError('--lane 要各给一个 --who、--desc')
                 if a.affected or a.cloud:
                     raise RuntimeError('--lane 只攒进本批（--finish --batch）；--affected、--cloud 给收口用（--queue 或 --close-batch）')
-                lane_one(root, a.lane, a.branch, a.who[0], a.desc[0], a.executor)
+                lane_one(root, a.lane, a.branch, a.who[0], a.desc[0], a.executor, prep_extra, finish_extra)
                 print('%s 已合并并攒进本批；没有别的要合时运行 --close-batch。' % a.lane, flush=True)
                 return 0
+            if a.also or a.accept_changes or a.accept_doc_edits:
+                # 原来 --queue 收了 --also 不报错也不转，修好的文件没提交、下一步照样停（三十一 11-07）
+                raise RuntimeError('--also、--accept-changes、--accept-doc-edits 只对一条：停在哪条就用 --lane <那条> 带上它们修好合完，'
+                                   '再重跑同一条 --queue（已攒进本批的跳过）')
             items = queue_items(a.queue, [a.branch] if a.branch else [], a.who, a.desc)
             done = {x['task'] for x in load_batch(folder)}
             for task, branch, who, desc in items:
@@ -2088,10 +2108,12 @@ def main(argv=None):
                     print('== %s 已在本批，跳过' % task, flush=True)
                     continue
                 print('== 串合 %s' % task, flush=True)
-                lane_one(root, task, branch, who, desc, a.executor)
+                lane_one(root, task, branch, who, desc, a.executor, ['--no-parse-check'] if a.no_parse_check else [])
             lock = take_lock(folder)
             close_batch(root, folder, a.affected, a.cloud)
             return 0
+        if a.who or a.desc:
+            raise RuntimeError('--who、--desc 只配 --lane／--queue')
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')
