@@ -36,5 +36,5 @@
 
 ## 本分支提交
 
-- 切片：新源剑道争锋 10 个守层者与死神觉醒 6 个事件进 keepEvents
+- 61e754f4 切片：新源剑道争锋 10 个守层者与死神觉醒 6 个事件进 keepEvents
 - a14eb06a 新专项 xiyou_newsrc_boss_events
