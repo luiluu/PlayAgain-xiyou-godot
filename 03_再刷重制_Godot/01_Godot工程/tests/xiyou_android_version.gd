@@ -1,7 +1,7 @@
 extends Node
 ## 安卓版本号按开发编号生成（cc 平台 DZ 2026-11-06，O-216·安卓版本号，开关 XAndroidVersion.AUTO）。
 ## 导出插件 addons/xiyou_export 用它覆盖 version/code、version/name；真导出由 发行入口冒烟.py --platform android 查。
-## 另含 Mac／Windows 的 XDesktopVersion（cc 平台 EC 2026-11-06，O-待定·桌面版本号）；真导出由 发行入口冒烟.py（mac／windows）查。
+## 另含 Mac／Windows 的 XDesktopVersion（cc 平台 EC 2026-11-06，O-217·桌面版本号）；真导出由 发行入口冒烟.py（mac／windows）查。
 var results := []
 
 

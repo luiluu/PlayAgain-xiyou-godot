@@ -1,7 +1,7 @@
 @tool
 class_name XDesktopVersion
 extends RefCounted
-## Mac 和 Windows 发行包的版本号按开发编号生成（cc 平台 EC 2026-11-06，O-待定·桌面版本号；做法照安卓的 XAndroidVersion）：
+## Mac 和 Windows 发行包的版本号按开发编号生成（cc 平台 EC 2026-11-06，O-217·桌面版本号；做法照安卓的 XAndroidVersion）：
 ## 预设里 Windows 一直是 0.0.0.0、Mac 没填（Info.plist 是 Godot 默认的 1.0），exe「属性→详细信息」和 Mac「显示简介」
 ## 看不出是哪一版。导出时改成跟安卓一样的「0.<开发编号>」：
 ##   Windows：file_version、product_version＝「0.<号>.0.0」（Windows 要四段数字）
