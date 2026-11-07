@@ -151,6 +151,25 @@ func _run() -> void:
 	await frames(2)
 	touch(0, Vector2(640, 200), false)
 	check("tap_stops_catch_up", not platform.is_catching_up())
+	# Codex 报告第 6 项（平台 EH）：补跑自然耗尽要恢复倍速——旧代码先把剩余减到 0 以下、stop 又以「剩余>0」判断在补跑，直接返回，一直八倍速
+	platform.start_catch_up(1.0)
+	platform._process(2.0)
+	check("catch_up_natural_end_restores", not platform.is_catching_up() and Engine.time_scale == 1.0
+		and Engine.physics_ticks_per_second == 60 and Engine.max_physics_steps_per_frame == 8,
+		[Engine.time_scale, Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame])
+	# 自然耗尽后再补跑一次：存下的「原始设置」不能是八倍速
+	platform.start_catch_up(1.0)
+	platform._process(2.0)
+	check("catch_up_twice_natural_end_restores", Engine.time_scale == 1.0 and Engine.physics_ticks_per_second == 60, [Engine.time_scale, Engine.physics_ticks_per_second])
+	# 补跑中又补跑（续时）：不重存原始设置，停下回到 1 倍
+	platform.start_catch_up(5.0)
+	platform.start_catch_up(5.0)
+	check("catch_up_repeat_extends", platform.is_catching_up() and is_equal_approx(platform.catch_up_left(), 5.0))
+	platform._process(2.0)
+	platform.stop_catch_up()
+	check("catch_up_repeat_stop_restores", not platform.is_catching_up() and Engine.time_scale == 1.0 and Engine.physics_ticks_per_second == 60, [Engine.time_scale])
+	platform.stop_catch_up()
+	check("catch_up_stop_twice_harmless", Engine.time_scale == 1.0)
 	# O-201 回退：关掉后台挂机就不补跑
 	XPlatform.BACKGROUND_IDLE = false
 	platform.on_paused(0)

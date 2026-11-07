@@ -30,6 +30,9 @@ signal catch_up_changed(active: bool)
 var _paused_at_msec := -1
 var _paused_idle := false
 var _catch_up_left := 0.0
+## 补跑中（平台 EH，Codex 报告第 6 项）：活动与否单独记，不拿剩余秒数判断——自然耗尽时剩余先减到 0 以下，
+## 旧代码 stop 以为没在补跑、直接返回，倍速一直不恢复。
+var _catch_up_active := false
 var _saved_engine := {}
 var _keep_on := false
 
@@ -221,7 +224,7 @@ func on_resumed(now_msec := Time.get_ticks_msec()) -> float:
 
 
 func is_catching_up() -> bool:
-	return _catch_up_left > 0.0
+	return _catch_up_active
 
 
 ## 按 CATCH_UP_SPEED 倍速跑 seconds 秒游戏时间（物理帧率、time_scale 一起乘，同测试快进的做法）。
@@ -233,6 +236,7 @@ func start_catch_up(seconds: float) -> void:
 		Engine.physics_ticks_per_second = 60 * CATCH_UP_SPEED
 		Engine.max_physics_steps_per_frame = 8 * CATCH_UP_SPEED
 		Engine.time_scale = float(CATCH_UP_SPEED)
+		_catch_up_active = true
 		catch_up_changed.emit(true)
 	_catch_up_left = seconds
 
@@ -240,6 +244,7 @@ func start_catch_up(seconds: float) -> void:
 func stop_catch_up() -> void:
 	if not is_catching_up():
 		return
+	_catch_up_active = false
 	_catch_up_left = 0.0
 	Engine.physics_ticks_per_second = int(_saved_engine.get("tps", 60))
 	Engine.max_physics_steps_per_frame = int(_saved_engine.get("steps", 8))
