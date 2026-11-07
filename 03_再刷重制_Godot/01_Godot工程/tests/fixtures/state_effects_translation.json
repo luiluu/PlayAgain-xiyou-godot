@@ -2083,5 +2083,67 @@
       "state": 2545,
       "note": "<Custom Confirm Effect>\n// Check if the user is an actor\nif (user.isActor()) {\n  // Make an empty pool for ranged weapon types.\n  var rangedTypes = [];\n  // Insert the ranged weapon TYPE ID's here.\n  rangedTypes.push(11);\n  // Get the user's first weapon.\n  var weapon = user.weapons()[0];\n  // Check if the weapon exists and if this action is an attack.\n  if (weapon && this.isAttack()) {\n    // Check if the ranged pool contains the current weapon's weapon type ID.\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      // If it does, add the bonus damage.\n      value += Math.ceil(value * 0.01);\n    }\n  }\n}\n</Custom Confirm Effect>"
     }
+  ],
+  "newsrc6": [
+    {
+      "state": 2720,
+      "note": "<Custom Remove Effect>\n//移除状态时触发\nuser.gainHp(-user.mhp);\nuser.startDamagePopup();\nuser.clearResult();\n</Custom Remove Effect>\n\n<Custom Leave Effect>\n//状态自然消失时触发\nuser.gainHp(-user.mhp);\nuser.startDamagePopup();\nuser.clearResult();\n</Custom Leave Effect>\n"
+    },
+    {
+      "state": 2721,
+      "note": "\n<Custom Confirm Effect>\nif (this.isHpEffect() && value > 0) {\ntarget.gainHp(-Math.ceil(user.atk * 45));\ntarget.startDamagePopup();\n}\n</Custom Confirm Effect>"
+    },
+    {
+      "state": 2723,
+      "note": "<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (user.isActor()) {\n  var rangedTypes = [];\n  rangedTypes.push(2);\n  var weapon = user.weapons()[0];\n  if (weapon && this.isHpEffect()) {\n    if (rangedTypes.contains(weapon.wtypeId)) {\n      $gameVariables.setValue(2,$gameVariables.value(2) + 150);\n      $gameVariables.setValue(3,$gameVariables.value(3) + 0);\n    }\n  }\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 2724,
+      "note": "<Custom Confirm Effect>\n//确认命中但未造成伤害时触发\nif (this.isHpEffect() && value > 0) {\n  $gameVariables.setValue(2,$gameVariables.value(2) + 300);\n  $gameVariables.setValue(3,$gameVariables.value(3) + 0);\n}\n</Custom Confirm Effect>\n"
+    },
+    {
+      "state": 2747,
+      "note": "<Permanent>\n<Custom React Effect>\n//被确认命中但未造成伤害时触发\n$gameVariables.setValue(1566,this.item().id);\nuser.addState(2748);\nif ($gameVariables.value(1566) == $gameVariables.value(1565)) {\n  value=0;\n}\n</Custom React Effect>\n\n<ClaudeShuangSource:2153>"
+    },
+    {
+      "state": 2748,
+      "note": "<Custom Leave Effect>\n//状态自然消失时触发\n$gameVariables.setValue(1565,$gameVariables.value(1566));\n</Custom Leave Effect>\n<ClaudeShuangSource:2154>"
+    },
+    {
+      "state": 2750,
+      "note": "<Permanent>\n<Custom React Effect>\n  value=0;\n</Custom React Effect>\n<ClaudeShuangSource:2156>"
+    },
+    {
+      "state": 2751,
+      "note": "<Permanent>\n<Custom React Effect>\n  value=0;\n</Custom React Effect>\n<ClaudeShuangSource:2157>"
+    },
+    {
+      "state": 2771,
+      "note": "<Custom Apply Effect>\nif (user.isActor()) {\nvar baseName = user.actor() ? user.actor().battlerName : '';\nuser._prevBattlerName = user._prevBattlerName || user._battlerName || baseName;\nuser.setBattlerImage('bjtc1');\nuser.refresh();\n}\n</Custom Apply Effect>\n<Custom Remove Effect>\nif (user.isActor()) {\nvar forms = {2771:'bjtc1',2772:'cjbjt2',2773:'cjbjt3',2774:'clbjt'};\nvar remaining = [2771,2772,2773,2774].filter(function(id) { return user.isStateAffected(id); });\nif (user._battlerName === forms[2771] || !user._battlerName) {\n  if (remaining.length) {\n    user.setBattlerImage(forms[Math.max.apply(null, remaining)]);\n  } else {\n    user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : ''));\n    user._prevBattlerName = undefined;\n  }\n}\nuser._priorityBattlerName = undefined;\nuser.refresh();\n}\n</Custom Remove Effect>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 1.5);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>\n<Port1227Source:1671>"
+    },
+    {
+      "state": 2772,
+      "note": "<Custom Apply Effect>\nif (user.isActor()) {\nvar baseName = user.actor() ? user.actor().battlerName : '';\nuser._prevBattlerName = user._prevBattlerName || user._battlerName || baseName;\nuser.setBattlerImage('cjbjt2');\nuser.refresh();\n}\n</Custom Apply Effect>\n<Custom Remove Effect>\nif (user.isActor()) {\nvar forms = {2771:'bjtc1',2772:'cjbjt2',2773:'cjbjt3',2774:'clbjt'};\nvar remaining = [2771,2772,2773,2774].filter(function(id) { return user.isStateAffected(id); });\nif (user._battlerName === forms[2772] || !user._battlerName) {\n  if (remaining.length) {\n    user.setBattlerImage(forms[Math.max.apply(null, remaining)]);\n  } else {\n    user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : ''));\n    user._prevBattlerName = undefined;\n  }\n}\nuser._priorityBattlerName = undefined;\nuser.refresh();\n}\n</Custom Remove Effect>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 2.4);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>\n<Port1227Source:1672>"
+    },
+    {
+      "state": 2773,
+      "note": "<Custom Apply Effect>\nif (user.isActor()) {\nvar baseName = user.actor() ? user.actor().battlerName : '';\nuser._prevBattlerName = user._prevBattlerName || user._battlerName || baseName;\nuser.setBattlerImage('cjbjt3');\nuser.refresh();\n}\n</Custom Apply Effect>\n<Custom Remove Effect>\nif (user.isActor()) {\nvar forms = {2771:'bjtc1',2772:'cjbjt2',2773:'cjbjt3',2774:'clbjt'};\nvar remaining = [2771,2772,2773,2774].filter(function(id) { return user.isStateAffected(id); });\nif (user._battlerName === forms[2773] || !user._battlerName) {\n  if (remaining.length) {\n    user.setBattlerImage(forms[Math.max.apply(null, remaining)]);\n  } else {\n    user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : ''));\n    user._prevBattlerName = undefined;\n  }\n}\nuser._priorityBattlerName = undefined;\nuser.refresh();\n}\n</Custom Remove Effect>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 3.2);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>\n<Port1227Source:1673>"
+    },
+    {
+      "state": 2774,
+      "note": "<Custom Apply Effect>\nif (user.isActor()) {\nvar baseName = user.actor() ? user.actor().battlerName : '';\nuser._prevBattlerName = user._prevBattlerName || user._battlerName || baseName;\nuser.setBattlerImage('clbjt');\nuser.refresh();\n}\n</Custom Apply Effect>\n<Custom Remove Effect>\nif (user.isActor()) {\nuser.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : ''));\nuser._priorityBattlerName = undefined;\nuser._prevBattlerName = undefined;\nuser.refresh();\nuser.addState(1);\n}\n</Custom Remove Effect>\nThe Truthseeker is a passive ability from Final Fantasy Record Keeper. When the user of the passive has a sword-type weapon equipped, the user will deal more damage overall. Here’s how to recreate the effect in RPG Maker MV!\n\nYou can grab the copy/paste code here: Insert the following Lunatic Mode code into your passive state’s notebox. Change the values in red to reflect your game’s settings.\n\n<Custom Passive Condition>\n// Set the default condition to false.\ncondition = false;\n// Check if the party is in battle.\nif ($gameParty.inBattle()) {\n  // Check if the user is an actor.\n  if (user.isActor()) {\n    // Get the sword weapon-type ID\n    var swordTypeId = 2;\n    // get the user's currently equipped weapons.\n    var weapons = user.weapons();\n    // Loop through each weapon\n    for (var i = 0; i < weapons.length; ++i) {\n      // Get the currently looped weapon\n      var weapon = weapons[i];\n      // Check if the weapon exists and if the weapon's type is a sword\n      if (weapon && weapon.wtypeId === swordTypeId) {\n        // Set the condition to true\n        condition = true;\n      }\n    }\n  }\n}\n</Custom Passive Condition>\n\n<Custom Confirm Effect>\n// Check if the action dealt HP damage\nif (this.isHpEffect() && value > 0) {\n  // Calculate the amount of bonus damage dealt\n  var bonus = Math.ceil(value * 5.0);\n  // Add that to the finalized damage\n  value += bonus;\n}\n</Custom Confirm Effect>\n\n\n<Port1227Source:1674>"
+    },
+    {
+      "state": 2775,
+      "note": "<Custom React Effect>\n$gameTemp.reserveCommonEvent(1721);\nif(this.isHpEffect() && value > 0) {\nif($gameVariables.value(1586)>= 10) {\n  value = Math.ceil(value * 0);\n}\n}\n</Custom React Effect>\n<Port1227Source:1676>"
+    },
+    {
+      "state": 2776,
+      "note": "<Custom React Effect>\n$gameTemp.reserveCommonEvent(1722);\n</Custom React Effect>\n<Port1227Source:1677>"
+    },
+    {
+      "state": 2777,
+      "note": "<Custom Confirm Effect>\nif(this.isHpEffect() && value > 0 ) {\n  // ...set the bonus damage to 设定增益数值\n  var finalRate = 1.5*$gameVariables.value(1543)\n  value += Math.ceil(value * finalRate);\n}\n</Custom Confirm Effect>\n<Port1227Source:1678>"
+    }
   ]
 }

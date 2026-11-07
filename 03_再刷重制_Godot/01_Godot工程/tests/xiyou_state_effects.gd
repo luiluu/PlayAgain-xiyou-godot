@@ -360,6 +360,12 @@ func _run() -> void:
 	check("effect2.oracle_present", cases.has("effect2.blocks"))
 	if cases.has("effect2.blocks"):
 		_effect_blocks(cases["effect2.blocks"].observed, 4032, 56, "effect2")
+	check("effect3.oracle_present", cases.has("effect3.blocks"))
+	if cases.has("effect3.blocks"):
+		_effect_blocks(cases["effect3.blocks"].observed, 2304, 32, "effect3")
+	check("newsrc6.oracle_present", cases.has("newsrc6.blocks"))
+	if cases.has("newsrc6.blocks"):
+		_newsrc6_blocks(cases["newsrc6.blocks"].observed)
 	check("hook.oracle_present", cases.has("hook.blocks"))
 	if cases.has("hook.blocks"):
 		_hook_blocks(cases["hook.blocks"].observed)
@@ -890,6 +896,9 @@ func _effect_blocks(o: Dictionary, want_rows: int, want_applies: int, tag: Strin
 		var extra: Dictionary = row.get("x", {})
 		if extra.has("v206"):
 			s.set_variable(206, float(extra.v206))
+		for k in extra.get("vars", {}):  # newsrc6：参照每行先把 o.vars 清零再设 x.vars
+			s.set_variable(int(k), float(extra.vars[k]))
+		XStateEffects._reserves.clear()
 		var f: Dictionary = row.before
 		var a := ValueBattler.new()
 		a.values = {"mhp": float(f.amhp), "mmp": float(f.ammp), "atk": float(f.aatk), "mat": float(f.amat)}
@@ -920,6 +929,12 @@ func _effect_blocks(o: Dictionary, want_rows: int, want_applies: int, tag: Strin
 		var right := {"value": float(row.got), "ahp": float(row.a.hp), "amp": float(row.a.mp), "atp": float(row.a.tp), "ehp": float(row.e.hp), "emp": float(row.e.mp), "etp": float(row.e.tp),
 			"ashield": float(row.a.shield), "eshield": float(row.e.shield), "xmx": row.e.xmx, "astates": _sorted(row.a.states), "estates": _sorted(row.e.states),
 			"draws": int(row.draws), "pops": want_pops, "v": float(row.vars[0])}
+		if o.has("vars"):
+			left.v = o.vars.map(func(v): return s.variable(int(v)))
+			right.v = row.vars.map(func(v): return float(v))
+		if row.has("reserves"):
+			left["reserves"] = XStateEffects.take_reserves().map(func(x): return int(x))
+			right["reserves"] = row.reserves.map(func(x): return int(x))
 		for name in ["ahp", "amp", "ehp", "emp"]:  # 参照测量已按 6 位小数取整（host.cjs round）；小数血量（1407 按当前血 0.15%）这边按同样位数比
 			left[name] = "%.6f" % float(left[name])
 			right[name] = "%.6f" % float(right[name])
@@ -972,8 +987,10 @@ func _effect_apply(index: int, row: Dictionary, tag := "effect") -> void:
 	var r := logic.apply(a, XDB.rec("Skills", 1), e)
 	var label := "%s.apply.%d" % [tag, index]
 	var info := [sid, row.phase, row.shield, row.low]
-	check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
-	check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
+	# 2721（newsrc6）额外扣 atk×45：参照敌人生命加了 1e9 打不死，这边敌人是原值会被打死，满血行只比掉血方向
+	if not (sid == 2721 and not bool(row.low)):
+		check(label + ".e_states", _sorted(e.state_ids) == _sorted(row.e.states), [info, row.e.states, e.state_ids])
+		check(label + ".e_dead", e.is_dead() == bool(row.e.dead), [info, row.e.dead, e.is_dead()])
 	check(label + ".xmx", e.state_data.get("_xmx") == row.e.xmx, [info, row.e.xmx, e.state_data.get("_xmx")])
 	check(label + ".var", s.variable(1174) == float(row.vars[0]), [info, row.vars, s.variable(1174)])
 	check(label + ".e_hp_dir", signf(e.hp - e_hp) == signf(float(row.e.hp) - float(row.before.ehp)), [info, row.before.ehp, row.e.hp, e_hp, e.hp])
@@ -984,6 +1001,77 @@ func _effect_apply(index: int, row: Dictionary, tag := "effect") -> void:
 	if sid == 1061:
 		check(label + ".user_died", bool(r.user_died) and bool(row.a.dead) and int(row.collapses) == 1, [info, r.user_died, row.a.dead, row.collapses])
 	check(label + ".result_sign", signf(float(r.result.hpDamage)) == signf(float(row.e.result.hpDamage)), [info, row.e.result.hpDamage, r.result.hpDamage])
+
+
+## newsrc6：2723 首把武器、2720／2748 移除与自然消失、超赛 2771～2774 换装叠加与超蓝倒下。
+func _newsrc6_blocks(o: Dictionary) -> void:
+	XStateEffects.observer = Callable()
+	for pair in [[2720, "remove"], [2720, "leave"], [2723, "confirm"], [2748, "leave"], [2771, "apply"], [2771, "remove"], [2774, "remove"]]:
+		var effects: Array = XDB.rec("States", pair[0]).effects.filter(func(e): return e.phase == pair[1])
+		check("newsrc6.translated.%d.%s" % pair, effects.size() == 1 and effects[0].op != "js", effects)
+	for index in range(o.weapon.size()):
+		var row: Dictionary = o.weapon[index]
+		XState.current = XState.new_game_blank()
+		XState.current.set_variable(2, 5.0)
+		XState.current.set_variable(3, 4.0)
+		var u: XBattler
+		if row.who == "a":
+			var actor := WeaponActor.new()
+			actor.setup(1)
+			actor.weapon_type = int(row.wt)
+			u = actor
+		else:
+			u = _plain()
+		var item := {"id": 1, "damage": {"type": int(row.dmgType), "elementId": 0}}
+		var got := XStateEffects.run_one("confirm", u, XDB.rec("States", 2723), _action_ctx(u, _plain(), 99.0, item))
+		var left := [got, XState.current.variable(2), XState.current.variable(3)]
+		check("newsrc6.weapon.%d" % index, left == [float(row.got), float(row.v2), float(row.v3)], {"row": row, "got": left})
+	for index in range(o.life.size()):
+		var row: Dictionary = o.life[index]
+		XEnemy.force_roll = 100.0
+		var s := XState.new_game(3, 1, [8])
+		s.random_master = XRandomStream.hex64(4700 + index)
+		XState.current = s
+		var logic := ReviveLogic.new()
+		logic.elite_roll = 100.0
+		logic.setup(2, s)
+		var h: XBattler = logic.actors[0] if row.who == "a" else logic.enemies[0]
+		h.hp = h.mhp
+		h.add_state(int(row.sid))
+		s.set_variable(1565, 3.0)
+		s.set_variable(1566, 9.0)
+		var had := h.is_state_affected(int(row.sid))
+		if bool(row.leave):
+			h.remove_state_auto(int(row.sid))
+		else:
+			h.remove_state(int(row.sid))
+		var left := {"had": had, "hp0": h.hp == 0.0, "dead": h.is_dead(), "states": _sorted(h.state_ids), "v1565": s.variable(1565), "v1566": s.variable(1566)}
+		var right := {"had": bool(row.had), "hp0": float(row.after.hp) == 0.0, "dead": bool(row.after.dead), "states": _sorted(row.after.states), "v1565": float(row.v1565), "v1566": float(row.v1566)}
+		check("newsrc6.life.%d" % index, left == right, {"row": [row.sid, row.who, row.leave], "want": right, "got": left})
+	for index in range(o.costume.size()):
+		var row: Dictionary = o.costume[index]
+		var s := XState.new_game(3, 1, [8])
+		XState.current = s
+		if row.has("enemy"):
+			var enemy := _plain()
+			enemy.add_state(int(row.enemy))
+			enemy.remove_state(int(row.enemy))
+			check("newsrc6.costume_enemy.%d" % int(row.enemy), enemy.is_dead() == bool(row.after.dead) and _sorted(enemy.state_ids) == _sorted(row.after.states), [row, enemy.state_ids])
+			continue
+		var a: XActor = s.actor(1)
+		check("newsrc6.costume_base", str(a.data().get("battlerName", "")) == str(o.base), [a.data().get("battlerName"), o.base])
+		for k in range(row.steps.size()):
+			var step: Dictionary = row.steps[k]
+			var sid := int(str(step.step).substr(1))
+			if str(step.step).begins_with("+"):
+				a.add_state(sid)
+			else:
+				a.remove_state(sid)
+			var prev = a.state_data.get("_prevBattlerName")
+			var left := {"look": str(a.data().get("battlerName", "")), "prev": null if prev == null or str(prev) == "" else str(prev), "dead": a.is_dead(), "states": _sorted(a.state_ids)}
+			var right := {"look": str(step.battlerName), "prev": step.prev, "dead": bool(step.dead), "states": _sorted(step.states)}
+			check("newsrc6.costume.%d.%d" % [index, k], left == right, {"seq": row.seq, "want": right, "got": left})
+	XState.current = null
 
 
 ## 其它／回合行动钩子两族（rules5）。
