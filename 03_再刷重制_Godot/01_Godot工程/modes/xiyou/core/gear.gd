@@ -174,7 +174,7 @@ static func valid_affix(table: String, id: int) -> bool:
 ## 只跑一次：还原前把改动的字段整份存进 _affixRevert，有这个键的不再处理。只管武器（原版 _independentWeapons）。
 ## 开关同 EXCLUSIVE_V056（false＝v0.28，读档不还原）。
 static var last_affix_revert := {}
-## O-待定·读档还原只去专武词缀：false＝照 v0.62.12 原版整份换回底装备（同件其它词缀一起没了）
+## O-232·读档还原只去专武词缀：false＝照 v0.62.12 原版整份换回底装备（同件其它词缀一起没了）
 static var REVERT_KEEP_OTHER_AFFIXES := true
 const AFFIX_REVERT_FIELDS := ["name", "baseName", "note", "description", "traits", "params", "price", "meta", "yep", "affixIds", "equipment"]
 
