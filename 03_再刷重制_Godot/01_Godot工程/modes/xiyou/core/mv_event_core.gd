@@ -375,7 +375,7 @@ func _execute(c: Dictionary):
 				v.bgm = (p[1] as Dictionary).duplicate() if p[1] is Dictionary else null
 		202:
 			# 设置载具位置 [载具, 0 直接／1 变量, 图, x, y]（Game_Vehicle.setLocation）：楼层回大厅、CE10／240／1002、
-			# 神魔战场门把飞艇停到 Map069／186。只改位置，朝向不动；上下与飞行还没做（甲二）
+			# 神魔战场门把飞艇停到 Map069／186。只改位置，朝向不动（上下与飞行在 XMapScene.get_on_vehicle 等）
 			var v := state().vehicle(int(p[0]))
 			if not v.is_empty():
 				var direct := int(p[1]) == 0
@@ -906,7 +906,7 @@ func _condition(p: Array) -> bool:
 			skipped.append({"code": 111, "text": "脚本条件 " + code.left(60)})
 			return false
 		13:
-			# 载具 [13, 0/1/2]：$gamePlayer.vehicle() === $gameMap.vehicle(p1)，走路时为 false（重制还不能上载具，甲二）
+			# 载具 [13, 0/1/2]：$gamePlayer.vehicle() === $gameMap.vehicle(p1)，走路时为 false（乘飞艇时 vehicle_type 为 airship，见 XMapScene.get_on_vehicle）
 			var i := int(p[1])
 			return i >= 0 and i < XState.VEHICLE_TYPES.size() and s.vehicle_type == XState.VEHICLE_TYPES[i]
 	var env = _condition_env(p)
