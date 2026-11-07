@@ -1,7 +1,7 @@
 # 交付：cc/ui-gaps3
 
 - 车道／工作者：B 界面／界面三期 FD3（cc）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点（原版 v0.62.12 全部系统页／菜单／弹窗对重制）
 
@@ -61,8 +61,12 @@
 ## 验证
 
 - `语法检查.py` 通过；`工具回归.py` 全过（69 秒）。
-- 选测走云端（`检查.sh --affected main --cloud`，`CHECK_CLOUD_NO_UPLOAD=1`）：待写
+- 选测走云端：
+  - 72b8e823（`检查.sh --affected main --cloud`，`CHECK_CLOUD_NO_UPLOAD=1`，运行 42419521088）：198 个场景 196 过；挂 `xiyou_splash_autosave`（没上传产物，云端快照里没有新加的三张开场图）、`xiyou_input_handled`（开场图直接调了 set_input_as_handled，守卫要求走 `XKeyMap.handled`）。其余守卫、文档检查全过。
+  - 改后本机重跑 `xiyou_export.py --app v0.62.12`（增量写 5 个文件，三张图进 generated），`云端选测.py run --base 72b8e823`（带上传，运行 42422903942）：2 个场景全过。
+- 合并提醒：切片 `xiyou_slice.json` 加了 3 行图片（总装同意），可能和 cc/wukong-floor4 冲突，由总装合并时解；合并后要重跑导出才有这三张图（没有图时开场图直接跳过，不会卡）。
 
 ## 本分支提交
 
 - 72b8e823 开场图、存读档小字、切片三张图、专项
+- e3bcc404 开场图按键走 XKeyMap.handled；.uid；交付单
