@@ -1,7 +1,7 @@
 # 交付：cc/platform-fix3
 
 - 车道／工作者：平台（cc，项目线程「完成再刷西游Godot引擎重制」；EJ 单，来源审查第 51 期 P2-1）
-- 状态：进行中
+- 状态：可合并
 - 基于：main ab80ca89（dev.391，含 input1）
 
 ## 变更记录草稿
@@ -33,4 +33,4 @@
 
 - `xiyou_pause_save` 40/40（本机直接跑）；反向：把 map_scene／mv_interpreter 还原，encounter_checkpoint_saves、event_battle_checkpoint_saves 挂 `skip:event`。
 - `语法检查.py` 605 个 .gd 0 问题；`事件空绿扫描.py --check` 55 例均在基线内。
-- 云端选测：待写
+- 云端选测通过：提交 d39455afd1，148 个场景、4 片（基准 ab80ca89），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42333314575
