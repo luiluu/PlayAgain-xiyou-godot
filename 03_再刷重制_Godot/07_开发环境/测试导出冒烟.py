@@ -103,8 +103,13 @@ class WindowsLayoutTests(unittest.TestCase):
             exe.with_name('再刷重制_验收.console.exe').write_bytes(fake_pe(subsystem=3))
             probs = smoke.windows_layout(exe)[0]
             self.assertTrue(any('图标' in p for p in probs) and any('fileVersion' in p for p in probs), probs)
-            exe.write_bytes(fake_pe(resources=True))
+            # 版本号按开发编号（XDesktopVersion 开着时导出改写成 0.N.0.0；关着才比预设的 0.0.0.0，平台 FB）
+            v = smoke.expected_desktop_version('windows') or '0.0.0.0'
+            exe.write_bytes(fake_pe(resources=True, version=v))
             self.assertEqual(smoke.windows_layout(exe)[0], [])
+            if v != '0.0.0.0':
+                exe.write_bytes(fake_pe(resources=True))  # 预设占位 0.0.0.0 没被改写＝版本号没生效
+                self.assertEqual(len(smoke.windows_layout(exe)[0]), 2)
             exe.write_bytes(fake_pe(resources=True, version='1.2.3.4'))
             self.assertEqual(len(smoke.windows_layout(exe)[0]), 2)
             exe.write_bytes(fake_pe(resources=True))

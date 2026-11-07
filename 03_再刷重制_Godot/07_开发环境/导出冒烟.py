@@ -153,10 +153,13 @@ def windows_layout(exe: Path, debug: bool = True):
     preset = PRESETS['windows'] if debug else 'Windows 发行'
     if not res['icon']:
         problems.append('exe 里没有图标（RT_GROUP_ICON）')
+    # 版本号：XDesktopVersion（平台 EC）导出时按开发编号改写成 0.N.0.0，预设里的 0.0.0.0 只是占位；开关关着才比预设
+    # （平台 FB 2026-11-07：云端导出冒烟 Windows 那条一直拿 0.398.0.0 去比预设 0.0.0.0 报失败）
+    auto = expected_desktop_version('windows')
     for key, opt in (('fileVersion', 'application/file_version'), ('productVersion', 'application/product_version')):
-        want = preset_template(preset, opt)
+        want = auto if auto else preset_template(preset, opt)
         if want is not None and res[key] != str(want):
-            problems.append(f'{key} 是 {res[key]}，预设是 {want}')
+            problems.append(f'{key} 是 {res[key]}，' + (f'按开发编号应是 {want}' if auto else f'预设是 {want}'))
     return problems, info
 
 
