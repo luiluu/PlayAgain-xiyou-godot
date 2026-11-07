@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_walk_speed.gd" id="1"]
+
+[node name="XiyouWalkSpeed" type="Node"]
+script = ExtResource("1")
