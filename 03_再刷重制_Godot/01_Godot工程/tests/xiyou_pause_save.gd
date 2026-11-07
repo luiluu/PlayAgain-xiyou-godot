@@ -146,7 +146,7 @@ func _run() -> void:
 	title_page.queue_free()
 	await frames(1)
 
-	# Codex 报告第 5 项（平台 EH，O-待定·自动存档检查点）：切后台碰上菜单／战斗时跳过，杀进程就丢进度；
+	# Codex 报告第 5 项（平台 EH，O-221·自动存档检查点）：切后台碰上菜单／战斗时跳过，杀进程就丢进度；
 	# 改成进主菜单、开战前各存一份安全检查点（地图上、事件没在跑时；不存战斗中间态）
 	check("checkpoint_default_on", XAutoSave.CHECKPOINTS)
 	_fresh()

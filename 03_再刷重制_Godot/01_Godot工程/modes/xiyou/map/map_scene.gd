@@ -1028,7 +1028,7 @@ func play_me(audio: Dictionary) -> void:
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
-	XAutoSave.checkpoint(self, "battle")  # 开战前的安全检查点（O-待定·自动存档检查点，只在手机上、事件没在跑时）
+	XAutoSave.checkpoint(self, "battle")  # 开战前的安全检查点（O-221·自动存档检查点，只在手机上、事件没在跑时）
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
 	me.stop()
 	bgm.stream_paused = true
@@ -1619,7 +1619,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	# 挂机中不能呼叫菜单（Scene_Map.isMenuCalled）
 	if busy or _menu_open or XHangUp.is_active(XState.current):
 		return
-	XAutoSave.checkpoint(self, "menu")  # 进主菜单的安全检查点（O-待定·自动存档检查点）
+	XAutoSave.checkpoint(self, "menu")  # 进主菜单的安全检查点（O-221·自动存档检查点）
 	_menu_open = true
 	var owner := XState.current
 	XSound.system(1)  # Scene_Map.callMenu：SoundManager.playOk
