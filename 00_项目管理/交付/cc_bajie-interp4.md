@@ -18,6 +18,12 @@
 ## 交接板
 
 - 下一步：剩 4491 个（簇 1645），简单门 3967 个多是往轮试过被剪的（参照里也走不到）；开不了的：整页没进 246（多是 119 跳标签进来的段，如 m116 等 19 层「见面礼」选单要两层 answers）、111 门 230（敌人条件 122 只在战斗、角色状态 6、载具 41）、411 26、脚本条件 22；对照宿主问题：m4e60p1 自定义单抽、m4e71p0 更新日志。
+- **五期接续要点**（新会话从本分支末端切 cc/bajie-interp5）：
+  1. 起点：`godot --headless --path 01_Godot工程 tests/xiyou_event_compare.tscn -- --coverage=<cov.json>`（约 11 分钟，用 `长任务.py start`）；写法键取 `事件写法覆盖.analyse` 全部首词，`事件写法覆盖.py --coverage <cov> --missed <键> --missed-json m.json` 应得 4491。
+  2. 出变体：`事件祖先预设.py --missed-json m.json --tag i6 --min 1 --skip-bad --targets t.json`，每个往轮 event_presets（`git log --all -- 03_转换工具/event_presets.json` 各版本导出）都传 `--tried-presets`（74 个以上，zsh 不拆词，用 python 拼参数）。
+  3. 补跑：`XIYOU_STATE_SHARDS=2 python3 07_开发环境/补跑事件状态探针.py`（增量，不加 --force）；再跑对照带 --coverage。
+  4. 剪：EVENT_SKIPPED 新增、oracleErrors 里的变体手删；`事件祖先预设.py --prune --cur cov --tag i6 --targets t.json --states generated/oracle/event_states.json`；再跑 `事件空绿扫描.py --check`，把「预设没挡住的那层条件」的也删；补跑探针后对照 `--update-baseline`、覆盖表 `--out 04_验证/事件写法覆盖.md`。
+  5. 值得做的新能力（按收益）：①整页没进 246：多是 119 跳到 115 后面标签的段（m116 等 19 层「见面礼选择」），要两层 answers（外层选项＋标签段里的选单），`missed` 把门记成「整页没进」，可让它沿 119→118 认门；②111 角色状态（子类 6）约 85：预设加 `actors.N.states`（参照 addState、重制同步各加一键）；③载具 41、敌人条件 122（只在战斗，可剪或归 battle_event_runner）；④对照宿主：m4e60p1 自定义单抽、m4e71p0 更新日志。
 - 用户试玩说明：无
 - 需要用户决定：无
 
