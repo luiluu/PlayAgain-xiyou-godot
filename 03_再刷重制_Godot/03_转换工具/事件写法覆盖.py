@@ -111,9 +111,37 @@ def analyse(executed: set):
 GATE = {111, 402, 403, 411, 601, 602, 603, 413, 112}
 
 
-def gate_of(lst, i, executed, loc):
+def top_of(lst, i):
+    """i 所在的顶层（缩进 0）那条指令的下标（i 自己在顶层时就是 i）。"""
+    ind = int(lst[i].get('indent', 0))
+    j = i
+    while j > 0 and ind > 0:
+        j -= 1
+        if int(lst[j].get('indent', 0)) < ind:
+            ind = int(lst[j].get('indent', 0))
+    return j
+
+
+def label_jump(lst, i):
+    """i 在顶层标签段里（前面最近的顶层 118 之后）时，跳进这一段的 119 的下标；不在标签段或没有段外的跳转时返回 None（八戒 interp5）。
+    标签段多在 115 之后，只有 119 跳进来才走得到（m116 等「见面礼」：外层选项 119 跳到标签，标签段里再出选单）。"""
+    top = top_of(lst, i)
+    k = top
+    while k >= 0 and not (int(lst[k]['code']) == 118 and int(lst[k].get('indent', 0)) == 0):
+        k -= 1
+    if k < 0:
+        return None
+    name = str(lst[k]['parameters'][0])
+    end = k + 1
+    while end < len(lst) and not (int(lst[end]['code']) == 118 and int(lst[end].get('indent', 0)) == 0):
+        end += 1
+    jumps = [x for x, c in enumerate(lst) if int(c['code']) == 119 and str(c['parameters'][0]) == name and not (k <= x < end)]
+    return jumps[0] if jumps else None
+
+
+def gate_of(lst, i, executed, loc, depth=0):
     """挡住 i 的门：离它最近、本身执行到了的上层分支头；中间隔着没选中的选项（402／403 头没执行到）时，门是最外那个选项头。
-    整页没进返回 None。"""
+    整页没进返回 None。顶层没有执行到的头、又在标签段里时，沿跳进来的 119 往外找门（interp5）。"""
     ind = int(lst[i].get('indent', 0))
     j = i - 1
     choice = None
@@ -126,6 +154,10 @@ def gate_of(lst, i, executed, loc):
                 choice = j
             ind -= 1
         j -= 1
+    if choice is None and depth < 4:
+        x = label_jump(lst, i)
+        if x is not None and '%s:%d' % (loc, x) not in executed:
+            return gate_of(lst, x, executed, loc, depth + 1)
     return choice
 
 
@@ -252,6 +284,10 @@ def open_preset(lst, j, loc):
         return {'actors': {str(p[1]): {'armors': [int(p[3])]}}}
     if t == 4 and int(p[2]) == 4 and want:   # 角色装备了武器（八戒 DR w15：ce682 等）
         return {'actors': {str(p[1]): {'weapons': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 6 and want:   # 角色处于状态（八戒 interp5）：actors.N.states，两边 addState
+        return {'actors': {str(p[1]): {'states': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 6 and not want:   # 「否则（不在状态）」：新开局默认没有，空预设占位
+        return {'actors': {str(p[1]): {}}}
     if t == 4 and int(p[2]) in (3, 4) and not want:   # 「否则（没学会技能／没装备武器）」：新开局默认没有，空预设占位，走不到的会被剪掉
         return {'actors': {str(p[1]): {}}}
     if t == 4 and int(p[2]) == 5 and not want:   # 「否则（没装备）」：新开局默认没穿，空预设占位（角色本来就穿着的，目标走不到会被剪掉）

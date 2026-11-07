@@ -104,10 +104,41 @@ def trace_var(lst, j, p):
     return p
 
 
+def segments(lst, i, depth=0):
+    """i 的祖先链按标签跳转分段，从外到里：i 在顶层标签段里时，先是跳进来的 119 的链（递归），再是段里的链（八戒 interp5）。"""
+    outer = []
+    x = cov.label_jump(lst, i) if depth < 4 else None
+    if x is not None:
+        outer = segments(lst, x, depth + 1)
+    return outer + [chain(lst, i, None)]
+
+
 def synth(lst, first, loc):
-    """cluster 第一个实例 first 的祖先链合成预设；返回 (预设, 没法开的门数)。"""
+    """cluster 第一个实例 first 的祖先链合成预设；返回 (预设, 没法开的门数)。
+    跨标签跳转时（interp5）各段的选项应答按段先后接起来：外段选到 119 的应答在前，段里选单的应答在后。"""
     pre, bad = {}, 0
-    for j in chain(lst, first, loc):
+    answers = []
+    first402 = None
+    for heads in segments(lst, first):
+        seg = []
+        if first402 is None:
+            first402 = next((j for j in heads if int(lst[j]['code']) == 402), None)
+            if first402 is not None:
+                answers += answer_prefix(lst, first402, loc)   # 同页前面先问过的选单（cc 分段甲）
+        for j in heads:
+            if int(lst[j]['code']) == 402:
+                seg = cov.choice_path(lst, j)
+        answers += seg
+        bad += _merge_chain(pre, lst, heads, loc)
+    pre.pop('answers', None)
+    if answers:
+        pre['answers'] = answers
+    return _finish(pre, bad)
+
+
+def _merge_chain(pre, lst, heads, loc):
+    bad = 0
+    for j in heads:
         code = int(lst[j]['code'])
         if code in (111, 411, 402, 602, 603):   # 602／603 战斗结果门：battleResult（八戒 interp4）
             p = cov.open_preset(lst, j, loc)
@@ -119,11 +150,12 @@ def synth(lst, first, loc):
                 bad += 1   # 两道随机门要同一个位置抽不同的数
             else:
                 merge_into(pre, p)
+    return bad
+
+
+def _finish(pre, bad):
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
     # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
-    first402 = next((j for j in chain(lst, first, loc) if int(lst[j]['code']) == 402), None)
-    if first402 is not None and 'answers' in pre:
-        pre['answers'] = answer_prefix(lst, first402, loc) + pre['answers']
     if '_rand' in pre:   # 位置→随机数，排成序列，空位填 0.5
         r = pre.pop('_rand')
         pre['random_seq'] = [r.get(i, 0.5) for i in range(max(r) + 1)]
