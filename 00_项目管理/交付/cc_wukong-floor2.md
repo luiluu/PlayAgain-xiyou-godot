@@ -1,7 +1,7 @@
 # 交付：cc/wukong-floor2
 
 - 车道／工作者：A 内容·楼层／悟空（cc，协调转派：一护副本入口进切片）
-- 状态：进行中（等云端选测）
+- 状态：可合并
 - 说明：分支从 cc/wukong-floor1 末端切出，含 floor1 全部提交；floor1 没单独合并时合本分支即可（floor1 交付单的变更记录与交接板照登）。接手时分支从工作树 trusting-tereshkova 续到 sharp-kapitsa（线程只写自己的工作树）。
 
 ## 变更记录草稿
@@ -30,7 +30,7 @@
 
 - 同步 `--accept-additions`（合 main 后重跑）：只有 floor1 带来的新增用例，已接受（不登记）；`内容覆盖检查.py` 新问题 0、基线不变。
 - 本机：`xiyou_unlock_chain*` 4 片全过（239 秒；修前 4 片挂 `partN_forced_pages_as_known`）；`语法检查.py` 过。
-- 云端选测：（待填）
+- 云端选测 3bbd8506（基准 cafdbb4c，336 场景、14 片）全过。
 
 ## 本分支提交
 
