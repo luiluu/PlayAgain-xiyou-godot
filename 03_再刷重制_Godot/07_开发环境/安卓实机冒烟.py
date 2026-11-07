@@ -38,7 +38,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0}
+WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 75.0}
 
 
 class Report:
@@ -192,7 +192,9 @@ def key_runs(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Re
         v.unlink(missing_ok=True)
 
 
-AUTOSAVE_SEQ = 'accept,wait:3600'  # 开新游戏后在地图上等着（一分钟），中间由 adb 按 HOME 切后台
+# 开新游戏，再连按 40 次确认把开场剧情（Map001 自动事件，有对话和选项）点过去，最后在地图上等着，由 adb 按 HOME 切后台。
+# 开场没点完时 PAUSE_SAVE 是 skip:event，只记 INFO
+AUTOSAVE_SEQ = 'accept' + ',wait:30,accept' * 40 + ',wait:7200'
 
 
 def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work: Path, rep: Report) -> None:
@@ -206,7 +208,7 @@ def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work
     adb.run('logcat', '-c')
     adb.launch(pkg)
     v.unlink(missing_ok=True)
-    sleep('launch')
+    sleep('autosave')
     adb.key(KEY_HOME)
     sleep('home')
     log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)

@@ -49,7 +49,7 @@ def start():
         keys = [x.split('=', 1)[1] for x in args if x.startswith('--smoke-keys=')]
         if '--report-entry' in args and not keys:
             st['log'].append('11-07 10:00:00.500  %s  %s I godot   : AUTO_SAVE_PRESENT=%s' % (st['pid'], st['pid'], 'true' if st.get('auto') else 'false'))
-        if keys and keys[0] == 'accept,wait:3600':
+        if keys and keys[0].endswith('wait:7200'):
             st['autosave_run'] = True
         elif keys:
             seq = keys[0].split(',')
