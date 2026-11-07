@@ -33,6 +33,14 @@ static var SAVE_BUTTON := true
 static var SAVE_MAP_MENU_ONLY := true
 ## 测试用：当成当前场景。
 static var scene_override: Node = null
+## Codex 审查报告第 13 项（O-225）：按住虚拟键的连发。原先确定、取消、方向按住 24 帧后每 6 帧都再发一次「新按下」，
+## 商店、标题这类只认新按下（不认回显）的确认会被连按（按住确定买了一串）。现在：确定、取消按住不连发，松开再按才算第二次；
+## 方向的连发改成方向键的回显事件（is_echo() 为 true，节奏不变），页面认得出是连发；按着时换了场景，回显停下，要松开再按。
+## 回退开关 HOLD_REPEAT_ECHO = false：回到所有虚拟键按住都发「新按下」。
+static var HOLD_REPEAT_ECHO := true
+## 方向回显用的键（XKeyRepeat 看到带这个标记的回显就放行，不当成系统回显吞掉）。
+const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
+const REPEAT_META := &"xiyou_touch_repeat"
 
 ## 原版 limits：大小百分比与透明度的范围，步长 5。
 const LIMITS := {"stick": [70, 170], "buttons": [70, 160], "tools": [80, 140], "transparency": [0, 80]}
@@ -74,6 +82,7 @@ var _buttons := {}
 var _touches := {}
 var _dir := ""
 var _held := {}  # 动作名 → 按住的帧数
+var _held_scene := {}  # 动作名 → 按下时的场景（换了场景就不再连发）
 var _catch_label: Label
 
 
@@ -240,7 +249,7 @@ func _press(what: String, pos: Vector2) -> void:
 			var spec: Dictionary = BUTTONS[what]
 			if spec.has("action"):
 				_send_action(spec.action, true)
-				_held[spec.action] = 0
+				_hold(spec.action)
 			elif spec.has("key"):
 				_send_key(spec.key, true)
 			(_buttons[what] as Panel).modulate = Color(1.4, 1.4, 1.4)
@@ -289,7 +298,18 @@ func _set_dir(action: String) -> void:
 	_dir = action
 	if action != "":
 		_send_action(action, true)
-		_held[action] = 0
+		_hold(action)
+
+
+func _hold(action: String) -> void:
+	_held[action] = 0
+	_held_scene[action] = _current_scene()
+
+
+func _current_scene() -> Node:
+	if is_instance_valid(scene_override):
+		return scene_override
+	return get_tree().current_scene if is_inside_tree() else null
 
 
 func _send_action(action: String, pressed: bool) -> void:
@@ -316,6 +336,7 @@ func release_all() -> void:
 	for action in _held.keys():
 		_send_action(action, false)
 	_held.clear()
+	_held_scene.clear()
 
 
 func _physics_process(_delta: float) -> void:
@@ -324,7 +345,21 @@ func _physics_process(_delta: float) -> void:
 		var n: int = _held[action] + 1
 		_held[action] = n
 		if n >= REPEAT_WAIT and (n - REPEAT_WAIT) % REPEAT_INTERVAL == 0:
-			_send_action(action, true)
+			if not HOLD_REPEAT_ECHO:
+				_send_action(action, true)
+			elif DIR_KEYS.has(action) and _held_scene.get(action) == _current_scene():
+				_send_echo(DIR_KEYS[action])
+
+
+## 方向连发：方向键的回显（不改按键状态，is_action_pressed(动作, true) 认得到、is_echo() 为 true）
+func _send_echo(code: Key) -> void:
+	var e := InputEventKey.new()
+	e.keycode = code
+	e.physical_keycode = code
+	e.pressed = true
+	e.echo = true
+	e.set_meta(REPEAT_META, true)
+	Input.parse_input_event(e)
 
 
 func _process(_delta: float) -> void:

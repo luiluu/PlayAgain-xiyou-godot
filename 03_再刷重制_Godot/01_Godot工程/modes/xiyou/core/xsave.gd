@@ -35,7 +35,7 @@ static func save(slot: int) -> bool:
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	if not _write(path(slot), data):
 		return false
-	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-待定·仓库取出事务）
+	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
 	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
 	return true
@@ -209,6 +209,8 @@ static func valid_data(d) -> bool:
 			return false
 		if not row.equips.all(func(e): return e == null or _valid_gear(e)):
 			return false
+		if not XSaveCheck.actor_row(row):
+			return false
 	if not d.gear.all(_valid_gear):
 		return false
 	for id in d.party:
@@ -227,7 +229,8 @@ static func valid_data(d) -> bool:
 			if not d.party.has(id) or seen.has(int(id)):
 				return false
 			seen[int(id)] = true
-	return true
+	# from_dict 及读完就跑的包装实际读到的其余字段（审计第 10 项）：坏一处就整个不读，不留半个新局
+	return XSaveCheck.top(d)
 
 
 static func _valid_gear(e) -> bool:
