@@ -35,7 +35,7 @@ static func save(slot: int) -> bool:
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	if not _write(path(slot), data):
 		return false
-	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-待定·仓库取出事务）
+	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
 	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
 	return true
