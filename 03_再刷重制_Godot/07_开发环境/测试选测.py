@@ -337,6 +337,52 @@ class SelectTests(Fixture):
         self.assertEqual(sections['file'], str(TOOLS / 'xiyou_slice.json'))
 
 
+class EntryGroupTests(Fixture):
+    """tools83：modes/xiyou/entry.gd 原来没有规则，改它被判成整轮；现在归 entry 组，只跑入口、标题、发行版冒烟那一组。"""
+    ENTRY = PROJECT / 'modes/xiyou/entry.gd'
+    SCENES = ['xiyou_entry_release', 'xiyou_key_smoke', 'xiyou_reincarnation_entry', 'xiyou_save_page', 'xiyou_platform', 'xiyou_input_handled', 'xiyou_flow']
+
+    def setUp(self):
+        super().setUp()
+        self.put(self.ENTRY, 'extends Control\n')
+        self.put(PROJECT / 'modes/xiyou/entry.tscn', '[gd_scene]\n')
+        for name in self.SCENES:
+            self.scene(name, 'pass')
+        self.scene('xiyou_title_extra', 'const E = "res://modes/xiyou/entry.gd"')     # 只靠引用选进来
+        self.commit('entry')
+        self.base = self.g('rev-parse', 'HEAD')
+
+    def test_real_table_classifies_entry_files(self):
+        groups, rules = sel.load_table()
+        self.assertEqual(sel.classify(str(self.ENTRY), rules), 'entry')
+        self.assertEqual(sel.classify(str(PROJECT / 'modes/xiyou/entry.tscn'), rules), 'entry')
+        self.assertEqual(sel.classify(str(PROJECT / 'modes/xiyou/entry.gd.uid')[:-4], rules), 'entry')
+        self.assertEqual(sel.classify(str(PROJECT / 'modes/xiyou/other.gd'), rules), 'full')     # 只管 entry，不顺带放宽别的
+
+    def test_entry_change_selects_entry_scenes_not_full(self):
+        self.put(self.ENTRY, 'extends Control\n# changed\n')
+        s = self.pick()
+        self.assertFalse(s.get('full'), s)
+        names = {x[:-5] for x in s['scenes']}
+        for must in ['xiyou_entry_release', 'xiyou_key_smoke', 'xiyou_reincarnation_entry', 'xiyou_platform', 'xiyou_title_extra', 'ui_smoke', 'xiyou_event_compare']:
+            self.assertIn(must, names, must)
+        self.assertNotIn('xiyou_rules', names)
+        self.assertNotIn('xiyou_battle', names)
+
+    def test_entry_scene_file_change_also_narrow(self):
+        self.put(PROJECT / 'modes/xiyou/entry.tscn', '[gd_scene]\n# changed\n')
+        s = self.pick()
+        self.assertFalse(s.get('full'), s)
+        self.assertIn('xiyou_entry_release', {x[:-5] for x in s['scenes']})
+
+    def test_real_entry_scenes_exist(self):
+        tests = HERE.parent / '01_Godot工程/tests'
+        if not tests.is_dir():
+            self.skipTest('没有工程目录')
+        for pat in json.loads((HERE / '选测对照.json').read_text())['groups']['entry']['scenes']:
+            self.assertTrue(list(tests.glob(pat)), '入口组的场景没有对应测试：' + pat)
+
+
 SLICE = TOOLS / 'xiyou_slice.json'
 RULES = ['xiyou_rules.tscn', 'xiyou_rules_d1b.tscn', 'xiyou_rules_d2.tscn']
 

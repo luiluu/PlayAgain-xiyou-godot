@@ -12,6 +12,10 @@ signal finished
 var host: Node
 var map_id := 0
 var event_id := 0
+## 并行事件（触发 4）的解释器：不占宿主的 busy，等待按地图更新的帧算（菜单、战斗、各种画面开着时停住）；
+## token 由同一次执行的父子游标共用，cancel() 后在下一个等待点结束（换页、消除、换图时由 MVEvent／地图场景调）
+var parallel := false
+var token := {"cancelled": false}
 ## 只有地图宿主才处理的指令（场所移动、画面、声音、战斗、商店、脚本…）：核心发 command 请求，由 _host_command 执行
 const HOST_CODES := [201, 205, 211, 212, 213, 214, 216, 217, 221, 222, 223, 224, 225, 230, 236, 241, 245, 249, 250, 283, 301, 302, 352, 354, 355]
 ## O-027：原版事件把玩家传到四个方向都不能通行的格子（正式引擎 isMapPassable 实测）时，改传到同图的正常落点。
@@ -41,6 +45,19 @@ func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
 	_depth = depth
 
 
+## headless 测试里「等待 N 帧」照旧按渲染帧（headless 渲染帧不限速、物理帧按真实时间走，几百个事件测试按物理帧要慢十几倍，
+## 云端 event_compare 超时）；xiyou_speed_gear 置 false 量真实节奏。带窗口时一律按物理帧
+static var HEADLESS_RENDER_WAIT := true
+
+
+func _wait_frame() -> void:
+	var tree := Engine.get_main_loop() as SceneTree  # 宿主暂时摘下时 host.get_tree() 为 null（DJ）
+	if HEADLESS_RENDER_WAIT and DisplayServer.get_name() == "headless":
+		await tree.process_frame
+	else:
+		await tree.physics_frame
+
+
 func _notice(text: String) -> void:
 	if host_alive():
 		host.toast(text)
@@ -65,15 +82,44 @@ func _frames(n: int, physics := true) -> void:
 
 
 ## 游标逐步推进；文字交给 host.show_message，宿主指令由发出请求的那一层（可能是公共事件子游标）执行
+func cancel() -> void:
+	token.cancelled = true
+
+
+## 取消了，或宿主（地图画面）已释放（合 DJ host_alive：释放后醒来的协程不再往下跑）
+func is_cancelled() -> bool:
+	return bool(token.cancelled) or not host_alive()
+
+
+## 等一帧（指令 230）。并行解释器等宿主的 parallel_frame（地图每个物理帧、且 Scene_Map 在更新地图时才发，菜单／战斗／各种画面开着时不数）；
+## 等的是宿主自己的信号，地图释放时挂起的协程随之丢弃，不会留到退出时报资源未释放
+func _frame() -> void:
+	if not parallel:
+		await host.get_tree().process_frame
+		return
+	await _tick()
+
+
+## 等一个物理帧（205 等路线、213 等气泡、223 等色调）：并行解释器同样等宿主的 parallel_frame
+func _tick() -> void:
+	if parallel and host.has_signal("parallel_frame"):
+		await host.parallel_frame
+	else:
+		await (Engine.get_main_loop() as SceneTree).physics_frame  # 宿主暂时摘下时 host.get_tree() 为 null（DJ）
+
+
 func run() -> void:
 	index = 0
 	if _depth == 0 and event_id > 0:
 		var ch = host.character(event_id, event_id)
 		if ch != null and str(ch.get("character_name")) == "BaoXiangGuai":
 			receipt = {"rows": []}
-	while await _step():
+	while not is_cancelled() and await _step():
 		pass
-	if _depth == 0 and host_alive():
+	if is_cancelled():
+		finished.emit()
+		return
+	if _depth == 0 and not parallel:
 		if receipt != null and not receipt.rows.is_empty():
 			host.toast("宝箱收获：<br>" + "<br>".join(PackedStringArray(receipt.rows.map(func(r): return "%s ×%d" % [str(r.name).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;"), int(r.amount)]))))
 		XDungeon.event_finished(state())
@@ -88,14 +134,18 @@ func _step() -> bool:
 		return false
 	var r := advance()
 	if r.kind == "message":
-		var response = await host.show_message(r.msg)
-		if not host_alive():
+		var response
+		if parallel and host.has_method("show_parallel_message"):
+			response = await host.show_parallel_message(r.msg)
+		else:
+			response = await host.show_message(r.msg)
+		if is_cancelled():
 			return false
 		waiting_frame().resume(response)
 		return true
 	if r.kind == "command":
 		var go = await waiting_frame()._host_command(r.command)
-		if not host_alive():
+		if is_cancelled():
 			return false
 		waiting_frame().resume(go)
 		return true
@@ -114,7 +164,10 @@ func flush_message() -> void:
 # ---- 核心的环境钩子 ----
 
 func _make_child(commands: Array) -> MVEventCore:
-	return MVInterpreter.new(host, map_id, event_id, commands)
+	var sub := MVInterpreter.new(host, map_id, event_id, commands)
+	sub.parallel = parallel
+	sub.token = token
+	return sub
 
 
 func _map_id() -> int:
@@ -241,18 +294,27 @@ func _host_command(c: Dictionary):
 			# 更改画面色调 [色调, 帧数, 等待]
 			state().screen.start_tint(p[0], int(p[1]))
 			if bool(p[2]):
-				await _frames(int(p[1]))
+				for i in range(int(p[1])):
+					if is_cancelled():
+						break
+					await _tick()
 		236:
 			# 设置天气 [类型, 强度, 帧数, 等待]；战斗中无效（地图解释器不在战斗里）
 			state().screen.change_weather(str(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
-				await _frames(int(p[2]))
+				for i in range(int(p[2])):
+					if is_cancelled():
+						break
+					await _tick()
 		224:
 			# 画面闪烁 [颜色 r,g,b,强度, 帧数, 等待]（Game_Screen.startFlash）
 			if host.has_method("flash_screen"):
 				host.flash_screen(p[0], int(p[1]))
 			if bool(p[2]):
-				await _frames(int(p[1]))
+				for i in range(int(p[1])):
+					if is_cancelled():
+						break
+					await _tick()
 		352:
 			# 打开存档画面（SceneManager.push(Scene_Save)；公共事件 9「炉石」），关闭后回到地图接着执行
 			if host.has_method("open_save"):
@@ -262,9 +324,18 @@ func _host_command(c: Dictionary):
 			if host.has_method("shake_screen"):
 				host.shake_screen(int(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
-				await _frames(int(p[2]), false)
+				for i in range(int(p[2])):
+					await _wait_frame()  # 震屏在地图 _physics_process 里逐帧走，按物理帧等
 		230:
-			await _frames(int(p[0]), false)
+			# 等待 N 帧＝N 个物理帧（MV updateMain 的帧；变速齿轮 1.6 时物理帧 96／秒，60 帧约 0.625 秒）。
+			# 原来按渲染帧等，帧率不跟齿轮走（60 Hz 屏上 60 帧要 1 秒，120 Hz 屏上只要半秒；battlefix2 实测）
+			for i in range(int(p[0])):
+				if is_cancelled():
+					break
+				if parallel:
+					await _tick()
+				else:
+					await _wait_frame()
 		241:
 			host.play_bgm(p[0])
 		245:
@@ -275,6 +346,8 @@ func _host_command(c: Dictionary):
 			host.play_se(p[0])
 		301:
 			var troop := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
+			if host is XMapScene:
+				XAutoSave.battle_checkpoint(host, true)  # 开战前检查点（O-221；事件里开的战斗）
 			var result: int = await host.start_battle(troop, bool(p[2]), bool(p[3]))
 			XDungeon.battle_finished(troop, result, state().map_id)
 			_branch[indent] = result
@@ -296,8 +369,8 @@ func _host_command(c: Dictionary):
 				ch.force_move_route(p[1])
 				if bool(p[1].get("wait", false)):
 					# 等待中若场所移动，旧地图的角色已释放
-					while host_alive() and is_instance_valid(ch) and ch.is_route_forcing():
-						await _frames(1)
+					while not is_cancelled() and is_instance_valid(ch) and ch.is_route_forcing():
+						await _tick()
 		211:
 			host.player.transparent = int(p[0]) == 0
 			host.player.queue_redraw()
@@ -311,7 +384,7 @@ func _host_command(c: Dictionary):
 			var ch = host.character(int(p[0]), event_id)
 			if ch:
 				var anim = host.show_animation(ch, int(p[1]))
-				if bool(p[2]) and anim:
+				if bool(p[2]) and anim and not is_cancelled():
 					await anim.done
 		213:
 			# 显示气泡 [角色, 气泡, 等待]
@@ -319,8 +392,8 @@ func _host_command(c: Dictionary):
 			if ch:
 				ch.start_balloon(int(p[1]))
 				if bool(p[2]):
-					while host_alive() and is_instance_valid(ch) and ch.is_balloon_playing():
-						await _frames(1)
+					while not is_cancelled() and is_instance_valid(ch) and ch.is_balloon_playing():
+						await _tick()
 		216:
 			# 更改队伍跟随 [0 显示 1 隐藏]
 			host.set_followers_visible(int(p[0]) == 0)

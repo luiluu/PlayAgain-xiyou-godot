@@ -13,6 +13,11 @@ static var MV_KEYS := true
 ## 发行模板的 GDScript 不查空，直接对空指针调用、闪退（11-06 天启篇标题按空格/J 退出，崩溃报告 SIGSEGV 0x450）。
 ## 回退开关 SAFE_HANDLED = false：照旧直接调用（不在树上时发行版仍会闪退）。
 static var SAFE_HANDLED := true
+## Codex 审查报告第 14 项（O-226）：自己用 _input 收键的弹层（网页面板 XWebPanel、批量抽奖窗 XCasinoDialog）原先只认 Esc，
+## 虚拟取消键、安卓返回键（都发 ui_cancel 动作）、手柄 B、X／K／Insert 都关不掉，手机上只能点「关闭」。现在认 ui_cancel 全部来源。
+## 优先级：输入框（LineEdit／TextEdit）有焦点时，会打出字的取消键（X、K、小键盘 0）归输入框；Esc、虚拟取消键、返回键、手柄 B 照样关。
+## 回退开关 POPUP_CANCEL_ACTION = false：回到只认 Esc。
+static var POPUP_CANCEL_ACTION := true
 ## 地图上右键（两指点按）呼出菜单（platform-keys2，原版 isMenuCalled 含 TouchInput.isCancelled）
 static var MV_MAP_RIGHT_MENU := true
 
@@ -100,6 +105,20 @@ static func remove() -> void:
 ## 菜单收到 Esc 关掉的同一帧，地图的 _process 还看得到「Esc 刚按下」，会立刻又开菜单；关菜单那帧不许开
 static func menu_call_blocked(closed_frame: int, frame: int) -> bool:
 	return closed_frame == frame
+
+
+## 弹层的取消（见 POPUP_CANCEL_ACTION）：node 是弹层自己，用来找输入焦点。
+static func popup_cancel(event: InputEvent, node: Node) -> bool:
+	if event is InputEventKey and event.pressed and (event as InputEventKey).keycode == KEY_ESCAPE:
+		return true
+	if not POPUP_CANCEL_ACTION or not event.is_action_pressed("ui_cancel"):
+		return false
+	if event is InputEventKey and (event as InputEventKey).unicode != 0:
+		var vp := node.get_viewport()
+		var focus := vp.gui_get_focus_owner() if vp != null else null
+		if (focus is LineEdit and (focus as LineEdit).editable) or (focus is TextEdit and (focus as TextEdit).editable):
+			return false
+	return true
 
 
 ## 代替 get_viewport() 再 set_input_as_handled()：节点已不在树上（刚切走场景）时跳过（不标已处理，和调试版报错后的表现一样，测试一直跑的就是这种情况）。

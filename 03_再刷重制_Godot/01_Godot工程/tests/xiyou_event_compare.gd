@@ -293,6 +293,7 @@ func _run() -> void:
 	expected_ids.sort()
 	actual_ids.sort()
 	check("oracle_cases_complete", expected_ids == actual_ids, [expected_ids.size(), actual_ids.size()])
+	_check_dispatch_cases(manifest)
 	var baseline: Dictionary = {}
 	if FileAccess.file_exists(BASELINE):
 		var b = JSON.parse_string(FileAccess.get_file_as_string(BASELINE))
@@ -396,6 +397,48 @@ func _run() -> void:
 	check("no_new_oracle_errors", oracle_errors.all(func(id): return KNOWN_ORACLE_ERRORS.has(id)), oracle_errors)
 	check("cases_ran", report.size() > 0)
 	_finish()
+
+
+## 地图事件分发（Codex 审查第 11、12 项）：上面的用例只单独执行一页的指令，量不到并行页每帧重起、换页终止、自主移动。
+## 这些由 tests/xiyou_map_dispatch 在真实地图场景逐帧对照 map_dispatch_oracle（mv_oracle/map_dispatch_probe.cjs）。这里守住覆盖面：
+## 切片里每个并行页（触发 4）都要有 par.m<地图>e<事件> 用例；自主路线（移动类型 3）与强制路线（205）用到的移动指令都要是 MVCharacter 认得的，
+## 路线脚本（45）只认 YEP_EventChasePlayer 的「this._fleeRange = N」类设定。新出现的并行页或新写法会在这里变红，去补探针用例或实现。
+const DISPATCH_ORACLE := "res://tests/fixtures/map_dispatch_oracle.json"
+const DISPATCH_ROUTE_CODES := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+	29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45]
+
+func _check_dispatch_cases(manifest: Dictionary) -> void:
+	var d = JSON.parse_string(FileAccess.get_file_as_string(DISPATCH_ORACLE))
+	var ids: Array = d.cases.map(func(c): return str(c.id)) if d is Dictionary else []
+	var missing := []
+	var bad_codes := {}
+	var bad_scripts := []
+	var re := RegEx.create_from_string("^\\s*this\\._(fleeRange|fleeSpeed|sightLock|returnWait|seePlayer|returnAfter|alertBalloon)\\s*=")
+	var scan_route := func(route) -> void:
+		if not route is Dictionary:
+			return
+		for cmd in route.get("list", []):
+			if not DISPATCH_ROUTE_CODES.has(int(cmd.code)):
+				bad_codes[int(cmd.code)] = true
+			elif int(cmd.code) == 45 and re.search(str(cmd.parameters[0])) == null:
+				bad_scripts.append(str(cmd.parameters[0]))
+	for id in manifest.slice.maps:
+		for ev in XDB.map(int(id)).get("events", []):
+			if not ev is Dictionary:
+				continue
+			for pg in ev.pages:
+				if int(pg.trigger) == 4 and pg.list.any(func(c): return int(c.code) != 0):
+					var key := "par.m%de%d" % [int(id), int(ev.id)]
+					if not ids.any(func(x): return x.begins_with(key)):
+						missing.append(key)
+				if int(pg.moveType) == 3:
+					scan_route.call(pg.moveRoute)
+				for c in pg.list:
+					if int(c.code) == 205:
+						scan_route.call(c.parameters[1])
+	check("dispatch_parallel_pages_covered", d is Dictionary and missing.is_empty(), missing)
+	check("dispatch_route_codes_known", bad_codes.is_empty(), bad_codes.keys())
+	check("dispatch_route_scripts_known", bad_scripts.is_empty(), bad_scripts)
 
 
 func _finish() -> void:

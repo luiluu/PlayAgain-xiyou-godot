@@ -29,6 +29,7 @@ func _ready() -> void:
 		back.pressed.connect(GameApp.return_to_menu)
 		column.add_child(back)
 		return
+	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	theme = XUI.theme()
 	_build_background()
 	_title()
@@ -115,6 +116,15 @@ func _title() -> void:
 		_add_transfer_buttons()
 	if XSave.exists_auto():
 		_add_auto_button()
+	# 光标与初始选中（审查报告第 16 项：原先误放在 _load_auto 末尾，标题没有光标，读自动存档失败后才冒出来）
+	var cp := XDB.img_path("titles2", "Cursor")
+	if cp != "":
+		_cursor = TextureRect.new()
+		_cursor.texture = load(cp)
+		_cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_layer.add_child(_cursor)
+	_sel = 0
+	_select(0, true)
 
 
 ## 切后台时自动存的档（XAutoSave）：有就在左上角放一个「继续」，手动存档后那份就删了、按钮也就没了
@@ -145,14 +155,6 @@ func _load_auto() -> void:
 		get_tree().change_scene_to_file(MAP_SCENE)
 	else:
 		_notice("自动存档", "这份自动存档读不出来。")
-	var cp := XDB.img_path("titles2", "Cursor")
-	if cp != "":
-		_cursor = TextureRect.new()
-		_cursor.texture = load(cp)
-		_cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_layer.add_child(_cursor)
-	_sel = 0
-	_select(0, true)
 
 
 ## 图片指令：Command_N.png 上半为选中（彩色），下半为未选中（灰）；没有图片的用文字代替。

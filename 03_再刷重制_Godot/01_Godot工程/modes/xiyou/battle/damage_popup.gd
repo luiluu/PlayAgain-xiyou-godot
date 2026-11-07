@@ -67,6 +67,12 @@ func setup(value: float, is_mp := false, critical := false, miss := false, actor
 		_scale = 0.0
 
 
+## 状态行（结果里有附加／解除状态）：原版 drawDefaultState 的绘制整段注释掉了，只剩空精灵——画面上什么都没有，
+## 但这个 Sprite_Damage 照样占弹数队列的一帧、存活 90 次（每次上移 0.5），所以要建出来（不画）
+func setup_state() -> void:
+	kind = "state"
+
+
 ## customPopup：drawCustomText 锚点 (0.5, 0.5)、格式 2 伤害色／1 回复色；默认移动码不动它，最后 10 次整体淡出
 func setup_custom(value: String, format: int) -> void:
 	_font = XUI.font()
@@ -97,12 +103,25 @@ static func _trim(v: float) -> String:
 	return String.num(v, 2).rstrip("0").rstrip(".")
 
 
+## 原版每帧更新两次：先 Sprite_Battler.updateDamagePopup 逐个一次（第 0 次），再 Spriteset_Battle 的 children 一次（第 1 次）；
+## 新建当帧只有第 0 次（建出时 _spawn_popup 直接调一次 _update）。update 开头若已走完（_duration ≤ 0 且不透明度 ≤ 0）
+## 就 remove（从 Spriteset 的 children 里摘掉）：摘在第 1 次（children 的 forEach 里）时数组前移，紧跟其后加入的那个
+## 弹数（不论哪个战斗者）这一帧的第 1 次被跳过——正式版读数 s2800、s3772 里紧跟其后的弹数只走 1 次。
+var skip := 0
+var on_removed := Callable()   # 第 1 次里被摘掉时调，参数为自己：由战斗画面给下一个弹数记 skip
+
+
 func _physics_process(_delta: float) -> void:
-	for i in range(2):
+	var n := 2 - skip
+	skip = 0
+	for i in range(n):
+		if _duration <= 0 and _alpha <= 0.0:
+			if i == 1 and on_removed.is_valid():
+				on_removed.call(self)
+			queue_free()
+			return
 		_update()
 	queue_redraw()
-	if _duration <= 0:
-		queue_free()
 
 
 func _update() -> void:
@@ -125,6 +144,8 @@ func _update() -> void:
 			if _crit == 0:
 				_scale = 1.0
 				_y -= 0.4
+		"state":
+			_y -= 0.5
 		"miss":
 			_x += 0.5 * dir
 			if on_actor:

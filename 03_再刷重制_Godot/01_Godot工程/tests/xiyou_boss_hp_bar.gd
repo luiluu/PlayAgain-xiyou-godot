@@ -300,5 +300,28 @@ func _run() -> void:
 	XBossHpBar.RANGE_V037 = true
 	XBossHpBar._ext_cache.clear()
 
+	# 原版缺陷修好（rules-bugfix1 照搬清单第 2 条，O-228）：变身换名字头像；开战没有 Boss、之后现身时补建条
+	for rebuild in [true, false]:
+		XBossHpBar.REBUILD = rebuild
+		var tag := "rebuild" if rebuild else "rebuild_off"
+		var tb := XEnemy.new().setup(6, 1)
+		var tbar := make_bar([tb])
+		tb.enemy_id = 21  # 同 battle_logic.enemy_transform
+		steps(tbar, 1)
+		var new_name := tb.original_name()
+		check(tag + "_transform_name", (tbar._name_text == new_name) == rebuild, [tbar._name_text, new_name])
+		check(tag + "_transform_face", (tbar._face_tex == XBossHpBar._tex("bosshp", "BOSS_1")) == rebuild)
+		var late := XEnemy.new().setup(6, 1)
+		late.hidden = true
+		var plain_late := XEnemy.new().setup(1, 1)
+		var lbar := make_bar([plain_late, late])
+		check(tag + "_no_boss_at_start", lbar.battler == null and not lbar.visible)
+		late.hidden = false  # 敌人现身（Game_Enemy.appear）
+		steps(lbar, 2)
+		check(tag + "_late_boss_builds", (lbar.battler == late and lbar.visible and lbar._name_text == late.original_name()) == rebuild, [lbar.battler != null, lbar.visible])
+		tbar.queue_free()
+		lbar.queue_free()
+	XBossHpBar.REBUILD = true
+
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks}))
 	get_tree().quit.call_deferred(0 if failures.is_empty() else 1)

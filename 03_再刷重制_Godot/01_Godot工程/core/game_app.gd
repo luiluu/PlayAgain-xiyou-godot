@@ -119,6 +119,9 @@ func enter_mode(mode_id: String) -> bool:
 
 func return_to_menu() -> void:
 	current_mode = ""
+	# 模式可能改过帧率（西游 Drill_SpeedGear 1.6 倍，XSpeedGear）：回模式选择时还原 60 帧／秒（headless 测试不动，快进由 fast_forward 管）
+	if DisplayServer.get_name() != "headless" and not (platform != null and platform.is_catching_up()):
+		XSpeedGear.reset()
 	# 发行构建没有模式选择：回到西游标题（BI）。
 	if ReleaseEntry.skips_menu() and enter_mode(ReleaseEntry.DIRECT_MODE):
 		return

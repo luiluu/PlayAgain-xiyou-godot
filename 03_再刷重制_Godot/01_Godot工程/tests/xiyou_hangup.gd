@@ -4,6 +4,12 @@ extends Node
 ## 窗口模式加 -- --out=<目录> 保存实际绘制截图。
 
 var results := []
+
+## 记下画了哪些字（挂机提示的 drawWord）
+class TextRec extends XMVCanvas:
+	var texts: Array = []
+	func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
+		texts.append([s, x, y, max_w, align, color.to_html(false), size, lh])
 var out_dir := ""
 var _victory_screens := 0
 var _clock_before := []
@@ -127,6 +133,17 @@ func _run() -> void:
 	map.encounter_count = 999
 	await key_g()
 	check("start", XHangUp.is_active(s) and s.hang_up_origin == Vector2i(11, 13) and ov.tip.visible and not map.player.input_enabled, [s.hang_up_active, s.hang_up_origin])
+	# 提示上的字（原版 drawWord 画进离屏画布从不显示；rules-bugfix1 照搬清单第 1 条修好，O-227）
+	var tip_rec := TextRec.new()
+	ov.tip_text.painter.call(tip_rec)
+	check("tip_word_drawn", ov.tip_text.is_visible_in_tree() and tip_rec.texts == [["摆烂中.....", 0.0, 30.0, 560.0, "center", "ff6400", 28, 30]], tip_rec.texts)
+	XHangUpOverlay.TIP_WORD = false
+	var tip_rec2 := TextRec.new()
+	ov.tip_text.painter.call(tip_rec2)
+	check("tip_word_rollback_none", tip_rec2.texts.is_empty(), tip_rec2.texts)
+	XHangUpOverlay.TIP_WORD = true
+	tip_rec.free()
+	tip_rec2.free()
 	map.open_menu()
 	await frames(2)
 	check("menu_blocked", not map._menu_open)

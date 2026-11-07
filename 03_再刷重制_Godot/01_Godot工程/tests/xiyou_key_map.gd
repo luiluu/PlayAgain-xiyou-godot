@@ -52,6 +52,12 @@ func _run() -> void:
 	check("menu_call_ok_next_frame", not XKeyMap.menu_call_blocked(100, 101) and not XKeyMap.menu_call_blocked(-1, 0))
 	# 高分屏文字不加同色描边的开关（platform-keys1）
 	check("crisp_switch", XMVCanvas.CRISP_HIDPI_TEXT and XMVCanvas.HIDPI_SCALE > 1.0 and XMVCanvas.HIDPI_SCALE < 2.0)
+	check("crisp_hidpi_no_embolden", XMVCanvas.embolden_at(1.0) and not XMVCanvas.embolden_at(XMVCanvas.HIDPI_SCALE) and not XMVCanvas.embolden_at(2.0))
+	# O-209 回退：CRISP_HIDPI_TEXT = false 时任何缩放都加
+	XMVCanvas.CRISP_HIDPI_TEXT = false
+	var rollback_bold := XMVCanvas.embolden_at(1.0) and XMVCanvas.embolden_at(2.0)
+	XMVCanvas.CRISP_HIDPI_TEXT = true
+	check("crisp_rollback_always_embolden", rollback_bold)
 	check("switches_exist", XKeyMap.MV_MAP_RIGHT_MENU and MVPlayer.MV_HOLD_MOVE and XKeyRepeat.MV_PAD)
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

@@ -2581,6 +2581,7 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if (value != 0.0) if STALE_REFRESH_POINTS else (t.hp != hp_was):
 		stale_refreshed(t)  # setHp 请求值与当前不同就 refresh（蛮骨限额在比较之后）：之前陈旧的状态从这一击之后生效（本击伤害已算完）
 	if value > 0.0:
+		_remove_states_by_damage(t)  # Game_Battler.onDamage：先受伤解除，再充 TP
 		var tp_before: float = t.tp
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 		if t.tp != tp_before:
@@ -2588,6 +2589,27 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if drain:
 		_action_resources.gain(u, "hp", value)
 	return value
+
+
+## Game_Battler.removeStatesByDamage（StateChangeIfRemove「受伤解除」包装）：按 states() 顺序，带 removeByDamage 的状态
+## 各掷一次 randomInt(100) < chanceByDamage 就解除（睡眠、眩晕、愤怒等 15 个）；解除后按备注 <SC受伤解除:N> 换状态。
+## 审查报告第 8 项：之前漏了，挨打不醒（参照 state_remove_probe）。
+func _remove_states_by_damage(t: XBattler) -> void:
+	var prev := t.state_ids.duplicate()
+	for id in prev:
+		var st := XDB.rec("States", id)
+		if not bool(st.get("removeByDamage", false)):
+			continue
+		if floori(_float("remove_by_damage") * 100.0) < int(st.get("chanceByDamage", 100)):
+			_state_remove(t, id)
+	# checkToRemoveStates：处理完再对之前身上的每个状态 changeState（还在的跳过）
+	var resources := _operation_resources(t)
+	var previous := t.lifecycle_context
+	t.lifecycle_context = resources.state_context(t)
+	for id in prev:
+		t.change_state_if_removed(id, "受伤解除")
+	t.lifecycle_context = previous
+	_finish_lifecycle_operation(resources, t)
 
 
 ## Game_Action.executeMpDamage（类型 2／4／6）：Boss输出→导入角色平衡缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；

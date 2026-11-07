@@ -217,12 +217,12 @@ func _run() -> void:
 	touch(0, ok_center, false)
 	await frames(2)
 	check("buttons_release", not Input.is_action_pressed("ui_accept") and not Input.is_action_pressed("ui_cancel"))
-	# 按住连发：24 帧后再按
+	# 按住确定不连发（审查报告第 13 项，O-225；方向的回显连发见 xiyou_ui_input）
 	accepts = rec.accepts
 	touch(0, ok_center, true)
 	for i in 40:
 		await get_tree().physics_frame
-	check("hold_repeats", rec.accepts >= accepts + 2, [rec.accepts, accepts])
+	check("hold_ok_no_repeat", rec.accepts == accepts + 1, [rec.accepts, accepts])
 	touch(0, ok_center, false)
 	await frames(2)
 	# 摇杆
@@ -452,6 +452,12 @@ func _run() -> void:
 		if f.begins_with("save_1.json.before_import_") and FileAccess.get_file_as_string(save_dir.path_join(f)) == old_text:
 			kept = true
 	check("transfer_import_backs_up", import_ok and kept and DirAccess.get_files_at(save_dir).size() == before_files + 1)
+	# O-206 回退：BACKUP_BEFORE_IMPORT = false 时覆盖有档的格子不留 .before_import 备份（照样导入）
+	XSaveTransfer.BACKUP_BEFORE_IMPORT = false
+	var files_off := DirAccess.get_files_at(save_dir).size()
+	var import_off := XSaveTransfer.import_to(1, got.data) == ""
+	XSaveTransfer.BACKUP_BEFORE_IMPORT = true
+	check("transfer_import_rollback_no_backup", import_off and XSave.exists(1) and DirAccess.get_files_at(save_dir).size() == files_off)
 	# 标题页：触屏时右上有两个按钮；导入走「选文件 → 选存档位」
 	var title_page: Control = load("res://modes/xiyou/entry.tscn").instantiate()
 	add_child(title_page)
