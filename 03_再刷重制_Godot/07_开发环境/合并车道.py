@@ -2006,14 +2006,15 @@ def queue_items(spec, branches, whos, descs):
     tasks = [x.strip() for x in spec.split(',') if x.strip()]
     if not tasks:
         raise RuntimeError('--queue 没给任务')
-    def spread(values, name):
-        if len(values) == 1 and len(tasks) > 1 and ',' in values[0]:
-            # 三十一 11-07：--who "a,b,c,d" 被当成一条，四行待核查都写成同一串。按英文逗号拆，段数要等于条数
-            parts = [x.strip() for x in values[0].split(',')]
+    def spread(values, name, sep):
+        if len(values) == 1 and len(tasks) > 1 and sep in values[0]:
+            # 三十一 11-07：--who "a,b,c,d" 被当成一条，四行待核查都写成同一串。--who 按英文逗号拆；--desc 正文常带英文逗号，
+            # 按「｜」拆（审查 57 P3-1：全队同用的 --desc 逗号数碰巧等于条数−1 时会被悄悄拆开）。段数要等于条数
+            parts = [x.strip() for x in values[0].split(sep)]
             if len(parts) != len(tasks) or not all(parts):
-                raise RuntimeError('%s 「%s」有英文逗号，按逗号拆成 %d 段，与 --queue 的 %d 条对不上；要每条一个就按条数写逗号分隔（或重复写 %s），'
-                                   '全队同用的不要带英文逗号' % (name, values[0], len(parts), len(tasks), name))
-            print('%s 按英文逗号拆成每条一个：%s' % (name, '｜'.join(parts)), flush=True)
+                raise RuntimeError('%s 「%s」按「%s」拆成 %d 段，与 --queue 的 %d 条对不上；要每条一个就按条数用「%s」分隔（或重复写 %s），'
+                                   '全队同用的不要带「%s」' % (name, values[0], sep, len(parts), len(tasks), sep, name, sep))
+            print('%s 按「%s」拆成每条一个：%s' % (name, sep, ' / '.join(parts)), flush=True)
             return parts
         if len(values) == 1:
             return values * len(tasks)
@@ -2021,7 +2022,7 @@ def queue_items(spec, branches, whos, descs):
             raise RuntimeError('%s 要给 1 个或 %d 个（与 --queue 条数相同），现在 %d 个' % (name, len(tasks), len(values)))
         return values
     out = []
-    for t, w, d in zip(tasks, spread(whos, '--who'), spread(descs, '--desc')):
+    for t, w, d in zip(tasks, spread(whos, '--who', ','), spread(descs, '--desc', '｜')):
         task, _, br = t.partition('=')
         out.append((task, br or None, w, d))
     if branches:
@@ -2040,9 +2041,9 @@ def main(argv=None):
                          '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口。--also、--accept-changes、--accept-doc-edits 只对一条：'
                          '停在哪条就用 --lane <那条> 带上它们修好合完，再重跑同一条 --queue（已攒进本批的跳过）')
     ap.add_argument('--who', action='append', default=[],
-                    help='--lane／--queue：待核查表的执行者。--queue 时给一个全队同用，或每条一个：重复写 --who，或一个值里用英文逗号分隔（段数＝条数）')
+                    help='--lane／--queue：待核查表的执行者。--queue 时给一个全队同用，或每条一个：重复写 --who，或一个值里用英文逗号「,」分隔（段数＝条数）')
     ap.add_argument('--desc', action='append', default=[],
-                    help='--lane／--queue：待核查表的内容，规则同 --who（全队同用的内容里别带英文逗号）')
+                    help='--lane／--queue：待核查表的内容。--queue 时给一个全队同用，或每条一个：重复写 --desc，或一个值里用「｜」分隔（段数＝条数；英文逗号不拆）')
     ap.add_argument('--root', type=Path, help='主工作区；默认从当前工具所属资料库定位')
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')

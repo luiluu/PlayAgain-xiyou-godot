@@ -3358,15 +3358,16 @@ for name in filter(None, files):
         self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
 
     def test_queue_who_desc_split_on_ascii_comma(self):
-        """三十一 11-07：--who "a,b" 一个值被当成一条，几行待核查写成同一串。现在按英文逗号拆，段数要等于条数。"""
+        """三十一 11-07：--who "a,b" 一个值被当成一条，几行待核查写成同一串。--who 按英文逗号拆、--desc 按「｜」拆，段数要等于条数；
+        审查 57 P3-1：全队同用的 --desc 里英文逗号数碰巧等于条数−1 时原来会被悄悄拆开，现在 --desc 不按逗号拆。"""
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(merge.queue_items('a,b=cc/b', [], ['cc（哪吒）, cc（八戒）'], ['甲：x,乙：y']),
+            self.assertEqual(merge.queue_items('a,b=cc/b', [], ['cc（哪吒）, cc（八戒）'], ['甲：x｜乙：y']),
                              [('a', None, 'cc（哪吒）', '甲：x'), ('b', 'cc/b', 'cc（八戒）', '乙：y')])
-        self.assertEqual(merge.queue_items('a,b', [], ['cc'], ['同一句']), [('a', None, 'cc', '同一句'), ('b', None, 'cc', '同一句')])
-        self.assertEqual(merge.queue_items('a', [], ['x,y'], ['d']), [('a', None, 'x,y', 'd')])   # 只一条：逗号原样
-        for who in ['x,y,z', 'x,']:
-            with self.assertRaisesRegex(RuntimeError, '英文逗号'):
-                merge.queue_items('a,b', [], [who], ['d'])
+        self.assertEqual(merge.queue_items('a,b', [], ['cc'], ['同一句, 带逗号']), [('a', None, 'cc', '同一句, 带逗号'), ('b', None, 'cc', '同一句, 带逗号')])
+        self.assertEqual(merge.queue_items('a', [], ['x,y'], ['d｜e']), [('a', None, 'x,y', 'd｜e')])   # 只一条：原样
+        for who, desc in [('x,y,z', 'd'), ('x,', 'd'), ('x', 'd｜e｜f')]:
+            with self.assertRaisesRegex(RuntimeError, '对不上'):
+                merge.queue_items('a,b', [], [who], [desc])
 
     def test_queue_rejects_per_lane_flags_and_lane_passes_them_on(self):
         """--queue 原来收了 --also 不报错也不转；现在拒绝并指路。--lane 把 --also 等转给准备与收尾那两步。"""
