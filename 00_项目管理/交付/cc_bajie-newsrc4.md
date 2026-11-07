@@ -382,6 +382,15 @@ B 类（要新源参照才能判）：这组没有。
 - 验证：event_compare 全量 22481 例，一致 22473，8 例原登记，regressions、oracleErrors 都空，11/11；空绿 93 例 \`--check\` 过。没执行到 3434→**3223**（1180 簇）。
 - m221e3p0 的 w13 五例（随机伙伴）两种口径下参照都没跑完，删掉了。
 
+### 深渊／副本 boss 进阶石 10 例：结论（11-07，八戒接续，分支 cc/bajie-dropseq）
+
+- **是参照口径问题，不是游戏不一致，重制不用改，也不登 O 号。** 打桩逐个记参照吃序列的调用：m160e4p0#w13_302 里 1439 的 v1463 掷到 1，给了天顶剑·封印（127），原版生成这件装备时 DreamX 词缀预掷池吃掉 40 个、YEP 插槽浮动吃掉 2 个，一共 42 个序列随机数。后面甚尔／宿傩 `rollAdvanceStone` 的 `randomInt(50)` 因此错位，宿傩那次正好取到 0.001499，原版掉了咒王进阶石。重制的 `XGear.roll` 走自己的装备随机流，不走 `random_sequence`，所以重制取到的是 0.5，不掉。两边掉石头的概率都是 1/50，真游戏里没有差别。
+- **改法（只改参照 `event_state_probe.cjs`）**：带序列的用例里，`DreamX.RandomPrefixSuffix.makeItem` 和 `DataManager.addNewIndependentItem` 执行期间 Math.random 固定 0.5，不吃序列。这和 301 战斗不吃序列是同一个道理：重制里有自己随机流的部分，参照这边也不吃。
+- 预设放回这 10 例，回到 16532 个。
+- **重测**：2579 个带 random_seq 的用例六路重跑参照（约 17 分钟），其余变体不受影响（钩子只在有序列时装）。拼回上一棒的 event_states 后，原有 2569 例的结果和上一棒逐字相同，只有这 10 例变了（参照里不再掉石头）。
+- **验证**：event_compare 全量 22491 例，一致 22483，8 例是原登记的，regressions、oracleErrors 都空，11/11；这 10 例单跑 10/10。事件空绿扫描 `--check` 过（空绿 93 例都在基线内）。
+- 本树的 generated/oracle 是从 funny-wing 树克隆的（新源），event_states 是上一棒的拼上本轮重跑的 2579 例。集成树同步时探针指纹变了会整份重量，结果应该一样。
+
 ## 本分支提交
 
-- 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`，到 59b8a8b1），w13 起在 `cc/funny-wing-249563`（`git log 59b8a8b1..cc/funny-wing-249563`）
+- 见 `git log cc/newsrc-switch..cc/bajie-newsrc3`；DR 在 `cc/bajie-newsrc4`（`git log 5a82db93..cc/bajie-newsrc4`，到 59b8a8b1），w13 起在 `cc/funny-wing-249563`（`git log 59b8a8b1..cc/funny-wing-249563`），进阶石 10 例在 `cc/bajie-dropseq`（`git log e62faaa4..cc/bajie-dropseq`）

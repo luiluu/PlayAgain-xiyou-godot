@@ -311,6 +311,14 @@ function runCase(c) {
     const old = w.Math.random; w.Math.random = inBattle ? () => 0.5 : seqRandom;
     try { return execute.apply(this, arguments); } finally { w.Math.random = old; }
   };
+  // 生成装备（DreamX 词缀与预掷池 RandomPrefixSuffix.makeItem、YEP 独立物品的插槽浮动 addNewIndependentItem）里的随机数也不吃序列：
+  // 重制 XGear.roll 走自己的装备随机流，不走 random_sequence（八戒 dropseq：m160e4p0#w13_302 等 10 例，1439 掉天顶剑·封印时
+  // 这里吃掉 42 个，后面甚尔／宿傩进阶石的 randomInt(50) 错位，原版掉石头、重制没掉——对照口径不同，不是游戏不一致）
+  const gearHooks = [[w.DreamX.RandomPrefixSuffix, 'makeItem'], [w.DataManager, 'addNewIndependentItem']].map(([o, k]) => [o, k, o[k]]);
+  if (seqRandom) for (const [o, k, f] of gearHooks) o[k] = function () {
+    const old = w.Math.random; w.Math.random = () => 0.5;
+    try { return f.apply(this, arguments); } finally { w.Math.random = old; }
+  };
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
   const errors = [];
   let frames = 0;
@@ -370,7 +378,7 @@ function runCase(c) {
   const out = {id: c.id, kind: c.kind, map: c.map, event: c.event, page: c.page, common: c.common, finished: !it.isRunning(), frames,
     trace, delta: delta(before, snap(watch))};
   if (errors.length) out.errors = errors;
-  w.Game_Interpreter.prototype.executeCommand = execute;
+  w.Game_Interpreter.prototype.executeCommand = execute; for (const [o, k, f] of gearHooks) o[k] = f;
   out.base = c.base; out.preset = c.preset;
   out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
