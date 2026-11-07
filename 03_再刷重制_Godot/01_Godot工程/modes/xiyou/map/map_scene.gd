@@ -626,6 +626,7 @@ func _encounter() -> void:
 	# 设置「禁用遇敌」：仍重置步数并抽敌群，只是不进战斗（executeEncounter 返回 false）
 	if troop <= 0 or XConfig.flag("ydgb"):
 		return
+	XAutoSave.battle_checkpoint(self)  # 开战前检查点（O-221），要在置 busy 之前
 	_set_busy(true)
 	await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
@@ -1028,7 +1029,6 @@ func play_me(audio: Dictionary) -> void:
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
-	XAutoSave.checkpoint(self, "battle")  # 开战前的安全检查点（O-221·自动存档检查点，只在手机上、事件没在跑时）
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
 	me.stop()
 	bgm.stream_paused = true

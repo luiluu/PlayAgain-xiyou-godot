@@ -7,13 +7,20 @@ extends RefCounted
 ## 回退：ON_PAUSE = false（切后台只暂停，同原版）。
 ## 检查点（cc 平台 EH 2026-11-07，Codex 报告第 5 项，O-221·自动存档检查点）：切后台时正开着菜单或在战斗里就存不了，
 ## 手机这时杀进程会丢掉上次存档后的进度；所以进主菜单时、开战前（地图上、事件没在跑时）也各存一份到同一个自动存档，
-## 不存战斗中间态。事件里开的战斗（busy）不存：那时事件只跑了一半，读回来会从头再跑。
+## 不存战斗中间态。
+## 开战前的检查点（cc 平台 EJ 2026-11-07，审查第 51 期 P2-1）：原来放在 start_battle 里，可所有入口都先置了 busy，
+## blocker 见 busy 就跳过，一次也没存过。改由各入口在置 busy／开打之前调 battle_checkpoint：随机遇敌在 _encounter
+## 置 busy 前；事件战斗（指令 301）、小猫试炼、真气闭关在开打前，这三处是事件里开的战斗，busy 不算阻挡（读回来
+## 事件会从头再跑，总装定接受）。挂机中跳过（挂机已有定时存）；不挂机时两次战斗检查点至少隔 BATTLE_GAP_MSEC。
 ## 回退：CHECKPOINTS = false（只在切后台时存）。
 
 static var ON_PAUSE := true
 static var CHECKPOINTS := true
 ## 这么久之内再来的切后台通知当成同一次（PAUSED 和 FOCUS_OUT 前后脚到）。
 const DEDUP_MSEC := 3000
+## 两次战斗检查点至少隔这么久（总装定 60 秒）
+const BATTLE_GAP_MSEC := 60000
+static var _last_battle_msec := -1000000
 
 ## 上一次的结果（测试看）："saved"、"fail"、"dup"、"skip:<原因>"
 static var last_result := ""
@@ -22,6 +29,7 @@ static var _last_msec := -1000000
 
 static func reset() -> void:
 	_last_msec = -1000000
+	_last_battle_msec = -1000000
 	last_result = ""
 
 
@@ -66,8 +74,10 @@ static func on_pause(map, now_msec := Time.get_ticks_msec()) -> String:
 
 ## 检查点：进主菜单（"menu"）、开战前（"battle"）调，要在置 _menu_open／_in_battle 之前。
 ## 返回 last_result："checkpoint:<what>"、"fail" 或 "skip:<原因>"；不占切后台的去重窗口。
-static func checkpoint(map, what: String) -> String:
+static func checkpoint(map, what: String, in_event := false) -> String:
 	var why := blocker(map)
+	if in_event and why == "event":
+		why = ""
 	if why == "" and not CHECKPOINTS:
 		why = "checkpoints_off"
 	if why != "":
@@ -79,3 +89,18 @@ static func checkpoint(map, what: String) -> String:
 		last_result = "fail"
 		push_warning("自动存档检查点没写成：" + XSave.auto_path())
 	return last_result
+
+
+## 开战前的检查点：各开战入口在置 busy／开打之前调（in_event＝事件里开的战斗，busy 不算阻挡）。
+## 挂机中跳过；距上次战斗检查点不到 BATTLE_GAP_MSEC 也跳过。返回 last_result。
+static func battle_checkpoint(map, in_event := false, now_msec := Time.get_ticks_msec()) -> String:
+	if XState.current != null and XHangUp.is_active(XState.current):
+		last_result = "skip:hangup"
+		return last_result
+	if now_msec - _last_battle_msec < BATTLE_GAP_MSEC:
+		last_result = "skip:recent"
+		return last_result
+	var r := checkpoint(map, "battle", in_event)
+	if r == "checkpoint:battle":
+		_last_battle_msec = now_msec
+	return r

@@ -14,6 +14,8 @@ static func run(host, node := {"page": "retreat"}) -> void:
 		var opts: Array = m.get("options", [])
 		if m.has("battle"):
 			await host.show_message({"lines": m.lines, "position": 2, "background": 0})
+			if host is XMapScene:
+				XAutoSave.battle_checkpoint(host, true)  # 开战前检查点（O-221；闭关菜单里开的战斗）
 			await host.start_battle(int(m.battle), false, true)
 			cur = m.next
 			continue
