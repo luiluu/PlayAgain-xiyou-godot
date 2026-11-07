@@ -2629,6 +2629,13 @@ for name in filter(None, files):
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
         self.assertIn('res://modes/broken.gd：Parse Error', r.stdout)
         self.assertNotIn('GameApp', r.stdout)
+        # 第十五批 FG：await 碰上三元式（11-07 mapev1 主事件文字全被跳过）也在这里报出文件与行号，不用等场景
+        self.put(str(merge.PROJECT / 'modes/interp.gd'), 'func _step():\n\tvar ok = await f() if c else null\n'
+                 '\tvar response = await (host.a(r) if p else host.b(r))\n')
+        r = run()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn('res://modes/interp.gd:3：await 与三元式', r.stdout)
+        self.assertNotIn('interp.gd:2', r.stdout)
 
     def test_parse_check_flags_import_and_load_process_failures(self):
         # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
@@ -3577,6 +3584,37 @@ sys.exit(0)
                              ('x.gd.uid', True), ('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd', False), ('AGENTS.md', False)]:
             self.assertEqual(merge.release_only_path(path), expect, path)
             self.assertEqual(cloud.release_only([path]), expect, path)
+
+
+class AwaitTernaryTests(unittest.TestCase):
+    """第十五批 FG：await 的优先级高于三元式，三元式两边的异步调用会被静默跳过（Godot 只报错不中断）。"""
+    def lines(self, body):
+        return [no for no, _ in merge.await_ternaries('func f():\n' + body)]
+
+    def test_flags_unawaited_branch_calls(self):
+        for body in ['\tvar r = await (host.show_parallel_message(m) if parallel else host.show_message(m))\n',   # mapev1 原句
+                     '\tvar r = await a() if c else b()\n',             # (await a()) if c else b()：b() 没 await
+                     '\tif ok: x = await a() if c else obj.b(1)\n',     # 一行写完的 if
+                     '\tvar q = (await (a()\n\t\tif c else b()))\n',   # 跨行
+                     '\treturn await (a() if c else b())\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [2])
+
+    def test_ignores_safe_forms(self):
+        for body in ['\tawait f(a if b else c())\n',                    # 三元式只在实参里
+                     '\tvar n = await f() if c else null\n',             # else 那边没有调用
+                     '\tvar cmd = [null] if d else await g()\n',          # await 在分支里
+                     '\tvar r = await (sig_a if c else sig_b)\n',         # 只是挑信号
+                     '\t_check(await w(1) and z, [m.id if m else -1])\n',
+                     '\tvar s = "await (a() if b else c())"  # await (a() if b else c())\n',
+                     '\tvar ok = await a() if c else b()  # await-ternary-ok\n',
+                     '\tawait get_tree().process_frame\n\tvar t = a if b else c()\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [])
+
+    def test_real_project_has_none(self):
+        project = HERE.parent / '01_Godot工程'
+        self.assertEqual(merge.gd_await_ternary_problems(project), [])
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 extends Node
 ## 地图快捷键（YEP_ButtonCommonEvents，见 XMapHotkeys）：连发时序、绑定来自插件参数、可用场景（走动、挂机可按；
 ## 事件、文字、菜单不响应）、六个公共事件在真实地图上跑通（没有跳过的指令）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
 
@@ -135,8 +136,7 @@ func test_bindings() -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_map_hotkeys"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_map_hotkeys")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	test_timing()
 	test_bindings()

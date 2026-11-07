@@ -3,6 +3,7 @@ extends Node
 ## 选项顺序与状态文字、范围/开关的改值与循环、选择移动、点击、子页未做时不改值、范围格、自动储存（O-017）。
 ## 从真实地图打开菜单→设置→挂机设置。另测第二批规则：三种逃跑（含原版逐行中断的写法与 DontEsc）、屏蔽掉落、
 ## 快速战斗，以及挂机中开着「小怪逃跑」时真实战斗开场即逃。窗口模式加 -- --out=<目录> 保存实际绘制截图。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
 var out_dir := ""
@@ -114,8 +115,7 @@ func rules(s: XState) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_hangup_options"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_hangup_options")   # 测试目录、每次从默认配置起跑（删旧 options.json，云端新目录与本机一致）、rift1 记成看过
 	XMessageBox.auto = true
 	var s := XState.new_game(3, 1, [8, 10, 9])
 	s.map_id = 5

@@ -3,6 +3,7 @@ extends Node
 ## - Map004 EV13：变量 20「神魔之塔层数」<16 时碰到提示「暂时无法进入」；≥16 且玩家朝右 → Map040 地下甬道 (4,7)；
 ## - Map040：EV2 ⇄ Map042 超越大厅、EV3 ⇄ Map066 符石大厅、EV1 ⇄ Map133 地下室，EV4 黄金大厅要开关 170（自由模式，原版无处置 ON，不接）→ 提示不可进入，EV6 回 Map004 (20,6)；
 ## - Map066 符石师：变量 14≥1 时领被动书「符文之王 +1」（变量 31 只领一次）；Map042 修炼师、技能师、战技师与 Map133 地下守卫对话能走完（选「离开」）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -135,8 +136,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
-	XSave.dir_override = "user://test_xiyou_floor_reach040"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach040")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

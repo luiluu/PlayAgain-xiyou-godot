@@ -5,6 +5,7 @@ extends Node
 ## - 参照（原版 Game_Interpreter.command317＋Game_Actor.addParam，参照引擎实测）：增加只加上限不回血；减到生命上限 1 时生命被截到 1；
 ##   指定角色只动该角色；能力值不低于 0；存档读回不丢；
 ## - Map004 EV70（开关 2496「宝宝难度」）→ Map225 蜜雪冰城 (38,32)；EV8 福利助手 ±5000／±1000；EV2 开启宝宝增益学会技能 5561；EV1 回 Map004 (17,6)。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -136,8 +137,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_floor_reach225"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach225")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
