@@ -4,7 +4,7 @@ extends Node
 ##   对照 mv_oracle/script_gaps_probe（generated/oracle/script_gaps.json）的 moveSpeed.*；下载具回 4（getOffVehicle setMoveSpeed(4)）另核。
 ## - 牛头人／纯爱战士认证（Map017 EV004）：条件分支脚本 $gameSystem.defeatNumber(66) >= 999／9999 → XEnemyBook.defeat_number；
 ##   对照 defeat.* 各例的分支；再用真事件页（选「认证 牛头人」）核 999 只时开称号 5、成就 121，998 只时不开。
-## - 大厅猫哥「清理存档」（Map004 EV024）DataManager.cleanupIndependentItems()：无操作，不再记认不出。
+## - 大厅猫哥「清理存档」（Map004 EV024）DataManager.cleanupIndependentItems()：在队成员回满 HP／MP、倒下的救起（zchuli.js 原作者有意保留的功能，v0.62.12 重写后注释仍写「保留原脚本的满血满蓝」），见 _cleanup。
 ## - 第二批（events2）：失去剩余伙伴号角 CE1391（for 循环 loseItem）；按变量 348 取人学技能＋角色名提示（CE1313 第一支），
 ##   没人时不学不提示；鲲拳 CE1160 只有一句声明的段无操作；大厅老妪头顶倒计时（Map004 EV005，画在看不见的名字条上）无操作；
 ##   战斗里按角色号加状态（CE43 脚本段，XBattleEventRunner._actor_states_script）：13～15 在队、不在队都加上 708。

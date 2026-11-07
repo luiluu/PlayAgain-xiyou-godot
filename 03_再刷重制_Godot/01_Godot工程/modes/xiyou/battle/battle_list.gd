@@ -30,11 +30,16 @@ var active := true
 var cancel_enabled := true
 
 
+## O-218·空列表一行高（Kyo 11-06 实机：「魔法框没有魔法的时候框只显示一半」）：原版 Olivia maxListHeight＝min(项数, 上限)，
+## 没有技能时窗口高只剩上下内边距，只露出半截框。true＝空列表也按一行高画（空白一行）；false＝照原版。
+static var EMPTY_ONE_ROW := true
+
+
 static func create(parent: Control, list: Array, width: float, text_align := "left") -> XBattleList:
 	var w := XBattleList.new()
 	w.entries = list
 	w.align = text_align
-	w.rows = clampi(list.size(), 0, MAX_ROWS)
+	w.rows = clampi(list.size(), 1 if EMPTY_ONE_ROW else 0, MAX_ROWS)
 	w.padding = PAD
 	w.size = Vector2(width, w.rows * LH + PAD * 2)
 	parent.add_child(w)

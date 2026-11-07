@@ -28,6 +28,12 @@ const SPECS := {4047: {"actor": 176, "base": "止戈环", "name": "太初五兵�
 	"rates": [[0, 1.3], [3, 1.2], [5, 1.2]], "who": "谷雨", "hint": "获得复活专属特效",
 	"desc": ["一盏盛着百谷新芽的瓷盏。", "盏中万象长春，生生不息。"],
 	"evolved": ["本场谷雨第一次以骨生花复活时，谷雨与储备比例最低的一名队友各获得谷雨基础最大生命18%的生命储备"]}}
+## O-137（原版缺陷，默认修；Kyo 2026-11-07「原版的 bug 要修」）：原版招募谷雨时新生成的百谷生实例第一次同步按旧版倍率去重（备注认不出「额外四项」），
+## 生命 ×1.3、物防 ×1.2 各多一条（生命按 ×1.6、物防按 ×1.4 算），直到人物等级或法宝等级变了 CP_MagicWeapon 重算才恢复（three_growth_probe relic.lv1.r1）。
+## 重制默认不重复；FIX_RECRUIT_DUP = false 回到原版：招募时记下（人物等级, 法宝等级），两者都没变时多出这两条特性，变了就去掉记号不再多。
+static var FIX_RECRUIT_DUP := true
+const RECRUIT_DUP_KEY := "_o137Dup"
+const RECRUIT_DUP := {7912: [[0, 1.3], [3, 1.2]]}
 const PN := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "速度", "幸运"]
 const PAIRS := [[0, 1], [2, 4], [3, 5], [6, 7]]
 const PARAM_TAGS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
@@ -121,3 +127,25 @@ static func relic_lines(spec: Dictionary, evolved: bool, unit: int) -> Array:
 	for pr in PAIRS:
 		rows.append("\\c[1]法宝每级：" + "　".join(PackedStringArray(pr.map(func(i): return "%s＋%d" % [PN[i], unit * (2 if (spec.extra as Array).has(i) else 1)]))))
 	return rows
+
+
+## O-137：招募时新生成的法宝实例记下（人物等级, 法宝等级）（XGuyu.recruit 调）
+static func mark_recruit(a: XActor, e: Dictionary) -> void:
+	if RECRUIT_DUP.has(int(e.get("base", e.get("id", 0)))):
+		e[RECRUIT_DUP_KEY] = [int(a.level), int(XEquipmentView.level(e))]
+
+
+## O-137：XActor.trait_objects 用。等级都没变时（开关关着）返回重复的那两条特性；变了就去掉记号（原版 CP_MagicWeapon 重算后恢复）
+static func recruit_dup_objects(a: XActor) -> Array:
+	var out := []
+	for e in a.equips:
+		if not (e is Dictionary) or not e.has(RECRUIT_DUP_KEY):
+			continue
+		var m: Array = e[RECRUIT_DUP_KEY]
+		if int(a.level) != int(m[0]) or int(XEquipmentView.level(e)) != int(m[1]):
+			e.erase(RECRUIT_DUP_KEY)
+			continue
+		if not FIX_RECRUIT_DUP:
+			out.append({"traits": (RECRUIT_DUP.get(int(e.get("base", e.get("id", 0))), []) as Array).map(
+				func(r): return {"code": 21, "dataId": int(r[0]), "value": float(r[1])})})
+	return out
