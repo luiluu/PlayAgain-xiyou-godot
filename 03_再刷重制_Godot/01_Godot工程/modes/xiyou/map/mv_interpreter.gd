@@ -239,10 +239,12 @@ func _host_command(c: Dictionary):
 				host.shake_screen(int(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
 				for i in range(int(p[2])):
-					await host.get_tree().process_frame
+					await host.get_tree().physics_frame  # 震屏在地图 _physics_process 里逐帧走，按物理帧等
 		230:
+			# 等待 N 帧＝N 个物理帧（MV updateMain 的帧；变速齿轮 1.6 时物理帧 96／秒，60 帧约 0.625 秒）。
+			# 原来按渲染帧等，帧率不跟齿轮走，60 帧要 1 秒（battlefix2 实测）
 			for i in range(int(p[0])):
-				await host.get_tree().process_frame
+				await host.get_tree().physics_frame
 		241:
 			host.play_bgm(p[0])
 		245:

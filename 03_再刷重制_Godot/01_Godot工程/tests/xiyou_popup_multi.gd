@@ -47,6 +47,7 @@ func _run() -> void:
 		e.hp = e.mhp
 	for key in oracle.traces:
 		await _trace(scene, key, oracle.traces[key])
+	await _switch_case(scene)
 	scene.queue_free()
 	for sp in XSound._players:
 		if is_instance_valid(sp):
@@ -57,6 +58,26 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
+
+
+## 回退开关：POPUP_QUEUE 开时同一帧对同一战斗者的第二个弹数排到下一帧；关时同帧全建（原来的写法）
+func _switch_case(scene: XBattleScene) -> void:
+	var t: XBattler = scene.logic.enemies[0]
+	for on in [true, false]:
+		XBattleScene.POPUP_QUEUE = on
+		await get_tree().physics_frame
+		for p in scene._popups.get(t, []):
+			if is_instance_valid(p):
+				p.free()
+		scene._popups.erase(t)
+		scene._popup(t, 10, false)
+		scene._popup(t, 20, false)
+		var now: int = scene._popups.get(t, []).size()
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		var later: int = scene._popups.get(t, []).filter(func(x): return is_instance_valid(x)).size()
+		check("switch_%s" % ("on" if on else "off"), now == (1 if on else 2) and later == 2, [now, later])
+	XBattleScene.POPUP_QUEUE = true
 
 
 func _key(b: XBattler, scene: XBattleScene) -> String:

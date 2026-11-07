@@ -59,6 +59,7 @@ func play() -> void:
 	while not done:
 		scene.camera.update()
 		var running := _live_anims()
+		scene.flush_popups()
 		if not _busy():
 			_step()
 		for sp in scene.sprites.values():
@@ -459,7 +460,7 @@ func _waiting(mode: String) -> bool:
 		"zoom":
 			return scene.camera.is_zooming()
 		"popups":
-			return scene._popups.values().any(func(l): return l.any(func(p): return is_instance_valid(p)))
+			return scene.popups_pending() or scene._popups.values().any(func(l): return l.any(func(p): return is_instance_valid(p)))
 	return false
 
 

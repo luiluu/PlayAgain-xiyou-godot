@@ -567,6 +567,7 @@ func _physics_process(_delta: float) -> void:
 		XBattleTransition.note({"phase": "in", "fade": _fade.opacity})
 	_update_state_animations()
 	if seq_player == null:
+		flush_popups()       # 行动序列演出中由 XSequencePlayer 每帧开头出
 		update_gauges()      # 行动序列演出中由 XSequencePlayer 每帧在精灵之后更新
 	if _camera.is_empty() and seq_player == null:
 		camera.update()
@@ -1916,9 +1917,62 @@ const POPUP_Z := 7
 var _popups := {}          # XBattler -> Array[XDamagePopup]
 
 
+## 原版 Sprite_Battler.setupDamagePopup 每帧每个战斗者只取一个弹数（LGP popupQueue），同一次结算的几个弹数隔帧出、
+## 多段技能各段按各自 ACTION EFFECT 当帧出；重制原来同帧全建、叠在一个位置（Kyo 11-06 实机 2）。POPUP_QUEUE = false 回到同帧全建。
+static var POPUP_QUEUE := true
+var _popup_queue := {}     # XBattler -> Array[参数]
+var _popup_frame := {}     # XBattler -> 上次出弹数的物理帧
+
+
 func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false, is_tp := false) -> void:
 	if not XConfig.flag("CombatDamageShow"):
 		return
+	if not sprites.has(b):
+		return
+	var args := [value, critical, text, is_mp, is_tp]
+	var q: Array = _popup_queue.get(b, [])
+	if POPUP_QUEUE and (not q.is_empty() or _popup_frame.get(b, -1) == Engine.get_physics_frames()):
+		q.append(args)
+		_popup_queue[b] = q
+		return
+	_spawn_popup(b, args)
+
+
+## 每物理帧（行动序列里在本帧结算之前）每个战斗者出一个排队的弹数
+func flush_popups() -> void:
+	var now := Engine.get_physics_frames()
+	for b in _popup_queue.keys():
+		var q: Array = _popup_queue[b]
+		if q.is_empty() or not sprites.has(b):
+			_popup_queue.erase(b)
+			continue
+		if _popup_frame.get(b, -1) == now:
+			continue
+		_spawn_popup(b, q.pop_front())
+		if q.is_empty():
+			_popup_queue.erase(b)
+
+
+## 把排队的弹数全部出完（测试与战斗收尾用）
+func drain_popups() -> void:
+	for b in _popup_queue.keys():
+		for args in _popup_queue[b]:
+			if sprites.has(b):
+				_spawn_popup(b, args)
+	_popup_queue.clear()
+
+
+func popups_pending() -> bool:
+	return _popup_queue.values().any(func(q): return not q.is_empty())
+
+
+func _spawn_popup(b: XBattler, args: Array) -> void:
+	var value: float = args[0]
+	var critical: bool = args[1]
+	var text: String = args[2]
+	var is_mp: bool = args[3]
+	var is_tp: bool = args[4]
+	_popup_frame[b] = Engine.get_physics_frames()
 	var s: XBattlerSprite = sprites[b]
 	var live: Array = _popups.get(b, []).filter(func(x): return is_instance_valid(x))
 	var p := XDamagePopup.new()
