@@ -50,6 +50,13 @@
 
 - 角色：待总装按本期两项核定。
 
+## 接续要点（等总装推送 main 后做）
+
+1. `git merge main`，`新建工作树.sh --补齐 <本工作树>`；`python3 03_再刷重制_Godot/07_开发环境/语法检查.py`。
+2. 专项：`xiyou_zhenhuo`、`xiyou_starburst_books`；再 `选测.py main --list` 取战斗核心类场景（改了 battle_logic／battler／resource_context，至少 xiyou_determinism 等），`工具回归.py`。
+3. 可能对不上的地方：mark.* 的 108 回合数（原版挂完后行动结束减 1：1083 为 1）、1083 两个不同目标的选法（随机 0.5）、提示文字；chase.* 原版的命中段数不比（强制行动排在事件里，探针不跑）。
+4. 探针跑法：`NODE_PATH=<主工作区>/03_再刷重制_Godot/03_转换工具/mv_oracle/node_modules node zhenhuo_probe.cjs`，产物拷到 `tests/fixtures/`。
+
 ## 验证
 
 （待写）
