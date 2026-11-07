@@ -9,6 +9,7 @@
 // 真实 BattleManager／Game_Action，Math.random 0.5；只在内存，产物 .sandbox/zhenhuo.json，拷成 tests/fixtures/zhenhuo_oracle.json。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（成长改伤害）重制不移植，量伤害前关掉
 const Z = w.__codexZhenhuoV05301;
 if (!Z || typeof Z.isOwner !== 'function') throw new Error('真火印记模块未安装');
 const stub = new Proxy(function () {}, {get: (_, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
@@ -96,8 +97,7 @@ for (const [user, skill] of [[ZZB, 1086], [1, 1086], [1, 1]]) {
   }));
 }
 // ③ 追击伤害倍率
-// scale.p1089.noscale：学 1089 但关掉本模块倍率（Z.noScale）。学 1089 本身另让 1090 高约 6.9%（被动链，与本模块无关，
-// 重制没有这一项，交规则车道），所以倍率按 p1089 ÷ p1089.noscale 比。
+// scale.p1089.noscale：学 1089 但关掉本模块倍率（Z.noScale），倍率按 p1089 ÷ p1089.noscale 比。
 for (const [name, learn, noScale] of [['p1089', [1089], false], ['p1089.noscale', [1089], true], ['plain', [], false]]) {
   cases.push(makeCase(`scale.${name}`, {learn, noScale, troop: TROOP, level: LEVEL}, () => {
     const {bm, a} = battle(learn);

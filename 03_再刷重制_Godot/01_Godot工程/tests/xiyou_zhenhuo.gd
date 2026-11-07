@@ -159,12 +159,13 @@ func _scale(ref: Array) -> void:
 		check(k + ".hits", got[k].size() == by[k].observed.log.size(), [got[k], by[k].observed.log])
 	var a_level := float(by["scale.p1089"].observed.scale)
 	check("scale.factor", absf(XZhenhuo.scale_of(_battle([])[1]) - a_level) < 1e-9, [a_level])
-	# 比值：原版 p1089 ÷ p1089.noscale（同样学了 1089、只差本模块倍率）；重制 p1089 ÷ plain（重制学 1089 不另改 1090，
-	# 原版学 1089 另高约 6.9% 是被动链差，交规则车道）。绝对伤害另有链差，这里只比倍率
+	# 原版 p1089 ÷ p1089.noscale（只差本模块倍率）与重制 p1089 ÷ plain 比；参照关了五乘区，逐段绝对伤害也比
 	for i in range(mini(got["scale.p1089"].size(), got["scale.plain"].size())):
 		var want_ratio := float(by["scale.p1089"].observed.log[i].value) / float(by["scale.p1089.noscale"].observed.log[i].value)
 		var got_ratio: float = got["scale.p1089"][i] / maxf(1.0, got["scale.plain"][i])
-		check("scale.ratio.%d" % i, absf(got_ratio - want_ratio) < 1e-6, [got_ratio, want_ratio, got["scale.p1089"][i], got["scale.plain"][i], by["scale.p1089"].observed.log[i].value, by["scale.plain"].observed.log[i].value])
+		check("scale.ratio.%d" % i, absf(got_ratio - want_ratio) < 1e-6, [got_ratio, want_ratio])
+		for k in ["scale.p1089", "scale.plain"]:
+			check("%s.value.%d" % [k, i], got[k][i] == float(by[k].observed.log[i].value), [got[k][i], by[k].observed.log[i].value])
 
 
 func _run() -> void:
