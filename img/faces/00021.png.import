@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fofgeyk88alq"
-path="res://.godot/imported/!$fishing.png-2d5eba99f934ad9d80b233237f832952.ctex"
+uid="uid://c8j2bnrq53je"
+path="res://.godot/imported/00021.png-2ea281ed9817d968f86a0fa5bc95237a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://modes/xiyou/generated/img/characters/!$fishing.png"
-dest_files=["res://.godot/imported/!$fishing.png-2d5eba99f934ad9d80b233237f832952.ctex"]
+source_file="res://modes/xiyou/generated/img/faces/00021.png"
+dest_files=["res://.godot/imported/00021.png-2ea281ed9817d968f86a0fa5bc95237a.ctex"]
 
 [params]
 
