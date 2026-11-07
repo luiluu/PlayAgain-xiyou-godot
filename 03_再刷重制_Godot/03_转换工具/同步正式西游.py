@@ -11,6 +11,8 @@
    有测量变化：不改登记，退出码 2，报告写在备份目录 同步报告.json，交给人看（变化可能就是正式版的规则改动，要跟进）。
 7. 同步正常结束（核对 0 问题、测量不变或只增）时在 generated/ 写产物指纹 sync_stamp.json：本库决定产物的转换工具文件摘要
    （03_转换工具 下受 Git 跟踪的文件，ui_reference 与 .md 除外）与全部产物摘要（不含 Godot 的 .import）。
+   只差测量接受（来源核验通过、导入成功、探针缓存发布成功，退出码 2）时也写，标 pendingAcceptance：产物是按这组输入如实测出的，
+   接不接受由合并时 main 用自己的基线重新比较决定，接受规则不变（2026-11-07 同步提速，XIYOU_REUSE_PENDING_STAMP=0 回退）。
 8. 最后 godot --import（--no-import 跳过），免得紧接着跑的专项测试读不到新图。
 
 --accept-changes <接受单.json>（可多次）：人工核过的单条既有用例测量改变（如有意修正探针）。接受单逐条写 file、collection、
@@ -248,6 +250,11 @@ def presets_merge_plan(worktree: Path, gen: Path, lane_gen: Path):
         return None, '预设方案读取失败'
 
 
+def reuse_pending_stamp() -> bool:
+    """只差测量接受的车道同步也写／认可复用指纹（11-07 换源合并 main 整轮重跑 3.5 小时）。XIYOU_REUSE_PENDING_STAMP=0 回到旧行为。"""
+    return os.environ.get('XIYOU_REUSE_PENDING_STAMP', '1') != '0'
+
+
 def clone_from_worktree(worktree: Path, gen: Path):
     """车道产物可用时克隆到本工作区 generated；不可用返回原因（此时不动本工作区）。"""
     lane_gen = worktree / gen.relative_to(ROOT.resolve())
@@ -262,6 +269,8 @@ def clone_from_worktree(worktree: Path, gen: Path):
         return None, '车道同步指纹无法读取'
     if not isinstance(stamp, dict):
         return None, '车道同步指纹格式无效'
+    if stamp.get('pendingAcceptance') and not reuse_pending_stamp():
+        return None, '车道指纹是待接受的（XIYOU_REUSE_PENDING_STAMP=0 不复用）'
     if stamp.get('toolsDigest') != tools_digest(worktree):
         return None, '车道同步后又改了转换工具文件'
     if outputs_digest(lane_gen) != stamp.get('outputsDigest'):
@@ -275,9 +284,12 @@ def clone_from_worktree(worktree: Path, gen: Path):
     return (lane_gen, stamp), None
 
 
-def write_stamp(gen: Path, report: dict) -> None:
+def write_stamp(gen: Path, report: dict, pending: bool = False) -> None:
     stamp = {'toolsDigest': tools_digest(), 'outputsDigest': outputs_digest(gen), 'releaseVersion': report.get('to'),
              'result': report.get('result'), 'time': dt.datetime.now().isoformat(timespec='seconds'), 'backup': report.get('backup')}
+    if pending:
+        # 产物如实，但本树的测量变化还没接受：合并时 main 照样用自己的基线比较、要接受单（--from-worktree 不放松任何接受规则）
+        stamp['pendingAcceptance'] = True
     (gen / STAMP).write_text(json.dumps(stamp, ensure_ascii=False, indent=2) + '\n')
 
 
@@ -1131,6 +1143,9 @@ def _main() -> int:
             elif outputs_digest(gen) != stamp.get('outputsDigest'):
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
+            if stamp.get('pendingAcceptance'):
+                report['fromWorktreePending'] = True
+                log.write('车道同步只差测量接受（待接受指纹）：产物照用，测量照样按本工作区基线比较\n')
         else:
             (gen / STAMP).unlink(missing_ok=True)
             run([sys.executable, str(HERE / 'xiyou_export.py'), '--app', str(app), '--out', str(gen)], HERE, log)
@@ -1265,8 +1280,13 @@ def _main() -> int:
         register(new_version, fingerprint, report)
     usable = (not report.get('cacheError') and not report.get('importError') and report['verifyOk'] and report['sameExistingSource']
               and (not measure or (clean and not resolved['unused'])))
-    if usable and lane is None:
-        write_stamp(gen, report)
+    # 只差测量接受：来源核验、导入、缓存发布都成功，产物是按这组输入如实测出的，照样可供 main 复用（main 重新比较、要接受单）
+    pending = (not usable and reuse_pending_stamp() and not report.get('cacheError') and not report.get('importError')
+               and report['verifyOk'])
+    if (usable or pending) and lane is None:
+        write_stamp(gen, report, pending=pending)
+        if pending:
+            print('已写待接受指纹：总装合并可直接用本树产物，main 仍按自己的基线比较、照样要接受单', flush=True)
     elif not usable:
         (gen / STAMP).unlink(missing_ok=True)
     # 缓存只描述测量与输入，不能充当接受记录。登记、导入、缓存与指纹均成功才推进接受边界。
