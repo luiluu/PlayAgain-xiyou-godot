@@ -94,6 +94,11 @@ func _run() -> void:
 	GameApp.fast_forward()
 	XSave.dir_override = "user://test_xiyou_map_dispatch"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# 新源大厅首次进入的漩涡过场（Map4 EV76 自动执行，CodexWhisper.seen('rift1') 为假时播，占住地图约 5000 帧）：
+	# par.m32e10.transfer 换到大厅后，过场里 EV75／EV77 的动画 136／678 会被当成「换图后旧图并行还在放动画」。过场由 xiyou_opening_branches c_rift_cutscene 单测，这里删旧配置、标成看过（同 xiyou_actor_p0／xiyou_flow，八戒 DD³）
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = ""
+	XConfig.whisper_mark("rift1")
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	get_tree().node_added.connect(_on_node_added)
