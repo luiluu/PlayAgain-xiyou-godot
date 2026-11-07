@@ -2184,7 +2184,10 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
 		return 0.0
-	var cri := u.cri * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
+	# （修负暴击率碰上 >100% 暴击回避负负得正），下面猫心必暴、云裳加成照旧（Kyo 11-01：必暴可以暴）
+	var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
+	var cri := maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3

@@ -112,4 +112,32 @@ cases.push(makeCase('streg', {stateIds: STREG_IDS}, () => {
   out.notes = [38, 1174, 5979, 5699].map(id => ({id, keys: Object.keys(w.$dataSkills[id].meta).filter(k => k.startsWith('passiveSTREG'))}));
   return out;
 }));
-process.exit(finish(host, 'passive.json', {scope: 'dsPassiveSkill passiveGUARD / passiveXPBSTEX / passiveSTREG on frozen source', cases}) ? 0 : 1);
+// SkillCriPush 暴击率增加与 v0.62.12 installCritFloor（rules-gaps1）：
+// ① 装上带 <SkillCriPushAll: 15%> 等的防具、学带 <SkillCriPushMf: n%> 的技能后，_passiveCache.critPush 与 itemCri（数据全写成 n%，原版正则对不上）；
+// ② 攻击方暴击率 ≤0、目标暴击回避 >1 时 itemCri（负负得正被下限挡掉）。cri／cev 用 getter 钉住。
+cases.push(makeCase('cripush', {}, () => {
+  const out = {rows: [], floor: []};
+  const pick = (table, re) => table.find(x => x && re.test(x.note || ''));
+  const arm = pick(w.$dataArmors, /<SkillCriPushAll:/), mfSkill = pick(w.$dataSkills, /<SkillCriPushMf:/), idSkill = pick(w.$dataSkills, /<SkillCriPush\d+:/);
+  out.objs = [['Armors', arm], ['Skills', mfSkill], ['Skills', idSkill]].map(([t, o]) => ({table: t, id: o.id, tags: o.note.match(/<SkillCriPush[^>]*>/g)}));
+  for (const which of ['none', 'armor', 'mf', 'id']) {
+    const {a, e} = battle(true); sourceErrors.length = 0;
+    if (which === 'armor') { a.canEquip = () => true; a.forceChangeEquip(a.equipSlots().indexOf(arm.etypeId), arm); }
+    if (which === 'mf') a.learnSkill(mfSkill.id);
+    if (which === 'id') a.learnSkill(idSkill.id);
+    a.need_refresh = true; a.refresh(); if (a.refreshPassiveCache) a.refreshPassiveCache();
+    const row = {which, critPush: JSON.parse(JSON.stringify(a._passiveCache.critPush)), cri: a.cri, itemCri: {}};
+    for (const sid of [1, mfSkill.id, idSkill.id]) { const act = new w.Game_Action(a); act.setSkill(sid); row.itemCri[sid] = act.itemCri(e); }
+    row.cev = e.cev; row.sourceErrors = sourceErrors.slice();
+    out.rows.push(row);
+  }
+  for (const [cri, cev] of [[-0.5, 2], [-0.5, 0.5], [0, 2], [0.3, 2], [0.3, 0.5]]) {
+    const {a, e} = battle(true); sourceErrors.length = 0;
+    Object.defineProperty(a, 'cri', {get: () => cri, configurable: true});
+    Object.defineProperty(e, 'cev', {get: () => cev, configurable: true});
+    const act = new w.Game_Action(a); act.setSkill(1);
+    out.floor.push({cri, cev, itemCri: act.itemCri(e), sourceErrors: sourceErrors.slice()});
+  }
+  return out;
+}));
+process.exit(finish(host, 'passive.json', {scope: 'dsPassiveSkill passiveGUARD / passiveXPBSTEX / passiveSTREG / SkillCriPush / CritFloor on frozen source', cases}) ? 0 : 1);
