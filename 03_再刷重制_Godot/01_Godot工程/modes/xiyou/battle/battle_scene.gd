@@ -462,6 +462,8 @@ func _small_button(text: String) -> Button:
 	b.add_theme_font_size_override("font_size", 20)
 	b.add_theme_stylebox_override("normal", XUI.panel())
 	b.custom_minimum_size.x = 120
+	# 只认鼠标：不拿键盘焦点。点过之后焦点留在按钮上，空格／J（ui_accept）会先按到它，选技能时又切一次倍速／自动（Kyo 11-06 实机）
+	b.focus_mode = Control.FOCUS_NONE
 	return b
 
 
@@ -817,11 +819,7 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 		entries.append([a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn") + XXuanBattle.manual_first_shift(logic, a, skill), logic._speed])
 	var cur := XBattleLogic._note_int(skill, "OTB Target Current Turn")
 	var nxt := XBattleLogic._note_int(skill, "OTB Target Next Turn")
-	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
-		for eff in skill.get("effects", []):
-			if int(eff.code) == 31 and int(eff.dataId) == XBattleLogic.AGI_PARAM:
-				nxt += 1
-				break
+	nxt += XBattleLogic.agi_convert_shift(skill)  # 敏捷增益 +1、减益 −1（O-219）
 	var follow := XBattleLogic._note_int(skill, "OTB Target Follow Turn")
 	for t in targets:
 		if logic._speed.get(t, 0.0) == INF:
@@ -1308,6 +1306,11 @@ func _gui_input(event: InputEvent) -> void:
 			_select_target(h)
 		return
 	if event is InputEventMouseButton and event.pressed:
+		# 不在选目标时，左键／滚轮交给开着的技能（物品）列表或指令窗（Window_Selectable.processTouch／processWheel）：
+		# 本场景铺满全屏、MOUSE_FILTER_STOP，点击在这里就被收下，到不了列表的 _unhandled_input（Kyo 11-06 实机：鼠标选不了战技）
+		if _target_mode == "" and event.button_index != MOUSE_BUTTON_RIGHT and _mouse_to_window(event):
+			accept_event()
+			return
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_picked.emit("cancel" if _target_mode != "" or list_win != null else "back")
 			return
@@ -1319,6 +1322,18 @@ func _gui_input(event: InputEvent) -> void:
 	var best = _nearest_target(pos)
 	if best != null:
 		_picked.emit(best)
+
+
+## 鼠标键转给开着、可操作的列表（先技能／物品列表，再指令窗）；坐标换成窗口父节点里的坐标（XBattleList._hit 按 position 算）
+func _mouse_to_window(event: InputEventMouseButton) -> bool:
+	for w in [list_win, cmd_win]:
+		if w == null or not is_instance_valid(w) or not w.active or not w.is_visible_in_tree():
+			continue
+		var e := event.duplicate() as InputEventMouseButton
+		e.position = (w.get_parent() as CanvasItem).get_global_transform().affine_inverse() * event.global_position
+		w._unhandled_input(e)
+		return true
+	return false
 
 
 func _nearest_target(pos: Vector2):

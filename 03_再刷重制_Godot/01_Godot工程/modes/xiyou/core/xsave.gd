@@ -35,7 +35,7 @@ static func save(slot: int) -> bool:
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	if not _write(path(slot), data):
 		return false
-	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-待定·仓库取出事务）
+	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
 	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
 	return true
@@ -123,7 +123,7 @@ static func auto_summary() -> String:
 	var d = JSON.parse_string(FileAccess.get_file_as_string(auto_path())) if exists_auto() else null
 	if not valid_data(d):
 		return ""
-	return "自动存档（切后台时）：%s" % str(d.get("savedAt", "")).replace("T", " ")
+	return "自动存档：%s" % str(d.get("savedAt", "")).replace("T", " ")
 
 ## 读切后台的自动存档；读完文件留着（直到下次手动存档），档位回到存它时玩家在用的那一格。
 static func load_auto() -> bool:

@@ -50,7 +50,7 @@ func _ready() -> void:
 	add_child(help_card)
 	help_card.show_for({})
 	XStarWarehouse.ensure_loaded()
-	XStarWarehouse.resolve_pending()   # 别的局取出、没存档的退回仓库（O-待定·仓库取出事务）
+	XStarWarehouse.resolve_pending()   # 别的局取出、没存档的退回仓库（O-222·仓库取出事务）
 	_reload()
 
 
