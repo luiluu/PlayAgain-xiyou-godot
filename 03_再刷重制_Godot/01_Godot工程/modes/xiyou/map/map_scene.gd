@@ -143,6 +143,7 @@ func _ready() -> void:
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
+	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 
 
 ## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
@@ -1160,6 +1161,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 			XToast.show_text("装备出售完成")
 	hud.visible = true
 	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
+	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 	_reset_transfer_button()
 	bgm.stream_paused = false
 	bgs.stream_paused = false
@@ -1720,6 +1722,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	_menu_open = false
 	_menu_closed_frame = Engine.get_process_frames()  # 同一次 Esc 关菜单后本帧不再开（XKeyMap.menu_call_blocked）
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
+	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 	hud.visible = true
 	_reset_transfer_button()
 	await run_reserved_common_event(owner)

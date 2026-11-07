@@ -1824,6 +1824,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XGuyu.begin(u)  # 谷雨 startAction 包装：清特效标记、开行动事件（众生之劫记各人最大生命）
 	XGarou.begin(u, skill)  # 饿狼 startAction 包装：开施放帧（记施放开始时的进化层）
 	XRaven.begin(u, skill)  # 渡鸦：新行动的施放帧（原版记在 Game_Action 上）
+	XZhenhuo.start_action()  # 至尊宝真火印记：新的 Game_Action，按目标的追击格子清空
 	XAlienBattle.start_action(self, u, skill)  # 异化蚀术 startAction 包装（最外层）：记上次用的技能、列出要解的封印
 	logs.append_array(XYunshang.prepare(self, u, skill))  # 云裳 startAction 包装（prepareAction）：敌人引爆符针、钉影虚弱、余辉、收针
 	if u.is_dead():
@@ -2310,6 +2311,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		if STALE_TIMING:
 			frame = {"t": t, "before": states_before}
 			_stale_frames.append(frame)
+	var zhenhuo = XZhenhuo.apply_begin(self, u, skill, t)  # 至尊宝真火印记 Game_Action.apply 包装（外层）：记行动前印记、独特技能先挂印记
 	var blocked := [false]
 	var r: Dictionary = XGuyu.apply(self, u, skill, t, func() -> Dictionary:
 		# 心钢 Game_Action.apply 包装（在谷雨之内，谷雨已置行动执行标记）：巨人吞噬没放成或已结算过，整次不生效（审查第 29 期 P3-2）
@@ -2325,6 +2327,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	_after_eval_force(u, skill)  # YEP_SkillCore Game_Action.apply 末尾的 <After Eval>（六耳猕猴「模仿」856）
 	XNanoha.applied(self, u, t, live, r)  # 奈叶 Game_Action.apply 包装（谷雨、屠苏、绑定在外层）：队友打中活着的敌人记目标
 	XHeartsteel.after_apply(self, u, skill, t, hp_before, r)  # 心钢：命中按权重记本场层数（原版装在奈叶之后，包在奈叶外层）
+	XZhenhuo.apply_end(self, u, skill, t, zhenhuo, r)  # 至尊宝真火印记 apply 包装后半：火伤打中带印记的目标，来源追加横扫千军 1090
 	if t is XActor and t.rv_tp_refreshed:
 		_mark_stale(t, states_before)
 	return r
@@ -2446,6 +2449,7 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		var previous_record := _damage_record
 		_damage_record = r
 		var value := _damage_value(XGuyu.owner(u), skill, dt, r.critical, true)  # 谷雨 makeDamageValue 包装：绽放按谷雨算（calcOwner）
+		value = XZhenhuo.scale(u, skill, value)  # 至尊宝真火印记 makeDamageValue 包装（最外层）：追击 1090 ×(0.6＋1%×等级)
 		if XBlackFlash.boosted(dt):
 			r.critical = true  # 黑闪 modifyCritical：结果记为暴击
 			_action_resources.result(dt).critical = true
@@ -3143,6 +3147,7 @@ func grant(r: Dictionary) -> Array:
 	if garou_text != "":
 		victory_texts.append(garou_text)
 	XXuanChart.credit_victory(state, actors, enemies)  # 璇 endBattle 包装：出战的璇胜利一场攒星砂（含 Boss 的敌群多给）
+	XStarburstBooks.on_victory(self)  # 星爆三本被动书 endBattle(0) 包装（真气、云裳外层，真气胜利结算之前）：8／18 层守层者、13 层不朽存在
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:

@@ -41,6 +41,8 @@ func add_state(b: XBattler, id: int, inputs := {}) -> void:
 		return
 	if XLiuying.blocks_state(b, id):
 		return  # 流萤 addState／isStateAddable 包装：负面免疫
+	if XZhenhuo.blocks_state(b, id):
+		return  # 至尊宝真火印记 addState 包装：角色不挂旧追击状态 109
 	var context := state_context(b)
 	context.merge(inputs, true)
 	context.resources = self

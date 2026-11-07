@@ -12,6 +12,55 @@ static func fits(a: XActor, slot: int, item: Dictionary) -> bool:
 	return slot >= 0 and slot < slots.size() and not item.is_empty() and int(item.get("etypeId", 0)) == int(slots[slot]) and a.can_equip(item) \
 		and (XState.current == null or XAlienation.can_wear(XState.current, a, item))  # 异化装备要就绪（installAlienationRuntime canEquip）
 
+## installDualExclusiveRuntime（v0.62.10，Kyo 2026-11-01）：双持时专武只能装一把。专武＝带 <req_actors> 的武器（与出售保护的「专属」同一判定，
+## 实例备注或解析出的角色需求）。另一个武器栏（槽位类型 1）已有专武时：change 不换、装备页变灰、最强装备跳过；
+## 旧档已同时装着两把：release_unequippable 只留排在前面的一把，其余卸回背包。白晶晶（76，毒吻＋穿肠）例外。参照 dual_exclusive_probe。
+const DUAL_EXCLUSIVE_EXEMPT := [76]
+## O-待定·双持专武最强装备：原版 bestEquipItem 的跳过挂在 Game_BattlerBase.canEquip 上，被 Game_Actor 自己的 canEquip 盖过去没生效，
+## 第二栏照样挑中专武，随后 changeEquip 被挡，第二栏空着。修好＝跳过专武、挑下一件最好的；false＝原版（第二栏留空）。
+static var FIX_DUAL_EXCLUSIVE_BEST := true
+static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
+
+static func is_exclusive(item) -> bool:
+	if not item is Dictionary or item.is_empty() or str(item.get("kind", "")) != "weapon":
+		return false
+	var eq = item.get("equipment")
+	var req = eq.get("requirements", {}) if eq is Dictionary else {}
+	var actors = req.get("actors", []) if req is Dictionary else []
+	return (actors is Array and not actors.is_empty()) or _req_actors_re.search(str(item.get("note", ""))) != null
+
+## 除 slot 这一栏外，别的武器栏里有没有专武
+static func _other_has_exclusive(a: XActor, slot: int) -> bool:
+	var slots := a.equip_slots()
+	for i in range(mini(a.equips.size(), slots.size())):
+		if i != slot and int(slots[i]) == 1 and is_exclusive(a.equips[i]):
+			return true
+	return false
+
+## KyoDualExclusive.blocked：这一栏不能装这把专武
+static func dual_blocked(a: XActor, slot: int, item) -> bool:
+	if DUAL_EXCLUSIVE_EXEMPT.has(a.actor_id) or not is_exclusive(item):
+		return false
+	var slots := a.equip_slots()
+	return slot >= 0 and slot < slots.size() and int(slots[slot]) == 1 and _other_has_exclusive(a, slot)
+
+## releaseUnequippableItems 包装：武器栏里的专武只留排在前面的一把，其余卸下（不论 forcing 都退回背包，由调用处放回）
+static func release_dual_exclusive(a: XActor) -> Array:
+	var removed := []
+	if DUAL_EXCLUSIVE_EXEMPT.has(a.actor_id):
+		return removed
+	var slots := a.equip_slots()
+	var kept := false
+	for i in range(mini(a.equips.size(), slots.size())):
+		if int(slots[i]) != 1 or not is_exclusive(a.equips[i]):
+			continue
+		if not kept:
+			kept = true
+			continue
+		removed.append(a.equips[i])
+		a.equips[i] = null
+	return removed
+
 static func clone(a: XActor) -> XActor:
 	var b := XActor.new()
 	b.actor_id = a.actor_id
@@ -49,6 +98,8 @@ static func preview(a: XActor, slot: int, item) -> XActor:
 static func change(s: XState, a: XActor, slot: int, item) -> bool:
 	if not can_change(a, slot) or not XAlienation.can_change(s, a, slot, item):  # 异化：待选、每人一件、就绪（changeEquip）
 		return false
+	if dual_blocked(a, slot, item):
+		return false  # 双持专武：另一武器栏已有专武（installDualExclusiveRuntime changeEquip）
 	if item is Dictionary:
 		var index := s.gear.find_custom(func(e):return is_same(e,item))
 		if index < 0 or not fits(a, slot, item):
@@ -86,7 +137,7 @@ static func optimize(s: XState, a: XActor) -> void:
 		var best = null
 		var score := -1000.0   # MV bestEquipItem 的起点，能力值和为负的也能选上
 		for e in s.gear:
-			if not fits(a, slot, e):
+			if not fits(a, slot, e) or (FIX_DUAL_EXCLUSIVE_BEST and dual_blocked(a, slot, e)):  # 另一栏已挑了专武就跳过专武（O-待定；原版挑中后被 change 挡下）
 				continue
 			var value := 0.0
 			for p in e.params:
