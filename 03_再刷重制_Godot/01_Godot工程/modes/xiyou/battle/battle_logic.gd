@@ -944,7 +944,7 @@ func _auto_battle_action(a: XActor) -> Array:
 ## - 技能速度不再参与排序，而是使用后把自己在下个回合的位置前移「速度」格（Action Speed Convert）：
 ##   攻击速度 -1 → 后移 1 格；防御速度 2000 → 移到最前。物品不移位（只有技能付费时触发）。
 ## - 增加敏捷增益的技能命中后，目标下个回合前移 1 格（Buff/Debuff AGI Convert）；减益正式版判断写错（两个 if 都判 ADD_BUFF），不移位，
-##   O-待定-2 默认修成后移 1 格（agi_convert_shift）。
+##   O-219 默认修成后移 1 格（agi_convert_shift）。
 ## - 追加行动（特性 61）：同一人在顺序中连续出现多次；正式版改为每回合最多 5 次（文件末尾的修复段）。
 ## - 无法行动（死亡、行动限制）的人从当前回合移除；下个回合若一回合后仍不能动也移除；恢复行动时补回顺序末尾。
 ## 超过上限的追加行动：原 _actionDMG 已被真气取代（installNativeZhenqiRuntime：首回合超额次数记真气，见 XZhenqi）。
@@ -1743,11 +1743,11 @@ func _otb_target_shift(skill: Dictionary, t: XBattler) -> void:
 		_shift(t, nxt, false)
 
 
-## 优化 O-待定-2（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」）：Olivia_BattleSysOTB otbBuffDebuffAgiConvert 第二个 if 本该判减益
+## 优化 O-219（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」）：Olivia_BattleSysOTB otbBuffDebuffAgiConvert 第二个 if 本该判减益
 ## （EFFECT_ADD_DEBUFF 32），写成了又判增益，敏捷减益（嘤嘤嘤、天坠翼击等 7 个技能）从不让目标后移。默认修：减益后移 1 格；false 回到原版不移。
 static var FIX_AGI_DEBUFF_SHIFT := true
 
-## Buff/Debuff AGI Convert：技能备注没写 <OTB Target Next Turn> 时，敏捷增益 +1、敏捷减益 −1（O-待定-2）；画面预览共用
+## Buff/Debuff AGI Convert：技能备注没写 <OTB Target Next Turn> 时，敏捷增益 +1、敏捷减益 −1（O-219）；画面预览共用
 static func agi_convert_shift(skill: Dictionary) -> int:
 	if str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
 		return 0
