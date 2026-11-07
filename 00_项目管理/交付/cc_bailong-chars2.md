@@ -2,7 +2,7 @@
 
 - 车道／工作者：E 角色专属／白龙（cc，FF2，接 cc/bailong-chars1 第二期）
 - 分支起点：cc/bailong-chars1 末端 0630f569（一期还没合进 main），已合 main 26c4fe69。**合并时先合 chars1 再合本分支**（本分支含 chars1 全部提交）。
-- 状态：云端选测进行中（见「验证」），结果出来后改成「可合并」
+- 状态：可合并
 
 ## 本期两项
 
@@ -48,6 +48,6 @@
 - 合 main 26c4fe69：冲突只在 `优化登记.md`（main 的 O-231 与 chars1 的真火行都留），之后 `新建工作树.sh --补齐` 重跑。
 - `语法检查.py` 0 问题；`工具回归.py` 全过（含探针登记检查：新探针有同名夹具、关了五乘区）。
 - 本机专项 13 个全过：`xiyou_dual_exclusive`、`xiyou_vegetto_form`、`xiyou_dual_wield`、`xiyou_equipment`、`xiyou_equipment_admission`、`xiyou_equipment_clone_state`、`xiyou_costumes`、`xiyou_state_effects`、`xiyou_actor_looks`、`xiyou_liuying2`、`xiyou_cat`、`xiyou_mira_battle`、`xiyou_wtype`。
-- 云端选测：`云端选测.py run`，提交 9a364943，基准 92c94104a8，345 个场景（含 chars1 改动面、xiyou_determinism、xiyou_rules 全段）。结果：待填。
+- 云端选测：`云端选测.py run`，提交 9a364943，基准 92c94104a8，345 个场景（含 chars1 改动面、xiyou_determinism、xiyou_rules 全段）。全过（run 42395719911，14 片，最长 11.7 分钟）；之后只加了交付单与优化登记文档。
 - 原版探针：`dual_exclusive_probe.cjs`，跑法 `NODE_PATH=<主工作区>/03_再刷重制_Godot/03_转换工具/mv_oracle/node_modules node <探针>`；产物拷进 `tests/fixtures/`，不进同步 PROBES。探针里刘备／紫霞直接写 `_level=80`（新游戏有等级上限，只为过 `<req_level>`）。
 - 测试里参照比的是原版（`FIX_DUAL_EXCLUSIVE_BEST = false`），修好的一头另比两例（刘备 2007＋2、紫霞 1696＋2）。
