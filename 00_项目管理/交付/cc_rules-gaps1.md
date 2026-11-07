@@ -1,7 +1,7 @@
 # 交付：cc/rules-gaps1（第十五批 FC：战斗规则缺口第一批）
 
 - 车道／工作者：C 规则（cc，项目线程「完成再刷西游Godot引擎重制」）
-- 状态：进行中
+- 状态：可合并
 - 基于：本地 main cbc5bf9b（换源合并中途，v0.62.12）。
 
 ## 盘点（新源 v0.62.12 现跑）
@@ -73,10 +73,16 @@
 
 ## 验证
 
-（待写）
+- 合 main 2443a7b0 后 `--补齐`；改了 `passive_probe.cjs`，工作树跑 `同步正式西游.py --accept-additions`（只重跑 passive，passive.json 新增 streg、cripush 两例已接受，指纹留下）。`otb_probe.cjs` 是夹具式探针，`tests/fixtures/otb.json` 手动同步（插件 SHA 不变）。
+- `语法检查.py` 635 个 .gd 0 问题；`工具回归.py` 全过。
+- 云端选测第一轮（8a7ebfb5，基准 2443a7b0，314 场景）：311 过，挂 3 个：xiyou_otb（`_insert_orders` 用 `==` 比数组，两个空数组相等，下个回合被当成当前回合，已改 `is_same`）、xiyou_passive（测试里抵抗该走 `sequence_add_state`，重制 `add_state` 本身不查抵抗；critPush 断言漏了全局那份，都是测试写错）、xiyou_floor_reach080 `chest_reward_reset`（宝箱后装备 +2 而不是 +1，本机同一提交重跑 27/27 过，记偶发；本单没碰地图事件和掉落）。
+- 修后本机：xiyou_otb 34/34、xiyou_passive 361/361、xiyou_floor_reach080 27/27。云端第二轮（7a2c1d6f，基准 8a7ebfb5，206 场景）全过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42390228660
+- 回退支：`xiyou_passive` 里 `XActor.FIX_CRIT_PUSH = false` 逐行比原版参照（critPush 全 0、itemCri＝面板暴击率）。
 
 ## 本分支提交
 
 - 9b0b0bac passiveSTREG
 - 419312bd SkillCriPush＋暴击下限＋AI 暴击率
 - 2c0e798f OTB 恢复插回
+- 8a7ebfb5 合 main
+- 7a2c1d6f 云端挂的三处修正（is_same、测试）
