@@ -141,6 +141,16 @@ def stop(proc):
 
 def run(log, command, idle=3600, poll=0.2, start_token=None):
     log = Path(log).resolve()
+    attach = os.environ.pop('XIYOU_LONG_TASK_ERR', None)
+    if attach:   # launchd 起的：把 stderr 从临时落点接回 <日志>.start.err，再删掉临时文件（tools82）
+        try:
+            with open(attach, 'ab') as f:
+                os.dup2(f.fileno(), 2)
+            label = os.environ.get('XIYOU_LONG_TASK_LABEL')
+            if label:
+                launchd_err_path(label).unlink(missing_ok=True)
+        except OSError:
+            pass
     log.parent.mkdir(parents=True, exist_ok=True)
     with Path(str(log) + '.lock').open('a') as lock:
         try:
@@ -342,28 +352,37 @@ def sweep_launchd(min_age=120):
         if pid is None and now - stamp > min_age:
             try:
                 launchd_bootout(label)
+                launchd_err_path(label).unlink(missing_ok=True)
             except (OSError, subprocess.SubprocessError):
                 pass
+
+
+def launchd_err_path(label):
+    """launchd 作业的 stderr 落点：放在每用户临时目录，不放日志旁边（tools82：日志在 ~/Documents 下时，launchd 打不开那里
+    已存在的文件——受「文件与文件夹」隐私保护，作业以 EX_CONFIG 起不来；run 起来后自己把 stderr 接回 <日志>.start.err）。"""
+    return Path(tempfile.gettempdir()) / (label + '.err')
 
 
 def submit_launchd(label, argv, err):
     """把 run 交给 launchd 起（gui 域，不保活）。这样任务的父进程是 launchd、macOS「责任进程」是它自己，
     发起它的 claude 会话被关时 app 按责任进程连带清理也清不到它（哪吒 tools81：原来 start_new_session
     只换了会话和父进程，责任进程仍是 claude，换源同步两次被 143 掐断）。
-    环境变量与工作目录照搬当前进程；plist 只在登记那一刻存在（0600），登记完即删。"""
+    环境变量与工作目录照搬当前进程；plist 只在登记那一刻存在（0600），登记完即删。
+    不设 LaunchOnlyOnce：起不来时作业留着，start 能读到 last exit code 再卸掉（tools82）。"""
     import plistlib
     import resource
     env = {k: v for k, v in os.environ.items() if k != '__CF_USER_TEXT_ENCODING'}
     env['XIYOU_LONG_TASK_LABEL'] = label
+    env['XIYOU_LONG_TASK_ERR'] = str(err)
     limits = {}
     for key, which in (('NumberOfFiles', resource.RLIMIT_NOFILE), ('NumberOfProcesses', resource.RLIMIT_NPROC)):
         soft = resource.getrlimit(which)[0]
         if soft != resource.RLIM_INFINITY:
             limits[key] = soft
     job = {'Label': label, 'ProgramArguments': argv, 'WorkingDirectory': os.getcwd(), 'EnvironmentVariables': env,
-           'RunAtLoad': True, 'KeepAlive': False, 'LaunchOnlyOnce': True, 'AbandonProcessGroup': True,
+           'RunAtLoad': True, 'KeepAlive': False, 'AbandonProcessGroup': True,
            'ProcessType': 'Standard', 'StandardInPath': os.devnull, 'StandardOutPath': os.devnull,
-           'StandardErrorPath': str(err), 'Umask': os.umask(0o022)}
+           'StandardErrorPath': str(launchd_err_path(label)), 'Umask': os.umask(0o022)}
     os.umask(job['Umask'])
     if limits:
         job['SoftResourceLimits'] = limits
@@ -378,6 +397,28 @@ def submit_launchd(label, argv, err):
         Path(plist).unlink(missing_ok=True)
     if p.returncode:
         raise OSError('launchctl bootstrap 失败（%d）：%s' % (p.returncode, (p.stderr or p.stdout).strip()))
+
+
+def launchd_failure(label):
+    """作业没写出状态就结束时的原因：last exit code 与它的 stderr（读完即删）。"""
+    why = []
+    try:
+        out = subprocess.run(['launchctl', 'print', 'gui/%d/%s' % (os.getuid(), label)],
+                             capture_output=True, text=True, timeout=10).stdout
+        why += [l.strip() for l in out.splitlines() if l.strip().startswith('last exit code')][:1]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    path = launchd_err_path(label)
+    try:
+        text = path.read_text(errors='replace').strip()
+        if text:
+            why.append(text[-500:])
+        path.unlink()
+    except OSError:
+        pass
+    if any('78' in w and 'EX_CONFIG' in w for w in why):
+        why.append('launchd 打不开作业的标准输出／错误路径或工作目录（常见于 ~/Documents 等受隐私保护的目录）')
+    return '；'.join(why) or '作业已结束，没有留下原因'
 
 
 def cleanup_finished_launchd(label):
@@ -431,16 +472,22 @@ def start(log, command, idle=3600):
             if isinstance(pid, int):
                 seen_running = True
             elif pid == 'gone' or seen_running or time.monotonic() > idle_since + 5:
-                # 作业已结束（或登记 5 秒仍没起来）却没写出本轮状态：run 起不来（如同一日志已有任务在跑）
+                # 作业已结束（或登记 5 秒仍没起来）却没写出本轮状态：退回子进程方式再起一次（tools82）。
+                # run 自己起来后报的错（如同一日志已有任务在跑）退回后照样会报出来
                 time.sleep(.2)
                 try:
                     if json.loads(status_path(log).read_text()).get('startToken') == token:
                         continue
                 except (OSError, ValueError):
                     pass
+                why = launchd_failure(label)
                 launchd_bootout(label)
-                print('任务未能启动：%s' % err.read_text(errors='replace').strip(), file=sys.stderr)
-                return 2
+                print('launchd 作业没写出状态就结束（%s），退回子进程方式' % why, file=sys.stderr)
+                label = None
+                with open(os.devnull, 'rb') as null_in, open(os.devnull, 'wb') as null_out, err.open('wb') as err_out:
+                    proc = subprocess.Popen(argv, stdin=null_in, stdout=null_out, stderr=err_out, start_new_session=True)
+                deadline = time.monotonic() + 30
+                continue
         time.sleep(.05 if label is None else .2)
     print('任务启动后 30 秒仍未写出状态：' + str(log), file=sys.stderr)
     return 2
