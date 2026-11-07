@@ -10,8 +10,10 @@ x86_64 模拟器）。包在同一次运行的安卓任务里导出：CI 副本�
 
 查的（发行模板：11-06 那类对空指针调方法，只有发行版会闪退）：
   - 装包（adb install -r）、清数据（pm clear）
-  - 启动 25 秒后进程活着；logcat 里看到 ENTRY_SCENE=res://modes/xiyou/entry.tscn 算进了标题（启动参数带 --report-entry，
-    看不到只记 INFO：Godot 安卓的 command_line_params 传参没在真机核实过）
+  - 启动 25 秒后进程活着；logcat 里 ENTRY_SCENE=res://modes/xiyou/entry.tscn＝进了标题。启动参数写进副本的 assets/_cl_
+    （Godot 4.7 对外部启动的 intent 一律删掉 command_line_params），副本用一次性 keystore 重签；原包不动
+  - 按键（默认开，同 发行入口冒烟.py 的四组）：每组一个 _cl_ 带 --smoke-keys=<序列> 的副本，清数据启动，等 SMOKE_DONE
+    （按完游戏自己退出），新游戏三组要停在地图；logcat 里本包没有崩溃行
   - 返回键：标题按一次进程还在（出「再按一次返回键退出」），两秒内再按一次进程结束（O-202）
   - 新游戏：重开，标题按回车（11-06 闪退那条路），10 秒后进程活着
   - 切后台：按 HOME、等 5 秒、再拉起来：还是同一个进程（回前台而不是重开）、活着
@@ -34,7 +36,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0}
+WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0}
 
 
 class Report:
@@ -74,8 +76,118 @@ class Adb:
         self.run('shell', 'input', 'keyevent', str(code), timeout=30)
 
     def launch(self, pkg):
-        # Godot 安卓读 intent 的 command_line_params（字符串数组）当启动参数；-- 之后是游戏自己的参数
-        self.run('shell', 'am', 'start', '-W', '-n', f'{pkg}/{ACTIVITY}', '--esa', 'command_line_params', '--,--report-entry', timeout=120)
+        # 启动参数不走 intent：Godot 4.7 对导出的 Activity（GodotAppLauncher）一律删掉 command_line_params，
+        # 不导出的 GodotApp 外面又起不来；所以参数写进 apk 的 assets/_cl_（见 with_cmdline）
+        self.run('shell', 'am', 'start', '-W', '-n', f'{pkg}/{ACTIVITY}', timeout=120)
+
+
+# 同 发行入口冒烟.py／Windows实机冒烟.py 的 KEY_RUNS（测试安卓实机冒烟.py 核对一致）
+MAP = 'res://modes/xiyou/map/map_scene.tscn'
+KEY_RUNS = [
+    ('title_space_new_game', 'space', MAP),
+    ('title_j_new_game', 'j', MAP),
+    ('title_enter_new_game', 'accept', MAP),
+    ('title_cancel_then_map_keys', 'cancel,x,k,down,up,z,wait:90,accept,space,j,accept,cancel,cancel,x,k,cancel,accept', None),
+]
+KEY_TIMEOUT = 120.0
+
+
+def cl_bytes(args) -> bytes:
+    """Godot 安卓 assets/_cl_ 的格式（CommandLineFileParser）：小端 int32 个数，每个参数小端 int32 长度＋UTF-8。"""
+    out = len(args).to_bytes(4, 'little')
+    for a in args:
+        b = a.encode('utf-8')
+        out += len(b).to_bytes(4, 'little') + b
+    return out
+
+
+def parse_cl(data: bytes) -> list:
+    n, i, out = int.from_bytes(data[:4], 'little'), 4, []
+    for _ in range(n):
+        k = int.from_bytes(data[i:i + 4], 'little')
+        out.append(data[i + 4:i + 4 + k].decode('utf-8'))
+        i += 4 + k
+    return out
+
+
+def with_cmdline(src: str, dst: Path, args) -> None:
+    """复制 apk，把 assets/_cl_ 换成 args，去掉旧签名（之后 zipalign＋apksigner 重签）。只给冒烟用的副本，原包不动。"""
+    import zipfile
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, 'w') as zout:
+        for info in zin.infolist():
+            n = info.filename
+            if n == 'assets/_cl_' or (n.startswith('META-INF/') and n.rsplit('.', 1)[-1] in ('SF', 'RSA', 'EC', 'DSA', 'MF')):
+                continue
+            zout.writestr(info, zin.read(n))
+        zout.writestr(zipfile.ZipInfo('assets/_cl_'), cl_bytes(args), compress_type=zipfile.ZIP_STORED)
+
+
+class Signer:
+    """一次性 keystore＋build-tools 里的 zipalign／apksigner，给改过 _cl_ 的副本重签。"""
+    def __init__(self, build_tools: Path, keystore: Path, password: str):
+        self.bt, self.ks, self.pw = build_tools, keystore, password
+
+    @staticmethod
+    def find(build_tools_arg, work: Path, keystore_arg=None):
+        sdk = Path(os.environ.get('ANDROID_HOME') or Path.home() / 'Library/Android/sdk')
+        bt = Path(build_tools_arg) if build_tools_arg else (sorted((sdk / 'build-tools').glob('*'))[-1:] or [None])[0]
+        if bt is None or not (bt / 'zipalign').is_file() or not (bt / 'apksigner').is_file():
+            return None
+        if keystore_arg:
+            return Signer(bt, Path(keystore_arg), 'android')
+        import secrets
+        pw, ks = secrets.token_hex(8), work / 'smoke.keystore'
+        java = os.environ.get('JAVA_HOME')
+        keytool = str(Path(java) / 'bin' / 'keytool') if java else 'keytool'
+        r = subprocess.run([keytool, '-genkeypair', '-keystore', str(ks), '-storepass', pw, '-keypass', pw, '-alias', 'smoke',
+                            '-keyalg', 'RSA', '-keysize', '2048', '-validity', '2', '-dname', 'CN=Smoke'], capture_output=True)
+        return Signer(bt, ks, pw) if r.returncode == 0 else None
+
+    def make(self, src: str, dst: Path, args) -> bool:
+        raw = dst.with_suffix('.raw.apk')
+        with_cmdline(src, raw, args)
+        a = subprocess.run([str(self.bt / 'zipalign'), '-p', '-f', '4', str(raw), str(dst)], capture_output=True)
+        raw.unlink(missing_ok=True)
+        if a.returncode != 0:
+            return False
+        b = subprocess.run([str(self.bt / 'apksigner'), 'sign', '--ks', str(self.ks), '--ks-pass', 'pass:' + self.pw,
+                            '--ks-key-alias', 'smoke', str(dst)], capture_output=True)
+        return b.returncode == 0
+
+
+def key_runs(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Report) -> None:
+    """四组按键：每组一个 _cl_ 写着 -- --report-entry --smoke-keys=<序列> 的重签副本；清数据、启动，等 SMOKE_DONE（游戏按完自己退出）。"""
+    for name, seq, want in KEY_RUNS:
+        v = work / f'keys_{name}.apk'
+        if not signer.make(apk, v, ['--', '--report-entry', f'--smoke-keys={seq}']):
+            rep.check('android_keys_' + name, False, '重签副本没做出来')
+            continue
+        code, out = adb.rc('install', '-r', str(v))
+        if code != 0:
+            v.unlink(missing_ok=True)
+            rep.check('android_keys_' + name, False, '装不上：' + (out.splitlines()[-1] if out else str(code)))
+            continue
+        adb.run('shell', 'pm', 'clear', pkg)
+        adb.run('logcat', '-c')
+        adb.launch(pkg)
+        first = adb.pid(pkg)
+        t0, log, done = time.monotonic(), '', None
+        while time.monotonic() - t0 < KEY_TIMEOUT:
+            log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
+            m = re.search(r'SMOKE_DONE scene=(\S+)', log)
+            if m:
+                done = m.group(1)
+                break
+            if not adb.pid(pkg) and time.monotonic() - t0 > 5:
+                break
+            time.sleep(WAIT['poll'])
+        (work / f'logcat_keys_{name}.txt').write_text(log, encoding='utf-8')
+        steps = len(re.findall(r'SMOKE_KEY=', log))
+        bad = fatal_lines(log, {first} if first else set(), pkg)
+        note = f'按完 {steps}/{len(seq.split(","))} 步' + (f'，最后在 {done}' if done else '，没有 SMOKE_DONE') + (f'；崩溃：{bad[0]}' if bad else '')
+        rep.check('android_keys_' + name, bool(done) and not bad and (want is None or done == want), note)
+        adb.run('shell', 'am', 'force-stop', pkg)
+        v.unlink(missing_ok=True)
 
 
 def emulators(adb: str) -> list:
@@ -100,7 +212,7 @@ def sleep(key):
     time.sleep(WAIT[key])
 
 
-def smoke(adb: Adb, apk: str, pkg: str, work: Path, rep: Report) -> None:
+def smoke(adb: 'Adb', apk: str, pkg: str, work: Path, rep: Report, expect_entry=False) -> None:
     code, out = adb.rc('install', '-r', apk)
     rep.check('android_install', code == 0 and 'Success' in out, out.splitlines()[-1] if out else f'退出码 {code}')
     if code != 0:
@@ -116,8 +228,8 @@ def smoke(adb: Adb, apk: str, pkg: str, work: Path, rep: Report) -> None:
     rep.check('android_alive_after_launch', bool(p1), f'pid={p1 or "无"}')
     log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
     entries = sorted(set(re.findall(r'ENTRY_SCENE=(\S+)', log)))
-    if entries:
-        rep.check('android_enters_title', entries == [TITLE], ','.join(entries))
+    if entries or expect_entry:
+        rep.check('android_enters_title', entries == [TITLE], ','.join(entries) or '_cl_ 带了 --report-entry，logcat 里却没有 ENTRY_SCENE')
     else:
         rep.info('android_enters_title', 'logcat 里没有 ENTRY_SCENE（启动参数可能没传进去），只看进程活着')
     # 2. 返回键：一次留着，两秒内再一次退出
@@ -168,6 +280,10 @@ def main(argv=None) -> int:
     ap.add_argument('--out')
     ap.add_argument('--serial')
     ap.add_argument('--package', default=PACKAGE)
+    ap.add_argument('--no-keys', action='store_true', help='不跑四组按键')
+    ap.add_argument('--no-resign', action='store_true', help='不改 _cl_、不重签，直接装原包')
+    ap.add_argument('--build-tools', help='zipalign／apksigner 所在目录（默认 $ANDROID_HOME/build-tools 下最新的）')
+    ap.add_argument('--keystore', help='重签用的 keystore（口令 android、别名 smoke；默认现生成一次性的）')
     ap.add_argument('--adb', default=str(Path(os.environ.get('ANDROID_HOME') or Path.home() / 'Library/Android/sdk') / 'platform-tools' / 'adb'))
     a = ap.parse_args(argv)
     work = Path(a.out or tempfile.mkdtemp(prefix='xiyou_android_run_'))
@@ -183,7 +299,25 @@ def main(argv=None) -> int:
         rep.check('android_apk', False, f'没有 {a.apk}')
         write_report(work, rep)
         return 2
-    smoke(Adb(a.adb, serial), a.apk, a.package, work, rep)
+    adb = Adb(a.adb, serial)
+    signer = None if a.no_resign else Signer.find(a.build_tools, work, a.keystore)
+    apk = a.apk
+    if signer is not None:
+        # 重签的副本和原包签名不同，先卸掉旧的（模拟器上的冒烟包，不是玩家的）
+        adb.run('uninstall', a.package)
+        base = work / 'base.apk'
+        if signer.make(a.apk, base, ['--', '--report-entry']):
+            apk = str(base)
+        else:
+            rep.info('android_resign', '重签副本没做出来，用原包（看不到 ENTRY_SCENE，也跑不了按键组）')
+            signer = None
+    else:
+        rep.info('android_resign', '没有 build-tools 的 zipalign／apksigner 或 keytool：用原包，看不到 ENTRY_SCENE，跳过按键组')
+    smoke(adb, apk, a.package, work, rep, expect_entry=signer is not None)
+    if signer is not None and not a.no_keys and not any(n == 'android_install' and o is False for n, o, _ in rep.rows):
+        key_runs(adb, signer, a.apk, a.package, work, rep)
+    for f in work.glob('*.apk'):
+        f.unlink()
     write_report(work, rep)
     print(f'报告：{work / "报告.md"}')
     if any(n == 'android_install' and o is False for n, o, _ in rep.rows):

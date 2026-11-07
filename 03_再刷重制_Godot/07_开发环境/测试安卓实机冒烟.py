@@ -29,13 +29,37 @@ if a[:1] == ['devices']:
     print(('R58N123ABC' if mode == 'phone' else 'emulator-5554') + '\tdevice')
     sys.exit(0)
 a = a[2:]  # -s <serial>
+def cl():
+    import zipfile
+    try:
+        with zipfile.ZipFile(st.get('apk', '')) as z:
+            d = z.read('assets/_cl_')
+    except Exception:
+        return []
+    n, i, out = int.from_bytes(d[:4], 'little'), 4, []
+    for _ in range(n):
+        k = int.from_bytes(d[i:i+4], 'little'); out.append(d[i+4:i+4+k].decode()); i += 4 + k
+    return out
 def start():
     if not st['pid']:
         st['pid'] = str(st['next']); st['next'] += 1
-        st['log'].append('11-07 10:00:00.000  %s  %s I godot   : ENTRY_SCENE=res://modes/xiyou/entry.tscn' % (st['pid'], st['pid']))
+        args = cl()
+        if mode == 'always_entry' or '--report-entry' in args:
+            st['log'].append('11-07 10:00:00.000  %s  %s I godot   : ENTRY_SCENE=res://modes/xiyou/entry.tscn' % (st['pid'], st['pid']))
+        keys = [x.split('=', 1)[1] for x in args if x.startswith('--smoke-keys=')]
+        if keys:
+            seq = keys[0].split(',')
+            if mode == 'keys_crash' and seq == ['j']:
+                st['log'].append('11-07 10:00:05.000  %s  %s F libc    : Fatal signal 11 (SIGSEGV)' % (st['pid'], st['pid']))
+            else:
+                for k in seq:
+                    st['log'].append('11-07 10:00:01.000  %s  %s I godot   : SMOKE_KEY=%s' % (st['pid'], st['pid'], k))
+                st['log'].append('11-07 10:00:02.000  %s  %s I godot   : SMOKE_DONE scene=res://modes/xiyou/map/map_scene.tscn' % (st['pid'], st['pid']))
+            st['pid'] = ''
 out = ''
 if a[0] == 'install':
     out = 'Performing Streamed Install\nSuccess'
+    st['apk'] = a[-1]
 elif a[0] == 'logcat':
     if '-c' in a: st['log'] = []
     else: out = '\n'.join(st['log'])
@@ -68,8 +92,20 @@ class FakeAdbTests(unittest.TestCase):
         self.adb = d / 'adb'
         self.adb.write_text(FAKE.replace('#!/usr/bin/env python3', '#!' + sys.executable), encoding='utf-8')
         self.adb.chmod(0o755)
+        import zipfile
         self.apk = d / 'x.apk'
-        self.apk.write_bytes(b'PK')
+        with zipfile.ZipFile(self.apk, 'w') as z:
+            z.writestr('AndroidManifest.xml', b'x')
+            z.writestr('META-INF/CERT.RSA', b'old')
+            z.writestr('assets/_cl_', A.cl_bytes([]))
+        # 假 build-tools：zipalign 照抄（-p -f 4 in out），apksigner 什么都不做
+        self.bt = d / 'bt'
+        self.bt.mkdir()
+        (self.bt / 'zipalign').write_text('#!/bin/sh\ncp "$4" "$5"\n', encoding='utf-8')
+        (self.bt / 'apksigner').write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+        (self.bt / 'ks').write_bytes(b'')
+        for f in ('zipalign', 'apksigner'):
+            (self.bt / f).chmod(0o755)
         self.out = d / 'out'
         os.environ['FAKE_STATE'] = str(d / 'state.json')
 
@@ -78,19 +114,40 @@ class FakeAdbTests(unittest.TestCase):
         os.environ.pop('FAKE_STATE', None)
         self.tmp.cleanup()
 
-    def go(self, mode):
+    def go(self, mode, resign=False):
         os.environ['FAKE_MODE'] = mode
-        return A.main(['--apk', str(self.apk), '--adb', str(self.adb), '--out', str(self.out)])
+        extra = ['--build-tools', str(self.bt), '--keystore', str(self.bt / 'ks')] if resign else ['--no-resign']
+        return A.main(['--apk', str(self.apk), '--adb', str(self.adb), '--out', str(self.out), *extra])
 
     def results(self):
         return {r['name']: r['ok'] for r in json.loads((self.out / '结果.json').read_text(encoding='utf-8'))}
 
     def test_all_pass(self):
-        self.assertEqual(self.go('ok'), 0, self.results())
+        self.assertEqual(self.go('always_entry'), 0, self.results())
         r = self.results()
         for k in ('android_install', 'android_alive_after_launch', 'android_enters_title', 'android_back_once_stays',
                   'android_back_twice_exits', 'android_enter_new_game_alive', 'android_resume_same_process', 'android_no_fatal'):
             self.assertTrue(r[k], k)
+
+    def test_resign_entry_and_keys(self):
+        # 重签副本：_cl_ 里带 --report-entry 才有 ENTRY_SCENE；四组按键都到 SMOKE_DONE；原包和副本都不留在输出目录
+        self.assertEqual(self.go('ok', resign=True), 0, self.results())
+        r = self.results()
+        self.assertTrue(r['android_enters_title'])
+        for name, _, _ in A.KEY_RUNS:
+            self.assertTrue(r['android_keys_' + name], name)
+        self.assertEqual(list(self.out.glob('*.apk')), [])
+
+    def test_resign_keys_crash(self):
+        self.assertEqual(self.go('keys_crash', resign=True), 1)
+        r = self.results()
+        self.assertFalse(r['android_keys_title_j_new_game'])
+        self.assertTrue(r['android_keys_title_space_new_game'])
+
+    def test_no_entry_without_cl(self):
+        # 不重签时看不到 ENTRY_SCENE 只记 INFO（不算失败）
+        self.assertEqual(self.go('ok'), 0)
+        self.assertIsNone(self.results()['android_enters_title'])
 
     def test_crash_on_enter(self):
         self.assertEqual(self.go('crash_enter'), 1)
@@ -119,6 +176,34 @@ class ParseTests(unittest.TestCase):
         got = A.fatal_lines(log, {'123'})
         self.assertEqual(len(got), 2)
         self.assertTrue(any('ANR' in g for g in got))
+
+    def test_cl_roundtrip_and_rewrite(self):
+        import zipfile
+        args = ['--', '--report-entry', '--smoke-keys=cancel,x,中文']
+        self.assertEqual(A.parse_cl(A.cl_bytes(args)), args)
+        with tempfile.TemporaryDirectory() as d:
+            src, dst = Path(d) / 'a.apk', Path(d) / 'b.apk'
+            with zipfile.ZipFile(src, 'w') as z:
+                z.writestr('META-INF/CERT.SF', b's')
+                z.writestr('META-INF/CERT.RSA', b'r')
+                z.writestr('META-INF/MANIFEST.MF', b'm')
+                z.writestr('assets/_cl_', A.cl_bytes(['old']))
+                z.writestr('lib/x86_64/libgodot_android.so', b'so')
+            A.with_cmdline(str(src), dst, args)
+            with zipfile.ZipFile(dst) as z:
+                names = z.namelist()
+                self.assertEqual(A.parse_cl(z.read('assets/_cl_')), args)
+                self.assertEqual(z.getinfo('assets/_cl_').compress_type, zipfile.ZIP_STORED)
+            self.assertNotIn('META-INF/CERT.RSA', names)
+            self.assertIn('lib/x86_64/libgodot_android.so', names)
+            self.assertEqual(names.count('assets/_cl_'), 1)
+
+    def test_key_runs_match_release_entry_smoke(self):
+        spec2 = importlib.util.spec_from_file_location('发行入口冒烟', HERE / '发行入口冒烟.py')
+        R = importlib.util.module_from_spec(spec2)
+        spec2.loader.exec_module(R)
+        self.assertEqual(A.KEY_RUNS, R.KEY_RUNS)
+        self.assertEqual(A.MAP, R.MAP)
 
     def test_preset_has_launcher(self):
         # 启动的 Activity 名跟 Godot 安卓模板一致（GodotAppLauncher）；包名跟「安卓 发行」预设一致
