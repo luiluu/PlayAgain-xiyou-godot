@@ -1,0 +1,4 @@
+{
+  "_说明": "审查条目里的短分支名对上多批时，在这里指定是哪一个（待核查.py 先查这张表）。release1 同时是 cc/entry-release1（审查 49 已核）和 cc/platform-release1（审查 50 核的是后者）。",
+  "release1": "cc/platform-release1"
+}

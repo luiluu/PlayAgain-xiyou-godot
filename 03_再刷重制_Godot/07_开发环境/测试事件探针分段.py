@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -209,6 +210,93 @@ class StateIncrementalTests(unittest.TestCase):
             self.assertEqual(second, first)
             published.write_bytes(first.replace(b'"finished":true', b'"finished":false', 1))   # 发布的那份被改过：账上认不出
             self.assertFalse(ess.prepare_prev(dict(env), history, published, tmp / 'work'))
+
+
+class ProgressTests(unittest.TestCase):
+    """tools83：分段跑事件状态探针期间定期打进度，免得整份重量跑近一小时没输出被会话 idle 超时掐掉。"""
+    def setUp(self):
+        import sys
+        sys.path.insert(0, str(TOOLS))
+        import event_state_shards
+        self.ess = event_state_shards
+
+    def test_heartbeat_lines_while_running_and_on_each_shard(self):
+        import io, time
+        buf = io.StringIO()
+        with self.ess.Progress(3, interval=0.05, out=buf) as prog:
+            time.sleep(0.3)
+            prog.done(0)
+        lines = buf.getvalue().splitlines()
+        self.assertIn('开始，3 段并行', lines[0])
+        beats = [l for l in lines if '还在跑' in l]
+        self.assertGreaterEqual(len(beats), 3, lines)
+        self.assertTrue(all('0/3 段完成' in l for l in beats), beats)
+        self.assertIn('1/3 段完成（第 1 段刚结束）', lines[-1])
+        n = len(lines)
+        time.sleep(0.2)
+        self.assertEqual(len(buf.getvalue().splitlines()), n, '退出后心跳线程要停')
+
+    def test_interval_zero_prints_nothing(self):
+        import io, time
+        buf = io.StringIO()
+        with self.ess.Progress(2, interval=0, out=buf) as prog:
+            time.sleep(0.1)
+            prog.done(1)
+        self.assertEqual(buf.getvalue(), '')
+
+    def test_env_sets_interval_and_zero_turns_off(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '7.5'}):
+            self.assertEqual(self.ess.Progress(1).interval, 7.5)
+        with mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '0'}):
+            self.assertEqual(self.ess.Progress(1).interval, 0)
+        with mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '乱写'}):
+            self.assertEqual(self.ess.Progress(1).interval, self.ess.PROGRESS_SECS)
+        os.environ.pop('XIYOU_STATE_PROGRESS_SECS', None)
+        self.assertEqual(self.ess.Progress(1).interval, 60)
+
+    @unittest.skipUnless(shutil.which('node'), '没有 node')
+    def test_run_sharded_prints_progress_and_result_unchanged(self):
+        """真走 run_sharded：假探针睡一会儿再写分段结果；心跳打在标准输出，拼回的结果与不开心跳时逐字相同。"""
+        import contextlib, io, sys, time
+        from unittest import mock
+
+        def launch(e, label):
+            time.sleep(0.25)
+            part = {'sourceIdentity': 's', 'setup': {}, 'cases': [{'id': '%s-%d' % (label[-3:].strip('/'), k)} for k in range(2)]}
+            Path(e['XIYOU_EVENT_OUT']).write_text(json.dumps(part))
+            return subprocess.CompletedProcess(['fake'], 0, '', '')
+        results = []
+        for secs in ('0.05', '0'):
+            with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': secs}):
+                tmp = Path(tmp)
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 2, launch)
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                results.append(((tmp / 'out.json').read_text(), buf.getvalue()))
+        (with_beat, text_on), (without, text_off) = results
+        self.assertEqual(with_beat, without)
+        self.assertIn('2 段并行', text_on)
+        self.assertIn('还在跑', text_on)
+        self.assertIn('2/2 段完成', text_on)
+        self.assertEqual(text_off, '')
+
+    def test_single_shard_also_reports(self):
+        import contextlib, io, time
+        from unittest import mock
+
+        def launch(e, label):
+            time.sleep(0.2)
+            return subprocess.CompletedProcess(['fake'], 0, 'ok', '')
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '0.05'}):
+            tmp = Path(tmp)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 1, launch)
+        self.assertEqual(r.stdout, 'ok')
+        self.assertIn('1 段并行', buf.getvalue())
+        self.assertIn('1/1 段完成', buf.getvalue())
 
 
 class StateKeysTests(unittest.TestCase):
