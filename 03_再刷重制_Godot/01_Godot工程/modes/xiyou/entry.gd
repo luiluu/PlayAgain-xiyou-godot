@@ -116,6 +116,8 @@ func _title() -> void:
 		_add_transfer_buttons()
 	if XSave.exists_auto():
 		_add_auto_button()
+	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟：标题有没有「继续」（安卓实机冒烟.py，平台 FB 四单）
+		print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
 	# 光标与初始选中（审查报告第 16 项：原先误放在 _load_auto 末尾，标题没有光标，读自动存档失败后才冒出来）
 	var cp := XDB.img_path("titles2", "Cursor")
 	if cp != "":

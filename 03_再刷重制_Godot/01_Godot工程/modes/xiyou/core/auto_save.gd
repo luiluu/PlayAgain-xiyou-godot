@@ -62,6 +62,13 @@ static func blocker(map) -> String:
 
 ## 切后台时调（XPlatform.pause_hook，地图 _ready 里挂上）。返回 last_result。
 static func on_pause(map, now_msec := Time.get_ticks_msec()) -> String:
+	var r := _on_pause(map, now_msec)
+	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟（安卓实机冒烟.py，平台 FB 四单）：只打印，不改流程
+		print("PAUSE_SAVE=" + r)
+	return r
+
+
+static func _on_pause(map, now_msec: int) -> String:
 	var why := blocker(map)
 	if why != "":
 		last_result = "skip:" + why
