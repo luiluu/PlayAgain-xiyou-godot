@@ -294731,6 +294731,960 @@
    "preset": {
     "playerDirection": 8
    }
+  },
+  {
+   "base": "m67e2p0",
+   "tag": "sa1_1",
+   "preset": {
+    "party": [
+     41,
+     42,
+     43,
+     44
+    ],
+    "actors": {
+     "41": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m1e1p0",
+   "tag": "sa1_2",
+   "preset": {
+    "answers": [
+     0,
+     0,
+     0,
+     0,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m1e1p0",
+   "tag": "sa1_3",
+   "preset": {
+    "answers": [
+     0,
+     0,
+     0,
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "m1e1p0",
+   "tag": "sa1_4",
+   "preset": {
+    "answers": [
+     0,
+     0,
+     0,
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "base": "m1e1p0",
+   "tag": "sa1_5",
+   "preset": {
+    "answers": [
+     0,
+     0,
+     0,
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "m1e1p0",
+   "tag": "sa1_6",
+   "preset": {
+    "answers": [
+     0,
+     0,
+     0,
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_7",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "actors": {
+     "149": {
+      "level": 81
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_8",
+   "preset": {
+    "answers": [
+     5,
+     1,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 50
+     }
+    },
+    "variables": {
+     "1499": 7
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_9",
+   "preset": {
+    "answers": [
+     3,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 35
+     }
+    },
+    "variables": {
+     "1499": 4
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "sa1_10",
+   "preset": {
+    "party": [
+     41
+    ],
+    "actors": {
+     "41": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_11",
+   "preset": {
+    "answers": [
+     2,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 25
+     }
+    },
+    "variables": {
+     "1499": 3
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_12",
+   "preset": {
+    "answers": [
+     5,
+     2,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 60
+     }
+    },
+    "variables": {
+     "1499": 8
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_13",
+   "preset": {
+    "answers": [
+     5,
+     1,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 55
+     }
+    },
+    "variables": {
+     "1499": 7
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_14",
+   "preset": {
+    "answers": [
+     5,
+     2,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 60
+     }
+    },
+    "variables": {
+     "1499": 8
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "sa1_15",
+   "preset": {
+    "party": [
+     42
+    ],
+    "actors": {
+     "42": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "sa1_16",
+   "preset": {
+    "party": [
+     43
+    ],
+    "actors": {
+     "43": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m67e2p2",
+   "tag": "sa1_17",
+   "preset": {
+    "party": [
+     44
+    ],
+    "actors": {
+     "44": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_18",
+   "preset": {
+    "answers": [
+     2,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 25
+     }
+    },
+    "variables": {
+     "1499": 3
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_19",
+   "preset": {
+    "answers": [
+     0,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 15
+     }
+    },
+    "variables": {
+     "1499": 1
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_20",
+   "preset": {
+    "answers": [
+     1,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 20
+     }
+    },
+    "variables": {
+     "1499": 2
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_21",
+   "preset": {
+    "answers": [
+     3,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 30
+     }
+    },
+    "variables": {
+     "1499": 4
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_22",
+   "preset": {
+    "answers": [
+     4,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 35
+     }
+    },
+    "variables": {
+     "1499": 5
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_23",
+   "preset": {
+    "answers": [
+     5,
+     0,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 45
+     }
+    },
+    "variables": {
+     "1499": 6
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_24",
+   "preset": {
+    "answers": [
+     5,
+     3,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 75
+     }
+    },
+    "variables": {
+     "1499": 9
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_25",
+   "preset": {
+    "answers": [
+     0,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 10
+     }
+    },
+    "variables": {
+     "1499": 1
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_26",
+   "preset": {
+    "answers": [
+     1,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 15
+     }
+    },
+    "variables": {
+     "1499": 2
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_27",
+   "preset": {
+    "answers": [
+     4,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 45
+     }
+    },
+    "variables": {
+     "1499": 5
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_28",
+   "preset": {
+    "answers": [
+     5,
+     0,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 50
+     }
+    },
+    "variables": {
+     "1499": 6
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_29",
+   "preset": {
+    "answers": [
+     5,
+     3,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 75
+     }
+    },
+    "variables": {
+     "1499": 9
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_30",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "actors": {
+     "149": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_31",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "actors": {
+     "149": {
+      "level": 50
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_32",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "actors": {
+     "149": {
+      "level": 70
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_33",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "actors": {
+     "149": {
+      "level": 80
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_34",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 15
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_35",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "actors": {
+     "93": {
+      "level": 20
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_36",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "actors": {
+     "93": {
+      "level": 25
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_37",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "actors": {
+     "93": {
+      "level": 30
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_38",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "actors": {
+     "93": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_39",
+   "preset": {
+    "answers": [
+     5,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 45
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_40",
+   "preset": {
+    "answers": [
+     5,
+     1
+    ],
+    "actors": {
+     "93": {
+      "level": 50
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_41",
+   "preset": {
+    "answers": [
+     5,
+     2
+    ],
+    "actors": {
+     "93": {
+      "level": 60
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p1",
+   "tag": "sa1_42",
+   "preset": {
+    "answers": [
+     5,
+     3
+    ],
+    "actors": {
+     "93": {
+      "level": 75
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_43",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 10
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_44",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "actors": {
+     "93": {
+      "level": 15
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_45",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "actors": {
+     "93": {
+      "level": 25
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_46",
+   "preset": {
+    "answers": [
+     3
+    ],
+    "actors": {
+     "93": {
+      "level": 35
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_47",
+   "preset": {
+    "answers": [
+     4
+    ],
+    "actors": {
+     "93": {
+      "level": 45
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_48",
+   "preset": {
+    "answers": [
+     5,
+     0
+    ],
+    "actors": {
+     "93": {
+      "level": 50
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_49",
+   "preset": {
+    "answers": [
+     5,
+     1
+    ],
+    "actors": {
+     "93": {
+      "level": 55
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_50",
+   "preset": {
+    "answers": [
+     5,
+     2
+    ],
+    "actors": {
+     "93": {
+      "level": 60
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e49p2",
+   "tag": "sa1_51",
+   "preset": {
+    "answers": [
+     5,
+     3
+    ],
+    "actors": {
+     "93": {
+      "level": 75
+     }
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_52",
+   "preset": {
+    "answers": [
+     0,
+     0
+    ],
+    "actors": {
+     "149": {
+      "level": 35
+     }
+    },
+    "variables": {
+     "1541": 1
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_53",
+   "preset": {
+    "answers": [
+     0,
+     1
+    ],
+    "actors": {
+     "149": {
+      "level": 35
+     }
+    },
+    "variables": {
+     "1541": 1
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_54",
+   "preset": {
+    "answers": [
+     1,
+     0
+    ],
+    "actors": {
+     "149": {
+      "level": 50
+     }
+    },
+    "variables": {
+     "1541": 2
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_55",
+   "preset": {
+    "answers": [
+     1,
+     1
+    ],
+    "actors": {
+     "149": {
+      "level": 50
+     }
+    },
+    "variables": {
+     "1541": 2
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_56",
+   "preset": {
+    "answers": [
+     2,
+     0
+    ],
+    "actors": {
+     "149": {
+      "level": 70
+     }
+    },
+    "variables": {
+     "1541": 3
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_57",
+   "preset": {
+    "answers": [
+     2,
+     1
+    ],
+    "actors": {
+     "149": {
+      "level": 70
+     }
+    },
+    "variables": {
+     "1541": 3
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_58",
+   "preset": {
+    "answers": [
+     3,
+     0
+    ],
+    "actors": {
+     "149": {
+      "level": 80
+     }
+    },
+    "variables": {
+     "1541": 4
+    }
+   }
+  },
+  {
+   "base": "m4e74p0",
+   "tag": "sa1_59",
+   "preset": {
+    "answers": [
+     3,
+     1
+    ],
+    "actors": {
+     "149": {
+      "level": 80
+     }
+    },
+    "variables": {
+     "1541": 4
+    }
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "sa1_60",
+   "preset": {
+    "answers": [
+     0,
+     1
+    ]
+   }
   }
  ]
 }
