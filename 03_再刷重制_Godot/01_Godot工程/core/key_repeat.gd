@@ -43,6 +43,8 @@ func _input(event: InputEvent) -> void:
 		return
 	var k := event as InputEventKey
 	if k.echo:
+		if k.has_meta(XTouchControls.REPEAT_META):
+			return  # 虚拟方向键自己按 24／6 帧发的回显（审查报告第 13 项），放行
 		if MV_REPEAT:
 			XKeyMap.handled(self)
 		return

@@ -282,9 +282,10 @@ func close() -> void:
 	queue_free()
 
 
-## Esc 先于输入框处理；其余按键交给控件（Tab 移动焦点），没被控件用掉的也不再传给游戏窗口
+## 取消（Esc、虚拟取消键、返回键、手柄 B；输入框外的 X 等，见 XKeyMap.popup_cancel）先于输入框处理；
+## 其余按键交给控件（Tab 移动焦点），没被控件用掉的也不再传给游戏窗口
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+	if XKeyMap.popup_cancel(event, self):
 		XKeyMap.handled(self)
 		close()
 

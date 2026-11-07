@@ -153,6 +153,31 @@ func _run() -> void:
 	await physics(10)
 	check("detail_open", page.mode == "detail" and page.detail_win.visible and page.detail_win.is_open() and int(page._detail.id) == 53)
 	await shot("04_掉落详情.png")
+	# 详情开着时方向键、Q/E 不再动后面的掉落框（rules-bugfix1 照搬清单第 3 条，O-待定）；走真实按键分发
+	var behind := page.drop_index
+	var behind_page := page.page
+	for code in [KEY_DOWN, KEY_LEFT, KEY_E]:
+		for pressed in [true, false]:
+			var ev := InputEventKey.new()
+			ev.keycode = code
+			ev.physical_keycode = code
+			ev.pressed = pressed
+			Input.parse_input_event(ev)
+		await frames(12)
+	check("detail_keeps_drop_selection", page.mode == "detail" and page.drop_index == behind and page.page == behind_page, [behind, page.drop_index])
+	XMapTransferScene.DETAIL_LOCKS_DROPS = false
+	var lk := InputEventKey.new()
+	lk.keycode = KEY_LEFT
+	lk.physical_keycode = KEY_LEFT
+	lk.pressed = true
+	Input.parse_input_event(lk)
+	lk = lk.duplicate()
+	lk.pressed = false
+	Input.parse_input_event(lk)
+	await frames(2)
+	check("detail_rollback_moves_drop", page.drop_index != behind, [behind, page.drop_index])
+	XMapTransferScene.DETAIL_LOCKS_DROPS = true
+	page.drop_index = behind
 	page.ok()
 	check("detail_close", page.mode == "drops" and not page.detail_win.visible)
 	page.request_transfer()
