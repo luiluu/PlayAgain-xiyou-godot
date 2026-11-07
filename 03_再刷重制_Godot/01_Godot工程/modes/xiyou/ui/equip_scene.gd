@@ -20,6 +20,11 @@ extends Control
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
 ## 战力：XPower.status_text（角色战力，关掉战力时不画）；装上／卸下／清空后右下角弹战力变化提示（XPowerNotice）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
 ## 候选阶段打开只检索该槽候选，应用后候选按条件筛选（「卸载」留在最后）。
+## 跟到 v0.62.12（installEquipmentDetailV041＋installPanelLayoutV043，O-待定·装备详情）：右下换成页签条＋详情＋翻页条（XGearDetail），
+## 三个页签「装备详情／属性对比／插槽与镶嵌」，默认装备详情；→／Tab 下一个、← 上一个（首尾相接，不响音效）、点页签条按横坐标选。
+## 属性对比挪进详情的位置 (640,231,640,431)；物品信息窗不再出现；说明卡不再弹出（详情代替）。
+## 详情页与插槽页：PageUp／PageDown 翻详情页（不再换角色；Q／E 照旧换角色）、点翻页条左半／右半翻页、滚轮滚动、按住拖动。
+## DETAIL_V041 = false：回到 v0.28 的信息窗／属性对比轮换和说明卡。
 
 signal closed
 
@@ -32,6 +37,7 @@ const CMD_ROWS := 4
 ## Window_StatCompare 能力名列宽（_paramNameWidth，运行时读数＝「最大生命值 」的字宽）
 const COMPARE_NAME_W := 137.21
 const COMPARE_GAP := 8.0
+static var DETAIL_V041 := true
 
 var actor_index := 0
 var _mode := "command"              # command / slot / item
@@ -51,6 +57,7 @@ var help_card: XHelpCard
 var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
+var gear_detail: XGearDetail
 
 
 func _ready() -> void:
@@ -63,6 +70,9 @@ func _ready() -> void:
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	lower_win = XMVWindow.make(self, LOWER_RECT, op, _paint_lower)
+	if DETAIL_V041:
+		lower_win.set_rect(XGearDetail.body_rect(LOWER_RECT))
+		gear_detail = XGearDetail.new(self, LOWER_RECT, op)
 	for w in [cmd_win, list_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
@@ -211,6 +221,9 @@ func _refresh() -> void:
 	cmd_win.down_arrow = commands().size() > CMD_ROWS
 	for w in [cmd_win, status_win, list_win, lower_win]:
 		w.refresh()
+	if gear_detail != null:
+		gear_detail.set_item(_shown_item())
+		_sync_lower()
 	if toolbar != null:
 		var gear := candidates().filter(func(e): return not (e.rec as Dictionary).is_empty()).size() if _slot >= 0 else 0
 		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
@@ -231,7 +244,7 @@ func _update_help() -> void:
 		_commit_seen()
 		if _mode == "item" and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
-	help_card.show_for(rec if row >= 0 else {})
+	help_card.show_for(rec if row >= 0 and gear_detail == null else {})
 	if help_card.visible:
 		place_help(help_card, row)
 
@@ -318,8 +331,14 @@ func _paint_remove(c: XMVCanvas, y: float) -> void:
 	c.text(str(eq.get("Remove Text", "卸载")), 36, y, c.size.x - 6 - 36, "left")
 
 
+## 详情模式：属性对比只在第 2 个页签显示
+func _sync_lower() -> void:
+	gear_detail.set_visible(true)
+	lower_win.visible = gear_detail.mode == 1
+
+
 func _paint_lower(c: XMVCanvas) -> void:
-	if _compare:
+	if _compare or gear_detail != null:
 		paint_compare(c, actor(), _temp_actor())
 	else:
 		XItemScene.paint_info(c, _shown_item())
@@ -376,6 +395,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_move(1, not event.is_echo())
 	elif event.is_action_pressed("ui_up", true):
 		_move(-1, not event.is_echo())
+	elif gear_detail != null and (event.is_action_pressed("ui_right", true) or (key and key.pressed and key.keycode == KEY_TAB)):
+		_choose_detail(1)
+	elif gear_detail != null and event.is_action_pressed("ui_left", true):
+		_choose_detail(-1)
+	elif gear_detail != null and gear_detail.mode != 1 and key and key.pressed and (key.physical_keycode == KEY_PAGEUP or key.physical_keycode == KEY_PAGEDOWN):
+		gear_detail.turn(1 if key.physical_keycode == KEY_PAGEDOWN else -1)
 	elif event.is_action_pressed("ui_right", true) or (key and key.pressed and key.keycode == KEY_TAB):
 		shift_lower()
 	elif event.is_action_pressed("ui_left", true):
@@ -394,6 +419,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func shift_lower() -> void:
 	_compare = not _compare
 	XSound.system(0)
+	lower_win.refresh()
+
+
+## chooseDetail41(当前 ± 1)：首尾相接，不响音效
+func _choose_detail(d: int) -> void:
+	gear_detail.choose(gear_detail.tab_index() + d)
+	_sync_lower()
 	lower_win.refresh()
 
 
@@ -484,7 +516,14 @@ func _keep_rates(change: Callable) -> void:
 
 # ---- 鼠标：只有活动窗口响应（选中行再点＝确定）；右键取消；滚轮滚动活动列表；点右下区域换窗口 ----
 func _gui_input(event: InputEvent) -> void:
-	if search_panel != null or not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null:
+		return
+	if gear_detail != null and gear_detail.mouse(event):
+		_sync_lower()
+		lower_win.refresh()
+		accept_event()
+		return
+	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
 	match event.button_index:
@@ -499,7 +538,8 @@ func _gui_input(event: InputEvent) -> void:
 			_refresh()
 		MOUSE_BUTTON_LEFT:
 			if LOWER_RECT.has_point(p):
-				shift_lower()
+				if gear_detail == null:
+					shift_lower()
 			else:
 				_click(p)
 

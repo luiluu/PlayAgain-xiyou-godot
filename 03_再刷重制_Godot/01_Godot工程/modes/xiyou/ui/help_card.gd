@@ -99,7 +99,18 @@ static func content(obj: Dictionary, kind := "", skill_copy := false, width := -
 	return rows
 
 
-static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
+## 装备页／物品页右侧详情（installEquipmentDetailV041 Detail.rows41 被 installPanelLayoutV043 改写后）：
+## RJO.HE.getDescParams（元素、特效排序、◆唯一 这些包在它上面的照样有）＋首行换成星级名，再 P.view 排版。
+## 详情不经 Sprite_ItemHelp.setItem，所以没有那一层加的「装备战力：」行（installCombatPowerRuntime 包的是 setItem）。
+static func detail_rows(obj: Dictionary, width: float) -> Array:
+	var rows := _content(obj, "", false, false)
+	if rows.is_empty():
+		return rows
+	rows[0][0] = XGearSearch.star_name(obj)
+	return panel_view(obj, rows, width)
+
+
+static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
@@ -119,7 +130,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	var liuying := type == 3 and XLiuying.lb_skill(int(obj.get("id", 0)))
 	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
 		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
-		if (type == 1 or type == 2) and XPower.enabled():
+		if power and (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:

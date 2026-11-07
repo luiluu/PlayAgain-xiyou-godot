@@ -12,6 +12,9 @@ extends Control
 ## - 升级材料（占列表位置）：XItemRow；不能用的半透明；确定即镶嵌，留在材料列表。取消回到操作。
 ## - 选人 (0,0,1280,720)：Window_MenuActor，每行 173，头像居中、名字/Lv、HP/MP/TP 量条；使用后留在选人。
 ## - 说明卡（XHelpCard）跟着列表/材料列表的选中行；操作阶段保留；分类与选人阶段隐藏（v0.10 选人时隐藏）。
+## - 跟到 v0.62.12（installPanelLayoutV043 的 Scene_Item 部分，O-待定·装备详情）：物品列表活动且选中的是装备时，信息窗换成
+##   页签条＋详情＋翻页条（XGearDetail，页签「装备详情／插槽与镶嵌」，Tab 或点页签条左半／右半切换），说明卡不弹出；
+##   别的时候照旧显示信息窗。DETAIL_V043 = false：回到 v0.28（装备也弹说明卡、信息窗一直在）。
 ## - 道具置顶（Star_ItemTop，只对物品）、出售锁定（Star_ShopOnekey，物品与装备）：见 XItemMarks；做完留在操作菜单。
 ## - 宝珠镶嵌（YEP_X_AttachAugments＋installNativeOrbRuntime，规则见 XOrbs）：装备的操作菜单在「升级」后每个孔一行
 ##   「\c[16]孔类型:\c[0] 宝珠／- 空 -」（Augment Slot Format），确定打开宝珠列表（占列表位置，XItemRow；不可选的半透明、
@@ -63,6 +66,8 @@ var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
 var power_page: XPowerForget
+var gear_detail: XGearDetail
+static var DETAIL_V043 := true
 var bulk_win: XMVWindow
 var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
 var _bulk_busy := false             # 正在逐颗服用（挡住输入）
@@ -100,6 +105,9 @@ func _ready() -> void:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	if DETAIL_V043:
+		gear_detail = XGearDetail.new(self, INFO_RECT, op, ["装备详情", "插槽与镶嵌"], [0, 2])
+		gear_detail.set_visible(false)
 	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
 	add_child(toolbar)
 	_refresh()
@@ -296,6 +304,7 @@ func _refresh() -> void:
 		w.visible = not actor_mode
 	actor_win.visible = actor_mode
 	bulk_win.visible = not _bulk.is_empty() and not _bulk_busy
+	_sync_gear()
 	for w in [cat_win, status_win, list_win, info_win, actor_win, bulk_win]:
 		w.refresh()
 	bulk_buttons.queue_redraw()
@@ -303,6 +312,27 @@ func _refresh() -> void:
 		var gear := entries().filter(func(e): return XItemMarks.is_gear(e.rec)).size()
 		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
 	_update_help()
+
+
+## gearShown43：物品列表活动、选中的是装备
+func gear_shown() -> bool:
+	return gear_detail != null and _mode == "list" and XItemMarks.is_gear(_current())
+
+
+## refreshGear43：详情三块与信息窗二选一
+func _sync_gear() -> void:
+	if gear_detail == null:
+		return
+	var on := gear_shown()
+	gear_detail.set_visible(on)
+	if on:
+		info_win.visible = false
+		gear_detail.set_item(_current())
+
+
+## gearTab43：Tab 在两个页签间切换
+func _gear_tab() -> void:
+	gear_detail.choose(gear_detail.tab_index() + 1)
 
 
 ## updateHelp：列表/材料列表的选中行；新物品停上去即记为看过（光标离开后不再画 NEW）
@@ -328,7 +358,7 @@ func _update_help() -> void:
 		_commit_seen()
 		if _mode in ["list", "upgrade", "augment"] and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
-	help_card.show_for(rec if row >= 0 else {})
+	help_card.show_for(rec if row >= 0 and not gear_shown() else {})
 	if help_card.visible:
 		help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + row * LH), Vector2(LIST_RECT.size.x, LH)))
 	# 用道具的结果提示：光标换了行（或回到分类、进了升级／宝珠列表）才被说明盖掉；选人阶段只是暂时隐藏
@@ -520,6 +550,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_up", true):
 		_move(-1, not event.is_echo())
 		_refresh()
+	elif gear_shown() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
+		_gear_tab()
 	elif XMenu.page_dir(event) != 0 and _mode in ["category", "list", "upgrade", "augment"]:
 		_page(XMenu.page_dir(event))
 		_refresh()
@@ -1109,7 +1141,12 @@ func _paint_notice() -> void:
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
-	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or power_page != null:
+		return
+	if _bulk.is_empty() and not _bulk_busy and gear_shown() and gear_detail.mouse(event):
+		accept_event()
+		return
+	if not (event is InputEventMouseButton and event.pressed):
 		return
 	_touched = true
 	if _bulk_busy or not _bulk.is_empty():
