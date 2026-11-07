@@ -86,13 +86,12 @@ func is_restricted() -> bool:
 
 ## Game_Battler.onRestrict（O-223 开时才调）：clearActions（重制在轮到时当场决定行动，没有预存的行动可清；OTB 也是轮到时 makeActions，
 ## 行动队列的移除只看 canMove，在 addState 包装里），去掉 removeByRestriction 的状态，防御指令（原版的防御状态 2）一并失效；
-## StateChangeIfRemove「行动限制解除」的换状态在 addState 里面，被 _Fix_StackOverflow 的全局锁挡住（与原版同）。
+## StateChangeIfRemove「行动限制解除」的换状态在 addState 里面，被 _Fix_StackOverflow 的全局锁挡住（与原版同），数据里也没有这个标签，所以不调。
 func on_restrict() -> void:
 	guarding = false
 	for id in state_ids.duplicate():
 		if bool(XDB.rec("States", id).get("removeByRestriction", false)):
 			remove_state(id)
-			change_state_if_removed(id, "行动限制解除")
 
 
 ## StateChangeIfRemove changeState：状态因 tag 这种解除没了时，换成备注 <SC{tag}:N> 的状态；原状态不再记入本次解除（deleteRemovedStates）
