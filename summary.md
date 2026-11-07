@@ -1,0 +1,6 @@
+## ✗ 云端选测有失败
+
+- 提交 4c5a48c648（ci/cc/bajie-mapev1），选测（基准 75757b4e32609ab9ccb40de0629139d29f74f8c6），151 个场景、4 片，最长一片 58.5 分钟
+- 失败场景 41 个：xiyou_airship_fly.tscn、xiyou_airship_state.tscn、xiyou_airship_view.tscn、xiyou_census1.tscn、xiyou_empress_draw.tscn、xiyou_floor30_seeker.tscn、xiyou_floor31_bosses.tscn、xiyou_floor_abyss037.tscn、xiyou_floor_guild198.tscn、xiyou_floor_odds.tscn、xiyou_floor_reach004.tscn、xiyou_floor_reach011.tscn、xiyou_floor_reach040.tscn、xiyou_floor_reach041.tscn、xiyou_floor_reach062.tscn、xiyou_floor_reach069.tscn、xiyou_floor_reach080.tscn、xiyou_floor_reach094.tscn、xiyou_floor_reach107.tscn、xiyou_floor_reach125.tscn、xiyou_floor_reach128.tscn、xiyou_floor_reach187.tscn、xiyou_floor_reach207.tscn、xiyou_floor_reach224.tscn、xiyou_floor_run.tscn、xiyou_floor_run_c.tscn、xiyou_floor_unknown210.tscn、xiyou_floor_unknown223.tscn、xiyou_flow.tscn、xiyou_hangup.tscn、xiyou_hud.tscn、xiyou_legion_tech.tscn、xiyou_map186_d.tscn、xiyou_map186_legions.tscn、xiyou_map186_legions_b.tscn、xiyou_map_hotkeys.tscn、xiyou_options_basic.tscn、xiyou_star_warehouse.tscn、xiyou_unlock_chain.tscn、xiyou_unlock_chain_b.tscn、xiyou_variants.tscn（日志在运行页的 logs-shard-* 附件）
+- 第 1、4 片没有交回结果（任务出错或超时，看运行页）
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42327902867
