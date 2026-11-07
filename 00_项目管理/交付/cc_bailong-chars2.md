@@ -22,7 +22,8 @@
 
 ## 优化登记草稿
 
-已直接写进 `03_再刷重制_Godot/00_设计/优化登记.md`（真火那行下面）：**O-待定·双持专武最强装备**——原版「最强装备」第二栏想跳过专武，但跳过挂在 Game_BattlerBase.canEquip 上，Game_Actor.canEquip 是饿狼等运行时包装出的自有函数（探针里 `hasOwnProperty` 为真），走不到；第二栏挑中专武后被 changeEquip 挡下而空着。重制默认修好（挑下一件最好的），`XEquipment.FIX_DUAL_EXCLUSIVE_BEST = false` 回原版。需要 Kyo 确认，写进交接板「需要用户决定」。
+优化登记草稿：无
+已直接写进优化登记 O-待定·双持专武最强装备，见 `03_再刷重制_Godot/00_设计/优化登记.md`（真火那行下面）：**O-待定·双持专武最强装备**——原版「最强装备」第二栏想跳过专武，但跳过挂在 Game_BattlerBase.canEquip 上，Game_Actor.canEquip 是饿狼等运行时包装出的自有函数（探针里 `hasOwnProperty` 为真），走不到；第二栏挑中专武后被 changeEquip 挡下而空着。重制默认修好（挑下一件最好的），`XEquipment.FIX_DUAL_EXCLUSIVE_BEST = false` 回原版。需要 Kyo 确认，写进交接板「需要用户决定」。
 
 ## 变更记录草稿
 
