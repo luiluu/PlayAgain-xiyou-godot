@@ -944,7 +944,7 @@ func _auto_battle_action(a: XActor) -> Array:
 ## - 技能速度不再参与排序，而是使用后把自己在下个回合的位置前移「速度」格（Action Speed Convert）：
 ##   攻击速度 -1 → 后移 1 格；防御速度 2000 → 移到最前。物品不移位（只有技能付费时触发）。
 ## - 增加敏捷增益的技能命中后，目标下个回合前移 1 格（Buff/Debuff AGI Convert）；减益正式版判断写错（两个 if 都判 ADD_BUFF），不移位，
-##   O-待定-2 默认修成后移 1 格（agi_convert_shift）。
+##   O-219 默认修成后移 1 格（agi_convert_shift）。
 ## - 追加行动（特性 61）：同一人在顺序中连续出现多次；正式版改为每回合最多 5 次（文件末尾的修复段）。
 ## - 无法行动（死亡、行动限制）的人从当前回合移除；下个回合若一回合后仍不能动也移除；恢复行动时补回顺序末尾。
 ## 超过上限的追加行动：原 _actionDMG 已被真气取代（installNativeZhenqiRuntime：首回合超额次数记真气，见 XZhenqi）。
@@ -1743,11 +1743,11 @@ func _otb_target_shift(skill: Dictionary, t: XBattler) -> void:
 		_shift(t, nxt, false)
 
 
-## 优化 O-待定-2（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」）：Olivia_BattleSysOTB otbBuffDebuffAgiConvert 第二个 if 本该判减益
+## 优化 O-219（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」）：Olivia_BattleSysOTB otbBuffDebuffAgiConvert 第二个 if 本该判减益
 ## （EFFECT_ADD_DEBUFF 32），写成了又判增益，敏捷减益（嘤嘤嘤、天坠翼击等 7 个技能）从不让目标后移。默认修：减益后移 1 格；false 回到原版不移。
 static var FIX_AGI_DEBUFF_SHIFT := true
 
-## Buff/Debuff AGI Convert：技能备注没写 <OTB Target Next Turn> 时，敏捷增益 +1、敏捷减益 −1（O-待定-2）；画面预览共用
+## Buff/Debuff AGI Convert：技能备注没写 <OTB Target Next Turn> 时，敏捷增益 +1、敏捷减益 −1（O-219）；画面预览共用
 static func agi_convert_shift(skill: Dictionary) -> int:
 	if str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
 		return 0
@@ -2563,6 +2563,7 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if (value != 0.0) if STALE_REFRESH_POINTS else (t.hp != hp_was):
 		stale_refreshed(t)  # setHp 请求值与当前不同就 refresh（蛮骨限额在比较之后）：之前陈旧的状态从这一击之后生效（本击伤害已算完）
 	if value > 0.0:
+		_remove_states_by_damage(t)  # Game_Battler.onDamage：先受伤解除，再充 TP
 		var tp_before: float = t.tp
 		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
 		if t.tp != tp_before:
@@ -2570,6 +2571,27 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if drain:
 		_action_resources.gain(u, "hp", value)
 	return value
+
+
+## Game_Battler.removeStatesByDamage（StateChangeIfRemove「受伤解除」包装）：按 states() 顺序，带 removeByDamage 的状态
+## 各掷一次 randomInt(100) < chanceByDamage 就解除（睡眠、眩晕、愤怒等 15 个）；解除后按备注 <SC受伤解除:N> 换状态。
+## 审查报告第 8 项：之前漏了，挨打不醒（参照 state_remove_probe）。
+func _remove_states_by_damage(t: XBattler) -> void:
+	var prev := t.state_ids.duplicate()
+	for id in prev:
+		var st := XDB.rec("States", id)
+		if not bool(st.get("removeByDamage", false)):
+			continue
+		if floori(_float("remove_by_damage") * 100.0) < int(st.get("chanceByDamage", 100)):
+			_state_remove(t, id)
+	# checkToRemoveStates：处理完再对之前身上的每个状态 changeState（还在的跳过）
+	var resources := _operation_resources(t)
+	var previous := t.lifecycle_context
+	t.lifecycle_context = resources.state_context(t)
+	for id in prev:
+		t.change_state_if_removed(id, "受伤解除")
+	t.lifecycle_context = previous
+	_finish_lifecycle_operation(resources, t)
 
 
 ## Game_Action.executeMpDamage（类型 2／4／6）：Boss输出→导入角色平衡缩放正伤害；MP 伤害（非回复）以目标现有 MP 为上限；

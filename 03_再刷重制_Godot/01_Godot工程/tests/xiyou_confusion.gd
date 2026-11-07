@@ -102,7 +102,7 @@ func _norm(v):
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	XConfusion.FIX_SELF_TARGET = false  # 参照是原版：O-待定-1 关着逐例比
+	XConfusion.FIX_SELF_TARGET = false  # 参照是原版：O-220 关着逐例比
 	check("oracle", ref is Dictionary and ref.cases.size() == 53 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		var id := str(c.id)
@@ -126,7 +126,7 @@ func _run() -> void:
 	finish()
 
 
-## O-待定-1（默认开）：己方单体随机不选行动者自己；己方只剩自己时打对方；全体照旧含自己。关着时同一随机值选到自己（对照原版）
+## O-220（默认开）：己方单体随机不选行动者自己；己方只剩自己时打对方；全体照旧含自己。关着时同一随机值选到自己（对照原版）
 func _self_fix() -> void:
 	for is_actor in [true, false]:
 		var side := "a" if is_actor else "e"

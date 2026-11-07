@@ -35,6 +35,7 @@ static func save(slot: int) -> bool:
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	if not _write(path(slot), data):
 		return false
+	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
 	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
 	return true
@@ -59,6 +60,38 @@ static func _write(target: String, data: Dictionary) -> bool:
 	return true
 
 
+## 账本类文件（头顶成长、云裳订单）共用的写法（Codex 审查第 2 项，哪吒 save1）：写到同目录临时文件，flush 后查写入错误，
+## 写不完整就删掉临时文件、不替换旧文件、返回 false；替换前把旧文件（能解析的才算有效）复制成 <文件>.bak，留上一版。
+static func write_text_safely(target: String, text: String, keep_backup := true) -> bool:
+	if DirAccess.make_dir_recursive_absolute(target.get_base_dir()) != OK:
+		return false
+	var temp := "%s.%s.tmp" % [target, Crypto.new().generate_random_bytes(8).hex_encode()]
+	var f := FileAccess.open(temp, FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(text)
+	f.flush()
+	var ok := f.get_error() == OK
+	f.close()
+	# close 之后再按长度核一遍：写满磁盘、文件大小上限等截断时 get_error 也可能来不及报
+	if ok:
+		var check := FileAccess.open(temp, FileAccess.READ)
+		ok = check != null and check.get_length() == text.to_utf8_buffer().size()
+		if check != null:
+			check.close()
+	if not ok:
+		DirAccess.remove_absolute(temp)
+		return false
+	if keep_backup and FileAccess.file_exists(target):
+		var old := JSON.new()
+		if old.parse(FileAccess.get_file_as_string(target)) == OK and old.data is Dictionary:
+			DirAccess.copy_absolute(target, target + ".bak")
+	if DirAccess.rename_absolute(temp, target) != OK:
+		DirAccess.remove_absolute(temp)
+		return false
+	return true
+
+
 ## 安卓切后台自动存档（XAutoSave，O-215·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
 ## 不加保存次数、不改 current_slot（一键存档仍存回玩家自己的档位）；记下当时的档位，读回来时接着用那一格。
 static func auto_path() -> String:
@@ -73,7 +106,10 @@ static func save_auto() -> bool:
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
 	data["autoFromSlot"] = current_slot
-	return _write(auto_path(), data)
+	if not _write(auto_path(), data):
+		return false
+	XStarWarehouse.after_save(XState.current)
+	return true
 
 static func exists_auto() -> bool:
 	return FileAccess.file_exists(auto_path())
@@ -87,7 +123,7 @@ static func auto_summary() -> String:
 	var d = JSON.parse_string(FileAccess.get_file_as_string(auto_path())) if exists_auto() else null
 	if not valid_data(d):
 		return ""
-	return "自动存档（切后台时）：%s" % str(d.get("savedAt", "")).replace("T", " ")
+	return "自动存档：%s" % str(d.get("savedAt", "")).replace("T", " ")
 
 ## 读切后台的自动存档；读完文件留着（直到下次手动存档），档位回到存它时玩家在用的那一格。
 static func load_auto() -> bool:
@@ -231,6 +267,7 @@ static func _load_data(d: Dictionary, slot: int, text: String) -> bool:
 	XDemonCrown.after_load(XState.current, XDemonCrown.identity(text))  # 魔冠 extractSaveContents 包装（在云裳外层）：收编、重放成长账本
 	XTusuXuan.after_load(XState.current)  # 屠苏／璇 extractSaveContents 包装：专属技能按习得表同步
 	XCat.restore_trial(XState.current, -1)  # 小猫 extractSaveContents 包装：存档里留着试炼就还原队伍
+	XStarWarehouse.after_load(XState.current, text)  # 仓库取出事务：存档里带着的 whToken 记成取走，别的局没存档的取出退回仓库
 	# dev.015 及以前忽略 ConfigManager 脚本，没有配置文件。已完成大厅 EV20 的 Godot 档补其 MapXy=true；
 	# 已有配置（包括显式 false）始终优先，不从存档回滚局外选项，不读取 MV 存档。
 	if not XConfig.has_map_xy() and XState.current.self_switch(4, 20, "A"):

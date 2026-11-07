@@ -182,25 +182,17 @@ static func load_ledger():
 	if not next_l.get("legacy") is Dictionary:
 		next_l.legacy = {}
 	_ledger = next_l
-	_loaded_path = p
+	_loaded_path = path()
 	return _ledger
 
 static func save_ledger(n: Dictionary) -> bool:
-	var p := path()
-	DirAccess.make_dir_recursive_absolute(p.get_base_dir())
-	var tmp := "%s.%s.tmp" % [p, uuid()]
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
-	if f == null:
-		_fail("\"头顶\"成长记录无法写入")
-		return false
-	f.store_string(JSON.stringify(n))
-	f.close()
-	if DirAccess.rename_absolute(tmp, p) != OK:
-		DirAccess.remove_absolute(tmp)
+	# Codex 审查第 2 项：原来 store_string／close 不查写没写完整，截断的文件照样换上去；现在写不完整就不替换、返回 false
+	#（调用方的扣材料都在写成之后的重放里，失败就不扣），替换前留一份上一版 .bak（XSave.write_text_safely）
+	if not XSave.write_text_safely(path(), JSON.stringify(n)):
 		_fail("\"头顶\"成长记录无法写入")
 		return false
 	_ledger = n
-	_loaded_path = p
+	_loaded_path = path()
 	return true
 
 static func reload() -> void:
