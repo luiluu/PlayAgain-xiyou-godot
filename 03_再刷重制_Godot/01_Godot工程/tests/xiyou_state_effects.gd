@@ -1296,8 +1296,9 @@ func _rest_costume(o: Dictionary) -> void:
 	check("rest.costume.apply226", look.call() == str(steps.apply226.battlerName) and str(a.state_data.get("_prevBattlerName")) == base, [look.call(), a.state_data])
 	run.call(226, "remove")
 	check("rest.costume.remove226", look.call() == base and not a.state_data.has("_prevBattlerName"), [look.call(), a.state_data])
-	# 原版这时把图设成 undefined（remove66、remove_only 的 battlerName 都没了），显示不出来；这边保留现状
-	check("rest.costume.undefined_note", not steps.remove66.has("battlerName") and not steps.remove_only.has("battlerName"), steps)
+	# 原版把 _battlerName 设成 undefined（raw 没了）；新源 v0.62.12 的 battlerName() 这时退回角色数据库的图（gxysv2），旧源 v0.28 读出 undefined、显示不出来。
+	# 重制退回本来的图，跟新源一致（同下面 remove_without_prev）
+	check("rest.costume.undefined_note", not steps.remove66.has("raw") and not steps.remove_only.has("raw") and str(steps.remove66.get("battlerName", o.costumeBase)) == str(o.costumeBase) and str(steps.remove_only.get("battlerName", o.costumeBase)) == str(o.costumeBase), steps)
 	run.call(66, "remove")
 	check("rest.costume.remove_without_prev", look.call() == base, look.call())
 	# 敌人：apply 什么都不做；remove TypeError，也什么都不做

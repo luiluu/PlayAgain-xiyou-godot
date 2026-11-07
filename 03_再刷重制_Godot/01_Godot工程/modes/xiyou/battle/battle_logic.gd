@@ -2050,6 +2050,11 @@ func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 	return skill
 
 
+## 新源 v0.35 起（YEP_BattleEngineCore invokeAction 第 2098 行）：敌人被反击判中时先挨这一下、再反击；角色照旧「反击代替挨打」。
+## false 回到旧源 v0.28（敌人也是反击代替挨打）。
+static var COUNTER_AFTER_HIT := true
+var _last_receiver: XBattler = null
+
 ## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf；YEP_ElementCore 再加属性反弹，任何命中类型），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
 ## 反射：行动作用到行动者自己。反击：目标对行动者普通攻击，原行动对该目标无效。
 ## dsPassiveSkill 必中（角色的 SkillCertainHit 被动）时不会被反射/反击。MV 不区分敌我。
@@ -2073,14 +2078,31 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
 	if _float("counter") < cnt:
-		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
-		XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
-		var r := apply(t, XAlienBattle.project(t, t.attack_skill()), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
-		XBlackFlash.nested -= 1
-		XRaceBattle.derived_end(self, race_prev)
-		r.counter = true
-		return [{"type": "counter", "user": t, "target": u}, r]
+		if COUNTER_AFTER_HIT and not t.is_actor():
+			# v0.35 起 YEP invokeAction：敌人反击跟在挨打之后——先正常生效；挨打的还是它（没被掩护）、还活着能行动、出手者也活着才反击
+			var hit := _invoke_normal(u, skill, t)
+			if is_same(_last_receiver, t) and t.is_alive() and can_move(t) and u.is_alive():
+				hit.append_array(_counter_attack(u, t))
+			return hit
+		return _counter_attack(u, t)
+	return _invoke_normal(u, skill, t)
+
+
+## invokeCounterAttack：反击者对行动者普通攻击
+func _counter_attack(u: XBattler, t: XBattler) -> Array:
+	var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
+	XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
+	var r := apply(t, XAlienBattle.project(t, t.attack_skill()), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
+	XBlackFlash.nested -= 1
+	XRaceBattle.derived_end(self, race_prev)
+	r.counter = true
+	return [{"type": "counter", "user": t, "target": u}, r]
+
+
+## invokeNormalAction：掩护后正常生效；_last_receiver 记实际挨打的（v0.35 敌人反击判 receiver === target）
+func _invoke_normal(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 	var tt := substitute_for(skill, t)
+	_last_receiver = tt
 	XXuanBattle.note_target(tt)  # 璇 Game_Action.apply 包装：记主行动打到的敌人（棱光跟打）。记在这里不进 apply：子行动是新 Game_Action，黄泉扩散、镜流补段 oldApply 绕过（审查 35b P3-1）
 	u = XTusu.apply_subject(u, skill)  # 屠苏 subject 包装：apply 里面各层（饿狼、云裳、渡鸦等）看到的出手者是屠苏
 	var used := _lotus_all(skill) or (int(skill.get("scope", 0)) in [9, 10]) == tt.is_dead()
