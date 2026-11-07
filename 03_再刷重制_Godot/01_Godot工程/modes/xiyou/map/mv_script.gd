@@ -413,6 +413,8 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexCat.startTrial(this)" and not (_actor_ready(s, XCat.ACTOR, 35) and XCat.has_sword(s.actor(XCat.ACTOR))):
 			interp.host.toast(XCat.TRIAL_NOT_READY)
 			continue
+		if st == "CodexCat.startTrial(this)" and interp.host is XMapScene:
+			XAutoSave.battle_checkpoint(interp.host, true)  # 开战前检查点（O-221），要在 start_trial 换成单人队伍之前
 		if st == "CodexCat.startTrial(this)" and interp.host.has_method("start_battle") and XCat.start_trial(s):
 			interp.host.refresh_party_sprites()  # $gamePlayer.refresh：跟随者换成只有 178
 			var result: int = await interp.host.start_battle(XCat.TROOP, false, true)
