@@ -472,7 +472,10 @@ window.__refJson = function (name, obj) {
                     // 战场上的 Sprite_Animation：[目标, x, y, _duration, _delay]（动画随浮空／跳跃高度用；目标取 _target 或其父精灵的战斗者）
                     anims:ss._battleField.children.filter(function(c){return c instanceof Sprite_Animation;}).map(function(a){
                         var t=a._target,b=t&&(t._battler||(t.parent&&t.parent._battler));
-                        return [b?(b.isActor()?'a'+b.actorId():'e'+b.index()):'',r3(a.x),r3(a.y),a._duration,a._delay];})});
+                        return [b?(b.isActor()?'a'+b.actorId():'e'+b.index()):'',r3(a.x),r3(a.y),a._duration,a._delay];}),
+                    // 存活的伤害弹数（Sprite_Damage，按创建先后）：每个战斗者 [[根 x, 根 y, _duration, 首个子精灵 x, y]…]（多段数字错开用）
+                    pops:list.map(function(sp){return (sp._damages||[]).filter(function(d){return d.parent;}).map(function(d){var c=d.children[0];
+                        return [r3(d.x),r3(d.y),d._duration,c?r3(c.x):0,c?r3(c.y):0];});})});
                 if(BattleManager._subject!==actor||BattleManager._phase==='input'||T.frames.length>=1500)T.done=true;
             };
             s._actorCommandWindow.deactivate();

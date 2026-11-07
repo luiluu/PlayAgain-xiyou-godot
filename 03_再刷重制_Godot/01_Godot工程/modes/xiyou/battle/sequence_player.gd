@@ -61,6 +61,7 @@ func play() -> void:
 		var running := _live_anims()
 		if not _busy():
 			_step()
+		scene.flush_popups()
 		for sp in scene.sprites.values():
 			(sp as XBattlerSprite).seq_update()
 		_tick_anims(running)
@@ -459,7 +460,7 @@ func _waiting(mode: String) -> bool:
 		"zoom":
 			return scene.camera.is_zooming()
 		"popups":
-			return scene._popups.values().any(func(l): return l.any(func(p): return is_instance_valid(p)))
+			return scene.popups_pending() or scene._popups.values().any(func(l): return l.any(func(p): return is_instance_valid(p)))
 	return false
 
 

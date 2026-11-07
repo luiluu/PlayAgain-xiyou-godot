@@ -30,7 +30,9 @@ func hrg_state(positive: bool) -> int:
 func popups_after(live: XBattleScene, logs: Array) -> Array:
 	for c in live.fx.get_children():
 		c.free()
+	live._popups.clear()
 	await live._play(logs)
+	live.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE）：排着的也算
 	return live.fx.get_children().filter(func(c): return c is XDamagePopup)
 
 func expect(tag: String, live: XBattleScene, logs: Array, kind: String, hp: float) -> void:

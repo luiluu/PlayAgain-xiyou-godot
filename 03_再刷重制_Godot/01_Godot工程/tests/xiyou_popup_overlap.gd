@@ -40,15 +40,16 @@ func _run() -> void:
 	_check("formal_message_rect", mr == Rect2(0, 274, 1280, 172), [mr.position, mr.size])
 	await _shot("popup_baseline")
 	b._popup(b.logic.enemies[0], 9876.0, false)
+	b.drain_popups()  # 同帧已出过弹数时这一个在排队（POPUP_QUEUE）
 	var p: XDamagePopup = b._popups[b.logic.enemies[0]][-1]
-	# 保留真实生成位置与真实5帧轨迹，只停此弹数的物理更新以获得同帧控制图。
+	# 保留真实生成位置与真实5帧轨迹（建出当帧已更新一次，同原版），只停此弹数的物理更新以获得同帧控制图。
 	p.set_physics_process(false)
 	for i in range(10):
 		p._update()
 	p.queue_redraw()
 	var width := p._font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, p.FONT_SIZE).x + p.BUFFER
 	var pr := Rect2(p.global_position + Vector2(p._x - width * 0.5, p._y - p.FONT_SIZE * p.anchor_y()), Vector2(width, p.FONT_SIZE))
-	_check("popup_alive_and_overlaps", p._duration == 80 and pr.intersects(mr), [p._duration, pr.position, pr.size])
+	_check("popup_alive_and_overlaps", p._duration == 79 and pr.intersects(mr), [p._duration, pr.position, pr.size])
 	_check("production_popup_layer", p.z_index == XBattleScene.POPUP_Z and p.z_index > 5 and p.z_index < b.message.z_index, [p.z_index, b.message.z_index])
 	await _shot("popup_overlap")
 	var red_covered := _red_pixels(pr.intersection(mr))
@@ -97,6 +98,7 @@ func _check_anchor_oracle(b: XBattleScene) -> void:
 		var made := []
 		for row in oracle.cases[key]:
 			b._popup(t, float(row.value), false)
+			b.drain_popups()  # 同帧第二个起在排队（POPUP_QUEUE）；这里逐个摆好、停住物理更新，只比锚点
 			var q: XDamagePopup = b._popups[t][-1]
 			q.set_physics_process(false)
 			made.append(q)
@@ -106,7 +108,7 @@ func _check_anchor_oracle(b: XBattleScene) -> void:
 				bad.append([key, i, made[i].anchor_y(), want])
 		if key == "enemy_damage":
 			var q: XDamagePopup = made[0]
-			for i in range(oracle.after_frames * 2):
+			for i in range(oracle.after_frames * 2 - 1):  # 建出当帧已更新一次（_spawn_popup，同原版）
 				q._update()
 			var top: float = q.global_position.y + q._y - q.FONT_SIZE * q.anchor_y()
 			_check("popup_anchor_damage_top", absf(top - float(oracle.cases[key][0].bounds[1])) < 0.5, [top, oracle.cases[key][0].bounds])

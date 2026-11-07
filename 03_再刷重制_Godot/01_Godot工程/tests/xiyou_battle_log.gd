@@ -135,12 +135,15 @@ func popup_order_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 		return live.slice(from).map(func(p): return p.is_heal())
 	var n: int = b._popups.get(t, []).size()
 	b._hit_visual(hit(a, t, skill, {"hp": 0.0, "shown": {"hp": 5.0, "mp": 0.0, "tp": 0.0}, "started_popups": [row.call(-40.0)], "started_split": 0}))
+	b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE），这里只看顺序
 	check("popup_order.hit_then_revive", heals.call(t, n) == [false, true], heals.call(t, n))
 	n = b._popups.get(t, []).size()
 	b._hit_visual(hit(a, t, skill, {"hp": 0.0, "shown": {"hp": -5.0, "mp": 0.0, "tp": 0.0}, "started_popups": [row.call(3.0)], "started_split": 1}))
+	b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE），这里只看顺序
 	check("popup_order.before_then_hit", heals.call(t, n) == [false, true], heals.call(t, n))
 	n = b._popups.get(t, []).size()
 	b._hit_visual(hit(a, t, skill, {"hp": 7.0}))
+	b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE），这里只看顺序
 	check("popup_order.old_record", heals.call(t, n) == [false], heals.call(t, n))
 	# 行动者：弹字、倒下
 	var user: XBattler = foes[1] if foes.size() > 1 else foes[0]
@@ -148,6 +151,7 @@ func popup_order_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	b._popups.erase(user)
 	var sprite: XBattlerSprite = b.sprites[user]
 	b._hit_visual(hit(user, target, skill, {"user_popups": [row.call(9.0)], "user_died": true}))
+	b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE），这里只看顺序
 	check("user_popup.shown", b._popups.get(user, []).size() == 1, b._popups.get(user, []).size())
 	check("user_died.collapses", not sprite.appeared, sprite.appeared)
 	sprite.appeared = true
@@ -156,6 +160,7 @@ func popup_order_case(b: XBattleScene, a: XActor, foes: Array) -> void:
 	var stray := XEnemy.new()
 	check("user_stray.no_sprite", not b.sprites.has(stray))
 	b._hit_visual(hit(stray, target, skill, {"user_popups": [row.call(9.0)], "user_died": true}))
+	b.drain_popups()  # 弹数每帧每人出一个（POPUP_QUEUE），这里只看顺序
 	check("user_stray.skipped", not b._popups.has(stray), b._popups.keys().size())
 	XConfig.set_flag("CombatDamageShow", keep)
 	await frames(1)

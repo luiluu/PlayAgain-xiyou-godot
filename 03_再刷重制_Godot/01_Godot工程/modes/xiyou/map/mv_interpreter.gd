@@ -45,6 +45,19 @@ func _init(h: Node, map: int, event: int, commands: Array, depth := 0) -> void:
 	_depth = depth
 
 
+## headless 测试里「等待 N 帧」照旧按渲染帧（headless 渲染帧不限速、物理帧按真实时间走，几百个事件测试按物理帧要慢十几倍，
+## 云端 event_compare 超时）；xiyou_speed_gear 置 false 量真实节奏。带窗口时一律按物理帧
+static var HEADLESS_RENDER_WAIT := true
+
+
+func _wait_frame() -> void:
+	var tree := host.get_tree()
+	if HEADLESS_RENDER_WAIT and DisplayServer.get_name() == "headless":
+		await tree.process_frame
+	else:
+		await tree.physics_frame
+
+
 func _notice(text: String) -> void:
 	host.toast(text)
 
@@ -288,12 +301,17 @@ func _host_command(c: Dictionary):
 				host.shake_screen(int(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
 				for i in range(int(p[2])):
-					await host.get_tree().process_frame
+					await _wait_frame()  # 震屏在地图 _physics_process 里逐帧走，按物理帧等
 		230:
+			# 等待 N 帧＝N 个物理帧（MV updateMain 的帧；变速齿轮 1.6 时物理帧 96／秒，60 帧约 0.625 秒）。
+			# 原来按渲染帧等，帧率不跟齿轮走（60 Hz 屏上 60 帧要 1 秒，120 Hz 屏上只要半秒；battlefix2 实测）
 			for i in range(int(p[0])):
 				if is_cancelled():
 					break
-				await _frame()
+				if parallel:
+					await _tick()
+				else:
+					await _wait_frame()
 		241:
 			host.play_bgm(p[0])
 		245:
