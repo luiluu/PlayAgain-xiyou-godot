@@ -35,6 +35,7 @@ extends Node
 ## 二十二层（交见面礼挑战三眼娃 458）加进第 2 段；队伍攻击、魔攻提到 5e13 后（见 _boost_party），本机 7 个并行负载下 13～22 层约 86 秒／348 项，6 个种子全过。
 ## 二十九、三十层加进去后单跑 13～30 层 109 秒／537 项（并行 2），接近上限，切出第 3 段（21～，xiyou_floor_run_c）。
 ## 三十一至三十三层（Map148／156／157，都没有回大厅的事件，用枫叶）加进第 3 段。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
@@ -518,8 +519,7 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false   # 区段里程碑会在走路时插进对话（tests/xiyou_guide 另测）
-	XSave.dir_override = "user://test_xiyou_floor_run"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_run")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	_fast_clock(true)
 	seed(seed_value)
 	var t0 := Time.get_ticks_msec()

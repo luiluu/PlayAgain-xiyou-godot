@@ -1,6 +1,7 @@
 extends Node
 ## 地图传送页（MapTransferPlugin）：配置与解锁、预览敌人/掉率（正式 v0.13 运行时读数）、页面布局与操作流程、
 ## 传送与按钮显示条件、旧档补解锁、O-012～O-014。窗口模式加 -- --out=<目录> 保存实际绘制截图。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
 var out_dir := ""
@@ -38,8 +39,7 @@ func shot(name: String) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_transfer"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_transfer")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	Engine.time_scale = 6.0
 	# ---- 配置 ----

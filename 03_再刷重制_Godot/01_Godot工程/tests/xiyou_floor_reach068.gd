@@ -11,6 +11,7 @@ extends Node
 ##   挑战者协会 EV26 → Map097 (8,16)；食人魔颅骨 469×10 换演武令 470（EV15，独立开关 A）；去图书馆 Map098 再回来；
 ##   南出口 EV3（朝下）去天之上 Map069 未接（传送会读图失败，不在专项里踩）。
 ## 原版随机分支一律固定（变量 94 的奖励档）；队伍生命攻击都很大（只查流程）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -143,8 +144,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_floor_reach068"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach068")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

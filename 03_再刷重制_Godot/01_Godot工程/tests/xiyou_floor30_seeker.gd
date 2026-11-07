@@ -7,6 +7,7 @@ extends Node
 ## - 开关 2306 开后三十层的门只剩空页（第 3 页），调查不做任何事。
 ## - 小明事件（6）要角色 99 在队（公共事件 1557 召唤，尚未进切片），本测试只核对队里没有 99 时它没有可用的页。
 ## 战斗只查流程：引路人吸收全部九种属性，开战后直接击倒（数值与敌群事件由 xiyou_troop_events 的 794 参照对照）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FLOOR_MAP := 146
 const FINAL_MAP := 55
@@ -95,8 +96,7 @@ func _run_event(map: XMapScene, id: int, answers: Array, kill := false) -> bool:
 
 func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
-	XSave.dir_override = "user://test_xiyou_floor30_seeker"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor30_seeker")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

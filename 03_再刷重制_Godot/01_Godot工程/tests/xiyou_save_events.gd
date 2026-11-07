@@ -4,6 +4,7 @@ extends Node
 ## 73 路线改的不透明度／穿透／图像、65 临时消除、36 自开关 A 换页。重制照同样操作，真实 XSave 存读档后重开地图场景逐项比。
 ## 另查：旧档没有 mapEvents 时事件回初始；换到别的地图再回来回初始（原版 Game_Map.setup）；读档后路线接着走完。
 ## 强制路线跳跃到一半存读档（沙僧第六期 S1／P2）：原版 _jumpCount／_jumpPeak 随 JsonEx 进存档（参照 eventKeys），读档后仍在空中。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://tests/fixtures/save_events_oracle.json"
 const TIMEOUT_MS := 60000
@@ -95,8 +96,7 @@ func _setup() -> XMapScene:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_save_events"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_save_events")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))

@@ -9,6 +9,7 @@ extends Node
 ##   降到 0 才走路），落点块号与表一致；再按通行 BFS 走到出口事件跑一次：传送门进目标图、用目标图回 69 的事件回来（落回同一块），
 ##   对话类事件按「离开／我再看看」触发一次；然后走回飞艇再上；
 ## - 飞行中换图（事件 201）带着飞艇、仍在飞、BGM 不换；在空中存读档、重建地图后仍在飞、能降落。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FIXTURE := "res://tests/fixtures/airship_land.json"
 const SAVE_DIR := "user://test_airship_fly"
@@ -298,7 +299,7 @@ func _visit(id: int, row: Array) -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = SAVE_DIR
+	TestEnv.isolate(SAVE_DIR.trim_prefix("user://test_"))   # 存档进 SAVE_DIR、配置也放这里，删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	_fast_clock(true)
 	fx = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))

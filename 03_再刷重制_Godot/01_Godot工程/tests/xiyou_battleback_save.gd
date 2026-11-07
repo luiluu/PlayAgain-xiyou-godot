@@ -4,6 +4,7 @@ extends Node
 ## 换到别的地图 setupBattleback 重设为地图指定（Map004 不指定＝null），再回 Map055 是它自己指定的 Translucent／Temple。
 ## 真实 XMapScene 跑公共事件 1387（283）、真实 XSave 存读档后重开地图场景、真实 transfer。
 ## battleback.versionReload（改版本号后 reloadMapIfUpdated 重载本图）重制没有这条路径，只核参照本身。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://modes/xiyou/generated/oracle/review_fix.json"
 const TIMEOUT_MS := 60000
@@ -106,8 +107,7 @@ func _case(id: String) -> Dictionary:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_battleback_save"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_battleback_save")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null

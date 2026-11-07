@@ -3,6 +3,7 @@ extends Node
 ## ① 逐个把这些公共事件交给地图解释器跑一遍（run_common_event），断言 skipped_log 为空（没有被跳过的未知指令）；
 ## ② 星谱（10349，CE9015 CodexXuan.openStarchart()）xuan1 起有星谱页，技能页可用（专项 xiyou_xuan_chart 比页面行文）；
 ## ③ 不对我方的技能在列表里直接用后，状态窗 MP 与列表灰显刷新（P3-2）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var checks := 0
 var failures: Array = []
 var map: XMapScene
@@ -66,6 +67,7 @@ func _has_battle(ce: int, seen: Dictionary) -> bool:
 
 
 func _run() -> void:
+	TestEnv.isolate("xiyou_skill_menu_events")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	var s := _state()
 	var events := _menu_events()

@@ -6,6 +6,7 @@ extends Node
 ## 111 两个条件分支走哪边（以结果开关为准）、「本局轮回已经开启」提示。
 ## 已知差异（不改代码，记在交付单）：①原版阵容规则菜单多一项「随机角色」（9 选 5 选人，O-035 暂不开放）；
 ## ②原版 pending.active（存档里 entryPending）这条路重制没有这个存档字段，不比；③原版战斗在探针里当作胜利，这里真打（force_auto）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results: Array = []
 var toasts_seen: Array = []
 
@@ -90,7 +91,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
-	XSave.dir_override = "user://test_xiyou_reincarnation_entry"
+	TestEnv.isolate("xiyou_reincarnation_entry")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	Engine.time_scale = 6.0
 	seed(20261013)
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/reincarnation_entry_oracle.json"))

@@ -6,6 +6,7 @@ extends Node
 ## - 202 变量指定、323 改图像、140 改 BGM；条件分支 13（$gamePlayer.vehicle() === $gameMap.vehicle(p1)）：走路为假、在飞艇上只有 2 为真；
 ## - 原版参照 airship_probe（tests/fixtures/airship_oracle.json）：新局三种载具、条件 13、四处事件 202 的落点、变量指定＋323＋140 逐项比；
 ## - XSave 真存档读档往返一致。上下飞艇、飞行、画面是甲二、甲三的事，本专项不碰。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 120000
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -137,7 +138,7 @@ func _conditions() -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = SAVE_DIR
+	TestEnv.isolate(SAVE_DIR.trim_prefix("user://test_"))   # 存档进 SAVE_DIR、配置也放这里，删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	_defaults()
 	s = XState.new_game(3, 1, [8, 9, 10])

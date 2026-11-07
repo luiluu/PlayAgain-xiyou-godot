@@ -6,6 +6,7 @@ extends Node
 ##   满 4 个后 EV1 最终首领 437，奖励页按变量 140／94 随机发装备，回 154 并重置；153 EV3 逃离。
 ## - 99 EV2 → 奇珍密室 100：EV6 兑换商店 2929，EV1 回 99。
 ## 队伍生命攻击都很大（只查流程）；随机用 MVEventCore.fixed_random 固定。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -165,8 +166,7 @@ func _run_call(map: XMapScene, call: Callable, mode := "win") -> bool:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_floor_reach062"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach062")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XShop.auto_close = true
 	XBattleScene.force_auto = true
