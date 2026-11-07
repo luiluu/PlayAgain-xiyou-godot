@@ -2,7 +2,8 @@ extends Node
 ## dsPassiveSkill 三处补齐（passive1），对照 oracle/passive.json（mv_oracle/passive_probe.cjs 量冻结正式源）：
 ## ① <passiveGUARD>（技能 10089 苍龙*破晓）：isGuard 恒真（不看能不能行动），受伤折减 ÷(2×grd)
 ## ② <passiveXPBSTEXn:上升量,条件,判定值>（技能 968 暴击率、3886 TP 回复率）：条件满足才加追加能力值
-## ③ passivePBSTEX 的 TPUP／TPLW 条件（技能 3219、4924）。能力值基数与原版不同，所以比「有没有加成、加成随条件的开关」与可由重制自己的基数算出的数。
+## ③ passivePBSTEX 的 TPUP／TPLW 条件（技能 3219、4924）。
+## ④ <passiveSTREG状态编号> 状态无效化（rules-gaps1）：学技能后的抵抗表、addState 挂不挂、状态 686 经特性 43 给 5500、防具 4088 备注不读。能力值基数与原版不同，所以比「有没有加成、加成随条件的开关」与可由重制自己的基数算出的数。
 var passed := 0
 var total := 0
 
@@ -41,6 +42,7 @@ func _run() -> void:
 	_guard(cases.guard.observed)
 	_xpbstex(cases.xpbstex.observed)
 	_tp(cases.pbstex_tp.observed)
+	_streg(cases.streg)
 	_state_rebuild()
 	_finish()
 
@@ -149,6 +151,38 @@ func _tp(o: Dictionary) -> void:
 		check(tag + ".gain_on_off", (got > 0.0) == (gain > 0.0), [got, gain])
 		if gain > 0.0:
 			check(tag + ".gain_value", is_equal_approx(got, floorf(a.param_base_direct(2) * 0.5)) and is_equal_approx(got, gain), [got, gain, a.param_base_direct(2)])
+
+
+func _streg(c: Dictionary) -> void:
+	var ids: Array = c.setup.stateIds
+	for note in c.observed.notes:
+		var keys: Array = XDB.rec("Skills", int(note.id)).get("meta", {}).keys().filter(func(k): return str(k).begins_with("passiveSTREG"))
+		keys.sort()
+		var want: Array = note.keys.duplicate()
+		want.sort()
+		check("streg.meta.%d" % int(note.id), keys == want, [keys, want])
+	for row in c.observed.rows:
+		var l := battle()
+		var a: XActor = l.actors[0]
+		var tag := "streg.%s.%s" % [row.kind, "+".join(row.ids.map(func(x): return str(int(x))))]
+		for id in row.ids:
+			a.learn_skill(int(id))
+		if row.kind == "state686":
+			a.add_state(686)
+			check(tag + ".has5500", a.skills().any(func(s): return int(s.id) == 5500) == bool(row.has5500))
+		elif row.kind == "armor4088":
+			var arm := XDB.rec("Armors", 4088)
+			var slot := a.equip_slots().find(int(arm.etypeId))
+			check(tag + ".slot", slot == int(row.slot), [slot, row.slot])
+			a.equips[slot] = arm
+			check(tag + ".equipped", a.equips.has(arm) == bool(row.equipped))
+		var got := ids.filter(func(i): return a.traits_set(XBattler.TRAIT_STATE_RESIST).has(int(i))).map(func(i): return int(i))
+		var want := (row.resist as Array).map(func(i): return int(i))
+		check(tag + ".resist", got == want, [got, want])
+		for st in row.get("added", {}):
+			a.add_state(int(st))
+			check(tag + ".added.%s" % st, a.state_ids.has(int(st)) == bool(row.added[st]), [a.state_ids, row.added])
+			a.remove_state(int(st))
 
 
 func _finish() -> void:

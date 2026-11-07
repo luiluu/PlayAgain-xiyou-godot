@@ -682,6 +682,26 @@ func attack_states_rate(id: int) -> float:
 		v += _num(m) * 0.01
 	return v
 
+## dsPassiveSkill：<passiveSTREG状态编号> 状态无效化（Game_Actor.stateResistSet 追加；编号位数不定，007／0007／00010 都按数值）。
+## 只认技能（含特性 43 加的、状态给的）上的标签，防具 4088 阎罗兜帽备注里的同名标签原版不读（参照 passive_probe streg）。
+## 原版 stateResistSet 跟着角色 refresh 才重算；这里随技能表即时读，时序同其它被动标签与特性 14。
+func traits_set(code: int) -> Array:
+	var out := super.traits_set(code)
+	if code == TRAIT_STATE_RESIST:
+		for id in passive_state_resists():
+			if not out.has(id):
+				out.append(id)
+	return out
+
+func passive_state_resists() -> Array:
+	var out := []
+	for s in skills():
+		for k in s.get("meta", {}):
+			var key := str(k)
+			if key.begins_with("passiveSTREG") and key.substr(12).is_valid_int() and not out.has(int(key.substr(12))):
+				out.append(int(key.substr(12)))
+	return out
+
 static func _num(v) -> float:
 	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
 	var m := r.search(str(v))
