@@ -233,9 +233,10 @@ func start_catch_up(seconds: float) -> void:
 		return
 	if not is_catching_up():
 		_saved_engine = {"tps": Engine.physics_ticks_per_second, "steps": Engine.max_physics_steps_per_frame, "scale": Engine.time_scale}
-		Engine.physics_ticks_per_second = 60 * CATCH_UP_SPEED
-		Engine.max_physics_steps_per_frame = 8 * CATCH_UP_SPEED
-		Engine.time_scale = float(CATCH_UP_SPEED)
+		# 相对入口设好的基准倍率（变速齿轮 XSpeedGear 1.6 时是 96 帧／1.6 倍）再乘 CATCH_UP_SPEED，停下回到这个基准，不写死 1 倍
+		Engine.physics_ticks_per_second = int(_saved_engine.tps) * CATCH_UP_SPEED
+		Engine.max_physics_steps_per_frame = int(_saved_engine.steps) * CATCH_UP_SPEED
+		Engine.time_scale = float(_saved_engine.scale) * CATCH_UP_SPEED
 		_catch_up_active = true
 		catch_up_changed.emit(true)
 	_catch_up_left = seconds

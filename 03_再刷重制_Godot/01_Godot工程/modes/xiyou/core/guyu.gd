@@ -286,10 +286,13 @@ static func recruit(s: XState) -> String:
 			push_error("[xiyou] 百谷生装备槽不可用")
 			return ""
 		var idx := s.gear.find_custom(func(e): return e.kind == "armor" and int(e.base) == RELIC)  # getMatchingBaseItem
-		if idx < 0:
+		var fresh := idx < 0
+		if fresh:
 			s.gain_gear("armor", RELIC, 1)
 			idx = s.gear.size() - 1
 		var item: Dictionary = s.gear[idx]
+		if fresh:
+			XThreeGrowth.mark_recruit(a, item)  # O-137：原版新生成的实例第一次同步倍率重复（开关关时重现）
 		s.gear.remove_at(idx)
 		var worn = a.equips[slot]
 		if worn is Dictionary and not worn.is_empty():
