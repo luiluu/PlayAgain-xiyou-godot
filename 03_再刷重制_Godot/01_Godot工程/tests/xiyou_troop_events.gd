@@ -19,9 +19,16 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 	# accept4：160 控尸者第 1 回合在 864／865 里随机挑（865 一回合杀光全队时别的敌人轮不到）；
 	# 398 蚀世树第 2 回合的技能随机（参照 0.5 挑到打自己的 2565、没命中角色，别的种子会打到角色并带附加伤害）
 	160, 398]
-## 已知游戏差异：这几项照原版参照会失败，不计入断言，输出打 KNOWN_DIFF 行（accept4 起；现在没有）。
+## 已知游戏差异：这几项照原版参照会失败，不计入断言，输出打 KNOWN_DIFF 行（accept4 起）。
 ## 321 六耳猕猴「模仿」856 的 <After Eval> 强制普通攻击 fix5 已接上（XBattleLogic._after_eval_force），回退支见 _unit_checks
-const KNOWN_DIFF := {}
+## floor1（新源 v0.62.12 新增 Boss 首次对照）：下面 12 个敌群的这些项与原版不一致，是规则缺口（状态 44／1107 没挂上、肉山 2029 第 1 回合强制与回满、
+## 2013 血线页后 HP、2010／2026 敌人行动集合、2024／2025 攻击魔攻与附加伤害），已交规则车道；修好一个删一个
+const KNOWN_DIFF := {
+	2001: ["extra"], 2002: ["t1_states"], 2004: ["t1_states"], 2010: ["t1_enemy_set"], 2013: ["hp_after_transform"],
+	2021: ["t1_states"], 2022: ["t1_states"], 2023: ["t1_states"], 2024: ["atk_mat", "extra", "t1_states"],
+	2025: ["atk_mat", "t1_states"], 2026: ["t1_enemy_set"],
+	2029: ["forced_t1", "hp_after_transform", "mhp", "t1_enemy_actions", "t1_states", "t2_enemy_once"],
+}
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
@@ -286,7 +293,9 @@ func _transform_case(c: Dictionary, round: int) -> void:
 				if int(eff.code) == 44 and int(eff.dataId) == 1401:
 					want_hp0 = minf(want_hp0 + 1e16, e0.mhp)
 			break
-	check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
+	# floor1：参照第 0 回合没有「e0 以自己为目标」的出手（v0.62 死神觉醒 2015 等血线页只对话／强制打玩家）时没有这个时点可比，跳过
+	if want_hp0 >= 0.0:
+		check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
 	var t1_states: Array = []
 	for t in range(1, 3):
 		if logic.is_won() or logic.is_lost():

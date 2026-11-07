@@ -4,6 +4,8 @@ extends Node
 ## 每个目标图挑一条能解出条件的入口（页条件＋外层条件分歧＋选项分支），写明开局要设的开关、变量、物品、独立开关、金钱和选项应答。
 ## 每例：新开局 → 站到来源图 → 按表设状态 → 在地图场景里执行该事件（战斗一开始击倒全部敌人）→ 断言落到原版指定的目标图与坐标。
 ## 用例页不是按表状态自然选中的页时（更高页恰好也满足），强制用该页执行，并在输出里记 forced（页选取另由 xiyou_event_compare 逐页对照）。
+## 审查 45 P3-4：fixture 的 known_forced（用例号→自然选中的页）列出预期要强制的用例；收尾断言本分片实际 forced 与它一致，
+## 页选取退步（该选用例页却选了别的页）或该强制的不再强制，都会挂。
 ## 落点按 MVInterpreter.TRANSFER_FIX 的优化修正（如 O-062 三十三层 (24,12)→(24,13)）。
 ## 已知不走的入口写在表的 skip（原因见交付单 cc_wukong-accept3）。part 分片（并行测试 300 秒上限）。
 ## accept4：用例另含「入口两边都没覆盖」的每一条（不只每个目标图一条）；random 字段＝分歧读的变量在事件里先被随机赋值，
@@ -85,6 +87,11 @@ func _apply(s: XState, c: Dictionary) -> void:
 	for id in c.actors:
 		if not s.party.has(int(id)):
 			s.add_actor(int(id))
+		# 超强者（如一护 148）在默认难度被 add_actor 拦下：来源页要的是「已在队」，照已入队的存档直接放进队伍，
+		# 不开地狱等难度开关（免得改动来源图别的页）
+		if not s.party.has(int(id)) and not XItemMarks.can_acquire_actor(s, int(id)):
+			s.actor(int(id))
+			s.party.append(int(id))
 	if int(c.gold) > 0:
 		s.gain_gold(int(c.gold))
 
@@ -170,12 +177,20 @@ func _run() -> void:
 	seed(20261105)
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(CASES))
 	var cases: Array = data.cases
+	var known: Dictionary = data.get("known_forced", {})
+	var want_forced := {}
 	var mine := 0
 	for i in range(cases.size()):
 		if i % PARTS == part - 1:
 			mine += 1
+			if known.has(cases[i].id):
+				want_forced[str(cases[i].id)] = int(known[cases[i].id])
 			await _case(cases[i])
 	_check("part%d_has_cases" % part, mine > 0)
+	var got_forced := {}
+	for f in forced:
+		got_forced[str(f[0])] = int(f[1])
+	_check("part%d_forced_pages_as_known" % part, got_forced == want_forced, {"want": want_forced, "got": got_forced})
 	_finish()
 
 

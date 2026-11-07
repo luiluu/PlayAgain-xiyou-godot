@@ -388,7 +388,14 @@ def main():
         if r['src'].startswith('ce'):
             r['callers'] = ce_calls.get(int(r['src'][2:]), [])[:8]
     tidx = test_index()
-    in_slice = set(load(HERE / 'xiyou_slice.json')['maps'])
+    slice_cfg = load(HERE / 'xiyou_slice.json')
+    in_slice = set(slice_cfg['maps'])
+    keep_ev = slice_cfg.get('keepEvents', {})
+
+    def ev_in_slice(r):
+        # floor1：切片 keepEvents 只收部分事件的图（如 Map146／148），没收的事件重制地图上不存在，专项走不到
+        k = keep_ev.get(str(r['src_map']))
+        return r['src_map'] in in_slice and (not isinstance(k, list) or r['ev'] in k)
     chain = TESTS / 'fixtures/unlock_chain_cases.json'
     chain_ids = {(c['id'], c['dest'], tuple(c['xy'])) for c in load(chain)['cases']} if chain.exists() else set()
     cidx = compare_index()
@@ -411,6 +418,8 @@ def main():
                 r['why'] = '公共事件里的移动，事件对照没走到这一跳（调用者见来源）'
             elif r['src_map'] not in in_slice:
                 r['why'] = '来源图不在切片'
+            elif not ev_in_slice(r):
+                r['why'] = '来源事件不在切片（keepEvents 没收）'
             elif 'raw' in r:
                 r['why'] = solve_reason(r)[1]
     # 汇总到「来源图 → 目标图」
@@ -460,7 +469,7 @@ def main():
                 continue  # 重新生成时不把本专项自己算作已覆盖
             cand = []
             for r in rs:
-                if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['src_map'] == d:
+                if not r['src_map'] or not ev_in_slice(r) or r['src'] in skip or r['src_map'] == d:
                     continue
                 rec = solve(r)
                 if rec is None:
@@ -475,7 +484,7 @@ def main():
         # accept4：再给每条「带条件、没被别的专项真走过、事件对照也没走到」且解得出的入口各一例（同图移动也算：断言玩家落到目标坐标）
         have = {(c['id'], c['dest'], tuple(c['xy'])) for c in out}
         for r in gated:
-            if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['compare'] or r['kind'] == '移动（变量指定）':
+            if not r['src_map'] or not ev_in_slice(r) or r['src'] in skip or r['compare'] or r['kind'] == '移动（变量指定）':
                 continue
             if any(t != 'xiyou_unlock_chain' for t in r['tests']) or (r['src'], r['dest'], tuple(r['xy'])) in have:
                 continue
@@ -485,7 +494,31 @@ def main():
             have.add((r['src'], r['dest'], tuple(r['xy'])))
             out.append(dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'], xy=r['xy'],
                             cond='；'.join(r['page_conds'] + r['branch']), **rec))
-        Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改；跳过的入口写在 skip', 'skip': sorted(skip), 'cases': out},
+        # floor1：旧表里的入口只要原版还在、仍解得出就留着（重算条件、顺序不变，分片不变），新挑出的接在后面；
+        # 不因为别的专项或事件对照后来覆盖了就从本专项掉出去（换源 v0.62.12 后事件对照基线重出，原先 272 例被判「对照已走到」，重新生成会整批掉）
+        old = load(Path(a.cases)) if Path(a.cases).exists() else {}
+        by_key = {(r['src'], r['dest'], tuple(r['xy'])): r for r in rows}
+        fresh = {(c['id'], c['dest'], tuple(c['xy'])): c for c in out}
+        kept = []
+        for c in old.get('cases', []):
+            k = (c['id'], c['dest'], tuple(c['xy']))
+            r = by_key.get(k)
+            if r is None or not ev_in_slice(r) or r['src'] in skip or k in {(x['id'], x['dest'], tuple(x['xy'])) for x in kept}:
+                continue
+            rec = solve(r)
+            if rec is None:
+                # 解法变保守了（如换源后兄弟分支里也改了同一变量，被判「前面被改过」）：旧例已由专项在地图场景真走过，原样留着
+                kept.append(c)
+                continue
+            kept.append(fresh.pop(k, None) or dict(id=r['src'], src_map=r['src_map'], ev=r['ev'], page=r['page'], pos=r['pos'], dest=r['dest'],
+                                                   xy=r['xy'], cond='；'.join(r['page_conds'] + r['branch']), **rec))
+        out = kept + list(fresh.values())
+        # 审查 45 P3-4：已知要强制改页的用例（用例页之上还有页按表状态也满足）手写在 known_forced（用例号→自然选中的页），重新生成时沿用；
+        # 专项收尾断言实际 forced 与它一致，重制页选取退步不会被强制改页藏住
+        ids = {c['id'] for c in out}
+        kf = {k: v for k, v in old.get('known_forced', {}).items() if k in ids}
+        Path(a.cases).write_text(json.dumps({'note': '解锁链表.py --cases 生成，勿手改（known_forced 除外）；跳过的入口写在 skip', 'skip': sorted(skip),
+                                             'known_forced': kf, 'cases': out},
                                             ensure_ascii=False, indent=1) + '\n')
         print('用例 %d（目标图未被专项真走到、或入口两边都没覆盖，且可解）' % len(out))
     md = '\n'.join(lines) + '\n'

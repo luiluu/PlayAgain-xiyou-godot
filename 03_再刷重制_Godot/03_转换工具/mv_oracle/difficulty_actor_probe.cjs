@@ -59,9 +59,9 @@ const battleRefresh = a => { if (a.initPassiveCache) { a.initPassiveCache(); a.r
 const SAMPLE = [1, 8, 9, 10, 2, 52, 12, 30];   // 队伍四人＋开局可选 2、52＋不在队的 12、30
 const SWITCHES = [2496, 2492, 2491, 2490, 2500, 2494, 2489, 2487, 2483, 2461, 2462, 2463, 2485, 2486, 2493, 2497, 2481];
 const VARS = [8, 9, 12, 13, 14, 20, 1395, 1396, 1397, 1482, 1491, 1639, 2530, 1468, 1469, 1470, 1471, 1472];
-function observe(runs) {
+function observe(runs, sample) {
   const actors = {};
-  for (const id of SAMPLE) {
+  for (const id of sample || SAMPLE) {
     const a = w.$gameActors.actor(id);
     battleRefresh(a);
     const row = {skills: a._skills.slice().sort((x, y) => x - y), states: a._states.slice().sort((x, y) => x - y), lv1: snap(a)};
@@ -96,6 +96,10 @@ const specs = [
   {id: 'd9.chaos_miemie_debuff', stages: [D7, D8, D9M, D9]},
   {id: 'd9.from_tianzai', stages: [D9]},
 ];
+// floor1：新源 v0.44 起难度传承等按角色备注 <KyoTier> 分强弱（CodexTier）。另跑一组同样的阶段、只看不在队的强者 11、超强者 96 与 148
+// （一护，v0.62 新角色）；单独成例（id 加 .tier、setup 带 sample），旧例与顶层 sample 逐字节不变
+const TIER_SAMPLE = [11, 96, 148];
+specs.slice().forEach(spec => specs.push({id: spec.id + '.tier', stages: spec.stages, sample: TIER_SAMPLE}));
 const cases = specs.map(spec => makeCase('diffactor.' + spec.id, spec, () => {
   newGame(); w.$gameMessage.clear();
   w.eval('$gameParty.ActorMaxLevel = 99;');
@@ -104,6 +108,6 @@ const cases = specs.map(spec => makeCase('diffactor.' + spec.id, spec, () => {
     if (st.v20 !== undefined) w.$gameVariables.setValue(20, st.v20);
     runs.push(run(page(M4, st.ev, st.page), st.picks, 4, st.ev));
   }
-  return observe(runs);
+  return observe(runs, spec.sample);
 }));
 process.exit(finish(host, 'difficulty_actor.json', {hostScope: '正式事件跑天灾开局与大厅 EV41／EV62 进灭世、洪荒、混沌后的角色技能、状态、能力值', sample: SAMPLE, cases}) ? 0 : 1);

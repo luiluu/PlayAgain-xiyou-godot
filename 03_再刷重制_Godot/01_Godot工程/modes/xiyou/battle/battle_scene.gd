@@ -183,6 +183,20 @@ static func battle_music() -> Dictionary:
 
 
 ## 战斗 BGM 播放器（还没进树、没开始放；stream 为空表示没有这首）
+## 敌群事件 241 播放 BGM（原版 AudioManager.playBgm）：换掉当前战斗曲；空名＝停（同 MV 的 name 为空即 stopBgm）
+func _change_bgm(music) -> void:
+	if not (music is Dictionary):
+		return
+	if bgm != null:
+		bgm.stop()
+		if bgm != prestarted_bgm:
+			bgm.queue_free()
+	bgm = new_bgm_player(music)
+	add_child(bgm)
+	if bgm.stream != null:
+		bgm.play()
+
+
 static func new_bgm_player(music: Dictionary) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
 	XAudio.bind(player, "BGM")
@@ -1601,6 +1615,8 @@ func _play(logs: Array) -> void:
 				_start_animation(int(l.animation), l.target)  # YEP_SkillMasteryLevels onAllActionsEnd：升级动画（不镜像，不等）
 			"se":
 				play_se(l.se)
+			"bgm":
+				_change_bgm(l.bgm)
 			"movie":
 				var movie := XMoviePlayer.start(str(l.name))   # 事件指令 261：放完再往下演（原版解释器等 video）
 				if movie != null:

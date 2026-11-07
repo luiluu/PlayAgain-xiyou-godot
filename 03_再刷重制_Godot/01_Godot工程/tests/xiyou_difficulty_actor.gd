@@ -4,6 +4,7 @@ extends Node
 ## Map004 EV41 第 2 页（进灭世）、第 6 页（再开洪荒＋CE1442 选诅咒）、EV62 第 4 页（31 层后：关难度开关、改怪物属性到混沌，可选灭世 debuff）。
 ## 逐例比：每段跑完与应答数、难度号、难度开关与相关变量、样本角色的全部技能、状态、1 级能力（被动刷新后）、开战加的 StartPushState
 ## 与开战能力（加完再刷新被动）。选项按 picks 依次应答（宿主同 xiyou_honghuang_curse）。
+## floor1：参照已是新源 v0.62.12；每例另有 .tier 变体，样本换成不在队的强者 11、超强者 96 与 148（v0.44 起 <KyoTier> 分强弱），共 12 例。
 const ORACLE := "oracle/difficulty_actor.json"
 const PARTY := [1, 8, 9, 10]
 const ELEMENTS := [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
@@ -40,7 +41,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	XMessageBox.auto = true
 	var d = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + ORACLE))
-	if not (d is Dictionary and d.cases.size() == 6):
+	if not (d is Dictionary and d.cases.size() == 12):
 		check("oracle", false, ORACLE)
 		return finish()
 	check("source", d.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
@@ -49,7 +50,8 @@ func _run() -> void:
 	for c in d.cases:
 		check(c.id + ".oracle", c.errors.is_empty(), c.errors)
 		if c.errors.is_empty():
-			await run_case(c, host, d.sample)
+			# floor1：.tier 例（强者 11、超强者 96／148）的样本写在用例 setup.sample 里
+			await run_case(c, host, Array(c.setup.get("sample", d.sample)))
 	XState.current = null
 	finish()
 
