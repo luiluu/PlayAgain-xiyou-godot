@@ -12,12 +12,12 @@
 | 真气首领血条（v0.37 Z.bossHpEnemy） | 已做 | `battle/boss_hp_bar.gd` `RANGE_V037`；cc_newsrc-switch 交付单那句「没做」已过期 |
 | 装备页右下详情（v0.41 installEquipmentDetailV041 的 Detail＋v0.43 改写） | **没做 → 本批做了** | 新源实跑参照（下） |
 | 物品页装备详情放右侧（v0.43 Scene_Item 部分） | **没做 → 本批做了** | 同上 |
-| 藏宝图直接／批量使用数量窗＋至臻装备入包金色闪光（v0.29 installTreasureBatchRuntime 的界面部分） | 没做，留到下一期 | 规则层 `core/treasure_map.gd` `_run_v029` 已做；Window_TreasureNumber、useOne 同步跑公共事件（只认 118／119／120／1377 后续）、T.updateNotice（物品页／地图／战斗都弹）都没有 |
+| 藏宝图直接／批量使用数量窗＋至臻装备入包金色闪光（v0.29 installTreasureBatchRuntime 的界面部分） | **没做 → 本批第二期做了** | 规则层 `core/treasure_map.gd` `_run_v029` 已做；Window_TreasureNumber、useOne 同步跑公共事件（只认 118／119／120／1377 后续）、T.updateNotice（物品页／地图／战斗都弹）都没有 |
 | ui5 千万级血量拖尾 | 等 Kyo | 派单注明 |
 
 ## 变更记录草稿
 
-## 2026-11-07 【cc·界面·未经审查】装备页／物品页右侧装备详情跟到新源；敌人血条参照换新源；游戏时间不再随变速齿轮变快（dev.待定）
+## 2026-11-07 【cc·界面·未经审查】装备页／物品页右侧装备详情、藏宝图批量使用与至臻闪光跟到新源；敌人血条参照换新源；游戏时间不再随变速齿轮变快（dev.待定）
 
 - 装备页（`ui/equip_scene.gd`）：右下换成 `XGearDetail`（新 `ui/gear_detail.gd`）——页签条 (640,173,640,58)「【装备详情】　属性对比　插槽与镶嵌」、详情 (640,231,640,431)、翻页条 (640,662,640,58)；属性对比挪进详情的位置，物品信息窗与说明卡浮窗不再出现。→／Tab 下一个页签、← 上一个（首尾相接，不响音效，照 v0.41 改写后的 updateLowerRightWindowTriggers），点页签条按三等分选；详情页与插槽页 PageUp／PageDown 翻详情（不再换角色，Q／E 照旧），点翻页条左半／右半翻页，滚轮一格 100 像素，按住拖动滚动（6 像素起算，点详情区不再轮换窗口）。
 - 物品页（`ui/item_scene.gd`）：物品列表活动且选中装备时，右侧换成「装备详情／插槽与镶嵌」两页签（Tab 或点左半／右半切换），不弹说明卡；操作菜单、分类、普通物品照旧显示信息窗。
@@ -26,12 +26,16 @@
 - 参照：`ui_reference/review_system_pages.js` 新页 `equip_detail`（7 态）、`item_detail`（5 态），新源 v0.62.12 实跑，读数压成 `tests/fixtures/gear_detail_oracle.json`；新专项 `xiyou_gear_detail`（行内容逐行比 3 件、窗口矩形、页签文字、→←Tab 与点击、PageDown 不换角色／属性对比页照旧换、分页与翻页滚动、原版总高 259／389／404、两个回退支）。
 - 敌人血条显隐：`hp_gauge_probe` 用新源重跑，`tests/fixtures/hp_gauge_oracle.json` 换成 v0.62.12（2027 个敌人），`xiyou_hp_gauge_visible` 计数断言改成 566／278。
 - 审查第 52 期 P2-2（来源 ui-battlefix2）：`XState.play_seconds` 原来按 `_process` 的 delta 累加，变速齿轮 time_scale 1.6 让游戏时间快 1.6 倍（商店补货、变量「游戏时间」、脚本 playtime() 冷却、存档页时间都受影响）。原版 playtime＝frameCount／60，齿轮不碰 frameCount。现在 `map_scene` 累加 `XSpeedGear.real_seconds(delta)`（除掉 set_engine 设下的那份倍率；测试快进、平台离线追帧的倍率照旧算进去）；`xiyou_speed_gear` 加 `map.play_seconds_real_time`（开齿轮 1.5 秒真实时间，play_seconds 增量误差 ≤8%）。
-- 玩家可见：装备页右边改成可翻页的完整装备详情和插槽页；物品菜单里选中装备时右边直接显示详情，不再弹浮窗；开着变速齿轮时游戏时间、商店补货按真实时间走。
+- 藏宝图直接／批量使用（新 `core/treasure_batch.gd` `XTreasureBatch`，`ui/item_scene.gd` 数量窗）：表里 21 种藏宝图在物品页「使用」时开 Window_TreasureNumber (390,184,500,352)——「使用藏宝图」、名字、× 数量、「持有 N 张」、按键说明，五个触摸键（y 194，一直显示）与 MAX 键 (206,258,88,40)；左右 ±1、上下 ±10、PageDown 取最大。确定后当场逐张用（T.useOne：该图公共事件带 common_id 跑，后续只认 118／119／120／1377，最多 12 条，提示不弹；成功＝库存正好少 1），每帧最多 8 张，取消键停；结束回列表，说明卡写「已使用 名字 ×N；剩余 N 张[；获得至臻装备 N 件][（原因）]」／「已取消使用藏宝图」。不再回地图跑事件。
+- 至臻装备入包闪光（新 `ui/prestige_notice.gd` `XPrestigeNotice`）：`XState.gain_gear` 新得到底子名以「至臻」开头的武器／防具时记队列；当前场景（地图；物品页、战斗是它的子节点）上弹窗 (290,86,700,172)「至臻现世 · 获得 N 件」＋前两种名字＋「另有 k 种至臻装备」，全屏闪光 255,219,130 不透明度 floor(128×剩余／45)，45 帧；窗 150 帧、文字不透明度 min(255, 剩余×12)。
+- 回退：`XTreasureBatch.ENABLED = false`（藏宝图单张使用回地图、不弹至臻窗）。复现原版，不登 O 号。
+- 参照：`review_system_pages.js` 新页 `treasure_batch`（开窗、加减、MAX、确定用 3 张、取消 5 态）与 `prestige_notice`；读数 `tests/fixtures/treasure_batch_ui_oracle.json`；新专项 `xiyou_treasure_batch`。
+- 玩家可见：装备页右边改成可翻页的完整装备详情和插槽页；物品菜单里选中装备时右边直接显示详情，不再弹浮窗；藏宝图可以在背包里直接一次用多张；拿到至臻装备时全屏金光提示；开着变速齿轮时游戏时间、商店补货按真实时间走。
 
 ## 交接板
 
-- 下一步：界面 FD 第二期——藏宝图直接／批量使用数量窗（Window_TreasureNumber：宽 500、fittingHeight(9) 居中，「使用藏宝图」、名字、×数量、「持有 N 张」、按键说明，±1／±10、MAX 键与 PageDown 取最大；每帧最多 8 张、取消可停；结果写进说明卡文字）＋至臻装备入包金色闪光（物品页、地图、战斗都弹，150 帧窗、45 帧闪光）。
-- 用户试玩说明：装备页右下三页签（→／Tab 切换，PageUp／PageDown 翻页）；物品菜单选中装备看右边。
+- 下一步：界面缺口下一批（ui5 千万级血量拖尾等 Kyo 定）；至臻闪光原版只认 gainItem／gainIndependentItem，重制只挂在 `gain_gear`，深渊商人等直接 append 实例的路径没接（量小，需要时补）。
+- 用户试玩说明：装备页右下三页签（→／Tab 切换，PageUp／PageDown 翻页）；物品菜单选中装备看右边；背包里用藏宝图会弹数量窗。
 - 需要用户决定：无（O-待定·装备详情随优化登记待确认）
 
 ## 进度账
@@ -53,3 +57,6 @@
 - 6322eefa 装备页／物品页右侧装备详情（XGearDetail）
 - 9a34dbf8 装备详情专项与参照夹具；旧版面测试关开关
 - 19cc44c6 审查 52 P2-2：游戏时间按真实时间累加
+- 44d88be2 交付单、优化登记
+- 82ba44da 合 main（2443a7b0）
+- 5e01c4d6 第二期 C：藏宝图批量使用＋至臻闪光
