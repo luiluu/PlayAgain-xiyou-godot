@@ -11,7 +11,10 @@ extends RefCounted
 ##   · 单体（scope 非 2／8／10，含随机、自己）：1 级＝对方随机一个；2 级＝掷 randomInt(2)，0 对方、1 己方，再在那一方随机一个；3 级＝己方随机一个（含自己）。
 ##   · 全体（scope 2／8／10）：1 级＝对方全部存活；2 级＝掷 randomInt(2)，0 对方全部、1 己方全部；3 级＝己方全部存活，不掷随机数。
 ##   随机一个按 tgr 加权，只在存活者里挑（量过：已倒下的人不会被选中）。
-## 原版疑似缺陷（照原版做，不改）：魅惑（3 级）和混乱的己方一侧可以选到行动者自己（己方随机含自己）。
+## 优化 O-待定-1（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」）：魅惑（3 级）和混乱的己方一侧单体随机能选到行动者自己。
+## 默认修好：己方单体随机排除行动者自己；己方只剩自己时改打对方随机一个（同样只取 1 个随机数）。全体（scope 2／8／10）照旧含自己。
+## FIX_SELF_TARGET = false 回到原版（参照 confusion_probe 的夹具在关着时逐例比）。
+static var FIX_SELF_TARGET := true
 
 const MAX_LEVEL := 3
 const ALL_SCOPES := [2, 8, 10]
@@ -50,4 +53,8 @@ static func targets(logic, a: XBattler, skill: Dictionary) -> Array:
 	var pool: Array = logic.alive(side)
 	if ALL_SCOPES.has(int(skill.get("scope", 1))):
 		return pool
+	if FIX_SELF_TARGET and is_same(side, friends):
+		pool = pool.filter(func(b): return b != a)
+		if pool.is_empty():
+			pool = logic.alive(foes)
 	return [logic._random_target(pool)] if not pool.is_empty() else []
