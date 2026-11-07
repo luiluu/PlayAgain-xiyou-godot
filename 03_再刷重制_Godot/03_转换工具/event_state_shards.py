@@ -13,7 +13,10 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import threading
+import time
 
 SHARD_MERGE_JS = r'''
 const fs = require('fs'), [out, ...parts] = process.argv.slice(1);
@@ -125,9 +128,59 @@ def prepare_prev(env, history, prev_file, work):
     return True
 
 
-def run_sharded(env, oracle, work, out, keys_out, shards, launch):
+PROGRESS_SECS = 60   # 心跳间隔（秒）；环境变量 XIYOU_STATE_PROGRESS_SECS 可改，0＝不打（回到原来整段无输出）
+
+
+class Progress:
+    """长任务的心跳（tools83，哪吒 save2 交付单「留给下一单」）：整份重量的探针一跑近一小时，期间没有任何输出，
+    会话被 idle 超时掐掉。这里开一条守护线程，每隔 interval 秒打一行「已 mm:ss，n/总数 段完成」，每段结束也打一行；
+    用法：with Progress(shards) as prog: … prog.done(i)。interval≤0 时什么都不打。"""
+
+    def __init__(self, shards, interval=None, out=None, label='事件状态探针'):
+        if interval is None:
+            try:
+                interval = float(os.environ.get('XIYOU_STATE_PROGRESS_SECS', PROGRESS_SECS))
+            except ValueError:
+                interval = PROGRESS_SECS
+        self.shards, self.interval, self.out, self.label = shards, interval, out, label
+        self.finished, self.lock, self.stop, self.t0 = 0, threading.Lock(), threading.Event(), time.monotonic()
+
+    def say(self, text):
+        out = self.out or sys.stdout
+        try:
+            print('  [%s] %s' % (self.label, text), file=out, flush=True)
+        except (OSError, ValueError):
+            pass
+
+    def line(self):
+        secs = int(time.monotonic() - self.t0)
+        return '已 %d 分 %02d 秒，%d/%d 段完成' % (secs // 60, secs % 60, self.finished, self.shards)
+
+    def done(self, i=None):
+        with self.lock:
+            self.finished += 1
+        if self.interval > 0:
+            self.say(self.line() + ('（第 %d 段刚结束）' % (i + 1) if i is not None else ''))
+
+    def _beat(self):
+        while not self.stop.wait(self.interval):
+            self.say(self.line() + '，还在跑')
+
+    def __enter__(self):
+        if self.interval > 0:
+            self.say('开始，%d 段并行，每 %g 秒报一次进度' % (self.shards, self.interval))
+            threading.Thread(target=self._beat, daemon=True).start()
+        return self
+
+    def __exit__(self, *exc):
+        self.stop.set()
+        return False
+
+
+def run_sharded(env, oracle, work, out, keys_out, shards, launch, progress=None):
     """分 shards 段跑 event_state_probe.cjs，结果拼到 out、摘要写 keys_out。
     launch(env, label) 跑 `node event_state_probe.cjs`（cwd=oracle）并返回 CompletedProcess；调用方决定怎么占槽。
+    进度：默认每 60 秒（XIYOU_STATE_PROGRESS_SECS，0＝关）往标准输出打一行心跳，传 progress=Progress(…) 可换输出与间隔。
     每段的存档目录从 env['XIYOU_ORACLE_SANDBOX']（没有就 oracle/.sandbox）复制 save／macport。"""
     import concurrent.futures
     oracle, work, out, keys_out = Path(oracle), Path(work), Path(out), Path(keys_out)
@@ -136,7 +189,10 @@ def run_sharded(env, oracle, work, out, keys_out, shards, launch):
     if shards <= 1:
         e = dict(env, XIYOU_EVENT_OUT=str(out), XIYOU_STATE_KEYS_OUT=str(keys_out))
         e.pop('XIYOU_PROBE_SHARD', None)
-        return launch(e, 'event_state_probe')
+        with progress or Progress(1) as prog:
+            r = launch(e, 'event_state_probe')
+            prog.done()
+        return r
 
     def part(i):
         sub = work / ('state-shard-%d' % i)
@@ -147,8 +203,10 @@ def run_sharded(env, oracle, work, out, keys_out, shards, launch):
                 shutil.copytree(seed / name, sub / name)
         e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_EVENT_OUT=str(sub / 'part.json'),
                  XIYOU_STATE_KEYS_OUT=str(sub / 'part.keys.json'))
-        return launch(e, 'event_state_probe %d/%d' % (i + 1, shards))
-    with concurrent.futures.ThreadPoolExecutor(shards) as pool:
+        r = launch(e, 'event_state_probe %d/%d' % (i + 1, shards))
+        prog.done(i)
+        return r
+    with progress or Progress(shards) as prog, concurrent.futures.ThreadPoolExecutor(shards) as pool:
         done = list(pool.map(part, range(shards)))
     text = ''.join('（第 %d/%d 段）\n%s%s' % (i + 1, shards, p.stdout, p.stderr) for i, p in enumerate(done))
     bad = [p for p in done if p.returncode]
