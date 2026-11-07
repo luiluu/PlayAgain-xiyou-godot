@@ -98,6 +98,15 @@ function applyPreset(p) {
     const ac = w.$gameActors.actor(Number(id));
     if (a.level !== undefined) ac.changeLevel(a.level, false);
     for (const sk of a.skills || []) ac.learnSkill(sk);
+    // 八戒 DR：actors.N.armors＝给这名角色直接穿上的防具底材（forceChangeEquip 到 etype 对应的第一个槽），开「角色 N 装备防具」门（ce1213）
+    for (const ar of a.armors || []) {
+      const item = w.$dataArmors[ar], slot = ac.equipSlots().indexOf(item.etypeId);
+      if (slot >= 0) ac.forceChangeEquip(slot, item);
+    }
+    for (const wp of a.weapons || []) {   // actors.N.weapons：同上，武器（etype 1）
+      const item = w.$dataWeapons[wp], slot = ac.equipSlots().indexOf(item.etypeId);
+      if (slot >= 0) ac.forceChangeEquip(slot, item);
+    }
   }
   if (p.gold !== undefined) w.$gameParty.gainGold(p.gold - w.$gameParty.gold());
   for (const [id, n] of Object.entries(p.items || {})) w.$gameParty.gainItem(w.$dataItems[Number(id)], n);
@@ -283,22 +292,32 @@ function runCase(c) {
     const named = String(firstWarehouse.parameters[0]).match(/<([^>:]*)/);
     if (named) w.PHPlugins.PHWarehouse.createWarehouse('<' + named[1] + '>');
   }
-  // 序列只给事件指令 122（变量操作·随机数）用，战斗等别处照旧 0.5（Godot 侧也只有事件随机数走序列）
-  // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）：这一例 122 随机数按这串循环取，覆盖 RANDOM_SEQUENCES；
-  // Godot 侧同（xiyou_event_compare 取 preset.random_seq 给 MVInterpreter.random_sequence）
+  // 预设 random_seq（eventsreg2；键名同 accept5 解锁链用例的 random_seq）／RANDOM_SEQUENCES：这一例的 Math.random 全部按这串循环取。
+  // 口径（八戒 DR，总装二十九）：原来只包 command122、脚本里的 Math.random 仍是 0.5；MV 里 122 与脚本（秘境抽奖、随机伙伴、
+  // 掉落等）共用同一条 Math.random，重制 MVEventCore.random_float／random_int 也是 122 与脚本共用 random_sequence。
+  // 改成事件指令执行期间（含 355 脚本、356 插件指令、子公共事件）的 Math.random 都吃序列；逐帧更新（地图、角色移动等）照旧 0.5——
+  // 整例全换时这些逐帧调用也吃掉序列、首个 122 就错位（试过：66 例不一致），而重制那边逐帧随机不走 random_sequence。
+  // 两边按同一事件调用顺序取数；多值序列不再因脚本随机错位（w7／w11／w13 删掉的 124 例）。
   const seq = (c.preset && c.preset.random_seq) || RANDOM_SEQUENCES[c.id], command122 = w.Game_Interpreter.prototype.command122;
-  if (seq) {
-    let at = 0;
-    w.Game_Interpreter.prototype.command122 = function () {
-      const old = w.Math.random; w.Math.random = () => seq[at++ % seq.length];
-      try { return command122.apply(this, arguments); } finally { w.Math.random = old; }
-    };
-  }
+  let at = 0;
+  const seqRandom = seq ? () => seq[at++ % seq.length] : null;
   const it = new w.Game_Interpreter();
   const ran = new Set(), execute = w.Game_Interpreter.prototype.executeCommand;
   w.Game_Interpreter.prototype.executeCommand = function () {
     if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(this._index); }
-    return execute.apply(this, arguments);
+    if (!seqRandom) return execute.apply(this, arguments);
+    // 301 战斗处理（敌群、战斗模拟）里的随机数不吃序列：重制战斗走自己的随机流，不走 random_sequence（试过：m138e6p0 等 69 例 301 后首个 122 错位）
+    const cmd = this.currentCommand(), inBattle = cmd && cmd.code === 301;
+    const old = w.Math.random; w.Math.random = inBattle ? () => 0.5 : seqRandom;
+    try { return execute.apply(this, arguments); } finally { w.Math.random = old; }
+  };
+  // 生成装备（DreamX 词缀与预掷池 RandomPrefixSuffix.makeItem、YEP 独立物品的插槽浮动 addNewIndependentItem）里的随机数也不吃序列：
+  // 重制 XGear.roll 走自己的装备随机流，不走 random_sequence（八戒 dropseq：m160e4p0#w13_302 等 10 例，1439 掉天顶剑·封印时
+  // 这里吃掉 42 个，后面甚尔／宿傩进阶石的 randomInt(50) 错位，原版掉石头、重制没掉——对照口径不同，不是游戏不一致）
+  const gearHooks = [[w.DreamX.RandomPrefixSuffix, 'makeItem'], [w.DataManager, 'addNewIndependentItem']].map(([o, k]) => [o, k, o[k]]);
+  if (seqRandom) for (const [o, k, f] of gearHooks) o[k] = function () {
+    const old = w.Math.random; w.Math.random = () => 0.5;
+    try { return f.apply(this, arguments); } finally { w.Math.random = old; }
   };
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
   const errors = [];
@@ -359,10 +378,11 @@ function runCase(c) {
   const out = {id: c.id, kind: c.kind, map: c.map, event: c.event, page: c.page, common: c.common, finished: !it.isRunning(), frames,
     trace, delta: delta(before, snap(watch))};
   if (errors.length) out.errors = errors;
-  w.Game_Interpreter.prototype.executeCommand = execute;
+  w.Game_Interpreter.prototype.executeCommand = execute; for (const [o, k, f] of gearHooks) o[k] = f;
   out.base = c.base; out.preset = c.preset;
   out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
+  w.Math.random = () => 0.5;
   trace = null;
   return out;
 }

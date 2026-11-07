@@ -31,6 +31,9 @@ def merge_into(out, add):
     for k, v in add.items():
         if k == 'answers':
             out['answers'] = list(v)
+        elif k == 'actors':   # 按角色深合并（同一角色的 skills／armors 各自并起来，不互相覆盖；八戒 DR w14）
+            for aid, spec in v.items():
+                merge_into(out.setdefault('actors', {}).setdefault(aid, {}), spec)
         elif isinstance(v, dict):
             out.setdefault(k, {}).update(v)
         elif isinstance(v, list):
@@ -75,10 +78,22 @@ def trace_var(lst, j, p):
                     return {'gold': int(val)}
             if int(q[2]) == 0 and int(q[3]) == 2 and isinstance(val, (int, float)):
                 # 随机赋值（DR）：门前只有这一条 122 随机时，用 random_seq 让它抽到 val（MV：min + floor(random × (max−min+1))）
+                # w14：门前有多条 122 随机时，按执行顺序数位置——只数祖先链在门的祖先链里的那些（同一路径上必然先执行的），
+                # 每条按变量个数各取一个随机数；目标那条之前的位置填 0.5（同两边不给序列时的默认值）。旁支里的随机数、
+                # 117 调用的公共事件里的随机数会挪位置，合成后目标没走到的照旧剪掉。
                 lo, hi = int(q[4]), int(q[5])
-                n_rand = sum(1 for x in lst[:j] if int(x['code']) == 122 and int(x['parameters'][3]) == 2)
-                if n_rand == 1 and lo <= int(val) <= hi and int(val) == val:
-                    return {'random_seq': [round((int(val) - lo + 0.5) / (hi - lo + 1), 6)]}
+                if not (lo <= int(val) <= hi and int(val) == val):
+                    return p
+                anc = set(chain(lst, j, None)) | {j}
+                pos = 0
+                for x in range(k):
+                    cx = lst[x]
+                    if int(cx['code']) == 122 and int(cx['parameters'][3]) == 2 and set(chain(lst, x, None)) <= anc:
+                        pos += int(cx['parameters'][1]) - int(cx['parameters'][0]) + 1
+                if not set(chain(lst, k, None)) <= anc:
+                    return p
+                pos += vid - int(q[0])
+                return {'_rand': {pos: round((int(val) - lo + 0.5) / (hi - lo + 1), 6)}}
             return p
     return p
 
@@ -94,13 +109,15 @@ def synth(lst, first, loc):
                 p = trace_var(lst, j, p)
             if p is None:
                 bad += 1
+            elif '_rand' in p and any(pre.get('_rand', {}).get(i, v) != v for i, v in p['_rand'].items()):
+                bad += 1   # 两道随机门要同一个位置抽不同的数
             else:
                 merge_into(pre, p)
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
     # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
-    if len(pre.get('random_seq', [])) > 1:   # 两道随机门合到一起，顺序认不准：当开不了
-        pre.pop('random_seq')
-        bad += 1
+    if '_rand' in pre:   # 位置→随机数，排成序列，空位填 0.5
+        r = pre.pop('_rand')
+        pre['random_seq'] = [r.get(i, 0.5) for i in range(max(r) + 1)]
     if 'difficulty' not in pre and any(i in super_ids() for i in pre.get('party', [])):
         pre['difficulty'] = 9
     return pre, bad

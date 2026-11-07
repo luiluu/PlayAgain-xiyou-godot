@@ -237,10 +237,21 @@ def open_preset(lst, j, loc):
         return {'selfSwitches': {'%s,%s,%s' % (m, e, p[1]): on == want}} if on == want else None
     if t in (8, 9, 10) and want:
         return {{8: 'items', 9: 'weapons', 10: 'armors'}[t]: {str(p[1]): 1}}
+    if t in (8, 9, 10) and not want:
+        # 「否则（没持有）」：新开局本来就没有，给 0 个（两边 gain 0 不改状态），只为祖先链合成时不当开不了的门（八戒 DR w13：矿洞层层「否则物品」）
+        return {{8: 'items', 9: 'weapons', 10: 'armors'}[t]: {str(p[1]): 0}}
     if t == 4 and int(p[2]) == 0 and want:
         return {'party': [int(p[1])]}
     if t == 4 and int(p[2]) == 3 and want:   # 角色学会了技能
         return {'actors': {str(p[1]): {'skills': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 5 and want:   # 角色装备了防具（八戒 DR：ce1213 命运之手「角色 94 装备 4521」）
+        return {'actors': {str(p[1]): {'armors': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 4 and want:   # 角色装备了武器（八戒 DR w15：ce682 等）
+        return {'actors': {str(p[1]): {'weapons': [int(p[3])]}}}
+    if t == 4 and int(p[2]) in (3, 4) and not want:   # 「否则（没学会技能／没装备武器）」：新开局默认没有，空预设占位，走不到的会被剪掉
+        return {'actors': {str(p[1]): {}}}
+    if t == 4 and int(p[2]) == 5 and not want:   # 「否则（没装备）」：新开局默认没穿，空预设占位（角色本来就穿着的，目标走不到会被剪掉）
+        return {'actors': {str(p[1]): {}}}
     if t == 7 and want and int(p[2]) == 0:
         return {'gold': int(p[1])}
     return None
