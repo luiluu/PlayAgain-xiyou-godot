@@ -3413,6 +3413,27 @@ for name in filter(None, files):
         self.assertEqual((self.root / merge.PROJECT / 'modes/旧.gd').read_text(), '# O-119\n')
         self.assertIn(str(merge.OPT_REGISTRY), changed)
 
+    def test_number_named_starts_above_all_used_numbers_and_respects_name_boundaries(self):
+        """审查 62：①起点与草稿发号同口径（变更记录、全树已用的号都算），不撞号；②变更记录里的同名占位也换，
+        按完整名字边界换：名字互为前缀的另一条未发号占位、「名字的说明」这种连着写的都不动。"""
+        tok = 'O-' + '待定'
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |\n| %s·AB | 旧 | a | b | c | d | e | 待分配 |' % tok)
+        self.put(str(merge.LOG), '# log\n\n- 早先手编的 O-150\n- 新的 %s·A。\n' % tok)
+        self.put(str(merge.PROJECT / 'modes/x.gd'), '# O-160 只写在代码里的号\n')
+        self.g('add', '.'); self.g('commit', '-m', 'used numbers')
+        base = self.g('rev-parse', 'HEAD')
+        reg = self.root / merge.OPT_REGISTRY
+        reg.write_text(reg.read_text().rstrip('\n') + '\n| %s·A | 甲 | a | b | c | d | e | 待用户确认 |\n' % tok)
+        self.put(str(merge.PROJECT / 'modes/a.gd'), '# %s·AB 与 %s·A：开关；%s·A的说明\n' % (tok, tok, tok))
+        self.g('add', '.'); self.g('commit', '-m', 'lane row')
+        with contextlib.redirect_stdout(io.StringIO()):
+            added, changed = merge.number_named(self.root, base)
+        self.assertEqual(added, [('O-161', '甲')])                      # 不是 O-119：变更记录 O-150、代码 O-160 都算
+        self.assertEqual((self.root / merge.PROJECT / 'modes/a.gd').read_text(), '# %s·AB 与 O-161：开关；%s·A的说明\n' % (tok, tok))
+        self.assertIn('- 新的 O-161。', (self.root / merge.LOG).read_text())
+        self.assertIn('| %s·AB |' % tok, reg.read_text())
+        self.assertIn(str(merge.LOG), changed)
+
     def test_lane_stops_on_new_placeholder_and_keeps_board(self):
         tok = 'O-' + '待定'
         self.lane_board()

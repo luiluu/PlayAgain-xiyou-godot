@@ -805,24 +805,23 @@ def number_named(root, base):
         print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）；要一并发号，这条合并设 XIYOU_NUMBER_NAMED=all'
               % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
     fresh = list(dict.fromkeys(r for r in rows if r not in before or mode == 'all'))
+    all_rows = registered_named(text)
     if not fresh:
         return [], []
-    nxt = max([int(n) for n in OPT_NUMBERED.findall(text)] + [0]) + 1
+    nxt = opt_top_number(root) + 1
     numbers = {}
     for tok in fresh:
         numbers[tok] = 'O-%03d' % nxt
         nxt += 1
     out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l', '-F', '-e', 'O-' + '待定·', '--',
-                          str(PROJECT), str(SUB / '00_设计'), str(BOARD)], capture_output=True, text=True).stdout.split()
+                          str(PROJECT), str(SUB / '00_设计'), str(BOARD), '00_项目管理/变更记录*.md'], capture_output=True, text=True).stdout.splitlines()
     changed = []
     for rel in dict.fromkeys(out + [str(OPT_REGISTRY)]):
         f = root / rel
         if not f.is_file() or rel.startswith(OPT_SKIP):
             continue
         old_text = f.read_text()
-        new_text = old_text
-        for tok in sorted(numbers, key=len, reverse=True):
-            new_text = new_text.replace(tok, numbers[tok])
+        new_text = replace_named(old_text, numbers, all_rows)
         if new_text != old_text:
             f.write_text(new_text)
             changed.append(rel)
@@ -1024,6 +1023,40 @@ def is_register(rel):
     return rel in OPT_REGISTERS or bool(re.fullmatch(r'00_项目管理/变更记录[^/]*\.md', rel))
 
 
+def opt_top_number(root, texts=()):
+    """已用的最大优化号：登记文件（交接板、归档、变更记录及其分卷、优化登记）、texts（本条交付单等）、全树 HEAD 里的 O-NNN
+    （上一条写进代码注释却没登记的号，下一条不能再发，11-01 云裳又拿到 O-140，tools39；工具源码里的举例不算）。
+    assign_opt_numbers 与 number_named 共用（审查 62 P3-1：具名发号原来只看优化登记，会撞号）。"""
+    regs = [root / r for r in OPT_REGISTERS] + [root / OPT_REGISTRY] + sorted((root / '00_项目管理').glob('变更记录*.md'))
+    top = 0
+    for f in regs:
+        if f.is_file():
+            top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
+    for t in texts:
+        top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
+    used = subprocess.run(['git', '-C', str(root), 'grep', '-I', '-h', '-o', '-E', r'O-[0-9]{3,}', 'HEAD', '--', '.',
+                           *(':!' + d for d in OPT_SKIP)], capture_output=True, text=True).stdout
+    return max([top] + [int(x[2:]) for x in used.split() if len(x) == 5])
+
+
+NAME_END = set('|｜，,。、；;：:（）()[]【】「」`*"\'')
+
+
+def replace_named(text, numbers, rows):
+    """把 text 里的具名占位按 numbers 换号：每处取从这里起最长的登记首格（rows），它在 numbers 里、且后面紧跟的是
+    句末、空白或标点（名字边界）才换。名字互为前缀（「O-待定·A」「O-待定·AB」）、或正文写成「O-待定·A的说明」时不误换（审查 62 P3-2）。"""
+    out, i = [], 0
+    for m in OPT_TOKEN.finditer(text):
+        if m.start() < i or not text.startswith('·', m.end()):
+            continue
+        hit = next((r for r in rows if text.startswith(r, m.start())), None)
+        end = m.start() + len(hit) if hit else None
+        if hit in numbers and (end == len(text) or text[end].isspace() or text[end] in NAME_END):
+            out.append(text[i:m.start()] + numbers[hit])
+            i = end
+    return ''.join(out) + text[i:]
+
+
 def assign_opt_numbers(root, state):
     """本条合并带来的 O-待定[-n] 各换成顺延的 O-NNN：起点＝登记文件（交接板、归档、变更记录及其分卷）与本条文件里已有的最大号 +1，
     同一个占位全合并里换成同一个号，按第一次出现的顺序编号。无占位时返回空表。"""
@@ -1049,17 +1082,7 @@ def assign_opt_numbers(root, state):
     sheet_texts = [(root / rel).read_text(errors='replace') for rel in sheets(state) if (root / rel).is_file()]
     for tok, row, keys in opt_row_entries(sheet_texts):
         rows.setdefault(tok, []).append((row, keys))
-    regs = [root / r for r in OPT_REGISTERS] + [root / OPT_REGISTRY] + sorted((root / '00_项目管理').glob('变更记录*.md'))
-    top = 0
-    for f in regs:
-        if f.is_file():
-            top = max([top] + [int(n) for n in OPT_NUMBERED.findall(f.read_text(errors='replace'))])
-    for t in texts:
-        top = max([top] + [int(n) for n in OPT_NUMBERED.findall(t)])
-    # 全树已用的号也算：上一条写进代码注释却没登记的号，下一条不能再发（11-01 云裳又拿到 O-140，tools39）；工具源码里的举例不算
-    used = subprocess.run(['git', '-C', str(root), 'grep', '-I', '-h', '-o', '-E', r'O-[0-9]{3,}', 'HEAD', '--', '.',
-                           *(':!' + d for d in OPT_SKIP)], capture_output=True, text=True).stdout
-    top = max([top] + [int(x[2:]) for x in used.split() if len(x) == 5])
+    top = opt_top_number(root, texts)
     numbers, ambiguous, keys, n = {}, {}, {}, top
     for tok in tokens:
         if len(rows.get(tok, [])) >= 2:
