@@ -496,7 +496,8 @@ func _help(entry = null) -> void:
 		help_card.visible = false
 		return
 	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
-	help_card.show_for(entry)
+	# 心钢 Window_BattleSkill.updateHelp 包装：巨人吞噬换成 H.skillHelpView（带就绪／冷却状态行）
+	help_card.show_for(XGrowthHelp.skill_view(entry, _active) if XHelpCard.kind_of(entry) == "skill" else entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
 	var row := Rect2(list_win.position - _origin + Vector2(0, list_win.padding + (list_win.index - list_win.top) * XBattleList.LH),
@@ -1130,6 +1131,9 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 		var hp := XBattleLogic.skill_hp_cost(a, e)
 		if hp > 0:
 			row.costs.append({"text": "%sHP" % XMenu._group(hp), "color": XUI.text_color(18), "icon": 1266})  # YEP drawHpCost
+		var custom := XSkillScene.custom_cost_row(e, XBattleList.FS)  # YEP drawCustomDisplayCost（Olivia 缩放后的标准字号）
+		if not custom.is_empty():
+			row.costs.append(custom)
 	return row
 
 

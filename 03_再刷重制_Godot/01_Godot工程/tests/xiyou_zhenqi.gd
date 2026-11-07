@@ -351,12 +351,17 @@ func _page_ui() -> void:
 	s.set_variable(20, 4)
 	_set_zq(s.actor(1), {"qi": 700})
 	XState.current = s
-	# 夹具是 v0.28 一页写法（真气、难度对照同页）：画法 drawPanelRows 新旧一样，按旧行比位置；新的第 5 页另比表头四列
+	# 夹具是 v0.62.12 第 5 页「修行·详细」（dom_ref.cjs 无头重取）：抬头、文字行起点与颜色码、「项目」表头四列；
+	# 旧的一页写法（PANEL_V062 关，回退用）画法 drawPanelRows 相同，表头四列的位置也照同一份夹具比
+	var dops := XStatusPage.page_ops(s.actor(1), 4)
+	var h: Array = o.head
+	var head := dops.filter(func(op): return op[0] == "text" and op[1] == h[0])
+	check("page_ui_head", head.size() == 1 and head[0][2] == float(h[1]) and head[0][3] == float(h[2]) and head[0][4] == float(h[3]) and head[0][6] == h[4] and head[0][8] == h[6], head)
+	var first := dops.filter(func(op): return op[0] == "text" and float(op[3]) == float(o.textStart[1]))
+	check("page_ui_text_start", first.size() > 0 and first[0][2] == float(o.textStart[0]), first.slice(0, 1))
 	XGuide.PANEL_V062 = false
 	var ops := XStatusPage._guide_ops(s.actor(1))
 	XGuide.PANEL_V062 = true
-	var h: Array = o.head
-	check("page_ui_head", ops[0][1] == h[0] and ops[0][2] == float(h[1]) and ops[0][3] == float(h[2]) and ops[0][4] == float(h[3]) and ops[0][8] == h[6], ops[0])
 	var line := ops.filter(func(op): return float(op[3]) == 252.0)
 	check("page_ui_text_colors", line.size() >= 4 and line[0][2] == 6.0 and line[1][1].begins_with("人界") and line[1][8] == o.colors.C6 and line.any(func(op): return op[8] == o.colors.C3), line)
 	var cols := ops.filter(func(op): return op[1] in ["项目", "难度（含补强）", "自身", "当前"])
@@ -365,12 +370,14 @@ func _page_ui() -> void:
 		var w: Array = o.colsHeader[j]
 		ok = ok and cols[j][2] == float(w[1]) and cols[j][4] == float(w[2]) and cols[j][6] == w[3]
 	check("page_ui_cols", ok, cols)
-	var dops := XStatusPage.page_ops(s.actor(1), 4)
-	var dcols := dops.filter(func(op): return op[0] == "text" and op[1] in ["项目", "难度影响", "不含难度", "实际"])
+	var names: Array = (o.colsHeader as Array).map(func(w): return w[0])
+	var dcols := dops.filter(func(op): return op[0] == "text" and op[1] in names)
 	var dok: bool = dcols.size() == 4
 	for j in range(mini(4, dcols.size())):
 		var w: Array = o.colsHeader[j]
-		dok = dok and dcols[j][2] == float(w[1]) and dcols[j][4] == float(w[2]) and dcols[j][6] == w[3]
+		dok = dok and dcols[j][1] == w[0] and dcols[j][2] == float(w[1]) and dcols[j][4] == float(w[2]) and dcols[j][6] == w[3]
 	check("page_ui_detail_cols", dok, dcols)
+	check("page_ui_warn_color", dops.any(func(op): return op[0] == "text" and op[8] == o.colors.warn), o.colors.warn)
 	var pops := XStatusPage.page_ops(s.actor(1), 3)
-	check("page_ui_panel_head", pops.any(func(op): return op[0] == "text" and op[1] == "【普通·第4层】" and op[2] == 6.0), pops.slice(0, 3))
+	var ph: Array = o.panelHead
+	check("page_ui_panel_head", pops.any(func(op): return op[0] == "text" and op[1] == ph[0] and op[2] == float(ph[1]) and op[3] == float(ph[2]) and op[8] == ph[6]), pops.slice(0, 3))

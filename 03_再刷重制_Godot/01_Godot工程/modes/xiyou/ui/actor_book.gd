@@ -33,7 +33,6 @@ const INDEX_ROWS := 19                     # floor((720 − 28) / 36)
 const LIST_ROWS := 16                      # floor((620 − 28) / 36)
 const BOX_W := 1280.0
 const CONTENT_W := 932.0                   # 状态窗内容宽
-const CONTENT_H := 692.0                   # 状态窗内容高（720 − 内边距 14×2）
 const SPRITE_CENTER := Vector2(93.2, 932.0 / 13.0)   # 窗口坐标（精灵是窗口子节点，不含内边距）
 const PARAM_LABELS := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运"]
 ## installUnifiedQualityRuntime actorGrades：人物原生品质 → 七档（12 按 10 处理，未列出的为 0）
@@ -44,7 +43,7 @@ const RAVEN_SKILLS := [10122, 10123, 10124, 10125, 10126, 10127, 10129, 10130, 1
 	10136, 10137, 10138, 10139, 10170]
 const TOJI_SKILLS := [10203, 10205, 10206, 10207, 10208, 10209, 10210, 10211, 10212, 10213, 10214, 10215, 10216,
 	10217, 10218, 10219, 10225, 10226]
-const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174, 179]  # 179：v0.62 起
+const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174, 179]  # v0.6x 加 179 流萤
 ## installNativeRavenRuntime 的 [等级, 进阶] 解锁表里要进阶的技能：新建的渡鸦（进阶 0）没有学会
 const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 10139, 10170]
 const ATTR_INK := Color("c1c9d5")
@@ -89,6 +88,12 @@ func _ready() -> void:
 	_select_actor()
 
 
+## 目录当前槽的角色号（空槽 0）
+func actor_id() -> int:
+	var ids := index_ids()
+	return int(ids[index]) if index >= 0 and index < ids.size() else 0
+
+
 func _process(_delta: float) -> void:
 	# Window_ActorBookStatus.update：每 12 帧换一格（0-1-2-1）；逐帧图整张不换格
 	_frame += 1
@@ -97,8 +102,25 @@ func _process(_delta: float) -> void:
 
 
 # ---- 数据 ----
+## 目录槽数（隐藏角色去掉之后）
 static func actor_count() -> int:
-	return (XDB.table("Actors") as Array).size()
+	return index_ids().size()
+
+
+## installIntegratedV029Runtime（v0.30）Window_ActorBookIndex.refresh 包装：目录里去掉 CodexV029.hiddenActors（有名字的才去；
+## 「？？？」占位没有 actorId，留着），之后目录位置不再等于角色号，状态页与详情按 Window_ActorBookIndex.actor()（v0.35）取角色。
+## 名单与开关在 XImportedBalance（HIDDEN_ACTORS、V029_HIDE_ACTORS，O-待定·V029 隐藏角色；角色仓库列表同一名单）
+
+
+## 目录每一槽的角色号（「？？？」槽为 0）
+static func index_ids() -> Array:
+	var out := []
+	for i in (XDB.table("Actors") as Array).size():
+		var nm := i > 0 and named(i)
+		if nm and XImportedBalance.is_hidden_actor(i):
+			continue
+		out.append(i if nm else 0)
+	return out
 
 
 static func named(id: int) -> bool:
@@ -116,31 +138,9 @@ static func actor_name(id: int) -> String:
 	return a.display_name() if a != null else str(XDB.rec("Actors", id).get("name", ""))
 
 
-## Window_ActorBookIndex.refresh：有名角色写名字，否则「？？？」；v0.62 V029 包装再滤掉隐藏角色（XImportedBalance.is_hidden_actor，
-## 只滤真角色行，「？？？」占位行留着），之后目录第 i 行对应 row_ids()[i]
-static func row_ids() -> Array:
-	var out := []
-	for i in actor_count():
-		if not (named(i) and XImportedBalance.is_hidden_actor(i)):
-			out.append(i)
-	return out
-
-
-static func row_count() -> int:
-	return row_ids().size()
-
-
+## Window_ActorBookIndex.refresh：有名角色写名字，否则「？？？」
 static func index_names() -> Array:
-	return row_ids().map(func(i): return actor_name(i) if named(i) else "？？？")
-
-
-## 目录当前行的角色编号
-var _rows: Array = []
-
-func cur_id() -> int:
-	if _rows.is_empty():
-		_rows = row_ids()
-	return int(_rows[index]) if index >= 0 and index < _rows.size() else 0
+	return index_ids().map(func(i): return actor_name(i) if i > 0 else "？？？")
 
 
 static func class_id(id: int) -> int:
@@ -174,11 +174,6 @@ static func _external_skill(skill: Dictionary) -> bool:
 	if _external.has(int(skill.id)) or skill.get("meta", {}).has("CodexRetired"):
 		return true
 	return RegEx.create_from_string(EXTERNAL_NAME).search(str(skill.get("name", ""))) != null
-
-
-## v0.29 光环技能（备注 <CodexAura>）：状态页单列一栏、详情页类型写「光环」
-static func is_aura(s: Dictionary) -> bool:
-	return str(s.get("note", "")).contains("<CodexAura>")
 
 
 ## CodexActorBookSkills(actor, baseOnly)：主动（stypeId 1～3）、被动（4）、其他（5）依次排
@@ -235,16 +230,17 @@ static func book_skills(id: int, base_only: bool) -> Array:
 		elif id == 171:
 			for sid in TOJI_SKILLS:
 				add.call(sid)
-		if id == 179:  # v0.62 流萤：10622 天火轰击、10623 完全燃烧、10624～10632 被动，再加全库备注带 <CodexLiuyingPassive:> 的
-			for sid in range(10622, 10633):
-				add.call(sid)
-			for sk in XDB.table("Skills"):
-				if sk is Dictionary and str(sk.get("note", "")).contains("<CodexLiuyingPassive:"):
-					add.call(int(sk.id))
 		if id == 174:
 			for sid in range(10270, 10282):
 				add.call(sid)
 			add.call(10287)
+		if id == 179:  # 流萤：10622 天火轰击、10623 完全燃烧、10624～10632 被动，再加备注 <CodexLiuyingPassive:…> 的技能
+			for sid in range(10622, 10633):
+				add.call(sid)
+			var all_skills: Array = XDB.table("Skills")
+			for sid in range(1, all_skills.size()):
+				if all_skills[sid] is Dictionary and str(all_skills[sid].get("note", "")).contains("<CodexLiuyingPassive:"):
+					add.call(sid)
 	return active + passive + other
 
 
@@ -351,44 +347,26 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	var initial_y := y + LH
 	var raven_w := floorf(CONTENT_W / 3.0) - 12
 	var skills := book_skills(id, true)
-	# v0.29 光环独立栏（v0.62 Star_ActorsBook drawAllContents）：本角色有 <CodexAura> 技能时改四栏「主动／被动／光环／其他」，
-	# 栏宽 floor(内容宽／4)，22 号、行高 30，每栏最多 maxRows 行，多出的写「确认查看全部」；武器掌握从最长一栏下一行起、靠左
-	var aura := skills.any(func(sk): return is_aura(sk))
-	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
-	if aura:
-		var cw4 := floorf(CONTENT_W / 4.0)
-		var labels := ["主动", "被动", "光环", "其他"]
-		for k in 4:
-			ops.append(_t(labels[k], k * cw4, y, cw4 - 8, XUI.SYSTEM))
-		var max_rows := maxi(1, floori((CONTENT_H - initial_y - LH * 6) / minf(30.0, LH)))
-		var groups := [[], [], [], []]
-		for sk in skills:
-			groups[2 if is_aura(sk) else 1 if int(sk.stypeId) == 4 else 3 if int(sk.stypeId) == 5 else 0].append(sk)
-		var longest := 0
-		for k in 4:
-			var list: Array = groups[k]
-			longest = maxi(longest, list.size())
-			for r in mini(list.size(), max_rows):
-				_item_name(ops, list[r], k * cw4, initial_y + r * 30, cw4 - 8, 22)
-			if list.size() > max_rows:
-				ops.append(_t("确认查看全部", k * cw4, initial_y + max_rows * 30, cw4 - 8, XUI.TEXT, 22))
-		note_y = initial_y + (mini(max_rows, longest) + 1) * 30
+	var aura_book := skills.any(is_aura_note)
+	if aura_book:
+		note_y = _aura_columns(ops, skills, y, initial_y)
 	else:
 		ops.append(_t("主动", 0, y, BOX_W, XUI.SYSTEM))
 		ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
 		ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
-		for col in 3:
-			var ry := initial_y
-			for s in skills:
-				var t := int(s.stypeId)
-				if (col == 0 and t >= 1 and t <= 3) or (col == 1 and t == 4) or (col == 2 and t == 5):
-					if raven:
-						_item_name(ops, s, offsets[col], ry, raven_w, 20)
-					else:
-						_item_name(ops, s, offsets[col], ry, BOX_W)
-					ry += skill_lh
-	y = initial_y if raven and not aura else note_y
-	var mx: float = offsets[2] if raven and not aura else 0.0
+	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
+	for col in (0 if aura_book else 3):
+		var ry := initial_y
+		for s in skills:
+			var t := int(s.stypeId)
+			if (col == 0 and t >= 1 and t <= 3) or (col == 1 and t == 4) or (col == 2 and t == 5):
+				if raven:
+					_item_name(ops, s, offsets[col], ry, raven_w, 20)
+				else:
+					_item_name(ops, s, offsets[col], ry, BOX_W)
+				ry += skill_lh
+	y = initial_y if raven and not aura_book else note_y
+	var mx: float = offsets[2] if raven and not aura_book else 0.0
 	var mw: float = CONTENT_W - mx - 4 if raven else BOX_W
 	var sys: Dictionary = XDB.system()
 	var traits: Array = XDB.rec("Classes", class_id(id)).get("traits", [])
@@ -429,6 +407,36 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	return ops
 
 
+## 备注带 <CodexAura> 的技能（光环）
+static func is_aura_note(s: Dictionary) -> bool:
+	return str(s.get("note", "")).contains("<CodexAura>")
+
+
+## Star_ActorsBook v0.29 光环独立栏（本角色基础技能里有光环时）：主动／被动／光环／其他四列，列宽 floor(932/4)，文字宽列宽−8；
+## 技能 22 号、行距 30，每列最多 maxRows＝floor((内容高 684 − 首行 y − 行高×6) / 30) 行，多出的写「确认查看全部」；返回掌握段的 y
+static func _aura_columns(ops: Array, skills: Array, y: float, initial_y: float) -> float:
+	var cw := floorf(CONTENT_W / 4.0)
+	var labels := ["主动", "被动", "光环", "其他"]
+	for k in 4:
+		ops.append(_t(labels[k], k * cw, y, cw - 8, XUI.SYSTEM))
+	var content_h := STATUS_RECT.size.y - XMVWindow.PADDING * 2
+	var row_h := minf(30.0, LH)
+	var max_rows := maxi(1, floori((content_h - initial_y - LH * 6) / row_h))
+	var groups := [[], [], [], []]
+	for sk in skills:
+		var t := int(sk.stypeId)
+		groups[2 if is_aura_note(sk) else 1 if t == 4 else 3 if t == 5 else 0].append(sk)
+	var longest := 0
+	for k in 4:
+		var list: Array = groups[k]
+		longest = maxi(longest, list.size())
+		for row in mini(max_rows, list.size()):
+			_item_name(ops, list[row], k * cw, initial_y + row * row_h, cw - 8, 22)
+		if list.size() > max_rows:  # drawItemName 画完已 resetTextColor，白字
+			ops.append(_t("确认查看全部", k * cw, initial_y + max_rows * row_h, cw - 8, XUI.TEXT, 22))
+	return initial_y + (mini(max_rows, longest) + 1) * row_h
+
+
 ## 技能详情抬头（Window_ActorBookSkillHeader.refresh，内容宽 509）
 static func header_ops(id: int) -> Array:
 	var w := HEADER_RECT.size.x - XMVWindow.PADDING * 2
@@ -444,7 +452,7 @@ static func list_row_ops(id: int, s: Dictionary, y: float, measure: Callable) ->
 	var sid := int(s.id)
 	var dragon := mira and ((sid >= 10148 and sid <= 10154) or (sid >= 10161 and sid <= 10164) or sid == 10167)
 	var t := int(s.stypeId)
-	var type_name := "光环" if is_aura(s) else "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
+	var type_name := "光环" if is_aura_note(s) else "被动" if t == 4 else str(XDB.system().skillTypes[t]) if t < XDB.system().skillTypes.size() and str(XDB.system().skillTypes[t]) != "" else "其他"
 	var label := "【" + ("黑龙·" if dragon else "") + type_name + "】"
 	var color := XUI.text_color(14) if t == 4 else XUI.text_color(3) if t >= 1 and t <= 3 else XUI.text_color(6)
 	var lw: float = measure.call(label, XUI.FONT_SIZE)
@@ -487,28 +495,28 @@ func _paint_index(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
-		var r := sprite_rect(cur_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
+		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
 
 func _paint_header(c: XMVCanvas) -> void:
-	paint_ops(c, header_ops(cur_id()))
+	paint_ops(c, header_ops(actor_id()))
 
 
 func _paint_list(c: XMVCanvas) -> void:
 	if skill_index >= skill_top and skill_index < skill_top + LIST_ROWS:
 		c.cursor(Rect2(0, (skill_index - skill_top) * LH, c.size.x, LH), mode == "skills")
 	for i in range(skill_top, mini(skill_top + LIST_ROWS, skill_list.size())):
-		paint_ops(c, list_row_ops(cur_id(), skill_list[i], (i - skill_top) * LH, _measure))
+		paint_ops(c, list_row_ops(actor_id(), skill_list[i], (i - skill_top) * LH, _measure))
 
 
 # ---- 操作 ----
 ## Scene_ActorBook.update：目录选中项变了就刷新状态窗（空槽清空）
 func _select_actor() -> void:
-	_status_ops = status_ops(cur_id(), _measure)
+	_status_ops = status_ops(actor_id(), _measure)
 	_sprite_tex = null
-	_sprite_spec = sprite_spec(cur_id())
+	_sprite_spec = sprite_spec(actor_id())
 	var p := str(_sprite_spec.get("path", ""))
 	_sprite_tex = load(p) if p != "" else null
 	_refresh()
@@ -551,6 +559,12 @@ static func sprite_path(id: int) -> String:
 	return str(sprite_spec(id).get("path", ""))
 
 
+## Codex_MiraRavenMultiFrame v1.07 profile.bookScale：只在人物图鉴里再乘的倍率（战斗大小不变；Kyo 2026-10-31「图鉴里的精灵有点大」）；
+## 表在 XAppearance.BOOK_SCALE（进阶界面大图 XActorAdvancedScene._v108 也用）
+static func book_scale(key: String) -> float:
+	return float(XAppearance.BOOK_SCALE.get(key, 1.0))
+
+
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
 static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, frame := 0) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
@@ -561,8 +575,7 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 	var w := float(prof[0])
 	var h := float(prof[1])
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
-	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x)
-	sc *= float(XAppearance.BOOK_SCALE.get(str(spec.get("key", "")), 1.0))  # v1.07 bookScale 只作用于图鉴
+	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x) * book_scale(str(spec.get("key", "")))
 	if spec.get("multi", false):
 		src = Rect2(0, 0, w, h)  # setFrame(0, 0, 档宽, 档高)
 	var sy := sc
@@ -579,7 +592,7 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + INDEX_ROWS < row_count()
+	index_win.down_arrow = top + INDEX_ROWS < actor_count()
 	list_win.up_arrow = skill_top > 0
 	list_win.down_arrow = skill_top + LIST_ROWS < skill_list.size()
 	for w in [index_win, status_win, header_win, list_win]:
@@ -632,12 +645,12 @@ func _update_help() -> void:
 func ok() -> void:
 	if mode != "index":
 		return
-	if cur_id() <= 0 or not named(cur_id()):
+	if actor_id() <= 0:
 		XSound.system(3)
 		return
 	XSound.system(1)
 	mode = "skills"
-	skill_list = book_skills(cur_id(), false)
+	skill_list = book_skills(actor_id(), false)
 	skill_top = 0
 	skill_index = 0 if not skill_list.is_empty() else -1
 	_show_skills(true)
@@ -657,14 +670,14 @@ func cancel() -> void:
 
 func _move(d: int, wrap: bool) -> void:
 	if mode == "index":
-		select(XMenu._move(index, d, row_count(), wrap))
+		select(XMenu._move(index, d, actor_count(), wrap))
 	elif not skill_list.is_empty():
 		select_skill(XMenu._move(skill_index, d, skill_list.size(), wrap))
 
 
 ## Window_Selectable.cursorPagedown/up
 func _page(d: int) -> void:
-	var n := row_count() if mode == "index" else skill_list.size()
+	var n := actor_count() if mode == "index" else skill_list.size()
 	var rows := INDEX_ROWS if mode == "index" else LIST_ROWS
 	var cur := index if mode == "index" else skill_index
 	var t := top if mode == "index" else skill_top
@@ -698,7 +711,7 @@ func _gui_input(event: InputEvent) -> void:
 			if rect.has_point(p):
 				var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 				if mode == "index":
-					top = clampi(top + d, 0, maxi(0, row_count() - INDEX_ROWS))
+					top = clampi(top + d, 0, maxi(0, actor_count() - INDEX_ROWS))
 				else:
 					skill_top = clampi(skill_top + d, 0, maxi(0, skill_list.size() - LIST_ROWS))
 				_refresh()
@@ -708,7 +721,7 @@ func _gui_input(event: InputEvent) -> void:
 			var row := floori((p.y - rect.position.y - XMVWindow.PADDING) / LH)
 			if mode == "index":
 				var i := top + row
-				if row >= 0 and row < INDEX_ROWS and i < row_count():
+				if row >= 0 and row < INDEX_ROWS and i < actor_count():
 					if i == index:
 						ok()
 					else:

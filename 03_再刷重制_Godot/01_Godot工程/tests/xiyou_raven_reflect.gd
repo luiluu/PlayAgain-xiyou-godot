@@ -144,6 +144,34 @@ func _refx(c: Dictionary) -> void:
 	check(c.id + ".foeStates", fs == fw, [fs, fw])
 
 
+## DV（审查 42 P3-2）：饿狼招募、形态 3／6（有进化、解析被动）放魔法拳被反射回自己（refg.*，同参照 gbattle(stage, 60, true)）：
+## 原版 Game_Action.apply 包装照样给饿狼记帧，行动结束对自己加解析、进化 +1
+func _refg(c: Dictionary) -> void:
+	var setup: Dictionary = c.setup
+	var r := _garou(int(setup.stage), 60)
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	logic.start_turn()
+	a.learn_skill(int(setup.skill))
+	a.mp = a.mmp
+	a.tp = 0.0
+	if bool(setup.reflect):
+		var st := _fake_state(5, 1.0)
+		for e in logic.enemies:
+			e.add_state(st)
+	var logs := _log(logic, logic.act(a, XDB.rec("Skills", int(setup.skill)), logic.enemies[0]))
+	var want: Dictionary = c.observed
+	# 只比段数与谁挨打：这套起手（同 garouzero）数值与参照差约十万分之一（起手写法与参照不全同，没细查），绝对值不在本例范围
+	var gs: Array = logs.map(func(l): return [l.kind, l.target])
+	var ws: Array = (want.log as Array).map(func(l): return [str(l.kind), str(l.target)])
+	check(c.id + ".hits", gs == ws, [gs, ws])
+	check(c.id + ".evolution", XGarou.evolution == int(want.evolution), [XGarou.evolution, want.evolution])
+	var ana: Array = XGarou.analysis.keys().filter(func(b): return XGarou.analysis[b] > 0).map(func(b): return _key(logic, b))
+	ana.sort()
+	check(c.id + ".analysis", ana == (want.analysis as Array).map(func(v): return str(v)), [ana, want.analysis])
+	check(c.id + ".tp", absf(a.tp - float(want.tp)) <= 1e-6, [a.tp, want.tp])
+
+
 ## raven2→3：普通角色（8 号）被自己的「全体魔法加黑暗侵蚀」反射：借 10124 的数据槽（同参照改写），tcr 强设 0.01／2
 func _refstate(c: Dictionary) -> void:
 	var setup: Dictionary = c.setup
@@ -641,6 +669,8 @@ func _run() -> void:
 				_garou_zero(c)
 			"refx":
 				_refx(c)
+			"refg":
+				_refg(c)
 			"refstate":
 				_refstate(c)
 			"refseq":
@@ -654,7 +684,7 @@ func _run() -> void:
 			"reffloor":
 				_reffloor(c)
 	_rollback_branch(ref)
-	check("covers_all", seen.keys().size() == 10, seen.keys())
+	check("covers_all", seen.keys().size() == 11, seen.keys())
 	finish()
 
 

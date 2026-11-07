@@ -71,6 +71,9 @@
                         var out = r.actors[id] = {};
                         out.status = capture(sw, function () { sw.setupWhenCheck(a); });
                         out.sprite = a ? a.battlerName() : '';
+                        // 图鉴实际画的图（Codex_MiraRavenMultiFrame 把 168、173～177 换成逐帧图第 1 动作第 0 帧）：图片 URL 末段去掉 .png
+                        var bm = a && sw._Sprite && sw._Sprite.bitmap;
+                        out.bitmap = bm && bm.url ? decodeURIComponent(String(bm.url).split('/').pop().replace(/\.png$/, '')) : '';
                         if (a) {
                             hw._actor = a;
                             out.header = capture(hw, function () { hw.refresh(); });

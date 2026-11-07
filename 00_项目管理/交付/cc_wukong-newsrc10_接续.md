@@ -106,49 +106,55 @@ EB 剩余清单只有 3 条，其中 `<CodexSVNativeSize>`（数据里没人用�
 - d6707f23 交付单
 - （本提交）原版 bug：高阶行封顶不压低（FIX_CAP_BASE）；交付单补云端结果
 
-## ED（接 EC′ ②，同分支；在工作树 funny-poitras-4e3474 做，分支从 priceless-hofstadter 的 cc/wukong-newsrc10-ec 头 357980b3 续过来，generated／.godot 克隆自 priceless）
+## ED（接 EC′ ②，同分支；在工作树 funny-poitras-4e3474 做，分支从 priceless-hofstadter 的 cc/wukong-newsrc10-ec 头 357980b3 续过来）
 
 ### 先核实（EC′ ② 剩余第 3 条）
 
-- **流萤头像**：已有。v0.62.12 `Actors.json` 179 用 `Codex_Liuying_Faces`，重制 generated/img/faces 里那张与原版逐字节相同（md5 一致），db 里 faceName 也对。不用做。
-- **改版向导流萤三页**：已有。三页在大厅 Map004 EV71「改版向导」的事件指令里（「怎么获得」选单、「谷雨 屠苏 璇 哈基米 流萤」子选单、流萤介绍页），重制 generated/maps/Map004.json 的 EV71 第 0 页 653 条指令与新源完全相同，走地图数据自带。不用做。
-- **说明按阶生成**：真缺，本单做了（下面）。
+- **流萤头像**：已有（generated/img/faces/Codex_Liuying_Faces.png 与新源逐字节相同，db faceName 对）。
+- **改版向导流萤三页**：已有（大厅 Map004 EV71「改版向导」第 0 页 653 条指令与新源完全相同，走地图数据）。
+- **说明按阶生成**：我做了一份，合集成分支 6caaac78 时发现界面车道已交 `XLiuyingHelp`（ui/liuying_help.gd，探针 liuying_help_probe，专项 xiyou_liuying_help 44/44），两份逐字同源（L.skillLines）。**保留集成那份**，删掉我的 `XLiuying.text_view`、liuying_text_probe.cjs、xiyou_liuying_text 与夹具、O-待定·流萤说明按阶（那份不设开关，照界面车道）。
 
 ### 变更记录草稿
 
-## 2026-11-06 【cc·悟空·未经审查】流萤技能说明按阶生成；神话／混沌神话词条概率随难度浮动（dev.待定）
+## 2026-11-07 【cc·悟空·未经审查】神话／混沌神话词条概率随难度浮动；高阶行封顶不压低（修原版 bug）；图鉴两套 179／V029 合成一套（dev.待定）
 
-- **流萤说明按阶**（O-待定·流萤说明按阶，`XLiuying.TEXT_BY_RANK`）：照 v0.62.12 `installLiuyingRuntime` 第 15 节 `L.skillLines`／`refreshText`（v0.62.08）。说明卡入口 `XHelpCard._content` 先过 `XLiuying.text_view`：10622 天火轰击、10623 完全燃烧的副本里 `<pos=APs …>` 行整组换成流萤当前进阶次数（`XAdvance.rank(…, 179)`，没建为 0）的写法，数据库不动。2 阶起天火攻击次数 8、燃烧去掉「解锁：进阶2阶」；3 阶起燃烧冷却 3 回合＋「施放后33%概率不进入冷却」、效果改写「增加与施放前护盾等量的护盾（上限为最大生命50%）」、去掉消耗行。原版 3 阶起还清空 `customCostText`（技能列表右侧「全部护盾」），重制技能列表本来就不画 `<Custom Cost Display>`，这处没有对应（另列）。新探针 `mv_oracle/liuying_text_probe.cjs`（新源，没建／0～4 阶，记备注、customCostText、`RJO.HE.getDescParams` 行）→ `tests/fixtures/liuying_text_oracle.json`；专项 xiyou_liuying_text 34/34（备注逐字、说明卡行文字／字号／颜色逐行、content 走到副本、开关关掉回数据库原文）。
-- **神话词条概率随难度**（O-待定·词条难度浮动，`XAffixRate.ENABLED`）：照 v0.62.12 `installAffixDifficultyRateRuntime`（CodexAffixRate v1）。新模块 `core/affix_rate.gd`（XAffixRate）：整行都是 14／15 品质词条的行（`line_tier`），概率 ×路线倍率（按路线开关取第一个开着的：洪荒 2～5 按诅咒倍率、灭世 1.5、天灾 1、地狱 0.75、困难 0.55、普通 0.4、简单 0.3、宝宝 25），单行封顶 50%；M＝1 或普通行照原掷法。原版浮动后用 `r×100` 连续比较（不再取整），按配置概率升序逐项减，都不中不出词条，照搬。`XGear.roll_item` 里掷一行词条那段抽成 `XGear.choose_affix`（原掷法逐字未改）。修行·详细页（`XGuide.detail_rows`）末尾加「高阶词条概率」一段（G.detailRows 包装）。**原版 bug 修了**（O-待定·高阶行封顶不压低，`XAffixRate.FIX_CAP_BASE`，Kyo 11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置高于 50% 的高阶行（落芸之力等 100% 行）在 M≠1 时压到 50%，灭世、洪荒、宝宝反而低于天灾的 100%；修成封顶取 max(50, 配置)，配置不超过 50% 的行不受影响。新探针 `mv_oracle/affix_rate_probe.cjs`（新源，68 例：13 种路线开关、6 档诅咒、7 件装备×7 条路线×21 个预掷随机数）→ `tests/fixtures/affix_rate_oracle.json`；专项 xiyou_affix_rate 371/371（参照比对时修 bug 开关关着；选出的词条与用掉的随机数个数逐个对上、lineTier、修行页那段逐行、开关关掉灭世等于 M＝1 原掷法、修行页不加）。
+- **神话词条概率随难度**（O-待定·词条难度浮动，`XAffixRate.ENABLED`）：照 v0.62.12 `installAffixDifficultyRateRuntime`（CodexAffixRate v1）。新模块 `core/affix_rate.gd`（XAffixRate）：整行都是 14／15 品质词条的行（`line_tier`），概率 ×路线倍率（按路线开关取第一个开着的：洪荒 2～5 按诅咒倍率、灭世 1.5、天灾 1、地狱 0.75、困难 0.55、普通 0.4、简单 0.3、宝宝 25），单行封顶 50%；M＝1 或普通行照原掷法。浮动后用 `r×100` 连续比较，按配置概率升序逐项减，都不中不出词条。`XGear.roll_item` 里掷一行词条那段抽成 `XGear.choose_affix`（原掷法逐字未改）。修行·详细页（`XGuide.detail_rows`）末尾加「高阶词条概率」一段。新探针 `mv_oracle/affix_rate_probe.cjs`（新源 68 例：13 种路线开关、6 档诅咒、7 件装备×7 条路线×21 个预掷随机数）→ `tests/fixtures/affix_rate_oracle.json`。
+- **原版 bug 修了**（O-待定·高阶行封顶不压低，`XAffixRate.FIX_CAP_BASE`，Kyo 11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置高于 50% 的高阶行（落芸之力等 100% 行）在 M≠1 时压到 50%，灭世、洪荒、宝宝反而低于天灾的 100%；修成封顶取 max(50, 配置)，配置不超过 50% 的行不受影响。专项 xiyou_affix_rate 371/371（参照比对时修 bug 开关关；fixed.* 7 例 100% 行按修好后的概率、42 例普通行与原版一致；ENABLED 关掉灭世等于 M＝1 原掷法、修行页不加）。
+- **图鉴冲突合并**（总装派）：集成分支与 EB 各做了一套 179 图鉴档与 V029 隐藏。合成一套：`actor_book.gd` 以集成版为底（`index_ids`／`actor_id`／`_aura_columns`／`is_aura_note`／`book_scale`），隐藏名单与开关统一用 `XImportedBalance.HIDDEN_ACTORS`／`V029_HIDE_ACTORS`（`is_hidden_actor`，角色仓库同一名单），去掉 actor_book 自己的 HIDDEN_ACTORS 常量；bookScale 表统一放 `XAppearance.BOOK_SCALE`（进阶界面大图也用），`XActorBook.book_scale` 读它，去掉 actor_book 的 BOOK_SCALE 常量。EB 的 `row_ids`／`row_count`／`cur_id`／`is_aura` 不再有。测试两边断言都留：xiyou_actor_book 的立绘比对新参照有 bitmap 时比实际画的图、旧参照只比战斗图名；V029 开关开、关两组改用 index_ids。
 
-### 优化登记
+## 优化登记草稿
 
-已写进 `03_再刷重制_Godot/00_设计/优化登记.md` 末尾三行，编号待总装分配：O-待定·流萤说明按阶、O-待定·词条难度浮动、O-待定·高阶行封顶不压低（修原版 bug）。`回退开关覆盖.py` 三条都认到、有回退支测试。
+已写进 `03_再刷重制_Godot/00_设计/优化登记.md` 末尾，编号待总装分配（EB、EC′ 的四条早已在登记里）：
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定·词条难度浮动 | `modes/xiyou/core/affix_rate.gd` `XAffixRate.ENABLED`；`XGear.choose_affix`、`XGuide.detail_rows` | v0.28 神话／混沌神话词条按装备配置概率掷，不分难度；v0.62 `installAffixDifficultyRateRuntime`（Kyo 2026-10-31 定）：整行都是 14／15 品质词条的行，概率 ×路线倍率（简单 0.3、普通 0.4、困难 0.55、地狱 0.75、天灾 1、灭世 1.5、洪荒 2～5 按诅咒、宝宝 25），单行封顶 50%；修行·详细页末尾加「高阶词条概率」一段 | 跟进新源（开关默认 true） | 换源后正式版的改动；参照 affix_rate_probe（新源：13 种路线开关、6 档诅咒、7 件装备×7 条路线×21 个预掷随机数），专项 xiyou_affix_rate | `XAffixRate.ENABLED = false` 回 v0.28（一律原掷法，修行页不加这段） | cc（悟空） | 跟进新源；编号待总装分配 |
+| O-待定·高阶行封顶不压低 | `modes/xiyou/core/affix_rate.gd` `XAffixRate.FIX_CAP_BASE`（`pick`） | v0.62 `installAffixDifficultyRateRuntime` 原版：浮动后的概率一律 min(配置×M, 50)，配置本来就高于 50% 的高阶行（落芸之力等 100% 行）在 M≠1 时被压到 50%：地狱 75%→50%，灭世、洪荒、宝宝也只有 50%，反而低于天灾（M＝1 走原掷法，100%） | 修原版 bug（Kyo 2026-11-07「原版的bug不照搬，要修」）：封顶取 max(50, 配置)，即 min(配置×M, max(50, 配置))；配置不超过 50% 的行与原版完全一样 | 参照 affix_rate_probe（新源，开关关时逐例对上原版）；专项 xiyou_affix_rate fixed.*（7 例 100% 行按修好后的概率掷、42 例普通配置行与原版一致） | `XAffixRate.FIX_CAP_BASE = false` 照原版 | cc（悟空） | 修原版 bug；编号待总装分配 |
+
+`回退开关覆盖.py` 两条都认到、有回退支测试。
 
 ### 交接板
 
-- 用户试玩说明：流萤进阶后，天火轰击、完全燃烧的说明只写当前阶的数值（不再写「进阶2阶解锁」之类）；神话／混沌神话词条按难度变：简单、普通更难出，灭世、洪荒更容易，宝宝路线高很多，单行最高 50%；修行·详细页末尾能看到当前倍率。
-- 需要用户决定：无（两条 O-待定照「冻结后改动逐项跟进」默认开）。
+- 用户试玩说明：神话／混沌神话词条按难度变：简单、普通更难出，灭世、洪荒更容易，宝宝路线高很多，单行最高 50%（本来就高于 50% 的行不会被压低）；修行·详细页末尾能看到当前倍率。
+- 需要用户决定：无（两条 O-待定照默认开）。
 
 ### 验证（ED）
 
-- 本机：xiyou_liuying_text 34/34、xiyou_affix_rate 371/371。语法检查通过（607 个 .gd）。工具回归通过。
-- 云端选测（[运行 42308091218](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42308091218)，提交 7032b5b4，基准 357980b3，143 个场景）：130 过、13 挂，查过都不是本单：
+- 合并 6caaac78 后本机：actor_book 26、hidden_actors 24、affix_rate 371、liuying_help 44、actor_advanced 33、advance_v108 9、actor_warehouse 26，全过。语法检查通过（612 个 .gd）。工具回归通过（合并前）。
+- 云端选测（合并前，[运行 42308091218](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42308091218)，提交 7032b5b4，基准 357980b3，143 个场景）：130 过、13 挂，查过都不是本单：
   - growth_help（8 条心钢／狂妄词条行）、gear_search（3 条战力排序）、equipment（affix_revert 参照缺）：本机把 gear.gd 换回 357980b3 原样、XAffixRate 关掉也一样挂（新源数据配 v0.28 旧参照；测试状态没开路线开关，M＝1 本来就不走新掷法）。
   - zhenqi 12 条 page.*：旧参照没有「修行·详细」detail（已知，同步后才有）。
-  - help_card 4 条：10290、10293、10298、10358 成长行新源换了词，参照是旧的；不涉及 10622／10623。
-  - floor_run、floor_run_b／_c（楼层行走）、event_compare（ce9039／ce9026 参照条数 5959 对 5900）、floor_fortress029（重跑过）、item_bag、empress_draw、save_events（测试过了但退出时 get_tree 报错）：与本单改动的文件无关。
-- `事件空绿扫描.py --check`：同 EB、EC′，只挂 5 条 m234 状态没量（不是本单）。`探针登记检查.py`：新探针都有夹具；挂的两条（module_equipment_view、recover_permanent）不是本单。
-- 没跑全量。
+  - help_card 4 条：10290、10293、10298、10358 成长行新源换了词，参照是旧的。
+  - floor_run、floor_run_b／_c、event_compare（ce9039／ce9026）、floor_fortress029、item_bag、empress_draw、save_events：与本单改动的文件无关。
+- `事件空绿扫描.py --check`：只挂 5 条 m234 状态没量（同 EB、EC′）。`探针登记检查.py`：新探针有夹具。没跑全量。
 
 ### 剩余清单
 
-- 技能列表的自定义消耗文字（YEP_SkillCore `<Custom Cost Display>`：流萤「5%生命」「全部护盾」等）重制整个没画；流萤 3 阶起原版把燃烧那格清空。属于技能列表通用缺口，归界面车道。
-- 图鉴立绘逐张比量具不归本车道（派单）。
-- 集成分支 cc/newsrc-switch 新进的改动与本分支在 `actor_book.gd`／`appearance.gd`／`xiyou_actor_book.gd` 有冲突（两边都做了 179 图鉴档与 V029 隐藏行），本车道没合，留总装合并时处理。
+- 技能列表的自定义消耗文字（YEP_SkillCore `<Custom Cost Display>`）重制整个没画；流萤 3 阶起原版把燃烧那格清空。归界面车道。
+- 图鉴立绘逐张比量具不归本车道。
 
 ### 本分支提交（ED）
 
-- 7032b5b4 流萤说明按阶、神话词条概率随难度＋新源探针与专项；O-待定两条
-- d6707f23 交付单
-- （本提交）原版 bug：高阶行封顶不压低（FIX_CAP_BASE）；交付单补云端结果
+- 7032b5b4 词条概率随难度（＋已删的说明按阶）
+- d6707f23、94821d43 交付单；高阶行封顶不压低
+- （本提交）合并 cc/newsrc-switch 6caaac78：图鉴合成一套，说明按阶留集成版

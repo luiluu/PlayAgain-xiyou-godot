@@ -677,1126 +677,1271 @@
    "js/rpg_οbjects.js": "44a492f6a9b742a68a3768cdf7c6bab8294f5a177f595ab562cc47a80809ce89"
   }
  },
- "hostScope": "流萤技能说明按阶生成（v0.62.12 第 15 节）",
+ "scope": "Native installAbyssMerchantRuntime with v0.62.13 parameter fix (string 355 parameters → [string]) on CE1439 and merchant map events; real Game_Map.setup, BattleManager.setup/startBattle/endBattle; Math.random scripted per case (else 0.5); SceneManager.push recorded.",
+ "config": {
+  "costs": [
+   30,
+   90,
+   150
+  ],
+  "reward": 10,
+  "encounterRate": 0.5,
+  "pity": 3,
+  "visitLimit": 3
+ },
  "cases": [
   {
-   "id": "rank.none",
+   "id": "complete.win.appear",
    "setup": {
-    "rank": null
+    "map": 37,
+    "troop": 145,
+    "result": 0,
+    "rolls": [
+     0.5,
+     0.1
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=解锁：进阶2阶 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：4回合（按自然回合计，再动不缩短） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[1]全部护盾\\c[0]",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：4回合（按自然回合计，再动不缩短）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "解锁：进阶2阶",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "merchant29",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": true,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:37",
+       "kind": "深渊商人",
+       "map": 37
+      },
+      "pool": 21
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:37": 10
+      },
+      "misses": {
+       "abyss:37": 0
+      }
+     },
+     "has": true,
+     "page": 1,
+     "toasts": [
+      "获得本副本战利品点＋10。深渊商人出现了。"
+     ],
+     "pushed": [
+      "Scene_Merchant29"
+     ],
+     "active": true
     }
    },
    "errors": []
   },
   {
-   "id": "rank.0",
+   "id": "complete.win.miss",
    "setup": {
-    "rank": 0
+    "map": 37,
+    "troop": 145,
+    "result": 0,
+    "rolls": [
+     0.5,
+     0.9
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=解锁：进阶2阶 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：4回合（按自然回合计，再动不缩短） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[1]全部护盾\\c[0]",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：4回合（按自然回合计，再动不缩短）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "解锁：进阶2阶",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:37",
+       "kind": "深渊商人",
+       "map": 37
+      },
+      "pool": 21
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:37": 10
+      },
+      "misses": {
+       "abyss:37": 1
+      }
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [
+      "获得本副本战利品点＋10。"
+     ],
+     "pushed": [],
+     "active": false
     }
    },
    "errors": []
   },
   {
-   "id": "rank.1",
+   "id": "complete.win.edge",
    "setup": {
-    "rank": 1
+    "map": 37,
+    "troop": 145,
+    "result": 0,
+    "rolls": [
+     0.5,
+     0.5
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=解锁：进阶2阶 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：4回合（按自然回合计，再动不缩短） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[1]全部护盾\\c[0]",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：4回合（按自然回合计，再动不缩短）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "解锁：进阶2阶",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:37",
+       "kind": "深渊商人",
+       "map": 37
+      },
+      "pool": 21
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:37": 10
+      },
+      "misses": {
+       "abyss:37": 1
+      }
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [
+      "获得本副本战利品点＋10。"
+     ],
+     "pushed": [],
+     "active": false
     }
    },
    "errors": []
   },
   {
-   "id": "rank.2",
+   "id": "complete.lost",
    "setup": {
-    "rank": 2
+    "map": 37,
+    "troop": 145,
+    "result": 1,
+    "rolls": [
+     0.5,
+     0.1
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：8 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：8",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：当前全部护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：4回合（按自然回合计，再动不缩短） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[1]全部护盾\\c[0]",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：4回合（按自然回合计，再动不缩短）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗当前全部护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
     }
    },
    "errors": []
   },
   {
-   "id": "rank.3",
+   "id": "complete.escape",
    "setup": {
-    "rank": 3
+    "map": 37,
+    "troop": 145,
+    "result": 2,
+    "rolls": [
+     0.5,
+     0.1
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：8 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：8",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：增加与施放前护盾等量的护盾（上限为最大生命50%） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：3回合（按自然回合计，再动不缩短）；施放后33%概率不进入冷却 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：3回合（按自然回合计，再动不缩短）；施放后33%概率不进入冷却",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：增加与施放前护盾等量的护盾（上限为最大生命50%）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
     }
    },
    "errors": []
   },
   {
-   "id": "rank.4",
+   "id": "complete.other_troop",
    "setup": {
-    "rank": 4
+    "map": 37,
+    "troop": 3,
+    "result": 0,
+    "rolls": [
+     0.5,
+     0.1
+    ]
    },
    "observed": {
-    "10622": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[2]5%生命\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.2 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：除主目标外，其余敌人受到50%扩散伤害 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=消耗：5%当前生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：8 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方单体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "\\c[2]5%生命\\c[0]",
-     "rows": [
-      [
-       "天火轰击",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[88000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方单体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：8",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "消耗：5%当前生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：消耗5%当前生命（至少保留1点），按实际扣除量转化为护盾",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：除主目标外，其余敌人受到50%扩散伤害",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.2",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加1层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     }
     },
-    "10623": {
-     "note": "<CodexLiuyingSkill>\n<Multiple Elements: 1>\n<quality:6>\n<ici:6>\n<HelpWidth: 520>\n<Custom Cost Display>\n\\c[1]全部护盾\\c[0]\n</Custom Cost Display>\n<pos=APs text=效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：有20%概率再释放一次（不再消耗、不进冷却） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：只有一个目标时，伤害结算×1.5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：施放后回复全部生命 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=效果：增加与施放前护盾等量的护盾（上限为最大生命50%） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=装备限制：剑 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=冷却时间：3回合（按自然回合计，再动不缩短）；施放后33%概率不进入冷却 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击次数：9（只有一个目标时13） size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=能否暴击：是 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中类型：必中 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=目标：敌方全体 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害属性：火焰·物理 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1] size=18 color=rgba(255,255,255,1) line=false align=0>",
-     "customCostText": "",
-     "rows": [
-      [
-       "完全燃烧",
-       20,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "",
-       10,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "品质：传说",
-       18,
-       "rgba(255,160,64,1)"
-      ],
-      [
-       "伤害：每段[880000＋己·最大生命×3000＋己·物理攻击×3888＋己·敏捷＋施放前护盾×3888]×[1+技能等级×0.1]",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "伤害属性：火焰·物理",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "目标：敌方全体",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "命中类型：必中",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "能否暴击：是",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "攻击次数：9（只有一个目标时13）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "冷却时间：3回合（按自然回合计，再动不缩短）；施放后33%概率不进入冷却",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "装备限制：剑",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：增加与施放前护盾等量的护盾（上限为最大生命50%）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：施放后回复全部生命",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：只有一个目标时，伤害结算×1.5",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：有20%概率再释放一次（不再消耗、不进冷却）",
-       18,
-       "rgba(255,255,255,1)"
-      ],
-      [
-       "效果：主动施放后叠加5层击破印记（多段与再释放不重复叠加）",
-       18,
-       "rgba(255,255,255,1)"
-      ]
-     ]
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
     }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.not_route",
+   "setup": {
+    "map": 4,
+    "troop": 145,
+    "result": 0,
+    "rolls": [
+     0.5,
+     0.1
+    ]
+   },
+   "observed": {
+    "before": {
+     "page": null,
+     "run": null
+    },
+    "wait": "",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": null,
+     "ledger": null,
+     "has": false,
+     "page": null,
+     "toasts": [],
+     "pushed": [],
+     "active": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.route38",
+   "setup": {
+    "map": 38,
+    "troop": 151,
+    "result": 0,
+    "rolls": [
+     0.25,
+     0.1
+    ]
+   },
+   "observed": {
+    "before": {
+     "page": 0,
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 536870911,
+      "identity": null,
+      "pool": null
+     }
+    },
+    "wait": "merchant29",
+    "text": "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);",
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": true,
+      "used": 0,
+      "seed": 536870911,
+      "identity": {
+       "key": "abyss:38",
+       "kind": "深渊商人",
+       "map": 38
+      },
+      "pool": 21
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:38": 10
+      },
+      "misses": {
+       "abyss:38": 0
+      }
+     },
+     "has": true,
+     "page": 1,
+     "toasts": [
+      "获得本副本战利品点＋10。深渊商人出现了。"
+     ],
+     "pushed": [
+      "Scene_Merchant29"
+     ],
+     "active": true
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.no_battle",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "ok": false,
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.twice",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "second": false,
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:37",
+       "kind": "深渊商人",
+       "map": 37
+      },
+      "pool": 21
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:37": 10
+      },
+      "misses": {
+       "abyss:37": 1
+      }
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [
+      "获得本副本战利品点＋10。"
+     ],
+     "pushed": [],
+     "active": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.left_map",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "ok": false,
+    "after": {
+     "run": {
+      "sequence": 2,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 2,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.reenter",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "ok": false,
+    "after": {
+     "run": {
+      "sequence": 2,
+      "claimed": false,
+      "appeared": false,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": null,
+      "pool": null
+     },
+     "ledger": {
+      "sequence": 2,
+      "balances": {},
+      "misses": {}
+     },
+     "has": false,
+     "page": 0,
+     "toasts": [],
+     "pushed": [],
+     "active": false
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "complete.pity",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "rounds": [
+     {
+      "appeared": false,
+      "misses": {
+       "abyss:37": 1
+      },
+      "balances": {
+       "abyss:37": 10
+      },
+      "toasts": [
+       "获得本副本战利品点＋10。"
+      ]
+     },
+     {
+      "appeared": false,
+      "misses": {
+       "abyss:37": 2
+      },
+      "balances": {
+       "abyss:37": 20
+      },
+      "toasts": [
+       "获得本副本战利品点＋10。",
+       "获得本副本战利品点＋10。"
+      ]
+     },
+     {
+      "appeared": true,
+      "misses": {
+       "abyss:37": 0
+      },
+      "balances": {
+       "abyss:37": 30
+      },
+      "toasts": [
+       "获得本副本战利品点＋10。",
+       "获得本副本战利品点＋10。",
+       "获得本副本战利品点＋10。深渊商人出现了。"
+      ]
+     },
+     {
+      "appeared": false,
+      "misses": {
+       "abyss:37": 1
+      },
+      "balances": {
+       "abyss:37": 40
+      },
+      "toasts": [
+       "获得本副本战利品点＋10。",
+       "获得本副本战利品点＋10。",
+       "获得本副本战利品点＋10。深渊商人出现了。",
+       "获得本副本战利品点＋10。"
+      ]
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "unknown.abyss",
+   "setup": {
+    "map": 152,
+    "origin": 57
+   },
+   "observed": {
+    "troop": 454,
+    "routeTroops": [
+     454,
+     455,
+     661,
+     767
+    ],
+    "origin": 57,
+    "immortal": false,
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": true,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:152:from:57",
+       "kind": "深渊商人",
+       "map": 152
+      },
+      "pool": 3
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:152:from:57": 10
+      },
+      "misses": {
+       "abyss:152:from:57": 0
+      }
+     },
+     "has": true,
+     "page": 1,
+     "toasts": [
+      "获得本副本战利品点＋10。深渊商人出现了。"
+     ],
+     "pushed": [
+      "Scene_Merchant29"
+     ],
+     "active": true
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "unknown.immortal",
+   "setup": {
+    "map": 152,
+    "origin": 38
+   },
+   "observed": {
+    "troop": 454,
+    "routeTroops": [
+     454,
+     455,
+     661,
+     767
+    ],
+    "origin": 38,
+    "immortal": true,
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": true,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "immortal:152:from:38",
+       "kind": "不朽商人",
+       "map": 152
+      },
+      "pool": 3
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "immortal:152:from:38": 10
+      },
+      "misses": {
+       "immortal:152:from:38": 0
+      }
+     },
+     "has": true,
+     "page": 1,
+     "toasts": [
+      "获得本副本战利品点＋10。不朽商人出现了。"
+     ],
+     "pushed": [
+      "Scene_Merchant29"
+     ],
+     "active": true
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "unknown.legacy",
+   "setup": {
+    "map": 152,
+    "origin": null
+   },
+   "observed": {
+    "troop": 454,
+    "routeTroops": [
+     454,
+     455,
+     661,
+     767
+    ],
+    "origin": 4,
+    "immortal": false,
+    "after": {
+     "run": {
+      "sequence": 1,
+      "claimed": true,
+      "appeared": true,
+      "used": 0,
+      "seed": 1073741823,
+      "identity": {
+       "key": "abyss:152:from:4",
+       "kind": "深渊商人",
+       "map": 152
+      },
+      "pool": 3
+     },
+     "ledger": {
+      "sequence": 1,
+      "balances": {
+       "abyss:152:from:4": 10
+      },
+      "misses": {
+       "abyss:152:from:4": 0
+      }
+     },
+     "has": true,
+     "page": 1,
+     "toasts": [
+      "获得本副本战利品点＋10。深渊商人出现了。"
+     ],
+     "pushed": [
+      "Scene_Merchant29"
+     ],
+     "active": true
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.t0.weapon",
+   "setup": {
+    "map": 37,
+    "tier": 0,
+    "group": "武器"
+   },
+   "observed": {
+    "key": "abyss:37",
+    "pool": 7,
+    "ok": true,
+    "item": {
+     "id": 4083,
+     "base": 1045,
+     "name": "龙拳",
+     "params": [
+      0,
+      0,
+      131,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "affix": {
+      "db": "Weapons",
+      "id": 145
+     },
+     "slots": 3,
+     "price": 0,
+     "wtypeId": 5,
+     "etypeId": 1,
+     "merchant": true
+    },
+    "balance": 470,
+    "used": 1,
+    "weapons": 1,
+    "armors": 0
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.t1.armor",
+   "setup": {
+    "map": 37,
+    "tier": 1,
+    "group": "防具"
+   },
+   "observed": {
+    "key": "abyss:37",
+    "pool": 8,
+    "ok": true,
+    "item": {
+     "id": 8018,
+     "base": 1018,
+     "name": "奇缘仙履",
+     "params": [
+      266,
+      147,
+      0,
+      0,
+      0,
+      97,
+      7,
+      69
+     ],
+     "affix": {
+      "db": "Armors",
+      "id": 4789
+     },
+     "slots": 3,
+     "price": 0,
+     "atypeId": 2,
+     "etypeId": 7,
+     "merchant": true
+    },
+    "balance": 410,
+    "used": 1,
+    "weapons": 0,
+    "armors": 1
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.t2.acc",
+   "setup": {
+    "map": 37,
+    "tier": 2,
+    "group": "饰品"
+   },
+   "observed": {
+    "key": "abyss:37",
+    "pool": 6,
+    "ok": true,
+    "item": {
+     "id": 8018,
+     "base": 1015,
+     "name": "圣贤石",
+     "params": [
+      566,
+      447,
+      0,
+      0,
+      117,
+      0,
+      59,
+      33
+     ],
+     "affix": {
+      "db": "Armors",
+      "id": 4797
+     },
+     "slots": 3,
+     "price": 0,
+     "atypeId": 6,
+     "etypeId": 11,
+     "merchant": true
+    },
+    "balance": 350,
+    "used": 1,
+    "weapons": 0,
+    "armors": 1
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.t0.any",
+   "setup": {
+    "map": 38,
+    "tier": 0,
+    "group": null
+   },
+   "observed": {
+    "key": "abyss:38",
+    "pool": 21,
+    "ok": true,
+    "item": {
+     "id": 8018,
+     "base": 1022,
+     "name": "地心石碑",
+     "params": [
+      566,
+      447,
+      0,
+      0,
+      122,
+      0,
+      54,
+      28
+     ],
+     "affix": {
+      "db": "Armors",
+      "id": 3076
+     },
+     "slots": 3,
+     "price": 0,
+     "atypeId": 6,
+     "etypeId": 11,
+     "merchant": true
+    },
+    "balance": 470,
+    "used": 1,
+    "weapons": 0,
+    "armors": 1
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.sequence",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "key": "abyss:37",
+    "out": [
+     {
+      "ok": true,
+      "item": {
+       "id": 4083,
+       "base": 1045,
+       "name": "龙拳",
+       "params": [
+        0,
+        0,
+        131,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "affix": {
+        "db": "Weapons",
+        "id": 145
+       },
+       "slots": 3,
+       "price": 0,
+       "wtypeId": 5,
+       "etypeId": 1,
+       "merchant": true
+      }
+     },
+     {
+      "ok": true,
+      "item": {
+       "id": 4084,
+       "base": 1042,
+       "name": "血吼",
+       "params": [
+        0,
+        0,
+        174,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "affix": {
+        "db": "Weapons",
+        "id": 153
+       },
+       "slots": 0,
+       "price": 0,
+       "wtypeId": 4,
+       "etypeId": 1,
+       "merchant": true
+      }
+     },
+     {
+      "ok": true,
+      "item": {
+       "id": 4085,
+       "base": 1047,
+       "name": "小李飞刀",
+       "params": [
+        0,
+        0,
+        77,
+        0,
+        0,
+        0,
+        0,
+        19
+       ],
+       "affix": {
+        "db": "Weapons",
+        "id": 96
+       },
+       "slots": 9,
+       "price": 0,
+       "wtypeId": 12,
+       "etypeId": 1,
+       "merchant": true
+      }
+     },
+     {
+      "ok": false,
+      "error": "本次商人的抽取次数已用完。"
+     }
+    ],
+    "balance": 410,
+    "used": 3
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.poor",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "key": "abyss:37",
+    "r": {
+     "ok": false,
+     "error": "本副本战利品点不足。"
+    },
+    "balance": 29
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.no_merchant",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "r": {
+     "ok": false,
+     "error": "当前没有可交易的商人。"
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "draw.bad_tier",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "r": {
+     "ok": false,
+     "error": "抽奖档位无效。"
+    }
+   },
+   "errors": []
+  },
+  {
+   "id": "pool.37",
+   "setup": {
+    "map": 37
+   },
+   "observed": {
+    "name": "深渊:无垠虚空",
+    "pool": [
+     [
+      "Armors",
+      935,
+      "冰霜之王的泪滴",
+      "饰品"
+     ],
+     [
+      "Armors",
+      1013,
+      "尼伯龙根指环",
+      "饰品"
+     ],
+     [
+      "Armors",
+      1014,
+      "权势之冠",
+      "防具"
+     ],
+     [
+      "Armors",
+      1015,
+      "圣贤石",
+      "饰品"
+     ],
+     [
+      "Armors",
+      1016,
+      "牛王之皮",
+      "防具"
+     ],
+     [
+      "Armors",
+      1017,
+      "凯旋之歌",
+      "防具"
+     ],
+     [
+      "Armors",
+      1018,
+      "奇缘仙履",
+      "防具"
+     ],
+     [
+      "Armors",
+      1019,
+      "华丽之裤",
+      "防具"
+     ],
+     [
+      "Armors",
+      1020,
+      "世界树之枝",
+      "防具"
+     ],
+     [
+      "Armors",
+      1021,
+      "吟游诗人的祷告",
+      "饰品"
+     ],
+     [
+      "Armors",
+      1022,
+      "地心石碑",
+      "饰品"
+     ],
+     [
+      "Armors",
+      1023,
+      "狗铃",
+      "饰品"
+     ],
+     [
+      "Armors",
+      2605,
+      "神射护手",
+      "防具"
+     ],
+     [
+      "Armors",
+      2606,
+      "刀锋铁盔",
+      "防具"
+     ],
+     [
+      "Weapons",
+      1042,
+      "血吼",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1043,
+      "秘法天球",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1044,
+      "石中剑",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1045,
+      "龙拳",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1047,
+      "小李飞刀",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1397,
+      "艾丝缇碎片",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1398,
+      "黄金三叉戟",
+      "武器"
+     ]
+    ]
+   },
+   "errors": []
+  },
+  {
+   "id": "pool.152",
+   "setup": {
+    "map": 152
+   },
+   "observed": {
+    "name": "深渊:未知存在",
+    "pool": [
+     [
+      "Weapons",
+      1521,
+      "未知的刀片",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1522,
+      "寒幽爪",
+      "武器"
+     ],
+     [
+      "Weapons",
+      1523,
+      "奇怪的法杖",
+      "武器"
+     ]
+    ]
    },
    "errors": []
   }

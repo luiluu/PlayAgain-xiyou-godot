@@ -92,8 +92,13 @@ func _compare(cat: String, card: Dictionary) -> void:
 	_check(name, h_ok, null if h_ok else {"height": [lay.height, exp.height]})
 
 
+## 量排版之前的价格行：v0.43 排版把购买／出售价格并成一行两列（\col[50]），这里只比出售价本身
 func _sell_row(obj: Dictionary) -> String:
-	for r in XHelpCard.content(obj, "item"):
+	var keep := XHelpCard.LAYOUT_V043
+	XHelpCard.LAYOUT_V043 = false
+	var rows := XHelpCard.content(obj, "item")
+	XHelpCard.LAYOUT_V043 = keep
+	for r in rows:
 		if str(r[0]).begins_with("出售价格"):
 			return str(r[0])
 	return ""

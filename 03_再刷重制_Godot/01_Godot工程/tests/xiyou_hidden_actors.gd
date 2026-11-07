@@ -66,8 +66,8 @@ func _run() -> void:
 	XImportedBalance.V029_HIDE_ACTORS = false
 	check("off.list", XActorWarehouse.list(s, false) == [141, 143, 160, 10], XActorWarehouse.list(s, false))
 	check("off.not_hidden", not XImportedBalance.is_hidden_actor(141))
-	check("off.book_all_slots", XActorBook.row_ids().size() == XActorBook.actor_count())
+	check("off.book_all_slots", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size())
 	XImportedBalance.V029_HIDE_ACTORS = true
-	check("on.book_rows", XActorBook.row_ids().size() == XActorBook.actor_count() - 7 and not XActorBook.row_ids().has(161))
+	check("on.book_rows", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size() - 7 and not XActorBook.index_ids().has(161))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)

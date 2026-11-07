@@ -37,7 +37,7 @@ static func heart_rows(item: Dictionary) -> Array:
 	var lev := XHeartsteel.is_leviathan(item)
 	var rows := ["成长：心钢层数%d；最大生命×%s" % [k, number(XHeartsteel.hp_rate(item))],
 		"进度：心钢升阶还需%d层" % (XHeartsteel.stage_need(n + 1) - k),
-		"伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", number(1.0 + 0.1 * n)],
+		damage_text(item),
 		"效果：每回合结束回复%d%%最大生命" % (5 if lev else 3),
 		"战技：巨人吞噬；物理，单体，不可暴击",
 		"冷却：巨人吞噬第2回合可用；冷却2回合" if XHeartsteel.TURN_CD_V035 else "冷却：巨人吞噬开战后行动2次可用；施放后行动3次恢复",
@@ -45,6 +45,34 @@ static func heart_rows(item: Dictionary) -> Array:
 	if XHeartsteel.growth(item) > 0:
 		rows.insert(2, "成长：额外最大生命＋%d" % XHeartsteel.growth(item))
 	return rows
+
+
+## H.damageText
+static func damage_text(item: Dictionary) -> String:
+	var lev := XHeartsteel.is_leviathan(item)
+	return "伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", number(1.0 + 0.1 * XHeartsteel.stage(item))]
+
+
+## H.skillHelpView（v0.35 起；Window_BattleSkill／Window_SkillList.updateHelp 包装）：巨人吞噬技能卡换成一份拷贝，
+## 备注里的 APs 行全删，重写成目标／命中／消耗／伤害（按角色身上对应的心钢／利维坦的阶，没有按原件）、
+## 战斗中加「状态」行（已就绪／冷却还需 n 回合／蓄力还需 n 回合，H.remaining）、效果／条件／冷却三行。
+## 跟 XHeartsteel.TURN_CD_V035（O-待定·心钢按回合冷却）一起开关：关＝v0.28，没有这张卡，照原技能说明。
+static func skill_view(skill: Dictionary, actor) -> Dictionary:
+	if not XHeartsteel.TURN_CD_V035 or not XHeartsteel.is_skill(skill):
+		return skill
+	var v := skill.duplicate(true)
+	v.skill_copy = true  # 拷贝：DataManager.isSkill 为假，元素包装不插技能的伤害属性（XHelpCard._content）
+	var lev := int(skill.id) == XHeartsteel.LEV_SKILL
+	var g := XHeartsteel.gear(actor)
+	if g.is_empty() or XHeartsteel.skill_for(g) != int(skill.id):
+		g = XDB.rec("Armors", XHeartsteel.LEVIATHAN if lev else XHeartsteel.ARMOR)
+	var rows := ["目标：敌方单体；伤害属性：物理", "命中类型：物理；能否暴击：否；攻击次数：1", "消耗：0MP／0TP", damage_text(g)]
+	if actor is XActor and XHeartsteel.in_battle:
+		var n := XHeartsteel.remaining(actor)
+		rows.append("状态：巨人吞噬已就绪" if n == 0 else ("状态：巨人吞噬冷却，还需%d回合" if bool(XHeartsteel._casted.get(actor.actor_id, false)) else "状态：巨人吞噬蓄力，还需%d回合") % n)
+	rows.append_array(["效果：命中积累心钢，胜利后保留", "条件：装备%s；第2回合起可用" % ("杰作利维坦" if lev else "心之钢"), "冷却：2回合"])
+	rewrite(v, [".*"], rows)
+	return v
 
 
 static func hubris_rows(item: Dictionary) -> Array:
@@ -147,4 +175,10 @@ static func group(rows: Array) -> Array:
 
 ## 说明卡行：describe 后的视图算 descParams，再按色分组
 static func rows(obj: Dictionary, type: int) -> Array:
-	return group(XHelpCard.desc_params(view(obj), type))
+	var v := view(obj)
+	var r := XHelpCard.desc_params(v, type)
+	# H.describe 末尾调 RJO.HE.getDescParams(item,2)，v0.41 特效排序（CodexDisplay.equipmentRows 的 D 包装）在里面，
+	# 所以心钢／狂妄也按品质排特效行，再按颜色分组（O-待定·特效排序，XHelpCard.EFFECT_SORT_V041 关＝不排）
+	if XHelpCard.EFFECT_SORT_V041 and (type == 1 or type == 2):
+		XHelpCard.sort_effects(v, r)
+	return group(r)
