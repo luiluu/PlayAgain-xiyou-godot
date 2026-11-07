@@ -1,7 +1,7 @@
 # 交付：cc/ui-gaps1
 
 - 车道／工作者：B 界面／界面（cc，第十五批 FD）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点（派单 ①：对照新源 v0.62.12 列没做或不一致的界面）
 
@@ -49,7 +49,13 @@
 
 ## 验证
 
-（主线推送、补齐后填）
+- 工具快速回归 `工具回归.py`：全过（64 秒）。
+- 选测走云端（`检查.sh --affected main --cloud`，`CHECK_CLOUD_NO_UPLOAD=1`；xstate.gd 改了 gain_gear，选中 361 个场景）：
+  - 6d99b22e（运行 42389806479）：359 过，挂 `xiyou_gear_detail`（测试里宿主不是 Control，解析错）、`xiyou_hp_gauge_visible`（新源神兵之仙 984～990、2005 原版 hpGaugeVisible 为假——v0.37 真气首领血条范围，断言改比战斗里实际用的 `XBossHpBar.small_gauge_visible`）。其余守卫、文档检查全过。
+  - 修后按上次提交为基准只重跑受影响的：74ac88f5／01329855（17 个场景，运行 42392166502、42393026180）——专项对着原版读数又改了三处：详情不带 installDamageElementRuntime（setItem 层）的攻击属性／元素增伤行、文字照 normalizeGear 换元素别名（暗黑→黑暗）、插槽行按实例孔数比结构；其余 16 个全过。
+  - 9072a5e4（运行 42394227958）：`xiyou_gear_detail` 55/55。
+- 新专项：`xiyou_gear_detail` 55 条、`xiyou_treasure_batch`（首轮即过）；`xiyou_speed_gear` 新断言 `map.play_seconds_real_time` 在首轮里过。
+- 没在 Mac 上跑 Godot（Kyo 11-07 定重测试走云端）；`--补齐` 的导入在等槽时让位，后续本机要跑时再补齐一次。
 
 ## 本分支提交
 
@@ -60,3 +66,5 @@
 - 44d88be2 交付单、优化登记
 - 82ba44da 合 main（2443a7b0）
 - 5e01c4d6 第二期 C：藏宝图批量使用＋至臻闪光
+- e286aa4e 交付单补第二期
+- 02c350ef、74ac88f5、01329855、9072a5e4 云端选测后的修正（测试宿主、血条比较对象、详情去元素行与别名、插槽断言、物品页高度）
