@@ -169,11 +169,15 @@ class Progress:
     def __enter__(self):
         if self.interval > 0:
             self.say('开始，%d 段并行，每 %g 秒报一次进度' % (self.shards, self.interval))
-            threading.Thread(target=self._beat, daemon=True).start()
+            self.thread = threading.Thread(target=self._beat, daemon=True)
+            self.thread.start()
         return self
 
     def __exit__(self, *exc):
         self.stop.set()
+        # 等心跳线程真停：只 set 不 join 时，正在 say 的那一拍会在退出后才写出（总装三十二 11-07，满载下 6 != 5）
+        if getattr(self, 'thread', None) is not None:
+            self.thread.join(timeout=5)
         return False
 
 
