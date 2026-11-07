@@ -205,9 +205,20 @@ func _request(kind: String, wait: String, data: Dictionary, arg = null) -> Dicti
 
 
 func _flush_request() -> Dictionary:
-	var lines := pending_lines.duplicate()
+	var lines := pending_lines.map(func(t): return message_text(str(t)))
 	pending_lines.clear()
 	return _request("message", "flush", {"msg": {"face": "", "index": 0, "background": 0, "position": 2, "lines": lines}})
+
+
+## installDisplayPreferencesRuntime 包 Game_Message.add：进消息的每行先把「全伤」「全伤害」写成「全属性伤害」（CodexDisplay.text，
+## 2026-10-11 起；选项 setChoices 不包）。原来漏了，CE1441 破阵·投影说明显示「全伤+1500%」（八戒 interp1 i1 变体对照发现）
+static var _full_dmg: RegEx
+static func message_text(t: String) -> String:
+	if not t.contains("全伤"):
+		return t
+	if _full_dmg == null:
+		_full_dmg = RegEx.create_from_string("全伤(?:害)?")
+	return _full_dmg.sub(t, "全属性伤害", true)
 
 
 ## Game_Message.newPage：已有文字时给最后一行加 \f
@@ -248,7 +259,7 @@ func _execute(c: Dictionary):
 				"position": int(p[3]) if p.size() > 3 else 2, "lines": []}
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
-				msg.lines.append(str(list[index].parameters[0]))
+				msg.lines.append(message_text(str(list[index].parameters[0])))
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
 				_merge_choices(index)
@@ -375,7 +386,7 @@ func _execute(c: Dictionary):
 				v.bgm = (p[1] as Dictionary).duplicate() if p[1] is Dictionary else null
 		202:
 			# 设置载具位置 [载具, 0 直接／1 变量, 图, x, y]（Game_Vehicle.setLocation）：楼层回大厅、CE10／240／1002、
-			# 神魔战场门把飞艇停到 Map069／186。只改位置，朝向不动；上下与飞行还没做（甲二）
+			# 神魔战场门把飞艇停到 Map069／186。只改位置，朝向不动（上下与飞行在 XMapScene.get_on_vehicle 等）
 			var v := state().vehicle(int(p[0]))
 			if not v.is_empty():
 				var direct := int(p[1]) == 0
@@ -906,7 +917,7 @@ func _condition(p: Array) -> bool:
 			skipped.append({"code": 111, "text": "脚本条件 " + code.left(60)})
 			return false
 		13:
-			# 载具 [13, 0/1/2]：$gamePlayer.vehicle() === $gameMap.vehicle(p1)，走路时为 false（重制还不能上载具，甲二）
+			# 载具 [13, 0/1/2]：$gamePlayer.vehicle() === $gameMap.vehicle(p1)，走路时为 false（乘飞艇时 vehicle_type 为 airship，见 XMapScene.get_on_vehicle）
 			var i := int(p[1])
 			return i >= 0 and i < XState.VEHICLE_TYPES.size() and s.vehicle_type == XState.VEHICLE_TYPES[i]
 	var env = _condition_env(p)

@@ -1,10 +1,7 @@
 {
-	"cases": 15629,
-	"match": 15621,
+	"cases": 25606,
+	"match": 25599,
 	"mismatch": {
-		"ce9043": [
-			"trace"
-		],
 		"m4e60p0#g3": [
 			"trace"
 		],
@@ -27,6 +24,6 @@
 			"trace"
 		]
 	},
-	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写，说明保留）。值为不一致的项目。现存：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。m4e1p2／p3（更换称号）已消：参照探针先补上标题画面才接的称号公共事件、当场跑完，选项里的 ESC 控制符比较前统一成反斜杠；m221e3p0／ce1344（随机伙伴）不再算参照出错：事件随机数改按固定序列取（悟空 dmg2）。 m4e60p0#g3／m4e60p2#g3（eventsreg3，自定义单抽／20连抽券不足）：XCasinoBatch.open 只在地图场景（XMapScene）里开，事件对照的宿主不是地图场景，提示「抽奖券不足」不出；游戏里由 xiyou_casino_batch（自有原版参照）管。 m4e69p0#o4_2／o4_3（+10／+20 级）已消：212 显示动画不勾等待时不再先出待显示的升级文字，toast 先出（rules-fix9，见 MVEventCore.FLUSH_IF_WAIT）。 新源 v0.62.12 换源后（八戒 newsrc3／newsrc4）进登记：m4e69p1、m4e69p1#o4_2／o4_3（新源流萤运行时包 changeLevel 丢掉 316 的「显示升级」，原版不出升级文字；重制照旧显示，O-待定·升级文字 MVEventCore.LEVEL_UP_SHOW_316）；m4e71p0（更新日志：参照宿主 jsdom 的同步读文件拿不到 data/PlayerChangelog 与 ContentVersion.json，CodexGuide.changelogEntries() 为空，参照只剩 Map004 里 v0.36 以前的页；真游戏与重制都先列 v0.62，交工具车道修宿主）；ce9043（CodexLiuying.recruit() 流萤招募没做，扩角色车道；跳过登记同）。 m148e38p0（凤凰殿战斗背景）已消：地图 234～239 进切片（八戒 newsrc4）。",
+	"note": "地图事件对照的已知不一致（tests/xiyou_event_compare 写入；--update-baseline 重写，说明保留）。值为不一致的项目。现存：m4e73p0 商店向导「战力短板」一段来自 CodexZones 五乘区预算，按数值平衡不移植（O-044／O-050）。m4e1p2／p3（更换称号）已消：参照探针先补上标题画面才接的称号公共事件、当场跑完，选项里的 ESC 控制符比较前统一成反斜杠；m221e3p0／ce1344（随机伙伴）不再算参照出错：事件随机数改按固定序列取（悟空 dmg2）。 m4e60p0#g3／m4e60p2#g3（eventsreg3，自定义单抽／20连抽券不足）：XCasinoBatch.open 只在地图场景（XMapScene）里开，事件对照的宿主不是地图场景，提示「抽奖券不足」不出；游戏里由 xiyou_casino_batch（自有原版参照）管。 m4e69p0#o4_2／o4_3（+10／+20 级）已消：212 显示动画不勾等待时不再先出待显示的升级文字，toast 先出（rules-fix9，见 MVEventCore.FLUSH_IF_WAIT）。 新源 v0.62.12 换源后（八戒 newsrc3／newsrc4）进登记：m4e69p1、m4e69p1#o4_2／o4_3（新源流萤运行时包 changeLevel 丢掉 316 的「显示升级」，原版不出升级文字；重制照旧显示，O-待定·升级文字 MVEventCore.LEVEL_UP_SHOW_316）；m4e71p0（更新日志：参照宿主 jsdom 的同步读文件拿不到 data/PlayerChangelog 与 ContentVersion.json，CodexGuide.changelogEntries() 为空，参照只剩 Map004 里 v0.36 以前的页；真游戏与重制都先列 v0.62，交工具车道修宿主）；ce9043（流萤号角）已消：招募由悟空 newsrc9 接上，八戒 interp1 重跑销登记。 m148e38p0（凤凰殿战斗背景）已消：地图 234～239 进切片（八戒 newsrc4）。",
 	"source": "v0.62.12"
 }

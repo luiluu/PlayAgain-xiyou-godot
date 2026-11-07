@@ -364,9 +364,6 @@
 			"355 var action = new Game_Action(actor, true": 1,
 			"355 var actor = $gameActors.actor(i)": 1
 		},
-		"ce9043": {
-			"355 CodexLiuying.recruit()": 1
-		},
 		"ce976": {
 			"355 !$gameTroop.isAllDead() && BattleManager": 1,
 			"355 action.decideRandomTarget()": 1,
