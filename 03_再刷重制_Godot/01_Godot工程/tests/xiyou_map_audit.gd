@@ -69,7 +69,7 @@ func _ichigo_maps() -> void:
 		_open(m, 8, 14)
 		if not _check("m%d_loaded" % m, await _load(m)):
 			continue
-		var want := XDB.map(m).get("events", []).filter(func(e): return e != null).size()
+		var want: int = XDB.map(m).get("events", []).filter(func(e): return e != null).size()
 		_check("m%d_events" % m, want > 0 and _scene().events.size() == want, {"want": want, "got": _scene().events.size()})
 
 
