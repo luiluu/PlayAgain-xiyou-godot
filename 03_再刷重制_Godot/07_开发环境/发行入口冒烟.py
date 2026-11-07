@@ -15,17 +15,23 @@
                                          标题按空格／J／回车开新游戏，再按一串确认、取消键，看进程活着、没有新崩溃报告
   python3 发行入口冒烟.py --keys-only --zip <包>   只做按键冒烟（不查名字图标），给验证旧包／修后包用
   python3 发行入口冒烟.py --arch x86_64 [--keys]  macOS 包在 Rosetta 下跑 x86_64 切片（arch -x86_64；包是 universal 才有这个切片）
+  python3 发行入口冒烟.py --update-baseline   全部通过时把启动用时记进 发行入口启动基线.json（按平台／架构各一份）
   python3 发行入口冒烟.py --keys-only --app <.app>  同上，直接跑一个已解开的 .app（只执行、不改它；HOME 照旧是临时的）
 
 查的：
   - 包名、CFBundleName／CFBundleDisplayName 是「再刷一把：天启篇」，包里有 icns 图标且和 content/app_icon/icon.icns 一致
+  - 版本号（平台 EC）：Mac CFBundleShortVersionString／CFBundleVersion＝0.<号>／<号>，Windows exe 资源里有 0.<号>.0.0；
+    号取当前工程的 build_info（查旧包时号对不上会报失败）；XDesktopVersion.AUTO 关着就不查
   - 包内运行（--headless --quit-after，加 --report-entry 让游戏打印进了哪个场景）：只出现 ENTRY_SCENE=res://modes/xiyou/entry.tscn
+  - 启动基线（平台 EC）：起进程到打印 ENTRY_SCENE 的秒数，跟 发行入口启动基线.json 比；慢一倍以上且多 2 秒打 WARN「变慢」，
+    只提示不算失败（机器忙时会抖）；Windows／安卓是 macOS 发行模板当替身，量的是读包数据进标题，不是真机
 发行包排除了 tests/、不认 --verify-export，所以这里只看入口，不跑包内测试（那是 导出冒烟.py 对「macOS 验收」调试包做的）。
 按键冒烟（--keys）：发行模板的 GDScript 对 null 调方法不查空、直接 SIGSEGV（11-06 标题按空格/J 闪退），调试版只报错，
 所以只有发行包里真按键才看得到。游戏带 `-- --smoke-keys=<序列>` 时自己注入按键（core/key_smoke.gd，经 Input.parse_input_event），
 按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
 发行构建直达西游标题、没有「返回版本选择」（BI），那一项只有调试构建有（tests/xiyou_input_handled 覆盖）。
-每次运行用新建的临时 HOME，跑完删掉；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
+每次运行用新建的临时 HOME，跑完删掉；临时目录 xiyou_release_entry_* 通过就整个删、失败只留 .log、
+被 SIGTERM 结束也收尾，下次运行清掉上次被杀残留的（cc 平台 EC 2026-11-06，以前每次留 0.5～1 GB）；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
 """
 import argparse
 import os
@@ -85,11 +91,20 @@ def windows(work: Path, check, keys=False, win_dir=None) -> int:
     n = struct.unpack('<H', ico[4:6])[0]
     size, off = struct.unpack('<II', ico[6 + 16 * (n - 1) + 8:6 + 16 * (n - 1) + 16])
     check('exe_icon_256', ico[off:off + size] in blob)
+    want_v = desktop_version('windows')
+    if want_v:
+        check('exe_version', want_v.encode('utf-16-le') in blob, f'资源里{"有" if want_v.encode("utf-16-le") in blob else "没有"} {want_v}')
     runner = release_runner(work, pck)
     if runner is None:
         return 2
-    run_entry(work, runner, check)
+    run_entry(work, runner, check, 'windows')
     return run_keys(work, runner, check) if keys else 0
+
+
+def desktop_version(platform: str):
+    sys.path.insert(0, str(HERE))
+    import 导出冒烟 as smoke
+    return smoke.expected_desktop_version(platform)
 
 
 def release_runner(work: Path, pck: Path):
@@ -187,7 +202,7 @@ def android(work: Path, check, keys=False, apk=None) -> int:
     runner = release_runner(work, pck)
     if runner is None:
         return 2
-    run_entry(work, runner, check)
+    run_entry(work, runner, check, 'android')
     if keys:
         run_keys(work, runner, check)
     # 模拟器：有就装上、启动、看进程活着；没有（或只有真机）就只写明
@@ -213,19 +228,86 @@ def android(work: Path, check, keys=False, apk=None) -> int:
     return 0
 
 
-def run_entry(work: Path, exe: Path, check) -> int:
+BASELINE = HERE / '发行入口启动基线.json'
+SLOW_FACTOR = 2.0   # 比基线慢一倍以上（且多 2 秒以上）算变慢
+SLOW_MARGIN = 2.0
+
+
+def timed_run(cmd, env, cwd, timeout=300):
+    """跑一次，返回 (输出, 退出码, 看到 ENTRY_SCENE 的秒数或 None)。秒数从起进程算到游戏打印 ENTRY_SCENE（读完资源、切进标题）。"""
+    t0 = time.monotonic()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', env=env, cwd=cwd)
+    import threading
+    killer = threading.Timer(timeout, p.kill)  # 不出声地卡住时也能到点结束
+    killer.start()
+    lines, seen = [], None
+    try:
+        for line in p.stdout:
+            lines.append(line)
+            if seen is None and line.startswith('ENTRY_SCENE='):
+                seen = time.monotonic() - t0
+        rc = p.wait(timeout=30)
+    finally:
+        killer.cancel()
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+    return ''.join(lines), rc, seen
+
+
+def baseline_key(platform: str) -> str:
+    return platform + ('_' + RUN_PREFIX[1].lstrip('-') if RUN_PREFIX else '')
+
+
+def load_baseline() -> dict:
+    import json
+    try:
+        return json.loads(BASELINE.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return {}
+
+
+def compare_baseline(key: str, secs, base: dict) -> str:
+    """启动到标题的用时跟基线比：返回一句说明；明显变慢以「变慢」开头（只提示，不算失败——机器忙时会抖）。"""
+    if secs is None:
+        return '没量到启动用时'
+    b = base.get(key, {}).get('seconds')
+    if not b:
+        return f'启动到标题 {secs:.1f} 秒（{key} 还没有基线，--update-baseline 记一份）'
+    if secs > b * SLOW_FACTOR and secs - b > SLOW_MARGIN:
+        return f'变慢：启动到标题 {secs:.1f} 秒，基线 {b:.1f} 秒（{key}）'
+    return f'启动到标题 {secs:.1f} 秒，基线 {b:.1f} 秒（{key}）'
+
+
+def run_entry(work: Path, exe: Path, check, platform='macos') -> int:
     home = Path(tempfile.mkdtemp(prefix='xiyou_export_home_'))
     try:
-        p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'],
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
-                           timeout=300, env=dict(os.environ, HOME=str(home)), cwd=str(home))
+        out, rc, secs = timed_run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'],
+                                  env=dict(os.environ, HOME=str(home)), cwd=str(home))
     finally:
         shutil.rmtree(home, ignore_errors=True)
-    (work / '运行.log').write_text(p.stdout, encoding='utf-8')
-    entries = [l.split('=', 1)[1].strip() for l in p.stdout.splitlines() if l.startswith('ENTRY_SCENE=')]
+    (work / '运行.log').write_text(out, encoding='utf-8')
+    entries = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('ENTRY_SCENE=')]
     check('release_enters_title', entries == [TITLE], ','.join(entries) or '没有 ENTRY_SCENE')
-    check('release_exit_clean', p.returncode == 0, f'退出码 {p.returncode}')
+    check('release_exit_clean', rc == 0, f'退出码 {rc}')
+    key = baseline_key(platform)
+    note = compare_baseline(key, secs, load_baseline())
+    print(('WARN ' if note.startswith('变慢') else 'INFO ') + 'startup_time（' + note + '）')
+    STARTUP[key] = secs
     return 0
+
+
+STARTUP: dict = {}
+
+
+def update_baseline(results: dict) -> None:
+    import json
+    base = load_baseline()
+    for k, v in results.items():
+        if v is not None:
+            base[k] = {'seconds': round(v, 2), 'date': time.strftime('%Y-%m-%d'), 'host': os.uname().machine}
+    BASELINE.write_text(json.dumps(base, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    print(f'基线已更新：{BASELINE.name} ' + '、'.join(f'{k}={v:.1f}s' for k, v in results.items() if v is not None))
 
 
 def crash_reports(stem: str) -> set:
@@ -271,7 +353,64 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     return 0
 
 
+WORK_PREFIX = 'xiyou_release_entry_'
+PID_FILE = '.pid'
+
+
+def pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def sweep_stale(tmp: Path = None) -> list:
+    """删掉上次被杀（SIGKILL、断电）没走到收尾的 xiyou_release_entry_* 目录：.pid 里的进程已不在、或没有 .pid 且超过 6 小时。"""
+    tmp = Path(tmp or tempfile.gettempdir())
+    removed = []
+    for d in tmp.glob(WORK_PREFIX + '*'):
+        if not d.is_dir():
+            continue
+        pf = d / PID_FILE
+        try:
+            stale = not pid_alive(int(pf.read_text().strip())) if pf.is_file() else time.time() - d.stat().st_mtime > 6 * 3600
+        except (ValueError, OSError):
+            stale = True
+        if stale:
+            shutil.rmtree(d, ignore_errors=True)
+            removed.append(d.name)
+    return removed
+
+
+def cleanup(work: Path, ok: bool, keep: bool) -> str:
+    """跑完收尾：--keep 全留；通过就整个目录删掉；失败只留 *.log（几百 KB）方便查，大件全删。返回给用户看的一句话。"""
+    if keep:
+        return f'日志和产物留在 {work}（--keep，用完请自己删）'
+    if ok:
+        shutil.rmtree(work, ignore_errors=True)
+        return '临时目录已删'
+    for t in work.iterdir():
+        if t.is_file() and (t.suffix == '.log' or t.name == PID_FILE):  # 留 .pid：下次运行认得出是死进程的残留、清掉
+            continue
+        if t.is_dir() and not t.is_symlink():
+            shutil.rmtree(t, ignore_errors=True)
+        else:
+            t.unlink(missing_ok=True)
+    return f'失败日志留在 {work}（只有 .log，看完可删；下次运行本脚本时自动清掉）'
+
+
+def _raise_on_signal(signum, _frame):
+    raise SystemExit(128 + signum)
+
+
 def main() -> int:
+    import signal
+    # 被 SIGTERM／SIGHUP 结束（超时、会话关闭）时也走 finally 收尾，不留 0.5～1 GB 的解包目录
+    for s in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(s, _raise_on_signal)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--zip')
     ap.add_argument('--arch', choices=['x86_64', 'arm64'], help='用 arch -<架构> 跑 macOS 包的某个切片（x86_64 走 Rosetta）')
@@ -282,6 +421,7 @@ def main() -> int:
     ap.add_argument('--win-dir', help='--platform windows：不导出，直接查这个目录里现成的 再刷一把_天启篇.exe／.pck')
     ap.add_argument('--keys', action='store_true', help='另外跑按键冒烟')
     ap.add_argument('--keys-only', action='store_true', help='只跑按键冒烟（配合 --zip 验证现成的包）')
+    ap.add_argument('--update-baseline', action='store_true', help='全部通过时把这次的启动用时记成基线（发行入口启动基线.json）')
     a = ap.parse_args()
     a.keys = a.keys or a.keys_only
     if a.arch:
@@ -289,21 +429,26 @@ def main() -> int:
             print('--arch 只配 macOS 包')
             return 2
         RUN_PREFIX[:] = ['arch', '-' + a.arch]
-    work = Path(tempfile.mkdtemp(prefix='xiyou_release_entry_'))
+    gone = sweep_stale()
+    if gone:
+        print(f'清掉上次残留的临时目录 {len(gone)} 个：' + '、'.join(gone))
+    work = Path(tempfile.mkdtemp(prefix=WORK_PREFIX))
+    (work / PID_FILE).write_text(str(os.getpid()))
     checks = []
+    code = 2
 
     def check(name, ok, note=''):
         checks.append((name, ok))
         print(('PASS ' if ok else 'FAIL ') + name + (f'（{note}）' if note else ''))
 
-    try:
+    def run() -> int:
         if a.platform in ('windows', 'android'):
             code = windows(work, check, a.keys, a.win_dir) if a.platform == 'windows' else \
                 android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None)
             if code:
                 return code
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         if a.app:
             if not a.keys_only:
@@ -315,7 +460,7 @@ def main() -> int:
                 return 2
             run_keys(work, exes[0], check)
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         if a.zip:
             pkg = Path(a.zip).resolve()
@@ -346,11 +491,15 @@ def main() -> int:
         if a.keys_only:
             run_keys(work, exes[0], check)
             ok = all(c[1] for c in checks)
-            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+            print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
             return 0 if ok else 1
         check('app_bundle_name', app.stem == APP_NAME, app.name)
         info = plistlib.loads((app / 'Contents' / 'Info.plist').read_bytes())
         check('bundle_name', info.get('CFBundleName') == APP_NAME, str(info.get('CFBundleName')))
+        want_v = desktop_version('macos')
+        if want_v:
+            got = (info.get('CFBundleShortVersionString'), info.get('CFBundleVersion'))
+            check('bundle_version', got == want_v, f'{got[0]}／{got[1]}（应是 {want_v[0]}／{want_v[1]}）')
         icon = app / 'Contents' / 'Resources' / (str(info.get('CFBundleIconFile', 'icon')).removesuffix('.icns') + '.icns')
         want = PROJECT / 'content' / 'app_icon' / 'icon.icns'
         check('icon_from_app_icon', icon.is_file() and want.is_file() and icon.read_bytes() == want.read_bytes(), icon.name)
@@ -358,18 +507,20 @@ def main() -> int:
         if a.keys:
             run_keys(work, exes[0], check)
         ok = all(c[1] for c in checks)
-        print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）；日志在 {work}')
+        print(f'结论：{"通过" if ok else "有失败"}（{sum(c[1] for c in checks)}/{len(checks)}）')
         if a.keep:
             print(f'留下的包：{app}')
         return 0 if ok else 1
+    try:
+        code = run()
+        if a.update_baseline:
+            if code == 0 and STARTUP:
+                update_baseline(STARTUP)
+            else:
+                print('没更新基线：' + ('有失败' if code else '这次没跑入口'))
+        return code
     finally:
-        if not a.keep:
-            for name in ['app', 'release.zip', 'win', 'tpl', 'android', 'run', 'empty_project']:
-                t = work / name
-                if t.is_dir():
-                    shutil.rmtree(t, ignore_errors=True)
-                elif t.exists():
-                    t.unlink()
+        print(cleanup(work, code == 0, a.keep))
 
 
 if __name__ == '__main__':
