@@ -443,6 +443,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
 	if XLiuying.blocks_state(self, id):
 		return  # 流萤 addState 包装：负面免疫
+	if XZhenhuo.blocks_state(self, id):
+		return  # 至尊宝真火印记 addState 包装：角色不挂旧追击状态 109
 	var alien_rev := XAlienBattle.revision(self, id)
 	_adding_state = true
 	_add_state(id, random)
