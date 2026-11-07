@@ -80,7 +80,7 @@ func _victory(c: Dictionary) -> void:
 		var logic := _logic(s, float(setup.get("random", 0.5)))
 		XZhenqi.battle = {}
 		if b is Dictionary:
-			XZhenqi.battle = {"trial": b.get("trial", {}), "scaled": bool(b.get("scaled", false)), "guardianFloor": int(b.get("guardianFloor", 0))}
+			XZhenqi.battle = {"trial": b.get("trial", {}), "scaled": {"ref": {"floor": 8}} if bool(b.get("scaled", false)) else {}, "guardianFloor": int(b.get("guardianFloor", 0))}
 		XStarburstBooks.IMMORTAL_CLEAR_TEST = 1 if immortal else 0
 		XStarburstBooks.on_victory(logic)
 		XStarburstBooks.IMMORTAL_CLEAR_TEST = -1

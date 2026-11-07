@@ -56,7 +56,8 @@ static func on_victory(logic) -> void:
 	if s == null:
 		return
 	var b: Dictionary = XZhenqi.battle
-	if not b.is_empty() and (b.get("trial", {}) as Dictionary).is_empty() and not bool(b.get("scaled", false)) and GIFTS.has(int(b.get("guardianFloor", 0))):
+	# 真气 battle 里 trial、scaled 没有时是空字典（原版 null）
+	if not b.is_empty() and (b.get("trial", {}) as Dictionary).is_empty() and (b.get("scaled", {}) as Dictionary).is_empty() and GIFTS.has(int(b.get("guardianFloor", 0))):
 		var f := int(b.guardianFloor)
 		_gift(s, f, "第%d层守层者" % f)
 	var immortal: bool = XYunshangOrders.immortal_clear(s, int(logic.troop_id)) if IMMORTAL_CLEAR_TEST < 0 else IMMORTAL_CLEAR_TEST == 1
