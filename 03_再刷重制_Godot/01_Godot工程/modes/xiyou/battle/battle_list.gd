@@ -30,7 +30,7 @@ var active := true
 var cancel_enabled := true
 
 
-## O-待定·空列表一行高（Kyo 11-06 实机：「魔法框没有魔法的时候框只显示一半」）：原版 Olivia maxListHeight＝min(项数, 上限)，
+## O-218·空列表一行高（Kyo 11-06 实机：「魔法框没有魔法的时候框只显示一半」）：原版 Olivia maxListHeight＝min(项数, 上限)，
 ## 没有技能时窗口高只剩上下内边距，只露出半截框。true＝空列表也按一行高画（空白一行）；false＝照原版。
 static var EMPTY_ONE_ROW := true
 
