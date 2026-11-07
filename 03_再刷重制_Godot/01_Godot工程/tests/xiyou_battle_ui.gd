@@ -74,8 +74,14 @@ func _battle_book(b: XBattleScene) -> void:
 	_check("battle_book_cancel_back", b.book_page == null and b.cmd_win != null and b.cmd_win.active and b.list_win == null)
 
 
-## 真实鼠标事件（按下＋松开），坐标是视口坐标
+## 真实鼠标事件（按下＋松开），坐标是视口坐标。headless 下根视口只有 64×64，点在外面 GUI 收不到（也到不了
+## _unhandled_input）；点的时候把根视口临时设成游戏窗口的 1280×720（全屏的战斗场景跟着铺满，同真机），点完还原
 func _mouse(pos: Vector2, button: MouseButton) -> void:
+	var root := get_tree().root
+	var old := root.size
+	if old.x < 1280 or old.y < 720:
+		root.size = Vector2i(1280, 720)
+		await _frames(1)
 	for down in [true, false]:
 		if not down and button in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP]:
 			break
@@ -86,6 +92,9 @@ func _mouse(pos: Vector2, button: MouseButton) -> void:
 		e.global_position = pos
 		Input.parse_input_event(e)
 		await _frames(2)
+	if root.size != old:
+		root.size = old
+		await _frames(1)
 
 
 func _press(action: String) -> void:

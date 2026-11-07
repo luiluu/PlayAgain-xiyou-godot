@@ -567,7 +567,7 @@ func _physics_process(_delta: float) -> void:
 		XBattleTransition.note({"phase": "in", "fade": _fade.opacity})
 	_update_state_animations()
 	if seq_player == null:
-		flush_popups()       # 行动序列演出中由 XSequencePlayer 每帧开头出
+		flush_popups()       # 行动序列演出中由 XSequencePlayer 每帧在结算之后出
 		update_gauges()      # 行动序列演出中由 XSequencePlayer 每帧在精灵之后更新
 	if _camera.is_empty() and seq_player == null:
 		camera.update()
@@ -1306,6 +1306,12 @@ func _gui_input(event: InputEvent) -> void:
 		if h != null and h != _hover:
 			_select_target(h)
 		return
+	if event is InputEventMouseButton and message != null and message.is_visible_in_tree() and message.is_busy():
+		# 战斗里的 101 消息：左键翻页／关闭、右键、滚轮交给消息窗（它在 _unhandled_input 里收；本场景 STOP 会先收下，
+		# 真实分发时到不了消息窗——battlefix2 用真实事件测出来的）
+		message._unhandled_input(event)
+		accept_event()
+		return
 	if event is InputEventMouseButton and event.pressed:
 		# 不在选目标时，左键／滚轮交给开着的技能（物品）列表或指令窗（Window_Selectable.processTouch／processWheel）：
 		# 本场景铺满全屏、MOUSE_FILTER_STOP，点击在这里就被收下，到不了列表的 _unhandled_input（Kyo 11-06 实机：鼠标选不了战技）
@@ -1718,7 +1724,11 @@ func _hit_visual(l: Dictionary) -> bool:
 			_popup(t, float(v), false)
 		# 弹的是 deselect 之前的结果（复活块清了结果槽，这一击的数字照弹），复活块自己的弹字跟在后面
 		var shown: Dictionary = l.get("shown", {"hp": l.hp, "mp": l.mp, "tp": l.get("tp", 0.0)})
-		if float(shown.hp) != 0.0 or l.has("popup_hp"):
+		# 本次结果的弹字行（popupQueue 中段，前后是行动中途拷下的弹字）
+		var q: Array = l.get("popupQueue", [])
+		var mid: Array = q.slice(split, q.size() - (started.size() - split))
+		# hpAffected 时伤害为 0 也弹「0」（LGP startDamagePopup 按 hpAffected 拷 HP 行；正式版读数 s10250）
+		if float(shown.hp) != 0.0 or l.has("popup_hp") or mid.any(func(row): return bool(row.get("hpAffected", false))):
 			_popup(t, float(l.get("popup_hp", shown.hp)), l.critical)
 			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
 			if float(shown.hp) > 0.0:
@@ -1727,6 +1737,10 @@ func _hit_visual(l: Dictionary) -> bool:
 			_popup(t, float(shown.mp), false, "", true)
 		if float(shown.tp) != 0.0:
 			_popup(t, float(shown.tp), false, "", false, true)
+		# 本次结果的状态行：不画，但占一帧队列
+		for row in mid:
+			if _is_status_row(row):
+				_popup(t, 0, false, "state")
 		_show_result_popups(t, started.slice(split))
 		if t is XEnemy:
 			_show_enemy_gauge(t)
@@ -1746,7 +1760,7 @@ func _hit_visual(l: Dictionary) -> bool:
 	return false
 
 
-## startDamagePopup 拷下的结果逐行弹（血、蓝、TP，状态行不弹数字）
+## startDamagePopup 拷下的结果逐行弹（血、蓝、TP；状态行建一个不画的占位，见 XDamagePopup.setup_state）
 func _show_result_popups(t: XBattler, rows: Array) -> void:
 	for p in rows:
 		if p.hpAffected:
@@ -1755,6 +1769,21 @@ func _show_result_popups(t: XBattler, rows: Array) -> void:
 			_popup(t, float(p.mpDamage), false, "", true)
 		if float(p.tpDamage) != 0.0:
 			_popup(t, float(p.tpDamage), false, "", false, true)
+		if _is_status_row(p):
+			_popup(t, 0, false, "state")
+
+
+## 弹数在原版 children 那次更新里被摘掉：紧跟其后加入的下一个弹数这一帧少更新一次（见 XDamagePopup.skip）
+func _popup_removed(p: XDamagePopup) -> void:
+	for i in range(p.get_index() + 1, fx.get_child_count()):
+		var q := fx.get_child(i)
+		if q is XDamagePopup and not q.is_queued_for_deletion():
+			q.skip = 1
+			return
+
+
+static func _is_status_row(p: Dictionary) -> bool:
+	return not (p.get("addedStates", []) as Array).is_empty() or not (p.get("removedStates", []) as Array).is_empty()
 
 
 ## MV Game_Battler.performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
@@ -1926,27 +1955,45 @@ func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := fals
 	if not sprites.has(b):
 		return
 	var args := [value, critical, text, is_mp, is_tp]
-	var q: Array = _popup_queue.get(b, [])
-	if POPUP_QUEUE and (not q.is_empty() or _popup_frame.get(b, -1) == Engine.get_physics_frames()):
-		q.append(args)
-		_popup_queue[b] = q
+	if not POPUP_QUEUE:
+		_spawn_popup(b, args)
 		return
-	_spawn_popup(b, args)
+	var q: Array = _popup_queue.get(b, [])
+	q.append(args)
+	_popup_queue[b] = q
+	if seq_player == null:
+		flush_popups()  # 不在行动序列里（回合末再生、敌群事件等）：当场出，同一战斗者本帧已出过的排到下一帧
 
 
-## 每物理帧（行动序列里在本帧结算之前）每个战斗者出一个排队的弹数
+## 每物理帧在本帧结算之后（行动序列里由 XSequencePlayer 在 _step 后调；其它时候在 _physics_process）每个战斗者出一个
+## 排队的弹数。先后照原版 Spriteset 里战斗者精灵的更新顺序（YEP 按画面 y 排，同 y 敌人在前），新弹数加进 Spriteset
+## 的先后决定了谁被「摘掉后跳一次更新」影响（XDamagePopup.skip）。
 func flush_popups() -> void:
 	var now := Engine.get_physics_frames()
+	var due := []
 	for b in _popup_queue.keys():
 		var q: Array = _popup_queue[b]
 		if q.is_empty() or not sprites.has(b):
 			_popup_queue.erase(b)
-			continue
-		if _popup_frame.get(b, -1) == now:
-			continue
+		elif _popup_frame.get(b, -1) != now:
+			due.append(b)
+	due.sort_custom(_sprite_order)
+	for b in due:
+		var q: Array = _popup_queue[b]
 		_spawn_popup(b, q.pop_front())
 		if q.is_empty():
 			_popup_queue.erase(b)
+
+
+func _sprite_order(a: XBattler, b: XBattler) -> bool:
+	var ya: float = sprites[a].position.y
+	var yb: float = sprites[b].position.y
+	if ya != yb:
+		return ya < yb
+	if (a is XEnemy) != (b is XEnemy):
+		return a is XEnemy
+	var la: Array = logic.enemies if a is XEnemy else logic.actors
+	return la.find(a) < la.find(b)
 
 
 ## 把排队的弹数全部出完（测试与战斗收尾用）
@@ -1975,8 +2022,14 @@ func _spawn_popup(b: XBattler, args: Array) -> void:
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	# 原版弹出数加在 Spriteset_Battle 里（LGP_BetterDamagePopup 第 665 行），在窗口层之下：在敌人血条（z 5）之上、行动顺序条／消息窗（z 8）与帮助卡（z 10）之下
 	p.z_index = POPUP_Z
-	p.setup(value, is_mp, critical, text == "miss", b is XActor, live.filter(func(x): return x.is_heal()).size(), is_tp)
+	if text == "state":
+		p.setup_state()
+	else:
+		p.setup(value, is_mp, critical, text == "miss", b is XActor, live.filter(func(x): return x.is_heal()).size(), is_tp)
 	fx.add_child(p)
+	p.on_removed = _popup_removed
+	# 原版 setupDamagePopup 建出的 Sprite_Damage 当帧就随父层更新一次（正式版读数首帧 [89, −0.3, 0.7]），之后每帧两次
+	p._update()
 	live.append(p)
 	_popups[b] = live
 
@@ -1990,7 +2043,9 @@ func _custom_popup(b: XBattler, text: String, format: int) -> void:
 	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	p.z_index = POPUP_Z
 	p.setup_custom(text, format)
+	p.on_removed = _popup_removed
 	fx.add_child(p)
+	p._update()  # 同 _spawn_popup：建出当帧更新一次
 
 
 func _say(text: String, seconds: float) -> void:

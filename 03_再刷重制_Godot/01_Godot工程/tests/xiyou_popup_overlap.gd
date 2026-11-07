@@ -41,14 +41,14 @@ func _run() -> void:
 	await _shot("popup_baseline")
 	b._popup(b.logic.enemies[0], 9876.0, false)
 	var p: XDamagePopup = b._popups[b.logic.enemies[0]][-1]
-	# 保留真实生成位置与真实5帧轨迹，只停此弹数的物理更新以获得同帧控制图。
+	# 保留真实生成位置与真实5帧轨迹（建出当帧已更新一次，同原版），只停此弹数的物理更新以获得同帧控制图。
 	p.set_physics_process(false)
 	for i in range(10):
 		p._update()
 	p.queue_redraw()
 	var width := p._font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, p.FONT_SIZE).x + p.BUFFER
 	var pr := Rect2(p.global_position + Vector2(p._x - width * 0.5, p._y - p.FONT_SIZE * p.anchor_y()), Vector2(width, p.FONT_SIZE))
-	_check("popup_alive_and_overlaps", p._duration == 80 and pr.intersects(mr), [p._duration, pr.position, pr.size])
+	_check("popup_alive_and_overlaps", p._duration == 79 and pr.intersects(mr), [p._duration, pr.position, pr.size])
 	_check("production_popup_layer", p.z_index == XBattleScene.POPUP_Z and p.z_index > 5 and p.z_index < b.message.z_index, [p.z_index, b.message.z_index])
 	await _shot("popup_overlap")
 	var red_covered := _red_pixels(pr.intersection(mr))

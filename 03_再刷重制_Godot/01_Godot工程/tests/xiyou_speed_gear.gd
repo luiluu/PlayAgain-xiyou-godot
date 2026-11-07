@@ -74,14 +74,18 @@ func _run() -> void:
 	check("entry.rate", Engine.physics_ticks_per_second == 96 and is_equal_approx(Engine.time_scale, 1.6)
 		and is_equal_approx(AudioServer.playback_speed_scale, 1.06), [Engine.physics_ticks_per_second, Engine.time_scale, AudioServer.playback_speed_scale])
 	entry.queue_free()
-	# 真实秒数：1 秒里的物理帧数；60 帧用多少毫秒
-	await get_tree().physics_frame
+	# 真实秒数：每秒物理帧数。先空转 0.5 秒（实例化入口时的卡顿会让引擎追帧，第一次跑量到过 107.7），再量 2 秒；
+	# 范围按原版实测 updateScene 96.2～97.6 次／秒（speed_gear_ref.cjs 三次）取 96 ± 5%
+	var w0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - w0 < 500:
+		await get_tree().process_frame
 	var t0 := Time.get_ticks_msec()
 	var f0 := Engine.get_physics_frames()
-	while Time.get_ticks_msec() - t0 < 1000:
+	while Time.get_ticks_msec() - t0 < 2000:
 		await get_tree().process_frame
 	var per_sec := (Engine.get_physics_frames() - f0) * 1000.0 / (Time.get_ticks_msec() - t0)
-	check("real.ticks_per_second", per_sec > 86.0 and per_sec < 106.0, per_sec)
+	print("SPEED_GEAR ticks_per_second=%.1f" % per_sec)
+	check("real.ticks_per_second", per_sec >= 96.0 * 0.95 and per_sec <= 96.0 * 1.05, per_sec)
 	t0 = Time.get_ticks_msec()
 	for i in 60:
 		await get_tree().physics_frame

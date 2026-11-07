@@ -91,6 +91,10 @@ static func _own(rows: Array) -> Array:
 	for f in range(rows.size()):
 		var keep := []
 		for p in rows[f]:
+			# 不画的状态占位（x 恒为 0）走到最后 2 次时不比：正式版在 Spriteset children 里被「前一个摘掉后跳一次」的对象
+			# 还取决于同帧加进 Spriteset 的别的精灵，这里不逐个仿；它本身看不见，也不影响数字的位置（s2800 e0 第 165 帧）
+			if float(p[1]) == 0.0 and int(p[0]) <= 2:
+				continue
 			if int(p[0]) >= 88 or born.has([f - 1, int(p[0]) + 2, snappedf(float(p[1]), 0.1)]):
 				keep.append([int(p[0]), snappedf(float(p[1]), 0.1), snappedf(float(p[2]), 0.1)])
 		for p in keep:
@@ -128,6 +132,10 @@ func _trace(scene: XBattleScene, key: String, t: Dictionary) -> void:
 				for p in scene._popups.get(b, []):
 					if is_instance_valid(p) and not p.is_queued_for_deletion():
 						row.append([p._duration, p._x, p._y])
+				# 正式版读数取的是 Sprite_Battler._damages：updateDamagePopup 每帧把走完（_duration ≤ 0）的第一个 shift 出去，
+				# 精灵本身仍留在 Spriteset 里到 remove（不透明度 0，看不见）。这里照读数的口径去掉
+				if not row.is_empty() and int(row[0][0]) <= 0:
+					row.pop_front()
 				got[k].append(row)
 	var i := logs.find(logs.filter(func(l): return l.type == "seq_phase")[0])
 	var j := logs.find(logs.filter(func(l): return l.type == "seq_end")[0])

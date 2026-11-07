@@ -59,9 +59,9 @@ func play() -> void:
 	while not done:
 		scene.camera.update()
 		var running := _live_anims()
-		scene.flush_popups()
 		if not _busy():
 			_step()
+		scene.flush_popups()
 		for sp in scene.sprites.values():
 			(sp as XBattlerSprite).seq_update()
 		_tick_anims(running)

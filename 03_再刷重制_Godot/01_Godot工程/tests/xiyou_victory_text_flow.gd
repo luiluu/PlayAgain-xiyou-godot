@@ -71,12 +71,14 @@ func _run() -> void:
 	b.setup(2, true, false, XDB.map(5))
 	var ended := [-1]
 	b.finished.connect(func(code): ended[0] = code)
-	add_child(b)
-	await frames(2)
+	# 自动战斗要在主循环第一次向角色要指令之前开（_command 开头看 logic.auto；开晚了主循环停在指令窗等输入）
+	b.logic.auto = true
 	b.logic._garou_boss = true  # 神之触媒只在 Boss 战给（G._bossBattle）；夹具敌群没有 Boss 血条，直接记成 Boss 战
 	for e in b.logic.enemies:
 		e.hp = 1.0
-	b.logic.auto = true
+	add_child(b)
+	await frames(2)
+	b.logic._garou_boss = true
 	var screen: XVictoryScreen = null
 	for i in 3000:
 		screen = _victory_screen(b)
@@ -85,7 +87,8 @@ func _run() -> void:
 		await frames(1)
 	check("victory_screen.shown", screen != null, ended[0])
 	if screen == null:
-		return finish(b)
+		await finish(b)
+		return
 	screen.automatic = false  # 自动战斗打完的结算页会自己关；这里要手按，关掉自动
 	b.logic.auto = false
 	await frames(30)
@@ -101,7 +104,7 @@ func _run() -> void:
 		await press("ui_accept")
 		await frames(5)
 	check("battle.finished_to_map", ended[0] == 0 and not b.message.is_busy(), [ended[0], b.message.is_busy()])
-	finish(b)
+	await finish(b)
 
 
 func finish(b: Node) -> void:
