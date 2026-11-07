@@ -11,7 +11,9 @@ extends Node2D
 ##   淡出：对话忙、战斗结束（胜利／逃跑／失败）、Boss 死亡时不透明度每帧 −5，否则 +5；首帧直接满。
 ## - 数字：≥1 万加单位（万／亿／兆／京），＜100 取 2 位小数、＜1000 取 1 位、其余取整，去掉末尾 0；字符间距 20（图格 30 宽，叠着画，同原版）。
 ## - 状态图标：原版被 Codex_BossStatusSummary 藏起（换成下方状态面板），所以这里不画。
-## - 和原版的差别：敌人变身（transform）不会把血条切到新编号；追加 Boss 现身不会补建血条（原版同样不会）。
+## - 原版缺陷，修好（O-待定，rules-bugfix1 照搬清单第 2 条）：敌人变身（transform）后血条的名字、头像仍是旧编号的；
+##   开战时没有 Boss、之后才现身（追加）或变身成 Boss 的，整场不建条。现在：条跟着的敌人编号变了就换名字和头像；
+##   还没建条时每帧按开战时的规则再挑一次（敌群里最后一个是 Boss 且未隐藏的），挑到就建。回退开关 REBUILD = false：照原版。
 
 ## 冻结后跟进 v0.37（installNativeZhenqiRuntime「首领血条」Z.bossHpEnemy）：除插件名单外，心魔／天劫瓶颈之战（敌群 901／823）、
 ## 心魔训练敌群（770）里的敌人，和神兵试炼的神兵之仙（Z.WEAPON_BOSS 或备注 <CodexZhenqi: weapon N>）也显示首领血条。
@@ -19,6 +21,7 @@ extends Node2D
 ## 它们的头像为空（face_name 返回 ""）、小血条不出现（原版 hpGaugeVisible 对它们返回 false）。
 ## 默认 false＝v0.28 的范围（只认插件名单）；换源（v0.62.12）后翻成 true（O-203，回退＝改回 false）。
 static var RANGE_V037 := false
+static var REBUILD := true
 
 const LIST_LENGTH := 569
 const SHAKE_FRAMES := 80
@@ -52,6 +55,8 @@ var _name_canvas: XMVCanvas
 var _name_text := ""
 var _face_tex: Texture2D = null
 var _base_y := 0.0
+var _enemies: Array = []   # 开战时的敌群（同一个数组，现身／变身后再挑）
+var _shown_id := 0         # 名字、头像对应的敌人编号
 
 
 static func params() -> Dictionary:
@@ -176,12 +181,18 @@ func pick(enemies: Array):
 ## 开战建条：没有 Boss 就什么都不画
 func setup(enemies: Array) -> void:
 	_rng.randomize()
+	_enemies = enemies
 	for e in enemies:
 		_known[e] = _read(e).hp
 	battler = pick(enemies)
 	if battler == null:
 		visible = false
 		return
+	_build()
+
+
+func _build() -> void:
+	visible = true
 	_temp_target = battler
 	_temp_hp = _known[battler]
 	position = layout_pos()
@@ -193,6 +204,7 @@ func setup(enemies: Array) -> void:
 	_name_canvas.painter = _paint_name
 	add_child(_name_canvas)
 	_name_text = _enemy_name(battler)
+	_shown_id = int(battler.enemy_id)
 	hp_red = _read(battler).mhp
 	hp_number = 0.0
 	_refresh_number()
@@ -238,7 +250,17 @@ func _physics_process(_delta: float) -> void:
 ## Sprite_BossHP.update 一帧
 func step() -> void:
 	if battler == null:
-		return
+		if not REBUILD or ended_flag:
+			return
+		battler = pick(_enemies)
+		if battler == null:
+			return
+		for e in _enemies:
+			if not _known.has(e):
+				_known[e] = _read(e).hp
+		_build()
+	if REBUILD and int(battler.enemy_id) != _shown_id:
+		_refresh_identity()
 	var speed := _num("流动速度", 4.0)
 	var flowing := str(params().get("生命条是否流动", "true")) == "true"
 	var period := 1392.0 / 3.0 * 2.0 if flowing else 0.0
@@ -318,9 +340,17 @@ func _refresh_all() -> void:
 	hp_number = _temp_hp
 	_refresh_number()
 	_name_text = _enemy_name(battler)
+	_shown_id = int(battler.enemy_id)
 	var id := int(battler.enemy_id)
 	if is_listed(id):
 		_face_tex = _tex("bosshp", face_name(id))
+
+
+## 条跟着的敌人变身了：名字、头像换成新编号的（REBUILD）
+func _refresh_identity() -> void:
+	_name_text = _enemy_name(battler)
+	_shown_id = int(battler.enemy_id)
+	_face_tex = _tex("bosshp", face_name(_shown_id))
 
 
 ## 数字字符串（单位、小数位规则同原版）

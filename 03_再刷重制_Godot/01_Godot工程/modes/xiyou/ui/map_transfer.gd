@@ -12,7 +12,8 @@ extends Control
 ## - 掉落选择：黄色 2px 框；方向键按本页全部掉落的序号移动（上/左越界到最后一个，下/右不越界），每次移动后 10 帧冷却；
 ##   Q/E 翻页并选回第一个；确定开掉落详情（不传送）；F 传送确认；取消回地图列表（无音效）。
 ## - 掉落详情 (360,160,560,400)：名字、掉落概率 %.3f%%、类型与品质、基础属性、说明、装备固定特性；确定/取消关闭。
-##   原版此时掉落窗口仍处理方向键（详情不变、框在后面移动），照做。
+##   原版此时掉落窗口仍处理方向键与 Q/E（详情不变、框在后面移动），原版缺陷，修好（O-待定，rules-bugfix1 照搬清单第 3 条）：
+##   详情开着时方向键、翻页只归详情（详情不用它们，等于不动）。回退开关 DETAIL_LOCKS_DROPS = false：照原版后面的框跟着动。
 ## - 传送确认 (450,276,380,168)：「是否传送至 名字?」与 确认/取消；确认播 Laser1，关闭本页后由地图从黑场淡入。
 ## 优化：O-012 事件中不开放按钮（map_scene）、O-013 预览掉率不随机神话、O-014 未解锁地图不能传送（XMapTransfer）。
 
@@ -30,6 +31,7 @@ const ENEMY_COL := 230.0             # min(230, floor(1072 × 0.28))
 const DROP_COLS := 3                 # floor((1072 − 230 − 30) / 190) 限 1～3
 const COOLDOWN := 10
 const SELECT_COLOR := Color("ffff00")
+static var DETAIL_LOCKS_DROPS := true
 const PARAM_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 var background: Texture2D
 var mode := "list"                   # list / drops / detail / confirm
@@ -538,6 +540,8 @@ func _page_key(d: int) -> void:
 		"list":
 			_list_page(d)
 		"drops", "detail":
+			if mode == "detail" and DETAIL_LOCKS_DROPS:
+				return
 			if pages.size() > 1:
 				drop_index = 0
 				_flip(d)
@@ -552,6 +556,8 @@ func _arrow(dir: String, first: bool) -> void:
 				_cooldown_until = Engine.get_process_frames() + COOLDOWN + 1
 				_flip(1 if dir == "right" else -1)
 		"drops", "detail":
+			if mode == "detail" and DETAIL_LOCKS_DROPS:
+				return
 			_drop_move(dir)
 		"confirm":
 			if dir in ["up", "down"]:
