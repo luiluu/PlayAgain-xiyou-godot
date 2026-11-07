@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_newsrc_boss_events.gd" id="1"]
+
+[node name="XiyouNewsrcBossEvents" type="Node"]
+script = ExtResource("1")
