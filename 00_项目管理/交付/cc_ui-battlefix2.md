@@ -31,6 +31,13 @@
 4. 复查 m234、help_card 10622／10623：第二次同步（集成分支 cc/newsrc-switch）完成后协调会通知分支。
 5. 交付前：`事件空绿扫描.py --check`、`语法检查.py`、`回退开关覆盖.py`；删临时产物（scratchpad 里的参照服务 8766 记得停）。
 
+## 第一次跑的结果（补齐完成后，`--skip-generated-check`：本树 generated 只有 oracle/smart_ai.json 落后，和这几项无关）
+
+- `xiyou_battle_ui` 158/163：**`mouse_pick_command`、`msg101_click_closed` 挂＝真实事件下 battlefix1 的鼠标确实不通**（审查第 7 项坐实；原测试直接调 `_gui_input` 所以过）。要修：真实分发时点击先到哪个节点（列表若是 Control 自己就收了，或被别的全屏 Control 挡住），以及战斗中消息窗收不到左键。另挂 `race_poison_card_hides／original_stays／original_drifts` 3 项，没查是不是本单引起（先在 cc/ui-battlefix1 上单跑对比）。
+- `xiyou_popup_multi` 6/12：6 个 `*_effect_frames` 全过（各段 ACTION EFFECT 帧与原版一致）；`*_popups` 全挂：①重制弹数建出当帧还没更新（[90,0,0]），原版当帧已更新一次（[89,−0.3,0.7]）——差一次更新；②s10250 重制完全没弹数、s2800 第二个弹数（同一结算的第二个，原版隔 1 帧出）没有。`_own` 过滤把重制下一帧的行当成残留丢了，先修过滤（按出现顺序跟踪），再对差。
+- `xiyou_speed_gear` 3/4：入口设倍率、开关都过；`real.ticks_per_second` 107.7（上限 106 太紧，headless 下首帧追帧），放宽或量 2 秒。
+- `xiyou_victory_text_flow` 0/1：结算页没出来（3000 帧内 `ended` 仍 −1）；另有「async 没 await」——`return finish(b)` 要改成 `await finish(b); return`。先查自动战斗为何没打赢（`logic.auto` 在第一位角色的 `_command` 已经在等输入时才设，主循环卡在指令窗；应在 add_child 前设或直接发指令）。
+
 ## 可优化（流程／工具／效率）
 
 - 平台追赶倍速（`XPlatform.CATCH_UP_SPEED`）可以读 `XSpeedGear.rate()` 相乘，追赶时节奏与正常一致。
