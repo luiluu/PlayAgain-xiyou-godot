@@ -682,6 +682,26 @@ func attack_states_rate(id: int) -> float:
 		v += _num(m) * 0.01
 	return v
 
+## dsPassiveSkill：<passiveSTREG状态编号> 状态无效化（Game_Actor.stateResistSet 追加；编号位数不定，007／0007／00010 都按数值）。
+## 只认技能（含特性 43 加的、状态给的）上的标签，防具 4088 阎罗兜帽备注里的同名标签原版不读（参照 passive_probe streg）。
+## 原版 stateResistSet 跟着角色 refresh 才重算；这里随技能表即时读，时序同其它被动标签与特性 14。
+func traits_set(code: int) -> Array:
+	var out := super.traits_set(code)
+	if code == TRAIT_STATE_RESIST:
+		for id in passive_state_resists():
+			if not out.has(id):
+				out.append(id)
+	return out
+
+func passive_state_resists() -> Array:
+	var out := []
+	for s in skills():
+		for k in s.get("meta", {}):
+			var key := str(k)
+			if key.begins_with("passiveSTREG") and key.substr(12).is_valid_int() and not out.has(int(key.substr(12))):
+				out.append(int(key.substr(12)))
+	return out
+
 static func _num(v) -> float:
 	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
 	var m := r.search(str(v))
@@ -872,7 +892,8 @@ func refresh_passive() -> void:
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
 		"certainHit": {"global": false, "bySkill": {}}, "damageElement": 0,
 		"consumeReduce": {"bySkill": {}, "byType": {"Zj": 0, "Mf": 0}, "all": 0},
-		"recPushStates": [], "pushStates": [], "pushSelfStates": []}
+		"recPushStates": [], "pushStates": [], "pushSelfStates": [],
+		"critPush": {"bySkill": {}, "byType": {"Zj": 0.0, "Mf": 0.0}, "all": 0.0}}
 	var objs := stat_equips() + skills() + states()
 	for o in objs:
 		var note := str(o.get("note", ""))
@@ -920,6 +941,14 @@ func refresh_passive() -> void:
 		for pair in [["RecPushState", "recPushStates"], ["PushState", "pushStates"], ["PushsubState", "pushSelfStates"]]:
 			for m in _scan(note, "<%s(\\d+):\\s*(\\d+)%%?>" % pair[0]):
 				c[pair[1]].append({"stateId": int(m[0]), "probability": float(m[1])})
+		# 暴击率增加 <SkillCriPushZj／Mf／All／技能号: n%>（itemCri 里加到攻击方暴击率上，见 XBattleLogic.item_cri）
+		for m in _scan(note, CRIT_PUSH_FIXED if FIX_CRIT_PUSH else CRIT_PUSH_ORIGINAL):
+			if m[0] in ["Zj", "Mf"]:
+				c.critPush.byType[m[0]] += float(m[1])
+			elif m[0] == "All":
+				c.critPush.all += float(m[1])
+			elif m[0].is_valid_int():
+				c.critPush.bySkill[int(m[0])] = c.critPush.bySkill.get(int(m[0]), 0.0) + float(m[1])
 		# dsPassiveSkill读取meta（重复同名标签取最后一条），parseInt按首个有符号整数解析。
 		for key in meta:
 			var tag := str(key)
@@ -941,6 +970,24 @@ func refresh_passive() -> void:
 	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 	_passive_states_sig = _passive_states_signature()
+
+## O-231·暴击率增加（rules-gaps1）：原版 refreshPassiveCache 用 /<SkillCriPush(\w+):\s*(\d+)>/ 读，数据里 80 条全写成「n%」，
+## 数字后面跟着 % 一条都对不上，critPush 恒 0（passive_probe cripush 实测；按 meta 读、认技能号的那版被注释掉了）。
+## 默认修好：% 可写可不写、带正负号，技能号后缀也认（注释掉那版的意思）；FIX_CRIT_PUSH = false 回到原版（恒 0）。
+static var FIX_CRIT_PUSH := true
+const CRIT_PUSH_ORIGINAL := "<SkillCriPush(\\w+):\\s*(\\d+)>"
+const CRIT_PUSH_FIXED := "<SkillCriPush(\\w+):\\s*([+-]?\\d+)\\s*%?\\s*>"
+
+## dsPassiveSkill itemCri 的 critPush：指定技能＋按技能类型（1 战技 Zj、2 魔法 Mf）＋全局，百分数折成小数
+func crit_push(skill: Dictionary) -> float:
+	var c: Dictionary = passive_cache().get("critPush", {})
+	if c.is_empty():
+		return 0.0
+	var n := float(c.bySkill.get(int(skill.get("id", 0)), 0.0))
+	match int(skill.get("stypeId", 0)):
+		1: n += float(c.byType.Zj)
+		2: n += float(c.byType.Mf)
+	return (n + float(c.all)) / 100.0
 
 ## v0.62 dsPassiveSkill 被动缓存生命周期（v0.51 起）：addState／removeState／eraseState／clearStates 置脏，下一次 refresh 前
 ## 按签名（状态、技能、装备）重建；角色只在开战构建阶段（Scene_Battle.start 里 okadd 置真之前）不重建，随后统一 refresh。

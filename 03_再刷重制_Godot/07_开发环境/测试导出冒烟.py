@@ -103,8 +103,13 @@ class WindowsLayoutTests(unittest.TestCase):
             exe.with_name('再刷重制_验收.console.exe').write_bytes(fake_pe(subsystem=3))
             probs = smoke.windows_layout(exe)[0]
             self.assertTrue(any('图标' in p for p in probs) and any('fileVersion' in p for p in probs), probs)
-            exe.write_bytes(fake_pe(resources=True))
+            # 版本号按开发编号（XDesktopVersion 开着时导出改写成 0.N.0.0；关着才比预设的 0.0.0.0，平台 FB）
+            v = smoke.expected_desktop_version('windows') or '0.0.0.0'
+            exe.write_bytes(fake_pe(resources=True, version=v))
             self.assertEqual(smoke.windows_layout(exe)[0], [])
+            if v != '0.0.0.0':
+                exe.write_bytes(fake_pe(resources=True))  # 预设占位 0.0.0.0 没被改写＝版本号没生效
+                self.assertEqual(len(smoke.windows_layout(exe)[0]), 2)
             exe.write_bytes(fake_pe(resources=True, version='1.2.3.4'))
             self.assertEqual(len(smoke.windows_layout(exe)[0]), 2)
             exe.write_bytes(fake_pe(resources=True))
@@ -203,7 +208,10 @@ class CloudExportTests(unittest.TestCase):
         out = self.ce.rewrite_presets(text, Path('/c/t'), conf['presets'])
         self.assertIn('custom_template/debug="/c/t/windows_debug_x86_64.exe"', out)
         self.assertIn('custom_template/debug="/c/t/android_debug.apk"', out)
-        self.assertEqual(out.count('/c/t/'), 2)
+        # 「Windows 发行」只换 release 模板（给 windows-run 真跑，平台 FB）；它的 debug、Mac／安卓发行都不动
+        self.assertIn('custom_template/release="/c/t/windows_release_x86_64.exe"', out)
+        self.assertIn('custom_template/release="/c/t/android_release.apk"', out)  # android-run 用（平台 FB 二批）
+        self.assertEqual(out.count('/c/t/'), 4)
         self.assertEqual(len(out.splitlines()), len(text.splitlines()))
         self.assertIn('Windows 发行', out)
 

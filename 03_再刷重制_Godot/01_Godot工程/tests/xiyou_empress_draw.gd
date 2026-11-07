@@ -2,6 +2,7 @@ extends Node
 ## 洪荒技能书随机抽奖（物品 1653 的效果＝公共事件 1441「洪荒技能抽奖·增益」）：变量 1481 取 1～10 十档，每档给一本技能书（物品 1642～1652），
 ## 另有档位的附带效果——第 2 档肝帝积分（＋30 万再乘 5）、第 3 档抽奖被动上限（变量 9）＋20、第 4 档开关 2482（解锁洪荒女皇）＋人道碎片 2530 ×2000、
 ## 第 9 档开关 2464。每次都开关 2483、变量 1482＝1。事件列表直接交给地图场景的解释器跑；对照参照见 xiyou_event_compare（公共事件 1441 已入切片 extraCommonEvents）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -141,8 +142,7 @@ const DRAWS := [[1, [1642]], [2, [1643]], [3, [1644]], [4, [1645]], [5, [1646]],
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_empress_draw"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_empress_draw")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	seed(20261023)

@@ -7,6 +7,7 @@ extends Node
 ## - Map197：前台 EV2；部门门 EV8 → 青训部 Map196 (6,2)（其余部门 199～203、主席 Map198 未接）；逃离 EV3 → 传送室 (14,6) 并重置副本。
 ## - Map196：青训部 EV1（敌群 673，开关 946，变量 512 加一）；出口 EV2 → Map197 (3,16)。
 ## 队伍生命攻击都很大（只查流程）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const RUNE := 171
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
@@ -141,8 +142,7 @@ func _start(map_id: int, x: int, y: int) -> XState:
 
 func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
-	XSave.dir_override = "user://test_xiyou_floor_guild197"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_guild197")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

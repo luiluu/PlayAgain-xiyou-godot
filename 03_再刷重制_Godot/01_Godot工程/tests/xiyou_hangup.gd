@@ -2,6 +2,7 @@ extends Node
 ## 挂机（XdRs_HangUp）第一批：默认设置、快捷界面与提示的布局（正式 v0.13 运行时读数）、无敌人/禁用、开关、
 ## 挂机中禁菜单与手动移动、范围内随机走动、遇敌自动战斗且不出结算、死亡停止、自动存档、读档清除、信息自动翻页。
 ## 窗口模式加 -- --out=<目录> 保存实际绘制截图。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
 
@@ -68,9 +69,7 @@ func key_g() -> void:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_hangup"
-	XConfig.path_override = XSave.dir().path_join("options.json")
-	XConfig.whisper_mark("rift1")   # 新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：过场占住地图，按挂机键被忽略、no_enemy 挂（集成分支 run 42343228257；本机留着上次的 options.json 才过）
+	TestEnv.isolate("xiyou_hangup")   # 新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：过场占住地图，按挂机键被忽略、no_enemy 挂（集成分支 run 42343228257；本机留着上次的 options.json 才过）
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	# 计时实测的最慢项是等待物理帧（约139秒）。沿用楼层流程的headless快时钟，

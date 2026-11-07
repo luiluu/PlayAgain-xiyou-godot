@@ -256,6 +256,133 @@ def duplicate_funcs(text):
     return [('.'.join(scope + (name,)), lines) for (scope, name), lines in seen.items() if len(lines) > 1]
 
 
+AWAIT_TERNARY_OK = '# await-ternary-ok'   # 写在该句（首行）末尾：确认三元式两边都不是异步函数
+
+
+def _gd_logical_lines(text):
+    """去掉字符串与注释后按逻辑行拼起来：括号没合上或行尾反斜杠续行的并成一句。返回 [(起始行号, 首行原文, 去掉字符串注释后的句子)]。"""
+    out, buf, start, depth, triple = [], '', 0, 0, None
+    lines = text.splitlines()
+    for no, line in enumerate(lines, 1):
+        clean, i = [], 0
+        while i < len(line):
+            if triple:
+                end = line.find(triple, i)
+                if end < 0:
+                    break
+                i, triple = end + 3, None
+                clean.append('""')
+                continue
+            c = line[i]
+            if c == '#':
+                break
+            if line[i:i + 3] in ('"' * 3, "'" * 3):
+                triple, i = line[i:i + 3], i + 3
+                continue
+            if c in '"\'':
+                j = i + 1
+                while j < len(line) and line[j] != c:
+                    j += 2 if line[j] == '\\' else 1
+                clean.append('""')
+                i = j + 1
+                continue
+            depth += (c in '([{') - (c in ')]}')
+            clean.append(c)
+            i += 1
+        if not buf:
+            start = no
+        body = ''.join(clean).rstrip()
+        cont = body.endswith('\\')
+        buf += ' ' + body.rstrip('\\')
+        if depth <= 0 and not cont and not triple:
+            out.append((start, lines[start - 1], buf.strip()))
+            buf, depth = '', 0
+    return out
+
+
+def _group_end(s, i):
+    """s[i] 是开括号：返回配对的闭括号之后的位置（没配上返回 len(s)）。"""
+    depth = 0
+    for j in range(i, len(s)):
+        depth += (s[j] in '([{') - (s[j] in ')]}')
+        if depth == 0:
+            return j + 1
+    return len(s)
+
+
+def _await_operand_end(s, i):
+    """s[i:] 是 await 的操作数：取一个基本式加后缀（.名、(…)、[…]）的结束位置（await 的优先级高于三元式与二元运算）。"""
+    m = re.match(r'\s*', s[i:])
+    i += m.end()
+    if i < len(s) and s[i] in '([{':
+        i = _group_end(s, i)
+    else:
+        m = re.match(r'[\w$@^&"]+', s[i:])
+        i += m.end() if m else 0
+    while True:
+        m = re.match(r'\s*(\.\s*\w+|[(\[])', s[i:])
+        if not m:
+            return i
+        if m.group(1) in '([':
+            i = _group_end(s, i + m.end() - 1)
+        else:
+            i += m.end()
+
+
+def _top_level(s, i):
+    """从 s[i] 起到本层结束（逗号、闭括号或句尾）的片段，括号里的内容换成空格，只留本层。"""
+    out, depth = [], 0
+    for c in s[i:]:
+        if c in ')]}' and depth == 0 or c == ',' and depth == 0:
+            break
+        depth -= c in ')]}'
+        out.append(c if depth == 0 else ' ')   # 括号本身留着（认得出调用），里面的内容换成空格
+        depth += c in '([{'
+    return ''.join(out)
+
+
+TERNARY = re.compile(r'\S.*?\bif\b.+?\belse\b')
+CALL = re.compile(r'[\w)\]]\s*\(')
+
+
+def await_ternaries(text):
+    """await 碰上三元式、有异步调用会被跳过的句子 [(行号, 首行原文)]。GDScript 里 await 的优先级高于三元式：
+    ①`await (a() if c else b())`：括号里的三元式两边的调用都不算被 await（两边都没调用、只是挑信号的不报）；
+    ②`await a() if c else b()`＝`(await a()) if c else b()`：else 那边有调用时它没被 await。
+    Godot 只报「Trying to call an async function without await」不中断，结果被静默跳过（11-07 八戒 mapev1：主事件文字全被跳过）。
+    三元式只在实参里（`await f(x if c else y)`）、或 else 那边没有调用（`await f() if c else null`）的不报。
+    该句首行末尾写 # await-ternary-ok 的不报（确认两边都不是异步函数）。"""
+    found = []
+    for no, raw, stmt in _gd_logical_lines(text):
+        if AWAIT_TERNARY_OK in raw:
+            continue
+        for m in re.finditer(r'\bawait\b', stmt):
+            op = m.end() + len(re.match(r'\s*', stmt[m.end():]).group())
+            end = _await_operand_end(stmt, m.end())
+            inner = _top_level(stmt, op + 1) if stmt[op:op + 1] == '(' and end == _group_end(stmt, op) else ''
+            bad = bool(TERNARY.search(inner) and CALL.search(inner))   # 只是挑信号（await (a if c else b)）不报
+            if not bad:
+                rest = re.match(r'\s*if\b(.*?)\belse\b(.*)', _top_level(stmt, end))
+                bad = bool(rest and CALL.search(rest.group(2)))
+            if bad:
+                found.append((no, raw.strip()))
+                break
+    return found
+
+
+def gd_await_ternary_problems(project):
+    """工程里全部 .gd（.godot 缓存除外）的 await 三元式问题（纯文本扫描，不要 godot）。"""
+    problems = []
+    for f in sorted(project.rglob('*.gd')):
+        rel = f.relative_to(project)
+        if '.godot' in rel.parts:
+            continue
+        for no, line in await_ternaries(f.read_text(errors='replace')):
+            problems.append('res://%s:%d：await 与三元式写在同一句，异步调用会被跳过，拆成 if/else 各自 await'
+                            '（确认两边都不是异步函数可在句末写 %s）：%s' % (rel.as_posix(), no, AWAIT_TERNARY_OK, line[:120]))
+    return problems
+
+
 PARSE_CHECK_GD = """extends SceneTree
 func _init() -> void:
 	for p in OS.get_environment("XIYOU_PARSE_CHECK_FILES").split("\\n", false):
@@ -281,7 +408,7 @@ def parse_errors(log, autoloads):
 
 
 def parse_check(root, base):
-    """合并后、同步与检查前的快速解析检查（1 分钟内）：①本次合并改动的 .gd 有没有同名 func；②godot --import 刷新类缓存后
+    """合并后、同步与检查前的快速解析检查（1 分钟内）：①本次合并改动的 .gd 有没有同名 func，工程全部 .gd 有没有 await 三元式；②godot --import 刷新类缓存后
     用外置脚本逐个 load 工程里全部 .gd，日志里有算数的 SCRIPT ERROR 就列出。没有 godot 或工程时只做①。返回问题列表。"""
     problems = []
     for rel in git(root, 'diff', '--name-only', '--diff-filter=AM', base, 'HEAD', '--', '*.gd').splitlines():
@@ -290,8 +417,10 @@ def parse_check(root, base):
             for name, lines in duplicate_funcs(f.read_text(errors='replace')):
                 problems.append('%s：func %s 重复定义（第 %s 行）' % (rel, name, '、'.join(map(str, lines))))
     godot, project = root / ENV / 'godot', root / PROJECT
+    if project.is_dir():
+        problems += gd_await_ternary_problems(project)
     if not (os.access(godot, os.X_OK) and (project / 'project.godot').is_file()):
-        print('提示：没有 godot 或工程，解析检查只扫了同名 func', flush=True)
+        print('提示：没有 godot 或工程，解析检查只扫了同名 func 与 await 三元式', flush=True)
         return problems
     text = (project / 'project.godot').read_text(errors='replace')
     section = text.split('[autoload]', 1)[1].split('\n[', 1)[0] if '[autoload]' in text else ''
@@ -1848,8 +1977,9 @@ def board_add(root, state, who, desc):
     path.write_text(text)
 
 
-def lane_one(root, task, branch, who, desc, executor):
-    """--lane：准备→查新冒出来的 O-待定→补交接板（board_add）→--finish --batch，一步做完；哪步停下就停在那，修好后重跑同一命令接着做。"""
+def lane_one(root, task, branch, who, desc, executor, prep_extra=(), finish_extra=()):
+    """--lane：准备→查新冒出来的 O-待定→补交接板（board_add）→--finish --batch，一步做完；哪步停下就停在那，修好后重跑同一命令接着做。
+    prep_extra／finish_extra：转给准备／收尾那一步的参数（--also、--accept-changes、--no-parse-check／--also、--accept-doc-edits）。"""
     if '|' in who + desc or '\n' in who + desc:
         raise RuntimeError('--who／--desc 里不能有「|」或换行（会弄坏交接板的表）')
     base_args = [task, '--root', str(root), '--executor', executor] + (['--branch', branch] if branch else [])
@@ -1857,7 +1987,7 @@ def lane_one(root, task, branch, who, desc, executor):
     state_file = folder / 'state.json'
     state = json.loads(state_file.read_text()) if state_file.exists() else None
     if not (state and state.get('task') == task and state.get('phase') == 'prepared'):
-        if main(base_args):
+        if main(base_args + list(prep_extra)):
             raise RuntimeError('%s 准备没过（见上），修好后重跑同一条 --lane' % task)
         state = json.loads(state_file.read_text())
     if state.get('phase') != 'prepared':
@@ -1867,7 +1997,7 @@ def lane_one(root, task, branch, who, desc, executor):
     if left:
         raise RuntimeError('%s 留了没换号的 O-待定，先手改再重跑：\n  ' % task + '\n  '.join(left[:12]))
     board_add(root, state, who, desc)
-    if main(base_args + ['--finish', '--batch']):
+    if main(base_args + ['--finish', '--batch'] + list(finish_extra)):
         raise RuntimeError('%s --finish --batch 没过（见上），修好后重跑同一条 --lane' % task)
 
 
@@ -1876,14 +2006,23 @@ def queue_items(spec, branches, whos, descs):
     tasks = [x.strip() for x in spec.split(',') if x.strip()]
     if not tasks:
         raise RuntimeError('--queue 没给任务')
-    def spread(values, name):
+    def spread(values, name, sep):
+        if len(values) == 1 and len(tasks) > 1 and sep in values[0]:
+            # 三十一 11-07：--who "a,b,c,d" 被当成一条，四行待核查都写成同一串。--who 按英文逗号拆；--desc 正文常带英文逗号，
+            # 按「｜」拆（审查 57 P3-1：全队同用的 --desc 逗号数碰巧等于条数−1 时会被悄悄拆开）。段数要等于条数
+            parts = [x.strip() for x in values[0].split(sep)]
+            if len(parts) != len(tasks) or not all(parts):
+                raise RuntimeError('%s 「%s」按「%s」拆成 %d 段，与 --queue 的 %d 条对不上；要每条一个就按条数用「%s」分隔（或重复写 %s），'
+                                   '全队同用的不要带「%s」' % (name, values[0], sep, len(parts), len(tasks), sep, name, sep))
+            print('%s 按「%s」拆成每条一个：%s' % (name, sep, ' / '.join(parts)), flush=True)
+            return parts
         if len(values) == 1:
             return values * len(tasks)
         if len(values) != len(tasks):
             raise RuntimeError('%s 要给 1 个或 %d 个（与 --queue 条数相同），现在 %d 个' % (name, len(tasks), len(values)))
         return values
     out = []
-    for t, w, d in zip(tasks, spread(whos, '--who'), spread(descs, '--desc')):
+    for t, w, d in zip(tasks, spread(whos, '--who', ','), spread(descs, '--desc', '｜')):
         task, _, br = t.partition('=')
         out.append((task, br or None, w, d))
     if branches:
@@ -1898,10 +2037,13 @@ def main(argv=None):
                     help='一步合一条（tools78，原总装 lane.sh）：准备→查新冒出来的 O-待定→交接板补「需要用户决定」O 行与待核查行→--finish --batch；'
                          '配 --who（执行者，如 cc（哪吒））、--desc（待核查表「内容」），可加 --branch')
     ap.add_argument('--queue', metavar='a,b,c',
-                    help='按顺序逐条 --lane，全部过了再自动 --close-batch（可加 --affected、--cloud）；分支写「任务=分支」；'
-                         '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口')
-    ap.add_argument('--who', action='append', default=[], help='--lane／--queue：待核查表的执行者')
-    ap.add_argument('--desc', action='append', default=[], help='--lane／--queue：待核查表的内容')
+                    help='按顺序逐条 --lane，全部过了再自动 --close-batch（可加 --affected、--cloud、--no-parse-check）；分支写「任务=分支」；'
+                         '--who／--desc 给一个全队同用，或按顺序每条一个；本批已有攒着的也一并收口。--also、--accept-changes、--accept-doc-edits 只对一条：'
+                         '停在哪条就用 --lane <那条> 带上它们修好合完，再重跑同一条 --queue（已攒进本批的跳过）')
+    ap.add_argument('--who', action='append', default=[],
+                    help='--lane／--queue：待核查表的执行者。--queue 时给一个全队同用，或每条一个：重复写 --who，或一个值里用英文逗号「,」分隔（段数＝条数）')
+    ap.add_argument('--desc', action='append', default=[],
+                    help='--lane／--queue：待核查表的内容。--queue 时给一个全队同用，或每条一个：重复写 --desc，或一个值里用「｜」分隔（段数＝条数；英文逗号不拆）')
     ap.add_argument('--root', type=Path, help='主工作区；默认从当前工具所属资料库定位')
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
@@ -1944,14 +2086,21 @@ def main(argv=None):
         if a.lane or a.queue:
             if a.task or a.finish or a.batch or a.close_batch or a.dry_run or a.abort or a.abort_batch or (a.lane and a.queue):
                 raise RuntimeError('--lane／--queue 不带任务名，不和 --finish、--batch、--close-batch、--dry-run、--abort 同用，两者也不同用')
+            prep_extra = sum((['--also', x] for x in a.also), []) + sum((['--accept-changes', x] for x in a.accept_changes), []) \
+                + (['--no-parse-check'] if a.no_parse_check else [])
+            finish_extra = sum((['--also', x] for x in a.also), []) + (['--accept-doc-edits'] if a.accept_doc_edits else [])
             if a.lane:
                 if len(a.who) != 1 or len(a.desc) != 1:
                     raise RuntimeError('--lane 要各给一个 --who、--desc')
                 if a.affected or a.cloud:
                     raise RuntimeError('--lane 只攒进本批（--finish --batch）；--affected、--cloud 给收口用（--queue 或 --close-batch）')
-                lane_one(root, a.lane, a.branch, a.who[0], a.desc[0], a.executor)
+                lane_one(root, a.lane, a.branch, a.who[0], a.desc[0], a.executor, prep_extra, finish_extra)
                 print('%s 已合并并攒进本批；没有别的要合时运行 --close-batch。' % a.lane, flush=True)
                 return 0
+            if a.also or a.accept_changes or a.accept_doc_edits:
+                # 原来 --queue 收了 --also 不报错也不转，修好的文件没提交、下一步照样停（三十一 11-07）
+                raise RuntimeError('--also、--accept-changes、--accept-doc-edits 只对一条：停在哪条就用 --lane <那条> 带上它们修好合完，'
+                                   '再重跑同一条 --queue（已攒进本批的跳过）')
             items = queue_items(a.queue, [a.branch] if a.branch else [], a.who, a.desc)
             done = {x['task'] for x in load_batch(folder)}
             for task, branch, who, desc in items:
@@ -1959,10 +2108,12 @@ def main(argv=None):
                     print('== %s 已在本批，跳过' % task, flush=True)
                     continue
                 print('== 串合 %s' % task, flush=True)
-                lane_one(root, task, branch, who, desc, a.executor)
+                lane_one(root, task, branch, who, desc, a.executor, ['--no-parse-check'] if a.no_parse_check else [])
             lock = take_lock(folder)
             close_batch(root, folder, a.affected, a.cloud)
             return 0
+        if a.who or a.desc:
+            raise RuntimeError('--who、--desc 只配 --lane／--queue')
         if a.close_batch:
             if a.task or a.batch:
                 raise RuntimeError('--close-batch 不带任务名、不配 --batch')

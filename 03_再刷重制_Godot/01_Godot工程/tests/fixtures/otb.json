@@ -195,6 +195,56 @@
         "a8"
       ]
     },
+    "restore_cap": [
+      {
+        "times": 8,
+        "acted": 0,
+        "current": 5,
+        "next": 5
+      },
+      {
+        "times": 8,
+        "acted": 2,
+        "current": 3,
+        "next": 5
+      },
+      {
+        "times": 8,
+        "acted": 4,
+        "current": 1,
+        "next": 4
+      },
+      {
+        "times": 8,
+        "acted": 5,
+        "current": 0,
+        "next": 3
+      },
+      {
+        "times": 8,
+        "acted": 6,
+        "current": 0,
+        "next": 2
+      },
+      {
+        "times": 3,
+        "acted": 2,
+        "current": 1,
+        "next": 1
+      },
+      {
+        "times": 3,
+        "acted": 4,
+        "current": 0,
+        "next": 1
+      },
+      {
+        "times": 1,
+        "acted": 0,
+        "current": 1,
+        "next": 1
+      }
+    ],
     "guard": {
       "current": [
         "a1",

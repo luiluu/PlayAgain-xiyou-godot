@@ -7,6 +7,7 @@ extends Node
 ##   Map217 EV11 作坊小妹选「生产间」置位 1981 等一批开关并记变量 753，选「我再想想」不变；
 ##   打工位 EV2 页 1（开关 1820）公共事件 1098 招人：选狗逍遥队员离开、开关 1801 开 1820 关。
 ## 原版随机固定（固定随机数）。队伍生命攻击都很大（只查流程）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -138,8 +139,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 
 func _run() -> void:
-	XSave.dir_override = "user://test_xiyou_floor_reach187"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach187")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

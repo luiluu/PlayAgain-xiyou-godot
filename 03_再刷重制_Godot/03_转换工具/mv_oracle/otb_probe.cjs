@@ -33,6 +33,16 @@ actors[1].clearStates(); actors[1].addState(stateId); actors[1]._stateTurns[stat
 bm._createdFirstTurnActionOrders=false; bm.makeActionOrdersOTB(); rows.stun_one=orders();
 actors[1]._stateTurns[stateId]=2; bm.otbClearActionOrdersOfUnableBattlers(); rows.stun_two=orders();
 actors[1].removeState(stateId); actors[1].refresh(); actors[1]._otbTimesActedThisTurn=0; bm.otbInsertRevivalActionOrders(actors[1]); rows.wakeup=orders();
+// v0.62.11 installOtbRestoreCap（rules-gaps1）：解除不能行动后插回，当前回合补到 5 次为止、下个回合最多 5 次
+rows.restore_cap=[];
+for (const [times, acted] of [[8,0],[8,2],[8,4],[8,5],[8,6],[3,2],[3,4],[1,0]]) {
+  actors[1].makeActionTimes=()=>1; bm._createdFirstTurnActionOrders=false; bm.makeActionOrdersOTB();
+  // 等于眩晕时被移出顺序（otbClearActionOrdersOfUnableBattlers），醒来走 otbInsertRevivalActionOrders
+  bm._actionBattlers=bm._actionBattlers.filter(b=>b!==actors[1]); bm._nextTurnActionBattlers=bm._nextTurnActionBattlers.filter(b=>b!==actors[1]);
+  actors[1].makeActionTimes=()=>times; actors[1]._otbTimesActedThisTurn=acted; bm.otbInsertRevivalActionOrders(actors[1]);
+  const o=orders(); rows.restore_cap.push({times, acted, current:o.current.filter(k=>k==='a8').length, next:o.next.filter(k=>k==='a8').length});
+}
+actors[1].makeActionTimes=()=>1; actors[1]._otbTimesActedThisTurn=0;
 // 技能速度与标签效果单独对照（只调用顺序效果，不结算伤害）。
 bm._createdFirstTurnActionOrders=false; bm.makeActionOrdersOTB();
 const action = new w.Game_Action(actors[0]); action.setSkill(2); actors[0]._actions=w.Array.of(action); actors[0].otbTurnShift(); rows.guard=orders();

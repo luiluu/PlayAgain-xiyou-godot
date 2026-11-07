@@ -2629,6 +2629,13 @@ for name in filter(None, files):
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
         self.assertIn('res://modes/broken.gd：Parse Error', r.stdout)
         self.assertNotIn('GameApp', r.stdout)
+        # 第十五批 FG：await 碰上三元式（11-07 mapev1 主事件文字全被跳过）也在这里报出文件与行号，不用等场景
+        self.put(str(merge.PROJECT / 'modes/interp.gd'), 'func _step():\n\tvar ok = await f() if c else null\n'
+                 '\tvar response = await (host.a(r) if p else host.b(r))\n')
+        r = run()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn('res://modes/interp.gd:3：await 与三元式', r.stdout)
+        self.assertNotIn('interp.gd:2', r.stdout)
 
     def test_parse_check_flags_import_and_load_process_failures(self):
         # 沙僧第十七期 P3：导入阶段退出码非零并打印 ERROR:、加载阶段正常打印完成标志，原来返回零问题
@@ -3350,6 +3357,37 @@ for name in filter(None, files):
         self.assertEqual(self.tool('--queue', 'task', '--branch', 'claude/task', '--who', 'a', '--desc', 'x'), 1)
         self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
 
+    def test_queue_who_desc_split_on_ascii_comma(self):
+        """三十一 11-07：--who "a,b" 一个值被当成一条，几行待核查写成同一串。--who 按英文逗号拆、--desc 按「｜」拆，段数要等于条数；
+        审查 57 P3-1：全队同用的 --desc 里英文逗号数碰巧等于条数−1 时原来会被悄悄拆开，现在 --desc 不按逗号拆。"""
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(merge.queue_items('a,b=cc/b', [], ['cc（哪吒）, cc（八戒）'], ['甲：x｜乙：y']),
+                             [('a', None, 'cc（哪吒）', '甲：x'), ('b', 'cc/b', 'cc（八戒）', '乙：y')])
+        self.assertEqual(merge.queue_items('a,b', [], ['cc'], ['同一句, 带逗号']), [('a', None, 'cc', '同一句, 带逗号'), ('b', None, 'cc', '同一句, 带逗号')])
+        self.assertEqual(merge.queue_items('a', [], ['x,y'], ['d｜e']), [('a', None, 'x,y', 'd｜e')])   # 只一条：原样
+        for who, desc in [('x,y,z', 'd'), ('x,', 'd'), ('x', 'd｜e｜f')]:
+            with self.assertRaisesRegex(RuntimeError, '对不上'):
+                merge.queue_items('a,b', [], [who], [desc])
+
+    def test_queue_rejects_per_lane_flags_and_lane_passes_them_on(self):
+        """--queue 原来收了 --also 不报错也不转；现在拒绝并指路。--lane 把 --also 等转给准备与收尾那两步。"""
+        for extra in (['--also', 'x.md'], ['--accept-changes', 'a.json'], ['--accept-doc-edits']):
+            self.assertEqual(self.tool('--queue', 'task,task2', '--who', 'a', '--desc', 'x', *extra), 1)
+            self.assertIn('只对一条', self.last_output)
+        self.assertEqual(self.tool('task', '--who', 'a'), 1)
+        self.assertIn('只配 --lane／--queue', self.last_output)
+        calls, folder = [], self.root / '.git/lane-merge'
+        def fake(argv):
+            calls.append(argv)
+            folder.mkdir(exist_ok=True)
+            (folder / 'state.json').write_text(json.dumps({'task': 'task', 'phase': 'prepared', 'base': 'HEAD', 'branch': 'claude/task'}))
+            return 0
+        with mock.patch.object(merge, 'main', side_effect=fake), mock.patch.object(merge, 'new_placeholders', return_value=[]), \
+             mock.patch.object(merge, 'board_add'):
+            merge.lane_one(self.root, 'task', None, 'cc', 'x', 'cc', ['--also', 'a.gd', '--no-parse-check'], ['--also', 'a.gd'])
+        self.assertEqual(calls[0][-3:], ['--also', 'a.gd', '--no-parse-check'])
+        self.assertEqual(calls[1][-4:], ['--finish', '--batch', '--also', 'a.gd'])
+
     def test_queue_merges_in_order_then_closes_and_anchors(self):
         """--queue a,b：逐条 --lane，最后自动 --close-batch（一次检查、清理、推送、立锚点）。"""
         bare = self.github()
@@ -3577,6 +3615,37 @@ sys.exit(0)
                              ('x.gd.uid', True), ('03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/power.gd', False), ('AGENTS.md', False)]:
             self.assertEqual(merge.release_only_path(path), expect, path)
             self.assertEqual(cloud.release_only([path]), expect, path)
+
+
+class AwaitTernaryTests(unittest.TestCase):
+    """第十五批 FG：await 的优先级高于三元式，三元式两边的异步调用会被静默跳过（Godot 只报错不中断）。"""
+    def lines(self, body):
+        return [no for no, _ in merge.await_ternaries('func f():\n' + body)]
+
+    def test_flags_unawaited_branch_calls(self):
+        for body in ['\tvar r = await (host.show_parallel_message(m) if parallel else host.show_message(m))\n',   # mapev1 原句
+                     '\tvar r = await a() if c else b()\n',             # (await a()) if c else b()：b() 没 await
+                     '\tif ok: x = await a() if c else obj.b(1)\n',     # 一行写完的 if
+                     '\tvar q = (await (a()\n\t\tif c else b()))\n',   # 跨行
+                     '\treturn await (a() if c else b())\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [2])
+
+    def test_ignores_safe_forms(self):
+        for body in ['\tawait f(a if b else c())\n',                    # 三元式只在实参里
+                     '\tvar n = await f() if c else null\n',             # else 那边没有调用
+                     '\tvar cmd = [null] if d else await g()\n',          # await 在分支里
+                     '\tvar r = await (sig_a if c else sig_b)\n',         # 只是挑信号
+                     '\t_check(await w(1) and z, [m.id if m else -1])\n',
+                     '\tvar s = "await (a() if b else c())"  # await (a() if b else c())\n',
+                     '\tvar ok = await a() if c else b()  # await-ternary-ok\n',
+                     '\tawait get_tree().process_frame\n\tvar t = a if b else c()\n']:
+            with self.subTest(body=body):
+                self.assertEqual(self.lines(body), [])
+
+    def test_real_project_has_none(self):
+        project = HERE.parent / '01_Godot工程'
+        self.assertEqual(merge.gd_await_ternary_problems(project), [])
 
 
 if __name__ == '__main__':

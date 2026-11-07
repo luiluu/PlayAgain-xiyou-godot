@@ -5,6 +5,7 @@ extends Node
 ## - 簇 10：Map061 EV6 → Map178 民宅 (10,13)；EV5 回 Map061 (21,6) 后插件指令 Autosave：存到最近用过的存档位（没手动存过就不存）；
 ##   Map178 EV6 黄昏的信徒、EV7 求道者·斯盖能跑完。
 ## 队伍生命攻击都很大（只查流程）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 240000   # 并行负载下单个事件可能跑到一两分钟，别用 90 秒的墙钟判失败
 const WaitBudget := preload("res://tests/wait_budget.gd")  # 墙钟与帧数都过了才算超时（tools30）
@@ -137,8 +138,7 @@ func _start(map_id: int, x: int, y: int, dir := 8) -> XState:
 
 func _run() -> void:
 	GameApp.fast_forward()  # 真走地图打战斗、等的是物理帧与计时器：headless 快进 4 倍（见 07_开发环境/测试提速.md）
-	XSave.dir_override = "user://test_xiyou_floor_reach224"
-	XConfig.path_override = XSave.dir().path_join("options.json")
+	TestEnv.isolate("xiyou_floor_reach224")   # 测试目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

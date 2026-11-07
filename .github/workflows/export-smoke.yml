@@ -1,4 +1,6 @@
-# 导出冒烟：在 Linux 上导出 Windows 与安卓「验收」包并跑 导出冒烟.py（cc BW 2026-11-06，唐僧派单）。
+# 导出冒烟：在 Linux 上导出 Windows 与安卓「验收」包并跑 导出冒烟.py（cc BW 2026-11-06，唐僧派单）；
+# Windows 发行包另交给 windows-run 在 windows-latest 上真跑（Windows实机冒烟.py，cc 平台 FB 2026-11-07）；
+# 安卓发行包交给 android-run 在 x86_64 模拟器上装机跑（安卓实机冒烟.py，FB 二批）。
 # 只在明确要跑时触发，普通推送不跑，省分钟：手动（Actions 页 Run workflow，或 gh workflow run export-smoke.yml -r <分支>），
 # 或推 ci-export/<分支>（工作流还没进默认分支时也能试跑；两个平台都跑、不留包）。
 # Mac 包照旧在 Mac 本机：python3 03_再刷重制_Godot/07_开发环境/导出冒烟.py。
@@ -104,6 +106,55 @@ jobs:
           XIYOU_SMOKE_RUNNER: ${{ steps.tpl.outputs.dir }}/linux_debug.x86_64
         run: |
           python3 "$TOOLS/导出冒烟.py" --platform "${{ matrix.platform }}" --out "$RUNNER_TEMP/smoke" ${{ inputs.upload_packages && '--keep' || '' }}
+      # Windows 发行包交给下面的 windows-run 在真 Windows 上跑（cc 平台 FB 2026-11-07）。
+      # 经 Actions 缓存传：缓存只有本仓库的工作流能读，不像附件谁都能下；windows-run 跑完就删。路径用工作区相对路径，两边才对得上。
+      - name: 导出 Windows 发行包（给 windows-run；上面验收包冒烟挂了也照导，两边各报各的）
+        if: ${{ !cancelled() && matrix.platform == 'windows' }}
+        env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          mkdir -p winrel
+          rc=0; timeout 900 "$GODOT" --headless --path "$PROJECT" --export-release "Windows 发行" "$PWD/winrel/再刷一把_天启篇.exe" > winrel-export.log 2>&1 || rc=$?
+          ls -la winrel
+          if [ "$rc" -ne 0 ] || [ ! -f winrel/再刷一把_天启篇.pck ]; then tail -40 winrel-export.log; exit 1; fi
+      - if: ${{ !cancelled() && matrix.platform == 'windows' }}
+        uses: actions/cache/save@v4
+        with:
+          path: winrel
+          key: winrel-${{ github.run_id }}-${{ github.run_attempt }}
+          enableCrossOsArchive: true
+      # 安卓发行包交给 android-run 在 x86_64 模拟器上装机跑（cc 平台 FB 二批 2026-11-07）。CI 副本的「安卓 发行」多开 x86_64
+      # （正式预设只有 arm64-v8a；模拟器免 ARM 转译），用上面现生成的一次性调试 keystore 当发行 keystore 签名；只给冒烟，不发布。
+      - name: 导出安卓发行包（给 android-run）
+        if: ${{ !cancelled() && matrix.platform == 'android' }}
+        env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          python3 - "$PROJECT/export_presets.cfg" <<'EOF'
+          import re, sys
+          p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+          parts = re.split(r'(?m)^(?=\[preset\.)', s)
+          name = None
+          for i, sec in enumerate(parts):
+              m = re.search(r'(?m)^name="([^"]*)"', sec)
+              if re.match(r'\[preset\.\d+\]\n', sec):
+                  name = m.group(1) if m else None
+              elif name == '安卓 发行' and sec.startswith('[preset.') and '.options]' in sec.splitlines()[0]:
+                  parts[i] = sec.replace('architectures/x86_64=false', 'architectures/x86_64=true')
+          open(p, 'w', encoding='utf-8').write(''.join(parts))
+          EOF
+          grep -n 'architectures/x86_64' "$PROJECT/export_presets.cfg"
+          mkdir -p androidrel
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$GODOT_ANDROID_KEYSTORE_DEBUG_PATH" GODOT_ANDROID_KEYSTORE_RELEASE_USER="$GODOT_ANDROID_KEYSTORE_DEBUG_USER" GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD"
+          rc=0; timeout 1200 "$GODOT" --headless --path "$PROJECT" --export-release "安卓 发行" "$PWD/androidrel/再刷一把_天启篇.apk" > androidrel-export.log 2>&1 || rc=$?
+          ls -la androidrel
+          if [ "$rc" -ne 0 ] || [ ! -f androidrel/再刷一把_天启篇.apk ]; then tail -40 androidrel-export.log; exit 1; fi
+          unzip -l androidrel/再刷一把_天启篇.apk 'lib/*' | tail -8
+      - if: ${{ !cancelled() && matrix.platform == 'android' }}
+        uses: actions/cache/save@v4
+        with:
+          path: androidrel
+          key: androidrel-${{ github.run_id }}-${{ github.run_attempt }}
       - if: always()
         run: |
           [ -f "$RUNNER_TEMP/smoke/报告.md" ] && cat "$RUNNER_TEMP/smoke/报告.md" >> "$GITHUB_STEP_SUMMARY" || echo "没有报告（导出前就失败了，看上面的日志）" >> "$GITHUB_STEP_SUMMARY"
@@ -126,3 +177,101 @@ jobs:
             ${{ runner.temp }}/smoke/*.apk
           retention-days: 3
           if-no-files-found: ignore
+
+  # 真 Windows 上跑发行 exe（cc 平台 FB 2026-11-07）：入口、标题按键闪退复测、存档目录在 %APPDATA%\KYO\再刷重制。
+  # 无头跑；窗口／全屏／高 DPI／输入法／手柄看不到，见 00_项目管理/Windows发行包验收清单.md。
+  windows-run:
+    needs: smoke
+    if: ${{ !cancelled() && inputs.platforms != 'android' }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    name: Windows 实机冒烟
+    permissions:
+      contents: read
+      actions: write   # 跑完删掉传包用的缓存
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: 03_再刷重制_Godot/07_开发环境
+      - uses: actions/cache/restore@v4
+        with:
+          path: winrel
+          key: winrel-${{ github.run_id }}-${{ github.run_attempt }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
+      - name: 真跑发行 exe
+        shell: bash
+        env:
+          PYTHONUTF8: '1'
+        run: python "$TOOLS/Windows实机冒烟.py" --dir winrel --out "$RUNNER_TEMP/winrun" --try-window
+      - if: always()
+        shell: bash
+        run: |
+          [ -f "$RUNNER_TEMP/winrun/报告.md" ] && cat "$RUNNER_TEMP/winrun/报告.md" >> "$GITHUB_STEP_SUMMARY" || echo "没有报告（缓存没取到：Linux 那边 Windows 发行包没导出来）" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-run-report
+          path: |
+            ${{ runner.temp }}/winrun/*.md
+            ${{ runner.temp }}/winrun/*.json
+            ${{ runner.temp }}/winrun/*.log
+          retention-days: 3
+          if-no-files-found: ignore
+      - if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete "winrel-${{ github.run_id }}-${{ github.run_attempt }}" --repo "${{ github.repository }}" || true
+
+  # 真安卓系统上装发行包跑（cc 平台 FB 二批 2026-11-07）：x86_64 模拟器（KVM），进标题、返回键两次退出、回车开新游戏、
+  # 切后台再回来同一进程、logcat 无崩溃。触屏手感、帧率、声音看不到，见 00_项目管理/安卓发行包验收清单.md。
+  android-run:
+    needs: smoke
+    if: ${{ !cancelled() && inputs.platforms != 'windows' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    name: 安卓实机冒烟（模拟器）
+    permissions:
+      contents: read
+      actions: write   # 跑完删掉传包用的缓存
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: 03_再刷重制_Godot/07_开发环境
+      - uses: actions/cache/restore@v4
+        with:
+          path: androidrel
+          key: androidrel-${{ github.run_id }}-${{ github.run_attempt }}
+          fail-on-cache-miss: true
+      - name: 开 KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: 模拟器里装包跑
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: python3 "$TOOLS/安卓实机冒烟.py" --apk androidrel/再刷一把_天启篇.apk --out "$RUNNER_TEMP/androidrun"
+      - if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/androidrun/报告.md" ] && cat "$RUNNER_TEMP/androidrun/报告.md" >> "$GITHUB_STEP_SUMMARY" || echo "没有报告（缓存没取到或模拟器没起来，看上面的日志）" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-run-report
+          path: |
+            ${{ runner.temp }}/androidrun/*.md
+            ${{ runner.temp }}/androidrun/*.json
+            ${{ runner.temp }}/androidrun/*.txt
+          retention-days: 3
+          if-no-files-found: ignore
+      - if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete "androidrel-${{ github.run_id }}-${{ github.run_attempt }}" --repo "${{ github.repository }}" || true
