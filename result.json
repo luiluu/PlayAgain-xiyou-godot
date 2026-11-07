@@ -1,0 +1,25 @@
+{
+ "sha": "66b47ffb44eb45e5ce60a88595477dffbf9bc3a6",
+ "branch": "ci/cc/wukong-floor1",
+ "mode": "affected",
+ "base": "91cf5f9ecb388a8fdedc36f0802a0c7946314831",
+ "passed": true,
+ "scenes": 4,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 248.8,
+ "testSeconds": 492,
+ "generatedRef": "refs/ci/generated/cc/wukong-floor1",
+ "generatedCommit": "2bc3896767de7dfb84997befc22c9e0139e8ae1f",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42394909651",
+ "sceneNames": [
+  "xiyou_unlock_chain.tscn",
+  "xiyou_unlock_chain_b.tscn",
+  "xiyou_unlock_chain_c.tscn",
+  "xiyou_unlock_chain_d.tscn"
+ ],
+ "time": "2026-11-07T17:18:26+00:00"
+}
