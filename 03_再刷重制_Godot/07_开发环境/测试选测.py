@@ -337,6 +337,21 @@ class SelectTests(Fixture):
         self.assertEqual(sections['file'], str(TOOLS / 'xiyou_slice.json'))
 
 
+class TroopProbeGroupTests(unittest.TestCase):
+    """tools-merge-args3（八戒 11-07）：改 troop_event_probe.cjs 原来归整组 converter，漏掉直接比它产物的 xiyou_troop_events*。"""
+    def test_troop_probe_selects_troop_event_scenes(self):
+        groups, rules = sel.load_table()
+        probe = '03_再刷重制_Godot/03_转换工具/mv_oracle/troop_event_probe.cjs'
+        self.assertEqual(sel.classify(probe, rules), 'troop_probe')
+        self.assertEqual(sel.classify('03_再刷重制_Godot/03_转换工具/mv_oracle/troop_condition_probe.cjs', rules), 'converter')
+        scenes = groups['troop_probe']['scenes']
+        self.assertIn('xiyou_troop_events*.tscn', scenes)
+        self.assertTrue(set(groups['converter']['scenes']) <= set(scenes))      # 不比 converter 少
+        tests = HERE.parent / '01_Godot工程/tests'
+        if tests.is_dir():
+            self.assertTrue(list(tests.glob('xiyou_troop_events*.tscn')))
+
+
 class EntryGroupTests(Fixture):
     """tools83：modes/xiyou/entry.gd 原来没有规则，改它被判成整轮；现在归 entry 组，只跑入口、标题、发行版冒烟那一组。"""
     ENTRY = PROJECT / 'modes/xiyou/entry.gd'

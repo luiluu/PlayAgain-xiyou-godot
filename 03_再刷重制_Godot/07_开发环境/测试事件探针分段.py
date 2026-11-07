@@ -84,6 +84,27 @@ class StateShardMergeTests(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
         return mod
 
+    def test_force_warns_that_it_runs_everything(self):
+        """tools-merge-args3：--force 关增量整份重量，开跑前打一行提示；不加不提示。"""
+        import contextlib, io, sys
+        from unittest import mock
+        mod = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'node_modules').mkdir(); (root / 'gen/maps').mkdir(parents=True)
+            seen = {}
+            def fake(env):
+                seen['incremental'] = env.get('XIYOU_STATE_INCREMENTAL')
+                return subprocess.CompletedProcess([], 1, '', 'stop')
+            for argv, warn in [(['x', '--force'], True), (['x'], False)]:
+                out = io.StringIO()
+                with mock.patch.object(mod, 'ORACLE', root), mock.patch.object(mod, 'GEN', root / 'gen'), \
+                     mock.patch.object(mod, 'needs', return_value=True), mock.patch.object(mod, 'run_probe', side_effect=fake), \
+                     mock.patch.object(sys, 'argv', argv), contextlib.redirect_stdout(out):
+                    self.assertEqual(mod.main(), 1)
+                self.assertEqual('会关掉增量' in out.getvalue(), warn, out.getvalue())
+                self.assertEqual(seen['incremental'], '0' if warn else None)
+
     def test_round_robin_merge_restores_order(self):
         mod = self.load()
         cases = [{'id': 'v%d' % i, 'finished': True} for i in range(7)]
