@@ -47,7 +47,11 @@ def start():
         if mode == 'always_entry' or '--report-entry' in args:
             st['log'].append('11-07 10:00:00.000  %s  %s I godot   : ENTRY_SCENE=res://modes/xiyou/entry.tscn' % (st['pid'], st['pid']))
         keys = [x.split('=', 1)[1] for x in args if x.startswith('--smoke-keys=')]
-        if keys:
+        if '--report-entry' in args and not keys:
+            st['log'].append('11-07 10:00:00.500  %s  %s I godot   : AUTO_SAVE_PRESENT=%s' % (st['pid'], st['pid'], 'true' if st.get('auto') else 'false'))
+        if keys and keys[0].endswith('wait:7200'):
+            st['autosave_run'] = True
+        elif keys:
             seq = keys[0].split(',')
             if mode == 'keys_crash' and seq == ['j']:
                 st['log'].append('11-07 10:00:05.000  %s  %s F libc    : Fatal signal 11 (SIGSEGV)' % (st['pid'], st['pid']))
@@ -63,6 +67,8 @@ if a[0] == 'install':
 elif a[0] == 'logcat':
     if '-c' in a: st['log'] = []
     else: out = '\n'.join(st['log'])
+elif a[:3] == ['shell', 'pm', 'clear']:
+    st['auto'] = False
 elif a[:2] == ['shell', 'pidof']:
     out = st['pid']
 elif a[:2] == ['shell', 'am'] and a[2] == 'start':
@@ -77,6 +83,11 @@ elif a[:3] == ['shell', 'input', 'keyevent']:
             st['pid'] = ''; st['back'] = 0
         else:
             st['back'] = time.time()
+    elif k == '3' and st['pid'] and st.get('autosave_run'):
+        r = 'skip:event' if mode == 'autosave_event' else 'saved'
+        st['log'].append('11-07 10:00:06.000  %s  %s I godot   : PAUSE_SAVE=%s' % (st['pid'], st['pid'], r))
+        st['auto'] = r == 'saved' and mode != 'autosave_lost'
+        st['autosave_run'] = False
     elif k == '66' and mode == 'crash_enter' and st['pid']:
         st['log'].append('11-07 10:00:05.000  %s  %s F libc    : Fatal signal 11 (SIGSEGV), code 1' % (st['pid'], st['pid']))
         st['pid'] = ''
@@ -137,6 +148,21 @@ class FakeAdbTests(unittest.TestCase):
         for name, _, _ in A.KEY_RUNS:
             self.assertTrue(r['android_keys_' + name], name)
         self.assertEqual(list(self.out.glob('*.apk')), [])
+
+    def test_autosave(self):
+        self.go('ok', resign=True)
+        r = self.results()
+        self.assertTrue(r['android_pause_hook_fires'])
+        self.assertTrue(r['android_autosave_continue'])
+
+    def test_autosave_lost_fails(self):
+        # 切后台说存成了，重开标题却没有「继续」
+        self.assertEqual(self.go('autosave_lost', resign=True), 1)
+        self.assertFalse(self.results()['android_autosave_continue'])
+
+    def test_autosave_skipped_is_info(self):
+        self.assertEqual(self.go('autosave_event', resign=True), 0)
+        self.assertIsNone(self.results()['android_autosave_continue'])
 
     def test_resign_keys_crash(self):
         self.assertEqual(self.go('keys_crash', resign=True), 1)

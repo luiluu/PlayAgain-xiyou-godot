@@ -14,6 +14,8 @@ x86_64 模拟器）。包在同一次运行的安卓任务里导出：CI 副本�
     （Godot 4.7 对外部启动的 intent 一律删掉 command_line_params），副本用一次性 keystore 重签；原包不动
   - 按键（默认开，同 发行入口冒烟.py 的四组）：每组一个 _cl_ 带 --smoke-keys=<序列> 的副本，清数据启动，等 SMOKE_DONE
     （按完游戏自己退出），新游戏三组要停在地图；logcat 里本包没有崩溃行
+  - 切后台自动存档（O-215）：新游戏后在地图上按 HOME，游戏打出 PAUSE_SAVE=<结果>；存成了（saved）就杀进程重开，
+    标题要打出 AUTO_SAVE_PRESENT=true（有「继续」）且进程活着；没存成（开场事件在跑等）只记 INFO
   - 返回键：标题按一次进程还在（出「再按一次返回键退出」），两秒内再按一次进程结束（O-202）
   - 新游戏：重开，标题按回车（11-06 闪退那条路），10 秒后进程活着
   - 切后台：按 HOME、等 5 秒、再拉起来：还是同一个进程（回前台而不是重开）、活着
@@ -36,7 +38,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0}
+WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0}
 
 
 class Report:
@@ -190,6 +192,46 @@ def key_runs(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Re
         v.unlink(missing_ok=True)
 
 
+# 开新游戏后在地图上等着，由 adb 按 HOME 切后台。新游戏一进地图就是 Map001 的开场自动事件（312 条指令，有对话、选项、循环），
+# 云端试过连按 40 次确认也没点完，所以切后台那一刻是 skip:event（同原版：事件中不存），只验钩子在真安卓上会触发；
+# 真存一份要等开场走完，留给真机清单第 16 步
+AUTOSAVE_SEQ = 'accept,wait:7200'
+
+
+def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work: Path, rep: Report) -> None:
+    """切后台自动存档（O-215）在真安卓上：新游戏进地图 → HOME → 看 PAUSE_SAVE → 杀进程 → 重开，标题有没有「继续」（AUTO_SAVE_PRESENT）。"""
+    v = work / 'autosave.apk'
+    if not signer.make(apk, v, ['--', '--report-entry', f'--smoke-keys={AUTOSAVE_SEQ}']):
+        rep.check('android_pause_save', False, '重签副本没做出来')
+        return
+    adb.rc('install', '-r', str(v))
+    adb.run('shell', 'pm', 'clear', pkg)
+    adb.run('logcat', '-c')
+    adb.launch(pkg)
+    v.unlink(missing_ok=True)
+    sleep('autosave')
+    adb.key(KEY_HOME)
+    sleep('home')
+    log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
+    got = re.findall(r'PAUSE_SAVE=(\S+)', log)
+    adb.run('shell', 'am', 'force-stop', pkg)
+    # 重开用基础副本（同一把 key，install -r 保留数据）
+    adb.rc('install', '-r', base)
+    adb.run('logcat', '-c')
+    adb.launch(pkg)
+    sleep('launch')
+    log2 = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
+    (work / 'logcat_autosave.txt').write_text(log + '\n---- 重开 ----\n' + log2, encoding='utf-8')
+    present = re.findall(r'AUTO_SAVE_PRESENT=(\w+)', log2)
+    alive = adb.pid(pkg)
+    adb.run('shell', 'am', 'force-stop', pkg)
+    rep.check('android_pause_hook_fires', bool(got), '切后台时 XAutoSave.on_pause 结果：' + ('、'.join(got) or '没打出来（切后台通知没到游戏？）'))
+    if 'saved' in got:
+        rep.check('android_autosave_continue', present[-1:] == ['true'] and bool(alive), f'重开后标题 AUTO_SAVE_PRESENT={present[-1] if present else "没打出来"}，pid={alive or "无"}')
+    elif got:
+        rep.info('android_autosave_continue', f'切后台那一刻没存（{got[-1]}，如开场事件还在跑），重开 AUTO_SAVE_PRESENT={present[-1] if present else "没打出来"}')
+
+
 def emulators(adb: str) -> list:
     out = subprocess.run([adb, 'devices'], capture_output=True, text=True, timeout=30).stdout
     rows = [l.split('\t') for l in out.splitlines()[1:] if '\t' in l]
@@ -316,6 +358,7 @@ def main(argv=None) -> int:
     smoke(adb, apk, a.package, work, rep, expect_entry=signer is not None)
     if signer is not None and not a.no_keys and not any(n == 'android_install' and o is False for n, o, _ in rep.rows):
         key_runs(adb, signer, a.apk, a.package, work, rep)
+        autosave_run(adb, signer, a.apk, apk, a.package, work, rep)
     for f in work.glob('*.apk'):
         f.unlink()
     write_report(work, rep)
