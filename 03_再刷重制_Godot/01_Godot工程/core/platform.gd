@@ -258,9 +258,10 @@ func catch_up_left() -> float:
 
 
 func _process(delta: float) -> void:
-	# delta 已乘 time_scale，就是走过的游戏秒数
+	# delta 已乘 time_scale（基准×CATCH_UP_SPEED）；按「平常速度下的秒数」扣：除以基准倍率。
+	# 变速齿轮 1.6 时 delta 含 1.6，直接扣会只补离开时长的 1/1.6（界面车道 FD 发现，cc 平台 FB 2026-11-07 修）
 	if is_catching_up():
-		_catch_up_left -= delta
+		_catch_up_left -= delta / maxf(float(_saved_engine.get("scale", 1.0)), 0.001)
 		if _catch_up_left <= 0.0 or not idle_active():
 			stop_catch_up()
 	var want_on := is_mobile() and idle_active()

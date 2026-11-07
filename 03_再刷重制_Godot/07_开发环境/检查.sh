@@ -247,6 +247,8 @@ want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/nu
 want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; then ok "补齐整轮重导入走长任务"; else bad "导入超时工具回归失败，单跑 07_开发环境/测试导入超时.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试Windows实机冒烟.py" >/dev/null 2>&1; then ok "Windows 实机冒烟（假 exe：入口、按键、存档目录）"; else bad "Windows 实机冒烟工具回归失败，单跑 07_开发环境/测试Windows实机冒烟.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试安卓实机冒烟.py" >/dev/null 2>&1; then ok "安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）"; else bad "安卓实机冒烟工具回归失败，单跑 07_开发环境/测试安卓实机冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试插件备注覆盖.py" >/dev/null 2>&1; then ok "插件备注覆盖工具"; else bad "插件备注覆盖工具回归失败，单跑 07_开发环境/测试插件备注覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
