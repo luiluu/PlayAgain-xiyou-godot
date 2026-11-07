@@ -82,6 +82,13 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0   # 流程测试不出神话敌人（神话另由 xiyou_combat 测）
 	XSave.dir_override = "user://test_xiyou_flow"
+	# 新源大厅首次进入的漩涡过场（Map4 EV76 自动执行，CodexWhisper.seen('rift1') 为假时播，占住地图约 5000 帧）：
+	# 本测试走开局→大厅→一层的主流程，过场由 xiyou_opening_branches c_rift_cutscene 单测，这里配置放进测试目录、标成看过（同 xiyou_actor_p0）。
+	# 不标时大厅里 ⌘Enter 两项判 busy、进门 run_event 被忙拒掉，后面一路等超时（八戒 DD²，新源集成 run 42343228257 rc=142）
+	XConfig.path_override = XSave.dir().path_join("options.json")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = ""
+	XConfig.whisper_mark("rift1")
 	_clock_before = [OS.low_processor_usage_mode_sleep_usec, Engine.physics_ticks_per_second,
 		Engine.max_physics_steps_per_frame, Engine.time_scale]
 	if DisplayServer.get_name() == "headless":
