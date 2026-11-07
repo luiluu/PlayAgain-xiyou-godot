@@ -1,0 +1,23 @@
+{
+ "sha": "781cbdf6a8121709792bf2f5af1665ccb13f0484",
+ "branch": "ci/cc/rules-pace1",
+ "mode": "affected",
+ "base": "205a81381a149b6fe75d6d01da109cdd4cebc3f7",
+ "passed": true,
+ "scenes": 2,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 173.5,
+ "testSeconds": 196,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "2bd5629951a97c64221cfc328b88b5067418d8b1",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42342942249",
+ "sceneNames": [
+  "xiyou_battle_pace.tscn",
+  "xiyou_event_compare.tscn"
+ ],
+ "time": "2026-11-07T05:35:08+00:00"
+}
