@@ -114,7 +114,9 @@ def synth(lst, first, loc):
             if p is None:
                 bad += 1
             elif '_rand' in p and any(pre.get('_rand', {}).get(i, v) != v for i, v in p['_rand'].items()):
-                bad += 1   # 两道随机门要同一个位置抽不同的数
+                # 两道随机门要同一个位置抽不同的数：多是层层「否则」（m149 矿点 ≥95／≥85…／≥40 的否则），里层的数
+                # 同时满足外层，取里层的（八戒 seg-b）；不满足的目标走不到，照旧剪掉。
+                pre['_rand'].update(p['_rand'])
             else:
                 merge_into(pre, p)
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
