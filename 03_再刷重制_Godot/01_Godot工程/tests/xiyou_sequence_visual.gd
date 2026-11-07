@@ -65,6 +65,9 @@ func _run() -> void:
 		await _trace(scene, s, key, float_oracle.traces[key])
 	var hp_oracle: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(HP_ORACLE))
 	await _counter_death(scene, hp_oracle.traces.s104_counter_death)
+	XBattleLogic.COUNTER_AFTER_HIT = false  # 回退支：旧源 v0.28 敌人反击代替挨打
+	await _counter_death(scene, hp_oracle.traces.s104_counter_death_v028, "_v028")
+	XBattleLogic.COUNTER_AFTER_HIT = true
 	await _multi_hit_gauge(scene, hp_oracle.traces.s131)
 	await _attack_mirror()
 	await _attack_dual()
@@ -218,9 +221,10 @@ func _play_once(scene: XBattleScene, user: XActor, skill_id: int, target: XBattl
 
 
 ## 反击致死（正式版读数 action_sequence_hp_oracle.json 的 s104_counter_death：行动者 1 HP、全体敌人反击率 1）：
+## 新源（默认）敌人先挨这一下再反击，日志多一段挨打的结果；s104_counter_death_v028 是旧源，COUNTER_AFTER_HIT 回退支对照。
 ## MV 在指令执行时读 spriteCanMove，反击到 ACTION EFFECT 的 invokeAction 才发生，之前的跳跃照常；之后 DEATH BREAK 中断本段。
 ## 逐帧比指令时间与行动者跳跃高度；结算（倒下、反击记录）照旧。
-func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
+func _counter_death(scene: XBattleScene, t: Dictionary, sfx := "") -> void:
 	var logic := scene.logic
 	var user: XActor = logic.actors.filter(func(a): return a.actor_id == int(t.actor))[0]
 	var foe: XBattler = logic.enemies[1]
@@ -232,16 +236,16 @@ func _counter_death(scene: XBattleScene, t: Dictionary) -> void:
 	var got := await _play_once(scene, user, int(t.skill), foe)
 	foe.remove_state(cnt)
 	var want_cmds: Array = t.cmds.map(func(c): return [int(c[0]), str(c[1]).to_upper()])
-	check("counter_death_cmds", got.cmds == want_cmds, {"godot": got.cmds, "mv": want_cmds})
+	check("counter_death_cmds" + sfx, got.cmds == want_cmds, {"godot": got.cmds, "mv": want_cmds})
 	var key := "a%d" % user.actor_id
 	var want_jump: Array = t.sprites[key].map(func(r): return snappedf(float(r[2]), 0.001))
 	var bad := []
 	for f in range(mini(want_jump.size(), got.jump.size())):
 		if absf(got.jump[f] - want_jump[f]) > 0.002:
 			bad.append([f, got.jump[f], want_jump[f]])
-	check("counter_death_jump", bad.is_empty() and got.jump.size() == want_jump.size() and want_jump.max() > 0.0,
+	check("counter_death_jump" + sfx, bad.is_empty() and got.jump.size() == want_jump.size() and want_jump.max() > 0.0,
 		{"bad": bad.slice(0, 6), "size": [got.jump.size(), want_jump.size()]})
-	check("counter_death_settled", user.is_dead() and got.logs.any(func(l): return l.type == "counter" and l.user == foe),
+	check("counter_death_settled" + sfx, user.is_dead() and got.logs.any(func(l): return l.type == "counter" and l.user == foe),
 		[user.hp, got.logs.map(func(l): return l.type)])
 
 

@@ -2082,7 +2082,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 			# v0.35 起 YEP invokeAction：敌人反击跟在挨打之后——先正常生效；挨打的还是它（没被掩护）、还活着能行动、出手者也活着才反击
 			var hit := _invoke_normal(u, skill, t)
 			if is_same(_last_receiver, t) and t.is_alive() and can_move(t) and u.is_alive():
-				hit.append_array(_counter_attack(u, t))
+				var c := _counter_attack(u, t)
+				c[0].after_hit = true  # 画面：同一次 invokeAction，日志外层 pushBaseLine／popBaseLine 只一对（sequence_player._play_results）
+				hit.append_array(c)
 			return hit
 		return _counter_attack(u, t)
 	return _invoke_normal(u, skill, t)

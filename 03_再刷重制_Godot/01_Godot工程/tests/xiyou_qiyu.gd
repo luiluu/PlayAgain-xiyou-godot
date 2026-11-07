@@ -77,6 +77,8 @@ func _invoke(c: Dictionary) -> void:
 	logic.setup(2, s)
 	var a := _actor(int(c.setup.actor), 50)
 	var t := _enemy(c)
+	# 参照走整段行动序列，开头 IMMORTAL: targets, true；新源敌人先挨打再反击，挨打后还要活着才反击，这里照序列给目标不死
+	t.immortal = true
 	var logs := logic._invoke(a, XDB.rec("Skills", int(c.setup.skill)), t)
 	var types: Array = logs.map(func(l): return str(l.get("type", "")))
 	check(c.id + ".reflected", types.has("reflect") == bool(o.reflected), [types, o.reflected])

@@ -471,9 +471,11 @@ func _clear_log() -> void:
 
 
 ## displayActionResults：pushBaseLine ×2、popupDamage ×2、（状态变化时 pushBaseLine、waitForNewLine、popBaseLine）、
-## waitForNewLine、popBaseLine ×2
-func _push_results(status: bool) -> void:
-	methods.append(["pushBaseLine"])
+## waitForNewLine、popBaseLine ×2。外层那对 pushBaseLine／popBaseLine 是 YEP invokeAction 的，一次 invokeAction 只一对：
+## 新源敌人先挨打再反击（COUNTER_AFTER_HIT）时，挨打的结果不收外层、反击的结果不开外层（新源 s104 反击致死逐帧读数）
+func _push_results(status: bool, open := true, close := true) -> void:
+	if open:
+		methods.append(["pushBaseLine"])
 	methods.append(["pushBaseLine"])
 	methods.append(["popupDamage"])
 	methods.append(["popupDamage"])
@@ -483,17 +485,22 @@ func _push_results(status: bool) -> void:
 		methods.append(["popBaseLine"])
 	methods.append(["waitForNewLine"])
 	methods.append(["popBaseLine"])
-	methods.append(["popBaseLine"])
+	if close:
+		methods.append(["popBaseLine"])
 
 
 func _play_results(list: Array) -> void:
-	for l in list:
+	for i in list.size():
+		var l: Dictionary = list[i]
 		match l.type:
 			"hit":
 				if scene._hit_visual(l):
 					scene._collapse_visual(l.target)
+				# 同一次 invokeAction 里「挨打→反击→反击的结果」：外层 pushBaseLine／popBaseLine 只一对
+				var counter_next: bool = i + 1 < list.size() and list[i + 1].type == "counter" and list[i + 1].get("after_hit", false)
+				var after_hit_counter: bool = i >= 1 and list[i - 1].type == "counter" and list[i - 1].get("after_hit", false)
 				# 倒下也算状态变化（MV 结算时附加了无法战斗状态，addedStateObjects 里有它）
-				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died)
+				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died, not after_hit_counter, not counter_next)
 				if l.has("wait_after"):
 					methods.append(["wait", l.wait_after])  # 小猫剑圣段间 WAIT 6（XCat.cast）
 			"counter":
