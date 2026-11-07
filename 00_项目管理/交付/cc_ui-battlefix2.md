@@ -56,3 +56,14 @@
 - 本机直跑：`xiyou_battle_ui` 164/164、`xiyou_popup_multi` 14/14、`xiyou_speed_gear` 10/10、`xiyou_popup_overlap` 8/8、`xiyou_battle_pace` 2/2。
 - `语法检查.py` 0 问题；`事件空绿扫描.py --check` 55 例均在基线内；`回退开关覆盖.py` 无本单新缺口。
 - 原版实测工具 `03_转换工具/ui_reference/speed_gear_ref.cjs`（只读冻结正式源，内存新局，不读写存档）。
+
+## 变更记录草稿
+
+## 2026-11-07 【cc·界面·未经审查】战斗胜利提示不卡、战斗鼠标真实事件、多段伤害数字逐帧出、变速齿轮 1.6 复现原版（dev.待定）
+
+- 审查第 3 项（O-190）：胜利提示出现前停用结算页输入，饿狼神之触媒首次满足的胜利→提示→返回地图整条路径能走完（`xiyou_victory_text_flow`）。
+- 审查第 7 项：战斗鼠标测试全部改成真实事件分发；战斗 101 消息左键翻页修好（消息窗忙时把点击转给它）。battlefix1 的 mouse_pick 只在直调 `_gui_input` 下成立，这次补实。
+- Kyo 实机 2：多段伤害数字照原版每个战斗者每帧只出一个（`POPUP_QUEUE`），建出当帧更新、hpAffected 时 0 伤害也弹（`xiyou_popup_multi` 对照正式版逐帧读数）。
+- Kyo 实机 3「原版动作稍快」：原版 Drill_SpeedGear 初始齿轮 1.6（每秒 96 次 updateScene），重制 `XSpeedGear`（物理 96 次/秒、time_scale 1.6、音高 +6%），复现原版不登 O 号，回退 `XSpeedGear.ENABLED = false`；地图事件「等待 N 帧」与震屏等待改按物理帧。实测等 60 帧、普攻 46 帧与原版一致。
+- 本单引起的 race_poison 3 项已修（测试里消息没关掉）。
+- 待复核：本分支量的走路每格 16 帧（原版 8 次），是因为没含八戒 mapev1 的 move_distance_scale 2.0；两单都合进 main 后要复量一次。
