@@ -12,7 +12,7 @@ extends Control
 ## - 升级材料（占列表位置）：XItemRow；不能用的半透明；确定即镶嵌，留在材料列表。取消回到操作。
 ## - 选人 (0,0,1280,720)：Window_MenuActor，每行 173，头像居中、名字/Lv、HP/MP/TP 量条；使用后留在选人。
 ## - 说明卡（XHelpCard）跟着列表/材料列表的选中行；操作阶段保留；分类与选人阶段隐藏（v0.10 选人时隐藏）。
-## - 跟到 v0.62.12（installPanelLayoutV043 的 Scene_Item 部分，O-待定·装备详情）：物品列表活动且选中的是装备时，信息窗换成
+## - 跟到 v0.62.12（installPanelLayoutV043 的 Scene_Item 部分，O-233）：物品列表活动且选中的是装备时，信息窗换成
 ##   页签条＋详情＋翻页条（XGearDetail，页签「装备详情／插槽与镶嵌」，Tab 或点页签条左半／右半切换），说明卡不弹出；
 ##   别的时候照旧显示信息窗。DETAIL_V043 = false：回到 v0.28（装备也弹说明卡、信息窗一直在）。
 ## - 藏宝图直接／批量使用（installTreasureBatchRuntime 的 Scene_Item.useItem，规则见 XTreasureBatch）：表里的 21 种藏宝图「使用」时

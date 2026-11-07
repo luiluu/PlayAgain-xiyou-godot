@@ -20,7 +20,7 @@ extends Control
 ## - 换角色只在指令阶段：Q/W、PageUp/PageDown（光标音），回到指令窗。装上/清空后 HP、MP 按原比例保留（YEP）。
 ## 战力：XPower.status_text（角色战力，关掉战力时不画）；装上／卸下／清空后右下角弹战力变化提示（XPowerNotice）。右上角「装备检索 / 排序」「清除筛选」见 XGearSearch：
 ## 候选阶段打开只检索该槽候选，应用后候选按条件筛选（「卸载」留在最后）。
-## 跟到 v0.62.12（installEquipmentDetailV041＋installPanelLayoutV043，O-待定·装备详情）：右下换成页签条＋详情＋翻页条（XGearDetail），
+## 跟到 v0.62.12（installEquipmentDetailV041＋installPanelLayoutV043，O-233）：右下换成页签条＋详情＋翻页条（XGearDetail），
 ## 三个页签「装备详情／属性对比／插槽与镶嵌」，默认装备详情；→／Tab 下一个、← 上一个（首尾相接，不响音效）、点页签条按横坐标选。
 ## 属性对比挪进详情的位置 (640,231,640,431)；物品信息窗不再出现；说明卡不再弹出（详情代替）。
 ## 详情页与插槽页：PageUp／PageDown 翻详情页（不再换角色；Q／E 照旧换角色）、点翻页条左半／右半翻页、滚轮滚动、按住拖动。
