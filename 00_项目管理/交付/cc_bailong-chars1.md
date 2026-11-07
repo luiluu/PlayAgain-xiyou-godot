@@ -1,7 +1,7 @@
 # 交付：cc/bailong-chars1
 
 - 车道／工作者：E 角色专属／白龙（cc，第十五批 FF）
-- 状态：进行中
+- 状态：可合并
 
 ## 盘点（新源 v0.62.12 角色专属类运行时，重制还缺的）
 
@@ -37,7 +37,7 @@
 
 - **真火印记**（新 `core/zhenhuo.gd`，跟 `installZhenhuoMarkRuntime` v0.53.03）：学了 1089 的至尊宝放 1083／1086 先给目标挂印记 108；任何角色的火伤打中行动前已带印记的活敌人，印记来源追加横扫千军 1090（物理），伤害 ×(0.6＋1%×等级)。原版想屏蔽的旧追击状态 109 实际没挡住（装载次序），重制默认挡下（O-待定·真火旧追击）。
 - **星爆三本被动书**（新 `core/starburst_books.gd`，跟 `installStarburstBooksRuntime` v0.62.10）：8／18 层守层者胜利各送一本封弊者／流光闪（每档一次，试炼、缩放战不送），152 不朽存在每场 1/66～1/33 掉阐释者，回地图时按已通过层数补发。
-- 参照：`mv_oracle/zhenhuo_probe.cjs`（11 例）、`starburst_books_probe.cjs`（22 例），夹具在 `tests/fixtures/`，专项 `xiyou_zhenhuo`、`xiyou_starburst_books`。
+- 参照：`mv_oracle/zhenhuo_probe.cjs`（12 例）、`starburst_books_probe.cjs`（22 例），夹具在 `tests/fixtures/`，专项 `xiyou_zhenhuo`、`xiyou_starburst_books`。
 - 玩家可见：至尊宝带真火印记时火伤会触发横扫千军追击；星爆气流斩的三本被动书改从神魔之塔 8、18 层守层者和不朽存在拿。
 
 ## 交接板
@@ -50,16 +50,13 @@
 
 - 角色：待总装按本期两项核定。
 
-## 接续要点（等总装推送 main 后做）
-
-1. `git merge main`，`新建工作树.sh --补齐 <本工作树>`；`python3 03_再刷重制_Godot/07_开发环境/语法检查.py`。
-2. 专项：`xiyou_zhenhuo`、`xiyou_starburst_books`；再 `选测.py main --list` 取战斗核心类场景（改了 battle_logic／battler／resource_context，至少 xiyou_determinism 等），`工具回归.py`。
-3. 可能对不上的地方：mark.* 的 108 回合数（原版挂完后行动结束减 1：1083 为 1）、1083 两个不同目标的选法（随机 0.5）、提示文字；chase.* 原版的命中段数不比（强制行动排在事件里，探针不跑）。
-4. 探针跑法：`NODE_PATH=<主工作区>/03_再刷重制_Godot/03_转换工具/mv_oracle/node_modules node zhenhuo_probe.cjs`，产物拷到 `tests/fixtures/`。
-
 ## 验证
 
-（待写）
+- 已合 main 2443a7b0（无冲突），`新建工作树.sh --补齐`；`语法检查.py` 639 个 .gd 0 问题；`工具回归.py` 全过（第一次挂探针登记检查：zhenhuo_probe 没关五乘区，已加 `CodexZones.ENABLED=false`，之后 1090 逐段绝对伤害与原版一致）。
+- 专项：`xiyou_zhenhuo` 97/97（开关开／关两头比）、`xiyou_starburst_books` 86/86。
+- 云端选测（`云端选测.py run`，基准 2443a7b063，325 个场景含 xiyou_determinism、xiyou_rules 全段、事件对照）：第一轮 433fa402 挂 69 个，根因是星爆模块把真气 `battle.scaled`（字典）喂给 `bool()`，胜利结算报错；修后 cf96679a 全过（run 42393426820）。
+- 原版探针：`zhenhuo_probe.cjs` 12 例、`starburst_books_probe.cjs` 22 例，夹具在 `tests/fixtures/`（不进同步 PROBES，同流萤做法）。探针跑法 `NODE_PATH=<主工作区>/03_再刷重制_Godot/03_转换工具/mv_oracle/node_modules node <探针>`。
+- 不比的：真火追击例的命中段数与 108 回合数（原版强制行动排进事件，探针不跑事件，本次行动停在第一段）。
 
 ## 可优化（流程／工具／效率）
 
@@ -67,5 +64,7 @@
 
 ## 本分支提交
 
-- 4f41818b WIP：真火印记
-- 583a863b WIP：星爆三本被动书、旧追击开关
+- 4f41818b、583a863b、1abec5b5、6daf8162、6727e832（WIP：模块、探针、测试、交付单、Kyo 定 O 号保留）
+- 合并 main 2443a7b0
+- 真火：旧自动施法每行动只排一次、倍率按 noScale 比；探针关五乘区、逐段绝对值也比
+- cf96679a 星爆：scaled 是字典（云端 69 个挂在这里）
