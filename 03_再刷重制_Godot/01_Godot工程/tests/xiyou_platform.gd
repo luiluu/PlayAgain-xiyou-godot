@@ -247,6 +247,26 @@ func _run() -> void:
 	XTouchControls.scene_override = null
 	not_map.free()
 	fake_map.free()
+	# 安卓商店页存档键按了没反应（DH）：事件打开的商店、存档页、仓库等独立页面开着时，真地图页也不显示存档键
+	var real_map := XMapScene.new()   # 不进树，_ready 不跑，只量 touch_save_visible 的判断
+	real_map.ui = CanvasLayer.new()
+	add_child(real_map.ui)
+	check("map_save_shown_plain", real_map.touch_save_visible())
+	var shop_page := Control.new()
+	real_map._add_scene_page(shop_page)
+	check("map_save_hidden_scene_page", not real_map.touch_save_visible() and real_map.scene_page_open())
+	XTouchControls.scene_override = real_map
+	await frames(1)
+	check("map_save_pad_hidden_scene_page", pad.hit(save_center) == "" and not (pad._buttons.save as Panel).visible, pad.hit(save_center))
+	XMapScene.SCENE_PAGE_HIDES_SAVE = false
+	check("map_save_rollback_scene_page", real_map.touch_save_visible())
+	XMapScene.SCENE_PAGE_HIDES_SAVE = true
+	shop_page.queue_free()
+	check("map_save_back_after_close", real_map.touch_save_visible() and not real_map.scene_page_open())
+	XTouchControls.scene_override = null
+	await frames(1)
+	real_map.ui.free()
+	real_map.free()
 	# 隐藏按键
 	var hide_center: Vector2 = (XTouchControls.BUTTONS.hide.rect as Rect2).get_center()
 	touch(0, hide_center, true)

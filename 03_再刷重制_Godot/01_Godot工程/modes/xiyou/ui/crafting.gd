@@ -690,20 +690,20 @@ func toggle_source() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and mode == "pick":
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		toggle_source()
 	elif event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_side(1 if event.is_action_pressed("ui_right", true) else -1)
 	elif mode in ["list", "pick"] and XMenu.page_dir(event) != 0:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_page(XMenu.page_dir(event))

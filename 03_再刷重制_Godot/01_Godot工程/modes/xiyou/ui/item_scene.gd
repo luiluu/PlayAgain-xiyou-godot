@@ -526,7 +526,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		handled = false
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## 通用翻页（Scene_Item 的分类、物品列表与升级、强化材料窗都不接管 pageup／pagedown）
@@ -875,7 +875,7 @@ func _bulk_change(d: int) -> void:
 
 func _bulk_input(event: InputEvent) -> void:
 	if _bulk_busy:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -893,7 +893,7 @@ func _bulk_input(event: InputEvent) -> void:
 	else:
 		handled = false
 	if handled:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_refresh()
 
 

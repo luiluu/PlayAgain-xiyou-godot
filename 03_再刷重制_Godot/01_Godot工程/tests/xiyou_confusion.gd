@@ -102,6 +102,7 @@ func _norm(v):
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
+	XConfusion.FIX_SELF_TARGET = false  # 参照是原版：O-220 关着逐例比
 	check("oracle", ref is Dictionary and ref.cases.size() == 53 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:
 		var id := str(c.id)
@@ -120,7 +121,54 @@ func _run() -> void:
 	_act_flow(ref)
 	_execute_paths()
 	_enemy_decide()
+	XConfusion.FIX_SELF_TARGET = true
+	_self_fix()
 	finish()
+
+
+## O-220（默认开）：己方单体随机不选行动者自己；己方只剩自己时打对方；全体照旧含自己。关着时同一随机值选到自己（对照原版）
+func _self_fix() -> void:
+	for is_actor in [true, false]:
+		var side := "a" if is_actor else "e"
+		for st in [9, 8]:  # 魅惑 3 级全走己方；混乱 2 级第二个随机数 ≥0.5 走己方
+			for v in [0.0, 0.3, 0.6, 0.99]:
+				var l := _battle()
+				var u = l.actors[0] if is_actor else l.enemies[0]
+				_add(u, st)
+				var seq: Array = [v] if st == 9 else [0.99, v]
+				var tag := "self_fix.%s.%d.%s" % [side, st, str(v)]
+				var rs := _stream(l, seq)
+				var list := l.targets_for(u, u.attack_skill(), null, true)
+				check(tag + ".not_self", list.size() == 1 and list[0] != u and _tag(l, list[0])[0] == side, _tags(l, list))
+				check(tag + ".draws", rs.draws == seq.size(), rs.draws)
+				if v == 0.0:
+					XConfusion.FIX_SELF_TARGET = false
+					_stream(l, seq)
+					var orig := l.targets_for(u, u.attack_skill(), null, true)
+					check(tag + ".off_hits_self", orig == [u], _tags(l, orig))
+					XConfusion.FIX_SELF_TARGET = true
+				l.end_battle(0)
+		# 己方只剩自己：改打对方随机一个
+		var l2 := _battle()
+		var u2 = l2.actors[0] if is_actor else l2.enemies[0]
+		for b in (l2.actors if is_actor else l2.enemies):
+			if b != u2:
+				b.hp = 0.0
+				b.param_mark_dirty()
+				b.param_refresh()
+		_add(u2, 9)
+		_stream(l2, [0.5])
+		var alone := l2.targets_for(u2, u2.attack_skill(), null, true)
+		check("self_fix.%s.alone_hits_foe" % side, alone.size() == 1 and _tag(l2, alone[0])[0] != side, _tags(l2, alone))
+		l2.end_battle(0)
+	# 全体（scope 2／8／10）照旧整侧存活含自己
+	var l3 := _battle()
+	var u3: XActor = l3.actors[0]
+	_add(u3, 9)
+	_stream(l3, [0.5])
+	var all := XConfusion.targets(l3, u3, {"scope": 8})
+	check("self_fix.all_scope_keeps_self", all.has(u3) and all.size() == l3.alive(l3.actors).size(), _tags(l3, all))
+	l3.end_battle(0)
 
 
 ## 13 个状态：等级＝restriction、可行动、不是不能行动

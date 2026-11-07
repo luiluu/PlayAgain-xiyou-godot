@@ -8,7 +8,7 @@
 
 ## 盘点（开工时报协调，协调批了分三期）
 
-新源 `installLiuyingRuntime.js`（850 行，运行时 1.2.0，modules.json 第 34 个）对集成分支 21cd90eb：重制里只有 O-212／setHp 遮挡那段，其余 12 块都没有。
+新源 `installLiuyingRuntime.js`（850 行，运行时 1.2.0，modules.json 第 34 个）对集成分支 21cd90eb：重制里只有 O-待定·角色HP包装／setHp 遮挡那段，其余 12 块都没有。
 
 | 块 | 内容 | 期 |
 |---|---|---|
@@ -82,7 +82,7 @@
 | 14 | 梦应归于何处（自动学、萤火） | 做了（一期学、二期萤火） |
 | 15 | 说明按当前进阶生成（skillLines／refreshText，图鉴副本同步 descParams） | 已交界面（总装 11-06 定）；help_card 10622／10623 同步后会挂，归界面 |
 | 16 | 萨姆残核掉落 | 做了（三期） |
-| — | 流萤遮住角色 setHp 的装载副作用 | O-212 管（rules，Kyo 11-06 定修正），本车道没加开关 |
+| — | 流萤遮住角色 setHp 的装载副作用 | O-待定·角色HP包装 管（rules，Kyo 11-06 定修正），本车道没加开关 |
 
 ## 结果（本机，新源）
 
@@ -123,7 +123,7 @@
 
 ## 可回退
 
-- `XLiuying.FIX_UNDYING_REFRESH`（xiyou_liuying2 两头）、`XLiuying.CORE_DROP`（xiyou_liuying3 两头），都是 static var、测试里有字面量赋值。其余照搬原版新行为；setHp 遮挡已由 O-212 管，没加开关。
+- `XLiuying.FIX_UNDYING_REFRESH`（xiyou_liuying2 两头）、`XLiuying.CORE_DROP`（xiyou_liuying3 两头），都是 static var、测试里有字面量赋值。其余照搬原版新行为；setHp 遮挡已由 O-待定·角色HP包装 管，没加开关。
 
 ## 可优化（流程／工具／效率）
 

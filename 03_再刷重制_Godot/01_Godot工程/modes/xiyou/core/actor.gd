@@ -558,6 +558,7 @@ func trait_objects() -> Array:
 			if not stale_state_ids.has(int(st.get("id", 0))):
 				out.append(st)
 	out.append_array(XMagicWeapon.trait_objects(equips))  # CP_MagicWeapon：升级特性对象按法宝等级重复
+	out.append_array(XThreeGrowth.recruit_dup_objects(self))  # O-137：开关关时重现原版招募后百谷生倍率重复
 	var resistance := []
 	for id in XEquipSuits.ids(self,"statesResist"):
 		resistance.append({"code":TRAIT_STATE_RESIST,"dataId":id,"value":1})

@@ -15,7 +15,7 @@
 | ①d gear_search | 3 项还挂，**不是穿透**：差在「随机／附加」对「固定」的词条归类（专武词缀，悟空 newsrc7「专武不当词缀」、DB ① 专武前缀读档还原），战力差跟着这个走 | — |
 | ② 角色被动缓存随状态重建 | dsPassiveSkill v0.51：addState／removeState／eraseState／clearStates 置脏、按签名重建；角色只在开战构建阶段（Scene_Battle.start 里 okadd 置真之前）不建。Godot 角色原来只在装备、技能、等级变化时刷新 | `core/actor.gd` `passive_cache()` 读时比状态列表（同 newsrc3 的敌人）。xiyou_passive 加 `state_rebuild`（252 的 harmRe 500 增删，角色、敌人各一组），**旧代码挂 actor.added**。state_effects 复活实战那批是探针现场（只 BattleManager.setup、没跑 Scene_Battle.start，okadd 一直假）：测试用 `XActor.passive_state_rebuild = false` 照现场比（默认 true，游戏不受影响），回到 155 行 |
 | ③ source_identity | 归哪吒 CY，本单只列清单，没改工具 | 见「source_identity 清单」 |
-| ④ O-212 并开关 | 总装批了：一个开关 `XResourceContext.o_actor_hp_wrappers`，沿用 O-212 | 删 `XShieldLedger.ACTOR_HP_LEDGER`、原 `o_actor_sethp_wrappers`；`set_resource` 回退支只跳过异化、谷雨，账本照调 `hp_gain`（回退支在里面按原生合计白挡）——**补上原来的洞**：回退支 setHp 整段跳过 hp_gain，角色带账本护盾时跟原版对不上。`shield_ledger_probe.cjs` 在 v0.62.12 重出成 `tests/fixtures/shield_ledger_oracle_v062.json`，xiyou_shield_ledger 在回退支下逐步比 9 例；**旧写法挂 native.v062.5／6.set**。测试改名：guyu_battle、alien_affix、xuan_auto。优化登记「O-待定·流萤遮住角色 setHp」并进 O-212 一行，仍「待用户确认」 |
+| ④ O-待定·角色HP包装 并开关 | 总装批了：一个开关 `XResourceContext.o_actor_hp_wrappers`，沿用 O-待定·角色HP包装 | 删 `XShieldLedger.ACTOR_HP_LEDGER`、原 `o_actor_sethp_wrappers`；`set_resource` 回退支只跳过异化、谷雨，账本照调 `hp_gain`（回退支在里面按原生合计白挡）——**补上原来的洞**：回退支 setHp 整段跳过 hp_gain，角色带账本护盾时跟原版对不上。`shield_ledger_probe.cjs` 在 v0.62.12 重出成 `tests/fixtures/shield_ledger_oracle_v062.json`，xiyou_shield_ledger 在回退支下逐步比 9 例；**旧写法挂 native.v062.5／6.set**。测试改名：guyu_battle、alien_affix、xuan_auto。优化登记「O-待定·流萤遮住角色 setHp」并进 O-待定·角色HP包装 一行，仍「待用户确认」 |
 
 改的原沙僧核心文件：无。请审查重点看 `actor.gd` 的状态签名重建（影响所有战斗里带 passive 标签的状态挂到角色身上）和 `resource_context.gd`／`shield_ledger.gd` 的开关合并。
 
@@ -40,18 +40,18 @@
 
 ## 变更记录草稿
 
-## 2026-11-06 【cc·rules·未经审查】新源补单三：穿透说明卡与战力去重、角色被动缓存按状态重建、O-212 并成一个开关（dev.待定）
+## 2026-11-06 【cc·rules·未经审查】新源补单三：穿透说明卡与战力去重、角色被动缓存按状态重建、O-待定·角色HP包装 并成一个开关（dev.待定）
 
 见本交付单「做了什么」。核查：待审查。
 
 ## 交接板
 
 - 下一步：source_identity 等哪吒 CY；gear_search 等专武词缀（悟空 DB ①）；help_card 特效排序归界面。
-- 需要用户决定：O-212（现在一个开关 `XResourceContext.o_actor_hp_wrappers`，默认修正）。
+- 需要用户决定：O-待定·角色HP包装（现在一个开关 `XResourceContext.o_actor_hp_wrappers`，默认修正）。
 
 ## 可优化
 
-- 建议（另开一单，总装已同意）：璇·余辉（installNativeXuanRuntime 308，回光溢出转护盾）和绑定（installNativeBindingChargeRuntime 232，敌方行动期间不可选中的不掉血）这两个 `Game_Battler.gainHp` 包装，原版对角色同样被 krz 的 Game_Actor.gainHp 遮住；Godot 现在对角色照包、没有回退支。先各量一个参照，再看要不要并进 O-212（规则，中）。
+- 建议（另开一单，总装已同意）：璇·余辉（installNativeXuanRuntime 308，回光溢出转护盾）和绑定（installNativeBindingChargeRuntime 232，敌方行动期间不可选中的不掉血）这两个 `Game_Battler.gainHp` 包装，原版对角色同样被 krz 的 Game_Actor.gainHp 遮住；Godot 现在对角色照包、没有回退支。先各量一个参照，再看要不要并进 O-待定·角色HP包装（规则，中）。
 - 建议：xiyou_rules 第一项 source_identity 挂了整段就不比，一处工具改动就让 65 段全红、看不到真正的规则差；可以让它记一项失败后照常往下比（工具／哪吒，小）。
 
 ## 本分支提交
@@ -59,6 +59,6 @@
 - c9aa2b95 角色被动缓存随状态重建
 - 684a9759 战力穿透去重
 - a612b321 说明卡穿透行
-- 384889e3 O-212 并开关、v0.62 账本夹具
+- 384889e3 O-待定·角色HP包装 并开关、v0.62 账本夹具
 - 6cfc61a6 state_effects 复活实战照探针现场
 - （本提交）交付单

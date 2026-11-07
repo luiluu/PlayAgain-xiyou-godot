@@ -11,7 +11,7 @@
 |---|---|---|
 | revive.apply 252（七星续命 500 固定减伤） | 新源 dsPassiveSkill v0.51 起 addState／removeState／eraseState／clearStates 置脏、按签名（状态列表＋技能＋装备＋敌人号）重建被动缓存，敌人没有角色那道 okadd 门；Godot 敌人只在开战建一次，战斗中挂的状态 passiveHarmRe 不进缓存。另外测试的 ReviveLogic 固定 7 点不走 finish 的固定减伤 | `core/enemy.gd`：`passive_cache()` 读时比签名（敌人号＋state_ids），变了就 `refresh_passive()`。测试 ReviveLogic 的 7 点照真实链带上固定减伤候选（没有 harmRe 的状态 flat 为 0，跟原来一样）。252 的 20 行全过；**换回旧 enemy.gd 挂 20 行**（175→155） |
 | weapon_unleash w93（解放 5636） | 不是规则差：参照用例带 `enabledDisabledActor: 166`，临时把 166 从 `CodexImportedBalance.disabledActorIds` 拿掉再量专武；Godot 测试没照做，`is_disabled_actor` 让 canUse 全否 | `core/imported_balance.gd` 加测试用 `static var probe_enabled`（默认空，游戏不受影响）；测试按用例设、量完清。963/963（改前挂 8 项） |
-| guyu_battle `script.sub.6.revive.party`／`7.turn.party` | 原版代码错误：新源流萤（main.js 第 144 行）在 `Game_Actor.prototype` 上自定义 setHp，捕获的是谷雨（152）包装前的 `Game_BattlerBase.setHp`，角色 setHp 不看替倒，替倒中的谷雨被直接设满血（死亡状态仍去不掉、仍算替倒）。谷雨自己的 `entrances` 注释写明要封住角色上的重写入口，setHp 漏了；同 O-212（账本） | 回退开关 `XGuyu.ROOTED_ACTOR_SET_HP`（默认 true＝照谷雨本意抬不起；false 照原版），`core/resource_context.gd` 的谷雨 setHp 那行加条件。测试参照比原版支（`= false`）；另重放 sub 例断言修正支 revive 后生命还是 0。1638/1638；登记见优化登记末行 `O-待定·谷雨替倒 setHp` |
+| guyu_battle `script.sub.6.revive.party`／`7.turn.party` | 原版代码错误：新源流萤（main.js 第 144 行）在 `Game_Actor.prototype` 上自定义 setHp，捕获的是谷雨（152）包装前的 `Game_BattlerBase.setHp`，角色 setHp 不看替倒，替倒中的谷雨被直接设满血（死亡状态仍去不掉、仍算替倒）。谷雨自己的 `entrances` 注释写明要封住角色上的重写入口，setHp 漏了；同 O-待定·角色HP包装（账本） | 回退开关 `XGuyu.ROOTED_ACTOR_SET_HP`（默认 true＝照谷雨本意抬不起；false 照原版），`core/resource_context.gd` 的谷雨 setHp 那行加条件。测试参照比原版支（`= false`）；另重放 sub 例断言修正支 revive 后生命还是 0。1638/1638；登记见优化登记末行 `O-待定·谷雨替倒 setHp` |
 
 改的原沙僧核心文件：无（`enemy.gd`、`resource_context.gd` 不在那份名单里；请审查重点看 `enemy.gd` 的签名重建，它影响所有战斗里敌人身上带 passiveHarmRe 的状态）。
 
@@ -38,11 +38,11 @@
 ## 交接板
 
 - 下一步：revive.apply「敌人＋缓存不脏」28 行待总装定归谁（newsrc2 判断是探针前面用例的现场）；异化 setHp 对角色失效（alien_affix 4 项）待派。
-- 需要用户决定：`O-待定·谷雨替倒 setHp`（默认保留谷雨限制），同 O-212 一起确认。
+- 需要用户决定：`O-待定·谷雨替倒 setHp`（默认保留谷雨限制），同 O-待定·角色HP包装 一起确认。
 
 ## 可优化
 
-- 建议：新源流萤的 `Game_Actor.prototype.setHp` 让之后装的所有 `Game_BattlerBase.setHp` 包装对角色失效（已知：账本 O-212、谷雨本单、异化 146／148 待查）。可以一次盘点 main.js 第 144 行之后所有 setHp 包装，统一一个「角色 setHp 照原版绕过」的回退口径，免得一个个撞（规则，中）。
+- 建议：新源流萤的 `Game_Actor.prototype.setHp` 让之后装的所有 `Game_BattlerBase.setHp` 包装对角色失效（已知：账本 O-待定·角色HP包装、谷雨本单、异化 146／148 待查）。可以一次盘点 main.js 第 144 行之后所有 setHp 包装，统一一个「角色 setHp 照原版绕过」的回退口径，免得一个个撞（规则，中）。
 - 建议：角色侧被动缓存在新源战斗中（okadd 之后）同样随状态增删重建，Godot 角色还没跟；本单只做了敌人。要查哪些状态带 passiveHarmRe／passiveXXX 并会在战斗中挂上（规则，中）。
 
 ## 本分支提交

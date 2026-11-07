@@ -14,6 +14,10 @@ func _ready() -> void:
 	key_repeat = XKeyRepeat.new()  # 按住键的连发照原版 24／6 帧（ui11）
 	key_repeat.name = "KeyRepeat"
 	add_child(key_repeat)
+	if XVersionLabel.SHOW:
+		var ver := XVersionLabel.new()  # 右下角版本号（正式版也显示）
+		ver.name = "VersionLabel"
+		add_child(ver)
 	platform = XPlatform.new()  # 平台差异（两指取消、返回键、切后台、触屏按键），跨平台二期
 	platform.name = "Platform"
 	add_child(platform)
@@ -35,6 +39,13 @@ func _ready() -> void:
 	# 官方导出模板不允许用命令行覆盖场景路径；调试包通过显式验收参数在包内跳转。
 	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--verify-export"):
 		_verify_export.call_deferred()
+	# 发行包按键冒烟（发行入口冒烟.py --keys）：带 --smoke-keys=… 才挂上，按完一串键自己退出
+	var smoke := XKeySmoke.sequence(OS.get_cmdline_user_args())
+	if not smoke.is_empty():
+		var ks := XKeySmoke.new()
+		ks.name = "KeySmoke"
+		ks.steps = smoke
+		add_child(ks)
 
 ## 无窗口（--headless，只有测试与工具这样跑）时 Godot 每帧固定睡 low_processor_mode_sleep_usec（默认 6900 微秒），
 ## 只等帧推进的测试大半时间在睡。设了 XIYOU_HEADLESS_SLEEP_USEC（微秒）就对所有 headless 运行改用这个值（实验与回退用）。
@@ -127,4 +138,4 @@ func _input(event: InputEvent) -> void:
 			WindowFit.apply(window)
 		else:
 			window.mode = Window.MODE_FULLSCREEN
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)

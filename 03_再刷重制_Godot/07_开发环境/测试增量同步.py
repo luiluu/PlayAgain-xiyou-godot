@@ -685,6 +685,68 @@ class CacheTests(unittest.TestCase):
             self.assertNotIn('a_probe.cjs', json.loads(c.path.read_text())['probes'])
             self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
 
+    def stash_run(self, behave, force=False):
+        """跑 a、b 两个探针：behave[探针名] 为产物文本（退出 0）或 None（退出 7、不写产物）；返回实际执行了哪些探针与异常。"""
+        ran, real = [], subprocess.run
+        def fake(cmd, *args, **kwargs):
+            if cmd[0] != 'node' or not str(cmd[1]).endswith('_probe.cjs'):
+                return real(cmd, *args, **kwargs)
+            name = Path(cmd[1]).name.split('_probe')[0]
+            ran.append(name)
+            text = behave[name]
+            if text is not None:
+                (self.oracle / '.sandbox' / (name + '.json')).write_text(text)
+            return subprocess.CompletedProcess(cmd, 0 if text is not None else 7, '', '' if text is not None else 'boom')
+        c = self.cache(force)
+        error = None
+        with mock.patch.multiple(sync, PROBES=self.probes[:2], ORACLE_DIR=self.oracle, SANDBOX=self.oracle / '.sandbox'), \
+             mock.patch.object(sync.subprocess, 'run', fake), mock.patch.dict(os.environ, XIYOU_GENERATED=str(self.gen)):
+            try:
+                sync.run_probes(io.StringIO(), c)
+                c.commit()
+            except RuntimeError as e:
+                error = e
+        return sorted(ran), error
+
+    def test_successful_probes_are_kept_when_another_probe_fails(self):
+        """tools79：同一轮里 b 挂了，已成功的 a 的产物留进暂存（generated 不动、缓存不发布）；下一轮输入没变就不重跑 a，
+        直接用暂存产物，跟 b 的新结果一起照常核验、发布、记缓存。"""
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-new"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('探针失败', str(error))
+        self.assertIn('"ok"', (self.gen / 'oracle/a.json').read_text())          # 失败时 generated 不动
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"should-not-run"}]}', 'b': '{"cases":[{"id":"b-new"}]}'})
+        self.assertIsNone(error)
+        self.assertEqual(ran, ['b'])
+        self.assertIn('a-new', (self.gen / 'oracle/a.json').read_text())
+        self.assertIn('b-new', (self.gen / 'oracle/b.json').read_text())
+        self.assertEqual(self.hits()[:2], [True, True])
+        self.assertFalse((self.oracle / '.sandbox/probe-stash/index.json').exists() and
+                         json.loads((self.oracle / '.sandbox/probe-stash/index.json').read_text()))   # 发布后暂存清掉
+
+    def test_stash_is_not_used_when_inputs_change_or_full_or_output_is_bad(self):
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-new"}]}', 'b': None})
+        (self.oracle / 'a_probe.cjs').write_text('// changed after the failed run')   # a 的输入变了：暂存作废，照跑
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-2"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        ran, error = self.stash_run({'a': '{"cases":[{"id":"a-3"}]}', 'b': '{"cases":[{"id":"b"}]}'}, force=True)   # --full 不用暂存
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('a-3', (self.gen / 'oracle/a.json').read_text())
+        # 带新错误的产物不进暂存（先让两个探针都失效，免得上一轮发布的缓存直接命中）
+        for n in ('a', 'b'):
+            (self.oracle / (n + '_probe.cjs')).write_text('// v3 ' + n)
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"x","error":"sampling failed"}]}', 'b': None})
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-4"}]}', 'b': None})
+        self.assertEqual(ran, ['a', 'b'])
+        # 暂存文件被改动：不认，照跑
+        for n in ('a', 'b'):
+            (self.oracle / (n + '_probe.cjs')).write_text('// v4 ' + n)
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-5"}]}', 'b': None})
+        (self.oracle / '.sandbox/probe-stash/a.json').write_text('{"cases":[{"id":"tampered"}]}')
+        ran, _ = self.stash_run({'a': '{"cases":[{"id":"a-6"}]}', 'b': '{"cases":[{"id":"b"}]}'})
+        self.assertEqual(ran, ['a', 'b'])
+        self.assertIn('a-6', (self.gen / 'oracle/a.json').read_text())
+
     def test_failed_forced_run_cannot_reuse_last_success(self):
         self.prime()
         c = self.cache(True)
@@ -1081,6 +1143,90 @@ class TaskWatchTests(unittest.TestCase):
                 self.assertEqual(p.stdout.strip(), 'TASK_LOG=' + str(log.resolve()))
                 w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
                 self.assertEqual(w.returncode, expected, w.stdout + w.stderr)
+
+    def test_start_fallback_without_launchd_still_detaches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / 'fallback.log'
+            env = dict(os.environ, XIYOU_LONG_TASK_LAUNCHD='0')
+            p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'start', str(log), '--', sys.executable, '-c', 'print("ok")'],
+                               capture_output=True, text=True, timeout=35, env=env)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertNotIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
+
+    def test_start_survives_killing_the_session_that_started_it(self):
+        """哪吒 tools81：发起 start 的「会话」整棵进程树被杀后任务照跑完；macOS 上任务的责任进程是它自己，
+        不再挂在发起它的 claude 上（原来 claude 会话一关，app 按责任进程连带 SIGTERM，换源同步 143）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            log, marker = Path(tmp) / 'survive.log', Path(tmp) / 'done.txt'
+            child = 'import time,pathlib; time.sleep(2.5); pathlib.Path(%r).write_text("ok"); print("ok")' % str(marker)
+            session = ('import subprocess,sys,time; p=subprocess.run(sys.argv[1:], capture_output=True); print("STARTED", p.returncode, flush=True); '
+                       'time.sleep(60)')
+            fake = subprocess.Popen([sys.executable, '-c', session, sys.executable, str(HERE / '长任务.py'), 'start', str(log),
+                                     '--', sys.executable, '-c', child], stdout=subprocess.PIPE, text=True, start_new_session=True)
+            try:
+                self.assertEqual(fake.stdout.readline().split(), ['STARTED', '0'])
+                wrapper = json.loads(Path(str(log) + '.status.json').read_text())['pid']
+                row = subprocess.run(['ps', '-o', 'ppid=', '-p', str(wrapper)], capture_output=True, text=True).stdout.strip()
+                self.assertEqual(row, '1')   # 不在发起者的进程树里
+                if sys.platform == 'darwin':
+                    import ctypes
+                    resp = ctypes.CDLL(None).responsibility_get_pid_responsible_for_pid
+                    resp.restype, resp.argtypes = ctypes.c_int, [ctypes.c_int]
+                    self.assertNotEqual(resp(wrapper), resp(fake.pid))
+                    self.assertEqual(resp(wrapper), wrapper)
+                os.killpg(fake.pid, signal.SIGKILL)   # 「会话」连同它的进程组整个被杀
+                fake.wait(timeout=5)
+            finally:
+                if fake.poll() is None:
+                    fake.kill()
+                fake.stdout.close()
+            self.assertFalse(marker.exists())     # 杀的时候任务还没跑完
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, text=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertEqual(marker.read_text(), 'ok')
+
+    @unittest.skipUnless(sys.platform == 'darwin' and shutil.which('launchctl'), '只在 macOS 上有 launchd')
+    def test_start_with_log_under_documents_uses_launchd(self):
+        """tools82：日志在本工作树（~/Documents 下）时 launchd 也起得来——它的 stderr 不再落在日志旁边
+        （launchd 打不开 Documents 里已存在的文件，作业 EX_CONFIG 一起来就消失），run 起来后自己接回 <日志>.start.err。"""
+        base = HERE.parent / '04_验证/本地结果/任务'
+        base.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=base, prefix='test-tools82-') as tmp:
+            log = Path(tmp) / 'docs.log'
+            script = 'import sys; print("ok"); print("to-err", file=sys.stderr)'
+            p = subprocess.run([sys.executable, str(HERE / '长任务.py'), 'start', str(log), '--', sys.executable, '-c', script],
+                               capture_output=True, text=True, timeout=35)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertNotIn('退回子进程方式', p.stderr)
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
+            self.assertIn(b'to-err', log.read_bytes())
+
+    @unittest.skipUnless(sys.platform == 'darwin' and shutil.which('launchctl'), '只在 macOS 上有 launchd')
+    def test_launchd_job_that_vanishes_falls_back_to_subprocess(self):
+        """tools82：launchd 作业没写出状态就结束时，start 打印原因（last exit code、作业 stderr）并退回子进程方式，任务照样跑完。
+        真实的 launchd 作业，只是换成一个一起来就报错退出的程序（Documents 下 EX_CONFIG 那种失败本机时有时无，不拿它做固定用例）。"""
+        task = load('long_task_fallback', HERE / '长任务.py')
+        real = task.submit_launchd
+        dying = [sys.executable, '-c', 'import sys; print("launchd-side boom", file=sys.stderr); sys.exit(3)']
+        base = HERE.parent / '04_验证/本地结果/任务'
+        base.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=base, prefix='test-tools82-') as tmp:
+            log = Path(tmp) / 'fallback.log'
+            err = io.StringIO()
+            with mock.patch.object(task, 'submit_launchd', lambda label, argv, e: real(label, dying, e)), \
+                    contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                code = task.start(log, [sys.executable, '-c', 'print("ok")'])
+            self.assertEqual(code, 0, err.getvalue())
+            self.assertIn('退回子进程方式', err.getvalue())
+            self.assertIn('last exit code = 3', err.getvalue())
+            self.assertIn('launchd-side boom', err.getvalue())
+            w = subprocess.run([str(HERE / '等待任务.sh'), str(log), '--timeout', '20'], capture_output=True, timeout=25)
+            self.assertEqual(w.returncode, 0, w.stdout + w.stderr)
+            self.assertNotIn('launchdLabel', json.loads(Path(str(log) + '.status.json').read_text()))
 
     def test_non_utf8_output_does_not_hide_valid_completion_marker(self):
         with tempfile.TemporaryDirectory() as tmp:

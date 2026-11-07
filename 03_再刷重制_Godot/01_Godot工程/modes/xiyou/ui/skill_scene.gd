@@ -468,23 +468,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var pressed := key != null and key.pressed and not key.echo
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_move(1 if event.is_action_pressed("ui_down", true) else -1, false, not event.is_echo())
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_move(1 if event.is_action_pressed("ui_right", true) else -1, true, not event.is_echo())
 	elif mode in ["list", "actor"] and XMenu.page_dir(event) != 0:
 		# 技能列表、选人窗不接管 pageup／pagedown（原版只有技能类型窗设了换角色）：走通用翻页
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_page(XMenu.page_dir(event))
 	elif event.is_action_pressed("ui_page_up") or event.is_action_pressed("ui_page_down") or (pressed and key.physical_keycode in [KEY_Q, KEY_E]):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		change_actor(-1 if event.is_action_pressed("ui_page_up") or (pressed and key.physical_keycode == KEY_Q) else 1)
 
 

@@ -155,15 +155,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		select(XMenu._move(index, d, ROWS.size(), not event.is_echo()))
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		side(event.is_action_pressed("ui_right", true))

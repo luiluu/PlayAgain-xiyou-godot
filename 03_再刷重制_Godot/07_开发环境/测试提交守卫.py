@@ -149,6 +149,32 @@ class GuardTests(unittest.TestCase):
         self.new_worktree('--branch', 'cc/nezha-y')                                        # --from 缺省为 main
         self.assertEqual(self.git('rev-parse', 'HEAD', cwd=self.lane).stdout, self.git('rev-parse', 'main').stdout)
 
+    def test_fill_in_links_frozen_source_to_xiyou_app(self):
+        """tools81：--补齐 认 XIYOU_APP——冻结正式源链接指向它，已有链接指向别处时改指；没设时不动已有链接。
+        （临时库没有引擎和产物，补齐在链接之后失败，这里只看链接。）"""
+        frozen_dir = self.lane / '03_再刷重制_Godot/02_内容与素材/冻结正式源'
+        frozen_dir.mkdir(parents=True)
+        (self.main / '03_再刷重制_Godot/07_开发环境/当前Godot.app').mkdir()   # 引擎链接要有落点，第二次补齐才不卡在它上
+        old_src = self.main / '03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw'
+        old_src.mkdir(parents=True)
+        new_src = Path(self.tmp.name).resolve() / 'v9/app.nw'
+        new_src.mkdir(parents=True)
+        (new_src / 'package.json').write_text('{"releaseVersion": "v9"}')
+        link = frozen_dir / 'app.nw'
+        self.new_worktree()
+        self.assertEqual(os.readlink(link), str(old_src))                  # 没设：链主工作区那份
+        self.env['XIYOU_APP'] = str(new_src)
+        r = self.new_worktree()
+        self.assertEqual(os.readlink(link), str(new_src), r.stdout + r.stderr)
+        self.assertIn('冻结正式源链接改指 XIYOU_APP', r.stdout)
+        del self.env['XIYOU_APP']
+        self.new_worktree()
+        self.assertEqual(os.readlink(link), str(new_src))                  # 没设时不改回旧源
+        self.env['XIYOU_APP'] = str(new_src / 'missing')
+        r = self.new_worktree()
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('XIYOU_APP 不是目录', r.stderr)
+
     def test_fill_in_branch_switch_refuses_unsafe_cases(self):
         r = self.new_worktree('--from', 'main')
         self.assertEqual(r.returncode, 64)

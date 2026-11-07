@@ -76,6 +76,10 @@ def trace_var(lst, j, p):
                     return {key: {str(q[5]): int(val)}}
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
+                if t == 7 and int(q[5]) == 4 and int(val) >= 0:
+                    return {'playtime': int(val)}
+            if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:
+                return {'playtime': int(val)}   # events14：122 脚本「$gameSystem.playtime();」
             if int(q[2]) == 0 and int(q[3]) == 2 and isinstance(val, (int, float)):
                 # 随机赋值（DR）：门前只有这一条 122 随机时，用 random_seq 让它抽到 val（MV：min + floor(random × (max−min+1))）
                 # w14：门前有多条 122 随机时，按执行顺序数位置——只数祖先链在门的祖先链里的那些（同一路径上必然先执行的），

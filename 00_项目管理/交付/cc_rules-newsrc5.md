@@ -2,12 +2,12 @@
 
 - 车道／工作者：C 规则／rules（cc）
 - 状态：可合并（第二棒做完；第一棒 40% 线交接的「接续」节留作背景）
-- 从集成分支 7c2a3a7e 切出，已合 `cc/rules-newsrc4`（4df3a75e，优化登记一处冲突：留奈叶那行，删「O-待定·流萤遮住角色 setHp」，它已并进 O-212），合并提交 b0a5d9cb。交回集成分支，不进 main。
+- 从集成分支 7c2a3a7e 切出，已合 `cc/rules-newsrc4`（4df3a75e，优化登记一处冲突：留奈叶那行，删「O-待定·流萤遮住角色 setHp」，它已并进 O-待定·角色HP包装），合并提交 b0a5d9cb。交回集成分支，不进 main。
 - 工作树 `.claude/worktrees/vigilant-jackson-ab7704`；generated 是 recursing-shamir 58340027 的克隆，`oracle/state_effects.json` 换成哪吒 newsrc5 工作树（competent-fermat-5b663e）重出的新源参照（不入 Git）。**注意**：本树 manifest 还带 26 份 PlayerChangelog 指纹（集成分支 7c2a3a7e 起转换器不再记，要等集成树重新同步再克隆一次）。
 
 ## 任务（总装定）
 
-敌人在热缓存下不复活，定成**原版代码错误**（复活状态本意就是复活；失效是 clearStates 时重建被动缓存带出来的副作用）。做法同 O-212：默认照常复活，另加开关，false 照原版；测试按 false 支比参照，另加默认值断言；登记 O-待定、待用户确认。依据：哪吒交付单 `cc_nezha-newsrc5.md` ①。
+敌人在热缓存下不复活，定成**原版代码错误**（复活状态本意就是复活；失效是 clearStates 时重建被动缓存带出来的副作用）。做法同 O-待定·角色HP包装：默认照常复活，另加开关，false 照原版；测试按 false 支比参照，另加默认值断言；登记 O-待定、待用户确认。依据：哪吒交付单 `cc_nezha-newsrc5.md` ①。
 
 ## 结论（第二棒）
 

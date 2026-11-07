@@ -133,15 +133,15 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif not actors.is_empty() and (event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true)):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		select(XMenu._move(index, d, actors.size(), not event.is_echo()))
 	elif not actors.is_empty() and XMenu.page_dir(event) != 0:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		page(XMenu.page_dir(event))

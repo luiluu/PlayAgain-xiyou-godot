@@ -197,19 +197,19 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	elif event.is_action_pressed("ui_accept"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if mode == "list":
 			_move_list(1 if event.is_action_pressed("ui_down", true) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if mode == "command":
 			_move_cmd(1 if event.is_action_pressed("ui_right", true) else -1, not event.is_echo())
 	elif event.is_action_pressed("ui_page_up", true) or event.is_action_pressed("ui_page_down", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		page(-1 if event.is_action_pressed("ui_page_up", true) else 1)

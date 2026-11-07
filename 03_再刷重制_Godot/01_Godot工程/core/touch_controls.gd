@@ -179,7 +179,7 @@ func _layout_input(event: InputEvent) -> void:
 		var t := event as InputEventScreenTouch
 		if _layout_bar.get_global_rect().has_point(t.position):
 			return  # 交给「恢复位置」「完成」两个按钮
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if t.pressed and _drag.is_empty():
 			var g := group_at(t.position)
 			if g != "":
@@ -189,12 +189,12 @@ func _layout_input(event: InputEvent) -> void:
 			_save()
 	elif event is InputEventScreenDrag:
 		var d := event as InputEventScreenDrag
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		if _drag.get("index", -1) == d.index:
 			move_group(_drag.group, d.position - _drag.offset)
 	elif event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION:
 		if not _layout_bar.get_global_rect().has_point((event as InputEventMouse).position):
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 
 
 func _input(event: InputEvent) -> void:
@@ -209,22 +209,22 @@ func _input(event: InputEvent) -> void:
 				return
 			_touches[t.index] = what
 			_press(what, t.position)
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 		elif _touches.has(t.index):
 			_release(_touches[t.index])
 			_touches.erase(t.index)
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 	elif event is InputEventScreenDrag:
 		var d := event as InputEventScreenDrag
 		if _touches.get(d.index, "") == "stick":
 			_move_stick(d.position)
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 		elif _touches.has(d.index):
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 	elif event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION:
 		# Godot 由第一指转出的鼠标事件（先于触屏事件本身到）：落在按键上、或第一指正按着按键时整段吃掉
 		if _touches.has(0) or (event is InputEventMouseButton and hit((event as InputEventMouseButton).position) != ""):
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
 
 
 func _press(what: String, pos: Vector2) -> void:

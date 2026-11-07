@@ -752,6 +752,21 @@ def partition(scenes, est, jobs, target, max_shards):
     return [sorted(x[1]) for x in shards if x[1]]
 
 
+def requested_scenes(spec, all_scenes):
+    """--scenes 的场景表（tools80）：要写全名带 .tscn、且 tests/ 里有；写错一个就报错停下。原来不带 .tscn 或不存在的名字被静默略过，
+    全错时计划是空的，云端「0 个场景全过」显示成功。"""
+    names = spec.split()
+    if not names:
+        raise RuntimeError('--scenes 没给场景名')
+    bare = [n for n in names if not n.endswith('.tscn')]
+    if bare:
+        raise RuntimeError('--scenes 的场景名要带 .tscn：' + '、'.join(bare) + '（如 ' + bare[0] + '.tscn）')
+    missing = [n for n in names if n not in all_scenes]
+    if missing:
+        raise RuntimeError('--scenes 里这些场景在 tests/ 里不存在：' + '、'.join(missing))
+    return sorted(set(names))
+
+
 def cmd_plan(a):
     sha = git('rev-parse', 'HEAD')
     branch = a.branch
@@ -770,12 +785,9 @@ def cmd_plan(a):
             return 0
     reasons = []
     if a.scenes:  # 只跑指定的场景（重跑失败项）
-        scenes, base = sorted(set(a.scenes.split()) & set(all_scenes)), ''
+        scenes, base = requested_scenes(a.scenes, all_scenes), ''
         mode = 'scenes'  # 结果写到 refs/ci/results/<提交>/scenes，不冒充选测或整轮通过
         reasons = ['手动指定 %d 个场景' % len(scenes)]
-        missing = set(a.scenes.split()) - set(all_scenes)
-        if missing:
-            reasons.append('不存在、已略过：' + '、'.join(sorted(missing)))
     elif mode == 'full':
         scenes, base = all_scenes, ''
     else:

@@ -536,7 +536,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if power_panel != null and is_instance_valid(power_panel):
 		return
 	if event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		var d := -1 if event.is_action("ui_left") else 1
 		var n := page_names().size()
 		# 按下时循环，按住连发不越过两端（Window_Selectable.cursorLeft/Right 的 wrap）
@@ -545,10 +545,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			next = clampi(next, 0, n - 1)
 		set_page(posmod(next, n))
 	elif event.is_action_pressed("ui_up", true) or event.is_action_pressed("ui_down", true):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		_scroll(-1 if event.is_action("ui_up") else 1)
 	elif event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 	else:
 		super._unhandled_input(event)

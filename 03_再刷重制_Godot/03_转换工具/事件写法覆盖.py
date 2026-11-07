@@ -254,7 +254,33 @@ def open_preset(lst, j, loc):
         return {'actors': {str(p[1]): {}}}
     if t == 7 and want and int(p[2]) == 0:
         return {'gold': int(p[1])}
+    if t == 12:
+        return playtime_preset(str(p[1]), want)
     return None
+
+
+PLAYTIME = re.compile(r'^\s*\$gameSystem\.playtime\(\)\s*(?:-\s*\$gameVariables\.value\((\d+)\)\s*)?(>=|>|<=|<)\s*(\d+)\s*;?\s*$')
+
+
+def playtime_preset(js, want):
+    """脚本条件「$gameSystem.playtime() [- 变量 V] 比 N」（cc 八戒 events14，playtime 预设键见 BY）：
+    给游玩秒数 playtime，有变量时把 V 设 0。要「不成立」时只认 >= ／> 且 N>0（游玩 0 秒）。其余脚本返回 None。"""
+    m = PLAYTIME.match(js)
+    if not m:
+        return None
+    v, op, n = m.group(1), m.group(2), int(m.group(3))
+    if want:
+        sec = {'>=': n, '>': n + 1, '<=': 0, '<': 0}[op]
+        if op == '<' and n <= 0:
+            return None
+    else:
+        if op not in ('>=', '>') or n <= 0:
+            return None
+        sec = 0
+    out = {'playtime': sec}
+    if v:
+        out['variables'] = {v: 0}
+    return out
 
 
 def missed(executed: set, targets: set, cases: set):

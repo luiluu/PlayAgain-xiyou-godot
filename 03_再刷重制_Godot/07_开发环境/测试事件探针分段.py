@@ -139,6 +139,152 @@ class StateIncrementalTests(unittest.TestCase):
             self.assertEqual(out.read_bytes(), full)
 
 
+    def test_only_variants_on_changed_maps_rerun(self):
+        """tools81：摘要按本例读到的地图算。换源只改了无关地图时全部取回；改了变体所在地图时只有它们重跑，结果照旧一致。"""
+        sandbox = ORACLE / '.sandbox'
+        sandbox.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=sandbox) as tmp:
+            app = Path(tmp) / 'app.nw'
+            subprocess.run(['cp', '-cR', str(APP.resolve()) + '/', str(app)], check=True)   # APFS 克隆，不占空间
+            subprocess.run(['chmod', '-R', 'u+w', str(app)], check=True)   # 冻结源只读；只改克隆（新 inode），原件不动，也让临时目录删得掉
+            out = Path(tmp) / 'states.json'
+            first = self.run_probe(out, XIYOU_APP=str(app), XIYOU_STATE_INCREMENTAL='0')
+            self.assertEqual(first['reused'], 0)
+            cases = json.loads(out.read_text())['cases']
+            keys = json.loads(out.with_suffix('.keys.json').read_text())
+            self.assertEqual(keys['version'], 2)
+            for c in cases:
+                self.assertIn(163, keys['maps'][c['id']])
+            unrelated = next(m for m in range(1, 200) if (app / ('data/Map%03d.json' % m)).is_file()
+                             and all(m not in v for v in keys['maps'].values()))
+
+            def touch(m):   # 末尾加一个换行：内容摘要变、JSON 不变
+                f = app / ('data/Map%03d.json' % m)
+                data = f.read_bytes()
+                f.unlink()   # 先断开再写新文件
+                f.write_bytes(data + b'\n')
+            touch(unrelated)
+            second = self.run_probe(out, XIYOU_APP=str(app))
+            self.assertEqual(second['reused'], second['cases'])
+            self.assertEqual(json.loads(out.read_text())['cases'], cases)
+            touch(163)
+            third = self.run_probe(out, XIYOU_APP=str(app))
+            self.assertEqual(third['reused'], 0)
+            self.assertEqual(json.loads(out.read_text())['cases'], cases)
+
+
+    def test_sync_sharded_run_reuses_from_published_result_via_history(self):
+        """tools81：同步的分段路径——上次已发布的结果＋摘要账认领 → 第二轮全部取回、结果逐字相同；账上没有就整份重量。"""
+        import sys
+        sys.path.insert(0, str(TOOLS))
+        import event_state_shards as ess
+        sandbox = ORACLE / '.sandbox'
+        sandbox.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=sandbox) as tmp:
+            tmp = Path(tmp)
+            published, history = tmp / 'gen/event_states.json', ess.KeyHistory(tmp / 'keys-history.json')
+            env = dict(os.environ)
+            env.pop('XIYOU_PROBE_SHARD', None)
+
+            def launch(e, label):
+                return subprocess.run(['node', 'event_state_probe.cjs', 'm163e6p7#e8c', 'm163e6p7#e8d'], cwd=ORACLE, env=e,
+                                      capture_output=True, text=True)
+
+            def one_round():
+                e = dict(env)
+                ok = ess.prepare_prev(e, history, published, tmp / 'work')
+                out, keys = tmp / 'out.json', tmp / 'work/keys.json'
+                r = ess.run_sharded(e, ORACLE, tmp / 'work', out, keys, 2, launch)
+                self.assertEqual(r.returncode, 0, r.stdout[-500:] + r.stderr[-500:])
+                self.assertTrue(history.add(keys))
+                published.parent.mkdir(exist_ok=True)
+                published.write_bytes(out.read_bytes())   # 「发布」
+                stats = [json.loads(l) for l in r.stdout.splitlines() if l.startswith('{"version"')]
+                return ok, sum(x['reused'] for x in stats), sum(x['cases'] for x in stats), out.read_bytes()
+            (tmp / 'work').mkdir()
+            ok1, reused1, n1, first = one_round()
+            self.assertEqual((ok1, reused1, n1), (False, 0, 2))
+            ok2, reused2, n2, second = one_round()
+            self.assertEqual((ok2, reused2, n2), (True, 2, 2))
+            self.assertEqual(second, first)
+            published.write_bytes(first.replace(b'"finished":true', b'"finished":false', 1))   # 发布的那份被改过：账上认不出
+            self.assertFalse(ess.prepare_prev(dict(env), history, published, tmp / 'work'))
+
+
+class StateKeysTests(unittest.TestCase):
+    """tools81：分段摘要合并、摘要账（按结果文件摘要认领、只留最近几份、新建工作树带账时合并）。"""
+    def setUp(self):
+        import sys
+        sys.path.insert(0, str(TOOLS))
+        import event_state_shards
+        self.ess = event_state_shards
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.tmpdir.name)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def test_merge_keys_unions_parts_and_rejects_mixed_fingerprints(self):
+        out = self.tmp / 'out.json'
+        out.write_text('{"cases":[]}')
+        a, b = self.tmp / 'a.json', self.tmp / 'b.json'
+        a.write_text(json.dumps({'version': 2, 'coreFingerprint': 'x', 'keys': {'v0': 'k0'}, 'maps': {'v0': [3]}}))
+        b.write_text(json.dumps({'version': 2, 'coreFingerprint': 'x', 'keys': {'v1': 'k1'}, 'maps': {'v1': [4, 9]}}))
+        self.assertTrue(self.ess.merge_keys([a, b], out, self.tmp / 'k.json'))
+        doc = json.loads((self.tmp / 'k.json').read_text())
+        self.assertEqual((doc['keys'], doc['maps'], doc['fileSha']), ({'v0': 'k0', 'v1': 'k1'}, {'v0': [3], 'v1': [4, 9]}, self.ess.file_sha(out)))
+        b.write_text(json.dumps({'version': 2, 'coreFingerprint': 'y', 'keys': {}, 'maps': {}}))
+        self.assertFalse(self.ess.merge_keys([a, b], out, self.tmp / 'k2.json'))
+        self.assertFalse((self.tmp / 'k2.json').exists())
+
+    def test_history_finds_by_result_sha_keeps_recent_and_absorbs(self):
+        h = self.ess.KeyHistory(self.tmp / 'h.json')
+        results = []
+        for i in range(self.ess.KEEP + 2):
+            r = self.tmp / ('r%d.json' % i)
+            r.write_text('{"n":%d}' % i)
+            k = self.tmp / ('k%d.json' % i)
+            k.write_text(json.dumps({'version': 2, 'fileSha': self.ess.file_sha(r), 'keys': {'i': str(i)}, 'maps': {}}))
+            self.assertTrue(h.add(k))
+            results.append(r)
+        self.assertIsNone(h.find(results[0]))                      # 最早的两份挤掉了
+        self.assertEqual(h.find(results[-1])['keys'], {'i': str(self.ess.KEEP + 1)})
+        other = self.ess.KeyHistory(self.tmp / 'other.json')
+        k = self.tmp / 'ko.json'
+        r = self.tmp / 'ro.json'
+        r.write_text('{"main":1}')
+        k.write_text(json.dumps({'version': 2, 'fileSha': self.ess.file_sha(r), 'keys': {}, 'maps': {}}))
+        other.add(k)
+        self.assertEqual(h.absorb(other.path), 1)
+        self.assertIsNotNone(h.find(r))
+        self.assertEqual(h.absorb(other.path), 0)
+        bad = self.tmp / 'bad.json'
+        bad.write_text(json.dumps({'version': 1, 'keys': {}}))     # 旧版摘要（没有地图）不进账
+        self.assertFalse(h.add(bad))
+
+    def test_carry_cache_brings_and_merges_key_history(self):
+        sys_path = str(TOOLS)
+        import sys
+        if sys_path not in sys.path:
+            sys.path.insert(0, sys_path)
+        import incremental_sync
+        src, dst = self.tmp / 'main', self.tmp / 'lane'
+        src.mkdir()
+        r = self.tmp / 'r.json'
+        r.write_text('{}')
+        k = self.tmp / 'k.json'
+        k.write_text(json.dumps({'version': 2, 'fileSha': self.ess.file_sha(r), 'keys': {}, 'maps': {}}))
+        self.ess.KeyHistory(src / 'event_state_keys.json').add(k)
+        self.assertIn('event_state_keys.json', incremental_sync.carry_cache(src, dst))
+        self.assertIsNotNone(self.ess.KeyHistory(dst / 'event_state_keys.json').find(r))
+        r2 = self.tmp / 'r2.json'
+        r2.write_text('{"x":2}')
+        k.write_text(json.dumps({'version': 2, 'fileSha': self.ess.file_sha(r2), 'keys': {}, 'maps': {}}))
+        self.ess.KeyHistory(src / 'event_state_keys.json').add(k)
+        self.assertIn('event_state_keys-merged', incremental_sync.carry_cache(src, dst))   # 车道已有账：合并，不覆盖
+        self.assertIsNotNone(self.ess.KeyHistory(dst / 'event_state_keys.json').find(r2))
+
+
 class MergeTests(unittest.TestCase):
     def test_merge_restores_single_process_order(self):
         cases = [{'id': 'm7e1p0', 'kind': 'map', 'map': 7}, {'id': 'm7e2p0', 'kind': 'map', 'map': 7},

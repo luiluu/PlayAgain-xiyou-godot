@@ -3,6 +3,8 @@
 # 用法：03_再刷重制_Godot/07_开发环境/检查.sh [--oracle] [--full] [--affected <基准提交> [--cloud]]
 #   在 worktree（多会话车道）里也可运行：测试自动只并行 2 个；交付单／开发编号占位检查只在主工作区做
 #   --oracle  另外启动 MV 参照引擎做一次启动检查（约 5 秒）
+#   --release-keys  另外导出「macOS 发行」包、在包里按确认／取消键冒烟（发行入口冒烟.py --keys，约 3～5 分钟；也可 CHECK_RELEASE_KEYS=1）。
+#             默认不跑；手动单跑：python3 03_再刷重制_Godot/07_开发环境/发行入口冒烟.py --keys
 #   --full    Godot 测试整轮重跑，不沿用上轮通过结果（也可 CHECK_FULL=1；沿用条件见 并行测试.py 文件头）
 #   --affected <基准>  选测（三级检查②）：按 选测对照.json 只跑与「基准到工作区」改动相关的 Godot 场景和非 Godot 检查，
 #             先打印选了什么、为什么；文档与登记检查照常；有拿不准的改动就整轮。不加时行为不变（全量）
@@ -25,16 +27,18 @@ fi
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
+RELEASE_KEYS=${CHECK_RELEASE_KEYS:-0}
 ORACLE=0; TEST_ARGS=(); AFFECTED=; KEEP_GOING=0; CLOUD=0
 CLOUD_SCRIPT=${XIYOU_CLOUD_SCRIPT:-$ENV_DIR/云端选测.py}
 while (( $# )); do
   case $1 in
     --oracle) ORACLE=1 ;;
+    --release-keys) RELEASE_KEYS=1 ;;
     --full) TEST_ARGS+=(--full) ;;
     --keep-going) KEEP_GOING=1 ;;
     --cloud) CLOUD=1 ;;
     --affected) (( $# >= 2 )) || { print -r -- "--affected 要跟基准提交"; exit 2; }; AFFECTED=$2; shift ;;
-    *) print -r -- "未知参数：$1（只认 --oracle、--full、--keep-going、--affected <基准>、--cloud）"; exit 2 ;;
+    *) print -r -- "未知参数：$1（只认 --oracle、--release-keys、--full、--keep-going、--affected <基准>、--cloud）"; exit 2 ;;
   esac
   shift
 done
@@ -229,6 +233,7 @@ want guards && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_refe
 want tools && { if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi; }
 want tools && { if python3 "$ENV_DIR/测试参照批次.py" >/dev/null 2>&1; then ok "车道参照与切片同批提示"; else bad "参照批次工具回归失败，单跑 07_开发环境/测试参照批次.py 看详情"; fi; }
 want guards && { if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi; }
+want guards && { if python3 "$ENV_DIR/切场景后调用扫描.py" --check; then ok "切场景后不再取视口／场景树（发行版空指针闪退同类）"; else bad "有切场景后还取视口／场景树的写法（发行版会闪退），见上方清单；确认安全的行尾写「# 离树后安全：理由」"; fi; }
 want tools && { if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi; }
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi; }
 want tools && { if python3 "$ENV_DIR/测试反向验证.py" >/dev/null 2>&1 && python3 "$ENV_DIR/测试合并工具.py"; then ok "新增用例、进度账与合并保护"; else bad "合并工具回归失败"; fi; }
@@ -238,6 +243,10 @@ want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换�
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试导出冒烟.py" >/dev/null 2>&1; then ok "导出冒烟工具（结果解析与报告）"; else bad "导出冒烟工具回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/null 2>&1; then ok "切场景后调用扫描工具"; else bad "切场景后调用扫描工具回归失败，单跑 07_开发环境/测试切场景后调用扫描.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; then ok "补齐整轮重导入走长任务"; else bad "导入超时工具回归失败，单跑 07_开发环境/测试导入超时.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试插件备注覆盖.py" >/dev/null 2>&1; then ok "插件备注覆盖工具"; else bad "插件备注覆盖工具回归失败，单跑 07_开发环境/测试插件备注覆盖.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&1; then ok "优化开关回退支覆盖检查"; else bad "回退开关覆盖检查回归失败，单跑 07_开发环境/测试回退开关覆盖.py 看详情"; fi; }
@@ -278,6 +287,12 @@ if (( ORACLE )); then
   else
     bad "mv_oracle 未安装依赖（在该目录运行 npm install）"
   fi
+fi
+
+# 发行包按键冒烟（platform-crash1）：发行模板才有的空指针闪退（11-06 标题按空格/J），调试版测试抓不到；导出一次发行包，默认不跑
+if [[ $RELEASE_KEYS == 1 ]]; then
+  print "== 发行包按键冒烟"
+  if python3 "$ENV_DIR/发行入口冒烟.py" --keys; then ok "发行包入口与按键冒烟"; else bad "发行包入口／按键冒烟失败，见上方 FAIL 行与日志目录"; fi
 fi
 
 if (( ! ORACLE && ! SEL_FULL && ${SEL_CHECKS[(Ie)same_source]} )); then
