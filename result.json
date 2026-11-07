@@ -1,0 +1,40 @@
+{
+ "sha": "01329855a445bfcca4dc93c6ee8514fc27a7448e",
+ "branch": "ci/cc/ui-gaps1",
+ "mode": "affected",
+ "base": "74ac88f59f30bc83f2cf0e2c163c2f0eb91226d1",
+ "passed": false,
+ "scenes": 17,
+ "failed": [
+  "xiyou_gear_detail.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 1,
+ "longestShardSeconds": 377.8,
+ "testSeconds": 525,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "4ac61382277309bd87b05a3fb91e918b6c3d9545",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42393026180",
+ "sceneNames": [
+  "xiyou_actor_book.tscn",
+  "xiyou_battle_ui.tscn",
+  "xiyou_black_flash_ui.tscn",
+  "xiyou_book_capacity_ui.tscn",
+  "xiyou_cat_help.tscn",
+  "xiyou_character_help_cost.tscn",
+  "xiyou_demon_crown.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_gear_detail.tscn",
+  "xiyou_growth_help.tscn",
+  "xiyou_guyu_ui.tscn",
+  "xiyou_help_card.tscn",
+  "xiyou_liuying_help.tscn",
+  "xiyou_merchant29.tscn",
+  "xiyou_pets.tscn",
+  "xiyou_weak_challenge.tscn",
+  "xiyou_yunshang_shop.tscn"
+ ],
+ "time": "2026-11-07T17:00:53+00:00"
+}
