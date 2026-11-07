@@ -40,7 +40,8 @@
 ## 验证
 
 - 云端整轮（合 main 前，提交 34deeed99d）：442 个场景全过，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42325277578
-- 合 main（ec877cb6）后本机：语法检查通过；存档相关选测 xiyou_save_corrupt、xiyou_review_regressions、xiyou_save_page、xiyou_autosave、xiyou_star_warehouse、xiyou_save_events、xiyou_pause_save、xiyou_battleback_save（结果见下）；工具回归。
+- 合 main（ec877cb6）后：语法检查通过；工具回归全过（58 秒）；本机测试槽被集成整轮同步占着，按总装改走云端：提交 764c55c62d 选测 370 个场景全过，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42331384407
+- O-206／O-209 回退测试：提交 0b7544c79c 云端选测 22 个场景全过（含 xiyou_platform、xiyou_key_map），https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42333019475；`回退开关覆盖.py` 新缺口 0
 - 旧代码上复现：xiyou_save_corrupt 3/53（50 个坏档样例全挂，日志 49 处 SCRIPT ERROR）。
 
 ## 变更记录草稿
@@ -55,8 +56,14 @@
 
 - 测试设置 options.json 的写法约 50 处各写一遍，建议收成一个公用函数（见第二项建议 1）。
 
+## 留给下一单（总装 03:14 追加的工具小项，本会话上下文到线没做）
+
+1. `待核查.py` 遇到认不出的短分支名时打警告。
+2. 给 `entry.gd` 配一组选测（`选测对照.json`），现在改它会被判成「整轮」。
+3. 补跑 `事件状态探针.py` 分段时定期打印进度，免得被长任务的 idle 超时掐掉。
+
 ## 本分支提交
 
-- 1510d71a 起：读档深层类型校验＋xiyou_save_corrupt；合 main；交付单。
+- 34deeed9 读档深层类型校验＋xiyou_save_corrupt；a1cac5f4 合 main（ec877cb6）；交付单；0b7544c7 O-206／O-209 回退测试。
 
 可合并
