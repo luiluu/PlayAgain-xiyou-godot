@@ -48,7 +48,7 @@
 
 - 云端「导出冒烟」：在 Linux 上导出「Windows 验收」包，查 PE 头、图标、版本号，用 Linux 模板载入包里的 pck 跑 `xiyou_mac_export`、`xiyou_flow`。
 - 本机 `发行入口冒烟.py --platform windows --keys`：导出「Windows 发行」，查 exe 资源，再用 macOS 发行模板当替身载入 pck 跑入口和按键。
-- **还没有的**：在真 Windows 上跑 exe。平台 FB 第一批在做：云端 `windows-latest` 机器上真跑发行 exe（入口、按键闪退复测、存档目录在 `%APPDATA%\KYO\再刷重制`）。它是无头跑的，第 7～11、15、16 步（窗口、DPI、全屏、输入法、手柄）和 4、5（SmartScreen、杀软）仍然只能真机看。
+- **真 Windows**（平台 FB，11-07 起）：云端 `windows-latest` 机器上真跑发行 exe（无头）：进标题、空格／J／回车开新游戏和一串确认取消都不闪退、存档目录在 `%APPDATA%\KYO\再刷重制`；ANGLE 软件渲染开窗口也进标题。第 7～11、15、16 步（窗口、DPI、全屏、输入法、手柄）和 4、5（SmartScreen、杀软）仍然只能真机看。
 
 ## 不过时怎么报
 
