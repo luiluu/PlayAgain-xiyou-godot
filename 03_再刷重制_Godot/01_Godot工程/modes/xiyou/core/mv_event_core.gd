@@ -205,9 +205,20 @@ func _request(kind: String, wait: String, data: Dictionary, arg = null) -> Dicti
 
 
 func _flush_request() -> Dictionary:
-	var lines := pending_lines.duplicate()
+	var lines := pending_lines.map(func(t): return message_text(str(t)))
 	pending_lines.clear()
 	return _request("message", "flush", {"msg": {"face": "", "index": 0, "background": 0, "position": 2, "lines": lines}})
+
+
+## installDisplayPreferencesRuntime 包 Game_Message.add：进消息的每行先把「全伤」「全伤害」写成「全属性伤害」（CodexDisplay.text，
+## 2026-10-11 起；选项 setChoices 不包）。原来漏了，CE1441 破阵·投影说明显示「全伤+1500%」（八戒 interp1 i1 变体对照发现）
+static var _full_dmg: RegEx
+static func message_text(t: String) -> String:
+	if not t.contains("全伤"):
+		return t
+	if _full_dmg == null:
+		_full_dmg = RegEx.create_from_string("全伤(?:害)?")
+	return _full_dmg.sub(t, "全属性伤害", true)
 
 
 ## Game_Message.newPage：已有文字时给最后一行加 \f
@@ -248,7 +259,7 @@ func _execute(c: Dictionary):
 				"position": int(p[3]) if p.size() > 3 else 2, "lines": []}
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
-				msg.lines.append(str(list[index].parameters[0]))
+				msg.lines.append(message_text(str(list[index].parameters[0])))
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
 				_merge_choices(index)

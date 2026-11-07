@@ -156,7 +156,7 @@ func _step() -> bool:
 func flush_message() -> void:
 	if pending_lines.is_empty() or not host_alive():
 		return
-	var lines := pending_lines.duplicate()
+	var lines := pending_lines.map(func(t): return MVEventCore.message_text(str(t)))
 	pending_lines.clear()
 	await host.show_message({"face": "", "index": 0, "background": 0, "position": 2, "lines": lines})
 

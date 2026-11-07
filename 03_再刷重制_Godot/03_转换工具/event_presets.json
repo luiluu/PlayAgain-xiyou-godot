@@ -202415,15 +202415,6 @@
    }
   },
   {
-   "base": "ce2495",
-   "tag": "i1_1",
-   "preset": {
-    "actors": {
-     "95": {}
-    }
-   }
-  },
-  {
    "base": "ce820",
    "tag": "i1_2",
    "preset": {
@@ -202550,58 +202541,6 @@
     "random_seq": [
      0.9
     ]
-   }
-  },
-  {
-   "base": "ce1617",
-   "tag": "i1_9",
-   "preset": {
-    "variables": {
-     "1210": 50000
-    },
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "ce1618",
-   "tag": "i1_10",
-   "preset": {
-    "variables": {
-     "1210": 80000
-    },
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "ce682",
-   "tag": "i1_11",
-   "preset": {
-    "actors": {
-     "77": {
-      "weapons": [
-       1700
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "m67e2p0",
-   "tag": "i1_12",
-   "preset": {
-    "party": [
-     41,
-     42,
-     43,
-     44
-    ],
-    "variables": {
-     "281": 35
-    }
    }
   },
   {
@@ -202737,15 +202676,6 @@
     "variables": {
      "450": 4
     }
-   }
-  },
-  {
-   "base": "m4e71p0",
-   "tag": "i1_28",
-   "preset": {
-    "answers": [
-     3
-    ]
    }
   },
   {
@@ -203769,15 +203699,6 @@
    }
   },
   {
-   "base": "m4e71p0",
-   "tag": "i1_142",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
    "base": "m173e3p4",
    "tag": "i1_143",
    "preset": {
@@ -203841,59 +203762,6 @@
    "preset": {
     "party": [
      76
-    ]
-   }
-  },
-  {
-   "base": "m4e71p0",
-   "tag": "i1_150",
-   "preset": {
-    "answers": [
-     1
-    ]
-   }
-  },
-  {
-   "base": "ce1108",
-   "tag": "i1_151",
-   "preset": {
-    "random_seq": [
-     0.5,
-     0.5,
-     0.895
-    ]
-   }
-  },
-  {
-   "base": "ce1109",
-   "tag": "i1_152",
-   "preset": {
-    "random_seq": [
-     0.5,
-     0.5,
-     0.895
-    ]
-   }
-  },
-  {
-   "base": "ce1110",
-   "tag": "i1_153",
-   "preset": {
-    "random_seq": [
-     0.5,
-     0.5,
-     0.895
-    ]
-   }
-  },
-  {
-   "base": "ce1111",
-   "tag": "i1_154",
-   "preset": {
-    "random_seq": [
-     0.5,
-     0.5,
-     0.895
     ]
    }
   },
@@ -205087,69 +204955,6 @@
    }
   },
   {
-   "base": "m30e8p0",
-   "tag": "i1_229",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m32e1p0",
-   "tag": "i1_230",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m33e3p0",
-   "tag": "i1_231",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m45e1p0",
-   "tag": "i1_232",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m46e1p0",
-   "tag": "i1_233",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m47e13p0",
-   "tag": "i1_234",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
-   "base": "m64e1p0",
-   "tag": "i1_235",
-   "preset": {
-    "answers": [
-     0
-    ]
-   }
-  },
-  {
    "base": "ce1213",
    "tag": "i1_236",
    "preset": {
@@ -205587,44 +205392,6 @@
    }
   },
   {
-   "base": "ce1597",
-   "tag": "i1_263",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "1203": 100000
-    }
-   }
-  },
-  {
-   "base": "ce682",
-   "tag": "i1_264",
-   "preset": {
-    "actors": {
-     "77": {
-      "weapons": [
-       1698
-      ]
-     }
-    }
-   }
-  },
-  {
-   "base": "ce682",
-   "tag": "i1_265",
-   "preset": {
-    "actors": {
-     "77": {
-      "weapons": [
-       1699
-      ]
-     }
-    }
-   }
-  },
-  {
    "base": "ce820",
    "tag": "i1_266",
    "preset": {
@@ -205941,18 +205708,6 @@
     },
     "variables": {
      "366": 1000
-    }
-   }
-  },
-  {
-   "base": "m146e6p0",
-   "tag": "i1_286",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "1177": 80
     }
    }
   },
@@ -208011,24 +207766,6 @@
     },
     "answers": [
      3
-    ]
-   }
-  },
-  {
-   "base": "m4e71p0",
-   "tag": "i1_410",
-   "preset": {
-    "answers": [
-     2
-    ]
-   }
-  },
-  {
-   "base": "m4e71p0",
-   "tag": "i1_411",
-   "preset": {
-    "answers": [
-     4
     ]
    }
   },
@@ -211102,15 +210839,6 @@
    }
   },
   {
-   "base": "ce110",
-   "tag": "i1_651",
-   "preset": {
-    "random_seq": [
-     0.145
-    ]
-   }
-  },
-  {
    "base": "ce1392",
    "tag": "i1_652",
    "preset": {
@@ -211214,42 +210942,6 @@
     "answers": [
      2
     ]
-   }
-  },
-  {
-   "base": "m67e2p2",
-   "tag": "i1_660",
-   "preset": {
-    "party": [
-     42
-    ],
-    "variables": {
-     "282": 35
-    }
-   }
-  },
-  {
-   "base": "m67e2p2",
-   "tag": "i1_661",
-   "preset": {
-    "party": [
-     43
-    ],
-    "variables": {
-     "283": 35
-    }
-   }
-  },
-  {
-   "base": "m67e2p2",
-   "tag": "i1_662",
-   "preset": {
-    "party": [
-     44
-    ],
-    "variables": {
-     "284": 35
-    }
    }
   },
   {
@@ -213898,15 +213590,6 @@
    }
   },
   {
-   "base": "ce1202",
-   "tag": "i1_874",
-   "preset": {
-    "party": [
-     33
-    ]
-   }
-  },
-  {
    "base": "ce1222",
    "tag": "i1_875",
    "preset": {
@@ -214316,15 +213999,6 @@
      0.147059,
      0.75
     ]
-   }
-  },
-  {
-   "base": "ce1685",
-   "tag": "i1_901",
-   "preset": {
-    "variables": {
-     "1542": 80
-    }
    }
   },
   {
@@ -214784,66 +214458,6 @@
    }
   },
   {
-   "base": "m111e9p4",
-   "tag": "i1_942",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m111e9p5",
-   "tag": "i1_943",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m111e9p6",
-   "tag": "i1_944",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m111e9p7",
-   "tag": "i1_945",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m116e1p1",
    "tag": "i1_946",
    "preset": {
@@ -215019,117 +214633,12 @@
    }
   },
   {
-   "base": "m163e6p4",
-   "tag": "i1_962",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m163e6p5",
-   "tag": "i1_963",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m163e6p6",
-   "tag": "i1_964",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m163e6p7",
    "tag": "i1_965",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m163e6p7",
-   "tag": "i1_966",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m166e6p4",
-   "tag": "i1_967",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m166e6p5",
-   "tag": "i1_968",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m166e6p6",
-   "tag": "i1_969",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -215144,42 +214653,12 @@
    }
   },
   {
-   "base": "m166e6p7",
-   "tag": "i1_971",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m169e1p7",
    "tag": "i1_972",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m169e1p7",
-   "tag": "i1_973",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -215204,42 +214683,12 @@
    }
   },
   {
-   "base": "m170e5p7",
-   "tag": "i1_976",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m172e2p7",
    "tag": "i1_977",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m172e2p7",
-   "tag": "i1_978",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -215356,306 +214805,6 @@
    }
   },
   {
-   "base": "m186e10p1",
-   "tag": "i1_990",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "623": 1
-    }
-   }
-  },
-  {
-   "base": "m186e11p1",
-   "tag": "i1_991",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "626": 1
-    }
-   }
-  },
-  {
-   "base": "m186e12p1",
-   "tag": "i1_992",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "629": 1
-    }
-   }
-  },
-  {
-   "base": "m186e13p1",
-   "tag": "i1_993",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "632": 1
-    }
-   }
-  },
-  {
-   "base": "m186e14p1",
-   "tag": "i1_994",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "635": 1
-    }
-   }
-  },
-  {
-   "base": "m186e15p1",
-   "tag": "i1_995",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "638": 1
-    }
-   }
-  },
-  {
-   "base": "m186e16p1",
-   "tag": "i1_996",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "641": 1
-    }
-   }
-  },
-  {
-   "base": "m186e17p1",
-   "tag": "i1_997",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "644": 1
-    }
-   }
-  },
-  {
-   "base": "m186e18p1",
-   "tag": "i1_998",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "647": 1
-    }
-   }
-  },
-  {
-   "base": "m186e19p1",
-   "tag": "i1_999",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "650": 1
-    }
-   }
-  },
-  {
-   "base": "m186e20p1",
-   "tag": "i1_1000",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "653": 1
-    }
-   }
-  },
-  {
-   "base": "m186e21p1",
-   "tag": "i1_1001",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "656": 1
-    }
-   }
-  },
-  {
-   "base": "m186e22p1",
-   "tag": "i1_1002",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "659": 1
-    }
-   }
-  },
-  {
-   "base": "m186e23p1",
-   "tag": "i1_1003",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "662": 1
-    }
-   }
-  },
-  {
-   "base": "m186e4p1",
-   "tag": "i1_1004",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "605": 1
-    }
-   }
-  },
-  {
-   "base": "m186e5p1",
-   "tag": "i1_1005",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "608": 1
-    }
-   }
-  },
-  {
-   "base": "m186e6p1",
-   "tag": "i1_1006",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "611": 1
-    }
-   }
-  },
-  {
-   "base": "m186e7p1",
-   "tag": "i1_1007",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "614": 1
-    }
-   }
-  },
-  {
-   "base": "m186e8p1",
-   "tag": "i1_1008",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "617": 1
-    }
-   }
-  },
-  {
-   "base": "m186e9p1",
-   "tag": "i1_1009",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "620": 1
-    }
-   }
-  },
-  {
-   "base": "m198e1p4",
-   "tag": "i1_1010",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m198e1p5",
-   "tag": "i1_1011",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m198e1p6",
-   "tag": "i1_1012",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m198e1p7",
-   "tag": "i1_1013",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m21e5p7",
    "tag": "i1_1014",
    "preset": {
@@ -215720,132 +214869,12 @@
    }
   },
   {
-   "base": "m36e2p1",
-   "tag": "i1_1020",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m39e21p4",
-   "tag": "i1_1021",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m39e21p5",
-   "tag": "i1_1022",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m39e21p6",
-   "tag": "i1_1023",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m39e21p7",
    "tag": "i1_1024",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m39e21p7",
-   "tag": "i1_1025",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m43e13p4",
-   "tag": "i1_1026",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m43e13p5",
-   "tag": "i1_1027",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m43e13p6",
-   "tag": "i1_1028",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -215860,87 +214889,12 @@
    }
   },
   {
-   "base": "m43e13p7",
-   "tag": "i1_1030",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m44e2p4",
-   "tag": "i1_1031",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m44e2p5",
-   "tag": "i1_1032",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m44e2p6",
-   "tag": "i1_1033",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m44e2p7",
    "tag": "i1_1034",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m44e2p7",
-   "tag": "i1_1035",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -215969,117 +214923,12 @@
    }
   },
   {
-   "base": "m48e1p4",
-   "tag": "i1_1038",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m48e1p5",
-   "tag": "i1_1039",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m48e1p6",
-   "tag": "i1_1040",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m48e1p7",
    "tag": "i1_1041",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m48e1p7",
-   "tag": "i1_1042",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m49e6p4",
-   "tag": "i1_1043",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m49e6p5",
-   "tag": "i1_1044",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m49e6p6",
-   "tag": "i1_1045",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -216094,67 +214943,12 @@
    }
   },
   {
-   "base": "m49e6p7",
-   "tag": "i1_1047",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m4e49p1",
-   "tag": "i1_1048",
-   "preset": {
-    "answers": [
-     0,
-     0
-    ],
-    "variables": {
-     "1500": 15,
-     "1499": 1
-    }
-   }
-  },
-  {
-   "base": "m4e49p2",
-   "tag": "i1_1049",
-   "preset": {
-    "answers": [
-     0,
-     0
-    ],
-    "variables": {
-     "1500": 10,
-     "1499": 1
-    }
-   }
-  },
-  {
    "base": "m4e73p0",
    "tag": "i1_1050",
    "preset": {
     "answers": [
      3
     ]
-   }
-  },
-  {
-   "base": "m4e74p0",
-   "tag": "i1_1051",
-   "preset": {
-    "answers": [
-     0
-    ],
-    "variables": {
-     "1542": 35
-    }
    }
   },
   {
@@ -216194,72 +214988,12 @@
    }
   },
   {
-   "base": "m54e15p4",
-   "tag": "i1_1055",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m54e15p5",
-   "tag": "i1_1056",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m54e15p6",
-   "tag": "i1_1057",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
    "base": "m54e15p7",
    "tag": "i1_1058",
    "preset": {
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m54e15p7",
-   "tag": "i1_1059",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
@@ -216306,96 +215040,6 @@
     "variables": {
      "450": 4,
      "94": 2
-    }
-   }
-  },
-  {
-   "base": "m63e3p7",
-   "tag": "i1_1065",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m80e13p3",
-   "tag": "i1_1066",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m85e1p4",
-   "tag": "i1_1067",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m85e1p5",
-   "tag": "i1_1068",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m85e1p6",
-   "tag": "i1_1069",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
-    }
-   }
-  },
-  {
-   "base": "m85e1p7",
-   "tag": "i1_1070",
-   "preset": {
-    "variables": {
-     "106": 1
-    },
-    "answers": [
-     1
-    ],
-    "switches": {
-     "107": true
     }
    }
   },
