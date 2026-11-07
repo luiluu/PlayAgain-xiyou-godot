@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 
@@ -209,6 +210,54 @@ class ReviewListTests(unittest.TestCase):
         r.git('add', '-A')
         r.git('commit', '-q', '-m', '审查线程自己的合并\n\n执行者: Claude（唐僧）\n核查: 无\n')
         self.assertNotIn('审查线程自己的合并', self.labels())
+
+    def merge_lane(self, name, n):
+        r = self.repo
+        r.git('checkout', '-q', '-b', name)
+        r.put(f'03_再刷重制_Godot/s{n}.py', 'x')
+        r.commit(f'{name} 的提交', '审查', 'cc（哪吒）')
+        r.git('checkout', '-q', 'main')
+        r.git('merge', '-q', '--no-ff', '-m', f'合并 {name}', name)
+
+    def test_short_branch_names(self):
+        # tools83：审查 50 写短名（android3、platform-keys1～3、release1／2），旧版只认 cc/ 全名，漏销 15 批
+        for n, name in enumerate(['cc/platform-android3', 'cc/platform-keys1', 'cc/platform-keys2', 'cc/platform-keys3', 'cc/nezha-tools71',
+                                  'cc/nezha-tools72', 'cc/platform-release1', 'cc/platform-release2', 'cc/entry-release1', 'cc/other-android30']):
+            self.merge_lane(name, n)
+        left = lambda: {i['label'] for i in review.pending(self.repo.root)}
+        for name in ['cc/platform-android3', 'cc/platform-keys1', 'cc/platform-keys3', 'cc/nezha-tools71', 'cc/nezha-tools72', 'cc/platform-release2']:
+            self.assertIn(f'合并 {name}', left())
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 android3、platform-keys1～3、tools71／72、release2（审查第 50 期）\n')
+        got = left()
+        for name in ['cc/platform-android3', 'cc/platform-keys1', 'cc/platform-keys2', 'cc/platform-keys3', 'cc/nezha-tools71', 'cc/nezha-tools72', 'cc/platform-release2']:
+            self.assertNotIn(f'合并 {name}', got, name)
+        self.assertIn('合并 cc/other-android30', got)       # android3 不是 android30 的后缀
+        # release1 同时对上 platform-release1 和 entry-release1：不自动认，警告；别名表指定后才销
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 release1\n')
+        warns = []
+        with mock.patch.object(review, 'load_aliases', return_value={}):     # 不受真实别名表影响
+            got = {i['label'] for i in review.pending(self.repo.root, warnings=warns)}
+        self.assertIn('合并 cc/platform-release1', got)
+        self.assertIn('合并 cc/entry-release1', got)
+        self.assertTrue(any('release1' in w and '多批' in w for w in warns), warns)
+        with mock.patch.object(review, 'load_aliases', return_value={'release1': 'cc/platform-release1'}):
+            got = {i['label'] for i in review.pending(self.repo.root)}
+        self.assertNotIn('合并 cc/platform-release1', got)
+        self.assertIn('合并 cc/entry-release1', got)
+
+    def test_unknown_short_name_warns_but_noise_does_not(self):
+        self.merge_lane('cc/platform-android3', 1)
+        self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【cc·审查】核查 android9（cc/lane2、dev.003、m4e69p0、ce942、a1b2c3d、xiyou_rules）\n\n- 核查覆盖：fb31ab0\n')
+        warns = []
+        review.pending(self.repo.root, warnings=warns)
+        self.assertEqual(len(warns), 1, warns)
+        self.assertIn('android9', warns[0])
+        # 命令行：警告走 stderr，清单照常
+        out = subprocess.run([sys.executable, str(HERE / '待核查.py'), '--root', str(self.repo.root)], capture_output=True, text=True)
+        self.assertIn('android9', out.stderr)
+        self.assertNotIn('android9', out.stdout)
+        self.assertEqual(review.short_names('platform-keys1～3、tools71／72、ui16 abc dev.375 cc/x-y1 9c26528'),
+                         [('platform-keys1', True), ('platform-keys2', False), ('platform-keys3', False), ('tools71', True), ('tools72', False), ('ui16', True)])
 
     def test_cc_names_are_recognized_like_claude(self):
         # Kyo 10-31 把 claude 改叫 cc：分支 cc/…、执行者 cc（…）、条目【cc·…】核查、核查者 cc（审查）都照旧销账
