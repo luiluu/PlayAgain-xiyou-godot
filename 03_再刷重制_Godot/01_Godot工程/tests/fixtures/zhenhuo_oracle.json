@@ -967,6 +967,7 @@
     "learn": [
      1089
     ],
+    "noScale": false,
     "troop": 3,
     "level": 55
    },
@@ -998,9 +999,47 @@
    "errors": []
   },
   {
+   "id": "scale.p1089.noscale",
+   "setup": {
+    "learn": [
+     1089
+    ],
+    "noScale": true,
+    "troop": 3,
+    "level": 55
+   },
+   "observed": {
+    "log": [
+     {
+      "target": "e0",
+      "value": 3469081,
+      "critical": false
+     },
+     {
+      "target": "e0",
+      "value": 3469081,
+      "critical": false
+     },
+     {
+      "target": "e0",
+      "value": 3469081,
+      "critical": false
+     },
+     {
+      "target": "e0",
+      "value": 3469081,
+      "critical": false
+     }
+    ],
+    "scale": 1.15
+   },
+   "errors": []
+  },
+  {
    "id": "scale.plain",
    "setup": {
     "learn": [],
+    "noScale": false,
     "troop": 3,
     "level": 55
    },

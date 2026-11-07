@@ -136,7 +136,10 @@ func _chase(c: Dictionary, fix: bool) -> void:
 	XStateEffects.take_forces()
 	var u: XActor = a if int(c.setup.user) == ZZB else r[2]
 	logic.execute(u, XDB.rec("Skills", int(c.setup.skill)), t)
-	_compare(id, _view(logic, a), _want(o, logic, a, fix))
+	# 原版探针不跑事件，排进强制行动公共事件后本次行动就停在第一段，序列末的 Add State 108 与行动结束减回合都没跑，回合数不比
+	var want := _want(o, logic, a, fix)
+	want.erase("turns")
+	_compare(id, _view(logic, a), want)
 
 
 func _scale(ref: Array) -> void:
@@ -144,7 +147,7 @@ func _scale(ref: Array) -> void:
 	for c in ref:
 		if str(c.id).begins_with("scale.") and c.errors.is_empty():
 			by[c.id] = c
-	if not check("scale.oracle", by.has("scale.p1089") and by.has("scale.plain"), by.keys()):
+	if not check("scale.oracle", by.has("scale.p1089") and by.has("scale.p1089.noscale") and by.has("scale.plain"), by.keys()):
 		return
 	var got := {}
 	for k in ["scale.p1089", "scale.plain"]:
@@ -156,11 +159,12 @@ func _scale(ref: Array) -> void:
 		check(k + ".hits", got[k].size() == by[k].observed.log.size(), [got[k], by[k].observed.log])
 	var a_level := float(by["scale.p1089"].observed.scale)
 	check("scale.factor", absf(XZhenhuo.scale_of(_battle([])[1]) - a_level) < 1e-9, [a_level])
-	# 比值：原版逐段 round(v×s) 与 v 之比；重制同一随机流下两次同段之比，绝对伤害另有链差、这里只比倍率
+	# 比值：原版 p1089 ÷ p1089.noscale（同样学了 1089、只差本模块倍率）；重制 p1089 ÷ plain（重制学 1089 不另改 1090，
+	# 原版学 1089 另高约 6.9% 是被动链差，交规则车道）。绝对伤害另有链差，这里只比倍率
 	for i in range(mini(got["scale.p1089"].size(), got["scale.plain"].size())):
-		var want_ratio := float(by["scale.p1089"].observed.log[i].value) / float(by["scale.plain"].observed.log[i].value)
+		var want_ratio := float(by["scale.p1089"].observed.log[i].value) / float(by["scale.p1089.noscale"].observed.log[i].value)
 		var got_ratio: float = got["scale.p1089"][i] / maxf(1.0, got["scale.plain"][i])
-		check("scale.ratio.%d" % i, absf(got_ratio - want_ratio) < 1e-6, [got_ratio, want_ratio])
+		check("scale.ratio.%d" % i, absf(got_ratio - want_ratio) < 1e-6, [got_ratio, want_ratio, got["scale.p1089"][i], got["scale.plain"][i], by["scale.p1089"].observed.log[i].value, by["scale.plain"].observed.log[i].value])
 
 
 func _run() -> void:

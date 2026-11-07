@@ -96,12 +96,16 @@ for (const [user, skill] of [[ZZB, 1086], [1, 1086], [1, 1]]) {
   }));
 }
 // ③ 追击伤害倍率
-for (const passive of [true, false]) {
-  const learn = passive ? [1089] : [];
-  cases.push(makeCase(`scale.${passive ? 'p1089' : 'plain'}`, {learn, troop: TROOP, level: LEVEL}, () => {
+// scale.p1089.noscale：学 1089 但关掉本模块倍率（Z.noScale）。学 1089 本身另让 1090 高约 6.9%（被动链，与本模块无关，
+// 重制没有这一项，交规则车道），所以倍率按 p1089 ÷ p1089.noscale 比。
+for (const [name, learn, noScale] of [['p1089', [1089], false], ['p1089.noscale', [1089], true], ['plain', [], false]]) {
+  cases.push(makeCase(`scale.${name}`, {learn, noScale, troop: TROOP, level: LEVEL}, () => {
     const {bm, a} = battle(learn);
-    const log = record(() => act(bm, a, 1090, 0));
-    return {log, scale: Z.scaleOf(a)};
+    Z.noScale = noScale;
+    try {
+      const log = record(() => act(bm, a, 1090, 0));
+      return {log, scale: Z.scaleOf(a)};
+    } finally { Z.noScale = false; }
   }));
 }
 // ④ 角色挂不上 109

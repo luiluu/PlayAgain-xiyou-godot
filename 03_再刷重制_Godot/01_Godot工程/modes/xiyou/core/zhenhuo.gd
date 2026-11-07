@@ -26,6 +26,8 @@ const UNIQUE := [1083, 1086]
 ## 本次行动按目标各一格：{target, marked_before, chased, marked}（原版记在 Game_Action._zhenhuoInfo 上）
 static var _slots: Array = []
 ## 原版 Z.runs／Z.last（只给测试看）
+## 开关关着时本次行动已按原版排过旧自动施法的角色（battler.add_state 与资源上下文 add_state 两层都会问，只排一次）
+static var _old_queued: Array = []
 static var runs := 0
 static var last := {}
 
@@ -40,6 +42,7 @@ static func scale_of(u) -> float:
 
 static func reset() -> void:
 	_slots.clear()
+	_old_queued.clear()
 	runs = 0
 	last = {}
 
@@ -47,6 +50,7 @@ static func reset() -> void:
 ## BattleManager.startAction：新的 Game_Action，格子清空
 static func start_action() -> void:
 	_slots.clear()
+	_old_queued.clear()
 
 
 ## O-待定·真火旧追击（原版 bug，默认修好）：新源想在 Game_Battler.addState 上挡掉角色的 109，但 Game_Actor.addState 早被
@@ -63,7 +67,8 @@ static func blocks_state(b, id: int) -> bool:
 		return false
 	if FIX_OLD_CHASE:
 		return true
-	if not b.is_state_affected(OLD_CHASE):
+	if not b.is_state_affected(OLD_CHASE) and not _old_queued.has(b):
+		_old_queued.append(b)
 		XStateEffects.queue_force_quiet(b, CHASE, XStateEffects.battle_units.get("actors", []).find(b))
 	return false
 
