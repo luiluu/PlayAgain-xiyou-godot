@@ -219,6 +219,10 @@ def open_preset(lst, j, loc):
         p, want = lst[k]['parameters'], False
     elif code == 402:
         return {'answers': choice_path(lst, j)}
+    elif code in (602, 603):
+        # 战斗结果门（八戒 interp4）：两边都认预设 battleResult（0 胜、1 逃、2 败），参照 event_state_probe 的战斗回调、
+        # 重制 xiyou_event_compare 的 preset_battle_result 都按它走；602 逃跑、603 战败
+        return {'battleResult': 1 if code == 602 else 2}
     elif code != 111:
         return None
     t = int(p[0])
