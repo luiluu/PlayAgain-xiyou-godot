@@ -146,6 +146,42 @@ func _run() -> void:
 	title_page.queue_free()
 	await frames(1)
 
+	# Codex 报告第 5 项（平台 EH，O-221·自动存档检查点）：切后台碰上菜单／战斗时跳过，杀进程就丢进度；
+	# 改成进主菜单、开战前各存一份安全检查点（地图上、事件没在跑时；不存战斗中间态）
+	check("checkpoint_default_on", XAutoSave.CHECKPOINTS)
+	_fresh()
+	check("checkpoint_on_map_saves", XAutoSave.checkpoint(map, "battle") == "checkpoint:battle" and XSave.exists_auto(), XAutoSave.last_result)
+	# 检查点不占切后台的去重窗口：紧接着切后台照样存
+	XSave.remove_auto()
+	check("checkpoint_not_dedup_pause", XAutoSave.on_pause(map) == "saved" and XSave.exists_auto(), XAutoSave.last_result)
+	for spec in [["battle", "_in_battle"], ["event", "busy"], ["menu", "_menu_open"]]:
+		_fresh()
+		map.set(spec[1], true)
+		XAutoSave.checkpoint(map, "menu")
+		check("checkpoint_skip_in_" + spec[0], not XSave.exists_auto() and XAutoSave.last_result == "skip:" + spec[0], XAutoSave.last_result)
+		map.set(spec[1], false)
+	_fresh()
+	XAutoSave.CHECKPOINTS = false
+	XAutoSave.checkpoint(map, "menu")
+	check("checkpoint_switch_off", not XSave.exists_auto() and XAutoSave.last_result == "skip:checkpoints_off", XAutoSave.last_result)
+	XAutoSave.CHECKPOINTS = true
+	_fresh()
+	XPlatform.force_mobile = false
+	XAutoSave.checkpoint(map, "menu")
+	check("checkpoint_desktop_no_save", not XSave.exists_auto(), XAutoSave.last_result)
+	XPlatform.force_mobile = true
+	# 战斗前：start_battle 第一件事就存（在 _in_battle、第一个 await 之前）
+	var src := FileAccess.get_file_as_string("res://modes/xiyou/map/map_scene.gd")
+	var sb := src.substr(src.find("func start_battle("))
+	sb = sb.substr(0, sb.find("\nfunc "))
+	var cp := sb.find('XAutoSave.checkpoint(self, "battle")')
+	check("battle_checkpoint_before_battle_state", cp > 0 and cp < sb.find("_in_battle = true") and cp < sb.find("await "), cp)
+	# 进主菜单：真开一次菜单，开的那一刻就有检查点
+	_fresh()
+	map.open_menu()
+	check("menu_checkpoint_saves", XSave.exists_auto() and XAutoSave.last_result == "checkpoint:menu", XAutoSave.last_result)
+	await frames(3)
+
 	# 离开地图：钩子失效，切后台不存也不报错
 	_fresh()
 	map.queue_free()

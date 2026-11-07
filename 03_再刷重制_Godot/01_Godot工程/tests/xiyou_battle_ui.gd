@@ -185,7 +185,7 @@ func _run() -> void:
 		cw.select(0)
 	# 自动、变速按钮不拿键盘焦点（拿了的话空格／J 会先按到它们）
 	_check("speed_auto_no_focus", b.auto_btn.focus_mode == Control.FOCUS_NONE and b.speed_btn.focus_mode == Control.FOCUS_NONE)
-	# O-待定·空列表一行高：没有技能时也按一行高；关掉照原版只剩内边距
+	# O-218·空列表一行高：没有技能时也按一行高；关掉照原版只剩内边距
 	var empty := XBattleList.create(b.ui, [], 450)
 	_check("empty_list_one_row", empty.rows == 1 and empty.size.y == XBattleList.LH + empty.padding * 2, [empty.rows, empty.size])
 	empty.queue_free()

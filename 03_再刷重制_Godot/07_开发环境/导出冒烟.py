@@ -249,6 +249,25 @@ def expected_android_version(preset: str) -> dict:
     return {'versionCode': preset_template(preset, 'version/code'), 'versionName': preset_template(preset, 'version/name')}
 
 
+def expected_desktop_version(platform: str):
+    """Mac／Windows 发行包该有的版本号（XDesktopVersion，O-待定·桌面版本号，平台 EC）：开关开着、插件启用、
+    读得出开发编号时 Mac 是 (CFBundleShortVersionString, CFBundleVersion)＝('0.N', 'N')，Windows 是 '0.N.0.0'；否则 None（不查）。"""
+    gd = PROJECT / 'addons' / 'xiyou_export' / 'desktop_version.gd'
+    cfg = (PROJECT / 'project.godot').read_text(encoding='utf-8')
+    if not (gd.is_file() and re.search(r'^static var AUTO := true', gd.read_text(encoding='utf-8'), re.M)
+            and 'res://addons/xiyou_export/plugin.cfg' in cfg):
+        return None
+    try:
+        dev = json.loads((PROJECT / 'content' / 'build_info.json').read_text(encoding='utf-8')).get('developmentVersion', '')
+    except (OSError, ValueError):
+        return None
+    m = re.fullmatch(r'dev\.(\d+)', str(dev))
+    if not m or int(m.group(1)) <= 0:
+        return None
+    n = int(m.group(1))
+    return ('0.%d' % n, str(n)) if platform == 'macos' else '0.%d.0.0' % n
+
+
 def preset_template(preset: str, key: str = 'custom_template/debug'):
     """从 export_presets.cfg 读某个预设的模板路径（模板在主工作区，工作树里没有）。"""
     import configparser
