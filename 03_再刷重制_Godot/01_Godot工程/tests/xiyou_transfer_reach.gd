@@ -78,7 +78,9 @@ func _map(m: int, landings: Array, exits: Dictionary, known: Dictionary) -> void
 				ok = true
 				print("BLOCKED ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk}))
 		if not ok:
-			print("STUCK ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk}))
+			var spawned := map.events.filter(func(e): return ex.walk.has(e.event_id)).map(func(e): return [e.event_id, e.grid.x, e.grid.y, e.page_index])
+			print("STUCK ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk, "spawned": spawned,
+				"cells": REACH.reachable(map, at).size(), "player": [map.player.grid.x, map.player.grid.y]}))
 			_check(tag + "_exit", why != null, {"from": l.from, "exits": ex.walk})
 
 
