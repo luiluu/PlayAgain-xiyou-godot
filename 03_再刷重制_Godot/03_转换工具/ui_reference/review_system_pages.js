@@ -736,6 +736,52 @@
         extra: detailState
     };
 
+    // 藏宝图批量使用（界面 ui-gaps1，installTreasureBatchRuntime）：特级藏宝图 212 ×5，物品页「使用」开数量窗；
+    // 改数量、MAX、确定后逐帧用完，读结果（CodexTreasure.lastResult）与说明卡文字；另在地图上直接给一件至臻武器 1885，读至臻通知窗。
+    function treasureState() {
+        var s = scene(), w = s._codexTreasureNumber, T = window.CodexTreasure, ui = s._codexPrestigeNotice;
+        var out = {lastResult: T ? T.lastResult : null, stock212: $gameParty.numItems($dataItems[212]), job: s._codexTreasureJob ? {state: s._codexTreasureJob.state, used: s._codexTreasureJob.used} : null};
+        if (w) out.number = {rect: [w.x, w.y, w.width, w.height], visible: w.visible, active: w.active, number: w._number, max: w._max, padding: w.standardPadding(),
+            buttonY: w.buttonY(), itemY: w.itemY(), cursorWidth: w.cursorWidth(), cursorX: w.cursorX(),
+            buttons: (w._buttons || []).concat(w._codexMaxButton ? [w._codexMaxButton] : []).map(function (b) { return [b.x, b.y, b.width, b.height, b.visible]; })};
+        if (s._helpWindow) out.help = {visible: s._helpWindow.visible, text: s._helpWindow._text || null, rows: (s._helpWindow.item && s._helpWindow.item.descParams || []).map(function (r) { return r[0]; })};
+        if (ui) out.notice = {frames: ui.frames, flashFrames: ui.flashFrames, flash: ui.flash.opacity, rect: [ui.window.x, ui.window.y, ui.window.width, ui.window.height],
+            visible: ui.window.visible, contentsOpacity: ui.window.contentsOpacity};
+        return out;
+    }
+    P.treasure_batch = {
+        setup: async function () {
+            $gameParty.gainItem($dataItems[212], 5);
+            await push(Scene_Item);
+            var s = scene(); s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk(); await settle();
+            var w = s._itemWindow, list = w._data || [];
+            for (var i = 0; i < list.length; i++) if (list[i] && list[i].id === 212) { w.select(i); break; }
+        },
+        shots: {
+            treasure_0_open: async function () { var s = scene(); s.useItem(); },
+            treasure_1_plus: async function () { var w = scene()._codexTreasureNumber; w.changeNumber(1); w.changeNumber(1); },
+            treasure_2_max: async function () { var w = scene()._codexTreasureNumber; w._number = w._max; w.refresh(); w.changeNumber(-10); w.changeNumber(1); w.changeNumber(1); },
+            treasure_3_done: async function () { var w = scene()._codexTreasureNumber; w.processOk(); await frames(30); },
+            treasure_4_cancel: async function () { var s = scene(); s._itemWindow.processOk && 0; s.useItem(); await settle(); scene()._codexTreasureNumber.processCancel(); }
+        },
+        extra: treasureState
+    };
+    P.prestige_notice = {
+        setup: async function () {},
+        shots: {
+            prestige_0_gain: async function () { $gameParty.gainItem($dataWeapons[1885], 1); $gameParty.gainItem($dataWeapons[1886], 1); $gameParty.gainItem($dataArmors[3623], 1); await frames(1); },
+            prestige_1_f40: async function () { await frames(40); },
+            prestige_2_f140: async function () { await frames(100); },
+            prestige_3_end: async function () { await frames(40); }
+        },
+        extra: function () {
+            var s = scene(), ui = s._codexPrestigeNotice;
+            return ui ? {frames: ui.frames, flashFrames: ui.flashFrames, flash: ui.flash.opacity, rect: [ui.window.x, ui.window.y, ui.window.width, ui.window.height],
+                visible: ui.window.visible, contentsOpacity: ui.window.contentsOpacity, padding: ui.window.standardPadding(), lineHeight: ui.window.lineHeight(),
+                texts: (ui.window.contents.__ilrText || []).map(function (t) { return [t.text, t.x, t.y, t.w, t.align, t.size, t.color]; })} : null;
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {

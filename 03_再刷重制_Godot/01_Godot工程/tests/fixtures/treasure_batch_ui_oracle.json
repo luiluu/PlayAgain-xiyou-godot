@@ -1,0 +1,812 @@
+{
+ "schemaVersion": 1,
+ "source": "v0.62.12 冻结副本；ui_reference/review_system_pages.js 的 treasure_batch／prestige_notice（内存新局 1/8/9/10，地图 5，Math.random 0.5）",
+ "shots": {
+  "treasure_0_open": {
+   "extra": {
+    "lastResult": null,
+    "stock212": 5,
+    "job": {
+     "state": "quantity",
+     "used": 0
+    },
+    "number": {
+     "rect": [
+      390,
+      184,
+      500,
+      352
+     ],
+     "visible": true,
+     "active": true,
+     "number": 1,
+     "max": 5,
+     "padding": 14,
+     "buttonY": 194,
+     "itemY": 72,
+     "cursorWidth": 27.5390625,
+     "cursorX": 438.4609375,
+     "buttons": [
+      [
+       74,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       138,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       202,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       266,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       330,
+       194,
+       96,
+       48,
+       true
+      ],
+      [
+       206,
+       258,
+       88,
+       40,
+       true
+      ]
+     ]
+    },
+    "help": {
+     "visible": false,
+     "text": null,
+     "rows": [
+      "特级藏宝图",
+      "藏宝图\n直接使用获得宝藏，可选择一次使用多张。",
+      "品质：传说",
+      "购买价格：5000",
+      "出售价格：2500"
+     ]
+    }
+   },
+   "window": {
+    "rect": [
+     390,
+     184,
+     500,
+     352
+    ],
+    "visible": true,
+    "padding": 14,
+    "opacity": 255,
+    "backOpacity": 255,
+    "texts": [
+     [
+      "使用藏宝图",
+      0,
+      0,
+      472,
+      "center",
+      26,
+      "#84aaff"
+     ],
+     [
+      "特级藏宝图",
+      36,
+      36,
+      436,
+      "left",
+      26,
+      "rgba(255,160,64,1)"
+     ],
+     [
+      "×",
+      386.46,
+      72,
+      26,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "1",
+      438.46,
+      72,
+      21.54,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "持有 5 张",
+      0,
+      108,
+      472,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "← / → ±1    ↑ / ↓ ±10",
+      0,
+      144,
+      472,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   }
+  },
+  "treasure_1_plus": {
+   "extra": {
+    "lastResult": null,
+    "stock212": 5,
+    "job": {
+     "state": "quantity",
+     "used": 0
+    },
+    "number": {
+     "rect": [
+      390,
+      184,
+      500,
+      352
+     ],
+     "visible": true,
+     "active": true,
+     "number": 3,
+     "max": 5,
+     "padding": 14,
+     "buttonY": 194,
+     "itemY": 72,
+     "cursorWidth": 27.5390625,
+     "cursorX": 438.4609375,
+     "buttons": [
+      [
+       74,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       138,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       202,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       266,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       330,
+       194,
+       96,
+       48,
+       true
+      ],
+      [
+       206,
+       258,
+       88,
+       40,
+       true
+      ]
+     ]
+    },
+    "help": {
+     "visible": false,
+     "text": null,
+     "rows": [
+      "特级藏宝图",
+      "藏宝图\n直接使用获得宝藏，可选择一次使用多张。",
+      "品质：传说",
+      "购买价格：5000",
+      "出售价格：2500"
+     ]
+    }
+   },
+   "window": {
+    "rect": [
+     390,
+     184,
+     500,
+     352
+    ],
+    "visible": true,
+    "padding": 14,
+    "opacity": 255,
+    "backOpacity": 255,
+    "texts": [
+     [
+      "使用藏宝图",
+      0,
+      0,
+      472,
+      "center",
+      26,
+      "#84aaff"
+     ],
+     [
+      "特级藏宝图",
+      36,
+      36,
+      436,
+      "left",
+      26,
+      "rgba(255,160,64,1)"
+     ],
+     [
+      "×",
+      386.46,
+      72,
+      26,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "3",
+      438.46,
+      72,
+      21.54,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "持有 5 张",
+      0,
+      108,
+      472,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "← / → ±1    ↑ / ↓ ±10",
+      0,
+      144,
+      472,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   }
+  },
+  "treasure_2_max": {
+   "extra": {
+    "lastResult": null,
+    "stock212": 5,
+    "job": {
+     "state": "quantity",
+     "used": 0
+    },
+    "number": {
+     "rect": [
+      390,
+      184,
+      500,
+      352
+     ],
+     "visible": true,
+     "active": true,
+     "number": 3,
+     "max": 5,
+     "padding": 14,
+     "buttonY": 194,
+     "itemY": 72,
+     "cursorWidth": 27.5390625,
+     "cursorX": 438.4609375,
+     "buttons": [
+      [
+       74,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       138,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       202,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       266,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       330,
+       194,
+       96,
+       48,
+       true
+      ],
+      [
+       206,
+       258,
+       88,
+       40,
+       true
+      ]
+     ]
+    },
+    "help": {
+     "visible": false,
+     "text": null,
+     "rows": [
+      "特级藏宝图",
+      "藏宝图\n直接使用获得宝藏，可选择一次使用多张。",
+      "品质：传说",
+      "购买价格：5000",
+      "出售价格：2500"
+     ]
+    }
+   },
+   "window": {
+    "rect": [
+     390,
+     184,
+     500,
+     352
+    ],
+    "visible": true,
+    "padding": 14,
+    "opacity": 255,
+    "backOpacity": 255,
+    "texts": [
+     [
+      "使用藏宝图",
+      0,
+      0,
+      472,
+      "center",
+      26,
+      "#84aaff"
+     ],
+     [
+      "特级藏宝图",
+      36,
+      36,
+      436,
+      "left",
+      26,
+      "rgba(255,160,64,1)"
+     ],
+     [
+      "×",
+      386.46,
+      72,
+      26,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "3",
+      438.46,
+      72,
+      21.54,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "持有 5 张",
+      0,
+      108,
+      472,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "← / → ±1    ↑ / ↓ ±10",
+      0,
+      144,
+      472,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   }
+  },
+  "treasure_3_done": {
+   "extra": {
+    "lastResult": {
+     "itemId": 212,
+     "requested": 3,
+     "used": 3,
+     "remaining": 2,
+     "prestige": 0,
+     "reason": "完成"
+    },
+    "stock212": 2,
+    "job": null,
+    "number": {
+     "rect": [
+      390,
+      184,
+      500,
+      352
+     ],
+     "visible": false,
+     "active": false,
+     "number": 3,
+     "max": 5,
+     "padding": 14,
+     "buttonY": 194,
+     "itemY": 72,
+     "cursorWidth": 27.5390625,
+     "cursorX": 438.4609375,
+     "buttons": [
+      [
+       74,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       138,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       202,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       266,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       330,
+       194,
+       96,
+       48,
+       true
+      ],
+      [
+       206,
+       258,
+       88,
+       40,
+       true
+      ]
+     ]
+    },
+    "help": {
+     "visible": true,
+     "text": null,
+     "rows": [
+      "已使用 特级藏宝图 ×3；剩余 2 张"
+     ]
+    }
+   },
+   "window": {
+    "rect": [
+     390,
+     184,
+     500,
+     352
+    ],
+    "visible": false,
+    "padding": 14,
+    "opacity": 255,
+    "backOpacity": 255,
+    "texts": [
+     [
+      "使用藏宝图",
+      0,
+      0,
+      472,
+      "center",
+      26,
+      "#84aaff"
+     ],
+     [
+      "特级藏宝图",
+      36,
+      36,
+      436,
+      "left",
+      26,
+      "rgba(255,160,64,1)"
+     ],
+     [
+      "×",
+      386.46,
+      72,
+      26,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "3",
+      438.46,
+      72,
+      21.54,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "持有 5 张",
+      0,
+      108,
+      472,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "← / → ±1    ↑ / ↓ ±10",
+      0,
+      144,
+      472,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   }
+  },
+  "treasure_4_cancel": {
+   "extra": {
+    "lastResult": {
+     "itemId": 212,
+     "requested": 0,
+     "used": 0,
+     "remaining": 2,
+     "prestige": 0,
+     "reason": "取消"
+    },
+    "stock212": 2,
+    "job": null,
+    "number": {
+     "rect": [
+      390,
+      184,
+      500,
+      352
+     ],
+     "visible": false,
+     "active": false,
+     "number": 1,
+     "max": 2,
+     "padding": 14,
+     "buttonY": 194,
+     "itemY": 72,
+     "cursorWidth": 27.5390625,
+     "cursorX": 438.4609375,
+     "buttons": [
+      [
+       74,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       138,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       202,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       266,
+       194,
+       48,
+       48,
+       true
+      ],
+      [
+       330,
+       194,
+       96,
+       48,
+       true
+      ],
+      [
+       206,
+       258,
+       88,
+       40,
+       true
+      ]
+     ]
+    },
+    "help": {
+     "visible": true,
+     "text": null,
+     "rows": [
+      "已取消使用藏宝图"
+     ]
+    }
+   },
+   "window": {
+    "rect": [
+     390,
+     184,
+     500,
+     352
+    ],
+    "visible": false,
+    "padding": 14,
+    "opacity": 255,
+    "backOpacity": 255,
+    "texts": [
+     [
+      "使用藏宝图",
+      0,
+      0,
+      472,
+      "center",
+      26,
+      "#84aaff"
+     ],
+     [
+      "特级藏宝图",
+      36,
+      36,
+      436,
+      "left",
+      26,
+      "rgba(255,160,64,1)"
+     ],
+     [
+      "×",
+      386.46,
+      72,
+      26,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "1",
+      438.46,
+      72,
+      21.54,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "持有 2 张",
+      0,
+      108,
+      472,
+      "right",
+      26,
+      "#ffffff"
+     ],
+     [
+      "← / → ±1    ↑ / ↓ ±10",
+      0,
+      144,
+      472,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   }
+  },
+  "prestige_0_gain": {
+   "extra": {
+    "frames": 0,
+    "flashFrames": 0,
+    "flash": 0,
+    "rect": [
+     290,
+     86,
+     700,
+     172
+    ],
+    "visible": false,
+    "contentsOpacity": 0,
+    "padding": 14,
+    "lineHeight": 36,
+    "texts": [
+     [
+      "至臻现世 · 获得 3 件",
+      0,
+      0,
+      672,
+      "center",
+      26,
+      "#ffe28a"
+     ],
+     [
+      "“至臻”嘤嘤杖",
+      40,
+      36,
+      632,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "“至臻”灼兮",
+      40,
+      72,
+      632,
+      "left",
+      26,
+      "#ffffff"
+     ],
+     [
+      "另有 1 种至臻装备",
+      0,
+      108,
+      672,
+      "center",
+      26,
+      "#ffffff"
+     ]
+    ]
+   },
+   "window": null
+  }
+ }
+}

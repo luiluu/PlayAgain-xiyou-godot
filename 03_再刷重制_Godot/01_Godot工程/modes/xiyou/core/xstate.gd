@@ -752,6 +752,8 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 			if not inst.is_empty():
 				register_gear(inst)
 				gear.append(inst)
+				# 至臻装备入包闪光（installTreasureBatchRuntime 包 gainIndependentItem，XTreasureBatch／XPrestigeNotice）
+				XTreasureBatch.note_gain(self, kind, base_id, str(inst.get("name", "")), int(inst.get("iconIndex", 0)), 1)
 		XGrowthForge.on_gain(self, kind, base_id)  # 利维坦锻造／狂妄 gainItem 包装：第一次拥有心钢／狂妄一族时解锁锻造配方
 	else:
 		for i in range(-amount):
