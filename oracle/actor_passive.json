@@ -19261,6 +19261,113 @@
     "damageElement": 0
    },
    "errors": []
+  },
+  {
+   "id": "actor179.lv1",
+   "setup": {
+    "actor": 179,
+    "level": 1
+   },
+   "observed": {
+    "level": 1,
+    "skills": [
+     10622,
+     10624
+    ],
+    "actionPlus": [
+     0.3
+    ],
+    "damageElement": 0
+   },
+   "errors": []
+  },
+  {
+   "id": "actor179.lv10",
+   "setup": {
+    "actor": 179,
+    "level": 10
+   },
+   "observed": {
+    "level": 10,
+    "skills": [
+     10622,
+     10624
+    ],
+    "actionPlus": [
+     0.3
+    ],
+    "damageElement": 0
+   },
+   "errors": []
+  },
+  {
+   "id": "actor179.lv35",
+   "setup": {
+    "actor": 179,
+    "level": 35
+   },
+   "observed": {
+    "level": 35,
+    "skills": [
+     10622,
+     10624,
+     10625,
+     10626,
+     10627
+    ],
+    "actionPlus": [
+     0.3,
+     0.3
+    ],
+    "damageElement": 0
+   },
+   "errors": []
+  },
+  {
+   "id": "actor179.lv65",
+   "setup": {
+    "actor": 179,
+    "level": 65
+   },
+   "observed": {
+    "level": 65,
+    "skills": [
+     10622,
+     10624,
+     10625,
+     10626,
+     10627
+    ],
+    "actionPlus": [
+     0.3,
+     0.3
+    ],
+    "damageElement": 0
+   },
+   "errors": []
+  },
+  {
+   "id": "actor179.lv99",
+   "setup": {
+    "actor": 179,
+    "level": 99
+   },
+   "observed": {
+    "level": 99,
+    "skills": [
+     10622,
+     10624,
+     10625,
+     10626,
+     10627
+    ],
+    "actionPlus": [
+     0.3,
+     0.3
+    ],
+    "damageElement": 0
+   },
+   "errors": []
   }
  ]
 }
