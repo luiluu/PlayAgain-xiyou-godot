@@ -272,6 +272,8 @@ func _run() -> void:
 	check("stick_page_shallow_no", pad.pages_sent == p0 and Input.is_action_pressed("ui_left"), pad.pages_sent)
 	touch(0, XTouchControls.STICK_CENTER, false)
 	await frames(2)
+	# 按住满 24 帧发过方向回显再松手，方向要真松开（Godot 把回显记成键盘设备按着；ui6 修，地图上人物会一直走）
+	check("stick_echo_then_release", not Input.is_action_pressed("ui_left") and not Input.is_physical_key_pressed(KEY_LEFT))
 	pad.set_stick_page(false)
 	touch(0, XTouchControls.STICK_CENTER, true)
 	Input.parse_input_event(deep)

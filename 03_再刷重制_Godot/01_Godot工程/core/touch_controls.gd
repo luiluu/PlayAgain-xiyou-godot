@@ -38,6 +38,9 @@ static var scene_override: Node = null
 ## 方向的连发改成方向键的回显事件（is_echo() 为 true，节奏不变），页面认得出是连发；按着时换了场景，回显停下，要松开再按。
 ## 回退开关 HOLD_REPEAT_ECHO = false：回到所有虚拟键按住都发「新按下」。
 static var HOLD_REPEAT_ECHO := true
+## ui6 查出：Godot 把带 echo 的按键事件也记成该动作在键盘设备上「按着」，只松开 InputEventAction 清不掉，
+## 所以摇杆按住满 24 帧（发过回显）再松手，ui_left 等仍是按着——地图上 mv_player 轮询方向，人物会一直走。
+## 松开方向时顺带发一次该方向键的松开（_set_dir）。
 ## 方向回显用的键（XKeyRepeat 看到带这个标记的回显就放行，不当成系统回显吞掉）。
 const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
 const REPEAT_META := &"xiyou_touch_repeat"
@@ -316,6 +319,8 @@ func _set_dir(action: String) -> void:
 	_paging = false
 	if _dir != "":
 		_send_action(_dir, false)
+		if HOLD_REPEAT_ECHO and DIR_KEYS.has(_dir):
+			_send_key(DIR_KEYS[_dir], false)  # 回显按下的方向键也要松开（见 DIR_KEYS 上方说明）
 		_held.erase(_dir)
 	_dir = action
 	if action != "":
