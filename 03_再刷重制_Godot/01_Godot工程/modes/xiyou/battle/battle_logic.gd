@@ -3138,6 +3138,7 @@ func grant(r: Dictionary) -> Array:
 	if garou_text != "":
 		victory_texts.append(garou_text)
 	XXuanChart.credit_victory(state, actors, enemies)  # 璇 endBattle 包装：出战的璇胜利一场攒星砂（含 Boss 的敌群多给）
+	XStarburstBooks.on_victory(self)  # 星爆三本被动书 endBattle(0) 包装（真气、云裳外层，真气胜利结算之前）：8／18 层守层者、13 层不朽存在
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	state.gain_gold(r.gold)
 	if not drop_lock:
