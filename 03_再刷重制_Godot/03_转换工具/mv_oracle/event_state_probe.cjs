@@ -306,7 +306,9 @@ function runCase(c) {
   w.Game_Interpreter.prototype.executeCommand = function () {
     if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(this._index); }
     if (!seqRandom) return execute.apply(this, arguments);
-    const old = w.Math.random; w.Math.random = seqRandom;
+    // 301 战斗处理（敌群、战斗模拟）里的随机数不吃序列：重制战斗走自己的随机流，不走 random_sequence（试过：m138e6p0 等 69 例 301 后首个 122 错位）
+    const cmd = this.currentCommand(), inBattle = cmd && cmd.code === 301;
+    const old = w.Math.random; w.Math.random = inBattle ? () => 0.5 : seqRandom;
     try { return execute.apply(this, arguments); } finally { w.Math.random = old; }
   };
   it.setup(w.JsonEx.makeDeepCopy(list), c.event);
