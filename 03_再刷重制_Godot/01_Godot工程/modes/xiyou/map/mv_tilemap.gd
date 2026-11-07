@@ -36,6 +36,9 @@ var _canvas: CanvasItem = self
 ## 分块：[{static, water, rect: Rect2i（格）, px: Rect2（像素）, dirty}]，water 为 null 表示这块没有水面
 var _chunks: Array = []
 var _water_chunks: Array = []
+## 测试看：画过的格数（整张画与静态块算 drawn_cells，水面块算 water_cells）
+var drawn_cells := 0
+var water_cells := 0
 
 
 class Part extends Node2D:
@@ -144,6 +147,10 @@ static func _water_split(ids: Array) -> int:
 
 func _draw_part(part: Part, r: Rect2i, water: bool) -> void:
 	_canvas = part
+	if water:
+		water_cells += r.size.x * r.size.y
+	else:
+		drawn_cells += r.size.x * r.size.y
 	for y in range(r.position.y, r.end.y):
 		for x in range(r.position.x, r.end.x):
 			var ids := _tiles_at(x, y)
@@ -209,6 +216,7 @@ func _draw() -> void:
 		return
 	var mx := LOOP_MARGIN.x if loop_x else 0
 	var my := LOOP_MARGIN.y if loop_y else 0
+	drawn_cells += (width + 2 * mx) * (height + 2 * my)
 	for y in range(-my, height + my):
 		for x in range(-mx, width + mx):
 			var dx := x * TS
