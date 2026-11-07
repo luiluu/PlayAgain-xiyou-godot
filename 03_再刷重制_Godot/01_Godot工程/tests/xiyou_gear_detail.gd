@@ -215,7 +215,12 @@ func _run() -> void:
 	XHelpCard.MIN_FONT = 0
 	var probe2 := XGearDetail.new(ui_host, Rect2(640, 173, 640, 547), 255)
 	await frames()
+	# 卍解-斩月的读数在物品页（内容高 404）：总高正好 404，装备页（403）会多出一页
+	var probe3 := XGearDetail.new(ui_host, XItemScene.INFO_RECT, 255, ["装备详情", "插槽与镶嵌"], [0, 2])
+	await frames()
 	for pair in [["equip_detail_1_slot", 2], ["equip_detail_4_item", 1706], ["item_detail_0_weapon", 67]]:
+		if int(pair[1]) == 67:
+			probe2 = probe3
 		probe2.key = ""
 		probe2.set_item(XGear.template("weapon", int(pair[1])))
 		var want_h: float = _shot_ref(pair[0]).detail.fullHeight
