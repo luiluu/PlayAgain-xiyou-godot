@@ -1,0 +1,26 @@
+{
+ "sha": "8fa38365142b467378c3c826f5eda8e117369c84",
+ "branch": "ci/cc/rules-gaps3",
+ "mode": "affected",
+ "base": "fe482a6b54b830e3ee96e8e408e1fc2c5375abe3",
+ "passed": true,
+ "scenes": 5,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 382.4,
+ "testSeconds": 638,
+ "generatedRef": "refs/ci/generated/cc/rules-gaps3",
+ "generatedCommit": "a3921842abdab82376b5eb1755ee2790febed0c6",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42402210895",
+ "sceneNames": [
+  "xiyou_troop_events.tscn",
+  "xiyou_troop_events_b.tscn",
+  "xiyou_troop_events_c.tscn",
+  "xiyou_troop_events_d.tscn",
+  "xiyou_troop_events_half.tscn"
+ ],
+ "time": "2026-11-07T18:47:14+00:00"
+}
