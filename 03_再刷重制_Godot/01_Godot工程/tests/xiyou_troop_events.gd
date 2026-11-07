@@ -18,16 +18,17 @@ var _strict_random_extra_checks := 0
 const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739,
 	# accept4：160 控尸者第 1 回合在 864／865 里随机挑（865 一回合杀光全队时别的敌人轮不到）；
 	# 398 蚀世树第 2 回合的技能随机（参照 0.5 挑到打自己的 2565、没命中角色，别的种子会打到角色并带附加伤害）
-	160, 398]
+	160, 398,
+	# floor1 新源 Boss：剑道争锋 2001、2022～2025 交了见面礼（不走开场强制）后在几个 rating 5 技能里随机挑，挑到 10472 才有状态 76、
+	# 挑到 10549 是 2757 和攻击加成；死神觉醒 2010／2026 的「最后通牒」4354 打没打倒全队决定后面的敌人还轮不轮得到；
+	# 2001／2024 附加伤害看守层者打没打到人。固定 0.5 的 xiyou_troop_events_half 这些项全过（规则对得上），五种种子下不比
+	2001, 2010, 2022, 2023, 2024, 2025, 2026]
 ## 已知游戏差异：这几项照原版参照会失败，不计入断言，输出打 KNOWN_DIFF 行（accept4 起）。
 ## 321 六耳猕猴「模仿」856 的 <After Eval> 强制普通攻击 fix5 已接上（XBattleLogic._after_eval_force），回退支见 _unit_checks
-## floor1（新源 v0.62.12 新增 Boss 首次对照）：下面 12 个敌群的这些项与原版不一致，是规则缺口（状态 44／1107 没挂上、肉山 2029 第 1 回合强制与回满、
-## 2013 血线页后 HP、2010／2026 敌人行动集合、2024／2025 攻击魔攻与附加伤害），已交规则车道；修好一个删一个
+## floor1 新源 Boss 首次对照挂的 12 个敌群（rules-gaps3 清空）：查下来都不是规则缺口，是对照的时点与随机：t1_states 改比回合末
+## （turnStarts），剑道争锋／死神觉醒的随机选技能进 RANDOM_AI_TROOPS（固定 0.5 的 _half 照常严比），肉山 2029 事件随机固定 0.5，
+## hp_after_transform 按单槽公共事件算 1401 回不回血
 const KNOWN_DIFF := {
-	2001: ["extra"], 2002: ["t1_states"], 2004: ["t1_states"], 2010: ["t1_enemy_set"], 2013: ["hp_after_transform"],
-	2021: ["t1_states"], 2022: ["t1_states"], 2023: ["t1_states"], 2024: ["atk_mat", "extra", "t1_states"],
-	2025: ["atk_mat", "t1_states"], 2026: ["t1_enemy_set"],
-	2029: ["forced_t1", "hp_after_transform", "mhp", "t1_enemy_actions", "t1_states", "t2_enemy_once"],
 }
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
@@ -41,6 +42,8 @@ const KNOWN_DIFF := {
 ## --coverage=<文件>（cc events13）：另记每例实际执行到的敌群页／公共事件指令（XBattleEventRunner.COVER，「tTpP:下标」或「ceN:下标」），
 ## 写成 JSON 给 03_转换工具/敌群页覆盖.py；byCase 以参照用例序号为键（五轮随机种子的并集）。不加时 COVER 保持 null，测试行为不变。
 var coverage_out := ""
+## 本机排查用：环境变量 XIYOU_TROOP_ONLY=2002,2029 只跑这些敌群的用例（断言少了，别拿来交付）
+var _only_troops: Array = Array(OS.get_environment("XIYOU_TROOP_ONLY").split(",", false)).map(func(x): return int(x))
 var coverage_by_case := {}
 
 
@@ -118,7 +121,9 @@ func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 		logic.setup(troop, s, context)
 	else:
 		logic.setup(troop, s)
-	if troop == 794 and not oracle_half:
+	# 794 引路人第 3 页、肉山 2029 的 10613 公共事件 9042（随机变量 1339 取 0～10，≥7 再强制 10614 踩地板）：事件里的随机同参照取 0.5，
+	# 不然 1／11 的种子多出一次 10614（第 1 回合行动次数、第 2 回合只出手一次对不上，踩地板打倒全队后第 1 回合整段没了）
+	if troop in [794, 2029] and not oracle_half:
 		logic.random.rule = _half_events(logic.random.rule)
 	for a in logic.actors:
 		for sk in [6168, 5980, 5548] + ([2571, 2786] if int(a.data().id) in [1, 2, 3, 4, 5, 6, 7, 52] else []):
@@ -142,6 +147,8 @@ func _run() -> void:
 	MVInterpreter.fixed_random = 0.5
 	for k in range(part, ref.cases.size(), parts):
 		var c: Dictionary = ref.cases[k]
+		if _only_troops != [] and not _only_troops.has(int(c.troop)):
+			continue
 		if coverage_out != "":
 			XBattleEventRunner.COVER = {}
 			_case_dispatch(c)
@@ -282,17 +289,23 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	check(name + ".messages", msgs == want_msgs, [msgs, want_msgs])
 	var want_ids: Array = c.enemyIds.map(func(x): return int(x))
 	check(name + ".transformed", logic.enemies.map(func(e): return e.enemy_id) == want_ids, [logic.enemies.map(func(e): return e.enemy_id), want_ids])
-	# 开战检查后守层者的 HP：参照记在第 0 回合它第一次出手（6070 以自己为目标）的 hpBefore
+	# 开战检查后守层者的 HP：参照第 0 回合它最后一次以自己为目标出手后的 hpAfter（死神觉醒 2013 第 3 页 6067 之后还有 10524 自疗 20%）。
+	# 6067～6070 领域技能带公共事件 1401「敌人恢复所有血量」（八戒_71 期四起执行）：行动结束后变量 40 = 9999999999999999
+	#（JS 读成 1e16），331 全体敌人 HP + 变量 40。战斗里技能的公共事件是单槽预约（XBattleCommonEvent，后一个盖前一个），
+	# 敌群页跑完才轮到它，所以只有第 0 回合守层者最后一个带公共事件的出手是 1401 时才加这一下（到上限为止）；
+	# 肉山 2029 第 2 页 6068 之后的 10613 预约 9042，把 1401 盖掉了，第 0 回合末不回血（第 1 回合开场 1396 的 334 才回满）
 	var want_hp0 := -1.0
 	for inv in c.invokes:
 		if int(inv.turn) == 0 and inv.subject == "e0" and inv.target == "e0":
-			want_hp0 = float(inv.hpBefore)
-			# 6067～6070 领域技能带公共事件 1401「敌人恢复所有血量」（八戒_71 期四起执行）：行动结束后变量 40 = 9999999999999999
-			#（JS 读成 1e16），331 全体敌人 HP + 变量 40；参照的 hpBefore 是出手前，开战检查结束时还要加上这一下（到上限为止）
-			for eff in XDB.rec("Skills", int(inv.skill)).get("effects", []):
-				if int(eff.code) == 44 and int(eff.dataId) == 1401:
-					want_hp0 = minf(want_hp0 + 1e16, e0.mhp)
-			break
+			want_hp0 = float(inv.hpAfter)
+	var last_ce := 0
+	for act in c.actions:
+		if int(act.turn) == 0 and act.subject == "e0":
+			for eff in XDB.rec("Skills", int(act.skill)).get("effects", []):
+				if int(eff.code) == 44:
+					last_ce = int(eff.dataId)
+	if want_hp0 >= 0.0 and last_ce == 1401:
+		want_hp0 = minf(want_hp0 + 1e16, e0.mhp)
 	# floor1：参照第 0 回合没有「e0 以自己为目标」的出手（v0.62 死神觉醒 2015 等血线页只对话／强制打玩家）时没有这个时点可比，跳过
 	if want_hp0 >= 0.0:
 		check(name + ".hp_after_transform", is_equal_approx(e0.hp, want_hp0), [e0.hp, e0.mhp, want_hp0])
@@ -321,11 +334,20 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		if t == 2 and logs[2].is_empty():
 			continue
 		check(name + ".forced_t%d" % t, got.slice(0, want.size()) == want, [got, want])
-	var want_states: Array = []
+	var want_states: Array = _t1_end_states(c)
+	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
+
+
+## 参照第 1 回合末 e0 的状态（见 _case 里 t1_states 的说明）
+static func _t1_end_states(c: Dictionary) -> Array:
+	var ts1: Array = c.get("turnStarts", []).filter(func(x): return int(x.after) == 1)
+	if not ts1.is_empty() and ts1[0].enemies.has("e0"):
+		return Array(ts1[0].enemies.e0.states)
+	var out: Array = []
 	for inv in c.invokes:
 		if int(inv.turn) == 1 and inv.subject == "e0":
-			want_states = inv.userStates
-	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
+			out = inv.userStates
+	return out
 
 
 func _case(c: Dictionary, round: int) -> void:
@@ -381,8 +403,9 @@ func _case(c: Dictionary, round: int) -> void:
 				for inv in c.invokes:
 					if int(inv.turn) == 1 and inv.subject == "e0":
 						want_am = [inv.userAtk, inv.userMat]
-			check(name + ".atk_mat", int(e0.atk) == int(want_am[0]) and int(e0.mat) == int(want_am[1]),
-				[e0.atk, e0.mat, want_am])
+			if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):  # 随机选技能的敌群：自加的状态随挑到的技能变
+				check(name + ".atk_mat", int(e0.atk) == int(want_am[0]) and int(e0.mat) == int(want_am[1]),
+					[e0.atk, e0.mat, want_am])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 	# 其余敌人（敌群 462 的第二名守层者）：回合结束时没有被打倒的，攻击／魔攻与状态应同参照
 	for k in c.battlers:
@@ -416,12 +439,13 @@ func _case(c: Dictionary, round: int) -> void:
 		want[int(a.turn)].append([a.subject, int(a.skill)])
 		if int(a.turn) == 1 and a.subject == "e0" and a.forced:
 			forced += 1
-	# 第 1 回合守层者最后一次行动后的状态（参照记在 invoke 的 userStates）：Godot 第 1 回合结束时都应还在
-	var want_states: Array = []
-	for inv in c.invokes:
-		if int(inv.turn) == 1 and inv.subject == "e0":
-			want_states = inv.userStates
-	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
+	# 第 1 回合末守层者的状态：参照 turnStarts（after＝1，回合末事件已跑完）与 Godot run_turn 跑完第 1 回合同一时点。
+	# 没有 turnStarts（第 1 回合内分出胜负）时退回守层者第 1 回合最后一次出手的 userStates。
+	# floor1 剑道争锋 2002 等：开场页先 1396 加 44／1107／1109，强制行动后 334 回满（recoverAll 清掉非 Permanent 的 44、1107），
+	# 出手时的 userStates 还带着、回合末已没了，以前按出手时比成了假差异
+	var want_states: Array = _t1_end_states(c)
+	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
+		check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
 	var enemies_of := func(list: Array) -> Array:
 		var keys := {}
 		for x in list:
