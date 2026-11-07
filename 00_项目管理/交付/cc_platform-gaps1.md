@@ -1,6 +1,6 @@
 # 交付：cc/platform-gaps1
 - 车道／工作者：平台／cc（FB 第十五批）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -10,7 +10,8 @@
 - ② 验收清单草稿：新文件 [Windows 发行包验收清单](../Windows发行包验收清单.md)（22 步：exe 与 pck 同目录、`%APPDATA%\KYO\再刷重制` 备份、SmartScreen「仍要运行」、杀软、版本号与文件属性、窗口九成居中、100%／150% 缩放、Alt+回车／F11 三次、Alt+Tab、多屏、闪退复测、键鼠、中文输入法、Xbox 手柄拔插、流程照 Mac 清单 5～16、存档目录不出现 `_开发`、退出无残留进程、崩溃时 godot.log 与事件查看器）、[安卓发行包验收清单](../安卓发行包验收清单.md)（27 步：调试签名包说明、机型、装包、横屏与刘海、闪退复测、长屏黑边、摇杆／确定取消连发／点按与滑动／两指取消／隐藏键／手机按键设置／存档键、返回键两次退出、切后台、切后台被杀后标题「继续」、后台挂机补跑、导出导入存档不要权限与坏文件、流畅与发热、声音被打断后恢复、蓝牙手柄、卸载前导出）。11-06 DP 交付单里那份 8 步安卓真机清单合并时随交付单删掉了，这次重写补全。
 - ③ 云端真 Windows（第一批能自动验证的）：`.github/workflows/export-smoke.yml` 的 Windows 那条在 Linux 上另导出「Windows 发行」，经 Actions 缓存（只有本仓库工作流能读，不做附件；跑完删）交给新任务 `windows-run`（windows-latest）。新脚本 `07_开发环境/Windows实机冒烟.py` 在真 Windows 上跑发行 exe：无头进标题（只有 entry.tscn、退出码 0）；照 `发行入口冒烟.py` 的四组按键（空格／J／回车开新游戏、一串确认取消）每组新进程，退出码 0、有 SMOKE_DONE、新游戏几组停在地图，`0xC0000005` 一类退出码记成闪退；存档目录写到临时 `%APPDATA%\KYO\再刷重制`、没有 `_开发`（O-200）；`--try-window` 用 ANGLE 开窗口进一次标题，只提示。每次运行用临时 APPDATA／LOCALAPPDATA。环境登记 cloudExport 加 `windows_release_x86_64.exe` 模板和「Windows 发行」的 release 改写。
 - 测试：新 `测试Windows实机冒烟.py` 9 项（假 exe：全过、写进 `_开发` 判失败、按键闪退判失败、标准输出收不到时读 godot.log、缺 pck、不改本进程 APPDATA、按键组／标题／地图与发行入口冒烟一致、存档目录名与 project.godot 一致、Windows 闪退码识别），进 `检查.sh` tools 组和 `工具回归.py`；`测试导出冒烟.py` 的预设改写断言 2→3 处。
-- 验证：（待写）
+- 顺手修：`导出冒烟.py` 的 Windows 版本号检查一直拿导出后的 `0.398.0.0` 去比预设占位 `0.0.0.0`，云端「导出冒烟（windows）」从 dev.385 起每次误报失败；改成 XDesktopVersion 开着时按开发编号比（关着才比预设），`测试导出冒烟.py` 跟着改（占位没被改写仍判失败）。
+- 验证：语法检查 0 问题；工具回归全过（81 秒）；云端选测 8f66aaad51 五个场景全过（xiyou_entry_release、xiyou_event_compare、xiyou_pause_save、xiyou_platform、xiyou_ui_input，[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42384993694)）；云端导出冒烟 ci-export/cc/platform-gaps1 三个任务全过（[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42386029067)）。windows-run 首轮（42385139483）真 Windows 上：发行 exe 104 MB＋pck 453 MB，进标题 7 秒、退出码 0，四组按键都到地图、17/17 步，存档写到 `%APPDATA%\KYO\再刷重制`、没有 `_开发`，ANGLE 开窗口也进了标题；传包缓存跑完已删（`gh cache list` 没有 winrel）。
 
 ## 2026-11-07 【cc·平台·未经审查】事件里开的战斗不再存开战前检查点：读回自动存档不会「东西扣了、仗没打」（审查第 52 期 P2-1，dev.待定）
 
@@ -40,4 +41,9 @@
 
 ## 本分支提交
 - db5807bc 缺口盘点、两份验收清单草稿
-- 3807506b、ec5a51d0、Windows实机冒烟.py 与测试（见 git log）
+- 3807506b、ec5a51d0 Windows实机冒烟.py、工作流 windows-run、测试
+- 91151942 审查 52 P2-1 事件战斗不存检查点
+- 15d7ff87 补跑按平常速度的秒数扣
+- ea4de576 记 Kyo 11-07 定的四项
+- 8f66aaad 合 main 2443a7b0
+- 最后一个：导出冒烟 Windows 版本号按开发编号比
