@@ -48,7 +48,7 @@ var _idle_count := 0
 ## 自主移动与路线里的随机（随机移动、随机转向等）：画面随机流，不动规则随机数。fixed_random ≥ 0 时固定（对照测试用，同参照的 Math.random＝0.5）
 static var fixed_random := -1.0
 var _motion_rng: RandomNumberGenerator
-## O-待定：原版强制路线结束时 restoreMoveRoute 还原了自定义路线的序号，紧接着 advanceMoveRouteIndex 又把它加一，自定义路线（移动类型 3）
+## O-230：原版强制路线结束时 restoreMoveRoute 还原了自定义路线的序号，紧接着 advanceMoveRouteIndex 又把它加一，自定义路线（移动类型 3）
 ## 每被强制一次就跳过一条（左右来回的路线被强制一次后一路往一边偏）；换页时也不清记下的原路线，之后的强制路线结束会还原成旧页的路线。
 ## 重制默认修好：还原后不再加一、换页时清掉记下的原路线。设为 false 恢复原版（专项两边都跑，所以是 static var）。
 static var route_resume_fix := true

@@ -9,7 +9,7 @@ extends Node
 ##   逐帧记格子、朝向、页、图像、速度、频率、是否在跳，与参照的「变了才记一行」逐行比（含帧号与这一行之前停了几帧）。
 ##   参照的随机数固定 0.5，这里设 MVCharacter.fixed_random＝0.5；走路速度用默认值（move_distance_scale＝2，同正式版 distancePerFrame 翻倍），
 ##   另断言速度 3 走一格 16 帧（参照 Map093 事件 3）。
-## - auto3.m149e33.skip：原版强制路线结束后自定义路线跳过一条（O-待定，MVCharacter.route_resume_fix）。关掉开关逐行等于参照；
+## - auto3.m149e33.skip：原版强制路线结束后自定义路线跳过一条（O-230，MVCharacter.route_resume_fix）。关掉开关逐行等于参照；
 ##   开着（默认）时左右来回不偏：强制路线之后仍在 10↔11 两格之间走。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const ORACLE := "res://tests/fixtures/map_dispatch_oracle.json"
