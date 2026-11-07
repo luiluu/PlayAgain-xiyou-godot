@@ -47,6 +47,9 @@ func _run() -> void:
 	s.x = 14
 	s.y = 23
 	s.set_self_switch(4, 20, "A", true)
+	# 新源（v0.62.12）方桌大厅多了无条件自动执行的事件 76「时空漩涡_字幕1」（47 条字幕演出，跑完开独立开关 A）：
+	# 不关掉的话进图就在演出、地图 busy，切后台照规矩跳过（skip:event），下面「地图上能存」的几项都测不到
+	s.set_self_switch(4, 76, "A", true)
 	s.flags.SaveGameId = 1
 	XSave.current_slot = 1
 	var platform := XPlatform.new()
@@ -56,6 +59,7 @@ func _run() -> void:
 	await frames(4)
 	check("defaults", XAutoSave.ON_PAUSE and XAutoSave.DEDUP_MSEC > 0)
 	check("hook_set_by_map", XPlatform.pause_hook.is_valid())
+	check("map_idle_after_setup", not map.busy)  # 前提：没有自动执行事件在跑（否则下面全是 skip:event）
 
 	# 地图上切后台：存到自动存档，手动存档位、保存次数、最近档位都不动
 	_fresh()
