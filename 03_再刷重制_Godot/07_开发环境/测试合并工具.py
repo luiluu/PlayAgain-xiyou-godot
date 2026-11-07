@@ -3399,6 +3399,20 @@ for name in filter(None, files):
         self.assertEqual(merge.unregistered_named('x %s·Sv 别的' % tok, '| %s·Sv 先清再解析 | a |' % tok), ['%s·Sv' % tok])
         self.assertTrue(merge.opt_tokens_registered('x %s·Sv 先清再解析。' % tok, '| %s·Sv 先清再解析 | a |' % tok))
 
+    def test_number_named_all_also_numbers_old_rows(self):
+        tok = 'O-' + '待定'
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |\n| %s·旧名字 | 旧 | a | b | c | d | e | 待分配 |' % tok)
+        self.put(str(merge.PROJECT / 'modes/旧.gd'), '# %s·旧名字\n' % tok)
+        self.g('add', '.'); self.g('commit', '-m', 'old code')
+        base = self.g('rev-parse', 'HEAD')
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(merge.number_named(self.root, base), ([], []))
+            with mock.patch.dict(os.environ, {'XIYOU_NUMBER_NAMED': 'all'}):
+                added, changed = merge.number_named(self.root, base)
+        self.assertEqual(added, [('O-119', '旧')])
+        self.assertEqual((self.root / merge.PROJECT / 'modes/旧.gd').read_text(), '# O-119\n')
+        self.assertIn(str(merge.OPT_REGISTRY), changed)
+
     def test_lane_stops_on_new_placeholder_and_keeps_board(self):
         tok = 'O-' + '待定'
         self.lane_board()

@@ -790,7 +790,8 @@ def opt_tokens_registered(text, registry):
 def number_named(root, base):
     """--lane 时给本次合并新登记的具名占位发正式号（审查 60 P3-1）：优化登记首格「O-待定·名字」、合并前的 main 登记里没有的，
     按登记里最大的 O-NNN 顺延，首格与工程、设计文档、交接板里的同名占位一起换。工具源码（07_开发环境、03_转换工具）照旧不换号。
-    返回 ([(编号, 项目)], [改过的文件])；早先就在登记里、还没发号的只列出来，不动（总装手编或另行处理）。XIYOU_NUMBER_NAMED=0 关掉。"""
+    返回 ([(编号, 项目)], [改过的文件])；早先就在登记里、还没发号的只列出来，不动；总装想顺带一次清掉旧的，这条合并设
+    XIYOU_NUMBER_NAMED=all（旧的按登记表顺序一起发号）。XIYOU_NUMBER_NAMED=0 关掉。"""
     reg = root / OPT_REGISTRY
     if os.environ.get('XIYOU_NUMBER_NAMED', '1') == '0' or not reg.is_file():
         return [], []
@@ -798,10 +799,12 @@ def number_named(root, base):
     old = subprocess.run(['git', '-C', str(root), 'show', '%s:%s' % (base, OPT_REGISTRY)], capture_output=True, text=True).stdout
     before = set(registered_named(old))
     rows = [r for r in re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', text, re.M)]
-    todo = [r for r in rows if r in before]
+    mode = os.environ.get('XIYOU_NUMBER_NAMED', '1')
+    todo = [r for r in rows if r in before and mode != 'all']
     if todo:
-        print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）' % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
-    fresh = list(dict.fromkeys(r for r in rows if r not in before))
+        print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）；要一并发号，这条合并设 XIYOU_NUMBER_NAMED=all'
+              % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
+    fresh = list(dict.fromkeys(r for r in rows if r not in before or mode == 'all'))
     if not fresh:
         return [], []
     nxt = max([int(n) for n in OPT_NUMBERED.findall(text)] + [0]) + 1
