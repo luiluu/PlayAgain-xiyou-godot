@@ -388,7 +388,14 @@ def main():
         if r['src'].startswith('ce'):
             r['callers'] = ce_calls.get(int(r['src'][2:]), [])[:8]
     tidx = test_index()
-    in_slice = set(load(HERE / 'xiyou_slice.json')['maps'])
+    slice_cfg = load(HERE / 'xiyou_slice.json')
+    in_slice = set(slice_cfg['maps'])
+    keep_ev = slice_cfg.get('keepEvents', {})
+
+    def ev_in_slice(r):
+        # floor1：切片 keepEvents 只收部分事件的图（如 Map146／148），没收的事件重制地图上不存在，专项走不到
+        k = keep_ev.get(str(r['src_map']))
+        return r['src_map'] in in_slice and (not isinstance(k, list) or r['ev'] in k)
     chain = TESTS / 'fixtures/unlock_chain_cases.json'
     chain_ids = {(c['id'], c['dest'], tuple(c['xy'])) for c in load(chain)['cases']} if chain.exists() else set()
     cidx = compare_index()
@@ -411,6 +418,8 @@ def main():
                 r['why'] = '公共事件里的移动，事件对照没走到这一跳（调用者见来源）'
             elif r['src_map'] not in in_slice:
                 r['why'] = '来源图不在切片'
+            elif not ev_in_slice(r):
+                r['why'] = '来源事件不在切片（keepEvents 没收）'
             elif 'raw' in r:
                 r['why'] = solve_reason(r)[1]
     # 汇总到「来源图 → 目标图」
@@ -460,7 +469,7 @@ def main():
                 continue  # 重新生成时不把本专项自己算作已覆盖
             cand = []
             for r in rs:
-                if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['src_map'] == d:
+                if not r['src_map'] or not ev_in_slice(r) or r['src'] in skip or r['src_map'] == d:
                     continue
                 rec = solve(r)
                 if rec is None:
@@ -475,7 +484,7 @@ def main():
         # accept4：再给每条「带条件、没被别的专项真走过、事件对照也没走到」且解得出的入口各一例（同图移动也算：断言玩家落到目标坐标）
         have = {(c['id'], c['dest'], tuple(c['xy'])) for c in out}
         for r in gated:
-            if not r['src_map'] or r['src_map'] not in in_slice or r['src'] in skip or r['compare'] or r['kind'] == '移动（变量指定）':
+            if not r['src_map'] or not ev_in_slice(r) or r['src'] in skip or r['compare'] or r['kind'] == '移动（变量指定）':
                 continue
             if any(t != 'xiyou_unlock_chain' for t in r['tests']) or (r['src'], r['dest'], tuple(r['xy'])) in have:
                 continue
@@ -494,7 +503,7 @@ def main():
         for c in old.get('cases', []):
             k = (c['id'], c['dest'], tuple(c['xy']))
             r = by_key.get(k)
-            if r is None or r['src'] in skip or k in {(x['id'], x['dest'], tuple(x['xy'])) for x in kept}:
+            if r is None or not ev_in_slice(r) or r['src'] in skip or k in {(x['id'], x['dest'], tuple(x['xy'])) for x in kept}:
                 continue
             rec = solve(r)
             if rec is None:
