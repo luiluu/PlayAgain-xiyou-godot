@@ -19,6 +19,9 @@ func shot(name: String) -> void:
 	await RenderingServer.frame_post_draw
 	check("screenshot_"+name,get_viewport().get_texture().get_image().save_png(out_dir.path_join(name+".png"))==OK)
 func _run() -> void:
+	# 这里核的是 v0.28 版面（原版参照 75～78 等），装备页／物品页右侧详情（v0.62.12）关掉，新版面见 xiyou_gear_detail
+	XEquipScene.DETAIL_V041 = false
+	XItemScene.DETAIL_V043 = false
 	XGear.force_roll=0.5
 	var s := XState.new_game(3,1,[8,9,10]);var a:=s.actor(1);a.change_level(30)
 	for id in [235,236,240]:

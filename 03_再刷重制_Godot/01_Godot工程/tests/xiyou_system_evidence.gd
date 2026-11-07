@@ -55,6 +55,9 @@ func shot(name: String, wins: Dictionary, extra := {}) -> void:
 
 
 func _run() -> void:
+	# 这里核的是 v0.28 版面（原版参照 75～78 等），装备页／物品页右侧详情（v0.62.12）关掉，新版面见 xiyou_gear_detail
+	XEquipScene.DETAIL_V041 = false
+	XItemScene.DETAIL_V043 = false
 	# 设置用内存默认值（不读本机开发档的 options.json，免得「战力显示」等开关跟着开发者的设置变）
 	XSave.dir_override = "user://test_system_evidence"
 	XConfig._loaded_path = "<unloaded>"

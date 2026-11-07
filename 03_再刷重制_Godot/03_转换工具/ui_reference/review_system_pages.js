@@ -656,6 +656,132 @@
         }
     };
 
+    // 装备页右下详情（界面 ui-gaps1，v0.62.12 installEquipmentDetailV041Runtime＋installPanelLayoutV043Runtime）：
+    // 三页签「装备详情／属性对比／插槽与镶嵌」、整行分页的翻页条；物品页装备说明放右侧（v0.43）。
+    // 长说明武器：角色 1 能装进槽 0 的武器里，详情排出来最高的那把（给一把，候选里选中它）。
+    // 详情窗（640×431）里排出来的总高
+    var probe41 = null;
+    function detailRows(item) {
+        if (!probe41) probe41 = new CodexEquipment41.Detail(0, 0, 640, 431);
+        probe41._key41 = ''; probe41.setMode(0); probe41.setEquipment(item);
+        return probe41._fullHeight41 || 0;
+    }
+    var longWeapon = 0, longKind = 'weapon';
+    function detailState() {
+        var s = scene(), d = s._detail41 || s._detail43, out = {longWeapon: longWeapon, longKind: longKind};
+        if (!d) return out;
+        out.detail = {rect: [d.x, d.y, d.width, d.height], visible: d.visible, mode: d._mode41, page: d._page41, pages: d._pages41,
+            fullHeight: d._fullHeight41, pageTops: d._pageTops43 || null, originY: d.origin.y, contentsHeight: d.contentsHeight(), contentsWidth: d.contentsWidth(),
+            item: d._item41 ? [d._item41.id, d._item41.name] : null,
+            rows: d.rows41().map(function (r) { return [r[0], r[1], r[2], r[4]]; })};
+        out.equipMode = s._equipMode41 !== undefined ? s._equipMode41 : s._mode43;
+        return out;
+    }
+    P.equip_detail = {
+        setup: async function () {
+            var a = $gameActors.actor(1), best = 0, bestN = 0;
+            for (var id = 1; id < $dataWeapons.length; id++) {
+                var w = $dataWeapons[id];
+                if (!w || !w.name || id > 3000 || !a.canEquipWeapon(w)) continue;
+                var n = detailRows(w);
+                if (n > bestN) { bestN = n; best = id; }
+            }
+            longWeapon = best;
+            $gameParty.gainItem($dataWeapons[best], 1);
+            await push(Scene_Equip);
+        },
+        shots: {
+            equip_detail_0_command: async function () {},
+            equip_detail_1_slot: async function () { var s = scene(); s._commandWindow.selectSymbol('equip'); s._commandWindow.processOk(); },
+            equip_detail_2_compare: async function () { scene().chooseDetail41(1); },
+            equip_detail_3_sockets: async function () { scene().chooseDetail41(2); },
+            equip_detail_4_item: async function () {
+                var s = scene(); s.chooseDetail41(0); s._slotWindow.processOk(); await settle();
+                var w = s._itemWindow, list = w._data || [];
+                for (var i = 0; i < list.length; i++) if (list[i] && (list[i].baseItemId || list[i].id) === longWeapon) { w.select(i); break; }
+            },
+            equip_detail_5_page2: async function () { scene()._detail41.turn41(1); },
+            equip_detail_6_scroll: async function () { var d = scene()._detail41; d.turn41(-1); d.scroll41(100); }
+        },
+        extra: detailState
+    };
+    P.item_detail = {
+        setup: async function () {
+            var best = null, bestN = 0;
+            [$dataWeapons, $dataArmors].forEach(function (db) {
+                for (var id = 1; id < db.length && id <= 3000; id++) {
+                    var w = db[id];
+                    if (!w || !w.name) continue;
+                    var n = detailRows(w);
+                    if (n > bestN) { bestN = n; best = w; }
+                }
+            });
+            longWeapon = best.id; longKind = DataManager.isWeapon(best) ? 'weapon' : 'armor';
+            $gameParty.gainItem(best, 1);
+            await push(Scene_Item);
+        },
+        shots: {
+            item_detail_0_weapon: async function () {
+                var s = scene(); s._categoryWindow.selectSymbol(longKind); s._categoryWindow.update(); s.onCategoryOk(); await settle();
+                var w = s._itemWindow, list = w._data || [];
+                for (var i = 0; i < list.length; i++) if (list[i] && (list[i].baseItemId || list[i].id) === longWeapon) { w.select(i); break; }
+            },
+            item_detail_0b_page2: async function () { scene()._detail43.turn41(1); },
+            item_detail_0c_scroll: async function () { var d = scene()._detail43; d.turn41(-1); d.scroll41(100); },
+            item_detail_1_sockets: async function () { scene().gearTab43(2); },
+            item_detail_2_item: async function () {
+                var s = scene(); s.gearTab43(0); s.onItemCancel(); s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk();
+            }
+        },
+        extra: detailState
+    };
+
+    // 藏宝图批量使用（界面 ui-gaps1，installTreasureBatchRuntime）：特级藏宝图 212 ×5，物品页「使用」开数量窗；
+    // 改数量、MAX、确定后逐帧用完，读结果（CodexTreasure.lastResult）与说明卡文字；另在地图上直接给一件至臻武器 1885，读至臻通知窗。
+    function treasureState() {
+        var s = scene(), w = s._codexTreasureNumber, T = window.CodexTreasure, ui = s._codexPrestigeNotice;
+        var out = {lastResult: T ? T.lastResult : null, stock212: $gameParty.numItems($dataItems[212]), job: s._codexTreasureJob ? {state: s._codexTreasureJob.state, used: s._codexTreasureJob.used} : null};
+        if (w) out.number = {rect: [w.x, w.y, w.width, w.height], visible: w.visible, active: w.active, number: w._number, max: w._max, padding: w.standardPadding(),
+            buttonY: w.buttonY(), itemY: w.itemY(), cursorWidth: w.cursorWidth(), cursorX: w.cursorX(),
+            buttons: (w._buttons || []).concat(w._codexMaxButton ? [w._codexMaxButton] : []).map(function (b) { return [b.x, b.y, b.width, b.height, b.visible]; })};
+        if (s._helpWindow) out.help = {visible: s._helpWindow.visible, text: s._helpWindow._text || null, rows: (s._helpWindow.item && s._helpWindow.item.descParams || []).map(function (r) { return r[0]; })};
+        if (ui) out.notice = {frames: ui.frames, flashFrames: ui.flashFrames, flash: ui.flash.opacity, rect: [ui.window.x, ui.window.y, ui.window.width, ui.window.height],
+            visible: ui.window.visible, contentsOpacity: ui.window.contentsOpacity};
+        return out;
+    }
+    P.treasure_batch = {
+        setup: async function () {
+            $gameParty.gainItem($dataItems[212], 5);
+            await push(Scene_Item);
+            var s = scene(); s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk(); await settle();
+            var w = s._itemWindow, list = w._data || [];
+            for (var i = 0; i < list.length; i++) if (list[i] && list[i].id === 212) { w.select(i); break; }
+        },
+        shots: {
+            treasure_0_open: async function () { var s = scene(); s.useItem(); },
+            treasure_1_plus: async function () { var w = scene()._codexTreasureNumber; w.changeNumber(1); w.changeNumber(1); },
+            treasure_2_max: async function () { var w = scene()._codexTreasureNumber; w._number = w._max; w.refresh(); w.changeNumber(-10); w.changeNumber(1); w.changeNumber(1); },
+            treasure_3_done: async function () { var w = scene()._codexTreasureNumber; w.processOk(); await frames(30); },
+            treasure_4_cancel: async function () { var s = scene(); s._itemWindow.processOk && 0; s.useItem(); await settle(); scene()._codexTreasureNumber.processCancel(); }
+        },
+        extra: treasureState
+    };
+    P.prestige_notice = {
+        setup: async function () {},
+        shots: {
+            prestige_0_gain: async function () { $gameParty.gainItem($dataWeapons[1885], 1); $gameParty.gainItem($dataWeapons[1886], 1); $gameParty.gainItem($dataArmors[3623], 1); await frames(1); },
+            prestige_1_f40: async function () { await frames(40); },
+            prestige_2_f140: async function () { await frames(100); },
+            prestige_3_end: async function () { await frames(40); }
+        },
+        extra: function () {
+            var s = scene(), ui = s._codexPrestigeNotice;
+            return ui ? {frames: ui.frames, flashFrames: ui.flashFrames, flash: ui.flash.opacity, rect: [ui.window.x, ui.window.y, ui.window.width, ui.window.height],
+                visible: ui.window.visible, contentsOpacity: ui.window.contentsOpacity, padding: ui.window.standardPadding(), lineHeight: ui.window.lineHeight(),
+                texts: (ui.window.contents.__ilrText || []).map(function (t) { return [t.text, t.x, t.y, t.w, t.align, t.size, t.color]; })} : null;
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {

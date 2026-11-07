@@ -14,6 +14,9 @@ static var ENABLED := true
 ## 测试用：headless 下也照设（tests/xiyou_speed_gear 断言入口确实设了倍率）
 static var HEADLESS_APPLY := false
 
+## set_engine 设下的 time_scale（齿轮那一份）；play_seconds 等按真实时间计的量用 real_seconds 把它除掉
+static var engine_rate := 1.0
+
 const BASE_TICKS := 60
 const BASE_STEPS := 8
 
@@ -53,4 +56,12 @@ static func set_engine(r: float, sound: float) -> void:
 	Engine.physics_ticks_per_second = ticks
 	Engine.max_physics_steps_per_frame = maxi(BASE_STEPS, ceili(BASE_STEPS * r))
 	Engine.time_scale = float(ticks) / BASE_TICKS
+	engine_rate = Engine.time_scale
 	AudioServer.playback_speed_scale = sound
+
+
+## 原版游戏时间 playtime() 是 Graphics.frameCount / 60：frameCount 每次 render 加 1，齿轮只让 updateScene 多跑、不多 render，
+## 所以游戏时间按真实时间走、不随齿轮变快（审查第 52 期 P2-2）。_process 的 delta 乘过 time_scale，这里除掉齿轮那一份；
+## 别的倍率（测试快进、平台离线追帧 CATCH_UP_SPEED）照旧算进去。
+static func real_seconds(delta: float) -> float:
+	return delta / maxf(0.05, engine_rate)

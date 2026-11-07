@@ -12,6 +12,13 @@ extends Control
 ## - 升级材料（占列表位置）：XItemRow；不能用的半透明；确定即镶嵌，留在材料列表。取消回到操作。
 ## - 选人 (0,0,1280,720)：Window_MenuActor，每行 173，头像居中、名字/Lv、HP/MP/TP 量条；使用后留在选人。
 ## - 说明卡（XHelpCard）跟着列表/材料列表的选中行；操作阶段保留；分类与选人阶段隐藏（v0.10 选人时隐藏）。
+## - 跟到 v0.62.12（installPanelLayoutV043 的 Scene_Item 部分，O-待定·装备详情）：物品列表活动且选中的是装备时，信息窗换成
+##   页签条＋详情＋翻页条（XGearDetail，页签「装备详情／插槽与镶嵌」，Tab 或点页签条左半／右半切换），说明卡不弹出；
+##   别的时候照旧显示信息窗。DETAIL_V043 = false：回到 v0.28（装备也弹说明卡、信息窗一直在）。
+## - 藏宝图直接／批量使用（installTreasureBatchRuntime 的 Scene_Item.useItem，规则见 XTreasureBatch）：表里的 21 种藏宝图「使用」时
+##   开数量窗 Window_TreasureNumber (390,184,500,352)：「使用藏宝图」（系统色居中）、名字、× 数量（光标框）、「持有 N 张」（右）、
+##   按键说明（居中）；五个触摸键（−10 −1 +1 +10 确定，y 194，一直显示）与 MAX 键 (206,258,88,40)；左右 ±1、上下 ±10、PageDown 取最大。
+##   确定后当场逐张用（每帧最多 8 张，提示不弹），取消键可停；结束回列表、说明卡写结果（XTreasureBatch.notice）。不回地图。
 ## - 道具置顶（Star_ItemTop，只对物品）、出售锁定（Star_ShopOnekey，物品与装备）：见 XItemMarks；做完留在操作菜单。
 ## - 宝珠镶嵌（YEP_X_AttachAugments＋installNativeOrbRuntime，规则见 XOrbs）：装备的操作菜单在「升级」后每个孔一行
 ##   「\c[16]孔类型:\c[0] 宝珠／- 空 -」（Augment Slot Format），确定打开宝珠列表（占列表位置，XItemRow；不可选的半透明、
@@ -63,9 +70,21 @@ var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
 var power_page: XPowerForget
+var gear_detail: XGearDetail
+static var DETAIL_V043 := true
 var bulk_win: XMVWindow
 var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
 var _bulk_busy := false             # 正在逐颗服用（挡住输入）
+## 藏宝图数量窗：{item, max, number, index, initial}；state "quantity"／"using"；空＝没开
+var _treasure: Dictionary = {}
+var _treasure_stop := false
+var treasure_win: XMVWindow
+var treasure_buttons: Control
+var last_treasure: Dictionary = {}  # CodexTreasure.lastResult（测试核对用）
+const TREASURE_RECT := Rect2(390, 184, 500, 352)
+const TREASURE_BTN_Y := 194.0       # buttonY＝行高×5＋内边距 14
+const TREASURE_MAX_RECT := Rect2(206, 258, 88, 40)
+const TREASURE_MAX_COLOR := Color("#293e53")
 const BULK_RECT := Rect2(412, 198, 456, 324)   # Window_BulkPillNumber：宽 456、fittingHeight(8)，居中
 const BULK_BACKDROP := Color("#111827")        # _refreshBack：皮肤透明处垫的底色，窗体不透明度 255
 const BULK_BTN_Y := 192.0                      # buttonY＝行高×5＋12（窗体坐标）
@@ -89,6 +108,13 @@ func _ready() -> void:
 	info_win = XMVWindow.make(self, INFO_RECT, op, _paint_info)
 	actor_win = XMVWindow.make(self, ACTOR_RECT, op, _paint_actors)
 	bulk_win = XMVWindow.make(self, BULK_RECT, 255, _paint_bulk)
+	treasure_win = XMVWindow.make(self, TREASURE_RECT, 255, _paint_treasure)
+	treasure_win.visible = false
+	treasure_buttons = Control.new()
+	treasure_buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	treasure_buttons.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	treasure_buttons.draw.connect(_draw_treasure_buttons)
+	treasure_win.add_child(treasure_buttons)
 	bulk_win.visible = false
 	bulk_win.backdrop = BULK_BACKDROP
 	bulk_buttons = Control.new()
@@ -100,6 +126,9 @@ func _ready() -> void:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	if DETAIL_V043:
+		gear_detail = XGearDetail.new(self, INFO_RECT, op, ["装备详情", "插槽与镶嵌"], [0, 2])
+		gear_detail.set_visible(false)
 	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
 	add_child(toolbar)
 	_refresh()
@@ -296,6 +325,10 @@ func _refresh() -> void:
 		w.visible = not actor_mode
 	actor_win.visible = actor_mode
 	bulk_win.visible = not _bulk.is_empty() and not _bulk_busy
+	treasure_win.visible = str(_treasure.get("state", "")) == "quantity"
+	treasure_win.refresh()
+	treasure_buttons.queue_redraw()
+	_sync_gear()
 	for w in [cat_win, status_win, list_win, info_win, actor_win, bulk_win]:
 		w.refresh()
 	bulk_buttons.queue_redraw()
@@ -305,9 +338,30 @@ func _refresh() -> void:
 	_update_help()
 
 
+## gearShown43：物品列表活动、选中的是装备
+func gear_shown() -> bool:
+	return gear_detail != null and _mode == "list" and XItemMarks.is_gear(_current())
+
+
+## refreshGear43：详情三块与信息窗二选一
+func _sync_gear() -> void:
+	if gear_detail == null:
+		return
+	var on := gear_shown()
+	gear_detail.set_visible(on)
+	if on:
+		info_win.visible = false
+		gear_detail.set_item(_current())
+
+
+## gearTab43：Tab 在两个页签间切换
+func _gear_tab() -> void:
+	gear_detail.choose(gear_detail.tab_index() + 1)
+
+
 ## updateHelp：列表/材料列表的选中行；新物品停上去即记为看过（光标离开后不再画 NEW）
 func _update_help() -> void:
-	if power_page != null:
+	if power_page != null or not _treasure.is_empty():
 		help_card.visible = false
 		return
 	var rec := {}
@@ -328,7 +382,7 @@ func _update_help() -> void:
 		_commit_seen()
 		if _mode in ["list", "upgrade", "augment"] and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
-	help_card.show_for(rec if row >= 0 else {})
+	help_card.show_for(rec if row >= 0 and not gear_shown() else {})
 	if help_card.visible:
 		help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + row * LH), Vector2(LIST_RECT.size.x, LH)))
 	# 用道具的结果提示：光标换了行（或回到分类、进了升级／宝珠列表）才被说明盖掉；选人阶段只是暂时隐藏
@@ -506,6 +560,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_touched = false
 	if search_panel != null or power_page != null:
 		return
+	if not _treasure.is_empty():
+		_treasure_input(event)
+		return
 	if _bulk_busy or not _bulk.is_empty():
 		_bulk_input(event)
 		return
@@ -520,6 +577,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_up", true):
 		_move(-1, not event.is_echo())
 		_refresh()
+	elif gear_shown() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
+		_gear_tab()
 	elif XMenu.page_dir(event) != 0 and _mode in ["category", "list", "upgrade", "augment"]:
 		_page(XMenu.page_dir(event))
 		_refresh()
@@ -840,6 +899,8 @@ func _use_direct() -> void:
 	if int(_item.get("id",0)) == XPowerBooks.FORGET_ITEM:
 		_open_power_forget()
 		return
+	if _open_treasure():
+		return
 	if _open_bulk([], false):
 		return
 	XSound.system(22)   # SoundManager.playUseItem
@@ -1109,9 +1170,17 @@ func _paint_notice() -> void:
 
 # ---- 鼠标：先选中再点确定；右键取消；滚轮滚动 ----
 func _gui_input(event: InputEvent) -> void:
-	if search_panel != null or power_page != null or not (event is InputEventMouseButton and event.pressed):
+	if search_panel != null or power_page != null:
+		return
+	if _bulk.is_empty() and not _bulk_busy and gear_shown() and gear_detail.mouse(event):
+		accept_event()
+		return
+	if not (event is InputEventMouseButton and event.pressed):
 		return
 	_touched = true
+	if not _treasure.is_empty():
+		_treasure_click(event)
+		return
 	if _bulk_busy or not _bulk.is_empty():
 		_bulk_click(event)
 		return
@@ -1221,3 +1290,200 @@ static func restore_return(menu: XMenu, saved: Dictionary) -> void:
 	page._notice = {"text": str(saved.message), "index": page._index}
 	page._refresh()
 	XToast.show_text(str(saved.message),true)
+
+
+
+# ---- 藏宝图直接／批量使用（installTreasureBatchRuntime）----
+## Scene_Item.useItem 包装：表里的藏宝图开数量窗并返回 true；不支持的返回 false 走原来的单张使用。
+## 库存不足、已有预约的事件时蜂鸣、不开（仍返回 true）
+func _open_treasure() -> bool:
+	var rec := XDB.rec("Items", int(_item.get("id", 0)))
+	if not XTreasureBatch.supports(rec):
+		return false
+	var s := XState.current
+	var n := XTreasureBatch.stock(s, rec)
+	if n < 1 or s.peek_common_event() > 0:
+		XSound.system(3)
+		return true
+	_treasure = {"item": rec, "max": n, "number": 1, "index": _index, "state": "quantity", "used": 0, "requested": 0,
+		"initial": XTreasureBatch.serial}
+	_treasure_stop = false
+	_refresh()
+	return true
+
+
+## Window_ShopNumber.changeNumber：夹在 1～持有数，变了响光标音
+func _treasure_change(d: int) -> void:
+	var n := clampi(int(_treasure.number) + d, 1, int(_treasure.max))
+	if n != int(_treasure.number):
+		XSound.system(0)
+	_treasure.number = n
+
+
+func _treasure_input(event: InputEvent) -> void:
+	XKeyMap.handled(self)
+	if str(_treasure.state) == "using":
+		if event.is_action_pressed("ui_cancel"):
+			_treasure_stop = true
+		return
+	var key := event as InputEventKey
+	if event.is_action_pressed("ui_cancel"):
+		XSound.system(2)
+		_treasure_finish(XTreasureBatch.CANCELLED)
+		return
+	elif event.is_action_pressed("ui_accept"):
+		_treasure_begin()
+		return
+	elif event.is_action_pressed("ui_right", true):
+		_treasure_change(1)
+	elif event.is_action_pressed("ui_left", true):
+		_treasure_change(-1)
+	elif event.is_action_pressed("ui_up", true):
+		_treasure_change(10)
+	elif event.is_action_pressed("ui_down", true):
+		_treasure_change(-10)
+	elif event.is_action_pressed("ui_page_down") or (key and key.pressed and key.physical_keycode == KEY_PAGEDOWN):
+		_treasure.number = int(_treasure.max)
+	else:
+		return
+	_refresh()
+
+
+## 鼠标：五个触摸键、MAX 键、右键取消
+func _treasure_click(event: InputEventMouseButton) -> void:
+	if str(_treasure.state) == "using":
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_treasure_stop = true
+		return
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		XSound.system(2)
+		_treasure_finish(XTreasureBatch.CANCELLED)
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	var p := event.position - TREASURE_RECT.position
+	if TREASURE_MAX_RECT.has_point(p):
+		_treasure.number = int(_treasure.max)
+		_refresh()
+		return
+	var rs := _treasure_button_rects()
+	for i in rs.size():
+		if rs[i].has_point(p):
+			match i:
+				0: _treasure_change(-10)
+				1: _treasure_change(-1)
+				2: _treasure_change(1)
+				3: _treasure_change(10)
+				4:
+					_treasure_begin()
+					return
+			_refresh()
+			return
+
+
+## placeButtons：五个键按 ButtonSet 宽排一排、间距 16、在窗内居中，y＝buttonY
+func _treasure_button_rects() -> Array:
+	var total := -BULK_BTN_SPACING
+	for w in BULK_BTN_W:
+		total += w + BULK_BTN_SPACING
+	var x := (TREASURE_RECT.size.x - total) / 2.0
+	var out := []
+	for i in 5:
+		out.append(Rect2(x, TREASURE_BTN_Y, BULK_BTN_W[i], 48))
+		x += BULK_BTN_W[i] + BULK_BTN_SPACING
+	return out
+
+
+func _draw_treasure_buttons() -> void:
+	if str(_treasure.get("state", "")) != "quantity":
+		return
+	var path := XDB.img_path("system", "ButtonSet")
+	var tex: Texture2D = load(path) if path != "" else null
+	if tex != null:
+		var rs := _treasure_button_rects()
+		for i in rs.size():
+			treasure_buttons.draw_texture_rect_region(tex, rs[i], Rect2(BULK_BTN_X[i], 0, BULK_BTN_W[i], 48))
+	treasure_buttons.draw_rect(TREASURE_MAX_RECT, TREASURE_MAX_COLOR)
+	var font := XUI.font()
+	var size := 28
+	var tw := font.get_string_size("MAX", HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	treasure_buttons.draw_string(font, Vector2(TREASURE_MAX_RECT.position.x + (TREASURE_MAX_RECT.size.x - tw) / 2.0,
+		TREASURE_MAX_RECT.position.y + TREASURE_MAX_RECT.size.y / 2.0 + size * 0.35), "MAX", HORIZONTAL_ALIGNMENT_LEFT, -1, size, XUI.TEXT)
+
+
+## Window_TreasureNumber.refresh
+func _paint_treasure(c: XMVCanvas) -> void:
+	if _treasure.is_empty():
+		return
+	var w := c.size.x
+	var rec: Dictionary = _treasure.item
+	var lh := LH
+	c.text("使用藏宝图", 0, 0, w, "center", XUI.SYSTEM)
+	c.icon(int(rec.get("iconIndex", 0)), 2, lh + 2)
+	c.text(XQuality.list_name(rec), 36, lh, w - 36, "left", XGear.color(rec))
+	var cw := c.text_width(str(int(_treasure.max))) + 12
+	var cx := w - cw - 6
+	var sign_w := c.text_width("×")
+	c.text("×", cx - sign_w * 2, lh * 2, sign_w)
+	c.cursor(Rect2(cx, lh * 2, cw, lh))
+	c.text(str(int(_treasure.number)), cx, lh * 2, cw - 6, "right")
+	c.text("持有 %d 张" % int(_treasure.max), 0, lh * 3, w, "right")
+	c.text("← / → ±1    ↑ / ↓ ±10", 0, lh * 4, w, "center")
+
+
+## begin：数量要在 1～现有库存，否则蜂鸣；关窗、播使用音效，逐帧用
+func _treasure_begin() -> void:
+	var s := XState.current
+	var n := int(_treasure.number)
+	if n < 1 or n > XTreasureBatch.stock(s, _treasure.item):
+		XSound.system(3)
+		return
+	_treasure.requested = n
+	_treasure.state = "using"
+	_refresh()
+	XSound.system(22)   # playSeForItem
+	var host := XTreasureBatch.QuietHost.new()
+	add_child(host)
+	var reason := XTreasureBatch.DONE
+	while true:
+		var budget := 0
+		while budget < XTreasureBatch.FRAME_BUDGET:
+			if _treasure_stop:
+				reason = XTreasureBatch.STOPPED
+				break
+			if int(_treasure.used) >= n:
+				break
+			if XTreasureBatch.stock(s, _treasure.item) < 1:
+				reason = XTreasureBatch.OUT_OF_STOCK
+				break
+			if s.peek_common_event() > 0:
+				reason = XTreasureBatch.BUSY
+				break
+			var ok: bool = await XTreasureBatch.use_one(host, s, _treasure.item)
+			if not ok:
+				reason = XTreasureBatch.CANNOT
+				break
+			_treasure.used = int(_treasure.used) + 1
+			budget += 1
+		if reason != XTreasureBatch.DONE or int(_treasure.used) >= n or not is_inside_tree():
+			break
+		await get_tree().process_frame
+	host.queue_free()
+	_treasure_finish(reason)
+
+
+## finish：记结果、关窗，回列表（光标夹在列表内），说明卡写结果
+func _treasure_finish(reason: String) -> void:
+	if _treasure.is_empty():
+		return
+	var job := _treasure
+	var s := XState.current
+	last_treasure = {"itemId": int(job.item.id), "requested": int(job.requested), "used": int(job.used),
+		"remaining": XTreasureBatch.stock(s, job.item), "prestige": XTreasureBatch.serial - int(job.initial), "reason": reason}
+	_treasure = {}
+	_treasure_stop = false
+	_mode = "list"
+	_index = clampi(int(job.index), 0, maxi(0, entries().size() - 1))
+	_top = XMenu._scroll_to(_index, _top, _rows())
+	_refresh()
+	show_notice(XTreasureBatch.notice(job.item, last_treasure))

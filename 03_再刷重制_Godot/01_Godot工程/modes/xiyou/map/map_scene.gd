@@ -371,7 +371,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 
 func _process(delta: float) -> void:
 	if XState.current:
-		XState.current.play_seconds += delta
+		XState.current.play_seconds += XSpeedGear.real_seconds(delta)  # 游戏时间按真实时间，不随变速齿轮变快（同原版 frameCount）
 		# Star_PetSystem：新游戏／读档后每 5 分钟查一次神秘生物刷新（改事件独立开关，见 XPetCapture）
 		var pet_notes = XPetCapture.tick(XState.current)
 		if pet_notes != null:

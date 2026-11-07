@@ -143,6 +143,15 @@ func _run() -> void:
 		check("map.move10_tiles", pl.grid.x - x0 == 10, pl.grid.x - x0)
 		# 每格帧数＝1／每帧距离（距离倍数由 MVCharacter 管，八戒那边改；这里只看物理帧率）
 		check("map.move10_ms", near_ticks(ms, mf), [ms, mf])
+		# 游戏时间（play_seconds）按真实时间走，不随齿轮快 1.6 倍（原版 playtime＝frameCount／60，审查第 52 期 P2-2）
+		var p0 := XState.current.play_seconds
+		t0 = Time.get_ticks_msec()
+		while Time.get_ticks_msec() - t0 < 1500:
+			await get_tree().process_frame
+		var real := (Time.get_ticks_msec() - t0) / 1000.0
+		var gained := XState.current.play_seconds - p0
+		print("SPEED_GEAR play_seconds real=%.3f gained=%.3f" % [real, gained])
+		check("map.play_seconds_real_time", absf(gained - real) <= real * 0.08, [gained, real])
 		map.queue_free()
 	# ③ 战斗普通攻击（行动序列演出，按物理帧走）
 	await _attack_case()

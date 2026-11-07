@@ -99,7 +99,24 @@ static func content(obj: Dictionary, kind := "", skill_copy := false, width := -
 	return rows
 
 
-static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
+## 装备页／物品页右侧详情（installEquipmentDetailV041 Detail.rows41 被 installPanelLayoutV043 改写后）：
+## RJO.HE.getDescParams＋首行换成星级名，再 P.view 排版。
+## 详情不经 Sprite_ItemHelp.setItem，所以没有那一层加的行：「装备战力：」（installCombatPowerRuntime）、攻击属性／元素增伤
+## （installDamageElementRuntime 包的也是 setItem；云端专项 rows_* 对原版读数核过）。特效排序、◆唯一 包在 getDescParams 上，照样有。
+static func detail_rows(obj: Dictionary, width: float) -> Array:
+	var rows := _content(obj, "", false, false, false)
+	if rows.is_empty():
+		return rows
+	rows[0][0] = XGearSearch.star_name(obj)
+	# 独立装备登记时 CodexElements.normalizeGear 已把备注、说明里作元素用的别名改掉（暗黑→黑暗等），详情读的是改过的实例
+	var kind := kind_of(obj)
+	if kind == "weapon" or kind == "armor":
+		for r in rows:
+			r[0] = gear_text(str(r[0]))
+	return panel_view(obj, rows, width)
+
+
+static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
 	if obj.is_empty():
 		return []
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
@@ -118,8 +135,9 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false) -> Array:
 	# 就把 descParams 换回 refreshText 重算的那份，元素包装删插的「伤害属性」行被冲掉（照原版：卡上留备注里的写法）
 	var liuying := type == 3 and XLiuying.lb_skill(int(obj.get("id", 0)))
 	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
-		rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
-		if (type == 1 or type == 2) and XPower.enabled():
+		if elements:
+			rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
+		if power and (type == 1 or type == 2) and XPower.enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
