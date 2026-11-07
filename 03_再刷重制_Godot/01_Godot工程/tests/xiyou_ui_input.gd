@@ -156,7 +156,7 @@ func _item13(pad: XTouchControls, rec: Recorder) -> void:
 	XTouchControls.scene_override = null
 	other.queue_free()
 	# 回退开关：照旧所有键按住都按「新按下」连发
-	XTouchControls.HOLD_REPEAT_ECHO = true
+	XTouchControls.HOLD_REPEAT_ECHO = false
 	var old_ok: Array = await _hold_ok(pad, rec, 60)
 	check("13_rollback_ok_repeats", old_ok[0] >= 3, old_ok)
 	var old_down: Array = await _hold_down(pad, rec, 60)
@@ -232,7 +232,7 @@ func _item14(platform: XPlatform) -> void:
 	d.queue_free()
 	XCasinoBatch.session = {}
 	# 回退开关：只认 Esc
-	XKeyMap.POPUP_CANCEL_ACTION = true
+	XKeyMap.POPUP_CANCEL_ACTION = false
 	check("14_rollback_virtual_cancel_ignored", not await _cancel_closes(func(): action("ui_cancel")))
 	check("14_rollback_esc_still_closes", await _cancel_closes(func(): key(KEY_ESCAPE); key(KEY_ESCAPE, false)))
 	XKeyMap.POPUP_CANCEL_ACTION = true
