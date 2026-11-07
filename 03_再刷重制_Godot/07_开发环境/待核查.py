@@ -13,7 +13,7 @@
     验证、结论、证据、问题等其余行里提到的提交号、分支名与开发编号不算（沙僧 2026-10-21：验证行写「开发编号（dev.118）通过」曾误销 dev.118 整批）。
   - 范围里写到的提交号（7 位以上）销该提交；写到合并提交号、分支名或开发编号（dev.NNN、dev.A～B、dev.A／B）时销整批。
   - 分支名与开发编号只销核查当天及以前的批，避免早先的核查盖住同一分支后来的合并。
-  - 短分支名（tools83）：核查条目的范围里写不带 `cc/` 前缀的名字（`android3`、`platform-keys1～3`、`release1／2`），按「合并到 main 的分支名等于它、或以 `-它` 结尾」认，
+  - 短分支名（tools83）：核查条目的范围行（不含标题行，审查 52 P3-4：标题里顺口提到的 fix3、pace2 会误销）里写不带 `cc/` 前缀的名字（`android3`、`platform-keys1～3`、`release1／2`），按「合并到 main 的分支名等于它、或以 `-它` 结尾」认，
     只有唯一一批对得上才销；对不上或对上多批的打警告（审查 50 写短名，旧版一批都没销掉，漏销 15 批）。
 批的划分：main 第一父链上的每个 `合并 <分支>` 合并提交连同它带进来的分支提交、紧随其后的同分支「收尾／登记」提交算一批，其余提交各自一批。
 """
@@ -215,7 +215,8 @@ def pending(root, rules=None, warnings=None):
         text = scope_text(text)
         hashes = HASH.findall(text)
         branches = set(BRANCH.findall(text))
-        for name, explicit in dict.fromkeys(short_names(BRANCH.sub(' ', text))):
+        # 短名只在范围行里认（审查 52 P3-4：标题里顺口提到的 fix3、pace2 会误销整批）；标题行仍只认全名、提交号和 dev 号
+        for name, explicit in dict.fromkeys(short_names(BRANCH.sub(' ', text.split('\n', 1)[1] if '\n' in text else ''))):
             hit = resolve_short(name, known, aliases)
             if len(hit) == 1:
                 branches.add(hit[0])
