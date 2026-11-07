@@ -1,7 +1,7 @@
 extends Node
 ## 敌人血条显隐（YEP_X_VisualHpGauge Game_Enemy.hpGaugeVisible，插件参数 Defeat First=false、Always Visible=false）：
 ## 隐藏成员 → 不显示；备注 <HIDE HP GAUGE> → 不显示（与 <SHOW HP GAUGE> 同写时 HIDE 先判）；
-## <SHOW HP GAUGE> 与什么都不写在默认参数下等价。正式数据：HIDE 546 个敌人、SHOW 277 个、两个都写 2 个。
+## <SHOW HP GAUGE> 与什么都不写在默认参数下等价。正式数据：HIDE 566 个敌人、SHOW 278 个、两个都写 2 个（v0.62.12；v0.28 时 546／277）。
 ## 画面：HIDE 的敌人受伤／被选中时血条（12px 粗条、gradient）不画，名字（Olivia 窗口）照画。
 ## 参照：mv_oracle/hp_gauge_probe.cjs 在真实原版里逐个敌人读 hpGaugeVisible()（夹具 tests/fixtures/hp_gauge_oracle.json），不再用「自己的正则比自己」。
 class QuietBattle extends XBattleScene:
@@ -75,8 +75,8 @@ func _run() -> void:
 			sample_show = int(row.id)
 		elif not h and not s and sample_none == 0:
 			sample_none = int(row.id)
-	check("counts_hide_546", hide_n == 546, hide_n)
-	check("counts_show_277", show_n == 277, show_n)
+	check("counts_hide_566", hide_n == 566, hide_n)
+	check("counts_show_278", show_n == 278, show_n)
 	check("counts_both_2", both_n == 2, both_n)
 	check("oracle_enemies_all_in_remake", missing.is_empty(), missing.slice(0, 8))
 	check("visible_matches_original_for_all_enemies", wrong.is_empty(), wrong.slice(0, 8))
