@@ -107,7 +107,7 @@ def synth(lst, first, loc):
     pre, bad = {}, 0
     for j in chain(lst, first, loc):
         code = int(lst[j]['code'])
-        if code in (111, 411, 402):
+        if code in (111, 411, 402, 602, 603):   # 602／603 战斗结果门：battleResult（八戒 interp4）
             p = cov.open_preset(lst, j, loc)
             if p is not None and code in (111, 411):
                 p = trace_var(lst, j, p)

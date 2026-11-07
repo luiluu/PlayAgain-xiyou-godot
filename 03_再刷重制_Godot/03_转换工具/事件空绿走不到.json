@@ -31,7 +31,6 @@
   "ce1383": "藏宝图：只调 Star.RomGetItems.RunGetFun，要玩家站在宝藏坐标上才挖到；预设设不了站位，挖宝由 xiyou_common_scripts 对照（bajie-newsrc2）",
   "ce1384": "藏宝图：只调 Star.RomGetItems.RunGetFun，要玩家站在宝藏坐标上才挖到；预设设不了站位，挖宝由 xiyou_common_scripts 对照（bajie-newsrc2）",
   "ce1395": "免疫转换：分支条件是敌人条件（cond5，$gameTroop 成员状态），只在战斗中成立",
-  "ce1604": "太极再释放：战斗中追加释放（要 86 学会 5859／5867 且在战斗里）；只预设技能走不到（accept3、accept5 都试过）",
   "ce161": "战斗中技能的追加释放公共事件：遍历全体角色找带指定状态的、new Game_Action 再 forceAction，只在战斗里有意义；事件对照是地图上下文（没有 $gameTroop 成员、不能强制行动），战斗侧由技能／状态专项管",
   "ce17": "战斗中技能的追加释放公共事件：遍历全体角色找带指定状态的、new Game_Action 再 forceAction，只在战斗里有意义；事件对照是地图上下文（没有 $gameTroop 成员、不能强制行动），战斗侧由技能／状态专项管",
   "ce173": "捕捉敌人：Star.PetSystem.PetGet() 读当前战斗的敌人，只在战斗中调用",
