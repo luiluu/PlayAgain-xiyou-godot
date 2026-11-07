@@ -3,6 +3,10 @@ extends Node2D
 ## 绘制一层 MV 地图图块（upper=false 为角色下方，true 为星号图块等角色上方）。
 ## 拼图规则移植自 rpg_core.js Tilemap._paintTiles/_drawTile/_drawAutotile/_drawTableEdge/_drawShadow。
 ## A1 水面每 30 帧换一帧（与 MV 相同），只有含 A1 图块的层会重绘。
+## 分块绘制（Codex 审查报告第 15 项）：原先整张图画在本节点上，换水面帧时整张重画；150×150 的天之上（Map069，A1 一万八千多格）
+## 每 30 帧卡 300 毫秒左右（上下两层都重画）。现在按 CHUNK 格分块：每块一个静态节点（只画一次）和一个水面节点（只画含 A1 的格），
+## 换水面帧时只重画画面内的水面节点，画面外的记脏、进画面时再画。同一格里水面节点画到最后一个 A1 图块为止，静态节点画其余，
+## 格与格不重叠，所以叠放次序与整张画一样。回退开关 CHUNKED = false：回到整张画、整张重画。
 ## 循环地图（MV scrollType 1 纵向、2 横向、3 双向；正式版只有十四层 Map030 横向循环）：通行与移动照
 ## Game_Map.roundX/roundY/deltaX，绘制时在循环方向两侧多画一屏（Tilemap 的 horizontalWrap/verticalWrap）。
 
@@ -25,6 +29,24 @@ var loop_y := false
 const LOOP_MARGIN := Vector2i(28, 16)
 ## 循环地图上角色的显示位置取离这一点（玩家的 real）最近的那一份，同 Game_Map.adjustX/adjustY
 var view_anchor := Vector2.ZERO
+static var CHUNKED := true
+const CHUNK := 16
+## 当前画到哪个 CanvasItem 上（整张画时是自己，分块时是块节点）
+var _canvas: CanvasItem = self
+## 分块：[{static, water, rect: Rect2i（格）, px: Rect2（像素）, dirty}]，water 为 null 表示这块没有水面
+var _chunks: Array = []
+var _water_chunks: Array = []
+## 测试看：画过的格数（整张画与静态块算 drawn_cells，水面块算 water_cells）
+var drawn_cells := 0
+var water_cells := 0
+
+
+class Part extends Node2D:
+	var tm: MVTilemap
+	var cells: Rect2i
+	var water := false
+	func _draw() -> void:
+		tm._draw_part(self, cells, water)
 
 
 func setup(map_data: Dictionary, upper_layer: bool) -> void:
@@ -46,16 +68,128 @@ func setup(map_data: Dictionary, upper_layer: bool) -> void:
 		if MVTiles.is_a1(int(data[i])):
 			_has_a1 = true
 			break
-	queue_redraw()
+	if CHUNKED:
+		_build_chunks()
+	else:
+		queue_redraw()
+
+
+func _build_chunks() -> void:
+	for c in _chunks:
+		c.static.queue_free()
+		if c.water != null:
+			c.water.queue_free()
+	_chunks.clear()
+	_water_chunks.clear()
+	_hidden_left = 0
+	var mx := LOOP_MARGIN.x if loop_x else 0
+	var my := LOOP_MARGIN.y if loop_y else 0
+	for cy in range(-my, height + my, CHUNK):
+		for cx in range(-mx, width + mx, CHUNK):
+			var r := Rect2i(cx, cy, mini(CHUNK, width + mx - cx), mini(CHUNK, height + my - cy))
+			var has_water := false
+			if _has_a1:
+				for y in range(r.position.y, r.end.y):
+					for x in range(r.position.x, r.end.x):
+						# 先看原始四层有没有 A1（便宜），有再按本层的绘制次序确认
+						if (MVTiles.is_a1(tile(x, y, 0)) or MVTiles.is_a1(tile(x, y, 1)) or MVTiles.is_a1(tile(x, y, 2)) \
+								or MVTiles.is_a1(tile(x, y, 3))) and _water_split(_tiles_at(x, y)) > 0:
+							has_water = true
+							break
+					if has_water:
+						break
+			var c := {"rect": r, "px": Rect2(r.position * TS, r.size * TS), "dirty": false, "water": null}
+			if has_water:
+				c.water = _part(r, true)
+			c.static = _part(r, false)
+			# 画面外的块先不显示（不画），进画面时才第一次画；显示后就一直留着，不再重画
+			c.static.visible = false
+			if c.water != null:
+				c.water.visible = false
+			_chunks.append(c)
+			_hidden_left += 1
+			if has_water:
+				_water_chunks.append(c)
+
+
+## 进画面的块显示出来（第一次显示时画）
+var _hidden_left := 0
+func _reveal_chunks() -> void:
+	if _hidden_left == 0:
+		return
+	var view := view_rect()
+	for c in _chunks:
+		if not (c.static as Part).visible and view.intersects(c.px):
+			c.static.visible = true
+			if c.water != null:
+				c.water.visible = true
+				c.dirty = false
+			_hidden_left -= 1
+
+
+func _part(r: Rect2i, water: bool) -> Part:
+	var p := Part.new()
+	p.tm = self
+	p.cells = r
+	p.water = water
+	add_child(p)
+	return p
+
+
+## 一格的图块里，水面节点要画的前几个（到最后一个 A1 为止）；0＝这格没有水面
+static func _water_split(ids: Array) -> int:
+	for i in range(ids.size() - 1, -1, -1):
+		var id: int = ids[i]
+		if id > 0 and id < 10000 and MVTiles.is_a1(id):
+			return i + 1
+	return 0
+
+
+func _draw_part(part: Part, r: Rect2i, water: bool) -> void:
+	_canvas = part
+	if water:
+		water_cells += r.size.x * r.size.y
+	else:
+		drawn_cells += r.size.x * r.size.y
+	for y in range(r.position.y, r.end.y):
+		for x in range(r.position.x, r.end.x):
+			var ids := _tiles_at(x, y)
+			var split := _water_split(ids) if _has_a1 else 0
+			var from := 0 if water else split
+			var to := split if water else ids.size()
+			for i in range(from, to):
+				_draw_id(ids[i], x * TS, y * TS)
+	_canvas = self
+
+
+## 画面在本节点坐标里的范围（多留一格）
+func view_rect() -> Rect2:
+	if not is_inside_tree():
+		return Rect2()
+	var r: Rect2 = get_global_transform_with_canvas().affine_inverse() * get_viewport_rect()
+	return r.grow(TS)
 
 
 func _process(_delta: float) -> void:
+	if not _chunks.is_empty():
+		_reveal_chunks()
 	if not _has_a1:
 		return
 	_tick += 1
-	if _tick % 30 == 0:
+	var turn := _tick % 30 == 0
+	if turn:
 		anim_frame += 1
-		queue_redraw()
+	if not CHUNKED or _chunks.is_empty():
+		if turn:
+			queue_redraw()
+		return
+	var view := view_rect()
+	for c in _water_chunks:
+		if turn:
+			c.dirty = true
+		if c.dirty and (c.water as Part).visible and view.intersects(c.px):
+			c.dirty = false
+			(c.water as Part).queue_redraw()
 
 
 func tile(x: int, y: int, z: int) -> int:
@@ -78,19 +212,26 @@ func _is_table(id: int) -> bool:
 
 
 func _draw() -> void:
+	if not _chunks.is_empty():
+		return
 	var mx := LOOP_MARGIN.x if loop_x else 0
 	var my := LOOP_MARGIN.y if loop_y else 0
+	drawn_cells += (width + 2 * mx) * (height + 2 * my)
 	for y in range(-my, height + my):
 		for x in range(-mx, width + mx):
 			var dx := x * TS
 			var dy := y * TS
 			for id in _tiles_at(x, y):
-				if id < 0:
-					_draw_shadow(-id, dx, dy)
-				elif id >= 10000:
-					_draw_table_edge(id - 10000, dx, dy)
-				else:
-					_draw_tile(id, dx, dy)
+				_draw_id(id, dx, dy)
+
+
+func _draw_id(id: int, dx: int, dy: int) -> void:
+	if id < 0:
+		_draw_shadow(-id, dx, dy)
+	elif id >= 10000:
+		_draw_table_edge(id - 10000, dx, dy)
+	else:
+		_draw_tile(id, dx, dy)
 
 
 func _tiles_at(x: int, y: int) -> Array:
@@ -128,7 +269,7 @@ func _draw_normal(id: int, dx: int, dy: int) -> void:
 		return
 	var sx := (floori(id / 128.0) % 2 * 8 + id % 8) * TS
 	var sy := (floori(id % 256 / 8.0) % 16) * TS
-	draw_texture_rect_region(tex, Rect2(dx, dy, TS, TS), Rect2(sx, sy, TS, TS))
+	_canvas.draw_texture_rect_region(tex, Rect2(dx, dy, TS, TS), Rect2(sx, sy, TS, TS))
 
 
 func _draw_autotile(id: int, dx: int, dy: int) -> void:
@@ -198,10 +339,10 @@ func _draw_autotile(id: int, dx: int, dy: int) -> void:
 				qsx2 = [0, 3, 2, 1][qsx]
 			var sx2 := (bx * 2 + qsx2) * HALF
 			var sy2 := (by * 2 + 3) * HALF
-			draw_texture_rect_region(tex, Rect2(dx1, dy1, HALF, HALF), Rect2(sx2, sy2, HALF, HALF))
-			draw_texture_rect_region(tex, Rect2(dx1, dy1 + HALF / 2.0, HALF, HALF / 2.0), Rect2(sx1, sy1, HALF, HALF / 2.0))
+			_canvas.draw_texture_rect_region(tex, Rect2(dx1, dy1, HALF, HALF), Rect2(sx2, sy2, HALF, HALF))
+			_canvas.draw_texture_rect_region(tex, Rect2(dx1, dy1 + HALF / 2.0, HALF, HALF / 2.0), Rect2(sx1, sy1, HALF, HALF / 2.0))
 		else:
-			draw_texture_rect_region(tex, Rect2(dx1, dy1, HALF, HALF), Rect2(sx1, sy1, HALF, HALF))
+			_canvas.draw_texture_rect_region(tex, Rect2(dx1, dy1, HALF, HALF), Rect2(sx1, sy1, HALF, HALF))
 
 
 func _draw_table_edge(id: int, dx: int, dy: int) -> void:
@@ -220,7 +361,7 @@ func _draw_table_edge(id: int, dx: int, dy: int) -> void:
 		var qsy: int = table[2 + i][1]
 		var sx1 := (bx * 2 + qsx) * HALF
 		var sy1 := (by * 2 + qsy) * HALF + HALF / 2.0
-		draw_texture_rect_region(tex, Rect2(dx + (i % 2) * HALF, dy, HALF, HALF / 2.0), Rect2(sx1, sy1, HALF, HALF / 2.0))
+		_canvas.draw_texture_rect_region(tex, Rect2(dx + (i % 2) * HALF, dy, HALF, HALF / 2.0), Rect2(sx1, sy1, HALF, HALF / 2.0))
 
 
 func _draw_shadow(bits: int, dx: int, dy: int) -> void:
@@ -228,7 +369,7 @@ func _draw_shadow(bits: int, dx: int, dy: int) -> void:
 		return
 	for i in range(4):
 		if bits & (1 << i):
-			draw_rect(Rect2(dx + (i % 2) * HALF, dy + floori(i / 2.0) * HALF, HALF, HALF), Color(0, 0, 0, 0.5))
+			_canvas.draw_rect(Rect2(dx + (i % 2) * HALF, dy + floori(i / 2.0) * HALF, HALF, HALF), Color(0, 0, 0, 0.5))
 
 
 # ---- 循环（MV Game_Map.roundX/roundY/isValid/deltaX/deltaY）----
