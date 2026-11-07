@@ -180,6 +180,23 @@ class AdditionTests(unittest.TestCase):
         additions.compare_file('slice_d1.json', {'actors': {'1': {'hp': 1}, '2': {'hp': 1}}}, {'actors': {'1': {'hp': 1}}}, changes)
         self.assertEqual([(c['collection'], c['key'], c['newDigest']) for c in changes], [('actors', '2', additions.DELETED)])
 
+    def test_top_level_field_added_or_removed_only_on_source_switch(self):
+        """总装三十一 11-07：换源期间探针新量一整个顶层字段（equipment.json affixRevert）或删掉一个，平时拒收，换源时整组可接受。"""
+        old = {'schemaVersion': 1, 'gone': [1], 'cases': [{'id': 'a', 'v': 1}]}
+        new = {'schemaVersion': 1, 'affixRevert': [{'id': 56}], 'cases': [{'id': 'a', 'v': 1}]}
+        with tempfile.TemporaryDirectory() as folder:
+            a, b = Path(folder) / 'old', Path(folder) / 'new'
+            a.mkdir(); b.mkdir()
+            (a / 'equipment.json').write_text(json.dumps(old)); (b / 'equipment.json').write_text(json.dumps(new))
+            check = additions.compare_directories(a, b)
+            self.assertEqual(sorted(check['problems']['equipment.json']), ['删除顶层字段：gone', '新增顶层字段：affixRevert'])
+            grouped = additions.grouped_candidates(additions.change_candidates(check))
+            self.assertEqual([(g['collection'], g['count']) for g in grouped], [(additions.TOP_LEVEL, 2)])
+            entry = dict({k: grouped[0][k] for k in additions.ACCEPT_FIELDS[:6]}, reason='换源整组', source='x')
+            self.assertFalse(additions.apply_acceptances(check, [entry], source_switch=True)['problems'])
+            r = additions.apply_acceptances(check, [entry])
+            self.assertEqual((len(r['unused']), bool(r['problems'])), (1, True))
+
     def test_grouped_acceptance_needs_exact_group_and_source_switch(self):
         """换源整组接受（key「*」）：同文件同集合本轮全部改变一条接受；多一条、少一条、值不同或不在换源时都对不上。"""
         old = {'schemaVersion': 1, 'cases': [{'id': i, 'v': 1} for i in range(4)]}

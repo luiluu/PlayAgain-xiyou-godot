@@ -53,9 +53,10 @@ class FormulaCompilerTests(unittest.TestCase):
         reference = json.loads((TOOLS.parent / '01_Godot工程/tests/fixtures/formula_rest_oracle.json').read_text())
         expected = {857, 858, 1051, 1054, 1055, 1060, 1068, 2192, 2194, 2195,
                     2391, 2494, 4013, 4938, 4939, 4940, 4941, 5309, 5437, 5445,
-                    5906, 5919, 7485, 7486, 7487, 7508, 8087, 10116, 10117, 10118, 10121}
+                    5906, 5919, 7485, 7486, 7487, 7508, 8087, 10116, 10117, 10118, 10121,
+                    10503, 10504, 10505}  # 10503～10505：v0.62.12 新增（换源 11-07）
         self.assertEqual({r['id'] for r in reference['inventory']}, expected)
-        self.assertEqual(len(reference['inventory']), 31)
+        self.assertEqual(len(reference['inventory']), 34)
         for row in reference['inventory']:
             with self.subTest(skill=row['id']):
                 self.assertEqual(hashlib.sha256(row['formula'].encode()).hexdigest(), row['sha256'])
@@ -69,7 +70,7 @@ class FormulaCompilerTests(unittest.TestCase):
             expected_cases.update(f"s{row['id']}.{mode}.{relation}"
                                   for mode in (('none', 'first', 'zero', 'nonmagic') if equipment else ('none',))
                                   for relation in ((-1, 0, 1) if branch else (0,)))
-        self.assertEqual(len(expected_cases), 135)
+        self.assertEqual(len(expected_cases), 147)  # 新源 10503～10505 各 4 种装备情形
         self.assertEqual({r['id'] for r in cases}, expected_cases)
         self.assertEqual(len(cases), len({r['id'] for r in cases}))
         self.assertEqual({r['setup']['skill'] for r in cases}, expected)

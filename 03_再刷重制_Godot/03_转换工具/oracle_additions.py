@@ -84,6 +84,8 @@ KEYS = {
 TOP_LEVEL = '顶层'  # 接受单 collection：参照文件顶层的非用例字段
 # 接受单 newDigest：这条既有用例（或地图、角色）在新参照里删掉了（换源时用例跟着正式版删，BM 11-06）
 DELETED = '已删除'
+# 新增顶层字段的旧值占位（只在换源时可接受）
+ADDED = '新增'
 # 接受单 key：换源时按「文件＋集合」整组接受（该集合本轮全部改变一条写一个理由）；摘要是全部条目 [键, 摘要] 排序后的摘要，
 # 所以整组里多一条、少一条或任何一条值不同都对不上（BM 11-06：换源有 33 万条单条改变，逐条写接受单八十多 MB）
 ALL_KEYS = '*'
@@ -305,7 +307,14 @@ def compare_file(name, old, new, changes=None):
                 additions.append({'collection': 'maps', 'key': key, 'count': 1})
         return additions, problems
     if set(old) != set(new):
-        problems.append('顶层字段集合变化')
+        # 换源时探针可能新量一整个顶层字段（如 equipment.json 的 affixRevert，newsrc8 v0.57），或删掉一个：
+        # 各记一条 switchOnly 改变，只在 --accept-source-switch 下可凭整组接受单放行；平时照旧拒收（总装三十一 11-07）
+        for field in sorted(set(old) - set(new)):
+            problems.append('删除顶层字段：' + field)
+            deleted(TOP_LEVEL, field, old[field], problems[-1])
+        for field in sorted(set(new) - set(old)):
+            problems.append('新增顶层字段：' + field)
+            change(TOP_LEVEL, field, ADDED, new[field], problems[-1], switch_only=True)
     for field in old.keys() & new.keys():
         a, b = old[field], new[field]
         if a == b:
