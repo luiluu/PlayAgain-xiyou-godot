@@ -30,7 +30,7 @@
 
 ## 验证
 
-- `xiyou_walk_speed` 9／9：本机直跑、本机 `XIYOU_TEST_FAST_FORWARD=4` 快进各一次；云端：待补。只加测试，没改游戏代码。
+- `xiyou_walk_speed` 9／9：本机直跑、本机 `XIYOU_TEST_FAST_FORWARD=4` 快进各一次；云端选测 205a81381a 通过（run 42342548270）。只加测试，没改游戏代码。
 - `语法检查.py` 通过。
 
 ## 待交叉核查
