@@ -1,7 +1,7 @@
 # 交付：cc/ui-input1
 
 - 车道／工作者：B 界面·输入（cc，项目线程「完成再刷西游Godot引擎重制」），总装派单：Codex 审查报告第 13～16 项，追加 rules-bugfix1 照搬清单第 1～3 条
-- 状态：进行中
+- 状态：可合并
 
 ## 逐条对应
 
@@ -27,6 +27,15 @@
 | --- | --- | --- | --- | --- |
 | 原先整张画 | 320～480 毫秒，每 30 帧一次 | 320～460 毫秒 | 约 8.5 MB | 60～90 毫秒 |
 | 分块 | 不再卡顿，180 帧里最长一帧 10～16 毫秒 | 11～14 毫秒 | 0.2～0.9 MB | 160～195 毫秒 |
+
+平台车道的量具 `tests/perf/water_redraw_bench`（其本地提交 8590d073，未入本分支，临时拷来跑完已删）复测，300 帧：
+
+| | 换水面那一帧 平均／最长 | 平时一帧 | 图块占内存 | setup |
+| --- | --- | --- | --- | --- |
+| 整张画（CHUNKED=false） | 278.7／291.4 毫秒 | 6.7 毫秒 | 35.4 MB | 50 毫秒 |
+| 分块 | 5.3／8.1 毫秒 | 6.9 毫秒 | 28.1 MB | 198 毫秒 |
+
+两种都没有内存增长（300 帧 +0.008 MB）。
 
 结论：问题确实存在（玩家在天之上每半秒卡一次），已修。代价是进图时 setup 多 100 毫秒左右（要找哪几块有水面），只在换图时一次。
 
@@ -60,7 +69,8 @@
 
 ## 验证
 
-- 专项（本工作树合 main b206af0d 后）：待填
+- 专项（并行测试，本工作树合 main b206af0d 后，23 个场景）：`xiyou_ui_input`、`xiyou_tilemap_chunks`、`xiyou_platform`、`xiyou_key_map`、`xiyou_key_repeat`、`xiyou_pad`、`xiyou_input_handled`、`xiyou_map_hotkeys`、`xiyou_version_label`、`xiyou_casino_batch`、`xiyou_status_power_panel`、`xiyou_boss_hp_bar`、`xiyou_hangup`、`xiyou_hangup_auto`、`xiyou_transfer`、`xiyou_pause_save`、`xiyou_window_rects`、`xiyou_map`、`xiyou_entry_release`、`xiyou_reincarnation_entry`、`xiyou_event_compare`、`xiyou_floor16_dungeon`、`xiyou_floor30_gifts`。22 个通过；`xiyou_ui_input` 回退开关那段有我自己的笔误（把开关设回了 true），修好后单跑 25/25。偶发（各第 1 次）：`xiyou_event_compare` 并行时 600 秒超时、单跑 218 秒通过；`xiyou_map_hotkeys` 并行时挂、单跑通过。
+- 再合 main dd124f89（main 改了 `xiyou_platform.gd`，自动合并无冲突）后单跑：`xiyou_platform` 95/95、`xiyou_ui_input` 25/25、`xiyou_map_hotkeys` 36/36。
 - `语法检查.py`：604 个 .gd，0 个问题。
 - `工具回归.py`：全部通过。
 - `事件空绿扫描.py --check`：空绿 55 例，都在基线内。
@@ -75,4 +85,4 @@
 
 - 030df8f2 第 13、14、16 项及 `xiyou_ui_input`
 - 13dfa4ca 第 15 项分块绘制
-- （后续）`xiyou_tilemap_chunks`、照搬清单 1～3、合 main、uid
+- 其后：`xiyou_tilemap_chunks`；照搬清单 1～3；新测试 uid；修专项笔误；合 main（b206af0d、dd124f89）
