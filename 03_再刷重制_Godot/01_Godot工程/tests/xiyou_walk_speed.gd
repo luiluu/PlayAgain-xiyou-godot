@@ -4,7 +4,8 @@ extends Node
 ## 原版（冻结 v0.28／v0.62.12 都一样，jsdom 参照 newGame 后实测）：玩家 moveSpeed 4，ConfigManager.alwaysDash 默认 true（不按 Shift 就跑），
 ## 跑时 realMoveSpeed 5；rpg_οbjects.js 的 distancePerFrame＝2×2^速度÷256 → 跑一格 4 帧、按住 Shift 走一格 8 帧；
 ## Drill_SpeedGear 1.6 使 SceneManager._deltaTime＝1/96，每真实秒 96 帧 → 跑 10 格 40 帧≈0.417 秒，走 10 格 80 帧≈0.833 秒。
-## 帧数要一致；秒数允许 ±15%（headless 墙钟受机器负载影响，负载高时只会更慢，所以只在偏快或慢过一倍时判失败——慢的另记一行不判）。
+## 只按物理帧数断言（重制每物理帧走一次角色更新，同原版每次 updateScene）：跑一格 4 帧、走一格 8 帧，整段 10 格允许多 1 帧（起步那帧）；
+## 加上入口设好每秒 96 个物理帧，秒数＝帧数÷96 就和原版一样。墙钟受机器负载与 CI 快进影响，不断言（11-07 云端墙钟比 0.83 挂过），只打印。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const WaitBudget := preload("res://tests/wait_budget.gd")
 const TILES := 10
@@ -113,9 +114,9 @@ func _run() -> void:
 		_check(mode + ".tiles", got.end == TILES, got)
 		# 帧数：整段按住时每格同原版；第一格起步那帧计入，允许差 1 帧
 		_check(mode + ".frames", absi(int(got.frames) - int(want.frames)) <= 1, [got, want])
-		var ratio := float(got.seconds) / float(want.seconds)
-		_check(mode + ".not_faster", ratio > 0.85, [snappedf(got.seconds, 0.001), snappedf(want.seconds, 0.001), snappedf(ratio, 0.01)])
-		print("%s 10 格：重制 %.3f 秒（%d 帧），原版 %.3f 秒（%d 帧），比 %.2f" % [mode, got.seconds, got.frames, want.seconds, want.frames, ratio])
+		var per_tile := 4 if mode == "run" else 8
+		_check(mode + ".frames_per_tile", int(want.frames) == per_tile * TILES and (int(got.frames) - 1) / TILES == per_tile, [got.frames, per_tile])
+		print("%s 10 格：重制 %d 帧＝游戏时间 %.3f 秒（墙钟 %.3f 秒，仅供参考），原版 %d 帧＝%.3f 秒" % [mode, got.frames, float(got.frames) / Engine.physics_ticks_per_second, got.seconds, want.frames, want.seconds])
 	_finish()
 
 

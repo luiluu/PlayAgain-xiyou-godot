@@ -11,7 +11,7 @@
 - 起因：总装请求（battlefix2 分支没含 mapev1 的 `move_distance_scale`，量到重制每格 16 帧、原版 8 帧）。两单都合进 main 后在 main 上复量。
 - 原版（冻结 v0.28／v0.62.12，jsdom 参照 newGame 实测）：玩家 moveSpeed 4，`ConfigManager.alwaysDash` 默认 true（不按 Shift 就跑，realMoveSpeed 5）；`js/rpg_οbjects.js` distancePerFrame＝2×2^速度÷256 → 跑一格 4 帧、按 Shift 走一格 8 帧；Drill_SpeedGear 1.6 使 `SceneManager._deltaTime`＝1/96。跑 10 格 40 帧≈0.417 秒，走 10 格 80 帧≈0.833 秒。
 - 重制（main 4db3bbd1，headless 照入口设齿轮，真实地图场景按住方向键）：跑 10 格 41 帧 0.416 秒，走 10 格 81 帧 0.832 秒（多的 1 帧是起步那帧计入）。两者一致，代码不用改。
-- 新专项 `tests/xiyou_walk_speed`（9 项）：齿轮 96 帧／秒；跑、走各 10 格的帧数（允许差 1）；墙钟不快于原版 15% 以上（机器忙时只会更慢，慢的只打印不判）。
+- 新专项 `tests/xiyou_walk_speed`（9 项）：齿轮 96 帧／秒；跑、走各 10 格的物理帧数（允许多起步 1 帧）；跑一格 4 帧、走一格 8 帧（同原版每次 updateScene）。只比帧数，不比墙钟（总装退回：云端墙钟比 0.83 挂过 run.not_faster），墙钟只打印。
 - 玩家可见：无（只加测试）。
 
 ## 交接板
@@ -30,7 +30,7 @@
 
 ## 验证
 
-- `xiyou_walk_speed` 9／9（本机直跑）。只加测试，没改游戏代码。
+- `xiyou_walk_speed` 9／9：本机直跑、本机 `XIYOU_TEST_FAST_FORWARD=4` 快进各一次；云端：待补。只加测试，没改游戏代码。
 - `语法检查.py` 通过。
 
 ## 待交叉核查
