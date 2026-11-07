@@ -214,6 +214,26 @@ class AcceptedBaselineTests(unittest.TestCase):
                 self.set_payload(self.original)
                 self.assertEqual(self.run_sync()[0], 0)
 
+    def test_pending_stamp_only_when_outputs_are_faithful(self):
+        """只差测量接受（退出 2）写待接受指纹；来源核验、导入、缓存发布失败照旧不写；接受后写正式指纹；回退开关关掉就不写。"""
+        stamp = self.gen / sync.STAMP
+        self.assertEqual(self.run_sync('--accept-additions')[0], 2)
+        self.assertTrue(json.loads(stamp.read_text())['pendingAcceptance'])
+        self.assertEqual(json.loads(stamp.read_text())['outputsDigest'], sync.outputs_digest(self.gen))
+        for failure in ['source', 'import', 'cache']:
+            with self.subTest(failure=failure):
+                self.verify = failure != 'source'
+                self.import_error = RuntimeError('fixture import') if failure == 'import' else None
+                self.assertEqual(self.run_sync(do_import=True, cache_error=failure == 'cache')[0], 2)
+                self.assertFalse(stamp.exists())
+                self.verify, self.import_error = True, None
+        with mock.patch.dict(os.environ, {'XIYOU_REUSE_PENDING_STAMP': '0'}):
+            self.assertEqual(self.run_sync()[0], 2)
+        self.assertFalse(stamp.exists())
+        self.set_payload(self.original)
+        self.assertEqual(self.run_sync()[0], 0)
+        self.assertNotIn('pendingAcceptance', json.loads(stamp.read_text()))
+
     def test_clone_cannot_erase_an_unaccepted_baseline(self):
         lane = self.root.parent / 'lane'
         import shutil
