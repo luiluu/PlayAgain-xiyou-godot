@@ -539,8 +539,13 @@ func _child_withdraw(arg: String) -> void:
 	page.save_mode = false
 	add_child(page)
 	await frames(3)
+	var before := XStarWarehouse.gear().size()
 	await _key("ui_accept")   # 分类「装备」
 	await _key("ui_accept")   # 取出第一件
+	for i in 60:   # 机器忙时输入晚几帧才到：等取出真的发生再往下
+		if XStarWarehouse.gear().size() != before:
+			break
+		await frames(1)
 	print("CHILD bag=%d warehouse=%d" % [XState.current.gear.size(), XStarWarehouse.gear().size()])
 	if save_after:
 		print("CHILD saved=%s" % XSave.save(1))
