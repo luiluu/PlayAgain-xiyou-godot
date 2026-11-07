@@ -205,8 +205,9 @@ func set_status(text: String) -> void:
 	status.text = text
 
 
+## 取消：Esc、虚拟取消键、返回键、手柄 B；数字框里打的小键盘 0 等归数字框（XKeyMap.popup_cancel）
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+	if XKeyMap.popup_cancel(event, self):
 		XKeyMap.handled(self)
 		if not cancel_button.disabled:
 			XCasinoBatch.cancel()
