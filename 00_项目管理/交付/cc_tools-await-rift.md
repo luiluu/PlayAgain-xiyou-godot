@@ -19,9 +19,11 @@
 ### 2. 测试公共夹具 `tests/xiyou_test_env.gd`（e83c4f3b，WIP）
 
 - `TestEnv.isolate("xiyou_<测试名>", rift_seen := true)`：设 `XSave.dir_override`／`XConfig.path_override` 到 `user://test_<名>`，删掉上次留下的 options.json、按默认值重读，再把新源大厅漩涡过场 rift1 记成看过（测过场本身的传 false）。返回测试目录。不用 class_name，`preload` 引用。
-- 改走它的 4 个：`xiyou_actor_p0`、`xiyou_item_bag`、`xiyou_hangup`（这三个云端新目录撞过 rift1）、`xiyou_pause_save`（同因的 skip:event，原来靠开 76 号独立开关绕开；照留，另外标 rift1）。item_bag、hangup 原来开头不删旧 options.json，现在删，云端和本机起点一致。
+- 改走它的（总装 10:19 定：以扫描为准、不按名单）：
+  - 集成期云端撞过的 4 个：`xiyou_item_bag`、`xiyou_hangup`、`xiyou_hangup_options`（Map5，删旧 options.json 让本机与云端起点一致）、`xiyou_pause_save`（原来靠开 76 号独立开关绕开，照留，另外标 rift1）；外加先例 `xiyou_actor_p0`。
+  - 扫描（032f8cbd）：建了地图场景（`XMapScene.new`／`map_scene.tscn`／`entry.tscn`）、引用 Map4（`map_id = 4`、`_wait_map(4)`、`HUB := 4`、`transfer(4` 等），又没有 `whisper_mark`／`TestEnv`／76 号独立开关的 23 个：airship_fly、airship_state、battleback_save、empress_draw、floor30_seeker、floor_guild197、floor_reach011／040／062／068／187／207／224／225、floor_run、hud、interp_review、map_hotkeys、party、reincarnation_entry、save_events、skill_menu_events、transfer。原来的「设 dir_override＋path_override」两行换成一行 `TestEnv.isolate(同名)`，目录不变；只设了 dir_override 的（party、reincarnation_entry、airship_*）现在配置也落到测试目录；skill_menu_events 原来没设目录（读写本机开发档配置），现在隔离。
+  - 不动：`xiyou_floor_reach004`、`xiyou_opening_branches`（测过场本身）、`xiyou_script`（测 whisper_mark 本身）；已手写 `whisper_mark("rift1")` 的 8 个先例（casino_batch、flow、fortress029、reach041、guide、map_dispatch、screen_fx、walk_speed）能用，留着。
 - 规则：`00_项目管理/规则/项目边界与操作规则.md`「操作规则」加一条：要读写存档或配置、会进大厅的测试开头用它。
-- 其余已经手写 `whisper_mark("rift1")` 的 9 个（casino_batch、flow、fortress029、reach041、guide、map_dispatch、screen_fx、walk_speed 等）没动，见「可优化」。
 
 ### 3. 待核查短名只在范围行认（818f71df，审查 52 P3-4）
 
@@ -34,13 +36,13 @@
 
 - 改：`03_再刷重制_Godot/07_开发环境/合并车道.py`、`语法检查.py`（说明）、`测试合并工具.py`、`待核查.py`、`测试记录工具.py`
 - 新：`03_再刷重制_Godot/01_Godot工程/tests/xiyou_test_env.gd`
-- 改：`tests/xiyou_actor_p0.gd`、`xiyou_item_bag.gd`、`xiyou_hangup.gd`、`xiyou_pause_save.gd`
+- 改：`tests/` 下 28 个测试（见上「2.」）
 - 改：`00_项目管理/规则/项目边界与操作规则.md`
 
 ## 验证
 
 - `测试合并工具.py` 整份 290 项通过；`测试记录工具.py` 16 项通过；`工具回归.py` 11 项全过（73 秒）。
-- 待做（总装推送后）：`--补齐`、提交 `xiyou_test_env.gd.uid`、`语法检查.py`、Godot 专项 `xiyou_actor_p0`、`xiyou_item_bag`、`xiyou_hangup`、`xiyou_pause_save`（先删本机 `test_<名>` 目录，模拟云端新目录）＋`选测.py main --list` 列出的。
+- 待做（总装推送后）：`--补齐`、提交 `xiyou_test_env.gd.uid`、`语法检查.py`、Godot 专项：改过的 28 个测试（先删本机 `test_<名>` 目录，模拟云端新目录）＋`选测.py main --list` 列出的。
 
 ## 优化登记草稿
 
@@ -51,7 +53,7 @@
 ## 可优化（流程／工具／效率）
 
 - 已做：语法检查抓 await 三元式（回退见上）；公共测试夹具（回退＝各测试改回手写三行）。
-- 建议：另外 9 个手写 `whisper_mark("rift1")` 的测试逐个改走 `TestEnv.isolate`（要逐个确认它们开头删 options.json 不影响用例），约半小时，归工具车道或顺手由改到它们的车道做。
+- 建议：8 个手写 `whisper_mark("rift1")` 的先例以后顺手改走 `TestEnv.isolate`（统一删旧 options.json），由改到它们的车道做。
 - 建议（八戒 FA 提，排在本车道下一期）：`xiyou_event_compare` 的跳过登记把「只被战斗场合技能调用的公共事件」（约 38 例：ce17～ce1370 再释放、333、122 敌人）单独分档，不混进地图跳过登记。要建技能／物品／事件→公共事件的调用表，属新机制，先报计划再做。
 
 ## 变更记录草稿
@@ -59,7 +61,7 @@
 ## 2026-11-07 【cc·工具·未经审查】语法检查抓 await 三元式、测试公共夹具标 rift1、待核查短名只认范围行（dev.待定）
 
 - `合并车道.py parse_check`（`语法检查.py`、`检查.sh` 语法检查、合并后解析检查共用）：纯文本扫描工程全部 .gd，`await (a() if c else b())` 与 `await a() if c else b()`（else 有调用）报出文件与行号；起因 mapev1 主事件文字被静默跳过。存量 0。
-- 新 `tests/xiyou_test_env.gd`：`isolate(名字)` 设测试自己的存档与配置目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过；actor_p0、item_bag、hangup、pause_save 改走它；规则文件加一条。
+- 新 `tests/xiyou_test_env.gd`：`isolate(名字)` 设测试自己的存档与配置目录、删旧 options.json、新源大厅漩涡过场 rift1 记成看过；扫描出进 Map4 又没标的 23 个测试加集成期撞过的 4 个（item_bag、hangup、hangup_options、pause_save）与 actor_p0 改走它；规则文件加一条。
 - `待核查.py`：短分支名只在范围行认，标题行不认（审查 52 P3-4）。
 
 ## 交接板
@@ -70,4 +72,5 @@
 
 - 7e4d3ff8 语法检查抓 await 三元式
 - e83c4f3b WIP: 测试公共夹具 xiyou_test_env.gd，4 个测试改走它
+- 032f8cbd WIP: 扫描进 Map4 又没标 rift1 的 23 个＋hangup_options 改走它
 - 818f71df 待核查：短分支名只在范围行认
