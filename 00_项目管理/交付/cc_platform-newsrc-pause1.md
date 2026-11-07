@@ -2,7 +2,7 @@
 
 - 车道／工作者：平台（cc，项目线程「完成再刷西游Godot引擎重制」；总装失败表）
 - 状态：可合并
-- 基于：cc/newsrc-switch 3948463f（集成分支）。合回集成分支，不进 main。
+- 基于：cc/newsrc-switch 3948463f（集成分支）。合回集成分支，不进 main。内容提交 7b9fe57b（旧 f5a52fd4 误带 generated.oldsrc，已重做、没推过）。
 
 ## 变更记录草稿
 
