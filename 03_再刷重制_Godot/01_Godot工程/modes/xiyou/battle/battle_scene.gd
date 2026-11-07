@@ -183,9 +183,14 @@ static func battle_music() -> Dictionary:
 
 
 ## 战斗 BGM 播放器（还没进树、没开始放；stream 为空表示没有这首）
-## 敌群事件 241 播放 BGM（原版 AudioManager.playBgm）：换掉当前战斗曲；空名＝停（同 MV 的 name 为空即 stopBgm）
+## 敌群事件 241 播放 BGM（原版 AudioManager.playBgm）：换掉当前战斗曲；空名＝停（同 MV 的 name 为空即 stopBgm）。
+## 正在放的就是同名曲（AudioManager.isCurrentBgm 只比名字）时不重放，只更新参数（updateBgmParameters，审查 59 P3-1）
 func _change_bgm(music) -> void:
 	if not (music is Dictionary):
+		return
+	var name := str(music.get("name", ""))
+	if bgm != null and name != "" and bgm.playing and str(bgm.get_meta("bgm_name", "")) == name:
+		bgm.volume_db = bgm_volume_db(music)
 		return
 	if bgm != null:
 		bgm.stop()
@@ -203,8 +208,13 @@ static func new_bgm_player(music: Dictionary) -> AudioStreamPlayer:
 	var p := XDB.audio_path("bgm", str(music.get("name", "")))
 	if p != "":
 		player.stream = load(p)
-		player.volume_db = linear_to_db(float(music.get("volume", 90)) / 100.0)
+		player.volume_db = bgm_volume_db(music)
+		player.set_meta("bgm_name", str(music.get("name", "")))
 	return player
+
+
+static func bgm_volume_db(music: Dictionary) -> float:
+	return linear_to_db(float(music.get("volume", 90)) / 100.0)
 
 
 # ---- 布局 ----
