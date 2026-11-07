@@ -19,6 +19,9 @@ func _all_text(node: Node) -> String:
 	for c in node.get_children(): text += _all_text(c)
 	return text
 func _run() -> void:
+	# 这里核的是 v0.28 版面（原版参照 75～78 等），装备页／物品页右侧详情（v0.62.12）关掉，新版面见 xiyou_gear_detail
+	XEquipScene.DETAIL_V041 = false
+	XItemScene.DETAIL_V043 = false
 	XEnemy.force_roll = 100
 	_check("current_xiyou_font_loaded", GameFont.current() is FontFile and GameFont.current().has_char("游".unicode_at(0)))
 	_check("font_shared_with_entry", preload("res://core/menu_ui.gd").make_theme().default_font == XUI.theme().default_font)

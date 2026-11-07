@@ -51,6 +51,9 @@ func _page(label: String, node: Node, want: Array) -> void:
 
 
 func _run() -> void:
+	# 这里核的是 v0.28 版面（原版参照 75～78 等），装备页／物品页右侧详情（v0.62.12）关掉，新版面见 xiyou_gear_detail
+	XEquipScene.DETAIL_V041 = false
+	XItemScene.DETAIL_V043 = false
 	var pages: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE)).pages
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s

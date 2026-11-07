@@ -44,6 +44,7 @@ var tops: Array = []               # 每页的顶（像素）
 var full_h := 0.0
 var origin_y := 0.0
 var _placed: Array = []            # [{glyphs, top, base}]：每行画在哪
+var rows_override: Array = []     # 测试用：给定行代替 content_rows()
 var _drag_y := NAN
 var _drag_moved := false
 
@@ -109,6 +110,8 @@ func tab_text() -> String:
 
 # ---- 内容 ----
 func content_rows() -> Array:
+	if not rows_override.is_empty():
+		return rows_override
 	var cw := detail.canvas.size.x
 	if item.is_empty():
 		return [[HINT, ROW_SIZE, "#ffffff", false, 0]]
