@@ -14,7 +14,7 @@
   - YEP_EventChasePlayer 的逃离（Map088 四团鬼火）：看见玩家（面朝玩家方向、5 格内）锁定 300 帧，逃离中每停一帧就远离（5/6）或随机（1/6），冒警觉气泡；锁定结束后等 180 帧往原位走，到了恢复原朝向。追逐（要寻路）全游戏没用到，没做，路线脚本写了会在 event_compare 变红。
   - 类型 1 随机移动的节奏沿用重制原有写法（没换成原版的停步计数），只加了强制路线、锁定、离屏时停下。
   - 存档：类型 3 记下自定义路线走到哪一条（`customRoute`），读档接着走。
-- 原版缺陷（O-待定，已登优化登记）：强制路线结束后自定义路线跳过一条、换页不清记下的原路线 → `MVCharacter.route_resume_fix`，默认修好。复现测试 `auto3.m149e33.skip#original`（关开关逐行等于原版的偏移）与 `auto3.m149e33.skip#fixed:no_drift`（开着不偏）。
+- 原版缺陷（O-待定，见下方「优化登记草稿」）：强制路线结束后自定义路线跳过一条、换页不清记下的原路线 → `MVCharacter.route_resume_fix`，默认修好。复现测试 `auto3.m149e33.skip#original`（关开关逐行等于原版的偏移）与 `auto3.m149e33.skip#fixed:no_drift`（开着不偏）。
 - 走路速度（总装 11-07 定案，复现原版、不登 O 号）：正式版 `js/rpg_οbjects.js`（文件名里是希腊字母 ο）`Game_CharacterBase.distancePerFrame` 写成 `2*Math.pow(2, this.realMoveSpeed()) / 256`（冻结 v0.28 第 6549 行、v0.62.12 第 6550 行），每帧距离比 MV 默认翻倍；重制原来按 MV 默认，整体慢一倍。`MVCharacter.move_distance_scale` 默认 2.0，设 1.0 回退。和 Drill_SpeedGear 的 1.6 倍帧率相乘才是原版实际速度，两边各自对齐。专项断言 `tile_frames_speed3`：速度 3 走一格 16 帧（参照 Map093 事件 3）。
 - event_compare：原有用例只单独执行一页，量不到分发；新加三项守覆盖面：`dispatch_parallel_pages_covered`（切片每个并行页都要有 `par.m<地图>e<事件>` 分发用例）、`dispatch_route_codes_known`（类型 3 路线与 205 用到的移动指令都要是 MVCharacter 认得的）、`dispatch_route_scripts_known`（路线脚本只认 YEP 逃离设定）。
 
@@ -30,6 +30,12 @@
 - 走路速度：正式版 `js/rpg_οbjects.js` 的 distancePerFrame 是 MV 默认的两倍（冻结 v0.28 第 6549 行、v0.62.12 第 6550 行），重制改成一致（`MVCharacter.move_distance_scale = 2.0`，设 1.0 回退）。复现原版，不登 O 号（总装 11-07 定）。
 - 玩家可见：Map152、Map032 的并行事件会动了；接近玩家的鬼火、按路线乱跑的小动物、看见人就逃的鬼火都会动了；人物和事件走路比之前快一倍（和原版一样）。
 - event_compare 加三项覆盖面守卫（并行页都有分发用例、路线指令与脚本都认得）。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | 自定义移动路线恢复（`modes/xiyou/map/mv_character.gd` `MVCharacter.route_resume_fix`：`_update_route`、`set_move_route`） | 原版强制路线（指令 205）结束时 restoreMoveRoute 还原自定义路线（移动类型 3）的序号后，advanceMoveRouteIndex 又加一，每被强制一次跳过一条（「左、等、右、等」来回的路线被强制一次后一路往一边偏）；换页时不清记下的原路线，之后强制路线结束会还原成旧页的路线 | 强制路线结束后从原来那一条接着走；换页时清掉记下的原路线 | 原版缺陷（Kyo 2026-11-07「原版的 bug 要修」）；参照 map_dispatch_probe `auto3.m149e33.skip` 实测跳条 | `MVCharacter.route_resume_fix = false`（专项 xiyou_map_dispatch 两边都跑） | cc（八戒 mapev1） | 待用户决定 |
 
 ## 交接板
 
