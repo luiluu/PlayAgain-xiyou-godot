@@ -53,7 +53,7 @@ static func start_action() -> void:
 	_old_queued.clear()
 
 
-## O-待定·真火旧追击（原版 bug，默认修好）：新源想在 Game_Battler.addState 上挡掉角色的 109，但 Game_Actor.addState 早被
+## O-234（原版 bug，默认修好）：新源想在 Game_Battler.addState 上挡掉角色的 109，但 Game_Actor.addState 早被
 ## StrongActorClassification／Toji／Qiyu 包过（各自拿的是包装前的 Game_Battler.addState），角色走不到这层，屏蔽没生效：
 ## 1086 的 Add State 109: user 照挂，109 的 <Custom Apply Effect> 照旧 queueForceAction(至尊宝, 1090, 至尊宝的我方队位)，
 ## 多敌人时打错目标、和新的追击叠成两次（参照 mark.*.p1089、chase.a36.s1086）。true＝照作者本意挡下；false＝照原版挂上并按队位排一次 1090。

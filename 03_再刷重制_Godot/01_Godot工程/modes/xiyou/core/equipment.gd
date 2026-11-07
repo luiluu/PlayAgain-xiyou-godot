@@ -16,7 +16,7 @@ static func fits(a: XActor, slot: int, item: Dictionary) -> bool:
 ## 实例备注或解析出的角色需求）。另一个武器栏（槽位类型 1）已有专武时：change 不换、装备页变灰、最强装备跳过；
 ## 旧档已同时装着两把：release_unequippable 只留排在前面的一把，其余卸回背包。白晶晶（76，毒吻＋穿肠）例外。参照 dual_exclusive_probe。
 const DUAL_EXCLUSIVE_EXEMPT := [76]
-## O-待定·双持专武最强装备：原版 bestEquipItem 的跳过挂在 Game_BattlerBase.canEquip 上，被 Game_Actor 自己的 canEquip 盖过去没生效，
+## O-235：原版 bestEquipItem 的跳过挂在 Game_BattlerBase.canEquip 上，被 Game_Actor 自己的 canEquip 盖过去没生效，
 ## 第二栏照样挑中专武，随后 changeEquip 被挡，第二栏空着。修好＝跳过专武、挑下一件最好的；false＝原版（第二栏留空）。
 static var FIX_DUAL_EXCLUSIVE_BEST := true
 static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
@@ -137,7 +137,7 @@ static func optimize(s: XState, a: XActor) -> void:
 		var best = null
 		var score := -1000.0   # MV bestEquipItem 的起点，能力值和为负的也能选上
 		for e in s.gear:
-			if not fits(a, slot, e) or (FIX_DUAL_EXCLUSIVE_BEST and dual_blocked(a, slot, e)):  # 另一栏已挑了专武就跳过专武（O-待定；原版挑中后被 change 挡下）
+			if not fits(a, slot, e) or (FIX_DUAL_EXCLUSIVE_BEST and dual_blocked(a, slot, e)):  # 另一栏已挑了专武就跳过专武（O-235；原版挑中后被 change 挡下）
 				continue
 			var value := 0.0
 			for p in e.params:
