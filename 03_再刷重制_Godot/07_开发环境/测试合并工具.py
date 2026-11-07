@@ -3434,6 +3434,40 @@ for name in filter(None, files):
         self.assertIn('| %s·AB |' % tok, reg.read_text())
         self.assertIn(str(merge.LOG), changed)
 
+    def test_named_number_and_dev_placeholder_in_same_file_survive_finish_and_rerun(self):
+        """审查 63 P2-1：同一文件既有开发编号占位又有「O-待定·名字」（含优化登记行写了开发编号占位）时，准备阶段已记下 versionEdits.after，
+        发号再改它，--finish 的 validate_version_edits 原来报「还有其它改动」停下、重跑照停。现在发号后更新那份摘要；
+        中途停下重跑同一条 --lane 照计划接着做、不重复记交接板行。"""
+        tok, dev = 'O-' + '待定', merge.VERSION_MARKER
+        self.realistic_checker()
+        self.lane_board()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |\n| %s·旧 | 旧 | a | b | c | d | e | 待分配 |' % tok)
+        reg = self.wt / merge.OPT_REGISTRY
+        reg.write_text(reg.read_text().rstrip('\n') + '\n| %s·双占位 | 甲项 | a | b | c | `XFoo.FIX = false` | %s | 待用户确认 |\n' % (tok, dev))
+        doc = self.wt / merge.SUB / '00_设计/说明.md'
+        doc.parent.mkdir(parents=True, exist_ok=True)
+        doc.write_text('# 说明\n%s 起：%s·双占位 开关；另一条 %s·旧 不动\n' % (dev, tok, tok))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'both placeholders', cwd=self.wt)
+        real_main, calls = merge.main, []
+        def stop_first_finish(argv):
+            calls.append(argv)
+            if '--finish' in argv and sum('--finish' in c for c in calls) == 1:
+                return 1                                  # 模拟收尾中途停下
+            return real_main(argv)
+        with mock.patch.object(merge, 'main', side_effect=stop_first_finish), contextlib.redirect_stdout(io.StringIO()), \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(RuntimeError, 'finish --batch 没过'):
+                merge.lane_one(self.root, 'task', None, 'cc', 'x', 'cc')
+            merge.lane_one(self.root, 'task', None, 'cc', 'x', 'cc')       # 重跑同一条：照计划接着做
+        text = (self.root / merge.OPT_REGISTRY).read_text()
+        self.assertIn('| O-119 | 甲项 |', text)
+        self.assertNotIn(dev, text)
+        self.assertNotIn(dev, (self.root / merge.SUB / '00_设计/说明.md').read_text())
+        self.assertIn('O-119 开关；另一条 %s·旧 不动' % tok, (self.root / merge.SUB / '00_设计/说明.md').read_text())
+        self.assertEqual((self.root / merge.BOARD).read_text().count('- O-119 甲项'), 1)
+        self.assertFalse((self.root / '.git/lane-merge/state.json').exists())
+        self.assertFalse(merge.dirty(self.root))
+
     def test_lane_stops_on_new_placeholder_and_keeps_board(self):
         tok = 'O-' + '待定'
         self.lane_board()

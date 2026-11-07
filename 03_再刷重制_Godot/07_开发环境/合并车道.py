@@ -787,50 +787,68 @@ def opt_tokens_registered(text, registry):
     return bool(registry) and bool(OPT_TOKEN.search(text)) and not unregistered_named(text, registry)
 
 
-def number_named(root, base):
+def number_named(root, base, state=None, state_file=None):
     """--lane 时给本次合并新登记的具名占位发正式号（审查 60 P3-1）：优化登记首格「O-待定·名字」、合并前的 main 登记里没有的，
-    按登记里最大的 O-NNN 顺延，首格与工程、设计文档、交接板里的同名占位一起换。工具源码（07_开发环境、03_转换工具）照旧不换号。
-    返回 ([(编号, 项目)], [改过的文件])；早先就在登记里、还没发号的只列出来，不动；总装想顺带一次清掉旧的，这条合并设
-    XIYOU_NUMBER_NAMED=all（旧的按登记表顺序一起发号）。XIYOU_NUMBER_NAMED=0 关掉。"""
+    按已用的最大号（opt_top_number）顺延，首格与工程、设计文档、交接板、变更记录里的同名占位一起换（replace_named）。工具源码照旧不换。
+    返回 ([(编号, 项目)], [可能改过的文件])；早先就在登记里、还没发号的只列出来，不动；总装想顺带一次清掉旧的，这条合并设
+    XIYOU_NUMBER_NAMED=all（旧的按登记表顺序一起发号）。XIYOU_NUMBER_NAMED=0 关掉。
+    给了 state 时：先把发号计划（namedNumbers、namedRows、namedFiles）存进合并状态再写文件，重跑同一条 --lane 照计划接着换（幂等）；
+    换过的文件若在 versionEdits 里（同一文件也有 dev.待定，准备阶段已记下替换后的摘要），把那份摘要更新成发号之后的，
+    免得 --finish 的 validate_version_edits 报「编号替换文件还有其它改动」（审查 63 P2-1）。"""
     reg = root / OPT_REGISTRY
-    if os.environ.get('XIYOU_NUMBER_NAMED', '1') == '0' or not reg.is_file():
-        return [], []
-    text = reg.read_text()
-    old = subprocess.run(['git', '-C', str(root), 'show', '%s:%s' % (base, OPT_REGISTRY)], capture_output=True, text=True).stdout
-    before = set(registered_named(old))
-    rows = [r for r in re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', text, re.M)]
-    mode = os.environ.get('XIYOU_NUMBER_NAMED', '1')
-    todo = [r for r in rows if r in before and mode != 'all']
-    if todo:
-        print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）；要一并发号，这条合并设 XIYOU_NUMBER_NAMED=all'
-              % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
-    fresh = list(dict.fromkeys(r for r in rows if r not in before or mode == 'all'))
-    all_rows = registered_named(text)
-    if not fresh:
-        return [], []
-    nxt = opt_top_number(root) + 1
-    numbers = {}
-    for tok in fresh:
-        numbers[tok] = 'O-%03d' % nxt
-        nxt += 1
-    out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l', '-F', '-e', 'O-' + '待定·', '--',
-                          str(PROJECT), str(SUB / '00_设计'), str(BOARD), '00_项目管理/变更记录*.md'], capture_output=True, text=True).stdout.splitlines()
-    changed = []
-    for rel in dict.fromkeys(out + [str(OPT_REGISTRY)]):
+    plan = state.get('namedNumbers') if state is not None else None
+    if plan is None:
+        if os.environ.get('XIYOU_NUMBER_NAMED', '1') == '0' or not reg.is_file():
+            return [], []
+        text = reg.read_text()
+        old = subprocess.run(['git', '-C', str(root), 'show', '%s:%s' % (base, OPT_REGISTRY)], capture_output=True, text=True).stdout
+        before = set(registered_named(old))
+        rows = [r for r in re.findall(r'^\|\s*(' + OPT_TOKEN.pattern + r'·[^|]+?)\s*\|', text, re.M)]
+        mode = os.environ.get('XIYOU_NUMBER_NAMED', '1')
+        todo = [r for r in rows if r in before and mode != 'all']
+        if todo:
+            print('提示：优化登记里还有 %d 行早先登记、没发号的具名占位（%s）；要一并发号，这条合并设 XIYOU_NUMBER_NAMED=all'
+                  % (len(todo), '、'.join(t.split('·', 1)[1] for t in todo[:12])), flush=True)
+        fresh = list(dict.fromkeys(r for r in rows if r not in before or mode == 'all'))
+        if not fresh:
+            return [], []
+        nxt = opt_top_number(root) + 1
+        plan = {}
+        for tok in fresh:
+            plan[tok] = 'O-%03d' % nxt
+            nxt += 1
+        all_rows = registered_named(text)
+        out = subprocess.run(['git', '-C', str(root), '-c', 'core.quotepath=false', 'grep', '-l', '-F', '-e', 'O-' + '待定·', '--',
+                              str(PROJECT), str(SUB / '00_设计'), str(BOARD), '00_项目管理/变更记录*.md'],
+                             capture_output=True, text=True).stdout.splitlines()
+        files = [rel for rel in dict.fromkeys(out + [str(OPT_REGISTRY)]) if (root / rel).is_file() and not rel.startswith(OPT_SKIP)]
+        names = {}
+        for tok in plan:
+            row = next((l for l in text.split('\n') if re.match(r'^\|\s*' + re.escape(tok) + r'\s*\|', l)), '')
+            names[tok] = row.split('|')[2].strip() if row else tok.split('·', 1)[1]
+        if state is not None:
+            state.update(namedNumbers=plan, namedRows=all_rows, namedFiles=files, namedNames=names)
+            state['optAppended'] = state.get('optAppended', []) + [[plan[t], names[t]] for t in plan]
+            save(state_file, state)
+    else:
+        all_rows, files, names = state['namedRows'], state['namedFiles'], state['namedNames']
+    for rel in files:
         f = root / rel
-        if not f.is_file() or rel.startswith(OPT_SKIP):
+        if not f.is_file():
             continue
         old_text = f.read_text()
-        new_text = replace_named(old_text, numbers, all_rows)
+        new_text = replace_named(old_text, plan, all_rows)
         if new_text != old_text:
             f.write_text(new_text)
-            changed.append(rel)
+        if state is not None and rel in state.get('versionEdits', {}):
+            state['versionEdits'][rel]['after'] = digest(f.read_bytes())
+    if state is not None:
+        save(state_file, state)
     added = []
-    for tok, num in numbers.items():
-        row = next((l for l in reg.read_text().split('\n') if re.match(r'^\|\s*' + re.escape(num) + r'\s*\|', l)), '')
-        added.append((num, row.split('|')[2].strip() if row else tok.split('·', 1)[1]))
+    for tok, num in plan.items():
+        added.append((num, names[tok]))
         print('具名占位发号：%s → %s' % (tok, num), flush=True)
-    return added, changed
+    return added, list(files)
 
 
 def check_opt_drafts(text, name, registry=''):
@@ -2117,11 +2135,9 @@ def lane_one(root, task, branch, who, desc, executor, prep_extra=(), finish_extr
         if named:
             left.append('（带名字的占位要与优化登记首格逐字相同、含空格才放行，没对上的：%s）' % '、'.join(named[:8]))
         raise RuntimeError('%s 留了没换号的 O-待定，先手改再重跑：\n  ' % task + '\n  '.join(left[:12]))
-    added, changed = number_named(root, state['base'])
+    added, changed = number_named(root, state['base'], state, state_file)   # 发号计划存进 state，重跑照计划接着换（不重复记 optAppended）
     if added:
-        state['optAppended'] = state.get('optAppended', []) + [list(x) for x in added]
-        save(state_file, state)
-        finish_extra = list(finish_extra) + sum((['--also', x] for x in changed), [])
+        finish_extra = list(finish_extra) + sum((['--also', x] for x in changed if x not in state.get('versionEdits', {})), [])
     board_add(root, state, who, desc)
     if main(base_args + ['--finish', '--batch'] + list(finish_extra)):
         raise RuntimeError('%s --finish --batch 没过（见上），修好后重跑同一条 --lane' % task)
