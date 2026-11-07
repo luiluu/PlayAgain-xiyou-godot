@@ -203,7 +203,9 @@ class CloudExportTests(unittest.TestCase):
         out = self.ce.rewrite_presets(text, Path('/c/t'), conf['presets'])
         self.assertIn('custom_template/debug="/c/t/windows_debug_x86_64.exe"', out)
         self.assertIn('custom_template/debug="/c/t/android_debug.apk"', out)
-        self.assertEqual(out.count('/c/t/'), 2)
+        # 「Windows 发行」只换 release 模板（给 windows-run 真跑，平台 FB）；它的 debug、Mac／安卓发行都不动
+        self.assertIn('custom_template/release="/c/t/windows_release_x86_64.exe"', out)
+        self.assertEqual(out.count('/c/t/'), 3)
         self.assertEqual(len(out.splitlines()), len(text.splitlines()))
         self.assertIn('Windows 发行', out)
 
