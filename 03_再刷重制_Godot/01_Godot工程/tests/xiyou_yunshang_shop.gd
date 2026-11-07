@@ -661,7 +661,7 @@ func finish() -> void:
 # ---- Codex 审查报告第 2 项：账本写不完整（哪吒 save1）----
 
 const LEDGER_DIR := "user://test_xiyou_yunshang_shop"
-## 子进程里的文件大小上限（512 字节一块）：比账本小，写账本时被截断（EFBIG）；Godot 自己的日志远小于它
+## 子进程里的文件大小上限（ulimit -f 的块数）：比账本小，写账本时被截断（EFBIG）；Godot 自己的日志远小于它
 const FSIZE_BLOCKS := 256
 
 
@@ -683,15 +683,19 @@ func _child_submit() -> void:
 ## 旧代码 store_string／close 不查，截断的账本照样换上去、订单照扣天丝；现在写不完整就不替换、不扣材料、不留临时文件
 func ledger_short_write() -> void:
 	var file := XSave.dir().path_join(XYunshangOrders.FILE)
-	var pad := "x".repeat(FSIZE_BLOCKS * 512 + 4096)
+	var pad := "x".repeat(FSIZE_BLOCKS * 1024 + 4096)   # sh 的 ulimit -f 在 macOS 上按 1024 字节一块
 	var original := JSON.stringify({"version": 2, "profiles": {}, "legacyProfiles": {"pad": pad}})
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string(original)
 	f.close()
 	XYunshangOrders.reload()
 	var out := []
-	var cmd := "trap '' XFSZ; ulimit -f %d; exec \"$0\" \"$@\"" % FSIZE_BLOCKS
-	var code := OS.execute("/bin/sh", ["-c", cmd, OS.get_executable_path(), "--headless", "--path",
+	# 包一层小脚本（OS.execute 自己会再套一层 sh，"$@" 写在命令行里会被外层先展开）
+	var wrapper := ProjectSettings.globalize_path(XSave.dir().path_join("fsize_limit.sh"))
+	var w := FileAccess.open(wrapper, FileAccess.WRITE)
+	w.store_string("trap '' XFSZ\nulimit -f %d\nexec \"$@\"\n" % FSIZE_BLOCKS)
+	w.close()
+	var code := OS.execute("/bin/sh", [wrapper, OS.get_executable_path(), "--headless", "--path",
 		ProjectSettings.globalize_path("res://"), "res://tests/xiyou_yunshang_shop.tscn", "--", "--child-ledger-submit"], out, true)
 	var log := "".join(out)
 	var at := log.find("CHILD ")
@@ -703,6 +707,7 @@ func ledger_short_write() -> void:
 	var leftovers := Array(DirAccess.get_files_at(XSave.dir())).filter(func(n): return n.ends_with(".tmp"))
 	check("ledger.short.no_tmp", leftovers.is_empty(), leftovers)
 	DirAccess.remove_absolute(file)
+	DirAccess.remove_absolute(wrapper)
 	XYunshangOrders.reload()
 
 
