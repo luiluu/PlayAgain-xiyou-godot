@@ -208,7 +208,10 @@ func _input(event: InputEvent) -> void:
 	if confirm:
 		XKeyMap.handled(self)
 		if _ready_to_close:
+			# 关掉后结算页还留在画面上（胜利提示的消息窗盖在上面）：set_process 停不掉 _input，
+			# 不停输入的话后面的确定／取消／左键都被这里吞掉，胜利提示关不掉、战斗结束不了（审查 O-190 第 3 项）
 			set_process(false)
+			set_process_input(false)
 			continued.emit()
 		else:
 			_elapsed = 3.0

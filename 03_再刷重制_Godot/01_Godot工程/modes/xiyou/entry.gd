@@ -29,6 +29,7 @@ func _ready() -> void:
 		back.pressed.connect(GameApp.return_to_menu)
 		column.add_child(back)
 		return
+	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	theme = XUI.theme()
 	_build_background()
 	_title()

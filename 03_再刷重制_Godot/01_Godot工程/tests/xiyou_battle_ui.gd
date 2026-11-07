@@ -74,6 +74,20 @@ func _battle_book(b: XBattleScene) -> void:
 	_check("battle_book_cancel_back", b.book_page == null and b.cmd_win != null and b.cmd_win.active and b.list_win == null)
 
 
+## 真实鼠标事件（按下＋松开），坐标是视口坐标
+func _mouse(pos: Vector2, button: MouseButton) -> void:
+	for down in [true, false]:
+		if not down and button in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP]:
+			break
+		var e := InputEventMouseButton.new()
+		e.button_index = button
+		e.pressed = down
+		e.position = pos
+		e.global_position = pos
+		Input.parse_input_event(e)
+		await _frames(2)
+
+
 func _press(action: String) -> void:
 	var e := InputEventAction.new()
 	e.action = action
@@ -149,20 +163,21 @@ func _run() -> void:
 	# Kyo 11-06 实机：鼠标左键点指令窗第 2 行先选中、再点一次确定→打开技能列表；右键回指令窗
 	var row_at := func(w: XBattleList, i: int) -> Vector2:
 		return (w.get_parent() as CanvasItem).get_global_transform() * (w.position + Vector2(w.padding + 20, w.padding + (i - w.top + 0.5) * XBattleList.LH))
+	# 审查报告第 7 项：走真实事件分发（Input.parse_input_event → 视口 → GUI／_unhandled_input），不直接调 _gui_input
 	for n in 2:
-		var click := InputEventMouseButton.new()
-		click.button_index = MOUSE_BUTTON_LEFT
-		click.pressed = true
-		click.global_position = row_at.call(cw, 1)
-		click.position = click.global_position
-		b._gui_input(click)
-		await _frames(2)
+		await _mouse(row_at.call(cw, 1), MOUSE_BUTTON_LEFT)
 	_check("mouse_pick_command", b.list_win != null, b.list_win != null)
 	if b.list_win != null:
-		var wheel := InputEventMouseButton.new()
-		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
-		wheel.pressed = true
-		b._gui_input(wheel)
+		# 滚轮：列表行数多于可见行时下滚一行（Window_Selectable.processWheel → scrollDown）
+		var lw: XBattleList = b.list_win
+		var many := lw.entries.size() > lw.rows
+		var top0 := lw.top
+		var idx0 := lw.index
+		await _mouse(row_at.call(lw, lw.top), MOUSE_BUTTON_WHEEL_DOWN)
+		_check("mouse_wheel_list", (lw.top > top0) if many else (lw.index == idx0 and b.list_win == lw), [many, top0, lw.top, idx0, lw.index])
+		# 列表里左键点第 1 行选中（再点才确定）
+		await _mouse(row_at.call(lw, lw.top), MOUSE_BUTTON_LEFT)
+		_check("mouse_pick_list_row", b.list_win == lw and lw.index == lw.top, [lw.index, lw.top])
 		await _press("ui_cancel")
 		await _frames(3)
 	cw = b.cmd_win  # 关列表后指令窗是新建的
@@ -380,10 +395,12 @@ func _message_101(b: XBattleScene) -> void:
 		Rect2(0, 274, 1280, 172), Rect2(), 0.0, "battle_49c_message_101_middle")
 	await _message_case(b, "msg101_bigfont", {"face": "KH06-2_faces_MV_03", "index": 4, "background": 0, "position": 2, "lines": ["\\n<魇脑>\\{\\{前所未有的兴奋！\\}\\}\\!"]},
 		Rect2(0, 548, 1280, 172), Rect2(0, 484, 220, 64), 168.0, "battle_49d_message_101_bigfont")
+	await _message_case(b, "msg101_click", {"face": "", "index": 0, "background": 0, "position": 2, "lines": ["第一句\\!", "第二句"]},
+		Rect2(0, 548, 1280, 172), Rect2(), 0.0, "", true)
 
 
 ## name_rect 为空时应没有名字框；left 是正文起点（有头像时 168）
-func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, name_rect: Rect2, left: float, shot: String) -> void:
+func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, name_rect: Rect2, left: float, shot: String, by_click := false) -> void:
 	var cw: XBattleList = b.cmd_win
 	cw.active = false
 	cw.hide()
@@ -406,12 +423,16 @@ func _message_case(b: XBattleScene, tag: String, msg: Dictionary, rect: Rect2, n
 	if left > 0.0:
 		var xs: Array = b.message._page_glyphs.filter(func(g): return g.has("t")).map(func(g): return float(g.x))
 		_check(tag + "_text_left", not xs.is_empty() and xs.min() == left, xs.slice(0, 3))
-	await _shot(shot)
+	if shot != "":
+		await _shot(shot)
 	# \\! 停住时按一次继续，文字完再按一次关闭
 	for i in range(3):
 		if done.v:
 			break
-		await _press("ui_accept")
+		if by_click:
+			await _mouse(rect.get_center(), MOUSE_BUTTON_LEFT)  # 审查报告第 7 项：战斗消息用鼠标左键翻页（真实事件分发）
+		else:
+			await _press("ui_accept")
 		await _until(func(): return done.v or b.message.win.pause, 120)
 	_check(tag + "_closed", await _until(func(): return done.v and w.openness == 0 and nw.openness == 0, 120), [done.v, w.openness, nw.openness])
 	cw.show()
