@@ -38,21 +38,37 @@ class CoverInterp:
 	extends MVInterpreter
 	var cover: Dictionary
 	var cover_label := ""
+	## 记原始下标：MVEventCore._merge_choices 把相邻的「404＋102」从 list 里删掉合成一个菜单，之后的下标都前移 2，
+	## 按游标下标记会把合并菜单后段记错位置（m217 晶石工作台约 1300 个实例因此显示没执行到；八戒 interp3）。
+	## 在执行前给每条指令记上原始下标（键 COV_I），记覆盖时用它；公共事件子游标在 _make_child 时补记（第一次见到的列表还没合并过）
+	const COV_I := "_cov_i"
+	static func tag(commands: Array) -> void:
+		if commands.is_empty() or (commands[0] as Dictionary).has(COV_I):
+			return
+		for i in commands.size():
+			commands[i][COV_I] = i
 	func _make_child(commands: Array) -> MVEventCore:
+		tag(commands)
 		var sub := CoverInterp.new(host, map_id, event_id, commands)
 		sub.cover = cover
 		return sub
 	func _execute(c: Dictionary):
 		var where := cover_label if _depth == 0 else ("ce%d" % common_id if common_id > 0 else "")
 		var start := index
+		var before := list.duplicate() if where != "" and int(c.code) in [101, 102] else []
 		var r = super._execute(c)
 		if where != "":
+			# 合并菜单删掉的「404＋102」原版也执行到（同一个菜单）：按原始下标补记
+			if before.size() > list.size():
+				for d in before:
+					if not list.any(func(x): return is_same(x, d)):
+						cover["%s:%d" % [where, int(d.get(COV_I, -1))]] = true
 			# 101 会把紧跟的 401（文字行）和 102／103 合成一条消息一起消费，这些续行下标也算执行到（BK）
 			var last := start
 			if int(c.code) == 101:
 				last = index
-			for i in range(start, last + 1):
-				cover["%s:%d" % [where, i]] = true
+			for i in range(start, mini(last, list.size() - 1) + 1):
+				cover["%s:%d" % [where, int(list[i].get(COV_I, i))]] = true
 		return r
 
 
@@ -511,6 +527,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	MVInterpreter.aborted = false
 	var interp: MVInterpreter
 	if coverage_out != "":
+		CoverInterp.tag(list)
 		var ci := CoverInterp.new(host, int(c.map), int(c.event), list)
 		var case_cover := {}
 		ci.cover = case_cover
