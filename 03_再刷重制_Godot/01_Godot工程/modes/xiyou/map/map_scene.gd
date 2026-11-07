@@ -156,7 +156,9 @@ func _difficulty_notice_active() -> bool:
 
 
 func _exit_tree() -> void:
+	# 叫停并行解释器后再发一帧：等着 parallel_frame 的协程当场醒来、看到已叫停就收尾，不留挂起的协程到退出（资源未释放）
 	_stop_parallels()
+	parallel_frame.emit()
 	if XPlatform.pause_hook == Callable(self, "_on_app_pause"):
 		XPlatform.pause_hook = Callable()
 	# 地图销毁前解除全局计时器的回调，不能留到下一帧再检测已释放的闭包。
@@ -528,7 +530,13 @@ func _on_action() -> void:
 			return
 
 
+## 并行事件解释器的帧（MVInterpreter._frame／_tick）：先于事件节点更新（父节点先处理），同原版 Game_Map.update 里事件依次 update
+signal parallel_frame
+
+
 func _physics_process(_delta: float) -> void:
+	if parallel_active():
+		parallel_frame.emit()
 	_update_hotkeys()
 	_hang_up_physics()
 	_update_shake()

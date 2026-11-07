@@ -58,19 +58,21 @@ func is_cancelled() -> bool:
 	return bool(token.cancelled)
 
 
-## 等一帧（指令 230）。并行解释器按地图更新的物理帧数（同事件移动、MVEvent.update_character），
-## 且 Scene_Map 不更新地图时（宿主 parallel_active() 为假）不往下数
+## 等一帧（指令 230）。并行解释器等宿主的 parallel_frame（地图每个物理帧、且 Scene_Map 在更新地图时才发，菜单／战斗／各种画面开着时不数）；
+## 等的是宿主自己的信号，地图释放时挂起的协程随之丢弃，不会留到退出时报资源未释放
 func _frame() -> void:
 	if not parallel:
 		await host.get_tree().process_frame
 		return
-	await host.get_tree().physics_frame
-	# 等的这一帧里地图可能已经释放（换场景、回标题）：已叫停，不再碰宿主
-	if is_cancelled() or not is_instance_valid(host):
-		return
-	if host.has_method("parallel_active"):
-		while not is_cancelled() and is_instance_valid(host) and not host.parallel_active():
-			await host.get_tree().physics_frame
+	await _tick()
+
+
+## 等一个物理帧（205 等路线、213 等气泡、223 等色调）：并行解释器同样等宿主的 parallel_frame
+func _tick() -> void:
+	if parallel and host.has_signal("parallel_frame"):
+		await host.parallel_frame
+	else:
+		await host.get_tree().physics_frame
 
 
 func run() -> void:
@@ -258,20 +260,24 @@ func _host_command(c: Dictionary):
 				for i in range(int(p[1])):
 					if is_cancelled():
 						break
-					await host.get_tree().physics_frame
+					await _tick()
 		236:
 			# 设置天气 [类型, 强度, 帧数, 等待]；战斗中无效（地图解释器不在战斗里）
 			state().screen.change_weather(str(p[0]), int(p[1]), int(p[2]))
 			if bool(p[3]):
 				for i in range(int(p[2])):
-					await host.get_tree().physics_frame
+					if is_cancelled():
+						break
+					await _tick()
 		224:
 			# 画面闪烁 [颜色 r,g,b,强度, 帧数, 等待]（Game_Screen.startFlash）
 			if host.has_method("flash_screen"):
 				host.flash_screen(p[0], int(p[1]))
 			if bool(p[2]):
 				for i in range(int(p[1])):
-					await host.get_tree().physics_frame
+					if is_cancelled():
+						break
+					await _tick()
 		352:
 			# 打开存档画面（SceneManager.push(Scene_Save)；公共事件 9「炉石」），关闭后回到地图接着执行
 			if host.has_method("open_save"):
@@ -318,7 +324,7 @@ func _host_command(c: Dictionary):
 				if bool(p[1].get("wait", false)):
 					# 等待中若场所移动，旧地图的角色已释放
 					while not is_cancelled() and is_instance_valid(ch) and ch.is_route_forcing():
-						await host.get_tree().physics_frame
+						await _tick()
 		211:
 			host.player.transparent = int(p[0]) == 0
 			host.player.queue_redraw()
@@ -341,7 +347,7 @@ func _host_command(c: Dictionary):
 				ch.start_balloon(int(p[1]))
 				if bool(p[2]):
 					while not is_cancelled() and is_instance_valid(ch) and ch.is_balloon_playing():
-						await host.get_tree().physics_frame
+						await _tick()
 		216:
 			# 更改队伍跟随 [0 显示 1 隐藏]
 			host.set_followers_visible(int(p[0]) == 0)

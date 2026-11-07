@@ -84,7 +84,8 @@ func _setup() -> XMapScene:
 		return null
 	_event(map, 72).locate(22, 15)
 	_event(map, 72).set_direction(8)
-	_event(map, 7).force_move_route({"list": [_cmd(1), _cmd(1), _cmd(1), _cmd(1), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
+	# 先降到速度 2（一格 32 帧）：走路速度同正式版（distancePerFrame 翻倍，八戒 mapev1）后速度 3 一格只要 16 帧，存档前后那几帧就会多走一步
+	_event(map, 7).force_move_route({"list": [_cmd(29, [2]), _cmd(1), _cmd(1), _cmd(1), _cmd(1), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
 	_event(map, 73).force_move_route({"list": [_cmd(42, [128]), _cmd(37), _cmd(41, ["People1", 3]), _cmd(0)], "repeat": false, "skippable": false, "wait": false})
 	await _frames(40)
 	map.erase_event(65)
