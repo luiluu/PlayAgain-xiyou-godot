@@ -2,7 +2,7 @@
 
 - 车道／工作者：界面（cc）；前半由 `elated-chatelet-b43f1e` 的会话做到 61ed3ac7，接棒后在 `zealous-rubin-9a80c1` 续做
 - **合并点：分支 `cc/zealous-rubin-9a80c1`**（含 cc/ui-battlefix2 61ed3ac7 全部提交，已并入 main）
-- 状态：见文末「验证」
+- 状态：**可合并**（m234／help_card 复查等同步失败表，另交）
 
 ## 逐条：报告项 → 测试名 → 修法
 
@@ -52,5 +52,7 @@
 
 ## 验证
 
-- 本机单跑（会话中）：`xiyou_speed_gear` 10/10（实测见上表）、`xiyou_popup_multi`、`xiyou_popup_overlap`、`xiyou_regen_popup` 过。
-- 云端选测：见下一次提交补的结果。
+- 云端整轮选测通过：提交 ac84948a51（已并入 main 5176d032），449 个场景、14 片，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42336322471 。前两轮（7f44c29a、fc20a2ec）挂的 battle_options、popup_overlap、battle_pace、battle_ui（msg101_click、race_poison）、event_compare（headless 等待变慢超时）都在本单里修了。
+- 本机直跑：`xiyou_battle_ui` 164/164、`xiyou_popup_multi` 14/14、`xiyou_speed_gear` 10/10、`xiyou_popup_overlap` 8/8、`xiyou_battle_pace` 2/2。
+- `语法检查.py` 0 问题；`事件空绿扫描.py --check` 55 例均在基线内；`回退开关覆盖.py` 无本单新缺口。
+- 原版实测工具 `03_转换工具/ui_reference/speed_gear_ref.cjs`（只读冻结正式源，内存新局，不读写存档）。
