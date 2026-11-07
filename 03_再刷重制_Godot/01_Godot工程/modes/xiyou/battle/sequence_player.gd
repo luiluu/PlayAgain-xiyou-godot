@@ -446,7 +446,8 @@ func _waiting(mode: String) -> bool:
 			return scene.sprites.values().any(func(s): return s.move_left > 0)
 		"animation":
 			anims = anims.filter(func(a): return is_instance_valid(a) and a.is_inside_tree())
-			return not anims.is_empty()
+			# Spriteset_Battle.isAnimationPlaying 包装：渡鸦施放特效没放完也算
+			return not anims.is_empty() or (scene.raven_fx != null and scene.raven_fx.busy())
 		"effect":
 			return scene.sprites.values().any(func(s): return s.effect_left > 0)
 		"float":
@@ -470,9 +471,11 @@ func _clear_log() -> void:
 
 
 ## displayActionResults：pushBaseLine ×2、popupDamage ×2、（状态变化时 pushBaseLine、waitForNewLine、popBaseLine）、
-## waitForNewLine、popBaseLine ×2
-func _push_results(status: bool) -> void:
-	methods.append(["pushBaseLine"])
+## waitForNewLine、popBaseLine ×2。外层那对 pushBaseLine／popBaseLine 是 YEP invokeAction 的，一次 invokeAction 只一对：
+## 新源敌人先挨打再反击（COUNTER_AFTER_HIT）时，挨打的结果不收外层、反击的结果不开外层（新源 s104 反击致死逐帧读数）
+func _push_results(status: bool, open := true, close := true) -> void:
+	if open:
+		methods.append(["pushBaseLine"])
 	methods.append(["pushBaseLine"])
 	methods.append(["popupDamage"])
 	methods.append(["popupDamage"])
@@ -482,17 +485,22 @@ func _push_results(status: bool) -> void:
 		methods.append(["popBaseLine"])
 	methods.append(["waitForNewLine"])
 	methods.append(["popBaseLine"])
-	methods.append(["popBaseLine"])
+	if close:
+		methods.append(["popBaseLine"])
 
 
 func _play_results(list: Array) -> void:
-	for l in list:
+	for i in list.size():
+		var l: Dictionary = list[i]
 		match l.type:
 			"hit":
 				if scene._hit_visual(l):
 					scene._collapse_visual(l.target)
+				# 同一次 invokeAction 里「挨打→反击→反击的结果」：外层 pushBaseLine／popBaseLine 只一对
+				var counter_next: bool = i + 1 < list.size() and list[i + 1].type == "counter" and list[i + 1].get("after_hit", false)
+				var after_hit_counter: bool = i >= 1 and list[i - 1].type == "counter" and list[i - 1].get("after_hit", false)
 				# 倒下也算状态变化（MV 结算时附加了无法战斗状态，addedStateObjects 里有它）
-				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died)
+				_push_results(not (l.added.is_empty() and l.removed.is_empty()) or l.died, not after_hit_counter, not counter_next)
 				if l.has("wait_after"):
 					methods.append(["wait", l.wait_after])  # 小猫剑圣段间 WAIT 6（XCat.cast）
 			"counter":
@@ -513,9 +521,11 @@ func _play_results(list: Array) -> void:
 				lines += 1
 				wait_count = MESSAGE_SPEED
 				scene._banner(str(XDB.system().terms.messages.magicReflection).replace("%1", l.target.display_name()))
-				var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
-				if a:
-					anims.append(a)
+				# 技能动画走 showNormalAnimation，渡鸦施放特效包装同样换掉
+				if not scene.raven_cast(user, skill, [l.user]):
+					var a := scene._start_animation(int(skill.get("animationId", 0)), l.user)
+					if a:
+						anims.append(a)
 				wait_mode = "animation"
 			"collapse":
 				scene.show_views(l.get("views", {}))
@@ -527,6 +537,9 @@ func _play_results(list: Array) -> void:
 ## Window_BattleLog.showNormalAnimation：画面中央的动画每个目标都放（不延迟），其余按目标依次延迟
 func _normal_animation(targets: Array, id: int, mirror := false) -> void:
 	if id <= 0:
+		return
+	# installRavenSkillEffectsRuntime 的 showNormalAnimation 包装：本次行动技能的动画、渡鸦放 10122～10127 时换成施放特效，不放原动画
+	if id == int(skill.get("animationId", 0)) and scene.raven_cast(user, skill, targets):
 		return
 	var data := XDB.rec("Animations", id)
 	var delay := ANIM_BASE_DELAY

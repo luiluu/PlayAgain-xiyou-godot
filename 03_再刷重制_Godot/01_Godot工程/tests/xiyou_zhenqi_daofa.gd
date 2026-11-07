@@ -348,6 +348,26 @@ func _extra() -> void:
 	check("save_weapon_trials", back.zhenqi_spec.w.has("3") and back.zhenqi_spec.weaponTrials.has("3"), back.zhenqi_spec)
 	XState._become_current(back)
 	check("load_clears_weapon_trial", XZhenqi.pending_scale.is_empty())
+	# v0.45：神兵试炼不结算经验、金钱（_codexZqWeaponTrial），瓶颈之战照旧只清物品
+	_fresh()
+	s.set_variable(20, 13)
+	h._go({"page": "weapon"})
+	h._pick(0)
+	var logic: XBattleLogic = h._logic(int(XZhenqi.weapon_masters()[0].troopId))
+	var rw := logic.rewards()
+	check("weapon_no_exp_gold", logic.enemies.all(func(e): return e.zq_weapon_trial) and int(rw.exp) == 0 and int(rw.gold) == 0 and rw.drops.is_empty(), rw)
+	XZhenqi.battle = {}
+	# 回退 XZhenqi.V045 = false（O-待定·真气 v0.45）：v0.28 神兵试炼照常给经验、金钱（物品照旧清掉）
+	XZhenqi.V045 = false
+	_fresh()
+	s.set_variable(20, 13)
+	h._go({"page": "weapon"})
+	h._pick(0)
+	var logic2: XBattleLogic = h._logic(int(XZhenqi.weapon_masters()[0].troopId))
+	var rw2 := logic2.rewards()
+	check("v028_weapon_exp_gold", not logic2.enemies.any(func(e): return e.zq_weapon_trial) and int(rw2.exp) > 0 and int(rw2.gold) > 0 and rw2.drops.is_empty(), rw2)
+	XZhenqi.battle = {}
+	XZhenqi.V045 = true
 
 
 ## 固定应答宿主：开战时打倒全部敌人再按胜利结算

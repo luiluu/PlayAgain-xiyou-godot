@@ -32,7 +32,7 @@ const OTHER_LANDINGS := {64: [Vector2i(14, 26)], 17: [Vector2i(21, 36)], 166: [V
 const SETUP := {
 	[10, 11]: {"self": "A"}, [12, 23]: {"self": "A"}, [47, 15]: {"self": "A"}, [64, 3]: {"self": "A"},
 	[64, 8]: {"actor": 127}, [17, 5]: {"switch": 172}, [17, 6]: {"actor": 128}, [46, 5]: {"actor": 104},
-	[213, 2]: {"actor": 148}, [32, 9]: {"switch": 2285}, [32, 10]: {"switch": 2285},
+	[213, 2]: {"actor": 148, "vars": {1575: 1}}, [32, 9]: {"switch": 2285}, [32, 10]: {"switch": 2285},
 }
 ## 原版也走不到的（图块通行与 MV checkPassage 一致，各入口都试过）：铃兰彩蛋 Map064 (4,1)、张楚岚彩蛋 Map017 (42,43)，照放、不改
 const UNREACHABLE := [[64, 8], [17, 6]]
@@ -296,6 +296,9 @@ func _map017() -> void:
 
 ## 一护修炼卍解（原版死内容，变量 1309 是测试强行置的，玩家走不到）：决心（变量 1318）不够不打；够了打敌群 962，再来第 2 页给斩月-II（武器 807）
 func _ichigo() -> void:
+	if not XDeadContent.ichigo_old_source():
+		await _ichigo_newsrc()
+		return
 	XDeadContent.ICHIGO_BANKAI = false  # 先比原版（死内容）
 	XDeadContent.clear_cache()
 	await _ichigo_original()
@@ -330,6 +333,36 @@ func _ichigo_live() -> void:
 	_check("m213e2_live_page3", e != null and e.page_index == 2, e.page_index if e != null else null)
 	await _run_event(_scene(), 2, [])
 	_check("m213e2_live_reroll", s.gear_count("weapon", 72) == 1, s.gear_count("weapon", 72))
+
+
+## 新源（原作已做活，<ClaudeShuangEvent:213:2>）：第 1 页要一护 148 在队且 1575≥1（45 层置）；1576＝1（116 层置）才打敌群 2026，
+## 胜后变量 1577／1578＝1、独立开关 B、提示学会卍解；第 2 页（B 且 1578≥1）1570、1575 都 ≥1 给卍解-斩月-II 72 并开 A，1570 不够只说话；
+## 第 3 页（A）刷孔（有 72 才失去再得到）。O-184 不打补丁：招募 CE2508 不再插 1309
+func _ichigo_newsrc() -> void:
+	var ce: Array = XDB.rec("CommonEvents", 2508).list
+	_check("m213e2_new_recruit_untouched", not ce.any(func(c): return int(c.code) == 122 and int(c.parameters[0]) == 1309), ce.slice(0, 3))
+	var s := await _play(213, 2, [], {"actor": 148, "vars": {1575: 1}})
+	if s == null:
+		return
+	_check("m213e2_new_no_will", battles.is_empty() and int(s.variable(1578)) == 0 and not s.self_switch(213, 2, "B"), [battles, s.variable(1578)])
+	s = await _play(213, 2, [], {"actor": 148, "vars": {1575: 1, 1576: 1}})
+	if s == null:
+		return
+	_check("m213e2_new_battle", battles.size() == 1 and int(battles[0].troop) == 2026 and int(battles[0].result) == 0, battles)
+	_check("m213e2_new_reward", int(s.variable(1577)) == 1 and int(s.variable(1578)) == 1 and s.self_switch(213, 2, "B") and XToast.shown.any(func(t): return str(t).contains("学会：卍解")),
+		[s.variable(1577), s.variable(1578), XToast.shown])
+	var e := _event(_scene(), 2)
+	_check("m213e2_new_page2", e != null and e.page_index == 1, e.page_index if e != null else null)
+	battles.clear()
+	await _run_event(_scene(), 2, [])
+	_check("m213e2_new_no_zangetsu", s.gear_count("weapon", 72) == 0 and not s.self_switch(213, 2, "A"), s.gear_count("weapon", 72))
+	s.set_variable(1570, 1)
+	await _run_event(_scene(), 2, [])
+	_check("m213e2_new_weapon", s.gear_count("weapon", 72) == 1 and s.self_switch(213, 2, "A") and battles.is_empty(), s.gear_count("weapon", 72))
+	e = _event(_scene(), 2)
+	_check("m213e2_new_page3", e != null and e.page_index == 2, e.page_index if e != null else null)
+	await _run_event(_scene(), 2, [])
+	_check("m213e2_new_reroll", s.gear_count("weapon", 72) == 1, s.gear_count("weapon", 72))
 
 
 func _ichigo_original() -> void:

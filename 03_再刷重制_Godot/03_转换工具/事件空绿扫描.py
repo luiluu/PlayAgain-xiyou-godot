@@ -35,6 +35,10 @@ BASELINE = HERE / '事件空绿基线.json'
 # accept5：逐个核过、事件对照（新开局＋预设）走不到效果的空绿，写明理由（id → 理由）；--check 报还没核的与已不再空绿的
 UNREACH = HERE / '事件空绿走不到.json'
 PRESETS = HERE / 'event_presets.json'
+# 零效果判定（审查 50 P3-1，八戒 DI）：True＝一条效果指令都没走到，并且文字轨迹（trace）与基础用例相同，才算「预设没生效」；
+# 走进别的选项、出了另一段对话的变体（如 m116e1p1#o2「向守层者索要礼物」）留着当原版文字对照。
+# False＝回到旧判定（只看 reached[0]==0，4c60db31 按它删了 82 个 o 变体）。事件祖先预设.py --prune 用同一个 zero_effect。
+TEXT_TRACE_COUNTS = True
 
 # 效果指令：改状态或改世界（对照的 delta／trace 能看见的那类）
 EFFECT = {121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 137, 201, 223, 236, 301, 302, 303, 311, 312, 313, 314, 315, 316, 317,
@@ -225,19 +229,34 @@ def scan():
     return rows, half, len(oracle)
 
 
+def base_traces():
+    f = GEN / 'oracle/events.json'
+    return {c['id']: c['trace'] for c in json.load(open(f))['cases']} if f.exists() else {}
+
+
+def zero_effect(v, base_trace, text_counts=None):
+    """变体 v（event_states.json 的一例）算零效果：效果指令一条都没走到（该页有效果指令），且（TEXT_TRACE_COUNTS 时）文字轨迹与基础用例相同。"""
+    text_counts = TEXT_TRACE_COUNTS if text_counts is None else text_counts
+    r = v.get('reached', [0, 0])
+    if not (r[0] == 0 and r[1] > 0):
+        return False
+    return not text_counts or base_trace is None or v.get('trace') == base_trace
+
+
 def check_variants():
     """预设 ↔ 量出来的 event_states.json 要对得上；变体不能比基础用例还浅（一条效果指令都没走到＝预设没生效）。"""
     presets = json.load(open(PRESETS))['cases'] if PRESETS.exists() else []
     f = GEN / 'oracle/event_states.json'
     got = {c['id']: c for c in json.load(open(f))['cases']} if f.exists() else {}
     problems = []
+    traces = base_traces() if TEXT_TRACE_COUNTS else {}
     for p in presets:
         vid = '%s#%s' % (p['base'], p['tag'])
         c = got.get(vid)
         if c is None:
             problems.append('%s 在预设里但 event_states.json 没量（先跑 event_state_probe.cjs／同步）' % vid)
-        elif c.get('reached', [0, 0])[0] == 0 and c.get('reached', [0, 0])[1] > 0:
-            problems.append('%s 一条效果指令都没走到（预设没挡住的那层条件）' % vid)
+        elif zero_effect(c, traces.get(p['base'])):
+            problems.append('%s 一条效果指令都没走到%s（预设没挡住的那层条件）' % (vid, '，文字也和基础用例一样' if TEXT_TRACE_COUNTS else ''))
     for vid in got:
         if vid not in {'%s#%s' % (p['base'], p['tag']) for p in presets}:
             problems.append('%s 在 event_states.json 里但预设已删（产物过期）' % vid)

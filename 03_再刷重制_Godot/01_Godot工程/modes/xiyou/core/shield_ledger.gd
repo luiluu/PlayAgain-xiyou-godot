@@ -166,6 +166,25 @@ static func _on_absorb(b, _got: float, list: Array) -> void:
 static var o_skip_unshielded := true
 
 
+## O-待定·角色HP包装：角色的 gainHp／setHp 掉血也经账本；开关是 XResourceContext.o_actor_hp_wrappers（原 ACTOR_HP_LEDGER 并入）。false 照原版：
+## 账本不扣，但原生 ShieldSystem 读到的 shield 是子类 getter 的合计，按合计「吸收」、只扣原生那份，剩下的再按 damageReduction 减
+## （参照 xuan_auto dinggui_seq／mist／binggui2、shield_ledger_oracle_v062：璃壁量不动，掉血照合计挡；同 O-144 回退支的白挡）。
+
+
+## gainHp／setHp 包装（resource_context、行动序列 HP、regenerateHp）：O-待定·角色HP包装 回退支下角色不经账本
+static func hp_gain(b, damage: float) -> float:
+	if XResourceContext.o_actor_hp_wrappers or not b is XActor:
+		return hp(b, damage)
+	var phantom := amount(b)
+	if damage <= 0.0 or phantom <= 0.0:
+		return damage
+	var native := maxf(0.0, float(b.shield))
+	var take := minf(native + phantom, damage)
+	b.shield = maxf(0.0, native - take)
+	var remaining := damage - take
+	return floorf(remaining * (1.0 - reduction())) if remaining > 0.0 else 0.0
+
+
 ## executeHpDamage／gainHp／setHp 的最外层：返回剩下的伤害（afterLedger：需要时减半一次）
 static func hp(b, damage: float) -> float:
 	if damage <= 0.0 or _list(b).is_empty():

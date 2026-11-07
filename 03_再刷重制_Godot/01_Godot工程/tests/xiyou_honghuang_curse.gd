@@ -52,8 +52,9 @@ func _run() -> void:
 	check("source", f.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	check("complete", f.cases.size() == 12)
 	check("label.first", XHonghuang.curse_label(1) == "【重·×1.5】万法俱衰（全属性*0.5）", XHonghuang.curse_label(1))
-	check("label.zwsp", XHonghuang.curse_label(12) == "【重·×1.5】武能溃散（物理属性伤害*0.1）", XHonghuang.curse_label(12))
-	check("label.light", XHonghuang.curse_label(3) == "【轻】残魂苟存（敌人免死0~1回合）", XHonghuang.curse_label(3))
+	# v0.52 重排分档（跟到 v0.62.12）：7212 重→中、7203 轻→中、7205 中→轻
+	check("label.zwsp", XHonghuang.curse_label(12) == "【中·×1.2】武能溃散（物理属性伤害*0.1）", XHonghuang.curse_label(12))
+	check("label.light", XHonghuang.curse_label(5) == "【轻】盲击失锋（暴击率-750%命中率-10%）", XHonghuang.curse_label(5))
 	var host := PickHost.new()
 	add_child(host)
 	for c in f.cases:

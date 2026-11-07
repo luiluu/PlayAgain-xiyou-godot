@@ -28,7 +28,8 @@ const RECRUIT_8 := {9017: 178, 9009: 173, 9002: 167, 9003: 168, 9007: 172, 9004:
 ## 第九批（events7「专属号角路径」逐条对过补上）：开局角色 2～7 的「招聘」（物品 1731～1736／2774～2779 → CE692～697）；
 ## 175 谷雨 9012（Guyu.recruit）、176 屠苏 9013、177 璇 9016（T.recruit／X.recruit → XTusuXuan.recruit：入队、首次给并装上法宝 4047／4048，
 ## 璇建星谱；events7 前这两支没接上模块，号角被吞、人不入队）
-const RECRUIT_9 := {692: 2, 693: 3, 694: 4, 695: 5, 696: 6, 697: 7, 9012: 175, 9013: 176, 9016: 177}
+## 179 流萤 9043（CodexLiuying.recruit()，号角 3063：入队并装上专武 4004、法宝 4582，XLiuying.recruit；悟空 newsrc9）
+const RECRUIT_9 := {692: 2, 693: 3, 694: 4, 695: 5, 696: 6, 697: 7, 9012: 175, 9013: 176, 9016: 177, 9043: 179}
 ## 物品（效果 44 公共事件）→ 公共事件 → 入队：每个会让角色入队的物品，其公共事件要么在上面各表里跑过，要么在这里写明为什么不跑
 const HORN_EXEMPT := {
 	691: "招聘:狗逍遥（角色 1）：开局就在队（REGRESSION），入队路径同 692～697",
@@ -56,6 +57,11 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_actor_p0"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# 每次从同一状态起跑：上次留下的 options.json 删掉（云端每次都是新目录、本机会留着，结果曾因此不同）；
+	# 大厅 Map004 有漩涡过场（CodexWhisper.seen('rift1') 为假时自动播，占住地图好几百帧），这里只验招募，标成看过
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = ""  # 删了文件后重新按默认值读
+	XConfig.whisper_mark("rift1")
 	XMessageBox.auto = true
 	var d = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/slice_d2.json"))
 	if not d is Dictionary:
@@ -69,6 +75,8 @@ func _run() -> void:
 		_check("oracle_damage_%d" % id, dmg.size() > 0 and dmg.all(func(r): return not r.has("error")), [id, dmg.size()])
 	# ② 初始装备与技能
 	for id in REGRESSION + RECRUIT.values() + RECRUIT_2.values() + RECRUIT_3.values() + RECRUIT_4.values() + RECRUIT_5.values() + RECRUIT_6.values() + RECRUIT_7.values() + RECRUIT_8.values() + RECRUIT_9.values() + CATS:
+		if not d.actors.has(str(id)):  # 参照里没有这名（新源 179 要等整份同步），上面 oracle_row 已记挂，这里跳过免得脚本出错停住
+			continue
 		var row: Dictionary = d.actors[str(id)]
 		var a := XActor.new().setup(id)
 		var mv_equips = row.equips.filter(func(e): return e != null).map(func(e): return int(e.base))
@@ -109,9 +117,15 @@ func _run() -> void:
 		while map.busy and waited < 600:  # 上一个公共事件的尾声（提示、刷新）可能还占着地图
 			await get_tree().process_frame
 			waited += 1
+		# 地图还占着时 run_common_event 直接返回、事件没跑：明确记挂，别算成「没招进来」
+		_check("map_idle_before_%d" % id, not map.busy, [ce, waited])
 		await map.run_common_event(ce)
 		for i in 3:
 			await get_tree().process_frame
+		if XImportedBalance.is_disabled_actor(id):
+			# 新源 141、146、152、161、166 进了停用名单（CodexV029.hiddenActors，读档／刷新时滤出队伍），同 143～145 不入队
+			_check("recruit_disabled_%d" % id, not s.party.has(id), [ce, s.party])
+			continue
 		_check("recruit_%d" % id, s.party.has(id), [ce, s.party])
 		var want_class: int = RECRUIT_CLASS_CHANGE.get(id, int(XDB.rec("Actors", id).classId))
 		_check("recruit_actor_%d" % id, s.actor(id).actor_id == id and s.actor(id).class_id == want_class, [id, s.actor(id).class_id, want_class])
@@ -120,6 +134,8 @@ func _run() -> void:
 		var worn: Array = s.actor(pair[0]).equips.filter(func(e): return e is Dictionary and not e.is_empty() and str(e.kind) == "armor").map(func(e): return int(e.base))
 		_check("relic_%d" % pair[0], worn.has(pair[1]), worn)
 	_check("xuan_chart", s.flags.has("_codexXuanChart"))
+	# 流萤：专武与法宝都装上
+	_check("liuying_gear", s.actor(179).has_base_equip("weapon", 4004) and s.actor(179).has_base_equip("armor", 4582), s.actor(179).equips)
 	# 已在队再用号角：recruit 返回 false，号角还回来（try { if (!X.recruit()) gainItem(号角) }）
 	var horns_before := s.item_count(2945)
 	await map.run_common_event(9013)

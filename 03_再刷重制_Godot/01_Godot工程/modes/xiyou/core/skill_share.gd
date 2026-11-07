@@ -8,6 +8,7 @@ extends RefCounted
 ##      出战成员全部技能备注与装备备注里的 <ShareSkill:n> 进「被点名」；两者交集（按可共享的先后）学给全体出战成员（已有不学）。
 ## - 装备备注取实例的 note（宝珠 <继承词缀> 接在里面），没有就取数据库备注。
 ## - 提示（codex installV019UsabilityRuntime 包装）：逐条「技能共享：X 激活！」吞掉，结束时本次共享里上次没有的合成一条「技能共享激活：a、b」。
+##   新源 v0.29 起插件先弹一条「光环生效：…」（吞提示拦不住，两条都出）。
 ## 记录 rec.share：{"members": [出战栏], "shared": [技能], "equip": {"角色": [技能]}}；O-095（XPartySkills.EXACT）另记
 ##   "sharedBy"／"equipBy" {"角色": [技能]}——只记本次真正学会的，遗忘时只忘这些。
 
@@ -174,7 +175,14 @@ static func refresh(s: XState, rec: Dictionary) -> Array:
 		var a := _actor(s, aid)
 		if a != null and not touched.has(a):
 			a.refresh_passive()
+	var out := []
+	# 新源 v0.29 插件自己的提示：本次共享里上次没有的，名字取前 4 个，多于 4 个加「等 N 项」。不是「技能共享：」开头，
+	# installV019UsabilityRuntime 的吞提示拦不住，所以和下面那条合并提示都会弹（原版两条都出）
+	var added := shared.filter(func(id): return not before.has(id))
+	if not added.is_empty():
+		var names: Array = added.slice(0, 4).map(func(id): return str(XDB.rec("Skills", id).get("name", "")))
+		out.append("光环生效：" + "、".join(names) + (" 等%d项" % added.size() if added.size() > 4 else ""))
 	var fresh := shared.filter(func(id): return not before.has(id) and XDB.rec("Skills", id).size() > 0)
-	if fresh.is_empty():
-		return []
-	return ["技能共享激活：" + "、".join(fresh.map(func(id): return str(XDB.rec("Skills", id).get("name", ""))))]
+	if not fresh.is_empty():
+		out.append("技能共享激活：" + "、".join(fresh.map(func(id): return str(XDB.rec("Skills", id).get("name", "")))))
+	return out

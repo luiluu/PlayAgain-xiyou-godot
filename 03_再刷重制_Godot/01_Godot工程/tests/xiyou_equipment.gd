@@ -65,6 +65,72 @@ func _run() -> void:
 		XRunewords.check(e)
 		check("runeword_%d_%s"%[int(row.recipeId),row.kind],close_array(e.params,row.params) and e.traits==row.traits and e.get("yep",{}).get("elementAmplify",{})==row.elementAmplify and e.name==row.name and e.get("runewords",[])==row.runewords.map(func(v):return int(v)),{"godot":e,"mv":row})
 		check("runeword_%d_once"%int(row.recipeId),once==JSON.stringify(e))
+	# 两个跟到 v0.62.12 的开关关掉时回到 v0.28：专武 67 照样抽成「卍解-斩月」前缀；单颗符石的配方镶上就结算，不挂起
+	XGear.EXCLUSIVE_V056 = false
+	XGear.force_roll = 0.0
+	XGear.reset_pool()
+	var old_affix := XGear.create("weapon", 56)
+	check("v028_exclusive_affix", old_affix.affixIds.size() == 1 and int(old_affix.affixIds[0].id) == 67 and str(old_affix.name).begins_with("卍解-斩月"), old_affix.affixIds)
+	XGear.EXCLUSIVE_V056 = true
+	XGear.reset_pool()
+	check("exclusive_affix_skipped", XGear.create("weapon", 56).affixIds.is_empty())
+	# v0.57 读档还原专武前缀：照 v0.28 造出旧装备（有的再强化一次），存档往返后与原版 revertExclusiveAffixes 的结果比
+	var revert_rows: Array = ref.get("affixRevert", [])
+	check("affix_revert_reference_present", revert_rows.size() == 3)
+	for row in revert_rows:
+		var tag := "affix_revert_%d_%.1f_%d" % [int(row.id), float(row.roll), int(row.upgradeItem)]
+		var s := XState.new_game(3, 1, [])
+		XGear.EXCLUSIVE_V056 = false
+		# roll<0：同探针，前两个随机数 0（抽中第一个专武词缀）、其余 0.5（浮动为 0）
+		XGear.force_roll = float(row.roll) if float(row.roll) >= 0 else -1.0
+		XGear.roll_seq = [] if float(row.roll) >= 0 else [0.0, 0.0] + range(300).map(func(_i): return 0.5)
+		XGear.roll_count = 0
+		XGear.reset_pool()
+		var g := XGear.create("weapon", int(row.id))
+		XGear.roll_seq = []
+		s.register_gear(g)
+		s.gear.append(g)
+		if int(row.upgradeItem) > 0:
+			XGear.force_roll = 0.5
+			s.gain_item(int(row.upgradeItem), 1)
+			XGearUpgrade.apply(s, g, int(row.upgradeItem))
+		var b: Dictionary = row.before
+		check(tag + "_before", g.name == b.name and close_array(g.params, b.params) and g.traits == b.traits and int(g.price) == int(b.price), {"godot": [g.name, g.params, g.traits.size(), g.price], "mv": [b.name, b.params, b.traits.size(), b.price]})
+		var saved: Dictionary = JSON.parse_string(JSON.stringify(s.to_dict()))
+		var id := str(g.instanceId)
+		# 开关关着＝v0.28：读档不动
+		var kept := XState.from_dict(saved.duplicate(true))
+		var k: Dictionary = kept.gear.filter(func(e): return str(e.instanceId) == id)[0]
+		check(tag + "_v028_kept", k.name == b.name and not k.has("_affixRevert") and XGear.last_affix_revert.items.is_empty())
+		XGear.EXCLUSIVE_V056 = true
+		var loaded := XState.from_dict(saved.duplicate(true))
+		var e: Dictionary = loaded.gear.filter(func(x): return str(x.instanceId) == id)[0]
+		var a: Dictionary = row.after
+		check(tag + "_reverted", XGear.last_affix_revert.items.has(id) == bool(row.reverted) and XGear.last_affix_revert.skipped.has(id) == bool(row.skipped), XGear.last_affix_revert)
+		check(tag + "_after", e.name == a.name and close_array(e.params, a.params) and e.traits == a.traits and int(e.price) == int(a.price) and str(e.description) == str(a.description) and XGear.quality(e) == int(a.quality),
+			{"godot": [e.name, e.params, e.traits, e.price, e.description], "mv": [a.name, a.params, a.traits, a.price, a.description]})
+		if bool(row.reverted):
+			check(tag + "_backup", e.has("_affixRevert") and e._affixRevert.name == b.name and e.affixIds.is_empty() and not str(e.note).to_lower().contains("<req_actors") and int(e.get("boostCount", 0)) == int(row.before.boost))
+			# 只跑一次：存档里已带备份的再读一遍不变
+			var once := JSON.stringify(e)
+			var again := XState.from_dict(JSON.parse_string(JSON.stringify(loaded.to_dict())))
+			var e2: Dictionary = again.gear.filter(func(x): return str(x.instanceId) == id)[0]
+			check(tag + "_once", XGear.last_affix_revert.items.is_empty() and e2.name == e.name and close_array(e2.params, e.params) and e2.traits == e.traits, [once.length(), XGear.last_affix_revert])
+	var one: Dictionary = {}
+	for row in ref.runewords:
+		if (row.materials as Array).size() == 1:
+			one = row
+			break
+	check("runeword_single_present", not one.is_empty())
+	if not one.is_empty():
+		for pending in [true, false]:
+			XRunewords.PENDING_V062 = pending
+			XGear.force_roll = 0.5
+			var g := XGear.create(one.kind, int(one.id))
+			g.upgrades = one.materials.map(func(id): return {"item": int(id), "name": "", "cost": 1})
+			XRunewords.check(g)
+			check("runeword_pending_%s" % pending, g.get("runewords", []).is_empty() == pending and g.has("runewordPending") == pending, [g.get("runewords"), g.get("runewordPending")])
+		XRunewords.PENDING_V062 = true
 	for row in ref.sets:
 		var a := XActor.new().setup(1);a.change_level(30);a.equips.fill(null);a.refresh_passive()
 		var before: Array = range(8).map(func(i):return a.param(i))

@@ -137,8 +137,10 @@ func _run() -> void:
 	var opt: XOptionsScene = menu.get_children().filter(func(n): return n is XOptionsScene).front()
 	check("options_open", opt != null and not menu.cmd_win.visible)
 	check("options_rect", opt.win.position == Vector2(440, 130) and opt.win.size == Vector2(400, 460))
-	check("options_list", opt.symbols().size() == 33 and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
-		and opt.symbols()[32] == "codexFeedbackPending")
+	# v0.56「Boss状态面板」一行随 XBossStatusPanel.TOGGLE（main 默认关 33 行；换源集成分支翻成开，O-204，多一行 34 行）
+	var extra := 1 if XBossStatusPanel.TOGGLE else 0
+	check("options_list", opt.symbols().size() == 33 + extra and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
+		and opt.symbols()[32 + extra] == "codexFeedbackPending", opt.symbols())
 	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))
 	await shot("00_设置.png")
 	# 坐标显示：确定切换，右开左关
@@ -257,7 +259,7 @@ func _run() -> void:
 	s.flags.HangUpProhibited = true
 	var opt2 := XOptionsScene.new()
 	add_child(opt2)
-	check("prohibited_no_hangup", opt2.symbols().size() == 32 and not opt2.symbols().has("HangUp"))
+	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra and not opt2.symbols().has("HangUp"), opt2.symbols().size())
 	opt2.queue_free()
 	s.flags.HangUpProhibited = false
 	rules(s)

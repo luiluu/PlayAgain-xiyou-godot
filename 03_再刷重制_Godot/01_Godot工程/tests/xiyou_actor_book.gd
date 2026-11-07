@@ -8,7 +8,8 @@ extends Node
 const FIXTURE := "res://tests/fixtures/actor_book_oracle.json"
 ## 坐标与宽的容差（XActorBook.js_width 与浏览器 measureText 一致到 0.01）
 const POS_TOL := 0.05
-## 立绘图名逐个与参照相同：167 号以后照 CodexSV 档缩放，168、173～177 是逐帧图第 1 个动作第 0 帧（XActorBook.sprite_spec）。
+## 立绘图名逐个与参照相同：167 号以后照 CodexSV 档缩放（流萤图鉴再乘 bookScale 0.8），168、173～177 是逐帧图第 1 个动作第 0 帧（XActorBook.sprite_spec）。
+## v0.30 起目录去掉隐藏角色（XImportedBalance.HIDDEN_ACTORS，开关 V029_HIDE_ACTORS），目录位置≠角色号，按 index_ids 换算。
 ## 原来豁免的 108、143、144、145、157、170、171（当时切片没导出战斗图）现在都已导出，不再豁免。
 
 var results := []
@@ -109,12 +110,14 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1, 0)
 	var dst: Rect2 = r[0]
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
-	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x)
+	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x) * XActorBook.book_scale(str(sp.key))
 	var sx := dst.size.x / float(r[1].size.x)
 	var sy := dst.size.y / float(r[1].size.y)
 	var vis_bottom := dst.position.y + b.end.y * sy
 	var vis_mid := dst.position.x + (b.position.x + b.end.x) / 2.0 * sx
 	var cx := 932.0 / 10.0 - XMVWindow.PADDING
+	if id == 179:
+		check("liuying_book_scale", is_equal_approx(sc, 72.0 / 116.0 * 0.8), sc)
 	var want_y := 932.0 / 13.0 - XMVWindow.PADDING + (72.0 if bool(sp.garou) else b.size.y * sc / 2.0)
 	if not (is_equal_approx(sx, sc) and absf(vis_mid - cx) < 0.01 and absf(vis_bottom - want_y) < 0.01 and (bool(sp.garou) or is_equal_approx(sy, sc))):
 		bad.sprite.append("%d 立绘位置 %s 缩放 %s／%s 档 %s 脚底 %s,%s 应 %s,%s" % [id, dst, sx, sy, sc, vis_mid, vis_bottom, cx, want_y])
@@ -122,13 +125,23 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	if not check("fixture_loaded", ref is Dictionary and ref.get("actors", {}).size() == 179, FIXTURE):
+	# v0.62.12 的图鉴取数 0～179 号（v0.28 到 178）
+	if not check("fixture_loaded", ref is Dictionary and ref.get("actors", {}).size() == 180, FIXTURE):
 		get_tree().quit.call_deferred(1)
 		return
 	var s := XState.new_game_blank()
 	for id in [1, 8, 9, 10]:
 		s.add_actor(id)
 	check("index_names", XActorBook.index_names() == ref.index, XActorBook.index_names().slice(0, 5))
+	# v0.62 V029 隐藏角色（141、146、152、157、160、161、166）不进目录，之后的行往上挪；开关关掉回到 v0.28 每槽一行
+	var rows := XActorBook.index_ids()
+	var slots: int = (XDB.table("Actors") as Array).size()
+	check("v029_hidden_rows", rows.size() == slots - 7 and not rows.has(141) and not rows.has(166)
+		and rows.has(162) and rows.find(142) == 141 and rows.find(147) == 145, [rows.size(), rows.find(142), rows.find(147)])
+	XImportedBalance.V029_HIDE_ACTORS = false
+	check("v029_off_all_slots", XActorBook.index_ids().size() == slots and XActorBook.index_names()[141] == XActorBook.actor_name(141),
+		XActorBook.index_ids().size())
+	XImportedBalance.V029_HIDE_ACTORS = true
 	var bad := {"status": [], "sprite": [], "header": [], "list": [], "skills": []}
 	for key in ref.actors:
 		var id := int(key)
@@ -139,8 +152,14 @@ func _run() -> void:
 			bad.status.append("%d %s" % [id, d])
 		var sp := XActorBook.sprite_spec(id)
 		var p := str(sp.get("path", ""))
-		if str(a.get("sprite", "")) != str(sp.get("name", "")) or (str(a.get("sprite", "")) != "") != (p != ""):
-			bad.sprite.append("%d %s 图 %s" % [id, a.get("sprite", ""), p])
+		# 参照的 bitmap 是状态窗实际画的图，sprite 是 battlerName（ui_reference/review_actor_book.js）；旧参照没有 bitmap 时只比战斗图名
+		# （168、173～177 图鉴改画逐帧图，Codex_MiraRavenMultiFrame drawAllContents 包装，画的那张由 sprite_spec 的 key／_sprite_geometry 管）
+		if a.has("bitmap") and (str(a.get("bitmap", "")) != str(sp.get("name", "")) or (str(a.get("bitmap", "")) != "") != (p != "")):
+			bad.sprite.append("%d %s 图 %s" % [id, a.get("bitmap", ""), p])
+		elif not a.has("bitmap") and (str(a.get("sprite", "")) != "") != (p != ""):
+			bad.sprite.append("%d 战斗图名 %s 图 %s" % [id, a.get("sprite", ""), p])
+		elif str(a.get("sprite", "")) != XActorBook._book_battler(id):
+			bad.sprite.append("%d battlerName %s≠%s" % [id, a.get("sprite", ""), XActorBook._book_battler(id)])
 		elif id >= 167 and p != "":
 			_sprite_geometry(id, sp, bad)
 		if not a.has("header"):
@@ -194,8 +213,8 @@ func _flow(ref: Dictionary) -> void:
 	check("select_1", book.index == 1 and not book._status_ops.is_empty() and book._sprite_tex != null)
 	await shot("actor_book_1")
 	if out_dir != "":
-		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178]:  # 只在存截图时：167 号以后的立绘
-			book.index = sid
+		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178, 179]:  # 只在存截图时：167 号以后的立绘
+			book.index = XActorBook.index_ids().find(sid)
 			book._select_actor()
 			await shot("actor_book_%d" % sid)
 		book.index = 1
@@ -233,6 +252,7 @@ func _flow(ref: Dictionary) -> void:
 	book._move(-1, true)
 	book._move(-1, true)
 	check("index_wrap", book.index == XActorBook.actor_count() - 1 and book.top == XActorBook.actor_count() - XActorBook.INDEX_ROWS, [book.index, book.top])
+	check("index_wrap_last_id", book.actor_id() == int(XActorBook.index_ids().back()), book.actor_id())
 	book._move(1, true)
 	book._page(1)
 	check("index_page", book.index == XActorBook.INDEX_ROWS and book.top == XActorBook.INDEX_ROWS, [book.index, book.top])

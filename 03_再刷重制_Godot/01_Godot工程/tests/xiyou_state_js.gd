@@ -388,7 +388,7 @@ func _counter_init(o: Dictionary) -> void:
 		check("counter.init.%d.%d" % [sid, row.value], _same(got, want), {"godot": got, "mv": want})
 
 
-## 层数沿用：排在计数状态后面的普通状态也乘计数，前面的不乘
+## 层数：v0.62.05 起每个状态只乘自己的层数（v0.28 排在计数状态后面的普通状态也乘计数）；测量 counter.carry 照抄
 func _counter_carry(o: Dictionary) -> void:
 	for row in o.rows:
 		var s := XState.new_game(3, 1, [8])

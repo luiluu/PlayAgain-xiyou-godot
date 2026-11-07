@@ -142,10 +142,44 @@ func _physics_process(_delta: float) -> void:
 	var cw := sprite.texture.get_width() / 9.0
 	var half := status_win.canvas.size.x / 2.0
 	var k := half / cw if cw > half else 1.0
+	_v108(k, cw)
 	if shown_actor != null and XYunshang.own(shown_actor):
 		k = yunshang_scale()  # 云裳 Window_ActorAdvancedStatus.update 包装（原 update 之后）：按 CodexSV 档 Yunshang 缩放
+	if v108_scale > 0.0 and not (shown_actor != null and XYunshang.own(shown_actor)):
+		k = v108_scale
 	sprite.scale = Vector2(k, k)
 	sprite_count += 1
+
+
+## v0.62 Codex_MiraRavenMultiFrame v1.08 包装 Window_ActorAdvancedStatus.update（原 update 之后、云裳包装之前）：战斗图是登记了
+## 归一档的 9×6 图、格宽大于 64（且与档宽差不超过 1）时，按图鉴同尺寸（归一缩放×bookScale）显示，只缩小不放大；锚点改左上、
+## 平滑采样，中线对齐 w/10+32、脚底对齐 w/10+64（老角色 64px 格的位置）。实际只碰到流萤 179（128px 格，原生约是老角色两倍大）。
+## O-待定（交付单「优化登记」进阶界面大图）：ADV_V108 = false 回到 v0.28（原生大小）。
+static var ADV_V108 := true
+
+func _v108(native_k: float, cw: float) -> void:
+	var w := status_win.canvas.size.x
+	var key := str(shown_actor.data().get("battlerName", "")) if shown_actor != null else ""
+	var p: Array = XAppearance.PROFILES.get(key, [])
+	var on := ADV_V108 and p.size() >= 6 and float(p[0]) > 64 and absf(cw - float(p[0])) <= 1.0
+	var sc := 0.0
+	if on:
+		var b := Rect2(p[2], p[3], p[4] - p[2], p[5] - p[3])
+		sc = minf((p[6] if p.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (p[7] if p.size() > 7 else XAppearance.PROFILE_W) / b.size.x)
+		sc *= float(XAppearance.BOOK_SCALE.get(key, 1.0))
+		on = sc < native_k - 1e-6
+		if on:
+			sprite.centered = false
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			sprite.position = Vector2(w / 10.0 + 32.0 - (b.position.x + b.end.x) / 2.0 * sc, w / 10.0 + 64.0 - b.end.y * sc)
+	if not on:
+		sprite.centered = true
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite.position = Vector2(w / 10.0, w / 10.0)
+	v108_scale = sc if on else 0.0
+
+
+var v108_scale := 0.0  # 本帧 v1.08 用的缩放（0＝没用）
 
 
 ## CodexSV.scaleFor(profiles.Yunshang)：可见高缩到 72、宽 129，取小

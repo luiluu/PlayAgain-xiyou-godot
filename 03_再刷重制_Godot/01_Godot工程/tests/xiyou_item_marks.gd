@@ -76,6 +76,8 @@ func _run() -> void:
 	worn.meta.quality = "1"
 	s.actor(1).equips[0] = worn
 	s.gold = 1000
+	# 以下到商店一键出售是换源前的筛法（O-待定·安全出售 关）：新源的筛法由 _item_marks_oracle 对参照逐件比
+	XSafeSell.ENABLED = false
 	var r := XItemMarks.onekey_sell(s, 0)
 	check("onekey_sell_grade0", r == [2, 50] and s.gold == 1050 and not s.gear.has(w1) and not s.gear.has(w2) and s.gear.has(w3) and s.gear.has(w4) and s.gear.has(w5) and s.actor(1).equips[0] == worn, [r, s.gold])
 	r = XItemMarks.onekey_sell(s, 6)
@@ -84,6 +86,7 @@ func _run() -> void:
 	var w8 := gear(s, "weapon", 7, "15", 70)       # 旧档 15、锁定
 	XItemMarks.toggle_lock(s, w8)
 	var sel := XItemMarks.sellable_gear(s, [14, 15])
+	XSafeSell.ENABLED = true
 	check("sellable_gear_shared", sel == [a6] and XItemMarks.sellable_gear(s, XItemMarks.onekey_members(6)).is_empty() and XItemMarks.sellable_gear(s, [1]).is_empty() and XItemMarks.sellable_gear(s, [2]) == [w4], sel.size())
 	# ---- 出售锁定：装备改实例名、提示；物品记 ItemSpLock、无提示 ----
 	check("gear_locked_name", str(w3.name).ends_with("[锁定]") and XItemMarks.is_locked(s, w3))
@@ -146,7 +149,8 @@ func _run() -> void:
 	XState.current = back
 	check("save_roundtrip", XItemMarks.is_locked(back, XDB.rec("Items", 3)) and XItemMarks.is_top(back, XDB.rec("Items", 2)) and back.gear.any(func(e): return str(e.name).ends_with("[锁定]")), back.flags)
 	XState.current = s
-	# ---- 商店：一键出售窗口与流程 ----
+	# ---- 商店：一键出售窗口与流程（先测关掉安全出售的旧流程，再测确认窗） ----
+	XSafeSell.ENABLED = false
 	var shop := XShop.new()
 	shop.setup([[0, 1, 0, 0]], false)
 	add_child(shop)
@@ -183,6 +187,8 @@ func _run() -> void:
 	shop._ok()
 	check("sell_unlocked_ok", shop._mode == "sell" and s.item_count(2) == 0 and s.gold == g0 + 25, [shop._mode, s.item_count(2), s.gold - g0])
 	shop.queue_free()
+	XSafeSell.ENABLED = true
+	await _safe_shop_flow(s)
 	var only := XShop.new()
 	only.setup([[0, 1, 0, 0]], true)
 	add_child(only)
@@ -244,7 +250,10 @@ func _sell_rewards() -> void:
 			cfg.SellQuality = 1
 			cfg["quality1"] = true
 			XHangUpAuto.better_frequency = 0
+			# 参照直接调 XdRsData.hangUp.doSell（量交易，不经过安全出售的筛选：0 价无报酬的装备在新源会被 S.reason 留下），这里同样只量交易
+			XSafeSell.ENABLED = false
 			XHangUpAuto.after_battle_sell(s)
+			XSafeSell.ENABLED = true
 		else:
 			XItemMarks.sell(s, rec, n)
 		var dv := {}
@@ -326,6 +335,14 @@ func _item_marks_oracle() -> void:
 				s.gear.append(e)
 		var before: Array = s.gear.map(func(e): return str(e.audit_label))
 		var v0 := s.variable(201)
+		if c.has("confirm"):
+			# v0.40 起确认窗（installSafeSellRuntime）：待卖／保留件数、门槛行、确认能否选，保留件的原因
+			var p := XSafeSell.plan(s, int(c.grade))
+			var keep: Array = p.keep.map(func(k): return {"label": str(k.item.audit_label), "reason": str(k.reason)})
+			keep.sort_custom(func(a, b): return a.label < b.label)
+			var want_rows: Array = c.confirm.rows.map(func(r): return [str(r.name), bool(r.enabled)])
+			var rows := [["待出售装备 %d 件；保留装备 %d 件" % [p.sell.size(), p.keep.size()], false], ["保留词条：" + XSafeSell.label(s), false], ["确认出售", p.sell.size() > 0], ["取消", true]]
+			check("onekey_confirm_grade%d" % int(c.grade), rows == want_rows and keep == c.confirm.keep and int(c.confirm.index) == 3, [rows, keep, c.confirm])
 		XItemMarks.onekey_sell(s, int(c.grade))
 		var remaining: Array = s.gear.map(func(e): return str(e.audit_label))
 		var sold: Array = before.filter(func(label): return not remaining.has(label))
@@ -359,8 +376,9 @@ func _item_marks_oracle() -> void:
 	add_child(shop)
 	await frames()
 	var rect: Array = data.layout.rect
-	check("onekey_oracle_layout", shop.onekey_win.position == Vector2(rect[0], rect[1]) and shop.onekey_win.size == Vector2(rect[2], rect[3]) and XShop.LH == data.layout.lineHeight and XMVWindow.PADDING == data.layout.padding and XItemMarks.onekey_grades().map(func(row): return row.text) == data.layout.commands, [shop.onekey_win.size, data.layout])
+	check("onekey_oracle_layout", shop.onekey_win.position == Vector2(rect[0], rect[1]) and shop.onekey_win.size == Vector2(rect[2], rect[3]) and XShop.LH == data.layout.lineHeight and XMVWindow.PADDING == data.layout.padding and XItemMarks.onekey_commands(state).map(func(row): return row.text) == data.layout.commands, [shop.onekey_win.size, data.layout])
 	shop.queue_free()
+	_safe_sell_extra(data.onekey[6].specs)
 	var tilemap := MVTilemap.new()
 	tilemap.setup(XDB.map(4), false)
 	for c in data.passability:
@@ -489,3 +507,113 @@ func _list_only_names_original() -> void:
 	XItemMarks.LIST_ONLY_NAMES = true
 	check("lock_renames_db_original", locked_name == name + XItemMarks.LOCK and same_rec and both == name + XItemMarks.LOCK + XItemMarks.TOP
 		and str(rec.name) == name and not XItemMarks.is_locked(s, rec) and not XItemMarks.is_top(s, rec), [locked_name, both, rec.name])
+
+
+## O-待定·安全出售：关掉回到换源前的筛法（只按品质与锁定：没品质备注的跳过、价为 0 也卖、一键出售不含旧档 15）；
+## 开着时另测参照没覆盖的保留原因（强化、宝珠孔、心钢层数、法宝专属照卖）与词条门槛。
+func _safe_sell_extra(specs: Array) -> void:
+	var mk := func(s: XState, kind: String, base: int, q, price: int, label: String) -> Dictionary:
+		var e := XGear.create(kind, base)
+		s.register_gear(e)
+		e.meta = e.meta.duplicate()
+		if q == null:
+			e.meta.erase("quality")
+		else:
+			e.meta.quality = str(int(q))
+		e.price = price
+		e.name = label
+		e.audit_label = label
+		s.gear.append(e)
+		return e
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.gear.clear()
+	for q in [0, 15]:
+		mk.call(s, "weapon", 1, q, 100, "q%d" % q)
+	mk.call(s, "weapon", 1, null, 90, "missing")
+	mk.call(s, "weapon", 1, 0, 0, "zero")
+	XSafeSell.ENABLED = false
+	var labels := func(): return s.gear.map(func(e): return str(e.audit_label))
+	XItemMarks.onekey_sell(s, 0)
+	check("safe_off_grade0", labels.call() == ["q15", "missing"], labels.call())
+	XItemMarks.onekey_sell(s, 6)
+	check("safe_off_grade6_no_q15", labels.call() == ["q15", "missing"], labels.call())
+	check("safe_off_commands", XItemMarks.onekey_commands(s) == XItemMarks.onekey_grades())
+	XSafeSell.ENABLED = true
+	XItemMarks.onekey_sell(s, 6)
+	check("safe_on_grade6_q15", labels.call() == ["missing"], labels.call())
+	# 已培养：强化、宝珠孔、心钢层数各一件，都保留
+	var s2 := XState.new_game(3, 1, [8, 9, 10])
+	s2.gear.clear()
+	var a: Dictionary = mk.call(s2, "weapon", 1, 0, 100, "boost")
+	a.boostCount = 1
+	var b: Dictionary = mk.call(s2, "weapon", 1, 0, 100, "orb")
+	b.augmentSlotItems = ["none", "item 1"]
+	var c: Dictionary = mk.call(s2, "weapon", 1, 0, 100, "steel")
+	c[XHeartsteel.STACKS] = 2
+	mk.call(s2, "weapon", 1, 0, 100, "plain")
+	var p := XSafeSell.plan(s2, 0)
+	check("safe_grown_kept", p.sell.map(func(e): return e.audit_label) == ["plain"] and p.keep.all(func(k): return k.reason == "已培养或镶嵌") and p.keep.size() == 3, p.keep.map(func(k): return [k.item.audit_label, k.reason]))
+	# 词条门槛：实例备注多一个 <quality:12>（rank 6×16+12＝108）——不朽及以上（88）保留，神话特效★★（110）不保留，关闭不看
+	var d: Dictionary = mk.call(s2, "weapon", 1, 0, 100, "affix")
+	d.note = str(d.note) + "\n<quality:12>"
+	check("safe_affix_kept", XSafeSell.reason(s2, d) == "词条保留" and int(XSafeSell.affix_info(d).maxRank) == 108, XSafeSell.affix_info(d))
+	XHangUpAuto.sell_config(s2).keepAffixTier41 = 7
+	check("safe_affix_tier7", XSafeSell.reason(s2, d) == "")
+	XHangUpAuto.sell_config(s2).keepAffixTier41 = -1
+	d.note = str(d.note) + "\n来历不明"
+	check("safe_affix_off", XSafeSell.reason(s2, d) == "" and XSafeSell.label(s2) == "关闭")
+	XHangUpAuto.sell_config(s2).keepAffixTier41 = 5
+	var e2: Dictionary = mk.call(s2, "weapon", 1, 0, 100, "unknown")
+	e2.note = str(e2.note) + "\n来历不明"
+	check("safe_affix_unknown", XSafeSell.reason(s2, e2) == "词条待确认")
+	XHangUpAuto.sell_config(s2).erase("keepAffixTier41")
+	XHangUpAuto.sell_config(s2).keepAffixGrade40 = 2
+	check("safe_old_key", XSafeSell.threshold(s2) == 2 and XSafeSell.label(s2) == "精良及以上")
+
+
+## 安全出售开着的商店流程：窗宽 680、首行「保留词条」确定循环门槛、选档弹确认窗（默认「取消」）、确认才卖、取消回一键出售窗
+func _safe_shop_flow(s: XState) -> void:
+	XState.current = s
+	s.gear.clear()
+	var e := gear(s, "armor", 3, "3", 30)
+	var shop := XShop.new()
+	shop.setup([[0, 1, 0, 0]], false)
+	add_child(shop)
+	await frames()
+	shop._cmd = 2
+	shop._ok()
+	check("safe_onekey_window", shop._mode == "onekey" and Rect2(shop.onekey_win.position, shop.onekey_win.size) == Rect2(350, 150, 680, 8 * 36 + XMVWindow.PADDING * 2), Rect2(shop.onekey_win.position, shop.onekey_win.size))
+	shop._onekey = 0
+	shop._ok()
+	check("safe_onekey_cycle", shop._mode == "onekey" and XSafeSell.label(s) == "神话★及以上" and XItemMarks.onekey_commands(s)[0].text == "保留词条：神话★及以上")
+	XHangUpAuto.sell_config(s).keepAffixTier41 = 5
+	shop._onekey = 3   # 出售精良装备（旧档 3）
+	shop._ok()
+	await frames()
+	check("safe_confirm_open", shop._mode == "confirm" and shop.confirm_win.visible and not shop.onekey_win.visible and shop._confirm == 3
+		and Rect2(shop.confirm_win.position, shop.confirm_win.size) == Rect2(280, 274, 720, 172) and shop.confirm_rows()[0][0] == "待出售装备 1 件；保留装备 0 件" and shop.confirm_rows()[2][1], [shop._mode, shop.confirm_rows()])
+	await shot("03_一键出售确认")
+	shop._ok()
+	check("safe_confirm_cancel_row", shop._mode == "onekey" and s.gear.has(e))
+	shop._ok()
+	shop._confirm = 0
+	shop._ok()
+	check("safe_confirm_info_disabled", shop._mode == "confirm" and s.gear.has(e))
+	# 弹窗后背包变了：确认时先刷新计划、停在「取消」，不卖
+	var e2 := gear(s, "armor", 4, "3", 40)
+	shop._confirm = 2
+	shop._ok()
+	check("safe_confirm_replan", shop._mode == "confirm" and shop._confirm == 3 and s.gear.has(e) and shop.confirm_rows()[0][0] == "待出售装备 2 件；保留装备 0 件", shop.confirm_rows())
+	var g0 := s.gold
+	shop._confirm = 2
+	shop._ok()
+	check("safe_confirm_sell", shop._mode == "command" and not s.gear.has(e) and not s.gear.has(e2) and s.gold == g0 + 35, [shop._mode, s.gold - g0])
+	shop._cmd = 2
+	shop._ok()
+	shop._onekey = 3
+	shop._ok()
+	check("safe_confirm_empty", shop._mode == "confirm" and not shop.confirm_rows()[2][1])
+	shop._cancel()
+	check("safe_confirm_cancel_key", shop._mode == "onekey")
+	shop.queue_free()
+	await frames()

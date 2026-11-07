@@ -164,6 +164,8 @@ func _run() -> void:
 	page.ok()
 	check("bottom_open", page.mode == "bottom" and page.cmd == 0)
 	page.cmd = 4
+	# 卡位置按原版字号比：O-007 把 15 号背景说明放大到 16 号以上，新源（v0.43 说明卡排版）这张卡因此高出 25，碰到画面底被往上推
+	page.help_card.min_font = 0
 	page.ok()
 	await frames(12)
 	await shot("pet_1_skills")
@@ -172,6 +174,7 @@ func _run() -> void:
 	var got_names := ids.slice(0, want_names.size()).map(func(i): return str(XDB.rec("Skills", i).name))
 	check("skill_list", page.mode == "skills" and got_names == want_names
 		and page.help_card.visible and page.help_card.position == Vector2(float(ref.help[0]), float(ref.help[1])), [ids, want_names, page.help_card.position])
+	page.help_card.min_font = XHelpCard.MIN_FONT
 	page.cancel()
 	check("skill_cancel", page.mode == "bottom" and not page.help_card.visible)
 	page.cancel()

@@ -36,9 +36,66 @@ func setup(id: int) -> XActor:
 			learn_skill(int(l.skillId))
 	init_equips(d.get("equips", []))
 	_fix_strong_classification()
+	if is_absorb_actor(id):  # installIntegratedV029Runtime setup 包装：开放专武的所属角色开局学「专武·特效吸取」
+		learn_skill(AFFIX_ABSORB_SKILL)
 	recover_all()
 	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
 	return self
+
+
+## 专武·特效吸取（CodexV029.absorb）。吸取界面（CodexAbyssMerchant.openAbsorb）重制未移植：技能照原版学、照原版列，点了没有吸取窗口。
+const AFFIX_ABSORB_SKILL := 10455
+static var _absorb_src = null
+static var _absorb_owners := {}  # 武器号 → 所属角色号
+static var _absorb_ids := {}
+
+## CodexAbyssMerchant.absorbOwners：武器（有名字、非 <CodexHiddenEquipment>；CodexV029.hiddenGear 恒假）备注 <req_actors: …> 里
+## 有名字、不在隐藏／禁用名单的角色（CodexV029.hiddenActors 都在 XImportedBalance 禁用名单里）
+static func absorb_owners(weapon_id: int) -> Array:
+	var weapons = XDB.table("Weapons")
+	if not is_same(weapons, _absorb_src):
+		_absorb_src = weapons
+		_absorb_owners = {}
+		_absorb_ids = {}
+		var re := RegEx.create_from_string("(?i)<req_actors\\s*:\\s*([^>]+)>")
+		var num := RegEx.create_from_string("\\d+")
+		for w in (weapons if weapons is Array else []):
+			if not (w is Dictionary) or str(w.get("name", "")).is_empty():
+				continue
+			var note := str(w.get("note", ""))
+			if note.to_lower().contains("<codexhiddenequipment>"):
+				continue
+			var m := re.search(note)
+			if m == null:
+				continue
+			var ids := []
+			for n in num.search_all(m.get_string(1)):
+				var aid := int(n.get_string())
+				if not str(XDB.rec("Actors", aid).get("name", "")).is_empty() and not XImportedBalance.is_disabled_actor(aid):
+					ids.append(aid)
+					_absorb_ids[aid] = true
+			if not ids.is_empty():
+				_absorb_owners[int(w.id)] = ids
+	return _absorb_owners.get(weapon_id, [])
+
+## CodexAbyssMerchant.isAbsorbActor
+static func is_absorb_actor(id: int) -> bool:
+	absorb_owners(0)
+	return _absorb_ids.has(id)
+
+## CodexBalance41.hasWeapon：背包武器或任一角色身上的武器里有这个角色的开放专武
+func has_absorb_weapon() -> bool:
+	var list: Array = equip_list()
+	var s = XState.current
+	if s != null:
+		list = list + s.gear
+		for other in s.actors.values():
+			if other != self and other is XActor:
+				list = list + other.equip_list()
+	for e in list:
+		if e is Dictionary and e.get("kind") == "weapon" and absorb_owners(int(e.get("base", e.get("id", 0)))).has(actor_id):
+			return true
+	return false
 
 
 ## installNativeMiraRuntime 的 fixStrongClassification（Game_Actor.setup 之后）：141～172 号角色一律算强者——
@@ -353,6 +410,7 @@ func change_level_mv(lv: int) -> Array:
 	while _lv > lv:
 		_lv -= 1
 		XActorModules.level_down(self)  # 专属角色模块的 levelDown 包装
+	XLiuying.sync(self)  # 流萤 changeLevel 包装：同级也整理一次（原版 changeLevel 之后 L.sync）
 	refresh_passive()
 	refresh_resources()  # Game_Actor.changeExp 最后 refresh，降级后夹回新 HP/MP 上限。
 	return skill_ids.filter(func(id): return not before.has(id))
@@ -389,6 +447,8 @@ const STRONG_SKILL_REPLACE := {5968: 5969, 5970: 5971, 5972: 5973, 6235: 6216}
 const STRONG_WEAK_STATES := [1035, 1273, 1274, 1276, 1277, 1279, 1280]
 
 func is_strong_classified() -> bool:
+	if XTier.tagged():
+		return XTier.is_non_weak(self)  # v0.44：CodexTier.isNonWeak（超强者和强者都用强者版技能）
 	var note := str(data().get("note", ""))
 	return (actor_id >= 167 and actor_id <= 174) or note.contains("<GuyuActor>") or note.contains("<CodexSuperStrong>")
 
@@ -419,6 +479,7 @@ func learn_skill(id: int) -> void:
 		skill_ids.append(id)
 		skill_ids.sort()
 	XToji.learned(self, id)  # 甚尔 learnSkill 包装：学暴君时清负面状态与弱化
+	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 
 func forget_skill(id: int) -> void:
 	if XPowerBooks.protected_forget(self, id):
@@ -457,6 +518,8 @@ func skills() -> Array:
 	ids.assign(XTusuXuan.skill_ids(self, ids))  # 屠苏／璇 bindGrowth skills 包装：专属技能按本体等级解锁
 	if XAlienBattle.devours(self):  # 异化饕餮 skills 包装（Adv:86）：战斗中多吞噬技能（原版 push 不去重）
 		ids.append(XAlienBattle.devour_id())
+	if ids.has(AFFIX_ABSORB_SKILL) and not has_absorb_weapon():
+		ids.erase(AFFIX_ABSORB_SKILL)  # installBalanceShopV041Runtime skills 包装：背包和全体角色身上都没有本人开放专武时不列
 	return _skill_records(ids)
 
 func _skill_records(ids: Array[int]) -> Array:
@@ -731,7 +794,7 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, param_before_alien(i)))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, param_before_alien(i))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
@@ -816,7 +879,13 @@ func refresh_passive() -> void:
 		var meta: Dictionary = o.get("meta", {})
 		for m in _scan(note, "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
-		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([\\d.]+%?)>"):
+		# v0.62 parseDepassiveHarmRe：带正负号；同一对象内完全相同的标签只计一次
+		var pen_seen := {}
+		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([+-]?[\\d.]+%?)>"):
+			var pen_key := "%d|%s" % [int(m[0]), m[1]]
+			if pen_seen.has(pen_key):
+				continue
+			pen_seen[pen_key] = true
 			var key := "penetratePercent" if m[1].contains("%") else "penetrateFixed"
 			c[key][int(m[0])] = c[key].get(int(m[0]), 0.0) + _num(m[1])
 		for k in meta:
@@ -871,8 +940,22 @@ func refresh_passive() -> void:
 				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
 	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
+	_passive_states_sig = _passive_states_signature()
+
+## v0.62 dsPassiveSkill 被动缓存生命周期（v0.51 起）：addState／removeState／eraseState／clearStates 置脏，下一次 refresh 前
+## 按签名（状态、技能、装备）重建；角色只在开战构建阶段（Scene_Battle.start 里 okadd 置真之前）不重建，随后统一 refresh。
+## 技能、装备变化这边各处本来就直接 refresh_passive；这里补状态：读缓存时比状态列表，变了就重建（同敌人，rules-newsrc3）。
+var _passive_states_sig := ""
+## 测试用：false＝不按状态重建，模拟原版开战构建阶段（okadd 假）。state_effects 探针只 BattleManager.setup、不跑
+## Scene_Battle.start，角色 okadd 一直假，战斗中挂的状态不进缓存；正式游戏开战后 okadd 为真，照常重建
+static var passive_state_rebuild := true
+
+func _passive_states_signature() -> String:
+	return ",".join(state_ids.map(func(x): return str(x)))
 
 func passive_cache() -> Dictionary:
+	if passive_state_rebuild and _passive_states_sig != _passive_states_signature():
+		refresh_passive()
 	return _passive_cache
 
 static func _scan(text: String, pattern: String) -> Array:

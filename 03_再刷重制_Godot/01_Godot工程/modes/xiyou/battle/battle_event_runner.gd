@@ -253,6 +253,34 @@ func _freeze_followup_script(code: String) -> bool:
 	return true
 
 
+## 新源 CE1370 斩天拔剑术再释放（技能 2826 的公共事件，会天魔星 2829 时再放一次 2827）：
+##   var s = BattleManager._subject; var actor = (s && s.isActor && s.isActor() && s.isLearnedSkill(2826)) ? s : $gameActors.actor($gameVariables.value(884));
+##   if(actor && actor.hasSkill(2829)){ var action = new Game_Action(actor, true); action.setSkill(2827); action.decideRandomTarget(); actor._actions.push(action); }
+## 原版（OTB）：公共事件在行动结束后才跑，这时 _subject 已清空，取变量 884 的角色；push 进 _actions 的行动没人取，
+## 轮到这人时 makeActions 先清空，2827 从不出手（参照 ce1370 探针：会不会 2829 行动序列一模一样）。这是代码错误
+## （天魔星说明「斩天拔剑术会额外释放一次」、旧版写法是 splice＋forceAction）：O_PUSH_RECAST（O 号待分配）默认按旧版
+## 强制行动补上——施法者取预约这条公共事件的行动者（会 2826 的角色），没有才用变量 884，学了 2829、在战斗里、敌人没死光就强制放一次；
+## 设 false 回到原版（认得、什么都不做）
+static var O_PUSH_RECAST := true
+
+func _push_recast_script(code: String) -> bool:
+	var m := RegEx.create_from_string("^vars=BattleManager\\._subject;varactor=\\(s&&s\\.isActor&&s\\.isActor\\(\\)&&s\\.isLearnedSkill\\((\\d+)\\)\\)\\?s:\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);if\\(actor&&actor\\.hasSkill\\((\\d+)\\)\\)\\{varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.push\\(action\\);\\}$").search(_compact_js(code))
+	if m == null:
+		return false
+	if not O_PUSH_RECAST:
+		return true
+	var user = get_meta("ce_user") if has_meta("ce_user") else null
+	var a = null
+	if user is XActor and user.skill_ids.has(int(m.get_string(1))):
+		a = user
+	else:
+		var aid := int(state().variable(int(m.get_string(2))))
+		a = null if XDB.rec("Actors", aid).is_empty() else state().actor(aid)
+	if a is XActor and _recast_meets(a, [["has_skill", int(m.get_string(3)), 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+		logic.pending_force = {"user": a, "skill": int(m.get_string(4))}
+	return true
+
+
 ## by_var 写法的角色号：变量号，或 _targetActorId（见 O_RECAST_CASTER）
 func _recast_actor_id(src: String) -> int:
 	if src != "_targetActorId":
@@ -450,7 +478,7 @@ func _execute_env(c: Dictionary):
 				at += 1
 				code += "\n" + str(list[at].parameters[0])
 			if _member_states_script(code) or _count_skills_script(code) or _count_members_script(code) or _actor_states_script(code) \
-					or _troop_cev_script(code) or _set_armor_troop_state_script(code) or _recast_script(code) or _freeze_followup_script(code):
+					or _troop_cev_script(code) or _set_armor_troop_state_script(code) or _recast_script(code) or _freeze_followup_script(code) or _push_recast_script(code):
 				index = at
 				return null
 			if code.strip_edges() == "Star.PetSystem.PetGet()":  # 公共事件 173：捕获网（XPetCapture）

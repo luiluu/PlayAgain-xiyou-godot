@@ -298,5 +298,26 @@ class EffectCommonEventTests(unittest.TestCase):
         self.assertEqual(self.exporter().effect_common_events(), {1, 4})
 
 
+class ChangelogIdentityTests(unittest.TestCase):
+    """玩家更新日志 data/PlayerChangelog/*.json 不进 manifest.inputs：探针 source_identity 只算 data/ 顶层，
+    两边口径一致；改日志不让参照身份失效（总装 11-06，newsrc5）。ContentVersion.json 在 data/ 顶层，照旧记。"""
+    def test_changelog_read_but_not_fingerprinted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app = Path(tmp)
+            (app / 'data/PlayerChangelog').mkdir(parents=True)
+            (app / 'data/ContentVersion.json').write_text('{"releaseVersion":"v0.38","releaseNumber":38}')
+            (app / 'data/PlayerChangelog/v0.37.json').write_text('{"version":"v0.37","pages":["甲"]}')
+            (app / 'data/PlayerChangelog/v0.38.json').write_text('{"version":"v0.38","pages":["乙"]}')
+            e = exporter.Exporter.__new__(exporter.Exporter)
+            e.app, e.inputs, e.outputs, e.pending_json = app, {}, {}, {}
+            e.export_changelog()
+            self.assertEqual(list(e.inputs), ['data/ContentVersion.json'])
+            got = json.loads(e.pending_json['db/PlayerChangelog.json'])
+            self.assertEqual(got, {'releaseNumber': 38, 'entries': [{'version': 'v0.38', 'pages': ['乙']}, {'version': 'v0.37', 'pages': ['甲']}]})
+            # 普通读照旧记指纹
+            e.read('data/ContentVersion.json')
+            self.assertIn('data/ContentVersion.json', e.inputs)
+
+
 if __name__ == '__main__':
     unittest.main()

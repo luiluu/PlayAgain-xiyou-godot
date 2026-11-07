@@ -1,5 +1,5 @@
 extends Node
-## 状态页逐像素复现（XStatusPage，JAH_StatusMenuCore）：对照 tests/fixtures/status_page_oracle.json（正式 v0.28 浏览器读数）。
+## 状态页逐像素复现（XStatusPage，JAH_StatusMenuCore）：对照 tests/fixtures/status_page_oracle.json（正式 v0.62.12 无头浏览器读数，ui_reference/dom_ref.cjs＋status_page_ref.js）。
 ## - 窗口矩形：选页窗 (0,0,1280,64)、页窗 (0,108,1280,612)（开着战力）／(0,72,1280,648)（关掉战力）。
 ## - 每个角色 × 前三页：contents 上的每个绘制调用（文字、位置、宽、对齐、字号、颜色；脸图、图标、量条、分隔线）逐项比对；
 ##   x 与宽差 1.5 以内（两边字体量宽的小数差），y 与对齐、字号、颜色一致。
@@ -52,6 +52,13 @@ func _run() -> void:
 			var w: Dictionary = want.pages[p]
 			compare("a%d_p%d" % [a.actor_id, p], XStatusPage.page_ops(a, p, 612.0), w.ops)
 			check("a%d_p%d_lines" % [a.actor_id, p], XStatusPage.line_count(a, p) == int(w.maxItems), [XStatusPage.line_count(a, p), w.maxItems])
+	# O-待定·武器类型生效：关掉开关回到 v0.28（武器类型加成只写百分比，不带「 生效／ 未持有」）
+	XStatusPage.WTYPE_HOLD_V041 = false
+	var off_ops := XStatusPage.page_ops(s.actor(1), 1, 612.0).filter(func(op): return op[0] == "text" and float(op[2]) > 700 and float(op[2]) < 720 and float(op[3]) >= 252)
+	XStatusPage.WTYPE_HOLD_V041 = true
+	var on_ops := XStatusPage.page_ops(s.actor(1), 1, 612.0).filter(func(op): return op[0] == "text" and float(op[2]) > 700 and float(op[2]) < 720 and float(op[3]) >= 252)
+	check("wtype_hold_switch", off_ops.size() == 12 and off_ops.all(func(op): return str(op[1]).ends_with("%"))
+		and on_ops.size() == 12 and on_ops.all(func(op): return str(op[1]).ends_with(" 生效") or str(op[1]).ends_with(" 未持有")), [off_ops.slice(0, 2), on_ops.slice(0, 2)])
 	await _scene(o, s)
 	XConfig.set_flag("codexPowerEnabled", true)
 	DirAccess.remove_absolute(XSave.dir().path_join("options.json"))
@@ -133,13 +140,16 @@ func _scene(o: Dictionary, s: XState) -> void:
 	check("page_rows", page.page_rows() == int(o.page.maxPageRows), page.page_rows())
 	check("window_opacity", page.page_win.opacity == int(o.page.opacity) and page.select_win.opacity == int(o.page.opacity))
 	check("arrows_top", page.page_win.down_arrow == bool(o.page.downArrow) and page.page_win.up_arrow == bool(o.page.upArrow))
-	# 选页窗：4 项居中，光标在第一项
+	# 选页窗：v0.62.12 夹具 5 项（O-待定·修行两页），各项居中，光标在第一项；XGuide.PANEL_V062 关时回到 v0.28 的 4 项（304／316，Window_HorzCommand 公式）
+	var names := XStatusPage.page_names()
 	var texts := []
-	for i in range(XStatusPage.PAGE_NAMES.size()):
-		texts.append(["text", XStatusPage.PAGE_NAMES[i], i * XStatusPage.ITEM_STEP + 6, 0.0, XStatusPage.ITEM_W - 12, 36, "center", 26, "#ffffff"])
-	var want_texts: Array = o.select.texts.duplicate(true)
-	compare("select_items", texts, want_texts)
-	check("select_item_rects", o.select.items.size() == 4 and range(4).all(func(i): return Rect2(o.select.items[i][0], 0, o.select.items[i][2], 36) == Rect2(i * XStatusPage.ITEM_STEP, 0, XStatusPage.ITEM_W, 36)))
+	for i in range(names.size()):
+		texts.append(["text", names[i], i * XStatusPage.item_step() + 6, 0.0, XStatusPage.item_w() - 12, 36, "center", 26, "#ffffff"])
+	compare("select_items", texts, o.select.texts.duplicate(true))
+	var items := range(names.size()).map(func(i): return [i * XStatusPage.item_step(), 0.0, XStatusPage.item_w(), 36.0])
+	check("select_item_rects", items == (o.select.items as Array).map(func(r): return (r as Array).map(func(v): return float(v))), [items, o.select.items])
+	check("select_cursor", Rect2(o.select.cursor[0], o.select.cursor[1], o.select.cursor[2], o.select.cursor[3]) == Rect2(0, 0, XStatusPage.item_w(), 36), o.select.cursor)
+	check("select_v028_four", floorf((1280.0 - 28 + 12) / 4 - 12) == XStatusPage.ITEM_W and XStatusPage.ITEM_STEP == XStatusPage.ITEM_W + 12 and XStatusPage.PAGE_NAMES.size() == 4)
 	await shot("status_1_p0")
 	# 滚动到底：最大滚动行与滚动后的调用（整体上移 top×36）
 	var a := s.actor(1)
@@ -153,7 +163,7 @@ func _scene(o: Dictionary, s: XState) -> void:
 	check("scroll_up", page.tops[0] == int(o.scrolled.topRow) - 1)
 	# 左右换页（按下循环）
 	_key(page, "ui_left")
-	check("page_wrap_left", page.page == 3)
+	check("page_wrap_left", page.page == XStatusPage.page_names().size() - 1)
 	_key(page, "ui_right")
 	check("page_wrap_right", page.page == 0 and page.tops[0] == int(o.scrolled.topRow) - 1)
 	_key(page, "ui_right")
@@ -165,11 +175,16 @@ func _scene(o: Dictionary, s: XState) -> void:
 	_key(page, "ui_right")
 	await frames()
 	await shot("status_1_p3")
+	if XGuide.PANEL_V062:
+		_key(page, "ui_right")
+		await frames()
+		check("detail_page", page.page == 4 and page.all_text().contains("【难度对照") and page.all_text().contains("结算伤害·合计"), page.page)
+		await shot("status_1_p4")
 	# 换角色：滚动复位，战力条与按钮跟着换
 	page.page = 0
 	page.switch_actor(2)
 	await frames()
-	check("switch_actor_resets_scroll", page.actor().actor_id == 23 and page.tops == [0, 0, 0, 0] and page.power_strip.actor == page.actor())
+	check("switch_actor_resets_scroll", page.actor().actor_id == 23 and page.tops == [0, 0, 0, 0, 0] and page.power_strip.actor == page.actor())
 	await shot("status_23_p0")
 	page.page = 1
 	page._scroll(0)

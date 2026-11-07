@@ -31,8 +31,9 @@ var prey := false
 var _selection_frame := 0
 ## 图像缩放只作用于身体（MV 缩放 _mainSprite），影子与位置不缩放
 var body_scale := 1.0
-## dsPassiveSkill SvPngFd：开战时算一次的身体放大倍数（XSvPngFd.scale），乘在身体缩放上
+## dsPassiveSkill SvPngFd：身体放大倍数（XSvPngFd.scale），乘在身体缩放上；v0.28 开战时算一次，v0.51 起装备／状态／技能变了就重算
 var fd := 1.0
+var _fd_sig := ""
 ## setup 给的缩放（旧式角色 0.75、敌人 1／精英 1.8）；新增角色有归一档时改用档里的缩放（_show_frame）
 var _base_scale := 1.0
 ## Codex_MiraRavenMultiFrame 站姿归一档（XAppearance.profile，角色 ID ≥ 167 才有）：此刻这一帧的
@@ -106,6 +107,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	_base_scale = sprite_scale
 	if b is XActor:
 		fd = XSvPngFd.scale(b as XActor)
+		_fd_sig = XSvPngFd.signature(b as XActor)
 	body_scale = sprite_scale * look.scale * fd
 	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
@@ -162,6 +164,23 @@ func _set_flip(f: bool) -> void:
 	else:
 		sprite.set_meta("flip", f)
 		_apply_scale()
+
+
+## dsPassiveSkill v0.51：装备／状态／技能变了（原版置脏后下一次 refresh 重建 _passiveCache，updateFrame 每帧读）就重算放大倍数
+func refresh_fd() -> void:
+	var a := battler as XActor
+	if a == null:
+		return
+	var sig := XSvPngFd.signature(a)
+	if sig == _fd_sig:
+		return
+	_fd_sig = sig
+	var next := XSvPngFd.scale(a)
+	if next != fd:
+		body_scale = body_scale / maxf(fd, 0.0001) * next
+		fd = next
+		_apply_scale()
+		_apply_smooth()
 
 
 ## 身体缩放（场景外观用负的 x 表示翻转）
@@ -288,6 +307,8 @@ func _process(delta: float) -> void:
 		if k != _look_key:
 			swap_look(k)
 		XXuanTusuArt.update(self)  # 璇、屠苏：绑定形态、持武、星魂
+		if XSvPngFd.REFRESH_V051:
+			refresh_fd()
 	if cursor:
 		cursor.visible = selected and show_cursor
 	if selected:
@@ -416,12 +437,26 @@ func _show_frame(f: Dictionary) -> void:
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
 	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()
+	_apply_smooth()
 	if weapon and _profile.get("multi", false):
 		weapon.visible = false
 	_place_body()
 
 
 var _frame_h := 0.0
+
+
+## Codex_MiraRavenMultiFrame v1.06 applyVisual：有归一档（167 号以后）的角色，归一缩放（含 SvPngFd 变大）小于 1 时主图改平滑采样，
+## 放大或原尺寸仍最近邻（CrispScaling 默认开：bitmap.smooth = scale < 1）。v0.62 量具：168、174、175、179 平滑，其余 NEAREST。
+## O-待定（交付单「优化登记草稿」v0.62 SV 归一平滑）：SV_NORM_SMOOTH = false 回到 v0.28（归一角色一律最近邻）。
+static var SV_NORM_SMOOTH := true
+
+func _apply_smooth() -> void:
+	var body := sprite as Sprite2D
+	if body == null:
+		return
+	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0
+	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 
 
 ## 身体以脚底为原点；有归一档时可见范围的底边中点落在原点（anchor 0.5,1 再挪 ((宽／2−可见中线), (高−可见底边))×缩放），浮空往上

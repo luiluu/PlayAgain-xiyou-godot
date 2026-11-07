@@ -50,7 +50,7 @@ static func _re(pattern: String) -> RegEx:
 ## 谷雨／屠苏／璇的号角脚本写 X.ids().horn（模块按物品名现找），这里取同一张表里的号角号。
 const _RECRUITMENTS := {"CodexRaven": [167, 2902], "CodexMira": [168, 2904], "CodexYomi": [169, 2931], "CodexJingliu": [170, 2932],
 	"CodexToji": [171, 2936], "CodexSukuna": [172, 2938], "CodexGarou": [173, 2940], "CodexYunshang": [174, 2941], "Guyu": [175, 2943],
-	"CodexTusu": [176, 2945], "CodexXuan": [177, 2946]}
+	"CodexTusu": [176, 2945], "CodexXuan": [177, 2946], "CodexLiuying": [179, 3063]}
 
 
 ## 包装那一层：挡下时提示并返回 true（recruit() 视为返回 false）
@@ -93,6 +93,12 @@ static func _module_recruit(module: String) -> Callable:
 					return false
 				interp.host.toast(XSukuna.RECRUIT_TEXT)  # $.toaster
 				return true
+		"CodexLiuying":
+			return func(s: XState, interp) -> bool:
+				var lines := XLiuying.recruit(s)
+				for line in lines:
+					interp.host.toast(line)
+				return not lines.is_empty()
 		"CodexTusu", "CodexXuan":
 			# 公共事件 9013／9016：T.recruit／X.recruit（installNativeTusuRuntime 614 行、installNativeXuanRuntime 500 行）入队、
 			# 首次给并装上专属法宝、璇建星谱；没有提示。已在队返回 false（还号角）。events7 接上（原注释「模块没移植」时号角吞掉、人不入队）
@@ -121,15 +127,46 @@ static func _actors_add_state(js: String) -> Array:
 	return plan
 
 
+## 裸标识符整段当无操作（见 run）；回退开关
+static var BARE_IDENTIFIER_NOOP := true
+
+
 ## 执行一段脚本；返回认不出的语句（空数组表示全部认得）。
 static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
 	if js == "":
 		return []
+	if js.contains("CodexTier.nonWeakIds()"):
+		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(XState.tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current
 	# 原版本身就是语法错误的整段（YEP_CoreEngine command355 把 eval 包在 try 里，出错只 displayError、整段不执行）：无操作。
 	# 大厅难度开关 Map004 EV062、萨麦尔格祝福 Map145 EV005、传承强化 Map195 EV023、中级熟练度 CE859／860 的提示少引号或少 }，CE513 把备注 <passivePBST0:1000> 当脚本（events6）
 	if _js_syntax_error(js):
+		return []
+	# 整段只是一个裸标识符：原版 eval 它没有任何效果（未定义就 ReferenceError 被上面那层 try 吞掉，定义了只取值）。
+	# 新源 355 的 parameters 写成了字符串，MV 读 parameters[0] 只拿到第一个字符（深渊商人事件页的 `C`、公共事件 1439 的 `i`），
+	# 转换器已把它拆成逐字符数组（mv_string_parameters），这里就是那一个字符（bajie-newsrc1）。BARE_IDENTIFIER_NOOP 设 false 回到交给后面逐句处理
+	if BARE_IDENTIFIER_NOOP and _re("^[A-Za-z_$][A-Za-z0-9_$]*;?$").search(js) != null:
+		return []
+	# 一线生机与天道注视（公共事件 1330，v0.34 起 CodexHeavenGaze.apply，installStrongActorClassificationRuntime）：
+	# 有名字的角色逐个（$gameActors.actor 会把角色建出来）：弱者在 apply(true) 时学一线生机 6212；
+	# 非弱者先 repair（会 6212 的忘掉、学天道注视 6213），再学 6213。弱者判定用 XWeakChallenge.is_weak（原版 CodexWeakChallenge.isWeak）
+	var gaze := _re("^CodexHeavenGaze\\.apply\\((true|false)\\);?$").search(js)
+	if gaze:
+		var table: Array = XDB.table("Actors")
+		for id in range(1, table.size()):
+			if not table[id] is Dictionary or str(table[id].get("name", "")) == "":
+				continue
+			var who: XActor = s.actor(id)
+			if XWeakChallenge.is_weak(who):
+				if gaze.get_string(1) == "true":
+					who.learn_skill(6212)
+			else:
+				if who.skill_ids.has(6212):
+					who.forget_skill(6212)
+					who.learn_skill(6213)
+				who.learn_skill(6213)
+			who.refresh_passive()
 		return []
 	# CE1317: selected actor is shared with the item-effect capacity check.
 	if js == "var actor = $gameActors.actor($gameParty._targetActorId);\n$.toaster({ message : ''+actor.name()+' 能学习的抽奖被动技能已经达到'+$gameVariables.value(9)+'上限！'});":
@@ -151,6 +188,14 @@ static func run(code: String, interp) -> Array:
 	if casino:
 		await XCasinoBatch.open(interp, "twenty" if casino.get_string(1) == "twenty" else "single")
 		return []
+	# 深渊／不朽商人（installAbyssMerchantRuntime，XAbyssMerchant）：CE1439 末条领战利品点、商人事件第 2 页打开商人。
+	# 只在 MVEvent.MERCHANT29_FIX 时能整段走到这里（原版字符串参数只剩第一个字符，见 MVInterpreter 355）
+	if js == "if(window.CodexAbyssMerchant)CodexAbyssMerchant.complete(this);":
+		await XAbyssMerchant.complete(s, interp)
+		return []
+	if js == "CodexAbyssMerchant.openCurrent(this);":
+		await XAbyssMerchant.open_current(interp)
+		return []
 	# 洪荒诅咒自选（公共事件 1442，见 XHonghuang）：开头列候选、连问 5 次、写变量 1468～1472 三段
 	if await _honghuang_curse(js, interp):
 		return []
@@ -161,7 +206,7 @@ static func run(code: String, interp) -> Array:
 	# 藏宝图（Star.RomGetItems.RunGetFun，CE117、174～189、1381～1384）：见 XTreasureMap
 	var dig := _re("^Star\\.RomGetItems\\.RunGetFun\\((\\d+)\\s*,\\s*(\\d+)\\);?$").search(js)
 	if dig:
-		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)))
+		var r := XTreasureMap.run(s, int(dig.get_string(1)), int(dig.get_string(2)), int(interp.get("common_id")) if interp.get("common_id") != null else 0)
 		for t in r.toasts:
 			interp.host.toast(t)
 		if int(r.reserve) > 0:
@@ -228,6 +273,13 @@ static func run(code: String, interp) -> Array:
 	if roster:
 		await _boss_roster(roster.get_string(1), interp)
 		return []
+	# v0.44 起（新源）：裸调用、不再 setWaitMode，名单是 CodexTier 两档（D.superStrongIds／strongIds 由 <KyoTier> 原地重建，不另加小猫）。
+	# 原版只 $gameMessage.add 进待显示文字；大厅 EV41 两条各在一个选项分支里、后面没有别的指令，当场显示与原版看到的一样
+	roster = _re("^CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);?$").search(js)
+	if roster:
+		var kind := roster.get_string(1)
+		await _boss_roster(kind, interp, XState.tier_ids(["超强者"] if kind == "super" else ["强者"]))
+		return []
 	# 更衣解锁（Star_ChangeClothes，见 XChangeClothes）：衣橱管理员 Map4 EV17 与各层宝箱、特殊事件，全游戏只这一种写法（CE367 两号不同）
 	var lite := _re("^if\\s*\\(\\s*ConfigManager\\.ChangeClothesLite\\.indexOf\\((-?\\d+)\\)\\s*==\\s*-1\\s*\\)\\s*\\{\\s*ConfigManager\\.ChangeClothesLite\\.push\\((-?\\d+)\\);?\\s*\\}$").search(js)
 	if lite:
@@ -252,6 +304,8 @@ static func run(code: String, interp) -> Array:
 				if not joined:
 					s.gain_item(horn_id, 1)
 				return []
+	if await _cut_misc(js, interp):
+		return []
 	var unknown := []
 	# 存档分支：if (DataManager.saveGame($gamePlayer.SaveGameId)) { …成功… } else { …失败… }
 	var at := js.find("DataManager.saveGame(")
@@ -274,6 +328,128 @@ static func run(code: String, interp) -> Array:
 		unknown.append_array(await _statements(js.substr(end), interp))
 		return unknown
 	return await _statements(js, interp)
+
+
+## 新源（v0.4x～v0.62）几样整段写法（bajie-newsrc2，script_census 销号）：认得返回 true。
+## - 剑心图鉴开关 $gameSystem._kyoJianxinBookUnlocked（天剑·非天 147 的招募 CE2507 打开；大厅 Map4 EV61、Map225 EV10「专精书兑换」
+##   先补开：147 在队或在角色仓库就开），存进 s.flags 同名键；条件 `!!$gameSystem._kyoJianxinBookUnlocked` 见 eval_expr 的 jianxin()。
+## - 等级上限道具（YEP_CoreEngine maxlevel，走 _plugin_command 同一条路）：破限之志 CE1385（上限不到 N 就设成 N，否则还道具）；
+##   卡尔突破 CE1685、破限之志【剑道】CE9041 先把上限临时抬到 81、升一级、再放回（this._kyoMaxLevel 记在本层解释器上，原版同是解释器属性）。
+## - 改版向导「更新日志」CodexGuide.injectChangelog（Map4 EV71）：见 _inject_changelog。
+const _JIANXIN := "$gameSystem._kyoJianxinBookUnlocked"
+
+
+static func _cut_misc(js: String, interp) -> bool:
+	var s := XState.current
+	if _re("^\\$gameSystem\\._kyoJianxinBookUnlocked\\s*=\\s*true;?$").search(js):
+		s.flags[_JIANXIN.trim_prefix("$gameSystem.")] = true
+		return true
+	var jx := _re("^if\\s*\\(\\s*!\\$gameSystem\\._kyoJianxinBookUnlocked\\s*&&\\s*\\(\\s*\\(\\$gameParty\\._actors\\s*\\|\\|\\s*\\[\\]\\)\\.indexOf\\((\\d+)\\)\\s*>=\\s*0\\s*\\|\\|\\s*\\(\\$gameParty\\._saveactors\\s*\\|\\|\\s*\\[\\]\\)\\.indexOf\\(\\1\\)\\s*>=\\s*0\\s*\\)\\s*\\)\\s*\\$gameSystem\\._kyoJianxinBookUnlocked\\s*=\\s*true;?$").search(js)
+	if jx:
+		var aid := int(jx.get_string(1))
+		if s.party.has(aid) or s.saved_actors.has(aid):
+			s.flags[_JIANXIN.trim_prefix("$gameSystem.")] = true
+		return true
+	const CAP := "var c=\\$gameParty\\.ActorMaxLevel\\|\\|Yanfly\\.Param\\.MaxLevel;"
+	var cap := _re("^" + CAP + "if\\(c<(\\d+)\\)\\{this\\.pluginCommand\\('maxlevel',\\['equal','\\1'\\]\\);\\$\\.toaster\\(\\{message:'([^']*)'\\}\\);\\}else\\{\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\],1\\);\\$\\.toaster\\(\\{message:'([^']*)'\\+c\\+'([^']*)'\\}\\);\\}$").search(js)
+	if cap:
+		var c := s.max_level()
+		if c < int(cap.get_string(1)):
+			interp._plugin_command("maxlevel equal " + cap.get_string(1))
+			interp.host.toast(cap.get_string(2))
+		else:
+			s.gain_item(int(cap.get_string(3)), 1)
+			interp.host.toast(cap.get_string(4) + str(c) + cap.get_string(5))
+		return true
+	var lift := _re("^" + CAP + "this\\._kyoMaxLevel=c;if\\(c<(\\d+)\\)this\\.pluginCommand\\('maxlevel',\\['equal','\\1'\\]\\);?$").search(js)
+	if lift:
+		var c := s.max_level()
+		interp.set_meta("_kyoMaxLevel", c)
+		if c < int(lift.get_string(1)):
+			interp._plugin_command("maxlevel equal " + lift.get_string(1))
+		return true
+	var back := _re("^if\\(this\\._kyoMaxLevel<(\\d+)\\)this\\.pluginCommand\\('maxlevel',\\['equal',String\\(this\\._kyoMaxLevel\\)\\]\\);?$").search(js)
+	if back:
+		# 没先跑过抬上限那句时 this._kyoMaxLevel 是 undefined，undefined<81 为假，不动
+		if interp.has_meta("_kyoMaxLevel") and int(interp.get_meta("_kyoMaxLevel")) < int(back.get_string(1)):
+			interp._plugin_command("maxlevel equal " + str(int(interp.get_meta("_kyoMaxLevel"))))
+		return true
+	if _data_patch(js):
+		return true
+	var whisper := _re("^CodexWhisper\\.mark\\('([^'\\\\]*)'\\);?$").search(js)
+	if whisper:
+		XConfig.whisper_mark(whisper.get_string(1))
+		return true
+	if _re("^if\\(window\\.CodexGuide&&CodexGuide\\.injectChangelog\\)CodexGuide\\.injectChangelog\\(this\\);?$").search(js):
+		_inject_changelog(interp)
+		return true
+	return false
+
+
+## 改数据库里的敌人能力值、状态特性值（肉山 Map186 EV34：按变量 1349 打过的次数给敌人 2027 加血加攻、给状态 2781 第 12 条特性加值）：
+## 每行 `$dataEnemies[N].params[K] *=|+= 式子;` 或 `$dataStates[N].traits[K].value +=|*= 式子;`，式子交 eval_expr。
+## 原版改的是内存里的 $dataEnemies／$dataStates：不进存档、重开游戏才回到数据库原值，同一次运行里一直累加（倍乘那条也叠乘）；
+## 重制同样改 XDB 缓存里的那份记录（同一进程内一直有效、不写盘），照原版。有一行认不出就整段不认
+static func _data_patch(js: String) -> bool:
+	var ops := []
+	for raw in js.split("\n"):
+		var line := raw.strip_edges()
+		if line == "":
+			continue
+		var m := _re("^\\$data(Enemies|States)\\[(\\d+)\\]\\.(?:params\\[(\\d+)\\]|traits\\[(\\d+)\\]\\.value)\\s*([*+])=\\s*(.+?);?$").search(line)
+		if m == null:
+			return false
+		var table := m.get_string(1)
+		if (table == "Enemies") == (m.get_string(3) == ""):   # 敌人只认 params、状态只认 traits
+			return false
+		var v = eval_expr(m.get_string(6))
+		if not (v is float or v is int):
+			return false
+		var rec := XDB.rec(table, int(m.get_string(2)))
+		var key := "params" if table == "Enemies" else "traits"
+		var k := int(m.get_string(3) if table == "Enemies" else m.get_string(4))
+		if rec.is_empty() or k >= (rec.get(key, []) as Array).size():
+			return false
+		ops.append([rec, key, k, m.get_string(5), float(v)])
+	if ops.is_empty():
+		return false
+	for op in ops:
+		var arr: Array = op[0][op[1]]
+		if op[1] == "params":
+			arr[op[2]] = float(arr[op[2]]) * op[4] if op[3] == "*" else float(arr[op[2]]) + op[4]
+		else:
+			var t: Dictionary = arr[op[2]]
+			t.value = float(t.value) * op[4] if op[3] == "*" else float(t.value) + op[4]
+	return true
+
+
+## G.injectChangelog（installNativeGuidanceRuntime）：把玩家更新日志（转换器 db/PlayerChangelog.json，新版在前、空页跳号已去掉）
+## 每页拼成「文字＋选项（更早的更新／返回→跳主菜单）」插在本句之后，头像取本句之后第一条 101（没有用 People5_mvt 7）；
+## 原版换成新数组（list.slice＋concat），这里同样换新数组，不改地图数据里的原列表
+static func _inject_changelog(interp) -> void:
+	var data = XDB.load_json("db/PlayerChangelog.json") if FileAccess.file_exists(XDB.BASE + "db/PlayerChangelog.json") else null
+	if not data is Dictionary:
+		return
+	var list: Array = interp.list
+	var at: int = interp.index
+	var ind := int(list[at].get("indent", 0)) if at < list.size() else 0
+	var face := ["People5_mvt", 7, 0, 2]
+	for i in range(at + 1, list.size()):
+		if int(list[i].code) == 101:
+			face = (list[i].parameters as Array).duplicate()
+			break
+	var cmds := []
+	for d in data.get("entries", []):
+		for page in d.get("pages", []):
+			cmds.append({"code": 101, "indent": ind, "parameters": face.duplicate()})
+			for line in str(page).split("\n"):
+				cmds.append({"code": 401, "indent": ind, "parameters": [line]})
+			cmds.append_array([{"code": 102, "indent": ind, "parameters": [["更早的更新", "返回"], 1, 0, 2, 0]},
+				{"code": 402, "indent": ind, "parameters": [0, "更早的更新"]}, {"code": 0, "indent": ind + 1, "parameters": []},
+				{"code": 402, "indent": ind, "parameters": [1, "返回"]}, {"code": 119, "indent": ind + 1, "parameters": ["主菜单"]},
+				{"code": 0, "indent": ind + 1, "parameters": []}, {"code": 404, "indent": ind, "parameters": []}])
+	if not cmds.is_empty():
+		interp.list = list.slice(0, at + 1) + cmds + list.slice(at + 1)
 
 
 ## O-147（悟空 events3，审查 21 期 P3①）：猫哥清理存档时仓库里的武器防具。true＝留着（重制存的是实例，不会失效）；
@@ -428,7 +604,7 @@ static func _statements(js: String, interp) -> Array:
 		if st == "CodexCat.recruit()":  # 公共事件 9017：178 哈基米入队（见 XCat.recruit）
 			XCat.recruit(s)
 			continue
-		if st in ["CodexMira.recruit()", "CodexYomi.recruit()", "CodexJingliu.recruit()", "CodexRaven.recruit()", "CodexYunshang.recruit()"] \
+		if st in ["CodexMira.recruit()", "CodexYomi.recruit()", "CodexJingliu.recruit()", "CodexRaven.recruit()", "CodexYunshang.recruit()", "CodexLiuying.recruit()"] \
 				and _recruit_blocked(st.get_slice(".", 0), interp):
 			continue  # 超强者门槛（见 _RECRUITMENTS）
 		if st == "CodexMira.recruit()":  # 公共事件 9003：168 米拉入队（见 XMira.recruit）
@@ -436,6 +612,10 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		if st == "CodexYomi.recruit()" or st == "CodexJingliu.recruit()":  # 公共事件 9004／9005：169 黄泉、170 镜流入队并装上专属法宝（见 XYomiJingliu.recruit；两条 $.toaster 提示）
 			for line in XYomiJingliu.recruit(s, XYomiJingliu.YOMI if st.begins_with("CodexYomi") else XYomiJingliu.JINGLIU):
+				interp.host.toast(line)
+			continue
+		if st == "CodexLiuying.recruit()":  # 公共事件 9043（号角 3063）：179 流萤入队，装上专武与法宝（见 XLiuying.recruit；三条 $.toaster 提示）
+			for line in XLiuying.recruit(s):
 				interp.host.toast(line)
 			continue
 		if st == "CodexYunshang.recruit()":  # 公共事件 9010：174 云裳入队（见 XYunshang.recruit；$.toaster 提示）
@@ -558,11 +738,15 @@ static func _guide_advise(interp) -> void:
 const _STRONG_IDS := [1, 8, 9, 10, 11, 13, 17, 38, 45, 47, 50, 59, 70, 71, 82, 84, 85, 92, 93, 95, 99, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 128, 129, 130, 131, 170]
 
 
-static func _boss_roster(kind: String, interp) -> void:
+static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
 	var is_super := kind == "super"
-	var ids: Array = (XItemMarks.super_strong_ids() if is_super else _STRONG_IDS).duplicate()
-	if not is_super:
-		ids.append(XCat.ACTOR)
+	var ids: Array
+	if tier_ids is Array:
+		ids = tier_ids
+	else:
+		ids = (XItemMarks.super_strong_ids() if is_super else _STRONG_IDS).duplicate()
+		if not is_super:
+			ids.append(XCat.ACTOR)
 	var lines := ["\\n<破阵·投影>%s（%d人）" % ["超强者名单" if is_super else "强者名单", ids.size()]]
 	var line := ""
 	for id in ids:
@@ -707,6 +891,10 @@ static func js_number(v: float) -> String:
 ## $gameMap.mapId()、$gameParty.numItems($dataItems[N])、Math.floor/ceil/max/min/abs。认不出返回 null（调用方记进 skipped）。
 static func eval_expr(js: String) -> Variant:
 	var e := js.strip_edges()
+	# 大厅漩涡过场（CodexWhisper，见 XConfig.whisper_seen）：模块总在，window.CodexWhisper 为真；seen('键') 当场取值
+	e = e.replace("window.CodexWhisper", "true")
+	for m in _re("CodexWhisper\\.seen\\('([^'\\\\]*)'\\)").search_all(e):
+		e = e.replace(m.get_string(), "true" if XConfig.whisper_seen(m.get_string(1)) else "false")
 	while e.ends_with(";"):
 		e = e.left(-1).strip_edges()
 	if e == "" or e.contains("%") or e.contains("=>") or e.contains("\"") or e.contains("'"):
@@ -716,13 +904,13 @@ static func eval_expr(js: String) -> Variant:
 		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
 		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "],
 		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"],
-		["$gameSystem.defeatNumber(", "defeats("]]
+		["$gameSystem.defeatNumber(", "defeats("], [_JIANXIN, "jianxin()"]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
 	e = _re("ConfigManager\\.DesignationN\\[(\\d+)\\]").sub(e, "designation($1)", true)  # 称号解锁（Map2 EV2 条件）
 	e = _re("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "defeats", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "defeats", "jianxin", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -742,6 +930,8 @@ class ExprEnv:
 	## AB_EnemyBook Game_System.defeatNumber：该敌人被打倒的次数（Map017 EV004 牛头人／纯爱战士认证）
 	func defeats(id: float) -> float: return float(XEnemyBook.defeat_number(XState.current, int(id)))
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
+	## 剑心图鉴开关（$gameSystem._kyoJianxinBookUnlocked，见 _cut_misc）：没设过是 undefined，!! 后为 false
+	func jianxin() -> bool: return bool(XState.current.flags.get("_kyoJianxinBookUnlocked", false))
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)
 	func steps() -> float: return float(XState.current.steps)

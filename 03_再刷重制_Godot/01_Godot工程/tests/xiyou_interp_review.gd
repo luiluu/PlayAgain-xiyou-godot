@@ -3,7 +3,7 @@ extends Node
 ## erase.*：指令 214 只在解释器起跑的地图＝当前地图时消除（isOnCurrentMap）；消除随存档（$gameMap 进存档、同版本读档不重设地图），
 ## 同图移动保留，换图再回来恢复。真实 XMapScene（Map008 副本怪事件 3）、真实 XSave 存读档后重开地图场景、真实 transfer。
 ## flush.225.*：316 升级提示进待显示文字后，225 勾等待时 MV 在等待的 10 帧里显示消息、等完才执行 122（参照帧号 > 1）；
-## 不勾等待时同一帧执行 122。Godot 把「等待期间显示」做成等待前先显示（同 230），对照「122 执行前消息是否已显示」。
+## 不勾等待时同一帧执行 122（新源 316 不出文字，文字按回退支 LEVEL_UP_SHOW_316 = false 比，时序用默认支比）。Godot 把「等待期间显示」做成等待前先显示（同 230），对照「122 执行前消息是否已显示」。
 ## transfer.*（八戒_48）：同图 201 不重建事件——事件节点、位置、朝向、强制路线与索引、页原样保留，玩家与跟随者重新放置；
 ## 换图再回来恢复初始。参照里给事件 3 挂的等待解释器（模拟并行事件）Godot 无对应（切片地图没有并行事件），不比 interp。
 ## MV 不强制路线时 _moveRoute 是当前页的自主路线，Godot 留在 page.moveRoute，route 长度按此取。
@@ -230,9 +230,17 @@ func _run() -> void:
 				var got := await _erase_case(c.id)
 				_check(c.id, JSON.stringify(got) == JSON.stringify(want), [got, want])
 			else:
-				var got := _flush_case(c.id == "flush.225.wait")
+				# 新源 v0.62.12 的 316 不出升级文字（流萤运行时丢了「显示升级」，O-待定·升级文字）：参照文字为空时按回退支比文字；
+				# 等待时序照旧用默认支（显示文字）比参照的帧号（旧源 v0.28 量的就是这个）
+				var wait: bool = c.id == "flush.225.wait"
+				var keep := MVEventCore.LEVEL_UP_SHOW_316
+				if (want.lines as Array).is_empty():
+					MVEventCore.LEVEL_UP_SHOW_316 = false
+				var got := _flush_case(wait)
+				MVEventCore.LEVEL_UP_SHOW_316 = keep
+				var shown := _flush_case(wait)
 				_check(c.id + ".lines", got.lines == want.lines, [got, want])
-				_check(c.id + ".order", got.shownBeforeVar == (int(want.varSet.frame) > 1) and got.var == 1, [got, want])
+				_check(c.id + ".order", shown.shownBeforeVar == (int(want.varSet.frame) > 1) and shown.var == 1 and not shown.lines.is_empty(), [shown, want])
 				_check(c.id + ".level", got.level == int(want.level), [got, want])
 	for i in range(1, XSave.SLOTS + 1):
 		if XSave.exists(i):

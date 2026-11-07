@@ -84,6 +84,45 @@ add('hubris.42.pending', 7902, {_codexHubrisFame: 42}, {pending: 4});
 add('hubris.600.buff', 7902, {_codexHubrisFame: 600}, {buff: {rate: 1.4, remaining: 2, sameRound: false}});
 add('hubris.600.buff.same', 7902, {_codexHubrisFame: 600}, {pending: 1, buff: {rate: 1.4, remaining: 3, sameRound: true}});
 add('ataraxia.1000', 7903, {_codexHubrisFame: 1000});
+// 尾项三（DL ③）：心钢技能说明卡 H.skillHelpView（Window_BattleSkill／Window_SkillList.updateHelp 包装，传给 Sprite_ItemHelp.setItem）。
+// gear：角色装上的心钢／利维坦（实例字段）；battle：{turn, ready, casted}，在战斗中才出「状态」行（H.remaining）。
+const skills = [];
+function skillCase(id, skillId, opt) {
+  opt = opt || {};
+  let it = null, slot = -1;
+  if (opt.gear) {
+    it = gear(opt.gear.base);
+    Object.assign(it, opt.gear.fields || {});
+    H.describe(it);
+    slot = actor.equipSlots().indexOf(it.etypeId);
+    actor.changeEquip(slot, it);
+  }
+  const inBattle = w.$gameParty.inBattle, turn = w.$gameTroop.turnCount;
+  if (opt.battle) {
+    w.$gameParty.inBattle = () => true;
+    w.$gameTroop.turnCount = () => opt.battle.turn;
+    if (opt.battle.ready !== undefined) actor._codexHeartsteelReadyTurn = opt.battle.ready;
+    if (opt.battle.casted) actor._codexHeartsteelCasted = true;
+  }
+  const view = H.skillHelpView(w.$dataSkills[skillId], opt.noActor ? null : actor);
+  const rec = {id, skill: skillId, gear: opt.gear || null, battle: opt.battle || null, noActor: !!opt.noActor, note: view.note};
+  Object.assign(rec, card(view));
+  w.$gameParty.inBattle = inBattle; w.$gameTroop.turnCount = turn;
+  delete actor._codexHeartsteelReadyTurn; delete actor._codexHeartsteelCasted;
+  if (it) actor.changeEquip(slot, null);
+  skills.push(rec);
+}
+skillCase('skill.heart.none', H.skillId, {noActor: true});
+skillCase('skill.lev.none', H.leviathanSkillId, {noActor: true});
+skillCase('skill.heart.menu', H.skillId);
+skillCase('skill.heart.equip350', H.skillId, {gear: {base: 7900, fields: {_codexHeartsteelStacks: 350}}});
+skillCase('skill.heart.withlev', H.skillId, {gear: {base: 7901, fields: {_codexHeartsteelStacks: 350}}});
+skillCase('skill.lev.equip1200', H.leviathanSkillId, {gear: {base: 7901, fields: {_codexHeartsteelStacks: 1200}}});
+skillCase('skill.heart.charge', H.skillId, {battle: {turn: 1}});
+skillCase('skill.heart.ready', H.skillId, {battle: {turn: 2}});
+skillCase('skill.heart.cool', H.skillId, {gear: {base: 7900, fields: {_codexHeartsteelStacks: 100}}, battle: {turn: 3, ready: 5, casted: true}});
+skillCase('skill.heart.ready.after', H.skillId, {battle: {turn: 6, ready: 5, casted: true}});
+skillCase('skill.lev.cool', H.leviathanSkillId, {gear: {base: 7901, fields: {_codexHeartsteelStacks: 0}}, battle: {turn: 4, ready: 6, casted: true}});
 // 尾项二：渡鸦／米拉／甚尔专属法宝的装备评分（CodexCombatPower.equipment 按 baseItemId 加专属固定、火伤 20%、物理池 ×1.11）
 const powerOnly = [4001, 4577, 4580].map(id => {
   const pw = w.CodexCombatPower.equipment(w.$dataArmors[id]);
@@ -91,6 +130,6 @@ const powerOnly = [4001, 4577, 4580].map(id => {
 });
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(OUT, {recursive: true});
-fs.writeFileSync(path.join(OUT, 'growth_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, cases, powerOnly}));
-console.log(JSON.stringify({cases: cases.length, rows: cases.map(c => c.rows.length)}));
+fs.writeFileSync(path.join(OUT, 'growth_help.json'), JSON.stringify({schemaVersion: 1, sourceIdentity: identity, cases, powerOnly, skills}));
+console.log(JSON.stringify({cases: cases.length, rows: cases.map(c => c.rows.length), skills: skills.map(c => c.rows.length)}));
 process.exit(0);

@@ -256,8 +256,29 @@ func _check_manual_first(ref: Dictionary) -> void:
 	check("first.auto", auto.back() == "a177", auto)
 
 
+## O-待定·角色HP包装 修正支（默认）：角色 gainHp／setHp 的掉血照旧先进护盾账本（旧源 v0.28 参照的值）
+func _check_actor_hp_ledger(ref: Dictionary) -> void:
+	XResourceContext.o_actor_hp_wrappers = true
+	var want := {"dinggui_seq": [3, "a1", {"hp": 466, "shield": []}], "mist": [5, "a1", {"hp": 485, "shield": [["xuan.libi", 210792, 3]]}],
+		"binggui2": [5, "a8", {"hp": 450, "shield": [["xuan.libi", 124057, 3]]}]}
+	for c in ref.cases:
+		if not want.has(c.id):
+			continue
+		var w: Array = want[c.id]
+		logic = _battle(c.setup)
+		for i in range(1, int(w[0]) + 1):
+			_step(c.observed[i].step)
+		var p: Dictionary = _norm(_snap()).party.get(w[1], {})
+		var got := {"hp": p.get("hp"), "shield": p.get("shield")}
+		check("ledger_on.%s.%s" % [c.id, w[1]], got == _norm(w[2]), [got, w[2]])
+		if XBinding.in_battle():
+			logic.end_battle(0)
+	XResourceContext.o_actor_hp_wrappers = false
+
+
 func _ready() -> void:
 	XXuanBattle.YUHUI_SHIELD = false  # 参照比原版：余辉不给护盾（fix1 默认修好，修正支在 xiyou_xuan_battle）
+	XResourceContext.o_actor_hp_wrappers = false  # 参照比原版：新源角色 gainHp／setHp 绕过账本（O-待定·角色HP包装；修正支见 _check_actor_hp_ledger）
 	_go.call_deferred()
 
 
@@ -296,5 +317,6 @@ func _go() -> void:
 		if XBinding.in_battle():
 			logic.end_battle(0)
 	_check_manual_first(ref)
+	_check_actor_hp_ledger(ref)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_xuan_auto", "passed": checks - failures.size(), "total": checks, "failures": failures.slice(0, 50)}))
 	get_tree().quit(0 if failures.is_empty() else 1)

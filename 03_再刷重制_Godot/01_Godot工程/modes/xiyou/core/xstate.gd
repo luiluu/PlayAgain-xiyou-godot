@@ -433,6 +433,22 @@ static func difficulty_managed_skills() -> Array:
 	return _difficulty_managed
 
 ## nativeIds：公共事件脚本里「var NAME = [..]」的数组
+## CodexTier.nonWeakIds（installTierTagsV044Runtime，v0.44 起公共事件 1345、1443～1445 的名单）：
+## 角色备注 <KyoTier:超强者>／<KyoTier:强者> 的有名字角色，按编号升序（原版超强者、强者两份拼起来再排序）。MVScript.run 里把调用换成字面数组；difficulty_native_ids 认 `var 名单 = CodexTier.nonWeakIds()`，
+## 后面照旧按「var ids = [..]; ids.forEach(...)」的写法认（v0.28 这几段就是写死的数组）
+static func tier_non_weak_ids() -> Array:
+	return XTier.non_weak_ids()
+
+
+## CodexTier.ids：备注里第一个 <KyoTier:…> 是 tiers 之一的有名字角色，编号升序（原版 TAG.exec 只取第一处）；分类本身在 XTier（悟空 wukong-newsrc5）
+static func tier_ids(tiers: Array) -> Array:
+	var ids := []
+	for t in tiers:
+		ids.append_array(XTier.ids(str(t)))
+	ids.sort()
+	return ids
+
+
 static func difficulty_native_ids(event_id: int, list_name: String) -> Array:
 	var key := "%d.%s" % [event_id, list_name]
 	if not _native_ids_cache.has(key):
@@ -442,15 +458,25 @@ static func difficulty_native_ids(event_id: int, list_name: String) -> Array:
 				text += str(c.parameters[0]) + "\n"
 		var m := RegEx.create_from_string("var\\s+" + list_name + "\\s*=\\s*(\\[[\\d,\\s]*\\])").search(text)
 		_native_ids_cache[key] = (JSON.parse_string(m.get_string(1)) if m != null else []).map(func(v): return int(v))
+		if m == null and RegEx.create_from_string("var\\s+" + list_name + "\\s*=\\s*CodexTier\\.nonWeakIds\\(\\)").search(text) != null:
+			_native_ids_cache[key] = tier_non_weak_ids()  # v0.44 起名单读角色备注 <KyoTier>（新源）
 	return _native_ids_cache[key]
 
 func _difficulty_strong(a: XActor, event_id: int, list_name: String) -> bool:
+	if XTier.tagged():
+		return XTier.is_non_weak(a)  # v0.44：strong(actor) = CodexTier.isNonWeak，不再读公共事件名单
 	var id := a.actor_id
 	if DIFFICULTY_NEW_STRONG.has(id):
 		return true
 	if id >= 167 and a.skill_ids.has(6216):
 		return true
 	return difficulty_native_ids(event_id, list_name).has(id)
+
+## lateActor（v0.44）：167 号以后、有分类的角色入队时直接按分类给强者／弱者压制；旧源是写死的新增超强者 167～173／175
+func _difficulty_late(a: XActor) -> bool:
+	if XTier.tagged():
+		return a.actor_id >= 167 and XTier.tier_of(a) != ""
+	return DIFFICULTY_NEW_STRONG.has(a.actor_id)
 
 ## profile()：主角（没有就找一名 <167 带难度技能的队员）的档位；没有任何档位返回空字典
 func _difficulty_profile() -> Dictionary:
@@ -491,7 +517,7 @@ func inherit_difficulty(a: XActor) -> void:
 		return
 	var managed := difficulty_managed_skills()
 	var desired: Array = current.skills.duplicate()
-	if current.classification or DIFFICULTY_NEW_STRONG.has(id):
+	if current.classification or _difficulty_late(a):
 		desired.append(6216 if _difficulty_strong(a, 1345, "actorIds") else 6235)
 	for i in 3:
 		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
@@ -506,7 +532,7 @@ func inherit_difficulty(a: XActor) -> void:
 			system_states[int(m.get_string(1))] = true
 	for sid in tracked:
 		# 分档技能：没有分档档位、也不是新增超强者时不碰（未跑强弱者事件前不给无关角色加）
-		if (sid == 6216 or sid == 6235) and not current.classification and not DIFFICULTY_NEW_STRONG.has(id):
+		if (sid == 6216 or sid == 6235) and not current.classification and not _difficulty_late(a):
 			continue
 		if desired.has(sid):
 			a.learn_skill(int(sid))
@@ -533,7 +559,8 @@ func sync_native_tier(a: XActor) -> void:
 		if not switch(DIFFICULTY_TIER_SWITCHES[i]) or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
 			continue
 		var pair: Array = DIFFICULTY_TIER_PAIRS[i]
-		var want: int = pair[1] if difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]).has(id) else pair[0]
+		var strong: bool = XTier.is_non_weak(a) if XTier.tagged() else difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]).has(id)
+		var want: int = pair[1] if strong else pair[0]
 		var other: int = pair[0] if want == pair[1] else pair[1]
 		if a.skill_ids.has(other):
 			a.forget_skill(other)
@@ -899,7 +926,10 @@ static func from_dict(d: Dictionary) -> XState:
 	s.party_skills = XPartySkills.from_save(d.get("partySkills"))
 	s.raven = XRaven.from_save(d.get("codexRaven"))
 	s.garou = XGarou.from_save(d.get("codexGarou"))
+	XImportedBalance.migrate_party(s)  # installImportedBalanceRuntime extractSaveContents 包装：停用角色挪出队伍与出战栏
+	XGear.revert_exclusive_affixes(s)  # v0.57 extractSaveContents 包装：旧专武前缀武器转回普通装备（开关 XGear.EXCLUSIVE_V056）
 	XYomiJingliu.after_load(s)  # 镜流 extractSaveContents 包装：整理技能、清放血累计
+	XLiuying.after_load(s)  # 流萤 extractSaveContents 包装：按等级、进阶学忘
 	XShieldLedger.clear_all()  # 护盾账本 extractSaveContents 包装：清空
 	XBinding.clear_all(s)  # 绑定 extractSaveContents 包装：清数据与形态状态
 	XTusu.clear(s)  # 屠苏 extractSaveContents 包装：清全队持武状态与本场数据

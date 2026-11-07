@@ -109,8 +109,15 @@ static func table(name: String) -> Variant:
 		_tables[name] = load_json("db/%s.json" % name)
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
+		if name == "Armors" and _tables[name] is Array:
+			# H／U.describe 在 isDatabaseLoaded 里就地改四件成长装备原件的说明与成长行（installNativeHeartsteel／HubrisRuntime；
+			# v0.62.12 数据库里狂妄原件写「物理伤害忽略18%目标物防」，开机后才改成「效果：物防穿透18%」，锻造出的实例照抄改过的）
+			for id in [XHeartsteel.ARMOR, XHeartsteel.LEVIATHAN, XHubris.ARMOR, XHubris.ATARAXIA]:
+				if id < _tables[name].size() and _tables[name][id] is Dictionary:
+					XGrowthHelp.describe(_tables[name][id])
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
+			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
 	return _tables[name]
 
 

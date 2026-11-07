@@ -51,7 +51,7 @@ static var HEADLESS_RENDER_WAIT := true
 
 
 func _wait_frame() -> void:
-	var tree := host.get_tree()
+	var tree := Engine.get_main_loop() as SceneTree  # 宿主暂时摘下时 host.get_tree() 为 null（DJ）
 	if HEADLESS_RENDER_WAIT and DisplayServer.get_name() == "headless":
 		await tree.process_frame
 	else:
@@ -59,7 +59,26 @@ func _wait_frame() -> void:
 
 
 func _notice(text: String) -> void:
-	host.toast(text)
+	if host_alive():
+		host.toast(text)
+
+
+## 【cc·八戒 DJ】宿主（地图画面）还在：地图／场景释放后，挂在 await 上的事件醒来时不再往下跑（原来接着调已释放的 host，
+## 报 get_tree／show_message／character on previously freed）。只看释放，不看在不在树上：打开存档等界面时地图可能暂时摘下，事件要照常接着跑。
+func host_alive() -> bool:
+	return is_instance_valid(host) and not host.is_queued_for_deletion()
+
+
+## 等 n 帧（physics＝物理帧，否则空闲帧）。用主循环的 SceneTree：宿主暂时不在树上时 host.get_tree() 是 null；宿主释放了就不再等
+func _frames(n: int, physics := true) -> void:
+	for i in range(n):
+		if not host_alive():
+			return
+		var tree := Engine.get_main_loop() as SceneTree
+		if physics:
+			await tree.physics_frame
+		else:
+			await tree.process_frame
 
 
 ## 游标逐步推进；文字交给 host.show_message，宿主指令由发出请求的那一层（可能是公共事件子游标）执行
@@ -67,8 +86,9 @@ func cancel() -> void:
 	token.cancelled = true
 
 
+## 取消了，或宿主（地图画面）已释放（合 DJ host_alive：释放后醒来的协程不再往下跑）
 func is_cancelled() -> bool:
-	return bool(token.cancelled)
+	return bool(token.cancelled) or not host_alive()
 
 
 ## 等一帧（指令 230）。并行解释器等宿主的 parallel_frame（地图每个物理帧、且 Scene_Map 在更新地图时才发，菜单／战斗／各种画面开着时不数）；
@@ -85,7 +105,7 @@ func _tick() -> void:
 	if parallel and host.has_signal("parallel_frame"):
 		await host.parallel_frame
 	else:
-		await host.get_tree().physics_frame
+		await (Engine.get_main_loop() as SceneTree).physics_frame  # 宿主暂时摘下时 host.get_tree() 为 null（DJ）
 
 
 func run() -> void:
@@ -108,7 +128,10 @@ func run() -> void:
 
 ## 推进到下一个请求并等它处理完；本列表执行完返回 false。
 ## 跨 await 不留指向游标的局部变量（Godot 4.7 宿主先释放时，带着它的挂起协程会让游标留在内存里，退出时报资源未释放）
+## 宿主释放了（地图关掉）就停：不再取下一条，也不把等到的结果交回核心
 func _step() -> bool:
+	if not host_alive():
+		return false
 	var r := advance()
 	if r.kind == "message":
 		var response
@@ -131,7 +154,7 @@ func _step() -> bool:
 
 ## 立即显示待显示的文字（MVScript 等在执行中途需要时用）
 func flush_message() -> void:
-	if pending_lines.is_empty():
+	if pending_lines.is_empty() or not host_alive():
 		return
 	var lines := pending_lines.duplicate()
 	pending_lines.clear()
@@ -156,7 +179,8 @@ func _event_id() -> int:
 
 
 func _data_changed() -> void:
-	host.refresh_events()
+	if host_alive():
+		host.refresh_events()
 
 
 ## 播放电影：宿主放完再接着执行（_host_command 261）
@@ -335,7 +359,9 @@ func _host_command(c: Dictionary):
 			while index + 1 < list.size() and int(list[index + 1].code) == 605:
 				index += 1
 				goods.append(list[index].parameters)
+			XShopStock.set_context(map_id, event_id)   # installBalanceShopV041Runtime 包 command302：当铺／大厅 EV54 的商店规则
 			await host.open_shop(goods, bool(p[4]))
+			XShopStock.shop_context = {}
 		205:
 			# 设置移动路线 [角色, 路线]；路线勾选「等待完成」时等角色走完
 			var ch = host.character(int(p[0]), event_id)
@@ -378,6 +404,8 @@ func _host_command(c: Dictionary):
 			return false
 		355:
 			var code := str(p[0])
+			if MVEvent.MERCHANT29_FIX and list[index].has("mvStringParameters"):
+				code = str(list[index].mvStringParameters)  # O-待定·深渊商人：字符串参数按整段执行（v0.62.13 修法）
 			while index + 1 < list.size() and int(list[index + 1].code) == 655:
 				index += 1
 				code += "\n" + str(list[index].parameters[0])

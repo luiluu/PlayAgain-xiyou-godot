@@ -42,6 +42,13 @@ var effect_dirty := true
 var effect_snapshot: Array = []
 var effect_snapshot_valid := false
 var effect_lists := {}
+## O-待定·热缓存复活（rules-newsrc5）：新源 dsPassiveSkill v0.51 被动缓存在死亡那次 clearStates 按新签名重建，krz 的 typestates
+## 表随之算成空表且不脏；出手前持有者没标脏（热，need_refresh 假）时，之后的 refresh 不再重算，deselect 读到空表，复活状态失灵。
+## 原版代码错误（失效是缓存副作用）。true（默认）＝照常复活；false＝照原版：热的持有者死亡时冻成空表，直到下一次脏刷新。
+## 角色同理（param_states 1768.self：Conclude 加能力值把自己加死，第二次 Conclude 不跑）；回退支下 XParamPlus.add 不标 effect_dirty。
+static var o_hot_cache_revive := true
+## 本次 Game_Action.apply 开始时 effect_dirty 为假（battle_logic.apply 记、用完清）
+var hot_at_apply := false
 static var _adding_state := false
 static var _leaving_state := false
 static var _outside_random: XRandomStream
@@ -157,7 +164,7 @@ var mev: float:
 var mrf: float:
 	get: return xparam(5)
 var cnt: float:
-	get: return xparam(6)
+	get: return clampf(xparam(6), 0.0, 1.0)  # v0.35 引擎核心 Game_BattlerBase cnt：反击概率夹到 0～1（xparam(6) 本身不夹）
 var hrg: float:
 	get: return xparam(7)
 var mrg: float:
@@ -296,7 +303,7 @@ func shield_effect_bonus() -> float:
 		var m := _shield_effect_re.search(str(obj.get("note", "")))
 		if m:
 			bonus += int(m.get_string(1)) / 100.0
-	return bonus + XZhenqi.shield_effect_bonus(self)
+	return bonus + XZhenqi.shield_effect_bonus(self) + XLiuying.shield_effect_bonus(self)  # 流萤自限装甲 +1
 
 ## addShield：正数乘 (1＋加成)，负数直接扣；不取整，不低于 0。非有限数按 0。
 func add_shield(value: float) -> void:
@@ -434,6 +441,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return  # 异化归墟 addState 包装：归墟者攻击期间不给别人附加状态
 	if XAlienBattle.route_state(self, id):
 		return  # 异化绝缘拒收、舍身转给队友（addState 包装）
+	if XLiuying.blocks_state(self, id):
+		return  # 流萤 addState 包装：负面免疫
 	var alien_rev := XAlienBattle.revision(self, id)
 	_adding_state = true
 	_add_state(id, random)
@@ -458,6 +467,11 @@ func add_new_state(id: int) -> void:
 				buffs[pid] = 0
 				buff_turns[pid] = 0
 		XAlienBattle.dying = null
+		if not o_hot_cache_revive and hot_at_apply and (self is XEnemy or XActor.passive_state_rebuild):
+			# 回退支：被动缓存按新签名重建，krz typestates 表成空表、不脏（角色只在开战后 okadd 真时重建）
+			effect_lists.clear()
+			effect_snapshot = []
+			effect_snapshot_valid = true
 		if self is XEnemy:
 			XEnemyBook.note_death(self)  # AB_EnemyBook Game_Enemy.die：击败数即时 +1
 			XRaven.on_enemy_death(self)  # 渡鸦 Game_Enemy.die 包装：得魂、判铸印
@@ -535,6 +549,8 @@ func remove_state_auto(id: int) -> void:
 func remove_state(id: int) -> void:
 	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
 		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
+	if XLiuying.mark_locked(self, id):
+		return  # 流萤 Game_Enemy.removeState／eraseState 包装：击破印记不可驱散
 	if XAlienBattle.blocks_removal(self, id, _leaving_state):
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
@@ -546,6 +562,7 @@ func remove_state(id: int) -> void:
 	state_turns.erase(id)
 	if had:
 		XRaceBattle.on_state_removed(self, id)  # 种族：去掉毒鸡汤时清待结算记录
+		XLiuying.mark_removed(self, id)  # 流萤：印记被移除时清层
 	if id == XZhenqi.POJIA_STATE:
 		zq_pojia_rate = 0.5
 	# YEP_BuffsStatesCore removeState：不论有没有该状态都清掉它的状态计数（死亡、抵抗等直接去状态的路径不清）
@@ -683,18 +700,18 @@ func param(i: int) -> float:
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
 ## G_StateParam paramState：各状态 <G_ShuXing> 的固定值 × 层数之和。层数取 YEP 状态计数（state_data._stateCounter，
-## 状态脚本写入）；原版层数变量在循环外，某状态计数为真后排在后面的状态都沿用它（state_js_probe counter.carry）。
+## 状态脚本写入）；v0.62.05 起每个状态只乘自己的层数（state_js_probe counter.carry；v0.28 的层数变量在循环外，会连带后面的状态）。
 static var _state_param_cache := {}
 func param_state(i: int) -> float:
+	# G_StateParam（v0.62.05）：每个状态只乘自己的层数（_stateCounter），没有层数按 1 层（旧版 ceng 放在循环外会连带后面的状态）
 	var v := 0.0
-	var ceng := 1.0
 	var counters: Dictionary = state_data.get("_stateCounter", {})
 	for id in state_ids:
 		if not _state_param_cache.has(id):
 			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
-		var c := XStateEffects._truthy_number(counters.get(str(id)))
-		if c != 0.0:
-			ceng = c
+		var ceng := XStateEffects._truthy_number(counters.get(str(id)))
+		if ceng == 0.0:
+			ceng = 1.0
 		v += float(_state_param_cache[id][i]) * ceng
 	return v
 
@@ -943,6 +960,8 @@ func buff_limit(pid: int, positive: bool) -> int:
 ## Game_BattlerBase.clearStates（PermanentState 保留 <Permanent>）：不 refresh、不标 dirty
 func clear_states() -> void:
 	for sid in state_ids.duplicate():
+		if XLiuying.mark_locked(self, sid):
+			continue  # 流萤 Game_Enemy.clearStates 包装：战斗中击破印记与层数保留
 		if not XResourceContext.permanent(sid) and not XAlienBattle.keeps_state(self, sid):
 			state_ids.erase(sid)
 			state_turns.erase(sid)

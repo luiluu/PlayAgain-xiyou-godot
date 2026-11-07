@@ -23,7 +23,7 @@ extends RefCounted
 ## - 领取 Y.claim：满 10 格；把订单那件天衣发进背包（grant）、清订单。
 ## - 不朽天丝（endBattle 包装，胜利、每场一次）：本场是不朽的未知战斗——地图在 C.unknownBattles、敌群在其中，来源地图在 immortalOrigins；
 ##   没记来源时 152／176 用 Leviathan 记的来源（XState.unknown_origin），再没有就看 unpaired 或难度变量 107 在 legacyDifficulty 里。
-##   clears＋1、天丝＋1；云裳出战且学了天丝成锦 10280 时 bonusClears＋1，偶数次多给 1 份。来源地图 Game_Map.setup 包装记在 flags._yunUnknownOrigin。
+##   clears＋1、天丝＋2（v0.28 是＋1，见 V062）；云裳出战且学了天丝成锦 10280 时 bonusClears＋1，偶数次再多给同样一份。来源地图 Game_Map.setup 包装记在 flags._yunUnknownOrigin。
 ## - 进阶 Y.advance：C.advance＝[{35 级, 天衣 3 件, 人道意志碎片 2530×50}, {50 级, 9 件, ×188}]；只认背包里的天衣（穿着的要先卸下）；
 ##   扣碎片、移除所选天衣、stage＋1，提示「云裳完成第N次进阶」。不走进阶表那一行的学技能、扣金钱（原版 onConfirmOk 包装不调旧的），技能由同步按等级与进阶学。
 ## - 失去天衣（gainItem 包装，第 200～204 行）：带 _yunUid 的天衣被直接失去（商店卖出、存进仓库、分解，走 XState.lose_gear）时记一条 remove，
@@ -443,9 +443,16 @@ static func immortal_clear(s: XState, troop: int) -> bool:
 	return bool(route.get("unpaired", false)) or (route.get("legacy", []) as Array).has(int(s.variables.get(107, 0)))
 
 
-## endBattle 包装（原 endBattle 之前）：胜利且是不朽的未知战斗，每场一次给不朽天丝
+## 跟到 v0.62.12（O-待定·云裳天丝与订单回合）：不朽天丝每场 2 份（天丝成锦偶数次再多 2）；胜利时补记最后没走完的回合（v0.49，
+## 一击结束的战斗也算 1 格订单进度）。false＝回到 v0.28：每场 1 份（偶数次多 1）、胜利不补记
+static var V062 := true
+
+## endBattle 包装（原 endBattle 之前）：胜利时补记本回合订单进度；胜利且是不朽的未知战斗，每场一次给不朽天丝
 static func end_battle(logic, result: int) -> void:
 	var s: XState = logic.state
+	if V062 and s != null and result == 0 and battle_id != "" and int(logic.turn) > 0 and str(s.flags.get(PROFILE_FLAG, "")) != "" \
+			and logic.actors.any(func(a): return XYunshang.own(a)):
+		_optional(s, func(): return progress(s, "%s:%d" % [battle_id, int(logic.turn)]) != null)
 	if s == null or result != 0 or _rewarded or not immortal_clear(s, int(logic.troop_id)):
 		return
 	_rewarded = true
@@ -458,7 +465,8 @@ static func end_battle(logic, result: int) -> void:
 		p.clears = int(p.clears) + 1
 		if bonus:
 			p.bonusClears = int(p.get("bonusClears", 0)) + 1
-		p.journal.append({"item": SILK, "delta": 1 + (1 if bonus and int(p.bonusClears) % 2 == 0 else 0)})))
+		var unit := 2 if V062 else 1
+		p.journal.append({"item": SILK, "delta": unit + (unit if bonus and int(p.bonusClears) % 2 == 0 else 0)})))
 
 
 ## gainItem 包装：这一件被直接失去时记移除（transaction 的重放会把它从背包拿掉）；账本不可用返回 false

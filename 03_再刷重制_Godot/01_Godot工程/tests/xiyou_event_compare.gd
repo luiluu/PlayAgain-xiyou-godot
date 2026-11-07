@@ -555,6 +555,19 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 			a.change_level_mv(int(spec.level))
 		for sk in spec.get("skills", []):
 			a.learn_skill(int(sk))
+		# 八戒 DR：actors.N.armors＝直接穿上的防具底材，同参照 forceChangeEquip（etype 对应的第一个槽，不看能否装备、不进背包）
+		var gears := []
+		for ar in spec.get("armors", []):
+			gears.append(XActor.make_equip("armor", int(ar)))
+		for wp in spec.get("weapons", []):  # actors.N.weapons：同参照，武器（etype 1）
+			gears.append(XActor.make_equip("weapon", int(wp)))
+		for item in gears:
+			var slot := a.equip_slots().find(int(item.get("etypeId", -1)))
+			if slot >= 0:
+				a.equips[slot] = item
+				a.refresh_passive()
+				a.release_unequippable()
+				a.refresh_passive()
 	if p.has("gold"):
 		s.gold = int(p.gold)
 	for id in p.get("items", {}):

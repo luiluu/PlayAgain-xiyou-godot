@@ -77,6 +77,28 @@ static func action_elements(item: Dictionary, a: XBattler) -> Array:
 			out.append(int(e))
 	return out
 
+## v0.62 conversionId：被动缓存的属性转换（<DamageElements>）只改目标承伤；宿傩 172 终式与 10234／10235 不算转换。
+static func conversion_id(item: Dictionary, a: XBattler) -> int:
+	if a is XActor and a.actor_id == 172 and int(item.get("id", 0)) in [10234, 10235]:
+		return 0
+	var id := int(a.passive_cache().get("damageElement", 0))
+	return id if id >= 1 and id <= 15 else 0
+
+
+## v0.62 originalElements：技能自身 damage.elementId（-1 取普攻属性）＋附加属性，不看属性转换。
+static func original_elements(item: Dictionary, a: XBattler) -> Array:
+	if a is XActor and a.actor_id == 172 and int(item.get("id", 0)) in [10234, 10235]:
+		return [13]
+	var id := int(item.damage.elementId)
+	var es: Array = a.attack_elements() if id < 0 else ([id] if id > 0 else [])
+	es = es.duplicate()
+	es.append_array(item.get("yep", {}).get("multipleElements", []))
+	var out := []
+	for e in es:
+		if int(e) >= 1 and int(e) <= 15 and not out.has(int(e)):
+			out.append(int(e))
+	return out
+
 ## 战斗者相关的全部对象：特性对象＋技能（角色已学、敌人行动表）
 static func objects(b: XBattler) -> Array:
 	var out := []
@@ -203,7 +225,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 		"finalMultiplier": 1.0, "growthMultiplier": 1.0, "settlementMultiplier": 1.0,
 		"physicalDefenseRate": 1.0, "magicalDefenseRate": 1.0, "physicalDamageMultiplier": 1.0, "magicalDamageMultiplier": 1.0,
 		"flatMitigationRate": 1.0, "healingMultiplier": 1.0, "physicalIncomingPierce": 0.0, "magicalIncomingPierce": 0.0,
-		"resistancePierce": 0.0, "incomingMultiplier": 1.0, "elements": null, "noElement": false, "categoryMax": false}
+		"resistancePierce": 0.0, "incomingMultiplier": 1.0, "elements": null, "noElement": false, "categoryMax": false,
+		"resistancePierceByElement": XLiuying.pierce_by_element(item, a, _resistance_pierce_by_element(a))}  # 流萤赤染之茧：火穿透取 max(原值, 33)
 	var registry: XModuleRegistry = options.get("moduleRegistry", XModuleRegistry.standard())
 	var facts := {"orbMultiplier": orb_set_multiplier(item, a) if not dmg_type in [3, 4] else 1.0}
 	# Extra module facts are explicitly supplied value snapshots. The registered
@@ -253,10 +276,17 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var final_mult := maxf(0.0, 1.0 + float(frame.finalAdd)) * maxf(0.0, float(frame.finalMultiplier))
 	var normal_mult := maxf(0.0, 1.0 + float(frame.normalAdd))
 	var race := _race_factors(a, b)
-	var es: Array = options.get("elements", frame.elements if frame.elements != null else action_elements(item, a))
+	var explicit = options.get("elements", frame.elements)
+	var es: Array = explicit if explicit != null else action_elements(item, a)
 	if frame.noElement: es = [0]
 	if es.is_empty():
 		es = [0]
+	# v0.62：属性转换时攻击方增伤、固定附加与独立乘区逐项按原属性，目标侧（抗性、克制、固定减伤）按转换后属性；多候选取最高
+	var originals := []
+	if explicit == null and not frame.noElement and conversion_id(item, a) != 0:
+		originals = original_elements(item, a)
+		if originals.is_empty():
+			originals = [0]
 	var physical := mode == "physical" if options.has("mode") else is_physical(item)
 	var magical := mode == "magical" if options.has("mode") else is_magical(item)
 	var incoming := 1.0
@@ -272,27 +302,27 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var best := {}
 	var cands := []
 	for e in es:
-		var resistance: float = 1.0 if kind == "true" or e == 0 else b.element_rate(e)
-		var absorb := resistance < 0.0
-		if resistance > 0.0 and resistance < 1.0:
-			resistance = 1.0 - (1.0 - resistance) * (1.0 - clampf(frame.resistancePierce, 0.0, 1.0))
-		var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
-		var bonus: float = 1.0 if frame.noElement else _module_element_bonus(a, e, frame)
-		var flat_element := 0.0 if frame.noElement else _sum_yep(a, "elementAmplifyN", e, _yep_objects(a))
-		var multiplied: float = (basis + flat_element * mastery_rate * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
-		var crit: float = 1.0 if absorb else critical_mult
-		var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
-		var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
-		var independent: float = 1.0 if absorb else _independent(a, item, e, frame)
-		var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
-		# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
-		var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
-		cands.append({"gross": value, "flat": flat, "resistance": resistance})
-		var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
-			"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
-			"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
-		if best.is_empty() or value > best.value:
-			best = row
+		for oe in (originals if not originals.is_empty() else [e]):
+			var resistance: float = 1.0 if kind == "true" or e == 0 else b.element_rate(e)
+			var absorb := resistance < 0.0
+			resistance = apply_resistance_pierce(resistance, frame, e)
+			var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
+			var bonus: float = 1.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _module_element_bonus(a, oe, frame)
+			var flat_element := 0.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _sum_yep(a, "elementAmplifyN", oe, _yep_objects(a))
+			var multiplied: float = (basis + flat_element * mastery_rate * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
+			var crit: float = 1.0 if absorb else critical_mult
+			var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
+			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
+			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
+			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
+			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
+			var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
+			cands.append({"gross": value, "flat": flat, "resistance": resistance})
+			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
+				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
+				"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
+			if best.is_empty() or value > best.value:
+				best = row
 	var settled: float = best.value
 	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
@@ -337,7 +367,7 @@ static func apply_fixed_mitigation(amount: float, res: Dictionary) -> float:
 
 static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictionary, vars: Array, frame: Dictionary) -> Dictionary:
 	var base := float(options.rawValue) if options.has("rawValue") else eval_formula(item, a, b, vars)
-	var es := action_elements(item, a)
+	var es := original_elements(item, a)  # v0.62：治疗只转换 HP 伤害，不看转换后的属性增伤
 	var mult := 1.0
 	if not es.is_empty():
 		mult = 0.0
@@ -386,6 +416,32 @@ static func _race_factors(a: XBattler, b: XBattler) -> Dictionary:
 			if source_ids.has(int(m[0])):
 				flat += float(m[1])
 	return {"multiplier": maxf(0.0, 1.0 + boost), "flat": maxf(0.0, flat)}
+
+
+## v0.62 installDamageElementRuntime：攻击方的百分比穿透（DepassiveHarmReXX: N%，penetrateHarmRe.percent）
+## 也作用于目标元素抗性，按元素记 0～100；只收正值。
+static func _resistance_pierce_by_element(a: XBattler) -> Dictionary:
+	var out := {}
+	var pp: Dictionary = a.passive_cache().get("penetratePercent", {}) if a != null else {}
+	for k in pp:
+		var v := float(pp[k])
+		if v > 0.0:
+			out[int(k)] = clampf(v, 0.0, 100.0)
+	return out
+
+
+## applyResistancePierce：吸收（<0）不变；完全免疫（0）只有该元素穿透 ≥100% 才打破成 1；
+## 0～1 之间与通用穿透（黄泉／镜流 resistancePierce）乘算：1-(1-r)(1-通用)(1-元素穿透)。
+static func apply_resistance_pierce(resistance: float, frame: Dictionary, e: int) -> float:
+	var by_element: Dictionary = frame.get("resistancePierceByElement", {})
+	var pg := clampf(float(by_element.get(e, 0.0)), 0.0, 100.0)
+	if not resistance > 0.0:
+		if resistance != 0.0:
+			return resistance
+		return 1.0 if pg >= 100.0 else 0.0
+	if resistance < 1.0:
+		return 1.0 - (1.0 - resistance) * (1.0 - clampf(frame.resistancePierce, 0.0, 1.0)) * (1.0 - pg / 100.0)
+	return resistance
 
 
 static func _flat_mitigation(a: XBattler, b: XBattler, e: int, frame: Dictionary) -> float:

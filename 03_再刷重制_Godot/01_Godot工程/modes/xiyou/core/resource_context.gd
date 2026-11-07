@@ -39,6 +39,8 @@ func add_state(b: XBattler, id: int, inputs := {}) -> void:
 		return
 	if result(b).removedStates.has(id) and not forced:
 		return
+	if XLiuying.blocks_state(b, id):
+		return  # 流萤 addState／isStateAddable 包装：负面免疫
 	var context := state_context(b)
 	context.merge(inputs, true)
 	context.resources = self
@@ -121,10 +123,11 @@ func gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}  # 绑定 gainHp 包装：璇附身期间不掉血
 	if amount > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 		return {}  # 归根中不回血
+	amount = XLiuying.heal_value(b, amount)  # 流萤 gainHp 包装（第 34 个）：击破印记受治疗 −10%/层
 	var temp := XGuyu.isolated_begin() if amount < 0.0 else {}  # 不在行动里的扣血包一个临时事件（代命）
 	amount = XGuyu.heal_value(amount)
 	if amount < 0.0:
-		amount = -XShieldLedger.hp(b, -amount)  # 护盾账本 gainHp 包装（最外层）：账本先吸收
+		amount = -XShieldLedger.hp_gain(b, -amount)  # 护盾账本 gainHp 包装（最外层）：账本先吸收
 	var was_alive := b.is_alive() and b.hp > 0.0
 	var entry := _gain(b, resource, amount)
 	if error.is_empty():
@@ -185,6 +188,15 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	XAlienBattle.after_gain(b, resource)  # 异化 hpChange 末尾：同步生命池与嫁祸者
 	return entry
 
+## O-待定·角色HP包装（并入原「O-待定·流萤遮住角色 setHp」，rules-newsrc4）：角色身上更早的自有重写遮住后装在基类上的 HP 包装（原版代码错误，装载次序副作用）。
+## - setHp：installLiuyingRuntime（模块 33）在 Game_Actor.prototype 上另定义 setHp，之后装的 Game_BattlerBase.setHp 包装
+##   （异化 Runtime 35、Advanced 37、谷雨 40、护盾账本 41）对角色全走不到；插件期的原生 ShieldSystem 在它里面，照旧按合计挡。
+## - gainHp：krz_state_re 在 Game_Actor.prototype 上的 gainHp 捕获插件期的 Game_Battler.gainHp，之后 alias 在 Game_Battler 上的
+##   账本 gainHp 包装对角色走不到（谷雨 entrances、异化 Advanced 自己补了 Game_Actor，不受影响）。
+## true＝这些包装照旧对角色生效（修正）；false＝照 v0.62.12 原版：角色 setHp 跳过异化、谷雨；角色 gainHp／setHp 账本不扣、
+## 原生按合计白挡（XShieldLedger.hp_gain 回退支，参照 tests/fixtures/shield_ledger_oracle_v062.json）
+static var o_actor_hp_wrappers := true
+
 ## 原版 setHp／setMp：护盾在 setter 内处理；不写伤害槽、不做 gain 末尾 dirty。
 func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not error.is_empty():
@@ -196,17 +208,19 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 	if not unsupported.is_empty():
 		error = unsupported
 		return {}
+	var wrapped := o_actor_hp_wrappers or not b is XActor
 	if resource == "hp" and not preview:
-		if value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
+		if wrapped and value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 			return {}  # 谷雨 setHp 包装：归根中抬不起生命
 		if value < b.hp:
-			value = b.hp - XShieldLedger.hp(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收
-	if resource == "hp" and XAlienBattle.routes_set_hp(b):
-		return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
-	if resource == "hp" and value < b.hp and XAlienBattle.frame_blocks_hp(b):
-		value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
-	elif resource == "hp" and value < b.hp and not boss_output.is_settled(b, "hp"):
-		value = b.hp - XAlienBattle.frame_outgoing(b.hp - value)  # 同一包装：帧里压低生命按烈变／小怪异化加成
+			value = b.hp - XShieldLedger.hp_gain(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收（O-待定·角色HP包装 回退支在 hp_gain 里按合计白挡）
+	if resource == "hp" and wrapped:
+		if XAlienBattle.routes_set_hp(b):
+			return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走
+		if value < b.hp and XAlienBattle.frame_blocks_hp(b):
+			value = b.hp  # 异化 setHp 包装（Runtime）：逆祷者的帧里对敌人压低生命无效
+		elif value < b.hp and not boss_output.is_settled(b, "hp"):
+			value = b.hp - XAlienBattle.frame_outgoing(b.hp - value)  # 同一包装：帧里压低生命按烈变／小怪异化加成
 	var before := snapshot(b)
 	var old: float = b.get(resource)
 	_set_resource(b, resource, value)
@@ -225,6 +239,8 @@ func _set_resource(b: XBattler, resource: String, value: float) -> void:
 	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
 	if value != old:
 		b.set(resource, value)
+		if resource == "hp" and value < old:
+			XLiuying.note_hp_loss(b)  # 流萤 setHp 包装：掉血叠萤火印记
 		if resource == "tp" and not in_battle:
 			_refresh_base(b)
 		else:
@@ -268,6 +284,7 @@ func refresh(b: XBattler) -> void:
 			b.effect_lists.clear()
 			b.effect_snapshot_valid = false
 	_refresh_type_after(b)
+	XLiuying.after_refresh(b)  # 流萤 refresh 包装：负面免疫中清掉绕过 addState 的负面状态
 	b.lifecycle_context = previous
 
 func _refresh_type_before(b: XBattler) -> void:
@@ -278,7 +295,7 @@ func _refresh_type_before(b: XBattler) -> void:
 func _refresh_base(b: XBattler) -> void:
 	var resisted := b.traits_set(XBattler.TRAIT_STATE_RESIST)
 	for id in b.state_ids.duplicate():
-		if resisted.has(id):
+		if resisted.has(id) and not XLiuying.keeps_resisted(b, id):  # 流萤 stateResistSet 包装：强制眩晕期间不抹
 			b.state_ids.erase(id)
 			b.state_turns.erase(id)
 	b.hp = clampf(b.hp, 0.0, b.mhp)

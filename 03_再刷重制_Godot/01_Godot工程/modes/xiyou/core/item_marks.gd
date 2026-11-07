@@ -121,6 +121,18 @@ static var _mc_res: Array = []
 ## 按名字的 <Item 名字 Buy Price> 正式数据里解析不到物品，不算；<Weapon/Armor x Buy Price> 的目标是独立装备，插件跳过。
 static func sell_rewards(rec: Dictionary) -> Dictionary:
 	var base := _base_rec(rec)
+	if XBabyAllActors.free_open and XBabyAllActors.is_horn(base):
+		# 宝宝免费号角店开着：号角的额外货币买入价清空（installBabyAllActorsRuntime makeFree），卖出那部分不变
+		var free: Dictionary = sell_rewards_raw(base).duplicate(true)
+		free.buy_vars = {}
+		free.buy_items = {}
+		free.buy = false
+		return free
+	return sell_rewards_raw(rec)
+
+
+static func sell_rewards_raw(rec: Dictionary) -> Dictionary:
+	var base := _base_rec(rec)
 	var key := "%s:%d" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0))]
 	if _rewards.has(key):
 		return _rewards[key]
@@ -199,8 +211,8 @@ static func selling_price(rec: Dictionary) -> int:
 
 # ---- 买入 ----
 
-## 停用的伙伴号角（installImportedBalanceRuntime：Scene_Shop.prepare 从商品里滤掉，Window_ShopBuy.isEnabled 也拦下）
-const DISABLED_HORNS := [255, 256, 257, 394, 440]
+## 停用的伙伴号角（installImportedBalanceRuntime：Scene_Shop.prepare 从商品里滤掉，Window_ShopBuy.isEnabled 也拦下）：
+## 名单只在 XImportedBalance.DISABLED_HORNS 一处（新源 v0.29／v0.36 扩成 10 个，原来这里另有一份旧的 5 个）
 const MAX_ITEMS := 9999         # $gameParty.maxItems（物品）；独立装备每件单独，maxItems 为 1
 static var _proxy := {}
 
@@ -228,7 +240,7 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 		if not mapped.has(g):
 			mapped.append(g)
 	var horn_before := mapped.any(_is_horn_row)
-	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and DISABLED_HORNS.has(g[1])))
+	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.DISABLED_HORNS.has(g[1])))
 	if map_id == LOBBY_MAP:
 		_lobby_additions(out, horn_before)
 	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
@@ -261,6 +273,7 @@ const LOBBY_MIRA_HORN := 2904
 const LOBBY_MIRA_HEART := 4577
 const LOBBY_RAVEN_HORN := 2902
 const LOBBY_RAVEN_ARTIFACT := 4001
+const LOBBY_LIUYING_HORN := 3063   # installLiuyingRuntime v0.60.02：有 2788 的不朽号角货架追加流萤号角（库里要真有这个号角，旧源没有）
 static var _binding_horns: Array = []
 static var _guyu_horn := -1
 
@@ -295,6 +308,10 @@ static func _lobby_additions(out: Array, horn_before: bool) -> void:
 		for id in _binding_horns:
 			_push(out, 0, id)
 		_push(out, 0, _guyu_horn)
+	# 流萤的 prepare 包装在谷雨与云裳之间（参照里 3063 排在 2943 之后、2941 之前）
+	if out.any(func(g): return g[0] == 0 and g[1] == LOBBY_LINK_HORN) and str(XDB.rec("Items", LOBBY_LIUYING_HORN).get("name", "")) == "伙伴号角：流萤":
+		_push(out, 0, LOBBY_LIUYING_HORN)
+	if horn_before:
 		_push(out, 0, LOBBY_YUNSHANG_HORN)
 	var horn := out.any(_is_horn_row)
 	if horn:
@@ -416,7 +433,7 @@ const SUPER_STRONG_IDS := [106, 101, 100, 102, 104, 127, 124, 96, 120, 107, 108,
 ## 持久挑战开关（不看副本事件临时改的敌方难度）；混沌难度（原生 ID 9）也在地狱之上
 const SUPER_SWITCHES := [2494, 2489, 2487, 2483, 2461, 2462, 2463]
 ## 新原生接入的伙伴号角（D.recruitments：号角物品 → 角色）
-const RECRUIT_HORNS := {2902: 167, 2904: 168, 2931: 169, 2932: 170, 2936: 171, 2938: 172, 2940: 173, 2941: 174, 2943: 175, 2945: 176, 2946: 177}
+const RECRUIT_HORNS := {2902: 167, 2904: 168, 2931: 169, 2932: 170, 2936: 171, 2938: 172, 2940: 173, 2941: 174, 2943: 175, 2945: 176, 2946: 177, 3063: 179}
 const SUPER_NOTICE := "超强者仅限地狱及以上难度获取。"
 static var _recruit_cache := {}
 static var _super_ids: Array = []
@@ -426,6 +443,8 @@ static var _super_ids: Array = []
 ## B.syncSuperStrong 在开战（BattleManager.setup）和读档时把后者并进 D.superStrongIds，之后出战、获取、招募、Boss 加成都按它算；
 ## 重制总是算进去（原版只有新局后还没打过仗、也没读过档的那一段不算）。
 static func super_strong_ids() -> Array:
+	if _super_ids.is_empty() and XTier.tagged():
+		_super_ids = XTier.ids(XTier.SUPER)  # v0.44 起名单就是 <KyoTier:超强者>（CodexTier 原地重建 superStrongIds）
 	if _super_ids.is_empty():
 		_super_ids = SUPER_STRONG_IDS.duplicate()
 		for a in XDB.table("Actors"):
@@ -439,7 +458,8 @@ static func is_super_strong(actor_id: int) -> bool:
 
 
 static func super_enabled(s: XState) -> bool:
-	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9
+	# installBabyAllActorsRuntime：宝宝路线视同已开放超强者
+	return SUPER_SWITCHES.any(func(id): return s.switch(id)) or s.difficulty == 9 or XBabyAllActors.active(s)
 
 
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
@@ -542,7 +562,7 @@ static func flush_deploy_notice(s: XState) -> void:
 static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 	if rec.is_empty():
 		return false
-	if not is_gear(rec) and DISABLED_HORNS.has(int(rec.get("id", 0))):
+	if not is_gear(rec) and XImportedBalance.DISABLED_HORNS.has(int(rec.get("id", 0))):
 		return false
 	if not is_gear(rec) and not can_acquire_item(s, rec):
 		return false
@@ -566,6 +586,8 @@ static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 ## Scene_Shop.maxBuy：持有上限余量（物品 9999−持有，独立装备 1），有价格时再受金钱限制，MoreCurrencies 再按各变量/物品取整
 static func max_buy(s: XState, rec: Dictionary, price: int) -> int:
 	var mx := 1 if is_gear(rec) else MAX_ITEMS - s.item_count(int(rec.get("id", 0)))
+	if XBabyAllActors.free_open and XBabyAllActors.is_horn(rec):
+		mx = mini(mx, 1)  # 宝宝免费号角店：每次最多 1 支
 	if price > 0:
 		mx = mini(mx, s.gold / price)
 	var r := sell_rewards(rec)
@@ -602,6 +624,17 @@ static func onekey_grades() -> Array:
 	return out
 
 
+## 一键出售窗的指令（installSafeSellRuntime 改写 makeCommandList）：开着安全出售时先一行「保留词条：门槛」（grade −1，确定循环门槛），
+## 各档改叫「出售X装备」；关着时同 onekey_grades
+static func onekey_commands(s: XState) -> Array:
+	var out := onekey_grades()
+	if not XSafeSell.ENABLED:
+		return out
+	out = out.map(func(r): return {"grade": r.grade, "text": str(r.text).trim_suffix("品质") + "装备"})
+	out.push_front({"grade": -1, "text": "保留词条：" + XSafeSell.label(s)})
+	return out
+
+
 static func onekey_members(g: int) -> Array:
 	var grades: Array = XQuality.config().itemGrades
 	var out := []
@@ -628,7 +661,10 @@ static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 
 ## Scene_Shop.sellUnifiedQuality：sellable_gear（该档旧档 0～14）逐件 doSell(1)。
 ## 卖价为 0 的也卖掉（原版现行代码不查价格）。返回 [件数, 金额]。
+## 安全出售开着时（O-待定·安全出售）改走 XSafeSell.plan（七档成员含旧档 15、没品质备注按旧档 1、按保留原因留下）。
 static func onekey_sell(s: XState, g: int) -> Array:
+	if XSafeSell.ENABLED:
+		return XSafeSell.sell_plan(s, XSafeSell.plan(s, g))
 	var gold := 0
 	var list := sellable_gear(s, onekey_members(g), true)
 	for e in list:

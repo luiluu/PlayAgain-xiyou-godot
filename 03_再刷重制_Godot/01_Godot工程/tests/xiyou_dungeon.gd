@@ -104,6 +104,9 @@ static func page_of(map_id: int, id: int, erased: Dictionary) -> int:
 		return -1
 	var s := XState.current
 	for i in range(ev.pages.size() - 1, -1, -1):
+		# 深渊商人 <CodexMerchant29> 第 2 页只看商人在不在（与 MVEvent._find_page 同）
+		if i == 1 and str(ev.get("note", "")).contains("<CodexMerchant29>") and not MVEvent.merchant29_present():
+			continue
 		var c: Dictionary = ev.pages[i].conditions
 		if c.switch1Valid and not s.switch(int(c.switch1Id)):
 			continue

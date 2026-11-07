@@ -130,10 +130,21 @@ func _run() -> void:
 	foe.add_state(cnt_state)
 	_check("enemy_cnt_1", is_equal_approx(foe.cnt, 1.0), foe.cnt)
 	var foe_hp := foe.hp
+	# 旧源 v0.28（COUNTER_AFTER_HIT 回退支）：敌人反击代替挨打
+	XBattleLogic.COUNTER_AFTER_HIT = false
 	logs = logic.execute(a, phys, foe)
+	XBattleLogic.COUNTER_AFTER_HIT = true
 	logs = logs.filter(func(l): return not str(l.type).begins_with("seq"))  # 去掉行动序列的画面条目
 	_check("counter_logged", logs.size() >= 3 and logs[1].type == "counter" and logs[1].user == foe and logs[2].user == foe and logs[2].target == a, logs.map(func(l): return l.type))
 	_check("counter_negates_hit", foe.hp == foe_hp, [foe.hp, foe_hp])
+	# 新源 v0.35 起（默认）：敌人先挨这一下，还活着能行动再反击（YEP invokeAction 2098 行）
+	a.cooldowns.clear()
+	a.hp = a.mhp
+	a.mp = a.mmp
+	logs = logic.execute(a, phys, foe)
+	logs = logs.filter(func(l): return not str(l.type).begins_with("seq"))
+	_check("counter_after_hit_logged", logs.size() >= 4 and logs[1].type == "hit" and logs[1].target == foe and logs[2].type == "counter" and logs[2].user == foe and logs[3].user == foe and logs[3].target == a, logs.map(func(l): return l.type))
+	_check("counter_after_hit_damages", foe.hp < foe_hp or logs[1].missed or logs[1].evaded, [foe.hp, foe_hp])
 	# 必中被动：不会被反击
 	phys.meta["SkillCertainHitss"] = true # persistent native note capability survives gain/refresh
 	a.refresh_passive()
@@ -145,6 +156,9 @@ func _run() -> void:
 	phys.meta.erase("SkillCertainHitss")
 	a.refresh_passive()
 	foe = logic.enemies[1]          # 上一步的敌人可能已被打倒，换一只
+	if foe.is_dead():  # 新源反击先挨打：401 的三段也会打到这只，测反射前把它拉回满血
+		foe.remove_state(1)
+		foe.hp = foe.mhp
 	var mrf_state := _fake_state(5, 1.0)
 	foe.add_state(mrf_state)
 	var magic := XDB.rec("Skills", 1)

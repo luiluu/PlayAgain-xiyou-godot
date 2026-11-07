@@ -107,7 +107,10 @@ func _run() -> void:
 	check("help_rows_other_actor", XBlackFlash.help_rows(skill, logic.state.actor(1)).is_empty())
 	check("help_rows_no_actor", XBlackFlash.help_rows(skill, null).is_empty())
 	XHelpCard.scene_actor = a
+	# 比的是 v0.43 排版（XHelpCard.LAYOUT_V043）之前的说明行
+	XHelpCard.LAYOUT_V043 = false
 	var texts := XHelpCard.content(skill, "skill").map(func(x): return str(x[0]))
+	XHelpCard.LAYOUT_V043 = true
 	check("help_card_tail", texts.size() >= 2 and texts.slice(-2) == rows.map(func(x): return x[0]), texts.slice(-3))
 	XHelpCard.scene_actor = null
 	texts = XHelpCard.content(skill, "skill").map(func(x): return str(x[0]))

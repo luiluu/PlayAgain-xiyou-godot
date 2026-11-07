@@ -3,7 +3,7 @@ extends RefCounted
 ## 【cc·悟空·未经审查】108 奈叶共享击杀（js/codex/runtime/installNanohaSharedKillRuntime.js）：
 ## - Game_Action.apply 包装：行动者是出战队伍里别的角色、奈叶学会并肩适应 10168 与适应 5683 且活着、也在出战队伍里时，
 ##   打中（isHit）一个 apply 前还活着的敌人，就记进本次行动的目标表（同一目标只记一次）；
-## - BattleManager.endAction 包装（原 endAction 之后）：目标表里每个已死的敌人给奈叶 addParam(0,10)、addParam(1,30)（永久，存档）。
+## - BattleManager.endAction 包装（原 endAction 之后）：目标表里每个已死的敌人给奈叶 CodexNanohaAdapt(nanoha, 0.5)（v0.62.03 起；v0.28 是 addParam(0,10)、addParam(1,30)）。
 ## 奈叶自己的击杀不走这里（actorId===108 排除），由状态 1768 Conclude 给。
 ## 目标表挂在本次行动的 Game_Action 上：追击、反击等另建的行动不算；重制只在 act／强制行动的 execute 期间开表（begin／end_execute）。
 ## 读档补学 10168（ensureLearned）是给旧存档的，重制不迁移 MV 旧存档、新局按职业 1 级习得，不移植。
@@ -31,6 +31,29 @@ static func eligible(subject) -> XActor:
 	return n if members.has(n) and members.has(subject) else null
 
 
+## 【cc·哪吒·未经审查】newsrc3：window.CodexNanohaAdapt(a, share)（v0.62.03 适应成长软上限，状态 1768 Conclude 调用）。
+## 累计次数 n 前 2000 次每次 +10 生命、+30 魔法；之后乘 2000/n；队友击杀 share＝0.5。
+## 次数第一次用时按已得魔法加值（_paramPlus[1]）÷30 取整估算，存档 flags["codexNanohaAdapt"]{"角色ID": n}（原版挂在 Game_Actor._codexNanohaAdapt）。
+const ADAPT_FLAG := "codexNanohaAdapt"
+
+static func adapt(a: XActor, share: float = 1.0) -> void:
+	var s := XState.current
+	if a == null or s == null:
+		return
+	if share == 0.0:
+		share = 1.0  # 原版 Number(share)||1
+	var book: Dictionary = s.flags.get(ADAPT_FLAG, {})
+	var key := str(a.actor_id)
+	if not book.has(key):
+		book[key] = maxf(0.0, floorf(XParamPlus.bonus(a, 1) / 30.0))
+	var n := maxf(0.0, float(book[key]))
+	var f := (1.0 if n < 2000.0 else 2000.0 / n) * share
+	a.add_param(0, 10.0 * f)
+	a.add_param(1, 30.0 * f)
+	book[key] = n + share
+	s.flags[ADAPT_FLAG] = book
+
+
 ## 本次行动开表（startAction 之后的 execute 之前）
 static func begin(logic) -> void:
 	logic.nanoha_frame = {"open": true, "targets": []}
@@ -52,6 +75,11 @@ static func applied(logic, u, t, live: bool, r: Dictionary) -> void:
 		f.targets.append(t)
 
 
+## ADAPT_V062＝true（默认，O-待定·奈叶队友击杀）：跟 v0.62.03 起的 CodexNanohaAdapt(nanoha, 0.5)，队友击杀给一半、计入适应软上限与累计次数；
+## false 回到 v0.28 的固定 +10 最大生命／+30 最大魔法（不计次数）。
+static var ADAPT_V062 := true
+
+
 ## endAction 包装（原 endAction 之后）：subject 是 BattleManager._subject
 static func finish(logic, subject) -> void:
 	var f: Dictionary = logic.nanoha_frame
@@ -63,8 +91,11 @@ static func finish(logic, subject) -> void:
 		return
 	for e in f.targets:
 		if e != null and e.is_dead():
-			n.add_param(0, 10.0)
-			n.add_param(1, 30.0)
+			if ADAPT_V062:
+				adapt(n, 0.5)  # v0.62.03 起 CodexNanohaAdapt(nanoha, 0.5)：队友击杀给一半、计入同一软上限（newsrc4）
+			else:
+				n.add_param(0, 10.0)  # v0.28：固定 +10／+30
+				n.add_param(1, 30.0)
 
 
 ## ---- 二期①：大招 5703～5709 的自定义 MP 消耗与伤害后多段（参照 mv_oracle/nanoha3_probe.cjs，tests/fixtures/nanoha3_oracle.json）----

@@ -1,9 +1,10 @@
 extends Node
-## 【cc·悟空·未经审查】108 奈叶共享击杀（XNanoha）：与 mv_oracle/nanoha_kill_probe.cjs 的冻结 v0.28 参照
+## 【cc·悟空·未经审查】108 奈叶共享击杀（XNanoha）：与 mv_oracle/nanoha_kill_probe.cjs 的参照（newsrc4 起新源 v0.62.12）
 ## （tests/fixtures/nanoha_kill_oracle.json，真实 Game_Action.apply／BattleManager.endAction）逐例比。
 ## - learn：新局奈叶 1 级就会并肩适应 10168、适应 5683；
 ## - kill.*：队伍 [1, 108]（或只有 1）各 10 级、敌群 2 三只（血量按例）、开挑战开关 2494（locked 不开，奈叶去替补）；
-##   行动后比奈叶永久加成（生命、魔法）、各敌死活、出战成员与两项技能：队友每杀一只 +10／+30，打不死、奈叶不在队／阵亡／缺技能不给，
+##   行动后比奈叶永久加成（生命、魔法）、适应累计次数、各敌死活、出战成员与两项技能：队友每杀一只走 CodexNanohaAdapt(0.5)（软上限前 +5／+15，
+##   softcap 例从 3000 次起），打不死、奈叶不在队／阵亡／缺技能不给，
 ##   奈叶自己的击杀只由状态 1768 Conclude 给（不重复）；twice：已死的敌人第二次行动不再算。
 const FIXTURE := "res://tests/fixtures/nanoha_kill_oracle.json"
 const BIG_HP := 1e9
@@ -40,6 +41,8 @@ func _battle(setup: Dictionary) -> Array:
 	var n := s.actor(XNanoha.ACTOR)
 	if setup.has("forget"):
 		n.forget_skill(int(setup.forget))
+	if setup.has("adapt"):
+		s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(setup.adapt)}  # 参照 n._codexNanohaAdapt
 	var rand := XBattleRandom.create("0000000000000108")
 	rand.rule = FixedMidStream.new()
 	rand.rule.domain = "rule"
@@ -71,12 +74,17 @@ func _snap(logic: XBattleLogic, s: XState, n: XActor) -> Dictionary:
 	var row: Array = s.mv_param_plus.get(str(XNanoha.ACTOR), [0, 0])
 	return {"members": s.battle_members().map(func(a): return a.actor_id), "plus": [float(row[0]), float(row[1])],
 		"dead": logic.enemies.map(func(e): return e.is_dead()),
-		"learned": [XNanoha.SHARED, XNanoha.ADAPT].map(func(id): return n.skill_ids.has(id))}
+		"learned": [XNanoha.SHARED, XNanoha.ADAPT].map(func(id): return n.skill_ids.has(id)),
+		"count": (s.flags.get(XNanoha.ADAPT_FLAG, {}) as Dictionary).get(str(XNanoha.ACTOR))}
 
 
 func _same(a: Dictionary, o: Dictionary) -> bool:
 	var ints := func(v): return (v as Array).map(func(x): return int(x))
-	return ints.call(a.members) == ints.call(o.members) and ints.call(a.plus) == ints.call(o.plus) \
+	# plus 按浮点比（适应软上限后是小数）；count 是适应累计次数（参照 _codexNanohaAdapt，旧夹具没有这一项就不比）
+	var plus_ok: bool = a.plus.size() == o.plus.size() and range(a.plus.size()).all(func(i): return is_equal_approx(float(a.plus[i]), float(o.plus[i])))
+	var count_ok: bool = not o.has("count") or (o.count == null and a.count == null) \
+		or (o.count != null and a.count != null and is_equal_approx(float(a.count), float(o.count)))
+	return ints.call(a.members) == ints.call(o.members) and plus_ok and count_ok \
 		and a.dead == o.dead and a.learned == o.learned
 
 
@@ -86,7 +94,7 @@ func _act(logic: XBattleLogic, s: XState, who: int, skill: int) -> void:
 
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	if not check("oracle_present", ref is Dictionary and ref.has("cases") and ref.cases.size() == 13):
+	if not check("oracle_present", ref is Dictionary and ref.has("cases") and ref.cases.size() == 14):
 		return finish()
 	for c in ref.cases:
 		check(c.id + ".oracle_clean", c.errors.is_empty(), c.errors)
@@ -122,7 +130,18 @@ func _run() -> void:
 	logic.apply(b[1].actor(1), XDB.rec("Skills", 1), logic.enemies[0])
 	XNanoha.finish(logic, b[1].actor(1))
 	check("local.closed_frame", _snap(logic, b[1], b[2]).plus == [0.0, 0.0], _snap(logic, b[1], b[2]))
+	# 回退开关 O-待定·奈叶队友击杀：ADAPT_V062＝false 回到 v0.28 固定 +10／+30，不计适应次数（AOE 杀两只＝+20／+60）
+	XNanoha.ADAPT_V062 = false
+	var rb := _battle({"party": [1, 108], "hp": [1, 1, BIG_HP]})
+	_act(rb[0], rb[1], 1, 160)
+	var rs := _snap(rb[0], rb[1], rb[2])
+	XNanoha.ADAPT_V062 = true
+	check("rollback.v028_fixed", _same_plus(rs.plus, [20.0, 60.0]) and rs.count == null, rs)
 	finish()
+
+
+func _same_plus(got: Array, want: Array) -> bool:
+	return got.size() == want.size() and range(got.size()).all(func(i): return absf(float(got[i]) - float(want[i])) < 1e-6)
 
 
 ## nanoha2_oracle field.flow：真实开战后奈叶带 1708／1768／1774／1780；开战只预约 1320（领域 1774 的 battle 效果在被动状态之前跑过，

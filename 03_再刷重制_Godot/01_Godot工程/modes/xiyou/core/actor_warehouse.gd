@@ -27,7 +27,10 @@ static func stored(s: XState) -> Array[int]:
 		if not s.party.has(id):
 			keep.append(id)
 	s.saved_actors = keep
-	return keep.duplicate()
+	# v0.62 V029：隐藏角色不出现在列表里（原版新局／读档把它们从 _saveactors 挪进 _codexHiddenActors29；这里只滤显示，编号留在仓库里不丢）
+	var shown: Array[int] = []
+	shown.assign(keep.filter(func(id): return not XImportedBalance.is_hidden_actor(id)))
+	return shown
 
 
 ## 列表数据：deposit＝true 时是队伍，否则是仓库
@@ -72,7 +75,7 @@ static func withdraw(s: XState, index: int) -> String:
 		return "disabled"
 	s.actor(id)
 	s.party.append(id)
-	s.saved_actors.remove_at(index)
+	s.saved_actors.erase(id)  # 列表滤掉了隐藏角色，行号不一定等于仓库下标，按编号去
 	s._ensure_slots()
 	_first_slot_fix(s)
 	return "ok"

@@ -35,6 +35,9 @@ const MC_PADDING := 5          # YEP_X_MoreCurrencies Currency Padding
 const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onekey"], ["取消", "cancel"]]
 const ONEKEY_POS := Vector2(350, 150)
 const ONEKEY_W := 240.0
+## 安全出售（XSafeSell，O-待定·安全出售）：一键出售窗宽 680；选档后先弹确认窗（宽 720、4 行、画面居中，默认停在「取消」）
+const ONEKEY_SAFE_W := 680.0
+const CONFIRM_W := 720.0
 const CATEGORIES := [["物品", "item"], ["消耗品", "consumable"], ["武器", "weapon"], ["护甲", "armor"], ["重要物品", "keyItem"]]
 const SOLD_OUT := "售完"            # KMS_ShopInventory 参数 Sold out text
 const STOCK_CAPTION := "库存"       # Caption for stock
@@ -51,6 +54,9 @@ var purchase_only := false
 var stock_group := ""           # KMS_ShopInventory 库存组（XShopStock.open 取得；"" 为不限购）
 var _mode := "command"          # command / buy / category / sell / number / onekey
 var _onekey := 0
+var _confirm := 3
+var _plan := {}
+var _plan_grade := -1
 var _cmd := 0
 var _cat := 0
 var _cat_top := 0
@@ -75,15 +81,30 @@ var list_win: XMVWindow
 var status_win: XMVWindow
 var gold_win: XMVWindow
 var onekey_win: XMVWindow
+var confirm_win: XMVWindow
 var help_card: XHelpCard
 var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
 var _gold_buy := true
 
 
 func setup(g: Array, only: bool, group := "") -> void:
-	goods = g
+	# installBabyAllActorsRuntime（Scene_Shop.prepare 最外层）：宝宝路线的号角店改列全部可用角色、免费
+	var baby := XBabyAllActors.prepare(XState.current, g)
+	goods = baby[0]
+	_baby_free = baby[1]
+	if _baby_free:
+		XBabyAllActors.free_open = true
 	purchase_only = only
 	stock_group = group
+
+
+var _baby_free := false
+
+
+## Scene_Shop.terminate 包装：免费期间清空的号角货币价还原
+func _exit_tree() -> void:
+	if _baby_free:
+		XBabyAllActors.free_open = false
 
 
 func _ready() -> void:
@@ -97,10 +118,13 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
 	gold_win = XMVWindow.make(self, GOLD_RECT, op, _paint_gold)
-	var n := XItemMarks.onekey_grades().size()
-	onekey_win = XMVWindow.make(self, Rect2(ONEKEY_POS, Vector2(ONEKEY_W, n * LH + XMVWindow.PADDING * 2)), op, _paint_onekey)
+	var n := XItemMarks.onekey_commands(XState.current).size()
+	onekey_win = XMVWindow.make(self, Rect2(ONEKEY_POS, Vector2(ONEKEY_SAFE_W if XSafeSell.ENABLED else ONEKEY_W, n * LH + XMVWindow.PADDING * 2)), op, _paint_onekey)
 	onekey_win.visible = false
-	for w in [cmd_win, list_win, onekey_win]:
+	var ch := 4 * LH + XMVWindow.PADDING * 2
+	confirm_win = XMVWindow.make(self, Rect2((1280 - CONFIRM_W) / 2.0, (720 - ch) / 2.0, CONFIRM_W, ch), op, _paint_confirm)
+	confirm_win.visible = false
+	for w in [cmd_win, list_win, onekey_win, confirm_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
@@ -130,7 +154,8 @@ func _refresh() -> void:
 	list_win.down_arrow = (_mode == "sell" and _sell_top < n - _list_rows()) or (_mode == "buy" and _buy_top < nb - _list_rows())
 	list_win.up_arrow = (_mode == "sell" and _sell_top > 0) or (_mode == "buy" and _buy_top > 0)
 	onekey_win.visible = _mode == "onekey"
-	for w in [cmd_win, info_win, list_win, status_win, gold_win, onekey_win]:
+	confirm_win.visible = _mode == "confirm"
+	for w in [cmd_win, info_win, list_win, status_win, gold_win, onekey_win, confirm_win]:
 		w.refresh()
 	_update_help()
 
@@ -230,7 +255,7 @@ func _stock_row() -> Array:
 		var d := _buy_data()
 		if e.is_empty() and _buy_index < d.size():
 			e = d[_buy_index]
-		if e.is_empty() or not XShopStock.managed(int(e.kind), int(e.gid)):
+		if e.is_empty() or not XShopStock.shop_managed(int(e.kind), int(e.gid)):
 			return []
 		return [int(e.kind), int(e.gid), XShopStock.remaining(s, stock_group, int(e.kind), int(e.gid))]
 	if from == "sell":
@@ -240,7 +265,7 @@ func _stock_row() -> Array:
 		var e: Dictionary = d[_sell_index]
 		var kind := int(e.kind)
 		var id := int(e.rec.get("base", e.rec.get("id", 0)))
-		if not XShopStock.managed(kind, id):
+		if not XShopStock.shop_managed(kind, id):
 			return []
 		return [kind, id, XShopStock.remaining(s, stock_group, kind, id) if kind == 0 else XShopStock.stock_max(kind, id)]
 	return []
@@ -285,11 +310,29 @@ func _cmd_enabled(i: int) -> bool:
 
 
 func _paint_onekey(c: XMVCanvas) -> void:
-	var rows := XItemMarks.onekey_grades()
+	var rows := XItemMarks.onekey_commands(XState.current)
 	for i in range(rows.size()):
 		if i == _onekey:
 			c.cursor(Rect2(0, i * LH, c.size.x, LH))
 		c.text(rows[i].text, 6, i * LH, c.size.x - 12, "left")
+
+
+## Window_SafeSellConfirm40 的四行：[文字, 能否选]
+func confirm_rows() -> Array:
+	var p: Dictionary = _plan if not _plan.is_empty() else {"sell": [], "keep": []}
+	return [["待出售装备 %d 件；保留装备 %d 件" % [p.sell.size(), p.keep.size()], false], ["保留词条：" + XSafeSell.label(XState.current), false],
+		["确认出售", p.sell.size() > 0], ["取消", true]]
+
+
+func _paint_confirm(c: XMVCanvas) -> void:
+	var rows := confirm_rows()
+	for i in range(rows.size()):
+		if i == _confirm:
+			c.cursor(Rect2(0, i * LH, c.size.x, LH))
+		var col := XUI.TEXT
+		if not rows[i][1]:
+			col.a = 160.0 / 255.0   # changePaintOpacity(false)
+		c.text(rows[i][0], 6, i * LH, c.size.x - 12, "left", col)
 
 
 func _paint_info(c: XMVCanvas) -> void:
@@ -668,7 +711,7 @@ var _clicked_ok := false
 
 
 func _cursor_state() -> Array:
-	return [_mode, _cmd, _cat, _buy_index, _sell_index, _onekey]
+	return [_mode, _cmd, _cat, _buy_index, _sell_index, _onekey, _confirm]
 
 
 func _cursor_se(before: Array) -> void:
@@ -702,7 +745,9 @@ func _move_inner(d: int, wrap: bool) -> void:
 		"number":
 			_change_number(d)
 		"onekey":
-			_onekey = XMenu._move(_onekey, d, XItemMarks.onekey_grades().size(), wrap)
+			_onekey = XMenu._move(_onekey, d, XItemMarks.onekey_commands(XState.current).size(), wrap)
+		"confirm":
+			_confirm = XMenu._move(_confirm, d, 4, wrap)
 
 
 ## 通用翻页（Window_Selectable.cursorPagedown／cursorPageup）：买入、出售、分类三个列表
@@ -816,8 +861,34 @@ func _ok_inner() -> void:
 			_trade()
 		"onekey":
 			XSound.system(1)
-			var rows := XItemMarks.onekey_grades()
-			XItemMarks.onekey_sell(s, int(rows[_onekey].grade))
+			var rows := XItemMarks.onekey_commands(s)
+			var g := int(rows[_onekey].grade)
+			if g < 0:
+				XSafeSell.cycle(s, 1)   # 「保留词条」行：门槛往后一档，留在一键出售窗
+			elif XSafeSell.ENABLED:
+				_plan_grade = g
+				_plan = XSafeSell.plan(s, g)
+				_confirm = 3
+				_mode = "confirm"
+			else:
+				XItemMarks.onekey_sell(s, g)
+				_mode = "command"
+		"confirm":
+			if not confirm_rows()[_confirm][1]:
+				XSound.system(3)
+				return
+			XSound.system(1)
+			if _confirm == 3:
+				_mode = "onekey"
+				return
+			# 确认前重算：和弹窗时的计划不同（期间背包变了）就刷新计划、停在「取消」，不卖
+			var now := XSafeSell.plan(s, _plan_grade)
+			if now.sell.size() != _plan.sell.size() or range(now.sell.size()).any(func(i): return not is_same(now.sell[i], _plan.sell[i])):
+				_plan = now
+				_confirm = 3
+				return
+			XSafeSell.sell_plan(s, now)
+			_plan = {}
 			_mode = "command"
 
 
@@ -832,6 +903,9 @@ func _trade() -> void:
 		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
 		XItemMarks.buy(s, e.item, int(e.price), _number)
 		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
+		if _baby_free and XBabyAllActors.is_horn(e.item):
+			goods = XBabyAllActors.bought(s, e.item, goods)  # 领过的记下、从列表拿掉
+			_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
 		_mode = "buy"
 	else:
 		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
@@ -856,6 +930,8 @@ func _cancel_inner() -> void:
 			closed.emit()
 		"buy", "category", "onekey":
 			_mode = "command"
+		"confirm":
+			_mode = "onekey"
 		"sell":
 			_mode = "category"
 		"number":
@@ -885,11 +961,19 @@ func _gui_input(event: InputEvent) -> void:
 	if _mode == "onekey":
 		var r := Rect2(onekey_win.position, onekey_win.size)
 		var i := floori((p - r.position - pad).y / LH)
-		if r.has_point(p) and i >= 0 and i < XItemMarks.onekey_grades().size():
+		if r.has_point(p) and i >= 0 and i < XItemMarks.onekey_commands(XState.current).size():
 			if i == _onekey:
 				_click_ok()
 			else:
 				_onekey = i
+	elif _mode == "confirm":
+		var r := Rect2(confirm_win.position, confirm_win.size)
+		var i := floori((p - r.position - pad).y / LH)
+		if r.has_point(p) and i >= 0 and i < 4:
+			if i == _confirm:
+				_click_ok()
+			else:
+				_confirm = i
 	elif CMD_RECT.has_point(p) and _mode in ["command", "category"]:
 		var i := floori((p - CMD_RECT.position - pad).y / LH)
 		if _mode == "command" and i >= 0 and i < COMMANDS.size():

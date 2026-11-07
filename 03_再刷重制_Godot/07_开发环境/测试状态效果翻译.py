@@ -110,8 +110,35 @@ class StateEffectTranslationTests(unittest.TestCase):
                 self.assertEqual(parse_state_effects('<Custom ' + tag + ' Effect>' + code + '</Custom ' + tag + ' Effect>')[0]['op'], 'js')
             wrong = 'Confirm' if tag == 'React' else 'React'
             self.assertEqual(parse_state_effects('<Custom ' + wrong + ' Effect>' + body + '</Custom ' + wrong + ' Effect>')[0]['op'], 'js')
+        # 2544／2545（首把武器＋普攻）后来由 hook.weapon 量过、改写进 MEASURED_EFFECT_SOURCES，不再是 js（newsrc6 补正这条过期断言）
         for row in fixtures['query_pending']:
-            self.assertEqual(next(e for e in parse_state_effects(row['note']) if e['phase'] == 'confirm')['op'], 'js')
+            self.assertEqual(next(e for e in parse_state_effects(row['note']) if e['phase'] == 'confirm')['op'], 'effect_program')
+
+
+    def test_newsrc6_states(self):
+        """v0.62.12 新增 15 个状态：Effect 块全部译成结构化效果（Custom Passive Condition 不是 Effect 块，这几个状态也不是被动）。"""
+        rows = json.loads(FIXTURES.read_text())['newsrc6']
+        self.assertEqual(len(rows), 15)
+        want = {2720: ['effect_program', 'effect_program'], 2721: ['effect_program'], 2723: ['effect_program'], 2724: ['effect_program'],
+                2747: ['effect_program'], 2748: ['effect_program'], 2750: ['effect_program'], 2751: ['effect_program'],
+                2771: ['costume_image', 'costume_form_remove', 'value_steps'], 2772: ['costume_image', 'costume_form_remove', 'value_steps'],
+                2773: ['costume_image', 'costume_form_remove', 'value_steps'], 2774: ['costume_image', 'costume_restore', 'value_steps'],
+                2775: ['effect_program'], 2776: ['effect_program'], 2777: ['effect_program']}
+        for row in rows:
+            with self.subTest(state=row['state']):
+                effects = parse_state_effects(row['note'])
+                self.assertEqual([e['op'] for e in effects], want[row['state']])
+                if row['state'] in (2771, 2772, 2773):
+                    self.assertEqual(effects[1]['own'], row['state'])
+                if row['state'] == 2774:
+                    self.assertEqual(effects[1].get('addState'), 1)
+        # 2777 靠换行补分号：改成一行就是语法错误，不能照翻
+        note = next(r['note'] for r in rows if r['state'] == 2777)
+        body = note.split('<Custom Confirm Effect>')[1].split('</Custom Confirm Effect>')[0]
+        self.assertEqual(parse_state_effects('<Custom Confirm Effect>' + ' '.join(body.split()) + '</Custom Confirm Effect>')[0]['op'], 'js')
+        # 换装 Remove 认自己的编号：把 2771 的块套在别的形态编号上就不认
+        note = next(r['note'] for r in rows if r['state'] == 2771)
+        self.assertEqual(parse_state_effects(note.replace('forms[2771]', 'forms[2770]'))[1]['op'], 'js')
 
 
 if __name__ == '__main__':

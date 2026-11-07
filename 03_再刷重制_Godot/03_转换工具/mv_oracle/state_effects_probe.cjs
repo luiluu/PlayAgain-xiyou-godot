@@ -496,8 +496,13 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
     let at = 0.5;
     w.Game_Action.prototype.onDeselectStateEffects = function (...args) { const save = w.Math.random; draws = 0; w.Math.random = () => { draws++; return at; };
       try { return oldSel.apply(this, args); } finally { w.Math.random = save; } };
+    // 每例独立现场（newsrc5）：新开一场战斗，并照 dsPassiveSkill 的 Scene_Battle.start 给双方建被动缓存（实战里敌我开战就有）。
+    // 原来整段共用一场战斗：第一个状态的角色行里敌人当行动者，云裳运行时 prepareAction 才给它建缓存，于是 114 的敌人行没有、其后的都有，
+    // 新源里「有被动缓存＋死亡 clearStates 重建」决定热缓存的敌人复活不复活，参照就成了前后用例留下的现场。
     for (const sid of REVIVES) for (const who of ['enemy', 'actor']) for (const r of [0.05, 0.95]) for (const dirtyWarm of [true, false]) {
-      const t = who === 'enemy' ? e : a, u = who === 'enemy' ? a : e; const act = new w.Game_Action(u); act.setSkill(1);
+      const fresh = battle(2), A = fresh.a, E = fresh.e;
+      for (const m of [...w.$gameParty.battleMembers(), ...w.$gameTroop.members()]) if (m.refreshPassiveCache) m.refreshPassiveCache();
+      const t = who === 'enemy' ? E : A, u = who === 'enemy' ? A : E; const act = new w.Game_Action(u); act.setSkill(1);
       reset(t, sid, 0, 2); t._hp = 1; at = r; w.Math.random = () => 0.5;
       if (!dirtyWarm) { t.need_refresh = true; t.refresh(); t.typestates('deselectState'); }
       const dirty = !!t.need_refresh, mhp = t.mhp, mmp = t.mmp; t.clearResult(); act.apply(t);
@@ -517,7 +522,7 @@ cases.push(makeCase('revive.blocks', {states: REVIVES}, () => {
 const DAMAGE_BLOCKS = [[1060, 'react'], [1061, 'react'], [1299, 'establish'], [1302, 'react'], [1405, 'establish'], [1450, 'establish'], [1580, 'respond'], [1642, 'confirm'],
   [1666, 'confirm'], [1731, 'confirm'], [1828, 'react'], [2554, 'respond'], [2559, 'confirm'], [2562, 'react'], [2575, 'confirm']];
 // EXTRA：每行再乘一层的附加条件（rules8 的新块要变 v206／暴击率／本击是否暴击）；老块传 [{}]，行数与内容不变。
-function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
+function effectMeasure(DAMAGE_BLOCKS, EXTRA, opts = {}) {
   const {a, e} = battle(2), action = new w.Game_Action(a); action.setSkill(1);
   const item = action.item(), originalDamage = Object.assign({}, item.damage), originalHit = item.hitType;
   const errors = [], oldError = w.Yanfly.Util.displayError, oldRandom = w.Math.random, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldInt = w.Math.randomInt;
@@ -527,7 +532,10 @@ function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
   w.Math.randomInt = n => { const d = draws; try { return oldInt.call(w.Math, n); } finally { draws = d; } };
   w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: this === a ? 'a' : 'e', hpAffected: r.hpAffected, hpDamage: r.hpDamage, mpDamage: r.mpDamage, tpDamage: r.tpDamage, added: Array.from(r.addedStates), removed: Array.from(r.removedStates)}); };
   w.Game_Enemy.prototype.performCollapse = w.Game_Actor.prototype.performCollapse = function () { collapses++; };
-  const VARS = [1174];
+  // opts.vars：再记这几个变量（每行先清零，x.vars 再设）；opts.reserves：记 $gameTemp.reserveCommonEvent 的调用（newsrc6）。老用例不传，行内容不变。
+  const VARS = [1174, ...(opts.vars || [])], reserves = [], oldReserve = w.Game_Temp.prototype.reserveCommonEvent;
+  if (opts.reserves) w.Game_Temp.prototype.reserveCommonEvent = function (id) { reserves.push(id); return oldReserve.call(this, id); };
+  const setVars = x => { for (const v of opts.vars || []) w.$gameVariables.setValue(v, 0); for (const k in x.vars || {}) w.$gameVariables.setValue(+k, x.vars[k]); };
   const hard = (t, hp, mp, shield, xmx) => { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1; t.need_refresh = true; t.refresh();
     t._hp = hp === 'full' ? t.mhp : hp; t._mp = Math.min(mp, t.mmp); t._tp = 20; t._Shield = shield; if (xmx === undefined) delete t._xmx; else t._xmx = xmx; };
   const side = t => { const r = t.result(); return {hp: t.hp, mp: t.mp, tp: t.tp, dead: t.isDead(), shield: t._Shield, xmx: t._xmx === undefined ? null : t._xmx, states: t._states.slice().sort((x, y) => x - y),
@@ -547,13 +555,14 @@ function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
         e._hp = keep; if (keep === 0) e._states.push(1);
         w.$gameVariables.setValue(1174, v1174);
         if (x.v206 !== undefined) w.$gameVariables.setValue(206, x.v206);
+        setVars(x); reserves.length = 0;
         if (x.cri !== undefined) Object.defineProperty(a, 'cri', {get: () => x.cri, configurable: true});
         if (x.crit !== undefined) e.result().critical = x.crit;
         script = seq; draws = 0; popups = []; collapses = 0; errors.length = 0;
         const before = {ahp: a.hp, amp: a.mp, amhp: a.mhp, ammp: a.mmp, aatk: a.atk, amat: a.mat, ashield: a._Shield, ehp: e.hp, emp: e.mp, emhp: e.mhp, emmp: e.mmp, eatk: e.atk, emat: e.mat, eshield: e._Shield};
         const got = action.customEffectEval(e, sid, phase + 'State', holder, value);
         rows.push({...(Object.keys(x).length ? {x} : {}), state: sid, phase, dmgType, hitType, value, hpIn: hp, mpIn: mp, shieldIn: shield, xmxIn: xmx === undefined ? null : xmx, v1174, seq, before, got, draws, popups: popups.slice(), collapses, sourceErrors: errors.slice(),
-          a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+          a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v)), ...(opts.reserves ? {reserves: reserves.slice()} : {})});
       }
     // 同一族里另两个阶段：1450 行动开始写变量（Battler 版 target＝持有者）、1060 获得时累加 _Shield
     a._paramPlus[1] = 450000; a.need_refresh = true; a.refresh();
@@ -566,11 +575,11 @@ function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
       const holder = TYPE[phase] === 'target' ? e : a;
       hard(a, 'full', 50, 0, undefined); hard(e, low ? 1 : 'full', 50, shield, undefined);
       holder.addState(sid); holder.clearResult(); e.clearResult(); a.clearResult(); holder.need_refresh = true; holder.refresh(); holder.typestates(phase + 'State');
-      w.$gameVariables.setValue(1174, 2); popups = []; collapses = 0; errors.length = 0;
+      w.$gameVariables.setValue(1174, 2); setVars({}); reserves.length = 0; popups = []; collapses = 0; errors.length = 0;
       const act = new w.Game_Action(a); act.setSkill(1);
       const before = {ahp: a.hp, amhp: a.mhp, ehp: e.hp, emhp: e.mhp, eshield: e._Shield};
       act.apply(e);
-      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, sourceErrors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v))});
+      applies.push({state: sid, phase, shield, low, before, popups: popups.slice(), collapses, sourceErrors: errors.slice(), a: side(a), e: side(e), vars: VARS.map(v => w.$gameVariables.value(v)), ...(opts.reserves ? {reserves: reserves.slice()} : {})});
     }
   } finally {
     Object.assign(item.damage, originalDamage); item.hitType = originalHit;
@@ -578,8 +587,9 @@ function effectMeasure(DAMAGE_BLOCKS, EXTRA) {
     delete w.Game_Enemy.prototype.performCollapse; delete w.Game_Actor.prototype.performCollapse;
     a._states.length = 0; e._states.length = 0; a.clearResult(); e.clearResult(); delete a._Shield; delete e._Shield;
     w.$gameVariables.setValue(1174, 0); w.$gameVariables.setValue(206, 0); delete a.cri;
+    setVars({}); w.Game_Temp.prototype.reserveCommonEvent = oldReserve; w.$gameTemp.clearCommonEvent();
   }
-  return {rows, applies, actionStart};
+  return {rows, applies, actionStart, ...(opts.vars ? {vars: VARS} : {})};
 }
 cases.push(makeCase('effect.blocks', {blocks: DAMAGE_BLOCKS}, () => effectMeasure(DAMAGE_BLOCKS, [{}])));
 // rules8：全游戏可达的伤害 react／confirm 块（切片外的套装、技能、防具备注推状态）。1749 的 user.criticalRate() 原版没有这个方法，量出来就是 TypeError。
@@ -587,6 +597,69 @@ const DAMAGE2_BLOCKS = [[38, 'confirm'], [50, 'confirm'], [97, 'confirm'], [250,
   [1257, 'confirm'], [1394, 'react'], [1407, 'establish'], [1538, 'react'], [1661, 'confirm'], [1749, 'confirm']];
 const EXTRA2 = [{v206: 0, cri: 0.05, crit: false}, {v206: 50, cri: 0.4, crit: true}, {v206: 3, cri: 1, crit: true}];
 cases.push(makeCase('effect2.blocks', {blocks: DAMAGE2_BLOCKS, extra: EXTRA2}, () => effectMeasure(DAMAGE2_BLOCKS, EXTRA2)));
+// newsrc6：v0.62.12 新增状态里的伤害 react／confirm 块。2747 记本招编号（var 1566）、与 var 1565 相同就清零，并给行动者加 2748；
+// 2750／2751 恒清零；2775 预约 1721、var 1586≥10 清零；2776 只预约 1722；2777 按 var 1543 加终伤；2721 额外扣目标血；2724 加 var 2。
+const DAMAGE3_BLOCKS = [[2721, 'confirm'], [2724, 'confirm'], [2747, 'react'], [2750, 'react'], [2751, 'react'], [2775, 'react'], [2776, 'react'], [2777, 'confirm']];
+const EXTRA3 = [{vars: {1565: 0, 1586: 0, 1543: 0}}, {vars: {1565: 1, 1586: 10, 1543: 1}}, {vars: {1565: 7, 1586: 12, 1543: 2.5}}];
+const VARS3 = [2, 3, 1543, 1565, 1566, 1586];
+cases.push(makeCase('effect3.blocks', {blocks: DAMAGE3_BLOCKS, extra: EXTRA3, vars: VARS3}, () => effectMeasure(DAMAGE3_BLOCKS, EXTRA3, {vars: VARS3, reserves: true})));
+// newsrc6：其余新状态块。2723 confirm 看首把武器类型（2 才加 var 2）；2720 移除／自然消失各扣一次满血；2748 自然消失抄 var 1566→1565；
+// 超赛 2771～2774 换装：真实 addState／removeState（移除效果在状态已去掉之后跑），多形态叠加时回落到剩下编号最大的形态，2774 去掉时 addState(1)。
+cases.push(makeCase('newsrc6.blocks', {}, () => {
+  const {a, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup;
+  const errors = []; let popups = [];
+  w.Yanfly.Util.displayError = error => errors.push(String(error).slice(0, 70));
+  w.Game_Battler.prototype.startDamagePopup = function () { const r = this.result(); popups.push({who: this === a ? 'a' : 'e', hpAffected: r.hpAffected, hpDamage: r.hpDamage}); };
+  const reset = () => { for (const t of [a, e]) { t._states.length = 0; for (const k in t._stateTurns) delete t._stateTurns[k]; t.clearResult(); t._hp = 1; t.need_refresh = true; t.refresh(); t._hp = t.mhp; delete t._stateOrigin; }
+    popups = []; errors.length = 0; for (const v of [2, 3, 1565, 1566]) w.$gameVariables.setValue(v, 0); };
+  const res = t => ({hp: t.hp, mhp: t.mhp, dead: t.isDead(), states: t._states.slice().sort((x, y) => x - y)});
+  const out = {weapon: [], life: [], costume: []};
+  const oldRandom = w.Math.random;
+  try {
+    w.Math.random = () => 0.5;
+    for (const [who, wt, dmgType] of [['a', 2, 1], ['a', 11, 1], ['a', 0, 1], ['a', 2, 0], ['e', 2, 1]]) {
+      reset(); const u = who === 'a' ? a : e, t = who === 'a' ? e : a;
+      a.weapons = () => wt ? [{wtypeId: wt}] : [];
+      const act = new w.Game_Action(u); act.setSkill(1); const item = act.item(), keep = item.damage.type; item.damage.type = dmgType;
+      w.$gameVariables.setValue(2, 5); w.$gameVariables.setValue(3, 4);
+      let got;
+      try { got = act.customEffectEval(t, 2723, 'confirmState', u, 99); } finally { item.damage.type = keep; }
+      out.weapon.push({who, wt, dmgType, got, v2: w.$gameVariables.value(2), v3: w.$gameVariables.value(3), sourceErrors: errors.slice()});
+    }
+    delete a.weapons;
+    // 2720／2748：真实 removeState（只跑 Remove）与 removeStatesAuto 那样的自然消失（Remove 之后再跑 Leave）
+    for (const sid of [2720, 2748]) for (const who of ['a', 'e']) for (const leave of [false, true]) {
+      reset(); const h = who === 'a' ? a : e; h.addState(sid); h.clearResult(); popups = [];
+      w.$gameVariables.setValue(1565, 3); w.$gameVariables.setValue(1566, 9);
+      const before = res(h);
+      if (leave) w.$gameTemp._customLeaveEffectEval = true;
+      try { h.removeState(sid); } finally { w.$gameTemp._customLeaveEffectEval = undefined; }
+      out.life.push({sid, who, leave, had: before.states.includes(sid), before, after: res(h), popups: popups.slice(), v1565: w.$gameVariables.value(1565), v1566: w.$gameVariables.value(1566), sourceErrors: errors.slice()});
+    }
+    const base = a._battlerName;
+    const look = step => ({step, battlerName: a.battlerName(), prev: a._prevBattlerName === undefined ? null : a._prevBattlerName, ...res(a), sourceErrors: errors.slice()});
+    const SEQS = [
+      ['+2771', '-2771'], ['+2772', '-2772'], ['+2773', '-2773'], ['+2774', '-2774'],
+      ['+2771', '+2772', '-2772', '-2771'], ['+2771', '+2772', '-2771', '-2772'], ['+2771', '+2773', '+2772', '-2773', '-2772', '-2771'],
+      ['+2772', '+2774', '-2772', '-2774'], ['+2771', '+2774', '-2774', '-2771'], ['+2773', '+2771', '-2773', '-2771']];
+    for (const seq of SEQS) {
+      reset(); a.setBattlerImage(base); a._prevBattlerName = undefined; a._priorityBattlerName = undefined;
+      const steps = [];
+      for (const s of seq) { const sid = +s.slice(1); if (s[0] === '+') a.addState(sid); else a.removeState(sid); steps.push(look(s)); }
+      out.costume.push({seq, steps});
+    }
+    a.setBattlerImage(base); a._prevBattlerName = undefined;
+    for (const sid of [2771, 2774]) { reset(); e.addState(sid); const has = e.isStateAffected(sid); e.removeState(sid);
+      out.costume.push({enemy: sid, has, after: res(e), enemyName: e.battlerName(), sourceErrors: errors.slice()}); }
+    out.base = base;
+  } finally {
+    w.Math.random = oldRandom; w.Yanfly.Util.displayError = oldError; w.Game_Battler.prototype.startDamagePopup = oldPopup; delete a.weapons;
+    a.setBattlerImage(a.actor().battlerName); a._prevBattlerName = undefined;
+    for (const t of [a, e]) { t._states.length = 0; t.clearResult(); delete t._stateOrigin; }
+    for (const v of [2, 3, 1565, 1566]) w.$gameVariables.setValue(v, 0);
+  }
+  return out;
+}));
 // 其它／回合行动钩子两族（rules5）：直调 customEffectEval，看不抛错、改了什么。队友遍历、武器、字段、计数器都在这里。
 cases.push(makeCase('hook.blocks', {}, () => {
   const {a, b, e} = battle(2), oldError = w.Yanfly.Util.displayError, oldPopup = w.Game_Battler.prototype.startDamagePopup, oldAnim = w.Game_Battler.prototype.startAnimation;

@@ -254,7 +254,7 @@ func _run() -> void:
 	b3.queue_free()
 	await frames(3)
 
-	# 10. 冻结后跟进 v0.37 的血条范围（RANGE_V037，默认关＝v0.28 只认插件名单）
+	# 10. 冻结后跟进 v0.37 的血条范围（RANGE_V037；换源集成分支默认开（O-203），关＝v0.28 只认插件名单）
 	var ext_ids := []
 	for wid in XZhenqi.WEAPON_BOSS:
 		if not XBossHpBar.is_listed(int(wid)):
@@ -266,7 +266,9 @@ func _run() -> void:
 				ext_ids.append(mid)
 	check("v037_candidates_exist", not ext_ids.is_empty(), ext_ids)
 	var ext_id: int = ext_ids[0]
-	check("v037_default_off", not XBossHpBar.RANGE_V037)
+	check("v037_default_on", XBossHpBar.RANGE_V037)
+	XBossHpBar.RANGE_V037 = false
+	XBossHpBar._ext_cache.clear()
 	var ext_e := XEnemy.new().setup(ext_id, 1)
 	var listed_e := XEnemy.new().setup(6, 1)
 	var plain_e := XEnemy.new().setup(1, 1)
@@ -295,6 +297,8 @@ func _run() -> void:
 	XBossHpBar.RANGE_V037 = false
 	XBossHpBar._ext_cache.clear()
 	check("v037_off_again", not XBossHpBar.is_extended(ext_id) and make_bar([plain_e, ext_e]).battler == null)
+	XBossHpBar.RANGE_V037 = true
+	XBossHpBar._ext_cache.clear()
 
 	# 原版缺陷修好（rules-bugfix1 照搬清单第 2 条，O-228）：变身换名字头像；开战没有 Boss、之后现身时补建条
 	for rebuild in [true, false]:

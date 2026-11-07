@@ -116,6 +116,17 @@ def _top_ternary(js):
     return [js[:q[0]].strip(), js[q[0] + 1:c[0]].strip(), js[c[0] + 1:].strip()]
 
 
+_GD_BIG_INT = re.compile(r'(?<![\w.])([0-9]{19,})(?![\w.])')
+
+
+def _gd_big_ints(gd):
+    """formulaGd 里超过 int64 的整数字面量写成浮点（JS 原文本来就是 double：10037／10060 的 1e23／1e41）。
+    Godot Expression 遇到这类整数会报「Cannot represent … as a 64-bit signed integer」；formulaProgram 已经存 double，不受影响。"""
+    if not isinstance(gd, str):
+        return gd
+    return _GD_BIG_INT.sub(lambda m: m.group(1) if int(m.group(1)) <= 2 ** 63 - 1 else repr(float(int(m.group(1)))), gd)
+
+
 def translate_formula(js, item_id=0):
     js = (js or '').strip()
     # MV 公式里 user/target 与 a/b 同义；item.id 在转换时就能确定
@@ -377,7 +388,7 @@ REVIVE_CONDS = [
     (re.compile(r'if \( target \. hp <= 0 && \$gameVariables \. value \( ([1-9][0-9]*) \) > ([0-9]+) \) \{ (.*) \}'),
      lambda m: {'kind': 'hp_zero_variable', 'variable': int(m.group(1)), 'above': int(m.group(2))}),
 ]
-REVIVE_GAIN = re.compile(r'target \. gain(Hp|Mp|Tp) \( (?:([0-9]+)|target \. (mhp|mmp|tp)(?: \* ([0-9.]+))?|Math \. (floor|ceil) \( target \. (mhp) \* ([0-9.]+) \)) \)')
+REVIVE_GAIN = re.compile(r'target \. gain(Hp|Mp|Tp) \( (?:([0-9]+)|target \. (mhp|mmp|tp|maxTp \( \))(?: \* ([0-9.]+))?|Math \. (floor|ceil) \( target \. (mhp) \* ([0-9.]+) \)) \)')
 REVIVE_STEP_RE = [
     (re.compile(r'target \. startAnimation \( ([1-9][0-9]*) \)'), lambda m: {'do': 'animation', 'id': int(m.group(1))}),
     (re.compile(r'target \. removeState \( stateId \)'), lambda m: {'do': 'remove_self'}),
@@ -429,7 +440,7 @@ def revive_state_effect(code, phase):
             if gain.group(2):
                 steps.append({'do': 'gain', 'resource': resource, 'amount': int(gain.group(2))})
             elif gain.group(3):
-                steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(3), 'rate': float(gain.group(4) or 1)})
+                steps.append({'do': 'gain', 'resource': resource, 'param': 'max_tp' if gain.group(3).startswith('maxTp') else gain.group(3), 'rate': float(gain.group(4) or 1)})  # 1725 新源 gainTp(maxTp())
             else:
                 steps.append({'do': 'gain', 'resource': resource, 'param': gain.group(6), 'rate': float(gain.group(7)), 'round': gain.group(5)})
             continue
@@ -618,6 +629,42 @@ MEASURED_EFFECT_SOURCES.update({
 COSTUME_APPLY = re.compile(r"if \(user\.isActor\(\)\) \{ user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName; var battlerName = '([^']+)'; user\.setBattlerImage\(battlerName\); user\.refresh\(\); \}")
 COSTUME_REMOVE = "var battlerName = user._prevBattlerName; user.setBattlerImage(battlerName); user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh();"
 
+# 超赛 2771～2774（v0.62.12，newsrc6 newsrc6.blocks costume）：Apply 多一层「|| 角色本身战斗图」（_battlerName 建档就有，等价于老模板）；
+# 2771～2773 Remove 只在当前图还是自己那张（或空）时动：剩下的超赛形态里编号最大的接上，一个不剩才还原；2774 Remove 直接还原再 addState(1)。
+COSTUME_APPLY2 = re.compile(r"if \(user\.isActor\(\)\) \{ var baseName = user\.actor\(\) \? user\.actor\(\)\.battlerName : ''; user\._prevBattlerName = user\._prevBattlerName \|\| user\._battlerName \|\| baseName; user\.setBattlerImage\('([^']+)'\); user\.refresh\(\); \}")
+COSTUME_FORMS = {2771: 'bjtc1', 2772: 'cjbjt2', 2773: 'cjbjt3', 2774: 'clbjt'}
+COSTUME_FORM_REMOVE = ("if (user.isActor()) { var forms = {2771:'bjtc1',2772:'cjbjt2',2773:'cjbjt3',2774:'clbjt'}; "
+                       "var remaining = [2771,2772,2773,2774].filter(function(id) { return user.isStateAffected(id); }); "
+                       "if (user._battlerName === forms[%d] || !user._battlerName) { if (remaining.length) { user.setBattlerImage(forms[Math.max.apply(null, remaining)]); } "
+                       "else { user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : '')); user._prevBattlerName = undefined; } } "
+                       "user._priorityBattlerName = undefined; user.refresh(); }")
+COSTUME_REMOVE_DEATH = ("if (user.isActor()) { user.setBattlerImage(user._prevBattlerName || (user.actor() ? user.actor().battlerName : '')); "
+                        "user._priorityBattlerName = undefined; user._prevBattlerName = undefined; user.refresh(); user.addState(1); }")
+
+# newsrc6：v0.62.12 新状态（effect3.blocks／newsrc6.blocks 量过）
+MEASURED_EFFECT_BLOCKS.update({
+    ('remove', 'user . gainHp ( - user . mhp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ;'),  # 2720
+    ('leave', 'user . gainHp ( - user . mhp ) ; user . startDamagePopup ( ) ; user . clearResult ( ) ;'),  # 2720
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { target . gainHp ( - Math . ceil ( user . atk * 45 ) ) ; target . startDamagePopup ( ) ; }'),  # 2721
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { $gameVariables . setValue ( 2 , $gameVariables . value ( 2 ) + 300 ) ; $gameVariables . setValue ( 3 , $gameVariables . value ( 3 ) + 0 ) ; }'),  # 2724
+    ('leave', '$gameVariables . setValue ( 1565 , $gameVariables . value ( 1566 ) ) ;'),  # 2748
+    ('react', 'value = 0 ;'),  # 2750、2751
+})
+MEASURED_EFFECT_SOURCES.update({
+    # 2723：weapons()[0] 是第一把武器，undefined 时整段不进；rangedTypes 只有 2
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 2 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isHpEffect ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { $gameVariables . setValue ( 2 , $gameVariables . value ( 2 ) + 150 ) ; $gameVariables . setValue ( 3 , $gameVariables . value ( 3 ) + 0 ) ; } } }'):
+        'if (user.isActor()) { if (user.firstWeaponType() === 2 && this.isHpEffect()) { $gameVariables.setValue(2, $gameVariables.value(2) + 150); $gameVariables.setValue(3, $gameVariables.value(3) + 0); } }',
+    # 2747：this.item().id 是本招编号；user 是行动者（2748 加在行动者身上）
+    ('react', '$gameVariables . setValue ( 1566 , this . item ( ) . id ) ; user . addState ( 2748 ) ; if ( $gameVariables . value ( 1566 ) == $gameVariables . value ( 1565 ) ) { value = 0 ; }'):
+        '$gameVariables.setValue(1566, se_item_id); user.addState(2748); if ($gameVariables.value(1566) == $gameVariables.value(1565)) { value = 0; }',
+    ('react', '$gameTemp . reserveCommonEvent ( 1721 ) ; if ( this . isHpEffect ( ) && value > 0 ) { if ( $gameVariables . value ( 1586 ) >= 10 ) { value = Math . ceil ( value * 0 ) ; } }'):  # 2775
+        'target.reserve(1721); if (this.isHpEffect() && value > 0) { if ($gameVariables.value(1586) >= 10) { value = Math.ceil(value * 0); } }',
+    ('react', '$gameTemp . reserveCommonEvent ( 1722 ) ;'): 'target.reserve(1722);',  # 2776
+    # 2777：var finalRate 那行没有分号，靠换行补（ASI 表里认原文换行）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 1.5 * $gameVariables . value ( 1543 ) value + = Math . ceil ( value * finalRate ) ; }'):
+        'if (this.isHpEffect() && value > 0) { var finalRate = 1.5 * $gameVariables.value(1543); value += Math.ceil(value * finalRate); }',
+})
+
 # fix1：原版笔误的修正版（可回退，开关在 XStateEffects）。原版程序照旧留在 program，开关开时跑 fixed。
 EFFECT_FIXES = {
     ('respond', 'if ( target . hp <= 0 || target . isDead ( ) ) { target . gainHp ( target . mhp * 1 ) ; target . startDamagePopup ( ) ; target . RemoveState ( 1580 ) ; }'):  # 2554
@@ -658,6 +705,60 @@ EFFECT_FIXES2 = {
     ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.005 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }'):  # 2575 说明：用剑时伤害 +3.5%
         ('FIX_SWORD_RATE_2575', 'if (this.isHpEffect() && value > 0 && user.isActor() && user.firstWeaponType() === 2) { value += Math.ceil(value * 0.035); }'),
 }
+
+
+# ---- newsrc3（v0.62.12 改写的 19 个状态，state_effects_probe 在新源上量过；旧源 v0.28 的签名照旧保留、不受影响）----
+# 原样可译的整段：数值或条件改了，IR 原本就表达得了，按整段 token 收进白名单。
+MEASURED_VALUE_BLOCKS = MEASURED_VALUE_BLOCKS | frozenset([
+    ('react', 'if ( this . isHpEffect ( ) && value > 0 ) { var bonus = Math . ceil ( value * 0.9 ) ; value - = bonus ; }'),  # 1451 存护1（0.1→0.9）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * ( 1 + $gameVariables . value ( 965 ) * 0.1 ) ) ; }'),  # 1726 不朽2（×v965×0.1→×(1+v965×0.1)）
+    ('react', 'value = Math . floor ( value * 0 ) ;'),  # 2558 蝶引来生（×0.9→×0）
+    ('react', 'value = Math . floor ( value * 0.1 ) ;'),  # 2561 减伤90%（×0.91→×0.1）
+    ('confirm', 'if ( this . isPhysical ( ) && this . isHpEffect ( ) && value > 0 ) { if ( target . hp > target . mhp * 0.7 ) { var xs = Math . min ( ( target . mhp * 0.00001 / user . mhp * 10000 ) , 1.3 ) ; value = Math . ceil ( value * xs ) ; } }'),  # 2583 雷道之威（去掉 ×0.1）
+])
+MEASURED_EFFECT_BLOCKS.update({
+    ('react', 'if ( value >= 0 ) { var damage1 = Math . ceil ( value * 1 ) ; var damage2 = origin . mhp ; var damage3 = origin . mat ; user . gainHp ( ( ( - 1 * damage1 - damage2 - damage3 ) * 88 ) ) ; if ( user . isDead ( ) ) { user . performCollapse ( ) ; } }'),  # 1061 混元护体（×100→×88）
+    ('turn_start', 'var tiers = Math . min ( 10 , Math . floor ( user . agi / 10000 ) ) ; for ( var k = 2 ; k <= 10 ; k ++ ) { if ( k <= tiers ) { if ( ! user . isStateAffected ( 1430 + k ) ) user . addState ( 1430 + k ) ; } else user . removeState ( 1430 + k ) ; } if ( tiers < 1 ) user . removeState ( 1431 ) ;'),  # 1431 巡猎1（新增：每 10000 速度一层）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { if ( user . hp >= user . mhp * 0.5 ) { value = Math . floor ( value * 1.5 ) ; user . gainHp ( - Math . floor ( user . mhp * 0.01 ) ) ; } else { value = Math . floor ( value * 0.5 ) ; user . gainHp ( Math . floor ( user . mhp * 0.01 ) ) ; } }'),  # 1731 均衡
+    ('confirm', 'target . gainHp ( - Math . ceil ( target . hp * 0.0012 ) ) ; target . startDamagePopup ( ) ; target . _xmx = target . _xmx || 0 ; target . _xmx + = 1 ; if ( target . _xmx >= 5 ) { target . _xmx = 0 || 0 ; target . gainHp ( - Math . ceil ( target . mhp * 0.0005 ) ) ; target . startDamagePopup ( ) ; }'),  # 2559 血梅香
+})
+# 2574 非天逆斩 Apply：v0.62.03 删成只剩注释的空块（原来写奈叶计数，本就不生效）
+NO_EFFECT_BLOCKS.add(('apply', ''))  # 2574
+# IR 表达不了原文写法的：整段比对后换成等价写法（forEach 回调、三元链、aliveMembers().length、i < 变量 的 for 循环、数组 push/contains）
+MEASURED_EFFECT_SOURCES.update({
+    # 1450 智识1：for 条件「i < cishu && 目标活着」→ 固定 10 轮、每轮先判（目标一死后续轮全跳过，与提前退出等价）
+    ('establish', 'if ( value > 0 && ( this . isPhysical ( ) || this . isMagical ( ) ) && target . isActor ( ) !== user . isActor ( ) ) { var cishu = Math . min ( 10 , Math . floor ( user . mmp / 150000 ) ) ; for ( var i = 0 ; i < cishu && target . isAlive ( ) ; i ++ ) { target . gainHp ( - Math . round ( value * ( 0.8 + Math . random ( ) * 0.4 ) ) ) ; target . startDamagePopup ( ) ; target . clearResult ( ) ; } }'):
+        'if (value > 0 && (this.isPhysical() || this.isMagical()) && target.isActor() !== user.isActor()) { var cishu = Math.min(10, Math.floor(user.mmp / 150000)); for (var i = 1; i <= 10; i++) { if (i <= cishu && target.isAlive()) { target.gainHp(-Math.round(value * (0.8 + Math.random() * 0.4))); target.startDamagePopup(); target.clearResult(); } } }',
+    # 1711 秩序0：存活队友（不含自己）n＝aliveFriends−1；三元链展开成 if 链，forEach 按 1712→1714 顺序展开
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var n = user . friendsUnit ( ) . aliveMembers ( ) . length - 1 ; var pick = n >= 3 ? 1714 : n === 2 ? 1713 : n === 1 ? 1712 : 0 ; [ 1712 , 1713 , 1714 ] . forEach ( function ( id ) { if ( id === pick ) { if ( ! user . isStateAffected ( id ) ) user . addState ( id ) ; } else user . removeState ( id ) ; } ) ; }'):
+        'if (user.isBattleMember() && user.isAlive()) { var n = user.aliveFriends() - 1; var pick = 0; if (n >= 3) { pick = 1714; } else if (n === 2) { pick = 1713; } else if (n === 1) { pick = 1712; } '
+        'if (pick === 1712) { if (!user.isStateAffected(1712)) { user.addState(1712); } } else { user.removeState(1712); } '
+        'if (pick === 1713) { if (!user.isStateAffected(1713)) { user.addState(1713); } } else { user.removeState(1713); } '
+        'if (pick === 1714) { if (!user.isStateAffected(1714)) { user.addState(1714); } } else { user.removeState(1714); } }',
+    # 1716 同谐0：n＝aliveFriends（含自己）
+    ('turn_start', 'if ( user . isBattleMember ( ) && user . isAlive ( ) ) { var n = user . friendsUnit ( ) . aliveMembers ( ) . length ; var pick = n >= 4 ? 1720 : n === 3 ? 1719 : n === 2 ? 1718 : n >= 1 ? 1717 : 0 ; [ 1717 , 1718 , 1719 , 1720 ] . forEach ( function ( id ) { if ( id === pick ) { if ( ! user . isStateAffected ( id ) ) user . addState ( id ) ; } else user . removeState ( id ) ; } ) ; }'):
+        'if (user.isBattleMember() && user.isAlive()) { var n = user.aliveFriends(); var pick = 0; if (n >= 4) { pick = 1720; } else if (n === 3) { pick = 1719; } else if (n === 2) { pick = 1718; } else if (n >= 1) { pick = 1717; } '
+        'if (pick === 1717) { if (!user.isStateAffected(1717)) { user.addState(1717); } } else { user.removeState(1717); } '
+        'if (pick === 1718) { if (!user.isStateAffected(1718)) { user.addState(1718); } } else { user.removeState(1718); } '
+        'if (pick === 1719) { if (!user.isStateAffected(1719)) { user.addState(1719); } } else { user.removeState(1719); } '
+        'if (pick === 1720) { if (!user.isStateAffected(1720)) { user.addState(1720); } } else { user.removeState(1720); } }',
+    # 1714 秩序3：Math.max(3, 存活队友−1)（原文就是 max，最少按 3 人算）
+    ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { value = Math . floor ( value * ( 1 + 0.4 * Math . max ( 3 , user . friendsUnit ( ) . aliveMembers ( ) . length - 1 ) ) ) ; }'):
+        'if (this.isHpEffect() && value > 0) { value = Math.floor(value * (1 + 0.4 * Math.max(3, user.aliveFriends() - 1))); }',
+    # 2544／2545 剑终伤／太刀终伤：0.01→0.1
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 2 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.1 ) ; } } }'):  # 2544
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 2) { value += Math.ceil(value * 0.1); }',
+    ('confirm', 'if ( user . isActor ( ) ) { var rangedTypes = [ ] ; rangedTypes . push ( 11 ) ; var weapon = user . weapons ( ) [ 0 ] ; if ( weapon && this . isAttack ( ) ) { if ( rangedTypes . contains ( weapon . wtypeId ) ) { value + = Math . ceil ( value * 0.1 ) ; } } }'):  # 2545
+        'if (user.isActor() && se_attack && user.firstWeaponType() === 11) { value += Math.ceil(value * 0.1); }',
+})
+# 2575 剑道争锋 Confirm：0.005→0.05，仍写没人读的 _zuizhongshanghai（原版无效果），修正版照旧口径换系数
+_SWORD_2575_NEW = ('confirm', 'if ( this . isHpEffect ( ) && value > 0 ) { var finalRate = 0.05 * user . jqsbt ; var bonusRate = 0 ; user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * finalRate ) ; if ( target . result ( ) . critical ) { user . _zuizhongshanghai = user . _zuizhongshanghai || 0 ; user . _zuizhongshanghai + = Math . ceil ( value * bonusRate ) ; } }')
+UNREAD_FIELD_BLOCKS.add(_SWORD_2575_NEW)
+EFFECT_FIXES[_SWORD_2575_NEW] = ('FIX_SWORD_2575', 'if (this.isHpEffect() && value > 0) { value += Math.ceil(value * 0.05 * (user.jqsbt || 0)); }')
+EFFECT_FIXES2[_SWORD_2575_NEW] = EFFECT_FIXES2[next(k for k in EFFECT_FIXES2 if k[0] == 'confirm' and '0.005 * user . jqsbt' in k[1])]
+# 1768 杀敌加属性 Conclude：v0.62.03 走 CodexNanohaAdapt（installNanohaSharedKillRuntime.js，适应成长软上限），
+# 该函数在新源恒存在，else 分支走不到。累计前 2000 次每次 +10 生命／+30 魔法，之后乘 2000/累计次数（见 nanoha.gd adapt）。
+NANOHA_ADAPT_1768 = 'if ( target . hp <= 0 || target . isDead ( ) ) { if ( window . CodexNanohaAdapt ) CodexNanohaAdapt ( user , 1 ) ; else { user . addParam ( 0 , 10 ) ; user . addParam ( 1 , 30 ) ; } }'
 
 
 def _adapt_phase_tokens(tokens):
@@ -705,7 +806,7 @@ def _compile_effect_tokens(tokens, signature):
             rewritten.append(name)
             declared.add(name)
             i += 3
-        elif tokens[i] in ('stateId', 'se_attack', 'se_can_crit'):
+        elif tokens[i] in ('stateId', 'se_attack', 'se_can_crit', 'se_item_id'):
             name = 'se_state_id' if tokens[i] == 'stateId' else tokens[i]
             rewritten.append(name)
             declared.add(name)
@@ -745,6 +846,7 @@ ASI_BLOCK_HASHES = {
     '9676454ba667dd20': '6db81c4d79011c99',  # 577 regenerate
     '3f57cb0c48c09427': '2ca5c9605b987b82',  # 732 regenerate
     '96260ff0c50f9067': '8257614ff5166cf2',  # 1006 regenerate
+    '67f970afd1685aa7': '797d8acabd0143f1',  # 2777 confirm（newsrc6）
 }
 
 
@@ -770,6 +872,15 @@ def effect_state_effect(code, phase, body=None):
         return {'op': 'costume_image', 'image': costume.group(1)}
     if phase == 'remove' and plain == COSTUME_REMOVE:
         return {'op': 'costume_restore'}
+    costume = COSTUME_APPLY2.fullmatch(plain) if phase == 'apply' else None
+    if costume:
+        return {'op': 'costume_image', 'image': costume.group(1)}
+    if phase == 'remove':
+        own = next((sid for sid in COSTUME_FORMS if plain == COSTUME_FORM_REMOVE % sid), None)
+        if own:
+            return {'op': 'costume_form_remove', 'own': own, 'forms': {str(k): v for k, v in COSTUME_FORMS.items()}}
+        if plain == COSTUME_REMOVE_DEATH:
+            return {'op': 'costume_restore', 'addState': 1}
     try:
         tokens = [row[0] for row in Parser(code).tokens[:-1]]
     except Unsupported:
@@ -808,6 +919,9 @@ def permanent_state_effect(tokens, phase):
                     'requires': ['persistent_actor']}
     if phase == 'conclude' and signature == 'if ( target . hp <= 0 || target . isDead ( ) ) { user . addParam ( 0 , 10 ) ; user . addParam ( 1 , 30 ) ; }':
         return {'op': 'param_add', 'recipient': 'user', 'scale': 'constant', 'when': 'target_dead',
+                'steps': [{'param': 0, 'amount': 10}, {'param': 1, 'amount': 30}], 'requires': ['persistent_actor']}
+    if phase == 'conclude' and signature == NANOHA_ADAPT_1768:
+        return {'op': 'param_add', 'recipient': 'user', 'scale': 'nanoha_adapt', 'share': 1, 'when': 'target_dead',
                 'steps': [{'param': 0, 'amount': 10}, {'param': 1, 'amount': 30}], 'requires': ['persistent_actor']}
     return None
 
@@ -1219,6 +1333,22 @@ def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def mv_string_parameters(lst, where, found):
+    """新源（v0.62.12）有事件指令的 parameters 是整段字符串而不是数组（深渊商人 32 个事件页的
+    `CodexAbyssMerchant.openCurrent(this);`、公共事件 1439 的 `if(window.CodexAbyssMerchant)…complete(this);`，都是 355）。
+    MV 的 command355 读 `parameters[0]`，对字符串就是第一个字符，原版实际 eval 的是 `C`／`i`：前者 ReferenceError 被
+    YEP_CoreEngine 的 try 吞掉，后者是插件漏出来的全局变量、只取值，都没有效果（新源参照引擎实测，bajie-newsrc1）。
+    这里换成逐字符的数组：任意下标读到的都和原版对字符串取下标相同，Godot 侧各处按数组读 parameters 不用再各自容错；
+    原字符串留在 `mvStringParameters`。XIYOU_MV_STRING_PARAMS=keep 时不换（回到原样，Godot 解释器会报 String 赋给 Array）。"""
+    for c in lst or []:
+        if isinstance(c, dict) and isinstance(c.get('parameters'), str):
+            raw = c['parameters']
+            found.append({'where': where, 'code': c.get('code'), 'text': raw[:80]})
+            if os.environ.get('XIYOU_MV_STRING_PARAMS', '') != 'keep':
+                c['mvStringParameters'] = raw
+                c['parameters'] = list(raw)
+
+
 def parse_life_steal(note):
     """YEP_LifeSteal.processLSNotetags2（技能、物品层）：<HP Life Steal: N%>（hpRate=N×0.01）、<HP Life Steal: N>（hpFlat）、
     <CANCEL (HP )?LIFE STEAL>（allNull／hpNull）。冻结数据里只有技能的 <HP Life Steal: N%>（112 个）；MP 吸血、CUSTOM 公式块没有数据，不转。
@@ -1369,15 +1499,19 @@ class Exporter:
         if self.out.is_relative_to(self.app) or self.app.is_relative_to(self.out):
             raise ValueError('输出目录不能与正式应用重叠')
         self.inputs, self.outputs, self.issues = {}, {}, []
+        self.string_parameters = []  # mv_string_parameters 找到的字符串 parameters，写进 manifest issues
         self.img, self.audio, self.movies = set(), set(), set()
         self.db = {}
         self.pending_json = {}
         self.written = self.unchanged = self.deleted = 0
 
-    def read(self, rel):
+    def read(self, rel, record=True):
+        """record=False：读了但不记进 manifest.inputs（来源指纹）。玩家更新日志只给改版向导显示，不影响规则；
+        探针的 source_identity 也不算它，两边口径一致，换源后改日志不会让参照身份失效（总装 11-06 定，newsrc5）。"""
         p = self.app / rel
         b = p.read_bytes()
-        self.inputs[rel] = sha(b)
+        if record:
+            self.inputs[rel] = sha(b)
         return json.loads(b.decode('utf-8'))
 
     def write_json(self, rel, data):
@@ -1485,10 +1619,19 @@ class Exporter:
                             gd, why = translate_custom_block(block, rec.get('id', 0))
                         else:
                             gd, why = translate_formula(rec['damage'].get('formula'), rec.get('id', 0))
-                        rec['damage']['formulaGd'] = gd
+                        rec['damage']['formulaGd'] = _gd_big_ints(gd)
                         rec['damage']['formulaProgram'] = compile_formula(rec['damage'].get('formula'), rec.get('id', 0), block is not None, name)
                         if why and rec['damage'].get('type'):
                             rec['damage']['formulaIssue'] = why
+            if name == 'CommonEvents':
+                for rec in data:
+                    if isinstance(rec, dict):
+                        mv_string_parameters(rec.get('list'), f'CE{rec.get("id")}', self.string_parameters)
+            elif name == 'Troops':
+                for rec in data:
+                    if isinstance(rec, dict):
+                        for i, pg in enumerate(rec.get('pages') or []):
+                            mv_string_parameters(pg.get('list'), f'T{rec.get("id")} p{i}', self.string_parameters)
             self.db[name] = data
             if name in ('Skills', 'States', 'Items', 'Armors'):
                 self.apply_xuan_tusu_icons(name, data)
@@ -1507,6 +1650,44 @@ class Exporter:
         yep_action_copy(self.db['Items'], self.db['Skills'], self.db['Items'])
         for name in ['Skills', 'Items']:
             self.write_json(f'db/{name}.json', self.db[name])
+
+    def export_changelog(self):
+        """玩家更新日志（installNativeGuidanceRuntime 的 G.changelogEntries，改版向导 Map004 EV71「更新日志」的
+        CodexGuide.injectChangelog 用）：data/ContentVersion.json 合法时读 v0.37～releaseNumber，否则读到 v0.37+899；
+        缺文件或格式不对就停，pages 为空的（已登记的跳号）跳过；新版在前。旧源没有这些文件时写空表。"""
+        first, release = 37, None
+        rel = 'data/ContentVersion.json'
+        if (self.app / rel).is_file():
+            try:
+                d = self.read(rel)
+                if re.fullmatch(r'v\d+\.\d{2}(?:\.\d{2})?', str(d.get('releaseVersion'))) and isinstance(d.get('releaseNumber'), int) \
+                        and not isinstance(d.get('releaseNumber'), bool) and d['releaseNumber'] >= 0:
+                    release = d['releaseNumber']
+            except (ValueError, AttributeError):
+                release = None
+        end = min(release, first + 899) if release is not None else first + 899
+        entries = []
+        for seq in range(first, end + 1):
+            rel = 'data/PlayerChangelog/v%d.%02d.json' % (seq // 100, seq % 100)
+            if not (self.app / rel).is_file():
+                break
+            try:
+                d = self.read(rel, record=False)  # 更新日志不进来源指纹（见 read）
+            except ValueError:
+                break
+            if not isinstance(d, dict) or not isinstance(d.get('pages'), list):
+                break
+            if d['pages']:
+                entries.insert(0, {'version': d.get('version'), 'pages': [str(x) for x in d['pages']]})
+        self.write_json('db/PlayerChangelog.json', {'releaseNumber': release, 'entries': entries})
+
+    def export_merchants(self):
+        """深渊／不朽商人（v0.30 起 installAbyssMerchantRuntime，$dataCodexMerchants）：data/CodexMerchants.json 原样导出
+        （routes 每个副本地图的名字、装备池、可领点数的敌群；affixes 三档特效；costs／reward／encounterRate／pity／visitLimit）。
+        旧源没有这个文件时写空表，XAbyssMerchant 当作没有商人路线。"""
+        rel = 'data/CodexMerchants.json'
+        data = self.read(rel) if (self.app / rel).is_file() else {}
+        self.write_json('db/CodexMerchants.json', data)
 
     def export_plugins(self):
         """启用插件的参数（难度倍率表等）。plugins.js 是 JS，取出其中的 JSON 数组。"""
@@ -1639,6 +1820,10 @@ class Exporter:
             rel = f'data/Map{mid:03d}.json'
             m = self.read(rel)
             m['meta'] = extract_meta(m.get('note'))
+            for ev in m.get('events') or []:
+                if ev:
+                    for i, pg in enumerate(ev.get('pages') or []):
+                        mv_string_parameters(pg.get('list'), f'Map{mid:03d} EV{ev.get("id")} p{i}', self.string_parameters)
             self.write_json(f'maps/Map{mid:03d}.json', m)
             ts = db['Tilesets'][m['tilesetId']]
             for n in ts['tilesetNames']:
@@ -1852,6 +2037,12 @@ class Exporter:
                     out = self.audio_96k(f'{kind}/{rel}{dst}', data, prev)
                 # 重编码过的音频不能沿用源文件的修改时间：Godot 先看修改时间，时间没变就不重新导入，包里还是旧的高码率
                 self.write_changed(f'{kind}/{rel}{dst}', out, source=None if kind == 'audio' and out is not data else src)
+                # 以前按原样复制过的伪 PNG（JPEG／WebP 内容）导入失败，留下 valid=false 的 .import；现在转成真 PNG 了，
+                # Godot 认 .import 里的旧记录不重导（162 诛仙战斗图、脸图因此是空的）。产物已对的情况下也删掉坏 .import，下次导入重做
+                bad = self.out / f'{kind}/{rel}{dst}.import'
+                if bad.is_file() and 'valid=false' in bad.read_text(encoding='utf-8', errors='replace'):
+                    bad.unlink()
+                    self.issues.append({'resetInvalidImport': f'{kind}/{rel}{dst}'})
                 self.inputs[f'{kind}/{rel}{ext}'] = sha(data)
                 self.outputs[f'{kind}/{rel}{dst}'] = sha(out)
         for name in sorted(self.movies):
@@ -1951,6 +2142,8 @@ class Exporter:
                           for p in sorted((self.app / 'js').rglob('*.js'))}
         self.export_db()
         self.export_plugins()
+        self.export_changelog()
+        self.export_merchants()
         self.collect_slice()
         self.copy_assets()
         untranslated = []
@@ -1979,6 +2172,7 @@ class Exporter:
                     'sliceConfigSHA256': sha(json.dumps(self.cfg, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()),
                     'formulaUntranslatedInSlice': untranslated, 'formulaUntranslatedAllSkills': all_bad,
                     'formulaPrograms': {'version': 1, 'execution': 'explicit-runtime', 'tables': program_stats},
+                    'mvStringParameters': self.string_parameters,
                     'audio96k': AUDIO_TARGET_KBPS if AUDIO_96K else 0,
                     'issues': self.issues, 'inputs': self.inputs, 'outputs': self.outputs}
         # 生成期间源若发生变化，候选不可用；不将混合来源登记成成功结果。

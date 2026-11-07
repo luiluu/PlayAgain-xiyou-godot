@@ -17,6 +17,9 @@ extends XActorPage
 ## - 第 4 页「修行」（installNativeGuidanceRuntime JAH_Window_Status_Zhenqi，行由 XGuide.page_rows 给出）：
 ##   head 系统色「【…】」(6, 宽 1240)；text 按 drawTextEx 从 x 6 起画，\C[n] 换色；cols 四列宽 floor(1252×.16/.28/.26/.26)，
 ##   首列左对齐、其余右对齐（宽减 6），表头系统色、首列普通色、warn 行第 4 列红字 textColor(2)。五个乘区不移植（O-044）。
+## - v0.62 起修行拆两页（XGuide.PANEL_V062，O-待定·修行两页）：第 4 页「修行」（G.panelRows），第 5 页「修行·详细」（G.detailRows，
+##   真气＋难度对照；「战力构成」五乘区不移植）。选页窗按 maxCols＝页数排：项宽 floor((1280−28+12)/5−12)＝240、间距 12。
+##   原版第 4 页按手机虚拟按键缩进（CodexV019.padRects，只在安卓宿主有）；重制版暂不缩进（桌面同原版，安卓待平台车道接虚拟键位）。
 ##   O-032（套装页）随之撤销：套装加成仍在物品说明卡与装备页显示。
 ## - 右上角「战力 N」按钮（XPowerPanel.make_button）打开角色战力面板（XPowerPanel）；关掉战力时没有按钮和战力条。
 
@@ -25,8 +28,13 @@ const PAGE_Y := 72.0
 const LH := 36.0
 const PAD := 14.0
 const PAGE_NAMES := ["状态", "加成与抗性", "掌握", "修行"]
+const PAGE_NAMES_V062 := ["状态", "加成与抗性", "掌握", "修行", "修行·详细"]
+## installEquipmentDetailV041Runtime 包 JAH_Window_Status_Resistances.calcWeaponBonus：武器类型加成后缀「 生效」（isWtypeEquipped）／「 未持有」。
+## O-待定·武器类型生效（跟新源的显示改动，关＝v0.28 只写百分比）
+static var WTYPE_HOLD_V041 := true
 ## 修行页四列（drawPageBlock：availableWidth＝contents 宽 1252）
 const GUIDE_COLS := [200.0, 350.0, 325.0, 325.0]
+## 4 页时的项宽、间距（Window_HorzCommand：itemWidth＝floor((宽−2×14＋12)/maxCols−12)，项距＝项宽＋12）
 const ITEM_W := 304.0
 const ITEM_STEP := 316.0
 const HEADER_LINES := 6
@@ -42,7 +50,7 @@ const RESIST_THRESHOLDS := [2.01, 1.01, 1.0, 0.5, 0.01, 0.0, -0.99, -10.0]
 const RESIST_COLORS := [10, 2, -1, 5, 13, 14, 3, 11]
 
 var page := 0
-var tops := [0, 0, 0, 0]
+var tops := [0, 0, 0, 0, 0]
 var select_win: XMVWindow
 var page_win: XMVWindow
 var power_strip: XPowerStrip
@@ -55,7 +63,7 @@ func rebuild() -> void:
 	super.rebuild()
 	var a := actor()
 	if a.actor_id != _last_actor:
-		tops = [0, 0, 0, 0]
+		tops = [0, 0, 0, 0, 0]
 		_last_actor = a.actor_id
 	# 战力条占页窗原位置的上 36，页窗下移；关掉战力时没有
 	var page_y := PAGE_Y
@@ -103,18 +111,32 @@ func set_page(i: int) -> void:
 	_scroll(0)
 
 
+static func page_names() -> Array:
+	return PAGE_NAMES_V062 if XGuide.PANEL_V062 else PAGE_NAMES
+
+
+static func item_w() -> float:
+	return floorf((1280.0 - PAD * 2 + 12) / page_names().size() - 12)
+
+
+static func item_step() -> float:
+	return item_w() + 12
+
+
 ## 当前页画出的全部文字（测试用）
 func all_text() -> String:
-	return "\n".join(PAGE_NAMES + page_ops(actor(), page, page_win.size.y).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
+	return "\n".join(page_names() + page_ops(actor(), page, page_win.size.y).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
 
 
 # ---- 绘制 ----
 func _paint_select(c: XMVCanvas) -> void:
-	for i in range(PAGE_NAMES.size()):
-		var r := Rect2(i * ITEM_STEP, 0, ITEM_W, LH)
+	var names := page_names()
+	var iw := item_w()
+	for i in range(names.size()):
+		var r := Rect2(i * item_step(), 0, iw, LH)
 		if i == page:
 			c.cursor(r, true)
-		c.text(PAGE_NAMES[i], r.position.x + 6, 0, ITEM_W - 12, "center")
+		c.text(names[i], r.position.x + 6, 0, iw - 12, "center")
 
 
 func _paint_page(c: XMVCanvas) -> void:
@@ -144,8 +166,10 @@ static func line_count(a: XActor, p: int) -> int:
 			return HEADER_LINES + 14
 		2:
 			return HEADER_LINES + 10
-		_:
+		3:
 			return HEADER_LINES + XGuide.page_rows(XState.current, a).size()
+		_:
+			return HEADER_LINES + XGuide.detail_rows(XState.current, a).size()
 
 
 # ---- 绘制调用（与正式版 contents 上的调用一一对应，测试直接比对） ----
@@ -160,8 +184,10 @@ static func page_ops(a: XActor, p: int, window_h := 612.0) -> Array:
 			ops += _resist_ops(a)
 		2:
 			ops += _mastery_ops(a, window_h)
-		_:
+		3:
 			ops += _guide_ops(a)
+		_:
+			ops += _guide_ops(a, XGuide.detail_rows(XState.current, a))
 	return ops
 
 
@@ -344,7 +370,10 @@ static func _resist_ops(a: XActor) -> Array:
 		var x := left + name_w + passive_w + pen_w + resist_w + gap * 4 + 170
 		ops.append(_t(str(wtypes[i]) if str(wtypes[i]) != "" else "武器类型%d" % i, x, wy, wt_w, "center", XUI.SYSTEM))
 		x += wt_w + gap
-		ops.append(_t(_num(float(cache.get("SkETypeHarmRi", {}).get(i, 0.0)) * 100) + "%", x, wy, wbonus_w, "center"))
+		var wtext := _num(float(cache.get("SkETypeHarmRi", {}).get(i, 0.0)) * 100) + "%"
+		if WTYPE_HOLD_V041:
+			wtext += " 生效" if XBattleLogic.wtype_equipped(a, i) else " 未持有"
+		ops.append(_t(wtext, x, wy, wbonus_w, "center"))
 		wy += LH
 	var qy := LH * (HEADER_LINES + 1)
 	for row in global_bonuses(a):
@@ -461,14 +490,14 @@ static func _section(title: String, types: Array, x: float, y: float, name_w: fl
 	return ops
 
 
-# ---- 第 4 页：修行（JAH_Window_Status_Zhenqi.drawPageBlock） ----
-static func _guide_ops(a: XActor) -> Array:
+# ---- 第 4／5 页：修行、修行·详细（JAH_Window_Status_Zhenqi／ZhenqiDetail 共用 drawPanelRows） ----
+static func _guide_ops(a: XActor, rows = null) -> Array:
 	var ops := []
 	var pad := 6.0
 	var w := 1252.0
 	var y := LH * HEADER_LINES
 	var re := RegEx.create_from_string("\\\\C\\[(\\d+)\\]")
-	for r in XGuide.page_rows(XState.current, a):
+	for r in (XGuide.page_rows(XState.current, a) if rows == null else rows):
 		match str(r.type):
 			"head":
 				ops.append(_t("【" + str(r.text) + "】", pad, y, w - pad * 2, "left", XUI.SYSTEM))
@@ -509,7 +538,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):
 		XKeyMap.handled(self)
 		var d := -1 if event.is_action("ui_left") else 1
-		var n := PAGE_NAMES.size()
+		var n := page_names().size()
 		# 按下时循环，按住连发不越过两端（Window_Selectable.cursorLeft/Right 的 wrap）
 		var next := page + d
 		if event.is_echo():
@@ -541,7 +570,7 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var p: Vector2 = event.position - SELECT_RECT.position - Vector2(PAD, PAD)
 		if p.y >= 0 and p.y < LH and p.x >= 0:
-			var i := int(p.x / ITEM_STEP)
-			if i < PAGE_NAMES.size() and p.x - i * ITEM_STEP < ITEM_W:
+			var i := int(p.x / item_step())
+			if i < page_names().size() and p.x - i * item_step() < item_w():
 				accept_event()
 				set_page(i)

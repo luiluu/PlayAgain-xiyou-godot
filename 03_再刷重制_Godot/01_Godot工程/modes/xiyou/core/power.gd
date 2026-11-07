@@ -254,9 +254,15 @@ static func _notes(s: Dictionary, obj: Dictionary, visited := {}, is_state := fa
 	for m: RegExMatch in _matches(note, "<Element Magnify (\\d+):\\s*([+-]?[\\d.]+)%\\s*>"):
 		var e := int(m.get_string(1))
 		p.magnify[e] = float(p.magnify.get(e, 0.0)) + float(m.get_string(2)) / 100.0
+	# v0.51 installCombatPowerRuntime：同被动缓存口径，同一对象里元素号＋值写法完全相同的只计一次
+	var dep_seen := {}
 	for m: RegExMatch in _matches(note, "<DepassiveHarmRe(\\d+):\\s*([+-]?[\\d.]+)(%?)\\s*>"):
 		var pool := "percent" if m.get_string(3) != "" else "fixed"
 		var e := int(m.get_string(1))
+		var dep_key := "%d|%s%s" % [e, m.get_string(2), m.get_string(3)]
+		if dep_seen.has(dep_key):
+			continue
+		dep_seen[dep_key] = true
 		p.penetrate[pool][e] = float(p.penetrate[pool].get(e, 0.0)) + float(m.get_string(2))
 	for m: RegExMatch in _matches(note, "<passivePBST([0-7]):\\s*([+-]?\\d+(?:\\.\\d+)?)(%?)\\s*>"):
 		var id := int(m.get_string(1))
@@ -507,7 +513,7 @@ static func formula_ok(skill: Dictionary) -> bool:
 	if not custom:
 		var s := _js_formula(str(d.get("formula", "0")))
 		for p in ["Codex(?:Raven\\.(?:legionStrikeRate|skillCoefficient|defenseFactor|defenseDeduction)|Mira\\.damage|Yomi\\.damage|Jingliu\\.damage|Toji\\.damage|Sukuna\\.damage|Garou\\.base)\\b",
-				"CodexYunshang\\.formula\\b", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
+				"CodexYunshang\\.formula\\b", "CodexLiuying\\.damage\\(a,\\s*b,\\s*\\d+\\)", "Codex(?:Tusu|Xuan)\\.(?:damage|heal)\\(a,\\s*b(?:,\\s*'\\w+')?\\)",
 				"(?:a|b|user|target|subject)\\.(?:skillMasteryLevel|isStateAffected|hpRate|mpRate|tpRate|param|xparam|sparam)\\b",
 				"(?:a|b|user|target|subject)\\.(?:mhp|mmp|hp|mp|tp|atk|def|mat|mdf|agi|luk|level|hit|cri|pdr|mdr|rec)\\b",
 				"Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt|log)\\b", "item\\.id", "v\\[\\d+\\]", "\\b(?:a|b|user|target|subject|this|true|false)\\b"]:

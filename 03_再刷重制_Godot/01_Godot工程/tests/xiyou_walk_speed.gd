@@ -92,6 +92,11 @@ func _measure(mode: String) -> Dictionary:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_walk_speed"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# 新源大厅首次进入的漩涡过场（Map4 EV76 自动执行，CodexWhisper.seen('rift1') 为假时播，占住地图约 5000 帧）：
+	# 跑步计时在大厅 Map004：过场占着地图时玩家不动，run.frames 成了 331。过场由 xiyou_opening_branches c_rift_cutscene 单测，这里删旧配置、标成看过（同 xiyou_actor_p0／xiyou_flow，八戒 DD³）
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = ""
+	XConfig.whisper_mark("rift1")
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	XSpeedGear.HEADLESS_APPLY = true

@@ -201,6 +201,8 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		value = XHeartsteel.ai_damage(a, t, id)  # 巨人吞噬：受控的估算函数
 	elif XTusu.ai_raw(a, t, rec) != null:
 		value = float(XTusu.ai_raw(a, t, rec))  # CodexAIEstimators：屠苏的武装、支援、本体技能（超强者持武的武装技能 0）
+	elif XLiuying.ai_raw(a, t, rec) != null:
+		value = float(XLiuying.ai_raw(a, t, rec))  # CodexAIEstimators：流萤两招的公式值
 	elif XYunshang.ai_raw(logic, a, t, rec) != null:
 		value = float(XYunshang.ai_raw(logic, a, t, rec))  # CodexAIEstimators：云裳公式（防取 0）
 	else:

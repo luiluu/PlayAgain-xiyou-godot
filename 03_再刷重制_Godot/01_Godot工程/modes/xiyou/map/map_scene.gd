@@ -261,6 +261,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	map_data = XDB.map(id)
 	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
 	XYunshangOrders.on_map_setup(s, s.map_id, id)  # 云裳 Game_Map.setup 包装：未知战斗记来源地图（不朽天丝用）
+	XAbyssMerchant.on_map_setup(s, s.map_id, id)  # 深渊商人 Game_Map.setup 包装：商人路线地图开新一轮
 	s.map_id = id
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
@@ -1438,16 +1439,19 @@ func scene_page_open() -> bool:
 
 func open_shop(goods: Array, purchase_only: bool) -> void:
 	# KMS_ShopInventory 在 Scene_Shop.prepare 补货并取走 apply 的库存组（先于宝珠商店的 start 关店）
+	goods = XShopStock.prepare_policy(goods)   # v0.41 外层：被动书加价、库存外观（见 XShopStock.policy）
 	var stock_group := XShopStock.open(XState.current)
 	# 宝珠运行时：只卖宝珠的商店（如二十一层神秘使者）一打开就提示并关闭（Scene_Shop.start → popScene）
 	if XItemMarks.shop_orb_only(goods):
 		toast(XItemMarks.ORB_SHOP_TEXT)
+		XShopStock.close_policy()
 		return
 	var shop := XShop.new()
 	shop.setup(goods, purchase_only, stock_group)
 	_add_scene_page(shop)
 	await shop.closed
 	shop.queue_free()
+	XShopStock.close_policy()
 
 func game_over() -> void:
 	await message.show_text("", 0, ["全军覆没……将在方桌大厅复活。"])
@@ -1578,6 +1582,16 @@ func open_inlay_book() -> void:
 	hud.visible = false
 	var page := XInlayBook.new()
 	_add_scene_page(page)
+	await page.closed
+	page.queue_free()
+	hud.visible = true
+
+
+## 深渊／不朽商人：CodexAbyssMerchant.openCurrent → SceneManager.push(Scene_Merchant29)，关闭后回到地图（事件等它关掉，见 XAbyssMerchant）
+func open_merchant29() -> void:
+	hud.visible = false
+	var page := XMerchant29Page.new()
+	ui.add_child(page)
 	await page.closed
 	page.queue_free()
 	hud.visible = true

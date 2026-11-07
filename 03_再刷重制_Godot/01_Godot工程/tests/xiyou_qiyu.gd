@@ -3,7 +3,7 @@ extends Node
 ## - rates.*：行动者 50 级、目标为敌群 2 第一个敌人（带参照同形的测试状态），比 itemHit／itemEva，以及 _invoke 实际用的
 ##   反击率（物理且不必中时取目标 cnt）、反射率（魔法且不必中时取目标 mrf）；163 的技能必中，物品照常，164／162 作对照。
 ## - invoke.*：真实 _invoke 打带反射或反击测试状态的敌人（比率为 1，必然触发），比有没有被反射／反击。
-## - state2626.*：163 加不上 2626，别人加得上。
+## - state2626.*：新源 v0.29 起导入角色 141～166（含 163）都加不上 2626；参照只量 163／164／162。
 ## - relic124：新生成的法宝 124 实例特性、每级成长、SkillPass 与参照一致，装给 163（30 级）后法宝 1／5 级的能力值。
 const ORACLE := "oracle/qiyu.json"
 var results := []
@@ -77,6 +77,8 @@ func _invoke(c: Dictionary) -> void:
 	logic.setup(2, s)
 	var a := _actor(int(c.setup.actor), 50)
 	var t := _enemy(c)
+	# 参照走整段行动序列，开头 IMMORTAL: targets, true；新源敌人先挨打再反击，挨打后还要活着才反击，这里照序列给目标不死
+	t.immortal = true
 	var logs := logic._invoke(a, XDB.rec("Skills", int(c.setup.skill)), t)
 	var types: Array = logs.map(func(l): return str(l.get("type", "")))
 	check(c.id + ".reflected", types.has("reflect") == bool(o.reflected), [types, o.reflected])

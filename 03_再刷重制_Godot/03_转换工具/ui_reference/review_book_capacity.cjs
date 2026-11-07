@@ -5,7 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), {spawn} = 
 const out = path.resolve(process.argv[2] || '.');
 const port = Number((process.argv.find(a => a.startsWith('--port=')) || '--port=8777').slice(7));
 fs.mkdirSync(out,{recursive:true});
-const source=path.resolve(__dirname,'../../02_内容与素材/冻结正式源/app.nw');
+const source=process.env.XIYOU_APP?path.resolve(process.env.XIYOU_APP):path.resolve(__dirname,'../../02_内容与素材/冻结正式源/app.nw');  // 换源重取认 XIYOU_APP（tools CR）
 const server=spawn('python3',['-u',path.join(__dirname,'review_book_capacity.py'),source,out,'--port',String(port)],{stdio:['ignore','inherit','inherit']});
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'xiyou-sysref-'));
