@@ -4,7 +4,7 @@ extends Node
 ##   伤害 0 或回复不掷。原版这条照常生效，重制漏了（逐例比参照）。
 ## - 第 9 项：addNewState 从「未受限」变「受限」时 onRestrict 去掉 removeByRestriction 的状态（防御 2／170／235、凌波舞 525、鸣贝 569／580）。
 ##   原版 krz_state_re 的 states() 缓存让加状态后的 isRestricted 读到旧值，onRestrict 从不触发（参照里全是「没去掉」），
-##   O-待定-3 `XBattler.FIX_RESTRICT_REMOVE` 默认修成触发；关着时逐例比参照。已受限时这些状态加不上（isStateRestrict），原版照常生效、不挂开关。
+##   O-223 `XBattler.FIX_RESTRICT_REMOVE` 默认修成触发；关着时逐例比参照。已受限时这些状态加不上（isStateRestrict），原版照常生效、不挂开关。
 const FIXTURE := "res://tests/fixtures/state_remove_oracle.json"
 var results := []
 
@@ -113,7 +113,7 @@ func _run() -> void:
 	check("oracle", ref is Dictionary and ref.cases.size() == 106 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	var census: Dictionary = ref.cases[0].observed
 	_census(census)
-	XBattler.FIX_RESTRICT_REMOVE = false  # 参照是原版：O-待定-3 关着逐例比
+	XBattler.FIX_RESTRICT_REMOVE = false  # 参照是原版：O-223 关着逐例比
 	for c in ref.cases:
 		var id := str(c.id)
 		if id.begins_with("damage."):
@@ -216,7 +216,7 @@ func _restrict(c: Dictionary) -> void:
 		check(id + ".not_addable", got.states == _sorted(o.states) and got.draws == int(o.draws), [got, o])
 
 
-## O-待定-3 开：第一次受限时去掉 removeByRestriction 的状态、防御失效；已受限再加不触发；普通状态不触发
+## O-223 开：第一次受限时去掉 removeByRestriction 的状态、防御失效；已受限再加不触发；普通状态不触发
 func _restrict_fixed(census: Dictionary) -> void:
 	for side in ["actor", "enemy"]:
 		for row in census.restriction:

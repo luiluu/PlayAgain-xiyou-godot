@@ -19,7 +19,7 @@ const TRAIT_STYPE_ADD := 41
 const TRAIT_STYPE_SEAL := 42
 const TRAIT_SKILL_ADD := 43
 const TRAIT_SKILL_SEAL := 44
-## O-待定-3：原版 addNewState 从「未受限」变「受限」时调 onRestrict（去掉 removeByRestriction 的状态：防御 2／170／235、凌波舞 525、鸣贝 569／580），
+## O-223：原版 addNewState 从「未受限」变「受限」时调 onRestrict（去掉 removeByRestriction 的状态：防御 2／170／235、凌波舞 525、鸣贝 569／580），
 ## 但 krz_state_re 的 states() 缓存让加状态后的 isRestricted 读到旧值，onRestrict 从不触发（参照 state_remove_probe）。true＝修成触发；false 重现原版。
 static var FIX_RESTRICT_REMOVE := true
 
@@ -84,7 +84,7 @@ func is_restricted() -> bool:
 	return false
 
 
-## Game_Battler.onRestrict（O-待定-3 开时才调）：clearActions（重制在轮到时当场决定行动，没有预存的行动可清；OTB 也是轮到时 makeActions，
+## Game_Battler.onRestrict（O-223 开时才调）：clearActions（重制在轮到时当场决定行动，没有预存的行动可清；OTB 也是轮到时 makeActions，
 ## 行动队列的移除只看 canMove，在 addState 包装里），去掉 removeByRestriction 的状态，防御指令（原版的防御状态 2）一并失效；
 ## StateChangeIfRemove「行动限制解除」的换状态在 addState 里面，被 _Fix_StackOverflow 的全局锁挡住（与原版同）。
 func on_restrict() -> void:

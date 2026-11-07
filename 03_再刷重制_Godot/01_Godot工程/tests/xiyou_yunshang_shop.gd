@@ -218,7 +218,7 @@ func _run() -> void:
 	shop.queue_free()
 	XYunshang.o_eye_cooldown = true
 	await save_load(s)
-	XYunshangOrders.FIX_TEMPLATE_PREFIXES = false  # 参照是原版：O-待定-4 关着逐项比
+	XYunshangOrders.FIX_TEMPLATE_PREFIXES = false  # 参照是原版：O-224 关着逐项比
 	for roll in [0.5, 0.1]:
 		await p8_craft(roll)
 	XYunshangOrders.FIX_TEMPLATE_PREFIXES = true
@@ -332,7 +332,7 @@ func shop_step(id: String, w: Dictionary, tag: String, shop: XYunshangShop, extr
 		same("%s.%s.%s" % [id, tag, k], extra[k], want[k])
 
 
-## O-待定-4：开着时天衣掷模板（XYunshangOrders.model）的前缀，词缀都出自模板的前缀表；品质、图标档照天衣自己的；关着时同一随机数不掷
+## O-224：开着时天衣掷模板（XYunshangOrders.model）的前缀，词缀都出自模板的前缀表；品质、图标档照天衣自己的；关着时同一随机数不掷
 func p8_prefix_fix() -> void:
 	var tpl := XGear.template("armor", XYunshangOrders.model())
 	var allowed := {}
