@@ -817,11 +817,7 @@ func _preview(a: XBattler, skill, targets: Array = []) -> void:
 		entries.append([a, "n", logic.next_order, int(skill.get("speed", 0)) + XBattleLogic._note_int(skill, "OTB User Next Turn") + XXuanBattle.manual_first_shift(logic, a, skill), logic._speed])
 	var cur := XBattleLogic._note_int(skill, "OTB Target Current Turn")
 	var nxt := XBattleLogic._note_int(skill, "OTB Target Next Turn")
-	if not str(skill.get("note", "")).contains("<OTB Target Next Turn:"):
-		for eff in skill.get("effects", []):
-			if int(eff.code) == 31 and int(eff.dataId) == XBattleLogic.AGI_PARAM:
-				nxt += 1
-				break
+	nxt += XBattleLogic.agi_convert_shift(skill)  # 敏捷增益 +1、减益 −1（O-待定-2）
 	var follow := XBattleLogic._note_int(skill, "OTB Target Follow Turn")
 	for t in targets:
 		if logic._speed.get(t, 0.0) == INF:
