@@ -6346,7 +6346,7 @@
   "js/rpg_windows.js": "4c5c65c5c80170bd9898f1f94ad5e7e5f31282e81c898f5201473f80b940f15f",
   "js/rpg_οbjects.js": "44a492f6a9b742a68a3768cdf7c6bab8294f5a177f595ab562cc47a80809ce89"
  },
- "sliceConfigSHA256": "8b18cbdb4626d593eee06a90c9308d47bc148b2fef171d9e83aee994d0eb8189",
+ "sliceConfigSHA256": "ff9beacda5cd5546fa4afb23e6b1e4e5c16e699cd90e065fa9f6eadef319b1bb",
  "formulaUntranslatedInSlice": [],
  "formulaUntranslatedAllSkills": 4,
  "formulaPrograms": {
@@ -13607,6 +13607,6 @@
   "movies/血轮眼开.ogg": "651fc3b90f56f0dd742b187ce3018ba43029e83c5407aed3ef3e1f7b16b85a9f",
   "movies/血轮眼开.json": "6c05e49eed2534075e4166ad3cf9100bec71dbec184198dd23cbe661ae189b9f",
   "fonts/FZLanTYJW_ZhongCu.TTF": "db0fe73bff1d05a1ddb4eac5bd31b9fc971a30285cb9c14b81464ab697195f79",
-  "slice.json": "dea5f7102c1b96106e048278bacb8779674a7292704e8c62cdeb8f2d0b092013"
+  "slice.json": "ae07cbd32a499ca18da9fc1617d17952ee2db6d49b3349ea00274a8374292bf1"
  }
 }
