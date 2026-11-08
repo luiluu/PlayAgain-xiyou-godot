@@ -3,7 +3,7 @@ extends Node
 ## 切片公共事件的全部传送落点（直接指定，或先常量赋值再按变量指定），以及每张图的出口事件（任一页有传送，含调用的公共事件）。
 ## 每张目标图在地图场景里开一次（新开局状态），对每个落点：断言在图内；从落点按图块通行 BFS（xiyou_reach_check，同层事件挡路），
 ## 至少走得到一个出口事件，或图上有自动／并行的出口，或这张图在 known_no_exit 里写明了离开办法（如热键 1 回大厅，副本中不可用）。
-## 走不到的写进输出 STUCK 行；fixture 的 known 列出已查明原因的落点（原版就这样且有别的离开办法），其余的挂。
+## 走不到的写进输出 STUCK 行；floor7 起再按页查开关／变量换页的传送页（见 _pages）；fixture 的 known 列出已查明原因的落点（原版就这样且有别的离开办法），其余的挂。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FIX := "res://tests/fixtures/transfer_landings.json"
 const KNOWN := "res://tests/fixtures/transfer_reach_known.json"
@@ -97,6 +97,111 @@ func _map(m: int, landings: Array, exits: Dictionary, known: Dictionary) -> void
 			print("STUCK ", JSON.stringify({"map": m, "xy": l.xy, "from": l.from, "exits": ex.walk, "spawned": spawned,
 				"cells": REACH.reachable(map, at).size(), "player": [map.player.grid.x, map.player.grid.y]}))
 			_check(tag + "_exit", why != null, {"from": l.from, "exits": ex.walk})
+	_pages(map, m, Array(raw.get("pages", [])), landings, known)
+
+
+## floor7：开关／变量换页的传送页（fixture exits.pages，参照逐页跑过的）。在已开好的图上逐页：按页条件设状态（开关开、变量取到值、
+## 独立开关、物品、角色入队），更高的页被一起满足时关掉它多出来的条件，refresh_events 后断言该事件选中这一页；再从各落点 BFS
+## 走得到它（自动／并行页不用走）。整段同步执行、不等帧，查完立刻还原状态再刷新，自动执行页来不及启动。
+## 选不中（更高页条件是它的子集、页条件被 page_switch_ignore 拦下）记 SHADOWED，走不到记 STUCK；已知项键「p地图:事件:页」。
+func _pages(map: XMapScene, m: int, pages: Array, landings: Array, known: Dictionary) -> void:
+	var s := XState.current
+	var at_list: Array = []
+	for l in landings:
+		var at := _fixed_landing(m, Vector2i(int(l.xy[0]), int(l.xy[1])), l.from)
+		if map.lower.is_valid(at):
+			at_list.append(at)
+	for pg in pages:
+		var ev := int(pg.event)
+		var want := int(pg.page)
+		var tag := "m%d_e%d_p%d" % [m, ev, want]
+		var why = known.get("p%d:%d:%d" % [m, ev, want], known.get(str(m)))
+		var e: MVEvent = null
+		for x in map.events:
+			if x.event_id == ev:
+				e = x
+		if not _check(tag + "_event", e != null or why != null):
+			continue
+		if e == null:
+			continue
+		var snap := [s.switches.duplicate(), s.variables.duplicate(), s.self_switches.duplicate(), s.items.duplicate(), s.party.duplicate()]
+		var erased := e.erased
+		e.erased = false
+		_satisfy(s, m, ev, e.data.pages[want].conditions)
+		map.refresh_events()
+		var guard := 0
+		while e.page_index > want and guard < e.data.pages.size():
+			guard += 1
+			if not _break(s, m, ev, e.data.pages[want].conditions, e.data.pages[e.page_index].conditions):
+				break
+			map.refresh_events()
+		var got := e.page_index
+		var ok := got == want
+		var reach := ok
+		if ok and int(pg.trigger) not in [3, 4]:
+			reach = at_list.any(func(at): return REACH.unreachable(map, at, [ev]).is_empty())
+			if not reach and at_list.any(func(at): return _tiles_reach(map, at, [ev])):
+				reach = true
+				print("BLOCKED ", JSON.stringify({"map": m, "event": ev, "page": want}))
+		s.switches = snap[0]
+		s.variables = snap[1]
+		s.self_switches = snap[2]
+		s.items = snap[3]
+		s.party = snap[4]
+		e.erased = erased
+		map.refresh_events()
+		if not ok:
+			print("SHADOWED ", JSON.stringify({"map": m, "event": ev, "page": want, "got": got, "cond": pg.cond}))
+			_check(tag + "_page", why != null, {"got": got})
+		elif not reach:
+			print("STUCK ", JSON.stringify({"map": m, "event": ev, "page": want, "grid": [e.grid.x, e.grid.y], "cond": pg.cond}))
+			_check(tag + "_reach", why != null, pg.cond)
+
+
+## 让一页的条件成立（直接改存档表，不走 set_switch 的跨存档钩子；调用方查完整份还原）
+func _satisfy(s: XState, m: int, ev: int, c: Dictionary) -> void:
+	if c.switch1Valid:
+		s.switches[int(c.switch1Id)] = true
+	if c.switch2Valid:
+		s.switches[int(c.switch2Id)] = true
+	if c.variableValid and s.variable(int(c.variableId)) < float(c.variableValue):
+		s.variables[int(c.variableId)] = float(c.variableValue)
+	if c.selfSwitchValid:
+		s.self_switches["%d,%d,%s" % [m, ev, str(c.selfSwitchCh)]] = true
+	if c.itemValid and s.item_count(int(c.itemId)) <= 0:
+		s.items[int(c.itemId)] = 1
+	if c.actorValid and not s.party.has(int(c.actorId)):
+		s.actor(int(c.actorId))
+		s.party.append(int(c.actorId))
+
+
+## 更高的页 q 一起成立时，关掉 q 有、目标页 c 不要求的一个条件；没有可关的返回 false（目标页被 q 盖住）
+func _break(s: XState, m: int, ev: int, c: Dictionary, q: Dictionary) -> bool:
+	var need := []
+	if c.switch1Valid:
+		need.append(int(c.switch1Id))
+	if c.switch2Valid:
+		need.append(int(c.switch2Id))
+	for k in ["switch1", "switch2"]:
+		if q[k + "Valid"] and not need.has(int(q[k + "Id"])):
+			s.switches[int(q[k + "Id"])] = false
+			return true
+	if q.variableValid:
+		# 同一个变量：取目标页要的下限（q 要求更高时才分得开）；不同变量：压到 q 的门槛下一格
+		var same: bool = c.variableValid and int(c.variableId) == int(q.variableId)
+		if not same or float(q.variableValue) > float(c.variableValue):
+			s.variables[int(q.variableId)] = float(c.variableValue) if same else float(q.variableValue) - 1.0
+			return true
+	if q.selfSwitchValid and not (c.selfSwitchValid and str(c.selfSwitchCh) == str(q.selfSwitchCh)):
+		s.self_switches["%d,%d,%s" % [m, ev, str(q.selfSwitchCh)]] = false
+		return true
+	if q.itemValid and not (c.itemValid and int(c.itemId) == int(q.itemId)):
+		s.items[int(q.itemId)] = 0
+		return true
+	if q.actorValid and not (c.actorValid and int(c.actorId) == int(q.actorId)) and s.party.size() > 1:
+		s.party.erase(int(q.actorId))
+		return true
+	return false
 
 
 ## 只看图块（不算事件挡路）从 from 走不走得到任一出口事件（同层的站到四邻，其余踩上去）

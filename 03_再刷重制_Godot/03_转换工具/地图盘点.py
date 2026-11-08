@@ -48,6 +48,23 @@ def transfers(lst):
     return out, ces
 
 
+def page_cond(pg):
+    """页条件（只记生效的项）：开关、变量≥、独立开关、物品、角色"""
+    c, out = pg['conditions'], {}
+    sw = [c[k] for k, v in (('switch1Id', 'switch1Valid'), ('switch2Id', 'switch2Valid')) if c.get(v)]
+    if sw:
+        out['switches'] = sw
+    if c.get('variableValid'):
+        out['variable'] = [c['variableId'], c['variableValue']]
+    if c.get('selfSwitchValid'):
+        out['self'] = c['selfSwitchCh']
+    if c.get('itemValid'):
+        out['item'] = c['itemId']
+    if c.get('actorValid'):
+        out['actor'] = c['actorId']
+    return out
+
+
 def has_content(ev):
     return any(c['code'] not in SKIP_CODES for p in ev['pages'] for c in p['list'])
 
@@ -178,29 +195,39 @@ def main():
         ins_kept = [s for s in ins if any(s == e[3] for e in edges.get(int(s[3:6]) if s.startswith('Map') else 0, []))]
         find['F'].append({'map': mid, 'name': name(mid), 'events': len(evs), 'entries': ins[:6], 'entriesTotal': len(ins), 'entriesInSlice': ins_kept[:6]})
     # 传送落点与各图出口（给 xiyou_transfer_reach 端到端走）：落点＝放了的事件、切片公共事件里直接或常量变量指定的传送；
-    # 出口＝放了的事件里任一页（含它调用的公共事件）有传送的事件，自动／并行触发的另记（不用走过去）
+    # 出口＝放了的事件里任一页（含它调用的公共事件）有传送的事件，自动／并行触发的另记（不用走过去）；
+    # pages 按页列出带页条件的传送页（floor7：专项按条件设状态、断言选中该页再走）
     landings = {}
     for mid, lst in edges.items():
         for d, x, y, src in lst:
             if d in slice_maps:
                 landings.setdefault((d, x, y), []).append(src)
+    oracle_f = GEN / 'oracle/events.json'
+    oracle_pages = {c['id'] for c in load(oracle_f)['cases'] if c.get('kind') == 'map'} if oracle_f.exists() else set()
     exits = {}
     for mid in sorted(slice_maps):
         m = maps.get(mid)
         if not m:
             continue
-        walk, auto = [], []
+        walk, auto, pages = [], [], []
         for ev in m['events']:
             if not ev or not kept(mid, ev['id']):
                 continue
-            for pg in ev['pages']:
+            hit = False
+            for pi, pg in enumerate(ev['pages']):
                 tr, calls = transfers(pg['list'])
                 for ci in ce_closure(calls):
                     tr += ce_tr[ci]
-                if tr:
+                if not tr:
+                    continue
+                if not hit:
                     (auto if pg['trigger'] in (3, 4) else walk).append(ev['id'])
-                    break
-        exits[str(mid)] = {'walk': walk, 'auto': auto}
+                    hit = True
+                # 按页记：有页条件、或不是第 1 页（新开局可能选不到它）的传送页，参照逐页跑过（events.json 的 m图e事件p页）才收
+                cond = page_cond(pg)
+                if (cond or pi > 0) and ('m%de%dp%d' % (mid, ev['id'], pi)) in oracle_pages:
+                    pages.append({'event': ev['id'], 'page': pi, 'trigger': pg['trigger'], 'cond': cond})
+        exits[str(mid)] = {'walk': walk, 'auto': auto, 'pages': pages}
     fixture = {'说明': '地图盘点.py 生成：传送落点（目标图、坐标、来源）与各图出口事件；xiyou_transfer_reach 用',
                'landings': [{'map': d, 'xy': [x, y], 'from': sorted(set(v))[:3]} for (d, x, y), v in sorted(landings.items())],
                'exits': exits}
