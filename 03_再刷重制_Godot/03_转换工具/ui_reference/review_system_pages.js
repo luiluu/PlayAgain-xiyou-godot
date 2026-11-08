@@ -677,6 +677,64 @@
         out.equipMode = s._equipMode41 !== undefined ? s._equipMode41 : s._mode43;
         return out;
     }
+    // 技能页（ui-gaps4）：xiyou_skill_page 的预期值原是 v0.24 实测，这里用新源 v0.62.12 重量一遍（四人学 6168/5980/5548/2571/2786、Lv10）
+    var skillPicked = {};
+    async function skillType(i) {
+        var s = scene();
+        if (s._itemWindow.active) s.onItemCancel();
+        s._skillTypeWindow.select(i); s._skillTypeWindow.processOk(); await settle();
+        s._itemWindow.select(0); await settle();
+    }
+    P.skill_page = {
+        setup: async function () {
+            [1, 8, 9, 10].forEach(function (id) {
+                var a = $gameActors.actor(id);
+                [6168, 5980, 5548, 2571, 2786].forEach(function (k) { a.learnSkill(k); });
+                a.changeLevel(10, false); a.refresh(); a.recoverAll();
+            });
+            // 魔法／其他／功法页要有内容：每类取 id≥2000 的前两个技能（id 记进 extra.picked）
+            skillPicked = {};
+            [2, 4, 5].forEach(function (st) {
+                skillPicked[st] = [];
+                for (var i = 2000; i < $dataSkills.length && skillPicked[st].length < 2; i++) {
+                    var k = $dataSkills[i];
+                    if (k && k.name && k.stypeId === st && !/^[?？]+$/.test(k.name)) skillPicked[st].push(i);
+                }
+                skillPicked[st].forEach(function (id) { $gameActors.actor(1).learnSkill(id); });
+            });
+            $gameActors.actor(1).refresh();
+            await push(Scene_Skill);
+        },
+        shots: {
+            skill_0_type: async function () {},
+            skill_1_list: async function () { var s = scene(); s._skillTypeWindow.processOk(); },
+            skill_2_second: async function () { var s = scene(); s._itemWindow.select(1); },
+            skill_3_passive: async function () { await skillType(2); },
+            skill_4_magic: async function () { await skillType(1); },
+            skill_5_other: async function () { await skillType(3); },
+            skill_6_function: async function () { await skillType(4); }
+        }
+        ,
+        extra: function () {
+            var a = $gameActors.actor(1), P = window.CodexCombatPower, p = P && P.actor(a, true);
+            return {params: [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return a.param(i); }), skills: a._skills.slice(), picked: skillPicked, stypes: $dataSystem.skillTypes.slice(), allSkills: a.skills().map(function (k) { return k.id; }),
+                equips: a.equips().map(function (e) { return e ? [e.id, e.name] : null; }), level: a.level,
+                power: p && {total: p.total, self: p.self, gear: p.gear, parts: p.parts, selfParts: p.selfParts},
+                ablation: (function () {
+                    var out = {}, books = [6168, 5980, 5548, 2571, 2786];
+                    function pw() { a.refresh(); var q = P.actor(a, true); return [q.total, q.self, q.gear]; }
+                    out.all = pw();
+                    books.forEach(function (k) { a.forgetSkill(k); }); out.none = pw();
+                    books.forEach(function (k) { a.learnSkill(k); var o = pw(); out['+' + k] = o; a.forgetSkill(k); });
+                    out.version = window.CodexDamage && CodexDamage.version;
+                    a.addState(1691); out.addState1691 = pw().concat([a.isStateAffected(1691)]); a.removeState(1691);
+                    a.addState(1631); out.addState1631 = pw().concat([a.isStateAffected(1631)]); a.removeState(1631);
+                    books.forEach(function (k) { a.learnSkill(k); }); a.refresh();
+                    return out;
+                })(),
+                difficulty: window.ConfigManager && ConfigManager.difficulty, passives: (a.states() || []).map(function (st) { return st.id; })};
+        }
+    };
     P.equip_detail = {
         setup: async function () {
             var a = $gameActors.actor(1), best = 0, bestN = 0;
