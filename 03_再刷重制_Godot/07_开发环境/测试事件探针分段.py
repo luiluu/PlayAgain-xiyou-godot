@@ -114,7 +114,8 @@ class TroopShardMergeTests(unittest.TestCase):
     def test_probe_shard_guard(self):
         src = (sync.HERE / 'mv_oracle/troop_event_probe.cjs').read_text()
         self.assertIn("process.env.XIYOU_PROBE_SHARD", src)
-        self.assertIn("caseCounter++ % SHARD.n !== SHARD.i", src)
+        self.assertIn("idx % SHARD.n !== SHARD.i", src)
+        self.assertIn("XIYOU_PROBE_FROM", src)
         self.assertIn("XIYOU_COVER 记录的下标是全局的", src)
 
 
