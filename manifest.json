@@ -6346,7 +6346,7 @@
   "js/rpg_windows.js": "4c5c65c5c80170bd9898f1f94ad5e7e5f31282e81c898f5201473f80b940f15f",
   "js/rpg_οbjects.js": "44a492f6a9b742a68a3768cdf7c6bab8294f5a177f595ab562cc47a80809ce89"
  },
- "sliceConfigSHA256": "82e7a6ee5a9f6c55fb4d83f5e1c7bb724c191393f0f34d5d888ed399b2b46a35",
+ "sliceConfigSHA256": "ff9beacda5cd5546fa4afb23e6b1e4e5c16e699cd90e065fa9f6eadef319b1bb",
  "formulaUntranslatedInSlice": [],
  "formulaUntranslatedAllSkills": 4,
  "formulaPrograms": {
@@ -9732,9 +9732,6 @@
   "img/titles2/Particles.png": "a28ece8cadf03180e42be4f0d6f3dbaf290559dc2b5bc0a4fd40d6fbe22d6005",
   "img/titles2/Particles2.png": "1a5623a3af3f4706df1c18d0fe8bc7b7984e7ea9b40a359a45282face5ab4b51",
   "img/titles2/Particles3.png": "6528ff974b4b459ec648a7a1d8b3afb2edc4828d62450d15f06915d1bb20d909",
-  "img/titles2/Splash_0.png": "e11aa6b5151c84f5f5126ed2852c5bfe12fa955e632eb46da61f7c2cda3dcd7a",
-  "img/titles2/Splash_1.png": "767379677a5f55fe88b907a24c25c0ae99f83153392f777bf997aa6e834d4a07",
-  "img/titles2/Splash_2.png": "ad5dabbcdeed393a0b15f846c3e005da6941ee05516c30553db8401fe60c4a18",
   "img/tusu_weapons/book_0.png": "d3afd3346ff682c77b917c8eeedf39ccb04dc8c47dfd623f6e4cde06daea4fde",
   "img/tusu_weapons/book_1.png": "f84c5af0660768d37b1a196964abbec07fe9a0f6677d3cf967165dd39a2c7b8b",
   "img/tusu_weapons/book_2.png": "2905dbf5afec4f28f2716b5bd97a58e7fb7cedfc59dbf4397d6002c6831121ff",
@@ -13170,9 +13167,6 @@
   "img/titles2/Particles.png": "a28ece8cadf03180e42be4f0d6f3dbaf290559dc2b5bc0a4fd40d6fbe22d6005",
   "img/titles2/Particles2.png": "1a5623a3af3f4706df1c18d0fe8bc7b7984e7ea9b40a359a45282face5ab4b51",
   "img/titles2/Particles3.png": "6528ff974b4b459ec648a7a1d8b3afb2edc4828d62450d15f06915d1bb20d909",
-  "img/titles2/Splash_0.png": "e11aa6b5151c84f5f5126ed2852c5bfe12fa955e632eb46da61f7c2cda3dcd7a",
-  "img/titles2/Splash_1.png": "767379677a5f55fe88b907a24c25c0ae99f83153392f777bf997aa6e834d4a07",
-  "img/titles2/Splash_2.png": "ad5dabbcdeed393a0b15f846c3e005da6941ee05516c30553db8401fe60c4a18",
   "img/tusu_weapons/book_0.png": "d3afd3346ff682c77b917c8eeedf39ccb04dc8c47dfd623f6e4cde06daea4fde",
   "img/tusu_weapons/book_1.png": "f84c5af0660768d37b1a196964abbec07fe9a0f6677d3cf967165dd39a2c7b8b",
   "img/tusu_weapons/book_2.png": "2905dbf5afec4f28f2716b5bd97a58e7fb7cedfc59dbf4397d6002c6831121ff",
@@ -13613,6 +13607,6 @@
   "movies/血轮眼开.ogg": "651fc3b90f56f0dd742b187ce3018ba43029e83c5407aed3ef3e1f7b16b85a9f",
   "movies/血轮眼开.json": "6c05e49eed2534075e4166ad3cf9100bec71dbec184198dd23cbe661ae189b9f",
   "fonts/FZLanTYJW_ZhongCu.TTF": "db0fe73bff1d05a1ddb4eac5bd31b9fc971a30285cb9c14b81464ab697195f79",
-  "slice.json": "34a44d221efd9ab6af006c1b9744c83ee849540e4eee4c2f18cd60bcf9886f99"
+  "slice.json": "ae07cbd32a499ca18da9fc1617d17952ee2db6d49b3349ea00274a8374292bf1"
  }
 }
