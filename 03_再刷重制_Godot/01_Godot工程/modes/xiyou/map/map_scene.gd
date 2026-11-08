@@ -1351,7 +1351,13 @@ func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
 	return anim
 
 
+## 测试用：非空时代替真的切到标题（只记「回标题」被调用，不加载 entry 场景）
+static var return_to_title_hook := Callable()
+
 func return_to_title() -> void:
+	if return_to_title_hook.is_valid():
+		return_to_title_hook.call()
+		return
 	get_tree().change_scene_to_file.call_deferred("res://modes/xiyou/entry.tscn")
 
 
@@ -1456,11 +1462,27 @@ func open_shop(goods: Array, purchase_only: bool) -> void:
 	shop.queue_free()
 	XShopStock.close_policy()
 
+## 全灭（301 战败不可败、353 游戏结束）。O-待定·全灭回大厅（Kyo 2026-11-08 定）：默认同原版——游戏结束画面（Scene_Gameover：
+## 停 BGM／BGS、放 gameoverMe、「菜」字图）→ 点一下回标题，读档恢复（副本开关、变量跟着存档回去，不会留脏状态）。
+## 回退：GAME_OVER_TO_LOBBY = true 回到 10-12 起的旧做法（弹「全军覆没……将在方桌大厅复活。」、回满、传回大厅 Map004，副本状态不清）。
+static var GAME_OVER_TO_LOBBY := false
+
 func game_over() -> void:
-	await message.show_text("", 0, ["全军覆没……将在方桌大厅复活。"])
-	for a in XState.current.members():
-		a.recover_all()
-	await transfer(4, 14, 23, 8)
+	if GAME_OVER_TO_LOBBY:
+		await message.show_text("", 0, ["全军覆没……将在方桌大厅复活。"])
+		for a in XState.current.members():
+			a.recover_all()
+		await transfer(4, 14, 23, 8)
+		return
+	bgm.stop()
+	bgs.stop()
+	_bgm_name = ""
+	play_me(XDB.system().get("gameoverMe", {}))
+	var screen := XGameOverScreen.new()
+	ui.add_child(screen)
+	await screen.finished
+	me.stop()
+	return_to_title()
 
 ## 事件「打开存档画面」352：SceneManager.push(Scene_Save)（YEP 存档页，存档模式），关闭后回到地图
 func open_save() -> void:
