@@ -113,7 +113,9 @@ def carry_cache(source, target):
     """只携带初始种子与已发布缓存；不覆盖车道现场，不跟随种子符号链接。"""
     source, target = Path(source), Path(target)
     # event_state_keys.json：事件状态探针的摘要账（event_state_shards.KeyHistory，tools81）；按结果文件摘要认领，带过去不会冒充
-    names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json')
+    # event_states.json／event_states.keys.json：事件状态探针上次的结果与摘要，补跑靠它们走增量；
+    # 带不过来，新树补跑退成整份重量（floor9 第一轮因此 40 分钟）。账认得才用，旧结果不会冒充新的。
+    names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json', 'event_states.json', 'event_states.keys.json')
     for base in (source, target):
         if base.is_symlink():
             raise RuntimeError('探针种子目录不能是符号链接：' + str(base))

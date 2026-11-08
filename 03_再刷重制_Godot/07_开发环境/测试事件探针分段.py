@@ -84,6 +84,35 @@ class StateShardMergeTests(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
         return mod
 
+    def test_changed_probe_needs_confirm_full(self):
+        """GC：探针相对 main 改过时补跑只提示、不跑；--confirm-full 才跑；关守卫退回旧行为。"""
+        import contextlib, io, sys
+        from unittest import mock
+        mod = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'node_modules').mkdir(); (root / 'gen/maps').mkdir(parents=True)
+            ran = []
+            def fake(env):
+                ran.append(1)
+                return subprocess.CompletedProcess([], 1, '', 'stop')
+            cases = [(['x'], {}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], False),
+                     (['x', '--confirm-full'], {}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {'XIYOU_PROBE_CHANGE_GUARD': '0'}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {'XIYOU_CONFIRM_FULL': '1'}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {}, [], True)]
+            for argv, env, changed, should_run in cases:
+                ran.clear(); out = io.StringIO()
+                with mock.patch.object(mod, 'ORACLE', root), mock.patch.object(mod, 'GEN', root / 'gen'), \
+                        mock.patch.object(mod, 'OUT', root / 'none.json'), mock.patch.object(mod, 'run_probe', fake), \
+                        mock.patch.object(mod, 'changed_probe_files', lambda base='main': changed), \
+                        mock.patch.dict(os.environ, env), mock.patch.object(sys, 'argv', argv), contextlib.redirect_stdout(out):
+                    rc = mod.main()
+                self.assertEqual(bool(ran), should_run, (argv, env, changed))
+                if not should_run:
+                    self.assertEqual(rc, 0)
+                    self.assertIn('--confirm-full', out.getvalue())
+
     def test_force_warns_that_it_runs_everything(self):
         """tools-merge-args3：--force 关增量整份重量，开跑前打一行提示；不加不提示。"""
         import contextlib, io, sys
