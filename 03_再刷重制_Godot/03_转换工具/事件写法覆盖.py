@@ -139,6 +139,19 @@ def label_jump(lst, i):
     return jumps[0] if jumps else None
 
 
+def label_reached(executed: set) -> set:
+    """119 跳到标签时解释器从标签下一条接着走，标签 118 本身不记执行；同页有执行到的 119 跳向它的，把这个 118 补记为执行到（八戒 interp6）。"""
+    out = set(executed)
+    for loc, lst in locations():
+        jumped = {str(c['parameters'][0]) for x, c in enumerate(lst) if int(c['code']) == 119 and '%s:%d' % (loc, x) in executed}
+        if not jumped:
+            continue
+        for x, c in enumerate(lst):
+            if int(c['code']) == 118 and str(c['parameters'][0]) in jumped:
+                out.add('%s:%d' % (loc, x))
+    return out
+
+
 def gate_of(lst, i, executed, loc, depth=0):
     """挡住 i 的门：离它最近、本身执行到了的上层分支头；中间隔着没选中的选项（402／403 头没执行到）时，门是最外那个选项头。
     整页没进返回 None。顶层没有执行到的头、又在标签段里时，沿跳进来的 119 往外找门（interp5）。"""
@@ -150,8 +163,8 @@ def gate_of(lst, i, executed, loc, depth=0):
         if int(cj.get('indent', 0)) == ind - 1:
             if '%s:%d' % (loc, j) in executed:
                 return choice if choice is not None else j
-            if int(cj['code']) in (402, 403):
-                choice = j
+            if int(cj['code']) in (402, 403) or (int(cj['code']) == 411 and label_jump(lst, i) is not None):
+                choice = j   # 411 没执行到＝条件成立没走否则（interp6：先只用于标签段里，别处的口径不动）
             ind -= 1
         j -= 1
     if choice is None and depth < 4:
@@ -377,7 +390,7 @@ def main(argv=None):
     ap.add_argument('--missed-json')
     ap.add_argument('--suggest')
     a = ap.parse_args(argv)
-    executed = set(json.loads(Path(a.coverage).read_text())['executed'])
+    executed = label_reached(set(json.loads(Path(a.coverage).read_text())['executed']))
     if a.missed:
         return run_missed(a, executed)
     rows = analyse(executed)
