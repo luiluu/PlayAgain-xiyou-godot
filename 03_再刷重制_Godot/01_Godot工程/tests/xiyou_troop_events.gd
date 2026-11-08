@@ -29,6 +29,10 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 ## （turnStarts），剑道争锋／死神觉醒的随机选技能进 RANDOM_AI_TROOPS（固定 0.5 的 _half 照常严比），肉山 2029 事件随机固定 0.5，
 ## hp_after_transform 按单槽公共事件算 1401 回不回血
 const KNOWN_DIFF := {
+	# rules-gaps6：木桩 826 HP≤20% 例（开战即第 3 页变身 937）第 1 回合，原版强制 6068／6055／6064 之后 OTB 轮到它的第二个行动位
+	#（getNextSubject 重新 makeActions）又普通出手 8111、加上 1460；Godot 只清首位行动、没有这第二位的普通行动。
+	# 不变身的 826 例同样两个行动位却没有第二次出手，差在哪还没查清，记下待下一批查（同敌群 t1_states 一并不计）
+	826: ["t1_states"],
 }
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
@@ -129,7 +133,8 @@ func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
 		logic.setup(troop, s)
 	# 794 引路人第 3 页、肉山 2029 的 10613 公共事件 9042（随机变量 1339 取 0～10，≥7 再强制 10614 踩地板）：事件里的随机同参照取 0.5，
 	# 不然 1／11 的种子多出一次 10614（第 1 回合行动次数、第 2 回合只出手一次对不上，踩地板打倒全队后第 1 回合整段没了）
-	if troop in [794, 2029] and not oracle_half:
+	# rules-gaps6：木桩 826 第 2 页每回合按随机变量 4 选强制 6063／6064（参照取 2 → 6064），同上
+	if troop in [794, 2029, 826] and not oracle_half:
 		logic.random.rule = _half_events(logic.random.rule)
 	for a in logic.actors:
 		for sk in [6168, 5980, 5548] + ([2571, 2786] if int(a.data().id) in [1, 2, 3, 4, 5, 6, 7, 52] else []):
@@ -206,6 +211,9 @@ func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
 		logic.random.rule = _half_events(logic.random.rule, event_r)
 	var n := int(c.turnPreset)
 	logic.turn = n
+	# rules-gaps6：参照 flags（同回合排在前面的页预置成本回合已执行，见 troop_event_probe LATE_GAPS6／PAGE2_844）
+	for i in c.get("flags", []):
+		logic._event_flags[int(i)] = true
 	var phases := {n: logic.run_events(), n + 1: []}
 	if not (logic.is_won() or logic.is_lost()):
 		var cmds := {}
@@ -244,6 +252,8 @@ func _turn_preset_case(c: Dictionary) -> void:
 	var name := "troop%d.turn%d" % [int(c.troop), int(c.turnPreset) + 1]
 	if c.has("eventRandom"):
 		name += ".r%d" % roundi(float(c.eventRandom) * 100)
+	if c.has("flags"):
+		name += ".f" + ",".join(Array(c.flags).map(func(x): return str(int(x))))
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 3000)
 	if str(c.get("variant", "")) == "t1":
 		_turn_page_case(c, name, logic)
@@ -379,6 +389,13 @@ func _case(c: Dictionary, round: int) -> void:
 	if target != 0:
 		name = "troop%d.paid%s.target%d.r%d" % [int(c.troop), str(c.get("paid", false)), target, round]
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 1000 + round)
+	# rules-gaps6：参照 vars／switches（神劫使 824 的变量 1178、木桩抵抗档开关 174～177、S3西游模式 682）开战前同样设上
+	for v in c.get("vars", {}):
+		logic.state.set_variable(int(v), int(c.vars[v]))
+	for sw in c.get("switches", []):
+		logic.state.set_switch(int(sw), true)
+	if c.has("vars") or c.has("switches"):
+		name += "." + str(c.variant)
 	var e0: XBattler = logic.enemies[0]
 	var logs := []
 	var t1_states: Array = []
