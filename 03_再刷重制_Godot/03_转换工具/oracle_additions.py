@@ -65,7 +65,9 @@ KEYS = {
     'param_cache.json': {'cases': ('id',)},
     # turnPreset 例（回合计数预置）与同敌群的开局例分开成组，新增这类例才算「新键」而非同键追加
     # variant 例（accept4：控尸者 160 不预置 HP，与 preset 例同敌群同交礼）也单独成键
-    'troop_events.json': {'cases': lambda row: ('troop', 'paid', 'turnPreset') if 'turnPreset' in row
+    # rules-gaps5：事件随机逐支例（eventRandom）与同敌群同回合预置的 t1 例分开成键
+    'troop_events.json': {'cases': lambda row: ('troop', 'paid', 'turnPreset', 'eventRandom') if 'eventRandom' in row
+                          else ('troop', 'paid', 'turnPreset') if 'turnPreset' in row
                           else ('troop', 'paid', 'variant') if 'variant' in row else ('troop', 'paid')},
     'smart_ai.json': {'cases': ('troop', 'scene', 'actor', 'state'),
                       'damage': ('troop', 'actor', 'skill', 'target')},
