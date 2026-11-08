@@ -142,6 +142,7 @@ func _ready() -> void:
 	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+	XAutosaveNotice.map_ready(self)  # YEP_X_Autosave：Scene_Map.createAllWindows 建 Window_Autosave，刚读过档就出「存档加载成功！」
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 
@@ -271,7 +272,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	lower.z_index = -10
 	add_child(lower)
 	lower.setup(map_data, false)
-	lower.open_cells = MVTilemap.open_cells_fix.get(id, [])
+	lower.open_cells = MVTilemap.opened_cells(id, map_data)
 	chars = Node2D.new()
 	chars.y_sort_enabled = true
 	add_child(chars)
