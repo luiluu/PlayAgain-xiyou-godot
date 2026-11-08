@@ -60,6 +60,10 @@ const HP_V062 = {2011: [[0.1, []]], 2013: [[0.2, []], [0.1, [2]], [0.05, [2, 3]]
   2015: [[0.2, []]], 2016: [[0.2, []]], 2017: [[0.1, []]], 2018: [[0.2, []], [0.1, [2]], [0.05, [2, 3]]],
   2019: [[0.1, []], [0.05, [1]], [0.01, [1, 2]]], 2026: [[0.2, []]], 2027: [[0.2, []]], 2029: [[0.1, []]]};
 // floor1：新增敌群第 3 回合以后才成立的回合页（[敌群, 回合预置＝页的回合−1]），走 t1 变体（只比开战检查与下一回合的对话、强制行动）
+// rules-gaps4：敌群页覆盖.py（新源）剩下没对照的敌人 0 血线页，每个敌群一例 [敌群, hpRate]（取页条件的门槛，向下取整后正好满足）。
+// 敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）hpRate 只设敌人 0，不在这里
+const HP_GAPS4 = [[270, 0.2], [417, 0.5], [418, 0.5], [456, 0.2], [457, 0.2], [458, 0.2], [661, 0.2], [755, 0.2], [756, 0.2], [757, 0.2],
+  [765, 0.25], [791, 0.2], [792, 0.2], [793, 0.2], [795, 0.2], [796, 0.2], [797, 0.2], [805, 0.2], [806, 0.2], [807, 0.2], [814, 0.25]];
 const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
 const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
   599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
@@ -224,7 +228,8 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     // floor1：新源新增敌群的已交礼例、血线页例、第 3 回合以后的回合页例（各常量的说明见文件开头）
     .concat(PAID_V062.map(id => run(id, true)))
     .concat(Object.entries(HP_V062).flatMap(([id, rows]) => rows.map(([rate, fl]) => run(Number(id), false, null, 0, rate, fl.length ? fl : null))))
-    .concat(LATE_V062.map(([id, n]) => Object.assign(run(id, false, null, 0, 0, null, n), {variant: 't1'})))};
+    .concat(LATE_V062.map(([id, n]) => Object.assign(run(id, false, null, 0, 0, null, n), {variant: 't1'})))
+    .concat(HP_GAPS4.map(([id, rate]) => run(id, false, null, 0, rate)))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));

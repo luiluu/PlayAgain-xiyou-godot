@@ -97,6 +97,7 @@ func _run() -> void:
 	check("flow_wraps_at_928", bar.flow == 0.0)
 	# 扣血：红条拖尾（每帧 1+差/160）、蓝条即时、数字追赶（1+⌊差/30⌋）——原版节奏先关掉 O-188 的拖尾封顶量
 	XBossHpBar.RED_TRAIL_CAP = false
+	XBossHpBar.NUMBER_CAP = false
 	var before := float(boss.hp)
 	var cut := floorf(boss.mhp * 0.4)
 	boss.hp -= cut
@@ -133,10 +134,34 @@ func _run() -> void:
 		r = maxf(r - (1.0 + (r - tgt) / 160.0), tgt)
 		slow += 1
 	XBossHpBar.RED_TRAIL_CAP = true
+	XBossHpBar.NUMBER_CAP = true
 	boss.hp -= big
 	bar.applied(boss, boss.hp)
 	steps(bar, XBossHpBar.RED_CAP_FRAMES)
 	check("red_cap_90_frames", bar.hp_red == boss.hp and slow > 600, [bar.hp_red, boss.hp, slow])
+	check("number_cap_with_red", bar.hp_number == boss.hp, [bar.hp_number, boss.hp])
+	# ui5 数字封顶：千万级差值原版要滚 400 帧上下；开着时 NUMBER_CAP_FRAMES 帧内到位、每帧都是整数；小差值照原版每帧 1+⌊差/30⌋
+	var hi := 30000000.0
+	var lo := 10000000.0
+	var orig_frames := 0
+	var x := hi
+	while x > lo:
+		x = maxf(x - (1.0 + floorf((x - lo) / 30.0)), lo)
+		orig_frames += 1
+	bar.hp_number = hi
+	var cap_frames := 0
+	var all_int := true
+	while bar.hp_number > lo and cap_frames < 1000:
+		bar.hp_number = maxf(bar.hp_number - bar.number_step(lo), lo)
+		all_int = all_int and bar.hp_number == floorf(bar.hp_number)
+		cap_frames += 1
+	check("number_cap_10m", cap_frames <= XBossHpBar.NUMBER_CAP_FRAMES and orig_frames > 300 and all_int, [cap_frames, orig_frames, all_int])
+	bar.hp_number = lo + 20.0
+	check("number_small_diff_orig_pace", bar.number_step(lo + 10.0) == 1.0, bar.number_step(lo + 10.0))
+	XBossHpBar.NUMBER_CAP = false
+	bar.hp_number = hi
+	check("number_cap_off_orig", bar.number_step(lo) == 1.0 + floorf((hi - lo) / 30.0))
+	XBossHpBar.NUMBER_CAP = true
 	steps(bar, 400)
 	var r1 := bar.hp_red
 	boss.hp -= 50

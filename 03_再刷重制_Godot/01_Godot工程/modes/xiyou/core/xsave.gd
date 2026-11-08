@@ -37,6 +37,7 @@ static func save(slot: int) -> bool:
 		return false
 	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
+	XAutosaveNotice.loading = false  # YEP_X_Autosave saveGameWithoutRescue 清 _autosaveLoading
 	remove_auto()  # 手动存过（含挂机定时存、事件 Autosave），切后台那份就旧了
 	return true
 
@@ -137,6 +138,7 @@ static func load_auto() -> bool:
 	if not _load_data(d, from, text):
 		return false
 	current_slot = from if from >= 1 and from <= SLOTS else 0
+	XAutosaveNotice.loading = true  # 进地图出「存档加载成功！」（重制自己的后台存档，读法同 load_slot）
 	return true
 
 
@@ -261,6 +263,7 @@ static func load_slot(slot: int) -> bool:
 	if not _load_data(d, slot, text):
 		return false
 	current_slot = slot
+	XAutosaveNotice.loading = true  # YEP_X_Autosave loadGameWithoutRescue：_autosaveLoading，进地图出「存档加载成功！」
 	return true
 
 
