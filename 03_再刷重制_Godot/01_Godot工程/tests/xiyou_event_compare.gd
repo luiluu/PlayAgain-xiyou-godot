@@ -572,8 +572,6 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 			a.change_level_mv(int(spec.level))
 		for sk in spec.get("skills", []):
 			a.learn_skill(int(sk))
-		for st in spec.get("states", []):  # 八戒 interp5：actors.N.states，同参照 addState
-			a.add_state(int(st))
 		# 八戒 DR：actors.N.armors＝直接穿上的防具底材，同参照 forceChangeEquip（etype 对应的第一个槽，不看能否装备、不进背包）
 		var gears := []
 		for ar in spec.get("armors", []):

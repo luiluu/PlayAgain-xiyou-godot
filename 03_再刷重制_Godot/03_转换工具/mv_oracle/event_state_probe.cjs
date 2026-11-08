@@ -114,7 +114,6 @@ function applyPreset(p) {
     const ac = w.$gameActors.actor(Number(id));
     if (a.level !== undefined) ac.changeLevel(a.level, false);
     for (const sk of a.skills || []) ac.learnSkill(sk);
-    for (const st of a.states || []) ac.addState(st);   // 八戒 interp5：actors.N.states 开「角色 N 处于状态」门
     // 八戒 DR：actors.N.armors＝给这名角色直接穿上的防具底材（forceChangeEquip 到 etype 对应的第一个槽），开「角色 N 装备防具」门（ce1213）
     for (const ar of a.armors || []) {
       const item = w.$dataArmors[ar], slot = ac.equipSlots().indexOf(item.etypeId);
