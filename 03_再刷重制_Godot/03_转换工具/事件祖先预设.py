@@ -76,6 +76,8 @@ def trace_var(lst, j, p):
                     return {key: {str(q[5]): int(val)}}
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
+                if t == 3 and int(q[6]) == 0 and int(val) >= 1:   # 角色等级（cc 分段甲：m4e49 炭治郎学技能先把 1500 设成 93 号的等级）
+                    return {'actors': {str(q[5]): {'level': min(int(val), 99)}}}
                 if t == 7 and int(q[5]) == 4 and int(val) >= 0:
                     return {'playtime': int(val)}
             if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:
@@ -116,8 +118,13 @@ def synth(lst, first, loc):
     跨标签跳转时（interp5）各段的选项应答按段先后接起来：外段选到 119 的应答在前，段里选单的应答在后。"""
     pre, bad = {}, 0
     answers = []
+    first402 = None
     for heads in segments(lst, first):
         seg = []
+        if first402 is None:
+            first402 = next((j for j in heads if int(lst[j]['code']) == 402), None)
+            if first402 is not None:
+                answers += answer_prefix(lst, first402, loc)   # 同页前面先问过的选单（cc 分段甲）
         for j in heads:
             if int(lst[j]['code']) == 402:
                 seg = cov.choice_path(lst, j)
@@ -155,6 +162,36 @@ def _finish(pre, bad):
     if 'difficulty' not in pre and any(i in super_ids() for i in pre.get('party', [])):
         pre['difficulty'] = 9
     return pre, bad
+
+
+_TRACES = None
+
+
+def answer_prefix(lst, j, loc):
+    """选项错位（cc 分段甲）：门链最外那个 402（下标 j）所属的 102 之前，同页还先问过别的选项时，
+    cov.choice_path 只给了本选单起的项号，应答会被前面的选单先吃掉（m1e1 难度选单前还有存档位、版本、确认三问）。
+    在参照基础用例的文字轨迹（generated/oracle/events.json）里找第一处选项文字和这个 102 相同的，
+    把它之前各处的 pick 依次补在前面。基础用例没走到这个选单就不补（照旧）。"""
+    global _TRACES
+    if _TRACES is None:
+        _TRACES = scan.base_traces()
+    ind = int(lst[j].get('indent', 0))
+    k = j - 1
+    while k >= 0 and not (int(lst[k]['code']) == 102 and int(lst[k].get('indent', 0)) == ind):
+        k -= 1
+    if k < 0:
+        return []
+    want = list(lst[k]['parameters'][0])
+    picks = []
+    for t in _TRACES.get(loc) or []:
+        ch = t.get('choices')
+        if ch is None:
+            continue
+        ch = list(ch)
+        if any(ch[i:i + len(want)] == want for i in range(len(ch) - len(want) + 1)):   # 相邻两个 102 被参照并成一个选单
+            return picks
+        picks.append(int(t.get('pick', 0)))
+    return []
 
 
 _SUPER = None
