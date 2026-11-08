@@ -232,6 +232,14 @@ func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
 		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
 		var got: Array = phases[t].filter(func(l): return l.type == "action").map(func(l): return [key(l.user, logic), int(l.skill.id)])
 		check(name + ".t1_%s_forced" % tag, got.slice(0, want.size()) == want, [got, want])
+	# 审查 69 P3-2：参照 sceneChange＝Scene_Gameover（353 游戏结束，圣劫使 825 第 30 回合）时 game_over 置位、按全灭收场，
+	# 且 353 之后的指令（同页 222 淡入）不再执行；没有 sceneChange 的例子 game_over 不该置位
+	var over := str(c.get("sceneChange", "")) == "Scene_Gameover"
+	var start_logs: Array = phases[n]
+	var at := start_logs.find_custom(func(l): return l.type == "game_over")
+	var after_in := at >= 0 and start_logs.slice(at).any(func(l): return l.type == "event_view" and l.fade == "in")
+	check(name + ".t1_game_over", logic.game_over == over and (not over or (logic.is_lost() and at >= 0 and not after_in)),
+		[logic.game_over, over, logic.is_lost(), at, after_in])
 	check(name + ".t1_skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 
 
