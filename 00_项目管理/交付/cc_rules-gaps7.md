@@ -20,7 +20,9 @@
 
 ## 优化登记草稿
 
-- 无：CounterGuard、战力不算状态 Confirm 都是照原版移植（修重制与原版的分歧），不是改原版，没占 O 号；两个开关已留（`COUNTER_GUARD`、`POWER_SKIP_STATE_EFFECTS`，测试里都有回退支字面量赋值）。派单写的「O-待定·反击者离场」请总装定要不要登记。
+无
+
+说明：CounterGuard、战力不算状态 Confirm 都是照原版移植（修重制与原版的分歧），不是改原版，没占 O 号；两个开关已留（`COUNTER_GUARD`、`POWER_SKIP_STATE_EFFECTS`，测试里都有回退支字面量赋值）。派单写的「O-待定·反击者离场」请总装定要不要登记。（总装 11-08：战力部分按 Kyo 选 C 不合，power.gd／xiyou_power.gd 合并时保持 main。）
 
 ## 验证
 
