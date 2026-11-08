@@ -1,8 +1,8 @@
 # 交付：cc/events-seg-a3
 
 - 车道／工作者：A 内容·地图事件对照分段甲三期（等级上限、角色门忘技能、脚本造选单）／cc（分段甲）
-- 状态：**WIP，未完成，不可合并**（周额度 96%，总装叫停；交接见「接续」）
-- 分支从 cc/events-seg-a2 末端（bc1ae072）切出，已合 main（ef489a59）。先合 cc/events-seg-a、cc/events-seg-a2，再合本分支。
+- 状态：**WIP，未完成，不可合并**（11-08 晚 Kyo 换账号，交接见「接续」）
+- 分支从 cc/events-seg-a2 末端（bc1ae072）切出，已合 main（c2295516，seg-a、seg-a2 已在 main 里）；`event_presets.json` 合并冲突已解：以 main 为准，末尾追加本分支 `sa3_hh*` 14 条，note 补了 forget／maxLevel。
 - **改了 `event_state_probe.cjs`：合并后事件状态探针指纹全变，整份重量（3 小时级）；其他车道合并后要重新拿底子（补齐／同步时会整份重跑，先跟总装约槽，`XIYOU_STATE_SHARDS=2`）。**
 
 ## 变更记录草稿
@@ -15,11 +15,12 @@
 
 ## 接续（下一位做）
 
-1. 整份重测：补齐（`新建工作树.sh --补齐`）时自带的事件状态探针已按新探针起跑（4 段，各占 1 槽；本机 auto 模式拦了 kill，没能改 2 段）。日志 `04_验证/本地结果/补齐_seg-a3.log`（工作树根下，未入 Git）。跑完后补齐继续做 godot --import。**若中途被停，下次先跟总装约槽，`XIYOU_STATE_SHARDS=2` 重跑。**
-2. 跑完后：增量补跑新加的 `ce1442#sa3_hh*`（14 个），`xiyou_event_compare --only=ce1442#sa3_hh --coverage` 看 5 个位置 75 个分支是否都执行到。
-3. ce1442 的 70 个 `w8_*` 变体直接设 1468～1472，会被第 40 条脚本覆盖，结果应与 `s1` 相同；确认 delta、trace 与 s1 一样后删掉（本期没删）。
-4. 整份 `xiyou_event_compare --coverage` → `事件写法覆盖.py --missed` → `事件祖先预设.py --missed-json … --tag sa3`，只留链上带 `forget` 或 `maxLevel` 的新变体，先抽样试点再放大；增量探针、对照、`--prune`。
-5. `事件空绿扫描.py --check`、`工具回归.py`、`测试事件探针分段.py`（它比对两边 PRESET_KEYS）。
+1. ✓ 整份重测（新探针）11-08 03:44 起、约 90 分钟跑完，结果在本工作树 `mv_oracle/.sandbox/event_states.json`（未入 Git）。
+2. ✱ 合 main 后再补齐（`XIYOU_STATE_SHARDS=2`，经 长任务.py，日志 `04_验证/本地结果/补齐2_seg-a3.log`）：增量补跑 main 新预设＋`sa3_hh*`，交接时已跑 25 分钟、0/2 段完成，让它跑完；接手的先 `等待任务.sh <日志> --timeout 540` 看结果（看探针输出的 reused 数，确认是增量不是整份）。工作树：`.claude/worktrees/cool-dirac-af471d`；换了机器／工作树就在自己的树里 `新建工作树.sh --补齐 <路径> --branch <新名> --from cc/events-seg-a3`，那时探针会整份重量，先跟总装约槽。
+3. ce1442：`xiyou_event_compare` 跑 `--only=ce1442#sa3_hh`（Godot：`07_开发环境/godot --headless --path 01_Godot工程 res://tests/xiyou_event_compare.tscn -- --only=… --coverage=<文件>`，外包 `占槽.py`），看 5 个位置 75 个分支是否都执行到、两边一致。
+4. ce1442 的 70 个 `w8_*` 变体直接设 1468～1472，会被第 40 条脚本覆盖，结果应与 `s1` 相同；确认 delta、trace 与 s1 一样后删掉。
+5. 整份 `xiyou_event_compare --coverage`（1 槽）→ `事件写法覆盖.py --coverage <文件> --missed <键> --missed-json 簇.json` → `事件祖先预设.py --missed-json 簇.json --tag sa3 --targets 目标.json`，只留链上带 `forget` 或 `maxLevel` 的新变体（ce2495 锻炼链、m4e49 45 级以上、m4e74），先抽样试点再放大；增量探针（SHARDS=2）、对照、`--prune --tag sa3 --targets 目标.json --states .sandbox/event_states.json`。
+6. `事件空绿扫描.py --check`、`工具回归.py`、`测试事件探针分段.py`（比对两边 PRESET_KEYS）；写变更记录草稿的数字、「验证」，状态改「可合并」。
 
 - 用户试玩说明：无
 - 需要用户决定：无
@@ -35,9 +36,10 @@
 ## 本分支提交
 
 - 26f32cea：预设键 maxLevel、actors.N.forget，开门生成跟上。
-- ce1442 sa3_hh 14 个变体（WIP 提交）。
+- c2dd7dff：ce1442 sa3_hh 14 个变体。
+- 合 main（c2295516），解 event_presets 冲突。
 
 ## 验证
 
 - `node --check`、`py_compile`、`语法检查.py`（654 个 .gd，0 问题）。
-- 探针整份重测：进行中（见接续 1）。其余未跑。
+- 探针整份重测：跑完（约 90 分钟，4 段）。合 main 后增量补跑进行中（接续 2）。其余未跑。
