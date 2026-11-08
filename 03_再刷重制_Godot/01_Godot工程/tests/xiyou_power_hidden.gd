@@ -1,5 +1,5 @@
 extends Node
-## 战力先藏（O-待定·战力先藏，Kyo 2026-11-08）：XPower.SHOW_POWER_UI 默认 false，各页不再出现「战力」；
+## 战力先藏（O-243，Kyo 2026-11-08）：XPower.SHOW_POWER_UI 默认 false，各页不再出现「战力」；
 ## 打开开关（回退）时与藏之前一致（那一半由 xiyou_power／status_power／help_card／gear_search 等专项开着开关逐字对照）。
 ## 这里只做扫描型断言：开关关着时，所有显示处的文字与控件里没有「战力」，排版没有留下空条。
 

@@ -36,7 +36,7 @@ static func enabled() -> bool:
 	return XConfig.flag("codexPowerEnabled")
 
 
-## 战力先藏（Kyo 2026-11-08：战力系统重构前各页都先藏起来；O-待定·战力先藏）。所有「显示战力」的页面都看 ui_enabled()，
+## 战力先藏（Kyo 2026-11-08：战力系统重构前各页都先藏起来；O-243）。所有「显示战力」的页面都看 ui_enabled()，
 ## 算法（enabled()、actor、equipment 等）不动，别的模块照旧可读。回退＝SHOW_POWER_UI 设 true，页面与藏之前逐字一致。
 static var SHOW_POWER_UI := false
 
