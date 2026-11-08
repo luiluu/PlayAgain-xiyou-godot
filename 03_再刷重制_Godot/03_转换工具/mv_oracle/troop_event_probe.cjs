@@ -71,6 +71,17 @@ const HP_ENEMY1 = [[805, 0.35], [806, 0.35], [807, 0.35], [814, 0.4]];
 const HP_VARS = [[456, 0.2, 0, 853], [457, 0.2, 0, 853], [458, 0.2, 0, 853], [755, 0.2, 0, 853], [756, 0.2, 0, 853], [757, 0.2, 0, 853],
   [805, 0.2, 0, 853], [806, 0.2, 0, 853], [807, 0.2, 0, 853], [805, 0.35, 1, 853], [806, 0.35, 1, 853], [807, 0.35, 1, 853],
   [2015, 0.2, 0, 1567], [2016, 0.2, 0, 1567], [2026, 0.2, 0, 1567], [2017, 0.1, 0, 1567]];
+// rules-gaps6：敌群页覆盖.py 剩下的回合页（[敌群, 回合预置, 预置已执行的页]，走 t1 变体）。预置回合取能让该页真跑到的值：
+// 2025 第 3 页（第 6 回合）、2019 第 4 页（第 10 回合）、825 第 2 页（第 30 回合）同回合排在前面的随机强制页（3+3·X／1+1·X）
+// 先出手会把 1 级开局队伍打倒、轮不到后面的页，所以把前面那页预置成本回合已执行（同 467 的 flags）
+const LATE_GAPS6 = [[2025, 4, null], [2025, 6, [0]], [2019, 10, [0]], [825, 30, [1]], [165, 3, null], [203, 9, null],
+  [823, 15, null], [824, 3, null], [824, 30, null]];
+// rules-gaps6：「111 开关 682（S3西游模式）为 ON」再给自己加状态的守层者／首领（都在第 2 页未交礼支里）
+const SW682 = [125, 126, 270, 467, 468, 469, 661, 791, 792, 793, 795, 796, 797, 816, 817, 818, 830, 831];
+// rules-gaps6：两名首领的敌群 798～814 第 1、2 页各自掷一次变量 844（同一回合、同一个 EVENT_R），第 1 页 844＝2／3 的强制
+// 先出手打倒 1 级开局队伍，第 2 页（敌人 1）这两支跑不到：回合预置 3（预置 2 的话第 3 回合开始时清掉「每回合」页的已执行标记），
+// 第 1 页预置成本回合已执行，单看第 2 页
+const PAGE2_844 = [798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814];
 const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
 const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
   599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
@@ -96,6 +107,13 @@ w.Game_Battler.prototype.startDamagePopup = function () {
 // 按「没有 spriteset 就返回」处理（同原函数在 spriteset 缺失时的分支）。
 const alterBattleback = w.BattleManager.alterBattleback;
 w.BattleManager.alterBattleback = function (line) { return w.SceneManager._scene ? alterBattleback.call(this, line) : undefined; };
+// rules-gaps6：敌群页把敌人全体战斗不能（雷劫使 823 第 15 回合、神劫使 824 第 30 回合的 333 状态 1）时原版走 processVictory，
+// 胜利界面插件读 SceneManager._scene 的窗口，无场景引擎里报错。没有场景时只记到战斗结束（旧例没有一例走到胜利，不受影响）
+const processVictory = w.BattleManager.processVictory;
+w.BattleManager.processVictory = function () {
+  if (w.SceneManager._scene) return processVictory.call(this);
+  this._phase = 'battleEnd';
+};
 
 // 覆盖记录（cc events13，环境变量 XIYOU_COVER=1 才开，默认不记、troop_events.json 逐字节不变）：每例记解释器实际执行到的
 // 「位置:下标」（敌群页 tTpP、公共事件 ceN，按 _list 对象认），101 连带消费的 401／102 续行也算；另写 .sandbox/troop_events_cover.json，
@@ -120,9 +138,9 @@ function eventRandomBranches(troopId) {
     }
   return out;
 }
-function runEventRandom(troopId, r) {
+function runEventRandom(troopId, r, flags = null, turnPreset = 2) {
   EVENT_R = r;
-  try { return Object.assign(run(troopId, false, null, 0, 0, null, 2), {variant: 't1', eventRandom: r}); } finally { EVENT_R = null; }
+  try { return Object.assign(run(troopId, false, null, 0, 0, flags, turnPreset), {variant: 't1', eventRandom: r}); } finally { EVENT_R = null; }
 }
 const COVER = process.env.XIYOU_COVER === '1', coverByCase = [];
 let ran = null;
@@ -147,7 +165,8 @@ if (COVER) {
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
 // hpEnemy：hpRate 预置的敌人序号（默认 0 不写字段）。
 // vars：开战前另设的变量（{变量号: 值}，默认不写字段）。
-function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0, vars = null) {
+// switches：开战前打开的开关（[开关号…]，默认不写字段；rules-gaps6 木桩抵抗档 174～177、S3西游模式 682）。
+function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0, vars = null, switches = null) {
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   // rules-gaps5：上一例的敌我精灵代理不再用到；不清的话 Map 一直攥着历届 Game_Battler，900 多例后默认堆 OOM（XIYOU_COVER 时更快）
   sprites.clear();
@@ -155,6 +174,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
   if (vars) for (const k of Object.keys(vars)) w.$gameVariables.setValue(Number(k), vars[k]);
+  if (switches) for (const k of switches) w.$gameSwitches.setValue(k, true);
   for (const id of PARTY) {
     const a = w.$gameActors.actor(id);
     [6168, 5980, 5548].concat([1, 2, 3, 4, 5, 6, 7, 52].includes(id) ? [2571, 2786] : []).forEach(k => a.learnSkill(k));
@@ -168,6 +188,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   w.Math.random = () => 0.5;
   const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
   if (vars) out.vars = vars;
+  if (switches) out.switches = switches;
   if (target !== 0) out.target = target;   // 玩家普通攻击的敌人序号（默认 0 不写字段，旧例逐字节不变）
   // turnPreset：开战前把回合计数设为这个值（金之巨人 830 第 20 回合强制 8203：从头打到 20 回合队伍早已倒下），跑到该回合结束；
   // 开战检查与第 N 回合的消息一并记录
@@ -234,6 +255,9 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   } catch (e) { out.errors.push(String(e && e.stack || e).slice(0, 800)); }
   BM.invokeAction = inv; BM.startAction = sa; BM.startTurn = st0;
   ran = null;
+  // rules-gaps6：敌群页里的 353 游戏结束（圣劫使 825 第 30 回合）在无场景引擎里只留下 SceneManager._nextScene，
+  // 不清的话之后每例 BattleManager 都当作「正在换场景」、停在 start 不动。记下换到的场景再清掉（旧例没有换场景，不写字段）
+  if (w.SceneManager._nextScene) { out.sceneChange = w.SceneManager._nextScene.constructor.name; w.SceneManager._nextScene = null; }
   for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members()))
     out.battlers[key(b)] = {hp: b.hp, mhp: b.mhp, atk: b.atk, mat: b.mat, agi: b.agi, states: b._states.slice()};
   if (hpRate) out.enemyIds = w.$gameTroop.members().map(e => e.enemyId());
@@ -273,7 +297,22 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     // rules-gaps5：血线页的变量门（variant hpVar 单独成键；同敌群多例再带 hpEnemy 区分，见 oracle_additions）
     .concat(HP_VARS.map(([id, rate, ei, v]) => Object.assign(run(id, false, null, 0, rate, null, 0, ei, {[v]: 1}), {variant: ei ? 'hpVarE' + ei : 'hpVar'})))
     // rules-gaps5：t1 例的变量 844 其余各支（见 EVENT_R）
-    .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))};
+    .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))
+    // rules-gaps6（敌群页覆盖剩 178 条的第一批）：后期回合页（LATE_GAPS6）
+    .concat(LATE_GAPS6.map(([id, n, fl]) => Object.assign(run(id, false, null, 0, 0, fl, n), {variant: 't1'})))
+    // 已交见面礼（变量 842＝1）时第 1 页的否则支：嘤族之光 739、蛮荒圣人 599
+    .concat([739, 599].map(id => run(id, true)))
+    // 神劫使 824 第 1 页「变量 1178（小明基因锁）≥ 6」时 335 显示其余 5 名敌人
+    .concat([Object.assign(run(824, false, null, 0, 0, null, 0, 0, {1178: 6}), {variant: 'v1178'})])
+    // 木桩Ⅰ～Ⅵ 70～75 与英雄级木桩 352～355 开场按抵抗档开关 174～177（抵抗1W／5W／10W／50W）给自己加状态：每档一例
+    .concat([70, 71, 72, 73, 74, 75, 352, 353, 354, 355].flatMap(id => [174, 175, 176, 177].map(sw =>
+      Object.assign(run(id, false, null, 0, 0, null, 0, 0, null, [sw]), {variant: 'sw' + sw}))))
+    // SW682（见文件开头）
+    .concat(SW682.map(id => Object.assign(run(id, false, null, 0, 0, null, 0, 0, null, [682]), {variant: 'sw682'})))
+    // 木桩 826（Map004）：开局两回合、变量 4 随机的另一支（第 2 页 6063）、HP≤20% 第 3 页（变身 937）；被封印者普罗米修斯 392 开局两回合
+    .concat([run(826), runEventRandom(826, 0), Object.assign(run(826, false, null, 0, 0.2), {variant: 'hp'}), run(392)])
+    // PAGE2_844（见文件开头）：844＝2、3 两支（eventRandom 0.25／0.5），第 1 页预置已执行（variant t1，oracle_additions 键带 flags 区分）
+    .concat(PAGE2_844.flatMap(id => [0.25, 0.5].map(r => runEventRandom(id, r, [0], 3))))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
