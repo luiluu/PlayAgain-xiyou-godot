@@ -282,7 +282,7 @@ static func _meta(row: Dictionary) -> String:
 
 ## 战力（原版：展开时现算，折叠时只读缓存）；开关关着或战力显示关掉时为空
 func power_of() -> Dictionary:
-	if not SHOW_POWER or battler == null:
+	if not SHOW_POWER or not XPower.SHOW_POWER_UI or battler == null:
 		return {}
 	return XPowerEnemy.enemy(battler) if open else XPowerEnemy.cached(battler)
 

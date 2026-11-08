@@ -38,7 +38,7 @@ var actor: XActor
 
 ## 状态页用：开着战力时在 rect 位置建条并返回，关掉时返回 null（调用方不下移页窗）
 static func make(parent: Control, a: XActor, y: float, width: float) -> XPowerStrip:
-	if not XPower.enabled():
+	if not XPower.ui_enabled():
 		return null
 	var s := XPowerStrip.new()
 	s.actor = a
