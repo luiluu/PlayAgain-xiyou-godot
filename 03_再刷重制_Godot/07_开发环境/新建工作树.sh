@@ -18,6 +18,17 @@ fi
 set -euo pipefail
 ENV_DIR=${0:A:h}
 SELF_ROOT=${ENV_DIR:h:h}
+# clone（git clone --shared）里的本脚本是旧副本，且会把 clone 当成主工作区、报「不需要补齐」（GB3 11-08，tools-probe-tags）：
+# 认出 clone（.git/objects/info/alternates 指向母库）就改用母库（主工作区）那份脚本，原样转交参数。XIYOU_WT_REDIRECTED 防循环。
+if [[ -z ${XIYOU_WT_REDIRECTED:-} && -f $SELF_ROOT/.git/objects/info/alternates ]]; then
+  _alt=$(head -1 "$SELF_ROOT/.git/objects/info/alternates")
+  _real=${_alt:h:h}
+  _real_script=$_real/03_再刷重制_Godot/07_开发环境/新建工作树.sh
+  if [[ -f $_real_script && ${_real:A} != ${SELF_ROOT:A} ]]; then
+    print -u2 "⚠ 这里是 clone（$SELF_ROOT），改用主工作区那份脚本：$_real_script"
+    XIYOU_WT_REDIRECTED=1 exec zsh "$_real_script" "$@"
+  fi
+fi
 MAIN=${$(git -C "$SELF_ROOT" rev-parse --path-format=absolute --git-common-dir):h}
 GODOT_SUB=03_再刷重制_Godot
 
