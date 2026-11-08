@@ -48,6 +48,18 @@ def transfers(lst):
     return out, ces
 
 
+def map_transfer_settings(app):
+    """plugins.js 里 MapTransferPlugin 的 Map Settings（插件关着或没有就空）"""
+    f = app / 'js/plugins.js'
+    if not f.exists():
+        return []
+    t = f.read_text(encoding='utf-8')
+    for pl in json.loads(t[t.index('['):t.rindex(']') + 1]):
+        if pl.get('name') == 'MapTransferPlugin' and pl.get('status'):
+            return [json.loads(x) for x in json.loads(pl['parameters'].get('Map Settings') or '[]')]
+    return []
+
+
 def page_cond(pg):
     """页条件（只记生效的项）：开关、变量≥、独立开关、物品、角色"""
     c, out = pg['conditions'], {}
@@ -147,7 +159,20 @@ def main():
         for d, x, y, direct in ce_tr[ci]:
             if direct:
                 edges[0].append((d, x, y, 'CE%d' % ci))
-    for mid, lst in edges.items():
+    # 传送菜单（MapTransferPlugin，A 键／右上按钮，XMapTransfer）：配置里 canTransfer 的地图（transmitid 优先）与坐标，来源记「传送菜单 N」。
+    # 不 hidden 的处处可用（来源图记 0，算进 C）；hidden 的要先到过（重制 REQUIRE_UNLOCK），只当落点查，不算入口
+    menu_landings = []
+    for st in map_transfer_settings(Path(a.app)):
+        if str(st.get('canTransfer', '')) == 'false':
+            continue
+        d = int(st['transmitid']) if str(st.get('transmitid', '')).strip().isdigit() else int(st['id'])
+        x, y = int(st.get('x') or 0), int(st.get('y') or 0)
+        src = '传送菜单 %s' % st['id']
+        if str(st.get('hidden', '')) == 'true':
+            menu_landings.append((d, x, y, src))
+        else:
+            edges[0].append((d, x, y, src))
+    for mid, lst in list(edges.items()) + [(-1, menu_landings)]:
         for d, x, y, src in lst:
             if d not in slice_maps:
                 find['A'].append({'from': src, 'to': d, 'toName': name(d), 'xy': [x, y], 'exists': d in maps})
@@ -198,7 +223,7 @@ def main():
     # 出口＝放了的事件里任一页（含它调用的公共事件）有传送的事件，自动／并行触发的另记（不用走过去）；
     # pages 按页列出带页条件的传送页（floor7：专项按条件设状态、断言选中该页再走）
     landings = {}
-    for mid, lst in edges.items():
+    for mid, lst in list(edges.items()) + [(-1, menu_landings)]:
         for d, x, y, src in lst:
             if d in slice_maps:
                 landings.setdefault((d, x, y), []).append(src)
