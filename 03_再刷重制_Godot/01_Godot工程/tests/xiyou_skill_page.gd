@@ -72,6 +72,15 @@ func _run() -> void:
 	await frames(2)
 	# 两列列表固定用正式位置（O-008 的贴边放法会盖住另一列）
 	check("help_position", page.help_card.visible and page.help_card.position == Vector2(650, 236), page.help_card.position)
+	# v0.62.12 实跑（review_system_pages 页 skill_page）：万剑诀说明卡 Sprite_ItemHelp 400×247；块间空行只占 4+8，
+	# 不被 O-007 的最小字号撑成 24（KEEP_GAP_ROWS，关掉就高出两三条空行）
+	var card_h: float = page.help_card.size.y
+	check("help_card_gap_rows", card_h >= 247.0 and card_h <= 252.0, card_h)
+	XHelpCard.KEEP_GAP_ROWS = false
+	page.help_card.show_for(page.current())
+	check("help_card_gap_rows_rollback", page.help_card.size.y >= card_h + 30.0, page.help_card.size.y)
+	XHelpCard.KEEP_GAP_ROWS = true
+	page.help_card.show_for(page.current())
 	await shot("技能_列表.png")
 	await press("ui_right")
 	check("right_moves_column", page.index == 1)
@@ -131,6 +140,34 @@ func _run() -> void:
 	check("menu_opens_skill", menu.get_children().any(func(n): return n is XSkillScene))
 	menu.queue_free()
 	await frames(2)
+	# 各类型页的列表内容（排序、名字、品质色）：新源 v0.62.12 浏览器实跑（review_system_pages 页 skill_page 的 skill_3_passive／4_magic／5_other／6_function，
+	# 同一批技能：另学 2000／2001（魔法）、2005／2006（被动）、2017／2018（其他））。列表按学习顺序（id 升序，职业自带的 2746／2748／41 排在后面）
+	for k in [2000, 2001, 2005, 2006, 2017, 2018]:
+		s.actor(1).learn_skill(k)
+	var tp := XSkillScene.new()
+	tp.actor_index = 0
+	add_child(tp)
+	await frames(3)
+	var expect := {
+		"魔法": [[2000, "时间停滞", Color8(255, 214, 90)], [2001, "寿命剥夺", Color8(255, 214, 90)]],
+		"被动": [[2005, "天龙佛体", Color8(255, 160, 64)], [2006, "口吐箴言", Color8(255, 160, 64)], [2571, "万众一心", Color8(255, 214, 90)],
+			[2786, "SupperStar", Color8(255, 72, 60)], [5548, "普通难度", Color8(255, 214, 90)], [5980, "难度适应", Color8(255, 214, 90)],
+			[6168, "天道诅咒", Color8(235, 240, 247)], [2746, "妖兽化形", Color8(255, 214, 90)], [2748, "麒麟臂", Color8(255, 214, 90)], [41, "天遁仙法", Color8(255, 214, 90)]],
+		"其他": [[2017, "羁绊:西天", Color8(255, 160, 64)], [2018, "西天(2)", Color8(255, 160, 64)]],
+		"功法": []}
+	for ti in tp.types().size():
+		tp.type_index = ti
+		tp.index = 0
+		var tname: String = tp.type_name(tp.types()[ti])
+		if not expect.has(tname):
+			continue
+		var got := tp.entries().map(func(k): return [int(k.id), str(k.name), XQuality.list_color(k)])
+		var want: Array = expect[tname]
+		var same := got.size() == want.size()
+		for i in (want.size() if same else 0):
+			same = same and got[i][0] == want[i][0] and got[i][1] == want[i][1] and got[i][2].is_equal_approx(want[i][2])
+		check("type_page_" + tname, same, got)
+	tp.queue_free()
 	# 事件降级会降低最大资源；原版 changeExp 最后 refresh，不能把原来的高等级 HP 留在新上限之外。
 	var level_ref: Dictionary = XDB.load_json("oracle/party.json").get("levelDown", {})
 	var level_state := XState.new_game_blank()
