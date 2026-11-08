@@ -65,7 +65,6 @@ static func _label(text: String, size: int, color := Color.WHITE) -> Label:
 
 func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	size = Vector2(1280, 720)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var black := ColorRect.new()
 	black.color = Color.BLACK
@@ -76,7 +75,6 @@ func _init() -> void:
 	_root = Control.new()
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.size = Vector2(1280, 720)
 	add_child(_root)
 
 	# 红底警告条
