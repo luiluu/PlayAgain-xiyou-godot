@@ -165,7 +165,8 @@ def main():
     for st in map_transfer_settings(Path(a.app)):
         if str(st.get('canTransfer', '')) == 'false':
             continue
-        d = int(st['transmitid']) if str(st.get('transmitid', '')).strip().isdigit() else int(st['id'])
+        tsid = str(st.get('transmitid', '')).strip()
+        d = int(tsid) if tsid.isdigit() and int(tsid) > 0 else int(st['id'])  # 同 XMapTransfer.target_map：transmitid > 0 才用
         x, y = int(st.get('x') or 0), int(st.get('y') or 0)
         src = '传送菜单 %s' % st['id']
         if str(st.get('hidden', '')) == 'true':
