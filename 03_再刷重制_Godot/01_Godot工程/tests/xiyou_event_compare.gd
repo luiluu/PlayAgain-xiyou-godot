@@ -31,6 +31,8 @@ var coverage_out := ""
 var coverage := {}
 ## 用例号（含 #变体）→ 该例实际执行到的「位置:下标」；coverage 是它们的并集（根游标位置去掉了 #变体，分不出是哪个变体走到的，BK2）
 var coverage_by_case := {}
+## 云端拿覆盖表用（floor9）：true 时照 --coverage 记，结尾把 executed 分段打到输出（行首「COVERAGE_PART=」），日志里拼回
+@export var print_coverage := false
 
 
 ## 记执行到的指令（只在 --coverage 时用）：根游标记用例的页（去掉 #变体），公共事件子游标记 ceN，别的子游标不记
@@ -259,6 +261,8 @@ func _ready() -> void:
 			only = Array(arg.substr(7).split(",", false))
 		elif arg.begins_with("--coverage="):
 			coverage_out = arg.substr(11)
+	if print_coverage and coverage_out == "":
+		coverage_out = "user://event_compare_coverage.json"
 	_run.call_deferred()
 
 
@@ -407,6 +411,9 @@ func _run() -> void:
 		keys.sort()
 		fc.store_string(JSON.stringify({"note": "xiyou_event_compare --coverage：对照里实际执行到的指令（位置:下标）", "executed": keys, "byCase": coverage_by_case}))
 		fc.close()
+		if print_coverage:
+			for i in range(0, keys.size(), 2000):
+				print("COVERAGE_PART=", JSON.stringify(keys.slice(i, i + 2000)))
 	check("no_new_skipped", new_skips.is_empty() or update_baseline, new_skips.slice(0, 20))
 	check("no_regressions", regressions.is_empty() or update_baseline, regressions)
 	check("preset_keys_known", bad_preset_keys.is_empty(), bad_preset_keys)
