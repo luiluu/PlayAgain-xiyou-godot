@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·GB·未经审查】v0.53.01 CounterGuard（反击者是敌人、已不在敌群里时跳过反击）：与 mv_oracle/counter_guard_probe.cjs（tests/fixtures/counter_guard_oracle.json，正式引擎）逐例比。
 ## 每例：新局难度 2，角色 1 清技能／装备／状态、mhp 加 50000；敌群 1 第一只（或另造的同号敌人、或从 enemies 摘掉的那只）mhp 也加 50000；
-## 反击者带状态 327（反击率 +100%），技能 1 改物理、定值 100、无浮动不暴击；比目标挨的、行动者被反击扣的、守卫跳过次数。
+## 反击者带状态 327（反击率 +100%），技能 1（行动与反击共用）改物理、定值 100、无浮动不暴击；比目标挨的、行动者被反击扣的、守卫跳过次数。
 ## 另测回退：COUNTER_GUARD = false 时不在敌群的敌人照常反击。
 const FIXTURE := "res://tests/fixtures/counter_guard_oracle.json"
 var passed := 0
@@ -62,7 +62,9 @@ func _case(cfg: Dictionary) -> Dictionary:
 	target.state_ids.append(327)
 	target.state_turns[327] = 1
 	target.param_mark_dirty()
-	var sk: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	# 同探针：直接改数据库里的技能 1（反击者 setAttack 用的也是它），本例结束还原
+	var sk: Dictionary = XDB.rec("Skills", 1)
+	var saved: Dictionary = sk.duplicate(true)
 	sk.damage.formula = "100"
 	sk.damage.formulaProgram = {"version": 1, "status": "pure", "locals": [], "source": {"sha256": "counter-guard-constant"}, "result": "completion",
 		"steps": [{"op": "expr", "value": {"op": "literal", "value": 100.0}}]}
@@ -73,6 +75,8 @@ func _case(cfg: Dictionary) -> Dictionary:
 	var t0 := target.hp
 	var rs := logic._invoke(user, sk, target)
 	var countered := rs.any(func(r): return r is Dictionary and r.get("type") == "counter")
+	for k in saved:
+		sk[k] = saved[k]
 	return {"u_delta": user.hp - u0, "t_delta": target.hp - t0, "countered": countered, "skipped": logic.counter_guard_skipped, "in_troop": logic.enemies.has(foe)}
 
 func _run() -> void:
