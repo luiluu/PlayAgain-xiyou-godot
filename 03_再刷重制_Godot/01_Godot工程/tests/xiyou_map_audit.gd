@@ -1,9 +1,9 @@
 extends Node
 ## 全量地图盘点的补漏（悟空 floor5，清单见 04_验证/地图盘点.md）：
 ## - 一护剧情副本 Map234～239 切片收了图却没写 keepEvents，图上一个事件都不生成：现在整图放，断言生成的事件数与原版一致。
-## - O-待定·天之上入口（MVEvent.page_switch_ignore）：Map069 EV47 毒蛇沼泽入口在开关 21 开着时，原版选第 2 页传到 Map102 (29,22)
+## - O-240（MVEvent.page_switch_ignore）：Map069 EV47 毒蛇沼泽入口在开关 21 开着时，原版选第 2 页传到 Map102 (29,22)
 ##   （图只有 29×18，人落在图外）；修后照第 1 页进 Map087 (13,28)。回退支 page_switch_ignore = {} 时断言选回第 2 页。
-## - O-待定·麒麟殿地面（MVTilemap.open_autotile_fix，floor6）：Map236 落点 (8,14) 四周是不可通行的深水自动图块，人动不了；
+## - O-241（MVTilemap.open_autotile_fix，floor6）：Map236 落点 (8,14) 四周是不可通行的深水自动图块，人动不了；
 ##   修后从落点走得到殿顶 Boss EV1 (8,4)。回退支 open_autotile_fix = {} 时断言只剩落点一格。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const CASE_MS := 30000
