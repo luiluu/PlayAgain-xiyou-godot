@@ -1,5 +1,5 @@
 {
- "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、等级 level}、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态），游玩秒数 playtime（非负整数秒，$gameSystem.playtime()））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
+ "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、忘掉的技能 forget、等级 level}、等级上限 maxLevel（同插件指令 maxlevel equal）、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态），游玩秒数 playtime（非负整数秒，$gameSystem.playtime()））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
  "cases": [
   {
    "base": "m187e3p1",
@@ -297157,6 +297157,230 @@
      0.5,
      0.955,
      0.875
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh1",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     1,
+     3,
+     5,
+     7,
+     9
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh2",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     2,
+     4,
+     6,
+     8,
+     10
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh3",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     3,
+     5,
+     7,
+     9,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh4",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     4,
+     6,
+     8,
+     10,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh5",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     5,
+     7,
+     9,
+     11,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh6",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     6,
+     8,
+     10,
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh7",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     7,
+     9,
+     11,
+     1,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh8",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     8,
+     10,
+     12,
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh9",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     9,
+     11,
+     0,
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh10",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     10,
+     12,
+     1,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh11",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     11,
+     13,
+     2,
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh12",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     12,
+     0,
+     2,
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh13",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     13,
+     1,
+     3,
+     5,
+     7
+    ]
+   }
+  },
+  {
+   "base": "ce1442",
+   "tag": "sa3_hh14",
+   "preset": {
+    "variables": {
+     "1482": 1
+    },
+    "answers": [
+     14,
+     2,
+     4,
+     6,
+     8
     ]
    }
   }
