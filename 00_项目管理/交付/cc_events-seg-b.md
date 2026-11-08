@@ -1,8 +1,8 @@
 # 交付：cc/events-seg-b
 
 - 车道／工作者：A 内容·地图事件对照分段乙（地图 81 及以后）／cc（事件分段乙）
-- 状态：进行中
-- 分支从 main b59bcb9c 切出，**没合 main**（合了 main 要重跑转换器＋导入＋探针，Mac 槽紧，按协调「共享文件冲突由总装解」交总装合）；main 之后的提交不碰 event_presets.json，合并应无冲突。没合 cc/bajie-interp5。
+- 状态：可合并
+- 分支从 main b59bcb9c 切出，交付前按协调合了 main ef489a59（无冲突，main 那边没碰 event_presets.json）；合并后周额度到线，没再跑测试，下面的验证都基于合并前的 b7e0423a。没合 cc/bajie-interp5。
 - **共享文件**：只在 `03_转换工具/event_presets.json` 末尾追加本段条目（tag b1／b2／b3），不重排、不改别段。`event_compare_baseline.json` 的 cases／match 计数与 `04_验证/事件写法覆盖.md` 三段都要动、必冲突，本分支**没改**，请总装合完三段后统一重跑对照 `--update-baseline` 和覆盖表。共用工具（事件写法覆盖.py／事件祖先预设.py）按协调没改（中途改过一处，已退回 main 版）。
 
 ## 变更记录草稿
@@ -38,10 +38,11 @@
 
 ## 本分支提交
 
-- 0b3ff84a b1～b3 变体；后一提交退回 事件祖先预设.py；b7e0423a 剪枝留 433；交付单
+- 0b3ff84a b1～b3 变体；后一提交退回 事件祖先预设.py；b7e0423a 剪枝留 433；交付单；合 main ef489a59
 
 ## 验证
 
 - `xiyou_event_compare`（本机 1 槽，--coverage）：14/14，29688 例一致 29680，不一致 8 例同基线，新跳过 0、参照出错 0。
 - 补跑事件状态探针（增量，SHARDS=2）：errors 0、unfinished 0。
-- 云端选测（基准 b59bcb9c，67 场景、7 片）：待结果
+- 云端选测（提交 b7e0423a，基准 245c08ce，67 场景、7 片，最长一片 15.4 分钟）：全过，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42443106569
+- `事件空绿扫描.py --check`：空绿 92 例同基线；本机产物里还留着剪掉的 24 个变体的旧结果（报「预设已删」，产物不入 Git，总装合并后同步重量即消）。
