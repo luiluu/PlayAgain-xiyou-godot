@@ -4,5 +4,4 @@
 
 [node name="XiyouTransferReachDbg1" type="Node"]
 script = ExtResource("1")
-part = 1
-parts = 16
+only_maps = [2]
