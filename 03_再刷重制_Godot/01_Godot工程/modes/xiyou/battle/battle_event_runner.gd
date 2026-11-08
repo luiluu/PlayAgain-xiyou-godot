@@ -469,6 +469,16 @@ func _execute_env(c: Dictionary):
 			logs.append_array(logic.enemy_appear(int(p[0])))
 		336:
 			logs.append_array(logic.enemy_transform(int(p[0]), int(p[1])))
+		221, 222:
+			# 淡出／淡入画面（圣劫使 825 第 30 回合灭世雷劫）：只是画面，记一条给画面层，不影响规则（rules-gaps6）
+			logs.append({"type": "event_view", "fade": "out" if int(c.code) == 221 else "in"})
+		353:
+			# 游戏结束（command353 → SceneManager.goto(Scene_Gameover)）：战斗场景随即离开，本页后面的指令（825 的 222 淡入）不再执行，
+			# 上层公共事件也到此为止（halted）。XBattleLogic.game_over 置位后 is_lost 成立，战斗按全军覆没收场（rules-gaps6）
+			logic.game_over = true
+			logs.append({"type": "game_over"})
+			halted = true
+			return false
 		339:
 			logs.append_array(logic._force_action(p, first_subject))
 			index += 1

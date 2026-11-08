@@ -411,8 +411,11 @@ func mark_views(entries: Array) -> Array:
 func is_won() -> bool:
 	return alive(enemies).is_empty()
 
+## 敌群事件 353 游戏结束（XBattleEventRunner）：之后按全军覆没收场（rules-gaps6，圣劫使 825 第 30 回合）
+var game_over := false
+
 func is_lost() -> bool:
-	return alive(actors).is_empty()
+	return game_over or alive(actors).is_empty()
 
 func vars() -> Array:
 	return state.variable_array()
