@@ -7,7 +7,7 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FIX := "res://tests/fixtures/transfer_landings.json"
 const KNOWN := "res://tests/fixtures/transfer_reach_known.json"
-const PARTS := 2
+const PARTS := 4
 const CASE_MS := 30000
 const WaitBudget := preload("res://tests/wait_budget.gd")
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
