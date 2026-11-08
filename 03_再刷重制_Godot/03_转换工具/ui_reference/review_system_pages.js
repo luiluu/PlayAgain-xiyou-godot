@@ -677,6 +677,26 @@
         out.equipMode = s._equipMode41 !== undefined ? s._equipMode41 : s._mode43;
         return out;
     }
+    // 技能页（ui-gaps4）：xiyou_skill_page 的预期值原是 v0.24 实测，这里用新源 v0.62.12 重量一遍（四人学 6168/5980/5548/2571/2786、Lv10）
+    P.skill_page = {
+        setup: async function () {
+            [1, 8, 9, 10].forEach(function (id) {
+                var a = $gameActors.actor(id);
+                [6168, 5980, 5548, 2571, 2786].forEach(function (k) { a.learnSkill(k); });
+                a.changeLevel(10, false); a.refresh(); a.recoverAll();
+            });
+            await push(Scene_Skill);
+        },
+        shots: {
+            skill_0_type: async function () {},
+            skill_1_list: async function () { var s = scene(); s._skillTypeWindow.processOk(); },
+            skill_2_second: async function () { var s = scene(); s._itemWindow.select(1); },
+            skill_3_passive: async function () {
+                var s = scene(); s._itemWindow.deactivate(); s._skillTypeWindow.activate();
+                s._skillTypeWindow.select(2); s._skillTypeWindow.processOk(); await settle();
+            }
+        }
+    };
     P.equip_detail = {
         setup: async function () {
             var a = $gameActors.actor(1), best = 0, bestN = 0;

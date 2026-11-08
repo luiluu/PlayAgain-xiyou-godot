@@ -72,6 +72,15 @@ func _run() -> void:
 	await frames(2)
 	# 两列列表固定用正式位置（O-008 的贴边放法会盖住另一列）
 	check("help_position", page.help_card.visible and page.help_card.position == Vector2(650, 236), page.help_card.position)
+	# v0.62.12 实跑（review_system_pages 页 skill_page）：万剑诀说明卡 Sprite_ItemHelp 400×247；块间空行只占 4+8，
+	# 不被 O-007 的最小字号撑成 24（KEEP_GAP_ROWS，关掉就高出两三条空行）
+	var card_h: float = page.help_card.size.y
+	check("help_card_gap_rows", card_h >= 247.0 and card_h <= 252.0, card_h)
+	XHelpCard.KEEP_GAP_ROWS = false
+	page.help_card.show_for(page.current())
+	check("help_card_gap_rows_rollback", page.help_card.size.y >= card_h + 30.0, page.help_card.size.y)
+	XHelpCard.KEEP_GAP_ROWS = true
+	page.help_card.show_for(page.current())
 	await shot("技能_列表.png")
 	await press("ui_right")
 	check("right_moves_column", page.index == 1)
