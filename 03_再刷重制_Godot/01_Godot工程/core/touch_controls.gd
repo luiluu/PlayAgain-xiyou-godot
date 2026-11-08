@@ -38,14 +38,35 @@ static var scene_override: Node = null
 ## 方向的连发改成方向键的回显事件（is_echo() 为 true，节奏不变），页面认得出是连发；按着时换了场景，回显停下，要松开再按。
 ## 回退开关 HOLD_REPEAT_ECHO = false：回到所有虚拟键按住都发「新按下」。
 static var HOLD_REPEAT_ECHO := true
+## ui6 查出：Godot 把带 echo 的按键事件也记成该动作在键盘设备上「按着」，只松开 InputEventAction 清不掉，
+## 所以摇杆按住满 24 帧（发过回显）再松手，ui_left 等仍是按着——地图上 mv_player 轮询方向，人物会一直走。
+## 松开方向时顺带发一次该方向键的松开（_set_dir）。
 ## 方向回显用的键（XKeyRepeat 看到带这个标记的回显就放行，不当成系统回显吞掉）。
 const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
 const REPEAT_META := &"xiyou_touch_repeat"
 
+## 摇杆拖动翻页（ui6，Kyo 11-07「先做吧，然后设置里做开关」；O-待定·摇杆翻页）：照原版 Mehmet_GhostButtons
+## Sprite_JoyStick.processTouch——摇杆往左／右推到半径的 65% 以上、按住满 36 帧后，每 24 帧对当前列表翻一页
+## （左＝pageup、右＝pagedown，原版调用活动窗口的 pageup／pagedown 处理或 cursorPageup／Pagedown）。
+## 重制发 ui_page_up／ui_page_down 动作，各页现有的 Q／E、LB／RB 翻页接住；地图上没有页面认它，不起作用（原版地图上也没有活动列表）。
+## 跟原版不同的两处：① 原版还要求手指这一帧在动（TouchInput.isMoved），按稳不动就不翻、得来回晃，这里按稳也翻；
+## ② 原版翻页时左右键照样按着，网格列表会同时横走光标，这里一开始翻页就停掉这一下的左右连发（键仍算按着，松手时照常松开）。
+## 玩家在「手机按键设置」里可关（settings.stick_page，默认开）；STICK_PAGE = false 整个功能不要、设置里也不列。
+static var STICK_PAGE := true
+const PAGE_PRESSURE := 0.65
+const PAGE_HOLD := 36
+const PAGE_INTERVAL := 24
+var _stick_offset := Vector2.ZERO
+var _page_held := 0
+var _page_time := 0
+var _paging := false
+## 翻页发出的次数（测试读）
+var pages_sent := 0
+
 ## 原版 limits：大小百分比与透明度的范围，步长 5。
 const LIMITS := {"stick": [70, 170], "buttons": [70, 160], "tools": [80, 140], "transparency": [0, 80]}
 const STEP := 5
-const DEFAULTS := {"hidden": false, "stick": 100, "buttons": 100, "tools": 100, "transparency": 0}
+const DEFAULTS := {"hidden": false, "stick": 100, "buttons": 100, "tools": 100, "transparency": 0, "stick_page": true}
 ## 三组：成员、缩放用哪个大小、100% 时的外框、默认贴哪两条边（与上面常量的位置一致）。
 const GROUPS := {
 	"movement": {"members": ["stick"], "size": "stick", "rect": Rect2(24, 552, 144, 144), "anchor": [SIDE_LEFT, SIDE_BOTTOM]},
@@ -284,6 +305,7 @@ static func stick_direction(offset: Vector2, radius := STICK_RADIUS) -> String:
 func _move_stick(pos: Vector2) -> void:
 	var offset := pos - stick_center
 	var travel := stick_radius - _stick_knob.size.x / 2
+	_stick_offset = offset
 	var shown := offset.limit_length(travel)
 	_stick_knob.position = stick_center + shown - _stick_knob.size / 2
 	_set_dir(stick_direction(offset, stick_radius))
@@ -292,8 +314,13 @@ func _move_stick(pos: Vector2) -> void:
 func _set_dir(action: String) -> void:
 	if action == _dir:
 		return
+	_page_held = 0
+	_page_time = 0
+	_paging = false
 	if _dir != "":
 		_send_action(_dir, false)
+		if HOLD_REPEAT_ECHO and DIR_KEYS.has(_dir):
+			_send_key(DIR_KEYS[_dir], false)  # 回显按下的方向键也要松开（见 DIR_KEYS 上方说明）
 		_held.erase(_dir)
 	_dir = action
 	if action != "":
@@ -340,6 +367,7 @@ func release_all() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_stick_page_tick()
 	# 按住连发：24 帧后每 6 帧再按一次（XKeyRepeat 只管实体键）
 	for action in _held.keys():
 		var n: int = _held[action] + 1
@@ -349,6 +377,39 @@ func _physics_process(_delta: float) -> void:
 				_send_action(action, true)
 			elif DIR_KEYS.has(action) and _held_scene.get(action) == _current_scene():
 				_send_echo(DIR_KEYS[action])
+
+
+## 摇杆翻页是否开着（代码开关＋玩家设置）
+func stick_page_on() -> bool:
+	return STICK_PAGE and bool(settings.get("stick_page", true))
+
+
+func set_stick_page(value: bool) -> void:
+	settings["stick_page"] = value
+	_page_held = 0
+	_page_time = 0
+	_paging = false
+	_save()
+
+
+## 每帧：摇杆左右推深、按满 PAGE_HOLD 帧后每 PAGE_INTERVAL 帧翻一页（原版两个计数都从按下那帧起算，所以第一页在第 36 帧）
+func _stick_page_tick() -> void:
+	if not stick_page_on() or (_dir != "ui_left" and _dir != "ui_right"):
+		return
+	_page_held += 1
+	_page_time += 1
+	if _stick_offset.length() < stick_radius * PAGE_PRESSURE:
+		return
+	if _page_held < PAGE_HOLD or _page_time < PAGE_INTERVAL:
+		return
+	_page_time = 0
+	if not _paging:
+		_paging = true
+		_held.erase(_dir)  # 停掉这一下的左右连发
+	var action := "ui_page_up" if _dir == "ui_left" else "ui_page_down"
+	_send_action(action, true)
+	_send_action(action, false)
+	pages_sent += 1
 
 
 ## 方向连发：方向键的回显（不改按键状态，is_action_pressed(动作, true) 认得到、is_echo() 为 true）
@@ -535,6 +596,8 @@ func _load() -> void:
 		data = {}
 	hidden = bool(data.get("hidden", false))
 	settings = DEFAULTS.duplicate()
+	if data.get("stick_page") is bool:
+		settings["stick_page"] = data.stick_page
 	for key in LIMITS:
 		var v = data.get(key)
 		if v is float or v is int:
@@ -549,7 +612,7 @@ func _load() -> void:
 
 
 func _save() -> void:
-	var data := {"hidden": hidden, "positions": positions}
+	var data := {"hidden": hidden, "positions": positions, "stick_page": bool(settings.get("stick_page", true))}
 	for key in LIMITS:
 		data[key] = settings[key]
 	var f := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)

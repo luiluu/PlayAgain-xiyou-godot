@@ -243,6 +243,46 @@ func _run() -> void:
 	check("pause_releases_keys", not Input.is_action_pressed("ui_left"))
 	platform.on_resumed(0)
 	touch(0, XTouchControls.STICK_CENTER, false)
+	await frames(2)
+	# 摇杆拖动翻页（ui6）：推深（≥65%）按满 36 帧翻第一页，之后每 24 帧一页；推浅不翻；设置关掉不翻
+	var p0 := pad.pages_sent
+	touch(0, XTouchControls.STICK_CENTER, true)
+	var deep := InputEventScreenDrag.new()
+	deep.index = 0
+	deep.position = to_window(XTouchControls.STICK_CENTER + Vector2(60, 0))
+	Input.parse_input_event(deep)
+	for i in 30:
+		await get_tree().physics_frame
+	check("stick_page_waits", pad.pages_sent == p0 and pad._held.has("ui_right"), [pad.pages_sent, p0])
+	for i in 40:
+		await get_tree().physics_frame
+	check("stick_page_every_24", pad.pages_sent == p0 + 2, [pad.pages_sent, p0])
+	check("stick_page_stops_lr_echo", not pad._held.has("ui_right") and Input.is_action_pressed("ui_right"))
+	touch(0, XTouchControls.STICK_CENTER, false)
+	await frames(2)
+	check("stick_page_release", not Input.is_action_pressed("ui_right"))
+	p0 = pad.pages_sent
+	touch(0, XTouchControls.STICK_CENTER, true)
+	var shallow := InputEventScreenDrag.new()
+	shallow.index = 0
+	shallow.position = to_window(XTouchControls.STICK_CENTER + Vector2(-40, 0))
+	Input.parse_input_event(shallow)
+	for i in 80:
+		await get_tree().physics_frame
+	check("stick_page_shallow_no", pad.pages_sent == p0 and Input.is_action_pressed("ui_left"), pad.pages_sent)
+	touch(0, XTouchControls.STICK_CENTER, false)
+	await frames(2)
+	# 按住满 24 帧发过方向回显再松手，方向要真松开（Godot 把回显记成键盘设备按着；ui6 修，地图上人物会一直走）
+	check("stick_echo_then_release", not Input.is_action_pressed("ui_left") and not Input.is_physical_key_pressed(KEY_LEFT))
+	pad.set_stick_page(false)
+	touch(0, XTouchControls.STICK_CENTER, true)
+	Input.parse_input_event(deep)
+	for i in 80:
+		await get_tree().physics_frame
+	check("stick_page_setting_off", pad.pages_sent == p0, pad.pages_sent)
+	touch(0, XTouchControls.STICK_CENTER, false)
+	await frames(2)
+	pad.set_stick_page(true)
 	# 跑步键按住＝Shift
 	var run_center: Vector2 = (XTouchControls.BUTTONS.run.rect as Rect2).get_center()
 	touch(0, run_center, true)
@@ -406,9 +446,23 @@ func _run() -> void:
 	page.index = 4
 	page.side(false)
 	check("touch_page_floor", pad.settings.transparency == 0)
-	page.index = 6
+	page.index = 5
 	page.ok()
-	check("touch_page_reset", not pad.hidden and pad.settings.stick == 100)
+	check("touch_page_stick_page_off", not pad.stick_page_on() and page.status_text(5) == "关"
+		and JSON.parse_string(FileAccess.get_file_as_string(XTouchControls.SETTINGS_PATH)).get("stick_page") == false)
+	var pad_reload := XTouchControls.new()
+	pad_reload._load()
+	check("touch_page_stick_page_remembered", pad_reload.settings.stick_page == false)
+	pad_reload.free()
+	page.side(true)
+	check("touch_page_stick_page_side", pad.stick_page_on() and page.status_text(5) == "开")
+	page.side(false)
+	XTouchControls.STICK_PAGE = false
+	check("touch_page_rollback_hides_row", XTouchOptionsScene.rows().size() == XTouchOptionsScene.ROWS.size() - 1 and not pad.stick_page_on())
+	XTouchControls.STICK_PAGE = true
+	page.index = 7
+	page.ok()
+	check("touch_page_reset", not pad.hidden and pad.settings.stick == 100 and pad.stick_page_on())
 	page.queue_free()
 	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
 
