@@ -1,7 +1,7 @@
 # 交付：cc/ui-hide-power
 
 - 车道／工作者：B 界面／cc（GF3）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -18,7 +18,10 @@ Kyo 11-08 定：战力系统重构前各页都先藏起来（取代 rules-gaps7 
 
 ## 验证
 
-见下「本分支提交」前的测试记录（待填）。
+- 基于 main 546fdb675（dev.414），无需再合 main。语法检查 0 问题；工具回归 64 秒全过。
+- `python3 选测.py main --list` 选出的 48 场景里本地跑了 44 个（`xiyou_smart_ai*` 四段不碰界面、按抽样规则没跑）：首轮 13 个测战力显示的老专项因开关默认关而失败，给它们的 `_ready` 开头加 `XPower.SHOW_POWER_UI = true` 后复跑全过（boss_status、cat_help、gear_search、growth_help、hangup_options、help_card、options_basic、power、status_page、status_power、status_power_panel、window_rects）；新增 `xiyou_power_hidden` 21/21。
+- `xiyou_event_compare`：首次在本分支跑出 1 条 m4e76p0 回归（trace:0 原版有话、Godot 空），main 同一提交单跑 0 回归，本分支再跑 0 回归（14/14）——判为偶发（疑似同机多会话负载下的时序），与本改动无关；若总装再见请记偶发。
+- 没做反向验证（`反向验证.py`）；`xiyou_power_hidden` 的咬合靠“开关打开后各处回来”的回退断言互证。
 
 ## 交接板
 
@@ -41,3 +44,5 @@ Kyo 11-08 定：战力系统重构前各页都先藏起来（取代 rules-gaps7 
 - 无。建议战力重构完成后统一收回这个开关，免得每个测战力显示的专项都要在开头打开它。
 
 ## 本分支提交
+
+- 5549faf15 战力先藏：总开关 XPower.SHOW_POWER_UI 默认关，各页不再显示战力
