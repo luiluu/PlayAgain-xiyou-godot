@@ -20,6 +20,12 @@ const KNOWN_ORACLE_ERRORS := []
 ## 随机数按序列循环取的用例（同参照 event_probe.cjs RANDOM_SEQUENCES）：随机伙伴重抽到不重复，固定 0.5 会死循环
 const RANDOM_SEQUENCES := {"ce1344": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05], "m221e3p0": [0.5, 0.1, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6, 0.05]}
 
+## 分段（tools-compare-split）：全部用例（基础＋有状态变体，按 oracle 里的顺序编号）按序号对 shards 取余分给各场景，本场景只跑 shard 那一份。
+## 每个用例都从空白新游戏起跑，互不依赖，所以分开跑与整份跑的逐例结果相同。shards＝1 就是原来的整份单场景（回退办法：场景里改 shards=1 并删掉 _b…等分段场景）。
+## 登记重写（--update-baseline）、报告（--out）、覆盖（--coverage、print_coverage）要看全部用例，这几个参数一出现就自动按整份跑（输出与分段前逐字一致）；
+## 命令行可用 --shards=N --shard=K 临时改分法。完整性类检查（oracle_cases_complete、分发覆盖、states_*）只在第 0 段做。
+@export var shards := 1
+@export var shard := 0
 var results := []
 var _saved_seal_fix := {}
 var _saved_gate_fix := {}
@@ -262,8 +268,15 @@ func _ready() -> void:
 			only = Array(arg.substr(7).split(",", false))
 		elif arg.begins_with("--coverage="):
 			coverage_out = arg.substr(11)
+		elif arg.begins_with("--shards="):
+			shards = int(arg.substr(9))
+		elif arg.begins_with("--shard="):
+			shard = int(arg.substr(8))
 	if print_coverage and coverage_out == "":
 		coverage_out = "user://event_compare_coverage.json"
+	if update_baseline or out_dir != "" or coverage_out != "" or not only.is_empty():
+		shards = 1
+		shard = 0
 	_run.call_deferred()
 
 
@@ -313,8 +326,10 @@ func _run() -> void:
 	var actual_ids: Array = oracle.cases.map(func(c): return str(c.id))
 	expected_ids.sort()
 	actual_ids.sort()
-	check("oracle_cases_complete", expected_ids == actual_ids, [expected_ids.size(), actual_ids.size()])
-	_check_dispatch_cases(manifest)
+	var first_shard := shard == 0
+	if first_shard:
+		check("oracle_cases_complete", expected_ids == actual_ids, [expected_ids.size(), actual_ids.size()])
+		_check_dispatch_cases(manifest)
 	var baseline: Dictionary = {}
 	if FileAccess.file_exists(BASELINE):
 		var b = JSON.parse_string(FileAccess.get_file_as_string(BASELINE))
@@ -324,7 +339,8 @@ func _run() -> void:
 	if FileAccess.file_exists(SKIPPED_BASELINE):
 		var sb = JSON.parse_string(FileAccess.get_file_as_string(SKIPPED_BASELINE))
 		skipped_baseline = sb.get("cases", {}) if sb is Dictionary else {}
-	check("skipped_baseline_present", FileAccess.file_exists(SKIPPED_BASELINE) or update_baseline)
+	if first_shard:
+		check("skipped_baseline_present", FileAccess.file_exists(SKIPPED_BASELINE) or update_baseline)
 	var host := EventHost.new()
 	add_child(host)
 	var report := []
@@ -333,14 +349,20 @@ func _run() -> void:
 	# 有状态变体（event_state_probe：同一批事件页，运行前按预设改好初始状态，让新游戏走不到的分支被量到；号为 基础号#tag）
 	var all_cases: Array = oracle.cases.duplicate()
 	# 文件缺失不能静默跳过变体（审查 41 P2-1：测试通过但变体没比＝空绿）：缺就失败，补量用 07_开发环境/补跑事件状态探针.py（检查.sh／新建工作树.sh 会自动跑）
-	check("states_present", FileAccess.file_exists(ORACLE_STATES))
+	if first_shard:
+		check("states_present", FileAccess.file_exists(ORACLE_STATES))
 	if FileAccess.file_exists(ORACLE_STATES):
 		var st = JSON.parse_string(FileAccess.get_file_as_string(ORACLE_STATES))
-		check("states_loaded", st is Dictionary and st.has("cases"))
+		if first_shard:
+			check("states_loaded", st is Dictionary and st.has("cases"))
 		if st is Dictionary and st.has("cases"):
 			all_cases.append_array(st.cases)
-			check("states_cases_present", st.cases.size() > 0)
-	for c in all_cases:
+			if first_shard:
+				check("states_cases_present", st.cases.size() > 0)
+	for case_index in all_cases.size():
+		var c: Dictionary = all_cases[case_index]
+		if shards > 1 and case_index % shards != shard:
+			continue
 		if not only.is_empty() and not only.any(func(p): return str(c.id).begins_with(p)):
 			continue
 		# 参照引擎出错或没跑完（如随机数固定后「抽到不同的为止」的循环）的用例不比较，只列出
