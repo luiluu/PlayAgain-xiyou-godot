@@ -55,6 +55,7 @@ class Fixture(unittest.TestCase):
                            'xiyou_battle': 'XBattler.new()\nconst F = "res://tests/fixtures/battle_oracle.json"',
                            'xiyou_rules': 'XBattler'}.items():
             self.scene(name, body)
+        self.put(TESTS / 'xiyou_event_compare_b.tscn', '[ext_resource path="res://tests/xiyou_event_compare.gd" id="1"]\n')  # 分段场景（tools-compare-split）
         for part in ['d1b', 'd2']:
             self.put(TESTS / ('xiyou_rules_%s.tscn' % part), '[ext_resource path="res://tests/xiyou_rules.gd" id="1"]\n')
         self.put(TESTS / 'helper.gd', 'class_name THelper\n')
@@ -126,18 +127,18 @@ class SelectTests(Fixture):
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# changed\n')
         self.put(UI / 'shop.gd.uid', 'uid://x\n')
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_shop.tscn'])
         self.assertEqual(s['checks'], ['guards'])
         self.assertEqual(len(s['reasons']), 1)  # .uid 跟源文件同组，不重复列
 
     def test_ui_without_refs_falls_back_to_smoke(self):
         self.put(UI / 'nobody.gd', 'class_name XNobody\n# changed\n')
-        self.assertEqual(self.pick()['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn'])
+        self.assertEqual(self.pick()['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
 
     def test_battle_core_runs_all_rules_parts(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# changed\n')
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_battle.tscn', 'xiyou_event_compare.tscn', 'xiyou_rules.tscn',
+        self.assertEqual(s['scenes'], ['xiyou_battle.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_rules.tscn',
                                        'xiyou_rules_d1b.tscn', 'xiyou_rules_d2.tscn'])
         self.assertEqual(s['checks'], ['content', 'guards', 'same_source'])
 
@@ -150,11 +151,11 @@ class SelectTests(Fixture):
 
     def test_map_runs_floors(self):
         self.put(PROJECT / 'modes/xiyou/map/interp.gd', 'class_name XInterp\n# 2\n')
-        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'])
+        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn'])
 
     def test_other_core_module_runs_users(self):
         self.put(CORE / 'orbs.gd', 'class_name XOrbs\n# 2\n')
-        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_orbs.tscn'])
+        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_orbs.tscn'])
 
     def test_changed_test_runs_itself_and_helper_runs_its_users(self):
         self.put(TESTS / 'xiyou_orbs.gd', 'extends Node\nXOrbs # 2\n')
@@ -218,7 +219,7 @@ class SelectTests(Fixture):
                  .replace('\t\t"items": 1}', '\t\t"items": 1, "pets": pets}')
                  .replace('\ts.gold = int(d.gold)\n', '\ts.gold = int(d.gold)\n\ts.pets = d.get("pets", {})\n'))
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_difficulty_inherit_load.tscn', 'xiyou_event_compare.tscn', 'xiyou_save_page.tscn'])
+        self.assertEqual(s['scenes'], ['xiyou_difficulty_inherit_load.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_save_page.tscn'])
         self.assertFalse(s['full'])
         self.put(CORE / 'xstate.gd', body.replace('\treturn s\n', '\ts.gold += 1\n\treturn s\n'))
         s = self.pick()
@@ -280,10 +281,10 @@ class SelectTests(Fixture):
         self.put(PROJECT / 'modes/xiyou/alienation.json', '{"a": 1}\n')
         s = self.pick()
         self.assertEqual((s['full'], s['scenes'], s['checks']),
-                         (False, ['xiyou_alien_config.tscn', 'xiyou_event_compare.tscn'], ['guards']))
+                         (False, ['xiyou_alien_config.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'], ['guards']))
         self.g('checkout', '--', '.')
         self.put(PROJECT / 'modes/xiyou/recipes.json', '{"a": 1}\n')  # 测试只引用加载它的 XCrafting
-        self.assertEqual(self.pick()['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn'])
+        self.assertEqual(self.pick()['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
         self.g('checkout', '--', '.')
         self.put(PROJECT / 'modes/xiyou/lonely.json', '{"a": 1}\n')  # 只有 generated 下的脚本提到它：不算，整轮
         self.assertTrue(self.pick()['full'])
@@ -291,7 +292,7 @@ class SelectTests(Fixture):
         self.commit('noop') if self.g('status', '--porcelain') else None
         self.put(PROJECT / 'modes/xiyou/recipes.json', '{"b": 1}\n')
         self.commit('recipes')
-        self.assertEqual(self.pick(head=self.g('rev-parse', 'HEAD'))['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn'])
+        self.assertEqual(self.pick(head=self.g('rev-parse', 'HEAD'))['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
 
     def test_deleted_module_reads_class_name_from_base(self):
         (self.root / CORE / 'orbs.gd').unlink()
@@ -335,6 +336,30 @@ class SelectTests(Fixture):
         sections, merge_base = sel.load_options()
         self.assertTrue(sections['enabled'] and merge_base)
         self.assertEqual(sections['file'], str(TOOLS / 'xiyou_slice.json'))
+
+
+class EventCompareShardTests(unittest.TestCase):
+    """tools-compare-split：xiyou_event_compare 按用例序号取余分段，真实 tests/ 里的分段场景必须凑成完整一圈
+    （同一个 shards、shard 恰好 0..shards-1 各一份、基础场景是第 0 段），选测映射用 xiyou_event_compare*.tscn 一次选全。"""
+    def test_segments_form_complete_ring(self):
+        tests = HERE.parent / '01_Godot工程/tests'
+        scenes = sorted(tests.glob('xiyou_event_compare*.tscn'))
+        got = {}
+        for sc in scenes:
+            text = sc.read_text()
+            self.assertIn('res://tests/xiyou_event_compare.gd', text, sc.name)
+            n = re.search(r'^shards = (\d+)$', text, re.M)
+            k = re.search(r'^shard = (\d+)$', text, re.M)
+            got[sc.name] = (int(n.group(1)) if n else 1, int(k.group(1)) if k else 0)
+        self.assertEqual(got['xiyou_event_compare.tscn'][1], 0)
+        total = got['xiyou_event_compare.tscn'][0]
+        self.assertEqual({v[0] for v in got.values()}, {total}, got)
+        self.assertEqual(sorted(v[1] for v in got.values()), list(range(total)), got)
+
+    def test_selection_table_uses_glob_not_bare_scene(self):
+        text = (HERE / '选测对照.json').read_text()
+        self.assertNotIn('"xiyou_event_compare.tscn"', text)
+        self.assertIn('xiyou_event_compare*.tscn', text)
 
 
 class TroopProbeGroupTests(unittest.TestCase):
@@ -423,34 +448,34 @@ class SliceSectionTests(SliceFixture):
         self.edit(maps=[1, 2, 69], keepEvents={'1': '*', '69': '*'})
         s = self.pick()
         self.assertFalse(s['full'])
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_lobby_shops.tscn'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn', 'xiyou_lobby_shops.tscn'])
         self.assertEqual(s['checks'], ['content', 'guards', 'tools'])
         self.assertIn('keepEvents、maps', s['reasons'][0][1])
 
     def test_troops_only_runs_rules(self):
         self.edit(troops=[5, 6])
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn'] + RULES)
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'] + RULES)
         self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
 
     def test_maps_and_troops_take_the_union(self):
         self.edit(maps=[1, 2, 69], troops=[5, 6])
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'] + RULES)
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn'] + RULES)
         self.assertEqual(s['checks'], ['content', 'guards', 'same_source', 'tools'])
         self.assertEqual(len(s['reasons']), 2)
 
     def test_images_only_runs_ui(self):
         self.edit(extraImages=['system/a', 'system/b'])
         s = self.pick()
-        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_panels.tscn'])
         self.assertEqual(s['checks'], ['guards', 'tools'])
 
     def test_sv_folders_is_asset_key_not_converter(self):
         """tools37：extraSvFolders（导出时拷的 SV 战斗图文件夹）原来不在键表里，一改就退回整组 converter（rules 全部段）；现归图像组。"""
         self.edit(extraSvFolders=['UserSV_A'])
         s = self.pick()
-        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_panels.tscn'])
+        self.assertEqual(s['scenes'], ['ui_smoke.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_panels.tscn'])
         self.assertFalse(set(RULES) & set(s['scenes']))
 
     def test_bad_json_and_unknown_key_fall_back_to_converter(self):
@@ -484,7 +509,7 @@ class SliceSectionTests(SliceFixture):
         self.edit(maps=[1, 2, 69])
         self.commit('maps')
         s = self.pick(head=self.g('rev-parse', 'HEAD'))
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn'])
 
 
 class FloorNarrowTests(SliceFixture):
@@ -502,7 +527,7 @@ class FloorNarrowTests(SliceFixture):
 
     def test_added_map_picks_only_its_floor(self):
         self.edit(maps=[1, 2, 69])
-        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_reach069.tscn',
+        self.assertEqual(self.pick()['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_reach069.tscn',
                                                  'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
 
     def test_code_refs_and_keep_events_edit(self):
@@ -516,7 +541,7 @@ class FloorNarrowTests(SliceFixture):
     def test_map_without_floor_test_picks_no_specific_floor(self):
         self.edit(maps=[1, 2, 300])
         s = self.pick()
-        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
+        self.assertEqual(s['scenes'], ['xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_floor_a.tscn', 'xiyou_floor_run.tscn', 'xiyou_flow.tscn'])
         self.assertIn('按图号 300 收窄', s['reasons'][0][1])
 
     def test_removed_map_counts(self):
@@ -1095,9 +1120,9 @@ class ReuseTests(SampleTests):
     def test_untouched_scenes_reuse_lane_result(self):
         c = self.lane()
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# main moved\n')  # 合并后主线带来的改动波及 shop
-        want = ['xiyou_shop.tscn', 'xiyou_event_compare.tscn', 'xiyou_battle.tscn']
+        want = ['xiyou_shop.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_battle.tscn']
         keep, used, notes = reuse.plan(self.root, self.base, want, {c: ('本机', {'xiyou_shop.tscn', 'xiyou_battle.tscn'}, set())}, sel)
-        self.assertEqual(keep, ['xiyou_shop.tscn', 'xiyou_event_compare.tscn'])  # shop 被波及，event_compare 车道没测
+        self.assertEqual(keep, ['xiyou_shop.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])  # shop 被波及，event_compare 车道没测
         self.assertEqual(used, {'xiyou_battle.tscn': (c, '本机', 'xiyou_battle.tscn')})
         self.assertIn('沿用 %s（本机）1 个：xiyou_battle' % c[:9], reuse.summarize(used))
 
@@ -1542,7 +1567,7 @@ class CheckerTests(Fixture):
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_shop.tscn'])  # 选测按指纹沿用
         self.assertIn('guard_check.cjs', self.names(ran))
         self.assertNotIn('测试合并工具.py', self.names(ran))
 
@@ -1553,15 +1578,15 @@ class CheckerTests(Fixture):
         self.assertEqual(rc, 0, out)
         self.assertIn('沿用车道.py', self.names(ran))
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn'])
-        rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn xiyou_event_compare.tscn'})
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
+        rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn xiyou_event_compare.tscn xiyou_event_compare_b.tscn'})
         self.assertEqual(rc, 0, out)
         self.assertNotIn('并行测试.py', self.names(ran))                    # 全沿用：不导入、不跑
         self.assertIn('跳过导入与测试', out)
         rc, out, ran = self.check('--affected', self.base, env={'FAKE_REUSE_DROP': 'xiyou_shop.tscn', 'XIYOU_REUSE_LANE': '0'})
         self.assertNotIn('沿用车道.py', self.names(ran))
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_shop.tscn'])
         rc, out, ran = self.check('--oracle')                               # 全量不调
         self.assertNotIn('沿用车道.py', self.names(ran))
 
@@ -1572,7 +1597,7 @@ class CheckerTests(Fixture):
         self.assertEqual(rc, 0, out)
         self.assertIn('沿用车道结果判断失败', out)
         runner = next(l for l in ran if l.startswith('并行测试.py')).split()
-        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_shop.tscn'])
+        self.assertEqual(runner[3:], ['--reuse', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn', 'xiyou_shop.tscn'])
 
     def test_cloud_gets_reused_scenes_as_skip(self):
         self.env = dict(self.env, FAKE_REUSE_DROP='xiyou_shop.tscn')

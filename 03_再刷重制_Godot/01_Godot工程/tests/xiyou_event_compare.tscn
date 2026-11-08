@@ -4,3 +4,4 @@
 
 [node name="XiyouEventCompare" type="Node"]
 script = ExtResource("1")
+shards = 4
