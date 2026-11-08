@@ -8,9 +8,9 @@
 ## 2026-11-08 【cc·哪吒·未经审查】新树补跑事件状态探针不再退成整份重量（dev.待定）
 
 - 起因：floor9 新树第一轮补跑因没带上次的结果与摘要，退成整份重量约 40 分钟；interp5／interp6／seg-a3 又三次因车道改了探针，`--补齐` 收尾自动补跑整份。
-- ① `incremental_sync.carry_cache` 多带 `event_states.json`、`event_states.keys.json`（连同已有的 `event_state_keys.json`）：新树补跑走增量。已有的不覆盖，账认得才用。
+- ① `新建工作树.sh` 在补跑前把主工作区 `.sandbox/event_states.json`、`event_states.keys.json` APFS 克隆进新树（已有的不覆盖；账认得才用，旧结果不会冒充新的）。没放进 `incremental_sync.carry_cache`：该文件在 TOOLING 里，改它会让所有分片探针（slice／smart_ai／event）下次同步整体重跑。
 - ② `补跑事件状态探针.py`：`event_state_probe.cjs` 或 `event_state_shards.py` 相对 main 有差异时，只打印「整份重量约数小时、先约总装」并跳过（退出 0，不算失败）；带 `--confirm-full`（或 `XIYOU_CONFIRM_FULL=1`）才跑。`XIYOU_PROBE_CHANGE_GUARD=0` 回到旧行为。`--补齐` 与 `检查.sh` 的自动调用因此不再误触整份重量。
-- 测试：`测试增量同步.py` 加 carry 用例；`测试事件探针分段.py` 加守卫用例（5 种组合）；工具回归全过，语法检查过。
+- 测试：`测试事件探针分段.py` 加脚本顺序用例（carry→克隆→补跑，不覆盖已有）；`测试事件探针分段.py` 加守卫用例（5 种组合）；工具回归全过，语法检查过。
 
 ## 交接板
 
@@ -24,7 +24,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 已做：见上 ①②，回退开关 `XIYOU_PROBE_CHANGE_GUARD=0`；carry 多带的两个文件只是多拷（APFS 克隆，不占空间）。
+- 已做：见上 ①②，回退开关 `XIYOU_PROBE_CHANGE_GUARD=0`；多克隆的两个文件走 APFS 克隆，不占空间；删掉 `新建工作树.sh` 里那个 for 循环即回退。
 - 建议：第二期，见下。
 
 ## 第二期计划（先报，未动手）
@@ -37,4 +37,4 @@
 
 ## 本分支提交
 
-- 5546a2939 WIP: 补跑探针 carry 带 event_states、探针改动要 --confirm-full
+- 5546a2939 WIP（含已撤回的 carry_cache 改动）；本次提交把 ① 改放到 新建工作树.sh

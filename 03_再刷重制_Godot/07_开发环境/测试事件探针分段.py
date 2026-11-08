@@ -84,6 +84,14 @@ class StateShardMergeTests(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
         return mod
 
+    def test_worktree_script_seeds_event_states(self):
+        """GC：新建工作树.sh 在补跑前把主工作区 .sandbox 的 event_states*.json 克隆过来，且不覆盖已有的。"""
+        text = (Path(__file__).resolve().parent / '新建工作树.sh').read_text()
+        seed = text.index('for n in event_states.json event_states.keys.json')
+        self.assertLess(text.index('--carry-cache'), seed)
+        self.assertLess(seed, text.index('补跑事件状态探针.py'))
+        self.assertIn('[[ -e $tools/mv_oracle/.sandbox/$n ||', text[seed:seed + 300])
+
     def test_changed_probe_needs_confirm_full(self):
         """GC：探针相对 main 改过时补跑只提示、不跑；--confirm-full 才跑；关守卫退回旧行为。"""
         import contextlib, io, sys

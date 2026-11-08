@@ -984,20 +984,6 @@ class ShardTests(unittest.TestCase):
         self.assertEqual(ran, '["4"]')
         self.assertEqual(merged, self.full_bytes([1, 2, 3, 4]))
 
-    def test_carry_includes_event_states_result_and_keys(self):
-        """GC：新树补跑靠上次结果与摘要走增量，carry 要带过来（floor9 缺它整份重量 40 分钟）；已有的不覆盖。"""
-        main_dir = Path(self.tmp.name) / 'main-sandbox2'
-        main_dir.mkdir()
-        (main_dir / 'event_states.json').write_text('{"a":1}')
-        (main_dir / 'event_states.keys.json').write_text('{"k":1}')
-        target = self.oracle / '.sandbox'
-        got = incremental_sync.carry_cache(main_dir, target)
-        self.assertIn('event_states.json', got)
-        self.assertIn('event_states.keys.json', got)
-        (main_dir / 'event_states.json').write_text('{"a":2}')
-        self.assertNotIn('event_states.json', incremental_sync.carry_cache(main_dir, target))
-        self.assertEqual((target / 'event_states.json').read_text(), '{"a":1}')
-
     def test_carried_ledger_is_used_and_carry_refreshes_it(self):
         self.sync([1, 2, 3], force=True)
         main_cache = self.cache_file()
