@@ -43,5 +43,5 @@
 ## 本分支提交
 
 - 9c2d94d1 合并 cc/wukong-floor4
-- 地图盘点工具、234～239 整图放、天之上入口 O-待定、xiyou_map_audit（WIP 提交 e9e6af03、6fcd5d1f）
+- 地图盘点工具、234～239 整图放、天之上入口 O-待定·天之上入口、xiyou_map_audit（WIP 提交 e9e6af03、6fcd5d1f）
 - 5969aaf3 xiyou_floor_reach041 空图例改测回退支
