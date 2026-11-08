@@ -1,7 +1,7 @@
 # 交付：cc/objective-mayer-333ac4
 
 - 车道／工作者：界面·开场声明屏／cc（项目线程）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -30,8 +30,9 @@
 ## 验证
 
 - `语法检查.py` 通过。
-- 选测（`选测.py main --list` 全部 10 个）：ui_smoke、xiyou_entry_release、xiyou_event_compare、xiyou_flow、xiyou_input_handled、xiyou_key_smoke、xiyou_platform、xiyou_reincarnation_entry、xiyou_save_page、xiyou_splash_autosave：（待写）
-- 工具回归：（待写）
+- 选测（`选测.py main --list` 全部 10 个）：ui_smoke、xiyou_entry_release、xiyou_event_compare、xiyou_flow、xiyou_input_handled、xiyou_key_smoke、xiyou_platform、xiyou_reincarnation_entry、xiyou_save_page、xiyou_splash_autosave：本机排不到测试槽，改走云端选测（基准 ee9ae46e，85 场景 8 片）全过，提交 2828f78380，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42489202429；xiyou_splash_autosave 本机单跑 54/54。
+- 回退开关覆盖：WARNING_SCREEN 回退值有测试覆盖。
+- 工具回归：全部通过（77 秒）。
 
 ## 待交叉核查
 
@@ -40,3 +41,5 @@
 ## 本分支提交
 
 - db35283f7 WIP: 开场声明屏取代三张开场图
+- 2b542eb30 去掉锚点后设 size 的警告；交付单草稿
+- 2828f7838 交付单记文案定稿
