@@ -66,7 +66,9 @@ func _map(m: int, landings: Array, exits: Dictionary, known: Dictionary) -> void
 	if not _check("m%d_loaded" % m, _map_ready(m), _scene().get("map_id")):
 		return
 	var map: XMapScene = _scene()
-	var ex: Dictionary = exits.get(str(m), {"walk": [], "auto": []})
+	var raw: Dictionary = exits.get(str(m), {"walk": [], "auto": []})
+	# JSON 数字读进来是浮点：转成整数再和事件号比
+	var ex := {"walk": Array(raw.walk).map(func(v): return int(v)), "auto": Array(raw.auto).map(func(v): return int(v))}
 	for l in landings:
 		var at := _fixed_landing(m, Vector2i(int(l.xy[0]), int(l.xy[1])), l.from)
 		var tag := "m%d_%d_%d" % [m, at.x, at.y]
