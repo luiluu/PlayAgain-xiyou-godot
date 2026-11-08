@@ -63,11 +63,14 @@ def trace_var(lst, j, p):
     if not vs or len(vs) != 1:
         return p
     vid, val = int(next(iter(vs))), next(iter(vs.values()))
+    anc_j = set(chain(lst, j, None)) | {j}
     for k in range(j - 1, -1, -1):
         c = lst[k]
         if int(c['code']) != 122:
             continue
         q = c['parameters']
+        if int(q[0]) <= vid <= int(q[1]) and int(q[2]) != 0 and not set(chain(lst, k, None)) <= anc_j:
+            continue   # 旁支里的加减（不一定执行，如 ce1431 开关 2282 下的 1200 += 1173）跳过，接着往前找真正的赋值（cc 分段甲 a2）
         if int(q[0]) <= vid <= int(q[1]):
             if int(q[2]) == 0 and int(q[3]) == 3:
                 t = int(q[4])
@@ -76,6 +79,8 @@ def trace_var(lst, j, p):
                     return {key: {str(q[5]): int(val)}}
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
+                if t == 3 and int(q[6]) == 0 and int(val) >= 1:   # 角色等级（cc 分段甲：m4e49 炭治郎学技能先把 1500 设成 93 号的等级）
+                    return {'actors': {str(q[5]): {'level': min(int(val), 99)}}}
                 if t == 7 and int(q[5]) == 4 and int(val) >= 0:
                     return {'playtime': int(val)}
             if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:
@@ -102,10 +107,41 @@ def trace_var(lst, j, p):
     return p
 
 
+def segments(lst, i, depth=0):
+    """i 的祖先链按标签跳转分段，从外到里：i 在顶层标签段里时，先是跳进来的 119 的链（递归），再是段里的链（八戒 interp5）。"""
+    outer = []
+    x = cov.label_jump(lst, i) if depth < 4 else None
+    if x is not None:
+        outer = segments(lst, x, depth + 1)
+    return outer + [chain(lst, i, None)]
+
+
 def synth(lst, first, loc):
-    """cluster 第一个实例 first 的祖先链合成预设；返回 (预设, 没法开的门数)。"""
+    """cluster 第一个实例 first 的祖先链合成预设；返回 (预设, 没法开的门数)。
+    跨标签跳转时（interp5）各段的选项应答按段先后接起来：外段选到 119 的应答在前，段里选单的应答在后。"""
     pre, bad = {}, 0
-    for j in chain(lst, first, loc):
+    answers = []
+    first402 = None
+    for heads in segments(lst, first):
+        seg = []
+        if first402 is None:
+            first402 = next((j for j in heads if int(lst[j]['code']) == 402), None)
+            if first402 is not None:
+                answers += answer_prefix(lst, first402, loc)   # 同页前面先问过的选单（cc 分段甲）
+        for j in heads:
+            if int(lst[j]['code']) == 402:
+                seg = cov.choice_path(lst, j)
+        answers += seg
+        bad += _merge_chain(pre, lst, heads, loc)
+    pre.pop('answers', None)
+    if answers:
+        pre['answers'] = answers
+    return _finish(pre, bad)
+
+
+def _merge_chain(pre, lst, heads, loc):
+    bad = 0
+    for j in heads:
         code = int(lst[j]['code'])
         if code in (111, 411, 402, 602, 603):   # 602／603 战斗结果门：battleResult（八戒 interp4）
             p = cov.open_preset(lst, j, loc)
@@ -117,6 +153,10 @@ def synth(lst, first, loc):
                 bad += 1   # 两道随机门要同一个位置抽不同的数
             else:
                 merge_into(pre, p)
+    return bad
+
+
+def _finish(pre, bad):
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
     # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
     if '_rand' in pre:   # 位置→随机数，排成序列，空位填 0.5
@@ -125,6 +165,36 @@ def synth(lst, first, loc):
     if 'difficulty' not in pre and any(i in super_ids() for i in pre.get('party', [])):
         pre['difficulty'] = 9
     return pre, bad
+
+
+_TRACES = None
+
+
+def answer_prefix(lst, j, loc):
+    """选项错位（cc 分段甲）：门链最外那个 402（下标 j）所属的 102 之前，同页还先问过别的选项时，
+    cov.choice_path 只给了本选单起的项号，应答会被前面的选单先吃掉（m1e1 难度选单前还有存档位、版本、确认三问）。
+    在参照基础用例的文字轨迹（generated/oracle/events.json）里找第一处选项文字和这个 102 相同的，
+    把它之前各处的 pick 依次补在前面。基础用例没走到这个选单就不补（照旧）。"""
+    global _TRACES
+    if _TRACES is None:
+        _TRACES = scan.base_traces()
+    ind = int(lst[j].get('indent', 0))
+    k = j - 1
+    while k >= 0 and not (int(lst[k]['code']) == 102 and int(lst[k].get('indent', 0)) == ind):
+        k -= 1
+    if k < 0:
+        return []
+    want = list(lst[k]['parameters'][0])
+    picks = []
+    for t in _TRACES.get(loc) or []:
+        ch = t.get('choices')
+        if ch is None:
+            continue
+        ch = list(ch)
+        if any(ch[i:i + len(want)] == want for i in range(len(ch) - len(want) + 1)):   # 相邻两个 102 被参照并成一个选单
+            return picks
+        picks.append(int(t.get('pick', 0)))
+    return []
 
 
 _SUPER = None
