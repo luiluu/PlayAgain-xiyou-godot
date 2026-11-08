@@ -64,11 +64,37 @@ def run_probe(env):
     return r
 
 
+# 11-08（GC 派单）：探针本身相对 main 改过时，增量的键全部作废，等于整份重量（本机数小时、占满槽）。
+# interp5／interp6／seg-a3 三次踩坑：车道改了探针或其分段代码，--补齐收尾自动补跑，一跑就是整份。
+# 现在这种情况只提示，要 --confirm-full（或 XIYOU_CONFIRM_FULL=1）才跑；XIYOU_PROBE_CHANGE_GUARD=0 回到旧行为（不查）。
+PROBE_FILES = ('03_转换工具/mv_oracle/event_state_probe.cjs', '03_转换工具/event_state_shards.py')
+
+
+def changed_probe_files(base='main'):
+    """探针相关文件相对 base 有差异（含工作区未提交）的相对路径；不在 git 里、没有 base 分支就当没改。"""
+    root = ENV.parent
+    try:
+        r = subprocess.run(['git', '-C', str(root), 'diff', '--name-only', base, '--'] + list(PROBE_FILES),
+                           capture_output=True, text=True, check=True)
+    except (subprocess.CalledProcessError, OSError):
+        return []
+    return [l for l in r.stdout.splitlines() if l.strip()]
+
+
 def main():
-    force = '--force' in sys.argv[1:]
+    args = sys.argv[1:]
+    force = '--force' in args
     if not needs(force):
         print('事件状态探针产物在，不用补跑')
         return 0
+    if os.environ.get('XIYOU_PROBE_CHANGE_GUARD', '1') != '0' and not force \
+            and '--confirm-full' not in args and os.environ.get('XIYOU_CONFIRM_FULL') != '1':
+        changed = changed_probe_files()
+        if changed:
+            print('⚠ 事件状态探针相对 main 改过（' + '、'.join(changed) + '）：增量的键全部作废，补跑等于整份重量，'
+                  '本机约数小时、占满测试槽。先约总装（整份重量要错开夜里），确认后再带 --confirm-full 跑；'
+                  '只想要产物在，先从主工作区拷 .sandbox/event_states*.json。本次跳过（不算失败）。', flush=True)
+            return 0
     if not (ORACLE / 'node_modules').exists() or not (GEN / 'maps').exists():
         print('⚠ 没有参照引擎依赖或转换产物，跳过补跑 event_states.json（事件对照与空绿扫描会照实报缺）')
         return 0
