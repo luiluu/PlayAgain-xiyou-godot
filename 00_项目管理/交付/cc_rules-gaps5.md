@@ -1,7 +1,7 @@
 # 交付：cc/rules-gaps5
 
 - 车道／工作者：FC5 战斗规则没对照的部分（第二批：敌群页内变量分支、敌人 1 血线页）／cc（FC5）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -17,7 +17,7 @@
 - `xiyou_troop_events.gd`：OracleHalfStream／EventHalfStream 加 event_r，t1 例按参照的 eventRandom 取事件随机；_transform_case 支持 hpEnemy（预置并比较那名敌人，玩家照旧打敌人 0）和 vars；_t1_end_states 可以指定敌人。
 - 结果：原版 936 例全部无错。敌群页覆盖（只看原版）没执行到的从 756 降到 178 条（门型：页内开关 58、敌群没进探针 44、页内变量 39、回合页 25、411 否则 12）。
 - 验证：见下「验证」。
-- 提交：776a0336、ff7f0544
+- 提交：776a0336、ff7f0544（交付单另见本分支提交）
 
 ## 优化登记草稿
 
@@ -27,7 +27,9 @@
 
 - 原版探针本机整轮（XIYOU_COVER=1）：920 例，errors 0；后加的 16 个变量门例单独补跑覆盖，也无错。
 - 语法检查.py 通过。
-- 云端选测：待跑
+- 云端选测：72 个场景全过（run 42443500038，提交 fa5c22e8，含 xiyou_troop_events 四份与 half；工具回归.py 全过）。
+- 同步：本树跑过 同步正式西游.py --accept-additions --no-import，troop_events.json 只有新增（936 例），已写待接受指纹；总装合并时照例要给 troop_events.json 写接受单（同 cc_rules-gaps4.json）。
+- 交付前合了 main ef489a59（周额度到 96%，按协调者交代合完不再重跑）。
 
 ## 交接板
 
