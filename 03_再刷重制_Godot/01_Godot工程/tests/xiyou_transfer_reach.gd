@@ -142,6 +142,12 @@ func _run() -> void:
 			mine += 1
 			await _map(int(ids[i]), by_map[ids[i]], data.exits, known)
 	_check("part%d_has_maps" % part, mine > 0)
+	# 收掉最后一张图（进图自动事件的解释器还挂着会在退出时报资源没释放）
+	var last := _scene()
+	if last != null:
+		last.queue_free()
+	for i in 5:
+		await get_tree().process_frame
 	print("失败：", JSON.stringify(fails))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

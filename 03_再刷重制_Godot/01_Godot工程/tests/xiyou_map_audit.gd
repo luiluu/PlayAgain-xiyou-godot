@@ -3,10 +3,13 @@ extends Node
 ## - 一护剧情副本 Map234～239 切片收了图却没写 keepEvents，图上一个事件都不生成：现在整图放，断言生成的事件数与原版一致。
 ## - O-待定·天之上入口（MVEvent.page_switch_ignore）：Map069 EV47 毒蛇沼泽入口在开关 21 开着时，原版选第 2 页传到 Map102 (29,22)
 ##   （图只有 29×18，人落在图外）；修后照第 1 页进 Map087 (13,28)。回退支 page_switch_ignore = {} 时断言选回第 2 页。
+## - O-待定·麒麟殿地面（MVTilemap.open_autotile_fix，floor6）：Map236 落点 (8,14) 四周是不可通行的深水自动图块，人动不了；
+##   修后从落点走得到殿顶 Boss EV1 (8,4)。回退支 open_autotile_fix = {} 时断言只剩落点一格。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const CASE_MS := 30000
 const WaitBudget := preload("res://tests/wait_budget.gd")
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
+const REACH := preload("res://tests/xiyou_reach_check.gd")
 
 var results: Array = []
 var fails: Array = []
@@ -102,6 +105,21 @@ func _sky_gate(fixed: bool) -> void:
 
 
 var _saved_ignore: Dictionary
+var _saved_autotile: Dictionary
+
+
+func _qilin(fixed: bool) -> void:
+	var tag := "qilin_" + ("fixed" if fixed else "orig")
+	if not fixed:
+		MVTilemap.open_autotile_fix = {}
+	_open(236, 8, 14)
+	if _check(tag + "_loaded", await _load(236)):
+		var cells := REACH.reachable(_scene(), Vector2i(8, 14))
+		if fixed:
+			_check(tag + "_boss_reachable", cells.has(Vector2i(8, 4)), cells.size())
+		else:
+			_check(tag + "_stuck", cells.size() == 1, cells.size())
+	MVTilemap.open_autotile_fix = _saved_autotile
 
 
 func _run() -> void:
@@ -110,9 +128,12 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	_saved_ignore = MVEvent.page_switch_ignore
+	_saved_autotile = MVTilemap.open_autotile_fix
 	await _ichigo_maps()
 	await _sky_gate(true)
 	await _sky_gate(false)
+	await _qilin(true)
+	await _qilin(false)
 	print("失败：", JSON.stringify(fails))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
