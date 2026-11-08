@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",456],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "2c3f56618c1246aa",
+      "newDigest": "ffd6675f463143ec",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",457],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "0d450f564a1c67ed",
+      "newDigest": "c1b44089e95bc191",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",458],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "5b8f8e8b77807883",
+      "newDigest": "f9bbb3972bfe6836",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",417],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "629d67c9de620bf4",
+      "newDigest": "78f64eb3b83e7297",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",418],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "986323dba0d55d65",
+      "newDigest": "5854abaaaee6df13",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",661],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b9bbe5999c27485e",
+      "newDigest": "6ed01b39db995229",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",755],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "a9c669a74aa8684c",
+      "newDigest": "7743c6c978ed2acc",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",756],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "6dd92a9b8326305c",
+      "newDigest": "74a4abdfc837dc31",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",757],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "314546ce634d5cb7",
+      "newDigest": "25fb6fddd5caf584",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",765],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "667b267159a60ad7",
+      "newDigest": "4d673a1fccb36d50",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",795],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "22ff1960f9e438e6",
+      "newDigest": "cf67eb01b2d12d65",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",805],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "3254f35dfd9d258e",
+      "newDigest": "d94dbc71da31e6ed",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",806],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "623a4907c9b5c264",
+      "newDigest": "23b7b0a4318bf23e",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",807],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "8706f21bf166c0d9",
+      "newDigest": "6ab43a21daa655d5",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",814],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "58292f5c19ac30bd",
+      "newDigest": "53d5fb8cf286aec4",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",791],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "563cdcff159d3980",
+      "newDigest": "003e088e9e2b66b5",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",792],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b78ba18b6b8063c7",
+      "newDigest": "d7f3dcbb8a5cd821",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",793],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "da13301a4fa1d5fc",
+      "newDigest": "c923cd2ce46efa6b",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",796],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "370baff55926a5ac",
+      "newDigest": "9d42a8112ddf4469",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",797],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "b25d402da06a358f",
+      "newDigest": "498d220a233f8c45",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    },
+    {
+      "file": "troop_events.json",
+      "collection": "cases",
+      "key": "[[\"troop\",270],[\"paid\",false]]",
+      "fields": [
+        "*"
+      ],
+      "oldDigest": "0639c51fedb962f6",
+      "newDigest": "aa9b95866b45bccd",
+      "reason": "rules-gaps4：给 21 个 Boss 敌群各加一例 0 血线页（HP_GAPS4），同键多一条是新增例，原例不变"
+    }
+  ]
+}

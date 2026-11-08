@@ -99,13 +99,28 @@ static func merchant29_present() -> bool:
 	return MERCHANT29_FIX and XAbyssMerchant.has_merchant(XState.current)
 
 
+## O-240（悟空 floor5 地图盘点）：天之上 Map069 六个副本入口（毒蛇沼泽、猛虎岭、洛水河畔、猴山、鹿吴山、火焰之河）
+## 第 2 页条件是开关 21「海岸洞窟 捕猎者」，开着时传到 Map102 旅馆 (29,22)；旅馆只有 29×18、没有事件，人落在图外动不了。
+## 开关 21 在四层海岸洞窟进副本、打完、逃离、重置时都会打开，之后没有地方关（Map008 EV2 只在洞窟里），做过海岸洞窟的玩家全会撞上。
+## 重制让这几处页条件里的开关 21 不算数，照第 1 页进副本。键「地图:事件」→ 不算数的开关号；设为空字典 {} 恢复原版。
+static var page_switch_ignore := {"69:47": [21], "69:52": [21], "69:53": [21], "69:55": [21], "69:56": [21], "69:70": [21]}
+
+
+func _switch_on(s: XState, id: int) -> bool:
+	if not page_switch_ignore.is_empty():
+		var ign = page_switch_ignore.get("%d:%d" % [map_id, event_id])
+		if ign is Array and ign.has(id):
+			return false
+	return s.switch(id)
+
+
 func _meets(c: Dictionary) -> bool:
 	var s := XState.current
 	if s == null:
 		return false
-	if c.switch1Valid and not s.switch(int(c.switch1Id)):
+	if c.switch1Valid and not _switch_on(s, int(c.switch1Id)):
 		return false
-	if c.switch2Valid and not s.switch(int(c.switch2Id)):
+	if c.switch2Valid and not _switch_on(s, int(c.switch2Id)):
 		return false
 	if c.variableValid and s.variable(int(c.variableId)) < float(c.variableValue):
 		return false
