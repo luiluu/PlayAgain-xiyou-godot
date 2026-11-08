@@ -7,7 +7,7 @@ extends Node2D
 ##   开战时取敌群里「最后一个」是 Boss 且未隐藏的敌人建条；开战时没有就整场不建。
 ## - 条跟着「最后被命中的 Boss」走（Game_Action.apply 记 $gameTemp._battler_bhp_temp）：换目标时红条与数字从该次命中前的血量起算。
 ## - 每帧（Sprite_BossHP.update）：条纹流动（每帧 4px，蓝红共用一个周期 3 段）；受伤震动头像（整个条 y 在 −3…+2 随机，共 80 帧）；
-##   红条（下半，拖尾）每帧下降 1+差/160；数字每帧追 1+⌊差/30⌋；蓝条（上半）即时。
+##   红条（下半，拖尾）每帧下降 1+差/160；数字每帧追 1+⌊差/30⌋；蓝条（上半）即时。大差值的两处都封顶（O-188、O-待定，见 red_step／number_step）。
 ##   淡出：对话忙、战斗结束（胜利／逃跑／失败）、Boss 死亡时不透明度每帧 −5，否则 +5；首帧直接满。
 ## - 数字：≥1 万加单位（万／亿／兆／京），＜100 取 2 位小数、＜1000 取 1 位、其余取整，去掉末尾 0；字符间距 20（图格 30 宽，叠着画，同原版）。
 ## - 状态图标：原版被 Codex_BossStatusSummary 藏起（换成下方状态面板），所以这里不画。
@@ -284,7 +284,7 @@ func step() -> void:
 		else:
 			hp_red = minf(hp_red + d, hp)
 	if hp_number != hp:
-		var n := 1.0 + floorf(absf(hp_number - hp) / 30.0)
+		var n := number_step(hp)
 		if hp_number < hp:
 			hp_number = minf(hp_number + n, hp)
 		else:
@@ -333,11 +333,36 @@ func red_step(hp: float) -> float:
 	return maxf(d, cap)
 
 
+## 优化 O-待定（ui5）：原版数字每帧追 1+⌊差/30⌋，也是越大越慢（差 1 万 188 帧、千万 392 帧约 6.5 秒、十亿 528 帧；
+## 开战从 0 爬到满也是），红条已封顶（O-188）后数字反倒比红条慢得多。开着时同红条的做法：每次目标血量变了重新计
+## NUMBER_CAP_FRAMES 帧，每帧至少走 ⌈剩余差 ÷ 剩余帧⌉（取整，数字不出小数），最迟约 0.75 秒到位、先于红条；
+## 前面几帧仍是原版步长，只截掉尾巴；差 < 65 原版本来 45 帧内就到，跟原版一样。
+## NUMBER_CAP = false 回到原版。
+static var NUMBER_CAP := true
+const NUMBER_CAP_FRAMES := 45
+var _num_target := INF
+var _num_left := 0
+
+
+func number_step(hp: float) -> float:
+	var diff := absf(hp_number - hp)
+	var n := 1.0 + floorf(diff / 30.0)
+	if not NUMBER_CAP:
+		return n
+	if hp != _num_target:
+		_num_target = hp
+		_num_left = NUMBER_CAP_FRAMES
+	var cap := ceilf(diff / maxf(1.0, float(_num_left)))
+	_num_left = maxi(1, _num_left - 1)
+	return maxf(n, cap)
+
+
 ## refresh_all：条换到另一个 Boss
 func _refresh_all() -> void:
 	battler = _temp_target
 	hp_red = _temp_hp
 	hp_number = _temp_hp
+	_num_target = INF
 	_refresh_number()
 	_name_text = _enemy_name(battler)
 	_shown_id = int(battler.enemy_id)
