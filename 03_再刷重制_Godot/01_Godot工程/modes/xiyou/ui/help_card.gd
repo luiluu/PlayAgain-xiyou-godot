@@ -140,7 +140,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
 		if elements:
 			rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
-		if power and (type == 1 or type == 2) and XPower.enabled():
+		if power and (type == 1 or type == 2) and XPower.ui_enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:

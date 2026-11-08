@@ -73,7 +73,7 @@ static func star_name(item: Dictionary) -> String:
 ## 列表行的摘要（cq-row small）
 static func row_small(r: Dictionary) -> String:
 	var rec := XGearQuery.record(r.item)
-	var power := " · 战力 " + XPower.format(float(XPower.equipment(r.item).get("total", 0.0))) if XPower.enabled() else ""
+	var power := " · 战力 " + XPower.format(float(XPower.equipment(r.item).get("total", 0.0))) if XPower.ui_enabled() else ""
 	return "%s%s · %d条 · %s · %s" % [grade_text(rec.quality), power, rec.rows.size(),
 		"已装备：" + str(r.owner) if str(r.owner) != "" else "背包", " / ".join(rec.categories)]
 
@@ -83,7 +83,7 @@ static func detail_blocks(r: Dictionary) -> Array:
 	var item: Dictionary = r.item
 	var out := [{"tag": "h2", "text": star_name(item)},
 		{"tag": "meta", "text": grade_text(XGearQuery.quality(item)) + " · " + ("已装备：" + str(r.owner) if str(r.owner) != "" else "背包")}]
-	if XPower.enabled():
+	if XPower.ui_enabled():
 		var score := XPower.equipment(item)
 		out.append({"tag": "power", "text": "装备战力 " + XPower.format(float(score.get("total", 0.0)))})
 		var parts: Array = score.get("parts", [0, 0, 0])
@@ -204,6 +204,8 @@ static func _has_number_term(src: Array, key: String) -> bool:
 static func sort_options(src: Array, f: Dictionary) -> Array:
 	var out := []
 	for k in ["original", "power", "quality", "count", "name"]:
+		if k == "power" and not XPower.ui_enabled():  # 战力先藏：排序里没有「战力高 → 低」
+			continue
 		out.append([k, XGearQuery.SORT_NAMES[k]])
 	for i in range(8):
 		out.append(["param%d" % i, XGearQuery.PARAMS[i] + "数值高 → 低"])
