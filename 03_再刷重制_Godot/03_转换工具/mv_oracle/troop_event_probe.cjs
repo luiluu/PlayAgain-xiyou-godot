@@ -66,6 +66,11 @@ const HP_GAPS4 = [[270, 0.2], [417, 0.5], [418, 0.5], [456, 0.2], [457, 0.2], [4
   [765, 0.25], [791, 0.2], [792, 0.2], [793, 0.2], [795, 0.2], [796, 0.2], [797, 0.2], [805, 0.2], [806, 0.2], [807, 0.2], [814, 0.25]];
 // rules-gaps5：敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）：[敌群, hpRate]，hpEnemy＝1 预置敌人 1 的 HP（玩家照旧打敌人 0）
 const HP_ENEMY1 = [[805, 0.35], [806, 0.35], [807, 0.35], [814, 0.4]];
+// rules-gaps5：血线页里「111 变量 853／1567 == 1」才走的对话＋强制（敌群页覆盖.py 里最多的页内变量门）：[敌群, hpRate, hpEnemy, 变量]，
+// 开战前把该变量设 1（vars 字段），其余同血线例
+const HP_VARS = [[456, 0.2, 0, 853], [457, 0.2, 0, 853], [458, 0.2, 0, 853], [755, 0.2, 0, 853], [756, 0.2, 0, 853], [757, 0.2, 0, 853],
+  [805, 0.2, 0, 853], [806, 0.2, 0, 853], [807, 0.2, 0, 853], [805, 0.35, 1, 853], [806, 0.35, 1, 853], [807, 0.35, 1, 853],
+  [2015, 0.2, 0, 1567], [2016, 0.2, 0, 1567], [2026, 0.2, 0, 1567], [2017, 0.1, 0, 1567]];
 const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
 const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
   599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
@@ -141,11 +146,15 @@ if (COVER) {
 // 记录 messages（每条的回合与文字）与回合结束时各敌人的 enemyId（三十层敌群 466：HP≤25% 第 3 页 101 对话、336 变身 538、1399、强制 6070／6105）。
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
 // hpEnemy：hpRate 预置的敌人序号（默认 0 不写字段）。
-function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0) {
+// vars：开战前另设的变量（{变量号: 值}，默认不写字段）。
+function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0, vars = null) {
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
+  // rules-gaps5：上一例的敌我精灵代理不再用到；不清的话 Map 一直攥着历届 Game_Battler，900 多例后默认堆 OOM（XIYOU_COVER 时更快）
+  sprites.clear();
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
+  if (vars) for (const k of Object.keys(vars)) w.$gameVariables.setValue(Number(k), vars[k]);
   for (const id of PARTY) {
     const a = w.$gameActors.actor(id);
     [6168, 5980, 5548].concat([1, 2, 3, 4, 5, 6, 7, 52].includes(id) ? [2571, 2786] : []).forEach(k => a.learnSkill(k));
@@ -158,6 +167,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   BM._logWindow = stub; BM._spriteset = stub; BM._statusWindow = stub;
   w.Math.random = () => 0.5;
   const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
+  if (vars) out.vars = vars;
   if (target !== 0) out.target = target;   // 玩家普通攻击的敌人序号（默认 0 不写字段，旧例逐字节不变）
   // turnPreset：开战前把回合计数设为这个值（金之巨人 830 第 20 回合强制 8203：从头打到 20 回合队伍早已倒下），跑到该回合结束；
   // 开战检查与第 N 回合的消息一并记录
@@ -260,6 +270,8 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat(HP_GAPS4.map(([id, rate]) => run(id, false, null, 0, rate)))
     // rules-gaps5：敌人 1 的血线页（variant hpE1 单独成键）
     .concat(HP_ENEMY1.map(([id, rate]) => Object.assign(run(id, false, null, 0, rate, null, 0, 1), {variant: 'hpE1'})))
+    // rules-gaps5：血线页的变量门（variant hpVar 单独成键；同敌群多例再带 hpEnemy 区分，见 oracle_additions）
+    .concat(HP_VARS.map(([id, rate, ei, v]) => Object.assign(run(id, false, null, 0, rate, null, 0, ei, {[v]: 1}), {variant: ei ? 'hpVarE' + ei : 'hpVar'})))
     // rules-gaps5：t1 例的变量 844 其余各支（见 EVENT_R）
     .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');

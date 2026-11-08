@@ -293,6 +293,11 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	if hi != 0:
 		name = "troop%d.paid%s.hp%s.%s.r%d" % [int(c.troop), str(c.get("paid", false)), str(c.hpRate), ek, round]
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 2000 + round)
+	# rules-gaps5：参照 vars（血线页里「变量 853／1567 == 1」才走的分支）开战前同样设上
+	for v in c.get("vars", {}):
+		logic.state.set_variable(int(v), int(c.vars[v]))
+	if c.has("vars"):
+		name += ".v" + ",".join(c.vars.keys())
 	# flags：参照开战前标为已执行的敌群页（三十一至三十三层 HP≤10% 例预置第 3 页，见 troop_event_probe）
 	for i in c.get("flags", []):
 		logic._event_flags[int(i)] = true
