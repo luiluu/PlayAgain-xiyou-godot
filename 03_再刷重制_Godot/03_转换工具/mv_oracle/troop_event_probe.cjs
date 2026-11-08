@@ -82,6 +82,14 @@ const SW682 = [125, 126, 270, 467, 468, 469, 661, 791, 792, 793, 795, 796, 797, 
 // 先出手打倒 1 级开局队伍，第 2 页（敌人 1）这两支跑不到：回合预置 3（预置 2 的话第 3 回合开始时清掉「每回合」页的已执行标记），
 // 第 1 页预置成本回合已执行，单看第 2 页
 const PAGE2_844 = [798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814];
+// rules-gaps7：嘤嘤怪 1 的五页：第 2／3／5 页（回合 1、1+1·X）角色 4 在队且会技能 23（全队加状态 11；角色 4 本来就会，否则支是空的不用另跑）／会 509（随机变量 53＝1～3 时
+// 全队加 45，之后 214 暂时消除本页）、角色 29 会 575（角色 29、30 加 51），第 4 页（回合 5+1·X）角色 20 会 201（自己加 34）；不会走否则支。
+// [variant, 角色技能（负数＝忘掉）, eventRandom（null＝不换事件随机）, 回合预置]。回合预置 4／5 两例键靠 turnPreset 区分（oracle_additions），
+// eventRandom 例键靠 eventRandom 区分
+const YING_PARTY = [1, 4, 20, 29];
+const YING_CASES = [['party', {}, null, 0], ['party.k575', {29: [575]}, null, 0],
+  ['party.k509.r1', {4: [509]}, 0, 0], ['party.k509.r2', {4: [509]}, 0.01, 0], ['party.k509.r3', {4: [509]}, 0.02, 0],
+  ['party.t5.k201', {20: [201]}, null, 4], ['party.t6', {}, null, 5]];
 const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
 const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
   599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
@@ -122,6 +130,14 @@ w.BattleManager.processVictory = function () {
 // 别处照旧 0.5）。T1_TURN3 第 1 页「回合 3+3·X」按变量 844 随机四选一强制（2018 是二选一），旧 t1 例取 0.5 只走一支；
 // 这里给其余每支各跑一例（eventRandom＝k/n），从 $dataTroops 的 122 读取值域，不手写分支表。
 let EVENT_R = null;
+// rules-gaps7：换队伍（嘤嘤怪 1 的页按角色 4／20／29 在队、会不会技能 23／509／201／575 走分支：111 角色条件第 3 类是「技能」）。
+// PARTY_CASE 非空时开局队伍换成 PARTY_CASE.party，开战（BattleManager.setup）后按 PARTY_CASE.skills（{角色号: [技能…]}，负数＝忘掉）
+// 学会／忘掉技能；记 party／actorSkills 字段，旧例不写
+let PARTY_CASE = null;
+function runParty(pc, fn) {
+  PARTY_CASE = pc;
+  try { return fn(); } finally { PARTY_CASE = null; }
+}
 const c122 = w.Game_Interpreter.prototype.command122;
 w.Game_Interpreter.prototype.command122 = function (params) {
   if (EVENT_R === null || Number((params || this._params)[3]) !== 2) return c122.apply(this, arguments);
@@ -171,11 +187,12 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   // rules-gaps5：上一例的敌我精灵代理不再用到；不清的话 Map 一直攥着历届 Game_Battler，900 多例后默认堆 OOM（XIYOU_COVER 时更快）
   sprites.clear();
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
-  w.eval('$gameParty._actors=[];' + JSON.stringify(PARTY) + '.forEach(function(id){$gameParty.addActor(id);});');
+  const party = PARTY_CASE ? PARTY_CASE.party : PARTY;
+  w.eval('$gameParty._actors=[];' + JSON.stringify(party) + '.forEach(function(id){$gameParty.addActor(id);});');
   w.$gameVariables.setValue(842, paid ? 1 : 0);
   if (vars) for (const k of Object.keys(vars)) w.$gameVariables.setValue(Number(k), vars[k]);
   if (switches) for (const k of switches) w.$gameSwitches.setValue(k, true);
-  for (const id of PARTY) {
+  for (const id of party) {
     const a = w.$gameActors.actor(id);
     [6168, 5980, 5548].concat([1, 2, 3, 4, 5, 6, 7, 52].includes(id) ? [2571, 2786] : []).forEach(k => a.learnSkill(k));
     a.refresh(); a.recoverAll();
@@ -186,9 +203,14 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   BM.setup(troopId, false, false);
   BM._logWindow = stub; BM._spriteset = stub; BM._statusWindow = stub;
   w.Math.random = () => 0.5;
+  if (PARTY_CASE) for (const id of Object.keys(PARTY_CASE.skills || {})) for (const k of PARTY_CASE.skills[id]) {
+    const a = w.$gameActors.actor(Number(id));
+    if (k > 0) a.learnSkill(k); else a.forgetSkill(-k);
+  }
   const out = {troop: troopId, paid, actions: [], invokes: [], errors: [], battlers: {}};
   if (vars) out.vars = vars;
   if (switches) out.switches = switches;
+  if (PARTY_CASE) { out.party = party; out.actorSkills = PARTY_CASE.skills || {}; }
   if (target !== 0) out.target = target;   // 玩家普通攻击的敌人序号（默认 0 不写字段，旧例逐字节不变）
   // turnPreset：开战前把回合计数设为这个值（金之巨人 830 第 20 回合强制 8203：从头打到 20 回合队伍早已倒下），跑到该回合结束；
   // 开战检查与第 N 回合的消息一并记录
@@ -312,7 +334,10 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     // 木桩 826（Map004）：开局两回合、变量 4 随机的另一支（第 2 页 6063）、HP≤20% 第 3 页（变身 937）；被封印者普罗米修斯 392 开局两回合
     .concat([run(826), runEventRandom(826, 0), Object.assign(run(826, false, null, 0, 0.2), {variant: 'hp'}), run(392)])
     // PAGE2_844（见文件开头）：844＝2、3 两支（eventRandom 0.25／0.5），第 1 页预置已执行（variant t1，oracle_additions 键带 flags 区分）
-    .concat(PAGE2_844.flatMap(id => [0.25, 0.5].map(r => runEventRandom(id, r, [0], 3))))};
+    .concat(PAGE2_844.flatMap(id => [0.25, 0.5].map(r => runEventRandom(id, r, [0], 3))))
+    // rules-gaps7：嘤嘤怪 1（YING_PARTY，见上）：队伍换成 1／4／20／29，各页的「带状态」支与否则支
+    .concat(YING_CASES.map(([v, st, r, n]) => runParty({party: YING_PARTY, skills: st}, () =>
+      Object.assign(r !== null ? runEventRandom(1, r, null, n) : run(1, false, null, 0, 0, null, n), {variant: v}))))};
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
 fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
