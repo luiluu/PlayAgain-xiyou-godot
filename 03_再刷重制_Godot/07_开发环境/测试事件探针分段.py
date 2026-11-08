@@ -77,6 +77,47 @@ class PresetsMergeTests(unittest.TestCase):
         self.assertEqual(sync.tools_digest(skip={sync.PRESETS_REL}), sync.tools_digest(skip={sync.PRESETS_REL}))
         self.assertNotEqual(sync.tools_digest(), sync.tools_digest(skip={sync.PRESETS_REL}))
 
+class TroopShardMergeTests(unittest.TestCase):
+    """GC：troop_event_probe 分段拼回（全局用例序号 % n）与单进程逐字相同；来源不一致、用例数对不上就失败。"""
+    def merge(self, docs):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for i, d in enumerate(docs):
+                p = Path(tmp) / ('p%d.json' % i); p.write_text(json.dumps(d, indent=1)); paths.append(str(p))
+            out = Path(tmp) / 'out.json'
+            r = subprocess.run(['node', '-e', sync.TROOP_MERGE_JS, str(out)] + paths, capture_output=True, text=True)
+            return r, (out.read_text() if r.returncode == 0 else None)
+
+    @staticmethod
+    def case(i):
+        return {'troop': i, 'actions': [], 'invokes': [], 'errors': [], 'turnCount': 2, 'phase': 'x', 'note': '中文%d' % i}
+
+    def docs(self, total, n):
+        head = {'sourceIdentity': {'releaseVersion': 'v'}, 'party': [1, 8], 'difficulty': 3}
+        return [dict(head, cases=[self.case(k) for k in range(total) if k % n == i]) for i in range(n)]
+
+    def test_merge_equals_single_process(self):
+        for total, n in [(10, 3), (9, 3), (2, 4), (7, 1)]:
+            r, text = self.merge(self.docs(total, n)[: min(n, total)] if total < n else self.docs(total, n))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            single = dict(self.docs(total, 1)[0])
+            self.assertEqual(text, json.dumps(single, indent=1, ensure_ascii=False), (total, n))
+
+    def test_merge_rejects_mismatch(self):
+        docs = self.docs(6, 2)
+        docs[1]['difficulty'] = 4
+        self.assertNotEqual(self.merge(docs)[0].returncode, 0)
+        docs = self.docs(6, 2)
+        docs[1]['cases'].append(self.case(99))   # 段 1 多一例：轮转的个数对不上
+        self.assertNotEqual(self.merge(docs)[0].returncode, 0)
+
+    def test_probe_shard_guard(self):
+        src = (sync.HERE / 'mv_oracle/troop_event_probe.cjs').read_text()
+        self.assertIn("process.env.XIYOU_PROBE_SHARD", src)
+        self.assertIn("caseCounter++ % SHARD.n !== SHARD.i", src)
+        self.assertIn("XIYOU_COVER 记录的下标是全局的", src)
+
+
 class StateShardMergeTests(unittest.TestCase):
     """BO：补跑事件状态探针.py 的分段拼回（序号轮转 i % n）与单进程顺序逐字相同；段数或来源对不上就失败。"""
     def load(self):

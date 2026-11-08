@@ -147,7 +147,20 @@ if (COVER) {
 // flags：开战前把这些敌群页标为已执行（$gameTroop._eventFlags），旧例不写字段。
 // hpEnemy：hpRate 预置的敌人序号（默认 0 不写字段）。
 // vars：开战前另设的变量（{变量号: 值}，默认不写字段）。
+// GC 11-08（tools-troop-shards）：分段并行。XIYOU_PROBE_SHARD=i/n 时只跑「全局用例序号 % n == i」的用例（序号＝run() 被调用的先后，
+// 与单进程的 cases 顺序一致），其余返回占位、最后滤掉；XIYOU_TROOP_OUT 改写输出路径。拼回见 同步正式西游.py 的 TROOP_MERGE_JS
+// （按序号交错，与单进程逐字相同）。不设就是单进程，行为与旧版完全相同。XIYOU_COVER 的下标是全局的，所以不许与分段同用。
+const SHARD = (() => {
+  const m = /^(\d+)\/(\d+)$/.exec(process.env.XIYOU_PROBE_SHARD || '');
+  if (!m) return null;
+  const i = Number(m[1]), n = Number(m[2]);
+  if (!(n >= 1 && i < n)) throw new Error('XIYOU_PROBE_SHARD 不合法：' + process.env.XIYOU_PROBE_SHARD);
+  if (process.env.XIYOU_COVER === '1') throw new Error('XIYOU_COVER 记录的下标是全局的，不能与 XIYOU_PROBE_SHARD 同用');
+  return {i, n};
+})();
+let caseCounter = 0;
 function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0, vars = null) {
+  if (SHARD && caseCounter++ % SHARD.n !== SHARD.i) return {__skip: true};
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   // rules-gaps5：上一例的敌我精灵代理不再用到；不清的话 Map 一直攥着历届 Game_Battler，900 多例后默认堆 OOM（XIYOU_COVER 时更快）
   sprites.clear();
@@ -274,9 +287,10 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat(HP_VARS.map(([id, rate, ei, v]) => Object.assign(run(id, false, null, 0, rate, null, 0, ei, {[v]: 1}), {variant: ei ? 'hpVarE' + ei : 'hpVar'})))
     // rules-gaps5：t1 例的变量 844 其余各支（见 EVENT_R）
     .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))};
+if (SHARD) result.cases = result.cases.filter(c => !c.__skip);
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
-fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
+fs.writeFileSync(process.env.XIYOU_TROOP_OUT || path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
 if (COVER) fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events_cover.json'), JSON.stringify({sourceIdentity: identity,
   note: 'troop_event_probe XIYOU_COVER=1：原版解释器实际执行到的敌群页／公共事件指令（位置:下标）',
   byCase: Object.fromEntries(coverByCase.map((s, i) => [String(i), [...s].sort()]))}));
