@@ -63,11 +63,14 @@ def trace_var(lst, j, p):
     if not vs or len(vs) != 1:
         return p
     vid, val = int(next(iter(vs))), next(iter(vs.values()))
+    anc_j = set(chain(lst, j, None)) | {j}
     for k in range(j - 1, -1, -1):
         c = lst[k]
         if int(c['code']) != 122:
             continue
         q = c['parameters']
+        if int(q[0]) <= vid <= int(q[1]) and int(q[2]) != 0 and not set(chain(lst, k, None)) <= anc_j:
+            continue   # 旁支里的加减（不一定执行，如 ce1431 开关 2282 下的 1200 += 1173）跳过，接着往前找真正的赋值（cc 分段甲 a2）
         if int(q[0]) <= vid <= int(q[1]):
             if int(q[2]) == 0 and int(q[3]) == 3:
                 t = int(q[4])
