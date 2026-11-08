@@ -771,13 +771,15 @@ func _plugin_command(line: String) -> void:
 			return
 		"Autosave", "EnableAutosave", "DisableAutosave":
 			# YEP_X_Autosave：Enable／DisableAutosave 开关 $gameSystem.setAutosave（随存档）；「Autosave」在允许时存到最近用过的
-			# 存档位（没手动存过就不存）。公共事件 5 是 Enable→Autosave→Disable，之后的 Autosave 不再写档（原版弹的「存档成功！」小字不做）
+			# 存档位（没手动存过就不存）。公共事件 5 是 Enable→Autosave→Disable，之后的 Autosave 不再写档。
+			# 存好弹「存档成功！」小字（Scene_Map.performAutosave 的 _autosaveMsgWindow.reveal，见 XAutosaveNotice）
 			if args[0] == "EnableAutosave":
 				state().allow_autosave = true
 			elif args[0] == "DisableAutosave":
 				state().allow_autosave = false
 			elif state().allow_autosave and XSave.current_slot > 0:
-				XSave.save(XSave.current_slot)
+				if XSave.save(XSave.current_slot):
+					XAutosaveNotice.saved()
 			return
 		"MagicWeaponAllGainExp", "MagicWeaponLevelUp":
 			XMagicWeapon.plugin_command(state(), args)  # CP_MagicWeapon：法宝经验丹、强制升级

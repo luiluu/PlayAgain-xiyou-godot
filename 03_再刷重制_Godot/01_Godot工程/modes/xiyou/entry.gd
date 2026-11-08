@@ -32,6 +32,12 @@ func _ready() -> void:
 	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	theme = XUI.theme()
 	_build_background()
+	# MOG_TitleSplashScreen：一次运行第一次进标题前先放开场图，放完再出标题指令（XSplashScreen）
+	if XSplashScreen.wanted():
+		var sp := XSplashScreen.play(self)
+		if sp != null:
+			sp.finished.connect(_title)
+			return
 	_title()
 
 
