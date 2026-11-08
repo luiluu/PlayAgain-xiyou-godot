@@ -75,6 +75,7 @@ func key(b: XBattler, logic: XBattleLogic) -> String:
 ## 原版参照把 Math.random 固定为0.5；整数是floor(n*0.5)，不能以uint32%n替代。
 ## 仅确定性对照场景注入，原五种种子的场景仍走真实本场流。
 class OracleHalfStream extends XRandomStream:
+	var event_r := 0.5  # rules-gaps5：事件随机变量（reason event_variable）另取的值（参照 eventRandom）
 	func next_float(reason: String, event_key := "") -> float:
 		journal.append({"domain": domain, "ordinal": draws, "kind": "float", "reason": reason, "event": event_key, "value": 0.5})
 		draws += 1
@@ -82,18 +83,23 @@ class OracleHalfStream extends XRandomStream:
 	func next_index_mod(n: int, reason: String, event_key := "") -> int:
 		return floori(n * next_float(reason, event_key))
 	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
+		if reason == "event_variable" and event_r != 0.5:
+			next_float(reason, event_key)
+			return lo + floori((hi - lo + 1) * event_r)
 		return lo + floori((hi - lo + 1) * next_float(reason, event_key))
 
 
 class EventHalfStream extends XRandomStream:
+	var event_r := 0.5
 	func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
 		if reason == "event_variable":
-			return lo + floori((hi - lo + 1) * 0.5)
+			return lo + floori((hi - lo + 1) * event_r)
 		return super(lo, hi, reason, event_key)
 
 
-static func _half_events(src: XRandomStream) -> XRandomStream:
+static func _half_events(src: XRandomStream, event_r := 0.5) -> XRandomStream:
 	var out := EventHalfStream.new()
+	out.event_r = event_r
 	out.domain = src.domain
 	out.draws = src.draws
 	out.journal = src.journal
@@ -191,9 +197,13 @@ func _case_dispatch(c: Dictionary) -> void:
 ## t1（cc events13，敌群页覆盖.py 的「页条件：回合 3+3·X」簇）：回合计数预置 N，先跑开战检查（第 N 回合）再跑第 N+1 回合。
 ## 只比两段各自的对话与强制行动［行动者, 技能］（强制行动排在该段行动最前）；守层者第 1 页按随机变量 844 选强制技能，
 ## 事件里的随机同参照取 0.5（_half_events），伤害与目标随机不比。
+## rules-gaps5：参照 eventRandom 例（变量 844 的其余各支）事件随机改取该值。
 func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
-	if not oracle_half:
-		logic.random.rule = _half_events(logic.random.rule)
+	var event_r := float(c.get("eventRandom", 0.5))
+	if oracle_half:
+		(logic.random.rule as OracleHalfStream).event_r = event_r
+	else:
+		logic.random.rule = _half_events(logic.random.rule, event_r)
 	var n := int(c.turnPreset)
 	logic.turn = n
 	var phases := {n: logic.run_events(), n + 1: []}
@@ -232,6 +242,8 @@ func _preset_case(c: Dictionary) -> void:
 ## 伤害公式 b.mhp * 2、无浮动、必中，每人 HP 清零）。比较：该回合的对话、强制行动、每名角色的首击伤害与 HP。
 func _turn_preset_case(c: Dictionary) -> void:
 	var name := "troop%d.turn%d" % [int(c.troop), int(c.turnPreset) + 1]
+	if c.has("eventRandom"):
+		name += ".r%d" % roundi(float(c.eventRandom) * 100)
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 3000)
 	if str(c.get("variant", "")) == "t1":
 		_turn_page_case(c, name, logic)
@@ -272,14 +284,25 @@ func _turn_preset_case(c: Dictionary) -> void:
 
 
 ## 开战前敌人 0 的 HP 设为上限的 hpRate（向下取整），跑开战检查与两回合。比较：开战时的对话（文字与脸图）、变身后的敌人编号与
+## rules-gaps5：参照 hpEnemy（敌人 1 的血线页，805～807、814 第 5 页）时预置并比较的是那名敌人（下面的 e0 换成它，玩家照旧打敌人 0）。
 ## 生命上限（1399 的 334 回满）、各回合守层者的强制行动依次相同（之后的普通行动随机，不比）、第 1 回合后状态与攻击／魔攻。
 func _transform_case(c: Dictionary, round: int) -> void:
+	var hi := int(c.get("hpEnemy", 0))
+	var ek := "e%d" % hi
 	var name := "troop%d.paid%s.hp%s.r%d" % [int(c.troop), str(c.get("paid", false)), str(c.hpRate), round]
+	if hi != 0:
+		name = "troop%d.paid%s.hp%s.%s.r%d" % [int(c.troop), str(c.get("paid", false)), str(c.hpRate), ek, round]
 	var logic := setup(int(c.troop), bool(c.get("paid", false)), 2000 + round)
+	# rules-gaps5：参照 vars（血线页里「变量 853／1567 == 1」才走的分支）开战前同样设上
+	for v in c.get("vars", {}):
+		logic.state.set_variable(int(v), int(c.vars[v]))
+	if c.has("vars"):
+		name += ".v" + ",".join(c.vars.keys())
 	# flags：参照开战前标为已执行的敌群页（三十一至三十三层 HP≤10% 例预置第 3 页，见 troop_event_probe）
 	for i in c.get("flags", []):
 		logic._event_flags[int(i)] = true
-	var e0: XBattler = logic.enemies[0]
+	var e0: XBattler = logic.enemies[hi]
+	var target0: XBattler = logic.enemies[0]
 	e0.hp = floorf(e0.mhp * float(c.hpRate))
 	check(name + ".hp_preset", is_equal_approx(e0.hp, float(c.hpPreset)), [e0.hp, c.hpPreset])
 	# 开战检查（第 0 回合）：第 3 页的对话停住规则，run_events 按默认应答续上
@@ -296,11 +319,11 @@ func _transform_case(c: Dictionary, round: int) -> void:
 	# 肉山 2029 第 2 页 6068 之后的 10613 预约 9042，把 1401 盖掉了，第 0 回合末不回血（第 1 回合开场 1396 的 334 才回满）
 	var want_hp0 := -1.0
 	for inv in c.invokes:
-		if int(inv.turn) == 0 and inv.subject == "e0" and inv.target == "e0":
+		if int(inv.turn) == 0 and inv.subject == ek and inv.target == ek:
 			want_hp0 = float(inv.hpAfter)
 	var last_ce := 0
 	for act in c.actions:
-		if int(act.turn) == 0 and act.subject == "e0":
+		if int(act.turn) == 0 and act.subject == ek:
 			for eff in XDB.rec("Skills", int(act.skill)).get("effects", []):
 				if int(eff.code) == 44:
 					last_ce = int(eff.dataId)
@@ -315,7 +338,7 @@ func _transform_case(c: Dictionary, round: int) -> void:
 			break
 		var cmds := {}
 		for a in logic.actors:
-			cmds[a] = [XDB.rec("Skills", 1), e0]
+			cmds[a] = [XDB.rec("Skills", 1), target0]
 		logs[t] = logic.run_turn(cmds)
 		# 第 1、2 回合的敌群事件对话（三十一层可选首领 830／831 第 2 页的提示）也按回合比
 		var turn_msgs: Array = logs[t].filter(func(l): return l.type == "message").map(func(l): return [str(l.msg.face), "\n".join(l.msg.lines)])
@@ -323,29 +346,29 @@ func _transform_case(c: Dictionary, round: int) -> void:
 		check(name + ".messages_t%d" % t, turn_msgs == want_turn, [turn_msgs, want_turn])
 		if t == 1:
 			t1_states = e0.state_ids.duplicate()
-			check(name + ".atk_mat", int(e0.atk) == int(c.battlers.e0.atk) and int(e0.mat) == int(c.battlers.e0.mat),
-				[e0.atk, e0.mat, c.battlers.e0.atk, c.battlers.e0.mat])
+			check(name + ".atk_mat", int(e0.atk) == int(c.battlers[ek].atk) and int(e0.mat) == int(c.battlers[ek].mat),
+				[e0.atk, e0.mat, c.battlers[ek].atk, c.battlers[ek].mat])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 	# 生命上限：变身后 538 的上限加 6070／6071 的生命 buff（第 0、1 回合各一级），同参照战斗结束时的值
-	check(name + ".mhp", int(e0.mhp) == int(c.battlers.e0.mhp), [e0.mhp, c.battlers.e0.mhp])
+	check(name + ".mhp", int(e0.mhp) == int(c.battlers[ek].mhp), [e0.mhp, c.battlers[ek].mhp])
 	for t in range(3):
-		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and a.subject == "e0" and a.forced).map(func(a): return int(a.skill))
+		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and a.subject == ek and a.forced).map(func(a): return int(a.skill))
 		var got: Array = logs[t].filter(func(l): return l.type == "action" and l.user == e0).map(func(l): return int(l.skill.id))
 		if t == 2 and logs[2].is_empty():
 			continue
 		check(name + ".forced_t%d" % t, got.slice(0, want.size()) == want, [got, want])
-	var want_states: Array = _t1_end_states(c)
+	var want_states: Array = _t1_end_states(c, ek)
 	check(name + ".t1_states", want_states.all(func(id): return t1_states.has(int(id))), [t1_states, want_states])
 
 
 ## 参照第 1 回合末 e0 的状态（见 _case 里 t1_states 的说明）
-static func _t1_end_states(c: Dictionary) -> Array:
+static func _t1_end_states(c: Dictionary, ek := "e0") -> Array:
 	var ts1: Array = c.get("turnStarts", []).filter(func(x): return int(x.after) == 1)
-	if not ts1.is_empty() and ts1[0].enemies.has("e0"):
-		return Array(ts1[0].enemies.e0.states)
+	if not ts1.is_empty() and ts1[0].enemies.has(ek):
+		return Array(ts1[0].enemies[ek].states)
 	var out: Array = []
 	for inv in c.invokes:
-		if int(inv.turn) == 1 and inv.subject == "e0":
+		if int(inv.turn) == 1 and inv.subject == ek:
 			out = inv.userStates
 	return out
 
