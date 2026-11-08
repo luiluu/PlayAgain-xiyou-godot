@@ -404,6 +404,29 @@ var tile_events: Callable
 ## 逐格 BFS 实测：整座监狱走不进去，只有开「穿墙」才行），首领、牢门都碰不到。这两格改为四向可通行，打通入口到牢房走廊。
 ## 键＝地图号 → 打通的格；设为空字典 {} 恢复原版（专项要两边都跑，所以是 static var）。
 static var open_cells_fix := {79: [Vector2i(15, 8), Vector2i(15, 10)]}
+## O-241（悟空 floor6 传送连通性）：一护副本麒麟殿 Map236 的殿内地面画的是图块组 41「亚特兰蒂斯」的 A1 第 2 种自动图块
+## （图块号 2096～2143，这套图块里是深水，四向不可通行）。入口 Map148 EV41 落在 (8,14)，四周全是这种格，人原地动不了，
+## 殿顶 (8,4) 的剧情 Boss（EV1，角色下方、按确认触发，要踩上去）碰不到；另外三殿用别的图块组，地面可走。
+## 重制把本图第 2 层（z=1）这种自动图块的格和 (8,4) 当作可通行。键＝地图号 → {z, from, to, extra}；设为空字典 {} 恢复原版。
+static var open_autotile_fix := {236: {"z": 1, "from": 2096, "to": 2144, "extra": [Vector2i(8, 4)]}}
+
+
+## 本图按 open_cells_fix 与 open_autotile_fix 要打通的格
+static func opened_cells(id: int, map_data: Dictionary) -> Array:
+	var out: Array = Array(open_cells_fix.get(id, [])).duplicate()
+	var spec = open_autotile_fix.get(id)
+	if spec is Dictionary:
+		var w := int(map_data.get("width", 0))
+		var h := int(map_data.get("height", 0))
+		var data: Array = map_data.get("data", [])
+		for y in h:
+			for x in w:
+				var t := int(data[(int(spec.z) * h + y) * w + x])
+				if t >= int(spec.from) and t < int(spec.to):
+					out.append(Vector2i(x, y))
+		out.append_array(spec.extra)
+	return out
+
 ## 本图被打通的格（地图场景按 open_cells_fix 设置）
 var open_cells: Array = []
 
