@@ -45,7 +45,7 @@ static var HOLD_REPEAT_ECHO := true
 const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
 const REPEAT_META := &"xiyou_touch_repeat"
 
-## 摇杆拖动翻页（ui6，Kyo 11-07「先做吧，然后设置里做开关」；O-待定·摇杆翻页）：照原版 Mehmet_GhostButtons
+## 摇杆拖动翻页（ui6，Kyo 11-07「先做吧，然后设置里做开关」；O-238）：照原版 Mehmet_GhostButtons
 ## Sprite_JoyStick.processTouch——摇杆往左／右推到半径的 65% 以上、按住满 36 帧后，每 24 帧对当前列表翻一页
 ## （左＝pageup、右＝pagedown，原版调用活动窗口的 pageup／pagedown 处理或 cursorPageup／Pagedown）。
 ## 重制发 ui_page_up／ui_page_down 动作，各页现有的 Q／E、LB／RB 翻页接住；地图上没有页面认它，不起作用（原版地图上也没有活动列表）。
