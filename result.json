@@ -1,0 +1,42 @@
+{
+ "sha": "24faa9a2525ed794ab79b551b03dc773ada01627",
+ "branch": "ci/cc/wukong-floor6",
+ "mode": "affected",
+ "base": "91496ba279ca89719a5015e66de465a5fd6833f3",
+ "passed": false,
+ "scenes": 18,
+ "failed": [
+  "xiyou_transfer_reach.tscn",
+  "xiyou_transfer_reach_dbg1.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 1,
+ "longestShardSeconds": 206.7,
+ "testSeconds": 225,
+ "generatedRef": "refs/ci/generated/cc/wukong-floor6",
+ "generatedCommit": "c59b758bb4f11dd188f451dbb29d39093688874f",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42432542162",
+ "sceneNames": [
+  "xiyou_transfer_reach.tscn",
+  "xiyou_transfer_reach_b.tscn",
+  "xiyou_transfer_reach_c.tscn",
+  "xiyou_transfer_reach_d.tscn",
+  "xiyou_transfer_reach_dbg1.tscn",
+  "xiyou_transfer_reach_dbg10.tscn",
+  "xiyou_transfer_reach_dbg11.tscn",
+  "xiyou_transfer_reach_dbg12.tscn",
+  "xiyou_transfer_reach_dbg13.tscn",
+  "xiyou_transfer_reach_dbg14.tscn",
+  "xiyou_transfer_reach_dbg2.tscn",
+  "xiyou_transfer_reach_dbg3.tscn",
+  "xiyou_transfer_reach_dbg4.tscn",
+  "xiyou_transfer_reach_dbg5.tscn",
+  "xiyou_transfer_reach_dbg6.tscn",
+  "xiyou_transfer_reach_dbg7.tscn",
+  "xiyou_transfer_reach_dbg8.tscn",
+  "xiyou_transfer_reach_dbg9.tscn"
+ ],
+ "time": "2026-11-08T01:08:38+00:00"
+}
