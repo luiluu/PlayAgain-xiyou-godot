@@ -1,0 +1,5050 @@
+[
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 98
+   }
+  },
+  "gate": "ce902:59 411 否则（变量 471 > 98）",
+  "n": 49
+ },
+ {
+  "base": "ce2495",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "95": {}
+   }
+  },
+  "gate": "ce2495:12 411 否则（角色 95 子类 3 8122）",
+  "n": 44
+ },
+ {
+  "base": "ce820",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "367": 999
+   }
+  },
+  "gate": "ce820:845 411 否则（变量 367 >= 1000）",
+  "n": 23
+ },
+ {
+  "base": "ce1432",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 96
+   }
+  },
+  "gate": "ce1432:95 111 变量 1200 >= 96",
+  "n": 19
+ },
+ {
+  "base": "ce1434",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 96
+   }
+  },
+  "gate": "ce1434:95 111 变量 1200 >= 96",
+  "n": 19
+ },
+ {
+  "base": "ce821",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "366": 999
+   }
+  },
+  "gate": "ce821:101 411 否则（变量 366 >= 1000）",
+  "n": 17
+ },
+ {
+  "base": "ce1618",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    0
+   ]
+  },
+  "gate": "ce1618:3 402 选项 0「开始拷贝技能」（没选中）",
+  "n": 10
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1542": 81
+   }
+  },
+  "gate": "m4e74p0:119 111 变量 1542 >= 81",
+  "n": 9
+ },
+ {
+  "base": "m67e2p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "281": 35
+   }
+  },
+  "gate": "m67e2p0:10 111 变量 281 >= 35",
+  "n": 9
+ },
+ {
+  "base": "ce682",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "77": {
+     "weapons": [
+      1700
+     ]
+    }
+   }
+  },
+  "gate": "ce682:42 111 角色 77 子类 4 1700",
+  "n": 6
+ },
+ {
+  "base": "ce1617",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    0
+   ]
+  },
+  "gate": "ce1617:3 402 选项 0「开始拷贝技能」（没选中）",
+  "n": 5
+ },
+ {
+  "base": "ce1597",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1203": 100000
+   }
+  },
+  "gate": "ce1597:3 111 变量 1203 >= 100000",
+  "n": 3
+ },
+ {
+  "base": "ce1600",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1202": 15000
+   }
+  },
+  "gate": "ce1600:6 111 变量 1202 >= 15000",
+  "n": 3
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:59 111 变量 752 >= 20",
+  "n": 3
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 100
+   }
+  },
+  "gate": "ce2500:132 111 变量 752 >= 100",
+  "n": 3
+ },
+ {
+  "base": "m221e3p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    1
+   ]
+  },
+  "gate": "m221e3p0:65 402 选项 1「轮回归来！」（没选中）",
+  "n": 3
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    1,
+    0
+   ]
+  },
+  "gate": "m4e49p1:116 402 选项 0「学习捌之形 飞轮阳炎/玖之形 斜阳转身/拾之形 辉煌恩光」（没选中）",
+  "n": 3
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    3,
+    0
+   ]
+  },
+  "gate": "m4e49p2:62 402 选项 0「学习肆之形 击打潮/伍之形 乾天的慈雨」（没选中）",
+  "n": 3
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    2,
+    0
+   ]
+  },
+  "gate": "m4e49p2:137 402 选项 0「学习拾之形 生生流转」（没选中）",
+  "n": 3
+ },
+ {
+  "base": "m67e2p2",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "281": 35
+   }
+  },
+  "gate": "m67e2p2:31 111 变量 281 >= 35",
+  "n": 3
+ },
+ {
+  "base": "ce1614",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1211": 5
+   }
+  },
+  "gate": "ce1614:190 111 变量 1211 == 5",
+  "n": 2
+ },
+ {
+  "base": "ce1614",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1211": 5
+   }
+  },
+  "gate": "ce1614:219 111 变量 1211 == 5",
+  "n": 2
+ },
+ {
+  "base": "ce2495",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 200
+   }
+  },
+  "gate": "ce2495:3 111 变量 752 >= 200",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:3 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:17 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:31 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:45 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:76 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:90 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 20
+   }
+  },
+  "gate": "ce2500:104 111 变量 752 >= 20",
+  "n": 2
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 50
+   }
+  },
+  "gate": "ce2500:118 111 变量 752 >= 50",
+  "n": 2
+ },
+ {
+  "base": "ce682",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "77": {
+     "weapons": [
+      1698
+     ]
+    }
+   }
+  },
+  "gate": "ce682:0 111 角色 77 子类 4 1698",
+  "n": 2
+ },
+ {
+  "base": "ce682",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "77": {
+     "weapons": [
+      1699
+     ]
+    }
+   }
+  },
+  "gate": "ce682:21 111 角色 77 子类 4 1699",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4423
+     ]
+    }
+   }
+  },
+  "gate": "ce823:6 111 角色 79 子类 3 4423",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4422
+     ]
+    }
+   }
+  },
+  "gate": "ce823:14 111 角色 79 子类 3 4422",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4421
+     ]
+    }
+   }
+  },
+  "gate": "ce823:22 111 角色 79 子类 3 4421",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4420
+     ]
+    }
+   }
+  },
+  "gate": "ce823:30 111 角色 79 子类 3 4420",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4419
+     ]
+    }
+   }
+  },
+  "gate": "ce823:38 111 角色 79 子类 3 4419",
+  "n": 2
+ },
+ {
+  "base": "ce823",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "366": 200
+   }
+  },
+  "gate": "ce823:81 111 变量 366 >= 200",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4434
+     ]
+    }
+   }
+  },
+  "gate": "ce824:6 111 角色 79 子类 3 4434",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4433
+     ]
+    }
+   }
+  },
+  "gate": "ce824:14 111 角色 79 子类 3 4433",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4432
+     ]
+    }
+   }
+  },
+  "gate": "ce824:22 111 角色 79 子类 3 4432",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4431
+     ]
+    }
+   }
+  },
+  "gate": "ce824:30 111 角色 79 子类 3 4431",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "actors": {
+    "79": {
+     "skills": [
+      4430
+     ]
+    }
+   }
+  },
+  "gate": "ce824:38 111 角色 79 子类 3 4430",
+  "n": 2
+ },
+ {
+  "base": "ce824",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "367": 200
+   }
+  },
+  "gate": "ce824:81 111 变量 367 >= 200",
+  "n": 2
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    2,
+    0
+   ]
+  },
+  "gate": "m4e49p1:44 402 选项 0「学习叁之形 烈日红镜/肆之形 幻日虹」（没选中）",
+  "n": 2
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    2,
+    0
+   ]
+  },
+  "gate": "m4e49p1:137 402 选项 0「学习拾壹之形 日晕之舞 头舞/拾贰之形 炎舞」（没选中）",
+  "n": 2
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    2,
+    0
+   ]
+  },
+  "gate": "m4e49p2:44 402 选项 0「学习叁之形 流流舞动」（没选中）",
+  "n": 2
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    1,
+    0
+   ]
+  },
+  "gate": "m4e49p2:118 402 选项 0「学习捌之形 泷壶/玖之形 水流飞沫·乱」（没选中）",
+  "n": 2
+ },
+ {
+  "base": "m67e2p2",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "282": 35
+   }
+  },
+  "gate": "m67e2p2:7 111 变量 282 >= 35",
+  "n": 2
+ },
+ {
+  "base": "m67e2p2",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "283": 35
+   }
+  },
+  "gate": "m67e2p2:19 111 变量 283 >= 35",
+  "n": 2
+ },
+ {
+  "base": "m67e2p2",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "284": 35
+   }
+  },
+  "gate": "m67e2p2:44 111 变量 284 >= 35",
+  "n": 2
+ },
+ {
+  "base": "ce1226",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "968": 240
+   }
+  },
+  "gate": "ce1226:2 111 变量 968 == 240",
+  "n": 1
+ },
+ {
+  "base": "ce1227",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "969": 200
+   }
+  },
+  "gate": "ce1227:2 111 变量 969 == 200",
+  "n": 1
+ },
+ {
+  "base": "ce1228",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "970": 120
+   }
+  },
+  "gate": "ce1228:2 111 变量 970 == 120",
+  "n": 1
+ },
+ {
+  "base": "ce1229",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "971": 80
+   }
+  },
+  "gate": "ce1229:3 111 变量 971 == 80",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:101 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:105 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:109 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:113 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:117 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:121 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:125 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:129 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:133 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:137 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:145 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:149 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:157 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:161 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:165 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:169 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:188 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:192 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:196 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:200 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:204 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:208 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:212 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:216 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:220 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:224 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:232 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:236 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:240 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:244 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:248 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:252 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:256 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:275 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:283 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:287 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:291 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:295 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:299 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:303 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:307 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:311 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:319 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:323 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:327 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:331 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:335 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:339 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:343 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:362 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:366 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:370 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:374 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:378 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:382 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:386 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:394 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:398 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:406 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:410 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:414 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:418 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:422 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:426 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:430 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:453 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:457 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:461 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:465 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:469 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:473 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:477 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:481 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:485 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:493 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:497 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:501 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:509 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:513 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:517 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:536 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:540 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:544 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:548 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:552 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:556 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:560 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:564 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:568 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:572 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:580 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:584 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:588 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:592 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:596 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:600 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:604 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:623 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:627 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:635 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:639 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:643 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:651 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:655 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:659 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:667 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:671 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:675 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:679 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:683 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:687 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:691 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:710 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:714 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:718 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:722 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:726 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:730 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:734 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:738 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:746 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:754 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:758 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:766 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:770 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:774 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:778 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:797 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:801 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:805 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:809 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:813 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:817 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:821 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:825 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:829 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:833 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:841 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:845 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:849 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:853 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:861 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:865 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:888 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:892 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:896 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:900 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:904 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:908 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:912 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:916 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:920 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:928 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:932 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:936 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:940 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:944 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:948 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:952 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:971 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:975 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:979 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:987 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:991 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:995 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:999 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1003 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1007 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1015 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1019 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1023 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1027 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1031 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1035 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1039 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1058 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1066 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1070 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1074 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1078 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1082 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1086 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1090 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1102 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1106 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1110 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1114 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1118 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1122 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1126 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1145 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1149 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1153 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1157 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1161 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1165 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1173 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1177 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1181 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1189 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1193 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1197 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1201 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1205 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1213 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1232 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1236 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1240 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1244 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1248 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1252 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1256 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1264 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1268 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1276 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1280 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1284 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1288 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1292 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1296 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1300 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1323 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1327 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1331 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1339 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1343 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1347 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1351 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1355 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1363 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1367 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1375 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1379 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1383 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1387 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1406 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1410 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1414 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1418 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1422 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1426 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1430 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1434 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1438 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1442 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1454 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1458 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1466 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1470 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1474 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1493 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1497 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1501 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1505 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1509 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1513 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1517 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1521 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1525 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1529 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1537 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1541 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1545 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1549 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1553 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1557 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1580 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1584 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1588 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1592 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1596 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1600 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1604 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1608 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1612 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1616 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1624 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1628 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1632 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1636 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1640 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1644 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1648 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 1
+   }
+  },
+  "gate": "ce1431:1667 111 变量 1200 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1671 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 3
+   }
+  },
+  "gate": "ce1431:1675 111 变量 1200 == 3",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1679 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1683 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1687 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1695 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1699 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1703 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1711 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1715 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1719 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1723 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1727 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1731 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1735 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 2
+   }
+  },
+  "gate": "ce1431:1758 111 变量 1200 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 4
+   }
+  },
+  "gate": "ce1431:1766 111 变量 1200 == 4",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 5
+   }
+  },
+  "gate": "ce1431:1770 111 脚本 $gameVariables.value(1200) === 5 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 6
+   }
+  },
+  "gate": "ce1431:1774 111 脚本 $gameVariables.value(1200) === 6 || $gameVariables.value(120",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 7
+   }
+  },
+  "gate": "ce1431:1778 111 变量 1200 == 7",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 8
+   }
+  },
+  "gate": "ce1431:1782 111 变量 1200 == 8",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 9
+   }
+  },
+  "gate": "ce1431:1786 111 变量 1200 == 9",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 10
+   }
+  },
+  "gate": "ce1431:1790 111 变量 1200 == 10",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 12
+   }
+  },
+  "gate": "ce1431:1798 111 变量 1200 == 12",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 13
+   }
+  },
+  "gate": "ce1431:1802 111 变量 1200 == 13",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 14
+   }
+  },
+  "gate": "ce1431:1806 111 变量 1200 == 14",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 15
+   }
+  },
+  "gate": "ce1431:1810 111 变量 1200 == 15",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 16
+   }
+  },
+  "gate": "ce1431:1814 111 变量 1200 == 16",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 17
+   }
+  },
+  "gate": "ce1431:1818 111 变量 1200 == 17",
+  "n": 1
+ },
+ {
+  "base": "ce1431",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1200": 18
+   }
+  },
+  "gate": "ce1431:1822 111 变量 1200 == 18",
+  "n": 1
+ },
+ {
+  "base": "ce1439",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1457": 1
+   }
+  },
+  "gate": "ce1439:85 111 变量 1457 == 1",
+  "n": 1
+ },
+ {
+  "base": "ce1439",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1458": 2
+   }
+  },
+  "gate": "ce1439:99 111 变量 1458 == 2",
+  "n": 1
+ },
+ {
+  "base": "ce1598",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1204": 50
+   }
+  },
+  "gate": "ce1598:109 111 变量 1204 == 50",
+  "n": 1
+ },
+ {
+  "base": "ce1626",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    5,
+    1
+   ]
+  },
+  "gate": "ce1626:224 402 选项 1「我要融合火遁与阴遁」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "ce2500",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "752": 500
+   }
+  },
+  "gate": "ce2500:145 111 变量 752 >= 500",
+  "n": 1
+ },
+ {
+  "base": "ce861",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "472": 1
+   }
+  },
+  "gate": "ce861:8 411 否则（变量 472 >= 2）",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 183
+   }
+  },
+  "gate": "ce902:4 111 变量 471 > 182",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 176
+   }
+  },
+  "gate": "ce902:8 111 变量 471 > 175",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 169
+   }
+  },
+  "gate": "ce902:12 111 变量 471 > 168",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 162
+   }
+  },
+  "gate": "ce902:16 111 变量 471 > 161",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 155
+   }
+  },
+  "gate": "ce902:20 111 变量 471 > 154",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 148
+   }
+  },
+  "gate": "ce902:24 111 变量 471 > 147",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 141
+   }
+  },
+  "gate": "ce902:28 111 变量 471 > 140",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 135
+   }
+  },
+  "gate": "ce902:32 111 变量 471 > 134",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 129
+   }
+  },
+  "gate": "ce902:36 111 变量 471 > 128",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 123
+   }
+  },
+  "gate": "ce902:40 111 变量 471 > 122",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 117
+   }
+  },
+  "gate": "ce902:44 111 变量 471 > 116",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 111
+   }
+  },
+  "gate": "ce902:48 111 变量 471 > 110",
+  "n": 1
+ },
+ {
+  "base": "ce902",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "471": 105
+   }
+  },
+  "gate": "ce902:52 111 变量 471 > 104",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 16
+   }
+  },
+  "gate": "ce9030:3 111 变量 1571 > 15",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 19
+   }
+  },
+  "gate": "ce9030:12 111 变量 1571 > 18",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 21
+   }
+  },
+  "gate": "ce9030:21 111 变量 1571 > 20",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 24
+   }
+  },
+  "gate": "ce9030:30 111 变量 1571 > 23",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 28
+   }
+  },
+  "gate": "ce9030:39 111 变量 1571 > 27",
+  "n": 1
+ },
+ {
+  "base": "ce9030",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1571": 31
+   }
+  },
+  "gate": "ce9030:50 111 变量 1571 > 30",
+  "n": 1
+ },
+ {
+  "base": "m146e6p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "1177": 80
+   }
+  },
+  "gate": "m146e6p0:5 111 变量 1177 >= 80",
+  "n": 1
+ },
+ {
+  "base": "m172e2p7",
+  "tag": "e8",
+  "preset": {
+   "switches": {
+    "107": true
+   }
+  },
+  "gate": "m172e2p7:81 111 开关 107 为 ON",
+  "n": 1
+ },
+ {
+  "base": "m186e10p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "623": 1
+   }
+  },
+  "gate": "m186e10p1:6 411 否则（变量 623 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e11p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "626": 1
+   }
+  },
+  "gate": "m186e11p1:6 411 否则（变量 626 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e12p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "629": 1
+   }
+  },
+  "gate": "m186e12p1:6 411 否则（变量 629 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e13p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "632": 1
+   }
+  },
+  "gate": "m186e13p1:6 411 否则（变量 632 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e14p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "635": 1
+   }
+  },
+  "gate": "m186e14p1:6 411 否则（变量 635 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e15p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "638": 1
+   }
+  },
+  "gate": "m186e15p1:6 411 否则（变量 638 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e16p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "641": 1
+   }
+  },
+  "gate": "m186e16p1:6 411 否则（变量 641 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e17p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "644": 1
+   }
+  },
+  "gate": "m186e17p1:6 411 否则（变量 644 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e18p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "647": 1
+   }
+  },
+  "gate": "m186e18p1:6 411 否则（变量 647 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e19p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "650": 1
+   }
+  },
+  "gate": "m186e19p1:6 411 否则（变量 650 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e20p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "653": 1
+   }
+  },
+  "gate": "m186e20p1:6 411 否则（变量 653 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e21p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "656": 1
+   }
+  },
+  "gate": "m186e21p1:6 411 否则（变量 656 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e22p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "659": 1
+   }
+  },
+  "gate": "m186e22p1:6 411 否则（变量 659 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e23p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "662": 1
+   }
+  },
+  "gate": "m186e23p1:6 411 否则（变量 662 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e4p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "605": 1
+   }
+  },
+  "gate": "m186e4p1:6 411 否则（变量 605 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e5p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "608": 1
+   }
+  },
+  "gate": "m186e5p1:6 411 否则（变量 608 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e6p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "611": 1
+   }
+  },
+  "gate": "m186e6p1:6 411 否则（变量 611 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e7p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "614": 1
+   }
+  },
+  "gate": "m186e7p1:6 411 否则（变量 614 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e8p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "617": 1
+   }
+  },
+  "gate": "m186e8p1:6 411 否则（变量 617 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m186e9p1",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "620": 1
+   }
+  },
+  "gate": "m186e9p1:6 411 否则（变量 620 <= 0）",
+  "n": 1
+ },
+ {
+  "base": "m30e8p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 35
+   }
+  },
+  "gate": "m30e8p0:70 111 变量 843 >= 35",
+  "n": 1
+ },
+ {
+  "base": "m32e1p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 50
+   }
+  },
+  "gate": "m32e1p0:87 111 变量 843 >= 50",
+  "n": 1
+ },
+ {
+  "base": "m33e3p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 65
+   }
+  },
+  "gate": "m33e3p0:69 111 变量 843 >= 65",
+  "n": 1
+ },
+ {
+  "base": "m36e2p1",
+  "tag": "e8",
+  "preset": {
+   "switches": {
+    "107": true
+   }
+  },
+  "gate": "m36e2p1:363 111 开关 107 为 ON",
+  "n": 1
+ },
+ {
+  "base": "m45e1p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 80
+   }
+  },
+  "gate": "m45e1p0:70 111 变量 843 >= 80",
+  "n": 1
+ },
+ {
+  "base": "m46e1p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 95
+   }
+  },
+  "gate": "m46e1p0:83 111 变量 843 >= 95",
+  "n": 1
+ },
+ {
+  "base": "m47e13p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 110
+   }
+  },
+  "gate": "m47e13p0:67 111 变量 843 >= 110",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    0,
+    0
+   ]
+  },
+  "gate": "m4e49p1:10 402 选项 0「学习壹之形 圆舞」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    1,
+    0
+   ]
+  },
+  "gate": "m4e49p1:27 402 选项 0「学习贰之形 碧罗天」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    3,
+    0
+   ]
+  },
+  "gate": "m4e49p1:63 402 选项 0「学习伍之形 火车」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    4,
+    0
+   ]
+  },
+  "gate": "m4e49p1:80 402 选项 0「学习陆之形 灼骨炎阳」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    0,
+    0
+   ]
+  },
+  "gate": "m4e49p1:99 402 选项 0「学习柒之形 阳华突」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p1",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    3,
+    0
+   ]
+  },
+  "gate": "m4e49p1:156 402 选项 0「学习火之神神乐」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    1,
+    0
+   ]
+  },
+  "gate": "m4e49p2:27 402 选项 0「学习贰之形 水车」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    4,
+    0
+   ]
+  },
+  "gate": "m4e49p2:82 402 选项 0「学习陆之形 扭转旋涡」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    0,
+    0
+   ]
+  },
+  "gate": "m4e49p2:101 402 选项 0「学习柒之形 雫波纹击刺」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e49p2",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    5,
+    3,
+    0
+   ]
+  },
+  "gate": "m4e49p2:156 402 选项 0「学习生生不息的激荡」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    0,
+    0
+   ]
+  },
+  "gate": "m4e74p0:10 402 选项 0「强袭飓风伤害+50%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    0,
+    1
+   ]
+  },
+  "gate": "m4e74p0:14 402 选项 1「寒冰之墙伤害+50%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    1,
+    0
+   ]
+  },
+  "gate": "m4e74p0:38 402 选项 0「急速冷却伤害+75%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    1,
+    1
+   ]
+  },
+  "gate": "m4e74p0:42 402 选项 1「熔炉精灵效果翻倍」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    2,
+    0
+   ]
+  },
+  "gate": "m4e74p0:66 402 选项 0「灵动迅捷效果+30%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    2,
+    1
+   ]
+  },
+  "gate": "m4e74p0:70 402 选项 1「混沌陨石伤害+200%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    3,
+    0
+   ]
+  },
+  "gate": "m4e74p0:94 402 选项 0「双倍命石效果」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m4e74p0",
+  "tag": "e8",
+  "preset": {
+   "answers": [
+    3,
+    1
+   ]
+  },
+  "gate": "m4e74p0:98 402 选项 1「超震声波伤害+300%」（没选中）",
+  "n": 1
+ },
+ {
+  "base": "m54e15p4",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m54e15p4:177 111 变量 107 == 1",
+  "n": 1
+ },
+ {
+  "base": "m54e15p5",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m54e15p5:77 111 变量 107 == 1",
+  "n": 1
+ },
+ {
+  "base": "m54e15p6",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m54e15p6:77 111 变量 107 == 1",
+  "n": 1
+ },
+ {
+  "base": "m54e15p7",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m54e15p7:97 111 变量 107 == 1",
+  "n": 1
+ },
+ {
+  "base": "m63e3p7",
+  "tag": "e8",
+  "preset": {
+   "switches": {
+    "107": true
+   }
+  },
+  "gate": "m63e3p7:95 111 开关 107 为 ON",
+  "n": 1
+ },
+ {
+  "base": "m64e1p0",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "843": 20
+   }
+  },
+  "gate": "m64e1p0:69 111 变量 843 >= 20",
+  "n": 1
+ },
+ {
+  "base": "m7e3p0",
+  "tag": "e8",
+  "preset": {
+   "switches": {
+    "170": true
+   }
+  },
+  "gate": "m7e3p0:23 111 开关 170 为 ON",
+  "n": 1
+ },
+ {
+  "base": "m80e13p2",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m80e13p2:431 111 变量 107 == 1",
+  "n": 1
+ },
+ {
+  "base": "m80e13p3",
+  "tag": "e8",
+  "preset": {
+   "variables": {
+    "107": 1
+   }
+  },
+  "gate": "m80e13p3:459 111 变量 107 == 1",
+  "n": 1
+ }
+]
