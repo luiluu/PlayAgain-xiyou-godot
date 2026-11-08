@@ -48,6 +48,41 @@
 - **接续要点**（新会话同分支：`git switch --ignore-other-worktrees cc/bajie-interp6` 再 `新建工作树.sh --补齐`）：
   1. 等总装合完，再 `git merge main`、`--补齐`，直到不再报「不同批」。
   2. `XIYOU_STATE_SHARDS=2 python3 07_开发环境/补跑事件状态探针.py`（增量，不加 --force，不改探针）。
-  3. 对照：`占槽.py --weight 1 -- godot --headless --path 01_Godot工程 tests/xiyou_event_compare.tscn -- --coverage=<cov.json>`；退步的 i7 删掉，`事件祖先预设.py --prune --cur <cov> --tag i7 --targets t7.json --states generated/oracle/event_states.json`（t7.json 丢了就只按对照结果删），`事件空绿扫描.py --check`。
+  3. 对照：`占槽.py --weight 1 -- godot --headless --path 01_Godot工程 tests/xiyou_event_compare.tscn -- --coverage=<cov.json>`；退步的 i7 删掉，`事件祖先预设.py --prune --cur <cov> --tag i7 --targets t7.json --states generated/oracle/event_states.json`（t7.json 在本交付单末尾「附：i7 目标位置」，拷成文件再用），`事件空绿扫描.py --check`。
   4. 删过变体就再补跑一次探针，然后对照加 `--update-baseline`、`事件写法覆盖.py --coverage <cov> --out 04_验证/事件写法覆盖.md`；写法键用 `事件写法覆盖.analyse` 的全部首词，`--missed` 数字填进上面。
   5. `工具回归.py`、`云端选测.py run`，交付单改「可合并」。
+
+## 附：i7 目标位置（t7.json）
+
+```json
+{
+"m30e8p0#i7_4": "m30e8p0:69",
+"m32e1p0#i7_5": "m32e1p0:86",
+"m33e3p0#i7_6": "m33e3p0:68",
+"m45e1p0#i7_7": "m45e1p0:69",
+"m46e1p0#i7_8": "m46e1p0:82",
+"m47e13p0#i7_9": "m47e13p0:66",
+"m64e1p0#i7_11": "m64e1p0:68",
+"m30e8p0#i7_15": "m30e8p0:52",
+"m30e8p0#i7_16": "m30e8p0:109",
+"m32e1p0#i7_17": "m32e1p0:69",
+"m32e1p0#i7_18": "m32e1p0:126",
+"m33e3p0#i7_19": "m33e3p0:51",
+"m33e3p0#i7_20": "m33e3p0:108",
+"m45e1p0#i7_21": "m45e1p0:52",
+"m45e1p0#i7_22": "m45e1p0:109",
+"m46e1p0#i7_23": "m46e1p0:65",
+"m46e1p0#i7_24": "m46e1p0:122",
+"m47e13p0#i7_25": "m47e13p0:49",
+"m47e13p0#i7_26": "m47e13p0:106",
+"m64e1p0#i7_39": "m64e1p0:51",
+"m64e1p0#i7_40": "m64e1p0:108",
+"m30e8p0#i7_56": "m30e8p0:78",
+"m32e1p0#i7_57": "m32e1p0:95",
+"m33e3p0#i7_58": "m33e3p0:77",
+"m45e1p0#i7_59": "m45e1p0:78",
+"m46e1p0#i7_60": "m46e1p0:91",
+"m47e13p0#i7_61": "m47e13p0:75",
+"m64e1p0#i7_70": "m64e1p0:77"
+}
+```
