@@ -103,17 +103,25 @@ const rec = e => trace && trace.push(e);
 const EFFECT = new Set([121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 137, 201, 223, 236, 301, 302, 303, 311, 312, 313, 314, 315, 316, 317,
   318, 319, 320, 321, 324, 325, 355, 356, 117, 352, 353, 354]);
 // 初始状态预设：开关、变量、独立开关、金钱、物品／武器／防具、队伍、角色技能和等级、难度
-const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
+const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'maxLevel', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
 function applyPreset(p) {
   if (!p) return;
   // 不认识的预设键直接报错（审查 49：g3 用了 random 而不是 random_seq，悄悄没生效）
   for (const k of Object.keys(p)) if (!PRESET_KEYS.includes(k)) throw new Error('event_presets 不认识的预设键: ' + k);
   if (p.difficulty !== undefined) w.$gameSystem._difficultyId = p.difficulty;
   for (const id of p.party || []) w.$gameParty.addActor(id);
+  // cc 分段甲 a3：等级上限＝插件指令「maxlevel equal N」（YEP_CoreEngine：$gameParty.ActorMaxLevel 与全部 $dataActors[i].maxLevel），
+  // 在角色等级之前摆，开「变量＝角色等级 ≥ 开局上限 10」的门（m4e49 45 级以上、m4e74）；$dataActors 的上限每例由开局快照换回
+  if (p.maxLevel !== undefined) {
+    w.$gameParty.ActorMaxLevel = Number(p.maxLevel);
+    for (let i = 1; i < w.$dataActors.length; i++) if (w.$dataActors[i]) w.$dataActors[i].maxLevel = Number(p.maxLevel);
+  }
   for (const [id, a] of Object.entries(p.actors || {})) {
     const ac = w.$gameActors.actor(Number(id));
     if (a.level !== undefined) ac.changeLevel(a.level, false);
     for (const sk of a.skills || []) ac.learnSkill(sk);
+    // cc 分段甲 a3：actors.N.forget＝忘掉的技能（开局就会的），开「否则（角色没学会技能）」门（ce2495 等锻炼链）
+    for (const sk of a.forget || []) ac.forgetSkill(sk);
     // 八戒 DR：actors.N.armors＝给这名角色直接穿上的防具底材（forceChangeEquip 到 etype 对应的第一个槽），开「角色 N 装备防具」门（ce1213）
     for (const ar of a.armors || []) {
       const item = w.$dataArmors[ar], slot = ac.equipSlots().indexOf(item.etypeId);
