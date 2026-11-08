@@ -2,7 +2,7 @@
 
 - 车道／工作者：A 内容／八戒（cc，接 cc/bajie-interp5 六期）
 - 分支起点：cc/bajie-interp5 末端 f11c9180，已合 main。**合并时先合 interp4、interp5 再合本分支**。
-- 状态：未完成，上下文到线交接（接续要点见「验证」）
+- 状态：未完成，周额度 96% 收工交接（11-08 第二棒，接续要点见「验证」第二棒）
 - 预设变了：合并时总装要补跑事件状态探针（增量，SHARDS=2，不加 --force）。本分支没改 event_state_probe.cjs。
 
 ## 本期（跳标签型，地图 1～80；81 层以后归分段乙，它已出过见面礼两层选单 b 系列）
@@ -30,7 +30,7 @@
 
 ## 交接板
 
-- 下一步：地图 1～80 跳标签型剩下的大头是 m4e71p0「更新日志」（约 211 个实例，多层选单翻页）：interp5、interp6 在这页出的变体对照多数退步，要先查对照宿主为什么不一致（参照与重制哪边翻页／取消处理不同），修好宿主后这一页能一次压下 200 左右。其次 m4e60p1 自定义单抽、角色状态 actors.N.states（要改探针、整份重量，先约夜里）。
+- 下一步：地图 1～80 跳标签型剩下的大头是 m4e71p0「更新日志」（约 211 个实例，多层选单翻页）：interp5、interp6 在这页出的变体对照多数退步，根因已查实（hboot.cjs 的 file:// XHR 不解码中文路径，见「第二棒」），修宿主要整份重量、须约夜里，修好后这一页能一次压下 200 左右。其次 m4e60p1 自定义单抽、角色状态 actors.N.states（要改探针、整份重量，先约夜里）。
 - 用户试玩说明：无
 - 需要用户决定：无
 
@@ -51,6 +51,38 @@
   3. 对照：`占槽.py --weight 1 -- godot --headless --path 01_Godot工程 tests/xiyou_event_compare.tscn -- --coverage=<cov.json>`；退步的 i7 删掉，`事件祖先预设.py --prune --cur <cov> --tag i7 --targets t7.json --states generated/oracle/event_states.json`（t7.json 在本交付单末尾「附：i7 目标位置」，拷成文件再用），`事件空绿扫描.py --check`。
   4. 删过变体就再补跑一次探针，然后对照加 `--update-baseline`、`事件写法覆盖.py --coverage <cov> --out 04_验证/事件写法覆盖.md`；写法键用 `事件写法覆盖.analyse` 的全部首词，`--missed` 数字填进上面。
   5. `工具回归.py`、`云端选测.py run`，交付单改「可合并」。
+
+
+## 第二棒（11-08，周额度 96% 停）
+
+- 已做：`git merge main`（ef489a59，wukong-floor8、rules-gaps4 都已在内）＋`--补齐`，**不再报混批**；补齐末尾自动补跑了事件状态探针（增量，4 段，23414 例，含 i7 28 个）。
+- 对照：29373 例，一致 29365，不一致 8（都是基线登记过的），regressions 空。比基线多 28 例＝i7 全部一致，**不用剪枝**。
+- `事件空绿扫描.py --check` 通过（空绿 92 例都在基线内；ce1604 已补上，可随 --update-baseline 销）。
+- **没做**（额度停）：对照 `--update-baseline`、`事件写法覆盖.py --coverage … --out 04_验证/事件写法覆盖.md`、`工具回归.py`、`云端选测.py run`。下一棒从这里接：重跑一次对照加 `--update-baseline`（占槽 weight 1，约 11 分钟），再出覆盖报告、工具回归、云端选测，改「可合并」。
+
+### m4e71p0（更新日志）退步的根因（已查实）
+
+不是「jsdom 同步读文件不行」：参照宿主 `hboot.cjs` 用 `url: 'file://' + root + '/index.html'` 建 JSDOM，工程路径里有中文（再刷项目资料库、冻结正式源），URL 被百分号转义，**jsdom 的 file:// XHR 不解码就直接拿 pathname 开文件 → ENOENT**。所以 `CodexGuide.releaseInfo()` 为 null、`changelogEntries()` 为空，参照只剩 Map004 里 v0.36 以前的页。实测：同一个 app 经 ASCII 路径的软链读，ContentVersion.json 与 PlayerChangelog/v0.62.json 都是 200。
+
+修法草案（已实测：boot 后装上，releaseInfo＝v0.62.12，changelogEntries 12 版、v0.62 打头）：在 `hboot.cjs` 的 `const w = dom.window;` 后，给 `w.XMLHttpRequest.prototype` 包 open／send——同步 GET 且 file: 协议时用 `url.fileURLToPath` 解码后 `fs.readFileSync` 直接给 status 200／404、readyState 4、responseText（不走 jsdom 的文件读取）。草案代码见下。
+
+**为什么没直接改**：`hboot.cjs` 在 event_state_probe.cjs 的 coreFingerprint 文件清单里，改它＝事件状态探针整份重量（数小时、占满槽），而且所有用 hboot 的探针参照都会变。要总装约夜里（或并进下一次整份重量）、归工具车道改；改完 m4e71p0 本体与 #o 系列应能一致，再出这一页的变体（约 200 实例）。会影响别的探针结果的只有经 XHR 读文件的地方（工程里只有 installNativeGuidanceRuntime 这两处同步读，数据库读已被 hboot 改成 fs）。
+
+```js
+// 草案：hboot.cjs，const w = dom.window; 之后
+const {fileURLToPath} = require('url');
+{ const P = w.XMLHttpRequest.prototype, open = P.open, send = P.send;
+  P.open = function (method, url, async) {
+    this.__fileSync = null;
+    try { const u = new w.URL(url, w.location.href);
+      if (u.protocol === 'file:' && async === false && String(method).toUpperCase() === 'GET') this.__fileSync = fileURLToPath(u.href); } catch (e) {}
+    return open.apply(this, arguments); };
+  P.send = function () {
+    if (this.__fileSync === null) return send.apply(this, arguments);
+    let t = null; try { t = fs.readFileSync(this.__fileSync, 'utf8'); } catch (e) {}
+    Object.defineProperties(this, {status: {value: t === null ? 404 : 200, configurable: true}, readyState: {value: 4, configurable: true},
+      responseText: {value: t || '', configurable: true}, response: {value: t || '', configurable: true}}); }; }
+```
 
 ## 附：i7 目标位置（t7.json）
 
