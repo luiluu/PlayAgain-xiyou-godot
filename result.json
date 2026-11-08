@@ -1,0 +1,32 @@
+{
+ "sha": "e3d780c9b82cbeaee09cd967cc82d42111bcb91c",
+ "branch": "ci/cc/wukong-floor9",
+ "mode": "affected",
+ "base": "d9d1c7aeb5bc7ae34b3649f4a25c558d08eadc12",
+ "passed": true,
+ "scenes": 11,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 718.1,
+ "testSeconds": 1406,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "ca3205b4ec995930e55c62b5422f9f6b0ab05694",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42435384373",
+ "sceneNames": [
+  "xiyou_autosave.tscn",
+  "xiyou_common_scripts.tscn",
+  "xiyou_cover_interp.tscn",
+  "xiyou_difficulty_actor.tscn",
+  "xiyou_dungeon.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_cov.tscn",
+  "xiyou_honghuang_curse.tscn",
+  "xiyou_honghuang_reward.tscn",
+  "xiyou_lobby_shops.tscn",
+  "xiyou_script_census.tscn"
+ ],
+ "time": "2026-11-08T01:57:49+00:00"
+}
