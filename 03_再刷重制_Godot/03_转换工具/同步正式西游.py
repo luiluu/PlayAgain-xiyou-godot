@@ -726,7 +726,7 @@ def run_event_sharded(cmd, env, box, only=None):
 # troop_event_probe 分段并行（GC，派单第十六批，总装同意）：约 900 例单进程约 45 分钟，是同步的长杆。每例都从新局起跑（run() 开头 setupNewGame、
 # 随机数固定），互不依赖，所以按全局用例序号轮转分 n 段（XIYOU_PROBE_SHARD=i/n），各段一个 node 进程、各占 1 槽、各用自己的存档目录，
 # 跑完按序号交错拼回 .sandbox/troop_events.json，与单进程逐字相同（测试事件探针分段.py 的拼回用例；实测对比见交付单）。
-# TROOP_PROBE_SHARDS=1 退回单进程（旧行为）；默认 4 段，首跑想少占槽设 2。XIYOU_COVER=1 的覆盖记录下标是全局的，自动退回单进程。
+# 默认单进程（总装 11-08：实测 2 段 1047 秒比单进程 893 秒还慢，4 段没量过）；TROOP_PROBE_SHARDS=n 开 n 段并行。XIYOU_COVER=1 的覆盖记录下标是全局的，自动退回单进程。
 TROOP_MERGE_JS = r'''
 const fs = require('fs'), [out, ...parts] = process.argv.slice(1);
 const docs = parts.map(p => JSON.parse(fs.readFileSync(p, 'utf8')));
@@ -747,7 +747,7 @@ console.log(JSON.stringify(cases.map(c => ({troop: c.troop, actions: c.actions.l
 
 def run_troop_sharded(cmd, env, box):
     import concurrent.futures
-    shards = max(1, int(os.environ.get('TROOP_PROBE_SHARDS', '4')))
+    shards = max(1, int(os.environ.get('TROOP_PROBE_SHARDS', '1')))
     if shards < 2 or env.get('XIYOU_COVER') == '1':
         return run_node(cmd, env)
 
