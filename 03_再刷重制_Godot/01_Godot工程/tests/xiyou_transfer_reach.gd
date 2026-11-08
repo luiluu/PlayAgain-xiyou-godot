@@ -143,10 +143,13 @@ func _run() -> void:
 			await _map(int(ids[i]), by_map[ids[i]], data.exits, known)
 	_check("part%d_has_maps" % part, mine > 0)
 	# 收掉最后一张图（进图自动事件的解释器还挂着会在退出时报资源没释放）
+	var t1 := WaitBudget.new(10000)
+	while t1.waiting() and _scene() is XMapScene and _scene().busy:
+		await get_tree().process_frame
 	var last := _scene()
 	if last != null:
 		last.queue_free()
-	for i in 5:
+	for i in 60:
 		await get_tree().process_frame
 	print("失败：", JSON.stringify(fails))
 	var passed := results.filter(func(r): return r.passed).size()
