@@ -443671,6 +443671,2971 @@
    "phase": "battleEnd",
    "variant": "t1",
    "eventRandom": 0.5
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 8906,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8906,
+     "hpAfter": 8543,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8543,
+     "hpAfter": 8180,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8180,
+     "hpAfter": 7825,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 491,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11
+     ]
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7825,
+     "hpAfter": 6998,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 6998,
+     "hpAfter": 5904,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5904,
+     "hpAfter": 5541,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5541,
+     "hpAfter": 5178,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5178,
+     "hpAfter": 4823,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 491,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11
+     ]
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4823,
+     "hpAfter": 3996,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 87,
+     "mat": 60,
+     "agi": 40,
+     "states": [
+      11
+     ]
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 65,
+     "mat": 65,
+     "agi": 60,
+     "states": [
+      11
+     ]
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 102,
+     "mat": 75,
+     "agi": 65,
+     "states": [
+      11
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 220,
+     "mat": 245,
+     "agi": 213,
+     "states": [
+      11
+     ]
+    },
+    "e0": {
+     "hp": 3996,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {},
+   "turnStarts": [
+    {
+     "after": 1,
+     "enemies": {
+      "e0": {
+       "hp": 6998,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 2,
+     "enemies": {
+      "e0": {
+       "hp": 3996,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 3,
+   "phase": "turn",
+   "variant": "party"
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 8508,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1492,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 295,
+     "userMat": 320,
+     "userStates": [
+      11,
+      51
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8508,
+     "hpAfter": 8145,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8145,
+     "hpAfter": 7782,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7782,
+     "hpAfter": 7427,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 491,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11
+     ]
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7427,
+     "hpAfter": 6600,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 6600,
+     "hpAfter": 5108,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1492,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 295,
+     "userMat": 320,
+     "userStates": [
+      11,
+      51
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5108,
+     "hpAfter": 4745,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4745,
+     "hpAfter": 4382,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4382,
+     "hpAfter": 4027,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 491,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11
+     ]
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4027,
+     "hpAfter": 3200,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11
+     ],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 87,
+     "mat": 60,
+     "agi": 40,
+     "states": [
+      11
+     ]
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 65,
+     "mat": 65,
+     "agi": 60,
+     "states": [
+      11
+     ]
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 102,
+     "mat": 75,
+     "agi": 65,
+     "states": [
+      11
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 295,
+     "mat": 320,
+     "agi": 213,
+     "states": [
+      11,
+      51
+     ]
+    },
+    "e0": {
+     "hp": 3200,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {
+    "29": [
+     575
+    ]
+   },
+   "turnStarts": [
+    {
+     "after": 1,
+     "enemies": {
+      "e0": {
+       "hp": 6600,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 2,
+     "enemies": {
+      "e0": {
+       "hp": 3200,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 3,
+   "phase": "turn",
+   "variant": "party.k575"
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 8906,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8906,
+     "hpAfter": 8543,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8543,
+     "hpAfter": 8180,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8180,
+     "hpAfter": 7825,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 491,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7825,
+     "hpAfter": 6998,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 6998,
+     "hpAfter": 5904,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5904,
+     "hpAfter": 5541,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5541,
+     "hpAfter": 5178,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5178,
+     "hpAfter": 4823,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 491,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4823,
+     "hpAfter": 3996,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 87,
+     "mat": 60,
+     "agi": 40,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 65,
+     "mat": 65,
+     "agi": 60,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 102,
+     "mat": 75,
+     "agi": 65,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 220,
+     "mat": 245,
+     "agi": 213,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "e0": {
+     "hp": 3996,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {
+    "4": [
+     509
+    ]
+   },
+   "turnStarts": [
+    {
+     "after": 1,
+     "enemies": {
+      "e0": {
+       "hp": 6998,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 2,
+     "enemies": {
+      "e0": {
+       "hp": 3996,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 3,
+   "phase": "turn",
+   "variant": "party.k509.r1",
+   "eventRandom": 0
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 8906,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8906,
+     "hpAfter": 8543,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8543,
+     "hpAfter": 8180,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8180,
+     "hpAfter": 7825,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 491,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7825,
+     "hpAfter": 6998,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 6998,
+     "hpAfter": 5904,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5904,
+     "hpAfter": 5541,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5541,
+     "hpAfter": 5178,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5178,
+     "hpAfter": 4823,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 491,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4823,
+     "hpAfter": 3996,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 87,
+     "mat": 60,
+     "agi": 40,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 65,
+     "mat": 65,
+     "agi": 60,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 102,
+     "mat": 75,
+     "agi": 65,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 220,
+     "mat": 245,
+     "agi": 213,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "e0": {
+     "hp": 3996,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {
+    "4": [
+     509
+    ]
+   },
+   "turnStarts": [
+    {
+     "after": 1,
+     "enemies": {
+      "e0": {
+       "hp": 6998,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 2,
+     "enemies": {
+      "e0": {
+       "hp": 3996,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 3,
+   "phase": "turn",
+   "variant": "party.k509.r2",
+   "eventRandom": 0.01
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 1,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 8906,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8906,
+     "hpAfter": 8543,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8543,
+     "hpAfter": 8180,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8180,
+     "hpAfter": 7825,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 1,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 491,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 1,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 7825,
+     "hpAfter": 6998,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 6998,
+     "hpAfter": 5904,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 1094,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 220,
+     "userMat": 245,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5904,
+     "hpAfter": 5541,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5541,
+     "hpAfter": 5178,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 363,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 102,
+     "userMat": 75,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 5178,
+     "hpAfter": 4823,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 355,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 65,
+     "userMat": 65,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 2,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 491,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 9,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": [
+      11,
+      45
+     ]
+    },
+    {
+     "turn": 2,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 4823,
+     "hpAfter": 3996,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 827,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 87,
+     "userMat": 60,
+     "userStates": [
+      11,
+      45
+     ],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 87,
+     "mat": 60,
+     "agi": 40,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 65,
+     "mat": 65,
+     "agi": 60,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 102,
+     "mat": 75,
+     "agi": 65,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 220,
+     "mat": 245,
+     "agi": 213,
+     "states": [
+      11,
+      45
+     ]
+    },
+    "e0": {
+     "hp": 3996,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {
+    "4": [
+     509
+    ]
+   },
+   "turnStarts": [
+    {
+     "after": 1,
+     "enemies": {
+      "e0": {
+       "hp": 6998,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 2,
+     "enemies": {
+      "e0": {
+       "hp": 3996,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 3,
+   "phase": "turn",
+   "variant": "party.k509.r3",
+   "eventRandom": 0.02
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 5,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 5,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 5,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 5,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 5,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 5,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 9117,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 883,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 180,
+     "userMat": 205,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 5,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 9117,
+     "hpAfter": 8856,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 261,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 62,
+     "userMat": 35,
+     "userStates": [
+      34
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 5,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8856,
+     "hpAfter": 8595,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 261,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 62,
+     "userMat": 35,
+     "userStates": [
+      34
+     ],
+     "targetStates": []
+    },
+    {
+     "turn": 5,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8595,
+     "hpAfter": 8490,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 105,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 25,
+     "userMat": 25,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 5,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 18,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 5,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8490,
+     "hpAfter": 8093,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 397,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 47,
+     "userMat": 20,
+     "userStates": [],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 47,
+     "mat": 20,
+     "agi": 0,
+     "states": []
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 25,
+     "mat": 25,
+     "agi": 20,
+     "states": []
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 62,
+     "mat": 35,
+     "agi": 25,
+     "states": [
+      34
+     ]
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 180,
+     "mat": 205,
+     "agi": 173,
+     "states": []
+    },
+    "e0": {
+     "hp": 0,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": [
+      1
+     ]
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {
+    "20": [
+     201
+    ]
+   },
+   "turnPreset": 4,
+   "messages": [],
+   "turnStarts": [
+    {
+     "after": 4,
+     "enemies": {
+      "e0": {
+       "hp": 10000,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 5,
+   "phase": "battleEnd",
+   "variant": "party.t5.k201"
+  },
+  {
+   "troop": 1,
+   "paid": false,
+   "actions": [
+    {
+     "turn": 6,
+     "subject": "a29",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 6,
+     "subject": "a20",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 6,
+     "subject": "a4",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 6,
+     "subject": "e0",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    },
+    {
+     "turn": 6,
+     "subject": "a1",
+     "skill": 1,
+     "forced": false,
+     "processingForced": false
+    }
+   ],
+   "invokes": [
+    {
+     "turn": 6,
+     "subject": "a29",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 10000,
+     "hpAfter": 9117,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 883,
+       "hpAffected": true
+      },
+      {
+       "target": "a29",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 180,
+     "userMat": 205,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 6,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 9117,
+     "hpAfter": 8913,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 204,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 62,
+     "userMat": 35,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 6,
+     "subject": "a20",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8913,
+     "hpAfter": 8709,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 204,
+       "hpAffected": true
+      },
+      {
+       "target": "a20",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 62,
+     "userMat": 35,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 6,
+     "subject": "a4",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8709,
+     "hpAfter": 8604,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 105,
+       "hpAffected": true
+      },
+      {
+       "target": "a4",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 25,
+     "userMat": 25,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 6,
+     "subject": "e0",
+     "skill": 1,
+     "target": "a4",
+     "hpBefore": 500,
+     "hpAfter": 482,
+     "popups": [
+      {
+       "target": "a4",
+       "hpDamage": 18,
+       "hpAffected": true
+      },
+      {
+       "target": "e0",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 14,
+     "userMat": 14,
+     "userStates": [],
+     "targetStates": []
+    },
+    {
+     "turn": 6,
+     "subject": "a1",
+     "skill": 1,
+     "target": "e0",
+     "hpBefore": 8604,
+     "hpAfter": 8207,
+     "popups": [
+      {
+       "target": "e0",
+       "hpDamage": 397,
+       "hpAffected": true
+      },
+      {
+       "target": "a1",
+       "hpDamage": 0,
+       "hpAffected": false
+      }
+     ],
+     "userAtk": 47,
+     "userMat": 20,
+     "userStates": [],
+     "targetStates": []
+    }
+   ],
+   "errors": [],
+   "battlers": {
+    "a1": {
+     "hp": 485,
+     "mhp": 485,
+     "atk": 47,
+     "mat": 20,
+     "agi": 0,
+     "states": []
+    },
+    "a4": {
+     "hp": 482,
+     "mhp": 500,
+     "atk": 25,
+     "mat": 25,
+     "agi": 20,
+     "states": []
+    },
+    "a20": {
+     "hp": 650,
+     "mhp": 650,
+     "atk": 62,
+     "mat": 35,
+     "agi": 25,
+     "states": []
+    },
+    "a29": {
+     "hp": 535,
+     "mhp": 535,
+     "atk": 180,
+     "mat": 205,
+     "agi": 173,
+     "states": []
+    },
+    "e0": {
+     "hp": 8207,
+     "mhp": 10000,
+     "atk": 14,
+     "mat": 14,
+     "agi": 20,
+     "states": []
+    }
+   },
+   "party": [
+    1,
+    4,
+    20,
+    29
+   ],
+   "actorSkills": {},
+   "turnPreset": 5,
+   "messages": [],
+   "turnStarts": [
+    {
+     "after": 5,
+     "enemies": {
+      "e0": {
+       "hp": 10000,
+       "states": [],
+       "turns": {}
+      }
+     }
+    },
+    {
+     "after": 6,
+     "enemies": {
+      "e0": {
+       "hp": 8207,
+       "states": [],
+       "turns": {}
+      }
+     }
+    }
+   ],
+   "turnCount": 7,
+   "phase": "turn",
+   "variant": "party.t6"
   }
  ]
 }
