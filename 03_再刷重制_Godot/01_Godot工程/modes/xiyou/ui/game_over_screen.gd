@@ -1,6 +1,6 @@
 class_name XGameOverScreen
 extends Control
-## 【cc·悟空·未经审查】游戏结束画面（Scene_Gameover，O-待定·全灭回大厅，Kyo 2026-11-08 定：全灭回标题，同原版）。
+## 【cc·悟空·未经审查】游戏结束画面（Scene_Gameover，O-244，Kyo 2026-11-08 定：全灭回标题，同原版）。
 ## 原版：停 BGM／BGS、播 System.gameoverMe（Gameover1）、背景是 img/system/GameOver.png（「菜」字，YEP「Scale Game Over」=true
 ## 拉伸到整屏）、startFadeIn(slowFadeSpeed)；淡入完按确定或点一下 → 淡出 → 回标题（Scene_Title）。没有任何文字。
 ## 【Kyo 2026-11-08 定】默认把「菜」字图换成「NULL」字图（modes/xiyou/ui/game_over_null.png：照原图的尺寸 816×624、底色渐变与蓝色扫描线、

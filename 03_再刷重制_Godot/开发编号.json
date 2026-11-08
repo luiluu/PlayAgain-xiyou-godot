@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.416",
-  "sequence": 416,
-  "next": "dev.417",
-  "nextSequence": 417,
+  "current": "dev.417",
+  "sequence": 417,
+  "next": "dev.418",
+  "nextSequence": 418,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "ui-hide-power",
+  "currentChange": "wukong-floor10b",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

@@ -1,5 +1,5 @@
 extends Node
-## 全灭回标题（O-待定·全灭回大厅，Kyo 2026-11-08 定：同原版 Scene_Gameover）：
+## 全灭回标题（O-244，Kyo 2026-11-08 定：同原版 Scene_Gameover）：
 ## - 默认显示 NULL 字图，NULL_IMAGE = false 回原版「菜」字图；
 ## - XGameOverScreen 状态机：淡入 24 帧，淡入完按确定才开始淡出，淡出 24 帧后发 finished；没按就一直停着；图在；
 ## - 真实地图场景里 game_over()（默认）：弹出游戏结束画面、BGM 停、gameoverMe 在放，不传回大厅、队伍不回满；

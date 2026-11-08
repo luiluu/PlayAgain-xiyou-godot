@@ -1462,7 +1462,7 @@ func open_shop(goods: Array, purchase_only: bool) -> void:
 	shop.queue_free()
 	XShopStock.close_policy()
 
-## 全灭（301 战败不可败、353 游戏结束）。O-待定·全灭回大厅（Kyo 2026-11-08 定）：默认同原版——游戏结束画面（Scene_Gameover：
+## 全灭（301 战败不可败、353 游戏结束）。O-244（Kyo 2026-11-08 定）：默认同原版——游戏结束画面（Scene_Gameover：
 ## 停 BGM／BGS、放 gameoverMe、「菜」字图）→ 点一下回标题，读档恢复（副本开关、变量跟着存档回去，不会留脏状态）。
 ## 回退：GAME_OVER_TO_LOBBY = true 回到 10-12 起的旧做法（弹「全军覆没……将在方桌大厅复活。」、回满、传回大厅 Map004，副本状态不清）。
 static var GAME_OVER_TO_LOBBY := false
