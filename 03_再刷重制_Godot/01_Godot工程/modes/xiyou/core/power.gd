@@ -605,19 +605,7 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	return (maxf(1.0, base) + clampf(chance / 100.0, 0.0, 1.0)) * maxf(1.0, float(hits))
 
 
-## 原版 installCombatPowerRuntime 的 confirm()：CodexDamage v3（新源）直接返回原值；预演里 nativePreState 也因
-## prepare→refreshPassives 清掉 need_refreshstatelist 而不跑，所以状态 Confirm／React（难度适应 ×5、普通难度 ×1.5 等）
-## 都不进战力，只留固定减伤结算（finishSettlement）。false＝旧重制：经 XDamage.finish 把状态 Confirm／React 算进预演。
-static var POWER_SKIP_STATE_EFFECTS := true
-
-
-static func _state_free_settle(res: Dictionary, item: Dictionary, a: XActor, t: XBattler, vars: Array) -> float:
-	if POWER_SKIP_STATE_EFFECTS:
-		return XDamage.apply_fixed_mitigation(res.value, res)
-	return XDamage.finish(res, item, a, t, false, {"variables": vars})
-
-
-## expected：先扣费用再预演普通与暴击伤害（状态 Confirm/React 见 POWER_SKIP_STATE_EFFECTS），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
+## expected：先扣费用再预演普通与暴击伤害（含状态 Confirm/React），× 命中 ×(1−闪避) × 段数，群体按 60% 单体／40% 三体
 ## power：种族的本路线状态（XRaceBattle.power_cycle），血契与神族首魔、残响据此判
 static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictionary, cost: Dictionary, power: Dictionary = {}) -> float:
 	if power.is_empty():
@@ -631,12 +619,12 @@ static func _expected(logic: XBattleLogic, a: XActor, t: XBattler, skill: Dictio
 	# battleRound：同实战传自然回合（哈基米巨龙减伤钩子缺它会返回 unavailable）
 	var opts := {"critical": false, "variance": false, "vars": vars, "battleRound": maxi(1, logic.turn), "racePower": power,
 		"racePowerBlood": bool(cost.get("raceBlood", false))}
-	var normal := _state_free_settle(XDamage.calculate(item, a, t, opts), item, a, t, vars)
+	var normal := XDamage.finish(XDamage.calculate(item, a, t, opts), item, a, t, false, {"variables": vars})
 	var critical := normal
 	if bool(item.damage.get("critical", false)):
 		var crit_opts := opts.duplicate()
 		crit_opts.critical = true
-		critical = _state_free_settle(XDamage.calculate(item, a, t, crit_opts), item, a, t, vars)
+		critical = XDamage.finish(XDamage.calculate(item, a, t, crit_opts), item, a, t, false, {"variables": vars})
 	var p := _clamp01(a.cri * (1.0 - t.cev)) if bool(item.damage.get("critical", false)) else 0.0
 	var hit := _clamp01(logic.item_hit(a, item, t)) * (1.0 - _clamp01(logic.item_eva(a, item, t)))
 	a.mp = saved[0]
