@@ -7,13 +7,13 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const FIX := "res://tests/fixtures/transfer_landings.json"
 const KNOWN := "res://tests/fixtures/transfer_reach_known.json"
-const PARTS := 4
 const CASE_MS := 30000
 const WaitBudget := preload("res://tests/wait_budget.gd")
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const REACH := preload("res://tests/xiyou_reach_check.gd")
 
 @export var part := 1
+@export var parts := 4
 
 var results: Array = []
 var fails: Array = []
@@ -26,6 +26,7 @@ func _ready() -> void:
 	var runner := Node.new()
 	runner.set_script(get_script())
 	runner.set("part", part)
+	runner.set("parts", parts)
 	runner.set_meta("runner", true)
 	get_tree().root.add_child.call_deferred(runner)
 
@@ -138,7 +139,8 @@ func _run() -> void:
 	ids.sort()
 	var mine := 0
 	for i in ids.size():
-		if i % PARTS == part - 1:
+		if i % parts == part - 1:
+			print("MAP ", ids[i])
 			mine += 1
 			await _map(int(ids[i]), by_map[ids[i]], data.exits, known)
 	_check("part%d_has_maps" % part, mine > 0)
