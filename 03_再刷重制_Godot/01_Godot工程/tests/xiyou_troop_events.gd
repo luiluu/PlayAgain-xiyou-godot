@@ -116,9 +116,10 @@ static func _half_events(src: XRandomStream, event_r := 0.5) -> XRandomStream:
 	return out
 
 
-func setup(troop: int, paid := false, trial_seed := 1000) -> XBattleLogic:
+func setup(troop: int, paid := false, trial_seed := 1000, party: Array = []) -> XBattleLogic:
 	XEnemy.force_roll = 100.0
-	var s := XState.new_game(3, 1, [8, 9, 10])
+	# rules-gaps7：参照 party（嘤嘤怪 1 换队伍）时开局队伍照它建，默认 1／8／9／10
+	var s := XState.new_game(3, 1, [8, 9, 10]) if party.is_empty() else XState.new_game(3, int(party[0]), party.slice(1).map(func(x): return int(x)))
 	s.random_master = XRandomStream.hex64(trial_seed)
 	s.set_variable(842, 1 if paid else 0)
 	var logic := XBattleLogic.new()
@@ -185,6 +186,9 @@ func _run() -> void:
 
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
+	if c.has("party"):
+		_party_case(c)
+		return
 	if c.has("preset"):
 		_preset_case(c)
 		return
@@ -228,7 +232,50 @@ func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
 		var want: Array = c.actions.filter(func(a): return int(a.turn) == t and bool(a.forced)).map(func(a): return [str(a.subject), int(a.skill)])
 		var got: Array = phases[t].filter(func(l): return l.type == "action").map(func(l): return [key(l.user, logic), int(l.skill.id)])
 		check(name + ".t1_%s_forced" % tag, got.slice(0, want.size()) == want, [got, want])
+	# 审查 69 P3-2：参照 sceneChange＝Scene_Gameover（353 游戏结束，圣劫使 825 第 30 回合）时 game_over 置位、按全灭收场，
+	# 且 353 之后的指令（同页 222 淡入）不再执行；没有 sceneChange 的例子 game_over 不该置位
+	var over := str(c.get("sceneChange", "")) == "Scene_Gameover"
+	var start_logs: Array = phases[n]
+	var at := start_logs.find_custom(func(l): return l.type == "game_over")
+	var after_in := at >= 0 and start_logs.slice(at).any(func(l): return l.type == "event_view" and l.fade == "in")
+	check(name + ".t1_game_over", logic.game_over == over and (not over or (logic.is_lost() and at >= 0 and not after_in)),
+		[logic.game_over, over, logic.is_lost(), at, after_in])
 	check(name + ".t1_skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
+
+
+## rules-gaps7：换队伍（参照 party／actorSkills，嘤嘤怪 1：页按角色 4／20／29 在队、会不会技能 23／509／201／575 给全队或自己加状态 11／45／34／51）。
+## 开局队伍照参照建，开战后学会／忘掉技能（负数＝忘掉），eventRandom 时事件随机（变量 53）改取该值，turnPreset 时回合计数从 N 起；
+## 跑到参照的回合数（或分出胜负），比各角色身上这几个由事件加的状态。伤害与行动随机不比。
+const PARTY_EVENT_STATES := [11, 34, 45, 51]
+
+func _party_case(c: Dictionary) -> void:
+	var name := "troop%d.%s" % [int(c.troop), str(c.variant)]
+	var logic := setup(int(c.troop), bool(c.get("paid", false)), 1000, Array(c.party))
+	for id in c.get("actorSkills", {}):
+		var a: XActor = logic.state.actor(int(id))
+		for k in c.actorSkills[id]:
+			if int(k) > 0:
+				a.learn_skill(int(k))
+			else:
+				a.forget_skill(-int(k))
+	if c.has("eventRandom"):
+		logic.random.rule = _half_events(logic.random.rule, float(c.eventRandom))
+	var n := int(c.get("turnPreset", 0))
+	logic.turn = n
+	var last := n + 1 if n else 2  # 同探针：跑到第 N+1 回合（预置时）或前两回合
+	while logic.turn < last and not (logic.is_won() or logic.is_lost()):
+		var cmds := {}
+		for a in logic.actors:
+			cmds[a] = [XDB.rec("Skills", 1), logic.enemies[0]]
+		logic.run_turn(cmds)
+	for a in logic.actors:
+		var k := key(a, logic)
+		var want: Array = Array(c.battlers[k].states).map(func(x): return int(x)).filter(func(x): return PARTY_EVENT_STATES.has(x))
+		var got: Array = a.state_ids.filter(func(x): return PARTY_EVENT_STATES.has(int(x)))
+		want.sort()
+		got.sort()
+		check(name + ".states_" + k, got == want, [got, want])
+	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
 
 
 ## 开战前改敌人 HP（参照 preset），只比开场敌群事件后的敌人 HP 与状态（十五层副本敌群 160：控尸者 HP≤1% 时两只丧尸战斗不能）

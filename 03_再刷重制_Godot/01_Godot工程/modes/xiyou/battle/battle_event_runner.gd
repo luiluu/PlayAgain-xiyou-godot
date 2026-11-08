@@ -469,12 +469,19 @@ func _execute_env(c: Dictionary):
 			logs.append_array(logic.enemy_appear(int(p[0])))
 		336:
 			logs.append_array(logic.enemy_transform(int(p[0]), int(p[1])))
+		214:
+			# 暂时消除事件：command214 只在地图上、事件号 >0 时 eraseEvent；敌群页（及其调用的公共事件）事件号是 0，原版什么都不做（嘤嘤怪 1 第 3 页，rules-gaps7）
+			pass
 		221, 222:
 			# 淡出／淡入画面（圣劫使 825 第 30 回合灭世雷劫）：只是画面，记一条给画面层，不影响规则（rules-gaps6）
 			logs.append({"type": "event_view", "fade": "out" if int(c.code) == 221 else "in"})
 		353:
 			# 游戏结束（command353 → SceneManager.goto(Scene_Gameover)）：战斗场景随即离开，本页后面的指令（825 的 222 淡入）不再执行，
 			# 上层公共事件也到此为止（halted）。XBattleLogic.game_over 置位后 is_lost 成立，战斗按全军覆没收场（rules-gaps6）
+			# 与原版的差异（审查 69 P3-1，有意保留）：原版切到 Scene_Gameover 后 BattleManager 不再 update，endBattle 及各模块的
+			# endBattle 包装都不跑，只有 Scene_Battle.terminate 的 onBattleEnd；重制走普通全灭收场，会跑 end_battle(2)
+			# （XStateEffects 的 defeat、谷雨／云裳／心钢等包装、「全军覆没」字样），随后同样全灭回大厅。清理更干净、不留战斗残留，
+			# 玩家可见只多一行战败字样，所以不照搬（rules-gaps7）
 			logic.game_over = true
 			logs.append({"type": "game_over"})
 			halted = true

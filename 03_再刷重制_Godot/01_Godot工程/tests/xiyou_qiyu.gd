@@ -79,6 +79,7 @@ func _invoke(c: Dictionary) -> void:
 	var t := _enemy(c)
 	# 参照走整段行动序列，开头 IMMORTAL: targets, true；新源敌人先挨打再反击，挨打后还要活着才反击，这里照序列给目标不死
 	t.immortal = true
+	logic.enemies[0] = t  # 参照里目标是敌群成员；另造的敌人不在敌群会被 CounterGuard 跳过反击（rules-gaps7）
 	var logs := logic._invoke(a, XDB.rec("Skills", int(c.setup.skill)), t)
 	var types: Array = logs.map(func(l): return str(l.get("type", "")))
 	check(c.id + ".reflected", types.has("reflect") == bool(o.reflected), [types, o.reflected])

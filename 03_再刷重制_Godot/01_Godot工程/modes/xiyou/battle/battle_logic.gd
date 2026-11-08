@@ -2063,6 +2063,10 @@ func weapon_unleash(u: XBattler, skill: Dictionary) -> Dictionary:
 ## 新源 v0.35 起（YEP_BattleEngineCore invokeAction 第 2098 行）：敌人被反击判中时先挨这一下、再反击；角色照旧「反击代替挨打」。
 ## false 回到旧源 v0.28（敌人也是反击代替挨打）。
 static var COUNTER_AFTER_HIT := true
+## v0.53.01 installCounterGuardRuntime（invokeCounterAttack 包装）：反击者是敌人、却已不在敌群里时跳过这次反击（原版是防 Game_Action 找不到队伍索引报错）。
+## 重制的 enemies 开战后不增不减，正常战斗走不到；跟原版一样留着防外部造的敌人。false 不看敌群（v0.53.01 以前）。参照 mv_oracle/counter_guard_probe.cjs。
+static var COUNTER_GUARD := true
+var counter_guard_skipped := 0
 var _last_receiver: XBattler = null
 
 ## YEP_BattleEngineCore 的 invokeAction：先判魔法反射（魔法、几率 mrf；YEP_ElementCore 再加属性反弹，任何命中类型），再判反击（物理、目标能行动、几率 cnt），否则正常生效。
@@ -2091,13 +2095,23 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		if COUNTER_AFTER_HIT and not t.is_actor():
 			# v0.35 起 YEP invokeAction：敌人反击跟在挨打之后——先正常生效；挨打的还是它（没被掩护）、还活着能行动、出手者也活着才反击
 			var hit := _invoke_normal(u, skill, t)
-			if is_same(_last_receiver, t) and t.is_alive() and can_move(t) and u.is_alive():
+			if is_same(_last_receiver, t) and t.is_alive() and can_move(t) and u.is_alive() and not _counter_guarded(t):
 				var c := _counter_attack(u, t)
 				c[0].after_hit = true  # 画面：同一次 invokeAction，日志外层 pushBaseLine／popBaseLine 只一对（sequence_player._play_results）
 				hit.append_array(c)
 			return hit
+		if _counter_guarded(t):
+			return []  # 反击代替挨打（角色、或旧源的敌人），守卫跳过就什么都不发生，同原版
 		return _counter_attack(u, t)
 	return _invoke_normal(u, skill, t)
+
+
+## CounterGuard：反击者是敌人且不在敌群里（$gameTroop.members() 含隐藏的）就跳过，记一次
+func _counter_guarded(t: XBattler) -> bool:
+	if COUNTER_GUARD and not t.is_actor() and not enemies.has(t):
+		counter_guard_skipped += 1
+		return true
+	return false
 
 
 ## invokeCounterAttack：反击者对行动者普通攻击

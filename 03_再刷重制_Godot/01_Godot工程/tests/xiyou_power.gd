@@ -43,6 +43,35 @@ func _run() -> void:
 	get_tree().quit(0 if passed == results.size() else 1)
 
 
+## 战力预演不算状态 Confirm／React（原版 CodexDamage v3 的 confirm() 直接返回原值）：狗逍遥 Lv10 依次学 5980／5548
+## （开战挂难度适应 1691 ×5、普通难度 1631 ×1.5）／6168／2571／2786，原版战力 808→808→808→808→808→839
+## （2026-11-08 v0.62.12 临时探针 P.actor(a,true)）；回退支 POWER_SKIP_STATE_EFFECTS=false 时学 5980 后战力变大
+func _state_effects() -> void:
+	var want := [808, 808, 808, 808, 808, 839]
+	var got := []
+	var st := XState.new_game_blank()
+	var a := st.actor(1)
+	a.change_level_mv(10)
+	a.recover_all()
+	got.append(int(XPower.actor(a, true).total))
+	for id in [5980, 5548, 6168, 2571, 2786]:
+		a.learn_skill(id)
+		a.recover_all()
+		got.append(int(XPower.actor(a, true).total))
+	check("state_effects_skipped", got == want, {"got": got, "want": want})
+	var st2 := XState.new_game_blank()
+	var b := st2.actor(1)
+	b.change_level_mv(10)
+	b.recover_all()
+	var base := int(XPower.actor(b, true).total)
+	b.learn_skill(5980)
+	b.recover_all()
+	XPower.POWER_SKIP_STATE_EFFECTS = false
+	var old := int(XPower.actor(b, true).total)
+	XPower.POWER_SKIP_STATE_EFFECTS = true
+	check("state_effects_rollback", old > base, [base, old])
+
+
 ## 真气境界：装备预览与战力评估复制的角色要带上境界（道法缩放），境界变了战力缓存也要失效
 func _zhenqi_clone() -> void:
 	var a := XActor.new().setup(1)
@@ -123,6 +152,7 @@ func _actors(data: Dictionary) -> void:
 			and _close(nums, want) and sched == c.full.schedule.map(func(x): return int(x)) and int(e.coverage.known) == int(c.full.known)
 		check("actor_%d_lv%d" % [int(c.id), int(c.level)], ok, {"got": [p.total, p.self, p.parts, nums, sched], "want": [c.total, c.self, c.parts, want, c.full.schedule]})
 	check("actors_covered", data.get("actors", []).size() >= 20)
+	_state_effects()
 	# 界面文字：主菜单没算过时「战力见状态」，技能/装备页算过后主菜单显示「战斗力 N」；关掉战力时都不画
 	var st := XState.new_game_blank()
 	var a1 := st.actor(1)
