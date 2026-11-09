@@ -824,8 +824,9 @@ func _screen_fx(b: XBattleScene) -> void:
 		await b._event_view({"type": "event_view", "flash": [255, 0, 0, 170], "duration": 30, "wait": false})
 		marks.done = true
 	go.call()
-	await _shot_at_physics(start, 12, "battle_60_fade_f12")
-	await _shot_at_physics(start, 24, "battle_60b_fade_f24")
+	# 截图与原版 gb9_fade_f12／f24 同一画面：原版 k=12 截图时淡出已推进 11 帧（k=2 起），这里 start 之后第 n 帧已推进 n 帧
+	await _shot_at_physics(start, 11, "battle_60_fade_f12")
+	await _shot_at_physics(start, 23, "battle_60b_fade_f24")
 	var shown := await _until(func(): return b.message.win.openness >= 255 and b.message.win.pause)
 	await _frames(10)
 	await _shot("battle_60c_fade_message")
@@ -842,7 +843,8 @@ func _screen_fx(b: XBattleScene) -> void:
 	_check("screen_fx_message_closed", int(marks["in"]) >= 0, [b.message.win.openness, b.message.win.pause])
 	await _until(func(): return marks.done, 300)
 	var fstart := start + int(marks.flash)
-	await _shot_at_physics(fstart, 5, "battle_60d_flash_f5")
+	# 原版 gb9_flash_f5 在 k=147（224 在 k=144），闪烁推进了 3 帧（强度 153）
+	await _shot_at_physics(fstart, 3, "battle_60d_flash_f5")
 	await _until(func(): return sx.flash_duration == 0, 120)
 	# 原版逐帧：221 在 k=1，之后每帧一次 updateFadeOut；消息在 k=1+24+1 起忙
 	var ref_out: Array = []
