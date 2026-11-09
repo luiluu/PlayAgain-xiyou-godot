@@ -307,6 +307,113 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   return out;
 }
 
+// rules-gaps9：只在战斗里跑的公共事件（内容覆盖检查.py 的 battleOnlyCommonEvents：场合＝战斗的技能／物品效果 44 起点可达、
+// 地图页与别的场合都调不到；这里按原版数据同法算，不读切片，所以比切片里的多几个，Godot 侧跳过切片没有的）。上面的敌群例玩家只普攻，
+// 这些事件几乎跑不到。每个直接起点各一例：敌群 2、全员 HP 加到打不死，CE 里第一个「111 角色在队」的角色（没有就 1 号）当使用者，
+// 学会起点技能（物品就给 5 个），第 1 回合输入时用它打敌人 0，其余人防御；CE 里有「111 角色会技能 K」时分 met（都学会）／unmet（都忘掉）两例，
+// 没有就一例 plain。跑到第 1 回合结束，记行动序列（行动者、技能或物品、是否强制）、公共事件开跑时刻，
+// 以及事件之后下一个非强制行动开始时（或回合结束）CE 里 313／333 提到的那些状态在谁身上（snap）。
+// 用例带 party 字段，oracle_additions 按 (troop, paid, variant) 成键；variant＝'ce<号>.<met|unmet|plain>'。
+const SKILL_CE = (() => {
+  const ces = w.$dataCommonEvents, occ = new Map();
+  const calls = list => new Set((list || []).filter(c => c.code === 117 && ces[c.parameters[0]]).map(c => c.parameters[0]));
+  const closure = start => { const seen = new Set(start), q = [...start];
+    while (q.length) for (const x of calls(ces[q.pop()].list)) if (!seen.has(x)) { seen.add(x); q.push(x); }
+    return seen; };
+  const srcs = new Map();
+  for (const [kind, tab] of [['skill', w.$dataSkills], ['item', w.$dataItems]]) for (const r of tab) if (r) for (const e of r.effects || [])
+    if (e.code === 44 && ces[e.dataId]) {
+      if (!occ.has(e.dataId)) occ.set(e.dataId, new Set());
+      occ.get(e.dataId).add(r.occasion);
+      if (r.occasion === 1) { if (!srcs.has(e.dataId)) srcs.set(e.dataId, []);
+        srcs.get(e.dataId).push({kind, id: r.id, single: r.effects.filter(x => x.code === 44).length === 1}); }
+    }
+  const mapStart = new Set();
+  for (const f of fs.readdirSync(path.join(APP, 'data'))) if (/^Map\d{3}\.json$/.test(f))
+    for (const e of JSON.parse(fs.readFileSync(path.join(APP, 'data', f), 'utf8')).events || []) if (e)
+      for (const pg of e.pages || []) for (const x of calls(pg.list)) mapStart.add(x);
+  const only = [...occ].filter(([, s]) => s.size === 1 && s.has(1)).map(([id]) => id);
+  const other = [...occ].filter(([, s]) => !(s.size === 1 && s.has(1))).map(([id]) => id);
+  const bad = closure([...mapStart, ...other]);
+  const out = [];
+  for (const ce of [...closure(only)].filter(x => !bad.has(x) && srcs.has(x)).sort((a, b) => a - b)) {
+    const list = ces[ce].list, sub = closure([ce]);
+    const conds = list.filter(c => c.code === 111 && c.parameters[0] === 4);
+    const user = (conds.find(c => c.parameters[2] === 0) || {parameters: [4, 1]}).parameters[1];
+    const learn = conds.filter(c => c.parameters[2] === 3).map(c => [c.parameters[1], c.parameters[3]]);
+    const watch = new Set();
+    for (const id of sub) for (const c of ces[id].list) if (c.code === 313 || c.code === 333) watch.add(c.parameters[3] !== undefined && c.code === 313 ? c.parameters[3] : c.parameters[2]);
+    const src = srcs.get(ce).find(s => s.single) || srcs.get(ce)[0];
+    for (const v of learn.length ? ['met', 'unmet'] : ['plain']) out.push({ce, user, learn, src, watch: [...watch].sort((a, b) => a - b), v});
+  }
+  return out;
+})();
+function runSkillCE(sc) {
+  { const idx = caseCounter++; if (idx < FROM || (SHARD && idx % SHARD.n !== SHARD.i)) return {__skip: true}; }
+  if (COVER) { ran = new Set(); coverByCase.push(ran); }
+  sprites.clear();
+  const party = [sc.user].concat([1, 8, 9, 10].filter(x => x !== sc.user)).slice(0, 4);
+  w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
+  // 照常 addActor（继承难度等）；部分高号角色（超强者等）默认难度会被拦，之后直接写 _actors 补上
+  w.eval('$gameParty._actors=[];' + JSON.stringify(party) + '.forEach(function(id){$gameParty.addActor(id);});$gameParty._actors=' + JSON.stringify(party) + ';');
+  const skills = {[sc.user]: sc.src.kind === 'skill' ? [sc.src.id] : []};
+  for (const [a, k] of sc.learn) (skills[a] = skills[a] || []).push(sc.v === 'met' ? k : -k);
+  for (const id of party) { const a = w.$gameActors.actor(id); a._paramPlus[0] = 999999999; }
+  for (const id of Object.keys(skills)) for (const k of skills[id]) { const a = w.$gameActors.actor(Number(id)); if (k > 0) a.learnSkill(k); else a.forgetSkill(-k); }
+  if (sc.src.kind === 'item') w.$gameParty.gainItem(w.$dataItems[sc.src.id], 5);
+  for (const id of party) { const a = w.$gameActors.actor(id); a.refresh(); a.recoverAll(); a._tp = 100; }
+  if (!w.$dataMap) w.$dataMap = {displayName: '', events: [], data: [], width: 1, height: 1, note: '', meta: {}, encounterList: [], tilesetId: 1};
+  const BM = w.BattleManager;
+  w.Math.random = () => 0.99;
+  BM.setup(2, false, false);
+  BM._logWindow = stub; BM._spriteset = stub; BM._statusWindow = stub;
+  w.Math.random = () => 0.5;
+  w.$gameTroop.members().forEach(e => { e._paramPlus[0] = 999999999; e.recoverAll(); });
+  const out = {troop: 2, paid: false, variant: 'ce' + sc.ce + '.' + sc.v, skillCE: sc.ce, party, actorSkills: skills,
+    use: [sc.src.kind, sc.src.id, sc.user], watch: sc.watch, actions: [], events: [], errors: [], battlers: {}};
+  const snap = () => { const s = {};
+    for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members())) s[key(b)] = b._states.filter(x => sc.watch.includes(x));
+    return s; };
+  const sa = BM.startAction, setupCE = w.Game_Interpreter.prototype.setupReservedCommonEvent;
+  BM.startAction = function () {
+    const s = this._subject, act = s && s.currentAction(), forcing = !!(act && act._forcing);
+    if (!forcing && !out.snap && out.events.some(e => e.commonEvent === sc.ce)) out.snap = snap();
+    out.actions.push({subject: s && key(s), item: act && act.item() ? [act.isItem() ? 'item' : 'skill', act.item().id] : null, forced: forcing});
+    return sa.call(this);
+  };
+  w.Game_Interpreter.prototype.setupReservedCommonEvent = function () {
+    const id = w.$gameTemp._commonEventId, ok = setupCE.apply(this, arguments);
+    if (ok) out.events.push({commonEvent: id, afterActions: out.actions.length});
+    return ok;
+  };
+  let used = false;
+  try {
+    BM.startBattle();
+    for (let i = 0; i < 20000; i++) {
+      if (BM._phase === 'battleEnd' || w.$gameTroop._turnCount > 1) break;
+      if (w.$gameMessage.isBusy()) { w.$gameMessage.clear(); continue; }
+      if (BM._phase === 'input') {
+        const actor = BM.actor(), act = BM.inputtingAction();
+        if (act && actor && actor.actorId() === sc.user && !used) {
+          if (sc.src.kind === 'item') act.setItem(sc.src.id); else act.setSkill(sc.src.id);
+          act.setTarget(0); used = true;
+        } else if (act) act.setGuard();
+        BM.selectNextCommand();
+        continue;
+      }
+      BM.update();
+    }
+  } catch (e) { out.errors.push(String(e && e.stack || e).slice(0, 800)); }
+  BM.startAction = sa; w.Game_Interpreter.prototype.setupReservedCommonEvent = setupCE;
+  ran = null;
+  if (w.SceneManager._nextScene) { out.sceneChange = w.SceneManager._nextScene.constructor.name; w.SceneManager._nextScene = null; }
+  if (!out.snap) out.snap = snap();
+  for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members())) out.battlers[key(b)] = {hp: b.hp, mhp: b.mhp, states: b._states.slice()};
+  out.turnCount = w.$gameTroop._turnCount;
+  out.phase = BM._phase;
+  return out;
+}
+
 const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
   cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333,456,457,458,459,460,461,462,463,464,465,466].map(id => run(id, true)))
     // 敌群 462 有金角、银角两名守层者：玩家集火银角（敌人 1），看第二名守层者受击与行动
@@ -356,7 +463,9 @@ const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
     .concat(PAGE2_844.flatMap(id => [0.25, 0.5].map(r => runEventRandom(id, r, [0], 3))))
     // rules-gaps7：嘤嘤怪 1（YING_PARTY，见上）：队伍换成 1／4／20／29，各页的「带状态」支与否则支
     .concat(YING_CASES.map(([v, st, r, n]) => runParty({party: YING_PARTY, skills: st}, () =>
-      Object.assign(r !== null ? runEventRandom(1, r, null, n) : run(1, false, null, 0, 0, null, n), {variant: v}))))};
+      Object.assign(r !== null ? runEventRandom(1, r, null, n) : run(1, false, null, 0, 0, null, n), {variant: v}))))
+    // rules-gaps9：只在战斗里跑的公共事件（SKILL_CE，见上）
+    .concat(SKILL_CE.map(runSkillCE))};
 if (PARTIAL) result.cases = result.cases.filter(c => !c.__skip);
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
