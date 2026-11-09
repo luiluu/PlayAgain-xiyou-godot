@@ -32,7 +32,7 @@
 ## 验证
 
 - **Gradle 出包（云端，本机没 JDK 17）**：导出冒烟 run 42668732578／42676011733：`云端导出.py android-build` 装构建模板、插件 `BUILD SUCCESSFUL in 53s`（aar 10 KB）；「安卓 验收」Gradle 导出 77.8 秒、467 MB，`导出冒烟.py` 签名与包结构通过（含新加的插件登记、服务、三个前台服务权限检查）；「安卓 发行」也导出成功。模拟器 logcat：`Initializing Godot plugin XiyouBgIdle`／`Completed initialization`。
-- **模拟器后台挂机（run 42676011733，安卓 14 x86_64）**：BGIDLE_ARMED=true；切后台 60 秒后进程同一 pid 活着；`dumpsys activity services` 有 XiyouIdleService；`dumpsys notification` 有 xiyou_idle 频道通知；回前台服务停了；插件记的离开时长 60.1 秒（实际约 60 秒）。全部 PASS。
+- **模拟器后台挂机（run 42676011733，安卓 14 x86_64）**：BGIDLE_ARMED=true；切后台 60 秒后进程同一 pid 活着；`dumpsys activity services` 有 XiyouIdleService；`dumpsys notification` 有 xiyou_idle 频道通知；回前台服务停了；插件记的离开时长 60.1 秒（实际约 60 秒）。全部 PASS。交付头 df6a72a16 再跑一轮（run 42683523056，含快速切回修正）：六项后台挂机仍全 PASS，Windows 导出与实机冒烟也过。
 - 同一轮模拟器另有 4 项失败：`android_keys_title_space_new_game`／`_j_`／`_enter_`（按完 1 步还在标题）和 `android_pause_hook_fires`。**main 上同样失败**（对照 run 42678614104，main 没有本分支改动，4 项一模一样），不是本分支带来的；logcat 看是第一下按键在进标题 1.3 秒后就按了、标题还没接住，新游戏没开、也就进不了地图存档。11-07 最后一次全过之后 main 有改动，建议派平台／界面车道查（见可优化）。
 - **云端选测**（基准 github/main eb6ab526b，`选测.py` 列的 206 个场景、14 片）：全过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42680616344 。
 - **本机专项**：`xiyou_platform`（122／122，含新加的 13 项前台服务用例与 background_service_off 回退）、`xiyou_hangup`、`xiyou_hangup_auto`、`xiyou_pause_save`、`xiyou_mac_export`、`xiyou_determinism`、`xiyou_map` 全过。
