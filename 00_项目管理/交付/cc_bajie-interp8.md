@@ -31,7 +31,7 @@ hboot.cjs 修好中文路径 file:// XHR 后，参照里 CodexGuide 读得到 v0
 
 ## 优化登记草稿
 
-- O-待定·参照宿主中文路径读文件：已登记在 `03_再刷重制_Godot/00_设计/优化登记.md`（工具修正，编号待总装分配）。
+| O-待定·参照宿主中文路径读文件 | `03_转换工具/mv_oracle/hboot.cjs`（工具，只影响参照，不影响游戏）：`boot` 里给 `XMLHttpRequest` 包 open／send | jsdom 的 file:// XHR 不解码百分号转义，工程路径含中文时同步读 `data/ContentVersion.json`、`data/PlayerChangelog/*.json` 全 ENOENT：参照里 `CodexGuide.releaseInfo()` 为空、`changelogEntries()` 为 0，m4e71p0 更新日志只剩 Map004 里 v0.36 以前的页 | 同步 GET 的 file: 请求用 `fileURLToPath` 解码后 fs 直接读（仍经 fs 守卫），给 status 200／404、readyState 4、responseText；实测 releaseInfo＝v0.62.12、更新日志 12 版 v0.62 打头 | 参照宿主的环境缺陷，原版在 NW.js 里读得到；修了参照才跟正式版一致（interp6 查实，interp8 做） | 环境变量 `XIYOU_HBOOT_FILE_XHR=0` 退回 jsdom 原行为 | cc（八戒 interp8） | 工具修正；编号待总装分配 |
 
 ## 验证
 
