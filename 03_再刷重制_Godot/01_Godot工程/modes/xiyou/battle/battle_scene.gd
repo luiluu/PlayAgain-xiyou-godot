@@ -1566,14 +1566,16 @@ const ACT_END_FRAMES := 52
 ## 敌群事件／战斗里的公共事件的画面指令（XBattleEventRunner 记的 event_view）：
 ## 221／222 Game_Interpreter.command221／222：startFadeOut／startFadeIn(fadeSpeed 24)，事件等 24 帧；
 ## 224 command224：startFlash(颜色, 帧数)，勾了等待才等。battleback 卷动只是记录，不演。
+## 原版 wait(n) 把 _waitCount 设 n，之后 n 帧都在 updateWaitCount 里空转，第 n＋1 帧才跑下一条
+## （参照 battle_screen_fx_oracle：221 在 k=1，101 在 k=26；222 在 k=119，224 在 k=144），所以这里等 n＋1 帧。
 func _event_view(l: Dictionary) -> void:
 	if l.has("fade"):
 		screen_fx.start_fade(str(l.fade) == "out", XBattleScreen.FADE_SPEED)
-		await _wait_frames(XBattleScreen.FADE_SPEED)
+		await _wait_frames(XBattleScreen.FADE_SPEED + 1)
 	elif l.has("flash"):
 		screen_fx.start_flash(l.flash, int(l.duration))
 		if bool(l.get("wait", false)):
-			await _wait_frames(int(l.duration))
+			await _wait_frames(int(l.duration) + 1)
 
 
 func _wait_frames(n: int) -> void:

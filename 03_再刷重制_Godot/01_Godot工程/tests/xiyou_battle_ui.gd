@@ -830,7 +830,16 @@ func _screen_fx(b: XBattleScene) -> void:
 	await _frames(10)
 	await _shot("battle_60c_fade_message")
 	_check("screen_fx_black_under_message", shown and is_zero_approx(sx.brightness) and is_equal_approx(sx.fade_opacity(), 255.0), [shown, sx.brightness])
-	await _press("ui_accept")
+	# 文字完按确定关闭。消息窗在物理帧里读输入，按一次可能先走完 _update_message 再停一次（原版 Window_Message 同），
+	# 所以每按一次等它推进 3 个物理帧再看（无头时一个物理帧里会跑好几个空闲帧，只数空闲帧会把几次按键挤进同一物理帧）
+	for i in range(5):
+		if int(marks["in"]) >= 0 or b.message.win.is_closing():
+			break
+		await _press("ui_accept")
+		for j in range(3):
+			await get_tree().physics_frame
+	await _until(func(): return int(marks["in"]) >= 0, 120)
+	_check("screen_fx_message_closed", int(marks["in"]) >= 0, [b.message.win.openness, b.message.win.pause])
 	await _until(func(): return marks.done, 300)
 	var fstart := start + int(marks.flash)
 	await _shot_at_physics(fstart, 5, "battle_60d_flash_f5")
@@ -851,13 +860,13 @@ func _screen_fx(b: XBattleScene) -> void:
 	var ref_flash := _ref_series(frames, 4, 4)
 	var got_in: Array = []
 	var got_flash: Array = []
-	var phase := 0
+	var phase := 0   # trace 的 k 每次 start_* 归零：第 1 段淡出、第 2 段淡入、第 3 段闪烁
 	for t in sx.trace:
-		if int(t[0]) == 1 and phase < 2:
+		if int(t[0]) == 1:
 			phase += 1
-		if phase == 1 and got_in.size() < 24 and int(marks["in"]) >= 0:
+		if phase == 2 and got_in.size() < 24:
 			got_in.append(float(t[1]))
-		elif phase == 2:
+		elif phase == 3:
 			got_flash.append(float(t[2]))
 	_check("screen_fx_fade_in_frames", _close(got_in, ref_in.slice(0, got_in.size())) and got_in.size() == 24, [got_in.slice(0, 4), ref_in.slice(0, 4), got_in.size()])
 	_check("screen_fx_flash_frames", _close(got_flash, ref_flash.slice(0, got_flash.size())) and got_flash.size() == 30, [got_flash.slice(0, 4), ref_flash.slice(0, 4), got_flash.size()])
