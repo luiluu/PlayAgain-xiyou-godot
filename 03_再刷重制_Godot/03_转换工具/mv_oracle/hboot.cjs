@@ -38,6 +38,30 @@ function boot(root, opts = {}) {
   const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>',
     {runScripts: 'outside-only', pretendToBeVisual: true, url: 'file://' + root + '/index.html', virtualConsole: vc});
   const w = dom.window;
+  // m4e71p0（interp8，O-待定）：工程路径含中文时 URL 被百分号转义，jsdom 的 file:// XHR 不解码就拿 pathname 开文件 → ENOENT，
+  // CodexGuide.releaseInfo()／changelogEntries() 读不到 data/ContentVersion.json、data/PlayerChangelog（参照里只剩 v0.36 前的更新日志）。
+  // 同步 GET 的 file: 请求改用 fileURLToPath 解码后 fs 直接读（读仍经 fs 守卫）；XIYOU_HBOOT_FILE_XHR=0 退回 jsdom 原行为。
+  // 只给 status／readyState／responseText，不发 onload 等事件（原版同步读的调用处都在 send 后直接读字段）。
+  if (process.env.XIYOU_HBOOT_FILE_XHR !== '0') {
+    const {fileURLToPath} = require('url');
+    const P = w.XMLHttpRequest.prototype, open = P.open, send = P.send;
+    P.open = function(method, url, async) {
+      this.__fileSync = null;
+      try {
+        const u = new w.URL(url, w.location.href);
+        if (u.protocol === 'file:' && async === false && String(method).toUpperCase() === 'GET') this.__fileSync = fileURLToPath(u.href);
+      } catch (e) {}
+      return open.apply(this, arguments);
+    };
+    P.send = function() {
+      if (this.__fileSync === null || this.__fileSync === undefined) return send.apply(this, arguments);
+      let t = null;
+      try { t = fs.readFileSync(this.__fileSync, 'utf8'); } catch (e) {}
+      Object.defineProperties(this, {
+        status: {value: t === null ? 404 : 200, configurable: true}, readyState: {value: 4, configurable: true},
+        responseText: {value: t || '', configurable: true}, response: {value: t || '', configurable: true}});
+    };
+  }
   // ---- 宿主环境占位 ----
   function ctxProxy(canvas) {
     const store = {canvas, globalAlpha: 1, font: '', fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, textAlign: 'left',
