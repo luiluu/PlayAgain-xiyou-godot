@@ -309712,69 +309712,6 @@
    }
   },
   {
-   "base": "ce978",
-   "tag": "sa4r_78",
-   "preset": {
-    "random_seq": [
-     0.005
-    ]
-   }
-  },
-  {
-   "base": "ce1202",
-   "tag": "sa4r_79",
-   "preset": {
-    "random_seq": [
-     0.7
-    ]
-   }
-  },
-  {
-   "base": "ce1202",
-   "tag": "sa4r_80",
-   "preset": {
-    "random_seq": [
-     0.1
-    ]
-   }
-  },
-  {
-   "base": "ce1202",
-   "tag": "sa4r_81",
-   "preset": {
-    "random_seq": [
-     0.3
-    ]
-   }
-  },
-  {
-   "base": "ce1204",
-   "tag": "sa4r_82",
-   "preset": {
-    "random_seq": [
-     0.7
-    ]
-   }
-  },
-  {
-   "base": "ce1204",
-   "tag": "sa4r_83",
-   "preset": {
-    "random_seq": [
-     0.1
-    ]
-   }
-  },
-  {
-   "base": "ce1204",
-   "tag": "sa4r_84",
-   "preset": {
-    "random_seq": [
-     0.3
-    ]
-   }
-  },
-  {
    "base": "ce1421",
    "tag": "sa4r_85",
    "preset": {
@@ -310671,18 +310608,6 @@
     },
     "answers": [
      0
-    ]
-   }
-  },
-  {
-   "base": "ce110",
-   "tag": "sa4d_39",
-   "preset": {
-    "party": [
-     30
-    ],
-    "random_seq": [
-     0.145
     ]
    }
   },
