@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -31,6 +32,17 @@ ENV = SUB / '07_开发环境'
 TOOLS = SUB / '03_转换工具'
 CORE = PROJECT / 'modes/xiyou/core'
 UI = PROJECT / 'modes/xiyou/ui'
+
+
+def robust_rmtree(root, tries=8, pause=0.25):
+    """偶发 OSError 66「Directory not empty: …/.git」：git 的后台子进程（如 gc --auto）还在写 .git 时删目录会撞上。
+    先 ignore_errors 删，没删净就短暂重试，最后一次不再吞错（tools-flake1）。"""
+    for i in range(tries):
+        shutil.rmtree(root, ignore_errors=True)
+        if not Path(root).exists():
+            return
+        time.sleep(pause * (i + 1))
+    shutil.rmtree(root)
 
 
 class Fixture(unittest.TestCase):
@@ -66,7 +78,8 @@ class Fixture(unittest.TestCase):
         self.base = self.g('rev-parse', 'HEAD')
 
     def tearDown(self):
-        self.tmp.cleanup()
+        robust_rmtree(Path(self.tmp.name))
+        self.tmp._finalizer.detach()  # 目录已删：不让 TemporaryDirectory 析构时再删一次
 
     def g(self, *args):
         return subprocess.run(['git', '-C', str(self.root), *args], capture_output=True, text=True, check=True,
@@ -1696,6 +1709,36 @@ class CheckerTests(Fixture):
         self.assertEqual(rc, 2)
         self.assertEqual(ran, [])
 
+
+
+class RobustRmtreeTests(unittest.TestCase):
+    def test_retries_when_a_background_writer_races_the_removal(self):
+        """删到一半有进程又往目录里写：第一遍删不净也要重试到干净（tools-flake1，对应 .git Directory not empty）。"""
+        root = Path(tempfile.mkdtemp(prefix='xiyou_rmtree_test_'))
+        (root / '.git').mkdir()
+        (root / '.git' / 'a').write_text('x')
+        real = shutil.rmtree
+        calls = []
+
+        def racing(path, ignore_errors=False, **kw):
+            calls.append(1)
+            real(path, ignore_errors=ignore_errors, **kw)
+            if len(calls) < 3:  # 前两遍删完后又冒出新文件，模拟后台 git 在写
+                Path(path).mkdir(exist_ok=True)
+                (Path(path) / 'late').write_text('y')
+        with mock.patch.object(shutil, 'rmtree', racing):
+            robust_rmtree(root, tries=6, pause=0.01)
+        self.assertFalse(root.exists())
+        self.assertGreaterEqual(len(calls), 3)
+
+    def test_raises_when_it_really_cannot_remove(self):
+        root = Path(tempfile.mkdtemp(prefix='xiyou_rmtree_test_'))
+        try:
+            with mock.patch.object(shutil, 'rmtree', side_effect=OSError(66, 'Directory not empty')):
+                with self.assertRaises(OSError):
+                    robust_rmtree(root, tries=2, pause=0.01)
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
 
 if __name__ == '__main__':
     # 带参数时只跑点名的类／用例（tools65：python3 测试选测.py CheckerTests CheckerStubParseTests）；不带参数跑整份
