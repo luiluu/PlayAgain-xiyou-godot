@@ -27,9 +27,15 @@ scan = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(scan)
 
 
+# 开局等级上限：YEP_CoreEngine 参数 Max Level（新开局 $gameParty.ActorMaxLevel 未设，走它）
+MV_START_MAX_LEVEL = 10
+
+
 def merge_into(out, add):
     for k, v in add.items():
-        if k == 'answers':
+        if k == 'maxLevel':
+            out[k] = max(out.get(k, 0), v)
+        elif k == 'answers':
             out['answers'] = list(v)
         elif k == 'actors':   # 按角色深合并（同一角色的 skills／armors 各自并起来，不互相覆盖；八戒 DR w14）
             for aid, spec in v.items():
@@ -80,7 +86,11 @@ def trace_var(lst, j, p):
                 if t == 7 and int(q[5]) == 2:
                     return {'gold': int(val)}
                 if t == 3 and int(q[6]) == 0 and int(val) >= 1:   # 角色等级（cc 分段甲：m4e49 炭治郎学技能先把 1500 设成 93 号的等级）
-                    return {'actors': {str(q[5]): {'level': min(int(val), 99)}}}
+                    lv = min(int(val), 99)
+                    out = {'actors': {str(q[5]): {'level': lv}}}
+                    if lv > MV_START_MAX_LEVEL:   # 开局上限以上同时抬上限（maxlevel equal，cc 分段甲 a3），否则 changeLevel 被夹住
+                        out['maxLevel'] = lv
+                    return out
                 if t == 7 and int(q[5]) == 4 and int(val) >= 0:
                     return {'playtime': int(val)}
             if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:
@@ -157,6 +167,10 @@ def _merge_chain(pre, lst, heads, loc):
 
 
 def _finish(pre, bad):
+    # 同一技能既要学会又要忘掉（两道门对同一技能要求相反）：开不了
+    for spec in pre.get('actors', {}).values():
+        if set(spec.get('skills', [])) & set(spec.get('forget', [])):
+            bad += 1
     # 新源 installBossDifficultyRuntime 包了 addActor：超强者在地狱（难度 9）以下进不了队，参照探针摆预设时就弹
     # 「超强者仅限地狱及以上难度获取。」、人也没进队；重制摆预设不走这层，于是对不上（八戒 DR：w5 四例）。预设里有超强者进队就带上难度 9。
     if '_rand' in pre:   # 位置→随机数，排成序列，空位填 0.5
