@@ -12,7 +12,7 @@
 - **`maxLevel`**（探针 `event_state_probe.cjs` 与 `tests/xiyou_event_compare.gd` 同加，进 PRESET_KEYS）：同插件指令「maxlevel equal N」——参照设 `$gameParty.ActorMaxLevel` 与全部 `$dataActors[i].maxLevel`（每例由开局快照换回），重制设 `XState.actor_max_level`；在角色等级之前摆。`事件祖先预设.trace_var` 的「变量＝角色等级」一支在等级超过开局上限 10（YEP_CoreEngine Max Level）时同时出 `maxLevel`。合并预设时取大。
 - **`actors.N.forget`**（两边同加）：在 skills 之后 forgetSkill／forget_skill。`事件写法覆盖.open_preset` 的「否则（角色没学会技能）」从空预设改成 `forget: [技能]`；`_finish` 里同一技能既学又忘的记为开不了的门。
 - **脚本造选单**：只有 ce1442 洪荒诅咒用 `$gameMessage.setChoices`（全源扫过）。探针 `msg()` 本来就按 answers 应答任何选单，不用改探针；`sa3_hh1～14` 按「第 k 次选到 ((j+3k) mod 15)+1」造，覆盖后发现选项号是剩余列表的下标、不是诅咒号，位置 2～5 各缺一个值（1469＝4、1470＝7、1471＝10、1472＝13），补 `sa3_hh15`（answers [0,2,4,6,8]＝选 1、4、7、10、13）。现在 ce1442 的 76 个条件分支全进过，570 条指令里没执行到的只剩结构行。
-- **ce1442 的 70 个 `w8_*` 冗余但保留**：它们直接设 1468～1472，被第 40 条脚本覆盖，旧探针结果和 `s1` 逐项一致（trace、reached 相同，变量终值相同）。本来删了（e7c6cf50），总装合并时同步拒收「删除既有参照用例」（oracle_additions 只在换源时接受删除），已 revert（e7c269d6），**换源时再删**。
+- **ce1442 的 70 个 `w8_*` 冗余但保留**：它们直接设 1468～1472，被第 40 条脚本覆盖，旧探针结果和 `s1` 逐项一致（trace、reached 相同，变量终值相同）。本来删了（e7c6cf50），总装合并时同步拒收「删除既有参照用例」（oracle_additions 只在换源时接受删除），已 revert（043febc0），**换源时再删**。
 - **sa3 祖先链变体**：整份对照覆盖（29907 例）→ `事件写法覆盖 --missed` 1303 簇 → `事件祖先预设 --tag sa3` 出 185 个，只留预设带 `forget` 或 `maxLevel` 的 40 个，量完对照 41／41 一致，剪掉目标仍没执行到的 1 个（ce2500#sa3_28），留 39 个：ce2500 锻炼链 9、m4e49p1 9、m4e49p2 8、m4e74p0 5、m67e2p2 4、ce2495／m67e2p0／m146e6p0／ce1685 各 1。
 - 顺手：`测试事件探针分段.py` 的 `--force` 提示用例 mock 掉 `changed_probe_files`，不然在改过探针的分支里被「相对 main 改过」守卫提前返回而误红。
 
@@ -20,7 +20,7 @@
 
 - 26f32cea：预设键 maxLevel、actors.N.forget，开门生成跟上。
 - c2dd7dff：ce1442 sa3_hh 14 个变体。
-- e7c6cf50：删 ce1442 的 70 个 w8_*；e7c269d6 revert 回来（同步不收删除既有用例）。
+- e7c6cf50：删 ce1442 的 70 个 w8_*；043febc0 revert 回来（同步不收删除既有用例）。
 - bc6d2767：sa3_hh15、sa3 祖先链 39 个变体。
 - 7cd4cb91：测试事件探针分段 --force 用例不受守卫影响。
 - 合 main 三次（最后一次 b445a3fe，均无冲突外的改动；event_presets 冲突解法同上）。
