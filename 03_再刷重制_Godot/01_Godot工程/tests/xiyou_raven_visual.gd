@@ -45,10 +45,10 @@ func _run() -> void:
 func _motion(c: Dictionary, on: bool) -> void:
 	var s := XState.new_game(2, 1, [8])
 	XState.current = s
-	if c.setup.get("myth", false):
-		s.raven["myth"] = 3
 	var sp := XBattlerSprite.new()
 	sp.battler = s.actor(int(c.setup.actor))
+	if c.setup.get("myth", false):  # 取角色时渡鸦存档会初始化，神话回合要在取完之后设
+		s.raven["myth"] = 3
 	var got := {}
 	var want := {}
 	for m in c.observed.motions:
