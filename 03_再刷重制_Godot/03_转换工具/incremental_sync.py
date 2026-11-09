@@ -395,17 +395,22 @@ class ProbeCache:
         detail['incremental_sync.py'] = 'rev:%d' % SHARD_TOOLING_REVISION
         return sha_json(detail), detail
 
-    def _compatible(self, old, current):
+    def _compatible(self, old, current, probe=None):
         """旧条目的输入明细与本次相容（本次的依赖是旧依赖的子集且逐份相同，其余输入相同）：
-        换成按实际依赖算键、或某个本探针没用到的 helper 改了时，旧条目换上新键接着用，不整份重跑。"""
+        换成按实际依赖算键、或某个本探针没用到的 helper 改了时，旧条目换上新键接着用，不整份重跑。
+        旧条目记的 helper 版本按影响面声明折算后与本次相同也算相同（声明前已用新 helper 跑过、记了 to 的条目不因声明重跑）。"""
         if not (isinstance(old, dict) and isinstance(current, dict)):
             return False
         oc, cc = old.get('common'), current.get('common')
         if not (isinstance(oc, dict) and isinstance(cc, dict)) or any(oc.get(k) != v for k, v in cc.items()):
             return False
         od, cd = old.get('dependencies'), current.get('dependencies')
-        if not (isinstance(od, dict) and isinstance(cd, dict)) or any(od.get(k) != v for k, v in cd.items()):
+        if not (isinstance(od, dict) and isinstance(cd, dict)):
             return False
+        for k, v in cd.items():
+            o = od.get(k)
+            if o != v and not (probe and isinstance(o, str) and self._scoped_sha(probe, k, o) == v):
+                return False
         for field in set(old) | set(current):
             if field in ('common', 'dependencies'):
                 continue
@@ -425,7 +430,7 @@ class ProbeCache:
         name, current, done = command[0], self.details.get(command[0]), []
         for label, book in (('entry', self.entries), ('ledger', self.ledger), ('carried', self.carried)):
             c = book.get(name)
-            if isinstance(c, dict) and c.get('key') != key and self._compatible(c.get('inputs'), current):
+            if isinstance(c, dict) and c.get('key') != key and self._compatible(c.get('inputs'), current, name):
                 c['key'] = key
                 c['inputs'] = current
                 done.append(label)

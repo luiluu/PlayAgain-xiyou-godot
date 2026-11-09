@@ -737,6 +737,12 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(self.hits(), [True, False, True])
         with mock.patch.dict(os.environ, XIYOU_HELPER_SCOPE='0'):
             self.assertEqual(self.hits(), [False, False, True])
+        # 声明之前已用新 helper 跑过、条目记的是 to（车道先同步、后合进声明）：折算后与本次相同，换键接着用，不重跑
+        scope = (self.tools / incremental_sync.SCOPE_FILE).read_text()
+        (self.tools / incremental_sync.SCOPE_FILE).unlink()
+        self.prime()
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(scope)
+        self.assertEqual(self.hits(), [True, True, True])
         (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [{'file': 'mv_oracle/host.cjs'}]}))
         with self.assertRaises(RuntimeError):
             self.cache()
