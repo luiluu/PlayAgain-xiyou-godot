@@ -495,7 +495,8 @@ func _case(c: Dictionary, round: int) -> void:
 			# 会给自己加状态（被封印者 379／383 的 4218 攻击 +500，原版强制两格实测同样 1830／1970），攻击／魔攻与附加伤害不比参照值
 			# （参照第 1 回合停在强制行动之后、没轮到任何角色的例子（830／831 首位是角色 a10）不算：参照没走完这一回合，照旧比）
 			var ref_t1: Array = c.actions.filter(func(a): return int(a.turn) == 1)
-			more_slots = ref_t1.any(func(a): return str(a.subject).begins_with("a")) \
+			# 审查 71 P3-1：_half 份的规则随机跟参照一样固定 0.5，正常不会多出格，多出来就是重制错了，不放宽
+			more_slots = not oracle_half and ref_t1.any(func(a): return str(a.subject).begins_with("a")) \
 				and got[1].filter(func(x): return x[0] == "e0").size() > ref_t1.filter(func(a): return a.subject == "e0").size()
 			if more_slots:
 				_more_slot_cases += 1
