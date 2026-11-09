@@ -114,13 +114,80 @@ func _run() -> void:
 			scr.step(false)
 	_check("default_returned_to_title", titled[0] == 1 and over_done[0], titled)
 	_check("default_me_stopped", not m.me.playing)
+	# 2b. 随机遇敌全灭（审查 70 P2①）：_encounter 收战斗结果，result==2 进结束画面（原来人 0 血留在地图）
+	var m2 := await _open_lobby()
+	if _check("lobby_reopen", m2 != null):
+		_hurt()
+		m2.map_data.encounterList = [{"weight": 1, "troopId": 4, "regionSet": []}]
+		titled[0] = 0
+		XMapScene.GAME_OVER_TO_LOBBY = false
+		m2._encounter()   # 不 await：战斗自动打输后进结束画面，画面等按键
+		var scr2: XGameOverScreen = null
+		var t2 := WaitBudget.new(60000)
+		while t2.waiting() and scr2 == null:
+			for c in m2.ui.get_children():
+				if c is XGameOverScreen:
+					scr2 = c
+			await get_tree().process_frame
+		_check("encounter_wipe_game_over", scr2 != null)
+		_check("encounter_wipe_busy", m2.busy)
+		if scr2 != null:
+			for i in range(XGameOverScreen.FADE_FRAMES + 2):
+				scr2.step(false)
+			scr2.step(true)
+			for i in range(XGameOverScreen.FADE_FRAMES + 2):
+				scr2.step(false)
+			for i in range(5):
+				await get_tree().process_frame
+		_check("encounter_wipe_to_title", titled[0] == 1, titled)
+	# 2c. 经解释器输掉（301 不可败，审查 70 P2②）：结束画面期间一直 busy，事件收尾也不放开，方向键人不动
+	var m3 := await _open_lobby()
+	if _check("lobby_reopen2", m3 != null):
+		_hurt()
+		titled[0] = 0
+		m3._set_busy(true)
+		var interp := MVInterpreter.new(m3, 4, 0, [
+			{"code": 301, "indent": 0, "parameters": [0, 4, false, false]},
+			{"code": 0, "indent": 0, "parameters": []},
+		])
+		var ev_done := [false]
+		var go_ev := func():
+			await interp.run()
+			m3._set_busy(false)   # 同 run_event 的收尾
+			ev_done[0] = true
+		go_ev.call()
+		var scr3: XGameOverScreen = null
+		var t3 := WaitBudget.new(60000)
+		while t3.waiting() and scr3 == null:
+			for c in m3.ui.get_children():
+				if c is XGameOverScreen:
+					scr3 = c
+			await get_tree().process_frame
+		_check("interp_wipe_game_over", scr3 != null)
+		var grid0: Vector2i = m3.player.grid
+		Input.action_press("ui_right")
+		for i in range(20):
+			await get_tree().physics_frame
+		Input.action_release("ui_right")
+		_check("interp_wipe_busy_held", m3.busy and not ev_done[0], [m3.busy, ev_done[0]])
+		_check("interp_wipe_player_still", m3.player.grid == grid0, [grid0, m3.player.grid])
+		if scr3 != null:
+			for i in range(XGameOverScreen.FADE_FRAMES + 2):
+				scr3.step(false)
+			scr3.step(true)
+			for i in range(XGameOverScreen.FADE_FRAMES + 2):
+				scr3.step(false)
+			for i in range(5):
+				await get_tree().process_frame
+		_check("interp_wipe_to_title", titled[0] == 1 and ev_done[0], titled)
+		_check("interp_wipe_busy_after", m3.busy, null)
 	# 3. 回退：回大厅
 	XMapScene.GAME_OVER_TO_LOBBY = true
 	titled[0] = 0
 	_hurt()
 	XMessageBox.auto = true
 	XMessageBox.auto_answers = []
-	await m.game_over()
+	await m3.game_over()
 	XMessageBox.auto = false
 	XMapScene.GAME_OVER_TO_LOBBY = false
 	_check("lobby_recovered", XState.current.members().all(func(a): return a.hp == a.mhp), XState.current.members().map(func(a): return [a.hp, a.mhp]))
