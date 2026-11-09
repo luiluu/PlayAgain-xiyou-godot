@@ -1381,6 +1381,10 @@ def prepare(root, state, state_file, executor, also=()):
                 print('== ' + ' '.join(cmd), flush=True)
             rc = subprocess.run(cmd, cwd=root).returncode if state['worktree'] else 3  # 无车道工作树：直接完整同步
             if rc == 3:
+                # 整份克隆不成时，车道已跑完的事件状态探针结果仍可逐例取回（tools-merge-probe，11-09 seg-a3 两次各 90 分钟整份重量）；
+                # XIYOU_STATE_PREV_FROM=0 不传
+                if state['worktree'] and os.environ.get('XIYOU_STATE_PREV_FROM', '1') != '0':
+                    sync = sync + ['--state-prev-from', state['worktree']]
                 print('== ' + ' '.join(map(str, sync)), flush=True)
                 rc = subprocess.run(list(map(str, sync)), cwd=root).returncode
             if rc:
