@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "events.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m4e71p0\"]]",
+      "fields": [
+        "trace"
+      ],
+      "oldDigest": "3a239637fabcd53f",
+      "newDigest": "b564aa689f1a101c",
+      "reason": "hboot.cjs 修好中文路径 file:// XHR 后，参照里 CodexGuide 读得到 v0.62.12 的 ContentVersion 与 PlayerChangelog，event_probe 的 m4e71p0（改版向导）更新日志页从 v0.36 以前的旧页变成 v0.62 起的 12 版，选项与台词随之变化，这是修正后的正确参照（O-待定·参照宿主中文路径读文件）。"
+    }
+  ]
+}
