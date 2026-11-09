@@ -16,6 +16,10 @@ extends RefCounted
 ## Star_PetSystem 的 PetGet 读「最后一个 setItem 的行动」：用道具时记在 meta "last_item_action"（XPetCapture.pet_get 读）。
 
 const CHAIN_LIMIT := 64
+## O-待定：CE1365 三咒凝魄（会心法 6927 时强制 6930「三魔术*火」，6930 自己的效果 44 又是 1365）原版会一直强制下去
+## （参照 2 万帧里放了 700 多次还没完）；心法写的是「额外释放一次」。true＝公共事件自己强制出来的行动再带同一个公共事件时不再预约
+## （只额外放一次），false＝回到原版的无限连放（靠 CHAIN_LIMIT 截停）。
+static var EXTRA_ONCE := true
 ## 本版 BattleManager.startBattle 每场开战预约的公共事件「战斗开始时调整变量」（调 1315／1372／1373／1375，变量 13＝1 时截上限）
 const START_EVENT := 1320
 
@@ -47,7 +51,15 @@ static func reserve_action(logic, user, item: Dictionary, targets: Array) -> voi
 		logic.set_meta("last_item_action", {"user": user, "item": item, "target": targets[0] if not targets.is_empty() else null})
 	for e in item.get("effects", []):
 		if int(e.code) == 44:
+			if EXTRA_ONCE and in_common_event(logic, int(e.dataId)):
+				continue
 			reserve(logic, int(e.dataId), user)
+
+
+## 正在跑公共事件 id（它里面强制出来的行动，其效果 44 又指回它自己）
+static func in_common_event(logic, id: int) -> bool:
+	var r = logic._runner
+	return r != null and r.has_meta("common_event") and int(r.get_meta("common_event")) == id
 
 
 ## 排在当前预约之后的公共事件（奈叶领域做活 O-183 用：2478 排在开战 1320 之后，不顶掉单槽）：
