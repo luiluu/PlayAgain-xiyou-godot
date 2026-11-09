@@ -3,6 +3,22 @@ extends Node
 ## 发行版存档目录与横屏设置。桌面上用 XPlatform.force_mobile 当成手机测，不依赖测试机平台。
 var results := []
 
+## 后台挂机插件替身（android-bgidle1）：方法名同安卓插件 XiyouBgIdle
+class FakeBgIdle extends RefCounted:
+	var armed := false
+	var away := -1
+	var stopped := false
+	var asked := 0
+	func setArmed(on: bool) -> void:
+		armed = on
+	func lastAwayMsec() -> int:
+		return away
+	func lastStoppedByUser() -> bool:
+		return stopped
+	func requestNotificationPermission() -> bool:
+		asked += 1
+		return true
+
 class Recorder extends Node:
 	var right_clicks := 0
 	var cancels := 0
@@ -197,6 +213,67 @@ func _run() -> void:
 	platform.on_paused(0)
 	check("background_idle_off", platform.on_resumed(60_000) == 0.0 and not platform.is_catching_up())
 	XPlatform.BACKGROUND_IDLE = true
+	# 后台挂机前台服务（O-待定，android-bgidle1）：插件替身
+	var fake := FakeBgIdle.new()
+	var saved_stopper := XPlatform.idle_stopper
+	var stops := [0]
+	XPlatform.idle_stopper = func(): stops[0] += 1
+	XPlatform.bg_service_override = fake
+	idle[0] = true
+	platform._process(0.0)
+	check("service_armed_when_idle", fake.armed and platform.service_armed() and fake.asked == 1, [fake.armed, fake.asked])
+	idle[0] = false
+	platform._process(0.0)
+	check("service_disarmed_when_idle_ends", not fake.armed and not platform.service_armed())
+	idle[0] = true
+	platform._process(0.0)
+	check("notify_permission_asked_once", fake.armed and fake.asked == 1, fake.asked)
+	# 服务陪着离开 2 小时：用插件量的真实时间（游戏计时只走了 1 秒），不受 O-201 的 30 分钟上限
+	fake.away = 7_200_000
+	platform.on_paused(0)
+	var svc_secs := platform.on_resumed(1000)
+	check("service_away_real_time", is_equal_approx(svc_secs, 7200.0) and platform.is_catching_up(), svc_secs)
+	platform.stop_catch_up()
+	check("service_no_stop_without_button", stops[0] == 0 and not platform.is_catching_up())
+	fake.away = 72_000_000
+	platform.on_paused(0)
+	check("service_capped", is_equal_approx(platform.on_resumed(1000), XPlatform.SERVICE_CAP_SEC))
+	platform.stop_catch_up()
+	# 通知上按了停止：只补到按的那一刻（插件给的时长），补完结束挂机
+	fake.away = 600_000
+	fake.stopped = true
+	platform.on_paused(0)
+	check("service_stopped_counts_until_stop", is_equal_approx(platform.on_resumed(1000), 600.0) and stops[0] == 0)
+	platform._process(700.0)
+	check("service_stopped_ends_idle_after_catch_up", not platform.is_catching_up() and stops[0] == 1, stops[0])
+	# 点屏幕提前停补跑也结束挂机
+	platform.on_paused(0)
+	platform.on_resumed(1000)
+	platform.stop_catch_up()
+	check("service_stopped_tap_ends_idle", stops[0] == 2, stops[0])
+	# 按了停止、离开不到 5 秒：不补跑，直接结束挂机
+	fake.away = 2000
+	platform.on_paused(0)
+	check("service_stopped_short_away", platform.on_resumed(1000) == 0.0 and stops[0] == 3 and not platform.is_catching_up(), stops[0])
+	fake.stopped = false
+	# 这次没起服务（插件给 -1）：退回 O-201 的游戏计时和 30 分钟上限
+	fake.away = -1
+	platform.on_paused(0)
+	check("service_missing_falls_back", is_equal_approx(platform.on_resumed(10_000_000), XPlatform.BACKGROUND_CAP_SEC))
+	platform.stop_catch_up()
+	# 回退：关掉前台服务就不起服务，插件给的时长也不用
+	XPlatform.BACKGROUND_SERVICE = false
+	platform._process(0.0)
+	fake.away = 7_200_000
+	platform.on_paused(0)
+	var off_secs := platform.on_resumed(60_000)
+	check("background_service_off", not fake.armed and not platform.service_armed() and is_equal_approx(off_secs, 60.0), [fake.armed, off_secs])
+	platform.stop_catch_up()
+	XPlatform.BACKGROUND_SERVICE = true
+	XPlatform.bg_service_override = null
+	platform._process(0.0)
+	check("service_none_on_desktop", platform.bg_service() == null and not platform.service_armed())
+	XPlatform.idle_stopper = saved_stopper
 	XPlatform.idle_probe = saved_probe
 
 	# 虚拟按键
