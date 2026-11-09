@@ -190,13 +190,16 @@ func _apply_scale() -> void:
 
 
 ## installNativeRavenRuntime Sprite_Actor.startMotion 包装（最外层）：渡鸦 167 受击改播 evade、濒死改播 wait（战斗缩放后受击／濒死帧
-## 看着一直趴着）；只换显示，伤害与死亡判定不变。参照 raven_visual 探针：普通与神话形态都换（多帧插件给神话留的原生受击／濒死帧
-## 被这一层挡在外面，实际用不上）。O-196（交付单「优化登记草稿」渡鸦受击濒死动作）：RAVEN_MOTION_REMAP = false 回到移植前。
+## 看着一直趴着）；只换显示，伤害与死亡判定不变。只换普通形态：神话形态（多帧 UserSV_RavenMythic）的受击／濒死照原样播自带的
+## 4 号、14 号帧——Codex_MiraRavenMultiFrame 的 startMotion 包装在开机画面才装、包在最外层，神话的这两个动作直接调开机前的原生
+## startMotion，绕过渡鸦替换（raven6：无头 Chrome 量具 real/raven_motion.json 实测；ravenfx 期参照引擎没走开机画面，量成了神话也换）。
+## O-196（交付单「优化登记草稿」渡鸦受击濒死动作）：RAVEN_MOTION_REMAP = false 回到移植前。
 static var RAVEN_MOTION_REMAP := true
 const RAVEN_MOTIONS := {"damage": "evade", "dying": "wait"}
 
 func raven_motion(m: String) -> String:
-	if RAVEN_MOTION_REMAP and battler is XActor and int(battler.actor_id) == XRaven.ACTOR:
+	if RAVEN_MOTION_REMAP and battler is XActor and int(battler.actor_id) == XRaven.ACTOR \
+			and not (RAVEN_MOTIONS.has(m) and XAppearance.sv_form(battler) == "RavenMythic"):
 		return str(RAVEN_MOTIONS.get(m, m))
 	return m
 
