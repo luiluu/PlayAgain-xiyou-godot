@@ -387,7 +387,9 @@ function runSkillCE(sc) {
   const snap = () => { const s = {};
     for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members())) s[key(b)] = b._states.filter(x => sc.watch.includes(x));
     return s; };
-  const sa = BM.startAction, setupCE = w.Game_Interpreter.prototype.setupReservedCommonEvent;
+  const sa = BM.startAction, setupCE = w.Game_Interpreter.prototype.setupReservedCommonEvent, et = BM.endTurn;
+  // 使用者排在本回合最后出手时没有「下一个非强制行动」：在回合结束（状态按回合解除之前）取快照
+  BM.endTurn = function () { if (!out.snap && out.events.some(e => e.commonEvent === sc.ce)) out.snap = snap(); return et.apply(this, arguments); };
   BM.startAction = function () {
     const s = this._subject, act = s && s.currentAction(), forcing = !!(act && act._forcing);
     if (!forcing && !out.snap && out.events.some(e => e.commonEvent === sc.ce)) out.snap = snap();
@@ -418,7 +420,7 @@ function runSkillCE(sc) {
       BM.update();
     }
   } catch (e) { out.errors.push(String(e && e.stack || e).slice(0, 800)); }
-  BM.startAction = sa; w.Game_Interpreter.prototype.setupReservedCommonEvent = setupCE;
+  BM.startAction = sa; BM.endTurn = et; w.Game_Interpreter.prototype.setupReservedCommonEvent = setupCE;
   ran = null;
   if (w.SceneManager._nextScene) { out.sceneChange = w.SceneManager._nextScene.constructor.name; w.SceneManager._nextScene = null; }
   if (!out.snap) out.snap = snap();
