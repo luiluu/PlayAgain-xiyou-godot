@@ -776,6 +776,56 @@ def run_troop_sharded(cmd, env, box):
 # 每段各占 1 槽；上次的结果用已发布的 generated/oracle/event_states.json，摘要从摘要账（.sandbox/event_state_keys.json，
 # 按结果文件 SHA-256 认领）取，摘要按「冻结源除地图外的部分＋本例读到的地图」算，换源只改了几张地图时只重跑那几张图上的变体。
 STATE_KEYS = SANDBOX / 'event_state_keys.json'
+# 合并时车道产物不能整份克隆（--from-worktree 退出码 3）而改跑完整同步时，合并车道.py 传 --state-prev-from <车道工作树>：
+# 车道已跑完的 event_states.json（车道账上认得的那份）也当「上次结果」交给探针，与 main 自己的上次结果按用例号拼成一份
+# （车道的优先，main 补车道没有的）。取不取回仍由探针逐例按摘要（含探针代码、来源、预设、读到的地图）判断、再抽 1% 重跑自检，
+# 所以只会省时间、不会把对不上的结果带进来。11-09 seg-a3 合并：车道改了探针，main 的上次结果整份作废，两次各 90 分钟整份重量，
+# 车道树里同一份代码的结果却就在那儿（tools-merge-probe）。XIYOU_STATE_PREV_FROM=0 回到只用 main 自己的上次结果。
+STATE_PREV_FROM = None
+
+
+def lane_state_prev(worktree, gen):
+    """车道工作树里账上认得的事件状态结果：(结果文件, 摘要文档)；没有或拿不准返回 None。"""
+    import event_state_shards as ess
+    try:
+        lane_gen = Path(worktree) / Path(gen).resolve().relative_to(ROOT.resolve())
+        lane_keys = Path(worktree) / (SANDBOX / 'event_state_keys.json').resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return None
+    result = lane_gen / 'oracle/event_states.json'
+    if not result.is_file() or result.resolve() == (Path(gen) / 'oracle/event_states.json').resolve():
+        return None
+    doc = ess.KeyHistory(lane_keys).find(result)
+    return (result, doc) if doc else None
+
+
+def combine_prev(work, lane, main_prev):
+    """车道结果（优先）与 main 上次结果（补车道没有的用例）拼成一份上次结果和摘要，写在 work 下；返回 (结果, 摘要, 车道条数, main 条数)。"""
+    import event_state_shards as ess
+    lane_file, lane_doc = lane
+    data = json.loads(Path(lane_file).read_text())
+    cases, keys, maps = list(data.get('cases') or []), dict(lane_doc.get('keys') or {}), dict(lane_doc.get('maps') or {})
+    seen, from_main = {c.get('id') for c in cases}, 0
+    if main_prev:
+        main_file, main_keys = main_prev
+        try:
+            other, other_doc = json.loads(Path(main_file).read_text()), json.loads(Path(main_keys).read_text())
+        except (OSError, ValueError):
+            other = other_doc = None
+        # 开局设定不同的那份探针整份不认，拼进来也没用
+        if other and other_doc and json.dumps(other.get('setup'), sort_keys=True) == json.dumps(data.get('setup'), sort_keys=True):
+            for c in other.get('cases') or []:
+                cid = c.get('id')
+                if cid not in seen and cid in (other_doc.get('keys') or {}) and cid in (other_doc.get('maps') or {}):
+                    cases.append(c)
+                    keys[cid], maps[cid] = other_doc['keys'][cid], other_doc['maps'][cid]
+                    seen.add(cid)
+                    from_main += 1
+    out, out_keys = Path(work) / 'prev-combined.json', Path(work) / 'prev-combined.keys.json'
+    out.write_text(json.dumps(dict(data, cases=cases)))
+    out_keys.write_text(json.dumps({'version': 2, 'coreFingerprint': lane_doc.get('coreFingerprint'), 'keys': keys,
+                                    'maps': maps, 'fileSha': ess.file_sha(out)}))
+    return out, out_keys, len(cases) - from_main, from_main
 
 
 def run_state_sharded(cmd, env, box):
@@ -785,13 +835,27 @@ def run_state_sharded(cmd, env, box):
     work.mkdir(parents=True, exist_ok=True)
     history = ess.KeyHistory(STATE_KEYS)
     incremental = ess.prepare_prev(env, history, Path(env['XIYOU_GENERATED']) / 'oracle/event_states.json', work)
+    note_lane = ''
+    if STATE_PREV_FROM and os.environ.get('XIYOU_STATE_PREV_FROM', '1') != '0':
+        lane = lane_state_prev(STATE_PREV_FROM, env['XIYOU_GENERATED'])
+        if lane is None:
+            note_lane = '车道 %s 没有账上认得的事件状态结果，不用；' % STATE_PREV_FROM
+        else:
+            try:
+                prev, prev_keys, n_lane, n_main = combine_prev(
+                    work, lane, (env['XIYOU_STATE_PREV'], env['XIYOU_STATE_PREV_KEYS']) if incremental else None)
+                env['XIYOU_STATE_PREV'], env['XIYOU_STATE_PREV_KEYS'] = str(prev), str(prev_keys)
+                incremental = True
+                note_lane = '上次结果并入车道 %s 的（车道 %d 例、main 补 %d 例）；' % (STATE_PREV_FROM, n_lane, n_main)
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                note_lane = '车道事件状态结果读取失败（%s），不用；' % str(error)[:80]
     keys = work / 'event_states.keys.json'
     p = ess.run_sharded(env, ORACLE_DIR, work, SANDBOX / 'event_states.json', keys, shards,
                         lambda e, label: run_node(cmd, e, weight=1))
     if p.returncode == 0 and keys.is_file():
         history.add(keys)
-    note = '（事件状态探针：%d 段；%s）\n' % (shards, '上次结果的摘要在账上，按摘要取回没变的变体' if incremental
-                                          else '账上没有上次结果的摘要，整份重量')
+    note = '（事件状态探针：%d 段；%s%s）\n' % (shards, note_lane, '上次结果的摘要在账上，按摘要取回没变的变体' if incremental
+                                            else '账上没有上次结果的摘要，整份重量')
     return subprocess.CompletedProcess(p.args, p.returncode, note + (p.stdout or ''), p.stderr or '')
 
 
@@ -1129,19 +1193,24 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument('--accept-source-switch', metavar='版本',
                     help='换源：允许正式版本从基线换到这个版本（如 v0.62.12），仍须接受单逐条接受全部测量变化；没有稳定键的整字段列表改变也只在这时可接受')
     ap.add_argument('--from-worktree', type=Path, help='合并时用车道已同步的产物（按指纹核对），不满足条件退出码 3')
+    ap.add_argument('--state-prev-from', type=Path, metavar='车道工作树',
+                    help='完整同步时把车道已跑完的事件状态探针结果也当上次结果（探针逐例按摘要取回）；合并车道.py 在 --from-worktree 退出码 3 后传')
     ap.add_argument('--full', '--full-probes', dest='full', action='store_true', help='忽略探针缓存，强制全量转换与全部探针（--full-probes 同义）')
     ap.add_argument('--no-import', action='store_true', help='结束时不跑 godot --import')
     return ap
 
 
 def _main() -> int:
-    a = build_parser().parse_args()
+    ap = build_parser()
+    a = ap.parse_args()
     try:
         withdraw = {int(re.sub(r'^(?i:map)', '', str(m))) for m in a.accept_withdrawal}
     except ValueError:
         ap.error('--accept-withdrawal 写地图号，如 41 或 Map041')
     if a.full and a.from_worktree:
         ap.error('--full 与 --from-worktree 不能一起使用')
+    global STATE_PREV_FROM
+    STATE_PREV_FROM = a.state_prev_from.resolve() if a.state_prev_from and not a.full else None
     # 多会话并行（AGENTS.md）：来源登记／当前状态只由总装在主工作区改，worktree 里自动不登记
     git = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
                          capture_output=True, text=True).stdout.split('\n')
