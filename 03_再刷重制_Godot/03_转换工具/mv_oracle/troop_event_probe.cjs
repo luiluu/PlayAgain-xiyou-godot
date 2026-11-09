@@ -339,20 +339,33 @@ const SKILL_CE = (() => {
   for (const ce of [...closure(only)].filter(x => !bad.has(x) && srcs.has(x)).sort((a, b) => a - b)) {
     const list = ces[ce].list, sub = closure([ce]);
     const conds = list.filter(c => c.code === 111 && c.parameters[0] === 4);
-    const user = (conds.find(c => c.parameters[2] === 0) || {parameters: [4, 1]}).parameters[1];
+    // 使用者：CE 里第一个「111 角色在队」的角色，没有就第一个 111 角色条件、再没有就第一个强制行动（339）的角色，都没有取 1 号。
+    // 队伍：使用者在前，再放 CE 里 111／313／339 提到的其余角色（原版 339 对不在队的角色照样强制，重制只认在队的，实战这些人都在队），
+    // 不满 4 人用 1／8／9／10 补
+    const forcedActors = [...sub].flatMap(id => ces[id].list.filter(c => c.code === 339 && c.parameters[0] === 1).map(c => c.parameters[1]));
+    const user = ((conds.find(c => c.parameters[2] === 0) || conds[0] || {parameters: [4, forcedActors[0] || 1]}).parameters[1]);
+    const named = [...sub].flatMap(id => ces[id].list.filter(c => c.code === 111 && c.parameters[0] === 4).map(c => c.parameters[1])
+      .concat(ces[id].list.filter(c => c.code === 313 && c.parameters[0] === 0 && c.parameters[1] > 0).map(c => c.parameters[1])))
+      .concat(forcedActors).filter(a => w.$dataActors[a]);
+    const party = [...new Set([user, ...named, 1, 8, 9, 10])].slice(0, 4);
     const learn = conds.filter(c => c.parameters[2] === 3).map(c => [c.parameters[1], c.parameters[3]]);
     const watch = new Set();
     for (const id of sub) for (const c of ces[id].list) if (c.code === 313 || c.code === 333) watch.add(c.parameters[3] !== undefined && c.code === 313 ? c.parameters[3] : c.parameters[2]);
     const src = srcs.get(ce).find(s => s.single) || srcs.get(ce)[0];
-    for (const v of learn.length ? ['met', 'unmet'] : ['plain']) out.push({ce, user, learn, src, watch: [...watch].sort((a, b) => a - b), v});
+    for (const v of learn.length ? ['met', 'unmet'] : ['plain']) out.push({ce, user, party, learn, src, watch: [...watch].sort((a, b) => a - b), v});
   }
   return out;
 })();
+// 1516 鼬万花筒：261 播放影片在无场景引擎里 Graphics._playVideo 读不到 video 元素报错、事件停下；没有 _video 时按「放完」处理
+const playVideo = w.Graphics.playVideo;
+w.Graphics.playVideo = function () { return this._video ? playVideo.apply(this, arguments) : undefined; };
+const isVideoPlaying = w.Graphics.isVideoPlaying;
+w.Graphics.isVideoPlaying = function () { return this._video ? isVideoPlaying.apply(this, arguments) : false; };
 function runSkillCE(sc) {
   { const idx = caseCounter++; if (idx < FROM || (SHARD && idx % SHARD.n !== SHARD.i)) return {__skip: true}; }
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   sprites.clear();
-  const party = [sc.user].concat([1, 8, 9, 10].filter(x => x !== sc.user)).slice(0, 4);
+  const party = sc.party;
   w.eval('ConfigManager.applyData({});DataManager.setupNewGame();$gameSystem.setDifficultyId(3);for(var i=1;i<5000;i++)if($gameVariables._data[i]===undefined)$gameVariables._data[i]=0;');
   // 照常 addActor（继承难度等）；部分高号角色（超强者等）默认难度会被拦，之后直接写 _actors 补上
   w.eval('$gameParty._actors=[];' + JSON.stringify(party) + '.forEach(function(id){$gameParty.addActor(id);});$gameParty._actors=' + JSON.stringify(party) + ';');

@@ -187,7 +187,8 @@ func _run() -> void:
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
 	if c.has("skillCE"):
-		_skill_ce_case(c)
+		if not oracle_half:  # 本来就全取 0.5，固定 0.5 的 _half 场景不再跑一遍（省时，_half 单场景逼近 600 秒）
+			_skill_ce_case(c)
 		return
 	if c.has("party"):
 		_party_case(c)
@@ -288,6 +289,7 @@ func _skill_ce_case(c: Dictionary) -> void:
 		a.tp = 100
 	for e in logic.enemies:
 		e.capture = false
+		e.hp = 1.0e9  # 同参照：敌人 HP 加 999999999 打不死（不然事件里「敌人 N 战斗不能」等条件与强制目标跟着变）
 	var acts: Array = c.actions
 	var ui := -1
 	for i in acts.size():
