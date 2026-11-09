@@ -34,8 +34,14 @@ class XiyouIdleService : Service() {
         @Volatile
         var stopRequestedAt = -1L
 
+        /** 已叫起、还没跑到 onStartCommand 时就回了前台：起来后先 startForeground 再马上停
+         *（startForegroundService 之后不调 startForeground 就停，系统会让应用崩溃）。 */
+        @Volatile
+        var cancelPending = false
+
         fun start(context: Context): Boolean {
             stopRequestedAt = -1L
+            cancelPending = false
             val intent = Intent(context, XiyouIdleService::class.java).setAction(ACTION_START)
             return try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -51,8 +57,13 @@ class XiyouIdleService : Service() {
             }
         }
 
+        /** 回前台：服务已经起来就停；还没起来就记下，起来后自己停。都在主线程，不会交错。 */
         fun stop(context: Context) {
-            context.stopService(Intent(context, XiyouIdleService::class.java))
+            if (running) {
+                context.stopService(Intent(context, XiyouIdleService::class.java))
+            } else {
+                cancelPending = true
+            }
         }
     }
 
@@ -75,6 +86,12 @@ class XiyouIdleService : Service() {
             }
             running = true
             Log.i(TAG, "前台服务已起")
+            if (cancelPending) {
+                cancelPending = false
+                Log.i(TAG, "起来前已回前台：马上停")
+                stopForegroundCompat()
+                stopSelf()
+            }
         } catch (e: Exception) {
             Log.w(TAG, "startForeground 失败：$e")
             stopSelf()
