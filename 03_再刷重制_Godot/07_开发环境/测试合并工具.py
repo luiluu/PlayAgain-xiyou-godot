@@ -1321,6 +1321,54 @@ class StatePrevFromLaneTests(unittest.TestCase):
         _, _, n_lane, n_main = sync.combine_prev(work, lane, (self.root / self.gen_rel / 'oracle/event_states.json', self.root / 'k.json'))
         self.assertEqual((n_lane, n_main), (2, 0))
 
+    def conflict(self, lane_core, main_core, lane_keys, main_keys, lane_preset, main_preset, merged_preset):
+        """两边都有用例 a、b：车道／main 各自的结果与摘要，再各写一份 event_presets.json（车道树、合并后）。"""
+        def res(root, core, keys):
+            f = root / self.gen_rel / 'oracle/event_states.json'
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps({'setup': {'party': 1}, 'cases': [{'id': i, 'from': root.name} for i in ('a#t', 'b#t')]}))
+            k = root / (root.name + '.keys.json')
+            k.write_text(json.dumps({'version': 2, 'coreFingerprint': core, 'keys': keys, 'maps': {'a#t': [1], 'b#t': [1]},
+                                     'fileSha': self.ess.file_sha(f)}))
+            return f, k
+        lane = res(self.lane, lane_core, lane_keys)
+        self.assertTrue(self.ess.KeyHistory(self.lane / self.keys_rel).add(lane[1]))
+        main = res(self.root, main_core, main_keys)
+        files = {}
+        for root, p in ((self.lane, lane_preset), (self.root, merged_preset)):
+            pf = root / 'p.json'
+            pf.write_text(json.dumps({'cases': [{'base': k, 'tag': 't', 'preset': p.get(k)} for k in ('a', 'b')]}))
+            files[root] = pf
+        work = Path(self.tmp.name) / 'work'; work.mkdir(exist_ok=True)
+        got = sync.combine_prev(work, sync.lane_state_prev(self.lane, self.root / self.gen_rel), main, files[self.lane], files[self.root])
+        return [(c['id'], c['from']) for c in json.loads(got[0].read_text())['cases']], got
+
+    def test_conflict_same_key_takes_main_existing(self):
+        # 审查 72 P3-1：摘要相同（结果等价）时用 main 已有的，不再一律取车道的
+        order, _ = self.conflict('c', 'c', {'a#t': 'k', 'b#t': 'k'}, {'a#t': 'k', 'b#t': 'k'}, {}, {}, {})
+        self.assertEqual(order, [('a#t', 'main'), ('b#t', 'main')])
+
+    def test_conflict_different_core_keeps_lane(self):
+        order, _ = self.conflict('lane', 'main', {'a#t': 'L', 'b#t': 'L'}, {'a#t': 'M', 'b#t': 'M'}, {}, {}, {})
+        self.assertEqual(order, [('a#t', 'lane'), ('b#t', 'lane')])
+
+    def test_conflict_same_core_main_changed_preset_takes_main(self):
+        # 同公共指纹、摘要不同：合并后 a 的预设与车道树不同（合并前 main 又改了它）取 main；b 和车道树一致取车道
+        order, got = self.conflict('c', 'c', {'a#t': 'L', 'b#t': 'L'}, {'a#t': 'M', 'b#t': 'M'},
+                                   {'a': 'p1', 'b': 'p1'}, {'a': 'p2', 'b': 'p1'}, {'a': 'p2', 'b': 'p1'})
+        self.assertEqual(order, [('a#t', 'main'), ('b#t', 'lane')])
+        self.assertEqual(json.loads(got[1].read_text())['keys'], {'a#t': 'M', 'b#t': 'L'})
+        self.assertEqual(self.ess.file_sha(got[0]), json.loads(got[1].read_text())['fileSha'])
+
+    def test_conflict_same_core_without_preset_files_falls_back_to_lane(self):
+        lane = self.result(self.lane, ['a'])
+        main = self.result(self.root, ['a'])
+        for p in (self.lane, self.root):   # 核心指纹相同、摘要不同、没给预设文件
+            doc = json.loads((p / 'k.json').read_text()); doc['coreFingerprint'] = 'c'; (p / 'k.json').write_text(json.dumps(doc))
+        work = Path(self.tmp.name) / 'work2'; work.mkdir()
+        got = sync.combine_prev(work, (lane[0], json.loads((self.lane / 'k.json').read_text())), main)
+        self.assertEqual([c['from'] for c in json.loads(got[0].read_text())['cases']], ['lane'])
+
     def test_lane_ledger_found_even_if_own_ledger_points_elsewhere(self):
         self.result(self.lane, ['x'])
         with mock.patch.object(sync, 'STATE_KEYS', Path(self.tmp.name) / 'elsewhere/keys.json'):

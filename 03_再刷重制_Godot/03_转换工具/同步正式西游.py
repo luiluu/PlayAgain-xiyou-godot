@@ -57,6 +57,7 @@ ORACLE_DIR = HERE / 'mv_oracle'
 SANDBOX = ORACLE_DIR / '.sandbox'
 STAMP = 'sync_stamp.json'
 TOOLS_REL = HERE.relative_to(ROOT).as_posix()   # 03_再刷重制_Godot/03_转换工具
+PRESETS_REL = TOOLS_REL + '/event_presets.json'
 # 只读的检查工具不影响产物，不算进转换工具指纹。oracle_additions.py 只决定测量变化接不接受（产物原样发布或整轮拒收），
 # 不改产物内容；列进来免得改比较规则让各车道的同步指纹失效（2026-10-28 哪吒_5，唐僧同意）。
 READ_ONLY_TOOLS = {'内容覆盖检查.py', '事件指令统计.py', '共性参照验收.py', '验证西游来源.py', '角色模板预检.py', 'oracle_additions.py'}
@@ -778,7 +779,7 @@ def run_troop_sharded(cmd, env, box):
 STATE_KEYS = SANDBOX / 'event_state_keys.json'
 # 合并时车道产物不能整份克隆（--from-worktree 退出码 3）而改跑完整同步时，合并车道.py 传 --state-prev-from <车道工作树>：
 # 车道已跑完的 event_states.json（车道账上认得的那份）也当「上次结果」交给探针，与 main 自己的上次结果按用例号拼成一份
-# （车道的优先，main 补车道没有的）。取不取回仍由探针逐例按摘要（含探针代码、来源、预设、读到的地图）判断、再抽 1% 重跑自检，
+# （两边都有的用例按摘要和预设条目挑，见 combine_prev）。取不取回仍由探针逐例按摘要（含探针代码、来源、预设、读到的地图）判断、再抽 1% 重跑自检，
 # 所以只会省时间、不会把对不上的结果带进来。11-09 seg-a3 合并：车道改了探针，main 的上次结果整份作废，两次各 90 分钟整份重量，
 # 车道树里同一份代码的结果却就在那儿（tools-merge-probe）。XIYOU_STATE_PREV_FROM=0 回到只用 main 自己的上次结果。
 STATE_PREV_FROM = None
@@ -799,13 +800,34 @@ def lane_state_prev(worktree, gen):
     return (result, doc) if doc else None
 
 
-def combine_prev(work, lane, main_prev):
-    """车道结果（优先）与 main 上次结果（补车道没有的用例）拼成一份上次结果和摘要，写在 work 下；返回 (结果, 摘要, 车道条数, main 条数)。"""
+def preset_entries(path):
+    """event_presets.json 里每个变体（基础用例#标签）的预设条目，序列化成可比较的字符串；读不了就是空表。"""
+    try:
+        cases = json.loads(Path(path).read_text()).get('cases') or []
+    except (OSError, ValueError, AttributeError):
+        return {}
+    return {'%s#%s' % (p.get('base'), p.get('tag')): json.dumps(p, sort_keys=True) for p in cases if isinstance(p, dict)}
+
+
+def combine_prev(work, lane, main_prev, lane_presets=None, merged_presets=None):
+    """车道结果与 main 上次结果拼成一份上次结果和摘要，写在 work 下；返回 (结果, 摘要, 车道条数, main 条数)。
+    只有一边有的用例照收；两边都有时（审查 72 P3-1：原来一律取车道的，main 那份对得上也被丢，白多跑）：
+    摘要相同的任取一份（取 main 已有的）；摘要不同时，探针只认「和合并后现状对得上」的那份，拼的一方看不到现状，只能推断——
+    两边探针公共指纹（coreFingerprint）不同，说明车道改了探针／来源，合并后现状随车道，取车道的；
+    公共指纹相同时，看这个变体的预设条目：车道树里的条目和合并后一致（车道改的或没人改），取车道的；
+    不一致（合并前 main 又改了它），取 main 的。推断错了也只是多跑，取不取回仍由探针逐例按摘要决定。
+    lane_presets／merged_presets 是两处 event_presets.json 的路径，不给就退回「车道优先」。"""
     import event_state_shards as ess
     lane_file, lane_doc = lane
     data = json.loads(Path(lane_file).read_text())
-    cases, keys, maps = list(data.get('cases') or []), dict(lane_doc.get('keys') or {}), dict(lane_doc.get('maps') or {})
-    seen, from_main = {c.get('id') for c in cases}, 0
+    lane_cases = list(data.get('cases') or [])
+    lane_keys, lane_maps = dict(lane_doc.get('keys') or {}), dict(lane_doc.get('maps') or {})
+    cases, keys, maps = [], {}, {}
+    for c in lane_cases:
+        cases.append(c)
+        keys[c.get('id')], maps[c.get('id')] = lane_keys.get(c.get('id')), lane_maps.get(c.get('id'))
+    index = {c.get('id'): i for i, c in enumerate(cases)}
+    from_main = 0
     if main_prev:
         main_file, main_keys = main_prev
         try:
@@ -814,17 +836,32 @@ def combine_prev(work, lane, main_prev):
             other = other_doc = None
         # 开局设定不同的那份探针整份不认，拼进来也没用
         if other and other_doc and json.dumps(other.get('setup'), sort_keys=True) == json.dumps(data.get('setup'), sort_keys=True):
+            same_core = other_doc.get('coreFingerprint') == lane_doc.get('coreFingerprint')
+            lane_p = preset_entries(lane_presets) if same_core and lane_presets and merged_presets else {}
+            merged_p = preset_entries(merged_presets) if lane_p else {}
             for c in other.get('cases') or []:
                 cid = c.get('id')
-                if cid not in seen and cid in (other_doc.get('keys') or {}) and cid in (other_doc.get('maps') or {}):
+                if cid not in (other_doc.get('keys') or {}) or cid not in (other_doc.get('maps') or {}):
+                    continue
+                if cid in index:
+                    if keys.get(cid) == other_doc['keys'][cid]:
+                        take_main = True          # 摘要一样：结果等价，用 main 已有的
+                    elif not same_core or not lane_p:
+                        take_main = False
+                    else:
+                        take_main = lane_p.get(cid) != merged_p.get(cid)   # 合并前 main 又改了这个预设
+                    if not take_main:
+                        continue
+                    cases[index[cid]] = c
+                else:
+                    index[cid] = len(cases)
                     cases.append(c)
-                    keys[cid], maps[cid] = other_doc['keys'][cid], other_doc['maps'][cid]
-                    seen.add(cid)
                     from_main += 1
+                keys[cid], maps[cid] = other_doc['keys'][cid], other_doc['maps'][cid]
     out, out_keys = Path(work) / 'prev-combined.json', Path(work) / 'prev-combined.keys.json'
     out.write_text(json.dumps(dict(data, cases=cases)))
-    out_keys.write_text(json.dumps({'version': 2, 'coreFingerprint': lane_doc.get('coreFingerprint'), 'keys': keys,
-                                    'maps': maps, 'fileSha': ess.file_sha(out)}))
+    out_keys.write_text(json.dumps({'version': 2, 'coreFingerprint': lane_doc.get('coreFingerprint'),
+                                    'keys': keys, 'maps': maps, 'fileSha': ess.file_sha(out)}))
     return out, out_keys, len(cases) - from_main, from_main
 
 
@@ -843,7 +880,8 @@ def run_state_sharded(cmd, env, box):
         else:
             try:
                 prev, prev_keys, n_lane, n_main = combine_prev(
-                    work, lane, (env['XIYOU_STATE_PREV'], env['XIYOU_STATE_PREV_KEYS']) if incremental else None)
+                    work, lane, (env['XIYOU_STATE_PREV'], env['XIYOU_STATE_PREV_KEYS']) if incremental else None,
+                    Path(STATE_PREV_FROM) / PRESETS_REL, ROOT / PRESETS_REL)
                 env['XIYOU_STATE_PREV'], env['XIYOU_STATE_PREV_KEYS'] = str(prev), str(prev_keys)
                 incremental = True
                 note_lane = '上次结果并入车道 %s 的（车道 %d 例、main 补 %d 例）；' % (STATE_PREV_FROM, n_lane, n_main)
