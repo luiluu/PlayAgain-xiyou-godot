@@ -326,15 +326,25 @@ func _run() -> void:
 			break
 	_check("save_roundtrip", before == after, diff)
 	s = XState.current
-	# 挑战守层者：开局等级打不过（500 万生命），不能战败 → 回方桌大厅且全员恢复
+	# 挑战守层者：开局等级打不过（500 万生命），不能战败 → 全灭弹游戏结束画面（O-244，Kyo 11-08 定回标题；
+	# 结束画面要按确定才走，这里只确认画面出来、没回满、没传回大厅；回标题细节见 xiyou_game_over）
 	XMessageBox.auto_answers = [0]
-	await map.run_event(_event(map, 2))
-	ok = await _wait_map(4, 3000)
-	_check("boss_defeat_returns_hub", ok)
-	_check("party_recovered", s.members().all(func(a): return a.hp == a.mhp), s.members().map(func(a): return [a.hp, a.mhp]))
+	map.run_event(_event(map, 2))
+	var go_screen: Node = null
+	for i in range(3000):
+		var sc = _scene()
+		if sc is XMapScene:
+			for c in sc.ui.get_children():
+				if c is XGameOverScreen:
+					go_screen = c
+		if go_screen != null:
+			break
+		await _wait_frame()
+	_check("boss_defeat_game_over", go_screen != null)
+	_check("party_not_recovered", not s.members().all(func(a): return a.hp == a.mhp), s.members().map(func(a): return [a.hp, a.mhp]))
 	_check("boss_not_beaten", not s.self_switch(5, 2, "A"))
 	await _frames(10)
-	await _shot("06_战败回大厅.png")
+	await _shot("06_战败结束画面.png")
 	# 清理测试存档
 	DirAccess.remove_absolute(XSave.path(1))
 	DirAccess.remove_absolute(XSave.dir())
