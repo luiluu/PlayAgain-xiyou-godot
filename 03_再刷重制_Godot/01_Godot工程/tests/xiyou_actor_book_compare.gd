@@ -2,7 +2,7 @@ extends Node
 ## 【cc·白龙·未经审查】人物图鉴立绘逐张比（raven6；工具，不进检查）：读 mv_oracle/real/actor_book_real.cjs 在无头 Chrome 量的冻结正式源结果，
 ## 逐个在重制 XActorBook 里选中同一角色，比状态窗立绘：用的图、整张图大小、可见帧（按原版那一刻的格号取同一格）、画出来的矩形
 ## （窗口坐标）、平滑（XActorBook 状态窗画布最终的 texture_filter）；再把两边用到的图逐像素比（原版 app.nw 的 PNG 与 generated 的源 PNG）。
-## 饿狼 173 的呼吸按 Graphics.frameCount 走、两边相位对不上，竖直方向放宽到 1%。
+## 饿狼 173 原版代码里有呼吸，实机被多帧插件的图鉴包装盖掉（量到不呼吸），竖直方向仍放宽 1% 防相位。
 ## 环境变量：XIYOU_BOOK_REAL＝result.json，XIYOU_APP＝…/app.nw，XIYOU_BOOK_OUT＝输出前缀（写 .json 与 .md，只列有差异的）。
 ## 跑法：godot --headless --path . tests/xiyou_actor_book_compare.tscn
 const EPS_PX := 0.6
@@ -63,7 +63,7 @@ func _snap(book: XActorBook, id: int, w) -> Dictionary:
 	var pattern := 0
 	if w is Dictionary and w.has("frame") and not book._sprite_spec.get("multi", false):
 		pattern = roundi(float(w.frame[0]) / (tex_size.x / 9.0))
-	var r: Array = XActorBook.sprite_rect(id, book._sprite_spec, tex_size, pattern, 0)
+	var r: Array = XActorBook.sprite_rect(id, book._sprite_spec, tex_size, pattern)
 	var dst: Rect2 = r[0]
 	var src: Rect2 = r[1]
 	var pad := XMVWindow.PADDING
