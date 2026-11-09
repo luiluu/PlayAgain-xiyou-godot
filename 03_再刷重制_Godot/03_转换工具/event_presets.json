@@ -312405,6 +312405,1256 @@
      "898": 3
     }
    }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa5n_1",
+   "preset": {
+    "gold": 100000,
+    "actors": {
+     "77": {
+      "weapons": [
+       1700
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5n_2",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5n_3",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5n_4",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5n_5",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5n_6",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5n_7",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5n_8",
+   "preset": {
+    "random_seq": [
+     0.05,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1597",
+   "tag": "sa5n_9",
+   "preset": {
+    "variables": {
+     "1203": 100000
+    }
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa5n_10",
+   "preset": {
+    "gold": 100000,
+    "actors": {
+     "77": {
+      "weapons": [
+       1698
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa5n_11",
+   "preset": {
+    "gold": 100000,
+    "actors": {
+     "77": {
+      "weapons": [
+       1699
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1600",
+   "tag": "sa5n_12",
+   "preset": {
+    "party": [
+     86
+    ],
+    "variables": {
+     "1202": 15000
+    }
+   }
+  },
+  {
+   "base": "ce407",
+   "tag": "sa5n_13",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.242574
+    ]
+   }
+  },
+  {
+   "base": "ce408",
+   "tag": "sa5n_14",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.193069
+    ]
+   }
+  },
+  {
+   "base": "ce409",
+   "tag": "sa5n_15",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.143564
+    ]
+   }
+  },
+  {
+   "base": "ce50",
+   "tag": "sa5n_16",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.292079
+    ]
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "sa5n_17",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p5",
+   "tag": "sa5n_18",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p6",
+   "tag": "sa5n_19",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p7",
+   "tag": "sa5n_20",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "sa5n_21",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m80e13p3",
+   "tag": "sa5n_22",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m172e2p7",
+   "tag": "sa5n_23",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "sa5n_24",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m63e3p7",
+   "tag": "sa5n_25",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m10e1p0",
+   "tag": "sa5n_26",
+   "preset": {
+    "switches": {
+     "2282": true
+    }
+   }
+  },
+  {
+   "base": "m164e5p1",
+   "tag": "sa5n_27",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m165e5p1",
+   "tag": "sa5n_28",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m17e1p0",
+   "tag": "sa5n_29",
+   "preset": {
+    "switches": {
+     "2282": true
+    }
+   }
+  },
+  {
+   "base": "m30e8p0",
+   "tag": "sa5n_30",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m32e1p0",
+   "tag": "sa5n_31",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m33e3p0",
+   "tag": "sa5n_32",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m45e1p0",
+   "tag": "sa5n_33",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m46e1p0",
+   "tag": "sa5n_34",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m47e13p0",
+   "tag": "sa5n_35",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "m58e5p1",
+   "tag": "sa5n_36",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m64e1p0",
+   "tag": "sa5n_37",
+   "preset": {
+    "variables": {
+     "841": 1
+    },
+    "answers": [
+     2
+    ],
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_38",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.083333
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_39",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_40",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.416667
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_41",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.75
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_42",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.916667
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_43",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1284": 2
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_44",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1284": 3
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_45",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1283": 2
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_46",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1283": 3
+    }
+   }
+  },
+  {
+   "base": "ce1597",
+   "tag": "sa5n_47",
+   "preset": {
+    "variables": {
+     "1203": 99999
+    }
+   }
+  },
+  {
+   "base": "ce1600",
+   "tag": "sa5n_48",
+   "preset": {
+    "party": [
+     86
+    ],
+    "variables": {
+     "1202": 14999
+    }
+   }
+  },
+  {
+   "base": "ce1627",
+   "tag": "sa5n_49",
+   "preset": {
+    "variables": {
+     "1235": 4,
+     "1210": 50000
+    },
+    "actors": {
+     "88": {
+      "level": 50
+     }
+    },
+    "maxLevel": 50
+   }
+  },
+  {
+   "base": "ce1627",
+   "tag": "sa5n_50",
+   "preset": {
+    "variables": {
+     "1235": 5,
+     "1210": 80000
+    },
+    "actors": {
+     "88": {
+      "level": 60
+     }
+    },
+    "maxLevel": 60
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_51",
+   "preset": {
+    "actors": {
+     "142": {
+      "skills": [
+       10113
+      ]
+     }
+    },
+    "variables": {
+     "206": 599
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_52",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113
+      ],
+      "skills": [
+       10579
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_53",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579
+      ],
+      "skills": [
+       10580
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_54",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580
+      ],
+      "skills": [
+       10581
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_55",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581
+      ],
+      "skills": [
+       10582
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_56",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583
+      ],
+      "skills": [
+       10585
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_57",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585
+      ],
+      "skills": [
+       10586
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_58",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585,
+       10586
+      ],
+      "skills": [
+       10587
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "sa5n_59",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585,
+       10586,
+       10587
+      ],
+      "skills": [
+       10588,
+       10589
+      ]
+     }
+    },
+    "variables": {
+     "206": -1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "sa5n_60",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 2,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "sa5n_61",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 2,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "sa5n_62",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 2,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "sa5n_63",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 2,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "sa5n_64",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 2,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "sa5n_65",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 2,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "sa5n_66",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 2,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "sa5n_67",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 2,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1,
+     "1105": 1
+    }
+   }
+  },
+  {
+   "base": "m152e7p6",
+   "tag": "sa5n_68",
+   "preset": {
+    "variables": {
+     "11": 3
+    }
+   }
+  },
+  {
+   "base": "m160e7p6",
+   "tag": "sa5n_69",
+   "preset": {
+    "variables": {
+     "11": 3
+    }
+   }
+  },
+  {
+   "base": "m186e32p0",
+   "tag": "sa5n_70",
+   "preset": {
+    "battleResult": 2,
+    "playtime": 0
+   }
+  },
+  {
+   "base": "m186e34p0",
+   "tag": "sa5n_71",
+   "preset": {
+    "playtime": 0,
+    "variables": {
+     "1340": 0,
+     "1349": 1
+    }
+   }
+  },
+  {
+   "base": "m56e5p1",
+   "tag": "sa5n_72",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m7e3p0",
+   "tag": "sa5n_73",
+   "preset": {
+    "switches": {
+     "170": true
+    }
+   }
+  },
+  {
+   "base": "m186e10p1",
+   "tag": "sa5p_1",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e11p1",
+   "tag": "sa5p_2",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e12p1",
+   "tag": "sa5p_3",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e13p1",
+   "tag": "sa5p_4",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e14p1",
+   "tag": "sa5p_5",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e15p1",
+   "tag": "sa5p_6",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e16p1",
+   "tag": "sa5p_7",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e17p1",
+   "tag": "sa5p_8",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e18p1",
+   "tag": "sa5p_9",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e19p1",
+   "tag": "sa5p_10",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e20p1",
+   "tag": "sa5p_11",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e21p1",
+   "tag": "sa5p_12",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e22p1",
+   "tag": "sa5p_13",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e23p1",
+   "tag": "sa5p_14",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e4p1",
+   "tag": "sa5p_15",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e5p1",
+   "tag": "sa5p_16",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e6p1",
+   "tag": "sa5p_17",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e7p1",
+   "tag": "sa5p_18",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e8p1",
+   "tag": "sa5p_19",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e9p1",
+   "tag": "sa5p_20",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
   }
  ]
 }
