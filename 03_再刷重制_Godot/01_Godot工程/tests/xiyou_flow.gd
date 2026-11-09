@@ -345,6 +345,17 @@ func _run() -> void:
 	_check("boss_not_beaten", not s.self_switch(5, 2, "A"))
 	await _frames(10)
 	await _shot("06_战败结束画面.png")
+	# 把结束画面走完（解释器现在 await game_over：不走完则事件协程悬着，退出时报资源泄漏）；回标题用 hook 代替
+	var titled_flow := [0]
+	XMapScene.return_to_title_hook = func(): titled_flow[0] += 1
+	for i in range(XGameOverScreen.FADE_FRAMES + 2):
+		go_screen.step(false)
+	go_screen.step(true)
+	for i in range(XGameOverScreen.FADE_FRAMES + 2):
+		go_screen.step(false)
+	await _frames(5)
+	_check("boss_defeat_to_title", titled_flow[0] == 1, titled_flow)
+	XMapScene.return_to_title_hook = Callable()
 	# 清理测试存档
 	DirAccess.remove_absolute(XSave.path(1))
 	DirAccess.remove_absolute(XSave.dir())
