@@ -370,7 +370,7 @@ function runSkillCE(sc) {
   w.Math.random = () => 0.5;
   w.$gameTroop.members().forEach(e => { e._paramPlus[0] = 999999999; e.recoverAll(); });
   const out = {troop: 2, paid: false, variant: 'ce' + sc.ce + '.' + sc.v, skillCE: sc.ce, party, actorSkills: skills,
-    use: [sc.src.kind, sc.src.id, sc.user], watch: sc.watch, actions: [], events: [], errors: [], battlers: {}};
+    use: [sc.src.kind, sc.src.id, sc.user], watch: sc.watch, actions: [], invokes: [], events: [], errors: [], battlers: {}};
   const snap = () => { const s = {};
     for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members())) s[key(b)] = b._states.filter(x => sc.watch.includes(x));
     return s; };
