@@ -557,6 +557,37 @@ def branch_hint(root, task):
     return '；交付单名对得上的分支有：%s（用 --branch <分支> 指定）' % '、'.join(found) if found else ''
 
 
+PRESETS = TOOLS / 'event_presets.json'
+STATE_BASELINE = PROJECT / 'modes/xiyou/generated/oracle/event_states.json'
+
+
+def deleted_reference_presets(root, fork, base, target):
+    """车道删掉的、main 基线里还有的事件状态预设行（base#tag）。同步不收删除既有参照用例（oracle_additions 记成 switchOnly，
+    只在换源时可接受），这种车道合到同步那步必被拒、白跑一轮整份探针（11-09 seg-a3 删 ce1442 w8_* 70 个，同步 90 分钟后才拒）。
+    三方比：分叉点与合并前 main 都有、车道上没了的行才算车道删的（main 后来自己删的、车道后加又删的都不算）；
+    main 已发布的 event_states.json 在时再只留基线里真有的用例（goneIn 跳过的不算）。读不准就返回空（照旧交给同步把关）。
+    换源合并（XIYOU_ACCEPT_SOURCE_SWITCH）不查；XIYOU_LANE_DELETE_CHECK=0 关掉本检查（tools-merge-probe）。"""
+    if os.environ.get('XIYOU_LANE_DELETE_CHECK', '1') == '0' or os.environ.get('XIYOU_ACCEPT_SOURCE_SWITCH'):
+        return []
+    rel = str(PRESETS)
+    try:
+        if rel not in git(root, 'diff', '--name-only', fork, target, '--', rel).splitlines():
+            return []
+
+        def rows(rev):
+            return {c['base'] + '#' + c['tag'] for c in json.loads(git(root, 'show', rev + ':' + rel))['cases']}
+        gone = (rows(fork) & rows(base)) - rows(target)
+    except (RuntimeError, ValueError, KeyError, TypeError):
+        return []
+    baseline = root / STATE_BASELINE
+    if gone and baseline.is_file():
+        try:
+            gone &= {c.get('id') for c in json.loads(baseline.read_text()).get('cases') or []}
+        except (OSError, ValueError, AttributeError):
+            pass
+    return sorted(gone)
+
+
 def plan(root, task, branch=None):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', task):
         raise RuntimeError('任务名只允许字母、数字、点、下划线和短横线')
@@ -670,6 +701,12 @@ def plan(root, task, branch=None):
             check_opt_drafts(read(p), p, registry)        # 接续交付单的优化草稿照本期的查（tools39）
             extra.append(p)
     changed = [p for p in changed if p not in gone]
+    removed_cases = deleted_reference_presets(root, fork, base, target)
+    if removed_cases:
+        raise RuntimeError('车道删了 main 基线里的 %d 个事件状态参照用例（%s%s）：同步不收删除既有参照用例（只换源时可接受），'
+                           '合并到同步那步一定被拒、白跑整份探针。还没合并，main 没动。请车道恢复这些预设行（冗余也保留，换源时再删）、'
+                           '本树增量补跑探针后再交付；确要照旧交给同步判就设 XIYOU_LANE_DELETE_CHECK=0'
+                           % (len(removed_cases), '、'.join(removed_cases[:6]), ' 等' if len(removed_cases) > 6 else ''))
     refresh = any(p in [str(TOOLS / 'xiyou_slice.json'), str(TOOLS / 'xiyou_export.py')]
                   or (p.startswith(str(TOOLS / 'mv_oracle') + '/') and p.endswith('.cjs')) for p in changed)
     # 车道带来的测量接受单（同步正式西游.py --accept-changes）：main 的同步对自己的旧基线同样逐条核对
@@ -1381,6 +1418,10 @@ def prepare(root, state, state_file, executor, also=()):
                 print('== ' + ' '.join(cmd), flush=True)
             rc = subprocess.run(cmd, cwd=root).returncode if state['worktree'] else 3  # 无车道工作树：直接完整同步
             if rc == 3:
+                # 整份克隆不成时，车道已跑完的事件状态探针结果仍可逐例取回（tools-merge-probe，11-09 seg-a3 两次各 90 分钟整份重量）；
+                # XIYOU_STATE_PREV_FROM=0 不传
+                if state['worktree'] and os.environ.get('XIYOU_STATE_PREV_FROM', '1') != '0':
+                    sync = sync + ['--state-prev-from', state['worktree']]
                 print('== ' + ' '.join(map(str, sync)), flush=True)
                 rc = subprocess.run(list(map(str, sync)), cwd=root).returncode
             if rc:
