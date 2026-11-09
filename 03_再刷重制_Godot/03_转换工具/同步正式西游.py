@@ -50,7 +50,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
-from incremental_sync import SHARDS, ProbeCache, atomic_json
+from incremental_sync import SHARDS, ProbeCache, atomic_json, carry_probe_deps
 from oracle_additions import (compare_directories, current_digest, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
                               load_acceptances, apply_acceptances, change_candidates, field_keys, groups)
 
@@ -1364,6 +1364,12 @@ def _main() -> int:
             elif outputs_digest(gen) != stamp.get('outputsDigest'):
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
+            # 车道跑探针时记下的运行时依赖（.sandbox/probe_deps/）：本工作区缺的补上，已有的不动（tools-probe-deps）
+            lane_sandbox = a.from_worktree.resolve() / SANDBOX.relative_to(ROOT.resolve())
+            deps = carry_probe_deps(lane_sandbox, SANDBOX)
+            if deps:
+                report['fromWorktreeProbeDeps'] = deps
+                log.write('从车道补来探针依赖记录：%s\n' % '、'.join(deps))
             if stamp.get('pendingAcceptance'):
                 report['fromWorktreePending'] = True
                 log.write('车道同步只差测量接受（待接受指纹）：产物照用，测量照样按本工作区基线比较\n')

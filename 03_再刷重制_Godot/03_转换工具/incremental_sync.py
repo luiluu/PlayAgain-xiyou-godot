@@ -133,11 +133,42 @@ def atomic_json(path, value):
         Path(temp).unlink(missing_ok=True)
 
 
+PROBE_DEPS_DIR = Path(RECORD_DIR).name
+
+
+def carry_probe_deps(source, target):
+    """探针运行时依赖记录（.sandbox/probe_deps/，tools-probe-deps）：目标没有的记录文件逐个复制过去，已有的不覆盖。
+    recorded() 本来就按记录文件取并集，所以这就是「取并集」；不改目标已有的文件，车道／main 自己记下、算进现有缓存键的那份不变。
+    不带的话车道里 slice_probe／shared_system_probe／event_state_probe 这类动态读取的探针没有记录、改带全部 helper，键对不上就重跑。
+    source／target 是两边的 mv_oracle/.sandbox；返回复制的文件名。"""
+    src, dst = Path(source) / PROBE_DEPS_DIR, Path(target) / PROBE_DEPS_DIR
+    if not src.is_dir() or src.is_symlink() or dst.is_symlink():
+        return []
+    copied = []
+    for f in sorted(src.glob('*.json')):
+        out = dst / f.name
+        if f.is_symlink() or not f.is_file() or out.exists():
+            continue
+        try:
+            rows = json.loads(f.read_text()).get('files')
+        except (OSError, ValueError, AttributeError):
+            continue
+        if not isinstance(rows, list):
+            continue
+        atomic_json(out, {'files': sorted({r for r in rows if isinstance(r, str)})})
+        copied.append(f.name)
+    return copied
+
+
 def carry_cache(source, target):
     """只携带初始种子与已发布缓存；不覆盖车道现场，不跟随种子符号链接。"""
     source, target = Path(source), Path(target)
     # event_state_keys.json：事件状态探针的摘要账（event_state_shards.KeyHistory，tools81）；按结果文件摘要认领，带过去不会冒充
     names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json')
+    for base in (source, target):
+        for q in (base / PROBE_DEPS_DIR, *(base / PROBE_DEPS_DIR).glob('*')):
+            if q.is_symlink():
+                raise RuntimeError('探针依赖记录含符号链接，拒绝携带：' + str(q))
     for base in (source, target):
         if base.is_symlink():
             raise RuntimeError('探针种子目录不能是符号链接：' + str(base))
@@ -163,6 +194,8 @@ def carry_cache(source, target):
                 shutil.copytree(src, stage) if src.is_dir() else shutil.copy2(src, stage)
             stage.rename(dst)
             copied.append(name)
+    if carry_probe_deps(source, target):
+        copied.append('probe_deps')
     keys_src, keys_dst = source / 'event_state_keys.json', target / 'event_state_keys.json'
     if 'event_state_keys.json' not in copied and keys_src.is_file() and keys_dst.is_file():
         from event_state_shards import KeyHistory

@@ -246,6 +246,24 @@ class AcceptedBaselineTests(unittest.TestCase):
         # A normal forced run must also retain the target's accepted baseline after cloning.
         self.assertEqual(self.run_sync('--full')[0], 2)
 
+    def test_clone_brings_missing_probe_dep_records_only(self):
+        # 合并时 --from-worktree：车道跑探针记下的依赖，本工作区缺的补上，已有的不改
+        worktree = self.root.parent / 'lane-tree'
+        lane = worktree / 'generated'
+        shutil.copytree(self.gen, lane)
+        lane_deps = worktree / 'tools/mv_oracle/.sandbox/probe_deps'
+        lane_deps.mkdir(parents=True)
+        (lane_deps / 'a_probe.cjs.json').write_text(json.dumps({'files': ['a_probe.cjs', 'x.cjs']}))
+        (lane_deps / 'b_probe.cjs.json').write_text(json.dumps({'files': ['b_probe.cjs', 'lane.cjs']}))
+        main_deps = self.oracle / '.sandbox/probe_deps'
+        main_deps.mkdir(parents=True)
+        (main_deps / 'b_probe.cjs.json').write_text(json.dumps({'files': ['b_probe.cjs']}))
+        result, report = self.run_sync('--from-worktree', str(worktree), lane=lane)
+        self.assertEqual(result, 0)
+        self.assertEqual(report['fromWorktreeProbeDeps'], ['a_probe.cjs.json'])
+        self.assertEqual(json.loads((main_deps / 'a_probe.cjs.json').read_text()), {'files': ['a_probe.cjs', 'x.cjs']})
+        self.assertEqual(json.loads((main_deps / 'b_probe.cjs.json').read_text()), {'files': ['b_probe.cjs']})
+
     def test_failed_clone_preflight_does_not_create_a_baseline_or_change_outputs(self):
         before = sync.outputs_digest(self.gen)
         self.assertEqual(self.run_sync('--from-worktree', str(self.root.parent / 'missing'))[0], 3)
@@ -667,6 +685,34 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(self.hits(), [True, True, True])
         (self.oracle / 'shared/one.cjs').write_text('// one changed')
         self.assertEqual(self.hits(), [True, False, True])
+
+    def test_carry_brings_probe_deps_so_dynamic_probe_key_matches(self):
+        # 主工作区记下了动态探针的依赖并按它算了键；新车道带来缓存却没带记录的话键对不上、整份重跑
+        (self.oracle / 'b_probe.cjs').write_text("const m = require('./shared/' + process.argv[2] + '.cjs');")
+        (self.oracle / 'shared').mkdir()
+        (self.oracle / 'shared/one.cjs').write_text('// one')
+        (self.oracle / 'shared/two.cjs').write_text('// two')
+        d = self.oracle / incremental_sync.RECORD_DIR
+        d.mkdir(parents=True)
+        (d / 'b_probe.cjs.123.json').write_text(json.dumps({'files': ['b_probe.cjs', 'shared/one.cjs']}))
+        self.prime()
+        main_sandbox = Path(self.tmp.name) / 'main-sandbox'
+        shutil.copytree(self.oracle / '.sandbox', main_sandbox)
+        shutil.rmtree(self.oracle / '.sandbox')
+        (self.oracle / '.sandbox').mkdir()
+        carried = incremental_sync.carry_cache(main_sandbox, self.oracle / '.sandbox')
+        self.assertIn('probe_deps', carried)
+        self.assertEqual(json.loads((d / 'b_probe.cjs.json').read_text()), {'files': ['b_probe.cjs', 'shared/one.cjs']})
+        self.assertEqual(self.hits(), [True, True, True])
+        # 车道已有的记录不覆盖；只补没有的文件
+        (d / 'b_probe.cjs.json').write_text(json.dumps({'files': ['b_probe.cjs']}))
+        (main_sandbox / 'probe_deps/c_probe.cjs.json').write_text(json.dumps({'files': ['c_probe.cjs']}))
+        self.assertEqual(incremental_sync.carry_probe_deps(main_sandbox, self.oracle / '.sandbox'), ['c_probe.cjs.json'])
+        self.assertEqual(json.loads((d / 'b_probe.cjs.json').read_text()), {'files': ['b_probe.cjs']})
+        # 记录目录里有符号链接：拒绝携带
+        (main_sandbox / 'probe_deps/x.json').symlink_to(main_sandbox / 'probe_deps/c_probe.cjs.json')
+        with self.assertRaises(RuntimeError):
+            incremental_sync.carry_cache(main_sandbox, self.oracle / '.sandbox')
 
     def test_literal_local_read_is_a_dependency(self):
         (self.oracle / 'b_probe.cjs').write_text("const x = fs.readFileSync(path.join(__dirname, 'shared', 'cases.json'));\n"
