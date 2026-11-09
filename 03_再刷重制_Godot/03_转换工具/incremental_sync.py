@@ -23,6 +23,30 @@ SHARDS = {
 }
 # 合并与缓存本身的代码：改了就让分片探针整体重跑
 TOOLING = ('incremental_sync.py', 'oracle_shard_merge.cjs')
+# tools-probe-deps（XIYOU_PROBE_HELPER_DEPS 开着时）：incremental_sync.py 不再按整份内容进分片探针的键（改缓存键算法本身不改分片产物，
+# 以前改这个文件就让 smart_ai／slice／event 三个分片探针整份重跑 2～4 小时），改按下面的修订号：
+# 改了单元划分、单元核对、分片合并相关的逻辑（units／plan／_verified_units／_unit_digests／record 里的单元摘要）就把它加一。
+SHARD_TOOLING_REVISION = 1
+# 按探针实际用到的 helper 算键（tools-probe-deps，XIYOU_PROBE_HELPER_DEPS=0 退回旧的「mv_oracle 里任一 helper 改了全部探针重跑」）：
+# 依赖＝探针文件起的静态 require 图（只认字面量本地路径）∪ 上次运行时记下的读过／require 过的 mv_oracle 文件（probe_dep_recorder.cjs）。
+# 依赖链里出现认不出的写法（非字面量 require、用 __dirname／ORACLE_DIR 拼非字面量路径）又还没有运行时记录时，保守地带上全部 helper。
+DYNAMIC_LOCAL = re.compile(r"\brequire\(\s*+(?!['\"][^'\"]*['\"]\s*\))"
+                           r"|\bpath\.(?:join|resolve)\(\s*(?:__dirname|ORACLE_DIR)\s*,\s*+(?!['\"]\.\./)(?!['\"]\.sandbox['\"/])")
+LITERAL_LOCAL_READ = re.compile(r"\bpath\.(?:join|resolve)\(\s*(?:__dirname|ORACLE_DIR)\s*,\s*((?:['\"][^'\"]+['\"]\s*,?\s*)+)\)")
+RECORD_DIR = '.sandbox/probe_deps'
+RECORDER = 'probe_dep_recorder.cjs'
+# 审过的 helper 改动影响面（helper_change_scope.json，XIYOU_HELPER_SCOPE=0 不用）：某 helper 从 from 改到 to，声明只影响 rerun 里的探针；
+# 其余探针算键时把这份 helper 当作还是 from（可连成链）。声明要交叉核查（同 GENERATED_SHARD_AUDITS），写错会让产物过期。
+SCOPE_FILE = 'helper_change_scope.json'
+EXCLUDED_PARTS = ('.sandbox', 'node_modules', 'real')
+
+
+def helper_deps_on():
+    return os.environ.get('XIYOU_PROBE_HELPER_DEPS', '1') != '0'
+
+
+def helper_scope_on():
+    return os.environ.get('XIYOU_HELPER_SCOPE', '1') != '0'
 # 探针读的、不在 mv_oracle 里也不是转换产物的输入文件（相对 03_转换工具）：内容进该探针的键，改了只重跑它自己
 # event_state_shards.py：同步里分段跑、拼回 event_state 结果的代码（tools81），改了要让它重跑
 PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json', 'event_state_shards.py')}
@@ -199,25 +223,26 @@ class ProbeCache:
         self.pending = {}
         self.details, self.misses, self.reuse = {}, {}, {}
         self.source_sha = digest_files(files(self.app), self.app)
-        helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in ('.sandbox', 'node_modules', 'real'))  # real/：无头 Chrome 量具，探针不 require，不进公共键
+        helpers = [p for p in files(self.oracle) if not any(x in p.relative_to(self.oracle).parts for x in EXCLUDED_PARTS)  # real/：无头 Chrome 量具，探针不 require，不进公共键
                    and p.suffix in ('.cjs', '.js', '.json') and not p.name.endswith('_probe.cjs')]
         self.helpers = helpers
+        self.helper_deps = helper_deps_on()
+        self.scope = self._load_scope() if self.helper_deps and helper_scope_on() else []
         runtime = digest_files(files(self.oracle / 'node_modules'), self.oracle)
         node = subprocess.run(['node', '--version'], capture_output=True, text=True, check=True).stdout.strip()
         seeds = files(self.oracle / '.sandbox/save') + files(self.oracle / '.sandbox/macport')
         # 转换器（*.py）不进公共键：探针不执行 Python，读转换产物的探针另按产物内容算键（converted／地图单元）
         self.common = {'version': VERSION, 'source': self.source_sha, 'app': str(self.app.resolve()),
                        'runtime': runtime, 'node': node, 'python': sys.version, 'platform': sys.platform,
-                       'helpers': digest_files(helpers, self.oracle),
+                       **({} if self.helper_deps else {'helpers': digest_files(helpers, self.oracle)}),
                        'seedFiles': digest_files(seeds, self.oracle),
                        'environment': {k: os.environ.get(k) for k in ('LANG', 'LC_ALL', 'TZ', 'NODE_OPTIONS', 'NODE_ENV', 'NODE_PATH')}}
 
     def _slice(self):
         return json.loads((self.tools / SLICE_NAME).read_text())
 
-    def _dependencies(self, command):
-        path = self.oracle / command[0]
-        dependencies, queue = set(), [path, *self.helpers]
+    def _closure(self, roots, dynamic=None):
+        dependencies, queue = set(), list(roots)
         while queue:
             p = queue.pop()
             if p in dependencies:
@@ -231,7 +256,150 @@ class ProbeCache:
                 if resolved is None or not resolved.is_relative_to(self.tools.resolve()):
                     raise RuntimeError('无法确认探针依赖：' + match[1])
                 queue.append(resolved)
+            if dynamic is not None and p.suffix in ('.cjs', '.js'):
+                code = '\n'.join(l for l in text.splitlines() if not l.lstrip().startswith('//'))
+                for match in LITERAL_LOCAL_READ.finditer(code):
+                    parts = re.findall(r"['\"]([^'\"]+)['\"]", match[1])
+                    target = p.parent.joinpath(*parts).resolve()
+                    if target.is_file() and target.is_relative_to(self.oracle.resolve()) and not self._excluded(target):
+                        queue.append(target)
+                if DYNAMIC_LOCAL.search(code):
+                    dynamic.add(p.relative_to(self.tools).as_posix() if p.is_relative_to(self.tools) else str(p))
+        return dependencies
+
+    def _excluded(self, path):
+        try:
+            return any(x in path.resolve().relative_to(self.oracle.resolve()).parts for x in EXCLUDED_PARTS)
+        except ValueError:
+            return True
+
+    def _record_files(self, name):
+        d = self.oracle / RECORD_DIR
+        return sorted(d.glob(name + '.*.json')) + ([d / (name + '.json')] if (d / (name + '.json')).is_file() else [])
+
+    def recorded(self, name):
+        """上次运行时记下的 mv_oracle 内文件（相对 mv_oracle）；没有记录返回 None。多段／多次运行取并集（只会多不会少）。"""
+        out, seen = set(), False
+        for f in self._record_files(name):
+            try:
+                rows = json.loads(f.read_text()).get('files')
+            except (OSError, ValueError, AttributeError):
+                continue
+            if isinstance(rows, list):
+                seen = True
+                out.update(r for r in rows if isinstance(r, str))
+        return out if seen else None
+
+    def compact_record(self, name):
+        """把各进程的记录并成一份 <探针>.json（并集），删掉逐进程的文件。"""
+        rows = self.recorded(name)
+        if rows is None:
+            return
+        atomic_json(self.oracle / RECORD_DIR / (name + '.json'), {'files': sorted(rows)})
+        for f in (self.oracle / RECORD_DIR).glob(name + '.*.json'):
+            f.unlink(missing_ok=True)
+
+    def _dependencies(self, command):
+        path = self.oracle / command[0]
+        if not self.helper_deps:
+            dependencies = self._closure([path, *self.helpers])
+            return dependencies, [p.read_text(errors='replace') for p in sorted(dependencies)]
+        dynamic = set()
+        dependencies = self._closure([path], dynamic)
+        rows = self.recorded(command[0])
+        extra = []
+        if rows is not None:
+            for r in rows:
+                q = (self.oracle / r).resolve()
+                if q.is_file() and q.is_relative_to(self.oracle.resolve()) and not self._excluded(q) and q not in dependencies:
+                    extra.append(q)
+        elif dynamic:
+            extra = [q.resolve() for q in self.helpers]
+        if extra:
+            dependencies |= self._closure(extra, set())
+        self.dynamic = getattr(self, 'dynamic', {})
+        self.dynamic[command[0]] = {'files': sorted(dynamic), 'recorded': rows is not None}
         return dependencies, [p.read_text(errors='replace') for p in sorted(dependencies)]
+
+    def _load_scope(self):
+        p = self.tools / SCOPE_FILE
+        try:
+            rows = json.loads(p.read_text()).get('changes') or []
+        except FileNotFoundError:
+            return []
+        except (OSError, ValueError, AttributeError) as error:
+            raise RuntimeError('%s 读不了：%s' % (SCOPE_FILE, error))
+        for r in rows:
+            if not (isinstance(r, dict) and all(isinstance(r.get(k), str) and r.get(k) for k in ('file', 'from', 'to', 'why'))
+                    and isinstance(r.get('rerun'), list) and len(r['from']) == 64 and len(r['to']) == 64):
+                raise RuntimeError('%s 的条目缺 file／from／to（整份 SHA-256）／rerun／why：%r' % (SCOPE_FILE, r))
+        return rows
+
+    def _scoped_sha(self, probe, rel, sha):
+        """rel 相对 03_转换工具。声明过「从 from 改到 to 只影响 rerun」且本探针不在 rerun 里时，把 to 当作 from（沿链往回找）。"""
+        seen = set()
+        while sha not in seen:
+            seen.add(sha)
+            row = next((r for r in self.scope if r['file'] == rel and r['to'] == sha and probe not in r['rerun']), None)
+            if row is None:
+                break
+            sha = row['from']
+        return sha
+
+    def _dependency_details(self, probe, paths):
+        out = {}
+        for p in sorted(set(paths)):
+            if p.is_file():
+                rel = p.relative_to(self.tools).as_posix()
+                out[rel] = self._scoped_sha(probe, rel, hashlib.sha256(p.read_bytes()).hexdigest())
+        return out
+
+    def _tooling(self, spec_on):
+        if not self.helper_deps:
+            paths = [self.tools / n for n in TOOLING]
+            return digest_files(paths, self.tools), self._file_details(paths, self.tools)
+        detail = self._file_details([self.tools / n for n in TOOLING if n != 'incremental_sync.py'], self.tools)
+        detail['incremental_sync.py'] = 'rev:%d' % SHARD_TOOLING_REVISION
+        return sha_json(detail), detail
+
+    def _compatible(self, old, current):
+        """旧条目的输入明细与本次相容（本次的依赖是旧依赖的子集且逐份相同，其余输入相同）：
+        换成按实际依赖算键、或某个本探针没用到的 helper 改了时，旧条目换上新键接着用，不整份重跑。"""
+        if not (isinstance(old, dict) and isinstance(current, dict)):
+            return False
+        oc, cc = old.get('common'), current.get('common')
+        if not (isinstance(oc, dict) and isinstance(cc, dict)) or any(oc.get(k) != v for k, v in cc.items()):
+            return False
+        od, cd = old.get('dependencies'), current.get('dependencies')
+        if not (isinstance(od, dict) and isinstance(cd, dict)) or any(od.get(k) != v for k, v in cd.items()):
+            return False
+        for field in set(old) | set(current):
+            if field in ('common', 'dependencies'):
+                continue
+            a, b = old.get(field), current.get(field)
+            if field == 'tooling' and isinstance(a, dict) and isinstance(b, dict):
+                a = dict(a)
+                if not str(a.get('incremental_sync.py', 'rev:')).startswith('rev:'):
+                    a['incremental_sync.py'] = 'rev:1'  # 改用修订号以前的旧条目算作修订 1
+            if a != b:
+                return False
+        return True
+
+    def upgrade(self, command, key):
+        """各本账里本探针的旧条目，输入明细与本次相容的，换成本次的键（只改内存；发布照旧经 record／commit）。"""
+        if not self.helper_deps or self.force:
+            return []
+        name, current, done = command[0], self.details.get(command[0]), []
+        for label, book in (('entry', self.entries), ('ledger', self.ledger), ('carried', self.carried)):
+            c = book.get(name)
+            if isinstance(c, dict) and c.get('key') != key and self._compatible(c.get('inputs'), current):
+                c['key'] = key
+                c['inputs'] = current
+                done.append(label)
+        if done:
+            self.upgraded = getattr(self, 'upgraded', {})
+            self.upgraded[name] = done
+        return done
 
     def shard(self, command):
         """分片规则；切片字段认不出时不分片（整体按键复用或重跑）。"""
@@ -256,9 +424,14 @@ class ProbeCache:
     def key(self, command):
         dependencies, texts = self._dependencies(command)
         text = ''.join(texts)
-        value = dict(self.common, command=command, dependencies=digest_files(dependencies, self.tools))
+        if self.helper_deps:
+            deps = self._dependency_details(command[0], dependencies)
+            value = dict(self.common, command=command, dependencies=sha_json(deps))
+        else:
+            deps = self._file_details(dependencies, self.tools)
+            value = dict(self.common, command=command, dependencies=digest_files(dependencies, self.tools))
         detail = {'common': {k: sha_json(v) for k, v in self.common.items()},
-                  'dependencies': self._file_details(dependencies, self.tools), 'command': command}
+                  'dependencies': deps, 'command': command}
         detail['common']['environment'] = {k: sha_json(v) for k, v in self.common['environment'].items()}
         spec = self.shard(command)
         if SLICE_NAME in text:
@@ -275,8 +448,7 @@ class ProbeCache:
                     value['sliceFirst'] = (data.get(spec['field']) or [None])[0]
                     detail['sliceFirst'] = sha_json(value['sliceFirst'])
         if spec:
-            value['tooling'] = digest_files([self.tools / n for n in TOOLING], self.tools)
-            detail['tooling'] = self._file_details([self.tools / n for n in TOOLING], self.tools)
+            value['tooling'], detail['tooling'] = self._tooling(True)
         elif any(m in text for m in GENERATED_MARKERS) or command[0] == 'event_probe.cjs':
             converted = files(self.gen / 'maps') + files(self.gen / 'db') + [self.gen / 'manifest.json', self.gen / 'slice.json']
             value['converted'] = digest_files(converted, self.gen)
@@ -377,6 +549,9 @@ class ProbeCache:
         """None＝整体重跑；[]＝整体复用；单元列表＝只跑这些单元再合并。
         分片探针只删了或换了顺序时返回 ['']：不跑探针，只按新顺序合并。"""
         name = command[0]
+        if name not in self.details:
+            self.key(command)
+        self.upgrade(command, key)
         self.misses[name] = self.explain(command, output_names, key, units)
         self.reuse.pop(name, None)
         if self.force:
@@ -466,6 +641,10 @@ class ProbeCache:
 
     def record(self, command, output_names, key, units=None):
         """产物复制进 generated 之后调用（命中的探针也调）。分片探针另记单元摘要，并立刻写进 ledger。"""
+        if self.helper_deps:
+            # 这次运行可能记下了新的运行时依赖：并成一份后按它重算键，与 commit 时重算的一致
+            self.compact_record(command[0])
+            key = self.key(command)
         entry = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names),
                  'units': units, 'inputs': self.details.get(command[0], {})}
         spec = self.shard(command)

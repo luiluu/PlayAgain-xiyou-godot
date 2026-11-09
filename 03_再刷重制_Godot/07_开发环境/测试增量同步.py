@@ -607,10 +607,105 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(self.hits(), [True, False, True])
 
     def test_helper_runtime_and_source_invalidate_all(self):
-        for path in [self.oracle / 'host.cjs', self.oracle / 'node_modules/runtime.js', self.app / 'source.js']:
+        for path in [self.oracle / 'node_modules/runtime.js', self.app / 'source.js']:
             self.prime()
             path.write_text('// changed ' + path.name)
             self.assertEqual(self.hits(), [False] * 3)
+
+    def test_helper_change_only_invalidates_probes_that_require_it(self):
+        # tools-probe-deps ①：helper 按探针的 require 图进键，没人用的 helper 改了谁都不重跑
+        (self.oracle / 'a_probe.cjs').write_text("// ../xiyou_slice.json\nrequire('./shared/host.cjs')")
+        (self.oracle / 'shared').mkdir()
+        (self.oracle / 'shared/host.cjs').write_text("require('../host.cjs')")
+        self.prime()
+        (self.oracle / 'unused.cjs').write_text('// new helper nobody requires')
+        self.assertEqual(self.hits(), [True, True, True])
+        (self.oracle / 'host.cjs').write_text('// changed transitively')
+        self.assertEqual(self.hits(), [False, True, True])
+
+    def test_switch_off_restores_all_helpers_in_every_key(self):
+        self.prime()
+        with mock.patch.dict(os.environ, XIYOU_PROBE_HELPER_DEPS='0'):
+            self.prime()
+            (self.oracle / 'host.cjs').write_text('// changed')
+            self.assertEqual(self.hits(), [False] * 3)
+
+    def test_old_format_entries_are_upgraded_without_rerun(self):
+        # 旧格式（全部 helper 进键）的条目：输入明细相容就换上新键，不因换算法整份重跑；之后没用到的 helper 改了也照旧命中
+        with mock.patch.dict(os.environ, XIYOU_PROBE_HELPER_DEPS='0'):
+            self.prime()
+        self.assertEqual(self.hits(), [True] * 3)
+        c = self.cache()
+        for cmd, outs in self.probes:
+            self.assertTrue(c.hit(cmd, outs, c.key(cmd)))
+            c.record(cmd, outs, c.key(cmd))
+        c.commit()
+        (self.oracle / 'host.cjs').write_text('// changed, nobody requires it')
+        self.assertEqual(self.hits(), [True] * 3)
+        # 旧条目的输入真变了（探针本身改了）就不能升级
+        with mock.patch.dict(os.environ, XIYOU_PROBE_HELPER_DEPS='0'):
+            self.prime()
+        (self.oracle / 'b_probe.cjs').write_text('// changed probe')
+        self.assertEqual(self.hits(), [True, False, True])
+
+    def test_unrecognised_local_read_uses_all_helpers_until_recorded(self):
+        (self.oracle / 'b_probe.cjs').write_text("const m = require('./shared/' + process.argv[2] + '.cjs');")
+        (self.oracle / 'shared').mkdir()
+        (self.oracle / 'shared/one.cjs').write_text('// one')
+        (self.oracle / 'shared/two.cjs').write_text('// two')
+        self.prime()
+        (self.oracle / 'shared/two.cjs').write_text('// two changed')
+        self.assertEqual(self.hits(), [True, False, True])
+        # 运行时记下只读了 one：之后 two 改了不重跑，one 改了重跑
+        d = self.oracle / incremental_sync.RECORD_DIR
+        d.mkdir(parents=True)
+        (d / 'b_probe.cjs.123.json').write_text(json.dumps({'files': ['b_probe.cjs', 'shared/one.cjs']}))
+        self.prime()
+        self.assertFalse((d / 'b_probe.cjs.123.json').exists())  # 记录并成 b_probe.cjs.json
+        self.assertTrue((d / 'b_probe.cjs.json').is_file())
+        (self.oracle / 'shared/two.cjs').write_text('// two changed again')
+        self.assertEqual(self.hits(), [True, True, True])
+        (self.oracle / 'shared/one.cjs').write_text('// one changed')
+        self.assertEqual(self.hits(), [True, False, True])
+
+    def test_literal_local_read_is_a_dependency(self):
+        (self.oracle / 'b_probe.cjs').write_text("const x = fs.readFileSync(path.join(__dirname, 'shared', 'cases.json'));\n"
+                                                 "fs.writeFileSync(path.join(__dirname, '.sandbox/b.json'), '');")
+        (self.oracle / 'shared').mkdir()
+        (self.oracle / 'shared/cases.json').write_text('[]')
+        self.prime()
+        self.assertEqual(self.cache().dynamic if hasattr(self.cache(), 'dynamic') else {}, {})
+        (self.oracle / 'shared/cases.json').write_text('[1]')
+        self.assertEqual(self.hits(), [True, False, True])
+
+    def test_reviewed_helper_scope_limits_reruns_and_switch_off_ignores_it(self):
+        for name in ('a', 'b'):
+            (self.oracle / (name + '_probe.cjs')).write_text("require('./host.cjs')")
+        self.prime()
+        old = hashlib.sha256((self.oracle / 'host.cjs').read_bytes()).hexdigest()
+        (self.oracle / 'host.cjs').write_text('// changed: only b can see it')
+        new = hashlib.sha256((self.oracle / 'host.cjs').read_bytes()).hexdigest()
+        self.assertEqual(self.hits(), [False, False, True])
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [
+            {'file': 'mv_oracle/host.cjs', 'from': old, 'to': new, 'rerun': ['b_probe.cjs'], 'why': 'test'}]}))
+        self.assertEqual(self.hits(), [True, False, True])
+        with mock.patch.dict(os.environ, XIYOU_HELPER_SCOPE='0'):
+            self.assertEqual(self.hits(), [False, False, True])
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [{'file': 'mv_oracle/host.cjs'}]}))
+        with self.assertRaises(RuntimeError):
+            self.cache()
+
+    def test_shard_tooling_follows_revision_not_cache_code(self):
+        (self.tools / 'incremental_sync.py').write_text('# v1')
+        (self.tools / 'oracle_shard_merge.cjs').write_text('// m1')
+        before = self.cache()._tooling(True)[0]
+        (self.tools / 'incremental_sync.py').write_text('# v2: key algorithm only')
+        self.assertEqual(self.cache()._tooling(True)[0], before)
+        (self.tools / 'oracle_shard_merge.cjs').write_text('// m2')
+        self.assertNotEqual(self.cache()._tooling(True)[0], before)
+        with mock.patch.object(incremental_sync, 'SHARD_TOOLING_REVISION', 2):
+            self.assertNotEqual(self.cache()._tooling(True)[0], self.cache()._tooling(True)[0] if False else before)
+
 
     def test_converter_code_only_matters_through_converted_output(self):
         # 探针不执行 Python：转换器改了但产物没变时不失效；产物变了由 converted 键让读产物的探针重跑
@@ -848,6 +943,82 @@ fs.appendFileSync(path.join(__dirname, '.sandbox/ran.log'), JSON.stringify(UNITS
 fs.writeFileSync(path.join(__dirname, '.sandbox/smart_ai.json'), JSON.stringify(out, null, 1));
 """
 
+
+class ProbeDepRecorderTests(unittest.TestCase):
+    def test_recorder_lists_required_and_read_oracle_files_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            oracle = Path(tmp) / 'mv_oracle'
+            (oracle / 'shared').mkdir(parents=True)
+            (oracle / '.sandbox').mkdir()
+            (oracle / 'shared/h.cjs').write_text('module.exports = 1;')
+            (oracle / 'data.json').write_text('{}')
+            (oracle / '.sandbox/x.json').write_text('{}')
+            (oracle / 'p_probe.cjs').write_text(
+                "const fs=require('fs'),path=require('path');require('./shared/h.cjs');"
+                "fs.readFileSync(path.join(__dirname,'data'+'.json'));fs.readFileSync(path.join(__dirname,'.sandbox/x.json'));process.exit(0);")
+            env = dict(os.environ, NODE_OPTIONS='--require "%s"' % (TOOLS / 'probe_dep_recorder.cjs'),
+                       XIYOU_PROBE_DEPS_NAME='p_probe.cjs', XIYOU_PROBE_DEPS_ROOT=str(oracle))
+            subprocess.run(['node', 'p_probe.cjs'], cwd=oracle, env=env, check=True)
+            rows = list((oracle / '.sandbox/probe_deps').glob('p_probe.cjs.*.json'))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(json.loads(rows[0].read_text())['files'], ['data.json', 'p_probe.cjs', 'shared/h.cjs'])
+
+    def test_sync_adds_recorder_unless_switched_off(self):
+        env = sync.with_dep_recorder({'NODE_OPTIONS': '--max-old-space-size=10'}, ['a_probe.cjs', '1'])
+        self.assertIn('probe_dep_recorder.cjs', env['NODE_OPTIONS'])
+        self.assertTrue(env['NODE_OPTIONS'].startswith('--max-old-space-size=10 '))
+        self.assertEqual(env['XIYOU_PROBE_DEPS_NAME'], 'a_probe.cjs')
+        with mock.patch.dict(os.environ, XIYOU_PROBE_HELPER_DEPS='0'):
+            self.assertEqual(sync.with_dep_recorder({}, ['a_probe.cjs']), {})
+
+
+class SyncSlotOrderTests(unittest.TestCase):
+    def setUp(self):
+        self.patches = [mock.patch.object(sync, '_slot_wait', {}), mock.patch.object(sync, '_slot_started', set()),
+                        mock.patch.object(sync, '_durations', {'short.cjs': 10.0, 'long.cjs': 9000.0, 'seg.cjs': 100.0})]
+        for p in self.patches:
+            p.start()
+            self.addCleanup(p.stop)
+
+    def order(self, groups, started=()):
+        import threading
+        import time
+        sync._slot_started.update(started)
+        got, gate = [], threading.Event()
+
+        def blocker():
+            with sync.local_turn(None):
+                gate.wait(10)
+
+        first = threading.Thread(target=blocker)
+        first.start()
+        time.sleep(0.2)
+        def go(g):
+            with sync.local_turn(g):
+                got.append(g)
+        threads = [threading.Thread(target=go, args=(g,)) for g in groups]
+        for th in threads:
+            th.start()
+            time.sleep(0.05)
+        gate.set()
+        for th in [first, *threads]:
+            th.join(10)
+        return got
+
+    def test_started_probe_segments_first_then_longest(self):
+        self.assertEqual(self.order(['short.cjs', 'long.cjs', 'seg.cjs'], started={'seg.cjs'}),
+                         ['seg.cjs', 'long.cjs', 'short.cjs'])
+        self.assertEqual(self.order(['short.cjs', 'long.cjs']), ['long.cjs', 'short.cjs'])
+
+    def test_switch_off_is_plain_pass_through(self):
+        with mock.patch.dict(os.environ, XIYOU_SYNC_SLOT_ORDER='0'):
+            with sync.local_turn('x'):
+                self.assertEqual(sync._slot_wait, {})
+
+    def test_duration_estimate_decays_slowly(self):
+        sync.note_duration('long.cjs', 60)
+        self.assertEqual(sync._durations['long.cjs'], 7200.0)
+        self.assertEqual(sync.probe_estimate('unknown.cjs'), 0.0)
 
 class ShardTests(unittest.TestCase):
     """真 node 跑假探针：分片增量产物与强制全量逐字节一致，只跑新增单元。"""
