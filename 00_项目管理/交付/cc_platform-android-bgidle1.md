@@ -1,7 +1,7 @@
 # 交付：cc/platform-android-bgidle1
 
 - 车道／工作者：平台·安卓后台真挂机（cc·平台 android-bgidle1，派单第十六批追加十七 GP2；Kyo 11-09 定 C）
-- 状态：进行中
+- 状态：可合并（两期一起交：插件＋Gradle 出包＋服务起停，挂机逻辑接线）
 - 基于：本库 main 70c22c2e2（scratchpad 里 `git clone --shared` 的 clone，见合并提示）。
 
 ## 变更记录草稿
@@ -31,7 +31,14 @@
 
 ## 验证
 
-（进行中，见下）
+- **Gradle 出包（云端，本机没 JDK 17）**：导出冒烟 run 42668732578／42676011733：`云端导出.py android-build` 装构建模板、插件 `BUILD SUCCESSFUL in 53s`（aar 10 KB）；「安卓 验收」Gradle 导出 77.8 秒、467 MB，`导出冒烟.py` 签名与包结构通过（含新加的插件登记、服务、三个前台服务权限检查）；「安卓 发行」也导出成功。模拟器 logcat：`Initializing Godot plugin XiyouBgIdle`／`Completed initialization`。
+- **模拟器后台挂机（run 42676011733，安卓 14 x86_64）**：BGIDLE_ARMED=true；切后台 60 秒后进程同一 pid 活着；`dumpsys activity services` 有 XiyouIdleService；`dumpsys notification` 有 xiyou_idle 频道通知；回前台服务停了；插件记的离开时长 60.1 秒（实际约 60 秒）。全部 PASS。
+- 同一轮模拟器另有 4 项失败：`android_keys_title_space_new_game`／`_j_`／`_enter_`（按完 1 步还在标题）和 `android_pause_hook_fires`。**main 上同样失败**（对照 run 42678614104，main 没有本分支改动，4 项一模一样），不是本分支带来的；logcat 看是第一下按键在进标题 1.3 秒后就按了、标题还没接住，新游戏没开、也就进不了地图存档。11-07 最后一次全过之后 main 有改动，建议派平台／界面车道查（见可优化）。
+- **云端选测**（基准 github/main eb6ab526b，`选测.py` 列的 206 个场景、14 片）：全过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42680616344 。
+- **本机专项**：`xiyou_platform`（122／122，含新加的 13 项前台服务用例与 background_service_off 回退）、`xiyou_hangup`、`xiyou_hangup_auto`、`xiyou_pause_save`、`xiyou_mac_export`、`xiyou_determinism`、`xiyou_map` 全过。
+- `语法检查.py` 659 个 .gd 0 问题；`工具回归.py` 全过（69 秒，含 测试安卓实机冒烟、测试导出冒烟 新用例）。
+- 没跑：真机（通知权限弹窗、锁屏长时间、通知上「停止挂机」按钮、各厂商省电策略）——模拟器点不到通知按钮，写进验收清单 17a～17d。
+- 说明：`--补齐` 跑到最后自带的事件状态探针时，因为 main 正在合 interp8（hboot.cjs 改了、探针要整份重量），会占 4 槽跑两小时多；本车道没改探针也不需要它，我把自己那组进程停了（只停本 clone 的进程组），产物和导入在那之前已经补好。
 
 ## 合并提示
 
@@ -41,9 +48,15 @@
 
 ## 可优化（流程／工具／效率）
 
+- 已做：`选测对照.json` 加两条，`addons/xiyou_export/android_src/*`、`addons/xiyou_export/*` 归 export 组（以前落到「拿不准：整轮」）。回退：删这两行。
+- 建议：模拟器冒烟的三组「标题一键开新游戏」和切后台存档在 main 上也挂（见验证），多半是标题接键时机变了，`--smoke-keys` 第一下前该等标题就绪；归平台或界面车道。
+- 建议：`--补齐` 末尾的事件状态探针在总装合并改了 mv_oracle 公共 helper 时会整份重量、占满槽，车道不需要时可以加个跳过开关（如 `--no-state-probe`），归工具车道。
 - 建议：GitHub 仓库公开后标准 runner 不计分钟，项目记忆里「Actions 分钟用完」那条对公开仓库已不成立（11-09 本车道实测 run 42668732578 正常跑完），总装可以核一下改记忆。
 
 ## 本分支提交
 
 - d68e85e79 插件＋Gradle 构建＋导出冒烟接上
-- （后续见 git log）
+- GDScript 接线、xiyou_platform 专项、导出冒烟查插件
+- 模拟器冒烟后台挂机一段、设计文档与验收清单
+- 快速切回时先 startForeground 再停
+- 选测对照归组、交付单
