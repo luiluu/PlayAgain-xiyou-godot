@@ -1573,8 +1573,11 @@ func _forced_target(u: XBattler, skill: Dictionary, index: int) -> XBattler:
 
 
 ## 回合开始时首位行动者的行动被强制行动清掉：本回合只剩 onAllActionsEnd（照 act 的「放弃行动」处理）。
+## 只清掉这一个行动位（rules-gaps8）：原版 forceAction 的 clearActions 清的是首位那次 makeActions 的结果，强制行动在首位里跑完；
+## 同一人在当前回合的下一个行动位（行动次数 ≥2，如木桩 937）getNextSubject 重新 makeActions、照常出手。所以每个行动位调一次、用掉就删
+## （木桩 826 HP≤20% 例：强制 6068／6055／6064 之后第 2 位普通出手 8111，参照见交付单 cc_rules-gaps8）。
 func cleared_action(b: XBattler) -> bool:
-	return _cleared.has(b)
+	return _cleared.erase(b)
 
 
 func can_move(b: XBattler) -> bool:

@@ -28,12 +28,10 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 ## floor1 新源 Boss 首次对照挂的 12 个敌群（rules-gaps3 清空）：查下来都不是规则缺口，是对照的时点与随机：t1_states 改比回合末
 ## （turnStarts），剑道争锋／死神觉醒的随机选技能进 RANDOM_AI_TROOPS（固定 0.5 的 _half 照常严比），肉山 2029 事件随机固定 0.5，
 ## hp_after_transform 按单槽公共事件算 1401 回不回血
-const KNOWN_DIFF := {
-	# rules-gaps6：木桩 826 HP≤20% 例（开战即第 3 页变身 937）第 1 回合，原版强制 6068／6055／6064 之后 OTB 轮到它的第二个行动位
-	#（getNextSubject 重新 makeActions）又普通出手 8111、加上 1460；Godot 只清首位行动、没有这第二位的普通行动。
-	# 不变身的 826 例同样两个行动位却没有第二次出手，差在哪还没查清，记下待下一批查（同敌群 t1_states 一并不计）
-	826: ["t1_states"],
-}
+## rules-gaps8：木桩 826 HP≤20% 例（开战即第 3 页变身 937）第 1 回合的第二行动位已接上：937 行动次数 2（OTB 当前回合排两格），
+## 强制 6068／6055／6064 的 clearActions 只清首位那一格，第 2 格 getNextSubject 重新 makeActions 照常出 8111、加 1460；
+## 不变身的黑莲 936 只有一格，所以强制之后没有普通出手（XBattleLogic.cleared_action 用掉就删）。现在没有已知差异
+const KNOWN_DIFF := {}
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
 @export var part := 0
