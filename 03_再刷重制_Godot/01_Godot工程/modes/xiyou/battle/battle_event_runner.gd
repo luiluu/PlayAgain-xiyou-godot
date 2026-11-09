@@ -480,7 +480,7 @@ func _execute_env(c: Dictionary):
 			# 上层公共事件也到此为止（halted）。XBattleLogic.game_over 置位后 is_lost 成立，战斗按全军覆没收场（rules-gaps6）
 			# 与原版的差异（审查 69 P3-1，有意保留）：原版切到 Scene_Gameover 后 BattleManager 不再 update，endBattle 及各模块的
 			# endBattle 包装都不跑，只有 Scene_Battle.terminate 的 onBattleEnd；重制走普通全灭收场，会跑 end_battle(2)
-			# （XStateEffects 的 defeat、谷雨／云裳／心钢等包装、「全军覆没」字样），随后同样全灭回大厅。清理更干净、不留战斗残留，
+			# （XStateEffects 的 defeat、谷雨／云裳／心钢等包装、「全军覆没」字样），随后同样走 O-244 结束画面回标题。清理更干净、不留战斗残留，
 			# 玩家可见只多一行战败字样，所以不照搬（rules-gaps7）
 			logic.game_over = true
 			logs.append({"type": "game_over"})

@@ -152,6 +152,21 @@ def label_reached(executed: set) -> set:
     return out
 
 
+def if_head_executed(lst, j, executed, loc):
+    """411（否则）j 对应的那个同缩进 111 执行到没有。"""
+    ind = int(lst[j].get('indent', 0))
+    k = j - 1
+    while k >= 0:
+        ck = lst[k]
+        ik = int(ck.get('indent', 0))
+        if ik < ind:
+            return False
+        if ik == ind and int(ck['code']) == 111:
+            return '%s:%d' % (loc, k) in executed
+        k -= 1
+    return False
+
+
 def gate_of(lst, i, executed, loc, depth=0):
     """挡住 i 的门：离它最近、本身执行到了的上层分支头；中间隔着没选中的选项（402／403 头没执行到）时，门是最外那个选项头。
     整页没进返回 None。顶层没有执行到的头、又在标签段里时，沿跳进来的 119 往外找门（interp5）。"""
@@ -163,8 +178,11 @@ def gate_of(lst, i, executed, loc, depth=0):
         if int(cj.get('indent', 0)) == ind - 1:
             if '%s:%d' % (loc, j) in executed:
                 return choice if choice is not None else j
-            if int(cj['code']) in (402, 403) or (int(cj['code']) == 411 and label_jump(lst, i) is not None):
-                choice = j   # 411 没执行到＝条件成立没走否则（interp6：先只用于标签段里，别处的口径不动）
+            if int(cj['code']) in (402, 403) or (int(cj['code']) == 411 and label_jump(lst, i) is not None
+                                                  and if_head_executed(lst, j, executed, loc)):
+                # 411 没执行到、它的 111 执行到了＝条件成立、真支里跳出（119）或结束了事件，没走否则
+                # （interp6：先只用于标签段里，别处的口径不动）；111 自己也没执行到时门在更外层，接着往外找（审查 66 P3-2）
+                choice = j
             ind -= 1
         j -= 1
     if choice is None and depth < 4:
