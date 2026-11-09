@@ -15,6 +15,12 @@
 
 真没做的只有人物图鉴立绘的逐张比（dev.361 核定第 42 行：「图鉴只比了图名，没逐张截图」），本期做。
 
+## 接续（11-09 21:25，第二位白龙；额度紧，总装叫停）
+
+- 分支头 0d17cb7f4（本条记录提交之后为新头），**本会话没改代码**：只切了分支、起了 `--补齐`，导入没跑完就被叫停中断（下一位重跑一次 `--补齐` 即可，不用清理）。
+- 注意：分支之后 main 进了 9 笔，其中 `mv_oracle/hboot.cjs` 有改动（bajie-interp8），所以**先 `git merge main` 再 `--补齐`**，再重量 raven_visual 探针。
+- 下一步照上一节第 1～4 条原样做，都还没验证：raven_visual 探针重量与 `xiyou_raven_visual`、图鉴对表场景 `xiyou_actor_book_compare`、修真差、语法检查／工具回归／选测、补各节。没有跑到一半的东西。
+
 ## 接续（11-09 20:45 额度 92% 停手，SUN 换账号；下一位照此接）
 
 **分支 cc/bailong-raven6 已推回本库**（从 github/main eb6ab526 切；我在 scratchpad 的 clone 里做的，clone 会丢，接手在自己工作树 `git switch --ignore-other-worktrees cc/bailong-raven6` 再 `新建工作树.sh --补齐`）。
