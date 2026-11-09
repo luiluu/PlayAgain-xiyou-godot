@@ -1269,6 +1269,86 @@ class SyncRegistrationTests(unittest.TestCase):
                 sync.godot_import(io.StringIO())
 
 
+class StatePrevFromLaneTests(unittest.TestCase):
+    """tools-merge-probe（11-09 seg-a3）：车道产物整份克隆不成、改跑完整同步时，车道账上认得的事件状态结果并进上次结果。"""
+    def setUp(self):
+        sys.path.insert(0, str(TOOLS))
+        import event_state_shards
+        self.ess = event_state_shards
+        self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_state_prev_')
+        base = Path(self.tmp.name).resolve()
+        self.root, self.lane = base / 'main', base / 'lane'
+        self.gen_rel = Path('03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated')
+        self.keys_rel = Path('03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/event_state_keys.json')
+        self.patches = [mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'STATE_KEYS', self.root / self.keys_rel)]
+        for p in self.patches:
+            p.start()
+
+    def tearDown(self):
+        for p in self.patches:
+            p.stop()
+        self.tmp.cleanup()
+
+    def result(self, root, ids, setup=None, on_ledger=True):
+        f = root / self.gen_rel / 'oracle/event_states.json'
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps({'sourceIdentity': {'releaseVersion': 'v'}, 'setup': setup or {'party': 1},
+                                 'cases': [{'id': i, 'from': root.name} for i in ids]}))
+        doc = {'version': 2, 'coreFingerprint': root.name, 'keys': {i: root.name + i for i in ids},
+               'maps': {i: [1] for i in ids}, 'fileSha': self.ess.file_sha(f)}
+        k = root / 'k.json'
+        k.write_text(json.dumps(doc))
+        if on_ledger:
+            self.assertTrue(self.ess.KeyHistory(root / self.keys_rel).add(k))
+        return f, k
+
+    def test_lane_result_first_main_fills_the_rest(self):
+        self.result(self.lane, ['x', 'y'])
+        main_file, main_keys = self.result(self.root, ['y', 'z'])
+        lane = sync.lane_state_prev(self.lane, self.root / self.gen_rel)
+        self.assertIsNotNone(lane)
+        work = Path(self.tmp.name) / 'work'; work.mkdir()
+        out, keys, n_lane, n_main = sync.combine_prev(work, lane, (main_file, main_keys))
+        self.assertEqual((n_lane, n_main), (2, 1))
+        data, doc = json.loads(out.read_text()), json.loads(keys.read_text())
+        self.assertEqual([(c['id'], c['from']) for c in data['cases']], [('x', 'lane'), ('y', 'lane'), ('z', 'main')])
+        self.assertEqual(doc['keys'], {'x': 'lanex', 'y': 'laney', 'z': 'mainz'})
+        self.assertEqual(doc['fileSha'], self.ess.file_sha(out))   # 探针按 fileSha 认领拼好的那份
+        # 开局设定不同的 main 结果不拼
+        self.result(self.root, ['z'], setup={'party': 2})
+        _, _, n_lane, n_main = sync.combine_prev(work, lane, (self.root / self.gen_rel / 'oracle/event_states.json', self.root / 'k.json'))
+        self.assertEqual((n_lane, n_main), (2, 0))
+
+    def test_lane_result_not_on_lane_ledger_is_not_used(self):
+        self.result(self.lane, ['x'], on_ledger=False)
+        self.assertIsNone(sync.lane_state_prev(self.lane, self.root / self.gen_rel))
+        self.assertIsNone(sync.lane_state_prev(self.root, self.root / self.gen_rel))   # 车道就是本工作区：不用
+
+    def test_run_state_sharded_passes_combined_prev_and_switch_turns_it_off(self):
+        self.result(self.lane, ['x'])
+        self.result(self.root, ['z'])
+        seen = []
+
+        def fake_run(env, oracle, work, out, keys, shards, launch, progress=None):
+            seen.append((env.get('XIYOU_STATE_PREV'), env.get('XIYOU_STATE_PREV_KEYS')))
+            return subprocess.CompletedProcess([], 0, '', '')
+        env = {'XIYOU_GENERATED': str(self.root / self.gen_rel)}
+        box = Path(self.tmp.name) / 'box'
+        with mock.patch.object(self.ess, 'run_sharded', fake_run), mock.patch.object(sync, 'STATE_PREV_FROM', self.lane):
+            p = sync.run_state_sharded(['event_state_probe.cjs'], env, box)
+            self.assertIn('上次结果并入车道', p.stdout)
+            self.assertTrue(seen[-1][0].endswith('prev-combined.json'))
+            with mock.patch.dict(os.environ, {'XIYOU_STATE_PREV_FROM': '0'}):
+                p = sync.run_state_sharded(['event_state_probe.cjs'], env, box)
+            self.assertNotIn('车道', p.stdout)
+            self.assertEqual(seen[-1][0], str(self.root / self.gen_rel / 'oracle/event_states.json'))
+
+    def test_merge_passes_lane_tree_to_full_sync_after_exit_3(self):
+        src = (HERE / '合并车道.py').read_text()
+        self.assertIn("sync = sync + ['--state-prev-from', state['worktree']]", src)
+        self.assertIsNotNone(sync.build_parser().parse_args(['--state-prev-from', '/x']).state_prev_from)
+
+
 class SyncStampTests(unittest.TestCase):
     """提速提案 P3：同步写产物指纹；合并时按指纹直接用车道产物，不满足就退出码 3 且不动 main。"""
     def setUp(self):
@@ -1507,6 +1587,56 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
         self.assertIn('核查: 待审查', self.g('log', '-1', '--format=%B', 'HEAD'))
+
+    def presets_fixture(self, main_rows, lane_rows, baseline=None):
+        """main 与车道各一份 event_presets.json（车道先 merge main 再改成 lane_rows）；baseline：main 已发布的 event_states 用例号。"""
+        doc = lambda rows: json.dumps({'cases': [{'base': r.split('#')[0], 'tag': r.split('#')[1], 'preset': {}} for r in rows]})
+        self.put(str(merge.PRESETS), doc(main_rows))
+        self.g('add', '.'); self.g('commit', '-m', 'main presets')
+        self.g('merge', 'main', cwd=self.wt)
+        (self.wt / merge.PRESETS).write_text(doc(lane_rows))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'lane presets', cwd=self.wt)
+        if baseline is not None:
+            p = self.root / merge.STATE_BASELINE
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps({'cases': [{'id': i} for i in baseline]}))
+            (self.root / '.git/info/exclude').write_text(str(merge.PROJECT / 'modes') + '/\n')
+
+    def test_lane_deleting_baseline_presets_stops_before_merge(self):
+        """tools-merge-probe（11-09 seg-a3）：车道删了 main 基线里的参照用例，准备阶段就停，不合并、不同步。"""
+        self.presets_fixture(['a#1', 'a#2', 'b#1'], ['a#1', 'b#1', 'c#1'])
+        head = self.g('rev-parse', 'HEAD')
+        self.assertNotEqual(self.call(), 0, self.last_output)
+        self.assertIn('车道删了 main 基线里的 1 个事件状态参照用例（a#2）', self.last_output)
+        self.assertEqual(self.g('rev-parse', 'HEAD'), head)
+        self.assertFalse(merge.dirty(self.root))
+
+    def test_lane_presets_only_additions_or_gone_from_baseline_pass(self):
+        """车道只加预设行：照常合并。"""
+        self.presets_fixture(['a#1', 'a#2'], ['a#1', 'a#2', 'c#1'])
+        fork = self.g('merge-base', 'main', 'claude/task')
+        self.assertEqual(merge.deleted_reference_presets(self.root, fork, self.g('rev-parse', 'HEAD'), 'claude/task'), [])
+        self.assertEqual(self.call(), 0, self.last_output)
+
+    def test_deleted_presets_three_way_and_baseline_filter(self):
+        """只认分叉点与 main 都有、车道没了的行；main 已发布结果在时只留基线里真有的；回退开关与换源合并不查。"""
+        self.presets_fixture(['a#1', 'a#2', 'a#3'], ['a#1'], baseline=['a#1', 'a#3'])
+        base, fork = self.g('rev-parse', 'HEAD'), self.g('merge-base', 'main', 'claude/task')
+        self.assertEqual(merge.deleted_reference_presets(self.root, fork, base, 'claude/task'), ['a#3'])
+        # main 后来自己删掉的行不算车道删的
+        self.put(str(merge.PRESETS), json.dumps({'cases': [{'base': 'a', 'tag': '1', 'preset': {}}, {'base': 'a', 'tag': '2', 'preset': {}}]}))
+        self.g('add', str(merge.PRESETS)); self.g('commit', '-m', 'main drops a#3')
+        self.assertEqual(merge.deleted_reference_presets(self.root, fork, self.g('rev-parse', 'HEAD'), 'claude/task'), [])
+        os.environ['XIYOU_LANE_DELETE_CHECK'] = '0'
+        try:
+            self.assertEqual(merge.deleted_reference_presets(self.root, fork, base, 'claude/task'), [])
+        finally:
+            del os.environ['XIYOU_LANE_DELETE_CHECK']
+        os.environ['XIYOU_ACCEPT_SOURCE_SWITCH'] = 'v9'
+        try:
+            self.assertEqual(merge.deleted_reference_presets(self.root, fork, base, 'claude/task'), [])
+        finally:
+            del os.environ['XIYOU_ACCEPT_SOURCE_SWITCH']
 
     def test_review_status_ignores_body_mention_of_reviewer(self):
         """唐僧 10-30：交付单正文里引用「执行者：Claude（审查）」不能让本条变成 核查: 无，只认头部执行者行。"""
