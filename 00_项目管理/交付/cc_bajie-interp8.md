@@ -1,7 +1,7 @@
 # 交付：cc/bajie-interp8
 
 - 车道／工作者：事件解释器（cc·八戒，派单第十六批 GB6；第二棒接续第一棒掉线的会话）
-- 状态：进行中
+- 状态：可合并
 - 基于：github/main 00fa4857，交付前已合 github/main 1772d9ac（tools-merge-probe，只改工具，没碰切片／转换器／探针）。
 
 ## 变更记录草稿
@@ -14,6 +14,10 @@
 - **审查 71 P3-1**：`tests/xiyou_troop_events.gd` 的 more_slots 放宽口径加 `not oracle_half`：_half 份的规则随机跟参照一样固定 0.5，多出格就是重制错了，不放宽。
 - **审查 71 P3-3**：`battle/battle_event_runner.gd` 约 483 行注释「全灭回大厅」改成「走 O-244 结束画面回标题」。
 - 审查 66 P3-3（分段乙 tag 前缀 b1／b2 重用）按派单只登记，没改。审查 71 P3-2 总装自己改，没碰。
+
+## 预期测量变化
+
+hboot.cjs 修好中文路径 file:// XHR 后，参照里 CodexGuide 读得到 v0.62.12 的 ContentVersion 与 PlayerChangelog，event_probe 的 m4e71p0（改版向导）更新日志页从 v0.36 以前的旧页变成 v0.62 起的 12 版，选项与台词随之变化，这是修正后的正确参照（O-待定·参照宿主中文路径读文件）。
 
 ## 交接板
 
@@ -36,7 +40,8 @@
 - 云端选测（基准 1772d9ac，`选测.py main` 列出的 83 个场景，含 xiyou_event_compare*、xiyou_troop_events*、xiyou_rules*、xiyou_determinism 等）：9 片全过，最长一片 13.9 分钟。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42614222235
 - `工具回归.py` 全过（74 秒）；`语法检查.py` 659 个 .gd 0 问题。
 - 同步（总装定的 A 方案）：hboot.cjs 是 mv_oracle 公共 helper，进 incremental_sync 公共键，所有参照探针键都变。本车道已用 `长任务.py --idle-timeout 7200` 跑 `同步正式西游.py --accept-additions`（PROBE_PLAN executed 96），结果见下。
-  - 待写
+  - 12:19～14:36 UTC（约 2 小时 17 分，经共用槽排队，探针全部跑完、无失败）。结果「有变化」退出码 2：只有 `events.json` 的 `m4e71p0` 一例 trace 变了（更新日志页变成 v0.62 起的 12 版，正是 hboot 修复的效果），verify issues 空。已用 `生成接受单.py --reason-from` 写成接受单 `03_再刷重制_Godot/04_验证/测量接受/cc_bajie-interp8.json`（1 条）。同步已写待接受指纹（pendingAcceptance），总装合并可直接用本树产物，main 按自己的基线比较时带上这张接受单。
+  - `event_states.json` 不在测量键表（oracle_additions）里，i7 那 14 例随预设变，不需要接受单。
 
 ## 合并提示
 
