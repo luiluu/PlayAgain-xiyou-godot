@@ -54,4 +54,5 @@
 
 ### 验证
 - 语法检查 660 个 .gd 0 问题；`xiyou_battle_ui` 无头 172/172、窗口模式 207/207。
-- 云端选测（基准 eb6ab526bf，196 场景，含 gaps9／10 的改动面）：结果见下一行。
+- 云端选测（基准 eb6ab526bf，196 场景、14 片，含 gaps9／10 的改动面，[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42718289847)）：194 过，失败 2 个 `xiyou_troop_events_sce`／`_sce_b`，两个都是 `total 0`——云端用的转换产物是从 main 补齐的，`oracle/troop_events.json` 里没有 gaps9 新增的 skillCE 用例（本地 `grep -c skillCE` 也是 0），场景没用例可跑算失败，**不是本条改动引起**。gaps9 合并时参照重跑后会有这些用例；合并 gaps11 时请连这两个一起看。其余 troop_events 五段（含 221／222 的圣劫使 825 等例）、battle_events、battle_common_events、battle_ui 全过。
+- 工具快速回归 60 秒全过。
