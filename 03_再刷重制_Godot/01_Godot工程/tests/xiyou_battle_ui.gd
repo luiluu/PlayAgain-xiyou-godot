@@ -161,6 +161,7 @@ func _run() -> void:
 	await _shot("battle_40_input")
 	await _shield_side(b, s)
 	await _message_101(b)
+	await _screen_fx(b)
 	await _race_ui(b, s)
 	await _select_confirm(b, s)
 	await _alien_pick(b, s)
@@ -789,3 +790,106 @@ func _prey_pick(b: XBattleScene, s: XState) -> void:
 	XRace.sync(s, a)
 	a.last_command = last[0]  # 后面的胜利循环按「攻击」确定
 	a.last_battle_skill = last[1]
+
+
+## rules-gaps11：战斗里 221 淡出 → 101（敌群 825 第 30 回合第一句，位置 1）→ 222 淡入 → 224 红闪 [255,0,0,170] 30 帧。
+## 参照 tests/fixtures/battle_screen_fx_oracle.json（ui_reference 战斗夹具，独立 Game_Interpreter 每帧在场景更新后 update）：
+## frames 每帧 [k, 指令下标, 亮度, 黑幕不透明度, 闪烁强度, 闪烁层不透明度, 消息忙, 消息窗开度]，k=1 是 221 执行的那帧。
+## 比：淡出、淡入、闪烁逐帧的亮度／强度；221 之后第几帧消息开始（等 24 帧）；黑幕层在战斗画面之上、窗口之下。
+func _screen_fx(b: XBattleScene) -> void:
+	var f := FileAccess.open("res://tests/fixtures/battle_screen_fx_oracle.json", FileAccess.READ)
+	var ref: Dictionary = JSON.parse_string(f.get_as_text()) if f != null else {}
+	var frames: Array = ref.get("frames", [])
+	_check("screen_fx_oracle", not frames.is_empty())
+	if frames.is_empty():
+		return
+	var sx: XBattleScreen = b.screen_fx
+	# 层次：战斗画面（背景、战斗者、伤害数字、连击数）之上，伤害记录与窗口层之下；不随镜头
+	var at := sx.get_index()
+	_check("screen_fx_layer", at > b.field.get_index() and at > b.fx.get_index() and at > b.combo.get_index() and at < b.ui.get_index()
+		and (b.record == null or at < b.record.get_index()) and not b._cam_base.has(sx), [at, b.field.get_index(), b.ui.get_index()])
+	var cw: XBattleList = b.cmd_win
+	cw.active = false
+	cw.hide()
+	sx.trace = []
+	var marks := {"msg": -1, "in": -1, "flash": -1, "done": false}
+	var start := Engine.get_physics_frames()
+	var go := func():
+		await b._event_view({"type": "event_view", "fade": "out"})
+		marks.msg = Engine.get_physics_frames() - start
+		await b.message.run({"face": "", "index": 0, "background": 0, "position": 1, "lines": ["天空中的圣雷积攒到了极限"]})
+		marks["in"] = Engine.get_physics_frames() - start
+		await b._event_view({"type": "event_view", "fade": "in"})
+		marks.flash = Engine.get_physics_frames() - start
+		await b._event_view({"type": "event_view", "flash": [255, 0, 0, 170], "duration": 30, "wait": false})
+		marks.done = true
+	go.call()
+	await _shot_at_physics(start, 12, "battle_60_fade_f12")
+	await _shot_at_physics(start, 24, "battle_60b_fade_f24")
+	var shown := await _until(func(): return b.message.win.openness >= 255 and b.message.win.pause)
+	await _frames(10)
+	await _shot("battle_60c_fade_message")
+	_check("screen_fx_black_under_message", shown and is_zero_approx(sx.brightness) and is_equal_approx(sx.fade_opacity(), 255.0), [shown, sx.brightness])
+	await _press("ui_accept")
+	await _until(func(): return marks.done, 300)
+	var fstart := start + int(marks.flash)
+	await _shot_at_physics(fstart, 5, "battle_60d_flash_f5")
+	await _until(func(): return sx.flash_duration == 0, 120)
+	# 原版逐帧：221 在 k=1，之后每帧一次 updateFadeOut；消息在 k=1+24+1 起忙
+	var ref_out: Array = []
+	var ref_msg := -1
+	for r in frames:
+		if int(r[0]) >= 2 and int(r[0]) <= 25:
+			ref_out.append(float(r[2]))
+		if ref_msg < 0 and int(r[6]) == 1:
+			ref_msg = int(r[0])
+	var got_out: Array = sx.trace.filter(func(t): return int(t[0]) <= 24).map(func(t): return float(t[1]))
+	_check("screen_fx_fade_out_frames", _close(got_out.slice(0, 24), ref_out), [got_out.slice(0, 6), ref_out.slice(0, 6), got_out.size()])
+	_check("screen_fx_message_after_24", ref_msg >= 0 and int(marks.msg) == ref_msg - 1, [marks.msg, ref_msg])
+	# 淡入、闪烁：从各自开始那帧算起的逐帧序列
+	var ref_in := _ref_series(frames, 3, 2)
+	var ref_flash := _ref_series(frames, 4, 4)
+	var got_in: Array = []
+	var got_flash: Array = []
+	var phase := 0
+	for t in sx.trace:
+		if int(t[0]) == 1 and phase < 2:
+			phase += 1
+		if phase == 1 and got_in.size() < 24 and int(marks["in"]) >= 0:
+			got_in.append(float(t[1]))
+		elif phase == 2:
+			got_flash.append(float(t[2]))
+	_check("screen_fx_fade_in_frames", _close(got_in, ref_in.slice(0, got_in.size())) and got_in.size() == 24, [got_in.slice(0, 4), ref_in.slice(0, 4), got_in.size()])
+	_check("screen_fx_flash_frames", _close(got_flash, ref_flash.slice(0, got_flash.size())) and got_flash.size() == 30, [got_flash.slice(0, 4), ref_flash.slice(0, 4), got_flash.size()])
+	sx.trace = null
+	cw.show()
+	cw.active = true
+
+
+## 参照里指令下标 idx 那条执行之后（k 是它执行的那帧）每帧的第 col 列，取 1..30 帧
+func _ref_series(frames: Array, idx: int, col: int) -> Array:
+	var k0 := -1
+	for r in frames:
+		if int(r[1]) > idx and k0 < 0:
+			k0 = int(r[0])
+	var out: Array = []
+	for r in frames:
+		if k0 >= 0 and int(r[0]) > k0 and out.size() < 30:
+			out.append(float(r[col]))
+	return out
+
+
+func _close(a: Array, b: Array) -> bool:
+	if a.size() != b.size():
+		return false
+	for i in a.size():
+		if absf(float(a[i]) - float(b[i])) > 0.001:
+			return false
+	return true
+
+
+## 从 start（物理帧号）起第 k 帧画完后截图
+func _shot_at_physics(start: int, k: int, name: String) -> void:
+	while Engine.get_physics_frames() - start < k:
+		await get_tree().process_frame
+	await _shot(name)

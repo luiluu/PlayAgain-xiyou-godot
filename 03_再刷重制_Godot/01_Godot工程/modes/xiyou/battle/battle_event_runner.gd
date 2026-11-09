@@ -474,7 +474,11 @@ func _execute_env(c: Dictionary):
 			pass
 		221, 222:
 			# 淡出／淡入画面（圣劫使 825 第 30 回合灭世雷劫）：只是画面，记一条给画面层，不影响规则（rules-gaps6）
+			# 画面层 XBattleScene._event_view 照 Game_Screen 演 24 帧黑幕（rules-gaps11）
 			logs.append({"type": "event_view", "fade": "out" if int(c.code) == 221 else "in"})
+		224:
+			# 闪烁画面 [颜色 r,g,b,强度, 帧数, 等待]（小明基因锁 CE1551～1554 的红闪）：只是画面，画面层 XBattleScreen 演（rules-gaps11）
+			logs.append({"type": "event_view", "flash": (p[0] as Array).duplicate(), "duration": int(p[1]), "wait": bool(p[2])})
 		353:
 			# 游戏结束（command353 → SceneManager.goto(Scene_Gameover)）：战斗场景随即离开，本页后面的指令（825 的 222 淡入）不再执行，
 			# 上层公共事件也到此为止（halted）。XBattleLogic.game_over 置位后 is_lost 成立，战斗按全军覆没收场（rules-gaps6）
