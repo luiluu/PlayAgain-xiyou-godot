@@ -1,8 +1,8 @@
 {
-  "toolsDigest": "4e964983339dc844d69d4639685296059454e583944495159636eafa8607666e",
-  "outputsDigest": "82e80124f582c7b89f2e50ee4cbdbfa53526d487219ae9e9d24bd10fd2fe752f",
+  "toolsDigest": "cf4412c79dd15a71c7bf13bb08509fbc003ae6eedee27bbac4504db9f7088890",
+  "outputsDigest": "f2d612ee4ed407f5bc81dc574c05bde036e7ec7ac46cfc8ad2fc6b3d2d1a365d",
   "releaseVersion": "v0.62.12",
-  "result": "测量不变，已登记",
-  "time": "2026-11-09T04:17:19",
-  "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261109_041255_904310_v0.62.12-v0.62.12"
+  "result": "新增用例，已接受并登记",
+  "time": "2026-11-09T09:24:10",
+  "backup": "03_再刷重制_Godot/04_验证/本地结果/自动同步/20261109_074751_450373_v0.62.12-v0.62.12"
 }
