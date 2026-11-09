@@ -166,6 +166,7 @@ func _skill(c: Dictionary, s: XState) -> void:
 
 
 func _ready() -> void:
+	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var s := XState.new_game(2, 1, [8, 9, 10])
 	XState.current = s

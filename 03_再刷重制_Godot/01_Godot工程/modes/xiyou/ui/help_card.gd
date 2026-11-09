@@ -62,6 +62,9 @@ static var WHITE_STATS_FIRST := true
 ## 原版 tidy 去掉「防御按攻防比例结算」、DROP 去掉「纯粹伤害：否」「武器／装备限制：无」：是原版有意不画，不是漏。
 ## 只改显示副本。默认开（O-待定·说明卡排版）；关＝v0.28 排法。
 static var LAYOUT_V043 := true
+## O-242：v0.43 排版里分组之间的空行（文字「 」、字号 4）照原版只占 4+8＝12；最小字号 MIN_FONT 把它也提到 16，一条空行变 24，
+## 技能卡实测比原版高 38。设 false 回到「空行也按最小字号」。
+static var KEEP_GAP_ROWS := true
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
 
@@ -137,7 +140,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 	if (not growth or XGrowthHelp.HELP_FIX) and not liuying:
 		if elements:
 			rows = _element_wrapper(obj, 0 if skill_copy or binding_copy else type, rows)
-		if power and (type == 1 or type == 2) and XPower.enabled():
+		if power and (type == 1 or type == 2) and XPower.ui_enabled():
 			rows.insert(1, [POWER_PREFIX + XPower.format(XPower.equipment(obj).total), 18, POWER_COLOR, false, 0])
 		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
@@ -1000,6 +1003,8 @@ static func layout(rows: Array, min_size := 0, width := WIDTH, measure := Callab
 	var lines := []
 	for r in rows:
 		var size := maxi(int(r[1]), min_size)
+		if KEEP_GAP_ROWS and str(r[0]) == " " and int(r[1]) <= P43_SIZE.gap:
+			size = int(r[1])
 		var align := int(r[4]) if r[4] != null else 0
 		var color := _css(str(r[2]))
 		var text := _escapes(str(r[0]))

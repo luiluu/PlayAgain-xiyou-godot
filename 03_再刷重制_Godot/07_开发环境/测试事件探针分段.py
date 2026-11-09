@@ -77,12 +77,91 @@ class PresetsMergeTests(unittest.TestCase):
         self.assertEqual(sync.tools_digest(skip={sync.PRESETS_REL}), sync.tools_digest(skip={sync.PRESETS_REL}))
         self.assertNotEqual(sync.tools_digest(), sync.tools_digest(skip={sync.PRESETS_REL}))
 
+class TroopShardMergeTests(unittest.TestCase):
+    """GC：troop_event_probe 分段拼回（全局用例序号 % n）与单进程逐字相同；来源不一致、用例数对不上就失败。"""
+    def merge(self, docs):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for i, d in enumerate(docs):
+                p = Path(tmp) / ('p%d.json' % i); p.write_text(json.dumps(d, indent=1)); paths.append(str(p))
+            out = Path(tmp) / 'out.json'
+            r = subprocess.run(['node', '-e', sync.TROOP_MERGE_JS, str(out)] + paths, capture_output=True, text=True)
+            return r, (out.read_text() if r.returncode == 0 else None)
+
+    @staticmethod
+    def case(i):
+        return {'troop': i, 'actions': [], 'invokes': [], 'errors': [], 'turnCount': 2, 'phase': 'x', 'note': '中文%d' % i}
+
+    def docs(self, total, n):
+        head = {'sourceIdentity': {'releaseVersion': 'v'}, 'party': [1, 8], 'difficulty': 3}
+        return [dict(head, cases=[self.case(k) for k in range(total) if k % n == i]) for i in range(n)]
+
+    def test_merge_equals_single_process(self):
+        for total, n in [(10, 3), (9, 3), (2, 4), (7, 1)]:
+            r, text = self.merge(self.docs(total, n)[: min(n, total)] if total < n else self.docs(total, n))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            single = dict(self.docs(total, 1)[0])
+            self.assertEqual(text, json.dumps(single, indent=1, ensure_ascii=False), (total, n))
+
+    def test_merge_rejects_mismatch(self):
+        docs = self.docs(6, 2)
+        docs[1]['difficulty'] = 4
+        self.assertNotEqual(self.merge(docs)[0].returncode, 0)
+        docs = self.docs(6, 2)
+        docs[1]['cases'].append(self.case(99))   # 段 1 多一例：轮转的个数对不上
+        self.assertNotEqual(self.merge(docs)[0].returncode, 0)
+
+    def test_probe_shard_guard(self):
+        src = (sync.HERE / 'mv_oracle/troop_event_probe.cjs').read_text()
+        self.assertIn("process.env.XIYOU_PROBE_SHARD", src)
+        self.assertIn("idx % SHARD.n !== SHARD.i", src)
+        self.assertIn("XIYOU_PROBE_FROM", src)
+        self.assertIn("XIYOU_COVER 记录的下标是全局的", src)
+
+
 class StateShardMergeTests(unittest.TestCase):
     """BO：补跑事件状态探针.py 的分段拼回（序号轮转 i % n）与单进程顺序逐字相同；段数或来源对不上就失败。"""
     def load(self):
         spec = importlib.util.spec_from_file_location('state_probe', Path(__file__).resolve().parent / '补跑事件状态探针.py')
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
         return mod
+
+    def test_worktree_script_seeds_event_states(self):
+        """GC：新建工作树.sh 在补跑前把主工作区 .sandbox 的 event_states*.json 克隆过来，且不覆盖已有的。"""
+        text = (Path(__file__).resolve().parent / '新建工作树.sh').read_text()
+        seed = text.index('for n in event_states.json event_states.keys.json')
+        self.assertLess(text.index('--carry-cache'), seed)
+        self.assertLess(seed, text.index('补跑事件状态探针.py'))
+        self.assertIn('[[ -e $tools/mv_oracle/.sandbox/$n ||', text[seed:seed + 300])
+
+    def test_changed_probe_needs_confirm_full(self):
+        """GC：探针相对 main 改过时补跑只提示、不跑；--confirm-full 才跑；关守卫退回旧行为。"""
+        import contextlib, io, sys
+        from unittest import mock
+        mod = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'node_modules').mkdir(); (root / 'gen/maps').mkdir(parents=True)
+            ran = []
+            def fake(env):
+                ran.append(1)
+                return subprocess.CompletedProcess([], 1, '', 'stop')
+            cases = [(['x'], {}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], False),
+                     (['x', '--confirm-full'], {}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {'XIYOU_PROBE_CHANGE_GUARD': '0'}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {'XIYOU_CONFIRM_FULL': '1'}, ['03_转换工具/mv_oracle/event_state_probe.cjs'], True),
+                     (['x'], {}, [], True)]
+            for argv, env, changed, should_run in cases:
+                ran.clear(); out = io.StringIO()
+                with mock.patch.object(mod, 'ORACLE', root), mock.patch.object(mod, 'GEN', root / 'gen'), \
+                        mock.patch.object(mod, 'OUT', root / 'none.json'), mock.patch.object(mod, 'run_probe', fake), \
+                        mock.patch.object(mod, 'changed_probe_files', lambda base='main': changed), \
+                        mock.patch.dict(os.environ, env), mock.patch.object(sys, 'argv', argv), contextlib.redirect_stdout(out):
+                    rc = mod.main()
+                self.assertEqual(bool(ran), should_run, (argv, env, changed))
+                if not should_run:
+                    self.assertEqual(rc, 0)
+                    self.assertIn('--confirm-full', out.getvalue())
 
     def test_force_warns_that_it_runs_everything(self):
         """tools-merge-args3：--force 关增量整份重量，开跑前打一行提示；不加不提示。"""

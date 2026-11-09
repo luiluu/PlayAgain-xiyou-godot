@@ -46,6 +46,7 @@ func _compare(state: String, card: Dictionary) -> void:
 
 
 func _ready() -> void:
+	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ORACLE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
 	XHelpCard.REAL_SELL_PRICE = false

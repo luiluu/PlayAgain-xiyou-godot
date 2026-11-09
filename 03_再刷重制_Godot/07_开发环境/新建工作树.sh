@@ -18,6 +18,17 @@ fi
 set -euo pipefail
 ENV_DIR=${0:A:h}
 SELF_ROOT=${ENV_DIR:h:h}
+# clone（git clone --shared）里的本脚本是旧副本，且会把 clone 当成主工作区、报「不需要补齐」（GB3 11-08，tools-probe-tags）：
+# 认出 clone（.git/objects/info/alternates 指向母库）就改用母库（主工作区）那份脚本，原样转交参数。XIYOU_WT_REDIRECTED 防循环。
+if [[ -z ${XIYOU_WT_REDIRECTED:-} && -f $SELF_ROOT/.git/objects/info/alternates ]]; then
+  _alt=$(head -1 "$SELF_ROOT/.git/objects/info/alternates")
+  _real=${_alt:h:h}
+  _real_script=$_real/03_再刷重制_Godot/07_开发环境/新建工作树.sh
+  if [[ -f $_real_script && ${_real:A} != ${SELF_ROOT:A} ]]; then
+    print -u2 "⚠ 这里是 clone（$SELF_ROOT），改用主工作区那份脚本：$_real_script"
+    XIYOU_WT_REDIRECTED=1 exec zsh "$_real_script" "$@"
+  fi
+fi
 MAIN=${$(git -C "$SELF_ROOT" rev-parse --path-format=absolute --git-common-dir):h}
 GODOT_SUB=03_再刷重制_Godot
 
@@ -85,6 +96,11 @@ PY
   [[ -e $tools/mv_oracle/node_modules ]] || cp -cR "$mtools/mv_oracle/node_modules" "$tools/mv_oracle/node_modules"
   # 起始种子与缓存必须配套携带；已有车道现场不覆盖。缓存仍逐文件核对 oracle 的 SHA。
   python3 "$tools/incremental_sync.py" --carry-cache "$mtools/mv_oracle/.sandbox" "$tools/mv_oracle/.sandbox"
+  # 事件状态探针上次的结果与摘要：补跑靠它们走增量，带不过来就退成整份重量（floor9 第一轮 40 分钟，GC 11-08）。
+  # 不放进 incremental_sync.carry_cache：那个文件在 TOOLING 里，改了会让所有分片探针下次同步整体重跑。已有的不覆盖。
+  for n in event_states.json event_states.keys.json; do
+    [[ -e $tools/mv_oracle/.sandbox/$n || ! -f $mtools/mv_oracle/.sandbox/$n ]] || cp -c "$mtools/mv_oracle/.sandbox/$n" "$tools/mv_oracle/.sandbox/$n"
+  done
   local flux_rc=0
   python3 "$ENV_DIR/参照批次.py" flux "$(git -C "$MAIN" rev-parse --path-format=absolute --git-common-dir)" || flux_rc=$?
   if [[ -e $gen ]]; then

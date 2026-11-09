@@ -352,7 +352,7 @@ func _host_command(c: Dictionary):
 			XDungeon.battle_finished(troop, result, state().map_id)
 			_branch[indent] = result
 			if result == 2 and not bool(p[3]):
-				host.game_over()
+				await host.game_over()   # 要等结束画面走完：不 await 的话事件收尾 busy=false，画面盖着时人还能走（O-244 补）
 				return false
 		302:
 			var goods := [p]

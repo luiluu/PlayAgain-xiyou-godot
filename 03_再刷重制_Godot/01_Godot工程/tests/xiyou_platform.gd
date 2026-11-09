@@ -7,6 +7,8 @@ class Recorder extends Node:
 	var right_clicks := 0
 	var cancels := 0
 	var accepts := 0
+	var page_downs := 0
+	var page_ups := 0
 	var unhandled_touches := 0
 	var unhandled_left := 0
 	func _input(event: InputEvent) -> void:
@@ -16,6 +18,11 @@ class Recorder extends Node:
 			cancels += 1
 		if event.is_action_pressed("ui_accept"):
 			accepts += 1
+		# 审查 66 P3-4：页面真收到的翻页事件（_input 里认 is_action_pressed，同各页）
+		if event.is_action_pressed("ui_page_down"):
+			page_downs += 1
+		if event.is_action_pressed("ui_page_up"):
+			page_ups += 1
 	func _unhandled_input(event: InputEvent) -> void:
 		if event is InputEventScreenTouch:
 			unhandled_touches += 1
@@ -246,6 +253,8 @@ func _run() -> void:
 	await frames(2)
 	# 摇杆拖动翻页（ui6）：推深（≥65%）按满 36 帧翻第一页，之后每 24 帧一页；推浅不翻；设置关掉不翻
 	var p0 := pad.pages_sent
+	var d0 := rec.page_downs
+	var u0 := rec.page_ups
 	touch(0, XTouchControls.STICK_CENTER, true)
 	var deep := InputEventScreenDrag.new()
 	deep.index = 0
@@ -253,15 +262,19 @@ func _run() -> void:
 	Input.parse_input_event(deep)
 	for i in 30:
 		await get_tree().physics_frame
-	check("stick_page_waits", pad.pages_sent == p0 and pad._held.has("ui_right"), [pad.pages_sent, p0])
+	check("stick_page_waits", pad.pages_sent == p0 and pad._held.has("ui_right") and rec.page_downs == d0, [pad.pages_sent, p0, rec.page_downs, d0])
 	for i in 40:
 		await get_tree().physics_frame
 	check("stick_page_every_24", pad.pages_sent == p0 + 2, [pad.pages_sent, p0])
+	# 端到端：每次发出都被页面接到（向右＝ui_page_down，不会误出 ui_page_up）
+	check("stick_page_reaches_pages", rec.page_downs == d0 + 2 and rec.page_ups == u0, [rec.page_downs, d0, rec.page_ups, u0])
 	check("stick_page_stops_lr_echo", not pad._held.has("ui_right") and Input.is_action_pressed("ui_right"))
 	touch(0, XTouchControls.STICK_CENTER, false)
 	await frames(2)
 	check("stick_page_release", not Input.is_action_pressed("ui_right"))
 	p0 = pad.pages_sent
+	d0 = rec.page_downs
+	u0 = rec.page_ups
 	touch(0, XTouchControls.STICK_CENTER, true)
 	var shallow := InputEventScreenDrag.new()
 	shallow.index = 0
@@ -269,7 +282,7 @@ func _run() -> void:
 	Input.parse_input_event(shallow)
 	for i in 80:
 		await get_tree().physics_frame
-	check("stick_page_shallow_no", pad.pages_sent == p0 and Input.is_action_pressed("ui_left"), pad.pages_sent)
+	check("stick_page_shallow_no", pad.pages_sent == p0 and Input.is_action_pressed("ui_left") and rec.page_downs == d0 and rec.page_ups == u0, [pad.pages_sent, rec.page_downs, rec.page_ups])
 	touch(0, XTouchControls.STICK_CENTER, false)
 	await frames(2)
 	# 按住满 24 帧发过方向回显再松手，方向要真松开（Godot 把回显记成键盘设备按着；ui6 修，地图上人物会一直走）
@@ -279,7 +292,7 @@ func _run() -> void:
 	Input.parse_input_event(deep)
 	for i in 80:
 		await get_tree().physics_frame
-	check("stick_page_setting_off", pad.pages_sent == p0, pad.pages_sent)
+	check("stick_page_setting_off", pad.pages_sent == p0 and rec.page_downs == d0, [pad.pages_sent, rec.page_downs, d0])
 	touch(0, XTouchControls.STICK_CENTER, false)
 	await frames(2)
 	pad.set_stick_page(true)

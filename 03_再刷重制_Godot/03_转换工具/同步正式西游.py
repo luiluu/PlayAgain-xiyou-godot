@@ -723,6 +723,54 @@ def run_event_sharded(cmd, env, box, only=None):
     return subprocess.CompletedProcess(cmd, m.returncode, text + m.stdout, m.stderr)
 
 
+# troop_event_probe 分段并行（GC，派单第十六批，总装同意）：约 900 例单进程约 45 分钟，是同步的长杆。每例都从新局起跑（run() 开头 setupNewGame、
+# 随机数固定），互不依赖，所以按全局用例序号轮转分 n 段（XIYOU_PROBE_SHARD=i/n），各段一个 node 进程、各占 1 槽、各用自己的存档目录，
+# 跑完按序号交错拼回 .sandbox/troop_events.json，与单进程逐字相同（测试事件探针分段.py 的拼回用例；实测对比见交付单）。
+# 默认单进程（总装 11-08：实测 2 段 1047 秒比单进程 893 秒还慢，4 段没量过）；TROOP_PROBE_SHARDS=n 开 n 段并行。XIYOU_COVER=1 的覆盖记录下标是全局的，自动退回单进程。
+TROOP_MERGE_JS = r'''
+const fs = require('fs'), [out, ...parts] = process.argv.slice(1);
+const docs = parts.map(p => JSON.parse(fs.readFileSync(p, 'utf8')));
+const head = d => JSON.stringify(Object.assign({}, d, {cases: null}));
+for (const d of docs) if (head(d) !== head(docs[0])) throw new Error('分段的来源或设置不一致');
+const n = docs.length, total = docs.reduce((a, d) => a + d.cases.length, 0), cases = [];
+// 序号 % n 轮转分段：第 i 段必有 ceil((total-i)/n) 例，多了少了都说明某段没按序号跑完
+docs.forEach((d, i) => { if (d.cases.length !== Math.ceil((total - i) / n)) throw new Error('分段的用例数对不上（第 ' + i + ' 段 ' + d.cases.length + ' 例）'); });
+for (let k = 0; k < total; k++) {
+  const c = docs[k % n].cases[Math.floor(k / n)];
+  if (!c) throw new Error('分段的用例数对不上（第 ' + k + ' 个）');
+  cases.push(c);
+}
+fs.writeFileSync(out, JSON.stringify(Object.assign({}, docs[0], {cases}), null, 1));
+console.log(JSON.stringify(cases.map(c => ({troop: c.troop, actions: c.actions.length, invokes: c.invokes.length, errors: c.errors.length, turn: c.turnCount, phase: c.phase}))));
+'''
+
+
+def run_troop_sharded(cmd, env, box):
+    import concurrent.futures
+    shards = max(1, int(os.environ.get('TROOP_PROBE_SHARDS', '1')))
+    if shards < 2 or env.get('XIYOU_COVER') == '1':
+        return run_node(cmd, env)
+
+    def part(i):
+        sub = box / ('shard-%d' % i)
+        sub.mkdir()
+        for name in ['save', 'macport']:
+            if (box / name).is_dir():
+                shutil.copytree(box / name, sub / name)
+        e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_TROOP_OUT=str(sub / 'troop_events.json'))
+        return run_node(cmd, e, weight=1)
+    with concurrent.futures.ThreadPoolExecutor(shards) as pool:
+        done = list(pool.map(part, range(shards)))
+    text = ''.join('（第 %d 段）\n%s%s' % (i + 1, p.stdout[-300:], p.stderr) for i, p in enumerate(done))
+    bad = [p for p in done if p.returncode]
+    if bad:
+        return subprocess.CompletedProcess(cmd, bad[0].returncode, text, '')
+    m = subprocess.run(['node', '-e', TROOP_MERGE_JS, str(SANDBOX / 'troop_events.json')] +
+                       [str(box / ('shard-%d' % i) / 'troop_events.json') for i in range(shards)],
+                       cwd=ORACLE_DIR, capture_output=True, text=True)
+    return subprocess.CompletedProcess(cmd, m.returncode, text + '（troop_event_probe：%d 段并行）\n' % shards + m.stdout[-200:], m.stderr)
+
+
 # event_state_probe（1 万多个有状态变体）原来在同步里单进程整份重量：开跑前删了 .sandbox 里的上次产物，探针自带的增量从没生效，
 # 整轮两小时以上，是同步的长杆（tools81）。现在同 补跑事件状态探针.py：按变体序号分 XIYOU_STATE_SHARDS 段（默认 4）并行，
 # 每段各占 1 槽；上次的结果用已发布的 generated/oracle/event_states.json，摘要从摘要账（.sandbox/event_state_keys.json，
@@ -940,6 +988,7 @@ def run_probes(log, cache=None):
         env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
         node = ((lambda c, e, only=None: run_event_sharded(c, e, box, only)) if event else
                 (lambda c, e, only=None: run_state_sharded(c, e, box)) if cmd[0] == 'event_state_probe.cjs' else
+                (lambda c, e, only=None: run_troop_sharded(c, e, box)) if cmd[0] == 'troop_event_probe.cjs' else
                 (lambda c, e, only=None: run_node(c, e)))
         t = time.time()
         part = partial.get(logical)
@@ -980,7 +1029,7 @@ def run_probes(log, cache=None):
             work.extend((cmd[0], [cmd[0], str(d)], [expected[d - 1]]) for d in range(1, 7))
         else:
             work.append((cmd[0], cmd, outputs))
-    slow = ['slice_probe.cjs', 'smart_ai_probe.cjs', 'event_probe.cjs', 'event_state_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']
+    slow = ['slice_probe.cjs', 'smart_ai_probe.cjs', 'event_probe.cjs', 'troop_event_probe.cjs', 'event_state_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']
     order = sorted(range(len(work)), key=lambda i: slow.index(work[i][0]) if work[i][0] in slow else len(slow))
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         futures = {i: pool.submit(one, work[i]) for i in order}

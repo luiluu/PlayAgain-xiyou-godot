@@ -672,6 +672,8 @@ func run_event(e: MVEvent) -> void:
 
 
 func _set_busy(b: bool) -> void:
+	if not b and _game_over_locked:
+		return   # 游戏结束画面期间到回标题为止一直 busy（事件收尾的 _set_busy(false) 也解不开）
 	busy = b
 	busy_changed.emit(b)
 
@@ -697,8 +699,11 @@ func _encounter() -> void:
 		return
 	XAutoSave.battle_checkpoint(self)  # 开战前检查点（O-221），要在置 busy 之前
 	_set_busy(true)
-	await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
+	var result: int = await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
+	# 随机遇敌不可败，全灭走 Scene_Gameover（O-244 补：原来不看返回值，人 0 血留在地图；挂机快速战斗同走这里）
+	if result == 2:
+		await game_over()
 
 
 ## Game_Player.canEncounter：没有「无遇敌」队伍能力、遇敌未被指令 136 禁止、不乘飞艇、不在强制移动路线中
@@ -1351,7 +1356,13 @@ func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
 	return anim
 
 
+## 测试用：非空时代替真的切到标题（只记「回标题」被调用，不加载 entry 场景）
+static var return_to_title_hook := Callable()
+
 func return_to_title() -> void:
+	if return_to_title_hook.is_valid():
+		return_to_title_hook.call()
+		return
 	get_tree().change_scene_to_file.call_deferred("res://modes/xiyou/entry.tscn")
 
 
@@ -1456,11 +1467,32 @@ func open_shop(goods: Array, purchase_only: bool) -> void:
 	shop.queue_free()
 	XShopStock.close_policy()
 
+## 全灭（301 战败不可败、353 游戏结束）。O-244（Kyo 2026-11-08 定）：默认同原版——游戏结束画面（Scene_Gameover：
+## 停 BGM／BGS、放 gameoverMe、「菜」字图）→ 点一下回标题，读档恢复（副本开关、变量跟着存档回去，不会留脏状态）。
+## 回退：GAME_OVER_TO_LOBBY = true 回到 10-12 起的旧做法（弹「全军覆没……将在方桌大厅复活。」、回满、传回大厅 Map004，副本状态不清）。
+static var GAME_OVER_TO_LOBBY := false
+## 游戏结束画面起到回标题为止锁住 busy（O-244 补：解释器 await game_over 后收尾 _set_busy(false) 不能把地图放开）
+var _game_over_locked := false
+
 func game_over() -> void:
-	await message.show_text("", 0, ["全军覆没……将在方桌大厅复活。"])
-	for a in XState.current.members():
-		a.recover_all()
-	await transfer(4, 14, 23, 8)
+	if GAME_OVER_TO_LOBBY:
+		_game_over_locked = false
+		await message.show_text("", 0, ["全军覆没……将在方桌大厅复活。"])
+		for a in XState.current.members():
+			a.recover_all()
+		await transfer(4, 14, 23, 8)
+		return
+	_set_busy(true)
+	_game_over_locked = true
+	bgm.stop()
+	bgs.stop()
+	_bgm_name = ""
+	play_me(XDB.system().get("gameoverMe", {}))
+	var screen := XGameOverScreen.new()
+	ui.add_child(screen)
+	await screen.finished
+	me.stop()
+	return_to_title()
 
 ## 事件「打开存档画面」352：SceneManager.push(Scene_Save)（YEP 存档页，存档模式），关闭后回到地图
 func open_save() -> void:

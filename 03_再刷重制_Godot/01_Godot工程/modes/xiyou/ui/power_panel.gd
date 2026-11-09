@@ -27,7 +27,7 @@ var detail_scroll: ScrollContainer
 
 ## 工具条按钮「战力 N」（状态页右上角）；关掉战力时不建
 static func make_button(a: XActor, on_open: Callable) -> Button:
-	if not XPower.enabled():
+	if not XPower.ui_enabled():
 		return null
 	var b := Button.new()
 	b.text = button_text(a)
@@ -90,7 +90,7 @@ func render() -> void:
 		remove_child(c)
 		c.queue_free()
 	var a := actor()
-	if not XPower.enabled():
+	if not XPower.ui_enabled():
 		head("角色战力", "战力显示与估算已关闭，可在设置中开启。")
 		return
 	if a == null:

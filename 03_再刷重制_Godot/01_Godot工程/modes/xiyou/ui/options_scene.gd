@@ -61,6 +61,8 @@ func _ready() -> void:
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
 	if XBossStatusPanel.TOGGLE:  # v0.56：「Boss状态面板」在「步步遇敌」后、「消息提醒」前（v0.62.12 options_probe 的行序）
 		_list.insert(_list.find_custom(func(o): return o[1] == "codexNotices"), ["Boss状态面板", "codexBossStatusPanel", true])
+	if not XPower.SHOW_POWER_UI:  # 战力先藏：设置页也不列「战力显示与估算」（回退＝XPower.SHOW_POWER_UI 设 true）
+		_list = _list.filter(func(o): return o[1] != "codexPowerEnabled")
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）

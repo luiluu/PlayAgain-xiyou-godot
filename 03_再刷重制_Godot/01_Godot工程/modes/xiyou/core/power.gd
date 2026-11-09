@@ -36,6 +36,15 @@ static func enabled() -> bool:
 	return XConfig.flag("codexPowerEnabled")
 
 
+## 战力先藏（Kyo 2026-11-08：战力系统重构前各页都先藏起来；O-243）。所有「显示战力」的页面都看 ui_enabled()，
+## 算法（enabled()、actor、equipment 等）不动，别的模块照旧可读。回退＝SHOW_POWER_UI 设 true，页面与藏之前逐字一致。
+static var SHOW_POWER_UI := false
+
+
+static func ui_enabled() -> bool:
+	return SHOW_POWER_UI and enabled()
+
+
 ## format：≥1 万用「万／亿／万亿」两位小数，其余取整
 static func format(v: float) -> String:
 	v = js_round(v)
@@ -858,12 +867,12 @@ static func actor(a: XActor, force := false) -> Dictionary:
 
 ## drawActorSimpleStatus 的战力行：技能/装备页「战力 N」（按需完整评估）；关掉战力时不画
 static func status_text(a: XActor) -> String:
-	return "战力 " + format(actor(a).total) if enabled() and a != null else ""
+	return "战力 " + format(actor(a).total) if ui_enabled() and a != null else ""
 
 
 ## 主菜单行：有有效缓存「战斗力 N」，否则「战力见状态」；关掉战力时不画
 static func menu_text(a: XActor) -> String:
-	if not enabled() or a == null:
+	if not ui_enabled() or a == null:
 		return ""
 	var p := cached_actor(a)
 	return "战力见状态" if p.is_empty() else "战斗力 " + format(p.total)

@@ -39,7 +39,7 @@ static func message(a: XActor, before: float, after: float) -> String:
 
 ## 装备页换装：change 前后身上装备不同才提示
 static func around(a: XActor, change: Callable) -> void:
-	if not XPower.enabled():
+	if not XPower.ui_enabled():
 		change.call()
 		return
 	var worn := a.equips.duplicate()
@@ -60,7 +60,7 @@ static func _same(x: Array, y: Array) -> bool:
 
 
 static func notify(a: XActor, before: float, after: float) -> void:
-	if not XPower.enabled():
+	if not XPower.ui_enabled():
 		return
 	last_change = {"actorId": a.actor_id, "before": before, "after": after, "delta": after - before}
 	var tree := Engine.get_main_loop() as SceneTree
