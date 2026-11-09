@@ -3068,6 +3068,42 @@ for name in filter(None, files):
         self.assertTrue(calls and calls[0][-1] == '--accept-additions', calls)
         self.assertFalse(any('--from-worktree' in c for c in calls))
 
+    def test_clone_lane_path_in_delivery_feeds_from_worktree(self):
+        # scratchpad 里 git clone --shared 的车道不在 git worktree list：按交付单「车道路径」取产物（核对分支头、干净）
+        slice_ = self.wt / merge.TOOLS / 'xiyou_slice.json'
+        slice_.parent.mkdir(parents=True, exist_ok=True); slice_.write_text('{}\n')
+        clone = Path(self.tmp.name) / 'clone-lane'
+        receipt = self.wt / self.receipt
+        receipt.write_text(receipt.read_text().replace('- 状态：可合并\n', '- 状态：可合并\n- 车道路径：`%s`\n' % clone))
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        subprocess.run(['git', 'clone', '-q', '--shared', '-b', 'claude/task', str(self.root), str(clone)], check=True)
+        self.g('worktree', 'remove', '--force', str(self.wt))
+        calls, real = [], subprocess.run
+
+        def fake(cmd, **kw):
+            if cmd[0] == 'git':
+                return real(cmd, **kw)
+            calls.append(list(map(str, cmd)))
+            return subprocess.CompletedProcess(cmd, 0)
+        state = merge.plan(self.root, 'task')
+        self.assertEqual(state['worktree'], '')
+        self.assertEqual(state['syncFrom'], str(clone.resolve()))
+        # 开关关掉、clone 不干净：都不用（照旧完整同步）
+        with mock.patch.dict(os.environ, {'XIYOU_LANE_PATH': '0'}):
+            self.assertEqual(merge.plan(self.root, 'task')['syncFrom'], '')
+        (clone / 'wip.md').write_text('x\n')
+        self.assertEqual(merge.plan(self.root, 'task')['syncFrom'], '')
+        (clone / 'wip.md').unlink()
+        state_file = Path(self.tmp.name) / 'state.json'
+        with mock.patch.object(merge.subprocess, 'run', side_effect=fake), \
+                mock.patch.object(merge, 'replace_versions', side_effect=RuntimeError('stop')):
+            with self.assertRaises(RuntimeError):
+                merge.prepare(self.root, dict(state, phase='merged', head=self.g('rev-parse', 'HEAD')), state_file, 'Claude')
+        self.assertEqual(calls[0][-2:], ['--from-worktree', str(clone.resolve())], calls)
+        # 分支头对不上也不用
+        self.g('commit', '--allow-empty', '-m', 'later', cwd=clone)
+        self.assertEqual(merge.lane_path_from_delivery(self.root, '- 车道路径：%s\n' % clone, state['target']), '')
+
     def test_lane_new_commit_or_dirty_on_same_branch_keeps_both(self):
         for case in ['commit', 'dirty']:
             with self.subTest(case=case):

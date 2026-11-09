@@ -461,6 +461,45 @@ def merge_head(root):
     return head.read_text().strip() if head.exists() else None
 
 
+LANE_PATH = re.compile(r'^\s*(?:[-*]\s*)?\**车道路径\**[：:]\s*`?([^`\s]+)`?\s*$', re.M)
+
+
+def lane_path_from_delivery(root, text, target):
+    """交付单「车道路径：<绝对路径>」：不在 git worktree list 里的车道（scratchpad 里 git clone --shared 的，见
+    「工作树没了用 clone」）给合并时的 --from-worktree／--state-prev-from 用（tools-probe-deps）。
+    核对是同一份提交（HEAD 等于本次合并目标）、干净、不是主工作区；任何一项不符只提示、返回 ''（照旧完整同步）。
+    XIYOU_LANE_PATH=0 不读。"""
+    if os.environ.get('XIYOU_LANE_PATH', '1') == '0':
+        return ''
+    found = LANE_PATH.findall(text)
+    if not found:
+        return ''
+    if len(set(found)) > 1:
+        print('提示：交付单写了多个车道路径（%s），不用' % '、'.join(found), file=sys.stderr, flush=True)
+        return ''
+    path = Path(found[0]).expanduser()
+    why = None
+    if not path.is_absolute() or not path.is_dir():
+        why = '不是存在的绝对路径'
+    elif path.resolve() == Path(root).resolve():
+        why = '就是主工作区'
+    else:
+        head = subprocess.run(['git', '-C', str(path), 'rev-parse', 'HEAD'], capture_output=True, text=True)
+        if head.returncode or head.stdout.strip() != target:
+            why = '分支头 %s 与交付提交 %s 对不上' % ((head.stdout.strip() or '无')[:9], target[:9])
+        else:
+            try:
+                if dirty(path):
+                    why = '有未提交改动'
+            except (RuntimeError, subprocess.CalledProcessError):
+                why = 'git status 读不了'
+    if why:
+        print('提示：交付单的车道路径 %s %s，不用它的产物（照旧完整同步）' % (path, why), file=sys.stderr, flush=True)
+        return ''
+    print('提示：车道不在 git worktree 里，按交付单的车道路径 %s 取产物' % path, file=sys.stderr, flush=True)
+    return str(path.resolve())
+
+
 def worktrees(root):
     raw = subprocess.check_output(['git', '-C', str(root), 'worktree', 'list', '--porcelain', '-z']).decode()
     records, current = [], {}
@@ -655,6 +694,7 @@ def plan(root, task, branch=None):
         raise RuntimeError('车道分支上有 %d 份交付单（%s），须只留一份：车道删掉多的那份再交' % (len(found), '、'.join(map(str, found))))
     (delivery, text), = found.items()
     draft(text)
+    sync_from = str(wt) if wt else lane_path_from_delivery(root, text, target)
     registry = '\n'.join(x for x in [(root / OPT_REGISTRY).read_text() if (root / OPT_REGISTRY).is_file() else '', read(OPT_REGISTRY) or ''] if x)
     check_opt_drafts(text, str(delivery), registry)
     # 只认相对本次合并前 main 真有改动的文件：交叉合并时 merge-base 可能取到旧基点，基点 diff 会把 main 早就有的
@@ -731,7 +771,7 @@ def plan(root, task, branch=None):
                 opt_added[p] = lines
     check_orphan_placeholders([dict(token=tok, row=row, keys=sorted(ks)) for tok, row, ks in opt_row_entries([text] + [read(p) for p in extra])],
                               {p: (read(p) or '', lines) for p, lines in opt_added.items()})
-    return dict(task=task, branch=branch, worktree=str(wt) if wt else '', base=base, target=target,
+    return dict(task=task, branch=branch, worktree=str(wt) if wt else '', syncFrom=sync_from, base=base, target=target,
                 delivery=str(delivery), extraDeliveries=extra, refresh=refresh, acceptChanges=accept, gameplay=game, phase='planned', head=base,
                 versionPaths=version_paths, optAdded=opt_added, evidenceFiles=evidence, goneSheets=gone,
                 mainAdvancedAfterDelivery=fork != base)
@@ -1413,15 +1453,17 @@ def prepare(root, state, state_file, executor, also=()):
                 sync += ['--accept-changes', spec]
             if os.environ.get('XIYOU_ACCEPT_SOURCE_SWITCH'):  # 换源合并（总装三十 11-07）：同步带 --accept-source-switch <版本>，接受单用 生成接受单.py --grouped 出
                 sync += ['--accept-source-switch', os.environ['XIYOU_ACCEPT_SOURCE_SWITCH']]
-            cmd = list(map(str, sync + ['--from-worktree', state['worktree']]))
-            if state['worktree']:
+            # 车道产物所在：worktree，或交付单「车道路径」写的 clone（syncFrom；旧 state 没有这个键时用 worktree）
+            lane_from = state.get('syncFrom', state['worktree'])
+            cmd = list(map(str, sync + ['--from-worktree', lane_from]))
+            if lane_from:
                 print('== ' + ' '.join(cmd), flush=True)
-            rc = subprocess.run(cmd, cwd=root).returncode if state['worktree'] else 3  # 无车道工作树：直接完整同步
+            rc = subprocess.run(cmd, cwd=root).returncode if lane_from else 3  # 无车道工作树：直接完整同步
             if rc == 3:
                 # 整份克隆不成时，车道已跑完的事件状态探针结果仍可逐例取回（tools-merge-probe，11-09 seg-a3 两次各 90 分钟整份重量）；
                 # XIYOU_STATE_PREV_FROM=0 不传
-                if state['worktree'] and os.environ.get('XIYOU_STATE_PREV_FROM', '1') != '0':
-                    sync = sync + ['--state-prev-from', state['worktree']]
+                if lane_from and os.environ.get('XIYOU_STATE_PREV_FROM', '1') != '0':
+                    sync = sync + ['--state-prev-from', lane_from]
                 print('== ' + ' '.join(map(str, sync)), flush=True)
                 rc = subprocess.run(list(map(str, sync)), cwd=root).returncode
             if rc:
