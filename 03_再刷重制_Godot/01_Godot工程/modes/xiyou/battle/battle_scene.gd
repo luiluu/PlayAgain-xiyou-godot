@@ -687,7 +687,7 @@ func _main() -> void:
 				break
 			otb.on_subject(u)
 			otb.show_orders(logic.current_order, logic.next_order)
-			var cmd = [null, null] if logic.cleared_action(u) else await _command(u)
+			var cmd = [null, null] if logic.take_cleared(u) else await _command(u)
 			if cmd is String and cmd == "escaped":
 				return
 			_close_windows()

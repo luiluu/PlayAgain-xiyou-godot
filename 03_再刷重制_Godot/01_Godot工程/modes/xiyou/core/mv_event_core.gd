@@ -884,7 +884,9 @@ func _condition(p: Array) -> bool:
 			if XDB.rec("Actors", aid).is_empty():
 				return false
 			match int(p[2]):
-				0: return s.party.has(aid)
+				0:
+					# $gameParty.members().contains(actor)：地图上是全队，战斗中只是出战成员（后备不算，interp7 对 cond111_oracle）
+					return _party_members().any(func(a): return a.actor_id == aid)
 				1: return s.actor(aid).display_name() == str(p[3])
 				2: return s.actor(aid).class_id == int(p[3])
 				3: return s.actor(aid).skills().any(func(k): return int(k.id) == int(p[3]))

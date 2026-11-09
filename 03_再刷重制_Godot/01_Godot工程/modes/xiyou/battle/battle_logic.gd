@@ -110,6 +110,8 @@ static func _mark_stale(t: XActor, before: Array) -> bool:
 var _event_flags := {}
 ## 强制行动清掉的首位行动者（OTB startTurn 先取出首位并 makeActions，事件里 forceAction 的 clearActions 把它清空）
 var _cleared := {}
+## 首位被清掉的那一格已经用掉的人（take_cleared；同 _cleared 一起清）
+var _cleared_used := {}
 ## 敌群事件里尚未翻译、本次跳过的指令（"代码 内容 页"）
 var troop_event_skipped: Array = []
 ## 技能／物品公共事件（XBattleCommonEvent）里尚未翻译、本次跳过的指令（"代码 内容 公共事件N"）
@@ -144,6 +146,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	drop_lock = false
 	_event_flags.clear()
 	_cleared.clear()
+	_cleared_used.clear()
 	troop_event_skipped.clear()
 	_clear_event_cursor()
 	_letters.clear()
@@ -977,6 +980,7 @@ func start_turn() -> void:
 		if int(pages[i].get("span", 0)) == 1:
 			_event_flags.erase(i)
 	_cleared.clear()
+	_cleared_used.clear()
 	XRaven.start_turn()  # 渡鸦 BattleManager.startTurn 包装：清「本回合有敌人倒下」
 	XYomiJingliu.start_turn(self)  # 镜流 BattleManager.startTurn 包装：月魄满 3
 	XMira.start_turn()  # 米拉 BattleManager.startTurn 包装：清劫火累计
@@ -1198,7 +1202,7 @@ func run_turn(commands: Dictionary) -> Array:
 		first = false
 		if u == null or is_won() or is_lost():
 			break
-		var cmd: Array = [null, null] if cleared_action(u) else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u))
+		var cmd: Array = [null, null] if take_cleared(u) else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u))
 		logs.append_array(act(u, cmd[0], cmd[1]))
 	if not is_won() and not is_lost():
 		logs.append_array(end_turn())
@@ -1572,9 +1576,25 @@ func _forced_target(u: XBattler, skill: Dictionary, index: int) -> XBattler:
 	return pool[0] if not pool.is_empty() else null
 
 
-## 回合开始时首位行动者的行动被强制行动清掉：本回合只剩 onAllActionsEnd（照 act 的「放弃行动」处理）。
+## 回合开始时首位行动者的行动被强制行动清掉：本回合只剩 onAllActionsEnd（照 act 的「放弃行动」处理）。只查询，不消耗（测试回合后还看）。
 func cleared_action(b: XBattler) -> bool:
 	return _cleared.has(b)
+
+
+## 轮到 b 的这个行动位时调一次：首位被清掉的那一格返回 true（只一次），之后的行动位照常决定行动（rules-gaps8）。
+## 原版 forceAction 的 clearActions 清的是首位那次 makeActions 的结果，强制行动在首位里跑完；同一人在当前回合的下一个行动位
+## （行动次数 ≥2，如木桩 937）getNextSubject 重新 makeActions、照常出手（木桩 826 HP≤20% 例：强制 6068／6055／6064 之后第 2 位出 8111）。
+## 回退：CLEAR_ALL_SLOTS = true 时同旧版，被清掉的人本回合所有行动位都放弃。
+static var CLEAR_ALL_SLOTS := false
+func take_cleared(b: XBattler) -> bool:
+	if not _cleared.has(b):
+		return false
+	if CLEAR_ALL_SLOTS:
+		return true
+	if _cleared_used.has(b):
+		return false
+	_cleared_used[b] = true
+	return true
 
 
 func can_move(b: XBattler) -> bool:
