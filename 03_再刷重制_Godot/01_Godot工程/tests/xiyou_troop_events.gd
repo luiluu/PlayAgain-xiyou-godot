@@ -49,6 +49,8 @@ var coverage_out := ""
 ## 本机排查用：环境变量 XIYOU_TROOP_ONLY=2002,2029 只跑这些敌群的用例（断言少了，别拿来交付）
 var _only_troops: Array = Array(OS.get_environment("XIYOU_TROOP_ONLY").split(",", false)).map(func(x): return int(x))
 var coverage_by_case := {}
+## 同上，XIYOU_CE_ONLY=1517,1501 只跑这些战斗专用公共事件的 skillCE 用例（rules-gaps9）
+var _only_ce: Array = Array(OS.get_environment("XIYOU_CE_ONLY").split(",", false)).map(func(x): return int(x))
 
 
 func _ready() -> void:
@@ -161,6 +163,8 @@ func _run() -> void:
 		var c: Dictionary = ref.cases[k]
 		if _only_troops != [] and not _only_troops.has(int(c.troop)):
 			continue
+		if _only_ce != [] and not _only_ce.has(int(c.get("skillCE", 0))):
+			continue
 		if coverage_out != "":
 			XBattleEventRunner.COVER = {}
 			_case_dispatch(c)
@@ -255,6 +259,8 @@ var _skill_ce_missing := 0
 
 func _skill_ce_case(c: Dictionary) -> void:
 	var name := "troop2.%s" % str(c.variant)
+	if _only_ce != []:
+		print("CASE ", name, " ", Time.get_ticks_msec())
 	var use: Array = c.use
 	var item := XDB.rec("Items" if str(use[0]) == "item" else "Skills", int(use[1]))
 	if item.is_empty() or XDB.rec("CommonEvents", int(c.skillCE)).is_empty():
@@ -289,7 +295,9 @@ func _skill_ce_case(c: Dictionary) -> void:
 		a.tp = 100
 	for e in logic.enemies:
 		e.capture = false
-		e.hp = 1.0e9  # 同参照：敌人 HP 加 999999999 打不死（不然事件里「敌人 N 战斗不能」等条件与强制目标跟着变）
+		e.added_params[0] = 999999999.0  # 同参照：敌人 HP 加 999999999 打不死（不然事件里「敌人 N 战斗不能」等条件与强制目标跟着变）
+		e.param_cells = []
+		e.hp = e.mhp
 	var acts: Array = c.actions
 	var ui := -1
 	for i in acts.size():
@@ -306,6 +314,8 @@ func _skill_ce_case(c: Dictionary) -> void:
 		if int(e.afterActions) == ui + 1 and int(e.commonEvent) != XBattleCommonEvent.START_EVENT:
 			want_ce = int(e.commonEvent)
 			break
+	# 同参照：有选项的选最后一项（多是「否」／「再想想」；CE1627 流派选择菜单选别的会跳回菜单无限循环）
+	logic.message_responder = func(msg): return msg.get("choices", []).size() - 1 if not msg.get("choices", []).is_empty() else null
 	logic.act(user, item, logic.enemies[0])
 	check(name + ".reserved", XBattleCommonEvent.reserved(logic) == want_ce, [XBattleCommonEvent.reserved(logic), want_ce])
 	logic.common_event_skipped.clear()
@@ -320,6 +330,11 @@ func _skill_ce_case(c: Dictionary) -> void:
 		if subj.begins_with("a") and str(acts[i].item[0]) == "skill":
 			sk = int(logic.change_to(s.actor(int(subj.substr(1))), XDB.rec("Skills", sk)).id)
 		want.append([subj, sk])
+	# CE1365 三咒凝魄：强制的 6930 自己又带效果 44 → 1365，原版无限连放（参照 2 万帧里放了 700 多次还没完）；
+	# 重制 XBattleCommonEvent.CHAIN_LIMIT 截停。参照比上限长时只比前 CHAIN_LIMIT 个
+	if want.size() > XBattleCommonEvent.CHAIN_LIMIT:
+		want = want.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
+		got = got.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
 	check(name + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
 	var watch: Array = Array(c.watch).map(func(x): return int(x))
 	for b in logic.actors + logic.enemies:

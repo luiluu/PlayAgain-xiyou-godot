@@ -404,7 +404,8 @@ function runSkillCE(sc) {
     BM.startBattle();
     for (let i = 0; i < 20000; i++) {
       if (BM._phase === 'battleEnd' || w.$gameTroop._turnCount > 1) break;
-      if (w.$gameMessage.isBusy()) { w.$gameMessage.clear(); continue; }
+      // 有选项的消息选最后一项（多是「否」／「再想想」：CE1501 爱莉希雅、CE1627 流派选择菜单选别的会 119 跳回菜单无限循环），再关掉
+      if (w.$gameMessage.isBusy()) { if (w.$gameMessage.isChoice()) w.$gameMessage.onChoice(w.$gameMessage.choices().length - 1); w.$gameMessage.clear(); continue; }
       if (BM._phase === 'input') {
         const actor = BM.actor(), act = BM.inputtingAction();
         if (act && actor && actor.actorId() === sc.user && !used) {
