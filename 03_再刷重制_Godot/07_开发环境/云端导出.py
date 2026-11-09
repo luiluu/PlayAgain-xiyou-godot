@@ -6,6 +6,10 @@
   python3 云端导出.py presets --templates <目录>  把 export_presets.cfg 里「Windows 验收」「安卓 验收」的模板路径改到 <目录>（只改 CI 的检出副本）
   python3 云端导出.py keystore                   生成一次性的安卓「调试」keystore（keytool），写进 GITHUB_ENV 的
                                                  GODOT_ANDROID_KEYSTORE_DEBUG_*；不碰发行 keystore，也不放任何发行签名材料
+  python3 云端导出.py android-build --templates <目录>
+                                                 安卓 Gradle 构建（cc 平台 android-bgidle1 2026-11-09）：把 android_source.zip 装成工程的
+                                                 android/build（同编辑器「安装 Android 构建模板」），再用模板自带的 gradlew 编出后台挂机插件
+                                                 addons/xiyou_export/android/xiyou_bgidle.aar（要 JDK 17、Android SDK 与外网下 Gradle 依赖）
 要用的模板与安卓工具版本登记在 环境登记.json 的 cloudExport 段。
 """
 import argparse
@@ -150,6 +154,57 @@ def cmd_gen_ref(a) -> int:
     return 0
 
 
+BGIDLE_SRC = PROJECT / 'addons' / 'xiyou_export' / 'android_src'
+BGIDLE_AAR = PROJECT / 'addons' / 'xiyou_export' / 'android' / 'xiyou_bgidle.aar'
+
+
+def install_build_template(source_zip: Path, project: Path, version: str) -> Path:
+    """同编辑器「项目 → 安装 Android 构建模板」：解到 res://android/build，写 .build_version 与 .gdignore。返回 build 目录。"""
+    import shutil
+    android = project / 'android'
+    build = android / 'build'
+    if build.exists():
+        shutil.rmtree(build)
+    build.mkdir(parents=True)
+    with zipfile.ZipFile(source_zip) as z:
+        z.extractall(build)
+    (android / '.build_version').write_text(version, encoding='utf-8')
+    (build / '.gdignore').write_text('', encoding='utf-8')
+    gradlew = build / 'gradlew'
+    if gradlew.exists():
+        os.chmod(gradlew, 0o755)
+    return build
+
+
+def cmd_android_build(a) -> int:
+    import shutil
+    import tempfile
+    reg = registry()
+    source = Path(a.templates) / 'android_source.zip'
+    if not source.is_file():
+        raise SystemExit('模板目录里没有 android_source.zip：环境登记.json cloudExport.templates 要列上它')
+    build = install_build_template(source, PROJECT, reg['templateVersion'])
+    cloud.log('Android 构建模板已装到 %s（%s）' % (build.relative_to(ROOT), reg['templateVersion']))
+    godot_aar = build / 'libs' / 'release' / 'godot-lib.template_release.aar'
+    tmp = Path(tempfile.mkdtemp(prefix='xiyou-godotlib-'))
+    with zipfile.ZipFile(godot_aar) as z:
+        jar = tmp / 'godot-lib-classes.jar'
+        with z.open('classes.jar') as src, open(jar, 'wb') as out:
+            shutil.copyfileobj(src, out)
+    cmd = [str(build / 'gradlew'), '-p', str(BGIDLE_SRC), '--no-daemon', '--stacktrace', 'assembleRelease', '-PgodotJar=%s' % jar]
+    cloud.log('编后台挂机插件：' + ' '.join(cmd))
+    r = subprocess.run(cmd)
+    if r.returncode != 0:
+        raise SystemExit('后台挂机插件 Gradle 构建失败（退出码 %d）' % r.returncode)
+    outs = sorted((BGIDLE_SRC / 'build' / 'outputs' / 'aar').glob('*release*.aar'))
+    if not outs:
+        raise SystemExit('Gradle 跑完了但没找到 release aar')
+    BGIDLE_AAR.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(outs[-1], BGIDLE_AAR)
+    cloud.log('后台挂机插件：%s（%d KB）' % (BGIDLE_AAR.relative_to(ROOT), BGIDLE_AAR.stat().st_size // 1024))
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -161,6 +216,9 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_presets)
     p = sub.add_parser('keystore')
     p.set_defaults(fn=cmd_keystore)
+    p = sub.add_parser('android-build')
+    p.add_argument('--templates', required=True)
+    p.set_defaults(fn=cmd_android_build)
     p = sub.add_parser('gen-ref')
     p.add_argument('--branch', required=True)
     p.set_defaults(fn=cmd_gen_ref)

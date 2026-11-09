@@ -88,6 +88,9 @@ jobs:
       - run: python3 "$TOOLS/云端导出.py" presets --templates "${{ steps.tpl.outputs.dir }}"
       - if: matrix.platform == 'android'
         run: python3 "$TOOLS/云端导出.py" keystore
+      # 安卓走 Gradle 构建（cc 平台 android-bgidle1 2026-11-09）：装构建模板、编后台挂机插件 aar（前台服务）
+      - if: matrix.platform == 'android'
+        run: python3 "$TOOLS/云端导出.py" android-build --templates "${{ steps.tpl.outputs.dir }}"
       # 转换产物（不入 Git，取 refs/ci/generated/<分支>，没有就 main 的）＋导入
       - id: gen
         run: python3 "$TOOLS/云端导出.py" gen-ref --branch "${GITHUB_REF_NAME#ci-export/}"
