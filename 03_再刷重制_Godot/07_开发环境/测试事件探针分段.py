@@ -179,7 +179,7 @@ class StateShardMergeTests(unittest.TestCase):
                 out = io.StringIO()
                 with mock.patch.object(mod, 'ORACLE', root), mock.patch.object(mod, 'GEN', root / 'gen'), \
                      mock.patch.object(mod, 'needs', return_value=True), mock.patch.object(mod, 'run_probe', side_effect=fake), \
-                     mock.patch.object(sys, 'argv', argv), contextlib.redirect_stdout(out):
+                     mock.patch.object(sys, 'argv', argv), mock.patch.object(mod, 'changed_probe_files', return_value=[]), contextlib.redirect_stdout(out):
                     self.assertEqual(mod.main(), 1)
                 self.assertEqual('会关掉增量' in out.getvalue(), warn, out.getvalue())
                 self.assertEqual(seen['incremental'], '0' if warn else None)

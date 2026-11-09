@@ -584,7 +584,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
 ## 预设键白名单（同参照 event_state_probe.cjs PRESET_KEYS）：不认识的键记下来，测试红（审查 49）
-const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
+const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "maxLevel", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
 var bad_preset_keys := []
 
 func _apply_preset(s: XState, p: Dictionary) -> void:
@@ -597,6 +597,9 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		s.difficulty = int(p.difficulty)
 	for id in p.get("party", []):
 		s.add_actor(int(id))
+	# cc 分段甲 a3：等级上限（同参照「maxlevel equal N」），在角色等级之前摆
+	if p.has("maxLevel"):
+		s.actor_max_level = int(p.maxLevel)
 	for id in p.get("actors", {}):
 		var a := s.actor(int(id))
 		var spec: Dictionary = p.actors[id]
@@ -604,6 +607,8 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 			a.change_level_mv(int(spec.level))
 		for sk in spec.get("skills", []):
 			a.learn_skill(int(sk))
+		for sk in spec.get("forget", []):  # actors.N.forget：忘掉开局就会的技能，同参照 forgetSkill
+			a.forget_skill(int(sk))
 		# 八戒 DR：actors.N.armors＝直接穿上的防具底材，同参照 forceChangeEquip（etype 对应的第一个槽，不看能否装备、不进背包）
 		var gears := []
 		for ar in spec.get("armors", []):

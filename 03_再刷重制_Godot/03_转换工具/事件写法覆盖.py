@@ -297,7 +297,9 @@ def open_preset(lst, j, loc):
         return {'actors': {str(p[1]): {'armors': [int(p[3])]}}}
     if t == 4 and int(p[2]) == 4 and want:   # 角色装备了武器（八戒 DR w15：ce682 等）
         return {'actors': {str(p[1]): {'weapons': [int(p[3])]}}}
-    if t == 4 and int(p[2]) in (3, 4) and not want:   # 「否则（没学会技能／没装备武器）」：新开局默认没有，空预设占位，走不到的会被剪掉
+    if t == 4 and int(p[2]) == 3 and not want:   # 「否则（没学会技能）」：忘掉它（开局就会的，如 ce2495 三笠锻炼链；cc 分段甲 a3）
+        return {'actors': {str(p[1]): {'forget': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 4 and not want:   # 「否则（没装备武器）」：新开局默认没有，空预设占位，走不到的会被剪掉
         return {'actors': {str(p[1]): {}}}
     if t == 4 and int(p[2]) == 5 and not want:   # 「否则（没装备）」：新开局默认没穿，空预设占位（角色本来就穿着的，目标走不到会被剪掉）
         return {'actors': {str(p[1]): {}}}
