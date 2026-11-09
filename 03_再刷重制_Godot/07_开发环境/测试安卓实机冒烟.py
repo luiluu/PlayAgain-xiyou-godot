@@ -47,6 +47,9 @@ def start():
         if mode == 'always_entry' or '--report-entry' in args:
             st['log'].append('11-07 10:00:00.000  %s  %s I godot   : ENTRY_SCENE=res://modes/xiyou/entry.tscn' % (st['pid'], st['pid']))
         keys = [x.split('=', 1)[1] for x in args if x.startswith('--smoke-keys=')]
+        if '--smoke-arm-bgidle' in args:
+            st['bg'] = True
+            st['log'].append('11-09 10:00:00.600  %s  %s I godot   : BGIDLE_ARMED=true' % (st['pid'], st['pid']))
         if '--report-entry' in args and not keys:
             st['log'].append('11-07 10:00:00.500  %s  %s I godot   : AUTO_SAVE_PRESENT=%s' % (st['pid'], st['pid'], 'true' if st.get('auto') else 'false'))
         if keys and keys[0].endswith('wait:7200'):
@@ -71,6 +74,13 @@ elif a[:3] == ['shell', 'pm', 'clear']:
     st['auto'] = False
 elif a[:2] == ['shell', 'pidof']:
     out = st['pid']
+elif a[:3] == ['shell', 'dumpsys', 'activity']:
+    out = '  * ServiceRecord{1 u0 local.kyo.remake/local.kyo.xiyou.bgidle.XiyouIdleService}' if st.get('svc') else '(nothing)'
+elif a[:3] == ['shell', 'dumpsys', 'notification']:
+    out = '  NotificationRecord(0x1: pkg=local.kyo.remake user=UserHandle{0} id=2061 tag=null importance=2 key=x: Notification(channel=xiyou_idle))' if st.get('svc') else ''
+elif a[:2] == ['shell', 'am'] and a[2] == 'start' and st.get('svc'):
+    st['svc'] = False
+    st['log'].append('11-09 10:01:00.000  %s  %s I XiyouBgIdle: 回前台：离开 %d 毫秒，点过停止 false' % (st['pid'], st['pid'], int((time.time() - st['home_at']) * 1000)))
 elif a[:2] == ['shell', 'am'] and a[2] == 'start':
     if mode == 'restart_on_resume' and st['pid'] and '-W' not in a: st['pid'] = ''
     start()
@@ -88,6 +98,10 @@ elif a[:3] == ['shell', 'input', 'keyevent']:
         st['log'].append('11-07 10:00:06.000  %s  %s I godot   : PAUSE_SAVE=%s' % (st['pid'], st['pid'], r))
         st['auto'] = r == 'saved' and mode != 'autosave_lost'
         st['autosave_run'] = False
+    elif k == '3' and st['pid'] and st.get('bg'):
+        st['bg'] = False
+        st['svc'] = mode != 'bgidle_none'
+        st['home_at'] = time.time()
     elif k == '66' and mode == 'crash_enter' and st['pid']:
         st['log'].append('11-07 10:00:05.000  %s  %s F libc    : Fatal signal 11 (SIGSEGV), code 1' % (st['pid'], st['pid']))
         st['pid'] = ''
@@ -148,6 +162,20 @@ class FakeAdbTests(unittest.TestCase):
         for name, _, _ in A.KEY_RUNS:
             self.assertTrue(r['android_keys_' + name], name)
         self.assertEqual(list(self.out.glob('*.apk')), [])
+
+    def test_bgidle(self):
+        self.assertEqual(self.go('ok', resign=True), 0)
+        r = self.results()
+        for n in ('android_bgidle_armed', 'android_bgidle_alive_in_background', 'android_bgidle_service', 'android_bgidle_notification',
+                  'android_bgidle_stops_on_resume', 'android_bgidle_away_measured'):
+            self.assertTrue(r[n], n)
+
+    def test_bgidle_service_missing_fails(self):
+        self.assertEqual(self.go('bgidle_none', resign=True), 1)
+        r = self.results()
+        self.assertFalse(r['android_bgidle_service'])
+        self.assertFalse(r['android_bgidle_notification'])
+        self.assertFalse(r['android_bgidle_away_measured'])
 
     def test_autosave(self):
         self.go('ok', resign=True)

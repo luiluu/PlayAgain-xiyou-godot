@@ -52,6 +52,8 @@ var _service_armed := false
 var _notify_asked := false
 ## 这次补跑完要结束挂机（通知上按过停止）
 var _stop_idle_after := false
+## 冒烟用（安卓实机冒烟.py）：启动参数 --smoke-arm-bgidle＝不挂机也让插件切后台起服务
+var _force_arm := false
 
 
 static func is_mobile() -> bool:
@@ -92,6 +94,7 @@ static func idle_active() -> bool:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_force_arm = OS.get_cmdline_user_args().has("--smoke-arm-bgidle")
 	if is_mobile():
 		get_tree().quit_on_go_back = false
 
@@ -276,13 +279,15 @@ func service_armed() -> bool:
 ## 第一次挂机时顺带申请通知权限（安卓 13+；不给也能起服务，只是看不到通知）。
 func _sync_service_arm() -> void:
 	var svc = bg_service()
-	var want := svc != null and BACKGROUND_IDLE and BACKGROUND_SERVICE and idle_active()
+	var want := svc != null and BACKGROUND_IDLE and BACKGROUND_SERVICE and (idle_active() or _force_arm)
 	if want == _service_armed:
 		return
 	_service_armed = want
 	if svc == null:
 		return
 	svc.setArmed(want)
+	if _force_arm:
+		print("BGIDLE_ARMED=%s" % want)
 	if want and not _notify_asked:
 		_notify_asked = true
 		svc.requestNotificationPermission()
