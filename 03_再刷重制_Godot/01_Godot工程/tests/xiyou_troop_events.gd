@@ -39,6 +39,8 @@ const KNOWN_DIFF := {}
 @export var part := 0
 @export var parts := 4
 @export var oracle_half := false
+## rules-gaps9：战斗专用公共事件的 skillCE 用例（381 例）单独两个场景跑（_sce／_sce_b，parts＝2），原来五个场景跳过它们，免得单场景逼近上限
+@export var skill_ce_only := false
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
@@ -154,13 +156,15 @@ func _run() -> void:
 		return finish()
 	var manifest: Dictionary = XDB.load_json("manifest.json")
 	var same: bool = ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs
-	if part == 0 or not same:  # 其他份只在不同源时补一项失败
+	if (part == 0 and not skill_ce_only) or not same:  # 其他份只在不同源时补一项失败
 		check("same_source", same)
 	# 事件里的随机变量（122 随机）同参照固定 Math.random＝0.5：Map055 引路人 794 第 3 页第 1 回合按随机变量 4 选强制 6063／6064／1393＋6065
 	# （参照取 2 → 6064）；其余守层者的随机强制（变量 844）在第 3 回合起，两回合内用不到
 	MVInterpreter.fixed_random = 0.5
 	for k in range(part, ref.cases.size(), parts):
 		var c: Dictionary = ref.cases[k]
+		if c.has("skillCE") != skill_ce_only:
+			continue
 		if _only_troops != [] and not _only_troops.has(int(c.troop)):
 			continue
 		if _only_ce != [] and not _only_ce.has(int(c.get("skillCE", 0))):
@@ -174,7 +178,7 @@ func _run() -> void:
 		_case_dispatch(c)
 	if _seen739:
 		check("troop739.extra_hit_exists", _extra_hits > 0, _extra_hits)
-	if part == 0:
+	if part == 0 and not skill_ce_only:
 		_unit_checks()
 	if coverage_out != "":
 		var all := {}
@@ -191,8 +195,7 @@ func _run() -> void:
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
 	if c.has("skillCE"):
-		if not oracle_half:  # 本来就全取 0.5，固定 0.5 的 _half 场景不再跑一遍（省时，_half 单场景逼近 600 秒）
-			_skill_ce_case(c)
+		_skill_ce_case(c)
 		return
 	if c.has("party"):
 		_party_case(c)
