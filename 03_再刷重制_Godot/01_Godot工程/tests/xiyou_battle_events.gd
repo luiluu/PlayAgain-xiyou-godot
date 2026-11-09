@@ -320,7 +320,7 @@ func turn_with_orders(logic: XBattleLogic, cmds: Dictionary) -> Dictionary:
 		first = false
 		if u == null or logic.is_won() or logic.is_lost():
 			break
-		var cmd: Array = [null, null] if logic.cleared_action(u) else (cmds[u] if u is XActor and cmds.has(u) else logic.decide(u))
+		var cmd: Array = [null, null] if logic.take_cleared(u) else (cmds[u] if u is XActor and cmds.has(u) else logic.decide(u))
 		logs.append_array(logic.act(u, cmd[0], cmd[1]))
 		heal(logic)
 	if not logic.is_won() and not logic.is_lost():

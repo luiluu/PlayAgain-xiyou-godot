@@ -14,6 +14,8 @@ var _extra_hits := 0
 var _seen739 := false
 var _strict_random_set_checks := 0
 var _strict_random_extra_checks := 0
+## rules-gaps8：第 1 回合守层者比参照多出手、改比自身攻击／魔攻的局数（只打印，看换种子后有多少局掷中追加行动）
+var _more_slot_cases := 0
 ## 随机选技能的敌群：军团 676～693（神魔战场）、超级 Boos 嘤族之光 739
 const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739,
 	# accept4：160 控尸者第 1 回合在 864／865 里随机挑（865 一回合杀光全队时别的敌人轮不到）；
@@ -30,7 +32,7 @@ const RANDOM_AI_TROOPS := [676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686
 ## hp_after_transform 按单槽公共事件算 1401 回不回血
 ## rules-gaps8：木桩 826 HP≤20% 例（开战即第 3 页变身 937）第 1 回合的第二行动位已接上：937 行动次数 2（OTB 当前回合排两格），
 ## 强制 6068／6055／6064 的 clearActions 只清首位那一格，第 2 格 getNextSubject 重新 makeActions 照常出 8111、加 1460；
-## 不变身的黑莲 936 只有一格，所以强制之后没有普通出手（XBattleLogic.cleared_action 用掉就删）。现在没有已知差异
+## 不变身的黑莲 936 只有一格，所以强制之后没有普通出手（XBattleLogic.take_cleared 只用掉首位那一格）。现在没有已知差异
 const KNOWN_DIFF := {}
 ## 参照用例按序号轮流分 parts 份，一个场景管一份（xiyou_troop_events 是第 0 份，_b／_c／_d 各管一份），免得单场景在并行全量里逼近上限
 ## （两份时满负载 534／600 秒，_b 被杀，tools30 改四份）；来源指纹与 _unit_checks 只在第 0 份做，断言总数与拆分前相同
@@ -447,6 +449,7 @@ func _case(c: Dictionary, round: int) -> void:
 	# 每回合单独记录 [行动者, 技能]（多敌人的敌群里角色可能在行动前被打倒，行动者集合随随机数变，只比敌方）
 	var got := {1: [], 2: []}
 	var first_cleared := false
+	var more_slots := false   # 第 1 回合守层者出手次数多于参照（掷中了参照没掷中的追加行动，见下）
 	var t1_others := {}   # 第 1 回合末各非首敌：{有无 44, 44 剩余回合}
 	var t2_finished := false
 	var t2_usable := true   # 第 2 回合开始时守层者有没有无条件可用的行动
@@ -488,7 +491,15 @@ func _case(c: Dictionary, round: int) -> void:
 				for inv in c.invokes:
 					if int(inv.turn) == 1 and inv.subject == "e0":
 						want_am = [inv.userAtk, inv.userMat]
-			if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):  # 随机选技能的敌群：自加的状态随挑到的技能变
+			# rules-gaps8：这一局第 1 回合守层者比参照多出手（换种子后掷中了追加行动，参照固定 0.5 没掷中）：多出的那格照常出手、
+			# 会给自己加状态（被封印者 379／383 的 4218 攻击 +500，原版强制两格实测同样 1830／1970），攻击／魔攻与附加伤害不比参照值
+			# （参照第 1 回合停在强制行动之后、没轮到任何角色的例子（830／831 首位是角色 a10）不算：参照没走完这一回合，照旧比）
+			var ref_t1: Array = c.actions.filter(func(a): return int(a.turn) == 1)
+			more_slots = ref_t1.any(func(a): return str(a.subject).begins_with("a")) \
+				and got[1].filter(func(x): return x[0] == "e0").size() > ref_t1.filter(func(a): return a.subject == "e0").size()
+			if more_slots:
+				_more_slot_cases += 1
+			if (oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop))) and not more_slots:  # 随机选技能的敌群：自加的状态随挑到的技能变
 				check(name + ".atk_mat", int(e0.atk) == int(want_am[0]) and int(e0.mat) == int(want_am[1]),
 					[e0.atk, e0.mat, want_am])
 	check(name + ".skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
@@ -550,7 +561,8 @@ func _case(c: Dictionary, round: int) -> void:
 	var t1_times: int = got[1].filter(func(x): return x[0] == "e0").size()
 	var normal := 0 if first_cleared or not t1_usable else 1
 	# 守层者本回合的普通行动：全队已被打倒（敌群 462 的银角一回合内杀光）时轮不到，此时只要强制行动做完
-	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + (0 if first_cleared else plus)) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
+	# rules-gaps8：首位被清掉时只清那一格，追加行动的格子照常出手（木桩 937），上限不再按 first_cleared 去掉 plus
+	check(name + ".t1_enemy_actions", (t1_times >= forced + normal and t1_times <= forced + normal + plus) or (logic.is_lost() and t1_times == forced), [forced, first_cleared, got[1]])
 	# 神魔战场的军团敌群（676～693，三四名杂兵）与嘤族之光 739：行动者集合取决于随机的技能选择和谁先被打倒，参照固定掷骰 0.5，不比这一项
 	if oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
 		if oracle_half and RANDOM_AI_TROOPS.has(int(c.troop)):
@@ -597,7 +609,7 @@ func _case(c: Dictionary, round: int) -> void:
 	if e0_idle2 and (oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop))):
 		# 第 2 回合没有可用行动、没出手：这一局没有命中，也就没有附加伤害（参照那局出手了，不比参照值）
 		check(name + ".extra_idle", extras.is_empty(), [extras, t2_tp])
-	elif oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop)):
+	elif (oracle_half or not RANDOM_AI_TROOPS.has(int(c.troop))) and not more_slots:
 		if oracle_half and RANDOM_AI_TROOPS.has(int(c.troop)):
 			_strict_random_extra_checks += 1
 		check(name + ".extra", extras.is_empty() if want_extra.is_empty() else (not extras.is_empty() and extras.all(func(x): return x == want_extra)), [extras, want_extra])
@@ -605,7 +617,7 @@ func _case(c: Dictionary, round: int) -> void:
 		# 随机技能的敌群（军团、嘤族之光 739）：命中次数随技能与谁先倒下而变，但每一次实际命中都要带精确的 [攻击, 魔攻]
 		# （参照有命中时就是参照值；参照没命中时是守层者自己的攻击／魔攻）。没有命中时记下来，全套另要求 739 至少有一例确有命中（_extra_hits）
 		var own := [float(int(e0.atk)), float(int(e0.mat))]
-		var expect: Array = want_extra if not want_extra.is_empty() else own
+		var expect: Array = want_extra if not want_extra.is_empty() and not more_slots else own
 		check(name + ".extra_value", extras.all(func(x): return x == expect), [extras, want_extra, own])
 		if int(c.troop) == 739:
 			_seen739 = true
@@ -630,6 +642,22 @@ func _unit_checks() -> void:
 		check("mimic856.after_eval_%s" % ("on" if on else "off"), (acts.slice(0, 2) == [856, 1]) if on else (acts == [856]), acts)
 	XBattleLogic.SKILL_AFTER_EVAL_FORCE = true
 	var logic := setup(4)
+	# rules-gaps8：强制行动清掉首位时只用掉一格（take_cleared 第二次返回 false，cleared_action 照旧可查）；
+	# 回退（CLEAR_ALL_SLOTS = true）：同一人每个行动位都放弃
+	for all_slots in [false, true]:
+		if all_slots:
+			XBattleLogic.CLEAR_ALL_SLOTS = true
+		else:
+			XBattleLogic.CLEAR_ALL_SLOTS = false
+		var e0: XBattler = logic.enemies[0]
+		logic._cleared = {e0: true}
+		logic._cleared_used = {}
+		var takes := [logic.take_cleared(e0), logic.take_cleared(e0), logic.take_cleared(logic.actors[0])]
+		check("cleared_slot.%s" % ("all" if all_slots else "one"), takes == ([true, true, false] if all_slots else [true, false, false])
+			and logic.cleared_action(e0), takes)
+	XBattleLogic.CLEAR_ALL_SLOTS = false
+	logic._cleared = {}
+	logic._cleared_used = {}
 	var page := {"conditions": {"turnEnding": false, "turnValid": true, "turnA": 1, "turnB": 0, "enemyValid": false,
 		"actorValid": false, "switchValid": false}, "span": 0, "list": []}
 	logic.turn = 0
@@ -672,5 +700,6 @@ func _unit_checks() -> void:
 
 func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
+	print("MORE_SLOT_CASES=", _more_slot_cases)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "oracleHalf": oracle_half, "strictRandomSetChecks": _strict_random_set_checks, "strictRandomExtraChecks": _strict_random_extra_checks}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
