@@ -1,4 +1,4 @@
-# 交付单 cc/platform-android-keys-fix（本机验证通过，待 Actions 冒烟）
+# 交付单 cc/platform-android-keys-fix（本机验证通过，Actions 冒烟全绿，可合并）
 
 ## 接续（额度用完，WIP 停手）
 - 根因（已定）：dev.410 并入的开场图（XSplashScreen，要放约 10 秒以上并吃掉按键）让冒烟第一下键落在开场图上，标题没接键、新游戏没开；地图没进，所以切后台钩子（挂在地图上）也没打 PAUSE_SAVE。证据：run 42678614104 的 android-run-report logcat（SMOKE_KEY 在启动后约 1.7 秒）。
@@ -11,3 +11,5 @@
 - 待做：推分支，Actions「安卓 验收」模拟器冒烟看 android_keys_title_*×3、android_pause_hook_fires 转绿，结果补在这里。
 - 优化登记草稿（O-待定，由总装合并时登记）：安卓按键冒烟不放开场图。开关 `XSplashScreen.SKIP_FOR_SMOKE`（默认 true，false＝回退）；不是原版 bug，只影响命令行带 `--smoke-keys=` 的冒烟运行，玩家正常启动不变。
 - 待交叉核查：splash_screen.gd（甲档，开场图判定）。
+- Actions 结果：导出冒烟 run 42706664517（platforms=android，头 9f725f223）全绿；android_keys_title_space/j/enter_new_game、android_keys_title_cancel_then_map_keys 与 android_pause_hook_fires 全部「过」。
+- 可合并
