@@ -546,6 +546,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	var watch := _watch_actors(list)
 	XConfig.achievements().clear()   # 同上：全局成就记录（物品成就只在全局还没有时触发）
 	XConfig.designations().clear()   # 参照每例 ConfigManager.applyData({}) 重置称号
+	XConfig.designations()   # ensure_loaded；漩涡过场播过的键同样每例清空（不清时前一例 mark('rift1') 让整份跑里的 m4e76p0 门关上，分段甲 a4）
+	(XConfig._values.codexWhisperSeen as Array).clear()
 	var before := _snap(s, watch)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5

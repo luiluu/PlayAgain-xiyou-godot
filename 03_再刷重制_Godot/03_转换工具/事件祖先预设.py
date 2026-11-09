@@ -62,9 +62,11 @@ def chain(lst, i, loc):
     return heads
 
 
-def trace_var(lst, j, p):
+def trace_var(lst, j, p, depth=0):
     """条件变量若在门前被 122 从游戏数据（物品／武器／防具数量、金钱）赋值，直接设预设变量会被覆盖：
-    改成设那个数据（物品 items、武器 weapons、防具 armors、金钱 gold）。"""
+    改成设那个数据（物品 items、武器 weapons、防具 armors、金钱 gold）。
+    分段甲 a4：门的祖先链上对它做的「加减乘除常量」倒推回去接着往前找；「X = 变量 Y」改成设 Y（Y 再往前追）。
+    如 ce2495 锻炼链「752 = 206；752 /= 30；752 >= 200」→ 设 206 = 6000。"""
     vs = p.get('variables')
     if not vs or len(vs) != 1:
         return p
@@ -75,6 +77,27 @@ def trace_var(lst, j, p):
         if int(c['code']) != 122:
             continue
         q = c['parameters']
+        if int(q[0]) == vid == int(q[1]) and set(chain(lst, k, None)) <= anc_j and isinstance(val, int):
+            op, ot = int(q[2]), int(q[3])
+            if op in (1, 2, 3, 4) and ot == 0:   # 祖先链上的 += -= *= /= 常量：倒推
+                cst = int(q[4])
+                if op == 1:
+                    val -= cst
+                elif op == 2:
+                    val += cst
+                elif op == 3:
+                    if cst == 0 or val % cst:
+                        return p
+                    val //= cst
+                else:
+                    if cst <= 0 or val < 0:
+                        return p
+                    val *= cst   # MV 除完取整（向下）；val×c 除回来正好是 val
+                continue
+            if op == 0 and ot == 1 and depth < 3:   # X = 变量 Y：改设 Y，再往前追 Y
+                return trace_var(lst, k, {'variables': {str(int(q[4])): val}}, depth + 1)
+            if val != next(iter(vs.values())) and not (op == 0 and ot in (2, 3)):
+                return p   # 倒推过但前面接的不是认得的赋值：放弃，免得给出错的值
         if int(q[0]) <= vid <= int(q[1]) and int(q[2]) != 0 and not set(chain(lst, k, None)) <= anc_j:
             continue   # 旁支里的加减（不一定执行，如 ce1431 开关 2282 下的 1200 += 1173）跳过，接着往前找真正的赋值（cc 分段甲 a2）
         if int(q[0]) <= vid <= int(q[1]):
@@ -114,6 +137,8 @@ def trace_var(lst, j, p):
                 pos += vid - int(q[0])
                 return {'_rand': {pos: round((int(val) - lo + 0.5) / (hi - lo + 1), 6)}}
             return p
+    if val != next(iter(vs.values())):   # 倒推过、前面再没赋值：变量从预设起算（分段甲 a4）
+        return {'variables': {str(vid): val}}
     return p
 
 
