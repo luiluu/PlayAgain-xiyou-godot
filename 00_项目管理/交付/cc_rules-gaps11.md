@@ -1,6 +1,6 @@
 # 交付单 cc/rules-gaps11（GB9）
 
-状态：**未完成，WIP 接续**（额度 92%，Kyo 19:40 要求收工换账号）。不可合并。
+状态：**①已完成（参照＋对齐，xiyou_battle_ui 172/172）；②画面对照进行中**。
 
 分支 cc/rules-gaps11，从 cc/rules-gaps10 头 4a0c3d38 切。在 scratchpad 的 `git clone --shared` 里做（会话没有自己的 worktree），已推回本库。
 
@@ -32,3 +32,12 @@
 - 原版参照 `battle_screen_fx_ref.cjs` 在测试槽里排了 8 分钟没轮上就被停，**一次都没跑**，所以上面「接续要点」第 1 条（消息窗在指令输入阶段没开）仍未查明；`tests/fixtures/battle_screen_fx_oracle.json` 仍没有，`xiyou_battle_ui` 的 screen_fx_oracle 现在会挂。
 - 下一步照上面「接续要点」1～5 原样做。建议排槽时避开合并长任务；参照服务 `serve.py` 已关，8766 端口空着。
 - 没有跑到一半的东西。不可合并。
+
+## 第三位八戒（11-09 22:50 起）
+
+- `--补齐` 用 `长任务.py start` 重跑，41 秒完成；语法检查 660 个 .gd 0 问题。
+- 原版参照跑成（等槽这次 1 分钟内就轮上）：消息窗**其实开了**（out.mw：open 255、pause、busy、y 274、指令下标 3），第一次的超时是旧版脚本等 pause 的写法问题，不是输入阶段不开消息窗。压成 `tests/fixtures/battle_screen_fx_oracle.json`（frames 201 行＋order／shots／mw）。
+- 原版逐帧：221 在 k=1、k=2 起变暗、k=25 到 0；101 在 k=26 开始（消息忙）；222 在 k=119（terminateMessage 当帧，消息窗还在合）、k=143 回到 255；224 在 k=144，k=174 闪烁到 0。场景层次：spriteset（base → pictures → timer → flash → fade）之后才是 hudField、windowLayer，和 battle_screen.gd 文件头写的一致。
+- 对齐修正：原版 wait(n) 之后 n 帧都在 updateWaitCount 空转、第 n＋1 帧才跑下一条，Godot `_event_view` 原来等 n 帧，消息早一帧开始（screen_fx_message_after_24 [24,26]）；改成等 n＋1（淡出淡入、勾了等待的闪烁）。
+- 测试修正：`_screen_fx` 关消息窗只按一次确定、且只数空闲帧——无头时一个物理帧里会跑好几个空闲帧，几次按键挤进同一物理帧只算一次，消息没关上，连带 race_poison_card 三项失败；改成每按一次等 3 个物理帧、最多 5 次。trace 分段原来把淡出当成淡入，改成按 k=1 数段（第 1 淡出、第 2 淡入、第 3 闪烁）。
+- `xiyou_battle_ui` 172/172（快车道，47 秒）。提交 1f5f955ed。
