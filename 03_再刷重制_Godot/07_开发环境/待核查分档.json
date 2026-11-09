@@ -10,6 +10,7 @@
     {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/", "why": "界面（总装六 10-31 定）"},
     {"tier": "乙", "match": "^03_再刷重制_Godot/01_Godot工程/tests/", "why": "对应测试"},
     {"tier": "丙", "match": "^03_再刷重制_Godot/(07_开发环境|03_转换工具|04_验证)/", "why": "工具与验证"},
+    {"tier": "丙", "match": "^(03_再刷重制_Godot/)?04_验证/事件预设轮次/", "why": "事件预设轮次数据（审查 71 可优化；含误放在仓库根 04_验证/ 下的）"},
     {"tier": "丙", "match": "^(00_项目管理/|\\.github/|AGENTS\\.md$|CLAUDE\\.md$|README[^/]*\\.md$)", "why": "项目管理与规则"},
     {"tier": "丙", "match": "^03_再刷重制_Godot/(开发编号\\.json$|01_Godot工程/(project\\.godot|content/build_info\\.json)$)", "why": "编号登记"},
     {"tier": "丙", "match": "\\.md$", "why": "其它文档"}
