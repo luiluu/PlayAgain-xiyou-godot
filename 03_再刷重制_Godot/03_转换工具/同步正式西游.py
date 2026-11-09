@@ -1365,8 +1365,11 @@ def _main() -> int:
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
             # 车道跑探针时记下的运行时依赖（.sandbox/probe_deps/）：本工作区缺的补上，已有的不动（tools-probe-deps）
-            lane_sandbox = a.from_worktree.resolve() / SANDBOX.relative_to(ROOT.resolve())
-            deps = carry_probe_deps(lane_sandbox, SANDBOX)
+            try:
+                lane_sandbox = a.from_worktree.resolve() / SANDBOX.resolve().relative_to(ROOT.resolve())
+            except ValueError:
+                lane_sandbox = None  # 参照目录不在仓库里（测试夹具）：不补
+            deps = carry_probe_deps(lane_sandbox, SANDBOX) if lane_sandbox else []
             if deps:
                 report['fromWorktreeProbeDeps'] = deps
                 log.write('从车道补来探针依赖记录：%s\n' % '、'.join(deps))

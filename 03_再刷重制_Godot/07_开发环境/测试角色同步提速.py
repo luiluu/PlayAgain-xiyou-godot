@@ -126,13 +126,23 @@ class PortableCacheTests(unittest.TestCase):
         self.assertEqual(self.misses()['plain_probe.cjs'], [{'kind': 'cache-invalid'}])
 
     def test_common_changes_are_named(self):
-        for relative, field in [('app/source.js', 'source'), ('donor/tools/mv_oracle/host.cjs', 'helpers'),
-                                ('donor/tools/mv_oracle/node_modules/runtime.js', 'runtime'),
+        for relative, field in [('app/source.js', 'source'), ('donor/tools/mv_oracle/node_modules/runtime.js', 'runtime'),
                                 ('donor/tools/mv_oracle/.sandbox/save/test.rpgsave', 'seedFiles')]:
             self.prime()
             with (self.root / relative).open('a') as f:
                 f.write('changed')
             self.assertIn({'kind': 'common-input', 'field': field}, self.misses()['plain_probe.cjs'])
+        # helper：tools-probe-deps 起不再是公共键，plain_probe 没 require host.cjs 就不受影响；XIYOU_PROBE_HELPER_DEPS=0 回旧
+        host = self.root / 'donor/tools/mv_oracle/host.cjs'
+        self.prime()
+        with host.open('a') as f:
+            f.write('changed')
+        self.assertEqual(self.misses()['plain_probe.cjs'], [])
+        with mock.patch.dict(os.environ, {'XIYOU_PROBE_HELPER_DEPS': '0'}):
+            self.prime()
+            with host.open('a') as f:
+                f.write('changed again')
+            self.assertIn({'kind': 'common-input', 'field': 'helpers'}, self.misses()['plain_probe.cjs'])
 
     def test_environment_reason_names_only_the_changed_variable(self):
         self.prime()
@@ -180,7 +190,7 @@ class PortableCacheTests(unittest.TestCase):
     def test_new_generated_read_in_helper_also_disables_sharding(self):
         tools, _ = self.paths('donor')
         (tools / 'mv_oracle/slice_probe.cjs').write_text(
-            "const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\nuse(SLICE.troops);")
+            "require('./host.cjs');\nconst SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));\nuse(SLICE.troops);")
         self.assertIsNotNone(self.cache().shard(self.probes[1][0]))
         (tools / 'mv_oracle/host.cjs').write_text('use(process.env.XIYOU_GENERATED);')
         self.assertIsNone(self.cache().shard(self.probes[1][0]))

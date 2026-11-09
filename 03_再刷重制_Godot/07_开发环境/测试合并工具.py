@@ -1352,7 +1352,7 @@ class StatePrevFromLaneTests(unittest.TestCase):
 
     def test_merge_passes_lane_tree_to_full_sync_after_exit_3(self):
         src = (HERE / '合并车道.py').read_text()
-        self.assertIn("sync = sync + ['--state-prev-from', state['worktree']]", src)
+        self.assertIn("sync = sync + ['--state-prev-from', lane_from]", src)   # lane_from＝worktree 或交付单「车道路径」（tools-probe-deps）
         self.assertIsNotNone(sync.build_parser().parse_args(['--state-prev-from', '/x']).state_prev_from)
 
 
