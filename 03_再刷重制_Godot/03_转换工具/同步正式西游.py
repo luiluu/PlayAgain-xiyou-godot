@@ -789,7 +789,7 @@ def lane_state_prev(worktree, gen):
     import event_state_shards as ess
     try:
         lane_gen = Path(worktree) / Path(gen).resolve().relative_to(ROOT.resolve())
-        lane_keys = Path(worktree) / STATE_KEYS.resolve().relative_to(ROOT.resolve())
+        lane_keys = Path(worktree) / (SANDBOX / 'event_state_keys.json').resolve().relative_to(ROOT.resolve())
     except ValueError:
         return None
     result = lane_gen / 'oracle/event_states.json'

@@ -1280,7 +1280,9 @@ class StatePrevFromLaneTests(unittest.TestCase):
         self.root, self.lane = base / 'main', base / 'lane'
         self.gen_rel = Path('03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated')
         self.keys_rel = Path('03_再刷重制_Godot/03_转换工具/mv_oracle/.sandbox/event_state_keys.json')
-        self.patches = [mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'STATE_KEYS', self.root / self.keys_rel)]
+        # 车道账按固定的 .sandbox 位置找，不跟着 STATE_KEYS 走（实测脚本把本树的账指到别处时车道账也跟着丢了）
+        self.patches = [mock.patch.object(sync, 'ROOT', self.root), mock.patch.object(sync, 'SANDBOX', self.root / self.keys_rel.parent),
+                        mock.patch.object(sync, 'STATE_KEYS', self.root / self.keys_rel)]
         for p in self.patches:
             p.start()
 
@@ -1318,6 +1320,11 @@ class StatePrevFromLaneTests(unittest.TestCase):
         self.result(self.root, ['z'], setup={'party': 2})
         _, _, n_lane, n_main = sync.combine_prev(work, lane, (self.root / self.gen_rel / 'oracle/event_states.json', self.root / 'k.json'))
         self.assertEqual((n_lane, n_main), (2, 0))
+
+    def test_lane_ledger_found_even_if_own_ledger_points_elsewhere(self):
+        self.result(self.lane, ['x'])
+        with mock.patch.object(sync, 'STATE_KEYS', Path(self.tmp.name) / 'elsewhere/keys.json'):
+            self.assertIsNotNone(sync.lane_state_prev(self.lane, self.root / self.gen_rel))
 
     def test_lane_result_not_on_lane_ledger_is_not_used(self):
         self.result(self.lane, ['x'], on_ledger=False)
