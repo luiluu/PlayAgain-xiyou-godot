@@ -95,6 +95,19 @@ func _generic() -> void:
 	check("bgm_fades_in", battle_bgm.volume_db < target - 6.0, [battle_bgm.volume_db, target])
 	await get_tree().create_timer(XAudio.REPLAY_FADE + 0.2).timeout
 	check("bgm_fade_reaches_target", is_equal_approx(battle_bgm.volume_db, target), [battle_bgm.volume_db, target])
+	# ME 期间敌群事件 241 换曲（AudioManager.playBgm 的 !this._meBuffer）：只换上，ME 放完才放
+	b.play_me({"name": "Inn", "volume": 90, "pitch": 100})
+	b._change_bgm({"name": "Battle1", "volume": 90, "pitch": 100, "pan": 0})
+	check("bgm_change_during_me_waits", _stream_name(b.bgm) == "Battle1" and not b.bgm.playing, [_stream_name(b.bgm), b.bgm.playing])
+	_finish_me(b.me)
+	check("bgm_change_plays_after_me", b.bgm.playing)
+	battle_bgm = b.bgm
+	# 收场 stop_bgm：战斗曲停，之后 ME 放完也不再响
+	b.play_me({"name": "Inn", "volume": 90, "pitch": 100})
+	b.stop_bgm()
+	_finish_me(b.me)
+	check("stop_bgm_stays_stopped", not battle_bgm.playing)
+	battle_bgm.play()
 	# 停掉的 BGM：ME 放完不会自己响
 	battle_bgm.stop()
 	b.play_me({"name": "Inn", "volume": 90, "pitch": 100})

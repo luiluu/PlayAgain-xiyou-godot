@@ -215,8 +215,21 @@ func _change_bgm(music) -> void:
 			bgm.queue_free()
 	bgm = new_bgm_player(music)
 	add_child(bgm)
+	# AudioManager.playBgm：ME 在放（!this._meBuffer 不成立）只换上、不开始，ME 放完 stopMe 再放
 	if bgm.stream != null:
-		bgm.play()
+		if me != null and me.playing:
+			_bgm_after_me = true
+		else:
+			bgm.play()
+
+
+## 战斗收场 replayBgmAndBgs 换回地图曲：战斗曲／胜利曲停掉（地图 start_battle 调）。ME 不在这里停，由地图接过去
+func stop_bgm() -> void:
+	_bgm_after_me = false
+	if bgm != null and is_instance_valid(bgm):
+		XAudio.stop_fade(bgm)
+		bgm.stop()
+		bgm.stream_paused = false
 
 
 static func new_bgm_player(music: Dictionary) -> AudioStreamPlayer:
