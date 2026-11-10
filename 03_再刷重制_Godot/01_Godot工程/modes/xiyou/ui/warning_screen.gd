@@ -1,6 +1,6 @@
 class_name XWarningScreen
 extends Control
-## 【cc·界面·未经审查】开场声明屏（天启篇改版，O-待定·开场声明屏）：取代 MOG_TitleSplashScreen 的三张开场图（titles2/Splash_0～2）。
+## 【cc·界面·未经审查】开场声明屏（天启篇改版，O-259）：取代 MOG_TitleSplashScreen 的三张开场图（titles2/Splash_0～2）。
 ## 仿老录像带片头警告的排版：黑底、红底白字警告条、等宽大字写「本游戏免费、禁止倒卖收费」，带一行英文；文字与排版原创，
 ## 不用任何机构徽章或标志。
 ## - 帧按 _physics_process 计（变速齿轮下每秒 96 帧）：淡入 FADE 帧 → 停 HOLD 帧（约 5 秒）→ 淡出 FADE 帧 → 进标题。

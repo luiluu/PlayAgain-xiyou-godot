@@ -16,7 +16,7 @@ extends Control
 signal finished
 
 static var ENABLED := true
-## 天启篇改版（O-待定·开场声明屏）：true＝放开场声明屏 XWarningScreen 取代下面三张图；false 回到原版三张开场图
+## 天启篇改版（O-259）：true＝放开场声明屏 XWarningScreen 取代下面三张图；false 回到原版三张开场图
 static var WARNING_SCREEN := true
 static var BLANK_FIRST_V028 := false
 static var shown := false

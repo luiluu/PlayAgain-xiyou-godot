@@ -98,7 +98,7 @@ func _run() -> void:
 		check("v028_then_splash_0", sp3.state().index == 1 and not sp3.state().blank)
 		XSplashScreen.BLANK_FIRST_V028 = false
 		sp3.queue_free()
-	# ---- 开场声明屏（天启篇改版，取代上面三张图；O-待定·开场声明屏）----
+	# ---- 开场声明屏（天启篇改版，取代上面三张图；O-259）----
 	check("warning_default_on", XSplashScreen.WARNING_SCREEN)
 	XSplashScreen.shown = false
 	var w := XWarningScreen.play(host)
