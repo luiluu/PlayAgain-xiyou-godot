@@ -313921,6 +313921,815 @@
      "1285": 1
     }
    }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_13",
+   "preset": {
+    "answers": [
+     3,
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_40",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     5,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_44",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_54",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_62",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_72",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_80",
+   "preset": {
+    "answers": [
+     1,
+     3,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_92",
+   "preset": {
+    "answers": [
+     1,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_110",
+   "preset": {
+    "answers": [
+     1,
+     1,
+     0,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_117",
+   "preset": {
+    "answers": [
+     1,
+     1,
+     1,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_124",
+   "preset": {
+    "answers": [
+     1,
+     1,
+     2,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_131",
+   "preset": {
+    "answers": [
+     1,
+     1,
+     3,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_147",
+   "preset": {
+    "answers": [
+     1,
+     2,
+     0,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_154",
+   "preset": {
+    "answers": [
+     1,
+     2,
+     1,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_163",
+   "preset": {
+    "answers": [
+     1,
+     2,
+     2,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_170",
+   "preset": {
+    "answers": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_188",
+   "preset": {
+    "answers": [
+     2,
+     0,
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_199",
+   "preset": {
+    "answers": [
+     2,
+     0,
+     1,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_219",
+   "preset": {
+    "answers": [
+     2,
+     1,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_230",
+   "preset": {
+    "answers": [
+     2,
+     2,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_236",
+   "preset": {
+    "answers": [
+     2,
+     3,
+     4,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_238",
+   "preset": {
+    "answers": [
+     2,
+     3,
+     0,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_248",
+   "preset": {
+    "answers": [
+     2,
+     3,
+     1,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_254",
+   "preset": {
+    "answers": [
+     2,
+     3,
+     2,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_262",
+   "preset": {
+    "answers": [
+     2,
+     3,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_297",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_308",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_317",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_333",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     1,
+     0,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_342",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     1,
+     1,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_351",
+   "preset": {
+    "answers": [
+     3,
+     0,
+     1,
+     2,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_371",
+   "preset": {
+    "answers": [
+     4,
+     0,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_381",
+   "preset": {
+    "answers": [
+     4,
+     0,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_387",
+   "preset": {
+    "answers": [
+     4,
+     0,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_393",
+   "preset": {
+    "answers": [
+     4,
+     0,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_403",
+   "preset": {
+    "answers": [
+     4,
+     1,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_405",
+   "preset": {
+    "answers": [
+     4,
+     1,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_413",
+   "preset": {
+    "answers": [
+     4,
+     1,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_423",
+   "preset": {
+    "answers": [
+     4,
+     1,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_431",
+   "preset": {
+    "answers": [
+     4,
+     1,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_441",
+   "preset": {
+    "answers": [
+     4,
+     2,
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_443",
+   "preset": {
+    "answers": [
+     4,
+     2,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_452",
+   "preset": {
+    "answers": [
+     4,
+     2,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_462",
+   "preset": {
+    "answers": [
+     4,
+     3,
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_464",
+   "preset": {
+    "answers": [
+     4,
+     3,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_471",
+   "preset": {
+    "answers": [
+     4,
+     3,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_485",
+   "preset": {
+    "answers": [
+     4,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_501",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     5,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_505",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_513",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_519",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_531",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_539",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     0,
+     4,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_549",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     1,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_551",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     1,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_557",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     1,
+     1,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_569",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     2,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_579",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     3,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_586",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     4,
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_588",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     4,
+     0,
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m4e71p0",
+   "tag": "mm_595",
+   "preset": {
+    "answers": [
+     3,
+     1,
+     4,
+     1,
+     5,
+     5
+    ]
+   }
   }
  ]
 }
