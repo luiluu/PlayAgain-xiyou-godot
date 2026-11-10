@@ -1103,6 +1103,9 @@ func play_me(audio: Dictionary) -> void:
 		me.play()
 
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
+## 上一场战斗是被事件 353 游戏结束收场的（原版直接 goto Scene_Gameover，可输的战斗也一样；301 据此走结束画面，审查第 75 期 P3-1）
+var last_battle_game_over := false
+
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
 	me.stop()
@@ -1135,12 +1138,13 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	# 挂机计时在本场景 _physics_process，照常走。
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
+	last_battle_game_over = battle.logic.game_over
 	if transition:
 		# Scene_Battle.stop：淡出 24 帧（全灭去结束画面 48 帧）；回地图后 Scene_Map.start 的淡入第 2 帧就被 Codex_MapSceneRecovery 清掉，只暗一帧
 		var out := XSceneFade.new()
 		out.mouse_filter = Control.MOUSE_FILTER_STOP
 		ui.add_child(out)
-		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and not can_lose else XBattleTransition.FADE_FRAMES)
+		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and (not can_lose or last_battle_game_over) else XBattleTransition.FADE_FRAMES)
 		while out.busy():
 			out.step()
 			XBattleTransition.note({"phase": "out", "fade": out.opacity})

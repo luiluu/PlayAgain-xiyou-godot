@@ -490,6 +490,14 @@ func _execute_env(c: Dictionary):
 			logs.append({"type": "game_over"})
 			halted = true
 			return false
+		340:
+			# 中止战斗（command340 → BattleManager.abort，_phase＝aborting）：之后 BattleManager 不再走 updateEventMain，敌群解释器
+			# 不再更新，本页后面的指令与上层公共事件都不执行；下一帧 checkAbort → processAbort（结果 1、_escaped，预约 1308）。
+			# 现有数据没有用到（审查第 75 期 P3-1 补上，免得以后的数据静默跳过）
+			logic.aborted = true
+			logs.append({"type": "abort"})
+			halted = true
+			return false
 		339:
 			logs.append_array(logic._force_action(p, first_subject))
 			index += 1

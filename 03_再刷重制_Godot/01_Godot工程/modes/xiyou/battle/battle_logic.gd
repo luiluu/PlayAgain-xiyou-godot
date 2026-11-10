@@ -420,6 +420,14 @@ var game_over := false
 func is_lost() -> bool:
 	return game_over or alive(actors).is_empty()
 
+## 敌群事件 340 中止战斗（command340 → BattleManager.abort；审查第 75 期 P3-1）：本页后面的指令不再执行，
+## 战斗按「中止」收场（结果 1、算逃跑：预约 1308、不判输赢）。原版 checkAbort 在全灭／全歼之前判，所以先于输赢
+var aborted := false
+
+## 战斗该收场了：中止、全歼或全灭（循环与事件检查用；输赢各自另判）
+func is_over() -> bool:
+	return aborted or is_won() or is_lost()
+
 func vars() -> Array:
 	return state.variable_array()
 
@@ -1032,7 +1040,7 @@ func act(u: XBattler, skill, target) -> Array:
 			if a is XActor:
 				a.stale_state_ids.clear()  # raven3：上一个行动之后的 refresh 已重建特性缓存
 	var before := _movable_snapshot()
-	if is_won() or is_lost() or u.is_dead():
+	if is_over() or u.is_dead():
 		return logs
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
 	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
@@ -1200,11 +1208,11 @@ func run_turn(commands: Dictionary) -> Array:
 		var u := next_subject()
 		logs.append_array(run_events(u if first else null))
 		first = false
-		if u == null or is_won() or is_lost():
+		if u == null or is_over():
 			break
 		var cmd: Array = [null, null] if take_cleared(u) else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u))
 		logs.append_array(act(u, cmd[0], cmd[1]))
-	if not is_won() and not is_lost():
+	if not is_over():
 		logs.append_array(end_turn())
 		logs.append_array(run_events(null, true))
 	return logs
@@ -1268,7 +1276,7 @@ func _drive_events() -> Array:
 			logs.append_array(_force_action(p, _check.get("first")))  # queueForceAction：预约事件优先，跑 339（倒下了就不行动）
 		if _runner == null: _runner = XBattleCommonEvent.take(self)  # setupBattleEvent：预约的公共事件（技能／物品效果 44）先于敌群页
 		if _runner == null:
-			if is_won() or is_lost() or int(_check.guard) > pages.size():
+			if is_over() or int(_check.guard) > pages.size():
 				break
 			_check.guard = int(_check.guard) + 1
 			var found := -1
@@ -1500,7 +1508,7 @@ func _take_pending_force() -> Array:
 	pending_force = {}
 	var u: XBattler = f.user
 	var skill := XDB.rec("Skills", int(f.skill))
-	if u.is_dead() or skill.is_empty() or is_won() or is_lost():
+	if u.is_dead() or skill.is_empty() or is_over():
 		return []
 	return _forced_run(u, skill, null, null)
 

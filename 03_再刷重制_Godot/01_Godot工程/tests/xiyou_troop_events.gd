@@ -766,6 +766,7 @@ func _unit_checks() -> void:
 		check("mimic856.after_eval_%s" % ("on" if on else "off"), (acts.slice(0, 2) == [856, 1]) if on else (acts == [856]), acts)
 	XBattleLogic.SKILL_AFTER_EVAL_FORCE = true
 	var logic := setup(4)
+	_extra_once_scope_checks(logic)
 	# rules-gaps8：强制行动清掉首位时只用掉一格（take_cleared 第二次返回 false，cleared_action 照旧可查）；
 	# 回退（CLEAR_ALL_SLOTS = true）：同一人每个行动位都放弃
 	for all_slots in [false, true]:
@@ -820,6 +821,47 @@ func _unit_checks() -> void:
 	var r := logic.apply(e0, probe, t)
 	check("establish.hp", is_equal_approx(t.hp, maxf(0.0, hp0 - e0.atk - e0.mat)), [hp0, t.hp, e0.atk, e0.mat])
 	check("establish.extra", r.get("extra", []) == [float(e0.atk), float(e0.mat)], r)
+
+
+## 审查第 75 期 P1-1：O-247 的 EXTRA_ONCE 只认 CE1365。数据里「强制出的技能效果 44 又指回自己」的公共事件逐个造一次
+## 「正在跑该公共事件时，强制出来的行动收尾预约」：1365 开关打开时不预约、关掉时预约；其余（CE28 风怒、CE1154 雪岭舞、
+## 堕天一击等概率连发）开关开着也照原版预约，每次再放都重掷
+func _extra_once_scope_checks(logic: XBattleLogic) -> void:
+	var self_ces := {}
+	var ces: Array = XDB.table("CommonEvents")
+	for id in range(1, ces.size()):
+		var ce := XDB.rec("CommonEvents", id)
+		if ce.is_empty():
+			continue
+		for cmd in ce.get("list", []):
+			if int(cmd.get("code", 0)) != 339:
+				continue
+			var sk := XDB.rec("Skills", int(cmd.parameters[2]))
+			for e in sk.get("effects", []):
+				if int(e.code) == 44 and int(e.dataId) == id:
+					self_ces[id] = sk
+	check("extra_once.self_ce_found", self_ces.has(1365) and self_ces.has(28) and self_ces.has(1154) and self_ces.size() >= 11, self_ces.keys())
+	var saved_runner = logic._runner
+	var default_once := XBattleCommonEvent.EXTRA_ONCE
+	for once in [true, false]:
+		XBattleCommonEvent.EXTRA_ONCE = once
+		var got := {}
+		for id in self_ces:
+			var r := XBattleEventRunner.new(logic, [], null)
+			r.set_meta("common_event", id)
+			logic._runner = r
+			if logic.has_meta("battle_ce"):
+				logic.remove_meta("battle_ce")
+			XBattleCommonEvent.reserve_action(logic, logic.enemies[0], self_ces[id], [logic.actors[0]])
+			got[id] = int(logic.get_meta("battle_ce", 0)) == id
+		var bad := got.keys().filter(func(id): return got[id] != (not once or id != 1365))
+		check("extra_once.only_1365_%s" % ("on" if once else "off"), bad.is_empty(), {"bad": bad, "got": got})
+	XBattleCommonEvent.EXTRA_ONCE = default_once
+	logic._runner = saved_runner
+	if logic.has_meta("battle_ce"):
+		logic.remove_meta("battle_ce")
+	if logic.has_meta("battle_ce_user"):
+		logic.remove_meta("battle_ce_user")
 
 
 func finish() -> void:
