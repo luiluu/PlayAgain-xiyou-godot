@@ -11,6 +11,9 @@ LEDGER = Path('00_项目管理/重制步骤清单.md')
 STATE = Path('00_项目管理/当前状态.json')
 
 
+OUT_MARK = '（出分母）'
+
+
 def number(text):
     if not re.fullmatch(r'\d+(?:\.\d+)?', text.strip()):
         raise ValueError('进度账存在非数字权重或完成度：' + text)
@@ -23,7 +26,7 @@ def display(value):
 
 def calculate(text):
     lines = text.splitlines(keepends=True)
-    active, rows, total_index = False, [], None
+    active, rows, total_index, out_weight = False, [], None, Decimal(0)
     for i, line in enumerate(lines):
         if line.startswith('## 进度账'):
             active = True
@@ -42,14 +45,20 @@ def calculate(text):
             continue
         if cells[0] == '部分' or cells[0].startswith('---'):
             continue
+        if cells[0].startswith(OUT_MARK):
+            # Kyo 2026-11-10：实机验收不计进度。标「（出分母）」的行只占权重位置，不进合计，也不进分母
+            out_weight += number(cells[1])
+            cells[3] = '—'
+            lines[i] = '| ' + ' | '.join(cells) + ' |\n'
+            continue
         weight, percent = number(cells[1]), number(cells[2].removesuffix('%'))
         if not 0 <= percent <= 100 or not 0 < weight <= 100:
             raise ValueError('权重或完成度超出范围：' + cells[0])
         rows.append({'line': i, 'cells': cells, 'name': cells[0], 'weight': weight,
                      'completion': percent, 'contribution': weight * percent / 100})
-    if total_index is None or not rows or sum(row['weight'] for row in rows) != 100:
+    if total_index is None or not rows or sum(row['weight'] for row in rows) + out_weight != 100:
         raise ValueError('进度账缺失、合计不唯一或权重之和不为100')
-    raw = sum(row['contribution'] for row in rows)
+    raw = sum(row['contribution'] for row in rows) * 100 / (100 - out_weight)
     rounded = raw.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
     total_cells = [x.strip() for x in lines[total_index].strip().strip('|').split('|')]
     current = number(total_cells[3].replace('*', ''))

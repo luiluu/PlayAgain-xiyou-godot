@@ -1171,6 +1171,16 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(str(result['raw']), '22.24')
         self.assertEqual(str(result['rounded']), '22.2')
 
+    def test_out_of_denominator_row(self):
+        # Kyo 2026-11-10：标「（出分母）」的行（实机验收）只占权重位，不进合计也不进分母
+        text = ('## 进度账\n| 部分 | 权重 | 完成度 | 计入 |\n| --- | --- | --- | --- |\n'
+                '| 甲 | 60 | 50% | 0 |\n| 乙 | 37 | 100% | 0 |\n| （出分母）丙 | 3 | 30% | 0.9 |\n| **合计** | 100 | | **0** |\n')
+        result = progress.calculate(text)
+        self.assertEqual(str(result['rounded']), '69.1')   # (30+37)/97
+        self.assertIn('| （出分母）丙 | 3 | 30% | — |', result['text'])
+        with self.assertRaises(ValueError):
+            progress.calculate(text.replace('| 乙 | 37', '| 乙 | 36'))
+
     def test_invalid_weights_rejected(self):
         with self.assertRaises(ValueError):
             progress.calculate(ledger().replace('| 乙 | 40', '| 乙 | 39'))
