@@ -18,7 +18,7 @@
   - `xiyou_actor_book` 截 167 号以后的立绘时直接改 `index`，目录不跟着滚、光标不在画面里；改走 `select()`。
   - `xiyou_orb_shop_ui` 截图前把前面几条路线留下的提示条、成就弹窗清掉（原版这一态没有）。
 - 对照工具：`ui_pixel_compare.py` 跳过整窗淡没（opacity 与 contentsOpacity 都是 0）的原版窗口；加 `KNOWN_ORIG_ONLY`（原版看不见、Godot 不建的窗口，单列为已认定）和怪物图鉴说明卡 −36 的认定。
-- 测试：`xiyou_ui_pixel` 33 项（新增真气两个窗口矩形）。
+- 测试：`xiyou_ui_pixel` 34 项（新增真气两个窗口矩形、选「离开」收掉闭关）。
 - 玩家可见：无（这一期没有改游戏代码）。
 
 ## 交接板
@@ -40,8 +40,8 @@
 ## 验证
 
 - 语法检查通过（666 个 .gd，0 问题）；工具回归全过（64 秒）。
-- 本机窗口模式 `--out`：`xiyou_ui_pixel` 33/33、`xiyou_party` 58/58、`xiyou_orb_shop_ui` 27/27、`xiyou_orb_ui` 39/39、`xiyou_actor_book` 28/28、`xiyou_achievement` 59/59、`xiyou_options_basic` 148/148、`xiyou_options_misc` 86/86、`xiyou_save_page` 42/42、`xiyou_enemy_book` 95/95、`xiyou_system_evidence` 16/16。
-- 云端选测：见下（`云端选测.py run --no-upload`，基准 d84b30c7b9，75 个场景）。
+- 本机窗口模式 `--out`：`xiyou_ui_pixel` 33/33（修泄漏前）、`xiyou_party` 58/58、`xiyou_orb_shop_ui` 27/27、`xiyou_orb_ui` 39/39、`xiyou_actor_book` 28/28、`xiyou_achievement` 59/59、`xiyou_options_basic` 148/148、`xiyou_options_misc` 86/86、`xiyou_save_page` 42/42、`xiyou_enemy_book` 95/95、`xiyou_system_evidence` 16/16。
+- 云端选测（`云端选测.py run --no-upload`，基准 d84b30c7b9，提交 fb5c96a935，Actions run 42785051553）：75 个场景 74 个过；`xiyou_ui_pixel` 断言 33/33 都过，但退出时报 ObjectDB 泄漏（真气页的闭关协程停在选项上没收），判失败。改成截完图选「离开」收掉闭关，本机 headless 34/34、无泄漏，`并行测试.py xiyou_ui_pixel` 通过。只动了这一个测试文件，没有再跑整轮云端选测。
 
 ## 本分支提交
 
@@ -49,4 +49,5 @@
 - 3973251be 各专项截图点写窗口读数；整队、宝珠坊同态
 - 143d2bcd7 人物图鉴、成就、设置同态
 - fb5c96a93 存档、真气同态；对照工具改进
-- （本提交）交付单、README
+- c7f2a113b 交付单、README
+- （本提交）真气页收掉闭关，修云端泄漏
