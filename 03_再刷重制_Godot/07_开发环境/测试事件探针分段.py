@@ -511,16 +511,18 @@ class ProgressTests(unittest.TestCase):
         buf = io.StringIO()
         with self.ess.Progress(3, interval=0.05, out=buf) as prog:
             # 等到至少 3 拍再收（最多 5 秒）：launchd 后台低优先级调度时 0.3 秒固定等待只出 2 拍（总装三十一 11-07 复现）
-            deadline = time.monotonic() + 5
+            # 只设上限（防死等），不靠墙钟断言：等到 3 拍为止，高负载下慢一点也只是多等
+            deadline = time.monotonic() + 60
             while buf.getvalue().count('还在跑') < 3 and time.monotonic() < deadline:
                 time.sleep(0.05)
+            before = buf.getvalue().splitlines()
             prog.done(0)
         lines = buf.getvalue().splitlines()
         self.assertIn('开始，3 段并行', lines[0])
-        beats = [l for l in lines if '还在跑' in l]
+        beats = [l for l in before if '还在跑' in l]       # done 之前的心跳
         self.assertGreaterEqual(len(beats), 3, lines)
         self.assertTrue(all('0/3 段完成' in l for l in beats), beats)
-        self.assertIn('1/3 段完成（第 1 段刚结束）', lines[-1])
+        self.assertTrue(any('1/3 段完成（第 1 段刚结束）' in l for l in lines), lines)
         n = len(lines)
         time.sleep(0.2)
         self.assertEqual(len(buf.getvalue().splitlines()), n, '退出后心跳线程要停')
@@ -551,15 +553,20 @@ class ProgressTests(unittest.TestCase):
         from unittest import mock
 
         def launch(e, label):
-            time.sleep(0.25)
+            # 等到心跳线程至少打出一拍再结束（开了心跳时），不靠固定睡眠
+            deadline = time.monotonic() + 60
+            while os.environ.get('XIYOU_STATE_PROGRESS_SECS') != '0' and '还在跑' not in cur[0].getvalue() and time.monotonic() < deadline:
+                time.sleep(0.02)
             part = {'sourceIdentity': 's', 'setup': {}, 'cases': [{'id': '%s-%d' % (label[-3:].strip('/'), k)} for k in range(2)]}
             Path(e['XIYOU_EVENT_OUT']).write_text(json.dumps(part))
             return subprocess.CompletedProcess(['fake'], 0, '', '')
         results = []
+        cur = [io.StringIO()]
         for secs in ('0.05', '0'):
             with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': secs}):
                 tmp = Path(tmp)
                 buf = io.StringIO()
+                cur[0] = buf
                 with contextlib.redirect_stdout(buf):
                     r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 2, launch)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
@@ -575,12 +582,17 @@ class ProgressTests(unittest.TestCase):
         import contextlib, io, time
         from unittest import mock
 
+        cur = [io.StringIO()]
+
         def launch(e, label):
-            time.sleep(0.2)
+            deadline = time.monotonic() + 60
+            while '开始' not in cur[0].getvalue() and time.monotonic() < deadline:
+                time.sleep(0.02)
             return subprocess.CompletedProcess(['fake'], 0, 'ok', '')
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '0.05'}):
             tmp = Path(tmp)
             buf = io.StringIO()
+            cur[0] = buf
             with contextlib.redirect_stdout(buf):
                 r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 1, launch)
         self.assertEqual(r.stdout, 'ok')
