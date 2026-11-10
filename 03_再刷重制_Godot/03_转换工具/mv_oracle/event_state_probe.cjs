@@ -433,10 +433,50 @@ const fileSha = f => crypto.createHash('sha256').update(fs.readFileSync(f)).dige
 const MAP_INPUT = /^data\/Map\d{3}\.json$/;
 const restInputs = Object.fromEntries(Object.entries(identity.inputs).filter(([k]) => !MAP_INPUT.test(k)));
 const mapDigest = m => identity.inputs['data/Map' + String(m).padStart(3, '0') + '.json'] || null;
-const coreFingerprint = sha([2, identity.releaseVersion, restInputs, identity.runtimeInputs, SETUP,
-  ['event_state_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs'].map(f => fileSha(path.join(__dirname, f))),
-  (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })(), [...bootMaps].sort((a, b) => a - b).map(m => [m, mapDigest(m)])]);
-const keyOf = (c, maps) => sha([coreFingerprint, c.id, c.preset, c.listHash, c.x, c.y, maps.map(m => [m, mapDigest(m)])]);
+// 探针代码本身的指纹按「影响面声明」折算（tools-probe-deps2，probe_change_scope.json）：本文件从 from 改到 to，若声明只影响预设里带某些键
+// （如 maxLevel、actors.*.forget）的变体，别的变体算键时把本文件当作还是 from，不因这次改动整份重跑。没有声明时与以前逐字相同。
+// 声明要交叉核查（甲档）；写错会让产物过期，所以取回的变体照旧抽 1% 重跑比对，同步每日一次整份审计（XIYOU_STATE_AUDIT=1）。
+const SELF_SHA = fileSha(path.join(__dirname, 'event_state_probe.cjs')), SELF_REL = 'mv_oracle/event_state_probe.cjs';
+const HELPER_SHAS = ['hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs'].map(f => fileSha(path.join(__dirname, f)));
+const JSDOM_VERSION = (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })();
+const coreMemo = new Map();
+const coreFor = selfSha => {
+  if (!coreMemo.has(selfSha)) coreMemo.set(selfSha, sha([2, identity.releaseVersion, restInputs, identity.runtimeInputs, SETUP,
+    [selfSha, ...HELPER_SHAS], JSDOM_VERSION, [...bootMaps].sort((a, b) => a - b).map(m => [m, mapDigest(m)])]));
+  return coreMemo.get(selfSha);
+};
+const coreFingerprint = coreFor(SELF_SHA);
+const SCOPE_ROWS = (() => {
+  let rows;
+  try { rows = JSON.parse(fs.readFileSync(path.join(__dirname, '../probe_change_scope.json'), 'utf8')).changes || []; } catch (e) { if (e.code === 'ENOENT') return []; throw e; }
+  for (const r of rows) {
+    if (!(r && r.file === SELF_REL && /^[0-9a-f]{64}$/.test(r.from) && /^[0-9a-f]{64}$/.test(r.to) && r.from !== r.to
+        && Array.isArray(r.presetKeys) && r.presetKeys.every(k => typeof k === 'string' && k) && typeof r.why === 'string' && r.why))
+      throw new Error('probe_change_scope.json 的条目要有 file（mv_oracle/event_state_probe.cjs）、from／to（不同的整份 SHA-256）、presetKeys（字符串数组，空＝不影响任何变体）、why：' + JSON.stringify(r));
+  }
+  return rows;
+})();
+// 预设里出现过的键路径（数字键记成 *，含各级前缀）：{actors:{79:{forget:[1]}}} → actors、actors.*、actors.*.forget
+const presetPaths = (v, pre = '', out = new Set()) => {
+  if (v && typeof v === 'object' && !Array.isArray(v)) for (const [k, x] of Object.entries(v)) {
+    const p = pre ? pre + '.' + (/^\d+$/.test(k) ? '*' : k) : k;
+    out.add(p); presetPaths(x, p, out);
+  }
+  return out;
+};
+const scopedSelf = preset => {
+  if (!SCOPE_ROWS.length) return SELF_SHA;
+  const paths = presetPaths(preset), seen = new Set();
+  let cur = SELF_SHA;
+  while (!seen.has(cur)) {
+    seen.add(cur);
+    const row = SCOPE_ROWS.find(r => r.to === cur && !r.presetKeys.some(k => paths.has(k)));
+    if (!row) break;
+    cur = row.from;
+  }
+  return cur;
+};
+const keyOf = (c, maps) => sha([coreFor(scopedSelf(c.preset)), c.id, c.preset, c.listHash, c.x, c.y, maps.map(m => [m, mapDigest(m)])]);
 const byId = Object.fromEntries(variants.map(c => [c.id, c]));
 let reuse = new Map(), reuseMaps = {};
 if (process.env.XIYOU_STATE_INCREMENTAL !== '0' && fs.existsSync(PREV) && fs.existsSync(PREV_KEYS)) {
@@ -450,6 +490,11 @@ if (process.env.XIYOU_STATE_INCREMENTAL !== '0' && fs.existsSync(PREV) && fs.exi
     }
   } catch (e) { reuse = new Map(); }
 }
+// 审计（XIYOU_STATE_AUDIT=1，同步每日一次）：整份重跑，同时拿每个「本可取回」的变体（结果与读到的地图）与上次逐个比对，有不同就失败（退出码 3），
+// 说明指纹漏了依赖（或影响面声明写错）。
+const AUDIT = process.env.XIYOU_STATE_AUDIT === '1';
+let auditCandidates = null;
+if (AUDIT && reuse.size) { auditCandidates = reuse; reuse = new Map(); }
 let reused = 0, sampled = 0, mismatched = 0;
 const todo = shardOf.filter(c => reuse.has(c.id));
 if (todo.length) {
@@ -463,6 +508,20 @@ if (todo.length) {
   if (mismatched) { console.error('增量自检：' + mismatched + '/' + sampled + ' 个取回的变体与重跑不同，整份重跑'); reuse = new Map(); }
 }
 const results = shardOf.map(c => reuse.has(c.id) ? (reused++, reuse.get(c.id)) : runCase(c));
+if (auditCandidates) {
+  const wrong = [];
+  shardOf.forEach((c, i) => {
+    if (!auditCandidates.has(c.id)) return;
+    const got = [...new Set([...mapsOf[c.id], ...snapshotMaps])].sort((a, b) => a - b);
+    if (JSON.stringify(results[i]) !== JSON.stringify(auditCandidates.get(c.id)) || JSON.stringify(got) !== JSON.stringify(reuseMaps[c.id])) wrong.push(c.id);
+  });
+  if (wrong.length) {
+    console.error('STATE_AUDIT_FAIL ' + JSON.stringify({audited: auditCandidates.size, different: wrong.length, sample: wrong.slice(0, 5),
+      note: '指纹相同的变体这次重跑与上次结果不同：指纹漏了依赖，或探针代码改动的影响面声明写错；先查清再同步'}));
+    process.exit(3);
+  }
+  console.error('STATE_AUDIT_OK ' + JSON.stringify({audited: auditCandidates.size}));
+}
 readSink = null;
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 const setup = SETUP;
@@ -475,7 +534,7 @@ for (const c of shardOf) {
   const m = reuse.has(c.id) ? reuseMaps[c.id] : [...new Set([...mapsOf[c.id], ...snapshotMaps])].sort((a, b) => a - b);
   maps[c.id] = m; keys[c.id] = keyOf(c, m);
 }
-fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({version: 2, coreFingerprint, keys, maps}, shardSpec ? {} : {fileSha: fileSha(OUT)})));
+fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({version: 2, coreFingerprint, keys, maps, reused}, shardSpec ? {} : {fileSha: fileSha(OUT)})));
 console.log(JSON.stringify({version: identity.releaseVersion, cases: results.length, reused, sampled, unfinished: results.filter(x => !x.finished).map(x => x.id),
   errors: results.filter(x => x.errors).map(x => x.id), ms: Date.now() - t0}));
 process.exit(0);

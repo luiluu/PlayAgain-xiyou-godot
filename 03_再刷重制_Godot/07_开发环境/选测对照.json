@@ -154,6 +154,7 @@
     {"match": "03_再刷重制_Godot/03_转换工具/事件空绿扫描.py", "group": "tool_readonly_content"},
     {"match": "03_再刷重制_Godot/03_转换工具/补预设批量.py", "group": "tool_readonly_content"},
     {"match": "03_再刷重制_Godot/03_转换工具/mv_oracle/troop_event_probe.cjs", "group": "troop_probe"},
+    {"match": "03_再刷重制_Godot/03_转换工具/mv_oracle/troop_event_cases.cjs", "group": "troop_probe"},
     {"match": "03_再刷重制_Godot/03_转换工具/*", "group": "converter"},
     {"match": "03_再刷重制_Godot/01_Godot工程/addons/xiyou_export/android_src/*", "group": "export"},
     {"match": "03_再刷重制_Godot/01_Godot工程/addons/xiyou_export/*", "group": "export"},

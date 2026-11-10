@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1] / '03_转换工具'
 spec = importlib.util.spec_from_file_location('xiyou_sync', TOOLS / '同步正式西游.py')
@@ -117,6 +118,191 @@ class TroopShardMergeTests(unittest.TestCase):
         self.assertIn("idx % SHARD.n !== SHARD.i", src)
         self.assertIn("XIYOU_PROBE_FROM", src)
         self.assertIn("XIYOU_COVER 记录的下标是全局的", src)
+
+
+class TroopCaseIncrementalTests(unittest.TestCase):
+    """tools-probe-deps2：troop 探针按用例增量。公共指纹不含用例清单；账与审计时机用假 node 走一遍；
+    真 node 小样本（XIYOU_TROOP_LIMIT）验证取回、抽查不一致整份重跑、审计失败。"""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_core_key_ignores_cases_file_only(self):
+        import sys
+        sys.path.insert(0, str(TOOLS))
+        from incremental_sync import ProbeCache
+        r = Path(self.tmp.name)
+        tools, app, gen = r / 'tools', r / 'app', r / 'gen'
+        oracle = tools / 'mv_oracle'
+        for d in (oracle / '.sandbox', gen / 'oracle', gen / 'maps', app):
+            d.mkdir(parents=True)
+        (app / 's.js').write_text('s'); (tools / 'xiyou_slice.json').write_text('{}')
+        (gen / 'manifest.json').write_text('{}'); (gen / 'slice.json').write_text('{}')
+        (oracle / 'troop_event_probe.cjs').write_text("require('./troop_event_cases.cjs'); require('./hboot.cjs');")
+        (oracle / 'troop_event_cases.cjs').write_text('// cases v1')
+        (oracle / 'hboot.cjs').write_text('// hboot v1')
+        cmd = ['troop_event_probe.cjs']
+        excl = {sync.TROOP_CASES_REL}
+
+        def keys():
+            c = ProbeCache(tools, app, gen)
+            return c.key(cmd), c.key(cmd, exclude=excl, store=False)
+        full0, core0 = keys()
+        self.assertNotEqual(full0, core0)
+        (oracle / 'troop_event_cases.cjs').write_text('// cases v2 加了一例')
+        full1, core1 = keys()
+        self.assertNotEqual(full0, full1)          # 完整键变了：要进探针
+        self.assertEqual(core0, core1)             # 公共指纹没变：别的用例取回
+        (oracle / 'hboot.cjs').write_text('// hboot v2')
+        self.assertNotEqual(core1, keys()[1])      # helper 变了：全部重跑
+        (oracle / 'hboot.cjs').write_text('// hboot v1')
+        (oracle / 'troop_event_probe.cjs').write_text("require('./troop_event_cases.cjs'); require('./hboot.cjs'); // 改了记录")
+        self.assertNotEqual(core1, keys()[1])      # 探针本体变了：全部重跑
+
+    def test_audit_due(self):
+        self.assertTrue(sync.troop_audit_due({}))
+        self.assertTrue(sync.troop_audit_due({'auditedAt': 1000.0}, now=1000.0 + 25 * 3600))
+        self.assertFalse(sync.troop_audit_due({'auditedAt': 1000.0}, now=1000.0 + 23 * 3600))
+        with mock.patch.dict(os.environ, {'XIYOU_TROOP_AUDIT_HOURS': '0'}):
+            self.assertFalse(sync.troop_audit_due({}))
+
+    def run_flow(self, core, published_ok=True, now=None):
+        """假 node：写结果文件和键表（键＝用例序号），记下收到的环境。"""
+        import event_state_shards  # noqa: F401  (sync 里 import)
+        seen = {}
+
+        def fake(cmd, env, weight=None):
+            seen.update(env)
+            out = Path(env.get('XIYOU_TROOP_OUT') or sync.SANDBOX / 'troop_events.json')
+            out.parent.mkdir(parents=True, exist_ok=True)
+            reuse = 'XIYOU_TROOP_PREV' in env and env.get('XIYOU_TROOP_AUDIT') != '1'
+            out.write_text('{"cases":[1,2,3]}')
+            Path(env['XIYOU_TROOP_KEYS_OUT']).write_text(json.dumps(
+                {'version': 1, 'core': env.get('XIYOU_TROOP_CORE'), 'keys': ['a#0', 'b#0', 'c#0'], 'reused': 2 if reuse else 0, 'checked': 1 if reuse else 0}))
+            return subprocess.CompletedProcess(cmd, 0, '', '')
+        gen = Path(self.tmp.name) / 'gen'
+        (gen / 'oracle').mkdir(parents=True, exist_ok=True)
+        env = {'XIYOU_GENERATED': str(gen)}
+        with mock.patch.object(sync, 'run_node', fake):
+            p = sync.run_troop_sharded(['troop_event_probe.cjs'], env, Path(self.tmp.name) / 'box', core)
+        if published_ok:
+            shutil.copy2(sync.SANDBOX / 'troop_events.json', gen / 'oracle/troop_events.json')
+        return p, seen
+
+    def test_ledger_flow(self):
+        sandbox = Path(self.tmp.name) / 'sandbox'
+        sandbox.mkdir()
+        with mock.patch.object(sync, 'SANDBOX', sandbox), mock.patch.object(sync, 'TROOP_KEYS', sandbox / 'troop_event_keys.json'):
+            # 第一次：账上没有 → 整份，记账，auditedAt 现在
+            p1, e1 = self.run_flow('core1')
+            self.assertNotIn('XIYOU_TROOP_PREV', e1)
+            book = json.loads((sandbox / 'troop_event_keys.json').read_text())['entries']
+            self.assertEqual(len(book), 1)
+            self.assertEqual(book[0]['core'], 'core1')
+            self.assertGreater(book[0]['auditedAt'], 0)
+            # 第二次：同公共指纹、审计没到期 → 增量（有上次结果与键表，不审计）
+            p2, e2 = self.run_flow('core1')
+            self.assertIn('XIYOU_TROOP_PREV', e2)
+            self.assertNotEqual(e2.get('XIYOU_TROOP_AUDIT'), '1')
+            self.assertIn('按用例增量', p2.stdout)
+            self.assertIn('取回 2 个', p2.stdout)
+            book = json.loads((sandbox / 'troop_event_keys.json').read_text())['entries']
+            self.assertEqual(len(book), 1)             # 同一份结果文件摘要，不重复
+            # 公共指纹变了 → 整份
+            p3, e3 = self.run_flow('core2')
+            self.assertNotIn('XIYOU_TROOP_PREV', e3)
+            self.assertIn('公共指纹变了', p3.stdout)
+            # 审计到期 → 带审计标记、整份重跑，之后 auditedAt 更新
+            entries = json.loads((sandbox / 'troop_event_keys.json').read_text())
+            entries['entries'][-1]['auditedAt'] = 1.0
+            (sandbox / 'troop_event_keys.json').write_text(json.dumps(entries))
+            p4, e4 = self.run_flow('core2')
+            self.assertEqual(e4.get('XIYOU_TROOP_AUDIT'), '1')
+            self.assertIn('已超 24 小时', p4.stdout)
+            self.assertGreater(json.loads((sandbox / 'troop_event_keys.json').read_text())['entries'][-1]['auditedAt'], 1e9)
+            # 回退开关
+            with mock.patch.dict(os.environ, {'XIYOU_TROOP_INCREMENTAL': '0'}):
+                p5, e5 = self.run_flow('core2')
+            self.assertNotIn('XIYOU_TROOP_PREV', e5)
+
+    def test_ledger_carry_and_absorb(self):
+        import sys
+        sys.path.insert(0, str(TOOLS))
+        import incremental_sync
+        import event_state_shards as ess
+        src, dst = Path(self.tmp.name) / 's', Path(self.tmp.name) / 'd'
+        src.mkdir(); dst.mkdir()
+        f1, f2 = Path(self.tmp.name) / 'k1.json', Path(self.tmp.name) / 'k2.json'
+        f1.write_text(json.dumps({'version': 1, 'core': 'c', 'keys': ['a'], 'fileSha': 'a' * 64}))
+        f2.write_text(json.dumps({'version': 1, 'core': 'c', 'keys': ['b'], 'fileSha': 'b' * 64}))
+        ess.KeyHistory(src / 'troop_event_keys.json', 1).add(f1)
+        self.assertIn('troop_event_keys.json', incremental_sync.carry_cache(src, dst))
+        ess.KeyHistory(src / 'troop_event_keys.json', 1).add(f2)
+        self.assertIn('troop_event_keys-merged', incremental_sync.carry_cache(src, dst))
+        self.assertEqual(len(ess.KeyHistory(dst / 'troop_event_keys.json', 1)._load()), 2)
+        self.assertEqual(ess.KeyHistory(dst / 'troop_event_keys.json', 2)._load(), [])   # 版本不同的不认
+
+    def probe(self, out, limit, **extra):
+        app = TOOLS.parent / '02_内容与素材/冻结正式源/app.nw'
+        if not app.exists():
+            self.skipTest('没有冻结正式源')
+        sandbox = TOOLS / 'mv_oracle/.sandbox'
+        d = sandbox / 'tt_troop_inc'
+        d.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(shutil.rmtree, d, True)
+        env = dict(os.environ, XIYOU_APP=str(app), XIYOU_TROOP_LIMIT=str(limit), XIYOU_TROOP_OUT=str(d / out),
+                   XIYOU_TROOP_CORE='test-core', XIYOU_TROOP_CHECK_EVERY='100')
+        for k in ('XIYOU_TROOP_PREV', 'XIYOU_TROOP_PREV_KEYS', 'XIYOU_TROOP_AUDIT', 'XIYOU_TROOP_INCREMENTAL'):
+            env.pop(k, None)
+        env.update(extra)
+        r = subprocess.run(['node', 'troop_event_probe.cjs'], cwd=TOOLS / 'mv_oracle', env=env, capture_output=True, text=True, timeout=900)
+        return r, d
+
+    def test_real_probe_incremental_mismatch_and_audit(self):
+        r1, d = self.probe('a.json', 5)
+        self.assertEqual(r1.returncode, 0, r1.stderr[-800:])
+        k1 = json.loads((d / 'a.keys.json').read_text())
+        self.assertEqual((len(k1['keys']), k1['reused'], k1['checked']), (5, 0, 0))
+        # 清单变长：前 5 例取回（抽查第 1 个），后 2 例新跑；结果与不取回的整份逐字相同
+        env = {'XIYOU_TROOP_PREV': str(d / 'a.json'), 'XIYOU_TROOP_PREV_KEYS': str(d / 'a.keys.json')}
+        r2, _ = self.probe('b.json', 7, **env)
+        self.assertEqual(r2.returncode, 0, r2.stderr[-800:])
+        k2 = json.loads((d / 'b.keys.json').read_text())
+        self.assertEqual((len(k2['keys']), k2['reused'], k2['checked']), (7, 4, 1))
+        r3, _ = self.probe('c.json', 7)
+        self.assertEqual((d / 'b.json').read_text(), (d / 'c.json').read_text())
+        self.assertEqual(k2['keys'], json.loads((d / 'c.keys.json').read_text())['keys'])
+        # 公共指纹不同：不取回
+        r4, _ = self.probe('e.json', 7, XIYOU_TROOP_CORE='other', **env)
+        self.assertEqual(json.loads((d / 'e.keys.json').read_text())['reused'], 0)
+        # 把上次结果里被抽查的第 0 例改坏：抽查发现不一致，整份重跑，结果仍与整份相同
+        doc = json.loads((d / 'a.json').read_text())
+        doc['cases'][0]['turnCount'] = 99
+        (d / 'bad.json').write_text(json.dumps(doc, indent=1))
+        keys = dict(k1, fileSha=hashlib_sha(d / 'bad.json'))
+        (d / 'bad.keys.json').write_text(json.dumps(keys))
+        r5, _ = self.probe('f.json', 7, XIYOU_TROOP_PREV=str(d / 'bad.json'), XIYOU_TROOP_PREV_KEYS=str(d / 'bad.keys.json'))
+        self.assertEqual(r5.returncode, 0, r5.stderr[-800:])
+        self.assertIn('TROOP_INCREMENTAL_MISMATCH', r5.stderr)
+        self.assertEqual((d / 'f.json').read_text(), (d / 'c.json').read_text())
+        self.assertEqual(json.loads((d / 'f.keys.json').read_text())['reused'], 0)
+        # 审计：改坏的是第 3 例（抽查碰不到的），审计要失败（退出码 3）；没改坏的审计通过
+        doc = json.loads((d / 'a.json').read_text())
+        doc['cases'][3]['turnCount'] = 99
+        (d / 'bad2.json').write_text(json.dumps(doc, indent=1))
+        (d / 'bad2.keys.json').write_text(json.dumps(dict(k1, fileSha=hashlib_sha(d / 'bad2.json'))))
+        r6, _ = self.probe('g.json', 7, XIYOU_TROOP_AUDIT='1', XIYOU_TROOP_PREV=str(d / 'bad2.json'), XIYOU_TROOP_PREV_KEYS=str(d / 'bad2.keys.json'))
+        self.assertEqual(r6.returncode, 3)
+        self.assertIn('TROOP_AUDIT_FAIL', r6.stderr)
+        r7, _ = self.probe('h.json', 7, XIYOU_TROOP_AUDIT='1', **env)
+        self.assertEqual(r7.returncode, 0, r7.stderr[-800:])
+        self.assertIn('TROOP_AUDIT_OK', r7.stderr)
+        self.assertEqual((d / 'h.json').read_text(), (d / 'c.json').read_text())
+
+
+def hashlib_sha(path):
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 class StateShardMergeTests(unittest.TestCase):
@@ -312,6 +498,106 @@ class StateIncrementalTests(unittest.TestCase):
             self.assertFalse(ess.prepare_prev(dict(env), history, published, tmp / 'work'))
 
 
+class StateScopeTests(unittest.TestCase):
+    """tools-probe-deps2 阶段②：事件状态探针本文件的指纹按 probe_change_scope.json 折算、每日审计。临时拷一份探针目录，改一行让文件 SHA 变。"""
+    PREFIXES = ['m163e6p7#e8c', 'ce820#e8c']     # 前者预设只有 variables，后者带 actors
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        if not APP.exists():
+            self.skipTest('没有冻结正式源')
+        self.tools = Path(self.tmp.name) / 'tools'
+        self.mo = self.tools / 'mv_oracle'
+        self.mo.mkdir(parents=True)
+        for f in ORACLE.glob('*.cjs'):
+            shutil.copy2(f, self.mo / f.name)
+        subprocess.run(['cp', '-cR', str(ORACLE / 'node_modules'), str(self.mo / 'node_modules')], check=True)
+        for n in ('xiyou_slice.json', 'event_presets.json'):
+            shutil.copy2(TOOLS / n, self.tools / n)
+        self.probe = self.mo / 'event_state_probe.cjs'
+
+    def sha(self):
+        import hashlib
+        return hashlib.sha256(self.probe.read_bytes()).hexdigest()
+
+    def scope(self, rows):
+        (self.tools / 'probe_change_scope.json').write_text(json.dumps({'changes': rows}))
+
+    def run_probe(self, out, **env):
+        e = dict(os.environ, XIYOU_EVENT_OUT=str(out), XIYOU_APP=str(APP.resolve()), XIYOU_GENERATED=str(TOOLS.parent / '01_Godot工程/modes/xiyou/generated'), **env)
+        for k in ('XIYOU_PROBE_SHARD', 'XIYOU_STATE_PREV', 'XIYOU_STATE_PREV_KEYS', 'XIYOU_STATE_AUDIT'):
+            if k not in env:
+                e.pop(k, None)
+        return subprocess.run(['node', 'event_state_probe.cjs'] + self.PREFIXES, cwd=self.mo, env=e, capture_output=True, text=True)
+
+    def stats(self, r):
+        self.assertEqual(r.returncode, 0, r.stderr[-600:])
+        return json.loads(r.stdout.strip().splitlines()[-1])
+
+    def test_scope_declaration_and_audit(self):
+        sb = self.mo / '.sandbox'
+        sb.mkdir(exist_ok=True)
+        out0 = sb / 'o0.json'
+        first = self.stats(self.run_probe(out0, XIYOU_STATE_INCREMENTAL='0'))
+        n = first['cases']
+        presets = {'%s#%s' % (c['base'], c['tag']): c['preset'] for c in json.loads((self.tools / 'event_presets.json').read_text())['cases']}
+        n_actors = sum('actors' in presets[c['id']] for c in json.loads(out0.read_text())['cases'])
+        self.assertTrue(n >= 3 and 0 < n_actors < n, (n, n_actors))
+        keys0 = sb / 'o0.keys.json'
+        s0 = self.sha()
+        prev = {'XIYOU_STATE_PREV': str(out0), 'XIYOU_STATE_PREV_KEYS': str(keys0)}
+        # 探针没改：全部取回
+        self.assertEqual(self.stats(self.run_probe(sb / 'o1.json', **prev))['reused'], n)
+        # 改一行（文件 SHA 变），没有声明：全部重跑
+        self.probe.write_text(self.probe.read_text() + '\n// 改了一行\n')
+        s1 = self.sha()
+        self.assertNotEqual(s0, s1)
+        self.assertEqual(self.stats(self.run_probe(sb / 'o2.json', **prev))['reused'], 0)
+        # 声明只影响带 nonexistent 键的变体：全部取回，结果逐字相同
+        row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'presetKeys': ['nonexistent'], 'why': '测试'}
+        self.scope([row])
+        r3 = self.stats(self.run_probe(sb / 'o3.json', **prev))
+        self.assertEqual(r3['reused'], n)
+        self.assertEqual((sb / 'o3.json').read_bytes(), out0.read_bytes())
+        # 声明影响 actors：带 actors 的变体重跑，另一个取回
+        self.scope([dict(row, presetKeys=['actors'])])
+        self.assertEqual(self.stats(self.run_probe(sb / 'o4.json', **prev))['reused'], n - n_actors)
+        # 声明只能折算到 to：to 对不上当前文件就不生效
+        self.scope([dict(row, to='0' * 63 + '1')])
+        self.assertEqual(self.stats(self.run_probe(sb / 'o5.json', **prev))['reused'], 0)
+        # 格式错直接报错，不静默忽略
+        self.scope([{'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'why': '缺 presetKeys'}])
+        self.assertNotEqual(self.run_probe(sb / 'o6.json', **prev).returncode, 0)
+        # 审计：把上次结果里第二个变体改坏。不审计时只抽查第一个，发现不了；审计整份重跑并逐个比对，退出码 3
+        self.scope([dict(row, presetKeys=[])])
+        doc = json.loads(out0.read_text())
+        doc['cases'][1]['finished'] = not doc['cases'][1]['finished']
+        bad = sb / 'bad.json'
+        bad.write_text(json.dumps(doc))
+        import hashlib
+        badkeys = json.loads(keys0.read_text())
+        badkeys['fileSha'] = hashlib.sha256(bad.read_bytes()).hexdigest()
+        (sb / 'bad.keys.json').write_text(json.dumps(badkeys))
+        badprev = {'XIYOU_STATE_PREV': str(bad), 'XIYOU_STATE_PREV_KEYS': str(sb / 'bad.keys.json')}
+        self.assertEqual(self.stats(self.run_probe(sb / 'o7.json', **badprev))['reused'], n)    # 抽查碰不到：坏结果被取回
+        r8 = self.run_probe(sb / 'o8.json', XIYOU_STATE_AUDIT='1', **badprev)
+        self.assertEqual(r8.returncode, 3)
+        self.assertIn('STATE_AUDIT_FAIL', r8.stderr)
+        r9 = self.run_probe(sb / 'o9.json', XIYOU_STATE_AUDIT='1', **prev)
+        self.assertEqual(self.stats(r9)['reused'], 0)
+        self.assertIn('STATE_AUDIT_OK', r9.stderr)
+        self.assertEqual((sb / 'o9.json').read_bytes(), out0.read_bytes())
+
+    def test_state_audit_due(self):
+        self.assertFalse(sync.state_audit_due(None))
+        self.assertFalse(sync.state_audit_due({}))                                     # 旧条目没有 auditedAt：不算到期
+        self.assertTrue(sync.state_audit_due({'auditedAt': 1.0}, now=1.0 + 25 * 3600))
+        self.assertFalse(sync.state_audit_due({'auditedAt': 1.0}, now=1.0 + 23 * 3600))
+        with mock.patch.dict(os.environ, {'XIYOU_STATE_AUDIT_HOURS': '0'}):
+            self.assertFalse(sync.state_audit_due({'auditedAt': 1.0}, now=1e12))
+
+
 class ProgressTests(unittest.TestCase):
     """tools83：分段跑事件状态探针期间定期打进度，免得整份重量跑近一小时没输出被会话 idle 超时掐掉。"""
     def setUp(self):
@@ -325,16 +611,18 @@ class ProgressTests(unittest.TestCase):
         buf = io.StringIO()
         with self.ess.Progress(3, interval=0.05, out=buf) as prog:
             # 等到至少 3 拍再收（最多 5 秒）：launchd 后台低优先级调度时 0.3 秒固定等待只出 2 拍（总装三十一 11-07 复现）
-            deadline = time.monotonic() + 5
+            # 只设上限（防死等），不靠墙钟断言：等到 3 拍为止，高负载下慢一点也只是多等
+            deadline = time.monotonic() + 60
             while buf.getvalue().count('还在跑') < 3 and time.monotonic() < deadline:
                 time.sleep(0.05)
+            before = buf.getvalue().splitlines()
             prog.done(0)
         lines = buf.getvalue().splitlines()
         self.assertIn('开始，3 段并行', lines[0])
-        beats = [l for l in lines if '还在跑' in l]
+        beats = [l for l in before if '还在跑' in l]       # done 之前的心跳
         self.assertGreaterEqual(len(beats), 3, lines)
         self.assertTrue(all('0/3 段完成' in l for l in beats), beats)
-        self.assertIn('1/3 段完成（第 1 段刚结束）', lines[-1])
+        self.assertTrue(any('1/3 段完成（第 1 段刚结束）' in l for l in lines), lines)
         n = len(lines)
         time.sleep(0.2)
         self.assertEqual(len(buf.getvalue().splitlines()), n, '退出后心跳线程要停')
@@ -365,15 +653,20 @@ class ProgressTests(unittest.TestCase):
         from unittest import mock
 
         def launch(e, label):
-            time.sleep(0.25)
+            # 等到心跳线程至少打出一拍再结束（开了心跳时），不靠固定睡眠
+            deadline = time.monotonic() + 60
+            while os.environ.get('XIYOU_STATE_PROGRESS_SECS') != '0' and '还在跑' not in cur[0].getvalue() and time.monotonic() < deadline:
+                time.sleep(0.02)
             part = {'sourceIdentity': 's', 'setup': {}, 'cases': [{'id': '%s-%d' % (label[-3:].strip('/'), k)} for k in range(2)]}
             Path(e['XIYOU_EVENT_OUT']).write_text(json.dumps(part))
             return subprocess.CompletedProcess(['fake'], 0, '', '')
         results = []
+        cur = [io.StringIO()]
         for secs in ('0.05', '0'):
             with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': secs}):
                 tmp = Path(tmp)
                 buf = io.StringIO()
+                cur[0] = buf
                 with contextlib.redirect_stdout(buf):
                     r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 2, launch)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
@@ -389,12 +682,17 @@ class ProgressTests(unittest.TestCase):
         import contextlib, io, time
         from unittest import mock
 
+        cur = [io.StringIO()]
+
         def launch(e, label):
-            time.sleep(0.2)
+            deadline = time.monotonic() + 60
+            while '开始' not in cur[0].getvalue() and time.monotonic() < deadline:
+                time.sleep(0.02)
             return subprocess.CompletedProcess(['fake'], 0, 'ok', '')
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {'XIYOU_STATE_PROGRESS_SECS': '0.05'}):
             tmp = Path(tmp)
             buf = io.StringIO()
+            cur[0] = buf
             with contextlib.redirect_stdout(buf):
                 r = self.ess.run_sharded(dict(os.environ), tmp, tmp / 'work', tmp / 'out.json', tmp / 'keys.json', 1, launch)
         self.assertEqual(r.stdout, 'ok')
