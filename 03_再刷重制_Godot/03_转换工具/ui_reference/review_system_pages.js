@@ -923,6 +923,60 @@
         }
     };
 
+    // 人物图鉴（同 tests/xiyou_actor_book 的 _flow）：目录第 1 项、167 号以后各立绘、第 1 项技能详情（第 0 行）
+    function bookPick(sid) {
+        var s = scene(), iw = s._indexWindow, i = sid === 1 ? 1 : iw._list.findIndex(function (a) { return a && a.actorId && a.actorId() === sid; });
+        if (i < 0) throw new Error('图鉴目录没有 ' + sid);
+        iw.select(i); s._windowIdx = -1; s.update();
+    }
+    var bookShots = {actor_book_1: async function () { bookPick(1); }};
+    [167, 168, 171, 173, 174, 175, 176, 177, 178, 179].forEach(function (sid) { bookShots['actor_book_' + sid] = async function () { bookPick(sid); }; });
+    bookShots.actor_book_1_skills = async function () { bookPick(1); await settle(); scene().openActorSkillDetails(); };
+    P.px3_actor_book = {
+        setup: async function () { await push(Scene_ActorBook); },
+        shots: bookShots
+    };
+
+    // 成就（同 tests/xiyou_achievement 的 _ui）：全局有 1、2（无时间）、22（本局无）、51，本局有 1、51；
+    // 挑战类 → 事件类列表第 7 行 → 本局再得 60（弹窗推 90 帧）
+    P.px3_achievement = {
+        setup: async function () {
+            var T = '2026年1月2日 3:4:5';
+            ConfigManager.SAchievementS = {1: true, '1Time': T, 2: true, 22: true, '22Time': T, 51: true, '51Time': T};
+            $gameParty.SAchievementS = {1: true, 51: true};
+            await push(Scene_AchievementBook);
+        },
+        shots: {
+            achievement_01_challenge: async function () {},
+            achievement_02_event_list: async function () {
+                var s = scene();
+                s._indexTypeWindow.select(1); await frames(2); s.onRangeOk(); await frames(2); s._indexWindow.select(7);
+            },
+            achievement_03_popup: async function () { Star.AchievementSystem.GetAcReward(60); await frames(90); }
+        }
+    };
+
+    // 设置（同 tests/xiyou_options_basic／_misc 的截图点；配置值照 Godot 截图那一刻：BGM 80、SE 40、只遇稀有开）：
+    // 第 11 行 → 「步步遇敌」行 → 屏蔽掉落子页第 0 行确定（开）
+    function optSelect(sym) { var w = scene()._optionsWindow, i = w.findSymbol(sym); w.select(i); }
+    P.px3_options = {
+        setup: async function () {
+            ConfigManager.bgmVolume = 80; ConfigManager.seVolume = 40; ConfigManager.Boss = true;
+            await push(Scene_Options);
+        },
+        shots: {
+            '设置音量': async function () { scene()._optionsWindow.select(11); },
+            '杂项开关': async function () { optSelect('yd100'); },
+            '屏蔽掉落': async function () {
+                optSelect('pingbiDrop'); scene()._optionsWindow.processOk();
+                await wait(function () { return scene().constructor.name === 'Scene_PingbiMenu' && SceneManager._sceneStarted; });
+                await settle();
+                var s = scene(), w = s._commandWindow || s._pingbiWindow || s._windowLayer.children.filter(function (c) { return c instanceof Window_Selectable; })[0];
+                w.select(0); w.processOk();
+            }
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {
