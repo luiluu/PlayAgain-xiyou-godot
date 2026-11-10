@@ -58,6 +58,31 @@ VERSION_MARKER = 'dev.' + '待定'
 OPT_SKIP = (str(ENV) + '/', str(TOOLS) + '/')
 OPT_TOKEN = re.compile('O-' + '待定' + r'(?:-\d+)?')
 OPT_NUMBERED = re.compile(r'O-(\d{3})(?!\d)')
+# 草稿表行首格除了纯占位（O-待定、O-待定-1），还认带名字的：O-待定·名字、O-待定（名字）、O-待定(名字)，每行各发一号
+# （审查 74 P2-2：interp8「O-待定·参照宿主中文路径读文件」整行没发号、没进优化登记）。XIYOU_OPT_NAMED_ROWS=0 回到只认纯占位。
+OPT_ROW_CELL = re.compile(OPT_TOKEN.pattern + r'(?:·[^|]+|[（(][^|]+[）)])?')
+OPT_NAME_END = set('|｜，,。、；;：:（）()[]【】「」`*"\'')
+
+
+def named_rows_on():
+    return os.environ.get('XIYOU_OPT_NAMED_ROWS', '1') != '0'
+
+
+def draft_cell(row):
+    """草稿表行的首格若是认得的占位写法，返回它（去空白）；认不出返回 None。"""
+    cell = row.split('|')[1].strip()
+    m = (OPT_ROW_CELL if named_rows_on() else OPT_TOKEN).fullmatch(cell)
+    return m.group(0) if m else None
+
+
+def tok_pattern(tok):
+    """换号时匹配一个占位的正则：纯占位不能吃掉 O-待定-1 的前半或 O-待定·名字 的前半；带名字的必须到名字边界
+    （「O-待定·A」不吃「O-待定·AB」），括号写法以右括号为界。"""
+    if OPT_TOKEN.fullmatch(tok):
+        return re.escape(tok) + r'(?!-?\d|·)'
+    if tok[-1] in '）)':
+        return re.escape(tok)
+    return re.escape(tok) + r'(?=$|\s|[' + re.escape(''.join(sorted(OPT_NAME_END))) + '])'
 # 换号只认本条交付单里的占位，和别的文件里车道自己新增的行（按 diff 新增行判）；登记文件（交接板、归档、变更记录）永远不扫：
 # 它们的车道表、说明里常原样写着占位字样（唐僧 10-30 合白龙期一时被整片换成 O-122）。
 OPT_REGISTERS = ['00_项目管理/交接板.md', '00_项目管理/交接板归档.md', '00_项目管理/变更记录.md']
@@ -810,7 +835,7 @@ def opt_draft_rows(text):
     m = OPT_DRAFT_HEAD.search(text)
     if not m:
         return [x.strip() for x in text.splitlines()
-                if re.match(r'^\|\s*O-', x) and len(x.strip().split('|')) == 10 and OPT_TOKEN.fullmatch(x.split('|')[1].strip())]
+                if re.match(r'^\|\s*O-', x) and len(x.strip().split('|')) == 10 and draft_cell(x.strip())]
     rest = text[m.end():]
     nxt = re.search(r'^## ', rest, re.M)
     block = rest[:nxt.start()] if nxt else rest
@@ -936,6 +961,10 @@ def check_opt_drafts(text, name, registry=''):
     if items:
         raise RuntimeError('交付单 %s 的「## 优化登记草稿」是列表不是表格（%s…）：改成表格行（表头照优化登记.md，8 列，首格写占位），合并工具只认表行'
                            % (name, items[0][:40]))
+    odd = [x.split('|')[1].strip() for x in opt_draft_rows(text) if draft_cell(x) is None and OPT_TOKEN.match(x.split('|')[1].strip())]
+    if odd:
+        raise RuntimeError('交付单 %s 的优化登记草稿有认不出的首格写法（%s）：首格写 O-待定、O-待定-1、O-待定·名字 或 O-待定（名字），每行一个号'
+                           % (name, '、'.join(dict.fromkeys(odd))))
     if (OPT_TOKEN.search(text) and not opt_draft_rows(text) and not OPT_NONE.search(text) and not opt_section_none(text)
             and not opt_tokens_registered(text, registry)):
         raise RuntimeError('交付单 %s 提到优化号占位却没有「## 优化登记草稿」表行：车道补一张表（表头照优化登记.md，首格写占位），'
@@ -962,9 +991,9 @@ def opt_row_entries(texts):
     out = []
     for t in texts:
         for row in opt_draft_rows(t):
-            m = OPT_TOKEN.fullmatch(row.split('|')[1].strip())
-            if m:
-                out.append((m.group(0), row, opt_row_keys(row)))
+            tok = draft_cell(row)
+            if tok:
+                out.append((tok, row, opt_row_keys(row)))
     return out
 
 
@@ -1009,6 +1038,9 @@ def orphan_problem(rel, n, line, tok, cand, rows):
 
 def orphan_tokens(line, known):
     # 「O-待定·名字」是直接写进优化登记表的那种，不按草稿表换号（--lane 按登记表放行，tools-merge-args4）
+    # 带名字的草稿首格（O-待定·名字）已由 substitute_opt 换号，先抹掉再找孤儿
+    for k in sorted((k for k in known if not OPT_TOKEN.fullmatch(k)), key=len, reverse=True):
+        line = line.replace(k, '')
     return [m.group(0) for m in OPT_TOKEN.finditer(line) if m.group(0) not in known and not line.startswith('·', m.end())]
 
 
@@ -1039,7 +1071,7 @@ def substitute_ambiguous(line, state, after=''):
     """同一个占位在本批有几条不同草稿时，按行对号：行里出现哪条草稿独有的识别键就换哪条的号；本行没有就看紧跟的两行
     （after：代码注释写在开关声明上一行，「## 优化 O-待定：…」下一行才是 static var FIT_ROWS，tools39）；对不上或对上几条就停下，让总装手改。"""
     for tok, entries in state.get('optEntries', {}).items():
-        pat = re.compile(re.escape(tok) + r'(?!-?\d|·)')
+        pat = re.compile(tok_pattern(tok))
         if not pat.search(line):
             continue
         hit = [e for e in entries if line.strip() == e['row']]
@@ -1164,12 +1196,35 @@ def assign_opt_numbers(root, state):
     # 交付单正文里讲占位写法本身的字样不是优化（11-01 tools32 一句「都写 O-待定 时」并入变更记录被换成 O-139，tools40）：
     # 只给草稿表行首格的占位发号；车道代码／文档新增行里的占位没有草稿表行就不发号、原样留着，准备阶段提示
     # （合 review-21 时报告正文「建议登记一条 O-待定」被换成 O-143，登记里没有那行、号空了，审查第 23 期 P3-1，tools42）
-    real = {m.group(0) for t in texts for row in opt_draft_rows(t) for m in [OPT_TOKEN.fullmatch(row.split('|')[1].strip())] if m}
+    # 首格带名字（O-待定·名字／O-待定（名字））的草稿行也各发一号；已经直接写进优化登记表的具名行归 number_named，这里跳过。
+    # 首格以 O-待定 开头却认不出写法的行：停下，不静默跳过（审查 74 P2-2）
+    reg_file = root / OPT_REGISTRY
+    registered = set(registered_named(reg_file.read_text(errors='replace') if reg_file.is_file() else ''))
+    real, named, bad, row_order = set(), [], [], []
+    for t in texts:
+        for row in opt_draft_rows(t):
+            tok = draft_cell(row)
+            if tok and tok not in row_order:
+                row_order.append(tok)
+            if tok is None:
+                cell = row.split('|')[1].strip()
+                if OPT_TOKEN.match(cell):
+                    bad.append(cell)
+            elif OPT_TOKEN.fullmatch(tok):
+                real.add(tok)
+            elif tok not in registered and tok not in named:
+                named.append(tok)
+    if bad:
+        raise RuntimeError('交付单优化登记草稿里有认不出的首格写法（%s）：首格写 O-待定、O-待定-1、O-待定·名字 或 O-待定（名字），每行一个号，改好再重跑'
+                           % '、'.join(dict.fromkeys(bad)))
     texts += lane
     for t in texts:
         for m in OPT_TOKEN.finditer(t):
             if m.group(0) in real and m.group(0) not in tokens:
                 tokens.append(m.group(0))
+    tokens += [x for x in named if x not in tokens]
+    if named:       # 纯占位与具名混写时按草稿表行的先后发号（只有纯占位时仍是正文里第一次出现的顺序）
+        tokens.sort(key=lambda x: row_order.index(x) if x in row_order else len(row_order))
     if not tokens:
         return {}
     # 同一占位在草稿表里对应几条不同优化：每条一个号，不再并成同一个
@@ -1233,7 +1288,7 @@ def substitute_orphans(line, rel, state, after, n):
         hit, cand = pick_by_location(line, rel, rows, after)
         if hit is None:
             raise RuntimeError(orphan_problem(rel, n, line, tok, cand, rows))
-        line = re.sub(re.escape(tok) + r'(?!-?\d|·)', hit['number'], line)
+        line = re.sub(tok_pattern(tok), hit['number'], line)
     return line
 
 
@@ -1268,9 +1323,9 @@ def substitute_opt(text, state, after=''):
         lines = text.split('\n')
         tail = lambda i: '\n'.join(lines[i + 1:i + 3]) if i + 1 < len(lines) else after
         text = '\n'.join(substitute_ambiguous(x, state, tail(i)) for i, x in enumerate(lines))
-    for tok, num in state.get('optNumbers', {}).items():
-        # 只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
-        text = re.sub(re.escape(tok) + r'(?!-?\d|·)', num, text)
+    # 长的先换（「O-待定·AB」先于「O-待定·A」），只换整个占位：没发号的 O-待定-1 不能被 O-待定 的号换掉前半
+    for tok, num in sorted(state.get('optNumbers', {}).items(), key=lambda kv: -len(kv[0])):
+        text = re.sub(tok_pattern(tok), num, text)
     return text
 
 
