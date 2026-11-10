@@ -125,6 +125,8 @@ func _ready() -> void:
 	for w in [cat_win, list_win, actor_win, bulk_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
+	# 卡片不盖信息窗首行（名字行）：信息窗 y＋MV 标准内边距 18＋一行＝原版说明窗 y 226，再让出品质框外扩 10，本体 236（O-251，XHelpCard.NEAR_BELOW_HEADER）
+	help_card.near_min_y = INFO_RECT.position.y + 18.0 + LH + 10.0
 	add_child(help_card)
 	if DETAIL_V043:
 		gear_detail = XGearDetail.new(self, INFO_RECT, op, ["装备详情", "插槽与镶嵌"], [0, 2])

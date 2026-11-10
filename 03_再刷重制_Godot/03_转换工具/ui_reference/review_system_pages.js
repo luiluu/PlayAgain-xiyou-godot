@@ -840,6 +840,48 @@
         }
     };
 
+    // 界面逐页像素／矩形对照（白龙 ui-pixel1）：主菜单、物品、装备、状态、商店五页，新局原样（不另给东西，物品页另给 732 ×3），
+    // Godot 一侧 tests/xiyou_ui_pixel -- --out=<目录> 出同名截图与窗口矩形，ui_pixel_compare.py 逐个比矩形、出像素差热图。
+    // 头像先载好：直接 push 装备／状态页时头像图还没进缓存，Window_SkillStatus／Window_Status 画的是空（实际游戏从主菜单进，头像已载）
+    async function faces() { $gameParty.members().forEach(function (a) { ImageManager.loadFace(a.faceName()); }); await settle(); }
+    P.px_menu = {
+        setup: async function () { await push(Scene_Menu); },
+        shots: {
+            px_menu_0_command: async function () {},
+            px_menu_1_party: async function () { var w = scene()._commandWindow; w.selectSymbol('skill'); w.processOk(); }
+        }
+    };
+    P.px_item = {
+        setup: async function () { $gameParty.gainItem($dataItems[732], 3); await push(Scene_Item); },
+        shots: {
+            px_item_0_category: async function () {},
+            px_item_1_list: async function () { var s = scene(); s._categoryWindow.selectSymbol('item'); s._categoryWindow.update(); s.onCategoryOk(); }
+        }
+    };
+    P.px_equip = {
+        setup: async function () { await faces(); await push(Scene_Equip); },
+        shots: {
+            px_equip_0_command: async function () {},
+            px_equip_1_slot: async function () { var s = scene(); s._commandWindow.selectSymbol('equip'); s._commandWindow.processOk(); },
+            px_equip_2_list: async function () { scene()._slotWindow.processOk(); }
+        }
+    };
+    P.px_status = {
+        setup: async function () { await faces(); await push(Scene_Status); },
+        shots: { px_status_0: async function () {} }
+    };
+    P.px_shop = {
+        setup: async function () {
+            $gameParty.gainGold(50000);
+            await push(Scene_Shop, function () { SceneManager.prepareNextScene([[0, 732, 0, 0], [1, 1, 0, 0], [2, 4375, 0, 0]], false); });
+        },
+        shots: {
+            px_shop_0_command: async function () {},
+            px_shop_1_buy: async function () { var s = scene(); s._commandWindow.selectSymbol('buy'); s._commandWindow.processOk(); },
+            px_shop_2_sell_category: async function () { var s = scene(); s._buyWindow.deactivate(); s.onBuyCancel(); s._commandWindow.selectSymbol('sell'); s._commandWindow.processOk(); }
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {

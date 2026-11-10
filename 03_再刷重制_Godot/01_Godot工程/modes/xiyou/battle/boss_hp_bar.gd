@@ -433,8 +433,17 @@ static func digit_frame(ch: String) -> int:
 	return maxi(0, int(ch)) if ch.is_valid_int() else 0
 
 
+## 名字颜色：EnemyNameColorByDifficulty 改了 Bitmap.drawText，与数据库敌人原名相同的文字换成难度色（普通天蓝等）；
+## refresh_name 画的正是 enemy().name，所以 Boss 血条上的名字也是难度色（原版读数：难度 3 画成 #4499ff；
+## 重制原来一直白字，八戒 rules-battle-pixel 截图对照查出）。
+func name_color() -> Color:
+	if battler == null or not ("difficulty_id" in battler):
+		return Color.WHITE
+	return XEnemy.name_color(_name_text, int(battler.difficulty_id), Color.WHITE)
+
+
 func _paint_name(c: XMVCanvas) -> void:
-	c.text(_name_text, 0, 0, 300, "left", Color.WHITE, int(_num("boss名字体大小", 18.0)), 48)
+	c.text(_name_text, 0, 0, 300, "left", name_color(), int(_num("boss名字体大小", 18.0)), 48)
 
 
 func _draw() -> void:
@@ -455,7 +464,9 @@ func _draw() -> void:
 		var fx := flow if flowing else 0.0
 		var red_w := seg * hp_red / mhp
 		if red_w > 0.0:
-			draw_texture_rect_region(b, Rect2(origin + Vector2(0, half), Vector2(red_w, half)), Rect2(fx, half, red_w, half), col)
+			# 红条与蓝条同一坐标（原版 _hp_meter_red.y＝_hp_meter_blue.y），只是取图的下半；蓝条盖在上面，掉血后才露出右边一截。
+			# 重制原来画到下一行（y＋半高），满血也多一道紫红带子（八戒 rules-battle-pixel 截图对照）。
+			draw_texture_rect_region(b, Rect2(origin, Vector2(red_w, half)), Rect2(fx, half, red_w, half), col)
 		var blue_w := seg * float(r.hp) / mhp
 		if blue_w > 0.0:
 			draw_texture_rect_region(b, Rect2(origin, Vector2(blue_w, half)), Rect2(fx, 0, blue_w, half), col)

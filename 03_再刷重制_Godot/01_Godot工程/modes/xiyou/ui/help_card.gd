@@ -47,6 +47,12 @@ const BACK := Color8(0x16, 0x1c, 0x25)
 static var MIN_FONT := 16
 ## 优化 O-008：true 贴着选中行（place_near）；false 照原版位置公式（place_original）。
 static var PLACE_NEAR := true
+## 优化 O-251（白龙 ui-pixel1）：O-008 贴行放时，卡片本体不高于 near_min_y（由页面设成右侧信息窗／状态窗首行之下）。
+## 物品页、商店选第一行时，O-008 把卡贴到行顶 y≈186，盖住信息窗的名字行、商店状态窗的「持有数」；原版卡在首行之下（本体 y 236／237）。
+## false 回到不限（卡贴行顶）。
+static var NEAR_BELOW_HEADER := true
+## 贴行放（O-008）时卡片本体的最高位置（0＝不限）；只在 NEAR_BELOW_HEADER 为真时生效
+var near_min_y := 0.0
 ## 技能书附卡之间的间距：原版 10（品质框外扩 10，相邻卡的框会叠在一起）；O-008 留出两边的框再加 4。
 const EXTRA_GAP_ORIGINAL := 10.0
 const EXTRA_GAP_NEAR := 24.0
@@ -1356,7 +1362,8 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)
 			if p.x + w > area.end.x:
 				p.x = anchor.position.x - gap - w
 	p.x = clampf(p.x, area.position.x, area.end.x - w)
-	p.y = clampf(p.y, area.position.y, area.end.y - h)
+	var top := maxf(area.position.y, near_min_y) if NEAR_BELOW_HEADER else area.position.y
+	p.y = clampf(p.y, minf(top, area.end.y - h), area.end.y - h)
 	position = p.round()
 	_layout_extras()
 
