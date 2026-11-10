@@ -16,11 +16,15 @@ from pathlib import Path
 
 THRESH = 32
 
+OVERLAY_ORIG = {'Window_AchievementPopup'}
+
 # 已认定的矩形差（白龙 ui-pixel2）：完全相同配不上、但原因已查清的，按「原版窗口类型、Godot 类型、四边差」认定成对，
 # 报表里单列「已认定」并写原因；差值或类型对不上的照旧列为没配上（新的真差不会被吞掉）。
 KNOWN = [
     ('Sprite_ItemHelp', 'XHelpCard', (-6, 0, 0, 2), '说明卡本体：O-008 贴行放（x−6）、O-007 最小字号（高＋2）'),
     ('Window_ItemHelp', 'XHelpCardFrame', (-6, 0, 0, 2), '说明卡品质框（本体外扩 10）：随本体 O-008／O-007'),
+    ('Sprite_ItemHelp', 'XHelpCard', (0, 0, 0, 1), '说明卡本体：O-007 最小字号（技能页万剑诀 15 号说明提到 16，高＋1；MIN_FONT=0 时 247 与原版同）'),
+    ('Window_ItemHelp', 'XHelpCardFrame', (0, 0, 0, 1), '说明卡品质框：随本体 O-007'),
     ('JAH_Window_Status_Params', 'XMVWindow', (0, -36, 0, 36), '状态页参数窗：战力先藏（Kyo 11-08），战力条 36 像素让出；开战力时 (0,108,1280,612) 与原版同'),
 ]
 
@@ -153,15 +157,24 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     report = {}
     for oj in sorted({q for g in globs for q in od.glob(g + '.json')}):
-        name, gj = oj.stem, gd / (oj.stem + '.json')
+        # Godot 读数：各专项 --out 写的 <名>.win.json（tests/ui_pixel_dump.gd）优先，xiyou_ui_pixel 写 <名>.json
+        name = oj.stem
+        gj = gd / (name + '.win.json') if (gd / (name + '.win.json')).exists() else gd / (name + '.json')
         if not gj.exists():
             report[name] = {'missing_godot': True}
             continue
         orig, god = windows(oj, False), windows(gj, True)
+        # 成就弹窗／提示条：两边弹出、消失的帧不同（时序噪声），单列不算差
+        overlay = [dict(g, side='godot') for g in god if g['type'] == 'Overlay'] + \
+            [dict(o, side='orig') for o in orig if o['type'] in OVERLAY_ORIG]
+        god = [g for g in god if g['type'] != 'Overlay']
+        orig = [o for o in orig if o['type'] not in OVERLAY_ORIG]
         pairs, known, o_left, g_left = match(orig, god)
         whole, per = pixel(od / (name + '.png'), gd / (name + '.png'), out / (name + '_heat.png'), orig)
-        report[name] = {'matched': pairs, 'known': known, 'orig_only': o_left, 'godot_only': g_left, 'pixel': whole, 'per_window': per}
+        report[name] = {'matched': pairs, 'known': known, 'overlay': overlay, 'orig_only': o_left, 'godot_only': g_left, 'pixel': whole, 'per_window': per}
         print(f"{name}: 矩形配上 {len(pairs)}，已认定 {len(known)}，原版多 {len(o_left)}，Godot 多 {len(g_left)}；整页平均差 {whole['mean']}、差>32 占 {whole['over32']:.1%}")
+        for g in overlay:
+            print(f"   {'Godot' if g['side'] == 'godot' else '原版'} 弹窗／提示条 {g['rect']}（时序噪声，不算差）")
         for k in known:
             print(f"   已认定 {k[0]} {k[2]} ↔ {k[1]} {k[3]}：{k[4]}")
         for o in o_left:

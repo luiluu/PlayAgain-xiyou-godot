@@ -61,6 +61,7 @@ var skill_win: XMVWindow
 var bottom_win: XMVWindow
 var team_win: XMVWindow
 var help_card: XHelpCard
+static var SKILL_CARD_NO_FRAME := true
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _sprite_sv := false
@@ -90,6 +91,9 @@ func _ready() -> void:
 	feed_win.openness = 0
 	syn_win.openness = 0
 	help_card = XHelpCard.new()
+	# 原版 Window_PetSkillList.updateHelp 先 setItem（ItemQuality 建品质框）再 hide()（hide 会拆掉品质框）、visible=true，
+	# 宠物技能卡实际不带品质框（v0.62.12 实跑 pet_1_skills 只有 Sprite_ItemHelp）。照原版；关掉＝与物品页一样带框（白龙 ui-pixel2）
+	help_card.show_frame = not SKILL_CARD_NO_FRAME
 	add_child(help_card)
 	help_card.show_for({})
 	_select_pet()

@@ -36,6 +36,7 @@ func shot(name: String) -> void:
 	await frames(3)
 	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -174,6 +175,14 @@ func _run() -> void:
 	var got_names := ids.slice(0, want_names.size()).map(func(i): return str(XDB.rec("Skills", i).name))
 	check("skill_list", page.mode == "skills" and got_names == want_names
 		and page.help_card.visible and page.help_card.position == Vector2(float(ref.help[0]), float(ref.help[1])), [ids, want_names, page.help_card.position])
+	# 原版 updateHelp 的 hide() 拆掉了品质框：宠物技能卡不带框（白龙 ui-pixel2）；回退支带框
+	check("skill_card_no_frame", not page.help_card.frame.is_visible_in_tree(), page.help_card.frame.visible)
+	XPetScene.SKILL_CARD_NO_FRAME = false
+	var framed := XPetScene.new()
+	add_child(framed)
+	check("skill_card_frame_rollback", framed.help_card.show_frame)
+	framed.queue_free()
+	XPetScene.SKILL_CARD_NO_FRAME = true
 	page.help_card.min_font = XHelpCard.MIN_FONT
 	page.cancel()
 	check("skill_cancel", page.mode == "bottom" and not page.help_card.visible)
