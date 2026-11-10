@@ -934,7 +934,7 @@ func defeat_text() -> String:
 ## - 我方全灭 → processDefeat（被击败消息、endBattle(2)）：301 分支结果改写成 2；但 _escaped 已置，updateBattleEnd 走「逃跑」那支，
 ##   预约 1308、不复活、不去结束画面（XMapScene.last_battle_escaped）
 ## - 敌群全灭 → processVictory（结算、奖励、endBattle(0)），结果 0
-## 原版这两种 endBattle 要跑两遍（先 1 后 2／0，各模块的 endBattle 包装也跑两遍）；重制只按最后的结果跑一遍（O-待定，
+## 原版这两种 endBattle 要跑两遍（先 1 后 2／0，各模块的 endBattle 包装也跑两遍）；重制只按最后的结果跑一遍（O-257，
 ## ABORT_DOUBLE_END 打开时先补跑一遍 end_battle(1)）
 static var ABORT_DOUBLE_END := false
 

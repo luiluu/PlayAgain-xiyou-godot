@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.441",
-  "sequence": 441,
-  "next": "dev.442",
-  "nextSequence": 442,
+  "current": "dev.442",
+  "sequence": 442,
+  "next": "dev.443",
+  "nextSequence": 443,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "ui-pixel4",
+  "currentChange": "rules-mira-raven2",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
