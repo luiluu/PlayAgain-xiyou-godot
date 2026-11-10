@@ -39,6 +39,8 @@ const KNOWN_DIFF := {}
 @export var part := 0
 @export var parts := 4
 @export var oracle_half := false
+## rules-gaps9：战斗专用公共事件的 skillCE 用例（381 例）单独两个场景跑（_sce／_sce_b，parts＝2），原来五个场景跳过它们，免得单场景逼近上限
+@export var skill_ce_only := false
 ## 敌群 462（金角、银角）：强制 8111（全体友方，必中）给银角附加轮回困难 1460——必中技能附加状态不乘状态有效度与幸运差。
 ## 三十层起变身例：336 变身后紧接的 334 按变身前的生命上限回满（冻结源能力值缓存）；334 保留 <Permanent> 状态（686 天道*祝福）。
 
@@ -49,6 +51,8 @@ var coverage_out := ""
 ## 本机排查用：环境变量 XIYOU_TROOP_ONLY=2002,2029 只跑这些敌群的用例（断言少了，别拿来交付）
 var _only_troops: Array = Array(OS.get_environment("XIYOU_TROOP_ONLY").split(",", false)).map(func(x): return int(x))
 var coverage_by_case := {}
+## 同上，XIYOU_CE_ONLY=1517,1501 只跑这些战斗专用公共事件的 skillCE 用例（rules-gaps9）
+var _only_ce: Array = Array(OS.get_environment("XIYOU_CE_ONLY").split(",", false)).map(func(x): return int(x))
 
 
 func _ready() -> void:
@@ -152,14 +156,18 @@ func _run() -> void:
 		return finish()
 	var manifest: Dictionary = XDB.load_json("manifest.json")
 	var same: bool = ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs
-	if part == 0 or not same:  # 其他份只在不同源时补一项失败
+	if (part == 0 and not skill_ce_only) or not same:  # 其他份只在不同源时补一项失败
 		check("same_source", same)
 	# 事件里的随机变量（122 随机）同参照固定 Math.random＝0.5：Map055 引路人 794 第 3 页第 1 回合按随机变量 4 选强制 6063／6064／1393＋6065
 	# （参照取 2 → 6064）；其余守层者的随机强制（变量 844）在第 3 回合起，两回合内用不到
 	MVInterpreter.fixed_random = 0.5
 	for k in range(part, ref.cases.size(), parts):
 		var c: Dictionary = ref.cases[k]
+		if c.has("skillCE") != skill_ce_only:
+			continue
 		if _only_troops != [] and not _only_troops.has(int(c.troop)):
+			continue
+		if _only_ce != [] and not _only_ce.has(int(c.get("skillCE", 0))):
 			continue
 		if coverage_out != "":
 			XBattleEventRunner.COVER = {}
@@ -170,7 +178,7 @@ func _run() -> void:
 		_case_dispatch(c)
 	if _seen739:
 		check("troop739.extra_hit_exists", _extra_hits > 0, _extra_hits)
-	if part == 0:
+	if part == 0 and not skill_ce_only:
 		_unit_checks()
 	if coverage_out != "":
 		var all := {}
@@ -186,6 +194,9 @@ func _run() -> void:
 
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
+	if c.has("skillCE"):
+		_skill_ce_case(c)
+		return
 	if c.has("party"):
 		_party_case(c)
 		return
@@ -241,6 +252,104 @@ func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
 	check(name + ".t1_game_over", logic.game_over == over and (not over or (logic.is_lost() and at >= 0 and not after_in)),
 		[logic.game_over, over, logic.is_lost(), at, after_in])
 	check(name + ".t1_skipped", logic.troop_event_skipped.is_empty(), logic.troop_event_skipped)
+
+
+## rules-gaps9：只在战斗里跑的公共事件（参照 skillCE，troop_event_probe SKILL_CE）：敌群 2、队伍照参照建（被拦的高号角色直接写进队伍），
+## 学会／忘掉参照 actorSkills，使用者用起点技能（或物品）打敌人 0，再跑行动后的事件。规则流全取 0.5（同参照 Math.random）。
+## 比：行动后预约的公共事件、事件里的强制行动［行动者, 技能］（参照记换前的技能，按同样的 0.5 过一次 change_to）、
+## 事件之后 CE 里 313／333 提到的状态在谁身上（参照 snap）、没有跳过的指令。切片里没有起点或公共事件的例子跳过（_skill_ce_missing 计数）。
+var _skill_ce_missing := 0
+
+func _skill_ce_case(c: Dictionary) -> void:
+	var name := "troop2.%s" % str(c.variant)
+	if _only_ce != []:
+		print("CASE ", name, " ", Time.get_ticks_msec())
+	var use: Array = c.use
+	var item := XDB.rec("Items" if str(use[0]) == "item" else "Skills", int(use[1]))
+	if item.is_empty() or XDB.rec("CommonEvents", int(c.skillCE)).is_empty():
+		_skill_ce_missing += 1
+		return
+	var party: Array = Array(c.party).map(func(x): return int(x))
+	var s := XState.new_game(3, party[0], party.slice(1))
+	s.random_master = XRandomStream.hex64(1000)
+	s.party.assign(party)
+	s.battle_slots = party + [0]
+	for id in party:
+		s.actor(id)
+	var logic := XBattleLogic.new()
+	logic.level_roll = 0.99
+	var context := s.reserve_battle_random()
+	context.rule = OracleHalfStream.new()
+	context.rule.domain = "rule"
+	context.rule._seed_hex = "0000000000000000"
+	logic.setup(2, s, context)
+	var user: XActor = s.actor(int(use[2]))
+	for id in c.actorSkills:
+		for k in c.actorSkills[id]:
+			if int(k) > 0:
+				s.actor(int(id)).learn_skill(int(k))
+			else:
+				s.actor(int(id)).forget_skill(-int(k))
+	if str(use[0]) == "item":
+		s.gain_item(int(use[1]), 5)
+	for a in logic.actors:
+		a.refresh_passive()
+		a.recover_all()
+		a.tp = 100
+	for e in logic.enemies:
+		e.capture = false
+		e.added_params[0] = 999999999.0  # 同参照：敌人 HP 加 999999999 打不死（不然事件里「敌人 N 战斗不能」等条件与强制目标跟着变）
+		e.param_cells = []
+		e.hp = e.mhp
+	var acts: Array = c.actions
+	var ui := -1
+	for i in acts.size():
+		var x: Dictionary = acts[i]
+		if x.item != null and str(x.subject) == "a%d" % int(use[2]) and int(x.item[1]) == int(use[1]) and not bool(x.forced):
+			ui = i
+			break
+	if ui < 0:
+		# 参照里使用者没出手（用不了这个技能），事件当然没跑；这里不比，只计数
+		_skill_ce_missing += 1
+		return
+	var want_ce := 0
+	for e in c.events:
+		if int(e.afterActions) == ui + 1 and int(e.commonEvent) != XBattleCommonEvent.START_EVENT:
+			want_ce = int(e.commonEvent)
+			break
+	# 同参照：有选项的选最后一项（多是「否」／「再想想」；CE1627 流派选择菜单选别的会跳回菜单无限循环）
+	logic.message_responder = func(msg): return msg.get("choices", []).size() - 1 if not msg.get("choices", []).is_empty() else null
+	logic.act(user, item, logic.enemies[0])
+	check(name + ".reserved", XBattleCommonEvent.reserved(logic) == want_ce, [XBattleCommonEvent.reserved(logic), want_ce])
+	logic.common_event_skipped.clear()
+	var ev := logic.run_events()
+	var got: Array = ev.filter(func(x): return x.type == "action").map(func(x): return [key(x.user, logic), int(x.skill.id)])
+	var want := []
+	for i in range(ui + 1, acts.size()):
+		if not bool(acts[i].forced):
+			break
+		var subj := str(acts[i].subject)
+		var sk := int(acts[i].item[1])
+		if subj.begins_with("a") and str(acts[i].item[0]) == "skill":
+			sk = int(logic.change_to(s.actor(int(subj.substr(1))), XDB.rec("Skills", sk)).id)
+		want.append([subj, sk])
+	# CE1365 三咒凝魄：强制的 6930 自己又带效果 44 → 1365，原版无限连放（参照 2 万帧里放了 700 多次还没完）；
+	# 重制 XBattleCommonEvent.CHAIN_LIMIT 截停。参照比上限长时只比前 CHAIN_LIMIT 个
+	if want.size() > XBattleCommonEvent.CHAIN_LIMIT:
+		want = want.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
+		got = got.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
+	check(name + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
+	var watch: Array = Array(c.watch).map(func(x): return int(x))
+	for b in logic.actors + logic.enemies:
+		var k := key(b, logic)
+		if not c.snap.has(k):
+			continue
+		var w: Array = Array(c.snap[k]).map(func(x): return int(x))
+		var g: Array = b.state_ids.map(func(x): return int(x)).filter(func(x): return watch.has(x))
+		w.sort()
+		g.sort()
+		check(name + ".states_" + k, g == w, [g, w])
+	check(name + ".skipped", logic.common_event_skipped.is_empty(), logic.common_event_skipped)
 
 
 ## rules-gaps7：换队伍（参照 party／actorSkills，嘤嘤怪 1：页按角色 4／20／29 在队、会不会技能 23／509／201／575 给全队或自己加状态 11／45／34／51）。
