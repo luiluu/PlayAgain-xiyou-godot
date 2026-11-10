@@ -24,6 +24,7 @@ const COMMANDS := [["整队", "change"], ["离队", "remove"], ["还原", "rever
 const REMOVE_ICON := 976
 const IN_PARTY_COLOR := 6
 const EMPTY_TEXT := "- 空 -"
+const HELPER_TEXT := "助力"  # 天启篇第 5 格
 const TEXT_PADDING := 6.0
 
 var cmd_win: XMVWindow
@@ -101,14 +102,19 @@ func _paint_slots(c: XMVCanvas) -> void:
 			c.cursor(r, mode == "slot")
 		var inner := Rect2(r.position + Vector2(TEXT_PADDING / 2, TEXT_PADDING / 2), r.size - Vector2(TEXT_PADDING, TEXT_PADDING))
 		var id := int(slots()[i])
+		var helper_slot := i == XTianqi.HELPER_SLOT and XTianqi.active(XState.current)  # 天启篇第 5 格是助力位
 		if id <= 0:
 			c.draw_rect(inner, Color(XUI.GAUGE_BACK, XUI.DIM.a))
 			c.text(EMPTY_TEXT, inner.position.x, inner.position.y, inner.size.x, "center", XUI.TEXT, XUI.FONT_SIZE, inner.size.y)
+			if helper_slot:
+				c.text(HELPER_TEXT, inner.position.x, inner.position.y + inner.size.y - LH, inner.size.x, "center", XUI.SYSTEM)
 			continue
 		var a := XState.current.actor(id)
 		c.face(str(a.data().faceName), int(a.data().faceIndex), inner.position.x, inner.position.y, inner.size.x, inner.size.y)
 		c.character(str(a.data().characterName), int(a.data().characterIndex), inner.position.x + inner.size.x / 2.0, inner.size.y * 19.0 / 20.0)
 		c.text(a.display_name(), inner.position.x, inner.position.y, inner.size.x, "left", XMenu._hp_color(a))
+		if helper_slot:
+			c.text(HELPER_TEXT, inner.position.x, inner.position.y + inner.size.y - LH, inner.size.x, "right", XUI.SYSTEM)
 		# Star_LeadActor：首位是领袖角色时画 img/system/LeaderFlag，x＝格宽（内缩后）−图宽、y＝0（照原版不加格子的 x）；
 		# 原版窗口读数：左上角 (417.4, 14)、图 33×30（ui_reference review_system_pages.js 的 party_leader）
 		if XLeadActor.is_leader(XState.current, id):
@@ -198,7 +204,7 @@ func ok() -> void:
 			var id := int(list_data()[list_index])
 			var s := XState.current
 			# Window_PartyList.isCurrentItemEnabled／Scene_Party.switchActors 包装：超强者（未开挑战）不能编入，蜂鸣
-			if id > 0 and not XItemMarks.can_deploy(s, id):
+			if id > 0 and not XItemMarks.can_deploy(s, id, slot_index):
 				XSound.system(3)
 				return
 			XSound.system(1)

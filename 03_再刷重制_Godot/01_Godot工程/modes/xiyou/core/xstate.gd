@@ -378,6 +378,13 @@ func add_actor(id: int, notice := Callable()) -> void:
 func _add_actor(id: int, notice := Callable()) -> void:
 	if XDB.rec("Actors", id).is_empty():
 		return
+	# 天启篇（XTianqi.NO_RECRUIT）：新角色只从开局阵容和大厅通关招募来，别的入队（事件、号角、角色专属招募）不加
+	if not XTianqi.join_allowed(self, id):
+		if notice.is_valid():
+			notice.call(XTianqi.JOIN_BLOCKED_NOTICE)
+		else:
+			XToast.show_text(XTianqi.JOIN_BLOCKED_NOTICE)
+		return
 	# installBossDifficultyRuntime：未持有的超强者在地狱以下不能入队（提示后不加）
 	if not party.has(id) and not XItemMarks.can_acquire_actor(self, id):
 		actor(id)  # 原版 addActor 链先 $gameActors.actor(id) 建出对象（读档时同步到它），再被超强者拦截
@@ -641,18 +648,33 @@ const MAX_BATTLE_MEMBERS := 5
 
 ## Game_Party.partyAbility：出战成员任一有该队伍能力（特性 64；0 遇敌减半 1 无遇敌 2 防偷袭 3 先发制人率上升 4 金钱双倍 5 物品掉落双倍）
 func party_ability(id: int) -> bool:
-	return battle_members().any(func(a): return not a.traits_with_id(64, id).is_empty())
+	var list := battle_members()
+	if helper() != null:
+		list.append(helper())  # 天启篇：助力位的装备效果也算
+	return list.any(func(a): return not a.traits_with_id(64, id).is_empty())
 
 
 ## YEP Game_Party.battleMembers：出战栏位里的非空角色（栏位顺序）；先清掉出战栏里的超强者（XItemMarks.enforce_party）
+## 天启篇（XTianqi.active）：只取前 4 格（上场），第 5 格是助力位，见 helper()
 func battle_members() -> Array:
 	_ensure_slots()
 	XItemMarks.enforce_party(self)
 	var out := []
-	for id in battle_slots:
+	var n := XTianqi.fighter_slots(self)
+	for i in n:
+		var id = battle_slots[i]
 		if int(id) > 0 and party.has(int(id)) and not XAlienBattle.possessed(actor(int(id))):  # 异化夺舍 battleMembers 包装（Adv:80）：战斗中被夺舍的队友不算
 			out.append(actor(int(id)))
 	return out
+
+
+## 天启篇助力位（出战栏第 5 格）：不上场，拿满经验，光环与装备效果照常对全队生效；原版档和空位返回 null
+func helper() -> XActor:
+	if not XTianqi.active(self):
+		return null
+	_ensure_slots()
+	var id := int(battle_slots[XTianqi.HELPER_SLOT])
+	return actor(id) if id > 0 and party.has(id) else null
 
 
 ## Game_Party.leader：第一个实际出战成员；出战栏全空时没有队首。

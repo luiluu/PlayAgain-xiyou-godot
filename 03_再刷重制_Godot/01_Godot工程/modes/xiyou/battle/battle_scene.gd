@@ -773,6 +773,8 @@ func _main() -> void:
 			_set_active(null)
 			var logs := logic.act(u, cmd[0], cmd[1])
 			await _play(logs)
+			if _tianqi_swap_out != null:
+				await _tianqi_swap(_tianqi_swap_out)
 			if PACE_GAPS:
 				await _pace_frames(1)  # endAction 之后那一帧阶段是 turn，下一帧 updateTurn 才取下一位（逐次行动起点间隔与原版一样，见 battle_pace）
 			if (logic.is_won() or logic.is_lost()) and XBattleCommonEvent.reserved(logic) > 0: await _play_troop_events(logic.troop_events())  # 打完最后一击，预约的公共事件照样跑（YEP checkBattleEnd）
@@ -1008,6 +1010,9 @@ func _command(u: XBattler):
 			return logic.decide(u)
 		if r is Array:
 			return r
+		if r is String and r == "tianqiSwap":
+			_tianqi_swap_out = u  # 这次行动放弃，演出完再换（XBattleLogic.tianqi_swap）
+			return [null, null]
 		if r is String and r == "escape":
 			_close_windows()
 			if logic.try_escape():
@@ -1017,6 +1022,36 @@ func _command(u: XBattler):
 			return [null, null]
 		# "back"：OTB 没有队伍指令窗，取消不回到上一人，重新显示指令
 	return null
+
+
+## 天启篇换人：换下的角色图与右侧状态行原地换成助力位的；换不了（这期间助力位倒下等）就什么也不做
+var _tianqi_swap_out: XActor = null
+
+func _tianqi_swap(out: XActor) -> void:
+	_tianqi_swap_out = null
+	var h := logic.tianqi_swap(out)
+	if h == null:
+		return
+	var old: XBattlerSprite = sprites[out]
+	var s := XBattlerSprite.new()
+	field.add_child(s)
+	s.setup(h, ACTOR_SCALE)
+	s.home = old.home
+	s.position = old.home
+	sprites.erase(out)
+	old.queue_free()
+	sprites[h] = s
+	var row: XSideStatus = status_rows[out]
+	var nr := XSideStatus.new()
+	nr.setup(h, logic.actors.find(h))
+	row.get_parent().add_child(nr)
+	row.get_parent().move_child(nr, row.get_index())
+	nr.cell_pressed.connect(_open_status)
+	status_rows.erase(out)
+	row.queue_free()
+	status_rows[h] = nr
+	_refresh_status()
+	await message.run({"lines": ["%s退下，%s上场了！" % [out.display_name(), h.display_name()]]})
 
 
 ## 状态详情（installEquipmentStatusRuntime open('status')）：点右侧状态格打开。正式版打开时 BattleManager.update 整个停住、
@@ -1103,6 +1138,8 @@ func _command_entries(a: XActor) -> Array:
 			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
+	if logic.can_tianqi_swap(a):
+		opts.append({"text": "换人", "key": "tianqiSwap"})  # 天启篇：和助力位换（用掉这次行动）
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
 	opts = XTusu.command_entries(logic, a, opts)  # 屠苏 makeCommandList 包装：持武者技能栏去重；武具态插「武相支援」、防御改「待命」
 	opts.append_array(XXuanBattle.command_entries(logic, a))  # 璇 makeCommandList 包装：附身时「回身」
@@ -1194,6 +1231,8 @@ func _command_for(a: XActor):
 					return "auto"
 			"escape":
 				return "escape"
+			"tianqiSwap":
+				return "tianqiSwap"
 			"item":
 				cmd_win.active = false
 				var action = await _pick_action_list(a, battle_item_order(logic.state, logic.battle_items()), true)
