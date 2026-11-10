@@ -77,6 +77,7 @@ func shot(name: String) -> void:
 		return
 	await RenderingServer.frame_post_draw
 	check("screenshot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png")) == OK)
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 func _ready() -> void:

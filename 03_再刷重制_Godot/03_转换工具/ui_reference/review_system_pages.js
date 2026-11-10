@@ -882,6 +882,47 @@
         }
     };
 
+    // 界面像素对照三期（白龙 ui-pixel3）：页名 px3_*，截图名与 Godot 各专项 --out 的截图同名（ui_pixel_compare.py 按名配对）。
+    // 整队：队伍 1/8/9/10/2/3/4（同 tests/xiyou_party）；打开 → 调整第 0 格、名单第 6 行（狗逍遥 3）→ 3 换进第 0 格、10 换进第 1 格、再「离队」清空第 1 格
+    P.px3_party = {
+        setup: async function () {
+            [2, 3, 4].forEach(function (id) { $gameParty.addActor(id); });
+            await faces();
+            await push(Scene_Party);
+            scene()._partyWindow.refresh();  // 领袖旗标第一次画时还没载好（见 party_leader）
+        },
+        shots: {
+            '整队_打开': async function () {},
+            '整队_名单': async function () {
+                var s = scene();
+                s._commandWindow.selectSymbol('change'); s._commandWindow.processOk(); await frames(2);
+                s._partyWindow.processOk(); await frames(2);
+                s._listWindow.select(6);
+            },
+            '整队_空位': async function () {
+                var s = scene();
+                s.onListOk(); await frames(2);
+                s._partyWindow.select(1); s._partyWindow.deactivate(); s._listWindow.activate();
+                s._listWindow.select(s._listWindow._data.indexOf(10)); s.onListOk(); await frames(2);
+                s._partyWindow.deactivate(); s._listWindow.activate(); s._listWindow.select(0); s.onListOk();
+            }
+        },
+        extra: function () { return {party: $gameParty._actors.slice(), battle: $gameParty._battleMembers.slice()}; }
+    };
+    // 宝珠坊：变量 20＝15，背包只有神秘珠·玄藏 ×12、尘封 ×1、残片 ×40（同 tests/xiyou_orb_shop_ui 的 _geometry）
+    P.px3_orb_shop = {
+        setup: async function () {
+            $gameParty._items = {}; $gameParty._weapons = {}; $gameParty._armors = {};
+            $gameVariables.setValue(20, 15);
+            $gameParty.gainItem($dataItems[3029], 12); $gameParty.gainItem($dataItems[3027], 1); $gameParty.gainItem($dataItems[2531], 40);
+            await push('Scene_CodexBindMenu', null, function () { if (!CodexOrbs.open()) throw new Error('打不开宝珠坊'); });
+        },
+        shots: {
+            orb_shop_home: async function () {},
+            orb_shop_identify_detail: async function () { yunPick('鉴定神秘珠'); await frames(2); yunPick('神秘珠·玄藏 ×12'); }
+        }
+    };
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {

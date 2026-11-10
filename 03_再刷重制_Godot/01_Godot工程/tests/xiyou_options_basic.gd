@@ -77,6 +77,7 @@ func _run() -> void:
 	if out_dir != "" and DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(out_dir.path_join("设置音量.png"))
+		preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join("设置音量" + ".win.json"), "设置音量")
 	opt.queue_free()
 	await frames()
 	var player := MVPlayer.new()
