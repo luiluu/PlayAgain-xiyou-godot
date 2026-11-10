@@ -112,7 +112,7 @@ func _item() -> void:
 	await frames(3)
 	check("item_1_list_mode", p._mode == "list", p._mode)
 	await shot("px_item_1_list", p)
-	# 原版 Sprite_ItemHelp 本体 (660,236)：O-008 贴行放（x 654），但不盖信息窗首行（O-待定 NEAR_BELOW_HEADER，本体 y 236）
+	# 原版 Sprite_ItemHelp 本体 (660,236)：O-008 贴行放（x 654），但不盖信息窗首行（O-251 NEAR_BELOW_HEADER，本体 y 236）
 	check("item_1_help_card", p.help_card.is_visible_in_tree() and p.help_card.position == Vector2(654, 236), p.help_card.position)
 	XHelpCard.NEAR_BELOW_HEADER = false
 	p._update_help()
@@ -169,7 +169,7 @@ func _shop() -> void:
 	await frames(3)
 	check("shop_1_buy_mode", sh._mode == "buy", sh._mode)
 	await shot("px_shop_1_buy", sh)
-	# 原版本体 (788,237)：不盖状态窗「持有数」（O-待定 NEAR_BELOW_HEADER）
+	# 原版本体 (788,237)：不盖状态窗「持有数」（O-251 NEAR_BELOW_HEADER）
 	check("shop_1_help_card", sh.help_card.is_visible_in_tree() and sh.help_card.position == Vector2(782, 237), sh.help_card.position)
 	XHelpCard.NEAR_BELOW_HEADER = false
 	sh._update_help()
