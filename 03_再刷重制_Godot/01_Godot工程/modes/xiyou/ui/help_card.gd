@@ -73,6 +73,9 @@ static var LAYOUT_V043 := true
 static var KEEP_GAP_ROWS := true
 ## 打开说明卡的那一页的角色（Scene_Skill._actor／战斗技能窗的角色）；黑闪、甚尔说明卡用，别的页留空
 static var scene_actor = null
+## characterHelpView 的 listCosts（chars-gaps2）：原版 SceneManager._scene 是 Scene_Battle 或 Scene_Skill 时为真，技能列表里已经显示消耗，
+## 说明卡就不再列消耗行。重制由 show_for 按卡片所在场景（祖先是 XBattleScene／XSkillScene）在出卡时设上，出完卡还原；静态调用 content 时为假。
+static var list_costs := false
 
 var rows: Array = []          # content() 的结果
 var quality := 0
@@ -152,7 +155,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
 			sort_effects(obj, rows)
 	if type != 3 and XCharacterHelp.target(obj):
-		rows = XCharacterHelp.view(obj, rows)  # 小猫一族的物品、法宝（认 <CodexCat:）与专属装备（4001、4577～4581、破限之心、云裳天衣）：characterHelpTarget 走 characterHelpView
+		rows = XCharacterHelp.view(obj, rows, list_costs)  # 小猫一族的物品、法宝（认 <CodexCat:）与专属装备（4001、4577～4581、破限之心、云裳天衣）：characterHelpTarget 走 characterHelpView
 		if type == 1 or type == 2:
 			# characterHelpView 最外层（terminologyView 之后）：每行 D.text，再 D.equipmentRows 一次——白字属性前移、v0.41 特效按品质排序、◆唯一
 			# （所以「效果：」行会排到「专属：」等作者行前面；chars-gaps1 照 character_gear_help_probe 补）
@@ -167,7 +170,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 		rows = XYomiJingliu.help_rows(obj, rows)  # 镜流 Sprite_ItemHelp.setItem 包装：10194 卡尾的星魂行
 		rows.append_array(XToji.help_rows(obj, scene_actor))  # 甚尔 Sprite_ItemHelp.setItem 包装：主技能卡尾两行熟练度（先并入，characterHelpView 再分组）
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
-		rows = XCharacterHelp.view(obj, rows) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
+		rows = XCharacterHelp.view(obj, rows, list_costs) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
 		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况
 	for r in rows:
 		r[0] = _terms(str(r[0]))
@@ -1200,11 +1203,13 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		visible = false
 		_set_extras({})
 		return
+	list_costs = _list_costs_scene()
 	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
 	quality = _quality(obj)
 	robe_card = XYunshang.is_robe(obj)
 	_apply(note_width(obj, card_width))
-	_set_extras(obj if with_extras and visible else {})
+	_set_extras(obj if with_extras and visible else {})  # 附卡与主卡同一场景
+	list_costs = false
 
 
 ## Sprite_ItemHelp.setText：假物品，内容只一行 [文字, ItemDescOtherSize 12, 白, 不分隔, 靠左]，品质 0、没有附卡
@@ -1214,6 +1219,15 @@ func cap_size(n: int) -> void:
 	for r in rows:
 		r[1] = mini(int(r[1]), n)
 	_apply(size.x)
+
+
+func _list_costs_scene() -> bool:
+	var n := get_parent()
+	while n != null:
+		if n is XBattleScene or n is XSkillScene:
+			return true
+		n = n.get_parent()
+	return false
 
 
 func show_text(text: String) -> void:
