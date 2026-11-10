@@ -312398,6 +312398,1529 @@
      "898": 3
     }
    }
+  },
+  {
+   "base": "ce407",
+   "tag": "sa5n_13",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.242574
+    ]
+   }
+  },
+  {
+   "base": "ce408",
+   "tag": "sa5n_14",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.193069
+    ]
+   }
+  },
+  {
+   "base": "ce409",
+   "tag": "sa5n_15",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.143564
+    ]
+   }
+  },
+  {
+   "base": "ce50",
+   "tag": "sa5n_16",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.292079
+    ]
+   }
+  },
+  {
+   "base": "m54e15p4",
+   "tag": "sa5n_17",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p5",
+   "tag": "sa5n_18",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p6",
+   "tag": "sa5n_19",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m54e15p7",
+   "tag": "sa5n_20",
+   "preset": {
+    "items": {
+     "179": 1
+    },
+    "random_seq": [
+     0.5,
+     0.166667
+    ]
+   }
+  },
+  {
+   "base": "m172e2p7",
+   "tag": "sa5n_23",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m36e2p1",
+   "tag": "sa5n_24",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m63e3p7",
+   "tag": "sa5n_25",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "variables": {
+     "106": 1
+    },
+    "random_seq": [
+     0.1
+    ],
+    "switches": {
+     "107": true
+    }
+   }
+  },
+  {
+   "base": "m10e1p0",
+   "tag": "sa5n_26",
+   "preset": {
+    "switches": {
+     "2282": true
+    }
+   }
+  },
+  {
+   "base": "m17e1p0",
+   "tag": "sa5n_29",
+   "preset": {
+    "switches": {
+     "2282": true
+    }
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_38",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.083333
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_39",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_40",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.416667
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_41",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.75
+    ]
+   }
+  },
+  {
+   "base": "ce1187",
+   "tag": "sa5n_42",
+   "preset": {
+    "variables": {
+     "206": 300
+    },
+    "random_seq": [
+     0.916667
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_43",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1284": 2
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5n_45",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1283": 2
+    }
+   }
+  },
+  {
+   "base": "m7e3p0",
+   "tag": "sa5n_73",
+   "preset": {
+    "switches": {
+     "170": true
+    }
+   }
+  },
+  {
+   "base": "m186e10p1",
+   "tag": "sa5p_1",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e11p1",
+   "tag": "sa5p_2",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e12p1",
+   "tag": "sa5p_3",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e13p1",
+   "tag": "sa5p_4",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e14p1",
+   "tag": "sa5p_5",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e15p1",
+   "tag": "sa5p_6",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e16p1",
+   "tag": "sa5p_7",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e17p1",
+   "tag": "sa5p_8",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e18p1",
+   "tag": "sa5p_9",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e19p1",
+   "tag": "sa5p_10",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e20p1",
+   "tag": "sa5p_11",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e21p1",
+   "tag": "sa5p_12",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e22p1",
+   "tag": "sa5p_13",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e23p1",
+   "tag": "sa5p_14",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e4p1",
+   "tag": "sa5p_15",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e5p1",
+   "tag": "sa5p_16",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e6p1",
+   "tag": "sa5p_17",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e7p1",
+   "tag": "sa5p_18",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e8p1",
+   "tag": "sa5p_19",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "m186e9p1",
+   "tag": "sa5p_20",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "playtime": 1000
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5r_1",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5r_2",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5r_3",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5r_4",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5r_5",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5r_6",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5r_7",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ]
+   }
+  },
+  {
+   "base": "ce1439",
+   "tag": "sa5r_10",
+   "preset": {
+    "party": [
+     109
+    ],
+    "actors": {
+     "109": {
+      "skills": [
+       5768
+      ]
+     }
+    },
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "ce1439",
+   "tag": "sa5r_11",
+   "preset": {
+    "party": [
+     109
+    ],
+    "actors": {
+     "109": {
+      "skills": [
+       5768
+      ]
+     }
+    },
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.1875
+    ]
+   }
+  },
+  {
+   "base": "ce1344",
+   "tag": "sa5h_1",
+   "preset": {
+    "random_seq": [
+     0.004202,
+     0.004202,
+     0.012605,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.029412,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.029412,
+     0.037815,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.029412,
+     0.037815,
+     0.046218,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.029412,
+     0.037815,
+     0.046218,
+     0.054622,
+     0.004202,
+     0.012605,
+     0.021008,
+     0.029412,
+     0.037815,
+     0.046218,
+     0.054622,
+     0.063025
+    ]
+   }
+  },
+  {
+   "base": "m164e5p1",
+   "tag": "sa5h_4",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m165e5p1",
+   "tag": "sa5h_9",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m58e5p1",
+   "tag": "sa5h_14",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m56e5p1",
+   "tag": "sa5h_19",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.000167
+    ]
+   }
+  },
+  {
+   "base": "m30e8p0",
+   "tag": "sa5g_1",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m32e1p0",
+   "tag": "sa5g_2",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m33e3p0",
+   "tag": "sa5g_3",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m45e1p0",
+   "tag": "sa5g_4",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m46e1p0",
+   "tag": "sa5g_5",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m47e13p0",
+   "tag": "sa5g_6",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "m64e1p0",
+   "tag": "sa5g_7",
+   "preset": {
+    "answers": [
+     2
+    ],
+    "variables": {
+     "841": 2
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5v_1",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5v_2",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5v_3",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5v_4",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1108",
+   "tag": "sa5v_5",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5v_6",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5v_7",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5v_8",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5v_9",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1109",
+   "tag": "sa5v_10",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5v_11",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5v_12",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5v_13",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5v_14",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1110",
+   "tag": "sa5v_15",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5v_16",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5v_17",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5v_18",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5v_19",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1111",
+   "tag": "sa5v_20",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5v_21",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5v_22",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5v_23",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5v_24",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1112",
+   "tag": "sa5v_25",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5v_26",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5v_27",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5v_28",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5v_29",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1113",
+   "tag": "sa5v_30",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5v_31",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 30
+    }
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5v_32",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 25
+    }
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5v_33",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 20
+    }
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5v_34",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 15
+    }
+   }
+  },
+  {
+   "base": "ce1114",
+   "tag": "sa5v_35",
+   "preset": {
+    "random_seq": [
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.5,
+     0.895
+    ],
+    "variables": {
+     "454": 10
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5v_36",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "random_seq": [
+     0.3
+    ],
+    "variables": {
+     "1287": 1
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5v_37",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1284": 1
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5v_38",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "random_seq": [
+     0.7
+    ],
+    "variables": {
+     "1283": 1
+    }
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "sa5v_39",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "random_seq": [
+     0.9
+    ],
+    "variables": {
+     "1285": 1
+    }
+   }
   }
  ]
 }
