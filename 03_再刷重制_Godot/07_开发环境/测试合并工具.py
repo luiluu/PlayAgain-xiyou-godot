@@ -1733,6 +1733,46 @@ for name in filter(None, files):
         self.assertEqual(code, '# O-119：STATE_COPY 回退开关\n# O-120 QIANJUN_SLEEVE 的说明\n')
         self.assertNotIn(tok, code + '\n'.join(reg))
 
+    def named_lane(self, cells, comment=''):
+        self.realistic_checker()
+        self.registry('| O-118 | 最后一项 | a | b | c | d | e | f |')
+        row = lambda cell, n: '| %s | 项%d | 问题 | 做法 | 理由 | `X%d.FIX = false` | cc | 待用户确认 |' % (cell, n, n)
+        self.sheet_with(self.HEAD8 + '\n'.join(row(c, i) for i, c in enumerate(cells)) + '\n')
+        if comment:
+            gd = merge.PROJECT / 'modes/具名.gd'
+            (self.wt / gd).parent.mkdir(parents=True, exist_ok=True)
+            (self.wt / gd).write_text(comment)
+        self.g('add', '.', cwd=self.wt); self.g('commit', '--allow-empty', '-m', 'named drafts', cwd=self.wt)
+
+    def test_named_draft_rows_each_get_a_number(self):
+        """审查 74 P2-2（tools-optnum）：草稿表首格写「O-待定·名字」「O-待定（名字）」的行原来不发号、不进优化登记。
+        三种写法各发一号，名字互为前缀（A、AB）不串，代码注释里的同名占位一起换。"""
+        tok = 'O-' + '待定'
+        cells = ['%s·参照宿主 中文路径' % tok, '%s（括号名）' % tok, '%s·A' % tok, '%s·AB' % tok, tok]
+        self.named_lane(cells, '## %s·AB：开关\nstatic var FIX := true\n## %s·A 说明\n' % (tok, tok))
+        self.assertEqual(self.call(), 0, self.last_output)
+        reg = (self.root / merge.OPT_REGISTRY).read_text().split('\n')
+        i = next(k for k, x in enumerate(reg) if x.startswith('| O-118'))
+        for n, name in enumerate(['项0', '项1', '项2', '项3', '项4']):
+            self.assertTrue(reg[i + 1 + n].startswith('| O-%d | %s |' % (119 + n, name)), reg[i + 1 + n])
+        self.assertNotIn(tok, '\n'.join(reg))
+        self.assertEqual((self.root / merge.PROJECT / 'modes/具名.gd').read_text(),
+                         '## O-122：开关\nstatic var FIX := true\n## O-121 说明\n')
+
+    def test_unrecognized_draft_first_cell_stops(self):
+        tok = 'O-' + '待定'
+        self.named_lane(['%s 名字' % tok])
+        self.assertNotEqual(self.call(), 0)
+        self.assertIn('认不出的首格写法', self.last_output)
+
+    def test_named_draft_rows_switch_off_keeps_old_behaviour(self):
+        tok = 'O-' + '待定'
+        self.assertEqual(merge.draft_cell('| %s·名 | a |' % tok), '%s·名' % tok)
+        with mock.patch.dict(os.environ, {'XIYOU_OPT_NAMED_ROWS': '0'}):
+            self.assertIsNone(merge.draft_cell('| %s·名 | a |' % tok))
+            self.assertEqual(merge.draft_cell('| %s-1 | a |' % tok), '%s-1' % tok)
+        self.assertEqual(merge.tok_pattern('%s·A' % tok) and merge.substitute_opt('%s·AB %s·A' % (tok, tok), {'optNumbers': {'%s·A' % tok: 'O-1', '%s·AB' % tok: 'O-2'}}), 'O-2 O-1')
+
     def test_extra_sheet_rows_outside_draft_heading_get_own_numbers_and_registered(self):
         """唐僧总装 十一 11-01：raven-ui1 带来的接续交付单 guyu4 把优化表写在「## 发现的原版问题」下（没有「## 优化登记草稿」标题），
         工具读不到表行：两条 O-待定 都换成 O-140、优化登记没登。首格是占位的 8 列表行不在该标题下也认；代码注释的开关名在下一行也认得出。"""
