@@ -7,6 +7,18 @@
       "to": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
       "presetKeys": [],
       "why": "tools-probe-deps2 本次改动只动指纹计算（本文件那一份按声明折算）、审计模式（XIYOU_STATE_AUDIT）和键表多记 reused；变体的执行路径（applyPreset／runCase）一行没改，旧变体的结果与读到的地图不变"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
+      "to": "9eb3ab43bc3e20298165ce7c38869b3c323e2f1730bd3a7be2496cb37ced6bb7",
+      "presetKeys": [
+        "actors.*.paramPlus",
+        "actors.*.states",
+        "actors.*.hp",
+        "actors.*.mp"
+      ],
+      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），main 上 24529 个变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变"
     }
   ]
 }
