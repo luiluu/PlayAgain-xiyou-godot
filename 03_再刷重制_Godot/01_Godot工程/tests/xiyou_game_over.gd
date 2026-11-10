@@ -63,6 +63,8 @@ func _all_hurt() -> bool:
 
 
 func _run() -> void:
+	# 别读本机真实设置（设置里的「禁用遇敌」等会让 2b 不开战）
+	XConfig.path_override = "user://test_xiyou_game_over_options.json"
 	# 1. 画面状态机
 	var g := XGameOverScreen.new()
 	add_child(g)
@@ -121,6 +123,11 @@ func _run() -> void:
 		m2.map_data.encounterList = [{"weight": 1, "troopId": 4, "regionSet": []}]
 		titled[0] = 0
 		XMapScene.GAME_OVER_TO_LOBBY = false
+		# 随机遇敌会掷先制（BattleManager.onEncounter）：先制时首回合只有我方出手，不开自动就停在指令窗等到超时
+		# （rules-gaps12 本机并行两次偶发 encounter_wipe_game_over，单跑掷不中；把先制钉成真必现）。开自动由我方自动出手，
+		# 开场「先发制人！」消息窗也要自动翻页，照样打输
+		XBattleScene.force_auto = true
+		XMessageBox.auto = true
 		m2._encounter()   # 不 await：战斗自动打输后进结束画面，画面等按键
 		var scr2: XGameOverScreen = null
 		var t2 := WaitBudget.new(60000)
@@ -140,6 +147,8 @@ func _run() -> void:
 			for i in range(5):
 				await get_tree().process_frame
 		_check("encounter_wipe_to_title", titled[0] == 1, titled)
+	XBattleScene.force_auto = false
+	XMessageBox.auto = false
 	# 2c. 经解释器输掉（301 不可败，审查 70 P2②）：结束画面期间一直 busy，事件收尾也不放开，方向键人不动
 	var m3 := await _open_lobby()
 	if _check("lobby_reopen2", m3 != null):
@@ -207,6 +216,8 @@ func _finish() -> void:
 	XGameOverScreen.NULL_IMAGE = true
 	XMessageBox.auto = false
 	XMessageBox.auto_answers = []
+	XBattleScene.force_auto = false
+	DirAccess.remove_absolute(XConfig.path_override)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
