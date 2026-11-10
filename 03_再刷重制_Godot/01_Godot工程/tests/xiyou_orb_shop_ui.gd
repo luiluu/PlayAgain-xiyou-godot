@@ -31,9 +31,19 @@ func frames(n := 2) -> void:
 func shot(name: String) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
+	_clear_popups(get_tree().root)  # 前面几条路线留下的提示条／成就弹窗（原版这一态没有）
 	await frames(3)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
+
+
+func _clear_popups(n: Node) -> void:
+	for c in n.get_children():
+		if c is XToast or c is XAchievementPopup:
+			c.queue_free()
+		else:
+			_clear_popups(c)
 
 
 static func norm(v):

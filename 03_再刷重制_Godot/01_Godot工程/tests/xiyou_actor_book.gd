@@ -41,6 +41,7 @@ func shot(name: String) -> void:
 	await frames(3)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 static func measure(s: String, size: int) -> float:
@@ -220,11 +221,9 @@ func _flow(ref: Dictionary) -> void:
 	await shot("actor_book_1")
 	if out_dir != "":
 		for sid in [167, 168, 171, 173, 174, 175, 176, 177, 178, 179]:  # 只在存截图时：167 号以后的立绘
-			book.index = XActorBook.index_ids().find(sid)
-			book._select_actor()
+			book.select(XActorBook.index_ids().find(sid))  # 走 select：目录跟着滚到光标（与原版 select 同态，像素对照用）
 			await shot("actor_book_%d" % sid)
-		book.index = 1
-		book._select_actor()
+		book.select(1)
 	book.ok()
 	await frames()
 	check("details_open", book.mode == "skills" and book.list_win.visible and book.header_win.visible

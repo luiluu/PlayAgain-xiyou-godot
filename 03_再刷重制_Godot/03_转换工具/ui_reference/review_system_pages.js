@@ -45,6 +45,8 @@
         // 工坊是独立 DOM 层，SceneManager 换场景不会替它关闭。
         if (window.CodexAlienation) CodexAlienation.closeWorkshop();
         Math.random = function () { return 0.5; };  // 同 mv_oracle 各探针：新局初始装备的随机浮动、宝珠孔数固定
+        // __ilr.newGame 会把地图解释器换成空函数；真气页要原版的（含插件包装），第一次建局前留一份
+        if (!S.nativeUpdateInterpreter && String(Game_Map.prototype.updateInterpreter).length > 30) S.nativeUpdateInterpreter = Game_Map.prototype.updateInterpreter;
         __ilr.newGame();
         if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
         $gameScreen.clear(); $gamePlayer.clearTransferInfo();
@@ -879,6 +881,142 @@
             px_shop_0_command: async function () {},
             px_shop_1_buy: async function () { var s = scene(); s._commandWindow.selectSymbol('buy'); s._commandWindow.processOk(); },
             px_shop_2_sell_category: async function () { var s = scene(); s._buyWindow.deactivate(); s.onBuyCancel(); s._commandWindow.selectSymbol('sell'); s._commandWindow.processOk(); }
+        }
+    };
+
+    // 界面像素对照三期（白龙 ui-pixel3）：页名 px3_*，截图名与 Godot 各专项 --out 的截图同名（ui_pixel_compare.py 按名配对）。
+    // 整队：队伍 1/8/9/10/2/3/4（同 tests/xiyou_party）；打开 → 调整第 0 格、名单第 6 行（狗逍遥 3）→ 3 换进第 0 格、10 换进第 1 格、再「离队」清空第 1 格
+    P.px3_party = {
+        setup: async function () {
+            [2, 3, 4].forEach(function (id) { $gameParty.addActor(id); });
+            await faces();
+            await push(Scene_Party);
+            scene()._partyWindow.refresh();  // 领袖旗标第一次画时还没载好（见 party_leader）
+        },
+        shots: {
+            '整队_打开': async function () {},
+            '整队_名单': async function () {
+                var s = scene();
+                s._commandWindow.selectSymbol('change'); s._commandWindow.processOk(); await frames(2);
+                s._partyWindow.processOk(); await frames(2);
+                s._listWindow.select(6);
+            },
+            '整队_空位': async function () {
+                var s = scene();
+                s.onListOk(); await frames(2);
+                s._partyWindow.select(1); s._partyWindow.deactivate(); s._listWindow.activate();
+                s._listWindow.select(s._listWindow._data.indexOf(10)); s.onListOk(); await frames(2);
+                s._partyWindow.deactivate(); s._listWindow.activate(); s._listWindow.select(0); s.onListOk();
+            }
+        },
+        extra: function () { return {party: $gameParty._actors.slice(), battle: $gameParty._battleMembers.slice()}; }
+    };
+    // 宝珠坊：变量 20＝15，背包只有神秘珠·玄藏 ×12、尘封 ×1、残片 ×40（同 tests/xiyou_orb_shop_ui 的 _geometry）
+    P.px3_orb_shop = {
+        setup: async function () {
+            $gameParty._items = {}; $gameParty._weapons = {}; $gameParty._armors = {};
+            $gameVariables.setValue(20, 15);
+            $gameParty.gainItem($dataItems[3029], 12); $gameParty.gainItem($dataItems[3027], 1); $gameParty.gainItem($dataItems[2531], 40);
+            await push('Scene_CodexBindMenu', null, function () { if (!CodexOrbs.open()) throw new Error('打不开宝珠坊'); });
+        },
+        shots: {
+            orb_shop_home: async function () {},
+            orb_shop_identify_detail: async function () { yunPick('鉴定神秘珠'); await frames(2); yunPick('神秘珠·玄藏 ×12'); }
+        }
+    };
+
+    // 人物图鉴（同 tests/xiyou_actor_book 的 _flow）：目录第 1 项、167 号以后各立绘、第 1 项技能详情（第 0 行）
+    function bookPick(sid) {
+        var s = scene(), iw = s._indexWindow, i = sid === 1 ? 1 : iw._list.findIndex(function (a) { return a && a.actorId && a.actorId() === sid; });
+        if (i < 0) throw new Error('图鉴目录没有 ' + sid);
+        iw.select(i); s._windowIdx = -1; s.update();
+    }
+    var bookShots = {actor_book_1: async function () { bookPick(1); }};
+    [167, 168, 171, 173, 174, 175, 176, 177, 178, 179].forEach(function (sid) { bookShots['actor_book_' + sid] = async function () { bookPick(sid); }; });
+    bookShots.actor_book_1_skills = async function () { bookPick(1); await settle(); scene().openActorSkillDetails(); };
+    P.px3_actor_book = {
+        setup: async function () { await push(Scene_ActorBook); },
+        shots: bookShots
+    };
+
+    // 成就（同 tests/xiyou_achievement 的 _ui）：全局有 1、2（无时间）、22（本局无）、51，本局有 1、51；
+    // 挑战类 → 事件类列表第 7 行 → 本局再得 60（弹窗推 90 帧）
+    P.px3_achievement = {
+        setup: async function () {
+            var T = '2026年1月2日 3:4:5';
+            ConfigManager.SAchievementS = {1: true, '1Time': T, 2: true, 22: true, '22Time': T, 51: true, '51Time': T};
+            $gameParty.SAchievementS = {1: true, 51: true};
+            await push(Scene_AchievementBook);
+        },
+        shots: {
+            achievement_01_challenge: async function () {},
+            achievement_02_event_list: async function () {
+                var s = scene();
+                s._indexTypeWindow.select(1); await frames(2); s.onRangeOk(); await frames(2); s._indexWindow.select(7);
+            },
+            achievement_03_popup: async function () { Star.AchievementSystem.GetAcReward(60); await frames(90); }
+        }
+    };
+
+    // 设置（同 tests/xiyou_options_basic／_misc 的截图点；配置值照 Godot 截图那一刻：BGM 80、SE 40、只遇稀有开）：
+    // 第 11 行 → 「步步遇敌」行 → 屏蔽掉落子页第 0 行确定（开）
+    function optSelect(sym) { var w = scene()._optionsWindow, i = w.findSymbol(sym); w.select(i); }
+    P.px3_options = {
+        setup: async function () {
+            ConfigManager.bgmVolume = 80; ConfigManager.seVolume = 40; ConfigManager.Boss = true;
+            await push(Scene_Options);
+        },
+        shots: {
+            '设置音量': async function () { scene()._optionsWindow.select(11); },
+            '杂项开关': async function () { optSelect('yd100'); },
+            '屏蔽掉落': async function () {
+                optSelect('pingbiDrop'); scene()._optionsWindow.processOk();
+                await wait(function () { return scene().constructor.name === 'Scene_PingbiMenu' && SceneManager._sceneStarted; });
+                await settle();
+                var s = scene(), w = s._commandWindow || s._pingbiWindow || s._windowLayer.children.filter(function (c) { return c instanceof Window_Selectable; })[0];
+                w.select(0); w.processOk();
+            }
+        }
+    };
+
+    // 存档页（同 tests/xiyou_save_page 的 _page）：金钱 123456、变量 20＝15、206＝3、狗逍遥 Lv 10、大厅 Map004，存到文件 1、3
+    // （无头 Chrome 临时用户目录的 localStorage，不碰玩家存档）后进 Scene_Load：初选最近一格（文件 3）→ 文件 1「读取」确认窗
+    P.px3_save = {
+        setup: async function () {
+            $gameParty._gold = 123456; $gameVariables.setValue(20, 15); $gameVariables.setValue(206, 3);
+            $gameActors.actor(1).changeLevel(10, false);
+            DataManager.loadMapData(4);
+            await wait(function () { return DataManager.isMapLoaded(); });
+            $gameMap.setup(4); $gamePlayer.locate(10, 10); $gamePlayer.refresh();
+            $gameSystem.onBeforeSave(); DataManager.saveGame(1);
+            await frames(2);
+            $gameSystem.onBeforeSave(); DataManager.saveGame(3);
+            await push(Scene_Load);
+        },
+        shots: {
+            load_slot3: async function () {},
+            load_confirm: async function () {
+                var s = scene(), lw = s._listWindow;
+                lw.select(0); lw.processOk(); await settle();
+                var aw = s._actionWindow || s._commandWindow; aw.select(0); aw.processOk();
+            }
+        }
+    };
+
+    // 真气（同 tests/xiyou_ui_pixel 的 _zhenqi）：主菜单「真气」走 CodexZhenqi.openFromMenu（立旗标、回地图），地图开出闭关第一页
+    P.px3_zhenqi = {
+        setup: async function () {},
+        shots: {
+            px3_zhenqi_0: async function () {
+                if (!S.nativeUpdateInterpreter) throw new Error('没留下原版 updateInterpreter');
+                Game_Map.prototype.updateInterpreter = S.nativeUpdateInterpreter;  // 只在这一页（本页是新局最后一步，下一页 fresh 会重新换掉）
+                $gameTemp._codexZhenqiMenu = true;  // 同 CodexZhenqi.openFromMenu：立旗标，地图 setupStartingEvent 包装接手
+                await wait(function () {
+                    var w = scene()._messageWindow;
+                    return $gameMessage.isBusy() && w && w.isOpen() && w._choiceWindow && w._choiceWindow.isOpen();
+                }, 15000);
+                await frames(30);
+            }
         }
     };
 

@@ -26,7 +26,13 @@ KNOWN = [
     ('Sprite_ItemHelp', 'XHelpCard', (0, 0, 0, 1), '说明卡本体：O-007 最小字号（技能页万剑诀 15 号说明提到 16，高＋1；MIN_FONT=0 时 247 与原版同）'),
     ('Window_ItemHelp', 'XHelpCardFrame', (0, 0, 0, 1), '说明卡品质框：随本体 O-007'),
     ('JAH_Window_Status_Params', 'XMVWindow', (0, -36, 0, 36), '状态页参数窗：战力先藏（Kyo 11-08），战力条 36 像素让出；开战力时 (0,108,1280,612) 与原版同'),
+    ('Sprite_ItemHelp', 'XHelpCard', (0, 0, 0, -36), '怪物图鉴掉落说明卡：战力先藏，少「装备战力」一行（白龙 ui-pixel3）'),
 ]
+
+# 已认定的原版独有窗口（白龙 ui-pixel3）：原版画面上看不见、Godot 不建的，按类型认定，单列不算差
+KNOWN_ORIG_ONLY = {
+    'Window_EnemyBookPercent': '怪物图鉴达成率窗 (0,80,426,64)：原版压在目录窗下面看不见，Godot 不画（enemy_book.gd 头注）',
+}
 
 
 def read_png(path):
@@ -85,6 +91,9 @@ def windows(path, godot):
     seen, out = set(), []
     for win in d['windows']:
         if not godot and (not win.get('visible') or (win.get('openness') is not None and win['openness'] <= 0)):
+            continue
+        # 整窗淡没（opacity 与 contentsOpacity 都是 0，如地图名、自动存档提示淡出后）：画面上没有，不参加配对
+        if not godot and win.get('opacity') == 0 and win.get('contentsOpacity') == 0:
             continue
         r = tuple(round(v) for v in win['rect'])
         if r in seen or r[2] <= 0 or r[3] <= 0:
@@ -170,6 +179,9 @@ def main():
         god = [g for g in god if g['type'] != 'Overlay']
         orig = [o for o in orig if o['type'] not in OVERLAY_ORIG]
         pairs, known, o_left, g_left = match(orig, god)
+        for o in [o for o in o_left if o['type'] in KNOWN_ORIG_ONLY]:
+            o_left.remove(o)
+            known.append([o['type'], None, o['rect'], None, KNOWN_ORIG_ONLY[o['type']]])
         whole, per = pixel(od / (name + '.png'), gd / (name + '.png'), out / (name + '_heat.png'), orig)
         report[name] = {'matched': pairs, 'known': known, 'overlay': overlay, 'orig_only': o_left, 'godot_only': g_left, 'pixel': whole, 'per_window': per}
         print(f"{name}: 矩形配上 {len(pairs)}，已认定 {len(known)}，原版多 {len(o_left)}，Godot 多 {len(g_left)}；整页平均差 {whole['mean']}、差>32 占 {whole['over32']:.1%}")

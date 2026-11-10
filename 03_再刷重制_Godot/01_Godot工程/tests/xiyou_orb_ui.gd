@@ -23,6 +23,7 @@ func shot(name: String) -> void:
 	await frames(3)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 func check(name: String, ok: bool, detail = null) -> bool:

@@ -71,7 +71,39 @@ func _run() -> void:
 	await _status()
 	await _shop()
 	await _round_wh_up()
+	await _zhenqi()
 	finish()
+
+
+## 真气（三期）：主菜单「真气」关菜单回地图后的闭关第一页（CodexZhenqi.openFromMenu → retreat）；地图 5 (10,10)，新局 1/8/9/10
+func _zhenqi() -> void:
+	_fresh()
+	s.map_id = 5
+	s.x = 10
+	s.y = 10
+	var map := XMapScene.new()
+	add_child(map)
+	await frames(8)
+	var done := [false]
+	var go := func():
+		await XZhenqiRetreat.run(map)
+		done[0] = true
+	go.call()
+	for i in 30:
+		await frames(1)
+	var wins := await shot("px3_zhenqi_0", map)
+	# 原版 v0.62.12 实跑：Window_Message (0,548,1280,172)、Window_ChoiceList (902,304,378,244)
+	var rects := wins.map(func(w): return w.rect)
+	check("zhenqi_windows", rects.has([0.0, 548.0, 1280.0, 172.0]) and rects.has([902.0, 304.0, 378.0, 244.0]), rects)
+	# 选最后一项「离开」收掉闭关（不留挂着的协程，退出时不泄漏）
+	map.message._close_choice(map.message._choices.size() - 1)
+	for i in 60:
+		if done[0]:
+			break
+		await frames(1)
+	check("zhenqi_leave", done[0])
+	map.queue_free()
+	await frames(4)
 
 
 ## YEP_CoreEngine Window._roundWhUp：窗口宽高向上取整（制作完成弹窗原版 297，算出来是 296.24）
