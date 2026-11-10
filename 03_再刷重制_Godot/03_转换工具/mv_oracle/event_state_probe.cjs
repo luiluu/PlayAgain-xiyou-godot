@@ -474,6 +474,17 @@ const presetPaths = (v, pre = '', out = new Set()) => {
   }
   return out;
 };
+// 最新那条声明（to＝当前文件 SHA）的每个键都要在至少一个变体（全部预设，不只本次选中的）的键路径里出现：
+// 键写错或拼错会让它「不影响任何变体」，该重跑的变体被取回（审查 76 P3-2）。只查最新那条：旧条目对应的预设可能已删改。
+if (SCOPE_ROWS.length) {
+  const allPaths = new Set();
+  for (const c of variants) for (const p of presetPaths(c.preset)) allPaths.add(p);
+  for (const r of SCOPE_ROWS.filter(r => r.to === SELF_SHA)) {
+    const missing = r.presetKeys.filter(k => !allPaths.has(k));
+    if (missing.length)
+      throw new Error('probe_change_scope.json 最新声明的 presetKeys 在任何变体的预设键路径里都没出现（拼错？数字键要写 *）：' + JSON.stringify(missing));
+  }
+}
 const scopedSelf = preset => {
   if (!SCOPE_ROWS.length) return SELF_SHA;
   const paths = presetPaths(preset), seen = new Set();

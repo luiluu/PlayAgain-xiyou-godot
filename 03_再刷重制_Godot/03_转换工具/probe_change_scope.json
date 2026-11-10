@@ -11,14 +11,21 @@
     {
       "file": "mv_oracle/event_state_probe.cjs",
       "from": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
-      "to": "9eb3ab43bc3e20298165ce7c38869b3c323e2f1730bd3a7be2496cb37ced6bb7",
+      "to": "c364dda8799594265659930139ab85b38349f12b476ecb5848a0efc354f24022",
+      "presetKeys": [],
+      "why": "tools-probe-scope1 只加影响面声明的校验（最新声明的键须在某变体的预设键路径里出现），在用例执行之前抛错或通过；变体执行路径（applyPreset／runCase）一行没改，旧变体结果与读到的地图不变"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "c364dda8799594265659930139ab85b38349f12b476ecb5848a0efc354f24022",
+      "to": "c25f14d3945ab9a5c9b5684232c3c4592e3ad6e1c969ebb51c84a823e176ada8",
       "presetKeys": [
         "actors.*.paramPlus",
         "actors.*.states",
         "actors.*.hp",
         "actors.*.mp"
       ],
-      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），main 上 24529 个变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变"
+      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），合并时 main 上的变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变"
     }
   ]
 }

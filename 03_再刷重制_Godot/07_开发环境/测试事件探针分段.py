@@ -579,8 +579,8 @@ class StateScopeTests(unittest.TestCase):
         s1 = self.sha()
         self.assertNotEqual(s0, s1)
         self.assertEqual(self.stats(self.run_probe(sb / 'o2.json', **prev))['reused'], 0)
-        # 声明只影响带 nonexistent 键的变体：全部取回，结果逐字相同
-        row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'presetKeys': ['nonexistent'], 'why': '测试'}
+        # 声明不影响任何变体：全部取回，结果逐字相同
+        row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'presetKeys': [], 'why': '测试'}
         self.scope([row])
         r3 = self.stats(self.run_probe(sb / 'o3.json', **prev))
         self.assertEqual(r3['reused'], n)
@@ -591,6 +591,16 @@ class StateScopeTests(unittest.TestCase):
         # 声明只能折算到 to：to 对不上当前文件就不生效
         self.scope([dict(row, to='0' * 63 + '1')])
         self.assertEqual(self.stats(self.run_probe(sb / 'o5.json', **prev))['reused'], 0)
+        # 最新声明的键在任何变体的预设键路径里都没有（拼错、数字键没写 *）：报错，不当成「不影响任何变体」（审查 76 P3-2）
+        for bad_keys in (['nonexistent'], ['actor'], ['actors.79'], ['actors', 'nonexistent']):
+            self.scope([dict(row, presetKeys=bad_keys)])
+            rb = self.run_probe(sb / 'o5b.json', **prev)
+            self.assertNotEqual(rb.returncode, 0, bad_keys)
+            self.assertIn('presetKeys', rb.stderr, bad_keys)
+        # 只查最新那条（to＝当前 SHA）：别的条目里的键对不上不报错（它不在当前文件的链上，不参与折算）
+        old_row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': '0' * 63 + '2', 'to': '0' * 63 + '3', 'presetKeys': ['nonexistent'], 'why': '旧条目'}
+        self.scope([old_row, dict(row, presetKeys=['actors.*'])])
+        self.assertEqual(self.stats(self.run_probe(sb / 'o5c.json', **prev))['reused'], n - n_actors)
         # 格式错直接报错，不静默忽略
         self.scope([{'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'why': '缺 presetKeys'}])
         self.assertNotEqual(self.run_probe(sb / 'o6.json', **prev).returncode, 0)
