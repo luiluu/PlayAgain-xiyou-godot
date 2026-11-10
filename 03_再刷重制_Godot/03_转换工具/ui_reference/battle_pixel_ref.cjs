@@ -3,7 +3,8 @@
 // 照 mac-preload-shim 的「战斗夹具 4 人」建内存新局（难度 3、队伍 1/8/9/10、地图 5、Math.random 0.5），但敌群换成 4（【守层者】里德，
 // 敌人 6 在 MOG_BossHP 名单里），截 Boss 血条、状态图标（右侧状态格、Boss 状态面板、选敌名字旁）、伤害数字三类场面，
 // 每张截图同时记场景显示树里看得见的节点（构造名、全局矩形、不透明度）。只建内存新局，不读写存档。
-// 用法：python3 -I serve.py <app.nw> <输出目录> &  然后  node battle_pixel_ref.cjs <输出目录>/bp_ref.json
+// 二期（rules-battle-pixel2，八戒）：第二个参数选场景，加 layout／anim／victory／defeat（敌群 2），每个场景开一个新的无头 Chrome。
+// 用法：python3 -I serve.py <app.nw> <输出目录> &  然后  node battle_pixel_ref.cjs <输出目录>/bp_ref.json [p1,layout,anim,victory,defeat]
 // 截图写进 serve.py 的输出目录（bp_*.png），读数写 <输出.json>。
 const fs = require('fs'), os = require('os'), path = require('path'), {spawn} = require('child_process');
 const outFile = path.resolve(process.argv[2] || 'bp_ref.json');
