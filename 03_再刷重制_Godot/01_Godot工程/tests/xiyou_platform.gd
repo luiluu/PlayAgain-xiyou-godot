@@ -213,7 +213,7 @@ func _run() -> void:
 	platform.on_paused(0)
 	check("background_idle_off", platform.on_resumed(60_000) == 0.0 and not platform.is_catching_up())
 	XPlatform.BACKGROUND_IDLE = true
-	# 后台挂机前台服务（O-待定，android-bgidle1）：插件替身
+	# 后台挂机前台服务（O-248，android-bgidle1）：插件替身
 	var fake := FakeBgIdle.new()
 	var saved_stopper := XPlatform.idle_stopper
 	var stops := [0]

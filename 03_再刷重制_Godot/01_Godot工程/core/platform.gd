@@ -18,7 +18,7 @@ const BACKGROUND_CAP_SEC := 1800.0
 const CATCH_UP_SPEED := 8
 ## 离开不到这么久不补跑（切出去看一眼消息）。
 const CATCH_UP_MIN_SEC := 5.0
-## O-待定·安卓后台挂机前台服务（Kyo 2026-11-09 定 C，cc 平台 android-bgidle1）：照原版，挂机中切后台起前台服务
+## O-248 安卓后台挂机前台服务（Kyo 2026-11-09 定 C，cc 平台 android-bgidle1）：照原版，挂机中切后台起前台服务
 ## （安卓插件 XiyouBgIdle：通知栏常驻计时、点通知回游戏、「停止挂机」按钮），进程不被系统杀掉。Godot 切后台渲染表面被收走、
 ## 主循环照样停，所以离开的时间仍在回前台时补跑：按真实离开时间（含锁屏睡眠；按了停止只算到按的那一刻），上限 SERVICE_CAP_SEC；
 ## 按过停止的，补完就结束挂机（idle_stopper）。false＝回到 O-201：不起服务，离开时间按游戏计时、最多 BACKGROUND_CAP_SEC。
