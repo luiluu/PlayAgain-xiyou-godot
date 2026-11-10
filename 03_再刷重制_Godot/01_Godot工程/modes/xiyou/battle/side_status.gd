@@ -112,7 +112,7 @@ static func cell_rows(b: XBattler) -> Array:
 		if not CELL_FILTER:
 			out.append({"icon": icon, "stack": 1})
 		elif _visible_cached(id, st):
-			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id)), "kind": state_kind(st, not b.state_ids.has(id)), "name": str(st.get("name", ""))})
+			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id)), "kind": _kind_cached(id, st, not b.state_ids.has(id)), "name": str(st.get("name", ""))})
 	if not CELL_FILTER:
 		return out
 	for i in range(b.buffs.size()):
@@ -166,6 +166,19 @@ static var _re_strip: RegEx
 
 
 static var _visible_cache := {}
+static var _kind_cache := {}
+
+
+## state_kind 按（状态号、是否被动）缓存：被动恒为「常驻」，不进缓存；只缓存数据库原条（XDB.rec 同一个字典），
+## states() 换过的视图（XZhenqi.pojia_state 改特性 21 的倍率，可能改变「异常」判定）每次现算（审查第 76 期）
+static func _kind_cached(id: int, st: Dictionary, passive: bool) -> String:
+	if passive:
+		return "常驻"
+	if not is_same(st, XDB.rec("States", id)):
+		return state_kind(st, false)
+	if not _kind_cache.has(id):
+		_kind_cache[id] = state_kind(st, false)
+	return _kind_cache[id]
 
 
 ## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算

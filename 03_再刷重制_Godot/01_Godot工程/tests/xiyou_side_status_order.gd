@@ -60,6 +60,25 @@ func _kinds(want: Dictionary) -> void:
 			diff.append([k, want[k], got])
 	check("kinds_all_%d" % want.size(), diff.is_empty(), diff.slice(0, 10))
 	check("kind_passive", XSideStatus.state_kind(XDB.rec("States", 5), true) == "常驻")
+	# 缓存（_kind_cached）：两遍都与直算一致；被动恒「常驻」；换过的视图（破阵·真气倍率）不读缓存
+	var cdiff := []
+	for k in want:
+		var st := XDB.rec("States", int(k))
+		if st.is_empty():
+			continue
+		for i in 2:
+			if XSideStatus._kind_cached(int(k), st, false) != want[k]:
+				cdiff.append([k, i])
+	check("kind_cache_all", cdiff.is_empty(), cdiff.slice(0, 10))
+	check("kind_cache_passive", XSideStatus._kind_cached(5, XDB.rec("States", 5), true) == "常驻")
+	var base := XDB.rec("States", 5)
+	var view := base.duplicate(true)
+	view.note = "<BuffType:增益>"
+	view.restriction = 0
+	view.name = "测试视图"
+	view.traits = []
+	check("kind_cache_view", XSideStatus._kind_cached(5, view, false) == "增益" and XSideStatus._kind_cached(5, base, false) == XSideStatus.state_kind(base, false),
+		[XSideStatus._kind_cached(5, view, false), XSideStatus._kind_cached(5, base, false)])
 
 
 ## 实际轮换内容：破阵——天道诅咒 995（异常）、难度适应 1691、普通难度·结算伤害 1631（常驻），接物攻强化（增益）、敏捷弱化（异常）
