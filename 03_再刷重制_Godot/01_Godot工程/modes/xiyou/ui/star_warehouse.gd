@@ -12,7 +12,7 @@ extends Control
 ##   不可存放都不蜂鸣（这与 PH 仓库 XWarehouseScene 不同，别「统一」）；不可存放另弹提示。
 ## - 说明卡：装备选中时显示（同物品页的说明卡）；宠物不显示——原版宠物是 Game_Enemy 没有 note，选中时 HelpExtend 读
 ##   item.note.split 抛错停机（O-125，优化登记），这里不画卡、照常存取。
-## - 说明卡位置（O-待定·星级仓库说明卡）：原版 Window_StarItemList.updateHelp 只 setHelpWindowItem、不调 updatePos，
+## - 说明卡位置（O-255）：原版 Window_StarItemList.updateHelp 只 setHelpWindowItem、不调 updatePos，
 ##   卡的位置每次 setItem 都在上一次的位置上再做一遍修正（x<900 右移 52、y<220 下移 32…），从左上角 (0,0) 起一路漂移
 ##   （ui-pixel4 对照：存入前 (52,32)，存一件后 (104,64)）。重制照别的列表贴着选中格放（O-008）。
 ##   回退：STAR_HELP_DRIFT = true 照原版漂移（按重制 _update_help 的调用次数累加，与原版 updateHelp 次数大体一致）。

@@ -216,7 +216,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## 说明卡位置回退（STAR_HELP_DRIFT，O-待定·星级仓库说明卡）：原版 updateHelp 不调 updatePos，每次 setItem 在上次位置上累加修正；
+## 说明卡位置回退（STAR_HELP_DRIFT，O-255）：原版 updateHelp 不调 updatePos，每次 setItem 在上次位置上累加修正；
 ## 原版读数（ui-pixel4，review_system_pages star_warehouse）：sw_1 本体 (52,32)、sw_2 (104,64)
 func _drift() -> void:
 	var card := Vector2(400, 246)
