@@ -314534,6 +314534,199 @@
      0.9
     ]
    }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6w_1",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 30,
+      "weapons": [
+       1698
+      ]
+     }
+    },
+    "gold": 100000,
+    "random_seq": [
+     0.0005
+    ]
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6w_2",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 30,
+      "weapons": [
+       1699
+      ]
+     }
+    },
+    "gold": 100000,
+    "random_seq": [
+     0.0005
+    ]
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6w_3",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 30,
+      "weapons": [
+       1700
+      ]
+     }
+    },
+    "gold": 100000,
+    "random_seq": [
+     0.0005
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6w_4",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6w_5",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6w_6",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6w_7",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6w_8",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6w_9",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6w_10",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6w_11",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
   }
  ]
 }
