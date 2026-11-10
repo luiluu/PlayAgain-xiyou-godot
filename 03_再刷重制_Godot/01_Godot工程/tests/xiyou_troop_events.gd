@@ -824,7 +824,7 @@ func _unit_checks() -> void:
 
 
 ## 审查第 75 期 P1-1：O-247 的 EXTRA_ONCE 只认 CE1365。数据里「强制出的技能效果 44 又指回自己」的公共事件逐个造一次
-## 「正在跑该公共事件时，强制出来的行动收尾预约」：1365 开关打开时不预约、关掉时预约；其余（CE28 风怒、CE1154 雪岭舞、
+## 「正在跑该公共事件时，强制出来的行动收尾预约」（v0.62.12 数据 9 个：28、110、621、945、979、980、985、1154、1365）：1365 开关打开时不预约、关掉时预约；其余（CE28 风怒、CE1154 雪岭舞、
 ## 堕天一击等概率连发）开关开着也照原版预约，每次再放都重掷
 func _extra_once_scope_checks(logic: XBattleLogic) -> void:
 	var self_ces := {}
@@ -840,7 +840,7 @@ func _extra_once_scope_checks(logic: XBattleLogic) -> void:
 			for e in sk.get("effects", []):
 				if int(e.code) == 44 and int(e.dataId) == id:
 					self_ces[id] = sk
-	check("extra_once.self_ce_found", self_ces.has(1365) and self_ces.has(28) and self_ces.has(1154) and self_ces.size() >= 11, self_ces.keys())
+	check("extra_once.self_ce_found", self_ces.has(1365) and self_ces.has(28) and self_ces.has(1154) and self_ces.size() >= 9, self_ces.keys())
 	var saved_runner = logic._runner
 	var default_once := XBattleCommonEvent.EXTRA_ONCE
 	for once in [true, false]:
