@@ -1,5 +1,5 @@
 extends Node
-## 启动开场图（XSplashScreen，MOG_TitleSplashScreen）与存读档小字（XAutosaveNotice，YEP_X_Autosave Window_Autosave）。
+## 启动开场图（XSplashScreen，MOG_TitleSplashScreen；天启篇改版默认换成开场声明屏 XWarningScreen，两者都测）与存读档小字（XAutosaveNotice，YEP_X_Autosave Window_Autosave）。
 ## 原版读数照源码推（参数见两个类的头注释）：开场图每张淡入 51 帧（+5 到 255，第 51 帧到顶时停留先减 1）、停 89 帧、淡出 51 帧，
 ## 一张共 191 帧；存读档小字 120 帧内每帧 +16，之后每帧 −16。
 ## 内存新局；存档写到 user://test_xiyou_splash_autosave，不碰开发档。
@@ -98,6 +98,48 @@ func _run() -> void:
 		check("v028_then_splash_0", sp3.state().index == 1 and not sp3.state().blank)
 		XSplashScreen.BLANK_FIRST_V028 = false
 		sp3.queue_free()
+	# ---- 开场声明屏（天启篇改版，取代上面三张图；O-待定·开场声明屏）----
+	check("warning_default_on", XSplashScreen.WARNING_SCREEN)
+	XSplashScreen.shown = false
+	var w := XWarningScreen.play(host)
+	check("warning_marks_shown", XSplashScreen.shown)
+	w.set_physics_process(false)
+	var wdone := [false]
+	w.finished.connect(func(): wdone[0] = true)
+	check("warning_text_free", "免费" in XWarningScreen.LINES[0] and "倒卖" in XWarningScreen.LINES[1])
+	check("warning_red_bar", (w._root.get_node("Bar") as ColorRect).color == XWarningScreen.RED)
+	check("warning_starts_hidden", w.state().opacity == 0 and w._root.modulate.a == 0.0)
+	for i in XWarningScreen.FADE:
+		w.step(true)  # 开头连按不算跳过
+	check("warning_fade_in_full", w.state().opacity == 255 and not w.state().fading_out, w.state())
+	await shot("warning")
+	for i in XWarningScreen.HOLD:
+		w.step()
+	check("warning_hold_end", w.state().opacity == 255 and not w.state().fading_out, w.state())
+	w.step()
+	check("warning_fade_out_starts", w.state().fading_out and w.state().opacity < 255, w.state())
+	for i in XWarningScreen.FADE:
+		w.step()
+	check("warning_auto_finish", wdone[0], w.state())
+	# 跳过：MIN_SKIP 帧之后按一下就淡出
+	var w2 := XWarningScreen.play(host)
+	w2.set_physics_process(false)
+	var wdone2 := [false]
+	w2.finished.connect(func(): wdone2[0] = true)
+	for i in XWarningScreen.MIN_SKIP:
+		w2.step(true)
+	check("warning_skip_ignored_early", not w2.state().fading_out, w2.state())
+	check("warning_hint_shown", w2._hint.visible)
+	w2.step(true)
+	check("warning_skip_fades", w2.state().fading_out)
+	for i in XWarningScreen.FADE:
+		w2.step()
+	check("warning_skip_done", wdone2[0], w2.state())
+	# 回退：回到原版三张开场图
+	XSplashScreen.WARNING_SCREEN = false
+	check("rollback_warning_off", not XSplashScreen.WARNING_SCREEN)
+	XSplashScreen.WARNING_SCREEN = true
+
 	XSplashScreen.ENABLED = false
 	check("rollback_not_wanted", not XSplashScreen.wanted())
 	XSplashScreen.ENABLED = true

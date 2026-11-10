@@ -33,6 +33,10 @@ func _ready() -> void:
 	theme = XUI.theme()
 	_build_background()
 	# MOG_TitleSplashScreen：一次运行第一次进标题前先放开场图，放完再出标题指令（XSplashScreen）
+	# 天启篇改版（O-待定·开场声明屏）：默认换成「免费游戏、禁止倒卖」声明屏（XWarningScreen）；WARNING_SCREEN = false 回到三张开场图
+	if XSplashScreen.wanted() and XSplashScreen.WARNING_SCREEN:
+		XWarningScreen.play(self).finished.connect(_title)
+		return
 	if XSplashScreen.wanted():
 		var sp := XSplashScreen.play(self)
 		if sp != null:
