@@ -45,6 +45,8 @@
         // 工坊是独立 DOM 层，SceneManager 换场景不会替它关闭。
         if (window.CodexAlienation) CodexAlienation.closeWorkshop();
         Math.random = function () { return 0.5; };  // 同 mv_oracle 各探针：新局初始装备的随机浮动、宝珠孔数固定
+        // __ilr.newGame 会把地图解释器换成空函数；真气页要原版的（含插件包装），第一次建局前留一份
+        if (!S.nativeUpdateInterpreter && String(Game_Map.prototype.updateInterpreter).length > 30) S.nativeUpdateInterpreter = Game_Map.prototype.updateInterpreter;
         __ilr.newGame();
         if (window.CodexGuide) CodexGuide.MILESTONE_ENABLED = false;
         $gameScreen.clear(); $gamePlayer.clearTransferInfo();
@@ -973,6 +975,47 @@
                 await settle();
                 var s = scene(), w = s._commandWindow || s._pingbiWindow || s._windowLayer.children.filter(function (c) { return c instanceof Window_Selectable; })[0];
                 w.select(0); w.processOk();
+            }
+        }
+    };
+
+    // 存档页（同 tests/xiyou_save_page 的 _page）：金钱 123456、变量 20＝15、206＝3、狗逍遥 Lv 10、大厅 Map004，存到文件 1、3
+    // （无头 Chrome 临时用户目录的 localStorage，不碰玩家存档）后进 Scene_Load：初选最近一格（文件 3）→ 文件 1「读取」确认窗
+    P.px3_save = {
+        setup: async function () {
+            $gameParty._gold = 123456; $gameVariables.setValue(20, 15); $gameVariables.setValue(206, 3);
+            $gameActors.actor(1).changeLevel(10, false);
+            DataManager.loadMapData(4);
+            await wait(function () { return DataManager.isMapLoaded(); });
+            $gameMap.setup(4); $gamePlayer.locate(10, 10); $gamePlayer.refresh();
+            $gameSystem.onBeforeSave(); DataManager.saveGame(1);
+            await frames(2);
+            $gameSystem.onBeforeSave(); DataManager.saveGame(3);
+            await push(Scene_Load);
+        },
+        shots: {
+            load_slot3: async function () {},
+            load_confirm: async function () {
+                var s = scene(), lw = s._listWindow;
+                lw.select(0); lw.processOk(); await settle();
+                var aw = s._actionWindow || s._commandWindow; aw.select(0); aw.processOk();
+            }
+        }
+    };
+
+    // 真气（同 tests/xiyou_ui_pixel 的 _zhenqi）：主菜单「真气」走 CodexZhenqi.openFromMenu（立旗标、回地图），地图开出闭关第一页
+    P.px3_zhenqi = {
+        setup: async function () {},
+        shots: {
+            px3_zhenqi_0: async function () {
+                if (!S.nativeUpdateInterpreter) throw new Error('没留下原版 updateInterpreter');
+                Game_Map.prototype.updateInterpreter = S.nativeUpdateInterpreter;  // 只在这一页（本页是新局最后一步，下一页 fresh 会重新换掉）
+                $gameTemp._codexZhenqiMenu = true;  // 同 CodexZhenqi.openFromMenu：立旗标，地图 setupStartingEvent 包装接手
+                await wait(function () {
+                    var w = scene()._messageWindow;
+                    return $gameMessage.isBusy() && w && w.isOpen() && w._choiceWindow && w._choiceWindow.isOpen();
+                }, 15000);
+                await frames(30);
             }
         }
     };
