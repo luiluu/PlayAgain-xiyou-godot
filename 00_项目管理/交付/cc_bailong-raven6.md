@@ -54,7 +54,7 @@ raven_visual.json 的 motion.167.myth：damage evade→damage、dying wait→dyi
 - **渡鸦神话形态受击／濒死照原样**：无头 Chrome 实机量具 `mv_oracle/real/raven_motion.json` 实测，多帧插件的画面钩子在开机画面才装、包在最外层，神话形态的受击／濒死绕过渡鸦替换。`battle/battler_sprite.gd` `raven_motion` 只换普通形态；`raven_visual_probe.cjs` 先调一次 Scene_Boot.start 装钩子后重量，只 motion.167.myth 的 damage／dying 变。O-196 回退开关不变。
 - **图鉴立绘逐张比**：新量具 `real/actor_book_real.cjs`（结果 `real/actor_book.result.json`）＋对表工具场景 `tests/xiyou_actor_book_compare.tscn`，切片 157 名逐张比图、取图、矩形、逐像素。
 - **173 饿狼图鉴立绘按实机**：同一装载次序，`garouBookPreview` 的呼吸与脚底位置实机被多帧插件盖掉；`ui/actor_book.gd` 改成同通用公式、不呼吸。
-- **原生立绘保持清晰**：原版 144 名原生立绘线性取样略糊，重制保持最近邻，回退开关 `XActorBook.BOOK_NATIVE_SMOOTH`（O-待定·图鉴立绘清晰）。
+- **原生立绘保持清晰**：原版 144 名原生立绘线性取样略糊，重制保持最近邻，回退开关 `XActorBook.BOOK_NATIVE_SMOOTH`（O-待定）。
 - 进度核定：渡鸦 #3／#4、战斗图逐张比早已做完（见本单开头表），图鉴立绘逐张比本期做完。
 
 ## 交接板
@@ -73,7 +73,7 @@ raven_visual.json 的 motion.167.myth：damage evade→damage、dying wait→dyi
 
 ## 优化登记草稿
 
-| O-待定·图鉴立绘清晰 | `ui/actor_book.gd` 状态窗立绘 | 原版 144 名原生侧视图 bitmap.smooth=true、画在半像素 (93.2,71.69) 上，线性取样略糊（167 以后有档的 smooth=false） | 重制最近邻保持清晰 | 同 11-05 Kyo 定胜利背景「不照原版放大模糊」 | `XActorBook.BOOK_NATIVE_SMOOTH = true` 回到原版（原生图线性取样） | cc（白龙 raven6） | 编号待总装分配 |
+| O-待定 | `ui/actor_book.gd` 状态窗立绘 | 原版 144 名原生侧视图 bitmap.smooth=true、画在半像素 (93.2,71.69) 上，线性取样略糊（167 以后有档的 smooth=false） | 重制最近邻保持清晰 | 同 11-05 Kyo 定胜利背景「不照原版放大模糊」 | `XActorBook.BOOK_NATIVE_SMOOTH = true` 回到原版（原生图线性取样） | cc（白龙 raven6） | 编号待总装分配 |
 
 ## 可优化（流程／工具／效率）
 
