@@ -573,7 +573,24 @@ func states() -> Array:
 	for id in XEquipSuits.ids(self,"states"):
 		var state := XDB.rec("States",id)
 		if not state.is_empty() and not result.has(state):result.append(state)
-	return result
+	return _sort_by_priority(result)
+
+## GT_EquipSuitCore.sortEquipSuitBonusStates：接上套装状态后整表按优先级降序再排（V8 稳定排序，同优先级保持原先后），
+## 所以优先级 50 的套装状态排在优先级更低的普通状态前面，不是一律接在末尾。
+## 原版 YEP_AutoPassiveStates 在 plugins.js 里停用（v0.28、v0.62.12 都是），没有被动状态这一段。
+static func _sort_by_priority(rows: Array) -> Array:
+	var sorted := true
+	for i in range(1, rows.size()):
+		if int(rows[i].get("priority", 0)) > int(rows[i - 1].get("priority", 0)):
+			sorted = false
+			break
+	if sorted:
+		return rows
+	var keyed := []
+	for i in rows.size():
+		keyed.append([-int(rows[i].get("priority", 0)), i, rows[i]])
+	keyed.sort_custom(func(x, y): return x[0] < y[0] or (x[0] == y[0] and x[1] < y[1]))
+	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
 	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i)  # 专属角色模块的 paramRate 包装（饿狼形态倍率）
