@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.437",
-  "sequence": 437,
-  "next": "dev.438",
-  "nextSequence": 438,
+  "current": "dev.438",
+  "sequence": 438,
+  "next": "dev.439",
+  "nextSequence": 439,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "ui-zorder1",
+  "currentChange": "battle-me1",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
