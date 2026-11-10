@@ -781,7 +781,11 @@ def audit_probe_reads(tools, probes):
         if not (pc.oracle / name).is_file():
             continue
         dynamic = set()
-        closure = pc._closure([pc.oracle / name], dynamic)
+        try:
+            closure = pc._closure([pc.oracle / name], dynamic)
+        except RuntimeError as error:
+            bad.append('%s：%s' % (name, error))
+            continue
         if dynamic:
             seen_dynamic.add(name)
             if name not in REVIEWED_DYNAMIC:

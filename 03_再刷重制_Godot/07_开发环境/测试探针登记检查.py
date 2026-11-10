@@ -101,6 +101,11 @@ class ReadsCheck(unittest.TestCase):
         self.assertEqual(len(bad), 1)
         self.assertIn('a_probe.cjs 依赖的 mv_oracle/shared/host.cjs', bad[0])
 
+    def test_unresolvable_require_is_reported_not_raised(self):
+        bad = self.bad("require('./shared/missing.cjs');")
+        self.assertEqual(len(bad), 1)
+        self.assertIn('无法确认探针依赖', bad[0])
+
     def test_unregistered_probe_is_not_checked(self):
         self.assertEqual(self.bad("fs.readFileSync(__dirname + '/data.json');", 'fixture_only_probe.cjs'), [])
 
