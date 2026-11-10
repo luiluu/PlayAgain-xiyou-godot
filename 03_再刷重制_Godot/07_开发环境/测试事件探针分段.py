@@ -572,8 +572,8 @@ class StateScopeTests(unittest.TestCase):
             rb = self.run_probe(sb / 'o5b.json', **prev)
             self.assertNotEqual(rb.returncode, 0, bad_keys)
             self.assertIn('presetKeys', rb.stderr, bad_keys)
-        # 只查最新那条（to＝当前 SHA）：旧条目里的键对不上不报错
-        old_row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': '0' * 63 + '2', 'to': s0, 'presetKeys': ['nonexistent'], 'why': '旧条目'}
+        # 只查最新那条（to＝当前 SHA）：别的条目里的键对不上不报错（它不在当前文件的链上，不参与折算）
+        old_row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': '0' * 63 + '2', 'to': '0' * 63 + '3', 'presetKeys': ['nonexistent'], 'why': '旧条目'}
         self.scope([old_row, dict(row, presetKeys=['actors.*'])])
         self.assertEqual(self.stats(self.run_probe(sb / 'o5c.json', **prev))['reused'], n - n_actors)
         # 格式错直接报错，不静默忽略
