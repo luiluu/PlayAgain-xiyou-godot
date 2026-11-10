@@ -343,6 +343,10 @@ func recovery_utility(t: XBattler, rec: Dictionary, item: bool, dir := {}) -> fl
 	return score
 
 
+static func _hyper_armor(t) -> bool:
+	return t is XEnemy and t.boss_difficulty_boss and t.boss_hyper_armor
+
+
 func benefit(t: XBattler, rec: Dictionary, ctx: Dictionary, dir := {}) -> float:
 	var score := 0.0
 	var opp := for_opponent(rec if dir.is_empty() else dir)
@@ -352,12 +356,14 @@ func benefit(t: XBattler, rec: Dictionary, ctx: Dictionary, dir := {}) -> float:
 		var id := int(e.dataId)
 		var harmful := harmful_state(id)
 		var st := XDB.rec("States", id)
-		if code == 21 and id > 1 and harmful == opp and not t.is_state_affected(id) and not t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		# 有霸体的难度 Boss（CodexBossDifficulty.hasHyperArmor）不估控制状态（isControlState），也不估解除霸体 2651（审查第 76 期）
+		if code == 21 and id > 1 and harmful == opp and not t.is_state_affected(id) and not t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) \
+				and not (_hyper_armor(t) and XEnemy.boss_control_state(id)):
 			var probability := minf(1.0, maxf(0.0, float(e.value1)) * logic.state_rate(t, id))
 			var control := int(st.get("restriction", 0)) > 0
 			var value := (11000.0 if control else 4200.0) if opp else 5000.0
 			score += value * probability * (1.0 if ctx.longFight else 0.18)
-		if code == 22 and id > 1 and t.is_state_affected(id):
+		if code == 22 and id > 1 and t.is_state_affected(id) and not (id == XEnemy.BOSS_ARMOR_STATE and _hyper_armor(t)):
 			if fri and harmful:
 				score += 40000.0 if int(st.get("restriction", 0)) > 0 else 16000.0
 			if opp and not harmful:
