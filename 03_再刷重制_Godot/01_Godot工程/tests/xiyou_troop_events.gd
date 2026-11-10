@@ -195,6 +195,16 @@ func _run() -> void:
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
 	if c.has("skillCE"):
+		# O-247：CE1365 三咒凝魄默认只额外放一次（EXTRA_ONCE），回退开关设 false 时回到原版的无限连放（靠 CHAIN_LIMIT 截停）；两支各比一遍
+		if int(c.skillCE) == 1365:
+			var once_default := XBattleCommonEvent.EXTRA_ONCE
+			check("troop2.%s.extra_once_default" % str(c.variant), once_default, once_default)  # 默认修好（只额外放一次）
+			XBattleCommonEvent.EXTRA_ONCE = false
+			_skill_ce_case(c, "off")
+			XBattleCommonEvent.EXTRA_ONCE = true
+			_skill_ce_case(c)
+			XBattleCommonEvent.EXTRA_ONCE = once_default
+			return
 		_skill_ce_case(c)
 		return
 	if c.has("party"):
@@ -260,8 +270,8 @@ func _turn_page_case(c: Dictionary, name: String, logic: XBattleLogic) -> void:
 ## 事件之后 CE 里 313／333 提到的状态在谁身上（参照 snap）、没有跳过的指令。切片里没有起点或公共事件的例子跳过（_skill_ce_missing 计数）。
 var _skill_ce_missing := 0
 
-func _skill_ce_case(c: Dictionary) -> void:
-	var name := "troop2.%s" % str(c.variant)
+func _skill_ce_case(c: Dictionary, tag := "") -> void:
+	var name := "troop2.%s%s" % [str(c.variant), "" if tag == "" else "." + tag]
 	if _only_ce != []:
 		print("CASE ", name, " ", Time.get_ticks_msec())
 	var use: Array = c.use
@@ -334,10 +344,14 @@ func _skill_ce_case(c: Dictionary) -> void:
 			sk = int(logic.change_to(s.actor(int(subj.substr(1))), XDB.rec("Skills", sk)).id)
 		want.append([subj, sk])
 	# CE1365 三咒凝魄：强制的 6930 自己又带效果 44 → 1365，原版无限连放（参照 2 万帧里放了 700 多次还没完）；
-	# 重制 XBattleCommonEvent.CHAIN_LIMIT 截停。参照比上限长时只比前 CHAIN_LIMIT 个
-	if want.size() > XBattleCommonEvent.CHAIN_LIMIT:
-		want = want.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
-		got = got.slice(0, XBattleCommonEvent.CHAIN_LIMIT)
+	# 默认（XBattleCommonEvent.EXTRA_ONCE）只额外放一次＝参照的第一个强制行动；回退开关关掉时 CHAIN_LIMIT 截停，参照比上限长时只比前 CHAIN_LIMIT 个
+	var cap := XBattleCommonEvent.CHAIN_LIMIT
+	if int(c.skillCE) == 1365 and XBattleCommonEvent.EXTRA_ONCE:
+		cap = 1
+		check(name + ".once_len", got.size() == mini(want.size(), 1), [got.size(), want.size()])
+	if want.size() > cap:
+		want = want.slice(0, cap)
+		got = got.slice(0, cap)
 	check(name + ".forced", JSON.stringify(got) == JSON.stringify(want), [got, want])
 	var watch: Array = Array(c.watch).map(func(x): return int(x))
 	for b in logic.actors + logic.enemies:

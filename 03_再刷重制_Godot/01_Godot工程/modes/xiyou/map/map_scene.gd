@@ -96,6 +96,7 @@ static func slice() -> Dictionary:
 func _ready() -> void:
 	XPlatform.idle_probe = XHangUp.current_active  # 跨平台二期：后台补跑、挂机不锁屏看这个
 	XPlatform.pause_hook = _on_app_pause  # 安卓切后台自动存档（XAutoSave）
+	XPlatform.idle_stopper = XHangUp.stop_current  # 通知上按了「停止挂机」（android-bgidle1）
 	# MV 画面底色为黑：比画面小的地图（开局 Map001/002 为 17×13）四周是黑的
 	var backdrop := CanvasLayer.new()
 	backdrop.layer = -100

@@ -191,7 +191,9 @@ def parse_android(badging: str, xmltree: str) -> dict:
             'orientation': int(orient.group(1)) if orient else None,
             'permissions': _re.findall(r"uses-permission: name='([^']+)'", badging),
             'versionCode': vcode.group(1) if vcode else None, 'versionName': vname.group(1) if vname else None,
-            'icon': icon.group(1) if icon else None, 'label': label.group(1) if label else None}
+            'icon': icon.group(1) if icon else None, 'label': label.group(1) if label else None,
+            'bgidle_service': 'local.kyo.xiyou.bgidle.XiyouIdleService' in xmltree,
+            'bgidle_plugin': 'org.godotengine.plugin.v2.XiyouBgIdle' in xmltree}
 
 
 def android_layout(apk: Path, names, debug: bool = True):
@@ -227,6 +229,14 @@ def android_problems(info: dict, names: set, debug: bool = True):
             problems.append(f'{key} 是 {info[key]}，应是 {want}')
     if not info.get('icon'):
         problems.append('读不出应用图标（application-icon）')
+    # 后台挂机前台服务插件（android-bgidle1）：预设开了 Gradle 构建就该编进包
+    if str(preset_template(preset, 'gradle_build/use_gradle_build')).lower() == 'true':
+        if not info.get('bgidle_service') or not info.get('bgidle_plugin'):
+            problems.append('包里没有后台挂机插件 XiyouBgIdle（服务 %s、插件登记 %s）：先跑 云端导出.py android-build'
+                            % (info.get('bgidle_service'), info.get('bgidle_plugin')))
+        for perm in ('android.permission.FOREGROUND_SERVICE', 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE', 'android.permission.POST_NOTIFICATIONS'):
+            if perm not in info.get('permissions', []):
+                problems.append('包里没有权限 ' + perm)
     need = ['assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap']
     if debug:
         need.append('assets/tests/xiyou_mac_export.tscn.remap')

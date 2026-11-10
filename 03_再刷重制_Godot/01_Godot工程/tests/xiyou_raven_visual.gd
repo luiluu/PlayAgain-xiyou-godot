@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·ravenfx·未经审查】渡鸦表现余项与 mv_oracle/raven_visual_probe.cjs 的冻结 v0.28 参照（generated/oracle/raven_visual.json）逐例比：
-## ① 战斗动作替换（XBattlerSprite.raven_motion）：167 普通／神话 damage→evade、dying→wait，168、1 号不换；
+## ① 战斗动作替换（XBattlerSprite.raven_motion）：167 普通 damage→evade、dying→wait，神话形态不换（raven6 改探针按实机装载次序重量），168、1 号不换；
 ## ② 地图步行帧停留（MVCharacter.animation_wait）：玩家（取队长）、第 1／2 个跟随者、普通角色，移动速度 1～6。
 ## 最后验两个回退开关：RAVEN_MOTION_REMAP=false、RAVEN_WALK_SLOW=false 时全部照通用值。
 const ORACLE := "oracle/raven_visual.json"
@@ -47,6 +47,8 @@ func _motion(c: Dictionary, on: bool) -> void:
 	XState.current = s
 	var sp := XBattlerSprite.new()
 	sp.battler = s.actor(int(c.setup.actor))
+	if c.setup.get("myth", false):  # 取角色时渡鸦存档会初始化，神话回合要在取完之后设
+		s.raven["myth"] = 3
 	var got := {}
 	var want := {}
 	for m in c.observed.motions:

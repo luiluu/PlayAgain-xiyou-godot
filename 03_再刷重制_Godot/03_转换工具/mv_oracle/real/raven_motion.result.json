@@ -1,0 +1,285 @@
+{
+ "spec": {
+  "name": "raven_motion",
+  "party": [
+   167,
+   1
+  ],
+  "level": 60,
+  "troop": 1,
+  "actor": 167,
+  "steps": [
+   {
+    "tag": "normal_damage",
+    "js": "s.refreshMotion = function () {}; s.startMotion('damage');",
+    "wait": 1000
+   },
+   {
+    "tag": "normal_dying",
+    "js": "s.startMotion('dying');",
+    "wait": 1000
+   },
+   {
+    "tag": "myth",
+    "js": "delete s.refreshMotion; a._codexRavenMythTurns = 3; a.refresh(); s.startMotion('wait');",
+    "wait": 2000
+   },
+   {
+    "tag": "myth_damage",
+    "js": "s.refreshMotion = function () {}; s.startMotion('damage');",
+    "wait": 1000,
+    "shot": true
+   },
+   {
+    "tag": "myth_dying",
+    "js": "s.startMotion('dying');",
+    "wait": 1000,
+    "shot": true
+   },
+   {
+    "tag": "myth_evade",
+    "js": "s.startMotion('evade');",
+    "wait": 1000
+   }
+  ]
+ },
+ "result": {
+  "normal_damage": {
+   "url": "img/sv_actors/Raven_Normal_SV.png",
+   "bmp": [
+    576,
+    384
+   ],
+   "frame": [
+    128,
+    320,
+    64,
+    64
+   ],
+   "scale": [
+    1.2,
+    1.2
+   ],
+   "pos": [
+    -3,
+    0
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": true,
+   "shadow": true,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "evade",
+   "smooth": false,
+   "others": [
+    "img/system/Shadow2.png",
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  },
+  "normal_dying": {
+   "url": "img/sv_actors/Raven_Normal_SV.png",
+   "bmp": [
+    576,
+    384
+   ],
+   "frame": [
+    64,
+    64,
+    64,
+    64
+   ],
+   "scale": [
+    1.2,
+    1.2
+   ],
+   "pos": [
+    -3,
+    0
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": true,
+   "shadow": true,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "wait",
+   "smooth": false,
+   "others": [
+    "img/system/Shadow2.png",
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  },
+  "myth": {
+   "url": "img/sv_actors/sv/UserSV_RavenMythic/UserSV_RavenMythic0_2.png",
+   "bmp": [
+    380,
+    280
+   ],
+   "frame": [
+    0,
+    0,
+    380,
+    280
+   ],
+   "scale": [
+    0.4615,
+    0.4615
+   ],
+   "pos": [
+    6.4615,
+    19.2712
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": false,
+   "shadow": false,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "wait",
+   "smooth": true,
+   "others": [
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  },
+  "myth_damage": {
+   "url": "img/sv_actors/sv/UserSV_RavenMythic/UserSV_RavenMythic4_0.png",
+   "bmp": [
+    380,
+    280
+   ],
+   "frame": [
+    0,
+    0,
+    380,
+    280
+   ],
+   "scale": [
+    0.4615,
+    0.4615
+   ],
+   "pos": [
+    6.4615,
+    18.0213
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": false,
+   "shadow": false,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "damage",
+   "smooth": true,
+   "others": [
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  },
+  "myth_dying": {
+   "url": "img/sv_actors/sv/UserSV_RavenMythic/UserSV_RavenMythic14_0.png",
+   "bmp": [
+    380,
+    280
+   ],
+   "frame": [
+    0,
+    0,
+    380,
+    280
+   ],
+   "scale": [
+    0.4615,
+    0.4615
+   ],
+   "pos": [
+    6.4615,
+    16.3725
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": false,
+   "shadow": false,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "dying",
+   "smooth": true,
+   "others": [
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  },
+  "myth_evade": {
+   "url": "img/sv_actors/sv/UserSV_RavenMythic/UserSV_RavenMythic5_0.png",
+   "bmp": [
+    380,
+    280
+   ],
+   "frame": [
+    0,
+    0,
+    380,
+    280
+   ],
+   "scale": [
+    0.4615,
+    0.4615
+   ],
+   "pos": [
+    6.4615,
+    17.397
+   ],
+   "anchor": [
+    0.5,
+    1
+   ],
+   "alpha": 1,
+   "visible": true,
+   "weapon": false,
+   "shadow": false,
+   "spr": [
+    819,
+    230
+   ],
+   "motion": "evade",
+   "smooth": true,
+   "others": [
+    "img/system/States.png",
+    "img/pictures/BattleCursor_A.png"
+   ]
+  }
+ },
+ "log": []
+}

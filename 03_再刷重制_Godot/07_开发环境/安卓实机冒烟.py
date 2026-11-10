@@ -38,7 +38,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0}
+WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0, 'bgidle_away': 60.0, 'bgidle_resume': 8.0}
 
 
 class Report:
@@ -232,6 +232,48 @@ def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work
         rep.info('android_autosave_continue', f'切后台那一刻没存（{got[-1]}，如开场事件还在跑），重开 AUTO_SAVE_PRESENT={present[-1] if present else "没打出来"}')
 
 
+def bgidle_run(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Report) -> None:
+    """后台挂机前台服务（android-bgidle1）：_cl_ 带 --smoke-arm-bgidle（不挂机也让插件切后台起服务）→ HOME → 等 60 秒：
+    进程活着、XiyouIdleService 在跑、通知在；回前台：服务停了、插件记的离开时长接近 60 秒。通知上「停止挂机」按钮模拟器点不到，留真机清单。"""
+    v = work / 'bgidle.apk'
+    if not signer.make(apk, v, ['--', '--report-entry', '--smoke-arm-bgidle']):
+        rep.check('android_bgidle_service', False, '重签副本没做出来')
+        return
+    adb.rc('install', '-r', str(v))
+    adb.run('shell', 'pm', 'clear', pkg)
+    adb.run('shell', 'pm', 'grant', pkg, 'android.permission.POST_NOTIFICATIONS')
+    adb.run('logcat', '-c')
+    adb.launch(pkg)
+    v.unlink(missing_ok=True)
+    sleep('launch')
+    pid0 = adb.pid(pkg)
+    t0 = time.time()
+    adb.key(KEY_HOME)
+    sleep('bgidle_away')
+    pid1 = adb.pid(pkg)
+    services = adb.run('shell', 'dumpsys', 'activity', 'services', pkg, timeout=60)
+    notes = adb.run('shell', 'dumpsys', 'notification', '--noredact', timeout=60)
+    running = 'XiyouIdleService' in services
+    noted = any(pkg in line and 'xiyou_idle' in line for line in notes.splitlines()) or bool(
+        re.search(r'pkg=%s\b[\s\S]{0,4000}?xiyou_idle' % re.escape(pkg), notes))
+    adb.launch(pkg)
+    waited = time.time() - t0
+    sleep('bgidle_resume')
+    services2 = adb.run('shell', 'dumpsys', 'activity', 'services', pkg, timeout=60)
+    log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
+    (work / 'logcat_bgidle.txt').write_text(log + '\n---- services（后台）----\n' + services + '\n---- services（回前台）----\n' + services2, encoding='utf-8')
+    armed = 'BGIDLE_ARMED=true' in log
+    away = [int(x) for x in re.findall(r'回前台：离开 (\d+) 毫秒', log)]
+    adb.run('shell', 'am', 'force-stop', pkg)
+    rep.check('android_bgidle_armed', armed, 'logcat 里有 BGIDLE_ARMED=true' if armed else '没打出 BGIDLE_ARMED=true（插件没编进包？）')
+    rep.check('android_bgidle_alive_in_background', bool(pid0) and pid1 == pid0, f'切后台前 pid={pid0 or "无"}，{WAIT["bgidle_away"]:.0f} 秒后 pid={pid1 or "无"}')
+    rep.check('android_bgidle_service', running, 'dumpsys activity services 里有 XiyouIdleService' if running else '后台时没看到 XiyouIdleService')
+    rep.check('android_bgidle_notification', noted, 'dumpsys notification 里有 xiyou_idle 频道的通知' if noted else '后台时没看到挂机通知')
+    rep.check('android_bgidle_stops_on_resume', 'XiyouIdleService' not in services2, '回前台后服务停了' if 'XiyouIdleService' not in services2 else '回前台后服务还在')
+    rep.check('android_bgidle_away_measured', bool(away) and abs(away[-1] / 1000 - waited) <= max(10.0, waited * 0.3),
+              f'插件记的离开时长 {away[-1] / 1000:.1f} 秒（实际离开约 {waited:.0f} 秒）' if away else 'logcat 里没有「回前台：离开 N 毫秒」')
+
+
 def emulators(adb: str) -> list:
     out = subprocess.run([adb, 'devices'], capture_output=True, text=True, timeout=30).stdout
     rows = [l.split('\t') for l in out.splitlines()[1:] if '\t' in l]
@@ -359,6 +401,7 @@ def main(argv=None) -> int:
     if signer is not None and not a.no_keys and not any(n == 'android_install' and o is False for n, o, _ in rep.rows):
         key_runs(adb, signer, a.apk, a.package, work, rep)
         autosave_run(adb, signer, a.apk, apk, a.package, work, rep)
+        bgidle_run(adb, signer, a.apk, a.package, work, rep)
     for f in work.glob('*.apk'):
         f.unlink()
     write_report(work, rep)

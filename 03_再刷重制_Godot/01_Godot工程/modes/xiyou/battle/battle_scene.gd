@@ -93,6 +93,8 @@ var seq_player: XSequencePlayer
 var fade_in := false
 var prestarted_bgm: AudioStreamPlayer = null
 var _fade: XSceneFade
+## 事件指令 221／222 淡出淡入、224 闪烁画面的画面层（XBattleScreen，rules-gaps11）
+var screen_fx: XBattleScreen
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
 ## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
@@ -132,6 +134,9 @@ func _ready() -> void:
 	combo = XComboCounter.new()
 	combo.position = _origin
 	add_child(combo)
+	# $gameScreen 的闪烁与淡出淡入（Spriteset_Base 的 _flashSprite／_fadeSprite，rules-gaps11）：在战斗画面之上、伤害记录与窗口之下，不随镜头动
+	screen_fx = XBattleScreen.new()
+	add_child(screen_fx)
 	# 设置「战斗伤害记录」：开战时开着才建（Star_CombatDamageRecord），在战斗画面之上、窗口之下，不随胜利镜头缩放
 	if XConfig.flag("CombatDamageRecordKey"):
 		record = XDamageRecord.new()
@@ -153,7 +158,7 @@ func _ready() -> void:
 	ui.add_child(message)
 	camera.sprites = sprites
 	for visual in get_children():
-		if visual != ui and visual != record and (visual is Control or visual is Node2D):
+		if visual != ui and visual != record and visual != screen_fx and (visual is Control or visual is Node2D):
 			_cam_base[visual] = visual.position
 	se = AudioStreamPlayer.new()
 	XAudio.bind(se, "SE")
@@ -590,6 +595,8 @@ func _physics_process(_delta: float) -> void:
 	if _fade != null and _fade.busy():
 		_fade.step()
 		XBattleTransition.note({"phase": "in", "fade": _fade.opacity})
+	if screen_fx != null:
+		screen_fx.step()   # Scene_Battle.update → $gameScreen.update（每帧，先于事件）
 	_update_state_animations()
 	if seq_player == null:
 		flush_popups()       # 行动序列演出中由 XSequencePlayer 每帧在结算之后出
@@ -703,6 +710,7 @@ func _main() -> void:
 		if logic.is_won():
 			otb.hide_bar()
 			await _victory()
+			reserve_battle_end_event(XState.current, 0)
 			finished.emit(0)
 			return
 		if logic.is_lost():
@@ -807,7 +815,19 @@ func _escape_success() -> void:
 	await message.run({"lines": [escape_text()]})
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(1)
+	reserve_battle_end_event(XState.current, 1)
 	finished.emit(1)
+
+
+## MV BattleManager.updateBattleEnd（rpg_managers.js 2696）：没逃跑且全灭时，可输就复活到 1 血、不可输去游戏结束，两种都不预约；
+## 其余（胜利、逃跑）预约公共事件 1308「战斗结束变量清除」（清太极之力、查克拉、命运连锁、一护技能号等战斗变量，町甄纯真值回初值，
+## 欠债减一）。单槽，覆盖战斗里留下的预约（同 $gameTemp.reserveCommonEvent）；回地图后 XMapScene 照常跑（地图事件跑完才轮到它）。
+## 参照 tests/fixtures/battle_end_ce_oracle.json（GD5）。设 0 关掉＝重制原来不预约的样子
+static var BATTLE_END_COMMON_EVENT := 1308
+
+static func reserve_battle_end_event(s: XState, result: int) -> void:
+	if BATTLE_END_COMMON_EVENT > 0 and s != null and result != 2:
+		s.reserve_common_event(BATTLE_END_COMMON_EVENT)
 
 
 ## 逃跑失败：逃跑音效，消息窗两行「<队名>开始逃跑了！」「\.但是没有逃跑成功！」，等按键后这次行动结束（OTB endAction）
@@ -1556,6 +1576,21 @@ const ACT_LOG_FRAMES := 41
 const ACT_END_FRAMES := 52
 
 
+## 敌群事件／战斗里的公共事件的画面指令（XBattleEventRunner 记的 event_view）：
+## 221／222 Game_Interpreter.command221／222：startFadeOut／startFadeIn(fadeSpeed 24)，事件等 24 帧；
+## 224 command224：startFlash(颜色, 帧数)，勾了等待才等。battleback 卷动只是记录，不演。
+## 原版 wait(n) 把 _waitCount 设 n，之后 n 帧都在 updateWaitCount 里空转，第 n＋1 帧才跑下一条
+## （参照 battle_screen_fx_oracle：221 在 k=1，101 在 k=26；222 在 k=119，224 在 k=144），所以这里等 n＋1 帧。
+func _event_view(l: Dictionary) -> void:
+	if l.has("fade"):
+		screen_fx.start_fade(str(l.fade) == "out", XBattleScreen.FADE_SPEED)
+		await _wait_frames(XBattleScreen.FADE_SPEED + 1)
+	elif l.has("flash"):
+		screen_fx.start_flash(l.flash, int(l.duration))
+		if bool(l.get("wait", false)):
+			await _wait_frames(int(l.duration) + 1)
+
+
 func _wait_frames(n: int) -> void:
 	for i in range(maxi(n, 0)):
 		await get_tree().physics_frame
@@ -1627,6 +1662,8 @@ func _play(logs: Array) -> void:
 				play_se(l.se)
 			"bgm":
 				_change_bgm(l.bgm)
+			"event_view":
+				await _event_view(l)
 			"movie":
 				var movie := XMoviePlayer.start(str(l.name))   # 事件指令 261：放完再往下演（原版解释器等 video）
 				if movie != null:

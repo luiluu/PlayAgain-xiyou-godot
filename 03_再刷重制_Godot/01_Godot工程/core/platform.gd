@@ -18,11 +18,23 @@ const BACKGROUND_CAP_SEC := 1800.0
 const CATCH_UP_SPEED := 8
 ## 离开不到这么久不补跑（切出去看一眼消息）。
 const CATCH_UP_MIN_SEC := 5.0
+## O-248 安卓后台挂机前台服务（Kyo 2026-11-09 定 C，cc 平台 android-bgidle1）：照原版，挂机中切后台起前台服务
+## （安卓插件 XiyouBgIdle：通知栏常驻计时、点通知回游戏、「停止挂机」按钮），进程不被系统杀掉。Godot 切后台渲染表面被收走、
+## 主循环照样停，所以离开的时间仍在回前台时补跑：按真实离开时间（含锁屏睡眠；按了停止只算到按的那一刻），上限 SERVICE_CAP_SEC；
+## 按过停止的，补完就结束挂机（idle_stopper）。false＝回到 O-201：不起服务，离开时间按游戏计时、最多 BACKGROUND_CAP_SEC。
+## 没有插件（桌面、非 Gradle 包、插件没编进去）时自动走 O-201。
+static var BACKGROUND_SERVICE := true
+## 有前台服务时补跑上限（游戏秒；CATCH_UP_SPEED 倍速下 4 小时补 30 分钟）。
+static var SERVICE_CAP_SEC := 14400.0
+## 测试用：替身插件（有 setArmed／lastAwayMsec／lastStoppedByUser／requestNotificationPermission）；null＝安卓上找 XiyouBgIdle 单例。
+static var bg_service_override = null
 
 ## 挂机是否进行中：GameApp 不认识各模式，由模式（西游地图）在 _ready 里设；没设当成没挂机。
 static var idle_probe := Callable()
 ## 切后台时调一次（参数：当前毫秒）：西游地图挂上自动存档（XAutoSave）；离开地图失效。
 static var pause_hook := Callable()
+## 结束挂机（通知上按了「停止挂机」、补跑完后调）：西游地图设成 XHangUp.stop；没设就只停补跑。
+static var idle_stopper := Callable()
 
 signal virtual_keys_release_requested
 signal catch_up_changed(active: bool)
@@ -35,6 +47,13 @@ var _catch_up_left := 0.0
 var _catch_up_active := false
 var _saved_engine := {}
 var _keep_on := false
+## 已告诉插件「挂机中」（切后台就起服务）
+var _service_armed := false
+var _notify_asked := false
+## 这次补跑完要结束挂机（通知上按过停止）
+var _stop_idle_after := false
+## 冒烟用（安卓实机冒烟.py）：启动参数 --smoke-arm-bgidle＝不挂机也让插件切后台起服务
+var _force_arm := false
 
 
 static func is_mobile() -> bool:
@@ -75,6 +94,7 @@ static func idle_active() -> bool:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_force_arm = OS.get_cmdline_user_args().has("--smoke-arm-bgidle")
 	if is_mobile():
 		get_tree().quit_on_go_back = false
 
@@ -216,11 +236,67 @@ func on_resumed(now_msec := Time.get_ticks_msec()) -> float:
 	_paused_at_msec = -1
 	var was_idle := _paused_idle
 	_paused_idle = false
-	if not BACKGROUND_IDLE or not was_idle or not idle_active() or away < CATCH_UP_MIN_SEC:
+	# 前台服务陪着的这次离开：用插件量的真实时间（Time.get_ticks_msec 不算锁屏睡眠）
+	var svc_away := service_away_sec()
+	var stopped := svc_away >= 0.0 and bool(bg_service().lastStoppedByUser())
+	if svc_away >= 0.0:
+		away = svc_away
+	if not BACKGROUND_IDLE or not was_idle or not idle_active():
 		return 0.0
-	var seconds := minf(away, BACKGROUND_CAP_SEC)
+	if away < CATCH_UP_MIN_SEC:
+		if stopped:
+			_stop_idle()
+		return 0.0
+	var seconds := minf(away, SERVICE_CAP_SEC if svc_away >= 0.0 else BACKGROUND_CAP_SEC)
 	start_catch_up(seconds)
+	_stop_idle_after = stopped
 	return seconds
+
+
+## 后台挂机插件；没有（桌面、插件没编进包）是 null。
+func bg_service():
+	if bg_service_override != null:
+		return bg_service_override
+	if is_android() and Engine.has_singleton("XiyouBgIdle"):
+		return Engine.get_singleton("XiyouBgIdle")
+	return null
+
+
+## 上一次由前台服务陪着的离开秒数；-1＝没起服务（没挂机、插件没有、BACKGROUND_SERVICE 关着、起服务失败）。
+func service_away_sec() -> float:
+	var svc = bg_service()
+	if svc == null or not BACKGROUND_SERVICE:
+		return -1.0
+	var ms := int(svc.lastAwayMsec())
+	return ms / 1000.0 if ms >= 0 else -1.0
+
+
+func service_armed() -> bool:
+	return _service_armed
+
+
+## 挂机中就告诉插件「切后台时起服务」；切后台的瞬间（活动 onPause）GDScript 已经跑不到，只能提前设好。
+## 第一次挂机时顺带申请通知权限（安卓 13+；不给也能起服务，只是看不到通知）。
+func _sync_service_arm() -> void:
+	var svc = bg_service()
+	var want := svc != null and BACKGROUND_IDLE and BACKGROUND_SERVICE and (idle_active() or _force_arm)
+	if want == _service_armed:
+		return
+	_service_armed = want
+	if svc == null:
+		return
+	svc.setArmed(want)
+	if _force_arm:
+		print("BGIDLE_ARMED=%s" % want)
+	if want and not _notify_asked:
+		_notify_asked = true
+		svc.requestNotificationPermission()
+
+
+func _stop_idle() -> void:
+	_stop_idle_after = false
+	if idle_stopper.is_valid() and idle_active():
+		idle_stopper.call()
 
 
 func is_catching_up() -> bool:
@@ -251,6 +327,8 @@ func stop_catch_up() -> void:
 	Engine.max_physics_steps_per_frame = int(_saved_engine.get("steps", 8))
 	Engine.time_scale = float(_saved_engine.get("scale", 1.0))
 	catch_up_changed.emit(false)
+	if _stop_idle_after:
+		_stop_idle()
 
 
 func catch_up_left() -> float:
@@ -264,6 +342,7 @@ func _process(delta: float) -> void:
 		_catch_up_left -= delta / maxf(float(_saved_engine.get("scale", 1.0)), 0.001)
 		if _catch_up_left <= 0.0 or not idle_active():
 			stop_catch_up()
+	_sync_service_arm()
 	var want_on := is_mobile() and idle_active()
 	if want_on != _keep_on:
 		_keep_on = want_on

@@ -8,7 +8,7 @@ extends Control
 ## - 原版 bug（O-239）：create 里 for (i = 0; …) 从 0 数，title_list 的键是 1～10，第 0 项 undefined 不等于 ""，
 ##   于是先压进一张 loadTitle2(undefined)＝空图，开场先黑屏一整轮（51＋90＋51 帧）才出 Splash_0。重制默认去掉这张空图；
 ##   BLANK_FIRST_V028 = true 回到原版（先黑一轮）。
-## - 一次运行只放一次（原版 Scene_Boot 才进；从游戏回标题不再放）；测试（headless 或命令行带场景／脚本）不放，
+## - 一次运行只放一次（原版 Scene_Boot 才进；从游戏回标题不再放）；测试（headless 或命令行带场景／脚本）和按键冒烟（--smoke-keys，SKIP_FOR_SMOKE）不放，
 ##   环境变量 XIYOU_SPLASH=1／0 强制放／不放。图缺时直接进标题。回退：ENABLED = false 不放开场图。
 ## 帧按 _physics_process 计（变速齿轮 1.6 倍时同原版按 updateScene 计）。
 
@@ -17,6 +17,10 @@ signal finished
 static var ENABLED := true
 static var BLANK_FIRST_V028 := false
 static var shown := false
+## 按键冒烟（命令行带 --smoke-keys=…）不放开场图：开场图要放 10 秒以上并吃掉按键，冒烟的第一下键会落在开场图上，
+## 标题没接到键、新游戏没开（安卓模拟器冒烟 android_keys_title_*、android_pause_hook_fires 在 dev.410 合并开场图后就挂）。
+## 回退：false＝冒烟也放开场图（回到会挂的旧状态，只用于对照）。
+static var SKIP_FOR_SMOKE := true
 
 const IMAGES := ["Splash_0", "Splash_1", "Splash_2"]
 const DURATION := 90
@@ -37,12 +41,22 @@ static func wanted() -> bool:
 		return not shown
 	if env == "0" or not ENABLED or shown:
 		return false
+	if SKIP_FOR_SMOKE and is_smoke_run(OS.get_cmdline_user_args()):
+		return false
 	if DisplayServer.get_name() == "headless":
 		return false
 	for a in OS.get_cmdline_args():
 		if a.ends_with(".tscn") or a.ends_with(".gd") or a == "-s" or a == "--script":
 			return false
 	return true
+
+
+## 命令行用户参数里有 --smoke-keys=（按键冒烟）
+static func is_smoke_run(user_args: PackedStringArray) -> bool:
+	for a in user_args:
+		if a.begins_with(XKeySmoke.ARG):
+			return true
+	return false
 
 
 ## 盖在 parent 上放一轮；放不了返回 null

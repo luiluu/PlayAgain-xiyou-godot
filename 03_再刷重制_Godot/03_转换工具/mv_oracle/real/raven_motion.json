@@ -1,0 +1,9 @@
+{"name": "raven_motion", "party": [167, 1], "level": 60, "troop": 1, "actor": 167,
+ "steps": [
+  {"tag": "normal_damage", "js": "s.refreshMotion = function () {}; s.startMotion('damage');", "wait": 1000},
+  {"tag": "normal_dying", "js": "s.startMotion('dying');", "wait": 1000},
+  {"tag": "myth", "js": "delete s.refreshMotion; a._codexRavenMythTurns = 3; a.refresh(); s.startMotion('wait');", "wait": 2000},
+  {"tag": "myth_damage", "js": "s.refreshMotion = function () {}; s.startMotion('damage');", "wait": 1000, "shot": true},
+  {"tag": "myth_dying", "js": "s.startMotion('dying');", "wait": 1000, "shot": true},
+  {"tag": "myth_evade", "js": "s.startMotion('evade');", "wait": 1000}
+ ]}

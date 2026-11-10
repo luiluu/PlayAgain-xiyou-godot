@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 后台挂机前台服务（cc 平台 android-bgidle1）：清单合并进游戏包 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application>
+        <meta-data
+            android:name="org.godotengine.plugin.v2.XiyouBgIdle"
+            android:value="local.kyo.xiyou.bgidle.XiyouBgIdlePlugin" />
+
+        <service
+            android:name="local.kyo.xiyou.bgidle.XiyouIdleService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps an idle game session alive while the player is away; elapsed time is applied when the player returns." />
+        </service>
+    </application>
+</manifest>

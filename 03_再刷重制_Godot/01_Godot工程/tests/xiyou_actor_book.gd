@@ -100,14 +100,14 @@ static func diff(got: Array, want: Array) -> String:
 
 
 ## 167 号以后有档的立绘：可见范围缩到高 72（或宽 129，取小），脚底中点在 x＝宽/10、
-## y＝宽/13＋可见高/2（饿狼 y＝宽/13＋72，呼吸只拉竖向）；内容层坐标（窗口坐标减内边距）
+## y＝宽/13＋可见高/2（173 饿狼同此，实机多帧插件盖掉了 garouBookPreview 的呼吸，raven6）；内容层坐标（窗口坐标减内边距）
 func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 	var prof: Array = XAppearance.PROFILES.get(str(sp.key), [])
 	var tex: Texture2D = load(str(sp.path))
 	if prof.is_empty() or tex == null:
 		bad.sprite.append("%d 没有档 %s" % [id, sp.key])
 		return
-	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1, 0)
+	var r: Array = XActorBook.sprite_rect(id, sp, Vector2(tex.get_size()), 1)
 	var dst: Rect2 = r[0]
 	var b := Rect2(prof[2], prof[3], prof[4] - prof[2], prof[5] - prof[3])
 	var sc := minf(72.0 / b.size.y, 129.0 / b.size.x) * XActorBook.book_scale(str(sp.key))
@@ -118,8 +118,8 @@ func _sprite_geometry(id: int, sp: Dictionary, bad: Dictionary) -> void:
 	var cx := 932.0 / 10.0 - XMVWindow.PADDING
 	if id == 179:
 		check("liuying_book_scale", is_equal_approx(sc, 72.0 / 116.0 * 0.8), sc)
-	var want_y := 932.0 / 13.0 - XMVWindow.PADDING + (72.0 if bool(sp.garou) else b.size.y * sc / 2.0)
-	if not (is_equal_approx(sx, sc) and absf(vis_mid - cx) < 0.01 and absf(vis_bottom - want_y) < 0.01 and (bool(sp.garou) or is_equal_approx(sy, sc))):
+	var want_y := 932.0 / 13.0 - XMVWindow.PADDING + b.size.y * sc / 2.0  # 173 饿狼同通用公式（raven6 实机量）
+	if not (is_equal_approx(sx, sc) and absf(vis_mid - cx) < 0.01 and absf(vis_bottom - want_y) < 0.01 and is_equal_approx(sy, sc)):
 		bad.sprite.append("%d 立绘位置 %s 缩放 %s／%s 档 %s 脚底 %s,%s 应 %s,%s" % [id, dst, sx, sy, sc, vis_mid, vis_bottom, cx, want_y])
 
 
@@ -142,6 +142,12 @@ func _run() -> void:
 	check("v029_off_all_slots", XActorBook.index_ids().size() == slots and XActorBook.index_names()[141] == XActorBook.actor_name(141),
 		XActorBook.index_ids().size())
 	XImportedBalance.V029_HIDE_ACTORS = true
+	# 立绘平滑（raven6 实机量具）：默认最近邻保持清晰；BOOK_NATIVE_SMOOTH 打开时只有原版原生图（<167 或无档）线性取样，有档的 167+ 不变
+	check("native_smooth_off", not XActorBook.native_smooth(1, XActorBook.sprite_spec(1)))
+	XActorBook.BOOK_NATIVE_SMOOTH = true
+	check("native_smooth_on", XActorBook.native_smooth(1, XActorBook.sprite_spec(1)) and not XActorBook.native_smooth(173, XActorBook.sprite_spec(173)),
+		[XActorBook.sprite_spec(1), XActorBook.sprite_spec(173)])
+	XActorBook.BOOK_NATIVE_SMOOTH = false
 	var bad := {"status": [], "sprite": [], "header": [], "list": [], "skills": []}
 	for key in ref.actors:
 		var id := int(key)

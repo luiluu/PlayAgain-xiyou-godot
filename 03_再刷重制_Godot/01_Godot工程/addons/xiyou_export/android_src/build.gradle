@@ -1,0 +1,33 @@
+// XiyouBgIdle：Godot 4.7.2 安卓插件（v2）。版本与 Godot 构建模板 config.gradle 对齐（AGP 8.6.1、Kotlin 2.1.21、compileSdk 36、minSdk 24）。
+// godot-lib 只编译时引用（-PgodotJar=<godot-lib aar 里解出的 classes.jar>），不打进 aar；运行时由游戏包自带。
+plugins {
+    id 'com.android.library' version '8.6.1'
+    id 'org.jetbrains.kotlin.android' version '2.1.21'
+}
+
+android {
+    namespace 'local.kyo.xiyou.bgidle'
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        buildConfig false
+    }
+}
+
+def godotJar = project.findProperty('godotJar')
+if (godotJar == null) {
+    throw new GradleException('要 -PgodotJar=<godot-lib 的 classes.jar>（云端导出.py android-build 会解出来）')
+}
+
+dependencies {
+    compileOnly files(godotJar)
+}

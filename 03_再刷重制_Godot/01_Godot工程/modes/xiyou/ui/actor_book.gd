@@ -49,6 +49,9 @@ const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 1
 const ATTR_INK := Color("c1c9d5")
 ## 优化 O-084：返回目录时整张说明卡隐藏；false 照原版只藏卡本体、把 4 层品质边框留在状态页上（矩形 [535,-2,747,卡高+20]）
 static var HIDE_HELP_ON_RETURN := true
+## 状态窗立绘平滑：原版 144 名原生侧视图 bitmap.smooth=true、画在半像素 (93.2,71.69) 上，线性取样略糊；167 以后有档的 smooth=false。
+## 重制保持清晰（最近邻，同 11-05 胜利背景「不照原版放大模糊」）。O-250：BOOK_NATIVE_SMOOTH = true 回到原版（原生图线性取样）。
+static var BOOK_NATIVE_SMOOTH := false
 
 var index := 0
 var top := 0
@@ -97,7 +100,7 @@ func actor_id() -> int:
 func _process(_delta: float) -> void:
 	# Window_ActorBookStatus.update：每 12 帧换一格（0-1-2-1）；逐帧图整张不换格
 	_frame += 1
-	if _sprite_tex != null and (_frame % 12 == 0 or _sprite_spec.get("garou", false)) and mode == "index":  # 饿狼每帧呼吸
+	if _sprite_tex != null and _frame % 12 == 0 and mode == "index":
 		status_win.canvas.queue_redraw()
 
 
@@ -495,7 +498,8 @@ func _paint_index(c: XMVCanvas) -> void:
 func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
-		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern, _frame)
+		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern)
+		c.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if native_smooth(actor_id(), _sprite_spec) else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
@@ -525,8 +529,9 @@ func _select_actor() -> void:
 ## 状态页立绘：数据库 battlerName 的 9×6 侧视图（原版 Window_ActorBookStatus 画第 1 行第 0-1-2-1 格）；没导出、没登记的不画。
 ## 167 号以后照 Codex_MiraRavenMultiFrame 的图鉴包装（drawAllContents／updateBookVisual）：有 CodexSV 档的图按档缩到可见高 72（宽 129），
 ## 脚底锚在可见范围底边中点；168 米拉、174 云裳、175 谷雨、176 屠苏、177 璇（数据库 battlerName 没被改过时）换成逐帧图第 1 个动作第 0 帧整张；
-## 173 饿狼由 installNativeGarouRuntime garouBookPreview 接管：进阶 6＝Codex_Garou_QCosmic，否则 Codex_Garou_QHuman，整张、竖向带呼吸（±0.9%），
-## 脚底在 y＝宽/13＋72（比米拉那段低半个身高）。渡鸦地图上的 battlerName 恒为 Raven_Normal_SV（XRaven 包装）。
+## 173 饿狼：进阶 6＝Codex_Garou_QCosmic，否则 Codex_Garou_QHuman，整张；位置、缩放同上面那段，不呼吸。installNativeGarouRuntime 的
+## garouBookPreview（竖向呼吸、脚底低半个身高）实机被盖掉：多帧插件的图鉴 update 包装在开机画面才装、包在最外层，每帧最后再按通用
+## 公式摆一次（raven6：无头 Chrome 量具 real/actor_book.result.json 实测 173 锚点 (0.5,1)、缩放不带呼吸、脚底 y＝宽/13＋可见高/2）。渡鸦地图上的 battlerName 恒为 Raven_Normal_SV（XRaven 包装）。
 const BOOK_MULTI := {168: ["", "UserSV_MiraHuman"], 174: ["", "yunshang"], 175: ["Guyu", "Codex_Guyu"],
 	176: ["Codex_Tusu_SV_v1", "Codex_Tusu_v1"], 177: ["Codex_Xuan_SV_v1", "Codex_Xuan_v1"]}
 
@@ -538,7 +543,7 @@ static func _book_battler(id: int) -> String:
 	return "Raven_Normal_SV" if id == 167 else n
 
 
-## 立绘的图：{path, key（档名＝图名或逐帧文件夹名）, multi（整张）, garou}；不画为空
+## 立绘的图：{path, key（档名＝图名或逐帧文件夹名）, multi（整张）}；不画为空
 static func sprite_spec(id: int) -> Dictionary:
 	if id <= 0 or not named(id):
 		return {}
@@ -550,9 +555,9 @@ static func sprite_spec(id: int) -> Dictionary:
 		multi = BOOK_MULTI[id][1]
 	if multi != "":
 		var mp := XDB.img_path("sv_actors", "sv/%s/%s1_0" % [multi, multi])
-		return {"path": mp, "key": multi, "multi": true, "garou": id == 173, "name": multi + "1_0"} if mp != "" else {}
+		return {"path": mp, "key": multi, "multi": true, "name": multi + "1_0"} if mp != "" else {}
 	var p := XDB.img_path("sv_actors", name)
-	return {"path": p, "key": name, "multi": false, "garou": false, "name": name} if p != "" else {}
+	return {"path": p, "key": name, "multi": false, "name": name} if p != "" else {}
 
 
 static func sprite_path(id: int) -> String:
@@ -565,8 +570,13 @@ static func book_scale(key: String) -> float:
 	return float(XAppearance.BOOK_SCALE.get(key, 1.0))
 
 
+## 状态窗立绘要不要线性取样：只在 BOOK_NATIVE_SMOOTH 打开、且是原版无档的原生侧视图时（同 sprite_rect 的「原生」支）
+static func native_smooth(id: int, spec: Dictionary) -> bool:
+	return BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
+
+
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
-static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int, frame := 0) -> Array:
+static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	var src := Rect2(Vector2.ZERO, tex_size) if spec.get("multi", false) else Rect2(pattern * tex_size.x / 9.0, 0, tex_size.x / 9.0, tex_size.y / 6.0)
 	var prof: Array = XAppearance.PROFILES.get(str(spec.get("key", "")), []) if id >= 167 else []
@@ -578,15 +588,9 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 	var sc := minf((prof[6] if prof.size() > 6 else XAppearance.PROFILE_H) / b.size.y, (prof[7] if prof.size() > 7 else XAppearance.PROFILE_W) / b.size.x) * book_scale(str(spec.get("key", "")))
 	if spec.get("multi", false):
 		src = Rect2(0, 0, w, h)  # setFrame(0, 0, 档宽, 档高)
-	var sy := sc
 	var foot_x := center.x + (w / 2.0 - (b.position.x + b.end.x) / 2.0) * sc
-	var foot_y: float
-	if spec.get("garou", false):
-		sy = sc * (1.0 + 0.009 * (1.0 + sin((frame + id * 11) / 23.0)) / 2.0)
-		foot_y = center.y + 72.0 + (h - b.end.y) * sy
-	else:
-		foot_y = center.y + b.size.y * sc / 2.0 + (h - b.end.y) * sc
-	var size := Vector2(src.size.x * sc, src.size.y * sy)
+	var foot_y := center.y + b.size.y * sc / 2.0 + (h - b.end.y) * sc
+	var size := src.size * sc
 	return [Rect2(Vector2(foot_x - size.x / 2.0, foot_y - size.y), size), src]
 
 
