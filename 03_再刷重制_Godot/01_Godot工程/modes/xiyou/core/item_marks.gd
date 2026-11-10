@@ -463,6 +463,9 @@ static func super_enabled(s: XState) -> bool:
 
 
 static func can_acquire_actor(s: XState, actor_id: int) -> bool:
+	# 天启篇：获取不限难度（阵容和通关招募自己按难度出人），只限同一场上阵人数（enforce_party）
+	if XTianqi.active(s):
+		return true
 	return not is_super_strong(actor_id) or super_enabled(s)
 
 
@@ -503,12 +506,18 @@ static func acquisition_notice() -> void:
 
 ## ---- 出战限制（D.enforceParty／canDeploy，参照 mv_oracle/super_deploy_probe.cjs） ----
 const DEPLOY_NOTICE := "超强者仅限地狱及以上难度出战，已移至替补。"
+const TIANQI_DEPLOY_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移至替补。"
 ## deploymentNotice：清出过超强者的那份 XState（只在内存，不进存档）；回地图／开整队页时弹一次
 static var _deploy_notice: WeakRef = null
 
 
 ## D.canDeploy：不是超强者，或已开挑战开关／混沌难度
+## 天启篇：出战栏里（除他本人）的超强者还没到本难度上限才能编入（数值重构方案第六节）
 static func can_deploy(s: XState, actor_id: int) -> bool:
+	if XTianqi.active(s):
+		if not is_super_strong(actor_id) or s.battle_slots.has(actor_id):
+			return true
+		return s.battle_slots.filter(func(id): return is_super_strong(int(id))).size() < XTianqi.super_cap(s)
 	return can_acquire_actor(s, actor_id)
 
 
@@ -516,12 +525,19 @@ static func can_deploy(s: XState, actor_id: int) -> bool:
 ## 原本就空的格不动，party 不重排、角色仍在队伍里。有清出返回 true 并记下提示。
 ## XState 的 battle_members／init_battle_slots／add_actor／rearrange_actors 前后都调（原版还包 swapOrderBattleMembers、changeBattleMax，重制没有这两处）。
 static func enforce_party(s: XState) -> bool:
-	if s == null or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS or super_enabled(s):
+	if s == null or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
+		return false
+	var cap := XTianqi.super_cap(s)  # 天启篇：按格序留前 cap 个超强者，多的清出；原版档 -1
+	if cap < 0 and super_enabled(s):
 		return false
 	var slots := s.battle_slots
 	var vacancies := []
+	var kept := 0
 	for i in slots.size():
 		if is_super_strong(int(slots[i])):
+			if cap >= 0 and kept < cap:
+				kept += 1
+				continue
 			vacancies.append(i)
 			slots[i] = 0
 	if vacancies.is_empty():
@@ -551,7 +567,7 @@ static func flush_deploy_notice(s: XState) -> void:
 	if owner != s:
 		return
 	_deploy_notice = null
-	XToast.show_text(DEPLOY_NOTICE)
+	XToast.show_text(TIANQI_DEPLOY_NOTICE % XTianqi.super_cap(s) if XTianqi.active(s) else DEPLOY_NOTICE)
 
 
 

@@ -150,9 +150,24 @@ func _ready() -> void:
 	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+	if XTianqi.has_pending():
+		await _run_tianqi_opening()
 	XAutosaveNotice.map_ready(self)  # YEP_X_Autosave：Scene_Map.createAllWindows 建 Window_Autosave，刚读过档就出「存档加载成功！」
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
+
+
+## 天启篇开局（XTianqi）：新游戏选完存档位、难度、阵容后直接到大厅，先在这里跑完替代原版开局三张图的指令（含引路人问道号），
+## 跑完才放开自动执行事件（大厅 EV020 首次到达存档、学难度被动）
+func _run_tianqi_opening() -> void:
+	_set_busy(true)
+	var interp := MVInterpreter.new(self, map_id, 0, XTianqi.take_pending())
+	await interp.run()
+	if not interp.skipped.is_empty():
+		skipped_log.append_array(interp.skipped)
+		print("[xiyou] 天启篇开局跳过 %d 条：%s" % [interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
+	_set_busy(false)
+	refresh_events()
 
 
 ## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
