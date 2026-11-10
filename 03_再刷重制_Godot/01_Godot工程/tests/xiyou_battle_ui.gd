@@ -808,6 +808,9 @@ func _screen_fx(b: XBattleScene) -> void:
 	var at := sx.get_index()
 	_check("screen_fx_layer", at > b.field.get_index() and at > b.fx.get_index() and at > b.combo.get_index() and at < b.ui.get_index()
 		and (b.record == null or at < b.record.get_index()) and not b._cam_base.has(sx), [at, b.field.get_index(), b.ui.get_index()])
+	# 自动／变速（O-006 重制新增）在黑幕之下、战斗画面之上，不随镜头（ui-zorder1：原先在 ui 里，淡出时露在黑幕上）
+	_check("auto_speed_under_screen_fx", b.auto_btn.get_parent().get_parent() == b.low_ui and b.speed_btn.get_parent().get_parent() == b.low_ui
+		and b.low_ui.get_index() < at and b.low_ui.get_index() > b.combo.get_index() and not b._cam_base.has(b.low_ui), [b.low_ui.get_index(), at])
 	var cw: XBattleList = b.cmd_win
 	cw.active = false
 	cw.hide()
