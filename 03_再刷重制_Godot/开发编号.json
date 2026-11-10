@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.444",
-  "sequence": 444,
-  "next": "dev.445",
-  "nextSequence": 445,
+  "current": "dev.445",
+  "sequence": 445,
+  "next": "dev.446",
+  "nextSequence": 446,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "project-thread-d4k4ag",
+  "currentChange": "intro-anim-v8",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

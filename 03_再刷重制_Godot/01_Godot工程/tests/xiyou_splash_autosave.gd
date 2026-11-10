@@ -140,7 +140,7 @@ func _run() -> void:
 	check("rollback_warning_off", not XSplashScreen.WARNING_SCREEN)
 	XSplashScreen.WARNING_SCREEN = true
 
-	# ---- 天启篇启动动画（v8_cc，声明屏之前；O-待定·启动动画）----
+	# ---- 天启篇启动动画（v8_cc，声明屏之前；O-262）----
 	check("intro_default_on", XIntroAnim.ENABLED)
 	check("intro_video_exists", ResourceLoader.exists(XIntroAnim.VIDEO))
 	check("intro_video_is_stream", load(XIntroAnim.VIDEO) is VideoStream)
