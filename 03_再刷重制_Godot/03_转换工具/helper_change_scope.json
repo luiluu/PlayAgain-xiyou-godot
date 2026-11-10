@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "file": "mv_oracle/hboot.cjs",
+      "from": "ae5d841fc990701c105e6f457f37fdab4221baf7f195a1b04743c39899c82e61",
+      "to": "1a4184bd7e0ecdc5e747756bbd9afe06ac0ccba02a76a51ffdba84c3b43f42c7",
+      "rerun": ["event_probe.cjs", "event_state_probe.cjs"],
+      "why": "bajie-interp8（0486c72a9，m4e71p0）：同步 file:// GET XHR 解码中文路径后用 fs 读。开机只多读一次 js/plugins/Drill_GlobalVariable.js（AntiCheatDetector 查作弊签名，读到读不到都是 isCheat=false）；会变的只有 CodexGuide.releaseInfo／changelogEntries，用到它的是 Map004 大厅事件 CodexGuide.injectChangelog，即 event_probe、event_state_probe（后者还把 hboot.cjs 内容哈希写进产物）。其余探针产物不变（interp8 车道整份探针只 m4e71p0 更新日志变化）。甲档核查。"
+    }
+  ]
+}

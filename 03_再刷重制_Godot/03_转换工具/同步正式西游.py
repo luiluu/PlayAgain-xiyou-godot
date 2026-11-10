@@ -33,6 +33,7 @@ import argparse
 import contextlib
 import datetime as dt
 import hashlib
+import itertools
 import json
 import os
 import re
@@ -49,7 +50,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 from xiyou_export import DEFAULT_APP, DEFAULT_OUT  # noqa: E402
-from incremental_sync import SHARDS, ProbeCache
+from incremental_sync import SHARDS, ProbeCache, atomic_json, carry_probe_deps
 from oracle_additions import (compare_directories, current_digest, payload, source_preserved, has_error, retained_errors_unchanged,  # noqa: E402
                               load_acceptances, apply_acceptances, change_candidates, field_keys, groups)
 
@@ -879,8 +880,89 @@ def probe_weight(name):
     return int(extra.get(name, PROBE_WEIGHTS.get(name, 1)))
 
 
+# 同步内的占槽次序（tools-probe-deps ③，XIYOU_SYNC_SLOT_ORDER=0 退回各线程各抢）：本同步里同时等槽的探针在进程内排队，
+# 一次只让排第一的去抢共用槽。次序：① 已有一段占到过槽的探针的其余段（事件状态探针、event_probe 分段）先走，
+# 免得 3 段跑完、最后一段排在一个刚起的长探针后面再等两小时（11-09：smart_ai 占槽 2.5 小时，事件状态探针一段被饿到 230 分钟以上）；
+# ② 再按估计耗时从长到短（上次同步记下的 .sandbox/probe_durations.json，没有记录按 SLOW_PROBES 的先后），长的先起、收尾短；③ 先来先得。
+# 不抢别人已占着的槽，也不改跨工作树的排队（总装优先等照旧）。
+SLOW_PROBES = ['slice_probe.cjs', 'smart_ai_probe.cjs', 'event_probe.cjs', 'troop_event_probe.cjs', 'event_state_probe.cjs',
+               'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']
+DURATIONS_NAME = 'probe_durations.json'  # 在 SANDBOX 下
+_slot_cv = threading.Condition()
+_slot_wait = {}
+_slot_holder = []  # 正在抢共用槽的那一个（最多一个）
+_slot_started = set()
+_slot_seq = itertools.count()
+
+
+def slot_order_on():
+    return os.environ.get('XIYOU_SYNC_SLOT_ORDER', '1') != '0'
+
+
+def load_durations():
+    try:
+        data = json.loads((SANDBOX / DURATIONS_NAME).read_text())
+        return {k: float(v) for k, v in data.items() if isinstance(v, (int, float))} if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+_durations = None
+
+
+def probe_estimate(group):
+    global _durations
+    if _durations is None:
+        _durations = load_durations()
+    if group in _durations:
+        return _durations[group]
+    return 60.0 * (len(SLOW_PROBES) - SLOW_PROBES.index(group)) if group in SLOW_PROBES else 0.0
+
+
+def note_duration(group, seconds):
+    """记下探针耗时供下次排序：取本次与旧值的八成中较大的（只跑几个单元的增量轮不会把估计一下拉低）。"""
+    global _durations
+    if _durations is None:
+        _durations = load_durations()
+    _durations[group] = round(max(float(seconds), 0.8 * _durations.get(group, 0.0)), 1)
+
+
+def save_durations():
+    if _durations is not None:
+        with contextlib.suppress(OSError):
+            atomic_json(SANDBOX / DURATIONS_NAME, _durations)
+
+
+def slot_rank(group, seq):
+    return (0 if group in _slot_started else 1, -probe_estimate(group), seq)
+
+
 @contextlib.contextmanager
-def heavy_slot(label, weight=1):
+def local_turn(group):
+    """进程内轮到自己才去抢共用槽；占到后（或抢槽出错）把机会交给下一个。"""
+    if not slot_order_on():
+        yield
+        return
+    token = object()
+    with _slot_cv:
+        _slot_wait[token] = (group, next(_slot_seq))
+        while _slot_holder or min(_slot_wait, key=lambda k: slot_rank(*_slot_wait[k])) is not token:
+            _slot_cv.wait(5)
+        _slot_holder.append(token)
+    try:
+        yield
+    finally:
+        with _slot_cv:
+            _slot_wait.pop(token, None)
+            if token in _slot_holder:
+                _slot_holder.remove(token)
+            if group:
+                _slot_started.add(group)
+            _slot_cv.notify_all()
+
+
+@contextlib.contextmanager
+def heavy_slot(label, weight=1, group=None):
     """占共用槽再跑重进程（node 探针、Godot 导入）。排队时每 60 秒打一行「等槽」到标准输出：
     长任务.py 的看门狗按输出判断有没有进展，排队不再被误判卡死（XIYOU_SLOT_HEARTBEAT 调间隔）。"""
     r = runner()
@@ -888,8 +970,10 @@ def heavy_slot(label, weight=1):
     def waiting(seconds):
         print('等槽：%s 已等 %d 秒（占 %d 槽，共用上限 %d）' % (label, seconds, min(weight, r.global_limit()), r.global_limit()),
               flush=True)
-    with r.global_slot(r.state_dir(str(ROOT)), r.global_limit(), weight, waiting,
-                       float(os.environ.get('XIYOU_SLOT_HEARTBEAT', '60')), priority=r.slot_priority(str(ROOT))):
+    with contextlib.ExitStack() as stack:
+        with local_turn(group):
+            stack.enter_context(r.global_slot(r.state_dir(str(ROOT)), r.global_limit(), weight, waiting,
+                                              float(os.environ.get('XIYOU_SLOT_HEARTBEAT', '60')), priority=r.slot_priority(str(ROOT))))
         yield
 
 
@@ -897,13 +981,27 @@ def run_node(cmd, env, weight=None):
     """跑一个 node 探针：先在 并行测试.py 的跨工作树共用槽（CHECK_GLOBAL_JOBS，状态目录同测试）占位再跑，
     几条车道同时同步、跑测试时合起来不超上限（唐僧 2026-10-21：两条车道同步加测试曾把 8 核负载冲到 21）。
     吃内存的探针按 PROBE_WEIGHTS 多占几槽。SYNC_JOBS 只决定本次同步最多同时排几个探针。"""
-    with heavy_slot(' '.join(cmd), probe_weight(cmd[0]) if weight is None else weight):
+    with heavy_slot(' '.join(cmd), probe_weight(cmd[0]) if weight is None else weight, group=Path(cmd[0]).name):
         # event_probe 在一个进程里连跑全部事件页，内存随事件数涨；切片事件过千页后撞 node 默认 4GB 堆上限（悟空_55 簇 8／13 同步 OOM），放宽到 10GB
         # 环境里已有 NODE_OPTIONS（如云端容器的 --use-openssl-ca）时 setdefault 不生效、仍是默认堆，event_probe 会 OOM：没写堆上限就追加
         env = dict(env)
         if '--max-old-space-size' not in env.get('NODE_OPTIONS', ''):
             env['NODE_OPTIONS'] = (env.get('NODE_OPTIONS', '') + ' --max-old-space-size=10240').strip()
-        return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=env, capture_output=True, text=True)
+        return subprocess.run(['node'] + cmd, cwd=ORACLE_DIR, env=with_dep_recorder(env, cmd), capture_output=True, text=True)
+
+
+def with_dep_recorder(env, cmd):
+    """给探针进程预加载运行时依赖记录（probe_dep_recorder.cjs，tools-probe-deps；XIYOU_PROBE_HELPER_DEPS=0 不加）。"""
+    if os.environ.get('XIYOU_PROBE_HELPER_DEPS', '1') == '0' or not cmd or not str(cmd[0]).endswith('.cjs'):
+        return env
+    recorder = (HERE / 'probe_dep_recorder.cjs').resolve()
+    if not recorder.is_file():
+        return env
+    env = dict(env)
+    env['NODE_OPTIONS'] = (env.get('NODE_OPTIONS', '') + ' --require "%s"' % recorder).strip()
+    env['XIYOU_PROBE_DEPS_NAME'] = Path(cmd[0]).name
+    env['XIYOU_PROBE_DEPS_ROOT'] = str(Path(ORACLE_DIR).resolve())
+    return env
 
 
 def run(cmd, cwd, log):
@@ -967,6 +1065,8 @@ def run_probes(log, cache=None):
     .sandbox/run/<探针>（开跑前复制 .sandbox 现有的 save／macport，各探针看到同样的起始状态），
     产物照旧写 .sandbox/*.json；日志按 PROBES 顺序写回，并记每个探针的耗时。SYNC_JOBS=1 退回串行。
     每个探针运行时另占跨工作树共用槽（run_node），排队等槽的时间算在该探针耗时里。"""
+    global _durations
+    _durations = None  # 按本次的 SANDBOX 重读耗时估计
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
@@ -1093,7 +1193,7 @@ def run_probes(log, cache=None):
             work.extend((cmd[0], [cmd[0], str(d)], [expected[d - 1]]) for d in range(1, 7))
         else:
             work.append((cmd[0], cmd, outputs))
-    slow = ['slice_probe.cjs', 'smart_ai_probe.cjs', 'event_probe.cjs', 'troop_event_probe.cjs', 'event_state_probe.cjs', 'zhenqi_probe.cjs', 'dungeon_probe.cjs', 'sequence_probe.cjs']
+    slow = SLOW_PROBES
     order = sorted(range(len(work)), key=lambda i: slow.index(work[i][0]) if work[i][0] in slow else len(slow))
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         futures = {i: pool.submit(one, work[i]) for i in order}
@@ -1108,6 +1208,8 @@ def run_probes(log, cache=None):
             for future in done:
                 i = waiting.pop(future)
                 results[i] = future.result()
+                if results[i][1] == 0:
+                    note_duration(results[i][0][0], results[i][3])
                 print('PROBE_DONE=' + json.dumps({'probe': results[i][0][0], 'seconds': round(results[i][3], 3),
                                                  'command': results[i][0],
                                                  'exitCode': results[i][1]}), flush=True)
@@ -1118,6 +1220,7 @@ def run_probes(log, cache=None):
                 for label, t in alive:
                     print('PROBE_RUNNING=' + json.dumps({'probe': label.split()[0], 'command': label.split(),
                                                         'seconds': round(now - t)}), flush=True)
+    save_durations()
     failed = []
     for cmd, code, out, sec in results:
         log.write('$ node %s（%.0f 秒）\n' % (' '.join(cmd), sec))
@@ -1261,6 +1364,15 @@ def _main() -> int:
             elif outputs_digest(gen) != stamp.get('outputsDigest'):
                 raise RuntimeError('克隆后的产物与车道指纹不一致')
             report['fromWorktree'] = str(a.from_worktree)
+            # 车道跑探针时记下的运行时依赖（.sandbox/probe_deps/）：本工作区缺的补上，已有的不动（tools-probe-deps）
+            try:
+                lane_sandbox = a.from_worktree.resolve() / SANDBOX.resolve().relative_to(ROOT.resolve())
+            except ValueError:
+                lane_sandbox = None  # 参照目录不在仓库里（测试夹具）：不补
+            deps = carry_probe_deps(lane_sandbox, SANDBOX) if lane_sandbox else []
+            if deps:
+                report['fromWorktreeProbeDeps'] = deps
+                log.write('从车道补来探针依赖记录：%s\n' % '、'.join(deps))
             if stamp.get('pendingAcceptance'):
                 report['fromWorktreePending'] = True
                 log.write('车道同步只差测量接受（待接受指纹）：产物照用，测量照样按本工作区基线比较\n')

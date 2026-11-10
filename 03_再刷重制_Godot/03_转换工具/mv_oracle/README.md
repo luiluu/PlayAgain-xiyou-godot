@@ -17,7 +17,7 @@ process.exit(ok ? 0 : 1);
 
 临时只打印结果的：`console.log(JSON.stringify(result)); process.exit(0);`。出错路径也要退出（`try { … } catch (e) { console.error(e); process.exit(1); }`）。
 
-为什么不改 `shared/host.cjs` 自动退出：`mv_oracle/` 下非探针的 `.cjs`／`.js`／`.json` 都是每个探针缓存键的一部分（`incremental_sync.py` helpers），改它会让下一次同步全部探针整轮重跑；本说明不进缓存键。
+为什么不改 `shared/host.cjs` 自动退出：`mv_oracle/` 下非探针的 `.cjs`／`.js`／`.json` 可能进探针缓存键（tools-probe-deps 起按探针实际依赖算：`shared/host.cjs` 被 61 个探针依赖、`hboot.cjs` 全部 96 个），改它会让依赖它的探针下次同步整轮重跑；只影响少数探针的 helper 改动可在 `03_转换工具/helper_change_scope.json` 声明影响面（要甲档核查，见 `07_开发环境/长任务与增量同步.md`）；本说明不进缓存键。
 
 ## 无头 Chrome 量具（real/）
 
