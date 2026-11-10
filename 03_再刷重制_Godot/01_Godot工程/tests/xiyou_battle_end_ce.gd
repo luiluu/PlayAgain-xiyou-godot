@@ -12,7 +12,7 @@ const SW := [2261, 2262, 2263, 2264, 2265, 2266, 2220, 1558]
 const PARTY := [1, 8, 9, 10]
 
 class QuickBattle extends XBattleScene:
-	func _say(_text: String, _seconds: float) -> void:
+	func _defeat_message() -> void:
 		await get_tree().process_frame
 
 var results := []

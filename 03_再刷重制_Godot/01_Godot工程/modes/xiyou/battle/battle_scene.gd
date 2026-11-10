@@ -714,12 +714,7 @@ func _main() -> void:
 			finished.emit(0)
 			return
 		if logic.is_lost():
-			boss_hp.ended()
-			otb.hide_bar()
-			_end_record()
-			# 快速战斗只跳过失败信息（见 XHangUp）
-			if not XHangUp.fast_fighting(XState.current):
-				await _say("全军覆没……", 1.2)
+			await _defeat()
 			XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 			logic.end_battle(2)
 			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
@@ -817,6 +812,28 @@ func _escape_success() -> void:
 	logic.end_battle(1)
 	reserve_battle_end_event(XState.current, 1)
 	finished.emit(1)
+
+
+## BattleManager.processDefeat → displayDefeatMessage：消息窗「<队名>被击败了。」（TextManager.defeat，等按键；挂机中按已有设置
+## 自动翻页）；快速战斗跳过失败信息（XdRs_HangUp，见 XHangUp）。rules-battle-pixel2 对照 v0.62.12 截图 bp2_defeat_f30 改：
+## 重制原来在战斗日志行显示「全军覆没……」1.2 秒，原版是底部整宽消息窗（与逃跑同一个窗）。
+func _defeat() -> void:
+	boss_hp.ended()
+	otb.hide_bar()
+	_close_windows()
+	_end_record()
+	if not XHangUp.fast_fighting(XState.current):
+		await _defeat_message()
+
+
+## 失败信息（测试里的快速战斗子类覆写成只等一帧）
+func _defeat_message() -> void:
+	await message.run({"lines": [defeat_text()]})
+
+
+## TextManager.defeat.format($gameParty.name())
+func defeat_text() -> String:
+	return str(XDB.system().terms.messages.get("defeat", "%1被击败了。")).replace("%1", XPreempt.party_name(logic.actors))
 
 
 ## MV BattleManager.updateBattleEnd（rpg_managers.js 2696）：没逃跑且全灭时，可输就复活到 1 血、不可输去游戏结束，两种都不预约；
@@ -2150,12 +2167,6 @@ func _custom_popup(b: XBattler, text: String, format: int) -> void:
 	p.on_removed = _popup_removed
 	fx.add_child(p)
 	p._update()  # 同 _spawn_popup：建出当帧更新一次
-
-
-func _say(text: String, seconds: float) -> void:
-	_banner(text)
-	await get_tree().create_timer(seconds).timeout
-	_banner("")
 
 
 ## MOG_TrPopUpBattle：敌人倒下动画结束时抽定它的掉落（不论设置）；开着「掉落动画」就立即获得、弹出图标，

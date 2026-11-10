@@ -75,13 +75,89 @@ func _physics_process(_delta: float) -> void:
 
 
 func _icons() -> Array:
+	return _rows().map(func(r): return int(r.icon))
+
+
+func _rows() -> Array:
 	if not view.is_empty():
-		return view.icons
+		return view.get("cell_rows", [])
+	return cell_rows(actor)
+
+
+## 状态格轮换的内容（installEquipmentStatusRuntime stateRows，再滤掉没图标的）：states() 去重，只留 visibleState——
+## 有名字、不是「角色血量／蓝量／…」能力项、不是纯数字、不带「战斗形象／战斗换图／视觉辅助」，且有说明（<StateNote>、描述、
+## 能写出说明的特性，或 1 号无法战斗、有行动限制）；之后接强弱化（buffIconIndex，层数＝等级绝对值）。层数 stateFloor（没有按 1）。
+## rules-battle-pixel2 对照改：重制原来凡带图标的状态都轮换（共 275 个带图标状态原版不进状态格，如越战越勇、出血），也不轮强弱化、不画层数。
+## 回退：CELL_FILTER = false 回到原来「带图标的状态全轮、不接强弱化、不画层数」。
+static var CELL_FILTER := true
+
+
+static func cell_rows(b: XBattler) -> Array:
 	var out := []
-	for st in actor.states():
-		if int(st.get("iconIndex", 0)) > 0:
-			out.append(int(st.iconIndex))
+	var seen := {}
+	for st in b.states():
+		var id := int(st.get("id", 0))
+		if seen.has(id):
+			continue
+		seen[id] = true
+		var icon := int(st.get("iconIndex", 0))
+		if icon <= 0:
+			continue
+		if not CELL_FILTER:
+			out.append({"icon": icon, "stack": 1})
+		elif _visible_cached(id, st):
+			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id))})
+	if CELL_FILTER:
+		for i in range(b.buffs.size()):
+			var lv := int(b.buffs[i])
+			if lv != 0:
+				var icon := XEnemyStateIcon.buff_icon(lv, i)
+				if icon > 0:
+					out.append({"icon": icon, "stack": absi(lv)})
 	return out
+
+
+const _HIDDEN_NAME := "^角色(?:血量|蓝量|生命|魔法|物攻|魔攻|物防|魔防|敏捷|幸运)$"
+static var _re_hidden: RegEx
+static var _re_note: RegEx
+static var _re_strip: RegEx
+
+
+static var _visible_cache := {}
+
+
+## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算
+static func _visible_cached(id: int, st: Dictionary) -> bool:
+	if not _visible_cache.has(id):
+		_visible_cache[id] = visible_state(st)
+	return _visible_cache[id]
+
+
+## installEquipmentStatusRuntime visibleState
+static func visible_state(st: Dictionary) -> bool:
+	if _re_hidden == null:
+		_re_hidden = RegEx.create_from_string(_HIDDEN_NAME)
+		_re_note = RegEx.create_from_string("(?i)<(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>([\\s\\S]*?)</(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>")
+		_re_strip = RegEx.create_from_string("(?i)\\\\[a-z]+\\[[^\\]]*\\]|<[^>]*>|\\\\[{}.!|><^]")
+	var name := str(st.get("name", ""))
+	if name == "" or _re_hidden.search(name) != null or name.is_valid_int() or name.contains("战斗形象") or name.contains("战斗换图") or name.contains("视觉辅助"):
+		return false
+	return has_description(st)
+
+
+## stateDescription 不为空：<StateNote> 或描述（去掉转义码与标签后），否则能写出说明的特性，否则 1 号或有行动限制
+static func has_description(st: Dictionary) -> bool:
+	var m := _re_note.search(str(st.get("note", "")))
+	var raw := m.get_string(1) if m != null else str(st.get("description", ""))
+	if _re_strip.sub(raw, "", true).strip_edges() != "":
+		return true
+	for t in st.get("traits", []):
+		var code := int(t.get("code", 0))
+		var v := float(t.get("value", 0))
+		if (code == 21 and v != 1.0) or (code == 22 and v != 0.0) or code in [23, 61, 33, 34, 11, 13, 14, 42, 43] \
+				or (code == 62 and int(t.get("dataId", -1)) in [0, 1, 2, 3]):
+			return true
+	return int(st.get("id", 0)) == 1 or int(st.get("restriction", 0)) > 0
 
 
 func _paint(c: XMVCanvas) -> void:
@@ -93,12 +169,15 @@ func _paint(c: XMVCanvas) -> void:
 	c.gradient(Rect2(ox, 0, w1, H), Color(0, 0, 0, 0), dark)
 	c.draw_rect(Rect2(ox + w1, 0, W - w1, H), dark)
 	# 状态格
-	var icons := _icons()
-	if icons.is_empty():
+	var rows := _rows()
+	if rows.is_empty():
 		c.draw_rect(Rect2(ox - 36 + 1, 21, 30, 30), Color8(20, 35, 55, 230))
 		c.text("i", ox - 36, 20, 32, "center", XUI.TEXT, 22, 36)
 	else:
-		c.icon(icons[_cycle % icons.size()], ox - 36, 20)
+		var row: Dictionary = rows[_cycle % rows.size()]
+		c.icon(int(row.icon), ox - 36, 20)
+		if int(row.stack) > 1:  # drawText(层数, 0, 12, 30, 'right')，12 号
+			c.text(str(row.stack), ox - 36, 20 + 12, 30, "right", XUI.TEXT, 12, 36)
 	# 名字（谷雨状态字在右）
 	var v := _v()
 	var info := str(v.get("guyu_text", ""))
