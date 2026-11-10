@@ -17,11 +17,12 @@ extends RefCounted
 ##    渡鸦 10137 另加「成长：冥河成长倍率×n」；伤害属性行字号取基本信息首行，排在基本信息前；
 ##    基本信息按 目标→伤害类型→伤害属性→命中→暴击→段数→冷却→准备时间 排序，「目标＋伤害属性／类型」「命中＋暴击」「暴击／段数＋段数／冷却」
 ##    同字号且合计不超过 28 字时并成一行；六组之间分隔。
-## 5. dyn2View：按前缀把行换成当前数值（渡鸦魄倍率／阶位系数／魔防穿透／魂海池，米拉人形倍率与共鸣，黄泉段数，宿傩术式威力／斩击强化，甚尔暴君成长与咒具成长系数，
-##    饿狼形态系数／进化／解析／当前形态）。
-## 未移植：listCosts（技能界面／战斗里消耗行不显示；重制说明卡不知道窗口，一律显示）、helpRankChanges「进阶变化」行（只在已进阶时出现）、
-## 云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
-## 宿傩斩击强化恒「未储存」）。
+## 5. dyn2View：按前缀把行换成当前数值（渡鸦魄倍率／阶位系数／魔防穿透／魂海池，米拉人形倍率与共鸣，黄泉段数，镜流已解锁星魂／寒川映月上限，
+##    宿傩术式威力／斩击强化，甚尔暴君成长与咒具成长系数，饿狼形态系数／进化／解析／当前形态，云裳目标／段数／成长倍率与爆伤终伤）。
+##    镜流、宿傩斩击强化（读 XSukuna 战斗内 emp／domain）、云裳三处 chars-gaps2 补（参照 character_help_dyn_probe）。
+## listCosts（chars-gaps2）：XHelpCard.list_costs，show_for 按卡所在场景（技能页、战斗）设上，技能列表已列消耗，卡上就不列。
+## helpRankChanges「进阶变化」行没做：v0.62.12 数据里一行都出不来（chars-gaps2 对 166～179 每个角色 10／25／40／60 级、1～5 阶逐张卡跑过原版）——
+##   目标技能都在 DYN2 里，currentHelpText 在阶位换算前就返回，进阶前后同文。以后数据改了再看。
 ## 专属装备（4001、4577～4581、7904～7911 破限之心、7920～7935 云裳天衣）的说明卡也走这里（chars-gaps1，参照 character_gear_help_probe）：
 ## 所属角色照原版 characterHelpActor 按 id 段落到 owner()（装备号都 ≤10139，即渡鸦；原版在装备页等界面取窗口的角色，重制一律按 id）。
 
@@ -558,6 +559,15 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 	if who == 169 and id >= 10171 and id <= 10174:
 		var seg := XYomiJingliu.repeats(a, id)
 		out["段数："] = "段数：" + str(seg) + "（幸运每6666点＋1段，最多＋6）"
+	if who == 170:  # chars-gaps2：原版 dyn2 who===170（J.visibleSoulRows 取「：」后最后一段）
+		if id == 10194:
+			var souls := []
+			for e in XYomiJingliu.STAR_ROWS:
+				if XYomiJingliu.soul(a, int(e[0])):
+					souls.append(str(e[1]).split("：")[-1])
+			out["成长：已解锁星魂"] = "成长：已解锁星魂：" + ("；".join(souls) if not souls.is_empty() else "无")
+		if id == 10196:
+			out["成长：寒川映月上限"] = "成长：寒川映月上限×" + ("2.5" if _learned(a, 10202) else "1.8")
 	if who == 171:
 		if id == 10205:
 			out["成长：最大生命"] = "成长：最大生命＋" + pc.call(lv * 10) + "；物攻、速度＋" + pc.call(lv * 5)
@@ -568,7 +578,12 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 		if [10239, 10247, 10248, 10249].has(id):
 			out["成长：术式威力"] = "成长：术式威力" + num(XSukuna.coefficient(a) if a != null else 88888.0)
 		if id == 10242:
-			out["成长：斩击强化"] = "成长：斩击强化：未储存"  # 斩击强化层数是第二期的战斗内字段
+			# a._codexSukuna 的 emp／domain＝XSukuna 战斗内临时数据（只读，不建条目）；觉醒 2639、领域 2636
+			var d: Dictionary = XSukuna._temp.get(a, {}) if a != null else {}
+			var emp := int(d.get("emp", 0))
+			var awake: bool = a != null and a.state_ids.has(XSukuna.AWAKE)
+			var dom: bool = a != null and int(d.get("domain", 0)) > 0 and a.state_ids.has(XSukuna.DOMAIN)
+			out["成长：斩击强化"] = "成长：斩击强化：下一次斩击＋" + pc.call(((0.35 if dom else 0.2) + (emp - 1) * 0.05) * 100) if emp and awake else "成长：斩击强化：未储存"
 	if who == 173:
 		var f := XGarou.form(a)
 		var ps: Dictionary = f.passives
@@ -581,6 +596,21 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 			out["成长：每层无视"] = "成长：每层无视物防" + str(ps.analysis_defense_ignore_percent_per_stack) + "%" + ("、魔防" + str(mag) + "%（最多99%）" if mag else "")
 		if id == 10269:
 			out["成长：当前形态"] = "成长：当前形态：" + str(f.name) + ("；每回合行动" + str(f.actions) + "次" if int(f.actions) > 1 else "")
+	if who == 174:  # chars-gaps2：原版 dyn2 who===174（yh＝学会且等级、阶位到 C.gates）
+		var yh := func(i: int) -> bool:
+			var g: Array = XYunshang.GATES.get(i, [1, 0])
+			return _learned(a, i) and lv >= int(g[0]) and rank >= int(g[1])
+		if [10270, 10271, 10274].has(id):
+			out["目标："] = "目标：" + ("敌方全体" if yh.call(10276) else "敌方单体")
+			out["段数："] = "段数：" + ("2" if yh.call(10277) else "1")
+		var mul := "4" if lv >= 50 and rank >= 2 else "3" if lv >= 40 and rank >= 1 else "2.5" if lv >= 35 and rank >= 1 else "2" if lv >= 30 else "1.5" if lv >= 25 else "1"
+		if id >= 10276 and id <= 10281 and id != 10280:
+			var t := "成长：生命、魔攻、敏捷成长×" + mul
+			if id == 10276:
+				# Y.offensiveGrowth：n＝min(99,等级)−24（不小于 0），暴伤 1.88n、终伤 0.1888n
+				var n := float(maxi(0, mini(99, lv) - 24)) if yh.call(10276) else 0.0
+				t += "；爆伤＋" + pc.call(n * 1.88 * 100) + "；终伤＋" + pc.call(n * 0.1888 * 100)
+			out["成长：生命、魔攻、敏捷成长"] = t
 	return out
 
 
