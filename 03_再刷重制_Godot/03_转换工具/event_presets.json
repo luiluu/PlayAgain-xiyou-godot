@@ -314730,6 +314730,339 @@
      5
     ]
    }
+  },
+  {
+   "base": "m4e38p0",
+   "tag": "mp_1",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m4e38p0",
+   "tag": "mp_2",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e38p0",
+   "tag": "mp_3",
+   "preset": {
+    "variables": {
+     "14": 1,
+     "20": 19
+    }
+   }
+  },
+  {
+   "base": "m4e39p0",
+   "tag": "mp_4",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m4e39p0",
+   "tag": "mp_5",
+   "preset": {
+    "variables": {
+     "14": 1
+    },
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e39p0",
+   "tag": "mp_6",
+   "preset": {
+    "variables": {
+     "14": 1,
+     "20": 19
+    }
+   }
+  },
+  {
+   "base": "m4e45p1",
+   "tag": "mp_7",
+   "preset": {
+    "variables": {
+     "1488": 1
+    }
+   }
+  },
+  {
+   "base": "m195e8p1",
+   "tag": "mp_8",
+   "preset": {
+    "variables": {
+     "12": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "mp_9",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "mp_10",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "mp_11",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "mp_12",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p0",
+   "tag": "mp_13",
+   "preset": {
+    "variables": {
+     "1101": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "mp_14",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1,
+     "1106": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "mp_15",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1,
+     "1104": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "mp_16",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1,
+     "1103": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "mp_17",
+   "preset": {
+    "variables": {
+     "1101": 1,
+     "1102": 1
+    }
+   }
+  },
+  {
+   "base": "m146e3p1",
+   "tag": "mp_18",
+   "preset": {
+    "variables": {
+     "1101": 1
+    }
+   }
+  },
+  {
+   "base": "m152e7p6",
+   "tag": "mp_19",
+   "preset": {
+    "random_seq": [
+     0,
+     0
+    ],
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m160e7p6",
+   "tag": "mp_20",
+   "preset": {
+    "random_seq": [
+     0,
+     0
+    ],
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m4e26p0",
+   "tag": "mp_21",
+   "preset": {
+    "variables": {
+     "15": 5
+    },
+    "playtime": 5
+   }
+  },
+  {
+   "base": "m4e5p0",
+   "tag": "mp_22",
+   "preset": {
+    "variables": {
+     "163": 5
+    },
+    "playtime": 5
+   }
+  },
+  {
+   "base": "m186e32p0",
+   "tag": "mp_23",
+   "preset": {
+    "variables": {
+     "707": 5
+    },
+    "playtime": 5
+   }
+  },
+  {
+   "base": "m186e34p0",
+   "tag": "mp_24",
+   "preset": {
+    "playtime": 5,
+    "variables": {
+     "1340": 5,
+     "1349": 1
+    }
+   }
+  },
+  {
+   "base": "m17e4p0",
+   "tag": "mp_26",
+   "preset": {
+    "answers": [
+     1
+    ],
+    "defeats": {
+     "66": 9999
+    }
+   }
+  },
+  {
+   "base": "m4e10p0",
+   "tag": "mp_29",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "variables": {
+     "20": 10
+    },
+    "gold": 0
+   }
+  },
+  {
+   "base": "m4e10p0",
+   "tag": "mp_30",
+   "preset": {
+    "answers": [
+     0
+    ],
+    "variables": {
+     "20": 15
+    },
+    "gold": 0
+   }
+  },
+  {
+   "base": "m4e41p3",
+   "tag": "mp_32",
+   "preset": {
+    "variables": {
+     "20": 13
+    },
+    "switches": {
+     "2483": false
+    },
+    "answers": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e41p5",
+   "tag": "mp_34",
+   "preset": {
+    "variables": {
+     "20": 13
+    },
+    "switches": {
+     "2483": false
+    },
+    "answers": [
+     1,
+     1
+    ]
+   }
   }
  ]
 }
