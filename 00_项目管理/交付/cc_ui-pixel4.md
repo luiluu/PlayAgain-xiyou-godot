@@ -53,7 +53,7 @@
 - 语法检查通过（675 个 .gd，0 问题）；工具回归全过（67 秒）。
 - 本机并行：`xiyou_party_status_panel`、`xiyou_battle_ui`、`xiyou_side_status_order`、`xiyou_transfer`、`xiyou_star_warehouse`、`xiyou_actor_warehouse`、`xiyou_orb_ui` 全过。
 - 本机窗口模式 `--out`：`xiyou_battle_ui` 213/213、`xiyou_party_status_panel` 19/19、`xiyou_actor_warehouse` 26/26、`xiyou_star_warehouse` 96/96（加漂移检查后 99/99）、`xiyou_orb_ui` 39/39、`xiyou_designation_plate` 6/6。
-- 云端选测：见下。
+- 云端选测（`云端选测.py run --no-upload`，提交 5bd01972f，基准 b6b8a92630）：268 个场景 15 片全过，[运行页](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42888341795)。之后只加了交付单。
 
 ## 本分支提交
 
