@@ -40,6 +40,9 @@ func _collect(node: Node, out: Array) -> void:
 		var op = c.get("openness")
 		if op == null or float(op) > 0.0:
 			out.append({"type": ("XHelpCard" if node is XHelpCard else "XMVWindow"), "name": str(node.name), "rect": grect(c), "openness": op})
+			# 说明卡的品质框是卡的子节点（本体外扩 10），对应原版单独的 Window_ItemHelp
+			if node is XHelpCard and (node as XHelpCard).frame != null and (node as XHelpCard).frame.is_visible_in_tree():
+				out.append({"type": "XHelpCardFrame", "name": "", "rect": grect((node as XHelpCard).frame), "openness": null})
 	for ch in node.get_children():
 		_collect(ch, out)
 
@@ -150,8 +153,20 @@ func _status() -> void:
 	await frames(3)
 	await shot("px_status_0", st)
 	expect("status_0", [["select", st.select_win, [0, 0, 1280, 64]]])
+	# 参数窗：战力先藏时 (0,72,1280,648)；开战力时让出战力条，与原版 JAH_Window_Status_Params (0,108,1280,612) 同
+	expect("status_0_hidden_power", [["page", st.page_win, [0, 72, 1280, 648]]])
 	st.queue_free()
 	await frames(2)
+	var was := XPower.SHOW_POWER_UI
+	XPower.SHOW_POWER_UI = true
+	if check("status_0_power_on_enabled", XPower.ui_enabled()):
+		var st2 := XStatusPage.new()
+		add_child(st2)
+		await frames(3)
+		expect("status_0_power_on", [["page", st2.page_win, [0, 108, 1280, 612]]])
+		st2.queue_free()
+		await frames(2)
+	XPower.SHOW_POWER_UI = was
 
 
 func _shop() -> void:
