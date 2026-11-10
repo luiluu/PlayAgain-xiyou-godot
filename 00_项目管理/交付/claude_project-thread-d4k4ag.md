@@ -24,10 +24,12 @@
 - 用户试玩说明：标题「新的游戏」→ 选存档位 → 选难度（证道暂锁）→ 随机阵容可一直「重新随机」→「就是他们了」进大厅 → 小小鱼问道号。九死起阵容里可能有 1 名超强者，炼狱 2 名。
 - 需要用户决定：改版策划 v0.6 写「选难度之后选线（四骑士）」，11-08 定的开局流程里没有选线；本批先不做选线，等四线内容开做时再加（建议，待 Kyo 确认）。
 
-## 优化登记
+## 优化登记草稿
 
-- O-待定·天启篇开局：`XTianqi.ENABLED`（modes/xiyou/core/tianqi.gd）默认 true；false 回到原版 Map001 开局。
-- O-待定·天启篇删羁绊：`XBonds.TIANQI_OFF`（modes/xiyou/core/bonds.gd）默认 true；false 天启篇存档里羁绊照原版。
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定·天启篇开局 | `modes/xiyou/core/tianqi.gd` `XTianqi.ENABLED`；`map_scene._run_tianqi_opening` | 原版 Map001 开局：对话、选项、教派、宝宝路线 | 天启篇新开局：选存档位→五档难度→随机阵容→大厅问道号 | Kyo 2026-11-10 定天启篇做在现有入口上 | `XTianqi.ENABLED = false` 回到原版 Map001 开局 | cc（天启篇） | 默认开 |
+| O-待定·天启篇删羁绊 | `modes/xiyou/core/bonds.gd` `XBonds.TIANQI_OFF` | 羁绊照原版学习、提示 | 天启篇存档里羁绊整套不学、不提示 | 天启篇改版方案 | `XBonds.TIANQI_OFF = false` 天启篇存档里羁绊照原版 | cc（天启篇） | 默认开 |
 
 ## 进度账
 
