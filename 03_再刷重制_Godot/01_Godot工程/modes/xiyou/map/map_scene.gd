@@ -1085,6 +1085,7 @@ func play_se(audio) -> void:
 
 func play_bgs(audio: Dictionary) -> void:
 	var path := XDB.audio_path("bgs", str(audio.get("name", "")))
+	XAudio.stop_fade(bgs)
 	bgs.stop()
 	if path != "":
 		bgs.stream = load(path)
@@ -1200,9 +1201,16 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 	_reset_transfer_button()
+	# BattleManager.replayBgmAndBgs → AudioManager.replayBgm／replayBgs：地图曲从原位置接着放、0.5 秒淡入。
 	# 接过来的战斗 ME 还在放：地图曲等它放完（_me_finished）再淡入
-	bgm.stream_paused = me.playing
-	bgs.stream_paused = false
+	if me.playing:
+		bgm.stream_paused = true
+	elif bgm.stream_paused:
+		bgm.stream_paused = false
+		XAudio.fade_in(bgm)
+	if bgs.stream_paused:
+		bgs.stream_paused = false
+		XAudio.fade_in(bgs)
 	refresh_events()
 	return result
 

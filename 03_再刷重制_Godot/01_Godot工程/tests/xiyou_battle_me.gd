@@ -181,6 +181,22 @@ func _map_handover() -> void:
 	check("map_bgm_fades_in", m.bgm.volume_db < target - 6.0, [m.bgm.volume_db, target])
 	await get_tree().create_timer(XAudio.REPLAY_FADE + 0.2).timeout
 	check("map_bgm_fade_reaches_target", is_equal_approx(m.bgm.volume_db, target), [m.bgm.volume_db, target])
+	# 真走一场可败的战斗（敌群 4、全队 1 血、自动打输）：Defeat2 由地图接着放，地图曲停着；ME 放完地图曲淡入
+	if m.bgm.stream == null:
+		m.play_bgm({"name": "Town1", "volume": 90, "pitch": 100, "pan": 0})
+	var map_target := m.bgm.volume_db
+	for a in XState.current.members():
+		a.hp = 1
+	XBattleScene.force_auto = true
+	var result: int = await m.start_battle(4, true, true)
+	XBattleScene.force_auto = false
+	check("real_battle_lost", result == 2, result)
+	check("real_defeat_me_on_map", m.me.playing and _stream_name(m.me) == "Defeat2", [m.me.playing, _stream_name(m.me)])
+	check("real_map_bgm_waits_for_me", m.bgm.stream_paused)
+	_finish_me(m.me)
+	check("real_map_bgm_back_after_me", not m.bgm.stream_paused and m.bgm.volume_db < map_target - 6.0, [m.bgm.stream_paused, m.bgm.volume_db])
+	await get_tree().create_timer(XAudio.REPLAY_FADE + 0.2).timeout
+	check("real_map_bgm_fade_done", is_equal_approx(m.bgm.volume_db, map_target), [m.bgm.volume_db, map_target])
 	# 换歌时收掉没淡完的淡入：新曲是自己的音量
 	m.bgm.stream_paused = true
 	m.me.play()
