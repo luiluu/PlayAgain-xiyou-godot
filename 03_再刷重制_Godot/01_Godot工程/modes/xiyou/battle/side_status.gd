@@ -88,8 +88,14 @@ func _rows() -> Array:
 ## 有名字、不是「角色血量／蓝量／…」能力项、不是纯数字、不带「战斗形象／战斗换图／视觉辅助」，且有说明（<StateNote>、描述、
 ## 能写出说明的特性，或 1 号无法战斗、有行动限制）；之后接强弱化（buffIconIndex，层数＝等级绝对值）。层数 stateFloor（没有按 1）。
 ## rules-battle-pixel2 对照改：重制原来凡带图标的状态都轮换（共 275 个带图标状态原版不进状态格，如越战越勇、出血），也不轮强弱化、不画层数。
-## 回退：CELL_FILTER = false 回到原来「带图标的状态全轮、不接强弱化、不画层数」。
+## 回退：CELL_FILTER = false 回到原来「带图标的状态全轮、不接强弱化、不画层数」（也不排序，按 states() 顺序）。
+## 顺序（rules-passive-order1）：stateRows 最后 result.sort——先按类别「异常→增益→常驻」（stateKind），同类按名字
+## localeCompare(…,'zh-Hans')（拼音序，XZhCollate），V8 稳定排序、同名同类保持 states() 顺序；强弱化行一起排。
+## 原版读数（battle_pixel_ref 敌群 2）995 破阵——天道诅咒（名含「诅咒」→异常）→ 1691 难度适应 → 1631 普通难度·结算伤害（都常驻）。
+## rules-battle-pixel2 当时记成「按被动来源顺序」是巧合，原版并不看来源。
 static var CELL_FILTER := true
+const KIND_ORDER := ["异常", "增益", "常驻"]
+const PARAM_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 
 
 static func cell_rows(b: XBattler) -> Array:
@@ -106,15 +112,51 @@ static func cell_rows(b: XBattler) -> Array:
 		if not CELL_FILTER:
 			out.append({"icon": icon, "stack": 1})
 		elif _visible_cached(id, st):
-			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id))})
-	if CELL_FILTER:
-		for i in range(b.buffs.size()):
-			var lv := int(b.buffs[i])
-			if lv != 0:
-				var icon := XEnemyStateIcon.buff_icon(lv, i)
-				if icon > 0:
-					out.append({"icon": icon, "stack": absi(lv)})
-	return out
+			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id)), "kind": state_kind(st, not b.state_ids.has(id)), "name": str(st.get("name", ""))})
+	if not CELL_FILTER:
+		return out
+	for i in range(b.buffs.size()):
+		var lv := int(b.buffs[i])
+		if lv != 0:
+			var icon := XEnemyStateIcon.buff_icon(lv, i)
+			if icon > 0:
+				var pname: String = PARAM_NAMES[i] if i < PARAM_NAMES.size() else ""
+				out.append({"icon": icon, "stack": absi(lv), "kind": "增益" if lv > 0 else "异常", "name": pname + ("强化" if lv > 0 else "弱化")})
+	out = XZhCollate.stable_sort(out, func(x, y):
+		return (KIND_ORDER.find(x.kind) - KIND_ORDER.find(y.kind)) if x.kind != y.kind else XZhCollate.compare(x.name, y.name))
+	return out.map(func(r): return {"icon": r.icon, "stack": r.stack})
+
+
+static var _re_bufftype: RegEx
+static var _re_bad_type: RegEx
+static var _re_good_type: RegEx
+static var _re_bad_name: RegEx
+static var _re_permanent: RegEx
+
+## installEquipmentStatusRuntime stateKind(s, passive)：passive＝不在 _states 里（重制：不在 state_ids，如套装状态）
+static func state_kind(st: Dictionary, passive: bool) -> String:
+	if passive:
+		return "常驻"
+	if _re_bufftype == null:
+		_re_bufftype = RegEx.create_from_string("(?i)<BuffType:\\s*([^>]+)>")
+		_re_bad_type = RegEx.create_from_string("(?i)减益|异常|削弱|持续伤害|debuff|诅咒|暗黑|沉默|混乱|魅惑|破甲|睡眠|麻痹|中毒|封印")
+		_re_good_type = RegEx.create_from_string("(?i)增益|强化|加成|buff")
+		_re_bad_name = RegEx.create_from_string("诅咒|中毒|剧毒|疾病|睡眠|失明|封印|沉默|眩晕|麻痹|破甲|灼伤|流血|虚弱|异界制约|压制|威压")
+		_re_permanent = RegEx.create_from_string("(?i)<Permanent>")
+	var note := str(st.get("note", ""))
+	var m := _re_bufftype.search(note)
+	if m != null and _re_bad_type.search(m.get_string(1)) != null:
+		return "异常"
+	if m != null and _re_good_type.search(m.get_string(1)) != null:
+		return "增益"
+	if int(st.get("restriction", 0)) > 0 or int(st.get("id", 0)) == 1 or _re_bad_name.search(str(st.get("name", ""))) != null:
+		return "异常"
+	for t in st.get("traits", []):
+		var code := int(t.get("code", 0))
+		var v := float(t.get("value", 0))
+		if (code == 21 and v < 1.0) or (code == 22 and v < 0.0) or code == 42:
+			return "异常"
+	return "常驻" if _re_permanent.search(note) != null else "增益"
 
 
 const _HIDDEN_NAME := "^角色(?:血量|蓝量|生命|魔法|物攻|魔攻|物防|魔防|敏捷|幸运)$"

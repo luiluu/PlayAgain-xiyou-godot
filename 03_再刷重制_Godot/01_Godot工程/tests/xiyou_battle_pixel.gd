@@ -217,10 +217,9 @@ func _layout() -> void:
 	var sp := _sprites(b)
 	nodes.bp2_layout_sprites = sp
 	nodes.bp2_layout_cq = _cq(b)
-	# 状态格轮换内容：原版读数 _cqRows 图标 1035／579／4210（破阵——天道诅咒、难度适应、普通难度·结算伤害；顺序见交付单）
-	var icons: Array = nodes.bp2_layout_cq[0].icons.duplicate()
-	icons.sort()
-	_check("cell_icons_layout", icons == [579, 1035, 4210], nodes.bp2_layout_cq[0])
+	# 状态格轮换内容与顺序：原版读数 _cqRows 图标 1035→579→4210（破阵——天道诅咒〔异常〕、难度适应、普通难度·结算伤害〔常驻，拼音序〕；
+	# rules-passive-order1 起比顺序，原来只比集合）
+	_check("cell_icons_layout", nodes.bp2_layout_cq[0].icons == [1035, 579, 4210], nodes.bp2_layout_cq[0])
 	# visibleState：越战越勇（34，有图标没说明）原版不进状态格；强化接在后面、层数＝等级
 	var a1: XActor = b.logic.actors[0]
 	a1.add_state(34)
@@ -228,7 +227,8 @@ func _layout() -> void:
 	var rows := XSideStatus.cell_rows(a1)
 	var ids: Array = rows.map(func(r): return r.icon)
 	_check("cell_hides_no_description", int(XDB.rec("States", 34).iconIndex) > 0 and not ids.has(int(XDB.rec("States", 34).iconIndex)), ids)
-	_check("cell_buff_stack", rows.back() == {"icon": XEnemyStateIcon.buff_icon(2, 2), "stack": 2}, rows.back())
+	# 强化按类别「增益」排在常驻前（rules-passive-order1），不再是最后一行
+	_check("cell_buff_stack", rows.has({"icon": XEnemyStateIcon.buff_icon(2, 2), "stack": 2}), rows)
 	XSideStatus.CELL_FILTER = false
 	var raw: Array = XSideStatus.cell_rows(a1).map(func(r): return r.icon)
 	XSideStatus.CELL_FILTER = true
