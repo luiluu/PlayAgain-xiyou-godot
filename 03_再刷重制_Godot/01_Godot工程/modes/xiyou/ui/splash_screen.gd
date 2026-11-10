@@ -10,11 +10,14 @@ extends Control
 ##   BLANK_FIRST_V028 = true 回到原版（先黑一轮）。
 ## - 一次运行只放一次（原版 Scene_Boot 才进；从游戏回标题不再放）；测试（headless 或命令行带场景／脚本）和按键冒烟（--smoke-keys，SKIP_FOR_SMOKE）不放，
 ##   环境变量 XIYOU_SPLASH=1／0 强制放／不放。图缺时直接进标题。回退：ENABLED = false 不放开场图。
+## 天启篇改版起默认不放这三张图，改放 XWarningScreen（见 WARNING_SCREEN）；本类仍管 wanted()／shown。
 ## 帧按 _physics_process 计（变速齿轮 1.6 倍时同原版按 updateScene 计）。
 
 signal finished
 
 static var ENABLED := true
+## 天启篇改版（O-259）：true＝放开场声明屏 XWarningScreen 取代下面三张图；false 回到原版三张开场图
+static var WARNING_SCREEN := true
 static var BLANK_FIRST_V028 := false
 static var shown := false
 ## 按键冒烟（命令行带 --smoke-keys=…）不放开场图：开场图要放 10 秒以上并吃掉按键，冒烟的第一下键会落在开场图上，
