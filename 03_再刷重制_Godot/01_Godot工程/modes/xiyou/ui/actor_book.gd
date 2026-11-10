@@ -50,7 +50,7 @@ const ATTR_INK := Color("c1c9d5")
 ## 优化 O-084：返回目录时整张说明卡隐藏；false 照原版只藏卡本体、把 4 层品质边框留在状态页上（矩形 [535,-2,747,卡高+20]）
 static var HIDE_HELP_ON_RETURN := true
 ## 状态窗立绘平滑：原版 144 名原生侧视图 bitmap.smooth=true、画在半像素 (93.2,71.69) 上，线性取样略糊；167 以后有档的 smooth=false。
-## 重制保持清晰（最近邻，同 11-05 胜利背景「不照原版放大模糊」）。O-待定：BOOK_NATIVE_SMOOTH = true 回到原版（原生图线性取样）。
+## 重制保持清晰（最近邻，同 11-05 胜利背景「不照原版放大模糊」）。O-250：BOOK_NATIVE_SMOOTH = true 回到原版（原生图线性取样）。
 static var BOOK_NATIVE_SMOOTH := false
 
 var index := 0
