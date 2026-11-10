@@ -148,8 +148,8 @@ func _run() -> void:
 				await get_tree().process_frame
 		_check("encounter_wipe_to_title", titled[0] == 1, titled)
 	XBattleScene.force_auto = false
-	XMessageBox.auto = false
 	# 2c. 经解释器输掉（301 不可败，审查 70 P2②）：结束画面期间一直 busy，事件收尾也不放开，方向键人不动
+	# 全灭现在先出底部消息窗「被击败了。」等按键（rules-battle-pixel2），消息自动翻页才到结束画面（合并 gaps12＋battle-pixel2 时补）
 	var m3 := await _open_lobby()
 	if _check("lobby_reopen2", m3 != null):
 		_hurt()
@@ -190,6 +190,7 @@ func _run() -> void:
 				await get_tree().process_frame
 		_check("interp_wipe_to_title", titled[0] == 1 and ev_done[0], titled)
 		_check("interp_wipe_busy_after", m3.busy, null)
+	XMessageBox.auto = false
 	# 3. 回退：回大厅
 	XMapScene.GAME_OVER_TO_LOBBY = true
 	titled[0] = 0
