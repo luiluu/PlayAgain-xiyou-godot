@@ -527,11 +527,25 @@ class PresetKeysTests(unittest.TestCase):
         self.assertEqual(keys(js), keys(gd))
         self.assertIn('playtime', keys(js))
 
+    def test_actor_whitelists_match(self):
+        """cc 分段甲 a6：actors.N 子键白名单两边一致，含角色状态门四个键。"""
+        import re
+        js = re.search(r"const ACTOR_PRESET_KEYS = \[([^\]]*)\]", PROBE.read_text())[1]
+        gd = re.search(r'const ACTOR_PRESET_KEYS := \[([^\]]*)\]', COMPARE.read_text())[1]
+        keys = lambda t: sorted(re.findall(r"""['"]([A-Za-z_]+)['"]""", t))
+        self.assertEqual(keys(js), keys(gd))
+        for k in ('paramPlus', 'hp', 'mp', 'states'):
+            self.assertIn(k, keys(js))
+
+    def test_probe_rejects_unknown_actor_key(self):
+        self.assertEqual(self.run_apply({'actors': {'1': {'state': [5]}}}), {'err': 'event_presets 不认识的角色预设键: actors.1.state'})
+
     def run_apply(self, preset):
         src = PROBE.read_text()
         start = src.index('function applyPreset(p) {')
         body = src[start:src.index('\n}\n', start) + 3]
         keys = src[src.index('const PRESET_KEYS'):src.index('\n', src.index('const PRESET_KEYS'))]
+        keys += '\n' + src[src.index('const ACTOR_PRESET_KEYS'):src.index('\n', src.index('const ACTOR_PRESET_KEYS'))]
         js = keys + '\nconst w = {Graphics: {frameCount: 0}};\n' + body + (
             '\ntry { applyPreset(%s); console.log(JSON.stringify({fc: w.Graphics.frameCount, pt: Math.floor(w.Graphics.frameCount / 60)})); }'
             ' catch (e) { console.log(JSON.stringify({err: e.message})); }\nprocess.exit(0);' % json.dumps(preset))

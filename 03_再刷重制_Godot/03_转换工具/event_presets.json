@@ -313921,6 +313921,270 @@
      "1285": 1
     }
    }
+  },
+  {
+   "base": "ce1597",
+   "tag": "sa6s_2",
+   "preset": {
+    "actors": {
+     "87": {
+      "paramPlus": {
+       "0": 100000
+      },
+      "hp": 100000
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1600",
+   "tag": "sa6s_5",
+   "preset": {
+    "party": [
+     86
+    ],
+    "actors": {
+     "86": {
+      "paramPlus": {
+       "2": 15000
+      }
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1597",
+   "tag": "sa6s_60",
+   "preset": {
+    "actors": {
+     "87": {
+      "paramPlus": {
+       "0": 99999
+      },
+      "hp": 99999
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1600",
+   "tag": "sa6s_61",
+   "preset": {
+    "party": [
+     86
+    ],
+    "actors": {
+     "86": {
+      "paramPlus": {
+       "2": 14999
+      }
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6s_62",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6s_63",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_101",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       692
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_102",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       995
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_103",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       693
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_104",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       694
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_105",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       695
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_106",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       696
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1316",
+   "tag": "sa6s_107",
+   "preset": {
+    "party": [
+     45
+    ],
+    "actors": {
+     "45": {
+      "states": [
+       698
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1709",
+   "tag": "sa6s_108",
+   "preset": {
+    "variables": {
+     "1510": 500
+    },
+    "actors": {
+     "159": {
+      "states": [
+       2765
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce1712",
+   "tag": "sa6s_109",
+   "preset": {
+    "variables": {
+     "1510": 500
+    },
+    "actors": {
+     "159": {
+      "states": [
+       2769
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce2472",
+   "tag": "sa6s_110",
+   "preset": {
+    "party": [
+     123
+    ],
+    "difficulty": 9,
+    "actors": {
+     "123": {
+      "states": [
+       1825
+      ]
+     }
+    }
+   }
+  },
+  {
+   "base": "ce2473",
+   "tag": "sa6s_111",
+   "preset": {
+    "party": [
+     123
+    ],
+    "difficulty": 9,
+    "actors": {
+     "123": {
+      "states": [
+       1825
+      ]
+     }
+    }
+   }
   }
  ]
 }
