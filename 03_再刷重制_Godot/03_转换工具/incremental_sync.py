@@ -50,6 +50,32 @@ def helper_scope_on():
 # 探针读的、不在 mv_oracle 里也不是转换产物的输入文件（相对 03_转换工具）：内容进该探针的键，改了只重跑它自己
 # event_state_shards.py：同步里分段跑、拼回 event_state 结果的代码（tools81），改了要让它重跑
 PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json', 'event_state_shards.py')}
+# 进键的行为开关（审查 probe-deps 指纹，2026-11-10）：探针或它依赖的 helper 读的、会改变产物的环境变量。
+# 只在设了、且该探针的依赖里提到它时进这个探针的键（没设时键与以前逐字相同，不引起重跑）：
+# 否则带着回退开关跑同步会全部命中、开关等于没生效；带着开关 --full 出的产物又会被之后不带开关的同步当成默认结果命中。
+SWITCH_ENV = ('XIYOU_HBOOT_FILE_XHR',)
+# 审过、不进键的环境变量（探针登记检查.py 会拦没归类的新名字）
+REVIEWED_ENV = {
+    'XIYOU_APP': '同步自己设；来源内容与路径已在公共键',
+    'XIYOU_GENERATED': '同步自己设；读到的转换产物按内容进键（converted／地图单元）',
+    'XIYOU_ORACLE_SANDBOX': '同步逐探针设的存档目录',
+    'XIYOU_PROBE_UNITS': '同步设：分片探针本轮只跑哪些单元',
+    'XIYOU_PROBE_SHARD': '同步设：分段序号',
+    'XIYOU_EVENT_OUT': '产物路径', 'XIYOU_SLICE_OUT': '产物路径', 'XIYOU_TROOP_OUT': '产物路径', 'XIYOU_STATE_KEYS_OUT': '产物路径',
+    'XIYOU_STATE_PREV': '同步设：事件状态探针上次结果', 'XIYOU_STATE_PREV_KEYS': '同上',
+    'XIYOU_STATE_INCREMENTAL': '只决定事件状态探针复不复用上次结果，产物相同',
+    'XIYOU_COVER': '只多写一份覆盖记录，troop_events.json 逐字节不变',
+    'XIYOU_PROBE_ACTORS': '手动开发用：产物改写 .sandbox/slice_actors，不进同步',
+    'XIYOU_PROBE_FROM': '手动开发用：必须同时给 XIYOU_TROOP_OUT，同步里设了直接报错',
+    'HB_TRACE': '只往标准错误打加载顺序',
+}
+# 审过的动态读取。运行时记录能代替「带全部 helper」的前提：同一条命令每次运行读到的 mv_oracle 文件都一样，
+# 与本轮跑哪些单元／分段、环境变量无关（只跑几个单元的增量轮也会留下记录，记录不区分整轮还是增量）。
+REVIEWED_DYNAMIC = {
+    'slice_probe.cjs': '只是产物目录的三元式（.sandbox/slice 或 .sandbox/slice_actors），不读文件',
+    'event_state_probe.cjs': '固定五个文件算哈希写进产物',
+    'shared_system_probe.cjs': '同步不带参数，三个模块每次都 require',
+}
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 # 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
 # 新读取法先退回全产物键，不能因 SHARDS 优先而漏掉 converted。
@@ -366,6 +392,17 @@ class ProbeCache:
             if not (isinstance(r, dict) and all(isinstance(r.get(k), str) and r.get(k) for k in ('file', 'from', 'to', 'why'))
                     and isinstance(r.get('rerun'), list) and len(r['from']) == 64 and len(r['to']) == 64):
                 raise RuntimeError('%s 的条目缺 file／from／to（整份 SHA-256）／rerun／why：%r' % (SCOPE_FILE, r))
+            # rerun 写错一个字（如漏了 .cjs）那个探针就被当成「不受影响」静默命中，所以逐项核对（审查 probe-deps 指纹）
+            wrong = [n for n in r['rerun'] if not (isinstance(n, str) and '/' not in n and (self.oracle / n).is_file())]
+            if wrong:
+                raise RuntimeError('%s 的 rerun 要写 mv_oracle 下现有探针的文件全名（如 event_probe.cjs），这几项不是：%r' % (SCOPE_FILE, wrong))
+            if not (re.fullmatch(r'[0-9a-f]{64}', r['from']) and re.fullmatch(r'[0-9a-f]{64}', r['to'])) or r['from'] == r['to']:
+                raise RuntimeError('%s 的 from／to 要是两个不同的小写十六进制 SHA-256：%s' % (SCOPE_FILE, r['file']))
+            if not (self.tools / r['file']).is_file():
+                raise RuntimeError('%s 的 file 要相对 03_转换工具 且存在（文件已删就把这一条删掉）：%s' % (SCOPE_FILE, r['file']))
+        pairs = [(r['file'], r['to']) for r in rows]
+        if len(set(pairs)) != len(pairs):
+            raise RuntimeError('%s 里同一份 file 的同一个 to 写了两条，折算不唯一' % SCOPE_FILE)
         return rows
 
     def _scoped_sha(self, probe, rel, sha):
@@ -471,6 +508,10 @@ class ProbeCache:
         detail = {'common': {k: sha_json(v) for k, v in self.common.items()},
                   'dependencies': deps, 'command': command}
         detail['common']['environment'] = {k: sha_json(v) for k, v in self.common['environment'].items()}
+        switches = {n: os.environ[n] for n in SWITCH_ENV if n in os.environ and re.search(r'\b%s\b' % re.escape(n), text)}
+        if switches:
+            value['switches'] = switches
+            detail['switches'] = {n: sha_json(v) for n, v in switches.items()}
         spec = self.shard(command)
         if SLICE_NAME in text:
             fields = slice_fields(texts)
@@ -711,6 +752,69 @@ class ProbeCache:
                     or current.units(entry['command']) != entry.get('units')):
                 raise RuntimeError('同步期间探针输入或产物改变，不发布缓存：' + name)
         atomic_json(self.path, {'version': VERSION, 'probes': self.pending, 'ledger': self.ledger, 'carried': self.carried})
+
+
+# 探针读法检查（审查 probe-deps 指纹，探针登记检查.py 调用）：按实际依赖算键以后，键里有什么取决于静态扫描认得出的写法和运行时记录，
+# 认不出又没被判成「动态」的读法在第一次带记录运行前不在键里，记录丢了也不在；mv_oracle 之外的文件记录器不记。
+# 这里把同步探针及其静态依赖里这几类写法拦下来，要么改成认得的写法，要么在上面的清单里登记理由。
+_BLIND_FORMS = (
+    (re.compile(r'\b(?:__dirname|__filename|ORACLE_DIR)\b'), '__dirname／__filename／ORACLE_DIR 不在 path.join／path.resolve(…, 的第一个参数位置：静态扫描认不出，'
+                                                         '改成 path.join(__dirname, \'字面量\') 或 require(\'./字面量\')'),
+    (re.compile(r'\bprocess\.cwd\(\)'), 'process.cwd() 拼路径：静态扫描认不出，改用 __dirname'),
+    (re.compile(r"\bfs\.(?:readFileSync|readFile|createReadStream|openSync|open|readdirSync)\(\s*['\"`](?!/)"),
+     '按当前目录读相对路径：静态扫描认不出，改成 path.join(__dirname, …)'),
+    (re.compile(r"\bcreateRequire\b|\brequire\.resolve\(|\bimport\("), 'createRequire／require.resolve／import()：静态扫描认不出，改成 require(\'./字面量\')'),
+)
+_KNOWN_FORMS = re.compile(r"\bpath\.(?:join|resolve)\(\s*(?:__dirname|ORACLE_DIR)\s*,|\bconst ORACLE_DIR\s*=\s*__dirname\s*;")
+_OUTSIDE_LITERAL = re.compile(r"\bpath\.(?:join|resolve)\(\s*(?:__dirname|ORACLE_DIR)\s*,\s*['\"](\.\./[^'\"]*)['\"]")
+_ENV_NAME = re.compile(r"\bprocess\.env(?:\.([A-Za-z_]\w*)|\[\s*['\"]([^'\"]+)['\"]\s*\]|(\s*\[))")
+
+
+def audit_probe_reads(tools, probes):
+    """probes：同步登记的探针文件名。返回问题列表（空＝每个探针读的东西要么在键里，要么审过）。"""
+    tools = Path(tools).resolve()
+    pc = object.__new__(ProbeCache)   # 只用静态扫描，不算来源指纹
+    pc.tools, pc.oracle = tools, tools / 'mv_oracle'
+    generated = (tools.parent / '01_Godot工程/modes/xiyou/generated').resolve()
+    bad, seen_dynamic = [], set()
+    for name in sorted(probes):
+        if not (pc.oracle / name).is_file():
+            continue
+        dynamic = set()
+        closure = pc._closure([pc.oracle / name], dynamic)
+        if dynamic:
+            seen_dynamic.add(name)
+            if name not in REVIEWED_DYNAMIC:
+                bad.append('%s（%s）有认不出的动态读取：确认同一条命令每次运行读到的 mv_oracle 文件都一样（与单元、分段、环境变量无关）后'
+                           '登记进 incremental_sync.REVIEWED_DYNAMIC；做不到就改成字面量写法' % (name, '、'.join(sorted(dynamic))))
+        extra = {(tools / n).resolve() for n in PROBE_INPUTS.get(name, ())}
+        for p in sorted(closure):
+            if p.suffix not in ('.cjs', '.js'):
+                continue
+            rel = p.relative_to(tools).as_posix()
+            code = '\n'.join(l for l in p.read_text(errors='replace').splitlines() if not l.lstrip().startswith('//'))
+            rest = _KNOWN_FORMS.sub('KNOWN_PATH(', code)   # 认得的写法换成占位，剩下的再找认不出的
+            for pattern, hint in _BLIND_FORMS:
+                if pattern.search(rest):
+                    bad.append('%s 依赖的 %s：%s' % (name, rel, hint))
+            for m in _OUTSIDE_LITERAL.finditer(code):
+                target = (p.parent / m[1]).resolve()
+                if target.is_relative_to(pc.oracle) or target == tools / SLICE_NAME or target == generated or target.is_relative_to(generated):
+                    continue
+                if target not in extra:
+                    bad.append('%s 依赖的 %s 读 mv_oracle 之外的 %s：运行时记录不记这里，把文件名（相对 03_转换工具）登记进 incremental_sync.PROBE_INPUTS[%r]'
+                               % (name, rel, m[1], name))
+            for m in _ENV_NAME.finditer(code):
+                env = m[1] or m[2]
+                if env is None:
+                    bad.append('%s 依赖的 %s 用变量名读 process.env：改成写明名字' % (name, rel))
+                elif env not in SWITCH_ENV and env not in REVIEWED_ENV:
+                    bad.append('%s 依赖的 %s 读环境变量 %s：会改变产物的登记进 incremental_sync.SWITCH_ENV（设了就进键），'
+                               '不会的登记进 REVIEWED_ENV 并写理由' % (name, rel, env))
+    for name in sorted(set(REVIEWED_DYNAMIC) - seen_dynamic):
+        if name in probes:
+            bad.append('incremental_sync.REVIEWED_DYNAMIC 里的 %s 已没有动态读取，删掉这一行' % name)
+    return sorted(set(bad))
 
 
 if __name__ == '__main__':

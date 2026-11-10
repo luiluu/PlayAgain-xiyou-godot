@@ -747,6 +747,56 @@ class CacheTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.cache()
 
+    def test_scope_declaration_typos_fail_closed(self):
+        # 审查 probe-deps 指纹：rerun 漏写 .cjs 的话那个探针会被当成不受影响、静默命中；声明写错一律报错不同步
+        for name in ('a', 'b'):
+            (self.oracle / (name + '_probe.cjs')).write_text("require('./host.cjs')")
+        self.prime()
+        old = hashlib.sha256((self.oracle / 'host.cjs').read_bytes()).hexdigest()
+        (self.oracle / 'host.cjs').write_text('// changed: only b can see it')
+        new = hashlib.sha256((self.oracle / 'host.cjs').read_bytes()).hexdigest()
+        good = {'file': 'mv_oracle/host.cjs', 'from': old, 'to': new, 'rerun': ['b_probe.cjs'], 'why': 'test'}
+        for wrong in ({'rerun': ['b_probe']}, {'rerun': ['mv_oracle/b_probe.cjs']}, {'rerun': ['gone_probe.cjs']}, {'rerun': [1]},
+                      {'file': 'mv_oracle/gone.cjs'}, {'from': new}, {'to': new.upper()}, {'from': 'z' * 64}):
+            (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [dict(good, **wrong)]}))
+            with self.assertRaises(RuntimeError, msg=str(wrong)):
+                self.cache()
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [good, dict(good, rerun=[])]}))
+        with self.assertRaises(RuntimeError):
+            self.cache()
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [good]}))
+        self.assertEqual(self.hits(), [True, False, True])
+
+    def test_switch_env_enters_key_only_when_set_and_only_for_probes_that_read_it(self):
+        # 审查 probe-deps 指纹：hboot 的回退开关 XIYOU_HBOOT_FILE_XHR 改产物却不在键里，带着它同步会全部命中（开关等于没生效），
+        # 带着它 --full 出的产物之后又被不带开关的同步命中。设了才进键、只进读它的探针；没设时键与以前逐字相同。
+        (self.oracle / 'host.cjs').write_text("if (process.env.XIYOU_HBOOT_FILE_XHR !== '0') {}")
+        (self.oracle / 'a_probe.cjs').write_text("// ../xiyou_slice.json\nrequire('./host.cjs')")
+        with mock.patch.dict(os.environ):
+            os.environ.pop('XIYOU_HBOOT_FILE_XHR', None)
+            plain = [self.cache().key(cmd) for cmd, _ in self.probes]
+            with mock.patch.object(incremental_sync, 'SWITCH_ENV', ()):
+                self.assertEqual([self.cache().key(cmd) for cmd, _ in self.probes], plain)
+            self.prime()
+            os.environ['XIYOU_HBOOT_FILE_XHR'] = '0'
+            self.assertEqual(self.hits(), [False, True, True])
+            c = self.cache()
+            c.plan(*self.probes[0], c.key(self.probes[0][0]))
+            self.assertIn({'kind': 'switches'}, c.misses['a_probe.cjs'])   # CACHE_MISS 里看得出是开关
+            self.prime()   # 带着开关跑出来的结果
+            self.assertEqual(self.hits(), [True, True, True])
+            os.environ.pop('XIYOU_HBOOT_FILE_XHR')
+            self.assertEqual(self.hits(), [False, True, True])   # 不带开关时不能拿它当默认结果
+
+    def test_unit_logic_change_needs_a_revision_decision(self):
+        # 审查 probe-deps 指纹：incremental_sync.py 不再整份进分片探针的键，靠人记得加 SHARD_TOOLING_REVISION。
+        # 这几个函数（单元划分、单元核对、单元摘要）一改这里就挂：改了单元的含义就把修订号加一（分片探针整轮重跑一次），
+        # 只是不影响已有单元结果的改动（日志、注释、键算法）就只更新下面的摘要。两样都要在这里改，免得悄悄漏掉。
+        import inspect
+        source = ''.join(inspect.getsource(getattr(ProbeCache, n)) for n in ('units', 'plan', '_verified_units', '_unit_digests', 'record'))
+        self.assertEqual((incremental_sync.SHARD_TOOLING_REVISION, hashlib.sha256(source.encode()).hexdigest()[:16]),
+                         (1, '22a2b14f5067aa58'))
+
     def test_shard_tooling_follows_revision_not_cache_code(self):
         (self.tools / 'incremental_sync.py').write_text('# v1')
         (self.tools / 'oracle_shard_merge.cjs').write_text('// m1')
