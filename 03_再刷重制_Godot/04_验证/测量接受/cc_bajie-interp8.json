@@ -11,6 +11,202 @@
       "oldDigest": "3a239637fabcd53f",
       "newDigest": "b564aa689f1a101c",
       "reason": "hboot.cjs 修好中文路径 file:// XHR 后，参照里 CodexGuide 读得到 v0.62.12 的 ContentVersion 与 PlayerChangelog，event_probe 的 m4e71p0（改版向导）更新日志页从 v0.36 以前的旧页变成 v0.62 起的 12 版，选项与台词随之变化，这是修正后的正确参照（O-待定·参照宿主中文路径读文件）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p0#i7_4\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "02f34df176f440c3",
+      "newDigest": "c6e3d07eee8804ea",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p0#i7_5\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "cc7091cc97ba1bd7",
+      "newDigest": "a0ff3f094721d8f3",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p0#i7_6\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "717e9be780c46a03",
+      "newDigest": "8d6f61ed10c6c339",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p0#i7_7\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "f50501a512564d6f",
+      "newDigest": "73ee5a9f79c7d911",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p0#i7_8\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "9b31507bdfdda7c2",
+      "newDigest": "d676e8b06d4eaa2f",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p0#i7_9\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "a4805f70108f33c3",
+      "newDigest": "44917781e44baf1c",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p0#i7_11\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "687cb0205e2257ef",
+      "newDigest": "eaa2f2c74f65e17b",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m30e8p0#i7_16\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "40497c53b9b12ef1",
+      "newDigest": "56751bea3eae3d2d",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m32e1p0#i7_18\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "38681f814e8af8fc",
+      "newDigest": "9231de57a44d1990",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m33e3p0#i7_20\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "01979cb84cdcfe67",
+      "newDigest": "249a9e121e61081f",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m45e1p0#i7_22\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "de06b8a6f859eab4",
+      "newDigest": "fa009e30edd99248",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m46e1p0#i7_24\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "601775fc1c3dd4b0",
+      "newDigest": "f7e41d0c344b992c",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m47e13p0#i7_26\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "6a35d02258b53e09",
+      "newDigest": "c463b7fd68707168",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
+    },
+    {
+      "file": "event_states.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"m64e1p0#i7_40\"]]",
+      "fields": [
+        "delta",
+        "preset",
+        "reached",
+        "trace"
+      ],
+      "oldDigest": "1e0432ca242a3bd6",
+      "newDigest": "c72e2a41cef31970",
+      "reason": "审查 66 P3-1：i7 七层变体改成「给够见面礼」（物品 182 到门槛、206＝30×门槛、去掉被门前赋值盖掉的 843），event_presets.json 14 个预设随之变，7 个事件各 2 例走到新分支，是本分支有意的覆盖修正（交付单 cc_bajie-interp8「整份结果比对」：24058 例只这 14 例变）。"
     }
   ]
 }
