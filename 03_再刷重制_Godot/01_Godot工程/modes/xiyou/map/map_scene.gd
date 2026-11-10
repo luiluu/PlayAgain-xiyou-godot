@@ -135,7 +135,7 @@ func _ready() -> void:
 	me = AudioStreamPlayer.new()
 	XAudio.bind(me, "ME")
 	add_child(me)
-	me.finished.connect(func(): bgm.stream_paused = false)
+	me.finished.connect(_me_finished)
 	camera = Camera2D.new()
 	add_child(camera)
 	screen_fx = XScreenFxView.new()
@@ -1062,6 +1062,7 @@ func play_bgm(audio) -> void:
 	_bgm_name = name
 	_bgm_audio = (audio as Dictionary).duplicate() if audio is Dictionary and name != "" else null
 	var p := XDB.audio_path("bgm", name) if name != "" else ""
+	XAudio.stop_fade(bgm)
 	bgm.stop()
 	if p != "":
 		bgm.stream = load(p)
@@ -1090,6 +1091,29 @@ func play_bgs(audio: Dictionary) -> void:
 		bgs.volume_db = linear_to_db(float(audio.get("volume", 90)) / 100.0)
 		bgs.pitch_scale = float(audio.get("pitch", 100)) / 100.0
 		bgs.play()
+
+
+## AudioManager.stopMe：ME 放完，暂停着的 BGM 接着放、_replayFadeTime 0.5 秒淡入（原来直接接上、不淡入）
+func _me_finished() -> void:
+	if bgm.stream_paused:
+		bgm.stream_paused = false
+		XAudio.fade_in(bgm)
+
+
+## 战斗结束时战斗 ME（胜利 Victory2／全灭 Defeat2）还没放完：原版 ME 不随 Scene_Battle 结束停，回地图接着放，
+## 地图曲（replayBgmAndBgs 换回的）等它放完才响（AudioManager.playBgm 的 !this._meBuffer），再 0.5 秒淡入。
+## 这里把战斗的 ME 播放器的曲子和位置接到地图自己的 me 上；返回是否接了
+func take_battle_me(battle: XBattleScene) -> bool:
+	if battle == null or battle.me == null or not battle.me.playing:
+		return false
+	me.stop()
+	me.stream = battle.me.stream
+	me.volume_db = battle.me.volume_db
+	me.pitch_scale = battle.me.pitch_scale
+	var pos := battle.me.get_playback_position()
+	battle.me.stop()
+	me.play(pos)
+	return true
 
 
 func play_me(audio: Dictionary) -> void:
@@ -1150,6 +1174,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 			XBattleTransition.note({"phase": "out", "fade": out.opacity})
 			await get_tree().physics_frame
 		_end_battle_bgm(battle)
+		take_battle_me(battle)
 		battle.queue_free()
 		out.start_in(XBattleTransition.FADE_FRAMES)
 		out.step()
@@ -1160,6 +1185,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 		chars.process_mode = Node.PROCESS_MODE_INHERIT
 	_in_battle = false
 	if not transition:
+		take_battle_me(battle)
 		battle.queue_free()
 	difficulty_notice.clock.paint()
 	# Scene_Battle.terminate → refrishHangUp：死亡停止；仍在挂机就自动吃药、按场数自动卖出
@@ -1174,7 +1200,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 	_reset_transfer_button()
-	bgm.stream_paused = false
+	# 接过来的战斗 ME 还在放：地图曲等它放完（_me_finished）再淡入
+	bgm.stream_paused = me.playing
 	bgs.stream_paused = false
 	refresh_events()
 	return result
