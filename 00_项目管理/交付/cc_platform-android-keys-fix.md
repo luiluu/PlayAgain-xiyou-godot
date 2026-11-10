@@ -1,5 +1,7 @@
 # 交付单 cc/platform-android-keys-fix（本机验证通过，Actions 冒烟全绿，可合并）
 
+状态：可合并（标题与本轮记录写明 Actions 冒烟全绿；总装三十九补状态行。O-待定 草稿是正文写法，总装合并后手补号）
+
 ## 接续（额度用完，WIP 停手）
 - 根因（已定）：dev.410 并入的开场图（XSplashScreen，要放约 10 秒以上并吃掉按键）让冒烟第一下键落在开场图上，标题没接键、新游戏没开；地图没进，所以切后台钩子（挂在地图上）也没打 PAUSE_SAVE。证据：run 42678614104 的 android-run-report logcat（SMOKE_KEY 在启动后约 1.7 秒）。
 - 已改（未验证）：`modes/xiyou/ui/splash_screen.gd` 加 `SKIP_FOR_SMOKE`（默认 true，回退＝false）和 `is_smoke_run()`，命令行带 `--smoke-keys=` 时 `wanted()` 返回 false；`tests/xiyou_splash_autosave.gd` 加 4 条断言。
