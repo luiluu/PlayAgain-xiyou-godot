@@ -55,6 +55,7 @@ func _run() -> void:
 	await _title_pages()
 	await _opening()
 	_rules()
+	await _revert()
 	for slot in range(1, 11):
 		DirAccess.remove_absolute(XSave.path(slot))
 	DirAccess.remove_absolute(XSave.dir())
@@ -169,3 +170,17 @@ func _rules() -> void:
 	XBonds.TIANQI_OFF = false
 	_check("bonds_switch_back", XBonds.enabled(s))
 	XBonds.TIANQI_OFF = true
+
+
+## 开关回退：XTianqi.ENABLED = false 时标题「新的游戏」回到原版 Map001 开局（不是天启篇存档）
+func _revert() -> void:
+	XTianqi.ENABLED = false
+	_check("enter_xiyou_again", GameApp.enter_mode("xiyou"))
+	await _wait(func(): return _scene() != null and _scene().has_method("_on_new_game"), 300)
+	_scene()._on_new_game()
+	var s := XState.current
+	_check("revert_original_opening", s.map_id == 1 and not XTianqi.active(s) and not XTianqi.has_pending(), [s.map_id, s.flags])
+	# 同一帧再切回标题，不真的进 Map001（开局事件的协程挂着退出会报资源未释放）
+	GameApp.enter_mode("xiyou")
+	await _wait(func(): return _scene() != null and _scene().has_method("_on_new_game"), 300)
+	XTianqi.ENABLED = true
