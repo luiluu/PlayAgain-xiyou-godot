@@ -314363,6 +314363,177 @@
      1
     ]
    }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6u_5",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      },
+      "skills": [
+       5907
+      ]
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6u_6",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      },
+      "skills": [
+       5914
+      ]
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6u_7",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      },
+      "skills": [
+       5926
+      ]
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6u_8",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      },
+      "skills": [
+       5923
+      ]
+     }
+    },
+    "answers": [
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6u_9",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      },
+      "skills": [
+       5907
+      ]
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6u_10",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      },
+      "skills": [
+       5914
+      ]
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6u_11",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      },
+      "skills": [
+       5926
+      ]
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6u_12",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      },
+      "skills": [
+       5923
+      ]
+     }
+    },
+    "answers": [
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "base": "m80e13p2",
+   "tag": "sa6x_1",
+   "preset": {
+    "random_seq": [
+     0.1,
+     0.166667,
+     0.9
+    ]
+   }
   }
  ]
 }
