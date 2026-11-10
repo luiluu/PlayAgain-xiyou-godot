@@ -314556,12 +314556,47 @@
   },
   {
    "base": "ce682",
-   "tag": "sa6w_2",
+   "tag": "sa6z_1",
    "preset": {
     "maxLevel": 99,
     "actors": {
      "77": {
       "level": 30,
+      "weapons": [
+       1698
+      ]
+     }
+    },
+    "gold": 100000,
+    "random_seq": [
+     0.5
+    ]
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6z_2",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 30,
+      "weapons": [
+       1698
+      ]
+     }
+    },
+    "gold": 0
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6z_3",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 50,
       "weapons": [
        1699
       ]
@@ -314575,12 +314610,47 @@
   },
   {
    "base": "ce682",
-   "tag": "sa6w_3",
+   "tag": "sa6z_4",
    "preset": {
     "maxLevel": 99,
     "actors": {
      "77": {
-      "level": 30,
+      "level": 50,
+      "weapons": [
+       1699
+      ]
+     }
+    },
+    "gold": 100000,
+    "random_seq": [
+     0.5
+    ]
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6z_5",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 50,
+      "weapons": [
+       1699
+      ]
+     }
+    },
+    "gold": 0
+   }
+  },
+  {
+   "base": "ce682",
+   "tag": "sa6z_6",
+   "preset": {
+    "maxLevel": 99,
+    "actors": {
+     "77": {
+      "level": 70,
       "weapons": [
        1700
       ]
@@ -314588,144 +314658,119 @@
     },
     "gold": 100000,
     "random_seq": [
-     0.0005
+     0.001
     ]
    }
   },
   {
-   "base": "ce1617",
-   "tag": "sa6w_4",
+   "base": "ce682",
+   "tag": "sa6z_7",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 50000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     0
+    "gold": 100000,
+    "random_seq": [
+     0.003
     ]
    }
   },
   {
-   "base": "ce1617",
-   "tag": "sa6w_5",
+   "base": "ce682",
+   "tag": "sa6z_8",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 50000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     1
+    "gold": 100000,
+    "random_seq": [
+     0.005
     ]
    }
   },
   {
-   "base": "ce1617",
-   "tag": "sa6w_6",
+   "base": "ce682",
+   "tag": "sa6z_9",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 50000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     2
+    "gold": 100000,
+    "random_seq": [
+     0.007
     ]
    }
   },
   {
-   "base": "ce1617",
-   "tag": "sa6w_7",
+   "base": "ce682",
+   "tag": "sa6z_10",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 50000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     3
+    "gold": 100000,
+    "random_seq": [
+     0.009
     ]
    }
   },
   {
-   "base": "ce1618",
-   "tag": "sa6w_8",
+   "base": "ce682",
+   "tag": "sa6z_11",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 80000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     0
+    "gold": 100000,
+    "random_seq": [
+     0.5
     ]
    }
   },
   {
-   "base": "ce1618",
-   "tag": "sa6w_9",
+   "base": "ce682",
+   "tag": "sa6z_12",
    "preset": {
+    "maxLevel": 99,
     "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 80000
-      }
+     "77": {
+      "level": 70,
+      "weapons": [
+       1700
+      ]
      }
     },
-    "answers": [
-     0,
-     1
-    ]
-   }
-  },
-  {
-   "base": "ce1618",
-   "tag": "sa6w_10",
-   "preset": {
-    "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 80000
-      }
-     }
-    },
-    "answers": [
-     0,
-     2
-    ]
-   }
-  },
-  {
-   "base": "ce1618",
-   "tag": "sa6w_11",
-   "preset": {
-    "actors": {
-     "88": {
-      "paramPlus": {
-       "1": 80000
-      }
-     }
-    },
-    "answers": [
-     0,
-     3
-    ]
+    "gold": 0
    }
   }
  ]

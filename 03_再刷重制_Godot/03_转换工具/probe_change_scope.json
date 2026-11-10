@@ -22,10 +22,9 @@
       "presetKeys": [
         "actors.*.paramPlus",
         "actors.*.states",
-        "actors.*.hp",
-        "actors.*.mp"
+        "actors.*.hp"
       ],
-      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），合并时 main 上的变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变"
+      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），合并时 main 上的变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变；mp 段眼下没有变体用到（原版没有「变量＝角色当前 MP」的门），按 tools-probe-scope1 的校验不列，没有缓存结果依赖它，以后有变体带 mp 时它是新变体、照样会量"
     }
   ]
 }
