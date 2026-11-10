@@ -471,6 +471,48 @@ static func from_save(v) -> Dictionary:
 
 
 # ---- 第三期：战斗内被动（进化、解析、反击、追击，参照 garou_battle_probe）----
+## 法宝说明（G.describeRelic，RJO.HE.getDescParams 包装、type 2，chars-gaps1）：原版每次画破限之心的说明卡前，往备注末尾写一段
+## <CodexGarouHelp>（十行 <pos=APs …>，倒序写、每行插在同一位置，画出来是正序）；重制不改备注，由 XHelpCard.desc_params
+## 在读备注行之后把同样十行接上（不照搬：原版写进备注，进化时旧块被当成额外备注行带走，见上面「原版的不合理处」）。
+## 形态取实例的 garouStage（原版 _garouStage），不是 0～6 的整数时按模板号在 RELICS 里的位置；等级默认 1、经验默认 0。
+## 参照 garou_relic_help_probe（tests/fixtures/garou_relic_help_oracle.json），测试 tests/xiyou_garou_relic_help。
+const RELIC_HELP := true  # 回退开关：false 时说明卡不加这十行（原版有，关掉是旧重制的样子）
+const RELIC_MAX_LEVEL := 888
+## G.config.stages[*].relic：每级成长（生命/物攻/魔攻/敏捷、魔法/物防/魔防/幸运）、物攻／魔攻／敏捷倍率、终伤、爆伤、命中、暴击、闪避
+const RELIC_STATS := [[12, 6, "1.11", "1.05", "1.05", 33, 33, 33, 33, 11], [18, 9, "1.22", "1.11", "1.11", 66, 66, 66, 66, 16],
+	[27, 12, "1.33", "1.22", "1.22", 99, 99, 99, 99, 22], [33, 15, "1.6", "1.3", "1.3", 166, 166, 166, 333, 33],
+	[40, 18, "1.66", "1.33", "1.33", 333, 333, 333, 666, 50], [50, 20, "1.77", "1.5", "1.5", 666, 666, 666, 999, 66],
+	[55, 22, "1.88", "1.66", "1.66", 999, 999, 999, 1888, 99]]
+
+
+static func relic_help_lines(item: Dictionary) -> Array:
+	# G.isRelic：_garouOwner 是饿狼，或模板号（baseItemId||id）是七个破限之心之一；模板（商店、图鉴里的原件）也认
+	if not RELIC_HELP or item.is_empty() or not (int(item.get("garouOwner", 0)) == ACTOR or RELICS.has(int(item.get("base", item.get("id", 0))))):
+		return []
+	var st := -1
+	var raw = item.get("garouStage", null)
+	if (raw is int or raw is float) and float(raw) == floorf(float(raw)) and float(raw) >= 0.0 and float(raw) <= 6.0:
+		st = int(raw)
+	else:
+		st = RELICS.find(int(item.get("base", item.get("id", 0))))
+	if st < 0:
+		return []
+	var r: Array = RELIC_STATS[st]
+	var lv := _num(item.get("level", 0))
+	var lines := ["专属:饿狼；法宝形态:%s；等级上限:%d" % [FORM_NAMES[st], RELIC_MAX_LEVEL],
+		"当前等级:%s / %d；经验:%s" % [_js_num(lv if lv != 0.0 else 1.0), RELIC_MAX_LEVEL, _js_num(_num(item.get("exp", 0)))],
+		"进阶继承:等级、经验及额外词条全部保留",
+		"每级成长:生命/物攻/魔攻/敏捷+%d" % r[0],
+		"每级成长:魔法/物防/魔防/幸运+%d" % r[1],
+		"物攻倍率:×%s" % r[2],
+		"魔攻倍率:×%s；敏捷倍率:×%s" % [r[3], r[4]],
+		"终伤+%d%%；爆伤+%d%%" % [r[5], r[6]],
+		"命中+%d%%；暴击+%d%%；闪避+%d%%" % [r[7], r[8], r[9]],
+		("进化强化:每层额外伤害+%d%%；最多3层" % RELIC_EVOLUTION[st]) if st > 0 else "进化强化:赤发形态起生效；最多3层"]
+	lines.reverse()
+	return lines.map(func(t): return "<pos=APs text=%s size=18 color=rgba(255,255,255,1) line=false align=0>" % t)
+
+
 ## 破限之心每层进化另加（G.config.stages[*].relic.evolution_bonus_per_stack_percent，按当前形态、戴着法宝才加）
 const RELIC_EVOLUTION := [3, 5, 7, 11, 15, 18, 22]
 const WATER := 10250
