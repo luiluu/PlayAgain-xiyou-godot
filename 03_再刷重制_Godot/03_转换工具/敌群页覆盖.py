@@ -6,7 +6,7 @@
   敌群页覆盖.py --oracle <troop_events_cover.json> [--godot a.json b.json …] [--out 报告.md] [--json 结果.json]
 
 没执行到的指令按「门」聚簇（同 事件写法覆盖.py --missed）：
-- 敌群没进探针：整个敌群不在 troop_event_probe 的用例里（加进 TROOPS 就有开局两回合）；
+- 敌群没进探针：整个敌群不在 troop_event_probe 的用例里（加进 troop_event_cases.cjs 的 TROOPS 就有开局两回合）；
 - 页条件没满足：敌群在探针里但这页一条都没执行到，门＝页条件（回合 turnA+turnB·X、敌人 HP≤%、角色 HP≤%、开关、回合末）；
 - 页内分支：门＝离它最近、本身执行到了的上层分支头（111 条件、411 否则、402 选项……）。
 无条件页（五个条件都没勾）原版 Game_Troop.meetsConditions 直接不跑，单列不计。

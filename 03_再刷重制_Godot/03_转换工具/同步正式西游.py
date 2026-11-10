@@ -747,30 +747,98 @@ console.log(JSON.stringify(cases.map(c => ({troop: c.troop, actions: c.actions.l
 '''
 
 
-def run_troop_sharded(cmd, env, box):
-    import concurrent.futures
-    shards = max(1, int(os.environ.get('TROOP_PROBE_SHARDS', '1')))
-    if shards < 2 or env.get('XIYOU_COVER') == '1':
-        return run_node(cmd, env)
+# troop 探针按用例增量（tools-probe-deps2）：用例清单在 mv_oracle/troop_event_cases.cjs，探针本体在 troop_event_probe.cjs。缓存键没命中进到这里后，
+# 上次的结果用已发布的 generated/oracle/troop_events.json，它的用例键表从账（.sandbox/troop_event_keys.json，按结果文件 SHA-256 认领）取；
+# 公共指纹 core ＝ 缓存键里去掉用例清单文件那份（来源、本体、helper 按影响面声明折算，一个都不能变）。core 相同时探针只跑新增或描述变了的用例，
+# 取回的每 100 个抽 1 个重跑比对（TROOP_INCREMENTAL_MISMATCH 则整份重跑）。每日审计：距上次整份重跑超过 XIYOU_TROOP_AUDIT_HOURS（默认 24）小时，
+# 这一次整份重跑并把「键相同的用例」逐个与上次结果比对，有不同就失败（TROOP_AUDIT_FAIL，指纹漏依赖）。XIYOU_TROOP_INCREMENTAL=0 回到整份重跑。
+TROOP_KEYS = SANDBOX / 'troop_event_keys.json'
+TROOP_CASES_REL = 'mv_oracle/troop_event_cases.cjs'
 
-    def part(i):
-        sub = box / ('shard-%d' % i)
-        sub.mkdir()
-        for name in ['save', 'macport']:
-            if (box / name).is_dir():
-                shutil.copytree(box / name, sub / name)
-        e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_TROOP_OUT=str(sub / 'troop_events.json'))
-        return run_node(cmd, e, weight=1)
-    with concurrent.futures.ThreadPoolExecutor(shards) as pool:
-        done = list(pool.map(part, range(shards)))
-    text = ''.join('（第 %d 段）\n%s%s' % (i + 1, p.stdout[-300:], p.stderr) for i, p in enumerate(done))
-    bad = [p for p in done if p.returncode]
-    if bad:
-        return subprocess.CompletedProcess(cmd, bad[0].returncode, text, '')
-    m = subprocess.run(['node', '-e', TROOP_MERGE_JS, str(SANDBOX / 'troop_events.json')] +
-                       [str(box / ('shard-%d' % i) / 'troop_events.json') for i in range(shards)],
-                       cwd=ORACLE_DIR, capture_output=True, text=True)
-    return subprocess.CompletedProcess(cmd, m.returncode, text + '（troop_event_probe：%d 段并行）\n' % shards + m.stdout[-200:], m.stderr)
+
+def troop_core(cache, cmd):
+    """troop 探针的公共指纹；没有缓存对象（不用缓存的同步）返回 None，探针退回自己算本地指纹。"""
+    return cache.key(cmd, exclude={TROOP_CASES_REL}, store=False) if cache else None
+
+
+def troop_audit_due(doc, now=None):
+    hours = float(os.environ.get('XIYOU_TROOP_AUDIT_HOURS', '24'))
+    if hours <= 0:
+        return False
+    at = doc.get('auditedAt')
+    return not isinstance(at, (int, float)) or (now if now is not None else time.time()) - at > hours * 3600
+
+
+def run_troop_sharded(cmd, env, box, core=None):
+    import concurrent.futures
+    import event_state_shards as ess
+    shards = max(1, int(os.environ.get('TROOP_PROBE_SHARDS', '1')))
+    cover = env.get('XIYOU_COVER') == '1'
+    incremental = os.environ.get('XIYOU_TROOP_INCREMENTAL', '1') != '0' and not cover
+    env, work = dict(env), box / 'troop'
+    work.mkdir(parents=True, exist_ok=True)
+    history = ess.KeyHistory(TROOP_KEYS, 1)
+    notes, prev_doc = [], None
+    if core:
+        env['XIYOU_TROOP_CORE'] = core
+    prev = Path(env['XIYOU_GENERATED']) / 'oracle/troop_events.json'
+    if incremental and core and prev.is_file():
+        prev_doc = history.find(prev)
+        if prev_doc is None:
+            notes.append('账上认不出已发布的 troop_events.json，整份重跑')
+        elif prev_doc.get('core') != core:
+            notes.append('公共指纹变了（来源、探针本体或 helper 改了），整份重跑')
+            prev_doc = None
+        else:
+            doc_file = work / 'prev.keys.json'
+            doc_file.write_text(json.dumps(prev_doc))
+            env['XIYOU_TROOP_PREV'], env['XIYOU_TROOP_PREV_KEYS'] = str(prev), str(doc_file)
+            if troop_audit_due(prev_doc):
+                env['XIYOU_TROOP_AUDIT'] = '1'
+                notes.append('距上次整份重跑已超 %s 小时：本轮整份重跑并审计键相同的用例' % os.environ.get('XIYOU_TROOP_AUDIT_HOURS', '24'))
+            else:
+                notes.append('按用例增量：键对得上的用例取回上次结果')
+    keys_out = work / 'troop_events.keys.json'
+    if shards < 2 or cover:
+        p = run_node(cmd, dict(env, XIYOU_TROOP_KEYS_OUT=str(keys_out)))
+        doc_path = keys_out
+    else:
+        def part(i):
+            sub = box / ('shard-%d' % i)
+            sub.mkdir()
+            for name in ['save', 'macport']:
+                if (box / name).is_dir():
+                    shutil.copytree(box / name, sub / name)
+            e = dict(env, XIYOU_ORACLE_SANDBOX=str(sub), XIYOU_PROBE_SHARD='%d/%d' % (i, shards), XIYOU_TROOP_OUT=str(sub / 'troop_events.json'),
+                     XIYOU_TROOP_KEYS_OUT=str(sub / 'troop_events.keys.json'))
+            return run_node(cmd, e, weight=1)
+        with concurrent.futures.ThreadPoolExecutor(shards) as pool:
+            done = list(pool.map(part, range(shards)))
+        text = ''.join('（第 %d 段）\n%s%s' % (i + 1, p.stdout[-300:], p.stderr) for i, p in enumerate(done))
+        bad = [p for p in done if p.returncode]
+        if bad:
+            return subprocess.CompletedProcess(cmd, bad[0].returncode, text, '')
+        m = subprocess.run(['node', '-e', TROOP_MERGE_JS, str(SANDBOX / 'troop_events.json')] +
+                           [str(box / ('shard-%d' % i) / 'troop_events.json') for i in range(shards)],
+                           cwd=ORACLE_DIR, capture_output=True, text=True)
+        p = subprocess.CompletedProcess(cmd, m.returncode, text + '（troop_event_probe：%d 段并行）\n' % shards + m.stdout[-200:], m.stderr)
+        doc_path = box / 'shard-0' / 'troop_events.keys.json'
+    if p.returncode == 0:
+        # 把这次的键表（探针写的，分段时取第 0 段）连结果文件摘要记进账；整份重跑（没取回任何用例）算一次审计
+        try:
+            doc = json.loads(Path(doc_path).read_text())
+            doc['fileSha'] = ess.file_sha(SANDBOX / 'troop_events.json')
+            if shards >= 2 and not cover:
+                docs = [json.loads((box / ('shard-%d' % i) / 'troop_events.keys.json').read_text()) for i in range(shards)]
+                doc['reused'] = sum(d.get('reused', 0) for d in docs)
+            fresh = not doc.get('reused')
+            doc['auditedAt'] = time.time() if fresh or not prev_doc else prev_doc.get('auditedAt')
+            Path(doc_path).write_text(json.dumps(doc))
+            history.add(doc_path)
+            notes.append('用例 %d 个，取回 %d 个，抽查 %d 个' % (len(doc.get('keys') or []), doc.get('reused', 0), doc.get('checked', 0)))
+        except (OSError, ValueError, KeyError) as error:
+            notes.append('键表没记进账（%s）' % str(error)[:80])
+    return subprocess.CompletedProcess(p.args, p.returncode, '（troop 探针：%s）\n' % '；'.join(notes) + (p.stdout or ''), p.stderr or '')
 
 
 # event_state_probe（1 万多个有状态变体）原来在同步里单进程整份重量：开跑前删了 .sandbox 里的上次产物，探针自带的增量从没生效，
@@ -1190,7 +1258,7 @@ def run_probes(log, cache=None):
         env = dict(os.environ, XIYOU_ORACLE_SANDBOX=str(box))
         node = ((lambda c, e, only=None: run_event_sharded(c, e, box, only)) if event else
                 (lambda c, e, only=None: run_state_sharded(c, e, box)) if cmd[0] == 'event_state_probe.cjs' else
-                (lambda c, e, only=None: run_troop_sharded(c, e, box)) if cmd[0] == 'troop_event_probe.cjs' else
+                (lambda c, e, only=None: run_troop_sharded(c, e, box, troop_core(cache, c))) if cmd[0] == 'troop_event_probe.cjs' else
                 (lambda c, e, only=None: run_node(c, e)))
         t = time.time()
         part = partial.get(logical)
@@ -1411,6 +1479,16 @@ def _main() -> int:
             if deps:
                 report['fromWorktreeProbeDeps'] = deps
                 log.write('从车道补来探针依赖记录：%s\n' % '、'.join(deps))
+            # 车道的 troop 用例键账与事件状态摘要账：克隆来的结果文件在本工作区账上也要认得（按文件摘要认领，并进来不会冒充），
+            # 否则合并后下一次探针改动在 main 上整份重跑（tools-probe-deps2）
+            if lane_sandbox:
+                import event_state_shards as ess
+                got = {name: ess.KeyHistory(SANDBOX / name, version).absorb(lane_sandbox / name)
+                       for name, version in (('troop_event_keys.json', 1), ('event_state_keys.json', 2)) if (lane_sandbox / name).is_file()}
+                got = {k: v for k, v in got.items() if v}
+                if got:
+                    report['fromWorktreeKeyBooks'] = got
+                    log.write('从车道并入摘要账：%s\n' % json.dumps(got, ensure_ascii=False))
             if stamp.get('pendingAcceptance'):
                 report['fromWorktreePending'] = True
                 log.write('车道同步只差测量接受（待接受指纹）：产物照用，测量照样按本工作区基线比较\n')

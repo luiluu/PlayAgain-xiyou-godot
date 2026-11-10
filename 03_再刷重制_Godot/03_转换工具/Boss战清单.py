@@ -3,7 +3,7 @@
 
 扫切片全部地图事件页与公共事件里「战斗处理」（指令 301，指定敌群），按敌群汇总：来源事件、敌人、敌群事件页数、
 能不能输（canLose 分支 601／602／603）、掉落条数，以及现有对照覆盖：
-- 开场：mv_oracle/troop_event_probe.cjs 的 TROOPS（真实 BattleManager 跑两回合，tests/xiyou_troop_events 对照）；
+- 开场：mv_oracle/troop_event_cases.cjs 的 TROOPS（真实 BattleManager 跑两回合，tests/xiyou_troop_events 对照）；
 - 胜后事件：generated/oracle/events.json 里该页用例记到这场战斗（event_probe 一律按胜利回调，xiyou_event_compare 对照）；
 - 输的分支：event_probe 不走（只回调胜利），本表单列出来。
 「Boss」按敌群：有敌群事件页（开场／血线脚本）或来源事件名／敌人名不是杂兵；守层者（楼层图 EV 进战）也列，标「楼层」。
@@ -22,7 +22,7 @@ def load(p):
 
 
 def probe_troops():
-    src = (HERE / 'mv_oracle/troop_event_probe.cjs').read_text()
+    src = (HERE / 'mv_oracle/troop_event_cases.cjs').read_text()
     m = re.search(r'TROOPS\s*=\s*\[(.*?)\];', src, re.S)
     body = re.sub(r'//[^\n]*', '', m.group(1))
     # 不在 TROOPS 里、单独 run(敌群号, …) 的例（accept4：控尸者 160 的 preset／noPreset 两例）也算开场对照

@@ -15,88 +15,7 @@ const {boot} = require('./hboot.cjs'), {sourceIdentity} = require('./source_iden
 const APP = process.env.XIYOU_APP || '/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw';
 const identity = sourceIdentity(APP), r = boot(APP, {tolerant: true, log: false}), w = r.window;
 if (r.errors.length || !w.DataManager.isDatabaseLoaded()) throw new Error('参照引擎启动失败');
-const PARTY = [1, 8, 9, 10], TROOPS = [4, 5, 8, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138, 172, 173, 174, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 794, 526,
-  // 三十一层七位可选首领的敌群 830／125／816／831／818／126／817（开场同 467，HP 页见下方 hpRate 例）
-  125, 126, 816, 817, 818, 830, 831,
-  // 二十七层副本墓池的二十八宿石像首领与四圣兽（607 角开场强制 8111；614／622／630／638 同 526：第 2 页第 1 回合给状态 44、强制 3813）
-  607, 614, 622, 630, 638,
-  // 二十九层副本太上老君藏身处的五位首领 733～737 与两位「太上老君」731／732（同 526）
-  731, 732, 733, 734, 735, 736, 737,
-  // 二十六层副本兜率宫·丹房的三位天尊投影 603／604／605（同 526）
-  603, 604, 605,
-  // 二十八层副本众分天的首领：Map208 恶·如来 695 与随机头目 696～704，Map209 善·无天 706 与随机头目 707～715（同 526）
-  695, 696, 697, 698, 699, 700, 701, 702, 703, 704, 706, 707, 708, 709, 710, 711, 712, 713, 714, 715,
-  // 深渊图的被封印者战斗（204～215、223～238、344～351、370／371、379～386、401～404、413～418：开场强制行动 339、状态 313／333、达摩变形条件）
-  204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238,
-  344, 345, 346, 347, 348, 349, 350, 351, 370, 371, 379, 380, 381, 382, 383, 384, 385, 386, 401, 402, 403, 404, 413, 414, 415, 416, 417, 418,
-  // 妄语深渊 717～722、未知存在 724～729、副本协会主席 661、天道研究员 767、传承战 776～779／785（第 1 回合开场强制 339，同 526）
-  661, 717, 718, 719, 720, 721, 722, 724, 725, 726, 727, 728, 729, 767, 776, 777, 778, 779, 785,
-  // 轮回／求道者变体：求道者 747～766、超级嘤雄 769、狗逍遥·心魔 770、考验者马神投影 788～790、解放全力的里德 795、「我们联合」联合战 798～814
-  747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770, 788, 789, 790, 795,
-  798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814,
-  // 神魔战场 Map186：九个军团的精英小队与元帅、农田矿的守卫、超级 Boos 嘤族之光 739
-  676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 739,
-  // 剧情／副本 Boss（cc 悟空 accept3，Boss战清单.py 挑的前 10 个还没开场对照的）：守护者 791 马神、792 霍格尔、793 九尾天狐、796 海拉、797 古代文明学者
-  // （同 467：第 1 回合 842＝0 时 1397 霸者领域＋强制，第 3 回合起随机强制）、599 蛮荒圣人（同 466）、203 贝尔蒙特（开场强制 983）、
-  // 593 马神牛神（开场强制 8111）、668 虚脱的主席（强制 3812＋状态 44）、165 海拉的幻影（回合变量 112 计数、回满）
-  791, 792, 793, 796, 797, 599, 203, 593, 668, 165,
-  // accept4（cc 悟空）：Boss战清单.py --pick 剩下的全部（嘤嘤怪 1、木桩 826 不算 Boss 跳过）：劫使 823～825、
-  // 古神 528～537、木桩Ⅰ～Ⅵ与英雄级木桩 70～75／352～355、六耳猕猴 321、深渊被封印者 396～398／551～555／640～645、圣人投影 451、
-  // 未知存在 454／455／470～474／539～548／570～589／647～659、旧古神 559～568、张三丰／张无忌心魔战 901／902
-  824, 825, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 70, 823, 71, 72, 73, 74, 75, 321, 352, 353, 354, 355,
-  396, 397, 398, 451, 454, 455, 470, 471, 472, 473, 474, 539, 540, 541, 542, 544, 545, 546, 547, 548, 551, 552, 553, 554, 555,
-  559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 570, 571, 572, 573, 574, 575, 577, 578, 579, 580, 581, 582,
-  584, 585, 586, 587, 588, 589, 640, 641, 642, 643, 644, 645, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 901, 902,
-  // 清单里还没开场对照的守层者／传承者：七层海明威 22、驯龙猎手 245、秃头男 270、传承者 772～775／780～784／786、求道者斯盖和齐格鲁德 787
-  22, 245, 270, 772, 773, 774, 775, 780, 781, 782, 783, 784, 786, 787,
-  // 新源 v0.62.12 新增的剧情／副本 Boss（cc 悟空 floor1，Boss战清单.py 在新源上列出的全部 24 个；嘤嘤怪 1、木桩 826 仍不算 Boss）：
-  // 剑道争锋巅峰／巅峰突破 2001～2004、2020～2025，死神觉醒 2010～2019、2026、2027，心魔夏娜 2028，DOTA 肉山宝宝 2029
-  2001, 2002, 2003, 2004, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029];
-// floor1：上面新增敌群里开场随变量 842（见面礼）分支的，另跑已交礼一例（参照两例的行动不同才列）
-const PAID_V062 = [2001, 2002, 2003, 2004, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2029];
-// floor1：新增敌群的敌人 0 血线页（[hpRate, 预置已执行的页]）：每条血线一例，更低的血线把更高血线的页标成已执行（同 467 的 HP≤10% 例，
-// 这些页多带 334 回满，不预置的话高血线页先回满、低血线页条件就不成立了）
-const HP_V062 = {2011: [[0.1, []]], 2013: [[0.2, []], [0.1, [2]], [0.05, [2, 3]]], 2014: [[0.1, []], [0.05, [1]], [0.01, [1, 2]]],
-  2015: [[0.2, []]], 2016: [[0.2, []]], 2017: [[0.1, []]], 2018: [[0.2, []], [0.1, [2]], [0.05, [2, 3]]],
-  2019: [[0.1, []], [0.05, [1]], [0.01, [1, 2]]], 2026: [[0.2, []]], 2027: [[0.2, []]], 2029: [[0.1, []]]};
-// floor1：新增敌群第 3 回合以后才成立的回合页（[敌群, 回合预置＝页的回合−1]），走 t1 变体（只比开战检查与下一回合的对话、强制行动）
-// rules-gaps4：敌群页覆盖.py（新源）剩下没对照的敌人 0 血线页，每个敌群一例 [敌群, hpRate]（取页条件的门槛，向下取整后正好满足）。
-// 敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）hpRate 只设敌人 0，不在这里
-const HP_GAPS4 = [[270, 0.2], [417, 0.5], [418, 0.5], [456, 0.2], [457, 0.2], [458, 0.2], [661, 0.2], [755, 0.2], [756, 0.2], [757, 0.2],
-  [765, 0.25], [791, 0.2], [792, 0.2], [793, 0.2], [795, 0.2], [796, 0.2], [797, 0.2], [805, 0.2], [806, 0.2], [807, 0.2], [814, 0.25]];
-// rules-gaps5：敌人 1 的血线页（805～807 第 5 页 35%、814 第 5 页 40%）：[敌群, hpRate]，hpEnemy＝1 预置敌人 1 的 HP（玩家照旧打敌人 0）
-const HP_ENEMY1 = [[805, 0.35], [806, 0.35], [807, 0.35], [814, 0.4]];
-// rules-gaps5：血线页里「111 变量 853／1567 == 1」才走的对话＋强制（敌群页覆盖.py 里最多的页内变量门）：[敌群, hpRate, hpEnemy, 变量]，
-// 开战前把该变量设 1（vars 字段），其余同血线例
-const HP_VARS = [[456, 0.2, 0, 853], [457, 0.2, 0, 853], [458, 0.2, 0, 853], [755, 0.2, 0, 853], [756, 0.2, 0, 853], [757, 0.2, 0, 853],
-  [805, 0.2, 0, 853], [806, 0.2, 0, 853], [807, 0.2, 0, 853], [805, 0.35, 1, 853], [806, 0.35, 1, 853], [807, 0.35, 1, 853],
-  [2015, 0.2, 0, 1567], [2016, 0.2, 0, 1567], [2026, 0.2, 0, 1567], [2017, 0.1, 0, 1567]];
-// rules-gaps6：敌群页覆盖.py 剩下的回合页（[敌群, 回合预置, 预置已执行的页]，走 t1 变体）。预置回合取能让该页真跑到的值：
-// 2025 第 3 页（第 6 回合）、2019 第 4 页（第 10 回合）、825 第 2 页（第 30 回合）同回合排在前面的随机强制页（3+3·X／1+1·X）
-// 先出手会把 1 级开局队伍打倒、轮不到后面的页，所以把前面那页预置成本回合已执行（同 467 的 flags）
-const LATE_GAPS6 = [[2025, 4, null], [2025, 6, [0]], [2019, 10, [0]], [825, 30, [1]], [165, 3, null], [203, 9, null],
-  [823, 15, null], [824, 3, null], [824, 30, null]];
-// rules-gaps6：「111 开关 682（S3西游模式）为 ON」再给自己加状态的守层者／首领（都在第 2 页未交礼支里）
-const SW682 = [125, 126, 270, 467, 468, 469, 661, 791, 792, 793, 795, 796, 797, 816, 817, 818, 830, 831];
-// rules-gaps6：两名首领的敌群 798～814 第 1、2 页各自掷一次变量 844（同一回合、同一个 EVENT_R），第 1 页 844＝2／3 的强制
-// 先出手打倒 1 级开局队伍，第 2 页（敌人 1）这两支跑不到：回合预置 3（预置 2 的话第 3 回合开始时清掉「每回合」页的已执行标记），
-// 第 1 页预置成本回合已执行，单看第 2 页
-const PAGE2_844 = [798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814];
-// rules-gaps7：嘤嘤怪 1 的五页：第 2／3／5 页（回合 1、1+1·X）角色 4 在队且会技能 23（全队加状态 11；角色 4 本来就会，否则支是空的不用另跑）／会 509（随机变量 53＝1～3 时
-// 全队加 45，之后 214 暂时消除本页）、角色 29 会 575（角色 29、30 加 51），第 4 页（回合 5+1·X）角色 20 会 201（自己加 34）；不会走否则支。
-// [variant, 角色技能（负数＝忘掉）, eventRandom（null＝不换事件随机）, 回合预置]。回合预置 4／5 两例键靠 turnPreset 区分（oracle_additions），
-// eventRandom 例键靠 eventRandom 区分
-const YING_PARTY = [1, 4, 20, 29];
-const YING_CASES = [['party', {}, null, 0], ['party.k575', {29: [575]}, null, 0],
-  ['party.k509.r1', {4: [509]}, 0, 0], ['party.k509.r2', {4: [509]}, 0.01, 0], ['party.k509.r3', {4: [509]}, 0.02, 0],
-  ['party.t5.k201', {20: [201]}, null, 4], ['party.t6', {}, null, 5]];
-const LATE_V062 = [[2004, 4], [2012, 7], [2014, 9], [2019, 9], [2025, 3], [2025, 5]];
-const T1_TURN3 = [111, 118, 125, 126, 138, 172, 173, 174, 270, 333, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469,
-  599, 661, 739, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 769, 770,
-  772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797,
-  798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 816, 817, 818, 825, 830, 831, 901, 902,
-  // floor1：新源新增敌群里第 1 页是「回合 3＋3·X」的
-  2001, 2002, 2003, 2004, 2011, 2013, 2018, 2020, 2021, 2022, 2023, 2024, 2025, 2027, 2028];
+const PARTY = [1, 8, 9, 10];
 const stub = new Proxy(function () {}, {get: (t, k) => k === '_waitCount' ? 0 : (() => false), set: () => true});
 const sprite = () => {
   const store = {x: 0, y: 0, _homeX: 0, _homeY: 0, width: 64, height: 64, scale: {x: 1, y: 1}, anchor: {x: 0.5, y: 1}, opacity: 255};
@@ -199,9 +118,29 @@ if (FROM > 0 && !process.env.XIYOU_TROOP_OUT) throw new Error('XIYOU_PROBE_FROM 
 if (FROM > 0 && process.env.XIYOU_COVER === '1') throw new Error('XIYOU_COVER 记录的下标是全局的，不能与 XIYOU_PROBE_FROM 同用');
 const PARTIAL = !!SHARD || FROM > 0;
 let caseCounter = 0;
+// ---- 按用例增量（tools-probe-deps2）：用例清单在 troop_event_cases.cjs。每一例的键＝它的描述（run() 的参数、换队伍／事件随机的上下文、
+// 调用方补的 variant 等标签）的 SHA-256；结果只由「描述＋公共指纹（XIYOU_TROOP_CORE：来源、本体代码、helper）」决定（每例从新局起跑，
+// 见 run() 开头）。同步把上次的结果（XIYOU_TROOP_PREV）和它的键表（XIYOU_TROOP_PREV_KEYS：{core, keys, fileSha}）交进来：公共指纹相同时，
+// 键对得上的用例原样取回，只跑新增或描述变了的例；取回的例每 100 个抽 1 个重跑比对，不同就整份重跑并打 TROOP_INCREMENTAL_MISMATCH。
+// 审计（XIYOU_TROOP_AUDIT=1，同步每日一次）：整份重跑，同时拿每个「本可取回」的例与上次结果逐字比对，有不同就失败（退出码 3）——
+// 说明键漏了某个依赖。XIYOU_TROOP_INCREMENTAL=0 不取回。XIYOU_COVER、XIYOU_PROBE_FROM 不取回。
+// 规划：先把清单跑一遍规划（run() 只返回描述，不开战），算出全部键，再真跑；两遍里 run() 被调用的顺序相同（清单是确定的）。
+const LIMIT = Number(process.env.XIYOU_TROOP_LIMIT || 0);   // 只给测试用：清单只留前 n 例（产物不是完整产物）
+let PHASE = 'run';
+const computed = new Map();      // 全局序号 → 本进程真跑出的结果（整份重跑时不重复跑）
+let REUSE = null, CHECK = new Set(), lastGate = null;
+function gate(desc) {
+  const idx = caseCounter++;
+  if (PHASE === 'plan') return {idx, early: {__plan: desc}};
+  if (idx < FROM || (LIMIT > 0 && idx >= LIMIT) || (SHARD && idx % SHARD.n !== SHARD.i)) return {idx, early: {__skip: true}};
+  if (computed.has(idx)) return {idx, early: computed.get(idx)};
+  if (REUSE && REUSE.has(idx) && !CHECK.has(idx)) return {idx, early: {__reuse: idx}};
+  return {idx};
+}
+function finish(g, out) { computed.set(g.idx, out); return out; }
 // switches：开战前打开的开关（[开关号…]，默认不写字段；rules-gaps6 木桩抵抗档 174～177、S3西游模式 682）。
 function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags = null, turnPreset = 0, hpEnemy = 0, vars = null, switches = null) {
-  { const idx = caseCounter++; if (idx < FROM || (SHARD && idx % SHARD.n !== SHARD.i)) return {__skip: true}; }
+  const g = gate({troopId, paid, preset, target, hpRate, flags, turnPreset, hpEnemy, vars, switches, party: PARTY_CASE, eventR: EVENT_R}); if (g.early) return g.early;
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   // rules-gaps5：上一例的敌我精灵代理不再用到；不清的话 Map 一直攥着历届 Game_Battler，900 多例后默认堆 OOM（XIYOU_COVER 时更快）
   sprites.clear();
@@ -304,7 +243,7 @@ function run(troopId, paid = false, preset = null, target = 0, hpRate = 0, flags
   if (hpRate) out.enemyIds = w.$gameTroop.members().map(e => e.enemyId());
   out.turnCount = w.$gameTroop._turnCount;
   out.phase = BM._phase;
-  return out;
+  return finish(g, out);
 }
 
 // rules-gaps9：只在战斗里跑的公共事件（内容覆盖检查.py 的 battleOnlyCommonEvents：场合＝战斗的技能／物品效果 44 起点可达、
@@ -362,7 +301,7 @@ w.Graphics.playVideo = function () { return this._video ? playVideo.apply(this, 
 const isVideoPlaying = w.Graphics.isVideoPlaying;
 w.Graphics.isVideoPlaying = function () { return this._video ? isVideoPlaying.apply(this, arguments) : false; };
 function runSkillCE(sc) {
-  { const idx = caseCounter++; if (idx < FROM || (SHARD && idx % SHARD.n !== SHARD.i)) return {__skip: true}; }
+  const g = gate({skillCE: sc}); if (g.early) return g.early;
   if (COVER) { ran = new Set(); coverByCase.push(ran); }
   sprites.clear();
   const party = sc.party;
@@ -427,65 +366,79 @@ function runSkillCE(sc) {
   for (const b of w.$gameParty.battleMembers().concat(w.$gameTroop.members())) out.battlers[key(b)] = {hp: b.hp, mhp: b.mhp, states: b._states.slice()};
   out.turnCount = w.$gameTroop._turnCount;
   out.phase = BM._phase;
-  return out;
+  return finish(g, out);
 }
 
-const result = {sourceIdentity: identity, party: PARTY, difficulty: 3,
-  cases: TROOPS.map(id => run(id)).concat([111,118,138,172,173,174,333,456,457,458,459,460,461,462,463,464,465,466].map(id => run(id, true)))
-    // 敌群 462 有金角、银角两名守层者：玩家集火银角（敌人 1），看第二名守层者受击与行动
-    .concat([run(462, false, null, 1), run(462, true, null, 1)])
-    // 十五层副本废墟深处：敌群 160 控尸者（第 3 名）HP≤1% 时两只丧尸附加战斗不能（只记开场敌群事件）
-    .concat([run(160, false, {2: 1})])
-    // accept4：控尸者 160 不预置 HP 的整两回合例。和上面的 preset 例同为 (160, 未交礼)，加 variant 区分键（oracle_additions 认 variant）
-    .concat([Object.assign(run(160), {variant: 'noPreset'})])
-    // 三十层敌群 466 玉皇大帝 HP≤25%：第 3 页对话、变身 538 与之后的强制行动（交礼／未交礼各一例）
-    .concat([run(466, false, null, 0, 0.25), run(466, true, null, 0, 0.25)])
-    // 三十一至三十三层守层者 HP≤30%（第 3 页）与 HP≤10%（第 3 页已执行，第 4 页变身）；Map055 引路人 794 HP≤20%（第 4 页变身 922）
-    .concat([467, 468, 469].flatMap(id => [run(id, false, null, 0, 0.3), run(id, false, null, 0, 0.1, [2])]))
-    .concat([run(794, false, null, 0, 0.2)])
-    // 三十一层可选首领：HP≤20%（第 3 页对话＋1397）；瑞丁 818 HP≤10%（第 3 页）与 HP≤5%（预置第 3 页已执行，第 4 页变身 938＋1399）
-    .concat([125, 126, 816, 817, 830, 831].map(id => run(id, false, null, 0, 0.2)))
-    .concat([run(818, false, null, 0, 0.1), run(818, false, null, 0, 0.05, [2])])
-    // 金之巨人 830 第 20 回合（第 4 页：101 对话＋强制 8203「毁灭」）：回合计数预置 19，跑到第 20 回合
-    .concat([run(830, false, null, 0, 0, null, 19)])
-    // t1（cc events13，敌群页覆盖.py 实例最多的簇「页条件：回合 3+3·X」）：守层者／首领第 1 页第 3 回合起每 3 回合随机强制（变量 844），
-    // 开战两回合跑不到。回合计数预置 2、跑第 3 回合；Godot 侧只比开战检查与第 3 回合的对话、强制行动［行动者, 技能］（variant t1）
-    .concat(T1_TURN3.map(id => Object.assign(run(id, false, null, 0, 0, null, 2), {variant: 't1'})))
-    // floor1：新源新增敌群的已交礼例、血线页例、第 3 回合以后的回合页例（各常量的说明见文件开头）
-    .concat(PAID_V062.map(id => run(id, true)))
-    .concat(Object.entries(HP_V062).flatMap(([id, rows]) => rows.map(([rate, fl]) => run(Number(id), false, null, 0, rate, fl.length ? fl : null))))
-    .concat(LATE_V062.map(([id, n]) => Object.assign(run(id, false, null, 0, 0, null, n), {variant: 't1'})))
-    .concat(HP_GAPS4.map(([id, rate]) => run(id, false, null, 0, rate)))
-    // rules-gaps5：敌人 1 的血线页（variant hpE1 单独成键）
-    .concat(HP_ENEMY1.map(([id, rate]) => Object.assign(run(id, false, null, 0, rate, null, 0, 1), {variant: 'hpE1'})))
-    // rules-gaps5：血线页的变量门（variant hpVar 单独成键；同敌群多例再带 hpEnemy 区分，见 oracle_additions）
-    .concat(HP_VARS.map(([id, rate, ei, v]) => Object.assign(run(id, false, null, 0, rate, null, 0, ei, {[v]: 1}), {variant: ei ? 'hpVarE' + ei : 'hpVar'})))
-    // rules-gaps5：t1 例的变量 844 其余各支（见 EVENT_R）
-    .concat(T1_TURN3.flatMap(id => eventRandomBranches(id).map(r => runEventRandom(id, r))))
-    // rules-gaps6（敌群页覆盖剩 178 条的第一批）：后期回合页（LATE_GAPS6）
-    .concat(LATE_GAPS6.map(([id, n, fl]) => Object.assign(run(id, false, null, 0, 0, fl, n), {variant: 't1'})))
-    // 已交见面礼（变量 842＝1）时第 1 页的否则支：嘤族之光 739、蛮荒圣人 599
-    .concat([739, 599].map(id => run(id, true)))
-    // 神劫使 824 第 1 页「变量 1178（小明基因锁）≥ 6」时 335 显示其余 5 名敌人
-    .concat([Object.assign(run(824, false, null, 0, 0, null, 0, 0, {1178: 6}), {variant: 'v1178'})])
-    // 木桩Ⅰ～Ⅵ 70～75 与英雄级木桩 352～355 开场按抵抗档开关 174～177（抵抗1W／5W／10W／50W）给自己加状态：每档一例
-    .concat([70, 71, 72, 73, 74, 75, 352, 353, 354, 355].flatMap(id => [174, 175, 176, 177].map(sw =>
-      Object.assign(run(id, false, null, 0, 0, null, 0, 0, null, [sw]), {variant: 'sw' + sw}))))
-    // SW682（见文件开头）
-    .concat(SW682.map(id => Object.assign(run(id, false, null, 0, 0, null, 0, 0, null, [682]), {variant: 'sw682'})))
-    // 木桩 826（Map004）：开局两回合、变量 4 随机的另一支（第 2 页 6063）、HP≤20% 第 3 页（变身 937）；被封印者普罗米修斯 392 开局两回合
-    .concat([run(826), runEventRandom(826, 0), Object.assign(run(826, false, null, 0, 0.2), {variant: 'hp'}), run(392)])
-    // PAGE2_844（见文件开头）：844＝2、3 两支（eventRandom 0.25／0.5），第 1 页预置已执行（variant t1，oracle_additions 键带 flags 区分）
-    .concat(PAGE2_844.flatMap(id => [0.25, 0.5].map(r => runEventRandom(id, r, [0], 3))))
-    // rules-gaps7：嘤嘤怪 1（YING_PARTY，见上）：队伍换成 1／4／20／29，各页的「带状态」支与否则支
-    .concat(YING_CASES.map(([v, st, r, n]) => runParty({party: YING_PARTY, skills: st}, () =>
-      Object.assign(r !== null ? runEventRandom(1, r, null, n) : run(1, false, null, 0, 0, null, n), {variant: v}))))
-    // rules-gaps9：只在战斗里跑的公共事件（SKILL_CE，见上）
-    .concat(SKILL_CE.map(runSkillCE))};
+const buildCases = require('./troop_event_cases.cjs');
+const CASE_API = {w, run, runEventRandom, runParty, runSkillCE, eventRandomBranches, SKILL_CE};
+const sha256 = v => require('crypto').createHash('sha256').update(typeof v === 'string' || Buffer.isBuffer(v) ? v : JSON.stringify(v)).digest('hex');
+const KEYS_OUT = process.env.XIYOU_TROOP_KEYS_OUT || (process.env.XIYOU_TROOP_OUT || path.join(__dirname, '.sandbox/troop_events.json')).replace(/\.json$/, '.keys.json');
+const OUT = process.env.XIYOU_TROOP_OUT || path.join(__dirname, '.sandbox/troop_events.json');
+const fileSha = f => sha256(fs.readFileSync(f));
+// 公共指纹：同步给（含影响面声明折算后的 helper）；手动跑时退回本地算
+const CORE = process.env.XIYOU_TROOP_CORE || sha256(['local', identity, ['troop_event_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs']
+  .map(f => fileSha(path.join(__dirname, f))), (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })()]);
+const AUDIT = process.env.XIYOU_TROOP_AUDIT === '1';
+const incrementalOk = process.env.XIYOU_TROOP_INCREMENTAL !== '0' && !COVER && !(FROM > 0);
+PHASE = 'plan';
+caseCounter = 0;
+const planned = buildCases(CASE_API);
+const planKeys = [], seenKeys = new Map();
+for (const item of (LIMIT > 0 ? planned.slice(0, LIMIT) : planned)) {
+  const k = sha256(item), n = seenKeys.get(k) || 0;
+  seenKeys.set(k, n + 1);
+  planKeys.push(k + '#' + n);
+}
+PHASE = 'run';
+caseCounter = 0;
+// 上次的结果：公共指纹、文件摘要、条数都对得上才用
+const prevByKey = new Map();
+if (incrementalOk && process.env.XIYOU_TROOP_PREV && process.env.XIYOU_TROOP_PREV_KEYS) {
+  try {
+    const doc = JSON.parse(fs.readFileSync(process.env.XIYOU_TROOP_PREV_KEYS, 'utf8')), prev = JSON.parse(fs.readFileSync(process.env.XIYOU_TROOP_PREV, 'utf8'));
+    if (doc.version === 1 && doc.core === CORE && doc.fileSha === fileSha(process.env.XIYOU_TROOP_PREV) && Array.isArray(doc.keys)
+        && doc.keys.length === prev.cases.length && JSON.stringify([prev.sourceIdentity, prev.party, prev.difficulty]) === JSON.stringify([identity, PARTY, 3]))
+      doc.keys.forEach((k, i) => { if (!prevByKey.has(k)) prevByKey.set(k, prev.cases[i]); });
+  } catch (e) { prevByKey.clear(); }
+}
+const reusable = new Map();   // 全局序号 → 上次的结果
+planKeys.forEach((k, i) => { if (prevByKey.has(k) && !(SHARD && i % SHARD.n !== SHARD.i)) reusable.set(i, prevByKey.get(k)); });
+const EVERY = Math.max(1, Number(process.env.XIYOU_TROOP_CHECK_EVERY || 100));
+if (!AUDIT && reusable.size) {
+  REUSE = reusable;
+  CHECK = new Set([...reusable.keys()].filter((_, i) => i % EVERY === 0));
+}
+let list = buildCases(CASE_API);
+if (LIMIT > 0) list = list.slice(0, LIMIT);
+let reused = REUSE ? REUSE.size - CHECK.size : 0, checked = 0, mismatched = [];
+for (const idx of CHECK) {
+  checked++;
+  if (JSON.stringify(computed.get(idx)) !== JSON.stringify(REUSE.get(idx))) mismatched.push(planKeys[idx]);
+}
+if (mismatched.length) {
+  console.error('TROOP_INCREMENTAL_MISMATCH ' + JSON.stringify({checked, mismatched: mismatched.length, sample: mismatched.slice(0, 3),
+    note: '取回的用例与重跑不同：键漏了某个依赖。本轮整份重跑'}));
+  REUSE = null; CHECK = new Set(); reused = 0;
+  caseCounter = 0;
+  list = buildCases(CASE_API);   // computed 里已有的例不重跑
+  if (LIMIT > 0) list = list.slice(0, LIMIT);
+}
+if (AUDIT) {
+  const wrong = [];
+  for (const [idx, old] of reusable) if (JSON.stringify(computed.get(idx)) !== JSON.stringify(old)) wrong.push(planKeys[idx]);
+  if (wrong.length) {
+    console.error('TROOP_AUDIT_FAIL ' + JSON.stringify({audited: reusable.size, different: wrong.length, sample: wrong.slice(0, 5),
+      note: '键相同的用例这次重跑与上次结果不同：指纹漏了依赖（或探针不确定），先查清再同步'}));
+    process.exit(3);
+  }
+  console.error('TROOP_AUDIT_OK ' + JSON.stringify({audited: reusable.size}));
+}
+const result = {sourceIdentity: identity, party: PARTY, difficulty: 3, cases: list.map(c => c && c.__reuse !== undefined ? REUSE.get(c.__reuse) : c)};
 if (PARTIAL) result.cases = result.cases.filter(c => !c.__skip);
 if (JSON.stringify(identity) !== JSON.stringify(sourceIdentity(APP))) throw new Error('测量期间来源改变');
 fs.mkdirSync(path.join(__dirname, '.sandbox'), {recursive: true});
-fs.writeFileSync(process.env.XIYOU_TROOP_OUT || path.join(__dirname, '.sandbox/troop_events.json'), JSON.stringify(result, null, 1));
+fs.writeFileSync(OUT, JSON.stringify(result, null, 1));
+if (!COVER && !(FROM > 0)) fs.writeFileSync(KEYS_OUT, JSON.stringify(Object.assign({version: 1, core: CORE, keys: planKeys, reused, checked}, PARTIAL ? {} : {fileSha: fileSha(OUT)})));
 if (COVER) fs.writeFileSync(path.join(__dirname, '.sandbox/troop_events_cover.json'), JSON.stringify({sourceIdentity: identity,
   note: 'troop_event_probe XIYOU_COVER=1：原版解释器实际执行到的敌群页／公共事件指令（位置:下标）',
   byCase: Object.fromEntries(coverByCase.map((s, i) => [String(i), [...s].sort()]))}));

@@ -65,15 +65,17 @@ def merge_keys(part_keys, merged_out, keys_out):
 class KeyHistory:
     """按结果文件 SHA-256 认领的摘要账（JSON：{"entries": [摘要文档…]}，新的在后）。"""
 
-    def __init__(self, path):
+    def __init__(self, path, version=2):
+        # version：摘要文档的版本号（事件状态探针 2，troop 探针 1；tools-probe-deps2 起 troop_event_keys.json 共用这个类）
         self.path = Path(path)
+        self.version = version
 
     def _load(self):
         try:
             entries = json.loads(self.path.read_text()).get('entries')
         except (OSError, ValueError, AttributeError):
             return []
-        return [e for e in entries if isinstance(e, dict) and e.get('version') == 2 and isinstance(e.get('fileSha'), str)] \
+        return [e for e in entries if isinstance(e, dict) and e.get('version') == self.version and isinstance(e.get('fileSha'), str)] \
             if isinstance(entries, list) else []
 
     def find(self, result_file):
@@ -89,7 +91,7 @@ class KeyHistory:
             doc = json.loads(Path(keys_file).read_text())
         except (OSError, ValueError):
             return False
-        if doc.get('version') != 2 or not isinstance(doc.get('fileSha'), str):
+        if doc.get('version') != self.version or not isinstance(doc.get('fileSha'), str):
             return False
         self._write([e for e in self._load() if e['fileSha'] != doc['fileSha']] + [doc])
         return True
@@ -98,7 +100,7 @@ class KeyHistory:
         """把另一本账（如主工作区的）里本账没有的条目并进来（新建工作树时带账，tools81）。"""
         mine = self._load()
         seen = {e['fileSha'] for e in mine}
-        theirs = [e for e in KeyHistory(other)._load() if e['fileSha'] not in seen]
+        theirs = [e for e in KeyHistory(other, self.version)._load() if e['fileSha'] not in seen]
         if theirs:
             self._write(mine + theirs)   # 带来的当最新：新建工作树刚从主工作区拷来的结果正对应它
         return len(theirs)

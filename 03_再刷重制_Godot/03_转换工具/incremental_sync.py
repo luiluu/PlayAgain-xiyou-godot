@@ -190,7 +190,7 @@ def carry_cache(source, target):
     """只携带初始种子与已发布缓存；不覆盖车道现场，不跟随种子符号链接。"""
     source, target = Path(source), Path(target)
     # event_state_keys.json：事件状态探针的摘要账（event_state_shards.KeyHistory，tools81）；按结果文件摘要认领，带过去不会冒充
-    names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json')
+    names = ('save', 'macport', 'incremental-cache.json', 'event_state_keys.json', 'troop_event_keys.json')
     for base in (source, target):
         for q in (base / PROBE_DEPS_DIR, *(base / PROBE_DEPS_DIR).glob('*')):
             if q.is_symlink():
@@ -227,6 +227,12 @@ def carry_cache(source, target):
         from event_state_shards import KeyHistory
         if KeyHistory(keys_dst).absorb(keys_src):
             copied.append('event_state_keys-merged')
+    # troop_event_keys.json：troop 探针的用例键账（tools-probe-deps2），同样按结果文件摘要认领
+    tkeys_src, tkeys_dst = source / 'troop_event_keys.json', target / 'troop_event_keys.json'
+    if 'troop_event_keys.json' not in copied and tkeys_src.is_file() and tkeys_dst.is_file():
+        from event_state_shards import KeyHistory
+        if KeyHistory(tkeys_dst, 1).absorb(tkeys_src):
+            copied.append('troop_event_keys-merged')
     # 车道已有缓存时也带上主工作区的单元摘要账（carried）：只在逐单元核对 generated 里的记录与账上相同、
     # 且输入键相同时才复用，不会让旧结果冒充新结果（木吒 2026-10-26）
     src_cache, dst_cache = source / 'incremental-cache.json', target / 'incremental-cache.json'
@@ -496,8 +502,13 @@ class ProbeCache:
                     return None
         return spec
 
-    def key(self, command):
+    def key(self, command, exclude=(), store=True):
+        """探针的缓存键。exclude：相对 03_转换工具的依赖文件（如 mv_oracle/troop_event_cases.cjs）不进键，算出「公共指纹」
+        （tools-probe-deps2：troop 探针按用例增量，用例清单文件不进公共指纹）；这时 store=False，不动 self.details。"""
         dependencies, texts = self._dependencies(command)
+        if exclude:
+            dependencies = {p for p in dependencies if p.relative_to(self.tools).as_posix() not in exclude}
+            texts = [p.read_text(errors='replace') for p in sorted(dependencies)]
         text = ''.join(texts)
         if self.helper_deps:
             deps = self._dependency_details(command[0], dependencies)
@@ -536,7 +547,10 @@ class ProbeCache:
         if extra:
             value['extraInputs'] = digest_files(extra, self.tools)
             detail['extraInputs'] = self._file_details(extra, self.tools)
-        self.details[command[0]] = detail
+        if exclude:
+            value['excluded'] = sorted(exclude)
+        if store:
+            self.details[command[0]] = detail
         return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
     @staticmethod
