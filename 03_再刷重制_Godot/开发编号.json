@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.427",
-  "sequence": 427,
-  "next": "dev.428",
-  "nextSequence": 428,
+  "current": "dev.428",
+  "sequence": 428,
+  "next": "dev.429",
+  "nextSequence": 429,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "bailong-raven6",
+  "currentChange": "floor-boss-lose",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
