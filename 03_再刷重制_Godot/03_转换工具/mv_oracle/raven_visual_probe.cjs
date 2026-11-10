@@ -1,11 +1,15 @@
 'use strict';
 // 【cc·ravenfx·未经审查】渡鸦表现余项（installNativeRavenRuntime 第 570～598 行）：
-// ① Sprite_Actor.startMotion 包装：167 的 damage→evade、dying→wait（普通与神话形态都量：这层包在 Codex_MiraRavenMultiFrame 外面，
-//   多帧插件给神话留的原生受击／濒死在实际装载次序下用不上）；别的角色不换。
+// ① Sprite_Actor.startMotion 包装：167 的 damage→evade、dying→wait；别的角色不换。
+//   【cc·白龙 raven6·未经审查】实机装载次序：main.js tryStart 先装运行时包装，Codex_MiraRavenMultiFrame 的画面钩子
+//   （installVisualHooks）在 Scene_Boot.start 里才装、包在最外层，神话形态的受击／濒死走它开机前存的原生 startMotion，
+//   不经渡鸦替换（无头 Chrome 量具 real/raven_motion.json 实测：神话 damage／dying 照原样、帧 UserSV_RavenMythic4_0／14_0）。
+//   参照引擎不走 Scene_Boot，这里手动调一次 Scene_Boot.start 把钩子装上（同 achievement_probe），ravenfx 期没装、神话量成了也换。
 // ② Game_CharacterBase.animationWait 包装：玩家（取队长）或跟随者是 167 时 ×1.35 四舍五入；事件、别的角色不变。各移动速度都量。
 // 产物 .sandbox/raven_visual.json（generated/oracle/raven_visual.json），专项 xiyou_raven_visual。
 const {start, makeCase, finish} = require('./shared/host.cjs');
 const host = start(), {w, newGame} = host;
+w.Scene_Boot.prototype.start.call({});  // 装 Codex_MiraRavenMultiFrame 的 installVisualHooks（实机在开机画面装）
 const MOTIONS = ['walk', 'wait', 'chant', 'guard', 'damage', 'evade', 'thrust', 'swing', 'missile', 'skill', 'spell', 'item', 'escape', 'victory', 'dying', 'abnormal', 'sleep', 'dead'];
 // 无场景：YEP_X_VisualStateFX 的状态动画要挂到战斗场景层，量动作时不需要
 w.Sprite_Battler.prototype.startStateAnimation = function () {};
