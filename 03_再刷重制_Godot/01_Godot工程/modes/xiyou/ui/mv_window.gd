@@ -68,8 +68,7 @@ func _layout() -> void:
 		# 留 0.001 余量：浮点误差（如 300×0.8）不算小数
 		var up := Vector2(ceilf(size.x - 0.001), ceilf(size.y - 0.001))
 		if up != size:
-			size = up   # 再触发一次 resized → _layout
-			return
+			size = up   # 不在树里时不一定再发 resized，所以接着往下排版，不 return
 	canvas.position = Vector2(padding, padding)
 	canvas.size = size - Vector2(padding, padding) * 2.0
 	queue_redraw()
