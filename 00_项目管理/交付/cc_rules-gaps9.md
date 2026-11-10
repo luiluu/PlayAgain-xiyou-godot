@@ -46,6 +46,19 @@
 - troop 探针每例 setupNewGame 约 2 秒，381 例单进程 16 分钟；同步里分段照常并行。
 - 敌群 2 打不死靠参照加 HP；以后可考虑把 SKILL_CE 挪进独立探针，免得每次改 troop 探针都整份重跑这 381 例。
 
+
+## 变更记录草稿
+
+（八戒交付单没写这一节，总装三十九照「做了什么」「验证」整理。）
+
+## 2026-11-09 【cc·八戒·未经审查】战斗专用公共事件对照 381 例、战斗里的角色技能脚本（dev.待定）
+
+- 原版参照：`mv_oracle/troop_event_probe.cjs` 尾部加 SKILL_CE 用例 381 例（237 个只在战斗里跑的公共事件，按原版 data 算），CE 里有「111 角色会技能」时分 met／unmet；无场景引擎里 `Graphics.playVideo` 没有 video 元素时按放完处理（CE1516 原来报错停下）。
+- 测试：`tests/xiyou_troop_events.gd` 加 `_skill_ce_case`、开关 `skill_ce_only`、排查开关 `XIYOU_CE_ONLY`，新场景 `xiyou_troop_events_sce.tscn`／`_sce_b.tscn` 逐例比，全过。
+- 真缺：`battle/battle_event_runner.gd` 里带 `$gameActors.actor(` 的 355 脚本（CE942～946、CE1501 等）原来在战斗里整段跳过，改走地图那套 `MVScript._target_actor_script`（认得才执行，认不得照旧跳过）。
+- CE1365 三咒凝魄无限连放（原版 bug）另由 rules-gaps10 修。
+- 玩家可见：战斗里火法天下第一、逐个角色学技能这类公共事件的脚本现在会执行。
+
 ## 状态
 
 可合并
