@@ -416,9 +416,15 @@ var game_over := false
 func is_lost() -> bool:
 	return game_over or alive(actors).is_empty()
 
-## 敌群事件 340 中止战斗（command340 → BattleManager.abort；审查第 75 期 P3-1）：本页后面的指令不再执行，
-## 战斗按「中止」收场（结果 1、算逃跑：预约 1308、不判输赢）。原版 checkAbort 在全灭／全歼之前判，所以先于输赢
+## 敌群事件 340 中止战斗（command340 → BattleManager.abort；审查第 75 期 P3-1）：本页这一帧照常往下跑到停下等待为止，
+## 战斗按「中止」收场（结果 1、算逃跑：预约 1308）。原版 checkAbort 在全灭／全歼之前判，所以先于输赢
 var aborted := false
+## 340 之后解释器停在了等待上（文字、等待等）：原版下一帧起只走 checkAbort，不再判全灭／全歼（见 abort_checks_end）
+var abort_yield := false
+
+## 340 所在页这一帧跑完了（没停在等待上）：原版 updateEventMain 的 checkBattleEnd 在 processAbort 之后接着判全灭、全歼
+func abort_checks_end() -> bool:
+	return aborted and not abort_yield
 
 ## 战斗该收场了：中止、全歼或全灭（循环与事件检查用；输赢各自另判）
 func is_over() -> bool:
@@ -1235,6 +1241,10 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 func resume_event(token: int, response = null) -> Array:
 	if _waiting.is_empty() or int(_waiting.token) != token:
 		return []
+	if aborted:
+		# 340 之后显示的文字：确认后敌群解释器不再更新（BattleManager 只走 checkAbort），本页后面与上层公共事件都不执行
+		_clear_event_cursor()
+		return []
 	var frame: MVEventCore = _waiting.frame
 	_waiting = {}
 	frame.resume(response)
@@ -1267,6 +1277,8 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		if aborted and _runner == null:
+			break  # 340 之后 checkBattleEnd 返回 true（或下一帧只走 checkAbort），不再取预约公共事件和别的页
 		_take_state_reserves()
 		for p in XStateEffects.take_forces():
 			logs.append_array(_force_action(p, _check.get("first")))  # queueForceAction：预约事件优先，跑 339（倒下了就不行动）
@@ -1297,6 +1309,8 @@ func _drive_events() -> Array:
 		logs.append_array(_runner.take_logs())
 		match str(r.kind):
 			"message":
+				if aborted:
+					abort_yield = true  # 340 之后停在文字上
 				_event_token += 1
 				_waiting = {"token": _event_token, "frame": _runner.waiting_frame(), "msg": r.msg}
 				logs.append({"type": "message", "msg": r.msg, "token": _event_token})

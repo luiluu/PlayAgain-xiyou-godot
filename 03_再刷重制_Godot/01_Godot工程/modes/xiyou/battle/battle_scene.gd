@@ -776,7 +776,7 @@ func _main() -> void:
 			otb.show_orders(logic.current_order, logic.next_order)
 			_refresh_status()
 		# 事件 340 中止战斗（BattleManager.checkAbort 在全灭、全歼之前）：逃跑音效、不出消息，结果 1，算逃跑（预约 1308）
-		if logic.aborted:
+		if logic.aborted and not logic.game_over:  # 340 之后又 353：原版切到结束画面，按全灭收场（下面）
 			await _abort_battle()
 			return
 		# BattleManager.checkBattleEnd（rpg_managers.js 2614）先判 $gameParty.isAllDead 再判 $gameTroop.isAllDead：
@@ -926,13 +926,38 @@ func defeat_text() -> String:
 
 ## 事件 340 中止战斗：BattleManager.checkAbort → playEscape、_escaped＝true → processAbort（removeBattleStates、endBattle(1)），
 ## updateBattleEnd 走「逃跑」那支预约 1308。没有消息窗（不同于逃跑成功的「开始逃跑了」）
+## 340 所在页同一帧跑完（logic.abort_checks_end）时，原版 checkBattleEnd 里 checkAbort 恒返回 false，processAbort 之后接着判：
+## - 我方全灭 → processDefeat（被击败消息、endBattle(2)）：301 分支结果改写成 2；但 _escaped 已置，updateBattleEnd 走「逃跑」那支，
+##   预约 1308、不复活、不去结束画面（XMapScene.last_battle_escaped）
+## - 敌群全灭 → processVictory（结算、奖励、endBattle(0)），结果 0
+## 原版这两种 endBattle 要跑两遍（先 1 后 2／0，各模块的 endBattle 包装也跑两遍）；重制只按最后的结果跑一遍（O-待定，
+## ABORT_DOUBLE_END 打开时先补跑一遍 end_battle(1)）
+static var ABORT_DOUBLE_END := false
+
 func _abort_battle() -> void:
+	logic.escaped = true
+	XSound.system(8)
+	if logic.abort_checks_end() and logic.is_lost():
+		if ABORT_DOUBLE_END:
+			logic.end_battle(1)
+		await _defeat()
+		XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
+		logic.end_battle(2)
+		reserve_battle_end_event(XState.current, 1)  # 逃跑那支：预约 1308
+		finished.emit(2)
+		return
+	if logic.abort_checks_end() and logic.is_won():
+		if ABORT_DOUBLE_END:
+			logic.end_battle(1)
+		otb.hide_bar()
+		await _victory()
+		reserve_battle_end_event(XState.current, 0)
+		finished.emit(0)
+		return
 	boss_hp.ended()
 	_close_windows()
 	_end_record()
 	otb.hide_bar()
-	logic.escaped = true
-	XSound.system(8)
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(1)
 	reserve_battle_end_event(XState.current, 1)

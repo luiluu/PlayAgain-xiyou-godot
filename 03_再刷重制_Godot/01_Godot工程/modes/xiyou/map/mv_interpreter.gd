@@ -352,7 +352,8 @@ func _host_command(c: Dictionary):
 			XDungeon.battle_finished(troop, result, state().map_id)
 			_branch[indent] = result
 			# 战斗里的 353 游戏结束不看可不可输（XMapScene.last_battle_game_over）
-			if result == 2 and (not bool(p[3]) or host.get("last_battle_game_over") == true):
+			# 340 中止同帧全灭（结果 2 但 _escaped）：原版 pop 回地图，不去结束画面（XMapScene.last_battle_escaped）
+			if result == 2 and host.get("last_battle_escaped") != true and (not bool(p[3]) or host.get("last_battle_game_over") == true):
 				await host.game_over()   # 要等结束画面走完：不 await 的话事件收尾 busy=false，画面盖着时人还能走（O-244 补）
 				return false
 		302:
