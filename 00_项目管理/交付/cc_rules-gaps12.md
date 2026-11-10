@@ -41,3 +41,9 @@
 
 - 甲：`modes/xiyou/core/battle_common_event.gd`（EXTRA_ONCE_IDS）、`modes/xiyou/battle/battle_scene.gd`（`_main` 收场次序、`_abort_battle`）、`modes/xiyou/battle/battle_logic.gd`（`aborted`／`is_over`）、`modes/xiyou/battle/battle_event_runner.gd`（340）
 - 乙：`modes/xiyou/map/map_scene.gd`（`last_battle_game_over`、淡出帧数）、`modes/xiyou/map/mv_interpreter.gd`（301）、`tests/xiyou_troop_events.gd`、`tests/xiyou_battle_end_ce.gd`、`tests/xiyou_game_over.gd`（偶发修复）
+
+## 本分支提交
+
+- df7b40b3c（合进来的 cc/review-75）审查第 75 期报告
+- d32d4102d／c6a0119b1 WIP：三项规则改动与专项
+- 62e1b69f3 交付：审查第 75 期返工、修 xiyou_game_over 先制偶发
