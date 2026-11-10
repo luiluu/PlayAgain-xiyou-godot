@@ -18,7 +18,7 @@ extends RefCounted
 ## - 累计突破（a._garouBreakthroughs，重制存 XState.garou.breakthroughs，存档 codexGarou）：胜利（processVictory 之前，
 ##   XBattleLogic.grant）开战时在出战栏的饿狼 +1，Boss 战（敌群有 MOG_BossHP 血条的成员）+5，夹到下一形态的门槛（星空 333）；
 ##   四臂以上、50 级、333 突破的 Boss 战得一次神之触媒 2939（catalyst 记已给过），提示「饿狼突破神之境界，获得神之触媒×1。」
-##   （存进 XBattleLogic.victory_texts，画面还没接）。同步时夹到当前门槛。
+##   （存进 XBattleLogic.victory_texts，battle_scene 胜利后弹出，O-190）。同步时夹到当前门槛。
 ## - 进阶（Scene_ActorAdvanced 包装，XAdvance.missing／advance 分派到 reason／advance）：条件依次是有下一形态、等级、累计突破、
 ##   四臂进星空要神之触媒 ×1；进阶＝遗忘 → 学会 → 形态 +1 → 同步（含法宝进化）→ 星空扣 1 个神之触媒（原版表里的金钱、物品不再另扣）。
 ##   熟练度继承（INHERIT：新技能取被替换技能的 skillMasteryLevel、Uses，学会之后 set）；原版出错回滚（snapshotProgression）GDScript 无异常，不做。
@@ -40,8 +40,8 @@ extends RefCounted
 ## selectNextCommand 有 _subject 就直接 startAction，不调 Game_Actor.selectNextCommand，_actionInputIndex 恒为 0，分支在正式战斗里取不到
 ## （读源码确认，重制每次行动逐个选、模式：琦玉命中即开 saitama，同效）。
 ## 已在别处：applyCritical 0 伤不暴击（battle_logic 伤害值恰为 0 时通用清暴击标记，2026-11-05 白龙核实）、技能分类与指令窗 [2,1,5,4]（actor_modules MENU／BATTLE_SKILL_TYPES）。
-## 未移植：进阶界面的饿狼提示（重制走 XAdvance.fail_text）、胜利提示 victory_texts 上画面、法宝说明 describeRelic、
-## 图鉴立绘、旧档迁移（不迁移 MV 旧存档）。
+## 已在别处（chars-gaps1 核实）：进阶不足的原因（reason，XAdvance 分派）、胜利提示（battle_scene，O-190）、法宝说明 describeRelic（relic_help_lines，
+## 接在 XHelpCard.desc_params）、法宝大图标（XQualityIcons 6411～6417）、图鉴立绘（ui/actor_book.gd，raven6 逐张比）。未移植：旧档迁移（不迁移 MV 旧存档）。
 ## 参照：slice_probe（切片角色行与伤害行）、actor_passive_probe（各等级技能表）、garou_progress_probe、garou_battle_probe；
 ## 测试 tests/xiyou_actor_modules.gd、tests/xiyou_garou_progress.gd、tests/xiyou_garou_battle.gd。
 

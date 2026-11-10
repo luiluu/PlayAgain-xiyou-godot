@@ -17,8 +17,8 @@ extends RefCounted
 ## - endRound（endTurn 之前，宿傩包装之后）：不再启用的清空；觉醒到期（round ≥ expires）去状态。round +1。
 ## - 不能行动（processTurn／OTB 判不能动）、逃跑时连闪归 0；开战、战斗结束、阵亡清空。
 ## 甚尔的额外一击（extraHitSkill 10216 觉醒时 _tojiHitCount＋1）在 XToji 的段数里（toji.gd「黑闪觉醒中的游云多 1 段」）。
-## 未移植：遗忘 10225／觉醒技时清空、
-## 说明框里的实时状态行、宣告的弹字与日志（画面）。旧档 unlock（学 10225／觉醒技）宿傩由 XSukuna.sync 管。
+## 已在别处（chars-gaps1 核实）：说明框实时状态行（help_rows）、宣告的弹字与日志（announced → battle_scene）。
+## 未移植：遗忘 10225／觉醒技时清空（forgetSkill 包装）：数据里没有遗忘这几个技能的事件（扫过 code 318）；宿傩同步按等级／进阶取舍、两者只增不减，学了不会再忘，走不到。旧档 unlock（学 10225／觉醒技）宿傩由 XSukuna.sync 管。
 
 const SKILL := 10225
 const STATE := 2635
