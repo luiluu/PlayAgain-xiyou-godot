@@ -50,6 +50,7 @@ func shot(name: String, wins: Dictionary, extra := {}) -> void:
 			"openness": w.openness if "openness" in w else null}
 	RenderingServer.force_draw(false)
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 	var f := FileAccess.open(out_dir.path_join(name + ".json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "  "))
 

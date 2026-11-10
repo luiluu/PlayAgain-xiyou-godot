@@ -56,9 +56,19 @@ var padding := PADDING:
 		_layout()
 
 
+## YEP_CoreEngine Window._roundWhUp：原版每次 _refreshAllParts 都把窗口宽高向上取整（文字量出来的弹窗宽是小数，
+## 如制作完成弹窗 296.24 → 297）。照原版做，不占 O 号；关掉＝保留小数宽高（白龙 ui-pixel2）。
+static var ROUND_WH_UP := true
+
+
 func _layout() -> void:
 	if canvas == null:
 		return
+	if ROUND_WH_UP:
+		# 留 0.001 余量：浮点误差（如 300×0.8）不算小数
+		var up := Vector2(ceilf(size.x - 0.001), ceilf(size.y - 0.001))
+		if up != size:
+			size = up   # 不在树里时不一定再发 resized，所以接着往下排版，不 return
 	canvas.position = Vector2(padding, padding)
 	canvas.size = size - Vector2(padding, padding) * 2.0
 	queue_redraw()

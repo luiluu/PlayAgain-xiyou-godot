@@ -28,6 +28,7 @@ func shot(name: String) -> void:
 		return
 	await RenderingServer.frame_post_draw
 	check("screenshot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png")) == OK)
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 func _shot_ref(name: String) -> Dictionary:
@@ -228,6 +229,9 @@ func _run() -> void:
 	XHelpCard.MIN_FONT = keep_min
 	for w in [probe2.tabs, probe2.detail, probe2.nav]:
 		w.queue_free()
+	# 探针的详情窗（probe、probe3）一并拆掉，免得叠在物品页截图下面、混进窗口矩形读数（白龙 ui-pixel2）
+	ui_host.queue_free()
+	await frames()
 
 	# ---- 物品页 ----
 	s.gain_gear("weapon", 67, 1)

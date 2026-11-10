@@ -3,8 +3,8 @@
 
 原版：review_system_pages.py ＋ `node review_system_pages.cjs <原版目录> px_menu px_item px_equip px_status px_shop`；
 Godot：`godot --path 01_Godot工程 res://tests/xiyou_ui_pixel.tscn -- --out=<Godot目录>`（非 headless）。
-然后 `python3 -I ui_pixel_compare.py <原版目录> <Godot目录> <输出目录>`：
-- 矩形：两边可见、开着的窗口各自去重，完全相同的配成一对；剩下的各列出来，并给出对方最近的矩形与四边差。
+然后 `python3 -I ui_pixel_compare.py <原版目录> <Godot目录> <输出目录> [图名通配…]`（默认 px_*；养成页如 pet_* training_* inlay_*）：
+- 矩形：两边可见、开着的窗口各自去重，完全相同的配成一对；再按 KNOWN（已查清原因的差）认定；剩下的各列出来，并给出对方最近的矩形与四边差。
 - 像素：整页逐像素差（RGB 最大通道差），出 <名>_heat.png（原版灰度底＋差值越大越红）、整页与每个原版窗口内的平均差和「差 >32 的像素占比」。
 写 <输出目录>/ui_pixel_report.json 并在终端打表。本机没装 PIL，PNG 用标准库读写（8 位 RGB／RGBA、不隔行）。
 只读两个输入目录，只写输出目录。"""
@@ -15,6 +15,18 @@ import zlib
 from pathlib import Path
 
 THRESH = 32
+
+OVERLAY_ORIG = {'Window_AchievementPopup'}
+
+# 已认定的矩形差（白龙 ui-pixel2）：完全相同配不上、但原因已查清的，按「原版窗口类型、Godot 类型、四边差」认定成对，
+# 报表里单列「已认定」并写原因；差值或类型对不上的照旧列为没配上（新的真差不会被吞掉）。
+KNOWN = [
+    ('Sprite_ItemHelp', 'XHelpCard', (-6, 0, 0, 2), '说明卡本体：O-008 贴行放（x−6）、O-007 最小字号（高＋2）'),
+    ('Window_ItemHelp', 'XHelpCardFrame', (-6, 0, 0, 2), '说明卡品质框（本体外扩 10）：随本体 O-008／O-007'),
+    ('Sprite_ItemHelp', 'XHelpCard', (0, 0, 0, 1), '说明卡本体：O-007 最小字号（技能页万剑诀 15 号说明提到 16，高＋1；MIN_FONT=0 时 247 与原版同）'),
+    ('Window_ItemHelp', 'XHelpCardFrame', (0, 0, 0, 1), '说明卡品质框：随本体 O-007'),
+    ('JAH_Window_Status_Params', 'XMVWindow', (0, -36, 0, 36), '状态页参数窗：战力先藏（Kyo 11-08），战力条 36 像素让出；开战力时 (0,108,1280,612) 与原版同'),
+]
 
 
 def read_png(path):
@@ -78,7 +90,8 @@ def windows(path, godot):
         if r in seen or r[2] <= 0 or r[3] <= 0:
             continue
         seen.add(r)
-        out.append({'type': win.get('name') if godot else win['type'], 'rect': list(r)})
+        name = str(win.get('name') or '')
+        out.append({'type': (name if name and not name.startswith('@') else win['type']) if godot else win['type'], 'rect': list(r)})
     return out
 
 
@@ -88,13 +101,25 @@ def match(orig, god):
     for o in orig:
         g = gr.pop(tuple(o['rect']), None)
         (pairs.append([o['type'], g['type'], o['rect']]) if g else o_left.append(o))
+    known = []
+    for o in list(o_left):
+        for ot, gt, delta, why in KNOWN:
+            if o['type'] != ot:
+                continue
+            want = tuple(a + d for a, d in zip(o['rect'], delta))
+            g = gr.get(want)
+            if g and g['type'] == gt:
+                gr.pop(want)
+                o_left.remove(o)
+                known.append([o['type'], g['type'], o['rect'], g['rect'], why])
+                break
     def near(r, pool):
         if not pool:
             return None
         best = min(pool, key=lambda q: sum(abs(a - b) for a, b in zip(r, q['rect'])))
         return {'type': best['type'], 'rect': best['rect'], 'delta': [b - a for a, b in zip(r, best['rect'])]}
     g_left = list(gr.values())
-    return pairs, [dict(o, nearest_godot=near(o['rect'], g_left)) for o in o_left], \
+    return pairs, known, [dict(o, nearest_godot=near(o['rect'], g_left)) for o in o_left], \
         [dict(g, nearest_orig=near(g['rect'], o_left)) for g in g_left]
 
 
@@ -125,21 +150,33 @@ def pixel(o_png, g_png, heat_path, rects):
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         sys.exit(__doc__)
-    od, gd, out = (Path(p) for p in sys.argv[1:])
+    od, gd, out = (Path(p) for p in sys.argv[1:4])
+    globs = sys.argv[4:] or ['px_*']
     out.mkdir(parents=True, exist_ok=True)
     report = {}
-    for oj in sorted(od.glob('px_*.json')):
-        name, gj = oj.stem, gd / (oj.stem + '.json')
+    for oj in sorted({q for g in globs for q in od.glob(g + '.json')}):
+        # Godot 读数：各专项 --out 写的 <名>.win.json（tests/ui_pixel_dump.gd）优先，xiyou_ui_pixel 写 <名>.json
+        name = oj.stem
+        gj = gd / (name + '.win.json') if (gd / (name + '.win.json')).exists() else gd / (name + '.json')
         if not gj.exists():
             report[name] = {'missing_godot': True}
             continue
         orig, god = windows(oj, False), windows(gj, True)
-        pairs, o_left, g_left = match(orig, god)
+        # 成就弹窗／提示条：两边弹出、消失的帧不同（时序噪声），单列不算差
+        overlay = [dict(g, side='godot') for g in god if g['type'] == 'Overlay'] + \
+            [dict(o, side='orig') for o in orig if o['type'] in OVERLAY_ORIG]
+        god = [g for g in god if g['type'] != 'Overlay']
+        orig = [o for o in orig if o['type'] not in OVERLAY_ORIG]
+        pairs, known, o_left, g_left = match(orig, god)
         whole, per = pixel(od / (name + '.png'), gd / (name + '.png'), out / (name + '_heat.png'), orig)
-        report[name] = {'matched': pairs, 'orig_only': o_left, 'godot_only': g_left, 'pixel': whole, 'per_window': per}
-        print(f"{name}: 矩形配上 {len(pairs)}，原版多 {len(o_left)}，Godot 多 {len(g_left)}；整页平均差 {whole['mean']}、差>32 占 {whole['over32']:.1%}")
+        report[name] = {'matched': pairs, 'known': known, 'overlay': overlay, 'orig_only': o_left, 'godot_only': g_left, 'pixel': whole, 'per_window': per}
+        print(f"{name}: 矩形配上 {len(pairs)}，已认定 {len(known)}，原版多 {len(o_left)}，Godot 多 {len(g_left)}；整页平均差 {whole['mean']}、差>32 占 {whole['over32']:.1%}")
+        for g in overlay:
+            print(f"   {'Godot' if g['side'] == 'godot' else '原版'} 弹窗／提示条 {g['rect']}（时序噪声，不算差）")
+        for k in known:
+            print(f"   已认定 {k[0]} {k[2]} ↔ {k[1]} {k[3]}：{k[4]}")
         for o in o_left:
             n = o['nearest_godot']
             print(f"   原版 {o['type']} {o['rect']} → 最近 Godot {n and n['type']} {n and n['rect']} 差 {n and n['delta']}")

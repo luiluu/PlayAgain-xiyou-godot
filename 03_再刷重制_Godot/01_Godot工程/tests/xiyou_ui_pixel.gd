@@ -5,6 +5,8 @@ extends Node
 ## 再用 ui_reference/ui_pixel_compare.py 逐个比矩形、出像素差热图。headless 时只走状态断言。
 ## 矩形断言（下方 RECTS）是 v0.62.12 原版实跑读数里与本页一一对应的窗口。
 
+const Dump := preload("res://tests/ui_pixel_dump.gd")
+
 var results := []
 var out_dir := ""
 var s: XState
@@ -34,22 +36,11 @@ static func grect(w: Control) -> Array:
 	return [r.position.x, r.position.y, r.size.x, r.size.y]
 
 
-func _collect(node: Node, out: Array) -> void:
-	if node is Control and (node is XMVWindow or node is XHelpCard) and (node as Control).is_visible_in_tree():
-		var c := node as Control
-		var op = c.get("openness")
-		if op == null or float(op) > 0.0:
-			out.append({"type": ("XHelpCard" if node is XHelpCard else "XMVWindow"), "name": str(node.name), "rect": grect(c), "openness": op})
-	for ch in node.get_children():
-		_collect(ch, out)
-
-
 func shot(name: String, page: Node) -> Array:
 	for i in 20:
 		await get_tree().physics_frame
 	await frames(2)
-	var wins := []
-	_collect(page, wins)
+	var wins: Array = Dump.collect(page)
 	if out_dir != "" and DisplayServer.get_name() != "headless":
 		RenderingServer.force_draw(false)
 		get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
@@ -79,7 +70,26 @@ func _run() -> void:
 	await _equip()
 	await _status()
 	await _shop()
+	await _round_wh_up()
 	finish()
+
+
+## YEP_CoreEngine Window._roundWhUp：窗口宽高向上取整（制作完成弹窗原版 297，算出来是 296.24）
+func _round_wh_up() -> void:
+	var holder := Control.new()
+	add_child(holder)
+	var w := XMVWindow.make(holder, Rect2(505.88, 328, 296.24, 64.5))
+	await frames(1)
+	check("round_wh_up", w.size == Vector2(297, 65) and is_equal_approx(w.position.x, 505.88) and w.canvas.size == Vector2(269, 37), [w.size, w.canvas.size])
+	w.size = Vector2(240.00001, 64)
+	check("round_wh_up_float_noise", w.size == Vector2(240, 64), w.size)
+	w.queue_free()
+	XMVWindow.ROUND_WH_UP = false
+	var w2 := XMVWindow.make(holder, Rect2(0, 0, 296.24, 64))
+	await frames(1)
+	check("round_wh_up_rollback", is_equal_approx(w2.size.x, 296.24), w2.size)
+	holder.queue_free()
+	XMVWindow.ROUND_WH_UP = true
 
 
 func _menu() -> void:
@@ -150,8 +160,20 @@ func _status() -> void:
 	await frames(3)
 	await shot("px_status_0", st)
 	expect("status_0", [["select", st.select_win, [0, 0, 1280, 64]]])
+	# 参数窗：战力先藏时 (0,72,1280,648)；开战力时让出战力条，与原版 JAH_Window_Status_Params (0,108,1280,612) 同
+	expect("status_0_hidden_power", [["page", st.page_win, [0, 72, 1280, 648]]])
 	st.queue_free()
 	await frames(2)
+	var was := XPower.SHOW_POWER_UI
+	XPower.SHOW_POWER_UI = true
+	if check("status_0_power_on_enabled", XPower.ui_enabled()):
+		var st2 := XStatusPage.new()
+		add_child(st2)
+		await frames(3)
+		expect("status_0_power_on", [["page", st2.page_win, [0, 108, 1280, 612]]])
+		st2.queue_free()
+		await frames(2)
+	XPower.SHOW_POWER_UI = was
 
 
 func _shop() -> void:
