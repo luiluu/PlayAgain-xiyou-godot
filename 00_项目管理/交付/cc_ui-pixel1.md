@@ -36,7 +36,7 @@
 
 - 语法检查通过（660 个 .gd，0 问题）；工具回归全过（60 秒）。
 - `xiyou_ui_pixel` 本机窗口模式 26/26。
-- 云端选测（`选测.py main --list` 74 个场景，--no-upload，基准 6bc1af076）：（待填）
+- 云端选测（`选测.py main --list` 74 个场景，--no-upload，基准 6bc1af076）：74 个场景全过，2 片、最长 6.6 分钟（提交 3e03c2b935，Actions run 42740322792）。含 xiyou_gear_detail、xiyou_help_card、xiyou_skill_page、xiyou_item_list、xiyou_shop_buy、xiyou_system_evidence、xiyou_window_rects、xiyou_ui_pixel（headless）。选测名单里没有战斗核心类场景。
 
 ## 本分支提交
 
