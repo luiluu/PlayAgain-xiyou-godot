@@ -313953,36 +313953,6 @@
    }
   },
   {
-   "base": "ce1597",
-   "tag": "sa6s_60",
-   "preset": {
-    "actors": {
-     "87": {
-      "paramPlus": {
-       "0": 99999
-      },
-      "hp": 99999
-     }
-    }
-   }
-  },
-  {
-   "base": "ce1600",
-   "tag": "sa6s_61",
-   "preset": {
-    "party": [
-     86
-    ],
-    "actors": {
-     "86": {
-      "paramPlus": {
-       "2": 14999
-      }
-     }
-    }
-   }
-  },
-  {
    "base": "ce1617",
    "tag": "sa6s_62",
    "preset": {
@@ -314184,6 +314154,248 @@
       ]
      }
     }
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_201",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_202",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_203",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_204",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_205",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_206",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_207",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_208",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_209",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      },
+      "skills": [
+       5892
+      ]
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_210",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      },
+      "skills": [
+       5892
+      ]
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_211",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1617",
+   "tag": "sa6t_212",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 50000
+      }
+     }
+    },
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_213",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "base": "ce1618",
+   "tag": "sa6t_214",
+   "preset": {
+    "actors": {
+     "88": {
+      "paramPlus": {
+       "1": 80000
+      }
+     }
+    },
+    "answers": [
+     1
+    ]
    }
   }
  ]
