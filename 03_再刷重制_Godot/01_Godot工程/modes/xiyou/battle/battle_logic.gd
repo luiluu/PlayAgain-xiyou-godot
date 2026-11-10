@@ -2225,6 +2225,8 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 		return 1.0
 	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
 		return 1.0
+	if XNumberBoost.owner(skill, u, t) != 0:  # 米拉／渡鸦数值池 itemHit 包装（在甚尔里面，影速加成只给甚尔自己）：归属技能打敌人必中
+		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
 
 
@@ -2234,8 +2236,10 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 		return 0.0
 	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
 	# （修负暴击率碰上 >100% 暴击回避负负得正），下面猫心必暴、云裳加成照旧（Kyo 11-01：必暴可以暴）
-	var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
-	var cri := maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+	# 米拉／渡鸦数值池 itemCri 包装（在甚尔里面）：渡鸦的非归属动作读面板暴击不带魂海加成
+	var cri := XNumberBoost.item_cri(skill, u, dt, func():
+		var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
+		return maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
@@ -2251,7 +2255,8 @@ func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
 	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
-	var base := 0.0 if XYomiJingliu.sure(u, skill) else _hit_formula("Evade Formula", "0", u, skill, t)
+	# 米拉／渡鸦数值池的 itemEva 包装也在甚尔里面（归属技能只打敌人，敌人不会天与咒缚，影速恒 0）
+	var base := 0.0 if XYomiJingliu.sure(u, skill) or XNumberBoost.owner(skill, u, t) != 0 else _hit_formula("Evade Formula", "0", u, skill, t)
 	return clampf(base + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
 
 

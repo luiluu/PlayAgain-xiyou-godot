@@ -104,6 +104,7 @@ PROBES = [
     (['difficulty_troop_probe.cjs'], ['difficulty_troop.json']),
     (['actor1_damage_probe.cjs'], ['actor1_damage.json']),
     (['toji_eva_probe.cjs'], ['toji_eva.json']),
+    (['mira_raven_hit_probe.cjs'], ['mira_raven_hit.json']),
     (['settlement_probe.cjs'], ['settlement.json']),
     (['item_marks_probe.cjs'], ['item_marks.json']),
     (['orb_probe.cjs'], ['orbs.json']),
