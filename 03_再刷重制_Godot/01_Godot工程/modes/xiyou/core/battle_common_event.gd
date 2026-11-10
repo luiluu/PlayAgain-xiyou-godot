@@ -19,7 +19,10 @@ const CHAIN_LIMIT := 64
 ## O-247：CE1365 三咒凝魄（会心法 6927 时强制 6930「三魔术*火」，6930 自己的效果 44 又是 1365）原版会一直强制下去
 ## （参照 2 万帧里放了 700 多次还没完）；心法写的是「额外释放一次」。true＝公共事件自己强制出来的行动再带同一个公共事件时不再预约
 ## （只额外放一次），false＝回到原版的无限连放（靠 CHAIN_LIMIT 截停）。
+## 只认 EXTRA_ONCE_IDS 里的公共事件：CE28 风怒、CE110、CE621／979／980／985 堕天一击、CE945、CE1154 雪岭舞等同结构的
+## 概率连发（每次再放都重掷，可连多次）照原版（审查第 75 期 P1-1）。
 static var EXTRA_ONCE := true
+const EXTRA_ONCE_IDS := [1365]
 ## 本版 BattleManager.startBattle 每场开战预约的公共事件「战斗开始时调整变量」（调 1315／1372／1373／1375，变量 13＝1 时截上限）
 const START_EVENT := 1320
 
@@ -51,7 +54,7 @@ static func reserve_action(logic, user, item: Dictionary, targets: Array) -> voi
 		logic.set_meta("last_item_action", {"user": user, "item": item, "target": targets[0] if not targets.is_empty() else null})
 	for e in item.get("effects", []):
 		if int(e.code) == 44:
-			if EXTRA_ONCE and in_common_event(logic, int(e.dataId)):
+			if EXTRA_ONCE and int(e.dataId) in EXTRA_ONCE_IDS and in_common_event(logic, int(e.dataId)):
 				continue
 			reserve(logic, int(e.dataId), user)
 

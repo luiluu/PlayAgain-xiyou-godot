@@ -685,12 +685,12 @@ func _main() -> void:
 			await _escape_success()
 			return
 		var turn_first := true
-		while not logic.is_won() and not logic.is_lost():
+		while not logic.is_over():
 			var u := logic.next_subject()
 			# 每位行动之前（及最后一人之后）检查敌群事件；回合首位已在 OTB startTurn 取出
 			await _play_troop_events(logic.troop_events(u if turn_first else null))
 			turn_first = false
-			if u == null or logic.is_won() or logic.is_lost():
+			if u == null or logic.is_over():
 				break
 			otb.on_subject(u)
 			otb.show_orders(logic.current_order, logic.next_order)
@@ -707,23 +707,30 @@ func _main() -> void:
 			otb.clear_subject()
 			otb.show_orders(logic.current_order, logic.next_order)
 			_refresh_status()
-		if logic.is_won():
-			otb.hide_bar()
-			await _victory()
-			reserve_battle_end_event(XState.current, 0)
-			finished.emit(0)
+		# 事件 340 中止战斗（BattleManager.checkAbort 在全灭、全歼之前）：逃跑音效、不出消息，结果 1，算逃跑（预约 1308）
+		if logic.aborted:
+			await _abort_battle()
 			return
+		# BattleManager.checkBattleEnd（rpg_managers.js 2614）先判 $gameParty.isAllDead 再判 $gameTroop.isAllDead：
+		# 反伤、自爆同时打死最后一个敌人和最后一个我方时算输（审查第 75 期 P2-1，原来先判赢）
 		if logic.is_lost():
 			await _defeat()
 			XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 			logic.end_battle(2)
-			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。
-			if can_lose:
+			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。事件 353 游戏结束不看可不可输（原版直接 goto Scene_Gameover，
+			# 不走 updateBattleEnd，不复活；地图那边见 XMapScene.last_battle_game_over，审查第 75 期 P3-1）
+			if can_lose and not logic.game_over:
 				for member in XState.current.battle_members():
 					if member.is_dead():
 						member.hp = 1.0
 						member.refresh_resources()
 			finished.emit(2)
+			return
+		if logic.is_won():
+			otb.hide_bar()
+			await _victory()
+			reserve_battle_end_event(XState.current, 0)
+			finished.emit(0)
 			return
 		if PACE_GAPS:
 			# YEP endTurn：场上还有伤害数字（isPopupPlaying）就先不结束回合，每帧再试
@@ -834,6 +841,21 @@ func _defeat_message() -> void:
 ## TextManager.defeat.format($gameParty.name())
 func defeat_text() -> String:
 	return str(XDB.system().terms.messages.get("defeat", "%1被击败了。")).replace("%1", XPreempt.party_name(logic.actors))
+
+
+## 事件 340 中止战斗：BattleManager.checkAbort → playEscape、_escaped＝true → processAbort（removeBattleStates、endBattle(1)），
+## updateBattleEnd 走「逃跑」那支预约 1308。没有消息窗（不同于逃跑成功的「开始逃跑了」）
+func _abort_battle() -> void:
+	boss_hp.ended()
+	_close_windows()
+	_end_record()
+	otb.hide_bar()
+	logic.escaped = true
+	XSound.system(8)
+	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
+	logic.end_battle(1)
+	reserve_battle_end_event(XState.current, 1)
+	finished.emit(1)
 
 
 ## MV BattleManager.updateBattleEnd（rpg_managers.js 2696）：没逃跑且全灭时，可输就复活到 1 血、不可输去游戏结束，两种都不预约；

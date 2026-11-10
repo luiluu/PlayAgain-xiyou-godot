@@ -4,6 +4,8 @@ extends Node
 ## - end.*：真实 XBattleScene 打完（胜利用 force_auto 打敌群 2；全灭先把出战者打倒）看预约槽与出战者 HP；逃跑走 reserve_battle_end_event(…, 1)。
 ## - ce1308.*：同样的初始状态在 MVInterpreter 里跑 CE1308，比变量、开关、物品、角色技能与状态。
 ## - BATTLE_END_COMMON_EVENT = 0（回到不预约）时胜利不预约。
+## - 审查第 75 期：双方同时倒下先判输（checkBattleEnd 先 isAllDead 我方）；事件 353 置的 game_over 在可输战斗里不复活；
+##   事件 340 置的 aborted 结果 1、预约 1308，先于全灭。
 
 const ORACLE := "res://tests/fixtures/battle_end_ce_oracle.json"
 const EventCompare := preload("res://tests/xiyou_event_compare.gd")
@@ -39,7 +41,7 @@ func _fresh() -> XState:
 	return s
 
 
-func _battle(troop: int, can_lose: bool, dead: bool) -> Dictionary:
+func _battle(troop: int, can_lose: bool, dead: bool, prep := Callable()) -> Dictionary:
 	var s := _fresh()
 	if dead:
 		for x in s.battle_members():
@@ -47,6 +49,8 @@ func _battle(troop: int, can_lose: bool, dead: bool) -> Dictionary:
 			x.hp = 0.0
 	var scene := QuickBattle.new()
 	scene.setup(troop, true, can_lose, XDB.map(4))
+	if prep.is_valid():
+		prep.call(scene.logic)
 	get_tree().root.add_child(scene)
 	var result: int = await scene.finished
 	var out := {"result": result, "reserved": s.peek_common_event(), "hp": s.battle_members().map(func(x): return x.hp),
@@ -146,7 +150,45 @@ func _run() -> void:
 	var off := await _battle(2, false, false)
 	check("rollback_no_reserve", off.result == 0 and off.reserved == 0, off)
 	XBattleScene.BATTLE_END_COMMON_EVENT = 1308
+	await _end_order_checks()
 	_finish()
+
+
+## 审查第 75 期 P2-1／P3-1（没有参照用例：原版的次序直接读 rpg_managers.js checkBattleEnd／updateBattleEnd、command340／353）
+func _end_order_checks() -> void:
+	var kill_enemies := func(lg: XBattleLogic) -> void:
+		for e in lg.enemies:
+			e.add_state(1)
+			e.hp = 0.0
+	# 我方全灭、敌群也全灭：算输（结果 2、不预约 1308、可输时复活 1 血）
+	var both := await _battle(2, true, true, kill_enemies)
+	check("both_dead.lose", both.result == 2 and both.reserved == 0, both)
+	check("both_dead.revive", both.hp.all(func(h): return h == 1.0), both)
+	# 353 游戏结束（logic.game_over）在可输战斗里：结果 2，不复活（原版 goto Scene_Gameover，不走 updateBattleEnd）
+	var go := await _battle(2, true, false, func(lg: XBattleLogic) -> void:
+		lg.game_over = true
+		lg.actors[0].add_state(1)
+		lg.actors[0].hp = 0.0)
+	check("game_over.can_lose_no_revive", go.result == 2 and go.reserved == 0 and go.hp[0] == 0.0 and go.dead[0], go)
+	# 340 中止战斗（logic.aborted）：结果 1、预约 1308；全灭了也先判中止（checkAbort 在前）
+	var ab := await _battle(2, false, true, func(lg: XBattleLogic) -> void: lg.aborted = true)
+	check("abort.result", ab.result == 1 and ab.reserved == 1308, ab)
+	# 敌群事件里的 340：本页后面的指令不执行，logic.aborted 置位，事件检查与无界面回合随即停下
+	var s := _fresh()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var list := [{"code": 340, "indent": 0, "parameters": []}, {"code": 121, "indent": 0, "parameters": [2261, 2261, 0]},
+		{"code": 0, "indent": 0, "parameters": []}]
+	s.set_switch(2261, false)
+	var r := XBattleEventRunner.new(lg, list, null)
+	r.advance()
+	check("abort.runner", lg.aborted and lg.is_over() and not s.switch(2261), [lg.aborted, s.switch(2261)])
+	var ctl := XBattleEventRunner.new(lg, list.slice(1), null)
+	ctl.advance()
+	check("abort.runner_control", s.switch(2261), "没有 340 时 121 应该执行")
+	s.set_switch(2261, false)
+	var acts: Array = lg.run_turn({}).filter(func(l): return l.type == "action")
+	check("abort.run_turn_stops", acts.is_empty(), acts.size())
 
 
 func _finish() -> void:
