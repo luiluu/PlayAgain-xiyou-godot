@@ -127,6 +127,8 @@ func _ready() -> void:
 	for w in [cmd_win, list_win, onekey_win, confirm_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
+	# 卡片不盖状态窗首行（「持有数」）：状态窗 y＋MV 标准内边距 18＋一行＝原版说明窗 y 227，再让出品质框外扩 10，本体 237（O-待定，XHelpCard.NEAR_BELOW_HEADER）
+	help_card.near_min_y = STATUS_RECT.position.y + 18.0 + LH + 10.0
 	add_child(help_card)
 	_refresh()
 	if auto_close:
