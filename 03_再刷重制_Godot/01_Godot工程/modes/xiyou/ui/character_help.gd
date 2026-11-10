@@ -21,7 +21,9 @@ extends RefCounted
 ##    饿狼形态系数／进化／解析／当前形态）。
 ## 未移植：listCosts（技能界面／战斗里消耗行不显示；重制说明卡不知道窗口，一律显示）、helpRankChanges「进阶变化」行（只在已进阶时出现）、
 ## 云裳的 dyn2、各角色第二期才有的战斗内字段（渡鸦灵魂恒 0、
-## 宿傩斩击强化恒「未储存」）、专属装备（4001、4577～4581、破限之心等）的角色说明。
+## 宿傩斩击强化恒「未储存」）。
+## 专属装备（4001、4577～4581、7904～7911 破限之心、7920～7935 云裳天衣）的说明卡也走这里（chars-gaps1，参照 character_gear_help_probe）：
+## 所属角色照原版 characterHelpActor 按 id 段落到 owner()（装备号都 ≤10139，即渡鸦；原版在装备页等界面取窗口的角色，重制一律按 id）。
 
 const VIEW_COLOR := "rgba(235,240,247,1)"
 ## DYN2_IDS：currentHelpText 在消耗行之后直接返回，改由 dyn2 按前缀换行
@@ -35,7 +37,21 @@ static func target(obj: Dictionary) -> bool:
 	if XCat.is_cat_item(obj):  # characterHelpTarget：window.CodexCat 且备注含 <CodexCat: 的技能／物品／法宝（17 个）也走 characterHelpView
 		return true
 	var id := int(obj.get("id", 0))
-	return obj.has("stypeId") and id >= 10122 and id <= 10299
+	if obj.has("stypeId"):
+		return id >= 10122 and id <= 10299
+	# 专属装备（chars-gaps1）：武器、防具按原型号（originalBaseItemId||baseItemId||id，重制实例是 base）认
+	# 4001 冥河断罪镰、4577～4581（黑龙心鳞、赤雨双缨、月魄剑匣、藏兵咒灵、神武解）、7904～7911 破限之心、7920～7935 云裳天衣
+	if not (obj.has("wtypeId") or obj.has("atypeId") or ["weapon", "armor"].has(str(obj.get("kind", "")))):
+		return false
+	return GEAR_TARGET and gear_target_id(int(obj.get("base", id)))
+
+
+## 回退开关：false 时专属装备不走 characterHelpView（旧重制的样子，说明行不分组上色）
+const GEAR_TARGET := true
+
+
+static func gear_target_id(base: int) -> bool:
+	return base == 4001 or (base >= 4577 and base <= 4581) or XGarou.RELICS.has(base) or (base >= 7920 and base <= 7935)
 
 
 static func owner(obj: Dictionary) -> int:
@@ -211,7 +227,8 @@ static func _styled(row: Array, text: String) -> Array:
 static func view(obj: Dictionary, rows: Array, list_costs := false) -> Array:
 	var a = actor(obj)
 	var id := int(obj.get("id", 0))
-	var texts := _note_rows(str(obj.get("note", "")))
+	# 饿狼 G.describeRelic 在 getDescParams 里把十行写进备注，characterHelpView 读备注时它们也算作者行（重制不写备注，这里接上）
+	var texts := _note_rows(str(obj.get("note", "")) + "\n" + "\n".join(XGarou.relic_help_lines(obj)))
 	var extra := {}
 	for t in texts:
 		extra[t] = true

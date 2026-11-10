@@ -151,8 +151,18 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 		# v0.41 特效排序在 RJO.HE.getDescParams 的 D 包装里，元素／穿透行（内层包装）已经插好；◆唯一 标记（v0.56，最外层）在排序之后
 		if EFFECT_SORT_V041 and (type == 1 or type == 2) and not growth:
 			sort_effects(obj, rows)
-	if type != 3 and XCat.is_cat_item(obj):
-		rows = XCharacterHelp.view(obj, rows)  # 小猫一族的物品、法宝：characterHelpTarget 认 <CodexCat:，走 CodexCat.helpItem＋characterHelpView
+	if type != 3 and XCharacterHelp.target(obj):
+		rows = XCharacterHelp.view(obj, rows)  # 小猫一族的物品、法宝（认 <CodexCat:）与专属装备（4001、4577～4581、破限之心、云裳天衣）：characterHelpTarget 走 characterHelpView
+		if type == 1 or type == 2:
+			# characterHelpView 最外层（terminologyView 之后）：每行 D.text，再 D.equipmentRows 一次——白字属性前移、v0.41 特效按品质排序、◆唯一
+			# （所以「效果：」行会排到「专属：」等作者行前面；chars-gaps1 照 character_gear_help_probe 补）
+			for r in rows:
+				r[0] = _terms(str(r[0]))
+			if WHITE_STATS_FIRST:
+				rows = equipment_rows(rows)
+			if EFFECT_SORT_V041:
+				sort_effects(obj, rows)
+			unique_mark(obj, rows)
 	if type == 3:
 		rows = XYomiJingliu.help_rows(obj, rows)  # 镜流 Sprite_ItemHelp.setItem 包装：10194 卡尾的星魂行
 		rows.append_array(XToji.help_rows(obj, scene_actor))  # 甚尔 Sprite_ItemHelp.setItem 包装：主技能卡尾两行熟练度（先并入，characterHelpView 再分组）
@@ -231,6 +241,9 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			pos[4] = rows.size()
 	for line in str(obj.get("note", "")).split("\n"):
 		_extra_row(rows, pos, line.strip_edges(false, true), normal)
+	if type == 2:  # 饿狼 G.describeRelic（getDescParams 包装）：备注末尾的 <CodexGarouHelp> 十行
+		for line in XGarou.relic_help_lines(obj):
+			_extra_row(rows, pos, line, normal)
 	if type == 2 and XYunshang.relic_item(obj):
 		_relic_rows(obj, rows, pos)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
@@ -571,6 +584,19 @@ static func _plain41(t) -> String:
 	return RegEx.create_from_string("[\\s:：]").sub(t2, "", true)
 
 
+## 云裳天衣（7920～7935）：setItem 前原版 refreshYunshangText 把备注里的 <pos=APs …> 行挪到末尾（其余行在前，<quality:N> 也就在说明行之前），
+## 所以 v0.41 排序给说明行查到的是天衣自身品质、与模板同档，「效果：」行不前移（chars-gaps1，character_gear_help_probe 7935 对出）。
+## 重制天衣实例照模板建、不另刷说明，只在排序取品质时照这个顺序读。
+static func _sort_note(obj: Dictionary) -> String:
+	var note := str(obj.get("note", ""))
+	var id := int(obj.get("base", obj.get("id", 0)))
+	if not (obj.has("atypeId") or str(obj.get("kind", "")) == "armor") or id < 7920 or id > 7935:
+		return note
+	var lines := Array(note.replace("\r\n", "\n").split("\n"))
+	var aps := lines.filter(func(x): return str(x).begins_with("<pos=APs "))
+	return "\n".join(lines.filter(func(x): return not str(x).begins_with("<pos=APs ")) + aps)
+
+
 static func sort_effects(obj: Dictionary, rows: Array) -> void:
 	var drop := RegEx.create_from_string("^效果：(?:持有.+时，造成的技能伤害[＋+]|持武增伤作用于)")
 	for i in range(rows.size() - 1, -1, -1):
@@ -579,7 +605,7 @@ static func sort_effects(obj: Dictionary, rows: Array) -> void:
 	var source := {}
 	var q := 0
 	var re := RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>|<pos=\\S+\\s+text=([\\s\\S]*?)\\s+size=")
-	for m in re.search_all(str(obj.get("note", ""))):
+	for m in re.search_all(_sort_note(obj)):
 		if m.get_string(1) != "":
 			q = int(m.get_string(1))
 		else:
@@ -878,7 +904,7 @@ static func _is_growth(t: String) -> bool:
 
 
 static func _is_formula(t: String) -> bool:
-	return _re("^(?:基础治疗|基础护盾|伤害|真实伤害|斩击|体术|自动斩击|每段(?:基础)?|基础伤害|基式|有效魔攻|有效双防|蓄势附加伤害|阶位系数|魄倍率|冠冕倍率|形态系数|防御系数|速度加成|倍率|术式威力|生命增量|魔攻增量)[：:=＝]", t) or _re("^[＋+×－−-]", t)
+	return _re("^(?:基础治疗|基础护盾|伤害|真实伤害|斩击|体术|自动斩击|每段(?:基础)?|基础伤害|基式|有效魔攻|有效双防|蓄势附加伤害|阶位系数|魄倍率|冠冕倍率|形态系数|防御系数|速度加成|倍率|术式威力|生命增量|魔法增量|魔攻增量)[：:=＝]", t) or _re("^[＋+×－−-]", t)
 
 
 static func _generic_view(obj: Dictionary, rows: Array) -> Array:
