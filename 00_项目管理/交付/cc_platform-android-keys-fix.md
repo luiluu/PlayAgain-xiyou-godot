@@ -15,3 +15,16 @@
 - 待交叉核查：splash_screen.gd（甲档，开场图判定）。
 - Actions 结果：导出冒烟 run 42706664517（platforms=android，头 9f725f223）全绿；android_keys_title_space/j/enter_new_game、android_keys_title_cancel_then_map_keys 与 android_pause_hook_fires 全部「过」。
 - 可合并
+
+## 变更记录草稿
+
+## 2026-11-09 【cc·平台·未经审查】安卓按键冒烟不放开场图（dev.待定，O-待定）
+
+- 根因：dev.410 并入的开场图（XSplashScreen）要放约 10 秒并吃掉按键，冒烟第一下键落在开场图上，标题没接键、没进地图，切后台钩子也没打。
+- 改动：`modes/xiyou/ui/splash_screen.gd` 加 `SKIP_FOR_SMOKE`（默认 true，false＝回退）与 `is_smoke_run()`，命令行带 `--smoke-keys=` 时不放开场图；`tests/xiyou_splash_autosave.gd` 加断言。
+- 验证：语法检查、专项 xiyou_splash_autosave、xiyou_key_smoke 过；Actions「安卓 验收」模拟器冒烟 android_keys_title_*×3、android_keys_title_cancel_then_map_keys、android_pause_hook_fires 全过。
+- 玩家可见：无（只影响带 `--smoke-keys=` 的冒烟运行）。
+
+## 优化登记（行草稿，O 号由总装分配，表格行格式同 `优化登记.md`）
+
+| O-待定 | `modes/xiyou/ui/splash_screen.gd` `XSplashScreen.SKIP_FOR_SMOKE`（`wanted`／`is_smoke_run`） | 开场图每次启动都放，约 10 秒，期间吃掉按键 | 命令行带 `--smoke-keys=` 的冒烟运行不放开场图 | 自动冒烟第一下键被开场图吃掉，标题与切后台钩子测不到；玩家正常启动不变 | `SKIP_FOR_SMOKE = false` | cc（平台） | 待用户决定 |
