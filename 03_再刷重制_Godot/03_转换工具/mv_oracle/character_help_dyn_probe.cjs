@@ -1,5 +1,5 @@
 'use strict';
-// 【cc·悟空·未经审查】角色说明卡动态行探针（chars-gaps2）：installDisplayPreferencesRuntime 的 characterHelpView。
+// 【cc·悟空·未经审查】角色说明卡动态行探针（chars-gaps2；chars-gaps3 加 newgame.* 没招募角色）：installDisplayPreferencesRuntime 的 characterHelpView。
 // ① listCosts（技能界面／战斗里为真）：消耗行不显示；② dyn2 里云裳 174（目标、段数、成长倍率、爆伤终伤）、镜流 170（已解锁星魂、寒川映月上限）、
 // 宿傩 172 的 10242 斩击强化（读 actor._codexSukuna 的 emp／domain 与觉醒 2639、领域 2636）。
 // 只记卡上以「成长／目标／段数／消耗」开头（去色后，含「；」并排的）的行，和实际的技能表、进阶次数，Godot 照这些摆角色。
@@ -43,6 +43,16 @@ cases.push(makeCase('yun.preview', {actor: 174, skills_view: YUN, preview: true}
   delete w.$gameActors._data[174];
   return {existedAfterNewGame: existed, skills: null, rows: view(YUN)};
 }));
+// chars-gaps3：新局后原版 $gameActors._data 已建好全部角色，没招募的角色卡用的是这个初始角色（不删，不走替身）
+const RANGE = {167: [10122, 10139], 168: [10140, 10167], 170: [10187, 10202], 172: [10229, 10249], 174: [10270, 10287], 175: [10288, 10299]};
+for (const id of Object.keys(RANGE).map(Number)) {
+  const ids = []; for (let s = RANGE[id][0]; s <= RANGE[id][1]; s++) ids.push(s);
+  cases.push(makeCase('newgame.' + id, {actor: id, skills_view: ids, unrecruited: true}, () => {
+    newGame();
+    const a = w.$gameActors._data[id];
+    return {level: lvOf(a), skills: own(a), rank: a ? (a._AdvancedNum || 0) : null, inParty: w.$gameParty._actors.indexOf(id) >= 0, rows: view(ids)};
+  }));
+}
 for (const [lv, rank] of [[25, 0], [30, 0], [36, 1], [45, 1], [60, 2]]) {
   cases.push(makeCase('yun.' + lv + '.' + rank, {actor: 174, level: lv, rank, skills_view: YUN}, () => {
     newGame();

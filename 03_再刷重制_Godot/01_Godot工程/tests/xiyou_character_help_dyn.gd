@@ -38,8 +38,8 @@ func _setup(c: Dictionary) -> XState:
 	XState.current = s
 	var o: Dictionary = c.observed
 	var id := int(c.setup.actor)
-	if o.get("skills") == null:
-		s.actors.erase(id)
+	if o.get("skills") == null or c.setup.get("unrecruited", false):
+		s.actors.erase(id)  # 预览替身／没招募（chars-gaps3：原版新局已建好全部角色，卡用初始角色）
 		return s
 	var a := s.actor(id)
 	a.change_level_mv(int(o.level))
@@ -65,19 +65,29 @@ func _ready() -> void:
 	XConfig.path_override = "user://xiyou_character_help_dyn_none.json"  # 不读本机设置
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)
-	check("cases", ref.cases.size() == 22, ref.cases.size())
+	check("cases", ref.cases.size() == 28, ref.cases.size())
 	for c in ref.cases:
 		check(c.id + ".native", c.errors.is_empty(), c.errors)
 		var s := _setup(c)
 		var a = s.actors.get(int(c.setup.actor))
 		if a != null:
 			check(c.id + ".level", int(a.level) == int(c.observed.level), [a.level, c.observed.level])
+		if c.setup.get("unrecruited", false):  # 不入档的初始角色：等级、专属技能表同原版新局，且不写进 actors
+			var g = XCharacterHelp.actor(XDB.rec("Skills", int(c.observed.rows.keys()[0])))
+			var own := []
+			if g != null:
+				own = g.skill_ids.filter(func(v): return v >= 10122 and v <= 10299)
+				own.sort()
+			check(c.id + ".ghost", g != null and int(g.level) == int(c.observed.level) and JSON.stringify(own) == JSON.stringify(c.observed.skills.map(func(v): return int(v))), [g.level if g != null else null, own, c.observed.skills])
+			check(c.id + ".not_saved", not s.actors.has(int(c.setup.actor)))
 		XHelpCard.list_costs = bool(c.setup.get("listCosts", false))
+		XCharacterHelp.UNRECRUITED_AS_NEW_GAME = not c.setup.get("preview", false)  # 替身预览只在开关关掉时走得到
 		for sid in c.observed.rows:
 			var got := _pick(XDB.rec("Skills", int(sid)))
 			check(c.id + "." + sid, JSON.stringify(got) == JSON.stringify(_norm(c.observed.rows[sid])), [got, c.observed.rows[sid]])
 		XHelpCard.list_costs = false
 		XSukuna._temp.clear()
+		XCharacterHelp.UNRECRUITED_AS_NEW_GAME = true
 	# show_for 按卡所在场景定 listCosts：祖先是技能页或战斗画面为真，别处（装备页等）为假，出完卡还原
 	for pair in [[XSkillScene.new(), true], [XBattleScene.new(), true], [Control.new(), false]]:
 		var host: Node = pair[0]
