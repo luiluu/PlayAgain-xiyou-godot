@@ -281,9 +281,18 @@ def pipeline_files(root, base, cfg, head=None):
         seen.add(f)
         text = strip_comments(f, read_any(root, base, f, head))
         for other, keys in names.items():
-            if other not in seen and any(k in text for k in keys):
+            if other not in seen and any(_mentions(text, k) for k in keys):
                 todo.append(other)
     return seen
+
+
+def _mentions(text, key):
+    """text 里提到 key。纯 ASCII 的短模块名（如 事件预设脚本/ 下的 nb、sim、tried）要整词出现，
+    免得 simple、unbind 这类子串把整个目录拖进入口链（seg-a5 合并后 test_real_repo_read_only_set 挂在这）；
+    XIYOU_TOOL_NARROW_WORD=0 回到纯子串。中文名和带扩展名的文件名照旧按子串认。"""
+    if key.isascii() and '.' not in key and os.environ.get('XIYOU_TOOL_NARROW_WORD', '1') != '0':
+        return re.search(r'(?<![A-Za-z0-9_])' + re.escape(key) + r'(?![A-Za-z0-9_])', text) is not None
+    return key in text
 
 
 def read_only_tool(root, base, path, cfg, head=None, cache=None):

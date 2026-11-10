@@ -813,6 +813,19 @@ class ToolNarrowTests(Fixture):
         self.put(TOOLS / '只读工具.py', '# edit\n')
         self.assertIn('xiyou_rules_d2', {x[:-5] for x in sel.select(self.root, self.base, table=off)['scenes']})
 
+    def test_short_ascii_stem_needs_whole_word(self):
+        """seg-a5 合并：子目录里 nb.py、sim.py 这类短模块名不能被 simple、unbind 子串拖进入口链；开关关掉回到子串。"""
+        self.assertFalse(sel._mentions('x = simple(1); unbind()', 'sim'))
+        self.assertFalse(sel._mentions('unbind()', 'nb'))
+        self.assertTrue(sel._mentions('import sim\nsim.run()', 'sim'))
+        self.assertTrue(sel._mentions('用 事件写法覆盖.py 出门', '事件写法覆盖.py'))
+        self.assertTrue(sel._mentions('读事件空绿扫描的结果', '事件空绿扫描'))
+        os.environ['XIYOU_TOOL_NARROW_WORD'] = '0'
+        try:
+            self.assertTrue(sel._mentions('x = simple(1)', 'sim'))
+        finally:
+            del os.environ['XIYOU_TOOL_NARROW_WORD']
+
     def test_real_repo_read_only_set(self):
         """真实资料库：入口链碰不到的顶层文件里有悟空提的两个只读工具，转换器与同步本身不在里面。"""
         root = HERE.parent.parent
