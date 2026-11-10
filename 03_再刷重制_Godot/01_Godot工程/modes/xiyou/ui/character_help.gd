@@ -5,7 +5,8 @@ extends RefCounted
 ## 照原版次序：
 ## 1. characterHelpActor：按技能号定所属角色（≤10139 渡鸦 167、≤10167 米拉 168、10168 奈叶 166、≤10186 黄泉 169、≤10202 镜流 170、
 ##    ≤10228 甚尔 171、≤10249 宿傩 172、≤10269 饿狼 173、≤10287 云裳 174，其余谷雨 175；10170 也算渡鸦），
-##    有这个角色（XState.current.actors）就用它，否则是初始状态的预览（null：等级取 initialLevel、0 阶、没学技能）。
+##    有这个角色（XState.current.actors）就用它；没招募的用不入档的初始角色（原版新局已建好全部角色，见 _unrecruited），
+##    开关 UNRECRUITED_AS_NEW_GAME 关掉或没有存档时才是预览替身（null：等级取 initialLevel、0 阶、没学技能）。
 ##    原版在技能界面／战斗技能窗里取窗口正在看的角色；重制说明卡不知道窗口，一律按所属角色取。
 ## 2. 备注 <pos=APs text=…> 的行（及插进来的「伤害属性」行，去色后与备注同文）算作者行；技能里与描述相同的行不显示；
 ##    名字、描述、品质进抬头；数据库 MP／TP 消耗行在有作者消耗行时不显示，否则改成「基础MP消耗：」。
@@ -83,7 +84,35 @@ static func actor(obj: Dictionary):
 		return XCat.help_actor()
 	var s := XState.current
 	var who := owner(obj)
-	return s.actors[who] if s != null and s.actors.has(who) else null
+	if s == null:
+		return null
+	if s.actors.has(who):
+		return s.actors[who]
+	return _unrecruited(s, who) if UNRECRUITED_AS_NEW_GAME else null
+
+
+## chars-gaps3：原版新局后 $gameActors._data 已建好 1～179 全部角色（v0.62.12 实测，别的模块建的），
+## characterHelpActor 总能取到真角色，替身预览走不到；没招募的角色卡上显示初始状态的实际消耗（云裳 1 级「消耗：99MP」，
+## 不是备注原文「66MP＋最大MP×5%」）。重制没招募的角色不在 actors 里，这里照 XState.actor 建一个不入档的初始角色
+## （同样套 actor_ops、算被动，不登记装备、不写进 actors）。按存档与 actor_ops 条数缓存。关掉回到替身预览。
+static var UNRECRUITED_AS_NEW_GAME := true
+static var _ghost_state: WeakRef = null
+static var _ghost_ops := -1
+static var _ghosts := {}
+
+
+static func _unrecruited(s: XState, who: int) -> XActor:
+	if _ghost_state == null or _ghost_state.get_ref() != s or _ghost_ops != s.actor_ops.size():
+		_ghost_state = weakref(s)
+		_ghost_ops = s.actor_ops.size()
+		_ghosts.clear()
+	if not _ghosts.has(who):
+		var a := XActor.new().setup(who)
+		for op in s.actor_ops:
+			XState._apply_actor_op(a, op)
+		a.refresh_passive()
+		_ghosts[who] = a
+	return _ghosts[who]
 
 
 static func _level(obj: Dictionary, a) -> int:

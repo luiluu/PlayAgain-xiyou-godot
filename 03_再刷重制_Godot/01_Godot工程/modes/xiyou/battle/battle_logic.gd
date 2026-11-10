@@ -170,6 +170,9 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
+	for id in XSkillProgression.RANGES:  # 渡鸦／米拉 startBattle 包装：已建的 167、168 同步解锁技能
+		if s.actors.has(id) and XSkillProgression.SYNC_ON_BATTLE_START:
+			XSkillProgression.sync(s.actors[id])
 	XXuanBattle.start_battle(self)  # 璇 startBattle 包装：建本场数据
 	XBinding.start_battle(self)  # 绑定 startBattle 包装（原 startBattle 之后）：在场本体建新数据、去掉形态状态
 	_garou = XGarou.start_battle(actors)  # 饿狼 startBattle 包装：同步、记下出战的饿狼
@@ -623,6 +626,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 	if XAlienBattle.sealed(self, a, skill):  # 异化蚀术 isSkillSealed 包装：被封印的技能
 		return false
 	if not wtype_ok(a, skill):
+		return false
+	if not XSkillProgression.unlocked(a, int(skill.id)):  # 渡鸦／米拉 meetsSkillConditions 包装：没解锁的专属技能不能用
 		return false
 	if not XGarou.meets(a, skill):  # 饿狼 meetsSkillConditions：未到形态、追击不能用，认真一拳要琦玉模式
 		return false

@@ -18,8 +18,8 @@ extends RefCounted
 ##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
 ## - 奈叶小魔炮（5692 只开六选一公共事件，自动战斗不能用）：会 5692 且能用时，候选里的 5703～5709 换成六档魔炮（不必学会、各自能用），
 ##   估伤按付费后的 MP 算公式、再 ×max(1, ⌊付前 MP×比例/2000⌋)（伤害后多段，见 XNanoha）。参照 nanoha3_probe ai.*。
-## - 没移植（重制版尚无这些角色/系统）：米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
-##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
+## - 没移植（chars-gaps3 对 v0.62.12 核过，角色都已在重制里，只是没接）：Codex_SmartBattleAI 自带的那条 registerProfile（黄泉 10172～10174、流萤 10622 的溅射，宿傩领域里神灶 10233 的 holdInLongFight、
+##      伏魔御厨子 10231 的 futureActor＋ongoingSkill 10237，渡鸦神话封解 10127 的 futureActor＋duration，米拉解放 10146 的 futureActor＋followupSkill 10151）。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"

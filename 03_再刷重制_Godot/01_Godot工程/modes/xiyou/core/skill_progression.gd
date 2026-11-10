@@ -5,7 +5,12 @@ extends RefCounted
 ##   CodexUnlockLevel ≤ 等级、CodexUnlockRank ≤ 进阶次数，有 CodexUnlockMaxRank 时进阶次数不超过它。
 ## - sync(a)：上述范围内允许就学、不允许就忘。原版挂在 setup、levelUp、changeLevel、入队、读档、进阶确认、开战；
 ##   重制挂在 XActorModules 的 setup／level_up／level_down／level_changed（入队与进阶走 setup／招募的同步）。
-## 未移植：skills() 与 meetsSkillConditions 按 unlocked 过滤（同步后已学列表本就一致，只差同步之外直接 learn_skill 的情形）、开战再同步。
+## - skills() 与 meetsSkillConditions 按 unlocked 过滤（XActor.skills、XBattleLogic.can_use；同步后已学列表本就一致，管的是同步之外直接 learn_skill 的情形），
+##   开战 BattleManager.startBattle 之前再同步已建的 167、168（XBattleLogic.setup，chars-gaps3）。
+## 同步时写的 _codexRavenStage（渡鸦阶位缓存）不另存：重制渡鸦阶位直接读 XAdvance.rank（raven.gd）。
+
+## 开战同步：参照探针只调 BattleManager.setup、不调 startBattle（mira_battle_probe 先同步再忘掉 drop），对这类参照的专项关掉
+static var SYNC_ON_BATTLE_START := true
 
 const RANGES := {167: [10122, 10139, [10170]], 168: [10140, 10167, []]}
 
