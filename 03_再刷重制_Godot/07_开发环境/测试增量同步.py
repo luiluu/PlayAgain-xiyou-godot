@@ -264,6 +264,31 @@ class AcceptedBaselineTests(unittest.TestCase):
         self.assertEqual(json.loads((main_deps / 'a_probe.cjs.json').read_text()), {'files': ['a_probe.cjs', 'x.cjs']})
         self.assertEqual(json.loads((main_deps / 'b_probe.cjs.json').read_text()), {'files': ['b_probe.cjs']})
 
+    def test_clone_absorbs_lane_key_books(self):
+        # tools-probe-deps2：克隆车道产物时，车道的 troop 键账和事件状态摘要账并进本工作区（按结果文件摘要认领），
+        # 本工作区已有的条目不动；否则合并后认不出克隆来的结果，下一次探针改动整份重跑
+        import event_state_shards as ess
+        worktree = self.root.parent / 'lane-books'
+        lane = worktree / 'generated'
+        shutil.copytree(self.gen, lane)
+        lane_sb = worktree / 'tools/mv_oracle/.sandbox'
+        lane_sb.mkdir(parents=True)
+        docs = {}
+        for name, version in (('troop_event_keys.json', 1), ('event_state_keys.json', 2)):
+            doc = lane_sb.parent / ('d-%d.json' % version)
+            doc.write_text(json.dumps({'version': version, 'core': 'c', 'keys': ['k'], 'fileSha': ('%d' % version) * 64}))
+            self.assertTrue(ess.KeyHistory(lane_sb / name, version).add(doc))
+        main_book = self.oracle / '.sandbox/troop_event_keys.json'
+        mine = self.root.parent / 'mine.json'
+        mine.write_text(json.dumps({'version': 1, 'core': 'mine', 'keys': ['m'], 'fileSha': 'f' * 64}))
+        self.assertTrue(ess.KeyHistory(main_book, 1).add(mine))
+        result, report = self.run_sync('--from-worktree', str(worktree), lane=lane)
+        self.assertEqual(result, 0)
+        self.assertEqual(report['fromWorktreeKeyBooks'], {'troop_event_keys.json': 1, 'event_state_keys.json': 1})
+        shas = {e['fileSha'] for e in ess.KeyHistory(main_book, 1)._load()}
+        self.assertEqual(shas, {'f' * 64, '1' * 64})
+        self.assertEqual(len(ess.KeyHistory(self.oracle / '.sandbox/event_state_keys.json', 2)._load()), 1)
+
     def test_failed_clone_preflight_does_not_create_a_baseline_or_change_outputs(self):
         before = sync.outputs_digest(self.gen)
         self.assertEqual(self.run_sync('--from-worktree', str(self.root.parent / 'missing'))[0], 3)
@@ -795,7 +820,7 @@ class CacheTests(unittest.TestCase):
         import inspect
         source = ''.join(inspect.getsource(getattr(ProbeCache, n)) for n in ('units', 'plan', '_verified_units', '_unit_digests', 'record'))
         self.assertEqual((incremental_sync.SHARD_TOOLING_REVISION, hashlib.sha256(source.encode()).hexdigest()[:16]),
-                         (1, '22a2b14f5067aa58'))
+                         (1, '157b843095a56d75'))
 
     def test_shard_tooling_follows_revision_not_cache_code(self):
         (self.tools / 'incremental_sync.py').write_text('# v1')
@@ -1064,6 +1089,31 @@ class ProbeDepRecorderTests(unittest.TestCase):
             rows = list((oracle / '.sandbox/probe_deps').glob('p_probe.cjs.*.json'))
             self.assertEqual(len(rows), 1)
             self.assertEqual(json.loads(rows[0].read_text())['files'], ['data.json', 'p_probe.cjs', 'shared/h.cjs'])
+
+    def test_outside_reads_are_recorded_and_unregistered_ones_reported(self):
+        # tools-probe-deps2：读了 03_转换工具 里 mv_oracle 之外、又没进键的文件 → unregistered_reads 报出（同步里打 PROBE_READ_UNREGISTERED，STRICT 时失败）
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp) / 'tools'
+            oracle = tools / 'mv_oracle'
+            for d in (oracle / '.sandbox', Path(tmp) / 'app', Path(tmp) / 'gen/oracle', Path(tmp) / 'gen/maps'):
+                d.mkdir(parents=True)
+            (tools / 'xiyou_slice.json').write_text('{}')
+            (tools / 'other.json').write_text('{}')
+            (Path(tmp) / 'gen/manifest.json').write_text('{}')
+            (Path(tmp) / 'gen/slice.json').write_text('{}')
+            (oracle / 'p_probe.cjs').write_text(
+                "const fs=require('fs'),path=require('path');fs.readFileSync(path.join(__dirname,'../xiyou_slice.json'));"
+                "fs.readFileSync(path.join(__dirname,'../other.json'));process.exit(0);")
+            env = dict(os.environ, NODE_OPTIONS='--require "%s"' % (TOOLS / 'probe_dep_recorder.cjs'),
+                       XIYOU_PROBE_DEPS_NAME='p_probe.cjs', XIYOU_PROBE_DEPS_ROOT=str(oracle))
+            subprocess.run(['node', 'p_probe.cjs'], cwd=oracle, env=env, check=True)
+            cache = ProbeCache(tools, Path(tmp) / 'app', Path(tmp) / 'gen')
+            self.assertEqual(cache.outside_reads('p_probe.cjs'), {'xiyou_slice.json', 'other.json'})
+            self.assertEqual(cache.unregistered_reads('p_probe.cjs'), ['other.json'])
+            cache.compact_record('p_probe.cjs')                                 # 并成一份后仍在
+            self.assertEqual(cache.unregistered_reads('p_probe.cjs'), ['other.json'])
+            with mock.patch.dict(incremental_sync.PROBE_INPUTS, {'p_probe.cjs': ('other.json',)}):
+                self.assertEqual(cache.unregistered_reads('p_probe.cjs'), [])
 
     def test_sync_adds_recorder_unless_switched_off(self):
         env = sync.with_dep_recorder({'NODE_OPTIONS': '--max-old-space-size=10'}, ['a_probe.cjs', '1'])

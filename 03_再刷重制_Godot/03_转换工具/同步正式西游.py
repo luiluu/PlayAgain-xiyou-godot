@@ -769,6 +769,14 @@ def troop_audit_due(doc, now=None):
     return not isinstance(at, (int, float)) or (now if now is not None else time.time()) - at > hours * 3600
 
 
+def state_audit_due(doc, now=None):
+    """事件状态探针的每日审计是否到期。账上条目没有 auditedAt（本功能推出前的旧条目）不算到期，保存时从第一次见到起算。"""
+    hours = float(os.environ.get('XIYOU_STATE_AUDIT_HOURS', '24'))
+    if hours <= 0 or not doc or not isinstance(doc.get('auditedAt'), (int, float)):
+        return False
+    return (now if now is not None else time.time()) - doc['auditedAt'] > hours * 3600
+
+
 def run_troop_sharded(cmd, env, box, core=None):
     import concurrent.futures
     import event_state_shards as ess
@@ -956,12 +964,26 @@ def run_state_sharded(cmd, env, box):
                 note_lane = '上次结果并入车道 %s 的（车道 %d 例、main 补 %d 例）；' % (STATE_PREV_FROM, n_lane, n_main)
             except (OSError, ValueError, KeyError, TypeError) as error:
                 note_lane = '车道事件状态结果读取失败（%s），不用；' % str(error)[:80]
+    # 每日审计（tools-probe-deps2）：距上次整份重跑超过 XIYOU_STATE_AUDIT_HOURS（默认 24，0＝不审计）小时，本轮整份重跑，并把指纹相同的变体
+    # 逐个与上次结果比对，有不同就失败（STATE_AUDIT_FAIL）。账上旧条目没有 auditedAt 的从第一次见到起算（不为推出这个功能白跑一轮 90 分钟）。
+    prev_doc = history.find(Path(env['XIYOU_GENERATED']) / 'oracle/event_states.json') if incremental else None
+    audited = prev_doc.get('auditedAt') if prev_doc else None
+    audit_note = ''
+    if incremental and state_audit_due(prev_doc):
+        env['XIYOU_STATE_AUDIT'] = '1'
+        audit_note = '距上次整份重跑已超 %s 小时：本轮整份重跑并审计指纹相同的变体；' % os.environ.get('XIYOU_STATE_AUDIT_HOURS', '24')
     keys = work / 'event_states.keys.json'
     p = ess.run_sharded(env, ORACLE_DIR, work, SANDBOX / 'event_states.json', keys, shards,
                         lambda e, label: run_node(cmd, e, weight=1))
     if p.returncode == 0 and keys.is_file():
+        try:   # 整份重跑（没取回任何变体）算一次审计；取回过的沿用上次的时刻，账上没有的从现在起算
+            doc = json.loads(keys.read_text())
+            doc['auditedAt'] = time.time() if not doc.get('reused') else (audited or time.time())
+            keys.write_text(json.dumps(doc))
+        except (OSError, ValueError):
+            pass
         history.add(keys)
-    note = '（事件状态探针：%d 段；%s%s）\n' % (shards, note_lane, '上次结果的摘要在账上，按摘要取回没变的变体' if incremental
+    note = '（事件状态探针：%d 段；%s%s%s）\n' % (shards, audit_note, note_lane, '上次结果的摘要在账上，按摘要取回没变的变体' if incremental
                                             else '账上没有上次结果的摘要，整份重量')
     return subprocess.CompletedProcess(p.args, p.returncode, note + (p.stdout or ''), p.stderr or '')
 
@@ -1380,7 +1402,12 @@ def run_probes(log, cache=None):
                 for rel in outputs:
                     (stash_dir() / rel).unlink(missing_ok=True)
         save_stash(index)
-    return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial and cmd[0] not in stashed],
+    gaps = getattr(cache, 'read_gaps', None) if cache else None
+    if gaps:
+        line = 'PROBE_READ_UNREGISTERED ' + json.dumps(gaps, ensure_ascii=False)
+        log.write(line + '\n')
+        print(line, flush=True)
+    return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial and cmd[0] not in stashed], 'readGaps': gaps or {},
             'partial': {k: v for k, v in partial.items()}, 'reused': reused, 'stashed': sorted(stashed),
             'missReasons': misses,
             # 多命令探针的合计为子进程用时之和；墙钟由同步报告 start/end 记录。

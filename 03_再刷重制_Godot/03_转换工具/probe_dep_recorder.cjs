@@ -6,7 +6,7 @@
 const fs = require('fs'), path = require('path'), {fileURLToPath} = require('url');
 const name = process.env.XIYOU_PROBE_DEPS_NAME, root = process.env.XIYOU_PROBE_DEPS_ROOT;
 if (name && root && !/[\\/]/.test(name)) {
-  const real = fs.realpathSync, write = fs.writeFileSync, mkdir = fs.mkdirSync, seen = new Set();
+  const real = fs.realpathSync, write = fs.writeFileSync, mkdir = fs.mkdirSync, seen = new Set(), outside = new Set();
   const canon = s => { try { return real(s); } catch (e) { return path.resolve(s); } };
   const base = canon(root);
   const note = p => {
@@ -15,6 +15,10 @@ if (name && root && !/[\\/]/.test(name)) {
       if (typeof s !== 'string') return;
       const rel = path.relative(base, canon(s));
       if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) seen.add(rel.split(path.sep).join('/'));
+      else if (rel.startsWith('..' + path.sep)) {   // mv_oracle 的上一级（03_转换工具）里 mv_oracle 之外的文件：记下，同步核对它们是否登记进了键（tools-probe-deps2）
+        const up = path.relative(path.dirname(base), canon(s));
+        if (up && !up.startsWith('..') && !path.isAbsolute(up)) outside.add(up.split(path.sep).join('/'));
+      }
     } catch (e) {}
   };
   for (const k of ['readFileSync', 'readFile', 'openSync', 'open', 'createReadStream']) {
@@ -27,7 +31,7 @@ if (name && root && !/[\\/]/.test(name)) {
     try {
       const dir = path.join(base, '.sandbox', 'probe_deps');
       mkdir(dir, {recursive: true});
-      write(path.join(dir, name + '.' + process.pid + '.json'), JSON.stringify({files}) + '\n');
+      write(path.join(dir, name + '.' + process.pid + '.json'), JSON.stringify({files, outside: [...outside].filter(r => !/(^|\/)node_modules\//.test(r)).sort()}) + '\n');
     } catch (e) {}
   });
 }

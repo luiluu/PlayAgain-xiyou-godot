@@ -498,6 +498,106 @@ class StateIncrementalTests(unittest.TestCase):
             self.assertFalse(ess.prepare_prev(dict(env), history, published, tmp / 'work'))
 
 
+class StateScopeTests(unittest.TestCase):
+    """tools-probe-deps2 阶段②：事件状态探针本文件的指纹按 probe_change_scope.json 折算、每日审计。临时拷一份探针目录，改一行让文件 SHA 变。"""
+    PREFIXES = ['m163e6p7#e8c', 'ce820#e8c']     # 前者预设只有 variables，后者带 actors
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        if not APP.exists():
+            self.skipTest('没有冻结正式源')
+        self.tools = Path(self.tmp.name) / 'tools'
+        self.mo = self.tools / 'mv_oracle'
+        self.mo.mkdir(parents=True)
+        for f in ORACLE.glob('*.cjs'):
+            shutil.copy2(f, self.mo / f.name)
+        subprocess.run(['cp', '-cR', str(ORACLE / 'node_modules'), str(self.mo / 'node_modules')], check=True)
+        for n in ('xiyou_slice.json', 'event_presets.json'):
+            shutil.copy2(TOOLS / n, self.tools / n)
+        self.probe = self.mo / 'event_state_probe.cjs'
+
+    def sha(self):
+        import hashlib
+        return hashlib.sha256(self.probe.read_bytes()).hexdigest()
+
+    def scope(self, rows):
+        (self.tools / 'probe_change_scope.json').write_text(json.dumps({'changes': rows}))
+
+    def run_probe(self, out, **env):
+        e = dict(os.environ, XIYOU_EVENT_OUT=str(out), XIYOU_APP=str(APP.resolve()), XIYOU_GENERATED=str(TOOLS.parent / '01_Godot工程/modes/xiyou/generated'), **env)
+        for k in ('XIYOU_PROBE_SHARD', 'XIYOU_STATE_PREV', 'XIYOU_STATE_PREV_KEYS', 'XIYOU_STATE_AUDIT'):
+            if k not in env:
+                e.pop(k, None)
+        return subprocess.run(['node', 'event_state_probe.cjs'] + self.PREFIXES, cwd=self.mo, env=e, capture_output=True, text=True)
+
+    def stats(self, r):
+        self.assertEqual(r.returncode, 0, r.stderr[-600:])
+        return json.loads(r.stdout.strip().splitlines()[-1])
+
+    def test_scope_declaration_and_audit(self):
+        sb = self.mo / '.sandbox'
+        sb.mkdir(exist_ok=True)
+        out0 = sb / 'o0.json'
+        first = self.stats(self.run_probe(out0, XIYOU_STATE_INCREMENTAL='0'))
+        n = first['cases']
+        presets = {'%s#%s' % (c['base'], c['tag']): c['preset'] for c in json.loads((self.tools / 'event_presets.json').read_text())['cases']}
+        n_actors = sum('actors' in presets[c['id']] for c in json.loads(out0.read_text())['cases'])
+        self.assertTrue(n >= 3 and 0 < n_actors < n, (n, n_actors))
+        keys0 = sb / 'o0.keys.json'
+        s0 = self.sha()
+        prev = {'XIYOU_STATE_PREV': str(out0), 'XIYOU_STATE_PREV_KEYS': str(keys0)}
+        # 探针没改：全部取回
+        self.assertEqual(self.stats(self.run_probe(sb / 'o1.json', **prev))['reused'], n)
+        # 改一行（文件 SHA 变），没有声明：全部重跑
+        self.probe.write_text(self.probe.read_text() + '\n// 改了一行\n')
+        s1 = self.sha()
+        self.assertNotEqual(s0, s1)
+        self.assertEqual(self.stats(self.run_probe(sb / 'o2.json', **prev))['reused'], 0)
+        # 声明只影响带 nonexistent 键的变体：全部取回，结果逐字相同
+        row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'presetKeys': ['nonexistent'], 'why': '测试'}
+        self.scope([row])
+        r3 = self.stats(self.run_probe(sb / 'o3.json', **prev))
+        self.assertEqual(r3['reused'], n)
+        self.assertEqual((sb / 'o3.json').read_bytes(), out0.read_bytes())
+        # 声明影响 actors：带 actors 的变体重跑，另一个取回
+        self.scope([dict(row, presetKeys=['actors'])])
+        self.assertEqual(self.stats(self.run_probe(sb / 'o4.json', **prev))['reused'], n - n_actors)
+        # 声明只能折算到 to：to 对不上当前文件就不生效
+        self.scope([dict(row, to='0' * 63 + '1')])
+        self.assertEqual(self.stats(self.run_probe(sb / 'o5.json', **prev))['reused'], 0)
+        # 格式错直接报错，不静默忽略
+        self.scope([{'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'why': '缺 presetKeys'}])
+        self.assertNotEqual(self.run_probe(sb / 'o6.json', **prev).returncode, 0)
+        # 审计：把上次结果里第二个变体改坏。不审计时只抽查第一个，发现不了；审计整份重跑并逐个比对，退出码 3
+        self.scope([dict(row, presetKeys=[])])
+        doc = json.loads(out0.read_text())
+        doc['cases'][1]['finished'] = not doc['cases'][1]['finished']
+        bad = sb / 'bad.json'
+        bad.write_text(json.dumps(doc))
+        import hashlib
+        badkeys = json.loads(keys0.read_text())
+        badkeys['fileSha'] = hashlib.sha256(bad.read_bytes()).hexdigest()
+        (sb / 'bad.keys.json').write_text(json.dumps(badkeys))
+        badprev = {'XIYOU_STATE_PREV': str(bad), 'XIYOU_STATE_PREV_KEYS': str(sb / 'bad.keys.json')}
+        self.assertEqual(self.stats(self.run_probe(sb / 'o7.json', **badprev))['reused'], n)    # 抽查碰不到：坏结果被取回
+        r8 = self.run_probe(sb / 'o8.json', XIYOU_STATE_AUDIT='1', **badprev)
+        self.assertEqual(r8.returncode, 3)
+        self.assertIn('STATE_AUDIT_FAIL', r8.stderr)
+        r9 = self.run_probe(sb / 'o9.json', XIYOU_STATE_AUDIT='1', **prev)
+        self.assertEqual(self.stats(r9)['reused'], 0)
+        self.assertIn('STATE_AUDIT_OK', r9.stderr)
+        self.assertEqual((sb / 'o9.json').read_bytes(), out0.read_bytes())
+
+    def test_state_audit_due(self):
+        self.assertFalse(sync.state_audit_due(None))
+        self.assertFalse(sync.state_audit_due({}))                                     # 旧条目没有 auditedAt：不算到期
+        self.assertTrue(sync.state_audit_due({'auditedAt': 1.0}, now=1.0 + 25 * 3600))
+        self.assertFalse(sync.state_audit_due({'auditedAt': 1.0}, now=1.0 + 23 * 3600))
+        with mock.patch.dict(os.environ, {'XIYOU_STATE_AUDIT_HOURS': '0'}):
+            self.assertFalse(sync.state_audit_due({'auditedAt': 1.0}, now=1e12))
+
+
 class ProgressTests(unittest.TestCase):
     """tools83：分段跑事件状态探针期间定期打进度，免得整份重量跑近一小时没输出被会话 idle 超时掐掉。"""
     def setUp(self):

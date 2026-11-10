@@ -49,7 +49,7 @@ def helper_scope_on():
     return os.environ.get('XIYOU_HELPER_SCOPE', '1') != '0'
 # 探针读的、不在 mv_oracle 里也不是转换产物的输入文件（相对 03_转换工具）：内容进该探针的键，改了只重跑它自己
 # event_state_shards.py：同步里分段跑、拼回 event_state 结果的代码（tools81），改了要让它重跑
-PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json', 'event_state_shards.py')}
+PROBE_INPUTS = {'event_state_probe.cjs': ('event_presets.json', 'event_state_shards.py', 'probe_change_scope.json')}
 # 进键的行为开关（审查 probe-deps 指纹，2026-11-10）：探针或它依赖的 helper 读的、会改变产物的环境变量。
 # 只在设了、且该探针的依赖里提到它时进这个探针的键（没设时键与以前逐字相同，不引起重跑）：
 # 否则带着回退开关跑同步会全部命中、开关等于没生效；带着开关 --full 出的产物又会被之后不带开关的同步当成默认结果命中。
@@ -68,6 +68,15 @@ REVIEWED_ENV = {
     'XIYOU_PROBE_ACTORS': '手动开发用：产物改写 .sandbox/slice_actors，不进同步',
     'XIYOU_PROBE_FROM': '手动开发用：必须同时给 XIYOU_TROOP_OUT，同步里设了直接报错',
     'HB_TRACE': '只往标准错误打加载顺序',
+    'XIYOU_STATE_AUDIT': '只决定是否整份重跑并比对取回候选，不改产物；比对不同则失败',
+    'XIYOU_TROOP_CORE': '同步设：troop 探针取回上次结果的公共指纹（缓存键去掉用例清单文件）；不设时探针用本地指纹',
+    'XIYOU_TROOP_PREV': '同步设：上次结果；公共指纹、文件摘要、来源都对得上才取回',
+    'XIYOU_TROOP_PREV_KEYS': '同上：上次结果的用例键表',
+    'XIYOU_TROOP_KEYS_OUT': '产物路径（键表）',
+    'XIYOU_TROOP_AUDIT': '只决定是否整份重跑并比对取回候选，不改产物；比对不同则失败',
+    'XIYOU_TROOP_CHECK_EVERY': '取回用例的抽查密度，不改产物',
+    'XIYOU_TROOP_INCREMENTAL': '只决定要不要取回上次结果，产物相同',
+    'XIYOU_TROOP_LIMIT': '手动开发用：只出前 n 例，必须同时给 XIYOU_TROOP_OUT，同步里设了直接报错',
 }
 # 审过的动态读取。运行时记录能代替「带全部 helper」的前提：同一条命令每次运行读到的 mv_oracle 文件都一样，
 # 与本轮跑哪些单元／分段、环境变量无关（只跑几个单元的增量轮也会留下记录，记录不区分整轮还是增量）。
@@ -75,6 +84,7 @@ REVIEWED_DYNAMIC = {
     'slice_probe.cjs': '只是产物目录的三元式（.sandbox/slice 或 .sandbox/slice_actors），不读文件',
     'event_state_probe.cjs': '固定五个文件算哈希写进产物',
     'shared_system_probe.cjs': '同步不带参数，三个模块每次都 require',
+    'troop_event_probe.cjs': '固定五个文件算本地指纹，每次都读，与环境无关',
 }
 GENERATED_MARKERS = ('XIYOU_GENERATED', 'modes/xiyou/generated')
 # 只有审视过「仅 maps 与 manifest.slice.commonEvents」的事件读取器能按地图分片。
@@ -176,12 +186,14 @@ def carry_probe_deps(source, target):
         if f.is_symlink() or not f.is_file() or out.exists():
             continue
         try:
-            rows = json.loads(f.read_text()).get('files')
+            doc = json.loads(f.read_text())
+            rows, outside = doc.get('files'), doc.get('outside') or []
         except (OSError, ValueError, AttributeError):
             continue
-        if not isinstance(rows, list):
+        if not isinstance(rows, list) or not isinstance(outside, list):
             continue
-        atomic_json(out, {'files': sorted({r for r in rows if isinstance(r, str)})})
+        atomic_json(out, dict({'files': sorted({r for r in rows if isinstance(r, str)})},
+                              **({'outside': sorted({r for r in outside if isinstance(r, str)})} if outside else {})))
         copied.append(f.name)
     return copied
 
@@ -355,12 +367,30 @@ class ProbeCache:
                 out.update(r for r in rows if isinstance(r, str))
         return out if seen else None
 
+    def outside_reads(self, name):
+        """运行时记下的、03_转换工具里 mv_oracle 之外的读（相对 03_转换工具），各次记录取并集。"""
+        out = set()
+        for f in self._record_files(name):
+            try:
+                rows = json.loads(f.read_text()).get('outside')
+            except (OSError, ValueError, AttributeError):
+                continue
+            if isinstance(rows, list):
+                out.update(r for r in rows if isinstance(r, str))
+        return out
+
+    def unregistered_reads(self, name):
+        """运行时读到、却没进键的文件：允许的只有切片文件、PROBE_INPUTS 登记的、转换产物之外的别无他物（审查 probe-deps 指纹后续）。"""
+        allowed = {SLICE_NAME, *PROBE_INPUTS.get(name, ())}
+        return sorted(r for r in self.outside_reads(name) if r not in allowed)
+
     def compact_record(self, name):
         """把各进程的记录并成一份 <探针>.json（并集），删掉逐进程的文件。"""
         rows = self.recorded(name)
         if rows is None:
             return
-        atomic_json(self.oracle / RECORD_DIR / (name + '.json'), {'files': sorted(rows)})
+        outside = self.outside_reads(name)
+        atomic_json(self.oracle / RECORD_DIR / (name + '.json'), {'files': sorted(rows), 'outside': sorted(outside)})
         for f in (self.oracle / RECORD_DIR).glob(name + '.*.json'):
             f.unlink(missing_ok=True)
 
@@ -738,6 +768,14 @@ class ProbeCache:
             # 这次运行可能记下了新的运行时依赖：并成一份后按它重算键，与 commit 时重算的一致
             self.compact_record(command[0])
             key = self.key(command)
+            missing = self.unregistered_reads(command[0])
+            if missing:
+                # 指纹漏依赖：探针读了没进键的文件，改它不会让这个探针重跑。默认只记下并在同步里打 PROBE_READ_UNREGISTERED；
+                # XIYOU_PROBE_STRICT_READS=1 直接失败
+                self.read_gaps = getattr(self, 'read_gaps', {})
+                self.read_gaps[command[0]] = missing
+                if os.environ.get('XIYOU_PROBE_STRICT_READS') == '1':
+                    raise RuntimeError('指纹漏依赖：%s 读了没进缓存键的文件 %s（登记进 incremental_sync.PROBE_INPUTS，或改成不读）' % (command[0], missing))
         entry = {'key': key, 'command': command, 'names': output_names, 'outputs': self.outputs(output_names),
                  'units': units, 'inputs': self.details.get(command[0], {})}
         spec = self.shard(command)

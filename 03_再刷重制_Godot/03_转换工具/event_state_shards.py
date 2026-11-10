@@ -57,7 +57,8 @@ def merge_keys(part_keys, merged_out, keys_out):
     for d in docs:
         keys.update(d.get('keys') or {})
         maps.update(d.get('maps') or {})
-    doc = {'version': 2, 'coreFingerprint': docs[0]['coreFingerprint'], 'keys': keys, 'maps': maps, 'fileSha': file_sha(merged_out)}
+    doc = {'version': 2, 'coreFingerprint': docs[0]['coreFingerprint'], 'keys': keys, 'maps': maps, 'fileSha': file_sha(merged_out),
+           'reused': sum(d.get('reused', 0) for d in docs)}
     Path(keys_out).write_text(json.dumps(doc))
     return True
 

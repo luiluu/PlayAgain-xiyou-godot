@@ -126,6 +126,7 @@ let caseCounter = 0;
 // 说明键漏了某个依赖。XIYOU_TROOP_INCREMENTAL=0 不取回。XIYOU_COVER、XIYOU_PROBE_FROM 不取回。
 // 规划：先把清单跑一遍规划（run() 只返回描述，不开战），算出全部键，再真跑；两遍里 run() 被调用的顺序相同（清单是确定的）。
 const LIMIT = Number(process.env.XIYOU_TROOP_LIMIT || 0);   // 只给测试用：清单只留前 n 例（产物不是完整产物）
+if (LIMIT > 0 && (!process.env.XIYOU_TROOP_OUT || process.env.XIYOU_PROBE_SHARD)) throw new Error('XIYOU_TROOP_LIMIT 只出部分用例，必须同时给 XIYOU_TROOP_OUT，且不能在同步里用');
 let PHASE = 'run';
 const computed = new Map();      // 全局序号 → 本进程真跑出的结果（整份重跑时不重复跑）
 let REUSE = null, CHECK = new Set(), lastGate = null;
@@ -376,8 +377,9 @@ const KEYS_OUT = process.env.XIYOU_TROOP_KEYS_OUT || (process.env.XIYOU_TROOP_OU
 const OUT = process.env.XIYOU_TROOP_OUT || path.join(__dirname, '.sandbox/troop_events.json');
 const fileSha = f => sha256(fs.readFileSync(f));
 // 公共指纹：同步给（含影响面声明折算后的 helper）；手动跑时退回本地算
-const CORE = process.env.XIYOU_TROOP_CORE || sha256(['local', identity, ['troop_event_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs']
-  .map(f => fileSha(path.join(__dirname, f))), (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })()]);
+const LOCAL_CORE = sha256(['local', identity, ['troop_event_probe.cjs', 'hboot.cjs', 'fs_guard.cjs', 'manual_sandbox.cjs', 'source_identity.cjs']
+  .map(f => fileSha(path.join(__dirname, f))), (() => { try { return require('jsdom/package.json').version; } catch (e) { return ''; } })()]);   // 每次都读，与环境无关
+const CORE = process.env.XIYOU_TROOP_CORE || LOCAL_CORE;
 const AUDIT = process.env.XIYOU_TROOP_AUDIT === '1';
 const incrementalOk = process.env.XIYOU_TROOP_INCREMENTAL !== '0' && !COVER && !(FROM > 0);
 PHASE = 'plan';
