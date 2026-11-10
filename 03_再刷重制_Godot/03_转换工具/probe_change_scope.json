@@ -1,0 +1,12 @@
+{
+  "note": "探针代码改动影响面声明（tools-probe-deps2）。每条：mv_oracle/event_state_probe.cjs 从 from（整份 SHA-256）改到 to，只影响预设里带 presetKeys 键路径的变体（数字键写 *；空数组＝不影响任何变体）；别的变体算指纹时把探针文件当作还是 from。可连成链（下一条 from＝上一条 to）。声明要甲档交叉核查；格式错探针直接报错。说明见 07_开发环境/长任务与增量同步.md。",
+  "changes": [
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "533019e4264228a1c694f3f0e2e1750f6abab68a9fa5306c311f5ff1272fd150",
+      "to": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
+      "presetKeys": [],
+      "why": "tools-probe-deps2 本次改动只动指纹计算（本文件那一份按声明折算）、审计模式（XIYOU_STATE_AUDIT）和键表多记 reused；变体的执行路径（applyPreset／runCase）一行没改，旧变体的结果与读到的地图不变"
+    }
+  ]
+}
