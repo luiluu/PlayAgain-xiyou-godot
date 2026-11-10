@@ -7,6 +7,13 @@
       "to": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
       "presetKeys": [],
       "why": "tools-probe-deps2 本次改动只动指纹计算（本文件那一份按声明折算）、审计模式（XIYOU_STATE_AUDIT）和键表多记 reused；变体的执行路径（applyPreset／runCase）一行没改，旧变体的结果与读到的地图不变"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "28525cfc160b35335e068704af86cc3ffd99d1440d99808fe06420315c288093",
+      "to": "c364dda8799594265659930139ab85b38349f12b476ecb5848a0efc354f24022",
+      "presetKeys": [],
+      "why": "tools-probe-scope1 只加影响面声明的校验（最新声明的键须在某变体的预设键路径里出现），在用例执行之前抛错或通过；变体执行路径（applyPreset／runCase）一行没改，旧变体结果与读到的地图不变"
     }
   ]
 }
