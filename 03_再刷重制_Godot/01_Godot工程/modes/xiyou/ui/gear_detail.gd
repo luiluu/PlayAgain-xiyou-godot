@@ -204,8 +204,9 @@ func turn(d: int) -> void:
 
 
 # ---- 绘制 ----
+## 原版 Window_Help.drawTextEx 逐字画，行高是 calcTextHeight＝字号＋8（26 号→34），不是 36；用 36 字会低 1px（ui-pixel1 实测 191→192）
 func _paint_tabs(c: XMVCanvas) -> void:
-	c.text(tab_text(), 6, 0, c.size.x - 6, "left", XUI.TEXT, TAB_SIZE, XUI.LINE_HEIGHT)
+	c.text(tab_text(), 6, 0, c.size.x - 6, "left", XUI.TEXT, TAB_SIZE, TAB_SIZE + 8.0)
 
 
 func _paint_detail(c: XMVCanvas) -> void:
