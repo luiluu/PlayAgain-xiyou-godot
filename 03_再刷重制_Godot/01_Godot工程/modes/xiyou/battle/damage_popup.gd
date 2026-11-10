@@ -14,7 +14,7 @@ extends Node2D
 ##   （数字顶在根点）、回复 y = 1；YEP Popup Overlap Rate 0.9 加在 setup 时还没有子精灵的新弹数上，实际不起作用
 ##   （原版读数 tests/fixtures/popup_anchor_oracle.json，七种普通伤害／回复叠加 × 敌人／角色）。Miss 为 (0.5, 0.5)。
 
-## 原版缺陷，修好（O-待定，八戒 rules-battle-pixel 截图对照）：LGP getTextWidth 把字号写进 bitmap._fontSize（Bitmap 认的是 fontSize），
+## 原版缺陷，修好（O-252，八戒 rules-battle-pixel 截图对照）：LGP getTextWidth 把字号写进 bitmap._fontSize（Bitmap 认的是 fontSize），
 ## 量宽时仍按默认 28 号，位图宽＝28 号字宽＋10；再用 38 号 drawText(…, 0, 0, 位图宽) 画，canvas 按 maxWidth 把整串字横向压到约 74%
 ## （原版读数：「1.23万」38 号宽 117.4、位图宽 96）。WIDE_TEXT = true 不压（重制一直是这样画的，现在登记成修好）；
 ## false 照原版：位图宽按 28 号量，字横向压进去。

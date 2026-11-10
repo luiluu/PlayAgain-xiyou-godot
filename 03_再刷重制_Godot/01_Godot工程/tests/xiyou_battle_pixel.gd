@@ -134,7 +134,7 @@ func _run() -> void:
 		await _until(func(): return Engine.get_physics_frames() >= k0 + f)
 		await _shot("bp_popup_f%d" % f, b)
 	_check("popups_shown", nodes.bp_popup_f6.popups.size() == 3, nodes.bp_popup_f6.popups.size())
-	# 伤害数字位图宽（O-待定 WIDE_TEXT）：原版读数（battle_pixel_ref.cjs info.popups／info.font）位图宽 96／60／192＝28 号字宽＋10，
+	# 伤害数字位图宽（O-252 WIDE_TEXT）：原版读数（battle_pixel_ref.cjs info.popups／info.font）位图宽 96／60／192＝28 号字宽＋10，
 	# 38 号「1.23万」实宽 117.41。修好时按 38 号量、不压；回退照原版按 28 号量、横向压到位图宽。
 	var sample := {"1.23万": 96.0, "321": 60.0, "暴击  4567  ！": 192.0}
 	var probe := XDamagePopup.new()
