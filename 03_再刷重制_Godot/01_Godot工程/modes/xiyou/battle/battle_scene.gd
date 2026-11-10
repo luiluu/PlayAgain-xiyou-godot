@@ -59,6 +59,9 @@ var boss_hp: XBossHpBar
 var log_canvas: XMVCanvas
 var _log_lines: Array = []        # [{text, simple}]
 var otb: XOTBBar
+## 正在等玩家选指令（_command 里 await _command_for 期间）；状态详情只在这时能打开
+var inputting := false
+var status_panel: XPartyStatusPanel
 var cmd_win: XBattleList
 var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
@@ -503,6 +506,7 @@ func _build_ui(vs: Vector2) -> void:
 		row.setup(logic.actors[i], i)
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
+		row.cell_pressed.connect(_open_status)
 	_refresh_status()
 	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）；让出左上 (20,10,240,74) 给挂机快捷界面。
 	# 层次（ui-zorder1）：在 screen_fx 之下（221 淡出的黑幕盖住按钮；原版没有这两个按钮，画面上只剩窗口），
@@ -971,7 +975,9 @@ func _command(u: XBattler):
 		return logic.decide(u)
 	_set_active(u)
 	while true:
+		inputting = true
 		var r = await _command_for(u)
+		inputting = false
 		if logic.auto or (r is String and r == "auto"):
 			_close_windows()
 			return logic.decide(u)
@@ -986,6 +992,27 @@ func _command(u: XBattler):
 			return [null, null]
 		# "back"：OTB 没有队伍指令窗，取消不回到上一人，重新显示指令
 	return null
+
+
+## 状态详情（installEquipmentStatusRuntime open('status')）：点右侧状态格打开。正式版打开时 BattleManager.update 整个停住、
+## 激活的窗口失活，关掉再激活；重制的战斗由协程推进，只在等指令（inputting）时能打开，打开期间指令窗收不到按键与点击
+## （面板吃掉输入），关掉后照旧。演出中点状态格不响应。
+func _open_status(a: XActor) -> void:
+	if not inputting or (status_panel != null and is_instance_valid(status_panel)):
+		return
+	var saved := []
+	for w in [cmd_win, list_win]:
+		if w != null and is_instance_valid(w) and w.active:
+			w.active = false
+			w.canvas.queue_redraw()
+			saved.append(w)
+	status_panel = XPartyStatusPanel.open(ui, logic.actors.filter(func(m): return m is XActor), a)
+	status_panel.closed.connect(func():
+		status_panel = null
+		for w in saved:
+			if is_instance_valid(w):
+				w.active = true
+				w.canvas.queue_redraw())
 
 
 func _close_windows() -> void:

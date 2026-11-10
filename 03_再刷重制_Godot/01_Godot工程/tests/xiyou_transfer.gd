@@ -222,6 +222,24 @@ func _run() -> void:
 	check("screen_fade_kept_across_transfer", is_equal_approx(map.screen_fader.modulate.a, 1.0) and is_zero_approx(map.fader.modulate.a), [map.screen_fader.modulate.a, map.fader.modulate.a])
 	await map.fade(false)
 	check("screen_fade_in", is_zero_approx(map.screen_fader.modulate.a))
+	# 淡出淡入 24 帧（fadeSpeed）；201 的淡出类型：1 白、2 不淡出（Scene_Map.fadeOutForTransfer）
+	check("fade_frames_24", map.FADE_FRAMES == 24)
+	var white_seen := [false]
+	var watch := func():
+		if map.fader.modulate.a > 0.0 and map.fader.color == Color.WHITE:
+			white_seen[0] = true
+	get_tree().process_frame.connect(watch)
+	await map.transfer(5, 12, 13, 2, 1)
+	get_tree().process_frame.disconnect(watch)
+	check("transfer_fade_white", white_seen[0] and is_zero_approx(map.fader.modulate.a) and map.player.grid == Vector2i(12, 13), [white_seen[0], map.fader.modulate.a])
+	var max_a := [0.0]
+	var watch2 := func(): max_a[0] = maxf(max_a[0], map.fader.modulate.a)
+	get_tree().process_frame.connect(watch2)
+	await map.transfer(5, 11, 13, 2, 2)
+	get_tree().process_frame.disconnect(watch2)
+	check("transfer_fade_none", is_zero_approx(max_a[0]) and map.player.grid == Vector2i(11, 13), max_a[0])
+	await map.transfer(5, 12, 13, 2)
+	check("transfer_fade_black_again", map.fader.color == Color.BLACK)
 	map.queue_free()
 	await frames(2)
 	DirAccess.remove_absolute(XSave.dir())
