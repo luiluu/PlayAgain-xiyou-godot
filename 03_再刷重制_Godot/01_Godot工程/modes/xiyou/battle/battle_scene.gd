@@ -710,6 +710,7 @@ func _main() -> void:
 		if logic.is_won():
 			otb.hide_bar()
 			await _victory()
+			reserve_battle_end_event(XState.current, 0)
 			finished.emit(0)
 			return
 		if logic.is_lost():
@@ -814,7 +815,19 @@ func _escape_success() -> void:
 	await message.run({"lines": [escape_text()]})
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(1)
+	reserve_battle_end_event(XState.current, 1)
 	finished.emit(1)
+
+
+## MV BattleManager.updateBattleEnd（rpg_managers.js 2696）：没逃跑且全灭时，可输就复活到 1 血、不可输去游戏结束，两种都不预约；
+## 其余（胜利、逃跑）预约公共事件 1308「战斗结束变量清除」（清太极之力、查克拉、命运连锁、一护技能号等战斗变量，町甄纯真值回初值，
+## 欠债减一）。单槽，覆盖战斗里留下的预约（同 $gameTemp.reserveCommonEvent）；回地图后 XMapScene 照常跑（地图事件跑完才轮到它）。
+## 参照 tests/fixtures/battle_end_ce_oracle.json（GD5）。设 0 关掉＝重制原来不预约的样子
+static var BATTLE_END_COMMON_EVENT := 1308
+
+static func reserve_battle_end_event(s: XState, result: int) -> void:
+	if BATTLE_END_COMMON_EVENT > 0 and s != null and result != 2:
+		s.reserve_common_event(BATTLE_END_COMMON_EVENT)
 
 
 ## 逃跑失败：逃跑音效，消息窗两行「<队名>开始逃跑了！」「\.但是没有逃跑成功！」，等按键后这次行动结束（OTB endAction）
