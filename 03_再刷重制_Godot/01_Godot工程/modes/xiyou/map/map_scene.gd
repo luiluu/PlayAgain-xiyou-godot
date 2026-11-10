@@ -710,7 +710,7 @@ func _encounter() -> void:
 	var result: int = await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
 	# 随机遇敌不可败，全灭走 Scene_Gameover（O-244 补：原来不看返回值，人 0 血留在地图；挂机快速战斗同走这里）
-	if result == 2:
+	if result == 2 and not last_battle_escaped:
 		await game_over()
 
 
@@ -1173,6 +1173,9 @@ func play_me(audio: Dictionary) -> void:
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 ## 上一场战斗是被事件 353 游戏结束收场的（原版直接 goto Scene_Gameover，可输的战斗也一样；301 据此走结束画面，审查第 75 期 P3-1）
 var last_battle_game_over := false
+## 上一场战斗按「逃跑」收场（_escaped：逃跑成功、340 中止）：即使 340 同帧全灭把结果改写成 2，updateBattleEnd 也只 pop 回地图，
+## 不去结束画面、不复活（GB13）
+var last_battle_escaped := false
 
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
@@ -1207,6 +1210,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
 	last_battle_game_over = battle.logic.game_over
+	last_battle_escaped = battle.logic.escaped and not battle.logic.game_over
 	# BattleManager.replayBgmAndBgs 在战斗收场时就调（胜利是关结算画面的 endVictoryPhase，全灭／逃跑在 process 里），
 	# 早于 Scene_Battle 的淡出：战斗曲（或胜利曲）这时停，地图曲接着放、淡入；没放完的 ME 地图接过来
 	battle.stop_bgm()
@@ -1217,7 +1221,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 		var out := XSceneFade.new()
 		out.mouse_filter = Control.MOUSE_FILTER_STOP
 		ui.add_child(out)
-		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and (not can_lose or last_battle_game_over) else XBattleTransition.FADE_FRAMES)
+		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and not last_battle_escaped and (not can_lose or last_battle_game_over) else XBattleTransition.FADE_FRAMES)
 		while out.busy():
 			out.step()
 			XBattleTransition.note({"phase": "out", "fade": out.opacity})

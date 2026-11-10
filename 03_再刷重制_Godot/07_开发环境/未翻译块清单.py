@@ -29,6 +29,12 @@ FAMILIES = ['换装', '护盾', '复活', 'regenerate', 'reserveCommonEvent', '�
 
 ADD_STATE_RE = re.compile(r'addState\(\s*(\d+)\s*\)')
 ADD_STATE_ANY_RE = re.compile(r'addState\(\s*([^)]*?)\s*\)')
+# 已逐个核过的「addState(非整数字面量)」来源（八戒 GB13，v0.62.12）：重制翻译与原版一致，不再列为待查
+# - 状态 292～317（单号）：暴击时 user.addState(param, turns)，原版各层 addState 只认第一个参数，回合数不生效；翻成 add_state criticalOnly
+# - 状态 319：暴击时 target.addState(318)
+# - 状态 1431 巡猎：addState(1430 + k)，按速度分档（tests/xiyou_state_effects fix.1431）
+# - 状态 1711 秩序、1716 同谐：forEach 里 addState(id)，按存活人数分档（tests/xiyou_state_effects fix.tiers）
+UNRESOLVED_CHECKED = {f'状态 {i}' for i in (292, 299, 301, 305, 307, 309, 311, 313, 315, 317, 319, 1431, 1711, 1716)}
 LEARN_RE = re.compile(r'learnSkill\(\s*(\d+)\s*\)')
 WEAK_RE = re.compile(r'状态\s*(\d+)')
 # 插件备注标签：PushState／StartPushState／StartWTPushState／StartAEPushState／RecPushState／PushsubState／StartRom…PushState + 状态号（4 位补零）
@@ -325,8 +331,10 @@ def render(rows, g, s, detail):
             paths = r['paths'][:3] + (['…共 %d 条' % len(r['paths'])] if len(r['paths']) > 3 else [])
             out.append(f'| {r["state"]} | {r["name"]} | {r["phase"]} | {r["family"]} | {"；".join(paths)} |')
         out.append('')
-    out.append(f'未解析的 `addState(非整数字面量)`：{sum(g.unresolved.values())} 处（来源 {len(g.unresolved)} 个），例：' +
-               '、'.join(f'{k}×{v}' for k, v in list(g.unresolved.most_common(8))) + '。\n')
+    left = Counter({k: v for k, v in g.unresolved.items() if k not in UNRESOLVED_CHECKED})
+    done = sum(v for k, v in g.unresolved.items() if k in UNRESOLVED_CHECKED)
+    out.append(f'未解析的 `addState(非整数字面量)`：{sum(g.unresolved.values())} 处（来源 {len(g.unresolved)} 个；其中 {done} 处已逐个核过，见 UNRESOLVED_CHECKED）' +
+               ('，未核的例：' + '、'.join(f'{k}×{v}' for k, v in list(left.most_common(8))) if left else '，全部已核') + '。\n')
     weak_only = sorted({r['state'] for r in rows if r['paths'] and all(p.endswith('✱') for p in r['paths'])})
     out.append(f'只靠弱匹配（备注「状态 n」✱）判可达的状态 {len(weak_only)} 个：{weak_only}。\n')
     out.append('切片集合：' + '，'.join(f'{k} {len(v)}' for k, v in s.items()) + '（道具／武器／防具为估算）。')

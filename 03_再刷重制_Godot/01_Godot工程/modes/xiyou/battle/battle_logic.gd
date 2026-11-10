@@ -419,9 +419,15 @@ var game_over := false
 func is_lost() -> bool:
 	return game_over or alive(actors).is_empty()
 
-## 敌群事件 340 中止战斗（command340 → BattleManager.abort；审查第 75 期 P3-1）：本页后面的指令不再执行，
-## 战斗按「中止」收场（结果 1、算逃跑：预约 1308、不判输赢）。原版 checkAbort 在全灭／全歼之前判，所以先于输赢
+## 敌群事件 340 中止战斗（command340 → BattleManager.abort；审查第 75 期 P3-1）：本页这一帧照常往下跑到停下等待为止，
+## 战斗按「中止」收场（结果 1、算逃跑：预约 1308）。原版 checkAbort 在全灭／全歼之前判，所以先于输赢
 var aborted := false
+## 340 之后解释器停在了等待上（文字、等待等）：原版下一帧起只走 checkAbort，不再判全灭／全歼（见 abort_checks_end）
+var abort_yield := false
+
+## 340 所在页这一帧跑完了（没停在等待上）：原版 updateEventMain 的 checkBattleEnd 在 processAbort 之后接着判全灭、全歼
+func abort_checks_end() -> bool:
+	return aborted and not abort_yield
 
 ## 战斗该收场了：中止、全歼或全灭（循环与事件检查用；输赢各自另判）
 func is_over() -> bool:
@@ -1240,6 +1246,10 @@ func troop_events(first_subject: XBattler = null, turn_end := false) -> Array:
 func resume_event(token: int, response = null) -> Array:
 	if _waiting.is_empty() or int(_waiting.token) != token:
 		return []
+	if aborted:
+		# 340 之后显示的文字：确认后敌群解释器不再更新（BattleManager 只走 checkAbort），本页后面与上层公共事件都不执行
+		_clear_event_cursor()
+		return []
 	var frame: MVEventCore = _waiting.frame
 	_waiting = {}
 	frame.resume(response)
@@ -1272,6 +1282,8 @@ func _drive_events() -> Array:
 	var logs := []
 	var pages: Array = XDB.rec("Troops", troop_id).get("pages", [])
 	while not _check.is_empty():
+		if aborted and _runner == null:
+			break  # 340 之后 checkBattleEnd 返回 true（或下一帧只走 checkAbort），不再取预约公共事件和别的页
 		_take_state_reserves()
 		for p in XStateEffects.take_forces():
 			logs.append_array(_force_action(p, _check.get("first")))  # queueForceAction：预约事件优先，跑 339（倒下了就不行动）
@@ -1302,6 +1314,8 @@ func _drive_events() -> Array:
 		logs.append_array(_runner.take_logs())
 		match str(r.kind):
 			"message":
+				if aborted:
+					abort_yield = true  # 340 之后停在文字上
 				_event_token += 1
 				_waiting = {"token": _event_token, "frame": _runner.waiting_frame(), "msg": r.msg}
 				logs.append({"type": "message", "msg": r.msg, "token": _event_token})
@@ -2230,6 +2244,8 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 		return 1.0
 	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
 		return 1.0
+	if XNumberBoost.owner(skill, u, t) != 0:  # 米拉／渡鸦数值池 itemHit 包装（在甚尔里面，影速加成只给甚尔自己）：归属技能打敌人必中
+		return 1.0
 	return clampf(_hit_formula("Accuracy Formula", "skillHitRate * (userHitRate - targetEvadeRate)", u, skill, t) + XToji.hit_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemHit 包装：天与咒缚影速
 
 
@@ -2239,8 +2255,10 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 		return 0.0
 	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
 	# （修负暴击率碰上 >100% 暴击回避负负得正），下面猫心必暴、云裳加成照旧（Kyo 11-01：必暴可以暴）
-	var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
-	var cri := maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+	# 米拉／渡鸦数值池 itemCri 包装（在甚尔里面）：渡鸦的非归属动作读面板暴击不带魂海加成
+	var cri := XNumberBoost.item_cri(skill, u, dt, func():
+		var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
+		return maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
@@ -2256,7 +2274,8 @@ func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
 	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
-	var base := 0.0 if XYomiJingliu.sure(u, skill) else _hit_formula("Evade Formula", "0", u, skill, t)
+	# 米拉／渡鸦数值池的 itemEva 包装也在甚尔里面（归属技能只打敌人，敌人不会天与咒缚，影速恒 0）
+	var base := 0.0 if XYomiJingliu.sure(u, skill) or XNumberBoost.owner(skill, u, t) != 0 else _hit_formula("Evade Formula", "0", u, skill, t)
 	return clampf(base + XToji.eva_bonus(u, skill, t), 0.0, 1.0)  # 甚尔 itemEva 包装：被打时天与咒缚影速
 
 

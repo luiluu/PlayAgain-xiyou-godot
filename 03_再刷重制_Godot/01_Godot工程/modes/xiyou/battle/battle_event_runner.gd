@@ -28,6 +28,16 @@ static var COVER = null
 
 
 func _execute(c: Dictionary):
+	# 340 之后（logic.aborted）：MV 解释器跑到第一条会等待的指令为止，这一帧之后不再被更新。文字（101～104）照常显示，
+	# 确认后 XBattleLogic.resume_event 丢掉游标；其余会等待的指令（230 等待、淡入淡出、带等待的闪烁等，MVEventCore._waits）
+	# 在战斗里只有画面效果，这里在它之前就停（画面差这一条）；339 强制行动要等行动结算，aborting 阶段不结算，也停。
+	# 353 游戏结束照常执行（原版切到结束画面）
+	if logic != null and logic.aborted and not logic.abort_yield:
+		var code := int(c.code)
+		if code == 339 or not [101, 102, 103, 104, 353].has(code) and _waits(c):  # 339 强制行动 setWaitMode('action')，aborting 阶段不再处理
+			logic.abort_yield = true
+			halted = true
+			return false
 	if COVER == null:
 		return super._execute(c)
 	var where := _cover_where()
@@ -491,13 +501,13 @@ func _execute_env(c: Dictionary):
 			halted = true
 			return false
 		340:
-			# 中止战斗（command340 → BattleManager.abort，_phase＝aborting）：之后 BattleManager 不再走 updateEventMain，敌群解释器
-			# 不再更新，本页后面的指令与上层公共事件都不执行；下一帧 checkAbort → processAbort（结果 1、_escaped，预约 1308）。
-			# 现有数据没有用到（审查第 75 期 P3-1 补上，免得以后的数据静默跳过）
+			# 中止战斗（command340 只调 BattleManager.abort，_phase＝aborting，返回 true）：解释器这一帧照常往下跑，直到停下等待
+			# （文字、等待、淡入淡出等，见 _execute）或本页跑完；之后 BattleManager 不再走 updateEventMain，敌群解释器不再更新。
+			# 本页这一帧跑完时 updateEventMain 接着 checkBattleEnd：checkAbort（processAbort 结果 1）之后原版不 return，
+			# 再判全灭（processDefeat 结果改写成 2）、全歼（processVictory），见 XBattleScene._abort_battle。
+			# 现有数据没有用到（审查第 75 期 P3-1 补上；GB13 按原版改成不立即停）
 			logic.aborted = true
 			logs.append({"type": "abort"})
-			halted = true
-			return false
 		339:
 			logs.append_array(logic._force_action(p, first_subject))
 			index += 1
