@@ -517,7 +517,25 @@ func _execute_env(c: Dictionary):
 				logs.append({"type": "toast", "text": MVScript._toaster_text(one)})
 				index = at
 				return null
+			# rules-gaps9：角色技能脚本（物品选中角色 $gameParty._targetActorId 的火法天下第一 CE942～946、逐个角色学技能的 CE1501 等）：
+			# 照地图的 MVScript._target_actor_script（整段认得才执行，认不得返回 null 走下面的通用跳过）；提示记成 toast。
+			# 那边是协程（地图解释器要 await），这些写法里没有真正的等待，经 Callable 调用直接得到结果
+			if code.contains("$gameActors.actor("):
+				var sink := _ToastSink.new()
+				sink.logs = logs
+				var picked = Callable(MVScript, "_target_actor_script").call(code, {"host": sink})
+				if picked is Array:
+					index = at
+					return null
 			return super(c)
 		_:
 			return super(c)
 	return null
+
+
+## rules-gaps9：给 MVScript._target_actor_script 当 interp.host，提示记进本次事件的日志
+class _ToastSink:
+	var logs: Array
+
+	func toast(text: String) -> void:
+		logs.append({"type": "toast", "text": text})
