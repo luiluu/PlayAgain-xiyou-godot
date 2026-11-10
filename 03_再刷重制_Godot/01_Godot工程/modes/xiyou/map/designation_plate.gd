@@ -5,7 +5,7 @@ extends XMVCanvas
 ## 画布内：图标 drawIcon(icon, 58, 0)（Star 版 drawIcon 再右移半格 16 → x 74，32×32）、称号名 y 32 行高 22 居中（称号颜色）、
 ## 开局名字 $gamePlayer.SaveActorName y 54 行高 22 居中（白色）。玩家精灵透明时随精灵隐藏；载具的那张只在玩家坐着它、位置重合时显示。
 ## installDisplayPreferencesRuntime 另有一张名牌，只在精灵没有 _nameSpriteOL 时画，单机玩家与载具都有，所以不出现。
-## 参照为读码（参照引擎里 Sprite 是桩，量不了画面）；常量见下。
+## 参照为读码（参照引擎里 Sprite 是桩，量不了画面）；常量见下。ui-pixel4 起与原版浏览器里的名牌位图逐像素比（tests/xiyou_designation_plate）。
 const W := 180.0
 const H := 78.0
 const FONT_SIZE := 16
@@ -25,7 +25,7 @@ func _init() -> void:
 	super()
 	var bold := FontVariation.new()
 	bold.base_font = XUI.font()
-	bold.variation_embolden = 0.7  # Bitmap.fontBold
+	bold.variation_embolden = 0.3  # Bitmap.fontBold（ui-pixel4 与原版位图比：0.7 平均差 6.2、0.3 为 4.0、0 为 4.0，墨迹框都在 1 像素内）
 	font = bold
 	size = Vector2(W, H)
 	painter = _paint

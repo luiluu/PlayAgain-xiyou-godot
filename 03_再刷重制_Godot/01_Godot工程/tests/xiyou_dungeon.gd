@@ -68,8 +68,8 @@ class DungeonHost:
 		game_over_hit = true
 		super.game_over()
 
-	func transfer(id: int, x: int, y: int, d: int) -> void:
-		super.transfer(id, x, y, d)
+	func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
+		super.transfer(id, x, y, d, fade_type)
 		erased = {}
 
 	func erase_event(id: int) -> void:

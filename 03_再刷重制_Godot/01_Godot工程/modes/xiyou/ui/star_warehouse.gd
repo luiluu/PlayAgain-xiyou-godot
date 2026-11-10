@@ -12,9 +12,14 @@ extends Control
 ##   不可存放都不蜂鸣（这与 PH 仓库 XWarehouseScene 不同，别「统一」）；不可存放另弹提示。
 ## - 说明卡：装备选中时显示（同物品页的说明卡）；宠物不显示——原版宠物是 Game_Enemy 没有 note，选中时 HelpExtend 读
 ##   item.note.split 抛错停机（O-125，优化登记），这里不画卡、照常存取。
+## - 说明卡位置（O-待定·星级仓库说明卡）：原版 Window_StarItemList.updateHelp 只 setHelpWindowItem、不调 updatePos，
+##   卡的位置每次 setItem 都在上一次的位置上再做一遍修正（x<900 右移 52、y<220 下移 32…），从左上角 (0,0) 起一路漂移
+##   （ui-pixel4 对照：存入前 (52,32)，存一件后 (104,64)）。重制照别的列表贴着选中格放（O-008）。
+##   回退：STAR_HELP_DRIFT = true 照原版漂移（按重制 _update_help 的调用次数累加，与原版 updateHelp 次数大体一致）。
 
 signal closed
 
+static var STAR_HELP_DRIFT := false
 const CAT_RECT := Rect2(0, 1, 1280, 64)
 const LIST_RECT := Rect2(0, 65, 1280, 655)
 const LH := 36.0
@@ -33,6 +38,7 @@ var data: Array = []
 var cat_win: XMVWindow
 var list_win: XMVWindow
 var help_card: XHelpCard
+var _drift := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -133,8 +139,28 @@ func _update_help() -> void:
 		help_card.show_for({})
 		return
 	help_card.show_for(data[index])
+	if STAR_HELP_DRIFT:
+		_drift = drift_step(_drift, help_card.size)
+		help_card.position = _drift
+		return
 	var p := cell(index, top)
 	help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(XMVWindow.PADDING, XMVWindow.PADDING) + p, Vector2(COL_W, LH)))
+
+
+## 原版 Sprite_ItemHelp.setItem 的位置修正（HelpExtend 第 337～347 行），在上一次的位置上累加
+static func drift_step(p: Vector2, card: Vector2) -> Vector2:
+	p.x += 52 if p.x < 900 else -10
+	if p.y < 220:
+		p.y += 32
+	if p.y > 400:
+		p.y -= 100
+	if p.y > 500:
+		p.y -= 250
+	if p.x + card.x > 1280:
+		p.x = 1280 - card.x - 30
+	if p.y + card.y > 720:
+		p.y = 720 - card.y - 30
+	return p
 
 
 # ---- 操作 ----

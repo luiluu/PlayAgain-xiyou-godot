@@ -132,7 +132,7 @@ class EventHost:
 	func show_text(face: String, idx: int, lines: Array, _background := 0, _position := 2) -> void:
 		show_message({"face": face, "index": idx, "lines": lines})
 
-	func transfer(id: int, x: int, y: int, d: int) -> void:
+	func transfer(id: int, x: int, y: int, d: int, _fade_type := 0) -> void:
 		trace.append({"t": "transfer", "map": id, "x": x, "y": y, "d": d})
 		var s := XState.current
 		if id != s.map_id:

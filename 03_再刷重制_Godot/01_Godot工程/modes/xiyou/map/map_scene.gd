@@ -1057,26 +1057,33 @@ static func _black_rect() -> ColorRect:
 	r.modulate.a = 0.0
 	return r
 
+## 淡出淡入的帧数：Game_Interpreter.fadeSpeed／Scene_Base.fadeSpeed 都是 24 帧（0.4 秒；原来写成 0.3 秒）
+const FADE_FRAMES := 24
+
 ## 事件 221／222（解释器调）：淡出淡入画面，窗口不被盖住
 func fade(out: bool) -> void:
 	await _tween_alpha(screen_fader, out)
 
-## 场所移动：黑幕盖住全部
-func transfer_fade(out: bool) -> void:
+## 场所移动：黑幕盖住全部。fade_type 是 201 的第 6 个参数（Game_Player.fadeType）：0 黑、1 白、2 不淡出
+## （Scene_Map.fadeOutForTransfer／fadeInForTransfer；原来一律黑、也不认「无」）
+func transfer_fade(out: bool, fade_type := 0) -> void:
+	if fade_type == 2:
+		return
+	fader.color = Color.WHITE if fade_type == 1 else Color.BLACK
 	await _tween_alpha(fader, out)
 
 func _tween_alpha(rect: ColorRect, out: bool) -> void:
 	var t := create_tween()
-	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, 0.3)
+	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, FADE_FRAMES / 60.0)
 	await t.finished
 
-func transfer(id: int, x: int, y: int, d: int) -> void:
+func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
 	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
 		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
 		return
-	await transfer_fade(true)
+	await transfer_fade(true, fade_type)
 	await load_map(id, x, y, d if d > 0 else player.direction)
-	await transfer_fade(false)
+	await transfer_fade(false, fade_type)
 
 func play_bgm(audio) -> void:
 	var name := str(audio.get("name", "")) if audio is Dictionary else ""

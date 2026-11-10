@@ -282,10 +282,10 @@ func _host_command(c: Dictionary):
 		201:
 			if int(p[0]) == 0:
 				var to: Vector2i = TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [map_id, event_id, int(p[1]), int(p[2]), int(p[3])], Vector2i(int(p[2]), int(p[3])))
-				await host.transfer(int(p[1]), to.x, to.y, int(p[4]))
+				await host.transfer(int(p[1]), to.x, to.y, int(p[4]), int(p[5]) if p.size() > 5 else 0)
 			else:
 				var s := state()
-				await host.transfer(int(s.variable(int(p[1]))), int(s.variable(int(p[2]))), int(s.variable(int(p[3]))), int(p[4]))
+				await host.transfer(int(s.variable(int(p[1]))), int(s.variable(int(p[2]))), int(s.variable(int(p[3]))), int(p[4]), int(p[5]) if p.size() > 5 else 0)
 		221:
 			await host.fade(true)
 		222:

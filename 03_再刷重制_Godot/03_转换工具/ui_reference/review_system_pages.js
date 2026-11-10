@@ -1020,6 +1020,66 @@
         }
     };
 
+    // 界面像素对照四期（白龙 ui-pixel4）：宝珠镶嵌，同 tests/xiyou_orb_ui 的 --out 截图点（orb_ui_oracle.json 的 w3）：
+    // 练习剑（武器 2）三孔武器宝珠，第 1 孔镶宝珠·锋刃·凝砂（2947）；物品页武器分类选中它进操作菜单 → 选第 1 孔（操作第 3 行）进候选列表
+    P.px4_orb = {
+        setup: async function () {
+            $gameParty._items = {}; $gameParty._weapons = {}; $gameParty._armors = {};
+            $gameParty.gainItem($dataWeapons[2], 1);
+            var eq = $gameParty.weapons().filter(function (x) { return (x.originalBaseItemId || x.baseItemId) === 2; })[0];
+            if (!eq) throw new Error('没有练习剑');
+            eq.augmentSlots = ['武器宝珠', '武器宝珠', '武器宝珠']; eq.augmentSlotEnable = [true, true, true]; eq.augmentSlotItems = ['none', 'none', 'none'];
+            $gameParty.gainItem($dataItems[2947], 1); ItemManager.applyAugmentEffects(eq, $dataItems[2947], 1, true);
+            [2947, 2949, 2952, 3018, 2997, 3000, 3012, 56, 441, 2000].forEach(function (id) { $gameParty.gainItem($dataItems[id], 1); });
+            S.px4Eq = eq;
+            await push(Scene_Item);
+            var sc = scene();
+            sc._categoryWindow.selectSymbol('weapon'); sc._categoryWindow.deactivate(); sc._itemWindow.setCategory('weapon'); sc._itemWindow.refresh();
+            sc._itemWindow.activate(); sc._itemWindow.select(sc._itemWindow._data.indexOf(eq)); sc._itemWindow.updateHelp();
+            sc._itemWindow.processOk();  // 走真按确定：列表先失活（直接调 onItemOk 列表还活着，右侧会留着装备详情，实玩看不到）
+        },
+        shots: {
+            orb_action_weapon3: async function () { scene()._itemActionWindow.select(3); },
+            orb_list_weapon_slot1_filled: async function () { var sc = scene(); sc._itemActionWindow.processOk(); }
+        },
+        extra: function () { var e = S.px4Eq; return e ? {slots: e.augmentSlots, items: e.augmentSlotItems, name: e.name} : null; }
+    };
+
+    // 称号头顶名牌（白龙 ui-pixel4）：地图 5 上玩家精灵的 _nameSpriteOL（Star_Designation，180×78 位图）。
+    // 设成称号表第 1 条（名字／图标／颜色照插件参数）、开局名「测试名」，_RefDesignation 让 updateOther 重画；
+    // 读数 extra.plate 是名牌位图的 PNG（data URL），与 Godot XDesignationPlate 单独渲染的图逐像素比（designation_plate_compare.py）。
+    P.px4_designation = {
+        setup: async function () {
+            var d = JSON.parse(PluginManager.parameters('Star_Designation')['Designation 1']);
+            $gamePlayer.SaveActorName = '测试名';
+            $gamePlayer.DesignationName = $gamePlayer.userDesignation = d.DesignationName;
+            $gamePlayer.DesignationIcon = Number(d.DesignationIcon); $gamePlayer.DesignationColor = d.DesignationColor;
+            $gamePlayer._RefDesignation = true;
+            await frames(4);
+            var sp = plateSprite();
+            if (!sp) throw new Error('找不到玩家名牌');
+            sp.bitmap.clear();  // 开局名在 initialize 时画（那时还没设），清掉按 initialize 的次序重画一遍
+            sp.bitmap.fontSize = 16; sp.bitmap.fontBold = true; sp.bitmap.outlineColor = '#000000'; sp.bitmap.textColor = '#ffffff';
+            sp.bitmap.drawText($gamePlayer.SaveActorName, 0, 54, 180, 22, 'center');
+            sp.bitmap.textColor = $gamePlayer.DesignationColor;
+            sp.bitmap.drawText($gamePlayer.DesignationName, 0, 32, 180, 22, 'center');
+            sp.bitmap.drawIcon($gamePlayer.DesignationIcon, 58, 0, 1);
+            S.px4Plate = {name: d.DesignationName, icon: Number(d.DesignationIcon), color: d.DesignationColor};
+            await settle();
+        },
+        shots: { px4_designation_plate: async function () {} },
+        extra: function () {
+            var sp = plateSprite(), b = sp && sp.bitmap;
+            return {plate: b ? b._canvas.toDataURL('image/png') : null, size: b ? [b.width, b.height] : null, anchor: sp ? [sp.anchor.x, sp.anchor.y] : null,
+                pos: sp ? [sp.x, sp.y] : null, visible: sp ? sp.visible : null, designation: S.px4Plate};
+        }
+    };
+    function plateSprite() {
+        var set = scene()._spriteset, out = null;
+        (set && set._characterSprites || []).forEach(function (c) { if (c._character === $gamePlayer && c._nameSpriteOL) out = c._nameSpriteOL; });
+        return out;
+    }
+
     // 换装卡战斗外观（八戒_71 期一，单独跑：node review_system_pages.cjs <目录> battle_costume）：角色 1 学会 6801「变身——深渊骑士」，
     // 开战 StartPushState1201 100% 推上卡状态，Custom Apply Effect setBattlerImage('Enemy_General_M')；地图 5、敌群 2、难度 3、四人
     P.battle_costume = {
