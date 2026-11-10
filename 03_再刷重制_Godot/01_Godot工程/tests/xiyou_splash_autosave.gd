@@ -39,6 +39,11 @@ func _run() -> void:
 
 	# ---- 开场图 ----
 	check("splash_not_in_tests", not XSplashScreen.wanted())
+	# 按键冒烟不放开场图（安卓模拟器冒烟的第一下键不能落在开场图上）
+	check("splash_smoke_detect", XSplashScreen.is_smoke_run(PackedStringArray(["--report-entry", "--smoke-keys=space"])))
+	check("splash_smoke_detect_no_keys", not XSplashScreen.is_smoke_run(PackedStringArray(["--report-entry"])))
+	check("splash_smoke_detect_empty", not XSplashScreen.is_smoke_run(PackedStringArray()))
+	check("splash_smoke_skip_default_on", XSplashScreen.SKIP_FOR_SMOKE)
 	for n in XSplashScreen.IMAGES:
 		check("splash_image_" + n, XDB.img_path("titles2", n) != "")
 	var host := _host()
