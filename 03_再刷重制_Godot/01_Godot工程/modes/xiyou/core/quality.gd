@@ -78,7 +78,7 @@ static func label(item: Dictionary, kind: String) -> String:
 		if t != null:
 			tags.append(t)
 		if kind == "armor" and int(item.get("etypeId", 0)) == 17:
-			tags.append("神武")
+			tags.append(XTianqiGear.type_name(17))  # 天启篇叫神器
 	return grade_name(item) + ("（%s）" % "·".join(tags) if not tags.is_empty() else "")
 
 

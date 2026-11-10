@@ -170,9 +170,9 @@ static func evaluation_lines(data: Dictionary) -> Array:
 
 
 static func equipment_title(r: Dictionary) -> String:
-	var types: Array = XDB.system().get("equipTypes", [])
 	var et := int(r.item.get("etypeId", 0))
-	var t := str(types[et]) if et > 0 and et < types.size() and str(types[et]) != "" else "装备"
+	var t := XTianqiGear.type_name(et) if et > 0 else ""
+	t = t if t != "" else "装备"
 	return t + " · " + XGearQuery.text(str(r.item.get("name", "")))
 
 

@@ -2,9 +2,13 @@ class_name XEquipment
 extends RefCounted
 ## 装备交换与预览共用规则；预览复制角色，绝不临时改动真实装备/生命/背包。
 
+## 天启篇（XTianqiGear）：删除的栏位不能换；坐骑不受难度适应 1691 的封印
 static func can_change(a: XActor, slot: int) -> bool:
 	var slots := a.equip_slots()
-	return slot >= 0 and slot < slots.size() and not a.traits_set(53).has(int(slots[slot])) and not a.traits_set(54).has(int(slots[slot]))
+	if slot < 0 or slot >= slots.size() or not XTianqiGear.open_type(int(slots[slot])):
+		return false
+	var t := int(slots[slot])
+	return not a.traits_set(53).has(t) and not (a.traits_set(54).has(t) and not XTianqiGear.seal_ignored(t))
 
 ## Window_EquipItem.includes／bestEquipItem：装备类型等于该槽当前的槽位类型（双持时第 2 格是武器）且能装备
 static func fits(a: XActor, slot: int, item: Dictionary) -> bool:

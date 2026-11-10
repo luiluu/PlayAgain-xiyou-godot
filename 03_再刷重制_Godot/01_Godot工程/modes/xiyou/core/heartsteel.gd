@@ -303,5 +303,5 @@ static func clear_reward(logic, result: int) -> bool:
 	if logic._rule().next_float("heartsteel.reward") >= REWARD_RATE:
 		return false
 	s.gain_gear("armor", ARMOR, 1)
-	XToast.show_text("获得神武：心之钢！")
+	XToast.show_text("获得%s：心之钢！" % XTianqiGear.type_name(17))  # 天启篇叫神器
 	return true

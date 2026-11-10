@@ -6,7 +6,7 @@ extends Control
 ## - 状态 (240,1,1040,172)：Window_SkillStatus＝头像 (0,0) 144；名字/Lv/状态图标/「战力」在 x 158、宽 144；
 ##   称号与 HP/MP/TP 在 x 314、宽 686；行高 36（XMenu.paint_actor_status）。
 ## - 槽位 (0,173,640,547)：槽位名系统色，列宽 = 最长槽位名＋空格（setSlotNameWidth）；图标在其后 +2、名字 +36（品质色）；
-##   空槽画图标 0 半透明；不能换的槽整行半透明。可见 14 行，19 个槽要滚动。
+##   空槽画图标 0 半透明；不能换的槽整行半透明。可见 14 行，19 个槽要滚动。天启篇只列 13 栏、按天启篇排列（XTianqiGear.view）。
 ## - 候选（Window_EquipItem，选槽后盖在槽位窗上）：背包里能装进该槽的装备（XItemRow，「序号/9,999」，按装备检索条件筛选排序）
 ##   ＋末行「卸载」（图标 1354，x 36、宽 570）。
 ## - 右下 (640,173,640,547)：物品信息窗（XItemScene.paint_info）与属性对比（Window_StatCompare）轮换，默认信息窗；
@@ -143,13 +143,23 @@ func commands() -> Array:
 
 
 func slot_name(i: int) -> String:
-	return str(XDB.system().equipTypes[actor().equip_slots()[i]])
+	return XTianqiGear.type_name(int(actor().equip_slots()[i]))
+
+
+## 显示的槽位（槽位序号，按显示顺序）：原版是全部 19 格；天启篇 13 栏、按天启篇排列（XTianqiGear.view）。
+## _slot 始终是槽位序号，_slot_top 与光标移动按显示行算。
+func slot_view() -> Array:
+	return XTianqiGear.view(actor())
+
+
+func _slot_row() -> int:
+	return maxi(0, slot_view().find(_slot))
 
 
 ## setSlotNameWidth：各槽位名加一个空格的最大字宽
 func slot_name_width(c: XMVCanvas) -> float:
 	var w := 0.0
-	for i in range(actor().equip_slots().size()):
+	for i in slot_view():
 		w = maxf(w, c.text_width(slot_name(i) + " "))
 	return w
 
@@ -213,7 +223,7 @@ func _temp_actor() -> XActor:
 
 # ---- 刷新 ----
 func _refresh() -> void:
-	var n := candidates().size() if _mode == "item" else actor().equip_slots().size()
+	var n := candidates().size() if _mode == "item" else slot_view().size()
 	var top := _item_top if _mode == "item" else _slot_top
 	list_win.up_arrow = top > 0
 	list_win.down_arrow = top < n - _rows()
@@ -236,7 +246,7 @@ func _update_help() -> void:
 	match _mode:
 		"slot":
 			rec = _slot_item()
-			row = _slot - _slot_top
+			row = _slot_row() - _slot_top
 		"item":
 			rec = _candidate()
 			row = _item_index - _item_top
@@ -302,8 +312,10 @@ func _paint_list(c: XMVCanvas) -> void:
 		return
 	var a := actor()
 	var nw := slot_name_width(c)
-	for i in range(_slot_top, mini(a.equips.size(), _slot_top + _rows())):
-		var y := (i - _slot_top) * LH
+	var view := slot_view()
+	for row in range(_slot_top, mini(view.size(), _slot_top + _rows())):
+		var i: int = view[row]
+		var y := (row - _slot_top) * LH
 		if _mode == "slot" and i == _slot:
 			c.cursor(Rect2(0, y, c.size.x, LH))
 		_paint_slot(c, a, i, y, nw)
@@ -448,8 +460,10 @@ func _move(d: int, wrap: bool) -> void:
 		"command":
 			_cmd = XMenu._move(_cmd, d, commands().size(), wrap)
 		"slot":
-			_slot = XMenu._move(_slot, d, actor().equip_slots().size(), wrap)
-			_slot_top = XMenu._scroll_to(_slot, _slot_top, _rows())
+			var view := slot_view()
+			var row := XMenu._move(_slot_row(), d, view.size(), wrap)
+			_slot = view[row]
+			_slot_top = XMenu._scroll_to(row, _slot_top, _rows())
 		"item":
 			_item_index = XMenu._move(_item_index, d, candidates().size(), wrap)
 			_item_top = XMenu._scroll_to(_item_index, _item_top, _rows())
@@ -536,7 +550,7 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 			if _mode == "slot":
-				_slot_top = clampi(_slot_top + d, 0, maxi(0, actor().equip_slots().size() - _rows()))
+				_slot_top = clampi(_slot_top + d, 0, maxi(0, slot_view().size() - _rows()))
 			elif _mode == "item":
 				_item_top = clampi(_item_top + d, 0, maxi(0, candidates().size() - _rows()))
 			_refresh()
@@ -556,10 +570,17 @@ func _click(p: Vector2) -> void:
 				_click_row(floori((p - CMD_RECT.position - pad).y / LH), commands().size(), "_cmd")
 		"slot":
 			if LIST_RECT.has_point(p):
-				_click_row(_slot_top + floori((p - LIST_RECT.position - pad).y / LH), actor().equip_slots().size(), "_slot")
+				_click_slot_row(_slot_top + floori((p - LIST_RECT.position - pad).y / LH))
 		"item":
 			if LIST_RECT.has_point(p):
 				_click_row(_item_top + floori((p - LIST_RECT.position - pad).y / LH), candidates().size(), "_item_index")
+
+
+## 槽位窗按显示行点：行换成槽位序号再走 _click_row
+func _click_slot_row(row: int) -> void:
+	var view := slot_view()
+	if row >= 0 and row < view.size():
+		_click_row(int(view[row]), actor().equip_slots().size(), "_slot")
 
 
 func _click_row(i: int, n: int, field: String) -> void:

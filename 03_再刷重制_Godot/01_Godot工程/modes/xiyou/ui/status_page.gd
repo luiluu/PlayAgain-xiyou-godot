@@ -299,11 +299,13 @@ static func _params_ops(a: XActor) -> Array:
 			var s := "%d%%" % int(XPower.js_round(v * 100)) if str(params.get("Parameter %d as %%" % i, "true")) == "true" else _num(v)
 			ops.append(_t(s, PARAM_X[col] + NAME_W, y, VALUE_W, "right"))
 	# drawEquipments：每个部位一行（空部位留空），图标 (x+2, y+2)、名字 (x+36, 宽 276)
-	for slot in range(a.equips.size()):
-		var e = a.equips[slot]
+	var view := XTianqiGear.view(a)  # 天启篇：13 栏按天启篇排列；原版就是逐格
+	for row in range(view.size()):
+		var slot: int = view[row]
+		var e = a.equips[slot] if slot < a.equips.size() else null
 		if not e is Dictionary or e.is_empty():
 			continue
-		var y := y0 + slot * LH
+		var y := y0 + row * LH
 		ops.append(["icon", int(e.get("iconIndex", 0)), EQUIP_X + 2, y + 2])
 		ops.append(_t(XQuality.list_name(e), EQUIP_X + 36, y, 276, "left", XGear.color(e)))
 	return ops
