@@ -587,6 +587,8 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
 ## 预设键白名单（同参照 event_state_probe.cjs PRESET_KEYS）：不认识的键记下来，测试红（审查 49）
 const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "maxLevel", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
+## cc 分段甲 a6：actors.N 下认的子键（同参照 ACTOR_PRESET_KEYS）；不认识的记成坏键「actors.N.键」
+const ACTOR_PRESET_KEYS := ["level", "skills", "forget", "armors", "weapons", "paramPlus", "hp", "mp", "states"]
 var bad_preset_keys := []
 
 func _apply_preset(s: XState, p: Dictionary) -> void:
@@ -605,6 +607,10 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 	for id in p.get("actors", {}):
 		var a := s.actor(int(id))
 		var spec: Dictionary = p.actors[id]
+		for k in spec.keys():
+			var bad := "actors.%s.%s" % [id, k]
+			if not ACTOR_PRESET_KEYS.has(k) and not bad_preset_keys.has(bad):
+				bad_preset_keys.append(bad)
 		if spec.has("level"):
 			a.change_level_mv(int(spec.level))
 		for sk in spec.get("skills", []):
@@ -624,6 +630,21 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 				a.refresh_passive()
 				a.release_unequippable()
 				a.refresh_passive()
+		# cc 分段甲 a6：角色状态门，同参照顺序（能力 → 状态 → HP → MP）。paramPlus 同指令 317（XParamPlus.add 后夹 HP／MP）；
+		# states 同 Game_Battler.addState（死者不加，同 mv_script 的 addState 整段）；hp／mp 同 setHp／setMp（refresh 夹到上限）
+		for i in spec.get("paramPlus", {}):
+			XParamPlus.add(s, int(id), int(i), float(spec.paramPlus[i]))
+			a.hp = minf(a.hp, a.mhp)
+			a.mp = minf(a.mp, a.mmp)
+		for st in spec.get("states", []):
+			if not a.state_ids.has(1):
+				a.add_state(int(st))
+		if spec.has("hp"):
+			a.hp = clampf(float(spec.hp), 0.0, a.mhp)
+			a.refresh_resources()
+		if spec.has("mp"):
+			a.mp = clampf(float(spec.mp), 0.0, a.mmp)
+			a.refresh_resources()
 	if p.has("gold"):
 		s.gold = int(p.gold)
 	for id in p.get("items", {}):

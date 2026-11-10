@@ -825,11 +825,25 @@ class PresetKeysTests(unittest.TestCase):
         self.assertEqual(keys(js), keys(gd))
         self.assertIn('playtime', keys(js))
 
+    def test_actor_whitelists_match(self):
+        """cc 分段甲 a6：actors.N 子键白名单两边一致，含角色状态门四个键。"""
+        import re
+        js = re.search(r"const ACTOR_PRESET_KEYS = \[([^\]]*)\]", PROBE.read_text())[1]
+        gd = re.search(r'const ACTOR_PRESET_KEYS := \[([^\]]*)\]', COMPARE.read_text())[1]
+        keys = lambda t: sorted(re.findall(r"""['"]([A-Za-z_]+)['"]""", t))
+        self.assertEqual(keys(js), keys(gd))
+        for k in ('paramPlus', 'hp', 'mp', 'states'):
+            self.assertIn(k, keys(js))
+
+    def test_probe_rejects_unknown_actor_key(self):
+        self.assertEqual(self.run_apply({'actors': {'1': {'state': [5]}}}), {'err': 'event_presets 不认识的角色预设键: actors.1.state'})
+
     def run_apply(self, preset):
         src = PROBE.read_text()
         start = src.index('function applyPreset(p) {')
         body = src[start:src.index('\n}\n', start) + 3]
         keys = src[src.index('const PRESET_KEYS'):src.index('\n', src.index('const PRESET_KEYS'))]
+        keys += '\n' + src[src.index('const ACTOR_PRESET_KEYS'):src.index('\n', src.index('const ACTOR_PRESET_KEYS'))]
         js = keys + '\nconst w = {Graphics: {frameCount: 0}};\n' + body + (
             '\ntry { applyPreset(%s); console.log(JSON.stringify({fc: w.Graphics.frameCount, pt: Math.floor(w.Graphics.frameCount / 60)})); }'
             ' catch (e) { console.log(JSON.stringify({err: e.message})); }\nprocess.exit(0);' % json.dumps(preset))
@@ -893,6 +907,78 @@ class PresetContributionReportTests(unittest.TestCase):
             self.assertIn('m1e1p0#o4_3', r.stdout)
             self.assertEqual(json.loads(out.read_text())['groups'][0]['group'], 'o4')
         self.assertEqual((TOOLS / 'event_presets.json').read_bytes(), before)
+
+
+def _anc():
+    sp = importlib.util.spec_from_file_location('anc_preset', TOOLS / '事件祖先预设.py')
+    m = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(m)
+    return m
+
+
+def _c(code, params, indent=0):
+    return {'code': code, 'indent': indent, 'parameters': params}
+
+
+class AncestorTraceTests(unittest.TestCase):
+    """审查 72 P3-3：trace_var 倒推算术；cc 分段甲 a6：角色 HP／MP／能力、状态门、开局等级上限读正式源。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.anc = _anc()
+
+    def gate(self, pre, val, op=1):
+        """门前 pre 一串指令，门是「变量 752 ≥ val」，返回 trace_var 的结果"""
+        lst = pre + [_c(111, [1, 752, 0, val, op]), _c(0, [], 1), _c(412, [])]
+        return self.anc.trace_var(lst, len(pre), {'variables': {'752': val}})
+
+    def test_arith_back(self):
+        # 752 = 206；752 /= 30；752 >= 200 → 206 = 6000（ce2495 锻炼链）
+        self.assertEqual(self.gate([_c(122, [752, 752, 0, 1, 206]), _c(122, [752, 752, 4, 0, 30])], 200), {'variables': {'206': 6000}})
+        # += 5、-= 3、*= 4：倒推 (40/4)+3-5 = 8
+        pre = [_c(122, [752, 752, 1, 0, 5]), _c(122, [752, 752, 2, 0, 3]), _c(122, [752, 752, 3, 0, 4])]
+        self.assertEqual(self.gate(pre, 40), {'variables': {'752': 8}})
+        # *= 4 除不尽：放弃，原样返回
+        self.assertEqual(self.gate([_c(122, [752, 752, 3, 0, 4])], 41), {'variables': {'752': 41}})
+        # 倒推后前面接的是不认得的赋值（变量 = 常量）：放弃
+        self.assertEqual(self.gate([_c(122, [752, 752, 0, 0, 7]), _c(122, [752, 752, 1, 0, 5])], 40), {'variables': {'752': 40}})
+
+    def test_side_branch_add_skipped(self):
+        # 旁支（另一个 111 里）的 += 不算，接着往前找到物品数
+        pre = [_c(122, [752, 752, 0, 3, 0, 179]), _c(111, [0, 5, 0]), _c(122, [752, 752, 1, 0, 9], 1), _c(0, [], 1), _c(412, [])]
+        self.assertEqual(self.gate(pre, 3), {'items': {'179': 3}})
+
+    def test_actor_resources_and_params(self):
+        hp = self.gate([_c(122, [752, 752, 0, 3, 3, 87, 2])], 100000)
+        self.assertEqual(hp, {'actors': {'87': {'paramPlus': {'0': 100000}, 'hp': 100000}}})
+        mp = self.gate([_c(122, [752, 752, 0, 3, 3, 88, 3])], 500)
+        self.assertEqual(mp, {'actors': {'88': {'paramPlus': {'1': 500}, 'mp': 500}}})
+        atk = self.gate([_c(122, [752, 752, 0, 3, 3, 86, 6])], 15000)
+        self.assertEqual(atk, {'actors': {'86': {'paramPlus': {'2': 15000}}}})
+        mmp = self.gate([_c(122, [752, 752, 0, 3, 3, 88, 5])], 50000)
+        self.assertEqual(mmp, {'actors': {'88': {'paramPlus': {'1': 50000}}}})
+
+    def test_level_raises_max_level(self):
+        lv = self.anc.MV_START_MAX_LEVEL
+        self.assertEqual(self.gate([_c(122, [752, 752, 0, 3, 3, 93, 0])], lv), {'actors': {'93': {'level': lv}}})
+        self.assertEqual(self.gate([_c(122, [752, 752, 0, 3, 3, 93, 0])], lv + 5), {'actors': {'93': {'level': lv + 5}}, 'maxLevel': lv + 5})
+
+    def test_start_max_level_reads_plugins(self):
+        with tempfile.TemporaryDirectory() as t:
+            (Path(t) / 'js').mkdir()
+            (Path(t) / 'js/plugins.js').write_text('var $plugins = [{"name":"YEP_CoreEngine","status":true,"parameters":{"Max Level":"37"}}];')
+            self.assertEqual(self.anc.start_max_level(t), 37)
+
+    def test_state_gate(self):
+        cov = self.anc.cov
+        lst = [_c(111, [4, 45, 6, 692]), _c(126, [1, 0, 0, 1], 1), _c(0, [], 1), _c(411, []), _c(126, [2, 0, 0, 1], 1), _c(0, [], 1), _c(412, [])]
+        self.assertEqual(cov.open_preset(lst, 0, 'ce1316'), {'actors': {'45': {'states': [692]}}})
+        self.assertEqual(cov.open_preset(lst, 3, 'ce1316'), {'actors': {'45': {}}})
+
+    def test_merge_actor_state_keys(self):
+        out = {'party': [45], 'actors': {'45': {'skills': [1]}}}
+        self.anc.merge_into(out, {'actors': {'45': {'states': [692], 'paramPlus': {'0': 10}, 'hp': 10}}})
+        self.assertEqual(out, {'party': [45], 'actors': {'45': {'skills': [1], 'states': [692], 'paramPlus': {'0': 10}, 'hp': 10}}})
 
 
 if __name__ == '__main__':
