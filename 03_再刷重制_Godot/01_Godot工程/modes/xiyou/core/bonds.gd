@@ -70,7 +70,7 @@ static func active_ids(rec: Dictionary) -> Array:
 	return (_rec(rec).get("active", []) as Array).map(func(v): return int(v))
 
 
-## 开关（O-待定·天启篇删羁绊）：true＝天启篇存档（XTianqi.active）里羁绊整套不学、不提示（数值重构方案第六节）；false＝照原版
+## 开关（O-261）：true＝天启篇存档（XTianqi.active）里羁绊整套不学、不提示（数值重构方案第六节）；false＝照原版
 static var TIANQI_OFF := true
 
 
