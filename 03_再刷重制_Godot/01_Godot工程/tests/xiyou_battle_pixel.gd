@@ -227,7 +227,8 @@ func _layout() -> void:
 	var rows := XSideStatus.cell_rows(a1)
 	var ids: Array = rows.map(func(r): return r.icon)
 	_check("cell_hides_no_description", int(XDB.rec("States", 34).iconIndex) > 0 and not ids.has(int(XDB.rec("States", 34).iconIndex)), ids)
-	_check("cell_buff_stack", rows.back() == {"icon": XEnemyStateIcon.buff_icon(2, 2), "stack": 2}, rows.back())
+	# 强化按类别「增益」排在常驻前（rules-passive-order1），不再是最后一行
+	_check("cell_buff_stack", rows.has({"icon": XEnemyStateIcon.buff_icon(2, 2), "stack": 2}), rows)
 	XSideStatus.CELL_FILTER = false
 	var raw: Array = XSideStatus.cell_rows(a1).map(func(r): return r.icon)
 	XSideStatus.CELL_FILTER = true
