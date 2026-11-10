@@ -195,7 +195,7 @@ func _run() -> void:
 func _case_dispatch(c: Dictionary) -> void:
 	check("troop%d.oracle_clean" % int(c.troop), c.errors.is_empty(), c.errors)
 	if c.has("skillCE"):
-		# O-待定：CE1365 三咒凝魄默认只额外放一次（EXTRA_ONCE），回退开关设 false 时回到原版的无限连放（靠 CHAIN_LIMIT 截停）；两支各比一遍
+		# O-247：CE1365 三咒凝魄默认只额外放一次（EXTRA_ONCE），回退开关设 false 时回到原版的无限连放（靠 CHAIN_LIMIT 截停）；两支各比一遍
 		if int(c.skillCE) == 1365:
 			var once_default := XBattleCommonEvent.EXTRA_ONCE
 			check("troop2.%s.extra_once_default" % str(c.variant), once_default, once_default)  # 默认修好（只额外放一次）
