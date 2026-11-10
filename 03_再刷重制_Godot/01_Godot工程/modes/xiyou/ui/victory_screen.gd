@@ -47,7 +47,9 @@ func _ready() -> void:
 	_drops = grouped_drops(rewards.get("drops", []))
 	var raw := str(XDB.plugin("Olivia_VictorySequenceUI").get("Victory Screen Continue Text", "\\c[27]ESC\\c[0] 或者 \\c[27]点击屏幕\\c[0] 退出界面"))
 	_hint_text = XMVText.new(XMVText.convert_escapes(raw), 6, 0)
-	var width := _hint_text.run() + 6
+	# Window_BattleVictoryContinue.refresh：宽 = textWidthEx + textPadding×2（字从 textPadding 6 起画）；x = 画面宽 − 侧边 96 − 宽
+	# （rules-battle-pixel2 对照 bp2_victory_win_f300：原来只加 6，整行比原版靠右 6～7px）
+	var width := _hint_text.run() + 12
 	hint = XMVCanvas.new()
 	hint.position = _origin + Vector2(1280 - 96 - width, 666)
 	hint.size = Vector2(width, 36)

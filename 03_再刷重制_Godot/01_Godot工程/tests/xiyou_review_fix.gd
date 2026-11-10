@@ -6,7 +6,7 @@ extends Node
 ## - 可败战斗全灭：真实 XBattleScene 结束链，canLose 时阵亡出战者复活到 1 HP；不可败时不复活。
 ##   参照里的部分阵亡（lose.770.partial）不会进全灭分支，原版也不复活，只核参照本身。
 class QuickBattle extends XBattleScene:
-	func _say(_text: String, _seconds: float) -> void:
+	func _defeat_message() -> void:
 		await get_tree().process_frame
 
 const ORACLE := "res://modes/xiyou/generated/oracle/review_fix.json"
