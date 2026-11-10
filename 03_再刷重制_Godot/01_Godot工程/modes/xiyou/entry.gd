@@ -1,7 +1,8 @@
 extends Control
 ## 西游模式标题：照原版标题画面（titles1/login 底图、MOG_TitlePictureCom 图片指令、MOG_TitleParticles 粒子）。
-## 指令：新的游戏 / 旧的回忆（读档）/ 返回版本选择。新游戏照 MV setupNewGame 从 System 起点（Map001）开始，
-## 由原版开局事件选固定存档位、难度、英雄与教派（Map001 → Map002 → Map221 → 方桌大厅）。
+## 指令：新的游戏 / 旧的回忆（读档）/ 返回版本选择。新游戏默认走天启篇开局（XTianqi：选存档位、五档难度、随机阵容，直接进大厅）；
+## XTianqi.ENABLED 关掉时照 MV setupNewGame 从 System 起点（Map001）开始，由原版开局事件选固定存档位、难度、英雄与教派
+## （Map001 → Map002 → Map221 → 方桌大厅）。测试直接调 _new_game() 走原版开局。
 ## 数据未生成时提示先运行转换器（数据来自正式 v0.04，只读转换，不随工程提交）。
 
 const UI = preload("res://core/menu_ui.gd")
@@ -108,7 +109,7 @@ func _title() -> void:
 	var any := false
 	for i in range(1, XSave.SLOTS + 1):
 		any = any or XSave.exists(i)
-	_add_picture_command(0, "新的游戏", true, _new_game)
+	_add_picture_command(0, "新的游戏", true, _on_new_game)
 	_add_picture_command(1, "旧的回忆", any, _choose_save)
 	# 发行构建没有版本选择，不放「返回版本选择」（BI）。
 	if not ReleaseEntry.skips_menu():
@@ -398,6 +399,111 @@ func _focus_first() -> void:
 		if c is GridContainer and c.get_child_count() > 0:
 			c.get_child(0).grab_focus.call_deferred()
 			return
+
+
+## 标题「新的游戏」：天启篇开局（XTianqi.ENABLED）或原版开局
+func _on_new_game() -> void:
+	if XTianqi.ENABLED:
+		_tq_slot()
+	else:
+		_new_game()
+
+
+# ---- 天启篇开局（XTianqi）：选存档位 → 选难度 → 随机阵容 → 进大厅 ----
+var _tq_rng := RandomNumberGenerator.new()
+
+
+## 原版 Map001 开头选的固定存档位，之后存档都存这一格（证道删档也靠它）
+func _tq_slot() -> void:
+	_window("选择存档位（开局后一直存在这一格）", 760.0)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	column.add_child(grid)
+	for slot in range(1, 11):
+		var b := XUI.button(XSave.summary(slot))
+		b.name = "TianqiSlot%d" % slot
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(_tq_slot_chosen.bind(slot))
+		grid.add_child(b)
+	_add(XUI.button("返回"), _title)
+	_focus_first()
+
+
+func _tq_slot_chosen(slot: int) -> void:
+	if not XSave.exists(slot):
+		_tq_difficulty(slot)
+		return
+	_window("%d 号存档位已有存档" % slot)
+	column.add_child(XUI.label("开始新的一局后，第一次到达方桌大厅时会覆盖这一格。"))
+	_add(XUI.button("覆盖它"), _tq_difficulty.bind(slot))
+	_add(XUI.button("换一格"), _tq_slot)
+	_focus_first()
+
+
+## 五档难度（证道暂未开放）
+func _tq_difficulty(slot: int) -> void:
+	_window("选择难度", 760.0)
+	for d in XTianqi.DIFFICULTIES:
+		var lock := XTianqi.locked(d.key)
+		var b := XUI.button("%s　　%s%s" % [d.name, d.desc, "（暂未开放）" if lock else ""], 76)
+		b.name = "TianqiDifficulty_" + str(d.key)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var tex := XTianqi.badge_path(d)
+		if ResourceLoader.exists(tex):
+			b.icon = load(tex)
+			b.expand_icon = false
+			b.add_theme_constant_override("icon_max_width", 64)
+		b.disabled = lock
+		_add(b, _tq_lineup.bind(slot, str(d.key), []))
+	_add(XUI.button("返回"), _tq_slot)
+	_focus_first()
+
+
+## 随机阵容：5 人，第一个是 1 号位；不满意就重抽，次数不限
+func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
+	if lineup.is_empty():
+		_tq_rng.randomize()
+		lineup = XTianqi.roll_lineup(key, _tq_rng)
+	var d := XTianqi.difficulty(key)
+	_window("随机阵容 · %s（同一场最多上阵 %d 名超强者）" % [d.name, int(d.super_cap)], 760.0)
+	for i in lineup.size():
+		column.add_child(_tq_actor_row(int(lineup[i]), i == 0))
+	var roll := XUI.button("重新随机")
+	roll.name = "TianqiReroll"
+	_add(roll, func(): _tq_lineup(slot, key, []))
+	var ok := XUI.button("就是他们了")
+	ok.name = "TianqiConfirm"
+	_add(ok, _tq_start.bind(slot, key, lineup))
+	_add(XUI.button("返回"), _tq_difficulty.bind(slot))
+	_focus_first()
+
+
+func _tq_actor_row(id: int, first: bool) -> Control:
+	var rec := XDB.rec("Actors", id)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var face := TextureRect.new()
+	face.custom_minimum_size = Vector2(56, 56)
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if str(rec.get("faceName", "")) != "":
+		face.texture = XUI.face_texture(str(rec.faceName), int(rec.get("faceIndex", 0)))
+	row.add_child(face)
+	var tier := XTier.tier_of(id)
+	var color := XUI.text_color(17) if tier == XTier.SUPER else XUI.text_color(23) if tier == XTier.STRONG else XUI.TEXT
+	var lbl := XUI.label("%s%s" % [str(rec.get("name", "")), "　（1 号位）" if first else ""])
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lbl)
+	row.add_child(XUI.label(tier, XUI.FONT_SIZE, color))
+	return row
+
+
+func _tq_start(slot: int, key: String, lineup: Array) -> void:
+	if not XTianqi.lineup_ok(key, lineup):
+		_tq_lineup(slot, key, [])
+		return
+	XTianqi.start_new_game(slot, key, lineup)
+	get_tree().change_scene_to_file(MAP_SCENE)
 
 
 ## Scene_Title.commandNewGame → DataManager.setupNewGame：空队伍、难度为初始值，站在 Map001 起点，开局事件自动执行
