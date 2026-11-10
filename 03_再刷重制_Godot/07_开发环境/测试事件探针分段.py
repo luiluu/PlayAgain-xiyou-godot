@@ -349,6 +349,31 @@ class StateShardMergeTests(unittest.TestCase):
                     self.assertEqual(rc, 0)
                     self.assertIn('--confirm-full', out.getvalue())
 
+    def test_guard_skips_declared_probe_change(self):
+        """cc 分段甲 a6：probe_change_scope.json 的声明链从 main 那份连到现在这份时，守卫不把探针算「改过」；断链、别的文件照拦。"""
+        import hashlib
+        from unittest import mock
+        mod = self.load()
+        old, mid, cur = b'v0', b'v1', b'v2'
+        h = lambda b: hashlib.sha256(b).hexdigest()
+        rel = 'mv_oracle/event_state_probe.cjs'
+        diff_out = '03_再刷重制_Godot/03_转换工具/mv_oracle/event_state_probe.cjs\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / 'mv_oracle').mkdir()
+            (tools / rel).write_bytes(cur)
+            def fake_run(cmd, **kw):
+                if cmd[3] == 'show':
+                    return subprocess.CompletedProcess(cmd, 0, old, b'')
+                return subprocess.CompletedProcess(cmd, 0, diff_out, '')
+            for chain, expect in [([(old, mid), (mid, cur)], []),            # 两条连成链
+                                  ([(old, mid)], [diff_out.strip()]),         # 断在中间
+                                  ([], [diff_out.strip()])]:                  # 没声明
+                (tools / 'probe_change_scope.json').write_text(json.dumps(
+                    {'changes': [{'file': rel, 'from': h(a), 'to': h(b), 'presetKeys': []} for a, b in chain]}), encoding='utf-8')
+                with mock.patch.object(mod, 'TOOLS', tools), mock.patch.object(mod.subprocess, 'run', side_effect=fake_run):
+                    self.assertEqual(mod.changed_probe_files(), expect, chain)
+
     def test_force_warns_that_it_runs_everything(self):
         """tools-merge-args3：--force 关增量整份重量，开跑前打一行提示；不加不提示。"""
         import contextlib, io, sys
