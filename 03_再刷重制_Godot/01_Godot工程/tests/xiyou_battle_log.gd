@@ -23,6 +23,14 @@ func frames(n := 1) -> void:
 		await get_tree().physics_frame
 
 
+## 等渲染帧（_process 之后）：Sprite 的指示物（领域法阵、觉醒描边）在 _process 里更新，物理帧与渲染帧不是一一对应，
+## 机器负载高时物理帧可能连跑几次而 _process 一次没跑——只等物理帧会读到旧状态（xiyou_battle_log 偶发，tools 车道）
+func procs(n := 1) -> void:
+	# process_frame 信号在该帧各节点 _process 之前发出，所以多等一帧，保证至少一整帧 _process 已跑完
+	for i in n + 1:
+		await get_tree().process_frame
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -191,21 +199,22 @@ func indicator_case(b: XBattleScene, a: XActor, other: XActor) -> void:
 	check("indicator.none", sp._domain_circle == null and sp._outline == null)
 	XSukuna.temp(a).domain = 2
 	b.logic._state_add(a, XSukuna.DOMAIN)
-	await frames(3)
+	await procs(3)
 	var c := sp._domain_circle
 	check("indicator.domain", c != null and c.visible and c.get_index() == 0 and c.position == sp.sprite.position and is_equal_approx(c.scale.y, 0.34),
 		[c != null, c.get_index() if c else -1])
 	if c != null:
+		await frames(1)  # procs 停在渲染帧开头（该帧物理已跑完）；对齐到物理帧信号，下面 10 帧才恰好是 10 步
 		var t0 := c.tick
 		var r0 := c.drawing.rotation
 		await frames(10)
 		check("indicator.domain-anim", c.tick == t0 + 10 and is_equal_approx(c.drawing.rotation, r0 + 0.03)
 			and is_equal_approx(c.modulate.a, 0.82 + cos(c.tick * 0.04) * 0.08), [c.tick, t0, c.drawing.rotation, c.modulate.a])
 		b.show_views({a: b.logic.view_of(a).merged({"domain": false}, true)})
-		await frames(1)
+		await procs(1)
 		check("indicator.domain-view", not c.visible)
 		b.clear_views()
-		await frames(1)
+		await procs(1)
 		check("indicator.domain-live", c.visible)
 	check("indicator.other-actor", b.sprites[other]._domain_circle == null)
 	# 黑闪觉醒：学 10225 与觉醒技 10242、觉醒状态 2639、未到期
@@ -213,7 +222,7 @@ func indicator_case(b: XBattleScene, a: XActor, other: XActor) -> void:
 	a.learn_skill(10242)
 	b.logic._state_add(a, 2639)
 	XBlackFlash.temp(a).expires = XBlackFlash.round + 3
-	await frames(2)
+	await procs(2)
 	var o := sp._outline
 	var body := sp.sprite as Sprite2D
 	check("indicator.outline", o != null and o.visible and o.get_child_count() == 16 and o.get_index() == body.get_index() - 1, [o != null])
@@ -226,18 +235,18 @@ func indicator_case(b: XBattleScene, a: XActor, other: XActor) -> void:
 			and c0.material.get_shader_parameter("fill") == XBattleIndicators.OUTLINE_COLORS[0]
 			and c9.material.get_shader_parameter("fill") == XBattleIndicators.OUTLINE_COLORS[1], [c0.position, c9.position, body.position])
 	XBlackFlash.temp(a).expires = XBlackFlash.round - 1
-	await frames(1)
+	await procs(1)
 	check("indicator.outline-expired", o == null or not o.visible)
 	XBlackFlash.temp(a).expires = XBlackFlash.round + 3
 	b.logic._state_add(a, XBattleLogic.DEATH_STATE)
-	await frames(1)
+	await procs(1)
 	check("indicator.dead", (c == null or not c.visible) and (o == null or not o.visible))
 	b.logic._state_remove(a, XBattleLogic.DEATH_STATE)
 	a.hp = a.mhp
 	b.logic._state_remove(a, XSukuna.DOMAIN)
 	b.logic._state_remove(a, 2639)
 	XSukuna.temp(a).domain = 0
-	await frames(1)
+	await procs(1)
 
 
 ## installRavenSkillEffectsRuntime：六个技能换成施放特效，一次行动只放一组（全体画在一组里）、不放原动画和 slash／ring；到时间就消失；别的技能和别人照旧
