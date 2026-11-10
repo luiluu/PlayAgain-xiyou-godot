@@ -24,7 +24,13 @@ var events: Array[MVEvent] = []
 var camera: Camera2D
 var ui: CanvasLayer
 var message: XMessageBox
+## 场所移动的黑幕（Scene_Base._fadeSprite，fadeOutForTransfer）：原版建出时加在场景最上，盖住窗口和全部界面；
+## 自己一层 CanvasLayer（layer 80），在 ui（10）之上；成就弹窗（85，原版之后才加进场景）、提示（XToast 90，原版网页层）、
+## 触屏按键（120）仍在它上面（ui-zorder1）
 var fader: ColorRect
+## 事件 221／222 的淡出淡入（$gameScreen 亮度，Spriteset_Base._fadeSprite）：在地图画面之上、窗口之下，
+## 「淡出后显示文字」时文字和选项照样显示在黑底上；跟场所移动的黑幕分开，移动时不会把 221 的黑掀掉（ui-zorder1）
+var screen_fader: ColorRect
 var screen_fx: XScreenFxView
 var bgm: AudioStreamPlayer
 var se: AudioStreamPlayer
@@ -109,14 +115,15 @@ func _ready() -> void:
 	ui = CanvasLayer.new()
 	ui.layer = 10
 	add_child(ui)
+	screen_fader = _black_rect()
+	ui.add_child(screen_fader)
 	message = XMessageBox.new()
 	ui.add_child(message)
-	fader = ColorRect.new()
-	fader.color = Color.BLACK
-	fader.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	fader.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fader.modulate.a = 0.0
-	ui.add_child(fader)
+	var top := CanvasLayer.new()
+	top.layer = 80
+	add_child(top)
+	fader = _black_rect()
+	top.add_child(fader)
 	_build_hud()
 	ui.child_entered_tree.connect(_on_ui_page)
 	# EnemyNameColorByDifficulty 的提示位于窗口层之上，随地图快照进入战斗背景。
@@ -1042,18 +1049,34 @@ func _update_shake() -> void:
 	if camera:
 		camera.offset = _zoom_offset + Vector2(roundf(k.value) / camera.zoom.x, 0)
 
+static func _black_rect() -> ColorRect:
+	var r := ColorRect.new()
+	r.color = Color.BLACK
+	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.modulate.a = 0.0
+	return r
+
+## 事件 221／222（解释器调）：淡出淡入画面，窗口不被盖住
 func fade(out: bool) -> void:
+	await _tween_alpha(screen_fader, out)
+
+## 场所移动：黑幕盖住全部
+func transfer_fade(out: bool) -> void:
+	await _tween_alpha(fader, out)
+
+func _tween_alpha(rect: ColorRect, out: bool) -> void:
 	var t := create_tween()
-	t.tween_property(fader, "modulate:a", 1.0 if out else 0.0, 0.3)
+	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, 0.3)
 	await t.finished
 
 func transfer(id: int, x: int, y: int, d: int) -> void:
 	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
 		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
 		return
-	await fade(true)
+	await transfer_fade(true)
 	await load_map(id, x, y, d if d > 0 else player.direction)
-	await fade(false)
+	await transfer_fade(false)
 
 func play_bgm(audio) -> void:
 	var name := str(audio.get("name", "")) if audio is Dictionary else ""
@@ -1891,7 +1914,7 @@ func open_transfer() -> void:
 	if not target.is_empty():
 		fader.modulate.a = 1.0
 		await load_map(int(target.map), int(target.x), int(target.y), 8)
-		await fade(false)
+		await transfer_fade(false)
 	else:
 		_reset_transfer_button()
 	_set_busy(false)

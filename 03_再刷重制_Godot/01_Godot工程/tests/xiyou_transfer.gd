@@ -210,6 +210,18 @@ func _run() -> void:
 	map.transfer_page.cancel()
 	await frames(2)
 	check("cancel_closes", map.transfer_page == null and map.map_id == 5 and not map.busy and map.hud.visible)
+	# 两块黑幕分层（ui-zorder1）：221／222 在窗口之下（Spriteset_Base._fadeSprite）；场所移动的在 ui 之上、成就弹窗与提示之下
+	# （Scene_Base._fadeSprite）；221 的黑不会被场所移动掀掉
+	var top_layer := map.fader.get_parent() as CanvasLayer
+	check("fade_layers", map.screen_fader.get_parent() == map.ui and map.screen_fader.get_index() < map.message.get_index()
+		and map.screen_fader.get_index() < map.hud.get_index() and top_layer != null and top_layer.layer > map.ui.layer and top_layer.layer < 85,
+		[map.screen_fader.get_index(), map.message.get_index(), null if top_layer == null else top_layer.layer])
+	await map.fade(true)
+	check("screen_fade_out", is_equal_approx(map.screen_fader.modulate.a, 1.0) and is_zero_approx(map.fader.modulate.a))
+	await map.transfer(5, 11, 13, 2)
+	check("screen_fade_kept_across_transfer", is_equal_approx(map.screen_fader.modulate.a, 1.0) and is_zero_approx(map.fader.modulate.a), [map.screen_fader.modulate.a, map.fader.modulate.a])
+	await map.fade(false)
+	check("screen_fade_in", is_zero_approx(map.screen_fader.modulate.a))
 	map.queue_free()
 	await frames(2)
 	DirAccess.remove_absolute(XSave.dir())

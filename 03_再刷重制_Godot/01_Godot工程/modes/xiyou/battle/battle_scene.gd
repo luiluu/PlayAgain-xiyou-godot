@@ -67,6 +67,9 @@ var mimic_win: XAlienMimicWindow
 var yun_win: XYunChoicesWindow
 ## 谷雨赠春／还春选择窗（开着时）
 var transfer_win: XGuyuTransferWindow
+## 自动／变速两个按钮的容器（O-006 重制新增）。不放 ui：放在画面层与 screen_fx 之间，事件淡出（221）的黑幕盖住它，
+## 跟原版画面上的东西一样（ui-zorder1）；不随镜头，胜利时同窗口一起藏。
+var low_ui: Control
 var auto_btn: Button
 var speed_btn: Button
 var bgm: AudioStreamPlayer
@@ -158,7 +161,7 @@ func _ready() -> void:
 	ui.add_child(message)
 	camera.sprites = sprites
 	for visual in get_children():
-		if visual != ui and visual != record and visual != screen_fx and (visual is Control or visual is Node2D):
+		if visual != ui and visual != low_ui and visual != record and visual != screen_fx and (visual is Control or visual is Node2D):
 			_cam_base[visual] = visual.position
 	se = AudioStreamPlayer.new()
 	XAudio.bind(se, "SE")
@@ -444,10 +447,17 @@ func _build_ui(vs: Vector2) -> void:
 		status_rows[logic.actors[i]] = row
 	_refresh_status()
 	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）；让出左上 (20,10,240,74) 给挂机快捷界面。
+	# 层次（ui-zorder1）：在 screen_fx 之下（221 淡出的黑幕盖住按钮；原版没有这两个按钮，画面上只剩窗口），
+	# 开战淡入黑幕（_fade，z 100）本来就盖住全部
+	low_ui = Control.new()
+	low_ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	low_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(low_ui)
+	move_child(low_ui, screen_fx.get_index())
 	var side := HBoxContainer.new()
 	side.position = _origin + Vector2(272, 12)
 	side.add_theme_constant_override("separation", 8)
-	ui.add_child(side)
+	low_ui.add_child(side)
 	auto_btn = _small_button("自动：关")
 	auto_btn.pressed.connect(func():
 		logic.auto = not logic.auto
@@ -2244,12 +2254,13 @@ func _victory() -> void:
 		_camera = {"from": BOX / 2.0, "to": Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460))),
 			"scale": float(params.get("Victory Screen Zoom Scale", 2)), "frames": int(params.get("Victory Screen Zoom Duration", 300)), "t": 0, "base": {}}
 		for visual in get_children():
-			if visual != ui and visual != record and (visual is Control or visual is Node2D):
+			if visual != ui and visual != low_ui and visual != record and (visual is Control or visual is Node2D):
 				_camera.base[visual] = visual.position
 	await get_tree().create_timer(float(params.get("Victory Screen Hide Window Delay", 500)) / 1000).timeout
 	for node in ui.get_children():
 		if node is CanvasItem:
 			node.hide()
+	low_ui.hide()
 	await get_tree().create_timer(maxf(0, float(params.get("Victory Screen Display Delay", 1000)) / 1000 - float(params.get("Victory Screen Hide Window Delay", 500)) / 1000)).timeout
 	# 挂机中：Window_BattleVictoryActorSub 一建出就把 _victoryPhase 设回 false，结算画面不出现、直接回地图
 	if XHangUp.is_active(XState.current):
