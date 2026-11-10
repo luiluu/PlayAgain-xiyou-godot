@@ -1006,9 +1006,14 @@ func _open_status(a: XActor) -> void:
 			w.active = false
 			w.canvas.queue_redraw()
 			saved.append(w)
-	status_panel = XPartyStatusPanel.open(ui, logic.actors.filter(func(m): return m is XActor), a)
+	# 网页覆盖层在画布之上：单独一层 95，盖住地图的挂机图标、行动顺序条和提示（90），触屏按键（120）仍在上面
+	var top := CanvasLayer.new()
+	top.layer = 95
+	add_child(top)
+	status_panel = XPartyStatusPanel.open(top, logic.actors.filter(func(m): return m is XActor), a)
 	status_panel.closed.connect(func():
 		status_panel = null
+		top.queue_free()
 		for w in saved:
 			if is_instance_valid(w):
 				w.active = true

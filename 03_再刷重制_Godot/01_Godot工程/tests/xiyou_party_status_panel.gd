@@ -91,8 +91,10 @@ func _panel() -> void:
 		"常驻 %d" % rows.filter(func(r): return r.kind == "常驻").size(), "全部 %d" % rows.size()], tabs)
 	check("pills", labels.has("HP %d / %d" % [int(a.hp), int(a.mhp)]) and labels.has("TP %d" % int(a.tp)), labels)
 	check("cards_all", _cards(p) == rows.size(), _cards(p))
+	await _shot("status_detail_all")
 	p._pick_tab("异常")
 	await get_tree().process_frame
+	await _shot("status_detail_abnormal")
 	check("cards_abnormal", _cards(p) == abn and p.tab == "异常", _cards(p))
 	var red := false
 	for c in _card_nodes(p):
@@ -112,6 +114,18 @@ func _panel() -> void:
 	p.close()
 	check("close", closed[0])
 	root.queue_free()
+
+
+## 窗口模式加 -- --out=<目录> 存截图
+func _shot(name: String) -> void:
+	var dir := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			dir = arg.substr(6)
+	if dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(dir.path_join(name + ".png"))
 
 
 func _texts(n: Node) -> Array:

@@ -28,10 +28,11 @@ var _search: LineEdit
 var _cards: Control
 var _detail_scroll: ScrollContainer
 var _top: Control
+var _tab_items: Array = []
 
 
 ## members：战斗中的队员（$gameParty.battleMembers）；who：点开的那位（没有就第一位）
-static func open(parent: Control, list: Array, who: XBattler) -> XPartyStatusPanel:
+static func open(parent: Node, list: Array, who: XBattler) -> XPartyStatusPanel:
 	var p := XPartyStatusPanel.new()
 	p.members = list
 	p.index = maxi(0, list.find(who))
@@ -91,6 +92,7 @@ func render() -> void:
 			for k in ["normal", "hover", "pressed"]:
 				b.add_theme_stylebox_override(k, _box(CURSOR, CURSOR_EDGE))
 		tab_items.append(b)
+	_tab_items = tab_items
 	blocks.append(spaced(flow(tab_items, w, 6, 6, 41.2), 0, 8, w))
 	# 搜索框：宽 100%、下距 8
 	_search = LineEdit.new()
@@ -115,6 +117,17 @@ func render() -> void:
 	_render_cards()
 	footer("显示实际效果、剩余回合和层数。", "返回战斗", close)
 	queue_redraw()
+	_layout_tabs()
+
+
+## 进树之后按钮才量得出字宽（主题字体），一行排开、间距 6
+func _layout_tabs() -> void:
+	var x := 0.0
+	for b in _tab_items:
+		var bw: float = (b as Control).get_combined_minimum_size().x
+		b.position.x = x
+		b.size = Vector2(bw, 41.2)
+		x += bw + 6
 
 
 func _pick_tab(t: String) -> void:
