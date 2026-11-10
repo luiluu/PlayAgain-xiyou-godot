@@ -16,6 +16,14 @@ static var SHOW_POWER := false
 static var TOGGLE := true
 
 
+## 名字颜色：原版 drawText 被 EnemyNameColorByDifficulty 改过，折叠栏与详情标题里的 Boss 名（clean(name())，截断后的字样）
+## 与数据库敌人原名相同时画成难度色（八戒 rules-battle-pixel 截图对照：难度 3 天蓝；重制原来白字）。
+func name_ink(text: String) -> Color:
+	if battler == null or not ("difficulty_id" in battler):
+		return INK
+	return XEnemy.name_color(text, int(battler.difficulty_id), INK)
+
+
 static func panel_enabled() -> bool:
 	return not TOGGLE or XConfig.flag("codexBossStatusPanel")
 
@@ -301,7 +309,8 @@ func _paint_bar(c: XMVCanvas) -> void:
 	var name_text := XBossStatus.clean(battler.display_name())
 	var power := power_of()
 	var pw := 118.0 if not power.is_empty() else 0.0
-	c.text(fit(c, name_text, WIDTH - 148.0 - pw, 14), 63, 3, WIDTH - 148.0 - pw, "left", INK, 14, 24)
+	var bar_name := fit(c, name_text, WIDTH - 148.0 - pw, 14)
+	c.text(bar_name, 63, 3, WIDTH - 148.0 - pw, "left", name_ink(bar_name), 14, 24)
 	if not power.is_empty():
 		c.text("战力 " + XPower.format(float(power.total)), WIDTH - 80.0 - pw, 3, pw, "right", Color8(255, 211, 115), 14, 24)
 	c.text("收起 ▴" if open else "详情 ▾", WIDTH - 76.0, 3, 62, "right", BLUE, 13, 24)
@@ -345,7 +354,8 @@ func _paint_detail(c: XMVCanvas) -> void:
 	var good := all.filter(func(r): return r.kind == "Buff").size()
 	_frame_box(c, w, DETAIL_H, false)
 	var title_w := maxf(80.0, w - 256.0)
-	c.text(fit(c, XBossStatus.clean(battler.display_name()), title_w, 18), 16, 7, title_w, "left", INK, 18, 28)
+	var title := fit(c, XBossStatus.clean(battler.display_name()), title_w, 18)
+	c.text(title, 16, 7, title_w, "left", name_ink(title), 18, 28)
 	_attributes(c, w - 231.0, 7.0, 178.0, 28.0)
 	c.text("×", w - 42.0, 7, 27, "center", BLUE, 17, 28)
 	var tabs := [["Debuff", "异常 %d" % bad, BAD], ["Buff", "增益 %d" % good, GOOD], ["All", "全部 %d" % all.size(), BLUE]]
