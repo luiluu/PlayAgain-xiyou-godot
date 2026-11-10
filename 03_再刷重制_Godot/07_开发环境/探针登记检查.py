@@ -12,6 +12,10 @@
 必须在源码里提到 CodexZones（一般是 `w.eval('CodexZones.ENABLED=false;')`，guide_probe 那种换成 undefined 也算）。
 没提到的：已有的存量记在 探针五乘区存量.json（尚未逐个确认受不受影响，确认后再改探针、从清单里删），新探针不许加入；
 存量探针后来加了开关或删了文件，清单里的行要删掉。
+
+读法检查（审查 probe-deps 指纹，2026-11-10）：同步缓存按探针实际依赖算键以后，探针读的东西得让键看得见。
+登记进 PROBES 的探针及其静态依赖里，认不出的读文件写法、没审过的动态读取、读 mv_oracle 之外没登记的文件、
+没归类的环境变量都报出来（规则与清单在 03_转换工具/incremental_sync.py 的 audit_probe_reads）。
 用法：探针登记检查.py [--root 工程根目录]
 """
 import argparse
@@ -62,6 +66,17 @@ def zones_check(remake: Path, stock: dict) -> list[str]:
     return bad
 
 
+def reads_check(remake: Path) -> list[str]:
+    """同步探针读的东西都在缓存键里或审过（incremental_sync.audit_probe_reads）。"""
+    tools = remake / '03_转换工具'
+    sync = tools / '同步正式西游.py'
+    if not sync.is_file() or not (tools / 'incremental_sync.py').is_file():
+        return []
+    sys.path.insert(0, str(HERE.parent / '03_转换工具'))
+    import incremental_sync
+    return incremental_sync.audit_probe_reads(tools, set(re.findall(r"'([\w]+_probe\.cjs)'", sync.read_text())))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--root', type=Path, default=REMAKE)
@@ -71,10 +86,11 @@ def main() -> int:
     bad = check(a.root, exempt)
     stock = json.loads(ZONES_FILE.read_text()).get('stock', {}) if ZONES_FILE.exists() else {}
     bad += zones_check(a.root, stock)
+    bad += reads_check(a.root)
     for b in bad:
         print('  ✗ ' + b)
     if not bad:
-        print('  ✓ 探针登记：每个 mv_oracle 探针都在 PROBES 里或有夹具；读伤害的探针都关了五乘区（存量 %d 个待确认）' % len(stock))
+        print('  ✓ 探针登记：每个 mv_oracle 探针都在 PROBES 里或有夹具；读伤害的探针都关了五乘区（存量 %d 个待确认）；同步探针的读法都进缓存键或审过' % len(stock))
     return 1 if bad else 0
 
 
