@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "accept": [
+    {
+      "file": "raven_visual.json",
+      "collection": "cases",
+      "key": "[[\"id\",\"motion.167.myth\"]]",
+      "fields": [
+        "observed"
+      ],
+      "oldDigest": "280f06207a118a56",
+      "newDigest": "3f7abe80ab6045b3",
+      "reason": "渡鸦神话形态受击／濒死照原样：多帧插件的画面钩子在 Scene_Boot 才装、包在最外层，神话这两个动作绕过渡鸦替换（real/raven_motion.json 无头 Chrome 实机量具实测）；探针改为先调 Scene_Boot.start 装钩子后重量，旧参照没装钩子量成了也换"
+    }
+  ]
+}

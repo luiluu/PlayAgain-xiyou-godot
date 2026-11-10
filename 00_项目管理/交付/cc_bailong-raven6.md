@@ -1,7 +1,7 @@
 # 交付：cc/bailong-raven6
 
 - 车道／工作者：B 界面／白龙（cc，chars-raven6；派单第十六批追加十八 GR1）
-- 状态：进行中（同步留指纹在跑；跑完改可合并）
+- 状态：可合并
 
 ## 派单两项其实已做完（给下次进度核定销账）
 
@@ -42,6 +42,10 @@
   1. **173 饿狼位置是真差，已改**：原版代码 `installNativeGarouRuntime.garouBookPreview` 写的是竖向呼吸、脚底 y＝宽/13＋72，但实机被 `Codex_MiraRavenMultiFrame.updateBookVisual` 盖掉——它的图鉴 update 包装同在 Scene_Boot 才装、包在最外层，每帧最后按通用公式再摆一次（同神话动作那条装载次序）。实机量到锚点 (0.5,1)、不呼吸、脚底 y＝宽/13＋可见高/2。重制原来照 garou 代码摆，低 36 像素、带呼吸；`ui/actor_book.gd` 的 `sprite_rect` 去掉 garou 支（连同 `frame` 参数、spec 的 garou 键、每帧重画），`tests/xiyou_actor_book.gd` 几何断言同步。改后对表 173 无差。
   2. **144 名原生立绘平滑**：原版 bitmap.smooth=true、画在半像素 (93.2,71.69)，线性取样略糊；重制最近邻清晰。按 11-05 Kyo 定的胜利背景先例保持清晰，加回退开关 `XActorBook.BOOK_NATIVE_SMOOTH`（默认 false，true 时原生图线性取样），`xiyou_actor_book` 加 native_smooth_off／on 两项。见下面优化登记草稿。
 - 对表报告在 scratchpad，没入库（工具场景，设 XIYOU_BOOK_REAL 才跑；跑法见上面接续第 3 条，XIYOU_APP 实际路径是 `03_再刷重制_Godot/02_内容与素材/冻结正式源/v0.62.12/app.nw`）。
+
+## 预期测量变化
+
+raven_visual.json 的 motion.167.myth：damage evade→damage、dying wait→dying（探针按实机装 Scene_Boot 钩子后重量），见接受单。
 
 ## 变更记录草稿
 
@@ -87,7 +91,7 @@
 - `xiyou_actor_book_compare`（XIYOU_BOOK_REAL＋XIYOU_APP）：157 名量到，改后只剩 144 条平滑（有意保持清晰）与 5 名两边都不在目录。
 - `语法检查.py`：660 个 .gd 0 问题。`工具回归.py` 全过（55 秒）。`回退开关覆盖.py` rc=0。
 - 选测：`选测.py main --list` 列 95 个，本地跑了其中非 `xiyou_rules*` 的 30 个（含 xiyou_raven_visual、xiyou_actor_book*、xiyou_actor_looks、xiyou_appearance、xiyou_actor_sv_compare、xiyou_event_compare* 等），全部通过（409 秒）。没跑 65 个 `xiyou_rules*`：它们是因 battler_sprite.gd 被选上，本期只改了 `raven_motion`（纯显示，rg 确认只在 battler_sprite 自身调用），不进结算。
-- `同步正式西游.py --accept-additions`：（跑完补）
+- `同步正式西游.py --accept-additions`（11-10 00:28～00:47 UTC）：退出码 2「只差测量接受」，measurementChanges 只有 raven_visual.json 的 motion.167.myth damage／dying 两项，正是本期预期；已留待接受指纹。接受单 `04_验证/测量接受/cc_bailong-raven6.json`（生成接受单.py 照抄、核过、写了理由），合并时由合并车道.py 带给 main 的同步。
 
 ## 本分支提交
 
@@ -97,3 +101,5 @@
 - c2637ad1c 合并 main
 - 2bfea2812 WIP：xiyou_raven_visual 神话回合在取角色后设
 - dffcc8b65 173 饿狼图鉴按实机、BOOK_NATIVE_SMOOTH
+- 829f6f9b3 WIP：交付单本期结果
+- 本条：接受单、交付单改可合并
