@@ -142,7 +142,7 @@ func _ready() -> void:
 	me = AudioStreamPlayer.new()
 	XAudio.bind(me, "ME")
 	add_child(me)
-	me.finished.connect(func(): bgm.stream_paused = false)
+	me.finished.connect(_me_finished)
 	camera = Camera2D.new()
 	add_child(camera)
 	screen_fx = XScreenFxView.new()
@@ -1085,6 +1085,7 @@ func play_bgm(audio) -> void:
 	_bgm_name = name
 	_bgm_audio = (audio as Dictionary).duplicate() if audio is Dictionary and name != "" else null
 	var p := XDB.audio_path("bgm", name) if name != "" else ""
+	XAudio.stop_fade(bgm)
 	bgm.stop()
 	if p != "":
 		bgm.stream = load(p)
@@ -1107,12 +1108,49 @@ func play_se(audio) -> void:
 
 func play_bgs(audio: Dictionary) -> void:
 	var path := XDB.audio_path("bgs", str(audio.get("name", "")))
+	XAudio.stop_fade(bgs)
 	bgs.stop()
 	if path != "":
 		bgs.stream = load(path)
 		bgs.volume_db = linear_to_db(float(audio.get("volume", 90)) / 100.0)
 		bgs.pitch_scale = float(audio.get("pitch", 100)) / 100.0
 		bgs.play()
+
+
+## AudioManager.stopMe：ME 放完，暂停着的 BGM 接着放、_replayFadeTime 0.5 秒淡入（原来直接接上、不淡入）
+func _me_finished() -> void:
+	if bgm.stream_paused:
+		bgm.stream_paused = false
+		XAudio.fade_in(bgm)
+
+
+## BattleManager.replayBgmAndBgs → AudioManager.replayBgm／replayBgs：开战时停在原位置的地图曲、环境音接着放、
+## _replayFadeTime 0.5 秒淡入（原来回地图直接接上、不淡入）。接过来的战斗 ME 还在放时地图曲等它放完（_me_finished）再淡入
+func _replay_map_audio() -> void:
+	if me.playing:
+		bgm.stream_paused = true
+	elif bgm.stream_paused:
+		bgm.stream_paused = false
+		XAudio.fade_in(bgm)
+	if bgs.stream_paused:
+		bgs.stream_paused = false
+		XAudio.fade_in(bgs)
+
+
+## 战斗结束时战斗 ME（胜利 Victory2／全灭 Defeat2）还没放完：原版 ME 不随 Scene_Battle 结束停，回地图接着放，
+## 地图曲（replayBgmAndBgs 换回的）等它放完才响（AudioManager.playBgm 的 !this._meBuffer），再 0.5 秒淡入。
+## 这里把战斗的 ME 播放器的曲子和位置接到地图自己的 me 上；返回是否接了
+func take_battle_me(battle: XBattleScene) -> bool:
+	if battle == null or battle.me == null or not battle.me.playing:
+		return false
+	me.stop()
+	me.stream = battle.me.stream
+	me.volume_db = battle.me.volume_db
+	me.pitch_scale = battle.me.pitch_scale
+	var pos := battle.me.get_playback_position()
+	battle.me.stop()
+	me.play(pos)
+	return true
 
 
 func play_me(audio: Dictionary) -> void:
@@ -1162,6 +1200,11 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
 	last_battle_game_over = battle.logic.game_over
+	# BattleManager.replayBgmAndBgs 在战斗收场时就调（胜利是关结算画面的 endVictoryPhase，全灭／逃跑在 process 里），
+	# 早于 Scene_Battle 的淡出：战斗曲（或胜利曲）这时停，地图曲接着放、淡入；没放完的 ME 地图接过来
+	battle.stop_bgm()
+	take_battle_me(battle)
+	_replay_map_audio()
 	if transition:
 		# Scene_Battle.stop：淡出 24 帧（全灭去结束画面 48 帧）；回地图后 Scene_Map.start 的淡入第 2 帧就被 Codex_MapSceneRecovery 清掉，只暗一帧
 		var out := XSceneFade.new()
@@ -1197,8 +1240,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	XItemMarks.deploy_start(XState.current)  # 战后回地图＝Scene_Map.start
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 	_reset_transfer_button()
-	bgm.stream_paused = false
-	bgs.stream_paused = false
+	_replay_map_audio()   # 上面收场时已接上；中途被别的事停了的再补一次（已在放的不动）
 	refresh_events()
 	return result
 
