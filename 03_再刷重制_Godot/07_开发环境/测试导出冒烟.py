@@ -135,14 +135,20 @@ class WindowsLayoutTests(unittest.TestCase):
 
 
 class AndroidLayoutTests(unittest.TestCase):
-    BADGING = "package: name='local.kyo.remake.verification' versionCode='1' versionName='0.0.0'\napplication: label='x' icon='res/mipmap/icon.png'\nuses-permission: name='android.permission.WAKE_LOCK'\nnative-code: 'arm64-v8a'\n"
-    XML = "      A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=11\n"
+    BADGING = "package: name='local.kyo.remake.verification' versionCode='1' versionName='0.0.0'\napplication: label='x' icon='res/mipmap/icon.png'\nuses-permission: name='android.permission.WAKE_LOCK'\n" \
+        "uses-permission: name='android.permission.FOREGROUND_SERVICE'\nuses-permission: name='android.permission.FOREGROUND_SERVICE_SPECIAL_USE'\n" \
+        "uses-permission: name='android.permission.POST_NOTIFICATIONS'\nnative-code: 'arm64-v8a'\n"
+    XML = "      A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=11\n" \
+        "        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"org.godotengine.plugin.v2.XiyouBgIdle\" (Raw: \"org.godotengine.plugin.v2.XiyouBgIdle\")\n" \
+        "        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"local.kyo.xiyou.bgidle.XiyouIdleService\" (Raw: \"local.kyo.xiyou.bgidle.XiyouIdleService\")\n"
 
     def test_parse(self):
         info = smoke.parse_android(self.BADGING, self.XML)
         self.assertEqual(info, {'package': 'local.kyo.remake.verification', 'native': ['arm64-v8a'], 'orientation': 11,
-                                'permissions': ['android.permission.WAKE_LOCK'], 'versionCode': '1', 'versionName': '0.0.0',
-                                'icon': 'res/mipmap/icon.png', 'label': None})
+                                'permissions': ['android.permission.WAKE_LOCK', 'android.permission.FOREGROUND_SERVICE',
+                                                'android.permission.FOREGROUND_SERVICE_SPECIAL_USE', 'android.permission.POST_NOTIFICATIONS'],
+                                'versionCode': '1', 'versionName': '0.0.0', 'icon': 'res/mipmap/icon.png', 'label': None,
+                                'bgidle_service': True, 'bgidle_plugin': True})
         self.assertEqual(smoke.parse_android('', '')['orientation'], None)
 
     def test_problems(self):
@@ -156,6 +162,11 @@ class AndroidLayoutTests(unittest.TestCase):
         bumped = dict(info, versionName='9.9', icon=None)
         self.assertEqual(len(smoke.android_problems(bumped, names)), 2, smoke.android_problems(bumped, names))
         self.assertEqual(smoke.android_problems(dict(info, package=smoke.preset_template('安卓 发行', 'package/unique_name')), names - {'assets/tests/xiyou_mac_export.tscn.remap'}, debug=False), [])
+        # 后台挂机插件（android-bgidle1）：Gradle 构建的包缺了插件或前台服务权限要报
+        bare = dict(info, bgidle_service=False, permissions=['android.permission.WAKE_LOCK'])
+        probs = smoke.android_problems(bare, names)
+        self.assertEqual(len(probs), 4, probs)
+        self.assertIn('XiyouBgIdle', probs[0])
 
     def test_expected_version_from_dev(self):
         # 导出插件开着（XAndroidVersion.AUTO）：versionCode＝开发编号数字、versionName＝0.数字；预设里的 1／0.0.0 不再是对的

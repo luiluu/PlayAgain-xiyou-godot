@@ -96,6 +96,12 @@ static func stop(s: XState) -> void:
 	XHangUpAuto.on_stop()
 
 
+## 结束当前存档的挂机（XPlatform.idle_stopper：安卓通知上按了「停止挂机」，android-bgidle1）。
+static func stop_current() -> void:
+	if current_active():
+		stop(XState.current)
+
+
 static func clear(s: XState) -> void:
 	s.hang_up_active = false
 	s.hang_up_origin = Vector2i(-1, -1)

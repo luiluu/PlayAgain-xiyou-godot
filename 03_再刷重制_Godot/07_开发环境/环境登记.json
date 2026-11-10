@@ -109,14 +109,15 @@
   "templateFilesNotInstalled": "icudt_godot.dat 及 iOS/Linux/Web 模板只在 tpz 内",
   "macExportNote": "macOS debug/release 模板未内嵌 ICU 断行数据（编辑器内嵌）；导出前开启 internationalization/locale/include_text_server_data 并实测中文自动换行",
   "cloudExport": {
-    "note": "GitHub Actions「导出冒烟」（.github/workflows/export-smoke.yml，手动触发）在 ubuntu-latest 上导出 Windows／安卓验收包并跑 导出冒烟.py（cc BW 2026-11-06）；Windows 那条另导出「Windows 发行」经 Actions 缓存交给 windows-latest 真跑（Windows实机冒烟.py，cc 平台 FB 2026-11-07）；安卓那条另导出「安卓 发行」（CI 副本加 x86_64、一次性调试 keystore 签）经缓存交给 android-run 在 x86_64 模拟器上装机跑（安卓实机冒烟.py，FB 二批）。模板从 downloads 里的官方 tpz 下载，按其 sha256／sha512 校验后只解出下列文件；只用调试签名（每次运行现生成的一次性 keystore），不放发行 keystore。",
+    "note": "GitHub Actions「导出冒烟」（.github/workflows/export-smoke.yml，手动触发）在 ubuntu-latest 上导出 Windows／安卓验收包并跑 导出冒烟.py（cc BW 2026-11-06）；Windows 那条另导出「Windows 发行」经 Actions 缓存交给 windows-latest 真跑（Windows实机冒烟.py，cc 平台 FB 2026-11-07）；安卓那条另导出「安卓 发行」（CI 副本加 x86_64、一次性调试 keystore 签）经缓存交给 android-run 在 x86_64 模拟器上装机跑（安卓实机冒烟.py，FB 二批）。模板从 downloads 里的官方 tpz 下载，按其 sha256／sha512 校验后只解出下列文件；只用调试签名（每次运行现生成的一次性 keystore），不放发行 keystore。 安卓预设改用 Gradle 构建（cc 平台 android-bgidle1 2026-11-09）：另解出 android_source.zip 当构建模板，build-tools／platform 跟模板 config.gradle（36.1.0／android-36）；Gradle 依赖从外网下。",
     "templates": [
       "windows_debug_x86_64.exe",
       "windows_debug_x86_64_console.exe",
       "windows_release_x86_64.exe",
       "android_debug.apk",
       "android_release.apk",
-      "linux_debug.x86_64"
+      "linux_debug.x86_64",
+      "android_source.zip"
     ],
     "presets": {
       "Windows 验收": {
@@ -133,8 +134,8 @@
       }
     },
     "runner": "linux_debug.x86_64",
-    "androidBuildTools": "35.0.1",
-    "androidPlatform": "android-35",
+    "androidBuildTools": "36.1.0",
+    "androidPlatform": "android-36",
     "java": {
       "distribution": "temurin",
       "version": "17"
