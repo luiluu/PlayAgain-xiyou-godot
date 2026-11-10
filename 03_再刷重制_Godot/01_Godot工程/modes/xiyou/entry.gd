@@ -36,7 +36,7 @@ func _ready() -> void:
 	# MOG_TitleSplashScreen：一次运行第一次进标题前先放开场图，放完再出标题指令（XSplashScreen）
 	# 天启篇改版（O-259）：默认换成「免费游戏、禁止倒卖」声明屏（XWarningScreen）；WARNING_SCREEN = false 回到三张开场图
 	if XSplashScreen.wanted() and XSplashScreen.WARNING_SCREEN:
-		# 天启篇启动动画（O-待定，v8_cc）：先放动画（合眼）→ 声明屏 → 标题从黑里淡入；XIntroAnim.ENABLED = false 回到只放声明屏
+		# 天启篇启动动画（O-待定·启动动画，v8_cc）：先放动画（合眼）→ 声明屏 → 标题从黑里淡入；XIntroAnim.ENABLED = false 回到只放声明屏
 		var intro := XIntroAnim.play(self)
 		if intro != null:
 			intro.finished.connect(func():

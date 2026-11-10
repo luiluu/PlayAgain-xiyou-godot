@@ -1,12 +1,12 @@
 class_name XIntroAnim
 extends Control
-## 【cc·界面·未经审查】天启篇启动动画（O-待定，Kyo 2026-11-11 定稿 v8_cc）：开场声明屏之前先放一段 4.47 秒的动画——
+## 【cc·界面·未经审查】天启篇启动动画（O-待定·启动动画，Kyo 2026-11-11 定稿 v8_cc）：开场声明屏之前先放一段 4.47 秒的动画——
 ## 指尖撑裂画面、裂口撑满后定住、天启之眼睁开，再用自己的眼睑合上。合眼后 0.1 秒压黑，接 XWarningScreen，
 ## 声明屏结束后标题从黑里用 1.2 秒淡入（fade_in_title）。
 ## - 视频 content/intro/tianqi_intro_v8.ogv（来历见同目录 README）。成片后段的警告屏和标题是预览，游戏里用真的，所以只剪到合眼。
 ## - 时间按真实秒计：变速齿轮把 Engine.time_scale 调到 1.6，视频播放和淡出都除掉它，不跟着变快。
 ## - 跳过：任意键、确定、点一下 → 直接 0.1 秒压黑、接声明屏（声明屏自己有 0.5 秒防连按）。
-## - 放不放跟声明屏同一套：XSplashScreen.wanted() 且 WARNING_SCREEN；只在西游（天启篇）标题，入口菜单和「新版」不放。
+## - 放不放跟声明屏同一套：XSplashScreen.wanted() 且 WARNING_SCREEN，另外要天启篇开着（XTianqi.ENABLED）；只在西游（天启篇）标题，入口菜单和「新版」不放。
 ## 回退：ENABLED = false 不放动画、标题也不淡入（回到声明屏结束直接出标题）。
 
 signal finished
@@ -31,9 +31,9 @@ var _done := false
 var _pressed := false
 
 
-## 有开关、有视频才放
+## 有开关、天启篇开着（XTianqi.ENABLED，O-260 回退到原版开局时不放）、有视频才放
 static func available() -> bool:
-	return ENABLED and ResourceLoader.exists(VIDEO)
+	return ENABLED and XTianqi.ENABLED and ResourceLoader.exists(VIDEO)
 
 
 ## 盖在 parent 上放一遍；放不了返回 null

@@ -140,7 +140,7 @@ func _run() -> void:
 	check("rollback_warning_off", not XSplashScreen.WARNING_SCREEN)
 	XSplashScreen.WARNING_SCREEN = true
 
-	# ---- 天启篇启动动画（v8_cc，声明屏之前；O-待定）----
+	# ---- 天启篇启动动画（v8_cc，声明屏之前；O-待定·启动动画）----
 	check("intro_default_on", XIntroAnim.ENABLED)
 	check("intro_video_exists", ResourceLoader.exists(XIntroAnim.VIDEO))
 	check("intro_video_is_stream", load(XIntroAnim.VIDEO) is VideoStream)
@@ -167,7 +167,7 @@ func _run() -> void:
 		ib.set_process(false)
 		var idone2 := [false]
 		ib.finished.connect(func(): idone2[0] = true)
-		ib.step(0.2, true)
+		ib.step(0.02, true)
 		check("intro_skip_starts_fade", ib.state().ending and not idone2[0], ib.state())
 		ib.step(XIntroAnim.FADE_OUT)
 		check("intro_skip_done", idone2[0], ib.state())
@@ -184,6 +184,11 @@ func _run() -> void:
 	XIntroAnim.ENABLED = false
 	check("rollback_intro_off", not XIntroAnim.available() and XIntroAnim.play(host) == null)
 	XIntroAnim.ENABLED = true
+	# 天启篇回退到原版开局（O-260）时也不放天启篇动画
+	var tq := XTianqi.ENABLED
+	XTianqi.ENABLED = false
+	check("intro_off_without_tianqi", not XIntroAnim.available())
+	XTianqi.ENABLED = tq
 
 	XSplashScreen.ENABLED = false
 	check("rollback_not_wanted", not XSplashScreen.wanted())
