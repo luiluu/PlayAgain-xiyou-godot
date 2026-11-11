@@ -88,7 +88,7 @@ func _run() -> void:
 	XAlienBattle.o116_idle_release = true
 	XAlienBattle.o_prayer_counter = true
 	XResourceContext.o_actor_hp_wrappers = true
-	# O-待定·流萤遮住角色 setHp 开时（默认）：异化 setHp 包装对角色照旧生效——绝缘挡下别人给的回血，舍身把它转给搭档
+	# O-282（原「流萤遮住角色 setHp」） 开时（默认）：异化 setHp 包装对角色照旧生效——绝缘挡下别人给的回血，舍身把它转给搭档
 	if by_id.has("battle.insulation.sethp"):
 		var rows := _battle(by_id["battle.insulation.sethp"], false)
 		check("oliuying.insulation_blocks_heal", float(rows[1].a.hp) == float(rows[0].a.hp) and float(rows[2].a.hp) < float(rows[1].a.hp), [rows[0].a, rows[1].a, rows[2].a])

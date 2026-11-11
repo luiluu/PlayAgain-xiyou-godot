@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·悟空·未经审查】v0.62 Codex_MiraRavenMultiFrame v1.08：进阶界面（Window_ActorAdvancedStatus）里格宽大于 64 的 9×6 归一图
 ## 按图鉴同尺寸显示（归一缩放×bookScale，只缩小）：流萤 179（Codex_Liuying_SV 128px 格）缩放 72/116×0.8、左上锚点、平滑，
-## 中线 w/10+32、脚底 w/10+64；老角色（64px 格）不动。开关 XActorAdvancedScene.ADV_V108（O-待定）开、关各一组。
+## 中线 w/10+32、脚底 w/10+64；老角色（64px 格）不动。开关 XActorAdvancedScene.ADV_V108（O-300）开、关各一组。
 var passed := 0
 var total := 0
 

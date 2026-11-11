@@ -9,7 +9,7 @@ extends RefCounted
 ## - hasMerchant：本轮已领且出现 → 商人事件（备注 <CodexMerchant29>）第 2 页成立，不看页面条件（MVEvent._find_page）。
 ## - draw(档位, 分组)：本轮种子＋已抽次数×104729 的线性同余随机数，先等概率选基础装备、再选本档类别的特效（同库优先），
 ##   照 DreamX 生成一件必带这条前缀的独立装备，扣点、次数＋1；每轮最多 visitLimit（3）次。出错照原版的提示文字。
-## MERCHANT29_FIX（MVEvent，O-待定·深渊商人）：新源 v0.62.12 的 33 条 355 把 parameters 存成字符串，原版只 eval 第一个字符，complete 与 openCurrent
+## MERCHANT29_FIX（MVEvent，O-286）：新源 v0.62.12 的 33 条 355 把 parameters 存成字符串，原版只 eval 第一个字符，complete 与 openCurrent
 ## 从不生效（v0.62.13 正式 MOD 已修）；默认按修好的跑，false 回到 v0.62.12 原版（商人永不出现）。
 
 const RUN_FLAG := "_merchantRun29"

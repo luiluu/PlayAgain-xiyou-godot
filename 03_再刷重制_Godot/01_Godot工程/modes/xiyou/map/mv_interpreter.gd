@@ -409,7 +409,7 @@ func _host_command(c: Dictionary):
 		355:
 			var code := str(p[0])
 			if MVEvent.MERCHANT29_FIX and list[index].has("mvStringParameters"):
-				code = str(list[index].mvStringParameters)  # O-待定·深渊商人：字符串参数按整段执行（v0.62.13 修法）
+				code = str(list[index].mvStringParameters)  # O-286：字符串参数按整段执行（v0.62.13 修法）
 			while index + 1 < list.size() and int(list[index + 1].code) == 655:
 				index += 1
 				code += "\n" + str(list[index].parameters[0])

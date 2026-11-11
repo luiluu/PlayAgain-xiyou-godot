@@ -26,7 +26,7 @@ const DRAWS_PER_FRAME := 4
 static var frame_budget_ms := 8
 ## O-132：一抽没跑就结束时说明原因；false 恢复原版（不出消息）
 static var notify_unstarted := true
-## O-待定·深渊赌场二阶段（跟新源 v0.62.10 installCasinoBatchRuntime 的 fixAbyssStage2）：深渊赌场公共事件 1434 二阶段原先「先把
+## O-285（跟新源 v0.62.10 installCasinoBatchRuntime 的 fixAbyssStage2）：深渊赌场公共事件 1434 二阶段原先「先把
 ## v1191～1195 读进 1197、再重抽那一格」，20 连后这几格残留约 ±30000；新源读入公共事件时把每对「读、抽」换成「先抽、再读」。
 ## true（默认）照新源换序；false 回到 v0.28 的数据原序。
 static var ABYSS_STAGE2_ROLL_FIRST := true

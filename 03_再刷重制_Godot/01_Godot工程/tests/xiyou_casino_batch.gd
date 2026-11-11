@@ -265,7 +265,7 @@ func random_draws() -> void:
 	await close_map()
 
 
-## O-待定·深渊赌场二阶段（新源 v0.62.10 fixAbyssStage2）：读入后 1434 的五对「读 v1191～1195、抽那一格」换成先抽再读；
+## O-285（新源 v0.62.10 fixAbyssStage2）：读入后 1434 的五对「读 v1191～1195、抽那一格」换成先抽再读；
 ## event_compare ce1434#o5_3 量到参照按换序后的次序跑。回退开关 false＝数据原序（v0.28）。
 func abyss_stage2() -> void:
 	var raw: Array = XDB.load_json("db/CommonEvents.json")

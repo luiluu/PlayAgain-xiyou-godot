@@ -35,7 +35,7 @@ const MC_PADDING := 5          # YEP_X_MoreCurrencies Currency Padding
 const COMMANDS := [["购买", "buy"], ["出售", "sell"], ["一键出售", "onekey"], ["取消", "cancel"]]
 const ONEKEY_POS := Vector2(350, 150)
 const ONEKEY_W := 240.0
-## 安全出售（XSafeSell，O-待定·安全出售）：一键出售窗宽 680；选档后先弹确认窗（宽 720、4 行、画面居中，默认停在「取消」）
+## 安全出售（XSafeSell，O-293）：一键出售窗宽 680；选档后先弹确认窗（宽 720、4 行、画面居中，默认停在「取消」）
 const ONEKEY_SAFE_W := 680.0
 const CONFIRM_W := 720.0
 const CATEGORIES := [["物品", "item"], ["消耗品", "consumable"], ["武器", "weapon"], ["护甲", "armor"], ["重要物品", "keyItem"]]

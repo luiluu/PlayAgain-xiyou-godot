@@ -451,7 +451,7 @@ var _frame_h := 0.0
 
 ## Codex_MiraRavenMultiFrame v1.06 applyVisual：有归一档（167 号以后）的角色，归一缩放（含 SvPngFd 变大）小于 1 时主图改平滑采样，
 ## 放大或原尺寸仍最近邻（CrispScaling 默认开：bitmap.smooth = scale < 1）。v0.62 量具：168、174、175、179 平滑，其余 NEAREST。
-## O-待定（交付单「优化登记草稿」v0.62 SV 归一平滑）：SV_NORM_SMOOTH = false 回到 v0.28（归一角色一律最近邻）。
+## O-298（v0.62 SV 归一平滑）：SV_NORM_SMOOTH = false 回到 v0.28（归一角色一律最近邻）。
 static var SV_NORM_SMOOTH := true
 
 func _apply_smooth() -> void:

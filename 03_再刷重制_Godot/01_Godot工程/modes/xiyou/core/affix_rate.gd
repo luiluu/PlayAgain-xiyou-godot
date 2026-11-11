@@ -8,14 +8,14 @@ extends RefCounted
 ## - M＝1 或不是高阶行：走原来的掷法（XGear.roll_item 那段，整数骰 floor(r×100)+1）。
 ##   否则每行仍取一个预掷随机数 roll＝r×100，各选项概率改成 min(配置×M, 50)，按配置概率升序逐项减，roll 小于该项就中；都不中＝不出词条。
 ## - 修行·详细页（G.detailRows 包装）末尾加一段「高阶词条概率」（detail_rows，XGuide.detail_rows 调）。
-## O-待定·词条难度浮动：ENABLED＝false 回 v0.28（一律原掷法，修行页不加这段）。
-## O-待定·高阶行封顶不压低（原版 bug，Kyo 2026-11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置本来就超过 50% 的行
+## O-302：ENABLED＝false 回 v0.28（一律原掷法，修行页不加这段）。
+## O-305（原版 bug，Kyo 2026-11-07「原版的bug要修」）：原版 min(配置×M, 50) 把配置本来就超过 50% 的行
 ## （落芸之力等 100% 行）在 M≠1 时一律压到 50%——灭世、洪荒、宝宝反而比天灾（M＝1 走原掷法、100%）低，地狱 75% 也被压到 50%。
 ## 修好：封顶取 max(50, 配置)，即 min(配置×M, max(50, 配置))，高于 50% 的行只会被低难度按倍率降低、不会被高难度压低。
 ## FIX_CAP_BASE＝false 照原版。
 static var ENABLED := true
 static var FIX_CAP_BASE := true
-## O-待定·高阶词条概率页（原版 bug）：原版这段包装 G.detailRows 装在 main.js 第 201 行，而「修行·详细」窗口
+## O-303（原版 bug）：原版这段包装 G.detailRows 装在 main.js 第 201 行，而「修行·详细」窗口
 ## （installNativeGuidanceRuntime 第 201 行 panelWindow(JAH_Window_Status_ZhenqiDetail, G.detailRows)）在第 160 行装引导模块时
 ## 就把旧的 G.detailRows 抓走了，包装从来到不了页面：v0.62.12 实机与 zhenqi_probe 的「修行·详细」都没有这一段。
 ## 作者本意是显示（方案 v0.3「修行页末尾加一段」），修好＝显示；DETAIL_SHOWN＝false 照原版不显示。

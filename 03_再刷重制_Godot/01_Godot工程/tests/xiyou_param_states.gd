@@ -104,7 +104,7 @@ func lifecycle(c: Dictionary, bound := false) -> void:
 	check(c.id + ".domain", resources.error.is_empty() and (not bound or a.lifecycle_context.resources == resources))
 	a.lifecycle_context = {}
 
-## 1768.self：新源死亡那次 refresh 把 krz states 缓存算成空表、不脏（O-待定·热缓存复活）。fallback＝回退支照参照只加一次；
+## 1768.self：新源死亡那次 refresh 把 krz states 缓存算成空表、不脏（O-288）。fallback＝回退支照参照只加一次；
 ## 默认支照常再加一次（repeat、save 是 conclude 的两倍）
 func conclude(c: Dictionary, fallback := false) -> void:
 	var revive_before := XBattler.o_hot_cache_revive

@@ -135,7 +135,7 @@ static func zhenqi_rows(s: XState, a: XActor) -> Array:
 
 
 ## 修行页两页（v0.62 起 installNativeGuidanceRuntime：第一页 G.panelRows 精简成路线／挑战评估／境界／必备属性／建议，
-## 原「真气」「难度对照」挪到第二页「修行·详细」G.detailRows）。O-待定·修行两页：关＝v0.28 一页写法（真气、难度对照、建议）。
+## 原「真气」「难度对照」挪到第二页「修行·详细」G.detailRows）。O-292：关＝v0.28 一页写法（真气、难度对照、建议）。
 static var PANEL_V062 := true
 
 
@@ -343,7 +343,7 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 	rows.append(_line("结算伤害·合计：" + dmg_pct(c.now.settle)))
 	rows.append(_line("\\C[8]暴击率：还需减去敌人暴击闪避\\C[0]"))
 	rows.append(_line("\\C[8]结算伤害：开战时获得的状态合计\\C[0]"))
-	rows.append_array(XAffixRate.detail_rows(s))  # v0.62 installAffixDifficultyRateRuntime 的 G.detailRows 包装（O-待定·词条难度浮动）
+	rows.append_array(XAffixRate.detail_rows(s))  # v0.62 installAffixDifficultyRateRuntime 的 G.detailRows 包装（O-302）
 	return rows
 
 

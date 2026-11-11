@@ -294,7 +294,7 @@ func _lock(c: Dictionary) -> void:
 
 
 
-## O-待定·异化隐藏：默认保持开启（Kyo 11-05）；开关打开时照正式 v0.58 installAlienationHide，遭遇与奖励都没有（参照量的是没装隐藏模块的原版）
+## O-283：默认保持开启（Kyo 11-05）；开关打开时照正式 v0.58 installAlienationHide，遭遇与奖励都没有（参照量的是没装隐藏模块的原版）
 func _hidden_v058(ref: Dictionary) -> void:
 	check("hidden_v058.default_off", XAlienBattle.HIDDEN_V058 == false)
 	var c: Dictionary = {}

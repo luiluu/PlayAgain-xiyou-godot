@@ -215,7 +215,7 @@ func _strip_power(rows: Array) -> Array:
 	return out
 
 
-## O-待定·修行两页 回退：关掉时页行回到 v0.28 一页写法（tests/fixtures/zhenqi_page_rows_v028.json，旧源参照摘出）。
+## O-292 回退：关掉时页行回到 v0.28 一页写法（tests/fixtures/zhenqi_page_rows_v028.json，旧源参照摘出）。
 ## 只比与数据无关的骨架（行类型、标题、表头、文字行的前缀），数值随换源的数据变了不算。
 func _panel_rollback() -> void:
 	var fx = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/zhenqi_page_rows_v028.json"))
@@ -259,7 +259,7 @@ func _run() -> void:
 				continue
 			if (SECOND + THIRD).any(func(p): return c.id.begins_with(p)):
 				continue   # 第二批（突破、瓶颈之战、奖励与道法）由 tests/xiyou_zhenqi_break、第三批（道法运行时、神兵试炼、隐藏成员）由 tests/xiyou_zhenqi_daofa 比
-			# 原版「修行·详细」窗口抓的是没包装的 G.detailRows，高阶词条概率那段不显示（O-待定·高阶词条概率页）：照原版比
+			# 原版「修行·详细」窗口抓的是没包装的 G.detailRows，高阶词条概率那段不显示（O-303）：照原版比
 			if c.id.begins_with("page."):
 				XAffixRate.DETAIL_SHOWN = false
 			var got = _case(c.id, c.setup)

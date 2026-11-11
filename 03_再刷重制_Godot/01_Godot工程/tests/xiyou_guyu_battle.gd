@@ -304,7 +304,7 @@ func _run() -> void:
 				_script(c)
 	XResourceContext.o_actor_hp_wrappers = true
 	check("covers_all", seen == 17, seen)
-	# O-待定·流萤遮住角色 setHp 开时（默认）：归根中 setHp 抬不起生命，revive 后谷雨仍是 0
+	# O-282（原「流萤遮住角色 setHp」） 开时（默认）：归根中 setHp 抬不起生命，revive 后谷雨仍是 0
 	for c in ref.cases:
 		if str(c.id) == "script.sub" and c.errors.is_empty():
 			revive_hp = []

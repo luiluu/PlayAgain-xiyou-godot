@@ -166,12 +166,12 @@ static func _on_absorb(b, _got: float, list: Array) -> void:
 static var o_skip_unshielded := true
 
 
-## O-待定·角色HP包装：角色的 gainHp／setHp 掉血也经账本；开关是 XResourceContext.o_actor_hp_wrappers（原 ACTOR_HP_LEDGER 并入）。false 照原版：
+## O-282：角色的 gainHp／setHp 掉血也经账本；开关是 XResourceContext.o_actor_hp_wrappers（原 ACTOR_HP_LEDGER 并入）。false 照原版：
 ## 账本不扣，但原生 ShieldSystem 读到的 shield 是子类 getter 的合计，按合计「吸收」、只扣原生那份，剩下的再按 damageReduction 减
 ## （参照 xuan_auto dinggui_seq／mist／binggui2、shield_ledger_oracle_v062：璃壁量不动，掉血照合计挡；同 O-144 回退支的白挡）。
 
 
-## gainHp／setHp 包装（resource_context、行动序列 HP、regenerateHp）：O-待定·角色HP包装 回退支下角色不经账本
+## gainHp／setHp 包装（resource_context、行动序列 HP、regenerateHp）：O-282 回退支下角色不经账本
 static func hp_gain(b, damage: float) -> float:
 	if XResourceContext.o_actor_hp_wrappers or not b is XActor:
 		return hp(b, damage)

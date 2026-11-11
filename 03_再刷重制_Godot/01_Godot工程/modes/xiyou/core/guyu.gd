@@ -88,7 +88,7 @@ const RECRUIT_TEXT := "谷雨加入队伍，已装备百谷生。"
 const RECRUIT_TEXT_PLAIN := "谷雨加入队伍。"
 ## G._notifiedRelic：本次运行里已提示过送法宝（不存档）
 static var _notified_relic := false
-## 替倒中角色 setHp 抬不起生命：开关并入 XResourceContext.o_actor_hp_wrappers（O-待定·角色HP包装）。
+## 替倒中角色 setHp 抬不起生命：开关并入 XResourceContext.o_actor_hp_wrappers（O-282）。
 const BLOOM := 10299
 const CAP_CURVE := [1.0, 1.25, 1.5, 1.75]
 const BLOOM_RATIO := 0.25

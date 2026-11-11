@@ -5,7 +5,7 @@ extends Node
 ## 参照是原版行为，所以比对时 O-144 开关 o_skip_unshielded 设回退值 false；另测默认开时 skip 行不再白挡。
 ## 另：战斗外不记、setup／end_battle／读档清空。
 const FIXTURE := "res://tests/fixtures/shield_ledger_oracle.json"
-const FIXTURE_V062 := "res://tests/fixtures/shield_ledger_oracle_v062.json"  # 同一探针 v0.62.12 重出（O-待定·角色HP包装 回退支）
+const FIXTURE_V062 := "res://tests/fixtures/shield_ledger_oracle_v062.json"  # 同一探针 v0.62.12 重出（O-282 回退支）
 var checks := 0
 var failures: Array = []
 var skip_flag := false
@@ -137,7 +137,7 @@ func _ready() -> void:
 	# 默认开时别的例照旧（没有 skip 行）
 	for id in ["order", "native", "nohalve", "race"]:
 		run(id + ".opt", setups[id].steps, obs[id])
-	# O-待定·角色HP包装 回退支（rules-newsrc4）：新源 v0.62.12 同一探针重出（shield_ledger_oracle_v062.json），角色 gainHp／setHp 绕过账本，
+	# O-282 回退支（rules-newsrc4）：新源 v0.62.12 同一探针重出（shield_ledger_oracle_v062.json），角色 gainHp／setHp 绕过账本，
 	# 原生 ShieldSystem 按合计白挡；setHp 那两步（native 例）原来回退支会整段跳过 hp_gain，跟原版对不上
 	var ref62 = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE_V062))
 	check("oracle62", ref62.sourceIdentity.releaseVersion == "v0.62.12" and ref62.cases.size() == 11 and ref62.cases.all(func(c): return (c.errors as Array).is_empty()))

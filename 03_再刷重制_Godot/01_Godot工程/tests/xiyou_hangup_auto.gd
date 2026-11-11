@@ -102,7 +102,7 @@ func rules(ref: Dictionary) -> void:
 	s.gear.append({"name": "无品质", "kind": "armor", "meta": {}, "price": 100})
 	var equipped: Array = s.actor(8).equips.duplicate(true)
 	XHangUpAuto.better_frequency = 0
-	# 这段的装备是手拼的、没有模板（安全出售会判「装备来源待确认」），按换源前的筛法测（O-待定·安全出售 关）；新筛法见 safe_after_battle
+	# 这段的装备是手拼的、没有模板（安全出售会判「装备来源待确认」），按换源前的筛法测（O-293 关）；新筛法见 safe_after_battle
 	XSafeSell.ENABLED = false
 	check("sell_waits", XHangUpAuto.after_battle_sell(s) == -1 and s.gear.size() == 6)
 	check("sell_groups_and_locked", XHangUpAuto.after_battle_sell(s) == 3 and s.gold == 150 and s.gear.size() == 3 and s.actor(8).equips == equipped)
@@ -176,7 +176,7 @@ func _run() -> void:
 			p.select(0)
 			p.ok()
 			check("sell_frequency_wraps", int(s.hang_up.SellWeapon.SellQuality) == 0)
-			# 安全出售（O-待定·安全出售）：末行「保留词条品质」确定往后、←/→ 前后循环（-1 关闭～8），说明窗两行
+			# 安全出售（O-293）：末行「保留词条品质」确定往后、←/→ 前后循环（-1 关闭～8），说明窗两行
 			var last := p.rows().size() - 1
 			p.select(last)
 			p.ok()

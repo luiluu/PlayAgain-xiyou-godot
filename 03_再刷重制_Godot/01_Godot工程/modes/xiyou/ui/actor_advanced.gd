@@ -154,7 +154,7 @@ func _physics_process(_delta: float) -> void:
 ## v0.62 Codex_MiraRavenMultiFrame v1.08 包装 Window_ActorAdvancedStatus.update（原 update 之后、云裳包装之前）：战斗图是登记了
 ## 归一档的 9×6 图、格宽大于 64（且与档宽差不超过 1）时，按图鉴同尺寸（归一缩放×bookScale）显示，只缩小不放大；锚点改左上、
 ## 平滑采样，中线对齐 w/10+32、脚底对齐 w/10+64（老角色 64px 格的位置）。实际只碰到流萤 179（128px 格，原生约是老角色两倍大）。
-## O-待定（交付单「优化登记」进阶界面大图）：ADV_V108 = false 回到 v0.28（原生大小）。
+## O-300（进阶界面大图）：ADV_V108 = false 回到 v0.28（原生大小）。
 static var ADV_V108 := true
 
 func _v108(native_k: float, cw: float) -> void:

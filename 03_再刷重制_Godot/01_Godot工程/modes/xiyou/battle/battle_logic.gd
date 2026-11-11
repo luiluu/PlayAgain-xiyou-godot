@@ -2478,7 +2478,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	var blocked := XImportedBalance.blocks(u, skill)
 	var ctx := _state_context(u, skill, t)
 	var hot_before := t.hot_at_apply
-	t.hot_at_apply = not t.effect_dirty  # O-待定·热缓存复活：apply 开始时 krz need_refresh 假
+	t.hot_at_apply = not t.effect_dirty  # O-288：apply 开始时 krz need_refresh 假
 	XStateEffects.force_previous = null
 	XStateEffects.force_depth = 0
 	XAlienBattle.push_action(u, skill)  # 异化 apply 包装的行动帧（在 YEP 包装之外）：归墟拦截附加状态

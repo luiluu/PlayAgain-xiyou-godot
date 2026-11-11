@@ -76,7 +76,7 @@ func _run() -> void:
 	worn.meta.quality = "1"
 	s.actor(1).equips[0] = worn
 	s.gold = 1000
-	# 以下到商店一键出售是换源前的筛法（O-待定·安全出售 关）：新源的筛法由 _item_marks_oracle 对参照逐件比
+	# 以下到商店一键出售是换源前的筛法（O-293 关）：新源的筛法由 _item_marks_oracle 对参照逐件比
 	XSafeSell.ENABLED = false
 	var r := XItemMarks.onekey_sell(s, 0)
 	check("onekey_sell_grade0", r == [2, 50] and s.gold == 1050 and not s.gear.has(w1) and not s.gear.has(w2) and s.gear.has(w3) and s.gear.has(w4) and s.gear.has(w5) and s.actor(1).equips[0] == worn, [r, s.gold])
@@ -509,7 +509,7 @@ func _list_only_names_original() -> void:
 		and str(rec.name) == name and not XItemMarks.is_locked(s, rec) and not XItemMarks.is_top(s, rec), [locked_name, both, rec.name])
 
 
-## O-待定·安全出售：关掉回到换源前的筛法（只按品质与锁定：没品质备注的跳过、价为 0 也卖、一键出售不含旧档 15）；
+## O-293：关掉回到换源前的筛法（只按品质与锁定：没品质备注的跳过、价为 0 也卖、一键出售不含旧档 15）；
 ## 开着时另测参照没覆盖的保留原因（强化、宝珠孔、心钢层数、法宝专属照卖）与词条门槛。
 func _safe_sell_extra(specs: Array) -> void:
 	var mk := func(s: XState, kind: String, base: int, q, price: int, label: String) -> Dictionary:

@@ -75,7 +75,7 @@ static func applied(logic, u, t, live: bool, r: Dictionary) -> void:
 		f.targets.append(t)
 
 
-## ADAPT_V062＝true（默认，O-待定·奈叶队友击杀）：跟 v0.62.03 起的 CodexNanohaAdapt(nanoha, 0.5)，队友击杀给一半、计入适应软上限与累计次数；
+## ADAPT_V062＝true（默认，O-287）：跟 v0.62.03 起的 CodexNanohaAdapt(nanoha, 0.5)，队友击杀给一半、计入适应软上限与累计次数；
 ## false 回到 v0.28 的固定 +10 最大生命／+30 最大魔法（不计次数）。
 static var ADAPT_V062 := true
 

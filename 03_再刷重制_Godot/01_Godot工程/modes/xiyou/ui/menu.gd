@@ -432,7 +432,7 @@ func _ok() -> void:
 				closed.emit()
 			"alienation":
 				# installAlienationWorkshop：CodexAlienation.openWorkshop（原版是盖在菜单上的网页叠加层，见 XAlienWorkshop）
-				if not XAlienBattle.HIDDEN_V058:  # O-待定·异化隐藏：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
+				if not XAlienBattle.HIDDEN_V058:  # O-283：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
 					_open_detail(XAlienWorkshop.new())
 			"orbs":
 				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）

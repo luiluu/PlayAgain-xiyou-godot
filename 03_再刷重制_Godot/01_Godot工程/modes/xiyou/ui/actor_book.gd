@@ -112,7 +112,7 @@ static func actor_count() -> int:
 
 ## installIntegratedV029Runtime（v0.30）Window_ActorBookIndex.refresh 包装：目录里去掉 CodexV029.hiddenActors（有名字的才去；
 ## 「？？？」占位没有 actorId，留着），之后目录位置不再等于角色号，状态页与详情按 Window_ActorBookIndex.actor()（v0.35）取角色。
-## 名单与开关在 XImportedBalance（HIDDEN_ACTORS、V029_HIDE_ACTORS，O-待定·V029 隐藏角色；角色仓库列表同一名单）
+## 名单与开关在 XImportedBalance（HIDDEN_ACTORS、V029_HIDE_ACTORS，O-299；角色仓库列表同一名单）
 
 
 ## 目录每一槽的角色号（「？？？」槽为 0）

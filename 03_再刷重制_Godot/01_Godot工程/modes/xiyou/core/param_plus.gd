@@ -18,7 +18,7 @@ static func add(s: XState, actor_id: int, param_id: int, value: float) -> void:
 		var hot := not a.effect_dirty
 		a.param_mark_dirty()
 		if hot and not XBattler.o_hot_cache_revive:
-			# O-待定·热缓存复活回退支：krz 没包 addParam，refresh 前不标 need_refresh；死亡冻成的空表照原版留到下一次脏刷新（1768.self）
+			# O-288回退支：krz 没包 addParam，refresh 前不标 need_refresh；死亡冻成的空表照原版留到下一次脏刷新（1768.self）
 			a.effect_dirty = false
 		a.release_to_party()
 		a.refresh_passive()

@@ -324,7 +324,7 @@ const FIREFLY_RATE := 0.1
 const FORM_SV := "Codex_Sam_SV"
 const NEGATIVE_TYPE := "毒|灼伤|损伤|眩晕|睡眠|混乱|沉默|麻痹|破甲|疾病|减益|天灾|暗黑|黑暗|致盲|冰封|冰冷|过冷|溺水|魅惑|愤怒|禁咒|变形|封印|诅咒|流血|持续伤害"
 
-## O-待定·流萤燃烧后免死刷新（原版代码错误）：BattleManager.endAction 包装里 refreshUndying 先 removeState 再 addState，
+## O-296（原版代码错误）：BattleManager.endAction 包装里 refreshUndying 先 removeState 再 addState，
 ## 同一次行动的结果里记着「刚移除」，原生 isStateAddable 不让加回，负面免疫与免疫死亡反倒没了。
 ## true＝修正：已有的就重置回合数、没有的照常附加；false＝照 v0.62.12 原版（移除后加不回）
 static var FIX_UNDYING_REFRESH := true
@@ -662,7 +662,7 @@ const CORE_RATES := {"base": 0.03, "doom": 0.05, "primordialMin": 0.06, "primord
 const HH_MAX := 6.075
 const PRIMORDIAL_SW := [2483, 2463]
 const DOOM_SW := [2487, 2462]
-## O-待定·萨姆残核掉落：false＝不掉（回到没有这段运行时）
+## O-297：false＝不掉（回到没有这段运行时）
 static var CORE_DROP := true
 static var _core_re: RegEx = null
 

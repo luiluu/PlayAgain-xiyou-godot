@@ -59,8 +59,8 @@ static func _toast(logic, text: String) -> void:
 
 
 ## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制保持开启。
-## HIDDEN_V058＝true 时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、工坊打不开（O-待定·异化隐藏，默认 false）。
-## 还没跟的另外三件（物品不可得／不可见／不可装备、商店、读档把异化实例还原成普通装备）见优化登记 O-待定·异化隐藏。
+## HIDDEN_V058＝true 时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、工坊打不开（O-283，默认 false）。
+## 还没跟的另外三件（物品不可得／不可见／不可装备、商店、读档把异化实例还原成普通装备）见优化登记 O-283。
 static var HIDDEN_V058 := false
 
 

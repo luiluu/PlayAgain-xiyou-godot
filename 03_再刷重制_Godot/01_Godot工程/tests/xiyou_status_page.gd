@@ -53,7 +53,7 @@ func _run() -> void:
 			var w: Dictionary = want.pages[p]
 			compare("a%d_p%d" % [a.actor_id, p], XStatusPage.page_ops(a, p, 612.0), w.ops)
 			check("a%d_p%d_lines" % [a.actor_id, p], XStatusPage.line_count(a, p) == int(w.maxItems), [XStatusPage.line_count(a, p), w.maxItems])
-	# O-待定·武器类型生效：关掉开关回到 v0.28（武器类型加成只写百分比，不带「 生效／ 未持有」）
+	# O-295：关掉开关回到 v0.28（武器类型加成只写百分比，不带「 生效／ 未持有」）
 	XStatusPage.WTYPE_HOLD_V041 = false
 	var off_ops := XStatusPage.page_ops(s.actor(1), 1, 612.0).filter(func(op): return op[0] == "text" and float(op[2]) > 700 and float(op[2]) < 720 and float(op[3]) >= 252)
 	XStatusPage.WTYPE_HOLD_V041 = true
@@ -141,7 +141,7 @@ func _scene(o: Dictionary, s: XState) -> void:
 	check("page_rows", page.page_rows() == int(o.page.maxPageRows), page.page_rows())
 	check("window_opacity", page.page_win.opacity == int(o.page.opacity) and page.select_win.opacity == int(o.page.opacity))
 	check("arrows_top", page.page_win.down_arrow == bool(o.page.downArrow) and page.page_win.up_arrow == bool(o.page.upArrow))
-	# 选页窗：v0.62.12 夹具 5 项（O-待定·修行两页），各项居中，光标在第一项；XGuide.PANEL_V062 关时回到 v0.28 的 4 项（304／316，Window_HorzCommand 公式）
+	# 选页窗：v0.62.12 夹具 5 项（O-292），各项居中，光标在第一项；XGuide.PANEL_V062 关时回到 v0.28 的 4 项（304／316，Window_HorzCommand 公式）
 	var names := XStatusPage.page_names()
 	var texts := []
 	for i in range(names.size()):

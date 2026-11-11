@@ -1,7 +1,7 @@
 class_name XSafeSell
 extends RefCounted
 ## 安全出售（正式西游 installSafeSellRuntime v0.40～v0.53.01，CodexSafeSell）：一键出售与挂机自动卖出共用一套「保留」判断。
-## O-待定·安全出售（机制，总装二十七批）：ENABLED 关＝换源前的筛法（XItemMarks.sellable_gear：只按品质与锁定，没品质备注的跳过、价为 0 也卖）。
+## O-293（机制，总装二十七批）：ENABLED 关＝换源前的筛法（XItemMarks.sellable_gear：只按品质与锁定，没品质备注的跳过、价为 0 也卖）。
 ## - 筛选：背包里的装备，旧档（Q.legacy：没有品质备注按 1）在该档成员里（一键出售按七档 Q.members，含旧档 15；挂机按 SellWA 开着的档）。
 ## - 保留原因（S.reason，有原因就不卖）：锁定（名字带「[锁定]」）→ 模板找不到「装备来源待确认」→ 专属（模板 <req_actors:>，
 ##   v0.53.01 起专属法宝即带 <Magic Weapon> 的护甲照常卖）→ 已培养或镶嵌（法宝升过级或有经验、异化、心钢／狂妄层数、强化、宝珠孔有东西）

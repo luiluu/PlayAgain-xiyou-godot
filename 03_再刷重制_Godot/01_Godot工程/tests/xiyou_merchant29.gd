@@ -258,7 +258,7 @@ func pool_cases() -> void:
 		check(str(x.id), str(XAbyssMerchant.route(map).name) == str(x.observed.name) and norm(got) == norm(x.observed.pool), got)
 
 
-## 回退开关 O-待定·深渊商人：MERCHANT29_FIX＝false 时 355 只取第一个字符（v0.62.12 原版），商人页不成立
+## 回退开关 O-286：MERCHANT29_FIX＝false 时 355 只取第一个字符（v0.62.12 原版），商人页不成立
 func fix_switch() -> void:
 	var s: XState = await present(37, 500)
 	check("fix.on.page", MVEvent.merchant29_present())

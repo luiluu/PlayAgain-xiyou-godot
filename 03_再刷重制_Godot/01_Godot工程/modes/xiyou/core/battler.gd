@@ -42,7 +42,7 @@ var effect_dirty := true
 var effect_snapshot: Array = []
 var effect_snapshot_valid := false
 var effect_lists := {}
-## O-待定·热缓存复活（rules-newsrc5）：新源 dsPassiveSkill v0.51 被动缓存在死亡那次 clearStates 按新签名重建，krz 的 typestates
+## O-288（rules-newsrc5）：新源 dsPassiveSkill v0.51 被动缓存在死亡那次 clearStates 按新签名重建，krz 的 typestates
 ## 表随之算成空表且不脏；出手前持有者没标脏（热，need_refresh 假）时，之后的 refresh 不再重算，deselect 读到空表，复活状态失灵。
 ## 原版代码错误（失效是缓存副作用）。true（默认）＝照常复活；false＝照原版：热的持有者死亡时冻成空表，直到下一次脏刷新。
 ## 角色同理（param_states 1768.self：Conclude 加能力值把自己加死，第二次 Conclude 不跑）；回退支下 XParamPlus.add 不标 effect_dirty。

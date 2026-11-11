@@ -17,7 +17,7 @@ extends XActorPage
 ## - 第 4 页「修行」（installNativeGuidanceRuntime JAH_Window_Status_Zhenqi，行由 XGuide.page_rows 给出）：
 ##   head 系统色「【…】」(6, 宽 1240)；text 按 drawTextEx 从 x 6 起画，\C[n] 换色；cols 四列宽 floor(1252×.16/.28/.26/.26)，
 ##   首列左对齐、其余右对齐（宽减 6），表头系统色、首列普通色、warn 行第 4 列红字 textColor(2)。五个乘区不移植（O-044）。
-## - v0.62 起修行拆两页（XGuide.PANEL_V062，O-待定·修行两页）：第 4 页「修行」（G.panelRows），第 5 页「修行·详细」（G.detailRows，
+## - v0.62 起修行拆两页（XGuide.PANEL_V062，O-292）：第 4 页「修行」（G.panelRows），第 5 页「修行·详细」（G.detailRows，
 ##   真气＋难度对照；「战力构成」五乘区不移植）。选页窗按 maxCols＝页数排：项宽 floor((1280−28+12)/5−12)＝240、间距 12。
 ##   原版第 4 页按手机虚拟按键缩进（CodexV019.padRects，只在安卓宿主有）；重制版暂不缩进（桌面同原版，安卓待平台车道接虚拟键位）。
 ##   O-032（套装页）随之撤销：套装加成仍在物品说明卡与装备页显示。
@@ -30,7 +30,7 @@ const PAD := 14.0
 const PAGE_NAMES := ["状态", "加成与抗性", "掌握", "修行"]
 const PAGE_NAMES_V062 := ["状态", "加成与抗性", "掌握", "修行", "修行·详细"]
 ## installEquipmentDetailV041Runtime 包 JAH_Window_Status_Resistances.calcWeaponBonus：武器类型加成后缀「 生效」（isWtypeEquipped）／「 未持有」。
-## O-待定·武器类型生效（跟新源的显示改动，关＝v0.28 只写百分比）
+## O-295（跟新源的显示改动，关＝v0.28 只写百分比）
 static var WTYPE_HOLD_V041 := true
 ## 修行页四列（drawPageBlock：availableWidth＝contents 宽 1252）
 const GUIDE_COLS := [200.0, 350.0, 325.0, 325.0]

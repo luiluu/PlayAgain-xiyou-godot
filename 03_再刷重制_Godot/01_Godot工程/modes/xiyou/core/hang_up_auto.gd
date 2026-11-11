@@ -439,7 +439,7 @@ static func after_battle_sell(s: XState) -> int:
 	if int(c.SellQuality) == 0 or int(c.SellQuality) != better_frequency:
 		return -1
 	better_frequency = 0
-	if XSafeSell.ENABLED:   # O-待定·安全出售：OnekeyWPSell 改走 CodexSafeSell.plan()
+	if XSafeSell.ENABLED:   # O-293：OnekeyWPSell 改走 CodexSafeSell.plan()
 		return int(XSafeSell.sell_plan(s, XSafeSell.plan(s))[0])
 	var list := XItemMarks.sellable_gear(s, sell_legacy(s))
 	for e in list:

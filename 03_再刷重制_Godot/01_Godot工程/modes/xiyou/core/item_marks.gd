@@ -684,7 +684,7 @@ static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 
 ## Scene_Shop.sellUnifiedQuality：sellable_gear（该档旧档 0～14）逐件 doSell(1)。
 ## 卖价为 0 的也卖掉（原版现行代码不查价格）。返回 [件数, 金额]。
-## 安全出售开着时（O-待定·安全出售）改走 XSafeSell.plan（七档成员含旧档 15、没品质备注按旧档 1、按保留原因留下）。
+## 安全出售开着时（O-293）改走 XSafeSell.plan（七档成员含旧档 15、没品质备注按旧档 1、按保留原因留下）。
 static func onekey_sell(s: XState, g: int) -> Array:
 	if XSafeSell.ENABLED:
 		return XSafeSell.sell_plan(s, XSafeSell.plan(s, g))

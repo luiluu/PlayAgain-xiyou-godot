@@ -181,7 +181,7 @@ func _run() -> void:
 
 
 ## 空图 102：Map69 EV47 第二页（开关 21 开）进入
-## O-待定·天之上入口修后这一页不再被选（人会落在图外）：这里测回退支，照原版进空图（修好的一支见 xiyou_map_audit）
+## O-240·天之上入口修后这一页不再被选（人会落在图外）：这里测回退支，照原版进空图（修好的一支见 xiyou_map_audit）
 func _empty() -> void:
 	var saved_ignore := MVEvent.page_switch_ignore
 	MVEvent.page_switch_ignore = {}

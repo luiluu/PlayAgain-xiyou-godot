@@ -97,7 +97,7 @@ func _find_page() -> int:
 ## 深渊／不朽商人（v0.30 起 installAbyssMerchantRuntime，XAbyssMerchant）：备注带 <CodexMerchant29> 的事件，第 2 页（下标 1）只在
 ## CodexAbyssMerchant.hasMerchant()（本副本已领战利品点且商人出现）时成立，不看页面条件。MERCHANT29_PAGE_GATE 设 false 回到只看页面条件。
 static var MERCHANT29_PAGE_GATE := true
-## O-待定·深渊商人（Kyo 11-06 定修）：v0.62.12 原版 CE1439 的 complete 与商人页的 openCurrent 那 33 条 355 把 parameters 存成字符串，
+## O-286（Kyo 11-06 定修）：v0.62.12 原版 CE1439 的 complete 与商人页的 openCurrent 那 33 条 355 把 parameters 存成字符串，
 ## 原版只 eval 第一个字符（`i`／`C`），商人从不出现（bajie-newsrc1 实测；v0.62.13 正式 MOD 已修）。true（默认）按修好的整段执行
 ## （MVInterpreter 355 取转换器留下的 mvStringParameters）；false 回到 v0.62.12 原版：只执行第一个字符，商人永不出现
 static var MERCHANT29_FIX := true

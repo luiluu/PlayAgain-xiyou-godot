@@ -7,7 +7,7 @@ extends RefCounted
 ##   或招募事件开头的「已招募」变量 ≥1）的也不列。排除停用角色与 V029 隐藏角色、没名字的。
 ## - 超强者：宝宝路线视同已开放（XItemMarks.super_enabled）。招募仍走号角原生流程，本模块不直接加角色。
 ## 原版装在最后（Scene_Shop.prepare 最外层）：先改商品表，再走其余 prepare 链（XItemMarks.shop_goods）。
-## O-待定（交付单「优化登记」宝宝号角免费）：ENABLED = false 回到 v0.28（宝宝路线商店照常）。
+## O-301（宝宝号角免费）：ENABLED = false 回到 v0.28（宝宝路线商店照常）。
 const SWITCH := 2496
 const TAKEN := "_codexBabyHornActors"
 static var ENABLED := true

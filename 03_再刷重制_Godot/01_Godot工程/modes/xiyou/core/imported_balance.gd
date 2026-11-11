@@ -20,7 +20,7 @@ const DOT_RATE := 0.01
 ## v0.62.12 installIntegratedV029Runtime（v0.30 起，CodexV029.hiddenActors）：这 7 名从队伍、仓库、出战栏移走（新局／读档 U.sync），
 ## 仓库列表（Star_Window_PartyList.createActorOrder）与人物图鉴目录（Window_ActorBookIndex.refresh）里不出现。
 ## 都在 DISABLED_ACTORS 里（add_actor 本来就不让入队），所以出战栏两边都没有；差的是图鉴目录和仓库列表。
-## O-待定（交付单「优化登记草稿」V029 隐藏角色）：V029_HIDE_ACTORS = false 回到 v0.28（图鉴目录照列全部角色槽）。
+## O-299（V029 隐藏角色）：V029_HIDE_ACTORS = false 回到 v0.28（图鉴目录照列全部角色槽）。
 const HIDDEN_ACTORS := [141, 146, 152, 157, 160, 161, 166]
 static var V029_HIDE_ACTORS := true
 

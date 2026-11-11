@@ -798,7 +798,7 @@ func _revive_blocks(o: Dictionary) -> void:
 			"added": row.result.added.map(func(x): return int(x)), "removed": row.result.removed.map(func(x): return int(x)), "pops": want_pops,
 			"vars": row.vars.map(func(x): return float(x))}
 		check("revive.row.%d" % index, got == want, {"row": [sid, row.hpMode, row.seq, row.varv], "want": want, "got": got})
-	XBattler.o_hot_cache_revive = false  # 参照比原版：热缓存的敌人死亡时 typestates 成空表，不复活（O-待定·热缓存复活）
+	XBattler.o_hot_cache_revive = false  # 参照比原版：热缓存的敌人死亡时 typestates 成空表，不复活（O-288）
 	var hot_rows := []
 	for index in range(o.applies.size()):
 		XActor.passive_state_rebuild = false  # 探针没跑 Scene_Battle.start：角色 okadd 假，252 的 passiveHarmRe 不进角色缓存（敌人照建）

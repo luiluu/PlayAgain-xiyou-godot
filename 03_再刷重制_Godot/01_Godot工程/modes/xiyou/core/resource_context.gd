@@ -190,7 +190,7 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	XAlienBattle.after_gain(b, resource)  # 异化 hpChange 末尾：同步生命池与嫁祸者
 	return entry
 
-## O-待定·角色HP包装（并入原「O-待定·流萤遮住角色 setHp」，rules-newsrc4）：角色身上更早的自有重写遮住后装在基类上的 HP 包装（原版代码错误，装载次序副作用）。
+## O-282（并入原「O-282（原「流萤遮住角色 setHp」）」，rules-newsrc4）：角色身上更早的自有重写遮住后装在基类上的 HP 包装（原版代码错误，装载次序副作用）。
 ## - setHp：installLiuyingRuntime（模块 33）在 Game_Actor.prototype 上另定义 setHp，之后装的 Game_BattlerBase.setHp 包装
 ##   （异化 Runtime 35、Advanced 37、谷雨 40、护盾账本 41）对角色全走不到；插件期的原生 ShieldSystem 在它里面，照旧按合计挡。
 ## - gainHp：krz_state_re 在 Game_Actor.prototype 上的 gainHp 捕获插件期的 Game_Battler.gainHp，之后 alias 在 Game_Battler 上的
@@ -215,7 +215,7 @@ func set_resource(b: XBattler, resource: String, value: float) -> Dictionary:
 		if wrapped and value > 0.0 and XGuyu.rooted(b) and XGuyu.internal == 0:
 			return {}  # 谷雨 setHp 包装：归根中抬不起生命
 		if value < b.hp:
-			value = b.hp - XShieldLedger.hp_gain(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收（O-待定·角色HP包装 回退支在 hp_gain 里按合计白挡）
+			value = b.hp - XShieldLedger.hp_gain(b, b.hp - value)  # 护盾账本 setHp 包装（最外层）：账本先吸收（O-282 回退支在 hp_gain 里按合计白挡）
 	if resource == "hp" and wrapped:
 		if XAlienBattle.routes_set_hp(b):
 			return gain(b, "hp", value - b.hp)  # 异化 setHp 包装：生命池、嫁祸、空壳、舍身、绝缘按 gainHp(差值) 走

@@ -2,7 +2,7 @@ extends Node
 ## 【cc·悟空·未经审查】v0.62.12 停用／隐藏角色：installImportedBalanceRuntime B.migrateParty（读档把停用角色挪出队伍与出战栏）、
 ## installIntegratedV029Runtime 隐藏 7 名（141、146、152、157、160、161、166）在角色仓库列表与人物图鉴目录里不出现。
 ## 出战栏：原版量具 actor_sv_real.cjs 设 _actors=[id] → initializeBattleMembers 后 141／146／152／161／166 不在出战栏（被 migrateParty 挪走），
-## 重制 add_actor 拦停用角色，两边一致。开关 XImportedBalance.V029_HIDE_ACTORS（O-待定）开、关各一组。
+## 重制 add_actor 拦停用角色，两边一致。开关 XImportedBalance.V029_HIDE_ACTORS（O-299）开、关各一组。
 var passed := 0
 var total := 0
 

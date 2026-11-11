@@ -56,7 +56,7 @@ static func damage_text(item: Dictionary) -> String:
 ## H.skillHelpView（v0.35 起；Window_BattleSkill／Window_SkillList.updateHelp 包装）：巨人吞噬技能卡换成一份拷贝，
 ## 备注里的 APs 行全删，重写成目标／命中／消耗／伤害（按角色身上对应的心钢／利维坦的阶，没有按原件）、
 ## 战斗中加「状态」行（已就绪／冷却还需 n 回合／蓄力还需 n 回合，H.remaining）、效果／条件／冷却三行。
-## 跟 XHeartsteel.TURN_CD_V035（O-待定·心钢按回合冷却）一起开关：关＝v0.28，没有这张卡，照原技能说明。
+## 跟 XHeartsteel.TURN_CD_V035（O-290）一起开关：关＝v0.28，没有这张卡，照原技能说明。
 static func skill_view(skill: Dictionary, actor) -> Dictionary:
 	if not XHeartsteel.TURN_CD_V035 or not XHeartsteel.is_skill(skill):
 		return skill
@@ -178,7 +178,7 @@ static func rows(obj: Dictionary, type: int) -> Array:
 	var v := view(obj)
 	var r := XHelpCard.desc_params(v, type)
 	# H.describe 末尾调 RJO.HE.getDescParams(item,2)，v0.41 特效排序（CodexDisplay.equipmentRows 的 D 包装）在里面，
-	# 所以心钢／狂妄也按品质排特效行，再按颜色分组（O-待定·特效排序，XHelpCard.EFFECT_SORT_V041 关＝不排）
+	# 所以心钢／狂妄也按品质排特效行，再按颜色分组（O-294，XHelpCard.EFFECT_SORT_V041 关＝不排）
 	if XHelpCard.EFFECT_SORT_V041 and (type == 1 or type == 2):
 		XHelpCard.sort_effects(v, r)
 	return group(r)
