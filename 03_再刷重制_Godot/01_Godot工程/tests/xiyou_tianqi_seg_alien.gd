@@ -224,6 +224,17 @@ func _battle() -> void:
 	_check("battle_famine", XTianqiFamineAlien.active(lf) and str(XTianqiFamineAlien.fight(lf).preset) == "segment" and not XTianqiWarAlien.active(lf)
 		and lf.enemies[0].display_name().begins_with("蚀骨·"), lf.enemies[0].display_name())
 	lf.end_battle(0)
+	# 34 层鸿钧（31～36 层重做借鸿蒙老祖，名字带【守层者】）：终焉
+	var s34 := _state(34)
+	if XTianqiSummit.prepare_hongjun(s34):
+		var lh := XBattleLogic.new()
+		lh.setup(int(XTianqiSummit.data().hongjun.troop), s34)
+		var hj = lh.enemies.filter(func(x): return int(x.enemy_id) == int(XTianqiSummit.data().hongjun.enemy))
+		_check("battle_hongjun_zhongyan", not hj.is_empty() and str(XTianqiWarAlien.unit(lh, hj[0]).get("tier", "")) == "zhongyan"
+			and hj[0].display_name().begins_with("终焉·") and hj[0].display_name().contains("鸿钧"), hj.map(func(x): return x.display_name()))
+		lh.end_battle(0)
+	else:
+		_check("battle_hongjun_prepare", false)
 	# 5 层守层者：不异化
 	var s5 := _state(5)
 	var l5 := XBattleLogic.new()
