@@ -350,7 +350,7 @@ func _alien_pyro() -> void:
 func _survival() -> void:
 	var s := _state(20000000.0, "war")
 	_check("survival_prepare", XTianqiHorsemen.prepare("war", s, "survival"))
-	_check("survival_other_line_no", not XTianqiHorsemen.prepare("death", s, "survival") and XTianqiHorsemen.pending() == "")
+	_check("survival_other_line_no", not XTianqiHorsemen.prepare("plague", s, "survival") and XTianqiHorsemen.pending() == "")
 	XTianqiHorsemen.prepare("war", s, "survival")
 	var lg := XBattleLogic.new()
 	lg.setup(30, s)
