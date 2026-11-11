@@ -322,6 +322,45 @@ func _run() -> void:
 	_check("手动退回到安装包自带内容", XUpdateInstall.rollback(true) == 0 and not FileAccess.file_exists(sp))
 	_check("没有登记时退回不出错", XUpdateInstall.rollback(true) == 0)
 
+	# 静默检查见到「现在运行的版本被撤回」：登记着的就是正在跑的才退；已登记新补丁只差重启时不退（审查 78 P3-4）
+	XUpdateInstall.register(p470, base)
+	BootPatchScript.confirm(sp)
+	var client := XUpdateClient.instance(get_tree())
+	var keep := {"urls": XUpdateClient.channel_urls, "key": XUpdateClient.public_key, "stamp": XUpdateClient.stamp_path, "result": BootPatchScript.result.duplicate()}
+	var key := Crypto.new().generate_rsa(2048)
+	XUpdateClient.public_key = key.save_to_string(true)
+	XUpdateClient.channel_urls = PackedStringArray(["https://a.invalid/godot/channel.json"])
+	XUpdateClient.stamp_path = DIR.path_join("check2.json")
+	var cur_code := XUpdateClient.current_code()
+	var man := JSON.stringify({"schema": 1, "latest": {"version": "0.%d" % (cur_code + 9), "code": cur_code + 9}, "bases": {}, "min_base": 0, "revoked": [cur_code]}).to_utf8_buffer()
+	var hc := HashingContext.new()
+	hc.start(HashingContext.HASH_SHA256)
+	hc.update(man)
+	var sig := Crypto.new().sign(HashingContext.HASH_SHA256, hc.finish(), key)
+	client.fetcher = func(url: String) -> PackedByteArray: return sig if url.ends_with(".sig") else man
+	# 假装正在跑的是一个补丁（号＝当前号，底包更旧），登记里却已经是更新的 470
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": cur_code, "base": cur_code - 1, "confirmed": true}
+	await get_tree().process_frame  # 让前面关掉的检查更新页真正离开场景树（页面开着时由页面处理撤回）
+	await get_tree().process_frame
+	var rr: Dictionary = await client.check()
+	_check("撤回名单里有现在运行的版本", rr["revoked"] == true)
+	_check("已登记新补丁只差重启：静默检查不退回", int(_state()["code"]) == 470 and XUpdateInstall.take_rollback_notice().is_empty())
+	# 登记着的就是正在跑的：退
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": 470, "base": cur_code - 1, "confirmed": true}
+	_check("这时没有待生效的", XUpdateInstall.pending_code() == 0)
+	man = JSON.stringify({"schema": 1, "latest": {"version": "0.%d" % (cur_code + 9), "code": cur_code + 9}, "bases": {}, "min_base": 0, "revoked": [cur_code]}).to_utf8_buffer()
+	rr = await client.check()
+	_check("登记着的就是正在跑的被撤回版本：静默检查退回", rr["revoked"] == true and not FileAccess.file_exists(sp) and XUpdateInstall.take_rollback_notice().get("reason") == "已撤回")
+	client.fetcher = Callable()
+	client.last = {}
+	BootPatchScript.result = keep["result"]
+	XUpdateClient.channel_urls = keep["urls"]
+	XUpdateClient.public_key = keep["key"]
+	XUpdateClient.stamp_path = keep["stamp"]
+	f = FileAccess.open(final, FileAccess.WRITE)
+	f.store_buffer(data)
+	f.close()
+
 	# 旧文件清理：登记 475 后只留 475 和上一份
 	var f3 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_460.pck"), FileAccess.WRITE)
 	f3.store_string("旧的")
