@@ -105,7 +105,7 @@ func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null,
 	boss_hyper_armor = false
 	enemy_id = id
 	difficulty_id = difficulty
-	_rates = difficulty_rates(difficulty)
+	_rates = XTianqiCombat.enemy_rates(difficulty)  # 天启篇：基准难度×本档敌人血量／攻击；原版档照 difficulty_rates
 	if roll < 0.0:
 		roll = force_roll
 	var r := (random.next_float("enemy_elite", str(id)) if random != null else _standalone_random().next_float("enemy_elite", str(id))) * 100.0 if roll < 0.0 else roll

@@ -71,7 +71,8 @@ func _run() -> void:
 func _lineups() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261110
-	for d in XTianqi.DIFFICULTIES:
+	for d0 in XTianqi.DIFFICULTIES:
+		var d := XTianqi.difficulty(d0.key)  # super_cap／min_weak 并自数值表（第三批）
 		var bad := []
 		var seen_super := false
 		var firsts := {}

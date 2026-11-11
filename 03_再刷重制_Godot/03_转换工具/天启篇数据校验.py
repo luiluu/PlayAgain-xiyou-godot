@@ -58,7 +58,9 @@ def tianqi_difficulties(path: Path = TIANQI_GD) -> list:
         for k in ('key', 'name'):
             row[k] = re.search(r'"%s":\s*"([^"]*)"' % k, line).group(1)
         for k in ('super_cap', 'min_weak'):
-            row[k] = int(re.search(r'"%s":\s*(-?\d+)' % k, line).group(1))
+            # 第三批起 tianqi.gd 不再写这两项（difficulty() 并自本表，单一来源）；没写就不对照
+            m2 = re.search(r'"%s":\s*(-?\d+)' % k, line)
+            row[k] = int(m2.group(1)) if m2 else None
         out.append(row)
     return out
 
@@ -123,8 +125,10 @@ def balance_rules(table: dict, tianqi: list) -> list:
         r = d.get('roster', {})
         check('难度名同开局：' + x['key'], d.get('name') == x['name'], '%s / %s' % (d.get('name'), x['name']))
         for k in ('super_cap', 'min_weak'):
-            check('%s 同开局：%s' % (k, x['key']), r.get(k) == x[k], '表 %s，tianqi.gd %s' % (r.get(k), x[k]))
-        pool_want = [WEAK, STRONG] + ([SUPER] if x['super_cap'] > 0 else [])
+            if x[k] is not None:
+                check('%s 同开局：%s' % (k, x['key']), r.get(k) == x[k], '表 %s，tianqi.gd %s' % (r.get(k), x[k]))
+        cap = x['super_cap'] if x['super_cap'] is not None else r.get('super_cap', 0)
+        pool_want = [WEAK, STRONG] + ([SUPER] if cap > 0 else [])
         check('候选池同开局规则：' + x['key'], r.get('pool') == pool_want, '表 %s，应为 %s' % (r.get('pool'), pool_want))
         for k in SCALING_KEYS:
             check('难度有 %s：%s' % (k, x['key']), isinstance(d.get('scaling', {}).get(k), (int, float)))

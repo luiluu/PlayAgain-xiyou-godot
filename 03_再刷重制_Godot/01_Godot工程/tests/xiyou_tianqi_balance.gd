@@ -55,7 +55,8 @@ func _complete() -> void:
 	_check("档位只有三个", d.get("tiers", {}).size() == 3, d.get("tiers", {}).keys())
 	var want: Array = XTianqi.DIFFICULTIES.map(func(x): return x.key)
 	_check("难度键与顺序同 XTianqi.DIFFICULTIES", XTianqiBalance.difficulty_keys() == want, [XTianqiBalance.difficulty_keys(), want])
-	for x in XTianqi.DIFFICULTIES:
+	for x0 in XTianqi.DIFFICULTIES:
+		var x := XTianqi.difficulty(x0.key)  # 第三批起开局的 super_cap／min_weak／pool 并自本表（单一来源）
 		var row := XTianqiBalance.difficulty(x.key)
 		_check("难度名同开局：" + x.key, row.get("name", "") == x.name, row.get("name"))
 		_check("super_cap 同开局：" + x.key, row.get("super_cap", -1) == int(x.super_cap), [row.get("super_cap"), x.super_cap])

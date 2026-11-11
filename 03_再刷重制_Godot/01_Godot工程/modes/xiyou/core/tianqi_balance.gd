@@ -3,7 +3,7 @@ extends RefCounted
 ## 天启篇档位与五档难度的数值表（只读）：modes/xiyou/tianqi_data/balance_table.json。
 ## 数来自设计仓库的天启篇数值测算 参数.json（Kyo 拍板的档位出伤／承伤、弱者协力；敌人倍率、品质偏移、助力位光环是占位，表里标 draft）。
 ##
-## 本步只有数据和查询，还没接进任何流程：伤害结算不读档位出伤与协力，开局仍用 XTianqi.DIFFICULTIES（legacy 借原版难度）。
+## 本类只读数据；接进流程的是 XTianqiCombat（敌人倍率、伤害结算）和 XTianqi.difficulty()（候选池、超强者上限、至少弱者），第三批起。
 ## 档位名用 XTier.WEAK／STRONG／SUPER；难度键与 XTianqi.DIFFICULTIES 的 key 相同。
 
 const PATH := "res://modes/xiyou/tianqi_data/balance_table.json"

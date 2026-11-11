@@ -28,19 +28,27 @@ const GUIDE_NAME := "小小鱼"
 const BADGE_DIR := "res://modes/xiyou/ui/tianqi/"
 
 ## 五档难度（数值重构方案第五、六节；出战上限与弱者下限是试算起点）。
-## legacy：本批借用的原版难度（Vitsuno 难度号，2 简单 3 普通 4 困难 5 地狱 6 天灾）。
-## pool：开局候选池的档位；super_cap：同一场上阵的超强者上限；min_weak：每次随机阵容至少几名弱者。
+## legacy：第一、二批借用的原版难度（Vitsuno 难度号，2 简单 3 普通 4 困难 5 地狱 6 天灾）；第三批起只在 UNIFIED_LEGACY＝false 时用。
+## super_cap（同一场上阵的超强者上限）、min_weak（每次随机阵容至少几名弱者）、候选池的档位：第三批起只认数值表
+## （XTianqiBalance，balance_table.json），difficulty() 把它们并进来，这里不再写一份。
 const DIFFICULTIES := [
-	{"key": "xunchang", "name": "寻常", "desc": "初入西行，熟悉玩法", "legacy": 2, "super_cap": 0, "min_weak": 4, "badge": "01_xunchang.png"},
-	{"key": "jianxian", "name": "艰险", "desc": "标准体验", "legacy": 3, "super_cap": 0, "min_weak": 3, "badge": "02_jianxian.png"},
-	{"key": "jiusi", "name": "九死", "desc": "需要搭配与养成", "legacy": 4, "super_cap": 1, "min_weak": 3, "badge": "03_jiusi.png"},
-	{"key": "lianyu", "name": "炼狱", "desc": "敌人大幅强化，可上阵更多超强者", "legacy": 5, "super_cap": 2, "min_weak": 2, "badge": "04_lianyu.png"},
-	{"key": "zhengdao", "name": "证道", "desc": "一命通关，全灭即删档", "legacy": 6, "super_cap": 3, "min_weak": 2, "badge": "05_zhengdao.png"},
+	{"key": "xunchang", "name": "寻常", "desc": "初入西行，熟悉玩法", "legacy": 2, "badge": "01_xunchang.png"},
+	{"key": "jianxian", "name": "艰险", "desc": "标准体验", "legacy": 3, "badge": "02_jianxian.png"},
+	{"key": "jiusi", "name": "九死", "desc": "需要搭配与养成", "legacy": 4, "badge": "03_jiusi.png"},
+	{"key": "lianyu", "name": "炼狱", "desc": "敌人大幅强化，可上阵更多超强者", "legacy": 5, "badge": "04_lianyu.png"},
+	{"key": "zhengdao", "name": "证道", "desc": "一命通关，全灭即删档", "legacy": 6, "badge": "05_zhengdao.png"},
 ]
+## 第三批（XTianqiCombat）：五档在数值上都按「艰险」跑，艰险借原版普通（3）。开关（O-待定·天启篇数值接线，与 XTianqiCombat.ENABLED 一起）：
+## true＝开局一律走原版普通难度分支，难度差别只来自数值表（敌人血量、攻击等）；false＝回到第二批，各档借各自的原版难度。
+static var UNIFIED_LEGACY := true
+const NUMERIC_LEGACY := 3
 
 ## 开关（O-267）：true＝天启篇存档只能在大厅通关抽角色，号角拿不到、商店不卖，事件和别的入口不再让新角色入队；
 ## false＝照原版（号角、招募事件照旧）。
 static var NO_RECRUIT := true
+## 开关（O-待定·天启篇删一线生机）：true＝天启篇存档不学一线生机 6212、天道注视 6213（公共事件 1330 整段不做；Kyo 11-08 数值重构「删掉一线生机和天道注视」）；
+## false＝照原版。
+static var NO_HEAVEN_GAZE := true
 ## 开关（O-268）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
 static var SWAP_IN_BATTLE := true
 
@@ -71,8 +79,18 @@ static var _pending: Array = []
 static func difficulty(key: String) -> Dictionary:
 	for d in DIFFICULTIES:
 		if d.key == key:
-			return d
+			var out: Dictionary = d.duplicate()
+			var row := XTianqiBalance.difficulty(key)
+			out["super_cap"] = int(row.get("super_cap", 0))
+			out["min_weak"] = int(row.get("min_weak", 0))
+			out["pool"] = row.get("pool", [])
+			return out
 	return {}
+
+
+## 开局借的原版难度号：UNIFIED_LEGACY 下五档都是 NUMERIC_LEGACY（普通）
+static func legacy_of(key: String) -> int:
+	return NUMERIC_LEGACY if UNIFIED_LEGACY else int(difficulty(key).get("legacy", NUMERIC_LEGACY))
 
 
 static func locked(key: String) -> bool:
@@ -101,12 +119,13 @@ static func super_cap(s: XState) -> int:
 # ---- 随机阵容 ----
 
 ## 能抽到的角色：有名字、分了档（XTier）、没停用（导入角色 143～145、157、160 等）。
-## 本批候选池按难度：寻常、艰险只出弱者和强者，九死起全部。
+## 候选池按数值表本档的 pool：寻常、艰险只出弱者和强者，九死起全部。
 static func pool(key: String) -> Dictionary:
 	var d := difficulty(key)
+	var allowed: Array = d.get("pool", [])
 	var out := {XTier.WEAK: [], XTier.STRONG: [], XTier.SUPER: []}
 	for tier in out:
-		if tier == XTier.SUPER and int(d.get("super_cap", 0)) <= 0:
+		if not allowed.has(tier):
 			continue
 		for id in XTier.ids(tier):
 			if not XImportedBalance.is_disabled_actor(id):
@@ -193,8 +212,7 @@ static func has_pending() -> bool:
 
 ## 原版开局三张图留下的状态，按原版顺序拼成事件指令（对话、选项、场所移动、教派、号角不要）。
 static func opening_commands(slot: int, key: String, lineup: Array) -> Array:
-	var d := difficulty(key)
-	var legacy := int(d.get("legacy", 3))
+	var legacy := legacy_of(key)
 	var c := []
 	# Map001 EV1：新存档、Hand、存档位、西游模式与其清零的变量
 	c.append(_script("$gameParty.DCultyL1 = true;"))
@@ -493,3 +511,60 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 		if i >= 0 and i < pool.size():
 			return int(pool[i])
 	return 0
+
+
+# ---- 选线（第三批骨架；Kyo 11-11「选线做成单独的大厅内事件」） ----
+## 选线不在开局流程里，是方桌大厅里单独的一个事件，和四线内容一起做。本批只做骨架：存档字段 flags.tianqi.line、查询与选定、
+## 大厅里由小小鱼主持的对话。在哪儿出现、怎么呈现、选了能不能换、没选线时怎么玩，等四线设计稿和 Kyo 定。
+## 开关（O-待定·天启篇选线）：LINE_EVENT_OPEN＝false（默认）时大厅不出这个事件，玩家看不到；四线内容做好再打开。
+static var LINE_EVENT_OPEN := false
+## 选定后能不能再换（旧稿是不能换，待 Kyo 定）
+static var LINE_CHANGEABLE := false
+## 四条线（骑士与原身是 Kyo 已定的；一句话说明是占位，等四线设计稿）
+const LINES := [
+	{"key": "war", "name": "战争", "knight": "莉co", "desc": "（四线内容制作中）"},
+	{"key": "death", "name": "死亡", "knight": "勇者", "desc": "（四线内容制作中）"},
+	{"key": "plague", "name": "瘟疫", "knight": "混子", "desc": "（四线内容制作中）"},
+	{"key": "famine", "name": "饥荒", "knight": "小镇做题家", "desc": "（四线内容制作中）"},
+]
+
+
+static func line_info(key: String) -> Dictionary:
+	for l in LINES:
+		if l.key == key:
+			return l
+	return {}
+
+
+## 本档选的线（没选为空串；不是天启篇存档也为空）
+static func line_of(s: XState) -> String:
+	return str(s.flags.tianqi.get("line", "")) if active(s) else ""
+
+
+## 大厅现在该不该出选线事件：开关开着、天启篇存档、还没选（或允许换）
+static func line_ready(s: XState) -> bool:
+	return LINE_EVENT_OPEN and active(s) and (line_of(s) == "" or LINE_CHANGEABLE)
+
+
+## 选定一条线；不认识的线、或已选且不许换时不收
+static func choose_line(s: XState, key: String) -> bool:
+	if not active(s) or line_info(key).is_empty():
+		return false
+	if line_of(s) != "" and not LINE_CHANGEABLE:
+		return false
+	s.flags.tianqi["line"] = key
+	return true
+
+
+## 大厅选线对话（地图场景在大厅里、没有别的事件时调）：「再想想」留到下次回大厅
+static func run_line_choice(host, s: XState) -> void:
+	if not line_ready(s):
+		return
+	var opts := LINES.map(func(l): return "%s · %s　%s" % [l.name, l.knight, l.desc])
+	opts.append("再想想")
+	var head := "四位骑士在塔里等你。你要踏上哪一条路？" + ("" if LINE_CHANGEABLE else "（选定后不能再换）")
+	var i: int = await host.show_text_with_choices("", 0, _line(head), opts, opts.size() - 1)
+	if i < 0 or i >= LINES.size():
+		return
+	if choose_line(s, str(LINES[i].key)):
+		await host.show_text("", 0, _line("那就走%s之路吧。" % LINES[i].name))

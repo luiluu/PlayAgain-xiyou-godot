@@ -298,6 +298,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	incoming *= maxf(0.0, frame.incomingMultiplier)
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
+	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）
 	# 多属性取最有利的一个候选（installDamageElementRuntime）。<Multi-Element Rule: …> 被它接管，原版改五种规则数值都不变（multi_element_probe）。
 	var best := {}
 	var cands := []
@@ -314,7 +315,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
 			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
 			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
-			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard
+			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard * tianqi
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 			var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
