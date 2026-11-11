@@ -223,6 +223,20 @@ class FakeAdbTests(unittest.TestCase):
 
 
 class ParseTests(unittest.TestCase):
+    def test_patch_checks(self):
+        mod = A
+        expect = 'PATCH_PROBE script=patched class=new_class data=dev.9999 img=123456'
+        good = '11-11 I godot: BOOT_PATCH loaded=true reason=已载入 base=453 code=9999\n11-11 I godot: ' + expect + '\n11-11 I godot: ENTRY_SCENE=res://modes/xiyou/entry.tscn\n'
+        ok = {n: o for n, o, _ in mod.patch_checks(good, expect, '{"confirmed": true}')}
+        self.assertTrue(all(ok.values()), ok)
+        self.assertEqual(len(ok), 4)
+        bad = {n: o for n, o, _ in mod.patch_checks('I godot: ENTRY_SCENE=res://modes/xiyou/entry.tscn\n', expect, '')}
+        self.assertEqual(bad, {'android_patch_loaded': False, 'android_patch_replaces_script_class_data_image': False,
+                               'android_patch_enters_title': True, 'android_patch_confirmed_after_boot': False})
+        half = {n: o for n, o, _ in mod.patch_checks(good.replace('img=123456', 'img=000000'), expect, '{"confirmed": false}')}
+        self.assertEqual(half, {'android_patch_loaded': True, 'android_patch_replaces_script_class_data_image': False,
+                                'android_patch_enters_title': True, 'android_patch_confirmed_after_boot': False})
+
     def test_fatal_lines_by_pid(self):
         log = ('11-07 10:00:05.000  123  130 F libc    : Fatal signal 11 (SIGSEGV)\n'
                '11-07 10:00:05.000  999  999 F libc    : Fatal signal 11 (SIGSEGV)\n'

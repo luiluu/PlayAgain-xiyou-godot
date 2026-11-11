@@ -3,6 +3,7 @@
 
   python3 补丁叠加验证.py               导出底包 → 临时改四处 → 导出补丁 → 还原改动 → 用 macOS 发行模板当替身跑六次
   python3 补丁叠加验证.py --preset "安卓 发行"   换一个导出预设做底包和补丁（默认「Windows 发行」）
+  python3 补丁叠加验证.py --make-only --base <底包.pck> --patch-out <目录>   只做探针补丁（给云端 windows-run／android-run 在真系统上跑）
   python3 补丁叠加验证.py --keep        留下工作目录（底包、补丁、日志）
   python3 补丁叠加验证.py --out <目录>   工作目录（默认系统临时目录下新建）
 
@@ -75,6 +76,53 @@ def sha(p: Path) -> str:
     return h.hexdigest()
 
 
+def make_patch(base: Path, patch: Path, preset: str):
+    """临时改四处 → 相对 base 导出补丁到 patch → 按原字节还原。返回 (成功, 引擎输出, 底包开发编号)。"""
+    ga, bi, icon = PROJECT / 'core/game_app.gd', PROJECT / 'content/build_info.json', PROJECT / 'modes/xiyou/ui/game_over_null.png'
+    probe = PROJECT / 'core/_patch_probe.gd'
+    backup = {p: p.read_bytes() for p in (ga, bi, icon)}
+    base_code = int(str(json.loads(backup[bi].decode('utf-8'))['developmentVersion']).replace('dev.', ''))
+    rc, out = 1, ''
+    try:
+        src = ga.read_text(encoding='utf-8')
+        anchor = 'func _ready() -> void:\n'
+        assert src.count(anchor) == 1, 'game_app.gd 里 _ready 定位不到'
+        ga.write_text(src.replace(anchor, anchor + PROBE_LINE), encoding='utf-8')
+        probe.write_text(PROBE_GD, encoding='utf-8')
+        d = json.loads(bi.read_text(encoding='utf-8'))
+        d['developmentVersion'] = 'dev.9999'
+        bi.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        png_set_pixel(icon)
+        godot('--import')
+        rc, out = godot('--export-patch', preset, str(patch), '--patches', str(base))
+    finally:
+        for p, b in backup.items():
+            p.write_bytes(b)
+        for p in (probe, Path(str(probe) + '.uid')):
+            p.unlink(missing_ok=True)
+        godot('--import')
+    return rc == 0 and patch.exists(), out, base_code
+
+
+def state_of(patch: Path, base_code: int, **extra) -> dict:
+    return dict({'file': patch.name, 'sha256': sha(patch), 'size': patch.stat().st_size, 'base': base_code, 'code': 9999}, **extra)
+
+
+def make_only(base: Path, out: Path, preset: str) -> int:
+    """给云端真系统用：相对现成的底包做探针补丁，写 <out>/patch.pck、active.json（未确认）、expect.txt。"""
+    out.mkdir(parents=True, exist_ok=True)
+    patch = out / 'patch.pck'
+    ok, log, base_code = make_patch(base, patch, preset)
+    if not ok:
+        print(log[-2000:])
+        print('✗ 补丁导出失败')
+        return 1
+    (out / 'active.json').write_text(json.dumps(state_of(patch, base_code, confirmed=False, boots=0, prev=None)), encoding='utf-8')
+    (out / 'expect.txt').write_text(EXPECT_PROBE + '\n', encoding='utf-8')
+    print(f'✓ 探针补丁 {patch}（{patch.stat().st_size / 1e3:.1f} KB，底包 dev.{base_code}）')
+    return 0
+
+
 def run_game(exe: Path, work: Path, tag: str, setup, after=None):
     home = work / f'home_{tag}'
     upd = home / USER_DIR / 'updates'
@@ -95,7 +143,14 @@ def main() -> int:
     ap.add_argument('--preset', default='Windows 发行')
     ap.add_argument('--keep', action='store_true')
     ap.add_argument('--out')
+    ap.add_argument('--make-only', action='store_true')
+    ap.add_argument('--base')
+    ap.add_argument('--patch-out')
     a = ap.parse_args()
+    if a.make_only:
+        if not a.base or not a.patch_out:
+            ap.error('--make-only 要同时给 --base 和 --patch-out')
+        return make_only(Path(a.base).resolve(), Path(a.patch_out).resolve(), a.preset)
     work = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix='xiyou_patch_probe_'))
     work.mkdir(parents=True, exist_ok=True)
     base, patch = work / 'game.pck', work / 'patch.pck'
@@ -109,28 +164,8 @@ def main() -> int:
         return 1
     print(f'· 底包 {base.stat().st_size / 1e6:.1f} MB（预设「{a.preset}」）')
 
-    ga, bi, icon = PROJECT / 'core/game_app.gd', PROJECT / 'content/build_info.json', PROJECT / 'modes/xiyou/ui/game_over_null.png'
-    probe = PROJECT / 'core/_patch_probe.gd'
-    backup = {p: p.read_bytes() for p in (ga, bi, icon)}
-    try:
-        src = ga.read_text(encoding='utf-8')
-        anchor = 'func _ready() -> void:\n'
-        assert src.count(anchor) == 1, 'game_app.gd 里 _ready 定位不到'
-        ga.write_text(src.replace(anchor, anchor + PROBE_LINE), encoding='utf-8')
-        probe.write_text(PROBE_GD, encoding='utf-8')
-        d = json.loads(bi.read_text(encoding='utf-8'))
-        d['developmentVersion'] = 'dev.9999'
-        bi.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        png_set_pixel(icon)
-        godot('--import')
-        rc, out = godot('--export-patch', a.preset, str(patch), '--patches', str(base))
-    finally:
-        for p, b in backup.items():
-            p.write_bytes(b)
-        for p in (probe, Path(str(probe) + '.uid')):
-            p.unlink(missing_ok=True)
-        godot('--import')
-    if rc != 0 or not patch.exists():
+    ok, out, base_code = make_patch(base, patch, a.preset)
+    if not ok:
         print(out[-2000:])
         print('✗ 补丁导出失败')
         return 1
@@ -142,8 +177,7 @@ def main() -> int:
     if exe is None:
         return 1
 
-    base_code = int(str(json.loads(backup[bi].decode('utf-8'))['developmentVersion']).replace('dev.', ''))
-    good = {'file': 'patch.pck', 'sha256': sha(patch), 'size': patch.stat().st_size, 'base': base_code, 'code': 9999}
+    good = state_of(patch, base_code)
 
     def put(state, cut=False):
         def f(upd: Path):

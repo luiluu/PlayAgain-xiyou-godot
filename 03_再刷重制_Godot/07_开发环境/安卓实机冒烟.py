@@ -349,6 +349,67 @@ def smoke(adb: 'Adb', apk: str, pkg: str, work: Path, rep: Report, expect_entry=
     adb.run('shell', 'am', 'force-stop', pkg)
 
 
+def patch_checks(log: str, expect: str, state_after: str) -> list:
+    """补丁叠加载入那次运行的判断（纯函数，好测）：返回 [(名字, 是否通过, 说明)]。"""
+    loaded = 'BOOT_PATCH loaded=true' in log
+    boot = [l.split('BOOT_PATCH', 1)[1].strip() for l in log.splitlines() if 'BOOT_PATCH' in l][:1]
+    entries = sorted(set(re.findall(r'ENTRY_SCENE=(\S+)', log)))
+    confirmed = False
+    try:
+        confirmed = json.loads(state_after).get('confirmed') is True
+    except (ValueError, AttributeError):
+        pass
+    return [
+        ('android_patch_loaded', loaded, ('BOOT_PATCH ' + boot[0]) if boot else 'logcat 里没有 BOOT_PATCH（补丁没放对地方，或载入器没跑）'),
+        ('android_patch_replaces_script_class_data_image', expect in log, expect if expect in log else '探针行不对或没有'),
+        ('android_patch_enters_title', entries == [TITLE], ','.join(entries) or '没有 ENTRY_SCENE'),
+        ('android_patch_confirmed_after_boot', confirmed, (state_after or '读不到登记')[:160]),
+    ]
+
+
+def patch_run(adb: 'Adb', apk: str, pkg: str, work: Path, rep: Report, patch_dir: Path) -> None:
+    """补丁叠加载入（自动更新第④批）：把探针补丁放进应用私有目录 files/updates 再启动。
+    要往别的应用的私有目录写文件，只有能 `adb root` 的模拟器镜像（google_apis／default）做得到；拿不到 root 就记一条 INFO 跳过。真机不碰。"""
+    expect = (patch_dir / 'expect.txt').read_text(encoding='utf-8').strip()
+    code, out = adb.rc('install', '-r', apk)
+    if code != 0:
+        rep.info('android_patch', '装不上带 --report-entry 的副本，补丁步骤没跑')
+        return
+    adb.run('shell', 'pm', 'clear', pkg)
+    adb.run('root', timeout=60)
+    time.sleep(WAIT.get('root', 3.0))
+    adb.run('wait-for-device', timeout=120)
+    home = f'/data/data/{pkg}'
+    uid = adb.run('shell', 'stat', '-c', '%u', home, timeout=30).strip()
+    whoami = adb.run('shell', 'id', '-u', timeout=30).strip()
+    if whoami != '0' or not uid.isdigit():
+        rep.info('android_patch', f'拿不到 root（id -u={whoami or "空"}），没法往应用私有目录放补丁，补丁步骤没跑')
+        return
+    upd = f'{home}/files/updates'
+    adb.run('shell', 'mkdir', '-p', upd)
+    adb.rc('push', str(patch_dir / 'patch.pck'), f'{upd}/patch.pck')
+    adb.rc('push', str(patch_dir / 'active.json'), f'{upd}/active.json')
+    adb.run('shell', 'chown', '-R', f'{uid}:{uid}', f'{home}/files')
+    adb.run('shell', 'restorecon', '-R', f'{home}/files')
+    adb.run('logcat', '-c')
+    adb.launch(pkg)
+    sleep('launch')
+    pid = adb.pid(pkg)
+    log = adb.run('logcat', '-d', '-v', 'threadtime', timeout=120)
+    (work / 'logcat_补丁.txt').write_text(log, encoding='utf-8')
+    state_after = adb.run('shell', 'cat', f'{upd}/active.json', timeout=30)
+    for name, ok, note in patch_checks(log, expect, state_after):
+        rep.check(name, ok, note)
+    rep.check('android_patch_alive', bool(pid), f'pid={pid or "无"}')
+    bad = fatal_lines(log, {pid} if pid else set(), pkg)
+    rep.check('android_patch_no_fatal', not bad, '；'.join(bad[:3]) if bad else 'logcat 里本包没有崩溃行')
+    adb.run('shell', 'am', 'force-stop', pkg)
+    adb.run('shell', 'pm', 'clear', pkg)
+    adb.run('unroot', timeout=60)
+    time.sleep(WAIT.get('root', 3.0))
+    adb.run('wait-for-device', timeout=120)
+
+
 def write_report(work: Path, rep: Report):
     lines = ['# 安卓实机冒烟（模拟器）', '', f'- 结果：{"通过" if not rep.failed else "失败 %d 项" % len(rep.failed)}', '',
              '| 项 | 结果 | 说明 |', '| --- | --- | --- |']
@@ -365,6 +426,7 @@ def main(argv=None) -> int:
     ap.add_argument('--serial')
     ap.add_argument('--package', default=PACKAGE)
     ap.add_argument('--no-keys', action='store_true', help='不跑四组按键')
+    ap.add_argument('--patch-dir', help='探针补丁目录（默认 apk 旁边的 _patch；有就跑补丁叠加载入，没有就跳过）')
     ap.add_argument('--no-resign', action='store_true', help='不改 _cl_、不重签，直接装原包')
     ap.add_argument('--build-tools', help='zipalign／apksigner 所在目录（默认 $ANDROID_HOME/build-tools 下最新的）')
     ap.add_argument('--keystore', help='重签用的 keystore（口令 android、别名 smoke；默认现生成一次性的）')
@@ -402,6 +464,12 @@ def main(argv=None) -> int:
         key_runs(adb, signer, a.apk, a.package, work, rep)
         autosave_run(adb, signer, a.apk, apk, a.package, work, rep)
         bgidle_run(adb, signer, a.apk, a.package, work, rep)
+    patch_dir = Path(a.patch_dir) if a.patch_dir else Path(a.apk).parent / '_patch'
+    if (patch_dir / 'patch.pck').is_file():
+        if signer is not None:
+            patch_run(adb, apk, a.package, work, rep, patch_dir)
+        else:
+            rep.info('android_patch', '没有重签副本（看不到 ENTRY_SCENE），补丁步骤没跑')
     for f in work.glob('*.apk'):
         f.unlink()
     write_report(work, rep)

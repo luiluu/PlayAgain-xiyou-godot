@@ -103,6 +103,41 @@ def entry(exe: Path, work: Path, rep: Report, tmp_root: Path) -> dict:
     return {'save': has, 'dev': dev, 'listing': listing(appdata / 'Roaming')}
 
 
+def patch_runs(exe: Path, work: Path, rep: Report, tmp_root: Path, patch_dir: Path) -> None:
+    """补丁叠加载入（自动更新第④批）：把探针补丁放进 %APPDATA%\\KYO\\再刷重制\\updates 再跑。
+    patch_dir 里是 补丁叠加验证.py --make-only 做的 patch.pck、active.json（未确认）、expect.txt。"""
+    import json
+    expect = (patch_dir / 'expect.txt').read_text(encoding='utf-8').strip()
+    state = json.loads((patch_dir / 'active.json').read_text(encoding='utf-8'))
+
+    def one(tag: str, st: dict, cut=False):
+        appdata = Path(tempfile.mkdtemp(prefix='appdata_', dir=tmp_root))
+        upd = (appdata / 'Roaming').joinpath(*SAVE_DIR, 'updates')
+        upd.mkdir(parents=True)
+        data = (patch_dir / 'patch.pck').read_bytes()
+        (upd / 'patch.pck').write_bytes(data[:len(data) // 2] if cut else data)
+        (upd / 'active.json').write_text(json.dumps(st), encoding='utf-8')
+        out, rc, _ = run([str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'], appdata, 300)
+        (work / f'补丁_{tag}.log').write_text(out, encoding='utf-8')
+        after = json.loads((upd / 'active.json').read_text(encoding='utf-8')) if (upd / 'active.json').is_file() else None
+        entered = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('ENTRY_SCENE=')] == [TITLE]
+        return out, rc, after, entered, (upd / 'rolled_back.json').is_file()
+
+    out, rc, after, entered, _ = one('载入', state)
+    rep.check('win_patch_loaded', 'BOOT_PATCH loaded=true' in out, '有 BOOT_PATCH loaded=true' if 'BOOT_PATCH loaded=true' in out else '没有载入')
+    rep.check('win_patch_replaces_script_class_data_image', expect in out, expect if expect in out else '探针行不对或没有')
+    rep.check('win_patch_enters_title', entered and rc == 0, rc_note(rc))
+    rep.check('win_patch_confirmed_after_boot', bool(after) and after.get('confirmed') is True, f'登记：{after}')
+    bad = dict(state, sha256='0' * 64)
+    out, rc, after, entered, _ = one('校验不符', bad)
+    rep.check('win_patch_bad_sha_not_loaded', '校验不符' in out and 'PATCH_PROBE' not in out and entered, rc_note(rc))
+    out, rc, after, entered, _ = one('截断', {k: v for k, v in state.items() if k != 'size'}, cut=True)
+    rep.check('win_patch_truncated_not_loaded', '校验不符' in out and 'PATCH_PROBE' not in out and entered, rc_note(rc))
+    out, rc, after, entered, noted = one('两次没起来', dict(state, boots=2))
+    rep.check('win_patch_auto_rollback', 'PATCH_PROBE' not in out and entered and after is None and noted,
+              '启动前退回、照常进标题、留了提示' if after is None and noted else f'登记：{after}，提示：{noted}')
+
+
 def listing(root: Path, limit=40):
     return sorted(str(p.relative_to(root)).replace('\\', '/') for p in root.rglob('*'))[:limit]
 
@@ -150,6 +185,7 @@ def main(argv=None) -> int:
     ap.add_argument('--exe', default=EXE, help='可执行文件名（测试用假 exe 时改）')
     ap.add_argument('--no-keys', action='store_true')
     ap.add_argument('--try-window', action='store_true')
+    ap.add_argument('--patch-dir', help='探针补丁目录（默认 <dir>/_patch，有就跑补丁叠加载入；没有就跳过）')
     a = ap.parse_args(argv)
     src = Path(a.dir)
     exe = src / a.exe
@@ -173,6 +209,11 @@ def main(argv=None) -> int:
                   '出现了 KYO\\再刷重制_开发（发行包不该用调试目录，O-200）' if any(d['dev'] for d in dirs) else '没有 _开发 目录')
         if a.try_window:
             try_window(exe, work, rep, tmp_root)
+        patch_dir = Path(a.patch_dir) if a.patch_dir else src / '_patch'
+        if (patch_dir / 'patch.pck').is_file():
+            patch_runs(exe, work, rep, tmp_root, patch_dir)
+        else:
+            rep.info('win_patch', '没有探针补丁目录，补丁叠加载入没跑')
     finally:
         shutil.rmtree(tmp_root, ignore_errors=True)
     write_report(work, rep, dirs)
