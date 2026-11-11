@@ -1,5 +1,5 @@
 extends Node
-## 自动更新第 0 批（技术验证，Kyo 2026-11-11「安排开工」；O-待定·补丁叠加载入）。
+## 自动更新第 0 批（技术验证，Kyo 2026-11-11「安排开工」；O-274）。
 ## 第一个自动加载，排在 GameApp 前面：在 _init 里把用户目录里已校验的补丁包叠到底包上。
 ## 引擎按顺序逐个载入自动加载脚本，所以这里载入补丁之后，GameApp 及其后所有脚本、数据、图都读到补丁里的版本。
 ## 本脚本一旦运行就不能再被补丁替换，所以写得尽量短，**不引用任何带 class_name 的脚本**（引用了就会先于补丁载入）。
@@ -15,7 +15,7 @@ const DIR := "user://updates"
 const STATE_FILE := "user://updates/active.json"
 const BUILD_INFO := "res://content/build_info.json"
 
-## O-待定·补丁叠加载入 开关：false 回退为不认任何补丁（只用安装包自带内容）。
+## O-274 开关：false 回退为不认任何补丁（只用安装包自带内容）。
 static var enabled := true
 ## 本次启动的结果，给界面和测试看：{"loaded": bool, "reason": String, "code": int, "base": int}
 static var result := {"loaded": false, "reason": "未运行", "code": 0, "base": 0}
