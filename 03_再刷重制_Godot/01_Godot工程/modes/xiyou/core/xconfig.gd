@@ -22,7 +22,8 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
-	"codexWeakFiveClearV2": false, "codexWhisperSeen": []}
+	"codexWeakFiveClearV2": false, "codexWhisperSeen": [],
+	"codexScreenFx": true}  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
