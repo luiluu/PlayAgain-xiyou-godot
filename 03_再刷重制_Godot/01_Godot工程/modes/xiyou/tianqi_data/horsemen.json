@@ -104,7 +104,8 @@
    "adds": {"every": 2, "max": 3},
    "shield": {"break": 0.22, "break3": 0.33},
    "plague": {"dot": 0.05, "heal_down": 0.5, "confuse": 0.15, "down_start": 0.1, "down_per": 0.05, "down_cap": 0.33},
-   "frail": {"per": 0.03, "cap": 0.6}
+   "frail": {"per": 0.03, "cap": 0.6},
+   "shadow_cry": {"_note": "35 层影子每回合一次弱化的「不服来打我」：我方全体 +1 不服，再盾击一人（系数 × 本体攻击 × (1－自身攻击降低)）；cc 瘟疫线车道，测试参数", "coef": 0.66, "per_add": 1}
   }
  },
  "shadow": {

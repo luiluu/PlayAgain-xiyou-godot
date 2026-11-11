@@ -192,6 +192,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
+	XTianqiPlagueAlien.setup(self, s)  # 天启篇瘟疫线异化（prepare 过才变）：病灶、病弱、毒腺、混乱者、挑衅者、传染者、疫源
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -244,6 +245,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	turn_start_logs.append_array(XTianqiHorsemen.take_logs(self))
 	turn_start_logs.append_array(XTianqiWarAlien.take_logs(self))
 	turn_start_logs.append_array(XTianqiFamineAlien.take_logs(self))
+	turn_start_logs.append_array(XTianqiPlagueAlien.take_logs(self))
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -752,6 +754,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
+	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
@@ -1079,6 +1082,7 @@ func start_turn() -> void:
 	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
 	turn_start_logs.append_array(XTianqiHorsemen.start_turn(self))  # 天启四骑士：死期、神圣剑亮目标、援军、疫病、破盾
 	turn_start_logs.append_array(XTianqiFamineAlien.start_turn(self))  # 天启篇饥荒线异化：报饥饿
+	turn_start_logs.append_array(XTianqiPlagueAlien.start_turn(self))  # 天启篇瘟疫线异化：报病灶
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1200,6 +1204,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiHorsemen.after_action(self, u))  # 天启四骑士：打混子记不服、号令、阶段
 	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
+	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1242,6 +1247,7 @@ func end_turn() -> Array:
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
+	logs.append_array(XTianqiPlagueAlien.end_turn(self))  # 天启篇瘟疫线异化：中毒扣血、传染、减益回合
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -2740,6 +2746,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiHorsemen.hp_damage(self, u, t, value)  # 天启四骑士：混子之盾累计、打混子记不服；疫病治疗 −50%
 	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
 	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
+	value = XTianqiPlagueAlien.hp_damage(self, u, t, value, item)  # 天启篇瘟疫线异化：毒腺中毒、混乱者混乱、挑衅者不服与化形群攻减半
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -2940,8 +2947,9 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 					else:
 						_state_add(t, id)
 						r.added.append(id)
+						XTianqiPlagueAlien.on_state_added(self, u, t, id)  # 天启篇瘟疫线异化：疫源让我方减益多几回合
 		22:
-			if _float("remove_state") < v1:
+			if _float("remove_state") < v1 and not XTianqiPlagueAlien.purge_blocked(self, u, t, int(eff.dataId)):  # 天启篇瘟疫线异化：疫源让净化可能失败
 				_state_remove(t, int(eff.dataId))
 				r.removed.append(int(eff.dataId))
 		31:
@@ -3372,6 +3380,7 @@ func end_battle(result := -1) -> void:
 	XTianqiHorsemen.end(self)  # 天启四骑士：清本场的标记（疫病、识破等不带出战斗）
 	XTianqiWarAlien.end(self)  # 天启篇战争线异化：清本场异化
 	XTianqiFamineAlien.end(self)  # 天启篇饥荒线异化：清本场异化
+	XTianqiPlagueAlien.end(self)  # 天启篇瘟疫线异化：清本场异化
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

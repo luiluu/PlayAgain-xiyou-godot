@@ -38,7 +38,7 @@ static var _pending := ""
 ## 下一场的打法（prepare 设、setup 取走）：body 36 层本体；survival 开场「天外裂」生存战；shadow 35 层影子。
 ## 生存战、影子现在只做了战争线（四线剧情与关卡设计稿 v0.4 第 5.7 节；cc/pro-tianqi-war），别的线 prepare 不收
 const MODES := ["body", "survival", "shadow"]
-const MODE_LINES := {"survival": ["war", "famine"], "shadow": ["war", "famine"]}
+const MODE_LINES := {"survival": ["war", "famine", "plague"], "shadow": ["war", "famine", "plague"]}
 static var _pending_mode := "body"
 ## 正在打的骑士战（BattleLogic）；挂钩先看它，没有就原样返回
 static var _logic_ref: WeakRef = null
@@ -467,7 +467,7 @@ static func end_turn(logic) -> Array:
 ## 生存战撑满回合：骑士和援军一起退场（算胜利，没有经验和掉落）
 static func _survive(logic, f: Dictionary) -> void:
 	f.survived = true
-	_say(f, "%s%s：「……今天先到这里。」" % [str(f.base.name), {"famine": "合上了卷子"}.get(str(f.line), "收起了引信")])
+	_say(f, "%s%s：「……今天先到这里。」" % [str(f.base.name), {"famine": "合上了卷子", "plague": "放低了盾"}.get(str(f.line), "收起了引信")])
 	for e in [f.knight] + f.adds:
 		if e.is_alive():
 			e.hp = 0.0
@@ -649,7 +649,7 @@ static func _shield_hit(f: Dictionary, value: float, turn: int) -> void:
 		return
 	f.shield_acc = float(f.shield_acc) + value
 	var k: Dictionary = knight("plague").shield
-	var need := float(f.knight.mhp) * float(k.break3 if int(f.phase) >= 3 else k.break)
+	var need := float(f.knight.mhp) * float(k.break3 if int(f.phase) >= 3 else k.break) * XTianqiPlagueLine.shield_need_mult()  # 瘟疫线 25 层捡了盾碎片：降低
 	if float(f.shield_acc) >= need and int(f.broken_turn) < 0:
 		f.shield_acc = 0.0
 		f.broken_turn = turn
@@ -692,6 +692,8 @@ static func decide(logic, b) -> Array:
 				return [_skill("sea", "题海战术", 2, 1, float(knight("famine").sea.coef), false), null]
 			return _famine_pick(logic, f, i)
 		"plague":
+			if str(f.mode) == "shadow":  # 35 层影子：每回合一次弱化的不服来打我（全体 +1 不服，盾击一人）（cc 瘟疫线车道）
+				return [_skill("defy_cry", "不服来打我", 1, 1, float(knight("plague").shadow_cry.coef), false), null]
 			return [_skill("bash", "盾击", 1, 1, float(knight("plague").bash.coef), false), null]
 	return [{}, null]
 
@@ -795,6 +797,12 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 			for t in _alive_actors(logic):
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef), false))
 			f.finale = 0
+		"defy_cry":
+			for a in _alive_actors(logic):
+				_defiance(logic, f, a, int(knight("plague").shadow_cry.per_add))
+			var t = _pick_target(logic, chosen)
+			if t != null:
+				logs.append(_strike(logic, u, t, skill, float(u.atk) * (1.0 - float(knight("plague").self_atk_down)) * float(skill.coef), false))
 		"bash":
 			var t = _pick_target(logic, chosen)
 			if t != null:

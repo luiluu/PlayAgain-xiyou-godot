@@ -10,7 +10,7 @@
 - horsemen.json（天启四骑士）：
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
   B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
-- war_line.json、famine_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
+- war_line.json、famine_line.json、plague_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -412,6 +412,7 @@ CHECKS = [
     ('horsemen', lambda args: check_horsemen(args.params)),
     ('war_line', check_war_line),
     ('famine_line', lambda _args: check_line('famine')),
+    ('plague_line', lambda _args: check_line('plague')),
 ]
 
 
