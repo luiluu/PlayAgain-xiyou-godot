@@ -174,9 +174,6 @@ func _battle() -> void:
 	XTianqi.SWAP_IN_BATTLE = false
 	_check("swap_switch_off", not lg.can_tianqi_swap(lg.actors[0]) and not scene._command_entries(lg.actors[0]).any(func(o): return o.key == "tianqiSwap"))
 	XTianqi.SWAP_IN_BATTLE = true
-	var exp_before := {}
-	for id in lineup:
-		exp_before[id] = s.actor(id).exp_total
 	get_tree().root.add_child(scene)
 	await _until(func(): return scene.sprites.size() > 0 and scene.status_rows.size() == 4)
 	var out: XActor = lg.actors[0]
@@ -187,8 +184,18 @@ func _battle() -> void:
 	_check("swapped_scene", scene.sprites.has(h) and not scene.sprites.has(out) and scene.status_rows.has(h) and not scene.status_rows.has(out))
 	var result: int = await scene.finished
 	_check("battle_won", result == 0, result)
-	var gained := lineup.map(func(id): return s.actor(id).exp_total - exp_before[id])
-	_check("helper_full_exp", gained.all(func(g): return g == gained[0] and g > 0), gained)
+	# 经验直接按一份固定奖励发（敌群 2 自动战斗的掉落经验在不同机器上会是 0，云端 11-11 碰到过）：上场的和助力位一样多，替补按后备比例（西游 optExtraExp 开着，后备也拿满，各人 exr 不同）
+	XTianqi._joining = true
+	s.add_actor(w[5])
+	XTianqi._joining = false
+	var lg2 := XBattleLogic.new()
+	lg2.setup(2, s)
+	var ids := [lg2.actors[0].actor_id, s.helper().actor_id, w[5]]
+	var before := ids.map(func(id): return s.actor(id).exp_total)
+	lg2.grant({"exp": 50, "gold": 0, "drops": []})
+	var gained := range(3).map(func(i): return s.actor(ids[i]).exp_total - before[i])
+	var bench := 50 if bool(XDB.system().get("optExtraExp", false)) else 0
+	_check("helper_full_exp", gained[0] > 0 and gained[1] == gained[0] and (gained[2] > 0) == (bench > 0), [ids, gained])
 	scene.bgm.stop()
 	scene.se.stop()
 	scene.queue_free()
