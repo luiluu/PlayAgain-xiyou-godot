@@ -11,6 +11,7 @@
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
   B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
 - war_line.json、famine_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
+- summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -406,12 +407,52 @@ def check_war_line(_args) -> bool:
     return check_line('war')
 
 
+# ---- summit.json（31～36 层重做） ----
+
+SUMMIT_SCENES = ['door', 'door_top', 'arrive34', 'arrive35', 'arrive36', 'ask', 'hongjun_before', 'hongjun_win', 'hongjun_lost',
+                 'shadow_win', 'lost', 'not_ready', 'honghuang_ask', 'honghuang_done', 'honghuang_skip', 'rechallenge_head']
+
+
+def summit_rules(table: dict) -> list:
+    bad = []
+    out = []
+    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
+    if out:
+        bad.append('数字带 4：' + '，'.join(out))
+    top, low = int(table.get('top', 0)), int(table.get('from', 0))
+    miss = [n for n in range(low, top + 1) if str(n) not in table.get('floors', {})]
+    if not low or top < low or miss:
+        bad.append('层不齐：from=%s top=%s 缺 %s' % (low, top, miss))
+    for n, f in table.get('floors', {}).items():
+        if f.get('boss') not in ('hongjun', 'shadow', 'final') or len(f.get('pos', [])) != 3 or len(f.get('tone', [])) != 4:
+            bad.append('%s 层数据不全：%s' % (n, f))
+    if len(table.get('hongjun', {}).get('rate', [])) != 8:
+        bad.append('鸿钧 rate 要 8 项')
+    miss = [k for k in SUMMIT_SCENES if not table.get('scenes', {}).get(k)]
+    if miss:
+        bad.append('缺台词：%s' % miss)
+    return bad
+
+
+def check_summit(_args) -> bool:
+    path = DATA_DIR / 'summit.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    bad = summit_rules(json.loads(path.read_text(encoding='utf-8')))
+    for b in bad:
+        print('  ' + b)
+    print('summit.json 规则自检：' + ('通过' if not bad else '%d 项不过' % len(bad)))
+    return not bad
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
     ('horsemen', lambda args: check_horsemen(args.params)),
     ('war_line', check_war_line),
     ('famine_line', lambda _args: check_line('famine')),
+    ('summit', check_summit),
 ]
 
 

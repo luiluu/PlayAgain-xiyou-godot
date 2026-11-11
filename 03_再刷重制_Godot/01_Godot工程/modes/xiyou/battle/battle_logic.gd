@@ -192,6 +192,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
+	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）

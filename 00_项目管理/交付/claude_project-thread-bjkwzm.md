@@ -6,7 +6,8 @@
 ## 依赖与合并顺序
 
 - **依赖 `cc/pro-tianqi-war`（战争线，它又依赖 `cc/pro-tianqi-horsemen`），都未合 main**：本分支从 `cc/pro-tianqi-war` 头 504b0af 切出。
-- **合并顺序：`cc/pro-tianqi-horsemen` → `cc/pro-tianqi-war` → 本分支。** 直接合本分支会把前两支一起带进 main（它们的交付单也在本分支里）。
+- **本分支合进了 `claude/project-thread-r4t9e0`（车道戊·31～36 层重做，12efff）**，接上饥荒线的 35、36 层。
+- **合并顺序：`cc/pro-tianqi-horsemen` → `cc/pro-tianqi-war` → `claude/project-thread-r4t9e0` → 本分支。** 直接合本分支会把前三支一起带进 main（它们的交付单也在本分支里）。
 - **周六整包出完前不合 main**（协调 11-11）。发行开关 `XTianqi.RELEASE_OPEN` 没动（仍是 false）：发行构建里天启篇整个不开，本分支的饥荒线、序幕、按线分派的门和楼层节点都只认天启篇存档且发行已开放。
 
 ## 变更记录草稿
@@ -20,7 +21,7 @@
   - 开场三节（选定饥荒线后接着跑；前两节可输，输了回大厅，再走大厅的门接着打）：第 1 节「异兆」三层训练场（6），侵染·枯竭者的哥布林巫师（敌群 11 第一只，十分罕见），教饥饿和口粮；第 2 节「蔓延」伐木者小屋（126），节末精英蚀骨·荒年者的光头强（敌群 430；设计稿写首领名字待查，cc 选的，待核），打完回头孩子不见了、只剩答题卡；第 3 节「天外裂」天外天（借 158），饥荒骑士生存战。
   - 序幕：天启篇存档第一次到三层训练场，吕茂在做题（「再刷一套就够了。」），所有线都有；饥荒线通关后再到三层说一次「这次我慢慢做。」
   - 使徒：10 层侵染·枯竭者（灵狼祭祀）、20 层蚀骨·掠夺者（石日天）、30 层化形·透支者（玉皇大帝），开战前放「饥荒骑士的声音」。15 层黑暗废墟的卷子回声、25 层上行天的传闻，各一次；25 层传闻后可选「模拟考」三道题，答对题数记 `flags.tianqi.famine.quiz`（余粮还没有物品，先只记分）。
-  - 35 层影子、36 层决战与结局（`run_shadow`／`run_final`，赢了记通关和可轮回、放「我是改卷子的」）：和战争线一样，地图上还没有入口（等 31～36 层重做车道）。
+  - 35 层影子、36 层决战与结局（`run_shadow`／`run_final`，赢了记通关和可轮回、放「我是改卷子的」）：接进 31～36 层重做的 `XTianqiSummit`（`line_module`、`_run_line` 各加饥荒线一行），35、36 层的门现在对饥荒线开。`xiyou_tianqi_summit` 里原来拿饥荒线当「还没做好的线」的两处改用瘟疫线，另加饥荒线 35 层影子、36 层决战两项。
 - 新模块 `core/tianqi_famine_alien.gd`（XTianqiFamineAlien）：饥荒线异化怪的战斗规则，只给上面几场用（`prepare` 预约，没预约的战斗一概不动）。级同战争线（生命 ×1.25／1.5／2／3，名字前加「级·」）；种类：枯竭者（我方 MP／TP 消耗 +30／50／80／120%，化形起生命消耗也提高）、荒年者（我方受到的回复 −20／30／50／70%，化形起再生失效）、掠夺者（命中夺目标 5／10／15／25% 的 MP、TP，化形起转成自己的护盾）、熬夜者（我方 TP 获得 −30／50／70／100%，化形起每回合结束 TP −10）、透支者（每放一次技能另扣 2／3／6／10% 当前生命，化形起按最大生命；第 2 档照「避开 4」从 4% 改 3%）。饥饿：消耗倍率、回复倍率由场上饥荒异化怪相加，开战和每回合开始在战斗日志里报。口粮：零消耗技能（原生攻击、防御除外）每次扣最大 MP 的 3／5／8／12%（按场上最高级），MP 不够扣同样比例的当前生命（不会扣死）。
 - 挂钩：`battle_logic.gd`（setup、开战日志、回合开始、`skill_cost` 最外层、`skill_hp_cost`、`pay_skill_cost` 付费后、两处静默 TP 获得、`_regenerate`、`execute_hp_damage`、行动后日志、回合结束、结束战斗各加一行）、`resource_context.gd`（`_gain` 里降回复）。`skill_cost` 原来的函数体改名 `_skill_cost_floor`，外面包一层；面板（`panel=true`）不动。
 - 四骑士（`tianqi_horsemen.gd`、`horsemen.json`）：生存战、影子加饥荒线。生存战开场即绝粮，3 只「饿出来的小怪」借三层伐木场的伐木哥布林 514 原数值 × 本档敌人倍率，骑士吃它们来打你，资历照涨、没有突破，撑过 6 回合「合上了卷子」退场；影子每回合一招题海战术，带绝粮，没有小怪。`survival` 一节加 `add_enemy_famine`。
@@ -31,7 +32,6 @@
 ### 未做（下一单）
 
 - 1～30 层按段异化（车道丁在做）：普通楼层的怪还不会异化；熬夜者只在规则和专项里，没有固定出场的战斗（11～15 层按段异化才教）。
-- 35、36 层入口（车道戊 31～36 层重做）：到时在 35、36 层的事件里调 `XTianqiLine.run_shadow`／`run_final`（本档的线）。
 - 饥荒细则：减耗、免耗效果打折；自带资源角色（层数、点数）的获得量降低（要逐个角色模块接）；荒年的掉落减少与余粮（没有物品）；各种类的终焉效果（终焉只给骑士和 31～36 层 Boss）；绝粮下「消耗再提高一档」和口粮 12%（四骑士本体战里还没接，本分支只接了异化战）。
 - 奖励：净印·存粮、骑士遗物「没写完的卷子」、生存战撑过的额外奖励（`survived` 已记），等装备栏和词条出包后的奖励车道。
 - 画面：饥饿计量条（现在只在战斗日志里报）、方桌裂纹的旧纸黄、楼层异化色调和空碗、试卷装饰、吕茂骑士形态的立绘。
@@ -44,7 +44,7 @@
 
 ## 进度账
 
-- 天启篇（扩展账）：饥荒线关卡流程、事件、对话 0 → 开场三节、序幕、楼层节点、使徒、模拟考、生存战、影子、五种异化已接；35／36 层入口、按段异化、奖励、画面未做。四线共用流程 XTianqiLine 抽出（战争线改走它）。
+- 天启篇（扩展账）：饥荒线关卡流程、事件、对话 0 → 开场三节、序幕、楼层节点、使徒、模拟考、生存战、影子、五种异化已接；35／36 层已接（XTianqiSummit）；按段异化、奖励、画面未做。四线共用流程 XTianqiLine 抽出（战争线改走它）。
 
 ## 可优化（流程／工具／效率）
 
@@ -64,7 +64,7 @@
 
 云端容器（Godot 4.7.2 Linux，转换产物取自 `refs/ci/generated/main`，轻量工程：不带 img／audio／movies）：
 
-- 新专项 `xiyou_tianqi_famine` 99/99；`xiyou_tianqi_war` 96/96（XTianqiLine 抽出后照过）。
+- 新专项 `xiyou_tianqi_famine` 99/99；`xiyou_tianqi_war` 96/96（XTianqiLine 抽出后照过）；合进戊之后 `xiyou_tianqi_summit` 63/63（含饥荒线 35、36 层）。
 - `并行测试.py` 一批 40 个：38 个过（`xiyou_tianqi_*` 14 个、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_boss_lifecycle`、`xiyou_boss_output`、`xiyou_boss_status`、`xiyou_action_sequence`、`xiyou_actor1_damage`、`xiyou_attack_query`、`xiyou_battle_pace`、`xiyou_lobby_corruption`、`xiyou_map_dispatch`、`xiyou_regen_popup`、`xiyou_battle_gaps`、`xiyou_challenge_passives`、`xiyou_guyu`、`xiyou_imported_balance`、`xiyou_loose_fixes`、`xiyou_mira_battle`、`xiyou_nanoha`、`xiyou_race_battle`、`xiyou_shield`、`xiyou_skill_mastery`、`xiyou_sukuna_battle`、`xiyou_target_eval`、`xiyou_tusu_battle`、`xiyou_wtype`、`xiyou_smart_ai`）。
 - 2 个失败是轻量工程的环境差异，不是本分支：`xiyou_determinism` 只挂 `real_animation_audio`（轻量工程没有音频）；`xiyou_tianqi_title_flow` 只挂触屏读档 `tc_loaded`，在没改过的 `cc/pro-tianqi-war` 上同样的轻量工程也挂（两次各挂 1～2 项）。请在 Mac 上照常跑。
 - `天启篇数据校验.py` 全过（war_line、famine_line 规则自检；horsemen 对照参数这次没给 `--params`）。
@@ -74,4 +74,5 @@
 
 - 53031ff WIP: 四线共用 XTianqiLine（战争线改走它）、famine_line.json、XTianqiFamineLine／XTianqiFamineAlien、生存战与影子、专项
 - f0cdb05 WIP: 口粮豁免按整数比；专项跑通
-- 本次：交付单可合并
+- 792966951 交付单可合并
+- 合并 claude/project-thread-r4t9e0（31～36 层重做），饥荒线接 35、36 层
