@@ -20,7 +20,7 @@ const BACKUP_DIR_NAME := "save_backup"
 const STALL_SEC := 30
 const MAX_REDIRECTS := 4
 
-## O-待定·补丁下载 开关：false 回退为不在游戏内装补丁（检查更新页照「要换整包」提示去 QQ 群）。
+## O-276 开关：false 回退为不在游戏内装补丁（检查更新页照「要换整包」提示去 QQ 群）。
 static var ENABLED := true
 static var dir := BootPatchScript.DIR
 ## 只给测试用：允许本机 http 地址（正式清单的补丁地址必须全是 https，XUpdateCheck.valid_patch 管着）。
