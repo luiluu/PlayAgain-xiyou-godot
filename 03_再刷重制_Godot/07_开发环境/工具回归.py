@@ -36,6 +36,7 @@ GATE = [
     ('发行出包', '测试发行出包.py', [], '发行说明去内部信息、旧目录压 zip 不删、体积表'),
     ('Windows 实机冒烟', '测试Windows实机冒烟.py', [], '假 exe：入口、按键、存档目录不落 _开发、按键组与发行入口冒烟一致'),
     ('安卓实机冒烟', '测试安卓实机冒烟.py', [], '假 adb：返回键两次退出、回车开新游戏、切后台同一进程、崩溃行、不碰真机'),
+    ('交付自检与待合看板', '测试交付自检.py', [], '车道交付前自检照搬合并准备阶段的校验；待合看板的排队顺序与只读'),
     ('合并：删基线用例早停、车道探针结果复用', '测试合并工具.py',
      ['StatePrevFromLaneTests', 'MergeTests.test_lane_deleting_baseline_presets_stops_before_merge',
       'MergeTests.test_deleted_presets_three_way_and_baseline_filter'],
