@@ -1,6 +1,6 @@
 class_name XRift
 extends RefCounted
-## 【cc·未经审查】大厅时空漩涡二阶段（Kyo 11-11 整包出，O-待定·漩涡二阶段；时空裂缝方案 v0.7、交付单 cc_rift2-canglong.md）。
+## 【cc·未经审查】大厅时空漩涡二阶段（Kyo 11-11 整包出，O-312；时空裂缝方案 v0.7、交付单 cc_rift2-canglong.md）。
 ## 第一阶在原版 v0.62.07 起的 Map004：EV75「时空漩涡_1」(14,19)、EV76「时空漩涡_字幕1」（rift1 过场，甩出流萤）、EV77「时空漩涡_流萤1」。
 ## 本文件在 XDB.map(4) 读入时就地改（同 XDeadContent.patch_map），不碰切片与转换器：
 ## - EV75：图换 !Codex_Rift_Stage2（1344×576，每格 112×72，约两格宽；素材在 content/rift/，来历见同目录 README），
