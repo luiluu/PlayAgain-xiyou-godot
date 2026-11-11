@@ -33,12 +33,22 @@ static func row(s = null) -> Dictionary:
 
 # ---- 敌人 ----
 
+## 敌人倍率的基准难度号：本档开局借的原版难度（XTianqi.legacy_of）
+static func base_legacy(s = null) -> int:
+	if s == null:
+		s = XState.current
+	return XTianqi.legacy_of(str(s.flags.tianqi.get("difficulty", "")))
+
 ## 敌人八项能力倍率（mhp, mmp, atk, def, mat, mdf, agi, luk）。天启篇：基准难度的倍率，mhp 乘敌人血量，atk、mat 乘敌人攻击；否则照原版传进来的难度。
+## 基准难度跟本档开局借的原版难度走（XTianqi.legacy_of）：UNIFIED_LEGACY 开着时五档都是普通，关掉时各档借各自的原版难度，
+## 和开局一致，两个开关能各自回退（审查 79 P3-1）。
 static func enemy_rates(difficulty: int, s = null) -> Array:
+	if s == null:
+		s = XState.current
 	var r := row(s)
 	if r.is_empty():
 		return XEnemy.difficulty_rates(difficulty)
-	var out := XEnemy.difficulty_rates(XTianqi.NUMERIC_LEGACY)
+	var out := XEnemy.difficulty_rates(base_legacy(s))
 	out[0] = float(out[0]) * float(r.enemy_hp)
 	out[2] = float(out[2]) * float(r.enemy_atk)
 	out[4] = float(out[4]) * float(r.enemy_atk)
