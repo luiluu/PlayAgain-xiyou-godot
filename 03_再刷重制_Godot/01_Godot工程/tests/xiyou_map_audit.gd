@@ -5,6 +5,7 @@ extends Node
 ##   （图只有 29×18，人落在图外）。开关 21 只在洞窟碰到捕猎者时打开、逃离／打完／重置都会关，原版要读异常存档才碰得到；全灭回标题、读档恢复（O-244，Kyo 11-08 定），只有回退开关 GAME_OVER_TO_LOBBY = true 时才碰得到；修后照第 1 页进 Map087 (13,28)。回退支 page_switch_ignore = {} 时断言选回第 2 页。
 ## - O-241（MVTilemap.open_autotile_fix，floor6）：Map236 落点 (8,14) 四周是不可通行的深水自动图块，人动不了；
 ##   修后从落点走得到殿顶 Boss EV1 (8,4)。回退支 open_autotile_fix = {} 时断言只剩落点一格。
+## - O-待定·31层不可达副本（MVEvent.removed_events）：Map148 墙里的一护副本入口 EV42、EV43 条件满足也不显示；回退支照原版选第 1 页。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const CASE_MS := 30000
 const WaitBudget := preload("res://tests/wait_budget.gd")
@@ -122,6 +123,32 @@ func _qilin(fixed: bool) -> void:
 	MVTilemap.open_autotile_fix = _saved_autotile
 
 
+## O-待定·31层不可达副本（MVEvent.removed_events）：一护在队、有强者的证明、变量 1563／1557 满足时，
+## 修后 EV42「不知道什么殿」、EV43「灵王宫」不选页；回退支 removed_events = {} 时选第 1 页。卧豚殿 EV40 两支都照常出现。
+func _ichigo_gates(fixed: bool) -> void:
+	var tag := "ichigo_cut_" + ("fixed" if fixed else "orig")
+	if not fixed:
+		MVEvent.removed_events = {}
+	var s := _open(148, 24, 46)
+	# 一护是超强者，地狱以下 add_actor／gain_item 会被拦；这里只测页条件，直接写进队伍和背包
+	s.party.append(148)
+	s.items[1982] = 1
+	for v in [1561, 1562, 1563, 1564]:
+		s.set_variable(v, 1)
+	s.set_variable(1557, 100)
+	if _check(tag + "_loaded", await _load(148)):
+		for id in [42, 43, 40]:
+			var e := _event(id)
+			if _check(tag + "_spawned_%d" % id, e != null):
+				e.refresh()
+				var want := -1 if (fixed and id != 40) else 0
+				_check(tag + "_page_%d" % id, e.page_index == want, e.page_index)
+	MVEvent.removed_events = _saved_removed
+
+
+var _saved_removed: Dictionary
+
+
 func _run() -> void:
 	GameApp.fast_forward()
 	TestEnv.isolate("xiyou_map_audit")
@@ -134,6 +161,9 @@ func _run() -> void:
 	await _sky_gate(false)
 	await _qilin(true)
 	await _qilin(false)
+	_saved_removed = MVEvent.removed_events
+	await _ichigo_gates(true)
+	await _ichigo_gates(false)
 	print("失败：", JSON.stringify(fails))
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
