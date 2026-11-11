@@ -32,6 +32,16 @@
       "to": "cdd9dcb1d5eed7169191a4cb049a766f60eb80da0d7228ec4bc4c41dfd103998",
       "presetKeys": [],
       "why": "cc 分段甲 a6（接 map-m4 建议）：runCase 统计 reached 改按指令对象记（runList＝setup 用的深拷贝，与 list 下标对齐），不再按解释器下标。只有执行中换了指令表的用例（帮助页更新日志段 injectChangelog 插行）结果会变，这类用例原先在 list[i].code 越界抛 TypeError、整段崩，从没有结果入账；正式源里别处没有改解释器 _list 的，已入账的变体 reached 逐字不变（实测 34 个 a6 旧变体新旧探针逐字相同）"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "cdd9dcb1d5eed7169191a4cb049a766f60eb80da0d7228ec4bc4c41dfd103998",
+      "to": "d511993de563bdfe365d2a39277e5bf11ad7a909f76778f0a52ea26b4dc5d15f",
+      "presetKeys": [
+        "hangUp",
+        "designations"
+      ],
+      "why": "cc 地图页 m5：applyPreset 新加预设键 hangUp（设 XdRsData.hangUp.GuaJiStartBettleOk，下一例开头换回原值）与 designations（ConfigManager.DesignationN[N]=true，每例 applyData({}) 已清空）；不带这两个键的变体执行路径不变（开头的换回只在上一例带 hangUp 时动作）"
     }
   ]
 }

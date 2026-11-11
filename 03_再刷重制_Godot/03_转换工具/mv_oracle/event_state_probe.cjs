@@ -103,10 +103,13 @@ const rec = e => trace && trace.push(e);
 const EFFECT = new Set([121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 137, 201, 223, 236, 301, 302, 303, 311, 312, 313, 314, 315, 316, 317,
   318, 319, 320, 321, 324, 325, 355, 356, 117, 352, 353, 354]);
 // 初始状态预设：开关、变量、独立开关、金钱、物品／武器／防具、队伍、角色技能和等级、难度
-const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'maxLevel', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
+const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'maxLevel', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons', 'hangUp', 'designations'];
 // cc 分段甲 a6：actors.N 下认的子键（角色状态门：paramPlus／hp／mp／states）；不认识的同样报错
 const ACTOR_PRESET_KEYS = ['level', 'skills', 'forget', 'armors', 'weapons', 'paramPlus', 'hp', 'mp', 'states'];
+// cc 地图页 m5：挂机标记 XdRsData.hangUp.GuaJiStartBettleOk 是运行期全局、新局不清；只有带 hangUp 的例改它，下一例开头换回原值
+let hangUpSaved = null;
 function applyPreset(p) {
+  if (hangUpSaved) { w.XdRsData.hangUp.GuaJiStartBettleOk = hangUpSaved.v; hangUpSaved = null; }
   if (!p) return;
   // 不认识的预设键直接报错（审查 49：g3 用了 random 而不是 random_seq，悄悄没生效）
   for (const k of Object.keys(p)) if (!PRESET_KEYS.includes(k)) throw new Error('event_presets 不认识的预设键: ' + k);
@@ -154,6 +157,10 @@ function applyPreset(p) {
   for (const id of p.dead || []) w.$gameActors.actor(Number(id)).setHp(0);
   // accept5：玩家朝向（条件分歧 6 [-1, 方向]：传送门、机关多要玩家面朝某方向）
   if (p.playerDirection) w.$gamePlayer.setDirection(p.playerDirection);
+  // cc 地图页 m5：hangUp＝正在挂机（开始挂机时设的全局标记），开 14 个守层者的「你正在挂机，无法挑战」门；
+  // designations＝已解锁的称号号（ConfigManager.DesignationN，每例 applyData({}) 已清空），开 Map2 EV2 窃格瓦拉的称号门
+  if (p.hangUp !== undefined) { hangUpSaved = {v: w.XdRsData.hangUp.GuaJiStartBettleOk}; w.XdRsData.hangUp.GuaJiStartBettleOk = !!p.hangUp; }
+  for (const id of p.designations || []) w.ConfigManager.DesignationN[Number(id)] = true;
   for (const [k, v] of Object.entries(p.selfSwitches || {})) { const [m, e, ch] = k.split(','); w.$gameSelfSwitches.setValue([Number(m), Number(e), ch], !!v); }
   // tools75：游玩秒数（$gameSystem.playtime() = floor(Graphics.frameCount / 60)）。此时 frameCount 刚清 0，之后每帧照常 +1，
   // 所以第一条指令看到 playtime 秒＋1 帧；Godot 侧 _apply_preset 设 play_seconds，start_frames 以它为起点，同

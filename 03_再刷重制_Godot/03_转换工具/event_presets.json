@@ -1,5 +1,5 @@
 {
- "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、忘掉的技能 forget、等级 level}、等级上限 maxLevel（同插件指令 maxlevel equal）、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态），游玩秒数 playtime（非负整数秒，$gameSystem.playtime()））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
+ "note": "事件对照有状态预设：base＝基础用例号，tag＝变体名，preset＝运行前改好的初始状态（开关 switches、变量 variables、独立开关 selfSwitches、金钱 gold、items／weapons／armors、队伍 party、角色 actors{技能 skills、忘掉的技能 forget、等级 level}、等级上限 maxLevel（同插件指令 maxlevel equal）、难度 difficulty、怪物图鉴击败数 defeats{敌人号: 次数}，先倒下的角色 dead[角色号…]（setHp(0)，带死亡状态），游玩秒数 playtime（非负整数秒，$gameSystem.playtime()），正在挂机 hangUp（XdRsData.hangUp.GuaJiStartBettleOk），已解锁称号 designations[称号号…]（ConfigManager.DesignationN））。变体号 base#tag。由 event_state_probe.cjs 量、tests/xiyou_event_compare 对照。",
  "cases": [
   {
    "base": "m187e3p1",
@@ -315983,6 +315983,209 @@
      0,
      0,
      0,
+     5
+    ]
+   }
+  },
+  {
+   "base": "m3e2p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m5e2p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m5e2p1",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m6e1p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m7e3p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m10e1p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m11e11p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m12e7p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m13e2p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m15e1p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m17e1p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m20e6p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m61e7p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m62e4p0",
+   "tag": "m5_hu",
+   "preset": {
+    "hangUp": true,
+    "answers": [
+     0
+    ]
+   }
+  },
+  {
+   "base": "m4e61p0",
+   "tag": "m5_jx",
+   "preset": {
+    "party": [
+     147
+    ],
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e61p1",
+   "tag": "m5_jx",
+   "preset": {
+    "party": [
+     147
+    ],
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m4e61p2",
+   "tag": "m5_jx",
+   "preset": {
+    "party": [
+     147
+    ],
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m225e10p0",
+   "tag": "m5_jx",
+   "preset": {
+    "party": [
+     147
+    ],
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "m2e2p2",
+   "tag": "m5_ds",
+   "preset": {
+    "variables": {
+     "1": 3
+    },
+    "answers": [
+     0
+    ],
+    "designations": [
      5
     ]
    }
