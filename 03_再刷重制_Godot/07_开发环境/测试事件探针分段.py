@@ -1010,6 +1010,26 @@ class AncestorTraceTests(unittest.TestCase):
         self.assertEqual(cov.open_preset(lst, 0, 'ce1316'), {'actors': {'45': {'states': [692]}}})
         self.assertEqual(cov.open_preset(lst, 3, 'ce1316'), {'actors': {'45': {}}})
 
+    def test_removed_positions(self):
+        """事件有意删除.json（地图死代码／轮回不选人）：区间展开、核指令码、--keep-removed 回退、名单里的位置都还是原版那条指令"""
+        cov = self.anc.cov
+        with tempfile.TemporaryDirectory() as t:
+            f = Path(t) / 'rm.json'
+            f.write_text(json.dumps({'groups': [{'o': 'O-x', 'code': 115, 'at': ['m1e1p0:2', 'm9e9p0:0']},
+                                                {'o': 'O-y', 'code': 355, 'at': ['m1e2p0:1-3']}]}))
+            lists = {'m1e1p0': [_c(0, []), _c(412, []), _c(115, [])], 'm1e2p0': [_c(0, []), _c(355, ['x']), _c(655, ['y']), _c(126, [1, 0, 0, 1])]}
+            with mock.patch.object(cov, 'REMOVED', f):
+                got = cov.removed_set(lists)
+                self.assertEqual(got, {'m1e1p0:2': 'O-x', 'm9e9p0:0': 'O-x', 'm1e2p0:1': 'O-y', 'm1e2p0:2': 'O-y', 'm1e2p0:3': 'O-y'})
+                with mock.patch.object(cov, 'KEEP_REMOVED', True):
+                    self.assertEqual(cov.removed_set(lists), {})
+                lists['m1e1p0'][2] = _c(0, [])
+                with self.assertRaises(SystemExit):
+                    cov.removed_set(lists)
+        real = json.loads(cov.REMOVED.read_text())
+        self.assertEqual([g['code'] for g in real['groups']], [115, 355])   # 地图死代码、轮回不选人（O 号合并时发）
+        self.assertEqual(len(real['groups'][0]['at']), 18)
+
     def test_merge_actor_state_keys(self):
         out = {'party': [45], 'actors': {'45': {'skills': [1]}}}
         self.anc.merge_into(out, {'actors': {'45': {'states': [692], 'paramPlus': {'0': 10}, 'hp': 10}}})

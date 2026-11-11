@@ -15,6 +15,9 @@
 角色在队、角色学会技能、金钱、独立开关）写出能让门打开的预设候选（event_presets.json 的 cases 格式，tag 用 e8），要不要采用由人挑。
 没选中的选项（402）出 answers（外层选项项号＋本项号，events9）；取消（403）、随机、脚本条件这类门列成「留给新能力」。
 
+有意删除（cc 地图死代码／轮回不选人，Kyo 2026-11-11 定）：`事件有意删除.json` 列出的位置（走不到的死代码、另有专项对照的轮回入口）
+写法统计和 --missed 都不算，单列个数；--keep-removed 照旧算（回退）。每个位置核对指令码，换源后挪了位置就报错。
+
 位置可达：公共事件在 tests/fixtures/script_census_known.json 的 unreachable 里→「走不到」，在 battleRoots 或只被战斗调用的→不分（本工具不追调用方，只看 unreachable）。
 排序：没有对照例的写法按出现次数降序；有对照例的写法只计数。
 """
@@ -26,6 +29,8 @@ import re
 HERE = Path(__file__).resolve().parent
 GEN = HERE.parent / '01_Godot工程/modes/xiyou/generated'
 KNOWN = HERE.parent / '01_Godot工程/tests/fixtures/script_census_known.json'
+REMOVED = HERE / '事件有意删除.json'
+KEEP_REMOVED = False   # --keep-removed：有意删除的位置照旧算（回退）
 SKIP = {0, 401, 405, 408, 411, 412, 402, 403, 404, 601, 602, 603, 604, 605, 655, 413, 505, 108}
 COND = {0: '开关', 1: '变量', 2: '独立开关', 3: '计时器', 4: '角色', 5: '敌人', 6: '角色朝向', 7: '金钱', 8: '物品', 9: '武器',
         10: '防具', 11: '按键', 12: '脚本', 13: '载具'}
@@ -88,13 +93,46 @@ def locations():
             yield 'ce%d' % int(cid), ce['list']
 
 
+def removed_set(lists: dict) -> dict:
+    """事件有意删除.json 展开成 {'位置:下标': 'O-…'}；位置在 lists（位置→指令表）里的核对指令码，对不上报错（换源后要重核）。"""
+    if KEEP_REMOVED or not REMOVED.exists():
+        return {}
+    out = {}
+    for g in json.loads(REMOVED.read_text())['groups']:
+        for at in g['at']:
+            loc, rng = at.rsplit(':', 1)
+            a, _, b = rng.partition('-')
+            a = int(a)
+            b = int(b) if b else a
+            lst = lists.get(loc)
+            if lst is not None and (b >= len(lst) or int(lst[a]['code']) != int(g['code'])):
+                raise SystemExit('事件有意删除.json：%s 处的指令码不是 %s（换源后位置挪了？要重核）' % (at, g['code']))
+            for i in range(a, b + 1):
+                out['%s:%d' % (loc, i)] = g['o']
+    return out
+
+
+def removed_count(executed: set) -> int:
+    """有意删除、本来就没执行到、且不是续行／结构行的实例数（报告里单列）"""
+    lists = dict(locations())
+    n = 0
+    for k in removed_set(lists):
+        loc, i = k.rsplit(':', 1)
+        lst = lists.get(loc)
+        if lst is not None and int(lst[int(i)]['code']) not in SKIP and k not in executed:
+            n += 1
+    return n
+
+
 def analyse(executed: set):
     known = json.loads(KNOWN.read_text())
     unreachable = set('ce' + k for k in known.get('unreachable', {}))
+    lists = dict(locations())
+    removed = removed_set(lists)
     rows = {}
-    for loc, lst in locations():
+    for loc, lst in lists.items():
         for i, c in enumerate(lst):
-            if int(c['code']) in SKIP:
+            if int(c['code']) in SKIP or '%s:%d' % (loc, i) in removed:
                 continue
             k = key_of(lst, i)
             r = rows.setdefault(k, {'key': k, 'count': 0, 'reachableCount': 0, 'covered': 0, 'examples': []})
@@ -376,11 +414,13 @@ def missed(executed: set, targets: set, cases: set):
     unreachable = set('ce' + k for k in known.get('unreachable', {}))
     clusters = {}
     entered = {x.split(':')[0] for x in executed}   # 开头的 101 常随 102 一起消费、不单记下标，所以按「本页有任何一条执行到」算进过
-    for loc, lst in locations():
+    lists = dict(locations())
+    removed = removed_set(lists)
+    for loc, lst in lists.items():
         if loc in unreachable:
             continue
         for i, c in enumerate(lst):
-            if int(c['code']) in SKIP:
+            if int(c['code']) in SKIP or '%s:%d' % (loc, i) in removed:
                 continue
             k = key_of(lst, i)
             if k not in targets or '%s:%d' % (loc, i) in executed:
@@ -413,7 +453,10 @@ def main(argv=None):
     ap.add_argument('--missed-out')
     ap.add_argument('--missed-json')
     ap.add_argument('--suggest')
+    ap.add_argument('--keep-removed', action='store_true', help='事件有意删除.json 的位置照旧算（回退）')
     a = ap.parse_args(argv)
+    global KEEP_REMOVED
+    KEEP_REMOVED = a.keep_removed
     executed = label_reached(set(json.loads(Path(a.coverage).read_text())['executed']))
     if a.missed:
         return run_missed(a, executed)
@@ -437,7 +480,7 @@ def main(argv=None):
         Path(a.out).write_text(text, encoding='utf-8')
     if a.json:
         Path(a.json).write_text(json.dumps({'rows': rows}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    print(f'写法 {len(rows)} 类：有对照 {len(have)}，没有且走得到 {len(missing)}，只在走不到处 {len(dead)}')
+    print(f'写法 {len(rows)} 类：有对照 {len(have)}，没有且走得到 {len(missing)}，只在走不到处 {len(dead)}；有意删除 {removed_count(executed)} 个不算')
     return 0
 
 
@@ -463,8 +506,10 @@ def run_missed(a, executed):
                 kind = '脚本条件'
             need[kind] = need.get(kind, 0) + c['n']
     total = sum(c['n'] for c in out)
+    nrm = removed_count(executed)
     lines = ['# 没执行到的实例（按门聚簇）', '', '写法：' + '、'.join('`%s`' % t for t in sorted(targets)), '',
-             f'玩家走得到、没执行到的实例 {total} 个，{len(out)} 簇；其中门是简单条件、能直接写预设的 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）。', '',
+             f'玩家走得到、没执行到的实例 {total} 个，{len(out)} 簇；其中门是简单条件、能直接写预设的 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）。'
+             f'有意删除（事件有意删除.json）{nrm} 个不算。', '',
              '## 门的种类（不能直接写预设的）', '', '| 门 | 实例 |', '| --- | --- |']
     for k, n in sorted(need.items(), key=lambda x: -x[1]):
         lines.append('| %s | %d |' % (k, n))
@@ -489,7 +534,7 @@ def run_missed(a, executed):
         sug = [{'base': c['loc'], 'tag': 'e8', 'preset': c['preset'], 'gate': '%s:%s %s' % (c['loc'], c['gate'], c['gateText']), 'n': c['n']}
                for c in simple if c['loc'] in cases]
         Path(a.suggest).write_text(json.dumps(sug, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    print(f'没执行到 {total} 个，{len(out)} 簇；简单门 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）')
+    print(f'没执行到 {total} 个，{len(out)} 簇；简单门 {sum(c["n"] for c in simple)} 个（{len(simple)} 簇）；有意删除 {nrm} 个不算')
     return 0
 
 
