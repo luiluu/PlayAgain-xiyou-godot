@@ -15,7 +15,7 @@ const DIR := "user://updates"
 const STATE_FILE := "user://updates/active.json"
 const BUILD_INFO := "res://content/build_info.json"
 
-## O-待定 开关：false 回退为不认任何补丁（只用安装包自带内容）。
+## O-待定·补丁叠加载入 开关：false 回退为不认任何补丁（只用安装包自带内容）。
 static var enabled := true
 ## 本次启动的结果，给界面和测试看：{"loaded": bool, "reason": String, "code": int, "base": int}
 static var result := {"loaded": false, "reason": "未运行", "code": 0, "base": 0}
