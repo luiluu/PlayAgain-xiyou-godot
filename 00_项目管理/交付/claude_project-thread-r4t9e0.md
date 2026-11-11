@@ -24,8 +24,9 @@
     - 36 层天外天（新图做好前借 158）：本线骑士决战（战争线 `run_final`，结局、通关、可轮回在那边记），赢了记 `summit.cleared`，接洪荒通关奖励；之后门上只说「天外天已经空了」。
   - 旧 34 层「决战：天外天」（158）在天启篇里：随机遇敌拿掉，决战事件（EV001，洪荒奖励／6213）不跑。
   - 洪荒通关奖励和 6213 挪到 36 层：照原版只在开关 2483（隐藏特殊挑战洪荒难度）开着时有；打过本档 34 层鸿钧就问存档、给奖励（变量 1476，跨存档照原版）；原条件「没打过鸿钧学 6213 天道注视」改成「没打过本档 34 层鸿钧」，天启篇默认不学（`XTianqi.NO_HEAVEN_GAZE`）。
+  - 等级上限（Kyo 11-11 09:58 定、21:26 再确认「不开放到 99，打完 35 层开放到 81」）：天启篇 30 层 75、33 层 80、35 层后 81。原版各层守层者事件里的「maxlevel equal N」，N 超过 75 的按本档已通关层截住（30 层 80→75、31 层 81→75、32 层 90→75、33 层 99→80）；打完 35 层直接开到 81 并提示。29 层及以下照原版。原版事件自带的提示（如 33 层「等级上限开放至:99」）是脚本里的固定文字，天启篇里照旧弹，实际上限按上面的表。
   - 再挑战（大厅 EV062）：打过 34～36 层后，先问要不要再见鸿钧／影子／本线骑士（只打，不改层数、不记通关、不给洪荒奖励）；选「别的事」照原事件。
-- 挂钩：`map_scene.gd`（门／158 决战事件／再挑战的事件前接管、158 不遇敌、地图名）、`battle_logic.gd`（setup 一行：鸿蒙老祖那只换鸿钧，借 `XEnemy.horseman` 的合成记录口子，难度倍率不动）。
+- 挂钩：`mv_event_core.gd`（插件指令 maxlevel equal 一行，天启篇截上限）、`map_scene.gd`（门／158 决战事件／再挑战的事件前接管、158 不遇敌、地图名）、`battle_logic.gd`（setup 一行：鸿蒙老祖那只换鸿钧，借 `XEnemy.horseman` 的合成记录口子，难度倍率不动）。
 - `天启篇数据校验.py` 加 summit 一组（数字避开 4、34～36 层齐全、台词齐全）。
 - 新专项 `tests/xiyou_tianqi_summit`。
 - 玩家可见：开发版天启篇存档（选了战争线）打完 33 层后，大厅的门能去 34 层太清天打鸿钧、35 层玉清天打战争线的影子、36 层天外天和莉co决战；发行版看不到（天启篇关着）。
@@ -56,7 +57,7 @@
 
 ## 在 Mac 上要跑的专项
 
-本分支改了 `battle_logic.gd`（一行）和 `map_scene.gd`，`选测.py main --list` 会判整轮。云端只跑了下面「验证」里列的，合并前请在 Mac 上跑：
+本分支改了 `battle_logic.gd`（一行）、`mv_event_core.gd`（一行）和 `map_scene.gd`，`选测.py main --list` 会判整轮。云端只跑了下面「验证」里列的，合并前请在 Mac 上跑：
 
 - 必跑：`xiyou_tianqi_summit`（新专项）、`xiyou_tianqi_war`、`xiyou_unlock_chain`、`xiyou_floor31_bosses`、`xiyou_rules*`、`xiyou_event_compare*`（云端缺 oracle）。
 - 画面（云端没有画面）：开发版天启篇档选战争线、开场打完，变量 20 调 34 回大厅走门，看 34 层地图名「34层 太清天」和色调、鸿钧的名字、35 层借 157 的玉色、36 层莉co决战和结局；回大厅色调复原。
@@ -65,8 +66,9 @@
 
 云端容器（Godot 4.7.2 Linux，转换产物取自 `refs/ci/generated/main`）：
 
-- 新专项 `xiyou_tianqi_summit` 62/62（加了鸿钧不借鸿蒙老祖掉落）。
+- 新专项 `xiyou_tianqi_summit` 71/71（含鸿钧不借鸿蒙老祖掉落、等级上限）。
 - `并行测试.py` 一批 34 个全过：`xiyou_tianqi_*`（14 个，含 `xiyou_tianqi_war` 96/96）、`xiyou_boss_*`（9 个）、`xiyou_map_*`（4 个）、`xiyou_unlock_chain` 347/347、`xiyou_floor31_bosses`、`xiyou_floor30_gifts`、`xiyou_global_vars`、`xiyou_lobby_corruption`、`xiyou_determinism`、`xiyou_alien_battle`、`xiyou_enemy_book`、`xiyou_battle_pace`。`xiyou_map_hotkeys` 并行时偶发失败一次、单独重跑通过（和本分支无关的偶发）。
+- 加等级上限后又跑一批 23 个全过：`xiyou_tianqi_*`（14 个）、`xiyou_floor30_seeker`、`xiyou_floor_run`、`xiyou_script`、`xiyou_floor31_bosses`、`xiyou_floor30_gifts`、`xiyou_unlock_chain`、`xiyou_map_dispatch`。
 - `天启篇数据校验.py --params <设计仓库>/重制设定/数值测算/参数.json` 全部通过（含新 summit 组）。
 - 没跑全量 `检查.sh`（车道规则）。
 

@@ -91,6 +91,7 @@ func _run() -> void:
 	_old158()
 	await _rechallenge()
 	_hongjun_battle()
+	_level_cap()
 	await _plain()
 	DirAccess.remove_absolute(XGlobalVars.path())
 	var passed := results.filter(func(r): return r.passed).size()
@@ -169,6 +170,7 @@ func _door35() -> void:
 	_check("shadow_battle", host.battles.size() == 1 and host.battles[0].knight == "war" and host.battles[0].mode == "shadow" and host.battles[0].troop == 30, host.battles)
 	_check("shadow_map", host.moves.map(func(m): return int(m[0])) == [157, 4] and host.names[0] == "35层 玉清天", [host.moves, host.names])
 	_check("shadow_win", int(s.variable(20)) == 36 and _has(host, "裂缝还在") and _has(host, "第 35 层"))
+	_check("shadow_level_81", s.max_level() == 81 and _has(host, "等级上限开放至：81"), [s.max_level(), host.said])
 	# 输了：不变
 	var s2 := _state(35)
 	host = FakeHost.new()
@@ -302,6 +304,31 @@ func _hongjun_battle() -> void:
 	_check("hongjun_pending_used", XTianqiSummit.pending() == "")
 	plain.end_battle(0)
 	lg.end_battle(0)
+
+
+func _level_cap() -> void:
+	# 30 层 75、33 层 80、35 层后 81；29 层及以下照原版
+	var s := _state(31, "")
+	_check("cap_after30", XTianqiSummit.clamp_max_level(s, 80) == 75 and XTianqiSummit.clamp_max_level(s, 75) == 75 and XTianqiSummit.clamp_max_level(s, 38) == 38)
+	s.set_variable(20, 32)
+	_check("cap_after31", XTianqiSummit.clamp_max_level(s, 81) == 75)
+	s.set_variable(20, 34)
+	_check("cap_after33", XTianqiSummit.clamp_max_level(s, 99) == 80, XTianqiSummit.clamp_max_level(s, 99))
+	s.set_variable(20, 35)
+	_check("cap_after34", XTianqiSummit.level_cap(s) == 80)
+	s.set_variable(20, 36)
+	_check("cap_after35", XTianqiSummit.clamp_max_level(s, 99) == 81)
+	# 走插件指令那条路（33 层鸿蒙老祖事件里的 maxlevel equal 99）
+	s.set_variable(20, 34)
+	var interp := MVInterpreter.new(null, 157, 1, [])
+	interp._plugin_command("maxlevel equal 99")
+	_check("cap_plugin", s.max_level() == 80, s.max_level())
+	var p := XState.new_game_blank()
+	XState.current = p
+	_check("cap_plain", XTianqiSummit.clamp_max_level(p, 99) == 99)
+	XTianqiSummit.ENABLED = false
+	_check("cap_switch_off", XTianqiSummit.clamp_max_level(s, 99) == 99)
+	XTianqiSummit.ENABLED = true
 
 
 func _plain() -> void:

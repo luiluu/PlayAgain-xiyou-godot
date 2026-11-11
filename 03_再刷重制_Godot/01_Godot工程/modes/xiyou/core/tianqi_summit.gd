@@ -103,6 +103,31 @@ static func line_module(key: String):
 	return null
 
 
+# ---- 等级上限（天启篇：30 层 75、33 层 80、35 层后 81） ----
+
+## 天启篇存档（不看选没选线）、发行构建里天启篇已开放
+static func level_cap_on(s: XState) -> bool:
+	return ENABLED and s != null and XTianqi.active(s) and (XTianqi.RELEASE_OPEN or not ReleaseEntry.is_release())
+
+
+## 本档现在能开到的最高等级（按已通关的层：变量 20 − 1）
+static func level_cap(s: XState) -> int:
+	var lc: Dictionary = data().get("level_cap", {})
+	var cap := int(lc.get("base", 75))
+	var cleared := int(s.variable(FLOOR_VAR)) - 1
+	for st in lc.get("steps", []):
+		if cleared >= int(st.after_floor):
+			cap = maxi(cap, int(st.cap))
+	return cap
+
+
+## 插件指令 maxlevel equal N（各层守层者打完）：天启篇里 N 超过 base 的截到 level_cap；原版档、29 层及以下照原样
+static func clamp_max_level(s: XState, n: int) -> int:
+	if not level_cap_on(s) or n <= int(data().get("level_cap", {}).get("base", 75)):
+		return n
+	return mini(n, level_cap(s))
+
+
 # ---- 台词 ----
 
 static func scene(key: String) -> Array:
@@ -193,7 +218,10 @@ static func run_floor(host, s: XState, n: int) -> int:
 			"shadow":
 				r = await _run_line(host, s, "run_shadow")
 				if r == 0:
-					await say(host, "shadow_win")
+					_advance(s, n)
+					s.actor_max_level = maxi(s.max_level(), level_cap(s))  # 打完 35 层等级上限开到 81
+					for row in scene("shadow_win"):
+						await host.show_text("", 0, [XTianqiWarLine.line_text([row[0], str(row[1]).replace("%d", str(s.max_level()))])])
 			"final":
 				r = await _run_line(host, s, "run_final")
 		if r == 0:
