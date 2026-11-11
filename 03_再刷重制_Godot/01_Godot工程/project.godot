@@ -22,6 +22,7 @@ config/features=PackedStringArray("4.7")
 
 [autoload]
 
+BootPatch="*res://core/boot_patch.gd"
 GameApp="*res://core/game_app.gd"
 
 [display]
