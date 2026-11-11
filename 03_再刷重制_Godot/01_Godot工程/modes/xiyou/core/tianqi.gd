@@ -38,10 +38,10 @@ const DIFFICULTIES := [
 	{"key": "zhengdao", "name": "证道", "desc": "一命通关，全灭即删档", "legacy": 6, "super_cap": 3, "min_weak": 2, "badge": "05_zhengdao.png"},
 ]
 
-## 开关（O-待定·天启篇招募）：true＝天启篇存档只能在大厅通关抽角色，号角拿不到、商店不卖，事件和别的入口不再让新角色入队；
+## 开关（O-267）：true＝天启篇存档只能在大厅通关抽角色，号角拿不到、商店不卖，事件和别的入口不再让新角色入队；
 ## false＝照原版（号角、招募事件照旧）。
 static var NO_RECRUIT := true
-## 开关（O-待定·天启篇换人）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
+## 开关（O-268）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
 static var SWAP_IN_BATTLE := true
 
 ## 通关抽角色（数值重构方案「招募改成通关抽角色」，Kyo 11-08 定的表）：每通关 5 层一次，最多 6 次。
