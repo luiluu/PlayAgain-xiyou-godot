@@ -115,6 +115,7 @@ PROBES = [
     (['gold_probe.cjs'], ['gold.json']),
     (['alien_workshop_probe.cjs'], ['alien_workshop.json']),
     (['alien_config_probe.cjs'], ['alien_config.json']),
+    (['alien_hide_probe.cjs'], ['alien_hide.json']),
     (['dungeon_probe.cjs'], ['dungeon.json']),
     (['shared_system_probe.cjs'], ['shop_stock.json', 'battle_messages.json', 'challenge_passives.json']),
     (['zhenqi_probe.cjs'], ['zhenqi.json']),

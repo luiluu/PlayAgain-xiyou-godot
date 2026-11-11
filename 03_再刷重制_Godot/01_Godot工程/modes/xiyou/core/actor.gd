@@ -219,6 +219,8 @@ static func make_equip(kind: String, base_id: int) -> Dictionary:
 func can_equip(item: Dictionary) -> bool:
 	if item.is_empty():
 		return false
+	if XAlienHide.blocks_gear(item):
+		return false  # installAlienationHide 包 canEquip：隐藏生效时残响装不上（O-283）
 	if traits_set(54).has(int(item.etypeId)) and not XTianqiGear.seal_ignored(int(item.etypeId)):
 		return false
 	if not XTianqiGear.allows(item):  # 天启篇：删除的栏位、神器白名单

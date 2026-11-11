@@ -731,6 +731,9 @@ func gain_item(id: int, amount: int) -> void:
 	# installBossDifficultyRuntime 包在 Game_Party.gainItem 外：超强者伙伴号角在地狱以下得不到（不弹提示）
 	if amount > 0 and not XItemMarks.can_acquire_item(self, XDB.rec("Items", id)):
 		return
+	# installAlienationHide 包 Game_Party.gainItem：隐藏生效时异化能量、异化石得不到（O-283，见 XAlienHide）
+	if amount > 0 and XAlienHide.blocks_item(id):
+		return
 	if amount > 0:
 		# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 		var races = XDB.table("CodexRaces")
@@ -765,6 +768,8 @@ func _gain_raw(id: int, amount: int) -> void:
 		items.erase(id)
 
 func gain_gear(kind: String, base_id: int, amount: int) -> void:
+	if amount > 0 and XAlienHide.blocks_base(kind, base_id):
+		return  # installAlienationHide：隐藏生效时深渊残刃／残杖／残甲／残环得不到（O-283）
 	if amount > 0:
 		if kind == "armor" and base_id == XDemonCrown.ARMOR and not XDemonCrown.mutating():
 			XDemonCrown.grant(self, amount)  # 魔冠 gainItem 包装：得到数据库那件改由成长账本发
@@ -999,6 +1004,7 @@ static func from_dict(d: Dictionary) -> XState:
 	s.race = rc.duplicate(true) if rc is Dictionary else {}
 	var al = d.get("alienLedger", {})
 	s.alien_ledger = al.duplicate(true) if al is Dictionary else {}
+	XAlienHide.migrate(s)  # installAlienationHide extractSaveContents 包装：隐藏生效时异化实例还原、六件物品归档（只跑一次，O-283）
 	var uo = d.get("unknownOrigin")
 	s.unknown_origin = int(uo) if uo != null else null
 	var gs = d.get("guideSeen", {})
