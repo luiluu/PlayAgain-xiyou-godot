@@ -31,6 +31,11 @@ static var ENABLED := true
 static var _data: Dictionary = {}
 ## 下一场开战要换成哪位骑士（prepare 设、setup 取走）
 static var _pending := ""
+## 下一场的打法（prepare 设、setup 取走）：body 36 层本体；survival 开场「天外裂」生存战；shadow 35 层影子。
+## 生存战、影子现在只做了战争线（四线剧情与关卡设计稿 v0.4 第 5.7 节；cc/pro-tianqi-war），别的线 prepare 不收
+const MODES := ["body", "survival", "shadow"]
+const MODE_LINES := {"survival": ["war"], "shadow": ["war"]}
+static var _pending_mode := "body"
 ## 正在打的骑士战（BattleLogic）；挂钩先看它，没有就原样返回
 static var _logic_ref: WeakRef = null
 
@@ -138,11 +143,13 @@ static func allowed(s: XState = null) -> bool:
 
 
 ## 下一场战斗换成这位骑士（line：death／war／famine／plague）。不收时返回 false。
-static func prepare(line: String, s: XState = null) -> bool:
-	if not LINES.has(line) or not allowed(s):
+static func prepare(line: String, s: XState = null, mode := "body") -> bool:
+	if not LINES.has(line) or not allowed(s) or not MODES.has(mode) or (mode != "body" and not MODE_LINES[mode].has(line)):
 		_pending = ""
+		_pending_mode = "body"
 		return false
 	_pending = line
+	_pending_mode = mode
 	return true
 
 
@@ -169,11 +176,13 @@ static func setup(logic, s: XState) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
 	var line := _pending
+	var mode := _pending_mode
 	_pending = ""
+	_pending_mode = "body"
 	if line == "" or not allowed(s):
 		return
 	var key := str(s.flags.tianqi.get("difficulty", ""))
-	var st := stats(line, key)
+	var st := stats(line, key) if mode == "body" else (survival_stats(line, key) if mode == "survival" else shadow_stats(line, key))
 	if st.is_empty():
 		return
 	var shell: Dictionary = data().get("shell_enemy", {})
@@ -195,14 +204,18 @@ static func setup(logic, s: XState) -> void:
 	var adds := []
 	for i in range(slots):
 		var e := XEnemy.new()
-		e.setup_horseman(int(shell.get("add", 2)), _add_rec(int(shell.get("add", 2)), line, key))
+		var add_shell := int(data().get("survival", {}).get("add_enemy", 0)) if mode == "survival" else 0
+		if add_shell > 0:
+			e.setup_horseman(add_shell, _survival_add_rec(add_shell, key))
+		else:
+			e.setup_horseman(int(shell.get("add", 2)), _add_rec(int(shell.get("add", 2)), line, key))
 		e.set_meta("x", 300.0 + 70.0 * (i % 3))
 		e.set_meta("y", 240.0 + 110.0 * floorf(i / 3.0))
 		e.hidden = true
 		logic.enemies.append(e)
 		adds.append(e)
-	var f := {"line": line, "key": key, "knight": kn, "adds": adds, "base": st, "phase": 1, "marks": {},
-		"queue": [], "down": {}, "acted": {}}
+	var f := {"line": line, "mode": mode, "key": key, "knight": kn, "adds": adds, "base": st, "phase": 1, "marks": {},
+		"queue": [], "down": {}, "acted": {}, "survived": false}
 	match line:
 		"death":
 			f.merge({"gems": 0, "unique": 0, "captain": false, "doom_last": 0, "finale": 0, "sword_target": null})
@@ -254,6 +267,34 @@ static func _add_rec(shell_id: int, line: String, key: String) -> Dictionary:
 	rec.exp = 0
 	rec.gold = 0
 	return rec
+
+
+## 生存战的援军：开场在第 5 层左右，借本线开场地图的普通怪（survival.add_enemy，六层火焰哥布林）原数值 × 本档敌人血量／攻击；
+## 行动由本模块给（普攻），不掉东西、不给经验
+static func _survival_add_rec(shell_id: int, key: String) -> Dictionary:
+	var row := XTianqiBalance.difficulty(key)
+	var rec: Dictionary = XDB.rec("Enemies", shell_id).duplicate(true)
+	var p: Array = rec.get("params", [1, 1, 1, 1, 1, 1, 1, 1]).duplicate()
+	rec.name = "兵临的援军"
+	rec.params = [roundf(float(p[0]) * float(row.enemy_hp)), float(p[1]), roundf(float(p[2]) * float(row.enemy_atk)), float(p[3]),
+		roundf(float(p[4]) * float(row.enemy_atk)), float(p[5]), float(p[6]), float(p[7])]
+	rec.actions = []
+	rec.note = "NoElite"
+	rec.meta = {}
+	rec.traits = []
+	rec.dropItems = []
+	rec.exp = 0
+	rec.gold = 0
+	return rec
+
+
+static func mode_of(logic) -> String:
+	return str(fight(logic).get("mode", "body")) if active(logic) else ""
+
+
+## 生存战撑过了（第 survive_turns 回合结束时骑士退场，算胜利）
+static func survived(logic) -> bool:
+	return active(logic) and bool(fight(logic).get("survived", false))
 
 
 ## 开战（BattleLogic.setup 末尾）：本线终焉与开场的援军、小怪
@@ -356,13 +397,18 @@ static func start_turn(logic) -> Array:
 	var f := fight(logic)
 	var turn := int(logic.turn)
 	f.acted = {}
+	if bool(f.survived):
+		return take_logs(logic)
 	_check_phase(logic, f)
 	match str(f.line):
 		"death":
 			_death_turn_start(logic, f, turn)
 		"war":
 			var r: Dictionary = knight("war").reinforce
-			if turn > 1 and (turn - 1) % int(r.every) == 0:
+			if str(f.mode) == "survival":
+				if turn > 1 and data().survival.war_waves.has(turn):
+					_reinforce(logic, f)
+			elif turn > 1 and (turn - 1) % int(r.every) == 0:
 				_reinforce(logic, f)
 		"plague":
 			_plague_turn_start(logic, f, turn)
@@ -406,12 +452,28 @@ static func end_turn(logic) -> Array:
 		f.finale = mini(int(knight("death").finale.full), int(f.finale) + 1)
 		_say(f, "终末 %d／%d。" % [int(f.finale), int(knight("death").finale.full)])
 	_check_kills(logic, f)
+	if str(f.mode) == "survival" and not bool(f.survived) and int(logic.turn) >= int(data().survival.survive_turns) and not _alive_actors(logic).is_empty():
+		_survive(logic, f)
 	_flush_params(logic)
 	logs.append_array(take_logs(logic))
 	return logs
 
 
+## 生存战撑满回合：骑士和援军一起退场（算胜利，没有经验和掉落）
+static func _survive(logic, f: Dictionary) -> void:
+	f.survived = true
+	_say(f, "%s收起了引信：「……今天先到这里。」" % str(f.base.name))
+	for e in [f.knight] + f.adds:
+		if e.is_alive():
+			e.hp = 0.0
+			e.refresh_resources()
+			logic._die(e)
+			f.queue.append({"type": "collapse", "target": e, "views": logic.views([e])})
+
+
 static func _check_phase(logic, f: Dictionary) -> void:
+	if str(f.mode) != "body":
+		return  # 生存战（生命锁住）和影子没有阶段、配方
 	var p := phase_of(f)
 	if str(f.line) == "war":
 		var layer := war_layer(_hp_ratio(f))
@@ -619,7 +681,7 @@ static func decide(logic, b) -> Array:
 		"death":
 			return _death_pick(logic, f, i)
 		"war":
-			return _war_pick(logic, f)
+			return _war_shadow_pick(logic, f) if str(f.mode) == "shadow" else _war_pick(logic, f)
 		"famine":
 			return _famine_pick(logic, f, i)
 		"plague":
@@ -665,6 +727,14 @@ static func _war_pick(logic, f: Dictionary) -> Array:
 		var hits := int(k.wave.hits) + (int(k.wave.bonus_hits) if layer >= 1 else 0) + (int(k.wave.kindle_hits) if bool(f.kindled) else 0)
 		return [_skill("wave", "焰浪轰击", 2, hits, float(k.wave.coef), true), null]
 	return [_skill("crackle", "噼啪三响", 1, int(k.crackle.hits) + (int(k.crackle.bonus_hits) if layer >= 1 else 0), float(k.crackle.coef), true), null]
+
+
+## 35 层影子：每回合一招，奇数回合焰浪轰击、偶数回合噼啪三响（弱化：只用基础段数，不吃火花和配方）
+static func _war_shadow_pick(logic, f: Dictionary) -> Array:
+	var k := knight("war")
+	if int(logic.turn) % 2 == 1:
+		return [_skill("wave", "焰浪轰击", 2, int(k.wave.hits), float(k.wave.coef), true), null]
+	return [_skill("crackle", "噼啪三响", 1, int(k.crackle.hits), float(k.crackle.coef), true), null]
 
 
 static func _famine_pick(logic, f: Dictionary, i: int) -> Array:
@@ -941,6 +1011,14 @@ static func after_action(logic, u) -> Array:
 		_defiance(logic, f, u, 1)
 	_check_kills(logic, f)
 	_check_phase(logic, f)
+	if str(f.line) == "war" and str(f.mode) == "survival" and not bool(f.survived):
+		var full := int(data().survival.war_spark_full)
+		if int(f.sparks) >= full:
+			f.sparks = 0
+			var again: Array = logic.alive(logic.enemies)
+			for i in range(again.size() - 1, -1, -1):
+				logic.current_order.push_front(again[i])
+			_say(f, "火花满了：敌方全体再动！")
 	return take_logs(logic)
 
 
@@ -951,6 +1029,8 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	if not active(logic):
 		return value
 	var f := fight(logic)
+	if value > 0.0 and str(f.mode) == "survival" and is_same(t, f.knight):
+		return minf(value, maxf(0.0, float(t.hp) - 1.0))  # 生存战：骑士生命锁住，打不完
 	if value < 0.0 and t is XActor and _mark(f, t).get("plague", false):
 		return value * (1.0 - float(knight("plague").plague.heal_down))
 	if value > 0.0 and is_same(t, f.knight) and str(f.line) == "plague" and u is XActor:
