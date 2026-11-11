@@ -46,6 +46,25 @@ class NotesTests(unittest.TestCase):
         self.assertIn('0.386', text)
         self.assertIn('上一个发行包是 0.382', text)
 
+    def test_none_and_internal_dropped(self):
+        log = """## 2026-11-10 【cc·甲】不重要（dev.390）
+
+- 玩家可见：无（只加测试）
+
+## 2026-11-10 【cc·乙】也不重要（dev.391）
+
+- 玩家可见：无明显变化（极少数情况先后与原版一致）
+
+## 2026-11-10 【cc·丙】SlotWeightTests 偶发失败修稳（dev.392）
+
+## 2026-11-10 【cc·丁】一护副本 6 个入口进切片（dev.393）
+
+## 2026-11-10 【cc·戊】地图事件（dev.394）
+
+- 玩家可见：Map152、Map032 的并行事件会动了；鬼火会动了
+"""
+        self.assertEqual(M.release_notes(log, 389, 394), ['部分地图的并行事件会动了；鬼火会动了'])
+
     def test_empty(self):
         self.assertIn('没有玩家能看到的改动', M.notes_text(384, 383, M.release_notes(LOG, 383, 384)))
 

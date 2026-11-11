@@ -38,7 +38,7 @@ TITLE = 'res://modes/xiyou/entry.tscn'
 KEY_BACK, KEY_HOME, KEY_ENTER = 4, 3, 66
 FATAL = re.compile(r'FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|ANR in ')
 # 等待时长（测试里调小）
-WAIT = {'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0, 'bgidle_away': 60.0, 'bgidle_resume': 8.0}
+WAIT = {'settle': 20.0, 'launch': 25.0, 'after_key': 10.0, 'back_exit': 6.0, 'home': 5.0, 'poll': 2.0, 'autosave': 25.0, 'bgidle_away': 60.0, 'bgidle_resume': 8.0}
 
 
 class Report:
@@ -85,10 +85,12 @@ class Adb:
 
 # 同 发行入口冒烟.py／Windows实机冒烟.py 的 KEY_RUNS（测试安卓实机冒烟.py 核对一致）
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
+# 天启篇开局（11-10 起）：新的游戏 → 选存档位（1 号）→ 选难度（第一档）→ 随机阵容（焦点在「重新随机」，down 到「就是他们了」）→ 地图；
+# 只按一下停在选存档位，三组新游戏会挂（平台 release450 2026-11-11）。
 KEY_RUNS = [
-    ('title_space_new_game', 'space', MAP),
-    ('title_j_new_game', 'j', MAP),
-    ('title_enter_new_game', 'accept', MAP),
+    ('title_space_new_game', 'space,space,space,down,space', MAP),
+    ('title_j_new_game', 'j,j,j,down,j', MAP),
+    ('title_enter_new_game', 'accept,accept,accept,down,accept', MAP),
     ('title_cancel_then_map_keys', 'cancel,x,k,down,up,z,wait:90,accept,space,j,accept,cancel,cancel,x,k,cancel,accept', None),
 ]
 KEY_TIMEOUT = 120.0
@@ -195,7 +197,7 @@ def key_runs(adb: 'Adb', signer: Signer, apk: str, pkg: str, work: Path, rep: Re
 # 开新游戏后在地图上等着，由 adb 按 HOME 切后台。新游戏一进地图就是 Map001 的开场自动事件（312 条指令，有对话、选项、循环），
 # 云端试过连按 40 次确认也没点完，所以切后台那一刻是 skip:event（同原版：事件中不存），只验钩子在真安卓上会触发；
 # 真存一份要等开场走完，留给真机清单第 16 步
-AUTOSAVE_SEQ = 'accept,wait:7200'
+AUTOSAVE_SEQ = 'accept,accept,accept,down,accept,wait:7200'  # 天启篇开局：新游戏→存档位→难度→阵容「就是他们了」（同 KEY_RUNS）
 
 
 def autosave_run(adb: 'Adb', signer: Signer, apk: str, base: str, pkg: str, work: Path, rep: Report) -> None:
@@ -302,6 +304,9 @@ def smoke(adb: 'Adb', apk: str, pkg: str, work: Path, rep: Report, expect_entry=
     if code != 0:
         return
     adb.run('shell', 'pm', 'clear', pkg)
+    # 刚开机的模拟器第一次装包后，系统还在发「包已添加」、授默认角色，十几秒后会把刚起的游戏 Activity 重建，
+    # Godot 重建时自己强退（Force quitting），首启 pid 就没了、返回键那组跟着挂（11-11 云端 42986831172）。先等系统消停再启动。
+    sleep('settle')
     adb.run('logcat', '-c')
     pids = set()
     # 1. 启动进标题

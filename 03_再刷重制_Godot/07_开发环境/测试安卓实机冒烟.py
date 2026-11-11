@@ -56,7 +56,7 @@ def start():
             st['autosave_run'] = True
         elif keys:
             seq = keys[0].split(',')
-            if mode == 'keys_crash' and seq == ['j']:
+            if mode == 'keys_crash' and seq[0] == 'j':
                 st['log'].append('11-07 10:00:05.000  %s  %s F libc    : Fatal signal 11 (SIGSEGV)' % (st['pid'], st['pid']))
             else:
                 for k in seq:

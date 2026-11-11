@@ -22,6 +22,8 @@ def expected_ctex(proj: Path) -> list:
         rel = imp.relative_to(proj).parts
         if rel and rel[0] in SKIP_DIRS:
             continue
+        if any((proj.joinpath(*rel[:i]) / '.gdignore').exists() for i in range(1, len(rel))):
+            continue  # Godot 不导入带 .gdignore 的目录（如安卓构建模板 android/build 里自带的 .import）
         try:
             text = imp.read_text(encoding='utf-8', errors='replace')
         except OSError:
