@@ -74,7 +74,17 @@ func refresh() -> void:
 	_sync_position()
 
 
+## O-待定·31层不可达副本（Kyo 11-11 定「到不了的副本就去除」，悟空 floor-ichigo-cut1）：三十一层 Map148 的一护副本入口
+## EV42「不知道什么殿」(35,0)→Map238、EV43「灵王宫」(23,2)→Map239 在墙里，原版按 MV 通行标志也走不到，两张副本图里也没有出口，
+## 事件备注带 ClaudeShuangEvent、名字还是「不知道什么殿」，是没做完的内容（floor7 地图盘点查出）。原版里一护在队、有强者的证明、
+## 打完卧豚殿（变量 1563）后「不知道什么殿」的门会出现在墙里，看得到走不到。重制让这两个事件不选任何页（不显示、不触发）。
+## 键「地图:事件」；设为空字典 {} 恢复原版。凤凰殿 Map234 的入口条件变量 1564 只在 Map238 里写，原版本来就开不了，照旧不显示，没列进来。
+static var removed_events := {"148:42": true, "148:43": true}
+
+
 func _find_page() -> int:
+	if not removed_events.is_empty() and removed_events.has("%d:%d" % [map_id, event_id]):
+		return -1
 	var merchant29 := str(data.get("note", "")).contains("<CodexMerchant29>")
 	for i in range(data.pages.size() - 1, -1, -1):
 		if merchant29 and i == 1 and not merchant29_present():
