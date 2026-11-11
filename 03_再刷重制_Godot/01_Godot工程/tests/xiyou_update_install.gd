@@ -80,7 +80,7 @@ func _serve(c: StreamPeerTCP) -> void:
 func _url(path: String) -> String:
 	return "http://127.0.0.1:%d%s" % [PORT, path]
 
-func _patch(urls: Array, data: PackedByteArray, code := 470) -> Dictionary:
+func _patch(urls: Array, data: PackedByteArray, code := 9470) -> Dictionary:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
 	ctx.update(data)
@@ -110,7 +110,7 @@ func _run() -> void:
 		data[i] = (i * 31 + 7) % 251
 	_files = {"/a.pck": data, "/b.pck": data, "/c.pck": data}
 	var base := 453
-	var final := XUpdateInstall.dir.path_join("patch_453_470.pck")
+	var final := XUpdateInstall.dir.path_join("patch_453_9470.pck")
 	var seen := []
 	inst.progress.connect(func(d, t): seen.append([d, t]))
 
@@ -217,7 +217,7 @@ func _run() -> void:
 	for i in range(6):
 		await get_tree().process_frame
 	_check("页面上没有正在用的补丁时不显示退回按钮", not (page.find_child("Rollback", true, false) as Button).visible)
-	var res := {"state": XUpdateCheck.PATCH, "current": "0.453", "version": "0.470", "code": 470, "date": "", "notes": PackedStringArray(), "patch": _patch([_url("/a.pck")], data), "revoked": false}
+	var res := {"state": XUpdateCheck.PATCH, "current": "0.453", "version": "0.9470", "code": 9470, "date": "", "notes": PackedStringArray(), "patch": _patch([_url("/a.pck")], data), "revoked": false}
 	page.show_result(res)
 	_mode = {}
 	(page.find_child("Primary", true, false) as Button).pressed.emit()
@@ -226,8 +226,8 @@ func _run() -> void:
 		if page.state != "downloading":
 			break
 		await get_tree().process_frame
-	_check("下完显示已准备好", page.state == "ready" and (page.find_child("Body", true, false) as Label).text.contains("新版本 0.470 已下载，存档已备份"))
-	_check("已登记、待重启生效", XUpdateInstall.pending_code() == 470 and _state()["confirmed"] == false)
+	_check("下完显示已准备好", page.state == "ready" and (page.find_child("Body", true, false) as Label).text.contains("新版本 0.9470 已下载，存档已备份"))
+	_check("已登记、待重启生效", XUpdateInstall.pending_code() == 9470 and _state()["confirmed"] == false)
 	var backups := DirAccess.open(XUpdateInstall.dir.path_join("save_backup")).get_directories()
 	_check("登记前备份了存档", backups.size() == 1 and FileAccess.get_file_as_string(XUpdateInstall.dir.path_join("save_backup").path_join(backups[0]).path_join("xiyou/save_1.json")) == "一号档")
 	page.close_page()
@@ -256,25 +256,25 @@ func _run() -> void:
 	var saves := DIR.path_join("modes")
 	_write(saves.path_join("xiyou/save_1.json"), "一号档")
 	_write(saves.path_join("xiyou/sub/x.json"), "子目录")
-	var b1 := XUpdateInstall.backup_saves(470, saves)
+	var b1 := XUpdateInstall.backup_saves(9470, saves)
 	_check("备份到 save_backup，内容和目录结构一致", b1 != "" and FileAccess.get_file_as_string(b1.path_join("xiyou/save_1.json")) == "一号档" and FileAccess.get_file_as_string(b1.path_join("xiyou/sub/x.json")) == "子目录")
 	for i in range(4):
 		XUpdateInstall.backup_saves(471 + i, saves)
 	var kept := DirAccess.open(XUpdateInstall.dir.path_join("save_backup")).get_directories()
 	_check("只留最近 3 份", kept.size() == 3 and not DirAccess.dir_exists_absolute(b1))
 	_check("原存档没被动", FileAccess.get_file_as_string(saves.path_join("xiyou/save_1.json")) == "一号档")
-	_check("没有存档目录时不算失败", XUpdateInstall.backup_saves(470, DIR.path_join("没有")) == "")
+	_check("没有存档目录时不算失败", XUpdateInstall.backup_saves(9470, DIR.path_join("没有")) == "")
 
 	# 10 登记、待生效、退回
 	var f := FileAccess.open(final, FileAccess.WRITE)
 	f.store_buffer(data)
 	f.close()
-	var p470 := _patch(["https://x.invalid/p"], data, 470)
-	_check("登记成功", XUpdateInstall.register(p470, base))
+	var p9470 := _patch(["https://x.invalid/p"], data, 9470)
+	_check("登记成功", XUpdateInstall.register(p9470, base))
 	var st = _state()
-	_check("登记内容：未确认、计数 0、没有上一份", st["file"] == "patch_453_470.pck" and st["confirmed"] == false and st["boots"] == 0 and st["prev"] == null and int(st["code"]) == 470 and int(st["base"]) == 453)
-	_check("待生效的是 470", XUpdateInstall.pending_code() == 470)
-	var p_bad := p470.duplicate()
+	_check("登记内容：未确认、计数 0、没有上一份", st["file"] == "patch_453_9470.pck" and st["confirmed"] == false and st["boots"] == 0 and st["prev"] == null and int(st["code"]) == 9470 and int(st["base"]) == 453)
+	_check("待生效的是 9470", XUpdateInstall.pending_code() == 9470)
+	var p_bad := p9470.duplicate()
 	p_bad["sha256"] = "0".repeat(64)
 	_check("文件和清单对不上不登记", not XUpdateInstall.register(p_bad, base))
 
@@ -287,43 +287,43 @@ func _run() -> void:
 	BootPatchScript.prepare(sp)
 	_check("两次都没确认：退回安装包自带内容（登记删掉）", not FileAccess.file_exists(sp))
 	var note := XUpdateInstall.take_rollback_notice()
-	_check("留了退回提示，读一次就没了", int(note.get("code", 0)) == 470 and note.get("reason") == "启动失败" and XUpdateInstall.take_rollback_notice().is_empty())
+	_check("留了退回提示，读一次就没了", int(note.get("code", 0)) == 9470 and note.get("reason") == "启动失败" and XUpdateInstall.take_rollback_notice().is_empty())
 
 	# 确认后不再计数；再装新补丁，上一份记在 prev；新补丁启动失败退回上一份
-	XUpdateInstall.register(p470, base)
+	XUpdateInstall.register(p9470, base)
 	BootPatchScript.prepare(sp)
 	BootPatchScript.confirm(sp)
 	_check("确认后 confirmed、计数清零", _state()["confirmed"] == true and int(_state()["boots"]) == 0)
 	BootPatchScript.prepare(sp)
 	BootPatchScript.prepare(sp)
 	BootPatchScript.prepare(sp)
-	_check("确认过的补丁再启动多少次都不退回", int(_state()["code"]) == 470)
+	_check("确认过的补丁再启动多少次都不退回", int(_state()["code"]) == 9470)
 	var data2 := data.slice(0, 5000)
-	var f2 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_475.pck"), FileAccess.WRITE)
+	var f2 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_9475.pck"), FileAccess.WRITE)
 	f2.store_buffer(data2)
 	f2.close()
-	var p475 := _patch(["https://x.invalid/p"], data2, 475)
-	_check("登记 475", XUpdateInstall.register(p475, base))
+	var p9475 := _patch(["https://x.invalid/p"], data2, 9475)
+	_check("登记 9475", XUpdateInstall.register(p9475, base))
 	st = _state()
-	_check("上一份 470 记在 prev，文件留着", int(st["code"]) == 475 and int(st["prev"]["code"]) == 470 and FileAccess.file_exists(final))
+	_check("上一份 9470 记在 prev，文件留着", int(st["code"]) == 9475 and int(st["prev"]["code"]) == 9470 and FileAccess.file_exists(final))
 	BootPatchScript.prepare(sp)
 	BootPatchScript.prepare(sp)
 	BootPatchScript.prepare(sp)
 	st = _state()
-	_check("475 两次没起来：自动退回 470（已确认）", int(st["code"]) == 470 and st["confirmed"] == true and st["file"] == "patch_453_470.pck")
+	_check("9475 两次没起来：自动退回 9470（已确认）", int(st["code"]) == 9470 and st["confirmed"] == true and st["file"] == "patch_453_9470.pck")
 	var r: Dictionary = BootPatchScript.apply(sp)
-	_check("退回后的 470 能过载入器的校验（底包号不符在测试里是预期）", not ["登记坏了", "文件不在", "字节数不符", "校验不符"].has(r["reason"]))
+	_check("退回后的 9470 能过载入器的校验（底包号不符在测试里是预期）", not ["登记坏了", "文件不在", "字节数不符", "校验不符"].has(r["reason"]))
 	XUpdateInstall.take_rollback_notice()
 
 	# 手动退回
-	XUpdateInstall.register(p475, base)
+	XUpdateInstall.register(p9475, base)
 	BootPatchScript.confirm(sp)
-	_check("手动退回上一份", XUpdateInstall.rollback(false) == 470 and int(_state()["code"]) == 470)
+	_check("手动退回上一份", XUpdateInstall.rollback(false) == 9470 and int(_state()["code"]) == 9470)
 	_check("手动退回到安装包自带内容", XUpdateInstall.rollback(true) == 0 and not FileAccess.file_exists(sp))
 	_check("没有登记时退回不出错", XUpdateInstall.rollback(true) == 0)
 
 	# 静默检查见到「现在运行的版本被撤回」：登记着的就是正在跑的才退；已登记新补丁只差重启时不退（审查 78 P3-4）
-	XUpdateInstall.register(p470, base)
+	XUpdateInstall.register(p9470, base)
 	BootPatchScript.confirm(sp)
 	var client := XUpdateClient.instance(get_tree())
 	var keep := {"urls": XUpdateClient.channel_urls, "key": XUpdateClient.public_key, "stamp": XUpdateClient.stamp_path, "result": BootPatchScript.result.duplicate()}
@@ -344,9 +344,9 @@ func _run() -> void:
 	await get_tree().process_frame
 	var rr: Dictionary = await client.check()
 	_check("撤回名单里有现在运行的版本", rr["revoked"] == true)
-	_check("已登记新补丁只差重启：静默检查不退回", int(_state()["code"]) == 470 and XUpdateInstall.take_rollback_notice().is_empty())
+	_check("已登记新补丁只差重启：静默检查不退回", int(_state()["code"]) == 9470 and XUpdateInstall.take_rollback_notice().is_empty())
 	# 登记着的就是正在跑的：退
-	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": 470, "base": cur_code - 1, "confirmed": true}
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": 9470, "base": cur_code - 1, "confirmed": true}
 	_check("这时没有待生效的", XUpdateInstall.pending_code() == 0)
 	man = JSON.stringify({"schema": 1, "latest": {"version": "0.%d" % (cur_code + 9), "code": cur_code + 9}, "bases": {}, "min_base": 0, "revoked": [cur_code]}).to_utf8_buffer()
 	rr = await client.check()
@@ -361,25 +361,25 @@ func _run() -> void:
 	f.store_buffer(data)
 	f.close()
 
-	# 旧文件清理：登记 475 后只留 475 和上一份
+	# 旧文件清理：登记 9475 后只留 9475 和上一份
 	var f3 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_460.pck"), FileAccess.WRITE)
 	f3.store_string("旧的")
 	f3.close()
-	XUpdateInstall.register(p470, base)
+	XUpdateInstall.register(p9470, base)
 	BootPatchScript.confirm(sp)
-	f2 = FileAccess.open(XUpdateInstall.dir.path_join("patch_453_475.pck"), FileAccess.WRITE)  # 上面登记 470 时已把它当旧文件清掉
+	f2 = FileAccess.open(XUpdateInstall.dir.path_join("patch_453_9475.pck"), FileAccess.WRITE)  # 上面登记 9470 时已把它当旧文件清掉
 	f2.store_buffer(data2)
 	f2.close()
 	f3 = FileAccess.open(XUpdateInstall.dir.path_join("patch_453_460.pck"), FileAccess.WRITE)
 	f3.store_string("旧的")
 	f3.close()
-	XUpdateInstall.register(p475, base)
-	_check("登记时清掉用不到的旧补丁，留现在和上一份", not FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_460.pck")) and FileAccess.file_exists(final) and FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_475.pck")))
+	XUpdateInstall.register(p9475, base)
+	_check("登记时清掉用不到的旧补丁，留现在和上一份", not FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_460.pck")) and FileAccess.file_exists(final) and FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_9475.pck")))
 
 	# 页面文字
 	_check("下载中", XUpdatePage.texts({"state": "downloading", "done": 1048576, "total": 2097152}, true)["body"].begins_with("1.0 MB / 2.0 MB") and XUpdatePage.texts({"state": "downloading"}, true)["primary"] == "取消下载")
-	_check("已准备好", XUpdatePage.texts({"state": "ready", "version": "0.475"}, true)["body"].contains("新版本 0.475 已下载，存档已备份") )
-	_check("没下完", XUpdatePage.texts({"state": "failed", "version": "0.475", "message": "已取消。"}, true)["body"].contains("已取消。") and XUpdatePage.texts({"state": "failed"}, true)["primary"] == "再试一次")
+	_check("已准备好", XUpdatePage.texts({"state": "ready", "version": "0.9475"}, true)["body"].contains("新版本 0.9475 已下载，存档已备份") )
+	_check("没下完", XUpdatePage.texts({"state": "failed", "version": "0.9475", "message": "已取消。"}, true)["body"].contains("已取消。") and XUpdatePage.texts({"state": "failed"}, true)["primary"] == "再试一次")
 
 	XUpdateInstall.dir = BootPatchScript.DIR
 	XUpdateInstall.save_dir = XUpdateInstall.SAVE_DIR
