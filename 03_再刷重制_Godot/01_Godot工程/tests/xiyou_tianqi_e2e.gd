@@ -22,6 +22,9 @@ const DAO_TOUCH := "触屏道号"
 const ENTRY_MENU := "res://scenes/entry_menu.tscn"
 ## 标题菜单项：键 → 原版标题 _commands 的下标（新标题按 _items 的 key 找）
 const TITLE_ITEM := {"new_game": 0, "load": 1}
+## 天启篇开局三页（选存档位、难度、阵容）按取消键退回上一页。现状 entry.gd 的 _unhandled_input 只管标题图片指令，
+## 窗口页不认取消键（安卓返回键经 XPlatform 也发 ui_cancel，同样不动），交付单「发现的问题」已报；修好后改成 true，测试就改测取消键退回。
+const ESC_BACK := false
 ## 每按一下键后等几帧（按下与松开之间另等 2 帧）
 const STEP := 4
 
@@ -84,10 +87,11 @@ func _type(text: String) -> void:
 		await _key(KEY_NONE, ch.unicode_at(0))
 
 
+## p 是画面（1280×720）坐标；触屏事件要窗口坐标（headless 窗口只有 64×64，按根窗口的拉伸变换换算）
 func _tap(p: Vector2) -> void:
 	var t := InputEventScreenTouch.new()
 	t.index = 0
-	t.position = p
+	t.position = get_tree().root.get_final_transform() * p
 	t.pressed = true
 	Input.parse_input_event(t)
 	await _frames(2)
@@ -264,18 +268,39 @@ func _drive_hub(touch: bool, dao: String) -> bool:
 	return false
 
 
+## 地图上等到能操作：中途冒出的对话（大厅里随阵容触发的自动事件）按确定翻掉，和玩家一样
+func _settle(frames := 1500) -> bool:
+	for i in frames:
+		var m := _map()
+		if m == null:
+			return false
+		if not m.busy and not m.scene_page_open() and not m.message.is_busy():
+			return true
+		if m.message.is_busy() and i % 6 == 0:
+			if i == 0:
+				print("NOTE 大厅对话：", JSON.stringify(m.message._msg).left(200))
+			await _key(KEY_ENTER)
+			continue
+		await get_tree().process_frame
+	return false
+
+
 ## 主菜单（Esc）里移到指令 sym 并确定
 func _menu_cmd(sym: String) -> bool:
-	await _key(KEY_ESCAPE)
 	var menu: XMenu = null
-	for i in 120:
-		if _map() != null:
+	for attempt in 5:
+		if not await _settle():
+			return false
+		await _key(KEY_ESCAPE)
+		for i in 120:
 			for n in _map().ui.get_children():
 				if n is XMenu:
 					menu = n
+			if menu != null:
+				break
+			await get_tree().process_frame
 		if menu != null:
 			break
-		await get_tree().process_frame
 	if menu == null:
 		return false
 	await _frames(STEP)
@@ -314,7 +339,9 @@ func _load_slot(slot: int) -> bool:
 	await _key(KEY_ENTER)  # 选格 → 操作窗「读取」
 	await _key(KEY_ENTER)  # 读取 → 确认
 	await _key(KEY_ENTER)  # 是
-	return await _wait(func(): return _map_idle(XTianqi.HALL_MAP), 3000)
+	if not await _wait(func(): return _map() != null and _map().map_id == XTianqi.HALL_MAP and _map().player != null, 3000):
+		return false
+	return await _settle()
 
 
 func _saved_flags(slot: int) -> Dictionary:
@@ -378,10 +405,11 @@ func _keyboard_main() -> Array:
 	# 声明屏开头 MIN_SKIP 帧防连按，之后按一下就淡出
 	var w := _entry().get_node_or_null("XWarningScreen") as XWarningScreen
 	if w != null:
-		await _wait(func(): return not is_instance_valid(w) or w._hint.visible, 600)
+		var wr: WeakRef = weakref(w)
+		await _wait(func(): return wr.get_ref() == null or wr.get_ref()._hint.visible, 600)
 		var frame_at_skip: int = w.state().frame if is_instance_valid(w) else -1
 		await _key(KEY_SPACE)
-		var gone := await _wait(func(): return not is_instance_valid(w) or w.is_queued_for_deletion(), 600)
+		var gone := await _wait(func(): return wr.get_ref() == null or wr.get_ref().is_queued_for_deletion(), 600)
 		_check("key.warning_skipped", gone and frame_at_skip < XWarningScreen.FADE + XWarningScreen.HOLD, frame_at_skip)
 	_check("key.title", await _wait(_title_ready, 600))
 	_check("key.title_new_game", await _title_key("new_game"))
@@ -423,15 +451,18 @@ func _keyboard_main() -> Array:
 	var f = saved.get("flags", {})
 	_check("key.saved", f is Dictionary and f.get("tianqi") is Dictionary and str(f.tianqi.difficulty) == "jiusi"
 		and Array(f.tianqi.lineup).map(func(v): return int(v)) == lineup, f.get("tianqi") if f is Dictionary else saved.keys())
-	# 能走动：按住方向键，换到能走的方向
+	# 能走动：点一下方向键走一格，再走回来（按太久会走到大厅南边的触发点）
 	var moved := false
 	var pl: MVPlayer = _map().player
-	for code in [KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT]:
+	var back := {KEY_DOWN: KEY_UP, KEY_UP: KEY_DOWN, KEY_LEFT: KEY_RIGHT, KEY_RIGHT: KEY_LEFT}
+	for code in [KEY_UP, KEY_LEFT, KEY_RIGHT, KEY_DOWN]:
 		var at := pl.grid
-		await _key(code, 0, 24)
-		await _frames(30)
+		await _key(code, 0, 3)
+		await _wait(func(): return not _map().player.is_moving(), 120)
 		if pl.grid != at:
 			moved = true
+			await _key(back[code], 0, 3)
+			await _wait(func(): return not _map().player.is_moving(), 120)
 			break
 	_check("key.walk", moved, pl.grid)
 	return lineup
@@ -543,19 +574,20 @@ func _cancel_and_overwrite() -> void:
 	_check("cancel.overwrite_to_difficulty", _btn("TianqiDifficulty_jiusi") != null, _page_title())
 	await _press_focused(_btn("TianqiDifficulty_jiusi"))
 	_check("cancel.lineup_page", _btn("TianqiReroll") != null, _page_title())
-	# 逐页按取消键：阵容 → 难度 → 选格 → 标题
-	await _key(KEY_ESCAPE)
-	_check("cancel.esc_lineup_to_difficulty", _btn("TianqiDifficulty_jiusi") != null, _page_title())
-	if _btn("TianqiReroll") != null:
-		await _press_focused(_btn_text("返回"))  # 取消键不认时用「返回」按钮接着走，后面几步照样测
-	await _key(KEY_ESCAPE)
-	_check("cancel.esc_difficulty_to_slots", _btn("TianqiSlot%d" % SLOT) != null, _page_title())
-	if _btn("TianqiDifficulty_jiusi") != null:
-		await _press_focused(_btn_text("返回"))
-	await _key(KEY_ESCAPE)
-	_check("cancel.esc_slots_to_title", await _wait(_title_ready, 30), _page_title())
-	if not _title_ready() and _btn_text("返回") != null:
-		await _press_focused(_btn_text("返回"))
+	# 逐页按取消键：阵容 → 难度 → 选格 → 标题。ESC_BACK＝false 时（现状）取消键不动、改按「返回」按钮走，见常量说明
+	for step in [["lineup_to_difficulty", "TianqiReroll", "TianqiDifficulty_jiusi"],
+			["difficulty_to_slots", "TianqiDifficulty_jiusi", "TianqiSlot%d" % SLOT], ["slots_to_title", "TianqiSlot%d" % SLOT, ""]]:
+		var title_before := _page_title()
+		await _key(KEY_ESCAPE)
+		var went_back: bool = _title_ready() if step[2] == "" else _btn(step[2]) != null
+		if ESC_BACK:
+			_check("cancel.esc_" + step[0], went_back, _page_title())
+		else:
+			_check("cancel.esc_" + step[0] + "_stays", not went_back and _btn(step[1]) != null and _page_title() == title_before, _page_title())
+			await _press_focused(_btn_text("返回"))
+			await _wait(_title_ready, 30)  # 不把 await 放进三元式（会被静默跳过）
+			var back_ok: bool = _title_ready() if step[2] == "" else _btn(step[2]) != null
+			_check("cancel.back_" + step[0], back_ok, _page_title())
 	_check("cancel.old_save_kept", str(_saved_flags(SLOT).get("flags", {}).get("tianqi", {}).get("difficulty", "")) == "jiusi")
 
 
@@ -603,12 +635,18 @@ func _revert() -> void:
 	_check("revert.to_title", await _to_title_via_menu())
 	XTianqi.ENABLED = false
 	await _wait(_title_ready, 60)
+	var before := XState.current
 	var ok := await _title_key_press_only("new_game")
+	ok = ok and await _wait(func(): return XState.current != before, 30)
 	var s := XState.current
 	_check("revert.original_opening", ok and s.map_id == 1 and not XTianqi.active(s) and not s.flags.has("tianqi") and not XTianqi.has_pending(),
 		[ok, s.map_id, s.flags.get("tianqi")])
 	# 同一帧切回标题，不真的跑原版 Map001 开局事件（同 xiyou_tianqi_opening 的 _revert）
 	GameApp.enter_mode("xiyou")
+	var up := InputEventKey.new()
+	up.keycode = KEY_ENTER
+	up.physical_keycode = KEY_ENTER
+	Input.parse_input_event(up)  # 补上回车的松开
 	XTianqi.ENABLED = true
 	await _wait(_title_ready, 300)
 	_check("revert.load_tianqi_save", await _load_slot(SLOT))
@@ -617,7 +655,7 @@ func _revert() -> void:
 		and t.actor_name == DAO_TOUCH, [t.flags.get("tianqi"), t.actor_name])
 
 
-## 移到标题项后只发「按下」：原版开局在按下这一下就切场景，测试要在同一帧拦回来
+## 移到标题项后只发「按下」：原版开局在按下这一下就建局并切场景，测试看到新局的同一帧就切回标题（不跑原版 Map001 开局事件）
 func _title_key_press_only(key: String) -> bool:
 	var target := _title_node(key)
 	for i in 8:
@@ -631,7 +669,4 @@ func _title_key_press_only(key: String) -> bool:
 	e.physical_keycode = KEY_ENTER
 	e.pressed = true
 	Input.parse_input_event(e)
-	var r := e.duplicate() as InputEventKey
-	r.pressed = false
-	Input.parse_input_event(r)
 	return true
