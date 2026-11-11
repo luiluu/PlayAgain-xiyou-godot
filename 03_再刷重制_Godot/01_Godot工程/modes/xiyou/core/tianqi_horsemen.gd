@@ -197,7 +197,7 @@ static func setup(logic, s: XState) -> void:
 		var e := XEnemy.new()
 		e.setup_horseman(int(shell.get("add", 2)), _add_rec(int(shell.get("add", 2)), line, key))
 		e.set_meta("x", 300.0 + 70.0 * (i % 3))
-		e.set_meta("y", 240.0 + 110.0 * (i / 3))
+		e.set_meta("y", 240.0 + 110.0 * floorf(i / 3.0))
 		e.hidden = true
 		logic.enemies.append(e)
 		adds.append(e)
@@ -527,7 +527,7 @@ static func _summon(logic, f: Dictionary, e) -> void:
 static func war_extra_actions(logic) -> int:
 	var f := fight(logic)
 	var others: int = logic.alive(logic.enemies).filter(func(e): return not is_same(e, f.knight)).size()
-	return mini(int(knight("war").max_extra), others / 2)
+	return mini(int(knight("war").max_extra), floori(others / 2.0))
 
 
 # ---- 瘟疫·混子 ----
@@ -705,7 +705,7 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 			logs.append_array(_follow_up(logic, f, u))
 		"holy_sword":
 			var t = _pick_target(logic, chosen)
-			for n in range(int(skill.hits)):
+			for _n in range(int(skill.hits)):
 				if t == null or not t.is_alive():
 					t = _pick_target(logic, null)
 				if t == null:
@@ -753,7 +753,7 @@ static func _war_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) -> 
 			var mult := (1.0 + float(k.fireworks.over_per) * over) * (1.0 + (float(k.fireworks.fuse) if layer >= 4 else 0.0))
 			f.sparks = int(f.sparks) - int(k.sparks.full)
 			f.cd["fireworks"] = turn + int(k.fireworks.cooldown) + 1
-			for n in range(int(skill.hits)):
+			for _n in range(int(skill.hits)):
 				for t in _alive_actors(logic):
 					logs.append(_war_hit(logic, f, u, t, skill, mat * float(skill.coef) * mult, true, 0.0))
 		"bomb":
@@ -761,7 +761,7 @@ static func _war_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) -> 
 			f.cd["bomb"] = turn + int(k.bomb.cooldown) + 1
 			var mult := 1.0 + (float(k.bomb.special) if layer >= 3 else 0.0)
 			var crit_up := float(k.bomb.special_crit) if layer >= 3 else 0.0
-			var thunder := logic._int(1, int(k.bomb.rand_hits), "horseman_bomb")
+			var thunder: int = logic._int(1, int(k.bomb.rand_hits), "horseman_bomb")
 			var hit_any := false
 			for n in range(int(skill.hits) + thunder):
 				var fire := n < int(skill.hits)
@@ -786,19 +786,19 @@ static func _war_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) -> 
 			if int(f.sparks) > 0 and logic._float("horseman_wave") < float(k.wave.spark_chance):
 				f.sparks = int(f.sparks) - 1
 				mult = float(k.wave.spark_mult)
-			for n in range(int(skill.hits)):
+			for _n in range(int(skill.hits)):
 				for t in _alive_actors(logic):
 					logs.append(_war_hit(logic, f, u, t, skill, mat * float(skill.coef) * mult, true, 0.0))
 			for t in _alive_actors(logic):
 				_mark(f, t).burn = int(k.wave.turns)
 		"crackle":
 			var t = _pick_target(logic, chosen)
-			for n in range(int(skill.hits)):
+			for _n in range(int(skill.hits)):
 				if t == null or not t.is_alive():
 					t = _pick_target(logic, null)
 				if t == null:
 					break
-				var rnd := logic._int(1, int(k.crackle.rand_hits), "horseman_crackle")
+				var rnd: int = logic._int(1, int(k.crackle.rand_hits), "horseman_crackle")
 				logs.append(_war_hit(logic, f, u, t, skill, mat * float(skill.coef) * rnd, true, 0.0))
 			f.sparks = int(f.sparks) + 1
 	# 每次行动 +1 火花（炮火连天起 +3）
@@ -842,7 +842,7 @@ static func _famine_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) 
 	if kind == "bankrupt" and not targets.is_empty():
 		_mark(f, targets[0]).bankrupt = true
 		_flush_params(logic)
-	for n in range(int(skill.hits)):
+	for _n in range(int(skill.hits)):
 		for t in targets:
 			if not t.is_alive():
 				continue
@@ -904,7 +904,7 @@ static func _lose_hp(logic, t, n: float, logs: Array, through_shield := false) -
 	if n <= 0.0 or not t.is_alive():
 		return
 	var before: float = t.hp
-	var v := n if through_shield else t.absorb_shield(n)
+	var v: float = n if through_shield else float(t.absorb_shield(n))
 	if through_shield:
 		t.shield = 0.0
 	t.hp = maxf(0.0, t.hp - v)

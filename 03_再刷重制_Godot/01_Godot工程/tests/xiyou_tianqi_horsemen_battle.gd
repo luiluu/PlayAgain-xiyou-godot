@@ -100,18 +100,18 @@ func _setup_common() -> void:
 			_check("no_elite_armor_" + tag, not kn.elite and not kn.boss_difficulty_boss and not kn.boss_hyper_armor)
 			_check("no_rewards_" + tag, kn.exp_reward() == 0 and kn.gold_reward() == 0 and lg.drops_of(kn).is_empty())
 	# 免疫停手的控制、即死；普通敌人照挂
-	var lg := _logic("death")
-	var kn: XEnemy = lg.enemies[0]
-	kn.add_state(124)
-	kn.add_state(1)
-	_check("immune_control_death", not kn.is_state_affected(124) and kn.is_alive())
-	_check("adds_none_death", lg.enemies.size() == 1)
+	var lg0 := _logic("death")
+	var kn0: XEnemy = lg0.enemies[0]
+	kn0.add_state(124)
+	kn0.add_state(1)
+	_check("immune_control_death", not kn0.is_state_affected(124) and kn0.is_alive())
+	_check("adds_none_death", lg0.enemies.size() == 1)
 	# 霸体：偶数回合不上 2651
-	lg.run_turn(_guard_all(lg))
-	lg.run_turn(_guard_all(lg))
-	_check("no_hyper_armor_turn2", not kn.is_state_affected(XEnemy.BOSS_ARMOR_STATE))
-	lg.end_battle(0)
-	_check("end_clears", not lg.has_meta(XTianqiHorsemen.META) and XTianqiHorsemen.active_logic() == null)
+	lg0.run_turn(_guard_all(lg0))
+	lg0.run_turn(_guard_all(lg0))
+	_check("no_hyper_armor_turn2", not kn0.is_state_affected(XEnemy.BOSS_ARMOR_STATE))
+	lg0.end_battle(0)
+	_check("end_clears", not lg0.has_meta(XTianqiHorsemen.META) and XTianqiHorsemen.active_logic() == null)
 
 
 func _death() -> void:
