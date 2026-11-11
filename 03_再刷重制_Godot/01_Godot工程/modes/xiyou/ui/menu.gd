@@ -55,16 +55,21 @@ var event_state: XState = XState.current
 var zhenqi_requested := false
 
 
+## 显示的指令：异化隐藏生效（XAlienBattle.hidden，O-283）时去掉「异化工坊」（v0.58 Window_MenuCommand.makeCommandList 包装）
+static func commands() -> Array:
+	return COMMANDS.filter(func(c): return c[1] != "alienation") if XAlienBattle.hidden() else COMMANDS
+
+
 ## 指令第 i 项是否可用：已重制，且（需要队员的）队里有人
 func command_enabled(i: int) -> bool:
-	var cmd: Array = COMMANDS[i]
+	var cmd: Array = commands()[i]
 	if cmd[1] == "formation" and _members().size() < 2:
 		return false
 	return cmd[2] and not (cmd[1] in NEEDS_MEMBERS and _members().is_empty())
 
 
 func command_names() -> Array:
-	return COMMANDS.map(func(c): return c[0])
+	return commands().map(func(c): return c[0])
 
 
 func _ready() -> void:
@@ -87,7 +92,7 @@ func _members() -> Array:
 
 func _refresh() -> void:
 	cmd_win.up_arrow = _cmd_top > 0
-	cmd_win.down_arrow = _cmd_top < COMMANDS.size() - CMD_VISIBLE
+	cmd_win.down_arrow = _cmd_top < commands().size() - CMD_VISIBLE
 	status_win.up_arrow = _actor_top > 0
 	status_win.down_arrow = _actor_top < _members().size() - STATUS_ROWS
 	for w in [cmd_win, gold_win, status_win]:
@@ -96,13 +101,13 @@ func _refresh() -> void:
 
 # ---- 绘制 ----
 func _paint_commands(c: XMVCanvas) -> void:
-	for i in range(COMMANDS.size()):
+	for i in range(commands().size()):
 		var y := (i - _cmd_top) * CMD_LH
 		if y < -CMD_LH or y > c.size.y:
 			continue
 		if i == _cmd_index:
 			c.cursor(Rect2(0, y, c.size.x, CMD_LH), _mode == "command")
-		c.text(COMMANDS[i][0], 6, y, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, CMD_LH, 1.0 if command_enabled(i) else XUI.DIM.a)
+		c.text(commands()[i][0], 6, y, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, CMD_LH, 1.0 if command_enabled(i) else XUI.DIM.a)
 
 
 func _paint_gold(c: XMVCanvas) -> void:
@@ -223,7 +228,7 @@ func _gui_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN or event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 			if CMD_RECT.has_point(p):
-				_cmd_top = clampi(_cmd_top + d, 0, maxi(0, COMMANDS.size() - CMD_VISIBLE))
+				_cmd_top = clampi(_cmd_top + d, 0, maxi(0, commands().size() - CMD_VISIBLE))
 			elif STATUS_RECT.has_point(p):
 				_actor_top = clampi(_actor_top + d, 0, maxi(0, _members().size() - STATUS_ROWS))
 			_refresh()
@@ -236,7 +241,7 @@ func _click(p: Vector2) -> void:
 	var cp := p - CMD_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	if _mode == "command" and CMD_RECT.has_point(p):
 		var i := _cmd_top + floori(cp.y / CMD_LH)
-		if i >= 0 and i < COMMANDS.size():
+		if i >= 0 and i < commands().size():
 			if i == _cmd_index:
 				_ok()
 			else:
@@ -271,7 +276,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var wrap := not event.is_echo()
 		var before := [_cmd_index, _actor_index]
 		if _mode == "command":
-			_cmd_index = _move(_cmd_index, d, COMMANDS.size(), wrap)
+			_cmd_index = _move(_cmd_index, d, commands().size(), wrap)
 			_cmd_top = _scroll_to(_cmd_index, _cmd_top, CMD_VISIBLE)
 		elif _mode == "actor":
 			_actor_index = _move(_actor_index, d, _members().size(), wrap)
@@ -283,7 +288,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Window_MenuCommand 不接管 pageup／pagedown：走通用翻页（队伍窗只 5 行，选人时不翻）
 		XKeyMap.handled(self)
 		var before := _cmd_index
-		var r := page(_cmd_top, _cmd_index, COMMANDS.size(), CMD_VISIBLE, page_dir(event))
+		var r := page(_cmd_top, _cmd_index, commands().size(), CMD_VISIBLE, page_dir(event))
 		_cmd_top = r[0]
 		_cmd_index = r[1]
 		if before != _cmd_index:
@@ -379,7 +384,7 @@ static func page(top: int, index: int, total: int, visible: int, d: int, cols :=
 
 func _ok() -> void:
 	if _mode == "command":
-		var cmd: Array = COMMANDS[_cmd_index]
+		var cmd: Array = commands()[_cmd_index]
 		if not command_enabled(_cmd_index):
 			XSound.system(3)
 			return
@@ -432,7 +437,7 @@ func _ok() -> void:
 				closed.emit()
 			"alienation":
 				# installAlienationWorkshop：CodexAlienation.openWorkshop（原版是盖在菜单上的网页叠加层，见 XAlienWorkshop）
-				if not XAlienBattle.HIDDEN_V058:  # O-283：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
+				if not XAlienBattle.hidden():  # O-283：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
 					_open_detail(XAlienWorkshop.new())
 			"orbs":
 				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）

@@ -232,7 +232,7 @@ for (const [base, fame] of [[7902, 0], [7903, 300]]) {
   }));
 }
 // 原版击杀记不上：死亡状态在行动结束后才挂（YEP 延后倒下），executeHpDamage 包装里 isDead() 还是假，_codexHubrisKilledByParty 设不上，
-// 上面两例击杀后都没有扬名。fix：照修复后的口径（生命打到 0 就算本方击杀）补记，量原版其余结算（O-待定 狂妄击杀判定）。
+// 上面两例击杀后都没有扬名。fix：照修复后的口径（生命打到 0 就算本方击杀）补记，量原版其余结算（O-150 狂妄击杀判定）。
 // boss：敌人改名【首领】，打掉 10% 一段算一次（首领分段，原版本来就能触发）。
 const enemyName = id => w.$dataEnemies[id].name;
 for (const mode of ['fix', 'boss']) for (const [base, fame] of [[7902, 0], [7903, 300]]) {

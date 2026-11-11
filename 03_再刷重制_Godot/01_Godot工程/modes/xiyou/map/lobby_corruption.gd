@@ -30,6 +30,10 @@ const FLAG_KEY := "_remakeLobbyCorruption"
 ## 漩涡紫
 const PURPLE := Color(0.56, 0.36, 0.92)
 const CRACK_DARK := Color(0.09, 0.02, 0.13)
+## 正式美术（Codex 11-11 原创，content/lobby/）：有图用图，没图（或测试置空）照旧程序画
+static var CRACK_TEX := "res://content/lobby/crack_stage2.png"
+static var CRACK_GLOW_TEX := "res://content/lobby/crack_stage2_glow.png"
+static var SCALE_TEX := "res://content/lobby/canglong_scale.png"
 
 ## 原事件跑完后追加的一句：事件号 → [脸图, 脸号, 名字, 文字]（名字空＝旁白）
 const AFTER_LINES := {
@@ -82,6 +86,7 @@ var _motes: Array = []       # {p: Vector2, v: Vector2, a: float, r: float, brig
 var _next_bright := 0.0
 var _scale_node: Node2D
 var _scale_cell := Vector2i(-1, -1)
+var _scale_tex: Texture2D
 var _hum: AudioStreamPlayer
 var _drip: AudioStreamPlayer2D
 var _thud: AudioStreamPlayer
@@ -160,6 +165,8 @@ func setup(map: XMapScene) -> void:
 	_pick_floats()
 	_floats_node = _layer(_draw_floats)
 	_scale_node = _layer(_draw_scale)
+	if SCALE_TEX != "" and ResourceLoader.exists(SCALE_TEX):
+		_scale_tex = load(SCALE_TEX)
 	_motes_node = _layer(_draw_motes)
 	_build_audio()
 	_next_drip = rng.randf_range(60.0, 90.0)
@@ -213,6 +220,22 @@ func _build_desat() -> void:
 
 ## 裂纹：固定种子，从漩涡边缘向外辐射，最长 3 格；正南那条固定通到可调查的裂缝格
 func _build_cracks() -> void:
+	# 正式贴花：336×336（7×7 格），图心对准漩涡中心；微光层单独一张，跟程序画法一样 6 秒呼吸
+	if CRACK_TEX != "" and ResourceLoader.exists(CRACK_TEX):
+		_crack_glow = Node2D.new()
+		if CRACK_GLOW_TEX != "" and ResourceLoader.exists(CRACK_GLOW_TEX):
+			var g := Sprite2D.new()
+			g.texture = load(CRACK_GLOW_TEX)
+			g.position = cell_px(CENTER)
+			_crack_glow.add_child(g)
+		add_child(_crack_glow)
+		_crack_base = Node2D.new()
+		var b := Sprite2D.new()
+		b.texture = load(CRACK_TEX)
+		b.position = cell_px(CENTER)
+		_crack_base.add_child(b)
+		add_child(_crack_base)
+		return
 	var r := RandomNumberGenerator.new()
 	r.seed = 0x51A7
 	var c := cell_px(CENTER)
@@ -321,11 +344,19 @@ func _draw_scale() -> void:
 	if _scale_cell.x < 0:
 		return
 	var p := cell_px(_scale_cell) + Vector2(0, 8)
+	if _scale_tex != null:
+		_scale_node.draw_texture(_scale_tex, p - _scale_tex.get_size() / 2.0)
+		return
 	var shine := 0.5 + 0.5 * sin(_t * 2.0)
 	_scale_node.draw_set_transform(p, -0.5, Vector2(1.0, 0.62))
 	_scale_node.draw_circle(Vector2.ZERO, 7.0, Color(0.18, 0.66, 0.68))
 	_scale_node.draw_circle(Vector2(-2, -2), 3.5, Color(0.55, 0.92, 0.88, 0.5 + 0.4 * shine))
 	_scale_node.draw_set_transform(Vector2.ZERO)
+
+
+## 测试看：裂纹用的是不是正式贴花
+func crack_textured() -> bool:
+	return _crack_base != null and _crack_base.get_child_count() > 0
 
 
 func scale_cell() -> Vector2i:

@@ -18,7 +18,8 @@ extends RefCounted
 ## - 回合：开始时镜骸重新充能；结束时蚀能（偶数回合，吸 MP 比例最高的活角色 10% 最大法力，按实际比例回 2% 最大生命）、
 ##   腐蚀（每回合末扣 2% 最大生命、经护盾，到期自然消失）。
 ## - 胜利（gainDropItems／endBattle(0) 包装）：异化敌人倒下才发，放进背包，账本 recent 头插、留 30 条，提示「获得 …」；每场一次。
-## 原版行动外的 gainHp／setHp（公式副作用等）也按帧加成与记镜骸；这里只接 executeHpDamage，其余未移植（帧里逆祷的阻断另接，见 frame_blocks_hp）。
+## 原版行动外（不在 executeHpDamage 里）的 gainHp／setHp 包装（Runtime wrapHp）：帧里逆祷阻断（frame_blocks_hp）、烈变／小怪加成（frame_outgoing）、
+## 行动 apply 帧里 gainHp 的镜骸记账（frame_record，setHp 原版不记）都已接上（resource_context._gain／set_resource）。
 ## 未知存在的来源地图（Leviathan 的 Game_Map.setup 包装）记在 XState.unknown_origin（进 Map152／176 时记上一张图）。
 
 static var _logic_ref: WeakRef
@@ -58,14 +59,23 @@ static func _toast(logic, text: String) -> void:
 	XToast.show_text(text)
 
 
-## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制保持开启。
-## HIDDEN_V058＝true 时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、工坊打不开（O-283，默认 false）。
-## 还没跟的另外三件（物品不可得／不可见／不可装备、商店、读档把异化实例还原成普通装备）见优化登记 O-283。
+## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制开发版保持开启。
+## 隐藏生效（hidden()）时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、主菜单没有「异化工坊」；
+## 六件物品不可得／不可见／不可装备、读档把异化实例还原成普通装备在 XAlienHide（O-283）。
+## HIDDEN_V058：开发版也隐藏（默认 false，开发版异化照常可玩）。
 static var HIDDEN_V058 := false
+## 发行开关（O-315）：Kyo 11-11「新整包里异化相关装备和词条都不开放」。true＝发行构建（ReleaseEntry.is_release）里隐藏；
+## false＝发行构建也照常开放（回到只看 HIDDEN_V058）。以后开放异化发补丁把它改成 false 即可。
+static var RELEASE_HIDE := true
+
+
+## 异化整套隐藏是否生效：HIDDEN_V058，或发行构建且 RELEASE_HIDE
+static func hidden() -> bool:
+	return HIDDEN_V058 or (RELEASE_HIDE and ReleaseEntry.is_release())
 
 
 static func encounter(logic):
-	if HIDDEN_V058:
+	if hidden():
 		return null
 	return _store(logic).encounter if logic != null and logic.has_meta("xalien") else null
 
@@ -128,7 +138,7 @@ static func variant_info(key: String) -> Dictionary:
 static func setup_encounter(logic, rng: XRandomStream, forced := {}):
 	var st := _store(logic)
 	st.encounter = null
-	if HIDDEN_V058:
+	if hidden():
 		return null
 	var s: XState = logic.state
 	var enemies: Array = logic.enemies
@@ -285,7 +295,7 @@ static func locked(a):
 
 ## A.grant：异化敌人倒下才发
 static func grant(logic) -> bool:
-	if HIDDEN_V058:
+	if hidden():
 		return false
 	var x = encounter(logic)
 	if x == null or bool(x.granted) or not x.enemy.is_dead():
@@ -473,6 +483,23 @@ static func frame_outgoing(value: float) -> float:
 	if logic == null or (f.item as Dictionary).is_empty():
 		return value
 	return outgoing(logic, f.source, f.item, value)
+
+
+## Runtime wrapHp 末尾（outer && !executeDepth && f.action）：行动 apply 帧里、不在 executeHpDamage 里的 gainHp 扣血
+## （效果「恢复 HP」负值、伤害公式里的 b.gainHp 等）照样 recordDamage，算进镜骸本次行动的扣血。帧没有行动（支援、自定义状态效果、
+## 腐蚀、蚀能、反噬这些 withFrame(null, …)）不记；setHp 包装原版不记。
+## OUTSIDE_HP_MIRROR：true＝照 v0.62.12 记账；false＝回到只记 executeHpDamage 的旧行为（回退开关，不偏离原版、不登记 O 号）
+static var OUTSIDE_HP_MIRROR := true
+
+
+static func frame_record(b, loss: float) -> void:
+	if not OUTSIDE_HP_MIRROR or loss <= 0.0 or _action_frames.is_empty():
+		return
+	var f: Dictionary = _action_frames[_action_frames.size() - 1]
+	var logic = active_logic()
+	if logic == null or (f.item as Dictionary).is_empty():
+		return
+	record(logic, f.source, b, loss)
 
 
 ## recordDamage：镜骸被行动根的角色打掉生命（不含反击、反射）

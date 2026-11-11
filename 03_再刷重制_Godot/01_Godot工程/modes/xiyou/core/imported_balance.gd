@@ -26,7 +26,24 @@ static var V029_HIDE_ACTORS := true
 
 
 static func is_hidden_actor(id: int) -> bool:
-	return V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id)
+	return V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id) and not released_actor(id)
+
+
+## 【cc·未经审查】解放苍龙破晓（Kyo 11-11，O-313）：开关开着时 146 不算停用、不隐藏，号角 274 不算停用号角
+## （回到兑换大厅号角商店，Map132 EV16 本来就有这一行）。招募照旧走 CE2506（入队、送法宝【上邪】），超强者门槛照旧。
+## 名单常量不动（参照测试按原版比），凡是判断停用／隐藏的地方都改问下面几个函数。RELEASE_CANGLONG = false 回原版。
+static var RELEASE_CANGLONG := true
+const CANGLONG := 146
+const CANGLONG_HORN := 274
+
+
+static func released_actor(id: int) -> bool:
+	return RELEASE_CANGLONG and id == CANGLONG
+
+
+## 号角编号是不是停用号角（商店过滤、能否购买、菜单「使用」灰）
+static func horn_id_disabled(id: int) -> bool:
+	return DISABLED_HORNS.has(id) and not (RELEASE_CANGLONG and id == CANGLONG_HORN)
 
 
 ## B.migrateParty（读档 extractSaveContents 包装；新局、initializeBattleMembers 等时也跑，重制 add_actor 本来就拦，只剩读档要做）：
@@ -82,11 +99,11 @@ static var probe_enabled: Array = []
 
 static func is_disabled_actor(b) -> bool:
 	var id := _actor_id(b)
-	return DISABLED_ACTORS.has(id) and not probe_enabled.has(id)
+	return DISABLED_ACTORS.has(id) and not probe_enabled.has(id) and not released_actor(id)
 
 
 static func is_disabled_horn(item: Dictionary) -> bool:
-	return XBattleLogic.is_item(item) and DISABLED_HORNS.has(int(item.get("id", 0)))
+	return XBattleLogic.is_item(item) and horn_id_disabled(int(item.get("id", 0)))
 
 
 ## 禁用角色或禁用号角：行动对目标无效

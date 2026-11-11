@@ -324,6 +324,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
 	XYunshangOrders.on_map_setup(s, s.map_id, id)  # 云裳 Game_Map.setup 包装：未知战斗记来源地图（不朽天丝用）
 	XAbyssMerchant.on_map_setup(s, s.map_id, id)  # 深渊商人 Game_Map.setup 包装：商人路线地图开新一轮
+	XRift.on_map_setup(id)  # 时空漩涡二阶段：记进图次数（rift2 不在刚播完 rift1 的同一次进大厅播）
 	s.map_id = id
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
@@ -343,7 +344,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower

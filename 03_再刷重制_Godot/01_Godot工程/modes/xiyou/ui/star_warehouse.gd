@@ -68,7 +68,7 @@ func _symbol() -> String:
 func _reload() -> void:
 	var s := XState.current
 	if _symbol() == "equip":
-		data = XStarWarehouse.carried_gear() if save_mode else XStarWarehouse.gear().duplicate()
+		data = XStarWarehouse.carried_gear() if save_mode else XStarWarehouse.withdrawable_gear()
 	else:
 		data = XPets.list(s).duplicate() if save_mode else XStarWarehouse.pets().duplicate()
 	_refresh()

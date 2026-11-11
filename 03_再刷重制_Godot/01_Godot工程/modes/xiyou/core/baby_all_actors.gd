@@ -42,7 +42,7 @@ static func horn_actor(rec: Dictionary) -> int:
 
 
 static func excluded(id: int) -> bool:
-	if XImportedBalance.DISABLED_ACTORS.has(id) or XImportedBalance.HIDDEN_ACTORS.has(id):
+	if (XImportedBalance.DISABLED_ACTORS.has(id) or XImportedBalance.HIDDEN_ACTORS.has(id)) and not XImportedBalance.released_actor(id):
 		return true
 	return str(XDB.rec("Actors", id).get("name", "")) == ""
 

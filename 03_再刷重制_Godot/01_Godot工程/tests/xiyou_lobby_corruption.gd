@@ -96,6 +96,11 @@ func event_digest(map: XMapScene) -> String:
 
 func _run() -> void:
 	TestEnv.isolate("xiyou_lobby_corruption")
+	# 本专项要「rift2 还没播」的大厅：TestEnv 默认把 rift2 记成看过，这里去掉；漩涡二阶段的地图补丁（XRift.STAGE2，含 rift2 过场 EV203）关掉，
+	# 免得过场占住大厅（阶段由 STAGE_OVERRIDE 指定，落点仍读 XRift.canglong_drop_cell）
+	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	XRift.STAGE2 = false
+	XRift.clear_cache()
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 
@@ -137,6 +142,8 @@ func _run() -> void:
 	check("stage2.max_stage", int(XLobbyCorruption.record(XState.current).maxStage) == 2, XState.current.flags.get(XLobbyCorruption.FLAG_KEY))
 	check("floats.fixed", fx.floats.has(XLobbyCorruption.FIXED_FLOAT) and fx.floats.size() >= 2 and fx.floats.size() <= 3, fx.floats)
 	check("floats.avoid", fx.floats.all(_float_clear), fx.floats)
+	var has_art := ResourceLoader.exists("res://content/lobby/crack_stage2.png")
+	check("art.crack", fx.crack_textured() == has_art, [has_art, fx.crack_textured()])
 	await frames(30)
 	m2.player.locate(14, 21)
 	await frames(90)
@@ -201,6 +208,15 @@ func _run() -> void:
 	var per := (Time.get_ticks_usec() - t) / 600.0
 	print("[lobby_corruption] _process 平均 %.1f 微秒/帧（600 帧，光尘 %d）" % [per, fx.mote_count()])
 	check("perf.process", per < 2000.0, per)
+
+	# 没有正式图时程序画：置空路径重建一次
+	XLobbyCorruption.CRACK_TEX = ""
+	var bare := XLobbyCorruption.new()
+	add_child(bare)
+	bare.setup(m2)
+	check("art.fallback", not bare.crack_textured() and bare._cracks.size() >= 11, bare._cracks.size())
+	bare.queue_free()
+	XLobbyCorruption.CRACK_TEX = "res://content/lobby/crack_stage2.png"
 
 	# 离开大厅即拆
 	m2.load_map(5, 11, 13, 2)
