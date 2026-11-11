@@ -439,6 +439,15 @@ class ProbeCache:
         pairs = [(r['file'], r['to']) for r in rows]
         if len(set(pairs)) != len(pairs):
             raise RuntimeError('%s 里同一份 file 的同一个 to 写了两条，折算不唯一' % SCOPE_FILE)
+        # 审查 95 P2-3：链上有环时 _scoped_sha 追到哪条取决于从哪进环，直接拒（原来只靠 seen 防死循环）
+        back = {(r['file'], r['to']): r['from'] for r in rows}
+        for start in back:
+            seen, cur = set(), start
+            while cur in back:
+                if cur in seen:
+                    raise RuntimeError('%s 的声明连成了环（from／to 绕回自己）：%s %s' % (SCOPE_FILE, start[0], start[1]))
+                seen.add(cur)
+                cur = (cur[0], back[cur])
         return rows
 
     def _scoped_sha(self, probe, rel, sha):

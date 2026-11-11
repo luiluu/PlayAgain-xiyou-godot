@@ -789,6 +789,11 @@ class CacheTests(unittest.TestCase):
         (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [good, dict(good, rerun=[])]}))
         with self.assertRaises(RuntimeError):
             self.cache()
+        # 审查 95 P2-3：链上有环（new→X→new）也拒，不靠追链的 seen 兜着
+        ring = '0' * 63 + '9'
+        (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [dict(good, **{'from': ring}), dict(good, **{'from': new, 'to': ring})]}))
+        with self.assertRaisesRegex(RuntimeError, '环'):
+            self.cache()
         (self.tools / incremental_sync.SCOPE_FILE).write_text(json.dumps({'changes': [good]}))
         self.assertEqual(self.hits(), [True, False, True])
 

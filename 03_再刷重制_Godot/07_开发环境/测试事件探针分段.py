@@ -601,6 +601,21 @@ class StateScopeTests(unittest.TestCase):
         old_row = {'file': 'mv_oracle/event_state_probe.cjs', 'from': '0' * 63 + '2', 'to': '0' * 63 + '3', 'presetKeys': ['nonexistent'], 'why': '旧条目'}
         self.scope([old_row, dict(row, presetKeys=['actors.*'])])
         self.assertEqual(self.stats(self.run_probe(sb / 'o5c.json', **prev))['reused'], n - n_actors)
+        # 审查 95 P2-3：同一个 to 写两条（一条带真受影响的键、一条空数组）——原来带 actors 的变体会跳过前一条、命中后一条，静默取回旧结果；现在报错
+        dup = [dict(row, presetKeys=['actors']), dict(row, presetKeys=[])]
+        for rows in (dup, dup[::-1]):
+            self.scope(rows)
+            rd = self.run_probe(sb / 'o5d.json', **prev)
+            self.assertNotEqual(rd.returncode, 0)
+            self.assertIn('同一个 to', rd.stderr)
+            self.assertFalse((sb / 'o5d.json').exists())
+        # 声明连成环（s1→A→s1）：追链结果取决于从哪进环，报错
+        ring = '0' * 63 + '4'
+        self.scope([dict(row, **{'from': ring}), dict(row, **{'from': s1, 'to': ring})])
+        rr = self.run_probe(sb / 'o5e.json', **prev)
+        self.assertNotEqual(rr.returncode, 0)
+        self.assertIn('环', rr.stderr)
+        # 有效但漏报键（真改了 actors 变体的结果却声明空数组）：声明本身过得了校验，靠每日审计兜底——见下面 o7／o8 的审计用例
         # 格式错直接报错，不静默忽略
         self.scope([{'file': 'mv_oracle/event_state_probe.cjs', 'from': s0, 'to': s1, 'why': '缺 presetKeys'}])
         self.assertNotEqual(self.run_probe(sb / 'o6.json', **prev).returncode, 0)
