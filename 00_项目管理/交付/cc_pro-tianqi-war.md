@@ -1,7 +1,7 @@
 # 交付：cc/pro-tianqi-war
 
 - 车道／工作者：A 内容·楼层＋C 规则／cc（Pro 云端线程「实装天启篇战争线关卡」）
-- 状态：进行中
+- 状态：可合并
 
 ## 依赖与合并顺序
 
@@ -63,10 +63,19 @@
 
 ## 验证
 
-（待写）
+云端 Pro 容器（Godot 4.7.2 Linux，转换产物取自 `refs/ci/generated/main`）：
+
+- 新专项 `xiyou_tianqi_war` 96/96；`xiyou_tianqi_numbers` 57/57、`xiyou_tianqi_horsemen` 97/97、`xiyou_tianqi_horsemen_battle` 100/100。
+- `并行测试.py` 一批 33 个全过：`xiyou_tianqi_*`（13 个）、`xiyou_boss_*`、`xiyou_lobby_corruption`、`xiyou_determinism`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_enemy_book`、`xiyou_actor1_damage`、`xiyou_attack_query`、`xiyou_action_sequence`、`xiyou_map_*`、`xiyou_battle_pace`。
+- `天启篇数据校验.py --params <设计仓库>/重制设定/数值测算/参数.json` 全过（balance、horsemen 对照照过，war_line 规则自检过）。
+- 没跑全量 `检查.sh`（车道规则）；`xiyou_rules*`、`xiyou_event_compare*` 云端跑不了，见上「在 Mac 上要跑的专项」。
+- 实测改了两处：异化加值改按不含难度倍率的基础值算（原来按含倍率的，天启篇敌人倍率下会多乘一遍）；生存战援军波次表从 JSON 读出来是小数，改成整数比较。
 
 ## 本分支提交
 
 - 5b1b6e3 合并 cc/pro-tianqi-horsemen（四骑士 Boss）
 - 985d2a1 WIP: 流程与台词、异化规则、生存战与影子、选线与门锁
 - WIP: 专项 xiyou_tianqi_war、数据校验加 war_line
+- WIP: 交付单草稿
+- WIP: 专项跑通 96/96（异化加值、波次修正）
+- 本次：交付单可合并
