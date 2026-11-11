@@ -27,8 +27,30 @@ scan = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(scan)
 
 
-# 开局等级上限：YEP_CoreEngine 参数 Max Level（新开局 $gameParty.ActorMaxLevel 未设，走它）
-MV_START_MAX_LEVEL = 10
+import os
+
+
+def start_max_level(app=None, default=10):
+    """开局等级上限：正式源 plugins.js 里 YEP_CoreEngine 的参数 Max Level（新开局 $gameParty.ActorMaxLevel 未设，走它）。
+    审查 72 P3-2：原来写死 10。正式源找 XIYOU_APP，没设用本树的冻结正式源（同 xiyou_export）；读不到（云端没正式源）时
+    退回 generated/db/Plugins.json（转换器从同一份 plugins.js 导出），都没有才用 default。"""
+    app = Path(app) if app else (Path(os.environ['XIYOU_APP']) if os.environ.get('XIYOU_APP') else HERE.parent / '02_内容与素材/冻结正式源/app.nw')
+    try:
+        text = (app / 'js/plugins.js').read_text(encoding='utf-8')
+        plugins = json.loads(text[text.index('['):text.rindex(']') + 1])
+        for x in plugins:
+            if x.get('name') == 'YEP_CoreEngine' and x.get('status'):
+                return int(x['parameters']['Max Level'])
+    except (OSError, ValueError, KeyError):
+        pass
+    gen = HERE.parent / '01_Godot工程/modes/xiyou/generated/db/Plugins.json'
+    try:
+        return int(json.loads(gen.read_text())['YEP_CoreEngine']['Max Level'])
+    except (OSError, ValueError, KeyError):
+        return default
+
+
+MV_START_MAX_LEVEL = start_max_level()
 
 
 def merge_into(out, add):
@@ -114,6 +136,14 @@ def trace_var(lst, j, p, depth=0):
                     if lv > MV_START_MAX_LEVEL:   # 开局上限以上同时抬上限（maxlevel equal，cc 分段甲 a3），否则 changeLevel 被夹住
                         out['maxLevel'] = lv
                     return out
+                if t == 3 and int(q[6]) in (2, 3) and int(val) >= 1:
+                    # 角色当前 HP／MP（cc 分段甲 a6：ce1597 张无忌「1203 = 87 号 HP；1203 >= 10 万」）：上限抬同样多（paramPlus 0／1）再设当前值
+                    i = int(q[6]) - 2
+                    return {'actors': {str(q[5]): {'paramPlus': {str(i): int(val)}, ('hp', 'mp')[i]: int(val)}}}
+                if t == 3 and 4 <= int(q[6]) <= 11 and int(val) >= 1:
+                    # 角色能力值 param(0～7)（cc 分段甲 a6：ce1600 攻击、ce1617 最大 MP）：加成给到门值，底值另算，只对「≥」类门有效，
+                    # 「<」门这样给不成立，目标走不到会被剪掉
+                    return {'actors': {str(q[5]): {'paramPlus': {str(int(q[6]) - 4): int(val)}}}}
                 if t == 7 and int(q[5]) == 4 and int(val) >= 0:
                     return {'playtime': int(val)}
             if int(q[2]) == 0 and int(q[3]) == 4 and str(q[4]).strip().rstrip(';').strip() == '$gameSystem.playtime()' and int(val) >= 0:

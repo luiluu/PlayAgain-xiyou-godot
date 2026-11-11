@@ -14,6 +14,24 @@
       "to": "c364dda8799594265659930139ab85b38349f12b476ecb5848a0efc354f24022",
       "presetKeys": [],
       "why": "tools-probe-scope1 只加影响面声明的校验（最新声明的键须在某变体的预设键路径里出现），在用例执行之前抛错或通过；变体执行路径（applyPreset／runCase）一行没改，旧变体结果与读到的地图不变"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "c364dda8799594265659930139ab85b38349f12b476ecb5848a0efc354f24022",
+      "to": "c25f14d3945ab9a5c9b5684232c3c4592e3ad6e1c969ebb51c84a823e176ada8",
+      "presetKeys": [
+        "actors.*.paramPlus",
+        "actors.*.states",
+        "actors.*.hp"
+      ],
+      "why": "cc 分段甲 a6：applyPreset 在每名角色的旧子键之后新加 paramPlus（addParam）／states（addState）／hp（setHp）／mp（setMp）四段，只在预设带这些子键时执行；另加 actors.N 子键白名单（不认识就报错），合并时 main 上的变体的 actors 子键只有 level／skills／forget／armors／weapons，全在白名单内，旧变体执行路径与结果不变；mp 段眼下没有变体用到（原版没有「变量＝角色当前 MP」的门），按 tools-probe-scope1 的校验不列，没有缓存结果依赖它，以后有变体带 mp 时它是新变体、照样会量"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "c25f14d3945ab9a5c9b5684232c3c4592e3ad6e1c969ebb51c84a823e176ada8",
+      "to": "cdd9dcb1d5eed7169191a4cb049a766f60eb80da0d7228ec4bc4c41dfd103998",
+      "presetKeys": [],
+      "why": "cc 分段甲 a6（接 map-m4 建议）：runCase 统计 reached 改按指令对象记（runList＝setup 用的深拷贝，与 list 下标对齐），不再按解释器下标。只有执行中换了指令表的用例（帮助页更新日志段 injectChangelog 插行）结果会变，这类用例原先在 list[i].code 越界抛 TypeError、整段崩，从没有结果入账；正式源里别处没有改解释器 _list 的，已入账的变体 reached 逐字不变（实测 34 个 a6 旧变体新旧探针逐字相同）"
     }
   ]
 }

@@ -104,10 +104,14 @@ const EFFECT = new Set([121, 122, 123, 125, 126, 127, 128, 129, 134, 135, 136, 1
   318, 319, 320, 321, 324, 325, 355, 356, 117, 352, 353, 354]);
 // 初始状态预设：开关、变量、独立开关、金钱、物品／武器／防具、队伍、角色技能和等级、难度
 const PRESET_KEYS = ['difficulty', 'party', 'actors', 'answers', 'armors', 'battleResult', 'dead', 'defeats', 'gold', 'items', 'maxLevel', 'playerDirection', 'playtime', 'random_seq', 'selfSwitches', 'switches', 'variables', 'weapons'];
+// cc 分段甲 a6：actors.N 下认的子键（角色状态门：paramPlus／hp／mp／states）；不认识的同样报错
+const ACTOR_PRESET_KEYS = ['level', 'skills', 'forget', 'armors', 'weapons', 'paramPlus', 'hp', 'mp', 'states'];
 function applyPreset(p) {
   if (!p) return;
   // 不认识的预设键直接报错（审查 49：g3 用了 random 而不是 random_seq，悄悄没生效）
   for (const k of Object.keys(p)) if (!PRESET_KEYS.includes(k)) throw new Error('event_presets 不认识的预设键: ' + k);
+  for (const [id, a] of Object.entries(p.actors || {}))
+    for (const k of Object.keys(a)) if (!ACTOR_PRESET_KEYS.includes(k)) throw new Error('event_presets 不认识的角色预设键: actors.' + id + '.' + k);
   if (p.difficulty !== undefined) w.$gameSystem._difficultyId = p.difficulty;
   for (const id of p.party || []) w.$gameParty.addActor(id);
   // cc 分段甲 a3：等级上限＝插件指令「maxlevel equal N」（YEP_CoreEngine：$gameParty.ActorMaxLevel 与全部 $dataActors[i].maxLevel），
@@ -131,6 +135,12 @@ function applyPreset(p) {
       const item = w.$dataWeapons[wp], slot = ac.equipSlots().indexOf(item.etypeId);
       if (slot >= 0) ac.forceChangeEquip(slot, item);
     }
+    // cc 分段甲 a6：角色状态门。paramPlus＝{能力编号: 值}（addParam，同指令 317）；states＝附加的状态（addState，死者不加）；
+    // hp／mp＝当前值（setHp／setMp，refresh 夹到上限）。顺序：能力 → 状态 → HP → MP（先抬上限、状态改上限后再设当前值）
+    for (const [i, v] of Object.entries(a.paramPlus || {})) ac.addParam(Number(i), Number(v));
+    for (const st of a.states || []) ac.addState(Number(st));
+    if (a.hp !== undefined) ac.setHp(Number(a.hp));
+    if (a.mp !== undefined) ac.setMp(Number(a.mp));
   }
   if (p.gold !== undefined) w.$gameParty.gainGold(p.gold - w.$gameParty.gold());
   for (const [id, n] of Object.entries(p.items || {})) w.$gameParty.gainItem(w.$dataItems[Number(id)], n);
@@ -333,7 +343,7 @@ function runCase(c) {
   const it = new w.Game_Interpreter();
   const ran = new Set(), execute = w.Game_Interpreter.prototype.executeCommand;
   w.Game_Interpreter.prototype.executeCommand = function () {
-    if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(this._index); }
+    if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(cmd); }
     if (!seqRandom) return execute.apply(this, arguments);
     // 301 战斗处理（敌群、战斗模拟）里的随机数不吃序列：重制战斗走自己的随机流，不走 random_sequence（试过：m138e6p0 等 69 例 301 后首个 122 错位）
     const cmd = this.currentCommand(), inBattle = cmd && cmd.code === 301;
@@ -348,7 +358,8 @@ function runCase(c) {
     const old = w.Math.random; w.Math.random = () => 0.5;
     try { return f.apply(this, arguments); } finally { w.Math.random = old; }
   };
-  it.setup(w.JsonEx.makeDeepCopy(list), c.event);
+  const runList = w.JsonEx.makeDeepCopy(list);
+  it.setup(runList, c.event);
   const errors = [];
   let frames = 0;
   const msg = () => {
@@ -409,7 +420,9 @@ function runCase(c) {
   if (errors.length) out.errors = errors;
   w.Game_Interpreter.prototype.executeCommand = execute; for (const [o, k, f] of gearHooks) o[k] = f;
   out.base = c.base; out.preset = c.preset;
-  out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
+  // 按指令对象记执行到的（不按下标）：帮助页更新日志段（CodexGuide.injectChangelog）把解释器指令表换成插了行的新表，
+  // 下标对不上原表（map-m4 发现，原先 list[i] 越界 TypeError 整段崩）；新表里原有指令仍是 runList 里的同一对象，runList 与 list 下标对齐
+  out.reached = [list.filter((x, i) => EFFECT.has(x.code) && ran.has(runList[i])).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
   w.Math.random = () => 0.5;
   trace = null;
