@@ -94,6 +94,8 @@ func _run() -> void:
 	_check("rollback_in_tree_no_error", _log.take("").is_empty())
 	XKeyMap.SAFE_HANDLED = true
 	if XDB.available():
+		var tq_title := XTianqiTitle.ENABLED
+		XTianqiTitle.ENABLED = false  # 本段测原版标题图片指令的按键处理；新标题的按键由 xiyou_tianqi_title 测
 		for code in [KEY_SPACE, KEY_J]:
 			GameApp.enter_mode("xiyou")
 			await _frames(6)
@@ -111,6 +113,7 @@ func _run() -> void:
 			_check("accept_left_title_%d" % code, _scene() == "res://scenes/entry_menu.tscn", _scene())
 			var hit := _log.take("set_input_as_handled")
 			_check("accept_no_null_viewport_%d" % code, hit.is_empty(), hit)
+		XTianqiTitle.ENABLED = tq_title
 	OS.remove_logger(_log)
 	_log = null
 	var passed := results.filter(func(r): return r["passed"]).size()

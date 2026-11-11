@@ -102,6 +102,14 @@ func _menu() -> void:
 	t.item(0).node.pressed.emit()
 	(t.find_child("ReturnToMenu", true, false) as Button).pressed.emit()
 	_check("callbacks_called", calls == ["options", "new_game", "achievements", "check_update", "new_game", "back_to_menu"], calls)
+	# 检查更新红点（entry.gd 按 XUpdateClient.has_update() 点亮）：开一次只一个、关掉就没，没有的键不出错
+	var upd: Button = t.item(4).node
+	t.set_badge("check_update", true)
+	t.set_badge("check_update", true)
+	_check("badge_on_once", upd.get_node_or_null("Badge") != null and upd.get_children().filter(func(n): return n.name == "Badge").size() == 1)
+	t.set_badge("check_update", false)
+	_check("badge_off", upd.get_node_or_null("Badge") == null)
+	_check("badge_unknown_key", t.set_badge("nope", true) == null)
 	# 选中态：上半图、放大；过渡走完
 	t.select(3)
 	for i in 30:

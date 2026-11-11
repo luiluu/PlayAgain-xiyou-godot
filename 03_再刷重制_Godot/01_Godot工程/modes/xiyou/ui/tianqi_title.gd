@@ -468,3 +468,30 @@ func item(i: int) -> Dictionary:
 
 func item_count() -> int:
 	return _items.size()
+
+
+## 按钮右上角红点（「检查更新」查到新版时 entry.gd 点亮）；没有这一项就什么都不做。返回红点节点（关着时为 null）。
+func set_badge(key: String, on: bool) -> Control:
+	for it in _items:
+		if str(it.key) != key:
+			continue
+		var b: Button = it.node
+		var dot := b.get_node_or_null("Badge") as Panel
+		if not on:
+			if dot != null:
+				dot.queue_free()
+				b.remove_child(dot)
+			return null
+		if dot == null:
+			dot = Panel.new()
+			dot.name = "Badge"
+			dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(0.9, 0.15, 0.15)
+			sb.set_corner_radius_all(8)
+			dot.add_theme_stylebox_override("panel", sb)
+			dot.size = Vector2(16, 16)
+			dot.position = Vector2(b.size.x - 22, 6)
+			b.add_child(dot)
+		return dot
+	return null
