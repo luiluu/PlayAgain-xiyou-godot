@@ -98,7 +98,7 @@ gate1_28 是关键：重制没归 0 的话 206 会是 −18000。
 ## 验证
 
 - 云端 Godot 侧预检（不是原版对照）：把上表 30 条手推预期临时拼进本地 `generated/oracle/event_states.json`（转换产物取自 `ci/generated/main`，跑完已还原，不入库），跑 `xiyou_event_compare.tscn -- --only=<30 例>`：`EVENT_COMPARE cases 30, match 30, mismatch 0`，`EVENT_SKIPPED` 0，TEST_RESULT 14/14。也就是说重制解释器的结果和我按原版指令手推的一致；原版是不是也这么走，要 Mac 量了才算数。
-- `工具回归.py`：失败 1 项「选测替身与 检查.sh 解析」，是云端容器的已知问题（基准提交上同样失败），与本单无关；其余全过。
+- `工具回归.py`：失败 1 项「选测替身与 检查.sh 解析」，是云端容器的已知问题（容器缺 zsh 一类环境差异，11-11 记过；本单只改了 event_presets.json 与交付单，碰不到它，基准提交上没重跑核对）；其余全过。
 - 没跑：`检查.sh`、同步、`交付自检.py`（本单状态不是可合并，需 Mac 跑完再自检）。
 
 ## 变更记录草稿
