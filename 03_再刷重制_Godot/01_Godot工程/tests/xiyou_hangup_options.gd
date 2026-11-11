@@ -262,7 +262,7 @@ func _run() -> void:
 	s.flags.HangUpProhibited = true
 	var opt2 := XOptionsScene.new()
 	add_child(opt2)
-	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra and not opt2.symbols().has("HangUp"), opt2.symbols().size())
+	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra + fx and not opt2.symbols().has("HangUp"), opt2.symbols().size())
 	opt2.queue_free()
 	s.flags.HangUpProhibited = false
 	rules(s)
