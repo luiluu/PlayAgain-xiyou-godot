@@ -774,7 +774,7 @@ static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
 	interp.skipped.append_array(sub.skipped)
 
 
-## 轮回不选人（O-待定·轮回不选人，Kyo 2026-11-11 定：天启篇新方案轮回不选人）：阵容规则这一层（原版选人的入口，重制只剩「常规阵容」）
+## 轮回不选人（O-270，Kyo 2026-11-11 定：天启篇新方案轮回不选人）：阵容规则这一层（原版选人的入口，重制只剩「常规阵容」）
 ## 去掉，选完难度直接按常规阵容开启。开关：false＝去掉（默认）；true＝照原版再问阵容规则。
 static var REINCARNATION_LINEUP_MENU := false
 
