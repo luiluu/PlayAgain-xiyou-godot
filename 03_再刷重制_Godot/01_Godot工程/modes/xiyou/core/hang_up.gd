@@ -26,7 +26,7 @@ const DEFAULTS := {"range": 10, "showInter": true, "fastFt": false, "deathStop":
 static var SILENT_WHEN_IDLE := true
 ## O-017：「自动储存」设置生效、说明写实际存档位（开局选的固定存档位）；设 false 恢复原版（开关无效、说明写 saveId 参数，空为 1）。
 static var AUTO_SAVE_SETTING := true
-## O-待定：守层者等事件「你正在挂机，无法挑战」的门（条件脚本 XdRsData.hangUp.GuaJiStartBettleOk，14 个首领事件）。
+## O-273：守层者等事件「你正在挂机，无法挑战」的门（条件脚本 XdRsData.hangUp.GuaJiStartBettleOk，14 个首领事件）。
 ## 原版看全局标记：开始挂机时设、按键停止时清，读档、回标题都不清，读档后没在挂机也会被拦；这里改看是否正在挂机。
 ## 设 false 恢复原版（看 started_flag：开始挂机时设、stop 时清，同一次运行内读档不清）。
 static var GATE_ACTIVE_ONLY := true

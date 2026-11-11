@@ -940,7 +940,7 @@ class ExprEnv:
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
 	## 剑心图鉴开关（$gameSystem._kyoJianxinBookUnlocked，见 _cut_misc）：没设过是 undefined，!! 后为 false
 	func jianxin() -> bool: return bool(XState.current.flags.get("_kyoJianxinBookUnlocked", false))
-	## 挂机门（守层者「你正在挂机，无法挑战」，XHangUp.gate；O-待定）
+	## 挂机门（守层者「你正在挂机，无法挑战」，XHangUp.gate；O-273）
 	func hang_up_gate() -> bool: return XHangUp.gate(XState.current)
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)
