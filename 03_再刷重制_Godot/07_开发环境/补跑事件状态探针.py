@@ -6,6 +6,7 @@
 探针只许写 mv_oracle/.sandbox（守卫），量完再拷进 generated/oracle。参照引擎或冻结正式源不在（云端等）就跳过，不算失败，
 缺文件由对照专项与空绿扫描照实报红。用法：补跑事件状态探针.py [--force]（--force 关增量、整份重量，约 1 小时，开跑时会提示）
 """
+import hashlib
 import json
 import os
 import shutil
@@ -78,7 +79,32 @@ def changed_probe_files(base='main'):
                            capture_output=True, text=True, check=True)
     except (subprocess.CalledProcessError, OSError):
         return []
-    return [l for l in r.stdout.splitlines() if l.strip()]
+    changed = [l for l in r.stdout.splitlines() if l.strip()]
+    # git 打的是仓库根起的路径（03_再刷重制_Godot/03_转换工具/…），按结尾认
+    probe = [l for l in changed if l.endswith(PROBE_FILES[0])]
+    if probe and declared_probe_change(base):
+        changed.remove(probe[0])   # 影响面声明从 base 那份连到了现在这份：增量只重量带声明键路径的变体，不算整份
+    return changed
+
+
+def declared_probe_change(base='main'):
+    """cc 分段甲 a6：probe_change_scope.json（tools-probe-deps2）的声明链能从 base 的 event_state_probe.cjs 连到工作区这份时为真。
+    此时探针只重量预设带声明键路径的变体，不是整份重量，守卫不该拦（a6 加了声明仍被拦）。读不到、连不上都当没声明。"""
+    root = ENV.parent
+    rel = 'mv_oracle/event_state_probe.cjs'
+    try:
+        old = subprocess.run(['git', '-C', str(root), 'show', f'{base}:./03_转换工具/{rel}'],
+                             capture_output=True, check=True).stdout
+        cur = (TOOLS / rel).read_bytes()
+        changes = json.loads((TOOLS / 'probe_change_scope.json').read_text(encoding='utf-8')).get('changes', [])
+    except (subprocess.CalledProcessError, OSError, ValueError):
+        return False
+    edges = {c.get('from'): c.get('to') for c in changes if c.get('file') == rel}
+    h, target, seen = hashlib.sha256(old).hexdigest(), hashlib.sha256(cur).hexdigest(), set()
+    while h != target and h in edges and h not in seen:
+        seen.add(h)
+        h = edges[h]
+    return h == target
 
 
 def main():

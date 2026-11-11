@@ -321,6 +321,10 @@ def open_preset(lst, j, loc):
         return {'actors': {str(p[1]): {}}}
     if t == 4 and int(p[2]) == 5 and not want:   # 「否则（没装备）」：新开局默认没穿，空预设占位（角色本来就穿着的，目标走不到会被剪掉）
         return {'actors': {str(p[1]): {}}}
+    if t == 4 and int(p[2]) == 6 and want:   # 角色带状态（cc 分段甲 a6：actors.N.states，两边 addState；ce1316 天运果「角色 45 带 692」）
+        return {'actors': {str(p[1]): {'states': [int(p[3])]}}}
+    if t == 4 and int(p[2]) == 6 and not want:   # 「否则（不带状态）」：新开局默认不带，空预设占位
+        return {'actors': {str(p[1]): {}}}
     if t == 1 and int(p[2]) and int(p[3]) != int(p[1]):
         # 变量比变量（八戒 interp4）：右边变量设 0，左边按比常量 0 取值
         op = int(p[4])
