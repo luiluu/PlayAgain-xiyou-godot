@@ -16,6 +16,7 @@ var _commands: Array = []         # [{node, enabled, fn, top, bottom}]
 var _sel := 0
 var _cursor: TextureRect
 var _cursor_t := 0.0
+var _tq_title: XTianqiTitle       # 天启篇新标题（O-待定）；不用新标题或已换到别的页面时为 null
 
 
 func _ready() -> void:
@@ -42,7 +43,11 @@ func _ready() -> void:
 			intro.finished.connect(func():
 				XWarningScreen.play(self).finished.connect(func():
 					_title()
-					XIntroAnim.fade_in_title(self)))
+					# 天启篇新标题自己从黑里亮起并睁眼（XTianqiTitle.play_entrance）；原版标题照旧整体淡入
+					if _tq_title != null:
+						_tq_title.play_entrance()
+					else:
+						XIntroAnim.fade_in_title(self)))
 			return
 		XWarningScreen.play(self).finished.connect(_title)
 		return
@@ -103,12 +108,13 @@ func _clear() -> void:
 	_commands.clear()
 	_cursor = null
 	column = null
+	_tq_title = null
 
 
 ## 原版坐标（1280×720）换算到当前画面：横向居中对齐，纵向按比例。
 ## 正在标题页（有图片指令），不在读档、设置等子页（XPlatform 判断返回键是不是到了顶层）。
 func is_title_page() -> bool:
-	return not _commands.is_empty()
+	return not _commands.is_empty() or (_tq_title != null and _tq_title.is_title_page())
 
 
 func _pos(p: Vector2) -> Vector2:
@@ -118,6 +124,9 @@ func _pos(p: Vector2) -> Vector2:
 
 func _title() -> void:
 	_clear()
+	if XTianqiTitle.available():
+		_tq_build_title()
+		return
 	var any := false
 	for i in range(1, XSave.SLOTS + 1):
 		any = any or XSave.exists(i)
@@ -147,6 +156,73 @@ func _title() -> void:
 	_sel = 0
 	_select(0, true)
 
+
+## 天启篇新标题（XTianqiTitle，O-待定）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
+## 原版 login 底图与粒子（_build_background）留在下面，被新底图整个盖住；读档、选存档位等子页仍以它为背景。
+func _tq_build_title() -> void:
+	var any := false
+	for i in range(1, XSave.SLOTS + 1):
+		any = any or XSave.exists(i)
+	var actions := {
+		"new_game": _on_new_game,
+		"load": _choose_save,
+		"options": _tq_open_options,
+		"achievements": _tq_open_achievements,
+		"check_update": _tq_check_update,
+	}
+	# 发行构建没有版本选择，不放「返回版本选择」（BI）
+	if not ReleaseEntry.skips_menu():
+		actions["back_to_menu"] = GameApp.return_to_menu
+	_tq_title = XTianqiTitle.new()
+	_tq_title.setup(actions, [] if any else ["load"])
+	_layer.add_child(_tq_title)
+	var before := _layer.get_child_count()
+	var ver := XUI.label(ReleaseEntry.APP_NAME if ReleaseEntry.is_release() else "重制开发版 · 首期：开局区域", 18, XUI.DIM)
+	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	ver.position = get_viewport_rect().size - Vector2(330, 40)
+	_layer.add_child(ver)
+	if XPlatform.is_touch():
+		_add_transfer_buttons()
+	if XSave.exists_auto():
+		_add_auto_button()
+	for n in _layer.get_children().slice(before):
+		n.reparent(_tq_title.extras, false)
+	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟：标题有没有「继续」（安卓实机冒烟.py）
+		print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
+	# 自动更新接线（update-check1 交付单）：进标题静默查一次（一天最多一次，只在发行构建），按钮红点看上次结果，查完刷新
+	var client := XUpdateClient.instance(get_tree())
+	_tq_title.set_badge("check_update", client.has_update())
+	if not client.checked.is_connected(_tq_on_update_checked):
+		client.checked.connect(_tq_on_update_checked)
+	client.auto_check()
+
+
+func _tq_on_update_checked(_result: Dictionary) -> void:
+	if _tq_title != null and is_instance_valid(_tq_title):
+		_tq_title.set_badge("check_update", XUpdateClient.instance(get_tree()).has_update())
+
+
+## 新标题「游戏设置」：没读档也能开（XOptionsScene 对 XState.current 为空都有判断），关掉回标题
+func _tq_open_options() -> void:
+	_clear()
+	var page := XOptionsScene.new()
+	page.name = "OptionsPage"
+	_layer.add_child(page)
+	page.closed.connect(_title)
+
+
+## 新标题「游戏成就」：显示全局已得的成就（本局计数为 0），关掉回标题
+func _tq_open_achievements() -> void:
+	_clear()
+	var page := XAchievementScene.new()
+	page.name = "AchievementPage"
+	_layer.add_child(page)
+	page.closed.connect(_title)
+
+
+## 新标题「检查更新」：打开更新页（XUpdatePage，联网查清单、下载补丁、退回）
+func _tq_check_update() -> void:
+	XUpdatePage.open(self)
 
 ## 切后台时自动存的档（XAutoSave）：有就在左上角放一个「继续」，手动存档后那份就删了、按钮也就没了
 func _add_auto_button() -> void:
