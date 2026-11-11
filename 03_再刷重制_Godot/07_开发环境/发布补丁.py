@@ -10,6 +10,9 @@
       --drop-base <号>（可多次） 清单里不再给这个底包发补丁
       --out <目录>             输出目录（默认 05_发布/补丁/dev<号>/，不入 Git）
       --stage                  把补丁和清单提交到两个发版仓库的本机副本（先提交包、再提交清单，清单里的包地址固定到包提交）
+      --old-tree <目录>        底包对应的工程目录：顺带调 生成更新清单.py 比对它和当前工程，写签名的补丁文件清单
+                               （patch_<底>_<新>.files.json／.files.sig），--stage 时和补丁同一提交进发版仓库。
+                               --stage 出补丁时必须给；确实没有底包目录时加 --no-files-manifest 跳过
       --repos <gitee副本> <github副本>   发版仓库副本的位置（默认 ~/Documents/DSH/小小鱼/发版/zaishuayiba-updates-{gitee,github}）
       --key <私钥.pem>         签名私钥（默认 ~/Library/Application Support/KYO/发版密钥/godot_update_private.pem；也认环境变量 XIYOU_UPDATE_KEY）
       --dry-run                只打印会做什么
@@ -22,6 +25,8 @@
 --stage 之后要做的（工具只打印、不执行）：Kyo 回「推」后，两个仓库各 `git push`，等一两分钟，再跑
   `python3 发布补丁.py --verify-online` 回读各源的清单和补丁核对签名与 SHA（Gitee 刚推完可能先返回一页占位文字）。
 公开游戏仓库不放任何包；输出目录 05_发布/补丁/ 已在 .gitignore。
+补丁文件清单（Kyo 11-11「接」）：排除项照「Windows 发行」预设的 exclude_filter，用的是同一把 --key；它的底包编号必须等于 --base 的编号。
+客户端不读它，存着给核对与交叉核查用；格式见 05_发布/更新清单生成说明.md。
 """
 import argparse
 import hashlib
@@ -34,6 +39,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+import importlib.util
 
 HERE = Path(__file__).resolve().parent
 REMAKE = HERE.parent
@@ -46,6 +52,41 @@ SUBDIR = 'godot'
 MAX_PATCH = 30 * 1024 * 1024
 SCHEMA = 1
 DIR_RE = re.compile(r'^dev(\d+)_三平台发行$')
+NEW_TREE = PROJECT  # 补丁文件清单的新版本目录（测试换成假目录）
+FILES_PRESET = 'Windows 发行'
+
+
+def release_excludes() -> list:
+    """「Windows 发行」预设的 exclude_filter，补丁文件清单照它排除（不进包的文件不该算进补丁）。"""
+    cfg = PROJECT / 'export_presets.cfg'
+    if not cfg.is_file():
+        return []
+    cur = None
+    for line in cfg.read_text(encoding='utf-8').splitlines():
+        m = re.match(r'^name="(.*)"$', line)
+        if m:
+            cur = m.group(1)
+        m = re.match(r'^exclude_filter="(.*)"$', line)
+        if m and cur == FILES_PRESET:
+            return [x.strip() for x in m.group(1).split(',') if x.strip()]
+    return []
+
+
+def files_manifest(old_tree: Path, key: Path, code: int, base_code: int, out: Path, date: str) -> tuple:
+    """调 生成更新清单.py 写签名的补丁文件清单，返回 (json, sig) 路径。"""
+    spec = importlib.util.spec_from_file_location('生成更新清单', HERE / '生成更新清单.py')
+    g = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(g)
+    argv = ['--old', str(old_tree), '--new', str(NEW_TREE), '--new-code', str(code), '--key', str(key), '--out', str(out), '--date', date]
+    for x in release_excludes():
+        argv += ['--exclude', x]
+    if g.main(argv) != 0:
+        raise Fail('补丁文件清单没生成（见上一行）')
+    mj = out / g.MANIFEST
+    got = json.loads(mj.read_text(encoding='utf-8'))['base_code']
+    if got != base_code:
+        raise Fail(f'--old-tree 的编号是 {got}，和底包 {base_code} 对不上：给的不是这个底包的工程目录')
+    return mj, out / g.SIG
 
 
 class Fail(Exception):
@@ -282,6 +323,8 @@ def main(argv=None) -> int:
     ap.add_argument('--allow-big', action='store_true')
     ap.add_argument('--verify-online', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--old-tree')
+    ap.add_argument('--no-files-manifest', action='store_true')
     a = ap.parse_args(argv)
     try:
         repos = [Path(p).expanduser() for p in a.repos] if a.repos else DEFAULT_REPOS
@@ -308,6 +351,8 @@ def main(argv=None) -> int:
                 raise Fail('不知道底包的开发编号：给 --base-code，或把 --base 指到 devNNN_三平台发行 目录')
             if base_code >= code:
                 raise Fail(f'底包编号 {base_code} 不比当前 {code} 小，没有可发的补丁')
+            if a.stage and not a.old_tree and not a.no_files_manifest:
+                raise Fail('--stage 出补丁要给 --old-tree <底包对应的工程目录>，好写补丁文件清单（没有就加 --no-files-manifest）')
             print(f'· 底包 {base}（dev.{base_code}，{base.stat().st_size / 1e6:.1f} MB）')
             exported = export_patch(base, out, a.dry_run)
             name = f'patch_{base_code}_{code}.pck'
@@ -321,6 +366,10 @@ def main(argv=None) -> int:
                     raise Fail(f'补丁 {size / 1e6:.1f} MB 超过 30 MB：该发新底包了（硬要发加 --allow-big）')
                 entry = {'code': code, 'size': size, 'sha256': sha256(patch_file), 'urls': []}
 
+        files_pair = None
+        if patch_file is not None and a.old_tree and not a.no_files_manifest:
+            files_pair = files_manifest(Path(a.old_tree).expanduser(), key, code, base_code, out / '文件清单', date)
+
         if a.stage and not a.dry_run:
             for r in repos:
                 check_repo_ready(r)
@@ -329,18 +378,25 @@ def main(argv=None) -> int:
         if old_path.exists():
             old = json.loads(old_path.read_text(encoding='utf-8'))
         if a.dry_run:
-            print('  [dry-run] 写清单、签名' + ('、提交到两个发版仓库副本（不推送）' if a.stage else ''))
+            print('  [dry-run] ' + ('比对 --old-tree 写补丁文件清单、' if a.old_tree and not a.no_files_manifest and not a.full_only else '')
+                  + '写清单、签名' + ('、提交到两个发版仓库副本（不推送）' if a.stage else ''))
             return 0
 
         commits = {}
         if a.stage and entry is not None:
             for r in repos:
                 (r / SUBDIR).mkdir(exist_ok=True)
-                for stale in (r / SUBDIR).glob(f'patch_{base_code}_*.pck'):
-                    git(r, 'rm', '-q', '--ignore-unmatch', str(stale.relative_to(r)))  # 同一底包的旧补丁从 main 上拿掉（历史里还在，旧清单的地址固定到提交仍可读）
-                    stale.unlink(missing_ok=True)
+                for pat in (f'patch_{base_code}_*.pck', f'patch_{base_code}_*.files.json', f'patch_{base_code}_*.files.sig'):
+                    for stale in (r / SUBDIR).glob(pat):
+                        git(r, 'rm', '-q', '--ignore-unmatch', str(stale.relative_to(r)))  # 同一底包的旧补丁从 main 上拿掉（历史里还在，旧清单的地址固定到提交仍可读）
+                        stale.unlink(missing_ok=True)
                 shutil.copy2(patch_file, r / SUBDIR / patch_file.name)
                 git(r, 'add', f'{SUBDIR}/{patch_file.name}')
+                if files_pair:
+                    stem = patch_file.name[:-len('.pck')]
+                    for src, ext in zip(files_pair, ('.files.json', '.files.sig')):
+                        shutil.copy2(src, r / SUBDIR / (stem + ext))
+                        git(r, 'add', f'{SUBDIR}/{stem}{ext}')
                 git(r, 'commit', '-q', '-m', f'重制版 0.{code} 补丁（底包 0.{base_code}）')
                 commits[r] = git(r, 'rev-parse', 'HEAD')
             entry['urls'] = package_urls(repos, commits, patch_file.name)

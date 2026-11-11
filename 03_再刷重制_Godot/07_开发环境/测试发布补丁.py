@@ -26,7 +26,7 @@ class Base(unittest.TestCase):
         self.key = self.t / 'k.pem'
         sh('openssl', 'genpkey', '-algorithm', 'RSA', '-pkeyopt', 'rsa_keygen_bits:2048', '-out', str(self.key))
         self.pub = M.public_of(self.key)
-        self._saved = (M.embedded_public_key, M.export_patch, M.current_code)
+        self._saved = (M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE)
         M.embedded_public_key = lambda: self.pub
         M.current_code = lambda: 470
         self.patch_bytes = b'PATCH' * 1000
@@ -39,6 +39,13 @@ class Base(unittest.TestCase):
         M.export_patch = fake_export
         self.base = self.t / 'base.pck'
         self.base.write_bytes(b'BASE')
+        # 补丁文件清单用的假工程目录：新版本（当前工程的替身）和各底包的工程目录
+        self.new_tree = self.t / 'tree_new'
+        self._tree(self.new_tree, 0)
+        (self.new_tree / 'core/changed.gd').write_text('v2\n')
+        (self.new_tree / 'tests/only_in_tests.gd').parent.mkdir(parents=True)
+        (self.new_tree / 'tests/only_in_tests.gd').write_text('不进发行包\n')
+        M.NEW_TREE = self.new_tree
         self.repos = []
         for name, url in (('gitee', 'git@gitee.com:someone/some-repo.git'), ('github', 'https://github.com/someone/updates.git')):
             r = self.t / name
@@ -52,11 +59,24 @@ class Base(unittest.TestCase):
             sh('git', 'commit', '-q', '-m', 'init', cwd=r)
             self.repos.append(r)
 
+    def _tree(self, root, code):
+        (root / 'core').mkdir(parents=True, exist_ok=True)
+        (root / 'content').mkdir(parents=True, exist_ok=True)
+        (root / 'core/boot_patch.gd').write_text('extends Node\n')
+        (root / 'core/changed.gd').write_text('v1\n')
+        (root / 'content/build_info.json').write_text(json.dumps({'developmentVersion': f'dev.{code}'}))
+        return root
+
+    def old_tree(self, code):
+        return self._tree(self.t / f'tree_{code}', code)
+
     def tearDown(self):
-        M.embedded_public_key, M.export_patch, M.current_code = self._saved
+        M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE = self._saved
         self.td.cleanup()
 
     def run_tool(self, *args):
+        if '--stage' in args and '--base-code' in args and '--no-files-manifest' not in args and '--old-tree' not in args:
+            args = (*args, '--old-tree', str(self.old_tree(int(args[args.index('--base-code') + 1]))))
         return M.main(['--key', str(self.key), '--repos', str(self.repos[0]), str(self.repos[1]), '--out', str(self.t / 'out'),
                        '--date', '2026-11-20', *args])
 
@@ -120,6 +140,54 @@ class StageTests(Base):
         self.assertEqual(self.run_tool('--full-only', '--min-base', '480', '--drop-base', '453', '--stage'), 0)
         m = json.loads((self.repos[0] / 'godot/channel.json').read_text(encoding='utf-8'))
         self.assertEqual((m['latest']['code'], m['bases'], m['min_base']), (480, {}, 480))
+
+
+class FilesManifestTests(Base):
+    """Kyo 11-11「接」：--stage 顺带调 生成更新清单.py，签名的补丁文件清单和补丁同一提交进发版仓库。"""
+    def test_files_manifest_committed_with_package(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
+        for r in self.repos:
+            pkg_commit_files = sh('git', 'show', '--name-only', '--format=', 'HEAD~1', cwd=r).splitlines()
+            self.assertEqual(sorted(pkg_commit_files), ['godot/patch_453_470.files.json', 'godot/patch_453_470.files.sig', 'godot/patch_453_470.pck'])
+        r = self.repos[0]
+        fm = json.loads((r / 'godot/patch_453_470.files.json').read_text(encoding='utf-8'))
+        self.assertEqual((fm['kind'], fm['code'], fm['base_code'], fm['min_base']), ('xiyou-patch-files', 470, 453, 453))
+        paths = [f['path'] for f in fm['files']]
+        self.assertIn('core/changed.gd', paths)
+        self.assertNotIn('tests/only_in_tests.gd', paths, '发行预设排除的 tests/ 不该进补丁文件清单')
+        self.assertTrue(M.verify(self.pub, r / 'godot/patch_453_470.files.json', r / 'godot/patch_453_470.files.sig'))
+
+    def test_next_patch_replaces_old_files_manifest(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
+        M.current_code = lambda: 475
+        self.patch_bytes = b'NEWER' * 500
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
+        names = sorted(x.name for x in (self.repos[0] / 'godot').iterdir())
+        self.assertEqual(names, ['channel.json', 'channel.sig', 'patch_453_475.files.json', 'patch_453_475.files.sig', 'patch_453_475.pck'])
+
+    def test_stage_without_old_tree_refused(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--no-files-manifest'), 0)
+        self.assertFalse(list((self.repos[0] / 'godot').glob('*.files.*')))
+        M.current_code = lambda: 475
+        rc = M.main(['--key', str(self.key), '--repos', str(self.repos[0]), str(self.repos[1]), '--out', str(self.t / 'out'),
+                     '--base', str(self.base), '--base-code', '453', '--stage'])
+        self.assertEqual(rc, 1)
+        self.assertEqual(sh('git', 'log', '-1', '--format=%s', cwd=self.repos[0]), '重制版清单指向 0.470', '被拒时不该有新提交')
+
+    def test_old_tree_of_other_base_refused(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--old-tree', str(self.old_tree(450))), 1)
+        self.assertFalse((self.repos[0] / 'godot').exists())
+
+    def test_without_stage_written_locally(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--old-tree', str(self.old_tree(453))), 0)
+        self.assertTrue((self.t / 'out/文件清单/patch_manifest.json').exists())
+        self.assertTrue((self.t / 'out/文件清单/patch_manifest.sig').exists())
+        self.assertFalse((self.repos[0] / 'godot').exists())
+
+    def test_release_excludes_read_from_presets(self):
+        ex = M.release_excludes()
+        self.assertIn('tests/*', ex)
+        self.assertIn('modes/xiyou/generated/oracle/*', ex)
 
 
 class RuleTests(Base):

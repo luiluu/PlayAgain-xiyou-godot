@@ -7,3 +7,5 @@
 导出预设两个：「macOS 验收」是调试包，保留 `tests/`（`--verify-export` 在包内跑 `tests/xiyou_mac_export.tscn`）；「macOS 发行」是给玩家的包，另外整个排除 `tests/`。两个都排除不进游戏的参照数据（`generated/oracle`、`manifest.json`、`sync_stamp.json`）和 `builds/`。`检查.sh` 的「导出包排除测试与参照数据」检查这些排除项，并确认游戏数据没被误排除。
 
 导出冒烟（2026-11-05 mac1）：`python3 07_开发环境/导出冒烟.py` 一条命令导出「macOS 验收」、解包、只读查签名与架构，在隔离临时 HOME 里无头跑包内 `xiyou_mac_export`（字体、资源、存档写读）和 `xiyou_flow`（入口→新游戏→进一层→自动战斗→存读档），报告写到 `04_验证/本地结果/导出冒烟/<时间>/报告.md`；`--keep` 留下 .app 给实机验收。调试包里用 `-- --verify-export --verify-scene=<tests 下的 xiyou_ 场景名>` 换跑别的场景。要 Kyo 本人做的（听音、Intel、签名公证）见 `00_项目管理/Mac实机验收清单.md`。不签名、不公证、不上传。
+
+更新清单（2026-11-11 pro-update-manifest）：`python3 07_开发环境/生成更新清单.py --old <旧版本目录> --new <新版本目录> --key <仓库外私钥> --out <目录>` 比较两个版本目录，写逐文件的补丁清单（路径、字节数、SHA-256、删掉的文件、版本号、底包号、最低基线）并签名，见[更新清单生成说明](更新清单生成说明.md)。玩家客户端读的 `channel.json` 仍由 `发布补丁.py` 写；`发布补丁.py --old-tree <底包工程目录>` 会顺带调它，`--stage` 时清单随补丁进发版仓库。

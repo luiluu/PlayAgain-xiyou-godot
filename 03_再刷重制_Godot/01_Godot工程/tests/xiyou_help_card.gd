@@ -13,6 +13,7 @@ var detail_left := 12
 
 
 func _ready() -> void:
+	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	_run.call_deferred()
 

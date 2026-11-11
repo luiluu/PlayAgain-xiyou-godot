@@ -36,13 +36,17 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", true], ["待提交反馈", "codexFeedbackPending", false]]
 
+## 重制新增：大厅初步异化（XLobbyCorruption）的光尘与氛围小字，关掉不放
+const FX_OPTION := ["画面特效", "codexScreenFx", true]
+
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
 
 ## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
-	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel"]
+	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel",
+	"codexScreenFx"]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
@@ -65,6 +69,8 @@ func _ready() -> void:
 		_list = _list.filter(func(o): return o[1] != "codexPowerEnabled")
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
+	if XLobbyCorruption.ENABLED:  # 重制新增「画面特效」（大厅初步异化的光尘与小字）排在原版各项之后；开关关掉时不列
+		_list.append(FX_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
 		_list.append(TOUCH_OPTION)
 	XUI.menu_background(self)

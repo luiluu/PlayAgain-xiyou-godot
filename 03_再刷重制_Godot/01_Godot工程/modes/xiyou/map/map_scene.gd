@@ -92,6 +92,12 @@ var _vehicle_getting_off := false
 var _vehicle_gathering := false
 ## 正在放的地图 BGM（AudioManager.saveBgm：上飞艇时存成 walking_bgm）
 var _bgm_audio = null
+## 大厅初步异化叠加层（XLobbyCorruption，只在 Map004 且漩涡二阶起才建；换图时释放）
+var lobby_fx: XLobbyCorruption
+## 正在跑的顶层事件号（run_event 期间；没有为 0）：叠加层看是不是漩涡过场
+var running_event_id := 0
+## 震屏（224／225 shake_screen）时发出：叠加层给漩涡弹回垫一声闷响
+signal screen_shaken
 
 
 static func slice() -> Dictionary:
@@ -307,6 +313,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	XAlienBattle.on_map_setup(s, s.map_id, id)  # Leviathan Game_Map.setup 包装：未知存在记来源地图（异化 Boss 来源用）
 	XYunshangOrders.on_map_setup(s, s.map_id, id)  # 云裳 Game_Map.setup 包装：未知战斗记来源地图（不朽天丝用）
 	XAbyssMerchant.on_map_setup(s, s.map_id, id)  # 深渊商人 Game_Map.setup 包装：商人路线地图开新一轮
+	XRift.on_map_setup(id)  # 时空漩涡二阶段：记进图次数（rift2 不在刚播完 rift1 的同一次进大厅播）
 	s.map_id = id
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
@@ -326,7 +333,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -348,6 +355,18 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	lower.tile_events = _tile_events_at
 	_clear_treasure_popups()
 	_place_party(x, y, d)
+	_setup_lobby_fx()
+
+
+## 大厅初步异化：换图时先拆旧的，到了大厅且阶段二起（开关开着）再建（同图移动不重建）
+func _setup_lobby_fx() -> void:
+	if lobby_fx != null and is_instance_valid(lobby_fx):
+		lobby_fx.queue_free()
+	lobby_fx = null
+	if map_id == XLobbyCorruption.MAP_ID and XLobbyCorruption.active():
+		lobby_fx = XLobbyCorruption.new()
+		add_child(lobby_fx)
+		lobby_fx.setup(self)
 
 
 ## 存档时的当前地图事件状态（XState.to_dict 调用）
@@ -574,12 +593,33 @@ func _on_action() -> void:
 	var front := player.front_cell(player.direction)
 	for e in events:
 		if e.grid == player.grid and e.trigger() == 0 and not e.is_normal_priority():
-			await run_event(e)
+			await _run_action_event(e)
 			return
 	for e in events:
 		if e.grid == front and [0, 1, 2].has(e.trigger()) and e.is_normal_priority():
-			await run_event(e)
+			await _run_action_event(e)
 			return
+	# 大厅初步异化的可调查格（踩在上面按确认键；没有事件时才轮到）
+	if lobby_fx != null and is_instance_valid(lobby_fx) and lobby_fx.is_investigation(player.grid):
+		await lobby_fx.on_action(player.grid)
+
+
+## 确认键启动的事件；大厅初步异化：原事件整段跑完、还在大厅时，再追加一句（不插进原指令表）
+func _run_action_event(e: MVEvent) -> void:
+	var ev_id := e.event_id
+	var after := lobby_fx != null and is_instance_valid(lobby_fx) and lobby_fx.wants_after(e)
+	await run_event(e)
+	if after and lobby_fx != null and is_instance_valid(lobby_fx) and map_id == XLobbyCorruption.MAP_ID and not busy:
+		await lobby_fx.after_event(ev_id)
+
+
+## 跑一段不属于任何地图事件的指令（叠加层的追加台词、调查文字）：占 busy，跑完刷新事件
+func run_command_list(list: Array) -> void:
+	_set_busy(true)
+	var interp := MVInterpreter.new(self, map_id, 0, list)
+	await interp.run()
+	_set_busy(false)
+	refresh_events()
 
 
 ## 并行事件解释器的帧（MVInterpreter._frame／_tick）：先于事件节点更新（父节点先处理），同原版 Game_Map.update 里事件依次 update
@@ -707,7 +747,9 @@ func run_event(e: MVEvent) -> void:
 	var ev_id := e.event_id
 	var rerun_key := "%d:%d:%d" % [map_id, ev_id, e.page_index]
 	var interp := MVInterpreter.new(self, map_id, ev_id, e.command_list())
+	running_event_id = ev_id
 	await interp.run()
+	running_event_id = 0
 	# 事件里若有场所移动，旧地图的事件节点已释放，之后不能再访问 e
 	if not interp.skipped.is_empty():
 		skipped_log.append_array(interp.skipped)
@@ -1073,6 +1115,7 @@ func shake_screen(power: int, speed: int, duration: int) -> void:
 	_shake.power = float(power)
 	_shake.speed = float(speed)
 	_shake.duration = duration
+	screen_shaken.emit()
 
 func _update_shake() -> void:
 	var k: Dictionary = _shake
