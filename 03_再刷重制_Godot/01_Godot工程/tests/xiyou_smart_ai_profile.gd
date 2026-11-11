@@ -132,6 +132,34 @@ func _battle(actor_id: int) -> Array:
 			for b in logic.actors:
 				b.warmups.clear()
 			a.tp = a.max_tp()
+		170:
+			s.actor_advance[170] = 2
+			a.change_level_mv(60)
+			for id in [10200, 10201, 10202]:
+				a.learn_skill(id)
+			XYomiJingliu.recruit(s, XYomiJingliu.JINGLIU)
+			s.gain_gear("weapon", 2, 1)
+			XEquipment.change(s, a, 0, s.gear[s.gear.size() - 1])
+			s.add_actor(1)
+			for id in s.party:
+				s.actor(id).add_param(0, BIG_HP)
+				s.actor(id).refresh_passive()
+			logic = _enter(s, "0000000000000170")
+			XYomiJingliu._blood.clear()
+			a.tp = 0.0  # 参照不走 startBattle，没有开战 TP
+			logic.start_turn()
+		173:
+			s.actor_advance[173] = 4
+			a.change_level_mv(60)
+			check("setup.garou_recruit", XGarou.recruit(s))
+			s.add_actor(1)
+			for id in [173, 1]:
+				s.actor(id).add_param(0, BIG_HP)
+				s.actor(id).refresh_passive()
+			logic = _enter(s, "0000000000000173")
+			XGarou.sync(a)
+			XGarou.clear_battle()
+			a.tp = a.max_tp()
 	return [logic, a]
 
 
@@ -338,6 +366,9 @@ func _local() -> void:
 		and XSmartAIProfiles.profile(hero, XDB.rec("Skills", 10127)).is_empty() and XSmartAIProfiles.profile(hero, XDB.rec("Skills", 10146)).is_empty()
 		and XSmartAIProfiles.profile(hero, XDB.rec("Skills", 10622)).is_empty())
 	check("local.other.damage", ai.safe_damage(hero, logic.enemies[0], blade) == 0.0)
+	# 镜流、饿狼的估算只认本人（j_formula／_garou_raw 对别人是 0）
+	check("local.other.jingliu_garou", ai.safe_damage(hero, logic.enemies[0], XDB.rec("Skills", 10187)) == 0.0
+		and ai.safe_damage(hero, logic.enemies[0], XDB.rec("Skills", 10255)) == 0.0)
 	check("local.other.boosts", XSmartAIProfiles.boosts(hero, XDB.rec("Skills", 10140)) == 1.0 and XSmartAIProfiles.boosts(hero, XDB.rec("Skills", 10126)) == 1.0
 		and XSmartAIProfiles.crit_bonus(hero, XDB.rec("Skills", 10126)) == 0.0 and XSmartAIProfiles.expected_rate(hero, XDB.rec("Skills", 10126)) == 1.0)
 	check("local.yomi.item", XSmartAIProfiles.raw(yomi, logic.enemies[0], XDB.rec("Items", 1)) == null and XSmartAIProfiles.boosts(yomi, XDB.rec("Items", 1)) == 1.0)

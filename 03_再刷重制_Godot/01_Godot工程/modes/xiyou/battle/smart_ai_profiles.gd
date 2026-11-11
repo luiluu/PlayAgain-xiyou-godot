@@ -31,6 +31,12 @@ const MIRA := 168
 const YOMI_SPLASH := {10172: 0.33, 10173: 0.5, 10174: 0.66}
 static var _mira_formula_re := RegEx.create_from_string("^CodexMira\\.damage\\(a,b,\\d+\\)$")
 static var _yomi_formula_re := RegEx.create_from_string("^CodexYomi\\.damage\\(a,b,1017[1-4]\\)$")
+static var _jingliu_formula_re := RegEx.create_from_string("^CodexJingliu\\.damage\\(a,b,101(?:8[7-9]|9[0-3])\\)$")
+static var _garou_formula_re := RegEx.create_from_string("^CodexGarou\\.base\\(a,b,102(?:5[0-9]|6[0-3])\\)$")
+## 饿狼各拳法 per_hit_formula 里减去的防御项：[D 系数, R 系数]（A、M 系数在 XGarou.COEFF）
+const GAROU_DEFENSE := {10250: [0.33, 0.0], 10251: [0.33, 0.0], 10252: [0.66, 0.0], 10253: [0.66, 0.0], 10254: [0.33, 0.0],
+	10255: [0.66, 0.0], 10256: [0.99, 0.0], 10257: [0.99, 0.0], 10258: [0.33, 0.0], 10259: [0.66, 0.99],
+	10260: [0.99, 0.66], 10261: [0.33, 0.66], 10262: [0.0, 0.0], 10263: [0.99, 0.66]}
 static var _sukuna_formula_re := RegEx.create_from_string("^CodexSukuna\\.damage\\(a,b,102(?:29|30|31|32|33),this\\)$")
 static var _sukuna_ongoing_re := RegEx.create_from_string("^CodexSukuna\\.damage\\(a,b,10237,this\\)$")
 
@@ -88,9 +94,34 @@ static func raw(a, t, rec: Dictionary):
 		if id == 10233 and int(XSukuna.temp(a).prep) <= 0:
 			return 0.0
 		return _sukuna_raw(a, t, rec)
+	if id >= 10187 and id <= 10193 and _jingliu_formula_re.search(formula) != null:
+		# 原版把 BattleManager._action 换成新行动再算：不带施放帧（月相取当前、无放血倍率）；不在伤害计算里，带守势项
+		var frame: Dictionary = XYomiJingliu._j_frame
+		XYomiJingliu._j_frame = {}
+		var out := XYomiJingliu.j_formula(a, t, rec, false)
+		XYomiJingliu._j_frame = frame
+		return out
+	if id >= 10250 and id <= 10263 and _garou_formula_re.search(formula) != null:
+		return _garou_raw(a, t, id)
 	if o_future_real and id == 10237 and _sukuna_ongoing_re.search(formula) != null:
 		return _sukuna_raw(a, t, rec)
 	return null
+
+
+## CodexGarou.base 在伤害计算之外、不带行动帧调用：防御项照减（解析层取当前、按层无视防御），再乘当前进化层的加成
+## （原版估算不看进化被动开没开，照样乘）
+static func _garou_raw(a, t, id: int) -> float:
+	if not XGarou.own(a) or not XGarou.COEFF.has(id):
+		return 0.0
+	var c: Array = XGarou.COEFF[id]
+	var d: Array = GAROU_DEFENSE[id]
+	var p: Dictionary = XGarou.passives(a)
+	var n := XGarou.layers(t)
+	var def_left: float = t.def * (1.0 - minf(0.99, n * int(p.def_percent) / 100.0))
+	var mdf_left: float = t.mdf * (1.0 - minf(0.99, n * int(p.mdf_percent) / 100.0))
+	var value: float = maxf(0.0, a.atk * c[0] + a.mat * c[1] - def_left * d[0] - mdf_left * d[1]) * XGarou.STAGES[XGarou.stage(a)].scale
+	var extra: int = XGarou.RELIC_EVOLUTION[XGarou.stage(a)] if XGarou.gear(a) != null else 0
+	return value * (1.0 + maxi(0, XGarou.evolution) * (int(p.evolution_percent) + extra) / 100.0)
 
 
 ## CodexSukuna.damage 在伤害计算之外调用（CodexDamage.isCalculating 为假）：攻击项先减固定防御（神灶类魔防×0.5，捌防御×0.15，其余防御×0.5）。

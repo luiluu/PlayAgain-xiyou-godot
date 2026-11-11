@@ -1,5 +1,5 @@
 'use strict';
-// 【cc·未经审查】Codex_SmartBattleAI 自带的那条 registerProfile（第 508～526 行）与五个角色的估伤分支（v0.62.12）：
+// 【cc·未经审查】Codex_SmartBattleAI 自带的那条 registerProfile（第 508～526 行）与七个角色的估伤分支（v0.62.12；镜流 170、饿狼 173 只有估伤分支，没有档案）：
 // 黄泉 169（10172～10174 溅射）、流萤 179（10622 溅射）、宿傩 172（领域里神灶：开 10233 的 holdInLongFight；伏魔御厨子 10231 的
 // futureActor＋ongoingSkill 10237）、渡鸦 167（神话封解 10127 的 futureActor＋duration 3）、米拉 168（解放 10146 的 futureActor＋followupSkill 10151）。
 // 每个角色照各自战斗探针的搭法开一场（敌群 3，敌人生命加 1e12；Math.random 0.5），按步骤改战况，每步记：
@@ -97,6 +97,26 @@ const BATTLES = {
     a._tp = a.maxTp();
     return env;
   },
+  170: () => {  // 镜流：60 级二阶（直接学 10200～10202），招募，给剑 2，再入队 1；全队生命加 1e12；开第一回合（照 jingliu2）
+    open(); w.eval('$gameParty._actors=[]; $gameParty._battleMembers=[0,0,0,0,0];');
+    const a = w.$gameActors.actor(170);
+    a._AdvancedNum = 2; a.changeLevel(60, false);
+    for (const id of [10200, 10201, 10202]) a.learnSkill(id);
+    if (!w.CodexJingliu.recruit()) throw new Error('招募失败');
+    a.forceChangeEquip(0, w.$dataWeapons[2]);
+    w.$gameParty.addActor(1);
+    for (const b of w.$gameParty.allMembers()) b._paramPlus[0] = BIG_HP;
+    return enter(a, {after: () => { a._codexJingliuBloodTotal = 0; w.BattleManager.startTurn(); }});
+  },
+  173: () => {  // 饿狼：60 级翼化（形态 4），招募（装上破限之心），再入队 1；两人生命加 1e12，TP 满（照 garou_battle）
+    open(); w.eval('$gameParty._actors=[]; $gameParty._battleMembers=[0,0,0,0,0];');
+    const a = w.$gameActors.actor(173), G = w.CodexGarou;
+    a._AdvancedNum = 4; a.changeLevel(60, false);
+    if (!G.recruit()) throw new Error('招募失败');
+    w.$gameParty.addActor(1);
+    for (const id of [173, 1]) w.$gameActors.actor(id)._paramPlus[0] = BIG_HP;
+    return enter(a, {after: () => { G.sync(a); G.clearBattle(a); a.setTp(a.maxTp()); }});
+  },
 };
 function act(bm, user, skillId, targetIndex) {
   const action = new w.Game_Action(user); action.setSkill(skillId); action.setTarget(targetIndex);
@@ -185,6 +205,12 @@ const SCRIPTS = {
   // 米拉（三阶 70 级）：解放的铺垫档案（长战、急需、短战、TP 为 0）；解放后的黑龙技
   mira: {actor: 168, steps: [['ai'], ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e11, 1e11, 1e11]], ['ai'],
     ['foehp', BIG], ['tp', 0], ['ai'], ['tp', 200], ['act', 10146, 0], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai']]},
+  // 镜流（二阶 60 级）：各剑招的估伤（不带施放帧、带守势项）；出招后月相变了再估；回合结束、急需、只剩一只
+  jingliu: {actor: 170, steps: [['ai'], ['act', 10187, 0], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai'],
+    ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e9, 1e9, 1e9]], ['ai'], ['foehp', [1000, 0, 0]], ['ai']]},
+  // 饿狼（翼化 60 级）：各拳法的估伤（照减防御、乘进化层）；打过之后有进化层与解析层再估；回合结束、急需、只剩一只
+  garou: {actor: 173, steps: [['ai'], ['act', 10255, 0], ['foehp', BIG], ['ai'], ['act', 10255, 0], ['foehp', BIG], ['ai'],
+    ['end'], ['foehp', BIG], ['ai'], ['tp', 100], ['ai'], ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e9, 1e9, 1e9]], ['ai'], ['foehp', [1000, 0, 0]], ['ai'], ['tp', 0], ['ai']]},
 };
 const cases = [];
 for (const [name, c] of Object.entries(SCRIPTS)) {
