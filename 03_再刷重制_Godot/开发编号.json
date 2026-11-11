@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.465",
-  "sequence": 465,
-  "next": "dev.466",
-  "nextSequence": 466,
+  "current": "dev.466",
+  "sequence": 466,
+  "next": "dev.467",
+  "nextSequence": 467,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "lobby-stage2-art",
+  "currentChange": "lobby-art-hookup",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
