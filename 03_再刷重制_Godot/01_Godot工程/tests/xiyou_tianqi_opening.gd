@@ -163,7 +163,7 @@ func _rules() -> void:
 	XItemMarks.enforce_party(s)
 	var on_field := s.battle_slots.filter(func(id): return XTier.is_super(int(id)))
 	_check("super_cap_enforced", on_field == [sup[0]], s.battle_slots)
-	_check("can_deploy_cap", not XItemMarks.can_deploy(s, sup[1]) and XItemMarks.can_deploy(s, sup[0]) and XItemMarks.can_acquire_actor(s, sup[1]))
+	_check("can_deploy_cap", not XItemMarks.can_deploy(s, sup[1], 1) and XItemMarks.can_deploy(s, sup[1], XTianqi.HELPER_SLOT) and XItemMarks.can_deploy(s, sup[0]) and XItemMarks.can_acquire_actor(s, sup[1]))
 	# 原版开局建的档：不是天启篇，羁绊照旧、超强者按原版
 	var old := XState.new_game_blank()
 	_check("legacy_untouched", not XTianqi.active(old) and XBonds.enabled(old) and XTianqi.super_cap(old) == -1 and not XItemMarks.can_acquire_actor(old, sup[0]))

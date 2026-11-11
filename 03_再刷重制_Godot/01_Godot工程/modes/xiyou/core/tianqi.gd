@@ -21,6 +21,9 @@ const RULES_VERSION := 1
 const HALL_MAP := 4
 const HALL_POS := Vector3i(14, 23, 8)  # 原版 Map002／Map221 进大厅的场所移动（x, y, 朝向）
 const LINEUP_SIZE := 5
+## 上场 4 人＋1 个助力位（出战栏第 5 格，下标 4）
+const FIGHTERS := 4
+const HELPER_SLOT := 4
 const GUIDE_NAME := "小小鱼"
 const BADGE_DIR := "res://modes/xiyou/ui/tianqi/"
 
@@ -34,6 +37,32 @@ const DIFFICULTIES := [
 	{"key": "lianyu", "name": "炼狱", "desc": "敌人大幅强化，可上阵更多超强者", "legacy": 5, "super_cap": 2, "min_weak": 2, "badge": "04_lianyu.png"},
 	{"key": "zhengdao", "name": "证道", "desc": "一命通关，全灭即删档", "legacy": 6, "super_cap": 3, "min_weak": 2, "badge": "05_zhengdao.png"},
 ]
+
+## 开关（O-待定·天启篇招募）：true＝天启篇存档只能在大厅通关抽角色，号角拿不到、商店不卖，事件和别的入口不再让新角色入队；
+## false＝照原版（号角、招募事件照旧）。
+static var NO_RECRUIT := true
+## 开关（O-待定·天启篇换人）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
+static var SWAP_IN_BATTLE := true
+
+## 通关抽角色（数值重构方案「招募改成通关抽角色」，Kyo 11-08 定的表）：每通关 5 层一次，最多 6 次。
+## 每档 6 行，依次是第 1～6 次：[档位, 几选一]；几选一为 0＝自选（档位内本局还没有的全部）。不能重抽。
+const DRAW_EVERY := 5
+const DRAW_MAX := 6
+const _W := ["弱者"]
+const _S := ["强者"]
+const _U := ["超强者"]
+const _WS := ["弱者", "强者"]
+const _SU := ["强者", "超强者"]
+const _ALL := ["弱者", "强者", "超强者"]
+const DRAW_TABLE := {
+	"xunchang": [[_W, 1], [_W, 1], [_W, 1], [_WS, 1], [_S, 1], [_WS, 0]],
+	"jianxian": [[_W, 1], [_W, 2], [_WS, 2], [_S, 2], [_S, 3], [_WS, 0]],
+	"jiusi": [[_W, 2], [_WS, 2], [_S, 3], [_SU, 3], [_U, 3], [_ALL, 0]],
+	"lianyu": [[_W, 3], [_WS, 3], [_S, 3], [_SU, 5], [_U, 5], [_ALL, 0]],
+	"zhengdao": [[_W, 5], [_WS, 5], [_S, 5], [_U, 5], [_ALL, 0], [_ALL, 0]],
+}
+## 抽角色、开局阵容入队时为真（NO_RECRUIT 下只有这两处能让新角色入队）
+static var _joining := false
 
 ## 开局要在大厅里跑的指令（start_new_game 放进来，地图场景 take_pending 取走）；不存档。
 static var _pending: Array = []
@@ -318,3 +347,149 @@ static func _lines(lines: Array) -> Array:
 static func _say(text: String) -> Array:
 	return [{"code": 101, "indent": 0, "parameters": ["", 0, 0, 2, ""]},
 		{"code": 401, "indent": 0, "parameters": ["\\n<%s>%s" % [GUIDE_NAME, text]]}]
+
+
+## 出战栏里真正上场的格数：天启篇 4，原版档整栏 5
+static func fighter_slots(s) -> int:
+	return FIGHTERS if active(s) else XState.MAX_BATTLE_MEMBERS
+
+
+# ---- 通关抽角色（第二批） ----
+
+## 已通关层数：变量 20「神魔之塔层数」是当前所在层（开局 1），减 1
+static func cleared_floors(s: XState) -> int:
+	return maxi(0, int(s.variable(20)) - 1)
+
+
+static func draws_earned(s: XState) -> int:
+	return mini(DRAW_MAX, cleared_floors(s) / DRAW_EVERY)
+
+
+static func draws_used(s: XState) -> int:
+	return int(s.flags.tianqi.get("draws", 0)) if active(s) else 0
+
+
+## 第 n 次（0 起）抽的规则 {tiers, count}；count 0＝自选
+static func draw_rule(s: XState, n: int) -> Dictionary:
+	var rows: Array = DRAW_TABLE.get(str(s.flags.tianqi.get("difficulty", "")), []) if active(s) else []
+	if n < 0 or n >= rows.size():
+		return {}
+	return {"tiers": rows[n][0], "count": int(rows[n][1])}
+
+
+## 本局还没有的、档位在 tiers 里的角色（停用的导入角色不出）
+static func draw_pool(s: XState, tiers: Array) -> Array:
+	var out := []
+	for tier in tiers:
+		for id in XTier.ids(tier):
+			if not XImportedBalance.is_disabled_actor(id) and not s.party.has(id) and not s.saved_actors.has(id):
+				out.append(id)
+	return out
+
+
+## 现在能抽：有没用掉的次数，且候选不空
+static func draw_ready(s: XState) -> bool:
+	if not active(s) or not NO_RECRUIT or draws_used(s) >= draws_earned(s):
+		return false
+	var r := draw_rule(s, draws_used(s))
+	return not r.is_empty() and not draw_pool(s, r.tiers).is_empty()
+
+
+## 这一次的候选：X 选一掷一次就记进存档（flags.tianqi.offer），没选之前再来也是这几个（不能重抽）；自选给整池
+static func draw_offer(s: XState, rng: RandomNumberGenerator = null) -> Array:
+	var r := draw_rule(s, draws_used(s))
+	if r.is_empty():
+		return []
+	var pool := draw_pool(s, r.tiers)
+	if int(r.count) <= 0:
+		return pool
+	var saved = s.flags.tianqi.get("offer")
+	if saved is Array and not saved.is_empty() and saved.all(func(id): return pool.has(int(id))):
+		return saved.map(func(id): return int(id))
+	if rng == null:
+		rng = RandomNumberGenerator.new()
+		rng.randomize()
+	_shuffle(pool, rng)
+	var offer := pool.slice(0, int(r.count))
+	s.flags.tianqi["offer"] = offer
+	return offer
+
+
+## 选定：在候选里才收，入队、记一次、清候选
+static func take_draw(s: XState, id: int) -> bool:
+	if not draw_ready(s) or not draw_offer(s).has(id):
+		return false
+	_joining = true
+	s.add_actor(id)
+	_joining = false
+	s.flags.tianqi["draws"] = draws_used(s) + 1
+	s.flags.tianqi.erase("offer")
+	return s.party.has(id)
+
+
+## NO_RECRUIT 下新角色能不能入队：已在队、开局阵容、正在抽的才行
+static func join_allowed(s: XState, id: int) -> bool:
+	if not active(s) or not NO_RECRUIT or s.party.has(id) or _joining:
+		return true
+	return s.flags.tianqi.get("lineup", []).has(id)
+
+
+## 号角（能招人的物品）：天启篇 NO_RECRUIT 下拿不到、不上架
+static func horn_blocked(s: XState, rec: Dictionary) -> bool:
+	return active(s) and NO_RECRUIT and XItemMarks.recruit_actor_id(rec) > 0
+
+
+const JOIN_BLOCKED_NOTICE := "天启篇的伙伴只从方桌大厅的通关招募来。"
+const DRAW_SPEAKER := "小小鱼"
+
+
+static func _actor_label(id: int) -> String:
+	return "%s【%s】" % [str(XDB.rec("Actors", id).get("name", "")), XTier.tier_of(id)]
+
+
+static func _line(text: String) -> Array:
+	return ["\\n<%s>%s" % [DRAW_SPEAKER, text]]
+
+
+## 大厅抽角色的对话（地图场景在大厅里、没有别的事件时调）：一次把能抽的都走完，玩家可以「稍后再选」留到下次回大厅
+static func run_draw(host, s: XState) -> void:
+	while draw_ready(s):
+		var r := draw_rule(s, draws_used(s))
+		var offer := draw_offer(s)
+		var head := "你已通关 %d 层，可以招募一名新伙伴（%s）。" % [cleared_floors(s), "／".join(r.tiers)]
+		var pick := 0
+		if int(r.count) == 1:
+			await host.show_text("", 0, _line(head + "来的是……"))
+			pick = int(offer[0])
+		elif int(r.count) > 1:
+			var opts := offer.map(func(id): return _actor_label(int(id)))
+			opts.append("稍后再选")
+			var i: int = await host.show_text_with_choices("", 0, _line(head + "这几位愿意跟你走，选一位吧。"), opts, opts.size() - 1)
+			if i < 0 or i >= offer.size():
+				return
+			pick = int(offer[i])
+		else:
+			pick = await _pick_free(host, s, r.tiers, head)
+			if pick <= 0:
+				return
+		if not take_draw(s, pick):
+			return
+		await host.show_text("", 0, _line("%s加入了队伍。" % _actor_label(pick)))
+
+
+## 自选：先选档位，再从该档位本局还没有的角色里选；取消回上一步，最外层取消＝稍后再选
+static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
+	while true:
+		var have := tiers.filter(func(t): return not draw_pool(s, [t]).is_empty())
+		var opts := have.duplicate()
+		opts.append("稍后再选")
+		var t: int = await host.show_text_with_choices("", 0, _line(head + "这一次你可以自己挑。"), opts, opts.size() - 1)
+		if t < 0 or t >= have.size():
+			return 0
+		var pool := draw_pool(s, [have[t]])
+		var names := pool.map(func(id): return _actor_label(int(id)))
+		names.append("返回")
+		var i: int = await host.show_text_with_choices("", 0, _line("想要哪一位？"), names, names.size() - 1)
+		if i >= 0 and i < pool.size():
+			return int(pool[i])
+	return 0

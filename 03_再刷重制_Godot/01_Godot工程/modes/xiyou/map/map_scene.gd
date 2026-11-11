@@ -170,6 +170,16 @@ func _run_tianqi_opening() -> void:
 	refresh_events()
 
 
+## 天启篇通关抽角色（XTianqi.run_draw）：回到大厅、没有别的事件时由小小鱼主持；「稍后再选」留到下次回大厅
+var _tianqi_draw_due := false
+
+func _run_tianqi_draw() -> void:
+	_set_busy(true)
+	await XTianqi.run_draw(self, XState.current)
+	_set_busy(false)
+	refresh_events()
+
+
 ## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
 func _on_ui_page(node: Node) -> void:
 	if not node is XTextPrompt and not node is XCasinoDialog:
@@ -259,6 +269,7 @@ func _show_map_name(text: String) -> void:
 
 func load_map(id: int, x: int, y: int, d: int) -> void:
 	var s := XState.current
+	_tianqi_draw_due = id == XTianqi.HALL_MAP  # 天启篇：每次到大厅查一次通关抽角色
 	# Game_Player.performTransfer：新地图 ID 与当前相同时不 $gameMap.setup，事件（位置、朝向、强制路线、页、消除）原样保留，
 	# 只重新放置玩家与跟随者（locate：synchronize、makeEncounterCount）；场景本身照常重建（地图名、自动播放、传送按钮）
 	if id == map_id and id == s.map_id and chars != null and is_instance_valid(chars):
@@ -434,6 +445,10 @@ func _process(delta: float) -> void:
 			run_reserved_common_event(XState.current)
 		else:
 			_check_autorun()
+			if not busy and _tianqi_draw_due:
+				_tianqi_draw_due = false
+				if map_id == XTianqi.HALL_MAP and XTianqi.draw_ready(XState.current):
+					_run_tianqi_draw()
 		# installItemBagContinuationRuntime：物品页预约的公共事件跑完（没有别的预约、事件与文字）就回物品页
 		if not busy and transfer_page == null and not XHangUp.is_active(XState.current):
 			var back := XItemBagReturn.take(XState.current, false)

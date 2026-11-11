@@ -497,6 +497,8 @@ static func recruit_actor_id(rec: Dictionary) -> int:
 
 
 static func can_acquire_item(s: XState, rec: Dictionary) -> bool:
+	if XTianqi.horn_blocked(s, rec):
+		return false  # 天启篇：号角整套不用（招募改大厅通关抽角色）
 	return can_acquire_actor(s, recruit_actor_id(rec))
 
 
@@ -512,12 +514,17 @@ static var _deploy_notice: WeakRef = null
 
 
 ## D.canDeploy：不是超强者，或已开挑战开关／混沌难度
-## 天启篇：出战栏里（除他本人）的超强者还没到本难度上限才能编入（数值重构方案第六节）
-static func can_deploy(s: XState, actor_id: int) -> bool:
+## 天启篇：超强者上限只算上场的前 4 格，助力位不限；slot＝要放进的格（整队页换人时传，先模拟换完再数），-1 只问能不能编进来
+static func can_deploy(s: XState, actor_id: int, slot := -1) -> bool:
 	if XTianqi.active(s):
-		if not is_super_strong(actor_id) or s.battle_slots.has(actor_id):
-			return true
-		return s.battle_slots.filter(func(id): return is_super_strong(int(id))).size() < XTianqi.super_cap(s)
+		if not is_super_strong(actor_id) or slot < 0 or slot == XTianqi.HELPER_SLOT:
+			return true  # 不指定格时总能放进助力位
+		var after: Array = s.battle_slots.duplicate()
+		var at := after.find(actor_id)
+		if at >= 0:
+			after[at] = after[slot]
+		after[slot] = actor_id
+		return after.slice(0, XTianqi.FIGHTERS).filter(func(id): return is_super_strong(int(id))).size() <= XTianqi.super_cap(s)
 	return can_acquire_actor(s, actor_id)
 
 
@@ -533,7 +540,7 @@ static func enforce_party(s: XState) -> bool:
 	var slots := s.battle_slots
 	var vacancies := []
 	var kept := 0
-	for i in slots.size():
+	for i in (XTianqi.FIGHTERS if cap >= 0 else slots.size()):  # 天启篇：助力位不算
 		if is_super_strong(int(slots[i])):
 			if cap >= 0 and kept < cap:
 				kept += 1

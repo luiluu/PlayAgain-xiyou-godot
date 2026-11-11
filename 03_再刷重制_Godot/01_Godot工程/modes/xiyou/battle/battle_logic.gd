@@ -985,6 +985,39 @@ var _speed := {}                # XBattler -> 最近一次排序时的速度
 var _escape_ratio := -1.0
 
 
+## 天启篇战斗中换人（XTianqi.SWAP_IN_BATTLE）：上场的 out 换下、助力位的上来，接手 out 在本回合／下回合顺序里剩下的位置；
+## 出战栏两格互换（助力位与上场格）。助力位要活着；超强者换上来不能超过本难度上限；专属模块角色（XActorModules.IDS）开战时另建本场数据，不能换。
+func can_tianqi_swap(out) -> bool:
+	if not XTianqi.SWAP_IN_BATTLE or not XTianqi.active(state) or not out is XActor or not actors.has(out):
+		return false
+	var h := state.helper()
+	if h == null or h == out or actors.has(h) or not h.is_alive() or XActorModules.IDS.has(h.actor_id) or XActorModules.IDS.has(out.actor_id):
+		return false
+	if XTier.is_super(h.actor_id) and not XTier.is_super(out.actor_id):
+		return actors.filter(func(a): return a is XActor and XTier.is_super(a.actor_id)).size() < XTianqi.super_cap(state)
+	return true
+
+
+func tianqi_swap(out: XActor) -> XActor:
+	if not can_tianqi_swap(out):
+		return null
+	var h := state.helper()
+	actors[actors.find(out)] = h
+	for list in [current_order, next_order]:
+		for k in list.size():
+			if list[k] == out:
+				list[k] = h
+	_acted[h] = _acted.get(out, 0)
+	_speed[h] = _speed.get(out, h.agi)
+	var si := state.battle_slots.find(out.actor_id)
+	state.battle_slots[XTianqi.HELPER_SLOT] = out.actor_id
+	if si >= 0:
+		state.battle_slots[si] = h.actor_id
+	h.param_mark_dirty()
+	h.param_refresh()
+	return h
+
+
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
 func start_turn() -> void:
 	XStateEffects.battle_turn = turn + 1
@@ -3221,8 +3254,9 @@ func grant(r: Dictionary) -> Array:
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
+	var helper := state.helper()
 	for a in state.members():
-		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) else bench_rate, _rule())
+		var n: int = a.gain_exp(r.exp, 1.0 if actors.has(a) or a == helper else bench_rate, _rule())  # 天启篇助力位拿满经验
 		if n > 0:
 			ups.append({"actor": a, "levels": n})
 	# CP_MagicWeapon 包在 gainRewards 之后：法宝经验（$gameTroop.members()：enemies 已含没出场的隐藏成员）
