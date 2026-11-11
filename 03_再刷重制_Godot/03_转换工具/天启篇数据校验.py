@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""天启篇数据表校验（只用标准库，云端没有 Godot 和转换产物也能跑）。
+
+  python3 03_再刷重制_Godot/03_转换工具/天启篇数据校验.py [--params <设计仓库>/重制设定/数值测算/参数.json]
+
+每张表一个检查函数，登记在 CHECKS 里；表文件不在就跳过那一张（打印「跳过」）。
+- balance_table.json（档位与五档难度）：
+  A 组：和设计仓库的测算 参数.json 逐项对照。不给 --params 时跳过（游戏仓库公开，检查.sh 里没有设计仓库）。
+  B 组：规则自检，和 tests/xiyou_tianqi_balance 同一套（难度键与 core/tianqi.gd 的 DIFFICULTIES 用正则对照）。
+有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
+"""
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PROJECT = HERE.parent / '01_Godot工程'
+DATA_DIR = PROJECT / 'modes' / 'xiyou' / 'tianqi_data'
+TIANQI_GD = PROJECT / 'modes' / 'xiyou' / 'core' / 'tianqi.gd'
+
+EPS = 1e-9
+WEAK, STRONG, SUPER = '弱者', '强者', '超强者'  # 同 core/tier.gd 的 XTier 常量
+FIELD_SIZE = 4  # 同一场上场人数，同 XTianqiBalance.FIELD_SIZE
+# 难度一行里 scaling 的键 → 参数.json「难度」的键
+SCALING_KEYS = {'enemy_hp': '敌人血量', 'enemy_atk': '敌人攻击', 'party_damage': '我方伤害', 'quality_offset': '品质偏移'}
+ROSTER_KEYS = {'pool': '候选池', 'super_cap': '超强者上限', 'min_weak': '至少弱者'}
+TIER_KEYS = {'damage_dealt': '出伤', 'damage_taken': '承伤', 'secret_cap': '秘籍上限'}
+NICE_EXEMPT_ALLOWED = {'version', 'secret_cap', 'super_cap', 'min_weak'}
+
+
+def num_text(x) -> str:
+    """和 XTianqiBalance._num_text 一样：整数不带小数点，其余去掉尾零。"""
+    x = float(x)
+    if x == int(x):
+        return str(int(x))
+    return ('%.6f' % x).rstrip('0').rstrip('.')
+
+
+def same(a, b) -> bool:
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool):
+        return abs(float(a) - float(b)) < EPS
+    return a == b
+
+
+def tianqi_difficulties(path: Path = TIANQI_GD) -> list:
+    """从 core/tianqi.gd 的 DIFFICULTIES 取 key、name、super_cap、min_weak（只读）。"""
+    text = path.read_text(encoding='utf-8')
+    m = re.search(r'const DIFFICULTIES := \[(.*?)\n\]', text, re.S)
+    if not m:
+        raise ValueError('tianqi.gd 里找不到 DIFFICULTIES')
+    out = []
+    for line in m.group(1).splitlines():
+        if '"key"' not in line:
+            continue
+        row = {}
+        for k in ('key', 'name'):
+            row[k] = re.search(r'"%s":\s*"([^"]*)"' % k, line).group(1)
+        for k in ('super_cap', 'min_weak'):
+            row[k] = int(re.search(r'"%s":\s*(-?\d+)' % k, line).group(1))
+        out.append(row)
+    return out
+
+
+# ---- balance_table.json ----
+
+def tier_mult(table, tier, key):
+    return 1.0 + float(table['tiers'][tier][key])
+
+
+def assist(table, weak_count, key):
+    n = max(0, min(weak_count, FIELD_SIZE))
+    return n * float(table['weak_assist'][key])
+
+
+def team(table, tiers, kind):
+    """全队相对出伤（kind='damage'）或承伤（'taken'）：Σ(1＋档位) ×(1＋上场弱者数×协力)。"""
+    tk, ak = ('damage_dealt', 'damage_dealt_per') if kind == 'damage' else ('damage_taken', 'damage_taken_per')
+    return sum(tier_mult(table, t, tk) for t in tiers) * (1.0 + assist(table, tiers.count(WEAK), ak))
+
+
+def nice_violations(v, path, exempt, out):
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if k not in exempt:
+                nice_violations(x, path + '/' + k, exempt, out)
+    elif isinstance(v, list):
+        for i, x in enumerate(v):
+            nice_violations(x, '%s/%d' % (path, i), exempt, out)
+    elif isinstance(v, (int, float)) and not isinstance(v, bool):
+        s = num_text(v)
+        if '4' in s:
+            out.append('%s=%s' % (path, s))
+
+
+def balance_rules(table: dict, tianqi: list) -> list:
+    """B 组规则自检，返回失败说明列表。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    # 1. 齐全、与 tianqi.gd 一致
+    for h in ('version', 'source', 'dev'):
+        check('表头 ' + h, str(table.get(h, '')) != '')
+    tiers = table.get('tiers', {})
+    check('档位只有三个', sorted(tiers) == sorted([WEAK, STRONG, SUPER]), list(tiers))
+    for t in (WEAK, STRONG, SUPER):
+        check('档位齐全：' + t, all(k in tiers.get(t, {}) for k in TIER_KEYS), tiers.get(t))
+    if bad:
+        return bad
+    diffs = table.get('difficulties', [])
+    keys = [d.get('key') for d in diffs]
+    want = [d['key'] for d in tianqi]
+    check('难度键与顺序同 tianqi.gd', keys == want, '表 %s，tianqi.gd %s' % (keys, want))
+    by_key = {d.get('key'): d for d in diffs}
+    for x in tianqi:
+        d = by_key.get(x['key'])
+        if d is None:
+            continue
+        r = d.get('roster', {})
+        check('难度名同开局：' + x['key'], d.get('name') == x['name'], '%s / %s' % (d.get('name'), x['name']))
+        for k in ('super_cap', 'min_weak'):
+            check('%s 同开局：%s' % (k, x['key']), r.get(k) == x[k], '表 %s，tianqi.gd %s' % (r.get(k), x[k]))
+        pool_want = [WEAK, STRONG] + ([SUPER] if x['super_cap'] > 0 else [])
+        check('候选池同开局规则：' + x['key'], r.get('pool') == pool_want, '表 %s，应为 %s' % (r.get('pool'), pool_want))
+        for k in SCALING_KEYS:
+            check('难度有 %s：%s' % (k, x['key']), isinstance(d.get('scaling', {}).get(k), (int, float)))
+    if bad:
+        return bad
+    # 2. 档位单调
+    w, s, u = (tier_mult(table, t, 'damage_dealt') for t in (WEAK, STRONG, SUPER))
+    check('出伤 弱 < 强 < 超强', w < s < u, (w, s, u))
+    tw, ts, tu = (tier_mult(table, t, 'damage_taken') for t in (WEAK, STRONG, SUPER))
+    check('承伤 弱 ≥ 强 ≥ 超强', tw >= ts >= tu, (tw, ts, tu))
+    cw, cs, cu = (tiers[t]['secret_cap'] for t in (WEAK, STRONG, SUPER))
+    check('秘籍上限 弱 ≥ 强 ≥ 超强', cw >= cs >= cu, (cw, cs, cu))
+    # 3. 档位盖过本体 ±20%（测算报告第一节同名两项）
+    check('档位盖过本体浮动（强者对弱者）', 0.8 * s >= 1.2 * w - EPS, '0.8×%.3f < 1.2×%.3f' % (s, w))
+    check('档位盖过本体浮动（超强者对强者）', 0.8 * u > 1.2 * s + EPS, '0.8×%.3f ≤ 1.2×%.3f' % (u, s))
+    # 4. 协力不让弱者多的队更强（强者、超强者各换一遍）
+    check('协力给出伤、减承伤', assist(table, 1, 'damage_dealt_per') > 0 and assist(table, 1, 'damage_taken_per') < 0)
+    aura = float(table.get('assist_slot', {}).get('team_damage_dealt', 0))
+    check('助力位光环在 0～1 之间', 0 < aura < 1, aura)
+    for other in (STRONG, SUPER):
+        for weak in range(FIELD_SIZE, 0, -1):
+            more = [WEAK] * weak + [other] * (FIELD_SIZE - weak)
+            less = [WEAK] * (weak - 1) + [other] * (FIELD_SIZE - weak + 1)
+            dm, dl = team(table, more, 'damage'), team(table, less, 'damage')
+            check('协力：%d弱 出伤低于 %d弱（换%s）' % (weak, weak - 1, other), dm < dl - EPS, '%.4f ≥ %.4f' % (dm, dl))
+            tm, tl = team(table, more, 'taken'), team(table, less, 'taken')
+            check('协力：%d弱 承伤高于 %d弱（换%s）' % (weak, weak - 1, other), tm > tl + EPS, '%.4f ≤ %.4f' % (tm, tl))
+    # 5. 难度单调、低难度没有超强者
+    for a, b in zip(diffs, diffs[1:]):
+        for k in ('enemy_hp', 'enemy_atk'):
+            va, vb = a['scaling'][k], b['scaling'][k]
+            check('%s 不降：%s→%s' % (k, a['key'], b['key']), vb >= va, '%s → %s' % (va, vb))
+    for k in ('xunchang', 'jianxian'):
+        r = by_key.get(k, {}).get('roster', {})
+        check('低难度候选池没有超强者：' + k, SUPER not in r.get('pool', []) and r.get('super_cap') == 0, r)
+    # 6. 数值好看
+    exempt = table.get('nice_number_exempt', [])
+    check('豁免键只放个数类', set(exempt) <= NICE_EXEMPT_ALLOWED, exempt)
+    out = []
+    nice_violations(table, '', set(exempt), out)
+    check('设计数值不含 4', not out, '，'.join(out))
+    return bad
+
+
+def balance_vs_params(table: dict, params: dict) -> list:
+    """A 组：逐项对照 参数.json，返回 (项, 游戏数据, 参数.json) 列表。"""
+    diff = []
+
+    def cmp(item, game, ref):
+        if not same(game, ref):
+            diff.append((item, game, ref))
+
+    for t in (WEAK, STRONG, SUPER):
+        for k, pk in TIER_KEYS.items():
+            cmp('档位/%s/%s' % (t, pk), table['tiers'].get(t, {}).get(k), params['档位'].get(t, {}).get(pk))
+    wa, pa = table['weak_assist'], params['弱者协力']
+    cmp('弱者协力/每人出伤', wa.get('damage_dealt_per'), pa.get('每人出伤'))
+    cmp('弱者协力/每人承伤', wa.get('damage_taken_per'), pa.get('每人承伤'))
+    cmp('助力位/光环全队出伤', table['assist_slot'].get('team_damage_dealt'), params['助力位'].get('光环全队出伤'))
+    pd = params['难度']
+    names = [d.get('name') for d in table['difficulties']]
+    cmp('难度/顺序', names, pd.get('顺序'))
+    for d in table['difficulties']:
+        ref = pd.get(d.get('name'), {})
+        for k, pk in SCALING_KEYS.items():
+            cmp('难度/%s/%s' % (d.get('name'), pk), d.get('scaling', {}).get(k), ref.get(pk))
+        for k, pk in ROSTER_KEYS.items():
+            cmp('难度/%s/%s' % (d.get('name'), pk), d.get('roster', {}).get(k), ref.get(pk))
+    return diff
+
+
+def check_balance_table(params_path) -> bool:
+    path = DATA_DIR / 'balance_table.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    table = json.loads(path.read_text(encoding='utf-8'))
+    ok = True
+    bad = balance_rules(table, tianqi_difficulties())
+    if bad:
+        ok = False
+        print('balance_table.json 规则自检 %d 项不过：' % len(bad))
+        for b in bad:
+            print('  ' + b)
+    else:
+        print('balance_table.json 规则自检：通过')
+    if params_path is None:
+        print('balance_table.json 对照参数：跳过：没有参数.json')
+        return ok
+    params = json.loads(Path(params_path).read_text(encoding='utf-8'))
+    diff = balance_vs_params(table, params)
+    if diff:
+        ok = False
+        print('balance_table.json 和 参数.json 有 %d 项不一致（项、游戏数据、参数.json）：' % len(diff))
+        for item, game, ref in diff:
+            print('  %s：%s ≠ %s' % (item, json.dumps(game, ensure_ascii=False), json.dumps(ref, ensure_ascii=False)))
+    else:
+        print('balance_table.json 对照参数：通过（%s）' % params_path)
+    return ok
+
+
+# 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
+CHECKS = [
+    ('balance_table', lambda args: check_balance_table(args.params)),
+]
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description='天启篇数据表校验')
+    ap.add_argument('--params', help='设计仓库的 重制设定/数值测算/参数.json；不给就跳过和参数的对照')
+    args = ap.parse_args(argv)
+    ok = True
+    for name, fn in CHECKS:
+        ok = fn(args) and ok
+    print('天启篇数据校验：' + ('全部通过' if ok else '有不通过'))
+    return 0 if ok else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
