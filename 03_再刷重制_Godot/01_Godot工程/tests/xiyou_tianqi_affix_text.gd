@@ -128,7 +128,7 @@ func _run() -> void:
 	# 四、抽查（设计稿 v0.3 与 Kyo 11-11 01:21 整数版）
 	for c in [
 		["物攻四阶极", X.line("atk", 4, "perfect"), "极·物攻 +8%"],
-		["终伤四阶上品", X.line("final_damage", 4, "fine"), "上品·终伤 +12%"],
+		["终伤四阶上品", X.line("final_damage", 4, "fine"), "上品·伤害加成 +12%"],
 		["再动四阶极", X.line("reaction", 4, "perfect"), "极·〔稀有〕每回合有 20% 几率多行动一次"],
 		["全能光环四阶极", X.line("aura_versatile", 4, "perfect"), "极·全队·八项属性 +6%"],
 		["连击", X.line("combo", 4, "perfect"), "〔稀有〕攻击次数 +1"],
