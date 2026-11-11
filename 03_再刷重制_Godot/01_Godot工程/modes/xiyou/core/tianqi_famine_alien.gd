@@ -234,7 +234,7 @@ static func after_pay(logic, u, skill: Dictionary, c: Dictionary) -> void:
 		return
 	var f := fight(logic)
 	var id := int(skill.get("id", 0))
-	if data().ration.exempt_skills.has(id):
+	if data().ration.exempt_skills.any(func(x): return int(x) == id):  # JSON 里是浮点数，按整数比
 		return
 	if int(c.get("mp", 0)) <= 0 and int(c.get("tp", 0)) <= 0 and logic.skill_hp_cost(u, skill) <= 0:
 		var r := ration_rate(logic)
