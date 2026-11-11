@@ -237,6 +237,9 @@ def android_problems(info: dict, names: set, debug: bool = True):
         for perm in ('android.permission.FOREGROUND_SERVICE', 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE', 'android.permission.POST_NOTIFICATIONS'):
             if perm not in info.get('permissions', []):
                 problems.append('包里没有权限 ' + perm)
+    # 自动更新（检查更新、下载补丁）要联网：预设开了就该在包里（update-android-net1）
+    if str(preset_template(preset, 'permissions/internet')).lower() == 'true' and 'android.permission.INTERNET' not in info.get('permissions', []):
+        problems.append('包里没有权限 android.permission.INTERNET（检查更新连不上网）')
     need = ['assets/project.binary', 'assets/modes/xiyou/generated/db/System.json', 'assets/scenes/entry_menu.tscn.remap']
     if debug:
         need.append('assets/tests/xiyou_mac_export.tscn.remap')

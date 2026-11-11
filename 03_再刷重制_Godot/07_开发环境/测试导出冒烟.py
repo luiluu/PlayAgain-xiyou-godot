@@ -137,7 +137,7 @@ class WindowsLayoutTests(unittest.TestCase):
 class AndroidLayoutTests(unittest.TestCase):
     BADGING = "package: name='local.kyo.remake.verification' versionCode='1' versionName='0.0.0'\napplication: label='x' icon='res/mipmap/icon.png'\nuses-permission: name='android.permission.WAKE_LOCK'\n" \
         "uses-permission: name='android.permission.FOREGROUND_SERVICE'\nuses-permission: name='android.permission.FOREGROUND_SERVICE_SPECIAL_USE'\n" \
-        "uses-permission: name='android.permission.POST_NOTIFICATIONS'\nnative-code: 'arm64-v8a'\n"
+        "uses-permission: name='android.permission.POST_NOTIFICATIONS'\nuses-permission: name='android.permission.INTERNET'\nnative-code: 'arm64-v8a'\n"
     XML = "      A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=11\n" \
         "        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"org.godotengine.plugin.v2.XiyouBgIdle\" (Raw: \"org.godotengine.plugin.v2.XiyouBgIdle\")\n" \
         "        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"local.kyo.xiyou.bgidle.XiyouIdleService\" (Raw: \"local.kyo.xiyou.bgidle.XiyouIdleService\")\n"
@@ -146,7 +146,8 @@ class AndroidLayoutTests(unittest.TestCase):
         info = smoke.parse_android(self.BADGING, self.XML)
         self.assertEqual(info, {'package': 'local.kyo.remake.verification', 'native': ['arm64-v8a'], 'orientation': 11,
                                 'permissions': ['android.permission.WAKE_LOCK', 'android.permission.FOREGROUND_SERVICE',
-                                                'android.permission.FOREGROUND_SERVICE_SPECIAL_USE', 'android.permission.POST_NOTIFICATIONS'],
+                                                'android.permission.FOREGROUND_SERVICE_SPECIAL_USE', 'android.permission.POST_NOTIFICATIONS',
+                                                'android.permission.INTERNET'],
                                 'versionCode': '1', 'versionName': '0.0.0', 'icon': 'res/mipmap/icon.png', 'label': None,
                                 'bgidle_service': True, 'bgidle_plugin': True})
         self.assertEqual(smoke.parse_android('', '')['orientation'], None)
@@ -165,8 +166,11 @@ class AndroidLayoutTests(unittest.TestCase):
         # 后台挂机插件（android-bgidle1）：Gradle 构建的包缺了插件或前台服务权限要报
         bare = dict(info, bgidle_service=False, permissions=['android.permission.WAKE_LOCK'])
         probs = smoke.android_problems(bare, names)
-        self.assertEqual(len(probs), 4, probs)
+        self.assertEqual(len(probs), 5, probs)  # 插件、三个前台服务权限、联网权限
         self.assertIn('XiyouBgIdle', probs[0])
+        # 自动更新要联网（update-android-net1）：预设开了联网，包里没有 INTERNET 要报
+        no_net = dict(info, permissions=[p for p in info['permissions'] if p != 'android.permission.INTERNET'])
+        self.assertEqual(smoke.android_problems(no_net, names), ['包里没有权限 android.permission.INTERNET（检查更新连不上网）'])
 
     def test_expected_version_from_dev(self):
         # 导出插件开着（XAndroidVersion.AUTO）：versionCode＝开发编号数字、versionName＝0.数字；预设里的 1／0.0.0 不再是对的
