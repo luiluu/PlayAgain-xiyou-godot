@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-swap-init
 
 - 车道／工作者：天启篇·换人开战初始化（审查 78 P3-1）／cc（项目线程「完成再刷西游Godot引擎重制」，本机工作树 unruffled-mendel-f95b6d）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -37,7 +37,7 @@
 
 - `语法检查.py`：0 个问题。
 - 本机专项：`xiyou_tianqi_swap_init` 15/15、`xiyou_tianqi_party` 33/33。
-- 云端选测：待写。
+- 云端整轮选测（c93c2827e，510 个场景、16 片）全过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43012776806
 
 ## 待交叉核查
 
@@ -47,4 +47,5 @@
 ## 本分支提交
 
 - 1a42738cc 换上来的助力位补开战初始化＋专项
-- （本提交）交付单
+- c93c2827e 交付单（进行中）
+- （本提交）交付单：可合并
