@@ -14,7 +14,7 @@ extends RefCounted
 
 ## 开关（O-260）：true＝新游戏走天启篇开局；false＝回到原版 Map001 开局。
 static var ENABLED := true
-## 发行开关（O-待定·天启篇发行关闭）：Kyo 11-11「新整包只有天启篇的标题和载入界面，完整天启篇内容以后单独更新」。
+## 发行开关（O-待定）：Kyo 11-11「新整包只有天启篇的标题和载入界面，完整天启篇内容以后单独更新」。
 ## false＝发行构建（ReleaseEntry.is_release）里新游戏走原版开局，天启篇规则（都只认存档里的天启篇标记）一条都不生效；
 ## 开发版、测试照 ENABLED。天启篇做完发补丁把它改成 true 即开放。
 static var RELEASE_OPEN := false
