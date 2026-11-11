@@ -778,7 +778,7 @@ def state_audit_due(doc, now=None):
     return (now if now is not None else time.time()) - doc['auditedAt'] > hours * 3600
 
 
-# 审查 95 P2-2：外层缓存整份命中（todo == []）和暂存命中原来都在进执行器之前，两个探针的到期审计要进了执行器才判，
+# 审查 95 P2-2（O-待定·审计先于命中）：外层缓存整份命中（todo == []）和暂存命中原来都在进执行器之前，两个探针的到期审计要进了执行器才判，
 # 输入一直没变时审计永远轮不到，漏依赖的旧产物会一直被放过。现在 run_probes 在用缓存／暂存之前先问一遍「审计到没到期」，
 # 到期的照常进执行器（执行器再判一次、带上审计环境变量）。XIYOU_AUDIT_BEFORE_HIT=0 回到原来的「先命中、不管到期」。
 def audit_before_hit_on():
