@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.467",
-  "sequence": 467,
-  "next": "dev.468",
-  "nextSequence": 468,
+  "current": "dev.468",
+  "sequence": 468,
+  "next": "dev.469",
+  "nextSequence": 469,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "rift2-canglong",
+  "currentChange": "alien-release-hide",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

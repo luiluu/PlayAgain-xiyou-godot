@@ -63,7 +63,7 @@ static func _toast(logic, text: String) -> void:
 ## 六件物品不可得／不可见／不可装备、读档把异化实例还原成普通装备在 XAlienHide（O-283）。
 ## HIDDEN_V058：开发版也隐藏（默认 false，开发版异化照常可玩）。
 static var HIDDEN_V058 := false
-## 发行开关（O-待定·异化发行隐藏）：Kyo 11-11「新整包里异化相关装备和词条都不开放」。true＝发行构建（ReleaseEntry.is_release）里隐藏；
+## 发行开关（O-315）：Kyo 11-11「新整包里异化相关装备和词条都不开放」。true＝发行构建（ReleaseEntry.is_release）里隐藏；
 ## false＝发行构建也照常开放（回到只看 HIDDEN_V058）。以后开放异化发补丁把它改成 false 即可。
 static var RELEASE_HIDE := true
 
