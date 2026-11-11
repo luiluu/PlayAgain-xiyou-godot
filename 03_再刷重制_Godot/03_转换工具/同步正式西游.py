@@ -778,6 +778,33 @@ def state_audit_due(doc, now=None):
     return (now if now is not None else time.time()) - doc['auditedAt'] > hours * 3600
 
 
+# 审查 95 P2-2：外层缓存整份命中（todo == []）和暂存命中原来都在进执行器之前，两个探针的到期审计要进了执行器才判，
+# 输入一直没变时审计永远轮不到，漏依赖的旧产物会一直被放过。现在 run_probes 在用缓存／暂存之前先问一遍「审计到没到期」，
+# 到期的照常进执行器（执行器再判一次、带上审计环境变量）。XIYOU_AUDIT_BEFORE_HIT=0 回到原来的「先命中、不管到期」。
+def audit_before_hit_on():
+    return os.environ.get('XIYOU_AUDIT_BEFORE_HIT', '1') != '0'
+
+
+def audit_due_before_hit(command, now=None):
+    """命中缓存前，这个探针的每日审计是否到期（只看 troop 与事件状态两个探针；账上认不出已发布结果的不算，跑了也只是整份重量、没有可比的）。"""
+    import event_state_shards as ess
+    name = command[0]
+    gen = os.environ.get('XIYOU_GENERATED')
+    if not gen or not audit_before_hit_on():
+        return False
+    if name == 'troop_event_probe.cjs':
+        if os.environ.get('XIYOU_TROOP_INCREMENTAL', '1') == '0' or os.environ.get('XIYOU_COVER') == '1':
+            return False
+        prev = Path(gen) / 'oracle/troop_events.json'
+        doc = ess.KeyHistory(TROOP_KEYS, 1).find(prev) if prev.is_file() else None
+        return bool(doc) and troop_audit_due(doc, now)
+    if name == 'event_state_probe.cjs':
+        prev = Path(gen) / 'oracle/event_states.json'
+        doc = ess.KeyHistory(STATE_KEYS).find(prev) if prev.is_file() else None
+        return bool(doc) and state_audit_due(doc, now)
+    return False
+
+
 def run_troop_sharded(cmd, env, box, core=None):
     import concurrent.futures
     import event_state_shards as ess
@@ -1199,7 +1226,7 @@ def run_probes(log, cache=None):
     import concurrent.futures
     import time
     jobs = max(1, int(os.environ.get('SYNC_JOBS', '4')))
-    plan, reused, keys, units, partial, misses = [], [], {}, {}, {}, {}
+    plan, reused, keys, units, partial, misses, audit_due = [], [], {}, {}, {}, {}, []
     for command, outputs in PROBES:
         key = cache.key(command) if cache else None
         keys[command[0]] = key
@@ -1212,6 +1239,12 @@ def run_probes(log, cache=None):
                                             ensure_ascii=False)
             log.write(line + '\n')
             print(line, flush=True)
+        if todo == [] and audit_due_before_hit(command):
+            audit_due.append(command[0])
+            todo = None
+            log.write('AUDIT_DUE %s（输入没变、整份命中，但每日审计已到期：不用缓存和暂存，进执行器整份重跑并审计）\n' % command[0])
+            if cache:
+                cache.misses.setdefault(command[0], []).append({'kind': 'audit-due'})
         if todo == []:
             reused.append(command[0])
             cache.record(command, outputs, key, units[command[0]])
@@ -1228,14 +1261,14 @@ def run_probes(log, cache=None):
             plan.append((command, outputs))
     stash = load_stash() if cache and not cache.force else {}
     stashed = {command[0] for command, outputs in plan
-               if command[0] not in partial and stash_usable(stash.get(command[0]), command, outputs, keys[command[0]])}
+               if command[0] not in partial and command[0] not in audit_due and stash_usable(stash.get(command[0]), command, outputs, keys[command[0]])}
     for name in sorted(stashed):
         log.write('STASH_HIT ' + name + '（上轮别的探针失败时已成功，输入没变，用暂存产物）\n')
     log.flush()
     print('PROBE_PLAN=' + json.dumps({'executed': len(plan) - len(partial) - len(stashed), 'partial': {k: len(v) for k, v in partial.items()},
-                                      'reused': len(reused), 'stashed': len(stashed)}), flush=True)
+                                      'reused': len(reused), 'stashed': len(stashed), 'auditDue': audit_due}), flush=True)
     if not plan:
-        return {'executed': [], 'partial': {}, 'reused': reused, 'stashed': [], 'seconds': {}, 'missReasons': misses}
+        return {'executed': [], 'partial': {}, 'reused': reused, 'stashed': [], 'seconds': {}, 'missReasons': misses, 'auditDue': audit_due}
     gen_oracle = Path(os.environ['XIYOU_GENERATED']) / 'oracle'
     # 合并要用上次产物：作废缓存前先存一份（作废后 generated/oracle 仍是上次产物，失败时也不会被当作新结果发布）
     previous = SANDBOX / 'run-previous'
@@ -1410,7 +1443,7 @@ def run_probes(log, cache=None):
         print(line, flush=True)
     return {'executed': [cmd[0] for cmd, _ in plan if cmd[0] not in partial and cmd[0] not in stashed], 'readGaps': gaps or {},
             'partial': {k: v for k, v in partial.items()}, 'reused': reused, 'stashed': sorted(stashed),
-            'missReasons': misses,
+            'missReasons': misses, 'auditDue': audit_due,
             # 多命令探针的合计为子进程用时之和；墙钟由同步报告 start/end 记录。
             'seconds': {name: round(sum(r[3] for r in results if r[0][0] == name), 3) for name, _, _ in work},
             'commands': [{'command': cmd, 'seconds': round(sec, 3), 'exitCode': code} for cmd, code, _, sec in results]}

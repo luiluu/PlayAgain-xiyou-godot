@@ -1057,6 +1057,75 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(len(result['reused']), 3)
         self.assertIn('ok', (self.gen / 'oracle/a.json').read_text())
 
+    def audit_run(self, name, out, ledger_attr, version, clock, env=None, stash=False):
+        """审查 95 P2-2：输入没变、整份命中的 troop／事件状态探针，审计到期（假时钟）时要进执行器；返回 (结果, 日志, 执行器被叫几次)。"""
+        import event_state_shards as ess
+        sandbox = self.oracle / '.sandbox'
+        (self.oracle / name).write_text('// probe')
+        (self.gen / 'oracle' / out).write_text('{"cases":[{"id":"old"}]}')
+        ledger = sandbox / (name + '.keys.json')
+        ledger.unlink(missing_ok=True)
+        doc = sandbox / 'doc.json'
+        doc.write_text(json.dumps({'version': version, 'fileSha': ess.file_sha(self.gen / 'oracle' / out), 'auditedAt': 1000.0}))
+        ess.KeyHistory(ledger, version).add(doc)
+        probes = [([name], [out])]
+        c = self.cache()
+        c.record(probes[0][0], probes[0][1], c.key(probes[0][0]))
+        c.commit()
+        if stash:   # 上轮别的探针挂了时留下的暂存：审计到期也不能拿它顶
+            (sandbox / 'probe-stash').mkdir(parents=True, exist_ok=True)
+        calls = []
+
+        def fake_runner(cmd, env_, box, *rest):
+            calls.append(env_.get('XIYOU_STATE_AUDIT') or env_.get('XIYOU_TROOP_AUDIT'))
+            (sandbox / out).write_text('{"cases":[{"id":"old"}]}')
+            return subprocess.CompletedProcess(cmd, 0, '', '')
+        log = io.StringIO()
+        patches = [mock.patch.multiple(sync, PROBES=probes, ORACLE_DIR=self.oracle, SANDBOX=sandbox, **{ledger_attr: ledger}),
+                   mock.patch.object(sync, 'run_troop_sharded', fake_runner),
+                   mock.patch.object(sync, 'run_state_sharded', fake_runner),
+                   mock.patch.object(sync.time, 'time', return_value=clock),
+                   mock.patch.dict(os.environ, dict({'XIYOU_GENERATED': str(self.gen)}, **(env or {})))]
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            result = sync.run_probes(log, self.cache())
+        return result, log.getvalue(), calls
+
+    def test_due_audit_is_not_skipped_by_full_cache_hit(self):
+        hour = 3600
+        for name, out, attr, version in [('troop_event_probe.cjs', 'troop_events.json', 'TROOP_KEYS', 1),
+                                         ('event_state_probe.cjs', 'event_states.json', 'STATE_KEYS', 2)]:
+            with self.subTest(probe=name):
+                # 23 小时：没到期，照旧整份命中，不进执行器
+                result, log, calls = self.audit_run(name, out, attr, version, 1000.0 + 23 * hour)
+                self.assertEqual(result['reused'], [name])
+                self.assertEqual(calls, [])
+                self.assertNotIn('AUDIT_DUE', log)
+                # 25 小时：到期，不用缓存，进执行器
+                result, log, calls = self.audit_run(name, out, attr, version, 1000.0 + 25 * hour)
+                self.assertEqual(result['reused'], [])
+                self.assertEqual(result['auditDue'], [name])
+                self.assertEqual(result['executed'], [name])
+                self.assertEqual(len(calls), 1)
+                self.assertIn('AUDIT_DUE ' + name, log)
+                self.assertIn({'kind': 'audit-due'}, result['missReasons'][name])
+                # 回退开关：回到「先命中、不管到期」
+                result, log, calls = self.audit_run(name, out, attr, version, 1000.0 + 25 * hour, {'XIYOU_AUDIT_BEFORE_HIT': '0'})
+                self.assertEqual(result['reused'], [name])
+                self.assertEqual(calls, [])
+                # 审计关掉（0 小时）也不强跑
+                hours_env = 'XIYOU_TROOP_AUDIT_HOURS' if attr == 'TROOP_KEYS' else 'XIYOU_STATE_AUDIT_HOURS'
+                result, log, calls = self.audit_run(name, out, attr, version, 1000.0 + 25 * hour, {hours_env: '0'})
+                self.assertEqual(result['reused'], [name])
+
+    def test_due_audit_is_not_skipped_by_stash(self):
+        name, out = 'troop_event_probe.cjs', 'troop_events.json'
+        with mock.patch.object(sync, 'stash_usable', return_value=True):
+            result, log, calls = self.audit_run(name, out, 'TROOP_KEYS', 1, 1000.0 + 25 * 3600, stash=True)
+        self.assertEqual(result['stashed'], [])
+        self.assertEqual(len(calls), 1)
+
 
 FAKE_SMART_AI = r"""const fs = require('fs'), path = require('path');
 const SLICE = JSON.parse(fs.readFileSync(path.join(__dirname, '../xiyou_slice.json'), 'utf8'));
