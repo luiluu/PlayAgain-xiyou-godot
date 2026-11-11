@@ -56,10 +56,12 @@ CRASH_WAIT = 40
 RUN_PREFIX: list = []  # --arch x86_64 时是 ['arch', '-x86_64']
 CRASH_DIR = Path.home() / 'Library' / 'Logs' / 'DiagnosticReports'
 # (名字, 按键序列, 最后应在的场景或 None)。每组新开进程：新游戏后就离开标题了。
+# 天启篇开局（11-10 起）：新的游戏 → 选存档位（1 号）→ 选难度（第一档）→ 随机阵容（焦点在「重新随机」，down 到「就是他们了」）→ 地图；
+# 只按一下停在选存档位，三组新游戏会挂（平台 release450 2026-11-11）。
 KEY_RUNS = [
-    ('title_space_new_game', 'space', MAP),
-    ('title_j_new_game', 'j', MAP),
-    ('title_enter_new_game', 'accept', MAP),
+    ('title_space_new_game', 'space,space,space,down,space', MAP),
+    ('title_j_new_game', 'j,j,j,down,j', MAP),
+    ('title_enter_new_game', 'accept,accept,accept,down,accept', MAP),
     ('title_cancel_then_map_keys', 'cancel,x,k,down,up,z,wait:90,accept,space,j,accept,cancel,cancel,x,k,cancel,accept', None),
 ]
 
