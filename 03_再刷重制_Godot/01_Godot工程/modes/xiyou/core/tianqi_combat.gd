@@ -96,4 +96,4 @@ static func damage_mult(a, b) -> float:
 	var s := XState.current
 	if not on(s):
 		return 1.0
-	return float(dealt_parts(a, s).mult) * float(taken_parts(b, s).mult)
+	return float(dealt_parts(a, s).mult) * float(taken_parts(b, s).mult) * XTianqiHorsemen.taken_mult(b)  # 天启四骑士：混子减伤、嘲讽削伤
