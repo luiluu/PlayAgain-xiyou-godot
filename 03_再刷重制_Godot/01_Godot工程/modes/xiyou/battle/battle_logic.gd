@@ -1020,7 +1020,7 @@ func tianqi_swap(out: XActor) -> XActor:
 	return h
 
 
-## 审查 78 P3-1（O-待定·换人开战初始化）：换上来的助力位补上开战时出战成员才有的初始化——初始 TP（保留 TP 的不动）、技能预热、
+## 审查 78 P3-1（O-281）：换上来的助力位补上开战时出战成员才有的初始化——初始 TP（保留 TP 的不动）、技能预热、
 ## 开战状态标签（StartPushState 等）、种族本场数据（记此刻最大生命）。开战「battle」状态块与心钢蓄力在开战时已按全队（含助力位）做过，不重做。
 func _tianqi_enter(h: XActor) -> void:
 	var resources := _operation_resources(h)

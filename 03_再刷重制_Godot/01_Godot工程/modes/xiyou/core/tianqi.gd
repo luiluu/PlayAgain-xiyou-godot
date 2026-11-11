@@ -51,7 +51,7 @@ static var NO_RECRUIT := true
 static var NO_HEAVEN_GAZE := true
 ## 开关（O-268）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
 static var SWAP_IN_BATTLE := true
-## 开关（O-待定·换人开战初始化，审查 78 P3-1）：true＝换上来的助力位补开战初始化（初始 TP、预热、开战状态标签、种族本场数据）；
+## 开关（O-281，审查 78 P3-1）：true＝换上来的助力位补开战初始化（初始 TP、预热、开战状态标签、种族本场数据）；
 ## false＝照第二批，换上来什么都不补
 static var SWAP_INIT := true
 
