@@ -192,6 +192,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
+	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -243,6 +244,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiHorsemen.start(self)  # 天启四骑士：本线终焉（疫病）、开场援军和小怪
 	turn_start_logs.append_array(XTianqiHorsemen.take_logs(self))
 	turn_start_logs.append_array(XTianqiWarAlien.take_logs(self))
+	turn_start_logs.append_array(XTianqiQiyinRule.take_logs(self))  # 七印祭坛：开场报本印规则
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -634,6 +636,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		if a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(skill.stypeId)) and not XAlienBattle.silence_bypass(a, skill) and not XToji.switch_unsealed(a, skill):  # 甚尔：切换技能不受战技类别封印
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
+		return false
+	if not XTianqiQiyinRule.can_use(self, a, skill):  # 七印祭坛：寂静双数回合、限时用满时只能普攻、防御、用物品
 		return false
 	if XAlienBattle.sealed(self, a, skill):  # 异化蚀术 isSkillSealed 包装：被封印的技能
 		return false
@@ -1073,6 +1077,7 @@ func start_turn() -> void:
 	XGuyu.start_turn(turn)  # 谷雨 startTurn 包装：跑完原 startTurn 设回 turnCount
 	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
 	turn_start_logs.append_array(XTianqiHorsemen.start_turn(self))  # 天启四骑士：死期、神圣剑亮目标、援军、疫病、破盾
+	turn_start_logs.append_array(XTianqiQiyinRule.start_turn(self))  # 七印祭坛：献祭、星坠、寂静
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1091,6 +1096,9 @@ func decide(b: XBattler) -> Array:
 		var horse := XTianqiHorsemen.decide(self, b)  # 天启四骑士：骑士按阶段和计量出招，援军普攻，小怪不出手
 		if not horse.is_empty():
 			return horse
+		var hush := XTianqiQiyinRule.decide_enemy(self, b)  # 七印祭坛寂静：双数回合敌人只普攻
+		if not hush.is_empty():
+			return hush
 		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
 		if not cat.is_empty():
 			return XConfusion.prepare_enemy(b, cat)  # Game_Action.prepare：混乱类状态（restriction 1～3）的敌人行动换成普通攻击，行动选择的随机数照取
@@ -1109,6 +1117,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_over() or u.is_dead():
 		return logs
+	XTianqiQiyinRule.on_act(self, u, skill)  # 七印祭坛限时：记我方本回合放了几个技能
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
 	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
 	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
@@ -2351,6 +2360,8 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	if XTianqiHorsemen.crit_immune(dt):  # 天启四骑士：勇者暴击免疫
 		return 0.0
+	if XTianqiQiyinRule.no_crit(self):  # 七印祭坛魔塔：没有暴击
+		return 0.0
 	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
 		return 0.0
 	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
@@ -2730,6 +2741,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTianqiHorsemen.hp_damage(self, u, t, value)  # 天启四骑士：混子之盾累计、打混子记不服；疫病治疗 −50%
 	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
+	value = XTianqiQiyinRule.hp_damage(self, u, t, value)  # 七印祭坛：杀声、献祭、魔塔宝石
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -3076,13 +3088,15 @@ func _tick_states(b: XBattler, timing: int) -> void:
 		var s := XDB.rec("States", id)
 		if int(s.get("autoRemovalTiming", 0)) != timing or id == DEATH_STATE:
 			continue
+		if XTianqiQiyinRule.keeps_state(self, id):  # 七印祭坛不愈：减益不到期
+			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
 			_state_remove(b, id, true)
 			_state_change_if_remove(b, id)
 	if timing == 2:
 		for i in range(8):
-			if b.buff_turns[i] > 0:
+			if b.buff_turns[i] > 0 and not XTianqiQiyinRule.keeps_debuff(self, b.buffs[i]):  # 七印祭坛不愈：能力值减益不到期
 				b.buff_turns[i] -= 1
 				if b.buff_turns[i] == 0:
 					b.buffs[i] = 0
@@ -3119,7 +3133,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		if altered:
 			var other := floorf(b.mhp * hrg * b.rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
-	var dm := floorf(b.mmp * b.mrg)
+	var dm := floorf(b.mmp * b.mrg) if not XTianqiQiyinRule.no_regen(self) else 0.0  # 七印祭坛限时：魔法不恢复
 	var alien_hp := b.hp
 	if dh < 0.0 and XBinding.blocks_hp_loss(b):
 		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
@@ -3148,7 +3162,8 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
 		if b.mp > alien_mp and XAlienBattle.route_hollow_mp(b, b.mp - alien_mp):
 			b.mp = alien_mp  # 异化 regenerateMp 包装：空壳的回蓝变护盾
-	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)
+	if not XTianqiQiyinRule.no_regen(self):  # 七印祭坛限时：TP 不恢复
+		b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)
 
 
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
@@ -3356,6 +3371,7 @@ func end_battle(result := -1) -> void:
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XTianqiHorsemen.end(self)  # 天启四骑士：清本场的标记（疫病、识破等不带出战斗）
 	XTianqiWarAlien.end(self)  # 天启篇战争线异化：清本场异化
+	XTianqiQiyinRule.end(self, result)  # 七印祭坛：清本场规则；31～35 层野外打赢掉印钥
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
