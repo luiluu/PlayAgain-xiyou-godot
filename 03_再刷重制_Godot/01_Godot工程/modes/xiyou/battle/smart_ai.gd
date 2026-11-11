@@ -15,11 +15,14 @@ extends RefCounted
 ## - 角色档案 profile（v0.28 registerProfile，只读）：段数 hits 代替行动序列段数、倍率 multiplier、穿透 pierce（防御率＋穿透×(1−防御率)）、
 ##   单体技能的溅射 splash（其余敌人按期望伤害×溅射算伤害效用）、铺垫 followupSkill／setupActions（付完本技能代价后
 ##   用后续技能打分〔noSetup，不再铺垫〕，取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))）。
-##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
+##   另有领域类的 ongoingSkill／ongoingRounds（不在 noSetup 里时，对每个敌人加「后续技能期望伤害×回合数×0.8」的伤害效用，乘代价之前）、
+##   holdInLongFight（长战且不急需时 0 分）、铺垫后的角色视图 futureActor（重制写 future：没给 followupSkill 时在视图上
+##   把会的伤害技能逐个按 noSetup 打分取最高）、duration（铺垫后受益的行动数 span：max(本分, (本分＋后续×span)÷(铺垫次数＋span)×0.92×急需 0.6)）。
+##   登记顺序同原版：插件自带的那条（XSmartAIProfiles：黄泉、流萤、宿傩、渡鸦、米拉）、甚尔（XToji.ai_profile；估伤 10216～10219 走
+##   XToji.ai_damage）、云裳。O-131 o_profile_hits 见下；XSmartAIProfiles 另有两个开关。
 ## - 奈叶小魔炮（5692 只开六选一公共事件，自动战斗不能用）：会 5692 且能用时，候选里的 5703～5709 换成六档魔炮（不必学会、各自能用），
 ##   估伤按付费后的 MP 算公式、再 ×max(1, ⌊付前 MP×比例/2000⌋)（伤害后多段，见 XNanoha）。参照 nanoha3_probe ai.*。
-## - 没移植（chars-gaps3 对 v0.62.12 核过，角色都已在重制里，只是没接）：Codex_SmartBattleAI 自带的那条 registerProfile（黄泉 10172～10174、流萤 10622 的溅射，宿傩领域里神灶 10233 的 holdInLongFight、
-##      伏魔御厨子 10231 的 futureActor＋ongoingSkill 10237，渡鸦神话封解 10127 的 futureActor＋duration，米拉解放 10146 的 futureActor＋followupSkill 10151）。
+## - 角色的受控估算、boosts、暴击增量（米拉、渡鸦、黄泉、宿傩）：见 XSmartAIProfiles。没移植：镜流 10187～10193、饿狼 10250～10263 的估算分支（估伤仍为 0）。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
@@ -40,6 +43,8 @@ var logic: XBattleLogic
 var actor: XActor
 var context := {}
 var _damage_cache := {}
+var _view := 0  # 铺垫后的角色视图序号（原版每个视图是新对象，伤害缓存各记各的）；0＝本人
+var _views := 0
 
 
 func _init(l: XBattleLogic, a: XActor) -> void:
@@ -158,10 +163,20 @@ static func formula_safe(formula: String) -> bool:
 	return RegEx.create_from_string("(?:^|[^=!<>])=(?!=)|\\+\\+|--").search(s) == null
 
 
-## 角色档案（registerProfile 依次问，第一个非空的；重制有甚尔、云裳）
+## 角色档案（registerProfile 依次问，第一个非空的）：插件自带的那条、甚尔、云裳。
+## 自带那条对黄泉、流萤总返回对象（原版后面的就问不到）；O-待定 o_profile_chain 开时接着问，把溅射并进后面的结果
 static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
-	var p := XToji.ai_profile(a, rec)
-	return p if not p.is_empty() else XYunshang.ai_profile(a, rec)
+	var p := XSmartAIProfiles.profile(a, rec)
+	if not p.is_empty() and not (XSmartAIProfiles.o_profile_chain and XSmartAIProfiles.splash_only(a)):
+		return p
+	var q := XToji.ai_profile(a, rec)
+	if q.is_empty():
+		q = XYunshang.ai_profile(a, rec)
+	if p.is_empty() or q.is_empty():
+		return q if p.is_empty() else p
+	if not q.has("splash"):
+		q.splash = p.splash
+	return q
 
 
 const CANNON_SKILL := 5692
@@ -199,6 +214,8 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
 	elif (id == XHeartsteel.SKILL or id == XHeartsteel.LEV_SKILL) and _heartsteel_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XHeartsteel.ai_damage(a, t, id)  # 巨人吞噬：受控的估算函数
+	elif XSmartAIProfiles.raw(a, t, rec) != null:
+		value = float(XSmartAIProfiles.raw(a, t, rec))  # 米拉、渡鸦、黄泉、宿傩：受控的估算函数
 	elif XTusu.ai_raw(a, t, rec) != null:
 		value = float(XTusu.ai_raw(a, t, rec))  # CodexAIEstimators：屠苏的武装、支援、本体技能（超强者持武的武装技能 0）
 	elif XLiuying.ai_raw(a, t, rec) != null:
@@ -231,7 +248,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
 	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
-	var extra := float(p.get("multiplier", 1.0))
+	var extra := float(p.get("multiplier", 1.0)) * XSmartAIProfiles.boosts(a, rec)
 	if type == 1 and a is XActor:
 		extra *= maxf(0.0, 1.0 + float(a.passive_cache().get("globalHarmRi", 0.0)))
 	var balance := 0.01 if a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
@@ -239,7 +256,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 
 
 func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
-	var key := "%s|%d|%d|%f|%f|%f" % [str(a.get_instance_id()), t.get_instance_id(), int(rec.id), a.hp, a.mp, t.hp]
+	var key := "%s|%d|%d|%f|%f|%f|%f|%d" % [str(a.get_instance_id()), t.get_instance_id(), int(rec.id), a.hp, a.mp, t.hp, a.tp, _view]
 	if _damage_cache.has(key):
 		return _damage_cache[key]
 	var damage := safe_damage(a, t, rec)
@@ -247,7 +264,7 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
 		var crit := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # 原版 action.itemCri(target)：整条包装链（甚尔、critPush、暴击下限等）
-		v = damage * hit * (1.0 + crit * 0.5)
+		v = damage * XSmartAIProfiles.expected_rate(a, rec) * hit * (1.0 + crit * (0.5 + XSmartAIProfiles.crit_bonus(a, rec)))
 	_damage_cache[key] = v
 	return v
 
@@ -478,35 +495,56 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 			if r.hitDamage > 0.0:
 				weighted += damage_utility(targets[i], r.hitDamage * n * w, ctx.foes, ctx)
 		score = weighted * 0.9
+	if p.has("ongoingSkill") and not ctx.get("noSetup", false):
+		var ongoing := XDB.rec("Skills", int(p.ongoingSkill))
+		for t in (ctx.foes if not ongoing.is_empty() else []):
+			score += damage_utility(t, expected_damage(actor, t, ongoing) * float(p.get("ongoingRounds", 1)) * 0.8, ctx.foes, ctx)
 	score *= cost_multiplier(rec, item)
+	if p.get("holdInLongFight", false) and ctx.longFight and not ctx.urgent:
+		score = 0.0
 	if not item and not ctx.longFight and has_cooldown(rec):
 		score *= 0.94
-	if not ctx.get("noSetup", false) and p.has("followupSkill"):
-		score = maxf(score, (score + _followup_score(rec, int(p.followupSkill), ctx)) \
-			/ maxf(1.0, float(p.get("setupActions", 1)) + 1.0) * 0.92 * (0.6 if ctx.urgent else 1.0))  # duration 缺省 1
+	if not ctx.get("noSetup", false) and (p.has("followupSkill") or p.has("future")):
+		var steps := maxf(1.0, float(p.get("setupActions", 1)) + 1.0)
+		var span := maxf(1.0, float(p.get("duration", 1)))
+		score = maxf(score, (score + _followup_score(rec, p, ctx) * span) / (steps - 1.0 + span) * 0.92 * (0.6 if ctx.urgent else 1.0))
 	var out := {"score": score, "target": null if for_all(d) or random else best.target}
 	if p.has("prepareTarget"):
 		out.prepare = p.prepareTarget.bind(best.target, ctx, self)  # 选中这个候选时再记（原版记在各候选自己的 action 上）
 	return out
 
 
-## 铺垫后的后续技能分：付完本技能的 MP／TP／HP 代价（原版 Object.create 出的 future）后，后续技能按 noSetup 打分；不是伤害技能记 0
-func _followup_score(rec: Dictionary, follow_id: int, ctx: Dictionary) -> float:
-	var follow := XDB.rec("Skills", follow_id)
-	if not int(follow.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
-		return 0.0
+## 铺垫后的后续技能分：付完本技能的 MP／TP／HP 代价（原版 Object.create 出的 future）后按 noSetup 打分。
+## 档案给了 followupSkill 就只算它（不查能不能用）；没给（只有铺垫后的角色视图 future）就在视图上把会的、能用的伤害技能逐个算，取最高。
+## 不是伤害技能不算
+func _followup_score(rec: Dictionary, p: Dictionary, ctx: Dictionary) -> float:
 	var c := logic.skill_cost(actor, rec)
-	var saved := [actor.hp, actor.mp, actor.tp]
-	actor.mp = maxf(0.0, actor.mp - float(c.mp))
-	actor.tp = maxf(0.0, actor.tp - float(c.tp))
-	actor.hp = maxf(1.0, actor.hp - float(XBattleLogic.skill_hp_cost(actor, rec)))
+	var hp_cost := float(XBattleLogic.skill_hp_cost(actor, rec))
+	var saved := [actor.hp, actor.mp, actor.tp, _view]
+	var token := XSmartAIProfiles.enter(actor, str(p.future)) if p.has("future") else {}
+	actor.mp = maxf(0.0, saved[1] - float(c.mp))
+	actor.tp = maxf(0.0, saved[2] - float(c.tp))
+	actor.hp = maxf(1.0, saved[0] - hp_cost)
+	_views += 1
+	_view = _views
 	var sub := ctx.duplicate()
 	sub.noSetup = true
-	var r := score_candidate(follow, false, sub)
+	var best := 0.0
+	if p.has("followupSkill"):
+		var follow := XDB.rec("Skills", int(p.followupSkill))
+		if int(follow.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
+			best = maxf(best, float(score_candidate(follow, false, sub).score))
+	else:
+		for s in actor.skills():
+			if int(s.get("damage", {}).get("type", 0)) in [1, 2, 5, 6] and legal(s, false):
+				best = maxf(best, float(score_candidate(valued(s, false), false, sub, directed(s, false)).score))
+	if not token.is_empty():
+		XSmartAIProfiles.leave(token)
 	actor.hp = saved[0]
 	actor.mp = saved[1]
 	actor.tp = saved[2]
-	return maxf(0.0, float(r.score))
+	_view = saved[3]
+	return best
 
 
 func _choose(cannon_only := false) -> Dictionary:
