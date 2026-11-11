@@ -353,7 +353,7 @@ func _extra() -> void:
 		and v1.options.map(func(o): return o.label) == v2.options.map(func(o): return o.label), [roll, v1, v2])
 	var done := XZhenqi.menu(back2, v2.options[0].next)
 	check("daofa_roll_cleared", not back2.actor(1).zhenqi.has("pendingDaofaRoll") and back2.actor(1).zhenqi.spec.get("benming") == 2 and not done.is_empty(), back2.actor(1).zhenqi)
-	# 回退 XZhenqi.V045 = false（O-待定·真气 v0.45）：回到 v0.28——掷出的道法不保留、没有翻页与「稍后再选」，神兵列表不分页
+	# 回退 XZhenqi.V045 = false（O-310·真气 v0.45）：回到 v0.28——掷出的道法不保留、没有翻页与「稍后再选」，神兵列表不分页
 	XZhenqi.V045 = false
 	_fresh()
 	var c := s.actor(1)

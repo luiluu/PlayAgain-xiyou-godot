@@ -35,7 +35,7 @@ static func can_grow(gear: Dictionary, materials: Array, start: int, length: int
 
 ## RW.decide：刚做成的配方若是更长配方的开头、剩余孔位还够，先挂起（runewordPending 随装备存档）；
 ## 下一颗没接上更长配方、或孔用完时，结算挂起的那条
-## O-待定·符文之语挂起（跟到 v0.62.12）：false＝回到 v0.28，做成就结算（RW.match）
+## O-308·符文之语挂起（跟到 v0.62.12）：false＝回到 v0.28，做成就结算（RW.match）
 static var PENDING_V062 := true
 static func decide(gear: Dictionary, materials: Array) -> Dictionary:
 	var best := match_recipe(gear, materials)
