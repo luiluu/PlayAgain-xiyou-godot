@@ -3,7 +3,7 @@
   "draft": true,
   "source": "天启篇_七印祭坛_里副本套装毕业武器方案 v0.4 第 2.1、2.2、3、6.5 节（Kyo 2026-11-11 定自选＋躁动、印钥门票；11-12 定掉落）",
   "_note": "七印祭坛的流程表（XTianqiQiyin／XTianqiQiyinRule），只读。祭坛入口、揭印条件、七个里副本借的图和敌群、七条规则的参数、台词。掉落几率在 qiyin_drop.json（XTianqiQiyinDrop），装备数据在 qiyin_gear.json。里副本的敌人一律按参照敌人（rebase.ref）重标能力值，外观和行动照借的敌人；倍率、印钥起手数都是测试参数。台词设计稿只给了小小鱼一句，其余 cc 起草，Kyo 想改直接改这张表。数字避开 4（层号、地图号、敌群号、敌人号、坐标、事件号照实写）。",
-  "nice_number_exempt": ["version", "map", "event", "pos", "troop", "troops", "enemy", "ref", "floor", "floors", "after_floor", "order", "every_turns", "silence_on"],
+  "nice_number_exempt": ["version", "map", "event", "pos", "troop", "troops", "enemy", "ref", "floor", "floors", "after_floor", "order", "every_turns", "silence_on", "field_maps"],
   "altar": {
     "_note": "祭坛借 19 层副本的古龙祭坛（Map054）换色调；坐标是从 19 层进祭坛的落点。",
     "map": 54,

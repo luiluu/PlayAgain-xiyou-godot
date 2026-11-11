@@ -188,7 +188,7 @@ static func scene(key: String) -> Array:
 
 static func _line(row: Array, args := []) -> String:
 	var text := str(row[1])
-	if not args.is_empty():
+	if not args.is_empty() and text.contains("%"):
 		text = text % args
 	return text if str(row[0]) == "" else "\\n<%s>%s" % [row[0], text]
 
@@ -543,7 +543,7 @@ static func equip_ready() -> bool:
 
 ## 31～35 层的一场普通战斗打赢：精英、守护者、守层者必掉，别的 field_chance。返回掉了几把
 static func field_drop(s: XState, map_id: int, troop_name: String, rng: XRandomStream = null) -> int:
-	if not allowed(s) or _at != "" or not data().keys.field_maps.has(map_id):
+	if not allowed(s) or _at != "" or not data().keys.field_maps.any(func(m): return int(m) == map_id):
 		return 0
 	var n := 0
 	for tag in data().keys.sure_tags:
