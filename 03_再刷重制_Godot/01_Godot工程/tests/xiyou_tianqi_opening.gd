@@ -136,10 +136,11 @@ func _opening() -> void:
 	_check("party", s.party == lineup, s.party)
 	_check("dao_hao", s.actor_name == "测试道号", s.actor_name)
 	_check("slot", s.fixed_save_slot() == 3 and XSave.exists(3), [s.fixed_save_slot(), XSave.exists(3)])
-	_check("difficulty", s.difficulty == 4 and s.switch(2490) and s.switch(2500) and s.flags.get("DCultyL4") == true, [s.difficulty, s.flags])
+	# 第三批（XTianqi.UNIFIED_LEGACY）：五档在数值上都按艰险跑，开局一律走原版普通（3）分支；九死与普通的差别只来自数值表
+	_check("difficulty", s.difficulty == 3 and s.switch(2491) and not s.switch(2490) and not s.switch(2500) and s.flags.get("DCultyL3") == true, [s.difficulty, s.flags])
 	_check("switches", s.switch(682) and s.switch(14) and s.switch(15) and s.switch(166) and int(s.variable(20)) == 1)
 	_check("no_sect", not s.switch(2301) and not s.switch(2302) and not s.switch(2303) and not s.switch(2307))
-	_check("items", s.item_count(4) == 1 and s.item_count(2896) == 1 and s.item_count(10) == 0 and s.item_count(1395) == 1,
+	_check("items", s.item_count(4) == 1 and s.item_count(2896) == 1 and s.item_count(10) == 0 and s.item_count(1395) == 0,
 		[s.item_count(4), s.item_count(2896), s.item_count(10), s.item_count(1395)])
 	_check("first_slot_skills", s.actor(lineup[0]).skill_ids.has(2571) and s.actor(lineup[0]).skill_ids.has(2786))
 	_check("init_events_ran", s.switch(1561) and range(1694, 1700).any(func(id): return s.switch(id)))
