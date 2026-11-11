@@ -49,6 +49,16 @@ class ClassifyTests(unittest.TestCase):
                 f.unlink()
             self.assertEqual(M.classify(Path(d))[0], 'full')
 
+    def test_gdignore_dir_not_counted(self):
+        # 安卓构建模板 android/build 带 .gdignore，里面自带的 icon.svg.import 不归 Godot 导入（平台 release450 发现出包被它挡住）
+        with tempfile.TemporaryDirectory() as d:
+            project(Path(d), 4, 4)
+            tpl = Path(d) / 'android' / 'build' / 'src' / 'assets'
+            tpl.mkdir(parents=True)
+            (Path(d) / 'android' / 'build' / '.gdignore').write_text('', encoding='utf-8')
+            (tpl / 'icon.svg.import').write_text('path="res://.godot/imported/icon.svg-x.ctex"\n', encoding='utf-8')
+            self.assertEqual(M.classify(Path(d)), ('normal', 0, 4))
+
     def test_cli_prints_one_line(self):
         import subprocess, sys
         with tempfile.TemporaryDirectory() as d:
