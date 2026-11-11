@@ -1,7 +1,7 @@
 {
  "version": 1,
  "source": "天启篇词条重构设计稿 v0.3",
- "dev": "dev.待定",
+ "dev": "dev.451",
  "_note": "来源：天启篇词条重构设计稿 v0.3；数值全用整数（Kyo 2026-11-11 01:21）。只读数据；每阶三种成色的值由 XTianqiAffixTable 按层的 tier_start 和一排 values 算出，这里不展开。概率写成 0～1 的小数，词条数值单位见 unit。",
  "digit_check_exempt": [
   "version",
