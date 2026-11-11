@@ -1,0 +1,100 @@
+{
+ "version": 1,
+ "draft": true,
+ "source": "七印祭坛方案 v0.4，Kyo 11-12 定稿",
+ "dev": "dev.待定",
+ "_note": "七印祭坛里副本的掉落表，只读（XTianqiQiyinDrop）。来源：七印祭坛方案 v0.4，Kyo 11-12 定稿（设计仓库 重制设定/天启篇_七印祭坛_里副本套装毕业武器方案_v0.4.md 第 2.1、2.2、6.2～6.4、6.5 节，测算 数值测算/套装凑齐.py）。几率都写小数（0.05＝5%）。本表只管掉什么、掉几件、印屑多少；还没接进战斗结算、存档、界面。",
+ "nice_number_exempt": ["version"],
+ "seals": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],
+ "parts": ["head", "body", "hands", "waist", "legs", "feet"],
+ "weapon_classes": {
+  "_note": "每印的毕业武器类型（方案 5.3 节，原版 12 类）；默印「不立文字」是 12 类随机。名字和数据层的武器键怎么对上由接入的车道定。",
+  "bai": ["弓弩", "暗器"],
+  "hong": ["剑", "斧"],
+  "hei": ["枪械", "拳套"],
+  "hui": ["太刀", "匕首"],
+  "xun": ["钝器", "矛"],
+  "zhen": ["法杖", "书"],
+  "mo": ["弓弩", "暗器", "剑", "斧", "枪械", "拳套", "太刀", "匕首", "钝器", "矛", "法杖", "书"]
+ },
+ "elite": {
+  "_note": "里副本前两场精英：不掉套装件，每场按这个几率给 1 个印屑。直取（只打 Boss）时不打这两场、不给。",
+  "fights": 2,
+  "shard_chance": 0.33,
+  "shards": 1
+ },
+ "boss_set": {
+  "_note": "里副本 Boss 掉本印套装件：base 起，每空一次加 step（暗），掉了归零；连空 pity_misses 次后下一次必掉。每印各记各的空次数。掉了以后 chain 的几率再掉 1 件，最多 max_pieces 件。没掉给 miss_shards 个印屑。部位随机，已有部位权重乘 owned_part_weight。",
+  "base": 0.05,
+  "step": 0.02,
+  "pity_misses": 20,
+  "chain": 0.1,
+  "max_pieces": 3,
+  "miss_shards": 1,
+  "owned_part_weight": 0.5
+ },
+ "boss_weapon": {
+  "_note": "里副本 Boss 掉本印毕业武器（本印的类型里随机一类）。同一印连续 pity_misses 次没掉，下一次必掉。",
+  "chance": {"xunchang": 0.03, "jianxian": 0.05, "jiusi": 0.06, "lianyu": 0.08, "zhengdao": 0.1},
+  "pity_misses": 20
+ },
+ "true_seal": {
+  "_note": "每件套装件、每把毕业武器掉落时单独掷。全局连续 pity_misses 件没出真印，下一件必是真印。不吃物品掉落加成。",
+  "chance": {"xunchang": 0.05, "jianxian": 0.1, "jiusi": 0.15, "lianyu": 0.2, "zhengdao": 0.3},
+  "pity_misses": 30
+ },
+ "grades": {
+  "_note": "成色：每条词条单独掷；真印的词条全是 true_grade。本表只出成色，不掷具体词条。",
+  "slots": 3,
+  "weights": {"putong": 0.5, "shangpin": 0.3, "ji": 0.2},
+  "true_grade": "ji"
+ },
+ "first_clear": {
+  "_note": "某印里副本 Boss 第一次打赢，再给这么多件本印套装件（部位随机，已有部位减半）。",
+  "set_pieces": 1
+ },
+ "floor_first_kill": {
+  "_note": "31～35 层守层者首杀，必掉它揭开的那几印的套装件各 1 件。默印不靠楼层揭开（前六印 Boss 都打过）。",
+  "31": ["bai", "hong"],
+  "32": ["hei"],
+  "33": ["hui"],
+  "34": ["xun"],
+  "35": ["zhen"]
+ },
+ "field": {
+  "_note": "31～35 层野外（层号同 floor_first_kill 的键）：精英、守护者按这个几率掉 1 件随机印（只在已揭开的印里抽）的套装件。",
+  "elite": 0.005,
+  "guardian": 0.03
+ },
+ "artifact": {
+  "_note": "里副本 Boss 每次按这个几率掉一件神器，五件里随机一件。不随难度变、没有保底、不吃物品掉落加成。",
+  "chance": 0.001,
+  "keys": ["bow_crown", "great_sword", "scales", "grey_scythe", "seven_seal_scroll"]
+ },
+ "restless": {
+  "_note": "每进 every_enters 次里副本（任何印都算），在已揭开的印里随机抽一印躁动，不连抽同一印。打赢躁动的那一印：真印几率乘 true_mult（按本档难度），Boss 套装件当次几率乘 set_mult；打赢一次就平息。",
+  "every_enters": 3,
+  "true_mult": 2,
+  "set_mult": 2
+ },
+ "offering": {
+  "_note": "进副本前二选一。shards：花 cost 个印屑指定一个部位，这一次 Boss 掉套装件的话第一件必是这个部位，没掉退 refund 个。weapon：献一把本印毕业武器，这一次毕业武器几率乘 chance_mult，掉的话必是同类。",
+  "shards": {"cost": 5, "refund": 3},
+  "weapon": {"count": 1, "chance_mult": 2}
+ },
+ "melt": {
+  "_note": "同印同部位的两件（武器要同类），副件挑一条词条换到主件，副件消失。真印只能和真印熔。",
+  "cost": 3
+ },
+ "dismantle": {
+  "_note": "分解给的印屑；真印乘 true_mult。",
+  "set": 2,
+  "weapon": 10,
+  "true_mult": 5
+ },
+ "exchange": {
+  "_note": "印屑兑换：set 个换一件随机部位的本印套装件（封着的）；weapon 个换一把自选流派（印）的毕业武器，类型在该印里随机。",
+  "set": 20,
+  "weapon": 100
+ }
+}
