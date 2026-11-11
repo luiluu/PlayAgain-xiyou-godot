@@ -242,6 +242,7 @@ want tools && { if python3 "$ENV_DIR/测试状态js翻译.py" >/dev/null 2>&1; t
 want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试发布补丁.py"; then ok "发布补丁工具（清单、签名、两次提交）"; else bad "发布补丁工具回归失败，单跑 07_开发环境/测试发布补丁.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试导出冒烟.py" >/dev/null 2>&1; then ok "导出冒烟工具（结果解析与报告）"; else bad "导出冒烟工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/null 2>&1; then ok "切场景后调用扫描工具"; else bad "切场景后调用扫描工具回归失败，单跑 07_开发环境/测试切场景后调用扫描.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试临时探针.py" >/dev/null 2>&1; then ok "临时探针车道标签、clone 里 --补齐 转用主工作区脚本"; else bad "临时探针工具回归失败，单跑 07_开发环境/测试临时探针.py 看详情"; fi; }
