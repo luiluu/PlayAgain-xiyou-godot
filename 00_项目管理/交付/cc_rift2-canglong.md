@@ -1,7 +1,7 @@
 # 交付：cc/rift2-canglong
 
 - 车道／工作者：A 内容·大厅＋C 规则·角色／项目线程「漩涡二阶段＋苍龙破晓实装」（cc，本机 Mac）
-- 状态：进行中
+- 状态：可合并
 - 分道：快车道（不碰切片、转换器、参照探针；Map004 在 XDB.map 读入时就地改）
 
 依据：分支 `claude/project-thread-rapszm` 的方案交付单（第三节、三之二、第四节；Kyo 的 8 个小问题按草案默认），`cc/pro-canglong-numbers` 的数值表 v0.3（五招都乘真龙之力），Kyo 11-11 定的习得等级与「整体对标 0.8 倍狂刀」。
@@ -46,7 +46,15 @@
 
 - 新专项 `xiyou_rift2_canglong`：83 项全过（三个开关各开、关一组；关掉后 Map004、Skills、Classes、Armors 与转换产物逐项相同）。
 - `xiyou_hidden_actors` 26／26（按原版比的一段先关解放开关，末尾开着加查图鉴少 6 名、仓库列出 146）。
-- 选测：待写（在跑）
+- 选测（本机，`并行测试.py`，并行 2）：第一轮 70 个场景（`选测.py` 结论整轮，按影响面手挑：改动文件引用到的专项、事件对照四段、智能 AI 全部、`xiyou_determinism` 等）挂 19 个，原因两类：① rift1 看过的档进大厅会播 rift2 过场，占住大厅的测试（flow、hud、transfer、walk_speed、guide、map_dispatch、pause_save、screen_fx、floor_run）——`TestEnv.isolate` 和 9 个直接 `whisper_mark("rift1")` 的专项一并记 rift2；② 按原版比的参照测试碰到苍龙数据、Map004 或号角 274（event_compare 四段、actor_book、baby_all_actors、imported_balance、item_use、map132_shop、shop_buy）——在 `_ready` 调 `XCanglong.original_data()` 三个开关全关，同样处理了 xiyou_rules、actor_p0、help_card、action_sequence、formula_program、json_cache、map。
+- 第二轮 29 个场景（上面挂的 19 个＋原版参照几组＋本专项）全部通过；`RULES_ONLY_ACTORS=146` 跑 `xiyou_rules*` 65 段全部通过；`工具回归.py` 全过；`语法检查.py` 通过。
+- 合进 main（含 cc/lobby-corruption）后：`xiyou_lobby_corruption` 一项「rift2 播过前不见鳞」因 TestEnv 默认记 rift2 而挂，改成该专项开头去掉 rift2、关 `XRift.STAGE2`（它的阶段由 `STAGE_OVERRIDE` 指定），之后与 rift2_canglong、hidden_actors、guide、hangup_options、map_dispatch 一起重跑全过。
+- 没跑：全量；`xiyou_rules*` 只跑了 146（别的角色的数据没动）。
+
+## 待交叉核查（改到的共用核心文件）
+
+- `core/xdb.gd`（Skills／Classes／Armors／Map 读入时打补丁、`img_path` 加 `content/rift/` 兜底）、`core/formula_execution.gd`（模块 canglong 一支）、`map/map_scene.gd`（进图计数、keepEvents 放行 201～204）、`core/xconfig.gd`（虚拟键 `rift1@thisvisit`、mark 通知）、`core/imported_balance.gd`、`core/item_marks.gd`（两处号角判断）、`map/mv_script.gd`（破阵名单「停用」）、`core/baby_all_actors.gd`。
+- 别的车道的测试：`tests/xiyou_lobby_corruption.gd` 开头三行（见上）。
 
 ## 变更记录草稿
 
@@ -88,3 +96,6 @@
 - a4362df8d 漩涡二阶段、苍龙重做与解放初版
 - 86f895e98 专项 xiyou_rift2_canglong
 - 9185bc03b 隐藏角色专项改法；原版复核脚本
+- bd9d3d814 原版参照测试关三个开关（`XCanglong.original_data`）
+- e3400b4cd 测试记 rift2 看过
+- （合并 main）、（本提交）大厅异化专项去 rift2、交付单可合并

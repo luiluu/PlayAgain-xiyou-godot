@@ -96,6 +96,11 @@ func event_digest(map: XMapScene) -> String:
 
 func _run() -> void:
 	TestEnv.isolate("xiyou_lobby_corruption")
+	# 本专项要「rift2 还没播」的大厅：TestEnv 默认把 rift2 记成看过，这里去掉；漩涡二阶段的地图补丁（XRift.STAGE2，含 rift2 过场 EV203）关掉，
+	# 免得过场占住大厅（阶段由 STAGE_OVERRIDE 指定，落点仍读 XRift.canglong_drop_cell）
+	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	XRift.STAGE2 = false
+	XRift.clear_cache()
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 
