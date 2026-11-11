@@ -52,7 +52,9 @@
 - 新专项 `xiyou_smart_ai_profile`：882/882（云端容器，Godot 4.7.2，产物取 `refs/ci/generated/main`）。
 - 参照探针：`XIYOU_APP=<v0.62.12 app.nw> node smart_ai_profile_probe.cjs`，8 段 0 错误。
 - 必跑项：`探针登记检查.py` 通过；`回退开关覆盖.py` 通过（两个新开关登记后要认的「恢复方法」赋值，专项里都有）；`工具回归.py` 其余全过，只有上面说的「选测替身」一项因云端环境失败（未改动的 main 同样失败）。`语法检查.py` 在云端跑不了自带的 `godot --import`（脚本写死 Mac 的 Godot.app），解析由专项和云端选测的加载代替。
-- 云端选测（GitHub Actions，基准 origin/main，30 个场景，含 `xiyou_event_compare` 四片、`xiyou_smart_ai` 十六片、`xiyou_mira_battle`、`xiyou_toji_battle`、`xiyou_yunshang`、`xiyou_target_eval`）：待写。
+- 云端选测（GitHub Actions，提交 cdcf8130，基准 origin/main 分叉点 e0b24ea0）：30 个场景全过，0 回归。含战斗对照 `xiyou_event_compare` 四片、`xiyou_smart_ai` 十六片、`xiyou_mira_battle`、`xiyou_mira_abyss`、`xiyou_toji_battle`、`xiyou_yunshang`、`xiyou_target_eval`、`xiyou_heartsteel`、`xiyou_nanoha`、`xiyou_actor_looks`、`xiyou_actor_modules`。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43045671034 。cdcf8130 之后只改了注释里的优化号占位和交付单。
+- 反向验证：把黄泉 10174 的溅射改成 0.6、渡鸦持续回合改成 2，专项掉 21 项（档案、分数、候选都报），改回后 882/882。
+- 交付自检：按云端车道（本机没有自己同步的产物）对 origin/main e0b24ea0 试合并通过，分道是慢车道（新增了一个 mv_oracle 探针文件；探针不进同步名单，只有夹具）。Mac main 比 GitHub main 新，试合并没覆盖那几个提交，`smart_ai.gd` 如有冲突请告诉本线程。
 
 ## 待交叉核查
 
