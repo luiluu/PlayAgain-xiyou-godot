@@ -1,6 +1,6 @@
 # 时空漩涡二阶段素材
 
-接入代码 `modes/xiyou/core/rift.gd`（`XRift`，O-待定），回退开关 `XRift.STAGE2 = false`。地图读图走 `XDB.img_path`：转换产物里没有的，再到 `content/rift/` 找同名文件。
+接入代码 `modes/xiyou/core/rift.gd`（`XRift`，O-待定·漩涡二阶段），回退开关 `XRift.STAGE2 = false`。地图读图走 `XDB.img_path`：转换产物里没有的，再到 `content/rift/` 找同名文件。
 
 | 文件 | 来历 | 尺寸 | 处理 |
 | --- | --- | --- | --- |

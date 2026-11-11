@@ -72,9 +72,9 @@
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定 | `modes/xiyou/core/rift.gd` `XRift.STAGE2`（`patch_map`，Map004；`map_scene.gd` 两行、`xconfig.gd` 两行、`xdb.gd` `img_path`） | v0.62.12 大厅时空漩涡只有一阶段（EV75～77、rift1 甩出流萤） | 漩涡二阶段：两格宽新图、转速加倍、新调查文字、左右挡路，rift2 过场甩出苍龙破晓（新事件 201～204） | Kyo 11-11 定整包出漩涡二阶段（时空裂缝方案 v0.7） | `XRift.STAGE2 = false` 后 `XRift.clear_cache()` | cc | 保留 |
-| O-待定 | `modes/xiyou/core/imported_balance.gd` `XImportedBalance.RELEASE_CANGLONG`（`released_actor`、`horn_id_disabled`） | 146 苍龙破晓 v0.30 起停用并隐藏，号角 274 不卖不能用 | 解放 146：不停用不隐藏，号角 274 回兑换大厅号角商店，超强者门槛照旧 | Kyo 11-11 定解放苍龙破晓，由漩涡二阶段引出 | `XImportedBalance.RELEASE_CANGLONG = false` | cc | 保留 |
-| O-待定 | `modes/xiyou/core/canglong.gd` `XCanglong.REWORK`（`patch_skills`／`patch_classes`／`patch_armors`、公式模块 canglong） | 苍龙只学到一个主动招，诛灭乘别人的除魔值恒为 0；10093～10096 学不到；说明里真龙之力指错变量、【上邪】写成云无迹 | 五招按 10／20／30／50／60 级习得，公式重定并乘真龙之力 1＋等级²×2%（不封顶），逐道加冷却 3，玉玺去武器限制，文字更正；70 级木桩 0.8 倍狂刀 | Kyo 11-11 定强度 0.8 倍狂刀、习得等级与真龙之力 | `XCanglong.REWORK = false` 后 `XCanglong.clear_cache()` | cc | 保留 |
+| O-待定·漩涡二阶段 | `modes/xiyou/core/rift.gd` `XRift.STAGE2`（`patch_map`，Map004；`map_scene.gd` 两行、`xconfig.gd` 两行、`xdb.gd` `img_path`） | v0.62.12 大厅时空漩涡只有一阶段（EV75～77、rift1 甩出流萤） | 漩涡二阶段：两格宽新图、转速加倍、新调查文字、左右挡路，rift2 过场甩出苍龙破晓（新事件 201～204） | Kyo 11-11 定整包出漩涡二阶段（时空裂缝方案 v0.7） | `XRift.STAGE2 = false` 后 `XRift.clear_cache()` | cc | 保留 |
+| O-待定·解放苍龙 | `modes/xiyou/core/imported_balance.gd` `XImportedBalance.RELEASE_CANGLONG`（`released_actor`、`horn_id_disabled`） | 146 苍龙破晓 v0.30 起停用并隐藏，号角 274 不卖不能用 | 解放 146：不停用不隐藏，号角 274 回兑换大厅号角商店，超强者门槛照旧 | Kyo 11-11 定解放苍龙破晓，由漩涡二阶段引出 | `XImportedBalance.RELEASE_CANGLONG = false` | cc | 保留 |
+| O-待定·苍龙重做 | `modes/xiyou/core/canglong.gd` `XCanglong.REWORK`（`patch_skills`／`patch_classes`／`patch_armors`、公式模块 canglong） | 苍龙只学到一个主动招，诛灭乘别人的除魔值恒为 0；10093～10096 学不到；说明里真龙之力指错变量、【上邪】写成云无迹 | 五招按 10／20／30／50／60 级习得，公式重定并乘真龙之力 1＋等级²×2%（不封顶），逐道加冷却 3，玉玺去武器限制，文字更正；70 级木桩 0.8 倍狂刀 | Kyo 11-11 定强度 0.8 倍狂刀、习得等级与真龙之力 | `XCanglong.REWORK = false` 后 `XCanglong.clear_cache()` | cc | 保留 |
 
 ## 交接板
 

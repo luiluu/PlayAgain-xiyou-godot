@@ -32,7 +32,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _ready() -> void:
-	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（O-待定）关掉，新行为由 xiyou_rift2_canglong 核
+	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	_run.call_deferred()
 
 

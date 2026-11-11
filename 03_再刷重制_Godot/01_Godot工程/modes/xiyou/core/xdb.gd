@@ -109,7 +109,7 @@ static func table(name: String) -> Variant:
 		_tables[name] = load_json("db/%s.json" % name)
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
-			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-待定，开关 XCanglong.REWORK）
+			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-待定·苍龙重做，开关 XCanglong.REWORK）
 		if name == "Classes":
 			XCanglong.patch_classes(_tables[name])
 		if name == "Armors" and _tables[name] is Array:
@@ -146,7 +146,7 @@ static func map(map_id: int) -> Dictionary:
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
-		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-待定，开关 XRift.STAGE2）
+		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-待定·漩涡二阶段，开关 XRift.STAGE2）
 	return _tables[key] if _tables[key] != null else {}
 
 

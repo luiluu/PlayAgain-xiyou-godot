@@ -3,7 +3,7 @@ extends Node
 ## installIntegratedV029Runtime 隐藏 7 名（141、146、152、157、160、161、166）在角色仓库列表与人物图鉴目录里不出现。
 ## 出战栏：原版量具 actor_sv_real.cjs 设 _actors=[id] → initializeBattleMembers 后 141／146／152／161／166 不在出战栏（被 migrateParty 挪走），
 ## 重制 add_actor 拦停用角色，两边一致。开关 XImportedBalance.V029_HIDE_ACTORS（O-299）开、关各一组。
-## 解放苍龙破晓（XImportedBalance.RELEASE_CANGLONG，O-待定）会让 146 不停用、不隐藏：按原版比的这一段先关掉它，末尾开着再查一次（细项在 xiyou_rift2_canglong）。
+## 解放苍龙破晓（XImportedBalance.RELEASE_CANGLONG，O-待定·解放苍龙）会让 146 不停用、不隐藏：按原版比的这一段先关掉它，末尾开着再查一次（细项在 xiyou_rift2_canglong）。
 var passed := 0
 var total := 0
 

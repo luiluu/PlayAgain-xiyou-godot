@@ -29,7 +29,7 @@ static func is_hidden_actor(id: int) -> bool:
 	return V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id) and not released_actor(id)
 
 
-## 【cc·未经审查】解放苍龙破晓（Kyo 11-11，O-待定）：开关开着时 146 不算停用、不隐藏，号角 274 不算停用号角
+## 【cc·未经审查】解放苍龙破晓（Kyo 11-11，O-待定·解放苍龙）：开关开着时 146 不算停用、不隐藏，号角 274 不算停用号角
 ## （回到兑换大厅号角商店，Map132 EV16 本来就有这一行）。招募照旧走 CE2506（入队、送法宝【上邪】），超强者门槛照旧。
 ## 名单常量不动（参照测试按原版比），凡是判断停用／隐藏的地方都改问下面几个函数。RELEASE_CANGLONG = false 回原版。
 static var RELEASE_CANGLONG := true
