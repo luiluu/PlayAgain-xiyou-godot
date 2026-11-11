@@ -58,14 +58,23 @@ static func _toast(logic, text: String) -> void:
 	XToast.show_text(text)
 
 
-## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制保持开启。
-## HIDDEN_V058＝true 时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、工坊打不开（O-283，默认 false）。
-## 还没跟的另外三件（物品不可得／不可见／不可装备、商店、读档把异化实例还原成普通装备）见优化登记 O-283。
+## 正式 v0.58 installAlienationHide 把异化整套隐藏（遭遇、奖励、工坊、六件物品、读档还原）；Kyo 11-05 定重制开发版保持开启。
+## 隐藏生效（hidden()）时照 v0.58：A.setupEncounter／A.encounter 返回 null、A.grant 返回 false、主菜单没有「异化工坊」；
+## 六件物品不可得／不可见／不可装备、读档把异化实例还原成普通装备在 XAlienHide（O-283）。
+## HIDDEN_V058：开发版也隐藏（默认 false，开发版异化照常可玩）。
 static var HIDDEN_V058 := false
+## 发行开关（O-待定）：Kyo 11-11「新整包里异化相关装备和词条都不开放」。true＝发行构建（ReleaseEntry.is_release）里隐藏；
+## false＝发行构建也照常开放（回到只看 HIDDEN_V058）。以后开放异化发补丁把它改成 false 即可。
+static var RELEASE_HIDE := true
+
+
+## 异化整套隐藏是否生效：HIDDEN_V058，或发行构建且 RELEASE_HIDE
+static func hidden() -> bool:
+	return HIDDEN_V058 or (RELEASE_HIDE and ReleaseEntry.is_release())
 
 
 static func encounter(logic):
-	if HIDDEN_V058:
+	if hidden():
 		return null
 	return _store(logic).encounter if logic != null and logic.has_meta("xalien") else null
 
@@ -128,7 +137,7 @@ static func variant_info(key: String) -> Dictionary:
 static func setup_encounter(logic, rng: XRandomStream, forced := {}):
 	var st := _store(logic)
 	st.encounter = null
-	if HIDDEN_V058:
+	if hidden():
 		return null
 	var s: XState = logic.state
 	var enemies: Array = logic.enemies
@@ -285,7 +294,7 @@ static func locked(a):
 
 ## A.grant：异化敌人倒下才发
 static func grant(logic) -> bool:
-	if HIDDEN_V058:
+	if hidden():
 		return false
 	var x = encounter(logic)
 	if x == null or bool(x.granted) or not x.enemy.is_dead():
