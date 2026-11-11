@@ -4,7 +4,7 @@ extends Node
 ## 二、段表与难度：几率、基础级、升级；寻常、九死、炼狱的修正；31～36 层守层者终焉不受难度影响。
 ## 三、种类：每段多教一种，深渊怪全出，没做好的种类（连击兵）不出。
 ## 四、判定：1～5 层不异化、小怪不异化、一场最多一只、守层者优先、几率掷不中不异化。
-## 五、开战：守层者在 10 层变侵染、本线预设（使徒）和四骑士战不被覆盖；没选线、别的线、开关关掉、原版档一处都不动。
+## 五、开战：守层者在 10 层变侵染（战争线）、12 层变蚀骨（饥荒线）；本线预设（使徒）和四骑士战不被覆盖；没选线、没做好的线、开关关掉、原版档一处都不动。
 ## 数字避开 4（Kyo 11-11）：用例里的层号、敌群号照实写。
 
 var results: Array = []
@@ -131,7 +131,9 @@ func _kinds() -> void:
 	_check("kinds_16", XTianqiSegAlien.kinds_for("war", 16, "guardian") == ["berserk", "fervor", "commander"])
 	_check("kinds_21", XTianqiSegAlien.kinds_for("war", 21, "rare") == ["berserk", "fervor", "commander", "pyro"])
 	_check("kinds_abyss_all", XTianqiSegAlien.kinds_for("war", 6, "abyss") == ["berserk", "fervor", "commander", "pyro"])
-	_check("kinds_other_line_none", XTianqiSegAlien.kinds_for("famine", 21, "rare").is_empty())
+	_check("kinds_famine", XTianqiSegAlien.kinds_for("famine", 6, "rare") == ["exhaust", "lean"]
+		and XTianqiSegAlien.kinds_for("famine", 21, "rare") == ["exhaust", "lean", "night", "plunder", "overdraw"], XTianqiSegAlien.kinds_for("famine", 21, "rare"))
+	_check("kinds_other_line_none", XTianqiSegAlien.kinds_for("death", 21, "rare").is_empty())
 
 
 func _plan() -> void:
@@ -166,7 +168,9 @@ func _plan() -> void:
 	_check("floor5_none", XTianqiSegAlien.plan(_state(5), _enemies(69), _const(0.0)).is_empty())
 	# 没选线、别的线、开关关、原版档
 	_check("no_line_none", XTianqiSegAlien.plan(_state(10, ""), _enemies(69), _const(0.0)).is_empty())
-	_check("famine_none", XTianqiSegAlien.plan(_state(10, "famine"), _enemies(69), _const(0.0)).is_empty())
+	var fam := XTianqiSegAlien.plan(_state(10, "famine"), _enemies(69), _const(0.99))
+	_check("famine_guard", fam.size() == 1 and fam[0].kind == "lean" and fam[0].tier == "qinran", fam)
+	_check("death_none", XTianqiSegAlien.plan(_state(10, "death"), _enemies(69), _const(0.0)).is_empty())
 	XTianqiSegAlien.ENABLED = false
 	_check("switch_off_none", XTianqiSegAlien.plan(s, _enemies(69), _const(0.0)).is_empty())
 	XTianqiSegAlien.ENABLED = true
@@ -213,6 +217,13 @@ func _battle() -> void:
 	lm.setup(30, s)
 	_check("battle_mobs_plain", not XTianqiWarAlien.active(lm))
 	lm.end_battle(0)
+	# 饥荒线：交给饥荒异化模块
+	var sf := _state(12, "famine")
+	var lf := XBattleLogic.new()
+	lf.setup(69, sf)
+	_check("battle_famine", XTianqiFamineAlien.active(lf) and str(XTianqiFamineAlien.fight(lf).preset) == "segment" and not XTianqiWarAlien.active(lf)
+		and lf.enemies[0].display_name().begins_with("蚀骨·"), lf.enemies[0].display_name())
+	lf.end_battle(0)
 	# 5 层守层者：不异化
 	var s5 := _state(5)
 	var l5 := XBattleLogic.new()

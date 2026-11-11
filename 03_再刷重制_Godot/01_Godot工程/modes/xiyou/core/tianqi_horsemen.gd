@@ -18,8 +18,9 @@ extends RefCounted
 ##  （一段＝攻击×系数×攻÷(攻＋防)×我方档位承伤，过护盾）。
 ## - 我方：疫病、病弱、识破、破产、碎甲降最大生命在 actor_param 里乘；绝粮挡住 MP、TP 的恢复；死期死去的人本场不能复活。
 ##
-## 打法（prepare 的第三个参数，cc/pro-tianqi-war 加）：body 本体；survival 开场生存战（只做了战争线：骑士生命锁住、援军第 1／3／5 回合、
-## 火花满 10 敌方全体再动、撑过 6 回合退场算赢）；shadow 35 层影子（只做了战争线：每回合一招焰浪轰击／噼啪三响，带兵临，没有阶段和配方）。
+## 打法（prepare 的第三个参数，cc/pro-tianqi-war 加）：body 本体；survival 开场生存战（战争线：骑士生命锁住、援军第 1／3／5 回合、
+## 火花满 10 敌方全体再动、撑过 6 回合退场算赢；饥荒线（cc 饥荒线车道）：开场即绝粮，3 只饿出来的小怪借伐木哥布林 514，骑士吃它们来打你，
+## 资历照涨、没有突破）；shadow 35 层影子（战争线：每回合一招焰浪轰击／噼啪三响，带兵临；饥荒线：每回合一招题海战术，带绝粮，没有小怪）。
 ##
 ## 还没做（交付单「未做」）：画面上的计量条和死期、不服标记（现在只在战斗日志里报）；死亡、饥荒、瘟疫的生存战和影子；
 ## 绝粮的「消耗再提高一档」和口粮；骑士队长让免即死、不屈失效；疫病让减益清不掉；识破的反击、爆闪几率。
@@ -37,7 +38,7 @@ static var _pending := ""
 ## 下一场的打法（prepare 设、setup 取走）：body 36 层本体；survival 开场「天外裂」生存战；shadow 35 层影子。
 ## 生存战、影子现在只做了战争线（四线剧情与关卡设计稿 v0.4 第 5.7 节；cc/pro-tianqi-war），别的线 prepare 不收
 const MODES := ["body", "survival", "shadow"]
-const MODE_LINES := {"survival": ["war"], "shadow": ["war"]}
+const MODE_LINES := {"survival": ["war", "famine"], "shadow": ["war", "famine"]}
 static var _pending_mode := "body"
 ## 正在打的骑士战（BattleLogic）；挂钩先看它，没有就原样返回
 static var _logic_ref: WeakRef = null
@@ -201,15 +202,16 @@ static func setup(logic, s: XState) -> void:
 		"war":
 			slots = int(knight(line).reinforce.max_adds)
 		"famine":
-			slots = int(knight(line).start_adds)
+			slots = 0 if mode == "shadow" else int(knight(line).start_adds)  # 影子没有异化追加（不吃小怪）
 		"plague":
 			slots = int(knight(line).adds.max)
 	var adds := []
 	for i in range(slots):
 		var e := XEnemy.new()
-		var add_shell := int(data().get("survival", {}).get("add_enemy", 0)) if mode == "survival" else 0
+		var sv: Dictionary = data().get("survival", {})
+		var add_shell := int(sv.get("add_enemy_" + line, sv.get("add_enemy", 0))) if mode == "survival" else 0
 		if add_shell > 0:
-			e.setup_horseman(add_shell, _survival_add_rec(add_shell, key))
+			e.setup_horseman(add_shell, _survival_add_rec(add_shell, key, line))
 		else:
 			e.setup_horseman(int(shell.get("add", 2)), _add_rec(int(shell.get("add", 2)), line, key))
 		e.set_meta("x", 300.0 + 70.0 * (i % 3))
@@ -274,11 +276,11 @@ static func _add_rec(shell_id: int, line: String, key: String) -> Dictionary:
 
 ## 生存战的援军：开场在第 5 层左右，借本线开场地图的普通怪（survival.add_enemy，六层火焰哥布林）原数值 × 本档敌人血量／攻击；
 ## 行动由本模块给（普攻），不掉东西、不给经验
-static func _survival_add_rec(shell_id: int, key: String) -> Dictionary:
+static func _survival_add_rec(shell_id: int, key: String, line := "war") -> Dictionary:
 	var row := XTianqiBalance.difficulty(key)
 	var rec: Dictionary = XDB.rec("Enemies", shell_id).duplicate(true)
 	var p: Array = rec.get("params", [1, 1, 1, 1, 1, 1, 1, 1]).duplicate()
-	rec.name = "兵临的援军"
+	rec.name = {"famine": "饿出来的小怪"}.get(line, "兵临的援军")
 	rec.params = [roundf(float(p[0]) * float(row.enemy_hp)), float(p[1]), roundf(float(p[2]) * float(row.enemy_atk)), float(p[3]),
 		roundf(float(p[4]) * float(row.enemy_atk)), float(p[5]), float(p[6]), float(p[7])]
 	rec.actions = []
@@ -465,7 +467,7 @@ static func end_turn(logic) -> Array:
 ## 生存战撑满回合：骑士和援军一起退场（算胜利，没有经验和掉落）
 static func _survive(logic, f: Dictionary) -> void:
 	f.survived = true
-	_say(f, "%s收起了引信：「……今天先到这里。」" % str(f.base.name))
+	_say(f, "%s%s：「……今天先到这里。」" % [str(f.base.name), {"famine": "合上了卷子"}.get(str(f.line), "收起了引信")])
 	for e in [f.knight] + f.adds:
 		if e.is_alive():
 			e.hp = 0.0
@@ -686,6 +688,8 @@ static func decide(logic, b) -> Array:
 		"war":
 			return _war_shadow_pick(logic, f) if str(f.mode) == "shadow" else _war_pick(logic, f)
 		"famine":
+			if str(f.mode) == "shadow":  # 35 层影子：每回合一招弱化的题海战术
+				return [_skill("sea", "题海战术", 2, 1, float(knight("famine").sea.coef), false), null]
 			return _famine_pick(logic, f, i)
 		"plague":
 			return [_skill("bash", "盾击", 1, 1, float(knight("plague").bash.coef), false), null]

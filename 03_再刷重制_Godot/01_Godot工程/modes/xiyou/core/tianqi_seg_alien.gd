@@ -4,16 +4,16 @@ extends RefCounted
 ## 数据 tianqi_data/seg_alien.json（只读，测试参数）。
 ##
 ## 每场战斗（BattleLogic.setup，四骑士和本线预设异化之后）按这一档走的线、所在楼层、难度，决定敌群里哪一只异化成什么级、什么种类，
-## 再交给本线的异化模块（现在只有战争线 XTianqiWarAlien.apply）去改数值、挂规则：
+## 再经 XTianqiLine.alien_apply 交给本线的异化模块（战争线 XTianqiWarAlien、饥荒线 XTianqiFamineAlien 的 apply）去改数值、挂规则：
 ## - 谁能异化：看敌人数据名的【前缀】。稀有、精英＝稀有；前所未见、亘古未有、首领＝非常稀有；守层者；被封印者、未知存在、古神＝深渊怪。
 ##   无前缀、罕见、十分罕见＝小怪，不异化（会被同场的异化种类带动，例如号令官）。一场最多异化 max_units 只（1），按 守层者＞深渊＞非常稀有＞稀有 的顺序挨个掷。
 ## - 楼层：所在地图的层（XDungeon.map_floor 沿地图树找「N层」）；找不到（深渊副本等）按修行进度层（变量 20 − 1）。1～5 层（序幕）一概不异化，守层者也不。
 ## - 段表（第 3.3 节）：几率、基础级、升一级的几率；守层者、深渊怪一定异化；31～36 层守层者终焉。
 ## - 难度：寻常几率 ×0.5、稀有最高侵染、守层者低一级；九死 +10 个百分点；炼狱、证道 +20 个百分点、稀有的级上限高一级（最高化形）。
 ## - 种类：本线到这一层为止教过的种类里随机一种（第 5.1 节，每段多一种）；深渊怪本线种类全出。只抽本线模块已经做好的种类（战争线的连击兵还没做）。
-## 已经有异化的战斗（本线预设：开场、使徒）和四骑士战不动；没选线、没有异化模块的线（饥荒、死亡、瘟疫还没做）不动。
+## 已经有异化的战斗（本线预设：开场、使徒）和四骑士战不动；没选线、还没做好的线（死亡、瘟疫）不动；新线做好后在 XTianqiLine 的 alien_apply／alien_kinds 各加一行即可。
 ##
-## 开关 ENABLED（false＝按段异化一概不出，只剩本线预设的几场）；只认天启篇存档且选了线，发行构建里还要 XTianqi.RELEASE_OPEN。
+## 开关 ENABLED（false＝按段异化一概不出，只剩本线预设的几场）；只认天启篇存档且选了做好的线，发行构建里还要 XTianqi.RELEASE_OPEN。
 
 const PATH := "res://modes/xiyou/tianqi_data/seg_alien.json"
 
@@ -50,37 +50,14 @@ static func nice_number_violations() -> Array:
 
 # ---- 开关与线 ----
 
-## 这一档能按段异化：开关开着、天启篇存档、发行构建里已开放、选了线且这条线有异化模块
+## 这一档能按段异化：开关开着、这一档走的线能跑（XTianqiLine.current：天启篇存档、发行构建里已开放、选了线且这条线做好了）
 static func allowed(s: XState) -> bool:
-	return ENABLED and XTianqi.active(s) and (XTianqi.RELEASE_OPEN or not ReleaseEntry.is_release()) and line_ready(s, XTianqi.line_of(s))
+	return ENABLED and s != null and XTianqiLine.current(s) != ""
 
 
-## 这条线的异化模块接上了（各线做好后在这里和 _apply_line 加一行）
-static func line_ready(s: XState, line: String) -> bool:
-	match line:
-		"war":
-			return XTianqiWarLine.allowed(s)
-	return false
-
-
-## 本线模块做好了战斗规则的种类
-static func module_kinds(line: String) -> Array:
-	match line:
-		"war":
-			return XTianqiWarAlien.kinds()
-	return []
-
-
-static func _apply_line(line: String, logic, s: XState, list: Array) -> bool:
-	match line:
-		"war":
-			return XTianqiWarAlien.apply(logic, s, "segment", list)
-	return false
-
-
-## 这一场已经有别的异化（本线预设）或是四骑士战
+## 这一场已经有本线预设的异化（开场、使徒）或是四骑士战
 static func _taken(logic) -> bool:
-	return XTianqiHorsemen.active(logic) or XTianqiWarAlien.active(logic)
+	return XTianqiHorsemen.active(logic) or XTianqiLine.alien_active(logic)
 
 
 # ---- 判定 ----
@@ -157,7 +134,7 @@ static func rule(cls: String, floor_no: int, diff_key: String) -> Dictionary:
 
 ## 本线到这一层为止教过、模块也做好了的种类；深渊怪本线种类全出
 static func kinds_for(line: String, floor_no: int, cls: String) -> Array:
-	var have := module_kinds(line)
+	var have := XTianqiLine.alien_kinds(line)
 	var out := []
 	var teach = data().get("lines", {}).get(line, {}).get("teach", [])
 	for step in teach:
@@ -172,7 +149,7 @@ static func kinds_for(line: String, floor_no: int, cls: String) -> Array:
 static func plan(s: XState, enemies: Array, roll: Callable) -> Array:
 	if not allowed(s):
 		return []
-	var line := XTianqi.line_of(s)
+	var line := XTianqiLine.current(s)
 	var floor_no := floor_of(s)
 	if segment(floor_no).is_empty() or floor_no <= 5:
 		return []
@@ -217,4 +194,4 @@ static func setup(logic, s: XState) -> void:
 	var rng = logic._rule()
 	var list := plan(s, logic.enemies, func(reason: String, key: String) -> float: return rng.next_float(reason, key))
 	if not list.is_empty():
-		_apply_line(XTianqi.line_of(s), logic, s, list)
+		XTianqiLine.alien_apply(XTianqiLine.current(s), logic, s, list)
