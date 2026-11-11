@@ -130,8 +130,9 @@ func _ichigo_gates(fixed: bool) -> void:
 	if not fixed:
 		MVEvent.removed_events = {}
 	var s := _open(148, 24, 46)
-	s.add_actor(148)
-	s.gain_item(1982, 1)
+	# 一护是超强者，地狱以下 add_actor／gain_item 会被拦；这里只测页条件，直接写进队伍和背包
+	s.party.append(148)
+	s.items[1982] = 1
 	for v in [1561, 1562, 1563, 1564]:
 		s.set_variable(v, 1)
 	s.set_variable(1557, 100)
