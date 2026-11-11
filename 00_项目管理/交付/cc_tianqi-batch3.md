@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-batch3
 
 - 车道／工作者：天启篇·第三批／cc（项目线程「完成再刷西游Godot引擎重制」，本机工作树 unruffled-mendel-f95b6d）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -39,6 +39,10 @@
 
 - 无
 
+## 需要总装做什么
+
+- main 上 `xiyou_input_handled` 现在就挂（`update_page.gd` 直接调 `set_input_as_handled`），请派自动更新车道改成项目统一的写法，和本分支无关。
+
 ## 验证
 
 - `语法检查.py`：699 个 .gd 0 个问题。
@@ -46,7 +50,8 @@
 - 本机专项：`xiyou_tianqi_numbers` 55/55、`xiyou_tianqi_opening` 41/41、`xiyou_tianqi_title_flow`、`xiyou_tianqi_balance`、`xiyou_tianqi_party` 全过（`xiyou_tianqi_party` 首跑 `helper_full_exp` 一次偶发、重跑通过，累计第 1 次，见下）。
 - 反向验证（`反向验证.py`，4 项全咬住）：去掉伤害结算里的天启篇乘区、敌人倍率退回原版、一线生机拦截去掉、开局不统一到普通。
 - `天启篇数据校验.py`：规则自检通过（另带 `--params` 对照见下）。
-- 云端选测：待写。
+- 云端整轮选测（`云端选测.py run`，1c7b9d1c3，510 个场景、16 片）：509 过，只挂 `xiyou_input_handled` 的 `no_direct_set_input_as_handled`，指的是 `modes/xiyou/ui/update_page.gd`（自动更新车道 dev.454～456 合进来的，本分支没碰）直接调 `set_input_as_handled`；本机单跑同样挂，是 main 现有的问题，不是本分支引起的：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43006662325
+- 偶发：`xiyou_tianqi_party` 的 `helper_full_exp` 本机首跑一次（上场者 0 经验、助力位与替补有），重跑通过，云端整轮也过；累计第 1 次，再出就修测试。
 
 ## 待交叉核查
 
@@ -58,5 +63,6 @@
 
 - 86e936088 五档难度与档位数值接进战斗、候选池与上限改读数值表、删一线生机与天道注视开关、选线骨架
 - 0ede2fa74 专项 xiyou_tianqi_numbers
-- （下一提交）开局专项改断言
-- （本提交）交付单
+- d2aee19c4 开局专项改断言
+- 1c7b9d1c3 交付单（进行中）
+- （本提交）交付单：可合并
