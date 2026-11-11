@@ -417,11 +417,11 @@ def affix_text_rules(text: dict, table_data: dict, ici: set) -> list:
     # 3. 抽查（设计稿 v0.3 与 Kyo 11-11 01:21 整数版）
     spot = [
         ('物攻四阶极', x.line('atk', 4, 'perfect'), '极·物攻 +8%'),
-        ('终伤四阶上品', x.line('final_damage', 4, 'fine'), '〔四阶·上品〕最终伤害 +12%'),
+        ('终伤四阶上品', x.line('final_damage', 4, 'fine'), '上品·终伤 +12%'),
         ('再动四阶极', x.line('reaction', 4, 'perfect'), '极·〔稀有〕每回合有 20% 几率多行动一次'),
         ('全能光环四阶极', x.line('aura_versatile', 4, 'perfect'), '极·全队·八项属性 +6%'),
         ('连击', x.line('combo', 4, 'perfect'), '〔稀有〕攻击次数 +1'),
-        ('暴怒四阶普通', x.line('aura_fury', 4, 'normal'), '全队·暴击率 +3%，暴击伤害 +6%'),
+        ('暴怒四阶普通', x.line('aura_fury', 4, 'normal'), '全队·暴击率 +3%，爆伤 +6%'),
         ('火焰增伤四阶极', x.line('element_damage', 4, 'perfect', {'element': 'fire'}), '极·火焰伤害 +22%'),
         ('避敌四阶普通', x.line('target_rate', 4, 'normal', {'variant': 'avoid'}), '避敌：被选为目标的几率 −10%'),
         ('物攻一阶普通', x.line('atk', 1, 'normal'), '物攻 +1%'),
