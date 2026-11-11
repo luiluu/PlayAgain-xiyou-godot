@@ -220,7 +220,12 @@ func _build_cracks() -> void:
 	for i in n:
 		var ang := TAU * i / n + r.randf_range(-0.2, 0.2)
 		var length := r.randf_range(1.2, 2.6) * TS
-		_cracks.append(_crack_line(r, c, ang, 1.15 * TS, length))
+		var line := _crack_line(r, c, ang, 1.15 * TS, length)
+		_cracks.append(line)
+		# 一半的裂纹中途分一小叉
+		if r.randf() < 0.5 and line.size() > 4:
+			var at := line[line.size() / 2]
+			_cracks.append(_crack_line(r, at, ang + r.randf_range(0.5, 0.9) * (1 if r.randf() < 0.5 else -1), 0.0, r.randf_range(0.3, 0.6) * TS))
 	# 最长的一道：正南到 (14,22)
 	_cracks.append(_crack_line(r, c, PI / 2, 1.1 * TS, (CRACK_CELL.y - CENTER.y) * TS - 0.6 * TS))
 	_crack_glow = _layer(_draw_cracks.bind(true))
@@ -233,9 +238,9 @@ func _crack_line(r: RandomNumberGenerator, c: Vector2, ang: float, start: float,
 	var a := ang
 	pts.append(c + Vector2.from_angle(a) * d)
 	while d < start + length:
-		d += r.randf_range(8.0, 16.0)
-		a = ang + r.randf_range(-0.22, 0.22)
-		pts.append(c + Vector2.from_angle(a) * minf(d, start + length) + Vector2(r.randf_range(-2, 2), r.randf_range(-2, 2)))
+		d += r.randf_range(6.0, 11.0)
+		a = ang + r.randf_range(-0.09, 0.09)
+		pts.append(c + Vector2.from_angle(a) * minf(d, start + length) + Vector2(r.randf_range(-1.2, 1.2), r.randf_range(-1.2, 1.2)))
 	return pts
 
 
@@ -243,9 +248,9 @@ func _draw_cracks(glow: bool) -> void:
 	var n := _crack_glow if glow else _crack_base
 	for pts in _cracks:
 		if glow:
-			n.draw_polyline(pts, Color(PURPLE, 0.45), 5.0, true)
+			n.draw_polyline(pts, Color(PURPLE, 0.3), 3.5, true)
 		else:
-			n.draw_polyline(pts, CRACK_DARK, 2.0, true)
+			n.draw_polyline(pts, Color(CRACK_DARK, 0.85), 1.5, true)
 
 
 ## 浮砖：固定一块 (11,17)，另随机 1～2 块；避开漩涡、弹回落点那条十字、可调查格、苍龙落点、有事件的格和走不了的格
@@ -336,8 +341,8 @@ func _spawn_mote(bright := false) -> Dictionary:
 		return {"p": c, "v": Vector2.from_angle(a) * 22.0, "a": 0.9, "r": 2.6, "bright": true, "life": 2.0 * TS / 22.0}
 	var ang := rng.randf() * TAU
 	var dist := rng.randf_range(1.6, RADIUS) * TS
-	return {"p": c + Vector2.from_angle(ang) * dist, "v": Vector2.ZERO, "a": rng.randf_range(0.15, 0.35),
-		"r": rng.randf_range(1.2, 2.2), "bright": false, "life": 0.0}
+	return {"p": c + Vector2.from_angle(ang) * dist, "v": Vector2.ZERO, "a": rng.randf_range(0.3, 0.55),
+		"r": rng.randf_range(1.5, 2.6), "bright": false, "life": 0.0}
 
 
 func _update_motes(dt: float) -> void:
@@ -373,7 +378,7 @@ func _draw_motes() -> void:
 	var c := cell_px(CENTER)
 	for m in _motes:
 		var fade := 1.0 if m.bright else clampf((Vector2(m.p).distance_to(c) - 0.8 * TS) / TS, 0.0, 1.0)
-		var col := Color(0.85, 0.75, 1.0) if m.bright else PURPLE.lightened(0.35)
+		var col := Color(0.85, 0.75, 1.0) if m.bright else PURPLE.darkened(0.15)   # 白色大理石上浅紫看不见，用深一点的紫
 		if m.bright:
 			_motes_node.draw_circle(m.p, m.r * 2.4, Color(PURPLE, m.a * 0.25))
 		_motes_node.draw_circle(m.p, m.r, Color(col, m.a * fade))
