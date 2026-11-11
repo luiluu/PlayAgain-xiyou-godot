@@ -526,9 +526,9 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 
 
 # ---- 选线（Kyo 11-11「选线做成单独的大厅内事件」；四线剧情与关卡设计稿 v0.4 第 2 节，已确认） ----
-## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiWarLine.door_blocked）。
+## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiLine.door_blocked）。
 ## 四张卡：骑士剪影（美术出来前没有）＋一句话＋它会怎样改变战斗＋考什么；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
-## 只有做好了内容的线能选（line_playable）：现在只有战争线（XTianqiWarLine，cc/pro-tianqi-war），别的线卡片照列、标「还没修好」。
+## 只有做好了内容的线能选（line_playable）：XTianqiLine.KEYS 里的线（战争 cc/pro-tianqi-war、饥荒），别的线卡片照列、标「还没修好」。
 ## 开关（O-280）：LINE_EVENT_OPEN＝false 时大厅不出这个事件、门也不锁（回到第三批之前）。战争线做好后打开（cc/pro-tianqi-war）。
 static var LINE_EVENT_OPEN := true
 ## 选定后能不能再换（Kyo 11-11 09:32 已确认：不能换）
@@ -561,7 +561,7 @@ static func line_info(key: String) -> Dictionary:
 
 ## 这条线的内容做好了、能选
 static func line_playable(key: String) -> bool:
-	return key == XTianqiWarLine.KEY and XTianqiWarLine.ENABLED
+	return XTianqiLine.playable(key)
 
 
 ## 本档选的线（没选为空串；不是天启篇存档也为空）
@@ -609,7 +609,5 @@ static func run_line_choice(host, s: XState) -> void:
 		if sure != 0:
 			continue
 		if choose_line(s, str(l.key)):
-			if str(l.key) == XTianqiWarLine.KEY:
-				await XTianqiWarLine.on_chosen(host)
-				await XTianqiWarLine.run_due(host, s)
+			await XTianqiLine.on_chosen(host, s, str(l.key))
 			return

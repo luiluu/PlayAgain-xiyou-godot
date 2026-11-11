@@ -10,7 +10,7 @@
 - horsemen.json（天启四骑士）：
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
   B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
-- war_line.json（战争线关卡流程与异化）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、开场用到的预设和台词齐全。
+- war_line.json、famine_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -367,16 +367,43 @@ def war_line_rules(table: dict) -> list:
     return bad
 
 
-def check_war_line(_args) -> bool:
-    path = DATA_DIR / 'war_line.json'
+def line_rules(table: dict) -> list:
+    """四线共用（XTianqiLine）：开场每节的步骤只用 say／go／fight，用到的台词、地图、坐标、预设都在表里。"""
+    bad = war_line_rules(table)
+    scenes = table.get('scenes', {})
+    for i, steps in enumerate(table.get('opening', [])):
+        for st in steps:
+            if st[0] == 'say' and not scenes.get(st[1]):
+                bad.append('开场第 %d 节缺台词：%s' % (i + 1, st[1]))
+            elif st[0] == 'go' and (st[1] not in table.get('maps', {}) or st[2] not in table.get('pos', {})):
+                bad.append('开场第 %d 节缺地图或坐标：%s' % (i + 1, st[1:]))
+            elif st[0] == 'fight' and st[1] not in table.get('presets', {}):
+                bad.append('开场第 %d 节缺预设：%s' % (i + 1, st[1]))
+            elif st[0] not in ('say', 'go', 'fight'):
+                bad.append('开场第 %d 节不认识的步骤：%s' % (i + 1, st[0]))
+    for beat, m in table.get('beats', {}).items():
+        if m not in table.get('maps', {}) or not scenes.get(beat):
+            bad.append('楼层节点缺地图或台词：%s' % beat)
+    for k in ('hall', 'tianwai'):
+        if k not in table.get('maps', {}) or k not in table.get('pos', {}):
+            bad.append('缺地图或坐标：%s' % k)
+    return bad
+
+
+def check_line(name: str) -> bool:
+    path = DATA_DIR / ('%s_line.json' % name)
     if not path.is_file():
         print('跳过：没有 %s' % path.name)
         return True
-    bad = war_line_rules(json.loads(path.read_text(encoding='utf-8')))
+    bad = line_rules(json.loads(path.read_text(encoding='utf-8')))
     for b in bad:
         print('  ' + b)
-    print('war_line.json 规则自检：' + ('通过' if not bad else '%d 项不过' % len(bad)))
+    print('%s 规则自检：' % path.name + ('通过' if not bad else '%d 项不过' % len(bad)))
     return not bad
+
+
+def check_war_line(_args) -> bool:
+    return check_line('war')
 
 
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
@@ -384,6 +411,7 @@ CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
     ('horsemen', lambda args: check_horsemen(args.params)),
     ('war_line', check_war_line),
+    ('famine_line', lambda _args: check_line('famine')),
 ]
 
 
