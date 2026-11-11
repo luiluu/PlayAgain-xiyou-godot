@@ -1,7 +1,7 @@
 # 交付：cc/pro-tianqi-p3-1
 
 - 车道／工作者：C 规则·机制／cc（pro-tianqi-p3-1，云端）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -22,7 +22,9 @@
 
 ### 验证结果
 
-（待写）
+- `xiyou_tianqi_numbers`：65/65 通过（新加 10 条全过）。
+- 反向验证：把 `enemy_rates` 的基准临时改回 `NUMERIC_LEGACY` 单跑，61/65，挂的正是 `enemy_rates_split_` 寻常、九死、炼狱、证道四档（艰险本来就借普通，不挂），断言咬得住；已用备份还原。
+- `xiyou_tianqi_opening`：44/44；`xiyou_determinism`：372/372。
 
 ## 风险
 
