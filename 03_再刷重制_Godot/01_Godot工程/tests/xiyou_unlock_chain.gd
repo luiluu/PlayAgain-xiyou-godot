@@ -130,6 +130,9 @@ func _case(c: Dictionary) -> void:
 		forced.append([c.id, e.page_index])
 		e.page_index = int(c.page)
 		e.page = e.data.pages[int(c.page)]
+		# 去除的事件（MVEvent.removed_events）没选过页，YEP 逃离状态没建；强制选页后补建，免得之后每帧更新读空字典报错
+		if e._ecp.is_empty():
+			e._clear_chase()
 	XMessageBox.auto_answers = c.answers.duplicate()
 	var same_map := int(c.dest) == int(c.src_map)
 	var want: Vector2i = MVInterpreter.TRANSFER_FIX.get("%d:%d:%d:%d:%d" % [int(c.src_map), int(c.ev), int(c.dest), int(c.xy[0]), int(c.xy[1])],

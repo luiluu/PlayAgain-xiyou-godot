@@ -138,6 +138,7 @@ func _soft_bound() -> void:
 
 func _ui() -> void:
 	var s := _tianqi_state()
+	s.flags.tianqi.lineup = [1]  # 天启篇 NO_RECRUIT（天启第二批）只放开局阵容入队
 	s.add_actor(1)
 	var a := s.actor(1)
 	a.change_level(80)
