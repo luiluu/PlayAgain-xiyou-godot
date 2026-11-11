@@ -40,6 +40,7 @@ func _run() -> void:
 	GameApp.fast_headless_frames()
 	_clean(TestEnv.isolate("xiyou_pause_save"))   # 清掉上一轮的存档（isolate 已设好测试目录与配置路径、按默认值重读）
 	XConfig.whisper_mark("rift1")   # _clean 连 options.json 一起删了，重写一次：新源大厅漩涡过场当作看过
+	XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
 	XMessageBox.auto = true
 	XPlatform.force_mobile = true
 	var s := XState.new_game(3, 1, [8, 10, 9])
