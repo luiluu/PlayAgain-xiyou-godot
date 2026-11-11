@@ -186,10 +186,12 @@ func _door() -> void:
 	_check("door_switch_off_free", not XTianqiWarLine.door_blocked(s))
 	XTianqi.LINE_EVENT_OPEN = true
 	XTianqiWarLine.ENABLED = false
-	XTianqiFamineLine.ENABLED = false  # 门锁看有没有能选的线：饥荒线也关掉才等于「没有能选的线」
+	XTianqiFamineLine.ENABLED = false  # 门锁看有没有能选的线：饥荒线、死亡线也关掉才等于「没有能选的线」
+	XTianqiDeathLine.ENABLED = false
 	_check("door_war_off_free", not XTianqiWarLine.door_blocked(s) and not XTianqi.line_playable("war") and not XTianqi.line_ready(s))
 	XTianqiWarLine.ENABLED = true
 	XTianqiFamineLine.ENABLED = true
+	XTianqiDeathLine.ENABLED = true
 	_check("door_other_event", not XTianqiWarLine.is_door(4, 35) and not XTianqiWarLine.is_door(13, 36))
 
 

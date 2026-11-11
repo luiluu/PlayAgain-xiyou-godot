@@ -95,6 +95,10 @@ static func setup(logic, s: XState) -> void:
 		return
 	var p := preset(key)
 	var picks := _pick_units(logic.enemies, p.get("units", "all"))
+	var from := int(p.get("stats_from", 0))
+	if from > 0:  # 同场没被选中的敌人也换数值（开场在 5 层左右打，原数值太高）
+		for e in logic.enemies.filter(func(x): return not x.hidden and not picks.has(x)):
+			_borrow_stats(e, from)
 	apply(logic, s, key, picks.map(func(e): return {"enemy": e, "tier": str(p.tier), "kind": str(p.kind), "stats_from": int(p.get("stats_from", 0))}))
 
 
@@ -115,11 +119,8 @@ static func apply(logic, s: XState, key: String, list: Array) -> bool:
 		for i in range(8):
 			base.append(e.param_base_unscaled(i))
 		var from := int(row.get("stats_from", 0))
-		if from > 0 and not XDB.rec("Enemies", from).is_empty():
-			var ref: Array = XDB.rec("Enemies", from).params
-			for i in range(8):
-				e.add_param(i, float(ref[i]) - float(base[i]))
-				base[i] = float(ref[i])
+		if _borrow_stats(e, from):
+			base = XDB.rec("Enemies", from).params.map(func(v): return float(v))
 		var idx := int(ti.get("idx", 0))
 		## base：异化前的基础能力值（换过数值的按换后的），级的生命倍率和收尸人的加值都按它
 		var u := {"tier": str(row.tier), "kind": str(row.kind), "idx": idx, "base": base}
@@ -144,6 +145,18 @@ static func apply(logic, s: XState, key: String, list: Array) -> bool:
 		logic.can_escape = false
 	_say(f, "死亡的异化：%s。" % "、".join(names))
 	_say(f, doom_text(logic))
+	return true
+
+
+## 能力值换成另一只敌人的原数值（借外观、用它的数值；神话倍率也去掉）。没换返回 false
+static func _borrow_stats(e, from: int) -> bool:
+	if from <= 0 or XDB.rec("Enemies", from).is_empty():
+		return false
+	var ref: Array = XDB.rec("Enemies", from).params
+	for i in range(8):
+		e.add_param(i, float(ref[i]) - e.param_base_unscaled(i))
+	e.hp = e.mhp
+	e.mp = e.mmp
 	return true
 
 
@@ -340,7 +353,7 @@ static func start_turn(logic) -> Array:
 			continue
 		r.last = turn
 		for _n in range(int(kind_info("verdict").targets[idx])):
-			var live := logic.actors.filter(func(a): return a.is_alive() and not f.doom.has(a))
+			var live: Array = logic.actors.filter(func(a): return a.is_alive() and not f.doom.has(a))
 			if live.is_empty():
 				break
 			var t = live[logic._int(0, live.size() - 1, "tianqi_death_verdict")]
@@ -382,7 +395,7 @@ static func end_turn(logic) -> Array:
 		_say(f, "%s的钟声敲响了。" % pair[0].display_name())
 		if idx >= 3:
 			f.knell_lock = int(logic.turn)
-		var live := logic.actors.filter(func(a): return a.is_alive())
+		var live: Array = logic.actors.filter(func(a): return a.is_alive())
 		if live.is_empty():
 			break
 		live.sort_custom(func(a, b): return a.hp_rate() < b.hp_rate())
@@ -409,7 +422,7 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	if int(r.used) >= int(info.times[idx]):
 		return value
 	var below := float(info.below[idx])
-	var cands := logic.actors.filter(func(a): return a.is_alive() and a.hp_rate() <= below)
+	var cands: Array = logic.actors.filter(func(a): return a.is_alive() and a.hp_rate() <= below)
 	if cands.is_empty():
 		return value
 	cands.sort_custom(func(a, b): return a.hp_rate() < b.hp_rate())
