@@ -120,6 +120,11 @@ func can_use(rec: Dictionary) -> bool:
 	return logic.can_use(actor, rec) and (is_item(rec) or XHangUpAuto.wtype_ok(actor, rec))
 
 
+## actor.skills()：宿傩的 skills 包装在战斗中另滤一遍（空间斩／次元斩、领域有准备层时的神灶、没有准备层时的神灶：开不列，XSukuna.listed）
+func skill_list() -> Array:
+	return actor.skills().filter(func(s): return XSukuna.listed(actor, s))
+
+
 ## legalCandidate
 func legal(rec: Dictionary, item: bool) -> bool:
 	if rec.is_empty() or scope_of(rec) == 0 or str(rec.get("note", "")).to_lower().contains("<hide in battle>") or not can_use(rec):
@@ -240,7 +245,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
 	if float(p.get("pierce", 0.0)) > 0.0 and defense < 1.0:
 		defense += float(p.pierce) * (1.0 - defense)
-	var repeats := float(XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1)))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2
+	var repeats := float(XSmartAIProfiles.repeats(a, rec, XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2；黄泉、流萤、渡鸦的段数包装
 	if p.has("hits") and o_profile_hits:
 		repeats = float(p.hits)
 	else:
@@ -535,7 +540,7 @@ func _followup_score(rec: Dictionary, p: Dictionary, ctx: Dictionary) -> float:
 		if int(follow.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]:
 			best = maxf(best, float(score_candidate(follow, false, sub).score))
 	else:
-		for s in actor.skills():
+		for s in skill_list():
 			if int(s.get("damage", {}).get("type", 0)) in [1, 2, 5, 6] and legal(s, false):
 				best = maxf(best, float(score_candidate(valued(s, false), false, sub, directed(s, false)).score))
 	if not token.is_empty():
@@ -552,7 +557,7 @@ func _choose(cannon_only := false) -> Dictionary:
 	var foes: Array = logic.alive(logic.enemies)
 	var attack := actor.attack_skill()  # $dataSkills[actor.attackSkillId()]
 	var candidates := []
-	for s in actor.skills():
+	for s in skill_list():
 		if legal(s, false) and int(s.id) != 5692:
 			candidates.append({"rec": s, "item": false, "eval": valued(s, false), "dir": directed(s, false)})
 	if not cannon_only and legal(attack, false) and not candidates.any(func(c): return int(c.rec.id) == int(attack.id)):

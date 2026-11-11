@@ -24,6 +24,7 @@ w.BattleManager.actionBattleHud = () => true;
 w.BattleManager.otbDisplayWindow = () => stub;
 if (!w.$) w.$ = {};
 w.$.toaster = () => {};
+w.eval('CodexZones.ENABLED=false;');  // 五乘区（CodexZones）重制不移植（O-044）：act 步的真实伤害不带成长修正；估伤本来就不经过它
 const BIG_HP = 1e12, TROOP = 3;
 const S = w.$dataSkills;
 
@@ -139,7 +140,7 @@ function snap(env) {
   const best = AI.choose(a), d = a._codexLastAIDecision;
   return {ids, usable, profile, future, damage, rates, selfIndex: a.index(),
     choice: best ? {id: best.item().id, target: best._targetIndex} : null, score: d ? d.score : 0, candidates: d ? d.candidates : [],
-    self: {hp: a.hp, mhp: a.mhp, mp: a.mp, mmp: a.mmp, tp: a.tp, atk: a.atk, mat: a.mat, def: a.def, mdf: a.mdf, agi: a.agi, luk: a.luk, states: a._states.slice().sort((x, y) => x - y)},
+    self: {hp: a.hp, mhp: a.mhp, mp: a.mp, mmp: a.mmp, tp: a.tp, atk: a.atk, mat: a.mat, def: a.def, mdf: a.mdf, agi: a.agi, luk: a.luk, harm: a._passiveCache ? Number(a._passiveCache.globalHarmRi) || 0 : 0, mastery: ids.map(id => a.skillMasteryLevel ? a.skillMasteryLevel(id) : 0), states: a._states.slice().sort((x, y) => x - y)},
     foes: foes.map(t => ({hp: t.hp, mhp: t.mhp, pdr: t.pdr, mdr: t.mdr, def: t.def, mdf: t.mdf, power: t.atk + t.mat + t.agi * 0.3, alive: t.isAlive()}))};
 }
 function run(id, steps) {
@@ -159,7 +160,32 @@ function run(id, steps) {
   }
   return out;
 }
-const SCRIPTS = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'smart_ai_profile_cases.json'), 'utf8')).scripts;
+// act／end 之后把敌人生命定回原值再记（真实伤害的绝对值两边另有与本探针无关的差，不让它混进分数）。
+// 步骤：ai＝记一次；act 技能 目标序号；end＝回合结束；foehp 各敌人生命（0＝倒下）；allyrate 1 号生命比例（<0.25 即急需）；tp／mp；
+// weapon＝黄泉换武器（技能要刀）；dream＝黄泉残梦。写在探针里而不另放 json：mv_oracle 下非探针的 json 会进全部探针的缓存键
+const BIG = [75000000015000, 75000000015000, 75000000015000];
+const SCRIPTS = {
+  // 黄泉：没刀只能普攻；持刀后三招的溅射；残梦 9 开 10174；敌人残血（溅射能补刀）、一大两小、急需、只剩一只
+  yomi: {actor: 169, steps: [['ai'], ['weapon', 11], ['ai'], ['dream', 9], ['ai'], ['foehp', [2e8, 2e8, 2e8]], ['ai'],
+    ['foehp', [3e9, 1e8, 1e8]], ['ai'], ['allyrate', 0.1], ['ai'], ['foehp', [1000, 0, 0]], ['ai']]},
+  // 流萤：天火溅射对完全燃烧（全体）；敌人生命与伤害同级、残血、只剩一只、急需
+  liuying: {actor: 179, steps: [['ai'], ['foehp', [5e9, 5e9, 5e9]], ['ai'], ['foehp', [1000, 1000, 1000]], ['ai'],
+    ['foehp', [1000, 0, 0]], ['ai'], ['allyrate', 0.1], ['ai']]},
+  // 宿傩（二阶）：伏魔御厨子的铺垫档案（长战、急需、短战）；展开后不再给；有准备层后神灶：开长战压 0、急需与短战不压；领域到期、冷却中
+  sukuna: {actor: 172, steps: [['ai'], ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e9, 1e9, 1e9]], ['ai'],
+    ['foehp', BIG], ['act', 10231, 0], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai'], ['allyrate', 0.1], ['ai'],
+    ['allyrate', 1], ['foehp', [1e9, 1e9, 1e9]], ['ai'], ['foehp', BIG],
+    ['end'], ['end'], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai']]},
+  // 宿傩 TP 不够开领域、TP 为 0
+  sukuna_tp: {actor: 172, steps: [['tp', 30], ['ai'], ['tp', 0], ['ai']]},
+  // 渡鸦（五阶 60 级）：神话封解的铺垫档案（长战、急需、短战、MP 不够）；神话形态中不再给；形态结束后又给
+  raven: {actor: 167, steps: [['ai'], ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e9, 1e9, 1e9]], ['ai'],
+    ['foehp', BIG], ['mp', 300], ['ai'], ['mp', 1193], ['act', 10127, 0], ['ai'], ['end'], ['ai'],
+    ['end'], ['end'], ['ai']]},
+  // 米拉（三阶 70 级）：解放的铺垫档案（长战、急需、短战、TP 为 0）；解放后的黑龙技
+  mira: {actor: 168, steps: [['ai'], ['allyrate', 0.1], ['ai'], ['allyrate', 1], ['foehp', [1e11, 1e11, 1e11]], ['ai'],
+    ['foehp', BIG], ['tp', 0], ['ai'], ['tp', 200], ['act', 10146, 0], ['foehp', BIG], ['ai'], ['end'], ['foehp', BIG], ['ai']]},
+};
 const cases = [];
 for (const [name, c] of Object.entries(SCRIPTS)) {
   cases.push(makeCase('script.' + name, {actor: c.actor, troop: TROOP, steps: c.steps}, () => ({steps: run(c.actor, c.steps)})));

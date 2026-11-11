@@ -85,6 +85,7 @@ func _battle(actor_id: int) -> Array:
 				s.actor(id).add_param(0, BIG_HP)
 				s.actor(id).refresh_passive()
 			logic = _enter(s, "0000000000000169")
+			a.tp = 0.0  # 参照不走 startBattle，没有开战 TP
 		179:
 			s.actor_advance[179] = 2
 			a.change_level_mv(60)
@@ -117,6 +118,7 @@ func _battle(actor_id: int) -> Array:
 				s.actor(id).add_param(0, BIG_HP)
 				s.actor(id).refresh_passive()
 			logic = _enter(s, "0000000000000167")
+			a.tp = 0.0  # 参照不走 startBattle，没有开战 TP
 			logic.start_turn()
 		168:
 			s.actor_advance[168] = 3
@@ -146,9 +148,13 @@ static func _near(got: float, want: float, rel := 1e-9) -> bool:
 	return absf(got - want) <= maxf(1e-6, absf(want) * rel)
 
 
+func _skills(a: XActor) -> Array:
+	return a.skills().filter(func(s): return XSukuna.listed(a, s))
+
+
 func _ids(a: XActor) -> Array:
 	var ids := [int(a.attack_skill().id)]
-	for s in a.skills():
+	for s in _skills(a):
 		if XSmartAI.scope_of(s) > 0 and not ids.has(int(s.id)):
 			ids.append(int(s.id))
 	ids.sort()
@@ -207,6 +213,17 @@ func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void
 	check(name + ".ids", ids == want.ids.map(func(v): return int(v)), [ids, want.ids])
 	var usable := ids.filter(func(id): return logic.can_use(a, XDB.rec("Skills", id)))
 	check(name + ".usable", usable == want.usable.map(func(v): return int(v)), [usable, want.usable])
+	var ws: Dictionary = want.self
+	var me := [a.hp, a.mhp, a.mp, a.mmp, a.tp, a.atk, a.mat, a.def, a.mdf, a.agi, a.luk, float(a.passive_cache().get("globalHarmRi", 0.0))]
+	var wme := [ws.hp, ws.mhp, ws.mp, ws.mmp, ws.tp, ws.atk, ws.mat, ws.def, ws.mdf, ws.agi, ws.luk, ws.harm]
+	check(name + ".self", range(me.size()).all(func(i): return _near(float(me[i]), float(wme[i]))), [me, wme])  # 行动者的资源与能力值（代价倍率、估伤的输入）
+	var foes_ok := true
+	for k in logic.enemies.size():
+		var e: XBattler = logic.enemies[k]
+		var wf: Dictionary = want.foes[k]
+		foes_ok = foes_ok and _near(e.hp, float(wf.hp)) and e.is_alive() == bool(wf.alive) and _near(e.atk + e.mat + e.agi * 0.3, float(wf.power)) \
+			and _near(e.pdr, float(wf.pdr)) and _near(e.mdr, float(wf.mdr)) and _near(e.def, float(wf.def)) and _near(e.mdf, float(wf.mdf))
+	check(name + ".foes", foes_ok, [logic.enemies.map(func(e): return [e.hp, e.def, e.mdf]), want.foes])
 	var ai := XSmartAI.new(logic, a)
 	ai.context = {"friends": logic.actors, "foes": logic.alive(logic.enemies), "urgent": false, "longFight": true, "damageScale": 0.0}
 	for id in ids:
@@ -221,9 +238,9 @@ func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void
 			var token := XSmartAIProfiles.enter(a, str(p.future))
 			ai._view = 99
 			var params := [a.mhp, a.mmp, a.atk, a.def, a.mat, a.mdf, a.agi, a.luk]
-			var f_usable: Array = a.skills().filter(func(s): return XSmartAI.scope_of(s) > 0 and logic.can_use(a, s)).map(func(s): return int(s.id))
+			var f_usable: Array = _skills(a).filter(func(s): return XSmartAI.scope_of(s) > 0 and logic.can_use(a, s)).map(func(s): return int(s.id))
 			f_usable.sort()
-			var f_damage := _damage_rows(ai, a, logic, a.skills().filter(func(s): return XSmartAI.scope_of(s) > 0).map(func(s): return int(s.id)))
+			var f_damage := _damage_rows(ai, a, logic, _skills(a).filter(func(s): return XSmartAI.scope_of(s) > 0).map(func(s): return int(s.id)))
 			ai._view = 0
 			XSmartAIProfiles.leave(token)
 			check(name + ".future.%d.params" % id, range(8).all(func(i): return _near(params[i], float(wf.params[i]))), [params, wf.params])
@@ -238,7 +255,8 @@ func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void
 		var rec := XDB.rec("Skills", id)
 		rates[id] = logic.enemies.map(func(t): return [logic.item_hit(a, rec, t), logic.item_eva(a, rec, t),
 			logic.item_cri(a, rec, t) if bool(rec.damage.get("critical", false)) else 0.0])
-		var w: Array = want.rates[str(id)]
+		var w: Array = want.rates.get(str(id), [])
+		rates_ok = rates_ok and w.size() == logic.enemies.size()
 		for k in w.size():
 			for j in 3:
 				rates_ok = rates_ok and _near(float(rates[id][k][j]), float(w[k][j]), 1e-9)
@@ -387,7 +405,8 @@ func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
-	var keep := [XSmartAI.o_profile_hits, XSmartAIProfiles.o_profile_chain, XSmartAIProfiles.o_future_real]
+	var keep := [XSmartAI.o_profile_hits, XSmartAIProfiles.o_profile_chain, XSmartAIProfiles.o_future_real, XYomiJingliu.CRIT_FIX]
+	XYomiJingliu.CRIT_FIX = false  # O-098：原版黄泉 10185 的暴击 +9.99 不生效
 	XSmartAI.o_profile_hits = false
 	XSmartAIProfiles.o_profile_chain = false
 	XSmartAIProfiles.o_future_real = false
@@ -397,6 +416,7 @@ func _run() -> void:
 	XSmartAI.o_profile_hits = keep[0]
 	XSmartAIProfiles.o_profile_chain = keep[1]
 	XSmartAIProfiles.o_future_real = keep[2]
+	XYomiJingliu.CRIT_FIX = keep[3]
 	_local()
 	finish()
 

@@ -8,6 +8,7 @@ extends RefCounted
 ## - safeDamage 的受控估算分支（第 96～172 行）：米拉 10140～10151（CodexMira.damage，按统一伤害的攻防比例折防御）、
 ##   渡鸦 10122～10126（整条公式）、黄泉 10171～10174（CodexYomi.damage）、宿傩 10229～10233（神灶要目标蓄力、神灶：开要准备层）。
 ##   镜流 10187～10193、饿狼 10250～10263 两支不在这里（见交付单）。
+## - 段数：估伤乘的 action.numRepeats 要过角色的包装（黄泉 2／6＋幸运段、流萤天火 5／8 与燃烧 9、渡鸦冥羽连葬加追加次数），见 repeats。
 ## - boosts（第 67～83 行）：米拉 30 级学了 10144 ×7.66、70 级三阶学了 10164 ×2；渡鸦 damageMultiplier、25 级学了 10132 ×1.15、
 ##   60 级五阶学了 10136 ×4.25。
 ## - expectedDamage（第 206～213 行）：米拉 40 级学了 10145、渡鸦五技 45 级学了 10134 的暴击增量 +9.99；渡鸦神话形态学了 10136 ×1.85。
@@ -86,10 +87,48 @@ static func raw(a, t, rec: Dictionary):
 			return 0.0
 		if id == 10233 and int(XSukuna.temp(a).prep) <= 0:
 			return 0.0
-		return XSukuna.formula(a, t, rec)
+		return _sukuna_raw(a, t, rec)
 	if o_future_real and id == 10237 and _sukuna_ongoing_re.search(formula) != null:
-		return XSukuna.formula(a, t, rec)
+		return _sukuna_raw(a, t, rec)
 	return null
+
+
+## CodexSukuna.damage 在伤害计算之外调用（CodexDamage.isCalculating 为假）：攻击项先减固定防御（神灶类魔防×0.5，捌防御×0.15，其余防御×0.5）。
+## 重制的 XSukuna.formula 只有计算中的口径（不减），这里按「攻击项−防御」的比例折回去；按一个新行动算（不带施放帧、内部行动）
+static func _sukuna_raw(a, t, rec: Dictionary) -> float:
+	var id := int(rec.id)
+	var fire := id == 10232 or id == 10233
+	var weight := float(XSukuna.WEIGHTS[id]) * (float(XSukuna.temp(a).prep) if id == 10233 else 1.0)
+	var attack: float = (a.mat if fire else a.atk) * weight
+	if attack <= 0.0:
+		return 0.0
+	var defense: float = t.mdf * 0.5 if fire else t.def * (0.15 if id == 10230 else 0.5)
+	var saved := [XSukuna.cast, XSukuna.part, XSukuna.internal]
+	XSukuna.cast = {}
+	XSukuna.part = ""
+	XSukuna.internal = false
+	var value := XSukuna.formula(a, t, rec)
+	XSukuna.cast = saved[0]
+	XSukuna.part = saved[1]
+	XSukuna.internal = saved[2]
+	return value * maxf(0.0, attack - defense) / attack
+
+
+## action.numRepeats 的角色包装（只读：实战那几层包装顺带开新行动帧，这里不开）：渡鸦冥羽连葬加额外攻击次数、
+## 黄泉／镜流技能换成各自的段数、流萤天火 5 段（学了星河 8 段）与完全燃烧 9 段
+static func repeats(a, rec: Dictionary, base: int) -> int:
+	if XBattleLogic.is_item(rec):
+		return base
+	var id := int(rec.get("id", 0))
+	if XRaven.own(a) and id == XRaven.FEATHER:
+		base += maxi(0, floori(a.attack_times_add()))
+	if XYomiJingliu._j_action(a, rec):
+		return int(XYomiJingliu.J_REPEATS[id])
+	if XYomiJingliu._yomi_action(a, rec):
+		return XYomiJingliu.repeats(a, id)
+	if XLiuying._action(a, rec):
+		return 5 + (3 if XLiuying.learned(a, XLiuying.XING_HE) else 0) if id == XLiuying.TIANHUO else 9
+	return base
 
 
 ## boosts
@@ -150,7 +189,7 @@ static func expected_rate(a, rec: Dictionary) -> float:
 	return 1.0
 
 
-## 进入铺垫后的角色视图（临时改同一个角色），返回还原用的记录；leave 还原
+## 进入铺垫后的角色视图（临时改同一个角色），返回还原用的记录；leave 还原。生命、魔法、TP 由调用处存取（能力值缓存刷新不截资源）
 static func enter(a, kind: String) -> Dictionary:
 	var token := {"kind": kind, "actor": a}
 	match kind:
@@ -166,15 +205,13 @@ static func enter(a, kind: String) -> Dictionary:
 			if o_future_real:
 				XSukuna.temp(a).domain = 4
 		"mira":
+			token.real = o_future_real
 			token.had = a.state_ids.has(XMira.DRAGON)
-			if not token.had:
+			if o_future_real and not token.had:
 				a.state_ids.append(XMira.DRAGON)
-			if o_future_real:
-				token.res = [a.hp, a.mp, a.tp]
-				_refresh(a)
-				a.hp = token.res[0]
-				a.mp = token.res[1]
-				a.tp = token.res[2]
+			if not o_future_real:
+				XMira.ai_view = a  # 原版：黑龙判定成立，2592 的特性不算（状态缓存没刷新）
+			_refresh(a)
 	return token
 
 
@@ -188,10 +225,10 @@ static func leave(token: Dictionary) -> void:
 				a.state_ids.erase(XSukuna.DOMAIN)
 			XSukuna.temp(a).domain = token.domain
 		"mira":
-			if not token.had:
+			if token.real and not token.had:
 				a.state_ids.erase(XMira.DRAGON)
-			if token.has("res"):
-				_refresh(a)
+			XMira.ai_view = null
+			_refresh(a)
 
 
 static func _refresh(a) -> void:
