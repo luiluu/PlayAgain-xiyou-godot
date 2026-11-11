@@ -172,6 +172,11 @@ def queue_spec(lanes):
     return ','.join('%s=%s' % (x['task'], x['branch']) for x in lanes)
 
 
+def brief(worker, limit=24):
+    """表格里的工作者一栏只留前一段（交付单这一行常带一长串说明）；--json 里是全文。"""
+    return worker if len(worker) <= limit else worker[:limit - 1] + '…'
+
+
 def render(b, stale_hours=4, out=sys.stdout):
     w = lambda s='': print(s, file=out)  # noqa: E731
     w('待合看板（%s %s，%s）：可合并 %d 条，退回车道 %d 条，没交付 %d 条'
@@ -192,7 +197,7 @@ def render(b, stale_hours=4, out=sys.stdout):
                 note.append('只在远端：先 git fetch %s %s:%s' % (x['where'].split('＋')[0], x['branch'], x['branch']))
             if x['note']:
                 note.append(x['note'])
-            w('| %d | %s | %s | %s | %s | %s | %s |' % (i, x['branch'], x['worker'] or '—', span(x['waited']), '慢' if x['slow'] else '快',
+            w('| %d | %s | %s | %s | %s | %s | %s |' % (i, x['branch'], brief(x['worker']) or '—', span(x['waited']), '慢' if x['slow'] else '快',
                                                     x['where'], '；'.join(note)))
         fast = [x for x in b['ready'] if not x['slow']]
         slow = [x for x in b['ready'] if x['slow']]
