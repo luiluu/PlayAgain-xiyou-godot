@@ -184,10 +184,10 @@ func _run() -> void:
 	XIntroAnim.ENABLED = false
 	check("rollback_intro_off", not XIntroAnim.available() and XIntroAnim.play(host) == null)
 	XIntroAnim.ENABLED = true
-	# 天启篇回退到原版开局（O-260）时也不放天启篇动画
+	# 天启篇内容关掉（O-260 或发行未开放）时启动动画照放（Kyo 11-11：整包带天启篇标题与载入画面）
 	var tq := XTianqi.ENABLED
 	XTianqi.ENABLED = false
-	check("intro_off_without_tianqi", not XIntroAnim.available())
+	check("intro_on_without_tianqi", XIntroAnim.available())
 	XTianqi.ENABLED = tq
 
 	XSplashScreen.ENABLED = false

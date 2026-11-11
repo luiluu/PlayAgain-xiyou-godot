@@ -6,7 +6,7 @@ extends Node
 ## 四、进场：t=0 全黑、贴闭眼；淡入第 26 帧起逐帧睁眼、第 32 帧去掉贴片；Logo 第 36～56 帧上浮淡入；推进到结束后
 ##     贴片去掉、Logo 不透明、菜单可操作；进场中按键直接跳到结束；按 time_scale 换算真实秒。
 ## 五、不调 play_entrance() 一建好就是最终画面；XIntroAnim.ENABLED = false 时 play_entrance() 不做进场。
-## 六、开关：ENABLED = false 或 XTianqi.ENABLED = false 时 available() 为假（测完恢复）。
+## 六、开关：ENABLED = false 时 available() 为假；XTianqi.ENABLED = false 时照样可用（与天启篇内容解绑，测完恢复）。
 
 var results: Array = []
 var calls: Array = []
@@ -229,6 +229,6 @@ func _switches() -> void:
 	XTianqiTitle.ENABLED = en
 	var tq := XTianqi.ENABLED
 	XTianqi.ENABLED = false
-	_check("off_without_tianqi", not XTianqiTitle.available())
+	_check("on_without_tianqi", XTianqiTitle.available())  # 新标题跟天启篇内容解绑（Kyo 11-11 整包）
 	XTianqi.ENABLED = tq
 	_check("switches_restored", XTianqiTitle.available() and XTianqiTitle.ENABLED and XTianqi.ENABLED)

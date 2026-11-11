@@ -489,9 +489,9 @@ func _focus_first() -> void:
 			return
 
 
-## 标题「新的游戏」：天启篇开局（XTianqi.ENABLED）或原版开局
+## 标题「新的游戏」：天启篇开局（XTianqi.new_game_enabled：开关开着，发行构建另要 RELEASE_OPEN）或原版开局
 func _on_new_game() -> void:
-	if XTianqi.ENABLED:
+	if XTianqi.new_game_enabled():
 		_tq_slot()
 	else:
 		_new_game()

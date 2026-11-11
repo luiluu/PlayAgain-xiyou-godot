@@ -80,9 +80,9 @@ var _t := 0.0
 var _skip := false
 
 
-## 开关开着、天启篇开着、素材都在
+## 开关开着、素材都在（不看天启篇内容开关：Kyo 11-11 整包带新标题、内容照改版）
 static func available() -> bool:
-	if not (ENABLED and XTianqi.ENABLED):
+	if not ENABLED:
 		return false
 	for p in files():
 		if not ResourceLoader.exists(p):
