@@ -162,7 +162,15 @@ func _run() -> void:
 	_check("物攻四阶 5/6/8", _row("atk") == [5.0, 6.0, 8.0], _row("atk"))
 	_check("终伤四阶 9/12/15", _row("final_damage") == [9.0, 12.0, 15.0], _row("final_damage"))
 	_check("再动四阶 10/15/20", _row("reaction") == [10.0, 15.0, 20.0], _row("reaction"))
-	_check("全能光环四阶 1.5/2/3", _row("aura_versatile") == [1.5, 2.0, 3.0], _row("aura_versatile"))
+	_check("全能光环四阶 3/5/6", _row("aura_versatile") == [3.0, 5.0, 6.0], _row("aura_versatile"))
+	_check("暴怒四阶暴击 3/5/6、爆伤 6/10/12", _row("aura_fury") == [3.0, 5.0, 6.0]
+		and T.GRADES.map(func(g): return T.secondary_value("aura_fury", 4, g)) == [6.0, 10.0, 12.0])
+	var nonint := []
+	for a in aff:
+		for x in a.values + a.get("secondary", {}).get("values", []):
+			if float(x) != floorf(float(x)):
+				nonint.append([a.key, x])
+	_check("词条数值全是整数", nonint.is_empty(), nonint)
 	_check("技能消耗全身上限 −50%", int(T.affix("skill_cost").get("cap_total", 0)) == 50, T.affix("skill_cost"))
 	_check("稀有词条连击、再动权重 0.3", aff.filter(func(a): return bool(a.get("rare", false))).map(func(a): return str(a.key)) == ["combo", "reaction"]
 		and is_equal_approx(float(T.affix("reaction").weight), 0.3) and is_equal_approx(float(T.affix("combo").weight), 0.3))

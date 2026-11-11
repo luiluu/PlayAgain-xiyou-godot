@@ -2,7 +2,7 @@
  "version": 1,
  "source": "天启篇词条重构设计稿 v0.3",
  "dev": "dev.待定",
- "_note": "来源：天启篇词条重构设计稿 v0.3。只读数据；每阶三种成色的值由 XTianqiAffixTable 按层的 tier_start 和一排 values 算出，这里不展开。概率写成 0～1 的小数，词条数值单位见 unit。",
+ "_note": "来源：天启篇词条重构设计稿 v0.3；数值全用整数（Kyo 2026-11-11 01:21）。只读数据；每阶三种成色的值由 XTianqiAffixTable 按层的 tier_start 和一排 values 算出，这里不展开。概率写成 0～1 的小数，词条数值单位见 unit。",
  "digit_check_exempt": [
   "version",
   "tier",
@@ -643,12 +643,12 @@
    "tag": "def",
    "effect": "闪避率 +%",
    "values": [
-    0.5,
     1,
-    1.5,
     2,
     3,
-    5
+    5,
+    6,
+    8
    ],
    "unit": "percent",
    "weight": 1,
@@ -663,12 +663,12 @@
    "tag": "def",
    "effect": "每回合回复最大生命 %",
    "values": [
-    0.3,
-    0.5,
-    0.8,
     1,
-    1.5,
-    2
+    2,
+    3,
+    5,
+    6,
+    8
    ],
    "unit": "percent",
    "weight": 1,
@@ -703,12 +703,12 @@
    "tag": "gen",
    "effect": "敏捷 +%",
    "values": [
-    0.5,
     1,
-    1.5,
     2,
     3,
-    5
+    5,
+    6,
+    8
    ],
    "unit": "percent",
    "weight": 1,
@@ -743,12 +743,12 @@
    "tag": "gen",
    "effect": "每回合回复最大魔法 %",
    "values": [
-    0.3,
-    0.5,
-    0.8,
     1,
-    1.5,
-    2
+    2,
+    3,
+    5,
+    6,
+    8
    ],
    "unit": "percent",
    "weight": 1,
@@ -857,10 +857,10 @@
    "effect": "造成伤害的 % 回复生命",
    "values": [
     1,
-    1.5,
     2,
-    2.5,
-    3
+    3,
+    5,
+    6
    ],
    "unit": "percent",
    "weight": 1,
@@ -1020,10 +1020,10 @@
    "effect": "技能放完后 % 几率再放一次",
    "values": [
     1,
-    1.5,
     2,
-    2.5,
-    3
+    3,
+    5,
+    6
    ],
    "unit": "percent",
    "weight": 1,
@@ -1396,7 +1396,7 @@
    "name": "暴怒",
    "layer": "aura",
    "tag": "gen",
-   "effect": "全队暴击率 +%，暴击伤害加两倍",
+   "effect": "全队暴击率 +%，暴击伤害另加 %",
    "values": [
     1,
     2,
@@ -1411,7 +1411,13 @@
    "stat": "cri",
    "secondary": {
     "pool": "crit_multiplier",
-    "factor": 2
+    "values": [
+     2,
+     3,
+     6,
+     10,
+     12
+    ]
    }
   },
   {
@@ -1500,11 +1506,11 @@
    "tag": "gen",
    "effect": "全队每回合回复生命、魔法 %",
    "values": [
-    0.5,
-    0.8,
     1,
-    1.5,
-    2
+    2,
+    3,
+    5,
+    6
    ],
    "unit": "percent",
    "weight": 1,
@@ -1522,11 +1528,11 @@
    "tag": "gen",
    "effect": "全队八项属性 +%",
    "values": [
-    0.5,
     1,
-    1.5,
     2,
-    3
+    3,
+    5,
+    6
    ],
    "unit": "percent",
    "weight": 1,

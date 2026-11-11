@@ -68,6 +68,14 @@ class AffixTable:
         vals = a["values"]
         return vals[i] if i < len(vals) else None
 
+    def secondary_value(self, key: str, tier: int, grade: str):
+        """暴怒这类带第二个数的词条：第二排按同样的阶和成色取。"""
+        a = self.affixes.get(key, {})
+        sec = a.get("secondary", {}).get("values")
+        if not sec or self.value(key, tier, grade) is None:
+            return None
+        return sec[tier - self.tier_start(key) + GRADES.index(grade)]
+
     def tier_of_level(self, level: int) -> int:
         for t in self.d["tiers"]:
             hi = t["max_level"]
@@ -182,7 +190,7 @@ def check_affix_table(data: dict, r: Report) -> None:
             lo, hi = t.value(a["key"], t.tier_start(a["key"]), "perfect"), t.value(a["key"], 4, "normal")
             rel.add("<" if lo < hi else "=" if lo == hi else ">")
         if rel != {"<"}:
-            r.warn(f"{layer} 层：最低可出阶的极 对 四阶普通 是 {'/'.join(sorted(rel))}（不是严格低于，见交付单）")
+            r.warn(f"{layer} 层：最低可出阶的极 对 四阶普通 是 {'/'.join(sorted(rel))}（Kyo 11-11 01:21 认可：极很稀有，不改）")
 
     # 4. 相邻阶衔接
     broken = []
@@ -201,13 +209,10 @@ def check_affix_table(data: dict, r: Report) -> None:
     exempt = set(data.get("digit_check_exempt", []))
     fours = [(p, x) for p, x in _numbers(data, exempt) if "4" in num_text(x)]
     r.check("不出现数字 4", not fours, fours)
-    for a in aff:
-        sec = a.get("secondary")
-        if sec:
-            derived = sorted({num_text(x * sec["factor"]) for x in a["values"]})
-            bad4 = [x for x in derived if "4" in x]
-            if bad4:
-                r.warn(f"{a['key']}（{a['name']}）派生值 ×{sec['factor']} 出现 {bad4}（见交付单）")
+    nonint = [(a["key"], x) for a in aff for x in a["values"] + a.get("secondary", {}).get("values", []) if float(x) != int(x)]
+    r.check("词条数值全是整数（Kyo 11-11 01:21）", not nonint, nonint)
+    fury = t.affixes["aura_fury"].get("secondary", {}).get("values", [])
+    r.check("暴怒爆伤一排 5 个、严格递增", len(fury) == 5 and all(x < y for x, y in zip(fury, fury[1:])), fury)
 
     # 6. 难度表
     diffs = tianqi_difficulty_keys()
@@ -270,7 +275,9 @@ def check_affix_table(data: dict, r: Report) -> None:
     r.check("物攻一阶 1/2/3", row("atk", 1) == [1, 2, 3], row("atk", 1))
     r.check("终伤四阶 9/12/15", row("final_damage") == [9, 12, 15], row("final_damage"))
     r.check("再动四阶 10/15/20、三阶 5/10/15", row("reaction") == [10, 15, 20] and row("reaction", 3) == [5, 10, 15])
-    r.check("全能光环四阶 1.5/2/3", row("aura_versatile") == [1.5, 2, 3], row("aura_versatile"))
+    r.check("全能光环四阶 3/5/6", row("aura_versatile") == [3, 5, 6], row("aura_versatile"))
+    r.check("暴怒四阶暴击 3/5/6、爆伤 6/10/12", row("aura_fury") == [3, 5, 6]
+            and [t.secondary_value("aura_fury", 4, g) for g in GRADES] == [6, 10, 12])
     r.check("技能消耗全身上限 −50%", t.affixes["skill_cost"].get("cap_total") == 50 and t.affixes["skill_cost"].get("direction") == "down")
     r.check("吸血单次不超过最大生命 10%", t.affixes["lifesteal"].get("cap_per_hit_mhp") == 10)
     r.check("再动、再释放不连锁", t.affixes["reaction"].get("no_chain") and t.affixes["recast"].get("no_chain"))

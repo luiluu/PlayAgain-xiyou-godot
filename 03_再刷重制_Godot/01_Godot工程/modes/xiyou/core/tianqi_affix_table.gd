@@ -65,6 +65,14 @@ static func value(affix_key: String, tier: int, grade: String) -> Variant:
 	return vals[i] if i < vals.size() else null
 
 
+## 暴怒这类带第二个数的词条（secondary.values）：第二排按同样的阶和成色取；没有或不能出返回 null。
+static func secondary_value(affix_key: String, tier: int, grade: String) -> Variant:
+	var sec: Array = affix(affix_key).get("secondary", {}).get("values", [])
+	if sec.is_empty() or value(affix_key, tier, grade) == null:
+		return null
+	return sec[tier - tier_start(affix_key) + GRADES.find(grade)]
+
+
 ## 能不能出：value 不是 null
 static func available(affix_key: String, tier: int) -> bool:
 	return value(affix_key, tier, "normal") != null
