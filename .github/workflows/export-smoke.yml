@@ -120,6 +120,15 @@ jobs:
           rc=0; timeout 900 "$GODOT" --headless --path "$PROJECT" --export-release "Windows 发行" "$PWD/winrel/再刷一把_天启篇.exe" > winrel-export.log 2>&1 || rc=$?
           ls -la winrel
           if [ "$rc" -ne 0 ] || [ ! -f winrel/再刷一把_天启篇.pck ]; then tail -40 winrel-export.log; exit 1; fi
+      # 自动更新第④批：相对刚导出的 pck 做一个探针补丁，windows-run 把它放进 %APPDATA% 再跑，验真 Windows 上的补丁叠加载入。
+      # 做不出来只警告、不挡别的检查（windows-run 没有 _patch 目录就跳过那一步）。
+      - name: 做探针补丁（给 windows-run）
+        if: ${{ !cancelled() && matrix.platform == 'windows' }}
+        env:
+          XIYOU_GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          python3 "$TOOLS/补丁叠加验证.py" --make-only --preset "Windows 发行" --base "$PWD/winrel/再刷一把_天启篇.pck" --patch-out "$PWD/winrel/_patch" || { echo "::warning::探针补丁没做出来，windows-run 不验补丁叠加载入"; rm -rf winrel/_patch; }
+          ls -la winrel/_patch 2>/dev/null || true
       - if: ${{ !cancelled() && matrix.platform == 'windows' }}
         uses: actions/cache/save@v4
         with:
@@ -153,6 +162,16 @@ jobs:
           ls -la androidrel
           if [ "$rc" -ne 0 ] || [ ! -f androidrel/再刷一把_天启篇.apk ]; then tail -40 androidrel-export.log; exit 1; fi
           unzip -l androidrel/再刷一把_天启篇.apk 'lib/*' | tail -8
+      # 同上，给 android-run：底包用同一份工程现导的数据包（apk 里是散文件，没有 pck；三个预设导出的数据包逐字节相同）。
+      - name: 做探针补丁（给 android-run）
+        if: ${{ !cancelled() && matrix.platform == 'android' }}
+        env:
+          XIYOU_GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          { "$XIYOU_GODOT" --headless --path "$PROJECT" --export-pack "安卓 发行" "$RUNNER_TEMP/android-base.pck" > android-base-export.log 2>&1 \
+            && python3 "$TOOLS/补丁叠加验证.py" --make-only --preset "安卓 发行" --base "$RUNNER_TEMP/android-base.pck" --patch-out "$PWD/androidrel/_patch"; } \
+            || { echo "::warning::探针补丁没做出来，android-run 不验补丁叠加载入"; rm -rf androidrel/_patch; }
+          ls -la androidrel/_patch 2>/dev/null || true
       - if: ${{ !cancelled() && matrix.platform == 'android' }}
         uses: actions/cache/save@v4
         with:

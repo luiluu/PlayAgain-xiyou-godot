@@ -125,5 +125,89 @@ class SyncTests(unittest.TestCase):
         self.assertNotIn('闪退', W.rc_note(1))
 
 
+# 假 exe（Python）：照 core/boot_patch.gd 的规则处理 updates/active.json；FAKE_PATCH 控制出错方式
+FAKE_PATCH = r"""#!/usr/bin/env python3
+import hashlib, json, os, sys
+from pathlib import Path
+mode = os.environ.get('FAKE_PATCH', 'ok')
+d = Path(os.environ['APPDATA']) / 'KYO' / '再刷重制'
+(d / 'logs').mkdir(parents=True, exist_ok=True)
+upd = d / 'updates'
+st_file = upd / 'active.json'
+if st_file.is_file() and mode != 'ignore':
+    st = json.loads(st_file.read_text(encoding='utf-8'))
+    if st.get('confirmed') is False and st.get('boots', 0) >= 2 and mode != 'norollback':
+        (upd / 'rolled_back.json').write_text('{}')
+        st_file.unlink()
+    else:
+        data = (upd / st['file']).read_bytes()
+        if hashlib.sha256(data).hexdigest() != st['sha256'] and mode != 'nosha':
+            print('BOOT_PATCH loaded=false reason=校验不符 base=453 code=9999')
+        else:
+            print('BOOT_PATCH loaded=true reason=已载入 base=453 code=9999')
+            print('PATCH_PROBE script=patched class=new_class data=dev.9999 img=' + ('000000' if mode == 'oldimg' else '123456'))
+            if mode != 'noconfirm':
+                st['confirmed'] = True
+                st_file.write_text(json.dumps(st))
+print('ENTRY_SCENE=res://modes/xiyou/entry.tscn')
+"""
+
+
+class PatchRunTests(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+        import json
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = Path(self.tmp.name) / 'pkg'
+        (self.d / '_patch').mkdir(parents=True)
+        exe = self.d / 'fake.py'
+        exe.write_text(FAKE_PATCH, encoding='utf-8')
+        exe.chmod(0o755)
+        (self.d / 'fake.pck').write_bytes(b'GDPC')
+        data = b'PATCHDATA' * 100
+        (self.d / '_patch' / 'patch.pck').write_bytes(data)
+        (self.d / '_patch' / 'active.json').write_text(json.dumps({'file': 'patch.pck', 'sha256': hashlib.sha256(data).hexdigest(),
+            'size': len(data), 'base': 453, 'code': 9999, 'confirmed': False, 'boots': 0, 'prev': None}), encoding='utf-8')
+        (self.d / '_patch' / 'expect.txt').write_text('PATCH_PROBE script=patched class=new_class data=dev.9999 img=123456\n', encoding='utf-8')
+        self.old = os.environ.get('FAKE_PATCH')
+
+    def tearDown(self):
+        if self.old is None:
+            os.environ.pop('FAKE_PATCH', None)
+        else:
+            os.environ['FAKE_PATCH'] = self.old
+        self.tmp.cleanup()
+
+    def go(self, mode):
+        os.environ['FAKE_PATCH'] = mode
+        rep = W.Report()
+        tmp_root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        work = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        W.patch_runs(self.d / 'fake.py', work, rep, tmp_root, self.d / '_patch')
+        return {r[0] for r in rep.failed}, {r[0] for r in rep.rows}
+
+    def test_all_pass(self):
+        failed, names = self.go('ok')
+        self.assertEqual(failed, set())
+        self.assertEqual(names, {'win_patch_loaded', 'win_patch_replaces_script_class_data_image', 'win_patch_enters_title',
+                                 'win_patch_confirmed_after_boot', 'win_patch_bad_sha_not_loaded', 'win_patch_truncated_not_loaded',
+                                 'win_patch_auto_rollback'})
+
+    def test_each_break_is_caught(self):
+        self.assertEqual(self.go('ignore')[0], {'win_patch_loaded', 'win_patch_replaces_script_class_data_image', 'win_patch_confirmed_after_boot',
+                                                'win_patch_bad_sha_not_loaded', 'win_patch_truncated_not_loaded', 'win_patch_auto_rollback'})
+        self.assertEqual(self.go('oldimg')[0], {'win_patch_replaces_script_class_data_image'})
+        self.assertEqual(self.go('noconfirm')[0], {'win_patch_confirmed_after_boot'})
+        self.assertEqual(self.go('nosha')[0], {'win_patch_bad_sha_not_loaded', 'win_patch_truncated_not_loaded'})
+        self.assertEqual(self.go('norollback')[0], {'win_patch_auto_rollback'})
+
+    def test_main_skips_when_no_patch_dir(self):
+        import shutil
+        shutil.rmtree(self.d / '_patch')
+        os.environ['FAKE_PATCH'] = 'ok'
+        rc = W.main(['--dir', str(self.d), '--exe', 'fake.py', '--no-keys', '--out', str(Path(self.tmp.name) / 'o')])
+        self.assertEqual(rc, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
