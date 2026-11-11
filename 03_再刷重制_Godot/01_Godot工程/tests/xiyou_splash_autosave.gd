@@ -140,6 +140,56 @@ func _run() -> void:
 	check("rollback_warning_off", not XSplashScreen.WARNING_SCREEN)
 	XSplashScreen.WARNING_SCREEN = true
 
+	# ---- 天启篇启动动画（v8_cc，声明屏之前；O-262）----
+	check("intro_default_on", XIntroAnim.ENABLED)
+	check("intro_video_exists", ResourceLoader.exists(XIntroAnim.VIDEO))
+	check("intro_video_is_stream", load(XIntroAnim.VIDEO) is VideoStream)
+	XSplashScreen.shown = false
+	var ia := XIntroAnim.play(host)
+	check("intro_plays", ia != null)
+	check("intro_marks_shown", XSplashScreen.shown)
+	if ia != null:
+		ia.set_process(false)
+		var idone := [false]
+		ia.finished.connect(func(): idone[0] = true)
+		check("intro_length", absf(ia.state().length - XIntroAnim.LENGTH) < 0.1, ia.state())
+		check("intro_video_full_rect", ia._player.expand and ia._player.size == Vector2(1280, 720), ia._player.size)
+		await shot("intro_start")
+		ia.step(ia.state().length - 0.01)
+		check("intro_not_ending_before_end", not ia.state().ending and ia._black.color.a == 0.0, ia.state())
+		ia.step(0.02)
+		check("intro_fades_at_end", ia.state().ending and not ia.state().done, ia.state())
+		ia.step(XIntroAnim.FADE_OUT)
+		check("intro_auto_finish", idone[0] and ia._black.color.a == 1.0, ia.state())
+	# 跳过：任意时刻按键 → 0.1 秒压黑后结束
+	var ib := XIntroAnim.play(host)
+	if ib != null:
+		ib.set_process(false)
+		var idone2 := [false]
+		ib.finished.connect(func(): idone2[0] = true)
+		ib.step(0.02, true)
+		check("intro_skip_starts_fade", ib.state().ending and not idone2[0], ib.state())
+		ib.step(XIntroAnim.FADE_OUT)
+		check("intro_skip_done", idone2[0], ib.state())
+	# 变速齿轮下按真实时间：淡入层的补间速度除掉 time_scale
+	var ts := Engine.time_scale
+	Engine.time_scale = 1.6
+	var fr := XIntroAnim.fade_in_title(host)
+	check("intro_title_fade_starts_black", fr.color == Color.BLACK and fr.modulate.a == 1.0)
+	check("intro_title_fade_ignores_mouse", fr.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	check("intro_title_fade_on_top", host.get_child(host.get_child_count() - 1) == fr)
+	Engine.time_scale = ts
+	fr.queue_free()
+	# 回退：不放动画（只放声明屏，标题不淡入）
+	XIntroAnim.ENABLED = false
+	check("rollback_intro_off", not XIntroAnim.available() and XIntroAnim.play(host) == null)
+	XIntroAnim.ENABLED = true
+	# 天启篇回退到原版开局（O-260）时也不放天启篇动画
+	var tq := XTianqi.ENABLED
+	XTianqi.ENABLED = false
+	check("intro_off_without_tianqi", not XIntroAnim.available())
+	XTianqi.ENABLED = tq
+
 	XSplashScreen.ENABLED = false
 	check("rollback_not_wanted", not XSplashScreen.wanted())
 	XSplashScreen.ENABLED = true
