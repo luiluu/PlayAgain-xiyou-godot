@@ -217,3 +217,59 @@ func _map_handover() -> void:
 	m.play_bgm({"name": "Battle1", "volume": 50, "pitch": 100, "pan": 0})
 	await get_tree().create_timer(XAudio.REPLAY_FADE + 0.2).timeout
 	check("new_bgm_not_clobbered_by_fade", is_equal_approx(m.bgm.volume_db, linear_to_db(0.5)), m.bgm.volume_db)
+	await _escape_audio(m, true)
+	await _escape_audio(m, false)
+
+
+## O-254（Kyo 11-11）：逃跑成功时消息窗一出来就停战斗曲、换回地图曲（原版 processEscape：排文字后紧接 replayBgmAndBgs）；
+## 开关关掉回到原重制：等消息窗关掉、战斗发 finished 才换。真开一场可逃的战斗，等到指令输入时直接走逃跑成功。
+func _escape_audio(m: XMapScene, early: bool) -> void:
+	var tag := "escape_early_" if early else "escape_late_"
+	if early:
+		XBattleScene.ESCAPE_MAP_AUDIO_EARLY = true
+	else:
+		XBattleScene.ESCAPE_MAP_AUDIO_EARLY = false   # 回退开关（O-254）
+	m.play_bgm({"name": "Town1", "volume": 90, "pitch": 100, "pan": 0})
+	# 前面那场用的是空白新游戏（没有队员、一开战就输）；换一份有三名队员的局，地图位置不动
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.map_id = 4
+	s.x = 14
+	s.y = 23
+	XState.current = s
+	m.start_battle(4, true, true)   # 不等：下面在战斗进行中检查
+	var b: XBattleScene = null
+	var t := WaitBudget.new(60000)
+	while t.waiting() and (b == null or not b.inputting):
+		for c in m.ui.get_children():
+			if c is XBattleScene and not c.is_queued_for_deletion():
+				b = c
+		await get_tree().process_frame
+	if not check(tag + "battle_inputting", b != null and b.inputting, [b != null, m._in_battle, XState.current.members().map(func(a): return a.hp)]):
+		XBattleScene.ESCAPE_MAP_AUDIO_EARLY = true
+		return
+	check(tag + "map_bgm_paused_in_battle", m.bgm.stream_paused)
+	XMessageBox.auto = false   # 消息窗停在那儿，看它显示期间的音轨
+	b._close_windows()
+	b.inputting = false
+	var done := [false]
+	b.finished.connect(func(_r): done[0] = true)
+	b._escape_success()   # 跑到消息窗等按键为止
+	await frames(2)
+	check(tag + "message_showing", not done[0])
+	check(tag + "map_bgm_during_message", m.bgm.stream_paused != early, [m.bgm.stream_paused, early])
+	check(tag + "battle_bgm_during_message", (b.bgm == null or not b.bgm.playing) == early, b.bgm.playing if b.bgm != null else null)
+	XMessageBox.auto = true
+	var t2 := WaitBudget.new(60000)
+	while t2.waiting() and (m._in_battle or not done[0]):
+		var e := InputEventAction.new()
+		e.action = "ui_accept"
+		e.pressed = true
+		Input.parse_input_event(e)
+		await frames(1)
+		e = InputEventAction.new()
+		e.action = "ui_accept"
+		Input.parse_input_event(e)
+		await frames(3)
+	check(tag + "back_on_map", done[0] and not m._in_battle)
+	check(tag + "map_bgm_after", not m.bgm.stream_paused)
+	XBattleScene.ESCAPE_MAP_AUDIO_EARLY = true

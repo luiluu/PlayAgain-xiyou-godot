@@ -467,6 +467,21 @@ const SCOPE_ROWS = (() => {
         && Array.isArray(r.presetKeys) && r.presetKeys.every(k => typeof k === 'string' && k) && typeof r.why === 'string' && r.why))
       throw new Error('probe_change_scope.json 的条目要有 file（mv_oracle/event_state_probe.cjs）、from／to（不同的整份 SHA-256）、presetKeys（字符串数组，空＝不影响任何变体）、why：' + JSON.stringify(r));
   }
+  // 审查 95 P2-3：同一个 to 写两条时 scopedSelf 的 find 会按「带不带本变体的键」挑其中一条，带键那条被跳过、空数组那条命中，
+  // 该重跑的变体被取回；链上有环时追链结果取决于从哪进环。两种都在用例执行前报错（同 incremental_sync.py 对 (file,to) 的去重）。
+  const tos = new Set();
+  for (const r of rows) {
+    if (tos.has(r.to)) throw new Error('probe_change_scope.json 里同一个 to 写了两条，折算不唯一：' + r.to);
+    tos.add(r.to);
+  }
+  const back = new Map(rows.map(r => [r.to, r.from]));
+  for (const start of back.keys()) {
+    const seen = new Set();
+    for (let cur = start; back.has(cur); cur = back.get(cur)) {
+      if (seen.has(cur)) throw new Error('probe_change_scope.json 的声明连成了环（from／to 绕回自己）：' + start);
+      seen.add(cur);
+    }
+  }
   return rows;
 })();
 // 预设里出现过的键路径（数字键记成 *，含各级前缀）：{actors:{79:{forget:[1]}}} → actors、actors.*、actors.*.forget

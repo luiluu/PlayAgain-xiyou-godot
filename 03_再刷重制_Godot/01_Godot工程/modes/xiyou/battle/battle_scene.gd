@@ -13,6 +13,8 @@ extends Control
 ## 规则在 XBattleLogic；结束时发出 finished(0 胜利 / 1 逃跑 / 2 战败)。
 
 signal finished(result: int)
+## 逃跑成功、消息窗出来之前发（ESCAPE_MAP_AUDIO_EARLY）：地图收掉战斗曲、换回地图曲
+signal escape_audio
 signal _picked(value)
 
 const BOX := Vector2(1280, 720)           # 原版画面尺寸（坐标基准）
@@ -881,6 +883,10 @@ func _sync_appeared() -> void:
 
 
 ## BattleManager.processEscape 成功：逃跑音效，消息窗「<队名>开始逃跑了！」（等按键；挂机中按 messageCount 自动翻页），结束战斗（结果 1）
+## 开关（O-254，Kyo 2026-11-11「按你设计优化一下」）：true＝照原版 processEscape，逃跑消息一出来就停战斗曲、换回地图曲淡入
+## （displayEscapeSuccessMessage 只排文字，紧接 processAbort → replayBgmAndBgs）；false＝等消息窗关掉、战斗发 finished 后才换（原重制）
+static var ESCAPE_MAP_AUDIO_EARLY := true
+
 func _escape_success() -> void:
 	boss_hp.ended()
 	_close_windows()
@@ -888,6 +894,8 @@ func _escape_success() -> void:
 	otb.hide_bar()
 	logic.escaped = true
 	XSound.system(8)
+	if ESCAPE_MAP_AUDIO_EARLY:
+		escape_audio.emit()
 	await message.run({"lines": [escape_text()]})
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
 	logic.end_battle(1)
