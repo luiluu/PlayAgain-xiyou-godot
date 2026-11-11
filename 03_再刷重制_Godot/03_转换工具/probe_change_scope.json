@@ -39,6 +39,16 @@
       "to": "9ee34db82a13cd8a5928e0cb1f0e0520d54f498a83d1d7277d338d26614fd4a8",
       "presetKeys": [],
       "why": "cc 审查 95 P2-3：SCOPE_ROWS 读入后只加两项校验（同一个 to 写两条、from／to 连成环都报错），在用例执行之前抛错或通过；变体执行路径（applyPreset／runCase）一行没改，旧变体结果与读到的地图不变"
+    },
+    {
+      "file": "mv_oracle/event_state_probe.cjs",
+      "from": "9ee34db82a13cd8a5928e0cb1f0e0520d54f498a83d1d7277d338d26614fd4a8",
+      "to": "82e9a3849acdd9d87aac48e422c92bda849459aa46564e0b22c314add4b70aed",
+      "presetKeys": [
+        "hangUp",
+        "designations"
+      ],
+      "why": "cc 地图页 m5：applyPreset 新加预设键 hangUp（设 XdRsData.hangUp.GuaJiStartBettleOk，下一例开头换回原值）与 designations（ConfigManager.DesignationN[N]=true，每例 applyData({}) 已清空）；不带这两个键的变体执行路径不变（开头的换回只在上一例带 hangUp 时动作）（总装合并：接在审查 95 返修那条之后，to 是两边合并后的探针）"
     }
   ]
 }

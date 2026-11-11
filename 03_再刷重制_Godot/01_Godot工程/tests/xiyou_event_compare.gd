@@ -539,6 +539,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 			if str(cmd.parameters[0]).begins_with("PHWarehouse show "):
 				XWarehouse.create(s, str(cmd.parameters[0]).substr(len("PHWarehouse show ")))
 			break
+	XHangUp.started_flag = false   # 参照每例把挂机标记换回开局值（运行期全局，不随新局清）
 	_apply_preset(s, c.get("preset", {}))
 	host.preset_battle_result = int(c.get("preset", {}).get("battleResult", 0))
 	XDungeon.battle = {}       # $gameTroop 每例新游戏都是空的
@@ -548,6 +549,9 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 	XConfig.designations().clear()   # 参照每例 ConfigManager.applyData({}) 重置称号
 	XConfig.designations()   # ensure_loaded；漩涡过场播过的键同样每例清空（不清时前一例 mark('rift1') 让整份跑里的 m4e76p0 门关上，分段甲 a4）
 	(XConfig._values.codexWhisperSeen as Array).clear()
+	# cc 地图页 m5：预设 designations＝已解锁的称号号（同参照 ConfigManager.DesignationN[N] = true），放在上面每例清空之后
+	for id in c.get("preset", {}).get("designations", []):
+		XConfig.designations()[str(int(id))] = true
 	var before := _snap(s, watch)
 	MVInterpreter.max_steps = MAX_STEPS
 	MVInterpreter.fixed_random = 0.5
@@ -586,7 +590,7 @@ func _run_case(c: Dictionary, host: EventHost) -> Dictionary:
 
 ## 有状态变体的初始状态（同 event_state_probe.cjs applyPreset，顺序相同）
 ## 预设键白名单（同参照 event_state_probe.cjs PRESET_KEYS）：不认识的键记下来，测试红（审查 49）
-const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "maxLevel", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons"]
+const PRESET_KEYS := ["difficulty", "party", "actors", "answers", "armors", "battleResult", "dead", "defeats", "gold", "items", "maxLevel", "playerDirection", "playtime", "random_seq", "selfSwitches", "switches", "variables", "weapons", "hangUp", "designations"]
 ## cc 分段甲 a6：actors.N 下认的子键（同参照 ACTOR_PRESET_KEYS）；不认识的记成坏键「actors.N.键」
 const ACTOR_PRESET_KEYS := ["level", "skills", "forget", "armors", "weapons", "paramPlus", "hp", "mp", "states"]
 var bad_preset_keys := []
@@ -666,6 +670,12 @@ func _apply_preset(s: XState, p: Dictionary) -> void:
 		dead_actor.refresh_resources()  # 同 MV setHp(0)：refresh 挂死亡状态
 	for k in p.get("selfSwitches", {}):
 		s.self_switches[str(k)] = bool(p.selfSwitches[k])
+	# cc 地图页 m5：预设 hangUp＝正在挂机（参照设 XdRsData.hangUp.GuaJiStartBettleOk），开守层者「你正在挂机」门。
+	# 这里摆成挂机中（原点取玩家位置），同时设原版标记，GATE_ACTIVE_ONLY 两支都开门
+	if p.has("hangUp") and bool(p.hangUp):
+		s.hang_up_active = true
+		s.hang_up_origin = Vector2i(maxi(s.x, 0), maxi(s.y, 0))
+		XHangUp.started_flag = true
 	if p.has("playerDirection"):
 		s.direction = int(p.playerDirection)  # accept5：同参照 $gamePlayer.setDirection
 	if p.has("playtime"):

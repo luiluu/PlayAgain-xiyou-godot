@@ -261,4 +261,25 @@ func _rollback_logic() -> void:
 		check("auto_save_slot_%s" % tag, XHangUp.auto_save_slot(st) == (7 if setting else param_slot), XHangUp.auto_save_slot(st))
 	XHangUp.AUTO_SAVE_SETTING = true
 	XHangUp.clear(st)
+	# O-待定 守层者挂机门（条件脚本 XdRsData.hangUp.GuaJiStartBettleOk，经 MVScript.eval_expr）：
+	# 开始挂机 → 门开；停止 → 门关；「读档」（clear，不经 stop）后：优化看是否正在挂机 → 关，原版残留标记 → 仍开
+	const GATE := "XdRsData.hangUp.GuaJiStartBettleOk"
+	for active_only in [true, false]:
+		if active_only:
+			XHangUp.GATE_ACTIVE_ONLY = true
+		else:
+			XHangUp.GATE_ACTIVE_ONLY = false  # 回退值写成字面量，回退开关覆盖.py 才认得
+		var tag := "active" if active_only else "original"
+		XHangUp.started_flag = false
+		check("gate_idle_%s" % tag, MVScript.eval_expr(GATE) == false, MVScript.eval_expr(GATE))
+		XHangUp.ready_start(st, true, Vector2i(2, 2))
+		check("gate_hanging_%s" % tag, MVScript.eval_expr(GATE) == true, MVScript.eval_expr(GATE))
+		XHangUp.clear(st)   # 读档：运行状态清掉，原版标记不清
+		check("gate_after_load_%s" % tag, MVScript.eval_expr(GATE) == (not active_only), [MVScript.eval_expr(GATE), XHangUp.started_flag])
+		XHangUp.ready_start(st, true, Vector2i(2, 2))
+		XHangUp.stop(st)
+		check("gate_after_stop_%s" % tag, MVScript.eval_expr(GATE) == false, MVScript.eval_expr(GATE))
+	XHangUp.GATE_ACTIVE_ONLY = true
+	XHangUp.started_flag = false
+	XHangUp.clear(st)
 	XState.current = prev

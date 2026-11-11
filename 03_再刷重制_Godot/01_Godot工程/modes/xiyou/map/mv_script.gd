@@ -911,13 +911,14 @@ static func eval_expr(js: String) -> Variant:
 		["$gameMap.mapId()", "map_id()"], ["$gameMap._mapId", "map_id()"], ["Math.floor(", "floor("], ["Math.ceil(", "ceil("],
 		["Math.max(", "max("], ["Math.min(", "min("], ["Math.abs(", "abs("], ["===", "=="], ["!==", "!="], ["&&", " and "], ["||", " or "],
 		["CodexReincarnationRandom.entryAccepted()", "entry_accepted()"], ["CodexReincarnationRandom.entryHard()", "entry_hard()"],
-		["$gameSystem.defeatNumber(", "defeats("], [_JIANXIN, "jianxin()"]]
+		["$gameSystem.defeatNumber(", "defeats("], [_JIANXIN, "jianxin()"],
+		["XdRsData.hangUp.GuaJiStartBettleOk", "hang_up_gate()"]]
 	for s in subs:
 		e = e.replace(s[0], s[1])
 	e = _re("\\$gameParty\\.numItems\\(\\$dataItems\\[(\\d+)\\]\\)").sub(e, "items($1)", true)
 	e = _re("ConfigManager\\.DesignationN\\[(\\d+)\\]").sub(e, "designation($1)", true)  # 称号解锁（Map2 EV2 条件）
 	e = _re("!(?!=)").sub(e, " not ", true)
-	var allowed := ["v", "sw", "defeats", "jianxin", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
+	var allowed := ["v", "sw", "defeats", "jianxin", "hang_up_gate", "designation", "playtime", "gold", "steps", "party_size", "map_id", "items", "entry_accepted", "entry_hard", "floor", "ceil", "max", "min", "abs", "true", "false", "and", "or", "not"]
 	for w in _re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 		if not allowed.has(w.get_string()):
 			return null
@@ -939,6 +940,8 @@ class ExprEnv:
 	func sw(id: float) -> bool: return XState.current.switch(int(id))
 	## 剑心图鉴开关（$gameSystem._kyoJianxinBookUnlocked，见 _cut_misc）：没设过是 undefined，!! 后为 false
 	func jianxin() -> bool: return bool(XState.current.flags.get("_kyoJianxinBookUnlocked", false))
+	## 挂机门（守层者「你正在挂机，无法挑战」，XHangUp.gate；O-待定）
+	func hang_up_gate() -> bool: return XHangUp.gate(XState.current)
 	func playtime() -> float: return floorf(XState.current.play_seconds)
 	func gold() -> float: return float(XState.current.gold)
 	func steps() -> float: return float(XState.current.steps)
