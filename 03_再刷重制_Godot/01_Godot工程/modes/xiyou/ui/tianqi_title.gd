@@ -1,6 +1,6 @@
 class_name XTianqiTitle
 extends Control
-## 【cc·Pro·未经审查】天启篇标题页（O-待定）：底图 T1、Logo T2、五个两态菜单字效 T3、光标 T4（素材来历见 content/title/README.md）。
+## 【cc·Pro·未经审查】天启篇标题页（O-306）：底图 T1、Logo T2、五个两态菜单字效 T3、光标 T4（素材来历见 content/title/README.md）。
 ## - 接住启动动画 v8（合眼收尾）：play_entrance() 照 v8 成片后段的时间线——全黑 → 1.2 秒亮起（眼睛闭着，贴 eye_0）
 ##   → 淡入开始后第 26 帧起每帧换下一张睁眼帧，7 帧睁完、去掉贴片 → 睁眼开始后第 10～30 帧 Logo 从下方 8 像素上浮淡入
 ##   → 菜单 0.3 秒淡入。时间按真实秒计（除掉 Engine.time_scale，同 XIntroAnim）。进场中任意键、点一下直接跳到最终画面。

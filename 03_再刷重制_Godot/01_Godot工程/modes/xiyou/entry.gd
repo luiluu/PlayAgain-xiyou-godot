@@ -16,7 +16,7 @@ var _commands: Array = []         # [{node, enabled, fn, top, bottom}]
 var _sel := 0
 var _cursor: TextureRect
 var _cursor_t := 0.0
-var _tq_title: XTianqiTitle       # 天启篇新标题（O-待定）；不用新标题或已换到别的页面时为 null
+var _tq_title: XTianqiTitle       # 天启篇新标题（O-306）；不用新标题或已换到别的页面时为 null
 
 
 func _ready() -> void:
@@ -157,7 +157,7 @@ func _title() -> void:
 	_select(0, true)
 
 
-## 天启篇新标题（XTianqiTitle，O-待定）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
+## 天启篇新标题（XTianqiTitle，O-306）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
 ## 原版 login 底图与粒子（_build_background）留在下面，被新底图整个盖住；读档、选存档位等子页仍以它为背景。
 func _tq_build_title() -> void:
 	var any := false
