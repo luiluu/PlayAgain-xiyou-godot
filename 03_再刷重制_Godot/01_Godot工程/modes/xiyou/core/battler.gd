@@ -555,6 +555,8 @@ func remove_state(id: int) -> void:
 		return  # 流萤 Game_Enemy.removeState／eraseState 包装：击破印记不可驱散
 	if XAlienBattle.blocks_removal(self, id, _leaving_state):
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
+	if id == 1 and state_ids.has(id) and hp <= 0.0 and XTianqiHorsemen.blocks_revive(self):
+		return  # 天启四骑士：死期死去的人本场不能复活（终焉）
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
 		return  # 异化 revive 包装（O-108）：连命复活回池，嫁祸的保护者倒下不能复活
 	var had := state_ids.has(id)

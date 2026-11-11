@@ -103,7 +103,7 @@ static func bind_battle(s: XState, enemies: Array) -> void:
 	_battle_enemies = enemies.map(func(e): return weakref(e))
 
 static func note_death(b: XBattler) -> void:
-	if not b is XEnemy or _battle_state == null:
+	if not b is XEnemy or _battle_state == null or not (b as XEnemy).horseman.is_empty():  # 天启四骑士战借外观的骑士、援军不记进图鉴
 		return
 	var s = _battle_state.get_ref()
 	if s != null and _battle_enemies.any(func(e): return is_same(e.get_ref(), b)):
