@@ -232,10 +232,10 @@ func _gui_input(event: InputEvent) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		close_page()
 	elif event is InputEventKey or event is InputEventJoypadButton:
 		# 这一页开着时键盘和手柄不漏到下面的标题菜单；确定键交给有焦点的按钮
 		if not event.is_action("ui_accept") and not event.is_action("ui_left") and not event.is_action("ui_right") \
 				and not event.is_action("ui_focus_next") and not event.is_action("ui_focus_prev"):
-			get_viewport().set_input_as_handled()
+			XKeyMap.handled(self)
