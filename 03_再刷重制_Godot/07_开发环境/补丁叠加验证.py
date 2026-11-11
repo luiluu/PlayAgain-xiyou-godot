@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """补丁叠加验证（自动更新第 0 批，cc 2026-11-11）：在真工程上确认「补丁包放用户目录、启动时叠加载入」能替换脚本、数据、图。
 
-  python3 补丁叠加验证.py               导出底包 → 临时改四处 → 导出补丁 → 还原改动 → 用 macOS 发行模板当替身跑四次
+  python3 补丁叠加验证.py               导出底包 → 临时改四处 → 导出补丁 → 还原改动 → 用 macOS 发行模板当替身跑六次
   python3 补丁叠加验证.py --preset "安卓 发行"   换一个导出预设做底包和补丁（默认「Windows 发行」）
   python3 补丁叠加验证.py --keep        留下工作目录（底包、补丁、日志）
   python3 补丁叠加验证.py --out <目录>   工作目录（默认系统临时目录下新建）
@@ -19,8 +19,10 @@
        b 登记补丁            → BOOT_PATCH loaded=true，探针行四项都是补丁里的值，照常进标题
        c 登记的 SHA 不对      → BOOT_PATCH reason=校验不符，没有探针行，照常进标题
        d 补丁文件截断一半     → 同上
+       e 新装的补丁（未确认）  → 载入、进标题，跑起来后登记变成已确认
+       f 已连续两次没起来      → 启动前自动退回、不载入，留下退回提示
 它量的是引擎读包与载入顺序；Windows／安卓真系统上 user:// 的位置和文件读写不在这里（走云端 export-smoke 或实机）。
-退出码 0＝四次都符合预期。
+退出码 0＝六次都符合预期。
 """
 import argparse
 import hashlib
@@ -73,7 +75,7 @@ def sha(p: Path) -> str:
     return h.hexdigest()
 
 
-def run_game(exe: Path, work: Path, tag: str, setup):
+def run_game(exe: Path, work: Path, tag: str, setup, after=None):
     home = work / f'home_{tag}'
     upd = home / USER_DIR / 'updates'
     upd.mkdir(parents=True)
@@ -82,6 +84,8 @@ def run_game(exe: Path, work: Path, tag: str, setup):
                        timeout=600, env=dict(os.environ, HOME=str(home)), cwd=str(home))
     out = p.stdout + p.stderr
     (work / f'run_{tag}.log').write_text(out, encoding='utf-8')
+    if after:
+        out = (out, after(upd))
     shutil.rmtree(home, ignore_errors=True)
     return out
 
@@ -170,10 +174,23 @@ def main() -> int:
     o = run_game(exe, work, 'd', put(bad, cut=True))
     check('d 文件截断', '不载入（校验不符）、照常进标题', 'reason=校验不符' in o and 'PATCH_PROBE' not in o and ENTRY in o)
 
+    # e 新装的补丁（confirmed=false）：跑起来后载入器自己确认，登记变成 confirmed=true、计数清零
+    def read_state(upd: Path):
+        return json.loads((upd / 'active.json').read_text(encoding='utf-8')) if (upd / 'active.json').exists() else None
+    o, st = run_game(exe, work, 'e', put(dict(good, confirmed=False, boots=0, prev=None)), after=read_state)
+    check('e 新装未确认', '载入并进标题', 'BOOT_PATCH loaded=true' in o and ENTRY in o)
+    check('e 新装未确认', '跑起来后登记变成已确认', bool(st) and st.get('confirmed') is True and st.get('boots') == 0)
+    # f 已经连续两次没起来（boots=2、未确认）：这次启动前自动退回，不载入补丁，留下提示
+    def read_all(upd: Path):
+        return (read_state(upd), (upd / 'rolled_back.json').exists())
+    o, (st, noted) = run_game(exe, work, 'f', put(dict(good, confirmed=False, boots=2, prev=None)), after=read_all)
+    check('f 两次没起来', '自动退回：不载入补丁、照常进标题', 'PATCH_PROBE' not in o and 'BOOT_PATCH loaded=true' not in o and ENTRY in o)
+    check('f 两次没起来', '登记删掉、留下退回提示', st is None and noted)
+
     if problems:
         print(f'✗ {len(problems)} 项不符，日志留在 {work}')
         return 1
-    print('✓ 补丁叠加载入：四次运行都符合预期')
+    print('✓ 补丁叠加载入：六次运行都符合预期')
     if not a.keep and not a.out:
         shutil.rmtree(work, ignore_errors=True)
     return 0
