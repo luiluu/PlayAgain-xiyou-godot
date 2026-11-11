@@ -128,7 +128,7 @@ static func variant_info(key: String) -> Dictionary:
 static func setup_encounter(logic, rng: XRandomStream, forced := {}):
 	var st := _store(logic)
 	st.encounter = null
-	if HIDDEN_V058:
+	if HIDDEN_V058 or XTianqi.legacy_alien_off(logic.state):  # 天启篇：不出原版 1% 异化遭遇（XTianqi.NO_LEGACY_ALIEN）
 		return null
 	var s: XState = logic.state
 	var enemies: Array = logic.enemies

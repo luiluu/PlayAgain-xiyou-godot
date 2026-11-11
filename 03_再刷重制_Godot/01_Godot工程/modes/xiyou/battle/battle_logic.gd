@@ -184,6 +184,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	var strong_count := XEnemy.deployed_strong_count(actors)
 	for m in t.get("members", []):
 		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule(), strong_count)
+		XTianqi.strip_myth(e, s)  # 天启篇：不出「神话」（XTianqi.NO_MYTH；照样掷，随机流不变）
 		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll, _rule())
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))

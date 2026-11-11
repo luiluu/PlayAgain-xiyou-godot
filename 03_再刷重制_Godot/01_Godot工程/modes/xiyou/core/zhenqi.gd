@@ -721,6 +721,7 @@ static func troop_setup(enemies: Array, difficulty: int, elite_roll := -1.0, ran
 	if t.is_empty() or int(t.ref.enemyId) == 0:
 		return
 	var ref := XEnemy.new().setup(int(t.ref.enemyId), difficulty, elite_roll, random)
+	XTianqi.strip_myth(ref, XState.current)  # 天启篇：参照敌人也不按「神话」取能力值
 	var p := []
 	for i in range(8):
 		p.append(ref.param_base_raw(i))

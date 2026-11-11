@@ -28,13 +28,18 @@
 - 31～36 层 Boss 终焉（31～36 层重做交付单留给本车道的那条）：31～33 层原守层者和 34 层鸿钧（名字「【守层者】鸿钧」）按守层者在 31～36 层段一定终焉；35、36 层影子和骑士是四骑士战，不动。
 - `天启篇数据校验.py` 加 seg_alien 一组（数字避开 4、1～36 层段表连续、级名和难度键齐全、几率在 0～100）。
 - 新专项 `tests/xiyou_tianqi_seg_alien`。
-- 玩家可见：开发版天启篇存档选了战争线或饥荒线后，6 层起的稀有怪、首领、守层者、深渊怪会按段异化（名字「侵染·」等，带本线规则）；发行版看不到（天启篇关着）。
+- 天启篇关掉原版 1% 异化遭遇和「神话」（Kyo 11-11 19:38「关」，四线异化 v0.8 第 2.3 节；免得同一只怪生命加成叠两次）：`core/tianqi.gd` 加开关 `NO_LEGACY_ALIEN`、`NO_MYTH`，默认开，只认天启篇存档。
+  - 遭遇：`XAlienBattle.setup_encounter` 在天启篇档直接不遭遇（同 v0.58 隐藏那条路；工坊、已有异化装备不动）。
+  - 神话：`battle_logic.gd` 建敌人后调 `XTianqi.strip_myth`：照原版照样掷（随机流不变），掷中了也改回普通怪并回满；真气幻化的参照敌人（`zhenqi.gd` troop_setup）同样处理。图鉴、地图掉率预览本来就固定按普通（O-078、O-013）。
+  - 西游档、发行版不变；两个开关关掉回原版。
+- `tests/xiyou_tianqi_summit` 的鸿钧能力值比对一段临时关掉按段异化（34 层守层者会被按段异化成终焉、种类随机，比值就不准了），其余不动。
+- 玩家可见：开发版天启篇存档里不再出现「【神话】」怪和原版的异化遭遇；选了战争线或饥荒线后，6 层起的稀有怪、首领、守层者、深渊怪会按段异化（名字「侵染·」等，带本线规则）；发行版看不到（天启篇关着）。
 
 ### 未做（下一单）
 
 - 死亡、瘟疫两线：模块做好后在 `XTianqiLine.alien_apply／alien_kinds／alien_active` 各加一行，并按自己的种类键改 `seg_alien.json` 的 `lines.death／plague.teach`（键是 cc 占的位，已告知两条车道）。
 - 战争线连击兵（11 层起教）还没做，段表里有，抽种类时自动跳过。
-- 原版的 1% 异化遭遇（XAlienBattle）和怪物「神话」在天启篇里还开着，没去掉（v0.8 第 2.3 节「去掉神话」归数值车道）；同一只怪可能叠两种异化的生命加成。
+- 去掉神话之后怪物平均强度、掉率基数（v0.8 第 2.3 节：普通怪掉率基数 0.2 → 约 0.6）没调，归数值车道。
 - 异化装备掉落（v0.8 第 1.2 节掉率）、异化图鉴、画面（级的纹、附加件、本线色调）都没做。
 - 31～36 层里不带【守层者】前缀的 Boss（如果以后加）不会自动终焉，要在表里加类或改名字。
 
@@ -65,6 +70,7 @@
 
 - 新专项 `xiyou_tianqi_seg_alien` 64/64（段表、难度修正、种类、判定、开战：战争线 10 层守层者侵染、饥荒线 12 层蚀骨、34 层鸿钧终焉、使徒和四骑士战不覆盖、没选线／没做好的线／开关关／原版档不动）。
 - `并行测试.py` 一批 36 个全过：`xiyou_tianqi_*`（16 个，含 war 96/96、famine 99/99、summit）、`xiyou_boss_*`、`xiyou_map_*`、`xiyou_determinism`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_enemy_book`、`xiyou_battle_pace`、`xiyou_action_sequence`、`xiyou_lobby_corruption`、`xiyou_actor1_damage`、`xiyou_attack_query`。
+- 关神话和 1% 遭遇后：专项 70/70（加了「天启篇不出神话、不遭遇；西游档照旧；开关关掉回原版」6 项）；`并行测试.py` 一批 40 个（上面那批加 `xiyou_alien_workshop`、`xiyou_zhenqi*`）：`xiyou_tianqi_summit` 因鸿钧比对被按段异化干扰失败，改测试后单跑连跑 3 次 63/63；`xiyou_tianqi_title_flow` 并行时超慢失败、单跑 38/38（⚠ 偶发，第 1 次，和本改动无关）；其余全过。
 - `天启篇数据校验.py` 全过（含 seg_alien）。
 - `选测.py main --list` 判整轮（本分支带着四条未合的天启篇分支）；没跑全量 `检查.sh`（车道规则），`xiyou_rules*`、`xiyou_event_compare*` 云端跑不了，见上「在 Mac 上要跑的专项」。
 
@@ -73,4 +79,5 @@
 - WIP: 按段异化 XTianqiSegAlien（段表、难度、种类）接战争线 apply；专项与数据校验
 - WIP: 合入饥荒线车道 XTianqiLine；按段异化改走 XTianqiLine.alien_apply／alien_kinds，饥荒异化拆出 apply
 - WIP: 再合饥荒线车道（含 31～36 层重做）；按段异化放在 34 层鸿钧之后，鸿钧终焉
-- 本次：交付单可合并
+- 交付单可合并
+- 天启篇关掉原版 1% 异化遭遇和神话（XTianqi.NO_LEGACY_ALIEN／NO_MYTH），专项 70/70

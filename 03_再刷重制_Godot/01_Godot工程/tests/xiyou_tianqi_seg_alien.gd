@@ -5,6 +5,7 @@ extends Node
 ## 三、种类：每段多教一种，深渊怪全出，没做好的种类（连击兵）不出。
 ## 四、判定：1～5 层不异化、小怪不异化、一场最多一只、守层者优先、几率掷不中不异化。
 ## 五、开战：守层者在 10 层变侵染（战争线）、12 层变蚀骨（饥荒线）；本线预设（使徒）和四骑士战不被覆盖；没选线、没做好的线、开关关掉、原版档一处都不动。
+## 六、天启篇不出原版 1% 异化遭遇和「神话」（Kyo 11-11「关」，XTianqi.NO_LEGACY_ALIEN／NO_MYTH）；西游档照旧，开关关掉回原版。
 ## 数字避开 4（Kyo 11-11）：用例里的层号、敌群号照实写。
 
 var results: Array = []
@@ -63,6 +64,7 @@ func _run() -> void:
 	_kinds()
 	_plan()
 	_battle()
+	_legacy()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -249,3 +251,43 @@ func _battle() -> void:
 	lo.setup(69, plain)
 	_check("battle_plain_save", not XTianqiWarAlien.active(lo))
 	lo.end_battle(0)
+
+
+func _forced() -> Dictionary:
+	return {"enemy": 0, "kind": "w", "baseId": 3980, "origin": "boss"}
+
+
+func _legacy() -> void:
+	XEnemy.force_roll = 0.0  # 每只都掷中神话
+	var s := _state(10, "")
+	var lt := XBattleLogic.new()
+	XAlienBattle.force = _forced()
+	lt.setup(30, s)
+	_check("tianqi_no_myth", lt.enemies.all(func(x): return not x.elite and not x.display_name().contains("神话")) and lt.enemies.all(func(x): return is_equal_approx(x.hp, x.mhp)),
+		lt.enemies.map(func(x): return x.display_name()))
+	_check("tianqi_no_legacy_alien", XAlienBattle.encounter(lt) == null and lt.enemies.all(func(x): return x.alien.is_empty()))
+	lt.end_battle(0)
+	# 西游档：照原版
+	var plain := XState.new()
+	XState.current = plain
+	var lo := XBattleLogic.new()
+	XAlienBattle.force = _forced()
+	lo.setup(30, plain)
+	var base_hp: float = lt.enemies[0].mhp
+	_check("plain_myth", lo.enemies.all(func(x): return x.elite), lo.enemies.map(func(x): return x.display_name()))
+	_check("plain_legacy_alien", XAlienBattle.encounter(lo) != null)
+	lo.end_battle(0)
+	# 开关关掉：天启篇档也照原版
+	XTianqi.NO_MYTH = false
+	XTianqi.NO_LEGACY_ALIEN = false
+	var s2 := _state(10, "")
+	var lf := XBattleLogic.new()
+	XAlienBattle.force = _forced()
+	lf.setup(30, s2)
+	_check("switch_off_myth", lf.enemies.all(func(x): return x.elite) and lf.enemies[1].mhp > base_hp * 3.0, [lf.enemies[1].mhp, base_hp])
+	_check("switch_off_legacy_alien", XAlienBattle.encounter(lf) != null)
+	lf.end_battle(0)
+	XTianqi.NO_MYTH = true
+	XTianqi.NO_LEGACY_ALIEN = true
+	XAlienBattle.force = {}
+	XEnemy.force_roll = -1.0
