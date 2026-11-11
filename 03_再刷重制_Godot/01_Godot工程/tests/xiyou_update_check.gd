@@ -63,6 +63,23 @@ func _run() -> void:
 	_check("相同", C.compare_versions("0.470", "0.470") == 0 and C.compare_versions("0.470", "0.470.0") == 0)
 	_check("较新", C.compare_versions("0.471", "0.470") == 1)
 
+	# 发行版本名（Kyo 11-11 整包 v0.01）：版本号只给人看，新旧比开发编号
+	var rn := C.release_name
+	var rb := C.release_base
+	C.release_name = "0.01"
+	C.release_base = 470
+	_check("整包显示 0.01", C.version_of(470) == "0.01")
+	_check("补丁显示 0.01.<多几号>", C.version_of(475) == "0.01.5")
+	_check("比整包旧的号照旧 0.<号>", C.version_of(462) == "0.462")
+	var rv := C.evaluate(_manifest(475, 470), 470, 470)
+	_check("0.01 整包遇到 475：有新版、显示 0.01.5", rv["state"] == C.FULL and rv["version"] == "0.01.5" and rv["current"] == "0.01")
+	rv = C.evaluate(_manifest(470, 470), 470, 470)
+	_check("同号是最新", rv["state"] == C.LATEST)
+	rv = C.evaluate(_manifest(462, 462), 470, 470)
+	_check("清单号更小不提示（不按 0.462 > 0.01 判反）", rv["state"] == C.LATEST)
+	C.release_name = rn
+	C.release_base = rb
+
 	# 验签：真公钥验 openssl 用真私钥签的样例
 	var raw := FileAccess.get_file_as_bytes("res://tests/fixtures/update_channel_sample.json")
 	var sig := FileAccess.get_file_as_bytes("res://tests/fixtures/update_channel_sample.sig")
