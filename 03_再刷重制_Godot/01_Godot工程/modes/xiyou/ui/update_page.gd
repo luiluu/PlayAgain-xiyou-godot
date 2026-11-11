@@ -4,7 +4,9 @@ extends Control
 ## 标题的按钮这样接：actions["check_update"] = func(): XUpdatePage.open(self)；红点看 XUpdateClient.instance(get_tree()).has_update()。
 ## 打开就查一次（手动查不受每天一次的限制），按结果显示五种状态：
 ##   正在检查／已是最新／有补丁／要换整包／读不到。
-## 有补丁时：第②批装上下载器（patch_installer）之前，按「要换整包」同样提示去 QQ 群。
+## 有补丁时（第②批）：点「立即更新」在游戏内下载（XUpdateInstall：多源、续传、校验），下完备份存档、登记，提示重启生效；
+## 下载中可以取消，已下的部分留着下次接着下。XUpdateInstall.ENABLED 关着时照「要换整包」提示去 QQ 群。
+## 正在用补丁时页面下方有「退回安装包自带版本」（点两次才执行）；启动失败被自动退回、或版本被撤回时在这里说明。
 ## 确定／取消键、点按钮、点页面外的暗处都能关。不自动打开网页、不下载任何东西。
 
 signal closed
@@ -12,8 +14,13 @@ signal closed
 const GROUP_HINT := "请到 QQ 群文件下载"
 const W := 640.0
 
-## 第②批接进来：Callable(page: XUpdatePage, result: Dictionary)。空＝还不能在游戏内装补丁。
+## 换掉下载安装那一步（测试用）：Callable(page: XUpdatePage, result: Dictionary)。空＝用 XUpdateInstall。
 static var patch_installer: Callable
+
+const DOWNLOADING := "downloading"
+const READY := "ready"          # 已下载登记好，等重启
+const FAILED := "failed"
+const ROLLED := "rolled"        # 已手动退回，等重启
 
 var client: XUpdateClient
 var state := "checking"
@@ -21,6 +28,10 @@ var _title: Label
 var _body: Label
 var _buttons: HBoxContainer
 var _primary: Button
+var _rollback: Button
+var _rollback_armed := false
+var _notice := ""
+var installer: XUpdateInstall
 
 
 static func open(host: Node) -> XUpdatePage:
@@ -51,6 +62,14 @@ static func texts(result: Dictionary, can_install: bool) -> Dictionary:
 				return {"title": "有新版本", "body": "\n".join(lines), "primary": "立即更新"}
 			lines.append("%s %s" % [GROUP_HINT, result.get("version", "")])
 			return {"title": "有新版本", "body": "\n".join(lines), "primary": ""}
+		DOWNLOADING:
+			return {"title": "正在下载更新", "body": "%s / %s\n可以取消，已下的部分会留着，下次接着下。" % [size_text(int(result.get("done", 0))), size_text(int(result.get("total", 0)))], "primary": "取消下载"}
+		READY:
+			return {"title": "更新已准备好", "body": "新版本 %s 已下载，存档已备份。\n重启游戏后生效。" % result.get("version", ""), "primary": "退出游戏" if OS.get_name() == "Android" else "立即重启"}
+		FAILED:
+			return {"title": "下载没完成", "body": "%s\n已下的部分留着，下次接着下；也可以%s %s。" % [result.get("message", "网络不通或空间不够。"), GROUP_HINT, result.get("version", "")], "primary": "再试一次"}
+		ROLLED:
+			return {"title": "已退回", "body": "重启游戏后回到%s。" % result.get("target", "安装包自带版本"), "primary": "退出游戏" if OS.get_name() == "Android" else "立即重启"}
 		_:
 			return {"title": "暂时查不到", "body": "连不上更新服务器。\n当前版本 %s，新版本%s。" % [cur, GROUP_HINT], "primary": ""}
 
@@ -104,31 +123,100 @@ func _ready() -> void:
 	close.name = "Close"
 	close.pressed.connect(close_page)
 	_buttons.add_child(close)
-	show_result({"state": "checking"})
+	_rollback = XUI.button("退回安装包自带版本", 36)
+	_rollback.name = "Rollback"
+	_rollback.add_theme_font_size_override("font_size", 18)
+	_rollback.pressed.connect(_on_rollback)
+	_rollback.visible = bool(XUpdateInstall.BootPatchScript.result.get("loaded", false))
+	box.add_child(_rollback)
+	installer = XUpdateInstall.instance(get_tree())
+	installer.progress.connect(_on_progress)
+	var rb := XUpdateInstall.take_rollback_notice()
+	if not rb.is_empty():
+		_notice = "上次的更新 %s 没能用上（%s），已退回。\n" % [XUpdateCheck.version_of(int(rb.get("code", 0))), rb.get("reason", "")]
 	client = XUpdateClient.instance(get_tree())
+	var pending := XUpdateInstall.pending_code()
+	if pending > 0:  # 已经下好登记了，只差重启
+		show_result({"state": READY, "version": XUpdateCheck.version_of(pending)})
+		return
+	show_result({"state": "checking"})
 	_check.call_deferred()
 
 
 func _check() -> void:
 	var r: Dictionary = await client.check()
-	if is_inside_tree():
-		show_result(r)
+	if not is_inside_tree():
+		return
+	if r.get("revoked", false):  # 现在用的这一版被撤回了：退回上一份，下次启动生效
+		var back := XUpdateInstall.rollback(false, "已撤回")
+		_notice += "当前版本已被撤回，重启后回到%s。\n" % (XUpdateCheck.version_of(back) if back > 0 else "安装包自带版本")
+	show_result(r)
 
 
 func show_result(result: Dictionary) -> void:
 	state = str(result.get("state", XUpdateCheck.BAD))
 	set_meta("result", result)
-	var t := texts(result, patch_installer.is_valid())
+	var t := texts(result, patch_installer.is_valid() or XUpdateInstall.ENABLED)
 	_title.text = t["title"]
-	_body.text = t["body"]
+	_body.text = _notice + t["body"]
 	_primary.visible = t["primary"] != ""
 	_primary.text = t["primary"] if t["primary"] != "" else "立即更新"
 	((_primary if _primary.visible else _buttons.get_node("Close")) as Button).grab_focus.call_deferred()
 
 
 func _on_primary() -> void:
-	if state == XUpdateCheck.PATCH and patch_installer.is_valid():
-		patch_installer.call(self, get_meta("result"))
+	match state:
+		XUpdateCheck.PATCH:
+			if patch_installer.is_valid():
+				patch_installer.call(self, get_meta("result"))
+			else:
+				_install(get_meta("result"))
+		DOWNLOADING:
+			installer.cancel()
+		FAILED:
+			_install(get_meta("result").get("source", {}))
+		READY, ROLLED:
+			XUpdateInstall.restart(get_tree())
+
+
+## 下载、校验、备份存档、登记。result 是 state＝patch 的检查结果。
+func _install(result: Dictionary) -> void:
+	var patch: Dictionary = result.get("patch", {})
+	if patch.is_empty() or installer.busy:
+		return
+	var total := int(patch.get("size", 0))
+	if not XUpdateInstall.enough_space(total):
+		show_result({"state": FAILED, "version": result.get("version", ""), "message": "剩余空间不够。", "source": result})
+		return
+	show_result({"state": DOWNLOADING, "done": 0, "total": total, "source": result})
+	var base := XUpdateClient.base_code()
+	var path := await installer.download(patch, base)
+	var ok := path != "" and XUpdateInstall.register(patch, base)
+	if not is_inside_tree():
+		return
+	if ok:
+		show_result({"state": READY, "version": result.get("version", "")})
+	else:
+		show_result({"state": FAILED, "version": result.get("version", ""), "source": result,
+			"message": "已取消。" if path == "" and installer._cancelled else ("存档备份或登记没成功。" if path != "" else "网络不通或文件不对。")})
+
+
+func _on_progress(done: int, total: int) -> void:
+	if state == DOWNLOADING:
+		var r: Dictionary = get_meta("result")
+		r["done"] = done
+		r["total"] = total
+		_body.text = _notice + texts(r, true)["body"]
+
+
+func _on_rollback() -> void:
+	if not _rollback_armed:
+		_rollback_armed = true
+		_rollback.text = "再点一次确认退回"
+		return
+	XUpdateInstall.rollback(true)
+	_rollback.visible = false
+	show_result({"state": ROLLED})
 
 
 func close_page() -> void:

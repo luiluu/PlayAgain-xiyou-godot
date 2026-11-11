@@ -174,6 +174,7 @@ func _run() -> void:
 	var host := Control.new()
 	host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	get_tree().root.add_child(host)
+	XUpdateInstall.ENABLED = false  # 先验「游戏内装补丁关着」时的提示
 	var page := XUpdatePage.open(host)
 	_check("打开先显示正在检查", page.state == "checking" and (page.get_node("../UpdatePage") == page))
 	await _frames(12)
@@ -188,6 +189,7 @@ func _run() -> void:
 	primary.pressed.emit()
 	_check("点立即更新把结果交给下载器", called == [cur + 5])
 	XUpdatePage.patch_installer = Callable()
+	XUpdateInstall.ENABLED = true
 	page.show_result({"state": C.LATEST, "current": "0.453", "version": "0.453"})
 	_check("已是最新", title.text == "已是最新版本" and body.text == "当前版本 0.453" and not primary.visible)
 	page.show_result({"state": C.FULL, "current": "0.453", "version": "0.470", "date": "2026-11-20", "notes": PackedStringArray(["说明"])})
