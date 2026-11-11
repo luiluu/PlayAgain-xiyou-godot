@@ -911,10 +911,8 @@ func _condition(p: Array) -> bool:
 				return true
 			return bool(p[2]) and s.members().any(func(a): return a.equip_list().any(func(e): return e.get("kind", "") == kind and int(e.get("base", 0)) == int(p[1])))
 		12:
-			# 脚本条件：白名单表达式（MVScript.eval_expr）；挂机相关写法与认不出的视为 false
+			# 脚本条件：白名单表达式（MVScript.eval_expr，挂机门 XdRsData.hangUp.GuaJiStartBettleOk 见 XHangUp.gate）；认不出的视为 false
 			var code := str(p[1])
-			if code.contains("hangUp"):
-				return false
 			var r = MVScript.eval_expr(code)
 			if r != null:
 				return bool(r)

@@ -316131,6 +316131,7 @@
    "base": "m4e61p0",
    "tag": "m5_jx",
    "preset": {
+    "difficulty": 9,
     "party": [
      147
     ],
@@ -316143,6 +316144,7 @@
    "base": "m4e61p1",
    "tag": "m5_jx",
    "preset": {
+    "difficulty": 9,
     "party": [
      147
     ],
@@ -316155,6 +316157,7 @@
    "base": "m4e61p2",
    "tag": "m5_jx",
    "preset": {
+    "difficulty": 9,
     "party": [
      147
     ],
@@ -316167,6 +316170,7 @@
    "base": "m225e10p0",
    "tag": "m5_jx",
    "preset": {
+    "difficulty": 9,
     "party": [
      147
     ],
