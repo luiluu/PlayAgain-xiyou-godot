@@ -18,7 +18,8 @@ extends RefCounted
 ## - 回合：开始时镜骸重新充能；结束时蚀能（偶数回合，吸 MP 比例最高的活角色 10% 最大法力，按实际比例回 2% 最大生命）、
 ##   腐蚀（每回合末扣 2% 最大生命、经护盾，到期自然消失）。
 ## - 胜利（gainDropItems／endBattle(0) 包装）：异化敌人倒下才发，放进背包，账本 recent 头插、留 30 条，提示「获得 …」；每场一次。
-## 原版行动外的 gainHp／setHp（公式副作用等）也按帧加成与记镜骸；这里只接 executeHpDamage，其余未移植（帧里逆祷的阻断另接，见 frame_blocks_hp）。
+## 原版行动外（不在 executeHpDamage 里）的 gainHp／setHp 包装（Runtime wrapHp）：帧里逆祷阻断（frame_blocks_hp）、烈变／小怪加成（frame_outgoing）、
+## 行动 apply 帧里 gainHp 的镜骸记账（frame_record，setHp 原版不记）都已接上（resource_context._gain／set_resource）。
 ## 未知存在的来源地图（Leviathan 的 Game_Map.setup 包装）记在 XState.unknown_origin（进 Map152／176 时记上一张图）。
 
 static var _logic_ref: WeakRef
@@ -482,6 +483,23 @@ static func frame_outgoing(value: float) -> float:
 	if logic == null or (f.item as Dictionary).is_empty():
 		return value
 	return outgoing(logic, f.source, f.item, value)
+
+
+## Runtime wrapHp 末尾（outer && !executeDepth && f.action）：行动 apply 帧里、不在 executeHpDamage 里的 gainHp 扣血
+## （效果「恢复 HP」负值、伤害公式里的 b.gainHp 等）照样 recordDamage，算进镜骸本次行动的扣血。帧没有行动（支援、自定义状态效果、
+## 腐蚀、蚀能、反噬这些 withFrame(null, …)）不记；setHp 包装原版不记。
+## OUTSIDE_HP_MIRROR：true＝照 v0.62.12 记账；false＝回到只记 executeHpDamage 的旧行为（回退开关，不偏离原版、不登记 O 号）
+static var OUTSIDE_HP_MIRROR := true
+
+
+static func frame_record(b, loss: float) -> void:
+	if not OUTSIDE_HP_MIRROR or loss <= 0.0 or _action_frames.is_empty():
+		return
+	var f: Dictionary = _action_frames[_action_frames.size() - 1]
+	var logic = active_logic()
+	if logic == null or (f.item as Dictionary).is_empty():
+		return
+	record(logic, f.source, b, loss)
 
 
 ## recordDamage：镜骸被行动根的角色打掉生命（不含反击、反射）
