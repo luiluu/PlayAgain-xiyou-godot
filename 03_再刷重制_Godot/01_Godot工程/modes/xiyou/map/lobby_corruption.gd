@@ -10,9 +10,9 @@ extends Node2D
 ##
 ## 阶段统一从 XRift.stage() 读（漩涡二阶段车道的类，按全局类表动态取，两边谁先合进来都能编译）；
 ## 没有 XRift 时按 FALLBACK_STAGE。测试用 STAGE_OVERRIDE 指定。
-## 回退开关 ENABLED = false（O-待定）：即使阶段是 2，大厅也回到阶段一的样子（漩涡本体的二阶不受影响）。
+## 回退开关 ENABLED = false（O-311）：即使阶段是 2，大厅也回到阶段一的样子（漩涡本体的二阶不受影响）。
 
-## O-待定：大厅初步异化叠加层；false 回到阶段一的大厅。
+## O-311：大厅初步异化叠加层；false 回到阶段一的大厅。
 static var ENABLED := true
 ## 测试用：> 0 时直接当作这个阶段
 static var STAGE_OVERRIDE := 0
