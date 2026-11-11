@@ -40,6 +40,7 @@ func setup(id: int) -> XActor:
 		learn_skill(AFFIX_ABSORB_SKILL)
 	recover_all()
 	XActorModules.setup(self)  # 专属角色模块的 Game_Actor.setup 包装（饿狼同步形态等）
+	XTianqiGear.on_setup(self)  # 天启篇：删除栏位的软绑定改成角色自己的技能（茉蕾强化·嘤嘤嘤、鼬通灵·乌鸦）
 	return self
 
 
@@ -214,11 +215,13 @@ static func make_equip(kind: String, base_id: int) -> Dictionary:
 	return XGear.template(kind,base_id)
 
 ## MV Game_Actor.canEquip：武器/防具类型由特性 51/52（及被动 passiveEWPN/EARM）放行，特性 54 封印装备类型；
-## zbxz 插件的 <req_level:N> 等级需求。
+## zbxz 插件的 <req_level:N> 等级需求。天启篇另按 XTianqiGear：删除栏位的装备不能穿、神器只认白名单、坐骑不受难度适应封印。
 func can_equip(item: Dictionary) -> bool:
 	if item.is_empty():
 		return false
-	if traits_set(54).has(int(item.etypeId)):
+	if traits_set(54).has(int(item.etypeId)) and not XTianqiGear.seal_ignored(int(item.etypeId)):
+		return false
+	if not XTianqiGear.allows(item):  # 天启篇：删除的栏位、神器白名单
 		return false
 	var req := int(item.get("meta", {}).get("req_level", 0))
 	if req > _lv:
@@ -480,6 +483,7 @@ func learn_skill(id: int) -> void:
 		skill_ids.append(id)
 		skill_ids.sort()
 	XToji.learned(self, id)  # 甚尔 learnSkill 包装：学暴君时清负面状态与弱化
+	XTianqiGear.learned(self, id)  # 天启篇：茉蕾觉醒时学嘤雄
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 
 func forget_skill(id: int) -> void:
@@ -530,7 +534,7 @@ func _skill_records(ids: Array[int]) -> Array:
 	for id in ids:
 		var s := XDB.rec("Skills", id)
 		if not s.is_empty():
-			out.append(XZhenqi.skill_view(s, self))  # 道法按境界缩放（CodexZhenqi.skillView）
+			out.append(XTianqiGear.skill_view(XZhenqi.skill_view(s, self)))  # 道法按境界缩放（CodexZhenqi.skillView）；天启篇软绑定被动生效
 	return out
 
 

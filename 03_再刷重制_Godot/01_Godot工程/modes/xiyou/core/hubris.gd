@@ -286,5 +286,5 @@ static func clear_reward(logic, result: int) -> bool:
 	if logic._rule().next_float("hubris.reward") >= REWARD_RATE:
 		return false
 	s.gain_gear("armor", ARMOR, 1)
-	XToast.show_text("获得神武：狂妄！")
+	XToast.show_text("获得%s：狂妄！" % XTianqiGear.type_name(17))  # 天启篇叫神器
 	return true

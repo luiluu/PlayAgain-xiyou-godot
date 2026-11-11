@@ -169,7 +169,7 @@ static func type_options(src: Array) -> Array:
 			out.append([key, "武器 · " + (n if n != "" else str(id))])
 		else:
 			var id := int(i.get("etypeId", 0))
-			var n := str(sys.equipTypes[id]) if id >= 0 and id < sys.equipTypes.size() else ""
+			var n := XTianqiGear.type_name(id)  # 天启篇类型 17 叫神器
 			out.append([key, n if n != "" else "防具"])
 	return out
 
