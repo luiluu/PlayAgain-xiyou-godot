@@ -1,0 +1,1553 @@
+{
+ "version": 1,
+ "source": "天启篇词条重构设计稿 v0.3",
+ "dev": "dev.451",
+ "_note": "来源：天启篇词条重构设计稿 v0.3；数值全用整数（Kyo 2026-11-11 01:21）。只读数据；每阶三种成色的值由 XTianqiAffixTable 按层的 tier_start 和一排 values 算出，这里不展开。概率写成 0～1 的小数，词条数值单位见 unit。",
+ "digit_check_exempt": [
+  "version",
+  "tier",
+  "min_level",
+  "max_level",
+  "slots",
+  "per_item_max",
+  "row_len",
+  "tier_start",
+  "turns",
+  "trait_code",
+  "num",
+  "den"
+ ],
+ "tiers": [
+  {
+   "tier": 1,
+   "min_level": 1,
+   "max_level": 29
+  },
+  {
+   "tier": 2,
+   "min_level": 30,
+   "max_level": 59
+  },
+  {
+   "tier": 3,
+   "min_level": 60,
+   "max_level": 69
+  },
+  {
+   "tier": 4,
+   "min_level": 70,
+   "max_level": null
+  }
+ ],
+ "grades": [
+  {
+   "key": "normal",
+   "name": "普通"
+  },
+  {
+   "key": "fine",
+   "name": "上品"
+  },
+  {
+   "key": "perfect",
+   "name": "极"
+  }
+ ],
+ "grade_odds": {
+  "perfect": 0.03,
+  "fine_by_quality": {
+   "putong": 0,
+   "youxiu": 0.1,
+   "jingliang": 0.1,
+   "shishi": 0.2,
+   "chuanshuo": 0.2,
+   "buxiu": 0.3,
+   "shenhua": 0.3
+  }
+ },
+ "qualities": [
+  {
+   "key": "putong",
+   "name": "普通",
+   "slots": 0,
+   "layers": []
+  },
+  {
+   "key": "youxiu",
+   "name": "优秀",
+   "slots": 1,
+   "layers": [
+    "base"
+   ]
+  },
+  {
+   "key": "jingliang",
+   "name": "精良",
+   "slots": 1,
+   "layers": [
+    "base"
+   ]
+  },
+  {
+   "key": "shishi",
+   "name": "史诗",
+   "slots": 2,
+   "layers": [
+    "base",
+    "special"
+   ]
+  },
+  {
+   "key": "chuanshuo",
+   "name": "传说",
+   "slots": 2,
+   "layers": [
+    "base",
+    "special"
+   ]
+  },
+  {
+   "key": "buxiu",
+   "name": "不朽",
+   "slots": 3,
+   "layers": [
+    "base",
+    "special",
+    "legendary"
+   ]
+  },
+  {
+   "key": "shenhua",
+   "name": "神话",
+   "slots": 3,
+   "layers": [
+    "base",
+    "special",
+    "legendary"
+   ]
+  }
+ ],
+ "layers": [
+  {
+   "key": "base",
+   "name": "基础",
+   "tier_start": 1,
+   "row_len": 6,
+   "min_quality": "youxiu",
+   "per_item_max": null
+  },
+  {
+   "key": "special",
+   "name": "特效",
+   "tier_start": 2,
+   "row_len": 5,
+   "min_quality": "shishi",
+   "per_item_max": 2
+  },
+  {
+   "key": "legendary",
+   "name": "传说",
+   "tier_start": 3,
+   "row_len": 4,
+   "min_quality": "buxiu",
+   "per_item_max": 1
+  },
+  {
+   "key": "aura",
+   "name": "光环",
+   "tier_start": 2,
+   "row_len": 5,
+   "min_quality": null,
+   "per_item_max": 1
+  }
+ ],
+ "layer_fallback": [
+  "legendary",
+  "special",
+  "base"
+ ],
+ "layer_odds": {
+  "xunchang": {
+   "base": 0.9,
+   "special": 0.1,
+   "legendary": 0
+  },
+  "jianxian": {
+   "base": 0.8,
+   "special": 0.18,
+   "legendary": 0.02
+  },
+  "jiusi": {
+   "base": 0.7,
+   "special": 0.25,
+   "legendary": 0.05
+  },
+  "lianyu": {
+   "base": 0.6,
+   "special": 0.32,
+   "legendary": 0.08
+  },
+  "zhengdao": {
+   "base": 0.5,
+   "special": 0.38,
+   "legendary": 0.12
+  }
+ },
+ "tags": [
+  {
+   "key": "atk",
+   "name": "攻"
+  },
+  {
+   "key": "def",
+   "name": "守"
+  },
+  {
+   "key": "gen",
+   "name": "通"
+  }
+ ],
+ "slots": [
+  {
+   "key": "weapon",
+   "name": "武器",
+   "group": "bingqi"
+  },
+  {
+   "key": "offhand",
+   "name": "副手",
+   "group": "bingqi"
+  },
+  {
+   "key": "head",
+   "name": "头部",
+   "group": "fangju"
+  },
+  {
+   "key": "body",
+   "name": "盔甲",
+   "group": "fangju"
+  },
+  {
+   "key": "hands",
+   "name": "护手",
+   "group": "fangju"
+  },
+  {
+   "key": "waist",
+   "name": "腰带",
+   "group": "fangju"
+  },
+  {
+   "key": "legs",
+   "name": "裤子",
+   "group": "fangju"
+  },
+  {
+   "key": "feet",
+   "name": "鞋子",
+   "group": "fangju"
+  },
+  {
+   "key": "necklace",
+   "name": "项链",
+   "group": "shipin",
+   "aura": true
+  },
+  {
+   "key": "ring",
+   "name": "戒指",
+   "group": "shipin"
+  },
+  {
+   "key": "artifact",
+   "name": "法宝",
+   "group": "fabao",
+   "aura": true
+  },
+  {
+   "key": "mount",
+   "name": "坐骑",
+   "group": "zuoqi"
+  }
+ ],
+ "slot_groups": [
+  {
+   "key": "bingqi",
+   "name": "兵器",
+   "tags": [
+    "atk",
+    "gen"
+   ],
+   "layers": [
+    "base",
+    "special",
+    "legendary"
+   ]
+  },
+  {
+   "key": "fangju",
+   "name": "防具",
+   "tags": [
+    "def",
+    "gen"
+   ],
+   "layers": [
+    "base",
+    "special",
+    "legendary"
+   ]
+  },
+  {
+   "key": "shipin",
+   "name": "饰品",
+   "tags": [
+    "atk",
+    "def",
+    "gen"
+   ],
+   "layers": [
+    "base",
+    "special",
+    "legendary",
+    "aura"
+   ]
+  },
+  {
+   "key": "fabao",
+   "name": "法宝",
+   "tags": [],
+   "layers": [
+    "aura"
+   ]
+  },
+  {
+   "key": "zuoqi",
+   "name": "坐骑",
+   "tags": [],
+   "layers": []
+  }
+ ],
+ "necklace_aura": {
+  "chance": 0.15,
+  "min_tier": 2,
+  "max_per_item": 1,
+  "uses_normal_slot": true
+ },
+ "artifact_aura": {
+  "kinds": [
+   "general"
+  ],
+  "slots": 1,
+  "chance": 0.5,
+  "tier_by_growth": [
+   {
+    "below": {
+     "num": 1,
+     "den": 3
+    },
+    "tier": 2
+   },
+   {
+    "below": {
+     "num": 2,
+     "den": 3
+    },
+    "tier": 3
+   },
+   {
+    "below": null,
+    "tier": 4
+   }
+  ]
+ },
+ "stacking": [
+  {
+   "key": "sum",
+   "name": "同名相加"
+  },
+  {
+   "key": "multiply",
+   "name": "每条相乘"
+  },
+  {
+   "key": "max_per_actor",
+   "name": "同名取最高"
+  },
+  {
+   "key": "max_party",
+   "name": "全队同名取最高"
+  }
+ ],
+ "pools": [
+  {
+   "key": "stat",
+   "name": "属性"
+  },
+  {
+   "key": "xparam",
+   "name": "命中、闪避、暴击率"
+  },
+  {
+   "key": "regen",
+   "name": "每回合回复"
+  },
+  {
+   "key": "skill_damage",
+   "name": "技能伤池"
+  },
+  {
+   "key": "element_damage",
+   "name": "元素增伤"
+  },
+  {
+   "key": "final_damage",
+   "name": "终伤池"
+  },
+  {
+   "key": "crit_multiplier",
+   "name": "暴击倍率"
+  },
+  {
+   "key": "damage_taken",
+   "name": "目标承伤"
+  },
+  {
+   "key": "target_vulnerability",
+   "name": "目标易伤"
+  },
+  {
+   "key": "target_debuff",
+   "name": "目标减益"
+  },
+  {
+   "key": "lifesteal",
+   "name": "吸血"
+  },
+  {
+   "key": "state_rate",
+   "name": "异常几率"
+  },
+  {
+   "key": "heal_received",
+   "name": "受疗"
+  },
+  {
+   "key": "heal_dealt",
+   "name": "治疗量"
+  },
+  {
+   "key": "heal_overflow",
+   "name": "治疗溢出"
+  },
+  {
+   "key": "battle_start",
+   "name": "开场"
+  },
+  {
+   "key": "target_rate",
+   "name": "被选为目标"
+  },
+  {
+   "key": "skill_cost",
+   "name": "技能消耗"
+  },
+  {
+   "key": "recast",
+   "name": "再释放"
+  },
+  {
+   "key": "drop_rate",
+   "name": "物品掉落"
+  },
+  {
+   "key": "exp_gold",
+   "name": "经验金钱"
+  },
+  {
+   "key": "on_kill",
+   "name": "击杀"
+  },
+  {
+   "key": "attack_times",
+   "name": "攻击次数"
+  },
+  {
+   "key": "extra_action",
+   "name": "额外行动"
+  }
+ ],
+ "elements": [
+  {
+   "key": "physical",
+   "name": "物理"
+  },
+  {
+   "key": "fire",
+   "name": "火焰"
+  },
+  {
+   "key": "ice",
+   "name": "寒冰"
+  },
+  {
+   "key": "earth",
+   "name": "大地"
+  },
+  {
+   "key": "thunder",
+   "name": "雷电"
+  },
+  {
+   "key": "nature",
+   "name": "自然"
+  },
+  {
+   "key": "arcane",
+   "name": "奥术"
+  },
+  {
+   "key": "holy",
+   "name": "神圣"
+  },
+  {
+   "key": "dark",
+   "name": "黑暗"
+  }
+ ],
+ "affixes": [
+  {
+   "key": "atk",
+   "name": "物攻",
+   "layer": "base",
+   "tag": "atk",
+   "effect": "物攻 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "atk"
+  },
+  {
+   "key": "mat",
+   "name": "魔攻",
+   "layer": "base",
+   "tag": "atk",
+   "effect": "魔攻 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "mat"
+  },
+  {
+   "key": "hit",
+   "name": "命中",
+   "layer": "base",
+   "tag": "atk",
+   "effect": "命中率 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "xparam",
+   "stat": "hit"
+  },
+  {
+   "key": "mhp",
+   "name": "生命",
+   "layer": "base",
+   "tag": "def",
+   "effect": "最大生命 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "mhp"
+  },
+  {
+   "key": "def",
+   "name": "物防",
+   "layer": "base",
+   "tag": "def",
+   "effect": "物防 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "def"
+  },
+  {
+   "key": "mdf",
+   "name": "魔防",
+   "layer": "base",
+   "tag": "def",
+   "effect": "魔防 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "mdf"
+  },
+  {
+   "key": "eva",
+   "name": "闪避",
+   "layer": "base",
+   "tag": "def",
+   "effect": "闪避率 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "xparam",
+   "stat": "eva"
+  },
+  {
+   "key": "hrg",
+   "name": "生命回复",
+   "layer": "base",
+   "tag": "def",
+   "effect": "每回合回复最大生命 %",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "regen",
+   "stat": "hrg"
+  },
+  {
+   "key": "mmp",
+   "name": "魔法",
+   "layer": "base",
+   "tag": "gen",
+   "effect": "最大魔法 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "mmp"
+  },
+  {
+   "key": "agi",
+   "name": "敏捷",
+   "layer": "base",
+   "tag": "gen",
+   "effect": "敏捷 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "agi"
+  },
+  {
+   "key": "luk",
+   "name": "幸运",
+   "layer": "base",
+   "tag": "gen",
+   "effect": "幸运 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "stat",
+   "stat": "luk"
+  },
+  {
+   "key": "mrg",
+   "name": "魔法回复",
+   "layer": "base",
+   "tag": "gen",
+   "effect": "每回合回复最大魔法 %",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "regen",
+   "stat": "mrg"
+  },
+  {
+   "key": "cri",
+   "name": "暴击率",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "暴击率 +%",
+   "values": [
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "xparam",
+   "stat": "cri"
+  },
+  {
+   "key": "crit_damage",
+   "name": "爆伤",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "暴击伤害 +%",
+   "values": [
+    5,
+    10,
+    15,
+    20,
+    25
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "crit_multiplier"
+  },
+  {
+   "key": "final_damage",
+   "name": "终伤",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "最终伤害 +%",
+   "values": [
+    3,
+    6,
+    9,
+    12,
+    15
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "final_damage"
+  },
+  {
+   "key": "skill_damage",
+   "name": "技能伤",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "技能伤害 +%",
+   "values": [
+    5,
+    8,
+    12,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "skill_damage"
+  },
+  {
+   "key": "element_damage",
+   "name": "元素增伤",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "某一系伤害 +%",
+   "values": [
+    6,
+    10,
+    15,
+    18,
+    22
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "element_damage",
+   "random_element": true,
+   "pierce": false
+  },
+  {
+   "key": "lifesteal",
+   "name": "吸血",
+   "layer": "special",
+   "tag": "atk",
+   "effect": "造成伤害的 % 回复生命",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "lifesteal",
+   "cap_per_hit_mhp": 10
+  },
+  {
+   "key": "damage_reduction",
+   "name": "减伤",
+   "layer": "special",
+   "tag": "def",
+   "effect": "受到的伤害 −%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "multiply",
+   "pool": "damage_taken",
+   "direction": "down"
+  },
+  {
+   "key": "element_resist",
+   "name": "元素抗性",
+   "layer": "special",
+   "tag": "def",
+   "effect": "受到某一系伤害 −%",
+   "values": [
+    5,
+    8,
+    10,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "multiply",
+   "pool": "damage_taken",
+   "direction": "down",
+   "random_element": true
+  },
+  {
+   "key": "state_resist",
+   "name": "异常抵抗",
+   "layer": "special",
+   "tag": "def",
+   "effect": "被施加异常的几率 −%",
+   "values": [
+    3,
+    6,
+    9,
+    12,
+    15
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "multiply",
+   "pool": "state_rate",
+   "direction": "down"
+  },
+  {
+   "key": "heal_received",
+   "name": "受疗",
+   "layer": "special",
+   "tag": "def",
+   "effect": "受到的治疗 +%",
+   "values": [
+    3,
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "heal_received"
+  },
+  {
+   "key": "opening_shield",
+   "name": "开场护盾",
+   "layer": "special",
+   "tag": "def",
+   "effect": "战斗开始时获得最大生命 % 的护盾",
+   "values": [
+    2,
+    3,
+    5,
+    6,
+    8
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "battle_start"
+  },
+  {
+   "key": "target_rate",
+   "name": "引敌／避敌",
+   "layer": "special",
+   "tag": "def",
+   "effect": "被选为目标的几率 +% 或 −%",
+   "values": [
+    5,
+    8,
+    10,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "target_rate",
+   "variants": [
+    {
+     "key": "draw",
+     "name": "引敌",
+     "direction": "up"
+    },
+    {
+     "key": "avoid",
+     "name": "避敌",
+     "direction": "down"
+    }
+   ]
+  },
+  {
+   "key": "skill_cost",
+   "name": "技能消耗",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "技能消耗 −%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "skill_cost",
+   "direction": "down",
+   "cap_total": 50
+  },
+  {
+   "key": "recast",
+   "name": "再释放",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "技能放完后 % 几率再放一次",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "recast",
+   "no_chain": true
+  },
+  {
+   "key": "heal_dealt",
+   "name": "治疗量",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "自己施放的治疗 +%",
+   "values": [
+    3,
+    5,
+    8,
+    12,
+    15
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "heal_dealt"
+  },
+  {
+   "key": "drop_rate",
+   "name": "物品掉落",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "掉落率 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "drop_rate",
+   "party": true,
+   "assist_counts": true
+  },
+  {
+   "key": "exp_gold",
+   "name": "阅历",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "经验、金钱 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "exp_gold",
+   "party": true,
+   "assist_counts": true
+  },
+  {
+   "key": "initial_tp",
+   "name": "初始 TP",
+   "layer": "special",
+   "tag": "gen",
+   "effect": "战斗开始时 TP +",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10
+   ],
+   "unit": "flat",
+   "weight": 1,
+   "stack": "sum",
+   "pool": "battle_start"
+  },
+  {
+   "key": "first_strike",
+   "name": "先声",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "每回合第一次造成伤害的技能伤害 +%",
+   "values": [
+    15,
+    20,
+    25,
+    30
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "final_damage",
+   "condition": {
+    "type": "first_damage_skill_per_turn"
+   }
+  },
+  {
+   "key": "last_stand",
+   "name": "背水",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "生命低于 30% 时伤害 +%",
+   "values": [
+    20,
+    25,
+    30,
+    35
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "final_damage",
+   "condition": {
+    "type": "hp_below",
+    "rate": 30
+   }
+  },
+  {
+   "key": "headhunter",
+   "name": "猎首",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "对精英、首领、守层者伤害 +%",
+   "values": [
+    10,
+    15,
+    20,
+    25
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "final_damage",
+   "condition": {
+    "type": "target_rank",
+    "ranks": [
+     "elite",
+     "boss",
+     "guardian"
+    ]
+   }
+  },
+  {
+   "key": "expose",
+   "name": "破绽",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "造成伤害后目标受到的伤害 +%",
+   "values": [
+    5,
+    8,
+    10,
+    12
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "target_vulnerability",
+   "turns": 2,
+   "single_layer": true
+  },
+  {
+   "key": "suppress",
+   "name": "压制",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "造成伤害后目标暴击率、闪避率 −%",
+   "values": [
+    10,
+    15,
+    20,
+    25
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "target_debuff",
+   "turns": 2,
+   "stats": [
+    "cri",
+    "eva"
+   ],
+   "direction": "down",
+   "no_stack": true
+  },
+  {
+   "key": "bulwark",
+   "name": "磐石",
+   "layer": "legendary",
+   "tag": "def",
+   "effect": "生命高于 70% 时受到的伤害 −%",
+   "values": [
+    8,
+    10,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "damage_taken",
+   "direction": "down",
+   "condition": {
+    "type": "hp_above",
+    "rate": 70
+   }
+  },
+  {
+   "key": "unyielding",
+   "name": "不屈",
+   "layer": "legendary",
+   "tag": "def",
+   "effect": "生命低于 30% 时受到的伤害 −%",
+   "values": [
+    15,
+    20,
+    25,
+    30
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "damage_taken",
+   "direction": "down",
+   "condition": {
+    "type": "hp_below",
+    "rate": 30
+   }
+  },
+  {
+   "key": "tenacity",
+   "name": "坚韧",
+   "layer": "legendary",
+   "tag": "def",
+   "effect": "被暴击时这一次受到的伤害 −%",
+   "values": [
+    20,
+    25,
+    30,
+    35
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "damage_taken",
+   "direction": "down",
+   "condition": {
+    "type": "crit_taken"
+   }
+  },
+  {
+   "key": "harvest",
+   "name": "斩获",
+   "layer": "legendary",
+   "tag": "gen",
+   "effect": "击杀时回复最大生命和最大魔法 %",
+   "values": [
+    6,
+    9,
+    12,
+    15
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "on_kill",
+   "once_per_action": true
+  },
+  {
+   "key": "rejuvenate",
+   "name": "回春",
+   "layer": "legendary",
+   "tag": "gen",
+   "effect": "治疗溢出转护盾，上限目标最大生命 %",
+   "values": [
+    8,
+    10,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_per_actor",
+   "pool": "heal_overflow"
+  },
+  {
+   "key": "combo",
+   "name": "连击",
+   "layer": "legendary",
+   "tag": "atk",
+   "effect": "攻击次数 +1",
+   "values": [
+    1
+   ],
+   "unit": "count",
+   "weight": 0.3,
+   "stack": "max_per_actor",
+   "pool": "attack_times",
+   "rare": true,
+   "fixed": true,
+   "trait_code": 34
+  },
+  {
+   "key": "reaction",
+   "name": "再动",
+   "layer": "legendary",
+   "tag": "gen",
+   "effect": "每回合 % 几率多行动一次",
+   "values": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "unit": "percent",
+   "weight": 0.3,
+   "stack": "max_per_actor",
+   "pool": "extra_action",
+   "rare": true,
+   "no_chain": true,
+   "trait_code": 61
+  },
+  {
+   "key": "aura_fervor",
+   "name": "狂热",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队物攻 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "stat",
+   "stat": "atk"
+  },
+  {
+   "key": "aura_arcane",
+   "name": "秘法",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队魔攻 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "stat",
+   "stat": "mat"
+  },
+  {
+   "key": "aura_fury",
+   "name": "暴怒",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队暴击率 +%，暴击伤害另加 %",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "xparam",
+   "stat": "cri",
+   "secondary": {
+    "pool": "crit_multiplier",
+    "values": [
+     2,
+     3,
+     6,
+     10,
+     12
+    ]
+   }
+  },
+  {
+   "key": "aura_focus",
+   "name": "集中",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队命中率 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "xparam",
+   "stat": "hit"
+  },
+  {
+   "key": "aura_haste",
+   "name": "急速",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队敏捷 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "stat",
+   "stat": "agi"
+  },
+  {
+   "key": "aura_guard",
+   "name": "防御",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队物防、魔防 +%",
+   "values": [
+    2,
+    3,
+    5,
+    8,
+    10
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "stat",
+   "stats": [
+    "def",
+    "mdf"
+   ]
+  },
+  {
+   "key": "aura_shelter",
+   "name": "庇护",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队受到的伤害 −%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "damage_taken",
+   "direction": "down"
+  },
+  {
+   "key": "aura_recovery",
+   "name": "恢复",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队每回合回复生命、魔法 %",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "regen",
+   "stats": [
+    "hrg",
+    "mrg"
+   ]
+  },
+  {
+   "key": "aura_versatile",
+   "name": "全能",
+   "layer": "aura",
+   "tag": "gen",
+   "effect": "全队八项属性 +%",
+   "values": [
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "unit": "percent",
+   "weight": 1,
+   "stack": "max_party",
+   "pool": "stat",
+   "stats": [
+    "mhp",
+    "mmp",
+    "atk",
+    "def",
+    "mat",
+    "mdf",
+    "agi",
+    "luk"
+   ]
+  }
+ ]
+}
