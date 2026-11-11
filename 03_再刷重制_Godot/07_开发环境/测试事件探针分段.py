@@ -894,7 +894,8 @@ class PresetKeysTests(unittest.TestCase):
         body = src[start:src.index('\n}\n', start) + 3]
         keys = src[src.index('const PRESET_KEYS'):src.index('\n', src.index('const PRESET_KEYS'))]
         keys += '\n' + src[src.index('const ACTOR_PRESET_KEYS'):src.index('\n', src.index('const ACTOR_PRESET_KEYS'))]
-        js = keys + '\nconst w = {Graphics: {frameCount: 0}};\n' + body + (
+        # applyPreset 引用模块级 hangUpSaved（map-m5 加的挂机门预设），单独抽出函数时要一并声明（总装三十五 11-11）
+        js = keys + '\nconst w = {Graphics: {frameCount: 0}};\nlet hangUpSaved = null;\n' + body + (
             '\ntry { applyPreset(%s); console.log(JSON.stringify({fc: w.Graphics.frameCount, pt: Math.floor(w.Graphics.frameCount / 60)})); }'
             ' catch (e) { console.log(JSON.stringify({err: e.message})); }\nprocess.exit(0);' % json.dumps(preset))
         r = subprocess.run(['node', '-e', js], capture_output=True, text=True, timeout=60)
