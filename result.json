@@ -1,0 +1,24 @@
+{
+ "sha": "8082e632f97f886e620163bce14a43032d09cf25",
+ "branch": "ci/cc/update-install-test-fix",
+ "mode": "affected",
+ "base": "66b64e4f2ed900296c3939713d0e4d2e9b57c4fc",
+ "passed": false,
+ "scenes": 1,
+ "failed": [
+  "xiyou_update_install.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 1,
+ "longestShardSeconds": 6.1,
+ "testSeconds": 5,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43119858451",
+ "sceneNames": [
+  "xiyou_update_install.tscn"
+ ],
+ "time": "2026-11-11T23:29:20+00:00"
+}
