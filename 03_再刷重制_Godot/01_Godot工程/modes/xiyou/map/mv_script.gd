@@ -11,7 +11,7 @@ extends RefCounted
 ##   $gamePlayer._moveSpeed = N（XState.player_move_speed）、DataManager.cleanupIndependentItems()（无操作）、
 ##   Star_RomGetItems 的 RomGet 预掷池初始化。
 ## - v0.27 轮回入口（installReincarnationRandomRuntime）：CodexReincarnationRandom.open(this) → 选「轮回普通／困难」再选阵容规则；
-##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式暂不开放（O-035），菜单只列「常规阵容」。
+##   条件 entryAccepted()／entryHard() 读选择结果；finishEntry() 无操作。随机角色模式不做（O-035）；阵容规则菜单默认去掉（轮回不选人，REINCARNATION_LINEUP_MENU）。
 ## - $gameVariables.setValue(N, 数字) → XState.set_variable（跨存档变量 900／899／1476 靠它存进 XGlobalVars）。
 ## - 副本 Boss 奖励（CE1439）：CodexEconomy.bossReward、CodexOrbs.rollInt、CodexV010Fixes.rewardNotice／awardQuantity、
 ##   甚尔／宿傩 rollAdvanceStone（见 XDungeon）；洪荒的 grantTicketBonus／rollPower 在非洪荒难度无操作。
@@ -774,8 +774,12 @@ static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
 	interp.skipped.append_array(sub.skipped)
 
 
+## 轮回不选人（O-待定·轮回不选人，Kyo 2026-11-11 定：天启篇新方案轮回不选人）：阵容规则这一层（原版选人的入口，重制只剩「常规阵容」）
+## 去掉，选完难度直接按常规阵容开启。开关：false＝去掉（默认）；true＝照原版再问阵容规则。
+static var REINCARNATION_LINEUP_MENU := false
+
 ## CodexReincarnationRandom.open（Scene_ReincarnationDraft）：本局已开启轮回（开关 2307／2303）时提示后关闭；
-## 否则先选难度（轮回普通／轮回困难／返回），再选阵容规则（常规阵容／返回：回到难度）。随机角色（9 选 5）暂不开放（O-035）。
+## 否则先选难度（轮回普通／轮回困难／返回），再选阵容规则（常规阵容／返回：回到难度）。随机角色（9 选 5）不做（O-035）。
 static func _reincarnation_open(interp) -> void:
 	var s := XState.current
 	reincarnation_entry = {"accepted": false, "hard": false}
@@ -783,8 +787,11 @@ static func _reincarnation_open(interp) -> void:
 		interp.host.toast("本局轮回已经开启，阵容规则不能中途更换。")
 		return
 	while true:
-		var d: int = await interp.host.show_text_with_choices("", 0, ["选择轮回难度，再选择阵容规则。"], ["轮回普通", "轮回困难", "返回"], 2)
+		var d: int = await interp.host.show_text_with_choices("", 0, ["选择轮回难度，再选择阵容规则。" if REINCARNATION_LINEUP_MENU else "选择轮回难度。"], ["轮回普通", "轮回困难", "返回"], 2)
 		if d < 0 or d == 2:
+			return
+		if not REINCARNATION_LINEUP_MENU:
+			reincarnation_entry = {"accepted": true, "hard": d == 1}
 			return
 		var m: int = await interp.host.show_text_with_choices("", 0, ["请选择本局阵容规则。"], ["常规阵容", "返回"], 1)
 		if m == 0:

@@ -4,7 +4,9 @@ extends Node
 ## 原版 open 会 push Scene_ReincarnationDraft 让事件停下，探针真创建这个场景、调菜单处理函数，再让 Map221 引路人事件接着跑。
 ## 这里用真的 Map221 事件 3 + 自动应答，逐例比：开关 2282／2303／2307、队伍、物品 4／2896、全员学 8105、入口结果（accepted／hard）、
 ## 111 两个条件分支走哪边（以结果开关为准）、「本局轮回已经开启」提示。
-## 已知差异（不改代码，记在交付单）：①原版阵容规则菜单多一项「随机角色」（9 选 5 选人，O-035 暂不开放）；
+## 比原版两层菜单时把回退开关 MVScript.REINCARNATION_LINEUP_MENU 置 true；默认（false，O-待定·轮回不选人）去掉阵容规则菜单，
+## 同一批用例按「只选难度」的应答再跑一遍（nolineup.*），结果应与原版选「常规阵容」相同。
+## 已知差异（不改代码，记在交付单）：①原版阵容规则菜单多一项「随机角色」（9 选 5 选人，O-035 不做）；
 ## ②原版 pending.active（存档里 entryPending）这条路重制没有这个存档字段，不比；③原版战斗在探针里当作胜利，这里真打（force_auto）。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results: Array = []
@@ -69,6 +71,10 @@ const ANSWERS := {
 	"normal.back.then.classic": [1, 0, 1, 0, 0], "hard.back.then.hard.classic": [1, 1, 1, 1, 0],
 	"already.2307": [1], "already.2303": [1],
 }
+## 默认去掉阵容规则菜单时的应答（只有难度一层；「阵容 → 返回」的两例没有对应走法，不跑）
+const ANSWERS_NO_LINEUP := {
+	"normal.classic": [1, 0], "hard.classic": [1, 1], "top.back": [1, 2], "already.2307": [1], "already.2303": [1],
+}
 
 
 func _sorted(a: Array) -> Array:
@@ -99,7 +105,23 @@ func _run() -> void:
 	_check("complete", f.cases.size() == 8)
 	for c in f.cases:
 		_check(c.id + ".native", c.errors.is_empty(), c.errors)
-		if not ANSWERS.has(c.id):
+	MVScript.REINCARNATION_LINEUP_MENU = true
+	await _cases(f, ANSWERS, "")
+	MVScript.REINCARNATION_LINEUP_MENU = false
+	await _cases(f, ANSWERS_NO_LINEUP, "nolineup.")
+	DirAccess.remove_absolute(XSave.dir())
+	Engine.time_scale = 1.0
+	var passed := results.filter(func(r): return r.passed).size()
+	for r in results:
+		if not r.passed:
+			print("FAIL ", r.name, " ", JSON.stringify(r.detail).left(600))
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+func _cases(f: Dictionary, answers: Dictionary, tag: String) -> void:
+	for c in f.cases:
+		if not answers.has(c.id):
 			continue  # pending.active：重制没有 entryPending 存档字段
 		var want: Dictionary = c.observed.after
 		var sw := {}
@@ -111,33 +133,25 @@ func _run() -> void:
 		var s := XState.current
 		for k in c.setup.get("pre", {}).get("switches", {}):
 			s.set_switch(int(k), true)
-		XMessageBox.auto_answers = ANSWERS[c.id].duplicate()
+		XMessageBox.auto_answers = answers[c.id].duplicate()
 		await map.run_event(_event(map, 3))
 		var accepted: bool = bool(want.entryAccepted)
 		if accepted:
 			await _wait(func(): return _map_idle(4) and s.self_switch(4, 20, "A"))
 		else:
 			await _wait(func(): return false, 30)
-		_check(c.id + ".switches", [2282, 2303, 2307].all(func(i): return s.switch(i) == sw[i]), [s.switch(2282), s.switch(2303), s.switch(2307), sw])
-		_check(c.id + ".party", _sorted(s.party) == _sorted(want.party), [s.party, want.party])  # 顺序不比：探针新局按 1、8、9、10 入队，重制开局是 1、8、10、9
-		_check(c.id + ".items", s.item_count(4) == int(want.item4) and s.item_count(2896) == int(want.item2896), [s.item_count(4), s.item_count(2896), want.item4, want.item2896])
+		_check(tag + c.id + ".switches", [2282, 2303, 2307].all(func(i): return s.switch(i) == sw[i]), [s.switch(2282), s.switch(2303), s.switch(2307), sw])
+		_check(tag + c.id + ".party", _sorted(s.party) == _sorted(want.party), [s.party, want.party])  # 顺序不比：探针新局按 1、8、9、10 入队，重制开局是 1、8、10、9
+		_check(tag + c.id + ".items", s.item_count(4) == int(want.item4) and s.item_count(2896) == int(want.item2896), [s.item_count(4), s.item_count(2896), want.item4, want.item2896])
 		var hard_knowers := _knowers(8105)
 		var want_knowers := 0
 		for p in want.knowers:
 			if int(p[0]) == 8105:
 				want_knowers = int(p[1])
-		_check(c.id + ".skill8105", hard_knowers == want_knowers, [hard_knowers, want_knowers])
+		_check(tag + c.id + ".skill8105", hard_knowers == want_knowers, [hard_knowers, want_knowers])
 		var entry: Dictionary = MVScript.reincarnation_entry
-		_check(c.id + ".entry", bool(entry.get("accepted", false)) == accepted and bool(entry.get("hard", false)) == bool(want.entryHard), [entry, want.entry])
-		_check(c.id + ".toasts", (c.observed.toasts as Array).all(func(t): return toasts_seen.has(t)) and (not (c.observed.toasts as Array).is_empty() or toasts_seen.is_empty() or accepted),
+		_check(tag + c.id + ".entry", bool(entry.get("accepted", false)) == accepted and bool(entry.get("hard", false)) == bool(want.entryHard), [entry, want.entry])
+		_check(tag + c.id + ".toasts", (c.observed.toasts as Array).all(func(t): return toasts_seen.has(t)) and (not (c.observed.toasts as Array).is_empty() or toasts_seen.is_empty() or accepted),
 			[toasts_seen, c.observed.toasts])
-		_check(c.id + ".hub_or_stay", (_scene() is XMapScene) and (_scene().map_id == 4) == accepted, _scene().map_id if _scene() is XMapScene else -1)
+		_check(tag + c.id + ".hub_or_stay", (_scene() is XMapScene) and (_scene().map_id == 4) == accepted, _scene().map_id if _scene() is XMapScene else -1)
 		DirAccess.remove_absolute(XSave.path(1))
-	DirAccess.remove_absolute(XSave.dir())
-	Engine.time_scale = 1.0
-	var passed := results.filter(func(r): return r.passed).size()
-	for r in results:
-		if not r.passed:
-			print("FAIL ", r.name, " ", JSON.stringify(r.detail).left(600))
-	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
-	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
