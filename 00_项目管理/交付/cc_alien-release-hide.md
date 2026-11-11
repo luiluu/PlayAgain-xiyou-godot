@@ -2,6 +2,7 @@
 
 - 车道／工作者：C 规则·界面（快车道）／cc（车道 C）
 - 状态：可合并
+- 总装三十八补：分支改为 cc/alien-release-hide-fix，先合了 cc/rift2-canglong-fix（item_marks.gd 号角过滤冲突：保留 horn_id_disabled，再接 XAlienHide.filter_goods）；顺带 cc/o-pending-register1 剩下的两处探针注释换号（heartsteel O-150、tusu O-148），这两份探针会重量。按慢车道合。
 
 ## 变更记录草稿
 
