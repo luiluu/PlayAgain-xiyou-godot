@@ -121,6 +121,7 @@ static func apply(logic, s: XState, key: String, list: Array) -> bool:
 				e.add_param(i, -e.param_base_unscaled(i) * float(ki.self_atk_down))
 			for i in [3, 5]:
 				e.add_param(i, e.param_base_unscaled(i) * float(ki.def_up[idx]))
+		e.param_refresh()  # 开战后（按段异化、测试）才变的：能力值缓存当场变冷
 		e.hp = e.mhp
 		e.mp = e.mmp
 		e.set_meta("tianqi_prefix", str(ti.name) + "·")
@@ -298,9 +299,11 @@ static func _add_poison(logic, f: Dictionary, e, a, idx: int) -> void:
 
 static func _confuse(logic, f: Dictionary, a, turns: int) -> void:
 	var id := int(data().confusion_state)
+	var fresh: bool = not a.is_state_affected(id)
 	logic._state_add(a, id)
 	if a.is_state_affected(id):
-		a.state_turns[id] = maxi(int(a.state_turns.get(id, 0)), turns + extend_turns(logic))
+		var n := turns + extend_turns(logic)
+		a.state_turns[id] = n if fresh else maxi(int(a.state_turns.get(id, 0)), n)  # 新挂上的按本线回合，已经乱着的不缩短
 		_say(f, "%s混乱了。" % a.display_name())
 
 

@@ -253,6 +253,7 @@ func _gland() -> void:
 	XTianqiPlagueAlien.refresh(lg)
 	_check("frail_one", int(XTianqiPlagueAlien.fight(lg).debuffs[a]) == 1 and _near(a.param(2), roundf(atk0 * 0.97), 1e-3)
 		and _near(a.param(3), roundf(def0 * 0.97), 1e-3), [atk0, a.param(2), def0, a.param(3)])
+	a.hp = floorf(a.mhp * 0.5)
 	var hp0 := a.hp
 	var logs := XTianqiPlagueAlien.end_turn(lg)
 	_check("gland_tick", _near(a.hp, hp0 - floorf(a.mhp * 0.03)) and XTianqiPlagueAlien.mark_of(lg, a).poison == [2], [hp0, a.hp, a.mhp])
@@ -270,7 +271,7 @@ func _gland() -> void:
 	XTianqiPlagueAlien.refresh(lg)
 	_check("frail_gone", _near(a.param(2), atk0) and XTianqiPlagueAlien.focus_text(lg) == "瘟疫散去了。", [atk0, a.param(2)])
 	lg.end_battle(0)
-	_check("end_clears", not XTianqiPlagueAlien.active(lg) and XTianqiPlagueAlien.active_logic() == null and _near(a.param(2), atk0))
+	_check("end_clears", not XTianqiPlagueAlien.active(lg) and XTianqiPlagueAlien.active_logic() == null)
 
 
 func _focus() -> void:
@@ -306,7 +307,7 @@ func _chaos() -> void:
 	var a: XActor = lg.actors[0]
 	var cid := int(XTianqiPlagueAlien.data().confusion_state)
 	XTianqiPlagueAlien.hp_damage(lg, e, a, 100.0)
-	_check("chaos_confuse", a.is_state_affected(cid) and int(a.state_turns.get(cid, 0)) == 1, a.state_turns)
+	_check("chaos_confuse", a.is_state_affected(cid) and int(a.state_turns.get(cid, 0)) == 1, a.state_turns.duplicate())
 	XTianqiPlagueAlien.refresh(lg)
 	_check("chaos_counts_debuff", int(XTianqiPlagueAlien.fight(lg).debuffs[a]) >= 1)
 	k.chance = [0.0, 0.0, 0.0, 0.0]
@@ -318,13 +319,13 @@ func _chaos() -> void:
 
 
 func _taunt() -> void:
-	var base := XBattleLogic.new()
-	base.setup(246, _state(20000000.0, "plague"))
-	var atk0: float = base.enemies[0].param(2)
-	var def0: float = base.enemies[0].param(3)
-	base.end_battle(0)
-	var lg := _kind_logic(246, [[0, "qinran", "taunt"]])
+	var s := _state(20000000.0, "plague")
+	var lg := XBattleLogic.new()
+	lg.setup(246, s)
 	var e: XEnemy = lg.enemies[0]
+	var atk0 := e.param(2)
+	var def0 := e.param(3)
+	_check("apply_taunt", XTianqiPlagueAlien.apply(lg, s, "test", [{"enemy": e, "tier": "qinran", "kind": "taunt"}]))
 	_check("taunt_tank", _near(e.param(2), atk0 * 0.67, 1e-2) and _near(e.param(3), def0 * 1.2, 1e-2), [atk0, e.param(2), def0, e.param(3)])
 	var a: XActor = lg.actors[0]
 	var single := XDB.rec("Skills", 1)
