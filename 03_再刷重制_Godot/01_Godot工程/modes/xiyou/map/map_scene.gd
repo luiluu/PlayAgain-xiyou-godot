@@ -1238,6 +1238,10 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	# 战斗期间 Scene_Map 不更新（$gameMap／$gamePlayer.update 都不跑）：地图上的玩家、事件、跟随者不走动、不取随机数。
 	# 挂机计时在本场景 _physics_process，照常走。
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
+	battle.escape_audio.connect(func():   # O-254：逃跑消息出来时就换回地图曲（收场时下面几步再调一次，已换过的不动）
+		battle.stop_bgm()
+		take_battle_me(battle)
+		_replay_map_audio())
 	var result: int = await battle.finished
 	last_battle_game_over = battle.logic.game_over
 	last_battle_escaped = battle.logic.escaped and not battle.logic.game_over
