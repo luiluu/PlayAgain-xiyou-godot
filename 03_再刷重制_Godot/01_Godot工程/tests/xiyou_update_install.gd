@@ -259,7 +259,7 @@ func _run() -> void:
 	var b1 := XUpdateInstall.backup_saves(9470, saves)
 	_check("备份到 save_backup，内容和目录结构一致", b1 != "" and FileAccess.get_file_as_string(b1.path_join("xiyou/save_1.json")) == "一号档" and FileAccess.get_file_as_string(b1.path_join("xiyou/sub/x.json")) == "子目录")
 	for i in range(4):
-		XUpdateInstall.backup_saves(471 + i, saves)
+		XUpdateInstall.backup_saves(9471 + i, saves)
 	var kept := DirAccess.open(XUpdateInstall.dir.path_join("save_backup")).get_directories()
 	_check("只留最近 3 份", kept.size() == 3 and not DirAccess.dir_exists_absolute(b1))
 	_check("原存档没被动", FileAccess.get_file_as_string(saves.path_join("xiyou/save_1.json")) == "一号档")
