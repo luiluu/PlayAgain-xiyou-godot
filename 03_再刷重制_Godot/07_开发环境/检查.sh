@@ -256,6 +256,7 @@ want tools && { if python3 "$ENV_DIR/测试回退开关覆盖.py" >/dev/null 2>&
 want tools && { if python3 "$ENV_DIR/测试探针登记检查.py" >/dev/null 2>&1; then ok "探针五乘区检查"; else bad "探针五乘区检查回归失败，单跑 07_开发环境/测试探针登记检查.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试工具回归.py" >/dev/null 2>&1; then ok "工具快速回归门禁（门禁清单与早停）"; else bad "工具快速回归门禁回归失败，单跑 07_开发环境/测试工具回归.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试交付自检.py" >/dev/null 2>&1; then ok "交付自检与待合看板（只读、试合并、快慢分道）"; else bad "交付自检／待合看板回归失败，单跑 07_开发环境/测试交付自检.py 看详情"; fi; }
 # 测试选测满载偶发 1 项失败、单跑复现不了：失败时打出用例名，整份输出留在 本地结果/选测回归/ 当证据（tools22）
 if want tools; then
   sel_log=$(mktemp -t xiyou_sel_test)
