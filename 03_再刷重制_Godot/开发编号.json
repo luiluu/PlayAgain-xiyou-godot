@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.468",
-  "sequence": 468,
-  "next": "dev.469",
-  "nextSequence": 469,
+  "current": "dev.469",
+  "sequence": 469,
+  "next": "dev.470",
+  "nextSequence": 470,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "alien-release-hide",
+  "currentChange": "alien-outside-hp1",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
