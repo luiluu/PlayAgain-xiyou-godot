@@ -12,6 +12,10 @@ var label: Label
 
 
 static func version_text() -> String:
+	# 发行构建有发行版本名（build_info releaseVersion，Kyo 11-11 整包 v0.01）时显示它，补丁是 v0.01.<多几号>；开发版照旧显示开发编号
+	if ReleaseEntry.is_release() and XUpdateClient.release_version() != "":
+		XUpdateClient.init_versions()
+		return "v" + XUpdateCheck.version_of(XUpdateClient.current_code())
 	return str(ProjectSettings.get_setting("application/config/version", ""))
 
 

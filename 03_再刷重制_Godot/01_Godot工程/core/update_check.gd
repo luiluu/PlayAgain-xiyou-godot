@@ -49,8 +49,18 @@ static func compare_versions(a: String, b: String) -> int:
 	return 0
 
 
-## 开发编号 → 玩家看到的版本号（Mac／Windows 0.<号>，安卓 versionCode＝号）。
+## 发行版本名（Kyo 11-11 定整包 v0.01）：build_info 的 releaseVersion 与这个整包的开发编号；XUpdateClient.instance 时填。
+## 空＝没有发行版本名（开发版、测试），版本号照旧是 0.<号>。
+static var release_name := ""
+static var release_base := 0
+
+
+## 开发编号 → 玩家看到的版本号。有发行版本名时：整包本身是「0.01」，之后的补丁是「0.01.<比整包多几号>」；
+## 没有时是 0.<号>（导出给系统看的 Mac／Windows 版本号、安卓 versionCode 不走这里，照旧按编号）。
+## 新旧一律比开发编号（evaluate、has_update），版本号只给人看。
 static func version_of(code: int) -> String:
+	if release_name != "" and release_base > 0 and code >= release_base:
+		return release_name if code == release_base else "%s.%d" % [release_name, code - release_base]
 	return "0.%d" % code
 
 
@@ -115,8 +125,8 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	if manifest.is_empty():
 		return out
 	var latest: Dictionary = manifest["latest"]
-	out["version"] = str(latest["version"])
 	out["code"] = int(latest["code"])
+	out["version"] = version_of(out["code"]) if release_name != "" else str(latest["version"])
 	out["date"] = str(latest.get("date", ""))
 	var notes := PackedStringArray()
 	if typeof(latest.get("notes")) == TYPE_ARRAY:
@@ -128,7 +138,7 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 		for r in manifest["revoked"]:
 			if int(r) == current_code and current_code != base_code:
 				out["revoked"] = true
-	if compare_versions(out["version"], out["current"]) <= 0:
+	if out["code"] <= current_code:  # 新旧比开发编号（版本号可能是 0.01 这种发行名，按段比会判反）
 		out["state"] = LATEST
 		return out
 	out["state"] = FULL

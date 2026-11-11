@@ -11,6 +11,7 @@ signal checked(result: Dictionary)
 
 const BootPatchScript := preload("res://core/boot_patch.gd")
 const NODE_NAME := "UpdateClient"
+const BUILD_INFO := "res://content/build_info.json"
 const STAMP_FILE := "user://updates/check.json"
 const TIMEOUT_SEC := 10.0
 const DAY_SEC := 86400
@@ -36,6 +37,7 @@ var fetcher: Callable
 
 
 static func instance(tree: SceneTree) -> XUpdateClient:
+	init_versions()
 	var n := tree.root.get_node_or_null(NODE_NAME) as XUpdateClient
 	if n == null:
 		n = XUpdateClient.new()
@@ -43,6 +45,24 @@ static func instance(tree: SceneTree) -> XUpdateClient:
 		n.process_mode = Node.PROCESS_MODE_ALWAYS
 		tree.root.add_child(n)
 	return n
+
+
+## 给 XUpdateCheck.version_of 填发行版本名和整包编号（只填一次）
+static func init_versions() -> void:
+	if XUpdateCheck.release_base == 0:
+		XUpdateCheck.release_name = release_version()
+		XUpdateCheck.release_base = base_code()
+
+
+## 发行版本名（build_info 的 releaseVersion，如 "0.01"）；开发版是 null／空。
+static func release_version() -> String:
+	if not FileAccess.file_exists(BUILD_INFO):
+		return ""
+	var j := JSON.new()
+	if j.parse(FileAccess.get_file_as_string(BUILD_INFO)) != OK or typeof(j.data) != TYPE_DICTIONARY:
+		return ""
+	var v = j.data.get("releaseVersion")
+	return str(v).trim_prefix("v") if v is String else ""
 
 
 ## 安装包自带的开发编号（补丁载入前读到的）。
@@ -121,7 +141,7 @@ func has_update() -> bool:
 		_load_stamp()
 	if last.is_empty() or last.get("state") == XUpdateCheck.BAD:
 		return false
-	return XUpdateCheck.compare_versions(str(last.get("version", "")), XUpdateCheck.version_of(current_code())) > 0
+	return int(last.get("code", 0)) > current_code()  # 比开发编号，不比版本号文字
 
 
 func _stamp_time() -> int:

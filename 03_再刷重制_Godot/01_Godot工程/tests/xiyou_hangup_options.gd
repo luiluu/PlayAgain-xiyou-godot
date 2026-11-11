@@ -140,7 +140,9 @@ func _run() -> void:
 	check("options_rect", opt.win.position == Vector2(440, 130) and opt.win.size == Vector2(400, 460))
 	# v0.56「Boss状态面板」一行随 XBossStatusPanel.TOGGLE（main 默认关 33 行；换源集成分支翻成开，O-204，多一行 34 行）
 	var extra := 1 if XBossStatusPanel.TOGGLE else 0
-	check("options_list", opt.symbols().size() == 33 + extra and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
+	# 重制新增「画面特效」排在最后（大厅初步异化，XLobbyCorruption.ENABLED 关掉时不列）
+	var fx := 1 if XLobbyCorruption.ENABLED else 0
+	check("options_list", opt.symbols().size() == 33 + extra + fx and (fx == 0 or opt.symbols().back() == "codexScreenFx") and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
 		and opt.symbols()[32 + extra] == "codexFeedbackPending", opt.symbols())
 	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))
 	await shot("00_设置.png")
@@ -260,7 +262,7 @@ func _run() -> void:
 	s.flags.HangUpProhibited = true
 	var opt2 := XOptionsScene.new()
 	add_child(opt2)
-	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra and not opt2.symbols().has("HangUp"), opt2.symbols().size())
+	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra + fx and not opt2.symbols().has("HangUp"), opt2.symbols().size())
 	opt2.queue_free()
 	s.flags.HangUpProhibited = false
 	rules(s)
