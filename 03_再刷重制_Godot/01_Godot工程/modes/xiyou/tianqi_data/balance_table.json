@@ -1,0 +1,38 @@
+{
+ "version": 1,
+ "source": "天启篇数值测算 参数.json（设计仓库 xiyou-design-docs 提交 7767262）",
+ "dev": "dev.待定",
+ "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。本表还没接进战斗与开局：五档仍借原版难度跑（XTianqi.DIFFICULTIES 的 legacy）。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
+ "nice_number_exempt": ["version", "secret_cap", "super_cap", "min_weak"],
+ "tiers": {
+  "弱者": {"damage_dealt": 0.0, "damage_taken": 0.0, "secret_cap": 6},
+  "强者": {"damage_dealt": 0.5, "damage_taken": -0.1, "secret_cap": 4},
+  "超强者": {"damage_dealt": 1.5, "damage_taken": -0.3, "secret_cap": 3}
+ },
+ "weak_assist": {
+  "_note": "每名上场弱者给全队；助力位不算。",
+  "damage_dealt_per": 0.03,
+  "damage_taken_per": -0.02
+ },
+ "assist_slot": {
+  "draft": true,
+  "team_damage_dealt": 0.05
+ },
+ "difficulties": [
+  {"key": "xunchang", "name": "寻常",
+   "scaling": {"draft": true, "enemy_hp": 0.7, "enemy_atk": 0.8, "party_damage": 1.0, "quality_offset": -0.3},
+   "roster": {"pool": ["弱者", "强者"], "super_cap": 0, "min_weak": 4}},
+  {"key": "jianxian", "name": "艰险",
+   "scaling": {"draft": true, "enemy_hp": 1.0, "enemy_atk": 1.0, "party_damage": 1.0, "quality_offset": 0.0},
+   "roster": {"pool": ["弱者", "强者"], "super_cap": 0, "min_weak": 3}},
+  {"key": "jiusi", "name": "九死",
+   "scaling": {"draft": true, "enemy_hp": 1.5, "enemy_atk": 1.25, "party_damage": 1.0, "quality_offset": 0.3},
+   "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 1, "min_weak": 3}},
+  {"key": "lianyu", "name": "炼狱",
+   "scaling": {"draft": true, "enemy_hp": 2.0, "enemy_atk": 1.5, "party_damage": 1.0, "quality_offset": 0.6},
+   "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 2, "min_weak": 2}},
+  {"key": "zhengdao", "name": "证道",
+   "scaling": {"draft": true, "enemy_hp": 2.8, "enemy_atk": 1.8, "party_damage": 1.0, "quality_offset": 0.9},
+   "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 3, "min_weak": 2}}
+ ]
+}
