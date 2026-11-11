@@ -298,6 +298,7 @@ func _hongjun_battle() -> void:
 		[e.display_name(), p0.display_name()])
 	_check("hongjun_hp", is_equal_approx(e.mhp / p0.mhp, 2.0) and is_equal_approx(e.hp, e.mhp), [e.mhp, p0.mhp])
 	_check("hongjun_atk", is_equal_approx(float(e.atk) / float(p0.atk), 1.5), [e.atk, p0.atk])
+	_check("hongjun_no_borrowed_drops", e.data().dropItems.is_empty() and not p0.data().dropItems.is_empty())
 	_check("hongjun_pending_used", XTianqiSummit.pending() == "")
 	plain.end_battle(0)
 	lg.end_battle(0)
