@@ -152,6 +152,9 @@ static func run(code: String, interp) -> Array:
 	# 有名字的角色逐个（$gameActors.actor 会把角色建出来）：弱者在 apply(true) 时学一线生机 6212；
 	# 非弱者先 repair（会 6212 的忘掉、学天道注视 6213），再学 6213。弱者判定用 XWeakChallenge.is_weak（原版 CodexWeakChallenge.isWeak）
 	var gaze := _re("^CodexHeavenGaze\\.apply\\((true|false)\\);?$").search(js)
+	# 天启篇（XTianqi.NO_HEAVEN_GAZE，Kyo 11-08 数值重构删一线生机与天道注视）：整段不做
+	if gaze and XTianqi.active(s) and XTianqi.NO_HEAVEN_GAZE:
+		return []
 	if gaze:
 		var table: Array = XDB.table("Actors")
 		for id in range(1, table.size()):

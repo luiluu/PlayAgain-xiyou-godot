@@ -176,6 +176,15 @@ var _tianqi_draw_due := false
 func _run_tianqi_draw() -> void:
 	_set_busy(true)
 	await XTianqi.run_draw(self, XState.current)
+	await XTianqi.run_line_choice(self, XState.current)  # 选线（默认关）排在抽角色后面，同一次回大厅里接着问
+	_set_busy(false)
+	refresh_events()
+
+
+## 天启篇选线（XTianqi.run_line_choice，第三批骨架，XTianqi.LINE_EVENT_OPEN 默认关）：和抽角色同一个时机，抽完才轮到它
+func _run_tianqi_line() -> void:
+	_set_busy(true)
+	await XTianqi.run_line_choice(self, XState.current)
 	_set_busy(false)
 	refresh_events()
 
@@ -449,6 +458,8 @@ func _process(delta: float) -> void:
 				_tianqi_draw_due = false
 				if map_id == XTianqi.HALL_MAP and XTianqi.draw_ready(XState.current):
 					_run_tianqi_draw()
+				elif map_id == XTianqi.HALL_MAP and XTianqi.line_ready(XState.current):
+					_run_tianqi_line()
 		# installItemBagContinuationRuntime：物品页预约的公共事件跑完（没有别的预约、事件与文字）就回物品页
 		if not busy and transfer_page == null and not XHangUp.is_active(XState.current):
 			var back := XItemBagReturn.take(XState.current, false)
