@@ -1,7 +1,7 @@
 # 交付：cc/pro-tianqi-horsemen
 
 - 车道／工作者：C 规则·机制／cc（Pro 云端线程「实装天启四骑士 Boss」）
-- 状态：进行中
+- 状态：可合并
 
 ## 依赖
 
@@ -23,7 +23,8 @@
 - 挂钩（都先看「这一场是骑士战」，不是就原样返回）：`battle_logic.gd`（setup、开战、回合开始／结束、decide、act、行动次数、选目标、暴击、生命伤害、逃跑、结束战斗、新增 `horseman_strike`）、`enemy.gd`（`horseman` 合成记录、`setup_horseman`、免疫控制和即死）、`actor.gd`（param 最内层乘疫病、病弱、识破、破产、碎甲）、`battler.gd`（死期死者不能复活）、`resource_context.gd`（绝粮）、`tianqi_combat.gd`（混子减伤）、`enemy_book.gd`（不记图鉴）、`battle_scene.gd`（援军、小怪战斗中出场播出场）。
 - 开关：`XTianqiHorsemen.ENABLED`（false＝一概不开）；另外只认天启篇存档（`XTianqiCombat.on`），发行构建里还要 `XTianqi.RELEASE_OPEN`（现在 false），所以发行版、原版档都不受影响。
 - `天启篇数据校验.py` 加 horsemen 一组：B 组规则自检（数字避开 4、五档倍率、四骑士齐全）；A 组 `--params` 和设计仓库 `参数.json`「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率、混子各档生命），本轮对设计仓库 8ddce08 全部一致。
-- 验证：（待写）
+- 验证（云端 Pro 容器，Godot 4.7.2 Linux，转换产物取自 `refs/ci/generated/main`）：新专项 `xiyou_tianqi_horsemen` 97/97、`xiyou_tianqi_horsemen_battle` 100/100；`并行测试.py` 跑 `xiyou_tianqi_*`（11 个）、`xiyou_boss_*`（8 个）、`xiyou_determinism`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_enemy_book`、`xiyou_actor1_damage`、`xiyou_attack_query`、`xiyou_action_sequence` 共 26 个全过；`xiyou_rules` 在云端跑不了（缺 `slice_probe` 的 oracle 产物，`oracle_d1_present` 挂，和本分支无关），要在 Mac 上跑；`天启篇数据校验.py --params <设计仓库>/重制设定/数值测算/参数.json` 全过；`工具回归.py` 只有云端已知的 3 项（容器没有 zsh：选测替身、提交守卫、临时探针车道标签）。没跑全量 `检查.sh`（车道规则）。
+- 实测改了一处：勇者圣水加最大生命会把血量比例拉回 33% 以上，原来阶段会跟着倒退、终末停在 2 层；改成阶段只进不退。
 - 未完成／已知问题：见下「未做」。
 
 ### 未做（下一单）
@@ -53,10 +54,14 @@
 
 本分支改了 `battle_logic.gd`、`battler.gd`、`enemy.gd`（战斗核心），`选测.py main --list` 判整轮。云端本轮只跑了下面「验证」里列的几项，**合并前请在 Mac 上跑**：
 
-- 必跑：`xiyou_tianqi_horsemen`、`xiyou_tianqi_horsemen_battle`（新专项）、`xiyou_tianqi_numbers`、`xiyou_tianqi_balance`、`xiyou_tianqi_swap_init`、`xiyou_tianqi_party`、`xiyou_tianqi_opening`、`xiyou_determinism`、`xiyou_rules*`（全部段）、`xiyou_boss_output*`、`xiyou_boss_lifecycle`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_enemy_book`、`xiyou_event_compare*`。
+- 必跑（云端没跑过的标 ＊）：＊`xiyou_rules*`（全部 65 段，云端缺 oracle）、`xiyou_tianqi_horsemen`、`xiyou_tianqi_horsemen_battle`（新专项）、`xiyou_tianqi_numbers`、`xiyou_tianqi_balance`、`xiyou_tianqi_swap_init`、`xiyou_tianqi_party`、`xiyou_tianqi_opening`、`xiyou_determinism`、`xiyou_boss_output*`、`xiyou_boss_lifecycle`、`xiyou_alien_battle`、`xiyou_alien_affix`、`xiyou_enemy_book`、＊`xiyou_event_compare*`。
 - 战斗核心整组：`选测.py main --list` 列出的 battle 组（约 280 个场景）；或直接 `检查.sh --full`。
-- 画面：开发版里手动开一场（调试台 `XTianqiHorsemen.prepare("war")` 后进任意战斗）看援军出场、骑士出手的日志与弹字是否正常（云端没有画面，只跑了逻辑）。
+- 画面：开发版里手动开一场（开发版里临时在开战前调 `XTianqiHorsemen.prepare("war")`，再进任意一场战斗）看援军出场、骑士出手的日志与弹字是否正常（云端没有画面，只跑了逻辑）。
 
 ## 本分支提交
 
-- （待写）
+- 78dfba13 WIP: 数值表 horsemen.json、XTianqiHorsemen、战斗挂钩与两份专项
+- eb4ff109 WIP: 类型推断、整除、豁免键修正
+- 交付单草稿那次 WIP（专项注明 horsemen.json 好让选测认出）
+- 3794feaf 阶段只进不退；两份专项跑通
+- 本次：交付单可合并
