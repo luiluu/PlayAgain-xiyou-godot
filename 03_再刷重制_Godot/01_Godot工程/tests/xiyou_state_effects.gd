@@ -1647,6 +1647,16 @@ func _fix_blocks() -> void:
 		XStateEffects.battle_units = {"enemies": unit}
 		XStateEffects.run_one("turn_start", h, st.call(int(row[0])), res.call())
 		check("fix.tiers.%d.%d" % [row[0], row[1]], h.state_ids == row[2], [row, h.state_ids])
+	# 巡猎 1431（未翻译块清单「addState(1430 + k)」，GB13 核）：每 10000 速度一层，第 2～tiers 层补上、其余去掉；不到一层连 1431 也去掉
+	for row in [[25000.0, [1431, 1440], [1431, 1432]], [9000.0, [1431, 1433], []], [123456.0, [1431], [1431, 1432, 1433, 1434, 1435, 1436, 1437, 1438, 1439, 1440]]]:
+		var h := _plain()
+		h.values["agi"] = row[0]
+		h.state_ids.append_array(row[1])
+		XStateEffects.battle_units = {"enemies": [h]}
+		XStateEffects.run_one("turn_start", h, st.call(1431), res.call())
+		var tiers: Array = h.state_ids.duplicate()
+		tiers.sort()
+		check("fix.1431.%d" % int(row[0]), tiers == row[2], [row, tiers])
 	# 鼬被动：变量不是 1 就预约
 	for row in [[0.0, [1513]], [1.0, []], [2.0, [1513]]]:
 		XState.current.set_variable(1163, row[0])

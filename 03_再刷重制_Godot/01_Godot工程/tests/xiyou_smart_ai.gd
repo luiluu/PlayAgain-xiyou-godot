@@ -183,6 +183,7 @@ func _run() -> void:
 		return finish()
 	routing(ref)
 	alien_projection(ref)
+	hyper_armor(ref)
 	var edge_logic := setup(ref, int(ref.cases[0].troop), "full")
 	var edge_actor := edge_logic.state.actor(1)
 	var edge_ai := XSmartAI.new(edge_logic, edge_actor)
@@ -230,6 +231,34 @@ func routing(ref: Dictionary) -> void:
 
 
 ## O-121 o_projection：逆祷者的攻击按治疗友方估值、祸祝 7100（对自己附加幻日虹）按对敌诅咒估值；关时照原版混读
+## 有霸体的难度 Boss（Codex_SmartBattleAI benefit 390／396）：附加控制状态不加分、解除霸体 2651 不加分；没霸体时照常加分（审查第 76 期）
+func hyper_armor(ref: Dictionary) -> void:
+	var logic := setup(ref, int(ref.cases[0].troop), "full")
+	var a: XActor = logic.state.actor(1)
+	var ai := XSmartAI.new(logic, a)
+	var e: XEnemy = logic.alive(logic.enemies)[0]
+	var ctx := {"longFight": true}
+	var control := -1
+	for id in range(2, 200):
+		var rec := {"scope": 1, "effects": [{"code": 21, "dataId": id, "value1": 1.0}]}
+		if XEnemy.boss_control_state(id) and ai.benefit(e, rec, ctx) > 0.0:
+			control = id
+			break
+	check("hyper.control_found", control > 0, control)
+	var add := {"scope": 1, "effects": [{"code": 21, "dataId": control, "value1": 1.0}]}
+	var strip := {"scope": 1, "effects": [{"code": 22, "dataId": XEnemy.BOSS_ARMOR_STATE, "value1": 1.0}]}
+	e.boss_difficulty_boss = true
+	e.boss_strong_count = 1
+	e.sync_boss_armor(true)
+	check("hyper.armor_on", e.boss_hyper_armor and e.is_state_affected(XEnemy.BOSS_ARMOR_STATE), e.state_ids)
+	check("hyper.no_control_score", ai.benefit(e, add, ctx) == 0.0, ai.benefit(e, add, ctx))
+	check("hyper.no_strip_score", ai.benefit(e, strip, ctx) == 0.0, ai.benefit(e, strip, ctx))
+	# 对照：同一 Boss 没霸体时（标志关、2651 还在身上）照常估分
+	e.boss_hyper_armor = false
+	check("hyper.off_control_score", ai.benefit(e, add, ctx) > 0.0, ai.benefit(e, add, ctx))
+	check("hyper.off_strip_score", ai.benefit(e, strip, ctx) > 0.0, ai.benefit(e, strip, ctx))
+
+
 func alien_projection(ref: Dictionary) -> void:
 	var blessing := XDB.rec("Skills", 7100)
 	var saved := [blessing.stypeId, blessing.mpCost, blessing.tpCost]

@@ -74,6 +74,7 @@ func shot(name: String) -> void:
 	await frames(3)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	preload("res://tests/ui_pixel_dump.gd").dump(get_tree().root, out_dir.path_join(name + ".win.json"), name)
 
 
 static func record(win: XMVWindow) -> Array:
@@ -184,12 +185,15 @@ func _compare(ref: Dictionary, name: String, page: XStarWarehouseScene) -> void:
 
 
 func _run() -> void:
+	# 配置用测试自己的目录、默认值（窗口模式下原来读本机真实 options.json，品质色开关不同时学徒斗篷画成金色，ui-pixel4）
+	preload("res://tests/xiyou_test_env.gd").isolate("xiyou_star_warehouse")
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var probe = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if not check("fixture_loaded", ref is Dictionary and ref.get("shots", {}).has("sw_0_save_open") and probe is Dictionary, [FIXTURE, ORACLE]):
 		get_tree().quit.call_deferred(1)
 		return
 	await _flow(ref)
+	await _drift()
 	_probe(probe, false)
 	_probe(probe, true)
 	_renumber(int(probe.swallowBase))
@@ -210,6 +214,29 @@ func _run() -> void:
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 说明卡位置回退（STAR_HELP_DRIFT，O-255）：原版 updateHelp 不调 updatePos，每次 setItem 在上次位置上累加修正；
+## 原版读数（ui-pixel4，review_system_pages star_warehouse）：sw_1 本体 (52,32)、sw_2 (104,64)
+func _drift() -> void:
+	var card := Vector2(400, 246)
+	var p1 := XStarWarehouseScene.drift_step(Vector2.ZERO, card)
+	var p2 := XStarWarehouseScene.drift_step(p1, card)
+	check("help_drift_steps", p1 == Vector2(52, 32) and p2 == Vector2(104, 64), [p1, p2])
+	check("help_drift_wraps", XStarWarehouseScene.drift_step(Vector2(1000, 450), card) == Vector2(1280 - 400 - 30, 350))
+	_setup_ui()
+	XStarWarehouseScene.STAR_HELP_DRIFT = true
+	var page := XStarWarehouseScene.new()
+	add_child(page)
+	await frames()
+	page.ok()
+	await frames()
+	var drifted := page.help_card.position
+	XStarWarehouseScene.STAR_HELP_DRIFT = false
+	page._update_help()
+	check("help_drift_switch", drifted == Vector2(52, 32) and page.help_card.position.x > 600, [drifted, page.help_card.position])
+	page.queue_free()
+	await frames()
 
 
 func _flow(ref: Dictionary) -> void:

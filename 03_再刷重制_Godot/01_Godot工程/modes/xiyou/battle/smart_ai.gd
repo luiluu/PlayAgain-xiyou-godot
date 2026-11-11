@@ -18,8 +18,8 @@ extends RefCounted
 ##   重制只登记了甚尔（XToji.ai_profile；估伤 10216～10219 走 XToji.ai_damage）。O-131 o_profile_hits 见下。
 ## - 奈叶小魔炮（5692 只开六选一公共事件，自动战斗不能用）：会 5692 且能用时，候选里的 5703～5709 换成六档魔炮（不必学会、各自能用），
 ##   估伤按付费后的 MP 算公式、再 ×max(1, ⌊付前 MP×比例/2000⌋)（伤害后多段，见 XNanoha）。参照 nanoha3_probe ai.*。
-## - 没移植（重制版尚无这些角色/系统）：米拉/渡鸦/宿傩等角色专属估算与 profile、Boss 霸体（CodexBossDifficulty）。
-##   这些在正式版里也只对对应角色/敌人生效；随相关内容接入时补上。
+## - 没移植（chars-gaps3 对 v0.62.12 核过，角色都已在重制里，只是没接）：Codex_SmartBattleAI 自带的那条 registerProfile（黄泉 10172～10174、流萤 10622 的溅射，宿傩领域里神灶 10233 的 holdInLongFight、
+##      伏魔御厨子 10231 的 futureActor＋ongoingSkill 10237，渡鸦神话封解 10127 的 futureActor＋duration，米拉解放 10146 的 futureActor＋followupSkill 10151）。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
@@ -343,6 +343,10 @@ func recovery_utility(t: XBattler, rec: Dictionary, item: bool, dir := {}) -> fl
 	return score
 
 
+static func _hyper_armor(t) -> bool:
+	return t is XEnemy and t.boss_difficulty_boss and t.boss_hyper_armor
+
+
 func benefit(t: XBattler, rec: Dictionary, ctx: Dictionary, dir := {}) -> float:
 	var score := 0.0
 	var opp := for_opponent(rec if dir.is_empty() else dir)
@@ -352,12 +356,14 @@ func benefit(t: XBattler, rec: Dictionary, ctx: Dictionary, dir := {}) -> float:
 		var id := int(e.dataId)
 		var harmful := harmful_state(id)
 		var st := XDB.rec("States", id)
-		if code == 21 and id > 1 and harmful == opp and not t.is_state_affected(id) and not t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		# 有霸体的难度 Boss（CodexBossDifficulty.hasHyperArmor）不估控制状态（isControlState），也不估解除霸体 2651（审查第 76 期）
+		if code == 21 and id > 1 and harmful == opp and not t.is_state_affected(id) and not t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) \
+				and not (_hyper_armor(t) and XEnemy.boss_control_state(id)):
 			var probability := minf(1.0, maxf(0.0, float(e.value1)) * logic.state_rate(t, id))
 			var control := int(st.get("restriction", 0)) > 0
 			var value := (11000.0 if control else 4200.0) if opp else 5000.0
 			score += value * probability * (1.0 if ctx.longFight else 0.18)
-		if code == 22 and id > 1 and t.is_state_affected(id):
+		if code == 22 and id > 1 and t.is_state_affected(id) and not (id == XEnemy.BOSS_ARMOR_STATE and _hyper_armor(t)):
 			if fri and harmful:
 				score += 40000.0 if int(st.get("restriction", 0)) > 0 else 16000.0
 			if opp and not harmful:

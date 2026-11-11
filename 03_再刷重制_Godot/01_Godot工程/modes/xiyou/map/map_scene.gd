@@ -150,9 +150,24 @@ func _ready() -> void:
 	add_child(screen_fx)
 	var s := XState.current
 	await load_map(s.map_id, s.x, s.y, s.direction)
+	if XTianqi.has_pending():
+		await _run_tianqi_opening()
 	XAutosaveNotice.map_ready(self)  # YEP_X_Autosave：Scene_Map.createAllWindows 建 Window_Autosave，刚读过档就出「存档加载成功！」
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
+
+
+## 天启篇开局（XTianqi）：新游戏选完存档位、难度、阵容后直接到大厅，先在这里跑完替代原版开局三张图的指令（含引路人问道号），
+## 跑完才放开自动执行事件（大厅 EV020 首次到达存档、学难度被动）
+func _run_tianqi_opening() -> void:
+	_set_busy(true)
+	var interp := MVInterpreter.new(self, map_id, 0, XTianqi.take_pending())
+	await interp.run()
+	if not interp.skipped.is_empty():
+		skipped_log.append_array(interp.skipped)
+		print("[xiyou] 天启篇开局跳过 %d 条：%s" % [interp.skipped.size(), JSON.stringify(interp.skipped.slice(0, 3))])
+	_set_busy(false)
+	refresh_events()
 
 
 ## Scene_Map.stop 包装：地图上开了别的画面（战斗、商店、各种页面；输入文字 prompt 与批量抽奖的数量框不算）就不再回物品页
@@ -710,7 +725,7 @@ func _encounter() -> void:
 	var result: int = await start_battle(troop, true, false, true)  # 随机遇敌：BattleManager.onEncounter 掷先制／偷袭
 	_set_busy(false)
 	# 随机遇敌不可败，全灭走 Scene_Gameover（O-244 补：原来不看返回值，人 0 血留在地图；挂机快速战斗同走这里）
-	if result == 2:
+	if result == 2 and not last_battle_escaped:
 		await game_over()
 
 
@@ -1057,26 +1072,33 @@ static func _black_rect() -> ColorRect:
 	r.modulate.a = 0.0
 	return r
 
+## 淡出淡入的帧数：Game_Interpreter.fadeSpeed／Scene_Base.fadeSpeed 都是 24 帧（0.4 秒；原来写成 0.3 秒）
+const FADE_FRAMES := 24
+
 ## 事件 221／222（解释器调）：淡出淡入画面，窗口不被盖住
 func fade(out: bool) -> void:
 	await _tween_alpha(screen_fader, out)
 
-## 场所移动：黑幕盖住全部
-func transfer_fade(out: bool) -> void:
+## 场所移动：黑幕盖住全部。fade_type 是 201 的第 6 个参数（Game_Player.fadeType）：0 黑、1 白、2 不淡出
+## （Scene_Map.fadeOutForTransfer／fadeInForTransfer；原来一律黑、也不认「无」）
+func transfer_fade(out: bool, fade_type := 0) -> void:
+	if fade_type == 2:
+		return
+	fader.color = Color.WHITE if fade_type == 1 else Color.BLACK
 	await _tween_alpha(fader, out)
 
 func _tween_alpha(rect: ColorRect, out: bool) -> void:
 	var t := create_tween()
-	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, 0.3)
+	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, FADE_FRAMES / 60.0)
 	await t.finished
 
-func transfer(id: int, x: int, y: int, d: int) -> void:
+func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
 	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
 		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
 		return
-	await transfer_fade(true)
+	await transfer_fade(true, fade_type)
 	await load_map(id, x, y, d if d > 0 else player.direction)
-	await transfer_fade(false)
+	await transfer_fade(false, fade_type)
 
 func play_bgm(audio) -> void:
 	var name := str(audio.get("name", "")) if audio is Dictionary else ""
@@ -1166,6 +1188,9 @@ func play_me(audio: Dictionary) -> void:
 ## 战斗：返回 0 胜利 1 逃跑 2 战败（MV 语义）
 ## 上一场战斗是被事件 353 游戏结束收场的（原版直接 goto Scene_Gameover，可输的战斗也一样；301 据此走结束画面，审查第 75 期 P3-1）
 var last_battle_game_over := false
+## 上一场战斗按「逃跑」收场（_escaped：逃跑成功、340 中止）：即使 340 同帧全灭把结果改写成 2，updateBattleEnd 也只 pop 回地图，
+## 不去结束画面、不复活（GB13）
+var last_battle_escaped := false
 
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
@@ -1200,6 +1225,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	chars.process_mode = Node.PROCESS_MODE_DISABLED
 	var result: int = await battle.finished
 	last_battle_game_over = battle.logic.game_over
+	last_battle_escaped = battle.logic.escaped and not battle.logic.game_over
 	# BattleManager.replayBgmAndBgs 在战斗收场时就调（胜利是关结算画面的 endVictoryPhase，全灭／逃跑在 process 里），
 	# 早于 Scene_Battle 的淡出：战斗曲（或胜利曲）这时停，地图曲接着放、淡入；没放完的 ME 地图接过来
 	battle.stop_bgm()
@@ -1210,7 +1236,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 		var out := XSceneFade.new()
 		out.mouse_filter = Control.MOUSE_FILTER_STOP
 		ui.add_child(out)
-		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and (not can_lose or last_battle_game_over) else XBattleTransition.FADE_FRAMES)
+		out.start_out(XBattleTransition.SLOW_FADE_FRAMES if result == 2 and not last_battle_escaped and (not can_lose or last_battle_game_over) else XBattleTransition.FADE_FRAMES)
 		while out.busy():
 			out.step()
 			XBattleTransition.note({"phase": "out", "fade": out.opacity})

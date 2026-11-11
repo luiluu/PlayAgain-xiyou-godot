@@ -11,6 +11,8 @@ extends Control
 ##   谷雨在队的战斗中名字行右侧写状态字（XGuyu.status_text：储备、归根／待绽／花期／生长）：名字宽收到 floor(200×0.38)＝76，
 ##   状态字 10 号（max(10, floor(16×0.68))）、#b7ead0，在 76～200 之间靠右。
 ## - 状态格（installEquipmentStatusRuntime）：(−36, 20) 36×36，有图标状态时每 1.4 秒轮换显示一个，否则深色方块里写「i」。
+## - 状态格上叠一个透明按钮（同位置 32×32），悬停提示「名字：当前状态名（没有写「无图标状态」）；点击查看全部状态」，
+##   点了发 cell_pressed，战斗打开状态详情（XPartyStatusPanel）。
 ## - 轮到输入或正在行动的角色左移 48，被选为目标时左移 24，每帧移动 4px。
 
 const W := 296.0
@@ -34,12 +36,15 @@ const GUYU_SPLIT := 76.0
 const GUYU_FS := 10
 const GUYU_COLOR := Color("#b7ead0")
 
+signal cell_pressed(actor: XActor)
+
 var actor: XActor
 ## 演出中的读数（XBattleScene.show_views 设、clear_views 清）；空时读实时状态
 var view := {}
 var active := false
 var selected := false
 var canvas: XMVCanvas
+var cell_button: Button
 var _cycle := 0
 var _cycle_at := 0
 
@@ -55,10 +60,29 @@ func setup(a: XActor, index: int) -> void:
 	canvas.clip_contents = false
 	canvas.painter = _paint
 	add_child(canvas)
+	cell_button = Button.new()
+	cell_button.flat = true
+	cell_button.focus_mode = Control.FOCUS_NONE
+	cell_button.position = Vector2(-36, 20)
+	cell_button.size = Vector2(32, 32)
+	for k in ["normal", "hover", "pressed", "focus", "disabled"]:
+		cell_button.add_theme_stylebox_override(k, StyleBoxEmpty.new())
+	cell_button.pressed.connect(func(): cell_pressed.emit(actor))
+	cell_button.mouse_entered.connect(func(): cell_button.tooltip_text = cell_tip())
+	add_child(cell_button)
 
 
 func refresh() -> void:
 	canvas.queue_redraw()
+
+
+## 悬停提示（installEquipmentStatusRuntime updateIconButtons 的 title）：当前轮到的那个状态名
+func cell_tip() -> String:
+	if actor == null:
+		return ""
+	var rows := XPartyStatusPanel.rows_for(actor).filter(func(r): return int(r.icon) > 0) if CELL_FILTER else []
+	var name := str(rows[_cycle % rows.size()].name) if not rows.is_empty() else "无图标状态"
+	return actor.display_name() + "：" + name + "；点击查看全部状态"
 
 
 func _physics_process(_delta: float) -> void:
@@ -112,7 +136,7 @@ static func cell_rows(b: XBattler) -> Array:
 		if not CELL_FILTER:
 			out.append({"icon": icon, "stack": 1})
 		elif _visible_cached(id, st):
-			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id)), "kind": state_kind(st, not b.state_ids.has(id)), "name": str(st.get("name", ""))})
+			out.append({"icon": icon, "stack": maxi(1, b.state_floor(id)), "kind": _kind_cached(id, st, not b.state_ids.has(id)), "name": str(st.get("name", ""))})
 	if not CELL_FILTER:
 		return out
 	for i in range(b.buffs.size()):
@@ -166,6 +190,19 @@ static var _re_strip: RegEx
 
 
 static var _visible_cache := {}
+static var _kind_cache := {}
+
+
+## state_kind 按（状态号、是否被动）缓存：被动恒为「常驻」，不进缓存；只缓存数据库原条（XDB.rec 同一个字典），
+## states() 换过的视图（XZhenqi.pojia_state 改特性 21 的倍率，可能改变「异常」判定）每次现算（审查第 76 期）
+static func _kind_cached(id: int, st: Dictionary, passive: bool) -> String:
+	if passive:
+		return "常驻"
+	if not is_same(st, XDB.rec("States", id)):
+		return state_kind(st, false)
+	if not _kind_cache.has(id):
+		_kind_cache[id] = state_kind(st, false)
+	return _kind_cache[id]
 
 
 ## 状态数据不变（同号同一条），按号缓存；画面快照每条日志都要算

@@ -343,7 +343,7 @@ function runCase(c) {
   const it = new w.Game_Interpreter();
   const ran = new Set(), execute = w.Game_Interpreter.prototype.executeCommand;
   w.Game_Interpreter.prototype.executeCommand = function () {
-    if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(this._index); }
+    if (this === it) { const cmd = this.currentCommand(); if (cmd) ran.add(cmd); }
     if (!seqRandom) return execute.apply(this, arguments);
     // 301 战斗处理（敌群、战斗模拟）里的随机数不吃序列：重制战斗走自己的随机流，不走 random_sequence（试过：m138e6p0 等 69 例 301 后首个 122 错位）
     const cmd = this.currentCommand(), inBattle = cmd && cmd.code === 301;
@@ -358,7 +358,8 @@ function runCase(c) {
     const old = w.Math.random; w.Math.random = () => 0.5;
     try { return f.apply(this, arguments); } finally { w.Math.random = old; }
   };
-  it.setup(w.JsonEx.makeDeepCopy(list), c.event);
+  const runList = w.JsonEx.makeDeepCopy(list);
+  it.setup(runList, c.event);
   const errors = [];
   let frames = 0;
   const msg = () => {
@@ -419,7 +420,9 @@ function runCase(c) {
   if (errors.length) out.errors = errors;
   w.Game_Interpreter.prototype.executeCommand = execute; for (const [o, k, f] of gearHooks) o[k] = f;
   out.base = c.base; out.preset = c.preset;
-  out.reached = [[...ran].filter(i => EFFECT.has(list[i].code)).length, list.filter(x => EFFECT.has(x.code)).length];
+  // 按指令对象记执行到的（不按下标）：帮助页更新日志段（CodexGuide.injectChangelog）把解释器指令表换成插了行的新表，
+  // 下标对不上原表（map-m4 发现，原先 list[i] 越界 TypeError 整段崩）；新表里原有指令仍是 runList 里的同一对象，runList 与 list 下标对齐
+  out.reached = [list.filter((x, i) => EFFECT.has(x.code) && ran.has(runList[i])).length, list.filter(x => EFFECT.has(x.code)).length];
   w.Game_Interpreter.prototype.command122 = command122;
   w.Math.random = () => 0.5;
   trace = null;

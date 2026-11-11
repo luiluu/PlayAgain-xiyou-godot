@@ -2,8 +2,8 @@ class_name XAlienBattle
 extends RefCounted
 ## 异化的战斗侧（冻结 v0.28 installAlienationRuntime，CodexAlienation）：遭遇、敌人变体、锁队、腐蚀、镜骸反噬、胜利发放。
 ## 工坊侧（标记、账本、合成、重抽、分解）在 alienation.gd（XAlienation）；词条效果（installAlienationAffixes／Advanced）
-## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸，③接祸祝、恶愿、逆祷、缄默、饕餮、百相、无面、蚀术，④接吞器、献器
-## （见文末「词条效果」），其余词条未移植。
+## 期一接逆骨、归墟，期二①接疫囊、囚厄、绝缘、舍身，期二②接空壳、连命、嫁祸，③接祸祝、恶愿、逆祷、缄默、饕餮、百相、无面、蚀术，④接吞器、献器、夺舍
+##（见文末「词条效果」）：alienation.json 的 20 个词条都已接上（chars-gaps3 核过 affixes 表）。
 ## 参照 mv_oracle/alien_battle_probe.cjs（generated/oracle/alien_battle.json），专项 tests/xiyou_alien_battle；
 ## 词条效果参照 mv_oracle/alien_affix_probe.cjs（generated/oracle/alien_affix.json），专项 tests/xiyou_alien_affix。
 ## - 遭遇（Game_Troop.setup 包装 setupEncounter）：本场敌人按 bossSources 匹配（敌人、地图、敌群，未知存在另看来源地图），

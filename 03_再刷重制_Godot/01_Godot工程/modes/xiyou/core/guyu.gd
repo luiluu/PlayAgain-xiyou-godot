@@ -69,7 +69,9 @@ extends RefCounted
 ## - 护盾合计 totalShield：原生护盾（b.shield）＋账本（XShieldLedger.total；重制账本不并进 b.shield，所以相加；原版账本就是 b.shield）。
 ## - 转移说明 transferText 与 transferPreview 的原因：请选择存活的出战队友／当前装备不支持此转移方式／供给者生命储备不足／接收者储备已满。
 ## - 动作 G.visuals.motions：治疗 spell、花期 chant、转移 item、花荫 guard、终结 skill（归根中、内部行动不换）。
-## 未移植：isValid 包装（重制的角色行动不看 isValid）。
+## - isValid 包装（转移的 transferPreview 不合法时行动无效）不接：原版 Olivia OTB 强制开（Force Battle System），角色走 startOTBInput
+##   直接 startAction、不经 processTurn 的 isValid；剩下唯一调用 itemTargetCandidates（自动战斗 evaluate）里转移伤害类型 0、
+##   evaluateWithTarget 恒无值，评分本来就是 0，包装没有可见效果（chars-gaps3 核 v0.62.12）。
 
 const ACTOR := 175
 const RELIC := 7912

@@ -68,7 +68,9 @@ func _battle(setup: Dictionary) -> Array:
 	rand.rule = HalfStream.new()
 	rand.rule.domain = "rule"
 	var logic := XBattleLogic.new()
+	XSkillProgression.SYNC_ON_BATTLE_START = false  # 参照只走 BattleManager.setup，不 startBattle（不再同步，drop 留着）
 	logic.setup(3, s, rand)
+	XSkillProgression.SYNC_ON_BATTLE_START = true
 	for e in logic.enemies:
 		var p: Array = (e.data().params as Array).map(func(v): return float(v))
 		p[0] += BIG_HP

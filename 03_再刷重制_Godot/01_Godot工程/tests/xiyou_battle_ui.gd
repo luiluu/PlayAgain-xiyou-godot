@@ -74,6 +74,23 @@ func _battle_book(b: XBattleScene) -> void:
 	_check("battle_book_cancel_back", b.book_page == null and b.cmd_win != null and b.cmd_win.active and b.list_win == null)
 
 
+## 状态详情（installEquipmentStatusRuntime open('status')）：点右侧状态格打开，指令窗失活；Esc 关掉回指令窗
+func _status_detail(b: XBattleScene) -> void:
+	var a: XActor = b.logic.actors[1]
+	var row: XSideStatus = b.status_rows[a]
+	_check("status_cell_tip", row.cell_tip().begins_with(a.display_name() + "：") and row.cell_tip().ends_with("；点击查看全部状态"), row.cell_tip())
+	var r := row.cell_button.get_global_rect()
+	_check("status_cell_rect", r.size == Vector2(32, 32) and is_equal_approx(r.position.y, row.global_position.y + 20) and is_equal_approx(r.position.x, row.global_position.x - 36), r)
+	await _mouse(r.get_center(), MOUSE_BUTTON_LEFT)
+	await _frames(2)
+	var p := b.status_panel
+	_check("status_panel_open", p != null and p.actor() == a and not b.cmd_win.active and p.tab == "全部")
+	await _shot("battle_43_status_detail")
+	await _key(KEY_ESCAPE)
+	await _frames(2)
+	_check("status_panel_closed", b.status_panel == null and b.cmd_win != null and b.cmd_win.active)
+
+
 ## 真实鼠标事件（按下＋松开），坐标是视口坐标。headless 下根视口只有 64×64，点在外面 GUI 收不到（也到不了
 ## _unhandled_input）；点的时候把根视口临时设成游戏窗口的 1280×720（全屏的战斗场景跟着铺满，同真机），点完还原
 func _mouse(pos: Vector2, button: MouseButton) -> void:
@@ -166,6 +183,7 @@ func _run() -> void:
 	await _select_confirm(b, s)
 	await _alien_pick(b, s)
 	await _alien_mimic(b, s)
+	await _status_detail(b)
 	# 指令窗（原版：851,462,220,196；6 条居中）
 	var cw: XBattleList = b.cmd_win
 	_check("command_rect", [cw.position, cw.size] == [Vector2(851, 462), Vector2(220, 196)], [cw.position, cw.size])
