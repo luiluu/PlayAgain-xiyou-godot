@@ -38,7 +38,7 @@ const DIFFICULTIES := [
 	{"key": "lianyu", "name": "炼狱", "desc": "敌人大幅强化，可上阵更多超强者", "legacy": 5, "badge": "04_lianyu.png"},
 	{"key": "zhengdao", "name": "证道", "desc": "一命通关，全灭即删档", "legacy": 6, "badge": "05_zhengdao.png"},
 ]
-## 第三批（XTianqiCombat）：五档在数值上都按「艰险」跑，艰险借原版普通（3）。开关（O-待定·天启篇数值接线，与 XTianqiCombat.ENABLED 一起）：
+## 第三批（XTianqiCombat）：五档在数值上都按「艰险」跑，艰险借原版普通（3）。开关（O-278，与 XTianqiCombat.ENABLED 一起）：
 ## true＝开局一律走原版普通难度分支，难度差别只来自数值表（敌人血量、攻击等）；false＝回到第二批，各档借各自的原版难度。
 static var UNIFIED_LEGACY := true
 const NUMERIC_LEGACY := 3
@@ -46,7 +46,7 @@ const NUMERIC_LEGACY := 3
 ## 开关（O-267）：true＝天启篇存档只能在大厅通关抽角色，号角拿不到、商店不卖，事件和别的入口不再让新角色入队；
 ## false＝照原版（号角、招募事件照旧）。
 static var NO_RECRUIT := true
-## 开关（O-待定·天启篇删一线生机）：true＝天启篇存档不学一线生机 6212、天道注视 6213（公共事件 1330 整段不做；Kyo 11-08 数值重构「删掉一线生机和天道注视」）；
+## 开关（O-279）：true＝天启篇存档不学一线生机 6212、天道注视 6213（公共事件 1330 整段不做；Kyo 11-08 数值重构「删掉一线生机和天道注视」）；
 ## false＝照原版。
 static var NO_HEAVEN_GAZE := true
 ## 开关（O-268）：true＝战斗中多一条「换人」指令，和助力位互换（用掉这次行动）；false＝不能换
@@ -516,7 +516,7 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 # ---- 选线（第三批骨架；Kyo 11-11「选线做成单独的大厅内事件」） ----
 ## 选线不在开局流程里，是方桌大厅里单独的一个事件，和四线内容一起做。本批只做骨架：存档字段 flags.tianqi.line、查询与选定、
 ## 大厅里由小小鱼主持的对话。在哪儿出现、怎么呈现、选了能不能换、没选线时怎么玩，等四线设计稿和 Kyo 定。
-## 开关（O-待定·天启篇选线）：LINE_EVENT_OPEN＝false（默认）时大厅不出这个事件，玩家看不到；四线内容做好再打开。
+## 开关（O-280）：LINE_EVENT_OPEN＝false（默认）时大厅不出这个事件，玩家看不到；四线内容做好再打开。
 static var LINE_EVENT_OPEN := false
 ## 选定后能不能再换（旧稿是不能换，待 Kyo 定）
 static var LINE_CHANGEABLE := false
