@@ -87,7 +87,8 @@ func check() -> Dictionary:
 			sources.append({"json": raw, "sig": sig})
 	var manifest := XUpdateCheck.pick_best(sources, public_key)
 	last = XUpdateCheck.evaluate(manifest, base_code(), current_code())
-	if last["revoked"] and get_tree().root.find_child("UpdatePage", true, false) == null:
+	# 已经登记了别的补丁、只差重启（pending_code()>0）时不退：那多半就是修正版，退了会把新登记抹掉（审查 78 P3-4）
+	if last["revoked"] and XUpdateInstall.pending_code() == 0 and get_tree().root.find_child("UpdatePage", true, false) == null:
 		XUpdateInstall.rollback(false, "已撤回")  # 静默检查时发现现在这版被撤回：直接退回上一份，下次启动生效（页面开着时由页面处理并说明）
 	if last["state"] != XUpdateCheck.BAD:
 		_save_stamp()
