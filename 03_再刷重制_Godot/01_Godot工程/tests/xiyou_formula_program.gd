@@ -11,6 +11,7 @@ func check(label: String, ok: bool, detail = null) -> void:
 			print("FAIL ", label, " ", detail)
 
 func _ready() -> void:
+	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（O-待定）关掉，新行为由 xiyou_rift2_canglong 核
 	var reference = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + "oracle/formula_programs.json"))
 	if not reference is Dictionary:
 		check("oracle_present", false)

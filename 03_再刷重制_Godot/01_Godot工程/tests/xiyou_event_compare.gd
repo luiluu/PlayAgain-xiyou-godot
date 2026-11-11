@@ -299,6 +299,8 @@ func _run() -> void:
 	XDeadContent.ICHIGO_BANKAI = false
 	XDeadContent.DOMAIN_ALL_MATK = false
 	XDeadContent.clear_cache()
+	# 漩涡二阶段、苍龙重做与解放（XRift／XCanglong／RELEASE_CANGLONG，O-待定）：对照原版语义，关掉；本身由 tests/xiyou_rift2_canglong 核
+	XCanglong.original_data()
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
 	# 只对修正表里那几扇门的用例关（逐用例设，见循环里）；其余用例保持修正生效的真实路径（审查 41 P3-6）
 	_saved_seal_fix = MVInterpreter.seal_check_fix

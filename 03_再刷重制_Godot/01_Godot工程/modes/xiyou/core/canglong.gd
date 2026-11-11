@@ -51,6 +51,15 @@ const DRAGON_TEXT := "效果:真龙之力＝1+等级×等级×2%，独特技能�
 const _APS_TAIL := " size=18 color=rgba(255,255,255,1) line=false align=0"
 
 
+## 按原版比的参照测试（xiyou_rules、xiyou_help_card 等）用：漩涡二阶段、苍龙重做、解放三个开关全关并清缓存，数据回到原版
+static func original_data() -> void:
+	XRift.STAGE2 = false
+	XRift.clear_cache()
+	REWORK = false
+	clear_cache()
+	XImportedBalance.RELEASE_CANGLONG = false
+
+
 ## 真龙之力：1＋等级²×2%
 static func dragon_power(level: int) -> float:
 	return 1.0 + float(level) * float(level) * 0.02
