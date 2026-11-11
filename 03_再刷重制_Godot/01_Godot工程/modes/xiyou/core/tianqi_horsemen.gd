@@ -402,7 +402,7 @@ static func end_turn(logic) -> Array:
 				var live := _alive_actors(logic)
 				if not live.is_empty():
 					_defiance(logic, f, live[logic._int(0, live.size() - 1, "horseman_defiance")], int(knight("plague").defiance.per_add))
-	if str(f.line) == "death" and phase_of(f) == 3:
+	if str(f.line) == "death" and int(f.phase) >= 3:  # 阶段只进不退（圣水加最大生命会把血量比例往回拉）
 		f.finale = mini(int(knight("death").finale.full), int(f.finale) + 1)
 		_say(f, "终末 %d／%d。" % [int(f.finale), int(knight("death").finale.full)])
 	_check_kills(logic, f)

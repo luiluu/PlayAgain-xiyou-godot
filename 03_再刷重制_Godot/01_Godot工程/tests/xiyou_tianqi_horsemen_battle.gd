@@ -322,7 +322,8 @@ func _plague() -> void:
 	_check("plague_taunt_back", bool(f.taunt))
 	lg.end_battle(0)
 	a.param_mark_dirty()
-	_check("plague_cleared_after", _near(a.atk, atk0), [a.atk, atk0])
+	# 战斗结束：疫病等标记不带出战斗（开战状态的加成也随战斗结束去掉，所以不和战斗中的数比）
+	_check("plague_cleared_after", XTianqiHorsemen.actor_param(a, 2, 100.0) == 100.0 and XTianqiHorsemen.mark_of(lg, a).is_empty())
 
 
 func _plain() -> void:

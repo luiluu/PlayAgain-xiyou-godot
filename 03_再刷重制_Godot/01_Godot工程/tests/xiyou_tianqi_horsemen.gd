@@ -71,7 +71,7 @@ func _table() -> void:
 	_check("death_doom", int(d.doom.interval) == 5 and int(d.doom.phase_interval) == 3)
 	var war := XTianqiHorsemen.knight("war")
 	_check("war_rules", int(war.fireworks.cooldown) == 2 and int(war.reinforce.per_wave) == 3 and int(war.reinforce.max_adds) == 5)
-	_check("famine_lines", XTianqiHorsemen.knight("famine").seniority.lines == [5, 10])
+	_check("famine_lines", XTianqiHorsemen.knight("famine").seniority.lines.map(func(x): return int(x)) == [5, 10])
 	_check("plague_defiance", int(p.defiance.full) == 6 and _near(float(p.plague.dot), 0.05) and _near(float(p.plague.down_cap), 0.33))
 	_check("unknown", XTianqiHorsemen.stats("nope", "jianxian").is_empty() and XTianqiHorsemen.stats("war", "nope").is_empty())
 
