@@ -357,7 +357,7 @@ func _extra() -> void:
 	var rw := logic.rewards()
 	check("weapon_no_exp_gold", logic.enemies.all(func(e): return e.zq_weapon_trial) and int(rw.exp) == 0 and int(rw.gold) == 0 and rw.drops.is_empty(), rw)
 	XZhenqi.battle = {}
-	# 回退 XZhenqi.V045 = false（O-待定·真气 v0.45）：v0.28 神兵试炼照常给经验、金钱（物品照旧清掉）
+	# 回退 XZhenqi.V045 = false（O-310·真气 v0.45）：v0.28 神兵试炼照常给经验、金钱（物品照旧清掉）
 	XZhenqi.V045 = false
 	_fresh()
 	s.set_variable(20, 13)

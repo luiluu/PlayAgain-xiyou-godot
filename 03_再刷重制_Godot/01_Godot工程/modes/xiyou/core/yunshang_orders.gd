@@ -443,7 +443,7 @@ static func immortal_clear(s: XState, troop: int) -> bool:
 	return bool(route.get("unpaired", false)) or (route.get("legacy", []) as Array).has(int(s.variables.get(107, 0)))
 
 
-## 跟到 v0.62.12（O-待定·云裳天丝与订单回合）：不朽天丝每场 2 份（天丝成锦偶数次再多 2）；胜利时补记最后没走完的回合（v0.49，
+## 跟到 v0.62.12（O-309·云裳天丝与订单回合）：不朽天丝每场 2 份（天丝成锦偶数次再多 2）；胜利时补记最后没走完的回合（v0.49，
 ## 一击结束的战斗也算 1 格订单进度）。false＝回到 v0.28：每场 1 份（偶数次多 1）、胜利不补记
 static var V062 := true
 

@@ -52,7 +52,7 @@ const APPLY_TO_DAMAGE := false
 ## 神兵试炼：没有 <CodexZhenqi: weapon N> 标签时按敌人编号认的神兵 Boss（Z.WEAPON_BOSS）；对手强度＝修行进度层守层者 ×2
 const WEAPON_BOSS := {20: 11, 40: 2, 51: 5, 52: 2, 419: 2, 420: 2, 421: 2, 655: 4, 664: 9, 667: 4}
 const WEAPON_TRIAL_SCALE := 2
-## 真气 v0.45 五条（换源跟到 v0.62.12，O-待定·真气 v0.45）：神兵试炼每类一位、分页；试炼不给真气、经验金钱为 0；
+## 真气 v0.45 五条（换源跟到 v0.62.12，O-310·真气 v0.45）：神兵试炼每类一位、分页；试炼不给真气、经验金钱为 0；
 ## 指定道法分页并保留掷出结果；灵根新备注 <CodexZhenqiLinggen>。false＝回到 v0.28 行为（文件末尾 _v028 各函数）
 static var V045 := true
 ## 破甲·真气（道法「破甲」passiveATKST2705）
