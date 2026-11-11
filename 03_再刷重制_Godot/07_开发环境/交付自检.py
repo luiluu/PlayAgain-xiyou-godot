@@ -401,8 +401,13 @@ def check(root, ref, task=None, main=None, sandbox=None, local=None):
         conflicts, static = box.try_merge(target, gone)
         if conflicts:
             result['conflicts'] = conflicts
-            result['problems'].append('和 %s 合并有冲突（%s%s）：在车道里 git merge main 解掉、重跑相关专项后再交付'
-                                      % (main_ref, '、'.join(conflicts[:6]), ' 等 %d 个' % len(conflicts) if len(conflicts) > 6 else ''))
+            if all(c.startswith(SHEET_DIR) for c in conflicts):
+                # 交付单在 main 已归并删除、车道没合 main 又改了它（modify/delete）：多半是上一期合并后在旧单上补写，不是新的交付
+                result['problems'].append('交付单 %s 在 %s 已随上一期归并删除，车道之后又改了它（没先合 main）：要交付新的一期，先 git merge main，'
+                                          '再重写交付单（只写本期内容）' % ('、'.join(conflicts), main_ref))
+            else:
+                result['problems'].append('和 %s 合并有冲突（%s%s）：在车道里 git merge main 解掉、重跑相关专项后再交付'
+                                          % (main_ref, '、'.join(conflicts[:6]), ' 等 %d 个' % len(conflicts) if len(conflicts) > 6 else ''))
         result['problems'] += static
     finally:
         if own:

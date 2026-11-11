@@ -162,7 +162,7 @@ def board(root, main=None, now=None, recent_days=3, show_all=False, old_days=14)
                     blocked.append(x)
                 else:
                     stacked.append(x)
-    blocked.sort(key=lambda x: x['time'])
+    blocked.sort(key=lambda x: x['time'], reverse=True)       # 刚交的排前面：最可能有人等着改
     return dict(main=main_sha, mainRef=main_ref, now=now, ready=ready, blocked=blocked, pending=pending, hidden=hidden,
                 old=old, unrelated=unrelated, shallow=shallow(root))
 

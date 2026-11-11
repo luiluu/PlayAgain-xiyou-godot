@@ -166,6 +166,19 @@ class PrecheckTests(Fixture):
         self.assertEqual(r['conflicts'], [])
         self.assertTrue(any('func dup 重复定义' in p for p in r['problems']), r['problems'])
 
+    def test_sheet_edited_after_it_was_merged_and_deleted_on_main(self):
+        # 实测（11-11 Mac 主仓库）：上一期合并后车道在旧交付单上补写备注，main 已把它归并删除，试合并报 modify/delete
+        wt = self.lane('cc/task')
+        self.g('merge', '-q', '--no-ff', 'cc/task', '-m', 'merge')
+        self.g('rm', '-q', '00_项目管理/交付/cc_task.md')
+        self.commit('fold sheet')
+        with (wt / '00_项目管理/交付/cc_task.md').open('a') as f:
+            f.write('\n- 合并后补记\n')
+        self.commit('note after merge', cwd=wt)
+        r = self.check('cc/task')
+        self.assertEqual(r['conflicts'], ['00_项目管理/交付/cc_task.md'])
+        self.assertTrue(any('已随上一期归并删除' in p and '重写交付单' in p for p in r['problems']), r['problems'])
+
     def test_main_advanced_without_conflict_is_only_a_hint(self):
         self.lane('cc/task')
         self.put('另一处.md', 'x\n')
