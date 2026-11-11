@@ -5,7 +5,7 @@
 
     python3 测算.py              # 按「最终参数」出表，并检查各项约束
     python3 测算.py --search     # 在不含 4 的整数候选里找比值最接近 0.8 的几组
-    python3 测算.py --all-scaled # 对照方案：逐道也吃真龙之力
+    python3 测算.py --unscaled   # 旧方案对照：逐道不吃真龙之力
     python3 测算.py --mastery 50 # 换熟练等级看出招顺序是否还成立
 
 口径（与草案 v0.1 实测一致）：冻结 v0.62.12，原版无画面引擎 sim/dmg5.cjs，
@@ -48,10 +48,10 @@ FORMULA = {
     "zhudao":  "(物攻＋魔攻＋幸运) × 当前 TP × {c}",
 }
 
-# 最终参数（本分支定稿）：每段倍率。
-FINAL = {"yuxi": 5_000, "xuelang": 5_000, "feixiao": 2_600, "zhumie": 57_000, "zhudao": 135_000}
-# 对照方案：逐道也吃真龙之力时的一组（--all-scaled）。
-FINAL_ALL_SCALED = {"yuxi": 5_000, "xuelang": 5_000, "feixiao": 3_500, "zhumie": 56_000, "zhudao": 1_300}
+# 最终参数（Kyo 11-11：五招都吃真龙之力，压逐道维持 0.8）：每段倍率。
+FINAL = {"yuxi": 5_000, "xuelang": 5_000, "feixiao": 3_200, "zhumie": 85_000, "zhudao": 1_000}
+# 旧方案对照：逐道不吃真龙之力时的一组（--unscaled）。
+FINAL_UNSCALED = {"yuxi": 5_000, "xuelang": 5_000, "feixiao": 2_600, "zhumie": 57_000, "zhudao": 135_000}
 
 
 def zhenlong(level: int) -> float:
@@ -115,7 +115,7 @@ def nice(lo: int, hi: int, step: int):
 
 def search(scaled: set[str], mastery: int, top: int = 8):
     zhumie = nice(30_000, 90_000, 1_000)
-    zhudao = nice(80_000, 200_000, 5_000) if "zhudao" not in scaled else nice(500, 3_000, 100)
+    zhudao = nice(80_000, 200_000, 5_000) if "zhudao" not in scaled else nice(500, 3_000, 10)
     feixiao = nice(2_000, 3_900, 100)
     yuxi = [5_000]
     found = []
@@ -127,8 +127,10 @@ def search(scaled: set[str], mastery: int, top: int = 8):
         m = margin_at_cap(coefs, mastery, scaled)
         if m < 1.02:  # 99 级时逐道至少比诛灭高 2%，留点余量
             continue
-        found.append((abs(ratio - TARGET), ratio, m, coefs))
-    found.sort(key=lambda x: (x[0], x[2]))
+        if abs(ratio - TARGET) > 0.002:
+            continue
+        found.append((m, ratio, m, coefs))
+    found.sort(key=lambda x: x[0])  # 比值够近的里面，逐道压得越贴近诛灭越靠前
     return found[:top]
 
 
@@ -176,17 +178,17 @@ def report(coefs: dict, mastery: int, scaled: set[str], title: str):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--search", action="store_true", help="搜索比值接近 0.8 的不含 4 的倍率组合")
-    ap.add_argument("--all-scaled", action="store_true", help="对照方案：逐道也吃真龙之力")
+    ap.add_argument("--unscaled", action="store_true", help="旧方案对照：逐道不吃真龙之力")
     ap.add_argument("--mastery", type=int, default=BENCH_MASTERY, help="熟练等级（默认 32）")
     args = ap.parse_args()
 
-    scaled = {"yuxi", "xuelang", "feixiao", "zhumie"}
+    scaled = {"yuxi", "xuelang", "feixiao", "zhumie", "zhudao"}
     coefs = FINAL
-    title = "最终参数（逐道不吃真龙之力）"
-    if args.all_scaled:
-        scaled = scaled | {"zhudao"}
-        coefs = FINAL_ALL_SCALED
-        title = "对照方案（五招都吃真龙之力）"
+    title = "最终参数（五招都吃真龙之力）"
+    if args.unscaled:
+        scaled = scaled - {"zhudao"}
+        coefs = FINAL_UNSCALED
+        title = "旧方案对照（逐道不吃真龙之力）"
 
     if args.search:
         print(f"## 搜索：{title}，熟练 {args.mastery}\n")
