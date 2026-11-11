@@ -56,6 +56,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 		return {"available": true, "value": XYomiJingliu.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "liuying":  # CodexLiuying.damage(a,b,id)（179 流萤，XLiuying.formula）
 		return {"available": true, "value": XLiuying.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == "canglong":  # 苍龙破晓重做五招（146，XCanglong.formula；O-待定）
+		return {"available": true, "value": XCanglong.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "yunshang":  # CodexYunshang.formula(this,a,b)（174 云裳，XYunshang.formula）
 		return {"available": true, "value": XYunshang.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") in ["tusu", "xuan"]:  # CodexTusu.damage／CodexXuan.damage、heal（176 屠苏、177 璇，XTusuXuan.formula）

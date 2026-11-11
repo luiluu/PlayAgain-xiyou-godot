@@ -248,11 +248,14 @@ static func clothes_unlocked() -> Array:
 
 ## 大厅漩涡过场（installRemakeWhisperRuntime 的 CodexWhisper）：播过的键记在配置 codexWhisperSeen（不跟存档），mark 立即写盘
 static func whisper_seen(key: String) -> bool:
+	if key == XRift.THIS_VISIT_KEY:
+		return XRift.this_visit_seen(key)  # 二阶段：rift1 是不是这一次进大厅才播的（不写盘的虚拟键）
 	ensure_loaded()
 	return (_values.codexWhisperSeen as Array).has(key)
 
 
 static func whisper_mark(key: String) -> bool:
+	XRift.on_mark(key)
 	ensure_loaded()
 	if not (_values.codexWhisperSeen as Array).has(key):
 		_values.codexWhisperSeen.append(key)

@@ -109,12 +109,16 @@ static func table(name: String) -> Variant:
 		_tables[name] = load_json("db/%s.json" % name)
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
+			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-待定，开关 XCanglong.REWORK）
+		if name == "Classes":
+			XCanglong.patch_classes(_tables[name])
 		if name == "Armors" and _tables[name] is Array:
 			# H／U.describe 在 isDatabaseLoaded 里就地改四件成长装备原件的说明与成长行（installNativeHeartsteel／HubrisRuntime；
 			# v0.62.12 数据库里狂妄原件写「物理伤害忽略18%目标物防」，开机后才改成「效果：物防穿透18%」，锻造出的实例照抄改过的）
 			for id in [XHeartsteel.ARMOR, XHeartsteel.LEVIATHAN, XHubris.ARMOR, XHubris.ATARAXIA]:
 				if id < _tables[name].size() and _tables[name][id] is Dictionary:
 					XGrowthHelp.describe(_tables[name][id])
+			XCanglong.patch_armors(_tables[name])  # 【上邪】专属名
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
@@ -142,6 +146,7 @@ static func map(map_id: int) -> Dictionary:
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
+		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-待定，开关 XRift.STAGE2）
 	return _tables[key] if _tables[key] != null else {}
 
 
@@ -150,6 +155,11 @@ static func img_path(folder: String, name: String) -> String:
 		var p := "%simg/%s/%s%s" % [BASE, folder, name, ext]
 		if ResourceLoader.exists(p):
 			return p
+	# 重制自带的新美术（不在原版里）：时空漩涡二阶段图在 content/rift/（XRift，见该目录 README）
+	if folder == "characters" and name.begins_with("!Codex_Rift_"):
+		var own := "res://content/rift/%s.png" % name
+		if ResourceLoader.exists(own):
+			return own
 	return ""
 
 
