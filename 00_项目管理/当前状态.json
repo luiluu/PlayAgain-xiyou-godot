@@ -92,11 +92,11 @@
     "devVersionTool": "03_再刷重制_Godot/07_开发环境/开发编号.py"
   },
   "progress": {
-    "percent": 97.5,
+    "percent": 97.9,
     "ledger": "00_项目管理/重制步骤清单.md（进度账）",
     "lastReviewAtPercent": 95,
     "nextReviewAtPercent": null,
-    "asOf": "dev.444",
+    "asOf": "dev.462",
     "reviewAtPercents": [
       50,
       75,
