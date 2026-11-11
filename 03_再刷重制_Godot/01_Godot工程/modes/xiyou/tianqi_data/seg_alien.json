@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "source": "设计仓库《天启篇四线剧情与关卡设计稿 v0.4》第 3.1、3.3、5.1 节；《四线异化与异化装备重构 v0.8》第 2.1 节（稀有度对照）",
+  "_note": "按段异化（四线共用）。几率是百分数；tier 是基础级，up 是升一级的级、up_rate 是异化后升到 up 的百分比（设计稿写成「侵染（蚀骨 10%）」）。都是测试参数，数值阶段再定。炼狱「稀有、精英的级上限提高一级」cc 读作：稀有、精英的 up 再高一级（没有 up 的段补一个高一级、几率 rare_up_rate），封顶化形。古神算深渊怪（v0.8 只写了被封印者、未知存在「等」，cc 补的，待核）。",
+  "nice_number_exempt": [
+    "from",
+    "to",
+    "floor_max",
+    "max_units"
+  ],
+  "tiers": [
+    "qinran",
+    "shigu",
+    "huaxing",
+    "zhongyan"
+  ],
+  "classes": {
+    "稀有": "rare",
+    "精英": "rare",
+    "前所未见": "very_rare",
+    "亘古未有": "very_rare",
+    "首领": "very_rare",
+    "守层者": "guardian",
+    "被封印者": "abyss",
+    "未知存在": "abyss",
+    "古神": "abyss"
+  },
+  "priority": [
+    "guardian",
+    "abyss",
+    "very_rare",
+    "rare"
+  ],
+  "max_units": 1,
+  "floor_max": 36,
+  "segments": [
+    {
+      "name": "序幕",
+      "from": 1,
+      "to": 5
+    },
+    {
+      "name": "侵染",
+      "from": 6,
+      "to": 10,
+      "rare": {
+        "rate": 11,
+        "tier": "qinran"
+      },
+      "very_rare": {
+        "rate": 33,
+        "tier": "qinran"
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "qinran"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    },
+    {
+      "name": "蚀骨",
+      "from": 11,
+      "to": 15,
+      "rare": {
+        "rate": 15,
+        "tier": "qinran"
+      },
+      "very_rare": {
+        "rate": 50,
+        "tier": "shigu"
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "shigu"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    },
+    {
+      "name": "深陷",
+      "from": 16,
+      "to": 20,
+      "rare": {
+        "rate": 20,
+        "tier": "qinran",
+        "up": "shigu",
+        "up_rate": 10
+      },
+      "very_rare": {
+        "rate": 60,
+        "tier": "shigu"
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "shigu"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    },
+    {
+      "name": "化形",
+      "from": 21,
+      "to": 25,
+      "rare": {
+        "rate": 25,
+        "tier": "qinran",
+        "up": "shigu",
+        "up_rate": 10
+      },
+      "very_rare": {
+        "rate": 70,
+        "tier": "shigu",
+        "up": "huaxing",
+        "up_rate": 20
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "huaxing"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    },
+    {
+      "name": "将至",
+      "from": 26,
+      "to": 30,
+      "rare": {
+        "rate": 30,
+        "tier": "shigu",
+        "up": "huaxing",
+        "up_rate": 10
+      },
+      "very_rare": {
+        "rate": 80,
+        "tier": "shigu",
+        "up": "huaxing",
+        "up_rate": 33
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "huaxing"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    },
+    {
+      "name": "天外",
+      "from": 31,
+      "to": 36,
+      "rare": {
+        "rate": 33,
+        "tier": "shigu",
+        "up": "huaxing",
+        "up_rate": 20
+      },
+      "very_rare": {
+        "rate": 88,
+        "tier": "huaxing"
+      },
+      "guardian": {
+        "rate": 100,
+        "tier": "zhongyan"
+      },
+      "abyss": {
+        "rate": 100,
+        "tier": "huaxing"
+      }
+    }
+  ],
+  "difficulty": {
+    "_note": "rate_mult、rate_add 只改稀有、精英、首领（守层者、深渊一定异化，只改级）；rare_max 稀有、精英最高级；guardian_shift 守层者升降几级（最低侵染）；终焉不受难度影响。",
+    "xunchang": {
+      "rate_mult": 0.5,
+      "rate_add": 0,
+      "rare_max": "qinran",
+      "guardian_shift": -1
+    },
+    "jianxian": {
+      "rate_mult": 1,
+      "rate_add": 0
+    },
+    "jiusi": {
+      "rate_mult": 1,
+      "rate_add": 10
+    },
+    "lianyu": {
+      "rate_mult": 1,
+      "rate_add": 20,
+      "rare_up_shift": 1,
+      "rare_up_rate": 10,
+      "rare_max": "huaxing"
+    },
+    "zhengdao": {
+      "rate_mult": 1,
+      "rate_add": 20,
+      "rare_up_shift": 1,
+      "rare_up_rate": 10,
+      "rare_max": "huaxing"
+    }
+  },
+  "lines": {
+    "_note": "各线每段教的异化种类（第 5.1 节）：teach 是 [从第几层起, 新增的种类]；深渊不按这张表，本线种类全出。只抽本线异化模块已经做好的种类（战争线的连击兵还没做，先不出）。饥荒、死亡、瘟疫三线的种类键是 cc 占的位，各线车道做异化模块时按自己的键改这里。",
+    "war": {
+      "teach": [
+        [
+          6,
+          [
+            "berserk",
+            "fervor"
+          ]
+        ],
+        [
+          11,
+          [
+            "combo"
+          ]
+        ],
+        [
+          16,
+          [
+            "commander"
+          ]
+        ],
+        [
+          21,
+          [
+            "pyro"
+          ]
+        ]
+      ]
+    },
+    "famine": {
+      "teach": [
+        [
+          6,
+          [
+            "dry",
+            "lean"
+          ]
+        ],
+        [
+          11,
+          [
+            "night"
+          ]
+        ],
+        [
+          16,
+          [
+            "raid"
+          ]
+        ],
+        [
+          21,
+          [
+            "overdraft"
+          ]
+        ]
+      ]
+    },
+    "death": {
+      "teach": [
+        [
+          6,
+          [
+            "verdict",
+            "reaper"
+          ]
+        ],
+        [
+          11,
+          [
+            "knell"
+          ]
+        ],
+        [
+          16,
+          [
+            "double"
+          ]
+        ],
+        [
+          21,
+          [
+            "captain"
+          ]
+        ]
+      ]
+    },
+    "plague": {
+      "teach": [
+        [
+          6,
+          [
+            "gland",
+            "chaos"
+          ]
+        ],
+        [
+          11,
+          [
+            "taunt"
+          ]
+        ],
+        [
+          16,
+          [
+            "contagion"
+          ]
+        ],
+        [
+          21,
+          [
+            "source"
+          ]
+        ]
+      ]
+    }
+  }
+}
