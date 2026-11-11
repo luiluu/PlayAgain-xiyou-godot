@@ -247,6 +247,8 @@ func _item16() -> void:
 		return
 	var saved_dir = XSave.dir_override
 	XSave.dir_override = "user://test_ui_input/" + str(Time.get_ticks_usec())
+	var tq_title := XTianqiTitle.ENABLED
+	XTianqiTitle.ENABLED = false  # 第 16 项查原版标题的光标与选中；新标题的光标和上下移动由 xiyou_tianqi_title 测
 	var title: Node = load("res://modes/xiyou/entry.tscn").instantiate()
 	add_child(title)
 	await frames(3)
@@ -258,6 +260,7 @@ func _item16() -> void:
 	await frames(2)
 	var n: int = title._commands.size()
 	check("16_title_down_moves_selection", n < 2 or title._sel != before, [before, title._sel, n])
+	XTianqiTitle.ENABLED = tq_title
 	title.queue_free()
 	await frames(1)
 	XSave.dir_override = saved_dir

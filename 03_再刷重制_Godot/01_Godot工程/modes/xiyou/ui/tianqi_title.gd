@@ -291,6 +291,8 @@ func move(step: int) -> void:
 		i = (i + step + n) % n
 		if _items[i].enabled:
 			break
+	if i != _sel:
+		XSound.system(0)  # 光标音，同其它列表（xiyou_list_paging 扫 move 有没有放）
 	select(i)
 
 

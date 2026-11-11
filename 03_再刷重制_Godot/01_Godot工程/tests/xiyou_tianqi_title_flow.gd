@@ -172,8 +172,8 @@ func _hub(tag: String, slot: int, key: String, dao: String, names: Array) -> voi
 ## 读回：标题「旧的回忆」→ 读档页（最近存的一格）→ 读取 → 确认
 func _load_back(tag: String, slot: int, key: String, dao: String, touch: bool) -> void:
 	var entry = await _title()
-	var load_cmd: Button = entry._commands[1].node
-	_check(tag + "_load_enabled", entry._commands[1].enabled)
+	var load_cmd: Button = _cmd(entry, 1).node
+	_check(tag + "_load_enabled", _cmd(entry, 1).enabled)
 	if touch:
 		await _tap(load_cmd)
 	else:
@@ -207,7 +207,7 @@ func _keyboard() -> void:
 	_check("kb_seed_save", XSave.save(2))
 	var before := FileAccess.get_file_as_bytes(XSave.path(2))
 	var entry = await _title()
-	_check("kb_title_new_game_selected", entry._sel == 0)
+	_check("kb_title_new_game_selected", _sel(entry) == 0)
 	await _key(KEY_ENTER)
 	_check("kb_slot_page", _find("TianqiSlot1") != null and _focus_name() == "TianqiSlot1", _focus_name())
 	await _key(KEY_RIGHT)
@@ -251,7 +251,7 @@ func _keyboard() -> void:
 func _touch() -> void:
 	XPlatform.force_mobile = true
 	var entry = await _title()
-	await _tap(entry._commands[0].node)
+	await _tap(_cmd(entry, 0).node)
 	var slot5 = _find("TianqiSlot5")
 	_check("tc_slot_page", slot5 != null)
 	if slot5 == null:
@@ -314,3 +314,14 @@ func _revert() -> void:
 	await _title()
 	_check("revert_no_map_left", not (_scene() is XMapScene))
 	XTianqi.ENABLED = true
+
+
+## 标题指令：天启篇新标题（XTianqiTitle，O-306）开着时取它的五项（0 新的游戏、1 旧的回忆），否则取原版图片指令
+func _cmd(entry, i: int) -> Dictionary:
+	if entry._tq_title != null:
+		return entry._tq_title.item(i)
+	return entry._commands[i]
+
+
+func _sel(entry) -> int:
+	return entry._tq_title.selected() if entry._tq_title != null else entry._sel
