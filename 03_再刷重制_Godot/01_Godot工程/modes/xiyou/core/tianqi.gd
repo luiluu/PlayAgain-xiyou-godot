@@ -14,6 +14,10 @@ extends RefCounted
 
 ## 开关（O-260）：true＝新游戏走天启篇开局；false＝回到原版 Map001 开局。
 static var ENABLED := true
+## 发行开关（O-待定）：Kyo 11-11「新整包只有天启篇的标题和载入界面，完整天启篇内容以后单独更新」。
+## false＝发行构建（ReleaseEntry.is_release）里新游戏走原版开局，天启篇规则（都只认存档里的天启篇标记）一条都不生效；
+## 开发版、测试照 ENABLED。天启篇做完发补丁把它改成 true 即开放。
+static var RELEASE_OPEN := false
 ## 证道一命通关：Kyo 平衡好之前不开放（数值重构方案第五节），选难度页显示锁定。
 static var ZHENGDAO_OPEN := false
 
@@ -105,6 +109,11 @@ static func badge_path(d: Dictionary) -> String:
 
 
 ## 这份存档按天启篇规则（新开局建的档）
+## 「新的游戏」走不走天启篇开局：ENABLED 且（不是发行构建或发行已开放）
+static func new_game_enabled() -> bool:
+	return ENABLED and (RELEASE_OPEN or not ReleaseEntry.is_release())
+
+
 static func active(s: XState) -> bool:
 	return s != null and s.flags.get("tianqi") is Dictionary and int(s.flags.tianqi.get("rules", 0)) >= 1
 

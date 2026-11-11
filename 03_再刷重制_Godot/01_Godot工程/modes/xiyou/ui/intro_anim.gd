@@ -6,7 +6,7 @@ extends Control
 ## - 视频 content/intro/tianqi_intro_v8.ogv（来历见同目录 README）。成片后段的警告屏和标题是预览，游戏里用真的，所以只剪到合眼。
 ## - 时间按真实秒计：变速齿轮把 Engine.time_scale 调到 1.6，视频播放和淡出都除掉它，不跟着变快。
 ## - 跳过：任意键、确定、点一下 → 直接 0.1 秒压黑、接声明屏（声明屏自己有 0.5 秒防连按）。
-## - 放不放跟声明屏同一套：XSplashScreen.wanted() 且 WARNING_SCREEN，另外要天启篇开着（XTianqi.ENABLED）；只在西游（天启篇）标题，入口菜单和「新版」不放。
+## - 放不放跟声明屏同一套：XSplashScreen.wanted() 且 WARNING_SCREEN，不看天启篇内容开没开（Kyo 11-11：整包带天启篇标题和载入画面、内容照改版）；只在西游（天启篇）标题，入口菜单和「新版」不放。
 ## 回退：ENABLED = false 不放动画、标题也不淡入（回到声明屏结束直接出标题）。
 
 signal finished
@@ -31,9 +31,9 @@ var _done := false
 var _pressed := false
 
 
-## 有开关、天启篇开着（XTianqi.ENABLED，O-260 回退到原版开局时不放）、有视频才放
+## 有开关、有视频才放（跟天启篇内容开关 XTianqi.ENABLED／RELEASE_OPEN 无关）
 static func available() -> bool:
-	return ENABLED and XTianqi.ENABLED and ResourceLoader.exists(VIDEO)
+	return ENABLED and ResourceLoader.exists(VIDEO)
 
 
 ## 盖在 parent 上放一遍；放不了返回 null

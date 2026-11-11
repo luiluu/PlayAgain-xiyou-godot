@@ -176,6 +176,15 @@ func _rules() -> void:
 
 ## 开关回退：XTianqi.ENABLED = false 时标题「新的游戏」回到原版 Map001 开局（不是天启篇存档）
 func _revert() -> void:
+	# 发行构建（Kyo 11-11 整包只带标题和载入画面）：RELEASE_OPEN = false 时新游戏不走天启篇开局，开了才走；开发版照 ENABLED
+	var sim := ReleaseEntry.simulate_release
+	_check("dev_new_game_tianqi", XTianqi.new_game_enabled())
+	ReleaseEntry.simulate_release = true
+	_check("release_new_game_original", not XTianqi.new_game_enabled() and not XTianqi.RELEASE_OPEN)
+	XTianqi.RELEASE_OPEN = true
+	_check("release_open_new_game_tianqi", XTianqi.new_game_enabled())
+	XTianqi.RELEASE_OPEN = false
+	ReleaseEntry.simulate_release = sim
 	XTianqi.ENABLED = false
 	_check("enter_xiyou_again", GameApp.enter_mode("xiyou"))
 	await _wait(func(): return _scene() != null and _scene().has_method("_on_new_game"), 300)
