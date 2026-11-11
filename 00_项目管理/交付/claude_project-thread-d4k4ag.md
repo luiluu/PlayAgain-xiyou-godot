@@ -1,7 +1,7 @@
 # 交付：claude/project-thread-d4k4ag
 
 - 车道／工作者：天启篇·第二批／cc（项目线程「开始制作天启篇内容」，云端容器；第一批已在 dev.444 合并，本分支从合并后的 main 重开）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -42,7 +42,8 @@
 
 - `语法检查.py`：681 个 .gd 0 个问题。
 - 专项 `xiyou_tianqi_party` 33/33；`xiyou_tianqi_opening` 41/41；相关场景 `xiyou_party`、`xiyou_super_acquire`、`xiyou_super_deploy`、`xiyou_shop_buy`、`xiyou_lobby_shops`、`xiyou_battle` 本地全过。
-- 选测：GitHub 云端选测（workflow_dispatch，本分支 6a32209f8，基准 origin/main，14 片）：13 片全过，片 11 只挂了本专项的 `helper_full_exp`（自动战斗打敌群 2 的掉落经验在云端是 0，本机不是）；改成按固定奖励直接发经验后本机 33/33，云端单跑本专项见下行。
+- 选测：GitHub 云端选测（workflow_dispatch，本分支 6a32209f8，基准 origin/main，14 片）：13 片全过，片 11 只挂了本专项的 `helper_full_exp`（自动战斗打敌群 2 的掉落经验在云端是 0，本机不是）；改成按固定奖励直接发经验后本机 33/33，
+- 云端单跑（a1007db9c）：`xiyou_tianqi_party` 33/33、`xiyou_tianqi_opening` 41/41：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42930697904 。全量选测在 6a32209f8：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/42926889569 （之后只改了专项本身和交付单）。
 
 ## 待交叉核查
 
@@ -52,5 +53,8 @@
 ## 本分支提交
 
 - 6a32209f8 天启篇第二批：上场 4 人＋助力位（战斗中换人）、每通关 5 层大厅抽角色、删号角与事件招募
+- d6154a0b2 交付单草稿
+- a1007db9c 专项经验检查改按固定奖励直接发
+- （本提交）交付单：可合并
 
 - 车道路径：无（云端容器做的；本分支没改切片、转换器、探针，合并不用重同步）
