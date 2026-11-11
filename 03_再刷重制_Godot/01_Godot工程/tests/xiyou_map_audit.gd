@@ -5,7 +5,7 @@ extends Node
 ##   （图只有 29×18，人落在图外）。开关 21 只在洞窟碰到捕猎者时打开、逃离／打完／重置都会关，原版要读异常存档才碰得到；全灭回标题、读档恢复（O-244，Kyo 11-08 定），只有回退开关 GAME_OVER_TO_LOBBY = true 时才碰得到；修后照第 1 页进 Map087 (13,28)。回退支 page_switch_ignore = {} 时断言选回第 2 页。
 ## - O-241（MVTilemap.open_autotile_fix，floor6）：Map236 落点 (8,14) 四周是不可通行的深水自动图块，人动不了；
 ##   修后从落点走得到殿顶 Boss EV1 (8,4)。回退支 open_autotile_fix = {} 时断言只剩落点一格。
-## - O-待定·31层不可达副本（MVEvent.removed_events）：Map148 墙里的一护副本入口 EV42、EV43 条件满足也不显示；回退支照原版选第 1 页。
+## - O-265（MVEvent.removed_events）：Map148 墙里的一护副本入口 EV42、EV43 条件满足也不显示；回退支照原版选第 1 页。
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const CASE_MS := 30000
 const WaitBudget := preload("res://tests/wait_budget.gd")
@@ -123,7 +123,7 @@ func _qilin(fixed: bool) -> void:
 	MVTilemap.open_autotile_fix = _saved_autotile
 
 
-## O-待定·31层不可达副本（MVEvent.removed_events）：一护在队、有强者的证明、变量 1563／1557 满足时，
+## O-265（MVEvent.removed_events）：一护在队、有强者的证明、变量 1563／1557 满足时，
 ## 修后 EV42「不知道什么殿」、EV43「灵王宫」不选页；回退支 removed_events = {} 时选第 1 页。卧豚殿 EV40 两支都照常出现。
 func _ichigo_gates(fixed: bool) -> void:
 	var tag := "ichigo_cut_" + ("fixed" if fixed else "orig")
