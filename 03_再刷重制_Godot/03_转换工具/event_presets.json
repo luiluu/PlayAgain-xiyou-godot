@@ -316438,6 +316438,472 @@
      0.9
     ]
    }
+  },
+  {
+   "base": "ce10",
+   "tag": "gate1_1",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce12",
+   "tag": "gate1_2",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce164",
+   "tag": "gate1_3",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce168",
+   "tag": "gate1_4",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce230",
+   "tag": "gate1_5",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce240",
+   "tag": "gate1_6",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce250",
+   "tag": "gate1_7",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce515",
+   "tag": "gate1_8",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce1002",
+   "tag": "gate1_9",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce1214",
+   "tag": "gate1_10",
+   "preset": {
+    "variables": {
+     "21": 1
+    }
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "gate1_11",
+   "preset": {
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "gate1_12",
+   "preset": {
+    "answers": [
+     3
+    ]
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "gate1_13",
+   "preset": {
+    "answers": [
+     6
+    ]
+   }
+  },
+  {
+   "base": "ce1098",
+   "tag": "gate1_14",
+   "preset": {
+    "answers": [
+     7
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_15",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1282": 1
+    },
+    "random_seq": [
+     0.083333
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_16",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1283": 1
+    },
+    "random_seq": [
+     0.583333
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_17",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1286": 1
+    },
+    "random_seq": [
+     0.916667
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_18",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1287": 1
+    },
+    "random_seq": [
+     0.25
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_19",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1284": 2
+    },
+    "random_seq": [
+     0.416667
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_20",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ]
+     }
+    },
+    "variables": {
+     "1285": 2
+    },
+    "random_seq": [
+     0.75
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_21",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1282": 2
+    },
+    "random_seq": [
+     0.1
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_22",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1285": 2
+    },
+    "random_seq": [
+     0.9
+    ]
+   }
+  },
+  {
+   "base": "ce1213",
+   "tag": "gate1_23",
+   "preset": {
+    "party": [
+     94
+    ],
+    "actors": {
+     "94": {
+      "skills": [
+       6861
+      ],
+      "armors": [
+       4521
+      ]
+     }
+    },
+    "variables": {
+     "1287": 2
+    },
+    "random_seq": [
+     0.3
+    ]
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "gate1_24",
+   "preset": {
+    "actors": {
+     "142": {
+      "skills": [
+       10113
+      ]
+     }
+    },
+    "variables": {
+     "206": 629
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "gate1_25",
+   "preset": {
+    "actors": {
+     "142": {
+      "skills": [
+       10113
+      ]
+     }
+    },
+    "variables": {
+     "206": 599
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "gate1_26",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585,
+       10586
+      ],
+      "skills": [
+       10587
+      ]
+     }
+    },
+    "variables": {
+     "206": 1529
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "gate1_27",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585,
+       10586
+      ],
+      "skills": [
+       10587
+      ]
+     }
+    },
+    "variables": {
+     "206": 1499
+    }
+   }
+  },
+  {
+   "base": "ce2500",
+   "tag": "gate1_28",
+   "preset": {
+    "actors": {
+     "142": {
+      "forget": [
+       10113,
+       10579,
+       10580,
+       10581,
+       10583,
+       10585,
+       10586,
+       10587
+      ],
+      "skills": [
+       10588,
+       10589
+      ]
+     }
+    },
+    "variables": {
+     "206": 15029
+    }
+   }
+  },
+  {
+   "base": "ce1313",
+   "tag": "gate1_29",
+   "preset": {
+    "variables": {
+     "206": 120
+    },
+    "answers": [
+     1
+    ]
+   }
+  },
+  {
+   "base": "ce1314",
+   "tag": "gate1_30",
+   "preset": {
+    "variables": {
+     "206": 120
+    },
+    "answers": [
+     1
+    ]
+   }
   }
  ]
 }
