@@ -93,8 +93,8 @@ static func setup(logic, s: XState) -> void:
 		if kind == "berserk":
 			var m := float(ki.mult[idx])
 			for i in range(8):
-				e.add_param(i, e.param_base(i) * (m - 1.0))
-		e.add_param(0, e.param_base(0) * (float(ti.hp) - 1.0) * (float(ki.mult[idx]) if kind == "berserk" else 1.0))
+				e.add_param(i, e.param_base_unscaled(i) * (m - 1.0))
+		e.add_param(0, e.param_base_unscaled(0) * (float(ti.hp) - 1.0) * (float(ki.mult[idx]) if kind == "berserk" else 1.0))
 		e.hp = e.mhp
 		e.mp = e.mmp
 		e.set_meta("tianqi_prefix", str(ti.name) + "·")
@@ -131,7 +131,7 @@ static func spark_full(logic) -> int:
 
 ## 号令官存活：同场其他怪（含小怪）属性提高；号令官倒下就收回
 static func _apply_commander(logic, f: Dictionary) -> void:
-	var cmd := _commander(logic, f)
+	var cmd = _commander(logic, f)
 	var rate := 0.0
 	if cmd != null:
 		rate = float(kind_info("commander").buff[int(f.units[cmd].idx)])
@@ -141,7 +141,7 @@ static func _apply_commander(logic, f: Dictionary) -> void:
 		if is_equal_approx(want, have):
 			continue
 		for i in range(2, 8):
-			e.add_param(i, e.param_base(i) * (want - have))
+			e.add_param(i, e.param_base_unscaled(i) * (want - have))
 		f.cmd_buff[e] = want
 
 
@@ -245,7 +245,7 @@ static func hp_damage(logic, u, t, value: float) -> float:
 		if str(r.kind) == "fervor":
 			f.hit[t] = true
 		elif str(r.kind) == "berserk" and int(r.idx) >= 2:
-			t.add_param(2, t.param_base(2) * float(kind_info("berserk").rage_per_hit))
+			t.add_param(2, t.param_base_unscaled(2) * float(kind_info("berserk").rage_per_hit))
 	return value
 
 

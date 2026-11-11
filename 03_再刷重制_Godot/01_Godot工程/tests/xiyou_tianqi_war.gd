@@ -243,8 +243,8 @@ func _alien_omen() -> void:
 	var e: XEnemy = lg.enemies[0]
 	_check("omen_all_alien", lg.enemies.all(func(x): return XTianqiWarAlien.is_alien(lg, x)), lg.enemies.size())
 	_check("omen_name", e.display_name().begins_with("侵染·") and e.display_name().contains("火焰哥布林"), e.display_name())
-	_check("omen_berserk_atk", _near(e.atk, e.param_base(2) * 1.5, 1e-3), [e.atk, e.param_base(2)])
-	_check("omen_hp", _near(e.mhp, e.param_base(0) * 1.5 * 1.25, 1e-3) and _near(e.hp, e.mhp), [e.mhp, e.param_base(0)])
+	_check("omen_berserk_atk", _near(float(e.added_params.get(2, 0.0)), e.param_base_unscaled(2) * 0.5, 1e-3) and e.atk > e.param_base(2), [e.added_params, e.param_base_unscaled(2)])
+	_check("omen_hp", _near(float(e.added_params.get(0, 0.0)), e.param_base_unscaled(0) * (1.5 * 1.25 - 1.0), 1e-3) and _near(e.mhp, e.param_base(0) * 1.875, 1e-3) and _near(e.hp, e.mhp), [e.mhp, e.param_base(0)])
 	_check("omen_plain_name", not p0.display_name().contains("·"), p0.display_name())
 	# 交锋：第 3 回合起每回合 +10%，上限 +100%
 	lg.turn = 2
@@ -279,7 +279,7 @@ func _alien_fervor() -> void:
 	var lg := _alien_logic("spread", 35)
 	var chief: XEnemy = lg.enemies[0]
 	_check("spread_name", chief.display_name().begins_with("蚀骨·") and chief.display_name().contains("帕斯诺夫"), chief.display_name())
-	_check("spread_hp", _near(chief.mhp, chief.param_base(0) * 1.5, 1e-3), [chief.mhp, chief.param_base(0)])
+	_check("spread_hp", _near(float(chief.added_params.get(0, 0.0)), chief.param_base_unscaled(0) * 0.5, 1e-3), [chief.added_params, chief.param_base_unscaled(0)])
 	var a: XActor = lg.actors[0]
 	var u := XTianqiWarAlien.unit(lg, chief)
 	var attack := XDB.rec("Skills", 1)
@@ -313,8 +313,8 @@ func _alien_commander() -> void:
 		var boss: XEnemy = lg.enemies[0]
 		var others := lg.enemies.filter(func(x): return not is_same(x, boss))
 		var rate := 0.2 if tier == "shigu" else 0.3
-		_check("commander_buff_" + tier, others.size() == 2 and others.all(func(x): return _near(float(x.added_params.get(2, 0.0)), x.param_base(2) * rate, 1e-3)),
-			others.map(func(x): return [x.added_params.get(2, 0.0), x.param_base(2)]))
+		_check("commander_buff_" + tier, others.size() == 2 and others.all(func(x): return _near(float(x.added_params.get(2, 0.0)), x.param_base_unscaled(2) * rate, 1e-3)),
+			others.map(func(x): return [x.added_params.get(2, 0.0), x.param_base_unscaled(2)]))
 		_check("commander_extra_" + tier, others.all(func(x): return XTianqiWarAlien.extra_actions(lg, x) == 1) and XTianqiWarAlien.extra_actions(lg, boss) == 1)
 		boss.hp = 0.0
 		boss.refresh_resources()
@@ -333,7 +333,7 @@ func _alien_commander() -> void:
 func _alien_pyro() -> void:
 	var lg := _alien_logic("apostle30", 466)
 	var boss: XEnemy = lg.enemies.filter(func(x): return XTianqiWarAlien.is_alien(lg, x))[0]
-	_check("pyro_name_hp", boss.display_name().begins_with("化形·") and _near(boss.mhp, boss.param_base(0) * 2.0, 1e-3), [boss.display_name(), boss.mhp])
+	_check("pyro_name_hp", boss.display_name().begins_with("化形·") and _near(float(boss.added_params.get(0, 0.0)), boss.param_base_unscaled(0), 1e-3), [boss.display_name(), boss.added_params])
 	var f := XTianqiWarAlien.fight(lg)
 	lg.current_order.clear()
 	lg.act(boss, XDB.rec("Skills", 2), null)
@@ -359,14 +359,14 @@ func _survival() -> void:
 	var adds: Array = f.adds
 	var row := XTianqiBalance.difficulty("jianxian")
 	var goblin := XDB.rec("Enemies", 31)
-	_check("survival_add_stats", _near(adds[0].mhp, roundf(float(goblin.params[0]) * float(row.enemy_hp))) and adds[0].display_name() == "兵临的援军", [adds[0].mhp, adds[0].display_name()])
+	_check("survival_add_stats", _near(adds[0].mhp, roundf(float(goblin.params[0]) * float(row.enemy_hp))) and adds[0].display_name().begins_with("兵临的援军"), [adds[0].mhp, adds[0].display_name()])
 	_check("survival_wave1", lg.alive(adds).size() == 3, lg.alive(adds).size())
 	# 生命锁住：一下打过最大生命也留 1 点
 	lg._action_resources = lg._new_lifecycle_resources()
 	lg.execute_hp_damage(lg.actors[0], kn, kn.mhp * 2.0, false)
 	lg._action_resources = null
 	_check("survival_hp_lock", kn.is_alive() and _near(kn.hp, 1.0), kn.hp)
-	# 援军第 3、5 回合；第 6 回合结束骑士退场算赢
+	# 援军第 1（开战，日志随第 1 回合开始出）、3、5 回合；第 6 回合结束骑士退场算赢
 	var waves := []
 	var spark_fired := false
 	for t in range(6):
@@ -380,7 +380,7 @@ func _survival() -> void:
 		spark_fired = spark_fired or _texts(logs).any(func(x): return x.contains("敌方全体再动"))
 		if lg.is_lost():
 			break
-	_check("survival_waves", waves == [0, 0, 1, 0, 1, 0], waves)
+	_check("survival_waves", waves == [1, 0, 1, 0, 1, 0], waves)
 	_check("survival_spark", spark_fired, f.sparks)
 	_check("survival_win", XTianqiHorsemen.survived(lg) and lg.is_won() and not lg.is_lost(), [lg.turn, lg.alive(lg.actors).size()])
 	lg.end_battle(0)

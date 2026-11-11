@@ -409,7 +409,7 @@ static func start_turn(logic) -> Array:
 		"war":
 			var r: Dictionary = knight("war").reinforce
 			if str(f.mode) == "survival":
-				if turn > 1 and data().survival.war_waves.has(turn):
+				if turn > 1 and data().survival.war_waves.any(func(w): return int(w) == turn):
 					_reinforce(logic, f)
 			elif turn > 1 and (turn - 1) % int(r.every) == 0:
 				_reinforce(logic, f)
