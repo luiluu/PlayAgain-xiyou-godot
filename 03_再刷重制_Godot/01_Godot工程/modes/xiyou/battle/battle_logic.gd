@@ -338,8 +338,8 @@ func _refresh_battler(b: XBattler) -> void:
 
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
 ## 全体敌人、全队；之后刷新所有角色的被动缓存。
-func _battle_start_states() -> void:
-	for a in actors:
+func _battle_start_states(list = null) -> void:
+	for a in (actors if list == null else list):
 		for tag in a.battle_start_state_tags():
 			if _float("start_state") * 100.0 >= float(tag[2]):
 				continue
@@ -1015,7 +1015,23 @@ func tianqi_swap(out: XActor) -> XActor:
 		state.battle_slots[si] = h.actor_id
 	h.param_mark_dirty()
 	h.param_refresh()
+	if XTianqi.SWAP_INIT:
+		_tianqi_enter(h)
 	return h
+
+
+## 审查 78 P3-1（O-待定·换人开战初始化）：换上来的助力位补上开战时出战成员才有的初始化——初始 TP（保留 TP 的不动）、技能预热、
+## 开战状态标签（StartPushState 等）、种族本场数据（记此刻最大生命）。开战「battle」状态块与心钢蓄力在开战时已按全队（含助力位）做过，不重做。
+func _tianqi_enter(h: XActor) -> void:
+	var resources := _operation_resources(h)
+	if not h.is_preserve_tp():
+		resources.silent_gain(h, "tp", float(_mod(25, "swap_initial_tp")) - h.tp)
+	_finish_lifecycle_operation(resources, h)
+	h.start_warmups()
+	_battle_start_states([h])
+	XRaceBattle.state(self, h)
+	h.param_mark_dirty()
+	h.param_refresh()
 
 
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
