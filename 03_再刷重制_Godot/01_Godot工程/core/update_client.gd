@@ -15,7 +15,7 @@ const STAMP_FILE := "user://updates/check.json"
 const TIMEOUT_SEC := 10.0
 const DAY_SEC := 86400
 
-## O-待定·检查更新 开关：false 回退为不联网（auto_check 不查；check 直接返回读不到）。
+## O-275 开关：false 回退为不联网（auto_check 不查；check 直接返回读不到）。
 static var ENABLED := true
 ## 进标题自动查（每天一次）。false 只在点按钮时查。
 static var AUTO := true
