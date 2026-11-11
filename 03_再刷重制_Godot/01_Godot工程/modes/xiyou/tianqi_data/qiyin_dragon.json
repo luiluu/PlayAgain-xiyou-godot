@@ -1,0 +1,43 @@
+{
+ "version": 1,
+ "draft": true,
+ "source": "七印祭坛方案 v0.4，Kyo 11-12 定稿",
+ "dev": "dev.待定",
+ "_note": "来源：七印祭坛方案 v0.4（设计仓库 天启篇_七印祭坛_里副本套装毕业武器方案_v0.4.md 第 3.1、6.4 节），Kyo 11-12 定稿。天启篇特殊副本「七首之龙」的出现判定、龙隙存放、奖励和龙血，只读（XTianqiQiyinDragon）。fight 一节只是数据，战斗本身还没做。几率写成 0～1 的小数。nice_number_exempt 里是编号、次数上限，不查数字 4。",
+ "nice_number_exempt": ["version", "pity_after", "max_stored", "actions_per_turn", "segments", "turns", "recruit_floor", "floor", "max_per_actor"],
+ "seals": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],
+ "difficulties": ["xunchang", "jianxian", "jiusi", "lianyu", "zhengdao"],
+ "rift": {
+  "_note": "打赢任何一个里副本的 Boss 之后判定一次。连续 pity_after 次没出，下一次必出（暗保底，不告诉玩家）。最多存 max_stored 次；存着的时候不判定、保底计数也停。不要印钥，输了龙隙合上。",
+  "chance": {"xunchang": 0.03, "jianxian": 0.05, "jiusi": 0.06, "lianyu": 0.08, "zhengdao": 0.1},
+  "pity_after": 30,
+  "max_stored": 1
+ },
+ "fight": {
+  "_note": "数据，战斗本身不在本车道。最大生命以艰险为准，其他难度乘 balance_table.json 的敌人血量倍率（enemy_hp）。攻击、防御照 36 层普通首领。生命分 segments 段，每断一首按 seals 顺序揭一道印，规则持续到下一首断掉。",
+  "max_hp_jianxian": 2500000,
+  "stats_ref": {"floor": 36, "kind": "普通首领", "single_hit": 85000},
+  "actions_per_turn": 3,
+  "segments": 7,
+  "reveal_order": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],
+  "grey_reprieve": {
+   "_note": "灰印那一段给我方一人挂「缓期」，turns 回合后倒下；之前再断一首就解除。",
+   "seal": "hui",
+   "turns": 2
+  }
+ },
+ "reward": {
+  "_note": "每次必给：1 件真印套装件（印自选，部位随机）、龙血 1 瓶。每次几率：真印毕业武器（流派即印，随机）；神器五件里随机一件，没有保底、不随难度变、不吃物品掉落加成。首杀多招一个人（回大厅额外抽一次角色，照本档难度 recruit_floor 层那一档的招募表），只给一次。",
+  "set_parts": ["head", "body", "hands", "waist", "legs", "feet"],
+  "dragon_blood": 1,
+  "weapon_chance": 0.33,
+  "artifact_chance": 0.03,
+  "artifacts": ["bow_crown", "great_sword", "scales", "grey_scythe", "seven_seal_scroll"],
+  "recruit_floor": 30
+ },
+ "dragon_blood": {
+  "_note": "给一名角色喝，全属性加 per_bottle；每名角色最多 max_per_actor 瓶，再喝拒绝、不消耗。只在本档，不进轮回。",
+  "per_bottle": 0.03,
+  "max_per_actor": 3
+ }
+}
