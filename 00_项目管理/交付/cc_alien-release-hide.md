@@ -1,7 +1,7 @@
 # 交付：cc/alien-release-hide
 
 - 车道／工作者：C 规则·界面（快车道）／cc（车道 C）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -49,8 +49,14 @@ O-283 原行已在 `00_设计/优化登记.md` 原处改写（补全的几件、
 
 - `语法检查.py` 通过。
 - 专项：`xiyou_alien_hide` 77/77。
-- 选测（54 个，结果见下）：待写
+- 选测 54 个全过（308 秒）：xiyou_alien_hide／affix／battle／config／workshop、item_bag／list／marks／use、shop_buy／stock／auto_close、lobby_shops、map132_shop、warehouse、star_warehouse、equipment、equipment_admission、gear_ui／detail／search、flow、list_paging、crafting、enemy_book、party、hangup_options、orb_shop_ui、review135、pause_save、save_page、save_events、autosave、determinism、merchant29、affix_rate、battle_drop、drop_record、demon_crown、yunshang、yunshang_shop、growth_forge、treasure_batch、entry_release、tianqi_opening、tianqi_gear、super_acquire、wtype、dual_wield、orbs、global_vars、cat、heartsteel、actor_change。
+- 没跑 `选测.py` 列的其余战斗核心场景（xiyou_rules 各段、事件对照等）：本分支在开发版下新加的判断恒不生效（`hidden()` 为 false 时直接放行、不取随机数），xiyou_determinism 已覆盖随机数顺序；交总装按影响面补。
+- 反向验证（`反向验证.py`）11 处改坏：不挡 gain_item／gain_gear、不迁移、菜单不去工坊、can_equip 不挡、商店／物品列表／bag_gear 不滤、发行不隐藏、星级取出不还原、词缀不挡，全部咬住。
+- 工具回归 `工具回归.py` 全过；`回退开关覆盖.py` 退出 0。
+- 同步：本树 `同步正式西游.py --accept-additions` 测量不变、只增 `alien_hide.json`，留了同步指纹（新探针 186 秒）。
 
 ## 本分支提交
 
-- 待写
+- 809d4d5b4 异化发行隐藏：XAlienHide 物品入口拦截、菜单去工坊、读档迁移、RELEASE_HIDE 开关、alien_hide 参照探针
+- 10771827c 专项 xiyou_alien_hide、O-283 登记改写、交付单草稿
+- （本提交）交付单定稿
