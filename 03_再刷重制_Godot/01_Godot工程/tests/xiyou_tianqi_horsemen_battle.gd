@@ -1,5 +1,5 @@
 extends Node
-## 天启四骑士实战专项（XTianqiHorsemen 接进 BattleLogic）：四位骑士各打几回合，看规则真的生效。
+## 天启四骑士实战专项（XTianqiHorsemen、horsemen.json 接进 BattleLogic）：四位骑士各打几回合，看规则真的生效。
 ## 一、开战：整组换成骑士＋援军／小怪位子，能力值照本档、不是神话、不吃霸体、免疫控制和即死、不掉东西。
 ## 二、死亡·勇者：宝石叠攻防血、每回合 2 动最后出手、第 5 回合死期带走一人且本场不能复活、神圣剑、暴击免疫、逃跑失败并变身骑士队长。
 ## 三、战争·莉co：开场援军 3 只、再动、火花、号令、碎甲降最大生命、骑士倒下援军一起散。
@@ -295,8 +295,8 @@ func _plague() -> void:
 	# 回合末：每人掉 5% 最大生命，疫病降属性再 −5%
 	a.recover_all()
 	var mhp := a.mhp
-	lg.run_turn(_guard_all(lg))
-	_check("plague_dot", a.hp <= a.mhp - floorf(mhp * 0.05) + 1.0, [a.hp, a.mhp])
+	var tlogs := lg.run_turn(_guard_all(lg))
+	_check("plague_dot", tlogs.any(func(l): return l.type == "regen" and is_same(l.target, a) and _near(float(l.hp), floorf(mhp * 0.05))), mhp)
 	_check("plague_down_grow", _near(float(f.plague_down), 0.15), f.plague_down)
 	for i in range(8):
 		lg.run_turn(_guard_all(lg))
@@ -305,8 +305,11 @@ func _plague() -> void:
 	var attacker: XActor = lg.alive(lg.actors)[0]
 	var mk: Dictionary = XTianqiHorsemen.mark_of(lg, attacker)
 	mk.defiance = 0
-	lg.act(attacker, XDB.rec("Skills", 1), kn)
-	_check("plague_defiance", int(mk.get("defiance", 0)) == 1, mk.get("defiance"))
+	var tries := 0
+	while int(mk.get("defiance", 0)) == 0 and tries < 8:  # 普通攻击可能没打中，多打几下
+		lg.act(attacker, XDB.rec("Skills", 1), kn)
+		tries += 1
+	_check("plague_defiance", int(mk.get("defiance", 0)) == 1, [mk.get("defiance"), tries])
 	# 第二阶段：盾累计到 22% 就碎，下一回合嘲讽解除
 	kn.hp = kn.mhp * 0.6
 	lg.run_turn(_guard_all(lg))
