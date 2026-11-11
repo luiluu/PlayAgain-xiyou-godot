@@ -211,7 +211,7 @@ static func help_number(n: float) -> String:
 ## H.damageText
 static func damage_text(item) -> String:
 	var lev := XHeartsteel.is_leviathan(item)
-	return "伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", help_number(1.0 + 0.1 * XHeartsteel.stage(item))]
+	return "伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", help_number(1.0 + 0.1 * XHeartsteel.eff_stage(item))]
 
 ## forgeDetailLines：锻造详情窗第 224 行起
 static func detail_lines(id: int, source) -> Array:
@@ -219,11 +219,11 @@ static func detail_lines(id: int, source) -> Array:
 		if not (source is Dictionary) or source.is_empty():
 			return ["选择一件心之钢，含已装备的实例", "品质、词条与心钢层数完整继承"]
 		return ["品质、词条、心钢与强化进度完整保留", "基础生命额外＋10000，双防各＋300", "回合结束回复5%最大生命", damage_text(preview(id, source)),
-			"最大生命×" + help_number(1.1 + 0.1 * XHeartsteel.stage(source))]
+			"最大生命×" + help_number(1.1 + 0.1 * XHeartsteel.eff_stage(source))]
 	if not (source is Dictionary) or source.is_empty():
 		return ["选择一件狂妄，含已装备的实例", "品质、词条与盛名层数完整继承"]
 	return ["品质、词条、盛名与强化进度完整保留", "基础物理攻击额外＋500", "物理防御穿透由18%提高至27%",
-		"扬名时物理攻击×" + help_number(1.2 + 0.1 * XHeartsteel.stage_of(XHubris.growth(source))), "扬名持续4个完整回合"]
+		"扬名时物理攻击×" + help_number(1.2 + 0.1 * XTianqiGear.hubris_stage(XHeartsteel.stage_of(XHubris.growth(source)))), "扬名持续4个完整回合"]
 
 ## forgeHelpText：帮助窗两行
 static func help_text(id: int, source, picking: bool, shown: bool) -> String:

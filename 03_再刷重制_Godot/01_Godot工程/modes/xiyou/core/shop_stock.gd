@@ -54,6 +54,7 @@ static func prepare_policy(goods: Array) -> Array:
 		if int(r[0]) == 0 and int(r[2]) == 1 and passive_book(0, int(r[1])):
 			r[3] = ceili(float(r[3]) * 13.0 / 10.0)
 		return r)
+	out = XTianqiGear.shop_goods(out)  # 天启篇：删除栏位的防具不上架
 	var chief := bool(shop_context.get("chief", false))
 	policy = {"active": true, "pawn": bool(shop_context.get("pawn", false)), "chief": chief,
 		"chief_passive": chief and out.any(func(g): return int(g[0]) == 0 and passive_book(0, int(g[1])))}

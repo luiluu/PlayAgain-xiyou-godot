@@ -305,7 +305,7 @@ func stat_equips() -> Array:
 	var list := equip_list()
 	if XCat.enabled_sword(self):
 		list[0] = XCat.sword_view(equips[0])
-	return list
+	return XTianqiGear.stat_list(list)  # 天启篇：普通坐骑原来的特性不算（只给表里的敏捷、先制）
 
 
 ## Game_Actor.weapons()[0]
@@ -778,7 +778,7 @@ func param_plus(i: int) -> float:
 
 func _param_plus(i: int) -> float:
 	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
-	for e in equip_list():
+	for e in XTianqiGear.stat_list(equip_list()):  # 天启篇：普通坐骑原来的属性不算
 		var p := float(e.params[i])
 		v += p
 		if p > 0.0:
@@ -845,7 +845,7 @@ func param_before_alien(i: int) -> float:
 	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，modules.json 第 2～18 个）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
 	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
-	var v := XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i)))))  # 心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
+	var v := XTianqiGear.param(self, i, XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i))))))  # 天启篇坐骑敏捷％在最外（云裳夹值之前）；心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## O-177：战斗中升级按新上限回满 HP／MP（原版 krz 能力值缓存让它回到升级前的上限）。false＝照原版
@@ -1045,7 +1045,7 @@ const START_STATE_TAGS := ["StartPushState", "StartRomActPushState", "StartRomEm
 
 func battle_start_state_tags() -> Array:
 	var out := []
-	var objs := equip_list() + skills()
+	var objs := XTianqiGear.stat_list(equip_list()) + skills()  # 天启篇：普通坐骑原来的开战状态不算
 	for prefix in START_STATE_TAGS:
 		for o in objs:
 			for k in o.get("meta", {}):
