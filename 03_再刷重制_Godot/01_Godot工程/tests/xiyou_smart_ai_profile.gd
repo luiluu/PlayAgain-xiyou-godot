@@ -372,7 +372,7 @@ func _local() -> void:
 	check("local.other.boosts", XSmartAIProfiles.boosts(hero, XDB.rec("Skills", 10140)) == 1.0 and XSmartAIProfiles.boosts(hero, XDB.rec("Skills", 10126)) == 1.0
 		and XSmartAIProfiles.crit_bonus(hero, XDB.rec("Skills", 10126)) == 0.0 and XSmartAIProfiles.expected_rate(hero, XDB.rec("Skills", 10126)) == 1.0)
 	check("local.yomi.item", XSmartAIProfiles.raw(yomi, logic.enemies[0], XDB.rec("Items", 1)) == null and XSmartAIProfiles.boosts(yomi, XDB.rec("Items", 1)) == 1.0)
-	# O-待定 o_profile_chain：黄泉的档案只有溅射；开着时后面的档案（云裳天衣）接着问，关掉照原版到此为止
+	# O-待定·档案接力（o_profile_chain）：黄泉的档案只有溅射；开着时后面的档案（云裳天衣）接着问，关掉照原版到此为止
 	var keep_chain := XSmartAIProfiles.o_profile_chain
 	XSmartAIProfiles.o_profile_chain = true
 	var on := XSmartAI.profile(yomi, blade)
@@ -390,7 +390,7 @@ func _local() -> void:
 			var before := _fingerprint(b[0])
 			var pick := XSmartAI.choose(b[0], b[1])
 			check("local.readonly.%d.%s" % [id, real], _fingerprint(b[0]) == before and pick.has("skill"), [before, _fingerprint(b[0])])
-	# O-待定 o_future_real：米拉黑龙视图的能力值——关掉是原版的旧值（攻击比人形还低），开着是真黑龙（攻击、生命上限都涨）
+	# O-待定·铺垫视图按真实形态（o_future_real）：米拉黑龙视图的能力值——关掉是原版的旧值（攻击比人形还低），开着是真黑龙（攻击、生命上限都涨）
 	var m := _battle(168)
 	var mira: XActor = m[1]
 	var human := [mira.atk, mira.mhp]

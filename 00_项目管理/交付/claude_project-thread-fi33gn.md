@@ -31,8 +31,8 @@
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定·档案接力 | `modes/xiyou/battle/smart_ai_profiles.gd` `XSmartAIProfiles.o_profile_chain`；`battle/smart_ai.gd` `profile()` | 插件自带的档案对黄泉、流萤的任何技能都返回一个对象（哪怕溅射是 0），`registerProfile` 取第一个非空的，后面登记的档案（云裳天衣等装备档案）对这两人永远问不到 | 这两人的档案只留溅射一项，接着问后面的档案并合并 | 原版 bug：黄泉、流萤穿云裳天衣时智能 AI 不认天衣的倍率；Kyo 11-11「优化直接接受」 | `XSmartAIProfiles.o_profile_chain = false` | cc（云端） | 保留 |
-| O-待定·铺垫视图按真实形态 | `modes/xiyou/battle/smart_ai_profiles.gd` `XSmartAIProfiles.o_future_real`（`enter`、`raw` 的 10237 分支） | 铺垫后的角色视图是 `Object.create` 出来的半成品：米拉的黑龙视图读的是旧的能力值缓存（比人形还低，没有黑龙特性）；宿傩的领域视图只挂了状态 2636、领域回合数还是 0，领域里的加成不算；持续技 10237 不在估算名单里，估出来永远是 0 | 米拉视图按真黑龙刷新能力值；宿傩视图把领域回合数设成 4；10237 照宿傩公式估 | 原版 bug：铺垫技的分数被低估，短一点的战斗里 AI 不肯开形态；Kyo 11-11「优化直接接受」 | `XSmartAIProfiles.o_future_real = false` | cc（云端） | 保留 |
+| O-待定·档案接力 | `modes/xiyou/battle/smart_ai_profiles.gd` `XSmartAIProfiles.o_profile_chain`；`battle/smart_ai.gd` `profile()`；`tests/xiyou_smart_ai_profile.gd` | 插件自带的档案对黄泉、流萤的任何技能都返回一个对象（哪怕溅射是 0），`registerProfile` 取第一个非空的，后面登记的档案（云裳天衣等装备档案）对这两人永远问不到 | 这两人的档案只留溅射一项，接着问后面的档案并合并 | 原版 bug：黄泉、流萤穿云裳天衣时智能 AI 不认天衣的倍率；Kyo 11-11「优化直接接受」 | `XSmartAIProfiles.o_profile_chain = false` | cc（云端） | 保留 |
+| O-待定·铺垫视图按真实形态 | `modes/xiyou/battle/smart_ai_profiles.gd` `XSmartAIProfiles.o_future_real`（`enter`、`raw` 的 10237 分支）；`tests/xiyou_smart_ai_profile.gd` | 铺垫后的角色视图是 `Object.create` 出来的半成品：米拉的黑龙视图读的是旧的能力值缓存（比人形还低，没有黑龙特性）；宿傩的领域视图只挂了状态 2636、领域回合数还是 0，领域里的加成不算；持续技 10237 不在估算名单里，估出来永远是 0 | 米拉视图按真黑龙刷新能力值；宿傩视图把领域回合数设成 4；10237 照宿傩公式估 | 原版 bug：铺垫技的分数被低估，短一点的战斗里 AI 不肯开形态；Kyo 11-11「优化直接接受」 | `XSmartAIProfiles.o_future_real = false` | cc（云端） | 保留 |
 
 （发号接当前最大号；GitHub main 上最大是 O-306，O-307～309 在补登记分支上，合并前请核对。）
 

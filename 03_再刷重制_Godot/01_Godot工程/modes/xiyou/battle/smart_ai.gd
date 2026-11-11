@@ -169,7 +169,7 @@ static func formula_safe(formula: String) -> bool:
 
 
 ## 角色档案（registerProfile 依次问，第一个非空的）：插件自带的那条、甚尔、云裳。
-## 自带那条对黄泉、流萤总返回对象（原版后面的就问不到）；O-待定 o_profile_chain 开时接着问，把溅射并进后面的结果
+## 自带那条对黄泉、流萤总返回对象（原版后面的就问不到）；O-待定·档案接力（o_profile_chain） 开时接着问，把溅射并进后面的结果
 static func profile(a: XBattler, rec: Dictionary) -> Dictionary:
 	var p := XSmartAIProfiles.profile(a, rec)
 	if not p.is_empty() and not (XSmartAIProfiles.o_profile_chain and XSmartAIProfiles.splash_only(a)):
