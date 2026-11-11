@@ -38,7 +38,7 @@ w.eval('CodexZones.ENABLED=false;');
 const BIG_HP = 1e12;
 // 在原对象上改（YEP 技能熟练度等插件载入时给技能对象挂了字段，整个替换会让行动结束时报错并 SceneManager.terminate）
 function synth(def) { Object.assign(w.$dataSkills[13], {scope: def.scope, hitType: def.hitType,
-  effects: def.effects.map(e => ({code: e[0], dataId: e[1], value1: e[2], value2: 0}))}); return 13; }
+  effects: def.effects.map(e => ({code: e[0], dataId: e[1], value1: e[2], value2: e[3] || 0}))}); return 13; }
 // 投影用 A.clone（JSON 克隆）复制技能，丢了 YEP_SkillMasteryLevels 挂在技能对象上的 masteryMpCost／TpCost 函数：付费算 skillMpCost 时
 // 报错，SkillMasteryLevelsError 先 alert 再 SceneManager.terminate（正式游戏里直接退出，O-109）。这里把两者换成计数，记进 view.terminated，
 // 让行动照「报错被吞、费用取熟练度公式之前的值」走完（默认公式就是 cost，数值上没有差别）
@@ -387,6 +387,11 @@ battleCase('insulation.mp', {affix: 'insulation'}, [{set: {aMp: 0.5}}, {event: {
 // 如效果「恢复 HP」负值、技能备注 b.gainHp(-3000)（净化之雷 857、4013）；普攻走 executeHpDamage 本来就加（对照：不能多乘一次）
 battleCase('flare.gain', {flare: true}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
 battleCase('flare.gain.mob', {flare: 'mob'}, [{user: 'e0', def: S(1, 0, [11, 0, -0.1])}, {user: 'e0', skill: 1}]);
+// 行动外 gainHp 的镜骸记账（Runtime wrapHp 末尾：帧有行动、不在 executeHpDamage 里时 recordDamage）：效果「恢复 HP」负值（效果第 4 项为 value2，
+// 定量 −5000）打镜骸也算本次行动的扣血，行动结束反噬；同一回合第二次不再充能不反噬；敌人自己打镜骸、普攻之后再用效果技能的对照
+battleCase('mirror.gain', {mirror: true}, [{def: S(1, 0, [11, 0, 0, -5000])}, {def: S(1, 0, [11, 0, 0, -5000])}]);
+battleCase('mirror.gain.enemy', {mirror: true}, [{user: 'e1', def: S(7, 0, [11, 0, 0, -5000])}, {user: 'b', def: S(1, 0, [11, 0, 0, -5000])}]);
+battleCase('mirror.gain.mix', {mirror: true}, [{skill: 1}, {def: S(1, 0, [11, 0, 0, -5000])}]);
 // 以下是后加的用例，放在末尾（同步按下标比对，插在中间会被当成改动）
 // 蚀术命中判定（审查第 2 期 D2／P3）：e0 先用 1926 留下可封的上次技能，再由角色 1 直接对活着的 e0 apply 选定的 1924：
 // 临时把 1924 的 scope 改成 9（对阵亡友方，复活类）时 used 为假、不算命中、不封印；scope 照旧时命中并封印
@@ -397,4 +402,4 @@ battleCase('erosion.used', {affix: 'erosion', learn: [1924], config: {actorId: 1
 battleCase('hollow.hpcost', {affix: 'hollow', learn: [3913]}, [{user: 'a', skill: 3913, view: true}, {set: {aShield: 1}}, {user: 'a', skill: 3913, view: true}]);
 battleCase('lifelink.hpcost', {affix: 'lifelink', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
 battleCase('scapegoat.hpcost', {affix: 'scapegoat', learn: [3913], config: {actorId: 1, partnerId: 8}}, [{user: 'a', skill: 3913, view: true}]);
-process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP）', config, cases}) ? 0 : 1);
+process.exit(finish(host, 'alien_affix.json', {hostScope: '新游戏（Math.random 0.5）；异化词条效果期一（逆骨、归墟）、期二①（疫囊、囚厄、绝缘、舍身）、期二②（空壳、连命、嫁祸）、生命池补漏（行动外扣血、事件增减生命）、第③批行动道具投影（祸祝、恶愿、逆祷）、MP 费用（缄默、饕餮）、借技能（百相、无相）、蚀术、第④批装备类（吞器、献器）、补漏（setHp、阵亡保留、锁队检查已倒下与重复绑定、逆祷反击与连击与持续伤害帧、事件增减 MP、行动外 gainHp 的镜骸记账）', config, cases}) ? 0 : 1);

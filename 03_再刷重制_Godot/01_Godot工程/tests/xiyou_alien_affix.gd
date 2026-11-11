@@ -98,6 +98,21 @@ func _run() -> void:
 	if by_id.has("battle.prayer.counter"):  # O-119 开时逆祷者的反击不治疗敌人（敌人生命停在反击前）
 		var rows := _battle(by_id["battle.prayer.counter"], false)
 		check("o_prayer_counter.no_enemy_heal", rows[2].enemies[0].hp == rows[1].enemies[0].hp and rows[2].a.hp == rows[1].a.hp, [rows[1].enemies[0].hp, rows[2].enemies[0].hp])
+	# 行动外 gainHp 的镜骸记账（XAlienBattle.OUTSIDE_HP_MIRROR）：关时回到只记 executeHpDamage——效果扣血打镜骸不反噬、不消耗充能
+	if by_id.has("battle.mirror.gain"):
+		XAlienBattle.OUTSIDE_HP_MIRROR = false
+		var rows := _battle(by_id["battle.mirror.gain"], false)
+		var start: Dictionary = by_id["battle.mirror.gain"].observed.start
+		check("outside_mirror.off_no_backlash", float(rows[0].a.hp) == float(start.a.hp) and float(rows[1].a.hp) == float(start.a.hp)
+			and float(rows[1].enemies[0].hp) == float(start.enemies[0].hp) - 10000.0, [start.a.hp, rows[0].a.hp, rows[1].a.hp, rows[1].enemies[0].hp])
+		XAlienBattle.OUTSIDE_HP_MIRROR = true
+	if by_id.has("battle.mirror.gain.mix"):  # 普攻（executeHpDamage 里已记）不重复记：只按一次扣血的 5% 反噬
+		var rows := _battle(by_id["battle.mirror.gain.mix"], false)
+		var start: Dictionary = by_id["battle.mirror.gain.mix"].observed.start
+		var loss := float(start.enemies[0].hp) - float(rows[0].enemies[0].hp)
+		check("outside_mirror.execute_once", float(start.a.hp) - float(rows[0].a.hp) == floorf(loss * 0.05), [loss, start.a.hp, rows[0].a.hp])
+	if by_id.has("battle.mirror.gain"):
+		_battle(by_id["battle.mirror.gain"], false, _outside_mirror_units)
 	if by_id.has("battle.erosion"):
 		_battle(by_id["battle.erosion"], false, _erosion_idle)
 	if by_id.has("battle.mimic"):
@@ -276,8 +291,38 @@ static func _synth(def: Dictionary) -> Dictionary:
 	var sk := XDB.rec("Skills", 13).duplicate(true)
 	sk.scope = int(def.scope)
 	sk.hitType = int(def.hitType)
-	sk.effects = (def.effects as Array).map(func(e): return {"code": int(e[0]), "dataId": int(e[1]), "value1": float(e[2]), "value2": 0.0})
+	sk.effects = (def.effects as Array).map(func(e): return {"code": int(e[0]), "dataId": int(e[1]), "value1": float(e[2]), "value2": float(e[3]) if e.size() > 3 else 0.0})
 	return sk
+
+
+## frame_record 单元（借 battle.mirror.gain 跑完的战斗）：没有行动帧、帧没有行动（支援／自定义状态效果垫的空帧）、不是镜骸、没有异化时都不记；行动帧里记一次
+func _outside_mirror_units(logic: XBattleLogic, a: XActor) -> void:
+	var e: XEnemy = logic.enemies[0]
+	var plain: XEnemy = logic.enemies[1]
+	e.alien.mirrorCharged = true
+	var skill := XDB.rec("Skills", 1)
+	var st: Dictionary = XAlienBattle._store(logic)
+	st.root = {"subject": a, "item": skill, "mirror": [], "plagueTargets": [], "plague": false, "ended": false}
+	XAlienBattle.frame_record(e, 100.0)
+	check("outside_mirror.no_frame", (st.root.mirror as Array).is_empty() and bool(e.alien.mirrorCharged), st.root.mirror)
+	XAlienBattle.push_action(a, {})
+	XAlienBattle.frame_record(e, 100.0)
+	XAlienBattle.pop_action()
+	check("outside_mirror.empty_frame", (st.root.mirror as Array).is_empty(), st.root.mirror)
+	XAlienBattle.push_action(a, skill)
+	XAlienBattle.frame_record(plain, 100.0)
+	check("outside_mirror.not_alien", (st.root.mirror as Array).is_empty(), st.root.mirror)
+	XAlienBattle.frame_record(e, 0.0)
+	check("outside_mirror.no_loss", (st.root.mirror as Array).is_empty(), st.root.mirror)
+	XAlienBattle.frame_record(e, 100.0)
+	XAlienBattle.frame_record(e, 50.0)
+	XAlienBattle.pop_action()
+	check("outside_mirror.recorded", (st.root.mirror as Array).size() == 1 and float(st.root.mirror[0].loss) == 150.0 and not bool(e.alien.mirrorCharged), st.root.mirror)
+	XAlienBattle.push_action(e, skill)  # 敌人自己的帧（行动根是角色、帧来源不是）
+	XAlienBattle.frame_record(e, 100.0)
+	XAlienBattle.pop_action()
+	check("outside_mirror.other_source", float(st.root.mirror[0].loss) == 150.0, st.root.mirror)
+	st.root = null
 
 
 ## O-116：敌人 0 身上封着 1928（参照最后一次封印），没有有效行动的一回合（act 不带技能）——关时封印还在，开时解掉
