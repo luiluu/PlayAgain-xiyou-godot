@@ -1,7 +1,7 @@
 {
  "version": 1,
  "source": "天启篇数值测算 参数.json（设计仓库 xiyou-design-docs 提交 7767262）",
- "dev": "dev.待定",
+ "dev": "dev.448",
  "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。本表还没接进战斗与开局：五档仍借原版难度跑（XTianqi.DIFFICULTIES 的 legacy）。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
  "nice_number_exempt": ["version", "secret_cap", "super_cap", "min_weak"],
  "tiers": {
