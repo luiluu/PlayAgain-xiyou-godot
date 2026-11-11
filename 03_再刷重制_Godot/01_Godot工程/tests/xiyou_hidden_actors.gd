@@ -3,6 +3,7 @@ extends Node
 ## installIntegratedV029Runtime 隐藏 7 名（141、146、152、157、160、161、166）在角色仓库列表与人物图鉴目录里不出现。
 ## 出战栏：原版量具 actor_sv_real.cjs 设 _actors=[id] → initializeBattleMembers 后 141／146／152／161／166 不在出战栏（被 migrateParty 挪走），
 ## 重制 add_actor 拦停用角色，两边一致。开关 XImportedBalance.V029_HIDE_ACTORS（O-299）开、关各一组。
+## 解放苍龙破晓（XImportedBalance.RELEASE_CANGLONG，O-待定）会让 146 不停用、不隐藏：按原版比的这一段先关掉它，末尾开着再查一次（细项在 xiyou_rift2_canglong）。
 var passed := 0
 var total := 0
 
@@ -29,6 +30,7 @@ func _state(party: Array, slots: Array, saved: Array) -> XState:
 
 
 func _run() -> void:
+	XImportedBalance.RELEASE_CANGLONG = false
 	check("hidden_list", XImportedBalance.HIDDEN_ACTORS == [141, 146, 152, 157, 160, 161, 166])
 	check("hidden_all_disabled", XImportedBalance.HIDDEN_ACTORS.all(func(id): return XImportedBalance.DISABLED_ACTORS.has(id)))
 	# 出战栏：add_actor 拦停用角色（同原版 migrateParty 挪走）
@@ -69,5 +71,9 @@ func _run() -> void:
 	check("off.book_all_slots", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size())
 	XImportedBalance.V029_HIDE_ACTORS = true
 	check("on.book_rows", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size() - 7 and not XActorBook.index_ids().has(161))
+	XImportedBalance.RELEASE_CANGLONG = true
+	check("release.book_rows", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size() - 6 and XActorBook.index_ids().has(146))
+	s = _state([1, 8], [1, 8, 0, 0, 0], [146, 141])
+	check("release.list", XActorWarehouse.list(s, false) == [146], XActorWarehouse.list(s, false))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
