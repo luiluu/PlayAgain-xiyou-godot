@@ -220,7 +220,7 @@ static func sync(s: XState) -> Array:
 		var r := XTianqiQiyinDrop.floor_first_kill(p.drop, n, difficulty_key(s), _owned_by_seal(s), _rng())
 		p.drop = r.state
 		for item in r.set_pieces:
-			if XTianqiQiyinGear.set_rule().get("first_kill_floors", []).has(n):
+			if XTianqiQiyinGear.set_rule().get("first_kill_floors", []).any(func(f): return int(f) == n):
 				item = item.duplicate(true)
 				item["level"] = int(XTianqiQiyinGear.set_rule().get("first_kill_level", 80))
 			_stash(s, item)
