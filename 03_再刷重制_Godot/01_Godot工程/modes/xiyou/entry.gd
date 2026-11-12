@@ -60,6 +60,16 @@ func _ready() -> void:
 
 
 func _build_background() -> void:
+	# 用天启篇新标题时，设置、调按键位置、读档等子页也垫新底图，不再露出原版 PlayAgain 底图和粒子（XTianqiTitle.ENABLED = false 回原版）
+	if XTianqiTitle.available():
+		var bg := TextureRect.new()
+		bg.name = "TianqiSubpageBg"
+		bg.texture = load(XTianqiTitle.BG)
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		add_child(bg)
+		return
 	var p := XDB.img_path("titles1", str(XDB.system().get("title1Name", "")))
 	if p != "":
 		var t := TextureRect.new()
