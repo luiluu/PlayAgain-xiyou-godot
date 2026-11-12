@@ -90,7 +90,8 @@ static func allows(item: Dictionary) -> bool:
 	var etype := int(item.get("etypeId", 0))
 	if not ORDER.has(etype):
 		return false
-	return etype != ARTIFACT or ARTIFACTS.has(int(item.get("base", item.get("id", 0)))) or XTianqiRewards.is_relic(item)  # 骑士遗物
+	return etype != ARTIFACT or ARTIFACTS.has(int(item.get("base", item.get("id", 0)))) or XTianqiRewards.is_relic(item) \
+		or str(XTianqiQiyinEffects.mark_of(item).get("kind", "")) == "artifact"  # 骑士遗物、七印神器
 
 
 ## 特性 54 的封印在天启篇不算的：坐骑（难度适应 1691 的封印不再沿用）

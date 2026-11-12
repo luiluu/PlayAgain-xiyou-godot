@@ -4,7 +4,7 @@
  "source": "Kyo 2026-11-11 七印祭坛派单（天启篇项目线程「做七印祭坛装备数据层」）",
  "dev": "dev.485",
  "_note": {
-  "说明": "天启篇「七印祭坛」装备，只读草稿（XTianqiQiyinGear）：七套套装（每套 6 件）、13 把毕业武器、5 件神器。还没接进战斗、掉落、界面，也不改原版数据库。数值是占位（draft）。效果写成 {code, 参数…, text}：code 的含义见 effect_codes，参数名照含义里的写法；text 是给界面的一句中文。百分比参数一律写成整数百分数（20＝20%），倍数参数（mult、base_mult）写成倍数。武器类 wtype_id 先留 null，接入时按原版 System.weaponTypes 填。",
+  "说明": "天启篇「七印祭坛」装备，只读草稿（XTianqiQiyinGear）：七套套装（每套 6 件）、13 把毕业武器、5 件神器。还没接进战斗、掉落、界面，也不改原版数据库。数值是占位（draft）。效果写成 {code, 参数…, text}：code 的含义见 effect_codes，参数名照含义里的写法；text 是给界面的一句中文。百分比参数一律写成整数百分数（20＝20%），倍数参数（mult、base_mult）写成倍数。武器类 wtype_id 是原版 System.weaponTypes 的编号（cc/qiyin-equip 接入时填）。",
   "effect_codes": {
    "dot_dealt_pct": "自己施加的持续伤害 +value%",
    "dmg_per_target_debuff_pct": "目标身上每有一种减益，对它伤害 +value%，最多 +max%",
@@ -75,7 +75,8 @@
   "etype",
   "affix_tier",
   "count",
-  "first_kill_floors"
+  "first_kill_floors",
+  "wtype_id"
  ],
  "seals": [
   {
@@ -684,62 +685,62 @@
   {
    "key": "bow",
    "name": "弓弩",
-   "wtype_id": null
+   "wtype_id": 7
   },
   {
    "key": "hidden",
    "name": "暗器",
-   "wtype_id": null
+   "wtype_id": 12
   },
   {
    "key": "sword",
    "name": "剑",
-   "wtype_id": null
+   "wtype_id": 2
   },
   {
    "key": "axe",
    "name": "斧",
-   "wtype_id": null
+   "wtype_id": 4
   },
   {
    "key": "gun",
    "name": "枪械",
-   "wtype_id": null
+   "wtype_id": 8
   },
   {
    "key": "fist",
    "name": "拳套",
-   "wtype_id": null
+   "wtype_id": 5
   },
   {
    "key": "katana",
    "name": "太刀",
-   "wtype_id": null
+   "wtype_id": 11
   },
   {
    "key": "dagger",
    "name": "匕首",
-   "wtype_id": null
+   "wtype_id": 1
   },
   {
    "key": "blunt",
    "name": "钝器",
-   "wtype_id": null
+   "wtype_id": 3
   },
   {
    "key": "spear",
    "name": "矛",
-   "wtype_id": null
+   "wtype_id": 9
   },
   {
    "key": "staff",
    "name": "法杖",
-   "wtype_id": null
+   "wtype_id": 6
   },
   {
    "key": "book",
    "name": "书",
-   "wtype_id": null
+   "wtype_id": 10
   }
  ],
  "schools": {

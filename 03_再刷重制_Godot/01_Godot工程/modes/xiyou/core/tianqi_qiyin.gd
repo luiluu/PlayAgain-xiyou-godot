@@ -11,7 +11,7 @@ extends RefCounted
 ##   三场连战（两场精英、一场 Boss），场间不回复；输了回祭坛。魔塔（灰印）每场前三选一捡宝石，本次副本内累计。
 ## - 掉落：精英印屑、Boss 套装件／毕业武器／神器（XTianqiQiyinDrop.roll_boss）、首通加 1 件；31～35 层守层者首杀给它揭开那几印各 1 件（到祭坛时补发）。
 ##   掉下来的都是封着的（先掉后揭，方案 6.1 节第 3 条），放进本档的「印库」；结算时可以当场揭（6.5 节第 3 条），也可以回祭坛揭。
-##   揭开只是把成色、真印亮出来；变成能穿的装备（词条、套装件数生效）归装备／奖励车道，见 equip_ready()。
+##   揭开时生成能穿的装备进背包（XTianqiQiyinEquip：词条、七印标记），印库里只留封着的；熔、分解、印屑兑换、献武器也在祭坛（cc/qiyin-equip）。
 ## - 印钥：里副本 Boss 打赢 33% 退 1 把；31～35 层野外怪 5%，精英、守护者、守层者必掉（XTianqiQiyinRule.end 记，回祭坛时报）。
 ##
 ## 开关 ENABLED（false＝祭坛一概不开，三处入口照原版事件）；只认天启篇存档且选了线，发行构建里还要 XTianqi.RELEASE_OPEN。
@@ -220,13 +220,35 @@ static func sync(s: XState) -> Array:
 		var r := XTianqiQiyinDrop.floor_first_kill(p.drop, n, difficulty_key(s), _owned_by_seal(s), _rng())
 		p.drop = r.state
 		for item in r.set_pieces:
+			if XTianqiQiyinGear.set_rule().get("first_kill_floors", []).any(func(f): return int(f) == n):
+				item = item.duplicate(true)
+				item["level"] = int(XTianqiQiyinGear.set_rule().get("first_kill_level", 80))
 			_stash(s, item)
 		if not r.set_pieces.is_empty():
 			notes.append(["floor_kill", [", ".join(r.set_pieces.map(func(i): return sealed_label(i)))]])
 	if int(p.field_keys) > 0:
 		notes.append(["field_keys", [int(p.field_keys)]])
 		p.field_keys = 0
+	claim(s)
 	return notes
+
+
+## 揭开过、已生成装备的从印库拿掉；拿到的神器生成装备进背包（XTianqiQiyinEquip 开着时）。返回这次进背包的神器
+static func claim(s: XState) -> Array:
+	var p := progress(s)
+	if not XTianqiQiyinEquip.on(s):
+		return []
+	p.bag = p.bag.filter(func(i): return str(i.get("gear", "")) == "")
+	var got := []
+	if not p.get("artifacts_got") is Array:
+		p["artifacts_got"] = []
+	for k in p.artifacts:
+		var item := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make_artifact(str(k)))
+		if not item.is_empty():
+			got.append(item)
+			p.artifacts_got.append(str(k))
+	p.artifacts = []
+	return got
 
 
 static func run_altar(host, s: XState) -> void:
@@ -237,6 +259,7 @@ static func run_altar(host, s: XState) -> void:
 	for n in sync(s):
 		await say(host, n[0], n[1])
 	while true:
+		claim(s)
 		var opts := altar_options(s)
 		var labels: Array = opts.map(func(o): return o.label)
 		var i: int = await ask(host, "head", labels, [keys(s), shards(s)])
@@ -252,6 +275,8 @@ static func run_altar(host, s: XState) -> void:
 				await run_reveal(host, s)
 			"bag":
 				await run_bag(host, s)
+			"forge":
+				await XTianqiQiyinEquip.run_forge(host, s)
 	await say(host, "leave")
 	await _home(host, s)
 
@@ -264,6 +289,8 @@ static func altar_options(s: XState) -> Array:
 		out.append({"id": "reveal", "label": "揭开封着的（%d 件）" % n})
 	if not progress(s).bag.is_empty():
 		out.append({"id": "bag", "label": "看印库"})
+	if XTianqiQiyinEquip.on(s):
+		out.append({"id": "forge", "label": "熔炼、分解、兑换"})
 	out.append({"id": "leave", "label": "离开"})
 	return out
 
@@ -309,16 +336,31 @@ static func choose_and_run(host, s: XState) -> int:
 	return r
 
 
-## 献（方案 6.3 节）：现在只做献印屑定部位；献武器要从背包挑一把本印毕业武器，等装备接入后再加（交付单「未做」）
+## 献（方案 6.3 节）：献印屑定第一件的部位，或献一把背包里的本印毕业武器（XTianqiQiyinEquip 开着时）
 static func _ask_offering(host, s: XState, key: String):
 	var cost := int(XTianqiQiyinDrop.data().get("offering", {}).get("shards", {}).get("cost", 5))
-	if shards(s) < cost:
+	var weapons := XTianqiQiyinEquip.offer_weapons(s, key) if XTianqiQiyinEquip.on(s) else []
+	var can_shards := shards(s) >= cost
+	if not can_shards and weapons.is_empty():
 		return {}
-	var i: int = await ask(host, "offer_head", ["不献", "献 %d 个印屑，指定第一件的部位" % cost, "返回"], [shards(s)])
+	var opts := ["不献"]
+	if can_shards:
+		opts.append("献 %d 个印屑，指定第一件的部位" % cost)
+	if not weapons.is_empty():
+		opts.append("献一把本印毕业武器（这次毕业武器几率翻倍、必是同类）")
+	opts.append("返回")
+	var i: int = await ask(host, "offer_head", opts, [shards(s)])
 	if i == 0:
 		return {}
-	if i != 1:
+	if i < 0 or i >= opts.size() - 1:
 		return null
+	if str(opts[i]).begins_with("献一把"):
+		var labels: Array = weapons.map(func(w): return str(w.name))
+		labels.append("返回")
+		var w: int = await host.show_text_with_choices("", 0, ["献哪一把？（献了就没了）"], labels, labels.size() - 1)
+		if w < 0 or w >= weapons.size():
+			return null
+		return XTianqiQiyinEquip.weapon_offering(weapons[w])
 	var parts := XTianqiQiyinDrop.parts()
 	var labels: Array = parts.map(func(p): return part_name(p))
 	labels.append("返回")
@@ -336,6 +378,8 @@ static func run_dungeon(host, s: XState, key: String, direct: bool, offering: Di
 		return -1
 	var chk := XTianqiQiyinDrop.offering_check(key, offering)
 	if not chk.ok or shards(s) < int(chk.shards):
+		return -1
+	if int(chk.weapons) > 0 and not XTianqiQiyinEquip.take_offering(s, offering):
 		return -1
 	p.keys = keys(s) - int(data().keys.cost)
 	p.shards = shards(s) - int(chk.shards)
@@ -444,8 +488,11 @@ static func _stash(s: XState, item: Dictionary) -> void:
 
 ## 印库里已有的部位 {印: [部位…]}（掉落「已有部位减半」用；extra 是同一次刚掉、还没入库的）
 static func _owned_by_seal(s: XState, extra := []) -> Dictionary:
-	var out := {}
+	var equip := XTianqiQiyinEquip.on(s)
+	var out := XTianqiQiyinEquip.owned_parts(s) if equip else {}
 	for item in progress(s).bag + extra:
+		if equip and str(item.get("gear", "")) != "":
+			continue
 		if str(item.get("kind", "")) != XTianqiQiyinDrop.KIND_SET:
 			continue
 		var k := str(item.seal)
@@ -494,7 +541,10 @@ static func revealed_label(item: Dictionary) -> String:
 			if str(pc.part) == str(item.get("part", "")):
 				name = str(pc.name)
 	var grades: Array = item.get("grades", []).map(func(g): return grade_name(str(g)))
-	return "%s%s　成色：%s" % ["【真印】" if bool(item.get("true_seal", false)) else "", name, "／".join(grades)]
+	var text := "%s%s　成色：%s" % ["【真印】" if bool(item.get("true_seal", false)) else "", name, "／".join(grades)]
+	if item.get("affix_text") is Array and not item.affix_text.is_empty():
+		text += "\n" + "\n".join(PackedStringArray(item.affix_text))
+	return text
 
 
 ## 揭开印库第 idx 件（成色、真印在掉落时已经掷定，这里只亮出来）。返回这件
@@ -503,6 +553,11 @@ static func reveal(s: XState, idx: int) -> Dictionary:
 	if idx < 0 or idx >= bag.size():
 		return {}
 	bag[idx]["revealed"] = true
+	if XTianqiQiyinEquip.on(s) and str(bag[idx].get("gear", "")) == "":
+		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng()))
+		if not gear.is_empty():
+			bag[idx]["gear"] = str(gear.instanceId)
+			bag[idx]["affix_text"] = XTianqiQiyinEffects.mark_of(gear).get("affixes", []).map(func(a): return XTianqiQiyinEquip.affix_line(a))
 	return bag[idx]
 
 
@@ -534,9 +589,9 @@ static func run_bag(host, s: XState) -> void:
 		await host.show_text("", 0, [revealed_label(item) if bool(item.get("revealed", false)) else sealed_label(item)])
 
 
-## 揭开的件变成能穿的装备：还没接（独立装备生成、词条、套装件数归装备／奖励车道）
+## 揭开的件变成能穿的装备（XTianqiQiyinEquip，cc/qiyin-equip）
 static func equip_ready() -> bool:
-	return false
+	return XTianqiQiyinEquip.on()
 
 
 # ---- 野外印钥（XTianqiQiyinRule.end 调） ----
