@@ -591,7 +591,7 @@ func _tq_actor_row(id: int, first: bool) -> Control:
 	if str(rec.get("faceName", "")) != "":
 		face.texture = XUI.face_texture(str(rec.faceName), int(rec.get("faceIndex", 0)))
 	row.add_child(face)
-	var tier := XTier.tier_of(id)
+	var tier := XTianqiSkills.tier_of(id, true)  # 天启篇档位名单
 	var color := XUI.text_color(17) if tier == XTier.SUPER else XUI.text_color(23) if tier == XTier.STRONG else XUI.TEXT
 	var lbl := XUI.label("%s%s" % [str(rec.get("name", "")), "　（1 号位）" if first else ""])
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL

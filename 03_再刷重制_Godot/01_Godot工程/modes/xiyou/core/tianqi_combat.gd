@@ -62,7 +62,7 @@ static func field_weak_count(s: XState) -> int:
 	var n := 0
 	for i in mini(XTianqi.FIGHTERS, s.battle_slots.size()):
 		var id := int(s.battle_slots[i])
-		if id > 0 and s.party.has(id) and XTianqiSkills.battle_tier(id, s) == XTier.WEAK:
+		if id > 0 and s.party.has(id) and XTianqiSkills.is_weak(id, true):  # 弱者协力按名单（成长型角色按名单档算）
 			n += 1
 	return n
 
