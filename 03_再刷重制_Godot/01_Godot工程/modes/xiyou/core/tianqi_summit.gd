@@ -102,6 +102,8 @@ static func line_module(key: String):
 			return XTianqiWarLine if XTianqiWarLine.ENABLED else null
 		XTianqiFamineLine.KEY:
 			return XTianqiFamineLine if XTianqiFamineLine.ENABLED else null
+		XTianqiPlagueLine.KEY:
+			return XTianqiPlagueLine if XTianqiPlagueLine.ENABLED else null
 	return null
 
 
@@ -267,6 +269,11 @@ static func _run_line(host, s: XState, fn: String) -> int:
 				r = await XTianqiFamineLine.run_shadow(host, s)
 			else:
 				r = await XTianqiFamineLine.run_final(host, s)
+		XTianqiPlagueLine.KEY:
+			if fn == "run_shadow":
+				r = await XTianqiPlagueLine.run_shadow(host, s)
+			else:
+				r = await XTianqiPlagueLine.run_final(host, s)
 	if r < 0:
 		await say(host, "not_ready")
 	return r

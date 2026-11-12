@@ -14,7 +14,7 @@ extends RefCounted
 
 const DATA_DIR := "res://modes/xiyou/tianqi_data/"
 ## 做好了内容的线（和 XTianqi.LINES 的键一致）
-const KEYS := ["war", "famine"]
+const KEYS := ["war", "famine", "plague"]
 
 static var _data: Dictionary = {}
 
@@ -25,6 +25,8 @@ static func enabled(key: String) -> bool:
 			return XTianqiWarLine.ENABLED
 		"famine":
 			return XTianqiFamineLine.ENABLED
+		"plague":
+			return XTianqiPlagueLine.ENABLED
 	return false
 
 
@@ -82,6 +84,8 @@ static func alien_prepare(key: String, name: String, s: XState) -> bool:
 			return XTianqiWarAlien.prepare(name, s)
 		"famine":
 			return XTianqiFamineAlien.prepare(name, s)
+		"plague":
+			return XTianqiPlagueAlien.prepare(name, s)
 	return false
 
 
@@ -92,6 +96,8 @@ static func alien_apply(key: String, logic, s: XState, list: Array) -> bool:
 			return XTianqiWarAlien.apply(logic, s, "segment", list)
 		"famine":
 			return XTianqiFamineAlien.apply(logic, s, "segment", list)
+		"plague":
+			return XTianqiPlagueAlien.apply(logic, s, "segment", list)
 	return false
 
 
@@ -102,12 +108,14 @@ static func alien_kinds(key: String) -> Array:
 			return XTianqiWarAlien.kinds()
 		"famine":
 			return XTianqiFamineAlien.kinds()
+		"plague":
+			return XTianqiPlagueAlien.kinds()
 	return []
 
 
 ## 这一场已经有本线预设的异化
 static func alien_active(logic) -> bool:
-	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic)
+	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic) or XTianqiPlagueAlien.active(logic)
 
 
 # ---- 开关与进度 ----
@@ -343,6 +351,8 @@ static func run_arrival(host, s: XState, map_id: int) -> void:
 	await say(host, key, beat)
 	if key == XTianqiFamineLine.KEY:
 		await XTianqiFamineLine.after_beat(host, s, beat)
+	if key == XTianqiPlagueLine.KEY:
+		await XTianqiPlagueLine.after_beat(host, s, beat)
 
 
 # ---- 35、36 层（31～36 层重做之后接地图） ----
