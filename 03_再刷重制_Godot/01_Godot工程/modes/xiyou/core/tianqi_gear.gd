@@ -140,7 +140,7 @@ static func skill_view(s: Dictionary) -> Dictionary:
 	return v
 
 static var _views := {}
-static var _APS := XRx.re("<pos=APs text=\\\\c\\[1\\]效果:[^>]*>")
+static var _APS := RegEx.create_from_string("<pos=APs text=\\\\c\\[1\\]效果:[^>]*>")
 
 
 # ==== 第二批（交接单「装备栏下一批」，Max 发、Kyo 11-08 规则）：删除栏位物品清理、坐骑管速度先手、神器成长上限 ====

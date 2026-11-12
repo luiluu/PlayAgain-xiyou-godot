@@ -149,7 +149,7 @@ static func relabel(i: Dictionary) -> void:
 		return
 	if str(i.name) != str(m.lastName):
 		var names := PackedStringArray(config().affixes.map(func(f): return str(f.name)))
-		m.plainName = XRx.re("^(" + "|".join(names) + ")·").sub(str(i.name), "")
+		m.plainName = RegEx.create_from_string("^(" + "|".join(names) + ")·").sub(str(i.name), "")
 	i.name = str(affix(str(m.affix)).name) + "·" + str(m.plainName)
 	m.lastName = i.name
 
@@ -322,7 +322,7 @@ static func original_active(a: XActor) -> Array:
 static func borrowable(sk: Dictionary) -> bool:
 	if sk.is_empty() or int(sk.id) <= 2 or not _in("attack", int(sk.id)):
 		return false
-	if XRx.re("处决|秒杀|剧情|阶段|召唤|变身").search(str(sk.get("name", ""))):
+	if RegEx.create_from_string("处决|秒杀|剧情|阶段|召唤|变身").search(str(sk.get("name", ""))):
 		return false
 	var debuffs: Array = config().get("transferDebuffs", [])
 	var buffs: Array = config().get("shareBuffs", [])
@@ -338,7 +338,7 @@ static func borrowable(sk: Dictionary) -> bool:
 static func life_compatible(a: XActor) -> bool:
 	if a == null or yunshang_key(a) == 3:
 		return false
-	var re := XRx.re("(?:死亡免疫|不死|自动复活|复活自己|濒死复活|<Custom (?:React|Respond|Confirm|Establish|Deselect) Effect>[\\s\\S]*(?:revive|deathStateId|\\.die\\(|setHp\\())")
+	var re := RegEx.create_from_string("(?:死亡免疫|不死|自动复活|复活自己|濒死复活|<Custom (?:React|Respond|Confirm|Establish|Deselect) Effect>[\\s\\S]*(?:revive|deathStateId|\\.die\\(|setHp\\())")
 	return not a.trait_objects().any(func(o): return o is Dictionary and re.search(str(o.get("note", ""))) != null)
 
 
@@ -351,7 +351,7 @@ static func binding_options(s: XState, a: XActor, k: String) -> Array:
 static func effect_ghost(i) -> Dictionary:
 	if not (i is Dictionary) or i.is_empty() or not mark(i).is_empty():
 		return {}
-	if XRx.re("(?i)Unique|Myth|Heartsteel|Yunshang|MagicWeapon|神器|唯一|神话|<quality:\\s*10>").search(str(i.get("note", ""))):
+	if RegEx.create_from_string("(?i)Unique|Myth|Heartsteel|Yunshang|MagicWeapon|神器|唯一|神话|<quality:\\s*10>").search(str(i.get("note", ""))):
 		return {}
 	var codes: Array = templates().get("gearTraitCodes", [])
 	var traits := []
@@ -362,7 +362,7 @@ static func effect_ghost(i) -> Dictionary:
 			traits.append(t.duplicate())
 	var note := ""
 	for tag in ["ShieldEffect", "SelfPhysRate", "SelfElemRate"]:
-		for m in XRx.re("(?i)<" + tag + "\\s*:\\s*([+-]?[\\d.]+%?)\\s*>").search_all(str(i.get("note", ""))):
+		for m in RegEx.create_from_string("(?i)<" + tag + "\\s*:\\s*([+-]?[\\d.]+%?)\\s*>").search_all(str(i.get("note", ""))):
 			note += m.get_string() + "\n"
 	if traits.is_empty() and note == "":
 		return {}

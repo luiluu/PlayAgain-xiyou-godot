@@ -667,11 +667,11 @@ func _button(text: String, cls := "", disabled := false) -> Button:
 	var pad := Vector2(12, 9)
 	if cls == "selected":
 		b.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.CURSOR, XWebPanel.CURSOR_EDGE, 6, 1, pad))
-	elif XRx.re(DANGER_RE).search(text) != null:
+	elif RegEx.create_from_string(DANGER_RE).search(text) != null:
 		b.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.BUTTON_BG, BAD, 6, 1, pad))
 		for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
 			b.add_theme_color_override(k, BAD)
-	elif XRx.re(PRIMARY_RE).search(text) != null:
+	elif RegEx.create_from_string(PRIMARY_RE).search(text) != null:
 		b.add_theme_stylebox_override("normal", XWebPanel._box(PRIMARY, XWebPanel.CURSOR_EDGE, 6, 1, pad))
 	if disabled:
 		b.add_theme_stylebox_override("disabled", b.get_theme_stylebox("normal"))
@@ -716,7 +716,7 @@ func _make(n: Dictionary) -> Control:
 		"h1", "h2", "h3":
 			var t := str(n.text)
 			# h3 系统色；「战力 …」「装备战力 …」标题金色（gp-power）
-			var col := XWebPanel.GOLD if XRx.re("^(?:装备)?战力\\s").search(t) != null else (XWebPanel.SYSTEM if n.tag == "h3" else TEXT)
+			var col := XWebPanel.GOLD if RegEx.create_from_string("^(?:装备)?战力\\s").search(t) != null else (XWebPanel.SYSTEM if n.tag == "h3" else TEXT)
 			return _label(t, SIZES[n.tag], col, true)
 		"p", "span":
 			if cls == "alien-error":

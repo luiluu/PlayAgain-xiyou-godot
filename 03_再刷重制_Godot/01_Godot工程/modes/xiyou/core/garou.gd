@@ -237,7 +237,7 @@ static func boss_meter(enemy_id: int) -> bool:
 	if _boss_ids.is_empty():
 		var p := XDB.plugin("MOG_BossHP")
 		for k in p:
-			if XRx.re("^boss-\\d+$").search(str(k)) and str(p[k]).strip_edges().is_valid_int():
+			if RegEx.create_from_string("^boss-\\d+$").search(str(k)) and str(p[k]).strip_edges().is_valid_int():
 				_boss_ids[int(str(p[k]).strip_edges())] = true
 		_boss_ids[0] = false
 	return bool(_boss_ids.get(enemy_id, false))

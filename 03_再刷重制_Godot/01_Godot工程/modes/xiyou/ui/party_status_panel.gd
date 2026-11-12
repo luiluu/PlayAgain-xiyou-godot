@@ -228,7 +228,7 @@ static var _re_note: RegEx
 ## stateDescription：<StateNote> 或描述（text 清理），否则特性说明，否则 1 号／行动限制
 static func description(st: Dictionary) -> String:
 	if _re_note == null:
-		_re_note = XRx.re("(?i)<(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>([\\s\\S]*?)</(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>")
+		_re_note = RegEx.create_from_string("(?i)<(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>([\\s\\S]*?)</(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>")
 	var m := _re_note.search(str(st.get("note", "")))
 	var t := XGearQuery.text(m.get_string(1) if m != null else str(st.get("description", "")))
 	if t != "":

@@ -10,7 +10,7 @@ static func animation_id(b: XBattler) -> int:
 	for s in b.states():
 		var v = s.get("meta", {}).get("State Animation", s.get("meta", {}).get("State Ani"))
 		if v != null:
-			var m := XRx.re("^\\s*(\\d+)\\s*$").search(str(v))
+			var m := RegEx.create_from_string("^\\s*(\\d+)\\s*$").search(str(v))
 			if m and int(m.get_string(1)) > 0:
 				return int(m.get_string(1))
 	return 0

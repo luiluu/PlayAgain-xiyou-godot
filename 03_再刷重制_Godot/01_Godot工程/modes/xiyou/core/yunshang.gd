@@ -1253,9 +1253,9 @@ static func borrowable(s: Dictionary) -> bool:
 	if s.is_empty() or int(s.get("id", 0)) >= PIN or int(s.get("occasion", 0)) == 3 or int(s.get("stypeId", 0)) == 4:
 		return false
 	if _borrow_res.is_empty():
-		_borrow_res = [XRx.re("(?i)<(?:Custom|Passive|SkillKill|SkillFrUse|Switch|Variable|Actor|req_|MagicWeapon)"),
-			XRx.re("Codex|\\$game|\\ba\\._|\\bb\\._|\\ba\\.[A-Za-z]+\\s*\\("),
-			XRx.re("形态|领域|觉醒|进阶|制作|唤醒|召唤|复活|变身|解放|无限|天与")]
+		_borrow_res = [RegEx.create_from_string("(?i)<(?:Custom|Passive|SkillKill|SkillFrUse|Switch|Variable|Actor|req_|MagicWeapon)"),
+			RegEx.create_from_string("Codex|\\$game|\\ba\\._|\\bb\\._|\\ba\\.[A-Za-z]+\\s*\\("),
+			RegEx.create_from_string("形态|领域|觉醒|进阶|制作|唤醒|召唤|复活|变身|解放|无限|天与")]
 	if _borrow_res[0].search(str(s.get("note", ""))) != null or _borrow_res[1].search(str(s.get("damage", {}).get("formula", ""))) != null \
 			or _borrow_res[2].search(str(s.get("name", ""))) != null:
 		return false

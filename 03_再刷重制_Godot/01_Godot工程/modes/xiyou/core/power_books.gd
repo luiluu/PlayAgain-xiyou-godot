@@ -9,7 +9,7 @@ static var _rates := {}
 
 static func skills() -> Array:
 	if _skills.is_empty():
-		var pattern := XRx.re("<CodexPower:\\s*\\d+>")
+		var pattern := RegEx.create_from_string("<CodexPower:\\s*\\d+>")
 		for item in XDB.table("Items"):
 			if not item is Dictionary or pattern.search(str(item.get("note", ""))) == null:
 				continue
@@ -20,7 +20,7 @@ static func skills() -> Array:
 
 ## Scene_ItemBase.onActorOk recognizes tagged power books before target validity.
 static func book_skill(item: Dictionary) -> int:
-	if XRx.re("<CodexPower:\\s*\\d+>").search(str(item.get("note",""))) == null:
+	if RegEx.create_from_string("<CodexPower:\\s*\\d+>").search(str(item.get("note",""))) == null:
 		return 0
 	for effect in item.get("effects",[]):
 		if int(effect.code) == 43 and is_power(int(effect.dataId)):
@@ -82,7 +82,7 @@ static func param_rate_bonus(a: XActor, param: int) -> float:
 	for id in a.skill_ids:
 		if not _rates.has(id):
 			var values := {}
-			var hit := XRx.re("(?i)<CodexParamRate:\\s*([^>]+)>").search(str(XDB.rec("Skills", id).get("note", "")))
+			var hit := RegEx.create_from_string("(?i)<CodexParamRate:\\s*([^>]+)>").search(str(XDB.rec("Skills", id).get("note", "")))
 			if hit != null:
 				for entry in hit.get_string(1).split(","):
 					var pair := entry.split(":")

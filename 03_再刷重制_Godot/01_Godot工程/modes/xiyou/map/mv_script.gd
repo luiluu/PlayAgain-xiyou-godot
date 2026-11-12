@@ -40,7 +40,7 @@ static var _re_cache := {}
 static func _re(pattern: String) -> RegEx:
 	var r: RegEx = _re_cache.get(pattern)
 	if r == null:
-		r = XRx.re(pattern)
+		r = RegEx.create_from_string(pattern)
 		_re_cache[pattern] = r
 	return r
 

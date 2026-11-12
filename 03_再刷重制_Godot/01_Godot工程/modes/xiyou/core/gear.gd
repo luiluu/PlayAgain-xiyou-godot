@@ -87,7 +87,7 @@ static func template(kind: String, id: int) -> Dictionary:
 
 ## YEP_CoreEngine 备注参数（<atk: +20> 等）覆盖基础值；初始装备不掷浮动，但这一步照做（天虎令的布丁 atk／mat 20 而非数据库 25）。
 static func _apply_note_params(item: Dictionary) -> void:
-	for m in XRx.re("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(item.note)):
+	for m in RegEx.create_from_string("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(item.note)):
 		item.params[param_id(m.get_string(1))] = int(m.get_string(2))
 
 static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
@@ -320,7 +320,7 @@ static func _affix_prefix(name: String) -> String:
 			best = n
 	return best
 
-static var _req_actors_re := XRx.re("(?i)<req_actors\\s*:")
+static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
 static func exclusive_affix(r: Dictionary) -> bool:
 	if not (r.has("wtypeId") or r.has("atypeId")):
 		return false

@@ -120,10 +120,10 @@ static func progress_floor(s: XState) -> int:
 
 ## parseFloor：「N层」阿拉伯数字或「一～三十几层」中文数字
 static func parse_floor(text: String) -> int:
-	var m := XRx.re("(\\d+)\\s*层").search(text)
+	var m := RegEx.create_from_string("(\\d+)\\s*层").search(text)
 	if m:
 		return int(m.get_string(1))
-	m = XRx.re("([一二三四五六七八九十]+)层").search(text)
+	m = RegEx.create_from_string("([一二三四五六七八九十]+)层").search(text)
 	if m == null:
 		return 0
 	var t := m.get_string(1)
@@ -246,15 +246,15 @@ static func is_boss_enemy(e: XEnemy) -> bool:
 	if _mog_boss.is_empty():
 		var p := XDB.plugin("MOG_BossHP")
 		for k in p:
-			if XRx.re("^boss-\\d+$").search(str(k)) and str(p[k]).is_valid_int():
+			if RegEx.create_from_string("^boss-\\d+$").search(str(k)) and str(p[k]).is_valid_int():
 				_mog_boss[int(p[k])] = true
 		_mog_boss[-1] = true
 	var d := e.data()
 	if _mog_boss.has(int(d.get("id", 0))):
 		return true
-	if XRx.re("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(d.get("note", ""))):
+	if RegEx.create_from_string("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(d.get("note", ""))):
 		return true
-	return XRx.re("【(首领|守层者|守护者|被封印者|未知存在|超级Boos|前所未见|终焉恐惧|神兵)】").search(str(d.get("name", ""))) != null
+	return RegEx.create_from_string("【(首领|守层者|守护者|被封印者|未知存在|超级Boos|前所未见|终焉恐惧|神兵)】").search(str(d.get("name", ""))) != null
 
 
 # ---- 战斗钩子（BattleLogic 调用）----
@@ -423,7 +423,7 @@ static var _skills := {}
 
 static func skill_key(key: String) -> int:
 	if _skills.is_empty():
-		var re := XRx.re("<CodexZhenqi:\\s*([^>]+)>")
+		var re := RegEx.create_from_string("<CodexZhenqi:\\s*([^>]+)>")
 		for sk in XDB.table("Skills"):
 			if sk is Dictionary:
 				var m := re.search(str(sk.get("note", "")))
@@ -540,7 +540,7 @@ static func weapon_masters() -> Array:
 	var out := []
 	var seen := {}
 	var pool := weapon_types()
-	var re := XRx.re("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
 	for e in XDB.table("Enemies"):
 		if not e is Dictionary:
 			continue
@@ -606,10 +606,10 @@ static func known_specs(s: XState, key: String) -> Array:
 ## Z.patchRewards：数据库载入时把筑基～化神属性奖励改成 30/50/70/99%、金丹 20%、元婴 50%（备注里的被动值与说明文字）
 static func patch_rewards(table: Array) -> void:
 	var values := [30, 50, 70, 99]
-	var tag_re := XRx.re("<CodexZhenqi:\\s*([^>]+)>")
-	var attr_re := XRx.re("^attr:(atk|def|sup):[1-4]$")
-	var pas_re := XRx.re("(?i)(<passive(?:PBST\\d|XPBST\\d|CrHarmRi):\\s*)[\\d.]+(%?>)")
-	var txt_re := XRx.re("\\+\\d+(?:\\.\\d+)?%")
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*([^>]+)>")
+	var attr_re := RegEx.create_from_string("^attr:(atk|def|sup):[1-4]$")
+	var pas_re := RegEx.create_from_string("(?i)(<passive(?:PBST\\d|XPBST\\d|CrHarmRi):\\s*)[\\d.]+(%?>)")
+	var txt_re := RegEx.create_from_string("\\+\\d+(?:\\.\\d+)?%")
 	for sk in table:
 		if not sk is Dictionary:
 			continue
@@ -636,7 +636,7 @@ static func patch_rewards(table: Array) -> void:
 ## DataManager.extractMetadata
 static func extract_meta(note: String) -> Dictionary:
 	var out := {}
-	for m in XRx.re("<([^<>:]+)(:?)([^>]*)>").search_all(note):
+	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(note):
 		out[m.get_string(1)] = m.get_string(3) if m.get_string(2) == ":" else true
 	return out
 
@@ -647,7 +647,7 @@ static var _views := {}
 
 
 static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
-	var m := XRx.re("<CodexZhenqi:\\s*(daofa:[^>]+)>").search(str(sk.get("note", "")))
+	var m := RegEx.create_from_string("<CodexZhenqi:\\s*(daofa:[^>]+)>").search(str(sk.get("note", "")))
 	if m == null:
 		return sk
 	var tag := m.get_string(1)
@@ -659,7 +659,7 @@ static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
 	var note := str(sk.get("note", ""))
 	var out := ""
 	var at := 0
-	for pm in XRx.re("(?i)(<passive(?:WPNM\\d+|ELUP\\d+|HEUP|EXTTP):\\s*)([\\d.]+)(%?>)").search_all(note):
+	for pm in RegEx.create_from_string("(?i)(<passive(?:WPNM\\d+|ELUP\\d+|HEUP|EXTTP):\\s*)([\\d.]+)(%?>)").search_all(note):
 		out += note.substr(at, pm.get_start() - at) + pm.get_string(1) + str(_js_round(float(pm.get_string(2)) * factor)) + pm.get_string(3)
 		at = pm.get_end()
 	note = out + note.substr(at)
@@ -750,9 +750,9 @@ static func unlock_specs(s: XState, enemies: Array, b := {}) -> void:
 	var sp := s.zhenqi_spec
 	spec_state(s)
 	# v0.45 第六段：旧 <Element Absorb> 照认，再加只给灵根的 <CodexZhenqiLinggen>；同元素只解锁、只提示一次
-	var res := [XRx.re("(?i)<Element Absorb:\\s*([\\d,\\s]+)>"), XRx.re("(?i)<CodexZhenqiLinggen:\\s*([\\d,\\s]+)>")]
+	var res := [RegEx.create_from_string("(?i)<Element Absorb:\\s*([\\d,\\s]+)>"), RegEx.create_from_string("(?i)<CodexZhenqiLinggen:\\s*([\\d,\\s]+)>")]
 	var types := weapon_types()
-	var tag_re := XRx.re("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
 	var scaled: Dictionary = b.get("scaled", {})
 	for e in enemies:
 		var tm := tag_re.search(str(e.data().get("note", "")))
@@ -1051,7 +1051,7 @@ static func _start_weapon(s: XState, m: Dictionary) -> Dictionary:
 ## Z.weaponMasters：敌人备注 <CodexZhenqi: weapon N> 的神兵之仙，取首个成员是它的敌群
 static func _weapon_masters_v028() -> Array:
 	var out := []
-	var re := XRx.re("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
 	for e in XDB.table("Enemies"):
 		if not e is Dictionary:
 			continue
@@ -1070,8 +1070,8 @@ static func _weapon_masters_v028() -> Array:
 ## enemies 含没出场的隐藏成员（troop_members）：原版 $gameTroop.members() 也算它们。
 static func _unlock_specs_v028(s: XState, enemies: Array, b := {}) -> void:
 	var sp := s.zhenqi_spec
-	var re := XRx.re("(?i)<Element Absorb:\\s*([\\d,\\s]+)>")
-	var tag_re := XRx.re("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
+	var re := RegEx.create_from_string("(?i)<Element Absorb:\\s*([\\d,\\s]+)>")
+	var tag_re := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+(\\d+)>")
 	var scaled: Dictionary = b.get("scaled", {})
 	for e in enemies:
 		var tm := tag_re.search(str(e.data().get("note", "")))

@@ -58,8 +58,8 @@ static func absorb_owners(weapon_id: int) -> Array:
 		_absorb_src = weapons
 		_absorb_owners = {}
 		_absorb_ids = {}
-		var re := XRx.re("(?i)<req_actors\\s*:\\s*([^>]+)>")
-		var num := XRx.re("\\d+")
+		var re := RegEx.create_from_string("(?i)<req_actors\\s*:\\s*([^>]+)>")
+		var num := RegEx.create_from_string("\\d+")
 		for w in (weapons if weapons is Array else []):
 			if not (w is Dictionary) or str(w.get("name", "")).is_empty():
 				continue
@@ -791,7 +791,7 @@ func attack_command_text() -> String:
 			text = m.get_string(2)
 	return text
 
-static var _command_text_line := XRx.re("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
+static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
 
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
 func attack_times_add() -> float:
@@ -801,7 +801,7 @@ func action_plus_set() -> Array:
 	var out := super.action_plus_set()
 	# dsPassiveSkill Game_Actor.actionPlusSet：每个 <passiveAPLUS:N%> 被动加一项追加行动几率（取第一个整数 ×0.01）
 	for m in passive_values("passiveAPLUS"):
-		var found := XRx.re("(\\d+)").search(str(m))
+		var found := RegEx.create_from_string("(\\d+)").search(str(m))
 		if found:
 			out.append(float(found.get_string(1)) * 0.01)
 	if XZhenqi.has_daofa(self, "fenshen"):
@@ -861,7 +861,7 @@ func passive_state_resists() -> Array:
 	return out
 
 static func _num(v) -> float:
-	var r := XRx.re("[-+]?\\d*\\.?\\d+")
+	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
 	var m := r.search(str(v))
 	return float(m.get_string()) if m else 0.0
 
@@ -1166,7 +1166,7 @@ func refresh_passive() -> void:
 			var tag := str(key)
 			if not tag.begins_with("ConsumeReduce"):
 				continue
-			var number := XRx.re("^\\s*([+-]?\\d+)").search(str(meta[key]))
+			var number := RegEx.create_from_string("^\\s*([+-]?\\d+)").search(str(meta[key]))
 			if number == null:
 				push_error("ConsumeReduce标签不是整数：" + tag + ":" + str(meta[key]))
 				continue
@@ -1219,7 +1219,7 @@ func passive_cache() -> Dictionary:
 
 static func _scan(text: String, pattern: String) -> Array:
 	var out := []
-	for m in XRx.re(pattern).search_all(text):
+	for m in RegEx.create_from_string(pattern).search_all(text):
 		var g := []
 		for i in range(1, m.get_group_count() + 1):
 			g.append(m.get_string(i))

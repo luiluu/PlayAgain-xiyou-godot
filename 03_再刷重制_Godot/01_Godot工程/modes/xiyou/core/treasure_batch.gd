@@ -137,7 +137,7 @@ static func series_key(kind: String, base_id: int) -> String:
 		_series = {}
 		for pair in [["Weapons", "w"], ["Armors", "a"]]:
 			for rec in XDB.table(pair[0]):
-				if rec is Dictionary and not rec.is_empty() and XRx.re("^[“「\"]?至臻").search(str(rec.get("name", ""))) != null:
+				if rec is Dictionary and not rec.is_empty() and RegEx.create_from_string("^[“「\"]?至臻").search(str(rec.get("name", ""))) != null:
 					_series[str(pair[1]) + str(int(rec.id))] = true
 	var key := ("w" if kind == "weapon" else "a") + str(base_id)
 	return key if _series.has(key) else ""

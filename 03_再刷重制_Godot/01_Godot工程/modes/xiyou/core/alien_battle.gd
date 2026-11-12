@@ -1585,8 +1585,8 @@ static func silence_bypass(a, skill: Dictionary) -> bool:
 static func magic_silence(st: Dictionary, stype: int) -> bool:
 	var text := str(st.get("name", "")) + " " + str(st.get("note", ""))
 	var traits: Array = st.get("traits", [])
-	return XRx.re("(?i)沉默|silence").search(text) != null and int(st.get("restriction", 0)) == 0 \
-		and XRx.re("Custom|阶段|变身").search(str(st.get("note", ""))) == null and not traits.is_empty() \
+	return RegEx.create_from_string("(?i)沉默|silence").search(text) != null and int(st.get("restriction", 0)) == 0 \
+		and RegEx.create_from_string("Custom|阶段|变身").search(str(st.get("note", ""))) == null and not traits.is_empty() \
 		and traits.all(func(t): return int(t.code) == XBattler.TRAIT_STYPE_SEAL and int(t.dataId) == stype)
 
 
@@ -1992,9 +1992,9 @@ static func possessed(a) -> bool:
 
 ## A.safePassive（Adv:36）：被动（技能类型 4）、没有效果、备注不含自定义／角色专属类写法，且至少有一个 passive／StartPush／TurnPush
 ## 标签、全部在白名单里
-static var _unsafe_note_re := XRx.re("(?i)Custom|Codex|Actor|Unique|Passive State|\\$game|SkillKill|SkillFr|Summon|死亡|复活|变身")
-static var _passive_tag_re := XRx.re("(?i)<((?:passive|StartPush|TurnPush)[a-zA-Z0-9]+)\\s*:")
-static var _safe_tag_re := XRx.re("(?i)^passive(?:PBST[2-7]|XPBST[0-9]|ELUP[0-9]+|WPNM[0-9]+|HarmRi|CrHarmRi|HarmRe[0-9]+|IRUP|GRUP|SPBST2)$")
+static var _unsafe_note_re := RegEx.create_from_string("(?i)Custom|Codex|Actor|Unique|Passive State|\\$game|SkillKill|SkillFr|Summon|死亡|复活|变身")
+static var _passive_tag_re := RegEx.create_from_string("(?i)<((?:passive|StartPush|TurnPush)[a-zA-Z0-9]+)\\s*:")
+static var _safe_tag_re := RegEx.create_from_string("(?i)^passive(?:PBST[2-7]|XPBST[0-9]|ELUP[0-9]+|WPNM[0-9]+|HarmRi|CrHarmRi|HarmRe[0-9]+|IRUP|GRUP|SPBST2)$")
 static func safe_passive(sk: Dictionary) -> bool:
 	if sk.is_empty() or int(sk.get("stypeId", 0)) != 4 or not (sk.get("effects", []) as Array).is_empty():
 		return false

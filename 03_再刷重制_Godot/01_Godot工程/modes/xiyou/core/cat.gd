@@ -29,8 +29,8 @@ const ICON := 280000
 ## 各剑技的公式权重（slash／cross／flurry／holy／echo）
 const WEIGHTS := {10437: 1.0, 10438: 5.0 / 6.0, 10439: 0.35, 10440: 10.0 / 3.0, 10445: 5.0 / 6.0}
 ## 备注里要翻倍的数值标签（同原版 doubled() 的正则）
-static var _note_re := XRx.re("<([^<>:]+):\\s*([+-]?[\\d.]+)(%?)\\s*>")
-static var _key_re := XRx.re("(?i)^(?:hp|mp|atk|def|mat|mdf|agi|luk|atkk|passive(?:PBST\\d+|XPST\\d+|SPST\\d+|HarmRi|CrHarmRi|HarmRe\\d+|ELUP\\d+|IRUP|APLUS)|DepassiveHarmRe\\d+|SkillPass\\d+|SkETypeHarmRi\\d+|SkillTypesDvup[A-Z]|Element Amplify \\d+|Element Magnify \\d+|Push(?:Self|sub)?State\\d+)$")
+static var _note_re := RegEx.create_from_string("<([^<>:]+):\\s*([+-]?[\\d.]+)(%?)\\s*>")
+static var _key_re := RegEx.create_from_string("(?i)^(?:hp|mp|atk|def|mat|mdf|agi|luk|atkk|passive(?:PBST\\d+|XPST\\d+|SPST\\d+|HarmRi|CrHarmRi|HarmRe\\d+|ELUP\\d+|IRUP|APLUS)|DepassiveHarmRe\\d+|SkillPass\\d+|SkETypeHarmRi\\d+|SkillTypesDvup[A-Z]|Element Amplify \\d+|Element Magnify \\d+|Push(?:Self|sub)?State\\d+)$")
 
 
 static func own(a) -> bool:
@@ -254,7 +254,7 @@ static func help_text(text: String, item: Dictionary, a) -> String:
 	var g := growth(a) if a != null else 0.06
 	var adv := advanced(a)
 	var agi: float = a.agi if a != null else 0.0
-	if weight != 0.0 and XRx.re("^伤害[：:]").search(text) != null:
+	if weight != 0.0 and RegEx.create_from_string("^伤害[：:]").search(text) != null:
 		return "伤害：[己·物理攻击×" + _n(1500.0 * weight * g) + "＋己·速度×" + _n(3000.0 * weight * g) + "]×[1＋剑技等级]×[1＋剑技等级×0.1]"
 	if k == "sword" and text.contains("抱剑护身"):
 		if agi == 0.0:
@@ -407,7 +407,7 @@ static func native_repeats(logic, a, item: Dictionary) -> int:
 	for o in a.equip_list() + a.skills() + a.states():
 		var meta: Dictionary = o.get("meta", {})
 		if meta.has("atkk"):
-			var m := XRx.re("(\\d+)").search(str(meta.atkk))
+			var m := RegEx.create_from_string("(\\d+)").search(str(meta.atkk))
 			if m:
 				atkk += int(m.get_string(1))
 		for k in meta:

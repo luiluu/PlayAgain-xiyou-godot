@@ -36,8 +36,8 @@ static var o_projection := true
 ## O-131（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
 ## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
 static var o_profile_hits := true
-static var _toji_formula_re := XRx.re("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
-static var _heartsteel_formula_re := XRx.re("^CodexHeartsteel\\.damage\\(a,b,this\\)$")
+static var _toji_formula_re := RegEx.create_from_string("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
+static var _heartsteel_formula_re := RegEx.create_from_string("^CodexHeartsteel\\.damage\\(a,b,this\\)$")
 
 var logic: XBattleLogic
 var actor: XActor
@@ -101,7 +101,7 @@ static func is_boss(e: XBattler) -> bool:
 	if _boss_ids.is_empty():
 		var p := XDB.plugin("MOG_BossHP")
 		for k in p:
-			if XRx.re("^boss-\\d+$").search(str(k)) and str(p[k]).is_valid_int() and int(p[k]) > 0:
+			if RegEx.create_from_string("^boss-\\d+$").search(str(k)) and str(p[k]).is_valid_int() and int(p[k]) > 0:
 				_boss_ids[int(p[k])] = true
 		_boss_ids[-1] = true
 	var meta: Dictionary = e.data().get("meta", {})
@@ -141,17 +141,17 @@ static func harmful_state(id: int) -> bool:
 	var st := XDB.rec("States", id)
 	if st.is_empty():
 		return false
-	var tag := XRx.re("(?i)<BuffType\\s*:\\s*([^>]+)>").search(str(st.get("note", "")))
-	if tag and XRx.re("(?i)(减益|异常|削弱|debuff|诅咒|毒|破甲|封印|眩晕)").search(tag.get_string(1)):
+	var tag := RegEx.create_from_string("(?i)<BuffType\\s*:\\s*([^>]+)>").search(str(st.get("note", "")))
+	if tag and RegEx.create_from_string("(?i)(减益|异常|削弱|debuff|诅咒|毒|破甲|封印|眩晕)").search(tag.get_string(1)):
 		return true
-	if tag and XRx.re("(?i)(增益|强化|buff)").search(tag.get_string(1)):
+	if tag and RegEx.create_from_string("(?i)(增益|强化|buff)").search(tag.get_string(1)):
 		return false
 	if int(st.get("restriction", 0)) > 0:
 		return true
 	for t in st.get("traits", []):
 		if (int(t.code) == 21 and float(t.value) < 1.0) or (int(t.code) == 22 and float(t.value) < 0.0):
 			return true
-	return XRx.re("(中毒|诅咒|流血|灼伤|眩晕|沉默|封印|虚弱|破甲|麻痹|失明)").search(str(st.get("name", ""))) != null
+	return RegEx.create_from_string("(中毒|诅咒|流血|灼伤|眩晕|沉默|封印|虚弱|破甲|麻痹|失明)").search(str(st.get("name", ""))) != null
 
 
 # ---- 伤害估算 ----
@@ -162,10 +162,10 @@ static func formula_safe(formula: String) -> bool:
 		"(?:a|b|user|target)\\.hpRate\\(\\)", "(?:a|b|user|target)\\.(?:mhp|mmp|hp|mp|tp|atk|def|mat|mdf|agi|luk|level|hit|cri)\\b",
 		"v\\[\\d+\\]", "Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt)\\b"]
 	for p in subs:
-		s = XRx.re(p).sub(s, "1", true)
-	if XRx.re("^[\\d\\s.+*/()%\\-,?:<>=!&|]+$").search(s) == null:
+		s = RegEx.create_from_string(p).sub(s, "1", true)
+	if RegEx.create_from_string("^[\\d\\s.+*/()%\\-,?:<>=!&|]+$").search(s) == null:
 		return false
-	return XRx.re("(?:^|[^=!<>])=(?!=)|\\+\\+|--").search(s) == null
+	return RegEx.create_from_string("(?:^|[^=!<>])=(?!=)|\\+\\+|--").search(s) == null
 
 
 ## 角色档案（registerProfile 依次问，第一个非空的）：插件自带的那条、甚尔、云裳。
@@ -251,7 +251,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	else:
 		repeats *= float(p.hits) if p.has("hits") else float(rec.get("yepEffects", 1))
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
-	var m := XRx.re("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
+	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
 	var extra := float(p.get("multiplier", 1.0)) * XSmartAIProfiles.boosts(a, rec)
 	if type == 1 and a is XActor:
@@ -290,11 +290,11 @@ static func shield_points(t: XBattler) -> float:
 
 ## shieldEstimate：公式整条是「b／target.addShield(式子); 0」（对自己时也认 a／user）且式子只含能力值与 Math 函数时，
 ## 按本次行动预演（不写入）得到的护盾增量，已含受益者护盾加成；其余 0。
-static var _shield_formula_re := XRx.re("^(?:b|target)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
-static var _self_shield_re := XRx.re("^(?:a|user)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
-static var _shield_reads_re := XRx.re("(?:a|b|user|target)\\.(?:mhp|mmp|hp|mp|atk|def|mat|mdf|agi|luk|level)\\b")
-static var _shield_math_re := XRx.re("Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt)\\b")
-static var _shield_plain_re := XRx.re("^[\\d\\s.+*/()%\\-,]+$")
+static var _shield_formula_re := RegEx.create_from_string("^(?:b|target)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
+static var _self_shield_re := RegEx.create_from_string("^(?:a|user)\\.addShield\\((.+)\\)\\s*;\\s*0\\s*$")
+static var _shield_reads_re := RegEx.create_from_string("(?:a|b|user|target)\\.(?:mhp|mmp|hp|mp|atk|def|mat|mdf|agi|luk|level)\\b")
+static var _shield_math_re := RegEx.create_from_string("Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt)\\b")
+static var _shield_plain_re := RegEx.create_from_string("^[\\d\\s.+*/()%\\-,]+$")
 func shield_estimate(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var formula := str(rec.get("damage", {}).get("formula", ""))
 	var m := _shield_formula_re.search(formula)
@@ -419,7 +419,7 @@ func cost_multiplier(rec: Dictionary, item: bool) -> float:
 static func has_cooldown(rec: Dictionary) -> bool:
 	if rec.has("_alienOriginal"):  # 逆祷投影照抄治愈的备注，冷却看原技能
 		rec = XDB.rec("Skills", int(rec._alienOriginal))
-	var m := XRx.re("(?i)<Cooldown:\\s*(\\d+)>").search(str(rec.get("note", "")))
+	var m := RegEx.create_from_string("(?i)<Cooldown:\\s*(\\d+)>").search(str(rec.get("note", "")))
 	return m != null and int(m.get_string(1)) > 0
 
 

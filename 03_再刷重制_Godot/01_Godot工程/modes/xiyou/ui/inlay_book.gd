@@ -78,7 +78,7 @@ static func _t(text: String, x: float, y: float, w: float, color := XUI.TEXT, al
 ## 模板备注里 <pos=… text=… size=… color=… line=… align=…> 的 text（只取原版正则匹配到的行）
 static func pos_texts(note: String) -> Array:
 	var out := []
-	var re := XRx.re("(?i)<pos=(.+) text=(.+) size=(.+) color=(.+) line=(true|false) align=(0|1|2)>")
+	var re := RegEx.create_from_string("(?i)<pos=(.+) text=(.+) size=(.+) color=(.+) line=(true|false) align=(0|1|2)>")
 	for line in XEnemyBookPage.notetags(note):
 		var m := re.search(line)
 		if m != null:
@@ -96,7 +96,7 @@ static func text_ex_ops(raw: String, x0: float, y0: float) -> Array:
 	var y := y0
 	var lh := XUI.FONT_SIZE + 8.0
 	var i := 0
-	var code := XRx.re("^\u001b[cC]\\[(\\d+)\\]")
+	var code := RegEx.create_from_string("^\u001b[cC]\\[(\\d+)\\]")
 	while i < s.length():
 		var m := code.search(s.substr(i))
 		if m != null:

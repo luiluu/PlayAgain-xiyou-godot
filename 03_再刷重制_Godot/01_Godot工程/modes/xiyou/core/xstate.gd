@@ -423,13 +423,13 @@ static var _native_ids_cache := {}
 
 static func difficulty_managed_skills() -> Array:
 	if _difficulty_managed.is_empty():
-		var re := XRx.re("^(?:轮回模式·|灭世挑战|(?:宝宝|简单|普通|困难|地狱|天灾)难度$|难度适应$|天道诅咒$)")
+		var re := RegEx.create_from_string("^(?:轮回模式·|灭世挑战|(?:宝宝|简单|普通|困难|地狱|天灾)难度$|难度适应$|天道诅咒$)")
 		for rec in XDB.table("Skills"):
 			if rec != null and re.search(str(rec.get("name", ""))) != null:
 				_difficulty_managed.append(int(rec.id))
 		# 洪荒五个选定诅咒由公共事件 1442 教：脚本里的 learnSkill(N)
 		var ce := XDB.rec("CommonEvents", 1442)
-		var lre := XRx.re("\\.learnSkill\\((\\d+)\\)")
+		var lre := RegEx.create_from_string("\\.learnSkill\\((\\d+)\\)")
 		for c in ce.get("list", []):
 			if int(c.code) in [355, 655]:
 				for m in lre.search_all(str(c.parameters[0])):
@@ -463,9 +463,9 @@ static func difficulty_native_ids(event_id: int, list_name: String) -> Array:
 		for c in XDB.rec("CommonEvents", event_id).get("list", []):
 			if int(c.code) in [355, 655]:
 				text += str(c.parameters[0]) + "\n"
-		var m := XRx.re("var\\s+" + list_name + "\\s*=\\s*(\\[[\\d,\\s]*\\])").search(text)
+		var m := RegEx.create_from_string("var\\s+" + list_name + "\\s*=\\s*(\\[[\\d,\\s]*\\])").search(text)
 		_native_ids_cache[key] = (JSON.parse_string(m.get_string(1)) if m != null else []).map(func(v): return int(v))
-		if m == null and XRx.re("var\\s+" + list_name + "\\s*=\\s*CodexTier\\.nonWeakIds\\(\\)").search(text) != null:
+		if m == null and RegEx.create_from_string("var\\s+" + list_name + "\\s*=\\s*CodexTier\\.nonWeakIds\\(\\)").search(text) != null:
 			_native_ids_cache[key] = tier_non_weak_ids()  # v0.44 起名单读角色备注 <KyoTier>（新源）
 	return _native_ids_cache[key]
 
@@ -531,7 +531,7 @@ func inherit_difficulty(a: XActor) -> void:
 		if not current.tiers[i] or difficulty_native_ids(DIFFICULTY_TIER_EVENTS[i], "noSkillIds").has(id):
 			continue
 		desired.append(pair[1] if _difficulty_strong(a, DIFFICULTY_TIER_EVENTS[i], "skill%dIds" % pair[1]) else pair[0])
-	var start_re := XRx.re("<Start(?:WT)?PushState(\\d+):\\s*100%>")
+	var start_re := RegEx.create_from_string("<Start(?:WT)?PushState(\\d+):\\s*100%>")
 	var tracked: Array = managed + DIFFICULTY_ROLE_SKILLS
 	var system_states := {}
 	for sid in tracked:

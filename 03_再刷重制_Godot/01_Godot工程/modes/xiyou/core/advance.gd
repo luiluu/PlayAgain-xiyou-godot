@@ -50,7 +50,7 @@ static func _list(v) -> Array:
 	var t := str(v).strip_edges()
 	if t == "":
 		return []
-	t = XRx.re(",\\s*\\]").sub(t, "]", true)
+	t = RegEx.create_from_string(",\\s*\\]").sub(t, "]", true)
 	var d = JSON.parse_string("[" + t + "]")
 	return d.back() if d is Array and not d.is_empty() and d.back() is Array else []
 

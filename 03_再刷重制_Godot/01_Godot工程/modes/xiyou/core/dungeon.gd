@@ -158,10 +158,10 @@ static func map_floor(map_id: int) -> int:
 
 
 static func parse_floor(t: String) -> int:
-	var m := XRx.re("(\\d+)\\s*层").search(t)
+	var m := RegEx.create_from_string("(\\d+)\\s*层").search(t)
 	if m:
 		return int(m.get_string(1))
-	m = XRx.re("([一二三四五六七八九十]+)层").search(t)
+	m = RegEx.create_from_string("([一二三四五六七八九十]+)层").search(t)
 	if not m:
 		return 0
 	const CN := "零一二三四五六七八九十"
@@ -211,7 +211,7 @@ static func boss_reward(s: XState) -> Array:
 	var total := extra + bonus
 	if total > 0:
 		s.gain_item(TICKET, total)
-	var name := XRx.re("【[^】]*】").sub(str(XDB.rec("Troops", t).get("name", "")), "", true).split(",")[0].strip_edges()
+	var name := RegEx.create_from_string("【[^】]*】").sub(str(XDB.rec("Troops", t).get("name", "")), "", true).split(",")[0].strip_edges()
 	var msg := "%s 熟练度 %d 次：抽奖券 +%d" % [name, n, total]
 	if extra > 0:
 		msg += "（%d层 +%d%s）" % [f, extra, ("，熟练度 +%d" % bonus) if bonus > 0 else ""]
@@ -295,7 +295,7 @@ static var _mijing := {}
 static func mijing_pool() -> Dictionary:
 	if not _mijing.is_empty():
 		return _mijing
-	var re := XRx.re("<CodexMijing:\\s*([^,>]+?)\\s*,\\s*([1-4])\\s*>")
+	var re := RegEx.create_from_string("<CodexMijing:\\s*([^,>]+?)\\s*,\\s*([1-4])\\s*>")
 	var items = XDB.table("Items")
 	for it in items:
 		if not (it is Dictionary):

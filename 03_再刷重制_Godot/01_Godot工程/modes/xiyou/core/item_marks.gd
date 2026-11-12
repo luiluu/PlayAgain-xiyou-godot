@@ -138,9 +138,9 @@ static func sell_rewards_raw(rec: Dictionary) -> Dictionary:
 		return _rewards[key]
 	if _mc_res.is_empty():
 		for pair in _MC_LINE:
-			_mc_res.append([pair[0], XRx.re("(?i)" + str(pair[1]))])
+			_mc_res.append([pair[0], RegEx.create_from_string("(?i)" + str(pair[1]))])
 	var out := {"vars": {}, "items": {}, "buy_vars": {}, "buy_items": {}, "buy": false}
-	for line in XRx.re("[\\r\\n]+").sub(str(base.get("note", "")), "\n", true).split("\n"):
+	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(base.get("note", "")), "\n", true).split("\n"):
 		for pair in _mc_res:
 			var m: RegExMatch = pair[1].search(line)
 			if m == null:
@@ -292,7 +292,7 @@ static func _lobby_horn_ids() -> void:
 	if _guyu_horn >= 0:
 		return
 	_guyu_horn = 0
-	var re := XRx.re("(?i)<Codex(?:Tusu|Xuan):\\s*horn\\s*>")
+	var re := RegEx.create_from_string("(?i)<Codex(?:Tusu|Xuan):\\s*horn\\s*>")
 	var db: Array = XDB.table("Items")
 	for i in range(1, db.size()):
 		if not db[i] is Dictionary:
@@ -385,7 +385,7 @@ static func proxy_buy(rec: Dictionary) -> int:
 	if _proxy.has(key):
 		return _proxy[key]
 	var id := 0
-	var m := XRx.re("(?i)<PROXY BUY:[ ](.*)>").search(str(_base_rec(rec).get("note", "")))
+	var m := RegEx.create_from_string("(?i)<PROXY BUY:[ ](.*)>").search(str(_base_rec(rec).get("note", "")))
 	if m:
 		var v := m.get_string(1)
 		if v.is_valid_int():
@@ -481,7 +481,7 @@ static func recruit_actor_id(rec: Dictionary) -> int:
 	if RECRUIT_HORNS.has(id):
 		out = RECRUIT_HORNS[id]
 	else:
-		var tag := XRx.re("(?i)<CodexRecruitActor:\\s*(\\d+)>").search(str(rec.get("note", "")))
+		var tag := RegEx.create_from_string("(?i)<CodexRecruitActor:\\s*(\\d+)>").search(str(rec.get("note", "")))
 		if tag != null:
 			out = int(tag.get_string(1))
 		else:

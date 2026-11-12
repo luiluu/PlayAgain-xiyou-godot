@@ -87,13 +87,13 @@ func _make_child(commands: Array) -> MVEventCore:
 ##   var actorN = $gameParty.battleMembers()[k]; … if (actorN && $gameVariables.value(V)<=M) { actorN.addState(S); }
 ## 按出战成员下标与变量条件附加状态（同 313 的附加：logic.sequence_add_state）。整段都认得才执行，返回 true；否则不动、返回 false。
 func _member_states_script(code: String) -> bool:
-	var js := XRx.re("//[^\\n]*").sub(code, "", true)
+	var js := RegEx.create_from_string("//[^\\n]*").sub(code, "", true)
 	var slots := {}
-	for m in XRx.re("var\\s+(\\w+)\\s*=\\s*\\$gameParty\\.battleMembers\\(\\)\\[(\\d+)\\]\\s*;?").search_all(js):
+	for m in RegEx.create_from_string("var\\s+(\\w+)\\s*=\\s*\\$gameParty\\.battleMembers\\(\\)\\[(\\d+)\\]\\s*;?").search_all(js):
 		slots[m.get_string(1)] = int(m.get_string(2))
 		js = js.replace(m.get_string(0), "")
 	var ops := []
-	var re := XRx.re("if\\s*\\(\\s*(\\w+)\\s*&&\\s*\\$gameVariables\\.value\\((\\d+)\\)\\s*<=\\s*(\\d+)\\s*\\)\\s*\\{\\s*(\\w+)\\.addState\\((\\d+)\\)\\s*;?\\s*\\}")
+	var re := RegEx.create_from_string("if\\s*\\(\\s*(\\w+)\\s*&&\\s*\\$gameVariables\\.value\\((\\d+)\\)\\s*<=\\s*(\\d+)\\s*\\)\\s*\\{\\s*(\\w+)\\.addState\\((\\d+)\\)\\s*;?\\s*\\}")
 	for m in re.search_all(js):
 		if not slots.has(m.get_string(1)) or m.get_string(4) != m.get_string(1):
 			return false
@@ -116,7 +116,7 @@ func _member_states_script(code: String) -> bool:
 func _actor_states_script(code: String) -> bool:
 	var js := _compact_js(code)
 	var who := {}
-	var head := XRx.re("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);")
+	var head := RegEx.create_from_string("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);")
 	var m := head.search(js)
 	while m != null:
 		who[m.get_string(1)] = int(m.get_string(2))
@@ -125,7 +125,7 @@ func _actor_states_script(code: String) -> bool:
 	if who.is_empty():
 		return false
 	var ops := []
-	var op := XRx.re("^(\\w+)\\.(addState|removeState)\\((\\d+)\\);?")
+	var op := RegEx.create_from_string("^(\\w+)\\.(addState|removeState)\\((\\d+)\\);?")
 	while js != "":
 		m = op.search(js)
 		if m == null or not who.has(m.get_string(1)):
@@ -169,7 +169,7 @@ func _troop_cev_script(code: String) -> bool:
 ##   var members = $gameTroop.members(), length = members.length; for(let i = 0; i < length; i++){members[i].addState(T);} } }
 ## 角色 1～N−1 里有一个带状态 S 且身上穿着防具 A，就给全体敌人加状态 T（倒下的加不上，同 addState）。参照 script_gaps setArmorState.*。
 func _set_armor_troop_state_script(code: String) -> bool:
-	var m := XRx.re("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);if\\(actor\\._states\\.includes\\((\\d+)\\)&&actor\\.hasArmor\\(\\$dataArmors\\[(\\d+)\\]\\)\\)\\{varmembers=\\$gameTroop\\.members\\(\\),length=members\\.length;for\\(leti=0;i<length;i\\+\\+\\)\\{members\\[i\\]\\.addState\\((\\d+)\\);\\}\\}\\}$").search(_compact_js(code))
+	var m := RegEx.create_from_string("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);if\\(actor\\._states\\.includes\\((\\d+)\\)&&actor\\.hasArmor\\(\\$dataArmors\\[(\\d+)\\]\\)\\)\\{varmembers=\\$gameTroop\\.members\\(\\),length=members\\.length;for\\(leti=0;i<length;i\\+\\+\\)\\{members\\[i\\]\\.addState\\((\\d+)\\);\\}\\}\\}$").search(_compact_js(code))
 	if m == null:
 		return false
 	var marker := int(m.get_string(2))
@@ -207,14 +207,14 @@ static var O_RECAST_CASTER := true
 func _recast_script(code: String) -> bool:
 	var js := _compact_js(code)
 	var act := "varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.splice\\(1,0,action\\);(?:!\\$gameTroop\\.isAllDead\\(\\)&&)?BattleManager\\.forceAction\\(actor\\);"
-	var loop := XRx.re("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);(.*)\\}$").search(js)
-	var by_var := XRx.re("^varactor=\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);(.*)$").search(js)
+	var loop := RegEx.create_from_string("^for\\(leti=1;i<(\\d+);i\\+\\+\\)\\{varactor=\\$gameActors\\.actor\\(i\\);(.*)\\}$").search(js)
+	var by_var := RegEx.create_from_string("^varactor=\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);(.*)$").search(js)
 	if by_var == null:
-		by_var = XRx.re("^varactor=\\$gameActors\\.actor\\(\\$gameParty\\.(_targetActorId)\\);(.*)$").search(js)
+		by_var = RegEx.create_from_string("^varactor=\\$gameActors\\.actor\\(\\$gameParty\\.(_targetActorId)\\);(.*)$").search(js)
 	if loop == null and by_var == null:
 		return false
 	var body := (loop if loop != null else by_var).get_string(2)
-	var branch := XRx.re("^if\\(([^{}]*)\\)\\{" + act + "\\}")
+	var branch := RegEx.create_from_string("^if\\(([^{}]*)\\)\\{" + act + "\\}")
 	var clauses := []   # [[条件…], 技能, 是否 else 分支]
 	var is_else := false
 	while body != "":
@@ -274,7 +274,7 @@ func _freeze_followup_script(code: String) -> bool:
 static var O_PUSH_RECAST := true
 
 func _push_recast_script(code: String) -> bool:
-	var m := XRx.re("^vars=BattleManager\\._subject;varactor=\\(s&&s\\.isActor&&s\\.isActor\\(\\)&&s\\.isLearnedSkill\\((\\d+)\\)\\)\\?s:\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);if\\(actor&&actor\\.hasSkill\\((\\d+)\\)\\)\\{varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.push\\(action\\);\\}$").search(_compact_js(code))
+	var m := RegEx.create_from_string("^vars=BattleManager\\._subject;varactor=\\(s&&s\\.isActor&&s\\.isActor\\(\\)&&s\\.isLearnedSkill\\((\\d+)\\)\\)\\?s:\\$gameActors\\.actor\\(\\$gameVariables\\.value\\((\\d+)\\)\\);if\\(actor&&actor\\.hasSkill\\((\\d+)\\)\\)\\{varaction=newGame_Action\\(actor,true\\);action\\.setSkill\\((\\d+)\\);action\\.decideRandomTarget\\(\\);actor\\._actions\\.push\\(action\\);\\}$").search(_compact_js(code))
 	if m == null:
 		return false
 	if not O_PUSH_RECAST:
@@ -307,7 +307,7 @@ func _recast_cond(t: String) -> Array:
 			["learned", "^actor\\._skills\\.includes\\((\\d+)\\)$"], ["has_skill", "^actor\\.hasSkill\\((\\d+)\\)$"],
 			["armor", "^actor\\.hasArmor\\(\\$dataArmors\\[(\\d+)\\]\\)$"], ["weapon", "^actor\\.hasWeapon\\(\\$dataWeapons\\[(\\d+)\\]\\)$"],
 			["variable", "^\\(\\$gameVariables\\.value\\((\\d+)\\)==(\\d+)\\)$"], ["not_end", "^!BattleManager\\.checkBattleEnd\\(\\)$"]]:
-		var m := XRx.re(pat[1]).search(t)
+		var m := RegEx.create_from_string(pat[1]).search(t)
 		if m != null:
 			return [pat[0], int(m.get_string(1)) if m.get_group_count() >= 1 else 0, int(m.get_string(2)) if m.get_group_count() >= 2 else 0]
 	return []
@@ -343,7 +343,7 @@ func _recast_meets(a, conds: Array):
 
 ## 去注释、去空白后的脚本（下面两段只认这种紧凑写法，脚本里没有字符串）
 static func _compact_js(code: String) -> String:
-	return XRx.re("\\s+").sub(XRx.re("//[^\\n]*").sub(code, "", true), "", true)
+	return RegEx.create_from_string("\\s+").sub(RegEx.create_from_string("//[^\\n]*").sub(code, "", true), "", true)
 
 
 ## 公共事件 1373「血脉数量统计」：var actor = $gameActors.actor(N); 之后若干段
@@ -351,13 +351,13 @@ static func _compact_js(code: String) -> String:
 ## 角色 N 每会（hasSkill：含特性附加）一个 [A, B) 里的技能，变量 V 加一。整段都认得才执行。
 func _count_skills_script(code: String) -> bool:
 	var js := _compact_js(code)
-	var head := XRx.re("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);").search(js)
+	var head := RegEx.create_from_string("^var(\\w+)=\\$gameActors\\.actor\\((\\d+)\\);").search(js)
 	if head == null:
 		return false
 	var who := head.get_string(1)
 	var aid := int(head.get_string(2))
 	js = js.substr(head.get_end())
-	var re := XRx.re("^for\\(var(\\w+)=(\\d+);\\1<(\\d+);\\1\\+\\+\\)\\{if\\(" + who
+	var re := RegEx.create_from_string("^for\\(var(\\w+)=(\\d+);\\1<(\\d+);\\1\\+\\+\\)\\{if\\(" + who
 		+ "\\.hasSkill\\(\\1\\)\\)\\{var(\\w+)=\\$gameVariables\\.value\\((\\d+)\\);\\$gameVariables\\.setValue\\(\\5,\\4\\+1\\);\\}\\}")
 	var loops := []
 	while js != "":
@@ -385,7 +385,7 @@ func _count_skills_script(code: String) -> bool:
 ##   actors.forEach(function(actor) { if (ids.includes(actor.actorId())) { var j = …value(V); …setValue(V, j+1); } });
 ##   var j = $gameVariables.value(V); $gameVariables.setValue(V, j-1);
 func _count_members_script(code: String) -> bool:
-	var re := XRx.re("^var(\\w+)=\\[([\\d,]+)\\];var(\\w+)=\\$gameParty\\.battleMembers\\(\\);\\3\\.forEach\\(function\\((\\w+)\\)\\{if\\(\\1\\.includes\\(\\4\\.actorId\\(\\)\\)\\)\\{var(\\w+)=\\$gameVariables\\.value\\((\\d+)\\);\\$gameVariables\\.setValue\\(\\6,\\5\\+1\\);\\}\\}\\);var(\\w+)=\\$gameVariables\\.value\\(\\6\\);\\$gameVariables\\.setValue\\(\\6,\\7-1\\);$")
+	var re := RegEx.create_from_string("^var(\\w+)=\\[([\\d,]+)\\];var(\\w+)=\\$gameParty\\.battleMembers\\(\\);\\3\\.forEach\\(function\\((\\w+)\\)\\{if\\(\\1\\.includes\\(\\4\\.actorId\\(\\)\\)\\)\\{var(\\w+)=\\$gameVariables\\.value\\((\\d+)\\);\\$gameVariables\\.setValue\\(\\6,\\5\\+1\\);\\}\\}\\);var(\\w+)=\\$gameVariables\\.value\\(\\6\\);\\$gameVariables\\.setValue\\(\\6,\\7-1\\);$")
 	var m := re.search(_compact_js(code))
 	if m == null:
 		return false
@@ -528,14 +528,14 @@ func _execute_env(c: Dictionary):
 				return null
 			# 整段只有一条 $gameVariables.setValue(N, 数字)（公共事件 1401「敌人恢复所有血量」：先把变量 40 设成极大值）；
 			# JS 数字按双精度，9999999999999999 读成 1e16
-			var sv := XRx.re("^\\$gameVariables\\.setValue\\(\\s*(\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\s*\\);?$").search(code.strip_edges())
+			var sv := RegEx.create_from_string("^\\$gameVariables\\.setValue\\(\\s*(\\d+)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)\\s*\\);?$").search(code.strip_edges())
 			if sv != null:
 				state().set_variable(int(sv.get_string(1)), float(sv.get_string(2)))
 				index = at
 				return null
 			# 整段只有一条 $.toaster（技能公共事件里的「当前剑思为 N」之类）：文字照地图的 MVScript 拼，记成提示
 			var one := code.strip_edges()
-			if XRx.re("^\\$\\.toaster\\(\\{[^;]*\\}\\);?$").search(one) != null and MVScript._toaster_text(one) != "":
+			if RegEx.create_from_string("^\\$\\.toaster\\(\\{[^;]*\\}\\);?$").search(one) != null and MVScript._toaster_text(one) != "":
 				logs.append({"type": "toast", "text": MVScript._toaster_text(one)})
 				index = at
 				return null

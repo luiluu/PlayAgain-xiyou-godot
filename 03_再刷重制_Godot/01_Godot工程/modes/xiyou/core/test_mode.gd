@@ -217,7 +217,7 @@ static func catalog(kind: String, query: String) -> Array:
 		if rec == null or not rec is Dictionary:
 			continue
 		var name := str(rec.get("name", "")).strip_edges()
-		if name == "" or XRx.re("^[-—＝=]+").search(name) != null or int(rec.get("baseItemId", 0)) != 0:
+		if name == "" or RegEx.create_from_string("^[-—＝=]+").search(name) != null or int(rec.get("baseItemId", 0)) != 0:
 			continue
 		if kind != "items" and not _is_equipment(rec):
 			continue

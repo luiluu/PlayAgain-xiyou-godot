@@ -139,7 +139,7 @@ static func gem_in_slot(eq: Dictionary, slot: int) -> Dictionary:
 	var held: Array = eq.get("augmentSlotItems", [])
 	if slot < 0 or slot >= held.size():
 		return {}
-	var m := XRx.re("(?i)ITEM (\\d+)").search(str(held[slot]))
+	var m := RegEx.create_from_string("(?i)ITEM (\\d+)").search(str(held[slot]))
 	return XDB.rec("Items", int(m.get_string(1))) if m else {}
 
 
@@ -152,9 +152,9 @@ static func parse(gem: Dictionary) -> Dictionary:
 	var out := {"types": [], "attach": {}, "detach": {}}
 	var mode := "NONE"
 	var type := ""
-	var open := XRx.re("(?i)<AUGMENT( ATTACH| DETACH| ATTACH EVAL| DETACH EVAL)?:[ ](.*)>")
-	var close := XRx.re("(?i)<\\/AUGMENT( ATTACH| DETACH| ATTACH EVAL| DETACH EVAL)?:[ ](.*)>")
-	for line in XRx.re("[\\r\\n]+").sub(str(gem.get("note", "")), "\n", true).split("\n"):
+	var open := RegEx.create_from_string("(?i)<AUGMENT( ATTACH| DETACH| ATTACH EVAL| DETACH EVAL)?:[ ](.*)>")
+	var close := RegEx.create_from_string("(?i)<\\/AUGMENT( ATTACH| DETACH| ATTACH EVAL| DETACH EVAL)?:[ ](.*)>")
+	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(gem.get("note", "")), "\n", true).split("\n"):
 		var c := close.search(line)
 		if c:
 			mode = "NONE"
@@ -189,12 +189,12 @@ static func parse(gem: Dictionary) -> Dictionary:
 ## reverseAugmentAutoLine
 static func reverse_line(line: String) -> String:
 	for pair in [["ADD", "REMOVE"], ["REMOVE", "ADD"], ["CHANGE", "CANCEL"], ["CANCEL", "CHANGE"]]:
-		var m := XRx.re("(?i)" + pair[0] + "[ ](.*):(.*)").search(line)
+		var m := RegEx.create_from_string("(?i)" + pair[0] + "[ ](.*):(.*)").search(line)
 		if m:
 			return pair[1] + " " + m.get_string(1) + ":" + m.get_string(2)
-	if XRx.re("(?i)(.*):[ ]([\\+\\-]\\d+)([%％])").search(line):
+	if RegEx.create_from_string("(?i)(.*):[ ]([\\+\\-]\\d+)([%％])").search(line):
 		return line
-	var m := XRx.re("(?i)(.*):[ ]([\\+\\-]\\d+)").search(line)
+	var m := RegEx.create_from_string("(?i)(.*):[ ]([\\+\\-]\\d+)").search(line)
 	if m:
 		var v := -int(m.get_string(2))
 		return m.get_string(1) + ": " + ("+" + str(v) if v > 0 else str(v))
@@ -301,13 +301,13 @@ static func remove_from_slot(eq: Dictionary, slot: int) -> Dictionary:
 static func effect(line: String, eq: Dictionary, attach: bool, tag: String) -> void:
 	var key := ""
 	var value := 0.0
-	var m := XRx.re("(?i)ELEMENT AMPLIFY[ ](\\d+):[ ]([\\+\\-]\\d+)[%％]").search(line)
+	var m := RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](\\d+):[ ]([\\+\\-]\\d+)[%％]").search(line)
 	if m:
 		key = m.get_string(1)
 		value = float(m.get_string(2))
 	else:
 		# 元素名写法：按 System.elements 的名字（不分大小写）找元素号，找不到不生效
-		m = XRx.re("(?i)ELEMENT AMPLIFY[ ](.*):[ ]([\\+\\-]\\d+)[%％]").search(line)
+		m = RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](.*):[ ]([\\+\\-]\\d+)[%％]").search(line)
 		if m:
 			var id: int = XDB.system().get("elements", []).map(func(n): return str(n).to_upper()).find(m.get_string(1).to_upper().strip_edges())
 			if id <= 0:
@@ -321,11 +321,11 @@ static func effect(line: String, eq: Dictionary, attach: bool, tag: String) -> v
 		yep.elementAmplify = amp
 		eq.yep = yep
 		return
-	m = XRx.re("(?i)(.*):[ ]([\\+\\-]\\d+)([%％])").search(line)
+	m = RegEx.create_from_string("(?i)(.*):[ ]([\\+\\-]\\d+)([%％])").search(line)
 	if m:
 		_param_rate(eq, m.get_string(1).to_upper().strip_edges(), float(m.get_string(2)), attach, tag)
 		return
-	m = XRx.re("(?i)(.*):[ ]([\\+\\-]\\d+)").search(line)
+	m = RegEx.create_from_string("(?i)(.*):[ ]([\\+\\-]\\d+)").search(line)
 	if m:
 		_param_plus(eq, m.get_string(1).to_upper().strip_edges(), int(m.get_string(2)))
 
@@ -375,8 +375,8 @@ static func _param_plus(eq: Dictionary, name: String, value: int) -> void:
 
 ## Star_EquipmentMosaic：<继承词缀> … </继承词缀> 并入装备备注与 meta；取下时从备注删去、meta 删键
 static func _inherit(eq: Dictionary, gem: Dictionary, attach: bool) -> void:
-	var lines := XRx.re("[\\r\\n]+").sub(str(gem.get("note", "")), "\n", true).split("\n")
-	var re := XRx.re("<([^<>:]+)(:?)([^>]*)>")
+	var lines := RegEx.create_from_string("[\\r\\n]+").sub(str(gem.get("note", "")), "\n", true).split("\n")
+	var re := RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>")
 	var inside := false
 	var last := 0   # 正式 re 带 g：上次命中后 lastIndex 留在原处，落空归零
 	var meta: Dictionary = eq.get("meta", {})
@@ -692,7 +692,7 @@ static func dismantle(s: XState, id: int, q) -> Dictionary:
 ## 暂存宝珠（旧档孔位重排退回而背包满时；正式 returnBox）。只认 "item N"：宝珠都是物品，
 ## 正式版对 "weapon/armor N" 领取时会生成新实例却不扣暂存数（数据里不会出现），这里不领。
 static func _return_id(key: String) -> int:
-	var m := XRx.re("^item (\\d+)$").search(key)
+	var m := RegEx.create_from_string("^item (\\d+)$").search(key)
 	return int(m.get_string(1)) if m and not XDB.rec("Items", int(m.get_string(1))).is_empty() else 0
 
 static func pending_returns(s: XState) -> int:

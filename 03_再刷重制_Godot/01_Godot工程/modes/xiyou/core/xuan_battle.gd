@@ -223,7 +223,7 @@ static func key_of(skill: Dictionary) -> String:
 
 static func state_id(key: String) -> int:
 	if _states.is_empty():
-		var re := XRx.re("<CodexXuan:\\s*([^>]+)>")
+		var re := RegEx.create_from_string("<CodexXuan:\\s*([^>]+)>")
 		for st in XDB.table("States"):
 			if st is Dictionary:
 				var m := re.search(str(st.get("note", "")))
@@ -269,11 +269,11 @@ static func is_cleanse_state(st: Dictionary, hard: bool) -> bool:
 	if st.is_empty() or int(st.id) == 1:
 		return false
 	var note := str(st.get("note", ""))
-	if XRx.re("(?i)" + NO_CLEANSE).search(note):
+	if RegEx.create_from_string("(?i)" + NO_CLEANSE).search(note):
 		return false
 	if int(st.get("restriction", 0)) > 0:
 		return true
-	return not hard and XRx.re(SOFT_TYPES).search(note) != null
+	return not hard and RegEx.create_from_string(SOFT_TYPES).search(note) != null
 
 
 ## cleansable(t)[0]：第一个可净化的硬控制（hard false 连软状态一起算），没有返回 0

@@ -226,7 +226,7 @@ func _exec(e: Dictionary) -> bool:
 			if not cam:
 				return true
 			var a := str(args[0]) if not args.is_empty() else ""
-			var m := XRx.re("(\\d+)([%％])").search(a)
+			var m := RegEx.create_from_string("(\\d+)([%％])").search(a)
 			var s := float(m.get_string(1)) * 0.01 if m else a.to_float()
 			scene.camera.zoom_to(s if s != 0.0 else 1.0, int(_num(args, 1, 30)))
 			return true
@@ -264,11 +264,11 @@ func _exec(e: Dictionary) -> bool:
 	if name.begins_with("OPACITY ") and not sub.is_empty():
 		var a := str(args[0]) if not args.is_empty() else ""
 		var v := -1.0
-		var m := XRx.re("(\\d+)([%％])").search(a)
+		var m := RegEx.create_from_string("(\\d+)([%％])").search(a)
 		if m:
 			v = clampf(floorf(float(m.get_string(1)) * 0.01 * 255.0), 0.0, 255.0)
 		else:
-			m = XRx.re("(\\d+)").search(a)
+			m = RegEx.create_from_string("(\\d+)").search(a)
 			if m:
 				v = float(m.get_string(1))
 		if v >= 0.0:
@@ -286,10 +286,10 @@ func _exec(e: Dictionary) -> bool:
 			wait_mode = "opacity"
 			return false
 	# ---- YEP_X_ActSeqPack1 ----
-	if XRx.re("^(?:ADD|REMOVE)[ ](.*)[ ](?:BUFF|DEBUFF)").search(name) \
-			or XRx.re("^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d").search(name):
+	if RegEx.create_from_string("^(?:ADD|REMOVE)[ ](.*)[ ](?:BUFF|DEBUFF)").search(name) \
+			or RegEx.create_from_string("^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d").search(name):
 		return not a0.is_empty()
-	var am := XRx.re("ANIMATION[ ](\\d+)").search(name)
+	var am := RegEx.create_from_string("ANIMATION[ ](\\d+)").search(name)
 	if am:
 		var id := int(am.get_string(1))
 		if id <= 0 or a0.is_empty():
@@ -307,14 +307,14 @@ func _exec(e: Dictionary) -> bool:
 		return false
 	if name.begins_with("CHANGE SWITCH") or name.begins_with("CHANGE VARIABLE") or name.begins_with("GOLD "):
 		return true
-	if XRx.re("(?:GAIN|LOSE)[ ](.*)[ ](\\d+)").search(name):
+	if RegEx.create_from_string("(?:GAIN|LOSE)[ ](.*)[ ](\\d+)").search(name):
 		return true
 	if name == "EVAL" or name == "SCRIPT":
 		return args.is_empty()
 	if name in ["SE", "SOUND", "SFX"]:
 		_se(args)
 		return true
-	var hm := XRx.re("^(HP|MP|TP)[ ]").search(name)
+	var hm := RegEx.create_from_string("^(HP|MP|TP)[ ]").search(name)
 	if hm:
 		if a0.is_empty():
 			return false
@@ -728,11 +728,11 @@ func _float_or_jump(movers: Array, args: Array, is_float: bool) -> void:
 	var frames := _speed_frames(_num(args, 1, 12))
 	var peak := 1.0
 	var pixels := 0.0
-	var m := XRx.re("(\\d+)([%％])").search(cmd)
+	var m := RegEx.create_from_string("(\\d+)([%％])").search(cmd)
 	if m:
 		peak = float(m.get_string(1)) * 0.01
 	else:
-		m = XRx.re("(\\d+)").search(cmd)
+		m = RegEx.create_from_string("(\\d+)").search(cmd)
 		if m:
 			pixels = float(m.get_string(1))
 			peak = 0.0

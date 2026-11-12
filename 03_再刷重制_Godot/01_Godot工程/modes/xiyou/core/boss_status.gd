@@ -18,7 +18,7 @@ static var _re := {}
 
 static func _regex(pattern: String) -> RegEx:
 	if not _re.has(pattern):
-		_re[pattern] = XRx.re(pattern)
+		_re[pattern] = RegEx.create_from_string(pattern)
 	return _re[pattern]
 
 

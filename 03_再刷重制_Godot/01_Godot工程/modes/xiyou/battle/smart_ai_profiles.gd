@@ -29,16 +29,16 @@ const SUKUNA := 172
 const RAVEN := 167
 const MIRA := 168
 const YOMI_SPLASH := {10172: 0.33, 10173: 0.5, 10174: 0.66}
-static var _mira_formula_re := XRx.re("^CodexMira\\.damage\\(a,b,\\d+\\)$")
-static var _yomi_formula_re := XRx.re("^CodexYomi\\.damage\\(a,b,1017[1-4]\\)$")
-static var _jingliu_formula_re := XRx.re("^CodexJingliu\\.damage\\(a,b,101(?:8[7-9]|9[0-3])\\)$")
-static var _garou_formula_re := XRx.re("^CodexGarou\\.base\\(a,b,102(?:5[0-9]|6[0-3])\\)$")
+static var _mira_formula_re := RegEx.create_from_string("^CodexMira\\.damage\\(a,b,\\d+\\)$")
+static var _yomi_formula_re := RegEx.create_from_string("^CodexYomi\\.damage\\(a,b,1017[1-4]\\)$")
+static var _jingliu_formula_re := RegEx.create_from_string("^CodexJingliu\\.damage\\(a,b,101(?:8[7-9]|9[0-3])\\)$")
+static var _garou_formula_re := RegEx.create_from_string("^CodexGarou\\.base\\(a,b,102(?:5[0-9]|6[0-3])\\)$")
 ## 饿狼各拳法 per_hit_formula 里减去的防御项：[D 系数, R 系数]（A、M 系数在 XGarou.COEFF）
 const GAROU_DEFENSE := {10250: [0.33, 0.0], 10251: [0.33, 0.0], 10252: [0.66, 0.0], 10253: [0.66, 0.0], 10254: [0.33, 0.0],
 	10255: [0.66, 0.0], 10256: [0.99, 0.0], 10257: [0.99, 0.0], 10258: [0.33, 0.0], 10259: [0.66, 0.99],
 	10260: [0.99, 0.66], 10261: [0.33, 0.66], 10262: [0.0, 0.0], 10263: [0.99, 0.66]}
-static var _sukuna_formula_re := XRx.re("^CodexSukuna\\.damage\\(a,b,102(?:29|30|31|32|33),this\\)$")
-static var _sukuna_ongoing_re := XRx.re("^CodexSukuna\\.damage\\(a,b,10237,this\\)$")
+static var _sukuna_formula_re := RegEx.create_from_string("^CodexSukuna\\.damage\\(a,b,102(?:29|30|31|32|33),this\\)$")
+static var _sukuna_ongoing_re := RegEx.create_from_string("^CodexSukuna\\.damage\\(a,b,10237,this\\)$")
 
 
 static func _id(a) -> int:

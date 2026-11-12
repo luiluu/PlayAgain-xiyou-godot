@@ -74,7 +74,7 @@ static func learned(a, id: int) -> bool:
 static func meng_ying_id() -> int:
 	if _meng < 0:
 		_meng = 0
-		var re := XRx.re("(?i)<CodexLiuyingPassive:\\s*mengYing\\s*>")
+		var re := RegEx.create_from_string("(?i)<CodexLiuyingPassive:\\s*mengYing\\s*>")
 		for s in XDB.table("Skills"):
 			if s is Dictionary and re.search(str(s.get("note", ""))) != null:
 				_meng = int(s.id)
@@ -359,7 +359,7 @@ static func _in_battle() -> bool:
 static func firefly_state_id() -> int:
 	if _firefly_id < 0:
 		_firefly_id = 0
-		var re := XRx.re("(?i)<CodexLiuyingState:\\s*firefly\\s*>")
+		var re := RegEx.create_from_string("(?i)<CodexLiuyingState:\\s*firefly\\s*>")
 		for st in XDB.table("States"):
 			if st is Dictionary and re.search(str(st.get("note", ""))) != null:
 				_firefly_id = int(st.id)
@@ -553,8 +553,8 @@ static func is_negative(id: int) -> bool:
 	if st.is_empty():
 		return false
 	if _negative_re == null:
-		_negative_re = XRx.re(NEGATIVE_TYPE)
-	var m := XRx.re("(?i)<BuffType:\\s*([^>]+)>").search(str(st.get("note", "")))
+		_negative_re = RegEx.create_from_string(NEGATIVE_TYPE)
+	var m := RegEx.create_from_string("(?i)<BuffType:\\s*([^>]+)>").search(str(st.get("note", "")))
 	if m != null:
 		return _negative_re.search(m.get_string(1)) != null
 	if int(st.get("restriction", 0)) > 0:
@@ -685,7 +685,7 @@ static func core_map_ok(s: XState) -> bool:
 
 static func core_rate_for(s: XState, enemy_note: String) -> float:
 	if _core_re == null:
-		_core_re = XRx.re("(?i)<CodexLiuyingCoreDrop(?::\\s*(\\d+(?:\\.\\d+)?))?>")
+		_core_re = RegEx.create_from_string("(?i)<CodexLiuyingCoreDrop(?::\\s*(\\d+(?:\\.\\d+)?))?>")
 	var m := _core_re.search(enemy_note)
 	if m == null or not core_map_ok(s):
 		return 0.0

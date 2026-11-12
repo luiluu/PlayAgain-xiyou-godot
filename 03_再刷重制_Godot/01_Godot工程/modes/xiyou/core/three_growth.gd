@@ -95,8 +95,8 @@ static func view(obj: Dictionary) -> Dictionary:
 
 ## R.syncItem 的备注改写：去掉 APs 行、每级成长、GuyuHealStrength、品质标签，补品质 9、每级成长，再倒序写 relicLines
 static func relic_note(note: String, spec: Dictionary, evolved: bool, unit: int) -> String:
-	var out := XRx.re("\\n?<pos=APs [^>]*>").sub(note, "", true)
-	out = XRx.re("\\n?<(?:\\w+ Param \\+\\d+ per Level|GuyuHealStrength[^>]*|quality:\\d+|ici:\\d+)>").sub(out, "", true)
+	var out := RegEx.create_from_string("\\n?<pos=APs [^>]*>").sub(note, "", true)
+	out = RegEx.create_from_string("\\n?<(?:\\w+ Param \\+\\d+ per Level|GuyuHealStrength[^>]*|quality:\\d+|ici:\\d+)>").sub(out, "", true)
 	out += "\n<quality:9>\n<ici:9>\n"
 	for i in 8:
 		out += "<%s Param +%d per Level>\n" % [PARAM_TAGS[i], unit * (2 if (spec.extra as Array).has(i) else 1)]

@@ -169,14 +169,14 @@ static func _external_skill(skill: Dictionary) -> bool:
 		for id in SYSTEM_BOOK_SKILLS:
 			_external[id] = true
 		var ev := XDB.rec("CommonEvents", 1442)
-		var re := XRx.re("\\.learnSkill\\((\\d+)\\)")
+		var re := RegEx.create_from_string("\\.learnSkill\\((\\d+)\\)")
 		for cmd in ev.get("list", []):
 			if int(cmd.code) == 355 or int(cmd.code) == 655:
 				for m in re.search_all(str(cmd.parameters[0])):
 					_external[int(m.get_string(1))] = true
 	if _external.has(int(skill.id)) or skill.get("meta", {}).has("CodexRetired"):
 		return true
-	return XRx.re(EXTERNAL_NAME).search(str(skill.get("name", ""))) != null
+	return RegEx.create_from_string(EXTERNAL_NAME).search(str(skill.get("name", ""))) != null
 
 
 ## CodexActorBookSkills(actor, baseOnly)：主动（stypeId 1～3）、被动（4）、其他（5）依次排
@@ -398,7 +398,7 @@ static func status_ops(id: int, measure: Callable) -> Array:
 		y += LH
 	# <ActorNote>…</ActorNote>：每 32 字一行，0..ceil(长/32) 共多画一行
 	var showing := false
-	for line in XRx.re("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
+	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(d.get("note", "")), "\n", true).split("\n"):
 		if line == "<ActorNote>" or showing:
 			showing = true
 			if line == "</ActorNote>":
@@ -640,7 +640,7 @@ func _update_help() -> void:
 		help_card.show_for({})
 		return
 	var s: Dictionary = skill_list[skill_index].duplicate()
-	s.note = XRx.re("(?i)<HelpWidth:\\s*\\d+>").sub(str(s.get("note", "")), "", true)
+	s.note = RegEx.create_from_string("(?i)<HelpWidth:\\s*\\d+>").sub(str(s.get("note", "")), "", true)
 	help_card.show_for(s, "skill", false)
 	help_card.position = HELP_POS
 

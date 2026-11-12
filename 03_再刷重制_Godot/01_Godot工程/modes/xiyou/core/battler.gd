@@ -297,7 +297,7 @@ static func _shield_param(key: String, def: String) -> float:
 ## shieldEffectBonus：特性对象备注 <ShieldEffect:n> 各取第一处相加（n/100），再加真气道法「金身」。
 func shield_effect_bonus() -> float:
 	if _shield_effect_re == null:
-		_shield_effect_re = XRx.re("(?i)<ShieldEffect\\s*:\\s*(\\d+)>")
+		_shield_effect_re = RegEx.create_from_string("(?i)<ShieldEffect\\s*:\\s*(\\d+)>")
 	var bonus := 0.0
 	for obj in trait_objects():
 		var m := _shield_effect_re.search(str(obj.get("note", "")))
@@ -806,17 +806,17 @@ static func _parse_element_absorb(note: String) -> Array:
 	for i in range(elements.size()):
 		names[str(elements[i]).to_upper()] = i
 	for line in note.split("\n"):
-		var m := XRx.re("(?i)<(?:ELEMENT ABSORB):[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>").search(line)
+		var m := RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>").search(line)
 		if m:
 			for n in m.get_string(1).split(","):
 				out.append(int(n.strip_edges()))
 			continue
-		m = XRx.re("(?i)<(?:ELEMENT ABSORB):[ ](\\d+)[ ](?:THROUGH|to)[ ](\\d+)>").search(line)
+		m = RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ](\\d+)[ ](?:THROUGH|to)[ ](\\d+)>").search(line)
 		if m:
 			for i in range(int(m.get_string(1)), int(m.get_string(2)) + 1):
 				out.append(i)
 			continue
-		m = XRx.re("(?i)<(?:ELEMENT ABSORB):[ ](.*)>").search(line)
+		m = RegEx.create_from_string("(?i)<(?:ELEMENT ABSORB):[ ](.*)>").search(line)
 		if m:
 			for n in m.get_string(1).split(","):
 				var id := int(names.get(n.to_upper().strip_edges(), 0))
@@ -859,8 +859,8 @@ func attack_skill() -> Dictionary:
 
 const ATTACK_SKILL_ID := 1
 static var _replace_attack_cache := {}
-static var _replace_attack_line := XRx.re("(?i)<(?:ATTACK REPLACE|REPLACE ATTACK):[ ](.*)>")
-static var _first_number := XRx.re("(\\d+)")
+static var _replace_attack_line := RegEx.create_from_string("(?i)<(?:ATTACK REPLACE|REPLACE ATTACK):[ ](.*)>")
+static var _first_number := RegEx.create_from_string("(\\d+)")
 
 ## DataManager.processWULNotetags1：逐行认 <Replace Attack: x>／<Attack Replace: x>，取里面第一串数字（技能名写法正式数据没用到，不认）；
 ## 多行时后写的盖前面的
@@ -894,7 +894,7 @@ func weapon_unleashes() -> Array:
 	return out
 
 static var _weapon_unleash_cache := {}
-static var _weapon_unleash_line := XRx.re("(?i)<WEAPON UNLEASH[ ](\\d+)([%％]):[ ](.*)>")
+static var _weapon_unleash_line := RegEx.create_from_string("(?i)<WEAPON UNLEASH[ ](\\d+)([%％]):[ ](.*)>")
 
 ## DataManager.processWULNotetags1：逐行认 <Weapon Unleash x%: 技能>，几率 x×0.01，技能取名字里第一串数字（技能名写法正式数据没用到，不认）
 static func weapon_unleash_of(o) -> Array:
@@ -961,7 +961,7 @@ func buff_limit(pid: int, positive: bool) -> int:
 	var tag := "BUFF" if positive else "DEBUFF"
 	for obj in trait_objects():
 		var bonus := 0
-		for m in XRx.re("(?i)<MAX (.*) " + tag + ": ([+-]\\d+)>").search_all(str(obj.get("note", ""))):
+		for m in RegEx.create_from_string("(?i)<MAX (.*) " + tag + ": ([+-]\\d+)>").search_all(str(obj.get("note", ""))):
 			if XActionSequence.PARAMS.get(m.get_string(1).to_upper(), -1) == pid:
 				bonus = int(m.get_string(2))
 		limit += bonus

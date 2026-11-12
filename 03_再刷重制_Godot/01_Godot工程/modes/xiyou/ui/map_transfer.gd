@@ -306,7 +306,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 
 ## drawWrapped：逐字量宽折行，换行符当空格；返回下一行 y
 func _wrapped(c: XMVCanvas, text: String, x: float, y: float, width: float) -> float:
-	var chars := XRx.re("[\\r\\n]+").sub(text, " ", true)
+	var chars := RegEx.create_from_string("[\\r\\n]+").sub(text, " ", true)
 	var line := ""
 	var row := 0
 	for ch in chars:
@@ -324,9 +324,9 @@ func _wrapped(c: XMVCanvas, text: String, x: float, y: float, width: float) -> f
 ## fixedTraitLines：装备备注 <pos=APs text=… size= 里的固定特性（专属/特效/套装/成长等），不显示随机词条
 static func fixed_traits(item: Dictionary) -> Array:
 	var out: Array = []
-	var keep := XRx.re("(专属|特效|固定|套装|每级|成长|被动|伤害|暴击|穿透|掉宝)")
-	var codes := XRx.re("(?i)\\\\[ci]\\[\\d+\\]")
-	for m in XRx.re("(?is)<pos=APs\\s+text=([\\s\\S]*?)\\s+size=").search_all(str(item.get("note", ""))):
+	var keep := RegEx.create_from_string("(专属|特效|固定|套装|每级|成长|被动|伤害|暴击|穿透|掉宝)")
+	var codes := RegEx.create_from_string("(?i)\\\\[ci]\\[\\d+\\]")
+	for m in RegEx.create_from_string("(?is)<pos=APs\\s+text=([\\s\\S]*?)\\s+size=").search_all(str(item.get("note", ""))):
 		var t := codes.sub(m.get_string(1), "", true).strip_edges()
 		if t != "" and keep.search(t) and not out.has(t):
 			out.append(t)

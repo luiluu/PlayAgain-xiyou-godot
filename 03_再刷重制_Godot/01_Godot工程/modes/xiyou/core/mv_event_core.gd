@@ -217,7 +217,7 @@ static func message_text(t: String) -> String:
 	if not t.contains("全伤"):
 		return t
 	if _full_dmg == null:
-		_full_dmg = XRx.re("全伤(?:害)?")
+		_full_dmg = RegEx.create_from_string("全伤(?:害)?")
 	return _full_dmg.sub(t, "全属性伤害", true)
 
 

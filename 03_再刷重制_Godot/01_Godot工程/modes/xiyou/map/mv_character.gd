@@ -186,10 +186,10 @@ var frames_offset := Vector2.ZERO
 
 static func frames_offset_of(name: String) -> Vector2:
 	var out := Vector2.ZERO
-	var ex := XRx.re("(?i)X(\\d+\\.*\\d*)").search(name)
+	var ex := RegEx.create_from_string("(?i)X(\\d+\\.*\\d*)").search(name)
 	if ex:
 		out.x = float(ex.get_string(1))
-	var ey := XRx.re("(?i)Y(\\d+\\.*\\d*)").search(name)
+	var ey := RegEx.create_from_string("(?i)Y(\\d+\\.*\\d*)").search(name)
 	if ey:
 		out.y = float(ey.get_string(1))
 	return out

@@ -81,8 +81,8 @@ const DEATH := 1
 ## O-138（优化登记）：学暴君／repair 时清弱化。false＝照原版（removeDebuff 不存在，抛错后弱化留着）
 static var CLEAR_DEBUFFS := true
 const POSITIVE_BUFF_TYPES := ["祝福", "变身", "魔法", "合剂", "食物", "愤怒", "共鸣"]
-static var _negative_re := XRx.re("中毒|毒|灼|诅咒|封印|眩晕|麻痹|虚弱|减速|沉默|睡眠|冻结|流血|失效")
-static var _buff_type_re := XRx.re("<BuffType:([^>]+)>")
+static var _negative_re := RegEx.create_from_string("中毒|毒|灼|诅咒|封印|眩晕|麻痹|虚弱|减速|沉默|睡眠|冻结|流血|失效")
+static var _buff_type_re := RegEx.create_from_string("<BuffType:([^>]+)>")
 static var _system_states := {}
 
 ## 战斗内：开战设、结束清（复活回形态只在战斗中）。不存战斗对象本身：静态变量拿着它，没走 end_battle 的测试退出时引擎会崩
@@ -300,7 +300,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 ## CodexDifficulty.isSystemState：难度系统技能（XState.difficulty_managed_skills 与分档技能）备注 <Start(WT)PushStateN: 100%> 给的状态
 static func system_state(id: int) -> bool:
 	if _system_states.is_empty():
-		var re := XRx.re("(?i)<Start(?:WT)?PushState(\\d+):\\s*100%>")
+		var re := RegEx.create_from_string("(?i)<Start(?:WT)?PushState(\\d+):\\s*100%>")
 		for sid in XState.difficulty_managed_skills() + XState.DIFFICULTY_ROLE_SKILLS:
 			for m in re.search_all(str(XDB.rec("Skills", int(sid)).get("note", ""))):
 				_system_states[int(m.get_string(1))] = true

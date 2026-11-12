@@ -31,7 +31,7 @@ static var save_dir := SAVE_DIR
 var busy := false
 var _cancelled := false
 var _cut_code := 0
-var _url_re := XRx.re("^(https?)://([^/:]+)(?::(\\d+))?(/.*)?$")
+var _url_re := RegEx.create_from_string("^(https?)://([^/:]+)(?::(\\d+))?(/.*)?$")
 
 
 static func instance(tree: SceneTree) -> XUpdateInstall:

@@ -150,7 +150,7 @@ static func _t(text: String, x: float, y: float, w: float, color := XUI.TEXT, al
 
 ## YEP notetags：备注按换行切（连续换行算一个）
 static func notetags(note: String) -> PackedStringArray:
-	return XRx.re("[\\r\\n]+").sub(note, "\n", true).split("\n")
+	return RegEx.create_from_string("[\\r\\n]+").sub(note, "\n", true).split("\n")
 
 
 static func race_name(n: int) -> String:
@@ -228,7 +228,7 @@ static func status_ops(e: XEnemy, all := true) -> Array:
 			y11 += XUI.FONT_SIZE
 			ops.append(_t(str(m), 0, y11, COLW))
 	var tags := notetags(str(d.get("note", "")))
-	var race_re := XRx.re("(?i)<ENEMYRACE: (\\d+)>")
+	var race_re := RegEx.create_from_string("(?i)<ENEMYRACE: (\\d+)>")
 	for line in tags:
 		var m := race_re.search(line)
 		if m != null:

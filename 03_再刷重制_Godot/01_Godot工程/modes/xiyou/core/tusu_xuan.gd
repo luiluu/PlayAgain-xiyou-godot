@@ -36,7 +36,7 @@ static func keys(actor_id: int) -> Dictionary:
 	if _keys.is_empty():
 		for id in TAGS:
 			_keys[id] = {}
-		var re := XRx.re("<(CodexTusu|CodexXuan):\\s*([^>]+)>")
+		var re := RegEx.create_from_string("<(CodexTusu|CodexXuan):\\s*([^>]+)>")
 		for sk in XDB.table("Skills"):
 			if sk is Dictionary:
 				var m := re.search(str(sk.get("note", "")))
@@ -195,7 +195,7 @@ static func recruit(s: XState, actor_id: int) -> bool:
 
 
 # ---- 模块公式（转换器 MODULE_FORMULAS 的 tusu／xuan，【cc·悟空·未经审查】events3 进切片时接上；屠苏的走 XTusu.damage） ----
-static var _formula_key := XRx.re("'([a-z_]+)'")
+static var _formula_key := RegEx.create_from_string("'([a-z_]+)'")
 
 
 ## CodexTusu.damage(a,b,'键')、CodexXuan.damage(a,b,'lengguang')、CodexXuan.heal(a,b)；不认的公式返回 null

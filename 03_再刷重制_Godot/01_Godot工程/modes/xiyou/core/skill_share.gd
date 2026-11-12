@@ -14,8 +14,8 @@ extends RefCounted
 
 const TAG_RE := "<ShareSkill:(\\d+)>"
 const LEARN_RE := "<ShareLearnSkill:(\\d+)>"
-static var _tag_re := XRx.re(TAG_RE)
-static var _learn_re := XRx.re(LEARN_RE)
+static var _tag_re := RegEx.create_from_string(TAG_RE)
+static var _learn_re := RegEx.create_from_string(LEARN_RE)
 
 
 static func _rec(rec: Dictionary) -> Dictionary:
