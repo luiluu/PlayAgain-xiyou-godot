@@ -96,6 +96,8 @@ static func alien_apply(key: String, logic, s: XState, list: Array) -> bool:
 			return XTianqiWarAlien.apply(logic, s, "segment", list)
 		"famine":
 			return XTianqiFamineAlien.apply(logic, s, "segment", list)
+		"plague":
+			return XTianqiPlagueAlien.apply(logic, s, "segment", list)
 	return false
 
 
@@ -106,12 +108,14 @@ static func alien_kinds(key: String) -> Array:
 			return XTianqiWarAlien.kinds()
 		"famine":
 			return XTianqiFamineAlien.kinds()
+		"plague":
+			return XTianqiPlagueAlien.kinds()
 	return []
 
 
 ## 这一场已经有本线预设的异化
 static func alien_active(logic) -> bool:
-	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic)
+	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic) or XTianqiPlagueAlien.active(logic)
 
 
 # ---- 开关与进度 ----
