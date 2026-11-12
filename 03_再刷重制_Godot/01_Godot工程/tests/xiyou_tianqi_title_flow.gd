@@ -213,6 +213,10 @@ func _keyboard() -> void:
 	_check("kb_title_load_selected_with_save", _sel(entry) == 1, _sel(entry))
 	await _key(KEY_UP)
 	_check("kb_title_new_game_selected", _sel(entry) == 0)
+	# 子页（设置、调按键位置、读档）底下垫的是天启篇底图，不是原版 PlayAgain 底图（安卓调按键位置页露出旧图，11-12）
+	var sub_bg = entry.get_node_or_null("TianqiSubpageBg")
+	var old_bg := entry.get_children().filter(func(c): return c is CPUParticles2D)
+	_check("subpage_bg_is_tianqi", sub_bg is TextureRect and sub_bg.texture == load(XTianqiTitle.BG) and old_bg.is_empty(), old_bg.size())
 	await _key(KEY_ENTER)
 	_check("kb_slot_page", _find("TianqiSlot1") != null and _focus_name() == "TianqiSlot1", _focus_name())
 	await _key(KEY_RIGHT)
