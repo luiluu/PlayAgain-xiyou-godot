@@ -650,8 +650,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = (c.states as Array).any(func(id): return b.is_state_affected(int(id)))
 		"target_hp_above":
 			ok = float(b.hp) >= float(b.mhp) * float(c.get("rate", 1.0))
-		"target_hp_below":
-			ok = float(b.hp) < float(b.mhp) * float(c.get("rate", 0.0))
+		"target_hp_below":  # rate_with／rate_add_with {要有: 线}：专属物提高残血线（病娇巴雷特 25% → 35%）
+			ok = float(b.hp) < float(b.mhp) * _rate(a, c)
 		"self_hp_above":  # 自己生命不低于 rate（玉面狐狸朔月依依）
 			ok = float(a.hp) >= float(a.mhp) * float(c.get("rate", 1.0))
 		"self_hp_below":
