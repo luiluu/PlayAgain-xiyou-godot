@@ -190,6 +190,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XTianqiQiyinDragonRun.setup(self, s)  # 天启篇七首之龙（prepare 过才换）：借来的普拉顿换成七首之龙（在各线异化之前，名字不带【首领】就不会被按段异化）
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
@@ -199,6 +200,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XTianqiRewards.setup(self, s)  # 天启篇奖励：穿着骑士遗物的人记本场资历、火花
 	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
+	XTianqiQiyinDragonRun.setup_rules(self)  # 天启篇七首之龙：七段揭印的规则记录（在里副本规则之后，免得被它清掉）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -1101,6 +1103,7 @@ func start_turn() -> void:
 	turn_start_logs.append_array(XTianqiPlagueAlien.start_turn(self))  # 天启篇瘟疫线异化：报病灶
 	turn_start_logs.append_array(XTianqiDeathAlien.start_turn(self))  # 天启篇死亡线异化：宣判者挂死期，报死期和丧钟
 	turn_start_logs.append_array(XTianqiQiyinRule.start_turn(self))  # 七印祭坛：献祭、星坠、寂静
+	turn_start_logs.append_array(XTianqiQiyinDragonRun.start_turn(self))  # 七首之龙：星坠等扣过后断首揭印、缓期到点倒下
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1215,6 +1218,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XLiuying.end_action(self, u, skill)  # 流萤 endAction 包装（原 endAction 之后）：燃烧后刷新负面免疫与免死
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
+	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）
 	if started:
@@ -2792,6 +2796,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiDeathAlien.hp_damage(self, u, t, value)  # 天启篇死亡线异化：替身被打倒时换一名我方代它倒下
 	value = XTianqiRewards.hp_damage(self, u, t, value, item)  # 天启篇奖励：遗物的受伤、出伤、回复与资历
 	value = XTianqiQiyinRule.hp_damage(self, u, t, value)  # 七印祭坛：杀声、献祭、魔塔宝石
+	value = XTianqiQiyinDragonRun.hp_damage(self, t, value)  # 七首之龙：一次行动最多打到本段底
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
