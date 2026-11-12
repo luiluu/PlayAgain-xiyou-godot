@@ -1214,7 +1214,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
-	if started:
+	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	_sync_orders(before, true)
 	resolve_collapses()
