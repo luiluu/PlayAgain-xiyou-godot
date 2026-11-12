@@ -140,6 +140,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return {}
 	if name == "Skills" and XTianqiSkills.has(id):
 		return XTianqiSkills.rec(id, t[id])  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
+	if name == "States" and XTianqiSkills.has_state(id):
+		return XTianqiSkills.rec_state(id, t[id])
 	return t[id]
 
 

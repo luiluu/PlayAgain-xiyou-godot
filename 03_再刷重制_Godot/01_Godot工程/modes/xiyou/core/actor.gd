@@ -750,7 +750,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i)  # 天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i) * XTianqiSkills.param_rate(self, i)  # 天启篇技能重构：击杀成长；天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:

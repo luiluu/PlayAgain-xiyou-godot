@@ -234,6 +234,7 @@ static func bodies(logic, e) -> Array:
 static func grant(logic) -> Array:
 	var s: XState = logic.state
 	XTianqiAlienCodex.record(logic)  # 天启篇异化图鉴：倒下的本线异化怪点亮（跨存档）
+	XTianqiFamineAlien.grant_grain(logic)  # 天启篇饥荒线「荒年」：倒下的饥荒异化怪几率掉余粮
 	if not on(s):
 		return []
 	var got := []

@@ -730,12 +730,13 @@ func param_state(i: int) -> float:
 	var v := 0.0
 	var counters: Dictionary = state_data.get("_stateCounter", {})
 	for id in state_ids:
-		if not _state_param_cache.has(id):
-			_state_param_cache[id] = XPower.state_params(XDB.rec("States", id))
+		var key := XTianqiSkills.state_key(id)  # 天启篇改写过的状态另存一份
+		if not _state_param_cache.has(key):
+			_state_param_cache[key] = XPower.state_params(XDB.rec("States", id))
 		var ceng := XStateEffects._truthy_number(counters.get(str(id)))
 		if ceng == 0.0:
 			ceng = 1.0
-		v += float(_state_param_cache[id][i]) * ceng
+		v += float(_state_param_cache[key][i]) * ceng
 	return v
 
 func xparam(i: int) -> float:

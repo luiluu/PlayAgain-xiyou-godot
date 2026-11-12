@@ -41,7 +41,7 @@ const PANE_W := 1080.0
 const PANE_BORDER := 12.0
 const PANE_PAD := Vector2(20, 16)
 const LIST_W := 1016.0 * 0.33              # .alien-list width:33%（含右内距 14 与 1px 线）
-const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1颗|开始抽取|确认|刻上"
+const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1颗|开始抽取|确认|刻上|重铸"
 const DANGER_RE := "确认分解|分解为|取核"
 ## 优化 O-087：false（默认）列表按钮左对齐、不出横向滚动条；true 照原版 button+button 把第 2 个起右推 7，宽仍 100%，撑出横向滚动条
 static var list_indent_quirk := false
@@ -214,6 +214,8 @@ func build() -> Array:
 	pane.append(el("div", null, "alien-body", [el("div", null, "alien-list", list), el("div", null, "alien-detail", detail)]))
 	if tq_on:
 		pane.append(_core_section(st, stones))
+	if XTianqiReforge.on(st):
+		pane.append(_reforge_section(st))
 	var codex_line := XTianqiLine.current(st)
 	if XTianqiAlienCodex.on(st) and codex_line != "":
 		pane.append(_codex_section(codex_line))
@@ -327,6 +329,42 @@ func _core_section(st: XState, stones: int) -> Dictionary:
 		kids.append(el("div", null, "alien-actions", [el("p", XTianqiAlienGear.core_label(list[n])),
 			btn("刻上（1颗异化石）", _engrave.bind(n), target == null or stones < 1)]))
 	return el("section", null, "alien-cores", kids)
+
+
+## 装备重铸（XTianqiReforge）：选一件，每条词条一行「重铸（N金钱）」
+func _reforge_section(st: XState) -> Dictionary:
+	var targets := XTianqiReforge.targets(st)
+	var kids := [el("h2", "装备重铸")]
+	if targets.is_empty():
+		kids.append(el("p", "背包里没有带天启篇词条的装备（穿着的、锁定的不能重铸）。", "alien-note"))
+		return el("section", null, "alien-reforge", kids)
+	var opts := targets.map(func(i): return _opt(str(i.get("instanceId", "")), str(i.name)))
+	if cfg_vals.get("reforge") == null or not opts.any(func(o): return str(o.value) == str(cfg_vals.reforge)):
+		cfg_vals["reforge"] = opts[0].value
+	kids.append(_select_node("重铸哪件", opts, cfg_vals.get("reforge"), "reforge"))
+	var item = _reforge_target(st)
+	if item != null:
+		var list: Array = item.tianqi_affixes
+		for n in list.size():
+			var a: Dictionary = list[n]
+			var price := XTianqiReforge.cost(a)
+			kids.append(el("div", null, "alien-actions", [el("p", XTianqiAffixText.line(str(a.key), int(a.tier), str(a.grade), a.get("extra", {}))),
+				btn("重铸第%d条（%d金钱）" % [n + 1, price], _reforge.bind(n), st.gold < price or XTianqiReforge.choices(item, n).is_empty())]))
+		kids.append(el("p", "在同一层里重抽一条（不会和这件别的词条重复），成色重新掷；连击、再动重铸不出来。", "alien-note"))
+	return el("section", null, "alien-reforge", kids)
+
+
+func _reforge_target(st: XState):
+	var hit := XTianqiReforge.targets(st).filter(func(i): return str(i.get("instanceId", "")) == str(cfg_vals.get("reforge", "")))
+	return hit[0] if not hit.is_empty() else null
+
+
+func _reforge(index: int) -> void:
+	var st := s()
+	var item = _reforge_target(st)
+	var r: Dictionary = XTianqiReforge.reforge(st, item, index) if item != null else {"error": "先选重铸哪件"}
+	error_text = str(r.error) if r.has("error") else ""
+	render(r.has("error"))
 
 
 ## 本线异化图鉴：每种一行，四级各一格（打倒过的亮名字，没打过的「？？」）
