@@ -1,0 +1,328 @@
+{
+ "version": 1,
+ "source": "天启篇词条重构设计稿 v0.3",
+ "dev": "dev.待定",
+ "_note": "来源：天启篇词条重构设计稿 v0.3。玩家看到的词条行（line）和详细说明（detail）模板；数值一律由 XTianqiAffixText 从 affix_table.json 取来填进去，这里不存数。占位符：{v} 数值、{v2} 第二个数、{element} 掷出的元素、{elements} 全部元素、{variant} 掷出的变体、{variants} 全部变体、{sign} 变体的正负号、{cap} 上限、{rate} 生命门槛、{turns} 持续回合、{tier} 阶名。颜色键是 XQuality.ICI_COLORS 的编号。",
+ "color_source": "XQuality.ICI_COLORS",
+ "tier_names": [
+  "一阶",
+  "二阶",
+  "三阶",
+  "四阶"
+ ],
+ "layers": {
+  "base": {
+   "name": "基础",
+   "color": 1
+  },
+  "special": {
+   "name": "特效",
+   "color": 3
+  },
+  "legendary": {
+   "name": "传说",
+   "color": 6
+  },
+  "aura": {
+   "name": "光环",
+   "color": 13
+  }
+ },
+ "grades": {
+  "normal": {
+   "name": "普通",
+   "mark": "",
+   "color": null
+  },
+  "fine": {
+   "name": "上品",
+   "mark": "上品·",
+   "color": 2
+  },
+  "perfect": {
+   "name": "极",
+   "mark": "极·",
+   "color": 9,
+   "line_color": 9
+  }
+ },
+ "rare": {
+  "name": "稀有",
+  "mark": "〔稀有〕",
+  "color": 5,
+  "detail": "稀有词条，比别的传说词条少见。"
+ },
+ "aura_prefix": "全队·",
+ "element_any": "某一系",
+ "element_join": "、",
+ "variant_any_sign": "±",
+ "variant_signs": {
+  "up": "+",
+  "down": "−"
+ },
+ "detail_header": "{layer}词条 · {tier} · {grade}",
+ "detail_header_fixed": "{layer}词条",
+ "stack_text": {
+  "sum": "同名词条数值相加。",
+  "multiply": "多条各自相乘，叠不到 0。",
+  "max_per_actor": "同名传说词条一个角色身上只生效数值最高的一条。",
+  "max_party": "全队指上场的人和助力位。同名光环全队只生效数值最高的一条，不同名的可以同时生效。"
+ },
+ "affixes": [
+  {
+   "key": "atk",
+   "line": "物攻 +{v}%",
+   "detail": "物攻 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "mat",
+   "line": "魔攻 +{v}%",
+   "detail": "魔攻 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "hit",
+   "line": "命中 +{v}%",
+   "detail": "命中率 +{v}%。"
+  },
+  {
+   "key": "mhp",
+   "line": "生命 +{v}%",
+   "detail": "最大生命 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "def",
+   "line": "物防 +{v}%",
+   "detail": "物防 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "mdf",
+   "line": "魔防 +{v}%",
+   "detail": "魔防 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "eva",
+   "line": "闪避 +{v}%",
+   "detail": "闪避率 +{v}%。"
+  },
+  {
+   "key": "hrg",
+   "line": "每回合回复最大生命 {v}%",
+   "detail": "每回合回复最大生命的 {v}%。"
+  },
+  {
+   "key": "mmp",
+   "line": "魔法 +{v}%",
+   "detail": "最大魔法 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "agi",
+   "line": "敏捷 +{v}%",
+   "detail": "敏捷 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "luk",
+   "line": "幸运 +{v}%",
+   "detail": "幸运 +{v}%，按比例乘到面板上。"
+  },
+  {
+   "key": "mrg",
+   "line": "每回合回复最大魔法 {v}%",
+   "detail": "每回合回复最大魔法的 {v}%。"
+  },
+  {
+   "key": "cri",
+   "line": "暴击率 +{v}%",
+   "detail": "暴击率 +{v}%。"
+  },
+  {
+   "key": "crit_damage",
+   "line": "爆伤 +{v}%",
+   "detail": "暴击伤害 +{v}%，和其他暴击伤害来源相加。"
+  },
+  {
+   "key": "final_damage",
+   "line": "伤害加成 +{v}%",
+   "detail": "造成的伤害 +{v}%。和其他伤害加成、先声、背水、猎首在同一个池里相加，不另乘一次。"
+  },
+  {
+   "key": "skill_damage",
+   "line": "技能伤 +{v}%",
+   "detail": "技能伤害 +{v}%，和其他技能伤害来源相加。"
+  },
+  {
+   "key": "element_damage",
+   "line": "{element}伤害 +{v}%",
+   "detail": "{element}伤害 +{v}%，同系相加；不带穿透。获得时从{elements}里随机定一系。"
+  },
+  {
+   "key": "lifesteal",
+   "line": "造成伤害的 {v}% 回复生命",
+   "detail": "造成伤害的 {v}% 回复为自己的生命；单次回复不超过自己最大生命的 {cap}%。"
+  },
+  {
+   "key": "damage_reduction",
+   "line": "减伤 +{v}%",
+   "detail": "受到的伤害 −{v}%。"
+  },
+  {
+   "key": "element_resist",
+   "line": "受到{element}伤害 −{v}%",
+   "detail": "受到的{element}伤害 −{v}%。获得时从{elements}里随机定一系。"
+  },
+  {
+   "key": "state_resist",
+   "line": "被施加异常的几率 −{v}%",
+   "detail": "被施加异常状态的几率 −{v}%。"
+  },
+  {
+   "key": "heal_received",
+   "line": "受疗 +{v}%",
+   "detail": "受到的治疗 +{v}%。"
+  },
+  {
+   "key": "opening_shield",
+   "line": "战斗开始时获得最大生命 {v}% 的护盾",
+   "detail": "战斗开始时获得一层护盾，护盾值为自己最大生命的 {v}%。"
+  },
+  {
+   "key": "target_rate",
+   "line": "{variant}：被选为目标的几率 {sign}{v}%",
+   "detail": "{variant}：被敌人选为目标的几率 {sign}{v}%。获得时{variants}两种随机一种。"
+  },
+  {
+   "key": "skill_cost",
+   "line": "技能消耗 −{v}%",
+   "detail": "技能消耗 −{v}%。全身的技能消耗词条加起来最多 −{cap}%。"
+  },
+  {
+   "key": "recast",
+   "line": "技能放完后 {v}% 几率再放一次",
+   "detail": "技能放完后有 {v}% 几率再放一次；再放出来的那次不会再触发再释放。"
+  },
+  {
+   "key": "heal_dealt",
+   "line": "治疗量 +{v}%",
+   "detail": "自己施放的治疗 +{v}%。"
+  },
+  {
+   "key": "drop_rate",
+   "line": "掉落率 +{v}%",
+   "detail": "掉落率 +{v}%。全队相加，助力位身上的也算。"
+  },
+  {
+   "key": "exp_gold",
+   "line": "经验、金钱 +{v}%",
+   "detail": "战斗获得的经验、金钱 +{v}%。全队相加，助力位身上的也算。"
+  },
+  {
+   "key": "initial_tp",
+   "line": "战斗开始时 TP +{v}",
+   "detail": "战斗开始时 TP +{v}。"
+  },
+  {
+   "key": "first_strike",
+   "line": "每回合第一次造成伤害的技能伤害 +{v}%",
+   "detail": "每回合自己第一次造成伤害的技能，伤害 +{v}%；和伤害加成在同一个池里相加。"
+  },
+  {
+   "key": "last_stand",
+   "line": "生命低于 {rate}% 时伤害 +{v}%",
+   "detail": "自己生命低于 {rate}% 时，造成的伤害 +{v}%；和伤害加成在同一个池里相加。"
+  },
+  {
+   "key": "headhunter",
+   "line": "对精英、首领、守层者伤害 +{v}%",
+   "detail": "对精英、首领、守层者造成的伤害 +{v}%；和伤害加成在同一个池里相加。"
+  },
+  {
+   "key": "expose",
+   "line": "造成伤害后目标受到的伤害 +{v}%",
+   "detail": "造成伤害后，目标受到的伤害 +{v}%，持续 {turns} 回合；同一目标只有一层，多人带也只取最高。"
+  },
+  {
+   "key": "suppress",
+   "line": "造成伤害后目标暴击率、闪避率 −{v}%",
+   "detail": "造成伤害后，目标暴击率、闪避率 −{v}%，持续 {turns} 回合；不叠加。"
+  },
+  {
+   "key": "bulwark",
+   "line": "生命高于 {rate}% 时受到的伤害 −{v}%",
+   "detail": "自己生命高于 {rate}% 时，受到的伤害 −{v}%。"
+  },
+  {
+   "key": "unyielding",
+   "line": "生命低于 {rate}% 时受到的伤害 −{v}%",
+   "detail": "自己生命低于 {rate}% 时，受到的伤害 −{v}%。"
+  },
+  {
+   "key": "tenacity",
+   "line": "被暴击时这一次受到的伤害 −{v}%",
+   "detail": "被暴击时，这一次受到的伤害 −{v}%。"
+  },
+  {
+   "key": "harvest",
+   "line": "击杀时回复最大生命和最大魔法 {v}%",
+   "detail": "击杀敌人时，回复自己最大生命和最大魔法的 {v}%；每次行动最多触发一次。"
+  },
+  {
+   "key": "rejuvenate",
+   "line": "治疗溢出转护盾，上限目标最大生命 {v}%",
+   "detail": "自己施放的治疗溢出的部分变成护盾，护盾不超过目标最大生命的 {v}%。"
+  },
+  {
+   "key": "combo",
+   "line": "攻击次数 +{v}",
+   "detail": "攻击次数 +{v}：普通攻击和替换普攻的技能多打一次，读攻击次数的技能也吃这一条。固定 +{v}，不分阶、没有成色。"
+  },
+  {
+   "key": "reaction",
+   "line": "每回合有 {v}% 几率多行动一次",
+   "detail": "每回合有 {v}% 几率多行动一次；多出来的那次行动不会再触发再动。"
+  },
+  {
+   "key": "aura_fervor",
+   "line": "物攻 +{v}%",
+   "detail": "全队物攻 +{v}%。"
+  },
+  {
+   "key": "aura_arcane",
+   "line": "魔攻 +{v}%",
+   "detail": "全队魔攻 +{v}%。"
+  },
+  {
+   "key": "aura_fury",
+   "line": "暴击率 +{v}%，爆伤 +{v2}%",
+   "detail": "全队暴击率 +{v}%，暴击伤害 +{v2}%。"
+  },
+  {
+   "key": "aura_focus",
+   "line": "命中率 +{v}%",
+   "detail": "全队命中率 +{v}%。"
+  },
+  {
+   "key": "aura_haste",
+   "line": "敏捷 +{v}%",
+   "detail": "全队敏捷 +{v}%。"
+  },
+  {
+   "key": "aura_guard",
+   "line": "物防、魔防 +{v}%",
+   "detail": "全队物防、魔防 +{v}%。"
+  },
+  {
+   "key": "aura_shelter",
+   "line": "受到的伤害 −{v}%",
+   "detail": "全队受到的伤害 −{v}%。"
+  },
+  {
+   "key": "aura_recovery",
+   "line": "每回合回复生命、魔法 {v}%",
+   "detail": "全队每回合回复最大生命、最大魔法的 {v}%。"
+  },
+  {
+   "key": "aura_versatile",
+   "line": "八项属性 +{v}%",
+   "detail": "全队最大生命、最大魔法、物攻、物防、魔攻、魔防、敏捷、幸运 +{v}%。"
+  }
+ ]
+}
