@@ -10,7 +10,7 @@ extends RefCounted
 ## 借 base 那件的图标和栏位，属性、特性、词缀、备注清空，名字和说明换成奖励的；不改原版数据库，存档照装备实例存。
 ## 发奖进度记在 flags.tianqi.rewards = {got: [来源键…], cores: [{line, affix, level, from}…]}，同一来源只发一次。
 ##
-## 开关（O-待定）：ENABLED＝false 时不发奖、已有的奖励装备不生效（还能穿、只是没效果）。
+## 开关（O-330）：ENABLED＝false 时不发奖、已有的奖励装备不生效（还能穿、只是没效果）。
 ## 只认天启篇存档（XTianqiLine.open_for：发行构建里还要 XTianqi.RELEASE_OPEN）。
 
 static var ENABLED := true
