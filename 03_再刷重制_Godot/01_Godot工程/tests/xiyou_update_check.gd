@@ -52,6 +52,10 @@ func _cleanup() -> void:
 		DirAccess.remove_absolute(DIR)
 
 func _run() -> void:
+	# 出整包后 build_info 的 releaseVersion 有值（v0.01），检查更新页会把版本号显示成 0.01.N；这里只测按编号的写法，
+	# 先占住 release_base，免得 XUpdateClient.init_versions 读进 build_info（发行版本名另有一段专门测）
+	XUpdateCheck.release_name = ""
+	XUpdateCheck.release_base = 1
 	_cleanup()
 	var C := XUpdateCheck
 	# 版本号按段比
