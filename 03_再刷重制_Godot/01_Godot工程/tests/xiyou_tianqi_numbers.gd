@@ -89,6 +89,18 @@ func _enemy_rates() -> void:
 		var off := XTianqiCombat.enemy_rates(4, s)
 		XTianqiCombat.ENABLED = true
 		_check("enemy_rates_off_" + key, off == XEnemy.difficulty_rates(4), off)
+		# 审查 79 P3-1：基准跟本档开局借的原版难度走。只关 UNIFIED_LEGACY 时各档借各自的原版难度，敌人倍率也跟着变
+		_check("enemy_base_unified_" + key, XTianqiCombat.base_legacy(s) == XTianqi.NUMERIC_LEGACY, XTianqiCombat.base_legacy(s))
+		XTianqi.UNIFIED_LEGACY = false
+		var own := int(XTianqi.difficulty(key).legacy)
+		var split := XTianqiCombat.enemy_rates(5, s)
+		var split_base := XEnemy.difficulty_rates(own)
+		XTianqi.UNIFIED_LEGACY = true
+		var split_want := split_base.duplicate()
+		split_want[0] = float(split_base[0]) * float(row.enemy_hp)
+		split_want[2] = float(split_base[2]) * float(row.enemy_atk)
+		split_want[4] = float(split_base[4]) * float(row.enemy_atk)
+		_check("enemy_rates_split_" + key, range(8).all(func(i): return _near(float(split[i]), float(split_want[i]))), [own, split, split_want])
 	# 同一只敌人：炼狱血量是九死的 2.0/1.5 倍，攻击 1.5/1.25 倍，防御不变
 	var eid := 1
 	_state("jiusi", w.slice(0, 5))

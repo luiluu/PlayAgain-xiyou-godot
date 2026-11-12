@@ -88,7 +88,7 @@ static func decorate(s: XState, rec: Dictionary) -> Dictionary:
 static func apply_list(s: XState, entries: Array) -> Array:
 	var rest := []
 	var top := []
-	for e in entries:
+	for e in XAlienHide.filter_entries(entries):  # installAlienationHide 包 Game_Party.items：隐藏生效时不列异化能量、异化石（O-283）
 		var d: Dictionary = e.duplicate()
 		d.rec = decorate(s, e.rec)
 		if is_top(s, e.rec):
@@ -240,7 +240,8 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 		if not mapped.has(g):
 			mapped.append(g)
 	var horn_before := mapped.any(_is_horn_row)
-	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.DISABLED_HORNS.has(g[1])))
+	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.horn_id_disabled(g[1])))
+	out = XAlienHide.filter_goods(out)  # installAlienationHide 包 Window_ShopBuy.makeItemList：隐藏生效时不卖六件异化物品（O-283）
 	if map_id == LOBBY_MAP:
 		_lobby_additions(out, horn_before)
 	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
@@ -585,7 +586,7 @@ static func flush_deploy_notice(s: XState) -> void:
 static func can_buy(s: XState, rec: Dictionary, price: int) -> bool:
 	if rec.is_empty():
 		return false
-	if not is_gear(rec) and XImportedBalance.DISABLED_HORNS.has(int(rec.get("id", 0))):
+	if not is_gear(rec) and XImportedBalance.horn_id_disabled(int(rec.get("id", 0))):
 		return false
 	if not is_gear(rec) and not can_acquire_item(s, rec):
 		return false

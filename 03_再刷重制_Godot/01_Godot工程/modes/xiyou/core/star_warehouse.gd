@@ -80,6 +80,11 @@ static func gear() -> Array:
 	return _gear
 
 
+## 取出画面列的装备：异化隐藏生效时不列残响（O-283；仓库跨存档，读档迁移管不到，原版没管，重制补）
+static func withdrawable_gear() -> Array:
+	return XAlienHide.filter_gear(gear().duplicate())
+
+
 static func pets() -> Array:
 	ensure_loaded()
 	return _pets
@@ -133,7 +138,7 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 	last_error = ""
 	ensure_loaded()
 	var i := _gear.find_custom(func(e): return is_same(e, rec))
-	if i < 0:
+	if i < 0 or XAlienHide.blocks_gear(rec):
 		return false
 	var token := _begin_withdraw("gear", i, rec)
 	_gear.remove_at(i)
@@ -144,6 +149,8 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 		return false
 	rec.erase("instanceId")
 	s.register_gear(rec)
+	if XAlienHide.active():
+		XAlienHide.restore(rec)  # 异化隐藏生效：取出的异化装备还原成普通装备（同读档迁移）
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		var led := XAlienation.ledger(s)
 		led.sequence = int(led.sequence) + 1
