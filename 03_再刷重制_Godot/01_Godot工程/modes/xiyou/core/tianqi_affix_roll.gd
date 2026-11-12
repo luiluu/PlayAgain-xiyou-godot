@@ -11,7 +11,7 @@ extends RefCounted
 ## - 记在装备实例的 tianqi_affixes = [{key, tier, grade, extra}]（XTianqiAffixBattle 认这个键算效果），说明末尾加上每条一行（XTianqiAffixText）。
 ## 已经带天启篇词条或七印标记、净印／遗物的装备不掷。只认天启篇存档（XTianqiAffixBattle.on）。
 ##
-## 开关（O-待定）：false＝天启篇存档的装备照原版掷词缀，不掷天启篇词条
+## 开关（O-347）：false＝天启篇存档的装备照原版掷词缀，不掷天启篇词条
 
 ## 开关：false＝回到原版词缀
 static var ENABLED := true

@@ -8,7 +8,7 @@ extends RefCounted
 ## 原来的 Mod／神话／混沌神话三档在天启篇存档里退役（XMerchant29Page 在天启篇存档里换成这两档）。
 ## 只认天启篇存档（XTianqiAffixRoll.on：天启篇词条开着）。
 ##
-## 开关（O-待定）：false＝天启篇存档的深渊商人照原版三档
+## 开关（O-347）：false＝天启篇存档的深渊商人照原版三档
 
 ## 开关：false＝回到原版三档
 static var ENABLED := true
