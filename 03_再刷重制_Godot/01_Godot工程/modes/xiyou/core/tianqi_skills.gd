@@ -14,7 +14,7 @@ extends RefCounted
 ## - 再动、追加行动：角色每回合最多多 1 次（XBattleLogic.make_action_times 读 cap_actions）。
 ## - 档位：天启篇按 tiers 名单（超强者 18、强者 52、其余有名字的弱者，不开放的不进候选池）；三笠跟锻炼和进阶、饿狼跟形态升档，
 ##   只影响战斗里的档位加成和弱者协力（battle_tier），抽阵容、超强者上限按名单（tier_of）。
-## 开关：ENABLED＝false 整套回原版（O-待定-1）；CARDS 角色卡、MASTERY 熟练度（O-待定-2）先默认关，等数值线一起开；ACTION_CAP 行动次数（O-待定-3）、TIERS 档位名单（O-待定-4）默认开。
+## 开关：ENABLED＝false 整套回原版（O-361）；CARDS 角色卡（第二期加，属 O-361）、MASTERY 熟练度（O-362）先默认关，等数值线一起开；ACTION_CAP 行动次数（O-363）、TIERS 档位名单（O-364）默认开。
 
 const PATH := "res://modes/xiyou/tianqi_data/skill_rework.json"
 const MODULE := "tianqi_skill"
