@@ -860,6 +860,15 @@ static func boss_rule(e, id: int):
 	return ""
 
 
+## 双持副手只算一半属性（稿子町甄悬胆、紫霞紫青缠绕、张三丰太极剑、艾琳幽璇、三笠红色围巾、夜隐重霞等，统一做）：
+## 卡开着时，XActor._param_plus 里第二把武器的属性（含武器类型放大、法宝成长、自定义属性）×0.5；特性、被动照算
+static var OFFHAND_HALF := true
+
+
+static func offhand_half() -> bool:
+	return OFFHAND_HALF and CARDS and cards_on()
+
+
 ## 百分比生命伤害对首领无效（第一节）：表里的技能在行动序列里按目标生命上限比例扣血（Hp -n%）时，首领不扣
 static func boss_pct_immune(u, t, skill_id: int) -> bool:
 	return BOSS_RULE and CARDS and u is XActor and t is XEnemy and t.boss_difficulty_boss and has(skill_id) and cards_on()

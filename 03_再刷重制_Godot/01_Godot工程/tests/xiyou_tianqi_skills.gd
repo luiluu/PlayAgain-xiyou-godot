@@ -853,6 +853,21 @@ func _fill() -> void:
 		_check("fill_nonboss_full", int(n.state_turns.get(two, 0)) == 2, n.state_turns.get(two))
 	var a: XActor = s.actor(XIAOYAO)
 	_check("fill_pct_immune", XTianqiSkills.boss_pct_immune(a, b, 1067) and not XTianqiSkills.boss_pct_immune(a, b, 1) and (n == null or not XTianqiSkills.boss_pct_immune(a, n, 1067)))
+	# 双持副手只算一半属性：第二把武器的物攻贡献 ×0.5
+	var w0 = a.equips[0]
+	var keep1 = a.equips[1] if a.equips.size() > 1 else null
+	if w0 is Dictionary and not w0.is_empty() and a.equips.size() > 1:
+		a.equips[1] = {}
+		var one := a._param_plus(2)
+		a.equips[1] = w0.duplicate(true)
+		var half := a._param_plus(2)
+		XTianqiSkills.OFFHAND_HALF = false
+		var full := a._param_plus(2)
+		XTianqiSkills.OFFHAND_HALF = true
+		a.equips[1] = keep1
+		_check("fill_offhand_half", full > one and is_equal_approx(half - one, (full - one) * 0.5), [one, half, full])
+	else:
+		_check("fill_offhand_half", false, "没有武器")
 	XTianqiSkills.CARDS = false
 	b.remove_state(1043)
 	b.add_state(1043)

@@ -951,15 +951,23 @@ func param_plus(i: int) -> float:
 
 func _param_plus(i: int) -> float:
 	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
+	var half := XTianqiSkills.offhand_half()  # 天启篇卡：双持时副手武器只算一半属性
+	var weapons := 0
 	for e in XTianqiGear.stat_list(equip_list()):  # 天启篇：普通坐骑原来的属性不算
+		var w := 0.0
 		var p := float(e.params[i])
-		v += p
+		w += p
 		if p > 0.0:
 			var tag := ("passiveWPNM%02d" % int(e.wtypeId)) if e.kind == "weapon" else ("passiveARMM%02d" % int(e.atypeId))
 			for m in passive_values(tag):
-				v += _param_boost(p, m)
-		v += magic_param(e, i)
-		v += custom_param(e, i)
+				w += _param_boost(p, m)
+		w += magic_param(e, i)
+		w += custom_param(e, i)
+		if e.kind == "weapon":
+			weapons += 1
+			if half and weapons == 2:
+				w *= 0.5
+		v += w
 	return XHeartsteel.param_plus(self, i, XActorModules.param_plus(self, i, v))  # 专属角色模块的 paramPlus 包装（黄泉 10176／10177／10182）；心钢旧版累计生命
 
 ## YEP_EquipCore evalParamPlus：<Custom Parameters> 由转换器解析成每项能力的 常数 + 等级系数 × 等级 + Σ 变量系数 × v[编号]，
