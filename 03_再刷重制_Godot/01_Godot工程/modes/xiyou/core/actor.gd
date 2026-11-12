@@ -233,6 +233,8 @@ func can_equip(item: Dictionary) -> bool:
 	if item.kind == "weapon":
 		var wt := int(item.wtypeId)
 		return traits_set(51).has(wt) or not passive_values("passiveEWPN%02d" % wt).is_empty()
+	if XTianqiQiyinEquip.any_class(item):
+		return true  # 天启篇七印套装件不分甲种（七印祭坛方案 v0.4 第 4.1 节）
 	var at := int(item.atypeId)
 	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
 

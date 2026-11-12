@@ -87,7 +87,7 @@ static func weapon_rule() -> Dictionary:
 	return data().get("weapon_rule", {}).duplicate(true)
 
 
-## 12 个武器类：key、name、wtype_id（接入时按原版 weaponTypes 填，现在是 null）
+## 12 个武器类：key、name、wtype_id（原版 System.weaponTypes 的编号）
 static func weapon_types() -> Array:
 	return data().get("weapon_types", []).duplicate(true)
 
