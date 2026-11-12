@@ -187,7 +187,7 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 	return r
 
 
-## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、
+## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、if_keep 条件段只留前 n 段（cmd 换成别的命令前缀，如 "Add State"）、replace_cmd 整条换命令名、
 ## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标
 static func _seq_edit(cmds: Array, ops: Array) -> Array:
 	var out: Array = cmds.duplicate(true)
@@ -215,6 +215,28 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 					res.append(out[i])
 					i += 1
 				out = res
+			"if_keep":  # 条件段留着（运行时照判），段里只留前 n 段（天蓬银河钉锤：净世诀额外 3 段 → 1 段）
+				var res2 := []
+				var i2 := 0
+				while i2 < out.size():
+					var nm := str(out[i2][0])
+					res2.append(out[i2])
+					i2 += 1
+					if nm.begins_with("if ") and nm.contains(str(op.get("match", ""))):
+						var kept := 0
+						while i2 < out.size() and str(out[i2][0]) != "end":
+							if str(out[i2][0]).to_lower().begins_with(str(op.get("cmd", "action effect")).to_lower()):
+								if kept < int(op.get("n", 1)):
+									res2.append(out[i2])
+								kept += 1
+							else:
+								res2.append(out[i2])
+							i2 += 1
+				out = res2
+			"replace_cmd":  # 命令名整条替换（曹操枭雄霸气 Hp -3% → Hp -1%）
+				for c in out:
+					if str(c[0]) == str(op.get("match", "")):
+						c[0] = str(op.get("to", ""))
 			"add_effects":
 				var last := -1
 				for i in out.size():
@@ -406,6 +428,13 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.maxTurns = int(sp.turns)
 	if sp.get("dot_remove", false):  # 固定量的持续伤害／回复改成按比例（traits 里的再生率），原来的公式去掉
 		r.erase("dot")
+	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
+		r.erase("effects")
+	if sp.has("dot"):  # 层数持续伤害：XExtDot 遇到 kind＝tianqi 时读 dot_value
+		var d: Dictionary = (sp.dot as Dictionary).duplicate(true)
+		d.kind = "tianqi"
+		d.state = id
+		r.dot = d
 	_state_recs[id] = [base, r]
 	return r
 
@@ -520,6 +549,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 					if a.skill_ids.has(int(id)):
 						n += 1
 			return 1.0 + clampf(n * per, 0.0, cap)
+		"self_tp":  # 当前 TP×per（天蓬神霄净世诀：每 10 点 +3%，最多 +30%；配 tp_drain 放完耗光）
+			return 1.0 + clampf(float(a.tp) * per, 0.0, cap)
 		"cast_count":  # 本场放过列表里的技能几次（begin_action 记、开战清零），每次 +per：签弟的忏悔
 			var n := 0
 			if a is Object and a.has_meta("xtq_casts"):
@@ -700,6 +731,17 @@ static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 				t.state_turns[id] = base + int(r.get("turns", 1))
 		if r.has("state") and t.is_alive() and logic._float("tianqi_skill_on_hit") < float(r.get("rate", 0.0)):
 			t.add_state(int(r.state))
+		if r.has("stack") and t.is_alive():  # 叠层（曹操霸道真气）：层数记在目标 state_data，封顶 cap（cap_with 专属物提高）
+			var sk: Dictionary = r.stack
+			var cap := int(sk.get("cap", 1))
+			for k in sk.get("cap_with", {}):
+				if owns(u, k):
+					cap = maxi(cap, int(sk.cap_with[k]))
+			var key := "_tq_stack_%d" % int(sk.state)
+			if not t.is_state_affected(int(sk.state)):
+				t.state_data[key] = 0
+			t.state_data[key] = mini(cap, int(t.state_data.get(key, 0)) + int(sk.get("add", 1)))
+			t.add_state(int(sk.state))
 		if r.has("pick") and t.is_alive() and not (r.pick as Array).is_empty() and logic._float("tianqi_skill_on_hit") < float(r.get("rate", 1.0)):
 			var pick: Array = r.pick  # 从几个状态里随机挂一个（晴明尸鬼尽封随机封一项属性）
 			t.add_state(int(pick[mini(pick.size() - 1, int(logic._float("tianqi_skill_on_hit") * pick.size()))]))
@@ -707,7 +749,15 @@ static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 		f.on_hit_done = done
 
 
-## 开战状态挂完之后（XBattleLogic._battle_start_states）：角色行 start_turns [{need, state, turns}] 改这件专属物开局状态的回合数
+## 层数持续伤害（XExtDot kind＝tianqi）：施加者 stat×per×层数×等级缩放，层数是 on_hit stack 记的
+static func dot_value(a, b, d: Dictionary) -> float:
+	var n := int(b.state_data.get("_tq_stack_%d" % int(d.get("state", 0)), 1))
+	var stat := STATS.find(str(d.get("stat", "atk")))
+	return float(a.param(stat)) * float(d.get("per", 0.0)) * float(maxi(1, n)) * level_scale(a)
+
+
+## 开战状态挂完之后（XBattleLogic._battle_start_states）：角色行 start_turns [{need, state, turns}] 改这件专属物开局状态的回合数，
+## start_tp [{need, tp}] 开场 TP 至少这么多
 ## （状态本身还被技能用，不改状态记录）
 static func start_turns(list: Array) -> void:
 	if not CARDS or not cards_on():
@@ -717,6 +767,9 @@ static func start_turns(list: Array) -> void:
 			continue
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
 		sync_learn(a)
+		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_tp", []):  # 开场 TP（天蓬吞云）
+			if not r.has("need") or owns(a, r.need):
+				a.tp = maxf(float(a.tp), float(r.tp))
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_turns", []):
 			if (not r.has("need") or owns(a, r.need)) and a.is_state_affected(int(r.state)):
 				a.state_turns[int(r.state)] = int(r.turns)
@@ -889,6 +942,8 @@ static func end_action(logic, u, skill) -> Array:
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_var_add(u, f.skill)
 		_foe_states(logic, u, f.skill)
+		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
+			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
 		return logs
 	if int(st.used.get(u, -1)) == int(logic.turn):
