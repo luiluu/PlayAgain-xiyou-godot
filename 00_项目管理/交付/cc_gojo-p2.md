@@ -36,6 +36,7 @@
 
 - 语法检查通过；`xiyou_gojo`、`xiyou_tianqi_skills` 全过。
 - 选测：`xiyou_tianqi*` 全部、`xiyou_hidden_actors`、`xiyou_actor_book`、`xiyou_actor_advanced`、`xiyou_skill_mastery`、`xiyou_reincarnation_entry`、`xiyou_rift2_canglong`、`xiyou_xuan_battle`、`xiyou_super_acquire`、`xiyou_super_deploy`、`xiyou_item_marks`、`xiyou_weak_challenge`、`xiyou_event_compare` a～d、`xiyou_determinism`，共 57 个：第一轮 `xiyou_rift2_canglong` off.Armors 挂（比原表时没补眼罩），专项里补上后单跑通过，其余全过。
+- 返工（总装四十收口挂）：`03_转换工具/天启篇数据校验.py` 的技能表规则自检超强者人数 16 → 17（五条悟在名单里，没解锁时游戏里当他不开放）；校验与 `测试天启篇数据校验.py` 39 项通过。
 - 没跑：`xiyou_rules*` 全段（原版档不走新逻辑，请总装合并时按选测跑）。
 
 ## 本分支提交
