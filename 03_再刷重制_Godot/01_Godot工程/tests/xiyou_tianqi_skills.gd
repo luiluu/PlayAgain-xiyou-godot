@@ -937,6 +937,24 @@ func _fill_charge() -> void:
 	b.add_state(1)
 	XTianqiSkills._charge(lg, a, {"u": a, "skill": dt, "targets": [b]})
 	_check("fill_charge_refund", int(s.variable(369)) == 3, s.variable(369))
+	# 复活类状态：七星续命回 30%；预感的庇护 30% 几率、回 30%、每场一次（复活后去掉自己）、不再回满魔法
+	var qx := XDB.rec("States", 252)
+	var qx_hp: Array = (qx.effects[0].steps as Array).filter(func(x): return str(x.do) == "gain")
+	_check("fill_revive_rate", qx_hp.size() == 1 and is_equal_approx(float(qx_hp[0].rate), 0.3), qx.effects)
+	var yg := XDB.rec("States", 1099)
+	var ye: Dictionary = yg.effects[0]
+	_check("fill_revive_once", is_equal_approx(float(ye.cond.above), 0.7) and str(ye.steps[0].do) == "remove_self" and not (ye.steps as Array).any(func(x): return str(x.get("resource", "")) == "mp"), ye)
+	# 诸葛：命星给战斗中的五行移位（不占行动）；逆天改命把七星续命再给生命最低的队友
+	var zg: XActor = s.actor(71)
+	var wx := XDB.rec("Skills", 10755)
+	_check("fill_zhuge_switch_rec", int(wx.stypeId) == 2 and not wx.get("meta", {}).has("Hide in Battle") and bool(XTianqiSkills.spec(10755).get("free_action", false)))
+	_check("fill_zhuge_no_star", XTianqiSkills.battle_extra(zg).is_empty() and not lg.battle_skills(zg).any(func(x): return int(x.id) == 10755))
+	if not zg.skill_ids.has(2547):
+		zg.learn_skill(2547)
+	var low: XActor = s.actor(100)
+	low.hp = 1.0
+	XTianqiSkills._ally_state(zg, XDB.rec("Skills", 2516))
+	_check("fill_zhuge_ally_star", low.is_state_affected(252) and not zg.is_state_affected(252), [s.battle_members().map(func(x): return [x.actor_id, x.hp, x.is_state_affected(252), is_same(x, low)])])
 	lg.end_battle(0)
 
 

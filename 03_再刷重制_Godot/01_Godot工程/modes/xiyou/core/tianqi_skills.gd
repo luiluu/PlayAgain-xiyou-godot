@@ -453,6 +453,29 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.erase("dot")
 	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
 		r.erase("effects")
+	if sp.has("revive") and r.get("effects") is Array:  # 自动复活（rules3 的 revive 块）：rate 回血比例（不再回满魔法、TP）、chance 几率、once 复活后自己去掉（每场一次）
+		var rv: Dictionary = sp.revive
+		for e in r.effects:
+			if not (e is Dictionary) or str(e.get("op", "")) != "revive":
+				continue
+			var steps: Array = []
+			var removed := false
+			for st in e.steps:
+				if str(st.get("do", "")) == "gain" and str(st.get("resource", "")) in ["mp", "tp"] and rv.has("rate"):
+					continue
+				if str(st.get("do", "")) == "gain" and str(st.get("resource", "")) == "hp" and rv.has("rate") and not st.has("amount"):
+					st.rate = float(rv.rate)
+					st.round = "floor"
+				removed = removed or str(st.get("do", "")) == "remove_self"
+				steps.append(st)
+			if bool(rv.get("once", false)) and not removed:
+				steps.push_front({"do": "remove_self"})
+			e.steps = steps
+			if rv.has("chance"):
+				if str(e.cond.get("kind", "")) == "down_each":
+					e.cond.above = 1.0 - float(rv.chance)
+				elif str(e.cond.get("kind", "")) == "down":
+					e.cond.below = float(rv.chance)
 	if sp.has("dot"):  # 层数持续伤害：XExtDot 遇到 kind＝tianqi 时读 dot_value
 		var d: Dictionary = (sp.dot as Dictionary).duplicate(true)
 		d.kind = "tianqi"
@@ -1163,6 +1186,32 @@ static func _charge(logic, u, f: Dictionary) -> void:
 		logic.current_order.append(u)
 
 
+## 技能行 ally_state {need, state}：学了 need 时，放完再给生命比例最低的一个队友挂这个状态（诸葛逆天改命：七星续命给队友）
+static func _ally_state(u, skill: Dictionary) -> void:
+	var r: Dictionary = spec(int(skill.get("id", 0))).get("ally_state", {})
+	if r.is_empty() or not (u is XActor) or not owns(u, r.need) or XState.current == null:
+		return
+	var best = null
+	for x in XState.current.battle_members():
+		if x != u and x is XActor and x.is_alive() and not x.is_state_affected(int(r.state)) and (best == null or float(x.hp) / maxf(1.0, float(x.mhp)) < float(best.hp) / maxf(1.0, float(best.mhp))):
+			best = x
+	if best != null:
+		best.add_state(int(r.state))
+
+
+## BattleLogic.battle_skills：角色行 battle_extra [{need, skill}]：带着这件时战斗技能列表多出这一招（诸葛命星：战斗中的五行移位）
+static func battle_extra(a) -> Array:
+	if not CARDS or not (a is XActor) or not cards_on():
+		return []
+	var out := []
+	for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("battle_extra", []):
+		if owns(a, r.need):
+			var rec := XDB.rec("Skills", int(r.skill))
+			if not rec.is_empty():
+				out.append(rec)
+	return out
+
+
 ## BattleLogic.can_use：技能行 need_var {var, min}：变量不够不能放（白起断天休要 3 点杀气）
 static func meets(a, skill: Dictionary) -> bool:
 	if not (a is XActor) or not CARDS:
@@ -1310,6 +1359,9 @@ static func end_action(logic, u, skill) -> Array:
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 		_consume(logic, u, f)
 		_charge(logic, u, f)
+		_ally_state(u, f.skill)
+		if bool(spec(int(f.skill.get("id", 0))).get("free_action", false)) and u.is_alive():
+			logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
 		if u.is_alive():
