@@ -41,6 +41,7 @@ func _run() -> void:
 	_gear()
 	_xinfa()
 	_buzhao()
+	_p3()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -464,8 +465,113 @@ func _buzhao() -> void:
 
 
 ## 改过卡的角色整场跑几回合不报错
+## 第三期（31～60 号）新加的能力：新状态、层数持续伤害、本场次数、序列改写、免生命消耗、取高、TP、诅咒数、状态数、物攻比较、按已学技能补学、真火半伤、开场 TP
+func _p3() -> void:
+	var s := XTianqi.start_new_game(3, "jianxian", [31, 34, 38, 51, 58])
+	XTianqi.take_pending()
+	for id in [33, 34, 37, 38, 43, 52, 54, 58, 59]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var st := XDB.rec("States", 10801)
+	_check("p3_new_state", str(st.get("name", "")) == "长恨" and int(st.get("id", 0)) == 10801 and int(st.maxTurns) == 2 and str(st.note).contains("passiveCrHarmRi:10"), st.get("name"))
+	_check("p3_dot_remove", not XDB.rec("States", 55).has("dot") and XDB.table("States")[55].has("dot"))
+	var b106 := XDB.rec("States", 106)
+	_check("p3_dot_tianqi", str(b106.get("dot", {}).get("kind", "")) == "tianqi" and not b106.has("effects"), b106.get("dot"))
+	var seq := func(id): return (XDB.rec("Skills", id).yepSeq.target as Array)
+	var fx := func(id): return (seq.call(id) as Array).filter(func(c): return str(c[0]) == "action effect")
+	_check("p3_drop_cmd", not (seq.call(1340) as Array).any(func(c): return str(c[0]) == "Add State 942") and (fx.call(1340) as Array).size() == 9, (fx.call(1340) as Array).size())
+	_check("p3_replace_cmd", (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -1%") and not (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -3%"))
+	_check("p3_keep_effects", (fx.call(10710) as Array).size() == 1 and (fx.call(2067) as Array).size() == 5)
+	_check("p3_drop_area", (fx.call(1212) as Array).all(func(c): return (c[1] as Array).is_empty()))
+	var in_w := 0
+	var on := false
+	for c in seq.call(1098):
+		if str(c[0]).begins_with("if ") and str(c[0]).contains("dataWeapons[1527]"):
+			on = true
+		elif str(c[0]) == "end":
+			on = false
+		elif on and str(c[0]) == "action effect":
+			in_w += 1
+	_check("p3_if_keep", in_w == 1, in_w)
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	# 层数持续伤害：曹操霸道真气每层物攻×0.1×等级缩放，最多 6 层
+	var cao: XActor = s.actor(38)
+	cao.change_level(99)
+	b.state_data["_tq_stack_106"] = 6
+	var dv := XTianqiSkills.dot_value(cao, b, b106.dot)
+	_check("p3_dot_value", is_equal_approx(dv, float(cao.atk) * 0.6), [dv, cao.atk])
+	# 本场忏悔次数：签弟赎罪每次 +10%，封顶 30%
+	var qd: XActor = s.actor(34)
+	qd.change_level(99)
+	var shu := XDB.rec("Skills", 1017)
+	qd.set_meta("xtq_casts", {})
+	var v0 := XTianqiSkills.formula(qd, b, shu)
+	qd.set_meta("xtq_casts", {1016: 2})
+	var v2 := XTianqiSkills.formula(qd, b, shu)
+	qd.set_meta("xtq_casts", {1016: 9})
+	var v9 := XTianqiSkills.formula(qd, b, shu)
+	_check("p3_cast_count", is_equal_approx(v2 / v0, 1.2) and is_equal_approx(v9 / v0, 1.3), [v0, v2, v9])
+	# 晴明尸鬼尽封：扣 50% 生命，学了心法②不扣
+	var qm: XActor = s.actor(33)
+	qm.change_level(99)
+	qm.learn_skill(5434)
+	var gui := XDB.rec("Skills", 5434)
+	var c0 := XBattleLogic.skill_hp_cost(qm, gui)
+	qm.learn_skill(6919)
+	_check("p3_hp_free", c0 > 0 and XBattleLogic.skill_hp_cost(qm, gui) == 0, c0)
+	# 露丝取物攻、魔攻里高的
+	var ls: XActor = s.actor(43)
+	ls.change_level(99)
+	var bao := XDB.rec("Skills", 1177)
+	_check("p3_max_of", is_equal_approx(XTianqiSkills.formula(ls, b, bao), maxf(ls.atk, ls.mat) * 3.6), [XTianqiSkills.formula(ls, b, bao), ls.atk, ls.mat])
+	# 天蓬净世诀吃 TP：每点 +0.3%，封顶 30%
+	var tp: XActor = s.actor(37)
+	tp.change_level(99)
+	var jsj := XDB.rec("Skills", 1098)
+	tp.tp = 0
+	var t0 := XTianqiSkills.formula(tp, b, jsj)
+	tp.tp = 50
+	var t50 := XTianqiSkills.formula(tp, b, jsj)
+	_check("p3_self_tp", is_equal_approx(t50 / t0, 1.15), [t0, t50])
+	# 艾瑞塔数诅咒、迪昂数自己的状态
+	b.add_state(189)
+	b.add_state(191)
+	var cr := XTianqiSkills._cond({"if": "target_states_in", "states": [99, 189, 191, 192], "per": 0.1, "cap": 0.3}, qm, b)
+	_check("p3_target_states_in", is_equal_approx(cr, 1.2), cr)
+	var di: XActor = s.actor(54)
+	di.add_state(10803)
+	di.add_state(10804)
+	_check("p3_self_states", is_equal_approx(XTianqiSkills._cond({"if": "self_states", "per": 0.05, "cap": 0.3}, di, b), 1.0 + 0.05 * di.state_ids.size()) and di.state_ids.size() >= 2, di.state_ids)
+	# 大羿物攻比较（追星判定时 ×1.3）
+	var yi: XActor = s.actor(59)
+	var hi := XTianqiSkills._cond({"if": "atk_above_target", "mult": 1.2}, yi, b)
+	_check("p3_atk_above", is_equal_approx(hi, 1.2 if float(yi.atk) > float(b.atk) else 1.0), [yi.atk, b.atk])
+	# 小青：学了进阶给的一剑破万光（5109），开战补学主动大招剑破万光（10711）
+	var xq: XActor = s.actor(58)
+	_check("p3_learn_s_not_level", not xq.learnings().any(func(l): return int(l.skillId) == 10711))
+	xq.learn_skill(5109)
+	XTianqiSkills.sync_learn(xq)
+	_check("p3_learn_s", xq.skill_ids.has(10711) and int(XDB.rec("Skills", 10711).tpCost) == 100 and int(XDB.rec("Skills", 10711).scope) == 2)
+	var wk: XActor = s.actor(52)
+	wk.change_level(20)
+	_check("p3_buzhao_wukong", wk.skill_ids.has(10712) and str(XDB.rec("Skills", 10712).name) == "气功连弹")
+	# 至尊宝真火追击半伤；天蓬吞云开场 TP
+	_check("p3_zhenhuo_half", is_equal_approx(XZhenhuo.scale_of(s.actor(31)), 0.5))
+	tp.tp = 0
+	_wear(tp, "armor", 3578)
+	XTianqiSkills.start_turns([tp])
+	_check("p3_start_tp", float(tp.tp) >= 50.0, tp.tp)
+	lg.end_battle(0)
+
+
 func _smoke() -> void:
-	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30]]:
+	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30],
+			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60]]:
 		_smoke_group(group)
 
 

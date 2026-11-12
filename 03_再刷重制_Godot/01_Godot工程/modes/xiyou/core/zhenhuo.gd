@@ -37,6 +37,8 @@ static func is_owner(u) -> bool:
 
 
 static func scale_of(u) -> float:
+	if XTianqiSkills.cards_on():
+		return 0.5  # 天启篇技能重构：追击的横扫千军半伤（系数在卡里，不再随等级涨）
 	return 0.6 + 0.01 * float(u.level if u != null else 0)
 
 

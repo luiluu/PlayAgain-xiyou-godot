@@ -81,7 +81,9 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 		_diag(st, b, "origin_missing")  # 原版：a 是 undefined，读属性报错，本状态跳过；公式不碰 a（常数）就照算
 		return
 	var value := 0.0
-	if kind == "damagedot":
+	if kind == "tianqi":  # 天启篇技能重构的层数持续伤害（曹操霸道真气）
+		value = XTianqiSkills.dot_value(a, b, d)
+	elif kind == "damagedot":
 		# 2038：施加者是角色→原版取全局泄漏值，起点 0＝什么也不做；否则读持有者的 damagedot（Apply Effect 写入 state_data._damagedot，
 		# 见 state_effects 2038 apply；敌人持有者 hasSkill 报错没写＝原版 value 是 undefined，gainHp(NaN) 对敌人什么也没改，只多一个 0 的弹字，这里不弹）
 		if a is XActor or not b.state_data.has("_damagedot"):
