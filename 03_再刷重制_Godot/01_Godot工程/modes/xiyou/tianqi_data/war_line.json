@@ -25,10 +25,10 @@
    "zhongyan": {"name": "终焉", "hp": 3.0, "idx": 3}
   },
   "kinds": {
-   "berserk": {"name": "战狂", "mult": [1.5, 2.0, 3.0, 5.0], "rage_per_hit": 0.05},
-   "fervor": {"name": "战意", "full": [6, 5, 3, 2]},
-   "commander": {"name": "号令官", "buff": [0.1, 0.2, 0.3, 0.5], "extra": [0, 1, 1, 2]},
-   "pyro": {"name": "烟火师", "spark_extra": 1}
+   "berserk": {"name": "战狂", "mult": [1.5, 2.0, 3.0, 5.0], "rage_per_hit": 0.05, "finale": "免疫能力值减益"},
+   "fervor": {"name": "战意", "full": [6, 5, 3, 2], "finale_mult": 2.0},
+   "commander": {"name": "号令官", "buff": [0.1, 0.2, 0.3, 0.5], "extra": [0, 1, 1, 2], "finale_cap": 3},
+   "pyro": {"name": "烟火师", "spark_extra": 1, "finale_bomb": 1.5}
   },
   "sparks": {"full": 10, "full_zhongyan": 6, "per_action": 1},
   "clash": {"from_turn": 3, "per_turn": 0.1, "cap": 1.0}

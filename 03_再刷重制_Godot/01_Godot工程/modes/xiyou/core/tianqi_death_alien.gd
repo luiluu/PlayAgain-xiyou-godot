@@ -15,7 +15,8 @@ extends RefCounted
 ##   骑士队长 captain：在场时逃跑必定失败；我方的「免即死」挡死期、丧钟的几率失效 50／75／100／100%；化形起死期改在被挂的人行动之后立刻结算；
 ##   终焉同场其他死亡异化的间隔（宣判者）−1 回合。
 ## - 死期（本线核心计量）：开战、每回合开始在战斗日志里报谁被挂了、丧钟还剩几回合；回合结束时带走被挂的人。终焉级在场时死者本场不能复活。
-## 没做（交付单「未做」）：「不屈」「致命伤害保命」类效果失效（要逐个角色模块接，现在只认免即死＝抵抗阵亡状态）；收尸人终焉的吸收技能；
+## 「致命伤害保命」失效：免即死（抵抗阵亡状态）、七印灰印免死（XTianqiQiyinEffects，breaks_saves）已接（cc/tianqi-alien-finale）。
+## 没做（交付单「未做」）：各角色模块自带的「不屈」类效果（要逐个角色模块接）；收尸人终焉的吸收技能；
 ## 画面上的死期钟和倒数（现在只在战斗日志里报）。
 ##
 ## 开关：XTianqiDeathLine.ENABLED（死亡线整条）；只认天启篇存档且选了死亡线，发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
@@ -258,6 +259,11 @@ static func _report(logic) -> void:
 # ---- 死亡的结算 ----
 
 ## 骑士队长让「免即死」失效（按场上最高级的几率掷一次）
+## 骑士队长在场：别的模块的「致命伤害保命」（七印灰印免死等）按队长的失效几率失效
+static func breaks_saves(logic) -> bool:
+	return active(logic) and _captain_breaks(logic)
+
+
 static func _captain_breaks(logic) -> bool:
 	var c := _captain_idx(logic)
 	if c < 0:

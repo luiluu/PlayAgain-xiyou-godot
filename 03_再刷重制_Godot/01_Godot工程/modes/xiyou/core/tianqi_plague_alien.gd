@@ -16,7 +16,10 @@ extends RefCounted
 ## - 病灶（本线核心计量）：我方身上减益的总层数（中毒按层、能力弱化按级）；满 12 爆发一次：中毒立刻结算一次、混乱的人多乱 1 回合；
 ##   降回 12 以下才会再爆发。开战时、每回合开始在战斗日志里报。
 ## 减益怎么数：本模块的中毒、不服，加上我方身上 XBossStatus.kind_of 判为 Debuff 的状态（不含阵亡）和能力弱化。每次行动后、回合首尾重数一次（缓存），属性按缓存算。
-## 没做（交付单「未做」）：各种类的终焉效果、终焉病灶阈值 8 与病弱上限 −60%；混乱者化形「优先打队友」；疫源的「免疫类装备无效」。
+## - 终焉（cc/tianqi-alien-finale）：终焉瘟疫异化在场时病灶满 8 就爆发、病弱上限 −60%；毒腺：中毒期间不能被治疗（XResourceContext._gain）；
+##   混乱者：混乱一次 2 回合；传染者：每回合传两次；疫源：我方对减益状态的免疫无效（BattleLogic 附加状态时不认抵抗）；
+##   挑衅者：全体挑衅（我方群体攻击也只打它），打它的人改为混乱（不再是不服）。
+## 没做（交付单「未做」）：混乱者化形「优先打队友」。
 ##
 ## 开关：XTianqiPlagueLine.ENABLED（瘟疫线整条）；只认天启篇存档、发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare／apply 的战斗一概不动。
 
@@ -185,6 +188,18 @@ static func sick(logic) -> bool:
 	return active(logic) and fight(logic).units.keys().any(func(e): return e.is_alive())
 
 
+## 场上有活着的终焉瘟疫异化怪（病灶阈值 8、病弱上限 −60%）
+static func finale(logic) -> bool:
+	if not active(logic):
+		return false
+	var f := fight(logic)
+	return f.units.keys().any(func(e): return e.is_alive() and int(f.units[e].idx) >= 3)
+
+
+static func _focus_full(logic) -> int:
+	return int(data().focus.full_end) if finale(logic) else int(data().focus.full)
+
+
 ## 疫源：减益多几回合（场上最高级）
 static func extend_turns(logic) -> int:
 	var i := _max_idx(logic, "source")
@@ -244,7 +259,7 @@ static func refresh(logic) -> void:
 	for a in logic.actors:
 		if a is XBattler:
 			a.param_mark_dirty()
-	var full := int(data().focus.full)
+	var full := _focus_full(logic)
 	if not sick(logic):
 		f.burst = false
 		return
@@ -270,14 +285,14 @@ static func frail_rate(logic, a) -> float:
 	if not sick(logic):
 		return 0.0
 	var fr: Dictionary = data().frail
-	return minf(float(fr.cap), XTianqiRewards.frail_per(a, float(fr.per)) * int(fight(logic).debuffs.get(a, 0)))  # 天启篇奖励：净印·清心
+	return minf(float(fr.cap_end) if finale(logic) else float(fr.cap), XTianqiRewards.frail_per(a, float(fr.per)) * int(fight(logic).debuffs.get(a, 0)))  # 天启篇奖励：净印·清心
 
 
 static func focus_text(logic) -> String:
 	if not sick(logic):
 		return "瘟疫散去了。"
-	return "病灶 %d／%d：我方每个减益让八项属性 −%d%%（最多 −%d%%）。" % [int(fight(logic).layers), int(data().focus.full),
-		roundi(float(data().frail.per) * 100.0), roundi(float(data().frail.cap) * 100.0)]
+	return "病灶 %d／%d：我方每个减益让八项属性 −%d%%（最多 −%d%%）。" % [int(fight(logic).layers), _focus_full(logic),
+		roundi(float(data().frail.per) * 100.0), roundi(float(data().frail.cap_end if finale(logic) else data().frail.cap) * 100.0)]
 
 
 # ---- 施加 ----
@@ -350,15 +365,19 @@ static func after_action(logic, _u) -> Array:
 
 ## BattleLogic.targets_for：挑衅者活着时，我方打敌人的单体技能只能打它（群体不受限）
 static func filter_targets(logic, a, skill: Dictionary, list: Array) -> Array:
-	if not active(logic) or not _our(logic, a) or int(skill.get("scope", 0)) != 1 or not list.any(func(t): return t is XEnemy):
+	if not active(logic) or not _our(logic, a) or not list.any(func(t): return t is XEnemy):
 		return list
 	var f := fight(logic)
 	var taunters := []
+	var total := false
 	for e in f.units:
 		if e.is_alive() and str(f.units[e].kind) == "taunt":
 			taunters.append(e)
-	if taunters.is_empty():
+			total = total or int(f.units[e].idx) >= 3  # 终焉挑衅者：全体挑衅，群体攻击也只打它
+	if taunters.is_empty() or (int(skill.get("scope", 0)) != 1 and not total):
 		return list
+	if int(skill.get("scope", 0)) != 1:
+		return list.filter(func(t): return not (t is XEnemy) or taunters.has(t))
 	var kept := list.filter(func(t): return taunters.has(t))
 	return kept if not kept.is_empty() else [taunters[0]]
 
@@ -375,11 +394,17 @@ static func hp_damage(logic, u, t, value: float, item := {}) -> float:
 				_add_poison(logic, f, u, t, int(r.idx))
 			"chaos":
 				if logic._float("plague_chaos") < float(kind_info("chaos").chance[int(r.idx)]):
-					_confuse(logic, f, t, int(kind_info("chaos").turns))
+					_confuse(logic, f, t, int(kind_info("chaos").get("finale_turns", 2)) if int(r.idx) >= 3 else int(kind_info("chaos").turns))
 	var rt := unit(logic, t)
 	if not rt.is_empty() and str(rt.kind) == "taunt" and _our(logic, u):
 		var k := kind_info("taunt")
 		var m := _mark(f, u)
+		if int(rt.idx) >= 3:  # 终焉挑衅者：打它的人混乱（不再是不服）
+			if u.is_alive() and not u.is_state_affected(int(data().confusion_state)):
+				_confuse(logic, f, u, int(kind_info("chaos").turns))
+			if not item.is_empty() and int(item.get("scope", 1)) != 1:
+				return floorf(value * float(k.group_cut))
+			return value
 		if int(m.defy) <= 0:
 			_say(f, "%s不服了：物攻、魔攻 −%d%%。" % [u.display_name(), roundi(float(k.defy_down) * 100.0)])
 		m.defy = maxi(int(m.defy), int(k.defy_turns) + extend_turns(logic))
@@ -426,8 +451,9 @@ static func end_turn(logic) -> Array:
 			m.defy = int(m.defy) - 1
 	var ci := _max_idx(logic, "contagion")
 	if ci >= 0:
-		for _n in _idx_of(logic, "contagion"):
-			_spread(logic, f, int(kind_info("contagion").copies[ci]), 1 if ci >= 2 else 0)
+		for i in _idx_of(logic, "contagion"):
+			for _k in (2 if int(i) >= 3 else 1):  # 终焉传染者：每回合传两次
+				_spread(logic, f, int(kind_info("contagion").copies[ci]), 1 if ci >= 2 else 0)
 	refresh(logic)
 	return take_logs(logic)
 
@@ -462,6 +488,26 @@ static func _spread(logic, f: Dictionary, n: int, plus: int) -> void:
 		copied += 1
 	if copied > 0:
 		_say(f, "传染：%s身上的 %d 个减益传给了%s。" % [from.display_name(), copied, to.display_name()])
+
+
+## XResourceContext._gain：终焉毒腺在场时，我方中毒（本模块的中毒）期间不能被治疗
+static func gain(b, resource: String, amount: float) -> float:
+	if amount <= 0.0 or resource != "hp" or _logic_ref == null:
+		return amount
+	var logic = active_logic()
+	if logic == null or not _our(logic, b) or _max_idx(logic, "gland") < 3:
+		return amount
+	return 0.0 if not (mark_of(logic, b).get("poison", []) as Array).is_empty() else amount
+
+
+## BattleLogic 附加状态判抵抗时：终焉疫源在场，我方对减益状态的免疫无效
+static func forced_state(t, id: int) -> bool:
+	if _logic_ref == null or id == DEATH_STATE:
+		return false
+	var logic = active_logic()
+	if logic == null or not _our(logic, t) or _max_idx(logic, "source") < 3:
+		return false
+	return XBossStatus.kind_of(XDB.rec("States", id)) == "Debuff"
 
 
 ## XActor.param：病弱（八项属性按减益个数降）、不服（物攻、魔攻 −20%）
