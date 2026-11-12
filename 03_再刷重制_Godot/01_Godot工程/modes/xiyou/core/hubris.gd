@@ -111,11 +111,13 @@ static func _pierce(item: Dictionary, a) -> float:
 
 ## evalDamageFormula 包装：公式求值期间目标物防 ×(1−穿透)
 static func push_formula(item: Dictionary, a, b) -> void:
+	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：公式帧进出会改能力值读法，当场作废
 	var rate := _pierce(item, a)
 	_frame_target = b if rate > 0.0 else null
 	_frame_rate = rate
 
 static func pop_formula() -> void:
+	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：公式帧进出会改能力值读法，当场作废
 	_frame_target = null
 	_frame_rate = 0.0
 

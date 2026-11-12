@@ -372,6 +372,18 @@ func max_level() -> int:
 	return XState.current.max_level() if XState.current else int(data().get("maxLevel", 99))
 
 func max_tp() -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "mtp1" if _cat_bare else "mtp0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _max_tp_now())
+			return m[key]
+		var gen := _read_gen
+		var fresh := _max_tp_now()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
 	read_begin()
 	var v := _max_tp_now()
 	read_end()
@@ -534,9 +546,12 @@ func skills() -> Array:
 			if READ_VERIFY:
 				_read_verify("skills", m[key], _skills_now())
 			return (m[key] as Array).duplicate()
+		var gen := _read_gen
 		var fresh := _skills_now()
-		m[key] = fresh
-		return fresh.duplicate()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
 	return _skills_now()
 
 func _skills_now() -> Array:
@@ -573,9 +588,12 @@ func all_traits() -> Array:
 			if READ_VERIFY:
 				_read_verify("all_traits", m[key], XOrbs.filter_traits(super.all_traits(), equips))
 			return (m[key] as Array).duplicate()
+		var gen := _read_gen
 		var fresh := XOrbs.filter_traits(super.all_traits(), equips)
-		m[key] = fresh
-		return fresh.duplicate()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
 	return XOrbs.filter_traits(super.all_traits(), equips)
 
 ## 只读窗口里按（特性码, 编号）分好组，同一窗口里第二次起直接取
@@ -588,13 +606,15 @@ func traits_with_id(code: int, id: int) -> Array:
 	if m.has(key):
 		index = m[key]
 	else:
+		var gen := _read_gen
 		for t in all_traits():
 			var k := int(t.code) * 100000 + int(t.dataId)
 			if index.has(k):
 				index[k].append(t)
 			else:
 				index[k] = [t]
-		m[key] = index
+		if gen == _read_gen:
+			m[key] = index
 	var out: Array = index.get(code * 100000 + id, [])
 	if READ_VERIFY:
 		_read_verify("traits_with_id", out, super.traits_with_id(code, id))
@@ -708,9 +728,12 @@ func passive_values(tag: String) -> Array:
 			if READ_VERIFY:
 				_read_verify("passive_values " + tag, m[key], _passive_values_now(tag))
 			return (m[key] as Array).duplicate()
+		var gen := _read_gen
 		var fresh := _passive_values_now(tag)
-		m[key] = fresh
-		return fresh.duplicate()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
 	return _passive_values_now(tag)
 
 func _passive_values_now(tag: String) -> Array:
@@ -949,6 +972,18 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("pa1:" if _cat_bare else "pa0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _param_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _param_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
 	read_begin()
 	var v := _param_now(i)
 	read_end()
@@ -1002,6 +1037,18 @@ func traits_sum(code: int, id: int) -> float:
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("xp1:" if _cat_bare else "xp0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _xparam_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _xparam_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
 	read_begin()
 	var v := _xparam_now(i)
 	read_end()
@@ -1021,6 +1068,18 @@ func _xparam_now(i: int) -> float:
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("sp1:" if _cat_bare else "sp0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _sparam_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _sparam_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
 	read_begin()
 	var v := _sparam_now(i)
 	read_end()

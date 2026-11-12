@@ -112,6 +112,12 @@ static func supported(b: XBattler) -> String:
 	return ""
 
 func snapshot(b: XBattler) -> Dictionary:
+	XActor.read_begin()  # 只读窗口缓存（O-待定-2）
+	var out := _snapshot_now(b)
+	XActor.read_end()
+	return out
+
+func _snapshot_now(b: XBattler) -> Dictionary:
 	return {"resources": [b.hp, b.mp, b.tp], "caps": [b.mhp, b.mmp, b.max_tp()], "states": b.state_ids.duplicate(),
 		"stateTurns": b.state_turns.duplicate(true), "buffs": b.buffs.duplicate(), "buffTurns": b.buff_turns.duplicate(),
 		"alive": not b.state_ids.has(1), "dead": b.state_ids.has(1), "immortal": b.immortal,

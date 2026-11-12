@@ -421,8 +421,10 @@ func views(list: Array = []) -> Dictionary:
 ## 全体战斗者 → 能否行动（spriteCanMove）与是否活着，行动序列每条指令执行前记一次（MOVE/JUMP/FACE 等按当时的状态）
 func move_flags() -> Dictionary:
 	var out := {}
+	XActor.read_begin()  # 只读窗口缓存（O-待定-2）
 	for b in actors + enemies:
 		out[b] = [can_move(b), b.is_alive()]
+	XActor.read_end()
 	return out
 
 
