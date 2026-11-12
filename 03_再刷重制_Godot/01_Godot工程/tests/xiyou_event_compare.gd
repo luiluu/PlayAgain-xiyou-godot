@@ -293,7 +293,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	# 比原版翻译：副本的难度／挂机恢复优化（O-038／O-040）关掉，由 tests/xiyou_dungeon 单独对照
 	XDungeon.restore_difficulty = false
-	# 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12，O-待定·大厅全图鉴 NPC）：比原版翻译时照原版整页，由 tests/xiyou_lobby_debug_npc 单独量
+	# 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12，O-354）：比原版翻译时照原版整页，由 tests/xiyou_lobby_debug_npc 单独量
 	XLobbyDebugNpc.BOOK_ONLY = false
 	XDungeon.restore_hang_up = false
 	XDungeon.battle_end_counts = false
