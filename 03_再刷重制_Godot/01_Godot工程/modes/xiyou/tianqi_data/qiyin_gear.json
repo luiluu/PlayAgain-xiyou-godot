@@ -2,7 +2,7 @@
  "version": 1,
  "draft": true,
  "source": "Kyo 2026-11-11 七印祭坛派单（天启篇项目线程「做七印祭坛装备数据层」）",
- "dev": "dev.待定",
+ "dev": "dev.485",
  "_note": {
   "说明": "天启篇「七印祭坛」装备，只读草稿（XTianqiQiyinGear）：七套套装（每套 6 件）、13 把毕业武器、5 件神器。还没接进战斗、掉落、界面，也不改原版数据库。数值是占位（draft）。效果写成 {code, 参数…, text}：code 的含义见 effect_codes，参数名照含义里的写法；text 是给界面的一句中文。百分比参数一律写成整数百分数（20＝20%），倍数参数（mult、base_mult）写成倍数。武器类 wtype_id 先留 null，接入时按原版 System.weaponTypes 填。",
   "effect_codes": {
