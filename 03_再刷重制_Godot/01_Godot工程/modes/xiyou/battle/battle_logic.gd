@@ -398,7 +398,7 @@ func alive(list: Array) -> Array:
 # ---- 画面快照：日志写入时记下表现要用的值，表现层只读日志（整次行动先结算完才演出，播放时的实时状态已是最终值） ----
 ## 一个战斗者此刻的画面读数（血条、状态栏、待机动作、能否行动）
 func view_of(b: XBattler) -> Dictionary:
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：一次快照里同一名角色的技能表、特性表只算一次
+	XActor.read_begin()  # 只读窗口缓存（O-348）：一次快照里同一名角色的技能表、特性表只算一次
 	var v := _view_now(b)
 	XActor.read_end()
 	return v
@@ -424,7 +424,7 @@ func views(list: Array = []) -> Dictionary:
 ## 全体战斗者 → 能否行动（spriteCanMove）与是否活着，行动序列每条指令执行前记一次（MOVE/JUMP/FACE 等按当时的状态）
 func move_flags() -> Dictionary:
 	var out := {}
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）
+	XActor.read_begin()  # 只读窗口缓存（O-348）
 	for b in actors + enemies:
 		out[b] = [can_move(b), b.is_alive()]
 	XActor.read_end()
@@ -743,7 +743,7 @@ static func wtype_equipped(a: XActor, wtype: int) -> bool:
 
 ## 角色的可用主动技能（隐藏的被动不列出）
 func usable_skills(a: XActor) -> Array:
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：逐个技能判能不能用都是只读
+	XActor.read_begin()  # 只读窗口缓存（O-348）：逐个技能判能不能用都是只读
 	var out := battle_skills(a).filter(func(s): return can_use(a, s))
 	XActor.read_end()
 	return out
@@ -1151,7 +1151,7 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
-	XActor.read_reset()  # 只读窗口缓存（O-待定-1）：行动开始时不该有开着的窗口
+	XActor.read_reset()  # 只读窗口缓存（O-348）：行动开始时不该有开着的窗口
 	if not STALE_TIMING:
 		for a in actors:
 			if a is XActor:

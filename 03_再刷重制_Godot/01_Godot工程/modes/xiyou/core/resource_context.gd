@@ -112,7 +112,7 @@ static func supported(b: XBattler) -> String:
 	return ""
 
 func snapshot(b: XBattler) -> Dictionary:
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）
+	XActor.read_begin()  # 只读窗口缓存（O-348）
 	var out := _snapshot_now(b)
 	XActor.read_end()
 	return out

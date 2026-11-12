@@ -8,7 +8,7 @@ static func counts(a: XActor) -> Dictionary:
 	return out
 
 static func active(a: XActor) -> Array:
-	if XActor.READ_MEMO and XActor._read_depth > 0:  # 只读窗口缓存（O-待定-1）：窗口里同一名角色生效的套装只算一次
+	if XActor.READ_MEMO and XActor._read_depth > 0:  # 只读窗口缓存（O-348）：窗口里同一名角色生效的套装只算一次
 		var m := a._read_memo()
 		var key := "su1" if a._cat_bare else "su0"
 		if m.has(key):

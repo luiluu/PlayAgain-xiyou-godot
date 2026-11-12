@@ -1449,7 +1449,7 @@ static func item_list_row(s: XState, e: Dictionary, enabled: bool) -> Dictionary
 ## Window_BattleSkill / Window_BattleItem（宽 450、最多 16 行），贴在角色旁 (+16, +16)。
 func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0):
 	_close_list()
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：逐行算能不能用、费用都是只读
+	XActor.read_begin()  # 只读窗口缓存（O-348）：逐行算能不能用、费用都是只读
 	var rows := entries.map(func(e): return _list_entry(a, e, items))
 	XActor.read_end()
 	list_win = XBattleList.create(ui, rows, LIST_W)
