@@ -226,7 +226,8 @@ func _battle_setup() -> void:
 	XEnemy.force_roll = -1.0
 	var e: XEnemy = l4.enemies[0]
 	var u := XRiftAlien.unit(l4, e)
-	_check("st4_guard_alien", str(u.get("tier", "")) == "qinran" and e.display_name().begins_with("侵染·"), [u, e.display_name()])
+	# v0.01 补丁线：底包 XEnemy.display_name 不认 tianqi_prefix（天启篇才有），名字前缀不显示；三阶起发行版走不到，这里只核级和前缀标记
+	_check("st4_guard_alien", str(u.get("tier", "")) == "qinran" and str(e.get_meta("tianqi_prefix", "")) == "侵染·", [u, e.get_meta("tianqi_prefix", "")])
 	_check("st4_no_myth", not e.elite and not e.display_name().contains("神话"), e.display_name())
 	var ratio := e.mhp / plain_hp
 	var want := 1.25 * (float(XRiftAlien.kind_info("berserk").mult[0]) if str(u.kind) == "berserk" else 1.0)
