@@ -104,6 +104,10 @@ func _tianqi_side() -> void:
 	XState.current = s
 	# 星级仓库：只剩装备
 	_check("warehouse_cats", XStarWarehouseScene.cat_ops().size() == 1, XStarWarehouseScene.cat_ops().size())
+	# 成就：不列提到宠物的（61 神秘生物！、104 宠物训练大师）
+	var all_ids := XAchievement.ids()
+	var kept := XTianqiPetHide.filter_achievements(all_ids)
+	_check("achievements_hidden", not kept.has(61) and not kept.has(104) and kept.size() == all_ids.size() - 2, all_ids.size() - kept.size())
 
 
 func _plain_side() -> void:
@@ -119,6 +123,7 @@ func _plain_side() -> void:
 	_check("plain_capture", lg.enemies[0].capture)
 	lg.end_battle(1)
 	_check("plain_warehouse_cats", XStarWarehouseScene.cat_ops().size() == 2)
+	_check("plain_achievements", XTianqiPetHide.filter_achievements(XAchievement.ids()).size() == XAchievement.ids().size())
 
 
 func _switch_off() -> void:

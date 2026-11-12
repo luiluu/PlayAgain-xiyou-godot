@@ -266,6 +266,10 @@ static func tier_rows(s: XState) -> Array:
 
 func tiers(g: String) -> void:
 	var s := XState.current
+	if XTianqiMerchant.on(s):  # 天启篇：两档货架（寻宝、珍藏）
+		choose(tianqi_rows(s, g), _tianqi_pick.bind(g), home,
+			["%s　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "寻宝必出1条特效词条；珍藏先指定1条传说词条。"])
+		return
 	choose(tier_rows(s), _tier_pick.bind(g), home,
 		["%s抽奖　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "同一分组内基础装备等概率，必出本档指定类别1条。"])
 
@@ -278,6 +282,52 @@ func _tier_pick(r: Dictionary, g: String) -> void:
 		set_text(got)
 	else:
 		XToast.show_text("获得 %s（%s）" % [str(got.name), XAbyssMerchant.LABELS[int(r.tier)]], true)
+		tiers(g)
+
+
+# ---- 天启篇货架（XTianqiMerchant） ----
+
+static func _can_pay(s: XState, price: int) -> bool:
+	var cur := _run_of()
+	var key := str(cur.get("identity", {}).get("key", ""))
+	return XAbyssMerchant.balance(s, key) >= price and int(cur.get("used", 0)) < int(XAbyssMerchant.config().get("visitLimit", 0))
+
+
+static func tianqi_rows(s: XState, g: String) -> Array:
+	var tr := XTianqiMerchant.shelf("treasure")
+	var co := XTianqiMerchant.shelf("collection")
+	var t_ok := not XTianqiMerchant.bodies(s, g, "treasure").is_empty()
+	var c_ok := not XTianqiMerchant.collection_choices(s, g).is_empty()
+	return [{"text": "%d点　%s：必出1条特效词条" % [int(tr.cost), str(tr.name)], "shelf": "treasure",
+			"help": "消耗本路线战利品点%d；装备本体和特效词条随机。" % int(tr.cost) if t_ok else "本路线这一组没有能出特效词条的装备。",
+			"enabled": t_ok and _can_pay(s, int(tr.cost))},
+		{"text": "%d点起　%s：指定1条传说词条" % [int(co.cost), str(co.name)], "shelf": "collection",
+			"help": "先选要哪一条传说词条；稀有词条%d点。本体只出三阶以上的不朽、神话装备。" % int(co.rare_cost) if c_ok else "本路线这一组没有三阶以上的不朽、神话装备，珍藏不可用。",
+			"enabled": c_ok}]
+
+
+func _tianqi_pick(r: Dictionary, g: String) -> void:
+	if str(r.shelf) == "collection":
+		_collection(g)
+	else:
+		_tianqi_draw("treasure", g, "")
+
+
+func _collection(g: String) -> void:
+	var s := XState.current
+	var rows := XTianqiMerchant.collection_choices(s, g).map(func(c):
+		return {"text": "%d点　%s%s" % [int(c.cost), str(c.name), "（稀有）" if c.rare else ""], "affix": str(c.key),
+			"help": XTianqiAffixText.detail(str(c.key), 4, "normal"), "enabled": _can_pay(s, int(c.cost))})
+	choose(rows, func(r): _tianqi_draw("collection", g, str(r.affix)), tiers.bind(g), ["%s珍藏　指定传说词条" % g, "成色照常掷，不保证是极；其余词条照常掷。"])
+
+
+func _tianqi_draw(shelf_key: String, g: String, affix: String) -> void:
+	var got = XTianqiMerchant.draw(XState.current, shelf_key, g, affix)
+	if got is String:
+		XToast.show_text(got, true)
+		set_text(got)
+	else:
+		XToast.show_text("获得 %s（%s）" % [str(got.name), str(XTianqiMerchant.shelf(shelf_key).get("name", ""))], true)
 		tiers(g)
 
 

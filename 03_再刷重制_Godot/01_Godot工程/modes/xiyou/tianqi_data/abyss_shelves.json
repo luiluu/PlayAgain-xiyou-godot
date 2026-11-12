@@ -1,0 +1,6 @@
+{
+  "_note": "天启篇深渊商人的两档货架（天启篇词条重构设计稿 v0.3 第 8.2 节，草案价格是测试参数）。寻宝：本路线一件能出特效词条的装备，保证带一条特效词条（随机）；珍藏：先选分组再指定一条传说词条，本体只从本路线三阶以上、不朽及以上的装备里出，稀有词条（连击、再动）另价。",
+  "draft": true,
+  "treasure": {"name": "寻宝", "cost": 10, "layer": "special"},
+  "collection": {"name": "珍藏", "cost": 60, "rare_cost": 100, "layer": "legendary", "min_tier": 3, "min_quality": "buxiu"}
+}
