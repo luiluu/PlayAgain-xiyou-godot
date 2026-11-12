@@ -120,12 +120,80 @@ static func penetration(a) -> float:
 
 
 ## numRepeats：黄泉技能 (10174 为 6，其余 2)＋min(6, floor(幸运/6666))（第一期只给说明卡「段数」用）
+## 天启篇（第七期）：加段改按比例——幸运达到物攻一半 +1 段、等于物攻 +2 段，多出的段每段只算半段（tq_ops 折回）
 static func repeats(a, id: int) -> int:
+	if _tq():
+		return _base_hits(id) + tq_extra_hits(a)
 	return (6 if id == 10174 else 2) + mini(6, floori((a.luk if a != null else 0.0) / 6666.0))
 
 
+static func _base_hits(id: int) -> int:
+	return 6 if id == 10174 else 2
+
+
+static func tq_extra_hits(a) -> int:
+	if a == null:
+		return 0
+	var r := float(a.luk) / maxf(1.0, float(a.atk))
+	return 2 if r >= 1.0 else (1 if r >= 0.5 else 0)
+
+
+## ---- 天启篇（技能重构第七期，稿子 169、170 号）：只在 XTianqiSkills.cards_on() 时走 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+const TQ_SPREAD := {10172: 0.3, 10173: 0.3, 10174: 0.5}
+
+
+## 天启篇伤害（XTianqiModules.damage_ops，在模块乘区收口之后）
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	var id := int(item.get("id", 0))
+	var m := 1.0
+	if yomi(a) and yomi_skill(id):
+		var base := _base_hits(id)
+		var n := tq_extra_hits(a)
+		m *= (base + 0.5 * n) / float(base + n)  # 多出的段只算半段
+		if spread_rate > 0.0:  # 扩散（每段各扩一次）：其他敌人各吃整招的 30%／50%
+			m *= float(TQ_SPREAD.get(id, spread_rate))
+		if id != 10174 and a.has_base_equip("armor", Y_ARMOR) and b != null and b.state_ids.has(Y_MARK):
+			m *= 1.2  # 赤雨双缨：命中带集真赤的目标 +20%
+	elif jingliu(a) and jingliu_skill(id):
+		m *= _j_tq_mult(a, b, id)
+	return [] if m == 1.0 else [{"op": "mul", "field": "finalMultiplier", "value": m}]
+
+
+## 镜流：剑势（物攻和生命上限越接近越强、朔望、霜痕月隙）保留；血契上限统一 +30%；进阶每次 +5%；
+## 霜痕尽裂有霜痕 +20%（不再多引爆一段）；碎月穿霜扩散其他敌人各吃整招 50%；寒川映月之后全体各 2.0
+static func _j_tq_mult(a, b, id: int) -> float:
+	var atk := maxf(0.0, a.atk)
+	var scaled := maxf(0.0, a.mhp) * (17463.0 / 136584.0)
+	var high := maxf(atk, scaled)
+	var balance := minf(atk, scaled) / high if high > 0.0 else 0.0
+	var mine: bool = is_same(_j_frame.get("user"), a) and _j_frame.has("moon_before")
+	var mo: int = int(_j_frame.moon_before) if mine else moon(a)
+	var marks := 1.0 + (0.10 if b != null and b.state_ids.has(J_FROST) else 0.0) + (0.10 if b != null and b.state_ids.has(J_GAP) else 0.0)
+	var m := (0.85 + 0.15 * balance) * (1.0 + 0.06 * (mo - 2.5)) * marks
+	if mine:
+		m *= float(_j_frame.get("blood", 1.0))
+	var adv := 0
+	for k in [10200, 10201, 10202]:
+		if a.skill_ids.has(k):
+			adv += 1
+	m *= 1.0 + 0.05 * adv
+	if id == 10188 and mine and bool(_j_frame.get("had_frost", false)):
+		m *= 1.2
+	if mine and bool(_j_frame.get("supplemental", false)):
+		var per := float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0))
+		if id == 10190:
+			m *= 3.0 / maxf(0.01, per)
+		elif id == 10192:
+			m *= 2.0 / maxf(0.01, per)
+	return m
+
+
 static func param_plus(a, i: int, v: float) -> float:
-	if not yomi(a):
+	if not yomi(a) or _tq():  # 天启篇：固定 +888／+777 去掉（幸运、敏捷改 +10%，见 param）
 		return v
 	if i == 7 and a.skill_ids.has(10176):
 		v += 888
@@ -137,18 +205,26 @@ static func param_plus(a, i: int, v: float) -> float:
 
 
 static func param(a, i: int, v: float) -> float:
+	if yomi(a) and _tq():  # 天启篇：高天寥落幸运 +10%、霆鼓俱寂敏捷 +10%、黄泉归命幸运的 20% 当额外物攻
+		if i == 7 and a.skill_ids.has(10176):
+			v = floorf(v * 1.1)
+		if i == 6 and a.skill_ids.has(10177):
+			v = floorf(v * 1.1)
+		if i == 2 and rank(a) >= 2 and a.skill_ids.has(10186):
+			v += floorf(a.luk * 0.2)
+		return v
 	if i == 2 and yomi(a) and rank(a) >= 2 and a.skill_ids.has(10186):
 		return v + floorf(a.luk * 1.88)
 	return v
 
 
 static func xparam(a, i: int, v: float) -> float:
-	return v + 9.99 if CRIT_FIX and i == 2 and yomi(a) and a.skill_ids.has(10185) else v
+	return v + (0.2 if _tq() else 9.99) if CRIT_FIX and i == 2 and yomi(a) and a.skill_ids.has(10185) else v  # 天启篇：暴击 +20%
 
 
 static func action_plus_set(a, rates: Array) -> void:
 	if yomi(a) and a.skill_ids.has(10175):
-		rates.append(1.0)
+		rates.append(0.1 if _tq() else 1.0)  # 天启篇：再动 10%
 
 
 ## CodexYomi.damage(a,b,id)：不是黄泉或不在表里为 0
@@ -169,7 +245,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		return j_damage_ops(item, a)
 	if not (yomi(a) and yomi_skill(id)):
 		return ops
-	var pen := penetration(a)
+	var pen := minf(0.1, penetration(a)) if _tq() else penetration(a)  # 天启篇：穿透最多 10%
 	ops.append({"op": "set", "field": "mode", "value": "physical"})
 	ops.append({"op": "set", "field": "physicalIncomingPierce", "value": pen})
 	ops.append({"op": "set", "field": "resistancePierce", "value": pen})
@@ -183,7 +259,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.33 if id == 10174 else 16.55})
 	if id != 10174 and a.has_base_equip("armor", Y_ARMOR) and b.state_ids.has(Y_MARK):
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.77})
-	if spread_rate > 0.0:
+	if spread_rate > 0.0 and not _tq():  # 天启篇的扩散比例在 tq_ops
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": spread_rate})
 	return ops
 
@@ -245,6 +321,7 @@ static func end_battle() -> void:
 	_moon_extra.clear()
 	_blood_extra.clear()
 	_queued = null
+	_refund.clear()
 
 
 ## Game_Action.apply 包装是否接管（扩散的补充结算不再进来）
@@ -330,6 +407,8 @@ static var _moon_extra := {}
 static var _blood_extra := {}
 ## 行动结束后要插队的镜流
 static var _queued = null
+## 天启篇月魄剑匣：本回合被镜流扣的血（队友 → 量），回合结束还回一半
+static var _refund := {}
 
 
 static func _j_action(u, skill: Dictionary) -> bool:
@@ -463,7 +542,7 @@ static func j_before(logic, u, skill: Dictionary, t) -> void:
 		_bloom[key] = false
 	if J_ENHANCED.has(id):
 		var p: Array = {10188: [0.03, 1.25], 10190: [0.05, 1.50], 10192: [0.08, 2.50 if u.skill_ids.has(10202) else 1.80]}[id]
-		_pay_blood(logic, u, float(p[0]), float(p[1]))
+		_pay_blood(logic, u, float(p[0]), 1.3 if _tq() else float(p[1]))  # 天启篇：血契上限统一 +30%
 		_j_frame["had_frost"] = t.state_ids.has(J_FROST)
 		_j_frame["had_gap"] = t.state_ids.has(J_GAP)
 
@@ -478,6 +557,8 @@ static func _pay_blood(logic, u, percent: float, cap: float) -> void:
 		if actual > 0.0:
 			logic.gain_hp(ally, -actual)
 			total += actual
+			if _tq() and u.has_base_equip("armor", J_ARMOR):  # 月魄剑匣：回合结束还回一半
+				_refund[ally] = float(_refund.get(ally, 0.0)) + actual
 	var key = u.get_instance_id()
 	_blood[key] = float(_blood.get(key, 0.0)) + total
 	_j_frame["lost"] = total > 0.0
@@ -526,7 +607,8 @@ static func j_finish(logic, u, skill) -> Array:
 	var key = u.get_instance_id()
 	var extra := false
 	if id == 10188 and bool(_j_frame.get("had_frost", false)):
-		logs.append_array(_supplemental(logic, u, skill, main, _advanced_row(u, 10188)))
+		if not _tq():  # 天启篇：有霜痕时本招 +20%，不再多引爆一段
+			logs.append_array(_supplemental(logic, u, skill, main, _advanced_row(u, 10188)))
 		logic._state_remove(main, J_FROST)
 	if id == 10190 and bool(_j_frame.get("had_gap", false)):
 		var row := _advanced_row(u, 10190)
@@ -573,12 +655,12 @@ static func queue_extra(logic, u) -> void:
 
 ## 裂隙演化：Game_Enemy.param(3) 包装
 static func enemy_param(e, i: int, v: float) -> float:
-	return floorf(v * 0.89) if i == 3 and _gap_evolved(e) else v
+	return floorf(v * (0.9 if _tq() else 0.89)) if i == 3 and _gap_evolved(e) else v  # 天启篇：月隙物防 −10%
 
 
 ## 裂隙演化：elementRate(3) 包装
 static func element_rate(b, element: int, v: float) -> float:
-	return v + 0.0111 if element == 3 and _gap_evolved(b) else v
+	return v + 0.0111 if element == 3 and _gap_evolved(b) and not _tq() else v
 
 
 static func _gap_evolved(b) -> bool:
@@ -597,6 +679,20 @@ static func after_load(s: XState) -> void:
 	if s.actors.has(JINGLIU):
 		setup(s.actors[JINGLIU], s)
 		_blood.erase(s.actors[JINGLIU].get_instance_id())
+
+
+## 天启篇 BattleManager.endTurn（原 endTurn 之前）：月魄剑匣把本回合扣的血还回一半
+static func tq_end_turn(logic) -> Array:
+	var logs := []
+	for ally in _refund:
+		if is_instance_valid(ally) and ally.is_alive():
+			var back := floorf(float(_refund[ally]) * 0.5)
+			var before: float = ally.hp
+			logic.gain_hp(ally, back)
+			if ally.hp != before:
+				logs.append({"type": "regen", "target": ally, "hp": before - ally.hp, "views": logic.views([ally])})
+	_refund.clear()
+	return logs
 
 
 ## BattleManager.startTurn 包装：月魄满 3

@@ -203,9 +203,42 @@ static func recruit(s: XState) -> bool:
 
 ## paramRate 包装：形态能力倍率（没学 10269 按人类形态）
 static func param_rate(a, i: int) -> float:
-	if not own(a) or not a.skill_ids.has(GROWTH):
+	if not own(a) or not a.skill_ids.has(GROWTH) or _tq():  # 天启篇：形态能力倍率去掉（破限成长改成伤害，见 tq_ops）
 		return 1.0
 	return float(STAGES[stage(a)].rate[i])
+
+
+## ---- 天启篇（技能重构第七期，稿子 173 号）：只在 XTianqiSkills.cards_on() 时走 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+## 破限成长：六次进阶合计 +22%（前四次各 +3%、后两次各 +5%）
+const TQ_GROWTH := [0.0, 0.03, 0.06, 0.09, 0.12, 0.17, 0.22]
+
+
+## 战斗进化最多层数（原版 3，天启篇 10）
+static func evolution_cap() -> int:
+	return 10 if _tq() else 3
+
+
+## 天启篇伤害（收口之后）：破限成长、战斗进化每层 +3%（破限之心每层再 +1%）、流水反击按 50%
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	if not own(a) or not is_fist(item):
+		return []
+	var p := passives(a)
+	var in_frame := not frame.is_empty() and is_same(frame.user, a)
+	var e: int = (int(frame.evolution) if in_frame else evolution) if p.evolution else 0
+	var m := (1.0 + (TQ_GROWTH[stage(a)] if a.skill_ids.has(GROWTH) else 0.0)) * (1.0 + e * (0.03 + (0.01 if gear(a) != null else 0.0)))
+	if in_frame and str(frame.triggered) == "counter":
+		m *= 0.5
+	return [{"op": "mul", "field": "finalMultiplier", "value": m}] if m != 1.0 else []
+
+
+## 天启篇 actionPlusSet：四臂、星空再动 10%（不再固定行动 2 次）
+static func action_plus_set(a, rates: Array) -> void:
+	if own(a) and _tq() and a.skill_ids.has(GROWTH) and int(STAGES[stage(a)].actions) > 1:
+		rates.append(0.1)
 
 
 ## makeActionTimes 包装：形态每回合行动次数（没学 10269 为 1）
@@ -616,6 +649,9 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		e = 0
 	var extra: int = RELIC_EVOLUTION[stage(a)] if gear(a) != null else 0
 	var c: Array = COEFF.get(id, [0.0, 0.0])
+	if _tq():  # 天启篇：解析每层无视物防 5%（最多 3 层）；进化、破限在 tq_ops
+		return [{"op": "mul", "field": "physicalDefenseRate", "value": 1.0 - (n * 0.05 if p.analysis else 0.0)},
+			{"op": "set", "field": "mode", "value": "mixed" if float(c[1]) != 0.0 and float(c[0]) != 0.0 else ("magical" if float(c[1]) != 0.0 else "physical")}]
 	return [{"op": "mul", "field": "physicalDefenseRate", "value": 1.0 - minf(0.99, n * p.def_percent / 100.0)},
 		{"op": "mul", "field": "magicalDefenseRate", "value": 1.0 - minf(0.99, n * p.mdf_percent / 100.0)},
 		{"op": "set", "field": "mode", "value": "mixed" if float(c[1]) != 0.0 and float(c[0]) != 0.0 else ("magical" if float(c[1]) != 0.0 else "physical")},
@@ -687,7 +723,7 @@ static func finish(logic, u, skill) -> Array:
 				logs.append_array(trigger(logic, u, row.target, TRIGGERED, "followup", int(f.evolution)))
 			add_analysis(u, row.target)
 		if hit and p.evolution:
-			evolution = mini(3, evolution + 1)
+			evolution = mini(evolution_cap(), evolution + 1)
 		if hit and int(skill.id) == WATER and u.is_alive():
 			u.tp = minf(u.max_tp(), u.tp + 20.0)  # gainSilentTp(20)：每次完整施放命中一次
 	elif u is XEnemy and _hp_damage(skill):
@@ -698,10 +734,10 @@ static func finish(logic, u, skill) -> Array:
 			var p := passives(b)
 			if float(row.damage) > 0.0:
 				if p.evolution and not received:
-					evolution = mini(3, evolution + 1)
+					evolution = mini(evolution_cap(), evolution + 1)
 					received = true
 				add_analysis(b, u)
-			if b.is_alive() and p.counter and logic._float("garou_counter") < COUNTER_RATE:
+			if b.is_alive() and p.counter and logic._float("garou_counter") < (0.3 if _tq() else COUNTER_RATE):  # 天启篇：30%
 				logs.append_array(trigger(logic, b, u, WATER, "counter"))
 	if own(u) and int(skill.id) == SERIOUS:
 		saitama = false

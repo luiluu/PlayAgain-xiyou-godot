@@ -1296,6 +1296,7 @@ func end_turn() -> Array:
 	logs.append_array(XGojo.end_round(self))  # 天启篇五条悟：无量空处计时
 	XBlackFlash.end_round(self)  # 黑闪 endTurn 包装（宿傩之内、米拉之外）：觉醒到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
+	logs.append_array(XYomiJingliu.tq_end_turn(self))  # 天启篇镜流月魄剑匣：本回合扣的队友生命还回一半（原版档为空）
 	XRaven.end_turn(self)  # 渡鸦 endTurn 包装（原 endTurn 之前，在米拉之内、宠物捕捉插件之外）：残响、神话形态减一回合
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
 	for b in actors + enemies:
@@ -1852,7 +1853,7 @@ func _make_action_times(b: XBattler) -> int:
 	var horse := XTianqiHorsemen.action_times(self, b)  # 天启四骑士：每回合固定次数（战争另加再动），不掷追加行动
 	if horse > 0:
 		return horse
-	if XGarou.own(b):  # 饿狼 makeActionTimes 包装：形态行动次数，不掷追加行动
+	if XGarou.own(b) and not XTianqiSkills.cards_on():  # 饿狼 makeActionTimes 包装：形态行动次数，不掷追加行动（天启篇改再动 10%，走下面）
 		return XGarou.action_times(b)
 	var n := 1
 	for p in b.action_plus_set():

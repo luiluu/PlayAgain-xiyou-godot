@@ -123,7 +123,7 @@ static func team_drop_factor(s: XState) -> float:
 		for v in a.passive_values("passiveIRUP"):
 			f += XActor._num(v) * 0.01 * f
 	if s.battle_members().any(func(a): return XRaven.has(a, XRaven.SOUL_DRAIN)):
-		f += 1.0
+		f += 0.2 if XTianqiSkills.cards_on(s) else 1.0  # 天启篇：亡魂汲取掉宝 +20%
 	return maxf(0.0, f)
 
 

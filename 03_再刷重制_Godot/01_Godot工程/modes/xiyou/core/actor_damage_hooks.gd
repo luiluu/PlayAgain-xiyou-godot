@@ -14,7 +14,7 @@ static func descriptor() -> Dictionary:
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
 	var mods: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XXuanBattle.cast_ops(item, a) + XXuanBattle.incoming_ops(item, a, b) + XXuanBattle.damage_ops(item, a) + XTusu.damage_ops(item, a, b) + XLiuying.damage_ops(item, a, b)
-	var ops: Array = XTianqiSkills.module_ops(item, a, mods) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a) + XTianqiQiyinEffects.damage_ops(item, a, b) + XTianqiAffixBattle.damage_ops(item, a, b) + XTianqiSkills.damage_ops(item, a, b) + XGojo.damage_ops(item, a)  # 天启篇技能重构：专属物无视双防、治疗量；天启篇七印装备、天启篇词条的出伤、承伤、治疗（原版档为空）；狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
+	var ops: Array = XTianqiSkills.module_ops(item, a, mods) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a) + XTianqiQiyinEffects.damage_ops(item, a, b) + XTianqiAffixBattle.damage_ops(item, a, b) + XTianqiSkills.damage_ops(item, a, b) + XTianqiModules.damage_ops(item, a, b) + XGojo.damage_ops(item, a)  # 天启篇技能重构：专属物无视双防、治疗量；天启篇七印装备、天启篇词条的出伤、承伤、治疗（原版档为空）；狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
 	return {"ops": ops}
 
 
@@ -25,7 +25,7 @@ static func mira_ops(item: Dictionary, a: XBattler, b: XBattler) -> Array:
 	if XMira.own(a) and id >= 10140 and id <= 10151:
 		ops.append({"op": "set", "field": "mode", "value": "magical" if id in [10142, 10143, 10149] else ("mixed" if id in [10146, 10147, 10151] else "physical")})
 	if XMira.dragon(b) and XMira.has(b, 10154, 3):
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.8})
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.9 if XTianqiSkills.cards_on() else 0.8})  # 天启篇：受伤 −10%
 	return ops
 
 
