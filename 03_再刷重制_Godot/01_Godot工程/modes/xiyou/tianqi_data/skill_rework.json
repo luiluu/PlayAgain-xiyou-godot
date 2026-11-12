@@ -934,7 +934,37 @@
   "6010": {"actor": 52, "name": "自在极意功", "kind": "被动", "note_remove": ["passiveXPBST\\d", "passiveELUP\\d+"], "desc": ["效果:自在极意功（并进太阳拳）"]},
   "6011": {"actor": 52, "name": "圣劫", "kind": "被动", "note_remove": ["passivePBST\\d", "passiveCrHarmRi", "AgainUseAll"], "note_add": "<AgainUseAll: 10%>", "desc": ["效果:再释放10%"]},
   "6008": {"actor": 52, "name": "界王拳", "kind": "被动", "note_remove": ["passivePBST\\d", "passiveELUP\\d+"], "note_add": "<passiveELUP01:10%><passiveELUP02:10%><passiveELUP03:10%><passiveELUP04:10%><passiveELUP05:10%><passiveELUP06:10%><passiveELUP07:10%><passiveELUP08:10%><passiveELUP09:10%>", "desc": ["效果:全伤+10%"]},
-  "6004": {"actor": 52, "name": "觉醒:传说中的神", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveCrHarmRi", "ConsumeReduceAll", "AgainUseAll", "passiveAPLUS", "passivePBST\\d"], "desc": ["效果:觉醒（并进界王拳、圣劫）"]}
+  "6004": {"actor": 52, "name": "觉醒:传说中的神", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveCrHarmRi", "ConsumeReduceAll", "AgainUseAll", "passiveAPLUS", "passivePBST\\d"], "desc": ["效果:觉醒（并进界王拳、圣劫）"]},
+  "2054": {"actor": 53, "name": "暗影炮", "kind": "常规", "damage": {"stats": {"mat": 1}, "coef": 3.6}, "mp_pct": 5, "seq": [{"op": "drop_if", "match": "dataArmors[3814]"}], "desc": ["效果:黑暗属性", "伤害:魔法攻击×3.6", "消耗:最大魔法5%"]},
+  "2053": {"actor": 53, "name": "暗影旋风", "kind": "常规随机", "scope": 5, "damage": {"stats": {"mat": 1}, "coef": 1.2}, "mp_pct": 5, "seq": [{"op": "drop_if", "match": "dataArmors[3814]"}], "header": {"对象": "随机3个敌人"}, "desc": ["效果:随机3个敌人", "伤害:每段 魔法攻击×1.2", "消耗:最大魔法5%"]},
+  "2055": {"actor": 53, "name": "暗影风暴", "kind": "常规全体", "damage": {"stats": {"mat": 1}, "coef": 1.8}, "mp_pct": 5, "seq": [{"op": "drop_if", "match": "dataArmors[3814]"}], "desc": ["伤害:每个敌人 魔法攻击×1.8", "消耗:最大魔法5%"]},
+  "2058": {"actor": 53, "name": "暗影毁灭弹", "kind": "爆发", "damage": {"stats": {"mat": 1}, "coef": 6.0, "conds": [{"if": "target_states_in", "states": [99, 150, 189, 190, 191, 192, 947], "per": 0.1, "cap": 0.3, "cap_with": {"e3814": 0.5}}]}, "hit_type": 0, "mp_pct": 10, "cooldown": 3, "seq": [{"op": "drop_if", "match": ""}], "header": {"冷却时间": "3回合"}, "desc": ["效果:必中；目标每有一种诅咒+10%（最多+30%）", "伤害:魔法攻击×6.0", "消耗:最大魔法10%"]},
+  "5459": {"actor": 53, "name": "咒灭魔弹", "kind": "被动", "desc": ["效果:目标身上每有一种诅咒（凋零、湮灭、腐朽、魔渊之咒、寂灭之咒等），暗影毁灭弹+10%，最多+30%"]},
+  "5460": {"actor": 53, "name": "深渊寂灭", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveELUP09", "passiveCrHarmRi"], "desc": ["效果:造成任何伤害为敌方施加“寂灭之咒”，所有属性-5%，持续2回合（算一种诅咒）"]},
+  "2057": {"actor": 53, "name": "暗影风眼", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:暗影风眼（并进技能本身）"]},
+  "2060": {"actor": 53, "name": "暗影魔王", "kind": "被动", "note_remove": ["passiveHarmRi", "SkillPass\\d+"], "desc": ["效果:暗影魔王（并进技能本身）"]},
+  "2050": {"actor": 53, "name": "暗影之子", "kind": "被动", "note_remove": ["passiveELUP\\d+"], "note_add": "<passiveELUP09:10%>", "desc": ["效果:黑暗伤害+10%"]},
+  "2052": {"actor": 53, "name": "破灭暗影", "kind": "被动", "note_remove": ["passiveELUP09"], "note_add": "<passiveELUP09:10%>", "desc": ["效果:黑暗伤害+10%"]},
+  "2056": {"actor": 53, "name": "蚀骨暗影", "kind": "被动", "note_remove": ["passiveXPBST2", "passiveELUP09", "passiveCrHarmRi"], "note_add": "<passiveELUP09:10%><passiveXPBST2:10%>", "desc": ["效果:黑暗伤害+10%", "效果:暴击率+10%"]},
+  "2051": {"actor": 53, "name": "暗影之伤", "kind": "被动", "note_remove": ["passiveCrHarmRi"], "desc": ["效果:暗影之伤（并进蚀骨暗影）"]},
+  "2059": {"actor": 53, "name": "觉醒:艾瑞塔", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进黑暗被动）"]},
+  "2064": {"actor": 54, "name": "乘胜追击", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "desc": ["效果:如果该技能击杀敌人则再次释放", "伤害:物理攻击×3.6"]},
+  "2066": {"actor": 54, "name": "战斗怒吼", "kind": "常规全体", "damage": {"stats": {"atk": 1}, "coef": 1.8}, "mp_pct": 5, "desc": ["效果:先手；全体友方获得战斗怒吼(物理伤害+5%，持续3回合)", "伤害:每个敌人 物理攻击×1.8", "消耗:最大魔法5%"]},
+  "2067": {"actor": 54, "name": "狂乱*灭", "kind": "爆发", "damage": {"stats": {"atk": 1}, "coef": 1.2, "conds": [{"if": "self_states", "per": 0.05, "cap": 0.3, "cap_with": {"e3815": 0.5}}]}, "tp": 50, "desc": ["效果:5段伤害；自身每有一个状态+5%（最多+30%）", "伤害:每段 物理攻击×1.2"]},
+  "10710": {"actor": 54, "name": "狂乱*灭", "kind": "普攻", "damage": {"stats": {"atk": 1}, "coef": 1.2, "conds": [{"if": "self_states", "per": 0.05, "cap": 0.3, "cap_with": {"e3815": 0.5}}]}, "tp": 0, "seq": [{"op": "keep_effects", "n": 1}], "desc": ["效果:1段伤害；自身每有一个状态+5%（最多+30%）", "伤害:物理攻击×1.2"]},
+  "2071": {"actor": 54, "name": "战神", "kind": "被动", "note_sub": [["<Replace Attack:\\s*2067>", "<Replace Attack: 10710>"]], "desc": ["效果:你的普通攻击变为一段狂乱*灭", "效果:你的战技有10%的几率再次释放"]},
+  "5456": {"actor": 54, "name": "盖世人雄", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:狂乱*灭伤害与自身所受状态相关"]},
+  "2070": {"actor": 54, "name": "胜利在望", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:狂乱*灭必定命中", "效果:战斗开始时为所有友军施加战斗怒吼"]},
+  "5457": {"actor": 54, "name": "天人之力", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveELUP\\d+", "passiveCrHarmRi", "AgainUseAll", "StartPushState0246"], "note_add": "<StartPushState10803: 100%><StartPushState10804: 100%><StartPushState10805: 100%>", "desc": ["效果:开局获得三个增益：物攻、物防、敏捷各+5%，持续3回合"]},
+  "2073": {"actor": 54, "name": "上古战意", "kind": "被动", "note_remove": ["passiveHarmRi", "SkillPass\\d+"], "desc": ["效果:保留能量值"]},
+  "2062": {"actor": 54, "name": "上古之人", "kind": "被动", "note_remove": ["passiveELUP\\d+", "SkillCriPushAll"], "note_add": "<passiveELUP01:10%>", "desc": ["效果:物理伤害+10%"]},
+  "2068": {"actor": 54, "name": "上古攻伐术", "kind": "被动", "note_remove": ["passiveELUP01"], "note_add": "<passiveELUP01:10%>", "desc": ["效果:物理伤害+10%", "效果:战技消耗率降低10%"]},
+  "2069": {"actor": 54, "name": "精湛斗技", "kind": "被动", "note_remove": ["passiveELUP01", "SkillPass\\d+"], "desc": ["效果:精湛斗技（并进上古之人）"]},
+  "2063": {"actor": 54, "name": "上古铠甲", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveHarmRe\\d+"], "desc": ["效果:上古铠甲（并进上古之人）"]},
+  "2065": {"actor": 54, "name": "致死打击", "kind": "被动", "note_remove": ["passiveCrHarmRi", "passiveXPBST2"], "note_add": "<passiveXPBST2:10%>", "desc": ["效果:暴击率+10%"]},
+  "2367": {"actor": 54, "name": "擐甲持戈", "kind": "领袖", "note_remove": ["passiveCrHarmRi", "passiveELUP\\d+"], "note_add": "<passiveELUP01:5%>", "desc": ["效果:物理伤害+5%"]},
+  "2368": {"actor": 54, "name": "领袖:擐甲持戈", "kind": "领袖说明", "desc": ["效果:全队物理伤害+5%"]},
+  "2072": {"actor": 54, "name": "觉醒:迪昂", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进上古之人）"]}
  },
  "states": {
   "12": {"name": "碎甲I", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 3, "value": 0.9}], "turns": 3, "state_note": "物理防御-10%"},
@@ -1031,7 +1061,12 @@
   "18": {"name": "灼伤II", "turns": 2},
   "942": {"name": "怒拳", "turns": 2, "state_note": "被劲夫的怒拳·乱打引爆"},
   "188": {"name": "紫金法咒", "traits": [{"code": 22, "dataId": 1, "value": -0.1}, {"code": 22, "dataId": 3, "value": -0.1}, {"code": 22, "dataId": 4, "value": -0.1}], "state_note": "所有闪避率-10%"},
-  "953": {"name": "步步生莲", "traits": [{"code": 22, "dataId": 0, "value": 0.1}], "turns": 3, "state_note": "命中率+10%"}
+  "953": {"name": "步步生莲", "traits": [{"code": 22, "dataId": 0, "value": 0.1}], "turns": 3, "state_note": "命中率+10%"},
+  "947": {"name": "寂灭之咒", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 2, "value": 0.95}, {"code": 21, "dataId": 3, "value": 0.95}, {"code": 21, "dataId": 4, "value": 0.95}, {"code": 21, "dataId": 5, "value": 0.95}, {"code": 21, "dataId": 6, "value": 0.95}, {"code": 21, "dataId": 7, "value": 0.95}], "turns": 2, "state_note": "所有属性-5%"},
+  "194": {"name": "战斗怒吼", "note_remove": ["Element Amplify \\d+"], "note_add": "<Element Amplify 1: +5%>", "turns": 3, "state_note": "物理伤害+5%"},
+  "10803": {"name": "天人·攻", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 2, "value": 1.05}], "turns": 3, "state_note": "物攻+5%"},
+  "10804": {"name": "天人·防", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 3, "value": 1.05}], "turns": 3, "state_note": "物防+5%"},
+  "10805": {"name": "天人·敏", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 6, "value": 1.05}], "turns": 3, "state_note": "敏捷+5%"}
  },
  "_gojo_note": "180 五条悟（XGojo，设计 00_项目管理/交付/五条悟_角色设计_v0.2.md）：超强者、输出型（伤害 ×1.2 已算进系数），主属性魔攻。茈的系数按对数取 gojo_pairs。",
  "gear": {
@@ -1121,9 +1156,11 @@
   "armor:3811": {"name": "风起", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1232: 20%>", "desc": ["特效：疾风杀意剑伤害+20%"]},
   "armor:3812": {"name": "沧恒", "note_remove": ["SkillPass\\d+"], "desc": ["特效：怒拳印记多持续1回合，乱打引爆后30%不消耗"]},
   "armor:3813": {"name": "言威", "note_remove": ["SkillPass\\d+"], "desc": ["特效：大威天龙*佛怒追加几率+10%"]},
-  "armor:5000": {"name": "金果棒", "note_remove": ["Element Amplify \\d+", "passiveCrHarmRi", "SkillPass\\d+", "SkETypeHarmRi\\d+"], "note_add": "<SkETypeHarmRi9: 10%><SkillPass6013: 20%>", "traits_remove": [[21, 2], [21, 4]], "desc": ["特效:使用矛时伤害+10%", "特效:元气弹伤害+20%", "随心铁杆兵:你可以用矛释放所有战技"]}
+  "armor:5000": {"name": "金果棒", "note_remove": ["Element Amplify \\d+", "passiveCrHarmRi", "SkillPass\\d+", "SkETypeHarmRi\\d+"], "note_add": "<SkETypeHarmRi9: 10%><SkillPass6013: 20%>", "traits_remove": [[21, 2], [21, 4]], "desc": ["特效:使用矛时伤害+10%", "特效:元气弹伤害+20%", "随心铁杆兵:你可以用矛释放所有战技"]},
+  "armor:3814": {"name": "暗觞", "desc": ["特效：暗影毁灭弹的诅咒加成上限从+30%提到+50%"]},
+  "armor:3815": {"name": "万仞", "note_remove": ["SkillPass\\d+"], "desc": ["特效：狂乱*灭的状态加成上限从+30%提到+50%"]}
  },
- "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}, "10709": {"from": 6012}},
+ "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}, "10709": {"from": 6012}, "10710": {"from": 2067}},
  "learn": {"8": [[30, 10701]], "9": [[30, 10702]], "10": [[30, 10703]], "11": [[30, 10705]], "16": [[10, 10706]], "21": [[20, 10707]], "22": [[30, 3768]]},
- "new_states": {"10801": {"from": 31}, "10802": {"from": 165}}
+ "new_states": {"10801": {"from": 31}, "10802": {"from": 165}, "10803": {"from": 246}, "10804": {"from": 246}, "10805": {"from": 246}}
 }

@@ -241,6 +241,16 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				out = out.filter(func(c): return not (str(c[0]) == "action effect" and not (c[1] as Array).is_empty()))
 			"drop_cmd":  # 删掉某条命令（劲夫乱打开头的 Add State 942：印记要先挂上才引爆）
 				out = out.filter(func(c): return str(c[0]) != str(op.get("match", "")))
+			"keep_effects":  # 整条序列只留前 n 段（迪昂普攻版狂乱·灭：一段）
+				var kept2 := 0
+				var res3 := []
+				for c in out:
+					if str(c[0]) == "action effect":
+						kept2 += 1
+						if kept2 > int(op.get("n", 1)):
+							continue
+					res3.append(c)
+				out = res3
 			"add_effects":
 				var last := -1
 				for i in out.size():
@@ -558,6 +568,14 @@ static func _cond(c: Dictionary, a, b) -> float:
 					if a.skill_ids.has(int(id)):
 						n += 1
 			return 1.0 + clampf(n * per, 0.0, cap)
+		"target_states_in":  # 目标身上有列表里的几种状态，每种 +per（艾瑞塔毁灭弹数诅咒）
+			var n := 0
+			for id in c.states:
+				if b.is_state_affected(int(id)):
+					n += 1
+			return 1.0 + clampf(n * per, 0.0, cap)
+		"self_states":  # 自己身上状态数（增益减益都算），每个 +per（迪昂狂乱·灭）
+			return 1.0 + clampf(float(a.state_ids.size()) * per, 0.0, cap)
 		"self_tp":  # 当前 TP×per（天蓬神霄净世诀：每 10 点 +3%，最多 +30%；配 tp_drain 放完耗光）
 			return 1.0 + clampf(float(a.tp) * per, 0.0, cap)
 		"cast_count":  # 本场放过列表里的技能几次（begin_action 记、开战清零），每次 +per：签弟的忏悔
