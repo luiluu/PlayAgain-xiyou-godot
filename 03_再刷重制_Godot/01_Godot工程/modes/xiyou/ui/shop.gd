@@ -93,6 +93,8 @@ static var HELP_SAME_SKIP := true
 static var DATA_CACHE := true
 var _cache_on := false
 var _cache := {}
+## 测试用：买入表、出售表实际现算的次数
+var data_builds := 0
 var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
 var _gold_buy := true
 
@@ -214,6 +216,7 @@ func _buy_data() -> Array:
 
 
 func _make_buy_data() -> Array:
+	data_builds += 1
 	var out := []
 	for g in XItemMarks.shop_goods(goods, XState.current.map_id if XState.current != null else 0):
 		var item := XItemMarks.shop_rec(int(g[0]), int(g[1]))
@@ -240,6 +243,7 @@ func _drop_cache() -> void:
 
 
 func _make_sell_data() -> Array:
+	data_builds += 1
 	var s := XState.current
 	var out := []
 	var sym: String = CATEGORIES[_cat][1]

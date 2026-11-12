@@ -3,6 +3,8 @@ extends Node
 ## - 绪绪（Map4 EV56，行走图 1xuxu 只画了左上一格、本页 pattern 0）停着时一直是第 0 帧，不会换到空白的第 1 帧（MVCharacter.original_pattern）；
 ## - 8 号当铺入口（Map132 EV7，确定键、角色下方、无图、只有场所移动）：踩上即进（XMapScene.STEP_ON_DOORS），关掉回原版不进；
 ##   原版点地走到目的地停下时也进（Game_Player.triggerTouchActionD1，MVPlayer.MV_TOUCH_D1）；普通 NPC 不算门；
+## - 商店列表缓存（XShop.DATA_CACHE）：一次按键＋重画里买入表、出售表各只现算一次；成交后照样现算（买到的东西进出售表）；
+##   关掉时一次按键现算多次（打印两边次数与用时）；
 ## - 神话敌人画面 1 倍（XBattleScene.ELITE_SCALE，原版 1.8 倍被 YEP 呼吸更新当帧改回）；
 ## - 画面平滑（XScreenScale）：触屏默认开、桌面默认关，设置改了立刻切根窗口缩放方式，开关关掉恒为 canvas_items；
 ##   viewport 缩放时屏幕→画面的换算按 keep 比例算（安全区用）。
@@ -61,6 +63,7 @@ func _run() -> void:
 	await _pattern()
 	await _doors()
 	_elite()
+	await _shop()
 	await _screen()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -127,6 +130,65 @@ func _doors() -> void:
 		await close(map)
 	MVPlayer.MV_TOUCH_D1 = true
 	XMapScene.STEP_ON_DOORS = true
+
+
+## 一次按键（下移）＋本帧重画：返回 [现算次数, 微秒]
+func _shop_press(sh: XShop) -> Array:
+	sh.data_builds = 0
+	var t0 := Time.get_ticks_usec()
+	sh._move(1, true)
+	sh._refresh()
+	await RenderingServer.frame_post_draw
+	await frames(1)
+	return [sh.data_builds, Time.get_ticks_usec() - t0]
+
+
+func _shop() -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	s.gain_gold(5000000)
+	# 背包塞满：道具 600 种、武器防具各 300 件（出售表要整背包筛）
+	var n := 0
+	for rec in XDB.table("Items"):
+		if rec is Dictionary and str(rec.get("name", "")) != "" and n < 600:
+			s.gain_item(int(rec.id), 3)
+			n += 1
+	var goods := []
+	var k := 0
+	for rec in XDB.table("Items"):
+		if rec is Dictionary and str(rec.get("name", "")) != "" and int(rec.get("price", 0)) > 0 and k < 40:
+			goods.append([0, int(rec.id), 0, 0])
+			k += 1
+	var res := {}
+	for on in [true, false]:
+		XShop.DATA_CACHE = on
+		var sh := XShop.new()
+		sh.setup(goods, false)
+		add_child(sh)
+		await frames(2)
+		sh._cmd = 0
+		sh._ok()   # 进买入
+		await frames(2)
+		var a := await _shop_press(sh)
+		var b := await _shop_press(sh)
+		res[on] = [a[0] + b[0], a[1] + b[1]]
+		if on:
+			# 买一件：成交后出售表照样现算，买到的东西在里面（不吃旧缓存）
+			var id := int(sh._buy_data()[sh._buy_index].gid)
+			var before := s.item_count(id)
+			sh._ok()   # 数量窗
+			sh._ok()   # 成交
+			check("shop_bought", s.item_count(id) == before + 1, [before, s.item_count(id)])
+			sh._mode = "sell"
+			sh._cat = 0
+			sh._refresh()
+			var sold: Array = sh._sell_data().filter(func(e): return int(e.rec.get("id", 0)) == id)
+			check("shop_sell_fresh", not sold.is_empty() and int(sold[0].count) == before + 1, sold.map(func(e): return e.count))
+		sh.queue_free()
+		await frames(2)
+	XShop.DATA_CACHE = true
+	print("SHOP_PRESS cache_on builds=%d %dus / cache_off builds=%d %dus (两次按键)" % [res[true][0], res[true][1], res[false][0], res[false][1]])
+	check("shop_cache_builds", res[true][0] <= 2 and res[false][0] > res[true][0], res)
 
 
 func _elite() -> void:
