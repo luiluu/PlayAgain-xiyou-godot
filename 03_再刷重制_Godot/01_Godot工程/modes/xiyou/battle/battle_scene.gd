@@ -1895,7 +1895,7 @@ func _play(logs: Array) -> void:
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
-				if l.kind == "vanish":
+				if l.kind == "vanish" or l.has("tianqi_horseman"):  # 天启四骑士：援军、小怪战斗中出场
 					_apply_enemy_change(l)  # die＋hide（XPetCapture：逃跑；被捕的在公共事件 173 里，由 _play_troop_events 处理）
 			"counter":
 				# YEP Show Counter Text：日志「%1的反击！」

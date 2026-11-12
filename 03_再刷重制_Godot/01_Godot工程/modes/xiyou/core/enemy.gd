@@ -81,6 +81,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	# 原生 isStateAddable 要求 isAlive；HP0本身不等于原版阵亡状态。
 	if hidden or state_ids.has(1):
 		return
+	if XTianqiHorsemen.blocks_state(self, id):  # 天启四骑士：免疫停手的控制和即死
+		return
 	if XCat.trial_blocks_state(self, id):  # 小猫试炼 addState 包装：巨龙不吃难度状态
 		return
 	if boss_hyper_armor and boss_difficulty_boss and boss_control_state(id):
@@ -152,7 +154,26 @@ func is_dead() -> bool:
 
 
 func data() -> Dictionary:
+	if not horseman.is_empty():
+		return horseman.rec  # 天启四骑士战的骑士、援军：借外观的合成记录（XTianqiHorsemen）
 	return XDB.rec("Enemies", enemy_id)
+
+
+## 天启四骑士战（XTianqiHorsemen）：{rec: 合成的敌人记录, knight: 是不是骑士本体}；空＝普通敌人
+var horseman := {}
+
+## 骑士、援军开战：外观借 shell_id，能力值、名字照 rec；不是神话、不算首领难度（不吃霸体）、难度倍率不再乘（rec 里已按本档算好）
+func setup_horseman(shell_id: int, rec: Dictionary, is_knight := false) -> XEnemy:
+	horseman = {"rec": rec, "knight": is_knight}
+	enemy_id = shell_id
+	boss_strong_count = 0
+	boss_difficulty_boss = false
+	boss_hyper_armor = false
+	elite = false
+	_rates = [1, 1, 1, 1, 1, 1, 1, 1]
+	refresh_passive()
+	recover_all()
+	return self
 
 func display_name() -> String:
 	return XAlienBattle.name_prefix(self) + original_name() + letter + ("宝宝" if capture else "")
