@@ -395,13 +395,42 @@ def await_ternaries(text):
     return found
 
 
-def gd_await_ternary_problems(project):
-    """工程里全部 .gd（.godot 缓存除外）的 await 三元式问题（纯文本扫描，不要 godot）。"""
-    problems = []
-    for f in sorted(project.rglob('*.gd')):
-        rel = f.relative_to(project)
-        if '.godot' in rel.parts:
+def project_gd_files(project):
+    """工程里要查的 .gd（绝对路径，排好序）：跳过 .godot 缓存，和含 .gdignore 的目录整棵（Godot 自己也不导入它们；
+    出安卓包生成的 android/build 带 .gdignore，里面有模板自带的测试 .gd，load 会报错）。解析检查、await 三元式、语法检查.py 共用。"""
+    project = Path(project)
+    out = []
+    for dirpath, dirnames, filenames in os.walk(project):
+        d = Path(dirpath)
+        if d != project and (d.name == '.godot' or (d / '.gdignore').exists()):
+            dirnames[:] = []
             continue
+        out += [d / f for f in filenames if f.endswith('.gd')]
+    return sorted(out)
+
+
+def gdignored_in_tree(path, tracked):
+    """工程里的 path 是否在某个含 .gdignore 的目录下（按 tracked＝某提交里跟踪的文件集合判，不看磁盘）。"""
+    parts = Path(path).parts
+    return any(str(Path(*parts[:i], '.gdignore')) in tracked for i in range(len(PROJECT.parts) + 1, len(parts)))
+
+
+def missing_gd_uids(root, base, target):
+    """target 相对 base 新增的工程 .gd（tests、modes 都算）里，target 没有同目录同名 .gd.uid 已提交的，排好序。
+    车道常漏交 Godot 导入生成的 .gd.uid（11 月连续三次合并要总装手补）；交付自检报错，plan() 提示。
+    .gdignore 目录下的脚本 Godot 不导入、没有 .uid，不算。"""
+    added = git(root, 'diff', '--name-only', '--diff-filter=A', base, target, '--', str(PROJECT / '*.gd')).splitlines()
+    if not added:
+        return []
+    tracked = set(git(root, 'ls-tree', '-r', '--name-only', target, '--', str(PROJECT)).splitlines())
+    return sorted(p for p in added if p.endswith('.gd') and p + '.uid' not in tracked and not gdignored_in_tree(p, tracked))
+
+
+def gd_await_ternary_problems(project):
+    """工程里全部 .gd（.godot 缓存、.gdignore 目录除外）的 await 三元式问题（纯文本扫描，不要 godot）。"""
+    problems = []
+    for f in project_gd_files(project):
+        rel = f.relative_to(project)
         for no, line in await_ternaries(f.read_text(errors='replace')):
             problems.append('res://%s:%d：await 与三元式写在同一句，异步调用会被跳过，拆成 if/else 各自 await'
                             '（确认两边都不是异步函数可在句末写 %s）：%s' % (rel.as_posix(), no, AWAIT_TERNARY_OK, line[:120]))
@@ -450,8 +479,7 @@ def parse_check(root, base):
     text = (project / 'project.godot').read_text(errors='replace')
     section = text.split('[autoload]', 1)[1].split('\n[', 1)[0] if '[autoload]' in text else ''
     autoloads = re.findall(r'^(\w+)=', section, re.M)
-    files = sorted('res://' + p.relative_to(project).as_posix() for p in project.rglob('*.gd')
-                   if '.godot' not in p.relative_to(project).parts)
+    files = ['res://' + p.relative_to(project).as_posix() for p in project_gd_files(project)]
     with tempfile.TemporaryDirectory(prefix='xiyou_parse_check_') as tmp:
         script = Path(tmp) / 'parse_check.gd'
         script.write_text(PARSE_CHECK_GD)
@@ -766,6 +794,11 @@ def plan(root, task, branch=None):
             check_opt_drafts(read(p), p, registry)        # 接续交付单的优化草稿照本期的查（tools39）
             extra.append(p)
     changed = [p for p in changed if p not in gone]
+    no_uid = missing_gd_uids(root, fork, target)
+    if no_uid:
+        # 只提示不拦：--finish 收尾时 lane_uids 会把主工作区导入生成的 .uid 带进来；交付自检.py 把它算问题，在车道里就补上
+        print('提示：车道新增的 %d 个 .gd 没提交同名 .gd.uid（%s%s）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交'
+              % (len(no_uid), '、'.join(no_uid[:5]), ' 等' if len(no_uid) > 5 else ''), file=sys.stderr, flush=True)
     removed_cases = deleted_reference_presets(root, fork, base, target)
     if removed_cases:
         raise RuntimeError('车道删了 main 基线里的 %d 个事件状态参照用例（%s%s）：同步不收删除既有参照用例（只换源时可接受），'
