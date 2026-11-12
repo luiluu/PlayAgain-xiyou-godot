@@ -638,8 +638,9 @@ static var read_mismatches: Array = []
 static var read_hits := 0
 static var _read_depth := 0
 static var _read_gen := 0
-var _memo_gen := -1
-var _memo := {}
+## 缓存不放在角色身上（公式预览的影子克隆照抄角色的全部字段，不能把缓存也抄走），按角色对象另存一张表，换代就整表丢掉
+static var _memo_store := {}
+static var _memo_store_gen := -1
 
 static func read_begin() -> void:
 	if _read_depth == 0:
@@ -648,6 +649,9 @@ static func read_begin() -> void:
 
 static func read_end() -> void:
 	_read_depth -= 1
+	if _read_depth == 0:
+		_memo_store = {}  # 窗口一关就丢，不留着角色（含影子克隆）的引用
+		_memo_store_gen = -1
 
 ## 行动开始：不该有没关的窗口（窗口只包同步的只读计算）；万一有就关掉并报错，不让缓存跨到写入之后
 static func read_reset() -> void:
@@ -661,10 +665,14 @@ static func read_touch() -> void:
 	_read_gen += 1
 
 func _read_memo() -> Dictionary:
-	if _memo_gen != _read_gen:
-		_memo_gen = _read_gen
-		_memo = {}
-	return _memo
+	if _memo_store_gen != _read_gen:
+		_memo_store_gen = _read_gen
+		_memo_store = {}
+	var m = _memo_store.get(self)
+	if m == null:
+		m = {}
+		_memo_store[self] = m
+	return m
 
 func _read_verify(what: String, cached, fresh) -> void:
 	read_hits += 1

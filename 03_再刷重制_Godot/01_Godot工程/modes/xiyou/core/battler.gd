@@ -23,7 +23,11 @@ const TRAIT_SKILL_SEAL := 44
 ## 但 krz_state_re 的 states() 缓存让加状态后的 isRestricted 读到旧值，onRestrict 从不触发（参照 state_remove_probe）。true＝修成触发；false 重现原版。
 static var FIX_RESTRICT_REMOVE := true
 
-var hp := 0.0
+## hp／mp／tp 一写就作废只读窗口缓存（O-待定-2）：被动的 HPUP／HPLW 等条件让能力值跟着资源变
+var hp := 0.0:
+	set(v):
+		hp = v
+		XActor._read_gen += 1
 ## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
 var immortal := false
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
@@ -55,8 +59,14 @@ static var _outside_random: XRandomStream
 ## Scoped host capability, never persisted; wrappers restore the previous owner.
 var lifecycle_context := {}
 var runtime_result := XResourceContext.empty_result()
-var mp := 0.0
-var tp := 0.0
+var mp := 0.0:
+	set(v):
+		mp = v
+		XActor._read_gen += 1
+var tp := 0.0:
+	set(v):
+		tp = v
+		XActor._read_gen += 1
 var state_ids: Array[int] = []
 var state_turns := {}
 ## O-178（rules10）隐月叠层：CP_StateFloor 的层数（状态 → 层数，只记 >1 的）。原版 dsPassiveSkill 已带着就不再挂，恒 1 层；
