@@ -12,7 +12,8 @@
 
 产物：<上一级>/dev<号>_三平台发行/
   再刷一把_天启篇_mac.zip              macOS 发行（universal）
-  windows/再刷一把_天启篇.exe、.pck     Windows 发行（两个放一起）
+  再刷一把_天启篇_windows.zip          Windows 发行（exe＋pck 两个文件，Kyo 11-12 要 zip；文件名带 UTF-8 标记）
+  windows/再刷一把_天启篇.exe、.pck     zip 的原料，冒烟用（--win-dir）
   再刷一把_天启篇_安卓.apk              安卓发行；发行 keystore 没配时用本机 Godot 调试 keystore 签（只能试装，不能上架）
   SHA256SUMS.txt、体积.md、冒烟.md、发行说明.txt
 三个包都在这台 Mac 上导（Godot 在 Mac 上能直接导 Windows 和安卓，不用虚拟机）。不走云端：云端导入为了不超时去掉了 WebP 最高档，
@@ -47,6 +48,8 @@ DIR_RE = re.compile(r'^dev(\d+)_三平台发行$')
 MAC_ZIP = '再刷一把_天启篇_mac.zip'
 WIN_DIR = 'windows'
 WIN_FILES = ('再刷一把_天启篇.exe', '再刷一把_天启篇.pck')
+WIN_ZIP = '再刷一把_天启篇_windows.zip'
+ZIP_UTF8 = 0x800  # 通用标志第 11 位：文件名是 UTF-8（Windows 资源管理器据此不把中文名解成乱码）
 APK = '再刷一把_天启篇_安卓.apk'
 
 # 发行说明：标题里有这些词的条目算内部（工具、流程、审查、记录），不进玩家看的说明
@@ -164,7 +167,7 @@ def notes_text(dev: int, since: int, lines: list) -> str:
            f'这一版的改动（上一个发行包是 0.{since}）：' if since else '这一版的改动：', '']
     out += [f'・{l}' for l in lines] if lines else ['・没有玩家能看到的改动（这一版只改了内部工具和流程）。']
     out += ['', '安装：', '・Mac：解开 再刷一把_天启篇_mac.zip，把「再刷一把：天启篇」拖进「应用程序」。',
-            '・Windows：再刷一把_天启篇.exe 和 再刷一把_天启篇.pck 放在同一个文件夹里，双击 exe。',
+            f'・Windows：解开 {WIN_ZIP}，里面的 再刷一把_天启篇.exe 和 .pck 留在同一个文件夹里，双击 exe。',
             '・安卓：装 再刷一把_天启篇_安卓.apk；这个包是测试签名，只能自己装着试，不是商店版。',
             '・不会自动搬原版的存档，原版可以照常接着玩。', '']
     return '\n'.join(out)
@@ -207,6 +210,8 @@ def export_all(out: Path, logs: Path) -> list:
     if run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log') \
             or not all((out / WIN_DIR / f).is_file() for f in WIN_FILES):
         problems.append('Windows 导出失败')
+    else:
+        win_zip(out)
     print('== 导出 安卓 发行')
     env, how = android_env()
     if env is None:
@@ -244,8 +249,23 @@ def smoke_all(out: Path, logs: Path) -> list:
     return rows
 
 
+def win_zip(out: Path) -> Path:
+    """把 windows/ 里的 exe、pck 打成 再刷一把_天启篇_windows.zip（只放这两个文件、不带目录；文件名标 UTF-8）。"""
+    z = out / WIN_ZIP
+    with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for name in WIN_FILES:
+            src = out / WIN_DIR / name
+            info = zipfile.ZipInfo.from_file(src, name)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.flag_bits |= ZIP_UTF8
+            with src.open('rb') as fin, zf.open(info, 'w', force_zip64=True) as fout:
+                shutil.copyfileobj(fin, fout, 1 << 20)
+    print(f'  打包 {WIN_ZIP}：{z.stat().st_size / 1e6:.1f} MB')
+    return z
+
+
 def package_files(out: Path) -> list:
-    return [p for p in [out / MAC_ZIP, *(out / WIN_DIR / f for f in WIN_FILES), out / APK] if p.is_file()]
+    return [p for p in [out / MAC_ZIP, out / WIN_ZIP, *(out / WIN_DIR / f for f in WIN_FILES), out / APK] if p.is_file()]
 
 
 def sha256(p: Path) -> str:
@@ -257,12 +277,14 @@ def sha256(p: Path) -> str:
 
 
 def sizes(out: Path) -> dict:
-    """平台 → 字节（Windows 是 exe＋pck）。"""
+    """平台 → 字节（Windows 是 exe＋pck，Windows zip 是发给玩家的压缩包）。"""
     d = {}
     if (out / MAC_ZIP).is_file():
         d['macOS'] = (out / MAC_ZIP).stat().st_size
     if all((out / WIN_DIR / f).is_file() for f in WIN_FILES):
         d['Windows'] = sum((out / WIN_DIR / f).stat().st_size for f in WIN_FILES)
+    if (out / WIN_ZIP).is_file():
+        d['Windows zip'] = (out / WIN_ZIP).stat().st_size
     if (out / APK).is_file():
         d['安卓'] = (out / APK).stat().st_size
     return d
@@ -319,7 +341,7 @@ def main(argv=None) -> int:
     prev_dev, prev_dir = older[-1] if older else (None, None)
     print(f'本次 0.{dev} → {out}；上一个发行目录：{prev_dir or "无"}')
     if a.dry_run:
-        print('会导出：macOS 发行、Windows 发行、安卓 发行；' + ('不跑冒烟' if a.no_smoke else '冒烟：' + '、'.join(n for n, _ in SMOKES)))
+        print(f'会导出：macOS 发行、Windows 发行（另打 {WIN_ZIP}）、安卓 发行；' + ('不跑冒烟' if a.no_smoke else '冒烟：' + '、'.join(n for n, _ in SMOKES)))
         for t in ([] if a.keep_old else tidy_old(parent, dev, dry=True)):
             print(f'冒烟全过后会删旧发行：{t.name}')
         return 0

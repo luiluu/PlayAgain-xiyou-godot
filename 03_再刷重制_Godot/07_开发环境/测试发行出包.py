@@ -125,6 +125,34 @@ class DirsTests(unittest.TestCase):
             table = M.size_table(384, {'macOS': 351_700_000}, 383, {'macOS': 501_500_000})
             self.assertIn('| macOS | 351.7 MB | 501.5 MB | −149.8 MB |', table)
 
+    def test_win_zip_and_manifests(self):
+        # Kyo 11-12：Windows 发一个 zip（exe＋pck 两个文件，文件名标 UTF-8），写进校验和与体积表
+        with tempfile.TemporaryDirectory() as t:
+            d = self.make(Path(t), 384)
+            z = M.win_zip(d)
+            self.assertEqual(z, d / '再刷一把_天启篇_windows.zip')
+            with zipfile.ZipFile(z) as zf:
+                self.assertEqual(sorted(zf.namelist()), sorted(M.WIN_FILES))
+                for info in zf.infolist():
+                    self.assertTrue(info.flag_bits & 0x800, info.filename)
+                self.assertEqual(zf.read(M.WIN_FILES[0]), b'e' * 3)
+                self.assertEqual(zf.read(M.WIN_FILES[1]), b'p' * 4)
+            raw = z.read_bytes()   # 本地文件头里的通用标志也带 UTF-8 位（不只中央目录）
+            self.assertTrue(int.from_bytes(raw[6:8], 'little') & 0x800)
+            names = [str(f.relative_to(d)) for f in M.package_files(d)]
+            self.assertIn('再刷一把_天启篇_windows.zip', names)
+            self.assertEqual(M.sizes(d)['Windows zip'], z.stat().st_size)
+            self.assertIn('| Windows zip |', M.size_table(384, M.sizes(d), None, {}))
+
+    def test_export_makes_win_zip_and_notes_say_unzip(self):
+        src = (HERE / '发行出包.py').read_text(encoding='utf-8')
+        body = src[src.index('def export_all('):src.index('def ', src.index('def export_all(') + 10)]
+        self.assertIn('win_zip(out)', body)
+        self.assertLess(body.index("'Windows 导出失败'"), body.index('win_zip(out)'))
+        notes = M.notes_text(386, 382, [])
+        self.assertIn('解开 再刷一把_天启篇_windows.zip', notes)
+        self.assertNotIn('Windows：再刷一把_天启篇.exe 和', notes)
+
     def test_release_dirs_sorted_numeric(self):
         with tempfile.TemporaryDirectory() as t:
             for n in (1000, 99, 383):
