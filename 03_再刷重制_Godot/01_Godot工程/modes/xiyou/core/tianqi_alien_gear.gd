@@ -17,7 +17,7 @@ extends RefCounted
 ##   刻印：花 1 颗异化石，把一颗核刻到背包里任何一件能异化的武器、防具上，已有词条的替换；
 ##   净化：花 1 颗异化石，去掉词条还原成普通装备，退还一部分分解能量。
 ##
-## 开关（O-待定）：ENABLED＝false 时天启篇的怪不掉异化装备，工坊里没有取核、刻印、净化；已有的天启篇异化装备照原版异化的规则还在。
+## 开关（O-336）：ENABLED＝false 时天启篇的怪不掉异化装备，工坊里没有取核、刻印、净化；已有的天启篇异化装备照原版异化的规则还在。
 ## 只认天启篇存档（XTianqiLine.open_for：发行构建里还要 XTianqi.RELEASE_OPEN），原版异化整套隐藏时（XAlienBattle.hidden）也不出。
 
 const PATH := "res://modes/xiyou/tianqi_data/alien_gear.json"
