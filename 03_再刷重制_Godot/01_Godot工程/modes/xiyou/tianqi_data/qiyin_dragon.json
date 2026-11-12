@@ -2,7 +2,7 @@
  "version": 1,
  "draft": true,
  "source": "七印祭坛方案 v0.4，Kyo 11-12 定稿",
- "dev": "dev.待定",
+ "dev": "dev.487",
  "_note": "来源：七印祭坛方案 v0.4（设计仓库 天启篇_七印祭坛_里副本套装毕业武器方案_v0.4.md 第 3.1、6.4 节），Kyo 11-12 定稿。天启篇特殊副本「七首之龙」的出现判定、龙隙存放、奖励和龙血，只读（XTianqiQiyinDragon）。fight 一节只是数据，战斗本身还没做。几率写成 0～1 的小数。nice_number_exempt 里是编号、次数上限，不查数字 4。",
  "nice_number_exempt": ["version", "pity_after", "max_stored", "actions_per_turn", "segments", "turns", "recruit_floor", "floor", "max_per_actor"],
  "seals": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],
