@@ -51,7 +51,18 @@ static func instance(tree: SceneTree) -> XUpdateClient:
 static func init_versions() -> void:
 	if XUpdateCheck.release_base == 0:
 		XUpdateCheck.release_name = release_version()
-		XUpdateCheck.release_base = base_code()
+		XUpdateCheck.release_base = release_base_code()
+
+
+## 版本名从哪个编号数起：build_info 的 releaseBase（修复整包沿用原整包的号，如 v0.01.03 整包写 470），没写就是安装包自带的编号。
+static func release_base_code() -> int:
+	if FileAccess.file_exists(BUILD_INFO):
+		var j := JSON.new()
+		if j.parse(FileAccess.get_file_as_string(BUILD_INFO)) == OK and typeof(j.data) == TYPE_DICTIONARY:
+			var rb := int(j.data.get("releaseBase", 0))
+			if rb > 0:
+				return rb
+	return base_code()
 
 
 ## 发行版本名（build_info 的 releaseVersion，如 "0.01"）；开发版是 null／空。
