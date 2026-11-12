@@ -92,8 +92,16 @@ func _tianqi_side() -> void:
 	# 神秘生物：已开的关掉、不刷新
 	var m: Dictionary = XPetCapture.pet_maps().values()[0]
 	s.set_self_switch(m.maps[0], m.events[0], m.switches[0], true)
+	XPetCapture.clock = func(): return {"day": 11, "hour": 9, "minute": 2}  # 刷新窗口内
 	var out := XPetCapture.check(s)
-	_check("mystic_off", out.is_empty() and not s.self_switch(m.maps[0], m.events[0], m.switches[0]))
+	var any_on := XPetCapture.pet_maps().values().any(func(x): return x.maps[0] > 0 and s.self_switch(x.maps[0], x.events[0], x.switches[0]))
+	_check("mystic_off", out.is_empty() and not any_on)
+	# 对照：原版档在窗口内会开一处
+	var p := _plain()
+	XPetCapture.check(p, func(): return 0.0)
+	_check("mystic_plain_on", XPetCapture.pet_maps().values().any(func(x): return x.maps[0] > 0 and p.self_switch(x.maps[0], x.events[0], x.switches[0])))
+	XPetCapture.clock = Callable()
+	XState.current = s
 	# 星级仓库：只剩装备
 	_check("warehouse_cats", XStarWarehouseScene.cat_ops().size() == 1, XStarWarehouseScene.cat_ops().size())
 
