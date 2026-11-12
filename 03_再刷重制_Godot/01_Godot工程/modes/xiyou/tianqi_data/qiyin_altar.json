@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "draft": true,
+  "source": "天启篇_七印祭坛_里副本套装毕业武器方案 v0.4 第 2.1、2.2、3、6.5 节（Kyo 2026-11-11 定自选＋躁动、印钥门票；11-12 定掉落）",
+  "_note": "七印祭坛的流程表（XTianqiQiyin／XTianqiQiyinRule），只读。祭坛入口、揭印条件、七个里副本借的图和敌群、七条规则的参数、台词。掉落几率在 qiyin_drop.json（XTianqiQiyinDrop），装备数据在 qiyin_gear.json。里副本的敌人一律按参照敌人（rebase.ref）重标能力值，外观和行动照借的敌人；倍率、印钥起手数都是测试参数。台词设计稿只给了小小鱼一句，其余 cc 起草，Kyo 想改直接改这张表。数字避开 4（层号、地图号、敌群号、敌人号、坐标、事件号照实写）。",
+  "nice_number_exempt": ["version", "map", "event", "pos", "troop", "troops", "enemy", "ref", "floor", "floors", "after_floor", "order", "every_turns", "silence_on", "field_maps"],
+  "altar": {
+    "_note": "祭坛借 19 层副本的古龙祭坛（Map054）换色调；坐标是从 19 层进祭坛的落点。",
+    "map": 54,
+    "pos": [15, 33, 8],
+    "tone": [-22, -33, 11, 33],
+    "name": "七印祭坛"
+  },
+  "entries": [
+    {"_note": "大厅 EV048（原版「去塔里找材料合成天顶剑」，天启篇删了天顶剑）改成去祭坛", "map": 4, "event": 48},
+    {"_note": "32 层焰轮天的古龙祭坛门（原版 EV002）", "map": 156, "event": 2},
+    {"_note": "33 层清净天的古龙祭坛门（原版 EV002）", "map": 157, "event": 2}
+  ],
+  "keys": {
+    "_note": "印钥（方案 6.5 节第 1 条）：进一次里副本 1 把，输了不退；里副本 Boss 打赢 refund_chance 退 1 把；31～35 层野外怪 field_chance 掉 1 把，精英和守护者必掉。first_open 是祭坛第一次开时送的（cc 起草，方案没写；不送的话刚打完 31 层手里可能一把都没有）。",
+    "name": "印钥",
+    "cost": 1,
+    "first_open": 3,
+    "refund_chance": 0.33,
+    "field_chance": 0.05,
+    "field_maps": [148, 156, 157, 158],
+    "sure_tags": ["【精英】", "【守护者】", "【守层者】"]
+  },
+  "shards_name": "印屑",
+  "unlock": {
+    "_note": "方案 2.2 节：打过哪一层的守层者揭开哪几印（变量 20＝下一层，所以打过 N 层＝变量 20 ≥ N＋1；34 层另认 XTianqiSummit 的鸿钧记录）。默印要前六印的 Boss 都打过。",
+    "bai": {"floor": 31},
+    "hong": {"floor": 31},
+    "hei": {"floor": 32},
+    "hui": {"floor": 33},
+    "xun": {"floor": 34},
+    "zhen": {"floor": 35},
+    "mo": {"after_seals": ["bai", "hong", "hei", "hui", "xun", "zhen"]}
+  },
+  "rebase": {
+    "_note": "里副本的敌人原本是 3～19 层的，能力值按参照敌人（鸿蒙老祖 537）乘 rate 重标，八项依次 生命、魔法、攻击、防御、魔攻、魔防、敏捷、幸运；难度倍率、首领霸体照常吃。精英战每只都按 elite；Boss 战的 Boss 按 boss（再乘各印 boss_rate），同场的小怪按 elite。测试参数。",
+    "ref": 537,
+    "elite": [0.03, 1.0, 0.5, 0.5, 0.5, 0.5, 0.8, 1.0],
+    "boss": [0.5, 1.0, 0.8, 0.8, 0.8, 0.8, 1.0, 1.0]
+  },
+  "seals": {
+    "bai": {
+      "order": 1, "seal": "白印", "name": "里·猪猪农场「疫土」", "map": 61, "pos": [4, 16, 8], "tone": [-11, 11, -33, 33],
+      "rule": "no_cure", "rule_name": "不愈", "rule_text": "减益不会到期，只能驱散。",
+      "troops": [249, 250, 52],
+      "boss": {"enemy": 54, "name": "【里】疫土之主", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "hong": {
+      "order": 2, "seal": "红印", "name": "里·哥布林部族「战场」", "map": 13, "pos": [27, 24, 8], "tone": [33, -22, -22, 33],
+      "rule": "war_cry", "rule_name": "杀声", "rule_text": "每有一个单位倒下，全场出伤 +5%。",
+      "troops": [33, 34, 39],
+      "boss": {"enemy": 40, "name": "【里】战酋", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "hei": {
+      "order": 3, "seal": "黑印", "name": "里·训练场「考场」", "map": 6, "pos": [21, 20, 8], "tone": [-33, -33, -33, 66],
+      "rule": "exam", "rule_name": "限时", "rule_text": "魔法、TP 不恢复；每回合全队合计只能放 5 个技能。",
+      "troops": [10, 11, 8],
+      "boss": {"enemy": 8, "name": "【里】监考官", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "hui": {
+      "order": 4, "seal": "灰印", "name": "里·勇者之塔「魔塔」", "map": 85, "pos": [15, 13, 8], "tone": [-11, -11, -11, 99],
+      "rule": "magic_tower", "rule_name": "魔塔", "rule_text": "没有暴击；每场战斗前三选一捡宝石，本次副本内累计。",
+      "troops": [291, 297, 296],
+      "boss": {"enemy": 335, "name": "【里】塔顶的魔王", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "xun": {
+      "order": 5, "seal": "殉印", "name": "里·黑暗废墟「魂冢」", "map": 32, "pos": [31, 14, 8], "tone": [11, 11, 33, 66],
+      "rule": "sacrifice", "rule_name": "献祭", "rule_text": "每回合开始，生命最高的单位损失 10% 当前生命，它那一方本回合出伤 +10%。",
+      "troops": [122, 123, 138],
+      "boss": {"enemy": 128, "name": "【里】白衣的魂", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "zhen": {
+      "order": 6, "seal": "震印", "name": "里·天空圣殿「坠星」", "map": 47, "pos": [14, 40, 8], "tone": [22, 0, -33, 33],
+      "rule": "star_fall", "rule_name": "星坠", "rule_text": "每 3 回合，全场损失当前生命的 33%。",
+      "troops": [187, 188, 333],
+      "boss": {"enemy": 202, "name": "【里】坠星者", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    },
+    "mo": {
+      "order": 7, "seal": "默印", "name": "祭坛深处「寂静」", "map": 54, "pos": [15, 4, 2], "tone": [-66, -66, -66, 99],
+      "rule": "silence", "rule_name": "寂静", "rule_text": "双数回合全场沉默，只能普攻、防御、用物品。",
+      "troops": [216, 220, 217],
+      "boss": {"enemy": 234, "name": "【里】守默者", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+    }
+  },
+  "rules": {
+    "war_cry": {"per_death": 0.05},
+    "exam": {"skills_per_turn": 5},
+    "magic_tower": {"gems": [
+      {"key": "atk", "name": "红宝石（攻击 +10%）", "value": 0.1},
+      {"key": "def", "name": "蓝宝石（防御 +10%）", "value": 0.1},
+      {"key": "hp", "name": "绿宝石（生命 +10%）", "value": 0.1}
+    ], "_note": "攻击按我方出伤 ×(1＋累计)，防御、生命都按我方受伤 ÷(1＋累计) 近似（生命 +10% 等于多扛 10% 的伤害；不改面板）"},
+    "sacrifice": {"hp_loss": 0.1, "dmg_up": 0.1},
+    "star_fall": {"every_turns": 3, "hp_loss": 0.33},
+    "silence": {"silence_on": "even"}
+  },
+  "scenes": {
+    "first_open": [["小小鱼", "别全揭开。……算了，你反正会揭。"], ["", "七印祭坛开了。祭坛前放着 %d 把印钥。"]],
+    "locked": [["", "祭坛上的印还没有一道亮着。打过 31 层的守层者再来。"]],
+    "head": [["", "七印祭坛。印钥：%d　印屑：%d"]],
+    "pick_seal": [["", "揭哪一道印？"]],
+    "no_key": [["小小鱼", "没有印钥了。去 31～35 层转转，精英和守护者身上都有。"]],
+    "restless": [["", "%s在发光。……它躁动起来了。"]],
+    "enter": [["", "%s。规则：%s"]],
+    "mode": [["", "要怎么打？"]],
+    "offer_head": [["", "要献点什么吗？（印屑 %d）"]],
+    "offer_part": [["", "指定哪个部位？"]],
+    "gem": [["", "捡一颗宝石（本次副本内累计）。"]],
+    "next": [["", "下一场。"]],
+    "lost": [["小小鱼", "先回祭坛。印钥没了，人还在。"]],
+    "boss_win": [["", "%s倒下了。"]],
+    "drop_head": [["", "掉落："]],
+    "shards": [["", "得到印屑 %d 个。"]],
+    "key_refund": [["", "印钥退还了 1 把。"]],
+    "first_clear": [["", "首通：多给了一件本印套装件。"]],
+    "floor_kill": [["", "守层者首杀：得到 %s。"]],
+    "field_keys": [["", "这段时间在塔里捡到印钥 %d 把。"]],
+    "reveal_none": [["", "没有封着的东西。"]],
+    "reveal_head": [["", "封着的：%d 件。揭哪一件？"]],
+    "reveal_done": [["", "揭开了：%s"]],
+    "bag_head": [["", "印库：%d 件。"]],
+    "leave": [["小小鱼", "走吧。"]]
+  },
+  "names": {
+    "parts": {"head": "头部", "body": "盔甲", "hands": "护手", "waist": "腰带", "legs": "裤子", "feet": "鞋子"},
+    "grades": {"putong": "普通", "shangpin": "上品", "ji": "极"},
+    "set_glow": "金光",
+    "true_glow": "红光"
+  }
+}

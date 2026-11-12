@@ -451,7 +451,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	_show_map_name(XTianqiSummit.map_name(XState.current, map_id, str(map_data.get("displayName", ""))))  # 天启篇 34～36 层借图时用新层名
+	_show_map_name(XTianqiQiyin.map_name(XState.current, map_id, XTianqiSummit.map_name(XState.current, map_id, str(map_data.get("displayName", "")))))  # 天启篇 34～36 层、七印祭坛借图时用新名字
 	_place_vehicle()
 	# Game_Map.autoplay：乘载具时只记下地图 BGM（saveWalkingBgm2），继续放载具的
 	if bool(map_data.get("autoplayBgm", false)):
@@ -612,7 +612,7 @@ func _on_player_step() -> void:
 		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
 			await run_event(e)
 			return
-	if not map_data.encounterList.is_empty() and not XTianqiSummit.no_encounter(XState.current, map_id):  # 天启篇：旧 34 层（158）不随机遇敌
+	if not map_data.encounterList.is_empty() and not XTianqiSummit.no_encounter(XState.current, map_id) and not XTianqiQiyin.no_encounter(XState.current, map_id):  # 天启篇：旧 34 层（158）、七印祭坛和里副本不随机遇敌
 		if can_encounter():
 			encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y), XState.current.party_ability(0))
 		if encounter_count <= 0:
@@ -781,6 +781,13 @@ func run_event(e: MVEvent) -> void:
 	if XTianqiLine.is_door(map_id, e.event_id) and XTianqiLine.door_blocked(XState.current):
 		_set_busy(true)
 		await XTianqiLine.run_door(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
+	# 天启篇七印祭坛（XTianqiQiyin）：大厅 EV048、32／33 层古龙祭坛门，有一印揭开后进祭坛
+	if XTianqiQiyin.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiQiyin.run_event(self, XState.current, map_id, e.event_id)
 		_set_busy(false)
 		refresh_events()
 		return
