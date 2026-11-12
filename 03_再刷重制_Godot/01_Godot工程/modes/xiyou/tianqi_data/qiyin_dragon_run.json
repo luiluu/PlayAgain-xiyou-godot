@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "draft": true,
+  "source": "七印祭坛方案 v0.4 第 3.1 节（Kyo 11-12 定稿）；美术素材清单 v0.2 E1、P6",
+  "_recruit_note": "首杀多招一人：照本档难度 recruit_floor 层（qiyin_dragon.json）那一档的招募表（XTianqi.DRAW_TABLE 第 recruit_floor÷5 次），当场在祭坛抽（不用回大厅），可以「稍后再选」留到下次开祭坛。",
+  "_note": "七首之龙的流程表（XTianqiQiyinDragonRun），只读。出现判定、奖励、龙血的数在 qiyin_dragon.json（XTianqiQiyinDragon），这里只放战斗怎么搭、流程台词。数字避开 4（敌人号、敌群号、编号照实写）。",
+  "nice_number_exempt": ["version", "troop", "shell_enemy", "extra_actions", "reprieve_turns_from"],
+  "fight": {
+    "_note": "借 19 层副本古龙祭坛的普拉顿（敌群 221、敌人 238）的外观和行动；七首之龙新画（美术 E1，七个头拆件）画好前先借它。能力值按里副本的参照敌人（qiyin_altar.json 的 rebase.ref，鸿蒙老祖 537）乘 rate，生命直接取 XTianqiQiyinDragon.fight_data 的本档最大生命（已乘本档敌人血量）。rate 是测试参数，进数值阶段再按 36 层普通首领一击约 8.5 万校。每回合 3 次行动＝加 extra_actions 条必定追加行动。",
+    "troop": 221,
+    "shell_enemy": 238,
+    "name": "七首之龙",
+    "rate": [1.0, 1.0, 0.8, 0.8, 0.8, 0.8, 1.0, 1.0],
+    "extra_actions": 2,
+    "tone": [-33, -55, -33, 99],
+    "open_reveal": true,
+    "_open_reveal_note": "true＝开场就揭第一道印（白），之后每断一首揭下一道，第六首断掉时揭默印、打最后一段，一场把七条规则都过一遍（方案「一场打完，等于把七个里副本的规则依次过一遍」）；false＝照 qiyin_dragon.json 的字面：第 i 首断掉揭第 i 道印，第七首断掉就倒下，默印只报不生效。",
+    "segment_lock": true,
+    "_segment_lock_note": "true＝一次行动的伤害最多打到本段底（断首前的伤害不溢出到下一段），保证每道印都要打一段；false＝溢出照扣，一下可以连断几首。"
+  },
+  "scenes": {
+    "rift_open": [["", "祭坛裂开了。七道印的光一起灭了。"], ["", "裂缝底下有东西在呼吸——七个。"]],
+    "rift_ask": [["", "龙隙开着。现在进去吗？"]],
+    "rift_stored": [["小小鱼", "……先记着这条缝。回去整队再来，它跑不了。"]],
+    "rift_already": [["", "已经存着一道龙隙了。"]],
+    "enter": [["", "你走进了龙隙。"]],
+    "lost": [["", "龙隙合上了。"], ["小小鱼", "活着出来就好。"]],
+    "win": [["", "七首之龙倒下了。"]],
+    "pick_seal": [["", "龙鳞里嵌着一件真印的套装件。要哪一印的？"]],
+    "drop_head": [["", "七首之龙的掉落："]],
+    "blood_get": [["", "得到龙血 %d 瓶。"]],
+    "recruit_get": [["小小鱼", "龙的气味会引来人。……回头看看，有人想跟你走。"]],
+    "blood_head": [["", "龙血还有 %d 瓶。给谁喝？（每人最多 %d 瓶，全属性 +%d%%）"]],
+    "blood_done": [["", "%s喝下了龙血。（已喝 %d 瓶）"]],
+    "blood_full": [["", "%s已经喝满了。"]]
+  },
+  "logs": {
+    "open": "七首之龙：生命分 %d 段，每断一首揭一道印。",
+    "reveal": "七首之龙的第 %d 首低下了头——%s：【%s】%s",
+    "cut": "七首之龙的第 %d 首断了！（还剩 %d 首）",
+    "reprieve_on": "缓期：%s被挂上缓期，%d 回合后倒下；在那之前再断一首就解除。",
+    "reprieve_off": "缓期解除了。",
+    "reprieve_fall": "缓期到了：%s倒下了。"
+  }
+}

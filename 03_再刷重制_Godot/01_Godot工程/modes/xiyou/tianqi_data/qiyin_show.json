@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "draft": true,
+  "source": "七印祭坛方案 v0.4 第 6.1 节第 6 条（演出「实装时不要省」）、第 3.1 节（龙隙）；美术素材清单 v0.2（S1 七印徽记、P1～P5 神器大图、P6 龙隙裂缝）",
+  "_note": "七印的掉落、揭开、龙隙演出（XTianqiQiyinShow），只读。颜色照美术清单第 2.2 节主色；音效借原版 SE。美术没到之前一律引擎画占位（色块、圆印、文字）；图放进 art 里写的路径就自动换上，不用改代码。时长单位秒。",
+  "nice_number_exempt": ["version", "frames", "power", "speed"],
+  "art": {
+    "_note": "美术清单的编号：S1 七印徽记（每枚 256×256 透明，按 seals 顺序切成 bai.png 等七张）；P1～P5 神器大图（512×512 透明，按神器键命名）；P6 龙隙裂缝（1280×720 透明）。文件不在就画占位。",
+    "seal_dir": "res://content/tianqi/qiyin/seals/",
+    "artifact_dir": "res://content/tianqi/qiyin/artifacts/",
+    "rift": "res://content/tianqi/qiyin/rift.png"
+  },
+  "seals": {
+    "bai": {"glyph": "白", "color": "#E8E2CC", "accent": "#9CC06A"},
+    "hong": {"glyph": "红", "color": "#E8582A", "accent": "#F2C14E"},
+    "hei": {"glyph": "黑", "color": "#2A2A30", "accent": "#D9C99A"},
+    "hui": {"glyph": "灰", "color": "#B9BEC6", "accent": "#7FA6C9"},
+    "xun": {"glyph": "殉", "color": "#F3EFE6", "accent": "#8E2A2A"},
+    "zhen": {"glyph": "震", "color": "#22305E", "accent": "#C9D3E6"},
+    "mo": {"glyph": "默", "color": "#7B6A8C", "accent": "#E0B95A"}
+  },
+  "true_glow": "#E0262B",
+  "set": {"se": "Saint3", "flash": 0.6, "hold": 0.8},
+  "weapon": {"se": "Sword5", "dim": 0.66, "hold": 1.2},
+  "true_seal": {"se": "Thunder9", "power": 6, "speed": 9, "frames": 30, "hold": 0.5},
+  "artifact": {"se": "Saint5", "light_se": "Flash1", "dim": 0.88, "step": 0.33, "hold": 1.5},
+  "reveal": {"se": "Break", "hold": 0.5},
+  "rift": {"se": "Earth5", "power": 9, "speed": 5, "frames": 60, "fade_out": 0.8, "hold": 1.0},
+  "dragon_cut": {"se": "Collapse3"}
+}

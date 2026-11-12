@@ -233,6 +233,8 @@ func can_equip(item: Dictionary) -> bool:
 	if item.kind == "weapon":
 		var wt := int(item.wtypeId)
 		return traits_set(51).has(wt) or not passive_values("passiveEWPN%02d" % wt).is_empty()
+	if XTianqiQiyinEquip.any_class(item):
+		return true  # 天启篇七印套装件不分甲种（七印祭坛方案 v0.4 第 4.1 节）
 	var at := int(item.atypeId)
 	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
 
@@ -601,7 +603,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i)  # 天启篇殉印 2 件最大生命；专属角色模块的 paramRate 包装（饿狼形态倍率）
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i)  # 天启篇殉印 2 件最大生命、七首之龙龙血全属性；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:

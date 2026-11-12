@@ -108,7 +108,9 @@ func _weapons() -> void:
 	var types := XTianqiQiyinGear.weapon_types()
 	var type_keys: Array = types.map(func(t): return str(t.key))
 	_check("12 个武器类", types.size() == 12, types.size())
-	_check("wtype_id 先留 null", types.all(func(t): return t.get("wtype_id") == null))
+	var wnames: Array = XDB.system().get("weaponTypes", [])
+	_check("wtype_id 对上原版 weaponTypes 名字", types.all(func(t): return t.get("wtype_id") != null and int(t.wtype_id) > 0 and int(t.wtype_id) < wnames.size() and str(wnames[int(t.wtype_id)]) == str(t.name)),
+		types.map(func(t): return [t.name, t.get("wtype_id")]))
 	var covered := {}
 	for s in SEALS:
 		var mine := XTianqiQiyinGear.weapons_of_seal(s)
@@ -173,4 +175,4 @@ func _nice() -> void:
 	var bad := XTianqiQiyinGear.nice_number_violations()
 	_check("设计数值不含 4", bad.is_empty(), bad)
 	_check("豁免键只放编号、类型号、层数、件数", XTianqiQiyinGear.data().get("nice_number_exempt", []).all(
-		func(k): return k in ["version", "order", "etype", "affix_tier", "count", "first_kill_floors"]))
+		func(k): return k in ["version", "order", "etype", "affix_tier", "count", "first_kill_floors", "wtype_id"]))
