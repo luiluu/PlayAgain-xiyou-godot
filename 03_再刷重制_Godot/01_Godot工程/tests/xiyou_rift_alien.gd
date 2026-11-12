@@ -162,6 +162,13 @@ func _plan() -> void:
 	XRiftAlien.ENABLED = false
 	_check("switch_off_none", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).is_empty())
 	XRiftAlien.ENABLED = true
+	# 发行构建：RELEASE_OPEN 关着不建
+	ReleaseEntry.simulate_release = true
+	_check("release_none", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).is_empty() and not XRiftAlien.on(_plain(10)))
+	XRiftAlien.RELEASE_OPEN = true
+	_check("release_open", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).size() == 1)
+	XRiftAlien.RELEASE_OPEN = false
+	ReleaseEntry.simulate_release = false
 	_check("floor_fallback", XRiftAlien.floor_of(_plain(10)) == 10)
 
 

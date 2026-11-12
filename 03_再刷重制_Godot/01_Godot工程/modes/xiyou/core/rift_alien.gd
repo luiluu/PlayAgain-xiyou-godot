@@ -18,7 +18,7 @@ extends RefCounted
 ## - 异化图鉴：赢了倒下的异化怪按「借自的线:种类:级」点亮天启篇异化图鉴（XConfig.tianqi_alien_mark，跨存档，不给数值和物品）。
 ## 外观的纹路贴图、附加件、化形替换件和变形演出还没有美术，先用 tint() 给 XBattlerSprite 的幽紫偏色顶着。
 ##
-## 开关（O-待定）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）。
+## 开关（O-待定）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
 
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"
@@ -28,6 +28,8 @@ const LOOK := "xrift_look"
 static var ENABLED := true
 ## 测试用／以后扩阶段：>0 时当作这一阶（1～5），0＝读 XRift.stage()
 static var STAGE_OVERRIDE := 0
+## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
+static var RELEASE_OPEN := false
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
 static var force_drop := -1.0
 
@@ -68,7 +70,7 @@ static func stage() -> int:
 
 ## 这一档受漩涡阶段影响：开关开着、不是天启篇存档、阶段二起
 static func on(s: XState) -> bool:
-	return ENABLED and s != null and not XTianqi.active(s) and stage() >= 2
+	return ENABLED and s != null and not XTianqi.active(s) and stage() >= 2 and (RELEASE_OPEN or not ReleaseEntry.is_release())
 
 
 static func tier_info(tier: String) -> Dictionary:
