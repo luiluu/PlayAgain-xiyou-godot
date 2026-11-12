@@ -635,6 +635,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = float(b.hp) >= float(b.mhp) * float(c.get("rate", 1.0))
 		"target_hp_below":
 			ok = float(b.hp) < float(b.mhp) * float(c.get("rate", 0.0))
+		"self_hp_above":  # 自己生命不低于 rate（玉面狐狸朔月依依）
+			ok = float(a.hp) >= float(a.mhp) * float(c.get("rate", 1.0))
 		"self_hp_below":
 			ok = float(a.hp) < float(a.mhp) * float(c.get("rate", 0.0))
 		"target_full_hp":
