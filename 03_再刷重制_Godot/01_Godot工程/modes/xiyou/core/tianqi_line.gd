@@ -216,6 +216,7 @@ static func _run_rift(host, s: XState, key: String) -> bool:
 		won = r == 0
 	progress(key, s)["survived"] = won
 	await say(host, key, "rift_survived" if won else "rift_lost")
+	await XTianqiRewards.after_rift(host, s, key, won)  # 天启篇奖励：第一件净印；撑过的额外奖励
 	await say(host, key, "rift_after")
 	progress(key, s)["stage"] = stage_done(key)
 	await go(host, key, "hall", "hall")
@@ -286,6 +287,7 @@ static func before_battle(host, s: XState, troop_id: int) -> void:
 		if int(p.get("troop", 0)) == troop_id:
 			await say(host, key, name)
 			alien_prepare(key, name, s)
+			XTianqiRewards.note_apostle(key, name)  # 天启篇奖励：打赢掉净印（XMapScene.start_battle 末尾发）
 			return
 
 
@@ -329,7 +331,9 @@ static func run_shadow(host, s: XState, key: String) -> int:
 	await say(host, key, "shadow_before")
 	if not XTianqiHorsemen.prepare(key, s, "shadow"):
 		return -1
-	return await host.start_battle(int(data(key).shell_troop), false, true)
+	var r: int = await host.start_battle(int(data(key).shell_troop), false, true)
+	await XTianqiRewards.after_shadow(host, s, key, r)  # 天启篇奖励：半强度遗物、终焉核
+	return r
 
 
 ## 36 层决战：本线骑士本体（XTianqiHorsemen 的 body），赢了放结局、记通关和可轮回
@@ -344,6 +348,7 @@ static func run_final(host, s: XState, key: String) -> int:
 		await say(host, key, "final_win")
 		progress(key, s)["cleared"] = true
 		s.flags.tianqi["reincarnate"] = true
+		await XTianqiRewards.after_final(host, s, key, r)  # 天启篇奖励：遗物、徽记、终焉核
 	else:
 		await say(host, key, "final_lost")
 	return r
