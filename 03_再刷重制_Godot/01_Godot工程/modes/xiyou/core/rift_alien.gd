@@ -30,6 +30,8 @@ static var ENABLED := true
 static var STAGE_OVERRIDE := 0
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
 static var RELEASE_OPEN := false
+## v0.01 补丁线（Kyo 11-12「异化二阶段先放进游戏」）：发行版只开二阶（只有画面），三阶起照旧要 RELEASE_OPEN
+static var RELEASE_STAGE2 := true
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
 static var force_drop := -1.0
 
@@ -58,8 +60,21 @@ static func reload() -> void:
 
 static func nice_number_violations() -> Array:
 	var out := []
-	XTianqiHorsemen._scan(data(), "", data().get("nice_number_exempt", []), out)
+	_scan(data(), "", data().get("nice_number_exempt", []), out)
 	return out
+
+
+## 数值里带 4 的键（v0.01 补丁线没有天启篇的同名扫描，这里自带一份）
+static func _scan(v, path: String, exempt: Array, out: Array) -> void:
+	if v is Dictionary:
+		for k in v:
+			if not exempt.has(str(k)) and not str(k).begins_with("_"):
+				_scan(v[k], path + "/" + str(k), exempt, out)
+	elif v is Array:
+		for i in v.size():
+			_scan(v[i], "%s[%d]" % [path, i], exempt, out)
+	elif (v is int or v is float) and "4" in str(v):
+		out.append(path)
 
 
 # ---- 开关、阶段 ----
@@ -70,7 +85,7 @@ static func stage() -> int:
 
 ## 这一档受漩涡阶段影响：开关开着、不是天启篇存档、阶段二起
 static func on(s: XState) -> bool:
-	return ENABLED and s != null and not XTianqi.active(s) and stage() >= 2 and (RELEASE_OPEN or not ReleaseEntry.is_release())
+	return ENABLED and s != null and not XTianqi.active(s) and stage() >= 2 and (RELEASE_OPEN or not ReleaseEntry.is_release() or (RELEASE_STAGE2 and stage() == 2))
 
 
 static func tier_info(tier: String) -> Dictionary:
@@ -483,7 +498,6 @@ static func grant(logic) -> Array:
 		var u: Dictionary = f.units[e]
 		if not e.is_dead():
 			continue
-		XConfig.tianqi_alien_mark(XTianqiAlienCodex.key(str(kind_info(str(u.kind)).from), str(u.kind), str(u.tier)))
 		if XAlienBattle.hidden():
 			continue
 		var id: String = logic.stable_id(e)

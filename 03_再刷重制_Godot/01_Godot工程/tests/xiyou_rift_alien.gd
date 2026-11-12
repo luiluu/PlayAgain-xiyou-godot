@@ -103,9 +103,6 @@ func _data() -> void:
 			bad.append([n, XRiftAlien.class_of(n)])
 	_check("class_of", bad.is_empty(), bad)
 	_check("kinds_pool", XRiftAlien.kinds() == ["berserk", "lean", "gland", "knell"], XRiftAlien.kinds())
-	# 种类都借自天启篇对应线、种类键与那条线一致（图鉴点亮用）
-	var mods := {"war": XTianqiWarAlien, "famine": XTianqiFamineAlien, "plague": XTianqiPlagueAlien, "death": XTianqiDeathAlien}
-	_check("kinds_borrowed", XRiftAlien.kinds().all(func(k): return mods[str(XRiftAlien.kind_info(k).from)].kinds().has(k)))
 	_check("no_zhongyan", not XRiftAlien.data().tiers.has("zhongyan"))
 	_check("diff_map", XRiftAlien.diff_key(1) == "low" and XRiftAlien.diff_key(3) == "mid" and XRiftAlien.diff_key(4) == "mid"
 		and XRiftAlien.diff_key(6) == "high" and XRiftAlien.diff_key(9) == "top")
@@ -333,7 +330,6 @@ func _drops() -> void:
 	_check("drop_got", got.size() == 1 and str(got[0]).begins_with("化形·"), got)
 	var item = s.gear.filter(func(i): return XRiftAlien.gear_tier(i) == "huaxing")
 	_check("drop_in_bag", item.size() == 1 and lg.victory_texts.has("获得 " + str(got[0])) if got.size() == 1 else false)
-	_check("codex_lit", XTianqiAlienCodex.seen("war", "berserk", "huaxing"))
 	if item.size() == 1:
 		var i: Dictionary = item[0]
 		XAlienation.relabel(i)
@@ -355,7 +351,7 @@ func _drops() -> void:
 	lhid.enemies[0].hp = 0.0
 	lhid.enemies[0].add_new_state(1)
 	XRiftAlien.force_drop = 0.0
-	_check("drop_hidden_none", XRiftAlien.grant(lhid).is_empty() and XTianqiAlienCodex.seen("plague", "gland", "huaxing"))
+	_check("drop_hidden_none", XRiftAlien.grant(lhid).is_empty())
 	lhid.end_battle(0)
 	XAlienBattle.HIDDEN_V058 = false
 	# 活着的不掉
