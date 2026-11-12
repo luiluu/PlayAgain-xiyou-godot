@@ -734,6 +734,62 @@ def check_affix_text(text_path=None) -> bool:
     return True
 
 
+# ---- rewards.json（天启篇奖励：净印、遗物、终焉词条；测试参数，draft）----
+
+REWARD_LINES = ('death', 'war', 'famine', 'plague')
+
+
+def rewards_rules(table: dict) -> list:
+    """奖励表规则自检（与 tests/xiyou_tianqi_rewards 的 _data 同一套），返回失败说明列表。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    for h in ('version', 'source'):
+        check('表头 ' + h, str(table.get(h, '')) != '')
+    check('标 draft', table.get('draft') is True, table.get('draft'))
+    seal = table.get('seal', {})
+    check('净印是项链（类型 9）', seal.get('etype') == 9, seal.get('etype'))
+    check('净印档名三个', len(seal.get('tier_names', [])) == 3, seal.get('tier_names'))
+    check('净印来源档在 1～3', all(isinstance(v, int) and 1 <= v <= 3 for v in seal.get('sources', {}).values()), seal.get('sources'))
+    relic = table.get('relic', {})
+    check('遗物放神器栏（类型 17）', relic.get('etype') == 17, relic.get('etype'))
+    fin = table.get('finale', {})
+    keys = []
+    for line in REWARD_LINES:
+        v = seal.get('lines', {}).get(line, {}).get('values', [])
+        check('净印三档 ' + line, isinstance(v, list) and len(v) == 3, v)
+        r = relic.get('lines', {}).get(line, {})
+        check('遗物完整版和半强度 ' + line, isinstance(r.get('full'), dict) and isinstance(r.get('half'), dict)
+              and set(r.get('full', {})) == set(r.get('half', {})), r)
+        f = fin.get('lines', {}).get(line, [])
+        check('终焉词条每线 4 条 ' + line, isinstance(f, list) and len(f) == 4, f)
+        keys.extend(f)
+    check('终焉词条不重复', len(keys) == len(set(keys)), keys)
+    check('终焉词条都有名字', all(k in fin.get('names', {}) for k in keys), [k for k in keys if k not in fin.get('names', {})])
+    fours = []
+    nice_violations(table, '', set(table.get('nice_number_exempt', [])), fours)
+    check('设计数值不带 4', not fours, '、'.join(fours))
+    return bad
+
+
+def check_rewards(_args) -> bool:
+    path = DATA_DIR / 'rewards.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    bad = rewards_rules(json.loads(path.read_text(encoding='utf-8')))
+    if bad:
+        print('rewards.json 规则自检 %d 项不过：' % len(bad))
+        for b in bad:
+            print('  ' + b)
+        return False
+    print('rewards.json 规则自检：通过')
+    return True
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -743,6 +799,7 @@ CHECKS = [
     ('summit', check_summit),
     ('gear_table', check_gear_table),
     ('affix_text', lambda args: check_affix_text(args.affix_text)),
+    ('rewards', check_rewards),
 ]
 
 

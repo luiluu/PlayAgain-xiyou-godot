@@ -353,7 +353,9 @@ func _relic_effects() -> void:
 	e.hp = e.mhp
 	_check("famine_stacks", int(c.get_meta(XTianqiRewards.META).stacks) == 10)
 	_check("famine_stat", _near(XTianqiRewards.actor_param(c, 2, 1000.0), 1030.0) and c.param(2) > atk0, [atk0, c.param(2)])
+	e.hp = 10.0
 	XTianqiRewards.hp_damage(lg, c, e, 100.0, c.attack_skill())
+	e.hp = e.mhp
 	_check("famine_attack_no_stack", int(c.get_meta(XTianqiRewards.META).stacks) == 10)
 	# 钥匙串：暴击率归零；每回合第一次放技能追加普攻
 	_check("death_crit", XTianqiRewards.cri_mult(d) == 0.0 and XTianqiRewards.cri_mult(a) == 1.0)
