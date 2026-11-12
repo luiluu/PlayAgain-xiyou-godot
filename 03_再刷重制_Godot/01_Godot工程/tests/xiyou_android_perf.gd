@@ -1,8 +1,8 @@
 extends Node
 ## 安卓卡顿（Kyo 11-12 v0.01 实机：战斗放技能卡、商店买东西卡）：
-## - 带闪烁光标的窗口（XMVCanvas.blink）不再每帧整块重画：光标画在背后一层，每帧只重画那层（O-待定-1，回退 BLINK_FULL_REDRAW）；
-## - 动画图、音效按路径留住最近用过的（O-待定-2，回退 MVAnimation.RES_CACHE）；
-## - 商店说明卡同一件商品不重排（O-待定-3，回退 XShop.HELP_SAME_SKIP）。
+## - 带闪烁光标的窗口（XMVCanvas.blink）不再每帧整块重画：光标画在背后一层，每帧只重画那层（O-319，回退 BLINK_FULL_REDRAW）；
+## - 动画图、音效按路径留住最近用过的（O-320，回退 MVAnimation.RES_CACHE）；
+## - 商店说明卡同一件商品不重排（O-321，回退 XShop.HELP_SAME_SKIP）。
 var results := []
 
 

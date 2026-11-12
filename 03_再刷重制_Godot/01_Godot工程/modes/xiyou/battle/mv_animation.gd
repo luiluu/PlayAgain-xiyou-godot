@@ -56,7 +56,7 @@ void fragment() {
 """
 
 static var se_play_count := 0
-## 安卓放技能卡（Kyo 11-12 v0.01 实机；O-待定-2）：动画图、音效原先每次播都 load()——上一个动画放掉后 Godot 资源缓存里就没了，
+## 安卓放技能卡（Kyo 11-12 v0.01 实机；O-320）：动画图、音效原先每次播都 load()——上一个动画放掉后 Godot 资源缓存里就没了，
 ## 下一次要从包里重新读、解码、传显存（手机上一张动画图几十毫秒）。这里按路径留住最近用过的 RES_CACHE_MAX 个，
 ## 同一技能再放直接取。回退开关 RES_CACHE = false：回到每次 load()。
 static var RES_CACHE := true

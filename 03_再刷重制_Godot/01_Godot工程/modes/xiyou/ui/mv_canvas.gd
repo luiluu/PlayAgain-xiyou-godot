@@ -33,7 +33,7 @@ var blink := false
 ## 本帧画到的纹理要一直引用到下一次重画，否则局部变量释放后 RID 失效、画成白块
 var _keep: Array = []
 static var _cache := {}
-## 安卓卡顿（Kyo 11-12 v0.01 实机：商店、战斗选技能卡；O-待定-1）：原先 blink 时每帧整块重画（每帧重跑 painter：商店每帧重算整张商品表、
+## 安卓卡顿（Kyo 11-12 v0.01 实机：商店、战斗选技能卡；O-319）：原先 blink 时每帧整块重画（每帧重跑 painter：商店每帧重算整张商品表、
 ## 战斗技能窗每帧重算每个技能），手机上掉帧。现在闪烁的光标画在背后一层（show_behind_parent，与原先先画光标再画字同序），
 ## 每帧只重画这一层；内容只在 refresh／queue_redraw 时重画。回退开关 BLINK_FULL_REDRAW = true：回到每帧整块重画。
 static var BLINK_FULL_REDRAW := false

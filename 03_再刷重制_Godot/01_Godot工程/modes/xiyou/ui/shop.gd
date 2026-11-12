@@ -176,7 +176,7 @@ func _update_help() -> void:
 		"sell":
 			row = _sell_index - _sell_top
 	var rec := _current_rec() if row >= 0 else {}
-	# 安卓商店卡（Kyo 11-12，O-待定-3）：说明卡排版（逐行量字宽折行）每次按键都重做；同一件商品不重排，只挪位置
+	# 安卓商店卡（Kyo 11-12，O-321）：说明卡排版（逐行量字宽折行）每次按键都重做；同一件商品不重排，只挪位置
 	if not (HELP_SAME_SKIP and help_card.visible == not rec.is_empty() and rec == _help_rec):
 		help_card.show_for(rec)
 		_help_rec = rec
