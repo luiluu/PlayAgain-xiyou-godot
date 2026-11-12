@@ -10,7 +10,7 @@ extends RefCounted
 ## 接法：XTianqiAffixBattle 的 start／finish／param_rate／damage_ops／cost／action_plus_set／after_apply／end_turn 各调一处，
 ## BattleLogic.execute_hp_damage 一行（临终）。只认天启篇存档（XTianqiAffixBattle.on），原版档、原版异化装备一概不动。
 ##
-## 开关（O-待定）：false＝四条新词条在战斗里没有效果（装备照样能掉、能刻，详情写「未生效」）
+## 开关（O-337）：false＝四条新词条在战斗里没有效果（装备照样能掉、能刻，详情写「未生效」）
 static var ENABLED := true
 
 const META := "xalien_affix"
