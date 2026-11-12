@@ -303,6 +303,8 @@ static func mount_of(a) -> Dictionary:
 
 ## 算能力值、特性用的装备列表（XActor.stat_equips／_param_plus）：普通坐骑原来的特性、属性、开战状态在天启篇不算
 static func stat_list(list: Array) -> Array:
+	if XTianqiSkills.CARDS:
+		list = list.map(func(e): return XTianqiSkills.gear_view(e))  # 天启篇技能重构：专属法宝、武器换改写视图
 	if not mount_on():
 		return list
 	return list.filter(func(e): return not plain_mount(e))

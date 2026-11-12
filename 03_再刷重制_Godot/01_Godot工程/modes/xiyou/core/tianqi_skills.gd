@@ -14,7 +14,7 @@ extends RefCounted
 ## - 再动、追加行动：角色每回合最多多 1 次（XBattleLogic.make_action_times 读 cap_actions）。
 ## - 档位：天启篇按 tiers 名单（超强者 18、强者 52、其余有名字的弱者，不开放的不进候选池）；三笠跟锻炼和进阶、饿狼跟形态升档，
 ##   只影响战斗里的档位加成和弱者协力（battle_tier），抽阵容、超强者上限按名单（tier_of）。
-## 开关：ENABLED＝false 整套回原版（O-361）；CARDS 角色卡、MASTERY 熟练度（O-362）先默认关，等数值线一起开；ACTION_CAP 行动次数（O-363）、TIERS 档位名单（O-364）默认开。
+## 开关：ENABLED＝false 整套回原版（O-361）；CARDS 角色卡（第二期加，属 O-361）、MASTERY 熟练度（O-362）先默认关，等数值线一起开；ACTION_CAP 行动次数（O-363）、TIERS 档位名单（O-364）默认开。
 
 const PATH := "res://modes/xiyou/tianqi_data/skill_rework.json"
 const MODULE := "tianqi_skill"
@@ -35,6 +35,8 @@ static var _states: Dictionary = {}  # int 状态号 → 改写规格
 static var _recs: Dictionary = {}  # int 技能号 → 改写后的记录（按原记录缓存）
 static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
+static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
+static var _gear_cache: Dictionary = {}  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
 
 
 static func data() -> Dictionary:
@@ -55,6 +57,10 @@ static func data() -> Dictionary:
 		for k in _data.get("states", {}):
 			if str(k).is_valid_int():
 				_states[int(k)] = _data.states[k]
+		_gear = {}
+		for k in _data.get("gear", {}):
+			if str(k).contains(":"):
+				_gear[str(k)] = _data.gear[k]
 		_tier = {}
 		for t in _data.get("tiers", {}):
 			if _data.tiers[t] is Array:
@@ -71,6 +77,8 @@ static func reload() -> void:
 	_recs = {}
 	_state_recs = {}
 	_tier = {}
+	_gear = {}
+	_gear_cache = {}
 
 
 static func rules() -> Dictionary:
@@ -226,6 +234,73 @@ static func _note_edit(note: String, sp: Dictionary) -> String:
 	return note
 
 
+# ---- 专属装备（法宝、武器）：按底号换成改写视图（第二期之二）----
+## 表 gear 的键是「armor:底号」或「weapon:底号」，规格：note_remove／note_sub／note_add 改备注（独有技能增伤、承伤、开战状态等标签），
+## traits_remove [[code, dataId]…]、traits_set [{code, dataId, value}…]（有就改值、没有就加）改特性，desc 换「\\c[1]」效果行。
+## 实例上的成长（等级、经验、法宝升级特性）不动：XMagicWeapon 读原实例。接在 XTianqiGear.stat_list（能力值、特性、被动缓存、开战状态）
+## 和物品说明（XHelpCard._content）上；原版档、卡没开时原样返回。
+static func gear_key(item) -> String:
+	if not (item is Dictionary) or item.is_empty():
+		return ""
+	return "%s:%d" % [str(item.get("kind", "")), int(item.get("base", item.get("id", 0)))]
+
+
+static func gear_view(item):
+	if not CARDS or not (item is Dictionary) or item.is_empty() or not cards_on():
+		return item
+	data()
+	var key := gear_key(item)
+	if not _gear.has(key):
+		return item
+	var src_note := str(item.get("note", ""))
+	var src_traits = item.get("traits", [])
+	var c = _gear_cache.get(key)
+	if not (c is Array and is_same(c[1], src_traits) and c[0] == src_note):
+		var sp: Dictionary = _gear[key]
+		var note := _note_edit(src_note, sp) + str(sp.get("note_add", ""))
+		note = _rewrite_desc(note, sp)
+		var traits: Array = (src_traits as Array).duplicate(true) if src_traits is Array else []
+		for e in sp.get("traits_remove", []):
+			traits = traits.filter(func(t): return not (int(t.get("code", -1)) == int(e[0]) and int(t.get("dataId", -1)) == int(e[1])))
+		for e in sp.get("traits_set", []):
+			var hit := false
+			for t in traits:
+				if int(t.get("code", -1)) == int(e.code) and int(t.get("dataId", -1)) == int(e.dataId):
+					t.value = float(e.value)
+					hit = true
+			if not hit:
+				traits.append({"code": int(e.code), "dataId": int(e.dataId), "value": float(e.value)})
+		c = [src_note, src_traits, note, parse_meta(note), traits]
+		_gear_cache[key] = c
+	var v: Dictionary = item.duplicate(false)
+	v.note = c[2]
+	v.meta = c[3]
+	v.traits = c[4]
+	return v
+
+
+## 条件里的「要有」：数字是学会的技能号，"e底号" 是身上装着这件（法宝、武器）
+static func owns(u, key) -> bool:
+	if not (u is XActor):
+		return false
+	if key is String and key.begins_with("e"):
+		var base := int(key.substr(1))
+		return u.equip_list().any(func(e): return int(e.get("base", e.get("id", 0))) == base)
+	return u.skill_ids.has(int(key))
+
+
+## rate_with {要有: 几率} 取最大、rate_add_with {要有: 加} 累加
+static func _rate(u, r: Dictionary) -> float:
+	var rate := float(r.get("rate", 0.0))
+	for k in r.get("rate_with", {}):
+		if owns(u, k):
+			rate = maxf(rate, float(r.rate_with[k]))
+	for k in r.get("rate_add_with", {}):
+		if owns(u, k):
+			rate += float(r.rate_add_with[k])
+	return rate
+
+
 # ---- 状态记录 ----
 
 static func has_state(id: int) -> bool:
@@ -333,12 +408,20 @@ static func formula(a, b, item: Dictionary) -> float:
 ## 一条伤害条件成立时的倍率，不成立为 1。
 ## 累计类（加成按量、有封顶）：var_bonus 变量×per 封顶 cap；target_states 目标异常状态数×per；self_mp_lost 已耗魔法比例×per；self_mp_rate 当前魔法比例×per
 static func _cond(c: Dictionary, a, b) -> float:
-	if c.has("need_skill") and not (a is XActor and (a as XActor).skill_ids.has(int(c.need_skill))):
+	if c.has("need_skill") and not owns(a, c.need_skill):
+		return 1.0
+	if c.has("need") and not owns(a, c.need):
 		return 1.0
 	if c.has("skills") and not (c.skills as Array).has(float(_cur_skill)) and not (c.skills as Array).has(_cur_skill):
 		return 1.0
 	var cap := float(c.get("cap", 0.0))
 	var per := float(c.get("per", 0.0))
+	for k in c.get("cap_with", {}):  # 专属法宝提高封顶（玛莎风息）
+		if owns(a, k):
+			cap = maxf(cap, float(c.cap_with[k]))
+	for k in c.get("per_with", {}):  # 专属法宝提高每层（维利魂骨）
+		if owns(a, k):
+			per = maxf(per, float(c.per_with[k]))
 	match str(c.get("if", "")):
 		"var_bonus":
 			var s := XState.current
@@ -499,12 +582,91 @@ static func after_apply(logic, u, skill, t) -> void:
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
 	_kill_grow(logic, u, skill, t)
+	_on_hit(logic, u, skill, t, f)
+
+
+## 角色行 on_hit [{skills, need, extend [状态], turns, state, rate, tp}]：放表里的技能打中目标时（专属法宝效果）——
+## extend：目标身上刚挂上（剩余回合等于状态原回合）的这些状态多持续 turns 回合；state＋rate：按几率给目标挂状态；tp：每段回 TP。
+## extend、state 每次行动每个目标只算一次
+static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
+	if not (u is XActor) or not (skill is Dictionary) or not cards_on():
+		return
+	var rows = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("on_hit", [])
+	if not rows is Array or rows.is_empty():
+		return
+	var sid := int(skill.get("id", 0))
+	var done: Array = f.get("on_hit_done", []) if not f.is_empty() else []
+	for i in rows.size():
+		var r: Dictionary = rows[i]
+		var list: Array = r.get("skills", [])
+		if not (list.has(float(sid)) or list.has(sid)) or (r.has("need") and not owns(u, r.need)):
+			continue
+		if r.has("tp"):
+			u.tp = float(u.tp) + float(r.tp)
+		var tag := [i, t]
+		if done.any(func(x): return x[0] == i and is_same(x[1], t)):
+			continue
+		done.append(tag)
+		for st in r.get("extend", []):
+			var id := int(st)
+			var base := int(XDB.rec("States", id).get("maxTurns", 0))
+			if t.is_state_affected(id) and int(t.state_turns.get(id, 0)) == base:
+				t.state_turns[id] = base + int(r.get("turns", 1))
+		if r.has("state") and t.is_alive() and logic._float("tianqi_skill_on_hit") < float(r.get("rate", 0.0)):
+			t.add_state(int(r.state))
+	if not f.is_empty():
+		f.on_hit_done = done
+
+
+## 开战状态挂完之后（XBattleLogic._battle_start_states）：角色行 start_turns [{need, state, turns}] 改这件专属物开局状态的回合数
+## （状态本身还被技能用，不改状态记录）
+static func start_turns(list: Array) -> void:
+	if not CARDS or not cards_on():
+		return
+	for a in list:
+		if not (a is XActor):
+			continue
+		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_turns", []):
+			if (not r.has("need") or owns(a, r.need)) and a.is_state_affected(int(r.state)):
+				a.state_turns[int(r.state)] = int(r.turns)
+
+
+## 伤害钩子（XActorDamageHooks.capture）：技能行 pierce {rate, need} 无视目标一部分双防；角色行 heal_mult [{need, mult}] 治疗量
+static func damage_ops(item: Dictionary, a, b) -> Array:
+	if not CARDS or not cards_on():
+		return []
+	var ops := []
+	var id := int(item.get("id", 0))
+	if has(id):
+		var p: Dictionary = spec(id).get("pierce", {})
+		if not p.is_empty() and (not p.has("need") or owns(a, p.need)):
+			var keep := 1.0 - float(p.get("rate", 0.0))
+			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
+			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": keep})
+	if a is XActor and int(item.get("damage", {}).get("type", 0)) in [3, 4]:
+		for h in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("heal_mult", []):
+			if not h.has("need") or owns(a, h.need):
+				ops.append({"op": "mul", "field": "healingMultiplier", "value": float(h.mult)})
+	return ops
+
+
+## itemCri 包装：技能行 crit_if（一条伤害条件，成立时必暴：小痔坐忘痔霄①）
+static func item_cri(u, skill: Dictionary, t, cri: float) -> float:
+	if not CARDS or not has(int(skill.get("id", 0))) or not cards_on():
+		return cri
+	var c: Dictionary = spec(int(skill.id)).get("crit_if", {})
+	if c.is_empty():
+		return cri
+	var probe := c.duplicate()
+	probe.mult = 2.0
+	_cur_skill = int(skill.id)
+	return 1.0 if _cond(probe, u, t) > 1.0 else cri
 
 
 ## 放了这招给变量加数（var_add {var, add, need_skill}：曼德斯给白起加杀气）
 static func _var_add(u, skill: Dictionary) -> void:
 	var va: Dictionary = spec(int(skill.get("id", 0))).get("var_add", {})
-	if va.is_empty() or not (u is XActor) or (va.has("need_skill") and not u.skill_ids.has(int(va.need_skill))):
+	if va.is_empty() or not (u is XActor) or (va.has("need_skill") and not owns(u, va.need_skill)):
 		return
 	var s := XState.current
 	if s != null:
@@ -549,7 +711,7 @@ static func _kill_grow(logic, u, skill, t) -> void:
 	if g.has("need_skill") and not u.skill_ids.has(int(g.need_skill)):
 		return
 	var s := XState.current
-	var cap := roundi(float(g.get("cap", 0.0)) / maxf(0.0001, float(g.get("per", 0.01))))
+	var cap := roundi(_grow_cap(g, u) / maxf(0.0001, float(g.get("per", 0.01))))
 	var tq: Dictionary = s.flags.tianqi
 	if not tq.get("skill_grow") is Dictionary:
 		tq.skill_grow = {}
@@ -566,7 +728,16 @@ static func param_rate(a, i: int) -> float:
 		return 1.0
 	if g.has("need_skill") and not a.skill_ids.has(int(g.need_skill)):
 		return 1.0
-	return 1.0 + minf(float(g.cap), float(grow_count(str(g.key))) * float(g.per))
+	return 1.0 + minf(_grow_cap(g, a), float(grow_count(str(g.key))) * float(g.per))
+
+
+## 成长封顶：cap_with {要有: 封顶} 取最大（齐格鲁德平波 +20% → +30%）
+static func _grow_cap(g: Dictionary, a) -> float:
+	var cap := float(g.get("cap", 0.0))
+	for k in g.get("cap_with", {}):
+		if owns(a, k):
+			cap = maxf(cap, float(g.cap_with[k]))
+	return cap
 
 
 ## 这次行动可以追加的候选：[[技能记录, 几率, 伤害倍率]…]，按表里顺序逐个掷，第一个掷中的追加
@@ -582,14 +753,11 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 		rows.append(r)
 	var out := []
 	for r in rows:
-		if r.has("need_skill") and not u.skill_ids.has(int(r.need_skill)):
+		if r.has("need_skill") and not owns(u, r.need_skill):
 			continue
 		if r.has("need_ally_skill") and not _ally_has(int(r.need_ally_skill[0]), int(r.need_ally_skill[1])):
 			continue
-		var rate := float(r.get("rate", 0.0))
-		for k in r.get("rate_with", {}):
-			if u.skill_ids.has(int(k)):
-				rate = maxf(rate, float(r.rate_with[k]))
+		var rate := _rate(u, r)
 		if rate <= 0.0:
 			continue
 		var cast := XDB.rec("Skills", int(r.get("cast", skill.get("id", 0))))
@@ -636,7 +804,7 @@ static func end_action(logic, u, skill) -> Array:
 	follow_scale = 1.0
 	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
 	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
-	if not then.is_empty() and (not then.has("need_skill") or u.skill_ids.has(int(then.need_skill))) and u.is_alive():
+	if not then.is_empty() and (not then.has("need_skill") or owns(u, then.need_skill)) and u.is_alive():
 		var nxt := XDB.rec("Skills", int(then.get("cast", 0)))
 		var left: Array = targets.filter(func(t): return t.is_alive())
 		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
@@ -654,12 +822,9 @@ static func change_to(logic, u, skill):
 		return skill
 	var rows: Array = spec(int(skill.get("id", 0))).get("variants", [])
 	for r in rows:
-		if r.has("need_skill") and not u.skill_ids.has(int(r.need_skill)):
+		if r.has("need_skill") and not owns(u, r.need_skill):
 			continue
-		var rate := float(r.get("rate", 0.0))
-		for k in r.get("rate_with", {}):
-			if u.skill_ids.has(int(k)):
-				rate = maxf(rate, float(r.rate_with[k]))
+		var rate := _rate(u, r)
 		if rate > 0.0 and logic._float("tianqi_skill_variant") < rate:
 			var cast := XDB.rec("Skills", int(r.cast))
 			if not cast.is_empty():

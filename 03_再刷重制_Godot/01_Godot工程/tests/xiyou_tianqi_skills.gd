@@ -38,6 +38,8 @@ func _run() -> void:
 	_table()
 	_states()
 	_follow()
+	_gear()
+	_xinfa()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -319,6 +321,105 @@ func _follow() -> void:
 	lg.end_battle(0)
 
 
+## 把专属装备穿到对应栏位（按装备类型找第一个同类栏）
+func _wear(a: XActor, kind: String, base: int) -> Dictionary:
+	var eq := XActor.make_equip(kind, base)
+	var slots := a.equip_slots()
+	for i in slots.size():
+		if int(slots[i]) == (1 if kind == "weapon" else int(eq.get("etypeId", -1))):
+			a.equips[i] = eq
+			break
+	a.param_mark_dirty()
+	a.refresh_passive()
+	return eq
+
+
+## 专属法宝、武器：天启篇换改写视图（紫电承伤 −10%，原来的固定减伤去掉）；原版档、卡关时原样
+func _gear() -> void:
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var a: XActor = s.actor(XIAOYAO)
+	var pdr0 := a.sparam(6)
+	var eq := _wear(a, "armor", 3672)
+	var view: Dictionary = XTianqiGear.stat_list(a.equip_list()).filter(func(e): return int(e.get("base", 0)) == 3672)[0]
+	_check("gear_view", not str(view.note).contains("passiveHarmRe") and view.traits.any(func(t): return int(t.code) == 23 and int(t.dataId) == 6 and is_equal_approx(float(t.value), 0.9)) and str(eq.note).contains("passiveHarmRe"), view.traits)
+	_check("gear_sparam", is_equal_approx(a.sparam(6), pdr0 * 0.9), [pdr0, a.sparam(6)])
+	_check("gear_passive_cache", a.passive_cache().harmRe.is_empty(), a.passive_cache().harmRe)
+	var rows := XHelpCard.content(eq)
+	_check("gear_help", JSON.stringify(rows).contains("受到的伤害-10%") and not JSON.stringify(rows).contains("-3000"))
+	_check("gear_owns", XTianqiSkills.owns(a, "e3672") and not XTianqiSkills.owns(a, "e4512") and XTianqiSkills.owns(a, float(a.skill_ids[0])))
+	var w := _wear(a, "weapon", 1687)
+	var wv: Dictionary = XTianqiSkills.gear_view(w)
+	_check("gear_weapon", str(wv.note).contains("<SkillPass3632: 20%>") and not str(wv.note).contains("250%") and wv.traits.any(func(t): return int(t.code) == 21 and int(t.dataId) == 6 and is_equal_approx(float(t.value), 0.8)), wv.traits)
+	XTianqiSkills.CARDS = false
+	_check("gear_cards_off", is_same(XTianqiSkills.gear_view(eq), eq))
+	XTianqiSkills.CARDS = true
+	# 冰音：吃我一痔挂上的冰冷多 1 回合
+	var sk := XDB.rec("Skills", 2770)
+	lg.end_battle(0)
+	var s5 := XTianqi.start_new_game(3, "jianxian", [5, 7, 13, 29, 1])
+	XTianqi.take_pending()
+	for id in [5, 7, 13, 29, 1]:
+		XTianqi._joining = true
+		s5.add_actor(id)
+		XTianqi._joining = false
+	s5.map_id = 4
+	XState.current = s5
+	lg = XBattleLogic.new()
+	lg.setup(2, s5)
+	var b := _enemy(lg)
+	var x5: XActor = s5.actor(5)
+	_wear(x5, "armor", 3674)
+	b.add_state(26)
+	var t0 := int(b.state_turns.get(26, 0))
+	XTianqiSkills.begin_action(lg, x5, sk)
+	XTianqiSkills.after_apply(lg, x5, sk, b)
+	XTianqiSkills.after_apply(lg, x5, sk, b)
+	_check("on_hit_extend", t0 == 2 and int(b.state_turns.get(26, 0)) == 3, [t0, b.state_turns.get(26)])
+	XTianqiSkills.end_action(lg, x5, sk)
+	# 茉蕾音叉：治疗 +10%
+	var x7: XActor = s5.actor(7)
+	_check("heal_mult_off", XTianqiSkills.damage_ops(XDB.rec("Skills", 108), x7, x7).is_empty())
+	_wear(x7, "armor", 3614)
+	var ops := XTianqiSkills.damage_ops(XDB.rec("Skills", 108), x7, x7)
+	_check("heal_mult", ops.size() == 1 and str(ops[0].field) == "healingMultiplier" and is_equal_approx(float(ops[0].value), 1.1), ops)
+	# 金蝉子九锡拳套：开局佛陀真身 2 回合
+	var x29: XActor = s5.actor(29)
+	x29.add_state(66)
+	x29.equips[0] = XActor.make_equip("weapon", 1529)  # 挂状态会刷新装备（测试角色等级不够穿），所以挂完再直接放进武器栏
+	XTianqiSkills.start_turns([x29])
+	_check("start_turns", int(x29.state_turns.get(66, 0)) == 2, x29.state_turns.get(66))
+	lg.end_battle(0)
+	_state(false)
+	var legacy := XActor.make_equip("armor", 3672)
+	_check("gear_legacy", is_same(XTianqiSkills.gear_view(legacy), legacy))
+
+
+## 心法：变体技能有行、诛心无视双防、坐忘痔霄①对减速目标必暴
+func _xinfa() -> void:
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var a: XActor = s.actor(XIAOYAO)
+	var b := _enemy(lg)
+	a.change_level(99)
+	var base := XTianqiSkills.formula(a, b, XDB.rec("Skills", 4748))
+	_check("xinfa_pohun", is_equal_approx(XTianqiSkills.formula(a, b, XDB.rec("Skills", 4749)), base * 1.5), [base])
+	var ops := XTianqiSkills.damage_ops(XDB.rec("Skills", 4751), a, b)
+	_check("xinfa_pierce", ops.size() == 2 and is_equal_approx(float(ops[0].value), 0.7), ops)
+	_check("xinfa_pierce_none", XTianqiSkills.damage_ops(XDB.rec("Skills", 4748), a, b).is_empty())
+	var sk := XDB.rec("Skills", 4762)
+	_check("xinfa_crit_plain", is_equal_approx(XTianqiSkills.item_cri(a, sk, b, 0.1), 0.1))
+	b.add_state(26)
+	_check("xinfa_crit_slow", is_equal_approx(XTianqiSkills.item_cri(a, sk, b, 0.1), 1.0))
+	b.remove_state(26)
+	_check("xinfa_note", str(XDB.rec("Skills", 4723).note).contains("<passivePBST6:-30%>") and not str(XDB.rec("Skills", 4723).note).contains("-1500"))
+	var ten := XDB.rec("Skills", 4774)
+	_check("xinfa_follow_oil", not str(ten.note).contains("ChangeTo[4775]") and int(XTianqiSkills.spec(4774).follow[0].cast) == 4775)
+	lg.end_battle(0)
+
+
 ## 改过卡的角色整场跑几回合不报错
 func _smoke() -> void:
 	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30]]:
@@ -340,6 +441,11 @@ func _smoke_group(group: Array) -> void:
 		for sid in XTianqiSkills.data().skills:
 			if int(XTianqiSkills.spec(int(sid)).get("actor", 0)) == id:
 				a.learn_skill(int(sid))
+		for gk in XTianqiSkills.data().get("gear", {}):
+			var kb := str(gk).split(":")
+			var rec := XDB.rec("Weapons" if kb[0] == "weapon" else "Armors", int(kb[1]))
+			if str(rec.get("note", "")).contains("<req_actors: %04d>" % id):
+				_wear(a, kb[0], int(kb[1]))
 		a.recover_all()
 	var lg := XBattleLogic.new()
 	lg.setup(2, s)
