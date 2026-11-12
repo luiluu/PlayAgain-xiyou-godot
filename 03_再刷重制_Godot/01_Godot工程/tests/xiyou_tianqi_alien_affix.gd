@@ -103,7 +103,7 @@ func _dying() -> void:
 	_hit(lg, e, a, 5000.0)
 	_check("dying_same_turn", a.is_alive(), a.hp)
 	lg.end_turn()
-	_check("dying_end_turn_dead", a.is_dead(), [a.hp, a.state_ids])
+	_check("dying_end_turn_dead", a.is_dead() and a.state_ids.has(1), [a.hp, a.state_ids])
 	_check("dying_atk_back", not XTianqiAlienAffix.dying_now(a) and a.param(2) <= atk0 * 1.01, [atk0, a.param(2)])
 	# 每场一次：复活后再挨一下致命的就倒
 	a.remove_state(1)
@@ -162,10 +162,9 @@ func _venom() -> void:
 	var skill := XDB.rec("Skills", 1)
 	XTianqiAffixBattle.after_apply(lg, a, skill, e, {"hp": 10.0})
 	_check("venom_hit", e.state_ids.has(POISON) or e.traits_set(XBattler.TRAIT_STATE_RESIST).has(POISON), e.state_ids)
-	var e2: XEnemy = lg.enemies[-1]
-	e2.remove_state(POISON)
-	XTianqiAffixBattle.after_apply(lg, a, skill, e2, {"hp": 0.0, "missed": true})
-	_check("venom_miss", not e2.state_ids.has(POISON) or e2 == e)
+	e.remove_state(POISON)
+	XTianqiAffixBattle.after_apply(lg, a, skill, e, {"hp": 0.0, "missed": true})
+	_check("venom_miss", not e.state_ids.has(POISON), e.state_ids)
 	a.remove_state(POISON)
 	XTianqiAlienAffix.end_turn(lg)
 	_check("venom_self_renew", a.state_ids.has(POISON) or a.is_dead(), a.state_ids)
