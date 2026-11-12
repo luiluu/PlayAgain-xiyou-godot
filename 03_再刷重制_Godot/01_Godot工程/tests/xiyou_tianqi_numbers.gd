@@ -4,7 +4,7 @@ extends Node
 ## 二、我方：档位出伤、我方伤害、上场弱者协力、助力位光环（出伤）；档位承伤、协力承伤（承伤）；敌人打敌人、原版档恒 1；真实伤害结算按这个比例变。
 ## 三、开局：五档都走原版普通分支（UNIFIED_LEGACY），关掉回到各借各的；超强者上限、至少弱者、候选池只认数值表。
 ## 四、一线生机与天道注视：天启篇不学，原版档照学，开关回退。
-## 五、选线骨架：默认不出；打开后大厅对话选定、不能再换、原版档不收。
+## 五、选线：通关 5 层后出（开关默认开）；只有做好内容的线能选、不能再换、原版档不收；开关关掉不出。
 
 ## 大厅对话的替身宿主：文字直接过，选项依次取 answers（取完选最后一个）
 class FakeHost extends RefCounted:
@@ -89,6 +89,18 @@ func _enemy_rates() -> void:
 		var off := XTianqiCombat.enemy_rates(4, s)
 		XTianqiCombat.ENABLED = true
 		_check("enemy_rates_off_" + key, off == XEnemy.difficulty_rates(4), off)
+		# 审查 79 P3-1：基准跟本档开局借的原版难度走。只关 UNIFIED_LEGACY 时各档借各自的原版难度，敌人倍率也跟着变
+		_check("enemy_base_unified_" + key, XTianqiCombat.base_legacy(s) == XTianqi.NUMERIC_LEGACY, XTianqiCombat.base_legacy(s))
+		XTianqi.UNIFIED_LEGACY = false
+		var own := int(XTianqi.difficulty(key).legacy)
+		var split := XTianqiCombat.enemy_rates(5, s)
+		var split_base := XEnemy.difficulty_rates(own)
+		XTianqi.UNIFIED_LEGACY = true
+		var split_want := split_base.duplicate()
+		split_want[0] = float(split_base[0]) * float(row.enemy_hp)
+		split_want[2] = float(split_base[2]) * float(row.enemy_atk)
+		split_want[4] = float(split_base[4]) * float(row.enemy_atk)
+		_check("enemy_rates_split_" + key, range(8).all(func(i): return _near(float(split[i]), float(split_want[i]))), [own, split, split_want])
 	# 同一只敌人：炼狱血量是九死的 2.0/1.5 倍，攻击 1.5/1.25 倍，防御不变
 	var eid := 1
 	_state("jiusi", w.slice(0, 5))
@@ -198,20 +210,30 @@ func _heaven_gaze() -> void:
 func _lines() -> void:
 	var w := _ids(XTier.WEAK)
 	var s := _state("jianxian", w.slice(0, 5))
-	_check("line_closed_default", not XTianqi.LINE_EVENT_OPEN and not XTianqi.line_ready(s) and XTianqi.line_of(s) == "")
-	XTianqi.LINE_EVENT_OPEN = true
-	_check("line_ready_open", XTianqi.line_ready(s))
+	# 战争线做好后选线默认打开（cc/pro-tianqi-war）；第一次通关 5 层（变量 20＝6）才出
+	_check("line_open_default", XTianqi.LINE_EVENT_OPEN and not XTianqi.line_ready(s) and XTianqi.line_of(s) == "")
+	s.set_variable(20, 6)
+	_check("line_ready_floor5", XTianqi.line_ready(s))
 	var host := FakeHost.new()
 	host.answers = [XTianqi.LINES.size()]  # 再想想
 	await XTianqi.run_line_choice(host, s)
 	_check("line_later", XTianqi.line_of(s) == "" and host.asked.size() == 1 and host.asked[0].size() == XTianqi.LINES.size() + 1, host.asked)
-	host.answers = [2]
+	# 内容没做好的线（死亡；瘟疫线 cc 瘟疫线车道做好了）：卡片照看，选不了，回到列表；再想想
+	XTianqiDeathLine.ENABLED = false  # 四条线都接上了，借关掉死亡线来模拟「没做好」
+	host.answers = [1]
 	await XTianqi.run_line_choice(host, s)
-	_check("line_chosen", XTianqi.line_of(s) == str(XTianqi.LINES[2].key) and not XTianqi.line_ready(s), XTianqi.line_of(s))
-	_check("line_no_change", not XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == str(XTianqi.LINES[2].key))
+	_check("line_unplayable", XTianqi.line_of(s) == "" and host.asked.size() == 3 and not XTianqi.choose_line(s, "death"), host.asked.size())
+	XTianqiDeathLine.ENABLED = true
+	_check("line_chosen", XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == "war" and not XTianqi.line_ready(s), XTianqi.line_of(s))
+	_check("line_no_change", not XTianqi.choose_line(s, "plague") and XTianqi.line_of(s) == "war")
 	_check("line_unknown", not XTianqi.choose_line(s, "nope"))
 	var saved := XState.from_dict(s.to_dict())
-	_check("line_saved", XTianqi.line_of(saved) == str(XTianqi.LINES[2].key))
+	_check("line_saved", XTianqi.line_of(saved) == "war")
 	var p := _plain_state(w.slice(0, 5))
+	p.set_variable(20, 6)
 	_check("line_plain", not XTianqi.line_ready(p) and not XTianqi.choose_line(p, "war"))
 	XTianqi.LINE_EVENT_OPEN = false
+	var s2 := _state("jianxian", w.slice(0, 5))
+	s2.set_variable(20, 6)
+	_check("line_switch_off", not XTianqi.line_ready(s2))
+	XTianqi.LINE_EVENT_OPEN = true

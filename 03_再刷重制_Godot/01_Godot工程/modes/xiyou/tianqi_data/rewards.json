@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "draft": true,
+  "source": "天启篇_四线剧情与关卡设计稿 v0.4 第 6、7 节（Kyo 2026-11-11 09:41 第 8 节全定：奖励三样东西方向定、数值阶段再定；跨存档选乙＝只互通图鉴、成就和外观）；四线异化与异化装备重构 v0.8 第 4.1、4.2 节（终焉词条、每线 4 条）；四骑士数值 v0.4 第 7 节；车道戊（31～36 层重做）口径：35 层影子掉半强度遗物、通关后再挑战骑士＝终焉试炼、骑士徽记只做外观",
+  "_note": "天启篇奖励（XTianqiRewards），只读。数字都是测试参数（设计稿写「草案」），避开 4；豁免键见 nice_number_exempt。奖励装备是普通装备实例多一个 tq_reward 字段（借 base 那件的图标与栏位，属性、特性、词缀清空），不改原版数据库。",
+  "nice_number_exempt": ["version", "base", "etype", "tier", "item", "icon", "floor", "troop", "map"],
+  "seal": {
+    "_note": "净印装备：每线三档，依次更好。开场打完给第一档；10、20、30 层使徒各掉一件（cc 读法：10 层第二档、20 层第三档、30 层再给一件第三档，给第二个人穿）。只对本档走的线生效（30 层前换线：旧线的净印留着但不生效，设计稿 3.2 乙）。效果按穿的人算；止戈是敌方计量，按上场的人里最好的一件算。",
+    "etype": 9,
+    "base": 151,
+    "tier_names": ["一", "二", "三"],
+    "sources": {"opening": 1, "apostle10": 2, "apostle20": 3, "apostle30": 3},
+    "lines": {
+      "death": {"name": "净印·长明", "values": [11, 22, 33],
+        "text": "被挂死期时有 %d%% 几率改为损失 50%% 当前生命；对终焉无效。", "half_hp": 0.5},
+      "war": {"name": "净印·止戈", "values": [11, 22, 33],
+        "text": "敌方火花每次增加时有 %d%% 几率不加（上场的人里取最好的一件）。"},
+      "famine": {"name": "净印·存粮", "values": [10, 15, 20],
+        "text": "「饥饿」让技能消耗变多、受到的回复变少的幅度各减轻 %d%%。"},
+      "plague": {"name": "净印·清心", "values": [2, 2, 1],
+        "text": "病弱每个减益降的属性从 3%% 降到 %d%%。"}
+    }
+  },
+  "relic": {
+    "_note": "骑士遗物：放神器栏（类型 17，不占原神武白名单）。36 层首次击败本线骑士给完整版；35 层影子首次击败给半强度版（车道戊口径）。再挑战（终焉试炼）不再给遗物。半强度＝收益和代价都约减半。",
+    "etype": 17,
+    "base": 4537,
+    "half_suffix": "（残）",
+    "lines": {
+      "death": {"name": "替身的钥匙串",
+        "full": {"extra_attack_chance": 100, "crit_mult": 0.0},
+        "half": {"extra_attack_chance": 50, "crit_mult": 0.5},
+        "text": "每回合第一次放技能后，追加一次普攻（%d%% 几率）。代价：暴击率 ×%s。",
+        "desc": "「魔塔是没有暴击的。」"},
+      "war": {"name": "最后一枚雷火弹",
+        "full": {"spark_full": 10, "bomb_coef": 1.5, "dmg_taken_pct": 15},
+        "half": {"spark_full": 10, "bomb_coef": 0.75, "dmg_taken_pct": 8},
+        "text": "每次行动攒 1 点火花，满 %d 点对敌全体火焰轰炸一次（普攻伤害的 %s 倍）。代价：受到的伤害 +%d%%。",
+        "desc": "莉co没扔出去的那一枚。"},
+      "famine": {"name": "没写完的卷子",
+        "full": {"stack_step": 10, "stat_pct": 3, "max_stacks": 30, "heal_taken_pct": 33},
+        "half": {"stack_step": 10, "stat_pct": 1.5, "max_stacks": 30, "heal_taken_pct": 16},
+        "text": "技能击倒敌人攒资历，每 %d 层全属性 +%s%%（本场，最多 %d 层）。代价：受到的回复 −%d%%。",
+        "desc": "最后一道大题空着。"},
+      "plague": {"name": "混子之盾（碎）",
+        "full": {"taunt_turns": 1, "def_pct": 33, "dmg_dealt_pct": 22},
+        "half": {"taunt_turns": 1, "def_pct": 16, "dmg_dealt_pct": 11},
+        "text": "开场嘲讽 %d 回合（敌人只打你），物防、魔防 +%d%%。代价：自己的出伤 −%d%%。",
+        "desc": "盾碎了，混子还在。"}
+    }
+  },
+  "finale": {
+    "_note": "终焉词条＝本线 4 条异化词条的终焉级，记成「异化核」（v0.8 第 4.1 节刻印：取核、刻上）。骑士（36 层）、35 层影子、34 层鸿钧每赢一场必掉 1 颗（含再挑战＝终焉试炼）；31～33 层旧守层者等终焉异化做好后接 boss_troops。刻印、取核、词条的终焉级数值归异化装备那一步，这里只发核、存进存档。key 是 alienation.json 里的原词条键，★ 新词条用新键。",
+    "level": "zhongyan",
+    "level_name": "终焉",
+    "boss_troops": [],
+    "lines": {
+      "death": ["hollow", "prayer", "void", "dying"],
+      "war": ["inversebone", "swallow", "faceless", "again"],
+      "famine": ["possession", "scapegoat", "sacrifice", "thrift"],
+      "plague": ["lifelink", "mimic", "insulation", "venom"]
+    },
+    "names": {
+      "hollow": "血铠", "prayer": "救赎", "void": "纯粹", "dying": "临终",
+      "inversebone": "装甲冲击", "swallow": "双兵", "faceless": "万法器", "again": "再动",
+      "possession": "夺舍", "scapegoat": "寄生", "sacrifice": "奉献", "thrift": "节俭",
+      "lifelink": "共生", "mimic": "拟态", "insulation": "心无旁骛", "venom": "带毒"
+    }
+  },
+  "survival": {
+    "_note": "开场「天外裂」生存战撑过 6 回合的额外奖励（设计稿只写「额外奖励」，内容 cc 定的测试参数）：异化石、金钱。输了剧情照走，只少这份。",
+    "items": [{"item": 2873, "amount": 3}],
+    "gold": 5000
+  },
+  "badge": {
+    "_note": "骑士徽记：只做外观（跨存档乙：不带任何数值）。36 层首次击败本线骑士点亮，记在全局配置，选线画面点亮骑士剪影由画面那一步读 XTianqiRewards.badges()。",
+    "name": "%s骑士徽记"
+  }
+}

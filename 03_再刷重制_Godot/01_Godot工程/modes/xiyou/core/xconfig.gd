@@ -22,7 +22,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
-	"codexWeakFiveClearV2": false, "codexWhisperSeen": [],
+	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [],
 	"codexScreenFx": true}  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
@@ -84,6 +84,10 @@ static func ensure_loaded() -> void:
 					_values[key] = Array(saved).map(func(v): return int(v)) if saved is Array else []
 				elif key == "codexWhisperSeen":
 					# installRemakeWhisperRuntime applyData：数组才认，每项转字符串（大厅漩涡过场播过的键）
+					var saved = data.get(key)
+					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
+				elif key == "codexTianqiBadges":
+					# 天启篇骑士徽记（重制新加，XTianqiRewards）：数组才认，每项转字符串（线键）
 					var saved = data.get(key)
 					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
 				elif key == "codexWeakFiveClearV2":
@@ -249,15 +253,34 @@ static func clothes_unlocked() -> Array:
 
 ## 大厅漩涡过场（installRemakeWhisperRuntime 的 CodexWhisper）：播过的键记在配置 codexWhisperSeen（不跟存档），mark 立即写盘
 static func whisper_seen(key: String) -> bool:
+	if key == XRift.THIS_VISIT_KEY:
+		return XRift.this_visit_seen(key)  # 二阶段：rift1 是不是这一次进大厅才播的（不写盘的虚拟键）
 	ensure_loaded()
 	return (_values.codexWhisperSeen as Array).has(key)
 
 
 static func whisper_mark(key: String) -> bool:
+	XRift.on_mark(key)
 	ensure_loaded()
 	if not (_values.codexWhisperSeen as Array).has(key):
 		_values.codexWhisperSeen.append(key)
 	return _write()
+
+
+## 天启篇骑士徽记（XTianqiRewards）：36 层首次击败本线骑士点亮的线键，记在配置 codexTianqiBadges（跨存档只带外观，不带数值）
+static func tianqi_badges() -> Array:
+	ensure_loaded()
+	return (_values.codexTianqiBadges as Array).duplicate()
+
+
+## 点亮一枚；返回这次是不是新点亮的（写盘失败也算点亮，下次写配置时一起存）
+static func tianqi_badge_mark(line: String) -> bool:
+	ensure_loaded()
+	if (_values.codexTianqiBadges as Array).has(line):
+		return false
+	_values.codexTianqiBadges.append(line)
+	_write()
+	return true
 
 
 static func save_clothes() -> bool:

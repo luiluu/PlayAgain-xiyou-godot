@@ -219,6 +219,8 @@ static func make_equip(kind: String, base_id: int) -> Dictionary:
 func can_equip(item: Dictionary) -> bool:
 	if item.is_empty():
 		return false
+	if XAlienHide.blocks_gear(item):
+		return false  # installAlienationHide 包 canEquip：隐藏生效时残响装不上（O-283）
 	if traits_set(54).has(int(item.etypeId)) and not XTianqiGear.seal_ignored(int(item.etypeId)):
 		return false
 	if not XTianqiGear.allows(item):  # 天启篇：删除的栏位、神器白名单
@@ -305,7 +307,7 @@ func stat_equips() -> Array:
 	var list := equip_list()
 	if XCat.enabled_sword(self):
 		list[0] = XCat.sword_view(equips[0])
-	return list
+	return XTianqiGear.stat_list(list)  # 天启篇：普通坐骑原来的特性不算（只给表里的敏捷、先制）
 
 
 ## Game_Actor.weapons()[0]
@@ -599,7 +601,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i)  # 专属角色模块的 paramRate 包装（饿狼形态倍率）
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i)  # 天启篇殉印 2 件最大生命；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
@@ -778,7 +780,7 @@ func param_plus(i: int) -> float:
 
 func _param_plus(i: int) -> float:
 	var v := XParamPlus.bonus(self, i) + XEquipSuits.value(self,"param",i,false)
-	for e in equip_list():
+	for e in XTianqiGear.stat_list(equip_list()):  # 天启篇：普通坐骑原来的属性不算
 		var p := float(e.params[i])
 		v += p
 		if p > 0.0:
@@ -838,14 +840,14 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
-	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, param_before_alien(i))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i)))))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
 	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，modules.json 第 2～18 个）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
 	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
-	var v := XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i)))))  # 心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
+	var v := XTianqiGear.param(self, i, XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i))))))  # 天启篇坐骑敏捷％在最外（云裳夹值之前）；心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## O-177：战斗中升级按新上限回满 HP／MP（原版 krz 能力值缓存让它回到升级前的上限）。false＝照原版
@@ -1045,7 +1047,7 @@ const START_STATE_TAGS := ["StartPushState", "StartRomActPushState", "StartRomEm
 
 func battle_start_state_tags() -> Array:
 	var out := []
-	var objs := equip_list() + skills()
+	var objs := XTianqiGear.stat_list(equip_list()) + skills()  # 天启篇：普通坐骑原来的开战状态不算
 	for prefix in START_STATE_TAGS:
 		for o in objs:
 			for k in o.get("meta", {}):

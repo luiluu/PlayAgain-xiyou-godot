@@ -159,6 +159,8 @@ static func choose_affix(row_choices: Array, table: String, owner: XState = null
 static var EXCLUSIVE_V056 := true
 static func valid_affix(table: String, id: int) -> bool:
 	var r := XDB.rec(table, id)
+	if XAlienHide.blocks_base("weapon" if table == "Weapons" else "armor", id):
+		return false  # installAlienationHide 包 isValidItem：隐藏生效时残响不当词缀（O-283）
 	return not r.is_empty() and not (EXCLUSIVE_V056 and exclusive_affix(r))
 
 ## v0.57 读档还原专武前缀（v0.62.12 installIntegratedV029Runtime.js U.revertExclusiveAffixes，extractSaveContents 包装）：

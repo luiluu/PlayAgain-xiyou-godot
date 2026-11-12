@@ -754,7 +754,7 @@ static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
 	var line := ""
 	for id in ids:
 		var nm := str(XDB.rec("Actors", int(id)).get("name", ""))
-		if XImportedBalance.DISABLED_ACTORS.has(int(id)):
+		if XImportedBalance.DISABLED_ACTORS.has(int(id)) and not XImportedBalance.released_actor(int(id)):
 			nm += "（停用）"
 		if line != "" and line.length() + nm.length() + 1 > 24:
 			lines.append(line)

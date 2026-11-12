@@ -31,6 +31,7 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_casino_batch"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76，自动执行、223 改色调等待）当作播过：本测不测过场；不记的话过场挂在色调等待上，地图释放后接着跑，退出时报 3 条 SCRIPT ERROR（过场本身见 xiyou_opening_branches）
+	XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
 	XPetCapture.clock = func(): return {"day": 1, "hour": 12, "minute": 15}
 	XMessageBox.auto = true
 	MVEventCore.fixed_random = 0.5

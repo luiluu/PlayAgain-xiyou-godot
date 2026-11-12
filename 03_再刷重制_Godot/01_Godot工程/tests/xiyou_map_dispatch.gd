@@ -99,6 +99,7 @@ func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	get_tree().node_added.connect(_on_node_added)

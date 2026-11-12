@@ -69,6 +69,107 @@ func check(name: String, ok: bool, detail = null) -> void:
 	if not ok:
 		print("FAIL ", name, " ", JSON.stringify(detail))
 
+## Kyo 11-12「把那个没装的虚拟按键定为默认按键」：原版虚拟按钮（Mehmet_GhostButtons）当默认，另可切改版按键（A／B、原多键、方向键、跑步键）
+func _touch_styles(platform: XPlatform, rec: Recorder) -> void:
+	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+	XTouchControls.knob_character_override = ["1-XiaoMing", 0]
+	var g := XTouchControls.new()
+	platform.add_child(g)
+	await frames(2)
+	check("ghost_default", g.ghost() and g.settings.style == "original" and not g.settings.battle_touch and g.settings.map_touch, g.settings)
+	check("ghost_geometry", g.rects.ok.get_center().is_equal_approx(Vector2(1030, 520)) and g.rects.cancel.get_center().is_equal_approx(Vector2(1160, 410))
+		and g.rects.ok.size.is_equal_approx(Vector2(120, 120)) and g.stick_center.is_equal_approx(Vector2(220, 540)) and is_equal_approx(g.stick_radius, 140.0),
+		[g.rects.ok, g.rects.cancel, g.stick_center, g.stick_radius])
+	var lab := (g._buttons.ok as Panel).get_node("Label") as Label
+	check("ghost_look", lab.text == "A" and ((g._buttons.cancel as Panel).get_node("Label") as Label).text == "B"
+		and lab.get_theme_color("font_color") == XTouchControls.GHOST_TEXT and g._ghost_base.visible and not g._stick_base.visible
+		and is_equal_approx((g._buttons.ok as Panel).modulate.a, XTouchControls.GHOST_IDLE) and not g.active.has("run"), [lab.text, g.active])
+	check("ghost_taps_default", not XTouchControls.battle_tap_allowed() and XTouchControls.map_tap_allowed())
+	var accepts := rec.accepts
+	touch(0, g.rects.ok.get_center(), true)
+	await frames(2)
+	check("ghost_a_accepts", rec.accepts == accepts + 1 and is_equal_approx((g._buttons.ok as Panel).modulate.a, 1.0), [rec.accepts, accepts])
+	touch(0, g.rects.ok.get_center(), false)
+	for i in 70:
+		await get_tree().physics_frame
+	check("ghost_fades_back", is_equal_approx((g._buttons.ok as Panel).modulate.a, XTouchControls.GHOST_IDLE), (g._buttons.ok as Panel).modulate.a)
+	touch(0, g.stick_center, true)
+	var dr := InputEventScreenDrag.new()
+	dr.index = 0
+	dr.position = to_window(g.stick_center + Vector2(-80, 10))
+	Input.parse_input_event(dr)
+	await frames(2)
+	check("ghost_stick_left", Input.is_action_pressed("ui_left") and g._ghost_knob.position.x < g.stick_center.x - XTouchControls.GHOST_KNOB - 10, g._ghost_knob.position)
+	touch(0, g.stick_center, false)
+	await frames(2)
+	check("ghost_stick_release", not Input.is_action_pressed("ui_left"))
+	# 改版按键：A／B 两键（右下角贴边）
+	g.set_choice("style", "modern")
+	check("modern_ab", not g.ghost() and g.layout() == "ab" and g.rects.ok.size.is_equal_approx(Vector2(XTouchControls.AB_BUTTON, XTouchControls.AB_BUTTON))
+		and g.group_rects.actions.end.is_equal_approx(Vector2(1260, 704)) and ((g._buttons.ok as Panel).get_node("Label") as Label).text == "A"
+		and g._stick_base.visible and not g._ghost_base.visible, [g.rects.ok, g.group_rects.actions])
+	# 原多键：前页＝ui_page_up
+	g.set_choice("layout", "full")
+	var ups := rec.page_ups
+	check("modern_full_keys", g.active.has("pageup") and g.active.has("ctrl") and ((g._buttons.ok as Panel).get_node("Label") as Label).text == "确认", g.active)
+	touch(0, g.rects.pageup.get_center(), true)
+	await frames(2)
+	touch(0, g.rects.pageup.get_center(), false)
+	await frames(2)
+	check("modern_full_pageup", rec.page_ups == ups + 1, [rec.page_ups, ups])
+	# 方向键
+	g.set_choice("mode", "buttons")
+	check("modern_dpad", not g._uses_stick and g.hit(g.rects.left.get_center()) == "left" and g.hit(g.stick_center) != "stick", g.active)
+	touch(0, g.rects.left.get_center(), true)
+	await frames(2)
+	check("dpad_left_press", Input.is_action_pressed("ui_left"))
+	touch(0, g.rects.left.get_center(), false)
+	await frames(2)
+	check("dpad_left_release", not Input.is_action_pressed("ui_left"))
+	# 跑步键（改版默认不显示）
+	g.set_flag("show_run", true)
+	check("modern_run_shown", g.active.has("run") and g.group_rects.movement.encloses(g.rects.run) and ((g._buttons.run as Panel).get_node("Label") as Label).text == "跑", [g.rects.run, g.group_rects.movement])
+	touch(0, g.rects.run.get_center(), true)
+	await frames(2)
+	check("modern_run_shift", Input.is_physical_key_pressed(KEY_SHIFT))
+	touch(0, g.rects.run.get_center(), false)
+	await frames(2)
+	g.set_flag("battle_touch", true)
+	g.set_flag("map_touch", false)
+	check("taps_flags", XTouchControls.battle_tap_allowed() and not XTouchControls.map_tap_allowed())
+	var g2 := XTouchControls.new()
+	g2._load()
+	check("styles_remembered", g2.settings.style == "modern" and g2.settings.layout == "full" and g2.settings.mode == "buttons" and g2.settings.show_run
+		and g2.settings.battle_touch and not g2.settings.map_touch, g2.settings)
+	g2.free()
+	# 设置页：原版虚拟按钮时改版专用行显示「—」、不能改
+	var page := XTouchOptionsScene.new()
+	add_child(page)
+	await frames(1)
+	var keys := XTouchOptionsScene.rows().map(func(r): return r[1])
+	page.index = keys.find("style")
+	check("page_style_modern", page.status_text(page.index) == "改版按键")
+	page.side(false)
+	check("page_style_original", g.ghost() and page.status_text(page.index) == "原版虚拟按钮")
+	page.index = keys.find("layout")
+	page.side(true)
+	check("page_modern_only_locked", page.status_text(page.index) == "—" and g.layout() == "full")
+	page.index = keys.find("battle_touch")
+	page.ok()
+	check("page_battle_touch", not g.settings.battle_touch and page.status_text(page.index) == "仅屏幕按键")
+	page.queue_free()
+	g.reset_defaults()
+	check("reset_to_ghost", g.ghost() and g.layout() == "ab" and g.move_mode() == "joystick" and not g.settings.show_run)
+	# 回退开关：默认回到 v0.01 旧三键、战斗点击开
+	XTouchControls.MODERN_DEFAULT = false
+	g.reset_defaults()
+	check("rollback_classic", not g.ghost() and g.layout() == "classic" and g.rects.ok == XTouchControls.BUTTONS.ok.rect and g.settings.battle_touch)
+	XTouchControls.MODERN_DEFAULT = true
+	XTouchControls.knob_character_override = []
+	g.queue_free()
+	await frames(1)
+
+
 func frames(n := 2) -> void:
 	for i in n:
 		await get_tree().process_frame
@@ -276,9 +377,10 @@ func _run() -> void:
 	XPlatform.idle_stopper = saved_stopper
 	XPlatform.idle_probe = saved_probe
 
-	# 虚拟按键
+	# 虚拟按键（这一段量的是 v0.01 的旧三键：回退开关关掉原版虚拟按钮默认；原版／改版按键在后面 _touch_styles 量）
 	XTouchControls.SETTINGS_PATH = "user://test_xiyou_platform_touch.json"
 	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+	XTouchControls.MODERN_DEFAULT = false
 	check("stick_dead_zone", XTouchControls.stick_direction(Vector2(5, 5)) == "")
 	check("stick_one_axis", XTouchControls.stick_direction(Vector2(-40, 20)) == "ui_left" and XTouchControls.stick_direction(Vector2(10, -50)) == "ui_up"
 		and XTouchControls.stick_direction(Vector2(30, 31)) == "ui_down" and XTouchControls.stick_direction(Vector2(50, 0)) == "ui_right")
@@ -550,10 +652,14 @@ func _run() -> void:
 	XTouchControls.STICK_PAGE = false
 	check("touch_page_rollback_hides_row", XTouchOptionsScene.rows().size() == XTouchOptionsScene.ROWS.size() - 1 and not pad.stick_page_on())
 	XTouchControls.STICK_PAGE = true
-	page.index = 7
+	page.index = XTouchOptionsScene.rows().size() - 1
 	page.ok()
 	check("touch_page_reset", not pad.hidden and pad.settings.stick == 100 and pad.stick_page_on())
 	page.queue_free()
+	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
+	XTouchControls.MODERN_DEFAULT = true
+	await _touch_styles(platform, rec)
+	XTouchControls.instance = pad
 	DirAccess.remove_absolute(XTouchControls.SETTINGS_PATH)
 
 	# 存档导出导入（原版二合一包 exportSave／prepareJSONImport 的做法）
@@ -686,6 +792,14 @@ func _run() -> void:
 	XPlatform.force_mobile = null
 	platform.queue_free()
 	rec.queue_free()
+	# 标题假页按键的光标、确定音效（Cursor2、Decision1）还在播时退出，偶发「4 resources still in use」：停掉、清 stream，按真实时间等 0.5 秒（同 xiyou_drop_dh）
+	var players: Array = get_tree().root.find_children("*", "AudioStreamPlayer", true, false)
+	players.append_array(XSound._players)
+	for sp in players:
+		if is_instance_valid(sp):
+			(sp as AudioStreamPlayer).stop()
+			(sp as AudioStreamPlayer).stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	await frames()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

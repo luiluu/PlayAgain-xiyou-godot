@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source": "交接单「天启篇装备栏下一批」（Max 起草，Kyo 11-08 规则）；数都是占位，等 Kyo 定",
+  "draft": true,
+  "mount": {
+    "grades": ["普通", "优秀", "精良", "史诗", "传说", "不朽", "神话"],
+    "agi_pct": [5, 10, 15, 20, 25, 30, 33],
+    "preempt_pct": [3, 5, 6, 8, 10, 12, 15],
+    "preempt_cap_pct": 33
+  },
+  "artifact_cap": {
+    "heartsteel_stage": 10,
+    "hubris_stage": 10,
+    "crown_bonus_pct": 300
+  },
+  "drop_reroll": {
+    "level_band": 10
+  }
+}

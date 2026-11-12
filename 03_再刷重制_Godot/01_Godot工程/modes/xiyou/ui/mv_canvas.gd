@@ -33,24 +33,56 @@ var blink := false
 ## 本帧画到的纹理要一直引用到下一次重画，否则局部变量释放后 RID 失效、画成白块
 var _keep: Array = []
 static var _cache := {}
+## 安卓卡顿（Kyo 11-12 v0.01 实机：商店、战斗选技能卡；O-319）：原先 blink 时每帧整块重画（每帧重跑 painter：商店每帧重算整张商品表、
+## 战斗技能窗每帧重算每个技能），手机上掉帧。现在闪烁的光标画在背后一层（show_behind_parent，与原先先画光标再画字同序），
+## 每帧只重画这一层；内容只在 refresh／queue_redraw 时重画。回退开关 BLINK_FULL_REDRAW = true：回到每帧整块重画。
+static var BLINK_FULL_REDRAW := false
+var _cursor_layer: Control
+## 本次重画登记的闪烁光标 [Rect2, ...]（画在 _cursor_layer）
+var _blink_cursors: Array = []
 
 
 func _init() -> void:
 	font = XUI.font()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip_contents = true
+	_cursor_layer = Control.new()
+	_cursor_layer.name = "BlinkCursor"
+	_cursor_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_layer.show_behind_parent = true
+	_cursor_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_cursor_layer.draw.connect(_draw_cursor_layer)
+	add_child(_cursor_layer, false, Node.INTERNAL_MODE_BACK)
 
 
 func _process(delta: float) -> void:
 	if blink:
 		_t += delta
-		queue_redraw()
+		if BLINK_FULL_REDRAW:
+			queue_redraw()
+		elif _cursor_layer != null and not _blink_cursors.is_empty():
+			_cursor_layer.queue_redraw()
 
 
 func _draw() -> void:
 	_keep.clear()
+	_blink_cursors.clear()
 	if painter.is_valid():
 		painter.call(self)
+	if _cursor_layer != null:
+		_cursor_layer.queue_redraw()
+
+
+func _draw_cursor_layer() -> void:
+	var a := blink_alpha()
+	for r in _blink_cursors:
+		_cursor_layer.draw_style_box(XUI.cursor_style(a), r)
+
+
+## MV 活动窗口光标的 40 帧明暗周期
+func blink_alpha() -> float:
+	var n := int(_t * 60.0) % 40
+	return 1.0 - (n if n < 20 else 40 - n) * 8.0 / 255.0
 
 
 func text_width(s: String, size := XUI.FONT_SIZE) -> float:
@@ -184,9 +216,16 @@ func gradient(r: Rect2, c1: Color, c2: Color) -> void:
 func cursor(r: Rect2, active := true) -> void:
 	var a := 1.0
 	if active and blink:
-		var n := int(_t * 60.0) % 40
-		a = 1.0 - (n if n < 20 else 40 - n) * 8.0 / 255.0
+		if not BLINK_FULL_REDRAW:
+			_blink_cursor(r)
+			return
+		a = blink_alpha()
 	draw_style_box(XUI.cursor_style(a), r)
+
+
+## 闪烁光标登记到背后那层
+func _blink_cursor(r: Rect2) -> void:
+	_blink_cursors.append(r)
 
 
 ## MV Window 的上下滚动箭头（皮肤 Window.png），x 为窗口宽的一半，坐标相对窗口左上。

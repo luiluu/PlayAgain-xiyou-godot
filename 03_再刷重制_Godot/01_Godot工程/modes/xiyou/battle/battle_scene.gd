@@ -30,6 +30,7 @@ const ENEMY_GAUGE_W := 180.0
 const OTB_POS := Vector2(58, 618)
 const LOG_Y := 92.0                # OTB Log Window Y
 const STATES_MAX := 4
+const TIANQI_METER_POS := Vector2(272, 66)   # 天启篇本线计量条左上（自动／变速按钮 (272,12) 高 46 之下）
 ## Codex_MiraRavenMultiFrame：旧式侧视角色（ID < 167）战斗中身体缩放 0.75、最近邻
 const ACTOR_SCALE := 0.75
 
@@ -68,6 +69,7 @@ var cmd_win: XBattleList
 var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
+var tianqi_meter: XTianqiMeter
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
 var yun_win: XYunChoicesWindow
 ## 谷雨赠春／还春选择窗（开着时）
@@ -548,6 +550,10 @@ func _build_ui(vs: Vector2) -> void:
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
 	boss_panel.help_source = _boss_panel_help_rect
 	ui.add_child(boss_panel)
+	# 天启篇本线计量（XTianqiMeter：火花、饥饿、死期、病灶）：自动／变速按钮下面；场上没有本线异化怪时不画
+	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
+	tianqi_meter.position = _origin + TIANQI_METER_POS
+	ui.add_child(tianqi_meter)
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空
@@ -1599,6 +1605,8 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 func _gui_input(event: InputEvent) -> void:
 	var pos := Vector2.INF
 	if event is InputEventMouseMotion and _target_mode != "":
+		if not XTouchControls.battle_tap_allowed() and event.device == InputEvent.DEVICE_ID_EMULATION:
+			return
 		# 鼠标指向的候选目标视为「被选中」：顺序条上放大闪烁，并预览位移
 		var h = _nearest_target(event.position)
 		if h != null and h != _hover:
@@ -1609,6 +1617,10 @@ func _gui_input(event: InputEvent) -> void:
 		# 真实分发时到不了消息窗——battlefix2 用真实事件测出来的）
 		message._unhandled_input(event)
 		accept_event()
+		return
+	# 手机按键设置「战斗点击操作：仅屏幕按键」（改版 battleTouch 默认关，Window_BattleXxx.processTouch 不处理）：
+	# 触屏点按（含 Godot 由第一指转出的鼠标）不选战斗选项与目标；消息窗翻页照旧（上面先处理）
+	if not XTouchControls.battle_tap_allowed() and (event is InputEventScreenTouch or (event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION)):
 		return
 	if event is InputEventMouseButton and event.pressed:
 		# 不在选目标时，左键／滚轮交给开着的技能（物品）列表或指令窗（Window_Selectable.processTouch／processWheel）：
@@ -1895,7 +1907,7 @@ func _play(logs: Array) -> void:
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 			"enemy_change":
-				if l.kind == "vanish":
+				if l.kind == "vanish" or l.has("tianqi_horseman"):  # 天启四骑士：援军、小怪战斗中出场
 					_apply_enemy_change(l)  # die＋hide（XPetCapture：逃跑；被捕的在公共事件 173 里，由 _play_troop_events 处理）
 			"counter":
 				# YEP Show Counter Text：日志「%1的反击！」
