@@ -218,7 +218,12 @@ func _paint_info(c: XMVCanvas) -> void:
 		if c.is_inside_tree():
 			c.draw_rect(Rect2(cw + 1, y + 1, 4, LH - 2), XTianqiLook.main_color(line))
 		c.text("天启之路", cw + 12, y, cw - 30, "left", XUI.SYSTEM, 20, LH)
-		c.text("%s·%s" % [str(l.get("name", "")), str(l.get("knight", ""))], cw, y, cw - 12, "right", XTianqiLook.main_color(line), 20, LH)
+		c.text("%s·%s%s" % [str(l.get("name", "")), str(l.get("knight", "")), "　可轮回" if can_reincarnate(d) else ""], cw, y, cw - 12, "right", XTianqiLook.main_color(line), 20, LH)
+
+
+## 这一档通关过本线（36 层打赢骑士，XTianqiLine.run_final 记 flags.tianqi.reincarnate）
+static func can_reincarnate(d) -> bool:
+	return d is Dictionary and d.get("flags", {}).get("tianqi", {}) is Dictionary and bool(d.flags.tianqi.get("reincarnate", false))
 
 
 ## 天启篇存档选的线（开关关掉、不是天启篇存档、没选线为空串）
