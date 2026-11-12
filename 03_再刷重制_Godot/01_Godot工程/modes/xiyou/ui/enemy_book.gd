@@ -47,7 +47,7 @@ const NO_WIDTH := 4294967295.0
 
 ## 战斗内「怪物信息」没登记的敌人也照写数值（玩家反馈 v0.01.01：第一次遇到的怪看不了属性）。原版 ResisterTiming 2＝打完才登记，
 ## 登记前战斗里看到的能力值、属性、技能全是「？？？」；现在战斗里照写，图鉴（大厅看的那本）的登记、击败数、掉落照旧打完才有。
-## 回退开关 BATTLE_SHOW_UNREGISTERED = false：照原版写「？？？」（O-待定·战斗怪物信息不藏数值）。
+## 回退开关 BATTLE_SHOW_UNREGISTERED = false：照原版写「？？？」（O-353）。
 static var BATTLE_SHOW_UNREGISTERED := true
 
 ## 战斗内：只列本场敌人、不写序号、没登记也画（isAllEnemies 为假）
