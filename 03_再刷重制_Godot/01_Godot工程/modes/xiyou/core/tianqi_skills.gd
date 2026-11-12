@@ -583,6 +583,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 				if b.is_state_affected(int(id)):
 					n += 1
 			return 1.0 + clampf(n * per, 0.0, cap)
+		"target_stack":  # 目标身上某状态的层数（on_hit stack 记的）×per（白晶晶毒爆：每层骨毒 +1.2／3.6）
+			var n := int(b.state_data.get("_tq_stack_%d" % int(c.state), 0)) if b.is_state_affected(int(c.state)) else 0
+			return 1.0 + clampf(n * per, 0.0, cap)
 		"self_states":  # 自己身上状态数（增益减益都算），每个 +per（迪昂狂乱·灭）
 			return 1.0 + clampf(float(a.state_ids.size()) * per, 0.0, cap)
 		"self_cri_over":  # 暴击率超过 from（缺省 100%）的部分×per（紫霞剑气：每超 10% +3%，最多 +30%）
@@ -595,6 +598,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 				var m: Dictionary = a.get_meta("xtq_casts")
 				for id in c.of:
 					n += int(m.get(int(id), 0))
+			for k in c.get("offset_with", {}):  # 带着这件开局就有几层（十三娘心绕：缠意 2 层）
+				if owns(a, k):
+					n += int(c.offset_with[k])
 			return 1.0 + clampf(n * per, 0.0, cap)
 		"allies":  # 上场的这些角色（不算自己）每人 +per
 			var s := XState.current
@@ -791,7 +797,7 @@ static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 				t.state_turns[id] = base + int(r.get("turns", 1))
 		if r.has("state") and t.is_alive() and logic._float("tianqi_skill_on_hit") < float(r.get("rate", 0.0)):
 			t.add_state(int(r.state))
-		if r.has("stack") and t.is_alive():  # 叠层（曹操霸道真气）：层数记在目标 state_data，封顶 cap（cap_with 专属物提高）
+		if r.has("stack") and t.is_alive() and (not r.stack.has("rate") or logic._float("tianqi_skill_on_hit") < float(r.stack.rate)):  # 叠层（曹操霸道真气）：层数记在目标 state_data，封顶 cap（cap_with 专属物提高）；rate 按几率多叠（白晶晶毒吻）
 			var sk: Dictionary = r.stack
 			var cap := int(sk.get("cap", 1))
 			for k in sk.get("cap_with", {}):
@@ -996,7 +1002,7 @@ static func param_rate(a, i: int) -> float:
 	if not ENABLED:
 		return 1.0
 	var g = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("grow")
-	if not g is Dictionary or int(g.get("param", -1)) != i or not cards_on():
+	if not g is Dictionary or not (g.get("params", [g.get("param", -1)]) as Array).any(func(x): return int(x) == i) or not cards_on():  # params：一次涨几项（白晶晶敏捷、幸运）
 		return 1.0
 	if g.has("need_skill") and not a.skill_ids.has(int(g.need_skill)):
 		return 1.0
