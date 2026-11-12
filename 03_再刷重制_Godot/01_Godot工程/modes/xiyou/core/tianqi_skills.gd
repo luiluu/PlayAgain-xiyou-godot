@@ -569,6 +569,12 @@ static func _cond(c: Dictionary, a, b) -> float:
 				for k in c.get("vars", {}):
 					v2 += float(s2.variable(int(k))) * float(c.vars[k])
 			return 1.0 + clampf(v2 * per, 0.0, cap)
+		"battle_turn":  # 本场已过的回合数×per（拳一无限超越：每回合 +3%，最多 10 回合；offset_with 带着这件开局就算几层）
+			var nt := maxi(0, int(a.get_meta("xtq_turn", 0)) - 1) if a is Object else 0
+			for k in c.get("offset_with", {}):
+				if owns(a, k):
+					nt += int(c.offset_with[k])
+			return 1.0 + clampf(nt * per, 0.0, cap)
 		"target_states":
 			var n := 0
 			for id in b.state_ids:
@@ -765,6 +771,7 @@ static func begin_action(logic, u, skill) -> void:
 	var casts: Dictionary = u.get_meta("xtq_casts") if u.has_meta("xtq_casts") else {}
 	casts[int(skill.get("id", 0))] = int(casts.get(int(skill.get("id", 0)), 0)) + 1
 	u.set_meta("xtq_casts", casts)
+	u.set_meta("xtq_turn", int(logic.get("turn")) if logic is Object and logic.get("turn") != null else 0)  # 本场第几回合（battle_turn 条件）
 
 
 static func after_apply(logic, u, skill, t, r := {}) -> void:
@@ -898,6 +905,7 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 					if e.is_state_affected(int(r.state)):
 						e.state_turns[int(r.state)] = int(r.turns)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
+		a.set_meta("xtq_turn", 0)
 		sync_learn(a)
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_tp", []):  # 开场 TP（天蓬吞云）
 			if not r.has("need") or owns(a, r.need):
