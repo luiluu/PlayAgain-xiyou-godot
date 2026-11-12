@@ -281,10 +281,10 @@ func _follow() -> void:
 	_check("follow_none", XTianqiSkills._follow_of(a, dunk).is_empty())
 	a.learn_skill(1235)
 	var f := XTianqiSkills._follow_of(a, dunk)
-	_check("follow_half", f.size() == 2 and int(f[0].id) == 4370 and is_equal_approx(float(f[1]), 0.5), f)
+	_check("follow_half", f.size() == 1 and int(f[0][0].id) == 4370 and is_equal_approx(float(f[0][1]), 0.5), f.size())
 	a.learn_skill(3514)
 	f = XTianqiSkills._follow_of(a, dunk)
-	_check("follow_full", f.size() == 2 and is_equal_approx(float(f[1]), 1.0))
+	_check("follow_full", f.size() == 1 and is_equal_approx(float(f[0][1]), 1.0))
 	_check("dunk_no_ce", not XDB.rec("Skills", 506).effects.any(func(e): return int(e.code) == 44))
 	var lg := XBattleLogic.new()
 	lg.setup(2, s)
@@ -301,7 +301,7 @@ func _follow() -> void:
 
 ## 改过卡的角色整场跑几回合不报错
 func _smoke() -> void:
-	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2]]:
+	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20]]:
 		_smoke_group(group)
 
 

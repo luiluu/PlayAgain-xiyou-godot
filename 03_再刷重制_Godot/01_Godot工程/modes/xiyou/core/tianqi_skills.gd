@@ -267,7 +267,7 @@ static func formula(a, b, item: Dictionary) -> float:
 	var stats: Dictionary = d.get("stats", {"atk": 1})
 	for k in stats:
 		base += float(stats[k]) * float(a.param(STATS.find(str(k))))
-	var v := base * float(d.get("coef", 0.0)) * level_scale(a)
+	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale
 	for c in d.get("conds", []):
 		v *= _cond(c, a, b)
 	if a is XActor:
@@ -504,7 +504,7 @@ static func param_rate(a, i: int) -> float:
 	return 1.0 + minf(float(g.cap), float(grow_count(str(g.key))) * float(g.per))
 
 
-## 这次行动该追加什么：[技能记录, 几率]；没有返回 []
+## 这次行动可以追加的候选：[[技能记录, 几率, 伤害倍率]…]，按表里顺序逐个掷，第一个掷中的追加
 static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 	var rows: Array = spec(int(skill.get("id", 0))).get("follow", []).duplicate()
 	var arow: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {})
@@ -512,9 +512,10 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 		var ons: Array = r.get("on", [])
 		if ons.is_empty() and (u.is_attack(skill) or not int(skill.get("damage", {}).get("type", 0)) in [1, 5]):
 			continue
-		if not ons.is_empty() and not ons.has(int(skill.get("id", 0))):
+		if not ons.is_empty() and not ons.has(float(skill.get("id", 0))) and not ons.has(int(skill.get("id", 0))):
 			continue
 		rows.append(r)
+	var out := []
 	for r in rows:
 		if r.has("need_skill") and not u.skill_ids.has(int(r.need_skill)):
 			continue
@@ -528,8 +529,12 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 			continue
 		var cast := XDB.rec("Skills", int(r.get("cast", skill.get("id", 0))))
 		if not cast.is_empty():
-			return [cast, rate]
-	return []
+			out.append([cast, rate, float(r.get("scale", 1.0))])
+	return out
+
+
+## 追加出来的那次伤害倍率（formula 读）
+static var follow_scale := 1.0
 
 
 static func end_action(logic, u, skill) -> Array:
@@ -543,20 +548,24 @@ static func end_action(logic, u, skill) -> Array:
 		return logs
 	if int(st.used.get(u, -1)) == int(logic.turn):
 		return logs
-	var hit := _follow_of(u, f.skill)
-	if hit.is_empty():
-		return logs
-	if logic._float("tianqi_skill_follow") >= float(hit[1]):
-		return logs
 	var alive: Array = f.targets.filter(func(t): return t.is_alive())
 	if alive.is_empty():
+		return logs
+	var hit := []
+	for c in _follow_of(u, f.skill):
+		if logic._float("tianqi_skill_follow") < float(c[1]):
+			hit = c
+			break
+	if hit.is_empty():
 		return logs
 	st.used[u] = int(logic.turn)
 	st.depth = int(st.depth) + 1
 	var cast: Dictionary = hit[0]
 	var targets: Array = alive if int(cast.get("scope", 1)) in [2, 8] or alive.size() == 1 else [alive[0]]
+	follow_scale = float(hit[2])
 	for t in targets:
 		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
 		logs.append(logic.apply(u, cast, t))
+	follow_scale = 1.0
 	st.depth = int(st.depth) - 1
 	return logs
