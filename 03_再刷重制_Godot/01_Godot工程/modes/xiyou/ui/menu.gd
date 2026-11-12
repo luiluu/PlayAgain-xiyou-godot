@@ -132,7 +132,8 @@ func _paint_status(c: XMVCanvas) -> void:
 		var a: XActor = members[i]
 		if _mode == "actor" and i == _actor_index:
 			c.cursor(Rect2(0, ry, c.size.x, rh))
-		c.face(str(a.data().faceName), int(a.data().faceIndex), 1, ry + 1, 144, rh - 2, 1.0 if battle.has(a) else XUI.DIM.a)
+		if not XTianqiQiyinLook.paint_face(c, a, 1, ry + 1, 144, rh - 2, 1.0 if battle.has(a) else XUI.DIM.a):  # 天启篇七印头像框
+			c.face(str(a.data().faceName), int(a.data().faceIndex), 1, ry + 1, 144, rh - 2, 1.0 if battle.has(a) else XUI.DIM.a)
 		_paint_actor(c, a, 158.0, ry, c.size.x - 158.0 - 6.0)
 
 

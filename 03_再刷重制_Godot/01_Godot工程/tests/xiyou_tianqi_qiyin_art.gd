@@ -3,6 +3,8 @@ extends Node
 ## 一、素材：首领图、徽记、神器大图、龙隙、头像框、法阵、图标都在，尺寸对；七印徽记、神器大图、龙隙被 XTianqiQiyinShow.art 取到。
 ## 二、图标：套装 42、武器 12、「不立文字」叠层 12、神器 5 各有图；XUI.icon_texture 分流到这里；做出来的装备带新图标号；开关关掉借底子。
 ## 三、首领：殉印、默印里副本 Boss 换新图（去掉借来敌人的侧视图），小怪不换；七首之龙换新图。
+## 六、外观（XTianqiQiyinLook）：六件都揭到过才解锁、跨存档记在配置；戴上后战斗脚下有法阵、倒下熄、摘了就没；开关关掉一概不出。
+## 七、骑士遗物、徽记：遗物完整／残缺各用自己的图标，徽记大图在。
 ## 四、精灵：七首之龙七个头叠在躯干上，断几首藏几个头（按揭印顺序）；守默者单数回合（不寂静）换燃起那张；开关关掉都不换。
 
 var results: Array = []
@@ -46,11 +48,14 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_tianqi_qiyin_art"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
+	DirAccess.remove_absolute(XConfig.path_override)  # 七印外观的解锁记在配置里，每次从空的起
 	_files()
 	_icons()
 	_bosses()
 	await _sprites()
 	await _show()
+	await _look()
+	_relics()
 	XTianqiQiyin.rng_override = null
 	XTianqiQiyinDragonRun.rng_override = null
 	var passed := results.filter(func(r): return r.passed).size()
@@ -300,3 +305,80 @@ func _show() -> void:
 			seal = str(c.get_child(0).seal)
 	_check("show_drop_seal", seal == "zhen", seal)
 	host.queue_free()
+
+
+# ---- 六、外观 ----
+
+func _look() -> void:
+	var s := _state()
+	_check("look_none_yet", XTianqiQiyinLook.unlocked_list().is_empty() and XTianqiQiyinLook.altar_options(s).is_empty())
+	for part in ["head", "body", "hands", "waist", "legs"]:
+		XTianqiQiyinLook.note({"kind": "set", "seal": "hong", "part": part})
+	XTianqiQiyinLook.note({"kind": "weapon", "seal": "hong", "wtype": "剑"})
+	_check("look_five_locked", not XTianqiQiyinLook.unlocked("hong") and XTianqiQiyinLook.take_new().is_empty())
+	# 第六件从印库揭开（走 XTianqiQiyin.reveal）
+	var bag: Array = XTianqiQiyin.progress(s).bag
+	bag.append({"kind": "set", "seal": "hong", "part": "feet", "true_seal": false, "grades": ["putong", "putong", "putong"], "revealed": false})
+	XTianqiQiyin.reveal(s, bag.size() - 1)
+	_check("look_six_unlocked", XTianqiQiyinLook.unlocked("hong") and XTianqiQiyinLook.take_new() == ["hong"], XConfig.tianqi_qiyin_parts())
+	_check("look_saved_in_config", XConfig.tianqi_qiyin_parts().has("hong:feet"))
+	XTianqiQiyinLook.note({"kind": "set", "seal": "hong", "part": "feet"})
+	_check("look_unlock_once", XTianqiQiyinLook.take_new().is_empty())
+	_check("look_altar_option", XTianqiQiyinLook.altar_options(s).size() == 1 and XTianqiQiyin.altar_options(s).any(func(o): return o.id == "look"))
+	var a: XActor = s.battle_members()[0]
+	_check("look_wear_locked_refused", not XTianqiQiyinLook.wear(s, a.actor_id, "bai") and XTianqiQiyinLook.worn(a, s) == "")
+	_check("look_wear", XTianqiQiyinLook.wear(s, a.actor_id, "hong") and XTianqiQiyinLook.worn(a, s) == "hong")
+	_check("look_frame_texture", XTianqiQiyinLook.frame_texture("hong") != null and XTianqiQiyinLook.circle_texture("hong") != null)
+	# 新开一档：解锁还在（配置），佩戴是本档的
+	var s2 := _state()
+	_check("look_cross_save", XTianqiQiyinLook.unlocked("hong") and XTianqiQiyinLook.worn(s2.battle_members()[0], s2) == "")
+	XState.current = s
+	# 战斗法阵
+	var lg := XBattleLogic.new()
+	lg.setup(30, s)
+	var b: XActor = null
+	for x in lg.actors:
+		if int(x.actor_id) == int(a.actor_id):
+			b = x
+	var sp := XBattlerSprite.new()
+	add_child(sp)
+	sp.setup(b, 1.0)
+	XTianqiQiyinLook.update_sprite(sp)
+	var node := sp.get_node_or_null(XTianqiQiyinLook.NODE) as Node2D
+	_check("circle_made", node != null and str(node.get_meta("seal")) == "hong" and node.get_index() == 0 and node.scale.y < 0.5)
+	await get_tree().process_frame
+	b.hp = 0
+	b.add_state(1)
+	XTianqiQiyinLook.update_sprite(sp)
+	_check("circle_dead_off", node != null and is_zero_approx(node.modulate.a))
+	XTianqiQiyinLook.wear(s, a.actor_id, "")
+	XTianqiQiyinLook.update_sprite(sp)
+	await get_tree().process_frame
+	_check("circle_removed", sp.get_node_or_null(XTianqiQiyinLook.NODE) == null)
+	sp.queue_free()
+	XTianqiQiyinLook.wear(s, a.actor_id, "hong")
+	XTianqiQiyinLook.ENABLED = false
+	_check("look_off", XTianqiQiyinLook.worn(a, s) == "" and XTianqiQiyinLook.altar_options(s).is_empty())
+	XTianqiQiyinLook.note({"kind": "set", "seal": "bai", "part": "head"})
+	_check("look_off_no_note", not XConfig.tianqi_qiyin_parts().has("bai:head"))
+	XTianqiQiyinLook.ENABLED = true
+	# 开祭坛补记：本档印库里已经揭开的（功能上线前揭的）
+	for part in ["head", "body", "hands", "waist", "legs", "feet"]:
+		bag.append({"kind": "set", "seal": "mo", "part": part, "revealed": true})
+	XTianqiQiyinLook.catch_up(s)
+	_check("look_catch_up", XTianqiQiyinLook.unlocked("mo") and XTianqiQiyinLook.take_new() == ["mo"])
+
+
+# ---- 七、骑士遗物、徽记 ----
+
+func _relics() -> void:
+	var full := XTianqiRewards.make_item("relic", "war", 0, false)
+	var half := XTianqiRewards.make_item("relic", "war", 0, true)
+	_check("relic_full_icon", int(full.get("iconIndex", 0)) == XTianqiQiyinArt.small_icon("relic_war"), full.get("iconIndex"))
+	_check("relic_half_icon", int(half.get("iconIndex", 0)) == XTianqiQiyinArt.small_icon("relic_war_broken"), half.get("iconIndex"))
+	var bad := []
+	for line in ["death", "war", "famine", "plague"]:
+		var t := XTianqiQiyinArt.badge_texture(line)
+		if t == null or t.get_size() != Vector2(128, 128):
+			bad.append(line)
+	_check("badge_big", bad.is_empty(), bad)

@@ -258,6 +258,9 @@ static func run_altar(host, s: XState) -> void:
 	s.screen.start_tint(a.get("tone", [0, 0, 0, 0]), 0)
 	for n in sync(s):
 		await say(host, n[0], n[1])
+	XTianqiQiyinLook.catch_up(s)  # 七印外观：这个功能之前揭开的也补记
+	for k in XTianqiQiyinLook.take_new():
+		await say(host, "look_unlock", [XTianqiQiyinLook.seal_name(str(k))])
 	while true:
 		claim(s)
 		var opts := altar_options(s)
@@ -277,6 +280,8 @@ static func run_altar(host, s: XState) -> void:
 				await run_bag(host, s)
 			"forge":
 				await XTianqiQiyinEquip.run_forge(host, s)
+			"look":
+				await XTianqiQiyinLook.run(host, s)
 			_:
 				await XTianqiQiyinDragonRun.run_option(host, s, str(opts[i].id))  # 七首之龙：存着的龙隙、首杀招募、龙血
 	await say(host, "leave")
@@ -294,6 +299,7 @@ static func altar_options(s: XState) -> Array:
 	if XTianqiQiyinEquip.on(s):
 		out.append({"id": "forge", "label": "熔炼、分解、兑换"})
 	out.append_array(XTianqiQiyinDragonRun.altar_options(s))  # 七首之龙：存着的龙隙、首杀招募、龙血
+	out.append_array(XTianqiQiyinLook.altar_options(s))  # 七印外观（头像框、战斗法阵）
 	out.append({"id": "leave", "label": "离开"})
 	return out
 
@@ -480,6 +486,8 @@ static func settle(host, s: XState, key: String, offering: Dictionary, run: Dict
 			for idx in range(first_idx, first_idx + got.size()):
 				await XTianqiQiyinShow.reveal(host, progress(s).bag[idx])  # 演出：封印碎开
 				await host.show_text("", 0, [_line(scene("reveal_done")[0], [revealed_label(reveal(s, idx))])])
+				for k in XTianqiQiyinLook.take_new():
+					await say(host, "look_unlock", [XTianqiQiyinLook.seal_name(str(k))])
 	return got
 
 
@@ -561,6 +569,7 @@ static func reveal(s: XState, idx: int) -> Dictionary:
 	if idx < 0 or idx >= bag.size():
 		return {}
 	bag[idx]["revealed"] = true
+	XTianqiQiyinLook.note(bag[idx])  # 七印外观：一套六件都揭到过就解锁（跨存档）
 	if XTianqiQiyinEquip.on(s) and str(bag[idx].get("gear", "")) == "":
 		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng()))
 		if not gear.is_empty():
@@ -589,6 +598,8 @@ static func run_reveal(host, s: XState) -> void:
 		for i in picked:
 			await XTianqiQiyinShow.reveal(host, bag[int(i)])  # 演出：封印碎开
 			await host.show_text("", 0, [_line(scene("reveal_done")[0], [revealed_label(reveal(s, int(i)))])])
+			for k in XTianqiQiyinLook.take_new():
+				await say(host, "look_unlock", [XTianqiQiyinLook.seal_name(str(k))])
 
 
 static func run_bag(host, s: XState) -> void:
