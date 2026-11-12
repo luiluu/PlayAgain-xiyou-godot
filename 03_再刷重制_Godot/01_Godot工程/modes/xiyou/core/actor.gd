@@ -633,7 +633,9 @@ func traits_with_id(code: int, id: int) -> Array:
 ## 也当场作废（read_touch）。所以读到的值和每次重算完全一样。
 ## 回退：READ_MEMO = false（每次重算，同原来）。READ_VERIFY＝测试用：每次命中都重算一遍比对，不一样就记进 read_mismatches。
 static var READ_MEMO := true
-static var READ_VERIFY := false
+static var READ_VERIFY := OS.get_environment("XIYOU_READ_VERIFY") == "1"
+## 环境变量 XIYOU_READ_VERIFY=1（整轮测试带上它跑）：全程比对，一次不一致就当场崩掉，那个测试必挂
+static var READ_VERIFY_FATAL := OS.get_environment("XIYOU_READ_VERIFY") == "1"
 static var read_mismatches: Array = []
 static var read_hits := 0
 static var _read_depth := 0
@@ -676,9 +678,14 @@ func _read_memo() -> Dictionary:
 
 func _read_verify(what: String, cached, fresh) -> void:
 	read_hits += 1
-	if cached != fresh and read_mismatches.size() < 50:
-		read_mismatches.append([what, actor_id, str(cached).left(300), str(fresh).left(300)])
-		push_error("只读窗口缓存不一致：%s 角色 %d" % [what, actor_id])
+	if cached is float and fresh is float and is_nan(cached) and is_nan(fresh):
+		return
+	if cached != fresh:
+		if read_mismatches.size() < 50:
+			read_mismatches.append([what, actor_id, str(cached).left(300), str(fresh).left(300)])
+		push_error("只读窗口缓存不一致：%s 角色 %d：%s ≠ %s" % [what, actor_id, str(cached).left(200), str(fresh).left(200)])
+		if READ_VERIFY_FATAL:
+			OS.crash("只读窗口缓存不一致（XIYOU_READ_VERIFY=1）：%s 角色 %d" % [what, actor_id])
 
 ## 渡鸦黑暗侵蚀的状态缓存时序（见 raven.gd on_tp_refresh）：tp_refreshed＝本次 apply 里伤害充 TP 已 refresh；
 ## stale_state_ids＝已在身上但特性缓存还没重建、特性暂读不到的状态（krz 状态缓存时序）
