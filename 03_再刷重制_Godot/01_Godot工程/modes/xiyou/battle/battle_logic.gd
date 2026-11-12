@@ -1721,7 +1721,7 @@ func _restricted(b: XBattler) -> bool:
 ## BattleManager.onEncounter（随机遇敌，BattleManager.setup 之后）：两次随机数各取一次，先制与偷袭互斥。
 func roll_encounter() -> void:
 	encounter = true
-	var r := XPreempt.rates(state, enemies)
+	var r := XTianqiGear.apply_preempt(state, XPreempt.rates(state, enemies))  # 天启篇：坐骑先制（上场最高一件，总上限）
 	var rolled := XPreempt.roll(_float("encounter_preemptive"), _float("encounter_surprise"), r)
 	preemptive = rolled[0]
 	surprise = rolled[1]
@@ -3263,7 +3263,7 @@ func drops_of(e: XEnemy) -> Array:
 		return []
 	var id := stable_id(e)
 	if not _treasure.has(id):
-		_treasure[id] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, _roll_drops(e)))
+		_treasure[id] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, XTianqiGear.reroll_drops(_roll_drops(e), func(): return random.reward.next_float("tianqi_reroll", id))))  # 天启篇：删除栏位的防具重抽
 	return _treasure[id].duplicate(true)
 
 

@@ -494,6 +494,62 @@ def check_seg_alien(_args) -> bool:
     return not bad
 
 
+# ---- gear_table.json（装备栏第二批：坐骑、神器上限、掉落重抽；占位数，draft）----
+
+MOUNT_GRADES = ['普通', '优秀', '精良', '史诗', '传说', '不朽', '神话']  # 同 core/quality.gd 的七档顺序
+GEAR_CAP_KEYS = ('heartsteel_stage', 'hubris_stage', 'crown_bonus_pct')
+
+
+def gear_rules(table: dict) -> list:
+    """装备表规则自检（与 tests/xiyou_tianqi_gear2 的 table_* 同一套），返回失败说明列表。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    for h in ('version', 'source'):
+        check('表头 ' + h, str(table.get(h, '')) != '')
+    check('标 draft', table.get('draft') is True, table.get('draft'))
+    m = table.get('mount', {})
+    check('坐骑七档', m.get('grades') == MOUNT_GRADES, m.get('grades'))
+    for k in ('agi_pct', 'preempt_pct'):
+        v = m.get(k, [])
+        check('坐骑 %s 七个数' % k, isinstance(v, list) and len(v) == 7, v)
+        if isinstance(v, list) and len(v) == 7:
+            check('坐骑 %s 随品质不降' % k, all(v[i] <= v[i + 1] for i in range(6)), v)
+            check('坐骑 %s 都是正数' % k, all(isinstance(x, (int, float)) and x > 0 for x in v), v)
+    cap = m.get('preempt_cap_pct')
+    check('先制总上限在 0～100', isinstance(cap, (int, float)) and 0 < cap <= 100, cap)
+    pre = m.get('preempt_pct', [])
+    if isinstance(cap, (int, float)) and isinstance(pre, list) and pre:
+        check('单件先制不超过总上限', max(pre) <= cap, [max(pre), cap])
+    c = table.get('artifact_cap', {})
+    for k in GEAR_CAP_KEYS:
+        check('神器上限 %s 是正整数' % k, isinstance(c.get(k), int) and c.get(k) > 0, c.get(k))
+    band = table.get('drop_reroll', {}).get('level_band')
+    check('重抽等级段是正整数', isinstance(band, int) and band > 0, band)
+    fours = []
+    nice_violations(table, '', {'version'}, fours)
+    check('设计数值不带 4', not fours, '、'.join(fours))
+    return bad
+
+
+def check_gear_table(_args) -> bool:
+    path = DATA_DIR / 'gear_table.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    bad = gear_rules(json.loads(path.read_text(encoding='utf-8')))
+    if bad:
+        print('gear_table.json 规则自检 %d 项不过：' % len(bad))
+        for b in bad:
+            print('  ' + b)
+        return False
+    print('gear_table.json 规则自检：通过')
+    return True
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -504,6 +560,7 @@ CHECKS = [
     ('death_line', lambda _args: check_line('death')),
     ('summit', check_summit),
     ('seg_alien', check_seg_alien),
+    ('gear_table', check_gear_table),
 ]
 
 

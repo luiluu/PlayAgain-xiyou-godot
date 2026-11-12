@@ -85,12 +85,16 @@ static func stage_need(n: int) -> int:
 static func stage(item) -> int:
 	return stage_of(stacks(item))
 
+## 算效果用的阶数：天启篇夹上限（XTianqiGear.heart_stage；层数照记不截）
+static func eff_stage(item) -> int:
+	return XTianqiGear.heart_stage(stage(item))
+
 static func hp_rate(item) -> float:
-	return (1.1 if is_leviathan(item) else 1.0) + 0.1 * stage(item)
+	return (1.1 if is_leviathan(item) else 1.0) + 0.1 * eff_stage(item)
 
 static func cast_scale(a) -> float:
 	var g := gear(a)
-	return 1.0 + 0.1 * stage(g) if not g.is_empty() else 1.0
+	return 1.0 + 0.1 * eff_stage(g) if not g.is_empty() else 1.0
 
 static func remaining(a) -> int:
 	if TURN_CD_V035:

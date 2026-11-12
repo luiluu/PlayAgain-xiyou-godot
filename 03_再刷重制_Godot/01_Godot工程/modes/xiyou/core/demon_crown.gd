@@ -157,13 +157,13 @@ static func describe(item: Dictionary) -> void:
 		item.meta = {}
 	item.meta.quality = str(q)
 	item.meta.ici = str(q)
-	var rate := 1.0 + bonus(item) / 100.0
+	var rate := 1.0 + XTianqiGear.crown_bonus(bonus(item)) / 100.0  # 天启篇八项加成夹上限（账本里的成长不截）
 	var traits: Array = (item.get("traits", []) as Array).filter(func(t): return not bool(t.get("_codexCrown", false)))
 	for n in range(8):
 		traits.append({"code": 21, "dataId": n, "value": 1.0 if storage_error != "" else rate, "_codexCrown": true})
 	item.traits = traits
 	note = RegEx.create_from_string("<pos=APs text=成长[：:]八项全属性[^>]*>\\s*").sub(note, "", true)
-	item.note = note + "\n<pos=APs text=成长：八项全属性＋%s%% size=18 color=rgba(255,255,255,1) line=false align=0>\n" % display(bonus(item))
+	item.note = note + "\n<pos=APs text=成长：八项全属性＋%s%%%s size=18 color=rgba(255,255,255,1) line=false align=0>\n" % [display(XTianqiGear.crown_bonus(bonus(item))), XTianqiGear.cap_note("crown_bonus_pct", bonus(item))]
 
 
 # ---- 账本文件 ----

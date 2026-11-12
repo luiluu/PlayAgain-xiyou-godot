@@ -35,8 +35,9 @@ static func heart_rows(item: Dictionary) -> Array:
 	var k := XHeartsteel.stacks(item)
 	var n := XHeartsteel.stage(item)
 	var lev := XHeartsteel.is_leviathan(item)
-	var rows := ["成长：心钢层数%d；最大生命×%s" % [k, number(XHeartsteel.hp_rate(item))],
-		"进度：心钢升阶还需%d层" % (XHeartsteel.stage_need(n + 1) - k),
+	var capped := XTianqiGear.cap_note("heartsteel_stage", n)  # 天启篇阶数到上限：不再显示升阶进度
+	var rows := ["成长：心钢层数%d；最大生命×%s%s" % [k, number(XHeartsteel.hp_rate(item)), capped],
+		"进度：心钢已达上限，层数照常累积" if capped != "" else "进度：心钢升阶还需%d层" % (XHeartsteel.stage_need(n + 1) - k),
 		damage_text(item),
 		"效果：每回合结束回复%d%%最大生命" % (5 if lev else 3),
 		"战技：巨人吞噬；物理，单体，不可暴击",
@@ -50,7 +51,7 @@ static func heart_rows(item: Dictionary) -> Array:
 ## H.damageText
 static func damage_text(item: Dictionary) -> String:
 	var lev := XHeartsteel.is_leviathan(item)
-	return "伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", number(1.0 + 0.1 * XHeartsteel.stage(item))]
+	return "伤害：[%d＋常态最大生命×%s]×%s" % [1000 if lev else 700, "8%" if lev else "6%", number(1.0 + 0.1 * XHeartsteel.eff_stage(item))]
 
 
 ## H.skillHelpView（v0.35 起；Window_BattleSkill／Window_SkillList.updateHelp 包装）：巨人吞噬技能卡换成一份拷贝，
@@ -79,8 +80,9 @@ static func hubris_rows(item: Dictionary) -> Array:
 	var k := XHubris.growth(item)
 	var n := XHeartsteel.stage_of(k)
 	var lev := XHubris.is_ataraxia(item)
-	return ["成长：盛名层数%d；扬名时物理攻击×%s" % [k, number(XHubris.rate_for(item, k))],
-		"进度：盛名升阶还需%d层" % (XHeartsteel.stage_need(n + 1) - k),
+	var capped := XTianqiGear.cap_note("hubris_stage", n)  # 天启篇阶数到上限：不再显示升阶进度
+	return ["成长：盛名层数%d；扬名时物理攻击×%s%s" % [k, number(XHubris.rate_for(item, k)), capped],
+		"进度：盛名已达上限，层数照常累积" if capped != "" else "进度：盛名升阶还需%d层" % (XHeartsteel.stage_need(n + 1) - k),
 		"效果：物防穿透%d%%" % (27 if lev else 18),
 		"效果：参与击杀获得扬名；首领战中持续造成伤害也可触发",
 		"效果：扬名积累盛名，胜利后保留",
