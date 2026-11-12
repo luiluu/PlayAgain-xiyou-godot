@@ -85,6 +85,11 @@ func _run() -> void:
 		ok = ok and not bool(T.affix(str(it.tianqi_affixes[2].key)).get("rare", false)) and str(T.affix(str(it.tianqi_affixes[2].key)).layer) == "legendary"
 	_check("legendary_stays_legendary", ok)
 	_check("desc_rewritten", str(it.description).contains(XTianqiAffixText.line(str(it.tianqi_affixes[2].key), 4, str(it.tianqi_affixes[2].grade), it.tianqi_affixes[2].get("extra", {}))))
+	# 同层两条：重铸第一条不会抽到第二条
+	var two := _make(s, wid)
+	var bases := XTianqiAffixRoll.layer_candidates(two, "base")
+	XTianqiAffixRoll.set_affixes(two, [{"key": str(bases[0]), "tier": 4, "grade": "normal", "extra": {}}, {"key": str(bases[1]), "tier": 4, "grade": "normal", "extra": {}}])
+	_check("no_dup_same_layer", not XTianqiReforge.choices(two, 0).has(str(bases[1])) and XTianqiReforge.choices(two, 0).has(str(bases[0])))
 	# 金钱不够
 	s.gold = 10
 	_check("poor", XTianqiReforge.reforge(s, it, 0).has("error") and s.gold == 10)
