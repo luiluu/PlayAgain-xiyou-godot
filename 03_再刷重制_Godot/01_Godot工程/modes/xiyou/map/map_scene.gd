@@ -1501,7 +1501,7 @@ func _end_battle_bgm(battle: XBattleScene) -> void:
 	battle.prestarted_bgm = null
 
 
-## 截图时先藏起触屏虚拟按键（O-待定·快照不带虚拟按键）；false 照旧连按键一起截。
+## 截图时先藏起触屏虚拟按键（O-351）；false 照旧连按键一起截。
 static var SNAP_HIDE_TOUCH := true
 
 
