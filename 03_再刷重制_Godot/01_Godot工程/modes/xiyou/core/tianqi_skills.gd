@@ -285,7 +285,7 @@ static func owns(u, key) -> bool:
 		return false
 	if key is String and key.begins_with("e"):
 		var base := int(key.substr(1))
-		return u.equip_list().any(func(e): return int(e.get("base", 0)) == base)
+		return u.equip_list().any(func(e): return int(e.get("base", e.get("id", 0))) == base)
 	return u.skill_ids.has(int(key))
 
 
