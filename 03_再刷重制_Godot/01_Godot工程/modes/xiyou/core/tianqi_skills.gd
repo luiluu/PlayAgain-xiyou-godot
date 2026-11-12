@@ -562,6 +562,13 @@ static func _cond(c: Dictionary, a, b) -> float:
 				if owns(a, k):
 					v += float(c.offset_with[k])
 			return 1.0 + clampf(v * per, 0.0, cap)
+		"var_sum":  # 几个变量按权重相加（vars {变量号: 权重}）×per（非天吞剑：十把剑各一个变量）
+			var s2 := XState.current
+			var v2 := 0.0
+			if s2 != null:
+				for k in c.get("vars", {}):
+					v2 += float(s2.variable(int(k))) * float(c.vars[k])
+			return 1.0 + clampf(v2 * per, 0.0, cap)
 		"target_states":
 			var n := 0
 			for id in b.state_ids:
