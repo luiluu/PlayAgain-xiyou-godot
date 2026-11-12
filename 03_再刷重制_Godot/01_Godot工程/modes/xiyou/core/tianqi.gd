@@ -160,7 +160,7 @@ static func pool(key: String) -> Dictionary:
 	for tier in out:
 		if not allowed.has(tier):
 			continue
-		for id in XTier.ids(tier):
+		for id in XTianqiSkills.ids(tier, true):
 			if not XImportedBalance.is_disabled_actor(id):
 				out[tier].append(id)
 	return out
@@ -181,7 +181,7 @@ static func roll_lineup(key: String, rng: RandomNumberGenerator) -> Array:
 	for id in rest:
 		if picked.size() >= LINEUP_SIZE:
 			break
-		if XTier.is_super(id):
+		if XTianqiSkills.is_super(id, true):
 			if supers >= int(d.get("super_cap", 0)):
 				continue
 			supers += 1
@@ -212,8 +212,8 @@ static func lineup_ok(key: String, lineup: Array) -> bool:
 		if not all.has(int(id)) or seen.has(int(id)):
 			return false
 		seen[int(id)] = true
-		weak += 1 if XTier.is_weak(id) else 0
-		supers += 1 if XTier.is_super(id) else 0
+		weak += 1 if XTianqiSkills.is_weak(id, true) else 0
+		supers += 1 if XTianqiSkills.is_super(id, true) else 0
 	return weak >= int(d.min_weak) and supers <= int(d.super_cap)
 
 
@@ -432,7 +432,7 @@ static func draw_rule(s: XState, n: int) -> Dictionary:
 static func draw_pool(s: XState, tiers: Array) -> Array:
 	var out := []
 	for tier in tiers:
-		for id in XTier.ids(tier):
+		for id in XTianqiSkills.ids(tier, true):
 			if not XImportedBalance.is_disabled_actor(id) and not s.party.has(id) and not s.saved_actors.has(id):
 				out.append(id)
 	return out
@@ -495,7 +495,7 @@ const DRAW_SPEAKER := "小小鱼"
 
 
 static func _actor_label(id: int) -> String:
-	return "%s【%s】" % [str(XDB.rec("Actors", id).get("name", "")), XTier.tier_of(id)]
+	return "%s【%s】" % [str(XDB.rec("Actors", id).get("name", "")), XTianqiSkills.tier_of(id, true)]
 
 
 static func _line(text: String) -> Array:

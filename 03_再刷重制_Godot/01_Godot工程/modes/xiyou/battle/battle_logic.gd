@@ -1040,8 +1040,8 @@ func can_tianqi_swap(out) -> bool:
 	var h := state.helper()
 	if h == null or h == out or actors.has(h) or not h.is_alive() or XActorModules.IDS.has(h.actor_id) or XActorModules.IDS.has(out.actor_id):
 		return false
-	if XTier.is_super(h.actor_id) and not XTier.is_super(out.actor_id):
-		return actors.filter(func(a): return a is XActor and XTier.is_super(a.actor_id)).size() < XTianqi.super_cap(state)
+	if XTianqiSkills.is_super(h.actor_id) and not XTianqiSkills.is_super(out.actor_id):
+		return actors.filter(func(a): return a is XActor and XTianqiSkills.is_super(a.actor_id)).size() < XTianqi.super_cap(state)
 	return true
 
 
@@ -1822,6 +1822,10 @@ func _action_times_modification(order: Array, first_current := false) -> void:
 
 ## MV makeActionTimes：每个「追加行动」几率（actionPlusSet，含道法分神的 [1]）各掷一次，成功加 1 次。
 func make_action_times(b: XBattler) -> int:
+	return XTianqiSkills.cap_actions(b, _make_action_times(b))  # 天启篇：角色每回合最多多行动 1 次
+
+
+func _make_action_times(b: XBattler) -> int:
 	var horse := XTianqiHorsemen.action_times(self, b)  # 天启四骑士：每回合固定次数（战争另加再动），不掷追加行动
 	if horse > 0:
 		return horse
