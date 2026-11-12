@@ -883,6 +883,12 @@ func _fill() -> void:
 		XTianqiSkills._reflect(b, a, {"hp": 1000.0})
 		_check("fill_mabaoguo_boss_half", is_equal_approx(hb - float(b.hp), 165.0), hb - float(b.hp))
 		a.remove_state(908)
+	# 唐三寄生：敌全体各掉 3% 当前生命，首领无效
+	if n != null:
+		n.hp = n.mhp
+		b.hp = b.mhp
+		XTianqiSkills._foe_drain(lg, a, XDB.rec("Skills", 7021))
+		_check("fill_foe_drain", is_equal_approx(float(n.hp), float(n.mhp) - floorf(float(n.mhp) * 0.03)) and is_equal_approx(float(b.hp), float(b.mhp)), [n.hp, n.mhp, b.hp, b.mhp])
 	XTianqiSkills.CARDS = false
 	b.remove_state(1043)
 	b.add_state(1043)

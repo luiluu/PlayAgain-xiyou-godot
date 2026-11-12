@@ -1199,6 +1199,16 @@ static func _ally_state(u, skill: Dictionary) -> void:
 		best.add_state(int(r.state))
 
 
+## 技能行 foe_drain：放完敌人全体各掉当前生命的这个比例（首领无效；唐三寄生 0.03）
+static func _foe_drain(logic, u, skill: Dictionary) -> void:
+	var pct := float(spec(int(skill.get("id", 0))).get("foe_drain", 0.0))
+	if pct <= 0.0 or not (u is XActor):
+		return
+	for e in logic.enemies:
+		if e is XEnemy and e.is_alive() and not e.hidden and not (BOSS_RULE and e.boss_difficulty_boss):
+			e.hp = maxf(1.0, float(e.hp) - floorf(float(e.hp) * pct))
+
+
 ## BattleLogic.battle_skills：角色行 battle_extra [{need, skill}]：带着这件时战斗技能列表多出这一招（诸葛命星：战斗中的五行移位）
 static func battle_extra(a) -> Array:
 	if not CARDS or not (a is XActor) or not cards_on():
@@ -1360,6 +1370,7 @@ static func end_action(logic, u, skill) -> Array:
 		_consume(logic, u, f)
 		_charge(logic, u, f)
 		_ally_state(u, f.skill)
+		_foe_drain(logic, u, f.skill)
 		if bool(spec(int(f.skill.get("id", 0))).get("free_action", false)) and u.is_alive():
 			logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
 		_hp_equalize(logic, u, f.skill)
