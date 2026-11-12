@@ -31,6 +31,10 @@ func _run() -> void:
 	_damage()
 	_mastery()
 	_actions()
+	_table()
+	_states()
+	_follow()
+	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -212,3 +216,112 @@ func _switches() -> void:
 	XTianqiSkills.MASTERY = false
 	_check("mastery_switch", not XTianqiSkills.mastery_on() and XTianqiSkills.on())
 	XTianqiSkills.MASTERY = true
+
+
+## 表里每一行：天启篇存档里改写生效、伤害行算得出正数、冷却和 TP 对得上
+func _table() -> void:
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	var a: XActor = s.actor(XIAOYAO)
+	a.change_level(99)
+	var bad := []
+	for k in XTianqiSkills.data().skills:
+		var id := int(k)
+		var sp: Dictionary = XTianqiSkills.spec(id)
+		var r := XDB.rec("Skills", id)
+		if r.is_empty():
+			bad.append([id, "empty"])
+			continue
+		if sp.has("damage") or sp.has("heal"):
+			if str(r.damage.formulaProgram.get("module", "")) != XTianqiSkills.MODULE:
+				bad.append([id, "module"])
+			var v := XTianqiSkills.formula(a, b if sp.has("damage") else a, r)
+			if is_nan(v) or is_inf(v) or (sp.has("damage") and v <= 0.0):
+				bad.append([id, "value", v])
+		if sp.has("cooldown") and str(r.meta.get("Cooldown", "")).strip_edges() != str(int(sp.cooldown)):
+			bad.append([id, "cooldown", r.meta.get("Cooldown")])
+		if sp.has("tp") and int(r.tpCost) != int(sp.tp):
+			bad.append([id, "tp"])
+		if sp.has("mp_pct") and not is_equal_approx(float(XBattleLogic.note_costs(r).get("mpCostPer", -1.0)), float(sp.mp_pct) / 100.0):
+			bad.append([id, "mp_pct"])
+		for tag in sp.get("note_remove", []):
+			if RegEx.create_from_string("<\\s*(?:%s)\\s*(?::[^>]*)?>" % str(tag)).search(str(r.note).replace(str(sp.get("note_add", "")), "")) != null:
+				bad.append([id, "note_remove", tag])
+	_check("table_rows", bad.is_empty(), bad)
+	_check("table_rows_count", XTianqiSkills.data().skills.size() >= 100, XTianqiSkills.data().skills.size())
+	lg.end_battle(0)
+
+
+## 状态改写：碎甲 −10%、冰冷 −20%、领域按比例；原版档照旧
+func _states() -> void:
+	var s := _state()
+	var st := XDB.rec("States", 12)
+	_check("state_traits", st.traits.size() == 1 and int(st.traits[0].code) == 21 and is_equal_approx(float(st.traits[0].value), 0.9) and not str(st.note).contains("def = -10") and int(st.maxTurns) == 3, st.traits)
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b: XActor = s.actor(XIAOYAO)
+	b.param_mark_dirty()
+	var agi0 := b.agi
+	b.add_state(26)
+	b.param_mark_dirty()
+	_check("state_rate_applies", b.state_ids.has(26) and absf(b.agi - agi0 * 0.8) <= 1.0, [agi0, b.agi, b.state_ids])
+	b.remove_state(26)
+	lg.end_battle(0)
+	_state(false)
+	_check("state_legacy", XDB.rec("States", 12).traits.is_empty() and str(XDB.rec("States", 12).note).contains("def = -10"))
+
+
+## 追加释放：艾坤学了篮球之神，大灌篮后 50%（鲲稚啸天 100%）追加球来；每回合最多一次
+func _follow() -> void:
+	var s := _state()
+	var a: XActor = s.actor(XIAOYAO)
+	var dunk := XDB.rec("Skills", 506)
+	_check("follow_none", XTianqiSkills._follow_of(a, dunk).is_empty())
+	a.learn_skill(1235)
+	var f := XTianqiSkills._follow_of(a, dunk)
+	_check("follow_half", f.size() == 2 and int(f[0].id) == 4370 and is_equal_approx(float(f[1]), 0.5), f)
+	a.learn_skill(3514)
+	f = XTianqiSkills._follow_of(a, dunk)
+	_check("follow_full", f.size() == 2 and is_equal_approx(float(f[1]), 1.0))
+	_check("dunk_no_ce", not XDB.rec("Skills", 506).effects.any(func(e): return int(e.code) == 44))
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	XTianqiSkills.begin_action(lg, a, dunk)
+	XTianqiSkills.after_apply(lg, a, dunk, b)
+	var logs := XTianqiSkills.end_action(lg, a, dunk)
+	_check("follow_cast", logs.size() == 2 and int(logs[0].skill.id) == 4370, logs.size())
+	XTianqiSkills.begin_action(lg, a, dunk)
+	XTianqiSkills.after_apply(lg, a, dunk, b)
+	_check("follow_once_per_turn", XTianqiSkills.end_action(lg, a, dunk).is_empty())
+	lg.end_battle(0)
+
+
+## 改过卡的角色整场跑几回合不报错
+func _smoke() -> void:
+	var s := XTianqi.start_new_game(3, "jianxian", [3, 4, 5, 6, 7])
+	XTianqi.take_pending()
+	for id in [3, 4, 5, 6, 7]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	for id in [3, 4, 5, 6, 7]:
+		var a: XActor = s.actor(id)
+		a.change_level(60)
+		for sid in XTianqiSkills.data().skills:
+			if int(XTianqiSkills.spec(int(sid)).get("actor", 0)) == id:
+				a.learn_skill(int(sid))
+		a.recover_all()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var t0 := lg.turn
+	for k in 4:
+		if lg.is_over():
+			break
+		lg.run_turn({})
+	_check("smoke_turns", lg.turn > t0, lg.turn)
+	lg.end_battle(0)
