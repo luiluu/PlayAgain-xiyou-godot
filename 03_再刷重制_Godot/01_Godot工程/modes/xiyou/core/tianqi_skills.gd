@@ -258,6 +258,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for i in out.size():
 					if str(out[i][0]) == "action effect":
 						last = i
+				if last < 0:  # 这一段（多半是默认 whole）没有小写段：不加（以前会插到开头，多打一段）
+					continue
 				for k in int(op.get("n", 1)):
 					out.insert(last + 1, ["action effect", []])
 			"clear_effect_args":
