@@ -2016,7 +2016,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	logs.append_array(XYunshang.prepare(self, u, skill))  # 云裳 startAction 包装（prepareAction）：敌人引爆符针、钉影虚弱、余辉、收针
 	if u.is_dead():
 		return logs  # 被引爆的符针打倒：原版 _subject 清空，整次行动不执行
-	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
+	skill = XTianqiSkills.change_to(self, u, change_to(u, skill))  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前；天启篇技能重构的变招
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	_take_state_reserves()
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前

@@ -529,7 +529,7 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 			continue
 		var cast := XDB.rec("Skills", int(r.get("cast", skill.get("id", 0))))
 		if not cast.is_empty():
-			out.append([cast, rate, float(r.get("scale", 1.0))])
+			out.append([cast, rate, float(r.get("scale", 1.0)), r.get("then", {})])
 	return out
 
 
@@ -567,5 +567,34 @@ static func end_action(logic, u, skill) -> Array:
 		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
 		logs.append(logic.apply(u, cast, t))
 	follow_scale = 1.0
+	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
+	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
+	if not then.is_empty() and (not then.has("need_skill") or u.skill_ids.has(int(then.need_skill))) and u.is_alive():
+		var nxt := XDB.rec("Skills", int(then.get("cast", 0)))
+		var left: Array = targets.filter(func(t): return t.is_alive())
+		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
+			logs.append({"type": "action", "user": u, "skill": nxt, "views": logic.views()})
+			logs.append(logic.apply(u, nxt, left[0]))
 	st.depth = int(st.depth) - 1
 	return logs
+
+
+
+# ---- 变招（替换这次放的技能：克比六式这类按几率换招；原版的 ChangeTo 在表里删掉时用）----
+## 技能行 variants [{cast, rate, need_skill, rate_with}]：按顺序逐个掷，第一个掷中的换掉
+static func change_to(logic, u, skill):
+	if not (skill is Dictionary) or skill.is_empty() or not (u is XActor) or not on():
+		return skill
+	var rows: Array = spec(int(skill.get("id", 0))).get("variants", [])
+	for r in rows:
+		if r.has("need_skill") and not u.skill_ids.has(int(r.need_skill)):
+			continue
+		var rate := float(r.get("rate", 0.0))
+		for k in r.get("rate_with", {}):
+			if u.skill_ids.has(int(k)):
+				rate = maxf(rate, float(r.rate_with[k]))
+		if rate > 0.0 and logic._float("tianqi_skill_variant") < rate:
+			var cast := XDB.rec("Skills", int(r.cast))
+			if not cast.is_empty():
+				return cast
+	return skill
