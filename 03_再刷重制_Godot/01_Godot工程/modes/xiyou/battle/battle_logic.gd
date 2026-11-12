@@ -1143,6 +1143,9 @@ func decide(b: XBattler) -> Array:
 		var hush := XTianqiQiyinRule.decide_enemy(self, b)  # 七印祭坛寂静：双数回合敌人只普攻
 		if not hush.is_empty():
 			return hush
+		var reap := XTianqiDeathAlien.decide_absorbed(self, b)  # 天启篇终焉收尸人：几率改用吸收来的技能
+		if not reap.is_empty():
+			return XConfusion.prepare_enemy(b, reap)
 		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
 		if not cat.is_empty():
 			return XConfusion.prepare_enemy(b, cat)  # Game_Action.prepare：混乱类状态（restriction 1～3）的敌人行动换成普通攻击，行动选择的随机数照取
@@ -3387,7 +3390,7 @@ func _roll_drops(e: XEnemy) -> Array:
 ## 难度不影响：Vitsuno_Difficulty 的按序号掉率在原版整段注释掉了。原来这里按难度「Drop Rate」×(1＋出战 passiveIRUP 最大值)×套装算，
 ## 没有 0.2 底、没有亡魂汲取，难度 2 时约多掉十几倍（悟空 drops1 改）。
 func drop_chances(e: XEnemy) -> Array:
-	var rate := XAlienBattle.drop_item_rate(state, e) * XTianqiAffixBattle.drop_mult(self)  # 天启篇词条「物品掉落」（全队相加，助力位也算）
+	var rate := XAlienBattle.drop_item_rate(state, e) * XTianqiAffixBattle.drop_mult(self) * XTianqiFamineAlien.drop_mult(self)  # 天启篇饥荒线「荒年」：掉落减少  # 天启篇词条「物品掉落」（全队相加，助力位也算）
 	var out := []
 	var di: Array = e.data().get("dropItems", [])
 	for drop: Dictionary in di:
