@@ -8,6 +8,22 @@ static func counts(a: XActor) -> Dictionary:
 	return out
 
 static func active(a: XActor) -> Array:
+	if XActor.READ_MEMO and XActor._read_depth > 0:  # 只读窗口缓存（O-待定-1）：窗口里同一名角色生效的套装只算一次
+		var m := a._read_memo()
+		var key := "su1" if a._cat_bare else "su0"
+		if m.has(key):
+			if XActor.READ_VERIFY:
+				a._read_verify("suits", m[key], _active_now(a))
+			return (m[key] as Array).duplicate()
+		var gen := XActor._read_gen
+		var fresh := _active_now(a)
+		if gen == XActor._read_gen:
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
+	return _active_now(a)
+
+static func _active_now(a: XActor) -> Array:
 	var out := []
 	var defs: Array = XDB.table("EquipSuits")
 	var pieces := counts(a)

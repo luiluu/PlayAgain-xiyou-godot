@@ -46,10 +46,36 @@ static func config() -> Dictionary:
 	return overrides
 
 
+## O-待定-3（安卓提速）：进战斗时战斗背景、角色与敌人的图、光标、影子、战斗音乐原先每场都 load()——上一场一结束引用全放掉，
+## Godot 资源缓存里就没了，下一场要从包里重新读、解码、传显存（手机上进战斗、打完回地图各卡一下）。这里按路径留住最近用过的
+## KEEP_MAX 个，下一场直接取（同 MVAnimation.cached_load 的做法，O-320）。回退：KEEP = false（每次 load()，同原来）。
+static var KEEP := true
+const KEEP_MAX := 160  # 逐帧图的专属角色一人五十来张（每张约 0.1 MB），留够两三名加背景、音乐
+static var _kept := {}
+static var _kept_order: Array[String] = []
+
+static func kept_load(p: String) -> Resource:
+	if p == "":
+		return null
+	if not KEEP:
+		return load(p)
+	if _kept.has(p):
+		_kept_order.erase(p)
+		_kept_order.append(p)
+		return _kept[p]
+	var r := load(p)
+	if r != null:
+		_kept[p] = r
+		_kept_order.append(p)
+		while _kept_order.size() > KEEP_MAX:
+			_kept.erase(_kept_order.pop_front())
+	return r
+
+
 static func _tex(path: String) -> Texture2D:
 	var cut := path.rfind("/")
 	var p := XDB.img_path(path.substr(0, cut), path.substr(cut + 1)) if cut > 0 else ""
-	return load(p) if p != "" else null
+	return kept_load(p) if p != "" else null
 
 
 ## 战斗者外观：角色用 battlerName 侧视图；敌人有 <Sideview Battler> 时用侧视图，否则 sv_enemies 单图。
