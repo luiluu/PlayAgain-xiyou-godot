@@ -7,7 +7,8 @@
 
 - 揭印要认 31～35 层守层者（变量 20、`XTianqiSummit.hongjun_beaten`）：四骑士、战争线、31～36 层重做、饥荒线已在 main（dev.472～475），本分支已合到 main 53879fc21。
 - **还依赖 Pro 三条数据层（未合 main，本分支已合进来）**：`cc/pro-qiyin-data`（`XTianqiQiyinGear`）、`cc/pro-qiyin-drop`（`XTianqiQiyinDrop`）、`cc/pro-qiyin-dragon`（`XTianqiQiyinDragon`，本单还没调它）。
-- **合并顺序：pro-qiyin-data → pro-qiyin-drop → pro-qiyin-dragon → 本分支。** 先合了它们，本分支只剩自己的提交（那三支的交付单也在本分支上，先合了就自然消掉）。本分支另提交了 data、dragon 两支没带的 4 个 `.gd.uid`（导入时生成）。
+- **也合进了 `cc/qiyin-effects`（七印装备战斗效果，`XTianqiQiyinEffects`）**：七印书卷揭的规则读它的 `enemy_only_rule(logic)`。
+- **合并顺序：pro-qiyin-data → pro-qiyin-drop → pro-qiyin-dragon → qiyin-effects → 本分支。** 先合了它们，本分支只剩自己的提交（那四支的交付单也在本分支上，先合了就自然消掉）。本分支另提交了 data、dragon 两支没带的 4 个 `.gd.uid`（导入时生成）。
 - 和别的天启篇车道（死亡、瘟疫、按段异化）：没碰 `tianqi_summit.gd`、各线模块，只在 `battle_logic.gd`、`map_scene.gd` 加单行挂钩（紧挨着 Summit／WarAlien／FamineAlien 那几行）；合 main 时和饥荒线的挂钩冲突过一次，两边并排保留。别的线合并时如有冲突也是行邻接，保留两边即可；`_regenerate` 里七印的「限时」放在饥荒线算完 dm、dt 之后清零。
 - 发行开关 `XTianqi.RELEASE_OPEN` 没动：发行版天启篇整个不开，祭坛也不出。
 
@@ -28,13 +29,14 @@
 - 新模块 `core/tianqi_qiyin_rule.gd`（XTianqiQiyinRule）：只在里副本开的战斗里（prepare 过）生效，敌我都算：
   - 重标：敌人能力值按鸿蒙老祖（537）乘 `rebase.elite`／`rebase.boss`（测试参数），Boss 换名字（【里】疫土之主、战酋、监考官、塔顶的魔王、白衣的魂、坠星者、守默者），掉落清空；外观和行动照借的敌人；难度倍率、首领霸体照常。
   - 不愈：减益状态（行动限制、HP 再生为负、能力值倍率 <1、xparam 为负、属性有效度 >1）和能力值减益不到期。杀声：每倒下一个单位双方出伤 +5%。限时：魔法、TP 不自然恢复，我方每回合合计 5 个技能。魔塔：没有暴击，宝石按出伤 ×／受伤 ÷ 算。献祭：每回合开始生命最高的单位掉 10% 当前生命，它那一方本回合出伤 +10%。星坠：第 3、6、9…回合开始全场掉 33% 当前生命（不致死）。寂静：双数回合我方只能普攻、防御、物品，敌人只普攻。
+  - 七印书卷（神器，`XTianqiQiyinEffects` 开战掷一条、记在 `enemy_only_rule`）：别的战斗里本模块按「只对敌方」跑：减益只在敌人身上不到期、杀声只加打在敌人身上的、限时只限敌人（技能数和再生）、敌人不能暴击、献祭只扣敌方最高生命那只（不给敌方加伤）、星坠只砸敌人、寂静只封敌人。里副本里本印规则优先，书卷不叠。
 - 挂钩：`battle_logic.gd`（setup、开场日志、start_turn、敌人 decide、act 开头计技能、can_use、_tick_states 两处、_regenerate 两处、item_cri、伤害、end_battle，各一行）、`map_scene.gd`（入口接管、地图名、不遇敌）。
-- 新专项 `tests/xiyou_tianqi_qiyin_altar`（160 项）。
+- 新专项 `tests/xiyou_tianqi_qiyin_altar`（173 项）。
 - 玩家可见：开发版天启篇存档（选了线）打完 31 层后，大厅 EV048 和 32／33 层的古龙祭坛门能进七印祭坛，花印钥打里副本、拿封着的套装件和毕业武器、揭开看成色；发行版看不到（天启篇关着）。
 
 ### 未做（下一单）
 
-- 揭开的件变成能穿的装备（独立装备生成、词条、套装件数生效、毕业武器流派印记和独有效果、神器进神器栏）：归装备／奖励车道；印库里的物品字典照 `XTianqiQiyinDrop` 的格式，接的时候从 `flags.tianqi.qiyin.bag` 取（`XTianqiQiyin.equip_ready()` 现在 false）。
+- 揭开的件变成能穿的装备（独立装备生成、词条、神器进神器栏和神器栏白名单）：归装备／奖励车道；生成装备实例时要调 `XTianqiQiyinEffects.mark(inst, 物品字典)` 打七印标记，套装件数、流派印记、独有效果才认得（印库物品字典 `{kind, seal, part|wtype, true_seal, grades}` 正是它认的掉落描述）；印库里的物品字典照 `XTianqiQiyinDrop` 的格式，接的时候从 `flags.tianqi.qiyin.bag` 取（`XTianqiQiyin.equip_ready()` 现在 false）。
 - 熔、分解、印屑兑换的界面（`XTianqiQiyinDrop.melt_check／dismantle_value／exchange` 已有）；献武器（要从背包挑一把本印毕业武器，等上一条）。
 - 七首之龙接流程：Boss 打赢后调 `XTianqiQiyinDragon.roll_rift`、龙隙当场问／存、七段揭印战、龙血、首杀多招一人（逻辑在 Pro 分支，战斗和流程没做）。
 - 物品掉落词条对套装件、毕业武器几率的加成：`XTianqiQiyin.drop_mult` 先按 1。
@@ -59,8 +61,10 @@
 
 ## 验证
 
-- `xiyou_tianqi_qiyin_altar`：160/160。
-- 相关专项（Mac，本工作树，`并行测试.py`）：`xiyou_tianqi*`（含 summit、war、horsemen、三条 qiyin 数据层等）、`xiyou_determinism`、`xiyou_event_compare`／`_b`／`_c`／`_d`、`xiyou_rules` 难度 1 八段（`xiyou_rules xiyou_rules_d1b`～`d1h`）、`xiyou_battle_end_ce`，共 31 个场景全过（1238 秒）。
+- `xiyou_tianqi_qiyin_altar`：173/173（含七印书卷 13 项）。
+- 相关专项（Mac，本工作树，`并行测试.py`）：`xiyou_tianqi*`（含 summit、war、horsemen、famine、三条 qiyin 数据层、qiyin_effects）、`xiyou_determinism`、`xiyou_event_compare`／`_b`／`_c`／`_d`、`xiyou_rules` 难度 1 八段（`xiyou_rules xiyou_rules_d1b`～`d1h`）、`xiyou_battle_end_ce`：合 main 之后 32 个场景全过（1199 秒）；再合 `cc/qiyin-effects`、加七印书卷之后 33 个场景，32 个过，见下两条偶发。
+- 偶发 ①：`xiyou_tianqi_gear` 并行时失败、单跑通过（并行测试已标 ⚠）。
+- 偶发 ②：`xiyou_tianqi_party` 的 `helper_full_exp` 失败一次（`[[6,2,7],[0,50,55]]`：上场的 6 号拿 0 经验，是敌群 2 那场自动战斗里它倒下了），单跑两次一挂一过。那场是普通战斗（地图 4、没有七印装备和书卷），本分支的挂钩全是空操作；之前两轮（合 main 前后）都过。这是这条用例自己的随机性（同一测试注释里说过云端 11-11 碰到「掉落经验是 0」），建议该测试的车道固定那场战斗的随机数或在发经验前把上场者复活；本分支没改它。
 - 没跑的：`选测.py dbfda72fe --list` 因 `battle_logic.gd`、`map_scene.gd` 判整轮 356 个场景；本单的挂钩都受 `XTianqiQiyinRule` 的 meta／`XTianqiQiyin.allowed` 门控（原版档、非里副本战斗全是空操作，专项「outside_inactive」「plain_save_no_rule」「entry_plain_save」覆盖），所以只跑了上面这组，其余请总装合并时按选测照常跑。
 - 反向验证（手改 `qiyin_altar.json` 再单跑、还原）：杀声 0.05→0.06、星坠每 3→2 回合、限时 5→6 个技能，各自断言挂（156/160），还原后 160/160。
 - `语法检查.py`：0 个问题。
