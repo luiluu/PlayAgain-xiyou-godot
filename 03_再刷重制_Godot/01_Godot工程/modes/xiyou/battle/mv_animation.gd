@@ -56,6 +56,33 @@ void fragment() {
 """
 
 static var se_play_count := 0
+## 安卓放技能卡（Kyo 11-12 v0.01 实机；O-待定-2）：动画图、音效原先每次播都 load()——上一个动画放掉后 Godot 资源缓存里就没了，
+## 下一次要从包里重新读、解码、传显存（手机上一张动画图几十毫秒）。这里按路径留住最近用过的 RES_CACHE_MAX 个，
+## 同一技能再放直接取。回退开关 RES_CACHE = false：回到每次 load()。
+static var RES_CACHE := true
+const RES_CACHE_MAX := 24
+static var _res_cache := {}
+static var _res_order: Array[String] = []
+
+
+## 按路径取资源（动画图、音效），留住最近用过的
+static func cached_load(p: String) -> Resource:
+	if p == "":
+		return null
+	if not RES_CACHE:
+		return load(p)
+	if _res_cache.has(p):
+		_res_order.erase(p)
+		_res_order.append(p)
+		return _res_cache[p]
+	var r := load(p)
+	if r != null:
+		_res_cache[p] = r
+		_res_order.append(p)
+		while _res_order.size() > RES_CACHE_MAX:
+			_res_cache.erase(_res_order.pop_front())
+	return r
+
 static var _hue_shaders := {}
 static var _materials := {}
 
@@ -128,7 +155,7 @@ func _ready() -> void:
 	for i in range(2):
 		var name := str(anim.get("animation%dName" % (i + 1), ""))
 		var p := XDB.img_path("animations", name) if name != "" else ""
-		sheets[i] = load(p) if p != "" else null
+		sheets[i] = cached_load(p)
 	se_player = AudioStreamPlayer.new()
 	XAudio.bind(se_player, "SE")
 	add_child(se_player)
@@ -271,7 +298,7 @@ func _timing(t: Dictionary) -> void:
 				se_player = AudioStreamPlayer.new()
 				XAudio.bind(se_player, "SE")
 				add_child(se_player)
-			se_player.stream = load(p)
+			se_player.stream = cached_load(p)
 			se_player.volume_db = linear_to_db(float(se.get("volume", 90)) / 100.0)
 			se_player.pitch_scale = float(se.get("pitch", 100)) / 100.0
 			se_player.play()

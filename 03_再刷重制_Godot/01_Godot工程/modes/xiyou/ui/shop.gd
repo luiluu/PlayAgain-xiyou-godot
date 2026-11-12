@@ -83,6 +83,9 @@ var gold_win: XMVWindow
 var onekey_win: XMVWindow
 var confirm_win: XMVWindow
 var help_card: XHelpCard
+## 说明卡上次排版的商品（同一件不重排；回退开关 HELP_SAME_SKIP = false 每次重排）
+var _help_rec := {}
+static var HELP_SAME_SKIP := true
 var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
 var _gold_buy := true
 
@@ -173,7 +176,10 @@ func _update_help() -> void:
 		"sell":
 			row = _sell_index - _sell_top
 	var rec := _current_rec() if row >= 0 else {}
-	help_card.show_for(rec)
+	# 安卓商店卡（Kyo 11-12，O-待定-3）：说明卡排版（逐行量字宽折行）每次按键都重做；同一件商品不重排，只挪位置
+	if not (HELP_SAME_SKIP and help_card.visible == not rec.is_empty() and rec == _help_rec):
+		help_card.show_for(rec)
+		_help_rec = rec
 	if help_card.visible:
 		help_card.place_for_row(Rect2(list_win.position + Vector2(0, list_win.padding + row * LH), Vector2(list_win.size.x, LH)))
 
