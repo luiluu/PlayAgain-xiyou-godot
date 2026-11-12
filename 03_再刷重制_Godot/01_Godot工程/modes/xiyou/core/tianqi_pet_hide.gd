@@ -11,7 +11,7 @@ extends RefCounted
 ## - 宠物出战加成：天启篇里拿不到宠物，自然没有；已有的（不该有）不清，只是看不见入口。
 ## 只认天启篇存档（XTianqiLine.open_for：发行构建里还要 XTianqi.RELEASE_OPEN）。
 ##
-## 开关（O-待定）：false＝天启篇存档里宠物系统照原版都在
+## 开关（O-343）：false＝天启篇存档里宠物系统照原版都在
 
 ## 开关：false＝天启篇存档也照常有宠物系统
 static var ENABLED := true
