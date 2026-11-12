@@ -191,6 +191,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		enemies.append(e)
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
+	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
@@ -243,6 +244,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiHorsemen.start(self)  # 天启四骑士：本线终焉（疫病）、开场援军和小怪
 	turn_start_logs.append_array(XTianqiHorsemen.take_logs(self))
 	turn_start_logs.append_array(XTianqiWarAlien.take_logs(self))
+	turn_start_logs.append_array(XTianqiFamineAlien.take_logs(self))
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -520,7 +522,7 @@ static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
 	if not nc.has("hpCost") and not nc.has("hpCostPer"):
 		return 0
 	var cost := maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
-	return XSkillMastery.cost(a, skill, "hp", cost)  # YEP_SkillMasteryLevels skillHpCost 包装
+	return XTianqiFamineAlien.hp_cost(a, XSkillMastery.cost(a, skill, "hp", cost))  # YEP_SkillMasteryLevels skillHpCost 包装；天启篇饥荒线化形枯竭者再提高
 
 ## canPaySkillHpCost：费用为 0 能付，否则生命要大于费用；异化空壳／嫁祸／连命另看护盾、保护者、生命池（Adv:127）
 static func can_pay_hp(a: XBattler, skill: Dictionary) -> bool:
@@ -548,6 +550,10 @@ const PERCENT_FLOOR := -100.0
 ## 再按比例部分的份额合成（固定部分、TP 不变）。
 ## panel：异化缄默的面板费用（A.panelMpCost：mcr 记 1、不按缄默归零）
 func skill_cost(a: XBattler, skill: Dictionary, panel := false) -> Dictionary:
+	return XTianqiFamineAlien.cost(self, a, skill, _skill_cost_floor(a, skill, panel), panel)  # 天启篇饥荒线异化：枯竭者让我方消耗提高（最外层）
+
+
+func _skill_cost_floor(a: XBattler, skill: Dictionary, panel: bool) -> Dictionary:
 	var cost := _skill_cost(a, skill, panel, 0.0)
 	if panel or not (a is XActor) or is_item(skill):
 		return cost
@@ -1073,6 +1079,7 @@ func start_turn() -> void:
 	XGuyu.start_turn(turn)  # 谷雨 startTurn 包装：跑完原 startTurn 设回 turnCount
 	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
 	turn_start_logs.append_array(XTianqiHorsemen.start_turn(self))  # 天启四骑士：死期、神圣剑亮目标、援军、疫病、破盾
+	turn_start_logs.append_array(XTianqiFamineAlien.start_turn(self))  # 天启篇饥荒线异化：报饥饿
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1193,6 +1200,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
 	logs.append_array(XTianqiHorsemen.after_action(self, u))  # 天启四骑士：打混子记不服、号令、阶段
 	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
+	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1234,6 +1242,7 @@ func end_turn() -> Array:
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
+	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -1916,6 +1925,7 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
 			pay_items(u, skill)  # YEP_X_SkillCostItems paySkillCost：再扣物品
 			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
+			XTianqiFamineAlien.after_pay(self, u, skill, c)  # 天启篇饥荒线异化：零消耗技能交口粮、透支者另扣生命
 	XTusu.pay_after(u, skill, tusu_who)
 	u.pay_cooldown(skill)
 
@@ -2703,7 +2713,7 @@ func _push_row_state(b: XBattler, id: int) -> void:
 ## Game_Action.applyItemUserEffect：行动者得 floor(tpGain × tcr)（gainSilentTp）
 func _user_tp_gain(u: XBattler, skill: Dictionary) -> void:
 	var resources := _operation_resources(u)  # 防御支不经 _apply，没有本次行动的资源上下文
-	resources.silent_gain(u, "tp", floorf(float(skill.get("tpGain", 0)) * u.tcr))
+	resources.silent_gain(u, "tp", XTianqiFamineAlien.tp_gain(self, u, floorf(float(skill.get("tpGain", 0)) * u.tcr)))  # 天启篇饥荒线：熬夜者
 	_finish_lifecycle_operation(resources, u)
 
 
@@ -2730,6 +2740,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTianqiHorsemen.hp_damage(self, u, t, value)  # 天启四骑士：混子之盾累计、打混子记不服；疫病治疗 −50%
 	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
+	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -2787,7 +2798,7 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 	if value > 0.0:
 		_remove_states_by_damage(t)  # Game_Battler.onDamage：先受伤解除，再充 TP
 		var tp_before: float = t.tp
-		_action_resources.silent_gain(t, "tp", floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr))
+		_action_resources.silent_gain(t, "tp", XTianqiFamineAlien.tp_gain(self, t, floorf(50.0 * value / maxf(t.mhp, 1.0) * t.tcr)))  # 天启篇饥荒线：熬夜者
 		if t.tp != tp_before:
 			XRaven.on_tp_refresh(t)  # setTp 的 refresh：消耗待刷新标记，并让前一击留下的黑暗侵蚀特性缓存生效
 	if drain:
@@ -3120,6 +3131,11 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 			var other := floorf(b.mhp * hrg * b.rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
+	var dt := 100.0 * b.trg
+	var famine := XTianqiFamineAlien.regen(self, b, dh, dm, dt)  # 天启篇饥荒线异化：荒年者降再生（化形起失效）、熬夜者降回 TP
+	dh = famine[0]
+	dm = famine[1]
+	dt = famine[2]
 	var alien_hp := b.hp
 	if dh < 0.0 and XBinding.blocks_hp_loss(b):
 		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
@@ -3148,7 +3164,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		b.mp = clampf(b.mp + dm, 0.0, b.mmp)
 		if b.mp > alien_mp and XAlienBattle.route_hollow_mp(b, b.mp - alien_mp):
 			b.mp = alien_mp  # 异化 regenerateMp 包装：空壳的回蓝变护盾
-	b.tp = minf(b.max_tp(), b.tp + 100.0 * b.trg)
+	b.tp = minf(b.max_tp(), b.tp + dt)
 
 
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
@@ -3356,6 +3372,7 @@ func end_battle(result := -1) -> void:
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XTianqiHorsemen.end(self)  # 天启四骑士：清本场的标记（疫病、识破等不带出战斗）
 	XTianqiWarAlien.end(self)  # 天启篇战争线异化：清本场异化
+	XTianqiFamineAlien.end(self)  # 天启篇饥荒线异化：清本场异化
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

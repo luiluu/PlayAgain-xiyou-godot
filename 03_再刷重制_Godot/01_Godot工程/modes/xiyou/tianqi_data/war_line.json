@@ -12,6 +12,11 @@
  },
  "door": {"map": 4, "event": 36, "floor": 6},
  "shell_troop": 30,
+ "opening": [
+  [["say", "omen_before"], ["go", "tribe", "tribe_gate"], ["say", "omen_arrive"], ["fight", "omen"], ["say", "omen_win"]],
+  [["go", "tribe", "tribe_deep"], ["say", "spread_before"], ["fight", "spread"], ["say", "spread_win"]]
+ ],
+ "beats": {"echo15": "ruins", "rumor25": "upper"},
  "alien": {
   "tiers": {
    "qinran": {"name": "侵染", "hp": 1.25, "idx": 0},
