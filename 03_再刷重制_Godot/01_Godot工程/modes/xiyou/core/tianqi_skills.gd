@@ -275,6 +275,7 @@ static func _note_edit(note: String, sp: Dictionary) -> String:
 
 
 # ---- 补招（第四节第 5、9 条：四小强 30 级爆发技、克莱德单体治疗、玛莎全体风技、维利百式观音挪到 30 级）----
+## learn 的条目 [等级, 技能号]，或 ["s技能号", 技能号]：学了那个技能（进阶给的被动）后开战时补学。
 ## new_skills {新号: {from: 底号}}：表里没有的技能号，XDB.rec 时按底号复制一条（换 id、名字），再照常走 rec 改写；号段 10701 起，
 ## 不往 Skills 表里插（遍历全表的原版对照不受影响）。learn {角色号: [[等级, 技能号]…]}：天启篇卡开着时多学的技能（按角色，不按职业）。
 static var _new_recs: Dictionary = {}
@@ -331,7 +332,8 @@ static func learnings(a, list: Array) -> Array:
 		return list
 	var out := list.duplicate()
 	for e in extra:
-		out.append({"level": int(e[0]), "skillId": int(e[1]), "note": ""})
+		if not e[0] is String:  # "s技能号" 的条目按已学技能补（sync_learn），不进等级表
+			out.append({"level": int(e[0]), "skillId": int(e[1]), "note": ""})
 	return out
 
 
@@ -340,7 +342,8 @@ static func sync_learn(a) -> void:
 	if not (a is XActor):
 		return
 	for e in data().get("learn", {}).get(str(int(a.actor_id)), []):
-		if int(a.level) >= int(e[0]) and not a.skill_ids.has(int(e[1])):
+		var ok: bool = a.skill_ids.has(int(str(e[0]).substr(1))) if e[0] is String else int(a.level) >= int(e[0])
+		if ok and not a.skill_ids.has(int(e[1])):  # "s技能号"：学了那个技能（进阶给的被动）就补学（小青剑破万光）
 			a.learn_skill(int(e[1]))
 
 
@@ -602,6 +605,12 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = float(a.agi) < float(b.agi)
 		"agi_above_target":
 			ok = float(a.agi) > float(b.agi)
+		"atk_above_target":  # 大羿大力出奇迹：自己物攻（scale_with {要有: 倍数} 判定时放大，追星 1.3）高于目标物攻
+			var k := 1.0
+			for key in c.get("scale_with", {}):
+				if owns(a, key):
+					k = maxf(k, float(c.scale_with[key]))
+			ok = float(a.atk) * k > float(b.atk)
 		"target_state":
 			ok = b.is_state_affected(int(c.state))
 		"self_state_any":
