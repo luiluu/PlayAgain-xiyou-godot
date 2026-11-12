@@ -647,6 +647,8 @@ static var _views := {}
 
 
 ## 技能号 → [备注原文, 道法标签（没有为 ""）]：skills() 每次都对每个技能的备注跑一遍正则，一次行动几千次；备注没变就直接取
+## 回退：DAOFA_TAG_CACHE = false（每次跑正则，同原来）
+static var DAOFA_TAG_CACHE := true
 static var _daofa_tags := {}
 static var _daofa_re: RegEx
 
@@ -654,7 +656,7 @@ static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
 	var sk_note := str(sk.get("note", ""))
 	var cached = _daofa_tags.get(sk.get("id"))
 	var tag := ""
-	if cached != null and cached[0] == sk_note:
+	if DAOFA_TAG_CACHE and cached != null and cached[0] == sk_note:
 		tag = cached[1]
 	else:
 		if _daofa_re == null:

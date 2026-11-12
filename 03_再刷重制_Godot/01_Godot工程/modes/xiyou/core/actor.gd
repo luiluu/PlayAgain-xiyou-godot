@@ -670,10 +670,15 @@ func _read_memo() -> Dictionary:
 	if _memo_store_gen != _read_gen:
 		_memo_store_gen = _read_gen
 		_memo_store = {}
-	var m = _memo_store.get(self)
+	# 三处「取对方那一项时不再套自己」的重入护栏（万法同裳物攻／魔攻取高、璇共宿、屠苏盾相补底）开着时算出的值与平时不同，各存各的
+	var ctx := (1 if XYunshang._pair_guard else 0) | (2 if XXuanBattle._param_guard else 0) | (4 if XTusu._param_guard else 0)
+	var store: Dictionary = _memo_store
+	if ctx != 0:
+		store = _memo_store.get_or_add(ctx, {})
+	var m = store.get(self)
 	if m == null:
 		m = {}
-		_memo_store[self] = m
+		store[self] = m
 	return m
 
 func _read_verify(what: String, cached, fresh) -> void:

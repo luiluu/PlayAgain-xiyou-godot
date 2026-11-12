@@ -33,7 +33,7 @@
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定-1 | `modes/xiyou/ui/help_card.gd` `XHelpCard.ELEMENT_DATA_TABLE`；`tests/xiyou_battle_speed.gd` | 原版元素数据开游戏时读一次留在内存；重制原先每画一张说明卡都重读、重解析这份近 1 MB 的文件两三遍 | 读已载入的表（`XDB.table`） | Kyo 11-12 安卓选技能、商店卡；一张卡 85 → 1.5 毫秒 | `XHelpCard.ELEMENT_DATA_TABLE = false` | cc（云端） | 保留 |
+| O-待定-1 | `modes/xiyou/ui/help_card.gd` `XHelpCard.ELEMENT_DATA_CACHE`；`tests/xiyou_battle_speed.gd` | 原版元素数据开游戏时读一次留在内存；重制原先每画一张说明卡都重读、重解析这份近 1 MB 的文件两三遍 | 读已载入的表（`XDB.table`） | Kyo 11-12 安卓选技能、商店卡；一张卡 85 → 1.5 毫秒 | `XHelpCard.ELEMENT_DATA_CACHE = false` | cc（云端） | 保留 |
 | O-待定-2 | `modes/xiyou/core/actor.gd` `XActor.READ_MEMO`（`read_begin`／`read_end`／`read_touch`）；窗口在 `battle/battle_logic.gd`、`core/damage.gd`、`core/resource_context.gd`、`battle/side_status.gd`、`battle/battle_scene.gd`；作废点在 `core/battler.gd`、`core/alien_battle.gd`、`core/hubris.gd`、`core/number_boost.gd`；`core/equip_suits.gd`；`tests/xiyou_battle_speed.gd` | 原版每次读能力值都现算（MV 引擎快，不成问题）；重制照做，一次行动里技能表重算 100～300 遍 | 只读窗口内同一名角色的技能表、特性表、被动值、能力值、套装只算一遍；写入当场作废，关窗丢弃 | Kyo 11-12 安卓放技能卡；行动结算省四成上下，结果逐项相同 | `XActor.READ_MEMO = false`（`XIYOU_READ_VERIFY=1` 可全程比对） | cc（云端） | 保留 |
 | O-待定-3 | `modes/xiyou/core/module_registry.gd` `XModuleRegistry.ITEM_COPY_CACHE`；`tests/xiyou_battle_speed.gd` | 重制原先：每次算伤害把整条技能记录深拷贝一遍给乘区钩子 | 同一条记录只拷一次，拷贝只读 | 同上 | `XModuleRegistry.ITEM_COPY_CACHE = false` | cc（云端） | 保留 |
 | O-待定-4 | `modes/xiyou/core/appearance.gd` `XAppearance.KEEP`、`KEEP_MAX`、`kept_load`；`battle/battle_scene.gd`、`battle/battler_sprite.gd`、`battle/combo_counter.gd`；`tests/xiyou_battle_speed.gd` | 原版图片载入后留在 ImageManager 缓存；重制原先每场战斗重新 `load()` | 按路径留住最近 160 个贴图／音乐 | Kyo 11-12 安卓进战斗卡 | `XAppearance.KEEP = false` | cc（云端） | 保留 |

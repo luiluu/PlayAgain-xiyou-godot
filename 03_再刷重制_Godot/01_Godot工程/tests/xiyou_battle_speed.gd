@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·未经审查】安卓战斗提速（Kyo 11-12：进战斗、选技能、放技能、逃跑都卡）。四项优化各带回退开关，这里核「开和关结果一样」：
-## - O-待定-1 说明卡的元素数据读已载入的表（XHelpCard.ELEMENT_DATA_TABLE）：一批技能、装备的说明卡内容开关两态逐行相同；
+## - O-待定-1 说明卡的元素数据读已载入的表（XHelpCard.ELEMENT_DATA_CACHE）：一批技能、装备的说明卡内容开关两态逐行相同；
 ## - O-待定-2 角色只读窗口缓存（XActor.READ_MEMO）：同一种子的同一场自动战斗，开关两态的整份日志（含每条命中的画面快照）、
 ##   随机流、收场资源逐项相同；READ_VERIFY 打开时每次命中都重算比对，一次不一致都不许有；窗口用完都关上；
 ##   窗口里的已知写入（加状态、学技能、改 HP）当场作废；影子克隆不带走缓存；
@@ -40,7 +40,7 @@ func _plain(v, logic: XBattleLogic):
 func _switches(on: bool) -> void:
 	XActor.READ_MEMO = on
 	XModuleRegistry.ITEM_COPY_CACHE = on
-	XHelpCard.ELEMENT_DATA_TABLE = on
+	XHelpCard.ELEMENT_DATA_CACHE = on
 	XAppearance.KEEP = on
 
 
@@ -137,16 +137,16 @@ func _help_card() -> void:
 	var took := {}
 	var rows := {}
 	for on in [false, true]:
-		XHelpCard.ELEMENT_DATA_TABLE = on
+		XHelpCard.ELEMENT_DATA_CACHE = on
 		var t0 := Time.get_ticks_usec()
 		rows[on] = objs.map(func(o): return XHelpCard.content(o))
 		took[on] = Time.get_ticks_usec() - t0
 	check("help_same_rows", JSON.stringify(rows[false]) == JSON.stringify(rows[true]))
 	check("help_has_element_rows", JSON.stringify(rows[true]).contains("伤害属性"))
 	# 反例：两条路读的是同一份内容（表被别处改了才会不同）
-	XHelpCard.ELEMENT_DATA_TABLE = false
+	XHelpCard.ELEMENT_DATA_CACHE = false
 	var fresh := XHelpCard._element_data()
-	XHelpCard.ELEMENT_DATA_TABLE = true
+	XHelpCard.ELEMENT_DATA_CACHE = true
 	check("help_same_data", fresh == XHelpCard._element_data() and not fresh.is_empty())
 	print("PERF 说明卡 %d 张：重读文件 %.1f ms，读已载入的表 %.1f ms" % [objs.size(), took[false] / 1000.0, took[true] / 1000.0])
 
