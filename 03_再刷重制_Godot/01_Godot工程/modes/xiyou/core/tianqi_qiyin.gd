@@ -252,6 +252,8 @@ static func run_altar(host, s: XState) -> void:
 				await run_reveal(host, s)
 			"bag":
 				await run_bag(host, s)
+			_:
+				await XTianqiQiyinDragonRun.run_option(host, s, str(opts[i].id))  # 七首之龙：存着的龙隙、首杀招募、龙血
 	await say(host, "leave")
 	await _home(host, s)
 
@@ -264,6 +266,7 @@ static func altar_options(s: XState) -> Array:
 		out.append({"id": "reveal", "label": "揭开封着的（%d 件）" % n})
 	if not progress(s).bag.is_empty():
 		out.append({"id": "bag", "label": "看印库"})
+	out.append_array(XTianqiQiyinDragonRun.altar_options(s))  # 七首之龙：存着的龙隙、首杀招募、龙血
 	out.append({"id": "leave", "label": "离开"})
 	return out
 
@@ -369,7 +372,9 @@ static func run_dungeon(host, s: XState, key: String, direct: bool, offering: Di
 		await say(host, "lost")
 		return 1
 	await say(host, "boss_win", [str(info.boss.name)])
+	var rift := await XTianqiQiyinDragonRun.after_boss(host, s)  # 七首之龙：结算之前判龙隙，出了就演地面裂开
 	await settle(host, s, key, offering, run)
+	await XTianqiQiyinDragonRun.offer(host, s, rift)  # 七首之龙：刚出的龙隙当场问进不进，不进就存着
 	return 0
 
 
@@ -414,8 +419,10 @@ static func settle(host, s: XState, key: String, offering: Dictionary, run: Dict
 	if not got.is_empty() or str(r.artifact) != "":
 		await say(host, "drop_head")
 		for item in got:
+			await XTianqiQiyinShow.drop(host, item)  # 演出：套装件闪本印色、毕业武器定格、真印红光震屏
 			await host.show_text("", 0, [sealed_label(item)])
 		if str(r.artifact) != "":
+			await XTianqiQiyinShow.artifact(host, str(r.artifact))  # 演出：整屏变暗、七印依次亮起
 			await host.show_text("", 0, ["神器「%s」" % str(XTianqiQiyinGear.artifact(str(r.artifact)).get("name", r.artifact))])
 	if first:
 		await say(host, "first_clear")
@@ -427,6 +434,7 @@ static func settle(host, s: XState, key: String, offering: Dictionary, run: Dict
 		var i: int = await host.show_text_with_choices("", 0, ["现在就揭开吗？"], ["揭开", "先收着"], 1)
 		if i == 0:
 			for idx in range(first_idx, first_idx + got.size()):
+				await XTianqiQiyinShow.reveal(host, progress(s).bag[idx])  # 演出：封印碎开
 				await host.show_text("", 0, [_line(scene("reveal_done")[0], [revealed_label(reveal(s, idx))])])
 	return got
 
@@ -524,6 +532,7 @@ static func run_reveal(host, s: XState) -> void:
 			return
 		var picked := idxs if c == idxs.size() else [idxs[c]]
 		for i in picked:
+			await XTianqiQiyinShow.reveal(host, bag[int(i)])  # 演出：封印碎开
 			await host.show_text("", 0, [_line(scene("reveal_done")[0], [revealed_label(reveal(s, int(i)))])])
 
 
