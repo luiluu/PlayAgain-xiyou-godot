@@ -777,6 +777,8 @@ static func _fstore(logic) -> Dictionary:
 
 
 static func begin_action(logic, u, skill) -> void:
+	if not (logic.has_meta("xtqs") and int(_fstore(logic).depth) > 0):
+		_act_skill = int(skill.get("id", 0)) if u is XActor and skill is Dictionary else 0
 	if not cards_on() or not (u is XActor) or not (skill is Dictionary):
 		return
 	var st := _fstore(logic)
@@ -825,6 +827,61 @@ static func _reflect(u, t, r: Dictionary) -> void:
 	u.hp = maxf(0.0, float(u.hp) - floorf(dmg * pct))
 	if u.hp <= 0.0:
 		u.add_state(1)
+
+
+## 首领减半（稿子第一节「控制 1～2 回合，对首领减半或无效」；各期待办里的通用项）：卡开着时，角色给首领（boss_difficulty_boss）挂的
+## 控制状态（XEnemy.boss_control_state）回合数减半、向下取整，1 回合的控制无效；其余减益（XBossStatus.kind_of＝Debuff：属性降低、持续伤害等）
+## 回合数减半、向上取整、至少 1 回合。整场的状态（autoRemovalTiming 0）、敌人自己挂的不动。
+## 技能行 boss {"状态号": "immune"／"half"／"ceil"／"full"／换成的状态号} 按招覆盖默认（申公豹神来之笔、碧霄伏龙击的眩晕在首领身上换成伤害 −30%）。
+## 接在 XEnemy.add_state（无效、替换）和 XEnemy.reset_state_counts（回合数）
+static var BOSS_RULE := true
+static var _act_skill := 0  # 角色正在放的技能号（begin_action 记、end_action 清）
+
+
+static func boss_rule(e, id: int):
+	if not BOSS_RULE or not CARDS or not (e is XEnemy) or not e.boss_difficulty_boss or not cards_on():
+		return ""
+	if XImportedBalance.acting_battler() is XEnemy:
+		return ""
+	if _act_skill > 0:
+		var o = spec(_act_skill).get("boss", {}).get(str(id))
+		if o != null:
+			return o if o is String else int(o)
+	var st := XDB.rec("States", id)
+	if st.is_empty() or int(st.get("autoRemovalTiming", 0)) == 0:
+		return ""
+	if XEnemy.boss_control_state(id):
+		var u = XImportedBalance.acting_battler()
+		var need = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("boss_control", "") if u is XActor else ""
+		return "ceil" if need != "" and owns(u, need) else "half"  # 角色行 boss_control：带着这件时控制按向上取整减半（唐三昊天锤：1 回合的也有效）
+	var dot = st.get("dot")
+	if XBossStatus.kind_of(st) == "Debuff" or (dot is Dictionary and not bool(dot.get("healing", false))):  # 持续伤害（卡里的 dot 状态没有减益标记）
+		return "ceil"
+	return ""
+
+
+## 百分比生命伤害对首领无效（第一节）：表里的技能在行动序列里按目标生命上限比例扣血（Hp -n%）时，首领不扣
+static func boss_pct_immune(u, t, skill_id: int) -> bool:
+	return BOSS_RULE and CARDS and u is XActor and t is XEnemy and t.boss_difficulty_boss and has(skill_id) and cards_on()
+
+
+## add_state 之前：返回 -1 不挂、0 照常、>0 换成这个状态
+static func boss_add(e, id: int) -> int:
+	var r = boss_rule(e, id)
+	if r is int:
+		return r
+	if r == "immune" or (r == "half" and int(XDB.rec("States", id).get("maxTurns", 1)) <= 1):
+		return -1
+	return 0
+
+
+static func boss_turns(e, id: int, n: int) -> int:
+	match boss_rule(e, id):
+		"half":
+			return maxi(1, n / 2)
+		"ceil":
+			return maxi(1, ceili(n / 2.0))
+	return n
 
 
 ## 技能行 shield {pct, self}：放这招时给目标（self：给自己）加施放者生命上限这个比例的护盾（钟离、立希、云霄；只在正式结算时加）
@@ -1173,6 +1230,8 @@ static func end_action(logic, u, skill) -> Array:
 	var st := _fstore(logic)
 	var f: Dictionary = st.act
 	st.act = {}
+	if int(st.depth) == 0:
+		_act_skill = 0
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_var_add(u, f.skill)
 		_foe_states(logic, u, f.skill)

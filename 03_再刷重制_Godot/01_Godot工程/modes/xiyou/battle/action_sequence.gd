@@ -241,6 +241,8 @@ func _modify(kind: String, name: String, list: Array) -> void:
 	# actionHp/MpModify 的最内层覆盖 processActionSequence 的 _targets 域。
 	_resources.boss_output.enter_targets(user, list)
 	for t in list:
+		if percent and change < 0.0 and kind == "HP" and XTianqiSkills.boss_pct_immune(user, t, int(skill.get("id", 0))):
+			continue  # 天启篇：卡里按目标生命比例扣血的招对首领无效（曹操枭雄霸气、希格雯心意注射）
 		var base: float = t.mhp if kind == "HP" else (t.mmp if kind == "MP" else t.max_tp())
 		var v := js_parse_int(base * change * 0.01 if percent else change)
 		_gains.append([t, kind, logic.sequence_gain(t, kind, v, user, _resources if kind in ["HP", "MP"] else null)])

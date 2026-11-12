@@ -46,6 +46,7 @@ func _run() -> void:
 	_p4()
 	_p5()
 	_p6()
+	_fill()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -815,6 +816,48 @@ func _p6() -> void:
 	_check("p6_new_skills", str(XDB.rec("Skills", 10737).name) == "剑*非天·一线" and int(XDB.rec("Skills", 10737).scope) == 1 and str(XDB.rec("Skills", 10753).name) == "万剑归宗·三段")
 	_check("p6_learn", (XTianqiSkills.data().learn.get("165", []) as Array).size() == 2 and (XTianqiSkills.data().learn.get("156", []) as Array).size() == 2)
 	_check("p6_states", str(XDB.rec("States", 10826).name) == "趴下" and is_equal_approx(float(XTianqiSkills._states[2550].get("reflect", 0.0)), 0.3))
+	lg.end_battle(0)
+
+
+## 补完：首领减半（控制减半、1 回合控制无效、减益减半至少 1 回合、按招换减伤）、百分比生命伤害对首领无效
+func _fill() -> void:
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg) as XEnemy
+	b.boss_difficulty_boss = true
+	b.boss_hyper_armor = false
+	XTianqiSkills._act_skill = 0
+	var two := 0  # 卡里 2 回合的控制状态（晴明失魄这类）
+	for id in XTianqiSkills._states:
+		var r := XDB.rec("States", int(id))
+		if XEnemy.boss_control_state(int(id)) and int(r.get("minTurns", 0)) == 2 and int(r.get("maxTurns", 0)) == 2 and int(r.get("autoRemovalTiming", 0)) > 0:
+			two = int(id)
+			break
+	b.add_state(two)
+	_check("fill_boss_ctrl_half", two > 0 and b.is_state_affected(two) and int(b.state_turns.get(two, 0)) == 1, [two, b.state_turns.get(two)])
+	b.remove_state(two)
+	b.add_state(1043)
+	_check("fill_boss_ctrl_1turn_immune", not b.is_state_affected(1043))
+	XTianqiSkills._act_skill = 4830
+	b.add_state(1043)
+	_check("fill_boss_sub", not b.is_state_affected(1043) and b.is_state_affected(10827) and str(XDB.rec("States", 10827).name) == "首领压制")
+	XTianqiSkills._act_skill = 0
+	b.add_state(1819)
+	var base := int(XDB.rec("States", 1819).maxTurns)
+	_check("fill_boss_debuff_ceil", int(b.state_turns.get(1819, 0)) == maxi(1, ceili(base / 2.0)), [base, b.state_turns.get(1819)])
+	var n := lg.enemies[1] as XEnemy if lg.enemies.size() > 1 else null
+	if n != null:
+		n.boss_difficulty_boss = false
+		n.add_state(two)
+		_check("fill_nonboss_full", int(n.state_turns.get(two, 0)) == 2, n.state_turns.get(two))
+	var a: XActor = s.actor(XIAOYAO)
+	_check("fill_pct_immune", XTianqiSkills.boss_pct_immune(a, b, 1067) and not XTianqiSkills.boss_pct_immune(a, b, 1) and (n == null or not XTianqiSkills.boss_pct_immune(a, n, 1067)))
+	XTianqiSkills.CARDS = false
+	b.remove_state(1043)
+	b.add_state(1043)
+	_check("fill_cards_off", b.is_state_affected(1043))
+	XTianqiSkills.CARDS = true
 	lg.end_battle(0)
 
 

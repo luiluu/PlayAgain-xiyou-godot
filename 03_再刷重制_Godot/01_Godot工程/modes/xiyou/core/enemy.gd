@@ -87,7 +87,16 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return
 	if boss_hyper_armor and boss_difficulty_boss and boss_control_state(id):
 		return
+	var tq := XTianqiSkills.boss_add(self, id)  # 天启篇首领减半：1 回合控制无效、按招换成减伤
+	if tq < 0:
+		return
+	super(tq if tq > 0 else id, random)
+
+## 天启篇首领减半：控制、减益回合数减半（XTianqiSkills.boss_turns）
+func reset_state_counts(id: int, random: XRandomStream = null) -> void:
 	super(id, random)
+	if state_turns.has(id):
+		state_turns[id] = XTianqiSkills.boss_turns(self, id, int(state_turns[id]))
 
 func remove_state(id: int) -> void:
 	if id == BOSS_ARMOR_STATE and boss_hyper_armor and boss_difficulty_boss and not _updating_boss_armor and not (not hidden and state_ids.has(1)):
