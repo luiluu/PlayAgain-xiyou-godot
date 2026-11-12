@@ -114,7 +114,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	var cp := XDB.img_path("pictures", cursor_name)
 	if cp != "":
 		cursor = Sprite2D.new()
-		cursor.texture = load(cp)
+		cursor.texture = XAppearance.kept_load(cp)
 		cursor.offset.y = -cursor.texture.get_height() / 2.0
 		cursor.position.y = -look.cell.y if sv and look.kind != "scene" else -height()
 		cursor.visible = false
@@ -132,7 +132,7 @@ func _make_shadow() -> void:
 	var sp := XDB.img_path("system", "Shadow2")
 	if sp != "":
 		shadow = Sprite2D.new()
-		shadow.texture = load(sp)
+		shadow.texture = XAppearance.kept_load(sp)
 		shadow.position.y = -2
 		if battler is XEnemy:  # Sprite_Enemy.adjustSVShadowSettings：Shadow Scale auto = 侧视图一格宽 / 64（x、y 同）
 			shadow.scale = Vector2.ONE * (look.cell.x / 64.0)
@@ -142,7 +142,7 @@ func _make_shadow() -> void:
 
 static func _load(folder: String, name: String) -> Texture2D:
 	var p := XDB.img_path(folder, name)
-	return load(p) if p != "" else null
+	return XAppearance.kept_load(p) if p != "" else null
 
 
 ## Game_Actor.spriteWidth／spriteHeight：有归一档时按可见范围（选择光标、状态图标跟着看得见的身体），浮空另加高

@@ -576,11 +576,13 @@ static func _same(x, y) -> bool:
 
 
 static func push_formula(item: Dictionary, a, b, formula: bool) -> void:
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：公式帧进出会改能力值读法，当场作废
 	_formula_frames.append({"item": item, "subject": a, "target": b, "formula": formula,
 		"physical": formula and (XDamage.is_physical(item) or _in_template("inversebone", int(item.get("id", 0))))})
 
 
 static func pop_formula() -> void:
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：公式帧进出会改能力值读法，当场作废
 	_formula_frames.pop_back()
 
 

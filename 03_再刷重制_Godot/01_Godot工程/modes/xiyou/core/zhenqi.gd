@@ -646,11 +646,26 @@ static func extract_meta(note: String) -> Dictionary:
 static var _views := {}
 
 
+## 技能号 → [备注原文, 道法标签（没有为 ""）]：skills() 每次都对每个技能的备注跑一遍正则，一次行动几千次；备注没变就直接取
+## 回退：DAOFA_TAG_CACHE = false（每次跑正则，同原来）
+static var DAOFA_TAG_CACHE := true
+static var _daofa_tags := {}
+static var _daofa_re: RegEx
+
 static func skill_view(sk: Dictionary, a: XActor) -> Dictionary:
-	var m := RegEx.create_from_string("<CodexZhenqi:\\s*(daofa:[^>]+)>").search(str(sk.get("note", "")))
-	if m == null:
+	var sk_note := str(sk.get("note", ""))
+	var cached = _daofa_tags.get(sk.get("id"))
+	var tag := ""
+	if DAOFA_TAG_CACHE and cached != null and cached[0] == sk_note:
+		tag = cached[1]
+	else:
+		if _daofa_re == null:
+			_daofa_re = RegEx.create_from_string("<CodexZhenqi:\\s*(daofa:[^>]+)>")
+		var m := _daofa_re.search(sk_note)
+		tag = m.get_string(1) if m != null else ""
+		_daofa_tags[sk.get("id")] = [sk_note, tag]
+	if tag == "":
 		return sk
-	var tag := m.get_string(1)
 	var factor := daofa_scale(a)
 	var key := "%d|%s" % [int(sk.id), str(factor)]
 	if _views.has(key):

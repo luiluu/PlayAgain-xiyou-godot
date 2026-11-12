@@ -207,6 +207,7 @@ func init_equips(ids: Array) -> void:
 		items[picked] = null
 		if can_equip(item):
 			equips[i] = item
+			read_touch()
 			refresh_passive()
 	release_unequippable()
 	refresh_passive()
@@ -248,6 +249,7 @@ func release_unequippable() -> Array:
 			if e != null and not e.is_empty() and (int(e.etypeId) != int(slots[i]) or not can_equip(e)):
 				removed.append(e)
 				equips[i] = null
+				read_touch()
 				changed = true
 	removed.append_array(XEquipment.release_dual_exclusive(self))  # 双持专武只留一把（installDualExclusiveRuntime）
 	return removed
@@ -297,8 +299,12 @@ func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
 
 func equip_list() -> Array:
-	var list := equips.slice(1) if _cat_bare else equips
-	return list.filter(func(e): return e != null and not e.is_empty())
+	var out := []
+	for i in range(1 if _cat_bare else 0, equips.size()):  # 一次行动里调几千次：不走 slice＋filter 回调，结果一样
+		var e = equips[i]
+		if e != null and not e.is_empty():
+			out.append(e)
+	return out
 
 
 ## 算能力值／特性／被动缓存用的装备：178 持剑时武器槽换成剑的翻倍视图（XCat.sword_view），其余同 equip_list
@@ -370,6 +376,24 @@ func max_level() -> int:
 	return XState.current.max_level() if XState.current else int(data().get("maxLevel", 99))
 
 func max_tp() -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "mtp1" if _cat_bare else "mtp0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _max_tp_now())
+			return m[key]
+		var gen := _read_gen
+		var fresh := _max_tp_now()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
+	read_begin()
+	var v := _max_tp_now()
+	read_end()
+	return v
+
+func _max_tp_now() -> float:
 	var value := super.max_tp()
 	for extra in passive_values("passiveEXTTP"):
 		value += _num(extra)
@@ -473,6 +497,7 @@ func repair_strong_classified() -> void:
 	refresh_passive()
 
 func learn_skill(id: int) -> void:
+	read_touch()
 	if XRace.learn(XState.current, self, id):  # installNativeRaceRuntime learnSkill 包装：种族技能改种族数据再 sync
 		return
 	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
@@ -489,6 +514,7 @@ func learn_skill(id: int) -> void:
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 
 func forget_skill(id: int) -> void:
+	read_touch()
 	if XPowerBooks.protected_forget(self, id):
 		return
 	skill_ids.erase(id)
@@ -517,6 +543,22 @@ func first_weapon_type() -> int:
 
 
 func skills() -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "sk1" if _cat_bare else "sk0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("skills", m[key], _skills_now())
+			return (m[key] as Array).duplicate()
+		var gen := _read_gen
+		var fresh := _skills_now()
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
+	return _skills_now()
+
+func _skills_now() -> Array:
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
@@ -543,7 +585,112 @@ func _skill_records(ids: Array[int]) -> Array:
 # ---- 特性对象 ----
 ## 宝珠：同类新宝珠的标记特性只算阶位最高 3 件装备（installNativeOrbRuntime capDrops，见 XOrbs）
 func all_traits() -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "tr1" if _cat_bare else "tr0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("all_traits", m[key], XOrbs.filter_traits(super.all_traits(), equips))
+			return (m[key] as Array).duplicate()
+		var gen := _read_gen
+		var fresh := XOrbs.filter_traits(super.all_traits(), equips)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
 	return XOrbs.filter_traits(super.all_traits(), equips)
+
+## 只读窗口里按（特性码, 编号）分好组，同一窗口里第二次起直接取
+func traits_with_id(code: int, id: int) -> Array:
+	if not (READ_MEMO and _read_depth > 0):
+		return super.traits_with_id(code, id)
+	var m := _read_memo()
+	var key := "ti1" if _cat_bare else "ti0"
+	var index: Dictionary
+	if m.has(key):
+		index = m[key]
+	else:
+		var gen := _read_gen
+		for t in all_traits():
+			var k := int(t.code) * 100000 + int(t.dataId)
+			if index.has(k):
+				index[k].append(t)
+			else:
+				index[k] = [t]
+		if gen == _read_gen:
+			m[key] = index
+	var out: Array = index.get(code * 100000 + id, [])
+	if READ_VERIFY:
+		_read_verify("traits_with_id", out, super.traits_with_id(code, id))
+	return out.duplicate()
+
+
+# ---- 只读窗口缓存（O-待定-1，安卓战斗提速）----
+## 一次行动结算里角色的技能表 skills() 要重算一两百次（每读一项能力值 3 次以上：被动 passivePBST／PBSTEX、装备被动……），
+## 每次都走心钢、云裳、异化、谷雨等整条包装链；手机上一次行动因此停 0.3～0.5 秒。
+## 「只读窗口」＝一段只读不写的计算（读一项能力值、拍一次画面快照、列能用的技能）：窗口里同一名角色的技能表、特性表、
+## 按标签取的被动值只算一次，窗口一关就作废，不跨到下一次读取；窗口里一旦有已知的写入（加减状态、换装、学技能、刷新被动）
+## 也当场作废（read_touch）。所以读到的值和每次重算完全一样。
+## 回退：READ_MEMO = false（每次重算，同原来）。READ_VERIFY＝测试用：每次命中都重算一遍比对，不一样就记进 read_mismatches。
+static var READ_MEMO := true
+static var READ_VERIFY := OS.get_environment("XIYOU_READ_VERIFY") == "1"
+## 环境变量 XIYOU_READ_VERIFY=1（整轮测试带上它跑）：全程比对，一次不一致就当场崩掉，那个测试必挂
+static var READ_VERIFY_FATAL := OS.get_environment("XIYOU_READ_VERIFY") == "1"
+static var read_mismatches: Array = []
+static var read_hits := 0
+static var _read_depth := 0
+static var _read_gen := 0
+## 缓存不放在角色身上（公式预览的影子克隆照抄角色的全部字段，不能把缓存也抄走），按角色对象另存一张表，换代就整表丢掉
+static var _memo_store := {}
+static var _memo_store_gen := -1
+
+static func read_begin() -> void:
+	if _read_depth == 0:
+		_read_gen += 1
+	_read_depth += 1
+
+static func read_end() -> void:
+	_read_depth -= 1
+	if _read_depth == 0:
+		_memo_store = {}  # 窗口一关就丢，不留着角色（含影子克隆）的引用
+		_memo_store_gen = -1
+
+## 行动开始：不该有没关的窗口（窗口只包同步的只读计算）；万一有就关掉并报错，不让缓存跨到写入之后
+static func read_reset() -> void:
+	if _read_depth != 0:
+		push_error("只读窗口没有关：depth=%d" % _read_depth)
+		_read_depth = 0
+	_read_gen += 1
+
+## 已知的写入：作废所有角色的窗口缓存
+static func read_touch() -> void:
+	_read_gen += 1
+
+func _read_memo() -> Dictionary:
+	if _memo_store_gen != _read_gen:
+		_memo_store_gen = _read_gen
+		_memo_store = {}
+	# 三处「取对方那一项时不再套自己」的重入护栏（万法同裳物攻／魔攻取高、璇共宿、屠苏盾相补底）开着时算出的值与平时不同，各存各的
+	var ctx := (1 if XYunshang._pair_guard else 0) | (2 if XXuanBattle._param_guard else 0) | (4 if XTusu._param_guard else 0)
+	var store: Dictionary = _memo_store
+	if ctx != 0:
+		store = _memo_store.get_or_add(ctx, {})
+	var m = store.get(self)
+	if m == null:
+		m = {}
+		store[self] = m
+	return m
+
+func _read_verify(what: String, cached, fresh) -> void:
+	read_hits += 1
+	if cached is float and fresh is float and is_nan(cached) and is_nan(fresh):
+		return
+	if cached != fresh:
+		if read_mismatches.size() < 50:
+			read_mismatches.append([what, actor_id, str(cached).left(300), str(fresh).left(300)])
+		push_error("只读窗口缓存不一致：%s 角色 %d：%s ≠ %s" % [what, actor_id, str(cached).left(200), str(fresh).left(200)])
+		if READ_VERIFY_FATAL:
+			OS.crash("只读窗口缓存不一致（XIYOU_READ_VERIFY=1）：%s 角色 %d" % [what, actor_id])
 
 ## 渡鸦黑暗侵蚀的状态缓存时序（见 raven.gd on_tp_refresh）：tp_refreshed＝本次 apply 里伤害充 TP 已 refresh；
 ## stale_state_ids＝已在身上但特性缓存还没重建、特性暂读不到的状态（krz 状态缓存时序）
@@ -605,6 +752,22 @@ func param_rate(i: int) -> float:
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("pv1:" if _cat_bare else "pv0:") + tag
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("passive_values " + tag, m[key], _passive_values_now(tag))
+			return (m[key] as Array).duplicate()
+		var gen := _read_gen
+		var fresh := _passive_values_now(tag)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+			return fresh.duplicate()
+		return fresh
+	return _passive_values_now(tag)
+
+func _passive_values_now(tag: String) -> Array:
 	var out := []
 	for s in skills():
 		var m: Dictionary = s.get("meta", {})
@@ -840,6 +1003,24 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("pa1:" if _cat_bare else "pa0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _param_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _param_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
+	read_begin()
+	var v := _param_now(i)
+	read_end()
+	return v
+
+func _param_now(i: int) -> float:
 	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, param_before_alien(i))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
@@ -887,6 +1068,24 @@ func traits_sum(code: int, id: int) -> float:
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("xp1:" if _cat_bare else "xp0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _xparam_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _xparam_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
+	read_begin()
+	var v := _xparam_now(i)
+	read_end()
+	return v
+
+func _xparam_now(i: int) -> float:
 	var v := super.xparam(i)
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
@@ -900,6 +1099,24 @@ func xparam(i: int) -> float:
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("sp1:" if _cat_bare else "sp0:") + str(i)
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify(key, m[key], _sparam_now(i))
+			return m[key]
+		var gen := _read_gen
+		var fresh := _sparam_now(i)
+		if gen == _read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
+	read_begin()
+	var v := _sparam_now(i)
+	read_end()
+	return v
+
+func _sparam_now(i: int) -> float:
 	var v := traits_pi(TRAIT_SPARAM, i)
 	for m in passive_values(_tag("passiveSPBST", i)):
 		v += _num(m) * 0.01

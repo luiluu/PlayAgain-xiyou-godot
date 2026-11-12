@@ -47,8 +47,11 @@ static func item_cri(item: Dictionary, a, b, calc: Callable) -> float:
 	var before := suppress_raven
 	if suppress:
 		suppress_raven = true
+		XActor.read_touch()  # 只读窗口缓存（O-待定-1）：魂海加成开关变了，当场作废
 	var rate: float = calc.call()
 	suppress_raven = before
+	if suppress:
+		XActor.read_touch()
 	return rate
 
 
