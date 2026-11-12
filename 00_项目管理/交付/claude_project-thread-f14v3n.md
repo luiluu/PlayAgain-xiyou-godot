@@ -1,7 +1,7 @@
 # 交付：claude/project-thread-f14v3n
 
 - 车道／工作者：v0.01 玩家反馈修复（地图、标题、商店、战斗画面、设置）／cc（反馈修复，云端容器）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -17,7 +17,7 @@
 - **画面锐化太高**：原版先把整幅画面画在 1280×720 画布上，再由浏览器整体双线性放大到窗口，放大后偏柔；重制 `canvas_items` 按屏幕分辨率直接画，战斗图最近邻放大 1.5、2.25 这类非整数倍，像素宽窄不一，显得硬。新增设置「画面平滑」（`XScreenScale`，O-待定·画面平滑；配置键 `codexScreenSmooth`）：开＝根窗口改 viewport 缩放（先画 1280×720 再整幅柔和放大，同原版，安卓上还少画像素），关＝照旧。**没存过时触屏（安卓）默认开、桌面默认关**（桌面窗口多为 1:1，Retina 原先已按物理像素处理过清晰度）。设置页排在「画面特效」后、「手机按键设置」前。安全区换算（`XPlatform.safe_insets`）改用 `XScreenScale.screen_to_view`，两种缩放都对。回退：`XScreenScale.ENABLED = false`（恒为 canvas_items，设置页不列）。
 - 测试：新专项 `xiyou_feedback_v001`（绪绪停步帧、踩上即进门开／关、点地 D1 开／关、普通 NPC 不算门、商店列表缓存次数与成交后出售表、说明卡元素表缓存开／关、神话倍数、画面平滑默认值／存读／切换／关开关、viewport 缩放下的屏幕→画面换算）；`xiyou_tianqi_title` 加 selectLast 六项；`xiyou_rift2_canglong` 加接着播一项；`xiyou_tianqi_title_flow`、`xiyou_opening_branches`、`xiyou_tianqi_opening` 进大厅后改等 rift2 也放完（不然退出时协程挂着），标题流程按 selectLast 先上移到「新的游戏」；`xiyou_hangup_options` 设置页行数多一行。
 - 玩家可见：大厅卖碎片的绪绪重新出现；商店、背包等带说明卡的列表按键不再一顿一顿；第一次进大厅看完流萤后接着就是苍龙破晓；有存档时标题默认停在「旧的回忆」；8 号当铺等出入口走上去就进出；神话怪物不再放大；新增「画面平滑」设置，手机上默认开，画面更柔和、接近原版。
-- 验证：（待写）
+- 验证：本地（云端容器，Linux 无头）专项 28 个全过（xiyou_feedback_v001 26 项、tianqi_title 46、tianqi_title_flow 39、rift2_canglong 84、hangup_options 57、opening_branches 17、tianqi_opening 44、help_card 1075、shop_buy 8479 等商店／说明卡相关场景）；语法检查 755 个 .gd 0 问题。云端选测（GitHub Actions，基准 origin/main 分叉点 e3df19bd5）258 个场景全过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43194149311 。商店实测：一次按键逻辑约 110 ms → 2～5 ms，说明卡 show_for 约 70 ms → 1.4～2.7 ms／件。
 - 提交：见「本分支提交」
 - 未完成／已知问题：画面平滑在安卓、Mac 全屏上的观感要实机看；苍龙接流萤只在第一次进大厅时有区别；截图里那只大怪没认出是不是神话，若不是神话、怪本身就那么大，原版也一样大。
 
@@ -47,4 +47,7 @@
 
 ## 本分支提交
 
-- （待写）
+- 34f3235 WIP: v0.01 玩家反馈七项（绪绪停步帧、商店列表缓存、苍龙接流萤、标题默认项、踩上即进门、神话 1 倍、画面平滑）
+- 83fe53b WIP: 交付单草稿；商店现算次数计数与专项
+- 32fda42 商店卡顿：说明卡元素表只读一次；商店列表买入时不算出售表；修两处测试语法、标题进场测试
+- （本条）交付单标可合并
