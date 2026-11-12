@@ -11,7 +11,7 @@ extends RefCounted
 ##
 ## 套装件不分甲种（方案 4.1 节「谁都能穿」）：XActor.can_equip 里一行 any_class。神器进神器栏：XTianqiGear.allows 认 qiyin 标记。
 ##
-## 开关（O-待定）：ENABLED＝false 时揭开只亮成色、不生成装备（回到 cc/qiyin-altar 的样子），祭坛不出熔、分解、兑换，献只剩印屑。
+## 开关（O-332）：ENABLED＝false 时揭开只亮成色、不生成装备（回到 cc/qiyin-altar 的样子），祭坛不出熔、分解、兑换，献只剩印屑。
 
 static var ENABLED := true
 
@@ -345,7 +345,7 @@ static func melt_partners(s: XState, main: Dictionary) -> Array:
 	return in_bag(s).filter(func(e): return not is_same(e, main) and bool(XTianqiQiyinDrop.melt_check(md, desc_of(e), 1 << 30).ok))
 
 
-## 副件里能换过去的词条下标：主件已有的同名词条换过去也只生效一条，不给选（O-待定 同一个开关）
+## 副件里能换过去的词条下标：主件已有的同名词条换过去也只生效一条，不给选（O-332 同一个开关）
 static func melt_choices(main: Dictionary, sub: Dictionary, slot: int) -> Array:
 	var mine: Array = XTianqiQiyinEffects.mark_of(main).get("affixes", [])
 	var theirs: Array = XTianqiQiyinEffects.mark_of(sub).get("affixes", [])
