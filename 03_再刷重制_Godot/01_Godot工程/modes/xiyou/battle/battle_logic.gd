@@ -194,6 +194,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
 	XTianqiPlagueAlien.setup(self, s)  # 天启篇瘟疫线异化（prepare 过才变）：病灶、病弱、毒腺、混乱者、挑衅者、传染者、疫源
+	XTianqiDeathAlien.setup(self, s)  # 天启篇死亡线异化（prepare 过才变）：死期、宣判者、收尸人、丧钟、替身、骑士队长
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XEnemyBook.bind_battle(s, enemies)
@@ -249,6 +250,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	turn_start_logs.append_array(XTianqiWarAlien.take_logs(self))
 	turn_start_logs.append_array(XTianqiFamineAlien.take_logs(self))
 	turn_start_logs.append_array(XTianqiPlagueAlien.take_logs(self))
+	turn_start_logs.append_array(XTianqiDeathAlien.take_logs(self))
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -1086,6 +1088,7 @@ func start_turn() -> void:
 	turn_start_logs.append_array(XTianqiHorsemen.start_turn(self))  # 天启四骑士：死期、神圣剑亮目标、援军、疫病、破盾
 	turn_start_logs.append_array(XTianqiFamineAlien.start_turn(self))  # 天启篇饥荒线异化：报饥饿
 	turn_start_logs.append_array(XTianqiPlagueAlien.start_turn(self))  # 天启篇瘟疫线异化：报病灶
+	turn_start_logs.append_array(XTianqiDeathAlien.start_turn(self))  # 天启篇死亡线异化：宣判者挂死期，报死期和丧钟
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1208,6 +1211,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
+	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1251,6 +1255,7 @@ func end_turn() -> Array:
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
 	logs.append_array(XTianqiPlagueAlien.end_turn(self))  # 天启篇瘟疫线异化：中毒扣血、传染、减益回合
+	logs.append_array(XTianqiDeathAlien.end_turn(self))  # 天启篇死亡线异化：死期带走、丧钟倒数
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -2750,6 +2755,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
 	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
 	value = XTianqiPlagueAlien.hp_damage(self, u, t, value, item)  # 天启篇瘟疫线异化：毒腺中毒、混乱者混乱、挑衅者不服与化形群攻减半
+	value = XTianqiDeathAlien.hp_damage(self, u, t, value)  # 天启篇死亡线异化：替身被打倒时换一名我方代它倒下
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -3180,7 +3186,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 ## MV：逃跑率在战斗开始时算一次（0.5×我方平均敏捷/敌方平均敏捷），每失败一次 +0.1。
 ## 逃跑失败在 OTB 下只消耗这名角色的本次行动（由画面层调用 act(u, null, null)）。
 func try_escape() -> bool:
-	if XTianqiHorsemen.blocks_escape(self):  # 天启四骑士：死亡骑士战逃跑必定失败（没变身的当场变身骑士队长）
+	if XTianqiHorsemen.blocks_escape(self) or XTianqiDeathAlien.blocks_escape(self):  # 天启四骑士：死亡骑士战逃跑必定失败（没变身的当场变身骑士队长）；死亡线骑士队长异化在场同样
 		escaped = false
 		return false
 	XBlackFlash.escape(self)  # 黑闪 processEscape 包装：连闪归 0
@@ -3384,6 +3390,7 @@ func end_battle(result := -1) -> void:
 	XTianqiWarAlien.end(self)  # 天启篇战争线异化：清本场异化
 	XTianqiFamineAlien.end(self)  # 天启篇饥荒线异化：清本场异化
 	XTianqiPlagueAlien.end(self)  # 天启篇瘟疫线异化：清本场异化
+	XTianqiDeathAlien.end(self)  # 天启篇死亡线异化：清本场异化
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

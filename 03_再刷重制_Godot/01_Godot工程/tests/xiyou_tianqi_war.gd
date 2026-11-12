@@ -128,7 +128,7 @@ func _data() -> void:
 		var p := XTianqiWarAlien.preset(k)
 		_check("preset_troop_" + k, not XDB.rec("Troops", int(p.troop)).is_empty() and not XTianqiWarAlien.tier_info(str(p.tier)).is_empty()
 			and not XTianqiWarAlien.kind_info(str(p.kind)).is_empty(), p)
-	_check("war_card", XTianqi.line_info("war").pick == "「烟火大会，开始啦！」" and XTianqi.line_playable("war") and not XTianqi.line_playable("death"))  # 饥荒、瘟疫线做好后能选（cc 饥荒线、瘟疫线车道），死亡还没有
+	_check("war_card", XTianqi.line_info("war").pick == "「烟火大会，开始啦！」" and XTianqi.line_playable("war") and XTianqi.line_playable("death"))  # 饥荒、瘟疫线做好后能选（cc 饥荒线、瘟疫线车道），死亡还没有
 
 
 func _choose_and_opening() -> void:
@@ -186,12 +186,14 @@ func _door() -> void:
 	_check("door_switch_off_free", not XTianqiWarLine.door_blocked(s))
 	XTianqi.LINE_EVENT_OPEN = true
 	XTianqiWarLine.ENABLED = false
-	XTianqiFamineLine.ENABLED = false  # 门锁看有没有能选的线：饥荒、瘟疫线也关掉才等于「没有能选的线」
+	XTianqiFamineLine.ENABLED = false  # 门锁看有没有能选的线：饥荒、瘟疫、死亡线也关掉才等于「没有能选的线」
 	XTianqiPlagueLine.ENABLED = false
+	XTianqiDeathLine.ENABLED = false
 	_check("door_war_off_free", not XTianqiWarLine.door_blocked(s) and not XTianqi.line_playable("war") and not XTianqi.line_ready(s))
 	XTianqiWarLine.ENABLED = true
 	XTianqiFamineLine.ENABLED = true
 	XTianqiPlagueLine.ENABLED = true
+	XTianqiDeathLine.ENABLED = true
 	_check("door_other_event", not XTianqiWarLine.is_door(4, 35) and not XTianqiWarLine.is_door(13, 36))
 
 
@@ -352,7 +354,7 @@ func _alien_pyro() -> void:
 func _survival() -> void:
 	var s := _state(20000000.0, "war")
 	_check("survival_prepare", XTianqiHorsemen.prepare("war", s, "survival"))
-	_check("survival_other_line_no", not XTianqiHorsemen.prepare("death", s, "survival") and XTianqiHorsemen.pending() == "")
+	_check("survival_other_line_no", not XTianqiHorsemen.prepare("nope", s, "survival") and XTianqiHorsemen.pending() == "")
 	XTianqiHorsemen.prepare("war", s, "survival")
 	var lg := XBattleLogic.new()
 	lg.setup(30, s)

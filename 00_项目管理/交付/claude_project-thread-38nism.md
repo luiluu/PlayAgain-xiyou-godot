@@ -1,0 +1,79 @@
+# 交付：claude/project-thread-38nism
+
+- 车道／工作者：天启篇车道「乙：死亡线（勇者）」／cc（云端线程「实装天启篇死亡线」）
+- 状态：可合并
+
+## 依赖与合并顺序
+
+- **基于饥荒线分支 `claude/project-thread-bjkwzm`（新头 31d7724，含四线共用 XTianqiLine 和 31～36 层重做 r4t9e0）**，它又基于 `cc/pro-tianqi-war`、`cc/pro-tianqi-horsemen`。**合并顺序：horsemen → war → 饥荒线（bjkwzm，含 r4t9e0）→ 本分支。**
+- 和按段异化车道（丁，`claude/project-thread-rswno9`）的接口：本线模块已照它的格式给了 `XTianqiDeathAlien.apply(logic, s, key, list)` 和 `kinds()`（种类键 verdict、reaper、knell、double、captain，和它在 `seg_alien.json` 里占的位一致）。两支都合进去后，在 `XTianqiLine` 的 `alien_apply`、`alien_kinds`、`alien_active` 各加一行 `"death"`（调 `XTianqiDeathAlien.apply(logic, s, "segment", list)`、`kinds()`、`active(logic)`）。本分支没有这三个函数，所以没加。
+- 会和丙（瘟疫线）冲突的几处都是一行：`XTianqiLine.KEYS`、`enabled()`、`alien_prepare()`，`XTianqiHorsemen.MODE_LINES`，`battle_logic.gd` 各挂钩下面一行。合并时两行都留。
+- 发行开关 `XTianqi.RELEASE_OPEN` 没动（仍是 false）。
+
+## 变更记录草稿
+
+## 2026-11-11 【cc·未经审查】天启篇死亡线（勇者）：开场三节、楼层节点、使徒、五种死亡异化与死期、生存战与影子（dev.待定）
+
+- 按设计仓库《四线剧情与关卡设计稿 v0.4》第 4.1、5.1、5.2、5.7 节，异化按《四线异化 v0.8》第 2.2、3.1 节（带 4 的参数按 v0.4 附录换：宣判者 5／3／2／1 回合、丧钟 6／5／3／2、替身回复 20／30／50／60%、收尸人 +10／15／25／50%），生存战死期间隔按四骑士数值稿 v0.4 第 7 节（每 3 回合，已确认）。
+- 新数据表 `tianqi_data/death_line.json`（照 famine_line.json 的格式）：地点（勇者之塔 82～85、废墟 32、上行天 147、天外天 158）、门、开场两节步骤、楼层节点、异化级与种类、五个预设、全部台词。
+- 新模块 `core/tianqi_death_line.gd`（XTianqiDeathLine，开关 `ENABLED`）：只放开关和 `run_shadow`／`run_final`，流程全走 XTianqiLine。
+  - 开场 1「异兆」：小小鱼从大厅开路进勇者之塔一层（82）→ 二层（83），恶魔训犬×3（敌群 291），第一只侵染·宣判者，教死期。
+  - 开场 2「蔓延」：三层（84）节末精英蚀骨·收尸人「勇者义从」罗奇（敌群 294），打完进王座（85），空王座上的背影说「现在一切结束了」。
+  - 开场 3「天外裂」：死亡骑士生存战。
+  - 使徒：10 层侵染·宣判者、20 层蚀骨·替身、30 层化形·骑士队长；15 层黑暗废墟（绿钥匙、替身值班表）、25 层上行天（传闻）。
+- 勇者之塔是高等级副本（训犬 25.5 万、罗奇 82 万生命），开场在 5 层左右打，所以预设加了 `stats_from`：借塔里的外观、能力值换成六层敌人的原数值（训犬借火焰哥布林 31，罗奇借「巨棒」帕斯诺夫 36）。**cc 选的，待 Max 核**；行动、经验照原敌人。
+- 新模块 `core/tianqi_death_alien.gd`（XTianqiDeathAlien）：
+  - 死期：宣判者在回合开始挂，本回合结束时带走；侵染、蚀骨时打倒挂标记的宣判者就解开，免即死（抵抗阵亡状态）挡得住；化形起挡不住；终焉一次挂两人。
+  - 收尸人：每倒下一名我方，自身攻防魔攻魔防按基础值 +10／15／25／50%，回复 10／15／20／30% 最大生命；化形起倒下的人 2 回合内不能复活。
+  - 丧钟：倒数 6／5／3／2 回合，归零时生命比例最低的我方倒下、重新倒数；化形起全体另损失 20% 生命；终焉那回合不能复活。
+  - 替身：被打倒时改由一名生命比例不高于 30／50／100／100% 的我方代它倒下，本体回到 20／30／50／60%；化形起能替两次；终焉换下的人本场不能复活。
+  - 骑士队长：在场时逃跑必定失败；免即死挡死期、丧钟的几率失效 50／75／100／100%；化形起死期改在被挂的人行动后立刻结算；终焉其他死亡异化间隔 −1。
+  - 终焉级在场时死者本场不能复活（`XBattler.remove_state(1)` 挂钩）。死期、丧钟倒数、骑士队长都在战斗日志里报。
+- `XTianqiHorsemen`：生存战、影子加死亡线（`MODE_LINES`）。生存战照原稿出宝石、神圣剑，每 3 回合挂一次死期（`survival.doom_interval`），没有阶段；影子奇数回合弱化的神圣剑（固定 6 段，攻击 5 成）、偶数回合给一人挂死期，没有追加普攻，带终焉（死者本场不能复活）。
+- 35、36 层：`XTianqiSummit.line_module`／`_run_line` 各加死亡线一行（35 层打本线影子、36 层打勇者本体，赢了放结局、记 cleared）；`xiyou_tianqi_summit` 加 death_shadow、death_final 两条。
+- 挂钩：`battle_logic.gd`（setup、开战日志、回合开始、行动结束、回合结束、生命伤害、逃跑、结束战斗各一行）、`battler.gd`（复活一行）、`XTianqiLine`（KEYS、enabled、alien_prepare 各一行）。
+- `天启篇数据校验.py` 加 death_line；新专项 `tests/xiyou_tianqi_death`；`xiyou_tianqi_famine`、`xiyou_tianqi_war` 里「死亡线不能选」的两处改成瘟疫线。
+- 玩家可见：开发版天启篇存档通关 5 层后能选死亡线，打勇者之塔两场异化战和天外天生存战；之后 10～30 层有勇者的声音和使徒。发行版看不到。
+
+### 未做（下一单）
+
+- 「不屈」「致命伤害保命」类效果被骑士队长、化形宣判者废掉：要逐个角色模块接，现在只认免即死（抵抗阵亡状态）。
+- 收尸人终焉吸收技能；画面上的死期钟、丧钟倒数（现在只在日志里）；死亡线墓碑碎片装饰与色调。
+- 36 层本体战的终焉「死去的角色本场不能复活」：四骑士本体现在只对死期死的人生效（Pro 的实现，本车道没改），影子已按全部死者算。建议本体也改成全部死者（一行，在 `XTianqiHorsemen.blocks_revive`）。
+- 净印与遗物奖励：等装备数据。
+
+## 交接板
+
+- 下一步：按上面的顺序合并；35、36 层已接；和按段异化车道一起合时补 `XTianqiLine.alien_apply／alien_kinds／alien_active` 的 death 行。
+- 用户试玩说明：开发版新开天启篇档，变量 20 调到 6 回大厅选死亡线，会进勇者之塔打训犬（头顶有钟的那只挂死期）和罗奇，再到天外天撑 6 回合。
+- 需要用户决定：无（开场借六层数值、选罗奇当节末精英是 cc 定的，写在 `death_line.json` 的 `_note` 里，待 Max 核）。
+
+## 进度账
+
+- 天启篇（扩展账）：死亡线 0 → 开场三节、楼层节点、使徒、五种异化、生存战、影子已接；按段异化接口已备，35／36 层入口、奖励、画面未做。
+
+## 可优化（流程／工具／效率）
+
+- 已做：预设加 `stats_from`，高等级地图也能当开场舞台（其他线想借副本场景时可用；回退：删掉这个键即照原数值）。
+- 建议：三条线的异化模块里 `_pick_units`、`tier_info`、`take_logs`、`end` 一模一样，可以抽进 XTianqiLine 一份（归天启篇总装，不急）。
+
+## 在 Mac 上要跑的专项
+
+改了 `battle_logic.gd`、`battler.gd`（战斗核心），选测会判整轮。云端只跑了下面「验证」里的，合并前请在 Mac 上跑 `xiyou_rules*`、`xiyou_event_compare*`（云端缺 oracle），或直接 `检查.sh --full`。画面：开发版新开天启篇档选死亡线，看勇者之塔两场（名字「侵染·」「蚀骨·」、日志里的死期）和天外天生存战（第 3、6 回合挂死期）。
+
+## 验证
+
+云端容器（Godot 4.7.2 Linux，转换产物取自 `refs/ci/generated/main`）：
+
+- 新专项 `xiyou_tianqi_death` 93/93；`xiyou_tianqi_summit` 65/65（含死亡线 35、36 层）、`xiyou_tianqi_famine` 99/99、`xiyou_tianqi_war` 96/96、`xiyou_tianqi_horsemen` 97/97、`xiyou_tianqi_horsemen_battle` 100/100、`xiyou_tianqi_numbers` 57/57。
+- `并行测试.py` 一批 35 个全过：`xiyou_tianqi_*`、`xiyou_boss_*`、`xiyou_map_*`、`xiyou_lobby_corruption`、`xiyou_determinism`、`xiyou_alien_battle`、`xiyou_enemy_book`、`xiyou_actor1_damage`、`xiyou_attack_query`、`xiyou_action_sequence`、`xiyou_battle_pace`。
+- `天启篇数据校验.py` 全过（不带 --params）。没跑全量 `检查.sh`（车道规则）。
+- 实测改了两处：三处数组变量补类型标注（解析报错）；开场同场没被选中的训犬也一并借六层数值（原来只换了宣判者那只，另外两只还是 8925 万生命）。
+
+## 本分支提交
+
+- WIP: 死亡线数据表、模块、挂钩、专项（未跑）
+- WIP: 交付单草稿
+- 合并饥荒线新头（31～36 层），接 35、36 层
+- WIP: 专项跑通 93/93
+- 本次：交付单可合并

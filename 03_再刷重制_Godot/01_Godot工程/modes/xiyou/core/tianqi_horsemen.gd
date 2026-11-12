@@ -20,9 +20,11 @@ extends RefCounted
 ##
 ## 打法（prepare 的第三个参数，cc/pro-tianqi-war 加）：body 本体；survival 开场生存战（战争线：骑士生命锁住、援军第 1／3／5 回合、
 ## 火花满 10 敌方全体再动、撑过 6 回合退场算赢；饥荒线（cc 饥荒线车道）：开场即绝粮，3 只饿出来的小怪借伐木哥布林 514，骑士吃它们来打你，
-## 资历照涨、没有突破）；shadow 35 层影子（战争线：每回合一招焰浪轰击／噼啪三响，带兵临；饥荒线：每回合一招题海战术，带绝粮，没有小怪）。
+## 资历照涨、没有突破；死亡线（cc 死亡线车道）：没有阶段，宝石、神圣剑照原稿出，每 3 回合挂一次死期，有人逃跑就变骑士队长）；
+## shadow 35 层影子（战争线：每回合一招焰浪轰击／噼啪三响，带兵临；饥荒线：每回合一招题海战术，带绝粮，没有小怪；
+## 死亡线：奇数回合弱化的神圣剑（固定 6 段）、偶数回合给一人挂死期，带终焉：死去的人本场不能复活）。
 ##
-## 还没做（交付单「未做」）：画面上的计量条和死期、不服标记（现在只在战斗日志里报）；死亡、饥荒、瘟疫的生存战和影子；
+## 还没做（交付单「未做」）：画面上的计量条和死期、不服标记（现在只在战斗日志里报）；瘟疫的生存战和影子；
 ## 绝粮的「消耗再提高一档」和口粮；骑士队长让免即死、不屈失效；疫病让减益清不掉；识破的反击、爆闪几率。
 
 const PATH := "res://modes/xiyou/tianqi_data/horsemen.json"
@@ -38,7 +40,7 @@ static var _pending := ""
 ## 下一场的打法（prepare 设、setup 取走）：body 36 层本体；survival 开场「天外裂」生存战；shadow 35 层影子。
 ## 生存战、影子现在只做了战争线（四线剧情与关卡设计稿 v0.4 第 5.7 节；cc/pro-tianqi-war），别的线 prepare 不收
 const MODES := ["body", "survival", "shadow"]
-const MODE_LINES := {"survival": ["war", "famine", "plague"], "shadow": ["war", "famine", "plague"]}
+const MODE_LINES := {"survival": ["war", "famine", "plague", "death"], "shadow": ["war", "famine", "plague", "death"]}
 static var _pending_mode := "body"
 ## 正在打的骑士战（BattleLogic）；挂钩先看它，没有就原样返回
 static var _logic_ref: WeakRef = null
@@ -519,8 +521,12 @@ static func _check_phase(logic, f: Dictionary) -> void:
 # ---- 死亡·勇者 ----
 
 static func _death_turn_start(logic, f: Dictionary, turn: int) -> void:
+	if str(f.mode) == "shadow":
+		return  # 35 层影子：死期和神圣剑都是它自己的那一招（_death_shadow_pick），回合开始不挂
 	var k := knight("death")
 	var interval := int(k.doom.phase_interval) if int(f.phase) >= 3 else int(k.doom.interval)
+	if str(f.mode) == "survival":
+		interval = int(data().survival.doom_interval)  # 开场生存战每 3 回合（数值稿 v0.4 第 7 节，已确认）
 	if turn - int(f.doom_last) >= interval:
 		var live := _alive_actors(logic).filter(func(a): return not _mark(f, a).get("doom", false))
 		if not live.is_empty():
@@ -684,7 +690,7 @@ static func decide(logic, b) -> Array:
 	_check_phase(logic, f)
 	match str(f.line):
 		"death":
-			return _death_pick(logic, f, i)
+			return _death_shadow_pick(logic, f) if str(f.mode) == "shadow" else _death_pick(logic, f, i)
 		"war":
 			return _war_shadow_pick(logic, f) if str(f.mode) == "shadow" else _war_pick(logic, f)
 		"famine":
@@ -716,6 +722,13 @@ static func _death_pick(logic, f: Dictionary, i: int) -> Array:
 		return [_skill("holy_sword", "神圣剑", 1, maxi(1, int(f.unique)), float(k.holy_sword.coef), false), t]
 	var kind: String = ["red", "blue", "holy"][int(f.gems) % 3]
 	return [_skill(kind, {"red": "红宝石", "blue": "蓝宝石", "holy": "圣水"}[kind], 11, 0, 0.0, false), null]
+
+
+## 35 层影子：每回合一招，奇数回合弱化的神圣剑（固定 shadow.holy_sword_hits 段，不看独有技能次数）、偶数回合给一人挂死期
+static func _death_shadow_pick(logic, f: Dictionary) -> Array:
+	if int(logic.turn) % 2 == 1:
+		return [_skill("holy_sword", "神圣剑", 1, int(data().shadow.holy_sword_hits), float(knight("death").holy_sword.coef), false), null]
+	return [_skill("doom_cast", "现在一切结束了", 1, 0, 0.0, false), null]
 
 
 static func _war_pick(logic, f: Dictionary) -> Array:
@@ -792,7 +805,14 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef), false))
 			f.sword_target = null
 			f.unique = int(f.unique) + 1
-			logs.append_array(_follow_up(logic, f, u))
+			if str(f.mode) != "shadow":  # 影子没有异化追加和原稿追加普攻，只放这一招
+				logs.append_array(_follow_up(logic, f, u))
+		"doom_cast":
+			var live := _alive_actors(logic).filter(func(a): return not _mark(f, a).get("doom", false))
+			if not live.is_empty():
+				var t = live[logic._int(0, live.size() - 1, "horseman_doom")]
+				_mark(f, t).doom = true
+				_say(f, "死期：%s会在本回合结束时死去。" % t.display_name())
 		"finale":
 			for t in _alive_actors(logic):
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef), false))
@@ -1105,7 +1125,12 @@ static func blocks_state(e, id: int) -> bool:
 ## XBattler.remove_state(1)：死期死去的人本场不能复活
 static func blocks_revive(b) -> bool:
 	var logic = active_logic()
-	return logic != null and b is XActor and bool(mark_of(logic, b).get("no_revive", false))
+	if logic == null or not b is XActor:
+		return false
+	var f := fight(logic)
+	if str(f.get("line", "")) == "death" and str(f.get("mode", "")) == "shadow" and logic.actors.has(b):
+		return true  # 35 层影子带本线终焉：死去的人本场不能复活
+	return bool(mark_of(logic, b).get("no_revive", false))
 
 
 ## XResourceContext.gain：绝粮下我方 MP、TP 在战斗中不能恢复
