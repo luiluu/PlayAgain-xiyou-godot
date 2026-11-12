@@ -771,7 +771,7 @@ static func hp_damage(logic, u, t, value: float) -> float:
 					break
 	var cd := _p(logic, t, "cheat_death")
 	var un := _unit(logic, t)
-	if not cd.is_empty() and not doom_kill and int(un.cheat_used) < int(cd.per_battle) and value >= t.hp + t.shield:
+	if not cd.is_empty() and not doom_kill and int(un.cheat_used) < int(cd.per_battle) and value >= t.hp + t.shield and not XTianqiDeathAlien.breaks_saves(logic):  # 骑士队长：保命失效
 		un.cheat_used = int(un.cheat_used) + 1
 		un.cheat_turns = int(cd.turns) + 1
 		value = maxf(0.0, t.hp + t.shield - float(cd.hp))

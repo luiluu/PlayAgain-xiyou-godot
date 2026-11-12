@@ -566,6 +566,7 @@ func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
+		XTianqiFamineAlien.on_revive(self)  # 天启篇饥荒线异化：终焉荒年者在场时这一下回复无效
 	state_ids.erase(id)
 	state_turns.erase(id)
 	if had:

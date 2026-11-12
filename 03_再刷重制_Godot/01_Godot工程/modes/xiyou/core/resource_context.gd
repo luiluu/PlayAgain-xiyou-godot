@@ -34,7 +34,7 @@ func add_state(b: XBattler, id: int, inputs := {}) -> void:
 		return  # 璇定星 addState 包装：挡一次硬控制（在 isStateAddable 之前）
 	# Native isStateAddable checks appearance and the death state. Raw HP may
 	# already be zero while refresh/_die still needs to attach state 1.
-	var forced := XAlienBattle.forced_state(b, id)  # 异化疫囊、囚厄：不可抵抗、本次移除过也照加
+	var forced := XAlienBattle.forced_state(b, id) or XTianqiPlagueAlien.forced_state(b, id)  # 异化疫囊、囚厄：不可抵抗、本次移除过也照加；天启篇终焉疫源：我方减益免疫无效
 	if b.state_ids.has(1) or (b is XEnemy and b.hidden) or (b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not forced):
 		return
 	if result(b).removedStates.has(id) and not forced:
@@ -152,6 +152,7 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	if XTianqiHorsemen.starved(b, resource, amount):
 		return {}  # 天启四骑士：饥荒终焉「绝粮」，我方 MP、TP 在战斗中不能恢复
 	amount = XTianqiFamineAlien.gain(b, resource, amount)  # 天启篇饥荒线异化：荒年者降回复、熬夜者降 TP 获得
+	amount = XTianqiPlagueAlien.gain(b, resource, amount)  # 天启篇瘟疫线异化：终焉毒腺在场时中毒的人不能被治疗
 	if XAlienBattle.route_gain(self, b, resource, amount):
 		return {}  # 异化绝缘拒收外来恢复、舍身的生命恢复转给队友（gainHp／gainMp 包装）
 	if resource == "hp" and XAlienBattle.route_life_gain(self, b, amount):

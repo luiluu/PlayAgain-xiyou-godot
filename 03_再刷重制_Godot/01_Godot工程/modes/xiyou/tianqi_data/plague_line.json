@@ -27,12 +27,12 @@
   },
   "kinds": {
    "gland": {"name": "毒腺", "poison": [0.03, 0.05, 0.08, 0.12], "turns": 3, "stack_max": 3},
-   "chaos": {"name": "混乱者", "chance": [0.2, 0.35, 0.5, 0.8], "turns": 1},
+   "chaos": {"name": "混乱者", "chance": [0.2, 0.35, 0.5, 0.8], "turns": 1, "finale_turns": 2},
    "taunt": {"name": "挑衅者", "self_atk_down": 0.33, "def_up": [0.2, 0.3, 0.6, 1.0], "defy_down": 0.2, "defy_turns": 2, "group_cut": 0.5},
    "contagion": {"name": "传染者", "copies": [1, 1, 2, 99]},
    "source": {"name": "疫源", "extend": [1, 1, 2, 3], "purge_fail": [0.0, 0.2, 0.33, 0.6]}
   },
-  "frail": {"_note": "病弱：瘟疫异化在场时，我方每有一个减益八项属性 −3%，上限 −30%（终焉在场 −60%，终焉没做）", "per": 0.03, "cap": 0.3, "cap_end": 0.6},
+  "frail": {"_note": "病弱：瘟疫异化在场时，我方每有一个减益八项属性 −3%，上限 −30%（终焉在场 −60%）", "per": 0.03, "cap": 0.3, "cap_end": 0.6},
   "focus": {"_note": "病灶：我方身上减益的总层数；满 12（终焉在场时 8）爆发：中毒立刻结算一次，混乱延长 1 回合", "full": 12, "full_end": 8},
   "confusion_state": 124
  },

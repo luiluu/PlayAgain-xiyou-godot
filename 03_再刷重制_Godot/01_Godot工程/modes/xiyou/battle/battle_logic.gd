@@ -2992,7 +2992,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				elif int(r.skill.get("hitType", 0)) != 0:
 					chance *= state_rate(t, id) * _luk_rate(u, t)
 				var resisted_chance := -1.0
-				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id):
+				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id) and not XTianqiPlagueAlien.forced_state(t, id):  # 天启篇终焉疫源
 					resisted_chance = chance
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
@@ -3036,7 +3036,7 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 		return
 	if not t.is_alive():
 		return
-	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):
+	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id) and not XTianqiPlagueAlien.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):  # 天启篇终焉疫源：我方减益免疫无效
 		return
 	if id == DEATH_STATE:
 		_die(t)
@@ -3090,6 +3090,8 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 			return  # 异化 addBuff／addDebuff 包装：绝缘拒收外来、舍身增益转给队友、囚厄接收队友减益
 		if not buff and XMira.blocks_debuff(t):
 			return  # 米拉终焉 addDebuff 包装
+		if not buff and XTianqiWarAlien.blocks_debuff(self, t):
+			return  # 天启篇战争线异化：终焉战狂免疫能力值减益
 		if t.buffs[pid] != t.buff_limit(pid, buff):
 			t.buffs[pid] += 1 if buff else -1
 		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
