@@ -68,7 +68,10 @@ func _rift() -> void:
 	check("off.stage", XRift.stage() == 1)
 	check("off.img", str(_ev(75).pages[0].image.characterName) == "!Codex_Rift_Stage1")
 	check("off.no_new", (XDB.map(4).events as Array).size() == 78 and not XRift.keep_event(4, 201))
+	XLobbyDebugNpc.BOOK_ONLY = false  # 大厅全图鉴 NPC 也改 Map004（Kyo 11-12），比原图时一起关
+	XRift.clear_cache()
 	check("off.same_as_source", JSON.stringify(XDB.map(4)) == JSON.stringify(XDB.load_json("maps/Map004.json")))
+	XLobbyDebugNpc.BOOK_ONLY = true
 	XRift.STAGE2 = true
 	XRift.clear_cache()
 
