@@ -6,6 +6,7 @@ extends Node
 ## 四、进场：t=0 全黑、贴闭眼；淡入第 26 帧起逐帧睁眼、第 32 帧去掉贴片；Logo 第 36～56 帧上浮淡入；推进到结束后
 ##     贴片去掉、Logo 不透明、菜单可操作；进场中按键直接跳到结束；按 time_scale 换算真实秒。
 ## 五、不调 play_entrance() 一建好就是最终画面；XIntroAnim.ENABLED = false 时 play_entrance() 不做进场。
+## 七、初始选中照原版 selectLast：上回按过的项 → 有存档选「旧的回忆」→ 第一项（MV_SELECT_LAST 关掉回第一项）。
 ## 六、开关：ENABLED = false 时 available() 为假；XTianqi.ENABLED = false 时照样可用（与天启篇内容解绑，测完恢复）。
 
 var results: Array = []
@@ -46,6 +47,7 @@ func _key(action: String) -> InputEventAction:
 func _run() -> void:
 	_assets()
 	await _menu()
+	_select_last()
 	await _entrance()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -75,6 +77,7 @@ func _assets() -> void:
 
 func _menu() -> void:
 	calls.clear()
+	XTianqiTitle.last_key = ""
 	var t := _make(["load"])
 	await get_tree().process_frame
 	var keys := []
@@ -219,6 +222,37 @@ func _entrance() -> void:
 	XIntroAnim.ENABLED = ia
 	t4.queue_free()
 	await get_tree().process_frame
+
+
+## 初始选中照原版 Window_TitleCommand.selectLast（玩家反馈 v0.01：有存档也总停在「新的游戏」）：
+## 本次运行上回按过的项 → 有存档（「旧的回忆」可用）选它 → 第一项；按确定记下键名；MV_SELECT_LAST = false 回到第一项。
+func _select_last() -> void:
+	XTianqiTitle.last_key = ""
+	var a := _make()
+	_check("select_last.save_selects_load", a.selected() == 1, a.selected())
+	a.queue_free()
+	var b := _make(["load"])
+	_check("select_last.no_save_first", b.selected() == 0, b.selected())
+	b.queue_free()
+	var c := _make()
+	c.activate(2)
+	_check("select_last.remembers_key", XTianqiTitle.last_key == "options", XTianqiTitle.last_key)
+	c.queue_free()
+	var d := _make()
+	_check("select_last.last_wins", d.selected() == 2, d.selected())
+	d.queue_free()
+	XTianqiTitle.last_key = "load"
+	var e := _make(["load"])
+	_check("select_last.last_disabled_falls_back", e.selected() == 0, e.selected())
+	e.queue_free()
+	XTianqiTitle.MV_SELECT_LAST = false
+	XTianqiTitle.last_key = "options"
+	var f := _make()
+	_check("select_last.off_first", f.selected() == 0, f.selected())
+	f.queue_free()
+	XTianqiTitle.MV_SELECT_LAST = true
+	XTianqiTitle.last_key = ""
+	calls.clear()
 
 
 func _switches() -> void:

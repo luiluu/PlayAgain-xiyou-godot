@@ -86,6 +86,13 @@ var help_card: XHelpCard
 ## 说明卡上次排版的商品（同一件不重排；回退开关 HELP_SAME_SKIP = false 每次重排）
 var _help_rec := {}
 static var HELP_SAME_SKIP := true
+## O-待定·商店列表缓存（玩家反馈 v0.01「所有 NPC 买东西都有轻微卡顿」）：一次按键里买入表、出售表各要重算十来次
+## （_refresh、说明卡、状态窗、库存行、列表各算一遍；出售表每次把整个背包按分类筛一遍、套标记），背包大时一按一卡。
+## 开着时 _refresh 之后到下一次操作之前（即本次重画）同一份表只算一次；确定、取消、成交一开始就作废，照旧现算。
+## 原版每个窗口各自 makeItemList 一次（Window_ShopBuy／ShopSell.refresh），不是每画一处算一次。回退：DATA_CACHE = false。
+static var DATA_CACHE := true
+var _cache_on := false
+var _cache := {}
 var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
 var _gold_buy := true
 
@@ -140,6 +147,8 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
+	_cache.clear()
+	_cache_on = DATA_CACHE
 	# Window_ShopBuy／Window_ShopSell.updateHelp 设金钱窗的商品；onBuyCancel 清空（出售取消不清）
 	if _mode == "buy":
 		var d := _buy_data()
@@ -196,6 +205,15 @@ func _price(g: Array) -> int:
 ## 购买列表：商品表先经 Scene_Shop.prepare 的改写（XItemMarks.shop_goods）。rec 是显示用记录（代购时抄上代购件的名字、图标、说明），
 ## item 是买入各函数用的商品记录（装备带 kind/base），price 是金币价（指定价格优先）。
 func _buy_data() -> Array:
+	if _cache_on and _cache.has("buy"):
+		return _cache.buy
+	var out := _make_buy_data()
+	if _cache_on:
+		_cache.buy = out
+	return out
+
+
+func _make_buy_data() -> Array:
 	var out := []
 	for g in XItemMarks.shop_goods(goods, XState.current.map_id if XState.current != null else 0):
 		var item := XItemMarks.shop_rec(int(g[0]), int(g[1]))
@@ -206,6 +224,22 @@ func _buy_data() -> Array:
 
 ## 出售列表：按分类列出持有物（装备是背包实例）；价格为一半（MV Scene_Shop.sellingPrice）。
 func _sell_data() -> Array:
+	var key := "sell:%d" % _cat
+	if _cache_on and _cache.has(key):
+		return _cache[key]
+	var out := _make_sell_data()
+	if _cache_on:
+		_cache[key] = out
+	return out
+
+
+## 列表缓存作废（会改背包、金钱、库存、商品表的操作开头调）；下一次 _refresh 再开
+func _drop_cache() -> void:
+	_cache_on = false
+	_cache.clear()
+
+
+func _make_sell_data() -> Array:
 	var s := XState.current
 	var out := []
 	var sym: String = CATEGORIES[_cat][1]
@@ -815,6 +849,7 @@ func _max_buy(e: Dictionary) -> int:
 
 
 func _ok() -> void:
+	_drop_cache()
 	_ok_inner()
 	_refresh()
 
@@ -901,6 +936,7 @@ func _ok_inner() -> void:
 
 
 func _trade() -> void:
+	_drop_cache()
 	var s := XState.current
 	var e := _number_entry()
 	if _number_from == "buy":
@@ -925,6 +961,7 @@ func _trade() -> void:
 
 
 func _cancel() -> void:
+	_drop_cache()
 	_cancel_inner()
 	_refresh()
 

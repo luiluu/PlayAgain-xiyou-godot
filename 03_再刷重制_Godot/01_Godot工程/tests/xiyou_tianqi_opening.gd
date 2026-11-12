@@ -150,7 +150,8 @@ func _opening() -> void:
 	_check("saved_rules", flags is Dictionary and flags.get("tianqi") is Dictionary and int(flags.tianqi.get("rules", 0)) == 1
 		and str(flags.tianqi.get("difficulty", "")) == "jiusi", flags.get("tianqi") if flags is Dictionary else saved)
 	# 大厅首次到达的漩涡过场（EV76）放完再离开，免得协程挂着
-	await _wait(func(): return _map_idle(4) and s.self_switch(4, 76, "A"))
+	# 苍龙破晓过场（EV203，XRift.CHAIN_AFTER_RIFT1）紧接着放：也等它放完
+	await _wait(func(): return _map_idle(4) and s.self_switch(4, 76, "A") and (not XRift.STAGE2 or s.self_switch(4, XRift.RIFT2, "A")))
 
 
 func _rules() -> void:
