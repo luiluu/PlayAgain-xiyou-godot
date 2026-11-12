@@ -58,7 +58,7 @@ static func growth(item) -> int:
 	return maxi(0, floori(float(item.get(FAME, 0)))) if item is Dictionary else 0
 
 static func rate_for(item, k: float) -> float:
-	return (1.2 if is_ataraxia(item) else 1.1) + 0.1 * XHeartsteel.stage_of(k)
+	return (1.2 if is_ataraxia(item) else 1.1) + 0.1 * XTianqiGear.hubris_stage(XHeartsteel.stage_of(k))  # 天启篇阶数夹上限
 
 static func pending(item) -> int:
 	for r in _ledger:
