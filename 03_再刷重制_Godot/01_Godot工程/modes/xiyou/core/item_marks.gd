@@ -88,7 +88,7 @@ static func decorate(s: XState, rec: Dictionary) -> Dictionary:
 static func apply_list(s: XState, entries: Array) -> Array:
 	var rest := []
 	var top := []
-	for e in XAlienHide.filter_entries(entries):  # installAlienationHide 包 Game_Party.items：隐藏生效时不列异化能量、异化石（O-283）
+	for e in XTianqiPetHide.filter_entries(XAlienHide.filter_entries(entries)):  # 天启篇隐藏宠物：不列宠物物品  # installAlienationHide 包 Game_Party.items：隐藏生效时不列异化能量、异化石（O-283）
 		var d: Dictionary = e.duplicate()
 		d.rec = decorate(s, e.rec)
 		if is_top(s, e.rec):
@@ -242,6 +242,7 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 	var horn_before := mapped.any(_is_horn_row)
 	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.horn_id_disabled(g[1])))
 	out = XAlienHide.filter_goods(out)  # installAlienationHide 包 Window_ShopBuy.makeItemList：隐藏生效时不卖六件异化物品（O-283）
+	out = XTianqiPetHide.filter_goods(out)  # 天启篇隐藏宠物：不卖宠物物品
 	if map_id == LOBBY_MAP:
 		_lobby_additions(out, horn_before)
 	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
