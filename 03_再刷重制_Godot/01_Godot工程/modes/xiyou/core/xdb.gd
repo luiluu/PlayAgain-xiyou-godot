@@ -147,6 +147,7 @@ static func map(map_id: int) -> Dictionary:
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
 		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-312，开关 XRift.STAGE2）
+		XLobbyDebugNpc.patch_map(map_id, _tables[key])  # 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12）
 	return _tables[key] if _tables[key] != null else {}
 
 
