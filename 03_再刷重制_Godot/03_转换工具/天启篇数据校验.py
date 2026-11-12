@@ -14,7 +14,7 @@
 - summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 16／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
+- skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1127,8 +1127,8 @@ def skill_rework_rules(table: dict) -> list:
         nice_violations(table.get(sec, {}), sec, exempt, bad)
     tiers = table.get('tiers', {})
     sup, strong, hidden = (set(tiers.get(k, [])) for k in (SUPER, STRONG, '不开放'))
-    if len(sup) != 16:
-        bad.append('超强者名单 %d 人（应 16：18 人里轮回者·里德、五条悟另做）' % len(sup))
+    if len(sup) != 17:
+        bad.append('超强者名单 %d 人（应 17：18 人里轮回者·里德另做；五条悟 180 在名单里，没解锁最强之名时游戏里当他不开放）' % len(sup))
     if len(strong) != 52:
         bad.append('强者名单 %d 人（应 52）' % len(strong))
     for a, b, name in ((sup, strong, '超强者∩强者'), (sup, hidden, '超强者∩不开放'), (strong, hidden, '强者∩不开放')):
