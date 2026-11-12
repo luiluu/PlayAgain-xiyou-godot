@@ -30,6 +30,7 @@ const ENEMY_GAUGE_W := 180.0
 const OTB_POS := Vector2(58, 618)
 const LOG_Y := 92.0                # OTB Log Window Y
 const STATES_MAX := 4
+const TIANQI_METER_POS := Vector2(272, 66)   # 天启篇本线计量条左上（自动／变速按钮 (272,12) 高 46 之下）
 ## Codex_MiraRavenMultiFrame：旧式侧视角色（ID < 167）战斗中身体缩放 0.75、最近邻
 const ACTOR_SCALE := 0.75
 
@@ -68,6 +69,7 @@ var cmd_win: XBattleList
 var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
+var tianqi_meter: XTianqiMeter
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
 var yun_win: XYunChoicesWindow
 ## 谷雨赠春／还春选择窗（开着时）
@@ -548,6 +550,10 @@ func _build_ui(vs: Vector2) -> void:
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
 	boss_panel.help_source = _boss_panel_help_rect
 	ui.add_child(boss_panel)
+	# 天启篇本线计量（XTianqiMeter：火花、饥饿、死期、病灶）：自动／变速按钮下面；场上没有本线异化怪时不画
+	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
+	tianqi_meter.position = _origin + TIANQI_METER_POS
+	ui.add_child(tianqi_meter)
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空

@@ -527,7 +527,7 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 
 # ---- 选线（Kyo 11-11「选线做成单独的大厅内事件」；四线剧情与关卡设计稿 v0.4 第 2 节，已确认） ----
 ## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiLine.door_blocked）。
-## 四张卡：骑士剪影（美术出来前没有）＋一句话＋它会怎样改变战斗＋考什么；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
+## 四张卡（XTianqiLineCards）：骑士剪影＋一句话＋它会怎样改变战斗＋考什么；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
 ## 只有做好了内容的线能选（line_playable）：XTianqiLine.KEYS 里的线（战争 cc/pro-tianqi-war、饥荒），别的线卡片照列、标「还没修好」。
 ## 开关（O-280）：LINE_EVENT_OPEN＝false 时大厅不出这个事件、门也不锁（回到第三批之前）。战争线做好后打开（cc/pro-tianqi-war）。
 static var LINE_EVENT_OPEN := true
@@ -593,14 +593,21 @@ static func _card_text(l: Dictionary) -> String:
 ## 大厅选线对话（地图场景在大厅里、抽完角色后调）：「再想想」留到下次回大厅；选定后接着跑本线开场
 static func run_line_choice(host, s: XState) -> void:
 	while line_ready(s):
-		var opts := LINES.map(func(l): return "%s·%s　%s" % [l.name, l.knight, l.pick])
-		opts.append("再想想")
-		var head := "方桌的裂纹裂成了四块，每一块里都映着一位骑士。你要踏上哪一条路？"
-		var i: int = await host.show_text_with_choices("", 0, _line(head), opts, opts.size() - 1)
+		var i: int
+		# 四张竖卡（XTianqiLineCards，地图场景的 pick_line；XTianqiLook.CARDS 关掉或没有画面时回到对话框选项）
+		var cards: bool = XTianqiLook.CARDS and host.has_method("pick_line")
+		if cards:
+			i = await host.pick_line(LINES, LINES.map(func(l): return line_playable(str(l.key))))
+		else:
+			var opts := LINES.map(func(l): return "%s·%s　%s" % [l.name, l.knight, l.pick])
+			opts.append("再想想")
+			var head := "方桌的裂纹裂成了四块，每一块里都映着一位骑士。你要踏上哪一条路？"
+			i = await host.show_text_with_choices("", 0, _line(head), opts, opts.size() - 1)
 		if i < 0 or i >= LINES.size():
 			return
 		var l: Dictionary = LINES[i]
-		await host.show_text("", 0, [_card_text(l)])
+		if not cards:
+			await host.show_text("", 0, [_card_text(l)])
 		await host.show_text("", 0, _line(str(l.guide)))
 		if not line_playable(str(l.key)):
 			await host.show_text("", 0, _line("……这条路还没修好。换一条吧。"))
