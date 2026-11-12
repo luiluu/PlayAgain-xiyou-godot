@@ -548,6 +548,8 @@ static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
 	var nc := note_costs(skill)
 	if not nc.has("hpCost") and not nc.has("hpCostPer"):
 		return 0
+	if XTianqiSkills.hp_free(a, skill):  # 天启篇技能重构：心法免生命消耗（晴明两仪四象②）
+		return 0
 	var cost := maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
 	return XTianqiFamineAlien.hp_cost(a, XSkillMastery.cost(a, skill, "hp", cost))  # YEP_SkillMasteryLevels skillHpCost 包装；天启篇饥荒线化形枯竭者再提高
 

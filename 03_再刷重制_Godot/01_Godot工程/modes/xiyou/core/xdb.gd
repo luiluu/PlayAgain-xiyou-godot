@@ -138,6 +138,8 @@ static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
 	if name == "Skills" and id >= t.size() and XTianqiSkills.has_new(id):
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
+	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
+		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	if name == "Skills" and XTianqiSkills.has(id):
