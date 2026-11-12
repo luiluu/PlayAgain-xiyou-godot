@@ -3,7 +3,7 @@ extends RefCounted
 ## 【cc·未经审查】天启篇「七印祭坛」装备的战斗效果：七套套装 2／3／5 件、13 把毕业武器的流派印记与独有效果、
 ## 真印追加、5 件神器的效果与代价（七印祭坛方案 v0.4 第 4.2、5.2、5.3、6.4 节；数据与参数一律读 XTianqiQiyinGear 的 qiyin_gear.json）。
 ##
-## 生效条件：ENABLED（O-待定）且是天启篇存档（XTianqi.active），发行构建另要 XTianqi.RELEASE_OPEN。原版档、关着时一条都不跑。
+## 生效条件：ENABLED（O-331）且是天启篇存档（XTianqi.active），发行构建另要 XTianqi.RELEASE_OPEN。原版档、关着时一条都不跑。
 ## 认装备：装备实例上的 qiyin 标记（与异化的 alien 标记同一种做法），由祭坛／掉落接入时用 mark() 打上：
 ##   套装件 {"kind": "set", "seal", "part", "true_seal"}；毕业武器 {"kind": "weapon", "seal", "key"（表里武器键）, "true_seal", "unique"（不立文字刻的那把武器的键）}；
 ##   神器 {"kind": "artifact", "key"}。专属武器刻印（方案 6.5 第 2 条）在专属武器上打 {"kind": "engrave", "key"}，只带独有效果。
@@ -15,7 +15,7 @@ extends RefCounted
 ## 技能消耗 cost；暴击率 cri；复活 blocks_revive。伤害乘区走 XActorDamageHooks（damage_ops，只做加和乘），最大生命走 XActor.param_rate（param_rate）。
 ## 数值是占位（表头 draft），表里没有的手感参数集中在 TUNE。
 
-## 开关（O-待定）：false＝七印装备在战斗里没有任何效果（只是带词条的装备）
+## 开关（O-331）：false＝七印装备在战斗里没有任何效果（只是带词条的装备）
 static var ENABLED := true
 
 ## 表里没有的参数（占位，数字避开 4）
