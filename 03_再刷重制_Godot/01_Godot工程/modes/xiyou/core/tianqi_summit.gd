@@ -13,7 +13,7 @@ extends RefCounted
 ## - 洪荒通关奖励和 6213 挪到 36 层：开关 2483 开着才有；「没打鸿钧」改成「没打过本档 34 层鸿钧」；天启篇默认不学 6213（XTianqi.NO_HEAVEN_GAZE）。
 ## - 再挑战（大厅 EV062）：打过 34～36 层后，先问要不要再见鸿钧／影子／骑士（只打，不改层数、不记通关），选「别的事」照原事件。
 ##
-## 各线的 35、36 层由线模块给（line_module）：现在有战争线 XTianqiWarLine、饥荒线 XTianqiFamineLine；别的线做好后在 line_module 里加一行。
+## 各线的 35、36 层由线模块给（line_module）：现在有战争线 XTianqiWarLine、饥荒线 XTianqiFamineLine、死亡线 XTianqiDeathLine；别的线做好后在 line_module 里加一行。
 ## 开关 ENABLED（false＝回到原版：门上限 34、158 照旧有随机遇敌和决战事件）；只认天启篇存档且选了线，
 ## 发行构建里还要 XTianqi.RELEASE_OPEN（现在 false），所以发行版、原版档都不受影响。
 
@@ -104,6 +104,8 @@ static func line_module(key: String):
 			return XTianqiFamineLine if XTianqiFamineLine.ENABLED else null
 		XTianqiPlagueLine.KEY:
 			return XTianqiPlagueLine if XTianqiPlagueLine.ENABLED else null
+		XTianqiDeathLine.KEY:
+			return XTianqiDeathLine if XTianqiDeathLine.ENABLED else null
 	return null
 
 
@@ -274,6 +276,11 @@ static func _run_line(host, s: XState, fn: String) -> int:
 				r = await XTianqiPlagueLine.run_shadow(host, s)
 			else:
 				r = await XTianqiPlagueLine.run_final(host, s)
+		XTianqiDeathLine.KEY:
+			if fn == "run_shadow":
+				r = await XTianqiDeathLine.run_shadow(host, s)
+			else:
+				r = await XTianqiDeathLine.run_final(host, s)
 	if r < 0:
 		await say(host, "not_ready")
 	return r

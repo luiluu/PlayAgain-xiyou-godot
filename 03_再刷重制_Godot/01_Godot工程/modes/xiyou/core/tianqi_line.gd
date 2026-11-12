@@ -10,11 +10,11 @@ extends RefCounted
 ## - beats：第一次到某张图说一次的楼层节点 {节点键: 地图键}（15 层回声、25 层传闻等，开场打完之后才有）。
 ## 进度存档 flags.tianqi.<线> = {stage, seen, survived, cleared}；stage 0～STAGE_DONE（开场节数＋1）。
 ##
-## 开关：每条线自己的 ENABLED（XTianqiWarLine、XTianqiFamineLine）；只认天启篇存档且这一档选了这条线，发行构建里还要 XTianqi.RELEASE_OPEN。
+## 开关：每条线自己的 ENABLED（XTianqiWarLine、XTianqiFamineLine、XTianqiDeathLine）；只认天启篇存档且这一档选了这条线，发行构建里还要 XTianqi.RELEASE_OPEN。
 
 const DATA_DIR := "res://modes/xiyou/tianqi_data/"
 ## 做好了内容的线（和 XTianqi.LINES 的键一致）
-const KEYS := ["war", "famine", "plague"]
+const KEYS := ["war", "famine", "plague", "death"]
 
 static var _data: Dictionary = {}
 
@@ -27,6 +27,8 @@ static func enabled(key: String) -> bool:
 			return XTianqiFamineLine.ENABLED
 		"plague":
 			return XTianqiPlagueLine.ENABLED
+		"death":
+			return XTianqiDeathLine.ENABLED
 	return false
 
 
@@ -86,6 +88,8 @@ static func alien_prepare(key: String, name: String, s: XState) -> bool:
 			return XTianqiFamineAlien.prepare(name, s)
 		"plague":
 			return XTianqiPlagueAlien.prepare(name, s)
+		"death":
+			return XTianqiDeathAlien.prepare(name, s)
 	return false
 
 
@@ -98,6 +102,8 @@ static func alien_apply(key: String, logic, s: XState, list: Array) -> bool:
 			return XTianqiFamineAlien.apply(logic, s, "segment", list)
 		"plague":
 			return XTianqiPlagueAlien.apply(logic, s, "segment", list)
+		"death":
+			return XTianqiDeathAlien.apply(logic, s, "segment", list)
 	return false
 
 
@@ -110,12 +116,14 @@ static func alien_kinds(key: String) -> Array:
 			return XTianqiFamineAlien.kinds()
 		"plague":
 			return XTianqiPlagueAlien.kinds()
+		"death":
+			return XTianqiDeathAlien.kinds()
 	return []
 
 
 ## 这一场已经有本线预设的异化
 static func alien_active(logic) -> bool:
-	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic) or XTianqiPlagueAlien.active(logic)
+	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic) or XTianqiPlagueAlien.active(logic) or XTianqiDeathAlien.active(logic)
 
 
 # ---- 开关与进度 ----

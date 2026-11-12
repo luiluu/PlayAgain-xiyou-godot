@@ -153,12 +153,14 @@ func _door34() -> void:
 	_check("hongjun_win", int(s.variable(20)) == 35 and XTianqiSummit.hongjun_beaten(s) and _has(host, "第 34 层") and host.moves[-1][0] == 4)
 	var back := XState.from_dict(s.to_dict())
 	_check("progress_saved", XTianqiSummit.hongjun_beaten(back))
-	# 别的线（死亡，还没做好；瘟疫线 cc 瘟疫线车道接上了）：34 层鸿钧照样打
+	# 别的线还没做好（四条线都接上了，借关掉死亡线来模拟）：34 层鸿钧照样打
+	XTianqiDeathLine.ENABLED = false
 	var f := _state(34, "death")
 	host = FakeHost.new()
 	host.answers = [0, 0]
 	await XTianqiSummit.run_door(host, f)
 	_check("death_hongjun", host.battles.size() == 1 and host.battles[0].summit == "hongjun" and int(f.variable(20)) == 35)
+	XTianqiDeathLine.ENABLED = true
 
 
 func _door35() -> void:
@@ -178,11 +180,13 @@ func _door35() -> void:
 	host.results = [2]
 	await XTianqiSummit.run_door(host, s2)
 	_check("shadow_lost", int(s2.variable(20)) == 35 and _has(host, "还能再来"))
-	# 线还没做好（死亡）：说一句、不打、不变
+	# 线还没做好（借关掉死亡线来模拟）：说一句、不打、不变
+	XTianqiDeathLine.ENABLED = false
 	var f := _state(35, "death")
 	host = FakeHost.new()
 	host.answers = [0, 0]
-	_check("death_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "还没修好") and int(f.variable(20)) == 35)
+	_check("death_unready_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "还没修好") and int(f.variable(20)) == 35)
+	XTianqiDeathLine.ENABLED = true
 	# 饥荒线（cc 饥荒线车道接上）：35 层打本线影子、36 层打本线骑士
 	var fm := _state(35, "famine")
 	host = FakeHost.new()
@@ -207,6 +211,18 @@ func _door35() -> void:
 	host.results = [0]
 	_check("plague_final", await XTianqiSummit.run_floor(host, pl, 36) == 0 and host.battles.size() == 1 and host.battles[0].knight == "plague"
 		and host.battles[0].mode == "body" and bool(XTianqiPlagueLine.progress(pl).get("cleared", false)), host.battles)
+	# 死亡线（cc 死亡线车道接上）：35 层打本线影子、36 层打本线骑士
+	var dt := _state(35, "death")
+	host = FakeHost.new()
+	host.answers = [0, 0]
+	host.results = [0]
+	_check("death_shadow", await XTianqiSummit.run_floor(host, dt, 35) == 0 and host.battles.size() == 1 and host.battles[0].knight == "death"
+		and host.battles[0].mode == "shadow" and int(dt.variable(20)) == 36 and _has(host, "骨白色"), host.battles)
+	host = FakeHost.new()
+	host.answers = [0, 0]
+	host.results = [0]
+	_check("death_final", await XTianqiSummit.run_floor(host, dt, 36) == 0 and host.battles.size() == 1 and host.battles[0].knight == "death"
+		and host.battles[0].mode == "body" and bool(XTianqiDeathLine.progress(dt).get("cleared", false)) and _has(host, "我是来改的"), host.battles)
 	# 战争线开场没打完（不该到这里，保险）：不打
 	var w := _state(35, "war", false)
 	host = FakeHost.new()
