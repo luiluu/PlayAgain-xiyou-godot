@@ -182,15 +182,25 @@ var _tianqi_draw_due := false
 func _run_tianqi_draw() -> void:
 	_set_busy(true)
 	await XTianqi.run_draw(self, XState.current)
-	await XTianqi.run_line_choice(self, XState.current)  # 选线（默认关）排在抽角色后面，同一次回大厅里接着问
+	await XTianqi.run_line_choice(self, XState.current)  # 选线排在抽角色后面，同一次回大厅里接着问；选了战争线接着跑本线开场
 	_set_busy(false)
 	refresh_events()
 
 
-## 天启篇选线（XTianqi.run_line_choice，第三批骨架，XTianqi.LINE_EVENT_OPEN 默认关）：和抽角色同一个时机，抽完才轮到它
+## 天启篇选线（XTianqi.run_line_choice，四线设计稿 v0.4 第 2 节；XTianqi.LINE_EVENT_OPEN）：和抽角色同一个时机，抽完才轮到它
 func _run_tianqi_line() -> void:
 	_set_busy(true)
 	await XTianqi.run_line_choice(self, XState.current)
+	_set_busy(false)
+	refresh_events()
+
+
+## 天启篇四线（XTianqiLine）：本线的楼层节点（15 层回声、25 层传闻等）第一次到时说一次（换图时置位，不忙时跑）
+var _tianqi_line_due := false
+
+func _run_tianqi_line_arrival() -> void:
+	_set_busy(true)
+	await XTianqiLine.run_arrival(self, XState.current, map_id)
 	_set_busy(false)
 	refresh_events()
 
@@ -285,6 +295,7 @@ func _show_map_name(text: String) -> void:
 func load_map(id: int, x: int, y: int, d: int) -> void:
 	var s := XState.current
 	_tianqi_draw_due = id == XTianqi.HALL_MAP  # 天启篇：每次到大厅查一次通关抽角色
+	_tianqi_line_due = true  # 天启篇四线：每次换图查一次楼层节点
 	# Game_Player.performTransfer：新地图 ID 与当前相同时不 $gameMap.setup，事件（位置、朝向、强制路线、页、消除）原样保留，
 	# 只重新放置玩家与跟随者（locate：synchronize、makeEncounterCount）；场景本身照常重建（地图名、自动播放、传送按钮）
 	if id == map_id and id == s.map_id and chars != null and is_instance_valid(chars):
@@ -420,7 +431,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	_show_map_name(str(map_data.get("displayName", "")))
+	_show_map_name(XTianqiSummit.map_name(XState.current, map_id, str(map_data.get("displayName", ""))))  # 天启篇 34～36 层借图时用新层名
 	_place_vehicle()
 	# Game_Map.autoplay：乘载具时只记下地图 BGM（saveWalkingBgm2），继续放载具的
 	if bool(map_data.get("autoplayBgm", false)):
@@ -479,6 +490,10 @@ func _process(delta: float) -> void:
 					_run_tianqi_draw()
 				elif map_id == XTianqi.HALL_MAP and XTianqi.line_ready(XState.current):
 					_run_tianqi_line()
+			if not busy and _tianqi_line_due:
+				_tianqi_line_due = false
+				if XTianqiLine.arrival_beat(XState.current, map_id) != "":
+					_run_tianqi_line_arrival()
 		# installItemBagContinuationRuntime：物品页预约的公共事件跑完（没有别的预约、事件与文字）就回物品页
 		if not busy and transfer_page == null and not XHangUp.is_active(XState.current):
 			var back := XItemBagReturn.take(XState.current, false)
@@ -577,7 +592,7 @@ func _on_player_step() -> void:
 		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
 			await run_event(e)
 			return
-	if not map_data.encounterList.is_empty():
+	if not map_data.encounterList.is_empty() and not XTianqiSummit.no_encounter(XState.current, map_id):  # 天启篇：旧 34 层（158）不随机遇敌
 		if can_encounter():
 			encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y), XState.current.party_ability(0))
 		if encounter_count <= 0:
@@ -738,6 +753,21 @@ func near_screen(c: MVCharacter) -> bool:
 func run_event(e: MVEvent) -> void:
 	if busy or e.command_list().is_empty():
 		return
+	# 天启篇（XTianqiLine.run_door）：大厅去楼层的门，没选线不放人去 6 层；本线开场没打完就接着打开场
+	if XTianqiLine.is_door(map_id, e.event_id) and XTianqiLine.door_blocked(XState.current):
+		_set_busy(true)
+		await XTianqiLine.run_door(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
+	# 天启篇 31～36 层重做（XTianqiSummit）：门在 34 层以上接新 34～36 层、158 的决战事件不跑、打过 34 层后再挑战多几位
+	if XTianqiSummit.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		var handled: bool = await XTianqiSummit.run_event(self, XState.current, map_id, e.event_id)
+		_set_busy(false)
+		if handled:
+			refresh_events()
+			return
 	_set_busy(true)
 	# Game_Event.start → lock：确定键／接触启动的事件执行期间，该事件停下自主移动（强制路线照走）
 	if [0, 1, 2].has(e.trigger()):
@@ -1262,6 +1292,8 @@ var last_battle_game_over := false
 var last_battle_escaped := false
 
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
+	if not random_encounter:
+		await XTianqiLine.before_battle(self, XState.current, troop_id)  # 天启篇四线：10／20／30 层守层者变使徒，先放骑士的声音
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
 	me.stop()
 	bgm.stream_paused = true

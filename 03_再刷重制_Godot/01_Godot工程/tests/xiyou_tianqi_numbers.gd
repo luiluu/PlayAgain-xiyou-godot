@@ -4,7 +4,7 @@ extends Node
 ## 二、我方：档位出伤、我方伤害、上场弱者协力、助力位光环（出伤）；档位承伤、协力承伤（承伤）；敌人打敌人、原版档恒 1；真实伤害结算按这个比例变。
 ## 三、开局：五档都走原版普通分支（UNIFIED_LEGACY），关掉回到各借各的；超强者上限、至少弱者、候选池只认数值表。
 ## 四、一线生机与天道注视：天启篇不学，原版档照学，开关回退。
-## 五、选线骨架：默认不出；打开后大厅对话选定、不能再换、原版档不收。
+## 五、选线：通关 5 层后出（开关默认开）；只有做好内容的线能选、不能再换、原版档不收；开关关掉不出。
 
 ## 大厅对话的替身宿主：文字直接过，选项依次取 answers（取完选最后一个）
 class FakeHost extends RefCounted:
@@ -198,20 +198,28 @@ func _heaven_gaze() -> void:
 func _lines() -> void:
 	var w := _ids(XTier.WEAK)
 	var s := _state("jianxian", w.slice(0, 5))
-	_check("line_closed_default", not XTianqi.LINE_EVENT_OPEN and not XTianqi.line_ready(s) and XTianqi.line_of(s) == "")
-	XTianqi.LINE_EVENT_OPEN = true
-	_check("line_ready_open", XTianqi.line_ready(s))
+	# 战争线做好后选线默认打开（cc/pro-tianqi-war）；第一次通关 5 层（变量 20＝6）才出
+	_check("line_open_default", XTianqi.LINE_EVENT_OPEN and not XTianqi.line_ready(s) and XTianqi.line_of(s) == "")
+	s.set_variable(20, 6)
+	_check("line_ready_floor5", XTianqi.line_ready(s))
 	var host := FakeHost.new()
 	host.answers = [XTianqi.LINES.size()]  # 再想想
 	await XTianqi.run_line_choice(host, s)
 	_check("line_later", XTianqi.line_of(s) == "" and host.asked.size() == 1 and host.asked[0].size() == XTianqi.LINES.size() + 1, host.asked)
+	# 内容没做好的线（瘟疫）：卡片照看，选不了，回到列表；再想想
 	host.answers = [2]
 	await XTianqi.run_line_choice(host, s)
-	_check("line_chosen", XTianqi.line_of(s) == str(XTianqi.LINES[2].key) and not XTianqi.line_ready(s), XTianqi.line_of(s))
-	_check("line_no_change", not XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == str(XTianqi.LINES[2].key))
+	_check("line_unplayable", XTianqi.line_of(s) == "" and host.asked.size() == 3 and not XTianqi.choose_line(s, "plague"), host.asked.size())
+	_check("line_chosen", XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == "war" and not XTianqi.line_ready(s), XTianqi.line_of(s))
+	_check("line_no_change", not XTianqi.choose_line(s, "plague") and XTianqi.line_of(s) == "war")
 	_check("line_unknown", not XTianqi.choose_line(s, "nope"))
 	var saved := XState.from_dict(s.to_dict())
-	_check("line_saved", XTianqi.line_of(saved) == str(XTianqi.LINES[2].key))
+	_check("line_saved", XTianqi.line_of(saved) == "war")
 	var p := _plain_state(w.slice(0, 5))
+	p.set_variable(20, 6)
 	_check("line_plain", not XTianqi.line_ready(p) and not XTianqi.choose_line(p, "war"))
 	XTianqi.LINE_EVENT_OPEN = false
+	var s2 := _state("jianxian", w.slice(0, 5))
+	s2.set_variable(20, 6)
+	_check("line_switch_off", not XTianqi.line_ready(s2))
+	XTianqi.LINE_EVENT_OPEN = true
