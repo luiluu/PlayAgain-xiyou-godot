@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.521",
-  "sequence": 521,
-  "next": "dev.522",
-  "nextSequence": 522,
+  "current": "dev.522",
+  "sequence": 522,
+  "next": "dev.523",
+  "nextSequence": 523,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "gojo-p2",
+  "currentChange": "tianqi-skills-p4",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
