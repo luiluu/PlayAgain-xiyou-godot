@@ -28,7 +28,7 @@
   },
   "kinds": {
    "verdict": {"name": "宣判者", "interval": [5, 3, 2, 1], "targets": [1, 1, 1, 2]},
-   "reaper": {"name": "收尸人", "up": [0.1, 0.15, 0.25, 0.5], "heal": [0.1, 0.15, 0.2, 0.3], "lock_turns": 2},
+   "reaper": {"name": "收尸人", "up": [0.1, 0.15, 0.25, 0.5], "heal": [0.1, 0.15, 0.2, 0.3], "lock_turns": 2, "absorb_use": 0.5},
    "knell": {"name": "丧钟", "count": [6, 5, 3, 2], "toll_loss": 0.2},
    "double": {"name": "替身", "below": [0.3, 0.5, 1.0, 1.0], "heal": [0.2, 0.3, 0.5, 0.6], "times": [1, 1, 2, 2]},
    "captain": {"name": "骑士队长", "fail": [0.5, 0.75, 1.0, 1.0]}

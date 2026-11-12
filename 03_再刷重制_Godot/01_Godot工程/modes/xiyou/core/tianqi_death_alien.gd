@@ -16,7 +16,8 @@ extends RefCounted
 ##   终焉同场其他死亡异化的间隔（宣判者）−1 回合。
 ## - 死期（本线核心计量）：开战、每回合开始在战斗日志里报谁被挂了、丧钟还剩几回合；回合结束时带走被挂的人。终焉级在场时死者本场不能复活。
 ## 「致命伤害保命」失效：免即死（抵抗阵亡状态）、七印灰印免死（XTianqiQiyinEffects，breaks_saves）已接（cc/tianqi-alien-finale）。
-## 没做（交付单「未做」）：各角色模块自带的「不屈」类效果（要逐个角色模块接）；收尸人终焉的吸收技能；
+## 收尸人终焉：吸收死者的一个伤害类主动技能，之后每次行动 absorb_use（50%）几率改用它（cc/tianqi-famine-reaper，BattleLogic.decide 一行）。
+## 没做（交付单「未做」）：各角色模块自带的「不屈」类效果（要逐个角色模块接）；
 ## 画面上的死期钟和倒数（现在只在战斗日志里报）。
 ##
 ## 开关：XTianqiDeathLine.ENABLED（死亡线整条）；只认天启篇存档且选了死亡线，发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
@@ -109,7 +110,7 @@ static func apply(logic, s: XState, key: String, list: Array) -> bool:
 		logic.remove_meta(META)
 	if list.is_empty() or not XTianqiDeathLine.allowed(s):
 		return false
-	var f := {"preset": key, "units": {}, "queue": [], "doom": {}, "dead": {}, "lock": {}, "no_revive": {}, "knell_lock": -1}
+	var f := {"preset": key, "units": {}, "queue": [], "doom": {}, "dead": {}, "lock": {}, "no_revive": {}, "knell_lock": -1, "absorbed": {}}
 	var names := PackedStringArray()
 	for row in list:
 		var e = row.enemy
@@ -341,6 +342,34 @@ static func _scan_deaths(logic) -> void:
 			_say(f, "%s收走了%s：属性 +%d%%，生命回复了。" % [e.display_name(), a.display_name(), roundi(up * 100.0)])
 			if idx >= 2:
 				f.lock[a] = int(logic.turn) + int(info.lock_turns)
+			if idx >= 3:
+				_absorb(logic, f, e, a)  # 终焉收尸人：吸收死者的一个主动技能
+
+
+## 终焉收尸人：从死者已学会的伤害类主动技能里挑一个（不含普攻防御、被动），记到这只收尸人身上
+static func _absorb(logic, f: Dictionary, e, a) -> void:
+	var cands := XAlienation.original_active(a).filter(func(sk): return int(sk.get("damage", {}).get("type", 0)) in [1, 5] and int(sk.get("scope", 0)) in [1, 2, 3, 4, 5, 6])
+	if cands.is_empty():
+		return
+	var sk: Dictionary = cands[logic._int(0, cands.size() - 1, "tianqi_death_absorb")]
+	var list: Array = f.absorbed.get(e, [])
+	if not list.has(int(sk.id)):
+		list.append(int(sk.id))
+	f.absorbed[e] = list
+	_say(f, "%s吸收了%s的「%s」。" % [e.display_name(), a.display_name(), str(sk.get("name", ""))])
+
+
+## BattleLogic.decide：吸收过技能的收尸人每次行动有 absorb_use 几率改用其中一个（目标照常由技能范围定）；返回 [技能, null] 或空
+static func decide_absorbed(logic, e) -> Array:
+	if not active(logic) or not e is XEnemy:
+		return []
+	var list: Array = fight(logic).get("absorbed", {}).get(e, [])
+	if list.is_empty() or not e.is_alive():
+		return []
+	if logic._float("tianqi_death_absorb_use") >= float(kind_info("reaper").get("absorb_use", 0.5)):
+		return []
+	var sk := XDB.rec("Skills", int(list[logic._int(0, list.size() - 1, "tianqi_death_absorb_pick")]))
+	return [] if sk.is_empty() else [sk, null]
 
 
 # ---- 挂钩 ----
