@@ -55,12 +55,12 @@ static var release_name := ""
 static var release_base := 0
 
 
-## 开发编号 → 玩家看到的版本号。有发行版本名时：整包本身是「0.01」，之后的补丁是「0.01.<比整包多几号>」；
+## 开发编号 → 玩家看到的版本号。有发行版本名时：整包本身是「0.01」，之后的补丁是「0.01.<比整包多几号，两位>」；
 ## 没有时是 0.<号>（导出给系统看的 Mac／Windows 版本号、安卓 versionCode 不走这里，照旧按编号）。
 ## 新旧一律比开发编号（evaluate、has_update），版本号只给人看。
 static func version_of(code: int) -> String:
 	if release_name != "" and release_base > 0 and code >= release_base:
-		return release_name if code == release_base else "%s.%d" % [release_name, code - release_base]
+		return release_name if code == release_base else "%s.%02d" % [release_name, code - release_base]  # 两位：0.01.01（Kyo 11-12：修 bug 改末两位）
 	return "0.%d" % code
 
 

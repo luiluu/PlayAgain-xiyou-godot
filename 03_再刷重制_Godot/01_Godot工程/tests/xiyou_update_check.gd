@@ -73,10 +73,10 @@ func _run() -> void:
 	C.release_name = "0.01"
 	C.release_base = 470
 	_check("整包显示 0.01", C.version_of(470) == "0.01")
-	_check("补丁显示 0.01.<多几号>", C.version_of(475) == "0.01.5")
+	_check("补丁显示 0.01.<多几号>", C.version_of(475) == "0.01.05")
 	_check("比整包旧的号照旧 0.<号>", C.version_of(462) == "0.462")
 	var rv := C.evaluate(_manifest(475, 470), 470, 470)
-	_check("0.01 整包遇到 475：有新版、显示 0.01.5", rv["state"] == C.FULL and rv["version"] == "0.01.5" and rv["current"] == "0.01")
+	_check("0.01 整包遇到 475：有新版、显示 0.01.05", rv["state"] == C.FULL and rv["version"] == "0.01.05" and rv["current"] == "0.01")
 	rv = C.evaluate(_manifest(470, 470), 470, 470)
 	_check("同号是最新", rv["state"] == C.LATEST)
 	rv = C.evaluate(_manifest(462, 462), 470, 470)
