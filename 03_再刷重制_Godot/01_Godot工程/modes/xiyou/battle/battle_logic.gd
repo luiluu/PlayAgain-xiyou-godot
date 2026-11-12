@@ -197,6 +197,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiPlagueAlien.setup(self, s)  # 天启篇瘟疫线异化（prepare 过才变）：病灶、病弱、毒腺、混乱者、挑衅者、传染者、疫源
 	XTianqiDeathAlien.setup(self, s)  # 天启篇死亡线异化（prepare 过才变）：死期、宣判者、收尸人、丧钟、替身、骑士队长
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
+	XRiftAlien.setup(self, s)  # 漩涡阶段怪物异化（西游，天启篇存档不动）：二阶只有画面，三阶起稀有、首领、守层者、深渊怪按阶段表异化（自己的随机流）
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XTianqiRewards.setup(self, s)  # 天启篇奖励：穿着骑士遗物的人记本场资历、火花
 	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
@@ -257,6 +258,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	turn_start_logs.append_array(XTianqiFamineAlien.take_logs(self))
 	turn_start_logs.append_array(XTianqiPlagueAlien.take_logs(self))
 	turn_start_logs.append_array(XTianqiDeathAlien.take_logs(self))
+	turn_start_logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：开场报哪只异化、丧钟倒数
 	turn_start_logs.append_array(XTianqiQiyinRule.take_logs(self))  # 七印祭坛：开场报本印规则
 
 func _new_lifecycle_resources() -> XResourceContext:
@@ -1117,6 +1119,7 @@ func start_turn() -> void:
 	turn_start_logs.append_array(XTianqiFamineAlien.start_turn(self))  # 天启篇饥荒线异化：报饥饿
 	turn_start_logs.append_array(XTianqiPlagueAlien.start_turn(self))  # 天启篇瘟疫线异化：报病灶
 	turn_start_logs.append_array(XTianqiDeathAlien.start_turn(self))  # 天启篇死亡线异化：宣判者挂死期，报死期和丧钟
+	turn_start_logs.append_array(XRiftAlien.start_turn(self))  # 漩涡阶段异化：报丧钟
 	turn_start_logs.append_array(XTianqiQiyinRule.start_turn(self))  # 七印祭坛：献祭、星坠、寂静
 	turn_start_logs.append_array(XTianqiQiyinDragonRun.start_turn(self))  # 七首之龙：星坠等扣过后断首揭印、缓期到点倒下
 
@@ -1251,6 +1254,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
+	logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：毒腺中毒的日志
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	_sync_orders(before, true)
@@ -1300,6 +1304,7 @@ func end_turn() -> Array:
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
 	logs.append_array(XTianqiPlagueAlien.end_turn(self))  # 天启篇瘟疫线异化：中毒扣血、传染、减益回合
 	logs.append_array(XTianqiDeathAlien.end_turn(self))  # 天启篇死亡线异化：死期带走、丧钟倒数
+	logs.append_array(XRiftAlien.end_turn(self))  # 漩涡阶段异化：毒腺中毒扣血、丧钟倒数
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -2820,6 +2825,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
 	value = XTianqiPlagueAlien.hp_damage(self, u, t, value, item)  # 天启篇瘟疫线异化：毒腺中毒、混乱者混乱、挑衅者不服与化形群攻减半
 	value = XTianqiDeathAlien.hp_damage(self, u, t, value)  # 天启篇死亡线异化：替身被打倒时换一名我方代它倒下
+	value = XRiftAlien.hp_damage(self, u, t, value)  # 漩涡阶段异化：化形战狂受伤叠攻、毒腺命中附加中毒
 	value = XTianqiRewards.hp_damage(self, u, t, value, item)  # 天启篇奖励：遗物的受伤、出伤、回复与资历
 	value = XTianqiQiyinRule.hp_damage(self, u, t, value)  # 七印祭坛：杀声、献祭、魔塔宝石
 	value = XTianqiQiyinDragonRun.hp_damage(self, t, value)  # 七首之龙：一次行动最多打到本段底
@@ -3223,6 +3229,9 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	dh = famine[0]
 	dm = famine[1]
 	dt = famine[2]
+	var rift := XRiftAlien.regen(self, b, dh, dm)  # 漩涡阶段异化：荒年者降再生（化形我方再生失效）
+	dh = rift[0]
+	dm = rift[1]
 	if XTianqiQiyinRule.no_regen(self, b):  # 七印祭坛限时：魔法、TP 不恢复
 		dm = 0.0
 		dt = 0.0
@@ -3430,6 +3439,7 @@ func grant(r: Dictionary) -> Array:
 	if not drop_lock:
 		gain_drops(r.drops)
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
+	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
@@ -3467,6 +3477,7 @@ func end_battle(result := -1) -> void:
 	XTianqiFamineAlien.end(self)  # 天启篇饥荒线异化：清本场异化
 	XTianqiPlagueAlien.end(self)  # 天启篇瘟疫线异化：清本场异化
 	XTianqiDeathAlien.end(self)  # 天启篇死亡线异化：清本场异化
+	XRiftAlien.end(self)  # 漩涡阶段异化：清本场异化与画面标记
 	XTianqiRewards.end(self)  # 天启篇奖励：清遗物的本场记录
 	XTianqiQiyinRule.end(self, result)  # 七印祭坛：清本场规则；31～35 层野外打赢掉印钥
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据

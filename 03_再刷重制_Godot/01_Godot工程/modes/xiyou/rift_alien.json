@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "source": "方案/重制版_漩涡五阶段怪物异化设计稿_v0.1.md（Kyo 2026-11-12 第 7 节六项全按默认）；表结构照 tianqi_data/seg_alien.json，层段换成漩涡阶段",
+  "_note": "西游侧（玩家手里的重制版）漩涡阶段怪物异化。几率是百分数；tier 基础级，up／up_rate 异化后升一级的级和百分比。守层者按楼层分段（bands）。都是测试参数，以后用测算工具调。数字避开 4。",
+  "nice_number_exempt": ["from", "to", "max_units", "floor_max", "period", "fade"],
+  "tier_order": ["qinran", "shigu", "huaxing"],
+  "tiers": {
+    "qinran": {"name": "侵染", "hp": 1.25, "idx": 0, "drop": 3, "energy": 1},
+    "shigu": {"name": "蚀骨", "hp": 1.5, "idx": 1, "drop": 8, "energy": 2},
+    "huaxing": {"name": "化形", "hp": 2.0, "idx": 2, "drop": 20, "energy": 3}
+  },
+  "classes": {
+    "稀有": "rare",
+    "精英": "rare",
+    "前所未见": "very_rare",
+    "亘古未有": "very_rare",
+    "首领": "very_rare",
+    "守层者": "guardian",
+    "被封印者": "abyss",
+    "未知存在": "abyss",
+    "古神": "abyss"
+  },
+  "priority": ["guardian", "abyss", "very_rare", "rare"],
+  "max_units": 1,
+  "floor_max": 30,
+  "stages": {
+    "3": {
+      "rare": {"rate": 11, "tier": "qinran"},
+      "very_rare": {"rate": 22, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "guardian": {"rate": 33, "bands": [{"from": 1, "to": 20, "tier": "qinran"}, {"from": 21, "to": 30, "tier": "shigu"}]}
+    },
+    "4": {
+      "rare": {"rate": 15, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "very_rare": {"rate": 33, "tier": "shigu"},
+      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 20, "tier": "shigu"}, {"from": 21, "to": 30, "tier": "huaxing"}]},
+      "abyss": {"rate": 50, "tier": "huaxing"}
+    },
+    "5": {
+      "rare": {"rate": 20, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "very_rare": {"rate": 50, "tier": "shigu", "up": "huaxing", "up_rate": 10},
+      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 20, "tier": "shigu"}, {"from": 21, "to": 30, "tier": "huaxing"}]},
+      "abyss": {"rate": 100, "tier": "huaxing"}
+    }
+  },
+  "difficulty": {
+    "_note": "西游难度（Vitsuno_Difficulty 1～9）没有天启篇的寻常／九死／炼狱，cc 读作：宝宝、简单＝寻常（稀有几率减半、最高侵染、守层者低一级）；普通、困难＝渐险（不改）；地狱、天灾＝九死（+10）；灭世、洪荒、混沌＝炼狱（+20，稀有级上限高一级）。rate_mult、rate_add 只改稀有、精英、首领。",
+    "map": {"1": "low", "2": "low", "3": "mid", "5": "high", "6": "high", "7": "top", "8": "top", "9": "top"},
+    "map_default": "mid",
+    "low": {"rate_mult": 0.5, "rate_add": 0, "rare_max": "qinran", "guardian_shift": -1},
+    "mid": {"rate_mult": 1, "rate_add": 0},
+    "high": {"rate_mult": 1, "rate_add": 10},
+    "top": {"rate_mult": 1, "rate_add": 20, "rare_up_shift": 1, "rare_up_rate": 10, "rare_max": "huaxing"}
+  },
+  "kinds": {
+    "berserk": {"name": "战狂", "from": "war", "mult": [1.5, 2.0, 3.0], "rage_per_hit": 0.05},
+    "lean": {"name": "荒年者", "from": "famine", "heal_down": [0.2, 0.3, 0.5]},
+    "gland": {"name": "毒腺", "from": "plague", "poison": [0.03, 0.05, 0.08], "turns": 3, "stack_max": 3},
+    "knell": {"name": "丧钟", "from": "death", "count": [5, 3, 2], "toll_loss": 0.2}
+  },
+  "look": {
+    "_note": "画面：幽紫偏色（贴图、附加件、化形替换件还没有美术，先用偏色顶着）。二阶守层者 6 秒一明一暗；稀有以上进场 11% 闪一下、1 秒褪掉。异化怪按级常亮。",
+    "color": [0.62, 0.35, 0.95],
+    "period": 6,
+    "guardian_pulse": 0.3,
+    "flash_rate": 11,
+    "flash": 0.5,
+    "fade": 1,
+    "tier_glow": {"qinran": 0.15, "shigu": 0.3, "huaxing": 0.5}
+  }
+}
