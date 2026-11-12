@@ -5,10 +5,10 @@
 
 ## 依赖与合并顺序
 
-- **基于 `claude/project-thread-r4t9e0`（31～36 层重做，未合 main；它又带着 `cc/pro-tianqi-horsemen`、`cc/pro-tianqi-war`）**：揭印要认 31～35 层守层者（变量 20、`XTianqiSummit.hongjun_beaten`）。
-- **又合进了 Pro 三条数据层**：`cc/pro-qiyin-data`（`XTianqiQiyinGear`）、`cc/pro-qiyin-drop`（`XTianqiQiyinDrop`）、`cc/pro-qiyin-dragon`（`XTianqiQiyinDragon`，本单还没调它）。
-- **合并顺序：horsemen → war → r4t9e0 → pro-qiyin-data → pro-qiyin-drop → pro-qiyin-dragon → 本分支。** 先合了它们，本分支只剩自己的提交（那几支的交付单也在本分支上，先合了就自然消掉）。
-- 和别的天启篇线（饥荒、死亡、瘟疫）、按段异化：没碰 `tianqi_summit.gd`、各线模块，只在 `battle_logic.gd`、`map_scene.gd` 各加单行挂钩（紧挨着 Summit／WarAlien 那几行），合并时如有冲突是行邻接，保留两边即可。
+- 揭印要认 31～35 层守层者（变量 20、`XTianqiSummit.hongjun_beaten`）：四骑士、战争线、31～36 层重做、饥荒线已在 main（dev.472～475），本分支已合到 main 53879fc21。
+- **还依赖 Pro 三条数据层（未合 main，本分支已合进来）**：`cc/pro-qiyin-data`（`XTianqiQiyinGear`）、`cc/pro-qiyin-drop`（`XTianqiQiyinDrop`）、`cc/pro-qiyin-dragon`（`XTianqiQiyinDragon`，本单还没调它）。
+- **合并顺序：pro-qiyin-data → pro-qiyin-drop → pro-qiyin-dragon → 本分支。** 先合了它们，本分支只剩自己的提交（那三支的交付单也在本分支上，先合了就自然消掉）。本分支另提交了 data、dragon 两支没带的 4 个 `.gd.uid`（导入时生成）。
+- 和别的天启篇车道（死亡、瘟疫、按段异化）：没碰 `tianqi_summit.gd`、各线模块，只在 `battle_logic.gd`、`map_scene.gd` 加单行挂钩（紧挨着 Summit／WarAlien／FamineAlien 那几行）；合 main 时和饥荒线的挂钩冲突过一次，两边并排保留。别的线合并时如有冲突也是行邻接，保留两边即可；`_regenerate` 里七印的「限时」放在饥荒线算完 dm、dt 之后清零。
 - 发行开关 `XTianqi.RELEASE_OPEN` 没动：发行版天启篇整个不开，祭坛也不出。
 
 ## 变更记录草稿
@@ -44,7 +44,7 @@
 
 ## 交接板
 
-- 下一步：依次合 horsemen、war、r4t9e0、三条 pro-qiyin、本分支；装备／奖励车道把印库接成能穿的装备；七首之龙接流程另派。
+- 下一步：依次合三条 pro-qiyin、本分支；装备／奖励车道把印库接成能穿的装备；七首之龙接流程另派。
 - 用户试玩说明：开发版天启篇档选了线、把变量 20 调到 32 回大厅，找 EV048（原版说「去塔里寻找材料合成天顶剑」的那位）进七印祭坛：第一次开送 3 把印钥、补发 31 层守层者的两件；选白印或红印进去连打三场，结算看掉了什么、选「揭开」看成色；打 3 次后会有一印躁动。调到 36 能看到前六印，前六印都首通后开默印。
 - 需要用户决定：①祭坛第一次开送 3 把印钥（方案没写；不送的话刚打完 31 层可能一把都没有）；②魔塔的「生命 +10%」按受伤 ÷1.1 近似（不改面板）；③里副本敌人能力值按鸿蒙老祖 537 的 3%（精英）／50%（Boss）重标，都是测试参数，进数值阶段再定。三条都先按现在的做法继续。
 
