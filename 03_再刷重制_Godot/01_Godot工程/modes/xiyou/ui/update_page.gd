@@ -98,11 +98,9 @@ static func size_text(bytes: int) -> String:
 
 
 func _ready() -> void:
-	# 挂在自己的 CanvasLayer 下铺满整个画面（open 里建）；直接挂在没撑开的节点下时也按视口大小铺满
+	# 挂在自己的 CanvasLayer 下（open 里建），锚点铺满就是整个视口
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	if not (get_parent() is Control):
-		size = get_viewport_rect().size
-		get_viewport().size_changed.connect(_on_viewport_resized)
+	get_viewport().size_changed.connect(_fit)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = XUI.theme()
@@ -249,11 +247,6 @@ func _wrapped_lines(width: float) -> int:
 		var pw := font.get_string_size(para, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		n += maxi(1, int(ceil(pw / maxf(1.0, width))))
 	return n
-
-
-func _on_viewport_resized() -> void:
-	size = get_viewport_rect().size
-	_fit()
 
 
 func _focus_default() -> void:

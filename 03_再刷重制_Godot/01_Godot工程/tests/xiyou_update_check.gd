@@ -249,7 +249,7 @@ func _run() -> void:
 	var sel0 := tq.selected()
 	XUpdatePage.patch_installer = func(p, res): tq_calls.append("install")
 	page = XUpdatePage.open(host)
-	await _frames(2)
+	await _frames(12)  # 等打开时那次检查回来，免得盖掉下面的结果
 	var long_notes := PackedStringArray()
 	for i in range(30):
 		long_notes.append("第 %d 条很长的更新说明，用来把框撑高，看说明会不会挤掉下面的按钮。" % i)
@@ -268,8 +268,8 @@ func _run() -> void:
 	var b2: Label = page.find_child("Body", true, false)
 	_check("大小写在更新内容前面", b2.text.find("更新大小") < b2.text.find("更新内容") and b2.text.find("更新大小") >= 0)
 	_check("默认选中立即更新", page.focused_button() == primary)
-	for a in ["ui_down", "ui_down", "ui_up", "ui_down"]:
-		_send(a)
+	for act in ["ui_down", "ui_down", "ui_up", "ui_down"]:
+		_send(act)
 		await _frames(1)
 	_check("上下键滚说明，不动标题", scroll.scroll_vertical > 0 and tq.selected() == sel0 and tq_calls.is_empty())
 	_send("ui_right")
