@@ -131,6 +131,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
 	if obj.is_empty():
 		return []
+	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	obj = XLiuyingHelp.view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按流萤当前进阶重写（L.refreshText）
 	if kind == "":

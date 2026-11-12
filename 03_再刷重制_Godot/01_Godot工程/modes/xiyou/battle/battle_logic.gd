@@ -387,6 +387,7 @@ func _battle_start_states(list = null) -> void:
 				"StartWTPushState":
 					for x in actors:
 						_state_add(x, sid)
+	XTianqiSkills.start_turns(actors if list == null else list)  # 天启篇技能重构：专属武器开局状态的回合数（金蝉子九锡拳套）
 	for a in actors:
 		a.refresh_passive()
 	for e in enemies:
@@ -2450,6 +2451,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
+	cri = XTianqiSkills.item_cri(u, skill, dt, cri)  # 天启篇技能重构：心法条件必暴
 	cri *= XTianqiRewards.cri_mult(u)  # 天启篇奖励：替身的钥匙串（暴击率归零，半强度减半）
 	cri = XTianqiQiyinEffects.cri(self, u, cri)  # 天启篇黑印 5 件：一次用掉 5 层砝码必定暴击
 	return clampf(cri, 0.0, 1.0)
