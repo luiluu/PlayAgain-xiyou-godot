@@ -222,7 +222,18 @@ func _alien_logic(preset: String, troop: int, tough := 20000000.0) -> XBattleLog
 	_check("prepare_" + preset, XTianqiPlagueAlien.prepare(preset, s))
 	var lg := XBattleLogic.new()
 	lg.setup(troop, s)
+	_clear_start_debuffs(lg)
 	return lg
+
+
+## 开战随机挂上的减益（小痔被动「痔疮」20% 开局挂「痔疮犯了」，疾病类算减益）去掉：专项只测瘟疫线自己挂的减益，
+## 不然「开场 0 个病灶」「只传染 1 个」随运气失败（云端整轮 11-12）
+func _clear_start_debuffs(lg: XBattleLogic) -> void:
+	for a in lg.actors:
+		for id in a.state_ids.duplicate():
+			if XBossStatus.kind_of(XDB.rec("States", int(id))) == "Debuff":
+				a.remove_state(int(id))
+		a.param_mark_dirty()
 
 
 ## 把敌群 troop 里第 i 只按 tier／kind 变成异化怪（走按段异化的 apply 入口）
@@ -230,6 +241,7 @@ func _kind_logic(troop: int, rows: Array) -> XBattleLogic:
 	var s := _state(20000000.0, "plague")
 	var lg := XBattleLogic.new()
 	lg.setup(troop, s)
+	_clear_start_debuffs(lg)
 	var list := rows.map(func(r): return {"enemy": lg.enemies[int(r[0])], "tier": str(r[1]), "kind": str(r[2])})
 	_check("apply_%d_%s" % [troop, str(rows[0][2])], XTianqiPlagueAlien.apply(lg, s, "test", list))
 	return lg
@@ -298,7 +310,7 @@ func _focus() -> void:
 	var e: XEnemy = lg.enemies[2]
 	XTianqiPlagueAlien.unit(lg, e).idx = 2
 	XTianqiPlagueAlien.refresh(lg)
-	_check("focus_text", XTianqiPlagueAlien.focus_text(lg).contains("病灶 0／12"), XTianqiPlagueAlien.focus_text(lg))
+	_check("focus_text", XTianqiPlagueAlien.focus_text(lg).contains("病灶 0／12"), [XTianqiPlagueAlien.focus_text(lg), lg.actors.map(func(x): return [x.actor_id, x.state_ids])])
 	var hp := {}
 	for a in lg.actors:
 		for i in 3:
