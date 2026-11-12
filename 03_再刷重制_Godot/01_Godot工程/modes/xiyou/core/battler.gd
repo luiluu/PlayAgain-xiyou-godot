@@ -491,6 +491,7 @@ func add_new_state(id: int) -> void:
 		XRaceBattle.on_death(self)  # 种族 die 包装：清反攻
 		XSukuna.on_death(self)  # 宿傩 Game_Actor.die 包装：清战斗数据（领域、适应等状态已随 die 清掉）
 		XBlackFlash.on_death(self)  # 黑闪 die 包装：清集中、连闪、觉醒
+		XGojo.on_death(self)  # 天启篇五条悟：阵亡清苍印赫印
 	var restricted := is_restricted()
 	if not state_ids.has(id):
 		state_ids.append(id)
