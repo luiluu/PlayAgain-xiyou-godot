@@ -122,10 +122,14 @@ static func needs_configuration(i: Dictionary) -> bool:
 static func details(s: XState, i: Dictionary) -> Array:
 	var m := mark(i)
 	var f := affix(str(m.get("affix", "")))
-	if f.is_empty():
+	var out := []
+	if XTianqiAlienGear.is_tq(i):  # 天启篇异化装备：级、新名字、按级的分解能量
+		out = XTianqiAlienGear.details(s, i)
+	elif f.is_empty():
 		return []
-	var boss := str(m.origin) == "boss"
-	var out := ["异化：" + str(f.name), "收益：" + str(f.benefit), "代价：" + str(f.cost), "来源：" + ("异化Boss" if boss else "异化小怪") + "；分解获得" + ("5" if boss else "1") + "点能量"]
+	else:
+		var boss := str(m.origin) == "boss"
+		out = ["异化：" + str(f.name), "收益：" + str(f.benefit), "代价：" + str(f.cost), "来源：" + ("异化Boss" if boss else "异化小怪") + "；分解获得" + ("5" if boss else "1") + "点能量"]
 	var c: Dictionary = m.get("config", {})
 	if c.has("actorId"):
 		out.append("使用角色：" + (s.actor(int(c.actorId)).display_name() if s.actors.has(int(c.actorId)) else "配置失效"))
@@ -146,6 +150,9 @@ static func details(s: XState, i: Dictionary) -> Array:
 static func relabel(i: Dictionary) -> void:
 	var m := mark(i)
 	if m.is_empty():
+		return
+	if XTianqiAlienGear.is_tq(i):  # 天启篇异化装备：「级·新词条名·原名」
+		XTianqiAlienGear.relabel(i)
 		return
 	if str(i.name) != str(m.lastName):
 		var names := PackedStringArray(config().affixes.map(func(f): return str(f.name)))
@@ -194,6 +201,8 @@ static func craft(s: XState, amount := 1) -> Dictionary:
 
 
 static func reroll(s: XState, i: Dictionary) -> Dictionary:
+	if XTianqiAlienGear.is_tq(i):  # 天启篇异化装备：只在本线本级内抽
+		return XTianqiAlienGear.reroll(s, i)
 	var m := mark(i)
 	if not m.is_empty():
 		m.pool = pool_for(i, str(m.origin))
@@ -236,6 +245,8 @@ static func resolve(s: XState, use_new: bool) -> Dictionary:
 
 
 static func dismantle(s: XState, i: Dictionary) -> Dictionary:
+	if XTianqiAlienGear.is_tq(i):  # 天启篇异化装备：按级给能量
+		return XTianqiAlienGear.dismantle(s, i)
 	if not can_operate(s, i):
 		return {"error": OPERATE_ERROR}
 	var n := 5 if str(mark(i).origin) == "boss" else 1
