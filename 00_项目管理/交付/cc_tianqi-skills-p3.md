@@ -72,4 +72,16 @@
 
 ## 本分支提交
 
-- （提交后补）
+- 9b29e7af5 技能重构第三期 31～60 号：交付单
+- 54bf5c204 WIP: 技能重构第三期补招（孙悟空气功连弹）、专项 131 项（新能力＋31～60 烟测）
+- 1d73bbee7 WIP: 技能重构第三期 57～60 号（龙马、小青、大羿、马宝国），learn 的 s技能号 条目、atk_above_target
+- b9d72920b WIP: 技能重构第三期 55、56 号（橙、瑞普）
+- c9c8ad316 WIP: 技能重构第三期 53、54 号（艾瑞塔、迪昂），target_states_in、self_states、keep_effects
+- 373076098 WIP: 技能重构第三期 51、52 号（法海、孙悟空）
+- 0e2c53252 WIP: 技能重构第三期 49、50 号（疾风丸、劲夫），consume、drop_cmd、agi_above_target
+- 3b4dd8c95 WIP: 技能重构第三期 45～48 号（东方教主、克莉丝汀、酒剑仙、莉娜），追加全体技打全场、mp_drain、then.on_kill、drop_area_effects
+- f893aa632 WIP: 技能重构第三期 41～44 号（半人马四人），伤害取高 max_of
+- 714e137eb WIP: 技能重构第三期 36～40 号（至尊宝、天蓬、曹操、沙和尚、小白龙）
+- 1de2143f8 WIP: 技能重构第三期新能力：if_keep、replace_cmd、self_tp、tp_drain、start_tp、层数持续伤害、真火追击半伤
+- ac63a91a6 WIP: 技能重构第三期 31～35 号（露茜、涅斐莉、晴明、签弟、摇光）＋新能力 tp_gain、dot_remove、new_states、cast_count、on_hit pick、foe_states、hp_free_with
+- （本条交付单补提交另算）
