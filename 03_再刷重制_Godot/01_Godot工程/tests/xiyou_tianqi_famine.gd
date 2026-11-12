@@ -146,7 +146,7 @@ func _data() -> void:
 			and not XTianqiFamineAlien.kind_info(str(p.kind)).is_empty(), p)
 	_check("stage_done", XTianqiLine.stage_done("famine") == XTianqiFamineLine.STAGE_DONE and XTianqiLine.stage_done("war") == XTianqiWarLine.STAGE_DONE)
 	_check("famine_card", XTianqi.line_info("famine").pick == "「噫~我中了！」" and XTianqi.line_playable("famine") and XTianqi.line_playable("war")
-		and not XTianqi.line_playable("plague"))
+		and XTianqi.line_playable("plague"))
 	_check("quiz_three", XTianqiFamineLine.data().quiz.questions.size() == 3)
 
 

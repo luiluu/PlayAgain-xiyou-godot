@@ -128,7 +128,7 @@ func _data() -> void:
 		var p := XTianqiWarAlien.preset(k)
 		_check("preset_troop_" + k, not XDB.rec("Troops", int(p.troop)).is_empty() and not XTianqiWarAlien.tier_info(str(p.tier)).is_empty()
 			and not XTianqiWarAlien.kind_info(str(p.kind)).is_empty(), p)
-	_check("war_card", XTianqi.line_info("war").pick == "「烟火大会，开始啦！」" and XTianqi.line_playable("war") and not XTianqi.line_playable("death"))  # 饥荒、瘟疫线做好后能选（cc 饥荒线、瘟疫线车道），死亡还没有
+	_check("war_card", XTianqi.line_info("war").pick == "「烟火大会，开始啦！」" and XTianqi.line_playable("war") and XTianqi.line_playable("death"))  # 饥荒、瘟疫线做好后能选（cc 饥荒线、瘟疫线车道），死亡还没有
 
 
 func _choose_and_opening() -> void:

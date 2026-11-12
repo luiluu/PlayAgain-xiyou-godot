@@ -132,7 +132,7 @@ func _data() -> void:
 	_check("kinds_five", kinds == ["captain", "double", "knell", "reaper", "verdict"], kinds)
 	_check("stage_done", XTianqiLine.stage_done("death") == XTianqiDeathLine.STAGE_DONE)
 	_check("death_card", XTianqi.line_playable("death") and XTianqi.line_playable("war") and XTianqi.line_playable("famine")
-		and not XTianqi.line_playable("plague"))
+		and XTianqi.line_playable("plague"))
 
 
 func _death_index() -> int:

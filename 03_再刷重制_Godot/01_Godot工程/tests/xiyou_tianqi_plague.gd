@@ -131,7 +131,7 @@ func _data() -> void:
 			and not XTianqiPlagueAlien.kind_info(str(p.kind)).is_empty(), p)
 	_check("stage_done", XTianqiLine.stage_done("plague") == XTianqiPlagueLine.STAGE_DONE)
 	_check("plague_card", XTianqi.line_info("plague").pick == "「不服来打我。」" and XTianqi.line_playable("plague") and XTianqi.line_playable("war")
-		and XTianqi.line_playable("famine") and not XTianqi.line_playable("death"))
+		and XTianqi.line_playable("famine") and XTianqi.line_playable("death"))
 	_check("kinds_five", XTianqiPlagueAlien.kinds().size() == 5 and ["gland", "chaos", "taunt", "contagion", "source"].all(func(k): return XTianqiPlagueAlien.kinds().has(k)))
 
 

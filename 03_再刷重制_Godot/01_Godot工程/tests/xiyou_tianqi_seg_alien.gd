@@ -135,7 +135,7 @@ func _kinds() -> void:
 	_check("kinds_abyss_all", XTianqiSegAlien.kinds_for("war", 6, "abyss") == ["berserk", "fervor", "commander", "pyro"])
 	_check("kinds_famine", XTianqiSegAlien.kinds_for("famine", 6, "rare") == ["exhaust", "lean"]
 		and XTianqiSegAlien.kinds_for("famine", 21, "rare") == ["exhaust", "lean", "night", "plunder", "overdraw"], XTianqiSegAlien.kinds_for("famine", 21, "rare"))
-	_check("kinds_other_line_none", XTianqiSegAlien.kinds_for("death", 21, "rare").is_empty())
+	_check("kinds_other_line_none", XTianqiSegAlien.kinds_for("nope", 21, "rare").is_empty())
 
 
 func _plan() -> void:
@@ -172,7 +172,9 @@ func _plan() -> void:
 	_check("no_line_none", XTianqiSegAlien.plan(_state(10, ""), _enemies(69), _const(0.0)).is_empty())
 	var fam := XTianqiSegAlien.plan(_state(10, "famine"), _enemies(69), _const(0.99))
 	_check("famine_guard", fam.size() == 1 and fam[0].kind == "lean" and fam[0].tier == "qinran", fam)
+	XTianqiDeathLine.ENABLED = false  # 四条线都接上了，借关掉死亡线来模拟「本线没做好」
 	_check("death_none", XTianqiSegAlien.plan(_state(10, "death"), _enemies(69), _const(0.0)).is_empty())
+	XTianqiDeathLine.ENABLED = true
 	XTianqiSegAlien.ENABLED = false
 	_check("switch_off_none", XTianqiSegAlien.plan(s, _enemies(69), _const(0.0)).is_empty())
 	XTianqiSegAlien.ENABLED = true
