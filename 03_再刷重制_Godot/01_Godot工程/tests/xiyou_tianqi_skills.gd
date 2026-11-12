@@ -301,15 +301,20 @@ func _follow() -> void:
 
 ## 改过卡的角色整场跑几回合不报错
 func _smoke() -> void:
-	var s := XTianqi.start_new_game(3, "jianxian", [3, 4, 5, 6, 7])
+	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2]]:
+		_smoke_group(group)
+
+
+func _smoke_group(group: Array) -> void:
+	var s := XTianqi.start_new_game(3, "jianxian", group)
 	XTianqi.take_pending()
-	for id in [3, 4, 5, 6, 7]:
+	for id in group:
 		XTianqi._joining = true
 		s.add_actor(id)
 		XTianqi._joining = false
 	s.map_id = 4
 	XState.current = s
-	for id in [3, 4, 5, 6, 7]:
+	for id in group:
 		var a: XActor = s.actor(id)
 		a.change_level(60)
 		for sid in XTianqiSkills.data().skills:
@@ -323,5 +328,5 @@ func _smoke() -> void:
 		if lg.is_over():
 			break
 		lg.run_turn({})
-	_check("smoke_turns", lg.turn > t0, lg.turn)
+	_check("smoke_turns_%s" % group[0], lg.turn > t0, lg.turn)
 	lg.end_battle(0)

@@ -301,6 +301,13 @@ static func _cond(c: Dictionary, a, b) -> float:
 			return 1.0 + clampf((1.0 - float(a.mp) / maxf(1.0, float(a.mmp))) * per, 0.0, cap)
 		"self_mp_rate":
 			return 1.0 + clampf(float(a.mp) / maxf(1.0, float(a.mmp)) * per, 0.0, cap)
+		"skills_learned":  # 学会了列表里的几个技能，每个 +per
+			var n := 0
+			if a is XActor:
+				for id in c.ids:
+					if a.skill_ids.has(int(id)):
+						n += 1
+			return 1.0 + clampf(n * per, 0.0, cap)
 		"allies":  # 上场的这些角色（不算自己）每人 +per
 			var s := XState.current
 			var n := 0
@@ -320,6 +327,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = b.is_state_affected(int(c.state))
 		"target_state_any":
 			ok = (c.states as Array).any(func(id): return b.is_state_affected(int(id)))
+		"target_hp_above":
+			ok = float(b.hp) >= float(b.mhp) * float(c.get("rate", 1.0))
 		"target_hp_below":
 			ok = float(b.hp) < float(b.mhp) * float(c.get("rate", 0.0))
 		"self_hp_below":
@@ -428,12 +437,71 @@ static func begin_action(logic, u, skill) -> void:
 	st.act = {"u": u, "skill": skill, "targets": []}
 
 
-static func after_apply(logic, u, _skill, t) -> void:
+static func after_apply(logic, u, skill, t) -> void:
 	if t == null or not logic.has_meta("xtqs"):
 		return
 	var f: Dictionary = _fstore(logic).act
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
+	_kill_grow(logic, u, skill, t)
+
+
+## 上场（出战栏前 4 格）的某名角色学了某技能
+static func _ally_has(actor_id: int, skill_id: int) -> bool:
+	var s := XState.current
+	if s == null:
+		return false
+	for i in mini(XTianqi.FIGHTERS, s.battle_slots.size()):
+		if int(s.battle_slots[i]) == actor_id and s.party.has(actor_id):
+			return s.actor(actor_id).skill_ids.has(skill_id)
+	return false
+
+
+# ---- 击杀成长（关羽物攻、张飞生命：每次击杀 +per，封顶 cap；存档 flags.tianqi.skill_grow）----
+## 技能行 kill_grow＝成长键；角色行 grow {key, param 能力号, per, cap, need_skill}
+
+static func grow_count(key: String, s = null) -> int:
+	if s == null:
+		s = XState.current
+	if s == null or not s.flags.get("tianqi") is Dictionary:
+		return 0
+	return int(s.flags.tianqi.get("skill_grow", {}).get(key, 0))
+
+
+static func _kill_grow(logic, u, skill, t) -> void:
+	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not on():
+		return
+	var key := str(spec(int(skill.get("id", 0))).get("kill_grow", ""))
+	var g: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("grow", {})
+	if key == "" or str(g.get("key", "")) != key:
+		return
+	var st := _fstore(logic)
+	var seen: Array = st.get("killed", [])
+	if seen.has(t):
+		return
+	seen.append(t)
+	st.killed = seen
+	if g.has("need_skill") and not u.skill_ids.has(int(g.need_skill)):
+		return
+	var s := XState.current
+	var cap := roundi(float(g.get("cap", 0.0)) / maxf(0.0001, float(g.get("per", 0.01))))
+	var tq: Dictionary = s.flags.tianqi
+	if not tq.get("skill_grow") is Dictionary:
+		tq.skill_grow = {}
+	tq.skill_grow[key] = mini(cap, int(tq.skill_grow.get(key, 0)) + 1)
+	u.param_mark_dirty()
+
+
+## XActor.param_rate 包装：击杀成长的能力比率
+static func param_rate(a, i: int) -> float:
+	if not ENABLED:
+		return 1.0
+	var g = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("grow")
+	if not g is Dictionary or int(g.get("param", -1)) != i or not on():
+		return 1.0
+	if g.has("need_skill") and not a.skill_ids.has(int(g.need_skill)):
+		return 1.0
+	return 1.0 + minf(float(g.cap), float(grow_count(str(g.key))) * float(g.per))
 
 
 ## 这次行动该追加什么：[技能记录, 几率]；没有返回 []
@@ -449,6 +517,8 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 		rows.append(r)
 	for r in rows:
 		if r.has("need_skill") and not u.skill_ids.has(int(r.need_skill)):
+			continue
+		if r.has("need_ally_skill") and not _ally_has(int(r.need_ally_skill[0]), int(r.need_ally_skill[1])):
 			continue
 		var rate := float(r.get("rate", 0.0))
 		for k in r.get("rate_with", {}):
