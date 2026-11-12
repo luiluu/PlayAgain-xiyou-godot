@@ -2616,7 +2616,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_mark_stale(t, states_before)
 	XTianqiQiyinEffects.after_apply(self, u, skill, t, r)  # 天启篇七印装备：疫、判决、落星、处决、击倒记录
 	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
-	XTianqiSkills.after_apply(self, u, skill, t)  # 天启篇技能重构：追加释放的目标
+	XTianqiSkills.after_apply(self, u, skill, t, r)  # 天启篇技能重构：追加释放的目标、反弹（reflect）
 	return r
 
 
