@@ -557,6 +557,8 @@ func remove_state(id: int) -> void:
 		return  # 异化疫囊、囚厄、绝缘 removeState 包装：只能自然到期
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XAlienBattle.route_revive(self):
 		return  # 异化 revive 包装（O-108）：连命复活回池，嫁祸的保护者倒下不能复活
+	if id == 1 and state_ids.has(id) and hp <= 0.0 and XTianqiQiyinEffects.blocks_revive(self):
+		return  # 天启篇灰镰代价：佩戴者不能被复活
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
