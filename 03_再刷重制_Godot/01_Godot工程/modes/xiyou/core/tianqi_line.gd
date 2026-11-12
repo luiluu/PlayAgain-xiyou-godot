@@ -85,6 +85,31 @@ static func alien_prepare(key: String, name: String, s: XState) -> bool:
 	return false
 
 
+## 按段异化（XTianqiSegAlien）：把指定的敌人交给本线异化模块，list 每项 {enemy, tier, kind}
+static func alien_apply(key: String, logic, s: XState, list: Array) -> bool:
+	match key:
+		"war":
+			return XTianqiWarAlien.apply(logic, s, "segment", list)
+		"famine":
+			return XTianqiFamineAlien.apply(logic, s, "segment", list)
+	return false
+
+
+## 本线异化模块做好了战斗规则的种类（按段异化只从这里面抽）
+static func alien_kinds(key: String) -> Array:
+	match key:
+		"war":
+			return XTianqiWarAlien.kinds()
+		"famine":
+			return XTianqiFamineAlien.kinds()
+	return []
+
+
+## 这一场已经有本线预设的异化
+static func alien_active(logic) -> bool:
+	return XTianqiWarAlien.active(logic) or XTianqiFamineAlien.active(logic)
+
+
 # ---- 开关与进度 ----
 
 ## 天启篇存档、发行构建里天启篇已开放（不看选没选线）

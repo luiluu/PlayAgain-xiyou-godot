@@ -2,7 +2,7 @@ class_name XTianqiWarAlien
 extends RefCounted
 ## 【cc·天启篇·未经审查】战争线异化怪的战斗规则（四线异化 v0.8 第 2.2、3.2 节；四线剧情与关卡设计稿 v0.4 第 4.2、5.1 节）。
 ## 只给战争线自己的几场战斗用：开场第 1 节「异兆」、第 2 节「蔓延」，10／20／30 层的使徒守层者（XTianqiWarLine 开战前 prepare）。
-## 1～30 层「按段异化」（第 3.3 节，四线共用的异化判定）不在这里，还没做。
+## 1～30 层「按段异化」（第 3.3 节，四线共用的异化判定）在 XTianqiSegAlien：它抽好哪只、什么级、什么种类后调这里的 apply。
 ##
 ## 怎么开一场：XTianqiWarAlien.prepare("omen") 之后照常开战（敌群是原版的），setup 时按预设把指定的敌人变成异化怪：
 ## - 级（侵染／蚀骨／化形／终焉）：生命 ×1.25／×1.5／×2／×3，名字前加「级·」。
@@ -79,17 +79,31 @@ static func setup(logic, s: XState) -> void:
 		return
 	var p := preset(key)
 	var picks := _pick_units(logic.enemies, p.get("units", "all"))
-	if picks.is_empty():
-		return
+	apply(logic, s, key, picks.map(func(e): return {"enemy": e, "tier": str(p.tier), "kind": str(p.kind)}))
+
+
+## 本线异化种类里已经做好战斗规则的（按段异化 XTianqiSegAlien 只从这里面抽；连击兵还没做）
+static func kinds() -> Array:
+	return data().get("kinds", {}).keys()
+
+
+## 把指定的敌人变成异化怪（预设和按段异化共用）：list 每项 {enemy, tier, kind}；返回 true＝这场有异化
+static func apply(logic, s: XState, key: String, list: Array) -> bool:
+	if logic.has_meta(META):
+		logic.remove_meta(META)
+	if list.is_empty() or not XTianqiWarLine.allowed(s):
+		return false
 	var f := {"preset": key, "units": {}, "sparks": 0, "queue": [], "hit": {}, "cmd_buff": {}, "cmd_down": {}}
-	var tier := str(p.tier)
-	var kind := str(p.kind)
-	var ti := tier_info(tier)
-	var ki := kind_info(kind)
-	var idx := int(ti.get("idx", 0))
-	for e in picks:
-		var u := {"tier": tier, "kind": kind, "idx": idx, "fervor": 0, "rage": 0.0}
-		f.units[e] = u
+	for row in list:
+		var e = row.enemy
+		var tier := str(row.tier)
+		var kind := str(row.kind)
+		var ti := tier_info(tier)
+		var ki := kind_info(kind)
+		if ti.is_empty() or ki.is_empty():
+			continue
+		var idx := int(ti.get("idx", 0))
+		f.units[e] = {"tier": tier, "kind": kind, "idx": idx, "fervor": 0, "rage": 0.0}
 		if kind == "berserk":
 			var m := float(ki.mult[idx])
 			for i in range(8):
@@ -98,12 +112,19 @@ static func setup(logic, s: XState) -> void:
 		e.hp = e.mhp
 		e.mp = e.mmp
 		e.set_meta("tianqi_prefix", str(ti.name) + "·")
+	if f.units.is_empty():
+		return false
 	logic.set_meta(META, f)
 	_apply_commander(logic, f)
-	_say(f, "战场上燃起了火花：%s（%s·%s）。异化怪每行动一次攒一点火花，满 %d 点全体再动。" % [
-		"、".join(PackedStringArray(picks.map(func(e): return e.original_name()))), str(ti.name), str(ki.name), spark_full(logic)])
-	if kind == "fervor":
-		_say(f, "战意：每被攻击一次叠一层，满 %d 层立刻再动。" % int(ki.full[idx]))
+	var names := PackedStringArray()
+	for e in f.units:
+		names.append("%s（%s·%s）" % [e.original_name(), str(tier_info(str(f.units[e].tier)).name), str(kind_info(str(f.units[e].kind)).name)])
+	_say(f, "战场上燃起了火花：%s。异化怪每行动一次攒一点火花，满 %d 点全体再动。" % ["、".join(names), spark_full(logic)])
+	for e in f.units:
+		if str(f.units[e].kind) == "fervor":
+			_say(f, "战意：每被攻击一次叠一层，满 %d 层立刻再动。" % int(kind_info("fervor").full[int(f.units[e].idx)]))
+			break
+	return true
 
 
 static func _pick_units(enemies: Array, spec) -> Array:

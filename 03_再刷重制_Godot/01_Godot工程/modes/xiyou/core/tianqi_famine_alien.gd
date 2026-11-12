@@ -2,7 +2,7 @@ class_name XTianqiFamineAlien
 extends RefCounted
 ## 【cc·天启篇·未经审查】饥荒线异化怪的战斗规则（四线异化 v0.8 第 2.2、3.3 节；四线剧情与关卡设计稿 v0.4 第 4.3、5.1 节）。
 ## 只给饥荒线自己的几场战斗用：开场第 1 节「异兆」、第 2 节「蔓延」，10／20／30 层的使徒守层者（XTianqiLine 开战前 prepare）。
-## 1～30 层「按段异化」（第 3.3 节，四线共用）不在这里，由按段异化车道调 prepare_units。
+## 1～30 层「按段异化」（第 3.3 节，四线共用）在 XTianqiSegAlien：它抽好哪只、什么级、什么种类后经 XTianqiLine.alien_apply 调这里的 apply。
 ##
 ## 怎么开一场：XTianqiFamineAlien.prepare("omen") 之后照常开战（敌群是原版的），setup 时按预设把指定的敌人变成异化怪：
 ## - 级（侵染／蚀骨／化形／终焉）：生命 ×1.25／×1.5／×2／×3，名字前加「级·」。
@@ -89,21 +89,40 @@ static func setup(logic, s: XState) -> void:
 		return
 	var p := preset(key)
 	var picks := _pick_units(logic.enemies, p.get("units", "all"))
-	if picks.is_empty():
-		return
+	apply(logic, s, key, picks.map(func(e): return {"enemy": e, "tier": str(p.tier), "kind": str(p.kind)}))
+
+
+## 本线异化种类里已经做好战斗规则的（按段异化 XTianqiSegAlien 只从这里面抽）
+static func kinds() -> Array:
+	return data().get("kinds", {}).keys()
+
+
+## 把指定的敌人变成异化怪（预设和按段异化 XTianqiSegAlien 共用）：list 每项 {enemy, tier, kind}；返回 true＝这场有异化
+static func apply(logic, s: XState, key: String, list: Array) -> bool:
+	if logic.has_meta(META):
+		logic.remove_meta(META)
+	if list.is_empty() or not XTianqiFamineLine.allowed(s):
+		return false
 	var f := {"preset": key, "units": {}, "queue": []}
-	var ti := tier_info(str(p.tier))
-	for e in picks:
-		f.units[e] = {"tier": str(p.tier), "kind": str(p.kind), "idx": int(ti.get("idx", 0))}
+	var names := PackedStringArray()
+	for row in list:
+		var e = row.enemy
+		var ti := tier_info(str(row.tier))
+		if ti.is_empty() or kind_info(str(row.kind)).is_empty():
+			continue
+		f.units[e] = {"tier": str(row.tier), "kind": str(row.kind), "idx": int(ti.get("idx", 0))}
 		e.add_param(0, e.param_base_unscaled(0) * (float(ti.hp) - 1.0))
 		e.hp = e.mhp
 		e.mp = e.mmp
 		e.set_meta("tianqi_prefix", str(ti.name) + "·")
+		names.append("%s（%s·%s）" % [e.original_name(), str(ti.name), str(kind_info(str(row.kind)).name)])
+	if f.units.is_empty():
+		return false
 	logic.set_meta(META, f)
 	_logic_ref = weakref(logic)
-	_say(f, "饥荒的异化：%s（%s·%s）。" % ["、".join(PackedStringArray(picks.map(func(e): return e.original_name()))),
-		str(ti.name), str(kind_info(str(p.kind)).name)])
+	_say(f, "饥荒的异化：%s。" % "、".join(names))
 	_say(f, hunger_text(logic))
+	return true
 
 
 static func _pick_units(enemies: Array, spec) -> Array:

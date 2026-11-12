@@ -300,6 +300,7 @@ func _rechallenge() -> void:
 
 
 func _hongjun_battle() -> void:
+	XTianqiSegAlien.ENABLED = false  # 只比鸿钧换能力值；按段异化（34 层守层者终焉、种类随机）另有专项 xiyou_tianqi_seg_alien
 	var s := _state(34)
 	var plain := XBattleLogic.new()
 	plain.setup(469, s)
@@ -316,6 +317,7 @@ func _hongjun_battle() -> void:
 	_check("hongjun_pending_used", XTianqiSummit.pending() == "")
 	plain.end_battle(0)
 	lg.end_battle(0)
+	XTianqiSegAlien.ENABLED = true
 
 
 func _level_cap() -> void:

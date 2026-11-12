@@ -184,6 +184,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	var strong_count := XEnemy.deployed_strong_count(actors)
 	for m in t.get("members", []):
 		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule(), strong_count)
+		XTianqi.strip_myth(e, s)  # 天启篇：不出「神话」（XTianqi.NO_MYTH；照样掷，随机流不变）
 		e.setup_level(actors.reduce(func(acc, x): return maxi(acc, int(x.level)), 1), level_roll, _rule())
 		e.set_meta("x", float(m.x))
 		e.set_meta("y", float(m.y))
@@ -193,6 +194,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
+	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）

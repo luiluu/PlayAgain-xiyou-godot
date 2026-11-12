@@ -58,6 +58,12 @@ static var SWAP_IN_BATTLE := true
 ## 开关（O-281，审查 78 P3-1）：true＝换上来的助力位补开战初始化（初始 TP、预热、开战状态标签、种族本场数据）；
 ## false＝照第二批，换上来什么都不补
 static var SWAP_INIT := true
+## 开关（Kyo 11-11「关」；四线异化 v0.8 第 2.3 节）：true＝天启篇存档不出原版的 1% 异化遭遇（XAlienBattle.setup_encounter），
+## 异化只走天启篇自己的按段异化和各线预设，免得同一只怪生命加成叠两次；false＝照原版。西游档、发行版不受影响。
+static var NO_LEGACY_ALIEN := true
+## 开关（同上）：true＝天启篇存档里怪物不变「【神话】」（EliteEnemy：能力 ×3.5、经验金钱 ×1.2、掉率 ×5、放大偏色）；
+## 照原版照样掷一次（随机流不变），掷中了也当普通怪。false＝照原版。
+static var NO_MYTH := true
 
 ## 通关抽角色（数值重构方案「招募改成通关抽角色」，Kyo 11-08 定的表）：每通关 5 层一次，最多 6 次。
 ## 每档 6 行，依次是第 1～6 次：[档位, 几选一]；几选一为 0＝自选（档位内本局还没有的全部）。不能重抽。
@@ -116,6 +122,21 @@ static func new_game_enabled() -> bool:
 
 static func active(s: XState) -> bool:
 	return s != null and s.flags.get("tianqi") is Dictionary and int(s.flags.tianqi.get("rules", 0)) >= 1
+
+
+## 这一档不出原版 1% 异化遭遇
+static func legacy_alien_off(s: XState) -> bool:
+	return NO_LEGACY_ALIEN and active(s)
+
+
+## 这一档不出「神话」：掷中了也改回普通怪（能力值、经验、金钱、掉率、图像都按普通算），回满
+static func strip_myth(e: XEnemy, s: XState) -> void:
+	if not NO_MYTH or not active(s) or e == null or not e.elite:
+		return
+	e.elite = false
+	e.elite_hue = 0.0
+	e.refresh_passive()
+	e.recover_all()
 
 
 static func difficulty_of(s: XState) -> Dictionary:

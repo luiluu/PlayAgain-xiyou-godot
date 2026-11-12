@@ -12,6 +12,7 @@
   B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
 - war_line.json、famine_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
 - summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
+- seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -446,6 +447,53 @@ def check_summit(_args) -> bool:
     return not bad
 
 
+# ---- seg_alien.json（按段异化） ----
+
+SEG_CLASSES = ['rare', 'very_rare', 'guardian', 'abyss']
+SEG_DIFFS = ['xunchang', 'jianxian', 'jiusi', 'lianyu', 'zhengdao']
+
+
+def seg_alien_rules(table: dict) -> list:
+    bad = []
+    out = []
+    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
+    if out:
+        bad.append('数字带 4：' + '，'.join(out))
+    tiers = table.get('tiers', [])
+    want = 1
+    for seg in table.get('segments', []):
+        if int(seg.get('from', 0)) != want:
+            bad.append('段表不连续：%s 从 %s 起，应从 %d 起' % (seg.get('name'), seg.get('from'), want))
+        want = int(seg.get('to', 0)) + 1
+        for cls in SEG_CLASSES:
+            row = seg.get(cls)
+            if row is None:
+                continue
+            if row.get('tier') not in tiers or (row.get('up') and row.get('up') not in tiers):
+                bad.append('%s %s 级名不对' % (seg.get('name'), cls))
+            for k in ('rate', 'up_rate'):
+                if not 0 <= float(row.get(k, 0)) <= 100:
+                    bad.append('%s %s %s 不在 0～100' % (seg.get('name'), cls, k))
+    if want - 1 != int(table.get('floor_max', 0)):
+        bad.append('段表到 %d 层，floor_max 是 %s' % (want - 1, table.get('floor_max')))
+    miss = [d for d in SEG_DIFFS if d not in table.get('difficulty', {})]
+    if miss:
+        bad.append('缺难度：%s' % miss)
+    return bad
+
+
+def check_seg_alien(_args) -> bool:
+    path = DATA_DIR / 'seg_alien.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    bad = seg_alien_rules(json.loads(path.read_text(encoding='utf-8')))
+    for b in bad:
+        print('  ' + b)
+    print('seg_alien.json 规则自检：' + ('通过' if not bad else '%d 项不过' % len(bad)))
+    return not bad
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -453,6 +501,7 @@ CHECKS = [
     ('war_line', check_war_line),
     ('famine_line', lambda _args: check_line('famine')),
     ('summit', check_summit),
+    ('seg_alien', check_seg_alien),
 ]
 
 
