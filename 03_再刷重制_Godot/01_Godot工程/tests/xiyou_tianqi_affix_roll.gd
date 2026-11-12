@@ -102,6 +102,12 @@ func _roll() -> void:
 	var always_top := func(): return 0.999
 	var list2 := XTianqiAffixRoll.roll(XGear.template("weapon", wid), "weapon", "zhengdao", always_top)
 	_check("legendary_cap", _layer_count(list2, "legendary") == 1 and list2.size() == 3, list2)
+	# 传说品质（三阶）出不了传说词条：全掷传说也退到别的层
+	var epic4 := _find("weapon", 4, 3, "weapon")
+	_check("found_legend3", epic4 > 0)
+	if epic4 > 0:
+		var l3 := XTianqiAffixRoll.roll(XGear.template("weapon", epic4), "weapon", "zhengdao", always_top)
+		_check("epic_no_legendary", _layer_count(l3, "legendary") == 0 and l3.size() == 2, l3)
 	# 普通品质不掷；一阶不出特效
 	var plain_id := _find("armor", 0, 1, "head")
 	if plain_id > 0:
@@ -218,6 +224,19 @@ func _merchant() -> void:
 	_check("collection_unavailable", low.all(func(x): return XTianqiMerchant.collection_choices(s3, x).is_empty()))
 	var rows := XMerchant29Page.tianqi_rows(s3, low[0])
 	_check("rows_reason", rows.size() == 2 and not bool(rows[1].enabled) and str(rows[1].help).contains("不可用"), rows)
+	# 混合路线：珍藏的本体只出三阶以上、不朽及以上
+	var s4 := _state()
+	_open(s4, 300)
+	s4.map_id = 141
+	var mixed_ok := true
+	var fewer := false
+	for x in ["武器", "防具", "饰品"]:
+		var bs := XTianqiMerchant.bodies(s4, x, "collection")
+		fewer = fewer or bs.size() < XAbyssMerchant.pool(s4, x).size()
+		for d in bs:
+			var tpl := XGear.template("weapon" if str(d.db) == "Weapons" else "armor", int(d.id))
+			mixed_ok = mixed_ok and XTianqiAffixRoll.tier_of(tpl) >= 3 and XQuality.grade(tpl) >= 5
+	_check("collection_threshold", mixed_ok and fewer)
 	# 原版档／开关关掉：照原版三档
 	XTianqiMerchant.ENABLED = false
 	_check("off", not XTianqiMerchant.on(s))
