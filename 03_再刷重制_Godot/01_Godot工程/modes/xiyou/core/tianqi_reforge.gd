@@ -7,7 +7,7 @@ extends RefCounted
 ## - 花金钱：按这条的阶 1000／3000／6000／10000。
 ## 界面在异化工坊页（天启篇存档）底下「装备重铸」一节。只认天启篇存档（XTianqiAffixRoll.on）。
 ##
-## 开关（O-待定）：false＝没有重铸
+## 开关（O-360）：false＝没有重铸
 
 ## 开关：false＝没有重铸
 static var ENABLED := true
