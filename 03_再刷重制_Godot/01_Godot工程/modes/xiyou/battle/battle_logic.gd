@@ -1241,6 +1241,7 @@ func act(u: XBattler, skill, target) -> Array:
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
 	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」
+	logs.append_array(XTianqiSkills.end_action(self, u, skill))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）
 	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）
@@ -2023,7 +2024,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	logs.append_array(XYunshang.prepare(self, u, skill))  # 云裳 startAction 包装（prepareAction）：敌人引爆符针、钉影虚弱、余辉、收针
 	if u.is_dead():
 		return logs  # 被引爆的符针打倒：原版 _subject 清空，整次行动不执行
-	skill = change_to(u, skill)  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前
+	skill = XTianqiSkills.change_to(self, u, change_to(u, skill))  # TorigoyaMZ_SkillChangeTo：startAction 链里在行动开始状态效果之前；天启篇技能重构的变招
 	XStateEffects.run("action_start", u)  # Custom Action Start：BattleManager.startAction 之前（强制行动同）
 	_take_state_reserves()
 	skill = weapon_unleash(u, skill)  # YEP_WeaponUnleash：行动开始状态效果之后、付费之前
@@ -2054,6 +2055,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	XTianqiQiyinEffects.begin_action(self, u, skill)  # 天启篇七印装备：行动帧（砝码、倾囊、换系、舍身、蓄势）
 	XTianqiAffixBattle.begin_action(self, u, skill)  # 天启篇词条：先声、本次行动的目标与击杀
+	XTianqiSkills.begin_action(self, u, skill)  # 天启篇技能重构：记本次行动，追加释放用
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
@@ -2592,6 +2594,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_mark_stale(t, states_before)
 	XTianqiQiyinEffects.after_apply(self, u, skill, t, r)  # 天启篇七印装备：疫、判决、落星、处决、击倒记录
 	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
+	XTianqiSkills.after_apply(self, u, skill, t)  # 天启篇技能重构：追加释放的目标
 	return r
 
 

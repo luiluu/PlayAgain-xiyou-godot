@@ -14,6 +14,7 @@
 - summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
+- skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 16／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1113,6 +1114,58 @@ def check_qiyin_refs(_args) -> bool:
     return _report('七印四张表', '跨表引用', bad)
 
 
+# ---- skill_rework.json（全角色技能重构，XTianqiSkills） ----
+
+SKILL_EXEMPT_EXTRA = {'effects_remove', 'rate_with'}
+
+
+def skill_rework_rules(table: dict) -> list:
+    """数字避开 4（豁免键另列）、档位名单人数和不重叠、技能行的系数／比例／几率范围。"""
+    bad = []
+    exempt = set(table.get('nice_number_exempt', [])) | SKILL_EXEMPT_EXTRA
+    for sec in ('rules', 'skills', 'states', 'actors'):
+        nice_violations(table.get(sec, {}), sec, exempt, bad)
+    tiers = table.get('tiers', {})
+    sup, strong, hidden = (set(tiers.get(k, [])) for k in (SUPER, STRONG, '不开放'))
+    if len(sup) != 16:
+        bad.append('超强者名单 %d 人（应 16：18 人里轮回者·里德、五条悟另做）' % len(sup))
+    if len(strong) != 52:
+        bad.append('强者名单 %d 人（应 52）' % len(strong))
+    for a, b, name in ((sup, strong, '超强者∩强者'), (sup, hidden, '超强者∩不开放'), (strong, hidden, '强者∩不开放')):
+        if a & b:
+            bad.append('%s 重叠：%s' % (name, sorted(a & b)))
+    for sid, row in table.get('skills', {}).items():
+        if not str(sid).isdigit():
+            continue
+        d = row.get('damage')
+        if d is not None and not float(d.get('coef', 0)) > 0:
+            bad.append('skills/%s 伤害系数要大于 0' % sid)
+        h = row.get('heal')
+        if h is not None and not all(0 <= float(v) <= 1 for v in h.values()):
+            bad.append('skills/%s 治疗比例要在 0～1' % sid)
+        if 'mp_pct' in row and not 0 < float(row['mp_pct']) <= 100:
+            bad.append('skills/%s 魔法比例要在 0～100' % sid)
+        for f in row.get('follow', []):
+            rates = [f.get('rate', 0)] + list(f.get('rate_with', {}).values())
+            if not all(0 <= float(r) <= 1 for r in rates):
+                bad.append('skills/%s 追加几率要在 0～1' % sid)
+        if 'desc' in row and not isinstance(row['desc'], list):
+            bad.append('skills/%s desc 要是列表' % sid)
+    return bad
+
+
+def check_skill_rework(_args) -> bool:
+    path = DATA_DIR / 'skill_rework.json'
+    if not path.is_file():
+        print('跳过：没有 skill_rework.json')
+        return True
+    try:
+        bad = skill_rework_rules(json.loads(path.read_text(encoding='utf-8')))
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('skill_rework.json', '规则自检', bad)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1131,6 +1184,7 @@ CHECKS = [
     ('qiyin_dragon', lambda _args: check_qiyin('dragon')),
     ('qiyin_altar', lambda _args: check_qiyin('altar')),
     ('qiyin_refs', check_qiyin_refs),
+    ('skill_rework', check_skill_rework),
 ]
 
 
