@@ -1,0 +1,14 @@
+{
+  "tests": ["xiyou_tianqi_rewards"],
+  "items": [
+    {"name": "存粮三档改成 24", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/rewards.json", "find": "\"values\": [10, 15, 20]", "replace": "\"values\": [10, 15, 24]"},
+    {"name": "净印换线照样生效", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "\tif s == null or not on(s) or XTianqi.line_of(s) != line:\n\t\treturn 0", "replace": "\tif s == null or not on(s):\n\t\treturn 0"},
+    {"name": "长明对终焉也生效", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "\tif finale or logic == null:\n\t\treturn false", "replace": "\tif logic == null:\n\t\treturn false"},
+    {"name": "遗物每次都给", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "\tif not on(s) or relic_info(line).is_empty() or got(s, key):", "replace": "\tif not on(s) or relic_info(line).is_empty():"},
+    {"name": "再挑战骑士不给核", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_summit.gd", "find": "\t\t\t\tawait XTianqiRewards.after_final(host, s, line, r36, \"rechallenge36\")", "replace": "\t\t\t\tpass"},
+    {"name": "卷子普攻也攒资历", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "and int(item.get(\"id\", 0)) != u.attack_skill_id() and not logic.is_item(item)", "replace": "and not logic.is_item(item)"},
+    {"name": "嘲讽不看回合", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "and int(logic.turn) <= int(p.taunt_turns)", "replace": ""},
+    {"name": "神器栏不收遗物", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gear.gd", "find": " or XTianqiRewards.is_relic(item)  # 骑士遗物", "replace": ""},
+    {"name": "开关不管发奖", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_rewards.gd", "find": "\treturn ENABLED and s != null and XTianqiLine.open_for(s)", "replace": "\treturn s != null and XTianqiLine.open_for(s)"}
+  ]
+}

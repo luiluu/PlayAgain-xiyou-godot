@@ -203,7 +203,7 @@ static func after_action(logic, u) -> Array:
 	var again := []
 	if is_alien(logic, u):
 		var n := int(data().sparks.per_action) + (int(kind_info("pyro").spark_extra) if str(f.units[u].kind) == "pyro" else 0)
-		f.sparks = int(f.sparks) + n
+		f.sparks = int(f.sparks) + XTianqiRewards.spark_gain(logic, n)  # 天启篇奖励：净印·止戈几率不加
 		var full := spark_full(logic)
 		if int(f.sparks) >= full:
 			f.sparks = 0

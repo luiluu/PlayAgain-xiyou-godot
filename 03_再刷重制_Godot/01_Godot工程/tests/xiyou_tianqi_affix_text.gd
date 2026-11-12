@@ -152,7 +152,9 @@ func _run() -> void:
 	_check("普通传说词条正文用传说层颜色", X.line_color("expose", "normal") == int(d.layers.legendary.color))
 
 	# 五、文字表本身不含数字 4
-	var raw := FileAccess.get_file_as_string(X.DATA)
+	var raw_d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(X.DATA))
+	raw_d.erase("dev")  # dev 是合并时盖的开发编号，不是设计数
+	var raw := JSON.stringify(raw_d)
 	_check("文字表本身不含数字 4", not ("4" in raw))
 
 	var passed := 0

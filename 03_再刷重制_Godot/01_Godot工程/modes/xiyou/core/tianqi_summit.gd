@@ -246,6 +246,7 @@ static func _run_hongjun(host, s: XState) -> int:
 	if r == 0:
 		progress(s)["hongjun"] = true
 		await say(host, "hongjun_win")
+		await XTianqiRewards.after_hongjun(host, s, r)  # 天启篇奖励：终焉核
 	else:
 		await say(host, "hongjun_lost")
 	return r
@@ -333,7 +334,7 @@ static func rechallenge_options(s: XState) -> Array:
 	return out
 
 
-## 只打，不改层数、不记通关、不给洪荒奖励；骑士的掉落（异化核）等奖励做好后再接（设计稿第 7 节草案）
+## 只打，不改层数、不记通关、不给洪荒奖励；赢了照给终焉核（终焉试炼），不再给遗物（XTianqiRewards，设计稿第 7 节草案）
 static func run_rechallenge(host, s: XState) -> bool:
 	var opts := rechallenge_options(s)
 	var labels := opts.map(func(n): return _rechallenge_label(s, int(n)))
@@ -348,15 +349,18 @@ static func run_rechallenge(host, s: XState) -> bool:
 	var line := XTianqi.line_of(s)
 	match n:
 		34:
-			await fight_hongjun(host, s)
+			var r34 := await fight_hongjun(host, s)
+			await XTianqiRewards.after_hongjun(host, s, r34, "rechallenge34")  # 天启篇奖励：终焉核
 		35:
 			if XTianqiHorsemen.prepare(line, s, "shadow"):
-				await host.start_battle(int(data().shell_troop), false, true)
+				var r35: int = await host.start_battle(int(data().shell_troop), false, true)
+				await XTianqiRewards.after_shadow(host, s, line, r35, "rechallenge35")  # 天启篇奖励：终焉核（遗物只首次）
 			else:
 				await say(host, "not_ready")
 		36:
 			if XTianqiHorsemen.prepare(line, s, "body"):
-				await host.start_battle(int(data().shell_troop), false, true)
+				var r36: int = await host.start_battle(int(data().shell_troop), false, true)
+				await XTianqiRewards.after_final(host, s, line, r36, "rechallenge36")  # 天启篇奖励：终焉试炼只给终焉核
 			else:
 				await say(host, "not_ready")
 	return true

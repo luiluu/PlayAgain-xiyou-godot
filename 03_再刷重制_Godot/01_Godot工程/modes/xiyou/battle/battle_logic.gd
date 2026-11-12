@@ -197,6 +197,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiDeathAlien.setup(self, s)  # 天启篇死亡线异化（prepare 过才变）：死期、宣判者、收尸人、丧钟、替身、骑士队长
 	XTianqiSummit.setup(self, s)  # 天启篇 34 层（prepare 过才换）：鸿蒙老祖那只换成鸿钧
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
+	XTianqiRewards.setup(self, s)  # 天启篇奖励：穿着骑士遗物的人记本场资历、火花
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -760,6 +761,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
+	list = XTianqiRewards.filter_targets(self, a, list)  # 天启篇奖励：混子之盾开场嘲讽
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
@@ -1212,6 +1214,8 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
+	if started:
+		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -2385,6 +2389,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3
+	cri *= XTianqiRewards.cri_mult(u)  # 天启篇奖励：替身的钥匙串（暴击率归零，半强度减半）
 	return clampf(cri, 0.0, 1.0)
 
 
@@ -2756,6 +2761,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
 	value = XTianqiPlagueAlien.hp_damage(self, u, t, value, item)  # 天启篇瘟疫线异化：毒腺中毒、混乱者混乱、挑衅者不服与化形群攻减半
 	value = XTianqiDeathAlien.hp_damage(self, u, t, value)  # 天启篇死亡线异化：替身被打倒时换一名我方代它倒下
+	value = XTianqiRewards.hp_damage(self, u, t, value, item)  # 天启篇奖励：遗物的受伤、出伤、回复与资历
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -3391,6 +3397,7 @@ func end_battle(result := -1) -> void:
 	XTianqiFamineAlien.end(self)  # 天启篇饥荒线异化：清本场异化
 	XTianqiPlagueAlien.end(self)  # 天启篇瘟疫线异化：清本场异化
 	XTianqiDeathAlien.end(self)  # 天启篇死亡线异化：清本场异化
+	XTianqiRewards.end(self)  # 天启篇奖励：清遗物的本场记录
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

@@ -531,9 +531,12 @@ static func _death_turn_start(logic, f: Dictionary, turn: int) -> void:
 		var live := _alive_actors(logic).filter(func(a): return not _mark(f, a).get("doom", false))
 		if not live.is_empty():
 			var t = live[logic._int(0, live.size() - 1, "horseman_doom")]
-			_mark(f, t).doom = true
 			f.doom_last = turn
-			_say(f, "死期：%s会在本回合结束时死去。" % t.display_name())
+			if XTianqiRewards.doom_spared(logic, t, str(f.mode) != "survival"):  # 天启篇奖励：净印·长明（终焉无效：本体、影子）
+				_say(f, "死期落在%s身上，被净印挡下，只损失了一半生命。" % t.display_name())
+			else:
+				_mark(f, t).doom = true
+				_say(f, "死期：%s会在本回合结束时死去。" % t.display_name())
 	# 神圣剑提前一回合亮出目标（已确认）：下一回合放的，这回合开始就选好
 	var every := int(k.holy_sword.every)
 	if (turn + 1) % every == 0:
@@ -907,7 +910,7 @@ static func _war_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) -> 
 				logs.append(_war_hit(logic, f, u, t, skill, mat * float(skill.coef) * rnd, true, 0.0))
 			f.sparks = int(f.sparks) + 1
 	# 每次行动 +1 火花（炮火连天起 +3）
-	f.sparks = int(f.sparks) + (int(k.sparks.barrage_per) if layer >= 6 else int(k.sparks.per_action))
+	f.sparks = int(f.sparks) + XTianqiRewards.spark_gain(logic, int(k.sparks.barrage_per) if layer >= 6 else int(k.sparks.per_action))  # 天启篇奖励：净印·止戈
 	return logs
 
 
@@ -1156,7 +1159,7 @@ static func actor_param(a, i: int, v: float) -> float:
 	if m.get("plague", false):
 		var k := knight("plague")
 		var debuffs := debuff_count(f, m)
-		mult *= (1.0 - float(f.plague_down)) * (1.0 - minf(float(k.frail.cap), float(k.frail.per) * debuffs))
+		mult *= (1.0 - float(f.plague_down)) * (1.0 - minf(float(k.frail.cap), XTianqiRewards.frail_per(a, float(k.frail.per)) * debuffs))  # 天启篇奖励：净印·清心
 	if i == 3:
 		if int(m.get("seen", 0)) > 0:
 			mult *= 1.0 - float(knight("famine").seen.def_down)

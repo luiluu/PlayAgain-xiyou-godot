@@ -233,7 +233,7 @@ static func start_turn(logic) -> Array:
 static func cost(logic, a, skill: Dictionary, c: Dictionary, panel: bool) -> Dictionary:
 	if panel or not active(logic) or not a is XActor or not logic.actors.has(a):
 		return c
-	var m := cost_mult(logic)
+	var m := XTianqiRewards.famine_cost_mult(a, cost_mult(logic))  # 天启篇奖励：净印·存粮减轻
 	if m == 1.0:
 		return c
 	return {"mp": floori(int(c.mp) * m), "tp": floori(int(c.tp) * m)}
@@ -244,7 +244,7 @@ static func hp_cost(a, value: int) -> int:
 	var logic = active_logic()
 	if logic == null or value <= 0 or not a is XActor or not logic.actors.has(a) or _max_idx(logic, "exhaust") < 2:
 		return value
-	return floori(value * cost_mult(logic))
+	return floori(value * XTianqiRewards.famine_cost_mult(a, cost_mult(logic)))  # 天启篇奖励：净印·存粮减轻
 
 
 ## BattleLogic.pay_skill_cost 之后：零消耗技能交口粮；透支者另扣生命
@@ -286,7 +286,7 @@ static func gain(b, resource: String, amount: float) -> float:
 		return amount
 	match resource:
 		"hp", "mp":
-			return floorf(amount * heal_mult(logic))
+			return floorf(amount * XTianqiRewards.famine_heal_mult(b, heal_mult(logic)))  # 天启篇奖励：净印·存粮减轻
 		"tp":
 			return floorf(amount * tp_mult(logic))
 	return amount
@@ -304,7 +304,7 @@ static func regen(logic, b, dh: float, dm: float, dt: float) -> Array:
 	if not active(logic) or not b is XActor or not logic.actors.has(b):
 		return [dh, dm, dt]
 	var off := _max_idx(logic, "lean") >= 2
-	var h := heal_mult(logic)
+	var h := XTianqiRewards.famine_heal_mult(b, heal_mult(logic))  # 天启篇奖励：净印·存粮减轻
 	if dh > 0.0:
 		dh = 0.0 if off else floorf(dh * h)
 	if dm > 0.0:
