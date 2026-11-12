@@ -409,6 +409,7 @@ static func setup(logic, s: XState) -> void:
 	rec.dropItems = []
 	rec.note = "NoElite"  # 普拉顿备注里的 <hp: …>、<Enemy Drops>、<Capture> 等不跟着借（同骑士的合成记录）
 	rec.meta = {}
+	XTianqiQiyinArt.dress_battler(rec, str(info.get("battler", "")))
 	rec.exp = 0
 	rec.gold = 0
 	var traits: Array = rec.get("traits", []).duplicate(true)
@@ -514,6 +515,7 @@ static func _check_cuts(logic) -> void:
 		_reveal(logic, int(f.cut) if open else int(f.cut) - 1)
 	if e.is_dead() and int(f.cut) < floors.size():
 		f.cut = floors.size()
+	XTianqiQiyinArt.dragon_cut(e, f.order, int(f.cut))
 
 
 static func _take(logic) -> Array:

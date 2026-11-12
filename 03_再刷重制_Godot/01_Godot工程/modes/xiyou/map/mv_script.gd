@@ -158,7 +158,7 @@ static func run(code: String, interp) -> Array:
 	if gaze:
 		var table: Array = XDB.table("Actors")
 		for id in range(1, table.size()):
-			if not table[id] is Dictionary or str(table[id].get("name", "")) == "":
+			if not table[id] is Dictionary or str(table[id].get("name", "")) == "" or XGojo.hidden(id):  # 五条悟只在天启篇
 				continue
 			var who: XActor = s.actor(id)
 			if XWeakChallenge.is_weak(who):

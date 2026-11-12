@@ -25,6 +25,7 @@ const STATE := 2635
 const CONFIGS := {
 	171: {"trigger": [10216, 10217, 10218, 10219], "awake": [10216, 10217, 10218, 10219], "awakening_skill": 10226, "state": STATE},
 	172: {"trigger": [10230, 10238], "awake": [10229, 10230, 10231, 10232, 10233, 10234, 10235, 10238], "awakening_skill": 10242, "state": 2639},
+	180: {"trigger": [10634], "awake": [10634, 10635, 10636, 10638, 10639, 10640, 10641, 10642], "awakening_skill": 10646, "state": 2799},  # 天启篇五条悟（XGojo）
 }
 const INCREMENT := [1.0, 1.2, 1.4, 1.6]
 
@@ -229,6 +230,7 @@ static func finish(logic, u, skill) -> void:
 		var cfg := config(u)
 		if u.skill_ids.has(int(cfg.awakening_skill)):
 			logic._state_add(u, int(cfg.state))
+		XGojo.on_black_flash(u)  # 天启篇五条悟专属：黑闪回最大 MP 10%
 		if int(u.actor_id) == XSukuna.ACTOR and XSukuna.knows(u, 10242):
 			XSukuna.temp(u).emp = maxi(int(XSukuna.temp(u).emp), mini(int(t.chain), 4))  # onSuccess
 	else:

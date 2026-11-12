@@ -117,6 +117,7 @@ static func rebase(logic, info: Dictionary, is_boss: bool) -> void:
 		rec.params = params
 		if is_b:
 			rec.name = str(boss.get("name", rec.get("name", "")))
+			XTianqiQiyinArt.dress_battler(rec, str(boss.get("battler", "")))
 		rec.dropItems = []
 		e.horseman = {"rec": rec, "knight": false}
 		e.refresh_passive()
@@ -171,6 +172,7 @@ static func start_turn(logic) -> Array:
 				_say(f, "星坠：天上落下了星星，%s失去当前生命的 %d%%。" % ["敌方" if enemy_only(logic) else "全场", roundi(loss * 100.0)])
 		"silence":
 			f.silent = t % 2 == 0
+			XTianqiQiyinArt.silence_turn(logic, not f.silent)
 			if f.silent:
 				_say(f, "寂静：这一回合敌人说不出话。" if enemy_only(logic) else "寂静：这一回合谁都说不出话。")
 	return take_logs(logic)

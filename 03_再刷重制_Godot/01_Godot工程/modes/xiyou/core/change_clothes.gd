@@ -62,7 +62,7 @@ static func list(category: int) -> Array:
 	var actors: Array = XDB.table("Actors")
 	for i in range(1, actors.size()):
 		var d = actors[i]
-		if d is Dictionary and str(d.get("name", "")) != "" and actor_grade(d) == grade:
+		if d is Dictionary and str(d.get("name", "")) != "" and actor_grade(d) == grade and not XGojo.hidden(i):  # 五条悟只在天启篇
 			out.append(d)
 	if with_entries:
 		out.append_array(entries())

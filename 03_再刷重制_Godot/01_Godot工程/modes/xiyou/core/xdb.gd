@@ -112,6 +112,14 @@ static func table(name: String) -> Variant:
 			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-314，开关 XCanglong.REWORK）
 		if name == "Classes":
 			XCanglong.patch_classes(_tables[name])
+		if _tables[name] is Array:  # 天启篇五条悟 180（重制新角色，XGojo）
+			match name:
+				"Actors": XGojo.patch_actors(_tables[name])
+				"Classes": XGojo.patch_classes(_tables[name])
+				"Skills": XGojo.patch_skills(_tables[name])
+				"States": XGojo.patch_states(_tables[name])
+		if name == "Plugins" and _tables[name] is Dictionary:
+			XGojo.patch_plugins(_tables[name])  # 五条悟的进阶行
 		if name == "Armors" and _tables[name] is Array:
 			# H／U.describe 在 isDatabaseLoaded 里就地改四件成长装备原件的说明与成长行（installNativeHeartsteel／HubrisRuntime；
 			# v0.62.12 数据库里狂妄原件写「物理伤害忽略18%目标物防」，开机后才改成「效果：物防穿透18%」，锻造出的实例照抄改过的）
@@ -165,6 +173,14 @@ static func img_path(folder: String, name: String) -> String:
 		var own := "res://content/rift/%s.png" % name
 		if ResourceLoader.exists(own):
 			return own
+	# 天启篇五条悟（XGojo）：行走图、战斗图、头像在 content/gojo/
+	if name.trim_prefix("$").begins_with("Codex_Gojo_"):
+		var gojo := "res://content/gojo/%s.png" % name
+		if ResourceLoader.exists(gojo):
+			return gojo
+	# 天启篇七印祭坛的首领新画（XTianqiQiyinArt）：content/tianqi/qiyin/battlers/Tianqi_Qiyin_*
+	if folder == "sv_enemies":
+		return XTianqiQiyinArt.battler_path(name)
 	return ""
 
 

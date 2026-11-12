@@ -281,7 +281,7 @@
   "dismantle_head": "分解哪一件？",
   "dismantle_item": "%s（%d 个印屑）",
   "dismantle_confirm": "分解「%s」？分了就没了。",
-  "dismantle_done": "得到印屑 %d 个。",
+  "dismantle_done": "\\I[310301]得到印屑 %d 个。",
   "exchange_head": "换什么？（印屑 %d）",
   "exchange_set": "一件随机部位的套装件（%d 个）",
   "exchange_weapon": "一把毕业武器，流派自选、类型随机（%d 个）",
