@@ -7,12 +7,12 @@
 
 本分支的底是四个还没进 main 的分支合起来的（分支里带着这几次合并提交）：
 
-1. `claude/project-thread-bjkwzm`（饥荒线，内含战争线 cc/pro-tianqi-war、四骑士 cc/pro-tianqi-horsemen、31～36 层重做 r4t9e0）
+1. `claude/project-thread-bjkwzm`（饥荒线，内含战争线、四骑士、31～36 层重做）：**已合 main（dev.475）**
 2. `claude/project-thread-yzaqle`（PR #30，装备栏第二批）
 3. `claude/project-thread-rp542v`（PR #31，词条文字，内含 PR #26 fxqj11）
 4. 本分支
 
-要求：先合 #30、#31 和各线分支，最后合本分支。合并 #30、#31 时 `03_转换工具/天启篇数据校验.py` 两边都在 `CHECKS` 末尾加一项、都在文件尾加一段，会冲突：两边都留（本分支 fcb004361、3369fec2b 是现成的解法，可以照抄）。
+要求：先合 #30、#31，最后合本分支（`交付自检.py` 对 main 53879fc21 试合并无冲突）。合并 #30、#31 时 `03_转换工具/天启篇数据校验.py` 两边都在 `CHECKS` 末尾加一项、都在文件尾加一段，会冲突：两边都留（本分支 fcb004361、3369fec2b 是现成的解法，可以照抄）。
 
 **死亡线 `38nism`、瘟疫线 `o0m34i` 和饥荒线底子冲突很大（tianqi_line、tianqi_horsemen、tianqi_summit、battle_logic 等 7 个文件），本分支没合它们。** 这两条线合进 main 后，要补两处挂钩（见下「未做」第 1 条），派给死亡／瘟疫线车道或本车道续做。
 
