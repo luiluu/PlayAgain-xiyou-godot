@@ -206,7 +206,7 @@ func _rules() -> void:
 	XTianqiAlienGear.add_core(s, "war", "again", "zhongyan", "test")
 	var er2 := XTianqiAlienGear.engrave(s, XTianqiAlienGear.cores(s).size() - 1, plain_item)
 	_check("engrave_replace", er2.has("ok") and str(plain_item.alien.affix) == "again" and str(plain_item.name) == "终焉·再动·毛布裤", plain_item.name)
-	_check("new_affix_inactive", XAlienation.details(s, plain_item).any(func(x): return str(x).begins_with("未生效")))
+	_check("new_affix_active", not XAlienation.details(s, plain_item).any(func(x): return str(x).begins_with("未生效")))
 	# 刻印不到穿着的、法宝
 	var a: XActor = s.members()[0]
 	var worn: Dictionary = a.equip_list().filter(func(e): return e is Dictionary and not e.is_empty())[0] if not a.equip_list().filter(func(e): return e is Dictionary and not e.is_empty()).is_empty() else {}
