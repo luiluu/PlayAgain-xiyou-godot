@@ -137,6 +137,9 @@ func _source(t: String):
 	# 原表在 XDB.table 里还有别的补丁（真气、成长装备说明），一并打上再比
 	if t == "Skills":
 		XZhenqi.patch_rewards(raw)
+		XGojo.patch_skills(raw)  # 天启篇五条悟的新技能
+	if t == "Classes":
+		XGojo.patch_classes(raw)
 	if t == "Armors":
 		for id in [XHeartsteel.ARMOR, XHeartsteel.LEVIATHAN, XHubris.ARMOR, XHubris.ATARAXIA]:
 			if id < raw.size() and raw[id] is Dictionary:
