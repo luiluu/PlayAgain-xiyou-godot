@@ -247,7 +247,7 @@ static func new_bgm_player(music: Dictionary) -> AudioStreamPlayer:
 	XAudio.bind(player, "BGM")
 	var p := XDB.audio_path("bgm", str(music.get("name", "")))
 	if p != "":
-		player.stream = load(p)
+		player.stream = XAppearance.kept_load(p)
 		player.volume_db = bgm_volume_db(music)
 		player.set_meta("bgm_name", str(music.get("name", "")))
 	return player
@@ -318,7 +318,7 @@ func _build_background() -> void:
 		if p == "":
 			continue
 		var t := TextureRect.new()
-		t.texture = load(p)
+		t.texture = XAppearance.kept_load(p)
 		t.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -2432,7 +2432,7 @@ func _victory() -> void:
 	bgm.stream_paused = false
 	var music := XDB.audio_path("bgm", str(params.get("Victory Screen BGM", "Ship3")))
 	if music != "":
-		bgm.stream = load(music)
+		bgm.stream = XAppearance.kept_load(music)
 		bgm.volume_db = linear_to_db(float(params.get("Victory Screen BGM Volume", 90)) / 100)
 		bgm.set_meta("bgm_name", str(params.get("Victory Screen BGM", "Ship3")))
 		_bgm_after_me = true

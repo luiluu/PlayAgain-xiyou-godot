@@ -30,8 +30,8 @@ var _tex_d: Texture2D
 func _ready() -> void:
 	var a := XDB.img_path("system", "Combo_A")
 	var d := XDB.img_path("system", "Combo_D")
-	_tex_a = load(a) if a != "" else null
-	_tex_d = load(d) if d != "" else null
+	_tex_a = XAppearance.kept_load(a) if a != "" else null
+	_tex_d = XAppearance.kept_load(d) if d != "" else null
 
 
 ## BattleManager.startAction / endAction
