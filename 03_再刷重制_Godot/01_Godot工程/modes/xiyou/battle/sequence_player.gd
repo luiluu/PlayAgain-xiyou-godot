@@ -596,7 +596,7 @@ func _se(args: Array) -> void:
 	var path := XDB.audio_path("se", name)
 	if path == "" or scene.se == null:
 		return
-	scene.se.stream = load(path)
+	scene.se.stream = MVAnimation.cached_load(path)
 	scene.se.volume_db = linear_to_db(_num(args, 1, float(p.get("Default Volume", "90"))) / 100.0)
 	scene.se.pitch_scale = _num(args, 2, float(p.get("Default Pitch", "100"))) / 100.0
 	scene.se.play()

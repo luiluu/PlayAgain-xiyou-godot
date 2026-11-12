@@ -1599,6 +1599,8 @@ func _pick_target(skill: Dictionary, a: XActor, forced := true):
 func _gui_input(event: InputEvent) -> void:
 	var pos := Vector2.INF
 	if event is InputEventMouseMotion and _target_mode != "":
+		if not XTouchControls.battle_tap_allowed() and event.device == InputEvent.DEVICE_ID_EMULATION:
+			return
 		# 鼠标指向的候选目标视为「被选中」：顺序条上放大闪烁，并预览位移
 		var h = _nearest_target(event.position)
 		if h != null and h != _hover:
@@ -1609,6 +1611,10 @@ func _gui_input(event: InputEvent) -> void:
 		# 真实分发时到不了消息窗——battlefix2 用真实事件测出来的）
 		message._unhandled_input(event)
 		accept_event()
+		return
+	# 手机按键设置「战斗点击操作：仅屏幕按键」（改版 battleTouch 默认关，Window_BattleXxx.processTouch 不处理）：
+	# 触屏点按（含 Godot 由第一指转出的鼠标）不选战斗选项与目标；消息窗翻页照旧（上面先处理）
+	if not XTouchControls.battle_tap_allowed() and (event is InputEventScreenTouch or (event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION)):
 		return
 	if event is InputEventMouseButton and event.pressed:
 		# 不在选目标时，左键／滚轮交给开着的技能（物品）列表或指令窗（Window_Selectable.processTouch／processWheel）：
