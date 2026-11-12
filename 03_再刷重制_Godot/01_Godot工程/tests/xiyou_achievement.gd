@@ -383,7 +383,8 @@ func _script_and_save() -> void:
 	var maps := DirAccess.get_files_at("res://modes/xiyou/generated/maps")
 	for name in maps:
 		if name.ends_with(".json") and name.begins_with("Map"):
-			lists.append([XDB.map(int(name.trim_prefix("Map").trim_suffix(".json")))])
+			# 读原样的转换产物（XDB.map 会套 XLobbyDebugNpc：大厅全图鉴 NPC 去掉了成就那串，Kyo 11-12）
+			lists.append([XDB.load_json("maps/" + name)])
 	var re := RegEx.create_from_string("GetAcReward\\((\\d+)\\)")
 	var calls := 0
 	for src in lists:

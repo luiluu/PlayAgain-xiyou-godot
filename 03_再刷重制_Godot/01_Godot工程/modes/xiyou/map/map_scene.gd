@@ -347,10 +347,11 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	upper.z_index = 10
 	add_child(upper)
 	upper.setup(map_data, true)
+	XLobbyDebugNpc.sync(s)  # installTestGateRuntime：进地图先对齐开关 2501（测试模式 99 级 NPC）
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -698,6 +699,9 @@ func _physics_process(_delta: float) -> void:
 		if not _in_battle:
 			_update_vehicle()
 	_sync_followers_look()
+	# installTestGateRuntime 每帧兜底：测试模式开关切了就刷新事件（重制每 30 帧查一次，读解锁文件不每帧做）
+	if Engine.get_physics_frames() % 30 == 0 and XLobbyDebugNpc.sync(XState.current):
+		refresh_events()
 	# 玩家朝同层事件走却被挡住：MV 的 checkEventTriggerTouch（触发 1/2）；挂机中不能手动移动；乘飞艇时不触发
 	if busy or player == null or player.is_moving() or XHangUp.is_active(XState.current) or not can_start_local_events():
 		return
