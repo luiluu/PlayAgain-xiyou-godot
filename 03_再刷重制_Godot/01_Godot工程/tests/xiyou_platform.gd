@@ -792,6 +792,14 @@ func _run() -> void:
 	XPlatform.force_mobile = null
 	platform.queue_free()
 	rec.queue_free()
+	# 标题假页按键的光标、确定音效（Cursor2、Decision1）还在播时退出，偶发「4 resources still in use」：停掉、清 stream，按真实时间等 0.5 秒（同 xiyou_drop_dh）
+	var players: Array = get_tree().root.find_children("*", "AudioStreamPlayer", true, false)
+	players.append_array(XSound._players)
+	for sp in players:
+		if is_instance_valid(sp):
+			(sp as AudioStreamPlayer).stop()
+			(sp as AudioStreamPlayer).stream = null
+	await get_tree().create_timer(0.5, true, false, true).timeout
 	await frames()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
