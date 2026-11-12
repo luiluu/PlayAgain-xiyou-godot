@@ -76,7 +76,7 @@ static func safe_insets(viewport: Viewport) -> Array:
 	if safe.size.x <= 0 or safe.size.y <= 0 or viewport == null:
 		return [0.0, 0.0, 0.0, 0.0]
 	var win := Vector2(DisplayServer.window_get_position()) if safe_area_override.size == Vector2i.ZERO else Vector2.ZERO
-	var inv := viewport.get_final_transform().affine_inverse()
+	var inv := XScreenScale.screen_to_view(viewport)  # canvas_items 与「画面平滑」（viewport 缩放）两种都对
 	var a := inv * (Vector2(safe.position) - win)
 	var b := inv * (Vector2(safe.end) - win)
 	var size := viewport.get_visible_rect().size

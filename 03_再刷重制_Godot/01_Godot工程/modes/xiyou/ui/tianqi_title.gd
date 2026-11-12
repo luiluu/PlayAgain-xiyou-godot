@@ -15,6 +15,12 @@ extends Control
 signal entrance_finished
 
 static var ENABLED := true
+## 初始选中照原版 Window_TitleCommand.selectLast：本次运行上回在标题按过的项（_lastCommandSymbol，Scene_Boot 时清空，
+## 不写盘）；没按过时有存档就选「旧的回忆」（isContinueEnabled），否则第一项。玩家反馈 v0.01：有存档也总停在「新的游戏」。
+## 回退：MV_SELECT_LAST = false 回到总选第一个可用项。
+static var MV_SELECT_LAST := true
+## 本次运行上回在标题按下的项（键名，如 "new_game"、"load"）；entry.gd 原版标题也读写它
+static var last_key := ""
 
 const DIR := "res://content/title/"
 const BG := DIR + "bg.png"
@@ -172,14 +178,26 @@ func setup(actions: Dictionary, disabled: Array = []) -> XTianqiTitle:
 	black.visible = false
 	add_child(black)
 
-	_sel = 0
-	while _sel < _items.size() - 1 and not _items[_sel].enabled:
-		_sel += 1
+	_sel = initial_index(_items.map(func(it): return [str(it.key), bool(it.enabled)]))
 	for j in _items.size():
 		_items[j].k = 1.0 if j == _sel else 0.0
 	_layout()
 	_show_final()
 	return self
+
+
+## 初始选中项（items：[[键, 可用]]）：MV_SELECT_LAST 时上回按过的项 → 「旧的回忆」（可用即有存档）→ 第一个可用项
+static func initial_index(items: Array) -> int:
+	var keys: Array = items.map(func(it): return str(it[0]))
+	if MV_SELECT_LAST:
+		for k in [last_key, "load"]:
+			var j := keys.find(k)
+			if k != "" and j >= 0 and bool(items[j][1]):
+				return j
+	var i := 0
+	while i < items.size() - 1 and not bool(items[i][1]):
+		i += 1
+	return i
 
 
 func _tex_rect(n: String, tex: Texture2D) -> TextureRect:
@@ -303,6 +321,7 @@ func activate(i := -1) -> bool:
 		return false
 	if i != _sel:
 		select(i)
+	last_key = str(_items[i].key)  # Window_TitleCommand.processOk 记 _lastCommandSymbol
 	var fn: Callable = _items[i].fn
 	fn.call()
 	return true

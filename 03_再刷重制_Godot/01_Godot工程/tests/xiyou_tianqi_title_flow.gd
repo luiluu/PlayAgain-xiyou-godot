@@ -166,7 +166,8 @@ func _hub(tag: String, slot: int, key: String, dao: String, names: Array) -> voi
 	_check(tag + "_saved", flags is Dictionary and flags.get("tianqi") is Dictionary and str(flags.tianqi.get("difficulty", "")) == key
 		and str(saved.get("actor_name", dao)) == dao, flags.get("tianqi") if flags is Dictionary else saved)
 	# 大厅首次到达的漩涡过场（EV76）放完再离开，免得协程挂着
-	await _wait(func(): return _map_idle(HUB) and XState.current.self_switch(HUB, 76, "A"))
+	# 苍龙破晓过场（EV203，XRift.CHAIN_AFTER_RIFT1）紧接着放：也等它放完（或已播过时监视页直接开 A）
+	await _wait(func(): return _map_idle(HUB) and XState.current.self_switch(HUB, 76, "A") and (not XRift.STAGE2 or XState.current.self_switch(HUB, XRift.RIFT2, "A")))
 
 
 ## 读回：标题「旧的回忆」→ 读档页（最近存的一格）→ 读取 → 确认
@@ -206,7 +207,11 @@ func _keyboard() -> void:
 	XState.current.actor_name = "旧档"
 	_check("kb_seed_save", XSave.save(2))
 	var before := FileAccess.get_file_as_bytes(XSave.path(2))
+	XTianqiTitle.last_key = ""
 	var entry = await _title()
+	# 原版 selectLast：本次运行还没在标题按过，有存档就停在「旧的回忆」；往上一格到「新的游戏」
+	_check("kb_title_load_selected_with_save", _sel(entry) == 1, _sel(entry))
+	await _key(KEY_UP)
 	_check("kb_title_new_game_selected", _sel(entry) == 0)
 	# 子页（设置、调按键位置、读档）底下垫的是天启篇底图，不是原版 PlayAgain 底图（安卓调按键位置页露出旧图，11-12）
 	var sub_bg = entry.get_node_or_null("TianqiSubpageBg")
@@ -297,6 +302,7 @@ func _touch() -> void:
 ## 开关回退：XTianqi.ENABLED = false 时回车「新的游戏」回到原版 Map001 开局（不是天启篇存档）
 func _revert() -> void:
 	XTianqi.ENABLED = false
+	XTianqiTitle.last_key = "new_game"   # 上一步读档按的是「旧的回忆」，selectLast 会停在它；这里测的是回车「新的游戏」
 	await _title()
 	var prev := XState.current
 	for pressed in [true, false]:

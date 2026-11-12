@@ -50,6 +50,7 @@ func refresh() -> void:
 	stop_parallel()
 	if page.is_empty():
 		set_image("", 0)
+		original_pattern = -1
 		priority_type = 0
 		through = true
 		_clear_chase()
@@ -61,6 +62,7 @@ func refresh() -> void:
 		set_image(str(img.characterName), int(img.characterIndex))
 	direction = int(img.direction) if int(img.direction) > 0 else 2
 	pattern = int(img.pattern)
+	original_pattern = pattern  # setupPageSettings：_originalPattern ＝ 本页图的 pattern（停下后回到它，不是固定的 1）
 	move_speed = int(page.moveSpeed)
 	move_frequency = int(page.moveFrequency)
 	walk_anime = bool(page.walkAnime)
@@ -153,6 +155,20 @@ func command_list() -> Array:
 
 func is_normal_priority() -> bool:
 	return priority_type == 1
+
+## 当前页像一扇「按确定才进」的门：确定键触发、角色下方、无图，指令只有场所移动（可带音效、淡入淡出、等待、色调）
+## （XMapScene.STEP_ON_DOORS 用；8 号当铺 Map132 EV7／Map204 EV2 这一类）
+const DOOR_CODES := [0, 201, 250, 221, 222, 223, 230, 245, 246]
+func is_plain_door() -> bool:
+	if trigger() != 0 or priority_type != 0 or character_name != "" or tile_id > 0:
+		return false
+	var has_transfer := false
+	for c in command_list():
+		var code := int(c.get("code", 0))
+		if not DOOR_CODES.has(code):
+			return false
+		has_transfer = has_transfer or code == 201
+	return has_transfer
 
 
 ## Game_Event.update：角色更新（停着时 updateStop → 强制路线／自主移动）→ 并行页（updateParallel）→ YEP 警觉与回位计时
