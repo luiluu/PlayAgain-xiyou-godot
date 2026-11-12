@@ -1,0 +1,1205 @@
+{
+ "version": 1,
+ "draft": true,
+ "source": "Kyo 2026-11-11 七印祭坛派单（天启篇项目线程「做七印祭坛装备数据层」）",
+ "dev": "dev.待定",
+ "_note": {
+  "说明": "天启篇「七印祭坛」装备，只读草稿（XTianqiQiyinGear）：七套套装（每套 6 件）、13 把毕业武器、5 件神器。还没接进战斗、掉落、界面，也不改原版数据库。数值是占位（draft）。效果写成 {code, 参数…, text}：code 的含义见 effect_codes，参数名照含义里的写法；text 是给界面的一句中文。百分比参数一律写成整数百分数（20＝20%），倍数参数（mult、base_mult）写成倍数。武器类 wtype_id 先留 null，接入时按原版 System.weaponTypes 填。",
+  "effect_codes": {
+   "dot_dealt_pct": "自己施加的持续伤害 +value%",
+   "dmg_per_target_debuff_pct": "目标身上每有一种减益，对它伤害 +value%，最多 +max%",
+   "dot_extra_tick": "回合结束时，自己挂在敌人身上的持续伤害再结算 times 次",
+   "aoe_skill_dmg_pct": "群体技能伤害 +value%",
+   "kill_stack_dmg_pct": "每击倒一个敌人，本场出伤 +value%，最多 max_stacks 层",
+   "kill_extra_action": "每回合前 per_turn 次击倒敌人后，立刻再行动一次",
+   "skill_cost_pct": "技能消耗 +value%（负数＝少耗）",
+   "weight_stack": "「砝码」：每回合开始得 per_turn 层，防御再得 on_guard 层，最多 max_stacks 层；放伤害技能时全部用掉，每层伤害 +per_stack_pct%",
+   "weight_full_crit": "一次用掉 stacks 层砝码时必定暴击，暴击伤害 +crit_dmg_pct%",
+   "low_hp_target_dmg_pct": "对生命低于 below_pct% 的敌人伤害 +value%",
+   "low_self_hp_dmg_pct": "自己生命越低伤害越高（按已损生命比例线性），最多 +max%",
+   "cheat_death": "受到致命伤害时不死，留 hp 点生命，之后 turns 回合伤害 +dmg_pct%，每场 per_battle 次；except 里的即死（死期）无效",
+   "max_hp_pct": "最大生命 +value%",
+   "guard_lowest_ally": "替生命最低的队友承受 share_pct% 的伤害",
+   "judgment": "「判决」：伤害＝自己最大生命的 max_hp_pct%，不吃增伤、无视防御；trigger＝on_hit 被攻击时反击／on_attack 每次攻击追加",
+   "element_dmg_pct": "元素伤害 +value%",
+   "element_switch_stack": "接连用不同系的技能，每换一系伤害 +per_stack_pct%，最多 max_stacks 层",
+   "skill_double_cast": "每 every_turns 回合，下一个技能放两次",
+   "heal_shield_pct": "治疗量、护盾量 +value%",
+   "support_ally_dmg_taken_pct": "给队友加增益或治疗时，对方受到的伤害 +value%（负数＝少受），turns 回合",
+   "grant_skill_silence_all": "附带技能，每场 per_battle 次：敌方全体沉默 silence_turns 回合，我方全体下 free_turns 回合技能不耗魔法和 TP",
+   "plague_stack": "命中叠「疫」：每次命中 per_hit 层，每回合受到攻击者物攻 atk_pct% 的伤害，最多 max_stacks 层，持续 turns 回合",
+   "plague_can_crit": "「疫」层伤害可以暴击",
+   "extra_hits": "攻击次数 +value",
+   "combo_hit_ramp_pct": "同一次行动里每多打一段，后面的段伤害 +value%",
+   "overflow_hits_redirect": "击倒敌人时，把这次行动剩下的段转给另一个敌人",
+   "single_action_dmg_pct": "本回合只出手一次时，这一次伤害 +value%",
+   "ignore_def_pct": "这一击无视目标 value% 的防御",
+   "execute_ramp": "目标每损失 per_lost_pct% 生命，对它伤害 +value%",
+   "judgment_mult_high_hp": "自己生命高于 above_pct% 时，判决伤害 ×mult",
+   "star_fall": "技能命中后 chance_pct% 几率落一颗星：对敌方全体造成这次伤害 dmg_pct% 的随机元素伤害",
+   "star_fall_weakness": "落星必定打中目标的弱点系",
+   "normal_attack_as_skill": "普攻算技能，吃技能伤害加成",
+   "normal_attack_heal_lowest": "普攻后给生命最低的队友回复这次伤害 heal_pct% 的生命",
+   "silenced_normal_attack_dmg_pct": "被沉默时普攻伤害 +value%",
+   "plague_pierce": "目标身上的「疫」满 at_stacks 层时，这一击穿到下一个敌人，带过去 carry_pct% 层数",
+   "plague_spread": "每回合结束时，目标身上的「疫」给旁边的敌人各传 per_turn 层",
+   "full_plague_heal_taken_pct": "「疫」满层的目标受到的治疗 +value%（负数＝减少）",
+   "hit_count_burst": "本场每累计打出 every_hits 段，下一次行动对敌方全体各补 bonus_hits 段",
+   "last_hit_mult": "每次行动的最后一段伤害 ×mult",
+   "overkill_carry": "最后一段打倒敌人时，溢出伤害落到下一个敌人",
+   "mp_dump": "这一击用光剩下的全部魔法，每用掉最大魔法的 per_mp_pct%，伤害 +dmg_pct%",
+   "idle_charge": "上一回合没出手（防御）时，这一击伤害再 +dmg_pct%",
+   "target_lose_action": "让目标下一回合少动 count 次（每个目标每场 per_target_per_battle 次）；condition 写触发前提",
+   "kill_chain_slash": "打倒敌人后对另一个敌人再斩一次（伤害 dmg_pct%），chain 为 true 时能一直连下去",
+   "ally_followup_execute": "队友攻击后目标生命低于 below_pct% 时自动追一刀，每回合最多 per_turn 次",
+   "judgment_lost_hp_ramp": "自己每损失 per_lost_pct% 生命，判决再加最大生命的 add_max_hp_pct%",
+   "sacrifice_hp": "攻击时可以献出 hp_pct% 当前生命：这一次判决 ×judgment_mult，并给生命最低的队友一层等量护盾",
+   "star_moon": "每落 every_stars 颗星，下一颗换成「陨月」，伤害 ×mult",
+   "star_pages": "落星是哪一系就记一页，集满 kinds 种不同的系时，敌方全体元素抗性 +value%（负数＝降低），turns 回合，然后清页",
+   "random_unique": "揭开时从 pool 里随机刻上一条独有效果（other_weapons＝另外 12 把毕业武器）",
+   "single_skill_repeat": "单体技能 chance_pct% 几率再放一次（伤害 dmg_pct%）",
+   "skill_dmg_pct": "技能伤害 +value%",
+   "execute_normal": "对生命低于 below_pct% 的普通敌人直接处决",
+   "boss_low_hp_dmg_pct": "对首领生命低于 below_pct% 时伤害 +value%",
+   "reveal_rift_rule": "战斗开始时从七个里副本的规则里随机揭 count 条，只对 target 生效",
+   "heal_taken_pct": "受到的治疗 +value%（负数＝减少）",
+   "dmg_taken_pct": "受到的伤害 +value%",
+   "skill_cost_mult": "技能消耗 ×mult",
+   "no_revive": "佩戴者不能被复活",
+   "reveal_luck": "每场只揭 count 条，揭到哪条看运气（代价只是说明，没有额外判定）"
+  }
+ },
+ "nice_number_exempt": [
+  "version",
+  "order",
+  "etype",
+  "affix_tier",
+  "count",
+  "first_kill_floors"
+ ],
+ "seals": [
+  {
+   "key": "bai",
+   "name": "白印",
+   "order": 1
+  },
+  {
+   "key": "hong",
+   "name": "红印",
+   "order": 2
+  },
+  {
+   "key": "hei",
+   "name": "黑印",
+   "order": 3
+  },
+  {
+   "key": "hui",
+   "name": "灰印",
+   "order": 4
+  },
+  {
+   "key": "xun",
+   "name": "殉印",
+   "order": 5
+  },
+  {
+   "key": "zhen",
+   "name": "震印",
+   "order": 6
+  },
+  {
+   "key": "mo",
+   "name": "默印",
+   "order": 7
+  }
+ ],
+ "parts": [
+  {
+   "key": "head",
+   "name": "头部",
+   "etype": 3
+  },
+  {
+   "key": "body",
+   "name": "盔甲",
+   "etype": 4
+  },
+  {
+   "key": "hands",
+   "name": "护手",
+   "etype": 6
+  },
+  {
+   "key": "waist",
+   "name": "腰带",
+   "etype": 8
+  },
+  {
+   "key": "legs",
+   "name": "裤子",
+   "etype": 5
+  },
+  {
+   "key": "feet",
+   "name": "鞋子",
+   "etype": 7
+  }
+ ],
+ "grade_weights": {
+  "normal": 50,
+  "fine": 30,
+  "perfect": 20
+ },
+ "set_rule": {
+  "quality": "shenhua",
+  "level": 80,
+  "first_kill_level": 75,
+  "first_kill_floors": [
+   31,
+   32
+  ],
+  "armor_kind": "any",
+  "affixes": {
+   "group": "fangju",
+   "affix_tier": 4,
+   "slots": 3
+  },
+  "true_seal": {
+   "grade": "perfect",
+   "base_mult": 1.1
+  }
+ },
+ "sets": {
+  "bai": {
+   "name": "胜而又胜",
+   "role": "持续伤害、减益",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "胜而又胜·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "胜而又胜·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "胜而又胜·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "胜而又胜·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "胜而又胜·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "胜而又胜·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "dot_dealt_pct",
+       "value": 20,
+       "text": "自己施加的持续伤害 +20%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "dmg_per_target_debuff_pct",
+       "value": 5,
+       "max": 30,
+       "text": "目标身上每有一种减益，对它伤害 +5%，最多 +30%"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "dot_extra_tick",
+       "times": 1,
+       "text": "回合结束时，自己挂在敌人身上的持续伤害再结算一次"
+      }
+     ]
+    }
+   ]
+  },
+  "hong": {
+   "name": "太平已死",
+   "role": "清场、多动",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "太平已死·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "太平已死·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "太平已死·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "太平已死·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "太平已死·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "太平已死·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "aoe_skill_dmg_pct",
+       "value": 15,
+       "text": "群体技能伤害 +15%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "kill_stack_dmg_pct",
+       "value": 5,
+       "max_stacks": 6,
+       "text": "每击倒一个敌人，本场出伤 +5%，最多 6 层"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "kill_extra_action",
+       "per_turn": 1,
+       "text": "每回合第一次击倒敌人后，立刻再行动一次"
+      }
+     ]
+    }
+   ]
+  },
+  "hei": {
+   "name": "斤斤计较",
+   "role": "蓄力一击",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "斤斤计较·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "斤斤计较·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "斤斤计较·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "斤斤计较·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "斤斤计较·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "斤斤计较·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "skill_cost_pct",
+       "value": -15,
+       "text": "技能消耗 −15%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "weight_stack",
+       "per_turn": 1,
+       "on_guard": 2,
+       "max_stacks": 5,
+       "per_stack_pct": 15,
+       "text": "每回合开始得 1 层「砝码」（防御再得 2 层），最多 5 层；放伤害技能时全部用掉，每层伤害 +15%"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "weight_full_crit",
+       "stacks": 5,
+       "crit_dmg_pct": 50,
+       "text": "一次用掉 5 层时必定暴击，暴击伤害 +50%"
+      }
+     ]
+    }
+   ]
+  },
+  "hui": {
+   "name": "阴府随行",
+   "role": "斩杀、背水",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "阴府随行·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "阴府随行·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "阴府随行·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "阴府随行·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "阴府随行·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "阴府随行·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "low_hp_target_dmg_pct",
+       "below_pct": 50,
+       "value": 15,
+       "text": "对生命低于 50% 的敌人伤害 +15%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "low_self_hp_dmg_pct",
+       "max": 30,
+       "text": "自己生命越低伤害越高，最多 +30%"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "cheat_death",
+       "hp": 1,
+       "turns": 2,
+       "dmg_pct": 50,
+       "per_battle": 1,
+       "except": [
+        "doom"
+       ],
+       "text": "受到致命伤害时不死，留 1 点生命，之后 2 回合伤害 +50%，每场 1 次（对死期无效）"
+      }
+     ]
+    }
+   ]
+  },
+  "xun": {
+   "name": "要到几时",
+   "role": "坦克、守护",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "要到几时·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "要到几时·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "要到几时·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "要到几时·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "要到几时·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "要到几时·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "max_hp_pct",
+       "value": 15,
+       "text": "最大生命 +15%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "guard_lowest_ally",
+       "share_pct": 50,
+       "text": "替生命最低的队友承受一半伤害"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "judgment",
+       "trigger": "on_hit",
+       "max_hp_pct": 5,
+       "text": "被攻击时反击一次「判决」：伤害＝自己最大生命的 5%，不吃增伤、无视防御"
+      }
+     ]
+    }
+   ]
+  },
+  "zhen": {
+   "name": "天卷",
+   "role": "元素法术",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "天卷·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "天卷·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "天卷·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "天卷·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "天卷·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "天卷·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "element_dmg_pct",
+       "value": 15,
+       "text": "元素伤害 +15%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "element_switch_stack",
+       "per_stack_pct": 10,
+       "max_stacks": 3,
+       "text": "接连用不同系的技能，每换一系伤害 +10%，最多 3 层"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "skill_double_cast",
+       "every_turns": 3,
+       "text": "每 3 回合，下一个技能放两次"
+      }
+     ]
+    }
+   ]
+  },
+  "mo": {
+   "name": "二刻",
+   "role": "辅助、治疗",
+   "pieces": [
+    {
+     "part": "head",
+     "name": "二刻·头",
+     "etype": 3
+    },
+    {
+     "part": "body",
+     "name": "二刻·甲",
+     "etype": 4
+    },
+    {
+     "part": "hands",
+     "name": "二刻·手",
+     "etype": 6
+    },
+    {
+     "part": "waist",
+     "name": "二刻·腰",
+     "etype": 8
+    },
+    {
+     "part": "legs",
+     "name": "二刻·裤",
+     "etype": 5
+    },
+    {
+     "part": "feet",
+     "name": "二刻·鞋",
+     "etype": 7
+    }
+   ],
+   "bonuses": [
+    {
+     "count": 2,
+     "effects": [
+      {
+       "code": "heal_shield_pct",
+       "value": 20,
+       "text": "治疗量、护盾量 +20%"
+      }
+     ]
+    },
+    {
+     "count": 3,
+     "effects": [
+      {
+       "code": "support_ally_dmg_taken_pct",
+       "value": -10,
+       "turns": 1,
+       "text": "给队友加增益或治疗时，对方受到的伤害 −10%，1 回合"
+      }
+     ]
+    },
+    {
+     "count": 5,
+     "effects": [
+      {
+       "code": "grant_skill_silence_all",
+       "per_battle": 1,
+       "silence_turns": 1,
+       "free_turns": 1,
+       "text": "附带技能，每场 1 次：敌方全体沉默 1 回合，我方全体下一回合技能不耗魔法和 TP"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "weapon_rule": {
+  "quality": "shenhua",
+  "level": 80,
+  "base_mult": 1.1,
+  "affixes": {
+   "group": "bingqi",
+   "affix_tier": 4,
+   "slots": 3
+  },
+  "true_seal": {
+   "grade": "perfect",
+   "mark_extra": true
+  }
+ },
+ "weapon_types": [
+  {
+   "key": "bow",
+   "name": "弓弩",
+   "wtype_id": null
+  },
+  {
+   "key": "hidden",
+   "name": "暗器",
+   "wtype_id": null
+  },
+  {
+   "key": "sword",
+   "name": "剑",
+   "wtype_id": null
+  },
+  {
+   "key": "axe",
+   "name": "斧",
+   "wtype_id": null
+  },
+  {
+   "key": "gun",
+   "name": "枪械",
+   "wtype_id": null
+  },
+  {
+   "key": "fist",
+   "name": "拳套",
+   "wtype_id": null
+  },
+  {
+   "key": "katana",
+   "name": "太刀",
+   "wtype_id": null
+  },
+  {
+   "key": "dagger",
+   "name": "匕首",
+   "wtype_id": null
+  },
+  {
+   "key": "blunt",
+   "name": "钝器",
+   "wtype_id": null
+  },
+  {
+   "key": "spear",
+   "name": "矛",
+   "wtype_id": null
+  },
+  {
+   "key": "staff",
+   "name": "法杖",
+   "wtype_id": null
+  },
+  {
+   "key": "book",
+   "name": "书",
+   "wtype_id": null
+  }
+ ],
+ "schools": {
+  "bai": {
+   "name": "瘟·持续伤害",
+   "types": [
+    "bow",
+    "hidden"
+   ],
+   "mark": [
+    {
+     "code": "plague_stack",
+     "per_hit": 1,
+     "atk_pct": 10,
+     "max_stacks": 10,
+     "turns": 3,
+     "text": "每次命中叠 1 层「疫」：每回合受到攻击者物攻 10% 的伤害，最多 10 层，3 回合"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "plague_can_crit",
+     "text": "「疫」层可以暴击"
+    }
+   ]
+  },
+  "hong": {
+   "name": "战·多段连击",
+   "types": [
+    "sword",
+    "axe"
+   ],
+   "mark": [
+    {
+     "code": "extra_hits",
+     "value": 1,
+     "text": "攻击次数 +1"
+    },
+    {
+     "code": "combo_hit_ramp_pct",
+     "value": 5,
+     "text": "同一次行动里每多打一段，后面的段伤害 +5%"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "overflow_hits_redirect",
+     "text": "击倒敌人时把剩下的段转给另一个敌人"
+    }
+   ]
+  },
+  "hei": {
+   "name": "量·一击",
+   "types": [
+    "gun",
+    "fist"
+   ],
+   "mark": [
+    {
+     "code": "single_action_dmg_pct",
+     "value": 50,
+     "text": "本回合只出手一次时，这一次伤害 +50%"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "ignore_def_pct",
+     "value": 33,
+     "text": "这一击无视目标 33% 的防御"
+    }
+   ]
+  },
+  "hui": {
+   "name": "终·斩杀",
+   "types": [
+    "katana",
+    "dagger"
+   ],
+   "mark": [
+    {
+     "code": "execute_ramp",
+     "per_lost_pct": 10,
+     "value": 3,
+     "text": "目标每损失 10% 生命，对它伤害 +3%"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "kill_extra_action",
+     "per_turn": 1,
+     "text": "击倒敌人后立刻再行动一次，每回合 1 次"
+    }
+   ]
+  },
+  "xun": {
+   "name": "殉·以命为刃",
+   "types": [
+    "blunt",
+    "spear"
+   ],
+   "mark": [
+    {
+     "code": "judgment",
+     "trigger": "on_attack",
+     "max_hp_pct": 5,
+     "text": "每次攻击追加一次判决，伤害＝自己最大生命的 5%"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "judgment_mult_high_hp",
+     "above_pct": 70,
+     "mult": 2,
+     "text": "自己生命高于 70% 时，判决翻倍"
+    }
+   ]
+  },
+  "zhen": {
+   "name": "震·元素共鸣",
+   "types": [
+    "staff",
+    "book"
+   ],
+   "mark": [
+    {
+     "code": "star_fall",
+     "chance_pct": 33,
+     "dmg_pct": 33,
+     "text": "技能命中后 33% 几率落一颗星：对敌方全体造成这次伤害 33% 的随机元素伤害"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "star_fall_weakness",
+     "text": "落星必定打中目标的弱点系"
+    }
+   ]
+  },
+  "mo": {
+   "name": "无字·普攻、辅助",
+   "types": "any",
+   "mark": [
+    {
+     "code": "normal_attack_as_skill",
+     "text": "普攻算技能，吃技能伤害加成"
+    },
+    {
+     "code": "normal_attack_heal_lowest",
+     "heal_pct": 10,
+     "text": "普攻后给生命最低的队友回复这次伤害 10% 的生命"
+    }
+   ],
+   "true_extra": [
+    {
+     "code": "silenced_normal_attack_dmg_pct",
+     "value": 50,
+     "text": "被沉默时普攻伤害 +50%"
+    }
+   ]
+  }
+ },
+ "weapons": [
+  {
+   "key": "baihong",
+   "seal": "bai",
+   "type": "bow",
+   "name": "白虹贯日",
+   "effects": [
+    {
+     "code": "plague_pierce",
+     "at_stacks": 10,
+     "carry_pct": 50,
+     "text": "目标身上的「疫」满 10 层时，这一箭穿到下一个敌人，带过去一半层数"
+    }
+   ]
+  },
+  {
+   "key": "bingcongkouru",
+   "seal": "bai",
+   "type": "hidden",
+   "name": "病从口入",
+   "effects": [
+    {
+     "code": "plague_spread",
+     "per_turn": 1,
+     "text": "每回合结束时，目标身上的「疫」给旁边的敌人各传 1 层"
+    },
+    {
+     "code": "full_plague_heal_taken_pct",
+     "value": -50,
+     "text": "满层的目标受到的治疗 −50%"
+    }
+   ]
+  },
+  {
+   "key": "zhige",
+   "seal": "hong",
+   "type": "sword",
+   "name": "止戈",
+   "effects": [
+    {
+     "code": "hit_count_burst",
+     "every_hits": 10,
+     "bonus_hits": 5,
+     "text": "本场每累计打出 10 段，下一次行动对敌方全体各补 5 段"
+    }
+   ]
+  },
+  {
+   "key": "dadaokuofu",
+   "seal": "hong",
+   "type": "axe",
+   "name": "大刀阔斧",
+   "effects": [
+    {
+     "code": "last_hit_mult",
+     "mult": 2,
+     "text": "每次行动的最后一段伤害翻倍"
+    },
+    {
+     "code": "overkill_carry",
+     "text": "这一段打倒敌人时，溢出伤害落到下一个敌人"
+    }
+   ]
+  },
+  {
+   "key": "yifaruhun",
+   "seal": "hei",
+   "type": "gun",
+   "name": "一发入魂",
+   "effects": [
+    {
+     "code": "mp_dump",
+     "per_mp_pct": 10,
+     "dmg_pct": 5,
+     "text": "这一击用光剩下的全部魔法，每用掉最大魔法的 10%，伤害 +5%"
+    }
+   ]
+  },
+  {
+   "key": "yilijiangshihui",
+   "seal": "hei",
+   "type": "fist",
+   "name": "一力降十会",
+   "effects": [
+    {
+     "code": "idle_charge",
+     "dmg_pct": 50,
+     "text": "上一回合没出手（防御）时，这一击再 +50%"
+    },
+    {
+     "code": "target_lose_action",
+     "condition": "idle_charge",
+     "count": 1,
+     "per_target_per_battle": 1,
+     "text": "并让目标下一回合少动 1 次（每个目标每场 1 次）"
+    }
+   ]
+  },
+  {
+   "key": "songxing",
+   "seal": "hui",
+   "type": "katana",
+   "name": "送行",
+   "effects": [
+    {
+     "code": "kill_chain_slash",
+     "dmg_pct": 50,
+     "chain": true,
+     "text": "打倒敌人后对另一个敌人再斩一次（伤害 50%），能一直连下去"
+    }
+   ]
+  },
+  {
+   "key": "budao",
+   "seal": "hui",
+   "type": "dagger",
+   "name": "补刀",
+   "effects": [
+    {
+     "code": "ally_followup_execute",
+     "below_pct": 33,
+     "per_turn": 2,
+     "text": "队友攻击后目标生命低于 33% 时自动追一刀，每回合最多 2 次"
+    }
+   ]
+  },
+  {
+   "key": "dangtoubanghe",
+   "seal": "xun",
+   "type": "blunt",
+   "name": "当头棒喝",
+   "effects": [
+    {
+     "code": "judgment_lost_hp_ramp",
+     "per_lost_pct": 10,
+     "add_max_hp_pct": 1,
+     "text": "自己每损失 10% 生命，判决再加最大生命的 1%"
+    }
+   ]
+  },
+  {
+   "key": "yishensihu",
+   "seal": "xun",
+   "type": "spear",
+   "name": "以身饲虎",
+   "effects": [
+    {
+     "code": "sacrifice_hp",
+     "hp_pct": 10,
+     "judgment_mult": 2,
+     "text": "攻击时可以献出 10% 当前生命，这一次判决翻倍，并给生命最低的队友一层等量护盾"
+    }
+   ]
+  },
+  {
+   "key": "weilou",
+   "seal": "zhen",
+   "type": "staff",
+   "name": "危楼",
+   "effects": [
+    {
+     "code": "star_moon",
+     "every_stars": 3,
+     "mult": 3,
+     "text": "每落 3 颗星，下一颗换成「陨月」，伤害三倍"
+    }
+   ]
+  },
+  {
+   "key": "tianshu",
+   "seal": "zhen",
+   "type": "book",
+   "name": "天书",
+   "effects": [
+    {
+     "code": "star_pages",
+     "kinds": 3,
+     "value": -33,
+     "turns": 2,
+     "text": "落星是哪一系就记一页，集满 3 种不同的系时，敌方全体元素抗性 −33%，2 回合，然后清页"
+    }
+   ]
+  },
+  {
+   "key": "buliwenzi",
+   "seal": "mo",
+   "type": null,
+   "name": "不立文字",
+   "effects": [
+    {
+     "code": "random_unique",
+     "pool": "other_weapons",
+     "text": "揭开时从另外 12 把的独有效果里随机刻上一条"
+    }
+   ],
+   "type_random": true
+  }
+ ],
+ "artifact_rule": {
+  "etype": 17,
+  "team_active_max": 1
+ },
+ "artifacts": [
+  {
+   "key": "bow_crown",
+   "name": "弓与冠",
+   "effects": [
+    {
+     "code": "single_skill_repeat",
+     "chance_pct": 33,
+     "dmg_pct": 50,
+     "text": "单体技能 33% 几率再射一次（伤害 50%）"
+    }
+   ],
+   "costs": [
+    {
+     "code": "heal_taken_pct",
+     "value": -33,
+     "text": "受到的治疗 −33%"
+    }
+   ]
+  },
+  {
+   "key": "great_sword",
+   "name": "夺和大刀",
+   "effects": [
+    {
+     "code": "kill_extra_action",
+     "per_turn": 1,
+     "text": "击倒敌人后立刻再动一次，每回合 1 次"
+    }
+   ],
+   "costs": [
+    {
+     "code": "dmg_taken_pct",
+     "value": 15,
+     "text": "受到的伤害 +15%"
+    }
+   ]
+  },
+  {
+   "key": "scales",
+   "name": "天平",
+   "effects": [
+    {
+     "code": "skill_dmg_pct",
+     "value": 33,
+     "text": "技能伤害 +33%"
+    }
+   ],
+   "costs": [
+    {
+     "code": "skill_cost_mult",
+     "mult": 2,
+     "text": "技能消耗翻倍"
+    }
+   ]
+  },
+  {
+   "key": "grey_scythe",
+   "name": "灰镰",
+   "effects": [
+    {
+     "code": "execute_normal",
+     "below_pct": 15,
+     "text": "对生命低于 15% 的普通敌人直接处决"
+    },
+    {
+     "code": "boss_low_hp_dmg_pct",
+     "below_pct": 33,
+     "value": 33,
+     "text": "对首领生命低于 33% 时伤害 +33%"
+    }
+   ],
+   "costs": [
+    {
+     "code": "no_revive",
+     "text": "佩戴者不能被复活"
+    }
+   ]
+  },
+  {
+   "key": "seven_seal_scroll",
+   "name": "七印书卷",
+   "effects": [
+    {
+     "code": "reveal_rift_rule",
+     "count": 1,
+     "target": "enemy",
+     "text": "战斗开始时从七个里副本的规则里随机揭一条，只对敌方生效"
+    }
+   ],
+   "costs": [
+    {
+     "code": "reveal_luck",
+     "count": 1,
+     "text": "每场只揭一条，揭到哪条看运气"
+    }
+   ]
+  }
+ ]
+}
