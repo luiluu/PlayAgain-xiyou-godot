@@ -150,7 +150,7 @@ func _choose_and_opening() -> void:
 	host.results = [2]
 	await XTianqi.run_line_choice(host, s)
 	_check("chosen_death", XTianqi.line_of(s) == "death" and XTianqiDeathLine.allowed(s) and not XTianqiFamineLine.allowed(s) and not XTianqiWarLine.allowed(s))
-	_check("card_shown", host.said.any(func(t): return str(t).contains("尽快结束战斗")))
+	_check("card_shown", host.said.any(func(t): return str(t).contains("抢时间")))
 	_check("choose_said", host.said.any(func(t): return str(t).contains("骨白色")))
 	_check("omen_battle", host.battles.size() == 1 and host.battles[0].troop == 291 and host.battles[0].alien == "omen" and host.battles[0].lose, host.battles)
 	_check("omen_went_tower", host.moves.size() >= 2 and host.moves[0] == [82, 15, 25, 8] and host.moves[1][0] == 83, host.moves)

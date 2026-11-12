@@ -112,7 +112,7 @@ func _choice() -> void:
 	_check("cards_used", h.picked.size() == 1 and int(h.picked[0][0]) == XTianqi.LINES.size() and h.asked.size() == 1, [h.picked, h.asked])
 	_check("cards_playable_list", h.picked.size() == 1 and h.picked[0][1] == XTianqi.LINES.map(func(l): return XTianqi.line_playable(str(l.key))), h.picked)
 	_check("cards_chose_war", XTianqi.line_of(s) == "war", XTianqi.line_of(s))
-	_check("cards_no_card_text", not h.said.any(func(t): return str(t).contains("它会怎样改变战斗")), h.said.slice(0, 3))
+	_check("cards_no_card_text", not h.said.any(func(t): return str(t).contains("本线特点")), h.said.slice(0, 3))
 	# 再想想：什么都不选
 	s = _state()
 	h = CardHost.new()
