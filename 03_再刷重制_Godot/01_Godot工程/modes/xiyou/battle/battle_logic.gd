@@ -2384,7 +2384,7 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	if XTianqiHorsemen.crit_immune(dt):  # 天启四骑士：勇者暴击免疫
 		return 0.0
-	if XTianqiQiyinRule.no_crit(self):  # 七印祭坛魔塔：没有暴击
+	if XTianqiQiyinRule.no_crit(self, u):  # 七印祭坛魔塔：没有暴击（七印书卷只让敌人不暴击）
 		return 0.0
 	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
 		return 0.0
@@ -3117,7 +3117,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 		var s := XDB.rec("States", id)
 		if int(s.get("autoRemovalTiming", 0)) != timing or id == DEATH_STATE:
 			continue
-		if XTianqiQiyinRule.keeps_state(self, id):  # 七印祭坛不愈：减益不到期
+		if XTianqiQiyinRule.keeps_state(self, id, b):  # 七印祭坛不愈：减益不到期
 			continue
 		b.state_turns[id] = int(b.state_turns.get(id, 1)) - 1
 		if b.state_turns[id] <= 0:
@@ -3125,7 +3125,7 @@ func _tick_states(b: XBattler, timing: int) -> void:
 			_state_change_if_remove(b, id)
 	if timing == 2:
 		for i in range(8):
-			if b.buff_turns[i] > 0 and not XTianqiQiyinRule.keeps_debuff(self, b.buffs[i]):  # 七印祭坛不愈：能力值减益不到期
+			if b.buff_turns[i] > 0 and not XTianqiQiyinRule.keeps_debuff(self, b.buffs[i], b):  # 七印祭坛不愈：能力值减益不到期
 				b.buff_turns[i] -= 1
 				if b.buff_turns[i] == 0:
 					b.buffs[i] = 0
@@ -3168,7 +3168,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	dh = famine[0]
 	dm = famine[1]
 	dt = famine[2]
-	if XTianqiQiyinRule.no_regen(self):  # 七印祭坛限时：魔法、TP 不恢复
+	if XTianqiQiyinRule.no_regen(self, b):  # 七印祭坛限时：魔法、TP 不恢复
 		dm = 0.0
 		dt = 0.0
 	var alien_hp := b.hp

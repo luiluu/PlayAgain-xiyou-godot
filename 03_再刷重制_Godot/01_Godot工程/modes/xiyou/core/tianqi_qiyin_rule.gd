@@ -14,10 +14,38 @@ extends RefCounted
 ##
 ## 里副本的敌人还会按 rebase 重标能力值（Boss 换名字），借 XEnemy.horseman 的合成记录口子（同 XTianqiSummit 的鸿钧）。
 ## 计量和提示只在战斗日志里报（battle_text）。
+##
+## 七印书卷（神器，方案 6.4 节）：别的战斗里开战从七条规则随机揭一条（XTianqiQiyinEffects 掷、记在 enemy_only_rule），
+## 本模块按「只对敌方生效」跑：减益只在敌人身上不到期、杀声只加打在敌人身上的伤害、限时只限敌人、敌人不能暴击、
+## 献祭只扣敌方最高生命那只（不给敌方加伤）、星坠只砸敌人、寂静只封敌人。里副本里本印规则优先，书卷不再叠一条。
 
 const META := "xqiyin_rule"
 
 static var _pending: Dictionary = {}
+
+
+## 规则是不是只对敌方（七印书卷）
+static func enemy_only(logic) -> bool:
+	return bool(fight(logic).get("enemy_only", false))
+
+
+## 这一下规则落不落在 b 身上（书卷只落在敌人身上；b 为 null 时按「落」）
+static func _hits(logic, b) -> bool:
+	return not enemy_only(logic) or b == null or b is XEnemy
+
+
+## 七印书卷：不是里副本的战斗、装备者的神器揭了规则时，第一次用到时建本场记录（XTianqiQiyinEffects.start 之后）
+static func _ensure_scroll(logic) -> void:
+	if logic == null or logic.has_meta(META) or logic.state == null or not XTianqiQiyin.allowed(logic.state):
+		return
+	var key := XTianqiQiyinEffects.enemy_only_rule(logic)
+	var info := XTianqiQiyin.seal_info(key)
+	if info.is_empty():
+		return
+	var f := {"seal": key, "rule": str(info.rule), "boss": false, "gems": {}, "queue": [], "skills_used": 0,
+		"side_bonus": "", "silent": false, "enemy_only": true}
+	logic.set_meta(META, f)
+	_say(f, "七印书卷揭开了【%s】，只对敌方生效：%s" % [str(info.rule_name), str(info.rule_text)])
 
 
 ## 下一场按这一印的规则打（is_boss＝第三场 Boss 战；gems＝魔塔累计的宝石 {atk, def, hp}）
@@ -100,6 +128,7 @@ static func _say(f: Dictionary, text: String) -> void:
 
 
 static func take_logs(logic) -> Array:
+	_ensure_scroll(logic)
 	if not active(logic):
 		return []
 	var f := fight(logic)
@@ -112,6 +141,7 @@ static func take_logs(logic) -> Array:
 
 ## BattleLogic.start_turn 末尾（turn 已经 +1）
 static func start_turn(logic) -> Array:
+	_ensure_scroll(logic)
 	if not active(logic):
 		return []
 	var f := fight(logic)
@@ -122,24 +152,27 @@ static func start_turn(logic) -> Array:
 		"sacrifice":
 			var top = null
 			for b in logic.actors + logic.enemies:
-				if b.is_alive() and (top == null or b.hp > top.hp):
+				if b.is_alive() and _hits(logic, b) and (top == null or b.hp > top.hp):
 					top = b
 			if top != null:
 				_lose(top, float(param("sacrifice").get("hp_loss", 0.1)))
-				f.side_bonus = "actor" if top is XActor else "enemy"
-				_say(f, "献祭：%s失去生命，%s本回合出伤提升。" % [top.display_name(), "我方" if f.side_bonus == "actor" else "敌方"])
+				if enemy_only(logic):
+					_say(f, "献祭：%s失去生命。" % top.display_name())
+				else:
+					f.side_bonus = "actor" if top is XActor else "enemy"
+					_say(f, "献祭：%s失去生命，%s本回合出伤提升。" % [top.display_name(), "我方" if f.side_bonus == "actor" else "敌方"])
 		"star_fall":
 			var every := int(param("star_fall").get("every_turns", 3))
 			if every > 0 and t % every == 0:
 				var loss := float(param("star_fall").get("hp_loss", 0.33))
 				for b in logic.actors + logic.enemies:
-					if b.is_alive():
+					if b.is_alive() and _hits(logic, b):
 						_lose(b, loss)
-				_say(f, "星坠：天上落下了星星，全场失去当前生命的 %d%%。" % roundi(loss * 100.0))
+				_say(f, "星坠：天上落下了星星，%s失去当前生命的 %d%%。" % ["敌方" if enemy_only(logic) else "全场", roundi(loss * 100.0)])
 		"silence":
 			f.silent = t % 2 == 0
 			if f.silent:
-				_say(f, "寂静：这一回合谁都说不出话。")
+				_say(f, "寂静：这一回合敌人说不出话。" if enemy_only(logic) else "寂静：这一回合谁都说不出话。")
 	return take_logs(logic)
 
 
@@ -165,11 +198,16 @@ static func can_use(logic, a, skill: Dictionary) -> bool:
 	if not active(logic) or _plain(logic, a, skill):
 		return true
 	var f := fight(logic)
-	if bool(f.silent):
+	if bool(f.silent) and _hits(logic, a):
 		return false
-	if str(f.rule) == "exam" and a is XActor and int(f.skills_used) >= int(param("exam").get("skills_per_turn", 5)):
+	if str(f.rule) == "exam" and _exam_side(logic, a) and int(f.skills_used) >= int(param("exam").get("skills_per_turn", 5)):
 		return false
 	return true
+
+
+## 限时的技能数算哪一方：里副本算我方，七印书卷算敌方
+static func _exam_side(logic, a) -> bool:
+	return a is XEnemy if enemy_only(logic) else a is XActor
 
 
 ## BattleLogic.decide（敌人）：寂静的双数回合只普攻
@@ -181,7 +219,7 @@ static func decide_enemy(logic, b) -> Array:
 
 ## BattleLogic.act 开头：记我方这回合放了几个技能（限时）
 static func on_act(logic, u, skill) -> void:
-	if not active(logic) or str(fight(logic).rule) != "exam" or not u is XActor:
+	if not active(logic) or str(fight(logic).rule) != "exam" or not _exam_side(logic, u):
 		return
 	if not skill is Dictionary or _plain(logic, u, skill):
 		return
@@ -208,23 +246,23 @@ static func debuff_state(id: int) -> bool:
 
 
 ## BattleLogic._tick_states：不愈时减益不减回合
-static func keeps_state(logic, id: int) -> bool:
-	return active(logic) and str(fight(logic).rule) == "no_cure" and debuff_state(id)
+static func keeps_state(logic, id: int, b = null) -> bool:
+	return active(logic) and str(fight(logic).rule) == "no_cure" and _hits(logic, b) and debuff_state(id)
 
 
 ## BattleLogic._tick_states 的能力值减益（buff 层数为负）
-static func keeps_debuff(logic, level: int) -> bool:
-	return active(logic) and str(fight(logic).rule) == "no_cure" and level < 0
+static func keeps_debuff(logic, level: int, b = null) -> bool:
+	return active(logic) and str(fight(logic).rule) == "no_cure" and level < 0 and _hits(logic, b)
 
 
 ## BattleLogic._regenerate：限时时魔法、TP 不恢复
-static func no_regen(logic) -> bool:
-	return active(logic) and str(fight(logic).rule) == "exam"
+static func no_regen(logic, b = null) -> bool:
+	return active(logic) and str(fight(logic).rule) == "exam" and _hits(logic, b)
 
 
 ## BattleLogic.item_cri：魔塔没有暴击
-static func no_crit(logic) -> bool:
-	return active(logic) and str(fight(logic).rule) == "magic_tower"
+static func no_crit(logic, u = null) -> bool:
+	return active(logic) and str(fight(logic).rule) == "magic_tower" and _hits(logic, u)
 
 
 # ---- 伤害：杀声、献祭、魔塔宝石 ----
@@ -236,6 +274,8 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	var f := fight(logic)
 	match str(f.rule):
 		"war_cry":
+			if not _hits(logic, t):
+				return value
 			var dead := 0
 			for b in logic.actors + logic.enemies:
 				if b.is_dead():
@@ -258,8 +298,10 @@ static func hp_damage(logic, u, t, value: float) -> float:
 ## BattleLogic.end_battle：清本场；不是里副本的 31～35 层战斗打赢了，掉印钥（XTianqiQiyin.field_drop）
 static func end(logic, result: int) -> void:
 	if active(logic):
+		var dungeon := not enemy_only(logic)
 		logic.remove_meta(META)
-		return
+		if dungeon:
+			return
 	if result != 0 or logic.state == null:
 		return
 	XTianqiQiyin.field_drop(logic.state, int(logic.state.map_id), str(XDB.rec("Troops", int(logic.troop_id)).get("name", "")))

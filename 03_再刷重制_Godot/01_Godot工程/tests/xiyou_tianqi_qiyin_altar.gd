@@ -7,7 +7,8 @@ extends Node
 ## 五、里副本：花印钥、三场连战带规则、Boss 那场重标、输了不退印钥；首通加件；直取只打 Boss；没印钥进不去；献印屑；躁动每 3 次。
 ## 六、揭开：封着只看印、部位、光；揭开亮成色和名字；当场揭。
 ## 七、规则：七条各自的效果，和不在里副本时一概不动。
-## 八、野外印钥：31～35 层精英／守护者必掉，别的按几率，大厅、里副本里不掉。
+## 八、七印书卷：别的战斗里揭的规则只对敌方生效；里副本里本印规则优先。
+## 九、野外印钥：31～35 层精英／守护者必掉，别的按几率，大厅、里副本里不掉。
 ## 数字避开 4（Kyo 11-11）：用例里的层号、地图号照实写。
 
 class FakeHost extends RefCounted:
@@ -92,6 +93,7 @@ func _run() -> void:
 	await _reveal()
 	await _altar_menu()
 	_rules()
+	_scroll()
 	_field_keys()
 	DirAccess.remove_absolute(XGlobalVars.path())
 	var passed := results.filter(func(r): return r.passed).size()
@@ -493,7 +495,110 @@ func _rules() -> void:
 	XState.current = s
 
 
-# ---- 八、野外印钥 ----
+# ---- 八、七印书卷 ----
+
+func _scroll_fight(s: XState, key: String, troop: int) -> XBattleLogic:
+	var lg := XBattleLogic.new()
+	lg.setup(troop, s)
+	XTianqiQiyinEffects._store(lg).scroll_rule = key
+	return lg
+
+
+func _scroll() -> void:
+	var s := _state(36)
+	XTianqiQiyin.set_current("")
+	var sk := {"id": 99999, "occasion": 0}
+	# 星坠：只砸敌人
+	var sf := _scroll_fight(s, "zhen", 187)
+	var logs := XTianqiQiyinRule.take_logs(sf)
+	_check("scroll_announced", XTianqiQiyinRule.active(sf) and XTianqiQiyinRule.enemy_only(sf) and logs.any(func(l): return str(l.get("text", "")).contains("七印书卷")), logs)
+	sf.start_turn()
+	sf.start_turn()
+	var ahp: Array = sf.actors.map(func(b): return b.hp)
+	var ehp: Array = sf.enemies.map(func(b): return b.hp)
+	sf.start_turn()
+	var ok := true
+	for i in sf.enemies.size():
+		if not is_equal_approx(sf.enemies[i].hp, maxf(1.0, ehp[i] - floorf(ehp[i] * 0.33))):
+			ok = false
+	_check("scroll_star_enemy_only", ok and sf.actors.map(func(b): return b.hp) == ahp)
+	sf.end_battle(0)
+	# 寂静：双数回合敌人只普攻，我方照常放技能
+	var si := _scroll_fight(s, "mo", 216)
+	si.start_turn()
+	si.start_turn()
+	_check("scroll_silence_enemy", not XTianqiQiyinRule.decide_enemy(si, si.enemies[0]).is_empty() and not XTianqiQiyinRule.can_use(si, si.enemies[0], sk))
+	_check("scroll_silence_actor_free", XTianqiQiyinRule.can_use(si, si.actors[0], sk))
+	si.end_battle(0)
+	# 魔塔：只有敌人不能暴击
+	var mt := _scroll_fight(s, "hui", 291)
+	mt.start_turn()
+	_check("scroll_tower", XTianqiQiyinRule.no_crit(mt, mt.enemies[0]) and not XTianqiQiyinRule.no_crit(mt, mt.actors[0]))
+	mt.end_battle(0)
+	# 杀声：只加打在敌人身上的
+	var wc := _scroll_fight(s, "hong", 33)
+	wc.start_turn()
+	wc._die(wc.enemies[1])
+	_check("scroll_war_cry", is_equal_approx(XTianqiQiyinRule.hp_damage(wc, wc.actors[0], wc.enemies[0], 1000.0), 1050.0)
+		and is_equal_approx(XTianqiQiyinRule.hp_damage(wc, wc.enemies[0], wc.actors[0], 1000.0), 1000.0))
+	wc.end_battle(0)
+	# 限时：只限敌人
+	var ex := _scroll_fight(s, "hei", 10)
+	ex.start_turn()
+	for i in 5:
+		XTianqiQiyinRule.on_act(ex, ex.enemies[0], sk)
+		XTianqiQiyinRule.on_act(ex, ex.actors[0], sk)
+	_check("scroll_exam_enemy", not XTianqiQiyinRule.can_use(ex, ex.enemies[0], sk) and XTianqiQiyinRule.can_use(ex, ex.actors[0], sk))
+	_check("scroll_exam_regen", XTianqiQiyinRule.no_regen(ex, ex.enemies[0]) and not XTianqiQiyinRule.no_regen(ex, ex.actors[0]))
+	ex.end_battle(0)
+	# 不愈：只有敌人身上的减益不到期
+	var nc := _scroll_fight(s, "bai", 33)
+	nc.start_turn()
+	var bad := -1
+	for id in range(1, 200):
+		if not XDB.rec("States", id).is_empty() and XTianqiQiyinRule.debuff_state(id):
+			bad = id
+			break
+	_check("scroll_no_cure", XTianqiQiyinRule.keeps_state(nc, bad, nc.enemies[0]) and not XTianqiQiyinRule.keeps_state(nc, bad, nc.actors[0])
+		and XTianqiQiyinRule.keeps_debuff(nc, -1, nc.enemies[0]) and not XTianqiQiyinRule.keeps_debuff(nc, -1, nc.actors[0]))
+	nc.end_battle(0)
+	# 献祭：只扣敌方生命最高那只，不给敌方加伤
+	var sc := _scroll_fight(s, "xun", 122)
+	var top = null
+	for b in sc.enemies:
+		if b.is_alive() and (top == null or b.hp > top.hp):
+			top = b
+	var hp0: float = top.hp
+	var a_hp: Array = sc.actors.map(func(b): return b.hp)
+	sc.start_turn()
+	_check("scroll_sacrifice", is_equal_approx(top.hp, hp0 - floorf(hp0 * 0.1)) and sc.actors.map(func(b): return b.hp) == a_hp
+		and is_equal_approx(XTianqiQiyinRule.hp_damage(sc, sc.enemies[0], sc.actors[0], 1000.0), 1000.0))
+	sc.end_battle(0)
+	# 书卷那场打赢照样掉野外印钥
+	s.map_id = 156
+	var k0 := XTianqiQiyin.keys(s)
+	var fk := _scroll_fight(s, "zhen", 216)
+	fk.start_turn()
+	fk.end_battle(0)
+	_check("scroll_field_key", XTianqiQiyin.keys(s) == k0 + 1 and not XTianqiQiyinRule.active(fk), [k0, XTianqiQiyin.keys(s)])
+	# 里副本里本印规则优先
+	s.map_id = 61
+	XTianqiQiyin.set_current("bai")
+	var dg := _fight(s, "bai", 249)
+	XTianqiQiyinEffects._store(dg).scroll_rule = "zhen"
+	dg.start_turn()
+	_check("scroll_dungeon_keeps_seal", XTianqiQiyinRule.rule_of(dg) == "no_cure" and not XTianqiQiyinRule.enemy_only(dg))
+	dg.end_battle(0)
+	XTianqiQiyin.set_current("")
+	# 原版档：书卷不开
+	var plain_s := XState.new()
+	var pl := _scroll_fight(plain_s, "zhen", 33)
+	pl.start_turn()
+	_check("scroll_plain_save", not XTianqiQiyinRule.active(pl))
+	XState.current = s
+
+
+# ---- 九、野外印钥 ----
 
 func _field_keys() -> void:
 	var s := _state(33)
