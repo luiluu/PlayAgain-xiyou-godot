@@ -69,8 +69,8 @@ static func check(gear: Dictionary) -> void:
 	if tpl.is_empty():return
 	for i in range(8):gear.params[i]=float(gear.params[i])+float(tpl.params[i])
 	gear.traits.append_array(tpl.traits.duplicate(true))
-	var numeric:=RegEx.create_from_string("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*(%?)\\s*$")
-	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(str(tpl.note)):
+	var numeric:=XRx.re("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*(%?)\\s*$")
+	for m in XRx.re("<([^<>:]+)(:?)([^>]*)>").search_all(str(tpl.note)):
 		var key:=m.get_string(1)
 		if m.get_string(2)!=":":gear.meta[key]=true;continue
 		var old:=numeric.search(str(gear.meta.get(key,"")));var extra:=numeric.search(m.get_string(3))

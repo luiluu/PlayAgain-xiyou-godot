@@ -22,7 +22,7 @@ static var o_reserved_no_dup := true
 
 ## checkSentence：取 <…> 里的内容
 static func sentence(s: String) -> String:
-	var m := RegEx.create_from_string("<([^)]+)>").search(s)
+	var m := XRx.re("<([^)]+)>").search(s)
 	return m.get_string(1) if m != null else ""
 
 

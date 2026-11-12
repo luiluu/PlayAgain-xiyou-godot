@@ -105,7 +105,7 @@ static func icon_texture(size := 32) -> AtlasTexture:
 
 ## RJO.HE.getDescParams 包装：先 describe，算出的行里带小数的数字按 D.display 取整（XHelpCard.desc_params 调）
 static func desc_rows(item: Dictionary, rows: Array) -> void:
-	var dec := RegEx.create_from_string("[-+]?\\d+\\.\\d+")
+	var dec := XRx.re("[-+]?\\d+\\.\\d+")
 	for r in rows:
 		var t := str(r[0])
 		var out := ""
@@ -137,7 +137,7 @@ static func owned(s: XState) -> Array:
 ## H.quality：12，备注里有 14／15 取大的
 static func _quality(item: Dictionary) -> int:
 	var q := 12
-	for m in RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>").search_all(str(item.get("note", ""))):
+	for m in XRx.re("(?i)<quality:\\s*(\\d+)>").search_all(str(item.get("note", ""))):
 		if int(m.get_string(1)) in [14, 15]:
 			q = maxi(q, int(m.get_string(1)))
 	return q
@@ -151,7 +151,7 @@ static func describe(item: Dictionary) -> void:
 	item.description = DESCRIPTION
 	item.iconIndex = ICON
 	var q := _quality(item)
-	var note := RegEx.create_from_string("(?i)<(quality|ici):\\s*\\d+>").sub(str(item.get("note", "")), "", true)
+	var note := XRx.re("(?i)<(quality|ici):\\s*\\d+>").sub(str(item.get("note", "")), "", true)
 	note += "\n<quality:%d>\n<ici:%d>\n" % [q, q]
 	if not item.get("meta") is Dictionary:
 		item.meta = {}
@@ -162,7 +162,7 @@ static func describe(item: Dictionary) -> void:
 	for n in range(8):
 		traits.append({"code": 21, "dataId": n, "value": 1.0 if storage_error != "" else rate, "_codexCrown": true})
 	item.traits = traits
-	note = RegEx.create_from_string("<pos=APs text=成长[：:]八项全属性[^>]*>\\s*").sub(note, "", true)
+	note = XRx.re("<pos=APs text=成长[：:]八项全属性[^>]*>\\s*").sub(note, "", true)
 	item.note = note + "\n<pos=APs text=成长：八项全属性＋%s%%%s size=18 color=rgba(255,255,255,1) line=false align=0>\n" % [display(XTianqiGear.crown_bonus(bonus(item))), XTianqiGear.cap_note("crown_bonus_pct", bonus(item))]
 
 

@@ -45,7 +45,7 @@ static func war_pet(s: XState) -> Dictionary:
 
 
 static func notetags(note: String) -> PackedStringArray:
-	return RegEx.create_from_string("[\\r\\n]+").sub(note, "\n", true).split("\n")
+	return XRx.re("[\\r\\n]+").sub(note, "\n", true).split("\n")
 
 
 static func _block(tags: PackedStringArray, open: String, close: String) -> Array:
@@ -68,19 +68,19 @@ static func create(enemy_id: int, elite := false, letter := "", rnd := Callable(
 	var tags := notetags(str(XDB.rec("Enemies", enemy_id).get("note", "")))
 	var push := []
 	for line in _block(tags, "<PetPushAttr>", "</PetPushAttr>"):
-		var m := RegEx.create_from_string("(\\d+)-(\\d+)").search(line)
+		var m := XRx.re("(\\d+)-(\\d+)").search(line)
 		push.append(floori(float(rnd.call()) * (int(m.get_string(2)) - int(m.get_string(1)) + 1) + int(m.get_string(1))) if m else 0)
 	var skills := []
 	var skill_lines := _block(tags, "<PetPushSkill>", "</PetPushSkill>")
 	for line in skill_lines:
 		var learn := _range_skills(line, skills)
-		var p := RegEx.create_from_string(":(\\d+)%").search(line)
+		var p := XRx.re(":(\\d+)%").search(line)
 		var roll := float(rnd.call()) * 100.0
 		if p != null and roll <= float(p.get_string(1)):
 			skills.append(learn[floori(float(rnd.call()) * 1000.0) % learn.size()] if not learn.is_empty() else 0)
 	var by_level := {}
 	for line in _block(tags, "<ULevelS>", "</ULevelS>"):
-		var m := RegEx.create_from_string("(?i)Lv(\\d+):(\\d+):(\\d+)%").search(line)
+		var m := XRx.re("(?i)Lv(\\d+):(\\d+):(\\d+)%").search(line)
 		if m:
 			var lv := int(m.get_string(1))
 			if not by_level.has(lv):
@@ -111,7 +111,7 @@ static func create(enemy_id: int, elite := false, letter := "", rnd := Callable(
 ## 一行「a-b,c-d…」里还没学的技能（原版按 $dataSkills 对象比，这里按 ID）
 static func _range_skills(line: String, have: Array) -> Array:
 	var out := []
-	for m in RegEx.create_from_string("(\\d+)-(\\d+)").search_all(line):
+	for m in XRx.re("(\\d+)-(\\d+)").search_all(line):
 		for id in range(int(m.get_string(1)), int(m.get_string(2)) + 1):
 			if not have.has(id):
 				out.append(id)

@@ -425,8 +425,8 @@ static func _reversed(a: Array) -> Array:
 static func _var_unit(v: int) -> Array:
 	var names: Array = XDB.system().get("variables", [])
 	var raw := str(names[v]) if v < names.size() and names[v] != null else ""
-	var m := RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]").search(raw)
-	var unit := RegEx.create_from_string("<<(.*?)>>").sub(RegEx.create_from_string("(?i)\\\\I\\[(\\d+)\\]").sub(raw, "", true), "", true)
+	var m := XRx.re("(?i)\\\\I\\[(\\d+)\\]").search(raw)
+	var unit := XRx.re("<<(.*?)>>").sub(XRx.re("(?i)\\\\I\\[(\\d+)\\]").sub(raw, "", true), "", true)
 	return [unit, int(m.get_string(1)) if m else 0]
 
 

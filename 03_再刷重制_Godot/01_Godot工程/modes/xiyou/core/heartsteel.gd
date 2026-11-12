@@ -123,11 +123,11 @@ static func _add_pending(item: Dictionary, gain: int) -> void:
 ## H.enemyWeight（狂妄同一张表，另看开场名单）
 static func name_weight(e) -> int:
 	var name := str(e.data().get("name", ""))
-	if RegEx.create_from_string("分身|复制|召唤物|练习|训练|木桩").search(name) != null:
+	if XRx.re("分身|复制|召唤物|练习|训练|木桩").search(name) != null:
 		return 0
 	if name.contains("【未知存在】"):
 		return 10
-	return 5 if RegEx.create_from_string("【首领】|【被封印者】").search(name) != null else 1
+	return 5 if XRx.re("【首领】|【被封印者】").search(name) != null else 1
 
 static func enemy_weight(logic, e) -> int:
 	if not (e is XEnemy) or not in_battle or logic == null or int(logic.troop_id) == 1:

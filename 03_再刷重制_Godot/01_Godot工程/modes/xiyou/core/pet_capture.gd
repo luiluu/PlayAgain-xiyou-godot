@@ -43,10 +43,10 @@ static func now() -> Dictionary:
 ## <Capture: N%> 的 N（/(\d+)/ 第一个整数）；没有标签 −1
 static func threshold(enemy_id: int) -> int:
 	var note := str(XDB.rec("Enemies", enemy_id).get("note", ""))
-	var m := RegEx.create_from_string("<Capture:([^>]*)>").search(note)
+	var m := XRx.re("<Capture:([^>]*)>").search(note)
 	if m == null:
 		return -1
-	var n := RegEx.create_from_string("(\\d+)").search(m.get_string(1))
+	var n := XRx.re("(\\d+)").search(m.get_string(1))
 	return int(n.get_string(1)) if n != null else -1
 
 

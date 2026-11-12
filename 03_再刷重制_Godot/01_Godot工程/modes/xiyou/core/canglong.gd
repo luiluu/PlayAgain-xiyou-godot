@@ -114,7 +114,7 @@ static func patch_skills(t) -> void:
 	if p is Dictionary:
 		# 说明只读 note 的 APs 行（XHelpCard），meta 里同键的旧值去掉即可
 		p.meta.erase("pos=APs text=\\c[1]真龙之力")
-		p.note = RegEx.create_from_string("<pos=APs text=\\\\c\\[1\\]真龙之力:[^>]*>").sub(str(p.note), "<pos=APs text=\\c[1]" + DRAGON_TEXT + _APS_TAIL + ">")
+		p.note = XRx.re("<pos=APs text=\\\\c\\[1\\]真龙之力:[^>]*>").sub(str(p.note), "<pos=APs text=\\c[1]" + DRAGON_TEXT + _APS_TAIL + ">")
 
 
 static func patch_classes(t) -> void:
@@ -137,7 +137,7 @@ static func patch_armors(t) -> void:
 static func _set_aps(s: Dictionary, key: String, value: String) -> void:
 	var mk := "pos=APs text=" + key
 	var note := str(s.note)
-	var re := RegEx.create_from_string("<pos=APs text=" + _re_escape(key) + ":[^>]*?" + _re_escape(_APS_TAIL) + ">")
+	var re := XRx.re("<pos=APs text=" + _re_escape(key) + ":[^>]*?" + _re_escape(_APS_TAIL) + ">")
 	s.note = re.sub(note, "<pos=APs text=" + key + ":" + value + _APS_TAIL + ">")
 	if s.get("meta", {}).has(mk):
 		s.meta[mk] = value + _APS_TAIL

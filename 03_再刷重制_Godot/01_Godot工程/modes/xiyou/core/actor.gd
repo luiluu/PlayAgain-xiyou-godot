@@ -58,8 +58,8 @@ static func absorb_owners(weapon_id: int) -> Array:
 		_absorb_src = weapons
 		_absorb_owners = {}
 		_absorb_ids = {}
-		var re := RegEx.create_from_string("(?i)<req_actors\\s*:\\s*([^>]+)>")
-		var num := RegEx.create_from_string("\\d+")
+		var re := XRx.re("(?i)<req_actors\\s*:\\s*([^>]+)>")
+		var num := XRx.re("\\d+")
 		for w in (weapons if weapons is Array else []):
 			if not (w is Dictionary) or str(w.get("name", "")).is_empty():
 				continue
@@ -207,6 +207,7 @@ func init_equips(ids: Array) -> void:
 		items[picked] = null
 		if can_equip(item):
 			equips[i] = item
+			read_touch()
 			refresh_passive()
 	release_unequippable()
 	refresh_passive()
@@ -248,6 +249,7 @@ func release_unequippable() -> Array:
 			if e != null and not e.is_empty() and (int(e.etypeId) != int(slots[i]) or not can_equip(e)):
 				removed.append(e)
 				equips[i] = null
+				read_touch()
 				changed = true
 	removed.append_array(XEquipment.release_dual_exclusive(self))  # 双持专武只留一把（installDualExclusiveRuntime）
 	return removed
@@ -370,6 +372,12 @@ func max_level() -> int:
 	return XState.current.max_level() if XState.current else int(data().get("maxLevel", 99))
 
 func max_tp() -> float:
+	read_begin()
+	var v := _max_tp_now()
+	read_end()
+	return v
+
+func _max_tp_now() -> float:
 	var value := super.max_tp()
 	for extra in passive_values("passiveEXTTP"):
 		value += _num(extra)
@@ -473,6 +481,7 @@ func repair_strong_classified() -> void:
 	refresh_passive()
 
 func learn_skill(id: int) -> void:
+	read_touch()
 	if XRace.learn(XState.current, self, id):  # installNativeRaceRuntime learnSkill 包装：种族技能改种族数据再 sync
 		return
 	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
@@ -489,6 +498,7 @@ func learn_skill(id: int) -> void:
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 
 func forget_skill(id: int) -> void:
+	read_touch()
 	if XPowerBooks.protected_forget(self, id):
 		return
 	skill_ids.erase(id)
@@ -517,6 +527,19 @@ func first_weapon_type() -> int:
 
 
 func skills() -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "sk1" if _cat_bare else "sk0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("skills", m[key], _skills_now())
+			return (m[key] as Array).duplicate()
+		var fresh := _skills_now()
+		m[key] = fresh
+		return fresh.duplicate()
+	return _skills_now()
+
+func _skills_now() -> Array:
 	var ids: Array[int] = native_skill_ids()
 	ids.assign(XHeartsteel.skill_ids(self, ids))  # 心钢 skills 包装（第 15 个，在云裳、异化之内）：穿着时换成对应的巨人吞噬
 	XYunshang.skill_ids(self, ids)  # 云裳 skills 包装（在异化之内）：天衣给的赠行／收存余光
@@ -543,7 +566,80 @@ func _skill_records(ids: Array[int]) -> Array:
 # ---- 特性对象 ----
 ## 宝珠：同类新宝珠的标记特性只算阶位最高 3 件装备（installNativeOrbRuntime capDrops，见 XOrbs）
 func all_traits() -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := "tr1" if _cat_bare else "tr0"
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("all_traits", m[key], XOrbs.filter_traits(super.all_traits(), equips))
+			return (m[key] as Array).duplicate()
+		var fresh := XOrbs.filter_traits(super.all_traits(), equips)
+		m[key] = fresh
+		return fresh.duplicate()
 	return XOrbs.filter_traits(super.all_traits(), equips)
+
+## 只读窗口里按（特性码, 编号）分好组，同一窗口里第二次起直接取
+func traits_with_id(code: int, id: int) -> Array:
+	if not (READ_MEMO and _read_depth > 0):
+		return super.traits_with_id(code, id)
+	var m := _read_memo()
+	var key := "ti1" if _cat_bare else "ti0"
+	var index: Dictionary
+	if m.has(key):
+		index = m[key]
+	else:
+		for t in all_traits():
+			var k := int(t.code) * 100000 + int(t.dataId)
+			if index.has(k):
+				index[k].append(t)
+			else:
+				index[k] = [t]
+		m[key] = index
+	var out: Array = index.get(code * 100000 + id, [])
+	if READ_VERIFY:
+		_read_verify("traits_with_id", out, super.traits_with_id(code, id))
+	return out.duplicate()
+
+
+# ---- 只读窗口缓存（O-待定-2，安卓战斗提速）----
+## 一次行动结算里角色的技能表 skills() 要重算一两百次（每读一项能力值 3 次以上：被动 passivePBST／PBSTEX、装备被动……），
+## 每次都走心钢、云裳、异化、谷雨等整条包装链；手机上一次行动因此停 0.3～0.5 秒。
+## 「只读窗口」＝一段只读不写的计算（读一项能力值、拍一次画面快照、列能用的技能）：窗口里同一名角色的技能表、特性表、
+## 按标签取的被动值只算一次，窗口一关就作废，不跨到下一次读取；窗口里一旦有已知的写入（加减状态、换装、学技能、刷新被动）
+## 也当场作废（read_touch）。所以读到的值和每次重算完全一样。
+## 回退：READ_MEMO = false（每次重算，同原来）。READ_VERIFY＝测试用：每次命中都重算一遍比对，不一样就记进 read_mismatches。
+static var READ_MEMO := true
+static var READ_VERIFY := false
+static var read_mismatches: Array = []
+static var read_hits := 0
+static var _read_depth := 0
+static var _read_gen := 0
+var _memo_gen := -1
+var _memo := {}
+
+static func read_begin() -> void:
+	if _read_depth == 0:
+		_read_gen += 1
+	_read_depth += 1
+
+static func read_end() -> void:
+	_read_depth -= 1
+
+## 已知的写入：作废所有角色的窗口缓存
+static func read_touch() -> void:
+	_read_gen += 1
+
+func _read_memo() -> Dictionary:
+	if _memo_gen != _read_gen:
+		_memo_gen = _read_gen
+		_memo = {}
+	return _memo
+
+func _read_verify(what: String, cached, fresh) -> void:
+	read_hits += 1
+	if cached != fresh and read_mismatches.size() < 50:
+		read_mismatches.append([what, actor_id, str(cached).left(300), str(fresh).left(300)])
+		push_error("只读窗口缓存不一致：%s 角色 %d" % [what, actor_id])
 
 ## 渡鸦黑暗侵蚀的状态缓存时序（见 raven.gd on_tp_refresh）：tp_refreshed＝本次 apply 里伤害充 TP 已 refresh；
 ## stale_state_ids＝已在身上但特性缓存还没重建、特性暂读不到的状态（krz 状态缓存时序）
@@ -605,6 +701,19 @@ func param_rate(i: int) -> float:
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
+	if READ_MEMO and _read_depth > 0:
+		var m := _read_memo()
+		var key := ("pv1:" if _cat_bare else "pv0:") + tag
+		if m.has(key):
+			if READ_VERIFY:
+				_read_verify("passive_values " + tag, m[key], _passive_values_now(tag))
+			return (m[key] as Array).duplicate()
+		var fresh := _passive_values_now(tag)
+		m[key] = fresh
+		return fresh.duplicate()
+	return _passive_values_now(tag)
+
+func _passive_values_now(tag: String) -> Array:
 	var out := []
 	for s in skills():
 		var m: Dictionary = s.get("meta", {})
@@ -659,7 +768,7 @@ func attack_command_text() -> String:
 			text = m.get_string(2)
 	return text
 
-static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
+static var _command_text_line := XRx.re("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
 
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
 func attack_times_add() -> float:
@@ -669,7 +778,7 @@ func action_plus_set() -> Array:
 	var out := super.action_plus_set()
 	# dsPassiveSkill Game_Actor.actionPlusSet：每个 <passiveAPLUS:N%> 被动加一项追加行动几率（取第一个整数 ×0.01）
 	for m in passive_values("passiveAPLUS"):
-		var found := RegEx.create_from_string("(\\d+)").search(str(m))
+		var found := XRx.re("(\\d+)").search(str(m))
 		if found:
 			out.append(float(found.get_string(1)) * 0.01)
 	if XZhenqi.has_daofa(self, "fenshen"):
@@ -729,7 +838,7 @@ func passive_state_resists() -> Array:
 	return out
 
 static func _num(v) -> float:
-	var r := RegEx.create_from_string("[-+]?\\d*\\.?\\d+")
+	var r := XRx.re("[-+]?\\d*\\.?\\d+")
 	var m := r.search(str(v))
 	return float(m.get_string()) if m else 0.0
 
@@ -840,6 +949,12 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
+	read_begin()
+	var v := _param_now(i)
+	read_end()
+	return v
+
+func _param_now(i: int) -> float:
 	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i)))))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
@@ -887,6 +1002,12 @@ func traits_sum(code: int, id: int) -> float:
 
 ## 正式版运行时对角色命中率保底 0.9（命中 = xparam 0）。
 func xparam(i: int) -> float:
+	read_begin()
+	var v := _xparam_now(i)
+	read_end()
+	return v
+
+func _xparam_now(i: int) -> float:
 	var v := super.xparam(i)
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
@@ -900,6 +1021,12 @@ func xparam(i: int) -> float:
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
+	read_begin()
+	var v := _sparam_now(i)
+	read_end()
+	return v
+
+func _sparam_now(i: int) -> float:
 	var v := traits_pi(TRAIT_SPARAM, i)
 	for m in passive_values(_tag("passiveSPBST", i)):
 		v += _num(m) * 0.01
@@ -980,7 +1107,7 @@ func refresh_passive() -> void:
 			var tag := str(key)
 			if not tag.begins_with("ConsumeReduce"):
 				continue
-			var number := RegEx.create_from_string("^\\s*([+-]?\\d+)").search(str(meta[key]))
+			var number := XRx.re("^\\s*([+-]?\\d+)").search(str(meta[key]))
 			if number == null:
 				push_error("ConsumeReduce标签不是整数：" + tag + ":" + str(meta[key]))
 				continue
@@ -1033,7 +1160,7 @@ func passive_cache() -> Dictionary:
 
 static func _scan(text: String, pattern: String) -> Array:
 	var out := []
-	for m in RegEx.create_from_string(pattern).search_all(text):
+	for m in XRx.re(pattern).search_all(text):
 		var g := []
 		for i in range(1, m.get_group_count() + 1):
 			g.append(m.get_string(i))

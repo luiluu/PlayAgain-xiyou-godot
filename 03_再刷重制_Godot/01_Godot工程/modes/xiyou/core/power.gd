@@ -160,7 +160,7 @@ static func _traits(s: Dictionary, obj: Dictionary, attributes_included: bool) -
 			a[1] = (1.0 - v) * 60.0; label = "状态抵抗"
 		if code == 14:
 			var st := XDB.rec("States", id)
-			if not st.is_empty() and (int(st.get("restriction", 0)) > 0 or RegEx.create_from_string(ABNORMAL).search(str(st.get("name", ""))) != null):
+			if not st.is_empty() and (int(st.get("restriction", 0)) > 0 or XRx.re(ABNORMAL).search(str(st.get("name", ""))) != null):
 				a[1] = 80.0; label = "异常免疫"
 		if code == 32:
 			a[2] = _clamp01(v) * 100.0; label = "攻击附加状态"
@@ -179,18 +179,18 @@ static func _traits(s: Dictionary, obj: Dictionary, attributes_included: bool) -
 
 
 static func _matches(note: String, pattern: String) -> Array:
-	return RegEx.create_from_string("(?i)" + pattern).search_all(note)
+	return XRx.re("(?i)" + pattern).search_all(note)
 
 
 ## YEP_AutoPassiveStates：<Passive State: a, b> 与 <Passive State: a to b>
 static func passive_states(obj: Dictionary) -> Array:
 	var out := []
-	var one := RegEx.create_from_string("(?i)<(?:PASSIVE STATE):[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>")
-	var range_re := RegEx.create_from_string("(?i)<(?:PASSIVE STATE):[ ](\\d+)[ ](?:THROUGH|to)[ ](\\d+)>")
+	var one := XRx.re("(?i)<(?:PASSIVE STATE):[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>")
+	var range_re := XRx.re("(?i)<(?:PASSIVE STATE):[ ](\\d+)[ ](?:THROUGH|to)[ ](\\d+)>")
 	for line in str(obj.get("note", "")).split("\n"):
 		var m := one.search(line)
 		if m:
-			for n: RegExMatch in RegEx.create_from_string("\\d+").search_all(m.get_string(1)):
+			for n: RegExMatch in XRx.re("\\d+").search_all(m.get_string(1)):
 				out.append(int(n.get_string()))
 			continue
 		m = range_re.search(line)
@@ -204,11 +204,11 @@ static func passive_states(obj: Dictionary) -> Array:
 static func state_params(state: Dictionary) -> Array:
 	var out := [0, 0, 0, 0, 0, 0, 0, 0]
 	var on := false
-	var line_re := RegEx.create_from_string("(.*)[ ]=[ ]([\\+\\-]\\d+)")
+	var line_re := XRx.re("(.*)[ ]=[ ]([\\+\\-]\\d+)")
 	for line in str(state.get("note", "")).split("\n"):
-		if RegEx.create_from_string("(?i)<G_ShuXing>").search(line):
+		if XRx.re("(?i)<G_ShuXing>").search(line):
 			on = true
-		elif RegEx.create_from_string("(?i)</G_ShuXing>").search(line):
+		elif XRx.re("(?i)</G_ShuXing>").search(line):
 			on = false
 		elif on:
 			var m := line_re.search(line)
@@ -282,10 +282,10 @@ static func _notes(s: Dictionary, obj: Dictionary, visited := {}, is_state := fa
 		_traits(s, {"traits": [{"code": 23, "dataId": int(m.get_string(1)), "value": 1.0 + float(m.get_string(2)) / 100.0}]}, true)
 	for m: RegExMatch in _matches(note, "<AgainUse(?:All|Mf|Zj|\\d+):\\s*([+-]?\\d+(?:\\.\\d+)?)%?\\s*>"):
 		_add(s, "额外释放", [clampf(float(m.get_string(1)), 0, 100) * 6, 0, 0])
-	var phys := RegEx.create_from_string("(?i)<SelfPhysRate:([\\d.]+)>").search(note)
+	var phys := XRx.re("(?i)<SelfPhysRate:([\\d.]+)>").search(note)
 	if phys:
 		p.physical *= float(phys.get_string(1))
-	var elem := RegEx.create_from_string("(?i)<SelfElemRate:([\\d.]+)>").search(note)
+	var elem := XRx.re("(?i)<SelfElemRate:([\\d.]+)>").search(note)
 	if elem:
 		p.magical *= float(elem.get_string(1))
 	# 状态没有 passiveStates（YEP_AutoPassiveStates 只处理角色、职业、装备、敌人、技能）
@@ -401,7 +401,7 @@ static func _settle(gross: float, flat: float) -> float:
 ## 数据库基础记录的属性：正式版载入时 YEP_CoreEngine 用备注 <atk: +300> 等覆盖 params（背包实例在 XGear.create 已覆盖）
 static func base_params(rec: Dictionary) -> Array:
 	var params: Array = rec.get("params", []).duplicate()
-	for m: RegExMatch in RegEx.create_from_string("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(rec.get("note", ""))):
+	for m: RegExMatch in XRx.re("(?i)<(HP|MAXHP|MAX HP|MHP|MP|MAXMP|MAX MP|MMP|ATK|STR|DEF|MAT|INT|SPI|MDF|RES|AGI|SPD|LUK):\\s*([+-]\\d+)>").search_all(str(rec.get("note", ""))):
 		params[XGear.param_id(m.get_string(1))] = int(m.get_string(2))
 	return params
 
@@ -418,7 +418,7 @@ static func magic_level(item: Dictionary) -> int:
 static func magic_growth(item: Dictionary) -> Array:
 	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	var ids := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
-	for m: RegExMatch in RegEx.create_from_string("<([a-z]{3}) Param ([+-]\\d+(\\.\\d+)*) per Level>").search_all(str(item.get("note", ""))):
+	for m: RegExMatch in XRx.re("<([a-z]{3}) Param ([+-]\\d+(\\.\\d+)*) per Level>").search_all(str(item.get("note", ""))):
 		var i := ids.find(m.get_string(1))
 		if i >= 0:
 			out[i] = m.get_string(2).to_float()
@@ -438,7 +438,7 @@ static func equipment(item: Dictionary) -> Dictionary:
 	var params: Array = item.get("params", []) if XItemMarks.is_gear(item) else base_params(item)
 	for i in range(mini(8, params.size())):
 		_attribute(s, i, float(params[i]), "基础属性 · " + NAMES[i])
-	var magic := RegEx.create_from_string("(?i)<Magic Weapon>").search(str(item.get("note", ""))) != null
+	var magic := XRx.re("(?i)<Magic Weapon>").search(str(item.get("note", ""))) != null
 	var level := maxi(0, magic_level(item)) if magic else 0
 	if magic:
 		var plus := magic_growth(item)
@@ -497,11 +497,11 @@ class NeutralEnemy extends XBattler:
 		return {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0}
 
 
-static var _CUSTOM_FORMULA := RegEx.create_from_string("(?im)^.*<damage formula>")
+static var _CUSTOM_FORMULA := XRx.re("(?im)^.*<damage formula>")
 
 
 static func _js_formula(f: String) -> String:
-	var re := RegEx.create_from_string("Math\\.(floor|ceil)\\(Math\\.random\\(\\)\\s*\\*\\s*(\\d+)\\)")
+	var re := XRx.re("Math\\.(floor|ceil)\\(Math\\.random\\(\\)\\s*\\*\\s*(\\d+)\\)")
 	var m := re.search(f)
 	while m:
 		var n := int(m.get_string(2))
@@ -526,10 +526,10 @@ static func formula_ok(skill: Dictionary) -> bool:
 				"(?:a|b|user|target|subject)\\.(?:skillMasteryLevel|isStateAffected|hpRate|mpRate|tpRate|param|xparam|sparam)\\b",
 				"(?:a|b|user|target|subject)\\.(?:mhp|mmp|hp|mp|tp|atk|def|mat|mdf|agi|luk|level|hit|cri|pdr|mdr|rec)\\b",
 				"Math\\.(?:floor|ceil|round|max|min|abs|pow|sqrt|log)\\b", "item\\.id", "v\\[\\d+\\]", "\\b(?:a|b|user|target|subject|this|true|false)\\b"]:
-			s = RegEx.create_from_string(p).sub(s, "1", true)
-		ok = RegEx.create_from_string("^[\\d\\s.eE+*/()%\\-,?:<>=!&|]+$").search(s) != null \
-			and RegEx.create_from_string("[;{}\\[\\]'\"`]").search(s) == null \
-			and RegEx.create_from_string("(?<![<>=!])=(?!=)").search(s) == null
+			s = XRx.re(p).sub(s, "1", true)
+		ok = XRx.re("^[\\d\\s.eE+*/()%\\-,?:<>=!&|]+$").search(s) != null \
+			and XRx.re("[;{}\\[\\]'\"`]").search(s) == null \
+			and XRx.re("(?<![<>=!])=(?!=)").search(s) == null
 	_formula_ok[key] = ok
 	return ok
 
@@ -544,7 +544,7 @@ static func _preview_skill(skill: Dictionary) -> Dictionary:
 
 
 static func _environment(rec: Dictionary) -> bool:
-	return not rec.is_empty() and RegEx.create_from_string(ENVIRONMENT).search(str(rec.get("name", ""))) != null
+	return not rec.is_empty() and XRx.re(ENVIRONMENT).search(str(rec.get("name", ""))) != null
 
 
 ## isolatedActor：复制角色（naked 时不穿装备），去掉环境技能/状态与战斗中状态，增减益清零，生命魔法补满
@@ -601,7 +601,7 @@ static func _repeat_count(a: XActor, item: Dictionary) -> float:
 	var chance := 0.0
 	var by := "Zj" if int(item.get("stypeId", 0)) == 1 else "Mf" if int(item.get("stypeId", 0)) == 2 else ""
 	for o in a.equip_list() + a.skills() + a.states():
-		for m: RegExMatch in RegEx.create_from_string("<AgainUse(All|Mf|Zj|\\d+):\\s*([+-]?\\d+(?:\\.\\d+)?)%?\\s*>").search_all(str(o.get("note", ""))):
+		for m: RegExMatch in XRx.re("<AgainUse(All|Mf|Zj|\\d+):\\s*([+-]?\\d+(?:\\.\\d+)?)%?\\s*>").search_all(str(o.get("note", ""))):
 			var k := m.get_string(1)
 			if k == "All" or k == by or (k.is_valid_int() and int(k) == int(item.id)):
 				chance += float(m.get_string(2))
@@ -721,8 +721,8 @@ static func _cycle(logic: XBattleLogic, a: XActor, t: XBattler, skills: Array) -
 		var f := str(s.damage.get("formula", ""))
 		# 同正式版：有种族时键带本路线种族状态（含回合号，每回合重算），不带生命（血契的生命门槛随缓存沿用）；
 		# 没选种族时预演与种族状态无关，键不带它（省得每回合重算）
-		var key := "%d|%s|%s|%s|%s" % [int(s.id), str(a.mp) if RegEx.create_from_string("\\.(?:mp|mpRate)").search(f) else "0",
-			str(a.hp) if RegEx.create_from_string("\\.(?:hp|hpRate)").search(f) else "0", str(a.tp) if RegEx.create_from_string("\\.(?:tp|tpRate)").search(f) else "0",
+		var key := "%d|%s|%s|%s|%s" % [int(s.id), str(a.mp) if XRx.re("\\.(?:mp|mpRate)").search(f) else "0",
+			str(a.hp) if XRx.re("\\.(?:hp|hpRate)").search(f) else "0", str(a.tp) if XRx.re("\\.(?:tp|tpRate)").search(f) else "0",
 			JSON.stringify(power) if raced else ""]
 		if not cache.has(key):
 			cache[key] = _expected(logic, a, t, s, c, power)

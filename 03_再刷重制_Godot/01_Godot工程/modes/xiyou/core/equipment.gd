@@ -23,7 +23,7 @@ const DUAL_EXCLUSIVE_EXEMPT := [76]
 ## O-235：原版 bestEquipItem 的跳过挂在 Game_BattlerBase.canEquip 上，被 Game_Actor 自己的 canEquip 盖过去没生效，
 ## 第二栏照样挑中专武，随后 changeEquip 被挡，第二栏空着。修好＝跳过专武、挑下一件最好的；false＝原版（第二栏留空）。
 static var FIX_DUAL_EXCLUSIVE_BEST := true
-static var _req_actors_re := RegEx.create_from_string("(?i)<req_actors\\s*:")
+static var _req_actors_re := XRx.re("(?i)<req_actors\\s*:")
 
 static func is_exclusive(item) -> bool:
 	if not item is Dictionary or item.is_empty() or str(item.get("kind", "")) != "weapon":

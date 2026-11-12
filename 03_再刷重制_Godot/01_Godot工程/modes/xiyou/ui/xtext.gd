@@ -23,7 +23,7 @@ static func color(n: int) -> Color:
 static func to_bb(raw: String) -> Dictionary:
 	var s := raw.replace("\\\\", "\u001b")
 	var name := ""
-	var m := RegEx.create_from_string("\\\\n<([^>]*)>").search(s)
+	var m := XRx.re("\\\\n<([^>]*)>").search(s)
 	if m:
 		name = m.get_string(1)
 		s = s.replace(m.get_string(0), "")
@@ -39,9 +39,9 @@ static func to_bb(raw: String) -> Dictionary:
 	var out := ""
 	var open := false
 	var i := 0
-	var color_re := RegEx.create_from_string("(?i)^\\\\c\\[(\\d+)\\]")
-	var icon_re := RegEx.create_from_string("(?i)^\\\\i\\[(\\d+)\\]")
-	var any_re := RegEx.create_from_string("^\\\\(?:[|!.{}<>^$]|[A-Za-z]+\\[[^\\]]*\\]|[A-Za-z]+<[^>]*>)?")
+	var color_re := XRx.re("(?i)^\\\\c\\[(\\d+)\\]")
+	var icon_re := XRx.re("(?i)^\\\\i\\[(\\d+)\\]")
+	var any_re := XRx.re("^\\\\(?:[|!.{}<>^$]|[A-Za-z]+\\[[^\\]]*\\]|[A-Za-z]+<[^>]*>)?")
 	while i < s.length():
 		var rest := s.substr(i)
 		var cm := color_re.search(rest)
@@ -70,12 +70,12 @@ static func to_bb(raw: String) -> Dictionary:
 
 
 static func plain(raw: String) -> String:
-	var r := RegEx.create_from_string("\\[[^\\]]*\\]")
+	var r := XRx.re("\\[[^\\]]*\\]")
 	return r.sub(to_bb(raw).bbcode.replace("[lb]", "["), "", true)
 
 
 static func _sub(s: String, pattern: String, fn: Callable) -> String:
-	var re := RegEx.create_from_string(pattern)
+	var re := XRx.re(pattern)
 	var m := re.search(s)
 	while m:
 		var rep: String = fn.call(m.get_string(1))

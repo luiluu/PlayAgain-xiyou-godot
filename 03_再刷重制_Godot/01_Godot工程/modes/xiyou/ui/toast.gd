@@ -46,14 +46,14 @@ static func classify(message: String) -> String:
 	for rule in [["^宝箱收获", "chest"], ["肝帝积分 *[+＋]|滑稽值 *[+＋]|抽奖券额外", "points"],
 			["专属掉落|权能掉落|获得锻造材料", "drop"], ["已领悟", "learn"],
 			["副本挑战完成|逃离副本|进入副本，关闭挂机", "dungeon"], ["^技能共享|^羁绊：", "share"]]:
-		if RegEx.create_from_string(rule[0]).search(message):
+		if XRx.re(rule[0]).search(message):
 			return rule[1]
 	return ""
 
 
 static func plain(message: String) -> String:
 	var t := message.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
-	return RegEx.create_from_string("<[^>]*>").sub(t, "", true).replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+	return XRx.re("<[^>]*>").sub(t, "", true).replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
 
 
 func _init() -> void:

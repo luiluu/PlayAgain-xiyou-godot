@@ -52,7 +52,7 @@ static var _states := {}
 ## 状态按备注 <CodexTusu: 键>，充能耗尽 <CodexBind: empty>
 static func state_id(k: String) -> int:
 	if _states.is_empty():
-		var re := RegEx.create_from_string("<Codex(Tusu|Bind):\\s*([^>]+)>")
+		var re := XRx.re("<Codex(Tusu|Bind):\\s*([^>]+)>")
 		for st in XDB.table("States"):
 			if st is Dictionary:
 				var m := re.search(str(st.get("note", "")))
@@ -869,7 +869,7 @@ static func _book_protection(t, u, skill: Dictionary) -> bool:
 		return false
 	var f := str(skill.get("damage", {}).get("formula", ""))
 	return int(skill.get("damage", {}).get("type", 0)) == 3 or skill.get("effects", []).any(func(e): return int(e.code) == 11) \
-		or RegEx.create_from_string("(?:addShield|gainShield|ShieldLedger\\.grant)").search(f) != null or XTusuXuan.owner_of(int(skill.id)) == [177, "libi"]
+		or XRx.re("(?:addShield|gainShield|ShieldLedger\\.grant)").search(f) != null or XTusuXuan.owner_of(int(skill.id)) == [177, "libi"]
 
 
 # ---- 自动战斗与智能 AI（makeAutoBattleActions 包装、CodexAIEstimators） ----

@@ -41,7 +41,7 @@ static func boss_id(id: int) -> bool:
 		var p := XDB.plugin("MOG_BossHP")
 		for i in range(1, 570):
 			_boss_ids[int(p.get("boss-%d" % i, "0"))] = true
-	return _boss_ids.has(id) or RegEx.create_from_string("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(rec.get("note", ""))) != null
+	return _boss_ids.has(id) or XRx.re("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(rec.get("note", ""))) != null
 
 func boss_attribute_rate() -> float:
 	return 1.0 + 0.2 * boss_strong_count if boss_difficulty_boss else 1.0
@@ -54,7 +54,7 @@ static func boss_control_state(id: int) -> bool:
 	var st := XDB.rec("States", id)
 	if st.is_empty() or id in [1, BOSS_ARMOR_STATE]:
 		return false
-	return int(st.get("restriction", 0)) > 0 or RegEx.create_from_string("(?i)<BuffType:\\s*(?:沉默|封印|眩晕|睡眠|麻痹|混乱|魅惑|恐惧|冰冻)\\s*>").search(str(st.get("note", ""))) != null or st.get("traits", []).any(func(t): return int(t.code) in [42, 44])
+	return int(st.get("restriction", 0)) > 0 or XRx.re("(?i)<BuffType:\\s*(?:沉默|封印|眩晕|睡眠|麻痹|混乱|魅惑|恐惧|冰冻)\\s*>").search(str(st.get("note", ""))) != null or st.get("traits", []).any(func(t): return int(t.code) in [42, 44])
 
 func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 	boss_hyper_armor = boss_difficulty_boss and active
@@ -332,12 +332,12 @@ func drop_rate_bonus() -> float:
 func hp_gauge_visible() -> bool:
 	if hidden:
 		return false
-	return RegEx.create_from_string("(?i)<HIDE HP GAUGE>").search(str(data().get("note", ""))) == null
+	return XRx.re("(?i)<HIDE HP GAUGE>").search(str(data().get("note", ""))) == null
 
 
 func race_ids() -> Array:
 	var out := []
-	for m in RegEx.create_from_string("(?i)<EnemyRace\\s*:\\s*(\\d+)\\s*>").search_all(str(data().get("note", ""))):
+	for m in XRx.re("(?i)<EnemyRace\\s*:\\s*(\\d+)\\s*>").search_all(str(data().get("note", ""))):
 		out.append(int(m.get_string(1)))
 	return out
 

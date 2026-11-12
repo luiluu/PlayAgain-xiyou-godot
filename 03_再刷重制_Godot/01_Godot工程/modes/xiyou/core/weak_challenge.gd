@@ -30,7 +30,7 @@ const CONFIG_KEY := "codexWeakFiveClearV2"
 ## 本场最终战判定（原版闭包里的 finalBattle）：null 或 {"eligible": bool}
 static var final_battle = null
 static var _granting := false
-static var _bad_note := RegEx.create_from_string("(?i)<GuyuActor>|<CodexSuperStrong>")
+static var _bad_note := XRx.re("(?i)<GuyuActor>|<CodexSuperStrong>")
 
 
 static func is_weak(a) -> bool:
@@ -123,7 +123,7 @@ static func damage_ops(a) -> Array:
 	return [{"op": "mul", "field": "finalMultiplier", "value": 3.0}] if active(a) else []
 
 
-static var _desc_tag := RegEx.create_from_string("(?i)<CodexWeakNewGame>")
+static var _desc_tag := XRx.re("(?i)<CodexWeakNewGame>")
 
 
 static func quality_label(skill: Dictionary, label: String) -> String:

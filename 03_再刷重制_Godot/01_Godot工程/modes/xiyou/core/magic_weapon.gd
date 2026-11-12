@@ -196,7 +196,7 @@ static func level_up_trait_object(item: Dictionary) -> Dictionary:
 		return {}
 	var key := _key(item)
 	if not _trait_cache.has(key):
-		var m := RegEx.create_from_string("<Equip LevelUp Trait (Weapon|Armor|State): (\\d+)>").search(str(_base(item).get("note", "")))
+		var m := XRx.re("<Equip LevelUp Trait (Weapon|Armor|State): (\\d+)>").search(str(_base(item).get("note", "")))
 		var rec := {}
 		if m:
 			rec = XDB.rec({"Weapon": "Weapons", "Armor": "Armors", "State": "States"}[m.get_string(1)], int(m.get_string(2)))
@@ -223,7 +223,7 @@ static func learn_data(item: Dictionary) -> Array:
 	var key := _key(item)
 	if not _learn_cache.has(key):
 		var out := []
-		var re := RegEx.create_from_string("<Magic Weapon Learn Skill (\\d+): ([\\s\\S]+)>")
+		var re := XRx.re("<Magic Weapon Learn Skill (\\d+): ([\\s\\S]+)>")
 		for line in str(_base(item).get("note", "")).split("\n"):
 			var m := re.search(line)
 			if m == null:

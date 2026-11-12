@@ -13,7 +13,7 @@ const STRONG := "强者"
 const WEAK := "弱者"
 static var _cache := {}
 static var _source = null
-static var _tag := RegEx.create_from_string("<KyoTier\\s*:\\s*(超强者|强者)\\s*>")
+static var _tag := XRx.re("<KyoTier\\s*:\\s*(超强者|强者)\\s*>")
 
 
 static func _rebuild() -> void:

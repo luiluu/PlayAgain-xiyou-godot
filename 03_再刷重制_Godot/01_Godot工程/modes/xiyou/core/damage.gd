@@ -146,7 +146,7 @@ static func own_bonus(a: XBattler, e: int) -> float:
 			if seen.has(o):
 				continue
 			seen[o] = true
-			for m in RegEx.create_from_string("(?i)<passiveELUP(\\d+)\\s*:\\s*([+-]?[\\d.]+)%?\\s*>").search_all(str(o.get("note", ""))):
+			for m in XRx.re("(?i)<passiveELUP(\\d+)\\s*:\\s*([+-]?[\\d.]+)%?\\s*>").search_all(str(o.get("note", ""))):
 				if int(m.get_string(1)) == e:
 					value += float(m.get_string(2)) / 100.0
 	return value + (1.0 + _sum_yep(a, "elementMagnify", e, objs)) - 1.0
@@ -458,8 +458,8 @@ static func _independent(a: XBattler, item: Dictionary, e: int, frame: Dictionar
 	var er := 1.0
 	for o in objects(a):
 		var note := str(o.get("note", ""))
-		var p := RegEx.create_from_string("(?i)<SelfPhysRate:\\s*([\\d.]+)>").search(note)
-		var q := RegEx.create_from_string("(?i)<SelfElemRate:\\s*([\\d.]+)>").search(note)
+		var p := XRx.re("(?i)<SelfPhysRate:\\s*([\\d.]+)>").search(note)
+		var q := XRx.re("(?i)<SelfElemRate:\\s*([\\d.]+)>").search(note)
 		if p:
 			pr *= float(p.get_string(1))
 		if q:

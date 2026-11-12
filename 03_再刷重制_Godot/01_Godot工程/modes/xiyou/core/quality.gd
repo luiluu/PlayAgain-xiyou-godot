@@ -96,7 +96,7 @@ static func list_color(item: Dictionary) -> Color:
 
 
 static func parse_rgba(text: String) -> Color:
-	var m := RegEx.create_from_string("rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)").search(text)
+	var m := XRx.re("rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)").search(text)
 	if m == null:
 		return Color.WHITE
 	return Color(float(m.get_string(1)) / 255, float(m.get_string(2)) / 255, float(m.get_string(3)) / 255, float(m.get_string(4)))

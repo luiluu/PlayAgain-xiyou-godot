@@ -168,8 +168,8 @@ func _auto_result(msg: Dictionary) -> int:
 
 ## 测试/记录用：去掉名字框与头像代码
 static func _strip_message_codes(s: String) -> String:
-	s = RegEx.create_from_string("(?i)\\\\(?:n[1-5cr]?)<[^>]*>").sub(s, "", true)
-	return RegEx.create_from_string("(?i)\\\\af\\[\\d+\\]").sub(s, "", true)
+	s = XRx.re("(?i)\\\\(?:n[1-5cr]?)<[^>]*>").sub(s, "", true)
+	return XRx.re("(?i)\\\\af\\[\\d+\\]").sub(s, "", true)
 
 
 # ---- 开始（Window_Message.startMessage / startInput） ----
@@ -212,18 +212,18 @@ const WORD_WRAP_MARGIN := 30.0
 
 
 static func word_wrap(text: String) -> Array:
-	var tag := RegEx.create_from_string("(?i)<WordWrap>")
+	var tag := XRx.re("(?i)<WordWrap>")
 	var on := tag.search(text) != null
-	var br := RegEx.create_from_string("(?i)<(?:BR|line break)>")
+	var br := XRx.re("(?i)<(?:BR|line break)>")
 	if on:
-		text = RegEx.create_from_string("[\n\r]+").sub(tag.sub(text, "", true), "", true)
+		text = XRx.re("[\n\r]+").sub(tag.sub(text, "", true), "", true)
 		return [br.sub(text, "\n", true), true]
 	return [br.sub(text, "", true), false]
 
 
 ## YEP convertNameBox / convertActorFace
 func _convert_message_codes(text: String) -> String:
-	var re := RegEx.create_from_string("(?i)\u001bAF\\[(\\d+)\\]")
+	var re := XRx.re("(?i)\u001bAF\\[(\\d+)\\]")
 	var m := re.search(text)
 	while m:
 		var a := XDB.rec("Actors", int(m.get_string(1)))
@@ -236,7 +236,7 @@ func _convert_message_codes(text: String) -> String:
 			_face_index = int(a.get("faceIndex", 0))
 		text = text.substr(0, m.get_start()) + text.substr(m.get_end())
 		m = re.search(text, m.get_start())
-	var nre := RegEx.create_from_string("(?i)\u001bN([1-5CR]?)<(.*?)>")
+	var nre := XRx.re("(?i)\u001bN([1-5CR]?)<(.*?)>")
 	m = nre.search(text)
 	while m:
 		var pos: int = {"": 1, "1": 1, "2": 2, "3": 3, "C": 3, "4": 4, "5": 5, "R": 5}.get(m.get_string(1).to_upper(), 1)

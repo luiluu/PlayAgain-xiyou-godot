@@ -44,7 +44,7 @@ static func curse_label(i: int) -> String:
 	var id := 7200 + i
 	var s := XDB.rec("Skills", id)
 	var t: String = TIER.get(id, "轻")
-	var m := RegEx.create_from_string("<pos=APs text=(?:\\\\c\\[\\d+\\])?效果:(.*?) size=").search(str(s.get("note", "")))
+	var m := XRx.re("<pos=APs text=(?:\\\\c\\[\\d+\\])?效果:(.*?) size=").search(str(s.get("note", "")))
 	var f: float = FACTOR[t]
 	return "【" + t + ("·×" + _num(f) if f > 1.0 else "") + "】" + str(s.get("name", "")) + ("（" + m.get_string(1).replace("\u200b", "") + "）" if m else "")
 
@@ -117,7 +117,7 @@ static func grant_ticket_bonus(s: XState) -> Array:
 ## 道具备注 <CodexPower: N> 的书，按区段分组（ID 升序）
 static func powers(seg: int) -> Array:
 	if _powers.is_empty():
-		var re := RegEx.create_from_string("<CodexPower:\\s*(\\d+)>")
+		var re := XRx.re("<CodexPower:\\s*(\\d+)>")
 		for rec in XDB.table("Items"):
 			if rec == null:
 				continue

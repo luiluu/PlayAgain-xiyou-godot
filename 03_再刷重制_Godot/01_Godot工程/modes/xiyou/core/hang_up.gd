@@ -159,7 +159,7 @@ static func should_escape(s: XState, enemies: Array) -> bool:
 	var escape := false
 	var broken := false
 	for e in enemies:
-		var note := RegEx.create_from_string("[\r\n]+").sub(str(e.data().get("note", "")), "\n", true)
+		var note := XRx.re("[\r\n]+").sub(str(e.data().get("note", "")), "\n", true)
 		for line in note.split("\n"):
 			var rare: bool = line == "HangUp Rare"
 			var unseen: bool = line == "HangUp Unprecedented"

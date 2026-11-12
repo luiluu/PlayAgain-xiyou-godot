@@ -273,8 +273,8 @@ static func custom_cost_text(s: Dictionary) -> String:
 		return ""
 	var out := ""
 	var on := false
-	var open := RegEx.create_from_string("(?i)<(?:CUSTOM COST DISPLAY|custom display cost)>")
-	var close := RegEx.create_from_string("(?i)</(?:CUSTOM COST DISPLAY|custom display cost)>")
+	var open := XRx.re("(?i)<(?:CUSTOM COST DISPLAY|custom display cost)>")
+	var close := XRx.re("(?i)</(?:CUSTOM COST DISPLAY|custom display cost)>")
 	for line in str(s.get("note", "")).split("\n"):
 		if open.search(line) != null:
 			on = true
@@ -293,7 +293,7 @@ static func custom_cost_row(s: Dictionary, size: int) -> Dictionary:
 		return {}
 	var color := XUI.text_color(0)
 	var plain := ""
-	var code := RegEx.create_from_string("(?i)\\\\c\\[(\\d+)\\]|\\\\[A-Za-z]+(?:\\[[^\\]]*\\])?")
+	var code := XRx.re("(?i)\\\\c\\[(\\d+)\\]|\\\\[A-Za-z]+(?:\\[[^\\]]*\\])?")
 	var at := 0
 	var cur := color
 	var picked := false

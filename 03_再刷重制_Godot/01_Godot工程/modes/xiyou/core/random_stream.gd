@@ -118,7 +118,7 @@ static func valid_saved(data) -> bool:
 	return data.get("domain") is String and (count is int or count is float) and is_finite(float(count)) and float(count) >= 0.0 and float(count) == floorf(float(count)) and float(count) < 9007199254740992.0 and data.get("scripted", false) is bool and data.get("tape", []) is Array
 
 static func valid_hex(value) -> bool:
-	return value is String and RegEx.create_from_string("^[0-9a-f]{16}$").search(value) != null
+	return value is String and XRx.re("^[0-9a-f]{16}$").search(value) != null
 
 static func restore(data: Dictionary) -> XRandomStream:
 	if not valid_saved(data):

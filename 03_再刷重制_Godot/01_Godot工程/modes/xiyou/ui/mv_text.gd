@@ -73,7 +73,7 @@ static func _eval_text(expr: String) -> String:
 
 
 static func _sub(s: String, pattern: String, fn: Callable, has_group := true) -> String:
-	var re := RegEx.create_from_string(pattern)
+	var re := XRx.re(pattern)
 	var m := re.search(s)
 	while m:
 		var rep: String = fn.call(m.get_string(1) if has_group else "")
@@ -172,7 +172,7 @@ func new_line() -> void:
 
 func _escape() -> Dictionary:
 	var rest := text.substr(index)
-	var m := RegEx.create_from_string("^[\\$\\.\\|\\^!><\\{\\}\\\\]|^[A-Za-z]+").search(rest)
+	var m := XRx.re("^[\\$\\.\\|\\^!><\\{\\}\\\\]|^[A-Za-z]+").search(rest)
 	if m == null:
 		return {}
 	var code := m.get_string(0).to_upper()
@@ -214,7 +214,7 @@ func _escape() -> Dictionary:
 
 ## Window_Base.obtainEscapeParam：/^\[\d+\]/
 func _param() -> int:
-	var m := RegEx.create_from_string("^\\[(\\d+)\\]").search(text.substr(index))
+	var m := XRx.re("^\\[(\\d+)\\]").search(text.substr(index))
 	if m == null:
 		return 0
 	index += m.get_string(0).length()

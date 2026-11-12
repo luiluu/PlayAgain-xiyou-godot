@@ -110,7 +110,7 @@ static var _ext_cache := {}
 static func _in_extended_range(enemy_id: int) -> bool:
 	if XZhenqi.WEAPON_BOSS.has(enemy_id):
 		return true
-	var tag := RegEx.create_from_string("<CodexZhenqi:\\s*weapon\\s+\\d+>")
+	var tag := XRx.re("<CodexZhenqi:\\s*weapon\\s+\\d+>")
 	if tag.search(str(XDB.rec("Enemies", enemy_id).get("note", ""))) != null:
 		return true
 	var troops := []
@@ -396,7 +396,7 @@ static func format_number(value: float) -> String:
 		places = 1
 	var text := _to_fixed(shown, places)
 	if places > 0:
-		text = RegEx.create_from_string("\\.?0+$").sub(text, "")
+		text = XRx.re("\\.?0+$").sub(text, "")
 	return text + UNITS[unit]
 
 

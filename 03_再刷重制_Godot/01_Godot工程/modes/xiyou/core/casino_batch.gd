@@ -195,7 +195,7 @@ static func native_list(event_id: int) -> Array:
 		var copy := {"code": int(c.code), "indent": int(c.indent), "parameters": (c.parameters as Array).duplicate()}
 		if copy.code in [355, 655] and copy.parameters.size() > 0:
 			var line := str(copy.parameters[0])
-			if not line.contains("if(actor)") and RegEx.create_from_string("actor\\.learnSkill\\((8101|8102|8091)\\)").search(line) != null:
+			if not line.contains("if(actor)") and XRx.re("actor\\.learnSkill\\((8101|8102|8091)\\)").search(line) != null:
 				copy.parameters[0] = line.replace("actor.learnSkill(", "if(actor)actor.learnSkill(")
 		out.append(copy)
 	return out

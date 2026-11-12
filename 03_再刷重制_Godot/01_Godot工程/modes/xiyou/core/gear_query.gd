@@ -23,7 +23,7 @@ static var _re := {}
 
 static func _rx(p: String) -> RegEx:
 	if not _re.has(p):
-		_re[p] = RegEx.create_from_string(p)
+		_re[p] = XRx.re(p)
 	return _re[p]
 
 

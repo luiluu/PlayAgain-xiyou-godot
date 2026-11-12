@@ -58,15 +58,15 @@ static func template(e: Dictionary) -> Dictionary:
 
 static func _qualities(note: String) -> Array:
 	var out := []
-	for m in RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>").search_all(note):
+	for m in XRx.re("(?i)<quality:\\s*(\\d+)>").search_all(note):
 		out.append(int(m.get_string(1)))
 	return out
 
 
 static func _lines(note: String) -> Array:
-	var t := RegEx.create_from_string("(?i)<prefix:[^>]*>|<suffix:[^>]*>").sub(note, "", true)
+	var t := XRx.re("(?i)<prefix:[^>]*>|<suffix:[^>]*>").sub(note, "", true)
 	var out := []
-	for line in RegEx.create_from_string("\\r?\\n").sub(t, "\n", true).split("\n"):
+	for line in XRx.re("\\r?\\n").sub(t, "\n", true).split("\n"):
 		if line.strip_edges() != "":
 			out.append(line.strip_edges())
 	return out
@@ -113,7 +113,7 @@ static func affix_info(e: Dictionary) -> Dictionary:
 	for q in tags:
 		add.call(q)
 	var extra := added_note(e, b)
-	for m in RegEx.create_from_string("(?i)(混沌神话|神话|太古|mod)特效\\s*[:：]").search_all(extra):
+	for m in XRx.re("(?i)(混沌神话|神话|太古|mod)特效\\s*[:：]").search_all(extra):
 		var k := m.get_string(1)
 		add.call(15 if k == "混沌神话" else 14 if k == "神话" else 11 if k == "太古" else 13)
 	if b.is_empty() or grades.is_empty() and extra.strip_edges() != "":
@@ -159,7 +159,7 @@ static func reason(s: XState, e: Dictionary) -> String:
 		return "装备来源待确认"
 	var note := str(b.get("note", ""))
 	var magic_armor := str(e.get("kind", "")) != "weapon" and note.to_lower().contains("<magic weapon>")
-	if RegEx.create_from_string("(?i)<req_actors\\s*:").search(note) != null and not magic_armor:
+	if XRx.re("(?i)<req_actors\\s*:").search(note) != null and not magic_armor:
 		return "专属"
 	if _grown(e, b):
 		return "已培养或镶嵌"

@@ -162,11 +162,11 @@ static func state_kind(st: Dictionary, passive: bool) -> String:
 	if passive:
 		return "常驻"
 	if _re_bufftype == null:
-		_re_bufftype = RegEx.create_from_string("(?i)<BuffType:\\s*([^>]+)>")
-		_re_bad_type = RegEx.create_from_string("(?i)减益|异常|削弱|持续伤害|debuff|诅咒|暗黑|沉默|混乱|魅惑|破甲|睡眠|麻痹|中毒|封印")
-		_re_good_type = RegEx.create_from_string("(?i)增益|强化|加成|buff")
-		_re_bad_name = RegEx.create_from_string("诅咒|中毒|剧毒|疾病|睡眠|失明|封印|沉默|眩晕|麻痹|破甲|灼伤|流血|虚弱|异界制约|压制|威压")
-		_re_permanent = RegEx.create_from_string("(?i)<Permanent>")
+		_re_bufftype = XRx.re("(?i)<BuffType:\\s*([^>]+)>")
+		_re_bad_type = XRx.re("(?i)减益|异常|削弱|持续伤害|debuff|诅咒|暗黑|沉默|混乱|魅惑|破甲|睡眠|麻痹|中毒|封印")
+		_re_good_type = XRx.re("(?i)增益|强化|加成|buff")
+		_re_bad_name = XRx.re("诅咒|中毒|剧毒|疾病|睡眠|失明|封印|沉默|眩晕|麻痹|破甲|灼伤|流血|虚弱|异界制约|压制|威压")
+		_re_permanent = XRx.re("(?i)<Permanent>")
 	var note := str(st.get("note", ""))
 	var m := _re_bufftype.search(note)
 	if m != null and _re_bad_type.search(m.get_string(1)) != null:
@@ -215,9 +215,9 @@ static func _visible_cached(id: int, st: Dictionary) -> bool:
 ## installEquipmentStatusRuntime visibleState
 static func visible_state(st: Dictionary) -> bool:
 	if _re_hidden == null:
-		_re_hidden = RegEx.create_from_string(_HIDDEN_NAME)
-		_re_note = RegEx.create_from_string("(?i)<(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>([\\s\\S]*?)</(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>")
-		_re_strip = RegEx.create_from_string("(?i)\\\\[a-z]+\\[[^\\]]*\\]|<[^>]*>|\\\\[{}.!|><^]")
+		_re_hidden = XRx.re(_HIDDEN_NAME)
+		_re_note = XRx.re("(?i)<(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>([\\s\\S]*?)</(?:StateNote|STATE_HELP|ステートヘルプ)\\s*>")
+		_re_strip = XRx.re("(?i)\\\\[a-z]+\\[[^\\]]*\\]|<[^>]*>|\\\\[{}.!|><^]")
 	var name := str(st.get("name", ""))
 	if name == "" or _re_hidden.search(name) != null or name.is_valid_int() or name.contains("战斗形象") or name.contains("战斗换图") or name.contains("视觉辅助"):
 		return false

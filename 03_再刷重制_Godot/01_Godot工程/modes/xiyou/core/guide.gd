@@ -39,8 +39,8 @@ static func settlement(a: XActor) -> float:
 	for e in a.equip_list():
 		if e != null:
 			notes.append(str(e.get("note", "")))
-	var re := RegEx.create_from_string("(?i)<Start(?:WT)?PushState(\\d+):\\s*100%>")
-	var kre := RegEx.create_from_string("(?is)<Custom Confirm Effect>.*?value\\s*\\*\\s*([\\d.]+).*?</Custom Confirm Effect>")
+	var re := XRx.re("(?i)<Start(?:WT)?PushState(\\d+):\\s*100%>")
+	var kre := XRx.re("(?is)<Custom Confirm Effect>.*?value\\s*\\*\\s*([\\d.]+).*?</Custom Confirm Effect>")
 	for n in notes:
 		for m in re.search_all(n):
 			var id := int(m.get_string(1))

@@ -92,9 +92,9 @@ static func hubris_rows(item: Dictionary) -> Array:
 
 ## H.rewriteHelpRows：删掉 APs 里匹配 patterns 的旧行，再把 rows 倒着追加
 static func rewrite(item: Dictionary, patterns: Array, rows: Array) -> void:
-	var tag := RegEx.create_from_string("<pos=APs text=([\\s\\S]*?) size=[^>]*>\\s*")
-	var code := RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
-	var res: Array = patterns.map(func(p): return RegEx.create_from_string(p))
+	var tag := XRx.re("<pos=APs text=([\\s\\S]*?) size=[^>]*>\\s*")
+	var code := XRx.re("(?i)\\\\c\\[\\d+\\]")
+	var res: Array = patterns.map(func(p): return XRx.re(p))
 	var note := str(item.get("note", ""))
 	var out := ""
 	var at := 0
@@ -106,7 +106,7 @@ static func rewrite(item: Dictionary, patterns: Array, rows: Array) -> void:
 		at = m.get_end()
 	out += note.substr(at)
 	out = out.strip_edges()
-	var head := RegEx.create_from_string("^(?:效果|战技|冷却|条件)：")
+	var head := XRx.re("^(?:效果|战技|冷却|条件)：")
 	for i in range(rows.size() - 1, -1, -1):
 		var text := str(rows[i])
 		if head.search(text) != null:
@@ -122,7 +122,7 @@ static func describe(item: Dictionary) -> void:
 		return
 	var old := "^神武\\n(?:13层[^\\n]*|奥恩杰作。[^\\n]*)" if heart else "^神武\\n(?:13层[^\\n]*|由狂妄原件[^\\n]*)"
 	var base := XDB.rec("Armors", XHeartsteel.base_id(item))
-	item.description = RegEx.create_from_string(old).sub(str(item.get("description", "")), str(base.get("description", "")))
+	item.description = XRx.re(old).sub(str(item.get("description", "")), str(base.get("description", "")))
 	if heart:
 		rewrite(item, HEART_PATTERNS, heart_rows(item))
 	else:
@@ -161,7 +161,7 @@ static func view(live: Dictionary) -> Dictionary:
 static func group(rows: Array) -> Array:
 	var order := []
 	var groups := {}
-	var code := RegEx.create_from_string("^\\\\[cC]\\[(\\d+)\\]")
+	var code := XRx.re("^\\\\[cC]\\[(\\d+)\\]")
 	for r in rows:
 		var m := code.search(str(r[0]))
 		var key := "palette:" + m.get_string(1) if m != null else XHelpCard.css_key(str(r[2]))

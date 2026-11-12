@@ -105,7 +105,7 @@ static func restore(item) -> bool:
 			plain = ""
 	if plain == "":
 		var names := PackedStringArray(XAlienation.config().get("affixes", []).map(func(f): return str(f.name)))
-		plain = RegEx.create_from_string("^(" + "|".join(names) + ")·").sub(str(item.get("name", "")), "") if not names.is_empty() else str(item.get("name", ""))
+		plain = XRx.re("^(" + "|".join(names) + ")·").sub(str(item.get("name", "")), "") if not names.is_empty() else str(item.get("name", ""))
 	item.name = plain
 	item.erase("alien")
 	item[RESTORED] = 1

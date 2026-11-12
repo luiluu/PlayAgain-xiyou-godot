@@ -77,7 +77,7 @@ static var _dream := {}
 static var _marked := false
 ## 扩散结算中的倍率（原版 action._codexYomiSpreadRate）；0 为不在扩散
 static var spread_rate := 0.0
-static var _negative_re := RegEx.create_from_string("<BuffType:(?:破甲|损伤|毒|灼伤|黑暗|诅咒|封印|沉默|冰冷|眩晕|减益|流血)>")
+static var _negative_re := XRx.re("<BuffType:(?:破甲|损伤|毒|灼伤|黑暗|诅咒|封印|沉默|冰冷|眩晕|减益|流血)>")
 
 
 static func yomi(a) -> bool:

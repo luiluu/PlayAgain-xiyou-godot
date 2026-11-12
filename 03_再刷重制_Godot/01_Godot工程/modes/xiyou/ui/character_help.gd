@@ -133,16 +133,16 @@ static func num(v: float) -> String:
 
 
 static func _re(p: String, t: String) -> bool:
-	return RegEx.create_from_string(p).search(t) != null
+	return XRx.re(p).search(t) != null
 
 
 static func _sub(p: String, t: String, r: String) -> String:
-	return RegEx.create_from_string(p).sub(t, r, true)
+	return XRx.re(p).sub(t, r, true)
 
 
 static func _note_rows(note: String) -> Array:
 	var out := []
-	for m in RegEx.create_from_string("(?i)<pos=APs\\s+text=([\\s\\S]*?)\\s+size=").search_all(note):
+	for m in XRx.re("(?i)<pos=APs\\s+text=([\\s\\S]*?)\\s+size=").search_all(note):
 		out.append(XHelpCard.plain(m.get_string(1)))
 	return out
 
@@ -168,9 +168,9 @@ static func current_text(text: String, item: Dictionary, a):
 	var lv := _level(item, a)
 	var rank := _rank(item, a)
 	var mastery := float(a.skillMasteryLevel(id)) if a != null else 0.0
-	for m in RegEx.create_from_string("角色等级[×*](\\d+(?:\\.\\d+)?)%").search_all(text):
+	for m in XRx.re("角色等级[×*](\\d+(?:\\.\\d+)?)%").search_all(text):
 		text = text.replace(m.get_string(), num(lv * float(m.get_string(1))) + "%")
-	for m in RegEx.create_from_string("1[＋+]技能等级[×*](\\d+(?:\\.\\d+)?)%").search_all(text):
+	for m in XRx.re("1[＋+]技能等级[×*](\\d+(?:\\.\\d+)?)%").search_all(text):
 		text = text.replace(m.get_string(), num(1 + mastery * float(m.get_string(1)) / 100.0))
 	if resource_cost(text) and a != null:
 		var cost := []
@@ -185,7 +185,7 @@ static func current_text(text: String, item: Dictionary, a):
 		return text
 	# 不在 DYN2 里的（奈叶 10168、琦玉 10169、镜流 10197～10199、甚尔 10227／10228、谷雨 10288 起）：只取当前阶位／等级的分支
 	text = _tiers(text, rank)
-	var gate := RegEx.create_from_string("^(?:([^：:]{1,8})[：:])?(\\d+)级起(.+)$").search(text)
+	var gate := XRx.re("^(?:([^：:]{1,8})[：:])?(\\d+)级起(.+)$").search(text)
 	if gate != null:
 		if lv < int(gate.get_string(2)):
 			return null
@@ -193,18 +193,18 @@ static func current_text(text: String, item: Dictionary, a):
 	if _re("进阶后(?:由|替换为)|第[一二三四五六七八九十\\d]+次进阶后由|(?:\\d+级)?进阶后替换", text):
 		return null
 	text = _sub("×\\(1\\)$", text.replace("进阶后获得对应形态的", "获得当前形态的"), "")
-	var range_m := RegEx.create_from_string("^(?:效果：)?([0-9]+)[～~]([0-9]+)阶(?:[：:]|(?=命中))").search(text)
+	var range_m := XRx.re("^(?:效果：)?([0-9]+)[～~]([0-9]+)阶(?:[：:]|(?=命中))").search(text)
 	if range_m != null:
 		if rank < int(range_m.get_string(1)) or rank > int(range_m.get_string(2)):
 			return null
 		text = text.replace(range_m.get_string(), "效果：")
-	var step := RegEx.create_from_string("^(?:效果：)?([一二三四五六七八九]|\\d+)阶(?:起|时)[：:]?").search(text)
+	var step := XRx.re("^(?:效果：)?([一二三四五六七八九]|\\d+)阶(?:起|时)[：:]?").search(text)
 	if step != null:
 		var n := int(step.get_string(1)) if step.get_string(1).is_valid_int() else "一二三四五六七八九".find(step.get_string(1)) + 1
 		if rank < n:
 			return null
 		text = text.replace(step.get_string(), "效果：")
-	var level_gate := RegEx.create_from_string("^(\\d+)级起[：:]").search(text)
+	var level_gate := XRx.re("^(\\d+)级起[：:]").search(text)
 	if level_gate != null:
 		if lv < int(level_gate.get_string(1)):
 			return null
@@ -214,18 +214,18 @@ static func current_text(text: String, item: Dictionary, a):
 
 ## helpCurrentTiers：「（0～N阶）a／b／…」只取当前阶的值；「x%＋每阶y%」直接算出
 static func _tiers(text: String, rank: int) -> String:
-	var tier := RegEx.create_from_string("[（(](?:按[^（）()]*?)?0[～~](\\d)阶[）)]").search(text)
+	var tier := XRx.re("[（(](?:按[^（）()]*?)?0[～~](\\d)阶[）)]").search(text)
 	if tier == null:
-		tier = RegEx.create_from_string("[（(]?(?:按[^（）()，,]*?)?0[～~](\\d)阶(?:依次为)?[）)]?").search(text)
+		tier = XRx.re("[（(]?(?:按[^（）()，,]*?)?0[～~](\\d)阶(?:依次为)?[）)]?").search(text)
 	if tier != null:
 		var n := int(tier.get_string(1)) + 1
 		var idx := clampi(rank, 0, n - 1)
-		var list := RegEx.create_from_string("(×?)((?:[\\d.]+%?)(?:[／/][\\d.]+%?){%d})" % (n - 1)).search(text)
+		var list := XRx.re("(×?)((?:[\\d.]+%?)(?:[／/][\\d.]+%?){%d})" % (n - 1)).search(text)
 		if list != null:
-			var vals := RegEx.create_from_string("[／/]").sub(list.get_string(2), "\n", true).split("\n")
+			var vals := XRx.re("[／/]").sub(list.get_string(2), "\n", true).split("\n")
 			text = text.replace(list.get_string(), list.get_string(1) + vals[idx]).replace(tier.get_string(), "")
 			text = _sub("：\\s*[，,]", _sub("[，,；;：:]\\s*$", text, ""), "：")
-	for m in RegEx.create_from_string("(\\d+(?:\\.\\d+)?)%[＋+]每阶(\\d+(?:\\.\\d+)?)%").search_all(text):
+	for m in XRx.re("(\\d+(?:\\.\\d+)?)%[＋+]每阶(\\d+(?:\\.\\d+)?)%").search_all(text):
 		text = text.replace(m.get_string(), num(float(m.get_string(1)) + float(m.get_string(2)) * rank) + "%")
 	return _sub("×\\((\\d+(?:\\.\\d+)?%)\\)", text, "×$1")
 
@@ -467,7 +467,7 @@ static func _tusu_xuan_growth_rows(obj: Dictionary, a) -> Variant:
 	var gs: String = "双防共享比例" + pct.call(c.call([0.15, 0.30], [20, 60]) if gongsu else 0.0)
 	var offense: String = "直接伤害提高" + pct.call(c.call([0.10, 0.30], [10, 60]) if gongsu else 0.0)
 	var shadow := "成长：星影人数" + ("全部队友" if lv >= 60 else "3名" if lv >= 50 else "2名" if lv >= 40 else "1名" if lv >= 30 else "0名")
-	var m := RegEx.create_from_string("<Codex(?:Tusu|Xuan):\\s*(passive\\.(?:temper|relay))\\s*>").search(str(obj.get("note", "")))
+	var m := XRx.re("<Codex(?:Tusu|Xuan):\\s*(passive\\.(?:temper|relay))\\s*>").search(str(obj.get("note", "")))
 	var passive := m.get_string(1) if m != null else ""
 	if passive == "passive.temper":  # T.temperRate：TEMPER 等级起 ×1.1，60 级 ×1.2（剑气纵横保持 ×1.1）
 		var tr := func(at: int, keep := false) -> String: return "×" + x.call(1.0 if lv < at else 1.1 if lv < 60 or keep else 1.2)
@@ -655,7 +655,7 @@ static func _dyn2_view(obj: Dictionary, rows: Array, a) -> Array:
 	for r in rows:
 		var raw := str(r[0])
 		var p := XHelpCard.plain(raw)
-		var color_m := RegEx.create_from_string("(?i)^(?:\\\\c\\[\\d+\\])+").search(raw)
+		var color_m := XRx.re("(?i)^(?:\\\\c\\[\\d+\\])+").search(raw)
 		var color := color_m.get_string() if color_m != null else ""
 		var whole := ""
 		for k in map:

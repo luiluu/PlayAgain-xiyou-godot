@@ -254,7 +254,7 @@ func _data_row(c: XMVCanvas, d: Dictionary, kind: String, dx: float, dy: float, 
 			c.text(XMenu._group(int(d.gold)), x, dy, tw, "right", XUI.TEXT, 20, LH)
 		"variable 20", "variable 206":
 			var id := int(kind.get_slice(" ", 1))
-			var vname := RegEx.create_from_string("<<(.*?)>>").sub(str(XDB.system().variables[id]), "")
+			var vname := XRx.re("<<(.*?)>>").sub(str(XDB.system().variables[id]), "")
 			var t := XMVText.new(XMVText.convert_escapes("\\c[16]" + vname), x, dy + 3, tw, 20)
 			t.run()
 			XMVText.paint(c, t.glyphs)

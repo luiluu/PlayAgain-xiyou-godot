@@ -112,7 +112,7 @@ static func spec(kind: int, id: int) -> Dictionary:
 		# 运行时新增的物品（如 Codex 渡鸦号角 2902、冥河断罪镰 4001）由插件直接写好字段，没有备注
 		out = {"max": int(rec.shopStockCountMax), "interval": int(rec.get("shopStockSupplyInterval", 0)), "mode": int(rec.get("shopStockSupplyMode", 0))}
 	elif raw != null:
-		var opts := RegEx.create_from_string("\\s+").sub(str(raw), "", true).split(",")
+		var opts := XRx.re("\\s+").sub(str(raw), "", true).split(",")
 		if opts.size() >= 2 and opts[0].is_valid_float() and opts[1].is_valid_float():
 			var mode := 0
 			if opts.size() >= 3 and opts[2].to_upper() == "B":

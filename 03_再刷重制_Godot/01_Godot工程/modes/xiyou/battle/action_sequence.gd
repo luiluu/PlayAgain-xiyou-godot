@@ -13,7 +13,7 @@ extends RefCounted
 ## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
 
 ## 会改数值或状态的指令：执行后记下全体读数（状态栏、血条）
-static var STATE_CMD := RegEx.create_from_string("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
+static var STATE_CMD := XRx.re("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
 const PHASES := ["setup", "whole", "target", "follow", "finish"]
 const PARAMS := {"MAXHP": 0, "MHP": 0, "MAX HP": 0, "HP": 0, "MAXMP": 1, "MMP": 1, "MAX MP": 1, "MP": 1, "ATK": 2, "STR": 2,
 	"DEF": 3, "MAT": 4, "INT": 4, "SPI": 4, "MDF": 5, "RES": 5, "AGI": 6, "SPD": 6, "LUK": 7}
@@ -83,7 +83,7 @@ func _run_list(list: Array) -> void:
 		var args: Array = entry[1] if entry.size() > 1 else []
 		if not _conditions_met(name):
 			continue
-		var m := RegEx.create_from_string("(?i)IF[ ](.*)").search(name)
+		var m := XRx.re("(?i)IF[ ](.*)").search(name)
 		if m:
 			var v = eval_condition(m.get_string(1))
 			_flags.append(v == true)
@@ -106,7 +106,7 @@ func _run_list(list: Array) -> void:
 ## BattleManager.actionConditionsMet
 func _conditions_met(name: String) -> bool:
 	var ci := _flags.size() - 1
-	var m := RegEx.create_from_string("(?i)ELSE[ ]IF[ ](.*)").search(name)
+	var m := XRx.re("(?i)ELSE[ ]IF[ ](.*)").search(name)
 	if m:
 		if _flags.is_empty():
 			return false
@@ -118,7 +118,7 @@ func _conditions_met(name: String) -> bool:
 			_flags[ci] = v == true
 			_true_flags[ci] = v == true
 		return false
-	if RegEx.create_from_string("(?i)ELSE[ ]*(.*)").search(name):
+	if XRx.re("(?i)ELSE[ ]*(.*)").search(name):
 		if _flags.is_empty():
 			return false
 		if _flags[ci]:
@@ -176,24 +176,24 @@ func _command(name: String, args: Array) -> void:
 		if name == "BREAK ACTION" or user.is_dead():
 			_break = true
 		return
-	var m := RegEx.create_from_string("^(?:ADD_STATE|ADD STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
+	var m := XRx.re("^(?:ADD_STATE|ADD STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
 	if m:
 		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
 			for id in _ids(m.get_string(1)):
 				logic.sequence_add_state(t, id)
 		return
-	m = RegEx.create_from_string("^(?:REMOVE_STATE|REMOVE STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
+	m = XRx.re("^(?:REMOVE_STATE|REMOVE STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
 	if m:
 		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
 			for id in _ids(m.get_string(1)):
 				if t.is_state_affected(id):
 					t.remove_state(id)
 		return
-	m = RegEx.create_from_string("^(HP|MP|TP)[ ](.*)").search(name)
+	m = XRx.re("^(HP|MP|TP)[ ](.*)").search(name)
 	if m:
 		_modify(m.get_string(1), name, make_targets(str(args[0]) if not args.is_empty() else ""))
 		return
-	m = RegEx.create_from_string("^(ADD|REMOVE)[ ](.*)[ ](BUFF|DEBUFF)").search(name)
+	m = XRx.re("^(ADD|REMOVE)[ ](.*)[ ](BUFF|DEBUFF)").search(name)
 	if m:
 		var pid: int = PARAMS.get(m.get_string(2).strip_edges(), -1)
 		if pid < 0:
@@ -223,18 +223,18 @@ static func _ids(text: String) -> Array:
 func _modify(kind: String, name: String, list: Array) -> void:
 	var change := 0.0
 	var percent := false
-	var m := RegEx.create_from_string("(?i)^" + kind + "[ ]([+-])(?:VARIABLE|VAR)[ ](\\d+)").search(name)
+	var m := XRx.re("(?i)^" + kind + "[ ]([+-])(?:VARIABLE|VAR)[ ](\\d+)").search(name)
 	if m:
 		change = js_parse_int(logic.state.variable(int(m.get_string(2))))
 		if m.get_string(1) == "-":
 			change = -change
 	else:
-		m = RegEx.create_from_string("(?i)^" + kind + "[ ]([+-]\\d+)([%％])").search(name)
+		m = XRx.re("(?i)^" + kind + "[ ]([+-]\\d+)([%％])").search(name)
 		if m:
 			change = float(m.get_string(1).to_float())
 			percent = true
 		else:
-			m = RegEx.create_from_string("(?i)^" + kind + "[ ]([+-]\\d+)").search(name)
+			m = XRx.re("(?i)^" + kind + "[ ]([+-]\\d+)").search(name)
 			if not m:
 				return
 			change = m.get_string(1).to_float()  # parseInt(很长的数字串) 是大浮点数
@@ -287,7 +287,7 @@ func make_targets(spec: String) -> Array:
 		"FIRST":
 			return [targets[0]] if not targets.is_empty() and targets[0] != null else []
 	for kind in ["ACTOR", "ENEMY"]:
-		var m := RegEx.create_from_string(kind + "[ ](\\d+)").search(s)
+		var m := XRx.re(kind + "[ ](\\d+)").search(s)
 		if m:
 			var members: Array = logic.actors if kind == "ACTOR" else logic.enemies
 			var at := int(m.get_string(1))
@@ -301,7 +301,7 @@ func make_targets(spec: String) -> Array:
 func _visual_entry(name: String, args: Array) -> Dictionary:
 	var e := {"type": "seq", "name": name, "args": args, "user": user, "targets": targets.filter(func(t): return t != null),
 		"moves": logic.move_flags()}
-	var m := RegEx.create_from_string("^(?:FACE|FLOAT|JUMP|MOVE|OPACITY)[ ](.*)$").search(name)
+	var m := XRx.re("^(?:FACE|FLOAT|JUMP|MOVE|OPACITY)[ ](.*)$").search(name)
 	if m:
 		e.sub = visual_targets(m.get_string(1))
 	if not args.is_empty():
@@ -353,23 +353,23 @@ func visual_targets(spec: String) -> Array:
 			return (mine + foes).filter(func(b): return b != user and not targets.has(b) and (b.is_alive() or b is XActor))
 		"FIRST":
 			return [targets[0]] if not targets.is_empty() and targets[0] != null else []
-	var m := RegEx.create_from_string("^ACTOR[ ](\\d+)").search(s)
+	var m := XRx.re("^ACTOR[ ](\\d+)").search(s)
 	if m:
 		var i := int(m.get_string(1))
 		return [logic.actors[i]] if i < logic.actors.size() else []
-	m = RegEx.create_from_string("^ENEMY[ ](\\d+)").search(s)
+	m = XRx.re("^ENEMY[ ](\\d+)").search(s)
 	if m:
 		var i := int(m.get_string(1))
 		return [logic.enemies[i]] if i < logic.enemies.size() else []
-	m = RegEx.create_from_string("(?:FRIEND|ALLY)[ ](\\d+)").search(s)
+	m = XRx.re("(?:FRIEND|ALLY)[ ](\\d+)").search(s)
 	if m:
 		var i := int(m.get_string(1))
 		return [mine[i]] if i < mine.size() else []
-	m = RegEx.create_from_string("(?:OPPONENT|FOE|RIVAL)[ ](\\d+)").search(s)
+	m = XRx.re("(?:OPPONENT|FOE|RIVAL)[ ](\\d+)").search(s)
 	if m:
 		var i := int(m.get_string(1))
 		return [foes[i]] if i < foes.size() else []
-	m = RegEx.create_from_string("(?:CHAR|CHARA|CHARACTER)[ ](\\d+)").search(s)
+	m = XRx.re("(?:CHAR|CHARA|CHARACTER)[ ](\\d+)").search(s)
 	if m:
 		return logic.actors.filter(func(a): return (a as XActor).actor_id == int(m.get_string(1)))
 	return []
@@ -488,7 +488,7 @@ static func _compare(l: float, op: String, r: float) -> bool:
 
 
 static func _re(p: String) -> RegEx:
-	return RegEx.create_from_string(p)
+	return XRx.re(p)
 
 
 ## YEP_BattleEngineCore Game_Actor.attackMotion：第一把武器的武器类型 → System attackMotions 的 type（0 突刺 1 挥舞 2 射击）；

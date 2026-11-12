@@ -71,7 +71,7 @@ static func weapon_body(eq: Dictionary, p: int) -> float:
 	var value := float(eq.params[p])
 	var slots: Array = eq.get("augmentSlots", [])
 	var held: Array = eq.get("augmentSlotItems", [])
-	var re := RegEx.create_from_string("(?i)^" + BODY_NAMES[p] + "\\s*:\\s*([+-]\\d+)$")
+	var re := XRx.re("(?i)^" + BODY_NAMES[p] + "\\s*:\\s*([+-]\\d+)$")
 	for i in held.size():
 		var gem := XOrbs.gem_in_slot(eq, i)
 		var type := str(slots[i] if i < slots.size() else "").to_upper().strip_edges()

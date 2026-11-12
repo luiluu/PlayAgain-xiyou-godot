@@ -395,6 +395,12 @@ func alive(list: Array) -> Array:
 # ---- 画面快照：日志写入时记下表现要用的值，表现层只读日志（整次行动先结算完才演出，播放时的实时状态已是最终值） ----
 ## 一个战斗者此刻的画面读数（血条、状态栏、待机动作、能否行动）
 func view_of(b: XBattler) -> Dictionary:
+	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：一次快照里同一名角色的技能表、特性表只算一次
+	var v := _view_now(b)
+	XActor.read_end()
+	return v
+
+func _view_now(b: XBattler) -> Dictionary:
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
 		"guarding": b.is_guard(), "can_move": can_move(b), "cell_rows": XSideStatus.cell_rows(b), "shield": b.shield, "look": XAppearance.battler_key(b),
 		"guyu_shield": XGuyu.shield_of(b), "guyu_text": XGuyu.status_text(b),
@@ -404,9 +410,11 @@ func view_of(b: XBattler) -> Dictionary:
 ## 全体战斗者 → view_of
 func views(list: Array = []) -> Dictionary:
 	var out := {}
+	XActor.read_begin()
 	for b in (list if not list.is_empty() else actors + enemies):
 		if b != null and not out.has(b):
 			out[b] = view_of(b)
+	XActor.read_end()
 	return out
 
 
@@ -471,13 +479,13 @@ static func note_costs(skill: Dictionary) -> Dictionary:
 		var out := {}
 		for line in note.split("\n"):
 			for kind in ["MP", "TP", "HP"]:
-				var m := RegEx.create_from_string("(?i)<(?:%s COST):[ ](\\d+)>" % kind).search(line)
+				var m := XRx.re("(?i)<(?:%s COST):[ ](\\d+)>" % kind).search(line)
 				if m != null:
 					out[kind.to_lower() + "Cost"] = int(m.get_string(1))
 					break
 				# O-129：MP 比例认小数（7225 降众天华 <MP Cost: 7.5%>；原版 YEP 正则只认整数，比例 0、只扣基础）
 				var digits := "\\d+(?:\\.\\d+)?" if o_decimal_mp_cost and kind == "MP" else "\\d+"
-				m = RegEx.create_from_string("(?i)<(?:%s COST):[ ](%s)([%%％])>" % [kind, digits]).search(line)
+				m = XRx.re("(?i)<(?:%s COST):[ ](%s)([%%％])>" % [kind, digits]).search(line)
 				if m != null:
 					out[kind.to_lower() + "CostPer"] = float(m.get_string(1)) * 0.01
 					break
@@ -490,7 +498,7 @@ static func skill_item_costs(skill: Dictionary) -> Array:
 	var note := str(skill.get("note", ""))
 	if not _item_cost_cache.has(note):
 		var totals := {}
-		for m in RegEx.create_from_string("(?i)<ITEM[ ](\\d+)[ ]COST:[ ](\\d+)>").search_all(note):
+		for m in XRx.re("(?i)<ITEM[ ](\\d+)[ ]COST:[ ](\\d+)>").search_all(note):
 			var id := int(m.get_string(1))
 			totals[id] = int(totals.get(id, 0)) + int(m.get_string(2))
 		var out := []
@@ -729,7 +737,10 @@ static func wtype_equipped(a: XActor, wtype: int) -> bool:
 
 ## 角色的可用主动技能（隐藏的被动不列出）
 func usable_skills(a: XActor) -> Array:
-	return battle_skills(a).filter(func(s): return can_use(a, s))
+	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：逐个技能判能不能用都是只读
+	var out := battle_skills(a).filter(func(s): return can_use(a, s))
+	XActor.read_end()
+	return out
 
 ## 技能列表里显示的全部主动技能（含冷却中/魔法不足的，画面上显示为灰色）
 func battle_skills(a: XActor) -> Array:
@@ -823,9 +834,9 @@ static func target_eval(skill: Dictionary) -> Dictionary:
 		return {}
 	if not _target_eval_cache.has(note):
 		var out := {}
-		var body := RegEx.create_from_string("(?is)<Custom Target Eval>(.*?)</Custom Target Eval>").search(note)
+		var body := XRx.re("(?is)<Custom Target Eval>(.*?)</Custom Target Eval>").search(note)
 		var code := body.get_string(1) if body != null else ""
-		var more := RegEx.create_from_string("foes\\.aliveMembers\\(\\)\\.length>(\\d+)").search(code)
+		var more := XRx.re("foes\\.aliveMembers\\(\\)\\.length>(\\d+)").search(code)
 		if more != null and "tlist.sort" in code:
 			out = {"more": int(more.get_string(1))}
 		elif "user.friendsUnit().aliveMembers()" in code and "tlist.sort" in code:
@@ -1931,7 +1942,7 @@ static func agi_convert_shift(skill: Dictionary) -> int:
 
 
 static func _note_int(rec: Dictionary, tag: String) -> int:
-	var m := RegEx.create_from_string("(?i)<" + tag + ":\\s*([+-]\\d+)>").search(str(rec.get("note", "")))
+	var m := XRx.re("(?i)<" + tag + ":\\s*([+-]\\d+)>").search(str(rec.get("note", "")))
 	return int(m.get_string(1)) if m else 0
 
 
@@ -2165,8 +2176,8 @@ static func change_to_conditions(rec: Dictionary) -> Array:
 	if _change_to_cache.has(note):
 		return _change_to_cache[note]
 	var meta := {}
-	var key_re := RegEx.create_from_string("ChangeTo\\[(\\d+)]")
-	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(note):
+	var key_re := XRx.re("ChangeTo\\[(\\d+)]")
+	for m in XRx.re("<([^<>:]+)(:?)([^>]*)>").search_all(note):
 		if key_re.search(m.get_string(1)):
 			meta[m.get_string(1)] = m.get_string(3) if m.get_string(2) == ":" else ""
 	var out := []
@@ -2182,7 +2193,7 @@ func _change_to_test(u: XBattler, code: String) -> bool:
 		var e := code.strip_edges().replace("小于", "<").replace("大于", ">").replace("&lt;", "<").replace("&gt;", ">")
 		e = e.replace("Math.random()", "change_to_roll()")
 		var ok := true
-		for w in RegEx.create_from_string("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
+		for w in XRx.re("[A-Za-z_$][A-Za-z_0-9$.]*").search_all(e):
 			if not ["change_to_roll", "a.hp", "a.mhp"].has(w.get_string()):
 				ok = false
 		var ex := Expression.new()
@@ -2216,7 +2227,7 @@ static func after_eval_force_of(skill: Dictionary) -> Array:
 	var id := int(skill.get("id", 0))
 	if not _after_eval_cache.has(id):
 		if _after_eval_re == null:
-			_after_eval_re = RegEx.create_from_string("<After Eval>\\s*var id = target\\._lastUsedSkill \\|\\| (\\d+);\\s*BattleManager\\.queueForceAction\\(user, id, (-?\\d+)\\);\\s*</After Eval>")
+			_after_eval_re = XRx.re("<After Eval>\\s*var id = target\\._lastUsedSkill \\|\\| (\\d+);\\s*BattleManager\\.queueForceAction\\(user, id, (-?\\d+)\\);\\s*</After Eval>")
 		var m := _after_eval_re.search(str(skill.get("note", "")))
 		_after_eval_cache[id] = [int(m.get_string(1)), int(m.get_string(2))] if m != null else []
 	return _after_eval_cache[id]
@@ -3371,11 +3382,11 @@ func gain_drops(drops: Array) -> void:
 ## YEP_ExtraEnemyDrops：<Enemy Drops> Item/Weapon/Armor x: y% </Enemy Drops>
 static func _extra_drops(d: Dictionary) -> Array:
 	var out := []
-	var m := RegEx.create_from_string("(?is)<Enemy Drops>(.*?)</Enemy Drops>").search(str(d.get("note", "")))
+	var m := XRx.re("(?is)<Enemy Drops>(.*?)</Enemy Drops>").search(str(d.get("note", "")))
 	if m == null:
 		return out
 	for line in m.get_string(1).split("\n"):
-		var lm := RegEx.create_from_string("(?i)(Item|Weapon|Armor)\\s+(\\d+):\\s*([\\d.]+)%").search(line)
+		var lm := XRx.re("(?i)(Item|Weapon|Armor)\\s+(\\d+):\\s*([\\d.]+)%").search(line)
 		if lm:
 			out.append({"kind": {"item": 1, "weapon": 2, "armor": 3}[lm.get_string(1).to_lower()], "id": int(lm.get_string(2)), "rate": float(lm.get_string(3)) / 100.0})
 	return out

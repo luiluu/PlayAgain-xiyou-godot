@@ -101,9 +101,9 @@ func desc(id: int) -> Array:
 		return out
 	var out := []
 	for t in str(XDB.rec("Items", id).get("note", "")).split("\n"):
-		var m := RegEx.create_from_string("<pos=APs text=(.*?) size=").search(t)
+		var m := XRx.re("<pos=APs text=(.*?) size=").search(t)
 		if m:
-			out.append(RegEx.create_from_string("\\\\c\\[\\d+\\]").sub(m.get_string(1), "", true))
+			out.append(XRx.re("\\\\c\\[\\d+\\]").sub(m.get_string(1), "", true))
 	return out.slice(0, 5)
 
 

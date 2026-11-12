@@ -416,12 +416,12 @@ static func global_bonuses(a: XActor) -> Array:
 	var element := 0
 	for o in a.equip_list() + a.skills() + a.states():
 		var note := str(o.get("note", ""))
-		for m in RegEx.create_from_string("<passiveAPLUS:\\s*([^>]*)>").search_all(note):
+		for m in XRx.re("<passiveAPLUS:\\s*([^>]*)>").search_all(note):
 			again_action += m.get_string(1).replace("%", "").strip_edges().to_float() / 100.0
-		for m in RegEx.create_from_string("<(ConsumeReduce|AgainUse)(All|Zj|Mf):\\s*([^>]*)>").search_all(note):
+		for m in XRx.re("<(ConsumeReduce|AgainUse)(All|Zj|Mf):\\s*([^>]*)>").search_all(note):
 			var pool := consume if m.get_string(1) == "ConsumeReduce" else again_use
 			pool[m.get_string(2)] += m.get_string(3).strip_edges().to_int()
-		var de := RegEx.create_from_string("<DamageElements:\\s*(\\d+)>").search(note)
+		var de := XRx.re("<DamageElements:\\s*(\\d+)>").search(note)
 		if de:
 			element = int(de.get_string(1))
 	var dvup: Dictionary = cache.get("skillTypeDvup", {})
@@ -498,7 +498,7 @@ static func _guide_ops(a: XActor, rows = null) -> Array:
 	var pad := 6.0
 	var w := 1252.0
 	var y := LH * HEADER_LINES
-	var re := RegEx.create_from_string("\\\\C\\[(\\d+)\\]")
+	var re := XRx.re("\\\\C\\[(\\d+)\\]")
 	for r in (XGuide.page_rows(XState.current, a) if rows == null else rows):
 		match str(r.type):
 			"head":

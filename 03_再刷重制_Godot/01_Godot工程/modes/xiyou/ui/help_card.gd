@@ -255,7 +255,7 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 	var label := "品质：" + XQuality.label(obj, ["item", "weapon", "armor", "skill"][type])
 	if type == 3:
 		label = XWeakChallenge.quality_label(obj, label)  # 弱者挑战 getItemExtraDescParams2 包装：10357 写「品质：神话」
-	var color_code := RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
+	var color_code := XRx.re("(?i)\\\\c\\[\\d+\\]")
 	for r in rows:
 		var plain := color_code.sub(str(r[0]), "", true)
 		if plain.begins_with("品质：") or plain.begins_with("品质:"):
@@ -285,25 +285,25 @@ const P43_ESC := "(?i)(?:\\\\|\u001b)c\\[\\d+\\]"
 
 
 static func _p43_plain(t) -> String:
-	return _js_trim(RegEx.create_from_string(P43_ESC).sub(str(t) if t != null else "", "", true))
+	return _js_trim(XRx.re(P43_ESC).sub(str(t) if t != null else "", "", true))
 
 
 ## String.prototype.trim：连全角空格 U+3000、不换行空格等一起去掉
 static func _js_trim(t: String) -> String:
-	return RegEx.create_from_string("^[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$").sub(t, "", true)
+	return XRx.re("^[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$").sub(t, "", true)
 
 
 static func _p43_lead(t: String) -> String:
-	var m := RegEx.create_from_string("(?i)^(?:(?:\\\\|\u001b)c\\[\\d+\\])+").search(t)
+	var m := XRx.re("(?i)^(?:(?:\\\\|\u001b)c\\[\\d+\\])+").search(t)
 	return m.get_string() if m != null else ""
 
 
 static func _p43_rgb(c) -> int:
 	var s := str(c if c != null else "").replace(" ", "")
-	var m := RegEx.create_from_string("(?i)^rgba?\\((\\d+),(\\d+),(\\d+)").search(s)
+	var m := XRx.re("(?i)^rgba?\\((\\d+),(\\d+),(\\d+)").search(s)
 	if m != null:
 		return (int(m.get_string(1)) << 16) + (int(m.get_string(2)) << 8) + int(m.get_string(3))
-	m = RegEx.create_from_string("(?i)^#([0-9a-f]{3}|[0-9a-f]{6})$").search(s)
+	m = XRx.re("(?i)^#([0-9a-f]{3}|[0-9a-f]{6})$").search(s)
 	if m == null:
 		return 0xffffff
 	var h := m.get_string(1)
@@ -314,13 +314,13 @@ static func _p43_rgb(c) -> int:
 
 ## tidy：去掉通用的「防御按攻防比例结算」，行首标签的半角冒号换全角
 static func _p43_tidy(t) -> String:
-	var s := RegEx.create_from_string("[；;，,]?\\s*防御按攻防比例结算").sub(str(t) if t != null else "", "", true)
-	return RegEx.create_from_string("^((?:(?:\\\\|\u001b)c\\[\\d+\\])*[^：:\\s\\\\\u001b]{1,8}):").sub(s, "$1：")
+	var s := XRx.re("[；;，,]?\\s*防御按攻防比例结算").sub(str(t) if t != null else "", "", true)
+	return XRx.re("^((?:(?:\\\\|\u001b)c\\[\\d+\\])*[^：:\\s\\\\\u001b]{1,8}):").sub(s, "$1：")
 
 
 ## units：全角（码位 > 0x2e80）算 1，其余 0.56
 static func _p43_units(t: String) -> float:
-	var s := RegEx.create_from_string("(?i)(?:\\\\|\u001b)(?:col|rgb|lock)\\[\\d+\\]").sub(_p43_plain(t), "", true)
+	var s := XRx.re("(?i)(?:\\\\|\u001b)(?:col|rgb|lock)\\[\\d+\\]").sub(_p43_plain(t), "", true)
 	var n := 0.0
 	for i in s.length():
 		n += 1.0 if s.unicode_at(i) > 0x2e80 else 0.56
@@ -348,7 +348,7 @@ static func _p43_pairs(fields: Array, size: int, color: String, width: float) ->
 
 static func _p43_meta_rank(t: String) -> int:
 	for i in P43_META.size():
-		if RegEx.create_from_string(P43_META[i]).search(t) != null:
+		if XRx.re(P43_META[i]).search(t) != null:
 			return i
 	return -1
 
@@ -379,7 +379,7 @@ static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
 	var flavor := []
 	var price := []
 	var desc := str(obj.get("description", ""))
-	var esc_re := RegEx.create_from_string(P43_ESC)
+	var esc_re := XRx.re(P43_ESC)
 	for index in rows.size():
 		var src = rows[index]
 		if not src is Array:
@@ -393,7 +393,7 @@ static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
 			continue
 		if str(src[0]) == desc or (index == 1 and src[1] != null and int(src[1]) == DESC_SIZE):
 			var lines := Array(str(src[0]).replace("\r\n", "\n").split("\n")).map(func(x): return _js_trim(str(x))).filter(func(x): return x != "")
-			if lines.size() > 1 and str(lines[0]).length() <= 8 and RegEx.create_from_string("[。，！？,.!?：:]").search(lines[0]) == null:
+			if lines.size() > 1 and str(lines[0]).length() <= 8 and XRx.re("[。，！？,.!?：:]").search(lines[0]) == null:
 				tags.append(lines.pop_front())
 			if not lines.is_empty():
 				flavor.append(_p43_row("\n".join(lines), P43_SIZE.small, P43_FLAVOR_COLOR))
@@ -410,7 +410,7 @@ static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
 		if _re(P43_DROP, t):
 			continue
 		if gear:
-			var p := RegEx.create_from_string("^(.+?)[：:]\\s*(-?\\d+(?:\\.\\d+)?)$").search(t)
+			var p := XRx.re("^(.+?)[：:]\\s*(-?\\d+(?:\\.\\d+)?)$").search(t)
 			if p != null and _p43_lead(str(src[0])) == "" and names.has(p.get_string(1)) and src[1] != null and int(src[1]) <= OTHER_SIZE:
 				params.append({"name": p.get_string(1), "value": p.get_string(2), "color": src[2]})
 				continue
@@ -418,7 +418,7 @@ static func panel_view(obj: Dictionary, rows: Array, width: float) -> Array:
 				cond.append(t)
 				continue
 		else:
-			var parts: Array = Array(RegEx.create_from_string("[；;](?=[^；;]{1,6}[：:])").sub(t, "\u0001", true).split("\u0001"))
+			var parts: Array = Array(XRx.re("[；;](?=[^；;]{1,6}[：:])").sub(t, "\u0001", true).split("\u0001"))
 			var ranks := parts.map(func(x): return _p43_meta_rank(x))
 			if ranks.all(func(r): return r >= 0):
 				for k in parts.size():
@@ -473,7 +473,7 @@ static var _unique_global = null
 
 static func _unique_tags(note: String) -> Array:
 	var out := []
-	for m in RegEx.create_from_string("(?i)<KyoUnique\\s*:\\s*([^>\\r\\n]+)>").search_all(note):
+	for m in XRx.re("(?i)<KyoUnique\\s*:\\s*([^>\\r\\n]+)>").search_all(note):
 		var k := m.get_string(1).strip_edges()
 		if k != "" and not out.has(k):
 			out.append(k)
@@ -496,7 +496,7 @@ static func unique_global_keys() -> Array:
 
 
 static func _unique_canon(t: String) -> String:
-	return RegEx.create_from_string("全伤(?:害)?").sub(t, "全属性伤害", true)
+	return XRx.re("全伤(?:害)?").sub(t, "全属性伤害", true)
 
 
 ## U.keysOf：本件备注＋原型备注的标签；独立实例另认备注里出现的全局键；数据库已撤的不算
@@ -521,8 +521,8 @@ static func unique_mark(obj: Dictionary, rows: Array) -> void:
 	var keys := unique_keys(obj)
 	if keys.is_empty():
 		return
-	var color := RegEx.create_from_string("^(?:(?:\\\\|\u001b)c\\[\\d+\\])+")
-	var effect := RegEx.create_from_string("^(?:混沌神话特效|神话特效|太古特效|mod特效|Mod特效|特效|效果|光环|连击|符石|被动|技能|套装(?:\\(\\d+\\))?)(?:[:：]|[（(])")
+	var color := XRx.re("^(?:(?:\\\\|\u001b)c\\[\\d+\\])+")
+	var effect := XRx.re("^(?:混沌神话特效|神话特效|太古特效|mod特效|Mod特效|特效|效果|光环|连击|符石|被动|技能|套装(?:\\(\\d+\\))?)(?:[:：]|[（(])")
 	for r in rows:
 		var text := str(r[0]) if r[0] != null else ""
 		if text == "" or text.contains(UNIQUE_MARK) or text == str(obj.get("name", "")) or text == str(obj.get("description", "")):
@@ -535,7 +535,7 @@ static func unique_mark(obj: Dictionary, rows: Array) -> void:
 		for k in keys:
 			if _unique_canon(text).contains(_unique_canon(k)):
 				var lead := text.substr(0, text.length() - stripped.length())
-				var body := RegEx.create_from_string("^([^：:\\s\\\\\u001b]{1,8}):").sub(stripped.substr(head.length()), "$1：")
+				var body := XRx.re("^([^：:\\s\\\\\u001b]{1,8}):").sub(stripped.substr(head.length()), "$1：")
 				r[0] = lead + head + UNIQUE_MARK + body
 				break
 
@@ -548,10 +548,10 @@ static var _color_code_re: RegEx
 ## 第一条以 \c[1] 开头的「特效／效果／成长：」前面；没有蓝字特效或没有白字属性就原样。只动顺序，不增删行。
 static func equipment_rows(rows: Array) -> Array:
 	if _white_stat_re == null:
-		_white_stat_re = RegEx.create_from_string("^(?:最大生命值|最大魔法值|生命值|魔法值|物理攻击力?|魔法攻击力?|攻击力|防御力|魔法防御|敏捷|幸运|命中率?|暴击(?:率|伤害)?|反击率?|闪避率?|魔法闪避率?|攻击速度|全属性(?:伤害)?|全闪避|暴击闪避率?|魔法反射率?|魔法反击率?|物理魔法闪避|爆闪|爆伤|攻击次数|(?:物|魔|火|冰|雷|暗|光|水|土|风|毒)伤|每级全属性|进化后每级全属性)[：:＋+－\\-\\d、， ,/]")
-		_blue_head_re = RegEx.create_from_string("(?i)^\\\\c\\[1\\](?:特效|效果|成长)[：:]")
-		_color_code_re = RegEx.create_from_string("(?i)\\\\c\\[\\d+\\]")
-	var any_color := RegEx.create_from_string("(?i)\\\\c\\[[1-9]\\d*\\]")
+		_white_stat_re = XRx.re("^(?:最大生命值|最大魔法值|生命值|魔法值|物理攻击力?|魔法攻击力?|攻击力|防御力|魔法防御|敏捷|幸运|命中率?|暴击(?:率|伤害)?|反击率?|闪避率?|魔法闪避率?|攻击速度|全属性(?:伤害)?|全闪避|暴击闪避率?|魔法反射率?|魔法反击率?|物理魔法闪避|爆闪|爆伤|攻击次数|(?:物|魔|火|冰|雷|暗|光|水|土|风|毒)伤|每级全属性|进化后每级全属性)[：:＋+－\\-\\d、， ,/]")
+		_blue_head_re = XRx.re("(?i)^\\\\c\\[1\\](?:特效|效果|成长)[：:]")
+		_color_code_re = XRx.re("(?i)\\\\c\\[\\d+\\]")
+	var any_color := XRx.re("(?i)\\\\c\\[[1-9]\\d*\\]")
 	var stats := []
 	var kept := []
 	var first := -1
@@ -583,8 +583,8 @@ static var EFFECT_SORT_V041 := true
 
 
 static func _plain41(t) -> String:
-	var t2 := RegEx.create_from_string("(?i)(?:\\\\|\u001b)c\\[\\d+\\]").sub(_terms(str(t)), "", true)
-	return RegEx.create_from_string("[\\s:：]").sub(t2, "", true)
+	var t2 := XRx.re("(?i)(?:\\\\|\u001b)c\\[\\d+\\]").sub(_terms(str(t)), "", true)
+	return XRx.re("[\\s:：]").sub(t2, "", true)
 
 
 ## 云裳天衣（7920～7935）：setItem 前原版 refreshYunshangText 把备注里的 <pos=APs …> 行挪到末尾（其余行在前，<quality:N> 也就在说明行之前），
@@ -601,13 +601,13 @@ static func _sort_note(obj: Dictionary) -> String:
 
 
 static func sort_effects(obj: Dictionary, rows: Array) -> void:
-	var drop := RegEx.create_from_string("^效果：(?:持有.+时，造成的技能伤害[＋+]|持武增伤作用于)")
+	var drop := XRx.re("^效果：(?:持有.+时，造成的技能伤害[＋+]|持武增伤作用于)")
 	for i in range(rows.size() - 1, -1, -1):
 		if drop.search(str(rows[i][0])) != null:
 			rows.remove_at(i)
 	var source := {}
 	var q := 0
-	var re := RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>|<pos=\\S+\\s+text=([\\s\\S]*?)\\s+size=")
+	var re := XRx.re("(?i)<quality:\\s*(\\d+)>|<pos=\\S+\\s+text=([\\s\\S]*?)\\s+size=")
 	for m in re.search_all(_sort_note(obj)):
 		if m.get_string(1) != "":
 			q = int(m.get_string(1))
@@ -617,8 +617,8 @@ static func sort_effects(obj: Dictionary, rows: Array) -> void:
 	var base_id := int(obj.get("originalBaseItemId", obj.get("baseItemId", obj.get("base", obj.get("id", 0)))))
 	var b := XDB.rec(table, base_id)
 	var base_rank := XSafeSell.rank(XQuality.legacy(b)) if not b.is_empty() else 0
-	var kind_re := RegEx.create_from_string("(?i)^(?:混沌神话|混沌|神话|太古|mod)特效|^(?:特效|效果|成长)")
-	var blue_re := RegEx.create_from_string("(?i)(?:\\\\|\u001b)c\\[[1-9]\\d*\\]")
+	var kind_re := XRx.re("(?i)^(?:混沌神话|混沌|神话|太古|mod)特效|^(?:特效|效果|成长)")
+	var blue_re := XRx.re("(?i)(?:\\\\|\u001b)c\\[[1-9]\\d*\\]")
 	var at := []
 	var effects := []
 	for n in rows.size():
@@ -626,11 +626,11 @@ static func sort_effects(obj: Dictionary, rows: Array) -> void:
 		if kind_re.search(text) == null and blue_re.search(str(rows[n][0])) == null:
 			continue
 		var rank: int = source.get(text, base_rank)
-		if RegEx.create_from_string("^混沌(?:神话)?特效").search(text) != null:
+		if XRx.re("^混沌(?:神话)?特效").search(text) != null:
 			rank = 111
 		elif text.begins_with("神话特效"):
 			rank = 110
-		elif RegEx.create_from_string("(?i)^mod特效").search(text) != null:
+		elif XRx.re("(?i)^mod特效").search(text) != null:
 			rank = 93
 		elif text.begins_with("太古特效"):
 			rank = 91
@@ -668,7 +668,7 @@ static var _pos_re: RegEx
 ## RJO.HE.processExtraDescParams：插在当时的位置（位置数组不随插入更新，所以同位置后插的在前）
 static func _extra_row(rows: Array, pos: Array, line: String, normal: String) -> void:
 	if _pos_re == null:
-		_pos_re = RegEx.create_from_string("(?i)<pos=(.+) text=(.+) size=(.+) color=(.+) line=(true|false) align=(0|1|2)>")
+		_pos_re = XRx.re("(?i)<pos=(.+) text=(.+) size=(.+) color=(.+) line=(true|false) align=(0|1|2)>")
 	var m := _pos_re.search(line)
 	if m == null:
 		return
@@ -688,8 +688,8 @@ static func _extra_row(rows: Array, pos: Array, line: String, normal: String) ->
 
 ## CodexDisplay.text；跟到 v0.62.12 另套 installEquipmentDetailV041Runtime（v0.43）：「（全）武器伤（害）＋N%」写成「装备武器时，技能伤害＋N%」
 static func _terms(text: String) -> String:
-	text = RegEx.create_from_string("全伤(?:害)?").sub(text, "全属性伤害", true)
-	return RegEx.create_from_string("(?:全)?武器伤(?:害)?(?=[＋+]\\s*[\\d.]+%)").sub(text, "装备武器时，技能伤害", true)
+	text = XRx.re("全伤(?:害)?").sub(text, "全属性伤害", true)
+	return XRx.re("(?:全)?武器伤(?:害)?(?=[＋+]\\s*[\\d.]+%)").sub(text, "装备武器时，技能伤害", true)
 
 
 # ---- installDamageElementRuntime ----
@@ -712,11 +712,11 @@ static func rich(ids: Array) -> String:
 ## 装备文字的元素别名（阴阳→虚空、奥数→奥术、暗黑→黑暗），只在作为元素用时替换（照 gearText）
 static func gear_text(text: String) -> String:
 	var aliases := {"阴阳": "虚空", "奥数": "奥术", "暗黑": "黑暗"}
-	var tail := RegEx.create_from_string("^(?:\\s|[、，,／/·（(]|物理|火焰|寒冰|冰|火|大地|雷电|雷|自然|奥术|奥数|神圣|黑暗|暗黑|阴阳|虚空|混沌|空间|水|风)*(?:伤害|伤|增伤|抗性|穿透|承伤|属性)")
-	var direct := RegEx.create_from_string("^(?:伤害|伤|增伤|抗性|穿透|承伤|属性)")
-	var before_sep := RegEx.create_from_string("[\\s、，,／/·（(：:]$")
-	var attr_before := RegEx.create_from_string("(?:伤害属性|攻击属性|元素)\\s*[:：][^:：\\n]*$")
-	var attr_after := RegEx.create_from_string("^(?:$|[\\s、，,／/·）)])")
+	var tail := XRx.re("^(?:\\s|[、，,／/·（(]|物理|火焰|寒冰|冰|火|大地|雷电|雷|自然|奥术|奥数|神圣|黑暗|暗黑|阴阳|虚空|混沌|空间|水|风)*(?:伤害|伤|增伤|抗性|穿透|承伤|属性)")
+	var direct := XRx.re("^(?:伤害|伤|增伤|抗性|穿透|承伤|属性)")
+	var before_sep := XRx.re("[\\s、，,／/·（(：:]$")
+	var attr_before := XRx.re("(?:伤害属性|攻击属性|元素)\\s*[:：][^:：\\n]*$")
+	var attr_after := XRx.re("^(?:$|[\\s、，,／/·）)])")
 	var out := ""
 	var i := 0
 	while i < text.length():
@@ -743,7 +743,7 @@ static func _element_wrapper(obj: Dictionary, type: int, rows: Array) -> Array:
 	if type == 1 or type == 2:
 		for r in rows:
 			r[0] = _terms(gear_text(str(r[0])))
-	var dmg_attr := RegEx.create_from_string("(?i)^(?:\\\\c\\[\\d+\\])?伤害属性\\s*[:：]")
+	var dmg_attr := XRx.re("(?i)^(?:\\\\c\\[\\d+\\])?伤害属性\\s*[:：]")
 	rows = rows.filter(func(r): return dmg_attr.search(str(r[0])) == null)
 	var lines := []
 	var data := _element_data()
@@ -806,7 +806,7 @@ static func _pierce_lines(lines: Array, note: String) -> void:
 	var pct := {}
 	var fixed := {}
 	var seen := {}
-	for m in RegEx.create_from_string("(?i)<DepassiveHarmRe(\\d+)\\s*:\\s*([+-]?[\\d.]+%?)>").search_all(note):
+	for m in XRx.re("(?i)<DepassiveHarmRe(\\d+)\\s*:\\s*([+-]?[\\d.]+%?)>").search_all(note):
 		var e := int(m.get_string(1))
 		var key := "%d|%s" % [e, m.get_string(2)]
 		if seen.has(key):
@@ -853,7 +853,7 @@ static func _int_keys(d) -> Dictionary:
 
 static func _note_rates(note: String, tag: String) -> Dictionary:
 	var out := {}
-	for m in RegEx.create_from_string("(?i)<" + tag + " (\\d+):\\s*([+-]?[\\d.]+)%\\s*>").search_all(note):
+	for m in XRx.re("(?i)<" + tag + " (\\d+):\\s*([+-]?[\\d.]+)%\\s*>").search_all(note):
 		out[int(m.get_string(1))] = float(out.get(int(m.get_string(1)), 0.0)) + float(m.get_string(2)) / 100.0
 	return out
 
@@ -878,7 +878,7 @@ static func _group(lines: Array, active: Array, values: Dictionary, label: Strin
 
 # ---- genericHelpView ----
 static func plain(text: String) -> String:
-	return RegEx.create_from_string("(?i)(?:\\\\|\u001b)c\\[\\d+\\]").sub(text, "", true)
+	return XRx.re("(?i)(?:\\\\|\u001b)c\\[\\d+\\]").sub(text, "", true)
 
 
 static func _compact(text: String) -> String:
@@ -890,12 +890,12 @@ static func _compact(text: String) -> String:
 		["^等级成长[：:]", "成长："], ["；实际消耗以技能列表为准", ""], ["；无(?:MP、TP|魔法、TP)消耗", ""],
 		["^生效条件：(.+?)(?:且|、)已(?:学会|习得)本被动$", "生效条件：$1"]]
 	for r in reps:
-		t = RegEx.create_from_string(r[0]).sub(t, r[1], true)
+		t = XRx.re(r[0]).sub(t, r[1], true)
 	return t
 
 
 static func _re(p: String, t: String) -> bool:
-	return RegEx.create_from_string(p).search(t) != null
+	return XRx.re(p).search(t) != null
 
 
 static func _is_info(t: String) -> bool:
@@ -921,7 +921,7 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 	var seen := {}
 	var name := str(obj.get("name", ""))
 	var desc := str(obj.get("description", ""))
-	var unlock := RegEx.create_from_string("^(?:人物等级解锁|解锁等级|解锁(?:条件)?)[：:]\\s*(?:[\\x{4e00}-\\x{9fff}]{0,4})?\\d+级?\\s*$")
+	var unlock := XRx.re("^(?:人物等级解锁|解锁等级|解锁(?:条件)?)[：:]\\s*(?:[\\x{4e00}-\\x{9fff}]{0,4})?\\d+级?\\s*$")
 	for row in rows:
 		var raw := str(row[0])
 		var p := plain(raw)
@@ -935,20 +935,20 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 			continue
 		if _re("^(?:伤害属性|攻击属性|触发攻击属性)[：:]", p):
 			var er: Array = row.duplicate()
-			er[0] = "\\c[0]" + RegEx.create_from_string("(?i)^(?:\\\\c\\[\\d+\\])+").sub(raw, "")
+			er[0] = "\\c[0]" + XRx.re("(?i)^(?:\\\\c\\[\\d+\\])+").sub(raw, "")
 			er[2] = VIEW_COLOR
 			er[3] = false
 			er[4] = 0
 			element_rows.append(er)
 			continue
-		var t := RegEx.create_from_string("^对象[：:]").sub(p, "目标：")
-		t = RegEx.create_from_string("^(MP|TP)消耗[：:]\\s*(\\d+)\\s*$").sub(t, "消耗：$2$1")
+		var t := XRx.re("^对象[：:]").sub(p, "目标：")
+		t = XRx.re("^(MP|TP)消耗[：:]\\s*(\\d+)\\s*$").sub(t, "消耗：$2$1")
 		t = _compact(t)
-		t = RegEx.create_from_string("^冷却时间：").sub(t, "冷却：")
-		t = RegEx.create_from_string("^特性：").sub(t, "效果：")
-		t = RegEx.create_from_string("[-－]\\s*\\[敌·(?:物抗|魔抗|物防|魔防)\\s*[*×]\\s*[\\d.]+\\](?:\\s*[*×]\\s*\\[[^\\]]*\\])*").sub(t, "", true)
-		t = RegEx.create_from_string("[-－]\\s*敌·(?:物抗|魔抗|物防|魔防)(?:\\s*[*×]\\s*[\\d.]+)?").sub(t, "", true)
-		t = RegEx.create_from_string("\\(\\s*\\)").sub(t, "", true)
+		t = XRx.re("^冷却时间：").sub(t, "冷却：")
+		t = XRx.re("^特性：").sub(t, "效果：")
+		t = XRx.re("[-－]\\s*\\[敌·(?:物抗|魔抗|物防|魔防)\\s*[*×]\\s*[\\d.]+\\](?:\\s*[*×]\\s*\\[[^\\]]*\\])*").sub(t, "", true)
+		t = XRx.re("[-－]\\s*敌·(?:物抗|魔抗|物防|魔防)(?:\\s*[*×]\\s*[\\d.]+)?").sub(t, "", true)
+		t = XRx.re("\\(\\s*\\)").sub(t, "", true)
 		if unlock.search(t) != null or _re("^(?:装备限制|冷却)[：:]无$", t) or seen.has(t):
 			continue
 		seen[t] = true
@@ -957,7 +957,7 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		s[3] = false
 		s[4] = 0
 		if _is_info(t):
-			s[0] = "\\c[0]" + RegEx.create_from_string("([\\x{4e00}-\\x{9fff}])[:]").sub(t, "$1：", true)
+			s[0] = "\\c[0]" + XRx.re("([\\x{4e00}-\\x{9fff}])[:]").sub(t, "$1：", true)
 			info.append(s)
 		elif _is_formula(t):
 			s[0] = "\\c[5]" + t
@@ -1001,7 +1001,7 @@ static func _generic_view(obj: Dictionary, rows: Array) -> Array:
 		var right := plain(str(row[0]))
 		var pair := last != null and ((_re("^命中[：:]", left) and _re("^暴击[：:]", right)) or (_re("^(?:暴击|段数)[：:]", left) and _re("^(?:段数|冷却)[：:]", right)))
 		if pair and left.length() + right.length() <= 28 and last[1] == row[1]:
-			last[0] = str(last[0]) + "；" + RegEx.create_from_string("^\\\\c\\[0\\]").sub(str(row[0]), "")
+			last[0] = str(last[0]) + "；" + XRx.re("^\\\\c\\[0\\]").sub(str(row[0]), "")
 		else:
 			compact.append(row.duplicate())
 	info = compact
@@ -1084,7 +1084,7 @@ static func layout(rows: Array, min_size := 0, width := WIDTH, measure := Callab
 				i += 1
 				continue
 			if c == "\u001b":
-				var m := RegEx.create_from_string("^\u001b([A-Za-z]+)(?:\\[(\\d+)\\])?|^\u001b([{}])").search(text.substr(i))
+				var m := XRx.re("^\u001b([A-Za-z]+)(?:\\[(\\d+)\\])?|^\u001b([{}])").search(text.substr(i))
 				if m == null:
 					i += 1
 					continue
@@ -1165,7 +1165,7 @@ static func css_key(text: String) -> String:
 
 
 static func _css(text: String) -> Color:
-	var m := RegEx.create_from_string("rgba?\\(\\s*([\\d.]+)\\s*,\\s*([\\d.]+)\\s*,\\s*([\\d.]+)(?:\\s*,\\s*([\\d.]+))?\\s*\\)").search(text)
+	var m := XRx.re("rgba?\\(\\s*([\\d.]+)\\s*,\\s*([\\d.]+)\\s*,\\s*([\\d.]+)(?:\\s*,\\s*([\\d.]+))?\\s*\\)").search(text)
 	if m:
 		return Color8(int(m.get_string(1)), int(m.get_string(2)), int(m.get_string(3)), int(float(m.get_string(4)) * 255) if m.get_string(4) != "" else 255)
 	if text.begins_with("#"):
@@ -1193,7 +1193,7 @@ func _init() -> void:
 ## HelpExtend setItem：备注 <HelpWidth: N> 把卡宽改成 N（专属角色技能多为 520）；没有时用 fallback。
 ## 原版改的是同一个 Sprite 的宽，之后没有标签的卡也沿用 N；重制每张卡按自己的备注取，不沿用。
 static func note_width(obj: Dictionary, fallback := WIDTH) -> float:
-	var m := RegEx.create_from_string("(?i)<HelpWidth:\\s*(\\d+)>").search(str(obj.get("note", "")))
+	var m := XRx.re("(?i)<HelpWidth:\\s*(\\d+)>").search(str(obj.get("note", "")))
 	return float(m.get_string(1)) if m != null else fallback
 
 

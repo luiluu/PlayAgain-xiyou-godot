@@ -307,8 +307,8 @@ static func model() -> int:
 	if _model < 0:
 		_model = 4282
 		var best := -1
-		var re := RegEx.create_from_string("(?i)<req_level:\\s*(\\d+)>")
-		var pre := RegEx.create_from_string("(?i)<Prefixes>")
+		var re := XRx.re("(?i)<req_level:\\s*(\\d+)>")
+		var pre := XRx.re("(?i)<Prefixes>")
 		for id in range(1, 8001):
 			var r := XDB.rec("Armors", id)
 			if r.is_empty() or int(r.get("etypeId", 0)) != 4 or int(r.get("atypeId", 0)) != 1:

@@ -53,7 +53,7 @@ static func data(skill_id: int) -> Dictionary:
 	var rec := XDB.rec("Skills", skill_id)
 	var keys := {"DAMAGE": "damage", "MP COST": "mp", "TP COST": "tp", "HP COST": "hp", "COOLDOWN": "cooldown"}
 	var vars := {"damage": "value", "mp": "cost", "tp": "cost", "hp": "cost", "cooldown": "turns"}
-	for line in RegEx.create_from_string("[\\r\\n]+").sub(str(rec.get("note", "")), "\n", true).split("\n"):
+	for line in XRx.re("[\\r\\n]+").sub(str(rec.get("note", "")), "\n", true).split("\n"):
 		var m := _re("<(?:MAX MASTERY LEVEL):[ ](\\d+)>").search(line)
 		if m:
 			d.max = int(m.get_string(1))
@@ -97,7 +97,7 @@ static func _strip(formula: String) -> String:
 static var _res := {}
 static func _re(p: String) -> RegEx:
 	if not _res.has(p):
-		_res[p] = RegEx.create_from_string("(?i)" + p)
+		_res[p] = XRx.re("(?i)" + p)
 	return _res[p]
 
 

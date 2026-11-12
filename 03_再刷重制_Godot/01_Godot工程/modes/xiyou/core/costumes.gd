@@ -17,8 +17,8 @@ static var _ready_flag := false
 
 static func registry() -> Dictionary:
 	if not _ready_flag:
-		var re := RegEx.create_from_string("(?i)<StartPushState(\\d+)\\s*:")
-		var img := RegEx.create_from_string("var battlerName\\s*=\\s*['\"]([^'\"]+)['\"]")
+		var re := XRx.re("(?i)<StartPushState(\\d+)\\s*:")
+		var img := XRx.re("var battlerName\\s*=\\s*['\"]([^'\"]+)['\"]")
 		for id in range(FIRST_SKILL, LAST_SKILL + 1):
 			var skill := XDB.rec("Skills", id)
 			var m := re.search(str(skill.get("note", ""))) if not skill.is_empty() else null
@@ -102,7 +102,7 @@ static func sv_meta(s: XState, a: XActor, meta: Dictionary, in_battle := true) -
 
 static func strip_sv(meta: Dictionary) -> Dictionary:
 	var out := {}
-	var re := RegEx.create_from_string("(?i)^(sv|SVspeed|SVzs\\d+|Cfdz\\d+|YCyy)$")
+	var re := XRx.re("(?i)^(sv|SVspeed|SVzs\\d+|Cfdz\\d+|YCyy)$")
 	for k in meta:
 		if re.search(str(k)) == null:
 			out[k] = meta[k]

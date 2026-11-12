@@ -21,7 +21,7 @@ const PATH := "res://modes/xiyou/tianqi_data/seg_alien.json"
 static var ENABLED := true
 
 static var _data: Dictionary = {}
-static var _tag := RegEx.create_from_string("^【([^】]+)】")
+static var _tag := XRx.re("^【([^】]+)】")
 
 
 static func data() -> Dictionary:

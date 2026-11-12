@@ -77,7 +77,7 @@ static func _round2(v: float) -> String:
 ## Number.toFixed(2).replace(/\.?0+$/, '')
 static func _fixed_trim(v: float) -> String:
 	var t := "%.2f" % v
-	var m := RegEx.create_from_string("\\.?0+$").search(t)
+	var m := XRx.re("\\.?0+$").search(t)
 	return t.substr(0, m.get_start()) if m != null else t
 
 
@@ -88,7 +88,7 @@ static func label(s: XState) -> String:
 
 static func _quality(rec: Dictionary) -> int:
 	if _quality_re == null:
-		_quality_re = RegEx.create_from_string("(?i)<quality:\\s*(\\d+)>")
+		_quality_re = XRx.re("(?i)<quality:\\s*(\\d+)>")
 	var m := _quality_re.search(str(rec.get("note", "")))
 	return int(m.get_string(1)) if m != null else 0
 

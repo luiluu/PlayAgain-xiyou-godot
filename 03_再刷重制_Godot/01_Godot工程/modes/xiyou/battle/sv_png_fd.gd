@@ -25,7 +25,7 @@ static func scale(a: XActor) -> float:
 		var v = o.get("meta", {}).get("SvPngFd")
 		if v == null:
 			continue
-		var m := RegEx.create_from_string("(\\d+)").search(str(v))
+		var m := XRx.re("(\\d+)").search(str(v))
 		if m:
 			out = float(m.get_string(1))
 	return out

@@ -279,7 +279,7 @@ func _clear_chase() -> void:
 
 ## 路线脚本（指令 45）：YEP 的「this._fleeRange = 5」之类设定
 func _route_script(text: String) -> void:
-	var re := RegEx.create_from_string("^\\s*this\\._(\\w+)\\s*=\\s*([^;]+?)\\s*;?\\s*$")
+	var re := XRx.re("^\\s*this\\._(\\w+)\\s*=\\s*([^;]+?)\\s*;?\\s*$")
 	var m := re.search(text)
 	var keys := {"fleeRange": "flee_range", "fleeSpeed": "flee_speed", "sightLock": "sight_lock", "returnWait": "return_wait",
 		"seePlayer": "see_player", "returnAfter": "return_after", "alertBalloon": "alert_balloon"}

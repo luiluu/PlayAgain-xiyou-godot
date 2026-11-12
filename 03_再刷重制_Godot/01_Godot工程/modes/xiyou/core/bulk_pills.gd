@@ -53,7 +53,7 @@ static func _toast_script(c: Dictionary, variable_id: int) -> bool:
 	var p = c.get("parameters")
 	if int(c.get("code", 0)) != 355 or not p is Array or p.size() != 1:
 		return false
-	var re := RegEx.create_from_string("^\\s*\\$\\.toaster\\(\\{\\s*message\\s*:\\s*'[^'\\\\\\r\\n]*'(?:\\+\\$gameVariables\\.value\\((\\d+)\\))?\\s*\\}\\);?\\s*$")
+	var re := XRx.re("^\\s*\\$\\.toaster\\(\\{\\s*message\\s*:\\s*'[^'\\\\\\r\\n]*'(?:\\+\\$gameVariables\\.value\\((\\d+)\\))?\\s*\\}\\);?\\s*$")
 	var m := re.search(str(p[0]))
 	if m == null:
 		return false

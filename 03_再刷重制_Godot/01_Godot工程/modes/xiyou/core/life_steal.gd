@@ -24,7 +24,7 @@ static func amount(u: XBattler, item: Dictionary, damage: float) -> float:
 	var steal := maxf(0.0, floorf(damage * (1.0 - rate) + float(ls.get("hpFlat", 0))))
 	if steal <= 0.0:
 		return 0.0
-	var re := RegEx.create_from_string("(-?\\d+)(%?)")
+	var re := XRx.re("(-?\\d+)(%?)")
 	for st in u.states():
 		var m := re.search(str(st.get("meta", {}).get("DBHPLSteal", "")))
 		if m != null and m.get_string(2) == "%":
@@ -37,7 +37,7 @@ static func push_rows(u: XBattler) -> Array:
 	var out := []
 	if not (u is XActor):
 		return out
-	var re := RegEx.create_from_string("<RecPushState(\\d+): ([-]?\\d+)%>")
+	var re := XRx.re("<RecPushState(\\d+): ([-]?\\d+)%>")
 	var objects := []
 	objects.append_array(u.states())
 	objects.append_array((u as XActor).equip_list())
