@@ -98,7 +98,7 @@ func _c_cleanse(c: Dictionary) -> void:
 	var hard := []
 	var soft := []
 	for st in XDB.table("States"):
-		if st is Dictionary:
+		if st is Dictionary and not bool(st.get("_gojo", false)):  # 重制新加的五条悟状态（XGojo）不在原版参照里
 			if XXuanBattle.is_cleanse_state(st, true):
 				hard.append(int(st.id))
 			if XXuanBattle.is_cleanse_state(st, false):

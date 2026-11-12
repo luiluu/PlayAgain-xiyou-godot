@@ -708,7 +708,7 @@ func _watch_actors(list: Array, depth: int = 0, out: Array = []) -> Array:
 		elif code == 355 or code == 655:
 			if str(p[0]).contains("$dataActors.length") or str(p[0]).contains("$gameActors.length"):
 				for n in range(1, XDB.table("Actors").size()):
-					if not str(XDB.rec("Actors", n).get("name", "")).is_empty() and not out.has(n):
+					if not str(XDB.rec("Actors", n).get("name", "")).is_empty() and not out.has(n) and not XGojo.hidden(n):  # 重制新加的五条悟（XGojo）原版没有
 						out.append(n)
 			for m in re.search_all(str(p[0])):
 				var n := int(m.get_string(1))
