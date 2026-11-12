@@ -51,7 +51,7 @@ func types() -> Array:
 
 
 func _load_list() -> void:
-	list = XAchievement.of_type(str(types()[type_index])) if type_index < types().size() else []
+	list = XTianqiPetHide.filter_achievements(XAchievement.of_type(str(types()[type_index]))) if type_index < types().size() else []  # 天启篇隐藏宠物：不列宠物成就
 	top = clampi(top, 0, _max_top())
 	_refresh()
 

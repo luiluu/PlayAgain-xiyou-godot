@@ -8,6 +8,7 @@ extends RefCounted
 ## - 物品：捕获网等（用公共事件 173 的）、魔兽要诀（公共事件里调 ComEveLearnSkill 的）、宠物口粮（Star_PetUpLevel 的 PetEatItem）
 ##   得不到（XState.gain_item 数量为正时挡下：掉落、事件、商店都经这里）、背包和出售列表里不列、商店不上架。
 ## - 星级仓库：分类只剩「装备」，宠物那一格不画、选不到。
+## - 成就：成就页不列提到宠物的成就（名字或条件里有宠物、捕捉、神秘生物、魔兽要诀；现在是 61「神秘生物！」、104「宠物训练大师」），全局记录照旧。
 ## - 宠物出战加成：天启篇里拿不到宠物，自然没有；已有的（不该有）不清，只是看不见入口。
 ## 只认天启篇存档（XTianqiLine.open_for：发行构建里还要 XTianqi.RELEASE_OPEN）。
 ##
@@ -58,6 +59,18 @@ static func filter_entries(entries: Array) -> Array:
 	if not active():
 		return entries
 	return entries.filter(func(e): return not (e is Dictionary and e.get("rec") is Dictionary and not e.rec.has("kind") and item_ids().has(int(e.rec.get("id", 0)))))
+
+
+## 成就页的一类：去掉提到宠物的成就
+static func filter_achievements(ids: Array) -> Array:
+	if not active():
+		return ids
+	return ids.filter(func(id): return not pet_achievement(int(id)))
+
+
+static func pet_achievement(id: int) -> bool:
+	var d := XAchievement.def(id)
+	return RegEx.create_from_string("宠物|捕捉|神秘生物|魔兽要诀").search(str(d.get("name", "")) + str(d.get("trigger", "")) + str(d.get("show", ""))) != null
 
 
 ## 商店进货 [[类, 号, …]…]（类 0＝物品）
