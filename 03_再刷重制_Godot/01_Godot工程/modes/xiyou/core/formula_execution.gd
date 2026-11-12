@@ -40,6 +40,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 	var status := str(program.get("status", "unsupported"))
 	if str(item.get("damage", {}).get("formula", "")).begins_with("CodexHeartsteel.damage("):  # 巨人吞噬 10227／10228（XHeartsteel.formula）
 		return {"available": true, "value": XHeartsteel.formula(a, b), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == XTianqiSkills.MODULE:  # 天启篇全角色技能重构（XTianqiSkills.formula）
+		return {"available": true, "value": XTianqiSkills.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）
 		return {"available": true, "value": XCat.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "garou":  # CodexGarou.base(a,b,id)（173 饿狼，XGarou.formula）
@@ -121,7 +123,7 @@ func _read(node: Dictionary):
 				return _fail("equipment_query_requires_actor")
 			return XEquipmentView.first_armor_level(b.equip_list(), int(index)) if valid else 0.0
 		"element": return b.element_rate(int(index)) if valid else 1.0
-		"mastery": return b.skillMasteryLevel(int(index)) if valid else 0
+		"mastery": return 0 if XTianqiSkills.mastery_on() else (b.skillMasteryLevel(int(index)) if valid else 0)  # 天启篇：熟练度不再乘进公式
 		"has_state": return b.is_state_affected(int(index)) if valid else false
 		"states_count": return b.states().size()
 		"max_tp": return b.max_tp()

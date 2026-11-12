@@ -15,10 +15,13 @@ extends RefCounted
 ## - 饥饿（本线核心计量）：消耗倍率＝1＋场上枯竭者的提高相加；回复倍率＝1－场上荒年者的降低相加（最低 0.1）。开战时和每回合开始在战斗日志里报。
 ## - 口粮（线规则，Kyo 11-08 已确认）：饥荒异化在场时，原本 MP、TP、生命消耗都是 0 的技能（原生攻击 1、防御 2 除外）
 ##   每次扣最大 MP 的 3／5／8／12%（按场上最高级），MP 不够改扣同样比例的当前生命（不会扣到 0）。
+## - 掠夺者终焉：命中我方时另扣当前金钱（设计稿的精魄）1%，每场上限开战时金钱的 10%；打倒它全额还回来，没打倒就没了。
+## - 荒年（线规则）：有饥荒异化的战斗胜利掉落几率 ×0.67；倒下的饥荒异化怪按级几率掉 1 份「余粮」（flags.tianqi.famine.grain）；
+##   余粮（cc 草案）：口粮先扣余粮、不扣 MP 和生命；25 层模拟考答对一题给一份。
 ## - 终焉效果（cc/tianqi-alien-finale）：枯竭者每回合开始我方 MP 上限再 −5%（本场累计，XActor.param 的 actor_param）；荒年者在场时我方被复活后
 ##   这一下回复无效（只剩复活给的 1 点生命）；熬夜者每回合开始我方 TP 归零；透支者每放一次技能另扣当前 MP 的 10%。
 ## 没做（交付单「未做」）：减耗、免耗效果打折；自带资源角色的获得量降低（要逐个角色模块接）；荒年的掉落减少与余粮（还没有余粮这个物品）；
-## 掠夺者终焉扣精魄（每场上限、打倒返还，要接精魄账）。
+## （掠夺者终焉扣精魄、荒年与余粮 cc/tianqi-famine-reaper 已接，见下）
 ##
 ## 开关：XTianqiFamineLine.ENABLED（饥荒线整条）；只认天启篇存档、发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
 
@@ -149,6 +152,7 @@ static func _say(f: Dictionary, text: String) -> void:
 static func take_logs(logic) -> Array:
 	if active(logic):
 		fight(logic).get("revived", {}).clear()  # 每次行动结束（和回合首尾）清「刚复活」
+		_refund_gold(logic)
 	if not active(logic):
 		return []
 	var f := fight(logic)
@@ -294,7 +298,10 @@ static func after_pay(logic, u, skill: Dictionary, c: Dictionary) -> void:
 	if int(c.get("mp", 0)) <= 0 and int(c.get("tp", 0)) <= 0 and logic.skill_hp_cost(u, skill) <= 0:
 		var r := ration_rate(logic)
 		var need := floorf(float(u.mmp) * r)
-		if need > 0.0 and u.mp >= need:
+		if grain(logic.state) > 0:  # 余粮（cc 草案）：口粮先扣余粮
+			add_grain(logic.state, -1)
+			_say(f, "%s交了一份余粮当口粮（还剩 %d）。" % [u.display_name(), grain(logic.state)])
+		elif need > 0.0 and u.mp >= need:
 			u.mp -= need
 			_say(f, "%s交了口粮：MP −%d。" % [u.display_name(), int(need)])
 		else:
@@ -368,17 +375,83 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	var mp := floorf(float(t.mp) * rate)
 	var tp := floorf(float(t.tp) * rate)
 	if mp <= 0.0 and tp <= 0.0:
+		_plunder_gold(logic, fight(logic), u, r)
 		return value
 	t.mp -= mp
 	t.tp -= tp
 	t.refresh_resources()
 	var f := fight(logic)
+	_plunder_gold(logic, f, u, r)
 	if int(r.idx) >= 2:
 		u.shield = float(u.shield) + mp + tp
 		_say(f, "%s夺走了%s的 MP %d、TP %d，变成了自己的护盾。" % [u.display_name(), t.display_name(), int(mp), int(tp)])
 	else:
 		_say(f, "%s夺走了%s的 MP %d、TP %d。" % [u.display_name(), t.display_name(), int(mp), int(tp)])
 	return value
+
+
+# ---- 精魄（金钱）、荒年、余粮 ----
+
+## 终焉掠夺者命中：扣当前金钱的 1%，本场合计不超过开战时金钱的 10%，记在这只身上
+static func _plunder_gold(logic, f: Dictionary, u, r: Dictionary) -> void:
+	if int(r.idx) < 3:
+		return
+	var k := kind_info("plunder")
+	var s: XState = logic.state
+	if not f.has("gold0"):
+		f.gold0 = int(s.gold)
+	var cap := floori(float(f.gold0) * float(k.get("finale_gold_cap", 0.1)))
+	var taken := int(f.get("gold_taken", 0))
+	var n := mini(floori(float(s.gold) * float(k.get("finale_gold", 0.01))), cap - taken)
+	if n <= 0:
+		return
+	s.gain_gold(-n)
+	f.gold_taken = taken + n
+	r.gold = int(r.get("gold", 0)) + n
+	_say(f, "%s顺手摸走了 %d 金钱。打倒它就能拿回来。" % [u.display_name(), n])
+
+
+## 打倒的掠夺者：它摸走的金钱全额还回来
+static func _refund_gold(logic) -> void:
+	var f := fight(logic)
+	for e in f.get("units", {}):
+		var r: Dictionary = f.units[e]
+		if int(r.get("gold", 0)) > 0 and e.is_dead():
+			logic.state.gain_gold(int(r.gold))
+			f.queue.append({"type": "battle_text", "text": "%s倒下了，摸走的 %d 金钱回来了。" % [e.display_name(), int(r.gold)]})
+			r.gold = 0
+
+
+## 荒年：有饥荒异化的战斗胜利掉落几率乘这个（BattleLogic.drop_chances）
+static func drop_mult(logic) -> float:
+	if not active(logic) or fight(logic).get("units", {}).is_empty():
+		return 1.0
+	return float(data().get("lean_year", {}).get("drop_mult", 1.0))
+
+
+static func grain(s: XState) -> int:
+	return int(XTianqiLine.progress("famine", s).get("grain", 0))
+
+
+static func add_grain(s: XState, n: int) -> void:
+	var p := XTianqiLine.progress("famine", s)
+	p["grain"] = maxi(0, int(p.get("grain", 0)) + n)
+
+
+## 赢了（XTianqiAlienGear.grant 调）：倒下的饥荒异化怪按级几率掉余粮；返回掉了几份
+static func grant_grain(logic) -> int:
+	if not active(logic):
+		return 0
+	var f := fight(logic)
+	var ch: Array = data().get("lean_year", {}).get("grain_chance", [])
+	var n := 0
+	for e in f.get("units", {}):
+		if e.is_dead() and not ch.is_empty() and logic._float("tianqi_famine_grain") < float(ch[clampi(int(f.units[e].idx), 0, ch.size() - 1)]):
+			n += 1
+	if n > 0:
+		add_grain(logic.state, n)
+		logic.victory_texts.append("得到了余粮×%d（现有 %d）" % [n, grain(logic.state)])
+	return n
 
 
 ## BattleLogic.end_turn：化形熬夜者在场时我方 TP −10

@@ -33,7 +33,7 @@ func _near(a: float, b: float, eps := 1e-6) -> bool:
 
 
 func _ids(tier: String) -> Array:
-	return XTier.ids(tier).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
+	return XTianqiSkills.ids(tier, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id) and not [95, 173].has(id))  # 三笠、饿狼的战斗档位跟成长走，夹具不用
 
 
 func _state(key: String, lineup: Array) -> XState:
@@ -132,9 +132,9 @@ func _damage_mult() -> void:
 	var enemy := XEnemy.new().setup(1, 4, 100.0)
 	for id in lineup.slice(0, 4):
 		var a := s.actor(id)
-		var want := XTianqiBalance.tier_damage_mult(XTier.tier_of(id)) * float(row.party_damage) * (1.0 + float(assist.damage_dealt)) * aura
+		var want := XTianqiBalance.tier_damage_mult(XTianqiSkills.battle_tier(id)) * float(row.party_damage) * (1.0 + float(assist.damage_dealt)) * aura
 		_check("dealt_%d" % id, _near(XTianqiCombat.damage_mult(a, enemy), want), [XTianqiCombat.damage_mult(a, enemy), want])
-		var taken := XTianqiBalance.tier_taken_mult(XTier.tier_of(id)) * (1.0 + float(assist.damage_taken))
+		var taken := XTianqiBalance.tier_taken_mult(XTianqiSkills.battle_tier(id)) * (1.0 + float(assist.damage_taken))
 		_check("taken_%d" % id, _near(XTianqiCombat.damage_mult(enemy, a), taken), [XTianqiCombat.damage_mult(enemy, a), taken])
 	_check("dealt_strong_gt_weak", XTianqiCombat.damage_mult(s.actor(st[0]), enemy) > XTianqiCombat.damage_mult(s.actor(w[0]), enemy))
 	_check("taken_super_lt_weak", XTianqiCombat.damage_mult(enemy, s.actor(sup[0])) < XTianqiCombat.damage_mult(enemy, s.actor(w[0])))

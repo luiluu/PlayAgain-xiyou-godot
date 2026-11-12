@@ -4,7 +4,7 @@ extends RefCounted
 ## Kyo 11-11 09:41「首期先做饥荒线」）。台词、地点、敌群、异化数值都在 tianqi_data/famine_line.json（只读）。
 ## 和线无关的流程（进度、门、开场、使徒、15／25 层、35／36 层）走 XTianqiLine；这里只放饥荒线自己的：
 ## - 序幕：1～5 层时第一次到三层训练场，吕茂在做题（所有天启篇存档都有，不分线）；饥荒线通关后再到三层，说一次「这次我慢慢做。」
-## - 25 层传闻之后的可选「模拟考」：三道题，答对的题数记在 flags.tianqi.famine.quiz（余粮还没有物品，先只记分）。
+## - 25 层传闻之后的可选「模拟考」：三道题，答对的题数记在 flags.tianqi.famine.quiz，答对一题给一份余粮（flags.tianqi.famine.grain，cc 草案）。
 ## 开场三节：1「异兆」三层训练场，侵染·枯竭者的哥布林巫师（教饥饿和口粮）；2「蔓延」伐木者小屋，蚀骨·荒年者的光头强；
 ## 3「天外裂」天外天，饥荒骑士生存战（XTianqiHorsemen 的 survival：开场即绝粮，吃身边的小怪来打你）。
 ## 使徒：10 层侵染·枯竭者、20 层蚀骨·掠夺者、30 层化形·透支者（XTianqiFamineAlien）。
@@ -68,7 +68,9 @@ static func after_beat(host, s: XState, beat: String) -> void:
 		if i == int(q.answer):
 			right += 1
 	progress(s)["quiz"] = right
-	await host.show_text("", 0, ["答对了 %d 道。" % right])
+	var g := right * int(XTianqiFamineAlien.data().get("lean_year", {}).get("quiz_grain", 1))
+	XTianqiFamineAlien.add_grain(s, g)
+	await host.show_text("", 0, ["答对了 %d 道。" % right + ("得到了余粮×%d。" % g if g > 0 else "")])
 	await XTianqiLine.say(host, KEY, "quiz_done")
 
 

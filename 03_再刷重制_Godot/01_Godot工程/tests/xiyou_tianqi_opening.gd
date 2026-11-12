@@ -78,8 +78,8 @@ func _lineups() -> void:
 		var firsts := {}
 		for i in 200:
 			var l := XTianqi.roll_lineup(d.key, rng)
-			var weak := l.filter(func(id): return XTier.is_weak(id)).size()
-			var supers := l.filter(func(id): return XTier.is_super(id)).size()
+			var weak := l.filter(func(id): return XTianqiSkills.is_weak(id, true)).size()
+			var supers := l.filter(func(id): return XTianqiSkills.is_super(id, true)).size()
 			var uniq := {}
 			for id in l:
 				uniq[id] = true
@@ -91,8 +91,8 @@ func _lineups() -> void:
 		_check("roll_%s" % d.key, bad.is_empty(), bad.slice(0, 3))
 		_check("roll_%s_super_seen" % d.key, seen_super == (int(d.super_cap) > 0), seen_super)
 		_check("roll_%s_varied" % d.key, firsts.size() > 20, firsts.size())
-	var w: Array = XTier.ids(XTier.WEAK)
-	var sup: Array = XTier.ids(XTier.SUPER)
+	var w: Array = XTianqiSkills.ids(XTier.WEAK, true)
+	var sup: Array = XTianqiSkills.ids(XTier.SUPER, true)
 	_check("lineup_ok_rejects", not XTianqi.lineup_ok("jiusi", [w[0], w[0], w[1], w[2], w[3]])
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], sup[0], sup[1]])
 		and not XTianqi.lineup_ok("jianxian", [w[0], w[1], w[2], w[3], sup[0]])
@@ -122,8 +122,8 @@ func _title_pages() -> void:
 
 
 func _opening() -> void:
-	var w: Array = XTier.ids(XTier.WEAK).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
-	var sup: Array = XTier.ids(XTier.SUPER).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var w: Array = XTianqiSkills.ids(XTier.WEAK, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var sup: Array = XTianqiSkills.ids(XTier.SUPER, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not [95, 173].has(id))
 	var lineup := [w[5], sup[0], w[1], w[2], w[3]]
 	_check("fixed_lineup_ok", XTianqi.lineup_ok("jiusi", lineup), lineup)
 	XMessageBox.auto_answers = ["测试道号"]
@@ -157,14 +157,14 @@ func _opening() -> void:
 func _rules() -> void:
 	var s := XState.current
 	_check("bonds_off", not XBonds.enabled(s) and not XBonds.changed(s, {}) and XBonds.refresh(s, {}).is_empty())
-	var sup: Array = XTier.ids(XTier.SUPER).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var sup: Array = XTianqiSkills.ids(XTier.SUPER, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not [95, 173].has(id))
 	for id in sup.slice(0, 2):
 		if not s.party.has(id):
 			s.party.append(id)
 			s.actor(id)
 	s.battle_slots = [sup[0], sup[1], s.party[0], 0, 0]
 	XItemMarks.enforce_party(s)
-	var on_field := s.battle_slots.filter(func(id): return XTier.is_super(int(id)))
+	var on_field := s.battle_slots.filter(func(id): return XTianqiSkills.is_super(int(id), true))
 	_check("super_cap_enforced", on_field == [sup[0]], s.battle_slots)
 	_check("can_deploy_cap", not XItemMarks.can_deploy(s, sup[1], 1) and XItemMarks.can_deploy(s, sup[1], XTianqi.HELPER_SLOT) and XItemMarks.can_deploy(s, sup[0]) and XItemMarks.can_acquire_actor(s, sup[1]))
 	# 原版开局建的档：不是天启篇，羁绊照旧、超强者按原版
