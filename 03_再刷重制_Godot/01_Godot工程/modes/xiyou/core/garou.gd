@@ -229,7 +229,7 @@ static func tq_ops(item: Dictionary, a, b) -> Array:
 	var p := passives(a)
 	var in_frame := not frame.is_empty() and is_same(frame.user, a)
 	var e: int = (int(frame.evolution) if in_frame else evolution) if p.evolution else 0
-	var m := (1.0 + (TQ_GROWTH[stage(a)] if a.skill_ids.has(GROWTH) else 0.0)) * (1.0 + e * (0.03 + (0.01 if gear(a) != null else 0.0)))
+	var m: float = (1.0 + (TQ_GROWTH[stage(a)] if a.skill_ids.has(GROWTH) else 0.0)) * (1.0 + e * (0.03 + (0.01 if gear(a) != null else 0.0)))
 	if in_frame and str(frame.triggered) == "counter":
 		m *= 0.5
 	return [{"op": "mul", "field": "finalMultiplier", "value": m}] if m != 1.0 else []

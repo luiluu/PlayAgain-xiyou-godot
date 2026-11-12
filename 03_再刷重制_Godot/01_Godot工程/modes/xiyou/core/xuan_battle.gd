@@ -301,7 +301,7 @@ static func tq_ops(item: Dictionary, a, _b) -> Array:
 		return []
 	if is_xuan(a) and key_of(item) == "lengguang" and not data.is_empty() and XBinding.current_round() <= int(data.liexingUntil):
 		var h = XBinding.host(a)
-		var n := beneficiaries(a).list.filter(func(t): return t != h).size()
+		var n: int = beneficiaries(a).list.filter(func(t): return t != h).size()
 		if n > 0:
 			return [{"op": "mul", "field": "finalMultiplier", "value": (1.0 + 0.2 * mini(3, n)) / (1.0 + n)}]
 		return []
