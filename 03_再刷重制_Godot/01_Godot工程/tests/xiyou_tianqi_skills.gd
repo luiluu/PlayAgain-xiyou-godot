@@ -740,6 +740,8 @@ func _p5() -> void:
 	_check("p5_new_skills", str(XDB.rec("Skills", 10728).name) == "换刃" and int(XDB.rec("Skills", 10730).scope) == 2 and str(XDB.rec("Skills", 10731).name) == "后颈斩")
 	_check("p5_learn", (XTianqiSkills.data().learn.get("95", []) as Array).size() == 4)
 	_check("p5_new_states", str(XDB.rec("States", 10813).name) == "换刃" and str(XDB.rec("States", 10816).name) == "生门")
+	_check("p5_fire_dot", str(XDB.rec("States", 1819).get("dot", {}).get("kind", "")) == "tianqi")
+	_check("p5_self_states", (XTianqiSkills.spec(5600).get("self_states", []) as Array).has(10819.0) and str(XDB.rec("States", 10819).name) == "碧天独行")
 	s.set_variable(1490, 10)
 	_check("p5_duanlian", is_equal_approx(XTianqiSkills._cond({"if": "var_bonus", "var": 1490, "per": 0.03, "cap": 0.3}, ms, b), 1.3))
 	lg.end_battle(0)
@@ -749,7 +751,7 @@ func _smoke() -> void:
 	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30],
 			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60],
 			[61, 62, 63, 64, 65], [66, 67, 68, 69, 70], [71, 72, 73, 74, 75], [76, 77, 78, 79, 80], [81, 82, 83, 84, 85], [86, 87, 88, 89, 90], [91, 92, 93, 94, 61],
-			[95, 96, 97, 98, 99], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109]]:
+			[95, 96, 97, 98, 99], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109], [115, 117, 118, 119, 120], [122, 123, 124, 127, 128], [129, 130, 131, 95, 100]]:
 		_smoke_group(group)
 
 

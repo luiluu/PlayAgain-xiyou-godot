@@ -1124,6 +1124,9 @@ static func end_action(logic, u, skill) -> Array:
 		_consume(logic, u, f)
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
+		if u.is_alive():
+			for sid in spec(int(f.skill.get("id", 0))).get("self_states", []):  # 技能行 self_states：放完给自己挂状态（高松灯碧天独行：之后 2 回合暴击 +20%、承伤 +20%）
+				u.add_state(int(sid))
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
