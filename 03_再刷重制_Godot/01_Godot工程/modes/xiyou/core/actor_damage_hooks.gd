@@ -9,11 +9,11 @@ static func descriptor() -> Dictionary:
 	return {"id": "actor-modules", "version": "1", "capabilities": ["damage.actor_modules"],
 		"contexts": ["facts"], "hooks": [{"point": "damage.before", "order": 3, "reads": ["facts.actorModules"],
 			"writes": ["mode", "kind", "elements", "physicalDefenseRate", "physicalIncomingPierce", "resistancePierce", "magicalDefenseRate", "elementAdd", "normalAdd", "finalAdd", "finalMultiplier", "skillMultiplier",
-				"settlementMultiplier", "criticalAdd", "incomingMultiplier", "categoryMax"], "handler": build}]}
+				"settlementMultiplier", "criticalAdd", "incomingMultiplier", "categoryMax", "healingMultiplier"], "handler": build}]}
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
-	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XXuanBattle.cast_ops(item, a) + XXuanBattle.incoming_ops(item, a, b) + XXuanBattle.damage_ops(item, a) + XTusu.damage_ops(item, a, b) + XLiuying.damage_ops(item, a, b) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a)  # 狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
+	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XXuanBattle.cast_ops(item, a) + XXuanBattle.incoming_ops(item, a, b) + XXuanBattle.damage_ops(item, a) + XTusu.damage_ops(item, a, b) + XLiuying.damage_ops(item, a, b) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a) + XTianqiQiyinEffects.damage_ops(item, a, b)  # 天启篇七印装备的出伤、承伤、治疗（原版档为空）；狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
 	return {"ops": ops}
 
 
