@@ -176,7 +176,7 @@ func setup_horseman(shell_id: int, rec: Dictionary, is_knight := false) -> XEnem
 	return self
 
 func display_name() -> String:
-	return XAlienBattle.name_prefix(self) + original_name() + letter + ("宝宝" if capture else "")
+	return XAlienBattle.name_prefix(self) + (str(get_meta("tianqi_prefix")) if has_meta("tianqi_prefix") else "") + original_name() + letter + ("宝宝" if capture else "")  # 天启篇战争线异化「侵染·」等
 
 ## Game_Enemy.originalName：EliteEnemy 改写为神话敌人带「【神话】」前缀（不含同名字母）；makeUniqueNames 按它计数，
 ## 所以同一敌人一只神话一只普通时两边都只有一个，都不加字母
