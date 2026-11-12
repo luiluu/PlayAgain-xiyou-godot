@@ -23,7 +23,7 @@ const TRAIT_SKILL_SEAL := 44
 ## 但 krz_state_re 的 states() 缓存让加状态后的 isRestricted 读到旧值，onRestrict 从不触发（参照 state_remove_probe）。true＝修成触发；false 重现原版。
 static var FIX_RESTRICT_REMOVE := true
 
-## hp／mp／tp 一写就作废只读窗口缓存（O-待定-2）：被动的 HPUP／HPLW 等条件让能力值跟着资源变
+## hp／mp／tp 一写就作废只读窗口缓存（O-待定-1）：被动的 HPUP／HPLW 等条件让能力值跟着资源变
 var hp := 0.0:
 	set(v):
 		hp = v
@@ -442,7 +442,7 @@ func push_state_result(key: String, id: int) -> void:
 			result[key].append(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：写入当场作废
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
 	if id == 1 and XGuyu.protect(self):
 		return  # 谷雨 addState 包装（最外层）：众生之劫代命，生命改 1、不加死亡
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
@@ -560,7 +560,7 @@ func remove_state_auto(id: int) -> void:
 	_leaving_state = false
 
 func remove_state(id: int) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：写入当场作废
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
 	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
 		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
 	if XLiuying.mark_locked(self, id):
@@ -578,6 +578,7 @@ func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
+		XTianqiFamineAlien.on_revive(self)  # 天启篇饥荒线异化：终焉荒年者在场时这一下回复无效
 	state_ids.erase(id)
 	state_turns.erase(id)
 	if had:
@@ -682,7 +683,7 @@ func param_cache_end() -> void:
 	param_cells = []
 
 func param_mark_dirty() -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：写入当场作废
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
 	effect_dirty = true
 	if param_cache_on:
 		param_dirty = true
@@ -980,7 +981,7 @@ func buff_limit(pid: int, positive: bool) -> int:
 
 ## Game_BattlerBase.clearStates（PermanentState 保留 <Permanent>）：不 refresh、不标 dirty
 func clear_states() -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-2）：写入当场作废
+	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
 	for sid in state_ids.duplicate():
 		if XLiuying.mark_locked(self, sid):
 			continue  # 流萤 Game_Enemy.clearStates 包装：战斗中击破印记与层数保留

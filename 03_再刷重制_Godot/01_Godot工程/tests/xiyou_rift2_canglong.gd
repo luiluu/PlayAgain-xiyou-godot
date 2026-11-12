@@ -75,14 +75,20 @@ func _rift() -> void:
 
 func _whisper() -> void:
 	# rift1 在这一次进图里记下：rift2 条件里的虚拟键为真（本次不播），换一次图后为假
+	XRift.CHAIN_AFTER_RIFT1 = false
 	XRift.on_map_setup(4)
 	check("visit.before", not XConfig.whisper_seen(XRift.THIS_VISIT_KEY))
 	XConfig.whisper_mark("rift1")
 	check("visit.same", XConfig.whisper_seen(XRift.THIS_VISIT_KEY))
+	# 默认（玩家反馈 v0.01）：rift1 放完同一次进大厅就接着播 rift2，虚拟键恒为假
+	XRift.CHAIN_AFTER_RIFT1 = true
+	check("visit.chain_same", not XConfig.whisper_seen(XRift.THIS_VISIT_KEY))
+	XRift.CHAIN_AFTER_RIFT1 = false
 	check("visit.not_saved", not XConfig.whisper_seen("rift2") and not (XConfig._values.codexWhisperSeen as Array).has(XRift.THIS_VISIT_KEY))
 	XRift.on_map_setup(132)
 	XRift.on_map_setup(4)
 	check("visit.next", not XConfig.whisper_seen(XRift.THIS_VISIT_KEY))
+	XRift.CHAIN_AFTER_RIFT1 = true
 
 
 func _canglong_data() -> void:

@@ -187,7 +187,7 @@ static func critical_multiplier_bonus(b: XBattler) -> float:
 ## 异化逆骨：伤害钩子 enter 压的公式帧（physical 为否）覆盖整次计算
 static func calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}) -> Dictionary:
 	XAlienBattle.push_formula(item, a, b, false)
-	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：乘区只读双方的能力值、被动、特性；公式值已由 rawValue 传入时才开窗口
+	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：乘区只读双方的能力值、被动、特性；公式值已由 rawValue 传入时才开窗口
 	var windowed := options.has("rawValue")
 	if not windowed:
 		XActor.read_end()

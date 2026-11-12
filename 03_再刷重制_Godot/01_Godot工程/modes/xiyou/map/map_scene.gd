@@ -75,6 +75,10 @@ const RERUN_AFTER_PAGE := {"4:36:2": true}
 ## O-117：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
 ## 飞行中能把飞艇带进楼层地图、越墙降落，挂机还会带着飞艇乱飞。设 false 恢复原版。
 static var SAFE_AIRSHIP_MENU := true  # O-117；测试要切回原版，用 static var
+## O-338：原版「确定键、角色下方、无图、只做场所移动」的门（8 号当铺进出、地下水栽培、超越大厅等 34 处）
+## 要站上去再按确定，只有鼠标点那格走过去才自动进（Game_Player.triggerTouchActionD1）；安卓摇杆走上去不进，玩家反馈 v0.01。
+## 开着时这类门踩上就进（挂机走动不进）；false 回到原版。判定见 MVEvent.is_plain_door。
+static var STEP_ON_DOORS := true
 ## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
 const AIRSHIP_MAX_ALTITUDE := 48
 ## 飞艇影子（Spriteset_Map.createShadow：system/Shadow1，锚点底边中点，z 6 在飞艇 z 5 之上）；挂在飞艇精灵下跟着它的格子位置，
@@ -442,6 +446,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 	refresh_party_sprites()
 	player.stepped.connect(_on_player_step)
 	player.action_pressed.connect(_on_action)
+	player.touch_target_reached.connect(_on_touch_arrived)
 	# 循环方向不限镜头（Game_Map.setDisplayPos／scrollLeft 在循环地图上不夹边）
 	const FREE := 10000000
 	camera.limit_left = -FREE if lower.loop_x else 0
@@ -612,6 +617,11 @@ func _on_player_step() -> void:
 		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
 			await run_event(e)
 			return
+	if STEP_ON_DOORS and can_start_local_events() and not XHangUp.is_active(XState.current):
+		for e in events:
+			if e.grid == player.grid and e.is_plain_door():
+				await run_event(e)
+				return
 	if not map_data.encounterList.is_empty() and not XTianqiSummit.no_encounter(XState.current, map_id) and not XTianqiQiyin.no_encounter(XState.current, map_id):  # 天启篇：旧 34 层（158）、七印祭坛和里副本不随机遇敌
 		if can_encounter():
 			encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y), XState.current.party_ability(0))
@@ -641,6 +651,17 @@ func _on_action() -> void:
 	# 天启篇大厅的方桌（面朝桌子按确认键；没有事件时才轮到）
 	if tianqi_table != null and is_instance_valid(tianqi_table) and XTianqiTable.is_table(front):
 		await tianqi_table.on_action(self)
+
+
+## Game_Player.triggerTouchActionD1：点了某格走到那里停下（wasMoving 且目的地＝脚下）时，脚下「确定键、角色下方」的事件启动；
+## 乘飞艇时那格是升降（get_on_off_vehicle 里处理脚下飞艇），不查事件
+func _on_touch_arrived() -> void:
+	if busy or not can_start_local_events() or in_vehicle():
+		return
+	for e in events:
+		if e.grid == player.grid and e.trigger() == 0 and not e.is_normal_priority():
+			await _run_action_event(e)
+			return
 
 
 ## 确认键启动的事件；大厅初步异化：原事件整段跑完、还在大厅时，再追加一句（不插进原指令表）

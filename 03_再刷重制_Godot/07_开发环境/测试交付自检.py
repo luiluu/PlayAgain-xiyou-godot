@@ -74,7 +74,10 @@ class Fixture(unittest.TestCase):
         """建一条车道工作树：files＝{相对路径: 内容}，交付单默认按分支名。返回工作树路径。"""
         wt = Path(self.tmp.name) / (name or branch.replace('/', '_'))
         self.g('worktree', 'add', '-q', '-b', branch, str(wt), 'main')
-        for rel, text in (files or {str(merge.PROJECT / ('modes/new_%s.gd' % branch.split('/')[-1].replace('-', '_'))): 'extends Node\n'}).items():
+        if files is None:
+            gd = str(merge.PROJECT / ('modes/new_%s.gd' % branch.split('/')[-1].replace('-', '_')))
+            files = {gd: 'extends Node\n', gd + '.uid': 'uid://fixture\n'}   # 新脚本带 .uid 才算交齐
+        for rel, text in files.items():
             self.put(rel, text, cwd=wt)
         if sheet is not False:
             self.put('00_项目管理/交付/%s.md' % (sheet or branch.replace('/', '_')), SHEET % (branch, status) + extra, cwd=wt)
@@ -133,6 +136,35 @@ class PrecheckTests(Fixture):
         r = self.check('cc/task')
         self.assertEqual(r['status'], 'draft')
         self.assertTrue(any('待写' in p for p in r['problems']))
+
+    def test_new_gd_without_uid_is_reported(self):
+        # 11 月最近三次合并都是车道漏交新脚本的 .gd.uid、总装手补：tests、modes 都查，列出缺的文件
+        P = merge.PROJECT
+        files = {str(P / 'modes/x/新.gd'): 'extends Node\n', str(P / 'tests/test_新.gd'): 'extends Node\n',
+                 str(P / 'modes/有.gd'): 'extends Node\n', str(P / 'modes/有.gd.uid'): 'uid://a\n',
+                 str(P / 'modes/a.gd'): 'extends Node\n\nfunc one():\n\treturn 3\n',     # 改已有脚本不算新增
+                 str(P / 'android/build/.gdignore'): '', str(P / 'android/build/t.gd'): 'extends Node\n',  # Godot 不导入，没有 .uid
+                 '03_再刷重制_Godot/07_开发环境/打包.gd': 'extends SceneTree\n'}             # 工程外的脚本不查
+        self.lane('cc/task', files=files)
+        r = self.check('cc/task')
+        bad = [p for p in r['problems'] if '.gd.uid' in p]
+        self.assertEqual(len(bad), 1, r['problems'])
+        self.assertIn('新增的 2 个 .gd', bad[0])
+        self.assertIn(str(P / 'modes/x/新.gd.uid'), bad[0])
+        self.assertIn(str(P / 'tests/test_新.gd.uid'), bad[0])
+        for other in ('有.gd', 'a.gd', 't.gd', '打包.gd'):
+            self.assertNotIn('/' + other, bad[0])
+        self.assertEqual(r['status'], 'ready')
+        self.assertFalse(any('没提交同名' in h for h in r['hints']), r['hints'])   # plan() 的同义提示不重复
+        self.assertEqual(merge.missing_gd_uids(self.root, 'main', 'cc/task'), sorted([str(P / 'modes/x/新.gd'), str(P / 'tests/test_新.gd')]))
+
+    def test_uid_committed_later_passes(self):
+        P = merge.PROJECT
+        wt = self.lane('cc/task', files={str(P / 'tests/test_b.gd'): 'extends Node\n'})
+        self.assertTrue(any('.gd.uid' in p for p in self.check('cc/task')['problems']))
+        self.put(str(P / 'tests/test_b.gd.uid'), 'uid://b\n', cwd=wt)
+        self.commit('add uid', cwd=wt)
+        self.assertEqual(self.check('cc/task')['problems'], [])
 
     def test_opt_draft_written_as_list_is_caught(self):
         # 11-10 天启篇开局那次：优化登记草稿写成列表，合并时才被拦

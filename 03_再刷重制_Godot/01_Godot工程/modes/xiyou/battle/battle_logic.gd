@@ -190,6 +190,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XTianqiQiyinDragonRun.setup(self, s)  # 天启篇七首之龙（prepare 过才换）：借来的普拉顿换成七首之龙（在各线异化之前，名字不带【首领】就不会被按段异化）
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
@@ -199,6 +200,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XTianqiRewards.setup(self, s)  # 天启篇奖励：穿着骑士遗物的人记本场资历、火花
 	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
+	XTianqiQiyinDragonRun.setup_rules(self)  # 天启篇七首之龙：七段揭印的规则记录（在里副本规则之后，免得被它清掉）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -242,6 +244,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XHubris.start_battle(self)  # 狂妄 setup／startBattle 包装：开场名单，清扬名与行动数
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XTianqiQiyinEffects.start(self)  # 天启篇七印装备：本场数据、全队那一件神器、七印书卷（原版档不建）
+	XTianqiAffixBattle.start(self)  # 天启篇词条：本场数据、全队光环、开场护盾、初始 TP
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	XLiuying.start_battle(self)  # 流萤 startBattle／onBattleStart 包装（原 startBattle 之后，开战移除状态之后）：萨姆形态、负面免疫、免死；萤火清零
@@ -395,7 +398,7 @@ func alive(list: Array) -> Array:
 # ---- 画面快照：日志写入时记下表现要用的值，表现层只读日志（整次行动先结算完才演出，播放时的实时状态已是最终值） ----
 ## 一个战斗者此刻的画面读数（血条、状态栏、待机动作、能否行动）
 func view_of(b: XBattler) -> Dictionary:
-	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：一次快照里同一名角色的技能表、特性表只算一次
+	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：一次快照里同一名角色的技能表、特性表只算一次
 	var v := _view_now(b)
 	XActor.read_end()
 	return v
@@ -421,7 +424,7 @@ func views(list: Array = []) -> Dictionary:
 ## 全体战斗者 → 能否行动（spriteCanMove）与是否活着，行动序列每条指令执行前记一次（MOVE/JUMP/FACE 等按当时的状态）
 func move_flags() -> Dictionary:
 	var out := {}
-	XActor.read_begin()  # 只读窗口缓存（O-待定-2）
+	XActor.read_begin()  # 只读窗口缓存（O-待定-1）
 	for b in actors + enemies:
 		out[b] = [can_move(b), b.is_alive()]
 	XActor.read_end()
@@ -623,6 +626,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	cost.mp = XXuanBattle.mp_cost(a, skill, int(cost.mp))  # 璇 skillMpCost 包装：专属技能按 MP 上限百分比
 	cost.mp = XTusu.mp_cost(a, skill, int(cost.mp))  # 屠苏 skillMpCost 包装（谷雨之外、种族之内）：专属技能按比例、噬主费用、书相省蓝
 	cost = XTianqiQiyinEffects.cost(a, skill, cost)  # 天启篇七印装备：黑印 2 件少耗、天平翻倍、默印 5 件免耗
+	cost = XTianqiAffixBattle.cost(a, skill, cost)  # 天启篇词条「技能消耗」（全身最多 −50%）
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 ## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
@@ -739,7 +743,7 @@ static func wtype_equipped(a: XActor, wtype: int) -> bool:
 
 ## 角色的可用主动技能（隐藏的被动不列出）
 func usable_skills(a: XActor) -> Array:
-	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：逐个技能判能不能用都是只读
+	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：逐个技能判能不能用都是只读
 	var out := battle_skills(a).filter(func(s): return can_use(a, s))
 	XActor.read_end()
 	return out
@@ -1114,6 +1118,7 @@ func start_turn() -> void:
 	turn_start_logs.append_array(XTianqiPlagueAlien.start_turn(self))  # 天启篇瘟疫线异化：报病灶
 	turn_start_logs.append_array(XTianqiDeathAlien.start_turn(self))  # 天启篇死亡线异化：宣判者挂死期，报死期和丧钟
 	turn_start_logs.append_array(XTianqiQiyinRule.start_turn(self))  # 七印祭坛：献祭、星坠、寂静
+	turn_start_logs.append_array(XTianqiQiyinDragonRun.start_turn(self))  # 七首之龙：星坠等扣过后断首揭印、缓期到点倒下
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1146,7 +1151,7 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
-	XActor.read_reset()  # 只读窗口缓存（O-待定-2）：行动开始时不该有开着的窗口
+	XActor.read_reset()  # 只读窗口缓存（O-待定-1）：行动开始时不该有开着的窗口
 	if not STALE_TIMING:
 		for a in actors:
 			if a is XActor:
@@ -1229,6 +1234,8 @@ func act(u: XBattler, skill, target) -> Array:
 		XLiuying.end_action(self, u, skill)  # 流萤 endAction 包装（原 endAction 之后）：燃烧后刷新负面免疫与免死
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
+	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」
+	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）
 	if started:
@@ -1241,6 +1248,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiHorsemen.after_action(self, u))  # 天启四骑士：打混子记不服、号令、阶段
 	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
+	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
@@ -1285,6 +1293,8 @@ func end_turn() -> Array:
 	logs.append_array(XXuanBattle.take_logs())
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XTianqiQiyinEffects.end_turn(self))  # 天启篇七印装备：疫结算与传染、各计时
+	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时；新异化词条：临终必死、带毒续毒
+	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
@@ -2031,6 +2041,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		return logs
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	XTianqiQiyinEffects.begin_action(self, u, skill)  # 天启篇七印装备：行动帧（砝码、倾囊、换系、舍身、蓄势）
+	XTianqiAffixBattle.begin_action(self, u, skill)  # 天启篇词条：先声、本次行动的目标与击杀
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
@@ -2489,12 +2500,14 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, 
 func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bool) -> Dictionary:
 	var raw := _formula_raw(u, skill, t)
 	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
+	XTianqiAffixBattle.crit_now = critical  # 天启篇词条「坚韧」：伤害钩子里看这一击是不是暴击
 	var options := {"critical": critical, "vars": vars(), "rawValue": raw, "random": _rule(),
 		"battleRound": maxi(1, turn), "raceAction": true}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 	var outcome := _formula_outcome
 	# 云裳伤害钩子 split：七曜流霞元素、万法同裳两路、千军入袖收袖的各目标（公式对别的目标重新求值；没有就照常算一次）
 	var res := XYunshang.calculate_split(skill, u, t, options, func(pt): return _formula_raw(u, skill, pt))
 	_formula_outcome = outcome
+	XTianqiAffixBattle.crit_now = false
 	return res
 
 
@@ -2525,6 +2538,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		return xuan_cmd
 	var hp_before := t.hp
 	XTianqiQiyinEffects.before_apply(self, u, skill, t)  # 天启篇七印装备：记这一击前的生命（大刀阔斧溢出）
+	XTianqiAffixBattle.before_apply(self, u, skill, t)  # 天启篇词条：斩获、回春要的这一击前生命
 	var live := t is XEnemy and t.is_alive()
 	var states_before: Array = t.state_ids.duplicate() if t is XActor else []
 	var frame := {}
@@ -2565,6 +2579,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	if t is XActor and t.rv_tp_refreshed:
 		_mark_stale(t, states_before)
 	XTianqiQiyinEffects.after_apply(self, u, skill, t, r)  # 天启篇七印装备：疫、判决、落星、处决、击倒记录
+	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
 	return r
 
 
@@ -2789,6 +2804,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
 	value = XTianqiQiyinEffects.hp_damage(self, u, t, value)  # 天启篇七印装备：殉印 3 件替挡一半、灰印 5 件免死
+	value = XTianqiAlienAffix.hp_damage(self, u, t, value)  # 天启篇新异化词条「临终」：致命一击留一口气
 	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
 	var hubris_before := t.hp
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
@@ -2806,6 +2822,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 	value = XTianqiDeathAlien.hp_damage(self, u, t, value)  # 天启篇死亡线异化：替身被打倒时换一名我方代它倒下
 	value = XTianqiRewards.hp_damage(self, u, t, value, item)  # 天启篇奖励：遗物的受伤、出伤、回复与资历
 	value = XTianqiQiyinRule.hp_damage(self, u, t, value)  # 七印祭坛：杀声、献祭、魔塔宝石
+	value = XTianqiQiyinDragonRun.hp_damage(self, t, value)  # 七首之龙：一次行动最多打到本段底
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -2992,7 +3009,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 				elif int(r.skill.get("hitType", 0)) != 0:
 					chance *= state_rate(t, id) * _luk_rate(u, t)
 				var resisted_chance := -1.0
-				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id):
+				if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id) and not XTianqiPlagueAlien.forced_state(t, id):  # 天启篇终焉疫源
 					resisted_chance = chance
 					chance = 0.0
 				# MV addState → isStateAddable 要求活着：本次伤害已致死时照常掷随机数，但不再附加（不进 r.added）
@@ -3036,7 +3053,7 @@ func sequence_add_state(t: XBattler, id: int) -> void:
 		return
 	if not t.is_alive():
 		return
-	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):
+	if (t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id) and not XAlienBattle.forced_state(t, id) and not XTianqiPlagueAlien.forced_state(t, id)) or (id == DEATH_STATE and t.immortal):  # 天启篇终焉疫源：我方减益免疫无效
 		return
 	if id == DEATH_STATE:
 		_die(t)
@@ -3090,6 +3107,8 @@ func sequence_buff(t: XBattler, pid: int, add: bool, buff: bool, turns: int, ali
 			return  # 异化 addBuff／addDebuff 包装：绝缘拒收外来、舍身增益转给队友、囚厄接收队友减益
 		if not buff and XMira.blocks_debuff(t):
 			return  # 米拉终焉 addDebuff 包装
+		if not buff and XTianqiWarAlien.blocks_debuff(self, t):
+			return  # 天启篇战争线异化：终焉战狂免疫能力值减益
 		if t.buffs[pid] != t.buff_limit(pid, buff):
 			t.buffs[pid] += 1 if buff else -1
 		if t.buffs[pid] != 0 and t.buff_turns[pid] < turns:
@@ -3120,7 +3139,7 @@ static func _luk_rate(u: XBattler, t: XBattler) -> float:
 func state_rate(b: XBattler, id: int) -> float:
 	if XAlienBattle.forced_state(b, id):
 		return 1.0  # 异化疫囊、囚厄 stateRate 包装
-	return b.traits_pi(XBattler.TRAIT_STATE_RATE, id)
+	return b.traits_pi(XBattler.TRAIT_STATE_RATE, id) * XTianqiAffixBattle.state_rate(b, id)  # 天启篇词条「异常抵抗」
 
 
 func _die(b: XBattler) -> void:
@@ -3304,6 +3323,7 @@ func rewards() -> Dictionary:
 	if enemies.any(func(e): return e.zq_weapon_trial):
 		out.exp = 0
 		out.gold = 0
+	XTianqiAffixBattle.rewards(self, out)  # 天启篇词条「阅历」：经验、金钱（全队相加，助力位也算）
 	return out
 
 
@@ -3358,7 +3378,7 @@ func _roll_drops(e: XEnemy) -> Array:
 ## 难度不影响：Vitsuno_Difficulty 的按序号掉率在原版整段注释掉了。原来这里按难度「Drop Rate」×(1＋出战 passiveIRUP 最大值)×套装算，
 ## 没有 0.2 底、没有亡魂汲取，难度 2 时约多掉十几倍（悟空 drops1 改）。
 func drop_chances(e: XEnemy) -> Array:
-	var rate := XAlienBattle.drop_item_rate(state, e)
+	var rate := XAlienBattle.drop_item_rate(state, e) * XTianqiAffixBattle.drop_mult(self)  # 天启篇词条「物品掉落」（全队相加，助力位也算）
 	var out := []
 	var di: Array = e.data().get("dropItems", [])
 	for drop: Dictionary in di:
@@ -3410,6 +3430,7 @@ func grant(r: Dictionary) -> Array:
 	if not drop_lock:
 		gain_drops(r.drops)
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
+	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
@@ -3449,6 +3470,7 @@ func end_battle(result := -1) -> void:
 	XTianqiRewards.end(self)  # 天启篇奖励：清遗物的本场记录
 	XTianqiQiyinRule.end(self, result)  # 七印祭坛：清本场规则；31～35 层野外打赢掉印钥
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据
+	XTianqiAffixBattle.finish(self)  # 天启篇词条：清本场数据
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

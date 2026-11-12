@@ -9,6 +9,9 @@ extends RefCounted
 ## - 种类：战狂（八项属性 ×1.5／×2／×3／×5；化形起每次受伤攻击 +5%）、战意（每被攻击一次叠 1 层，满 6／5／3／2 层立刻再动，
 ##   层数照设计稿附录避开 4）、号令官（存活时同场所有怪属性 +10／20／30／50%、每回合再动 0／1／1／2 次；化形起被打倒时其他怪各立刻行动一次）、
 ##   烟火师（每次行动火花额外 +1；化形起火花满触发再动时自己多动一次；随机雷电段数没做）。
+## - 终焉效果（cc/tianqi-alien-finale）：战狂免疫能力值减益（BattleLogic.sequence_buff）；号令官同场每多一只活着的怪自己多再动 1 次（上限 3）；
+##   烟火师火花满时额外对我方全体轰炸一次（攻击×系数×攻÷(攻＋防)，不吃护盾外的减伤）；战意满层那次再动伤害 ×2。
+##   战意化形起：满层再动时清掉自己一个减益（能力值减益或减益状态）。连击兵这个种类还没做。
 ## - 火花（本线核心计量）：异化怪每行动 +1，满 10（终焉在场时 6）全体异化怪立刻再动一次，火花归零。
 ## - 交锋（线规则）：场上有异化怪时，从第 3 回合起双方伤害每回合 +10%（上限 +100%）。
 ## 计量和层数现在只在战斗日志里报（battle_text），没有专门的计量条（画面归 B 界面车道）。
@@ -192,7 +195,13 @@ static func extra_actions(logic, b) -> int:
 		return 0
 	var f := fight(logic)
 	var cmd = _commander(logic, f)
-	return int(kind_info("commander").extra[int(f.units[cmd].idx)]) if cmd != null else 0
+	if cmd == null:
+		return 0
+	var n := int(kind_info("commander").extra[int(f.units[cmd].idx)])
+	if is_same(b, cmd) and int(f.units[cmd].idx) >= 3:  # 终焉号令官：同场每多一只活着的怪自己多再动 1 次
+		var others: int = logic.alive(logic.enemies).filter(func(e): return not is_same(e, cmd)).size()
+		n += mini(int(kind_info("commander").get("finale_cap", 3)), others)
+	return n
 
 
 ## BattleLogic.act 末尾：火花、战意、号令官倒下
@@ -201,6 +210,9 @@ static func after_action(logic, u) -> Array:
 		return []
 	var f := fight(logic)
 	var again := []
+	var ru: Dictionary = f.units.get(u, {})
+	if int(ru.get("boost", 0)) > 0:
+		ru.boost = 0  # 战意终焉：加倍的那次再动打完了（它满层后排在最前，下一次行动就是那次再动）
 	if is_alien(logic, u):
 		var n := int(data().sparks.per_action) + (int(kind_info("pyro").spark_extra) if str(f.units[u].kind) == "pyro" else 0)
 		f.sparks = int(f.sparks) + XTianqiRewards.spark_gain(logic, n)  # 天启篇奖励：净印·止戈几率不加
@@ -213,6 +225,9 @@ static func after_action(logic, u) -> Array:
 					if str(f.units[e].kind) == "pyro" and int(f.units[e].idx) >= 2:
 						again.append(e)  # 烟火师化形：自己再多动一次
 			_say(f, "火花满了（%d 点）：异化怪全体再动！" % full)
+			for e in f.units:
+				if e.is_alive() and str(f.units[e].kind) == "pyro" and int(f.units[e].idx) >= 3:
+					_bomb(logic, f, e)  # 烟火师终焉：火花满额外全体轰炸
 		else:
 			_say(f, "火花 %d／%d。" % [int(f.sparks), full])
 	# 战意：这一次行动里被我方打到的战意怪各叠一层
@@ -226,6 +241,10 @@ static func after_action(logic, u) -> Array:
 			r.fervor = 0
 			again.append(e)
 			_say(f, "%s战意满了：立刻再动！" % e.display_name())
+			if int(r.idx) >= 2:
+				_cleanse_one(logic, f, e)  # 战意化形：再动时清掉自己一个减益
+			if int(r.idx) >= 3:
+				r.boost = 1  # 战意终焉：这次再动伤害 ×2（它这次再动结束时清）
 		else:
 			_say(f, "%s战意 %d／%d。" % [e.display_name(), int(r.fervor), need])
 	f.hit = {}
@@ -241,6 +260,50 @@ static func after_action(logic, u) -> Array:
 	for i in range(again.size() - 1, -1, -1):
 		logic.current_order.push_front(again[i])
 	return take_logs(logic)
+
+
+## 烟火师终焉：对我方全体轰炸一次（同骑士 perform 的口径：攻击×系数×攻÷(攻＋防)，交锋照乘）
+static func _bomb(logic, f: Dictionary, e) -> void:
+	var coef := float(kind_info("pyro").get("finale_bomb", 1.5))
+	var atk: float = maxf(1.0, float(e.atk))
+	var hit := 0
+	for a in logic.alive(logic.actors):
+		var v := floorf(atk * coef * atk / (atk + maxf(0.0, float(a.def))) * clash_mult(logic))
+		if v <= 0.0:
+			continue
+		var before: float = a.hp
+		a.hp = maxf(0.0, a.hp - float(a.absorb_shield(v)))
+		a.refresh_resources()
+		f.queue.append({"type": "regen", "target": a, "hp": before - a.hp, "views": logic.views([a])})
+		if a.is_dead():
+			logic._die(a)
+			f.queue.append({"type": "collapse", "target": a, "views": logic.views([a])})
+		hit += 1
+	if hit > 0:
+		_say(f, "%s的烟火落了下来：我方全体被轰炸。" % e.display_name())
+
+
+## 战意化形：清掉自己一个减益（先能力值减益，再减益状态）
+static func _cleanse_one(logic, f: Dictionary, e) -> void:
+	for i in e.buffs.size():
+		if int(e.buffs[i]) < 0:
+			logic.sequence_buff(e, i, false, false, 0)
+			_say(f, "%s甩掉了一个减益。" % e.display_name())
+			return
+	for st in e.states():
+		var id := int(st.get("id", 0))
+		if id != 1 and XBossStatus.kind_of(st) == "Debuff":
+			logic._state_remove(e, id)
+			_say(f, "%s甩掉了一个减益。" % e.display_name())
+			return
+
+
+## BattleLogic.sequence_buff：终焉战狂免疫能力值减益
+static func blocks_debuff(logic, t) -> bool:
+	if not active(logic):
+		return false
+	var r: Dictionary = fight(logic).units.get(t, {})
+	return not r.is_empty() and str(r.kind) == "berserk" and int(r.idx) >= 3
 
 
 ## 交锋：场上有异化怪时，从第 3 回合起每回合伤害 +10%，上限 +100%
@@ -261,6 +324,9 @@ static func hp_damage(logic, u, t, value: float) -> float:
 		return value
 	var f := fight(logic)
 	value *= clash_mult(logic)
+	var ru: Dictionary = f.units.get(u, {})
+	if int(ru.get("boost", 0)) > 0 and t is XActor:
+		value *= float(kind_info("fervor").get("finale_mult", 2.0))  # 战意终焉：满层那次再动伤害加倍
 	var r: Dictionary = f.units.get(t, {})
 	if not r.is_empty() and u is XActor:
 		if str(r.kind) == "fervor":

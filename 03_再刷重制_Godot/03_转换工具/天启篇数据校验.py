@@ -13,6 +13,7 @@
 - war_line.json、famine_line.json、plague_line.json、death_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
 - summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
+- qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -838,6 +839,280 @@ def check_rewards(_args) -> bool:
     return True
 
 
+# ---- 七印祭坛四张表：qiyin_gear／qiyin_drop／qiyin_dragon／qiyin_altar（只读草稿，另两条车道还在加字段）----
+# 只查表里现有的字段：缺了就不查，不认识的键不报错。
+
+TIANQI_GEAR_GD = PROJECT / 'modes' / 'xiyou' / 'core' / 'tianqi_gear.gd'
+QIYIN_SEALS = ('bai', 'hong', 'hei', 'hui', 'xun', 'zhen', 'mo')
+QIYIN_PARTS = ('head', 'body', 'hands', 'waist', 'legs', 'feet')
+QIYIN_SET_PIECES = 6
+QIYIN_WEAPONS = 13
+QIYIN_ARTIFACTS = 5
+
+
+def tianqi_gear_order(path: Path = None) -> list:
+    """从 core/tianqi_gear.gd 的 ORDER 取天启篇装备栏的类型号（只读）。"""
+    text = Path(path or TIANQI_GEAR_GD).read_text(encoding='utf-8')
+    m = re.search(r'const ORDER\s*:?=\s*\[([^\]]*)\]', text)
+    if not m:
+        raise ValueError('tianqi_gear.gd 里找不到 ORDER')
+    return [int(x) for x in re.findall(r'-?\d+', m.group(1))]
+
+
+def _is_num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _walk(v, path=''):
+    """逐个给出 (路径, 键, 值)，跳过 _note。"""
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if k == '_note':
+                continue
+            p = path + '/' + str(k)
+            yield p, k, x
+            yield from _walk(x, p)
+    elif isinstance(v, list):
+        for i, x in enumerate(v):
+            p = '%s/%d' % (path, i)
+            yield p, None, x
+            yield from _walk(x, p)
+
+
+def _is_chance_key(k) -> bool:
+    return isinstance(k, str) and (k == 'chance' or k.endswith('_chance'))
+
+
+def qiyin_common_rules(table: dict) -> list:
+    """四张表共用：数字避开 4（表自己的 nice_number_exempt 豁免）、几率在 0～1、权重非负且不全为 0。"""
+    bad = []
+    fours = []
+    nice_violations({k: v for k, v in table.items() if k not in ('_note', 'dev')}, '',
+                    set(table.get('nice_number_exempt', [])), fours)
+    if fours:
+        bad.append('设计数值不带 4：' + '、'.join(fours))
+    for p, k, v in _walk(table):
+        if _is_chance_key(k):
+            vals = list(v.values()) if isinstance(v, dict) else [v]
+            for x in vals:
+                if not (_is_num(x) and 0 <= x <= 1):
+                    bad.append('几率在 0～1：%s=%s' % (p, v))
+                    break
+        if isinstance(k, str) and (k == 'weights' or k.endswith('_weights')) and isinstance(v, dict):
+            nums = [x for x in v.values() if _is_num(x)]
+            if any(x < 0 for x in nums) or len(nums) != len(v):
+                bad.append('权重非负：%s=%s' % (p, v))
+            elif not any(x > 0 for x in nums):
+                bad.append('权重不全为 0：%s=%s' % (p, v))
+        if isinstance(k, str) and k.endswith('_weight') and _is_num(v) and v < 0:
+            bad.append('权重非负：%s=%s' % (p, v))
+    return bad
+
+
+def _seal_refs(table: dict, name: str) -> list:
+    """表里引用印键的地方：[(说明, 键)]。只看已知字段。"""
+    out = []
+
+    def add(where, keys):
+        if isinstance(keys, (list, tuple)):
+            out.extend((where, k) for k in keys)
+        elif isinstance(keys, dict):
+            out.extend((where, k) for k in keys if k != '_note')
+        elif keys is not None:
+            out.append((where, keys))
+
+    if name == 'gear':
+        add('seals', [s.get('key') for s in table.get('seals', []) if isinstance(s, dict)])
+        add('sets', table.get('sets'))
+        add('schools', table.get('schools'))
+        add('weapons.seal', [w.get('seal') for w in table.get('weapons', []) if isinstance(w, dict) and 'seal' in w])
+    elif name == 'drop':
+        add('seals', table.get('seals'))
+        add('weapon_classes', table.get('weapon_classes'))
+        for fl, ks in table.get('floor_first_kill', {}).items():
+            if fl != '_note':
+                add('floor_first_kill.' + fl, ks)
+    elif name == 'dragon':
+        add('seals', table.get('seals'))
+        fight = table.get('fight', {})
+        add('fight.reveal_order', fight.get('reveal_order'))
+        add('fight.grey_reprieve.seal', fight.get('grey_reprieve', {}).get('seal'))
+    elif name == 'altar':
+        add('seals', table.get('seals'))
+        unlock = table.get('unlock', {})
+        add('unlock', unlock)
+        for k, u in unlock.items():
+            if isinstance(u, dict):
+                add('unlock.%s.after_seals' % k, u.get('after_seals'))
+    return out
+
+
+def _part_refs(table: dict, name: str) -> list:
+    out = []
+    if name == 'gear':
+        out += [('parts', p.get('key')) for p in table.get('parts', []) if isinstance(p, dict)]
+        for sk, s in table.get('sets', {}).items():
+            if isinstance(s, dict):
+                out += [('sets.%s.pieces' % sk, p.get('part')) for p in s.get('pieces', []) if isinstance(p, dict) and 'part' in p]
+    elif name == 'drop':
+        out += [('parts', k) for k in table.get('parts', [])]
+    elif name == 'dragon':
+        out += [('reward.set_parts', k) for k in table.get('reward', {}).get('set_parts', [])]
+    elif name == 'altar':
+        out += [('names.parts', k) for k in table.get('names', {}).get('parts', {})]
+    return out
+
+
+def qiyin_key_rules(table: dict, name: str) -> list:
+    """印键只有七个、部位键只有六个。"""
+    bad = []
+    for where, k in _seal_refs(table, name):
+        if k not in QIYIN_SEALS:
+            bad.append('印键只有 %s：%s 里有 %s' % ('、'.join(QIYIN_SEALS), where, k))
+    for where, k in _part_refs(table, name):
+        if k not in QIYIN_PARTS:
+            bad.append('部位键只有 %s：%s 里有 %s' % ('、'.join(QIYIN_PARTS), where, k))
+    return bad
+
+
+def qiyin_gear_rules(table: dict, order: list) -> list:
+    """qiyin_gear.json：共用规则＋键＋类型号对 ORDER＋七套各 6 件、毕业武器 13 把、神器 5 件。"""
+    bad = qiyin_common_rules(table) + qiyin_key_rules(table, 'gear')
+
+    def check(n, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (n, detail))
+
+    part_etype = {p.get('key'): p.get('etype') for p in table.get('parts', []) if isinstance(p, dict)}
+    for k, e in part_etype.items():
+        if e is not None:
+            check('部位类型号在 tianqi_gear.gd 的 ORDER 里：' + str(k), e in order, '%s 不在 %s' % (e, order))
+    if 'sets' in table:
+        sets = table['sets']
+        check('套装七套', sorted(sets) == sorted(QIYIN_SEALS), sorted(sets))
+        for sk, s in sets.items():
+            pieces = s.get('pieces', []) if isinstance(s, dict) else []
+            check('套装 %s 有 %d 件' % (sk, QIYIN_SET_PIECES), len(pieces) == QIYIN_SET_PIECES, len(pieces))
+            parts = [p.get('part') for p in pieces if isinstance(p, dict)]
+            check('套装 %s 部位不重复' % sk, len(parts) == len(set(parts)), parts)
+            for p in pieces:
+                if not isinstance(p, dict) or 'etype' not in p:
+                    continue
+                check('套装件类型号在 ORDER 里：%s %s' % (sk, p.get('part')), p['etype'] in order, '%s 不在 %s' % (p['etype'], order))
+                want = part_etype.get(p.get('part'))
+                if want is not None:
+                    check('套装件类型号同部位：%s %s' % (sk, p.get('part')), p['etype'] == want, '%s / 部位 %s' % (p['etype'], want))
+    art_etype = table.get('artifact_rule', {}).get('etype')
+    if art_etype is not None:
+        check('神器类型号在 ORDER 里', art_etype in order, '%s 不在 %s' % (art_etype, order))
+    if 'weapons' in table:
+        ws = table['weapons']
+        check('毕业武器 %d 把' % QIYIN_WEAPONS, len(ws) == QIYIN_WEAPONS, len(ws))
+        keys = [w.get('key') for w in ws if isinstance(w, dict)]
+        check('毕业武器键不重复', len(keys) == len(set(keys)), keys)
+        types = {t.get('key') for t in table.get('weapon_types', []) if isinstance(t, dict)}
+        if types:
+            for w in ws:
+                if isinstance(w, dict) and w.get('type') is not None:
+                    check('毕业武器类型在 weapon_types 里：%s' % w.get('key'), w['type'] in types, w['type'])
+            for sk, sc in table.get('schools', {}).items():
+                if isinstance(sc, dict) and isinstance(sc.get('types'), list):
+                    miss = [t for t in sc['types'] if t not in types]
+                    check('流派武器类型在 weapon_types 里：' + sk, not miss, miss)
+    if 'artifacts' in table:
+        arts = table['artifacts']
+        check('神器 %d 件' % QIYIN_ARTIFACTS, len(arts) == QIYIN_ARTIFACTS, len(arts))
+        keys = [a.get('key') for a in arts if isinstance(a, dict)]
+        check('神器键不重复', len(keys) == len(set(keys)), keys)
+    return bad
+
+
+def qiyin_refs(gear: dict, others: dict) -> list:
+    """跨表：qiyin_drop／qiyin_dragon／qiyin_altar 引用的套装、武器、神器、印、部位都要在 qiyin_gear 里有。"""
+    bad = []
+    seals = {s.get('key') for s in gear.get('seals', []) if isinstance(s, dict)}
+    sets = set(gear.get('sets', {}))
+    parts = {p.get('key') for p in gear.get('parts', []) if isinstance(p, dict)}
+    arts = {a.get('key') for a in gear.get('artifacts', []) if isinstance(a, dict)}
+    wtypes = {t.get('name'): t.get('key') for t in gear.get('weapon_types', []) if isinstance(t, dict)}
+    schools = gear.get('schools', {})
+    for name, t in others.items():
+        fname = 'qiyin_%s.json' % name
+        for where, k in _seal_refs(t, name):
+            if 'seals' in gear and k not in seals:
+                bad.append('%s 的印在 qiyin_gear 的 seals 里：%s 里有 %s' % (fname, where, k))
+            if 'sets' in gear and k not in sets:
+                bad.append('%s 的套装在 qiyin_gear 的 sets 里：%s 里有 %s' % (fname, where, k))
+        if 'parts' in gear:
+            for where, k in _part_refs(t, name):
+                if k not in parts:
+                    bad.append('%s 的部位在 qiyin_gear 的 parts 里：%s 里有 %s' % (fname, where, k))
+        art_refs = []
+        if name == 'drop':
+            art_refs = [('artifact.keys', k) for k in t.get('artifact', {}).get('keys', [])]
+        elif name == 'dragon':
+            art_refs = [('reward.artifacts', k) for k in t.get('reward', {}).get('artifacts', [])]
+        if 'artifacts' in gear:
+            for where, k in art_refs:
+                if k not in arts:
+                    bad.append('%s 的神器在 qiyin_gear 的 artifacts 里：%s 里有 %s' % (fname, where, k))
+        if name == 'drop' and wtypes:
+            for sk, cls in t.get('weapon_classes', {}).items():
+                if sk == '_note' or not isinstance(cls, list):
+                    continue
+                miss = [c for c in cls if c not in wtypes]
+                if miss:
+                    bad.append('%s 的武器类型在 qiyin_gear 的 weapon_types 里：weapon_classes.%s 里有 %s' % (fname, sk, miss))
+                want = schools.get(sk, {}).get('types') if isinstance(schools.get(sk), dict) else None
+                if isinstance(want, list) and not miss and sorted(wtypes[c] for c in cls) != sorted(want):
+                    bad.append('%s 的武器类型同 qiyin_gear 的流派：weapon_classes.%s=%s，schools.%s.types=%s' % (fname, sk, cls, sk, want))
+    return bad
+
+
+def _qiyin_load(name: str):
+    path = DATA_DIR / ('qiyin_%s.json' % name)
+    return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else None
+
+
+def _report(fname: str, what: str, bad: list) -> bool:
+    if bad:
+        print('%s %s %d 项不过：' % (fname, what, len(bad)))
+        for b in bad:
+            print('  ' + b)
+        return False
+    print('%s %s：通过' % (fname, what))
+    return True
+
+
+def check_qiyin(name: str) -> bool:
+    fname = 'qiyin_%s.json' % name
+    if not (DATA_DIR / fname).is_file():
+        print('跳过：没有 %s' % fname)
+        return True
+    try:
+        t = _qiyin_load(name)
+        if name == 'gear':
+            bad = qiyin_gear_rules(t, tianqi_gear_order())
+        else:
+            bad = qiyin_common_rules(t) + qiyin_key_rules(t, name)
+    except Exception as e:  # 缺键、格式坏也算失败
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report(fname, '规则自检', bad)
+
+
+def check_qiyin_refs(_args) -> bool:
+    if not (DATA_DIR / 'qiyin_gear.json').is_file():
+        print('跳过：没有 qiyin_gear.json（七印跨表引用）')
+        return True
+    try:
+        gear = _qiyin_load('gear')
+        others = {n: t for n in ('drop', 'dragon', 'altar') for t in [_qiyin_load(n)] if t is not None}
+        bad = qiyin_refs(gear, others)
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('七印四张表', '跨表引用', bad)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -851,6 +1126,11 @@ CHECKS = [
     ('gear_table', check_gear_table),
     ('affix_text', lambda args: check_affix_text(args.affix_text)),
     ('rewards', check_rewards),
+    ('qiyin_gear', lambda _args: check_qiyin('gear')),
+    ('qiyin_drop', lambda _args: check_qiyin('drop')),
+    ('qiyin_dragon', lambda _args: check_qiyin('dragon')),
+    ('qiyin_altar', lambda _args: check_qiyin('altar')),
+    ('qiyin_refs', check_qiyin_refs),
 ]
 
 

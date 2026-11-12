@@ -7,6 +7,7 @@ extends RefCounted
 ##   旋转路线每步等 6 帧改 3 帧（转得更快），调查文字换成二阶段的，震屏弹回照旧。
 ## - EV201／202：漩涡左右 (13,19)／(15,19) 两个无图挡路事件，调查同 EV75。
 ## - EV203「时空漩涡_字幕2」（自动执行）：rift1 播过、rift2 没播、且不是刚播完 rift1 的同一次进大厅时播——
+##   （CHAIN_AFTER_RIFT1 开着时不等下一次：rift1 放完接着播）
 ##   变暗 →「??????」一句 → 漩涡闪光震屏 → 苍龙破晓被甩出两格到 (14,21) → 一句台词 → 淡出往南 → 小字。
 ##   先记 rift2 再播；全存档只播一次（配置 codexWhisperSeen，同 rift1）。
 ## - EV204「时空漩涡_苍龙2」：过场用的人物，平时无图（行走图 TZX04 第 0 格，即角色 146 的行走图）。
@@ -14,6 +15,10 @@ extends RefCounted
 ## 开关 STAGE2＝false 后 clear_cache() 回第一阶。给大厅异化留的接口：stage()、canglong_drop_cell()；本文件只占 (13～15,19) 三格与 EV75～77、201～204。
 
 static var STAGE2 := true
+## O-339：原设计 rift2 要等「下一次进大厅」才播，玩家第一次进大厅看完流萤后苍龙不出，
+## 要出去再进来（玩家反馈 v0.01「流萤和苍龙的解锁动画冲突，退出重新切图才刷出苍龙」）。开着时 rift1 放完（地图不忙了）
+## 自动执行页紧接着播 rift2，两段不会同时跑（自动执行只在没有别的事件时启动）。false 回到「下一次进大厅」。
+static var CHAIN_AFTER_RIFT1 := true
 
 const MAP := 4
 const VORTEX := 75
@@ -62,7 +67,7 @@ static func on_mark(key: String) -> void:
 
 
 static func this_visit_seen(key: String) -> bool:
-	return key == THIS_VISIT_KEY and _rift1_visit == _visit
+	return key == THIS_VISIT_KEY and _rift1_visit == _visit and not CHAIN_AFTER_RIFT1
 
 
 ## 切片 keepEvents 之外也要放进地图的事件（二阶段新加的）

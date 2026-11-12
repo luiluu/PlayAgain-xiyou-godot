@@ -263,7 +263,7 @@ func warehouse_rate() -> float:
 	return 1.0
 
 func xparam(i: int) -> float:
-	return super.xparam(i) * warehouse_rate()
+	return XTianqiAffixBattle.enemy_xparam(self, i, super.xparam(i) * warehouse_rate())  # 天启篇词条「压制」
 
 func sparam(i: int) -> float:
 	return super.sparam(i) * warehouse_rate()

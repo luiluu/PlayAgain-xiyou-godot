@@ -80,6 +80,8 @@ static func _t(text: String, x: float, y: float, w: float, color := XUI.TEXT, al
 
 
 static func cat_ops() -> Array:
+	if XTianqiPetHide.active():  # 天启篇隐藏宠物：只剩「装备」
+		return [_t("装备", 6, 0, CAT_W - 12, XUI.TEXT, "center")]
 	return [_t("装备", 6, 0, CAT_W - 12, XUI.TEXT, "center"), _t("宠物", CAT_W + 12 + 6, 0, CAT_W - 12, XUI.TEXT, "center")]
 
 
@@ -215,7 +217,7 @@ func _select(i: int) -> void:
 
 
 func _set_category(i: int) -> void:
-	if i == category:
+	if i == category or (XTianqiPetHide.active() and CATS[i] != "equip"):  # 天启篇隐藏宠物：选不到宠物那一格
 		return
 	category = i
 	XSound.system(0)

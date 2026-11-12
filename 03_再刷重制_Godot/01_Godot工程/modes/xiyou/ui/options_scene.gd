@@ -38,6 +38,8 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 
 ## 重制新增：大厅初步异化（XLobbyCorruption）的光尘与氛围小字，关掉不放
 const FX_OPTION := ["画面特效", "codexScreenFx", true]
+## 重制新增：画面平滑（XScreenScale，玩家反馈 v0.01「画面锐化太高」）：开＝先画 1280×720 再整幅柔和放大（同原版），关＝按屏幕分辨率直接画
+const SMOOTH_OPTION := ["画面平滑", "codexScreenSmooth", true]
 
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
@@ -46,7 +48,7 @@ const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
 	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel",
-	"codexScreenFx"]
+	"codexScreenFx", "codexScreenSmooth"]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
@@ -71,6 +73,8 @@ func _ready() -> void:
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
 	if XLobbyCorruption.ENABLED:  # 重制新增「画面特效」（大厅初步异化的光尘与小字）排在原版各项之后；开关关掉时不列
 		_list.append(FX_OPTION)
+	if XScreenScale.ENABLED:  # 画面平滑排在画面特效后、手机按键设置前；开关关掉时不列
+		_list.append(SMOOTH_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
 		_list.append(TOUCH_OPTION)
 	XUI.menu_background(self)

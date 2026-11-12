@@ -15,7 +15,10 @@ extends RefCounted
 ## - 饥饿（本线核心计量）：消耗倍率＝1＋场上枯竭者的提高相加；回复倍率＝1－场上荒年者的降低相加（最低 0.1）。开战时和每回合开始在战斗日志里报。
 ## - 口粮（线规则，Kyo 11-08 已确认）：饥荒异化在场时，原本 MP、TP、生命消耗都是 0 的技能（原生攻击 1、防御 2 除外）
 ##   每次扣最大 MP 的 3／5／8／12%（按场上最高级），MP 不够改扣同样比例的当前生命（不会扣到 0）。
-## 没做（交付单「未做」）：减耗、免耗效果打折；自带资源角色的获得量降低（要逐个角色模块接）；荒年的掉落减少与余粮；终焉效果。
+## - 终焉效果（cc/tianqi-alien-finale）：枯竭者每回合开始我方 MP 上限再 −5%（本场累计，XActor.param 的 actor_param）；荒年者在场时我方被复活后
+##   这一下回复无效（只剩复活给的 1 点生命）；熬夜者每回合开始我方 TP 归零；透支者每放一次技能另扣当前 MP 的 10%。
+## 没做（交付单「未做」）：减耗、免耗效果打折；自带资源角色的获得量降低（要逐个角色模块接）；荒年的掉落减少与余粮（还没有余粮这个物品）；
+## 掠夺者终焉扣精魄（每场上限、打倒返还，要接精魄账）。
 ##
 ## 开关：XTianqiFamineLine.ENABLED（饥荒线整条）；只认天启篇存档、发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
 
@@ -103,7 +106,7 @@ static func apply(logic, s: XState, key: String, list: Array) -> bool:
 		logic.remove_meta(META)
 	if list.is_empty() or not XTianqiFamineLine.allowed(s):
 		return false
-	var f := {"preset": key, "units": {}, "queue": []}
+	var f := {"preset": key, "units": {}, "queue": [], "mmp_down": 0.0, "revived": {}}
 	var names := PackedStringArray()
 	for row in list:
 		var e = row.enemy
@@ -144,6 +147,8 @@ static func _say(f: Dictionary, text: String) -> void:
 
 
 static func take_logs(logic) -> Array:
+	if active(logic):
+		fight(logic).get("revived", {}).clear()  # 每次行动结束（和回合首尾）清「刚复活」
 	if not active(logic):
 		return []
 	var f := fight(logic)
@@ -225,8 +230,39 @@ static func _num(v: float) -> String:
 static func start_turn(logic) -> Array:
 	if not active(logic):
 		return []
-	_say(fight(logic), hunger_text(logic))
+	var f := fight(logic)
+	if _max_idx(logic, "exhaust") >= 3:  # 终焉枯竭者：我方 MP 上限每回合再 −5%（本场累计）
+		f.mmp_down = minf(0.9, float(f.get("mmp_down", 0.0)) + float(kind_info("exhaust").get("finale_mmp", 0.05)))
+		for a in logic.actors:
+			if a is XBattler:
+				a.param_mark_dirty()
+				a.refresh_resources()
+		_say(f, "枯竭：我方 MP 上限 −%d%%。" % roundi(float(f.mmp_down) * 100.0))
+	if _max_idx(logic, "night") >= 3:  # 终焉熬夜者：每回合开始我方 TP 归零
+		for a in logic.alive(logic.actors):
+			a.tp = 0.0
+		_say(f, "熬夜：我方 TP 归零。")
+	_say(f, hunger_text(logic))
 	return take_logs(logic)
+
+
+## XActor.param：终焉枯竭者降 MP 上限（本场）
+static func actor_param(a, i: int, v: float) -> float:
+	if i != 1 or _logic_ref == null:
+		return v
+	var logic = active_logic()
+	if logic == null or not logic.actors.has(a):
+		return v
+	var d := float(fight(logic).get("mmp_down", 0.0))
+	return floorf(v * (1.0 - d)) if d > 0.0 else v
+
+
+## Game_Battler 复活（去掉阵亡）时：终焉荒年者在场，这一下的回复无效，记到本次行动结束
+static func on_revive(b) -> void:
+	var logic = active_logic()
+	if logic == null or not b is XActor or not logic.actors.has(b) or _max_idx(logic, "lean") < 3:
+		return
+	fight(logic).revived[b] = true
 
 
 ## BattleLogic.skill_cost：我方技能的 MP／TP 消耗 × 饥饿（枯竭者）；面板（战斗外）不动
@@ -267,6 +303,11 @@ static func after_pay(logic, u, skill: Dictionary, c: Dictionary) -> void:
 				u.hp -= lose
 				_say(f, "%s交不出口粮，饿得生命 −%d。" % [u.display_name(), int(lose)])
 	var od := _max_idx(logic, "overdraw")
+	if od >= 3 and u.mp > 0.0:  # 终焉透支者：另扣当前 MP 的 10%
+		var mp_lose := floorf(float(u.mp) * float(kind_info("overdraw").get("finale_mp", 0.1)))
+		if mp_lose > 0.0:
+			u.mp -= mp_lose
+			_say(f, "透支：%sMP −%d。" % [u.display_name(), int(mp_lose)])
 	if od >= 0:
 		var rate := _sum(logic, "overdraw", "hp_cost")
 		var base: float = float(u.mhp) if od >= 2 else float(u.hp)
@@ -286,6 +327,8 @@ static func gain(b, resource: String, amount: float) -> float:
 		return amount
 	match resource:
 		"hp", "mp":
+			if resource == "hp" and fight(logic).get("revived", {}).has(b):
+				return 0.0  # 终焉荒年者：刚复活的这一下回复无效
 			return floorf(amount * XTianqiRewards.famine_heal_mult(b, heal_mult(logic)))  # 天启篇奖励：净印·存粮减轻
 		"tp":
 			return floorf(amount * tp_mult(logic))

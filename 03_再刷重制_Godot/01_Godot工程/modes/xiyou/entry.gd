@@ -31,6 +31,7 @@ func _ready() -> void:
 		back.pressed.connect(GameApp.return_to_menu)
 		column.add_child(back)
 		return
+	XScreenScale.apply(XConfig.flag(XScreenScale.KEY), get_tree())  # 画面平滑（玩家反馈 v0.01，触屏默认开）
 	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	theme = XUI.theme()
 	_build_background()
@@ -60,6 +61,16 @@ func _ready() -> void:
 
 
 func _build_background() -> void:
+	# 用天启篇新标题时，设置、调按键位置、读档等子页也垫新底图，不再露出原版 PlayAgain 底图和粒子（XTianqiTitle.ENABLED = false 回原版）
+	if XTianqiTitle.available():
+		var bg := TextureRect.new()
+		bg.name = "TianqiSubpageBg"
+		bg.texture = load(XTianqiTitle.BG)
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		add_child(bg)
+		return
 	var p := XDB.img_path("titles1", str(XDB.system().get("title1Name", "")))
 	if p != "":
 		var t := TextureRect.new()
@@ -153,8 +164,9 @@ func _title() -> void:
 		_cursor.texture = load(cp)
 		_cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_layer.add_child(_cursor)
-	_sel = 0
-	_select(0, true)
+	# 原版 selectLast：上回按过的项 → 有存档选「旧的回忆」（XTianqiTitle.initial_index，MV_SELECT_LAST 关掉回第一项）
+	_sel = XTianqiTitle.initial_index(_commands.map(func(c): return [str(c.get("key", "")), bool(c.enabled)]))
+	_select(_sel, true)
 
 
 ## 天启篇新标题（XTianqiTitle，O-306）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
@@ -263,7 +275,8 @@ func _add_picture_command(image: int, text: String, enabled: bool, fn: Callable)
 	b.position = _pos(COMMAND_POS[idx])
 	b.size = Vector2(200, 52)
 	b.disabled = not enabled
-	var cmd := {"node": b, "enabled": enabled, "fn": fn}
+	# key 与新标题同名（XTianqiTitle.last_key／initial_index 用）：图 0 新的游戏、1 旧的回忆、-1 返回版本选择
+	var cmd := {"node": b, "enabled": enabled, "fn": fn, "key": ["new_game", "load"][image] if image in [0, 1] else "back_to_menu"}
 	var p := XDB.img_path("titles2", "Command_%d" % image) if image >= 0 else ""
 	if p != "":
 		var tex: Texture2D = load(p)
@@ -324,6 +337,7 @@ func _cursor_target() -> Vector2:
 func _activate(i: int) -> void:
 	var c: Dictionary = _commands[i]
 	if c.enabled:
+		XTianqiTitle.last_key = str(c.get("key", ""))  # Window_TitleCommand.processOk 记 _lastCommandSymbol
 		c.fn.call()
 
 

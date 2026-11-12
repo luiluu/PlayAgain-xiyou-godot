@@ -1500,6 +1500,7 @@ class SyncStampTests(unittest.TestCase):
             for name in ['oracle_additions.py', 'xiyou_export.py']:
                 (tools / name).write_text('# v1\n')
             subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            subprocess.run(['git', '-C', str(root), '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-q', '--allow-empty', '-m', 'base'], check=True)
             subprocess.run(['git', '-C', str(root), 'add', '.'], check=True)
             before = sync.tools_digest(root)
             (tools / 'oracle_additions.py').write_text('# v2 比较规则改了\n')
@@ -1624,6 +1625,16 @@ for name in filter(None, files):
         p.write_text('# 界面风格\n' + merge.VERSION_MARKER + '：已完成；参见 ' + merge.VERSION_MARKER + '。\n')
         self.g('add', str(rel), cwd=self.wt); self.g('commit', '-m', 'lane document', cwd=self.wt)
         return rel
+
+    def test_plan_hints_missing_gd_uid(self):
+        # 夹具的 modes/测试.gd 没带 .uid：plan() 只提示不拦（收尾 lane_uids 还会带入），补上 .uid 后不再提示
+        self.assertEqual(self.call('--dry-run'), 0, self.last_output)
+        self.assertIn('没提交同名 .gd.uid', self.last_output)
+        self.assertIn('modes/测试.gd', self.last_output)
+        (self.wt / merge.PROJECT / 'modes/测试.gd.uid').write_text('uid://fixture\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'uid', cwd=self.wt)
+        self.assertEqual(self.call('--dry-run'), 0, self.last_output)
+        self.assertNotIn('.gd.uid', self.last_output)
 
     def test_real_checker_sees_receipt_deletion(self):
         self.realistic_checker()
@@ -4060,6 +4071,44 @@ class AwaitTernaryTests(unittest.TestCase):
                      '\tawait get_tree().process_frame\n\tvar t = a if b else c()\n']:
             with self.subTest(body=body):
                 self.assertEqual(self.lines(body), [])
+
+    def test_gdignore_dirs_skipped(self):
+        # 出安卓包生成的 android/build 带 .gdignore、里面有模板自带的测试 .gd：解析检查、await 扫描、语法检查.py 都整棵跳过
+        bad = 'func f():\n\tvar r = await a() if c else b()\n'
+        with tempfile.TemporaryDirectory() as t:
+            proj = Path(t)
+            for rel in ['modes/ok.gd', 'android/build/src/test/T.gd', 'android/x.gd', '.godot/cache.gd', 'addons/y/.godot/z.gd']:
+                (proj / rel).parent.mkdir(parents=True, exist_ok=True)
+                (proj / rel).write_text(bad)
+            (proj / 'android/build/.gdignore').touch()
+            self.assertEqual([f.relative_to(proj).as_posix() for f in merge.project_gd_files(proj)], ['android/x.gd', 'modes/ok.gd'])
+            self.assertEqual(sorted(p.split(':')[1] for p in merge.gd_await_ternary_problems(proj)), ['//android/x.gd', '//modes/ok.gd'])
+            # parse_check 交给 godot 的文件清单（外置 load 脚本）也走同一函数
+            src = (HERE / '合并车道.py').read_text()
+            body = src[src.index('def parse_check('):src.index('def merge_head(')]
+            self.assertIn('project_gd_files(project)', body)
+            self.assertNotIn('rglob', body)
+
+    def test_syntax_checker_skips_gdignore(self):
+        # 语法检查.py 借 parse_check：没有 godot 时只做纯文本扫描，.gdignore 目录里的坏脚本不报，工程里的照报
+        bad = 'func f():\n\tvar r = await a() if c else b()\n'
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            subprocess.run(['git', '-C', str(root), '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-q', '--allow-empty', '-m', 'base'], check=True)
+            ignored = root / merge.PROJECT / 'android/build/src/T.gd'
+            ignored.parent.mkdir(parents=True)
+            ignored.write_text(bad)
+            (root / merge.PROJECT / 'android/build/.gdignore').touch()
+            run = lambda: subprocess.run([sys.executable, str(HERE / '语法检查.py'), '--root', str(root)], capture_output=True, text=True)
+            ok = run()
+            self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+            (root / merge.PROJECT / 'modes').mkdir()
+            (root / merge.PROJECT / 'modes/m.gd').write_text(bad)
+            out = run()
+            self.assertEqual(out.returncode, 1, out.stdout + out.stderr)
+            self.assertIn('modes/m.gd', out.stdout)
+            self.assertNotIn('T.gd', out.stdout)
 
     def test_real_project_has_none(self):
         project = HERE.parent / '01_Godot工程'

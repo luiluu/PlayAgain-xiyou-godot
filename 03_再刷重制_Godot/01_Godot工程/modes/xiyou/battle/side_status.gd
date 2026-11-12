@@ -242,7 +242,7 @@ static func has_description(st: Dictionary) -> bool:
 func _paint(c: XMVCanvas) -> void:
 	if actor == null:
 		return
-	XActor.read_begin()  # 只读窗口缓存（O-待定-2）：画一格侧栏只读这名角色的能力值
+	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：画一格侧栏只读这名角色的能力值
 	_paint_now(c)
 	XActor.read_end()
 

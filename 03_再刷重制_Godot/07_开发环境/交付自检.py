@@ -9,7 +9,8 @@
 做法：在临时目录建一个借用本库对象的空库（等同 `git clone --shared`：只读本库的对象，不往本库写引用、不动任何工作树），检出 main，
 ①照搬 合并车道.py 的 plan()（交付单有且只有一份、状态行、变更记录草稿、优化登记草稿表、占位对号、删基线参照用例……与合并用的是同一份代码）；
 ②真的 `git merge --no-ff --no-commit` 一次看有没有冲突；③合并后的 .gd 查同名 func、await 三元式、冲突标记（纯文本，不要 godot）；
-④在自己的工作树里跑时再查：有没有未提交改动；慢车道（改了切片、转换器、参照探针或带接受单）的同步指纹还在不在、
+④分支新增的工程 .gd（tests、modes 都算）要有已提交的同名 .gd.uid（与 合并车道.py missing_gd_uids 同一份代码）；
+⑤在自己的工作树里跑时再查：有没有未提交改动；慢车道（改了切片、转换器、参照探针或带接受单）的同步指纹还在不在、
 本树同步留下的测量变化有没有对应的接受单、条目够不够。
 自检和合并一样只看**已提交**的内容：先提交，再跑；有问题改完提交后重跑。
 
@@ -49,8 +50,8 @@ git = merge.git
 SHEET_DIR = '00_项目管理/交付/'
 SHEET_NAME = re.compile(r'(?:cc|claude|codex)_(.+)\.md')
 GENERATED = merge.PROJECT / 'modes/xiyou/generated'
-# 沙盒里没有工作树停在车道分支上，plan() 每次都打这句，对车道没有信息量
-NOISE = ('没有工作树停在',)
+# 沙盒里没有工作树停在车道分支上，plan() 每次都打这句，对车道没有信息量；缺 .gd.uid 的提示本工具另算成问题，不重复
+NOISE = ('没有工作树停在', '没提交同名 .gd.uid')
 SIM_ENV = dict(os.environ, GIT_AUTHOR_NAME='precheck', GIT_AUTHOR_EMAIL='precheck@example.invalid',
                GIT_COMMITTER_NAME='precheck', GIT_COMMITTER_EMAIL='precheck@example.invalid')
 
@@ -373,6 +374,14 @@ def check(root, ref, task=None, main=None, sandbox=None, local=None):
         result['problems'].append('和 %s 没有共同历史，没法试合并（浅克隆里的旧分支常这样：在 Mac 主仓库跑，或先 git fetch --unshallow）' % main_ref)
         return result
     result['changed'] = quiet(root, 'diff', '--name-only', fork, target)[1].splitlines()
+    try:
+        no_uid = merge.missing_gd_uids(root, fork, target)
+    except RuntimeError as e:
+        no_uid, _ = [], result['hints'].append('.gd.uid 没查成：%s' % str(e)[:80])
+    if no_uid:
+        result['problems'].append('新增的 %d 个 .gd 没提交同目录的同名 .gd.uid（%s）：Godot 导入时生成，跑一次 godot --import 或打开工程后'
+                                  '把这些 .uid 一起 git add 提交（最近几次合并都是总装手补）'
+                                  % (len(no_uid), '、'.join(p + '.uid' for p in no_uid)))
     if not sheets:
         result['status'] = 'nosheet'
     elif all(sheet_status(t)[0] == 'wip' for t in sheets.values()):

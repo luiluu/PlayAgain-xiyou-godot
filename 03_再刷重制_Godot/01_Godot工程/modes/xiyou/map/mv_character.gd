@@ -13,6 +13,11 @@ var direction := 2
 var move_speed := 4                # MV 1..6，4 为标准
 var move_frequency := 3
 var pattern := 1
+## Game_CharacterBase._originalPattern：停下后回到的帧（resetPattern）。玩家、跟随者是 1；事件是本页图的 pattern
+## （Game_Event.setupPageSettings，MVEvent.refresh 设）。-1＝用行走图的停步序号 _walk.stand。
+## 重制原先一律回到 stand：本页图 pattern 0、只画了第一列的行走图（大厅绪绪 1xuxu，800×529 只有左上一格有图）
+## 停 6 帧后换到空白的第二列，人就不见了（玩家反馈 v0.01「买碎片的 NPC 图标丢失」）。
+var original_pattern := -1
 var through := false
 var priority_type := 1             # 0 角色下方 1 同层 2 角色上方
 var walk_anime := true
@@ -551,13 +556,17 @@ func animation_wait() -> int:
 func walking_actor():
 	return null
 
+## 停下后回到的帧：事件是本页图的 pattern，其余是行走图的停步序号
+func origin_pattern() -> int:
+	return original_pattern if original_pattern >= 0 else int(_walk.stand)
+
 func _update_animation() -> void:
 	if is_moving() and walk_anime or step_anime:
 		_anime_count += 1.5 if is_moving() else 1.0
-	elif pattern != int(_walk.stand):
+	elif pattern != origin_pattern():
 		_stop_count += 1
 		if _stop_count > 6:
-			pattern = int(_walk.stand)
+			pattern = origin_pattern()
 			_anime_count = 0
 			queue_redraw()
 	var wait := animation_wait()

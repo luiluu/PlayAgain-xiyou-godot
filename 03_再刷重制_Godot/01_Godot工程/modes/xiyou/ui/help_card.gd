@@ -693,10 +693,12 @@ static func _terms(text: String) -> String:
 
 
 # ---- installDamageElementRuntime ----
-## O-待定-1（安卓提速）：原来每次都 XDB.load_json 重读这份近 1 MB 的文件（读盘、整份算 SHA-256、解压、还原），一张说明卡读两三次，
-## 电脑上每张卡约 100 毫秒，手机上选技能、逛商店每换一行停半秒。改读 XDB.table 已载入的那份（同一文件，XDamage.elements_data 也读它）。
-## 回退：ELEMENT_DATA_CACHE = false（每次重读，同原来）。
+## O-341：原先每张说明卡（每个元素名）都把约 1 MB 的 CodexDamageElements.json 整份重读重解析一遍，
+## 商店、背包、战斗技能列表每移一行要 40～100 ms（玩家反馈 v0.01「NPC 买东西轻微卡顿」）。改走 XDB.table 缓存（damage.gd 本来就这样读），只读不改。
+## 回退 ELEMENT_DATA_CACHE = false。
 static var ELEMENT_DATA_CACHE := true
+
+
 static func _element_data() -> Dictionary:
 	var d = XDB.table("CodexDamageElements") if ELEMENT_DATA_CACHE else XDB.load_json("db/CodexDamageElements.json")
 	return d if d is Dictionary else {}

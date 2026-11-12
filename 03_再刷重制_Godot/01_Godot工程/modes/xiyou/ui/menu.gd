@@ -57,7 +57,8 @@ var zhenqi_requested := false
 
 ## 显示的指令：异化隐藏生效（XAlienBattle.hidden，O-283）时去掉「异化工坊」（v0.58 Window_MenuCommand.makeCommandList 包装）
 static func commands() -> Array:
-	return COMMANDS.filter(func(c): return c[1] != "alienation") if XAlienBattle.hidden() else COMMANDS
+	var out := COMMANDS.filter(func(c): return c[1] != "alienation") if XAlienBattle.hidden() else COMMANDS
+	return out.filter(func(c): return c[1] != "pet") if XTianqiPetHide.active() else out  # 天启篇隐藏宠物：没有「宠物」
 
 
 ## 指令第 i 项是否可用：已重制，且（需要队员的）队里有人

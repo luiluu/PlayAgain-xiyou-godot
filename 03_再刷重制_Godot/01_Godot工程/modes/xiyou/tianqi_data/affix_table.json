@@ -402,7 +402,7 @@
   },
   {
    "key": "final_damage",
-   "name": "终伤池"
+   "name": "伤害加成池"
   },
   {
    "key": "crit_multiplier",
@@ -795,7 +795,7 @@
   },
   {
    "key": "final_damage",
-   "name": "终伤",
+   "name": "伤害加成",
    "layer": "special",
    "tag": "atk",
    "effect": "最终伤害 +%",

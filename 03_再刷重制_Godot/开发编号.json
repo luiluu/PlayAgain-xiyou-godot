@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.489",
-  "sequence": 489,
-  "next": "dev.490",
-  "nextSequence": 490,
+  "current": "dev.499",
+  "sequence": 499,
+  "next": "dev.500",
+  "nextSequence": 500,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "qiyin-altar",
+  "currentChange": "tianqi-alien-finale",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

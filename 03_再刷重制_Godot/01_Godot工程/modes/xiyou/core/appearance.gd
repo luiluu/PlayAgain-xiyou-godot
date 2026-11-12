@@ -46,7 +46,7 @@ static func config() -> Dictionary:
 	return overrides
 
 
-## O-待定-4（安卓提速）：进战斗时战斗背景、角色与敌人的图、光标、影子、战斗音乐原先每场都 load()——上一场一结束引用全放掉，
+## O-待定-3（安卓提速）：进战斗时战斗背景、角色与敌人的图、光标、影子、战斗音乐原先每场都 load()——上一场一结束引用全放掉，
 ## Godot 资源缓存里就没了，下一场要从包里重新读、解码、传显存（手机上进战斗、打完回地图各卡一下）。这里按路径留住最近用过的
 ## KEEP_MAX 个，下一场直接取（同 MVAnimation.cached_load 的做法，O-320）。回退：KEEP = false（每次 load()，同原来）。
 static var KEEP := true

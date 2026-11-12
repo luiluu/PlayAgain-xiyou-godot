@@ -23,7 +23,8 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
 	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [],
-	"codexScreenFx": true}  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
+	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
+	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没存过时按平台：触屏开、桌面关（ensure_loaded）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -52,6 +53,7 @@ static func ensure_loaded() -> void:
 		return
 	_loaded_path = p
 	_values = DEFAULTS.duplicate(true)  # 正式版 applyData({}) 的实际默认值（含后续插件覆盖）
+	_values[XScreenScale.KEY] = XScreenScale.default_on()
 	_map_xy_configured = false
 	if p != "" and FileAccess.file_exists(p):
 		var data = JSON.parse_string(FileAccess.get_file_as_string(p))
@@ -93,6 +95,9 @@ static func ensure_loaded() -> void:
 				elif key == "codexWeakFiveClearV2":
 					# installWeakChallengeRuntime applyData：!!(d && d.codexWeakFiveClearV2 === true)（XWeakChallenge）
 					_values[key] = data.get(key) is bool and data[key] == true
+				elif key == XScreenScale.KEY:
+					# 画面平滑：存过 true／false 才认，没存过照平台默认
+					_values[key] = bool(data[key]) if data.get(key) is bool else XScreenScale.default_on()
 				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
@@ -129,6 +134,8 @@ static func set_flag(key: String, value: bool) -> bool:
 	_values[key] = value
 	if key == "MapXy":
 		_map_xy_configured = true
+	if key == XScreenScale.KEY:
+		XScreenScale.apply(value)
 	return _write()
 
 

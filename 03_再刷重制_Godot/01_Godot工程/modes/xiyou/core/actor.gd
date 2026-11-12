@@ -234,6 +234,8 @@ func can_equip(item: Dictionary) -> bool:
 	if item.kind == "weapon":
 		var wt := int(item.wtypeId)
 		return traits_set(51).has(wt) or not passive_values("passiveEWPN%02d" % wt).is_empty()
+	if XTianqiQiyinEquip.any_class(item):
+		return true  # 天启篇七印套装件不分甲种（七印祭坛方案 v0.4 第 4.1 节）
 	var at := int(item.atypeId)
 	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
 
@@ -625,7 +627,7 @@ func traits_with_id(code: int, id: int) -> Array:
 	return out.duplicate()
 
 
-# ---- 只读窗口缓存（O-待定-2，安卓战斗提速）----
+# ---- 只读窗口缓存（O-待定-1，安卓战斗提速）----
 ## 一次行动结算里角色的技能表 skills() 要重算一两百次（每读一项能力值 3 次以上：被动 passivePBST／PBSTEX、装备被动……），
 ## 每次都走心钢、云裳、异化、谷雨等整条包装链；手机上一次行动因此停 0.3～0.5 秒。
 ## 「只读窗口」＝一段只读不写的计算（读一项能力值、拍一次画面快照、列能用的技能）：窗口里同一名角色的技能表、特性表、
@@ -748,7 +750,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i)  # 天启篇殉印 2 件最大生命；专属角色模块的 paramRate 包装（饿狼形态倍率）
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i)  # 天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
@@ -826,7 +828,7 @@ static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|CO
 
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
 func attack_times_add() -> float:
-	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0)
+	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0) + XTianqiAffixBattle.attack_times(self)  # 天启篇词条「连击」
 
 func action_plus_set() -> Array:
 	var out := super.action_plus_set()
@@ -838,6 +840,7 @@ func action_plus_set() -> Array:
 	if XZhenqi.has_daofa(self, "fenshen"):
 		out.append(1.0)
 	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
+	XTianqiAffixBattle.action_plus_set(self, out)  # 天启篇词条「再动」
 	return out
 
 ## dsPassiveSkill <SvPngFd: N>（防具 2937 巨人指环等、状态 1120 人鱼化身）：战斗里角色立绘（Sprite_Actor 主图）放大 N 倍。
@@ -1003,6 +1006,7 @@ func param_max(_i: int) -> float:
 
 ## 178 哈基米的 param 包装（速度 ×1.88、抱剑喵铃 ×1.6），在 G_StateParam 之外
 func param(i: int) -> float:
+<<<<<<< HEAD
 	if READ_MEMO and _read_depth > 0:
 		var m := _read_memo()
 		var key := ("pa1:" if _cat_bare else "pa0:") + str(i)
@@ -1022,6 +1026,9 @@ func param(i: int) -> float:
 
 func _param_now(i: int) -> float:
 	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i)))))))))))  # 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+=======
+	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiFamineAlien.actor_param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i))))))))))))  # 天启篇饥荒线异化：终焉枯竭者降 MP 上限； 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+>>>>>>> origin/main
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
@@ -1096,6 +1103,7 @@ func _xparam_now(i: int) -> float:
 			v += _num(parts[0]) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
 	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
+	v = XTianqiAffixBattle.xparam(self, i, v)  # 天启篇词条：命中、闪避、暴击率、每回合回复（含光环）
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
@@ -1123,6 +1131,8 @@ func _sparam_now(i: int) -> float:
 	v = (v + XEquipSuits.value(self,"sparam",i,false)/100) * XEquipSuits.value(self,"sparam",i,true)
 	if i == 6 or i == 7:
 		return XWeakChallenge.sparam(self, i, XCat.sparam(self, i, additive_rate(TRAIT_SPARAM, i, v, [])))  # 弱者挑战 sparam 包装：10357 承伤 ×0.5
+	if i == 0:
+		v *= XTianqiAffixBattle.target_rate(self)  # 天启篇词条「引敌／避敌」
 	return v
 
 func passive_element_values(e: int) -> Array:
