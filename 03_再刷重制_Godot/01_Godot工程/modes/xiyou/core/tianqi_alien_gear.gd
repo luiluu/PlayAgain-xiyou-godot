@@ -9,7 +9,7 @@ extends RefCounted
 ##   掉落表里一件能用的都没有时：终焉照样给，改成一颗同级异化核；其余级不给。
 ## - 装备：普通独立装备实例多一个原版的 alien 标记（XAlienation：uid、affix、pool、config…），另加 tq = {line, level}；
 ##   原有 12 条词条（血铠＝空壳等）的战斗效果直接走原版异化的那一套（XAlienBattle），名字「级·新词条名·原名」。
-##   本线新词条（临终、再动、节俭、带毒）只记在装备上，战斗效果还没接（详情里写「未生效」）；四级数值分档也还没做（数值阶段定）。
+##   本线新词条（临终、再动、节俭、带毒）的战斗效果在 XTianqiAlienAffix；四级数值分档还没做（数值阶段定）。
 ## - 词条：每件 1 条，从掉落那条线的 4 条里出；共生、夺舍、寄生要化形及以上才出。
 ## - 工坊（原版异化工坊页，天启篇存档多出几个按钮；规则都在这里，XAlienation 遇到带 tq 的装备转过来）：
 ##   分解按级给能量（1／2／5／8）；重抽只在本线本级内抽、新旧二选一（沿用原版待选）；
@@ -392,6 +392,6 @@ static func details(s: XState, i: Dictionary) -> Array:
 	var out := ["异化：%s（%s）" % [affix_name(key), level_name(str(t.level))],
 		"收益：" + str(f.get("benefit", "")), "代价：" + str(f.get("cost", "")),
 		"来源：%s线异化怪；分解获得%d点能量" % [str(XTianqi.line_info(str(t.line)).get("name", t.line)), dismantle_gain(i)]]
-	if is_new_affix(key):
-		out.append("未生效：本线新词条的战斗效果还没做。")
+	if is_new_affix(key) and not XTianqiAlienAffix.ENABLED:
+		out.append("未生效：本线新词条的战斗效果关着。")
 	return out

@@ -249,6 +249,7 @@ static func _unit(logic, b) -> Dictionary:
 
 ## 开战（startBattle 之后，开场 TP 已掷）：建本场数据、开场护盾、初始 TP
 static func start(logic) -> void:
+	XTianqiAlienAffix.start(logic)  # 天启篇新异化词条（临终、再动、节俭、带毒）
 	if logic.has_meta("xaffix"):
 		logic.remove_meta("xaffix")
 	if not on(logic.state):
@@ -270,6 +271,7 @@ static func start(logic) -> void:
 
 
 static func finish(logic) -> void:
+	XTianqiAlienAffix.finish(logic)
 	if logic != null and logic.has_meta("xaffix"):
 		logic.remove_meta("xaffix")
 
@@ -277,6 +279,10 @@ static func finish(logic) -> void:
 # ---- 面板（XActor／XEnemy 调） ----
 
 static func param_rate(a, i: int) -> float:
+	return _param_rate(a, i) * XTianqiAlienAffix.param_rate(a, i)  # 新异化词条「临终」：攻击、魔攻
+
+
+static func _param_rate(a, i: int) -> float:
 	if not ENABLED or not (a is XActor) or i < 0 or i > 7:
 		return 1.0
 	var v := view(a)
@@ -310,6 +316,7 @@ static func attack_times(a) -> float:
 
 ## 再动：追加一项行动几率（同名只取最高；追加出来的行动不会再掷，MV makeActionTimes 本来就只掷一轮）
 static func action_plus_set(a, rates: Array) -> void:
+	XTianqiAlienAffix.action_plus_set(a, rates)  # 新异化词条「再动」
 	if not ENABLED or not (a is XActor):
 		return
 	var r := _pv(a, "reaction")
@@ -333,6 +340,10 @@ static func enemy_xparam(e, i: int, value: float) -> float:
 # ---- 伤害、治疗（XActorDamageHooks.capture 调；只做加和乘） ----
 
 static func damage_ops(item: Dictionary, a, b) -> Array:
+	return _damage_ops(item, a, b) + XTianqiAlienAffix.damage_ops(item, a, b)  # 新异化词条「再动」承伤、「节俭」受到的回复
+
+
+static func _damage_ops(item: Dictionary, a, b) -> Array:
 	var logic = _logic()
 	if not _active(logic) or a == null or b == null:
 		return []
@@ -450,6 +461,7 @@ static func before_apply(logic, u, _skill: Dictionary, t) -> void:
 
 ## 每次 apply 之后：吸血、斩获、破绽、压制、回春
 static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
+	XTianqiAlienAffix.after_apply(logic, u, skill, t, r)  # 新异化词条「带毒」
 	if not _active(logic) or not (u is XActor) or t == null:
 		return
 	var st := _store(logic)
@@ -517,6 +529,7 @@ static func end_action(logic, u, skill) -> Array:
 
 ## 回合结束：破绽、压制计时
 static func end_turn(logic) -> void:
+	XTianqiAlienAffix.end_turn(logic)  # 新异化词条：临终必死、带毒续毒
 	if not _active(logic):
 		return
 	for b in _store(logic).units:
@@ -533,6 +546,10 @@ static func end_turn(logic) -> void:
 
 ## 技能消耗：全身合计最多 −cap_total%
 static func cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:
+	return XTianqiAlienAffix.cost(a, skill, _cost(a, skill, c))  # 新异化词条「节俭」在别的减耗之后再乘
+
+
+static func _cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:
 	if not ENABLED or not (a is XActor) or skill == null or skill.is_empty():
 		return c
 	var pct := minf(_pv(a, "skill_cost"), float(XTianqiAffixTable.affix("skill_cost").get("cap_total", 50)))

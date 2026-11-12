@@ -1234,6 +1234,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiHorsemen.after_action(self, u))  # 天启四骑士：打混子记不服、号令、阶段
 	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
 	logs.append_array(XTianqiFamineAlien.take_logs(self))  # 天启篇饥荒线异化：口粮、透支、掠夺的日志
+	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XTianqiPlagueAlien.after_action(self, u))  # 天启篇瘟疫线异化：重数减益（病弱、病灶），中毒、混乱、不服的日志
 	logs.append_array(XTianqiDeathAlien.after_action(self, u))  # 天启篇死亡线异化：收尸人、宣判者倒下解开死期、化形骑士队长当场结算死期
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
@@ -1278,7 +1279,8 @@ func end_turn() -> Array:
 	logs.append_array(XXuanBattle.take_logs())
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XTianqiQiyinEffects.end_turn(self))  # 天启篇七印装备：疫结算与传染、各计时
-	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时
+	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时；新异化词条：临终必死、带毒续毒
+	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
@@ -2788,6 +2790,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
 	value = XTianqiQiyinEffects.hp_damage(self, u, t, value)  # 天启篇七印装备：殉印 3 件替挡一半、灰印 5 件免死
+	value = XTianqiAlienAffix.hp_damage(self, u, t, value)  # 天启篇新异化词条「临终」：致命一击留一口气
 	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
 	var hubris_before := t.hp
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
