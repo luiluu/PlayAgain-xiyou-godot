@@ -399,6 +399,7 @@ func _add_actor(id: int, notice := Callable()) -> void:
 	if not party.has(id):
 		inherit_difficulty(actor(id))
 		party.append(id)
+		XGojo.on_join(self, id)  # 天启篇五条悟入队：装上专属法宝「眼罩」
 	_ensure_slots()
 	if battle_slots.has(id) or not battle_slots.has(0):
 		return

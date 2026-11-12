@@ -144,6 +144,7 @@ func _source(t: String):
 		for id in [XHeartsteel.ARMOR, XHeartsteel.LEVIATHAN, XHubris.ARMOR, XHubris.ATARAXIA]:
 			if id < raw.size() and raw[id] is Dictionary:
 				XGrowthHelp.describe(raw[id])
+		XGojo.patch_armors(raw)  # 天启篇五条悟专属法宝「眼罩」
 	return raw
 
 

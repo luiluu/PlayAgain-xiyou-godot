@@ -23,12 +23,14 @@ func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiSkills.reload()
+	XGojo.unlock_override = 1  # 默认按已解锁最强之名（不读本机配置）；解锁的专门检查见 _unlock
 	_data()
 	_marks()
 	_purple()
 	_six_eyes_infinity()
 	_domain_flash()
 	_real_turns()
+	_unlock()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -40,7 +42,7 @@ func _run() -> void:
 func _state() -> XState:
 	var w := XTianqiSkills.ids(XTier.WEAK, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
 	var lineup := [w[0], w[1], w[2]]
-	var s := XTianqi.start_new_game(3, "jianxian", lineup)
+	var s := XTianqi.start_new_game(3, "lianyu", lineup)
 	XTianqi.take_pending()
 	XState.current = s
 	for id in lineup + [GOJO]:
@@ -92,9 +94,17 @@ func _data() -> void:
 	_check("advance_rows", row.size() == 4 and (row[0].learn as Array).has(1240) and (row[3].learn as Array).has(XGojo.ADV[3]), row.size())
 	_check("art", XDB.img_path("sv_actors", "Codex_Gojo_SV") != "" and XDB.img_path("characters", "$Codex_Gojo_Walk") != "" and XDB.img_path("faces", "Codex_Gojo_Face") != "")
 	_check("hidden_outside", XImportedBalance.is_disabled_actor(GOJO) and XImportedBalance.is_hidden_actor(GOJO) and not XActorBook.index_ids().has(GOJO))
-	_check("tier_closed_for_now", XTianqiSkills.tier_of(GOJO, true) == "" and not XTianqi.pool("lianyu")[XTier.SUPER].has(GOJO))
+	XGojo.unlock_override = 0
+	_check("locked_closed", XTianqiSkills.tier_of(GOJO, true) == "" and not XTianqi.pool("lianyu")[XTier.SUPER].has(GOJO) and XGojo.locked(GOJO))
+	XGojo.unlock_override = 1
+	var pool := XTianqi.pool("lianyu")
+	_check("unlocked_pool", XTianqiSkills.tier_of(GOJO, true) == XTier.SUPER and pool[XTier.SUPER].has(GOJO) and not XTianqi.pool("jianxian").get(XTier.SUPER, []).has(GOJO), pool[XTier.SUPER])
+	_check("main_tier_hidden", XTier.tier_of(GOJO) == "" and not XTier.ids(XTier.SUPER).has(GOJO))
+	var armor := XDB.rec("Armors", XGojo.ARMOR)
+	_check("blindfold_rec", str(armor.get("name", "")) == "眼罩" and int(armor.etypeId) == 13 and str(armor.note).contains("<req_actors: 180>"))
 	var s := _state()
 	_check("tianqi_join", s.party.has(GOJO) and not XImportedBalance.is_disabled_actor(GOJO))
+	_check("join_blindfold", XGojo.wears_blindfold(s.actor(GOJO)), s.actor(GOJO).equips)
 	var a := _gojo(s)
 	_check("attack_replaced", a.attack_skill_id() == XGojo.STRIKE)
 	_check("skill_ids", a.skill_ids.has(XGojo.DOMAIN) and a.skill_ids.has(XGojo.SIX_EYES), a.skill_ids.size())
@@ -152,7 +162,7 @@ func _purple() -> void:
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
 	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * 10.8), via)
 	XGojo.finish(lg, a, p_out)
-	_check("purple_clears", XGojo.marks(a) == [0, 0] and not a.state_ids.has(XGojo.ST_BLUE + 2))
+	_check("purple_clears_blindfold", XGojo.marks(a) == [1, 1] and not a.state_ids.has(XGojo.ST_BLUE + 2), XGojo.marks(a))
 	XGojo.temp(a).blue = 1
 	XGojo.temp(a).red = 3
 	XGojo.temp(a).last = "blue"
@@ -243,9 +253,30 @@ func _real_turns() -> void:
 	var before := e.hp
 	if e.is_alive():
 		lg.act(a, XDB.rec("Skills", XGojo.PURPLE_OUT), e)
-		_check("act_purple", XGojo.marks(a) == [0, 0] and (e.hp < before or e.is_dead()), [XGojo.marks(a), e.hp, before])
+		_check("act_purple", XGojo.marks(a) == [1, 1] and (e.hp < before or e.is_dead()), [XGojo.marks(a), e.hp, before])
 	a.hp = floorf(a.mhp * 0.5)
 	var hp1 := a.hp
 	lg.act(a, XDB.rec("Skills", XGojo.REVERSE), a)
-	_check("act_reverse_heals", a.hp > hp1 and XGojo.marks(a)[1] == 1, [a.hp, hp1, a.mhp, XGojo.marks(a)])
+	_check("act_reverse_heals", a.hp > hp1 and XGojo.marks(a)[1] == 2, [a.hp, hp1, a.mhp, XGojo.marks(a)])
 	lg.end_battle(0)
+
+
+## 最强之名：证道、36 层骑士战上场的人里有宿傩或甚尔才解锁
+func _unlock() -> void:
+	XGojo.unlock_override = 0
+	var s := XTianqi.start_new_game(3, "zhengdao", [1])
+	XState.current = s
+	XGojo._fighters = [1, 2, 3]
+	_check("unlock_needs_partner", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	XGojo._fighters = [1, 172]
+	s.flags.tianqi.difficulty = "lianyu"
+	_check("unlock_needs_zhengdao", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	s.flags.tianqi.difficulty = "zhengdao"
+	_check("unlock_ok", XGojo.strongest_check(s) and XGojo.unlocked())
+	_check("unlock_once", not XGojo.strongest_check(s))
+	XGojo.unlock_override = 0
+	XGojo._fighters = [171]
+	var plain := XState.new()
+	XState.current = plain
+	_check("unlock_not_outside", not XGojo.strongest_check(plain) and not XGojo.unlocked())
+	XGojo.unlock_override = 1

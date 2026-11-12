@@ -313,6 +313,8 @@ static func after_final(host, s: XState, line: String, result: int, from := "36"
 		await _say_item(host, grant_relic(s, line, false))
 		if mark_badge(line):
 			await _say(host, "点亮了「%s」。" % badge_name(line))
+	if XGojo.strongest_check(s):
+		await _say(host, XGojo.UNLOCK_TEXT)  # 天启篇五条悟开放方式「最强之名」
 	await _say_core(host, grant_core(s, line, from))
 
 

@@ -99,7 +99,7 @@ static var probe_enabled: Array = []
 
 static func is_disabled_actor(b) -> bool:
 	var id := _actor_id(b)
-	return (DISABLED_ACTORS.has(id) and not probe_enabled.has(id) and not released_actor(id)) or XGojo.hidden(id)  # 五条悟只在天启篇
+	return (DISABLED_ACTORS.has(id) and not probe_enabled.has(id) and not released_actor(id)) or XGojo.hidden(id) or XGojo.locked(id)  # 五条悟只在天启篇、要解锁最强之名
 
 
 static func is_disabled_horn(item: Dictionary) -> bool:
