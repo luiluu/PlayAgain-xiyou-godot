@@ -81,7 +81,7 @@ static var SAVE_MAP_MENU_ONLY := true
 ## 原版虚拟按钮（Mehmet_GhostButtons）只有 A／B，改版 A／B 两键也没有 Shift，手机上开不了。现在这两种布局在战斗中
 ## 于 A、B 之间左上角多一个圆形「信息」键，按下＝Shift（指令窗或技能列表开着时打开怪物信息）；「原多键」本来有 Shift 键，旧三键不加。
 ## 战斗外不显示、不吃触摸。当前场景有 touch_info_visible() 且返回 true 才算（XMapScene：在战斗中）。
-## 回退开关 BATTLE_INFO_BUTTON = false：不要这个键（O-待定·战斗信息键）。
+## 回退开关 BATTLE_INFO_BUTTON = false：不要这个键（O-352）。
 static var BATTLE_INFO_BUTTON := true
 ## 测试用：当成当前场景。
 static var scene_override: Node = null
