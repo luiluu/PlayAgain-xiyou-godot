@@ -98,6 +98,7 @@ func _run() -> void:
 	await _choose_and_opening()
 	await _beats()
 	_gland()
+	_seal_hook()
 	_focus()
 	_chaos()
 	_taunt()
@@ -232,6 +233,24 @@ func _kind_logic(troop: int, rows: Array) -> XBattleLogic:
 	var list := rows.map(func(r): return {"enemy": lg.enemies[int(r[0])], "tier": str(r[1]), "kind": str(r[2])})
 	_check("apply_%d_%s" % [troop, str(rows[0][2])], XTianqiPlagueAlien.apply(lg, s, "test", list))
 	return lg
+
+
+## 天启篇奖励净印·清心接进异化怪的病弱：穿三档后每个减益 3% → 1%
+func _seal_hook() -> void:
+	var lg := _alien_logic("omen", 247)
+	var e: XEnemy = lg.enemies[2]
+	var a: XActor = lg.actors[0]
+	XTianqiPlagueAlien.hp_damage(lg, e, a, 100.0)
+	XTianqiPlagueAlien.refresh(lg)
+	var fr0 := XTianqiPlagueAlien.frail_rate(lg, a)
+	var s: XState = XState.current
+	var seal := XTianqiRewards.make_item("seal", "plague", 3)
+	s.register_gear(seal)
+	s.gear.append(seal)
+	var worn := XEquipment.change(s, a, a.equip_slots().find(int(seal.etypeId)), seal)
+	var fr1 := XTianqiPlagueAlien.frail_rate(lg, a)
+	_check("seal_frail_hooked", worn and _near(fr0, 0.03) and _near(fr1, 0.01), [worn, fr0, fr1])
+	lg.end_battle(0)
 
 
 func _gland() -> void:

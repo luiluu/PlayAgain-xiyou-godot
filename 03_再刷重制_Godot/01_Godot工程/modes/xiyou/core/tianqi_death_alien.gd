@@ -357,6 +357,9 @@ static func start_turn(logic) -> Array:
 			if live.is_empty():
 				break
 			var t = live[logic._int(0, live.size() - 1, "tianqi_death_verdict")]
+			if XTianqiRewards.doom_spared(logic, t, false):  # 天启篇奖励：净印·长明（异化怪不算终焉）
+				_say(f, "%s：「现在一切结束了。」死期落在%s身上，被净印挡下，只损失了一半生命。" % [e.display_name(), t.display_name()])
+				continue
 			f.doom[t] = e
 			_say(f, "%s：「现在一切结束了。」%s被挂上了死期。" % [e.display_name(), t.display_name()])
 	_report(logic)

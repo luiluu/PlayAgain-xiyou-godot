@@ -98,6 +98,7 @@ func _run() -> void:
 	await _choose_and_opening()
 	await _beats()
 	_alien_verdict()
+	_seal_hook()
 	_alien_reaper()
 	_alien_double()
 	_alien_captain_knell()
@@ -210,6 +211,31 @@ func _plain_logic(troop: int) -> XBattleLogic:
 	var lg := XBattleLogic.new()
 	lg.setup(troop, s)
 	return lg
+
+
+## 天启篇奖励净印·长明接进宣判者挂死期：穿三档有几率改成损失一半生命，不挂死期
+func _seal_hook() -> void:
+	var lg := _alien_logic("omen", 291)
+	var s: XState = XState.current
+	var worn := true
+	for a in lg.actors:
+		var seal := XTianqiRewards.make_item("seal", "death", 3)
+		s.register_gear(seal)
+		s.gear.append(seal)
+		worn = worn and XEquipment.change(s, a, a.equip_slots().find(int(seal.etypeId)), seal)
+	var f := XTianqiDeathAlien.fight(lg)
+	var spared := 0
+	var marked := 0
+	for i in range(30):
+		f.doom.clear()
+		for a in lg.actors:
+			a.hp = a.mhp
+		lg.turn = 5 * (i + 1)
+		var logs := XTianqiDeathAlien.start_turn(lg)
+		spared += _texts(logs).filter(func(t): return t.contains("被净印挡下")).size()
+		marked += f.doom.size()
+	_check("seal_doom_hooked", worn and spared > 0 and marked > 0 and spared + marked == 30, [worn, spared, marked])
+	lg.end_battle(0)
 
 
 func _alien_verdict() -> void:
