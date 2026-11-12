@@ -603,7 +603,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 	return keyed.map(func(k): return k[2])
 
 func param_rate(i: int) -> float:
-	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i)  # 天启篇殉印 2 件最大生命、七首之龙龙血全属性；专属角色模块的 paramRate 包装（饿狼形态倍率）
+	return super.param_rate(i) * XEquipSuits.value(self,"param",i,true) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i)  # 天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
 func passive_values(tag: String) -> Array:
@@ -665,7 +665,7 @@ static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|CO
 
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
 func attack_times_add() -> float:
-	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0)
+	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0) + XTianqiAffixBattle.attack_times(self)  # 天启篇词条「连击」
 
 func action_plus_set() -> Array:
 	var out := super.action_plus_set()
@@ -677,6 +677,7 @@ func action_plus_set() -> Array:
 	if XZhenqi.has_daofa(self, "fenshen"):
 		out.append(1.0)
 	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
+	XTianqiAffixBattle.action_plus_set(self, out)  # 天启篇词条「再动」
 	return out
 
 ## dsPassiveSkill <SvPngFd: N>（防具 2937 巨人指环等、状态 1120 人鱼化身）：战斗里角色立绘（Sprite_Actor 主图）放大 N 倍。
@@ -899,6 +900,7 @@ func xparam(i: int) -> float:
 			v += _num(parts[0]) * 0.01
 	v = (v + XEquipSuits.value(self,"xparam",i,false)/100) * XEquipSuits.value(self,"xparam",i,true)
 	v = XActorModules.xparam(self, i, v)  # 专属角色模块的 Game_Actor.xparam 包装（米拉／渡鸦面板暴击）
+	v = XTianqiAffixBattle.xparam(self, i, v)  # 天启篇词条：命中、闪避、暴击率、每回合回复（含光环）
 	return maxf(0.9, v) if i == 0 else v
 
 func sparam(i: int) -> float:
@@ -908,6 +910,8 @@ func sparam(i: int) -> float:
 	v = (v + XEquipSuits.value(self,"sparam",i,false)/100) * XEquipSuits.value(self,"sparam",i,true)
 	if i == 6 or i == 7:
 		return XWeakChallenge.sparam(self, i, XCat.sparam(self, i, additive_rate(TRAIT_SPARAM, i, v, [])))  # 弱者挑战 sparam 包装：10357 承伤 ×0.5
+	if i == 0:
+		v *= XTianqiAffixBattle.target_rate(self)  # 天启篇词条「引敌／避敌」
 	return v
 
 func passive_element_values(e: int) -> Array:
