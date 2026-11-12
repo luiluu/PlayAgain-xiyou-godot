@@ -214,6 +214,9 @@ func build() -> Array:
 	pane.append(el("div", null, "alien-body", [el("div", null, "alien-list", list), el("div", null, "alien-detail", detail)]))
 	if tq_on:
 		pane.append(_core_section(st, stones))
+	var codex_line := XTianqiLine.current(st)
+	if XTianqiAlienCodex.on(st) and codex_line != "":
+		pane.append(_codex_section(codex_line))
 	var recent: Array = lg.recent
 	if not recent.is_empty():
 		var rows := [btn("最近异化掉落（%d）" % recent.size(), _toggle_recent, false, "summary")]
@@ -324,6 +327,18 @@ func _core_section(st: XState, stones: int) -> Dictionary:
 		kids.append(el("div", null, "alien-actions", [el("p", XTianqiAlienGear.core_label(list[n])),
 			btn("刻上（1颗异化石）", _engrave.bind(n), target == null or stones < 1)]))
 	return el("section", null, "alien-cores", kids)
+
+
+## 本线异化图鉴：每种一行，四级各一格（打倒过的亮名字，没打过的「？？」）
+func _codex_section(line: String) -> Dictionary:
+	var pr := XTianqiAlienCodex.progress(line)
+	var kids := [el("h2", "本线异化图鉴（%d／%d）" % [int(pr[0]), int(pr[1])])]
+	for r in XTianqiAlienCodex.rows(line):
+		var cells := PackedStringArray()
+		for c in r.cells:
+			cells.append(str(c.name) if c.seen else "？？")
+		kids.append(el("p", "%s：%s" % [str(r.name), "　".join(cells)], "alien-benefit" if r.cells.any(func(c): return c.seen) else "alien-note"))
+	return el("section", null, "alien-codex", kids)
 
 
 func _engrave_target(st: XState):

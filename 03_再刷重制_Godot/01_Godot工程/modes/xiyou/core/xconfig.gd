@@ -22,7 +22,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
-	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [],
+	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [], "codexTianqiAliens": [],
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
 	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没存过时按平台：触屏开、桌面关（ensure_loaded）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
@@ -86,6 +86,10 @@ static func ensure_loaded() -> void:
 					_values[key] = Array(saved).map(func(v): return int(v)) if saved is Array else []
 				elif key == "codexWhisperSeen":
 					# installRemakeWhisperRuntime applyData：数组才认，每项转字符串（大厅漩涡过场播过的键）
+					var saved = data.get(key)
+					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
+				elif key == "codexTianqiAliens":
+					# 天启篇异化图鉴（重制新加，XTianqiAlienCodex）：数组才认，每项转字符串（"线:种类:级"）
 					var saved = data.get(key)
 					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
 				elif key == "codexTianqiBadges":
@@ -286,6 +290,22 @@ static func tianqi_badge_mark(line: String) -> bool:
 	if (_values.codexTianqiBadges as Array).has(line):
 		return false
 	_values.codexTianqiBadges.append(line)
+	_write()
+	return true
+
+
+## 天启篇异化图鉴（XTianqiAlienCodex）：打倒过的「线:种类:级」，记在配置 codexTianqiAliens（跨存档，只是图鉴）
+static func tianqi_aliens() -> Array:
+	ensure_loaded()
+	return (_values.codexTianqiAliens as Array).duplicate()
+
+
+## 点亮一格；返回这次是不是新点亮的
+static func tianqi_alien_mark(key: String) -> bool:
+	ensure_loaded()
+	if (_values.codexTianqiAliens as Array).has(key):
+		return false
+	_values.codexTianqiAliens.append(key)
 	_write()
 	return true
 

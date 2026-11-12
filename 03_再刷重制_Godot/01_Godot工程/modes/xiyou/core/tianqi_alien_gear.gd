@@ -233,6 +233,7 @@ static func bodies(logic, e) -> Array:
 ## BattleLogic.grant（赢了发奖）里调：异化怪倒下的按级掷，掉的放进背包；返回发了什么（名字）
 static func grant(logic) -> Array:
 	var s: XState = logic.state
+	XTianqiAlienCodex.record(logic)  # 天启篇异化图鉴：倒下的本线异化怪点亮（跨存档）
 	if not on(s):
 		return []
 	var got := []

@@ -390,8 +390,11 @@ static func run_final(host, s: XState, key: String) -> int:
 	if r == 0:
 		await say(host, key, "final_win")
 		progress(key, s)["cleared"] = true
+		var first := not bool(s.flags.tianqi.get("reincarnate", false))
 		s.flags.tianqi["reincarnate"] = true
 		await XTianqiRewards.after_final(host, s, key, r)  # 天启篇奖励：遗物、徽记、终焉核
+		if first and host != null and host.has_method("show_text"):  # 结局结算：本档可轮回（读档界面线名后面标「可轮回」）
+			await host.show_text("", 0, ["\\c[2]%s线·终\\c[0]　本档获得了「可轮回」。" % str(XTianqi.line_info(key).get("name", key))])
 	else:
 		await say(host, key, "final_lost")
 	return r
