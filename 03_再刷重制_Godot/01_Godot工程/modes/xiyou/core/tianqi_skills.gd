@@ -237,6 +237,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for c in out:
 					if str(c[0]) == str(op.get("match", "")):
 						c[0] = str(op.get("to", ""))
+			"drop_area_effects":  # 删掉带参数（action effect: enemies 这类打全体）的段（莉娜炎帝：全体那段改成另放一招）
+				out = out.filter(func(c): return not (str(c[0]) == "action effect" and not (c[1] as Array).is_empty()))
 			"add_effects":
 				var last := -1
 				for i in out.size():
@@ -949,13 +951,13 @@ static func end_action(logic, u, skill) -> Array:
 		_foe_states(logic, u, f.skill)
 		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
+		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
+			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
 		return logs
 	if int(st.used.get(u, -1)) == int(logic.turn):
 		return logs
 	var alive: Array = f.targets.filter(func(t): return t.is_alive())
-	if alive.is_empty():
-		return logs
 	var hit := []
 	for c in _follow_of(u, f.skill):
 		if logic._float("tianqi_skill_follow") < float(c[1]):
@@ -963,10 +965,18 @@ static func end_action(logic, u, skill) -> Array:
 			break
 	if hit.is_empty():
 		return logs
+	var cast: Dictionary = hit[0]
+	# 追加的是全体技（敌方全体 2、我方全体 8）时打全场（单体治疗后接全体治疗、炎帝打倒目标后的余焰）；否则打这次行动打到、还活着的目标
+	var targets: Array = alive if alive.size() <= 1 else [alive[0]]
+	match int(cast.get("scope", 1)):
+		2:
+			targets = logic.alive(logic.enemies)
+		8:
+			targets = logic.alive(logic.actors)
+	if targets.is_empty():
+		return logs
 	st.used[u] = int(logic.turn)
 	st.depth = int(st.depth) + 1
-	var cast: Dictionary = hit[0]
-	var targets: Array = alive if int(cast.get("scope", 1)) in [2, 8] or alive.size() == 1 else [alive[0]]
 	follow_scale = float(hit[2])
 	for t in targets:
 		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
@@ -974,9 +984,12 @@ static func end_action(logic, u, skill) -> Array:
 	follow_scale = 1.0
 	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
 	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
+	var on_kill := bool(then.get("on_kill", false))  # then.on_kill：这次行动打倒过目标才接（莉娜最后的丸子），目标改成还活着的敌人
+	if on_kill and not (f.targets as Array).any(func(t): return not t.is_alive()):
+		then = {}
 	if not then.is_empty() and (not then.has("need_skill") or owns(u, then.need_skill)) and u.is_alive():
 		var nxt := XDB.rec("Skills", int(then.get("cast", 0)))
-		var left: Array = targets.filter(func(t): return t.is_alive())
+		var left: Array = logic.alive(logic.enemies) if on_kill else targets.filter(func(t): return t.is_alive())
 		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
 			logs.append({"type": "action", "user": u, "skill": nxt, "views": logic.views()})
 			logs.append(logic.apply(u, nxt, left[0]))
