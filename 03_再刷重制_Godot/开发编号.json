@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.495",
-  "sequence": 495,
-  "next": "dev.496",
-  "nextSequence": 496,
+  "current": "dev.496",
+  "sequence": 496,
+  "next": "dev.497",
+  "nextSequence": 497,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "tianqi-alien-affix",
+  "currentChange": "tianqi-subpage-bg",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
