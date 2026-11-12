@@ -443,6 +443,8 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 	if sp.has("turns"):
 		r.minTurns = int(sp.turns)
 		r.maxTurns = int(sp.turns)
+	if sp.has("auto"):  # 解除时机（0 不自动、1 行动结束、2 回合结束）：原版「整场」的状态改成按回合
+		r.autoRemovalTiming = int(sp.auto)
 	if sp.get("dot_remove", false):  # 固定量的持续伤害／回复改成按比例（traits 里的再生率），原来的公式去掉
 		r.erase("dot")
 	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
@@ -553,6 +555,10 @@ static func _cond(c: Dictionary, a, b) -> float:
 		"var_bonus":
 			var s := XState.current
 			var v := float(s.variable(int(c["var"]))) if s != null else 0.0
+			v += float(c.get("offset", 0.0))  # offset：变量的起点挪一挪（町甄纯真值原版开局就有 6 点，按稿子从 2 点算）
+			for k in c.get("offset_with", {}):  # 带着这件再加（阿语寰怨：开局就有 2 滴仪式之血）
+				if owns(a, k):
+					v += float(c.offset_with[k])
 			return 1.0 + clampf(v * per, 0.0, cap)
 		"target_states":
 			var n := 0
@@ -577,8 +583,13 @@ static func _cond(c: Dictionary, a, b) -> float:
 				if b.is_state_affected(int(id)):
 					n += 1
 			return 1.0 + clampf(n * per, 0.0, cap)
+		"target_stack":  # 目标身上某状态的层数（on_hit stack 记的）×per（白晶晶毒爆：每层骨毒 +1.2／3.6）
+			var n := int(b.state_data.get("_tq_stack_%d" % int(c.state), 0)) if b.is_state_affected(int(c.state)) else 0
+			return 1.0 + clampf(n * per, 0.0, cap)
 		"self_states":  # 自己身上状态数（增益减益都算），每个 +per（迪昂狂乱·灭）
 			return 1.0 + clampf(float(a.state_ids.size()) * per, 0.0, cap)
+		"self_cri_over":  # 暴击率超过 from（缺省 100%）的部分×per（紫霞剑气：每超 10% +3%，最多 +30%）
+			return 1.0 + clampf((float(a.cri) - float(c.get("from", 1.0))) * per, 0.0, cap)
 		"self_tp":  # 当前 TP×per（天蓬神霄净世诀：每 10 点 +3%，最多 +30%；配 tp_drain 放完耗光）
 			return 1.0 + clampf(float(a.tp) * per, 0.0, cap)
 		"cast_count":  # 本场放过列表里的技能几次（begin_action 记、开战清零），每次 +per：签弟的忏悔
@@ -587,6 +598,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 				var m: Dictionary = a.get_meta("xtq_casts")
 				for id in c.of:
 					n += int(m.get(int(id), 0))
+			for k in c.get("offset_with", {}):  # 带着这件开局就有几层（十三娘心绕：缠意 2 层）
+				if owns(a, k):
+					n += int(c.offset_with[k])
 			return 1.0 + clampf(n * per, 0.0, cap)
 		"allies":  # 上场的这些角色（不算自己）每人 +per
 			var s := XState.current
@@ -621,6 +635,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = float(b.hp) >= float(b.mhp) * float(c.get("rate", 1.0))
 		"target_hp_below":
 			ok = float(b.hp) < float(b.mhp) * float(c.get("rate", 0.0))
+		"self_hp_above":  # 自己生命不低于 rate（玉面狐狸朔月依依）
+			ok = float(a.hp) >= float(a.mhp) * float(c.get("rate", 1.0))
 		"self_hp_below":
 			ok = float(a.hp) < float(a.mhp) * float(c.get("rate", 0.0))
 		"target_full_hp":
@@ -741,11 +757,23 @@ static func after_apply(logic, u, skill, t) -> void:
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
 	_kill_grow(logic, u, skill, t)
+	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
 
 
+## 技能行 kill_tp {tp, need_skill}：这招打倒敌人时回 TP（孙权气吞万里），每次行动一次
+static func _kill_tp(logic, u, skill, t, f: Dictionary) -> void:
+	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not cards_on():
+		return
+	var k: Dictionary = spec(int(skill.get("id", 0))).get("kill_tp", {})
+	if k.is_empty() or (k.has("need_skill") and not owns(u, k.need_skill)) or f.is_empty() or f.get("kill_tp_done", false):
+		return
+	f.kill_tp_done = true
+	u.tp = float(u.tp) + float(k.get("tp", 0.0))
+
+
 ## 角色行 on_hit [{skills, need, extend [状态], turns, state, rate, pick [状态…], tp}]：放表里的技能打中目标时（专属法宝效果）——
-## extend：目标身上刚挂上（剩余回合等于状态原回合）的这些状态多持续 turns 回合；state＋rate：按几率给目标挂状态；pick：随机挂其中一个；tp：每段回 TP。
+## extend：目标身上刚挂上（剩余回合等于状态原回合）的这些状态多持续 turns 回合；state＋rate：按几率给目标挂状态；pick：随机挂其中一个；tp：每段回 TP；tp_once：每次行动每个目标回一次。
 ## extend、state 每次行动每个目标只算一次
 static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 	if not (u is XActor) or not (skill is Dictionary) or not cards_on():
@@ -766,6 +794,8 @@ static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 		if done.any(func(x): return x[0] == i and is_same(x[1], t)):
 			continue
 		done.append(tag)
+		if r.has("tp_once"):  # 每次行动每个目标回一次 TP（花木兰战场经验：用大厅战技后回 TP）
+			u.tp = float(u.tp) + float(r.tp_once)
 		for st in r.get("extend", []):
 			var id := int(st)
 			var base := int(XDB.rec("States", id).get("maxTurns", 0))
@@ -773,7 +803,7 @@ static func _on_hit(logic, u, skill, t, f: Dictionary) -> void:
 				t.state_turns[id] = base + int(r.get("turns", 1))
 		if r.has("state") and t.is_alive() and logic._float("tianqi_skill_on_hit") < float(r.get("rate", 0.0)):
 			t.add_state(int(r.state))
-		if r.has("stack") and t.is_alive():  # 叠层（曹操霸道真气）：层数记在目标 state_data，封顶 cap（cap_with 专属物提高）
+		if r.has("stack") and t.is_alive() and (not r.stack.has("rate") or logic._float("tianqi_skill_on_hit") < float(r.stack.rate)):  # 叠层（曹操霸道真气）：层数记在目标 state_data，封顶 cap（cap_with 专属物提高）；rate 按几率多叠（白晶晶毒吻）
 			var sk: Dictionary = r.stack
 			var cap := int(sk.get("cap", 1))
 			for k in sk.get("cap_with", {}):
@@ -799,22 +829,29 @@ static func dot_value(a, b, d: Dictionary) -> float:
 
 
 ## 开战状态挂完之后（XBattleLogic._battle_start_states）：角色行 start_turns [{need, state, turns}] 改这件专属物开局状态的回合数，
-## start_tp [{need, tp}] 开场 TP 至少这么多
+## start_tp [{need, tp}] 开场 TP 至少这么多，foe_turns [{need, state, turns}] 改开局挂给敌人的状态的回合数
 ## （状态本身还被技能用，不改状态记录）
-static func start_turns(list: Array) -> void:
+static func start_turns(list: Array, foes: Array = []) -> void:
 	if not CARDS or not cards_on():
 		return
 	for a in list:
 		if not (a is XActor):
 			continue
+		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("foe_turns", []):  # 开局挂给敌人的状态的回合数（拉尔垂恤：安抚多 1 回合）
+			if not r.has("need") or owns(a, r.need):
+				for e in foes:
+					if e.is_state_affected(int(r.state)):
+						e.state_turns[int(r.state)] = int(r.turns)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
 		sync_learn(a)
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_tp", []):  # 开场 TP（天蓬吞云）
 			if not r.has("need") or owns(a, r.need):
 				a.tp = maxf(float(a.tp), float(r.tp))
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_turns", []):
-			if (not r.has("need") or owns(a, r.need)) and a.is_state_affected(int(r.state)):
-				a.state_turns[int(r.state)] = int(r.turns)
+			if not r.has("need") or owns(a, r.need):
+				for x in (list if r.get("party", false) else [a]):  # party：开局挂给全队的状态（花木兰念乡：振奋多 1 回合）
+					if x is XBattler and x.is_state_affected(int(r.state)):
+						x.state_turns[int(r.state)] = int(r.turns)
 
 
 ## 伤害钩子（XActorDamageHooks.capture）：技能行 pierce {rate, need} 无视目标一部分双防；角色行 heal_mult [{need, mult}] 治疗量
@@ -865,6 +902,34 @@ static func _var_add(u, skill: Dictionary) -> void:
 	var s := XState.current
 	if s != null:
 		s.set_variable(int(va["var"]), float(s.variable(int(va["var"]))) + float(va.add))
+
+
+## 技能行 hp_equalize 加成比例：放完把己方活着的人生命比例拉平到平均值再加这么多（孙权制衡；原版 Before/After Eval 没移植）
+static func _hp_equalize(logic, u, skill: Dictionary) -> void:
+	var sp := spec(int(skill.get("id", 0)))
+	if not sp.has("hp_equalize") or not u.is_alive():
+		return
+	var mates: Array = logic.alive(logic.actors) if u.is_actor() else logic.alive(logic.enemies)
+	if mates.is_empty():
+		return
+	var avg := 0.0
+	for m in mates:
+		avg += float(m.hp) / maxf(1.0, float(m.mhp))
+	avg = minf(1.0, avg / mates.size() + float(sp.hp_equalize))
+	for m in mates:
+		m.hp = clampi(floori(avg * float(m.mhp)), 1, int(m.mhp))
+
+
+## 技能行 self_heal {pct, need_skill, pct_with {要有: 比例}}：放完自己回生命上限的这个比例（陈醉拳打完回 10%，酒仙 20%）
+static func _self_heal(u, skill: Dictionary) -> void:
+	var h: Dictionary = spec(int(skill.get("id", 0))).get("self_heal", {})
+	if h.is_empty() or not u.is_alive() or (h.has("need_skill") and not owns(u, h.need_skill)):
+		return
+	var pct := float(h.get("pct", 0.0))
+	for k in h.get("pct_with", {}):
+		if owns(u, k):
+			pct = maxf(pct, float(h.pct_with[k]))
+	u.hp = minf(float(u.mhp), float(u.hp) + floorf(float(u.mhp) * pct))
 
 
 ## 技能行 consume [状态…]：放完把打到的目标身上这些状态去掉（劲夫乱打引爆怒拳）；consume_keep_with {要有: 几率} 有几率不去
@@ -943,7 +1008,7 @@ static func param_rate(a, i: int) -> float:
 	if not ENABLED:
 		return 1.0
 	var g = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("grow")
-	if not g is Dictionary or int(g.get("param", -1)) != i or not cards_on():
+	if not g is Dictionary or not (g.get("params", [g.get("param", -1)]) as Array).any(func(x): return int(x) == i) or not cards_on():  # params：一次涨几项（白晶晶敏捷、幸运）
 		return 1.0
 	if g.has("need_skill") and not a.skill_ids.has(int(g.need_skill)):
 		return 1.0
@@ -1002,6 +1067,8 @@ static func end_action(logic, u, skill) -> Array:
 		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 		_consume(logic, u, f)
+		_hp_equalize(logic, u, f.skill)
+		_self_heal(u, f.skill)
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():

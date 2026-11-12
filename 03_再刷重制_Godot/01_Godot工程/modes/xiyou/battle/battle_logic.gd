@@ -388,7 +388,7 @@ func _battle_start_states(list = null) -> void:
 				"StartWTPushState":
 					for x in actors:
 						_state_add(x, sid)
-	XTianqiSkills.start_turns(actors if list == null else list)  # 天启篇技能重构：专属武器开局状态的回合数（金蝉子九锡拳套）
+	XTianqiSkills.start_turns(actors if list == null else list, alive(enemies))  # 天启篇技能重构：专属武器开局状态的回合数（金蝉子九锡拳套）
 	for a in actors:
 		a.refresh_passive()
 	for e in enemies:

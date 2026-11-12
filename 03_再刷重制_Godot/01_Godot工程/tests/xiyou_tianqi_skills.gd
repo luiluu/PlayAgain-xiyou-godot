@@ -43,6 +43,7 @@ func _run() -> void:
 	_xinfa()
 	_buzhao()
 	_p3()
+	_p4()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -572,10 +573,112 @@ func _p3() -> void:
 	_check("p3_start_tp", float(tp.tp) >= 50.0, tp.tp)
 	lg.end_battle(0)
 
+## 第四期（61～94 号）的新能力
+func _p4() -> void:
+	var s := XTianqi.start_new_game(3, "jianxian", [61, 65, 69, 70, 74])
+	XTianqi.take_pending()
+	for id in [61, 63, 64, 65, 69, 70, 72, 74, 76, 78, 82]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	# 变量起点挪动（町甄纯真值：原版开局 6 点，按 2 点算，每点 +5%，最多 6 点）
+	var zz: XActor = s.actor(61)
+	s.set_variable(372, 6)
+	_check("p4_offset", is_equal_approx(XTianqiSkills._cond({"if": "var_bonus", "var": 372, "per": 0.05, "cap": 0.3, "offset": -4}, zz, b), 1.1))
+	s.set_variable(372, 20)
+	_check("p4_offset_cap", is_equal_approx(XTianqiSkills._cond({"if": "var_bonus", "var": 372, "per": 0.05, "cap": 0.3, "offset": -4}, zz, b), 1.3))
+	# 带着专属物再加（阿语寰怨 +2 滴）
+	var ay: XActor = s.actor(72)
+	s.set_variable(371, 1)
+	var c0 := XTianqiSkills._cond({"if": "var_bonus", "var": 371, "per": 0.05, "cap": 0.3, "offset_with": {"e3830": 2}}, ay, b)
+	_wear(ay, "armor", 3830)
+	var c2 := XTianqiSkills._cond({"if": "var_bonus", "var": 371, "per": 0.05, "cap": 0.3, "offset_with": {"e3830": 2}}, ay, b)
+	_check("p4_offset_with", is_equal_approx(c0, 1.05) and is_equal_approx(c2, 1.15), [c0, c2])
+	# 状态解除时机改写（安抚圣光原版整场 → 1 回合、回合结束解除）
+	var st228 := XDB.rec("States", 228)
+	_check("p4_state_auto", int(st228.autoRemovalTiming) == 2 and int(st228.maxTurns) == 1, [st228.autoRemovalTiming, st228.maxTurns])
+	# 制衡：全队生命比例拉平再 +5%
+	var party: Array = lg.alive(lg.actors)
+	for i in party.size():
+		party[i].hp = float(party[i].mhp) * (0.2 if i == 0 else 1.0)
+	var avg := 0.0
+	for m in party:
+		avg += float(m.hp) / float(m.mhp)
+	avg = minf(1.0, avg / party.size() + 0.05)
+	XTianqiSkills._hp_equalize(lg, party[0], XDB.rec("Skills", 2584))
+	_check("p4_hp_equalize", party.all(func(m): return absf(float(m.hp) / float(m.mhp) - avg) < 0.01), avg)
+	# 开局挂给敌人的状态的回合数（拉尔垂恤：安抚多 1 回合）
+	var lr: XActor = s.actor(63)
+	_wear(lr, "armor", 3822)
+	b.add_state(228)
+	XTianqiSkills.start_turns([lr], [b])
+	_check("p4_foe_turns", int(b.state_turns.get(228, 0)) == 2, b.state_turns.get(228))
+	# 念乡：振奋多 1 回合（全队）
+	var ml: XActor = s.actor(69)
+	var zn: XActor = s.actor(61)
+	_wear(ml, "armor", 3828)
+	ml.add_state(238)
+	zn.add_state(238)
+	XTianqiSkills.start_turns([ml, zn], [])
+	_check("p4_start_party", int(zn.state_turns.get(238, 0)) == 3 and int(ml.state_turns.get(238, 0)) == 3, zn.state_turns.get(238))
+	# 紫霞剑气：暴击率超过 100% 每 10% +3%，最多 +30%
+	var zx: XActor = s.actor(70)
+	var cri := float(zx.cri)
+	var want := 1.0 + clampf((cri - 1.0) * 0.3, 0.0, 0.3)
+	_check("p4_cri_over", is_equal_approx(XTianqiSkills._cond({"if": "self_cri_over", "per": 0.3, "cap": 0.3}, zx, b), want), cri)
+	# 自己生命比例判定（玉面狐狸朔月依依）
+	var hu: XActor = s.actor(82)
+	hu.hp = hu.mhp
+	var up := XTianqiSkills._cond({"if": "self_hp_above", "rate": 0.5, "mult": 1.1}, hu, b)
+	hu.hp = float(hu.mhp) * 0.3
+	var dn := XTianqiSkills._cond({"if": "self_hp_above", "rate": 0.5, "mult": 1.1}, hu, b)
+	_check("p4_self_hp_above", is_equal_approx(up, 1.1) and is_equal_approx(dn, 1.0), [up, dn])
+	# 陈醉拳打完回 10%，学了酒仙 20%
+	var ch: XActor = s.actor(74)
+	ch.learn_skill(2614)
+	ch.hp = float(ch.mhp) * 0.5
+	XTianqiSkills._self_heal(ch, XDB.rec("Skills", 2612))
+	var h1 := float(ch.hp) / float(ch.mhp)
+	ch.learn_skill(2619)
+	ch.hp = float(ch.mhp) * 0.5
+	XTianqiSkills._self_heal(ch, XDB.rec("Skills", 2612))
+	var h2 := float(ch.hp) / float(ch.mhp)
+	_check("p4_self_heal", absf(h1 - 0.6) < 0.01 and absf(h2 - 0.7) < 0.01, [h1, h2])
+	# 白晶晶毒爆：每层骨毒 +1.2／3.6，封顶 3 层（骨姿 5 层）
+	var bj: XActor = s.actor(76)
+	b.add_state(502)
+	b.state_data["_tq_stack_502"] = 3
+	var g3 := XTianqiSkills._cond({"if": "target_stack", "state": 502, "per": 0.3333, "cap": 1.0, "cap_with": {"e3635": 1.6667}}, bj, b)
+	b.state_data["_tq_stack_502"] = 5
+	var g5 := XTianqiSkills._cond({"if": "target_stack", "state": 502, "per": 0.3333, "cap": 1.0, "cap_with": {"e3635": 1.6667}}, bj, b)
+	_check("p4_target_stack", absf(g3 - 2.0) < 0.01 and absf(g5 - 2.0) < 0.01, [g3, g5])
+	_check("p4_bone_dot", str(XDB.rec("States", 502).get("dot", {}).get("kind", "")) == "tianqi")
+	# 击杀成长一次涨两项（白晶晶敏捷、幸运）
+	s.flags.tianqi["skill_grow"] = {"baijingjing": 100}
+	bj.learn_skill(3497)
+	_check("p4_grow_params", is_equal_approx(XTianqiSkills.param_rate(bj, 6), 1.1) and is_equal_approx(XTianqiSkills.param_rate(bj, 7), 1.1) and is_equal_approx(XTianqiSkills.param_rate(bj, 2), 1.0))
+	# 十三娘心绕：缠意开局 2 层
+	var ss: XActor = s.actor(78)
+	ss.set_meta("xtq_casts", {3737: 1})
+	var k0 := XTianqiSkills._cond({"if": "cast_count", "of": [3737], "per": 0.05, "cap": 0.3, "offset_with": {"e3671": 2}}, ss, b)
+	_wear(ss, "armor", 3671)
+	var k2 := XTianqiSkills._cond({"if": "cast_count", "of": [3737], "per": 0.05, "cap": 0.3, "offset_with": {"e3671": 2}}, ss, b)
+	_check("p4_cast_offset", is_equal_approx(k0, 1.05) and is_equal_approx(k2, 1.15), [k0, k2])
+	# 新补的技能、表外状态
+	_check("p4_new_skills", str(XDB.rec("Skills", 10713).name) == "地裂术" and int(XDB.rec("Skills", 10713).scope) == 2 and str(XDB.rec("Skills", 10727).name) == "剑影重重")
+	_check("p4_new_states", str(XDB.rec("States", 10807).name) == "神性能量" and str(XDB.rec("States", 10810).name) == "冰冷")
+	lg.end_battle(0)
+
 
 func _smoke() -> void:
 	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30],
-			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60]]:
+			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60],
+			[61, 62, 63, 64, 65], [66, 67, 68, 69, 70], [71, 72, 73, 74, 75], [76, 77, 78, 79, 80], [81, 82, 83, 84, 85], [86, 87, 88, 89, 90], [91, 92, 93, 94, 61]]:
 		_smoke_group(group)
 
 
