@@ -35,6 +35,8 @@ const BUTTONS := {
 	# Mehmet_GhostButtons 的「Save」键（原版虚拟按键只在手机上有，按下＝键盘 ~，YEP_ButtonCommonEvents 428 一键存档，地图与菜单才有）。
 	# 显示在哪见 SAVE_MAP_MENU_ONLY。回退开关 SAVE_BUTTON = false（整个不要存档键）。
 	"save": {"rect": Rect2(1050, 8, 100, 40), "text": "存档", "key": KEY_QUOTELEFT},
+	# 战斗「信息」键（按下＝Shift，AB_EnemyBook 怪物信息），只在战斗中、原版虚拟按钮与 A／B 两键布局显示；见 BATTLE_INFO_BUTTON。
+	"info": {"rect": Rect2(), "text": "信息", "key": KEY_SHIFT},
 	# 改版按键（见文件头）：原多键与方向键；位置由 _style_members 按当前样式算，这里的 rect 不用
 	"shift": {"rect": Rect2(), "text": "Shift", "key": KEY_SHIFT},
 	"ctrl": {"rect": Rect2(), "text": "Ctrl", "key": KEY_CTRL},
@@ -62,6 +64,9 @@ const GHOST_STICK := Rect2(80, 400, 280, 280)
 const GHOST_KNOB := 84.0
 const GHOST_ACTIONS := Rect2(970, 350, 250, 230)
 const GHOST_BUTTON := 120.0
+## 战斗「信息」键的直径（原版按钮布局／A／B 两键布局；放在 A 上方、B 左边的空角）
+const GHOST_INFO := 96.0
+const AB_INFO := 72.0
 const GHOST_TOP := Rect2(1086, 8, 190, 62)
 const GHOST_IDLE := 80.0 / 255.0
 const GHOST_STICK_ALPHA := 150.0 / 255.0
@@ -72,6 +77,12 @@ static var SAVE_BUTTON := true
 ## 战斗、菜单的子页面也没有）。当前场景有 touch_save_visible() 且返回 true 才算（XMapScene：不在战斗、菜单没开或停在主菜单）。
 ## 审查 50 P2-1：keys3 原先所有页面都显示，标题页「导出存档」被它盖住。回退开关 = false：回到所有页面都显示（cc CJ 2026-11-06，O-211）。
 static var SAVE_MAP_MENU_ONLY := true
+## 战斗「信息」键（玩家反馈 v0.01.01：虚拟按键看不了敌人属性）：战斗里看怪物信息要按 Shift（AB_EnemyBook ShortCutButtonName），
+## 原版虚拟按钮（Mehmet_GhostButtons）只有 A／B，改版 A／B 两键也没有 Shift，手机上开不了。现在这两种布局在战斗中
+## 于 A、B 之间左上角多一个圆形「信息」键，按下＝Shift（指令窗或技能列表开着时打开怪物信息）；「原多键」本来有 Shift 键，旧三键不加。
+## 战斗外不显示、不吃触摸。当前场景有 touch_info_visible() 且返回 true 才算（XMapScene：在战斗中）。
+## 回退开关 BATTLE_INFO_BUTTON = false：不要这个键（O-待定·战斗信息键）。
+static var BATTLE_INFO_BUTTON := true
 ## 测试用：当成当前场景。
 static var scene_override: Node = null
 ## Codex 审查报告第 13 项（O-225）：按住虚拟键的连发。原先确定、取消、方向按住 24 帧后每 6 帧都再发一次「新按下」，
@@ -244,7 +255,7 @@ func hit(pos: Vector2) -> String:
 	if _uses_stick and pos.distance_to(stick_center) <= stick_radius * 1.2:
 		return "stick"
 	for name in active:
-		if name == "save" and not save_shown():
+		if not _cond_shown(name):
 			continue
 		if rects.has(name) and (rects[name] as Rect2).has_point(pos):
 			return name
@@ -259,6 +270,24 @@ func save_shown() -> bool:
 		return true
 	var scene: Node = scene_override if is_instance_valid(scene_override) else (get_tree().current_scene if is_inside_tree() else null)
 	return scene != null and scene.has_method("touch_save_visible") and bool(scene.touch_save_visible())
+
+
+## 战斗「信息」键现在该不该出现（不看隐藏状态）。
+func info_shown() -> bool:
+	if not BATTLE_INFO_BUTTON:
+		return false
+	var scene: Node = scene_override if is_instance_valid(scene_override) else (get_tree().current_scene if is_inside_tree() else null)
+	return scene != null and scene.has_method("touch_info_visible") and bool(scene.touch_info_visible())
+
+
+## 只在某些场景出现的键（存档、信息）现在该不该出现；其余键恒为 true。
+func _cond_shown(name: String) -> bool:
+	match name:
+		"save":
+			return save_shown()
+		"info":
+			return info_shown()
+	return true
 
 
 ## 布局编辑时某点落在哪一组上。
@@ -516,10 +545,11 @@ func _process(_delta: float) -> void:
 		if ch != _knob_drawn:
 			_knob_drawn = ch
 			_ghost_knob.queue_redraw()
-	if _buttons.has("save"):
-		var want := active.has("save") and (not hidden or layout_editing) and (layout_editing or save_shown())
-		if (_buttons.save as Panel).visible != want:
-			(_buttons.save as Panel).visible = want
+	for name in ["save", "info"]:
+		if _buttons.has(name):
+			var want := active.has(name) and (not hidden or layout_editing) and (layout_editing or _cond_shown(name))
+			if (_buttons[name] as Panel).visible != want:
+				(_buttons[name] as Panel).visible = want
 	var platform := get_parent() as XPlatform
 	var catching := platform != null and platform.is_catching_up()
 	_catch_label.visible = catching
@@ -531,7 +561,7 @@ func _process(_delta: float) -> void:
 func _apply_hidden() -> void:
 	var shown := not hidden or layout_editing
 	for name in _buttons:
-		(_buttons[name] as Panel).visible = name == "hide" or (shown and active.has(name) and (name != "save" or layout_editing or save_shown()))
+		(_buttons[name] as Panel).visible = name == "hide" or (shown and active.has(name) and (layout_editing or _cond_shown(name)))
 	_stick_base.visible = shown and _uses_stick and not ghost()
 	_stick_knob.visible = shown and _uses_stick and not ghost()
 	_ghost_base.visible = shown and _uses_stick and ghost()
@@ -587,7 +617,7 @@ func apply_layout() -> void:
 			elif _buttons.has(name):
 				active.append(name)
 				rects[name] = Rect2(pos + local.position * s, local.size * s)
-				var round_key: bool = (name in ["ok", "cancel"] and (layout() == "ab" or ghost())) or (name == "run" and layout() != "classic")
+				var round_key: bool = name == "info" or (name in ["ok", "cancel"] and (layout() == "ab" or ghost())) or (name == "run" and layout() != "classic")
 				_place(_buttons[name], rects[name], rects[name].size.x / 2.0 if round_key else (8.0 if BUTTONS[name].has("dir") else 12.0) * s)
 				_style_button(name)
 				var label := (_buttons[name] as Panel).get_node("Label") as Label
@@ -615,7 +645,8 @@ func _style_members(g: String) -> Dictionary:
 			"actions":
 				return {"size_key": "buttons", "size": GHOST_ACTIONS.size, "base": GHOST_ACTIONS, "members": {
 					"ok": Rect2(0, GHOST_ACTIONS.size.y - GHOST_BUTTON, GHOST_BUTTON, GHOST_BUTTON),
-					"cancel": Rect2(GHOST_ACTIONS.size.x - GHOST_BUTTON, 0, GHOST_BUTTON, GHOST_BUTTON)}}
+					"cancel": Rect2(GHOST_ACTIONS.size.x - GHOST_BUTTON, 0, GHOST_BUTTON, GHOST_BUTTON)}.merged(
+						{"info": Rect2(8, 8, GHOST_INFO, GHOST_INFO)} if BATTLE_INFO_BUTTON else {})}
 			_:
 				var m := {"hide": Rect2(0, 0, 100, 40)}
 				if SAVE_BUTTON:
@@ -652,7 +683,8 @@ func _style_members(g: String) -> Dictionary:
 					"pageup": Rect2(0, 60, w, 54), "pagedown": Rect2(w + 6, 60, w, 54),
 					"cancel": Rect2(0, 120, w, 60), "ok": Rect2(w + 6, 120, w, 60)}}
 			return {"size_key": "buttons", "size": AB_SIZE, "members": {
-				"ok": Rect2(0, AB_SIZE.y - AB_BUTTON, AB_BUTTON, AB_BUTTON), "cancel": Rect2(AB_SIZE.x - AB_BUTTON, 0, AB_BUTTON, AB_BUTTON)}}
+				"ok": Rect2(0, AB_SIZE.y - AB_BUTTON, AB_BUTTON, AB_BUTTON), "cancel": Rect2(AB_SIZE.x - AB_BUTTON, 0, AB_BUTTON, AB_BUTTON)}.merged(
+					{"info": Rect2(6, 6, AB_INFO, AB_INFO)} if BATTLE_INFO_BUTTON else {})}
 		_:
 			var base: Rect2 = GROUPS.top.rect
 			var m := {}
@@ -667,6 +699,8 @@ func _style_members(g: String) -> Dictionary:
 func button_text(name: String) -> String:
 	if ghost() and name in ["ok", "cancel", "save"]:
 		return {"ok": "A", "cancel": "B", "save": "Save"}[name]
+	if name == "info":
+		return BUTTONS.info.text
 	match name:
 		"ok":
 			return {"ab": "A", "full": "确认"}.get(layout(), BUTTONS.ok.text)
@@ -678,6 +712,8 @@ func button_text(name: String) -> String:
 
 
 func _font_base(name: String) -> int:
+	if name == "info":
+		return 30 if ghost() else 22
 	if ghost() and name in ["ok", "cancel", "save"]:
 		return 72 if name != "save" else 24
 	if name == "hide" or name == "save":
@@ -692,7 +728,7 @@ func _font_base(name: String) -> int:
 
 
 func _font_color(name: String) -> Color:
-	if ghost() and name in ["ok", "cancel", "save"]:
+	if ghost() and name in ["ok", "cancel", "save", "info"]:
 		return GHOST_TEXT
 	if layout() == "ab" and name == "ok":
 		return Color(0.8, 0.965, 0.847)
@@ -713,7 +749,7 @@ func ghost() -> bool:
 ## 按键底色：原版 A／B 灰底（gradientFillRect 207,217,223 → 226,235,240，0.8）、Save 再叠一层暗色；其余照旧深蓝
 func _style_button(name: String) -> void:
 	var sb := (_buttons[name] as Panel).get_theme_stylebox("panel") as StyleBoxFlat
-	if ghost() and name in ["ok", "cancel", "save"]:
+	if ghost() and name in ["ok", "cancel", "save", "info"]:
 		sb.bg_color = Color8(216, 226, 231, 204) if name != "save" else Color8(130, 136, 139, 220)
 		sb.set_border_width_all(0)
 		if not _ghost_alpha.has(name):
