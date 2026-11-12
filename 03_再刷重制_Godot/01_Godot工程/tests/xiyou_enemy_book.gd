@@ -502,8 +502,12 @@ func _battle_book() -> void:
 	var idx := [XEnemyBookPage._t(page.index_name(0), 6, 0, XEnemyBookPage.INDEX_NAME_W + 40)]
 	var d := diff(got_form(idx), want_form(ref.unknown.index, s.difficulty))
 	check("battle_index", page.ids == [1] and d == "", [page.ids, d])
-	d = diff(got_form(page._status_ops), want_form(ref.unknown.status, s.difficulty))
+	# 原版参照（没登记写「？？？」）对照回退态；默认（BATTLE_SHOW_UNREGISTERED）战斗里照写数值，见 xiyou_battle_ui
+	XEnemyBookPage.BATTLE_SHOW_UNREGISTERED = false
+	d = diff(got_form(XEnemyBookPage.status_ops(page.enemy(1), false)), want_form(ref.unknown.status, s.difficulty))
+	XEnemyBookPage.BATTLE_SHOW_UNREGISTERED = true
 	check("battle_status_unknown", d == "", d)
+	check("battle_status_unregistered_shown", not page._status_ops.any(func(o): return o[0] == "t" and o[1] == XEnemyBookPage.UNKNOWN_DATA))
 	XEnemyBook.add(s, 1)
 	d = diff(got_form(XEnemyBookPage.status_ops(page.enemy(1), false)), want_form(ref.known.status, s.difficulty))
 	check("battle_status_known", d == "", d)

@@ -59,8 +59,16 @@ func _battle_book(b: XBattleScene) -> void:
 	await _key(KEY_SHIFT)
 	await _frames(3)
 	var p := b.book_page
-	_check("shift_opens_battle_book", p != null and p.in_battle and p.ids == [1] and not b.cmd_win.active
-		and p._status_ops.any(func(o): return o[0] == "t" and o[1] == "？？？"), null if p == null else p.ids)
+	var unk := func(ops: Array) -> bool: return ops.any(func(o): return o[0] == "t" and o[1] == "？？？")
+	_check("shift_opens_battle_book", p != null and p.in_battle and p.ids == [1] and not b.cmd_win.active, null if p == null else p.ids)
+	# 没登记的敌人：战斗里照写数值（v0.01.01 玩家反馈，XEnemyBookPage.BATTLE_SHOW_UNREGISTERED）；关掉照原版写「？？？」；图鉴仍不画
+	if p != null:
+		var en: XEnemy = p.enemy(p.ids[0])
+		_check("battle_book_unregistered_shown", not XEnemyBook.registered(XState.current, en.enemy_id) and not unk.call(p._status_ops)
+			and XEnemyBookPage.status_ops(en, true).is_empty())
+		XEnemyBookPage.BATTLE_SHOW_UNREGISTERED = false
+		_check("battle_book_unregistered_rollback", unk.call(XEnemyBookPage.status_ops(en, false)))
+		XEnemyBookPage.BATTLE_SHOW_UNREGISTERED = true
 	await _shot("battle_42_enemy_book")
 	# 窗口读数：与 ui_reference/review_system_pages.js 的 battle_book 同态，review_system_pages_compare.py 核对
 	if p != null and out_dir != "" and DisplayServer.get_name() != "headless":
