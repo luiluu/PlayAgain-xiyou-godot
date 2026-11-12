@@ -127,6 +127,7 @@ static func table(name: String) -> Variant:
 				if id < _tables[name].size() and _tables[name][id] is Dictionary:
 					XGrowthHelp.describe(_tables[name][id])
 			XCanglong.patch_armors(_tables[name])  # 【上邪】专属名
+			XGojo.patch_armors(_tables[name])  # 天启篇五条悟专属法宝「眼罩」
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）

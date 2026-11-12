@@ -664,7 +664,9 @@ static func tier_of(actor_or_id, force := false) -> String:
 	if not (TIERS and ENABLED and (force or on())):
 		return XTier.tier_of(id)
 	data()
-	if XTier.tier_of(id) == "":
+	if id == XGojo.ACTOR and XGojo.locked(id):
+		return ""  # 五条悟没解锁最强之名
+	if XTier.tier_of(id) == "" and id != XGojo.ACTOR:  # XTier 在原版档不算五条悟，天启篇名单照表
 		return ""
 	var t := str(_tier.get(id, XTier.WEAK))
 	return "" if t == HIDDEN else t
@@ -683,6 +685,8 @@ static func ids(tier: String, force := false) -> Array:
 		for id in XTier.ids(t):
 			if tier_of(id, true) == tier:
 				out.append(int(id))
+	if XGojo.ENABLED and not out.has(XGojo.ACTOR) and tier_of(XGojo.ACTOR, true) == tier:
+		out.append(XGojo.ACTOR)  # 五条悟：XTier 在当前不是天启篇存档时不列他（开新局抽阵容时）
 	out.sort()
 	return out
 

@@ -161,9 +161,14 @@ static func pool(key: String) -> Dictionary:
 		if not allowed.has(tier):
 			continue
 		for id in XTianqiSkills.ids(tier, true):
-			if not XImportedBalance.is_disabled_actor(id):
+			if not _disabled(id):
 				out[tier].append(id)
 	return out
+
+
+## 候选池里停用的角色；五条悟只看最强之名解锁没有（开新局时当前存档还不是天启篇，XGojo.hidden 不作数）
+static func _disabled(id: int) -> bool:
+	return XGojo.locked(id) if id == XGojo.ACTOR else XImportedBalance.is_disabled_actor(id)
 
 
 ## 抽一次阵容：先抽够弱者下限，再从全池补满（超强者不超过本难度上限），最后打乱顺序（第一个是 1 号位）。
@@ -433,7 +438,7 @@ static func draw_pool(s: XState, tiers: Array) -> Array:
 	var out := []
 	for tier in tiers:
 		for id in XTianqiSkills.ids(tier, true):
-			if not XImportedBalance.is_disabled_actor(id) and not s.party.has(id) and not s.saved_actors.has(id):
+			if not _disabled(id) and not s.party.has(id) and not s.saved_actors.has(id):
 				out.append(id)
 	return out
 

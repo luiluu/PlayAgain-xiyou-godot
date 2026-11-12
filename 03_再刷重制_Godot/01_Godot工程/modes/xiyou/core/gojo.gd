@@ -21,7 +21,13 @@ extends RefCounted
 ##   普通敌人 30%、首领 15% 这次不能行动；五条悟的术式必中。
 ## - 进阶（XAdvance，插件「Advanced 501～504」）：一 茈「收」命中减速 10% 一回合；二 茈「放」无视目标 50% 防御；
 ##   三 每场一次生命掉到 30% 以下立刻回复 30%；四 展开领域时苍印、赫印各 +1。每次进阶另学通用的超越极限 I～IV（增伤 +5%）。
-## 第二期再做：专属法宝「眼罩」（茈后返还各 1 印）、开放方式「最强之名」（证道带宿傩或甚尔通关骑士线）、头像正式图。
+## 第二期（cc/gojo-p2）：
+## - 专属法宝「眼罩」（护甲 8001，装备类型 13，只能五条悟装）：茈结算后返还苍印、赫印各 1。五条悟在天启篇入队时（XState.add_actor）
+##   背包有就拿、没有就生成，装进装备类型 13 的槽（照宿傩神武解）。
+## - 开放方式「最强之名」：证道难度、36 层骑士战（XTianqiRewards.after_final）赢了、那场上场的人里有宿傩 172 或甚尔 171
+##  （开战时记下出战的人，中途阵亡也算）→ 全局配置 codexTianqiGojo 记一次（跨存档），右上角提示。没解锁时天启篇也当他停用
+##  （XImportedBalance.is_disabled_actor、XTianqiSkills.tier_of 返回空），解锁后按技能表名单进超强者候选池（寻常、艰险照超强者上限抽不到）。
+## - 头像：还是战斗图截的临时图，等 GPT 出的正式图。
 ## 开关：ENABLED＝false 不补数据、不挂机制（O-365）。
 
 const ACTOR := 180
@@ -64,6 +70,15 @@ const TEMPLATE_SKILL := 10229  # 宿傩「解」：主动技能记录的样子�
 const TEMPLATE_PASSIVE := 10242
 const TEMPLATE_CLASS := 170
 const TEMPLATE_ACTOR := 172
+const ARMOR := 8001  # 专属法宝「眼罩」
+const ARMOR_SLOT_TYPE := 13
+const TEMPLATE_ARMOR := 4581  # 宿傩「神武解」
+const UNLOCK_KEY := "codexTianqiGojo"
+const UNLOCK_DIFFICULTY := "zhengdao"
+const UNLOCK_WITH := [171, 172]
+const UNLOCK_TEXT := "五条悟：「你们打得不错嘛。」\n最强之名已解锁：之后天启篇的候选池里会出现五条悟。"
+## 测试用：-1 读全局配置，0／1 强制没解锁／已解锁
+static var unlock_override := -1
 
 static var ENABLED := true
 
@@ -75,6 +90,18 @@ static func own(a) -> bool:
 ## 天启篇以外不出现（停用、图鉴仓库不列、全角色循环跳过）
 static func hidden(id: int) -> bool:
 	return ENABLED and id == ACTOR and not XTianqi.active(XState.current)
+
+
+## 最强之名解锁了没有（跨存档）
+static func unlocked() -> bool:
+	if unlock_override >= 0:
+		return unlock_override == 1
+	return XConfig.flag(UNLOCK_KEY)
+
+
+## 天启篇里还没解锁：不能入队、不进候选池
+static func locked(id: int) -> bool:
+	return ENABLED and id == ACTOR and not unlocked()
 
 
 static func knows(a, id: int) -> bool:
@@ -187,6 +214,63 @@ static func patch_skills(t: Array) -> void:
 		t[id].id = id
 
 
+static func patch_armors(t: Array) -> void:
+	if not ENABLED or not _free(t, ARMOR, "护甲"):
+		return
+	var r: Dictionary = (t[TEMPLATE_ARMOR] as Dictionary).duplicate(true)
+	r.id = ARMOR
+	r._gojo = true
+	r.name = "眼罩"
+	r.description = "法宝\n五条悟遮住六眼的黑色眼罩。"
+	r.traits = []
+	r.note = "<req_level:1>\n<req_actors: %d>\n<pos=APs text=\\c[2]专属：五条悟 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效：虚式「茈」结算后，返还苍印、赫印各1 size=18 color=rgba(255,255,255,1) line=false align=0>" % ACTOR
+	r.meta = XTianqiSkills.parse_meta(r.note)
+	if r.get("equipment") is Dictionary:
+		r.equipment.requirements = {"actors": [ACTOR]}
+		r.equipment.variance = 0
+	t[ARMOR] = r
+
+
+static func wears_blindfold(a) -> bool:
+	return own(a) and a.equip_list().any(func(e): return e is Dictionary and int(e.get("base", e.get("id", 0))) == ARMOR)
+
+
+## 天启篇入队（XState.add_actor）：没戴眼罩就背包里拿或生成一件，装进装备类型 13 的槽
+static func on_join(s, id: int) -> void:
+	if not ENABLED or id != ACTOR or not XTianqi.active(s):
+		return
+	var a: XActor = s.actor(ACTOR)
+	var slot := a.equip_slots().find(ARMOR_SLOT_TYPE)
+	if slot < 0 or wears_blindfold(a):
+		return
+	var idx: int = s.gear.find_custom(func(e): return e.kind == "armor" and int(e.base) == ARMOR)
+	if idx < 0:
+		s.gain_gear("armor", ARMOR, 1)
+		idx = s.gear.size() - 1
+	var item: Dictionary = s.gear[idx]
+	s.gear.remove_at(idx)
+	var worn = a.equips[slot]
+	if worn is Dictionary and not worn.is_empty():
+		s.gear.append(worn)
+	a.equips[slot] = item
+	a.refresh_passive()
+
+
+## 骑士战（36 层）打赢后：证道、上场的人里有宿傩或甚尔，就解锁最强之名；返回这次是不是新解锁
+static func strongest_check(s) -> bool:
+	if not ENABLED or unlocked() or not XTianqi.active(s):
+		return false
+	if str(s.flags.tianqi.get("difficulty", "")) != UNLOCK_DIFFICULTY:
+		return false
+	if not _fighters.any(func(id): return UNLOCK_WITH.has(int(id))):
+		return false
+	if unlock_override >= 0:
+		unlock_override = 1
+	else:
+		XConfig.set_flag(UNLOCK_KEY, true)
+	return true
+
+
 static func _set_module(r: Dictionary, module: String) -> void:
 	r.damage.formula = "XGojo(a,b,%d)" % int(r.id)
 	r.damage.formulaGd = r.damage.formula
@@ -257,6 +341,7 @@ static var round := 0
 static var cast := {}  # 本次行动：skill、pairs（茈开始时的对数）、again
 static var _temp := {}
 static var _queued = null
+static var _fighters: Array = []  # 最近一场开战时出战的角色号（最强之名看「上场」，中途阵亡也算）
 
 
 static func temp(a) -> Dictionary:
@@ -323,6 +408,7 @@ static func start_battle(logic) -> void:
 	cast = {}
 	_queued = null
 	_temp.clear()
+	_fighters = logic.actors.filter(func(x): return x is XActor).map(func(x): return int(x.actor_id))
 	for a in _members(logic):
 		_clear(logic, a)
 
@@ -387,6 +473,9 @@ static func finish(logic, u, skill) -> Array:
 	elif id in [PURPLE_IN, PURPLE_OUT]:
 		d.blue = 0
 		d.red = 0
+		if wears_blindfold(u):
+			d.blue = 1  # 眼罩：茈后返还苍印、赫印各 1
+			d.red = 1
 		_show(logic, u)
 	cast = {}
 	return logs

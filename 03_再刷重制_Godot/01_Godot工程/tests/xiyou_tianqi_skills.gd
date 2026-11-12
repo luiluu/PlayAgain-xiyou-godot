@@ -26,6 +26,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiSkills.reload()
+	XGojo.unlock_override = 0  # 五条悟没解锁最强之名（不读本机配置）：超强者照 16 人
 	_check("defaults", not XTianqiSkills.CARDS and not XTianqiSkills.MASTERY and XTianqiSkills.ACTION_CAP and XTianqiSkills.TIERS)
 	_default_off()
 	XTianqiSkills.CARDS = true  # 角色卡、熟练度默认关（等数值线），专项打开测
@@ -89,6 +90,9 @@ func _tiers() -> void:
 	var sup := XTianqiSkills.ids(XTier.SUPER, true)
 	var strong := XTianqiSkills.ids(XTier.STRONG, true)
 	_check("tier_super_16", sup.size() == 16 and sup.has(MIKASA) and sup.has(122) and not sup.has(96), sup)
+	XGojo.unlock_override = 1
+	_check("tier_super_gojo_unlocked", XTianqiSkills.ids(XTier.SUPER, true).size() == 17 and XTianqiSkills.ids(XTier.SUPER, true).has(XGojo.ACTOR))
+	XGojo.unlock_override = 0
 	_check("tier_strong_52", strong.size() == 52 and strong.has(96) and strong.has(XIAOYAO) and not strong.has(8), strong.size())
 	_check("tier_demoted_weak", XTianqiSkills.tier_of(8, true) == XTier.WEAK and XTianqiSkills.tier_of(141, true) == XTier.WEAK and XTianqiSkills.tier_of(11, true) == XTier.WEAK)
 	_check("tier_hidden", XTianqiSkills.tier_of(110, true) == "" and not XTianqiSkills.ids(XTier.STRONG, true).has(110) and not XTianqiSkills.ids(XTier.WEAK, true).has(110))
