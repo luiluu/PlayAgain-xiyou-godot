@@ -374,7 +374,7 @@ static func dragon(logic) -> XEnemy:
 	return logic.enemies[i] if i >= 0 and i < logic.enemies.size() else null
 
 
-## BattleLogic.setup（XTianqiQiyinRule.setup 之后）：借来的那只换成七首之龙，建七段和规则记录
+## BattleLogic.setup（各线异化之前）：借来的那只换成七首之龙，建七段；规则记录在 setup_rules 里建
 static func setup(logic, s: XState) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
@@ -402,11 +402,13 @@ static func setup(logic, s: XState) -> void:
 	for i in 8:
 		var v := float(ref[i]) * (float(rate[i]) if i < rate.size() else 1.0) if ref.size() >= 8 else float(rec.params[i])
 		params.append(roundf(v))
-	# 生命：最后的最大生命正好是本档的 max_hp（难度倍率 _rates 里已经乘了本档敌人血量，这里除掉）
-	params[0] = roundf(float(fd.max_hp) / maxf(0.0001, float(e._rates[0])))
+	# 生命：先除掉难度倍率 _rates（里面已经乘了本档敌人血量），换上之后再按实际量的校一次
+	params[0] = maxf(1.0, roundf(float(fd.max_hp) / maxf(0.0001, float(e._rates[0]))))
 	rec.params = params
 	rec.name = str(info.get("name", "七首之龙"))
 	rec.dropItems = []
+	rec.note = "NoElite"  # 普拉顿备注里的 <hp: …>、<Enemy Drops>、<Capture> 等不跟着借（同骑士的合成记录）
+	rec.meta = {}
 	rec.exp = 0
 	rec.gold = 0
 	var traits: Array = rec.get("traits", []).duplicate(true)
@@ -416,6 +418,13 @@ static func setup(logic, s: XState) -> void:
 	e.horseman = {"rec": rec, "knight": false}
 	e.refresh_passive()
 	e.recover_all()
+	# 借来的普拉顿身上还有能力值比率等特性：按量出来的最大生命再校一次，最后正好是本档的 max_hp
+	if e.mhp > 0.0 and absf(e.mhp - float(fd.max_hp)) > 1.0:
+		params[0] = roundf(float(params[0]) * float(fd.max_hp) / e.mhp)
+		rec.params = params
+		e.param_mark_dirty()
+		e.refresh_passive()
+		e.recover_all()
 	# 段底：第 k 首断掉的生命线（最后一段到 0）
 	var floors := []
 	var left := float(e.mhp)
@@ -429,10 +438,18 @@ static func setup(logic, s: XState) -> void:
 	var f := {"index": idx, "floors": floors, "cut": 0, "segments": int(fd.segments), "order": fd.reveal_order,
 		"grey": fd.grey_reprieve, "reprieve": {}, "revealed": -1, "logs": []}
 	logic.set_meta(META, f)
+
+
+## BattleLogic.setup（XTianqiQiyinRule.setup 之后）：建规则记录（XTianqiQiyinRule 的七条规则照用），开场揭第一道印
+static func setup_rules(logic) -> void:
+	if not active(logic):
+		return
+	var f := fight(logic)
+	var info := fight_info()
 	var rule := {"seal": "", "rule": "", "boss": true, "gems": {}, "queue": [], "skills_used": 0, "side_bonus": "",
 		"silent": false, "dragon": true}
 	logic.set_meta(XTianqiQiyinRule.META, rule)
-	_push(logic, _log("open", [int(fd.segments)]))
+	_push(logic, _log("open", [int(f.segments)]))
 	if bool(info.get("open_reveal", true)):
 		_reveal(logic, 0)
 	rule.queue.append_array(f.logs)

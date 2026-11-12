@@ -197,6 +197,8 @@ func _fight() -> void:
 	_check("fight_max_hp", absf(e.mhp - float(fd.max_hp)) <= 2.0 and is_equal_approx(e.hp, e.mhp), [e.mhp, fd.max_hp])
 	_check("fight_three_actions", e.action_plus_set().filter(func(v): return v >= 1.0).size() >= 2, e.action_plus_set())
 	_check("fight_no_drop", e.data().dropItems.is_empty() and int(e.data().exp) == 0)
+	_check("fight_no_borrowed_tags", not str(e.data().note).contains("<hp") and not str(e.data().note).contains("Capture") and e.data().meta.is_empty())
+	_check("fight_no_seg_alien", e.added_params.is_empty() and not e.has_meta("tianqi_prefix") and e.alien.is_empty(), [e.added_params, e.display_name()])
 	_check("fight_open_reveal_bai", XTianqiQiyinRule.rule_of(lg) == "no_cure" and str(XTianqiQiyinRule.fight(lg).seal) == "bai")
 	_check("fight_open_logs", lg.turn_start_logs.any(func(l): return l is Dictionary and str(l.get("text", "")).contains("七首之龙")), lg.turn_start_logs.size())
 	var floors: Array = XTianqiQiyinDragonRun.fight(lg).floors
@@ -302,7 +304,7 @@ func _reward() -> void:
 	XTianqiQiyinDragon.data().reward.weapon_chance = 1.0
 	XTianqiQiyinDragon.data().reward.artifact_chance = 1.0
 	var h3 := FakeHost.new()
-	h3.answers = [0, 1, 1]
+	h3.answers = [0, 1]  # 选白印、先收着；招募不答＝稍后再选
 	var got: Array = await XTianqiQiyinDragonRun.settle(h3, s2)
 	XTianqiQiyinDragon.reload()
 	var w: Array = got.filter(func(i): return str(i.kind) == "weapon")
@@ -334,6 +336,7 @@ func _blood() -> void:
 	host.answers = [0, 0, 0, 0]  # 给第一位喝四次（第四次喝满拒绝）
 	_check("altar_menu_blood", XTianqiQiyin.altar_options(s).any(func(o): return o.id == "dragon_blood"))
 	await XTianqiQiyinDragonRun.run_option(host, s, "dragon_blood")
+	d = XTianqiQiyinDragonRun.state(s)
 	_check("blood_three_max", int(d.blood.get(str(id), 0)) == 3 and int(d.blood_stock) == 2, d)
 	_check("blood_full_said", _has(host, "已经喝满"))
 	_check("blood_rate", is_equal_approx(XTianqiQiyinDragonRun.param_rate(a, 2), 1.09), XTianqiQiyinDragonRun.param_rate(a, 2))
