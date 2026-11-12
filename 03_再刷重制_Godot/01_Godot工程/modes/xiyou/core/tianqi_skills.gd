@@ -651,6 +651,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 	match str(c.get("if", "")):
 		"always":
 			ok = true
+		"var_at_least":  # 变量（按 cap 封顶）至少 n（白起断天休：杀气 6 点时变大招）
+			var vs := XState.current
+			ok = vs != null and mini(int(c.get("cap", 999999)), int(vs.variable(int(c["var"])))) >= int(c.n)
 		"agi_below_target":
 			ok = float(a.agi) < float(b.agi)
 		"agi_above_target":
@@ -798,6 +801,8 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 	var f: Dictionary = _fstore(logic).act
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
+	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
+		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）
 	_kill_grow(logic, u, skill, t)
 	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
@@ -819,10 +824,13 @@ static func _reflect(u, t, r: Dictionary) -> void:
 			for k in sp.get("reflect_with", {}):  # 带着这件反弹更多（张楚岚雷符：金光在时 30%）
 				if owns(t, k):
 					v = maxf(v, float(sp.reflect_with[k]))
+			if sp.has("reflect_var") and XState.current != null:  # 按变量加成（马宝国肝帝积分：每 10 分 +1%，最多 +30%）
+				var rv: Dictionary = sp.reflect_var
+				v *= 1.0 + minf(float(rv.get("cap", 0.0)), maxf(0.0, float(XState.current.variable(int(rv.var)))) * float(rv.get("per", 0.0)))
 			pct = maxf(pct, v)
 	if pct <= 0.0:
 		return
-	if u is XEnemy and XEnemy.boss_id(int(u.enemy_id)):
+	if u is XEnemy and u.boss_difficulty_boss:  # 首领（开战时按 boss_id 记）
 		pct *= 0.5
 	u.hp = maxf(0.0, float(u.hp) - floorf(dmg * pct))
 	if u.hp <= 0.0:
@@ -985,6 +993,14 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 				for e in foes:
 					if e.is_state_affected(int(r.state)):
 						e.state_turns[int(r.state)] = int(r.turns)
+		var ch: Dictionary = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("charge", {})
+		if not ch.is_empty() and XState.current != null:  # 积攒点数开战归零（白起杀气不跨战斗累计），专属物给起始点数
+			var n0 := 0
+			for r in ch.get("start", []):
+				if owns(a, r.need):
+					n0 = maxi(n0, int(r.n))
+			XState.current.set_variable(int(ch["var"]), n0)
+			a.set_meta("xtq_charge_again", false)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
 		a.set_meta("xtq_turn", 0)
 		sync_learn(a)
@@ -1111,6 +1127,52 @@ static func _self_heal(u, skill: Dictionary) -> void:
 
 
 ## 技能行 consume [状态…]：放完把打到的目标身上这些状态去掉（劲夫乱打引爆怒拳）；consume_keep_with {要有: 几率} 有几率不去
+## 角色行 charge（白起杀气，第四期待办）：{var, cap, gain {技能号: 点}, gain_crit {need, n}, spend {技能号: [低档, 高档]}, refund_kill {need, rate}, start [{need, n}], full_again 技能号}。
+## 卡开着时原版的凝聚／释放公共事件（422／423）从技能上去掉，由这里接管：放 gain 里的招得点（这次行动暴击过、学了 gain_crit.need 再多 n），封顶 cap；
+## spend 里的招够高档耗高档、不然耗低档（不够低档不能放，技能行 need_var，见 meets）；这招打倒了目标、学了 refund_kill.need 时返还耗掉的 rate；
+## 开战点数归零，专属物 start 给起始点数；学了 full_again 的，点数第一次攒满 cap 的那次行动之后本回合再动一次（每场一次）。伤害的高档加成写在技能的 var_at_least 条件里
+static func _charge(logic, u, f: Dictionary) -> void:
+	if not (u is XActor) or XState.current == null:
+		return
+	var ch: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("charge", {})
+	if ch.is_empty():
+		return
+	var s := XState.current
+	var vid := int(ch["var"])
+	var cap := int(ch.get("cap", 6))
+	var sid := str(int(f.skill.get("id", 0)))
+	var v := mini(cap, int(s.variable(vid)))
+	var before := v
+	if ch.get("gain", {}).has(sid):
+		v += int(ch.gain[sid])
+		var gc: Dictionary = ch.get("gain_crit", {})
+		if bool(f.get("crit", false)) and not gc.is_empty() and owns(u, gc.need):
+			v += int(gc.get("n", 1))
+	if ch.get("spend", {}).has(sid):
+		var tiers: Array = ch.spend[sid]
+		var cost := int(tiers[1]) if tiers.size() > 1 and v >= int(tiers[1]) else int(tiers[0])
+		cost = mini(cost, v)
+		v -= cost
+		var rk: Dictionary = ch.get("refund_kill", {})
+		if not rk.is_empty() and owns(u, rk.need) and (f.targets as Array).any(func(t): return t is XBattler and not t.is_alive()):
+			v += int(floorf(cost * float(rk.get("rate", 0.5))))
+	v = clampi(v, 0, cap)
+	s.set_variable(vid, v)
+	if ch.has("full_again") and v >= cap and before < cap and owns(u, ch.full_again) and not bool(u.get_meta("xtq_charge_again", false)) and u.is_alive():
+		u.set_meta("xtq_charge_again", true)
+		logic.current_order.append(u)
+
+
+## BattleLogic.can_use：技能行 need_var {var, min}：变量不够不能放（白起断天休要 3 点杀气）
+static func meets(a, skill: Dictionary) -> bool:
+	if not (a is XActor) or not CARDS:
+		return true
+	var nv: Dictionary = spec(int(skill.get("id", 0))).get("need_var", {})
+	if nv.is_empty() or not cards_on() or XState.current == null:
+		return true
+	return int(XState.current.variable(int(nv["var"]))) >= int(nv.get("min", 0))
+
+
 static func _consume(logic, u, f: Dictionary) -> void:
 	var sp := spec(int(f.skill.get("id", 0)))
 	if not sp.has("consume"):
@@ -1247,6 +1309,7 @@ static func end_action(logic, u, skill) -> Array:
 		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 		_consume(logic, u, f)
+		_charge(logic, u, f)
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
 		if u.is_alive():

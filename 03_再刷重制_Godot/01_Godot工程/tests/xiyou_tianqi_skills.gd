@@ -47,6 +47,7 @@ func _run() -> void:
 	_p5()
 	_p6()
 	_fill()
+	_fill_charge()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -868,11 +869,74 @@ func _fill() -> void:
 		_check("fill_offhand_half", full > one and is_equal_approx(half - one, (full - one) * 0.5), [one, half, full])
 	else:
 		_check("fill_offhand_half", false, "没有武器")
+	# 马宝国混元：反弹受到伤害的 30%，肝帝积分每 10 分 +1%（最多 +30%），首领减半
+	if n != null:
+		a.add_state(908)
+		s.set_variable(206, 100)
+		n.hp = n.mhp
+		var h0 := float(n.hp)
+		XTianqiSkills._reflect(n, a, {"hp": 1000.0})
+		_check("fill_mabaoguo_reflect", is_equal_approx(h0 - float(n.hp), 330.0), h0 - float(n.hp))
+		b.hp = b.mhp
+		var hb := float(b.hp)
+		XTianqiSkills._reflect(b, a, {"hp": 1000.0})
+		_check("fill_mabaoguo_boss_half", is_equal_approx(hb - float(b.hp), 165.0), hb - float(b.hp))
+		a.remove_state(908)
 	XTianqiSkills.CARDS = false
 	b.remove_state(1043)
 	b.add_state(1043)
 	_check("fill_cards_off", b.is_state_affected(1043))
 	XTianqiSkills.CARDS = true
+	lg.end_battle(0)
+
+
+## 补完：白起杀气（上限 6、耗 3／6、不够不能放、暴击多攒、击杀返还、满 6 再动、开战归零）
+func _fill_charge() -> void:
+	var ids := [80, 60, 71, 95, 100]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var a: XActor = s.actor(80)
+	s.set_variable(369, 7)
+	XTianqiSkills.start_turns([a], [])
+	var dt := XDB.rec("Skills", 4450)
+	_check("fill_charge_start", int(s.variable(369)) == 0 and not lg.can_use(a, dt) and not XTianqiSkills.meets(a, dt))
+	_check("fill_charge_no_ce", not (XDB.rec("Skills", 4448).effects as Array).any(func(e): return int(e.code) == 44) and not (dt.effects as Array).any(func(e): return int(e.code) == 44))
+	var kz := XDB.rec("Skills", 4448)
+	for i in 3:
+		XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_gain", int(s.variable(369)) == 3 and XTianqiSkills.meets(a, dt), s.variable(369))
+	if not a.skill_ids.has(4459):
+		a.learn_skill(4459)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_crit", int(s.variable(369)) == 5, s.variable(369))
+	var b := _enemy(lg)
+	_check("fill_charge_low", is_equal_approx(XTianqiSkills._cond({"if": "var_at_least", "var": 369, "n": 6, "cap": 6, "mult": 1.6667}, a, b), 1.0))
+	if not a.skill_ids.has(4456):
+		a.learn_skill(4456)
+	var q := lg.current_order.size()
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_full_again", int(s.variable(369)) == 6 and lg.current_order.size() == q + 1, [s.variable(369), lg.current_order.size(), q])
+	s.set_variable(369, 5)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": false})
+	_check("fill_charge_again_once", lg.current_order.size() == q + 1)
+	_check("fill_charge_high", is_equal_approx(XTianqiSkills._cond({"if": "var_at_least", "var": 369, "n": 6, "cap": 6, "mult": 1.6667}, a, b), 1.6667))
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": dt, "targets": []})
+	_check("fill_charge_spend_high", int(s.variable(369)) == 0, s.variable(369))
+	s.set_variable(369, 5)
+	if not a.skill_ids.has(4461):
+		a.learn_skill(4461)
+	b.hp = 0.0
+	b.add_state(1)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": dt, "targets": [b]})
+	_check("fill_charge_refund", int(s.variable(369)) == 3, s.variable(369))
 	lg.end_battle(0)
 
 

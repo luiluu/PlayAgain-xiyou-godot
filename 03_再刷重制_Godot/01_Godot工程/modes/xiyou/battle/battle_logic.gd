@@ -675,6 +675,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
 		return false
+	if not XTianqiSkills.meets(a, skill):  # 天启篇技能重构：点数不够不能放（白起断天休要 3 点杀气）
+		return false
 	if not XTianqiQiyinRule.can_use(self, a, skill):  # 七印祭坛：寂静双数回合、限时用满时只能普攻、防御、用物品
 		return false
 	if XAlienBattle.sealed(self, a, skill):  # 异化蚀术 isSkillSealed 包装：被封印的技能
