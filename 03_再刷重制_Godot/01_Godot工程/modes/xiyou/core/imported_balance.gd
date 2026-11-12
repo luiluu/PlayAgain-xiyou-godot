@@ -26,7 +26,7 @@ static var V029_HIDE_ACTORS := true
 
 
 static func is_hidden_actor(id: int) -> bool:
-	return V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id) and not released_actor(id)
+	return (V029_HIDE_ACTORS and HIDDEN_ACTORS.has(id) and not released_actor(id)) or XGojo.hidden(id)  # 五条悟只在天启篇
 
 
 ## 【cc·未经审查】解放苍龙破晓（Kyo 11-11，O-313）：开关开着时 146 不算停用、不隐藏，号角 274 不算停用号角
@@ -99,7 +99,7 @@ static var probe_enabled: Array = []
 
 static func is_disabled_actor(b) -> bool:
 	var id := _actor_id(b)
-	return DISABLED_ACTORS.has(id) and not probe_enabled.has(id) and not released_actor(id)
+	return (DISABLED_ACTORS.has(id) and not probe_enabled.has(id) and not released_actor(id)) or XGojo.hidden(id)  # 五条悟只在天启篇
 
 
 static func is_disabled_horn(item: Dictionary) -> bool:

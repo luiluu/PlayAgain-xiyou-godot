@@ -290,7 +290,7 @@ func _optimized() -> void:
 
 ## 进阶表：462 行＋渡鸦开机补的 5 行（finishRavenDatabaseCompatibility，表尾 473～477）＝467；经济合并后不再有 184～187；角色 1 各阶需求
 func _rows() -> void:
-	var rs := XAdvance.rows()
+	var rs := XAdvance.rows().filter(func(r): return int(r.actor) != XGojo.ACTOR)  # 重制新加的五条悟进阶 4 行不在原版参照里
 	check("rows_count", rs.size() == 490, rs.size())  # v0.62.12 新源进阶表 485 行＋渡鸦 5 行（v0.28 是 462＋5＝467）
 	check("rows_no_old_currency", not rs.any(func(r): return r.items.any(func(p): return p[0] >= 184 and p[0] <= 187)))
 	var a1 := rs.filter(func(r): return int(r.actor) == 1)

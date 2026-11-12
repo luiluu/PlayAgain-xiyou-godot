@@ -222,6 +222,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XDemonCrown.begin(state, int(troop_id), func(): return _rule().next_float("demon_crown.roll"))  # 魔冠 startBattle 包装（main.js 第 151 行，最外层、原 startBattle 之前）：收编、记穿着的人、掉落战斗开战掷点
 	XToji.start_battle(self)  # 甚尔 startBattle 包装（原 startBattle 之前）：设第一形态（随后开战清 removeAtBattleEnd 状态）
 	XSukuna.start_battle(self)  # 宿傩 startBattle 包装（之前）：清战斗数据、同步技能
+	XGojo.start_battle(self)  # 天启篇五条悟：清苍印赫印、领域
 	XBlackFlash.start_battle(self)  # 黑闪 startBattle 包装（宿傩之内）：round 归 0、清数据
 	if XStateEffects.FIX_QUEUE_CLEAR:
 		XStateEffects.clear_queues()  # rules9 审查 39 P3-5：先清上一场遗留，再移除 removeAtBattleEnd 状态（1307 崩坏能 remove 阶段预约的 CE1505 要留下）
@@ -620,6 +621,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 		cost.tp = floori(cost.tp * (1.0 - reduce / 100.0))
 	cost = {"mp": XMira.cost(a, skill, int(cost.mp)), "tp": XMira.cost(a, skill, int(cost.tp))}  # 米拉禁忌 skillMpCost／skillTpCost 包装：主动技 ×0.75
 	cost.tp = XSukuna.tp_cost(a, skill, int(cost.tp))  # 宿傩 skillTpCost 包装：领域中解／捌减半（种族包装在外）
+	cost.mp = XGojo.mp_cost(a, skill, int(cost.mp))  # 天启篇五条悟六眼：苍、赫交替不耗魔法
 	if not panel and XAlienBattle.silence_skill(a, skill):
 		cost.mp = 0  # 异化缄默 skillMpCost 包装（Adv:132）：选定技能不花 MP，改锁生命上限
 	var guyu := XGuyu.mp_cost(a, skill, 1.0 if panel else a.mcr, consume_reduce(a, skill, shift))
@@ -690,6 +692,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not XSukuna.meets(a, skill, self):  # 宿傩 meetsSkillConditions：解锁、领域冷却、神灶要蓄力目标、神灶：开要准备层
 		return false
+	if not XGojo.meets(a, skill):  # 天启篇五条悟：茈要两种印、形状对；领域开着不能再展开
+		return false
 	if not XMira.meets(a, skill):  # 米拉 meetsSkillConditions：人形／黑龙技按形态、解放的进阶与等级、劫焰不能单放
 		return false
 	if not XGuyu.meets(a, skill):  # 谷雨 meetsSkillConditions：五个主动技只有谷雨能用、要解锁，花期／终结／花荫／转移看战斗内状态
@@ -754,7 +758,7 @@ func usable_skills(a: XActor) -> Array:
 func battle_skills(a: XActor) -> Array:
 	var out := []
 	for s in a.skills():
-		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and XSukuna.listed(a, s) and XToji.listed(a, s):
+		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and XSukuna.listed(a, s) and XToji.listed(a, s) and XGojo.listed(a, s):
 			out.append(s)
 	return out
 
@@ -1171,6 +1175,10 @@ func act(u: XBattler, skill, target) -> Array:
 	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
 	var started := true
 	var skipped := not can_move(u)
+	var overloaded := not skipped and XGojo.overload(self, u)  # 天启篇五条悟无量空处：信息过载，敌人这次不能行动
+	if overloaded:
+		skipped = true
+		logs.append(XGojo.overload_text(u))
 	if skipped:
 		# 敌人走 YEP processTurn，不 startAction、不减行动结束的回合；角色走 OTB startOTBInput，没有行动也走 endAction、减回合，专属模块的收尾都不做事（参照 stunned_turn）
 		started = u.is_actor()
@@ -1224,6 +1232,7 @@ func act(u: XBattler, skill, target) -> Array:
 	if started and not skipped:
 		logs.append_array(XGarou.finish(self, u, skill))  # 饿狼 endAction 包装（原 endAction 之前）：进化、解析、追击、流水回 TP；敌人命中饿狼的进化、解析、反击
 		logs.append_array(XSukuna.finish(self, u, skill))  # 宿傩 endAction 包装（原 endAction 之前）：神灶：开、追斩、看破、适应
+		logs.append_array(XGojo.finish(self, u, skill))  # 天启篇五条悟：加印、茈清印、六眼再动
 		XBlackFlash.finish(self, u, skill)  # 黑闪 endAction 包装（宿傩之内）：集中、连闪、觉醒
 		logs.append_array(XYomiJingliu.j_finish(self, u, skill))  # 镜流 endAction 包装（黑闪之内、渡鸦之外）：追加段、霜痕／裂隙、月魄、追加行动
 		XToji.finish(self, u, skill)  # 甚尔 endAction 包装（原 endAction 之后，镜流在里层）：切换技能换形态
@@ -1239,6 +1248,7 @@ func act(u: XBattler, skill, target) -> Array:
 	if started:
 		XLiuying.end_action(self, u, skill)  # 流萤 endAction 包装（原 endAction 之后）：燃烧后刷新负面免疫与免死
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
+	XGojo.queue_again(self, u)  # 天启篇五条悟六眼：再动插队
 	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
 	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」
 	logs.append_array(XTianqiSkills.end_action(self, u, skill))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）
@@ -1280,6 +1290,7 @@ func end_turn() -> Array:
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
 	logs.append_array(XSukuna.end_round(self))  # 宿傩 endTurn 包装（原 endTurn 之前，在米拉外层）：领域斩击、神灶：开、伤口到期
+	logs.append_array(XGojo.end_round(self))  # 天启篇五条悟：无量空处计时
 	XBlackFlash.end_round(self)  # 黑闪 endTurn 包装（宿傩之内、米拉之外）：觉醒到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
 	XRaven.end_turn(self)  # 渡鸦 endTurn 包装（原 endTurn 之前，在米拉之内、宠物捕捉插件之外）：残响、神话形态减一回合
@@ -2071,6 +2082,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(mark_views(XToji.begin(self, u, skill, list)))  # 甚尔 startAction 包装（黑闪之内）：切换记形态；武器库追击；主技能收成单目标、记段数
 		XBlackFlash.begin(u, skill, list, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
+		logs.append_array(XGojo.begin(self, u, skill))  # 天启篇五条悟：茈记对数、领域展开
 		var lotus_seq := _lotus_hp(skill, list)
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		logs.append_array(mark_views(_lotus_strike(u, skill, lotus_seq.keys(), lotus_seq)))
@@ -2083,6 +2095,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
 	XBlackFlash.begin(u, skill, targets, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 	logs.append_array(XSukuna.begin(self, u, skill, targets))  # 宿傩 startAction 包装：领域展开、施放帧
+	logs.append_array(XGojo.begin(self, u, skill))  # 天启篇五条悟：茈记对数、领域展开
 	var lotus_before := _lotus_hp(skill, targets)
 	for t0 in targets:
 		var t: XBattler = t0
@@ -2429,7 +2442,7 @@ func item_hit(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 		return 1.0
 	if XGuyu.sure(skill):  # 谷雨 itemHit 包装：绽放、终结、治疗必中
 		return 1.0
-	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中
+	if certain_hit(u, skill) or XYomiJingliu.sure(u, skill) or XYunshang.sure(u, skill) or XGojo.sure(u, skill):  # 黄泉技能、云裳伤害技能 itemHit 包装：必中（五条悟领域中的术式也是）
 		return 1.0
 	if XNumberBoost.owner(skill, u, t) != 0:  # 米拉／渡鸦数值池 itemHit 包装（在甚尔里面，影速加成只给甚尔自己）：归属技能打敌人必中
 		return 1.0
@@ -2464,7 +2477,7 @@ func item_eva(u: XBattler, skill: Dictionary, t: XBattler) -> float:
 		return 0.0
 	if XGuyu.sure(skill) or XCat.sure_segment(u):  # 谷雨 itemEva 包装：绽放、终结、治疗不闪避；哈基米必中剑段（导入角色平衡在甚尔外层，影速也不加）
 		return 0.0
-	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
+	if XYunshang.sure(u, skill) or XSukuna.no_evade(u, skill, t) or XToji.sure(u, skill) or XGojo.sure(u, skill):  # 云裳伤害技能、宿傩斩击打有看破的目标、甚尔五感主技能／武器库 itemEva 包装：不闪避
 		return 0.0
 	# 镜流黄泉的包装在甚尔里面：必中只把内层闪避压成 0，甚尔照样加目标的影速（审查第 18 期 P3②，参照 toji_eva_probe）
 	# 米拉／渡鸦数值池的 itemEva 包装也在甚尔里面（归属技能只打敌人，敌人不会天与咒缚，影速恒 0）
@@ -2544,6 +2557,11 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	u = XTusu.apply_subject(u, skill)  # 屠苏 Game_Action.apply／subject 包装（在绑定之外）：武装技能整个 apply 以屠苏为出手者
 	if XBinding.blocks_apply(u, t):
 		return XBinding.unused_result(u, skill, t)  # 绑定 Game_Action.apply 包装：敌方效果打不到形态中的本体
+	if XGojo.infinity_block(self, u, skill, t):  # 天启篇五条悟无下限：花 1 苍印整次拦下（同闪避）
+		var blocked_r := XBinding.unused_result(u, skill, t)
+		blocked_r.erase("unused")
+		blocked_r.evaded = true
+		return blocked_r
 	var tusu_cmd := XTusu.apply_command(self, u, skill, t)  # 屠苏 Game_Action.apply 包装：归形、易武、化武
 	if not tusu_cmd.is_empty():
 		return tusu_cmd
@@ -2681,6 +2699,8 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	_action_resources = previous_resources
 	XZhenqi.pojia_actor = before
 	XMira.after_apply(u, skill, t, r)  # 米拉 Game_Action.apply 包装：记劫火累计
+	XGojo.after_apply(self, u, skill, t, r)  # 天启篇五条悟进阶一：茈·收减速
+	XGojo.after_hit(self, t)  # 天启篇五条悟进阶三：自动反转
 	XBlackFlash.apply_end(black_flash)
 	return r
 
@@ -3496,6 +3516,7 @@ func end_battle(result := -1) -> void:
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
 	XSukuna.end_battle(self)  # 宿傩 endBattle 包装：清战斗数据与领域、适应、觉醒状态
+	XGojo.end_battle(self)  # 天启篇五条悟：清苍印赫印、领域
 	XHubris.end_battle(self, result)  # 狂妄 endBattle 包装（在心钢外层）：胜利存盛名，清扬名
 	XHeartsteel.end_battle(result)  # 心钢 endBattle 包装：胜利存层数
 	XYunshang.end_battle(self, result)  # 云裳 endBattle 包装：不朽天丝，结清赊账、结束衣魂，清战斗数据、御风、余辉、符针

@@ -42,6 +42,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 		return {"available": true, "value": XHeartsteel.formula(a, b), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == XTianqiSkills.MODULE:  # 天启篇全角色技能重构（XTianqiSkills.formula）
 		return {"available": true, "value": XTianqiSkills.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and program.get("module") == "gojo":  # 天启篇五条悟虚式「茈」（XGojo.formula，按对数取系数）
+		return {"available": true, "value": XGojo.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）
 		return {"available": true, "value": XCat.formula(a, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "garou":  # CodexGarou.base(a,b,id)（173 饿狼，XGarou.formula）
