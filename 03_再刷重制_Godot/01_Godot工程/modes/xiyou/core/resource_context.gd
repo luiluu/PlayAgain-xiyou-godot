@@ -159,6 +159,7 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		return {}  # 天启四骑士：饥荒终焉「绝粮」，我方 MP、TP 在战斗中不能恢复
 	amount = XTianqiFamineAlien.gain(b, resource, amount)  # 天启篇饥荒线异化：荒年者降回复、熬夜者降 TP 获得
 	amount = XTianqiPlagueAlien.gain(b, resource, amount)  # 天启篇瘟疫线异化：终焉毒腺在场时中毒的人不能被治疗
+	amount = XRiftAlien.gain(b, resource, amount)  # 漩涡阶段异化（西游）：荒年者在场时我方受到的回复打折
 	if XAlienBattle.route_gain(self, b, resource, amount):
 		return {}  # 异化绝缘拒收外来恢复、舍身的生命恢复转给队友（gainHp／gainMp 包装）
 	if resource == "hp" and XAlienBattle.route_life_gain(self, b, amount):
