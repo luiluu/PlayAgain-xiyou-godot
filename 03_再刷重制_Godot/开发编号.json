@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.499",
-  "sequence": 499,
-  "next": "dev.500",
-  "nextSequence": 500,
+  "current": "dev.500",
+  "sequence": 500,
+  "next": "dev.501",
+  "nextSequence": 501,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "tianqi-alien-finale",
+  "currentChange": "tianqi-ending",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

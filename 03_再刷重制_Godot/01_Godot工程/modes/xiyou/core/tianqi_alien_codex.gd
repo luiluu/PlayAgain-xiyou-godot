@@ -7,7 +7,7 @@ extends RefCounted
 ## - 看：异化工坊页（天启篇存档）底下一节「本线异化图鉴」，本线每种一行，四级各一格，打倒过的亮名字，没打过的「？？」。
 ## 只认天启篇存档（XTianqiLine.open_for），开关关着不记也不显示。
 ##
-## 开关（O-待定）：false＝不记也不显示异化图鉴
+## 开关（O-345）：false＝不记也不显示异化图鉴
 
 ## 开关：false＝没有异化图鉴
 static var ENABLED := true
