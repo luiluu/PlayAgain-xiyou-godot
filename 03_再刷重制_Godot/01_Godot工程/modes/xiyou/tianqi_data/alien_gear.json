@@ -1,0 +1,69 @@
+{
+  "_note": "天启篇异化装备（四线异化与异化装备重构 v0.8 第 4 节，四线剧情与关卡设计稿 v0.4 第 3.4、6 节）。数字是测试参数（draft），避开 4：化形分解能量设计稿是 4，这里写 5；净化退还「该级分解能量的一半」取整后避开 4。每线 4 条词条和新名字读 rewards.json 的 finale（单一来源）。",
+  "draft": true,
+  "levels": {
+    "qinran": {
+      "name": "侵染",
+      "rate": 0.03,
+      "energy": 1,
+      "refund": 1
+    },
+    "shigu": {
+      "name": "蚀骨",
+      "rate": 0.08,
+      "energy": 2,
+      "refund": 1
+    },
+    "huaxing": {
+      "name": "化形",
+      "rate": 0.2,
+      "energy": 5,
+      "refund": 3
+    },
+    "zhongyan": {
+      "name": "终焉",
+      "rate": 1.0,
+      "energy": 8,
+      "refund": 5
+    }
+  },
+  "level_order": [
+    "qinran",
+    "shigu",
+    "huaxing",
+    "zhongyan"
+  ],
+  "late_only": {
+    "_note": "原来只有首领来源才出的三条（共生、夺舍、寄生）改为化形及以上才出（v0.8 第 4.2 节）",
+    "keys": [
+      "lifelink",
+      "possession",
+      "scapegoat"
+    ],
+    "min_level": "huaxing"
+  },
+  "costs": {
+    "reroll": 1,
+    "engrave": 1,
+    "purify": 1
+  },
+  "new_affixes": {
+    "_note": "本线新词条（★），v0.8 第 4.2 节；战斗效果还没接（交付单「未做」），装备上显示「未生效」",
+    "dying": {
+      "benefit": "受到致命伤害时本回合不死，攻击提高一半。",
+      "cost": "本回合结束时必死。"
+    },
+    "again": {
+      "benefit": "每 3 回合多行动一次。",
+      "cost": "受到的伤害提高四分之一。"
+    },
+    "thrift": {
+      "benefit": "技能消耗降低。",
+      "cost": "受到的回复降低同样多。"
+    },
+    "venom": {
+      "benefit": "攻击附带中毒。",
+      "cost": "自己也一直中毒。"
+    }
+  }
+}

@@ -3411,6 +3411,7 @@ func grant(r: Dictionary) -> Array:
 	if not drop_lock:
 		gain_drops(r.drops)
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
+	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0

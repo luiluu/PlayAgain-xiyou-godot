@@ -41,8 +41,8 @@ const PANE_W := 1080.0
 const PANE_BORDER := 12.0
 const PANE_PAD := Vector2(20, 16)
 const LIST_W := 1016.0 * 0.33              # .alien-list width:33%（含右内距 14 与 1px 线）
-const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1颗|开始抽取|确认"
-const DANGER_RE := "确认分解|分解为"
+const PRIMARY_RE := "采用新|保存配置|合成|能量 →|应用到|使用1颗|开始抽取|确认|刻上"
+const DANGER_RE := "确认分解|分解为|取核"
 ## 优化 O-087：false（默认）列表按钮左对齐、不出横向滚动条；true 照原版 button+button 把第 2 个起右推 7，宽仍 100%，撑出横向滚动条
 static var list_indent_quirk := false
 ## 优化 O-089：true（默认）打开／重画后焦点放在第一个按钮（不画框，方向键可直接走）；false 照原版不聚焦任何按钮（键盘先按 Tab）
@@ -52,6 +52,8 @@ const PARAM_NAMES := ["生命", "法力", "物攻", "物防", "魔攻", "魔防"
 ## 选中的异化装备 uid：原版是工坊模块的变量，关掉再开、读档后都还记着（uid 对上才生效）
 static var selected := ""
 var confirming := false
+## 天启篇：取核的确认框
+var confirming_core := false
 ## 配置页：是否展开、打开时的已存配置（原版 configure 打开时取一次）、各下拉框当前值（null＝没选中）
 var cfg_open := false
 var cfg_saved := {}
@@ -138,7 +140,7 @@ func build() -> Array:
 		pane.append(el("h3", i.name))
 		var cards := []
 		for x in [[p.old, "保留旧异化", false], [p.next, "采用新异化", true]]:
-			var f := XAlienation.affix(str(x[0]))
+			var f := XTianqiAlienGear.affix_view(st, str(x[0]))  # 天启篇存档换新名字、新词条读天启篇的表；原版档同 XAlienation.affix
 			cards.append(el("section", null, "", [el("h2", f.name), el("p", "收益：" + str(f.benefit), "alien-benefit"),
 				el("p", "代价：" + str(f.cost), "alien-cost"), btn(x[1], _act.bind(XAlienation.resolve.bind(st, x[2])))]))
 		pane.append(el("div", null, "alien-choices", cards))
@@ -147,7 +149,13 @@ func build() -> Array:
 	var list := []
 	var detail := []
 	var all := XAlienation.owned(st).filter(func(e): return not XAlienation.mark(e).is_empty())
-	if all.is_empty():
+	var tq_on := XTianqiAlienGear.on(st)
+	if all.is_empty() and tq_on:  # 天启篇：异化装备只有本线异化怪掉
+		list.append(el("p", "尚未获得异化装备。"))
+		detail.append(el("div", null, "alien-guide", [el("h2", "如何获得异化装备"),
+			el("p", "只有本线的异化怪会掉：侵染、蚀骨、化形按几率掉一件，终焉必掉。词条从本线 4 条里出，级跟着那只怪。"),
+			el("p", "分解按级给能量；取核把词条连同级取出来，花 1 颗异化石刻到别的装备上；净化去掉词条，退还一部分能量。")]))
+	elif all.is_empty():
 		list.append(el("p", "尚未获得异化装备。"))
 		var maps := []
 		for id in cfg.get("mobMaps", []):
@@ -183,11 +191,20 @@ func build() -> Array:
 		if not eligible:
 			detail.append(el("p", "操作前请卸下装备、解除锁定与绑定。"))
 		var boss := str(XAlienation.mark(item).origin) == "boss"
+		var tq_item := XTianqiAlienGear.is_tq(item)
+		var gain := XTianqiAlienGear.dismantle_gain(item) if tq_item else (5 if boss else 1)
 		var actions := [btn("使用1颗异化石重抽", _act.bind(XAlienation.reroll.bind(st, item)), not eligible or stones < 1),
-			btn("分解为%d点能量" % (5 if boss else 1), _confirm, not eligible)]
+			btn("分解为%d点能量" % gain, _confirm, not eligible)]
+		if tq_item and tq_on:  # 天启篇：取核、净化
+			actions.append(btn("取核", _confirm_core, not eligible))
+			actions.append(btn("使用1颗异化石净化", _act.bind(XTianqiAlienGear.purify.bind(st, item)), not eligible or stones < 1))
 		if XAlienation.needs_configuration(item):
 			actions.append(btn("配置异化", _open_config.bind(item), not eligible))
 		detail.append(el("div", null, "alien-actions", actions))
+		if confirming_core:
+			detail.append(el("section", null, "alien-confirm", [el("h3", "确认取核 " + str(item.name)),
+				el("p", "装备本身没了，得到一颗记着词条和级的异化核，之后花 1 颗异化石刻到别的武器或防具上。"),
+				btn("确认取核", _extract_core.bind(item)), btn("取消", _cancel_confirm)]))
 		if confirming:
 			detail.append(el("section", null, "alien-confirm", [el("h3", "确认分解 " + str(item.name)),
 				el("p", "整件装备及其普通词条、强化、宝石、经验和成长将全部销毁。分解不会保留异化词条。"),
@@ -195,6 +212,8 @@ func build() -> Array:
 		if cfg_open:
 			detail.append(_config_section(st, item))
 	pane.append(el("div", null, "alien-body", [el("div", null, "alien-list", list), el("div", null, "alien-detail", detail)]))
+	if tq_on:
+		pane.append(_core_section(st, stones))
 	var recent: Array = lg.recent
 	if not recent.is_empty():
 		var rows := [btn("最近异化掉落（%d）" % recent.size(), _toggle_recent, false, "summary")]
@@ -246,11 +265,19 @@ func _select(uid: String) -> void:
 
 func _confirm() -> void:
 	confirming = true
+	confirming_core = false
+	render(true)
+
+
+func _confirm_core() -> void:
+	confirming_core = true
+	confirming = false
 	render(true)
 
 
 func _cancel_confirm() -> void:
 	confirming = false
+	confirming_core = false
 	cfg_open = false
 	render()
 
@@ -264,6 +291,53 @@ func _dismantle(item: Dictionary) -> void:
 		selected = ""
 		confirming = false
 		cfg_open = false
+	render(r.has("error"))
+
+
+## ---- 天启篇：取核、刻印（XTianqiAlienGear） ----
+
+func _extract_core(item: Dictionary) -> void:
+	var r := XTianqiAlienGear.extract_core(s(), item)
+	error_text = str(r.error) if r.has("error") else ""
+	if not r.has("error"):
+		selected = ""
+		confirming_core = false
+	render(r.has("error"))
+
+
+## 异化核一节：选刻到哪件，每颗核一个「刻上」
+func _core_section(st: XState, stones: int) -> Dictionary:
+	var list := XTianqiAlienGear.cores(st)
+	var targets := XTianqiAlienGear.engrave_targets(st)
+	var opts := targets.map(func(i): return _opt(str(i.get("instanceId", "")), str(i.name)))
+	if cfg_vals.get("engrave") == null or not opts.any(func(o): return str(o.value) == str(cfg_vals.engrave)):
+		cfg_vals["engrave"] = opts[0].value if not opts.is_empty() else null
+	var kids := [el("h2", "异化核（%d）" % list.size())]
+	if list.is_empty():
+		kids.append(el("p", "取核、骑士和 34～36 层的首领会给异化核。"))
+		return el("section", null, "alien-cores", kids)
+	kids.append(_select_node("刻到哪件", opts, cfg_vals.get("engrave"), "engrave"))
+	var target = _engrave_target(st)
+	if target != null and not XAlienation.mark(target).is_empty():
+		kids.append(el("p", "这件已有词条，刻上会替换掉。", "alien-cost"))
+	for n in list.size():
+		kids.append(el("div", null, "alien-actions", [el("p", XTianqiAlienGear.core_label(list[n])),
+			btn("刻上（1颗异化石）", _engrave.bind(n), target == null or stones < 1)]))
+	return el("section", null, "alien-cores", kids)
+
+
+func _engrave_target(st: XState):
+	var hit := XTianqiAlienGear.engrave_targets(st).filter(func(i): return str(i.get("instanceId", "")) == str(cfg_vals.get("engrave", "")))
+	return hit[0] if not hit.is_empty() else null
+
+
+func _engrave(index: int) -> void:
+	var st := s()
+	var target = _engrave_target(st)
+	var r: Dictionary = XTianqiAlienGear.engrave(st, index, target) if target != null else {"error": "先选刻到哪件"}
+	error_text = str(r.error) if r.has("error") else ""
+	if not r.has("error"):
+		selected = str(XAlienation.mark(target).uid)
 	render(r.has("error"))
 
 
