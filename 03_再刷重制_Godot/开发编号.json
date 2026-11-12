@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.485",
-  "sequence": 485,
-  "next": "dev.486",
-  "nextSequence": 486,
+  "current": "dev.486",
+  "sequence": 486,
+  "next": "dev.487",
+  "nextSequence": 487,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "pro-qiyin-data",
+  "currentChange": "pro-qiyin-drop",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

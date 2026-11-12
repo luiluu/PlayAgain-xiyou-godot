@@ -2,7 +2,7 @@
  "version": 1,
  "draft": true,
  "source": "七印祭坛方案 v0.4，Kyo 11-12 定稿",
- "dev": "dev.待定",
+ "dev": "dev.486",
  "_note": "七印祭坛里副本的掉落表，只读（XTianqiQiyinDrop）。来源：七印祭坛方案 v0.4，Kyo 11-12 定稿（设计仓库 重制设定/天启篇_七印祭坛_里副本套装毕业武器方案_v0.4.md 第 2.1、2.2、6.2～6.4、6.5 节，测算 数值测算/套装凑齐.py）。几率都写小数（0.05＝5%）。本表只管掉什么、掉几件、印屑多少；还没接进战斗结算、存档、界面。",
  "nice_number_exempt": ["version"],
  "seals": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],
