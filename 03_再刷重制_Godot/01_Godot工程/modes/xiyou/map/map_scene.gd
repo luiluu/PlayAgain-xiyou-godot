@@ -431,7 +431,7 @@ func _place_party(x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	_show_map_name(str(map_data.get("displayName", "")))
+	_show_map_name(XTianqiSummit.map_name(XState.current, map_id, str(map_data.get("displayName", ""))))  # 天启篇 34～36 层借图时用新层名
 	_place_vehicle()
 	# Game_Map.autoplay：乘载具时只记下地图 BGM（saveWalkingBgm2），继续放载具的
 	if bool(map_data.get("autoplayBgm", false)):
@@ -592,7 +592,7 @@ func _on_player_step() -> void:
 		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
 			await run_event(e)
 			return
-	if not map_data.encounterList.is_empty():
+	if not map_data.encounterList.is_empty() and not XTianqiSummit.no_encounter(XState.current, map_id):  # 天启篇：旧 34 层（158）不随机遇敌
 		if can_encounter():
 			encounter_count -= encounter_progress_value(lower.is_bush(player.grid.x, player.grid.y), XState.current.party_ability(0))
 		if encounter_count <= 0:
@@ -760,6 +760,14 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇 31～36 层重做（XTianqiSummit）：门在 34 层以上接新 34～36 层、158 的决战事件不跑、打过 34 层后再挑战多几位
+	if XTianqiSummit.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		var handled: bool = await XTianqiSummit.run_event(self, XState.current, map_id, e.event_id)
+		_set_busy(false)
+		if handled:
+			refresh_events()
+			return
 	_set_busy(true)
 	# Game_Event.start → lock：确定键／接触启动的事件执行期间，该事件停下自主移动（强制路线照走）
 	if [0, 1, 2].has(e.trigger()):

@@ -741,7 +741,7 @@ func _plugin_command(line: String) -> void:
 					s.actor_max_level = s.max_level() + int(args[2])
 					return
 				if str(args[1]).to_lower() == "equal":
-					s.actor_max_level = int(args[2])
+					s.actor_max_level = XTianqiSummit.clamp_max_level(s, int(args[2]))  # 天启篇：30 层 75、33 层 80、35 层后 81
 					return
 		"ProhibitHangUp", "EnableHangUp":
 			XDungeon.set_hang_up(state(), args[0] == "EnableHangUp")
