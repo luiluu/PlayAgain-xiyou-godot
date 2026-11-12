@@ -140,7 +140,7 @@ static func _db_rec(i: Dictionary) -> Dictionary:
 static func body_ok(i) -> bool:
 	if not i is Dictionary or i.is_empty() or not ["weapon", "armor"].has(str(i.get("kind", ""))):
 		return false
-	if i.has("qiyin") or i.has("tq_reward") or XEquipment.is_exclusive(i):
+	if not XTianqiQiyinEffects.mark_of(i).is_empty() or i.has("tq_reward") or XEquipment.is_exclusive(i):
 		return false
 	var et := 1 if str(i.kind) == "weapon" else int(_db_rec(i).get("etypeId", 0))
 	return BODY_ETYPES.has(et)
