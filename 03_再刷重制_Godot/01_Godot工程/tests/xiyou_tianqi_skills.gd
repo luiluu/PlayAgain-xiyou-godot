@@ -48,6 +48,7 @@ func _run() -> void:
 	_p6()
 	_fill()
 	_fill_charge()
+	_fill_hits()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -955,6 +956,52 @@ func _fill_charge() -> void:
 	low.hp = 1.0
 	XTianqiSkills._ally_state(zg, XDB.rec("Skills", 2516))
 	_check("fill_zhuge_ally_star", low.is_state_affected(252) and not zg.is_state_affected(252), [s.battle_members().map(func(x): return [x.actor_id, x.hp, x.is_state_affected(252), is_same(x, low)])])
+	lg.end_battle(0)
+
+
+## 第六期没判准的 7 条段数：真跑行动序列数打到主目标的段数（条件技能学没学两种都跑），和说明的段数比
+func _seq_hits(lg: XBattleLogic, u: XActor, id: int) -> int:
+	var rec := XDB.rec("Skills", id)
+	var t = lg.enemies[0]
+	var list := []
+	for x in lg.targets_for(u, rec, t):
+		list.append(x)
+	var n := 0
+	for l in XActionSequence.create(lg, u, rec, list).run():
+		if l.get("type") == "hit" and is_same(l.get("target"), t) and not l.get("counter", false) and not l.get("reflected", false):
+			n += 1
+	for e in lg.enemies:
+		e.hp = e.mhp
+		if e.is_state_affected(1):
+			e.remove_state(1)
+	u.hp = u.mhp
+	u.mp = u.mmp
+	return n
+
+
+func _fill_hits() -> void:
+	var ids := [64, 67, 86, 87, 100]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var rows := [[64, 2358, 2361, 3], [67, 2377, 2376, 1], [86, 5860, 5866, 4], [86, 5868, 5866, 4], [86, 5862, 5866, 4], [86, 5869, 5866, 4], [87, 5853, 5849, 4]]
+	var got := []
+	for r in rows:
+		var u: XActor = s.actor(int(r[0]))
+		if u.skill_ids.has(int(r[2])):
+			u.forget_skill(int(r[2]))
+		var without := _seq_hits(lg, u, int(r[1]))
+		u.learn_skill(int(r[2]))
+		var with := _seq_hits(lg, u, int(r[1]))
+		got.append([r[1], without, with, r[3]])
+	_check("fill_hits_measured", got.size() == rows.size() and got.all(func(g): return g[1] == g[3] and g[2] == g[3]), got)
 	lg.end_battle(0)
 
 
