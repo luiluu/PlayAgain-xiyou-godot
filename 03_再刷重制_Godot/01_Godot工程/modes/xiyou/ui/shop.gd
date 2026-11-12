@@ -165,7 +165,7 @@ func _refresh() -> void:
 	var cats := _mode in ["category", "sell"] or (_mode == "number" and _number_from == "sell")
 	cmd_win.down_arrow = cats and _cat_top < CATEGORIES.size() - 4
 	cmd_win.up_arrow = cats and _cat_top > 0
-	var n := _sell_data().size()
+	var n := _sell_data().size() if _mode == "sell" else 0   # 只有出售列表要它（原先买入时也整背包筛一遍）
 	var nb := _buy_data().size() if _mode == "buy" else 0
 	list_win.down_arrow = (_mode == "sell" and _sell_top < n - _list_rows()) or (_mode == "buy" and _buy_top < nb - _list_rows())
 	list_win.up_arrow = (_mode == "sell" and _sell_top > 0) or (_mode == "buy" and _buy_top > 0)

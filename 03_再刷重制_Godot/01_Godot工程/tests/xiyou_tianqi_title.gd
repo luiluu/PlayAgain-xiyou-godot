@@ -165,6 +165,7 @@ func _menu() -> void:
 
 func _entrance() -> void:
 	calls.clear()
+	XTianqiTitle.last_key = "new_game"  # selectLast：有「旧的回忆」时默认停在它（会开读档页），这里要按「新的游戏」看回调
 	var t := _make()
 	t.play_entrance()
 	var s0 := t.state()

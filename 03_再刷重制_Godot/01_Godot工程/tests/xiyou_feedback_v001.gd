@@ -5,6 +5,7 @@ extends Node
 ##   原版点地走到目的地停下时也进（Game_Player.triggerTouchActionD1，MVPlayer.MV_TOUCH_D1）；普通 NPC 不算门；
 ## - 商店列表缓存（XShop.DATA_CACHE）：一次按键＋重画里买入表、出售表各只现算一次；成交后照样现算（买到的东西进出售表）；
 ##   关掉时一次按键现算多次（打印两边次数与用时）；
+## - 说明卡元素表只读一次（XHelpCard.ELEMENT_DATA_CACHE）：商店每移一行原先 40～100 ms 都花在重读 1 MB 的元素表；
 ## - 神话敌人画面 1 倍（XBattleScene.ELITE_SCALE，原版 1.8 倍被 YEP 呼吸更新当帧改回）；
 ## - 画面平滑（XScreenScale）：触屏默认开、桌面默认关，设置改了立刻切根窗口缩放方式，开关关掉恒为 canvas_items；
 ##   viewport 缩放时屏幕→画面的换算按 keep 比例算（安全区用）。
@@ -60,10 +61,14 @@ func _event(map: XMapScene, id: int) -> MVEvent:
 func _run() -> void:
 	TestEnv.isolate("xiyou_feedback_v001")
 	XMessageBox.auto = true
+	print("STEP pattern")
 	await _pattern()
+	print("STEP doors")
 	await _doors()
 	_elite()
+	print("STEP shop")
 	await _shop()
+	print("STEP screen")
 	await _screen()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -138,8 +143,7 @@ func _shop_press(sh: XShop) -> Array:
 	var t0 := Time.get_ticks_usec()
 	sh._move(1, true)
 	sh._refresh()
-	await RenderingServer.frame_post_draw
-	await frames(1)
+	await frames(2)   # 重画在帧末（无头时 frame_post_draw 不一定发，这里只等帧）
 	return [sh.data_builds, Time.get_ticks_usec() - t0]
 
 
@@ -189,6 +193,20 @@ func _shop() -> void:
 	XShop.DATA_CACHE = true
 	print("SHOP_PRESS cache_on builds=%d %dus / cache_off builds=%d %dus (两次按键)" % [res[true][0], res[true][1], res[false][0], res[false][1]])
 	check("shop_cache_builds", res[true][0] <= 2 and res[false][0] > res[true][0], res)
+	XShop.DATA_CACHE = true
+	# 说明卡元素表（约 1 MB）走 XDB.table 缓存，不再每张卡重读；关掉回到每次读
+	check("help_element_cached", is_same(XHelpCard._element_data(), XDB.table("CodexDamageElements")))
+	var t0 := Time.get_ticks_usec()
+	var card := XHelpCard.new()
+	add_child(card)
+	for g in goods:
+		card.show_for(XDB.rec("Items", int(g[1])))
+	var per := (Time.get_ticks_usec() - t0) / goods.size()
+	XHelpCard.ELEMENT_DATA_CACHE = false
+	check("help_element_off", not is_same(XHelpCard._element_data(), XDB.table("CodexDamageElements")))
+	XHelpCard.ELEMENT_DATA_CACHE = true
+	card.queue_free()
+	print("HELP_CARD show_for %dus/件" % per)
 
 
 func _elite() -> void:
@@ -198,6 +216,8 @@ func _elite() -> void:
 func _screen() -> void:
 	var root := get_tree().root
 	var before := root.content_scale_mode
+	# 没存过这一项（v0.01 老配置）：按平台默认。TestEnv 写过一次配置（会连默认值一起写进去），先删掉
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XPlatform.force_mobile = true
 	XConfig._loaded_path = "<unloaded>"
 	check("smooth_default_touch", XConfig.flag(XScreenScale.KEY))

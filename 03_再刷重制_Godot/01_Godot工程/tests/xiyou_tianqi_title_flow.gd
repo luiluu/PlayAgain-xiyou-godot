@@ -167,8 +167,7 @@ func _hub(tag: String, slot: int, key: String, dao: String, names: Array) -> voi
 		and str(saved.get("actor_name", dao)) == dao, flags.get("tianqi") if flags is Dictionary else saved)
 	# 大厅首次到达的漩涡过场（EV76）放完再离开，免得协程挂着
 	# 苍龙破晓过场（EV203，XRift.CHAIN_AFTER_RIFT1）紧接着放：也等它放完（或已播过时监视页直接开 A）
-	await _wait(func(): return _map_idle(HUB) and XState.current.self_switch(HUB, 76, "A")
-		and (not XRift.STAGE2 or XState.current.self_switch(HUB, XRift.RIFT2, "A")))
+	await _wait(func(): return _map_idle(HUB) and XState.current.self_switch(HUB, 76, "A") and (not XRift.STAGE2 or XState.current.self_switch(HUB, XRift.RIFT2, "A")))
 
 
 ## 读回：标题「旧的回忆」→ 读档页（最近存的一格）→ 读取 → 确认
