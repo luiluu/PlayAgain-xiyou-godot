@@ -71,6 +71,9 @@ static func seal_order() -> Array:
 	return _sec("seals").keys()
 
 
+## 取过的图留着：_draw 里现取的贴图没人拿着，画完就被释放，这一帧画成白块（七印徽记接入时实测）
+static var _art := {}
+
 ## 美术到了没有：有图返回贴图，没有返回 null（画占位）
 static func art(kind: String, key := "") -> Texture2D:
 	var a := _sec("art")
@@ -84,7 +87,9 @@ static func art(kind: String, key := "") -> Texture2D:
 			path = str(a.get("rift", ""))
 	if path == "" or not ResourceLoader.exists(path):
 		return null
-	return load(path) as Texture2D
+	if not _art.has(path):
+		_art[path] = load(path) as Texture2D
+	return _art[path]
 
 
 static func _record(kind: String, info: Dictionary) -> void:
@@ -108,6 +113,7 @@ static func drop(host, item: Dictionary) -> void:
 	if not _live(host):
 		return
 	var ov := _overlay(host)
+	ov.seal = seal  # 原来漏了：中间那枚印一直画成没颜色的白圆（七印徽记接入时截图看到）
 	var label := XTianqiQiyin.sealed_label(item)
 	if weapon:
 		var w := _sec("weapon")
@@ -196,7 +202,7 @@ static func rift(host) -> void:
 	await _close(ov)
 
 
-## 战斗里断一首：只报音效（七个头拆件的新画到了再在战斗场景里藏头）
+## 战斗里断一首：报音效（藏头在 XTianqiQiyinArt.update_sprite）
 static func dragon_cut_se() -> String:
 	return str(_sec("dragon_cut").get("se", ""))
 
@@ -364,6 +370,14 @@ class Overlay extends Control:
 		for i in keys.size():
 			var p := at + Vector2((i - (keys.size() - 1) / 2.0) * gap, 0)
 			var v: float = lights[i]
+			var tex := XTianqiQiyinShow.art("seal", str(keys[i]))
+			if tex != null:
+				# 七印徽记（S1）：暗着是去色压暗的印，亮起来渐变回原色（清单「暗态用引擎去色」）
+				var half := gap * 0.4
+				var r := Rect2(p - Vector2(half, half), Vector2(half, half) * 2.0)
+				draw_texture_rect(XTianqiQiyinArt.dim(tex), r, false, Color(1, 1, 1, 0.85 * (1.0 - v)))
+				draw_texture_rect(tex, r, false, Color(1, 1, 1, v))
+				continue
 			draw_circle(p, gap * 0.32, Color(0.15, 0.15, 0.15, 0.8))
 			if v > 0.0:
 				draw_circle(p, gap * 0.32 * (0.7 + 0.3 * v), Color(XTianqiQiyinShow.seal_color(str(keys[i])), v))

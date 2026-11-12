@@ -178,6 +178,9 @@ static func img_path(folder: String, name: String) -> String:
 		var gojo := "res://content/gojo/%s.png" % name
 		if ResourceLoader.exists(gojo):
 			return gojo
+	# 天启篇七印祭坛的首领新画（XTianqiQiyinArt）：content/tianqi/qiyin/battlers/Tianqi_Qiyin_*
+	if folder == "sv_enemies":
+		return XTianqiQiyinArt.battler_path(name)
 	return ""
 
 
