@@ -525,19 +525,30 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 	return 0
 
 
-# ---- 选线（第三批骨架；Kyo 11-11「选线做成单独的大厅内事件」） ----
-## 选线不在开局流程里，是方桌大厅里单独的一个事件，和四线内容一起做。本批只做骨架：存档字段 flags.tianqi.line、查询与选定、
-## 大厅里由小小鱼主持的对话。在哪儿出现、怎么呈现、选了能不能换、没选线时怎么玩，等四线设计稿和 Kyo 定。
-## 开关（O-280）：LINE_EVENT_OPEN＝false（默认）时大厅不出这个事件，玩家看不到；四线内容做好再打开。
-static var LINE_EVENT_OPEN := false
-## 选定后能不能再换（旧稿是不能换，待 Kyo 定）
+# ---- 选线（Kyo 11-11「选线做成单独的大厅内事件」；四线剧情与关卡设计稿 v0.4 第 2 节，已确认） ----
+## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiWarLine.door_blocked）。
+## 四张卡：骑士剪影（美术出来前没有）＋一句话＋它会怎样改变战斗＋考什么；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
+## 只有做好了内容的线能选（line_playable）：现在只有战争线（XTianqiWarLine，cc/pro-tianqi-war），别的线卡片照列、标「还没修好」。
+## 开关（O-280）：LINE_EVENT_OPEN＝false 时大厅不出这个事件、门也不锁（回到第三批之前）。战争线做好后打开（cc/pro-tianqi-war）。
+static var LINE_EVENT_OPEN := true
+## 选定后能不能再换（Kyo 11-11 09:32 已确认：不能换）
 static var LINE_CHANGEABLE := false
-## 四条线（骑士与原身是 Kyo 已定的；一句话说明是占位，等四线设计稿）
+## 第一次通关第几层后出选线（已确认：5 层）
+const LINE_FLOOR := 5
+## 四条线（骑士与原身 Kyo 已定；卡面文字照设计稿 v0.4 第 2.2 节）
 const LINES := [
-	{"key": "war", "name": "战争", "knight": "莉co", "desc": "（四线内容制作中）"},
-	{"key": "death", "name": "死亡", "knight": "勇者", "desc": "（四线内容制作中）"},
-	{"key": "plague", "name": "瘟疫", "knight": "混子", "desc": "（四线内容制作中）"},
-	{"key": "famine", "name": "饥荒", "knight": "小镇做题家", "desc": "（四线内容制作中）"},
+	{"key": "war", "name": "战争", "knight": "莉co", "pick": "「烟火大会，开始啦！」",
+		"change": "敌人属性更高，会再动；火花攒满时一起动", "test": "清场：在下一波之前清掉场面",
+		"guide": "这个……会让敌人一直动。很吵。"},
+	{"key": "death", "name": "死亡", "knight": "勇者", "pick": "「现在一切结束了。」",
+		"change": "有人会被挂上死期，这回合结束时必死", "test": "速度：尽快结束战斗",
+		"guide": "这个……会有人突然死掉。你看得见是谁。"},
+	{"key": "plague", "name": "瘟疫", "knight": "混子", "pick": "「不服来打我。」",
+		"change": "中毒、混乱叠满身，减益越多人越虚", "test": "底子：属性和抗性够不够厚",
+		"guide": "这个……会让人生病。一直病。"},
+	{"key": "famine", "name": "饥荒", "knight": "小镇做题家", "pick": "「噫~我中了！」",
+		"change": "技能更贵、回复更少，不花资源的技能也要交口粮", "test": "储备：开场那份资源怎么花",
+		"guide": "这个会让人……很饿。"},
 ]
 
 
@@ -548,19 +559,26 @@ static func line_info(key: String) -> Dictionary:
 	return {}
 
 
+## 这条线的内容做好了、能选
+static func line_playable(key: String) -> bool:
+	return key == XTianqiWarLine.KEY and XTianqiWarLine.ENABLED
+
+
 ## 本档选的线（没选为空串；不是天启篇存档也为空）
 static func line_of(s: XState) -> String:
 	return str(s.flags.tianqi.get("line", "")) if active(s) else ""
 
 
-## 大厅现在该不该出选线事件：开关开着、天启篇存档、还没选（或允许换）
+## 大厅现在该不该出选线事件：开关开着、天启篇存档（发行构建里还要天启篇已开放）、通关过 5 层、还没选（或允许换）、有能选的线
 static func line_ready(s: XState) -> bool:
-	return LINE_EVENT_OPEN and active(s) and (line_of(s) == "" or LINE_CHANGEABLE)
+	return LINE_EVENT_OPEN and active(s) and (RELEASE_OPEN or not ReleaseEntry.is_release()) \
+		and cleared_floors(s) >= LINE_FLOOR and (line_of(s) == "" or LINE_CHANGEABLE) \
+		and LINES.any(func(l): return line_playable(str(l.key)))
 
 
-## 选定一条线；不认识的线、或已选且不许换时不收
+## 选定一条线；不认识的线、没做好的线、或已选且不许换时不收
 static func choose_line(s: XState, key: String) -> bool:
-	if not active(s) or line_info(key).is_empty():
+	if not active(s) or line_info(key).is_empty() or not line_playable(key):
 		return false
 	if line_of(s) != "" and not LINE_CHANGEABLE:
 		return false
@@ -568,15 +586,30 @@ static func choose_line(s: XState, key: String) -> bool:
 	return true
 
 
-## 大厅选线对话（地图场景在大厅里、没有别的事件时调）：「再想想」留到下次回大厅
+static func _card_text(l: Dictionary) -> String:
+	return "%s·%s　%s\n它会怎样改变战斗：%s\n考什么：%s" % [l.name, l.knight, l.pick, l.change, l.test]
+
+
+## 大厅选线对话（地图场景在大厅里、抽完角色后调）：「再想想」留到下次回大厅；选定后接着跑本线开场
 static func run_line_choice(host, s: XState) -> void:
-	if not line_ready(s):
-		return
-	var opts := LINES.map(func(l): return "%s · %s　%s" % [l.name, l.knight, l.desc])
-	opts.append("再想想")
-	var head := "四位骑士在塔里等你。你要踏上哪一条路？" + ("" if LINE_CHANGEABLE else "（选定后不能再换）")
-	var i: int = await host.show_text_with_choices("", 0, _line(head), opts, opts.size() - 1)
-	if i < 0 or i >= LINES.size():
-		return
-	if choose_line(s, str(LINES[i].key)):
-		await host.show_text("", 0, _line("那就走%s之路吧。" % LINES[i].name))
+	while line_ready(s):
+		var opts := LINES.map(func(l): return "%s·%s　%s" % [l.name, l.knight, l.pick])
+		opts.append("再想想")
+		var head := "方桌的裂纹裂成了四块，每一块里都映着一位骑士。你要踏上哪一条路？"
+		var i: int = await host.show_text_with_choices("", 0, _line(head), opts, opts.size() - 1)
+		if i < 0 or i >= LINES.size():
+			return
+		var l: Dictionary = LINES[i]
+		await host.show_text("", 0, [_card_text(l)])
+		await host.show_text("", 0, _line(str(l.guide)))
+		if not line_playable(str(l.key)):
+			await host.show_text("", 0, _line("……这条路还没修好。换一条吧。"))
+			continue
+		var sure: int = await host.show_text_with_choices("", 0, _line("选定后这个存档不能再换。确定走%s之路吗？" % l.name), ["确定", "再想想"], 1)
+		if sure != 0:
+			continue
+		if choose_line(s, str(l.key)):
+			if str(l.key) == XTianqiWarLine.KEY:
+				await XTianqiWarLine.on_chosen(host)
+				await XTianqiWarLine.run_due(host, s)
+			return

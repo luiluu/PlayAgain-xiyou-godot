@@ -190,6 +190,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
+	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -240,6 +241,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XNanoha.domain_queue(self)  # 奈叶魔法领域做活（O-183）：领域预约的 2478 排在 1320 之后
 	XTianqiHorsemen.start(self)  # 天启四骑士：本线终焉（疫病）、开场援军和小怪
 	turn_start_logs.append_array(XTianqiHorsemen.take_logs(self))
+	turn_start_logs.append_array(XTianqiWarAlien.take_logs(self))
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -1189,6 +1191,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XNanoha.finish(self, u)  # 奈叶 endAction 包装（原 endAction 之后，米拉、渡鸦、镜流、甚尔在里层）：队友击杀给奈叶永久生命／魔法
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
 	logs.append_array(XTianqiHorsemen.after_action(self, u))  # 天启四骑士：打混子记不服、号令、阶段
+	logs.append_array(XTianqiWarAlien.after_action(self, u))  # 天启篇战争线异化：火花、战意满了立刻再动，号令官倒下
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1761,7 +1764,7 @@ func make_action_times(b: XBattler) -> int:
 	for p in b.action_plus_set():
 		if _float("action_times") < float(p):
 			n += 1
-	return n + XCat.extra_actions(b)  # 小猫剑圣 makeActionTimes 包装：进阶学了速剑多 1 次
+	return n + XCat.extra_actions(b) + XTianqiWarAlien.extra_actions(self, b)  # 小猫剑圣 makeActionTimes 包装：进阶学了速剑多 1 次；战争线号令官再动
 
 
 ## otbClearActionOrdersOfUnableBattlers
@@ -2725,6 +2728,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 
 func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTianqiHorsemen.hp_damage(self, u, t, value)  # 天启四骑士：混子之盾累计、打混子记不服；疫病治疗 −50%
+	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -3350,6 +3354,7 @@ func end_battle(result := -1) -> void:
 	_clear_event_cursor()
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XTianqiHorsemen.end(self)  # 天启四骑士：清本场的标记（疫病、识破等不带出战斗）
+	XTianqiWarAlien.end(self)  # 天启篇战争线异化：清本场异化
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

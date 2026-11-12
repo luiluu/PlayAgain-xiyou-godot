@@ -10,6 +10,7 @@
 - horsemen.json（天启四骑士）：
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
   B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
+- war_line.json（战争线关卡流程与异化）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、开场用到的预设和台词齐全。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -343,10 +344,46 @@ def check_horsemen(params_path) -> bool:
     return ok
 
 
+# ---- war_line.json（战争线） ----
+
+WAR_PRESETS = ['omen', 'spread', 'apostle10', 'apostle20', 'apostle30']
+WAR_SCENES = ['choose', 'omen_before', 'omen_arrive', 'omen_win', 'spread_before', 'spread_win', 'lose_retry', 'rift_before',
+              'rift_survived', 'rift_lost', 'rift_after', 'rift_home', 'apostle10', 'apostle20', 'apostle30', 'echo15', 'rumor25',
+              'shadow_before', 'final_before', 'final_win', 'final_lost']
+
+
+def war_line_rules(table: dict) -> list:
+    bad = []
+    out = []
+    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
+    if out:
+        bad.append('数字带 4：' + '，'.join(out))
+    miss = [k for k in WAR_PRESETS if k not in table.get('presets', {})]
+    if miss:
+        bad.append('缺异化预设：%s' % miss)
+    miss = [k for k in WAR_SCENES if not table.get('scenes', {}).get(k)]
+    if miss:
+        bad.append('缺台词：%s' % miss)
+    return bad
+
+
+def check_war_line(_args) -> bool:
+    path = DATA_DIR / 'war_line.json'
+    if not path.is_file():
+        print('跳过：没有 %s' % path.name)
+        return True
+    bad = war_line_rules(json.loads(path.read_text(encoding='utf-8')))
+    for b in bad:
+        print('  ' + b)
+    print('war_line.json 规则自检：' + ('通过' if not bad else '%d 项不过' % len(bad)))
+    return not bad
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
     ('horsemen', lambda args: check_horsemen(args.params)),
+    ('war_line', check_war_line),
 ]
 
 
