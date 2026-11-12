@@ -75,7 +75,7 @@ const RERUN_AFTER_PAGE := {"4:36:2": true}
 ## O-117：乘飞艇时（含升降中）地图传送按钮不可用、不能开始挂机。原版 MapTransferPlugin 与 XdRs_HangUp 都不看载具，
 ## 飞行中能把飞艇带进楼层地图、越墙降落，挂机还会带着飞艇乱飞。设 false 恢复原版。
 static var SAFE_AIRSHIP_MENU := true  # O-117；测试要切回原版，用 static var
-## O-待定·踩上即进门：原版「确定键、角色下方、无图、只做场所移动」的门（8 号当铺进出、地下水栽培、超越大厅等 34 处）
+## O-338：原版「确定键、角色下方、无图、只做场所移动」的门（8 号当铺进出、地下水栽培、超越大厅等 34 处）
 ## 要站上去再按确定，只有鼠标点那格走过去才自动进（Game_Player.triggerTouchActionD1）；安卓摇杆走上去不进，玩家反馈 v0.01。
 ## 开着时这类门踩上就进（挂机走动不进）；false 回到原版。判定见 MVEvent.is_plain_door。
 static var STEP_ON_DOORS := true

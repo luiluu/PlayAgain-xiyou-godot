@@ -693,7 +693,7 @@ static func _terms(text: String) -> String:
 
 
 # ---- installDamageElementRuntime ----
-## O-待定·说明卡元素表只读一次：原先每张说明卡（每个元素名）都把约 1 MB 的 CodexDamageElements.json 整份重读重解析一遍，
+## O-341：原先每张说明卡（每个元素名）都把约 1 MB 的 CodexDamageElements.json 整份重读重解析一遍，
 ## 商店、背包、战斗技能列表每移一行要 40～100 ms（玩家反馈 v0.01「NPC 买东西轻微卡顿」）。改走 XDB.table 缓存（damage.gd 本来就这样读），只读不改。
 ## 回退 ELEMENT_DATA_CACHE = false。
 static var ELEMENT_DATA_CACHE := true

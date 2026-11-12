@@ -86,7 +86,7 @@ var help_card: XHelpCard
 ## 说明卡上次排版的商品（同一件不重排；回退开关 HELP_SAME_SKIP = false 每次重排）
 var _help_rec := {}
 static var HELP_SAME_SKIP := true
-## O-待定·商店列表缓存（玩家反馈 v0.01「所有 NPC 买东西都有轻微卡顿」）：一次按键里买入表、出售表各要重算十来次
+## O-342（玩家反馈 v0.01「所有 NPC 买东西都有轻微卡顿」）：一次按键里买入表、出售表各要重算十来次
 ## （_refresh、说明卡、状态窗、库存行、列表各算一遍；出售表每次把整个背包按分类筛一遍、套标记），背包大时一按一卡。
 ## 开着时 _refresh 之后到下一次操作之前（即本次重画）同一份表只算一次；确定、取消、成交一开始就作废，照旧现算。
 ## 原版每个窗口各自 makeItemList 一次（Window_ShopBuy／ShopSell.refresh），不是每画一处算一次。回退：DATA_CACHE = false。

@@ -15,7 +15,7 @@ extends RefCounted
 ## 开关 STAGE2＝false 后 clear_cache() 回第一阶。给大厅异化留的接口：stage()、canglong_drop_cell()；本文件只占 (13～15,19) 三格与 EV75～77、201～204。
 
 static var STAGE2 := true
-## O-待定·苍龙破晓接着流萤播：原设计 rift2 要等「下一次进大厅」才播，玩家第一次进大厅看完流萤后苍龙不出，
+## O-339：原设计 rift2 要等「下一次进大厅」才播，玩家第一次进大厅看完流萤后苍龙不出，
 ## 要出去再进来（玩家反馈 v0.01「流萤和苍龙的解锁动画冲突，退出重新切图才刷出苍龙」）。开着时 rift1 放完（地图不忙了）
 ## 自动执行页紧接着播 rift2，两段不会同时跑（自动执行只在没有别的事件时启动）。false 回到「下一次进大厅」。
 static var CHAIN_AFTER_RIFT1 := true
