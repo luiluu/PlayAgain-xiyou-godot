@@ -26,6 +26,9 @@ var vehicle_speed := 0
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
+	# 手机按键设置「地图移动：仅方向键／轮盘移动」（改版 mapTouch，Scene_Map.processMapTouch 不处理）：触屏点按不走路
+	if not XTouchControls.map_tap_allowed() and (event is InputEventScreenTouch or (event is InputEventMouseButton and event.device == InputEvent.DEVICE_ID_EMULATION)):
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_hold_cell = _touch_cell(get_global_mouse_position())
 		_hold_count = 1
