@@ -95,7 +95,7 @@ func _table(c: Dictionary) -> void:
 	var bad := []
 	for id in range(1, t.size()):
 		var rec = t[id]
-		if rec == null or str(rec.get("name", "")) == "":
+		if rec == null or str(rec.get("name", "")) == "" or bool(rec.get("_gojo", false)):  # 重制新加的五条悟技能（XGojo）不在原版参照里
 			continue
 		count += 1
 		var d := XSkillMastery.data(id)

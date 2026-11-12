@@ -137,7 +137,7 @@ func _run() -> void:
 	check("index_names", XActorBook.index_names() == ref.index, XActorBook.index_names().slice(0, 5))
 	# v0.62 V029 隐藏角色（141、146、152、157、160、161、166）不进目录，之后的行往上挪；开关关掉回到 v0.28 每槽一行
 	var rows := XActorBook.index_ids()
-	var slots: int = (XDB.table("Actors") as Array).size()
+	var slots: int = (XDB.table("Actors") as Array).size() - (1 if XGojo.ENABLED else 0)  # 重制新加的五条悟 180 天启篇以外不进目录
 	check("v029_hidden_rows", rows.size() == slots - 7 and not rows.has(141) and not rows.has(166)
 		and rows.has(162) and rows.find(142) == 141 and rows.find(147) == 145, [rows.size(), rows.find(142), rows.find(147)])
 	XImportedBalance.V029_HIDE_ACTORS = false
