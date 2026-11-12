@@ -50,6 +50,7 @@ func _run() -> void:
 	_icons()
 	_bosses()
 	await _sprites()
+	await _show()
 	XTianqiQiyin.rng_override = null
 	XTianqiQiyinDragonRun.rng_override = null
 	var passed := results.filter(func(r): return r.passed).size()
@@ -142,6 +143,28 @@ func _icons() -> void:
 	_check("overlay_differs", plain.get_size() == over.get_size() and diff > 20, diff)
 	# 大图标（物品状态页 128）走通用最近邻放大
 	_check("large_icon", XItemStatusPainter.large_icon(XTianqiQiyinArt.set_icon("mo", "feet")) != null)
+	# 不是装备的小图：道具、规则、效果、遗物、徽记都有号、有图；规则号按 qiyin_altar.json 七印的 rule 名取得到
+	var small_bad := []
+	for start in XTianqiQiyinArt.SMALL:
+		for f in XTianqiQiyinArt.SMALL[start]:
+			var i := XTianqiQiyinArt.small_icon(str(f))
+			if i == 0 or XUI.icon_texture(i) == null:
+				small_bad.append(f)
+	for k in XTianqiQiyinArt.SEALS:
+		if XTianqiQiyinArt.small_icon("rule_" + str(XTianqiQiyin.seal_info(k).rule)) == 0:
+			small_bad.append("rule_of_" + k)
+	_check("small_icons", small_bad.is_empty(), small_bad)
+	_check("small_fixed_numbers", XTianqiQiyinArt.small_icon("item_seal_key") == XTianqiQiyinArt.KEY_ICON and XTianqiQiyinArt.small_icon("item_shards") == XTianqiQiyinArt.SHARDS_ICON
+		and XTianqiQiyinArt.small_icon("item_dragon_blood") == XTianqiQiyinArt.BLOOD_ICON and XTianqiQiyinArt.small_icon("item_sealed") == XTianqiQiyinArt.SEALED_ICON)
+	# 祭坛文字里的图标号就是这几个
+	var head := str(XTianqiQiyin.data().scenes.head[0][1])
+	_check("altar_text_icons", head.contains("\\I[%d]" % XTianqiQiyinArt.KEY_ICON) and head.contains("\\I[%d]" % XTianqiQiyinArt.SHARDS_ICON)
+		and str(XTianqiQiyinDragonRun.data().scenes.blood_get[0][1]).contains("\\I[%d]" % XTianqiQiyinArt.BLOOD_ICON), head)
+	# 徽记暗态：去色压暗、透明照留
+	var seal := XTianqiQiyinShow.art("seal", "hong")
+	var dim := XTianqiQiyinArt.dim(seal).get_image()
+	var c := dim.get_pixel(128, 128)
+	_check("seal_dim_gray", is_equal_approx(c.r, c.g) and is_equal_approx(c.g, c.b) and dim.get_pixel(0, 0).a == seal.get_image().get_pixel(0, 0).a, c)
 	# 做出来的装备
 	var rng := XRandomStream.create("1111222233335555", "qiyin_art")
 	var piece := XTianqiQiyinEquip.make({"kind": "set", "seal": "hong", "part": "hands", "true_seal": false, "grades": []}, "jianxian", rng)
@@ -259,3 +282,21 @@ func _sprites() -> void:
 	XTianqiQiyinArt.update_sprite(ms)
 	_check("silent_even_normal", (ms.sprite as Sprite2D).texture.resource_path == normal, (ms.sprite as Sprite2D).texture.resource_path)
 	ms.queue_free()
+
+
+# ---- 五、演出（XTianqiQiyinShow 用上图时的两处修补） ----
+
+func _show() -> void:
+	# 取过的图留着（_draw 里现取的贴图画完就被释放，画成白块）
+	_check("show_art_kept", XTianqiQiyinShow.art("seal", "zhen") == XTianqiQiyinShow.art("seal", "zhen"))
+	# 套装件掉落：中间那枚印是本印（原来漏设，画成白圆）
+	var host := Node.new()
+	add_child(host)
+	XTianqiQiyinShow.drop(host, {"kind": "set", "seal": "zhen", "part": "head", "true_seal": false})
+	await get_tree().process_frame
+	var seal := ""
+	for c in host.get_children():
+		if c is CanvasLayer and c.get_child_count() > 0:
+			seal = str(c.get_child(0).seal)
+	_check("show_drop_seal", seal == "zhen", seal)
+	host.queue_free()

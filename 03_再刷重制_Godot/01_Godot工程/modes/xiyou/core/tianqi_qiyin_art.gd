@@ -8,7 +8,10 @@ extends RefCounted
 ##   七首之龙：躯干一层、七个头各一层（同画布原位），每断一首藏一个头（按揭印顺序）；守默者：单数回合（不寂静、放大招的回合）换「香炉燃起」那张。
 ## - 装备图标：七印套装 42 件、毕业武器 12 类（「不立文字」＝随机到的那类武器叠一卷空白卷轴）、神器 5 件，
 ##   不再借底子（base_id）那件的图标；图标号 ICON_BASE 起一段，XUI.icon_texture 分流到这里。
-## - 七印徽记（S1）、神器大图（P1～P5）、龙隙（P6）：XTianqiQiyinShow 的 art 路径本来就留着，图到了就换上（这里不管）。
+## - 不是装备的小图（I10 道具、O1 规则、O2 效果、O3 遗物与徽记）也编了号（SMALL），文字里写 \\I[号] 就画；
+##   祭坛「印钥／印屑」、龙血几句台词已经带上。规则、效果状态、遗物的界面还没有，以后的界面直接用这些号。
+## - 七印徽记（S1）、神器大图（P1～P5）、龙隙（P6）：XTianqiQiyinShow 的 art 路径本来就留着，图到了就换上；
+##   七道印的灯也换成徽记（暗的用 dim() 去色压暗）。头像框 P7、法阵 P8 还没有「外观」系统接，图先放着。
 ##
 ## 回退开关 ENABLED（O-待定）：false＝新做的装备照旧借底子图标、首领照旧借原版敌人的图（已经做出来的装备图标号存在存档里，照样画新图）。
 
@@ -29,7 +32,21 @@ const SET_BLOCK := 0        # +印序×10＋部位序（七印 × 六部位）
 const WEAPON_BLOCK := 100   # +武器类序（qiyin_gear.json weapon_types 顺序）
 const OVERLAY_BLOCK := 120  # +武器类序：「不立文字」＝那类武器＋卷轴叠层
 const ARTIFACT_BLOCK := 200 # +神器序（qiyin_gear.json artifacts 顺序）
-const ICON_END := 300
+## 不是装备的小图（文字里用 \\I[号]，或以后的状态、外观、遗物界面用）：每块一张表，按表的顺序编号
+const SMALL := {
+	300: ["item_seal_key", "item_shards", "item_page", "item_dragon_blood", "item_sealed"],  # I10 印钥、印屑、残页、龙血、封着的装备
+	500: ["rule_no_cure", "rule_war_cry", "rule_exam", "rule_magic_tower", "rule_sacrifice", "rule_star_fall", "rule_silence"],  # O1，同 qiyin_altar.json 七印的 rule
+	600: ["effect_plague", "effect_weight", "effect_verdict", "effect_fallen_moon", "effect_book_page", "effect_chain_cut",
+		"effect_reprieve", "effect_dragon_blood"],  # O2 疫、砝码、判决、陨月、天书页、连斩、缓期、龙血
+	700: ["relic_death", "relic_war", "relic_famine", "relic_plague"],  # O3 骑士遗物（完整）
+	710: ["relic_death_broken", "relic_war_broken", "relic_famine_broken", "relic_plague_broken"],  # O3 骑士遗物（残）
+	800: ["badge_death", "badge_war", "badge_famine", "badge_plague"],  # O3 骑士徽记
+}
+const ICON_END := 900
+const KEY_ICON := ICON_BASE + 300
+const SHARDS_ICON := ICON_BASE + 301
+const BLOOD_ICON := ICON_BASE + 303
+const SEALED_ICON := ICON_BASE + 304
 
 const SEALS := ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"]
 const PARTS := ["head", "body", "hands", "waist", "legs", "feet"]
@@ -66,7 +83,20 @@ static func icon_files(index: int) -> Array:
 	var arts := _artifacts()
 	if n >= ARTIFACT_BLOCK and n < ARTIFACT_BLOCK + arts.size():
 		return ["artifact_" + str(arts[n - ARTIFACT_BLOCK])]
+	for start in SMALL:
+		var list: Array = SMALL[start]
+		if n >= int(start) and n < int(start) + list.size():
+			return [list[n - int(start)]]
 	return []
+
+
+## 小图的号（SMALL 表里的文件名，如 "rule_silence"）；没有返回 0
+static func small_icon(file: String) -> int:
+	for start in SMALL:
+		var i: int = SMALL[start].find(file)
+		if i >= 0:
+			return ICON_BASE + int(start) + i
+	return 0
 
 
 static func icon_texture(index: int) -> AtlasTexture:
@@ -125,6 +155,24 @@ static func artifact_icon(key: String) -> int:
 static func dress_item(item: Dictionary, icon: int) -> void:
 	if ENABLED and icon > 0 and icon_texture(icon) != null:
 		item.iconIndex = icon
+
+
+## 去色压暗的一张（七印徽记的暗态，清单「暗态用引擎去色」）；按原图缓存
+static var _dim := {}
+
+static func dim(tex: Texture2D) -> Texture2D:
+	if tex == null:
+		return null
+	var key := tex.resource_path if tex.resource_path != "" else str(tex.get_instance_id())
+	if not _dim.has(key):
+		var img := _rgba(tex.get_image())
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				var l := (c.r * 0.299 + c.g * 0.587 + c.b * 0.114) * 0.55
+				img.set_pixel(x, y, Color(l, l, l, c.a))
+		_dim[key] = ImageTexture.create_from_image(img)
+	return _dim[key]
 
 
 # ---- 首领战斗图 ----
