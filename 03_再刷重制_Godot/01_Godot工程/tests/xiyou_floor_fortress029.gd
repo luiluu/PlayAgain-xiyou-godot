@@ -146,6 +146,7 @@ func _run() -> void:
 	# DM：新源大厅首次进入的漩涡过场（Map4 EV76，自动执行、223 色调等待）记成看过：本测最后辛德瑞回大厅时它会接着开场，
 	# 测试收尾退出时还挂在等待上，报 MVInterpreter 资源未释放（同 xiyou_screen_fx、casino_batch；过场本身见 xiyou_opening_branches、floor_run）
 	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0

@@ -67,8 +67,13 @@ static func has(a, skill: int, needed := 0) -> bool:
 	return own(a) and rank(a) >= needed and a.skill_ids.has(skill)
 
 
+## ai_view：智能 AI 照原版估「解放之后」时的只读视图（XSmartAIProfiles.enter "mira"，o_future_real 关）——原版只在视图的状态表里加了 2592，
+## 状态缓存没刷新：黑龙判定成立、2592 自己的特性不算。平时为 null
+static var ai_view = null
+
+
 static func dragon(a) -> bool:
-	return own(a) and rank(a) >= 3 and has(a, 10161, 3) and a.state_ids.has(DRAGON)
+	return own(a) and rank(a) >= 3 and has(a, 10161, 3) and (a.state_ids.has(DRAGON) or ai_view == a)
 
 
 static func heart_equipped(a) -> bool:
