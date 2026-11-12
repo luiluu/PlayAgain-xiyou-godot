@@ -67,8 +67,8 @@ func _state(floor := 34, line := "war", opening := true) -> XState:
 	XState.current = s
 	if line != "":
 		s.flags.tianqi["line"] = line
-	if opening and line == "war":
-		XTianqiWarLine.progress(s)["stage"] = XTianqiWarLine.STAGE_DONE
+	if opening and XTianqiLine.KEYS.has(line):
+		XTianqiLine.progress(line, s)["stage"] = XTianqiLine.stage_done(line)
 	return s
 
 
@@ -153,12 +153,12 @@ func _door34() -> void:
 	_check("hongjun_win", int(s.variable(20)) == 35 and XTianqiSummit.hongjun_beaten(s) and _has(host, "第 34 层") and host.moves[-1][0] == 4)
 	var back := XState.from_dict(s.to_dict())
 	_check("progress_saved", XTianqiSummit.hongjun_beaten(back))
-	# 别的线（饥荒，还没做好）：34 层鸿钧照样打
-	var f := _state(34, "famine")
+	# 别的线（瘟疫，还没做好）：34 层鸿钧照样打
+	var f := _state(34, "plague")
 	host = FakeHost.new()
 	host.answers = [0, 0]
 	await XTianqiSummit.run_door(host, f)
-	_check("famine_hongjun", host.battles.size() == 1 and host.battles[0].summit == "hongjun" and int(f.variable(20)) == 35)
+	_check("plague_hongjun", host.battles.size() == 1 and host.battles[0].summit == "hongjun" and int(f.variable(20)) == 35)
 
 
 func _door35() -> void:
@@ -178,11 +178,23 @@ func _door35() -> void:
 	host.results = [2]
 	await XTianqiSummit.run_door(host, s2)
 	_check("shadow_lost", int(s2.variable(20)) == 35 and _has(host, "还能再来"))
-	# 线还没做好（饥荒）：说一句、不打、不变
-	var f := _state(35, "famine")
+	# 线还没做好（瘟疫）：说一句、不打、不变
+	var f := _state(35, "plague")
 	host = FakeHost.new()
 	host.answers = [0, 0]
-	_check("famine_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "还没修好") and int(f.variable(20)) == 35)
+	_check("plague_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "还没修好") and int(f.variable(20)) == 35)
+	# 饥荒线（cc 饥荒线车道接上）：35 层打本线影子、36 层打本线骑士
+	var fm := _state(35, "famine")
+	host = FakeHost.new()
+	host.answers = [0, 0]
+	host.results = [0]
+	_check("famine_shadow", await XTianqiSummit.run_floor(host, fm, 35) == 0 and host.battles.size() == 1 and host.battles[0].knight == "famine"
+		and host.battles[0].mode == "shadow" and int(fm.variable(20)) == 36, host.battles)
+	host = FakeHost.new()
+	host.answers = [0, 0]
+	host.results = [0]
+	_check("famine_final", await XTianqiSummit.run_floor(host, fm, 36) == 0 and host.battles.size() == 1 and host.battles[0].knight == "famine"
+		and host.battles[0].mode == "body" and bool(XTianqiFamineLine.progress(fm).get("cleared", false)), host.battles)
 	# 战争线开场没打完（不该到这里，保险）：不打
 	var w := _state(35, "war", false)
 	host = FakeHost.new()
