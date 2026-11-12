@@ -100,16 +100,16 @@ func _res_cache() -> void:
 	MVAnimation.RES_CACHE = true
 
 
-## 动画表里第 k 个有图的动画图名
+## 动画表里第 k 张（不重名）有图的动画图名
 func _any_anim_sheet(k := 0) -> String:
-	var seen := 0
+	var seen := []
 	for id in range(1, 400):
 		var a := XDB.rec("Animations", id)
 		var n := str(a.get("animation1Name", ""))
-		if n != "" and XDB.img_path("animations", n) != "":
-			if seen == k:
+		if n != "" and not seen.has(n) and XDB.img_path("animations", n) != "":
+			if seen.size() == k:
 				return n
-			seen += 1
+			seen.append(n)
 	return ""
 
 

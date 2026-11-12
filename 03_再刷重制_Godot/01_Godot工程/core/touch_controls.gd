@@ -587,7 +587,7 @@ func apply_layout() -> void:
 			elif _buttons.has(name):
 				active.append(name)
 				rects[name] = Rect2(pos + local.position * s, local.size * s)
-				var round_key := (name in ["ok", "cancel"] and (layout() == "ab" or ghost())) or (name == "run" and layout() != "classic")
+				var round_key: bool = (name in ["ok", "cancel"] and (layout() == "ab" or ghost())) or (name == "run" and layout() != "classic")
 				_place(_buttons[name], rects[name], rects[name].size.x / 2.0 if round_key else (8.0 if BUTTONS[name].has("dir") else 12.0) * s)
 				_style_button(name)
 				var label := (_buttons[name] as Panel).get_node("Label") as Label
