@@ -38,6 +38,8 @@ static func tagged() -> bool:
 static func tier_of(actor_or_id) -> String:
 	_rebuild()
 	var id := int(actor_or_id.actor_id) if actor_or_id is Object else int(actor_or_id)
+	if XGojo.hidden(id):
+		return ""  # 重制新加的五条悟只在天启篇（原版档的超强者名单、难度名单都不算他）
 	return str(_cache.get(id, ""))
 
 
@@ -51,7 +53,7 @@ static func ids(tier: String) -> Array:
 	_rebuild()
 	var out := []
 	for id in _cache:
-		if _cache[id] == tier:
+		if _cache[id] == tier and not XGojo.hidden(int(id)):  # 五条悟只在天启篇
 			out.append(int(id))
 	out.sort()
 	return out

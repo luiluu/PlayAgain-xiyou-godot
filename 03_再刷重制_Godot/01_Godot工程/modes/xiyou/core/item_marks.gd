@@ -447,6 +447,7 @@ static var _super_ids: Array = []
 static func super_strong_ids() -> Array:
 	if _super_ids.is_empty() and XTier.tagged():
 		_super_ids = XTier.ids(XTier.SUPER)  # v0.44 起名单就是 <KyoTier:超强者>（CodexTier 原地重建 superStrongIds）
+		_super_ids.erase(XGojo.ACTOR)  # 重制新加的五条悟只在天启篇（天启篇读 XTianqiSkills 名单），缓存里不留他
 	if _super_ids.is_empty():
 		_super_ids = SUPER_STRONG_IDS.duplicate()
 		for a in XDB.table("Actors"):

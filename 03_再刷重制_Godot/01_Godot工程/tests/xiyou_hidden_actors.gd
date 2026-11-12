@@ -68,12 +68,17 @@ func _run() -> void:
 	XImportedBalance.V029_HIDE_ACTORS = false
 	check("off.list", XActorWarehouse.list(s, false) == [141, 143, 160, 10], XActorWarehouse.list(s, false))
 	check("off.not_hidden", not XImportedBalance.is_hidden_actor(141))
-	check("off.book_all_slots", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size())
+	check("off.book_all_slots", XActorBook.index_ids().size() == _slots())
 	XImportedBalance.V029_HIDE_ACTORS = true
-	check("on.book_rows", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size() - 7 and not XActorBook.index_ids().has(161))
+	check("on.book_rows", XActorBook.index_ids().size() == _slots() - 7 and not XActorBook.index_ids().has(161))
 	XImportedBalance.RELEASE_CANGLONG = true
-	check("release.book_rows", XActorBook.index_ids().size() == (XDB.table("Actors") as Array).size() - 6 and XActorBook.index_ids().has(146))
+	check("release.book_rows", XActorBook.index_ids().size() == _slots() - 6 and XActorBook.index_ids().has(146))
 	s = _state([1, 8], [1, 8, 0, 0, 0], [146, 141])
 	check("release.list", XActorWarehouse.list(s, false) == [146], XActorWarehouse.list(s, false))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
+
+
+## 图鉴目录的原版槽数：重制新加的五条悟 180（XGojo）天启篇以外不进目录
+func _slots() -> int:
+	return (XDB.table("Actors") as Array).size() - (1 if XGojo.ENABLED else 0)

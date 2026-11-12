@@ -88,7 +88,7 @@ func _knowers(skill: int) -> int:
 	var s := XState.current
 	for id in range(1, XDB.table("Actors").size()):
 		var rec := XDB.rec("Actors", id)
-		if not rec.is_empty() and str(rec.get("name", "")) != "" and s.actor(id).skill_ids.has(skill):
+		if not rec.is_empty() and str(rec.get("name", "")) != "" and not bool(rec.get("_gojo", false)) and s.actor(id).skill_ids.has(skill):  # 重制新加的五条悟（XGojo）不在原版参照里
 			n += 1
 	return n
 
