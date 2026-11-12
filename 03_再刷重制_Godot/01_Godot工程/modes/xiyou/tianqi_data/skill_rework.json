@@ -907,7 +907,34 @@
   "5463": {"actor": 50, "name": "怒拳", "kind": "被动", "note_remove": ["passiveWPNM05"], "note_add": "<SkETypeHarmRi5: 10%>", "desc": ["效果:使用拳套时伤害+10%", "效果:无情腿法、乌鸦坐飞机施加'怒拳'，怒拳·乱打引爆"]},
   "2568": {"actor": 50, "name": "全场欢呼", "kind": "领袖", "note_remove": ["passiveCrHarmRi"], "note_add": "<passiveCrHarmRi:10>", "desc": ["效果:暴击伤害+10%"]},
   "2567": {"actor": 50, "name": "领袖:全场欢呼", "kind": "领袖说明", "desc": ["效果:全队暴击伤害+10%"]},
-  "1794": {"actor": 50, "name": "觉醒:劲夫", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进重拳出击）"]}
+  "1794": {"actor": 50, "name": "觉醒:劲夫", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进重拳出击）"]},
+  "2008": {"actor": 51, "name": "般若巴嘛空", "kind": "常规全体", "damage": {"stats": {"mat": 1}, "coef": 1.8}, "mp_pct": 5, "effects_remove": [[44, 135]], "desc": ["效果:神圣属性", "伤害:每个敌人 魔法攻击×1.8", "消耗:最大魔法5%"]},
+  "2004": {"actor": 51, "name": "大威天龙*普渡", "kind": "常规", "damage": {"stats": {"mat": 1}, "coef": 0.4}, "mp_pct": 5, "note_remove": ["ChangeTo\\[\\d+\\]"], "seq": [{"op": "if_to_effects", "match": "includes(2016)", "n": 6}], "follow": [{"cast": 2011, "need_skill": 5476, "rate": 0.3, "rate_add_with": {"e3813": 0.1}}], "desc": ["效果:九段；之后30%追加大威天龙*佛怒（全体3.0）", "伤害:每段 魔法攻击×0.4", "消耗:最大魔法5%"]},
+  "2011": {"actor": 51, "name": "大威天龙*佛怒", "kind": "追加全体", "scope": 2, "damage": {"stats": {"mat": 1}, "coef": 0.3333}, "mp": 0, "seq": [{"op": "if_to_effects", "match": "includes(2016)", "n": 6}], "header": {"对象": "全体敌人"}, "desc": ["效果:全体九段", "伤害:每个敌人每段 魔法攻击×0.33（合计3.0）"]},
+  "5476": {"actor": 51, "name": "普渡众生", "kind": "被动", "note_remove": ["StartPushState0952"], "effects_remove": [[44, 1300]], "desc": ["效果:大威天龙*普渡后30%追加大威天龙*佛怒（全体3.0）"]},
+  "2010": {"actor": 51, "name": "紫金法咒", "kind": "被动", "desc": ["效果:战斗开始时为敌人施加紫金法咒，所有闪避率-10%，持续3回合"]},
+  "2012": {"actor": 51, "name": "天龙转世", "kind": "被动", "note_remove": ["passiveHarmRi", "SkillPass\\d+", "passiveAPLUS"], "desc": ["效果:天龙转世（并进技能本身）"]},
+  "2016": {"actor": 51, "name": "摩呼罗迦", "kind": "被动", "note_remove": ["passiveHarmRi", "SkillPass\\d+"], "desc": ["效果:般若巴嘛空及大威天龙必定命中；段数并进技能本身"]},
+  "5477": {"actor": 51, "name": "步步生莲", "kind": "被动", "note_remove": ["passiveELUP\\d+", "passiveCrHarmRi", "AgainUseAll", "passiveAPLUS"], "note_add": "<AgainUseAll: 10%>", "desc": ["效果:开局为所有队友施加“步步生莲”，命中率+10%，持续3回合", "效果:再释放10%"]},
+  "2005": {"actor": 51, "name": "天龙佛体", "kind": "被动", "note_remove": ["passiveHarmRe\\d+", "passiveELUP\\d+"], "note_add": "<passiveELUP08:10%>", "desc": ["效果:神圣伤害+10%"]},
+  "2009": {"actor": 51, "name": "凝练佛光", "kind": "被动", "note_remove": ["passiveELUP\\d+", "SkillCriPushAll"], "note_add": "<passiveXPBST2:10%>", "desc": ["效果:暴击率+10%"]},
+  "2013": {"actor": 51, "name": "降魔佛光", "kind": "被动", "note_remove": ["passiveELUP\\d+", "passiveHarmRi"], "note_add": "<passiveELUP08:10%>", "desc": ["效果:神圣伤害+10%"]},
+  "2014": {"actor": 51, "name": "降妖除魔", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:暴击伤害+30%"]},
+  "2015": {"actor": 51, "name": "觉醒:法海", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进神圣被动）"]},
+  "6012": {"actor": 52, "name": "王八气功波", "kind": "常规全体", "damage": {"stats": {"atk": 0.5, "mat": 0.5}, "coef": 1.8}, "mp_pct": 5, "desc": ["伤害:每个敌人 物攻×0.9＋魔攻×0.9", "消耗:最大魔法5%"]},
+  "6013": {"actor": 52, "name": "元气弹", "kind": "大招", "damage": {"stats": {"atk": 0.5, "mat": 0.5}, "coef": 3.6}, "variance": 43, "mp_pct": 20, "cooldown": 6, "seq": [{"op": "clear_effect_args"}], "header": {"冷却时间": "6回合"}, "follow": [{"cast": 10709, "rate": 1.0}], "desc": ["效果:三段；之后对全体再炸一次（1.8）", "伤害:每段 (物攻＋魔攻)×1.8，随机2.0～5.0倍浮动（合计平均10.8）", "消耗:最大魔法20%"]},
+  "10709": {"actor": 52, "name": "元气弹·余波", "kind": "追加全体", "damage": {"stats": {"atk": 0.5, "mat": 0.5}, "coef": 1.8}, "mp": 0, "desc": ["伤害:每个敌人 物攻×0.9＋魔攻×0.9"]},
+  "6000": {"actor": 52, "name": "超级赛亚人I", "kind": "进阶", "note_remove": ["passiveHarmRi", "passivePBST\\d"], "note_add": "<passiveELUP01:5%><passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><passiveELUP07:5%><passiveELUP08:5%><passiveELUP09:5%><passivePBST0:5%>", "desc": ["效果:伤害+5%", "效果:生命+5%"]},
+  "6001": {"actor": 52, "name": "超级赛亚人II", "kind": "进阶", "note_remove": ["passiveHarmRi", "passivePBST\\d"], "note_add": "<passiveELUP01:5%><passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><passiveELUP07:5%><passiveELUP08:5%><passiveELUP09:5%><passivePBST0:5%>", "desc": ["效果:伤害+5%", "效果:生命+5%"]},
+  "6002": {"actor": 52, "name": "超级赛亚人III", "kind": "进阶", "note_remove": ["passiveHarmRi", "passivePBST\\d"], "note_add": "<passiveELUP01:5%><passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><passiveELUP07:5%><passiveELUP08:5%><passiveELUP09:5%><passivePBST0:5%>", "desc": ["效果:伤害+5%", "效果:生命+5%"]},
+  "6003": {"actor": 52, "name": "超级赛亚人·蓝", "kind": "进阶", "note_remove": ["passiveHarmRi", "passivePBST\\d"], "note_add": "<passiveELUP01:5%><passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><passiveELUP07:5%><passiveELUP08:5%><passiveELUP09:5%><passivePBST0:5%>", "desc": ["效果:伤害+5%", "效果:生命+5%"]},
+  "6005": {"actor": 52, "name": "筋斗云", "kind": "被动", "note_remove": ["passivePBST6", "passiveAPLUS"], "note_add": "<passivePBST6:10%>", "desc": ["效果:敏捷+10%"]},
+  "6009": {"actor": 52, "name": "瞬间移动", "kind": "被动", "note_remove": ["passivePBST6", "passiveAPLUS"], "note_add": "<passiveAPLUS: 10%>", "desc": ["效果:再动+10%"]},
+  "6006": {"actor": 52, "name": "太阳拳", "kind": "被动", "note_remove": ["passiveXPBST\\d"], "note_add": "<passiveXPBST1:20%>", "desc": ["效果:闪避率+20%"]},
+  "6010": {"actor": 52, "name": "自在极意功", "kind": "被动", "note_remove": ["passiveXPBST\\d", "passiveELUP\\d+"], "desc": ["效果:自在极意功（并进太阳拳）"]},
+  "6011": {"actor": 52, "name": "圣劫", "kind": "被动", "note_remove": ["passivePBST\\d", "passiveCrHarmRi", "AgainUseAll"], "note_add": "<AgainUseAll: 10%>", "desc": ["效果:再释放10%"]},
+  "6008": {"actor": 52, "name": "界王拳", "kind": "被动", "note_remove": ["passivePBST\\d", "passiveELUP\\d+"], "note_add": "<passiveELUP01:10%><passiveELUP02:10%><passiveELUP03:10%><passiveELUP04:10%><passiveELUP05:10%><passiveELUP06:10%><passiveELUP07:10%><passiveELUP08:10%><passiveELUP09:10%>", "desc": ["效果:全伤+10%"]},
+  "6004": {"actor": 52, "name": "觉醒:传说中的神", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveCrHarmRi", "ConsumeReduceAll", "AgainUseAll", "passiveAPLUS", "passivePBST\\d"], "desc": ["效果:觉醒（并进界王拳、圣劫）"]}
  },
  "states": {
   "12": {"name": "碎甲I", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 3, "value": 0.9}], "turns": 3, "state_note": "物理防御-10%"},
@@ -1002,7 +1029,9 @@
   "193": {"name": "不灭", "turns": 2},
   "120": {"name": "酒神", "turns": 3, "state_note": "暴击率+10%，伤害+10%，普通攻击变为剑去"},
   "18": {"name": "灼伤II", "turns": 2},
-  "942": {"name": "怒拳", "turns": 2, "state_note": "被劲夫的怒拳·乱打引爆"}
+  "942": {"name": "怒拳", "turns": 2, "state_note": "被劲夫的怒拳·乱打引爆"},
+  "188": {"name": "紫金法咒", "traits": [{"code": 22, "dataId": 1, "value": -0.1}, {"code": 22, "dataId": 3, "value": -0.1}, {"code": 22, "dataId": 4, "value": -0.1}], "state_note": "所有闪避率-10%"},
+  "953": {"name": "步步生莲", "traits": [{"code": 22, "dataId": 0, "value": 0.1}], "turns": 3, "state_note": "命中率+10%"}
  },
  "_gojo_note": "180 五条悟（XGojo，设计 00_项目管理/交付/五条悟_角色设计_v0.2.md）：超强者、输出型（伤害 ×1.2 已算进系数），主属性魔攻。茈的系数按对数取 gojo_pairs。",
  "gear": {
@@ -1090,9 +1119,11 @@
   "armor:4146": {"name": "破神", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1199: 20%><SkillPass1200: 20%><SkillPass1205: 20%><SkillPass1206: 20%>", "traits_remove": [[23, 0], [22, 2], [22, 0], [22, 7], [11, 1], [21, 0]], "desc": ["特效:获得技能\"搏命V\"", "特效:酒剑仙独有技能伤害+20%"]},
   "armor:3572": {"name": "离火", "note_remove": ["SkillPass\\d+"], "desc": ["特效：炎帝放完回复20%魔法"]},
   "armor:3811": {"name": "风起", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1232: 20%>", "desc": ["特效：疾风杀意剑伤害+20%"]},
-  "armor:3812": {"name": "沧恒", "note_remove": ["SkillPass\\d+"], "desc": ["特效：怒拳印记多持续1回合，乱打引爆后30%不消耗"]}
+  "armor:3812": {"name": "沧恒", "note_remove": ["SkillPass\\d+"], "desc": ["特效：怒拳印记多持续1回合，乱打引爆后30%不消耗"]},
+  "armor:3813": {"name": "言威", "note_remove": ["SkillPass\\d+"], "desc": ["特效：大威天龙*佛怒追加几率+10%"]},
+  "armor:5000": {"name": "金果棒", "note_remove": ["Element Amplify \\d+", "passiveCrHarmRi", "SkillPass\\d+", "SkETypeHarmRi\\d+"], "note_add": "<SkETypeHarmRi9: 10%><SkillPass6013: 20%>", "traits_remove": [[21, 2], [21, 4]], "desc": ["特效:使用矛时伤害+10%", "特效:元气弹伤害+20%", "随心铁杆兵:你可以用矛释放所有战技"]}
  },
- "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}},
+ "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}, "10709": {"from": 6012}},
  "learn": {"8": [[30, 10701]], "9": [[30, 10702]], "10": [[30, 10703]], "11": [[30, 10705]], "16": [[10, 10706]], "21": [[20, 10707]], "22": [[30, 3768]]},
  "new_states": {"10801": {"from": 31}, "10802": {"from": 165}}
 }
