@@ -36,8 +36,8 @@ func _state() -> XState:
 
 
 ## 给上场第一人穿一件带 affix 的天启篇异化装备（草帽，头部）
-func _wear(s: XState, line: String, affix: String) -> XActor:
-	var item: Dictionary = XTianqiAlienGear.create(s, "armor", 52, line, "huaxing", affix).ok
+func _wear(s: XState, line: String, affix: String, level := "huaxing") -> XActor:
+	var item: Dictionary = XTianqiAlienGear.create(s, "armor", 52, line, level, affix).ok
 	s.gear.append(item)
 	var a: XActor = s.battle_members()[0]
 	var slot := a.equip_slots().find(int(item.etypeId))
@@ -65,6 +65,7 @@ func _run() -> void:
 	_thrift()
 	_venom()
 	_off()
+	_tiers()
 	if FileAccess.file_exists(CONFIG):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
 	XConfig.path_override = ""
@@ -190,3 +191,37 @@ func _off() -> void:
 	lp.setup(TROOP, plain)
 	_check("plain_none", not lp.has_meta(XTianqiAlienAffix.META))
 	lp.end_battle(1)
+
+
+## 四级分档：收益按装备的级取，代价各级一样
+func _tiers() -> void:
+	var want := {"qinran": [1.2, 20, 5, 50], "zhongyan": [1.8, 50, 2, 100]}
+	for lv in want:
+		var w: Array = want[lv]
+		var s := _state()
+		var a := _wear(s, "death", "dying", lv)
+		var lg := _logic(s)
+		_check("tier_dying_" + lv, is_equal_approx(XTianqiAlienAffix.value("dying", "atk_rate", XTianqiAlienAffix.level_of(a)) / 100.0 + 1.0, float(w[0])), XTianqiAlienAffix.level_of(a))
+		lg.end_battle(1)
+		var s2 := _state()
+		var b := _wear(s2, "famine", "thrift", lv)
+		var lg2 := _logic(s2)
+		var c := XTianqiAffixBattle.cost(b, XDB.rec("Skills", 10), {"mp": 100, "tp": 100})
+		_check("tier_thrift_" + lv, int(c.mp) == 100 - int(w[1]), c)
+		var heal := XTianqiAffixBattle.damage_ops({"damage": {"type": 3, "elementId": 0}}, b, b)
+		_check("tier_thrift_cost_same_" + lv, heal.any(func(o): return o.field == "healingMultiplier" and is_equal_approx(float(o.value), 0.67)))
+		lg2.end_battle(1)
+		var s3 := _state()
+		var d := _wear(s3, "war", "again", lv)
+		var lg3 := _logic(s3)
+		lg3.turn = int(w[2])
+		var rates := []
+		XTianqiAffixBattle.action_plus_set(d, rates)
+		lg3.turn = 3 if int(w[2]) != 3 else 1
+		var rates2 := []
+		XTianqiAffixBattle.action_plus_set(d, rates2)
+		_check("tier_again_" + lv, rates.has(1.0) and (int(w[2]) == 3 or not rates2.has(1.0) or 3 % int(w[2]) == 0), [rates, rates2])
+		lg3.end_battle(1)
+		var s4 := _state()
+		var v := _wear(s4, "plague", "venom", lv)
+		_check("tier_venom_" + lv, is_equal_approx(XTianqiAlienAffix.value("venom", "chance", XTianqiAlienAffix.level_of(v), 100.0), float(w[3])))
