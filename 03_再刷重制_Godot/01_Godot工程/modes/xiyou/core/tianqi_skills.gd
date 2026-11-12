@@ -170,6 +170,8 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 				r.yepSeq[ph] = _seq_edit(r.yepSeq[ph], sp.seq)
 	if sp.has("hit_type"):
 		r.hitType = int(sp.hit_type)
+	for k in sp.get("fields", {}):  # 记录上的其他字段直接改（奈叶自定义魔法消耗 mpCostCurrentRate／postDamageCostRepeat 关掉）
+		r[k] = sp.fields[k]
 	if sp.has("repeats"):
 		r.repeats = int(sp.repeats)
 	if sp.has("scope"):
@@ -568,6 +570,14 @@ static func _cond(c: Dictionary, a, b) -> float:
 			return 1.0 + clampf(n * per, 0.0, cap)
 		"self_mp_lost":
 			return 1.0 + clampf((1.0 - float(a.mp) / maxf(1.0, float(a.mmp))) * per, 0.0, cap)
+		"self_mp_frac":  # 当前魔法占上限的比例本身当倍率（封顶 cap，缺省 1）：奈叶厄临星爆，配 mp_drain 放完耗光
+			return clampf(float(a.mp) / maxf(1.0, float(a.mmp)), 0.0, float(c.get("cap", 1.0)))
+		"self_hp_lost":  # 已损生命比例×per（牢大死亡坠机：每 10% +5%，最多 +30%）
+			return 1.0 + clampf((1.0 - float(a.hp) / maxf(1.0, float(a.mhp))) * per, 0.0, cap)
+		"target_hp_rate":  # 目标当前生命比例×per（南宫恨武痴执念：满血 +20%，随血量线性降到 0）
+			return 1.0 + clampf(float(b.hp) / maxf(1.0, float(b.mhp)) * per, 0.0, cap)
+		"self_shield":  # 护盾占「满盾」（自身生命上限×full）的比例×cap（钟离岩脊、立希震鼓：护盾满时 +30%）
+			return 1.0 + cap * clampf(float(a.shield) / maxf(1.0, float(a.mhp) * float(c.get("full", 0.2))), 0.0, 1.0)
 		"self_mp_rate":
 			return 1.0 + clampf(float(a.mp) / maxf(1.0, float(a.mmp)) * per, 0.0, cap)
 		"skills_learned":  # 学会了列表里的几个技能，每个 +per
@@ -750,7 +760,8 @@ static func begin_action(logic, u, skill) -> void:
 	u.set_meta("xtq_casts", casts)
 
 
-static func after_apply(logic, u, skill, t) -> void:
+static func after_apply(logic, u, skill, t, r := {}) -> void:
+	_reflect(u, t, r)
 	if t == null or not logic.has_meta("xtqs"):
 		return
 	var f: Dictionary = _fstore(logic).act
@@ -759,6 +770,43 @@ static func after_apply(logic, u, skill, t) -> void:
 	_kill_grow(logic, u, skill, t)
 	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
+
+
+## 状态行 reflect 比例：带这个状态的角色受到敌人伤害时反弹这么多（首领减半；云霄阵眼不灭、张楚岚进阶、南宫恨五绝神功）。
+## 原版这类状态是 React 脚本按（伤害＋属性）×几十倍反弹，天启篇改成比例（effects_remove 去掉原脚本）
+static func _reflect(u, t, r: Dictionary) -> void:
+	if not CARDS or not (t is XActor) or u == null or u is XActor or not u.is_alive() or not cards_on():
+		return
+	var dmg := float(r.get("hp", 0.0))
+	if dmg <= 0.0 or bool(r.get("missed", false)) or bool(r.get("evaded", false)):
+		return
+	var pct := 0.0
+	for id in t.state_ids:
+		var sp: Dictionary = _states.get(int(id), {})
+		if sp.has("reflect"):
+			var v := float(sp.reflect)
+			for k in sp.get("reflect_with", {}):  # 带着这件反弹更多（张楚岚雷符：金光在时 30%）
+				if owns(t, k):
+					v = maxf(v, float(sp.reflect_with[k]))
+			pct = maxf(pct, v)
+	if pct <= 0.0:
+		return
+	if u is XEnemy and XEnemy.boss_id(int(u.enemy_id)):
+		pct *= 0.5
+	u.hp = maxf(0.0, float(u.hp) - floorf(dmg * pct))
+	if u.hp <= 0.0:
+		u.add_state(1)
+
+
+## 技能行 shield {pct, self}：放这招时给目标（self：给自己）加施放者生命上限这个比例的护盾（钟离、立希、云霄；只在正式结算时加）
+static func after_formula(a, b, item: Dictionary) -> void:
+	if not CARDS or not cards_on():
+		return
+	var sh: Dictionary = spec(int(item.get("id", 0))).get("shield", {})
+	if sh.is_empty() or a == null:
+		return
+	var t = a if bool(sh.get("self", false)) or b == null else b
+	t.add_shield(floorf(float(a.mhp) * float(sh.get("pct", 0.0))))
 
 
 ## 技能行 kill_tp {tp, need_skill}：这招打倒敌人时回 TP（孙权气吞万里），每次行动一次
@@ -862,7 +910,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	var id := int(item.get("id", 0))
 	if has(id):
 		var p: Dictionary = spec(id).get("pierce", {})
-		if not p.is_empty() and (not p.has("need") or owns(a, p.need)):
+		if not p.is_empty() and (not p.has("need") or owns(a, p.need)) and (not p.has("when") or _when(p.when, a, b)):
 			var keep := 1.0 - float(p.get("rate", 0.0))
 			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": keep})
@@ -871,6 +919,13 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 			if not h.has("need") or owns(a, h.need):
 				ops.append({"op": "mul", "field": "healingMultiplier", "value": float(h.mult)})
 	return ops
+
+
+## 一条伤害条件当开关用：成立为真（pierce.when：三笠后颈斩目标生命低于 30% 才无视物防）
+static func _when(c: Dictionary, a, b) -> bool:
+	var probe := c.duplicate()
+	probe.mult = 2.0
+	return _cond(probe, a, b) > 1.0
 
 
 ## itemCri 包装：技能行 crit_if（一条伤害条件，成立时必暴：小痔坐忘痔霄①）
@@ -1069,6 +1124,9 @@ static func end_action(logic, u, skill) -> Array:
 		_consume(logic, u, f)
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
+		if u.is_alive():
+			for sid in spec(int(f.skill.get("id", 0))).get("self_states", []):  # 技能行 self_states：放完给自己挂状态（高松灯碧天独行：之后 2 回合暴击 +20%、承伤 +20%）
+				u.add_state(int(sid))
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():

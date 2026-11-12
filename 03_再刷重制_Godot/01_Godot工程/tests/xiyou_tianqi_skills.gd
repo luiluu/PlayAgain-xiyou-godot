@@ -44,6 +44,7 @@ func _run() -> void:
 	_buzhao()
 	_p3()
 	_p4()
+	_p5()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -675,10 +676,82 @@ func _p4() -> void:
 	lg.end_battle(0)
 
 
+## 第五期（95～140 号）的新能力：护盾、反弹、按比例的条件、记录字段、带条件的无视防御
+func _p5() -> void:
+	var s := XTianqi.start_new_game(3, "jianxian", [95, 100, 107, 108, 109])
+	XTianqi.take_pending()
+	for id in [95, 100, 107, 108, 109]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	# 当前魔法比例当倍率（奈叶厄临星爆：最多 0.9）、已损生命（牢大）、目标生命比例（南宫恨）
+	var ny: XActor = s.actor(108)
+	ny.mp = float(ny.mmp) * 0.5
+	var f5 := XTianqiSkills._cond({"if": "self_mp_frac", "cap": 0.9}, ny, b)
+	ny.mp = ny.mmp
+	var f9 := XTianqiSkills._cond({"if": "self_mp_frac", "cap": 0.9}, ny, b)
+	_check("p5_mp_frac", is_equal_approx(f5, 0.5) and is_equal_approx(f9, 0.9), [f5, f9])
+	var ld: XActor = s.actor(109)
+	ld.hp = float(ld.mhp) * 0.6
+	var l1 := XTianqiSkills._cond({"if": "self_hp_lost", "per": 0.5, "cap": 0.3}, ld, b)
+	ld.hp = 1.0
+	var l2 := XTianqiSkills._cond({"if": "self_hp_lost", "per": 0.5, "cap": 0.3}, ld, b)
+	_check("p5_hp_lost", is_equal_approx(l1, 1.2) and is_equal_approx(l2, 1.3), [l1, l2])
+	b.hp = float(b.mhp) * 0.5
+	_check("p5_target_hp_rate", is_equal_approx(XTianqiSkills._cond({"if": "target_hp_rate", "per": 0.2, "cap": 0.2}, ld, b), 1.1))
+	b.hp = b.mhp
+	# 护盾：钟离玉璋护盾给自己加生命上限 20%，只在正式结算（execute）时加；护盾满时岩脊 +30%
+	var zl: XActor = s.actor(107)
+	zl.shield = 0.0
+	var rec := XDB.rec("Skills", 5671)
+	XFormulaExecution.run_item(rec, zl, zl, lg.vars(), {}, false)
+	var pre := float(zl.shield)
+	XFormulaExecution.run_item(rec, zl, zl, lg.vars(), {}, true)
+	_check("p5_shield", pre == 0.0 and absf(float(zl.shield) - floorf(float(zl.mhp) * 0.2) * (1.0 + zl.shield_effect_bonus())) < 1.0, [pre, zl.shield, zl.mhp])
+	zl.shield = float(zl.mhp) * 0.2
+	_check("p5_shield_full", is_equal_approx(XTianqiSkills._cond({"if": "self_shield", "full": 0.2, "cap": 0.3}, zl, b), 1.3))
+	zl.shield = 0.0
+	# 反弹：云霄阵眼不灭 20%（原版 ×88 的脚本去掉）
+	var yx: XActor = s.actor(100)
+	yx.add_state(1061)
+	b.hp = b.mhp
+	var hp0 := float(b.hp)
+	XTianqiSkills._reflect(b, yx, {"hp": 1000.0})
+	var cut := hp0 - float(b.hp)
+	_check("p5_reflect", is_equal_approx(cut, 200.0) or is_equal_approx(cut, 100.0), cut)
+	_check("p5_reflect_script_gone", (XDB.rec("States", 1061).get("effects", []) as Array).is_empty())
+	# 记录字段：厄临星爆的「按当前魔法扣、每 2000 蓝多打一段」关掉
+	var el := XDB.rec("Skills", 5706)
+	_check("p5_fields", float(el.get("mpCostCurrentRate", 1)) == 0.0 and not bool(el.get("postDamageCostRepeat", true)) and int(el.mpCost) == 0, [el.get("mpCostCurrentRate"), el.get("postDamageCostRepeat"), el.mpCost])
+	# 后颈斩：目标生命低于 30% 才无视物防 30%、必暴
+	var ms: XActor = s.actor(95)
+	var hj := XDB.rec("Skills", 10731)
+	var full_ops := XTianqiSkills.damage_ops(hj, ms, b)
+	b.hp = float(b.mhp) * 0.2
+	var low_ops := XTianqiSkills.damage_ops(hj, ms, b)
+	_check("p5_pierce_when", full_ops.is_empty() and low_ops.size() == 2 and is_equal_approx(XTianqiSkills.item_cri(ms, hj, b, 0.1), 1.0), [full_ops, low_ops])
+	b.hp = b.mhp
+	# 三笠补的四招、锻炼；表外状态
+	_check("p5_new_skills", str(XDB.rec("Skills", 10728).name) == "换刃" and int(XDB.rec("Skills", 10730).scope) == 2 and str(XDB.rec("Skills", 10731).name) == "后颈斩")
+	_check("p5_learn", (XTianqiSkills.data().learn.get("95", []) as Array).size() == 4)
+	_check("p5_new_states", str(XDB.rec("States", 10813).name) == "换刃" and str(XDB.rec("States", 10816).name) == "生门")
+	_check("p5_fire_dot", str(XDB.rec("States", 1819).get("dot", {}).get("kind", "")) == "tianqi")
+	_check("p5_self_states", (XTianqiSkills.spec(5600).get("self_states", []) as Array).has(10819.0) and str(XDB.rec("States", 10819).name) == "碧天独行")
+	s.set_variable(1490, 10)
+	_check("p5_duanlian", is_equal_approx(XTianqiSkills._cond({"if": "var_bonus", "var": 1490, "per": 0.03, "cap": 0.3}, ms, b), 1.3))
+	lg.end_battle(0)
+
+
 func _smoke() -> void:
 	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30],
 			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60],
-			[61, 62, 63, 64, 65], [66, 67, 68, 69, 70], [71, 72, 73, 74, 75], [76, 77, 78, 79, 80], [81, 82, 83, 84, 85], [86, 87, 88, 89, 90], [91, 92, 93, 94, 61]]:
+			[61, 62, 63, 64, 65], [66, 67, 68, 69, 70], [71, 72, 73, 74, 75], [76, 77, 78, 79, 80], [81, 82, 83, 84, 85], [86, 87, 88, 89, 90], [91, 92, 93, 94, 61],
+			[95, 96, 97, 98, 99], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109], [115, 117, 118, 119, 120], [122, 123, 124, 127, 128], [129, 130, 131, 95, 100]]:
 		_smoke_group(group)
 
 
