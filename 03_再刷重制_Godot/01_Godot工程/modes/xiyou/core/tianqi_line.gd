@@ -14,7 +14,7 @@ extends RefCounted
 
 const DATA_DIR := "res://modes/xiyou/tianqi_data/"
 ## 做好了内容的线（和 XTianqi.LINES 的键一致）
-const KEYS := ["war", "famine"]
+const KEYS := ["war", "famine", "plague"]
 
 static var _data: Dictionary = {}
 
@@ -25,6 +25,8 @@ static func enabled(key: String) -> bool:
 			return XTianqiWarLine.ENABLED
 		"famine":
 			return XTianqiFamineLine.ENABLED
+		"plague":
+			return XTianqiPlagueLine.ENABLED
 	return false
 
 
@@ -82,6 +84,8 @@ static func alien_prepare(key: String, name: String, s: XState) -> bool:
 			return XTianqiWarAlien.prepare(name, s)
 		"famine":
 			return XTianqiFamineAlien.prepare(name, s)
+		"plague":
+			return XTianqiPlagueAlien.prepare(name, s)
 	return false
 
 
@@ -343,6 +347,8 @@ static func run_arrival(host, s: XState, map_id: int) -> void:
 	await say(host, key, beat)
 	if key == XTianqiFamineLine.KEY:
 		await XTianqiFamineLine.after_beat(host, s, beat)
+	if key == XTianqiPlagueLine.KEY:
+		await XTianqiPlagueLine.after_beat(host, s, beat)
 
 
 # ---- 35、36 层（31～36 层重做之后接地图） ----

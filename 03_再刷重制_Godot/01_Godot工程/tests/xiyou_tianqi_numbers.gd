@@ -218,10 +218,10 @@ func _lines() -> void:
 	host.answers = [XTianqi.LINES.size()]  # 再想想
 	await XTianqi.run_line_choice(host, s)
 	_check("line_later", XTianqi.line_of(s) == "" and host.asked.size() == 1 and host.asked[0].size() == XTianqi.LINES.size() + 1, host.asked)
-	# 内容没做好的线（瘟疫）：卡片照看，选不了，回到列表；再想想
-	host.answers = [2]
+	# 内容没做好的线（死亡；瘟疫线 cc 瘟疫线车道做好了）：卡片照看，选不了，回到列表；再想想
+	host.answers = [1]
 	await XTianqi.run_line_choice(host, s)
-	_check("line_unplayable", XTianqi.line_of(s) == "" and host.asked.size() == 3 and not XTianqi.choose_line(s, "plague"), host.asked.size())
+	_check("line_unplayable", XTianqi.line_of(s) == "" and host.asked.size() == 3 and not XTianqi.choose_line(s, "death"), host.asked.size())
 	_check("line_chosen", XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == "war" and not XTianqi.line_ready(s), XTianqi.line_of(s))
 	_check("line_no_change", not XTianqi.choose_line(s, "plague") and XTianqi.line_of(s) == "war")
 	_check("line_unknown", not XTianqi.choose_line(s, "nope"))
