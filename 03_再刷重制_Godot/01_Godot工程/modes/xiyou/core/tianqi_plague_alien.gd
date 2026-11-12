@@ -270,7 +270,7 @@ static func frail_rate(logic, a) -> float:
 	if not sick(logic):
 		return 0.0
 	var fr: Dictionary = data().frail
-	return minf(float(fr.cap), float(fr.per) * int(fight(logic).debuffs.get(a, 0)))
+	return minf(float(fr.cap), XTianqiRewards.frail_per(a, float(fr.per)) * int(fight(logic).debuffs.get(a, 0)))  # 天启篇奖励：净印·清心
 
 
 static func focus_text(logic) -> String:
