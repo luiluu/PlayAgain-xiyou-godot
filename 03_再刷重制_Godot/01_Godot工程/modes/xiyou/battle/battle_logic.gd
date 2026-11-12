@@ -1146,6 +1146,7 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
+	XActor.read_reset()  # 只读窗口缓存（O-待定-2）：行动开始时不该有开着的窗口
 	if not STALE_TIMING:
 		for a in actors:
 			if a is XActor:

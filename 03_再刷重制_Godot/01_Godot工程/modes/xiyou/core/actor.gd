@@ -299,8 +299,12 @@ func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
 
 func equip_list() -> Array:
-	var list := equips.slice(1) if _cat_bare else equips
-	return list.filter(func(e): return e != null and not e.is_empty())
+	var out := []
+	for i in range(1 if _cat_bare else 0, equips.size()):  # 一次行动里调几千次：不走 slice＋filter 回调，结果一样
+		var e = equips[i]
+		if e != null and not e.is_empty():
+			out.append(e)
+	return out
 
 
 ## 算能力值／特性／被动缓存用的装备：178 持剑时武器槽换成剑的翻倍视图（XCat.sword_view），其余同 equip_list
@@ -644,6 +648,13 @@ static func read_begin() -> void:
 
 static func read_end() -> void:
 	_read_depth -= 1
+
+## 行动开始：不该有没关的窗口（窗口只包同步的只读计算）；万一有就关掉并报错，不让缓存跨到写入之后
+static func read_reset() -> void:
+	if _read_depth != 0:
+		push_error("只读窗口没有关：depth=%d" % _read_depth)
+		_read_depth = 0
+	_read_gen += 1
 
 ## 已知的写入：作废所有角色的窗口缓存
 static func read_touch() -> void:

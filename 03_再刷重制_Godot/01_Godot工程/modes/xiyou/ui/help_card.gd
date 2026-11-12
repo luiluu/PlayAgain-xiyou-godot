@@ -693,8 +693,12 @@ static func _terms(text: String) -> String:
 
 
 # ---- installDamageElementRuntime ----
+## O-待定-1（安卓提速）：原来每次都 XDB.load_json 重读这份近 1 MB 的文件（读盘、整份算 SHA-256、解压、还原），一张说明卡读两三次，
+## 电脑上每张卡约 100 毫秒，手机上选技能、逛商店每换一行停半秒。改读 XDB.table 已载入的那份（同一文件，XDamage.elements_data 也读它）。
+## 回退：ELEMENT_DATA_TABLE = false（每次重读，同原来）。
+static var ELEMENT_DATA_TABLE := true
 static func _element_data() -> Dictionary:
-	var d = XDB.load_json("db/CodexDamageElements.json")
+	var d = XDB.table("CodexDamageElements") if ELEMENT_DATA_TABLE else XDB.load_json("db/CodexDamageElements.json")
 	return d if d is Dictionary else {}
 
 

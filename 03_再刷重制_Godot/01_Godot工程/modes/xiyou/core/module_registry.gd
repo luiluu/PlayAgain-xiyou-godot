@@ -181,6 +181,34 @@ static func value_copy(value):
 		return value
 	return null
 
+## O-待定-3（安卓提速）：每次算伤害都把整条技能记录（备注、行动序列、公式语法树）逐层拷贝再逐层冻结一遍，一击约 1 毫秒。
+## 技能记录平时不变：按技能号留一份冻好的拷贝，下次内容逐项相等（引擎自带的深比较）就直接用；不相等、或带不是纯值的东西就照原来拷。
+## 冻好的拷贝只读，钩子拿到的内容和原来一样。回退：ITEM_COPY_CACHE = false。
+static var ITEM_COPY_CACHE := true
+static var _item_copies := {}
+
+static func _context_copy(context: Dictionary):
+	var item = context.get("item")
+	if not ITEM_COPY_CACHE or not item is Dictionary or not (item.get("id") is float or item.get("id") is int):
+		return value_copy(context)
+	var cached = _item_copies.get(item.id)
+	if cached == null or cached != item:
+		cached = value_copy(item)
+		if cached == null or cached != item:  # 带 StringName 键之类拷完不逐项相等的不留
+			return value_copy(context)
+		freeze(cached)
+		if _item_copies.size() >= 512:
+			_item_copies.clear()
+		_item_copies[item.id] = cached
+	var result := {}
+	for key in context:
+		if not key is String and not key is StringName and not key is int:
+			return null
+		var copied = cached if (key is String and key == "item") else value_copy(context[key])
+		if copied == null and context[key] != null: return null
+		result[str(key) if key is StringName else key] = copied
+	return result
+
 static func freeze(value) -> void:
 	if value is Dictionary or value is Array:
 		for item in (value.values() if value is Dictionary else value):
@@ -191,7 +219,7 @@ func dispatch(point: String, context: Dictionary, initial: Dictionary) -> Dictio
 	var errors := diagnostics()
 	var trace := []
 	var frame = value_copy(initial)
-	var snapshot = value_copy(context)
+	var snapshot = _context_copy(context)
 	if not POINTS.get(point, false): errors.append("unavailable_point:" + point)
 	if frame == null or snapshot == null: errors.append("non_value_context")
 	if frame is Dictionary:
