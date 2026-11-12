@@ -16,6 +16,9 @@ var touch_target := Vector2i(-1, -1)
 ## 按住左键（platform-keys2）：原版 Scene_Map.processMapTouch 按住满 15 帧后每帧把目的地更新到鼠标所在格，边按边拖就能带着人走。
 ## 这里只在鼠标换了一格时更新（不重复触发脚下／前方一格的确认）。回退开关 MV_HOLD_MOVE = false。
 static var MV_HOLD_MOVE := true
+## 原版点地移动走到目的地停下时，触发脚下「确定键、角色下方」的事件（triggerTouchActionD1）；重制原先走到就停、要再按确定。
+## 回退开关 MV_TOUCH_D1 = false。
+static var MV_TOUCH_D1 := true
 var _hold_count := 0
 var _hold_cell := Vector2i(-1, -1)
 var dash := true
@@ -87,7 +90,12 @@ func update_character() -> void:
 	if d == 0 and touch_target.x >= 0:
 		d = _toward(touch_target)
 		if d == 0:
+			# 走到点的那格停下：Game_Player.updateNonmoving → triggerTouchAction → D1（脚下确定键事件）。
+			# 点自己脚下在 click_cell 当场按确认、目标已清掉，所以到这里的一定是走过来的。
+			var arrived := touch_target == grid and MV_TOUCH_D1
 			touch_target = Vector2i(-1, -1)
+			if arrived:
+				touch_target_reached.emit()
 	if d != 0:
 		move_speed = vehicle_speed if vehicle_speed > 0 else walk_speed()
 		if move_straight(d):

@@ -141,8 +141,10 @@ func _run() -> void:
 	# v0.56「Boss状态面板」一行随 XBossStatusPanel.TOGGLE（main 默认关 33 行；换源集成分支翻成开，O-204，多一行 34 行）
 	var extra := 1 if XBossStatusPanel.TOGGLE else 0
 	# 重制新增「画面特效」排在最后（大厅初步异化，XLobbyCorruption.ENABLED 关掉时不列）
-	var fx := 1 if XLobbyCorruption.ENABLED else 0
-	check("options_list", opt.symbols().size() == 33 + extra + fx and (fx == 0 or opt.symbols().back() == "codexScreenFx") and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
+	# 再后面是「画面平滑」（XScreenScale.ENABLED 关掉时不列，玩家反馈 v0.01）
+	var fx := (1 if XLobbyCorruption.ENABLED else 0) + (1 if XScreenScale.ENABLED else 0)
+	var tail := "codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx"
+	check("options_list", opt.symbols().size() == 33 + extra + fx and (fx == 0 or opt.symbols().back() == tail) and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
 		and opt.symbols()[32 + extra] == "codexFeedbackPending", opt.symbols())
 	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))
 	await shot("00_设置.png")

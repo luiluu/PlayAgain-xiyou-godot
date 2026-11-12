@@ -5,7 +5,7 @@ extends Control
 ##   右侧每人一条状态（缩放 0.6：名字、HP/MP/TP 量条、左侧状态图标，轮到谁谁左移 48）；
 ##   指令窗（宽 220、缩放 0.8）出现在行动角色身旁，技能/物品列表（宽 450）在其右下；
 ##   选中技能/物品时在列表左侧显示 HelpExtend 说明卡（XHelpCard；原版没有顶部说明栏）。
-## - 敌人在敌群编辑器坐标（原版 1280×720 原样使用），1 倍大小，神话 1.8 倍并偏色；
+## - 敌人在敌群编辑器坐标（原版 1280×720 原样使用），1 倍大小；神话偏色、画面上也是 1 倍（ELITE_SCALE，见下）；
 ##   YEP_X_VisualHpGauge：敌人脚下 12px 粗血条（受伤或选目标时显示，带数值）。
 ## - 伤害数字照 LGP_BetterDamagePopup 文字弹出（XDamagePopup）。
 ## - Olivia_BattleSysOTB：行动顺序回合制，轮到谁谁当场选指令；画面下方是行动顺序条（XOTBBar），
@@ -18,6 +18,11 @@ signal escape_audio
 signal _picked(value)
 
 const BOX := Vector2(1280, 720)           # 原版画面尺寸（坐标基准）
+## 神话敌人画面倍数。EliteEnemyPlugins（EliteEnemySize=true）在 updateBitmap→updateScale 里设 1.8 倍，但同一帧稍后
+## YEP_X_AnimatedSVEnemies 的 Sprite_Enemy.update 末尾无条件调 updateBreathing，把 scale 改回 spriteScaleX()＋呼吸量
+## （本源敌人没有 <Sprite Scale> 备注，即 1），画到屏幕上的神话敌人仍是 1 倍。重制原先照 updateScale 画 1.8 倍，
+## 玩家反馈 v0.01「怪物太大了」。回退：ELITE_SCALE = 1.8。
+static var ELITE_SCALE := 1.0
 const STATUS_SCALE := 0.6
 const STATUS_W := 200.0
 const STATUS_MOVE := 48.0
@@ -364,7 +369,7 @@ func _place_battlers() -> void:
 func _make_enemy_sprite(e: XEnemy) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
-	s.setup(e, 1.8 if e.elite else 1.0)
+	s.setup(e, ELITE_SCALE if e.elite else 1.0)
 	var br := XSvEnemy.breathing(e)  # 呼吸只给该给的敌人：非 SV 默认呼吸，SV 默认不呼吸；周期读备注（见 XSvEnemy）
 	s.breathing = br.on
 	s.breath_speed = br.speed
