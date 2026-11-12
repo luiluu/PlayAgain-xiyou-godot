@@ -1501,6 +1501,10 @@ func _end_battle_bgm(battle: XBattleScene) -> void:
 	battle.prestarted_bgm = null
 
 
+## 截图时先藏起触屏虚拟按键（O-待定·快照不带虚拟按键）；false 照旧连按键一起截。
+static var SNAP_HIDE_TOUCH := true
+
+
 ## Scene_Map.snapForBattleBackground：隐藏窗口层（对话框、地图名、菜单按钮）后截取地图画面，
 ## 裁成 1280×720 画布范围。无画面（测试）时返回 null。
 func _snapshot() -> Texture2D:
@@ -1513,11 +1517,19 @@ func _snapshot() -> Texture2D:
 	message.visible = false
 	if plate:
 		plate.visible = false
+	# 触屏虚拟按键（CanvasLayer 120，在根视口里）也不进截图：否则战斗背景（这张快照）里留着一份 A／B，
+	# 跟上面活的按键叠成两份（玩家反馈 v0.01.01）。原版 Mehmet_GhostButtons 的按键是场景子节点，同样会被截进去，按原版缺陷修掉。
+	var pad := XTouchControls.instance if SNAP_HIDE_TOUCH else null
+	var pad_was := pad.visible if pad != null else false
+	if pad != null:
+		pad.visible = false
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	message.visible = was
 	if plate:
 		plate.visible = plate_was
+	if pad != null and is_instance_valid(pad):
+		pad.visible = pad_was
 	if img == null or img.is_empty():
 		return null
 	var ft := get_viewport().get_final_transform()
@@ -1971,6 +1983,11 @@ func relocate_race_guide() -> void:
 
 
 var _menu_closed_frame := -1
+
+
+## 触屏战斗「信息」键（XTouchControls.BATTLE_INFO_BUTTON）：只在战斗中显示。
+func touch_info_visible() -> bool:
+	return _in_battle
 
 
 ## 触屏存档键（XTouchControls.SAVE_MAP_MENU_ONLY）：照原版只在地图与主菜单（Scene_Map／Scene_Menu）显示；战斗中、菜单进了子页面不显示。

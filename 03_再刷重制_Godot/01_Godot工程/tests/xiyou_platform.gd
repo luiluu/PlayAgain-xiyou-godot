@@ -56,6 +56,12 @@ class FakeMap extends Node:
 	func touch_save_visible() -> bool:
 		return allow
 
+## 当成战斗中的地图页（XMapScene.touch_info_visible）：战斗「信息」键只在战斗中显示（v0.01.01 玩家反馈）
+class FakeBattle extends Node:
+	var in_battle := true
+	func touch_info_visible() -> bool:
+		return in_battle
+
 func fake(path: String) -> FakeScene:
 	var s := FakeScene.new()
 	s.scene_file_path = path
@@ -103,6 +109,40 @@ func _touch_styles(platform: XPlatform, rec: Recorder) -> void:
 	touch(0, g.stick_center, false)
 	await frames(2)
 	check("ghost_stick_release", not Input.is_action_pressed("ui_left"))
+	# 战斗「信息」键（v0.01.01 玩家反馈：虚拟按键看不了敌人属性）：只在战斗中出现，按下＝Shift（怪物信息）
+	check("info_hidden_off_battle", g.active.has("info") and not (g._buttons.info as Panel).visible and g.hit(g.rects.info.get_center()) == "",
+		[g.active, g.hit(g.rects.info.get_center())])
+	var fb := FakeBattle.new()
+	XTouchControls.scene_override = fb
+	await frames(1)
+	var info_r: Rect2 = g.rects.info
+	check("info_shown_in_battle", (g._buttons.info as Panel).visible and g.hit(info_r.get_center()) == "info"
+		and ((g._buttons.info as Panel).get_node("Label") as Label).text == "信息", g.hit(info_r.get_center()))
+	check("info_no_overlap", not info_r.intersects(g.rects.ok) and not info_r.intersects(g.rects.cancel)
+		and g.group_rects.actions.encloses(info_r), [info_r, g.rects.ok, g.rects.cancel])
+	touch(0, info_r.get_center(), true)
+	await frames(2)
+	check("info_holds_shift", Input.is_physical_key_pressed(KEY_SHIFT))
+	touch(0, info_r.get_center(), false)
+	await frames(2)
+	check("info_releases_shift", not Input.is_physical_key_pressed(KEY_SHIFT))
+	fb.in_battle = false
+	await frames(1)
+	check("info_hidden_after_battle", not (g._buttons.info as Panel).visible)
+	fb.in_battle = true
+	XTouchControls.BATTLE_INFO_BUTTON = false
+	g.apply_layout()
+	await frames(1)
+	check("info_rollback_off", not g.active.has("info") and not (g._buttons.info as Panel).visible and g.hit(info_r.get_center()) != "info")
+	XTouchControls.BATTLE_INFO_BUTTON = true
+	g.apply_layout()
+	XTouchControls.scene_override = null
+	fb.free()
+	var rm := XMapScene.new()   # 不进树：只量 touch_info_visible
+	check("map_info_follows_battle", not rm.touch_info_visible())
+	rm._in_battle = true
+	check("map_info_in_battle", rm.touch_info_visible())
+	rm.free()
 	# 改版按键：A／B 两键（右下角贴边）
 	g.set_choice("style", "modern")
 	check("modern_ab", not g.ghost() and g.layout() == "ab" and g.rects.ok.size.is_equal_approx(Vector2(XTouchControls.AB_BUTTON, XTouchControls.AB_BUTTON))
