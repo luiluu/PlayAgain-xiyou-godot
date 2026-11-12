@@ -2,7 +2,7 @@ class_name XTianqiAffixBattle
 extends RefCounted
 ## 【cc·未经审查】天启篇词条的战斗结算（天启篇词条重构设计稿 v0.3 第 3.7、4～7、8.4 节；数值一律读 XTianqiAffixTable 的 affix_table.json）。
 ##
-## 生效条件：ENABLED（O-待定）且是天启篇存档，发行构建另要 XTianqi.RELEASE_OPEN（同七印装备）。原版档、关着时一条都不跑。
+## 生效条件：ENABLED（O-335）且是天启篇存档，发行构建另要 XTianqi.RELEASE_OPEN（同七印装备）。原版档、关着时一条都不跑。
 ## 认装备：装备实例上的
 ##   tianqi_affixes：[{key, tier, grade, extra}…]（通用装备掷词条接线后用这个键，tier 1～4）；
 ##   qiyin.affixes：[{key, grade, extra}…]（七印祭坛装备，一律四阶）。
@@ -19,7 +19,7 @@ extends RefCounted
 ## _calculate_damage（记这一击暴击没有，给「坚韧」）；actor.gd 的 param_rate／xparam／sparam／attack_times_add／action_plus_set；
 ## enemy.gd 的 xparam；actor_damage_hooks 的 capture。
 
-## 开关（O-待定）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
+## 开关（O-335）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
 static var ENABLED := true
 
 const PARAM_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
