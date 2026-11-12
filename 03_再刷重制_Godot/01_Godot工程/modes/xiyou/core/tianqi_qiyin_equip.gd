@@ -4,7 +4,7 @@ extends RefCounted
 ## 底子表 tianqi_data/qiyin_equip.json（只读，draft）；装备数据 XTianqiQiyinGear；掉落与熔／分解／兑换的判定 XTianqiQiyinDrop；
 ## 战斗效果认 XTianqiQiyinEffects.mark() 打的 qiyin 标记。
 ##
-## 装备实例：照 XTianqiRewards 的做法，借 base_id 那件的图标和栏位，属性、特性、原版词缀、备注清空，名字、说明、底子换成七印的；
+## 装备实例：照 XTianqiRewards 的做法，借 base_id 那件的栏位（图标换七印新画，XTianqiQiyinArt.dress_item；开关关了才借底子图标），属性、特性、原版词缀、备注清空，名字、说明、底子换成七印的；
 ## 不改原版数据库，存档照装备实例存。实例上的 qiyin 标记除了 mark() 写的 {kind, seal, part|key, true_seal, unique}，
 ## 本模块再记 wtype（武器中文类名）、grades（三条成色，掉落时掷定）、affixes（[{key, grade, extra}…]，揭开时掷，四阶）、level。
 ## 词条用天启篇词条表（XTianqiAffixTable，三槽、神话、防具组／兵器组），只算出来写进说明；天启篇词条的战斗效果还没有模块接（交付单）。
@@ -191,6 +191,7 @@ static func _make_set(desc: Dictionary, difficulty: String, rng: XRandomStream) 
 	var true_seal := bool(desc.get("true_seal", false))
 	var mult := float(rule.get("true_seal", {}).get("base_mult", 1.0)) if true_seal else 1.0
 	item.etypeId = int(piece.etype)
+	XTianqiQiyinArt.dress_item(item, XTianqiQiyinArt.set_icon(seal, part))
 	item.atypeId = int(data().armor.get("atype", 1))
 	item.params = _scaled(row.params, mult)
 	var level := int(desc.get("level", rule.get("level", 80)))
@@ -223,6 +224,7 @@ static func _make_weapon(desc: Dictionary, difficulty: String, rng: XRandomStrea
 	var w := XTianqiQiyinGear.weapon(str(m.get("key", "")))
 	var true_seal := bool(desc.get("true_seal", false))
 	item.name = ("%s%s" % [str(data().names.true_seal), str(w.get("name", ""))]) if true_seal else str(w.get("name", ""))
+	XTianqiQiyinArt.dress_item(item, XTianqiQiyinArt.weapon_icon(str(t.key), w.get("type") == null))  # 「不立文字」不定类：那类武器叠卷轴
 	item.baseName = str(item.name)
 	_finish(item, m, d, "bingqi", difficulty, level, rng)
 	return item
@@ -237,6 +239,7 @@ static func make_artifact(key: String) -> Dictionary:
 	if item.is_empty():
 		return {}
 	item.etypeId = int(XTianqiQiyinGear.artifact_rule().get("etype", XTianqiGear.ARTIFACT))
+	XTianqiQiyinArt.dress_item(item, XTianqiQiyinArt.artifact_icon(key))
 	item.name = str(a.get("name", key))
 	item.baseName = str(item.name)
 	XTianqiQiyinEffects.mark(item, {"kind": "artifact", "key": key})
