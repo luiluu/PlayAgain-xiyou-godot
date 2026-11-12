@@ -210,11 +210,11 @@ static func view(a) -> Dictionary:
 		return {}
 	var st := _store(_logic())
 	if not st.is_empty():
-		if not st.views.has(a):
+		if not st.views.has(a) or not _same_equips(st.views[a].eq, (a as XActor).equips):
 			var member: bool = st.members.has(a)
 			var p := personal(a)
 			var aura: Dictionary = st.aura if member else {}
-			st.views[a] = {"p": p, "aura": aura, "d": derive(p, aura), "member": member}
+			st.views[a] = {"p": p, "aura": aura, "d": derive(p, aura), "member": member, "eq": (a as XActor).equips.duplicate()}
 		return st.views[a]
 	if not on():
 		return {}
@@ -223,6 +223,16 @@ static func view(a) -> Dictionary:
 	var p := personal(a)
 	var aura: Dictionary = party_aura(ms) if member else {}
 	return {"p": p, "aura": aura, "d": derive(p, aura), "member": member}
+
+
+## 战斗中换了装备（同一格换了实例）就重算这个人的视图（光环按开战时的全队算）
+static func _same_equips(x: Array, y: Array) -> bool:
+	if x.size() != y.size():
+		return false
+	for i in x.size():
+		if not is_same(x[i], y[i]):
+			return false
+	return true
 
 
 static func _pv(a, key: String) -> float:
