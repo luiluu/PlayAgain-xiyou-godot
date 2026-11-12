@@ -94,6 +94,8 @@ var _vehicle_gathering := false
 var _bgm_audio = null
 ## 大厅初步异化叠加层（XLobbyCorruption，只在 Map004 且漩涡二阶起才建；换图时释放）
 var lobby_fx: XLobbyCorruption
+## 天启篇大厅方桌的裂纹（XTianqiTable，只在 Map004、天启篇存档才建；换图时释放）
+var tianqi_table: XTianqiTable
 ## 正在跑的顶层事件号（run_event 期间；没有为 0）：叠加层看是不是漩涡过场
 var running_event_id := 0
 ## 震屏（224／225 shake_screen）时发出：叠加层给漩涡弹回垫一声闷响
@@ -367,6 +369,24 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_clear_treasure_popups()
 	_place_party(x, y, d)
 	_setup_lobby_fx()
+	_setup_tianqi_look()
+
+
+## 天启篇画面（庚）：大厅方桌的裂纹（XTianqiTable）、6～30 层的本线色调（XTianqiLook.apply_floor_tint）；换图时重建
+func _setup_tianqi_look() -> void:
+	if tianqi_table != null and is_instance_valid(tianqi_table):
+		tianqi_table.queue_free()
+	tianqi_table = null
+	if map_id == XTianqiTable.MAP_ID and XTianqiTable.wanted(XState.current) != "":
+		tianqi_table = XTianqiTable.new()
+		add_child(tianqi_table)
+		tianqi_table.setup()
+	XTianqiLook.apply_floor_tint(self, XState.current, map_id)
+
+
+## 天启篇选线的四张竖卡（XTianqi.run_line_choice 调；返回 0～3，「再想想」-1）
+func pick_line(lines: Array, playable: Array) -> int:
+	return await XTianqiLineCards.pick(self, lines, playable)
 
 
 ## 大厅初步异化：换图时先拆旧的，到了大厅且阶段二起（开关开着）再建（同图移动不重建）
@@ -617,6 +637,10 @@ func _on_action() -> void:
 	# 大厅初步异化的可调查格（踩在上面按确认键；没有事件时才轮到）
 	if lobby_fx != null and is_instance_valid(lobby_fx) and lobby_fx.is_investigation(player.grid):
 		await lobby_fx.on_action(player.grid)
+		return
+	# 天启篇大厅的方桌（面朝桌子按确认键；没有事件时才轮到）
+	if tianqi_table != null and is_instance_valid(tianqi_table) and XTianqiTable.is_table(front):
+		await tianqi_table.on_action(self)
 
 
 ## 确认键启动的事件；大厅初步异化：原事件整段跑完、还在大厅时，再追加一句（不插进原指令表）

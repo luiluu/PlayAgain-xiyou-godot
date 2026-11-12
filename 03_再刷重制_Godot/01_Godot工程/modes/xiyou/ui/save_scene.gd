@@ -154,6 +154,9 @@ func _paint_list(c: XMVCanvas) -> void:
 		var a := 1.0 if valid else XUI.DIM.a
 		c.icon(int(plugin("Saved Icon" if valid else "Empty Icon", "0")), 2, y + 2, a)
 		c.text("%s %d" % [str(XDB.system().get("terms", {}).get("messages", {}).get("file", "文件")), i + 1], 36, y, 180, "left", XUI.TEXT, XUI.FONT_SIZE, LH, a)
+		var line := save_line(data(i + 1))
+		if line != "" and c.is_inside_tree():   # 天启篇选过线的档：这一格右边一道本线颜色（四线设计稿 v0.4 第 2.1 节第 6 步；XTianqiLook.SAVE_COLOR）
+			c.draw_rect(Rect2(c.size.x - 8, y + 6, 4, LH - 12), XTianqiLook.main_color(line))
 
 
 func action_rect(i: int) -> Rect2:
@@ -207,6 +210,20 @@ func _paint_info(c: XMVCanvas) -> void:
 	for i in range(left.size()):
 		_data_row(c, d, str(left[i]), 0, DATA_Y + i * LH, cw - 6)
 	_data_row(c, d, "file size", cw, DATA_Y, cw - 6)
+	var line := save_line(d)
+	if line != "":
+		var l := XTianqi.line_info(line)
+		var y := DATA_Y + LH
+		_dark(c, Rect2(cw, y, cw - 6, LH))
+		if c.is_inside_tree():
+			c.draw_rect(Rect2(cw + 1, y + 1, 4, LH - 2), XTianqiLook.main_color(line))
+		c.text("天启之路", cw + 12, y, cw - 30, "left", XUI.SYSTEM, 20, LH)
+		c.text("%s·%s" % [str(l.get("name", "")), str(l.get("knight", ""))], cw, y, cw - 12, "right", XTianqiLook.main_color(line), 20, LH)
+
+
+## 天启篇存档选的线（开关关掉、不是天启篇存档、没选线为空串）
+static func save_line(d) -> String:
+	return XTianqiLook.line_of_save(d) if XTianqiLook.SAVE_COLOR else ""
 
 
 static func _width(glyphs: Array) -> float:
