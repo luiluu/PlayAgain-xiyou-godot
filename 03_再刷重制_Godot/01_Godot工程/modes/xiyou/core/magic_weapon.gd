@@ -121,6 +121,7 @@ static func level_up(item: Dictionary, user: XActor = null) -> bool:
 	if level_of(item) < max_level(item):
 		item.level = level_of(item) + 1.0
 		item.exp = maxf(0.0, cur - need)
+		XTianqiAffixRoll.refresh_growth(item)  # 天启篇：通用法宝的光环随养成升阶
 		_level_up_effect(item, user)
 	else:
 		item.exp = need

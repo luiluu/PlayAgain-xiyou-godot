@@ -5,7 +5,9 @@ extends RefCounted
 ## - 原版随机词缀行在天启篇里不掷（设计稿 11 节：affix_rate 不再调用），必出的行（几率合计 ≥100）照原版合进装备，属于装备固有效果。
 ##   跳过的行不取预掷随机数，所以天启篇存档的装备随机流和原版对不上，原版档不受影响。
 ## - 槽数按品质（普通 0、优秀／精良 1、史诗／传说 2、不朽／神话 3），阶按装备等级需求（<req_level>：1～29 一阶…70 以上四阶）。
-## - 栏位组：武器、副手→兵器；头、甲、护手、腰带、裤、鞋→防具；项链、戒指→饰品。法宝（光环按养成分阶）、坐骑、神器栏不掷。
+## - 栏位组：武器、副手→兵器；头、甲、护手、腰带、裤、鞋→防具；项链、戒指→饰品。坐骑、神器栏不掷。
+## - 通用法宝（没有角色限定、不是独特物件；cc/tianqi-artifact-aura）：50% 带一条光环（记 growth: true），阶按法宝等级／满级
+##   （不到 1/3 二阶、不到 2/3 三阶、再往上四阶），XMagicWeapon.level_up 升级时 refresh_growth 重定阶、重写说明。专属法宝不掷。
 ## - 项链先掷一次「是否光环」（二阶起 15%，占一个普通槽）。其余每槽按难度的层几率掷层，层不够格或到每件上限就按表里的退路往下找；
 ##   在「这一层 ∩ 本组标签 ∩ 这件还没有 ∩ 这一阶能出」里按权重抽（稀有词条权重低）；成色先掷极 3%，再按品质掷上品，其余普通。
 ## - 记在装备实例的 tianqi_affixes = [{key, tier, grade, extra}]（XTianqiAffixBattle 认这个键算效果），说明末尾加上每条一行（XTianqiAffixText）。
@@ -55,15 +57,63 @@ static func tier_of(item: Dictionary) -> int:
 static func apply(item: Dictionary, s: XState, rng := Callable()) -> void:
 	if item.is_empty() or not on(s) or item.has("tianqi_affixes") or item.has("qiyin") or item.has("tq_reward"):
 		return
+	if not rng.is_valid():
+		rng = func(): return XGear.roll(s)
+	if general_artifact(item):  # 通用法宝：50% 带一条光环，阶随养成（词条稿第 7 节）
+		var aura := roll_artifact(item, rng)
+		if not aura.is_empty():
+			set_affixes(item, [aura])
+		return
 	var slot := slot_key(item)
 	if slot == "":
 		return
-	if not rng.is_valid():
-		rng = func(): return XGear.roll(s)
 	var list := roll(item, slot, _difficulty(s), rng)
 	if list.is_empty():
 		return
 	set_affixes(item, list)
+
+
+## 通用法宝：CP_MagicWeapon 的法宝、没有角色限定（<req_actors>）、不是独特物件（<KyoUnique>）
+static func general_artifact(item: Dictionary) -> bool:
+	if not XMagicWeapon.is_magic(item) or int(item.get("etypeId", 0)) != 13:
+		return false
+	var note := str(item.get("note", ""))
+	return not note.contains("<req_actors") and not note.contains("<KyoUnique") and not XEquipment.is_exclusive(item)
+
+
+## 法宝的阶：法宝等级／满级（不到 1/3 二阶，不到 2/3 三阶，再往上四阶）
+static func artifact_tier_of(item: Dictionary) -> int:
+	var mx := maxf(1.0, XMagicWeapon.max_level(item))
+	return T.artifact_tier(clampf(XMagicWeapon.level_of(item) / mx, 0.0, 1.0))
+
+
+## 法宝的光环：chance（50%）带一条，空字典＝没带
+static func roll_artifact(item: Dictionary, rng: Callable) -> Dictionary:
+	var aa: Dictionary = T.data().get("artifact_aura", {})
+	if float(rng.call()) >= float(aa.get("chance", 0.0)):
+		return {}
+	var tier := artifact_tier_of(item)
+	var key := _pick(T.candidates("aura", "fabao").filter(func(a): return T.available(a, tier)), rng)
+	if key == "":
+		return {}
+	var e := _entry(key, tier, quality_key(item), rng)
+	e["growth"] = true
+	return e
+
+
+## 法宝升级后：随养成的光环按新等级重定阶、重写说明（XMagicWeapon.level_up 调）
+static func refresh_growth(item: Dictionary) -> void:
+	var list = item.get("tianqi_affixes", null)
+	if not list is Array or not (list as Array).any(func(a): return bool(a.get("growth", false))):
+		return
+	var tier := artifact_tier_of(item)
+	var changed := false
+	for a in list:
+		if bool(a.get("growth", false)) and int(a.tier) != tier:
+			a.tier = tier
+			changed = true
+	if changed:
+		set_affixes(item, list)
 
 
 ## 换一件的天启篇词条并重写说明（原说明记在 tianqi_desc_base，词条行每次重拼）
