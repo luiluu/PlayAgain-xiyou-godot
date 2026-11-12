@@ -14,7 +14,7 @@ extends RefCounted
 ## - 再动、追加行动：角色每回合最多多 1 次（XBattleLogic.make_action_times 读 cap_actions）。
 ## - 档位：天启篇按 tiers 名单（超强者 18、强者 52、其余有名字的弱者，不开放的不进候选池）；三笠跟锻炼和进阶、饿狼跟形态升档，
 ##   只影响战斗里的档位加成和弱者协力（battle_tier），抽阵容、超强者上限按名单（tier_of）。
-## 开关：ENABLED＝false 整套回原版（O-待定-1）；MASTERY 熟练度（O-待定-2）、ACTION_CAP 行动次数（O-待定-3）、TIERS 档位名单（O-待定-4）各管一条全局规则。
+## 开关：ENABLED＝false 整套回原版（O-待定-1）；CARDS 角色卡、MASTERY 熟练度（O-待定-2）先默认关，等数值线一起开；ACTION_CAP 行动次数（O-待定-3）、TIERS 档位名单（O-待定-4）默认开。
 
 const PATH := "res://modes/xiyou/tianqi_data/skill_rework.json"
 const MODULE := "tianqi_skill"
@@ -22,7 +22,10 @@ const HIDDEN := "不开放"
 const STATS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
 
 static var ENABLED := true
-static var MASTERY := true
+## 角色卡（技能表改写：伤害、费用、被动、状态、追加、变招、击杀成长）。卡上的系数按新数值线（本体标准线、敌人重做）写，
+## 现在的属性和敌人还是原版量级，没有固定底数时前期伤害只剩原来的十分之一左右，所以先默认关，等数值线那一轮一起开（Kyo 定）
+static var CARDS := false
+static var MASTERY := false
 static var ACTION_CAP := true
 static var TIERS := true
 
@@ -97,8 +100,12 @@ static func spec(id: int) -> Dictionary:
 
 
 ## XDB.rec 包装：天启篇存档里换成改写后的记录
+static func cards_on(s = null) -> bool:
+	return CARDS and on(s)
+
+
 static func rec(id: int, base: Dictionary) -> Dictionary:
-	if base.is_empty() or not has(id) or not on():
+	if base.is_empty() or not has(id) or not cards_on():
 		return base
 	var hit = _recs.get(id)
 	if hit is Array and is_same(hit[0], base):
@@ -228,7 +235,7 @@ static func has_state(id: int) -> bool:
 
 ## XDB.rec("States") 包装：天启篇存档里换成改写后的状态（减益、领域按比例写）
 static func rec_state(id: int, base: Dictionary) -> Dictionary:
-	if base.is_empty() or not has_state(id) or not on():
+	if base.is_empty() or not has_state(id) or not cards_on():
 		return base
 	var hit = _state_recs.get(id)
 	if hit is Array and is_same(hit[0], base):
@@ -254,7 +261,7 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 
 ## 状态缓存的键：被改写的状态在天启篇存档里用负号，免得和原版档的缓存混用
 static func state_key(id: int) -> int:
-	return -id if has_state(id) and on() else id
+	return -id if has_state(id) and cards_on() else id
 
 
 ## 说明行：desc 换掉全部「\c[1]」开头的效果行，header 改表头（冷却时间、对象…）的值；样式照原来第一行
@@ -477,7 +484,7 @@ static func _fstore(logic) -> Dictionary:
 
 
 static func begin_action(logic, u, skill) -> void:
-	if not on() or not (u is XActor) or not (skill is Dictionary):
+	if not cards_on() or not (u is XActor) or not (skill is Dictionary):
 		return
 	var st := _fstore(logic)
 	if int(st.depth) > 0:
@@ -527,7 +534,7 @@ static func grow_count(key: String, s = null) -> int:
 
 
 static func _kill_grow(logic, u, skill, t) -> void:
-	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not on():
+	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not cards_on():
 		return
 	var key := str(spec(int(skill.get("id", 0))).get("kill_grow", ""))
 	var g: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("grow", {})
@@ -555,7 +562,7 @@ static func param_rate(a, i: int) -> float:
 	if not ENABLED:
 		return 1.0
 	var g = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("grow")
-	if not g is Dictionary or int(g.get("param", -1)) != i or not on():
+	if not g is Dictionary or int(g.get("param", -1)) != i or not cards_on():
 		return 1.0
 	if g.has("need_skill") and not a.skill_ids.has(int(g.need_skill)):
 		return 1.0
@@ -604,7 +611,7 @@ static func end_action(logic, u, skill) -> Array:
 	st.act = {}
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_var_add(u, f.skill)
-	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not on():
+	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
 		return logs
 	if int(st.used.get(u, -1)) == int(logic.turn):
 		return logs
@@ -643,7 +650,7 @@ static func end_action(logic, u, skill) -> Array:
 # ---- 变招（替换这次放的技能：克比六式这类按几率换招；原版的 ChangeTo 在表里删掉时用）----
 ## 技能行 variants [{cast, rate, need_skill, rate_with}]：按顺序逐个掷，第一个掷中的换掉
 static func change_to(logic, u, skill):
-	if not (skill is Dictionary) or skill.is_empty() or not (u is XActor) or not on():
+	if not (skill is Dictionary) or skill.is_empty() or not (u is XActor) or not cards_on():
 		return skill
 	var rows: Array = spec(int(skill.get("id", 0))).get("variants", [])
 	for r in rows:

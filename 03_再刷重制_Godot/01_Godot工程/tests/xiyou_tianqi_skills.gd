@@ -26,6 +26,10 @@ func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiSkills.reload()
+	_check("defaults", not XTianqiSkills.CARDS and not XTianqiSkills.MASTERY and XTianqiSkills.ACTION_CAP and XTianqiSkills.TIERS)
+	_default_off()
+	XTianqiSkills.CARDS = true  # 角色卡、熟练度默认关（等数值线），专项打开测
+	XTianqiSkills.MASTERY = true
 	_tiers()
 	_records()
 	_damage()
@@ -42,6 +46,16 @@ func _run() -> void:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 默认（角色卡、熟练度关）：天启篇存档也照原版技能和熟练度
+func _default_off() -> void:
+	var s := _state()
+	_check("default_record", str(XDB.rec("Skills", 101).damage.formula).begins_with("250+"))
+	XSkillMastery.set_level(s.actor(XIAOYAO), 101, 50)
+	_check("default_mastery", XSkillMastery.level(s.actor(XIAOYAO), 101) == 50)
+	_check("default_tiers_on", XTianqiSkills.tier_of(96) == XTier.STRONG)
+	XState.current = XState.new()
 
 
 func _weak_ids() -> Array:
