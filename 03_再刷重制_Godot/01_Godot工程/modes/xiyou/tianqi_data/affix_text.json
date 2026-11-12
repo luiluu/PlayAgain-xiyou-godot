@@ -1,7 +1,7 @@
 {
  "version": 1,
  "source": "天启篇词条重构设计稿 v0.3",
- "dev": "dev.待定",
+ "dev": "dev.482",
  "_note": "来源：天启篇词条重构设计稿 v0.3。玩家看到的词条行（line）和详细说明（detail）模板；数值一律由 XTianqiAffixText 从 affix_table.json 取来填进去，这里不存数。占位符：{v} 数值、{v2} 第二个数、{element} 掷出的元素、{elements} 全部元素、{variant} 掷出的变体、{variants} 全部变体、{sign} 变体的正负号、{cap} 上限、{rate} 生命门槛、{turns} 持续回合、{tier} 阶名。颜色键是 XQuality.ICI_COLORS 的编号。",
  "color_source": "XQuality.ICI_COLORS",
  "tier_names": [
