@@ -128,6 +128,8 @@ static func table(name: String) -> Variant:
 ## 取一条记录；不存在或为空时返回 {}。
 static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
+	if name == "Skills" and id >= t.size() and XTianqiSkills.has_new(id):
+		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	if name == "Skills" and XTianqiSkills.has(id):

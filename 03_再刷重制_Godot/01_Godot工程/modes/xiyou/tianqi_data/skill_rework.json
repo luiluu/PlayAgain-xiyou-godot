@@ -549,7 +549,13 @@
   "4920": {"actor": 30, "name": "霸道女帝", "kind": "被动", "desc": ["效果:普通攻击变为花御天下（半伤）"], "note_remove": ["SkillPass\\d+", "passiveHarmRi", "StartWTPushState\\d+"]},
   "4922": {"actor": 30, "name": "无悔霸气", "kind": "爆发全体", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "variance": 20, "mp_pct": 10, "cooldown": 3, "header": {"冷却时间": "3回合"}, "desc": ["伤害:每个敌人 物理攻击×3.6", "消耗:最大魔法10%"]},
   "824": {"actor": 30, "name": "顾盼生姿", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 1.2}, "tp": 15, "effects_remove": [[44, 110]], "seq": [{"op": "drop_if", "match": "_skills.includes(599)"}, {"op": "drop_if", "match": "_skills.includes(822)"}], "follow": [{"cast": 823, "need_skill": 4903, "rate": 0.3}], "desc": ["效果:三段伤害；之后30%追加国色天香（每回合最多1次）", "伤害:每段 物理攻击×1.2"]},
-  "823": {"actor": 30, "name": "国色天香", "kind": "追加", "damage": {"stats": {"atk": 1}, "coef": 1.2}, "seq": [{"op": "drop_if", "match": "_skills.includes(599)"}, {"op": "drop_if", "match": "_skills.includes(822)"}], "desc": ["效果:五段伤害", "伤害:每段 物理攻击×1.2"]}
+  "823": {"actor": 30, "name": "国色天香", "kind": "追加", "damage": {"stats": {"atk": 1}, "coef": 1.2}, "seq": [{"op": "drop_if", "match": "_skills.includes(599)"}, {"op": "drop_if", "match": "_skills.includes(822)"}], "desc": ["效果:五段伤害", "伤害:每段 物理攻击×1.2"]},
+  "10701": {"actor": 8, "name": "因果审判", "kind": "爆发", "damage": {"stats": {"mat": 1}, "coef": 3.0}, "mp_pct": 10, "cooldown": 3, "note_remove": ["ChangeTo\\[\\d+\\]"], "seq": [{"op": "drop_if", "match": ""}], "header": {"冷却时间": "3回合"}, "desc": ["效果:两段伤害（30级学会）", "伤害:每段 魔法攻击×3.0", "消耗:最大魔法10%"]},
+  "10702": {"actor": 9, "name": "圣盾冲锋", "kind": "爆发", "damage": {"stats": {"atk": 1.5, "def": 0.8, "mdf": 0.8}, "coef": 2.0}, "tp": 0, "cooldown": 3, "note_remove": ["ChangeTo\\[\\d+\\]"], "seq": [{"op": "drop_if", "match": ""}], "header": {"冷却时间": "3回合"}, "desc": ["效果:单体伤害（30级学会）", "伤害:物理攻击×3.0＋双防各×1.6"]},
+  "10703": {"actor": 10, "name": "月下背刺", "kind": "爆发", "damage": {"stats": {"atk": 1.8, "agi": 1.8}, "coef": 1.6667}, "tp": 0, "cooldown": 3, "note_remove": ["ChangeTo\\[\\d+\\]"], "seq": [{"op": "drop_if", "match": ""}], "header": {"冷却时间": "3回合"}, "desc": ["效果:单体伤害（30级学会）", "伤害:物理攻击×3.0＋敏捷×3.0"]},
+  "10705": {"actor": 11, "name": "破军一击", "kind": "爆发", "damage": {"stats": {"atk": 1}, "coef": 6.0}, "tp": 0, "cooldown": 3, "note_remove": ["ChangeTo\\[\\d+\\]"], "seq": [{"op": "drop_if", "match": ""}], "header": {"冷却时间": "3回合"}, "desc": ["效果:单体伤害（30级学会）", "伤害:物理攻击×6.0"]},
+  "10706": {"actor": 16, "name": "圣疗术", "kind": "单体治疗", "heal": {"mhp_pct": 0.3}, "scope": 7, "mp_pct": 10, "note_remove": ["ChangeTo\\[\\d+\\]"], "desc": ["效果:治疗一名队友（10级学会）", "治疗:生命上限30%", "消耗:最大魔法10%"]},
+  "10707": {"actor": 21, "name": "狂风术", "kind": "常规全体", "damage": {"stats": {"mat": 1}, "coef": 0.5, "conds": [{"if": "var_bonus", "var": 525, "per": 0.01, "cap": 0.2, "cap_with": {"e3633": 0.3}}]}, "scope": 2, "mp_pct": 5, "note_remove": ["ChangeTo\\[\\d+\\]"], "desc": ["效果:全体三段伤害（20级学会）", "伤害:每个敌人每段 魔法攻击×0.5；风法天下第一每层+1%，最多+20%", "消耗:最大魔法5%"]}
  },
  "states": {
   "12": {"name": "碎甲I", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 3, "value": 0.9}], "turns": 3, "state_note": "物理防御-10%"},
@@ -649,5 +655,7 @@
   "weapon:1694": {"name": "圣*九锡拳套", "traits_set": [{"code": 34, "dataId": 0, "value": 1}], "desc": ["特效:裟毁(攻击次数+1)", "特效:渡！(开局进入佛陀真身，持续3回合)"]},
   "armor:3667": {"name": "冠合", "note_remove": ["SkillPass\\d+"], "traits_set": [{"code": 21, "dataId": 1, "value": 1.2}], "desc": ["特效：金蝉子魔法上限+20%"]},
   "armor:3670": {"name": "相唯", "note_remove": ["SkillPass\\d+"], "note_add": "<AgainUseAll: 5%>", "desc": ["特效：女帝再释放几率+5%"]}
- }
+ },
+ "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}},
+ "learn": {"8": [[30, 10701]], "9": [[30, 10702]], "10": [[30, 10703]], "11": [[30, 10705]], "16": [[10, 10706]], "21": [[20, 10707]], "22": [[30, 3768]]}
 }

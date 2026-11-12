@@ -31,7 +31,7 @@ func setup(id: int) -> XActor:
 	_lv = int(d.initialLevel)
 	nickname = str(d.get("nickname", ""))
 	exp_total = exp_for_level(_lv)
-	for l in class_data().get("learnings", []):
+	for l in learnings():
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
 	init_equips(d.get("equips", []))
@@ -211,6 +211,11 @@ func init_equips(ids: Array) -> void:
 			refresh_passive()
 	release_unequippable()
 	refresh_passive()
+
+## 职业技能表；天启篇技能重构的补招按角色加在后面（XTianqiSkills.learnings）
+func learnings() -> Array:
+	return XTianqiSkills.learnings(self, class_data().get("learnings", []))
+
 
 static func make_equip(kind: String, base_id: int) -> Dictionary:
 	return XGear.template(kind,base_id)
@@ -406,7 +411,7 @@ func _level_up() -> void:
 	# O-177 回退支：照原版，战斗中 krz 能力值缓存还是升级前的上限，回满只回到旧上限
 	var stale := [] if FIX_BATTLE_LEVELUP_MAX or not XBinding.in_battle() else [mhp, mmp]
 	_lv += 1
-	for l in class_data().get("learnings", []):
+	for l in learnings():
 		if int(l.level) == _lv:
 			learn_skill(int(l.skillId))
 	_level_up_recover(stale)
@@ -452,7 +457,7 @@ func change_level(lv: int) -> void:
 	var before := _lv
 	_lv = clampi(lv, 1, int(data().get("maxLevel", 99)))
 	exp_total = exp_for_level(_lv)
-	for l in class_data().get("learnings", []):
+	for l in learnings():
 		if int(l.level) <= _lv:
 			learn_skill(int(l.skillId))
 	XActorModules.level_changed(self, before)  # 直接改等级：按升／降调专属角色模块的 levelUp／levelDown 包装
