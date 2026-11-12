@@ -58,6 +58,7 @@ const BODY_SHADER := """
 shader_type canvas_item;
 uniform float hue = 0.0;
 uniform vec4 blend = vec4(0.0);
+uniform vec4 rift = vec4(0.0);
 varying vec4 tint;
 void vertex() { tint = COLOR; }
 void fragment() {
@@ -66,6 +67,7 @@ void fragment() {
 	vec3 k = vec3(0.57735);
 	float ca = cos(a);
 	c.rgb = c.rgb * ca + cross(k, c.rgb) * sin(a) + k * dot(k, c.rgb) * (1.0 - ca);
+	c.rgb = mix(c.rgb, rift.rgb, rift.a);
 	c.rgb = mix(c.rgb, blend.rgb, blend.a);
 	COLOR = c * tint;
 }
@@ -305,6 +307,8 @@ func motion_tick() -> void:
 
 
 func _process(delta: float) -> void:
+	if battler is XEnemy:
+		_rift_tint(delta)
 	if battler is XActor:
 		var k := str(view.get("look", _look_key)) if not view.is_empty() else XAppearance.battler_key(battler)
 		if k != _look_key:
@@ -528,6 +532,16 @@ static func body_shader() -> Shader:
 		_body_shader = Shader.new()
 		_body_shader.code = BODY_SHADER
 	return _body_shader
+
+
+## 漩涡阶段异化（XRiftAlien.tint）：幽紫偏色，二阶守层者一明一暗、稀有以上进场一闪、异化怪按级常亮；没有时不建材质
+var _rift_t := 0.0
+func _rift_tint(delta: float) -> void:
+	_rift_t += delta
+	var c := XRiftAlien.tint(battler, _rift_t)
+	if c.a <= 0.0 and not sprite.material is ShaderMaterial:
+		return
+	_body_material().set_shader_parameter("rift", c)
 
 
 ## 身体的 BODY_SHADER 材质（用到时才建）。场景外观里没有自己材质的子节点跟着用；

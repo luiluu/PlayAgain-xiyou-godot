@@ -147,10 +147,11 @@ static func relabel(i: Dictionary) -> void:
 	var m := mark(i)
 	if m.is_empty():
 		return
+	var lv := XRiftAlien.gear_prefix(i)  # 漩涡异化怪掉的：「级·词条名·原名」
 	if str(i.name) != str(m.lastName):
 		var names := PackedStringArray(config().affixes.map(func(f): return str(f.name)))
-		m.plainName = RegEx.create_from_string("^(" + "|".join(names) + ")·").sub(str(i.name), "")
-	i.name = str(affix(str(m.affix)).name) + "·" + str(m.plainName)
+		m.plainName = RegEx.create_from_string("^(" + "|".join(names) + ")·").sub(str(i.name).trim_prefix(lv) if lv != "" else str(i.name), "")
+	i.name = lv + str(affix(str(m.affix)).name) + "·" + str(m.plainName)
 	m.lastName = i.name
 
 
@@ -239,6 +240,8 @@ static func dismantle(s: XState, i: Dictionary) -> Dictionary:
 	if not can_operate(s, i):
 		return {"error": OPERATE_ERROR}
 	var n := 5 if str(mark(i).origin) == "boss" else 1
+	if XRiftAlien.gear_energy(i) >= 0:
+		n = XRiftAlien.gear_energy(i)  # 漩涡异化怪掉的：按级 1／2／3
 	if s.item_count(energy_id()) + n > MAX_ITEMS:
 		return {"error": "异化能量已达持有上限"}
 	s.lose_gear(i)  # $gameParty.loseItem(i, 1)

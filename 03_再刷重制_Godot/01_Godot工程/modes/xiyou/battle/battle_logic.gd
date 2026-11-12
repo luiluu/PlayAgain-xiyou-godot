@@ -189,6 +189,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XRiftAlien.setup(self, s)  # 漩涡阶段怪物异化（西游，天启篇存档不动）：二阶只有画面，三阶起稀有、首领、守层者、深渊怪按阶段表异化（自己的随机流）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -237,6 +238,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	# 本版改过的 BattleManager.startBattle：每场开战预约公共事件 1320「战斗开始时调整变量」，开战第一次事件检查先跑它
 	XBattleCommonEvent.reserve(self, XBattleCommonEvent.START_EVENT)
 	XNanoha.domain_queue(self)  # 奈叶魔法领域做活（O-183）：领域预约的 2478 排在 1320 之后
+	turn_start_logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：开场报哪只异化、丧钟倒数
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -1078,6 +1080,7 @@ func start_turn() -> void:
 	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
 	XGuyu.start_turn(turn)  # 谷雨 startTurn 包装：跑完原 startTurn 设回 turnCount
 	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
+	turn_start_logs.append_array(XRiftAlien.start_turn(self))  # 漩涡阶段异化：报丧钟
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1191,6 +1194,7 @@ func act(u: XBattler, skill, target) -> Array:
 		XMira.liberate(self, u, skill)  # 米拉 endAction 包装（原 endAction 之后）：解放·黑龙
 		XNanoha.finish(self, u)  # 奈叶 endAction 包装（原 endAction 之后，米拉、渡鸦、镜流、甚尔在里层）：队友击杀给奈叶永久生命／魔法
 		logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装（原 endAction 之后）afterAction：花期里队友用技能后绽放
+	logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：毒腺中毒的日志
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1231,6 +1235,7 @@ func end_turn() -> Array:
 	logs.append_array(XXuanBattle.take_logs())
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
+	logs.append_array(XRiftAlien.end_turn(self))  # 漩涡阶段异化：毒腺中毒扣血、丧钟倒数
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -2691,6 +2696,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 
 
 func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
+	value = XRiftAlien.hp_damage(self, u, t, value)  # 漩涡阶段异化：化形战狂受伤叠攻、毒腺命中附加中毒
 	value = XGuyu.hp_damage(t, value)  # 护盾账本 executeHpDamage 包装（最外层）：账本先吸收；谷雨记本回合我方受伤（受伤压力）
 	# 异化蚀术 executeHpDamage 包装（Adv:124，最外层）：选定技能及其行动根里的正伤害只扣护盾，生命不变
 	if XAlienBattle.erosion_shield(self, u, t, value, item):
@@ -3081,6 +3087,9 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 			var other := floorf(b.mhp * hrg * b.rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
+	var rift := XRiftAlien.regen(self, b, dh, dm)  # 漩涡阶段异化：荒年者降再生（化形我方再生失效）
+	dh = rift[0]
+	dm = rift[1]
 	var alien_hp := b.hp
 	if dh < 0.0 and XBinding.blocks_hp_loss(b):
 		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
@@ -3281,6 +3290,7 @@ func grant(r: Dictionary) -> Array:
 	if not drop_lock:
 		gain_drops(r.drops)
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
+	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
@@ -3312,6 +3322,7 @@ func end_battle(result := -1) -> void:
 		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members(), {"random": _rule(), "variables": vars()})
 	_clear_event_cursor()
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
+	XRiftAlien.end(self)  # 漩涡阶段异化：清本场异化与画面标记
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
