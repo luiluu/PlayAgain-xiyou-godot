@@ -18,7 +18,7 @@ extends RefCounted
 ## - 异化图鉴：赢了倒下的异化怪按「借自的线:种类:级」点亮天启篇异化图鉴（XConfig.tianqi_alien_mark，跨存档，不给数值和物品）。
 ## 外观的纹路贴图、附加件、化形替换件和变形演出还没有美术，先用 tint() 给 XBattlerSprite 的幽紫偏色顶着。
 ##
-## 开关（O-待定）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
+## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
 
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"

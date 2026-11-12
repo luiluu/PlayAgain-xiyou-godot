@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.506",
-  "sequence": 506,
-  "next": "dev.507",
-  "nextSequence": 507,
+  "current": "dev.507",
+  "sequence": 507,
+  "next": "dev.508",
+  "nextSequence": 508,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "boot-splash",
+  "currentChange": "rift-alien",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
