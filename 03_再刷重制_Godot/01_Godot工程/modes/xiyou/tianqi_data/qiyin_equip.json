@@ -1,0 +1,293 @@
+{
+ "version": 1,
+ "draft": true,
+ "source": "天启篇_七印祭坛_里副本套装毕业武器方案 v0.4 第 4.1、5.1、6.3、6.4 节；底子数值是占位（cc 起草，进数值阶段再定）",
+ "_note": "七印装备变成能穿的装备（XTianqiQiyinEquip）：借 base_id 那件的图标，属性、特性、原版词缀、备注清空，名字、说明、底子换成这里的。params 照 RPG Maker 八项 [最大生命, 最大魔法, 物攻, 物防, 魔攻, 魔防, 敏捷, 幸运]，是神话 80 级的同级参照，再乘 qiyin_gear.json 的 base_mult（武器 1.1）和真印 base_mult（套装件 1.1）。base_id、wtype_id 是原版编号，不是设计数。",
+ "nice_number_exempt": [
+  "version",
+  "base_id",
+  "quality_legacy",
+  "atype"
+ ],
+ "quality_legacy": 14,
+ "armor": {
+  "atype": 1,
+  "any_class": true,
+  "parts": {
+   "head": {
+    "base_id": 4533,
+    "params": [
+     1200,
+     0,
+     0,
+     90,
+     0,
+     90,
+     0,
+     0
+    ]
+   },
+   "body": {
+    "base_id": 4384,
+    "params": [
+     2000,
+     0,
+     0,
+     150,
+     0,
+     150,
+     0,
+     0
+    ]
+   },
+   "hands": {
+    "base_id": 4102,
+    "params": [
+     800,
+     0,
+     60,
+     60,
+     60,
+     60,
+     0,
+     0
+    ]
+   },
+   "waist": {
+    "base_id": 4531,
+    "params": [
+     1000,
+     0,
+     0,
+     80,
+     0,
+     80,
+     0,
+     0
+    ]
+   },
+   "legs": {
+    "base_id": 4534,
+    "params": [
+     1500,
+     0,
+     0,
+     120,
+     0,
+     120,
+     0,
+     0
+    ]
+   },
+   "feet": {
+    "base_id": 4532,
+    "params": [
+     800,
+     0,
+     0,
+     60,
+     0,
+     60,
+     30,
+     0
+    ]
+   }
+  }
+ },
+ "weapons": {
+  "bow": {
+   "base_id": 1908,
+   "params": [
+    0,
+    0,
+    300,
+    0,
+    0,
+    0,
+    20,
+    0
+   ]
+  },
+  "hidden": {
+   "base_id": 1904,
+   "params": [
+    0,
+    0,
+    280,
+    0,
+    0,
+    0,
+    30,
+    0
+   ]
+  },
+  "sword": {
+   "base_id": 1903,
+   "params": [
+    0,
+    0,
+    300,
+    20,
+    0,
+    20,
+    0,
+    0
+   ]
+  },
+  "axe": {
+   "base_id": 1905,
+   "params": [
+    0,
+    0,
+    350,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "gun": {
+   "base_id": 1107,
+   "params": [
+    0,
+    0,
+    300,
+    0,
+    0,
+    0,
+    0,
+    20
+   ]
+  },
+  "fist": {
+   "base_id": 2004,
+   "params": [
+    500,
+    0,
+    280,
+    20,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "katana": {
+   "base_id": 1892,
+   "params": [
+    0,
+    0,
+    320,
+    0,
+    0,
+    0,
+    10,
+    0
+   ]
+  },
+  "dagger": {
+   "base_id": 1900,
+   "params": [
+    0,
+    0,
+    260,
+    0,
+    0,
+    0,
+    50,
+    0
+   ]
+  },
+  "blunt": {
+   "base_id": 2003,
+   "params": [
+    800,
+    0,
+    280,
+    30,
+    0,
+    30,
+    0,
+    0
+   ]
+  },
+  "spear": {
+   "base_id": 1889,
+   "params": [
+    0,
+    0,
+    310,
+    20,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "staff": {
+   "base_id": 1907,
+   "params": [
+    0,
+    300,
+    0,
+    0,
+    300,
+    20,
+    0,
+    0
+   ]
+  },
+  "book": {
+   "base_id": 1411,
+   "params": [
+    0,
+    300,
+    0,
+    0,
+    280,
+    30,
+    0,
+    0
+   ]
+  }
+ },
+ "artifact": {
+  "base_id": 4537
+ },
+ "names": {
+  "kind_set": "七印套装",
+  "kind_weapon": "七印毕业武器",
+  "kind_artifact": "七印神器",
+  "true_seal": "【真印】",
+  "set_bonus": "%d 件：%s",
+  "school_mark": "流派印记：%s",
+  "true_extra": "真印追加：%s",
+  "unique": "独有：%s",
+  "engraved": "不立文字刻下：%s",
+  "cost": "代价：%s",
+  "forge_head": "熔炼、分解、兑换。印屑：%d",
+  "forge_melt": "熔（同印同部位两件，副件一条词条换到主件；%d 个印屑）",
+  "forge_dismantle": "分解（换印屑）",
+  "forge_exchange": "印屑兑换（%d 个一件套装件，%d 个一把毕业武器）",
+  "melt_none": "没有能熔的：要同印同部位的两件（武器要同类，真印只和真印熔），副件在背包里。",
+  "melt_main": "熔到哪一件上（主件）？",
+  "melt_sub": "拿哪一件当副件？（熔完副件就没了）",
+  "melt_slot": "换掉主件的哪一条？",
+  "melt_pick": "从副件里挑哪一条换过去？",
+  "melt_dup": "副件的词条主件别处都有了，同名只生效一条，换过来没用。",
+  "melt_done": "熔好了：%s 换上了「%s」。",
+  "dismantle_none": "背包里没有能分解的七印装备（穿着的先卸下）。",
+  "dismantle_head": "分解哪一件？",
+  "dismantle_item": "%s（%d 个印屑）",
+  "dismantle_confirm": "分解「%s」？分了就没了。",
+  "dismantle_done": "得到印屑 %d 个。",
+  "exchange_head": "换什么？（印屑 %d）",
+  "exchange_set": "一件随机部位的套装件（%d 个）",
+  "exchange_weapon": "一把毕业武器，流派自选、类型随机（%d 个）",
+  "exchange_seal": "哪一印？",
+  "exchange_done": "换到了：%s。封着的，回祭坛揭开。",
+  "fail_no_shards": "印屑不够。",
+  "fail_other": "没成。"
+ }
+}
