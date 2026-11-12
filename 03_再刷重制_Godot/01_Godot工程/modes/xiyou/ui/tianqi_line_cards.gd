@@ -204,7 +204,7 @@ func _handle(event: InputEvent) -> void:
 		_finish(-1)
 	else:
 		return
-	get_viewport().set_input_as_handled()
+	XKeyMap.handled(self)
 
 
 ## 一张卡：底板、本线颜色的边，选中时边亮起、底下透出本线的纹路
