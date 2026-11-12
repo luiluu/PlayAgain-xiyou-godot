@@ -62,7 +62,7 @@ static func field_weak_count(s: XState) -> int:
 	var n := 0
 	for i in mini(XTianqi.FIGHTERS, s.battle_slots.size()):
 		var id := int(s.battle_slots[i])
-		if id > 0 and s.party.has(id) and XTier.is_weak(id):
+		if id > 0 and s.party.has(id) and XTianqiSkills.is_weak(id, true):  # 弱者协力按名单（成长型角色按名单档算）
 			n += 1
 	return n
 
@@ -83,7 +83,7 @@ static func dealt_parts(a, s = null) -> Dictionary:
 	var r := row(s)
 	if r.is_empty() or not _is_party_actor(a, s):
 		return {"mult": 1.0}
-	var tier := XTianqiBalance.tier_damage_mult(XTier.tier_of(a))
+	var tier := XTianqiBalance.tier_damage_mult(XTianqiSkills.battle_tier(a, s))
 	var party := float(r.party_damage)
 	var assist := 1.0 + float(XTianqiBalance.assist_bonus(field_weak_count(s)).damage_dealt)
 	var aura := 1.0 + (XTianqiBalance.assist_slot_aura() if has_helper(s) else 0.0)
@@ -96,7 +96,7 @@ static func taken_parts(b, s = null) -> Dictionary:
 		s = XState.current
 	if row(s).is_empty() or not _is_party_actor(b, s):
 		return {"mult": 1.0}
-	var tier := XTianqiBalance.tier_taken_mult(XTier.tier_of(b))
+	var tier := XTianqiBalance.tier_taken_mult(XTianqiSkills.battle_tier(b, s))
 	var assist := 1.0 + float(XTianqiBalance.assist_bonus(field_weak_count(s)).damage_taken)
 	return {"mult": maxf(0.0, tier * assist), "tier": tier, "assist": assist}
 

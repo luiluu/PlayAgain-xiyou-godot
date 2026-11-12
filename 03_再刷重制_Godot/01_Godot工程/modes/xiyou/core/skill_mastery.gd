@@ -119,6 +119,12 @@ static func eval(formula: String, x: float, level: float, cat := 0.0, fallback :
 
 
 static func max_level(skill_id: int) -> int:
+	if XTianqiSkills.mastery_on():
+		return mini(_max_level(skill_id), XTianqiSkills.mastery_cap())  # 天启篇：熟练度上限 10 级
+	return _max_level(skill_id)
+
+
+static func _max_level(skill_id: int) -> int:
 	if skill_id >= RAVEN_FIRST and skill_id <= RAVEN_LAST:
 		return raven_cap() if skill_id <= RAVEN_CAPPED_LAST else 0  # refreshMasteryLimit 只刷 10122～10126；其余没有 CodexRavenDamage，是 0
 	return int(data(skill_id).max)
@@ -260,6 +266,8 @@ static func damage(item: Dictionary, a, initial: float) -> float:
 	var lv: int = a.skillMasteryLevelOf(id) if a.has_method("skillMasteryLevelOf") else a.skillMasteryLevel(id)  # 原版传 f.item（技能对象）
 	if int(XYunshang.derived_frame.get("mastery_skill", 0)) == id:
 		lv = int(XYunshang.derived_frame.mastery)  # 云裳派生伤害（nativeDamage 里临时换掉 subject.skillMasteryLevel）
+	if XTianqiSkills.mastery_on():
+		return XTianqiSkills.mastery_damage(initial, lv)  # 天启篇：每级 +3%、上限 10 级
 	var v := eval(f, initial, float(lv), cat)
 	return initial if is_nan(v) or is_inf(v) else v
 
