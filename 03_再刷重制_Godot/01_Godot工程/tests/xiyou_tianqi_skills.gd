@@ -250,6 +250,12 @@ func _table() -> void:
 			if RegEx.create_from_string("<\\s*(?:%s)\\s*(?::[^>]*)?>" % str(tag)).search(str(r.note).replace(str(sp.get("note_add", "")), "")) != null:
 				bad.append([id, "note_remove", tag])
 	_check("table_rows", bad.is_empty(), bad)
+	var effects := func(id, base := false): return ((XDB.table("Skills")[id] if base else XDB.rec("Skills", id)).yepSeq.target as Array).filter(func(c): return str(c[0]) == "action effect").size()
+	_check("seq_add", effects.call(379) == 6 and effects.call(379, true) == 5, [effects.call(379), effects.call(379, true)])
+	_check("seq_drop_if", effects.call(506) == 3 and effects.call(506, true) == 5, [effects.call(506), effects.call(506, true)])
+	_check("seq_if_to_effects", effects.call(521) == 6, effects.call(521))
+	_check("seq_clear_args", (XDB.rec("Skills", 821).yepSeq.target as Array).all(func(c): return str(c[0]) != "action effect" or (c[1] as Array).is_empty()) and effects.call(821) == 6)
+	_check("change_to_removed", not str(XDB.rec("Skills", 223).note).contains("ChangeTo["))
 	_check("table_rows_count", XTianqiSkills.data().skills.size() >= 100, XTianqiSkills.data().skills.size())
 	lg.end_battle(0)
 
@@ -301,7 +307,7 @@ func _follow() -> void:
 
 ## 改过卡的角色整场跑几回合不报错
 func _smoke() -> void:
-	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25]]:
+	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30]]:
 		_smoke_group(group)
 
 

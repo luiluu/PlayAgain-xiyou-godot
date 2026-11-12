@@ -145,6 +145,10 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 		if sp.has("critical"):
 			dmg.critical = bool(sp.critical)
 		r.damage = dmg
+	if sp.has("seq") and r.get("yepSeq") is Dictionary:
+		for ph in ["target", "whole"]:
+			if r.yepSeq.get(ph) is Array:
+				r.yepSeq[ph] = _seq_edit(r.yepSeq[ph], sp.seq)
 	if sp.has("hit_type"):
 		r.hitType = int(sp.hit_type)
 	if sp.has("repeats"):
@@ -162,6 +166,48 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 					if e.has(k):
 						row[k] = e[k]
 	return r
+
+
+## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、
+## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标
+static func _seq_edit(cmds: Array, ops: Array) -> Array:
+	var out: Array = cmds.duplicate(true)
+	for op in ops:
+		match str(op.get("op", "")):
+			"drop_if", "if_to_effects":
+				var res := []
+				var i := 0
+				while i < out.size():
+					var name := str(out[i][0])
+					if name.begins_with("if ") and name.contains(str(op.get("match", ""))):
+						var depth := 1
+						i += 1
+						while i < out.size() and depth > 0:
+							var n2 := str(out[i][0])
+							if n2.begins_with("if "):
+								depth += 1
+							elif n2 == "end":
+								depth -= 1
+							i += 1
+						if str(op.op) == "if_to_effects":
+							for k in int(op.get("n", 1)):
+								res.append(["action effect", []])
+						continue
+					res.append(out[i])
+					i += 1
+				out = res
+			"add_effects":
+				var last := -1
+				for i in out.size():
+					if str(out[i][0]) == "action effect":
+						last = i
+				for k in int(op.get("n", 1)):
+					out.insert(last + 1, ["action effect", []])
+			"clear_effect_args":
+				for c in out:
+					if str(c[0]) == "action effect":
+						c[1] = []
+	return out
 
 
 ## 备注：note_remove 删标签（名字是正则）、note_sub [[正则, 换成]] 逐条替换（动作序列里的条件段数之类）
@@ -325,6 +371,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = float(a.agi) < float(b.agi)
 		"target_state":
 			ok = b.is_state_affected(int(c.state))
+		"self_state_any":
+			ok = (c.states as Array).any(func(id): return a.is_state_affected(int(id)))
 		"target_state_any":
 			ok = (c.states as Array).any(func(id): return b.is_state_affected(int(id)))
 		"target_hp_above":
@@ -446,6 +494,16 @@ static func after_apply(logic, u, skill, t) -> void:
 	_kill_grow(logic, u, skill, t)
 
 
+## 放了这招给变量加数（var_add {var, add, need_skill}：曼德斯给白起加杀气）
+static func _var_add(u, skill: Dictionary) -> void:
+	var va: Dictionary = spec(int(skill.get("id", 0))).get("var_add", {})
+	if va.is_empty() or not (u is XActor) or (va.has("need_skill") and not u.skill_ids.has(int(va.need_skill))):
+		return
+	var s := XState.current
+	if s != null:
+		s.set_variable(int(va["var"]), float(s.variable(int(va["var"]))) + float(va.add))
+
+
 ## 上场（出战栏前 4 格）的某名角色学了某技能
 static func _ally_has(actor_id: int, skill_id: int) -> bool:
 	var s := XState.current
@@ -544,6 +602,8 @@ static func end_action(logic, u, skill) -> Array:
 	var st := _fstore(logic)
 	var f: Dictionary = st.act
 	st.act = {}
+	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
+		_var_add(u, f.skill)
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not on():
 		return logs
 	if int(st.used.get(u, -1)) == int(logic.turn):
