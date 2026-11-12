@@ -175,4 +175,4 @@ func _nice() -> void:
 	var bad := XTianqiQiyinGear.nice_number_violations()
 	_check("设计数值不含 4", bad.is_empty(), bad)
 	_check("豁免键只放编号、类型号、层数、件数", XTianqiQiyinGear.data().get("nice_number_exempt", []).all(
-		func(k): return k in ["version", "order", "etype", "affix_tier", "count", "first_kill_floors"]))
+		func(k): return k in ["version", "order", "etype", "affix_tier", "count", "first_kill_floors", "wtype_id"]))
