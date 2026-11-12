@@ -130,6 +130,8 @@ static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
+	if name == "Skills" and XTianqiSkills.has(id):
+		return XTianqiSkills.rec(id, t[id])  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	return t[id]
 
 

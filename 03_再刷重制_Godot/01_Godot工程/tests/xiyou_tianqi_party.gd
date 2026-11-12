@@ -33,7 +33,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _ids(tier: String) -> Array:
-	return XTier.ids(tier).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
+	return XTianqiSkills.ids(tier, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id) and not [95, 173].has(id))  # 三笠、饿狼的战斗档位跟成长走，夹具不用
 
 
 func _state(key: String, lineup: Array) -> XState:
@@ -85,7 +85,7 @@ func _slots() -> void:
 		and XItemMarks.can_deploy(s, sup[2], 0) and XItemMarks.can_deploy(s, sup[2]))
 	s.battle_slots = [sup[0], sup[1], w[2], w[3], w[4]]
 	XItemMarks.enforce_party(s)
-	_check("fighter_cap_enforced", s.battle_slots.slice(0, 4).filter(func(id): return XTier.is_super(int(id))).size() == 1 and s.battle_slots[0] == sup[0], s.battle_slots)
+	_check("fighter_cap_enforced", s.battle_slots.slice(0, 4).filter(func(id): return XTianqiSkills.is_super(int(id), true)).size() == 1 and s.battle_slots[0] == sup[0], s.battle_slots)
 	# 原版档：5 人上场、没有助力位
 	var old := XState.new_game_blank()
 	old.party.clear()
@@ -128,7 +128,7 @@ func _draws() -> void:
 	_check("not_yet", not XTianqi.draw_ready(s) and XTianqi.draws_earned(s) == 0)
 	s.set_variable(20, 6)
 	var offer := XTianqi.draw_offer(s)
-	_check("first_offer", XTianqi.draw_ready(s) and offer.size() == 2 and offer.all(func(id): return XTier.is_weak(id) and not s.party.has(id)), offer)
+	_check("first_offer", XTianqi.draw_ready(s) and offer.size() == 2 and offer.all(func(id): return XTianqiSkills.is_weak(id, true) and not s.party.has(id)), offer)
 	_check("offer_kept", XTianqi.draw_offer(s) == offer and s.flags.tianqi.get("offer") == offer)
 	_check("take_outside_offer", not XTianqi.take_draw(s, w[10]) if not offer.has(w[10]) else true)
 	_check("take_draw", XTianqi.take_draw(s, offer[1]) and s.party.has(offer[1]) and XTianqi.draws_used(s) == 1 and not s.flags.tianqi.has("offer"))
@@ -140,7 +140,7 @@ func _draws() -> void:
 		var r := XTianqi.draw_rule(s, XTianqi.draws_used(s))
 		var o := XTianqi.draw_offer(s)
 		counts.append(o.size() if int(r.count) > 0 else 0)
-		var ok: bool = o.all(func(id): return r.tiers.has(XTier.tier_of(id)))
+		var ok: bool = o.all(func(id): return r.tiers.has(XTianqiSkills.tier_of(id, true)))
 		if not ok or not XTianqi.take_draw(s, o[o.size() - 1]):
 			break
 	_check("all_draws", XTianqi.draws_used(s) == 6 and s.party.size() == 11 and counts == [2, 3, 3, 3, 0], [counts, s.party.size()])
