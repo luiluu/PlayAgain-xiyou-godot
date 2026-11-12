@@ -689,7 +689,8 @@ static func _statements(js: String, interp) -> Array:
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):
-			await interp.host.open_pets()
+			if not XTianqiPetHide.active():  # 天启篇隐藏宠物：不开宠物页
+				await interp.host.open_pets()
 			continue
 		# 修炼（Star_ActorAttributePlusPoints，见 XTraining）：魔塔教师、二十六层小萝莉等先设列出的表项再打开
 		m = _re("^Star\\.ActorAttributePlusPoints\\.XiuLian\\s*=\\s*\\[([\\d,\\s]*)\\]$").search(st)

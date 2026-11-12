@@ -61,6 +61,8 @@ static func random(logic) -> XRandomStream:
 
 ## 开战（XBattleScene.setup 里 logic.setup 之后＝Scene_Battle.start；只建 logic 的规则测试不掷，名字不带「宝宝」）：敌群 1 强制可捕捉并记时间，再按 <Capture> 掷。rnd：本场的 pet 流（测试传入脚本流），缺省新派生
 static func roll_battle(logic, rnd: XRandomStream = null) -> void:
+	if XTianqiPetHide.active(logic.state):  # 天启篇隐藏宠物：不掷可捕捉，没有「宝宝」
+		return
 	if rnd != null:
 		logic.set_meta("pet_random", rnd)
 	if int(logic.troop_id) == 1 and not logic.enemies.is_empty():
@@ -186,7 +188,7 @@ static func _in_window(minute: int) -> bool:
 static func check(s: XState, rnd := Callable()) -> Array:
 	var t := now()
 	var d := XPets._data(s)
-	if not _in_window(t.minute):
+	if not _in_window(t.minute) or XTianqiPetHide.active(s):  # 天启篇隐藏宠物：神秘生物不刷新、已开的关掉
 		stop(s)
 		return []
 	if d.get("ref_day") == t.day and d.get("ref_hour") == t.hour and _in_window(int(d.get("ref_minute", -1))) \

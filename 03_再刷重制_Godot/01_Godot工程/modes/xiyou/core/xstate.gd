@@ -734,6 +734,8 @@ func gain_item(id: int, amount: int) -> void:
 	# installAlienationHide 包 Game_Party.gainItem：隐藏生效时异化能量、异化石得不到（O-283，见 XAlienHide）
 	if amount > 0 and XAlienHide.blocks_item(id):
 		return
+	if amount > 0 and XTianqiPetHide.blocks_item(id):  # 天启篇隐藏宠物：捕获道具、魔兽要诀、宠物口粮得不到
+		return
 	if amount > 0:
 		# installNativeRaceRuntime：得到旧版祝福进阶石时换成正规 ID（CodexRaces.legacyItems）
 		var races = XDB.table("CodexRaces")
