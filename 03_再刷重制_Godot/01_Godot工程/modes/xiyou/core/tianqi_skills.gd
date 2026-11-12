@@ -239,6 +239,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 						c[0] = str(op.get("to", ""))
 			"drop_area_effects":  # 删掉带参数（action effect: enemies 这类打全体）的段（莉娜炎帝：全体那段改成另放一招）
 				out = out.filter(func(c): return not (str(c[0]) == "action effect" and not (c[1] as Array).is_empty()))
+			"drop_cmd":  # 删掉某条命令（劲夫乱打开头的 Add State 942：印记要先挂上才引爆）
+				out = out.filter(func(c): return str(c[0]) != str(op.get("match", "")))
 			"add_effects":
 				var last := -1
 				for i in out.size():
@@ -580,6 +582,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = true
 		"agi_below_target":
 			ok = float(a.agi) < float(b.agi)
+		"agi_above_target":
+			ok = float(a.agi) > float(b.agi)
 		"target_state":
 			ok = b.is_state_affected(int(c.state))
 		"self_state_any":
@@ -832,6 +836,21 @@ static func _var_add(u, skill: Dictionary) -> void:
 		s.set_variable(int(va["var"]), float(s.variable(int(va["var"]))) + float(va.add))
 
 
+## 技能行 consume [状态…]：放完把打到的目标身上这些状态去掉（劲夫乱打引爆怒拳）；consume_keep_with {要有: 几率} 有几率不去
+static func _consume(logic, u, f: Dictionary) -> void:
+	var sp := spec(int(f.skill.get("id", 0)))
+	if not sp.has("consume"):
+		return
+	var keep := 0.0
+	for k in sp.get("consume_keep_with", {}):
+		if owns(u, k):
+			keep = maxf(keep, float(sp.consume_keep_with[k]))
+	for t in f.targets:
+		for id in sp.consume:
+			if t.is_state_affected(int(id)) and not (keep > 0.0 and logic._float("tianqi_skill_on_hit") < keep):
+				t.remove_state(int(id))
+
+
 ## 技能行 foe_states [{state, rate}]：对己方放的技能顺带给所有活着的敌人挂状态（签弟忏悔的流离）
 static func _foe_states(logic, u, skill: Dictionary) -> void:
 	if not (u is XActor) or not u.is_alive():
@@ -951,6 +970,7 @@ static func end_action(logic, u, skill) -> Array:
 		_foe_states(logic, u, f.skill)
 		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
+		_consume(logic, u, f)
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():

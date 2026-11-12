@@ -35,7 +35,8 @@
   "42": {"name": "布兰德瓦登", "conds": [{"if": "always", "skills": [1153], "mult": 0.8333, "_note": "凌空斩和波加尼共用（3.6），布兰德瓦登均衡按 3.0"}]},
   "44": {"name": "碧池", "on_hit": [{"skills": [1170, 1172], "need": "e3561", "extend": [117], "turns": 1, "_note": "绿棘：回春多持续1回合"}]},
   "45": {"name": "东方教主", "conds": [{"if": "always", "need": "e3575", "skills": [6161], "mult": 1.3333, "_note": "鸣勤：劫运神镖多一段（合计 1.5→2.0，按倍率折）"}]},
-  "46": {"name": "克莉丝汀", "on_hit": [{"skills": [2029, 2033, 2034, 5445], "need": "e3810", "extend": [189, 191, 192], "turns": 1, "_note": "觅荒：诅咒多持续1回合"}]}
+  "46": {"name": "克莉丝汀", "on_hit": [{"skills": [2029, 2033, 2034, 5445], "need": "e3810", "extend": [189, 191, 192], "turns": 1, "_note": "觅荒：诅咒多持续1回合"}]},
+  "50": {"name": "劲夫", "conds": [{"if": "allies", "ids": [28], "per": 0.2, "cap": 0.2, "need_skill": 5464, "skills": [1340, 1348], "_note": "双拳合璧：和桑克莱同队，乱打 +20%"}], "on_hit": [{"skills": [1337, 1339], "need": "e3812", "extend": [942], "turns": 1, "_note": "沧恒：怒拳多 1 回合"}]}
  },
  "skills": {
   "1240": {"name": "超越极限I", "note_remove": ["passiveHarmRi", "passivePBST\\d"], "note_add": "<passiveHarmRi:5><passivePBST0:5%>", "desc": ["效果:最终伤害+5%", "效果:生命值+5%"]},
@@ -877,7 +878,36 @@
   "1270": {"actor": 48, "name": "炎魂", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveELUP\\d+"], "desc": ["效果:炎魂（并进焱炎）"]},
   "1209": {"actor": 48, "name": "爆裂火焰", "kind": "被动", "note_remove": ["passiveCrHarmRi"], "desc": ["效果:暴击率+5%"]},
   "1213": {"actor": 48, "name": "热忱之火", "kind": "被动", "note_remove": ["passiveXPBST0"], "desc": ["效果:暴击率+5%", "效果:免疫:睡眠", "效果:免疫:沉默"]},
-  "1792": {"actor": 48, "name": "觉醒:莉娜", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进火灵体、焱炎）"]}
+  "1792": {"actor": 48, "name": "觉醒:莉娜", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进火灵体、焱炎）"]},
+  "1223": {"actor": 49, "name": "二段斩", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 1.8}, "desc": ["效果:攻击2个不同的敌人", "伤害:每个目标 物理攻击×1.8"]},
+  "1226": {"actor": 49, "name": "疾风连斩", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 1.5, "conds": [{"if": "agi_above_target", "mult": 0.8}]}, "desc": ["效果:速斩(敏捷高于目标时攻击3次，否则2次)", "伤害:两段 物理攻击×1.5；三段时每段×1.2（合计3.6）"]},
+  "1229": {"actor": 49, "name": "拔刀斩", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "hit_type": 0, "header": {"对象": "单个敌人"}, "desc": ["效果:必中", "伤害:物理攻击×3.6"]},
+  "1232": {"actor": 49, "name": "疾风杀意剑", "kind": "爆发", "damage": {"stats": {}, "max_of": ["atk", "agi"], "coef": 1.2}, "tp": 50, "seq": [{"op": "drop_if", "match": "user.agi>="}], "desc": ["效果:六段攻击；物攻和敏捷取高", "伤害:每段 物攻、敏捷取高×1.2"]},
+  "1230": {"actor": 49, "name": "连斩术", "kind": "被动", "note_remove": ["passivePBST\\d"], "desc": ["效果:释放独特技能后，会获得额外一次攻击次数"]},
+  "1228": {"actor": 49, "name": "疾风步伐", "kind": "被动", "note_remove": ["passiveAPLUS", "passivePBST6", "passiveXPBST\\d"], "note_add": "<passivePBST6:10%><passiveXPBST0:10%>", "desc": ["效果:命中率+10%", "效果:敏捷+10%"]},
+  "5462": {"actor": 49, "name": "剑道宗师", "kind": "被动", "note_remove": ["passiveCrHarmRi", "passiveELUP\\d+"], "desc": ["效果:开局敏捷提高（其疾如风）", "效果:学到太刀剑术技能书时另有加成"]},
+  "1224": {"actor": 49, "name": "狼人倭刀术", "kind": "被动", "note_remove": ["passiveXPBST2", "passiveELUP\\d+"], "note_add": "<passiveELUP01:10%><passiveXPBST2:5%>", "desc": ["效果:你只能使用太刀", "效果:物理伤害+10%", "效果:暴击率+5%"]},
+  "1227": {"actor": 49, "name": "野性激发", "kind": "被动", "note_remove": ["passiveELUP01"], "note_add": "<passiveELUP01:10%>", "desc": ["效果:物理伤害+10%"]},
+  "1225": {"actor": 49, "name": "狼人体术", "kind": "被动", "note_remove": ["passiveXPBST\\d"], "note_add": "<passiveXPBST2:5%>", "desc": ["效果:暴击率+5%"]},
+  "1923": {"actor": 49, "name": "疾风拔刀术", "kind": "被动", "note_remove": ["SkillPass\\d+", "passiveELUP01"], "desc": ["效果:疾风拔刀术（并进野性激发）"]},
+  "5461": {"actor": 49, "name": "疾风剑豪", "kind": "被动", "desc": ["效果:疾风丸的飞天连斩变为疾风杀意剑"]},
+  "1793": {"actor": 49, "name": "觉醒:疾风丸", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进倭刀术）"]},
+  "1337": {"actor": 50, "name": "无情腿法", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "effects_add": [{"code": 21, "dataId": 942, "value1": 1, "value2": 0}], "desc": ["效果:施加怒拳印记(2回合)", "伤害:物理攻击×3.6"]},
+  "1339": {"actor": 50, "name": "乌鸦坐飞机", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 1.8}, "tp_gain": 20, "effects_remove": [[44, 171]], "seq": [{"op": "if_to_effects", "match": "includes(1342)", "n": 1}], "desc": ["效果:两段；施加怒拳印记；回复20点能量", "伤害:每段 物理攻击×1.8"]},
+  "1340": {"actor": 50, "name": "怒拳·乱打", "kind": "爆发", "damage": {"stats": {"atk": 1}, "coef": 0.5556, "conds": [{"if": "target_state", "state": 942, "mult": 1.8}]}, "tp": 50, "effects_remove": [[44, 172]], "seq": [{"op": "drop_cmd", "match": "Add State 942"}, {"op": "if_to_effects", "match": "includes(1342)", "n": 2}, {"op": "drop_if", "match": "_states.includes(935)"}], "consume": [942], "consume_keep_with": {"e3812": 0.3}, "follow": [{"cast": 1348, "need_skill": 1345, "rate": 0.3, "scale": 0.5}], "desc": ["效果:九段；目标有怒拳时引爆印记，伤害提到9.0", "伤害:每段 物理攻击×0.56（引爆时×1.0）"]},
+  "1348": {"actor": 50, "name": "怒拳·乱打·再释放", "kind": "追加", "damage": {"stats": {"atk": 1}, "coef": 0.5556, "conds": [{"if": "target_state", "state": 942, "mult": 1.8}]}, "seq": [{"op": "drop_cmd", "match": "Add State 942"}, {"op": "if_to_effects", "match": "includes(1342)", "n": 2}, {"op": "drop_if", "match": "_states.includes(935)"}], "desc": ["效果:九段（半伤）", "伤害:每段 物理攻击×0.28"]},
+  "1345": {"actor": 50, "name": "神拳无敌", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:怒拳·乱打后30%再放一次（半伤）"]},
+  "1342": {"actor": 50, "name": "暴戾拳击", "kind": "被动", "desc": ["效果:怒拳·乱打、乌鸦坐飞机段数并进技能本身"]},
+  "1334": {"actor": 50, "name": "重拳出击", "kind": "被动", "note_remove": ["passiveCrHarmRi", "passiveELUP\\d+"], "note_add": "<passiveCrHarmRi:50>", "desc": ["效果:暴击伤害+50%"]},
+  "1335": {"actor": 50, "name": "拳拳到肉", "kind": "被动", "note_remove": ["passiveXPBST2", "passiveELUP\\d+"], "note_add": "<passiveXPBST2:20%>", "desc": ["效果:暴击率+20%"]},
+  "1336": {"actor": 50, "name": "裂骨拳术", "kind": "被动", "note_remove": ["passiveXPBST2"], "desc": ["效果:所有伤害有35%的几率打伤敌人，使目标所有属性-5%，直到回合结束"]},
+  "1341": {"actor": 50, "name": "怒不可遏", "kind": "被动", "note_remove": ["passiveELUP\\d+", "passiveXPBST9"], "note_add": "<passiveXPBST9:20>", "desc": ["效果:每回合回复20能量值"]},
+  "1343": {"actor": 50, "name": "暴戾拳意", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:乌鸦坐飞机及怒拳·乱打必定命中"]},
+  "1344": {"actor": 50, "name": "齑粉", "kind": "被动", "note_remove": ["passiveCrHarmRi"], "desc": ["效果:齑粉（并进重拳出击）"]},
+  "5463": {"actor": 50, "name": "怒拳", "kind": "被动", "note_remove": ["passiveWPNM05"], "note_add": "<SkETypeHarmRi5: 10%>", "desc": ["效果:使用拳套时伤害+10%", "效果:无情腿法、乌鸦坐飞机施加'怒拳'，怒拳·乱打引爆"]},
+  "2568": {"actor": 50, "name": "全场欢呼", "kind": "领袖", "note_remove": ["passiveCrHarmRi"], "note_add": "<passiveCrHarmRi:10>", "desc": ["效果:暴击伤害+10%"]},
+  "2567": {"actor": 50, "name": "领袖:全场欢呼", "kind": "领袖说明", "desc": ["效果:全队暴击伤害+10%"]},
+  "1794": {"actor": 50, "name": "觉醒:劲夫", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进重拳出击）"]}
  },
  "states": {
   "12": {"name": "碎甲I", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 3, "value": 0.9}], "turns": 3, "state_note": "物理防御-10%"},
@@ -971,7 +1001,8 @@
   "192": {"name": "湮灭", "traits": [{"code": 22, "dataId": 7, "value": -0.03}], "turns": 2, "state_note": "回合结束时最大生命值-3%"},
   "193": {"name": "不灭", "turns": 2},
   "120": {"name": "酒神", "turns": 3, "state_note": "暴击率+10%，伤害+10%，普通攻击变为剑去"},
-  "18": {"name": "灼伤II", "turns": 2}
+  "18": {"name": "灼伤II", "turns": 2},
+  "942": {"name": "怒拳", "turns": 2, "state_note": "被劲夫的怒拳·乱打引爆"}
  },
  "_gojo_note": "180 五条悟（XGojo，设计 00_项目管理/交付/五条悟_角色设计_v0.2.md）：超强者、输出型（伤害 ×1.2 已算进系数），主属性魔攻。茈的系数按对数取 gojo_pairs。",
  "gear": {
@@ -1057,7 +1088,9 @@
   "armor:4144": {"name": "裂宵", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1199: 10%><SkillPass1200: 10%><SkillPass1205: 10%><SkillPass1206: 10%>", "traits_remove": [[23, 0], [22, 2], [22, 0], [22, 7], [11, 1], [21, 0]], "desc": ["特效:获得技能\"搏命III\"", "特效:酒剑仙独有技能伤害+10%"]},
   "armor:4145": {"name": "震魂", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1199: 15%><SkillPass1200: 15%><SkillPass1205: 15%><SkillPass1206: 15%>", "traits_remove": [[23, 0], [22, 2], [22, 0], [22, 7], [11, 1], [21, 0]], "desc": ["特效:获得技能\"搏命IV\"", "特效:酒剑仙独有技能伤害+15%"]},
   "armor:4146": {"name": "破神", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1199: 20%><SkillPass1200: 20%><SkillPass1205: 20%><SkillPass1206: 20%>", "traits_remove": [[23, 0], [22, 2], [22, 0], [22, 7], [11, 1], [21, 0]], "desc": ["特效:获得技能\"搏命V\"", "特效:酒剑仙独有技能伤害+20%"]},
-  "armor:3572": {"name": "离火", "note_remove": ["SkillPass\\d+"], "desc": ["特效：炎帝放完回复20%魔法"]}
+  "armor:3572": {"name": "离火", "note_remove": ["SkillPass\\d+"], "desc": ["特效：炎帝放完回复20%魔法"]},
+  "armor:3811": {"name": "风起", "note_remove": ["SkillPass\\d+"], "note_add": "<SkillPass1232: 20%>", "desc": ["特效：疾风杀意剑伤害+20%"]},
+  "armor:3812": {"name": "沧恒", "note_remove": ["SkillPass\\d+"], "desc": ["特效：怒拳印记多持续1回合，乱打引爆后30%不消耗"]}
  },
  "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}},
  "learn": {"8": [[30, 10701]], "9": [[30, 10702]], "10": [[30, 10703]], "11": [[30, 10705]], "16": [[10, 10706]], "21": [[20, 10707]], "22": [[30, 3768]]},
