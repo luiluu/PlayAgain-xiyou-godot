@@ -964,7 +964,38 @@
   "2065": {"actor": 54, "name": "致死打击", "kind": "被动", "note_remove": ["passiveCrHarmRi", "passiveXPBST2"], "note_add": "<passiveXPBST2:10%>", "desc": ["效果:暴击率+10%"]},
   "2367": {"actor": 54, "name": "擐甲持戈", "kind": "领袖", "note_remove": ["passiveCrHarmRi", "passiveELUP\\d+"], "note_add": "<passiveELUP01:5%>", "desc": ["效果:物理伤害+5%"]},
   "2368": {"actor": 54, "name": "领袖:擐甲持戈", "kind": "领袖说明", "desc": ["效果:全队物理伤害+5%"]},
-  "2072": {"actor": 54, "name": "觉醒:迪昂", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进上古之人）"]}
+  "2072": {"actor": 54, "name": "觉醒:迪昂", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进上古之人）"]},
+  "2076": {"actor": 55, "name": "重型歼敌弹", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "mp_pct": 5, "desc": ["伤害:物理攻击×3.6", "消耗:最大魔法5%"]},
+  "2078": {"actor": 55, "name": "坏死光线", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 3.0}, "mp_pct": 5, "effects_add": [{"code": 21, "dataId": 10806, "value1": 1, "value2": 0}], "desc": ["效果:坏死(受到的治疗-30%，持续2回合)", "伤害:物理攻击×3.0", "消耗:最大魔法5%"]},
+  "2079": {"actor": 55, "name": "坏死风暴", "kind": "常规全体", "damage": {"stats": {"atk": 1}, "coef": 1.8}, "mp_pct": 5, "desc": ["伤害:每个敌人 物理攻击×1.8", "消耗:最大魔法5%"]},
+  "2082": {"actor": 55, "name": "毁灭能量弹", "kind": "爆发", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "hit_type": 0, "mp_pct": 10, "cooldown": 3, "effects_remove": [[44, 262]], "follow": [{"cast": 2086, "need_skill": 2081, "rate": 1.0}], "header": {"冷却时间": "3回合"}, "desc": ["效果:必中；学了毁灭装置后再放一次", "伤害:每发 物理攻击×3.6"]},
+  "2086": {"actor": 55, "name": "毁灭能量弹", "kind": "追加", "damage": {"stats": {"atk": 1}, "coef": 3.6}, "hit_type": 0, "mp": 0, "desc": ["伤害:物理攻击×3.6"]},
+  "2077": {"actor": 55, "name": "机械再生", "kind": "被动", "note_remove": ["passiveXPBST\\d"], "note_add": "<passiveXPBST7:5><passiveXPBST8:5>", "desc": ["效果:每回合回复5%的生命值，魔法值"]},
+  "5452": {"actor": 55, "name": "水果神兵", "kind": "被动", "note_remove": ["passiveWPNM\\d+", "passivePBST\\d", "SkETypeHarmRi\\d+"], "note_sub": [["(<SkillPass\\d+:\\s*)500%", "${1}30%"]], "desc": ["效果:水果武器的自带技能伤害+30%"]},
+  "5451": {"actor": 55, "name": "果宝机甲", "kind": "被动", "note_remove": ["passiveHarmRe\\d+", "StartPushState0246"], "desc": ["效果:现在你可以使用任何武器，穿戴任何防具"]},
+  "2074": {"actor": 55, "name": "起源机器人", "kind": "被动", "note_remove": ["passiveHarmRe\\d+", "passiveELUP\\d+"], "note_add": "<passiveSPBST6:-5%><passiveSPBST7:-5%>", "desc": ["效果:承受伤害-5%"]},
+  "2075": {"actor": 55, "name": "初号机", "kind": "被动", "note_remove": ["passiveHarmRi", "passiveELUP\\d+"], "desc": ["效果:初号机（并进破坏装置、毁灭装置）"]},
+  "2080": {"actor": 55, "name": "破坏装置", "kind": "被动", "note_remove": ["passiveELUP\\d+"], "note_add": "<passiveELUP01:10%>", "desc": ["效果:物理伤害+10%", "效果:技能消耗率降低15%"]},
+  "2081": {"actor": 55, "name": "毁灭装置", "kind": "被动", "note_remove": ["passiveELUP\\d+"], "note_add": "<passiveELUP01:10%>", "desc": ["效果:毁灭能量弹会再放一次", "效果:物理伤害+10%"]},
+  "2083": {"actor": 55, "name": "超载", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:暴击伤害+30%"]},
+  "2085": {"actor": 55, "name": "灭城弹", "kind": "被动", "note_remove": ["passiveHarmRi", "SkillPass\\d+"], "desc": ["效果:保留能量值"]},
+  "2210": {"actor": 55, "name": "机械狂潮", "kind": "领袖", "note_remove": ["SkillCriPush\\w+"], "desc": ["效果:技能消耗率-5%"]},
+  "2209": {"actor": 55, "name": "领袖:机械狂潮", "kind": "领袖说明", "desc": ["效果:全队技能消耗率-5%"]},
+  "2084": {"actor": 55, "name": "觉醒:橙", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（增伤并进破坏装置）"]},
+  "2092": {"actor": 56, "name": "轻型歼敌弹", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 2.5}, "mp_pct": 5, "desc": ["伤害:物理攻击×2.5", "消耗:最大魔法5%"]},
+  "2089": {"heal": {"mhp_pct": 0.1}, "mp_pct": 10, "effects": [{"code": 13, "dataId": 0, "value1": 10}], "effects_remove": [[11, 0], [12, 0]], "actor": 56, "name": "战场修复装置", "kind": "全体治疗", "desc": ["效果:回复10点能量值", "治疗:每人生命上限10%", "消耗:最大魔法10%"]},
+  "2094": {"heal": {"mhp_pct": 0.1}, "mp_pct": 10, "effects": [{"code": 13, "dataId": 0, "value1": 10}], "effects_remove": [[11, 0], [12, 0]], "actor": 56, "name": "战场修复装置2.0", "kind": "全体治疗", "desc": ["效果:回复10点能量值", "治疗:每人生命上限10%", "消耗:最大魔法10%"]},
+  "2093": {"heal": {"mhp_pct": 0.0}, "effects": [{"code": 11, "dataId": 0, "value1": 0.3, "value2": 0}], "effects_remove": [[12, 0], [13, 0]], "actor": 56, "name": "基因重组", "kind": "复活", "mp_pct": 30, "cooldown": 3, "header": {"冷却时间": "3回合"}, "desc": ["效果:复活友方，恢复30%生命", "消耗:最大魔法30%"]},
+  "2095": {"scope": 7, "mp_pct": 20, "cooldown": 6, "effects": [{"code": 11, "dataId": 0, "value1": 0.3}, {"code": 13, "dataId": 0, "value1": 50}], "effects_remove": [[12, 0]], "header": {"冷却时间": "6回合", "对象": "单个友军"}, "desc": ["效果:超越(伤害+20%，持续2回合)", "效果:回复30%的生命值及50点能量值", "消耗:最大魔法20%"], "actor": 56, "name": "超越之光", "kind": "功能"},
+  "2099": {"scope": 7, "mp_pct": 20, "cooldown": 6, "effects": [{"code": 11, "dataId": 0, "value1": 0.3}, {"code": 13, "dataId": 0, "value1": 50}], "effects_remove": [[12, 0]], "header": {"冷却时间": "6回合", "对象": "单个友军"}, "desc": ["效果:超越(伤害+20%，持续2回合)", "效果:回复30%的生命值及50点能量值", "消耗:最大魔法20%"], "actor": 56, "name": "超越之光2.0", "kind": "功能"},
+  "2087": {"actor": 56, "name": "机械医者", "kind": "被动", "note_remove": ["ConsumeReduceMf", "passiveELUP10"], "note_add": "<ConsumeReduceMf: 10%><passiveELUP10:15%>", "desc": ["效果:魔法消耗降低10%", "效果:治疗效果+15%"]},
+  "2096": {"actor": 56, "name": "治疗装置2.0", "kind": "被动", "note_remove": ["ConsumeReduceMf", "passiveELUP10"], "note_add": "<ConsumeReduceMf: 10%><passiveELUP10:15%>", "desc": ["效果:魔法消耗降低10%", "效果:治疗效果+15%"]},
+  "2090": {"actor": 56, "name": "机械再生", "kind": "被动", "note_remove": ["passiveXPBST\\d"], "note_add": "<passiveXPBST7:5><passiveXPBST8:5>", "desc": ["效果:每回合回复5%的生命值，魔法值"]},
+  "2088": {"actor": 56, "name": "起源机器人", "kind": "被动", "note_remove": ["passiveHarmRe\\d+", "passiveELUP\\d+"], "note_add": "<passiveSPBST6:-5%><passiveSPBST7:-5%>", "desc": ["效果:承受伤害-5%"]},
+  "2097": {"actor": 56, "name": "机甲护盾光环", "kind": "光环", "note_remove": ["passiveHarmRe\\d+"], "desc": ["效果:机甲护盾光环（并进起源机器人）"]},
+  "5497": {"actor": 56, "name": "医疗模式(点击切换为作战模式)", "kind": "功能", "desc": ["效果:切换模式，获得“防御形态”：承受伤害-30%，持续一回合"]},
+  "5495": {"actor": 56, "name": "模式融合", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:基因重组会为队友施加“防御形态”效果"]},
+  "2098": {"actor": 56, "name": "觉醒:瑞普", "kind": "被动", "note_remove": ["SkillPass\\d+"], "desc": ["效果:觉醒（辅助）"]}
  },
  "states": {
   "12": {"name": "碎甲I", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 3, "value": 0.9}], "turns": 3, "state_note": "物理防御-10%"},
@@ -1066,7 +1097,10 @@
   "194": {"name": "战斗怒吼", "note_remove": ["Element Amplify \\d+"], "note_add": "<Element Amplify 1: +5%>", "turns": 3, "state_note": "物理伤害+5%"},
   "10803": {"name": "天人·攻", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 2, "value": 1.05}], "turns": 3, "state_note": "物攻+5%"},
   "10804": {"name": "天人·防", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 3, "value": 1.05}], "turns": 3, "state_note": "物防+5%"},
-  "10805": {"name": "天人·敏", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 6, "value": 1.05}], "turns": 3, "state_note": "敏捷+5%"}
+  "10805": {"name": "天人·敏", "note_remove": ["Permanent"], "traits": [{"code": 21, "dataId": 6, "value": 1.05}], "turns": 3, "state_note": "敏捷+5%"},
+  "10806": {"name": "坏死", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 23, "dataId": 2, "value": 0.7}], "turns": 2, "state_note": "受到的治疗-30%"},
+  "195": {"name": "超越之光", "note_remove": ["passiveCrHarmRi", "passiveHarmRi"], "note_add": "<passiveHarmRi:20>", "turns": 2, "state_note": "伤害+20%"},
+  "958": {"name": "防御形态", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "note_remove": ["passiveHarmRe\\d+"], "traits": [{"code": 23, "dataId": 6, "value": 0.7}, {"code": 23, "dataId": 7, "value": 0.7}], "state_note": "承受伤害-30%"}
  },
  "_gojo_note": "180 五条悟（XGojo，设计 00_项目管理/交付/五条悟_角色设计_v0.2.md）：超强者、输出型（伤害 ×1.2 已算进系数），主属性魔攻。茈的系数按对数取 gojo_pairs。",
  "gear": {
@@ -1158,9 +1192,11 @@
   "armor:3813": {"name": "言威", "note_remove": ["SkillPass\\d+"], "desc": ["特效：大威天龙*佛怒追加几率+10%"]},
   "armor:5000": {"name": "金果棒", "note_remove": ["Element Amplify \\d+", "passiveCrHarmRi", "SkillPass\\d+", "SkETypeHarmRi\\d+"], "note_add": "<SkETypeHarmRi9: 10%><SkillPass6013: 20%>", "traits_remove": [[21, 2], [21, 4]], "desc": ["特效:使用矛时伤害+10%", "特效:元气弹伤害+20%", "随心铁杆兵:你可以用矛释放所有战技"]},
   "armor:3814": {"name": "暗觞", "desc": ["特效：暗影毁灭弹的诅咒加成上限从+30%提到+50%"]},
-  "armor:3815": {"name": "万仞", "note_remove": ["SkillPass\\d+"], "desc": ["特效：狂乱*灭的状态加成上限从+30%提到+50%"]}
+  "armor:3815": {"name": "万仞", "note_remove": ["SkillPass\\d+"], "desc": ["特效：狂乱*灭的状态加成上限从+30%提到+50%"]},
+  "armor:3816": {"name": "机钺", "note_remove": ["SkillPass\\d+"], "note_add": "<passiveXPBST7:5><passiveXPBST8:5>", "desc": ["特效：机械再生翻倍（每回合10%）"]},
+  "armor:3817": {"name": "斑瞳", "desc": ["特效：瑞普可以穿戴所有类型护甲", "特效：瑞普可以使用弓弩"]}
  },
  "new_skills": {"10701": {"from": 3635}, "10702": {"from": 3641}, "10703": {"from": 3644}, "10705": {"from": 4410}, "10706": {"from": 4550}, "10707": {"from": 4507}, "10708": {"from": 1215}, "10709": {"from": 6012}, "10710": {"from": 2067}},
  "learn": {"8": [[30, 10701]], "9": [[30, 10702]], "10": [[30, 10703]], "11": [[30, 10705]], "16": [[10, 10706]], "21": [[20, 10707]], "22": [[30, 3768]]},
- "new_states": {"10801": {"from": 31}, "10802": {"from": 165}, "10803": {"from": 246}, "10804": {"from": 246}, "10805": {"from": 246}}
+ "new_states": {"10801": {"from": 31}, "10802": {"from": 165}, "10803": {"from": 246}, "10804": {"from": 246}, "10805": {"from": 246}, "10806": {"from": 165}}
 }
