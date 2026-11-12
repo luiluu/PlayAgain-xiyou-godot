@@ -161,6 +161,9 @@ static func img_path(folder: String, name: String) -> String:
 		var own := "res://content/rift/%s.png" % name
 		if ResourceLoader.exists(own):
 			return own
+	# 天启篇七印祭坛的首领新画（XTianqiQiyinArt）：content/tianqi/qiyin/battlers/Tianqi_Qiyin_*
+	if folder == "sv_enemies":
+		return XTianqiQiyinArt.battler_path(name)
 	return ""
 
 

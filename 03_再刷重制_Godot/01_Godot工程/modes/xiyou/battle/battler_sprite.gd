@@ -309,6 +309,7 @@ func motion_tick() -> void:
 func _process(delta: float) -> void:
 	if battler is XEnemy:
 		_rift_tint(delta)
+		XTianqiQiyinArt.update_sprite(self)  # 七印祭坛首领新画：七首之龙断首藏头、守默者香炉两态
 	if battler is XActor:
 		var k := str(view.get("look", _look_key)) if not view.is_empty() else XAppearance.battler_key(battler)
 		if k != _look_key:

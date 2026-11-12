@@ -72,7 +72,7 @@
       "order": 5, "seal": "殉印", "name": "里·黑暗废墟「魂冢」", "map": 32, "pos": [31, 14, 8], "tone": [11, 11, 33, 66],
       "rule": "sacrifice", "rule_name": "献祭", "rule_text": "每回合开始，生命最高的单位损失 10% 当前生命，它那一方本回合出伤 +10%。",
       "troops": [122, 123, 138],
-      "boss": {"enemy": 128, "name": "【里】白衣的魂", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+      "boss": {"enemy": 128, "name": "【里】白衣的魂", "battler": "Tianqi_Qiyin_WhiteSoul", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
     },
     "zhen": {
       "order": 6, "seal": "震印", "name": "里·天空圣殿「坠星」", "map": 47, "pos": [14, 40, 8], "tone": [22, 0, -33, 33],
@@ -84,7 +84,7 @@
       "order": 7, "seal": "默印", "name": "祭坛深处「寂静」", "map": 54, "pos": [15, 4, 2], "tone": [-66, -66, -66, 99],
       "rule": "silence", "rule_name": "寂静", "rule_text": "双数回合全场沉默，只能普攻、防御、用物品。",
       "troops": [216, 220, 217],
-      "boss": {"enemy": 234, "name": "【里】守默者", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+      "boss": {"enemy": 234, "name": "【里】守默者", "battler": "Tianqi_Qiyin_Silent", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
     }
   },
   "rules": {

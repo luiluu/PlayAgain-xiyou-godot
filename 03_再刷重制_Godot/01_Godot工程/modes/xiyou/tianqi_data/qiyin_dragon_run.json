@@ -6,10 +6,11 @@
   "_note": "七首之龙的流程表（XTianqiQiyinDragonRun），只读。出现判定、奖励、龙血的数在 qiyin_dragon.json（XTianqiQiyinDragon），这里只放战斗怎么搭、流程台词。数字避开 4（敌人号、敌群号、编号照实写）。",
   "nice_number_exempt": ["version", "troop", "shell_enemy", "extra_actions", "reprieve_turns_from"],
   "fight": {
-    "_note": "借 19 层副本古龙祭坛的普拉顿（敌群 221、敌人 238）的外观和行动；七首之龙新画（美术 E1，七个头拆件）画好前先借它。能力值按里副本的参照敌人（qiyin_altar.json 的 rebase.ref，鸿蒙老祖 537）乘 rate，生命直接取 XTianqiQiyinDragon.fight_data 的本档最大生命（已乘本档敌人血量）。rate 是测试参数，进数值阶段再按 36 层普通首领一击约 8.5 万校。每回合 3 次行动＝加 extra_actions 条必定追加行动。",
+    "_note": "借 19 层副本古龙祭坛的普拉顿（敌群 221、敌人 238）的行动；外观换成新画的七首之龙（美术 E1，躯干＋七个头拆件，battler，XTianqiQiyinArt，每断一首藏一个头）。能力值按里副本的参照敌人（qiyin_altar.json 的 rebase.ref，鸿蒙老祖 537）乘 rate，生命直接取 XTianqiQiyinDragon.fight_data 的本档最大生命（已乘本档敌人血量）。rate 是测试参数，进数值阶段再按 36 层普通首领一击约 8.5 万校。每回合 3 次行动＝加 extra_actions 条必定追加行动。",
     "troop": 221,
     "shell_enemy": 238,
     "name": "七首之龙",
+    "battler": "Tianqi_Qiyin_Dragon",
     "rate": [1.0, 1.0, 0.8, 0.8, 0.8, 0.8, 1.0, 1.0],
     "extra_actions": 2,
     "tone": [-33, -55, -33, 99],
