@@ -40,6 +40,7 @@ func _run() -> void:
 	_follow()
 	_gear()
 	_xinfa()
+	_buzhao()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -418,6 +419,48 @@ func _xinfa() -> void:
 	var ten := XDB.rec("Skills", 4774)
 	_check("xinfa_follow_oil", not str(ten.note).contains("ChangeTo[4775]") and int(XTianqiSkills.spec(4774).follow[0].cast) == 4775)
 	lg.end_battle(0)
+
+
+## 补招：表外号段按底号复制、按角色等级学会；原版档不学、Skills 表本身不变
+func _buzhao() -> void:
+	var size0: int = (XDB.table("Skills") as Array).size()
+	var s := XTianqi.start_new_game(3, "jianxian", [8, 16, 21, 22, 1])
+	XTianqi.take_pending()
+	for id in [8, 16, 21, 22, 1]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var r := XDB.rec("Skills", 10701)
+	_check("new_rec", str(r.get("name", "")) == "因果审判" and int(r.id) == 10701 and str(r.damage.formulaProgram.get("module", "")) == XTianqiSkills.MODULE and not str(r.note).contains("ChangeTo["), r.get("name"))
+	_check("new_table_untouched", (XDB.table("Skills") as Array).size() == size0 and size0 < 10701, size0)
+	var x: XActor = s.actor(8)
+	x.change_level(29)
+	_check("learn_before", not x.skill_ids.has(10701))
+	x.change_level(30)
+	_check("learn_at_30", x.skill_ids.has(10701))
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	_check("new_damage", XTianqiSkills.formula(x, b, r) > 0.0)
+	_check("new_heal", XTianqiSkills.formula(s.actor(16), s.actor(16), XDB.rec("Skills", 10706)) < 0.0 and int(XDB.rec("Skills", 10706).scope) == 7)
+	var w: XActor = s.actor(22)
+	w.change_level(30)
+	_check("learn_move", w.skill_ids.has(3768))
+	var m: XActor = s.actor(21)
+	XTianqiSkills.CARDS = false
+	m.change_level(25)
+	XTianqiSkills.CARDS = true
+	_check("learn_cards_off", not m.skill_ids.has(10707))
+	XTianqiSkills.sync_learn(m)
+	_check("learn_sync", m.skill_ids.has(10707))
+	lg.end_battle(0)
+	var legacy := _state(false)
+	legacy.add_actor(8)
+	var y: XActor = legacy.actor(8)
+	y.change_level(30)
+	_check("learn_legacy", not y.skill_ids.has(10701))
 
 
 ## 改过卡的角色整场跑几回合不报错

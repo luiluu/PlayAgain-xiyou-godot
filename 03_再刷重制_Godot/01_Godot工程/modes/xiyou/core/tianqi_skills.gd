@@ -79,6 +79,7 @@ static func reload() -> void:
 	_tier = {}
 	_gear = {}
 	_gear_cache = {}
+	_new_recs = {}
 
 
 static func rules() -> Dictionary:
@@ -232,6 +233,54 @@ static func _note_edit(note: String, sp: Dictionary) -> String:
 	for pair in sp.get("note_sub", []):
 		note = RegEx.create_from_string("(?s)" + str(pair[0])).sub(note, str(pair[1]), true)
 	return note
+
+
+# ---- 补招（第四节第 5、9 条：四小强 30 级爆发技、克莱德单体治疗、玛莎全体风技、维利百式观音挪到 30 级）----
+## new_skills {新号: {from: 底号}}：表里没有的技能号，XDB.rec 时按底号复制一条（换 id、名字），再照常走 rec 改写；号段 10701 起，
+## 不往 Skills 表里插（遍历全表的原版对照不受影响）。learn {角色号: [[等级, 技能号]…]}：天启篇卡开着时多学的技能（按角色，不按职业）。
+static var _new_recs: Dictionary = {}
+
+
+static func has_new(id: int) -> bool:
+	return data().get("new_skills", {}).has(str(id))
+
+
+static func new_rec(id: int, t: Array) -> Dictionary:
+	if _new_recs.has(id):
+		return rec(id, _new_recs[id])
+	var ns: Dictionary = data().get("new_skills", {}).get(str(id), {})
+	var from := int(ns.get("from", 0))
+	if from <= 0 or from >= t.size() or not t[from] is Dictionary:
+		return {}
+	var r: Dictionary = t[from].duplicate(true)
+	r.id = id
+	r.name = str(spec(id).get("name", r.get("name", "")))
+	r.description = ""
+	r["_tianqi_new"] = true
+	_new_recs[id] = r
+	return rec(id, r)
+
+
+## XActor 的职业技能表（升级、改等级、新建时学技能）：天启篇卡开着时加上 learn 里这名角色的
+static func learnings(a, list: Array) -> Array:
+	if not CARDS or not (a is XActor) or not cards_on():
+		return list
+	var extra = data().get("learn", {}).get(str(int(a.actor_id)), [])
+	if not extra is Array or extra.is_empty():
+		return list
+	var out := list.duplicate()
+	for e in extra:
+		out.append({"level": int(e[0]), "skillId": int(e[1]), "note": ""})
+	return out
+
+
+## 开卡之前已经过了等级的老存档：开战时把够等级的补学上
+static func sync_learn(a) -> void:
+	if not (a is XActor):
+		return
+	for e in data().get("learn", {}).get(str(int(a.actor_id)), []):
+		if int(a.level) >= int(e[0]) and not a.skill_ids.has(int(e[1])):
+			a.learn_skill(int(e[1]))
 
 
 # ---- 专属装备（法宝、武器）：按底号换成改写视图（第二期之二）----
@@ -626,6 +675,7 @@ static func start_turns(list: Array) -> void:
 	for a in list:
 		if not (a is XActor):
 			continue
+		sync_learn(a)
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_turns", []):
 			if (not r.has("need") or owns(a, r.need)) and a.is_state_affected(int(r.state)):
 				a.state_turns[int(r.state)] = int(r.turns)
