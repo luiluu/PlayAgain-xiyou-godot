@@ -556,6 +556,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 			var s := XState.current
 			var v := float(s.variable(int(c["var"]))) if s != null else 0.0
 			v += float(c.get("offset", 0.0))  # offset：变量的起点挪一挪（町甄纯真值原版开局就有 6 点，按稿子从 2 点算）
+			for k in c.get("offset_with", {}):  # 带着这件再加（阿语寰怨：开局就有 2 滴仪式之血）
+				if owns(a, k):
+					v += float(c.offset_with[k])
 			return 1.0 + clampf(v * per, 0.0, cap)
 		"target_states":
 			var n := 0
@@ -905,6 +908,18 @@ static func _hp_equalize(logic, u, skill: Dictionary) -> void:
 		m.hp = clampi(floori(avg * float(m.mhp)), 1, int(m.mhp))
 
 
+## 技能行 self_heal {pct, need_skill, pct_with {要有: 比例}}：放完自己回生命上限的这个比例（陈醉拳打完回 10%，酒仙 20%）
+static func _self_heal(u, skill: Dictionary) -> void:
+	var h: Dictionary = spec(int(skill.get("id", 0))).get("self_heal", {})
+	if h.is_empty() or not u.is_alive() or (h.has("need_skill") and not owns(u, h.need_skill)):
+		return
+	var pct := float(h.get("pct", 0.0))
+	for k in h.get("pct_with", {}):
+		if owns(u, k):
+			pct = maxf(pct, float(h.pct_with[k]))
+	u.hp = minf(float(u.mhp), float(u.hp) + floorf(float(u.mhp) * pct))
+
+
 ## 技能行 consume [状态…]：放完把打到的目标身上这些状态去掉（劲夫乱打引爆怒拳）；consume_keep_with {要有: 几率} 有几率不去
 static func _consume(logic, u, f: Dictionary) -> void:
 	var sp := spec(int(f.skill.get("id", 0)))
@@ -1041,6 +1056,7 @@ static func end_action(logic, u, skill) -> Array:
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 		_consume(logic, u, f)
 		_hp_equalize(logic, u, f.skill)
+		_self_heal(u, f.skill)
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
