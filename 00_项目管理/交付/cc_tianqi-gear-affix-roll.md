@@ -17,7 +17,7 @@
 - 新模块 `core/tianqi_merchant.gd`（XTianqiMerchant，开关 `ENABLED`）＋价格表 `tianqi_data/abyss_shelves.json`（`draft`）：天启篇存档的深渊商人选分组后是两档——寻宝 10 点（本组能出特效的装备里挑一件，保证带一条特效词条）、珍藏 60 点（先指定一条传说词条，本体只出本路线三阶以上、不朽及以上、栏位能出这条的装备；连击、再动这两条稀有的 100 点）。沿用原版的战利品点、每轮 3 次、分组和本轮随机数。本路线没有够格装备时货架灰掉并写原因。界面在 `ui/merchant29_page.gd`（天启篇存档换成这两档和「指定传说词条」一页）。
 - `XTianqiAffixRoll.ensure_affix`：保证一件带某条词条（同层到上限就换掉同层那条，有空槽就加，否则换掉一条基础词条），商人用。
 - 宠物隐藏补一处（四线异化 v0.8 第 2.4 节「图鉴、成就等提到宠物的地方」）：成就页在天启篇存档里不列提到宠物的成就（61「神秘生物！」、104「宠物训练大师」，按名字、条件、说明里有宠物／捕捉／神秘生物／魔兽要诀判断），全局记录照旧（`ui/achievement_scene.gd` 一行、`XTianqiPetHide.filter_achievements`）。怪物图鉴、人物图鉴里没找到提到宠物的地方。
-- 新专项 `tests/xiyou_tianqi_affix_roll`（31 项）；`xiyou_tianqi_pet_hide` 加两条（成就）。
+- 新专项 `tests/xiyou_tianqi_affix_roll`（30 项）；`xiyou_tianqi_pet_hide` 加两条（成就）。
 - 玩家可见：开发版天启篇存档里新得到的装备带天启篇词条（说明里能看到「〔四阶·上品〕」这样的行），战斗里生效；深渊商人改成寻宝、珍藏两档；成就页不列宠物成就。发行版看不到（天启篇关着）。
 
 ## 优化登记草稿
@@ -43,7 +43,7 @@
 
 ## 验证
 
-- `xiyou_tianqi_affix_roll`：31/31；`xiyou_tianqi_pet_hide`：23/23。
+- `xiyou_tianqi_affix_roll`：30/30；`xiyou_tianqi_pet_hide`：23/23。
 - 相关专项（Mac，本工作树，`并行测试.py`，21 个场景，243 秒，全部通过）：`xiyou_tianqi_affix_roll`、`xiyou_tianqi_pet_hide`、`xiyou_achievement`、`xiyou_affix_rate`、`xiyou_cat`、`xiyou_demon_crown`、`xiyou_drop_record`、`xiyou_equipment`、`xiyou_gear_detail`、`xiyou_merchant29`、`xiyou_tianqi_affix_battle`、`xiyou_tianqi_gear`、`xiyou_tianqi_gear2`、`xiyou_tianqi_qiyin_equip`、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_rewards`、`xiyou_tianqi_party`、`xiyou_yunshang_shop`、`xiyou_battle_drop`、`xiyou_determinism`、`xiyou_event_compare`（之后补的三条断言只改了本专项，单跑过）。
 - 没跑的：`gear.gd` 让选测判出较多场景；本单在 `roll_item` 里两处都只在天启篇存档起作用（原版档 `plain_none`、开关 `off_none` 覆盖，原版对照的 `xiyou_affix_rate`、`xiyou_merchant29`、`xiyou_drop_record` 已过），其余请总装合并时按选测跑。
 - 反向验证（`反向验证.py`）：不挂掷词条、原版行照掷、不限传说、不看品质层、同名可重、项链无光环、寻宝不保底、不扣点、稀有同价、成就不藏，10 处咬住（「不看品质层」第一版找的装备不存在，换成三阶传说武器后咬住）；「珍藏不看阶门槛」没咬住：传说词条本来就只在三阶以上能出，`layer_candidates` 已经挡住，`min_tier` 是重复的保险，行为不变。
