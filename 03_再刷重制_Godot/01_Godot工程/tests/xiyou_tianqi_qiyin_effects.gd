@@ -49,6 +49,7 @@ func _logic(tianqi := true) -> XBattleLogic:
 
 ## 给角色穿上七印装备：marks 是 mark() 的描述列表；套装件放防具格，武器放武器格
 func _wear(a: XActor, marks: Array) -> void:
+	a.keep_unequippable = true  # 夹具直接塞实例（部位、甲种不一定对得上），不让 refresh 卸掉
 	var slot := 1
 	for m in marks:
 		var kind := "weapon" if str(m.kind) == "weapon" else "armor"
@@ -70,7 +71,7 @@ func _wear(a: XActor, marks: Array) -> void:
 	a.param_refresh()
 
 
-func _set(seal: String, n: int, true_seal := false) -> Array:
+func _gear_set(seal: String, n: int, true_seal := false) -> Array:
 	var parts := ["head", "body", "hands", "waist", "legs", "feet"]
 	var out := []
 	for i in n:
@@ -114,7 +115,7 @@ func _run() -> void:
 func _marks() -> void:
 	var lg := _logic()
 	var a: XActor = lg.actors[0]
-	_wear(a, _set("bai", 3) + _set("hong", 2) + [{"kind": "weapon", "seal": "hei", "wtype": "gun", "true_seal": true}])
+	_wear(a, _gear_set("bai", 3) + _gear_set("hong", 2) + [{"kind": "weapon", "seal": "hei", "wtype": "gun", "true_seal": true}])
 	var c := XTianqiQiyinEffects.set_counts(a)
 	_check("count_bai3_hong2", int(c.get("bai", 0)) == 3 and int(c.get("hong", 0)) == 2, c)
 	var fx := XTianqiQiyinEffects.fold(XTianqiQiyinEffects.gear_effects(a))
@@ -143,14 +144,14 @@ func _damage() -> void:
 	var e: XEnemy = lg.enemies[0]
 	_fresh(lg)
 	_check("no_gear_no_ops", XTianqiQiyinEffects.damage_ops(_hit(), a, e).is_empty())
-	_wear(a, _set("hui", 2))
+	_wear(a, _gear_set("hui", 2))
 	_fresh(lg)
 	e.hp = e.mhp * 0.4
 	_check("hui2_low_target", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), a, e)), 1.15), XTianqiQiyinEffects.damage_ops(_hit(), a, e))
 	e.hp = e.mhp
 	_check("hui2_full_target", XTianqiQiyinEffects.damage_ops(_hit(), a, e).is_empty())
 	var b: XActor = lg.actors[1]
-	_wear(b, _set("bai", 3))
+	_wear(b, _gear_set("bai", 3))
 	_fresh(lg)
 	_check("bai3_no_debuff", XTianqiQiyinEffects.damage_ops(_hit(), b, e).is_empty())
 	e.buffs[2] = -1
@@ -179,7 +180,7 @@ func _cost_hp() -> void:
 	var lg := _logic()
 	var a: XActor = lg.actors[0]
 	var mhp0 := a.mhp
-	_wear(a, _set("hei", 2) + _set("xun", 2))
+	_wear(a, _gear_set("hei", 2) + _gear_set("xun", 2))
 	_fresh(lg)
 	var cost := XTianqiQiyinEffects.cost(a, _hit(), {"mp": 100, "tp": 20})
 	_check("hei2_cost", int(cost.mp) == 85 and int(cost.tp) == 17, cost)
@@ -224,7 +225,7 @@ func _actions() -> void:
 	XTianqiQiyinEffects.end_action(lg, b, sk)
 	# 免死（灰印 5 件）一场一次
 	var c: XActor = lg.actors[2]
-	_wear(c, _set("hui", 5))
+	_wear(c, _gear_set("hui", 5))
 	_fresh(lg)
 	c.recover_all()
 	c.shield = 0.0
@@ -237,9 +238,12 @@ func _actions() -> void:
 	XTianqiQiyinEffects.doom_kill = false
 	# 替挡（殉印 3 件）：生命最低的队友挨打，持有者挡一半
 	var g: XActor = lg.actors[3]
-	_wear(g, _set("xun", 3))
+	_wear(g, _gear_set("xun", 3))
 	_fresh(lg)
 	for x in lg.actors:
+		x.param_mark_dirty()
+		x.param_refresh()
+		x.refresh_resources()
 		x.recover_all()
 		x.shield = 0.0
 	var low: XActor = lg.actors[0]
@@ -249,7 +253,7 @@ func _actions() -> void:
 	_check("guard_half", is_equal_approx(got, 50.0) and is_equal_approx(g0 - g.hp, 50.0), [got, g0 - g.hp])
 	# 击倒后再行动（红印 5 件）每回合一次
 	var h: XActor = lg.actors[1]
-	_wear(h, _set("hong", 5))
+	_wear(h, _gear_set("hong", 5))
 	_fresh(lg)
 	var e2: XEnemy = lg.enemies[0]
 	e2.recover_all()
@@ -263,7 +267,7 @@ func _actions() -> void:
 	_check("kill_stack_counted", int(lg.get_meta("xqiyin").units[h].kills) == 1)
 	# 砝码（黑印 3、5 件）：回合开始得层，满 5 层必暴、暴伤 +50%
 	var w: XActor = lg.actors[2]
-	_wear(w, _set("hei", 5))
+	_wear(w, _gear_set("hei", 5))
 	_fresh(lg)
 	for i in 5:
 		XTianqiQiyinEffects.start_turn(lg)
@@ -277,7 +281,7 @@ func _actions() -> void:
 	_check("weights_spent", int(lg.get_meta("xqiyin").units[w].weights) == 0)
 	# 默印 5 件：敌方沉默
 	var m: XActor = lg.actors[4] if lg.actors.size() > 4 else lg.actors[3]
-	_wear(m, _set("mo", 5))
+	_wear(m, _gear_set("mo", 5))
 	_fresh(lg)
 	_check("silence_all", XTianqiQiyinEffects.use_silence_all(lg, m) and XTianqiQiyinEffects.silenced(lg, en))
 	_check("silence_once", not XTianqiQiyinEffects.use_silence_all(lg, m))
@@ -312,7 +316,7 @@ func _switches() -> void:
 	var sets := ["bai", "hong", "hei", "hui", "xun"]
 	var types := ["bow", "sword", "gun", "katana", "spear"]
 	for i in mini(5, lg.actors.size()):
-		_wear(lg.actors[i], _set(sets[i], 5) + [{"kind": "weapon", "seal": sets[i], "wtype": types[i], "true_seal": true}])
+		_wear(lg.actors[i], _gear_set(sets[i], 5) + [{"kind": "weapon", "seal": sets[i], "wtype": types[i], "true_seal": true}])
 	_fresh(lg)
 	var t0 := lg.turn
 	for k in 3:
@@ -326,7 +330,7 @@ func _switches() -> void:
 	XTianqiQiyinEffects.ENABLED = false
 	var lg2 := _logic()
 	var a: XActor = lg2.actors[0]
-	_wear(a, _set("hui", 2) + _set("xun", 2))
+	_wear(a, _gear_set("hui", 2) + _gear_set("xun", 2))
 	_fresh(lg2)
 	lg2.enemies[0].hp = lg2.enemies[0].mhp * 0.2
 	_check("off_no_store", not lg2.has_meta("xqiyin"))
@@ -336,7 +340,7 @@ func _switches() -> void:
 	# 原版档
 	var lg3 := _logic(false)
 	var b: XActor = lg3.actors[0]
-	_wear(b, _set("hui", 2))
+	_wear(b, _gear_set("hui", 2))
 	_fresh(lg3)
 	_check("legacy_no_store", not lg3.has_meta("xqiyin"))
 	_check("legacy_cost_unchanged", XTianqiQiyinEffects.cost_mult(b, _hit()) == 1.0)

@@ -1,7 +1,7 @@
 # 交付：cc/qiyin-effects
 
 - 车道／工作者：天启篇·七印祭坛战斗效果／cc（云端项目线程「实装七印套装与毕业武器效果」）
-- 状态：进行中
+- 状态：可合并
 
 ## 合并顺序
 
@@ -57,7 +57,13 @@
 
 ## 验证
 
-- 待写
+- 云端容器（Godot 4.7.2 headless，转换产物是项目文件夹里 10-18 的旧快照）：
+  - 新专项 `xiyou_tianqi_qiyin_effects`：48/48。反向验证（手改后用备份还原）：伤害乘区不出 `finalMultiplier`、击倒不插队，各掉 6 项，还原后 48/48。
+  - 相关旧专项 `xiyou_tianqi_qiyin_gear`、`xiyou_tianqi_swap_init`、`xiyou_tianqi_gear` 全过；`xiyou_determinism` 370/370。
+  - `xiyou_actor_modules`（raven.advance_rows）、`xiyou_module_hooks`（view.same_source、oracle.exists）、`xiyou_tianqi_party`（all_draws）各有失败，把四个接入文件换回 origin/main 原样再跑，失败项一模一样，是云端旧产物、没有参照数据的环境差异；另各场景都有 `XDB: 读取失败 db/CodexMerchants.json`（旧快照缺文件），并行测试因此判失败。
+- **需要总装在 Mac 上跑**：改了 `battle_logic.gd`，`选测.py origin/main --list` 选中 360 个场景（等于整轮），云端容器跑不动也没有新产物；请按影响面跑选测（至少 `xiyou_rules*`、`xiyou_determinism`、`xiyou_module_hooks`、`xiyou_actor_modules`、`xiyou_tianqi*`、`xiyou_status_power_panel`）。非天启篇存档每个钩子都早退，原版对照不应有变化。
+- 没跑：`工具回归.py`（云端没 zsh 固定挂 3 项，与本分支无关；本分支没改工具和检查）、`同步正式西游.py`（没改切片、转换器、探针）。
+- `.uid`：只提交本车道两个新脚本的；数据层 `tianqi_qiyin_gear.gd.uid`、`xiyou_tianqi_qiyin_gear.gd.uid` 照它的交付单留给总装。
 
 ## 待交叉核查
 
@@ -66,4 +72,5 @@
 
 ## 本分支提交
 
-- （见 git log）
+- 合并 `origin/cc/pro-qiyin-data`（数据层，先合它）
+- WIP 与收尾提交：效果模块、战斗接入、专项、交付单

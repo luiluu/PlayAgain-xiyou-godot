@@ -20,7 +20,7 @@ static var ENABLED := true
 
 ## 表里没有的参数（占位，数字避开 4）
 const TUNE := {
-	"aoe_scopes": [2, 3, 5, 6],            # 群体技能：敌方全体、随机敌方 1～3 体（RPG Maker scope；4 号是随机 2 体，也算）
+	"aoe_scopes": [2, 3, 4, 5, 6],         # 群体技能：敌方全体、随机敌方 1～4 体（RPG Maker scope 号，不是设计数）
 	"plague_crit_mult": 1.5,               # 「疫」暴击倍率
 	"chain_max": 9,                        # 送行连斩最多连几次（防死循环）
 	"sacrifice_min_hp_pct": 50,            # 以身饲虎：自己生命高于这个比例才献
@@ -652,7 +652,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		var elemental := es.any(func(e): return int(e) > 1)
 		var un := _unit(logic, a)
 		var bu := _unit(logic, b)
-		var lost_b := 1.0 - b.hp / b.mhp if b.mhp > 0.0 else 0.0
+		var lost_b: float = 1.0 - b.hp / b.mhp if b.mhp > 0.0 else 0.0
 		mult *= 1.0 + minf(float(_p(logic, a, "dmg_per_target_debuff_pct").get("max", 0)), debuff_count(logic, b) * float(_p(logic, a, "dmg_per_target_debuff_pct").get("value", 0))) / 100.0
 		if int(item.get("scope", 0)) in TUNE.aoe_scopes and skillish:
 			mult *= 1.0 + float(_p(logic, a, "aoe_skill_dmg_pct").get("value", 0)) / 100.0
