@@ -500,6 +500,11 @@ static func formula(a, b, item: Dictionary) -> float:
 	var stats: Dictionary = d.get("stats", {"atk": 1})
 	for k in stats:
 		base += float(stats[k]) * float(a.param(STATS.find(str(k))))
+	if d.has("max_of"):  # 取几项里最高的那项（露丝：物攻、魔攻取高）
+		var hi := 0.0
+		for k in d.max_of:
+			hi = maxf(hi, float(a.param(STATS.find(str(k)))))
+		base += hi
 	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale
 	for c in d.get("conds", []):
 		v *= _cond(c, a, b)
