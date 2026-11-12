@@ -1,7 +1,7 @@
 class_name XTianqiLineCards
 extends Control
 ## 【cc·天启篇·未经审查】选线画面：四张竖卡并排（四线剧情与关卡设计稿 v0.4 第 2.2 节）。
-## 每张：骑士剪影（本线颜色；XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「本线特点」＋「传闻」（骑士来历）。
+## 每张：骑士剪影（本线颜色；XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」。
 ## 还没做好的线照列，压暗并标「还没修好」，仍可选中看说明（小小鱼会说这条路还没修好）。
 ## 左右键／鼠标选，确认键或点卡定；取消键或「再想想」返回 -1。开关 XTianqiLook.CARDS（O-322）。
 
@@ -132,7 +132,7 @@ func _make_card(i: int) -> Control:
 	pick.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(pick)
 	y += 32.0
-	for row in [["本线特点", str(l.change)], ["传闻", str(l.test)]]:
+	for row in [["传闻", str(l.test)], ["本线特点", str(l.change)]]:  # Kyo 11-13：先传闻，再特点
 		var cap := XUI.label(str(row[0]), 15, XTianqiLook.accent_color(key).lightened(0.1))
 		cap.position = Vector2(16, y)
 		cap.size = Vector2(CARD.x - 32, 20)

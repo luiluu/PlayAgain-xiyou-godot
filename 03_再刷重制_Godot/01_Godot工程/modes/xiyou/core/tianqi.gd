@@ -553,7 +553,7 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 
 # ---- 选线（Kyo 11-11「选线做成单独的大厅内事件」；四线剧情与关卡设计稿 v0.4 第 2 节，已确认） ----
 ## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiLine.door_blocked）。
-## 四张卡（XTianqiLineCards）：骑士剪影＋一句话＋本线特点＋传闻；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
+## 四张卡（XTianqiLineCards）：骑士剪影＋一句话＋传闻＋本线特点；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
 ## 只有做好了内容的线能选（line_playable）：XTianqiLine.KEYS 里的线（战争 cc/pro-tianqi-war、饥荒），别的线卡片照列、标「还没修好」。
 ## 开关（O-280）：LINE_EVENT_OPEN＝false 时大厅不出这个事件、门也不锁（回到第三批之前）。战争线做好后打开（cc/pro-tianqi-war）。
 static var LINE_EVENT_OPEN := true
@@ -613,7 +613,7 @@ static func choose_line(s: XState, key: String) -> bool:
 
 
 static func _card_text(l: Dictionary) -> String:
-	return "%s·%s　%s\n本线特点：%s\n传闻：%s" % [l.name, l.knight, l.pick, l.change, l.test]
+	return "%s·%s　%s\n传闻：%s\n本线特点：%s" % [l.name, l.knight, l.pick, l.test, l.change]
 
 
 ## 大厅选线对话（地图场景在大厅里、抽完角色后调）：「再想想」留到下次回大厅；选定后接着跑本线开场
