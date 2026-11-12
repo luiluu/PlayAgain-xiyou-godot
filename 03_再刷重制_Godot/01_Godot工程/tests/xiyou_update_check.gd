@@ -21,6 +21,17 @@ func _check(name: String, ok: bool) -> void:
 	if not ok:
 		print("FAIL " + name)
 
+func _send(action: String) -> void:
+	var e := InputEventAction.new()
+	e.action = action
+	e.pressed = true
+	Input.parse_input_event(e)
+	var up := InputEventAction.new()
+	up.action = action
+	up.pressed = false
+	Input.parse_input_event(up)
+
+
 func _frames(n: int) -> void:
 	for i in range(n):
 		await get_tree().process_frame
@@ -224,6 +235,62 @@ func _run() -> void:
 	Input.parse_input_event(ev)
 	await _frames(3)
 	_check("取消键关掉这一页", not is_instance_valid(page) or page.is_queued_for_deletion())
+
+	# 弹框盖住标题：居中、铺满，键盘一个都不漏到标题菜单（Kyo 11-13 实机：框歪在左上角、说明溢出看不到按钮、方向键在动标题）
+	var tq_calls := []
+	var tq := XTianqiTitle.new()
+	var acts := {}
+	for k in ["new_game", "load", "options", "achievements", "check_update"]:
+		acts[k] = func(): tq_calls.append(k)
+	tq.setup(acts, [])
+	host.add_child(tq)
+	tq._show_final()
+	await _frames(2)
+	var sel0 := tq.selected()
+	XUpdatePage.patch_installer = func(p, res): tq_calls.append("install")
+	page = XUpdatePage.open(host)
+	await _frames(12)  # 等打开时那次检查回来，免得盖掉下面的结果
+	var long_notes := PackedStringArray()
+	for i in range(30):
+		long_notes.append("第 %d 条很长的更新说明，用来把框撑高，看说明会不会挤掉下面的按钮。" % i)
+	page.show_result({"state": C.PATCH, "current": "0.01.03", "version": "0.01.05", "date": "2026-11-12", "notes": long_notes, "patch": {"code": 105, "size": 2516582}})
+	await _frames(3)
+	var vp := page.get_viewport_rect()
+	var panel: Control = page.find_child("Panel", true, false)
+	var pr := panel.get_global_rect()
+	_check("弹框在单独的画布层里铺满视口", page.get_parent() is CanvasLayer and page.size.is_equal_approx(vp.size))
+	_check("弹框居中且整个在画面里", vp.encloses(pr) and absf(pr.get_center().x - vp.size.x / 2) < 2.0, )
+	primary = page.find_child("Primary", true, false)
+	var close_b: Button = page.find_child("Close", true, false)
+	_check("长说明时按钮仍在画面里", primary.visible and vp.encloses(primary.get_global_rect()) and vp.encloses(close_b.get_global_rect()) and close_b.text == "稍后再说")
+	var scroll: ScrollContainer = page.find_child("Scroll", true, false)
+	_check("说明能滚动、有提示", scroll.get_v_scroll_bar().max_value > scroll.size.y and (page.find_child("More", true, false) as Label).visible)
+	var b2: Label = page.find_child("Body", true, false)
+	_check("大小写在更新内容前面", b2.text.find("更新大小") < b2.text.find("更新内容") and b2.text.find("更新大小") >= 0)
+	_check("默认选中立即更新", page.focused_button() == primary)
+	for act in ["ui_down", "ui_down", "ui_up", "ui_down"]:
+		_send(act)
+		await _frames(1)
+	_check("上下键滚说明，不动标题", scroll.scroll_vertical > 0 and tq.selected() == sel0 and tq_calls.is_empty())
+	_send("ui_right")
+	await _frames(1)
+	_check("右键换到稍后再说", page.focused_button() == close_b)
+	_send("ui_left")
+	await _frames(1)
+	_check("左键回到立即更新", page.focused_button() == primary)
+	_send("ui_accept")
+	await _frames(2)
+	_check("确定键按立即更新、标题没被触发", tq_calls == ["install"] and tq.selected() == sel0)
+	_send("ui_right")
+	await _frames(1)
+	_send("ui_accept")
+	await _frames(2)
+	_check("确定键按稍后再说就关掉、标题没被触发", (not is_instance_valid(page) or page.is_queued_for_deletion()) and tq_calls == ["install"])
+	_send("ui_down")
+	await _frames(1)
+	_check("关掉后键盘回到标题", tq.selected() != sel0)
+	XUpdatePage.patch_installer = Callable()
+	tq.queue_free()
 
 	host.queue_free()
 	client.fetcher = Callable()
