@@ -104,6 +104,15 @@ func _data() -> void:
 	_check("class_of", bad.is_empty(), bad)
 	_check("kinds_pool", XRiftAlien.kinds() == ["berserk", "lean", "gland", "knell"], XRiftAlien.kinds())
 	_check("no_zhongyan", not XRiftAlien.data().tiers.has("zhongyan"))
+	# 发行版二阶只读代码里的 STAGE2（包里不带 rift_alien.json），两边要一致
+	var full := XRiftAlien.data()
+	var look_json: Dictionary = full.look.duplicate()
+	look_json.erase("_note")
+	_check("stage2_matches_json", full.classes == XRiftAlien.STAGE2.classes and look_json == XRiftAlien.STAGE2.look, [JSON.stringify(look_json), JSON.stringify(XRiftAlien.STAGE2.look)])
+	XRiftAlien.force_stage2_only = true
+	_check("stage2_only_class_of", XRiftAlien.class_of("【守层者】里德") == "guardian" and XRiftAlien.class_of("【稀有】巨型鱼人") == "rare")
+	_check("stage2_only_no_tiers", XRiftAlien.tier_info("qinran").is_empty() and XRiftAlien.kinds().is_empty())
+	XRiftAlien.force_stage2_only = false
 	_check("diff_map", XRiftAlien.diff_key(1) == "low" and XRiftAlien.diff_key(3) == "mid" and XRiftAlien.diff_key(4) == "mid"
 		and XRiftAlien.diff_key(6) == "high" and XRiftAlien.diff_key(9) == "top")
 

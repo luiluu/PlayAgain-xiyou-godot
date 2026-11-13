@@ -40,7 +40,23 @@ static var _tag := RegEx.create_from_string("^【([^】]+)】")
 static var _logic_ref: WeakRef = null
 
 
+## 发行版二阶只要画面：用到的「classes」「look」两项抄在代码里，发行包不带 rift_alien.json（未发布的三阶起数据，v0.01.07 泄漏修复）。
+## 改 rift_alien.json 的这两项要同步改这里（专项 xiyou_rift_alien 核两边一致）
+const STAGE2 := {
+	"classes": {"稀有": "rare", "精英": "rare", "前所未见": "very_rare", "亘古未有": "very_rare", "首领": "very_rare", "守层者": "guardian", "被封印者": "abyss", "未知存在": "abyss", "古神": "abyss"},
+	"look": {"color": [0.62, 0.35, 0.95], "period": 6.0, "guardian_pulse": 0.3, "flash_rate": 11.0, "flash": 0.5, "fade": 1.0, "tier_glow": {"qinran": 0.15, "shigu": 0.3, "huaxing": 0.5}},
+}
+## 测试用：true＝当发行版二阶读法（只用 STAGE2，不读文件）
+static var force_stage2_only := false
+
+
+static func stage2_only() -> bool:
+	return force_stage2_only or (ReleaseEntry.is_release() and not RELEASE_OPEN)
+
+
 static func data() -> Dictionary:
+	if stage2_only():
+		return STAGE2
 	if _data.is_empty():
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:
