@@ -1,6 +1,6 @@
 class_name XGraphics
 extends RefCounted
-## 画质设置（重制新增，Kyo 2026-11-13；设计见 00_设计/画质设置.md，O-待定-1）。
+## 画质设置（重制新增，Kyo 2026-11-13；设计见 00_设计/画质设置.md，O-372）。
 ## 建在「画面平滑」（XScreenScale）之上，另加四项，存在配置的一个键 codexQuality（字典）里：
 ## - integer 整数倍缩放：根窗口 content_scale_stretch 设成整数倍，画面只按 1、2、3 倍放大，像素均匀、四周留黑边；
 ##   窗口比 1280×720 小时不生效（Godot 会按 1 倍画、裁掉画面）。
@@ -57,7 +57,7 @@ static func low_power() -> bool:
 
 
 ## 像素柔边现在开不开（XBattlerSprite 的身体材质用）：战斗图放大到非整数倍时像素仍一样大、交界处一个屏幕像素过渡。
-## CRISP = false 是这一项自己的回退开关（O-待定-2）：不论设置都照旧最近邻，子页也不列。
+## CRISP = false 是这一项自己的回退开关（O-370）：不论设置都照旧最近邻，子页也不列。
 static var CRISP := true
 static func crisp_on() -> bool:
 	return ENABLED and CRISP and bool(settings()["crisp"])
@@ -67,7 +67,7 @@ static func crisp_on() -> bool:
 ## 跑步时画面一帧挪 12 像素、一帧挪 24 像素，看着一顿一顿（原版 MV 的主循环同样如此）。开着时用引擎的物理插值，
 ## 在两步之间按时间补位置（量过：每帧稳定挪 19 像素）。只画面补位置，逻辑、帧数、速度都不变。
 ## 只对登记过的节点（smooth_node，现在是地图场景）开，根节点关，别的界面不受影响。
-## MOTION = false 是这一项自己的回退开关（O-待定-3）：不论设置都不补，子页也不列。
+## MOTION = false 是这一项自己的回退开关（O-371）：不论设置都不补，子页也不列。
 static var MOTION := true
 const MOTION_GROUP := "xgraphics_motion"
 static func motion_on() -> bool:
