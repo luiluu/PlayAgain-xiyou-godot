@@ -434,6 +434,8 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 			var r: Dictionary = ctx.record
 			for p in e.params:
 				var amount := float(c.user.get(str(p)))
+				if amount > 0.0 and c.user is XEnemy and c.user.output_scale != 1.0:
+					amount = maxf(1.0, roundf(amount * c.user.output_scale))  # 守层者重算（O-待定-4）：轮回困难附加的「攻击＋魔攻」真伤也乘出伤倍率
 				if amount > 0.0:
 					ctx.resources.gain(c.target, "hp", -amount)
 					r.extra = r.get("extra", []) + [amount]

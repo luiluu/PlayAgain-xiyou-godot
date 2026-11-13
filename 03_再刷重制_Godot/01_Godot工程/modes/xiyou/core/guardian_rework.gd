@@ -10,8 +10,9 @@ extends RefCounted
 ## - HP：守层者那场（含同场小怪）的总血量 ＝ HP_BASE[层] × 本档目标回合（寻常 6、艰险 8、九死 10、炼狱 12、证道 15），
 ##   各成员按原来的血量比例分；34 层鸿钧用 HP_BASE[34]。七印里副本的敌人（按鸿蒙老祖重标）血量一律乘
 ##   HP_BASE[33] × 本档回合 ÷ 鸿蒙老祖原血量。35、36 层骑士和七首之龙是天启篇自己的数值，不动。
-##   再乘本层守层者的九系抗性（ELEM：20 层起守层者每系都只受 50%～5%，血量是按元素中性量的，不乘就要多打 2～20 倍回合）。
-##   吸收元素（19、28～33 层）没算进去，等元素重做定了再说。
+##   ELEM：20 层起守层者九系一刀切的抗性（每系只受 50%～5%）折进血量：受到伤害时抗性 ÷ elem_factor（0.5 → 1），血量不再乘。
+##   血量是按元素中性量的，这样九系、无属性、水风虚空混沌空间（数据里没抗性条）打上去都一样，回合数对得上。
+##   吸收元素（19、28～33 层）照旧，等元素重做定了再说；元素重做去掉一刀切时把 ELEM 关掉即可。
 ##   HP_BASE 暂用基准队（只算等级、法宝、精良装备）每回合伤害的平滑值，Kyo 11-13 定改用虚拟玩家每层实队（C）重量，量好换表。
 ## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
@@ -144,6 +145,17 @@ static func _on() -> bool:
 	return XState.current != null and XTianqi.active(XState.current)
 
 
+## XDamage 取抗性时调：守层者（含鸿钧）的抗性按本层一刀切的值折回 1（吸收、免疫不动）
+static func resistance(b: XBattler, r: float) -> float:
+	if not ELEM or r <= 0.0 or not b is XEnemy or not _on():
+		return r
+	var e := b as XEnemy
+	var f := floor_of(e.enemy_id)
+	if f == 0 or r >= 1.0:
+		return r
+	return minf(1.0, r / elem_factor(f))   # 只折回抗性；没有抗性条的系（水、风等）本来就是 1，不放大
+
+
 static func neutral(b: XBattler) -> bool:
 	return measure_neutral and b is XEnemy and floor_of((b as XEnemy).enemy_id) > 0
 
@@ -175,7 +187,7 @@ static func setup(logic, s: XState) -> void:
 		for e in logic.enemies:
 			if str(e.horseman.get("rec", {}).get("_ref", "")) == "qiyin":
 				# 鸿蒙老祖原血量（含本档难度倍率）换成 33 层的目标血量，按这只占鸿蒙老祖的几成同比缩
-				_scale_hp(e, float(HP_BASE[33]) * turns(s) * elem_factor(33) / maxf(1.0, ref_hp * float(e._rates[0])))
+				_scale_hp(e, float(HP_BASE[33]) * turns(s) / maxf(1.0, ref_hp * float(e._rates[0])))
 		return
 	var f := troop_floor(logic)
 	if f == 0:
@@ -188,7 +200,7 @@ static func setup(logic, s: XState) -> void:
 		total += float(e.mhp)
 	if total <= 0.0:
 		return
-	var k := float(HP_BASE[f]) * turns(s) * elem_factor(mini(f, 33)) / total
+	var k := float(HP_BASE[f]) * turns(s) / total
 	for e in logic.enemies:
 		_scale_hp(e, k)
 
@@ -214,4 +226,4 @@ static func _world(logic, s: XState) -> void:
 		e.set_meta(META_FLOOR, f)
 		e.refresh_passive()
 		# 本层守层者原总血量（乘本档难度倍率）→ 新总血量，同一比例
-		_scale_hp(e, float(HP_BASE[f]) * turns(s) * elem_factor(f) / (old_total(f) * float(e._rates[0])))
+		_scale_hp(e, float(HP_BASE[f]) * turns(s) / (old_total(f) * float(e._rates[0])))
