@@ -31,6 +31,7 @@ func _run() -> void:
 	_table_rows()
 	_battle()
 	_signature()
+	_guardian_and_dungeon()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -233,6 +234,48 @@ func _signature() -> void:
 	_check("switch_signature", lg.drop_chances(lg.enemies[0], true).all(func(r): return not r.has("sig")))
 	XTianqiDrop.SIGNATURE = true
 	lg.end_battle(1)
+
+
+## 第三期：守层者固定给、副本档位品质上移、商店货不能喂
+func _guardian_and_dungeon() -> void:
+	var s := _tianqi_state()
+	s.set_variable(20, 2)
+	var g = XTianqiDrop.guardian_grades(s, 5)  # 敌群 5＝二层守层者；还没过二层 → 首杀
+	_check("guardian_first", g is Array and g[0] == 2 and g[1] == [1, 0, 0, 0], g)
+	s.set_variable(20, 3)
+	_check("guardian_repeat", XTianqiDrop.guardian_grades(s, 5)[1] == [0, 0], XTianqiDrop.guardian_grades(s, 5))
+	_check("not_guardian", XTianqiDrop.guardian_grades(s, 1) == null)
+	var late := 0
+	for t in XZhenqi.GUARDIANS:
+		if int(XZhenqi.GUARDIANS[t]) == 29:
+			late = int(t)
+	s.set_variable(20, 33)
+	_check("guardian_late_repeat", late > 0 and (XTianqiDrop.guardian_grades(s, late)[1] as Array).size() == 6, late)
+	s.set_variable(20, 2)
+	var got: Array = XTianqiDrop.roll(s, [], func(): return 0.5, 5)
+	_check("guardian_roll_fixed", got.size() == 4, got)
+	# 副本档位：王者档高一档、高两档权重翻倍（12：6 → 24：6，合计 115）
+	_check("dungeon_up_outside", XTianqiDrop.dungeon_up(s) == 1.0)
+	s.set_variable(XDungeon.VAR_INSIDE, 1)
+	s.set_variable(XDungeon.VAR_TIER, 4)
+	_check("dungeon_up_king", XTianqiDrop.dungeon_up(s) == 2.0, XTianqiDrop.dungeon_up(s))
+	_check("dungeon_grade_shift", XTianqiDrop.roll_grade(12, 0.75, 2.0) == 3 and XTianqiDrop.roll_grade(12, 0.75) == 2 and XTianqiDrop.roll_grade(12, 0.73, 2.0) == 2,
+		[XTianqiDrop.roll_grade(12, 0.75, 2.0), XTianqiDrop.roll_grade(12, 0.75)])
+	s.set_variable(XDungeon.VAR_INSIDE, 0)
+	# 商店货不能喂
+	var before := s.gear.size()
+	s.gain_gear("weapon", 1, 2)
+	XTianqiDrop.mark_bought(s, before + 1)
+	_check("bought_marked", not XTianqiDrop.feed_blocked(s, s.gear[before]) and XTianqiDrop.feed_blocked(s, s.gear[before + 1]))
+	XTianqiDrop.NO_FEED_BOUGHT = false
+	_check("switch_feed_bought", not XTianqiDrop.feed_blocked(s, s.gear[before + 1]))
+	XTianqiDrop.NO_FEED_BOUGHT = true
+	var old := XState.new_game_blank()
+	XState.current = old
+	var ob := old.gear.size()
+	old.gain_gear("weapon", 1, 1)
+	XTianqiDrop.mark_bought(old, ob)
+	_check("legacy_not_marked", not old.gear[ob].has("tq_bought"))
 
 
 func _switches() -> void:

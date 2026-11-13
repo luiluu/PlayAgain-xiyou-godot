@@ -17,13 +17,17 @@ extends RefCounted
 ##   长期平均等于面板概率。连着没出的次数、掷过的总次数、种子都记在存档（flags.tianqi.drop），随机数由它们算出来，读档重打结果一样。
 ##   SIGNATURE 关着（或 BONUS 关着，招牌的倍率要用新加成）时：留下的行照原表 × 0.2 × 加成，用战斗随机流掷。
 ##
-## 回退（O-待定-1）：`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
+## - 第三期：守层者不走每场的掷法，固定给（首杀 1 件高一档＋3 件门槛档，再打 2 件，28～30 层没有随机遇敌、再打 6 件），不吃加成；
+##   副本里按所选档位把高一档、高两档的权重乘 1／1.3／1.6／2（件数不变）；商店买来的装备打上 tq_bought，不能喂法宝（NO_FEED_BOUGHT）。
+##
+## 回退（O-待定-1）：`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
 static var BONUS := true
 static var DIFFICULTY := true
 static var SIGNATURE := true
+static var NO_FEED_BOUGHT := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -306,10 +310,20 @@ static func pieces(s: XState, floor_no: int, members = null) -> float:
 	return maxf(0.0, n * party_mult(s, members) * difficulty_mult(s))
 
 
-## 品质档：r 是 0～1 随机数
-static func roll_grade(floor_no: int, r: float) -> int:
+## 副本里高一档、高两档权重的倍数（不在副本里是 1）
+static func dungeon_up(s: XState) -> float:
+	if s == null or int(s.variable(XDungeon.VAR_INSIDE)) <= 0:
+		return 1.0
+	var tiers: Array = table().get("dungeon_up", {}).get("by_tier", [1.0])
+	return float(tiers[clampi(int(s.variable(XDungeon.VAR_TIER)) - 1, 0, tiers.size() - 1)])
+
+
+## 品质档：r 是 0～1 随机数；up 是高一档、高两档权重的倍数
+static func roll_grade(floor_no: int, r: float, up := 1.0) -> int:
 	var g: Dictionary = table().get("generic", {})
-	var w: Array = g.get("quality_weights", [30, 55, 12, 3])
+	var w: Array = (g.get("quality_weights", [30, 55, 12, 3]) as Array).duplicate()
+	for i in range(2, w.size()):
+		w[i] = float(w[i]) * up
 	var gate := gate_grade(floor_no)
 	var total := 0.0
 	for x in w:
@@ -374,21 +388,67 @@ static func pick(s: XState, floor_no: int, grade: int, members: Array, r1: float
 	return {}
 
 
-## 这一场的通用掉落 [{kind, id, generic}]；roll 每次给一个 0～1 随机数
-static func roll(s: XState, members: Array, roll_fn: Callable) -> Array:
+## 守层者这一场固定给的品质档列表（不是守层者返回 null）：首杀＝还没过这一层（变量 20 不大于这一层）
+static func guardian_grades(s: XState, troop_id: int):
+	var floor_no := int(XZhenqi.GUARDIANS.get(troop_id, 0))
+	var range_: Array = table().get("generic", {}).get("floors", [1, 30])
+	if floor_no < int(range_[0]) or floor_no > int(range_[1]):
+		return null
+	var g: Dictionary = table().get("guardian", {})
+	var gate := gate_grade(floor_no)
+	var top := int(table().get("generic", {}).get("top_grade", 5))
 	var out := []
+	if int(s.variable(20)) <= floor_no:
+		var first: Array = g.get("first", [1, 3])
+		for i in int(first[0]):
+			out.append(mini(gate + 1, top))
+		for i in int(first[1]):
+			out.append(gate)
+	else:
+		for i in int(g.get("late_repeat", 6)) if floor_no >= int(g.get("late_floors", 28)) else int(g.get("repeat", 2)):
+			out.append(gate)
+	return [floor_no, out]
+
+
+## 这一场的通用掉落 [{kind, id, generic}]；roll 每次给一个 0～1 随机数。troop_id 是守层者时固定给
+static func roll(s: XState, members: Array, roll_fn: Callable, troop_id := 0) -> Array:
+	var out := []
+	if not generic_on(s):
+		return out
+	var fixed = guardian_grades(s, troop_id) if troop_id > 0 else null
+	if fixed is Array:
+		for gr in fixed[1]:
+			var d := pick(s, int(fixed[0]), int(gr), members, float(roll_fn.call()), float(roll_fn.call()))
+			if not d.is_empty():
+				out.append(d)
+		return out
 	var floor_no := floor_of(s)
-	if not generic_on(s) or floor_no <= 0:
+	if floor_no <= 0:
 		return out
 	var n := pieces(s, floor_no, members)
 	var count := floori(n)
 	if float(roll_fn.call()) < n - float(count):
 		count += 1
+	var up := dungeon_up(s)
 	for i in count:
-		var d := pick(s, floor_no, roll_grade(floor_no, float(roll_fn.call())), members, float(roll_fn.call()), float(roll_fn.call()))
+		var d := pick(s, floor_no, roll_grade(floor_no, float(roll_fn.call()), up), members, float(roll_fn.call()), float(roll_fn.call()))
 		if not d.is_empty():
 			out.append(d)
 	return out
+
+
+## 商店成交后调：这次买进来的装备（背包里 from 之后新增的）打上标记，不能喂法宝
+static func mark_bought(s: XState, from: int) -> void:
+	if not on(s):
+		return
+	for i in range(maxi(0, from), s.gear.size()):
+		if s.gear[i] is Dictionary:
+			s.gear[i]["tq_bought"] = true
+
+
+## 这件装备因为是商店买的不能喂法宝
+static func feed_blocked(s: XState, item: Dictionary) -> bool:
+	return NO_FEED_BOUGHT and on(s) and bool(item.get("tq_bought", false))
 
 
 ## XBattleLogic.rewards 调：一场只掷一次（rewards 会被多处调用），屏蔽掉落照样管
@@ -398,7 +458,7 @@ static func battle_drops(logic) -> Array:
 	if not logic.has_meta("tianqi_generic"):
 		var drops := []
 		if not logic.enemies.any(func(e): return e.zq_trial_loot) and logic.enemies.any(func(e): return not e.hidden):
-			drops = roll(logic.state, _members(logic), func(): return logic.random.reward.next_float("tianqi_generic", "battle"))
+			drops = roll(logic.state, _members(logic), func(): return logic.random.reward.next_float("tianqi_generic", "battle"), int(logic.troop_id))
 			drops = XPingbi.filter_drops(logic.state, XHangUp.shield_drops(logic.state, drops))
 		logic.set_meta("tianqi_generic", drops)
 	return (logic.get_meta("tianqi_generic") as Array).duplicate(true)
