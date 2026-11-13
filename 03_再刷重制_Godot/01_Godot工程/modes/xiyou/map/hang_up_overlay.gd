@@ -24,8 +24,6 @@ const TEXT_COLOR := Color8(0, 200, 0)
 ## O-022：摘要随状态清除。false 按状态保留并叠画旧文字，恢复原版残留。
 static var CLEAR_SUMMARY := true
 static var TIP_WORD := true
-## O-待定-1：触屏一下只算一次按下（鼠标模拟＋触屏两份事件去重）。设 false 恢复（触屏点一下开了又关）。
-static var ONE_PRESS_PER_TAP := true
 
 var inter: Control
 var tip: TextureRect
@@ -34,7 +32,6 @@ var button: Button
 var _button_sprite: TextureRect
 var _text: XMVCanvas
 var _press := 0
-var _press_frame := -1
 var _time := ""
 var _summary: XMVCanvas
 var _lines := {}
@@ -86,12 +83,8 @@ func _ready() -> void:
 		button.add_theme_stylebox_override(key, StyleBoxEmpty.new())
 	inter.add_child(button)
 	button.pressed.connect(func():
-		# 触屏点一下 Godot 送两份按下（第一指转出的鼠标键＋触屏本身），按下即触发的按钮会连开带关：
-		# 安卓点挂机按钮刚开始就又停了（Kyo 11-13 反馈 v0.01.07）。同一下（相隔不超过 2 帧）只认第一份。
-		var f := Engine.get_process_frames()
-		if ONE_PRESS_PER_TAP and _press_frame >= 0 and f - _press_frame <= 2:
+		if not XKeyMap.first_press(button):  # 触屏一下的第二份按下（O-待定-1，XKeyMap.ONE_PRESS_PER_TAP）
 			return
-		_press_frame = f
 		press()
 		toggle_requested.emit())
 	refresh()
