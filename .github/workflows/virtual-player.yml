@@ -1,0 +1,175 @@
+# 虚拟玩家：一个只靠按键玩游戏的机器人（tests/virtual_player），在云端自己开局、爬塔，替人把流程玩一遍。
+# 说明见 03_再刷重制_Godot/07_开发环境/虚拟玩家.md。每个种子一台机器，各玩 minutes 分钟，出一份小结和完整报告。
+# - 手动：Actions 页「虚拟玩家」→ Run workflow（可改种子、时长、要通过几层）
+# - 推 vp/<随便什么名字>（如 git push github HEAD:refs/heads/vp/试跑）：用默认参数跑推上来的这个提交，分支上试改动用
+# - 定时：写好了但先关着（见下面 schedule 处的说明）
+# 结果：运行页摘要里每个种子一段小结（爬到第几层、为什么停、全灭几次、卡住与存疑）；完整报告与日志在附件 vp-seed-<种子>。
+# 判红：机器人卡死、脚本报错、硬性不变量被破、爬不动（守层者打不过、找不到守层者）。只是时间用完不算红。
+# 转换产物不入 Git：和「云端选测」用同一份快照（refs/ci/generated/<分支>，没有就用 main 的）和同一个导入缓存。
+name: 虚拟玩家
+
+on:
+  push:
+    branches: ['vp/**']
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: 种子（空格分隔；每个种子一台机器，各玩一局）
+        type: string
+        default: '1 2 3'
+      minutes:
+        description: 每局玩多少分钟
+        type: string
+        default: '30'
+      floors:
+        description: 通过这么多层就收工（0＝玩到时间用完）
+        type: string
+        default: '0'
+      mode:
+        description: climb＝爬塔，explore＝在大厅一带随便逛
+        type: choice
+        options: [climb, explore]
+        default: climb
+      extra:
+        description: 额外参数（原样传给机器人，如 --vp-no-farm --vp-frames=150000；见 虚拟玩家.md）
+        type: string
+        default: ''
+  # 定时先不开（cc 2026-11-13）：机器人学会了游戏内向导写的养成路线，但还不会花钱（商店的饰品、战技书、功法、丹药），
+  # 眼下多数阵容仍停在前几层并判红，天天红没有新信息。等它稳定爬过前十层后去掉下面两行的 #，每天北京时间 03:00 在默认分支上跑一次。
+  # schedule:
+  #   - cron: '0 19 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TOOL: 03_再刷重制_Godot/07_开发环境/云端选测.py
+  PROJECT: 03_再刷重制_Godot/01_Godot工程
+  GENERATED: 03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated
+  SEEDS: ${{ inputs.seeds || '1 2 3' }}
+  MINUTES: ${{ inputs.minutes || '30' }}
+  FLOORS: ${{ inputs.floors || '0' }}
+  MODE: ${{ inputs.mode || 'climb' }}
+  EXTRA: ${{ inputs.extra || '' }}
+
+jobs:
+  # 取引擎、解开产物、godot --import 一次，存进 Actions 缓存（键和「云端选测」一样，两边互相命中）
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      ws_key: ${{ steps.key.outputs.ws_key }}
+      godot_key: ${{ steps.key.outputs.godot_key }}
+      seeds: ${{ steps.key.outputs.seeds }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: key
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          gen=''; ref=''
+          for r in "refs/ci/generated/$BRANCH" refs/ci/generated/main; do
+            c=$(git ls-remote origin "$r" | cut -f1)
+            if [ -n "$c" ]; then gen=$c; ref=$r; break; fi
+          done
+          if [ -z "$gen" ]; then echo "找不到转换产物快照（refs/ci/generated/…）：先在 Mac 上跑 云端选测.py upload"; exit 1; fi
+          echo "产物快照 $ref ＝ $gen"
+          echo "generated_ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "godot_key=godot-v2-${{ hashFiles('03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
+          echo "ws_key=ws-v1-${gen}-${{ hashFiles('03_再刷重制_Godot/01_Godot工程/**', '03_再刷重制_Godot/07_开发环境/环境登记.json') }}" >> "$GITHUB_OUTPUT"
+          python3 -c "import json,os;print('seeds='+json.dumps([int(x) for x in os.environ['SEEDS'].split()]))" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/xiyou-godot
+          key: ${{ steps.key.outputs.godot_key }}
+      - id: godot
+        run: python3 "$TOOL" godot
+      - id: ws
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ steps.key.outputs.ws_key }}
+      - if: steps.ws.outputs.cache-hit != 'true'
+        run: python3 "$TOOL" fetch --ref "${{ steps.key.outputs.generated_ref }}"
+      - if: steps.ws.outputs.cache-hit != 'true'
+        env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+        run: |
+          # 同「云端选测」：云端不用 WebP 无损最高档导入（从零导入会超时），内容不变
+          sed -i '/^textures\/webp_compression\//d' "$PROJECT/project.godot"
+          rc=0; timeout 1500 "$GODOT" --headless --path "$PROJECT" --import > import.log 2>&1 || rc=$?
+          echo "godot --import 退出码 $rc"
+          if [ "$rc" -ne 0 ] || grep -qE 'SCRIPT ERROR|^ERROR:' import.log; then
+            grep -E 'ERROR|FAIL' import.log | head -40; exit 1
+          fi
+      - if: steps.ws.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ steps.key.outputs.ws_key }}
+
+  play:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: ${{ fromJSON(needs.prepare.outputs.seeds) }}
+    name: 玩一局（种子 ${{ matrix.seed }}）
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/xiyou-godot
+          key: ${{ needs.prepare.outputs.godot_key }}
+      - id: godot
+        run: python3 "$TOOL" godot
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.PROJECT }}/.godot
+            ${{ env.GENERATED }}
+          key: ${{ needs.prepare.outputs.ws_key }}
+          fail-on-cache-miss: true
+      - name: 玩
+        env:
+          GODOT: ${{ steps.godot.outputs.godot }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          out="$RUNNER_TEMP/vp"; mkdir -p "$out"
+          if [ "$MODE" = climb ]; then
+            args="--vp-mode=climb --vp-minutes=$MINUTES --vp-floors=$FLOORS"
+          else
+            args="--vp-free --vp-ticks=30000"
+          fi
+          rc=0
+          timeout $(( (MINUTES + 15) * 60 )) "$GODOT" --headless --path "$PROJECT" -s res://tests/test_main_loop.gd \
+            res://tests/xiyou_virtual_player.tscn -- --vp-seed="$SEED" --vp-out="$out" $args $EXTRA > "$out/godot.log" 2>&1 || rc=$?
+          {
+            if [ -f "$out/summary.md" ]; then cat "$out/summary.md"; else echo "## 虚拟玩家（种子 $SEED）"; echo; echo "- **没出报告**：进程退出码 $rc（超时是 124），看附件里的 godot.log"; fi
+            errors=$(grep -cE 'SCRIPT ERROR|^ERROR:' "$out/godot.log" || true)
+            if [ "$errors" -gt 0 ]; then
+              echo; echo "**日志里有 $errors 条报错**（前 15 条）："; echo; echo '```'
+              grep -E -A2 'SCRIPT ERROR|^ERROR:' "$out/godot.log" | head -45; echo '```'
+            fi
+            fails=$(grep -E '^FAIL ' "$out/godot.log" || true)
+            if [ -n "$fails" ]; then echo; echo "**没通过的检查**："; echo; echo '```'; echo "$fails" | cut -c1-600; echo '```'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^(VP_CLIMB|TEST_RESULT)=' "$out/godot.log" | cut -c1-2000 || true
+          if [ "$rc" -ne 0 ] || grep -qE 'SCRIPT ERROR|^ERROR:|^FAIL ' "$out/godot.log"; then exit 1; fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vp-seed-${{ matrix.seed }}
+          path: ${{ runner.temp }}/vp
+          retention-days: 14
+          if-no-files-found: ignore
