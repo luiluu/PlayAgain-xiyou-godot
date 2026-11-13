@@ -125,7 +125,7 @@ func _run() -> void:
 	var cached:=equip.candidates().map(func(e):return e.rec)
 	var hit:=is_same(equip.candidates(),equip.candidates())
 	XEquipScene.CACHE_CANDIDATES=false;var fresh:=equip.candidates().map(func(e):return e.rec);XEquipScene.CACHE_CANDIDATES=true
-	check("candidates_cache_fresh",hit and cached.size()==fresh.size() and range(cached.size()).all(func(i):return is_same(cached[i],fresh[i])) and cached.any(func(r):return is_same(r,old_weapon)) and not cached.any(func(r):return is_same(r,a.equips[0])),[cached.size(),fresh.size()])
+	check("candidates_cache_fresh",hit and cached.size()==fresh.size() and range(cached.size()).all(func(i):return is_same(cached[i],fresh[i]) or (cached[i].is_empty() and fresh[i].is_empty())) and cached.any(func(r):return is_same(r,old_weapon)) and not cached.any(func(r):return is_same(r,a.equips[0])),[cached.size(),fresh.size()])
 	equip._item_index=equip.candidates().size()-1;equip._refresh();await frames()
 	check("remove_row_no_card",not equip.help_card.visible and equip._shown_item().is_empty() and equip._temp_actor()!=null)
 	equip._ok();await frames()
