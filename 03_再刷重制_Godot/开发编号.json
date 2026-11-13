@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.528",
-  "sequence": 528,
-  "next": "dev.529",
-  "nextSequence": 529,
+  "current": "dev.529",
+  "sequence": 529,
+  "next": "dev.530",
+  "nextSequence": 530,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "gojo-art",
+  "currentChange": "tianqi-seven-seals-look",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

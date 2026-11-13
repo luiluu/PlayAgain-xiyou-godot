@@ -10,7 +10,7 @@ extends RefCounted
 ##   飘几颗本印颜色的光点；倒下时熄掉（XBattlerSprite._process 调 update_sprite）。
 ## - 七套都解锁：七印的称号还没有称号系统接，先不做（交付单）。
 ##
-## 回退开关 ENABLED（O-待定）：false＝不解锁、菜单不出、头像不加框、战斗不画法阵（已经记下的解锁和佩戴留着）。
+## 回退开关 ENABLED（O-368）：false＝不解锁、菜单不出、头像不加框、战斗不画法阵（已经记下的解锁和佩戴留着）。
 
 static var ENABLED := true
 
