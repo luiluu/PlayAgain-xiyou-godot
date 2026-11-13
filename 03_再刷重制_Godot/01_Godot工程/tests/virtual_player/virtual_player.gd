@@ -481,6 +481,10 @@ func _close_battle(obs: Dictionary, how: String) -> void:
 	if _battle.get("stalemate", false):
 		res = "僵局"
 	_battle["result"] = res
+	_battle["gifted"] = gifted_floors.has(_floor) and _dg.is_empty()
+	if mode == "climb" and (res == "全灭" or res == "僵局" or _intent in ["challenge", "enter"]):
+		_log("战斗记录 第 %d 层 敌群 %d %s%s 第 %d 回合 敌人剩 %.1f%% 逐回合[回合,敌血,我血,站着]=%s" % [_floor, int(_battle.get("troop", 0)), res, "（副本）" if not _dg.is_empty() else "",
+			int(_battle.get("turn", 0)), 100.0 * float(_battle.get("hp", 0.0)) / maxf(1.0, float(_battle.get("hp0", 1.0))), str(_battle.get("trace", []))])
 	if res == "胜利" and not _dg.is_empty() and int(_battle.get("troop", 0)) == int(_dg.get("boss_troop", -1)):
 		_dg["won"] = true
 		dungeon_kills += 1
@@ -848,6 +852,18 @@ func _act_battle(obs: Dictionary) -> void:
 		_battle.actions += 1
 		if not _battle.has("hp0"):
 			_battle["hp0"] = hp
+		# 每回合记一笔：敌人剩几成血、我方剩几成血、还站着几个（看是一回合被秒还是慢慢磨死）
+		var tr: Array = _battle.get("trace", [])
+		if (tr.is_empty() or int(tr[-1][0]) != int(b.logic.turn)) and tr.size() < 60:
+			var ph := 0.0
+			var pm := 0.0
+			var alive := 0
+			for a in b.logic.actors:
+				ph += maxf(0.0, float(a.hp))
+				pm += float(a.mhp)
+				alive += 1 if float(a.hp) > 0.0 else 0
+			tr.append([int(b.logic.turn), snappedf(hp / maxf(1.0, float(_battle.get("hp0", hp))), 0.001), snappedf(ph / maxf(1.0, pm), 0.01), alive])
+			_battle["trace"] = tr
 		if not _battle.get("stalemate", false):
 			_battle["hp"] = hp           # 收工时还剩多少血、打到第几回合（报告里看差多远）
 			_battle["turn"] = int(b.logic.turn)
