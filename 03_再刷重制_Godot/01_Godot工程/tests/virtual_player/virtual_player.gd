@@ -21,6 +21,7 @@ var max_stuck := 3                 # 连续卡住这么多次就放弃（报告�
 var battle_manual_actions := 60    # 一场战斗手动按这么多步还没完，就打开自动战斗（报告里记 assist）
 var overlay_monkey_max := 10       # 每次进菜单／子页先随手按最多这么多下再退出
 var battle_give_up := 1500         # 一场战斗最多这么多步
+var settle_ticks := 800            # 目标达到／步数用完后，最多再走这么多步把手头的画面收完
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
 var verbose := false
@@ -42,6 +43,7 @@ var _msg_hash := 0
 var _violation_seen := {}
 var _unreach_logged := {}
 var aborted := ""
+var settled := false
 
 var _rng := RandomNumberGenerator.new()
 var _last_screen := ""
@@ -231,8 +233,30 @@ func run() -> Dictionary:
 		ticks += 1
 		if not goals.is_empty() and goals.all(func(g): return milestones.has(g)):
 			break
+	await _settle()
 	_close_battle(observe(), "未结束")
 	return report()
+
+
+## 收工前把手头的画面走完（对话、过场、战斗、子页），停在地图空闲或标题上：
+## 事件跑到一半就退出，悬着的协程会让引擎报资源没释放（并行测试把它算失败）
+func _settle() -> void:
+	var extra := 0
+	while extra < settle_ticks and aborted == "":
+		var obs := observe()
+		_note_screen(obs)
+		_note_message(obs)
+		if obs.screen == "title" or (obs.screen == "map" and not obs.map.player.is_moving()):
+			break
+		if obs.screen == "map":
+			await _frames(1)
+		elif _watchdog(obs):
+			await _recover(obs)
+		else:
+			await _act(obs)
+		ticks += 1
+		extra += 1
+	settled = extra < settle_ticks and aborted == ""
 
 
 ## 机器人自己记对话（XMessageBox.transcript 只在自动应答模式下才记）：消息内容换了就算新的一条
@@ -755,7 +779,7 @@ func report() -> Dictionary:
 	var st := XState.current
 	return {
 		"seed": rng_seed, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
-		"aborted": aborted, "milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
+		"aborted": aborted, "settled": settled, "milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
 		"timeline": timeline, "messages": messages_seen, "transcript": transcript,
 		"final": {"screen": _last_screen, "map": _last_map, "gold": int(st.gold) if st != null else 0,

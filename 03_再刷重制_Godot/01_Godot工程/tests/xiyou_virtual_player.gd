@@ -65,6 +65,7 @@ func _run() -> void:
 	_check("enter_xiyou", GameApp.enter_mode("xiyou"))
 	var rep: Dictionary = await bot.run()
 	_check("not_aborted", rep.aborted == "", rep.aborted)
+	_check("settled", rep.settled, rep.final)
 	# 硬性不变量（金币、生命为负）算失败；「存疑」的只打印出来给人看
 	var hard: Array = rep.violations.filter(func(v): return v.hard)
 	_check("no_hard_violations", hard.is_empty(), hard.slice(0, 5))
@@ -87,6 +88,7 @@ func _run() -> void:
 	brief.erase("transcript")
 	print("VP_REPORT=" + JSON.stringify(brief))
 	bot.queue_free()
+	await get_tree().process_frame
 	for i in range(1, XSave.SLOTS + 1):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XSave.path(i)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
