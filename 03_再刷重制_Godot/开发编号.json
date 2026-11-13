@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.530",
-  "sequence": 530,
-  "next": "dev.531",
-  "nextSequence": 531,
+  "current": "dev.531",
+  "sequence": 531,
+  "next": "dev.532",
+  "nextSequence": 532,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "tianqi-line-card-text",
+  "currentChange": "screen-smooth-default",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

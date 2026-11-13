@@ -218,7 +218,7 @@ func _screen() -> void:
 	var before := root.content_scale_mode
 	# 没存过这一项（v0.01 老配置）：按平台默认。TestEnv 写过一次配置（会连默认值一起写进去），先删掉
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
-	# v0.01.06 起（O-待定）：触屏、桌面没选过都默认关
+	# v0.01.06 起（O-369）：触屏、桌面没选过都默认关
 	XPlatform.force_mobile = true
 	XConfig._loaded_path = "<unloaded>"
 	check("smooth_default_touch_off", not XConfig.flag(XScreenScale.KEY))
