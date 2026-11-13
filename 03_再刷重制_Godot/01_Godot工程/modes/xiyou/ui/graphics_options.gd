@@ -19,9 +19,10 @@ const HINT_SIZE := 20
 const ON_COLOR := Color("a9dfb7")
 const OFF_COLOR := Color("c0c0c0")
 const TITLE := "画质设置"
-const NOTE := "默认都不改动画面。改了立刻生效并保存；想恢复就全部调回最左边一档。"
+const NOTE := "改了立刻生效并保存。灰色是默认档。"
 ## [键, 名字, 说明]
-const ROWS := [["integer", "整数倍缩放", "画面只放大整数倍，像素均匀，四周留黑边"],
+const ROWS := [["crisp", "像素柔边", "战斗图放大后像素均匀、不发硬；文字不变"],
+	["integer", "整数倍缩放", "画面只放大整数倍，像素均匀，四周留黑边"],
 	["fps", "帧率上限", "降低可省电、少发热；游戏速度不变"],
 	["window", "窗口大小", "自动＝按屏幕大小；也可用 F11 切全屏"],
 	["low", "省电模式", "低配手机用：30 帧、柔和放大、关画面特效"]]
@@ -44,9 +45,9 @@ func _ready() -> void:
 	list_win.canvas.blink = true
 
 
-## 本平台列出的行（窗口大小只在桌面）
+## 本平台列出的行（窗口大小只在桌面；像素柔边的回退开关关掉时不列）
 static func rows() -> Array:
-	return ROWS.filter(func(r): return r[0] != "window" or not XPlatform.is_mobile())
+	return ROWS.filter(func(r): return (r[0] != "window" or not XPlatform.is_mobile()) and (r[0] != "crisp" or XGraphics.CRISP))
 
 
 func list_rect() -> Rect2:

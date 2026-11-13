@@ -54,7 +54,7 @@ func _run() -> void:
 	check("sanitize_bad", bad == XGraphics.DEFAULTS, bad)
 	check("sanitize_not_dict", XGraphics.sanitize(null) == XGraphics.DEFAULTS and XGraphics.sanitize([1]) == XGraphics.DEFAULTS)
 	var good := XGraphics.sanitize({"integer": true, "fps": 30.0, "window": "full", "low": true})
-	check("sanitize_good", good == {"integer": true, "fps": 30, "window": "full", "low": true}, good)
+	check("sanitize_good", good == {"integer": true, "fps": 30, "window": "full", "low": true, "crisp": true}, good)
 	check("set_wrong_type", not XGraphics.set_value("fps", "60") and not XGraphics.set_value("nope", true))
 	check("set_flag_refused", not XConfig.set_flag(XGraphics.KEY, true) and XGraphics.settings() == XGraphics.DEFAULTS)
 
@@ -76,8 +76,7 @@ func _run() -> void:
 	XGraphics.set_value("low", false)
 	check("low_off_restores", Engine.max_fps == 60 and root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS and XGraphics.fx_on(),
 		[Engine.max_fps, root.content_scale_mode])
-	check("low_keeps_lower", XGraphics.fps_cap({"integer": false, "fps": 30, "window": "auto", "low": true}) == 30
-		and XGraphics.fps_cap({"integer": false, "fps": 0, "window": "auto", "low": true}) == 30)
+	check("low_keeps_lower", XGraphics.fps_cap({"fps": 30, "low": true}) == 30 and XGraphics.fps_cap({"fps": 0, "low": true}) == 30)
 	XGraphics.set_value("fps", 0)
 
 	# ---- 整数倍缩放 ----
@@ -137,12 +136,12 @@ func _run() -> void:
 	await frames(2)
 	var page := opt._page as XGraphicsOptionsScene
 	check("page_open", page != null)
-	check("page_rows_desktop", page.keys() == ["integer", "fps", "window", "low"], page.keys())
-	check("page_status_default", page.status_text(0) == "关" and page.status_text(1) == "跟随屏幕" and page.status_text(2) == "自动" and page.status_text(3) == "关",
-		[page.status_text(0), page.status_text(1), page.status_text(2), page.status_text(3)])
-	page.index = 1
+	check("page_rows_desktop", page.keys() == ["crisp", "integer", "fps", "window", "low"], page.keys())
+	check("page_status_default", page.status_text(1) == "关" and page.status_text(2) == "跟随屏幕" and page.status_text(3) == "自动" and page.status_text(4) == "关",
+		[page.status_text(1), page.status_text(2), page.status_text(3), page.status_text(4)])
+	page.index = 2
 	page.ok()
-	check("page_ok_cycles", XGraphics.settings()["fps"] == 60 and page.status_text(1) == "60 帧", page.status_text(1))
+	check("page_ok_cycles", XGraphics.settings()["fps"] == 60 and page.status_text(2) == "60 帧", page.status_text(2))
 	page.side(true)
 	page.side(true)
 	check("page_right_stops", XGraphics.settings()["fps"] == 30)
@@ -150,9 +149,9 @@ func _run() -> void:
 	check("page_ok_wraps", XGraphics.settings()["fps"] == 0)
 	page.side(false)
 	check("page_left_stops", XGraphics.settings()["fps"] == 0)
-	page.index = 3
+	page.index = 4
 	page.side(true)
-	check("page_low_on", XGraphics.settings()["low"] and page.status_text(3) == "开")
+	check("page_low_on", XGraphics.settings()["low"] and page.status_text(4) == "开")
 	page.side(true)
 	check("page_low_stays", XGraphics.settings()["low"])
 	# 省电模式开着时，在设置页关「画面平滑」不会把缩放切回去
@@ -161,9 +160,9 @@ func _run() -> void:
 	check("low_keeps_viewport", root.content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT, root.content_scale_mode)
 	page.side(false)
 	check("page_low_off", not XGraphics.settings()["low"] and root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS)
-	page.index = 0
+	page.index = 1
 	page.ok()
-	check("page_integer_status", page.status_text(0).begins_with("开"), page.status_text(0))
+	check("page_integer_status", page.status_text(1).begins_with("开"), page.status_text(1))
 	page.ok()
 	page.cancel()
 	await frames(2)
@@ -172,7 +171,7 @@ func _run() -> void:
 	await frames(1)
 	# 手机：不列窗口大小
 	XPlatform.force_mobile = true
-	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["integer", "fps", "low"])
+	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["crisp", "integer", "fps", "low"])
 	XPlatform.force_mobile = false
 
 	# ---- 回退开关 ----

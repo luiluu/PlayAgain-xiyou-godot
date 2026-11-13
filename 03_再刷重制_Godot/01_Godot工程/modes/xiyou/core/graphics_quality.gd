@@ -6,8 +6,9 @@ extends RefCounted
 ##   窗口比 1280×720 小时不生效（Godot 会按 1 倍画、裁掉画面）。
 ## - fps 帧率上限：0 跟随屏幕、60、30。只限画面刷新（Engine.max_fps）；游戏逻辑按物理帧走（XSpeedGear），速度不变。
 ## - window 窗口大小（只桌面）：auto 照旧（WindowFit 按屏幕九成）、三档固定大小、full 全屏。
+## - crisp 像素柔边（默认开）：战斗图放大到 1.5 倍这类非整数倍时，像素不再宽窄不一；文字、图标不受影响。
 ## - low 省电模式：帧率上限当作 30、画面按 1280×720 画再放大（同画面平滑开）、画面特效当作关；只覆盖生效值，不改那几项存的值。
-## 默认全部「不干预」：没存过设置时画面与原先完全一样。
+## 除像素柔边外默认全部「不干预」。
 ## 回退：ENABLED = false 时设置页不列「画质设置」，apply 什么都不碰，画面特效只看它自己的开关。
 
 static var ENABLED := true
@@ -15,7 +16,7 @@ static var ENABLED := true
 static var HEADLESS_APPLY := false
 
 const KEY := "codexQuality"
-const DEFAULTS := {"integer": false, "fps": 0, "window": "auto", "low": false}
+const DEFAULTS := {"integer": false, "fps": 0, "window": "auto", "low": false, "crisp": true}
 const FPS_CHOICES := [0, 60, 30]
 const WINDOW_CHOICES := ["auto", "1280x720", "1600x900", "1920x1080", "full"]
 const LOW_FPS := 30
@@ -34,6 +35,8 @@ static func sanitize(saved: Variant) -> Dictionary:
 		out["integer"] = saved["integer"]
 	if saved.get("low") is bool:
 		out["low"] = saved["low"]
+	if saved.get("crisp") is bool:
+		out["crisp"] = saved["crisp"]
 	var fps = saved.get("fps")
 	if (fps is int or fps is float) and FPS_CHOICES.has(int(fps)):
 		out["fps"] = int(fps)
@@ -48,6 +51,13 @@ static func settings() -> Dictionary:
 
 static func low_power() -> bool:
 	return ENABLED and bool(settings()["low"])
+
+
+## 像素柔边现在开不开（XBattlerSprite 的身体材质用）：战斗图放大到非整数倍时像素仍一样大、交界处一个屏幕像素过渡。
+## CRISP = false 是这一项自己的回退开关（O-待定-1）：不论设置都照旧最近邻，子页也不列。
+static var CRISP := true
+static func crisp_on() -> bool:
+	return ENABLED and CRISP and bool(settings()["crisp"])
 
 
 ## 「画面特效」现在放不放（XLobbyCorruption、XRiftAlien 用）：省电模式开着当作关

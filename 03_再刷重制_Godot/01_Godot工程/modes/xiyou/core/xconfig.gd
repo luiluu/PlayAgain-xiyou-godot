@@ -17,7 +17,7 @@ const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonof
 static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true, "battleCamera": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
-	"codexQuality": {"integer": false, "fps": 0, "window": "auto", "low": false},  # 重制新增「画质设置」（XGraphics）
+	"codexQuality": {"integer": false, "fps": 0, "window": "auto", "low": false, "crisp": true},  # 重制新增「画质设置」（XGraphics）
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
