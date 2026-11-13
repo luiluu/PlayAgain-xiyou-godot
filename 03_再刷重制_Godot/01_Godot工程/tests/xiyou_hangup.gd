@@ -126,7 +126,7 @@ func _run() -> void:
 	check("plugin_enable", XHangUp.enabled(s) and interp.skipped.is_empty())
 	interp._plugin_command("ProhibitHangUp")
 	check("plugin_prohibit", not XHangUp.enabled(s))
-	# 禁用时按 G（v0.01.06 玩家反馈「挂机没反应」：新游戏开局就禁用，原版要先按 L）：照 L 的公共事件 484 开启，不直接开始（O-待定）
+	# 禁用时按 G（v0.01.06 玩家反馈「挂机没反应」：新游戏开局就禁用，原版要先按 L）：照 L 的公共事件 484 开启，不直接开始（O-373）
 	await frames(2)
 	await key_g()
 	check("g_enables_when_prohibited", await until(func(): return XHangUp.enabled(s) and not map.busy, 600) and not XHangUp.is_active(s), [s.flags.get("HangUpProhibited"), map.busy])
