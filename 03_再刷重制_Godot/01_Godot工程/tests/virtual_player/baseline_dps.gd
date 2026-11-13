@@ -38,6 +38,8 @@ var atk_search := false
 var atk_target := 10.0   # --atk-search：找让基准队中位数撑到这么多回合团灭的攻击倍率
 var atk_scale := 1.0
 var iters := 7
+var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
+var _cur_floor := 0
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
@@ -56,6 +58,8 @@ func _ready() -> void:
 			difficulty = a.substr(13)
 		elif a.begins_with("--iters="):
 			iters = int(a.substr(8))
+		elif a.begins_with("--atk-table="):
+			atk_table = JSON.parse_string(FileAccess.get_file_as_string(a.substr(12)))
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -353,6 +357,10 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var logic := XBattleLogic.new()
 	logic.setup(troop, s)
 	logic.auto = true
+	var k := float(atk_table.get(str(_cur_floor), atk_scale))
+	if k != 1.0:
+		for e in logic.enemies:
+			e.output_scale = k
 	var ours := 0.0
 	var theirs := 0.0
 	var hits := []
@@ -403,9 +411,10 @@ func _run_both(list: Array) -> void:
 	var rows := []
 	for f in floors:
 		var per := []
+		_cur_floor = f
 		for team in list:
 			per.append(_fight_both(_state(team, f), int(GUARDIAN[f])))
-		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": atk_scale,
+		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
