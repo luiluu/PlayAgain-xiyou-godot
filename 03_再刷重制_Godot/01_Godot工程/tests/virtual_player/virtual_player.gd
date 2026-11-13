@@ -100,6 +100,8 @@ var bag_uses := 0                  # 用掉多少本捡到的书、多少个盒�
 var advance_enabled := true        # 角色进阶（兑换大厅奉神老妪）：条件够就进阶，只缺魂灯就去兑换大厅买（--vp-no-advance 关）
 var advances := 0                  # 进阶了几次
 var fragments_enabled := true      # 肝帝积分够了就找绪绪换人道意志碎片，再去人族首领那里买功法、丹药、法宝（--vp-no-fragments 关）
+var formation_enabled := true      # 整队：板凳上有明显更强的人就换上场，领袖放 1 号位，助力位放档位高的；通关抽角色挑档位最高的（--vp-no-formation 关）
+var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
@@ -779,6 +781,11 @@ func _act_choice(obs: Dictionary) -> void:
 	elif _intent == "dungeon" and _dungeon_tier_choice(obs.message._choices) >= 0:
 		want = _dungeon_tier_choice(obs.message._choices)
 		_dg_tier = want
+	if formation_enabled and mode == "climb":
+		var dp: int = Growth.draw_choice(obs.message._choices)
+		if dp >= 0:
+			want = dp                # 通关抽角色：挑档位最高的
+			_mark("draw_picked")
 	counts[want] = int(counts[want]) + 1
 	choice_counts[ckey] = counts
 	var cur: int = obs.index
@@ -1220,6 +1227,13 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			var fed: Array = Growth.feed_fabao(st)
 			fabao_feeds += fed.size()
 			did.append_array(fed)
+		if formation_enabled:
+			var fm: Array = Growth.formation(st)
+			if not fm.is_empty():
+				formations += 1
+				_equip_sig = null          # 换了人：装备重新分一遍
+				_mark("formation_changed")
+			did.append_array(fm)
 		if advance_enabled:
 			var adv: Array = Growth.advance(st)
 			advances += adv.size()
@@ -2077,7 +2091,7 @@ func _growth_state(st: XState) -> Dictionary:
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
 		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
-		"bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
+		"formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
 		"fragments": st.item_count(FRAGMENT), "lamps": st.item_count(LAMP),
 	}
 

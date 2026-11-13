@@ -451,3 +451,108 @@ static func advance_needs(st: XState) -> Dictionary:
 ## 每人的进阶次数（给报告用）
 static func advance_ranks(st: XState) -> Array:
 	return st.battle_members().map(func(a): return XAdvance.rank(st, a.actor_id))
+
+
+# ---------------------------------------------------------------- 第二批：整队、通关抽角色
+
+const TIER_RANK := {"弱者": 0, "强者": 1, "超强者": 2}
+const SWAP_MARGIN := 1.15          # 板凳上的人比场上最弱的强这么多才换（免得来回倒）
+
+
+static func tier_rank(id: int) -> int:
+	return int(TIER_RANK.get(XTianqiSkills.tier_of(id, true), 0))
+
+
+## 上场价值（只用来排队）：出手估值 × 生命的平方根 × 档位（强者 ×1.3、超强者 ×1.6）
+static func field_value(a: XActor) -> float:
+	return offense(a) * sqrt(maxf(float(a.mhp), 1.0)) * (1.0 + 0.3 * tier_rank(a.actor_id))
+
+
+## 整队（同菜单「整队」改出战栏再点「完成」）：上场 4 人里最弱的，板凳上有明显更强的就换下去（超强者不超过本档上限）；
+## 有领袖技能的人放 1 号位；助力位放剩下的人里档位最高、等级最高的（助力位拿满经验）。换下场的人身上的装备卸回背包给别人用。
+## 返回这次改了什么；没改返回空。
+static func formation(st: XState) -> Array:
+	var out := []
+	if not XTianqi.active(st) or st.party.size() <= 1:
+		return out
+	var before: Array = st.battle_slots.duplicate()
+	var cap := XTianqi.super_cap(st)
+	var fighters: Array = st.battle_members()
+	var bench: Array = st.members().filter(func(a): return a != null and not fighters.has(a))
+	bench.sort_custom(func(x, y): return field_value(x) > field_value(y))
+	for cand in bench:
+		if fighters.size() < XTianqi.FIGHTERS:
+			if tier_rank(cand.actor_id) == 2 and cap >= 0 and fighters.filter(func(a): return tier_rank(a.actor_id) == 2).size() >= cap:
+				continue
+			fighters.append(cand)
+			continue
+		var weakest: XActor = fighters[0]
+		for a in fighters:
+			if field_value(a) < field_value(weakest):
+				weakest = a
+		if field_value(cand) <= field_value(weakest) * SWAP_MARGIN:
+			continue
+		var supers: int = fighters.filter(func(a): return tier_rank(a.actor_id) == 2).size()
+		if tier_rank(cand.actor_id) == 2 and tier_rank(weakest.actor_id) != 2 and cap >= 0 and supers >= cap:
+			continue
+		fighters[fighters.find(weakest)] = cand
+	# 领袖：有领袖技能的放 1 号位
+	for i in fighters.size():
+		if XLeadActor.skill_of(int(fighters[i].actor_id)) > 0:
+			var lead: XActor = fighters[i]
+			fighters.remove_at(i)
+			fighters.push_front(lead)
+			break
+	var rest: Array = st.members().filter(func(a): return a != null and not fighters.has(a))
+	rest.sort_custom(func(x, y):
+		if tier_rank(x.actor_id) != tier_rank(y.actor_id):
+			return tier_rank(x.actor_id) > tier_rank(y.actor_id)
+		return int(x.level) > int(y.level))
+	var slots := []
+	for a in fighters:
+		slots.append(int(a.actor_id))
+	while slots.size() < XTianqi.FIGHTERS:
+		slots.append(0)
+	slots.append(int(rest[0].actor_id) if not rest.is_empty() else 0)
+	while slots.size() < XState.MAX_BATTLE_MEMBERS:
+		slots.append(0)
+	if slots == before:
+		return out
+	st.battle_slots = slots
+	st.rearrange_actors()
+	XPartySkills.finish(st)
+	out.append("整队：出战栏 %s → %s" % [str(before), str(st.battle_slots)])
+	# 不在出战栏里的人：装备卸回背包
+	for a in st.members():
+		if a == null or st.battle_slots.has(int(a.actor_id)):
+			continue
+		var n := 0
+		for slot in a.equip_slots().size():
+			if a.equips[slot] is Dictionary and not a.equips[slot].is_empty() and XEquipment.can_change(a, slot) and XEquipment.change(st, a, slot, null):
+				n += 1
+		if n > 0:
+			out.append("%s 下场，卸下 %d 件装备" % [a.display_name(), n])
+	return out
+
+
+## 通关抽角色的选项里挑哪个：候选带【档位】的挑档位最高的（同档挑第一个）；自选先挑最高的档位。不是抽角色的选项返回 -1
+static func draw_choice(choices: Array) -> int:
+	if choices.size() < 2 or not (str(choices[-1]) in ["稍后再选", "返回"]):
+		return -1
+	var best := -1
+	var best_rank := -1
+	for i in choices.size() - 1:
+		var t := str(choices[i])
+		var rank := -1
+		if TIER_RANK.has(t):
+			rank = int(TIER_RANK[t])
+		else:
+			for k in TIER_RANK:
+				if t.ends_with("【%s】" % k):
+					rank = int(TIER_RANK[k])
+		if rank < 0:
+			return -1
+		if rank > best_rank:
+			best_rank = rank
+			best = i
+	return best
