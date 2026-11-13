@@ -825,7 +825,7 @@ func _act_battle(obs: Dictionary) -> void:
 	for e in b.logic.enemies:
 		hp += float(e.hp)
 	# 放水（只在量数时开）：这一层已经输满 pass_after 次，这次挑战把守层者的血压到 1
-	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent == "challenge" and int(_floor_row().get("defeats", 0)) >= pass_after:
+	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent in ["challenge", "enter"] and int(_floor_row().get("defeats", 0)) >= pass_after:
 		for e in b.logic.enemies:
 			if float(e.hp) > 1.0:
 				e.hp = 1.0
@@ -929,7 +929,7 @@ func _on_defeat() -> void:
 		return
 	defeats += 1
 	row["defeats"] = int(row.get("defeats", 0)) + 1
-	_need_grind = climb_grind_base * int(pow(2, int(row.defeats) - 1))
+	_need_grind = climb_grind_base * int(pow(2, mini(int(row.defeats) - 1, 6)))   # 最多翻到 384 场
 	if farm_enabled and not _farm_block.has(_floor):
 		_need_farm = farm_base * int(row.defeats)
 	_log("全灭：第 %d 层第 %d 次，下次先练 %d 场、刷 %d 次副本首领" % [_floor, row.defeats, _need_grind, _need_farm])
