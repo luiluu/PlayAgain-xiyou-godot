@@ -62,7 +62,7 @@ func _summary(rep: Dictionary) -> String:
 			var fb: Dictionary = g.get("fabao", {})
 			if not fb.is_empty():
 				lines.append("- 法宝：当层上限 %s；出战的人身上 %s" % [str(int(fb.cap)) if int(fb.cap) > 0 else "不限", "、".join(fb["items"].map(func(x): return "%s %d 级" % [str(x.name), int(x.level)])) if not fb["items"].is_empty() else "没有法宝"])
-			lines.append("- 花钱：买了 %d 件，用掉书和丹药 %d 个，收工时金币 %d" % [int(g.get("spend_buys", 0)), int(g.get("spend_uses", 0)), int(g.get("gold", 0))])
+			lines.append("- 花钱：买了 %d 件，用掉书和丹药 %d 个，喂法宝 %d 次，收工时金币 %d" % [int(g.get("spend_buys", 0)), int(g.get("spend_uses", 0)), int(g.get("fabao_feeds", 0)), int(g.get("gold", 0))])
 		if not rep.growth_log.is_empty():
 			lines.append("- 养成动作 %d 次：%s" % [rep.growth_log.size(), "；".join(rep.growth_log.slice(0, 12).map(func(x): return "第 %d 层 %s" % [int(x.floor), str(x.what)]))])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
@@ -108,9 +108,28 @@ func _check_spend_rules(climb: bool) -> void:
 	await get_tree().process_frame
 	var listed: bool = shop._buy_data().any(func(e): return int(e.kind) == 0 and int(e.gid) == PILL)
 	var res: Dictionary = VP_GROWTH.shop(shop, st)
-	_check("spend_skips_fabao_exp_pill", listed and st.item_count(PILL) == pills0, [listed, st.item_count(PILL), res.lines])
+	# 经验丹下架（XFabaoFeed.NO_PILLS）以后店里可能根本不列它：列不列都不能买到
+	_check("spend_skips_fabao_exp_pill", st.item_count(PILL) == pills0, [listed, st.item_count(PILL), res.lines])
 	if not climb:                        # 爬塔局收工时可能早就戴上了，只在逛图局（新开局的队伍）查
 		_check("spend_buys_useful_gear", int(res.bought) >= 1, res.lines)
+	# 喂法宝：给第一位出战的人一件 1 级法宝、背包里放几件普通装备，喂完法宝要升级、装备要少（XFabaoFeed 还没合进来时跳过）
+	if VP_GROWTH.feed_script() != null:
+		var fabao := {}
+		var owner: XActor = null
+		st.gain_gear("armor", 13, 1)   # 大罗剑胎（法宝）
+		var bag: Array = st.gear.filter(func(g): return XMagicWeapon.is_magic(g))
+		owner = st.battle_members()[0]
+		var slot: int = owner.equip_slots().find(int(bag[0].get("etypeId", 0))) if not bag.is_empty() else -1
+		if slot >= 0:                    # 测试摆放：直接放进法宝格（这位角色平时能不能戴不在这里查）
+			fabao = bag[0]
+			st.lose_gear(fabao, false)
+			owner.equips[slot] = fabao
+		if not fabao.is_empty() and XMagicWeapon.level_of(fabao) < XMagicWeapon.max_level(fabao):
+			st.gain_gear("armor", 3793, 6)
+			var lv0 := XMagicWeapon.level_of(fabao)
+			var bag0 := st.gear.size()
+			var fed: Array = VP_GROWTH.feed_fabao(st)
+			_check("feed_fabao_levels_up", not fed.is_empty() and st.gear.size() < bag0 and XMagicWeapon.level_of(fabao) > lv0, [fed, lv0, owner.actor_id])
 	shop.queue_free()
 	await get_tree().process_frame
 
@@ -134,6 +153,7 @@ func _run() -> void:
 	bot.race_enabled = not OS.get_cmdline_user_args().has("--vp-no-race")
 	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")
 	bot.spend_enabled = not OS.get_cmdline_user_args().has("--vp-no-spend")
+	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"

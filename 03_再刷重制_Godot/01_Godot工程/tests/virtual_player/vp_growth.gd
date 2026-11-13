@@ -277,3 +277,32 @@ static func fabao(st: XState) -> Dictionary:
 			if XMagicWeapon.is_magic(eq):
 				out.items.append({"actor": a.actor_id, "name": str(eq.get("name", "")), "level": int(XMagicWeapon.level_of(eq)), "max": int(XMagicWeapon.max_level(eq))})
 	return out
+
+
+## 「喂装备给法宝」的脚本（XFabaoFeed，法宝落地车道做的）；这个类还没合进来时返回 null，机器人就不喂
+static func feed_script():
+	for c in ProjectSettings.get_global_class_list():
+		if str(c.get("class", "")) == "XFabaoFeed":
+			return load(str(c.path))
+	return null
+
+
+## 把背包里的装备喂给出战的人身上没到当层上限的法宝（换装之后做：留在背包里的就是没人穿的）。
+## 品质低的先喂，到上限就停；能不能喂、给多少经验都由 XFabaoFeed 自己判。
+static func feed_fabao(st: XState) -> Array:
+	var out := []
+	var feed = feed_script()
+	if feed == null or not bool(feed.ENABLED):
+		return out
+	for a in st.battle_members():
+		for eq in a.equips:
+			if not XMagicWeapon.is_magic(eq) or XMagicWeapon.level_of(eq) >= XMagicWeapon.max_level(eq):
+				continue
+			var food: Array = st.gear.filter(func(g): return str(feed.reason(st, eq, g)) == "")
+			if food.is_empty():
+				continue
+			food.sort_custom(func(x, y): return int(feed.exp_of(x)) < int(feed.exp_of(y)))
+			var res: Dictionary = feed.feed(st, eq, food, a)
+			if int(res.used) > 0:
+				out.append("给 %s 的法宝 %s 喂了 %d 件装备：%d 级 → %d 级%s" % [a.display_name(), str(eq.get("name", "")), int(res.used), int(res.from), int(res.to), "（到当层上限）" if bool(res.capped) else ""])
+	return out

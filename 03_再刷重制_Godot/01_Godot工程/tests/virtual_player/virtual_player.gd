@@ -61,6 +61,8 @@ var orbs_enabled := true           # 大厅里把神秘珠鉴定掉、给装备�
 var race_enabled := true           # 大厅里有进阶石就给种族祝福进阶（同菜单「种族祝福」）
 var lottery_enabled := true        # 大厅里有抽奖券就去希禾那里「自定义单抽」全部抽掉
 var spend_enabled := true          # 大厅里逛商店：买换上能变强的装备、出战的人能学的书、加属性的丹药，买完用掉（法宝经验丹不买）
+var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
+var fabao_feeds := 0               # 喂过几次法宝
 var spend_buys := 0                # 一共买了多少件
 var spend_uses := 0                # 一共用掉多少本书、多少颗丹药
 var _shop_stamp = null             # 这一轮逛店是哪一次回大厅（[层, 打过几场]）
@@ -1142,6 +1144,10 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			did.append_array(Growth.orbs(st))
 		if race_enabled:
 			did.append_array(Growth.race(st))
+		if feed_enabled:
+			var fed: Array = Growth.feed_fabao(st)
+			fabao_feeds += fed.size()
+			did.append_array(fed)
 		for line in did:
 			_note_growth(str(line))
 		if not did.is_empty():
@@ -1844,7 +1850,7 @@ func _growth_state(st: XState) -> Dictionary:
 		"tickets": st.item_count(XDungeon.TICKET), "points": int(st.variable(XCasinoBatch.VAR_POINTS)),
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
-		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses,
+		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
 	}
 
 
