@@ -11,6 +11,9 @@ const TROOPS := {1: 4, 2: 5, 3: 8, 4: 22, 5: 28, 6: 39, 7: 52, 8: 53, 9: 67, 10:
 ## 工具用：≥0 时守层者的伤害抵抗（技能备注 passiveHarmRe，20 层起 200 万～50 兆）一律换成这个值；-1 不动
 static var measure_resist := -1.0
 
+## 工具用：为真时我方打守层者一律按元素中性（抗性 1，不吸收、不免疫），量「不挑元素」的基准伤害
+static var measure_neutral := false
+
 static var _floor_of := {}
 
 
@@ -34,3 +37,7 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 	for k in table:
 		out[k] = measure_resist
 	return out
+
+
+static func neutral(b: XBattler) -> bool:
+	return measure_neutral and b is XEnemy and floor_of((b as XEnemy).enemy_id) > 0

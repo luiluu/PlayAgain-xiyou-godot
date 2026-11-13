@@ -23,6 +23,8 @@ var elite_hue := 0.0              # 0~1，画面偏色用
 static var force_roll := -1.0
 ## 出伤倍率：对我方的 HP 伤害／吸取最后乘它（XDamage.finish）。默认 1；守层者按楼层重算攻击、基准伤害工具量攻击时设
 var output_scale := 1.0
+## 量数用：这个敌人打出的 HP 伤害累计（XDamage.finish 记，扣血前的值）
+var dealt := 0.0
 
 ## installBossDifficultyRuntime：本场出战人数快照；倍率在原生缓存外结算。
 var boss_strong_count := 0

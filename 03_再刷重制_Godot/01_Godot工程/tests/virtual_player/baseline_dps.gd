@@ -41,6 +41,7 @@ var iters := 7
 var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
 var _cur_floor := 0
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
+var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
@@ -60,6 +61,8 @@ func _ready() -> void:
 			iters = int(a.substr(8))
 		elif a.begins_with("--atk-table="):
 			atk_table = JSON.parse_string(FileAccess.get_file_as_string(a.substr(12)))
+		elif a == "--neutral":
+			neutral = true
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -311,6 +314,7 @@ func _run() -> void:
 	var list := _teams()
 	var rows := []
 	XGuardianRework.measure_resist = resist
+	XGuardianRework.measure_neutral = neutral
 	if atk_search:
 		_search(list)
 		return
@@ -363,6 +367,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			e.output_scale = k
 	var ours := 0.0
 	var theirs := 0.0
+	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
 	var hits := []
 	var done := 0
 	for r in turns:
@@ -384,13 +389,15 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			var cmd := logic.decide(u)
 			var eb := _enemy_hp(logic)
 			var pb := _party_hp(logic)
+			var db: float = logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)
 			logic.act(u, cmd[0], cmd[1])
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
 				if d > 0.0:
 					hits.append(d)
-			else:
+			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
+			if not u is XActor:
 				theirs += maxf(0.0, pb - _party_hp(logic))
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
@@ -404,7 +411,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		logic.end_turn()
 	hits.sort()
 	var n := maxf(1.0, float(done))
-	return {"dmg": ours / n, "enemyDmg": theirs / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+	return {"dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0)}
 
@@ -417,11 +424,11 @@ func _run_both(list: Array) -> void:
 		for team in list:
 			per.append(_fight_both(_state(team, f), int(GUARDIAN[f])))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
-			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)),
+			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
 		rows.append(row)
-		print("BOTH floor=%d dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [f, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+		print("BOTH floor=%d raw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [f, row.enemyRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
