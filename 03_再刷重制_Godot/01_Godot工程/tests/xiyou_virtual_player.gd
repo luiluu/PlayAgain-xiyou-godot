@@ -59,6 +59,10 @@ func _summary(rep: Dictionary) -> String:
 			var m: Dictionary = g.get("materials", {})
 			if not m.is_empty():
 				lines.append("- 宝珠：身上镶了 %d 颗，背包里神秘珠 %d、残片 %d；种族阶位 %s，进阶石 %s；抽奖 %d 次" % [int(m.gems), int(m.pearls), int(m.fragments), str(m.race_ranks), str(m.stones), int(g.get("lottery_draws", 0))])
+			var fb: Dictionary = g.get("fabao", {})
+			if not fb.is_empty():
+				lines.append("- 法宝：当层上限 %s；出战的人身上 %s" % [str(int(fb.cap)) if int(fb.cap) > 0 else "不限", "、".join(fb["items"].map(func(x): return "%s %d 级" % [str(x.name), int(x.level)])) if not fb["items"].is_empty() else "没有法宝"])
+			lines.append("- 花钱：买了 %d 件，用掉书和丹药 %d 个，收工时金币 %d" % [int(g.get("spend_buys", 0)), int(g.get("spend_uses", 0)), int(g.get("gold", 0))])
 		if not rep.growth_log.is_empty():
 			lines.append("- 养成动作 %d 次：%s" % [rep.growth_log.size(), "；".join(rep.growth_log.slice(0, 12).map(func(x): return "第 %d 层 %s" % [int(x.floor), str(x.what)]))])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
@@ -104,6 +108,7 @@ func _run() -> void:
 	bot.orbs_enabled = not OS.get_cmdline_user_args().has("--vp-no-orbs")
 	bot.race_enabled = not OS.get_cmdline_user_args().has("--vp-no-race")
 	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")
+	bot.spend_enabled = not OS.get_cmdline_user_args().has("--vp-no-spend")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
