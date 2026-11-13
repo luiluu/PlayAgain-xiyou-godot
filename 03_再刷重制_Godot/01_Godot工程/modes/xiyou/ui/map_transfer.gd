@@ -32,6 +32,11 @@ const DROP_COLS := 3                 # floor((1072 − 230 − 30) / 190) 限 1�
 const COOLDOWN := 10
 const SELECT_COLOR := Color("ffff00")
 static var DETAIL_LOCKS_DROPS := true
+## O-380：点选也能传送。原版只认键盘 F（mapTransferConfirm），手机没有 F 键：选好地图进了掉落页就再也传不出去，
+## 点列表也没反应，玩家以为卡死（Kyo 11-13 转安卓玩家反馈 v0.01.07「一点传送就卡了」）。
+## 现在掉落页里再点一次选中的地图名、或点底部提示行＝按 F；点别的地图名回到列表并选中它；提示写「再点地图名传送」。
+## 设 false 恢复原版（只有 F 键能传送）。
+static var TAP_TRANSFER := true
 const PARAM_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 var background: Texture2D
 var mode := "list"                   # list / drops / detail / confirm
@@ -218,14 +223,14 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.text("当前地图不可传送", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 		elif int(m.transferItem) > 0:
 			var item := XDB.rec("Items", int(m.transferItem))
-			var head := "确定看详情 / F传送，消耗 " if XState.current and XState.current.item_count(int(m.transferItem)) > 0 else "确定看详情；不可传送，需 "
+			var head := ("确定看详情 / %s，消耗 " % _transfer_hint()) if XState.current and XState.current.item_count(int(m.transferItem)) > 0 else "确定看详情；不可传送，需 "
 			c.text(head, 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 			var tw := c.text_width(head)
 			c.icon(int(item.get("iconIndex", 0)), tw, prompt_y + 2)
 			c.text(str(item.get("name", "")), tw + 36, prompt_y, INFO_RECT.size.x - tw - 30 - 36)
 			c.text("x1", tw + c.text_width(str(item.get("name", ""))) + 36, prompt_y, 30, "left", XUI.SYSTEM)
 		else:
-			c.text("确定查看详情 / F传送", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+			c.text("确定查看详情 / " + _transfer_hint(), 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 	else:
 		c.text("确认地图后可选择掉落物查看详情", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 	if pages.size() > 1:
@@ -439,6 +444,11 @@ func close_detail() -> void:
 	_refresh_info()
 
 
+## 提示行里传送的写法：触屏写点选（TAP_TRANSFER），否则照原版「F传送」
+func _transfer_hint() -> String:
+	return "再点地图名传送" if TAP_TRANSFER and XPlatform.is_touch() else "F传送"
+
+
 ## F：可传送的地图才开确认；需要道具而没有时蜂鸣
 func request_transfer() -> void:
 	var m := current_map()
@@ -457,6 +467,15 @@ func request_transfer() -> void:
 
 
 ## closeConfirmationWindow：回到掉落选择，并选回第一个掉落（activateDropSelect）
+## 点选传送（TAP_TRANSFER）：同按 F；不能传送（不可传送、未解锁）时蜂鸣，免得像没反应
+func _tap_transfer() -> void:
+	var m := current_map()
+	if m.is_empty() or not bool(m.canTransfer) or (XMapTransfer.REQUIRE_UNLOCK and XMapTransfer.is_locked(XState.current, m)):
+		XSound.system(3)
+		return
+	request_transfer()  # 缺传送道具时它自己蜂鸣
+
+
 func close_confirm() -> void:
 	confirm_win.openness = 0
 	confirm_win.visible = false
@@ -590,6 +609,16 @@ func _gui_input(event: InputEvent) -> void:
 				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + LIST_ROWS:
 					XSound.system(0)
 					_select(i)
+			elif TAP_TRANSFER and mode == "drops" and LIST_RECT.has_point(p):
+				var i := top + floori((p - LIST_RECT.position - pad).y / LH)
+				if i == index:
+					_tap_transfer()
+				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + LIST_ROWS:
+					back_to_list()
+					XSound.system(0)
+					_select(i)
+			elif TAP_TRANSFER and mode == "drops" and INFO_RECT.has_point(p) and p.y >= INFO_RECT.end.y - pad.y - LH:
+				_tap_transfer()
 			elif mode == "confirm" and CONFIRM_RECT.has_point(p):
 				var row := floori(((p - CONFIRM_RECT.position - pad).y - LH - 12) / LH)
 				if row == confirm_index:
