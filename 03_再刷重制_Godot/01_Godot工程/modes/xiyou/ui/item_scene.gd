@@ -72,7 +72,7 @@ var search_panel: XGearSearch
 var power_page: XPowerForget
 var gear_detail: XGearDetail
 static var DETAIL_V043 := true
-## O-待定（同 XGearQuery.PRESORT_KEYS，玩家反馈 v0.01.07 物品页护甲卡）：物品页一次刷新要取六七遍列表（行数、详情、说明卡、状态、
+## O-待定-2（同 XGearQuery.PRESORT_KEYS，玩家反馈 v0.01.07 物品页护甲卡）：物品页一次刷新要取六七遍列表（行数、详情、说明卡、状态、
 ## 列表、信息窗、工具条件数），武器／护甲每遍都筛选排序全部装备。开着：武器、护甲两类按（存档、分类、筛选条件、排序设置、
 ## 背包全部装备内容的哈希、队员与身上装备的哈希、异化隐藏）记住，同样就直接取；装备增减、强化镶嵌改了内容、换装、换队员都让哈希变，
 ## 所以结果与每次重算相同。物品类不缓存（本来就快）。false＝每次重算。

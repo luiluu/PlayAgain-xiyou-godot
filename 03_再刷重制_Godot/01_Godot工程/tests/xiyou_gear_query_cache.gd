@@ -28,7 +28,7 @@ func _ready() -> void:
 	get_tree().quit(0 if passed == results.size() else 1)
 
 
-## O-待定（物品页护甲卡）：排序键（PRESORT_KEYS）与逐次 compare 的顺序逐件相同；物品页武器／护甲列表缓存（CACHE_GEAR_ENTRIES）
+## 物品页护甲卡顿：排序键（PRESORT_KEYS）与逐次 compare 的顺序逐件相同；物品页武器／护甲列表缓存（CACHE_GEAR_ENTRIES）
 ## 在增减装备、就地改装备、换装后都和关掉缓存重算的结果逐件相同
 func _presort_and_page_cache() -> void:
 	var s := XState.new_game(3, 1, [8, 9, 10])
