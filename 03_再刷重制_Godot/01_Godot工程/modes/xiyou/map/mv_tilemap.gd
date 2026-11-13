@@ -30,6 +30,8 @@ const LOOP_MARGIN := Vector2i(28, 16)
 ## 循环地图上角色的显示位置取离这一点（玩家的 real）最近的那一份，同 Game_Map.adjustX/adjustY
 var view_anchor := Vector2.ZERO
 static var CHUNKED := true
+## 回退开关（O-待定-2）：true＝分块绘制时按「格内次序 → 图集」归组再画，同图集连成一批；false＝回到逐格逐层画（图集来回换，一块断成几百次绘制）
+static var SORTED_DRAW := true
 const CHUNK := 16
 ## 当前画到哪个 CanvasItem 上（整张画时是自己，分块时是块节点）
 var _canvas: CanvasItem = self
@@ -151,6 +153,18 @@ func _draw_part(part: Part, r: Rect2i, water: bool) -> void:
 		water_cells += r.size.x * r.size.y
 	else:
 		drawn_cells += r.size.x * r.size.y
+	var cmds := part_commands(r, water)
+	for j in range(0, cmds.size(), 3):
+		_draw_id(cmds[j], cmds[j + 1], cmds[j + 2])
+	_canvas = self
+
+
+## 一块要画的图块，按绘制次序排成 [id, dx, dy, id, dx, dy, …]（测试也读它）。
+## 按图集归组（SORTED_DRAW）：同一格里的次序不能动，格与格不重叠可以随意换序，所以按「格内第几个 → 哪张图集」分桶，
+## 桶内各格再依次画。同一图集连着画才能并成一批：原先逐格换图集，一块 16×16 要断成几百次绘制（十三层整屏约 790 次，归组后约 70 次）。
+func part_commands(r: Rect2i, water: bool) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var buckets := {}
 	for y in range(r.position.y, r.end.y):
 		for x in range(r.position.x, r.end.x):
 			var ids := _tiles_at(x, y)
@@ -158,8 +172,43 @@ func _draw_part(part: Part, r: Rect2i, water: bool) -> void:
 			var from := 0 if water else split
 			var to := split if water else ids.size()
 			for i in range(from, to):
-				_draw_id(ids[i], x * TS, y * TS)
-	_canvas = self
+				var id: int = ids[i]
+				if not SORTED_DRAW:
+					out.append_array([id, x * TS, y * TS])
+					continue
+				var sheet := sheet_of(id)
+				if sheet < 0:
+					continue
+				var key := i * 16 + sheet
+				# Packed 数组是值类型：取出、追加、再放回
+				var cmds: PackedInt32Array = buckets.get(key, PackedInt32Array())
+				cmds.append_array([id, x * TS, y * TS])
+				buckets[key] = cmds
+	if SORTED_DRAW:
+		var keys := buckets.keys()
+		keys.sort()
+		for key in keys:
+			out.append_array(buckets[key])
+	return out
+
+
+## 这个图块画在哪张图集上（0～8 同 sheets，9＝阴影纯色块）；-1＝什么都不画（空格、无阴影、不可见图块）
+func sheet_of(id: int) -> int:
+	if id < 0:
+		return 9 if (-id) & 0x0f != 0 else -1
+	if id >= 10000:
+		return 1
+	if not MVTiles.is_visible(id):
+		return -1
+	if MVTiles.is_autotile(id):
+		if MVTiles.is_a1(id):
+			return 0
+		if MVTiles.is_a2(id):
+			return 1
+		if MVTiles.is_a3(id):
+			return 2
+		return 3
+	return 4 if MVTiles.is_a5(id) else 5 + floori(id / 256.0)
 
 
 ## 画面在本节点坐标里的范围（多留一格）
