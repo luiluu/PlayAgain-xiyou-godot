@@ -40,6 +40,10 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 const FX_OPTION := ["画面特效", "codexScreenFx", true]
 ## 重制新增：画面平滑（XScreenScale，玩家反馈 v0.01「画面锐化太高」）：开＝先画 1280×720 再整幅柔和放大（同原版），关＝按屏幕分辨率直接画
 const SMOOTH_OPTION := ["画面平滑", "codexScreenSmooth", true]
+## 重制新增：定向遇怪（O-待定-2，XEncounterTarget）：替换原版「只遇稀有／只遇罕见／极其稀有」三行，左右与确定切换档位，存配置
+const TARGET_OPTION := ["定向遇怪", XEncounterTarget.KEY, true]
+## 重制新增：进战斗默认自动（O-待定-1，XBattleScene.AUTO_DEFAULT）：ON 时每场战斗开局自动按钮就是开；默认 OFF
+const AUTO_OPTION := ["进战斗默认自动", "codexBattleAutoDefault", true]
 
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
@@ -48,7 +52,7 @@ const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
 	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel",
-	"codexScreenFx", "codexScreenSmooth"]
+	"codexScreenFx", "codexScreenSmooth", "codexBattleAutoDefault"]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
@@ -65,6 +69,8 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
+	if XEncounterTarget.ENABLED:  # 定向遇怪占原「只遇稀有」的位子，另两行去掉
+		_list = _list.filter(func(o): return o[1] != "BOSS" and o[1] != "boss").map(func(o): return TARGET_OPTION if o[1] == "Boss" else o)
 	if XBossStatusPanel.TOGGLE:  # v0.56：「Boss状态面板」在「步步遇敌」后、「消息提醒」前（v0.62.12 options_probe 的行序）
 		_list.insert(_list.find_custom(func(o): return o[1] == "codexNotices"), ["Boss状态面板", "codexBossStatusPanel", true])
 	if not XPower.SHOW_POWER_UI:  # 战力先藏：设置页也不列「战力显示与估算」（回退＝XPower.SHOW_POWER_UI 设 true）
@@ -75,6 +81,8 @@ func _ready() -> void:
 		_list.append(FX_OPTION)
 	if XScreenScale.ENABLED:  # 画面平滑排在画面特效后、手机按键设置前；开关关掉时不列
 		_list.append(SMOOTH_OPTION)
+	if XBattleScene.AUTO_DEFAULT:  # 进战斗默认自动排在画面平滑后、手机按键设置前；开关关掉时不列
+		_list.append(AUTO_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
 		_list.append(TOUCH_OPTION)
 	XUI.menu_background(self)
@@ -108,6 +116,8 @@ func status_text(i: int) -> String:
 	match symbol:
 		"battleAniSpeed":
 			return XConfig.battle_speed_text()
+		XEncounterTarget.KEY:
+			return XEncounterTarget.text()
 		"codexNotices":
 			return XConfig.notices_text()
 		"codexFollow":
@@ -176,6 +186,8 @@ func ok() -> void:
 	match symbol:
 		"battleAniSpeed":
 			_set_speed(XConfig.battle_speed() % 4 + 1)
+		XEncounterTarget.KEY:
+			_set_target((XConfig.encounter_target() + 1) % XEncounterTarget.NAMES.size())
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
@@ -224,6 +236,8 @@ func _side(right: bool) -> void:
 						_set_test_mode(right)
 				"battleAniSpeed":
 					_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
+				XEncounterTarget.KEY:
+					_set_target(clampi(XConfig.encounter_target() + (1 if right else -1), 0, XEncounterTarget.NAMES.size() - 1))
 
 
 func _set_map_xy(v: bool) -> void:
@@ -274,6 +288,14 @@ func _set_volume(sym: String, v: int) -> void:
 	if XConfig.volume(sym) == v:
 		return
 	XConfig.set_volume(sym, v)
+	XSound.system(0)
+	_refresh()
+
+
+func _set_target(v: int) -> void:
+	if XConfig.encounter_target() == v:
+		return
+	XConfig.set_encounter_target(v)
 	XSound.system(0)
 	_refresh()
 
