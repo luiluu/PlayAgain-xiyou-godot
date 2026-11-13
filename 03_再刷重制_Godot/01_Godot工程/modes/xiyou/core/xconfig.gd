@@ -27,7 +27,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
 	"codexScreenSmooth": false,  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
 	"codexBattleAutoDefault": false,  # 重制新增「进战斗默认自动」
-	"codexEncounterTarget": 0}  # 重制新增「定向遇怪」（O-待定-2，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-待定-1，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
+	"codexEncounterTarget": 0}  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
