@@ -324,12 +324,24 @@ func guardian() -> void:
 	var hl := XBattleLogic.new()
 	hl.setup(int(XTianqiSummit.data().hongjun.troop), s)
 	var hj: Array = hl.enemies.filter(func(x): return not x.horseman.is_empty())
+	check("guardian.hongjun_hp", absf(hl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 6110000.0 * 8) < 10.0, hl.enemies.map(func(x): return x.mhp))
 	check("guardian.hongjun", hj.size() == 1 and is_equal_approx(hj[0].output_scale, XGuardianRework.HONGJUN_SCALE), hl.enemies.map(func(x): return x.output_scale))
 	XTianqiQiyinRule.prepare("bai", true)
 	var ql := XBattleLogic.new()
 	ql.setup(int(XTianqiQiyin.seal_info("bai").troops[-1]), s)
 	check("guardian.qiyin_ref", not ql.enemies.is_empty() and ql.enemies.all(func(x): return is_equal_approx(x.output_scale, XGuardianRework.REF_SCALE)),
 		ql.enemies.map(func(x): return x.output_scale))
+	var boss_hp: float = ql.enemies.reduce(func(t, x): return maxf(t, x.mhp), 0.0)
+	check("guardian.qiyin_hp", boss_hp > 0.0 and boss_hp < 5690000.0 * 8, boss_hp)
+	var gl := XBattleLogic.new()
+	gl.setup(XGuardianRework.TROOPS[24], s)
+	check("guardian.hp", absf(gl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 3000000.0 * 8) < 10.0 and gl.enemies.all(func(x): return x.hp == x.mhp),
+		gl.enemies.map(func(x): return [x.hp, x.mhp]))
+	XGuardianRework.HP = false
+	var gl2 := XBattleLogic.new()
+	gl2.setup(XGuardianRework.TROOPS[24], s)
+	check("guardian.hp_o-off", gl2.enemies.reduce(func(t, x): return t + x.mhp, 0.0) > 1.0e13, gl2.enemies.map(func(x): return x.mhp))
+	XGuardianRework.HP = true
 	XTianqiHorsemen.prepare("war", s, "body")
 	var kl := XBattleLogic.new()
 	kl.setup(int(XTianqiLine.data("war").shell_troop), s)

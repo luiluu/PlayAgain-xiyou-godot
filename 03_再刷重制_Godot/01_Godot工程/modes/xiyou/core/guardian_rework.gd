@@ -7,17 +7,26 @@ extends RefCounted
 ##   换成 RESIST_TABLE[层]，约等于基准队单下伤害中位数的 30%。
 ##   34 层鸿钧（借鸿蒙老祖那场、能力值 × rate）单独一档 HONGJUN_SCALE；七印里副本的敌人、七首之龙都按鸿蒙老祖重标能力值
 ##   （记录里 _ref），出伤一律乘 REF_SCALE（＝33 层的倍率：它们的攻击就是鸿蒙老祖的几成）。35、36 层骑士走自己的数值表，不在这里。
-## - 血量：等 Kyo 定基准队口径（v0.3 第 5 条）后再加。
-## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.RESIST = false`。
+## - HP：守层者那场（含同场小怪）的总血量 ＝ HP_BASE[层] × 本档目标回合（寻常 6、艰险 8、九死 10、炼狱 12、证道 15），
+##   各成员按原来的血量比例分；34 层鸿钧用 HP_BASE[34]。七印里副本的敌人（按鸿蒙老祖重标）血量一律乘
+##   HP_BASE[33] × 本档回合 ÷ 鸿蒙老祖原血量。35、36 层骑士和七首之龙是天启篇自己的数值，不动。
+##   HP_BASE 暂用基准队（只算等级、法宝、精良装备）每回合伤害的平滑值，Kyo 11-13 定改用虚拟玩家每层实队（C）重量，量好换表。
+## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.RESIST = false`。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
 static var ATK := true
+static var HP := true
 static var RESIST := true
 
 const ATK_SCALE := {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 0.00884, 6: 3.07, 7: 1.29, 8: 1.9, 9: 0.589, 10: 1.09, 11: 0.952,
 	12: 0.511, 13: 0.946, 14: 0.0151, 15: 0.284, 16: 0.439, 17: 0.115, 18: 0.634, 19: 0.33, 20: 0.074, 21: 0.0303, 22: 0.0585,
 	23: 0.0903, 24: 0.0243, 25: 0.0164, 26: 0.00149, 27: 0.0107, 28: 0.00191, 29: 0.00521, 30: 0.00417, 31: 0.00121,
 	32: 0.000161, 33: 0.0000256}
+const HP_BASE := {1: 583000, 2: 626000, 3: 672000, 4: 722000, 5: 775000, 6: 832000, 7: 893000, 8: 959000, 9: 1030000,
+	10: 1110000, 11: 1190000, 12: 1280000, 13: 1370000, 14: 1470000, 15: 1580000, 16: 1700000, 17: 1820000, 18: 1960000,
+	19: 2100000, 20: 2250000, 21: 2420000, 22: 2600000, 23: 2790000, 24: 3000000, 25: 3220000, 26: 3460000, 27: 3710000,
+	28: 3980000, 29: 4280000, 30: 4590000, 31: 4930000, 32: 5300000, 33: 5690000, 34: 6110000}
+const TURNS := {"xunchang": 6, "jianxian": 8, "jiusi": 10, "lianyu": 12, "zhengdao": 15}
 const HONGJUN_SCALE := 0.0000109
 const REF_SCALE := 0.0000256
 const RESIST_TABLE := {19: 4500, 20: 4900, 21: 5500, 22: 6000, 23: 6700, 24: 7300, 25: 8100, 26: 8900, 27: 9900, 28: 10900,
@@ -89,3 +98,52 @@ static func _on() -> bool:
 
 static func neutral(b: XBattler) -> bool:
 	return measure_neutral and b is XEnemy and floor_of((b as XEnemy).enemy_id) > 0
+
+
+
+## 这一场是第几层的守层者那场（34＝鸿钧；不是返回 0）
+static func troop_floor(logic) -> int:
+	for e in logic.enemies:
+		if str(e.horseman.get("rec", {}).get("_ref", "")) == "hongjun":
+			return 34
+	for f in TROOPS:
+		if int(TROOPS[f]) == int(logic.troop_id):
+			return int(f)
+	return 0
+
+
+## 本档目标回合（不是天启篇五档的按艰险）
+static func turns(s: XState) -> int:
+	return int(TURNS.get(str(s.flags.get("tianqi", {}).get("difficulty", "")), 8))
+
+
+## BattleLogic.setup 末尾（各种重标之后）调：守层者那场、鸿钧、七印里副本的血量
+static func setup(logic, s: XState) -> void:
+	if not HP or s == null or not XTianqi.active(s) or logic.enemies.is_empty():
+		return
+	var qiyin: bool = logic.enemies.any(func(e): return str(e.horseman.get("rec", {}).get("_ref", "")) == "qiyin")
+	if qiyin:
+		var ref_hp := float(XDB.rec("Enemies", 537).get("params", [1])[0])
+		for e in logic.enemies:
+			if str(e.horseman.get("rec", {}).get("_ref", "")) == "qiyin":
+				# 鸿蒙老祖原血量（含本档难度倍率）换成 33 层的目标血量，按这只占鸿蒙老祖的几成同比缩
+				_scale_hp(e, float(HP_BASE[33]) * turns(s) / maxf(1.0, ref_hp * float(e._rates[0])))
+		return
+	var f := troop_floor(logic)
+	if f == 0 or not HP_BASE.has(f):
+		return
+	var total := 0.0
+	for e in logic.enemies:
+		total += float(e.mhp)
+	if total <= 0.0:
+		return
+	var k := float(HP_BASE[f]) * turns(s) / total
+	for e in logic.enemies:
+		_scale_hp(e, k)
+
+
+static func _scale_hp(e: XEnemy, k: float) -> void:
+	e._rates = e._rates.duplicate()
+	e._rates[0] = float(e._rates[0]) * k
+	e.param_mark_dirty()
+	e.recover_all()
