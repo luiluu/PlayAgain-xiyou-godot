@@ -34,7 +34,7 @@
 
 - `语法检查.py`：818 个 .gd，0 个问题。
 - 新专项 xiyou_random_big_range 44/44；反向验证：random_stream.gd、damage.gd 换回旧版跑同一专项挂 10 项。
-- 选测：云端跑 `选测.py` 选出的 193 个场景（Kyo 11-13 定测试走云端），192 个通过；xiyou_flow 的 alt_enter_not_map_action（Alt+回车按键时序）失败 1 项，本机单跑 4 次：新代码 3 次 50/50、1 次在机器满载时同样失败，换回旧代码也是时序相关，与随机数无关（这两处出界分支在该测试里一次都没走到，加打印核过），按偶发记。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43454609590
+- 选测：云端跑 `选测.py` 选出的 193 个场景（Kyo 11-13 定测试走云端），192 个通过；xiyou_flow 的 alt_enter_not_map_action（Alt+回车按键时序）失败 1 项，本机单跑 5 次：机器满载时 1 次同样失败，其余 4 次 50/50（换回旧代码跑 1 次 50/50）。两处出界分支在这个测试里一次都没走到（加打印核过），失败的是按键时序断言，与随机数无关，按偶发记。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43454609590
 - 待交叉核查：random_stream.gd（出界分支）、damage.gd（apply_variance 大幅度分支）——两个都是战斗核心文件，甲档。
 
 ## 可优化（流程／工具／效率）
