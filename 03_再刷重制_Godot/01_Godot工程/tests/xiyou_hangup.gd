@@ -180,7 +180,7 @@ func _run() -> void:
 	await frames(2)
 	map.encounter_count = 999
 	# 触屏点挂机按钮（Kyo 11-13 安卓：点了不会开始）：Godot 把一下触屏送成鼠标键＋触屏两份按下，按下即触发的按钮开了又关；
-	# 现在同一下只认一次（O-待定-1，XHangUpOverlay.ONE_PRESS_PER_TAP）
+	# 现在同一下只认一次（O-待定-1，XKeyMap.ONE_PRESS_PER_TAP）
 	var emu := Input.emulate_mouse_from_touch
 	Input.emulate_mouse_from_touch = true
 	var at := ov.button.get_global_rect().get_center()
@@ -189,11 +189,31 @@ func _run() -> void:
 	await frames(4)
 	await tap(at)
 	check("touch_tap_again_stops", not XHangUp.is_active(s))
-	XHangUpOverlay.ONE_PRESS_PER_TAP = false
+	XKeyMap.ONE_PRESS_PER_TAP = false
 	await frames(4)
 	await tap(at)
 	check("touch_tap_rollback_toggles_twice", not XHangUp.is_active(s))
-	XHangUpOverlay.ONE_PRESS_PER_TAP = true
+	XKeyMap.ONE_PRESS_PER_TAP = true
+	# 回城枫叶（map_hud 返回按钮）同一类按下即触发的按钮：触屏一下只预约一次回大厅
+	var hud := map.map_hud
+	hud.return_requested.disconnect(map.return_to_hub)
+	var rets := [0]
+	var count_ret := func(): rets[0] += 1
+	hud.return_requested.connect(count_ret)
+	var ret_disabled := hud.return_button.disabled
+	hud.return_button.disabled = false
+	var ret_at := hud.return_button.get_global_rect().get_center()
+	await frames(4)
+	await tap(ret_at)
+	check("touch_return_once", rets[0] == 1, [rets[0], hud.return_button.get_global_rect(), hud.return_button.is_visible_in_tree()])
+	XKeyMap.ONE_PRESS_PER_TAP = false
+	await frames(4)
+	await tap(ret_at)
+	check("touch_return_rollback_twice", rets[0] == 3, rets[0])
+	XKeyMap.ONE_PRESS_PER_TAP = true
+	hud.return_button.disabled = ret_disabled
+	hud.return_requested.disconnect(count_ret)
+	hud.return_requested.connect(map.return_to_hub)
 	Input.emulate_mouse_from_touch = emu
 	await physics(10)
 	await map.load_map(5, 11, 13, 2)  # 挂机时随机走过，回到原点再测 G 键
