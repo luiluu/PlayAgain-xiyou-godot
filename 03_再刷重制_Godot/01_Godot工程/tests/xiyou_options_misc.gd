@@ -293,7 +293,7 @@ func _run() -> void:
 	finish()
 
 
-## O-待定「定向遇怪」：一行替换原版三行、档位切换与存盘、按档定向抽签、本层没有该档时退档、关着照原版、回退
+## O-待定-2「定向遇怪」：一行替换原版三行、档位切换与存盘、按档定向抽签、本层没有该档时退档、关着照原版、回退
 func target_tests() -> void:
 	XEncounterTarget.ENABLED = true
 	XConfig.set_encounter_target(0)

@@ -906,7 +906,7 @@ static func encounter_troop(list: Array, r: int) -> int:
 		total += int(en.weight)
 	if total <= 0:
 		return 0
-	var targeted := XEncounterTarget.pick(list, r, total)  # 设置「定向遇怪」（O-待定）：按档定向；关着照原版
+	var targeted := XEncounterTarget.pick(list, r, total)  # 设置「定向遇怪」（O-待定-2）：按档定向；关着照原版
 	if targeted >= 0:
 		return targeted
 	var value := total - 1 if XConfig.flag("boss") else (total - 2 if XConfig.flag("Boss") else r)

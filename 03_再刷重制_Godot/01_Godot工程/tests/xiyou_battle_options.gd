@@ -117,7 +117,7 @@ func _run() -> void:
 	check("button_initial", b.speed_btn.text == "变速 OFF")
 	b.speed_btn.pressed.emit()
 	check("button_shared_config", XConfig.battle_speed() == 1 and b.speed_btn.text == "变速 四倍" and Engine.time_scale == 1.0)
-	# O-待定「进战斗默认自动」：默认 OFF 照原来开局为关；ON 时开局自动按钮就是开；回退 AUTO_DEFAULT＝false 时不看设置、设置页不列
+	# O-待定-1「进战斗默认自动」：默认 OFF 照原来开局为关；ON 时开局自动按钮就是开；回退 AUTO_DEFAULT＝false 时不看设置、设置页不列
 	check("auto_default_off", not XConfig.flag("codexBattleAutoDefault") and not b.logic.auto and b.auto_btn.text == "自动：关")
 	var opt_auto := XOptionsScene.new()
 	add_child(opt_auto)
