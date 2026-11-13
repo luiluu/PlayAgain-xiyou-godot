@@ -44,7 +44,7 @@ func setup(id: int) -> XActor:
 	return self
 
 
-## 专武·特效吸取（CodexV029.absorb）。吸取界面（CodexAbyssMerchant.openAbsorb）重制未移植：技能照原版学、照原版列，点了没有吸取窗口。
+## 专武·特效吸取（CodexV029.absorb）：技能页用它打开吸取页（XSkillScene.open_absorb → XMerchant29Page absorb 模式，XAffixAbsorb）。
 const AFFIX_ABSORB_SKILL := 10455
 static var _absorb_src = null
 static var _absorb_owners := {}  # 武器号 → 所属角色号
@@ -305,9 +305,20 @@ func remove_state(id: int) -> void:
 func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
 
+## 身上的装备；吸取过特效的开放专武换成效果视图（XAffixAbsorb.view，原版 Game_Actor.equips 包装）。改装备本身用 raw_equip_list
 func equip_list() -> Array:
 	var out := []
 	for i in range(1 if _cat_bare else 0, equips.size()):  # 一次行动里调几千次：不走 slice＋filter 回调，结果一样
+		var e = equips[i]
+		if e != null and not e.is_empty():
+			out.append(XAffixAbsorb.view(e) if e.has(XAffixAbsorb.KEY) else e)
+	return out
+
+
+## 身上的装备本体（不换吸取视图）：登记、镶嵌、熔炼、按引用找装备时用
+func raw_equip_list() -> Array:
+	var out := []
+	for i in range(1 if _cat_bare else 0, equips.size()):
 		var e = equips[i]
 		if e != null and not e.is_empty():
 			out.append(e)
@@ -319,7 +330,7 @@ var _cat_bare := false
 func stat_equips() -> Array:
 	var list := equip_list()
 	if XCat.enabled_sword(self):
-		list[0] = XCat.sword_view(equips[0])
+		list[0] = XCat.sword_view(XAffixAbsorb.view(equips[0]))
 	return XTianqiGear.stat_list(list)  # 天启篇：普通坐骑原来的特性不算（只给表里的敏捷、先制）
 
 
