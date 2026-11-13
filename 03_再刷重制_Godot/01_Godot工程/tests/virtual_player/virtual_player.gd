@@ -60,6 +60,24 @@ var zhenqi_max_trials := 2         # 同一层最多打这么多次瓶颈之战
 var orbs_enabled := true           # 大厅里把神秘珠鉴定掉、给装备的空孔镶上宝珠（同菜单「宝珠坊」和装备的镶嵌）
 var race_enabled := true           # 大厅里有进阶石就给种族祝福进阶（同菜单「种族祝福」）
 var lottery_enabled := true        # 大厅里有抽奖券就去希禾那里「自定义单抽」全部抽掉
+var spend_enabled := true          # 大厅里逛商店：买换上能变强的装备、出战的人能学的书、加属性的丹药，买完用掉（法宝经验丹不买）
+var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
+var fabao_feeds := 0               # 喂过几次法宝
+var spend_buys := 0                # 一共买了多少件
+var spend_uses := 0                # 一共用掉多少本书、多少颗丹药
+var _shop_stamp = null             # 这一轮逛店是哪一次回大厅（[层, 打过几场]）
+var _shop_event := 0               # 正在逛的那位 NPC
+var _shop_done := {}               # 这一轮看完的 NPC
+var _shop_visits := {}             # 这一轮找过这位 NPC 几次
+var _shop_exh := {}                # 这一轮看完的选项（"选项组#序号"）
+var _shop_tries := {}
+var _shop_parent := {}             # 子选项组 → 把人带到这里的上一级选项
+var _shop_top := {}                # NPC → 第一组选项
+var _shop_last := ""               # 刚选的那个选项
+var _shop_seen := 0                # 已经逛过的商店页（实例号）
+var _shop_bought := {}             # 这一轮在这位 NPC 买了几件
+var _shop_memo := {}               # NPC → 上次看完时 {gold, floor, bought}：没买到东西、钱也没翻倍就先不再去
+var _use_queue: Array = []         # 买完等着用掉的 [{id, actor, n}]
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
@@ -538,6 +556,21 @@ func _act(obs: Dictionary) -> void:
 			if _equip_job != null:
 				await _act_equip(obs)
 				return
+			var shop_page: XShop = _find_ui(obs.map, XShop)
+			if shop_page != null and mode == "climb":
+				_overlay_budget = 0          # 商店里不乱按（确定键会真的买东西）
+				if _intent == "shop" and spend_enabled and shop_page.get_instance_id() != _shop_seen:
+					_shop_seen = shop_page.get_instance_id()
+					if _shop_last != "":
+						_shop_exh[_shop_last] = true
+					var res: Dictionary = Growth.shop(shop_page, XState.current)
+					for line in res.lines:
+						_note_growth(str(line))
+					_use_queue.append_array(res.uses)
+					spend_buys += int(res.bought)
+					_shop_bought[_shop_event] = int(_shop_bought.get(_shop_event, 0)) + int(res.bought)
+					if int(res.bought) > 0:
+						_mark("shop_bought")
 			if _overlay_budget > 0:
 				_overlay_budget -= 1
 				var r := _rng.randf()
@@ -709,6 +742,8 @@ func _act_choice(obs: Dictionary) -> void:
 			break
 	if _intent == "zhenqi":
 		want = _zhenqi_choice(obs.message._choices)
+	elif _intent == "shop":
+		want = _shop_choice(obs.message._choices)
 	elif _intent == "dungeon" and _dungeon_tier_choice(obs.message._choices) >= 0:
 		want = _dungeon_tier_choice(obs.message._choices)
 		_dg_tier = want
@@ -1109,6 +1144,10 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			did.append_array(Growth.orbs(st))
 		if race_enabled:
 			did.append_array(Growth.race(st))
+		if feed_enabled:
+			var fed: Array = Growth.feed_fabao(st)
+			fabao_feeds += fed.size()
+			did.append_array(fed)
 		for line in did:
 			_note_growth(str(line))
 		if not did.is_empty():
@@ -1123,6 +1162,37 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			await _goto_target(map)
 			return
 		_lottery_stamp = tickets         # 找不到或走不到希禾：这批券先不管
+	# 花钱：买来的书和丹药先用掉；每次打过仗回大厅逛一轮店
+	if spend_enabled:
+		if not _use_queue.is_empty():
+			if st.peek_common_event() > 0:
+				await _frames(4)         # 上一样东西带出来的事件还没跑：等它
+				return
+			var u: Dictionary = _use_queue.pop_front()
+			var who: XActor = st.actor(int(u.actor))
+			var used: int = await Growth.use_item(map.ui, st, int(u.id), who, int(u.n))
+			spend_uses += used
+			_note_growth("%s 用 %s×%d" % [who.display_name(), str(XDB.rec("Items", int(u.id)).get("name", u.id)), used])
+			if used > 0:
+				_mark("item_used")
+			await _frames(2)
+			return
+		var sstamp := [int(st.variable(FLOOR_VAR)), battles.size()]
+		if sstamp != _shop_stamp:
+			_shop_stamp = sstamp
+			_shop_done = {}
+			_shop_visits = {}
+			_shop_exh = {}
+			_shop_tries = {}
+			_shop_bought = {}
+		e = _next_shop(map, st)
+		if e != null:
+			_shop_event = e.event_id
+			if _arrived(map.player):
+				_shop_visits[e.event_id] = int(_shop_visits.get(e.event_id, 0)) + 1
+				_shop_last = ""
+			await _goto_target(map)
+			return
 	# 进门前存档（快捷键 ~）：全灭回标题后从这里接着来
 	var stamp := [int(st.variable(FLOOR_VAR)), battles.size()]
 	if stamp != _save_stamp:
@@ -1715,6 +1785,62 @@ func _plan(map: XMapScene) -> void:
 # ---------------------------------------------------------------- 报告
 
 ## 养成现状（给报告用）：每人的真气和境界、抽奖券、肝帝积分、副本首领熟练度
+## 这位 NPC 现在这一页开不开店（事件指令里有「商店处理」）
+func _is_shop(e: MVEvent) -> bool:
+	return e.page.get("list", []).any(func(c): return int(c.code) == 302)
+
+
+## 这一轮下一家要去的店；都看完了返回 null。上次没买到东西、钱没翻倍、层数也没变的先不去
+func _next_shop(map: XMapScene, st: XState) -> MVEvent:
+	for x in map.events:
+		if x.erased or x.page.is_empty() or _shop_done.has(x.event_id) or not _is_shop(x):
+			continue
+		var memo: Dictionary = _shop_memo.get(x.event_id, {})
+		if not memo.is_empty() and int(memo.bought) == 0 and int(memo.floor) == int(st.variable(FLOOR_VAR)) and int(st.gold) < int(memo.gold) * 2:
+			_shop_done[x.event_id] = true
+			continue
+		if int(_shop_visits.get(x.event_id, 0)) >= 12 or not _aim(map, x, "shop"):
+			_shop_close(x.event_id, st)
+			continue
+		return x
+	return null
+
+
+func _shop_close(event_id: int, st: XState) -> void:
+	_shop_done[event_id] = true
+	_shop_memo[event_id] = {"gold": int(st.gold), "floor": int(st.variable(FLOOR_VAR)), "bought": int(_shop_bought.get(event_id, 0))}
+
+
+## 逛店时的选项：带「购买／兑换／功法／神武」的逐个点开（抽奖不算），都看过了就选离开。
+## 一个选项点开的是下一级选项时，下一级都看完才算它看完；点了四次都没开出店来的不再点。
+func _shop_choice(choices: Array) -> int:
+	var k := "%d|%s" % [_shop_event, "/".join(choices.map(func(c): return str(c)))]
+	if not _shop_top.has(_shop_event):
+		_shop_top[_shop_event] = k
+	if _shop_last != "" and not _shop_last.begins_with(k + "#") and k != _shop_top[_shop_event] and not _shop_parent.has(k):
+		_shop_parent[k] = _shop_last
+	for i in choices.size():
+		var t := str(choices[i])
+		var key := "%s#%d" % [k, i]
+		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武")):
+			continue
+		_shop_tries[key] = int(_shop_tries.get(key, 0)) + 1
+		if int(_shop_tries[key]) >= 4:
+			_shop_exh[key] = true
+		_shop_last = key
+		return i
+	if _shop_parent.has(k):
+		_shop_exh[_shop_parent[k]] = true
+	if k == _shop_top[_shop_event]:
+		_shop_close(_shop_event, XState.current)
+	_shop_last = ""
+	for i in choices.size():
+		for w in ["离开", "返回", "取消", "算了", "否"]:
+			if str(choices[i]).contains(w):
+				return i
+	return choices.size() - 1
+
+
 func _growth_state(st: XState) -> Dictionary:
 	if st == null:
 		return {}
@@ -1724,6 +1850,7 @@ func _growth_state(st: XState) -> Dictionary:
 		"tickets": st.item_count(XDungeon.TICKET), "points": int(st.variable(XCasinoBatch.VAR_POINTS)),
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
+		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
 	}
 
 
