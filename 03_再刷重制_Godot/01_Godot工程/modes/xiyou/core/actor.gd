@@ -780,9 +780,13 @@ static func batch_end() -> void:
 		_carry = {}
 
 ## 行动开始、开战、收场开头：不该有没关的批（中途出错跳出就会留下）；万一有就关掉并报错，把欠着的被动缓存建好
+static var batch_leaks := 0
+static var batch_leak_quiet := false  # 测试故意留一个没关的批时不报错
 static func batch_reset() -> void:
 	if _batch_depth != 0:
-		push_error("整批加减状态没有关：depth=%d" % _batch_depth)
+		batch_leaks += 1
+		if not batch_leak_quiet:
+			push_error("整批加减状态没有关：depth=%d" % _batch_depth)
 		_batch_depth = 0
 	passive_flush_all()
 	_carry = {}
