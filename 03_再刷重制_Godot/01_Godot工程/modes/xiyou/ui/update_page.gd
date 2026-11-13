@@ -35,6 +35,7 @@ var _panel: PanelContainer
 var _scroll: ScrollContainer
 var _more: Label
 var _rollback: Button
+var _form: Button  # 反馈问卷按钮（没有问卷时为 null）
 var _rollback_armed := false
 var _notice := ""
 var installer: XUpdateInstall
@@ -172,6 +173,10 @@ func _ready() -> void:
 		var fb := XFeedback.make_button(18)
 		fb.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		box.add_child(fb)
+	if XFeedback.SHOW and XFeedback.has_form():
+		_form = XFeedback.make_form_button(18)
+		_form.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		box.add_child(_form)
 	_rollback = XUI.button("退回安装包自带版本", 36)
 	_rollback.name = "Rollback"
 	_rollback.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -237,6 +242,8 @@ func _fit() -> void:
 	var want := lines * (lh + 2.0) + 4.0
 	# 标题、分隔线、提示、按钮、退回、上下边距大约占的高度
 	var chrome := 44.0 + 2.0 + 22.0 + 48.0 + (44.0 if _rollback != null and _rollback.visible else 0.0) + 44.0 + 12.0 * 5
+	if _form != null:  # 反馈问卷一行（XFeedback.has_form）
+		chrome += _form.get_combined_minimum_size().y + 12.0
 	var cap := maxf(120.0, vp.y - 64.0 - chrome)
 	var h := minf(want, cap)
 	_scroll.custom_minimum_size = Vector2(inner, h)
