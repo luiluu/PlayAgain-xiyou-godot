@@ -817,6 +817,13 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇天平（XTianqiMoney）：大厅 EV043（原宠物商店）换成天平
+	if XTianqiMoney.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiMoney.run_scale(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
 	# 天启篇 31～36 层重做（XTianqiSummit）：门在 34 层以上接新 34～36 层、158 的决战事件不跑、打过 34 层后再挑战多几位
 	if XTianqiSummit.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)
