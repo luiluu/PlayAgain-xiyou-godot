@@ -13,7 +13,9 @@ const ENTRY := "res://modes/xiyou/entry.tscn"
 const KEYS := {"accept": KEY_ENTER, "cancel": KEY_ESCAPE, "up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "f": KEY_F,
 	"g": KEY_G, "tilde": KEY_QUOTELEFT, "one": KEY_1, "e": KEY_E}
 const DIR_KEY := {2: "down", 4: "left", 6: "right", 8: "up"}
-const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑战"], "heal": ["治愈"]}
+const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑战"], "heal": ["治愈"],
+	"dungeon": ["挑战副本", "普通难度"], "reset": ["重置副本"], "flee": ["逃离"], "boss": ["挑战"]}
+const TIER_SWITCHES := [1561, 1660] # 副本各档的开关：入口门和首领都按它分页（见 XDungeon 文件头）
 const LOBBY := 4                   # 方桌大厅
 const FLOOR_VAR := 20              # 变量 20＝神魔之塔当前层数（守层者打赢后加一，大厅的门按它送人）
 
@@ -29,10 +31,27 @@ var battle_give_up_frames := 90000 # 一场战斗最多这么多帧（按 60 帧
 var settle_ticks := 800            # 目标达到／步数用完后，最多再走这么多步把手头的画面收完
 var mode := "explore"              # explore 随便逛（原型）／climb 爬塔：进塔门 → 打守层者 → 回大厅 → 下一层
 var max_msec := 0                  # 墙钟上限（毫秒）；0＝不限。云端按时间跑用它
+var max_frames := 0                # 画面帧上限；0＝不限。无头模式一帧就是一个游戏逻辑帧，所以它等于「游戏里过了多久」，不受机器快慢影响（做对比用）
+var _f0 := 0
 var climb_manual_actions := 12     # 爬塔时每场战斗先手动按这么多步，再点战斗里的「自动」按钮
 var climb_max_defeats := 5         # 同一层守层者输这么多次就收工，报告写「打不过」
 var climb_grind_base := 6          # 第一次输了之后挂机练这么多场再来，之后每输一次翻倍
 var equip_enabled := true          # 爬塔时在大厅打开菜单 → 装备，把背包里更好的装备穿上
+var farm_enabled := true           # 守层者打不过时去刷这一层的副本首领（游戏内向导写的路线）
+var farm_base := 2                 # 第一次输给守层者后刷这么多次副本首领，之后每输一次再加这么多
+var farm_max_defeats := 2          # 同一层的副本首领输这么多次就不再去刷
+var fixed_random := true           # 开局阵容、战斗与掉落的随机都跟着种子走，同一个种子能重现同一局（关掉＝每次都不一样）
+var _state_id := 0
+var _state_count := 0
+var _tq_slot := 0
+var _tq_key := ""
+var _lineup_fixed := false
+var lineup: Array = []
+var debug_floor := 0                # 调试：开局第一次到大厅时把层数直接改成这个数（报告里会标出来，不算正常通关）
+var _debug_floor_done := false
+var farm_first := 0                # 每到新的一层，挑战守层者之前先刷这么多次副本首领（0＝输了才去刷）
+var zhenqi_enabled := true         # 大厅里有人能突破或有突破奖励没选，就去「真气」（闭关）
+var zhenqi_max_trials := 2         # 同一层最多打这么多次瓶颈之战
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
@@ -52,6 +71,9 @@ var choice_counts: Dictionary = {} # "地图|选项们" → 每个选项选过�
 var messages_seen := 0
 var transcript: Array = []         # 最近 300 条对话与选项（截短）
 var _msg_hash := 0
+var _msg_at = null
+var _msg_repeat := {}
+var msg_loop_limit := 80           # 同一句对话在同一个位置出现这么多次就算卡在对话圈里
 var _violation_seen := {}
 var _unreach_logged := {}
 var aborted := ""
@@ -73,6 +95,18 @@ var equip_changes := 0             # 一共换上了多少件装备
 var equip_passes := 0
 var _equip_job = null              # 正在进行的换装：{actor, row, started, want, changes, ticks, done, tries}
 var _equip_sig = null
+var dungeon_runs := 0              # 进副本的次数
+var dungeon_kills := 0             # 打倒副本首领的次数
+var dungeon_defeats := 0           # 在副本里全灭的次数
+var growth_log: Array = []         # 养成动作 [{tick, floor, what, detail}]
+var _need_farm := 0
+var _farm_block := {}              # 层 → 这一层不再去刷副本的原因
+var _dg := {}                      # 正在打的副本 {floor, map, tick, steps, boss_event, boss_troop, won}
+var _dg_fail := 0
+var _dg_entry_tries := 0
+var _zq_trials := {}               # 层 → 打过几次瓶颈之战
+var _zq_visit := 0                 # 这一次闭关里打了几次瓶颈之战
+var _zq_before = null
 var _last_over_tick := -1
 var settled := false
 
@@ -266,11 +300,13 @@ func _violate(what: String, actor: int, value, hard: bool) -> void:
 func run() -> Dictionary:
 	_rng.seed = rng_seed
 	_t0 = Time.get_ticks_msec()
+	_f0 = Engine.get_process_frames()
 	while ticks < max_ticks and aborted == "" and climb_stop == "":
-		if max_msec > 0 and Time.get_ticks_msec() - _t0 > max_msec:
+		if (max_msec > 0 and Time.get_ticks_msec() - _t0 > max_msec) or (max_frames > 0 and Engine.get_process_frames() - _f0 > max_frames):
 			climb_stop = "时间用完"
 			break
 		var obs := observe()
+		_fix_random()
 		_note_screen(obs)
 		_check_invariants()
 		_note_message(obs)
@@ -284,6 +320,19 @@ func run() -> Dictionary:
 	await _settle()
 	_close_battle(observe(), "未结束")
 	return report()
+
+
+## 游戏自己的随机（战斗、掉落、事件）每开一局、每读一次档都会新取种子：换成由机器人种子推出来的，同一个种子就能重现。
+## 只换种子，不改任何规则；存档里本来就不存这几条随机流。
+func _fix_random() -> void:
+	var st := XState.current
+	if not fixed_random or st == null or st.get_instance_id() == _state_id:
+		return
+	_state_id = st.get_instance_id()
+	_state_count += 1
+	st.random_master = XRandomStream.derive(XRandomStream.hex64(rng_seed), "vp:%d" % _state_count)
+	st._equipment_random = null
+	st._world_random = null
 
 
 ## 收工前把手头的画面走完（对话、过场、战斗、子页），停在地图空闲或标题上：
@@ -316,6 +365,14 @@ func _note_message(obs: Dictionary) -> void:
 		return
 	_msg_hash = h
 	messages_seen += 1
+	# 同一句话在同一个位置反复出现：对话在兜圈子（看门狗只看画面变没变，这种一直在「变」的圈它看不出来）
+	var at = [obs.map.map_id, obs.map.player.grid] if obs.has("map") else null
+	if at != _msg_at:
+		_msg_at = at
+		_msg_repeat = {}
+	_msg_repeat[h] = int(_msg_repeat.get(h, 0)) + 1
+	if int(_msg_repeat[h]) == msg_loop_limit:
+		aborted = "同一句对话在原地重复了 %d 次：%s" % [msg_loop_limit, XMVText.plain(" ".join(obs.message._msg.get("lines", []))).left(60)]
 	var lines: Array = obs.message._msg.get("lines", [])
 	var text := XMVText.plain(" ".join(lines)).left(80)
 	if obs.message._msg.has("choices"):
@@ -329,7 +386,8 @@ func _note_screen(obs: Dictionary) -> void:
 	var screen: String = obs.screen
 	if screen == "battle":
 		if _battle == null:
-			_battle = {"map": obs.map.map_id, "start": ticks, "actions": 0, "assist": false, "enemies": obs.battle.logic.enemies.size()}
+			_battle = {"map": obs.map.map_id, "start": ticks, "actions": 0, "assist": false, "enemies": obs.battle.logic.enemies.size(),
+				"troop": int(obs.battle.logic.troop_id), "floor": _floor}
 			_mark("battle_started")
 	elif screen != "none":
 		_close_battle(obs, "结束")
@@ -376,6 +434,10 @@ func _close_battle(obs: Dictionary, how: String) -> void:
 		elif how == "结束":
 			res = "胜利"
 	_battle["result"] = res
+	if res == "胜利" and not _dg.is_empty() and int(_battle.get("troop", 0)) == int(_dg.get("boss_troop", -1)):
+		_dg["won"] = true
+		dungeon_kills += 1
+		_mark("dungeon_boss_killed")
 	battles.append(_battle)
 	_battle = null
 	if how == "结束":
@@ -556,6 +618,21 @@ func _act_form(obs: Dictionary) -> void:
 			if n.begins_with("TianqiSlot") and not XSave.exists(int(n.substr(10))):
 				want = b
 				break
+	# 随机阵容页：用种子重抽一次（等于玩家点「重新随机」点到这一组），同一个种子每次都是这五个人
+	if want != null and str(want.name) == "TianqiConfirm" and fixed_random and not _lineup_fixed and _tq_key != "":
+		_lineup_fixed = true
+		var r := RandomNumberGenerator.new()
+		r.seed = rng_seed
+		lineup = XTianqi.roll_lineup(_tq_key, r)
+		entry._tq_lineup(_tq_slot, _tq_key, lineup)
+		await _frames(2)
+		return
+	if want != null and want == focus:
+		var wn := str(want.name)
+		if wn.begins_with("TianqiDifficulty_"):
+			_tq_key = wn.substr(17)
+		elif wn.begins_with("TianqiSlot"):
+			_tq_slot = int(wn.substr(10))
 	if want == null or want == focus:
 		_mark("form_pressed")
 		await _tap("accept")
@@ -573,6 +650,11 @@ func _act_choice(obs: Dictionary) -> void:
 	var n: int = obs.count
 	if n <= 0:
 		await _tap("accept")
+		return
+	# 选项窗还在展开时按键不算数：等它开完再选（不然会把没按上的那一下也记成「选过了」）
+	var win = obs.message.get("choice_win")
+	if win != null and is_instance_valid(win) and not win.is_open():
+		await _frames(1)
 		return
 	# 同一组选项里优先选没选过的（次数最少的，同次数随机），这样门、向导这类多分支的事件会被逐个试到
 	var ckey := "%d|%s" % [obs.map.map_id, "/".join(obs.message._choices.map(func(c): return str(c)))]
@@ -595,9 +677,14 @@ func _act_choice(obs: Dictionary) -> void:
 		if hit >= 0:
 			want = hit
 			break
+	if _intent == "zhenqi":
+		want = _zhenqi_choice(obs.message._choices)
+	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
+		want = 0                     # 天启篇选线的确认：要通关就得选一条线
 	counts[want] = int(counts[want]) + 1
 	choice_counts[ckey] = counts
 	var cur: int = obs.index
+	_log("选项 %s：光标在 %d，要选 %d（意图 %s）" % [str(obs.message._choices).left(80), cur, want, _intent])
 	var guard := 0
 	while cur != want and guard < n + 2:
 		await _tap("down" if want > cur else "up")
@@ -669,6 +756,8 @@ func _act_battle(obs: Dictionary) -> void:
 		_battle.actions += 1
 		if not _battle.has("hp0"):
 			_battle["hp0"] = hp
+		_battle["hp"] = hp               # 收工时还剩多少血、打到第几回合（报告里看差多远）
+		_battle["turn"] = int(b.logic.turn)
 		if not _battle.has("frame0"):
 			_battle["frame0"] = Engine.get_process_frames()
 		if Engine.get_process_frames() - int(_battle.frame0) > battle_give_up_frames:
@@ -728,13 +817,26 @@ func _act_battle(obs: Dictionary) -> void:
 
 ## 全灭（出了结束画面）：这一层记一次失败，下次先挂机练级；输太多次就收工
 func _on_defeat() -> void:
-	defeats += 1
 	var row := _floor_row()
+	if not _dg.is_empty():
+		# 输给副本首领（或副本里的小怪）：不算守层者的失败；输多了这一层就不再去刷
+		dungeon_defeats += 1
+		row["dungeon_defeats"] = int(row.get("dungeon_defeats", 0)) + 1
+		_log("副本里全灭：第 %d 层第 %d 次" % [_floor, row.dungeon_defeats])
+		if int(row.dungeon_defeats) >= farm_max_defeats:
+			_farm_block[_floor] = "副本首领打不过（输了 %d 次，队伍等级 %s）" % [int(row.dungeon_defeats), str(_levels())]
+			_need_farm = 0
+		_dg = {}
+		return
+	defeats += 1
 	row["defeats"] = int(row.get("defeats", 0)) + 1
 	_need_grind = climb_grind_base * int(pow(2, int(row.defeats) - 1))
-	_log("全灭：第 %d 层第 %d 次，下次先练 %d 场" % [_floor, row.defeats, _need_grind])
+	if farm_enabled and not _farm_block.has(_floor):
+		_need_farm = farm_base * int(row.defeats)
+	_log("全灭：第 %d 层第 %d 次，下次先练 %d 场、刷 %d 次副本首领" % [_floor, row.defeats, _need_grind, _need_farm])
 	if int(row.defeats) >= climb_max_defeats:
-		climb_stop = "第 %d 层守层者打不过：输了 %d 次，中间挂机练了 %d 场，队伍等级 %s" % [_floor, row.defeats, int(row.get("grind_battles", 0)), str(_levels())]
+		climb_stop = "第 %d 层守层者打不过：输了 %d 次，中间挂机练了 %d 场、打倒副本首领 %d 次%s，队伍等级 %s" % [_floor, row.defeats,
+			int(row.get("grind_battles", 0)), int(row.get("dungeon_kills", 0)), ("（%s）" % str(_farm_block[_floor])) if _farm_block.has(_floor) else "", str(_levels())]
 
 
 func _levels() -> Array:
@@ -819,8 +921,13 @@ func _act_climb(obs: Dictionary) -> void:
 		if _floor >= 0 and floor > _floor:
 			_mark("floor_%d_cleared" % _floor)
 			_log("通过第 %d 层" % _floor)
+			if fixed_random and XTianqi.draw_ready(st):
+				XTianqi.draw_offer(st, _rng)     # 通关抽角色的候选也跟着种子走（游戏回大厅时沿用已掷出的这一组）
 		_floor = floor
 		_need_grind = 0
+		_need_farm = farm_first if farm_enabled else 0
+		_dg_fail = 0
+		_dg_entry_tries = 0
 		_lost_guardian = 0
 		_floor_row()
 	if not _floor_entry.has(map.map_id):
@@ -877,6 +984,12 @@ func _hotkey_lobby(map: XMapScene) -> void:
 
 func _climb_lobby(map: XMapScene, st: XState) -> void:
 	var e: MVEvent = null
+	if debug_floor > 0 and not _debug_floor_done and XRace.guide_chosen(st):
+		_debug_floor_done = true
+		st.set_variable(FLOOR_VAR, debug_floor)
+		_mark("debug_floor_%d" % debug_floor)
+		await _hotkey_lobby(map)
+		return
 	if not XRace.guide_chosen(st):
 		e = _find_event(map, func(x): return str(x.data.get("note", "")) == "<CodexRaceGuide>")
 		if e != null and _aim(map, e, "race"):
@@ -890,6 +1003,23 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				_heal_tries += 1
 			await _goto_target(map)
 			return
+	# 闭关回来：记下谁突破了
+	if _zq_before != null:
+		var now := _realms(st)
+		if now != _zq_before:
+			_mark("zhenqi_breakthrough")
+			_note_growth("真气突破", {"before": _zq_before, "after": now})
+		_zq_before = null
+	# 真气：有人能突破或有奖励没选，就去闭关（同菜单「真气」；对话和选项照常按键）
+	if zhenqi_enabled and _zhenqi_wanted(st):
+		_zq_before = _realms(st)
+		_zq_visit = 0
+		_target = {}
+		_intent = "zhenqi"
+		_log("去闭关")
+		map.run_zhenqi_retreat()
+		await _frames(4)
+		return
 	# 背包里的装备变了（打到新的）：打开菜单去装备页，把更好的穿上
 	if equip_enabled:
 		var gsig := _gear_sig(st)
@@ -1047,6 +1177,14 @@ func _act_equip(obs: Dictionary) -> void:
 var _grind_start := 0
 
 func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
+	if XDungeon.inside(st):
+		await _climb_dungeon(map, st, floor)
+		return
+	if not _dg.is_empty():
+		# 从副本出来了（领完奖被送回来，或逃离）：记一笔，回大厅治疗、存档、换装
+		_finish_dungeon()
+		await _hotkey_lobby(map)
+		return
 	# 进来之后层数变了＝这层打完了：回大厅去下一层
 	if int(_floor_entry.get(map.map_id, floor)) != floor:
 		await _hotkey_lobby(map)
@@ -1080,6 +1218,8 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 			_grind_goal = -1         # 没开起来（弹了提示）：下一步对话会被按掉，再挑战
 			_need_grind = 0
 		return
+	if _need_farm > 0 and await _go_dungeon(map, st, floor):
+		return
 	if _aim(map, g, "challenge"):
 		if _arrived(map.player):
 			_floor_row()["challenges"] = int(_floor_row().get("challenges", 0)) + 1
@@ -1088,6 +1228,186 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 		return
 	_intent = ""
 	await _act_map({"map": map})
+
+
+# ---------------------------------------------------------------- 副本首领（养成：真气、抽奖券、神秘珠、进阶石的来源）
+
+func _note_growth(what: String, detail = null) -> void:
+	growth_log.append({"tick": ticks, "floor": _floor, "what": what, "detail": detail})
+	_log("养成：%s %s" % [what, str(detail) if detail != null else ""])
+
+
+## 副本入口：有「挑战副本」并且会扣符文、关挂机的事件（XDungeon.entry_spec 认的那种）
+func _is_dungeon_entry(e: MVEvent) -> bool:
+	return not XDungeon.entry_spec(e.command_list()).is_empty()
+
+
+## 副本首领：当前页按副本档位开关分页、并且会开战的事件；返回它的敌群号，不是首领返回 0
+func _dungeon_boss_troop(e: MVEvent) -> int:
+	var cond: Dictionary = e.page.get("conditions", {})
+	var tiered := false
+	for k in ["switch1", "switch2"]:
+		if bool(cond.get(k + "Valid", false)) and int(cond.get(k + "Id", 0)) >= TIER_SWITCHES[0] and int(cond.get(k + "Id", 0)) <= TIER_SWITCHES[1]:
+			tiered = true
+	if not tiered:
+		return 0
+	for c in e.command_list():
+		if int(c.get("code", 0)) == 301 and int(c.parameters[0]) == 0:
+			return int(c.parameters[1])
+	return 0
+
+
+## 副本里往深处走的门：会换地图、不开战、也不是「逃离」的事件里，去得最少、走得到的那个
+func _dungeon_door(map: XMapScene) -> MVEvent:
+	var best: MVEvent = null
+	var low := INF
+	for x in map.events:
+		if x.erased or x.page.is_empty() or _has_choice(x, "逃离"):
+			continue
+		var codes: Array = x.command_list().map(func(c): return int(c.get("code", 0)))
+		if not codes.has(201) or codes.has(301):
+			continue
+		var n := float(event_visits.get("%d:%d" % [map.map_id, x.event_id], 0))
+		if n < low:
+			low = n
+			best = x
+	return best
+
+
+## 按商店标价买东西（副本符文在大厅阿卡拉的店里卖；这里不走到店里去，直接按价扣钱）
+func _buy_item(st: XState, id: int, n: int) -> bool:
+	var price := int(XDB.rec("Items", id).get("price", 0)) * n
+	if int(st.gold) < price:
+		return false
+	st.gain_gold(-price)
+	st.gain_item(id, n)
+	_note_growth("买 %s×%d" % [str(XDB.rec("Items", id).get("name", id)), n], {"gold": price})
+	return true
+
+
+## 在楼层地图上去副本入口：要重置先选「重置副本」，再选「挑战副本」。去不了返回 false（并记下这一层不再刷的原因）
+func _go_dungeon(map: XMapScene, st: XState, floor: int) -> bool:
+	var ent := _find_event(map, _is_dungeon_entry)
+	var why := ""
+	if ent == null:
+		why = "地图 %d 上没有副本入口" % map.map_id
+	elif _dg_entry_tries > 12:
+		why = "副本入口试了 %d 次进不去" % _dg_entry_tries
+	else:
+		var rune := int(XDungeon.entry_spec(ent.command_list()).rune)
+		if st.item_count(rune) <= 0 and not _buy_item(st, rune, 5):
+			why = "买不起副本符文"
+	var sealed := int(st.variable(XDungeon.VAR_SEALED)) != 0
+	if why == "" and not _aim(map, ent, "reset" if sealed else "dungeon"):
+		why = "走不到副本入口"
+	if why != "":
+		_farm_block[floor] = why
+		_need_farm = 0
+		_log("这一层不刷副本：" + why)
+		return false
+	if _arrived(map.player):
+		_dg_entry_tries += 1
+	await _goto_target(map)
+	return true
+
+
+## 副本里：去打首领；首领走不到就先清挡路的小怪；打倒后再调查它领奖（会被送回楼层）；迷路了走「逃离」
+func _climb_dungeon(map: XMapScene, _st: XState, floor: int) -> void:
+	if _dg.is_empty():
+		_dg = {"floor": floor, "map": map.map_id, "tick": ticks, "steps": 0, "won": false}
+		_dg_entry_tries = 0
+		dungeon_runs += 1
+		_floor_row()["dungeon_runs"] = int(_floor_row().get("dungeon_runs", 0)) + 1
+		_mark("dungeon_entered")
+		_log("进了副本（地图 %d）" % map.map_id)
+	_dg.steps += 1
+	var e: MVEvent = null
+	if int(_dg.steps) <= 1500:
+		if not bool(_dg.won):
+			e = _find_event(map, func(x): return _dungeon_boss_troop(x) > 0)
+			if e != null and _aim(map, e, "boss"):
+				_dg["boss_event"] = e.event_id
+				_dg["boss_troop"] = _dungeon_boss_troop(e)
+				await _goto_target(map)
+				return
+			# 首领不在这张图或走不到：打一只走得到的小怪开路
+			for x in map.events:
+				if not x.erased and not x.page.is_empty() and x.trigger() == 0 and _dungeon_boss_troop(x) == 0 \
+						and x.command_list().any(func(c): return int(c.get("code", 0)) == 301) and _aim(map, x, "minion"):
+					await _goto_target(map)
+					return
+			# 这张图清完了还没见到首领：往里走
+			e = _dungeon_door(map)
+			if e != null and _aim(map, e, "door"):
+				await _goto_target(map)
+				return
+		elif _dg.has("boss_event"):
+			e = _find_event(map, func(x): return x.event_id == int(_dg.boss_event))
+			if e != null and _aim(map, e, "loot"):
+				await _goto_target(map)
+				return
+	e = _find_event(map, func(x): return _has_choice(x, "逃离"))
+	if e != null and _aim(map, e, "flee"):
+		await _goto_target(map)
+		return
+	_intent = ""
+	await _act_map({"map": map})
+
+
+func _finish_dungeon() -> void:
+	var row := _floor_row()
+	if bool(_dg.get("won", false)):
+		row["dungeon_kills"] = int(row.get("dungeon_kills", 0)) + 1
+		_need_farm = maxi(0, _need_farm - 1)
+		_dg_fail = 0
+		_log("副本首领打倒，还要刷 %d 次" % _need_farm)
+	else:
+		_dg_fail += 1
+		_log("副本没打到首领就出来了（第 %d 次）" % _dg_fail)
+		if _dg_fail >= 2:
+			_farm_block[_floor] = "进了副本两次都没打到首领（地图 %d）" % int(_dg.map)
+			_need_farm = 0
+	_dg = {}
+
+
+# ---------------------------------------------------------------- 真气（闭关）
+
+## 出战的人里有没有该去闭关的：有突破奖励没选，或真气够、楼层门槛过了可以打瓶颈之战
+func _zhenqi_wanted(st: XState) -> bool:
+	for a in st.battle_members():
+		var z := XZhenqi.state_of(st, a)
+		if int(z.pending) > 0:
+			return true
+		if bool(z.canBreak) and int(_zq_trials.get(_floor, 0)) < zhenqi_max_trials:
+			return true
+	return false
+
+
+## 闭关的选项怎么选：先领奖励（属性奖励选攻击／全属性）→ 能突破就打瓶颈之战（每次闭关一场）→ 离开
+func _zhenqi_choice(choices: Array) -> int:
+	var find := func(word: String) -> int:
+		for i in choices.size():
+			if str(choices[i]).contains(word):
+				return i
+		return -1
+	for w in ["选择突破奖励", "攻击属性", "全属性", "［待选奖励］"]:
+		if find.call(w) >= 0:
+			return find.call(w)
+	if _zq_visit < 1 and int(_zq_trials.get(_floor, 0)) < zhenqi_max_trials:
+		for w in ["挑战瓶颈之战", "［可突破］"]:
+			var i: int = find.call(w)
+			if i >= 0:
+				if w == "挑战瓶颈之战":
+					_zq_visit += 1
+					_zq_trials[_floor] = int(_zq_trials.get(_floor, 0)) + 1
+					_mark("zhenqi_trial")
+				return i
+	var leave: int = find.call("离开")
+	return leave if leave >= 0 else choices.size() - 1
+
+
+func _realms(st: XState) -> Array:
+	return st.members().map(func(a): return int(XZhenqi.data(a).realm))
 
 
 # ---------------------------------------------------------------- 地图探索
@@ -1265,12 +1585,26 @@ func _plan(map: XMapScene) -> void:
 
 # ---------------------------------------------------------------- 报告
 
+## 养成现状（给报告用）：每人的真气和境界、抽奖券、肝帝积分、副本首领熟练度
+func _growth_state(st: XState) -> Dictionary:
+	if st == null:
+		return {}
+	return {
+		"zhenqi": st.members().map(func(a): return int(XZhenqi.data(a).qi)),
+		"realms": st.members().map(func(a): return str(XZhenqi.state_of(st, a).name)),
+		"tickets": st.item_count(XDungeon.TICKET), "points": int(st.variable(XCasinoBatch.VAR_POINTS)),
+		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
+	}
+
+
 func report() -> Dictionary:
 	var st := XState.current
 	return {
-		"seed": rng_seed, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
+		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "debug_floor": debug_floor, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
 		"aborted": aborted, "settled": settled, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
+		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block,
+		"growth": _growth_state(st), "growth_log": growth_log,
 		"milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
 		"timeline": timeline, "messages": messages_seen, "transcript": transcript,
