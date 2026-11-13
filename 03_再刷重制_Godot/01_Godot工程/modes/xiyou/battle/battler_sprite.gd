@@ -597,7 +597,9 @@ func set_anim_blend(c: Color) -> void:
 
 
 func anim_blend() -> Color:
-	return sprite.material.get_shader_parameter("blend") if sprite.material is ShaderMaterial else Color(0, 0, 0, 0)
+	# 材质在、但 blend 从没设过时取到的是 null（像素柔边让身体材质常在，dev.532 后 xiyou_mv_animation 挂在这里）
+	var c = sprite.material.get_shader_parameter("blend") if sprite.material is ShaderMaterial else null
+	return c if c is Color else Color(0, 0, 0, 0)
 
 
 ## Sprite_Base.hide/show（技能动画 flashScope 3）

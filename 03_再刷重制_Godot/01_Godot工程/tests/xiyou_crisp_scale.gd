@@ -80,6 +80,8 @@ func _run() -> void:
 			check("crisp_on_%d" % i, _crisp(sp))
 			check("filter_kept_%d" % i, sp.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST
 				and (sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_PARENT_NODE)
+	# 身体材质常在、blend 没设过时，anim_blend 仍给透明色（不是 null）
+	check("anim_blend_default", sprites.all(func(sp): return sp.anim_blend() == Color(0, 0, 0, 0)))
 	await shot("crisp_on")
 
 	# 设置里关
