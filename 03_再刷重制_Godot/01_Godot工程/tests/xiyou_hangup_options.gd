@@ -143,10 +143,13 @@ func _run() -> void:
 	# 重制新增「画面特效」排在最后（大厅初步异化，XLobbyCorruption.ENABLED 关掉时不列）
 	# 再后面是「画面平滑」（XScreenScale.ENABLED 关掉时不列，玩家反馈 v0.01）
 	# 最后是「画质设置」（XGraphics.ENABLED 关掉时不列）
-	var fx := (1 if XLobbyCorruption.ENABLED else 0) + (1 if XScreenScale.ENABLED else 0) + (1 if XGraphics.ENABLED else 0)
-	var tail := "codexQuality" if XGraphics.ENABLED else ("codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx")
-	check("options_list", opt.symbols().size() == 33 + extra + fx and (fx == 0 or opt.symbols().back() == tail) and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
-		and opt.symbols()[32 + extra] == "codexFeedbackPending", opt.symbols())
+	# 再后面是「进战斗默认自动」（XBattleScene.AUTO_DEFAULT 关掉时不列）
+	var fx := (1 if XLobbyCorruption.ENABLED else 0) + (1 if XScreenScale.ENABLED else 0) + (1 if XGraphics.ENABLED else 0) + (1 if XBattleScene.AUTO_DEFAULT else 0)
+	var tail := "codexBattleAutoDefault" if XBattleScene.AUTO_DEFAULT else ("codexQuality" if XGraphics.ENABLED else ("codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx"))
+	# 「定向遇怪」（XEncounterTarget.ENABLED）把原版三行合成一行，少两行
+	var merged := 2 if XEncounterTarget.ENABLED else 0
+	check("options_list", opt.symbols().size() == 33 + extra + fx - merged and (fx == 0 or opt.symbols().back() == tail) and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
+		and opt.symbols()[32 + extra - merged] == "codexFeedbackPending", opt.symbols())
 	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))
 	await shot("00_设置.png")
 	# 坐标显示：确定切换，右开左关
@@ -265,7 +268,7 @@ func _run() -> void:
 	s.flags.HangUpProhibited = true
 	var opt2 := XOptionsScene.new()
 	add_child(opt2)
-	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra + fx and not opt2.symbols().has("HangUp"), opt2.symbols().size())
+	check("prohibited_no_hangup", opt2.symbols().size() == 32 + extra + fx - merged and not opt2.symbols().has("HangUp"), opt2.symbols().size())
 	opt2.queue_free()
 	s.flags.HangUpProhibited = false
 	rules(s)

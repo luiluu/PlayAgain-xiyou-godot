@@ -426,7 +426,10 @@ static func skill_key(key: String) -> int:
 		var re := RegEx.create_from_string("<CodexZhenqi:\\s*([^>]+)>")
 		for sk in XDB.table("Skills"):
 			if sk is Dictionary:
-				var m := re.search(str(sk.get("note", "")))
+				var note := str(sk.get("note", ""))
+				if WEAPON_TYPES_CACHE and not note.contains("<CodexZhenqi"):
+					continue  # 先按字面筛，几千条技能备注不必都跑正则（胜利结算第一次要停约 0.07 秒，见 weapon_types）
+				var m := re.search(note)
 				if m:
 					_skills[m.get_string(1).strip_edges()] = int(sk.id)
 		_skills[""] = 0
@@ -562,7 +565,25 @@ static func weapon_masters() -> Array:
 
 ## Z.weaponTypes（v0.45）：有名字、有对应本命兵技能（daofa:benming:N）、且有该类型武器的武器类型
 ## （原版另排除 CodexV029.hiddenGear，v0.62.12 恒为 false）
+## 战斗胜利结算（unlock_specs）每场都要算一遍：扫全部武器（四千件）＋本命兵技能表，桌面约 3～4 毫秒、第一次 70 毫秒以上，
+## 手机上是退出战斗时的一下卡顿（玩家反馈 v0.01.07）。数据库不变，按武器表、技能表、系统表留一份；拿到的是副本。
+## 回退：WEAPON_TYPES_CACHE = false 回到每次现算、技能备注逐条跑正则（O-386）。
+static var WEAPON_TYPES_CACHE := true
+static var _weapon_types_memo := []
+static var _weapon_types_key := []
+
+
 static func weapon_types() -> Array:
+	if not WEAPON_TYPES_CACHE:
+		return _weapon_types_now()
+	var key := [XDB.table("Weapons"), XDB.table("Skills"), XDB.system()]
+	if _weapon_types_key.size() != key.size() or not range(key.size()).all(func(i): return is_same(_weapon_types_key[i], key[i])):
+		_weapon_types_memo = _weapon_types_now()
+		_weapon_types_key = key
+	return _weapon_types_memo.duplicate()
+
+
+static func _weapon_types_now() -> Array:
 	var names: Array = XDB.system().get("weaponTypes", [])
 	var has := {}
 	for wp in XDB.table("Weapons"):

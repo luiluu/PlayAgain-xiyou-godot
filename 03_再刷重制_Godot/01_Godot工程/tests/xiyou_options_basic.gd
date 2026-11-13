@@ -52,6 +52,7 @@ func _run() -> void:
 	s.map_id = 5
 	s.x = 11
 	s.y = 13
+	XEncounterTarget.ENABLED = false  # 行序对照原版（定向遇怪把三行合成一行，在 xiyou_options_misc 单测）
 	var opt := XOptionsScene.new()
 	add_child(opt)
 	await frames()
