@@ -41,6 +41,7 @@ var iters := 7
 var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
 var _cur_floor := 0
 var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
+var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者前的存档（floor_<层>*.json，XState.to_dict()），用它的真实队伍量（Kyo 11-13 定 C）
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
@@ -66,6 +67,9 @@ func _ready() -> void:
 			neutral = true
 		elif a.begins_with("--line="):
 			line = a.substr(7)
+		elif a.begins_with("--snapshots="):
+			snapshots = a.substr(12)
+			both = true
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -435,8 +439,11 @@ func _run_both(list: Array) -> void:
 	for f in floors:
 		var per := []
 		_cur_floor = f
-		for team in list:
-			per.append(_fight_both(_state(team, f), 0))
+		var states: Array = _snapshot_states(f) if snapshots != "" else list.map(func(team): return _state(team, f))
+		if states.is_empty():
+			continue
+		for st in states:
+			per.append(_fight_both(st, 0))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
@@ -450,3 +457,24 @@ func _run_both(list: Array) -> void:
 		fh.store_string(JSON.stringify({"mode": "both", "resist": resist, "turns": turns, "teams": list, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)
+
+
+
+## 这一层的快照（同一层可有多个种子）：floor_<层>.json、floor_<层>_<种子>.json
+func _snapshot_states(f: int) -> Array:
+	var out := []
+	var d := DirAccess.open(snapshots)
+	if d == null:
+		return out
+	for name in d.get_files():
+		if not name.ends_with(".json") or not (name == "floor_%d.json" % f or name.begins_with("floor_%d_" % f)):
+			continue
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(snapshots.path_join(name)))
+		if not parsed is Dictionary:
+			continue
+		var st := XState.from_dict(parsed)
+		st.set_variable(20, f)
+		for a in st.battle_members():
+			a.recover_all()
+		out.append(st)
+	return out
