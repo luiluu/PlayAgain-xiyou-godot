@@ -182,6 +182,11 @@ func _run() -> void:
 	for i in range(1, XSave.SLOTS + 1):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XSave.path(i)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	# --vp-resume=<存档文件>：从一份存档接着玩（虚拟玩家每层进门前另抄的那份，见 --vp-snapshot-dir 的 saves/）。放进 1 号格，机器人在标题看到有档会读它
+	if _arg("--vp-resume") != "":
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(XSave.dir()))
+		var err := DirAccess.copy_absolute(_arg("--vp-resume"), ProjectSettings.globalize_path(XSave.path(1)))
+		_check("resume_save_copied", err == OK, [_arg("--vp-resume"), err])
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")

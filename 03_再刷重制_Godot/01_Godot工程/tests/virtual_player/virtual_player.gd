@@ -1253,6 +1253,10 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		await _frames(10)
 		if is_instance_valid(map) and map.toasts.size() > before:
 			_mark("saved")
+			# 接着玩用：把刚存的档另抄一份到快照目录 saves/（每层留最近一次进门前的），下次用 --vp-resume 从这一层接着爬
+			if snapshot_dir != "" and XSave.current_slot >= 1 and FileAccess.file_exists(XSave.path(XSave.current_slot)):
+				DirAccess.make_dir_recursive_absolute(snapshot_dir.path_join("saves"))
+				DirAccess.copy_absolute(ProjectSettings.globalize_path(XSave.path(XSave.current_slot)), snapshot_dir.path_join("saves").path_join("floor_%d_%d.json" % [int(st.variable(FLOOR_VAR)), rng_seed]))
 		return
 	e = _find_event(map, func(x): return _has_choice(x, "进入该层"))
 	if e != null:
