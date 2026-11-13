@@ -233,6 +233,7 @@ want guards && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/ui_refe
 want tools && { if python3 "$ENV_DIR/测试工作树清理.py" >/dev/null; then ok "工作树清理保护"; else bad "工作树清理保护"; fi; }
 want tools && { if python3 "$ENV_DIR/测试参照批次.py" >/dev/null 2>&1; then ok "车道参照与切片同批提示"; else bad "参照批次工具回归失败，单跑 07_开发环境/测试参照批次.py 看详情"; fi; }
 want guards && { if python3 "$ENV_DIR/测试导出过滤.py"; then ok "导出包排除测试与参照数据"; else bad "导出过滤没挡住测试或参照数据"; fi; }
+want guards && { if python3 "$ENV_DIR/发行空壳.py" check >/dev/null; then ok "发行空壳覆盖西游代码用到的天启篇成员"; else bad "发行空壳缺成员：跑 07_开发环境/发行空壳.py check，照真脚本发行时的行为补 发行空壳特例.json"; fi; }
 want guards && { if python3 "$ENV_DIR/切场景后调用扫描.py" --check; then ok "切场景后不再取视口／场景树（发行版空指针闪退同类）"; else bad "有切场景后还取视口／场景树的写法（发行版会闪退），见上方清单；确认安全的行尾写「# 离树后安全：理由」"; fi; }
 want tools && { if python3 "$ENV_DIR/测试共性验收.py"; then ok "共性参照对照工具保护"; else bad "共性验收工具回归失败"; fi; }
 want content && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/共性参照验收.py"; then ok "共性参照完整性（尚非Godot实现验收）"; else bad "共性参照缺失或异常"; fi; }
@@ -251,6 +252,7 @@ want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/测试天启篇数据校验.py" >/dev/null 2>&1 && python3 "$ROOT/03_再刷重制_Godot/03_转换工具/天启篇数据校验.py" >/dev/null; then ok "天启篇数据表校验（规则自检与回归）"; else bad "天启篇数据表校验失败，单跑 03_转换工具/天启篇数据校验.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试发行空壳.py" >/dev/null 2>&1; then ok "发行空壳生成"; else bad "发行空壳工具回归失败，单跑 07_开发环境/测试发行空壳.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试Windows实机冒烟.py" >/dev/null 2>&1; then ok "Windows 实机冒烟（假 exe：入口、按键、存档目录）"; else bad "Windows 实机冒烟工具回归失败，单跑 07_开发环境/测试Windows实机冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试安卓实机冒烟.py" >/dev/null 2>&1; then ok "安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）"; else bad "安卓实机冒烟工具回归失败，单跑 07_开发环境/测试安卓实机冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试内容覆盖.py" >/dev/null 2>&1; then ok "内容覆盖检查工具"; else bad "内容覆盖检查工具回归失败"; fi; }

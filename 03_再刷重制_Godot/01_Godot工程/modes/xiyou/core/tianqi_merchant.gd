@@ -19,6 +19,8 @@ static var _data: Dictionary = {}
 
 static func data() -> Dictionary:
 	if _data.is_empty():
+		if XDataFile.missing(PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
 		var parsed = JSON.parse_string(FileAccess.get_file_as_string(PATH))
 		_data = parsed if parsed is Dictionary else {}
 	return _data

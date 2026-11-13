@@ -146,7 +146,7 @@ class DirsTests(unittest.TestCase):
 
     def test_export_makes_win_zip_and_notes_say_unzip(self):
         src = (HERE / '发行出包.py').read_text(encoding='utf-8')
-        body = src[src.index('def export_all('):src.index('def ', src.index('def export_all(') + 10)]
+        body = src[src.index('def _export_all('):src.index('def ', src.index('def _export_all(') + 10)]
         self.assertIn('win_zip(out)', body)
         self.assertLess(body.index("'Windows 导出失败'"), body.index('win_zip(out)'))
         notes = M.notes_text(386, 382, [])

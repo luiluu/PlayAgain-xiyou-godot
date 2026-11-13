@@ -26,6 +26,7 @@
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -200,14 +201,44 @@ def android_env():
     return env, '本机 Godot 调试 keystore（只能试装，不能上架）'
 
 
+def stub_tree(out: Path) -> Path:
+    """发行空壳（11-13）：克隆工程、天启篇脚本换成空壳，从克隆导出；返回克隆路径。REAL_SCRIPTS＝True 时直接用工程（回退）。"""
+    if REAL_SCRIPTS:
+        return PROJECT
+    spec = importlib.util.spec_from_file_location('发行空壳', HERE / '发行空壳.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    tree = out.parent / f'.空壳工程_{out.name}'
+    if tree.exists():
+        shutil.rmtree(tree)
+    m.make_tree(tree)
+    left = m.is_stub_tree(tree)
+    if left:
+        raise SystemExit('发行空壳没换全：' + '、'.join(left))
+    print(f'== 发行空壳：天启篇脚本已换成空壳（{tree.name}）')
+    return tree
+
+
+REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚本（--real-scripts）
+
+
 def export_all(out: Path, logs: Path) -> list:
     problems = []
+    src = stub_tree(out)
+    try:
+        return _export_all(out, logs, src, problems)
+    finally:
+        if src != PROJECT:
+            shutil.rmtree(src, ignore_errors=True)
+
+
+def _export_all(out: Path, logs: Path, src: Path, problems: list) -> list:
     print('== 导出 macOS 发行')
-    if run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log') or not (out / MAC_ZIP).is_file():
+    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log') or not (out / MAC_ZIP).is_file():
         problems.append('macOS 导出失败')
     print('== 导出 Windows 发行')
     (out / WIN_DIR).mkdir(exist_ok=True)
-    if run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log') \
+    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log') \
             or not all((out / WIN_DIR / f).is_file() for f in WIN_FILES):
         problems.append('Windows 导出失败')
     else:
@@ -218,12 +249,28 @@ def export_all(out: Path, logs: Path) -> list:
         problems.append('安卓：没配发行 keystore，本机也找不到 Godot 调试 keystore')
     else:
         print(f'  签名：{how}')
-        if run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
+        if run([str(GODOT), '--headless', '--path', str(src), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
                 or not (out / APK).is_file():
             problems.append('安卓导出失败')
         idsig = out / (APK + '.idsig')
         if idsig.exists():
             idsig.unlink()  # 只给 adb 增量安装用，玩家用不着
+    return problems
+
+
+def audit_unreleased(out: Path) -> list:
+    """发行内容审计（11-13 漩涡异化设计稿外泄后加）：三个包里不许有没发行的内容，有就不往下走。"""
+    spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    problems = []
+    for pkg in (out / WIN_DIR / WIN_FILES[1], out / APK, out / MAC_ZIP):
+        if not pkg.is_file():
+            continue
+        bad = m.audit(pkg)
+        if bad:
+            problems.append(f'{pkg.name} 带了 {len(bad)} 个没发行的文件（{"、".join(bad[:5])}…）；看 export_presets.cfg 发行预设的 exclude_filter')
+    print('== 发行内容审计：' + ('有问题' if problems else '通过'))
     return problems
 
 
@@ -328,12 +375,15 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--out', help='发行目录的上一级')
     ap.add_argument('--no-smoke', action='store_true')
+    ap.add_argument('--real-scripts', action='store_true', help='回退：发行包带天启篇真脚本（不换空壳）')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
+    global REAL_SCRIPTS
+    REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'
     dev = dev_number()
     out = parent / f'dev{dev}_三平台发行'
@@ -375,6 +425,8 @@ def main(argv=None) -> int:
     logs = out / '日志'
     logs.mkdir()
     problems = export_all(out, logs)
+    if not problems:
+        problems = audit_unreleased(out)
     if problems:
         print('✗ ' + '；'.join(problems))
         return 1

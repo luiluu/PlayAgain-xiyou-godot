@@ -46,7 +46,7 @@ static var _load_failed := false
 
 static func data() -> Dictionary:
 	if _data.is_empty():
-		if _load_failed:
+		if _load_failed or XDataFile.missing(PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
 			return {}
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:

@@ -164,6 +164,8 @@ static var _table: Dictionary = {}
 
 static func table() -> Dictionary:
 	if _table.is_empty():
+		if XDataFile.missing(TABLE_PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
 		var f := FileAccess.open(TABLE_PATH, FileAccess.READ)
 		if f == null:
 			push_error("XTianqiGear: 读不到 " + TABLE_PATH)

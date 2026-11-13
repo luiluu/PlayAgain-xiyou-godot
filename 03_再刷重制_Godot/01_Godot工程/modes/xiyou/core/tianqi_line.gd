@@ -46,6 +46,8 @@ static func data(key: String) -> Dictionary:
 		return {}
 	if not _data.has(key):
 		var path := DATA_DIR + key + "_line.json"
+		if XDataFile.missing(path):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
 		var f := FileAccess.open(path, FileAccess.READ)
 		if f == null:
 			push_error("XTianqiLine: 读不到 " + path)
