@@ -1,0 +1,30 @@
+{
+ "sha": "95bc98c17a27fd7999cd9713af184d1389b32471",
+ "branch": "ci/cc/ultimate-pill-lag",
+ "mode": "affected",
+ "base": "beaaf76494604c95ea93b72bb31b6f4f5243437e",
+ "passed": true,
+ "scenes": 9,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 2,
+ "longestShardSeconds": 208.3,
+ "testSeconds": 713,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43349818322",
+ "sceneNames": [
+  "xiyou_bulk_pills.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_garou_progress.tscn",
+  "xiyou_magic_weapon_level.tscn",
+  "xiyou_raven_artifact.tscn",
+  "xiyou_tianqi_artifact_aura.tscn"
+ ],
+ "time": "2026-11-13T02:14:00+00:00"
+}
