@@ -310,7 +310,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var cands := []
 	for e in es:
 		for oe in (originals if not originals.is_empty() else [e]):
-			var resistance: float = 1.0 if kind == "true" or e == 0 else b.element_rate(e)
+			var resistance: float = 1.0 if kind == "true" or e == 0 or XGuardianRework.neutral(b) else b.element_rate(e)
 			var absorb := resistance < 0.0
 			resistance = apply_resistance_pierce(resistance, frame, e)
 			var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
@@ -350,7 +350,13 @@ static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, 
 	# installDamageElementRuntime 结算 part() 末尾的 result._after（伤害／治疗时挂状态，XBattleLogic._push_states），在 React 之前
 	if execute and ctx.has("after_confirm"):
 		ctx.after_confirm.call()
-	return apply_state_effects(mitigated, item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
+	var out := apply_state_effects(mitigated, item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
+	# 敌人出伤倍率（XEnemy.output_scale；守层者按楼层重算攻击用，默认 1 不动）：只乘对我方的 HP 伤害／吸取
+	if a is XEnemy and a.output_scale != 1.0 and out > 0.0 and int(item.damage.type) in [1, 5]:
+		out = roundf(out * a.output_scale)
+	if execute and a is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5]:
+		a.dealt += out   # 量数用：守层者打出的伤害（扣血前，不受我方剩余血量截断）
+	return out
 
 
 ## 正式 installDamageElementRuntime 的 entered 阶段：Confirm 之后的伤害按比例摊回各属性候选，各减固定减伤，取最大；

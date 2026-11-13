@@ -21,6 +21,10 @@ var elite := false
 var elite_hue := 0.0              # 0~1，画面偏色用
 ## 测试用：>= 0 时所有敌人按此值判定神话（0 必为神话，100 必不是）
 static var force_roll := -1.0
+## 出伤倍率：对我方的 HP 伤害／吸取最后乘它（XDamage.finish）。默认 1；守层者按楼层重算攻击、基准伤害工具量攻击时设
+var output_scale := 1.0
+## 量数用：这个敌人打出的 HP 伤害累计（XDamage.finish 记，扣血前的值）
+var dealt := 0.0
 
 ## installBossDifficultyRuntime：本场出战人数快照；倍率在原生缓存外结算。
 var boss_strong_count := 0
@@ -364,6 +368,8 @@ func refresh_passive() -> void:
 	for o in objs:
 		for m in XActor._scan(str(o.get("note", "")), "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
+	c.harmRe = XGuardianRework.harm_re(self, c.harmRe)  # 守层者重算（O-待定-4）：按层换伤害抵抗
+	output_scale = XGuardianRework.atk_scale(self)  # 守层者重算：按层的出伤倍率（鸿钧、七印里副本、七首之龙换记录后重刷时也跟着改）
 	_passive_cache = c
 	_passive_sig = _passive_signature()
 

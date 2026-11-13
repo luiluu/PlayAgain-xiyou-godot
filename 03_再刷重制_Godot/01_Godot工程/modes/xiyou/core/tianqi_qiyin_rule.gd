@@ -115,6 +115,7 @@ static func rebase(logic, info: Dictionary, is_boss: bool) -> void:
 				v *= float(extra[i])
 			params.append(roundf(v))
 		rec.params = params
+		rec["_ref"] = "qiyin"  # 守层者重算（XGuardianRework）：按鸿蒙老祖重标的，出伤跟 33 层一档
 		if is_b:
 			rec.name = str(boss.get("name", rec.get("name", "")))
 			XTianqiQiyinArt.dress_battler(rec, str(boss.get("battler", "")))
