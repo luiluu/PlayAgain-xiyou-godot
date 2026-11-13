@@ -3,7 +3,8 @@ extends Node
 ## tests/fixtures/magic_weapon_level_oracle.json（mv_oracle/magic_weapon_level_probe.cjs）：
 ## 全部法宝载入后的等级／经验／上限／下一级所需／升级特性／学技能表；下一级所需公式；逐次得经验升级与满级；
 ## 法宝经验丹公共事件 1190 与 MagicWeaponAllGainExp／MagicWeaponLevelUp；战斗胜利结算（含隐藏成员、后备减半）；
-## 麒麟对剑升级特性按等级叠加；烽舞按等级学技能。另有不靠参照的：<Cannot Gain Exp After Victory>、存档往返。
+## 麒麟对剑升级特性按等级叠加；烽舞按等级学技能。另有不靠参照的：<Cannot Gain Exp After Victory>、存档往返；
+## 连升多级只在最后重算一次角色（究极丹卡顿），结果与逐级重算相同。
 
 const FIXTURE := "res://tests/fixtures/magic_weapon_level_oracle.json"
 var results := []
@@ -83,6 +84,7 @@ func _run() -> void:
 	_traits(_case(data, "traits"))
 	_learn(_case(data, "learn"))
 	_synthetic()
+	_batch_refresh()
 	_finish()
 
 
@@ -246,6 +248,38 @@ func _synthetic() -> void:
 	XState._become_current(s)
 	check("param_plus_follows_level", is_equal_approx(XActor.magic_param(item, 0), lv * float(XPower.magic_growth(XDB.rec("Armors", 121))[0])), [XActor.magic_param(item, 0), lv])
 	check("no_unsupported_effects", XMagicWeapon.unsupported_effects.is_empty(), XMagicWeapon.unsupported_effects)
+
+
+## 不靠参照：究极丹（100 万经验）一颗连升几百级，gain_exp／MagicWeaponLevelUp 只在最后重算一次角色；
+## 等级、经验、生命魔法、八项能力、技能与逐级 level_up（每级重算，原版做法）一样
+func _batch_refresh() -> void:
+	for w in [[1, "armor", 121], [8, "armor", 3551]]:
+		var base: int = w[2]
+		var snaps := []
+		for mode in ["per_level", "gain_exp", "command"]:
+			var s := _state([w[0]])
+			var a := s.actor(w[0])
+			var slot := _wear(a, w[1], base)
+			var item: Dictionary = a.equips[slot]
+			a.refresh_resources()
+			a.hp = maxf(1.0, floorf(a.mhp / 3.0))
+			a.mp = maxf(0.0, floorf(a.mmp / 3.0))
+			match mode:
+				"per_level":
+					item.exp = XPower.js_round(XMagicWeapon.exp_of(item) + 1000000.0)
+					while XMagicWeapon.level_of(item) < XMagicWeapon.max_level(item) and XMagicWeapon.exp_of(item) >= XMagicWeapon.next_level_exp(item):
+						XMagicWeapon.level_up(item, a)
+				"gain_exp":
+					XMagicWeapon.gain_exp(item, 1000000.0, a)
+				"command":
+					XMagicWeapon.plugin_command(s, PackedStringArray(["MagicWeaponLevelUp", str(w[0]), str(slot), "30"]))
+			check("batch_refresh_%d_%s_kept" % [base, mode], a.equips[slot] == item, a.equips[slot])
+			a.param_mark_dirty()
+			snaps.append([XMagicWeapon.level_of(item), XMagicWeapon.exp_of(item), a.hp, a.mp, a.mhp, a.mmp,
+				range(8).map(func(i): return a.param(i)), a.skills().map(func(sk): return int(sk.id))])
+		check("batch_refresh_%d_levels" % base, snaps[0][0] > 20.0, snaps[0][0])
+		check("batch_refresh_%d_same" % base, snaps[0] == snaps[1], [snaps[0], snaps[1]])
+		check("batch_refresh_%d_command" % base, snaps[2][0] == minf(31.0, XMagicWeapon.max_level(XGear.template(w[1], base))), snaps[2])
 
 
 func _finish() -> void:
