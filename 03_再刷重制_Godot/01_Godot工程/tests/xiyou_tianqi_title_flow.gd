@@ -208,7 +208,9 @@ func _keyboard() -> void:
 	_check("kb_seed_save", XSave.save(2))
 	var before := FileAccess.get_file_as_bytes(XSave.path(2))
 	XTianqiTitle.last_key = ""
+	XFeedback.FORM_URL = "https://wj.qq.com/s2/test/ab12"  # 标题反馈问卷按钮（有链接才放）
 	var entry = await _title()
+	XFeedback.FORM_URL = ""
 	# 原版 selectLast：本次运行还没在标题按过，有存档就停在「旧的回忆」；往上一格到「新的游戏」
 	_check("kb_title_load_selected_with_save", _sel(entry) == 1, _sel(entry))
 	await _key(KEY_UP)
@@ -223,6 +225,9 @@ func _keyboard() -> void:
 	if fb is Button:
 		fb.pressed.emit()
 		_check("title_feedback_copied", fb.text == XFeedback.COPIED and _sel(entry) == 0, fb.text)
+	# 反馈问卷按钮在群号行正上方、在画面里、不抢焦点（不点：点了会真去开浏览器）
+	var ff = entry.find_child("FeedbackForm", true, false)
+	_check("title_feedback_form", ff is Button and ff.focus_mode == Control.FOCUS_NONE and vr.encloses(ff.get_global_rect()) and fb is Button and ff.get_global_rect().end.y <= fb.get_global_rect().position.y + 0.5, ff.get_global_rect() if ff is Button else null)
 	_check("subpage_bg_is_tianqi", sub_bg is TextureRect and sub_bg.texture == load(XTianqiTitle.BG) and old_bg.is_empty(), old_bg.size())
 	await _key(KEY_ENTER)
 	_check("kb_slot_page", _find("TianqiSlot1") != null and _focus_name() == "TianqiSlot1", _focus_name())

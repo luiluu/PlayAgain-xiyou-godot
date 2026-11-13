@@ -207,6 +207,12 @@ func _run() -> void:
 	host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	get_tree().root.add_child(host)
 	XUpdateInstall.ENABLED = false  # 先验「游戏内装补丁关着」时的提示
+	# 反馈问卷（XFeedback.FORM_URL）：没链接不放按钮；有链接时点了复制游戏信息、打开问卷
+	XFeedback.FORM_URL = ""
+	_check("没有问卷链接不放问卷按钮", not XFeedback.has_form())
+	XFeedback.FORM_URL = "https://wj.qq.com/s2/test/ab12"
+	var opened := []
+	XFeedback.opener = func(u): opened.append(u)
 	var page := XUpdatePage.open(host)
 	_check("打开先显示正在检查", page.state == "checking" and (page.get_node("../UpdatePage") == page))
 	await _frames(12)
@@ -220,6 +226,19 @@ func _run() -> void:
 	if fb != null:
 		fb.pressed.emit()
 		_check("更新页点反馈群显示已复制", fb.text == XFeedback.COPIED)
+	var ff: Button = page.find_child("FeedbackForm", true, false)
+	_check("更新页有反馈问卷按钮", ff != null and ff.focus_mode == Control.FOCUS_NONE and ff.text == XFeedback.FORM_LINE)
+	if ff != null:
+		ff.pressed.emit()
+		_check("点问卷按钮打开问卷并提示粘贴", opened == [XFeedback.FORM_URL] and ff.text == XFeedback.FORM_DONE)
+	var info := XFeedback.info_line()
+	_check("游戏信息带版本和系统", info.begins_with("再刷一把 ") and info.contains(OS.get_name()) and info.contains(XVersionLabel.version_text()))
+	_check("open_form 复制的就是游戏信息", XFeedback.open_form() == info)
+	XFeedback.FORM = false
+	_check("问卷开关关了不放按钮", not XFeedback.has_form())
+	XFeedback.FORM = true
+	XFeedback.FORM_URL = ""
+	XFeedback.opener = Callable()
 	var called := []
 	XUpdatePage.patch_installer = func(p, res): called.append(res["patch"]["code"])
 	page.show_result(page.get_meta("result"))

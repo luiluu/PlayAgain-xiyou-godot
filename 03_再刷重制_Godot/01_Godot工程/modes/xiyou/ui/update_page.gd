@@ -172,6 +172,10 @@ func _ready() -> void:
 		var fb := XFeedback.make_button(18)
 		fb.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		box.add_child(fb)
+	if XFeedback.SHOW and XFeedback.has_form():
+		var ff := XFeedback.make_form_button(18)
+		ff.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		box.add_child(ff)
 	_rollback = XUI.button("退回安装包自带版本", 36)
 	_rollback.name = "Rollback"
 	_rollback.alignment = HORIZONTAL_ALIGNMENT_CENTER
