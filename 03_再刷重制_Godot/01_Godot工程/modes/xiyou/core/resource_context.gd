@@ -316,7 +316,7 @@ func refresh(b: XBattler) -> void:
 			XActor.read_touch()
 	_refresh_type_after(b)  # 被动缓存重建也在窗口里：和前半段共用同一份技能表（中间没写入时）
 	if REFRESH_WINDOW:
-		XActor.read_touch()  # 被动缓存换了新的
+		XActor.passive_touch()  # 被动缓存换了新的（它不是技能表、特性表的输入：整批加减里不作废跨步保留的表）
 		XActor.read_end()
 	XLiuying.after_refresh(b)  # 流萤 refresh 包装：负面免疫中清掉绕过 addState 的负面状态
 	b.lifecycle_context = previous

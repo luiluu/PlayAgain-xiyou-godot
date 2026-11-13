@@ -55,7 +55,7 @@ static func settlement(a: XActor) -> float:
 
 static func _snap(a: XActor) -> Dictionary:
 	a.refresh_passive()
-	var pc: Dictionary = a._passive_cache
+	var pc: Dictionary = a.passive_cache()
 	return {"cri": a.cri, "hit": a.hit, "crit": float(pc.get("critHarmRi", 0.0)), "fin": float(pc.get("globalHarmRi", 0.0)),
 		"atk": a.atk, "mat": a.mat, "settle": settlement(a)}
 

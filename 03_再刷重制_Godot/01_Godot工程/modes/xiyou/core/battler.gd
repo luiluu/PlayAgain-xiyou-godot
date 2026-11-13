@@ -28,6 +28,7 @@ var hp := 0.0:
 	set(v):
 		hp = v
 		XActor._read_gen += 1
+		XActor._write_gen += 1
 ## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
 var immortal := false
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
@@ -63,10 +64,12 @@ var mp := 0.0:
 	set(v):
 		mp = v
 		XActor._read_gen += 1
+		XActor._write_gen += 1
 var tp := 0.0:
 	set(v):
 		tp = v
 		XActor._read_gen += 1
+		XActor._write_gen += 1
 var state_ids: Array[int] = []
 var state_turns := {}
 ## O-178（rules10）隐月叠层：CP_StateFloor 的层数（状态 → 层数，只记 >1 的）。原版 dsPassiveSkill 已带着就不再挂，恒 1 层；
@@ -477,7 +480,7 @@ func push_state_result(key: String, id: int) -> void:
 			result[key].append(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
+	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里按状态的类别只作废会变的表，见 XActor.STATE_BATCH）
 	if id == 1 and XGuyu.protect(self):
 		return  # 谷雨 addState 包装（最外层）：众生之劫代命，生命改 1、不加死亡
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
@@ -575,8 +578,8 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 			param_refresh()
 	push_state_result("addedStates", id)
 	if fresh:
-		XStateEffects.run_one("apply", self, s)
-		param_mark_dirty()
+		_run_state_effect("apply", s)
+		_state_mark_dirty(id)
 
 func roll_state_duration(lo: int, hi: int, random: XRandomStream = null, event_key := "") -> int:
 	if lifecycle_context.get("preview", false):
@@ -595,7 +598,7 @@ func remove_state_auto(id: int) -> void:
 	_leaving_state = false
 
 func remove_state(id: int) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-待定-1）：写入当场作废
+	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里按状态的类别只作废会变的表）
 	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
 		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
 	if XLiuying.mark_locked(self, id):
@@ -625,11 +628,11 @@ func remove_state(id: int) -> void:
 			param_refresh()
 		push_state_result("removedStates", id)
 		var st := XDB.rec("States", id)
-		XStateEffects.run_one("remove", self, st)
+		_run_state_effect("remove", st)
 		if _leaving_state:
-			XStateEffects.run_one("leave", self, st)
+			_run_state_effect("leave", st)
 		state_origins.erase(id)  # remove AND leave still see the original source
-	param_mark_dirty()
+	_state_mark_dirty(id)
 	XAlienBattle.after_removal(self, id, _leaving_state)
 
 func _sort_states() -> void:
@@ -715,6 +718,63 @@ func param_mark_dirty() -> void:
 	effect_dirty = true
 	if param_cache_on:
 		param_dirty = true
+
+## 加减状态末尾的标脏：同 param_mark_dirty，只是整批加减里按状态的类别只作废会变的表（XActor.STATE_BATCH）
+func _state_mark_dirty(id: int) -> void:
+	XActor.state_touch(id)
+	effect_dirty = true
+	if param_cache_on:
+		param_dirty = true
+
+## 加减一个状态会不会改角色的技能表、特性表（整批加减时哪些表能留到下一步，见 XActor.STATE_BATCH）：
+## - STATE_LIGHT：没有特性、也没有挂上／拿掉／到期时要跑的效果（开战自带的状态大多如此，只带确认、受击等时机的效果）——两张表都不变；
+## - STATE_TRAITS：有特性但不加技能（特性 43）——特性表变（按特性码取的集合只有用到它那几个码的变），技能表不变；
+## - STATE_HARD：其余（加技能的、带挂上／拿掉／到期效果的、阵亡 1、破甲·真气（记录随倍率改写）、查不到的）——按普通写入全部作废。
+## 依据：角色的技能表只从状态的特性 43 里读状态（native_skill_ids）；之后的心钢、云裳、异化、渡鸦／米拉、谷雨、屠苏／璇、吞噬、
+## 专武吸取、套装、法宝、真气与天启篇的技能视图都不读身上的状态、特性、能力值、HP／MP／TP。特性表读状态只在 trait_objects 的状态段。
+## 按状态表对象记，表换了重来；天启篇改写过的状态另记（XTianqiSkills.state_key）。
+enum {STATE_LIGHT, STATE_TRAITS, STATE_HARD}
+static var _state_classes := {}
+static var _state_class_table = null
+static func state_class(id: int) -> int:
+	var table = XDB._tables.get("States")
+	if not is_same(table, _state_class_table):
+		_state_class_table = table
+		_state_classes = {}
+		_state_masks = {}
+	var key := id  # 补丁线没有天启篇技能卡（main 用 XTianqiSkills.state_key(id)）
+	var hit = _state_classes.get(key)
+	if hit != null:
+		return hit
+	var st := state_rec(id)
+	var traits: Array = st.get("traits", [])
+	var cls := STATE_LIGHT if traits.is_empty() else STATE_TRAITS
+	if id == 1 or id == XZhenqi.POJIA_STATE or st.is_empty() or traits.any(func(t): return int(t.code) == TRAIT_SKILL_ADD) \
+			or (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) in ["apply", "remove", "leave"]):
+		cls = STATE_HARD
+	_state_classes[key] = cls
+	var mask := 0
+	for t in traits:
+		var code := int(t.code)
+		mask = -1 if code < 0 or code > 62 else mask | (1 << code)
+	_state_masks[key] = mask
+	return cls
+
+## 状态带的特性码（按位，码 c 在第 c 位；超出 0～62 的算全部）。整批加减时只作废用到这些码的那几项（XActor._carry_slot）
+static var _state_masks := {}
+static func state_trait_mask(id: int) -> int:
+	state_class(id)
+	return _state_masks.get(id, -1)
+
+## 加减状态时跑状态自带的效果。整批加减（XActor.STATE_BATCH）里，效果是任意代码：跑之前把欠着的被动缓存都建好，
+## 跑完按「有写入」算（跨步保留的表全部作废）。批外同原来。
+func _run_state_effect(phase: String, st: Dictionary) -> void:
+	if XActor._batch_depth > 0 and (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) == phase):
+		XActor.passive_flush_all()
+		XStateEffects.run_one(phase, self, st)
+		XActor.read_touch()
+	else:
+		XStateEffects.run_one(phase, self, st)
 
 ## krz Game_Enemy.refresh：need_refresh 为真才让八格变冷，再由原 refresh 截 HP／MP 读上限（生命、魔法上限当场重新填入），最后清 need_refresh。
 ## 只做缓存这一层，不截资源；截资源的 refresh 是 XResourceContext.refresh（开头调用本函数）。
