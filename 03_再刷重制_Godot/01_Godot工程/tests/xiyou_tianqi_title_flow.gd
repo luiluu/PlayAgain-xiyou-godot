@@ -208,9 +208,10 @@ func _keyboard() -> void:
 	_check("kb_seed_save", XSave.save(2))
 	var before := FileAccess.get_file_as_bytes(XSave.path(2))
 	XTianqiTitle.last_key = ""
+	var form_url := XFeedback.FORM_URL
 	XFeedback.FORM_URL = "https://wj.qq.com/s2/test/ab12"  # 标题反馈问卷按钮（有链接才放）
 	var entry = await _title()
-	XFeedback.FORM_URL = ""
+	XFeedback.FORM_URL = form_url
 	# 原版 selectLast：本次运行还没在标题按过，有存档就停在「旧的回忆」；往上一格到「新的游戏」
 	_check("kb_title_load_selected_with_save", _sel(entry) == 1, _sel(entry))
 	await _key(KEY_UP)
