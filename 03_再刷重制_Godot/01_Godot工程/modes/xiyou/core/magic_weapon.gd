@@ -64,7 +64,7 @@ static func max_level(item: Dictionary) -> float:
 	return minf(own, float(cap)) if cap > 0 else own
 
 
-## O-待定（法宝与积分重构 v0.2，Kyo 11-13 通过）：西游本体的法宝上限。原版插件参数 Max Level 888 对全部法宝生效（另有 18 件
+## O-待定-1（法宝与积分重构 v0.2，Kyo 11-13 通过）：西游本体的法宝上限。原版插件参数 Max Level 888 对全部法宝生效（另有 18 件
 ## 备注也写 888），一颗究极丹（100 万经验）就到 331 级，10 级角色几十万生命。
 ## - LEVEL_99：上限封到 99；回退 `XMagicWeapon.LEVEL_99 = false`（照原版 888）。
 ## - FLOOR_CAP：再跟楼层走，上限 ＝ min(99, 9 ＋ 3 × 最高到达层)，最高到达层＝变量 20（至少 1）：1 层 12、10 层 39、30 层 99；
