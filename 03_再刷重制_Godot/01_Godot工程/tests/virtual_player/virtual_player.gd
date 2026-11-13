@@ -660,7 +660,12 @@ func _act_battle(obs: Dictionary) -> void:
 			aborted = "一场战斗 %d 帧还没打完也逃不掉（地图 %d）" % [battle_give_up_frames, _battle.map]
 			return
 	if b.logic.auto:
-		await _frames(6)
+		# 自动战斗里也有要按键才走的消息（「被击败了」、逃跑、战斗事件的对话）
+		var bm = b.get("message")
+		if bm != null and is_instance_valid(bm) and bm.is_busy():
+			await _tap("accept")
+		else:
+			await _frames(6)
 		return
 	if mode == "climb" and _battle != null and _battle.actions > climb_manual_actions:
 		var btn = b.get("auto_btn")
