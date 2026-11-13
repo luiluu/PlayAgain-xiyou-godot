@@ -120,7 +120,13 @@ func _run() -> void:
 	equip._ok();await frames()
 	check("equip_candidate",equip._mode=="slot" and is_same(a.equips[0],cands[0].rec) and s.gear.has(old_weapon) and not s.gear.has(cands[0].rec) and s.gear.size()+a.equip_list().size()==gear_total)
 	check("equip_keeps_hp_rate",a.hp==maxf(1.0,floorf(a.mhp*hp_rate)),[a.hp,a.mhp])
-	equip._ok();await frames();equip._item_index=equip.candidates().size()-1;equip._refresh();await frames()
+	equip._ok();await frames()
+	# O-待定 候选缓存（换装备卡顿）：同条件直接取同一份；换装后（背包件数不变的对换）重算，和关掉缓存每次重算的结果逐件相同
+	var cached:=equip.candidates().map(func(e):return e.rec)
+	var hit:=is_same(equip.candidates(),equip.candidates())
+	XEquipScene.CACHE_CANDIDATES=false;var fresh:=equip.candidates().map(func(e):return e.rec);XEquipScene.CACHE_CANDIDATES=true
+	check("candidates_cache_fresh",hit and cached.size()==fresh.size() and range(cached.size()).all(func(i):return is_same(cached[i],fresh[i]) or (cached[i].is_empty() and fresh[i].is_empty())) and cached.any(func(r):return is_same(r,old_weapon)) and not cached.any(func(r):return is_same(r,a.equips[0])),[cached.size(),fresh.size()])
+	equip._item_index=equip.candidates().size()-1;equip._refresh();await frames()
 	check("remove_row_no_card",not equip.help_card.visible and equip._shown_item().is_empty() and equip._temp_actor()!=null)
 	equip._ok();await frames()
 	check("remove_equip",equip._mode=="slot" and a.equips[0]==null and s.gear.size()+a.equip_list().size()==gear_total)
