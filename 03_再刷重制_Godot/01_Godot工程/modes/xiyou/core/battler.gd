@@ -380,6 +380,14 @@ var _states_key: Array = []
 var _states_list: Array = []
 var _states_ver := 0
 
+## 状态表的版本号：表重算一次加一（只在 STATES_MEMO 开时有意义；角色另算套装状态，见 XActor.states_stamp）
+func states_stamp() -> int:
+	_states_memo_list()
+	return _states_ver
+
+## 侧栏格子的记忆（XSideStatus.CELL_MEMO）：[状态表版本, 层数, 强化弱化, 结果]
+var _cell_memo: Array = []
+
 func _states_memo_list() -> Array:
 	var key := [state_ids, zq_pojia_rate, XTianqiSkills.cards_on(), FIX_YINYUE_2521, XDB._tables.get("States")]
 	if _states_key.size() == 5 and _states_key[0] == state_ids and _states_key[1] == zq_pojia_rate and _states_key[2] == key[2] \
