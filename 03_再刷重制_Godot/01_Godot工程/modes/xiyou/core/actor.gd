@@ -250,7 +250,7 @@ static var RELEASE_WINDOW := true
 func release_unequippable() -> Array:
 	var removed := []
 	var changed := true
-	# O-待定-3：逐件判断能不能穿是一串只读的读取（特性、被动标签），包进一个只读窗口（O-348 的机制）：
+	# O-394：逐件判断能不能穿是一串只读的读取（特性、被动标签），包进一个只读窗口（O-348 的机制）：
 	# 技能表、特性表整轮只算一次；真卸下一件时当场作废（下面的 read_touch）。RELEASE_WINDOW = false 照原来各算各的。
 	var window := RELEASE_WINDOW
 	if window:
@@ -1214,7 +1214,7 @@ func passive_element_values(e: int) -> Array:
 
 
 # ---- 伤害结算用的被动缓存（dsPassiveSkill refreshPassiveCache，单次汇总）----
-## O-待定-5 的开关与上次的输入、结果（模块追加之前的那份）。false＝每次重建（同原来）
+## O-396 的开关与上次的输入、结果（模块追加之前的那份）。false＝每次重建（同原来）
 static var PASSIVE_MEMO := true
 var _pm_base := {}
 var _pm_notes: Array = []
@@ -1229,7 +1229,7 @@ func refresh_passive() -> void:
 		"recPushStates": [], "pushStates": [], "pushSelfStates": [],
 		"critPush": {"bySkill": {}, "byType": {"Zj": 0.0, "Mf": 0.0}, "all": 0.0}}
 	var objs := stat_equips() + skills() + states()
-	# O-待定-5：装备、技能、状态的备注与标签和上次一模一样时，直接用上次算好的表（给副本）。
+	# O-396：装备、技能、状态的备注与标签和上次一模一样时，直接用上次算好的表（给副本）。
 	# 备注逐段全文比对，标签表比哈希（标签是从备注解析出来的；就地改过的装备哈希会变）。
 	var sig_notes := []
 	var sig_meta := PackedInt64Array()
@@ -1370,7 +1370,7 @@ func passive_cache() -> Dictionary:
 		refresh_passive()
 	return _passive_cache
 
-## O-待定-2：备注扫描记住结果。被动缓存 refresh_passive 对每件装备、每个技能、每个状态的备注各跑十来条正则，
+## O-393：备注扫描记住结果。被动缓存 refresh_passive 对每件装备、每个技能、每个状态的备注各跑十来条正则，
 ## 每次还现编译正则；穿满装备的角色一次约 6 毫秒，而每加减一个状态就 refresh 一次（开战状态一场一百多个），
 ## 开战、收场各卡一两秒。同一段备注、同一条正则的结果不会变：按（正则，备注）记下，给出去的是副本。
 ## false＝每次现编译现扫（同原来）。每条正则最多记 SCAN_MEMO_MAX 段备注，满了清空重记。
