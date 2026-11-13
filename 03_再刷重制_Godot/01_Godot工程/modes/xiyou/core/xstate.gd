@@ -100,7 +100,7 @@ var random_master := ""
 var battle_serial := 0
 var _equipment_random: XRandomStream
 var _world_random: XRandomStream
-## XLotteryRework（O-待定-2）：抽奖随机流 {seed, state, draws}，随存档保存，读档后同一抽结果相同；_lottery_rng 是它的运行时对象
+## XLotteryRework（O-389）：抽奖随机流 {seed, state, draws}，随存档保存，读档后同一抽结果相同；_lottery_rng 是它的运行时对象
 var lottery_random := {}
 var _lottery_rng: RandomNumberGenerator = null
 

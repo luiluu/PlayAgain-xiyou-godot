@@ -83,7 +83,7 @@ static func general_artifact(item: Dictionary) -> bool:
 
 ## 法宝的阶：法宝等级／满级（不到 1/3 二阶，不到 2/3 三阶，再往上四阶）
 static func artifact_tier_of(item: Dictionary) -> int:
-	var mx := maxf(1.0, XMagicWeapon.top_level(item))  # 满级按封顶 99 算，不跟楼层上限（O-待定-1）
+	var mx := maxf(1.0, XMagicWeapon.top_level(item))  # 满级按封顶 99 算，不跟楼层上限（O-388）
 	return T.artifact_tier(clampf(XMagicWeapon.level_of(item) / mx, 0.0, 1.0))
 
 
