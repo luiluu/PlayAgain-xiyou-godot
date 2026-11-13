@@ -23,7 +23,7 @@ extends RefCounted
 ## - 第四期：挂机「屏蔽掉落」开着时，通用掉落里低于门槛档的自动按卖价折成钱、够门槛的留着（AUTO_SELL；原版是精良及以下全丢）；
 ##   怪物图鉴、地图传送预览的掉率换成招牌掉落的面板概率，图鉴里标「已连续 N 次没出」。
 ##
-## 回退（O-待定-1）：`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
+## 回退（O-403）：`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
