@@ -293,15 +293,15 @@ func _take_state_reserves() -> void:
 ## 原版 onBattleEnd 先 clearResult 再 removeBattleStates，移除记录留在 _result 里，isStateAddable 又拒绝「本次移除过」的状态，
 ## 要等地图上走一步（onPlayerWalk 的 clearResult）才清。所以不走动连着开战，上一场结束时去掉的开战状态（dsPassiveSkill
 ## StartPushState 等：神魔压制、神魔威压伤害×10%，变身、破阵增益……）这一场整批挂不上，隔一场漏一次（贝吉特木桩 762 对 7.61 万）。
-## 默认修：开战处理开战状态前清掉出战成员上一场留下的移除记录；false 回到原版（走一步之前挂不上）。
+## 默认修：开战处理开战状态前只清掉出战成员上一场留下的移除记录（removedStates，其余结果照原版带进开战）；false 回到原版（走一步之前挂不上）。
 static var START_CLEAR_RESULT := true
 
 
 func _start_battle_effects() -> void:
 	if START_CLEAR_RESULT:
 		for b in state.members():
-			if b != null:
-				b.runtime_result = XResourceContext.empty_result()
+			if b != null and b.runtime_result is Dictionary and b.runtime_result.has("removedStates"):
+				b.runtime_result.removedStates = []
 	XStateEffects.battle_units = {"actors": actors, "enemies": enemies}
 	XStateEffects.force_critical = false
 	XStateEffects.force_depth = 0
