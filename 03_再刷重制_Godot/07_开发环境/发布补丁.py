@@ -273,7 +273,8 @@ def remote_slug(repo: Path):
 
 
 def package_urls(repos: list, commits: dict, name: str) -> list:
-    """照 MOD 的顺序：Gitee raw 为主，再是 GitHub 仓库经 jsDelivr 各域名、githack、raw；全部固定到包提交。"""
+    """照 MOD 的顺序：Gitee raw 为主，再是 GitHub 仓库经 jsDelivr 各域名、raw；全部固定到包提交。
+    githack 已去掉（Kyo 2026-11-13「删掉备用源」：0.01.09 上线时返回 403）。"""
     urls = []
     for repo in repos:
         site, slug = remote_slug(repo)
@@ -286,7 +287,6 @@ def package_urls(repos: list, commits: dict, name: str) -> list:
         if site == 'github.com':
             for host in ('cdn', 'gcore', 'fastly', 'testingcf'):
                 urls.append(f'https://{host}.jsdelivr.net/gh/{slug}@{c}/{SUBDIR}/{name}')
-            urls.append(f'https://rawcdn.githack.com/{slug}/{c}/{SUBDIR}/{name}')
             urls.append(f'https://raw.githubusercontent.com/{slug}/{c}/{SUBDIR}/{name}')
     return urls
 
