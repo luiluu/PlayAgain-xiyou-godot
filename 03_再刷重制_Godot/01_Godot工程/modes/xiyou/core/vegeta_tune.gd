@@ -28,6 +28,13 @@ static var ENABLED := true
 static var TIER := "甲"
 
 
+## 测试用：按原版比（参照是原版数据）：关掉并让三张表重读
+static func original_data() -> void:
+	ENABLED = false
+	for n in ["Skills", "States", "CommonEvents"]:
+		XDB._tables.erase(n)
+
+
 static func cfg() -> Dictionary:
 	return TIERS.get(TIER, TIERS["甲"]) if ENABLED else {}
 
