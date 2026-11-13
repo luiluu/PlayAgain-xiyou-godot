@@ -34,10 +34,10 @@ static func xparam(a, i: int, v: float) -> float:
 	if i != 2 or not a is XActor:
 		return v
 	var lv := int(a.level)
-	if int(a.actor_id) == 168 and lv >= 5 and a.skill_ids.has(10156):
+	if int(a.actor_id) == 168 and lv >= 5 and a.skill_ids.has(10156) and not XTianqiSkills.cards_on():  # 天启篇：赤鳞共鸣的暴击去掉
 		return v + (0.15 + 0.08 * (lv - 5) if lv <= 15 else 0.95 + 7.93 * minf(1.0, (lv - 15) / 55.0))
 	if int(a.actor_id) == 167 and not suppress_raven and a.skill_ids.has(10137):
-		return v + 10 * XRaven.progress(a)
+		return v + (XRaven.tq_soul_bonus(a, 0.2) if XRaven._tq() else 10 * XRaven.progress(a))  # 天启篇：灵魂满暴击 +20%
 	return v
 
 

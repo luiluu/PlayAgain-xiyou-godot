@@ -101,7 +101,12 @@ static func soul_gain(e) -> int:
 	var meta: Dictionary = e.data().get("meta", {})
 	if meta.has("boss") or meta.has("Boss"):
 		gain *= 10
-	return mini(50, gain)
+	gain = mini(50, gain)
+	if _tq():  # 天启篇（第七期）：冥河断罪镰每次收魂多收 20%
+		var a = XState.current.actor(ACTOR) if XState.current != null and XState.current.actors.has(ACTOR) else null
+		if a != null and artifact_equipped(a):
+			gain = floori(gain * 1.2)
+	return gain
 
 
 ## $gameParty.members()：战斗中是出战成员，战斗外是全队
@@ -168,6 +173,21 @@ static func progress(a) -> float:
 	return clampf(soul(a) / REQUIRE[5], 0.0, 1.0)
 
 
+## ---- 天启篇（技能重构第七期，稿子 167 号）：只在 XTianqiSkills.cards_on() 时走，原版档不变 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+## 至尊鸦皇 10136：灵魂上限提到 20 万，15 万以上那段按 0～1 记「超出进度」，各项再 +5%
+static func tq_over(a) -> float:
+	return clampf((soul(a) - REQUIRE[5]) / 50000.0, 0.0, 1.0) if has(a, 10136) else 0.0
+
+
+## 灵魂成长的三项：暴击 +20%、魔防穿透 +20%、黑暗伤害 +30%（满 15 万；至尊鸦皇再各 +5%）
+static func tq_soul_bonus(a, full: float) -> float:
+	return full * progress(a) + 0.05 * tq_over(a) if own(a) else 0.0
+
+
 static func unlocked(a, skill: int) -> bool:
 	var gate = SKILL_GATE.get(skill)
 	return gate == null or own(a) and int(a.level) >= gate[0] and stage(a) >= gate[1]
@@ -222,7 +242,7 @@ static func growth_pools(a) -> Array:
 
 ## initPassiveCache 包装
 static func passive_cache(a, c: Dictionary) -> void:
-	if own(a) and a.skill_ids.has(SOUL_LEDGER):
+	if own(a) and a.skill_ids.has(SOUL_LEDGER) and not _tq():  # 天启篇：暴伤池、终伤池去掉（预算在卡里）
 		var p := growth_pools(a)
 		c.critHarmRi += p[0] / 100.0
 		c.globalHarmRi += p[1] / 100.0
@@ -264,6 +284,8 @@ static func crown_rate(a) -> float:
 static func defense_factor(a) -> float:
 	if not own(a) or not has(a, 10130):
 		return 1.0
+	if _tq():
+		return 1.0 - tq_soul_bonus(a, 0.2)
 	var pierce := minf(0.90, 0.60 + 0.30 * progress(a))
 	if myth_power(a):
 		pierce = minf(0.95, pierce + 0.05)
@@ -292,6 +314,8 @@ const SOUL_DRAIN := 10129
 
 static func param_plus(a, i: int, v: float) -> float:
 	if not artifact_equipped(a):
+		return v
+	if _tq():  # 天启篇：法宝不按阶位、灵魂加属性（固定值也去掉），效果换成开局残响、收魂 +20%
 		return v
 	v += ARTIFACT_BASE_BONUS[i]
 	if i == 4:
@@ -506,16 +530,23 @@ static func finish(logic, u, skill) -> Array:
 		var base: float = row[1]
 		if t == null or t.is_dead() or base <= 0.0:
 			continue
+		var tq := _tq()  # 天启篇：残响 3 层后追加 50%（神话形态里 ×1.5）、影鸦复刻 20%
 		if hunting:
-			logs.append_array(_direct(logic, t, base * (1.5 if myth_power(u) else 1.0), "harvest"))
+			logs.append_array(_direct(logic, t, base * (0.5 if tq else 1.0) * (1.5 if myth_power(u) else 1.0), "harvest"))
 		if myth_power(u) and not t.is_dead():
-			logs.append_array(_direct(logic, t, base * 0.85, "echo"))
+			logs.append_array(_direct(logic, t, base * (0.2 if tq else 0.85), "echo"))
 	return logs
 
 
 ## BattleManager.startTurn 包装
 static func start_turn() -> void:
 	any_death = false
+
+
+## 天启篇开战（XTianqiSkills.start_turns）：冥河断罪镰装着时每场开局自带 1 层残响
+static func tq_battle_start(a) -> void:
+	if own(a) and artifact_equipped(a) and has(a, RESIDUE):
+		_store()["residue"] = maxi(1, residue(a))
 
 
 ## BattleManager.endTurn 包装（原 endTurn 之前）：本回合没有敌人倒下时残响 +1；神话形态减一回合

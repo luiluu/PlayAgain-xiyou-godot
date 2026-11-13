@@ -85,6 +85,10 @@ static func param(a, i: int, v: float) -> float:
 	if not own(a):
 		return v
 	var lv := int(a.level)
+	if XTianqiSkills.cards_on():  # 天启篇（第七期）：鳞甲护身、龙心炽燃、禁忌的属性倍率去掉；灾厄苏醒：黑龙形态生命上限 +20%
+		if i == 0 and dragon(a) and has(a, 10163, 3):
+			v *= 1.2
+		return XPower.js_round(minf(a.param_max(i), v))
 	if not dragon(a):
 		if (i == 3 or i == 5) and lv >= 30 and has(a, 10144):
 			v *= 1.25 * (1 + 0.25 * minf(1.0, maxf(0.0, (lv - 30) / 5.0)))
@@ -225,7 +229,7 @@ static func pay(a, skill: Dictionary) -> void:
 		return
 	_due = null
 	if ACTIVE_SKILLS.has(int(skill.get("id", 0))) and has(a, 10166, 2):
-		_due = {"skill": int(skill.id), "cost": maxf(1.0, floorf(a.mhp * 0.1))}
+		_due = {"skill": int(skill.id), "cost": maxf(1.0, floorf(a.mhp * (0.05 if XTianqiSkills.cards_on() else 0.1)))}  # 天启篇：扣 5%
 
 
 ## BattleManager.endAction 包装（原 endAction 之前）：扣登记的生命代价，最低留 1
@@ -247,6 +251,8 @@ static func liberate(logic, u, skill) -> void:
 	if not own(u) or not skill is Dictionary or int(skill.get("id", 0)) != LIBERATE or rank(u) < 3 or not has(u, LIBERATE, 3):
 		return
 	logic._state_add(u, DRAGON)
+	if XTianqiSkills.cards_on() and heart_equipped(u):  # 天启篇：黑龙心鳞变身时回满 TP
+		u.tp = float(u.max_tp())
 	if end_of_all(u):
 		for id in END_OF_ALL_IMMUNE:
 			if u.state_ids.has(id):
@@ -288,7 +294,7 @@ static func end_turn(logic) -> Array:
 		return logs
 	for e in _flame:
 		var t = e[0]
-		var extra := floorf(float(e[1]) * 0.3)
+		var extra := floorf(float(e[1]) * (0.1 if XTianqiSkills.cards_on() else 0.3))  # 天启篇：追加 10%
 		if t == null or t.is_dead() or extra <= 0.0:
 			continue
 		var before: float = t.hp
@@ -309,6 +315,22 @@ static func turn_end(logic, b, logs: Array) -> void:
 	b.refresh_resources()
 	if b.hp != before:
 		logs.append({"type": "regen", "target": b, "hp": before - b.hp, "views": logic.views([b])})
+
+
+## 天启篇开战：终焉王权 10164 时黑日焚界准备减到 1 回合
+static func tq_battle_start(a) -> void:
+	if has(a, 10164, 3) and a.warmups.has(10151):
+		a.warmups[10151] = minf(float(a.warmups[10151]), 1.0)
+
+
+## 天启篇伤害（XTianqiModules.damage_ops）：禁忌 放主动技伤害 +10%；人形戴黑龙心鳞受到的伤害 −10%
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	var ops := []
+	if own(a) and has(a, 10166, 2) and ACTIVE_SKILLS.has(int(item.get("id", 0))):
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": 1.1})
+	if own(b) and not dragon(b) and heart_equipped(b):
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.9})
+	return ops
 
 
 ## BattleManager.endBattle 包装

@@ -110,9 +110,51 @@ static func ai_raw(a, t, rec: Dictionary):
 
 
 ## 赤染之茧：流萤用两招时火（2）的按元素穿透取 max(原值, 33)
+## ---- 天启篇（技能重构第七期，稿子 179 号）：只在 XTianqiSkills.cards_on() 时走 ----
+## 天火 3.6（五段，星河多一段 +0.5）、其他敌人各吃 30%、只有一个目标 +20%、再放 10%、叠 1 层；
+## 完全燃烧 6.0（九段）、只有一个目标 +50%（不再多打四段）、叠 3 层、消耗护盾每 10% 生命上限 +10%（最多 +30%）、冷却 6（三阶 5），
+## 三阶放完得生命上限 20% 护盾；击破印记每层只让流萤自己的伤害 +3%、受治疗 −5%，10 层引爆追加单体 9.0（火）；
+## 过载再动 10%、敏捷 +10%；自限生命 +20%、护盾效果 +20%；赤染无视 10%、自己受火和物理 −20%；进阶不再加生命、敏捷、再动；
+## 萨姆变身器前 2 回合受到的伤害 −20%；逐火封顶 +3000 生命，满时伤害 +20%；开局免疫负面 2 回合、免死 1 回合（不刷新）
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+const TQ_EMBER_CAP := 3000.0
+static var _tq_explode := false
+## 天启篇引爆追加的结算记录（_segment 接进本次行动日志）
+static var _tq_explode_logs := []
+
+
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	var ops := []
+	if own(b) and b.has_base_equip("armor", ARMOR) and turn_now() <= 2:
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.8})
+	if not _action(a, item):
+		return ops
+	var id := int(item.get("id", 0))
+	var per := float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0))
+	var m := 1.0
+	if _tq_explode:
+		m = 9.0 / maxf(0.01, per)
+	elif id == TIANHUO:  # 每段各扩一次：其他敌人各吃 30%
+		var n := 5 + (1 if learned(a, XING_HE) else 0)
+		m = (3.6 + (0.5 if learned(a, XING_HE) else 0.0)) / (n * maxf(0.01, per)) * (0.3 if spread_rate > 0.0 else 1.0)
+	elif id == RANSHAO:
+		m = 6.0 / (9.0 * maxf(0.01, per))
+		m *= 1.0 + float(_frame.get("burn", 0.0))
+	if not _tq_explode and float(_frame.get("single", 0.0)) > 0.0:
+		m *= float(_frame.single)
+	m *= 1.0 + 0.03 * mini(10, mark_count(b))
+	if a.has_base_equip("weapon", WEAPON) and float(a.state_data.get("_codexLbEmber", 0.0)) >= TQ_EMBER_CAP:
+		m *= 1.2
+	ops.append({"op": "mul", "field": "finalMultiplier", "value": m})
+	return ops
+
+
 static func pierce_by_element(item: Dictionary, a, by_element: Dictionary) -> Dictionary:
 	if _action(a, item) and learned(a, CHI_RAN):
-		by_element[2] = maxf(float(by_element.get(2, 0.0)), CHI_RAN_RATE * 100.0)
+		by_element[2] = maxf(float(by_element.get(2, 0.0)), (10.0 if _tq() else CHI_RAN_RATE * 100.0))
 	return by_element
 
 
@@ -137,7 +179,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	if _action(a, item):
 		ops.append({"op": "set", "field": "mode", "value": "physical"})
 		if learned(a, CHI_RAN):
-			ops.append({"op": "set", "field": "physicalIncomingPierce", "value": CHI_RAN_RATE})  # 原版 max(原值, 0.33)；流萤这两招别的钩子不写它
+			ops.append({"op": "set", "field": "physicalIncomingPierce", "value": 0.1 if _tq() else CHI_RAN_RATE})  # 原版 max(原值, 0.33)；流萤这两招别的钩子不写它
 		if learned(a, ZI_XIAN):
 			ops.append({"op": "add", "field": "elementAdd", "element": 2, "value": 2.0})
 			ops.append({"op": "add", "field": "elementAdd", "element": 1, "value": 2.0})
@@ -157,13 +199,13 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.5})
 		if float(_frame.get("single", 0.0)) > 0.0:
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": float(_frame.single)})  # 只有一个目标 ×1.2／×1.5
-		if spread_rate > 0.0:
+		if spread_rate > 0.0 and not _tq():
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": spread_rate})  # 天火扩散 ×0.5
 	var marks := mini(MARK_MAX, mark_count(b))
-	if marks > 0:
+	if marks > 0 and not _tq():  # 天启篇：只对流萤 +3%/层（tq_ops）
 		ops.append({"op": "mul", "field": "skillMultiplier", "value": 1.0 + 0.1 * marks})  # 击破印记：全队对它易伤
 	if own(b) and learned(b, CHI_RAN) and item.get("damage") is Dictionary and _fire_or_physical(a, item):
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 - CHI_RAN_RATE})
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.8 if _tq() else 1.0 - CHI_RAN_RATE})
 	if firefly > 0 and a is XActor:
 		ops.append({"op": "add", "field": "finalAdd", "value": FIREFLY_RATE * firefly})  # 萤火印记：全队行动者终伤 +10%/层
 	return ops
@@ -179,6 +221,8 @@ static func repeats(u, skill: Dictionary, base: int) -> int:
 	begin_action(u, skill)
 	if not _action(u, skill):
 		return base
+	if _tq() and int(skill.id) == TIANHUO:
+		return 5 + (1 if learned(u, XING_HE) else 0)
 	return 5 + (3 if learned(u, XING_HE) else 0) if int(skill.id) == TIANHUO else 9
 
 
@@ -186,6 +230,12 @@ static func repeats(u, skill: Dictionary, base: int) -> int:
 
 static func param(a, i: int, v: float) -> float:
 	if not own(a):
+		return v
+	if _tq():
+		if i == 0 and learned(a, ZI_XIAN):
+			v = floorf(v * 1.2)
+		if i == 6 and learned(a, GUO_ZAI):
+			v = floorf(v * 1.1)
 		return v
 	if i == 0:
 		var hp_rate := 1.0
@@ -207,18 +257,21 @@ static func param_plus(a, i: int, v: float) -> float:
 	if not own(a):
 		return v
 	if i == 0:
-		v += float(a.state_data.get("_codexLbEmber", 0.0))
-	if (i == 2 or i == 6) and a.has_base_equip("weapon", WEAPON):
+		v += minf(TQ_EMBER_CAP, float(a.state_data.get("_codexLbEmber", 0.0))) if _tq() else float(a.state_data.get("_codexLbEmber", 0.0))
+	if (i == 2 or i == 6) and a.has_base_equip("weapon", WEAPON) and not _tq():
 		v += 30.0 * maxf(1.0, float(a.level))
 	return v
 
 
 static func shield_effect_bonus(b) -> float:
-	return 1.0 if own(b) and learned(b, ZI_XIAN) else 0.0
+	return (0.2 if _tq() else 1.0) if own(b) and learned(b, ZI_XIAN) else 0.0
 
 
 static func action_plus_set(a, rates: Array) -> void:
 	if not own(a):
+		return
+	if _tq():
+		if learned(a, GUO_ZAI): rates.append(0.1)
 		return
 	if learned(a, GUO_ZAI): rates.append(0.3)
 	if a.has_base_equip("armor", ARMOR): rates.append(1.0)
@@ -234,6 +287,8 @@ static func gain_rewards(members: Array) -> void:
 		var wins := maxf(0.0, float(a.state_data["_codexLbEmberWins"])) if a.state_data.get("_codexLbEmberWins") != null else floorf(ember / 10.0)
 		a.state_data["_codexLbEmber"] = ember + 10.0 * (1.0 if wins < EMBER_FULL else EMBER_FULL / wins)
 		a.state_data["_codexLbEmberWins"] = wins + 1.0
+		if _tq():
+			a.state_data["_codexLbEmber"] = minf(maxf(TQ_EMBER_CAP, ember), float(a.state_data["_codexLbEmber"]))  # 天启篇：封顶 +3000（已超过的不扣）
 		a.param_mark_dirty()
 
 
@@ -400,9 +455,10 @@ static func add_mark(logic, actor, t, count: int) -> void:
 		logic._state_add(t, MARK)
 		if not t.state_ids.has(MARK):
 			return
-	var now := mini(MARK_MAX, mark_count(t) + count)
+	var cap := 10 if _tq() else MARK_MAX
+	var now := mini(cap, mark_count(t) + count)
 	t.state_data["_codexLbMark"] = now
-	if now >= MARK_MAX:
+	if now >= cap:
 		explode(logic, actor, t)
 
 
@@ -417,7 +473,15 @@ static func explode(logic, actor, t) -> void:
 		logic._state_remove(t, MARK)
 	_marks_removing = false
 	t.state_data.erase("_codexLbMark")
-	var dmg := floorf(maxf(0.0, actor.mhp if actor != null else 0.0) * EXPLODE_RATE)
+	var dmg := 0.0 if _tq() else floorf(maxf(0.0, actor.mhp if actor != null else 0.0) * EXPLODE_RATE)
+	if _tq() and actor != null and t.is_alive():  # 天启篇：引爆追加大招单体 9.0（火），走正常伤害（不再是真实伤害）
+		_tq_explode = true
+		var saved_spread := spread_rate
+		spread_rate = 0.0
+		var r: Dictionary = logic.apply(actor, XDB.rec("Skills", TIANHUO), t)
+		spread_rate = saved_spread
+		_tq_explode = false
+		_tq_explode_logs.append(r)
 	if dmg > 0.0 and t.is_alive():  # 固定真伤：setHp，不经护盾账本与治疗修正（原生护盾照 setHp 吸收）
 		var res: XResourceContext = logic._operation_resources(t)
 		res.set_resource(t, "hp", maxf(0.0, t.hp - dmg))
@@ -448,7 +512,7 @@ static func keeps_resisted(b, id: int) -> bool:
 ## 印记：受到治疗 −10%/层（最低 0），向下取整
 static func heal_value(b, amount: float) -> float:
 	var marks := mini(MARK_MAX, mark_count(b)) if amount > 0.0 else 0
-	return floorf(amount * maxf(0.0, 1.0 - 0.1 * marks)) if marks > 0 else amount
+	return floorf(amount * maxf(0.0, 1.0 - (0.05 if _tq() else 0.1) * marks)) if marks > 0 else amount  # 天启篇：−5%/层
 
 
 # ---- 施放流程（Game_Action.apply 包装，原版第 34 个） ----
@@ -489,6 +553,19 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 				u.shield = maxf(0.0, u.shield + floorf(paid * (1.0 + maxf(0.0, u.shield_effect_bonus()))))
 			if singles:
 				_frame.single = 1.2
+		elif _tq():  # 天启篇完全燃烧：消耗自己全部护盾，每生命上限 10% +10%（最多 +30%）；三阶放完得 20% 护盾；冷却 6（三阶 5）
+			var own_shield := maxf(0.0, float(u.shield))
+			_frame.burn = minf(0.3, floorf(own_shield / maxf(1.0, u.mhp * 0.1)) * 0.1)
+			if own_shield > 0.0:
+				u.add_shield(-own_shield)
+			if rank(u) >= 3:
+				u.shield = maxf(0.0, u.shield + floorf(u.mhp * 0.2))
+			var res2: XResourceContext = logic._operation_resources(u)
+			res2.set_resource(u, "hp", u.mhp)
+			logic._finish_lifecycle_operation(res2, u)
+			if singles:
+				_frame.single = 1.5
+			u.state_data["_codexLbRsReady"] = turn_now() + (5 if rank(u) >= 3 else 6)
 		else:
 			var snapshot := float(u.get_meta("liuying_cast_shield"))
 			if rank(u) >= 3:
@@ -508,7 +585,7 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 				if logic._float("liuying_cooldown") < 0.33:
 					cd = 0
 			u.state_data["_codexLbRsReady"] = turn_now() + cd if cd > 0 else 0
-		_frame.rerelease = logic._float("liuying_rerelease") < RE_RELEASE
+		_frame.rerelease = logic._float("liuying_rerelease") < (0.1 if _tq() else RE_RELEASE)  # 天启篇：10% 再放
 	var out := _segment(logic, u, skill, t, false)
 	if bool(_frame.get("rerelease", false)):
 		out.append_array(_segment(logic, u, skill, t, true))
@@ -521,7 +598,10 @@ static func _segment(logic, u, skill: Dictionary, t, replay: bool) -> Array:
 	var out := [r]
 	if _hit(r) and not replay and not bool(_frame.get("marked", false)):
 		_frame.marked = true
-		add_mark(logic, u, t, 1 if id == TIANHUO else 5)
+		add_mark(logic, u, t, 1 if id == TIANHUO else (3 if _tq() else 5))
+		if not _tq_explode_logs.is_empty():
+			out.append_array(_tq_explode_logs)
+			_tq_explode_logs = []
 	if id == TIANHUO:
 		for other in _alive_enemies(logic):
 			if other == t:
@@ -530,7 +610,7 @@ static func _segment(logic, u, skill: Dictionary, t, replay: bool) -> Array:
 			out.append(logic.apply(u, skill, other))
 			spread_rate = 0.0
 	var flag := "extra_replay" if replay else "extra"
-	if id == RANSHAO and _alive_enemies(logic).size() == 1 and not bool(_frame.get(flag, false)):
+	if id == RANSHAO and _alive_enemies(logic).size() == 1 and not bool(_frame.get(flag, false)) and not _tq():  # 天启篇：不再多打四段（单目标 +50% 在 tq_ops）
 		_frame[flag] = true
 		for i in 4:
 			out.append(logic.apply(u, skill, t))
@@ -600,10 +680,17 @@ static func start_battle(logic) -> void:
 				logic._state_add(a, IMMUNE)
 			if not a.state_ids.has(UNDYING):
 				logic._state_add(a, UNDYING)
+			if _tq():  # 天启篇：免疫负面 2 回合、免死 1 回合
+				if a.state_ids.has(IMMUNE):
+					a.state_turns[IMMUNE] = 2
+				if a.state_ids.has(UNDYING):
+					a.state_turns[UNDYING] = 1
 
 
 ## BattleManager.endAction 包装：戴专武、学了飞萤的流萤放完完全燃烧后刷新负面免疫与免死
 static func end_action(logic, u, skill) -> void:
+	if _tq():  # 天启篇：放完完全燃烧不刷新免疫与免死
+		return
 	if not (own(u) and u.has_base_equip("weapon", WEAPON) and skill is Dictionary and int(skill.get("id", 0)) == RANSHAO and learned(u, FEI_YING)):
 		return
 	for id in [IMMUNE, UNDYING]:

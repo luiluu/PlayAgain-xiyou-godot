@@ -103,21 +103,50 @@ static func formula(a, item: Dictionary) -> float:
 	return (a.atk * 1500.0 + agi * 3000.0) * weight * growth(a) * (1.0 + mastery(a)) * rate
 
 
+## ---- 天启篇（技能重构第七期，稿子 178 号）：只在 XTianqiSkills.cards_on() 时走 ----
+## 剑技系数在技能表（物攻 2.0＋敏捷 1.0 的口径）；段数结构照旧，按段折算：小猫斩 3.0、十字斩 3.6、连斩 6.0，
+## 剑心／剑痕／速度多出的每段只算 +0.5；连携段 30%；至圣斩 9.0、每段剑影 1.0（表里）；至圣斩冷却 6（满层 5）；
+## 敏捷 +20%（不再 ×1.88）、法宝不加属性；持剑受到的伤害 −10%；进阶后再动 10%（不再固定多 1 次）；喵喵剑法增伤 +30%（XCatDamageHooks）
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+const TQ_PHASE := {"slash": [1, 3.0], "cross": [2, 3.6], "flurry": [4, 6.0]}
+
+
+static func tq_ops(item: Dictionary, a, _b) -> Array:
+	if not own(a) or _formula_snap.is_empty() or _formula_snap.actor != a or not WEIGHTS.has(int(item.get("id", 0))):
+		return []
+	var r := float(_formula_snap.rate)
+	return [{"op": "mul", "field": "finalMultiplier", "value": r}] if r != 1.0 else []
+
+
+static func action_plus_set(a, rates: Array) -> void:
+	if _tq() and advanced(a) and learned(a, SKILL_SPEED):
+		rates.append(0.1)
+
+
 ## Game_Actor.param 的包装（v 是包装前、已取整夹值的值）
 static func param(a, i: int, v: float) -> float:
 	if not own(a):
 		return v
 	var r := 1.0
-	if i == 6 and learned(a, SKILL_SPEED) and int(a.level) >= 10:
-		r *= 1.88
-	if i in [2, 6, 7] and has_relic(a):
-		r *= 1.6
+	if _tq():
+		if i == 6 and learned(a, SKILL_SPEED) and int(a.level) >= 10:
+			r *= 1.2
+	else:
+		if i == 6 and learned(a, SKILL_SPEED) and int(a.level) >= 10:
+			r *= 1.88
+		if i in [2, 6, 7] and has_relic(a):
+			r *= 1.6
 	return roundf(clampf(v * r, a.param_min(i), a.param_max(i)))
 
 
 static func sparam(a, i: int, v: float) -> float:
 	if not enabled_sword(a):
 		return v
+	if _tq():
+		return v * (0.9 if i == 6 or i == 7 else 1.0)  # 天启篇：持剑受到的伤害 −10%
 	return v * (0.8 if i == 6 else (0.88 if i == 7 else 1.0))
 
 
@@ -466,13 +495,18 @@ static func _build(logic, c: Dictionary, k: String, chain: bool) -> void:
 		var echoes := h if advanced(a) else 0
 		if echoes > 0:
 			_set_heart(logic, a, 0)
-		_data(logic, a).holyReady = _round(logic) + (3 if advanced(a) and h == 3 else 4)
+		_data(logic, a).holyReady = _round(logic) + (3 if advanced(a) and h == 3 else 4) + (2 if _tq() else 0)  # 天启篇：冷却 6，满层 5
 		c.steps.append({"key": k, "rate": 1.0, "sure": sure})
 		for j in range((2 if sc else 0) + echoes):
 			c.steps.append({"key": "echo", "rate": 1.0, "sure": sure})
 	else:
+		var rate := 0.6 if chain else 1.0
+		if _tq() and TQ_PHASE.has(k) and n > 0:  # 按段折算：基础段合计是招式系数，多出的每段 +0.5；连携 30%
+			var base: int = TQ_PHASE[k][0]
+			var total: float = TQ_PHASE[k][1]
+			rate = (0.3 if chain else 1.0) * (total + 0.5 * maxi(0, n - base)) / (n * total / base)
 		for i in range(n):
-			c.steps.append({"key": k, "rate": 0.6 if chain else 1.0, "sure": sure})
+			c.steps.append({"key": k, "rate": rate, "sure": sure})
 	c.segment = 0
 	c.segmentRepeat = 0
 
@@ -739,7 +773,7 @@ static func dragon_param(e, i: int) -> float:
 
 ## makeActionTimes 包装：进阶且学了速剑 10442，多 1 次行动
 static func extra_actions(b) -> int:
-	return 1 if advanced(b) and learned(b, SKILL_SPEED) else 0
+	return 1 if advanced(b) and learned(b, SKILL_SPEED) and not _tq() else 0  # 天启篇：改再动 10%（action_plus_set）
 
 
 ## Game_BattlerBase.canUse 包装：178 在队时号角 2899 不能用

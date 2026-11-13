@@ -39,6 +39,7 @@ static func capture(_item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 	var out := {"enabled": provider != null, "subjectSword": false, "targetSword": false,
 		"heart": false, "advanced": false, "targetSpeed": 0.0, "round": null}
 	if provider == null: return out
+	out.tq = XTianqiSkills.cards_on()  # 天启篇（技能重构第七期）：速度减伤删掉，喵喵剑法只给增伤 +30%
 	out.subjectSword = _sword(a)
 	out.targetSword = _sword(b)
 	out.heart = _own(a) and a.skill_ids.has(10443)
@@ -72,7 +73,7 @@ static func enter(context: Dictionary, _frame: Dictionary) -> Dictionary:
 	if cat.has("diagnostic"): return _failure(cat)
 	var ops := []
 	if not cat.enabled: return {"ops": ops}
-	if context.target.kind == "actor" and int(context.target.id) == 178 and cat.targetSword:
+	if context.target.kind == "actor" and int(context.target.id) == 178 and cat.targetSword and not cat.get("tq", false):
 		var speed := float(cat.targetSpeed)
 		ops.append(_operation("flatMitigationAdd", minf(16000.0, minf(floorf(3 * speed), 15030 + floorf(speed / 8))), 1))
 		for element in ELEMENTS:
@@ -90,6 +91,8 @@ static func build(context: Dictionary, _frame: Dictionary) -> Dictionary:
 	if cat.has("diagnostic"): return _failure(cat)
 	var ops := []
 	if cat.enabled and context.subject.kind == "actor" and int(context.subject.id) == 178 and cat.subjectSword and int(context.item.id) in SKILLS:
+		if cat.get("tq", false):
+			return {"ops": [_operation("normalAdd", 0.3)]}
 		ops = [_operation("normalAdd", 6), _operation("elementAdd", 6, 1), _operation("elementAdd", 6, 8)]
 		if cat.heart:
 			ops.append(_operation("finalAdd", 8)); ops.append(_operation("criticalAdd", 12))

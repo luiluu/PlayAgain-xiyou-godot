@@ -597,7 +597,7 @@ static func _cond(c: Dictionary, a, b) -> float:
 		"target_hp_lost":  # 目标已损生命比例×per（渡鸦黑翼裁决：最多 +50%）
 			return 1.0 + clampf((1.0 - float(b.hp) / maxf(1.0, float(b.mhp))) * per, 0.0, cap)
 		"raven_soul":  # 渡鸦灵魂进度（满 15 万为 1）×cap
-			return 1.0 + cap * XRaven.progress(a) if XRaven.own(a) else 1.0
+			return 1.0 + (cap * XRaven.progress(a) + 0.05 * XRaven.tq_over(a)) if XRaven.own(a) else 1.0
 		"stat_ratio":  # 自己两项属性之比（num／den）到了 steps [[比, 倍率]…] 里的线取最高一档（黄泉幸运加段：幸运达到物攻一半、等于物攻）
 			var r := float(a.param(STATS.find(str(c.num)))) / maxf(1.0, float(a.param(STATS.find(str(c.den)))))
 			var m := 1.0
@@ -1025,6 +1025,7 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 			XState.current.set_variable(int(ch["var"]), n0)
 			a.set_meta("xtq_charge_again", false)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
+		XTianqiModules.battle_start(a, list, foes)  # 专属模块角色的天启篇开战处理（第七期）
 		a.set_meta("xtq_turn", 0)
 		sync_learn(a)
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_tp", []):  # 开场 TP（天蓬吞云）

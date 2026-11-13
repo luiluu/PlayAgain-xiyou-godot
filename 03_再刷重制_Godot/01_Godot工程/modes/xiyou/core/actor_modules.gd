@@ -114,6 +114,8 @@ static func action_plus_set(a, rates: Array) -> void:
 	if _module(a):
 		XYomiJingliu.action_plus_set(a, rates)
 		XLiuying.action_plus_set(a, rates)  # 流萤：过载 0.3、法宝 1、一阶 1
+		XGarou.action_plus_set(a, rates)  # 天启篇饿狼：四臂、星空再动 10%
+	XCat.action_plus_set(a, rates)  # 天启篇哈基米：进阶后再动 10%
 
 
 static func passive_cache(a, c: Dictionary) -> void:

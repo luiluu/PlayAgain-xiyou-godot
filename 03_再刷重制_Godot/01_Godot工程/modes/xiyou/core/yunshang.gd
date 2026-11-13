@@ -120,8 +120,25 @@ static func sync(a) -> void:
 	a.refresh_passive()
 
 
+## ---- 天启篇（技能重构第七期，稿子 174 号）：只在 XTianqiSkills.cards_on() 时走 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+## 天启篇伤害（收口之后）：收针每个剩余唤醒回合 +30%；织神天梭唤醒天衣后自己下一招 +20%（余辉）
+static func tq_ops(item: Dictionary, a, _b) -> Array:
+	if not own(a) or not derived_frame.is_empty():
+		return []
+	var m := 1.0
+	if int(item.get("id", 0)) == GATHER:
+		m *= 1.0 + 0.3 * gather_rounds
+	if relic(a) and is_same(frame.get("user"), a) and float(frame.get("glow", 1.0)) > 1.0:
+		m *= 1.2
+	return [{"op": "mul", "field": "finalMultiplier", "value": m}] if m != 1.0 else []
+
+
 static func param(a, i: int, v: float) -> float:
-	if not own(a):
+	if not own(a) or _tq():  # 天启篇：按等级、进阶的属性成长去掉
 		return v
 	if i in [0, 4, 6]:
 		var lv := int(a.level)
@@ -137,7 +154,7 @@ static func param(a, i: int, v: float) -> float:
 
 
 static func passive_cache(a, c: Dictionary) -> void:
-	if not own(a):
+	if not own(a) or _tq():  # 天启篇：展幅的暴伤终伤、天梭终伤去掉
 		return
 	var n := maxi(0, mini(99, int(a.level)) - 24) if knows(a, SPREAD) else 0
 	c.critHarmRi += n * 1.88
@@ -184,16 +201,31 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		if knows(a, DOUBLE):
 			ops.append({"op": "mul", "field": "skillMultiplier", "value": 0.555})
 		if knows(a, SPREAD) and for_one(item) and b != primary:
-			ops.append({"op": "mul", "field": "skillMultiplier", "value": 0.77 if knows(a, SILVER) else (0.66 if knows(a, DOUBLE) else 0.5)})
-	if relic(a) and not XBattleLogic.is_item(item) and int(item.get("damage", {}).get("type", 0)) > 0:
+			ops.append({"op": "mul", "field": "skillMultiplier", "value": _spread_rate(a)})
+	if relic(a) and not _tq() and not XBattleLogic.is_item(item) and int(item.get("damage", {}).get("type", 0)) > 0:  # 天启篇：天梭结算 ×1.99 去掉
 		ops.append({"op": "mul", "field": "settlementMultiplier", "value": 1.99 * (float(frame.get("glow", 1.0)) if mine else 1.0)})
 	if derived:
-		ops.append({"op": "mul", "field": "skillMultiplier", "value": float(derived_frame.get("rate", 1.0)) * float(derived_frame.get("glow", 1.0))})
+		var glow := float(derived_frame.get("glow", 1.0))
+		if _tq() and glow > 1.0:
+			glow = 1.2  # 天启篇：余辉 +20%
+		ops.append({"op": "mul", "field": "skillMultiplier", "value": float(derived_frame.get("rate", 1.0)) * glow})
 	if mine and bool(frame.get("weaken", false)):
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.67})
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": (0.9 if _boss(a) else 0.8) if _tq() else 0.67})  # 天启篇：−20%，首领 −10%
 	if key(a) == 13:
 		ops.append({"op": "set", "field": "categoryMax", "value": true})
 	return ops
+
+
+## 云丝展幅扩成全体时其他目标的比例（天启篇 30%）
+static func _spread_rate(a) -> float:
+	if _tq():
+		return 0.3
+	return 0.77 if knows(a, SILVER) else (0.66 if knows(a, DOUBLE) else 0.5)
+
+
+static func _boss(b) -> bool:
+	var meta: Dictionary = b.data().get("meta", {}) if b is XEnemy else {}
+	return meta.has("boss") or meta.has("Boss")
 
 
 ## itemHit 1／itemEva 0：云裳的伤害技能
@@ -517,7 +549,7 @@ static func battle_param(a, i: int, v: float) -> float:
 	if borrow_stats.has(a) and i in [2, 4]:
 		v = maxf(v, float(borrow_stats[a].get(i, 0.0)))  # 空袖藏星：醒着用借来的技能时物攻／魔攻至少取主人的
 	if i == 6 and int(wind_until.get(a, -1)) >= round:
-		v *= 1.33
+		v *= 1.1 if _tq() else 1.33  # 天启篇：御风敏捷 +10%
 	return v
 
 
@@ -746,9 +778,9 @@ static func applied(logic, u, skill: Dictionary, t, r: Dictionary, used: bool) -
 	if own(u) and id == PIN and not (frame.planted as Array).has(t):
 		(frame.planted as Array).append(t)
 		var count := 3 if knows(u, FORMATION) else (2 if knows(u, SILVER) else 1)
-		var rate := 0.4 if count == 3 else (0.555 if count == 2 else 1.0)
+		var rate := (0.35 if count == 3 else (0.5 if count == 2 else 1.0)) if _tq() else (0.4 if count == 3 else (0.555 if count == 2 else 1.0))  # 天启篇：2 枚各 50%、3 枚各 35%
 		var parts := 2 if knows(u, DOUBLE) else 1
-		var spread := 1.0 if t == primary else (0.77 if knows(u, SILVER) else (0.66 if knows(u, DOUBLE) else 0.5))
+		var spread := 1.0 if t == primary else _spread_rate(u)
 		if not needles.has(t):
 			needles[t] = []
 		for i in range(count):

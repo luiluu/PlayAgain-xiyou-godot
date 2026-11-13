@@ -49,6 +49,7 @@ func _run() -> void:
 	_fill()
 	_fill_charge()
 	_fill_hits()
+	_p7()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -1009,6 +1010,82 @@ func _fill_hits() -> void:
 		got.append([r[1], without, with, r[3]])
 	_check("fill_hits_measured", got.size() == rows.size() and got.all(func(g): return g[1] == g[3] and g[2] == g[3]), got)
 	lg.end_battle(0)
+
+
+## 第七期：167～179 专属模块的天启篇分支（XTianqiModules；卡关时照原版）
+func _p7() -> void:
+	var ids := [167, 168, 169, 171, 173]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids + [175, 178, 179, 172]:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	# 渡鸦：魔防穿透按灵魂 +20%（至尊鸦皇再 +5%）、魂海暴击 +20%；卡关时照原版 60% 起
+	var rv: XActor = s.actor(167)
+	rv.change_level(30)
+	rv.learn_skill(10130)
+	rv.learn_skill(10137)
+	s.raven["soul"] = 0.0
+	var f0 := XRaven.defense_factor(rv)
+	s.raven["soul"] = 150000.0
+	var f1 := XRaven.defense_factor(rv)
+	var crit := XNumberBoost.xparam(rv, 2, 0.0)
+	XTianqiSkills.CARDS = false
+	var f_off := XRaven.defense_factor(rv)
+	XTianqiSkills.CARDS = true
+	s.raven["soul"] = 0.0
+	_check("p7_raven_soul", is_equal_approx(f0, 1.0) and is_equal_approx(f1, 0.8) and is_equal_approx(crit, 0.2) and f_off < 0.2, [f0, f1, crit, f_off])
+	# 米拉：禁忌、鳞甲护身的属性倍率去掉；黑龙形态状态的倍率在表里清空
+	var mi: XActor = s.actor(168)
+	_check("p7_mira_param", is_equal_approx(XMira.param(mi, 2, 1000.0), 1000.0) and (XDB.rec("States", 2592).get("traits", [1]) as Array).is_empty())
+	# 黄泉：加段按幸运／物攻比例，多的段只算半段
+	var yq: XActor = s.actor(169)
+	var n := XYomiJingliu.tq_extra_hits(yq)
+	_check("p7_yomi_hits", XYomiJingliu.repeats(yq, 10171) == 2 + n and XYomiJingliu.repeats(yq, 10174) == 6 + n and n <= 2, n)
+	# 甚尔：暴君按等级的暴击去掉；武器库追击换标准系数
+	var tj: XActor = s.actor(171)
+	_check("p7_toji", is_equal_approx(XToji.xparam(tj, 2, 0.0), 0.0) and is_equal_approx(float(XTianqiSkills.spec(10220).damage.coef), 0.75) and not str(XDB.rec("Skills", 10220).damage.formula).contains("CodexToji"))
+	# 宿傩：终式不再是真实伤害
+	_check("p7_sukuna_true", not XSukuna.true_hit(s.actor(172), XDB.rec("Skills", 10229).merged({"id": 10234}, true)))
+	# 饿狼：战斗进化最多 10 层（卡关 3）；四臂、星空不再固定行动 2 次
+	var cap_on := XGarou.evolution_cap()
+	XTianqiSkills.CARDS = false
+	var cap_off := XGarou.evolution_cap()
+	XTianqiSkills.CARDS = true
+	_check("p7_garou_cap", cap_on == 10 and cap_off == 3, [cap_on, cap_off])
+	# 谷雨：治疗 10%，储备上限＝谷雨生命上限
+	var gy: XActor = s.actor(175)
+	_check("p7_guyu", is_equal_approx(XGuyu.heal_ratio(gy) / maxf(0.0001, _heup(gy)), 0.1), XGuyu.heal_ratio(gy))
+	# 哈基米：剑心多出的段每段只算 +0.5，连携 30%
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var c := {"actor": s.actor(178), "target": _enemy(lg), "heart": 1, "agi": 100.0, "read": false, "scar": false, "steps": [], "hits": []}
+	XCat._build(lg, c, "slash", false)
+	var r1 := float(c.steps[0].rate)
+	c.steps = []
+	XCat._build(lg, c, "slash", true)
+	var r2 := float(c.steps[0].rate)
+	_check("p7_cat_rate", c.steps.size() == 2 and is_equal_approx(r1, 3.5 / 6.0) and is_equal_approx(r2, 0.3 * 3.5 / 6.0), [r1, r2])
+	# 流萤：再动只剩过载 10%；天火五段（星河六段）
+	var ly: XActor = s.actor(179)
+	ly.learn_skill(10625)
+	var rates := []
+	XLiuying.action_plus_set(ly, rates)
+	_check("p7_liuying", rates == [0.1] and XLiuying.repeats(ly, XDB.rec("Skills", 10622), 1) == 5, rates)
+	# 模块法宝：百分比属性去掉
+	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
+	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))
+	lg.end_battle(0)
+
+
+func _heup(a) -> float:
+	var p := 1.0
+	for v in a.passive_values("passiveHEUP"):
+		p *= 1.0 + float(v) * 0.01
+	return p
 
 
 func _smoke() -> void:
