@@ -104,6 +104,8 @@ var formation_enabled := true      # 整队：板凳上有明显更强的人就�
 var guard_shop_enabled := true     # 打赢守层者后回头找它：13 层起它会卖东西（种族祝福石、专属书）、送礼（--vp-no-guard-shop 关）
 var _gshop_done := {}              # 地图 → 这位守层者的店逛过了
 var guard_shops := 0               # 逛了几位守层者的店
+var blood_enabled := true          # 手里的头颅多了就去兑换大厅把店逛一遍（嫦娥用头颅换血脉被动）（--vp-no-blood 关）
+var _heads_seen := 0               # 上次去兑换大厅时手里的头颅数
 var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
@@ -1309,7 +1311,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			await _goto_target(map)
 			return
 		# 法宝：出战的人有谁没戴，每层去一趟兑换大厅
-		if _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st)):
+		if _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st) or _want_blood(st)):
 			e = _transfer_event(map, EXCHANGE)
 			if e != null and _aim(map, e, "exchange"):
 				await _goto_target(map)
@@ -1981,6 +1983,25 @@ func _climb_exchange(map: XMapScene, st: XState) -> void:
 					_shop_last = ""
 				await _goto_target(map)
 				return
+		if _want_blood(st):
+			# 头颅多了：把兑换大厅带「购买物品」的店都看一遍（嫦娥的血脉用头颅换；别的店没有用得上的就不会买）
+			var any := false
+			for x in map.events:
+				var key3: int = EXCHANGE * 1000 + x.event_id
+				if x.erased or x.page.is_empty() or not _is_shop(x) or not _has_choice(x, "购买物品") or _shop_done.has(key3) or int(_shop_visits.get(key3, 0)) >= 6:
+					continue
+				if not _aim(map, x, "shop"):
+					_shop_done[key3] = true
+					continue
+				_shop_event = key3
+				if _arrived(map.player):
+					_shop_visits[key3] = int(_shop_visits.get(key3, 0)) + 1
+					_shop_last = ""
+				any = true
+				await _goto_target(map)
+				return
+			if not any:
+				_heads_seen = Growth.heads(st)
 		if _want_lamps(st):
 			for x in map.events:
 				var key2: int = EXCHANGE * 1000 + x.event_id
@@ -2003,6 +2024,11 @@ func _climb_exchange(map: XMapScene, st: XState) -> void:
 		await _goto_target(map)
 		return
 	await _hotkey_lobby(map)
+
+
+## 手里的头颅比上次去兑换大厅时多了 4 个以上：值得去看看嫦娥的血脉
+func _want_blood(st: XState) -> bool:
+	return blood_enabled and spend_enabled and Growth.heads(st) >= _heads_seen + 4
 
 
 ## 进阶只差魂灯、手里又有能买魂灯的不朽碎片：值得去一趟兑换大厅

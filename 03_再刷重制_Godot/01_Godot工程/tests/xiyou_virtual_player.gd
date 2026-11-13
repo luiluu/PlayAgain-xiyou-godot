@@ -163,6 +163,7 @@ func _run() -> void:
 	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
 	bot.fabao_enabled = not OS.get_cmdline_user_args().has("--vp-no-fabao")
 	bot.bag_enabled = not OS.get_cmdline_user_args().has("--vp-no-bag")
+	bot.blood_enabled = not OS.get_cmdline_user_args().has("--vp-no-blood")
 	bot.guard_shop_enabled = not OS.get_cmdline_user_args().has("--vp-no-guard-shop")
 	bot.formation_enabled = not OS.get_cmdline_user_args().has("--vp-no-formation")
 	bot.advance_enabled = not OS.get_cmdline_user_args().has("--vp-no-advance")

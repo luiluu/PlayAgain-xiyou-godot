@@ -13,6 +13,15 @@ static func orbs(st: XState) -> Array:
 	var claimed := XOrbs.claim_drops(st)
 	if claimed > 0:
 		out.append("宝珠坊领回暂存的神秘珠 %d 枚" % claimed)
+	# 宝珠残片换神秘珠（宝珠坊「残片换神秘珠」，按已通过的层段定价）：残片够几枚换几枚，下面一起鉴定
+	var band_now := XOrbs.progress_band(st)
+	var price := XOrbs.pearl_price(band_now) if not band_now.is_empty() else 0
+	if price > 0:
+		var can: int = st.item_count(int(XOrbs.config().get("fragment", 0))) / price
+		if can > 0:
+			var bought: Dictionary = XOrbs.buy_pearl(st, can)
+			if bool(bought.get("ok", false)):
+				out.append("宝珠残片换 %s×%d" % [XOrbs.item_name(int(band_now.itemId)), can])
 	for b in XOrbs.config().get("bands", []):
 		var id := int(b.itemId)
 		var n := XOrbs.max_identify(st, id)
@@ -604,3 +613,14 @@ static func stone_needs(st: XState) -> Dictionary:
 		if rank - 2 < stones.size():
 			need[rank] = maxi(0, int(need[rank]) - st.item_count(int(stones[rank - 2])))
 	return need
+
+
+# ---------------------------------------------------------------- 第四批：血脉（兑换大厅嫦娥，用副本首领的头颅换）
+
+## 背包里一共有多少个头颅（名字以「头颅：」开头的物品）
+static func heads(st: XState) -> int:
+	var n := 0
+	for id in st.items:
+		if int(st.items[id]) > 0 and str(XDB.rec("Items", int(id)).get("name", "")).begins_with("头颅"):
+			n += int(st.items[id])
+	return n
