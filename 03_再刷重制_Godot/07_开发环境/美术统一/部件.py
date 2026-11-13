@@ -49,6 +49,29 @@ def 外缘(实):
     return 实 & (~垫[:-2, 1:-1] | ~垫[2:, 1:-1] | ~垫[1:-1, :-2] | ~垫[1:-1, 2:])
 
 
+def 连块(实):
+    """八个方向连通的块，每块是 (行, 列) 的列表。"""
+    高, 宽 = 实.shape
+    见 = np.zeros_like(实)
+    出 = []
+    for y0, x0 in zip(*np.where(实)):
+        if 见[y0, x0]:
+            continue
+        堆, 栈 = [], [(int(y0), int(x0))]
+        见[y0, x0] = True
+        while 栈:
+            y, x = 栈.pop()
+            堆.append((y, x))
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    yy, xx = y + dy, x + dx
+                    if 0 <= yy < 高 and 0 <= xx < 宽 and 实[yy, xx] and not 见[yy, xx]:
+                        见[yy, xx] = True
+                        栈.append((yy, xx))
+        出.append(堆)
+    return 出
+
+
 def 小块(实, 上限=2):
     """不超过「上限」个点、八个方向都不挨着别的点的碎块。返回点的列表。"""
     高, 宽 = 实.shape
@@ -132,7 +155,48 @@ def 拆身(类型: str, 素材: Path, 名: str) -> np.ndarray:
         else:
             Image.fromarray(np.zeros((战.格, 战.格, 4), np.uint8), "RGBA").save(目录 / "空.png")
             出, _ = 战.拼({"头部件": "空.png", "身体": 名}, 素材, 目录)
+    去悬空(出, 类型, 素材, 名)
     return 出
+
+
+def 像发(色, 发阵, 算描边=True) -> bool:
+    """旧头发的颜色、和它差不多的颜色（含高光），或者描边的深色。"""
+    if 亮度(色) < 50:
+        return 算描边
+    return bool(len(发阵)) and int(np.abs(发阵 - np.asarray(色, int)).sum(1).min()) <= 60
+
+
+def 去悬空(出, 类型, 素材, 名):
+    """整块都在下巴线以上、又不是挡在脸前的手的碎块擦掉：旧头没认进去的发梢、头顶的饰物。
+    大块的只擦几乎全是旧头发颜色的（尾巴、武器这类大块不动）。
+
+    换成新头以后这些会悬在新头上面，所以底子里先去掉。
+    """
+    if 类型 == "行走":
+        图 = 走.读部件(素材, 名)
+        脖 = 走.找脖子行(图)
+        帧们 = [(行, 列, 脖 + 走.头沉(图, 行, 列), None) for 行 in range(走.行数) for 列 in range(走.列数)]
+        格 = 走.格
+        发色 = set()
+    else:
+        分 = 战.分头(战.读战斗图(素材, 名), None, False)
+        帧们 = [(*战.帧位(i), 分["下巴行"] + 分["位移"][i][1], 分["遮挡"][i]) for i in range(战.帧数)]
+        格 = 战.格
+        发色 = {tuple(int(v) for v in 色) for 色 in 分["发色"]}
+    发阵 = np.array(sorted(发色), int).reshape(-1, 3)
+    去掉 = 0
+    for a, b, 切, 挡 in 帧们:
+        y0, x0 = (a * 格, b * 格) if 类型 == "行走" else (a, b)
+        块 = 出[y0:y0 + 格, x0:x0 + 格]
+        for 堆 in 连块(块[..., 3] > 0):
+            是发 = bool(发色) and sum(像发(块[y, x, :3], 发阵) for y, x in 堆) >= 0.8 * len(堆)
+            亮发 = 是发 and sum(像发(块[y, x, :3], 发阵, False) for y, x in 堆) >= 0.5 * len(堆)   # 不算描边也有一半是头发色
+            挡着 = 挡 is not None and any(挡[y, x] for y, x in 堆)
+            if max(y for y, x in 堆) < 切 and ((not 挡着 and (len(堆) <= 48 or 是发)) or 亮发):
+                for y, x in 堆:
+                    块[y, x] = 0
+                去掉 += len(堆)
+    return 去掉
 
 
 def 命令_拆身(参):
