@@ -306,7 +306,7 @@ static func shield_text(value: float) -> String:
 	for u in UNITS:
 		if value >= u[0]:
 			return "%.1f%s" % [value / u[0], u[1]]
-	return str(int(floorf(value)))
+	return XMenu.int_text(floorf(value))
 
 
 func _param(c: XMVCanvas, x: float, y: float, label: String, cur: float, mx: float, colors: Array, color: Color, with_max: bool) -> void:
