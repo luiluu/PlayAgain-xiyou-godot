@@ -383,6 +383,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	XGuardianRework.measure_atk = k if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0   # 没给就照游戏里的表
 	logic.setup(troop, s)
 	logic.auto = true
+	_drain(logic, logic.troop_events())   # 开战的敌群事件（守层者开场强制技能：天道屠灭、大道领域、轮回困难等）
 	var ours := 0.0
 	var theirs := 0.0
 	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
@@ -399,9 +400,14 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		var count := 0
+		var turn_first := true
 		while count < 80:
 			var u := logic.next_subject()
-			if u == null:
+			var pb0 := _party_hp(logic)
+			_drain(logic, logic.troop_events(u if turn_first else null))
+			theirs += maxf(0.0, pb0 - _party_hp(logic))   # 敌群事件里的伤害（强制技能）算守层者的
+			turn_first = false
+			if u == null or logic.is_over():
 				break
 			count += 1
 			var cmd := logic.decide(u)
@@ -478,3 +484,13 @@ func _snapshot_states(f: int) -> Array:
 			a.recover_all()
 		out.append(st)
 	return out
+
+
+
+## 敌群事件停在文字上就一路按确定续上
+static func _drain(logic: XBattleLogic, logs: Array) -> void:
+	var guard := 0
+	while logic.is_event_waiting() and guard < 50:
+		guard += 1
+		var last: Dictionary = logs[-1] if not logs.is_empty() and logs[-1] is Dictionary else {}
+		logs = logic.resume_event(int(last.get("token", 0)), 0)
