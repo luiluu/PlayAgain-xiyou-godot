@@ -129,6 +129,7 @@ func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null,
 		var visual := RandomNumberGenerator.new()
 		visual.randomize()
 		elite_hue = visual.randf_range(100.0, 170.0) / 360.0
+	output_scale = XGuardianRework.atk_scale(self)  # 守层者重算（O-待定-4）：按层的出伤倍率
 	refresh_passive()
 	recover_all()
 	return self

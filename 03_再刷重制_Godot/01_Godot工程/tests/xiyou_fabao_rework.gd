@@ -26,6 +26,7 @@ func _run() -> void:
 	lottery_ev()
 	feed()
 	pills()
+	guardian()
 	XConfig.path_override = ""
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
@@ -285,3 +286,36 @@ func pills() -> void:
 	check("pills.o-off_exp", XMagicWeapon.level_of(item) == 99.0, XMagicWeapon.level_of(item))
 	check("pills.o-off_goods", XFabaoFeed.filter_goods(rows) == rows and XBulkPills.supported_ids().has(1987))
 	XFabaoFeed.NO_PILLS = true
+
+
+## 守层者重算（O-待定-4）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
+func guardian() -> void:
+	var s := _blank()
+	check("guardian.floor_of", XGuardianRework.floor_of(527) == 24 and XGuardianRework.floor_of(537) == 33 and XGuardianRework.floor_of(1) == 0,
+		[XGuardianRework.floor_of(527), XGuardianRework.floor_of(537)])
+	var plain := XEnemy.new().setup(527, 3, 100.0)
+	check("guardian.plain_save_untouched", plain.output_scale == 1.0 and float(plain.passive_cache().harmRe.get(1, 0.0)) == 50000000.0,
+		[plain.output_scale, plain.passive_cache().harmRe])
+	s.flags["tianqi"] = {"rules": 1}
+	var e := XEnemy.new().setup(527, 3, 100.0)
+	check("guardian.atk", is_equal_approx(e.output_scale, 0.0243), e.output_scale)
+	var hr: Dictionary = e.passive_cache().harmRe
+	check("guardian.resist", not hr.is_empty() and hr.values().all(func(v): return float(v) == 7300.0), hr)
+	var f1 := XEnemy.new().setup(int(XDB.rec("Troops", 4).members[0].enemyId), 3, 100.0)
+	check("guardian.floor1_not_raised", f1.output_scale == 1.0, f1.output_scale)
+	var normal := XEnemy.new().setup(1, 3, 100.0)
+	check("guardian.normal_enemy", normal.output_scale == 1.0, normal.output_scale)
+	# 实际出伤：同一下，开关开着是关掉的 0.0243 倍
+	var a := s.actor(1)
+	var skill := XDB.rec("Skills", 3562)
+	var calc := XDamage.calculate(skill, e, a, {"critical": false, "variance": false})
+	var on := XDamage.finish(calc.duplicate(true), skill, e, a)
+	XGuardianRework.ATK = false
+	XGuardianRework.RESIST = false
+	var e2 := XEnemy.new().setup(527, 3, 100.0)
+	var off := XDamage.finish(calc.duplicate(true), skill, e2, a)
+	check("guardian.atk_damage", off > 0.0 and absf(on - roundf(off * 0.0243)) <= 1.0, [on, off])
+	check("guardian.o-off", e2.output_scale == 1.0 and float(e2.passive_cache().harmRe.get(1, 0.0)) == 50000000.0, [e2.output_scale, e2.passive_cache().harmRe])
+	XGuardianRework.ATK = true
+	XGuardianRework.RESIST = true
+	s.flags.erase("tianqi")
