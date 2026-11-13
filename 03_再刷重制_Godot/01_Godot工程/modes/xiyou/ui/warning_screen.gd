@@ -107,6 +107,13 @@ func _init() -> void:
 	en.position = Vector2(0, y + 18)
 	en.size = Vector2(1280, 28)
 	_root.add_child(en)
+	# 反馈群（XFeedback，Kyo 11-13）：英文行下面一行金色小字；这一屏点一下是跳过，所以只显示不复制
+	if XFeedback.SHOW:
+		var fb := _label(XFeedback.LINE, 24, Color(1.0, 0.86, 0.5))
+		fb.name = "Feedback"
+		fb.position = Vector2(0, y + 74)
+		fb.size = Vector2(1280, 32)
+		_root.add_child(fb)
 	_hint = _label(HINT, 18, Color(0.6, 0.6, 0.6))
 	_hint.position = Vector2(0, 660)
 	_hint.size = Vector2(1280, 26)

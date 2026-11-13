@@ -163,6 +163,10 @@ def notes_audit(text: str, since: int, upto: int) -> list:
     return out
 
 
+# 反馈群号：跟游戏里 core/feedback.gd 的 XFeedback.QQ_GROUP 一致（工具回归里比对）
+FEEDBACK_QQ_GROUP = '1097315054'
+
+
 def notes_text(dev: int, since: int, lines: list) -> str:
     out = [f'{APP_NAME}  0.{dev}', '',
            f'这一版的改动（上一个发行包是 0.{since}）：' if since else '这一版的改动：', '']
@@ -170,7 +174,8 @@ def notes_text(dev: int, since: int, lines: list) -> str:
     out += ['', '安装：', '・Mac：解开 再刷一把_天启篇_mac.zip，把「再刷一把：天启篇」拖进「应用程序」。',
             f'・Windows：解开 {WIN_ZIP}，里面的 再刷一把_天启篇.exe 和 .pck 留在同一个文件夹里，双击 exe。',
             '・安卓：装 再刷一把_天启篇_安卓.apk；这个包是测试签名，只能自己装着试，不是商店版。',
-            '・不会自动搬原版的存档，原版可以照常接着玩。', '']
+            '・不会自动搬原版的存档，原版可以照常接着玩。', '',
+            f'问题反馈、新版本下载：QQ 群 {FEEDBACK_QQ_GROUP}', '']
     return '\n'.join(out)
 
 
