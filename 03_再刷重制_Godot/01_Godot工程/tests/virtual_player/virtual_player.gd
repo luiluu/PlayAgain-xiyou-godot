@@ -21,6 +21,8 @@ const TIER_SWITCHES := [1561, 1660] # 副本各档的开关：入口门和首领
 const LOBBY := 4                   # 方桌大厅
 const EXCHANGE := 132               # 兑换大厅（大厅有传送点过去）：节日礼物送法宝积分，铁匠卖法宝
 const FABAO_POINTS := 213          # 法宝积分
+const GREET_VAR := 842             # 变量 842＝当前层是否缴纳见面礼
+const GREET_ITEM := 182            # 不朽残渣（见面礼的一种）
 const FRAG_MIN := 4500             # 绪绪最便宜的一档（10 个人道意志碎片）要的肝帝积分
 const FRAGMENT := 2530             # 人道意志碎片
 const LAMP := 188                  # 魂灯（角色进阶的材料，兑换大厅魂灯兑换商店卖）
@@ -106,6 +108,12 @@ var _gshop_done := {}              # 地图 → 这位守层者的店逛过了
 var guard_shops := 0               # 逛了几位守层者的店
 var blood_enabled := true          # 手里的头颅多了就去兑换大厅把店逛一遍（嫦娥用头颅换血脉被动）（--vp-no-blood 关）
 var _heads_seen := 0               # 上次去兑换大厅时手里的头颅数
+var greet_enabled := true          # 13 层起守层者要见面礼（不朽残渣或肝帝积分）：没交它会开大道领域、给我方挂天道灭绝。挑战前先交（--vp-no-greet 关）
+var _greet_sig := {}               # 层 → 上次试着交时手里的 [不朽残渣, 肝帝积分]（没变就不再试）
+var _greet_asked := -1             # 刚在这一层点了「给」，等着看交成没有
+var greet_paid: Array = []         # 交过见面礼的层
+var greet_failed: Array = []       # 想交没交成的层（东西不够）
+var lottery_keep := 2000           # 抽奖期望调成零以下后长期抽一定亏：肝帝积分低于这个数不抽，抽的次数也按每抽最多亏 500 留够这个数（--vp-lottery-keep=N，0＝有券就全抽）
 var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
@@ -501,6 +509,8 @@ func _close_battle(obs: Dictionary, how: String) -> void:
 	if _battle.get("stalemate", false):
 		res = "僵局"
 	_battle["result"] = res
+	if res == "胜利":
+		_battle["boss_left"] = 0.0
 	_battle["gifted"] = gifted_floors.has(_floor) and _dg.is_empty()
 	if mode == "climb" and (res == "全灭" or res == "僵局" or _intent in ["challenge", "enter"]):
 		_log("战斗记录 第 %d 层 敌群 %d %s%s 第 %d 回合 敌人剩 %.1f%% 首领剩 %.1f%% 逐回合[回合,敌总血,我血,站着,首领血,敌人数]=%s" % [_floor, int(_battle.get("troop", 0)), res, "（副本）" if not _dg.is_empty() else "",
@@ -558,6 +568,8 @@ func _recover(_obs: Dictionary) -> void:
 
 
 func _act(obs: Dictionary) -> void:
+	if _greet_asked >= 0 and obs.screen in ["battle", "map"]:
+		_greet_check()
 	match obs.screen:
 		"none", "other":
 			await _frames(2)
@@ -617,6 +629,8 @@ func _act(obs: Dictionary) -> void:
 			# 抽奖的数量框开着：填最多、开始抽（等于在框里把数量拉满再点「开始抽取」）
 			if XCasinoBatch.is_open() and str(XCasinoBatch.session.get("state", "")) == "quantity":
 				var n := XCasinoBatch.maximum(XState.current, str(XCasinoBatch.session.mode))
+				if lottery_keep > 0:
+					n = mini(n, maxi(0, (int(XState.current.variable(XCasinoBatch.VAR_POINTS)) - lottery_keep) / 500))
 				var p0 := int(XState.current.variable(XCasinoBatch.VAR_POINTS))
 				if n > 0 and XCasinoBatch.begin(n):
 					lottery_draws += n
@@ -744,6 +758,24 @@ func _act_form(obs: Dictionary) -> void:
 
 # ---------------------------------------------------------------- 对话选项
 
+## 点了「给」之后：进了战斗或回到地图时看变量 842，记这一层见面礼交成没有（打赢后游戏会把它清零，所以要在战斗里看）
+func _greet_check() -> void:
+	if _greet_asked >= 0 and XState.current != null:
+		if int(XState.current.variable(GREET_VAR)) != 0:
+			if not greet_paid.has(_greet_asked):
+				greet_paid.append(_greet_asked)
+				greet_failed.erase(_greet_asked)
+				_mark("greet_paid_%d" % _greet_asked)
+				_note_growth("给第 %d 层守层者交了见面礼" % _greet_asked)
+				_snap_done.erase(_greet_asked)       # 快照重拍一份交过见面礼之后的（变量 842＝1）
+				_snap_done.erase("last")
+				_snapshot(XState.current, _greet_asked)
+		elif not greet_failed.has(_greet_asked) and not greet_paid.has(_greet_asked):
+			greet_failed.append(_greet_asked)
+			_note_growth("第 %d 层的见面礼交不起（不朽残渣 %d、肝帝积分 %d）" % [_greet_asked, XState.current.item_count(GREET_ITEM), int(XState.current.variable(XCasinoBatch.VAR_POINTS))])
+		_greet_asked = -1
+
+
 func _act_choice(obs: Dictionary) -> void:
 	var n: int = obs.count
 	if n <= 0:
@@ -786,6 +818,17 @@ func _act_choice(obs: Dictionary) -> void:
 	elif _intent == "dungeon" and _dungeon_tier_choice(obs.message._choices) >= 0:
 		want = _dungeon_tier_choice(obs.message._choices)
 		_dg_tier = want
+	# 见面礼（13 层起守层者的选项多一项「缴纳见面礼」；变量 842＝这一层交过没有）
+	if greet_enabled and mode == "climb":
+		var gst := XState.current
+		var gnow := [gst.item_count(GREET_ITEM), int(gst.variable(XCasinoBatch.VAR_POINTS))]
+		var gi: int = obs.message._choices.find("缴纳见面礼")
+		if gi >= 0 and _intent == "challenge" and int(gst.variable(GREET_VAR)) == 0 and _greet_sig.get(_floor) != gnow:
+			want = gi
+		elif obs.message._choices.size() == 3 and str(obs.message._choices[0]) == "给" and str(obs.message._choices[2]) == "先准备准备":
+			want = 0
+			_greet_sig[_floor] = gnow
+			_greet_asked = _floor
 	if formation_enabled and mode == "climb":
 		var dp: int = Growth.draw_choice(obs.message._choices)
 		if dp >= 0:
@@ -1251,7 +1294,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			_mark("growth_done")
 	# 抽奖：有券就去希禾那里选「自定义单抽」，数量填最多（数量框由 _act 里代填）
 	var tickets := XCasinoBatch.stock(st)
-	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp:
+	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp and (lottery_keep <= 0 or int(st.variable(XCasinoBatch.VAR_POINTS)) >= lottery_keep + 500):
 		e = _find_event(map, func(x): return _has_choice(x, "自定义单抽"))
 		if e != null and _aim(map, e, "lottery"):
 			if _arrived(map.player):
@@ -2136,7 +2179,7 @@ func _growth_state(st: XState) -> Dictionary:
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
 		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
-		"guard_shops": guard_shops, "formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
+		"greet_paid": greet_paid, "greet_failed": greet_failed, "guard_shops": guard_shops, "formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
 		"fragments": st.item_count(FRAGMENT), "lamps": st.item_count(LAMP),
 	}
 

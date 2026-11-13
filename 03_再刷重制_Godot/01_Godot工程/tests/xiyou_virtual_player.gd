@@ -65,7 +65,7 @@ func _summary(rep: Dictionary) -> String:
 			if not fb.is_empty():
 				lines.append("- 法宝：当层上限 %s；出战的人身上 %s" % [str(int(fb.cap)) if int(fb.cap) > 0 else "不限", "、".join(fb["items"].map(func(x): return "%s %d 级" % [str(x.name), int(x.level)])) if not fb["items"].is_empty() else "没有法宝"])
 			lines.append("- 花钱：买了 %d 件，用掉书和丹药 %d 个，喂法宝 %d 次，收工时金币 %d" % [int(g.get("spend_buys", 0)), int(g.get("spend_uses", 0)), int(g.get("fabao_feeds", 0)), int(g.get("gold", 0))])
-			lines.append("- 第六轮养成：用掉捡到的书和盒子 %d 个；角色进阶 %d 次（出战的人各 %s 阶，手里魂灯 %d）；换人道意志碎片 %d 次（剩 %d 个）；整队 %d 次，出战栏 %s" % [int(g.get("bag_uses", 0)), int(g.get("advances", 0)), str(g.get("advance_ranks", [])), int(g.get("lamps", 0)), int(g.get("fragment_buys", 0)), int(g.get("fragments", 0)), int(g.get("formations", 0)), str(g.get("slots", []))])
+			lines.append("- 第六轮养成：用掉捡到的书和盒子 %d 个；角色进阶 %d 次（出战的人各 %s 阶，手里魂灯 %d）；换人道意志碎片 %d 次（剩 %d 个）；整队 %d 次，出战栏 %s；见面礼交了 %s 层、交不起 %s 层" % [int(g.get("bag_uses", 0)), int(g.get("advances", 0)), str(g.get("advance_ranks", [])), int(g.get("lamps", 0)), int(g.get("fragment_buys", 0)), int(g.get("fragments", 0)), int(g.get("formations", 0)), str(g.get("slots", [])), str(g.get("greet_paid", [])), str(g.get("greet_failed", []))])
 		if not rep.growth_log.is_empty():
 			lines.append("- 养成动作 %d 次：%s" % [rep.growth_log.size(), "；".join(rep.growth_log.slice(0, 12).map(func(x): return "第 %d 层 %s" % [int(x.floor), str(x.what)]))])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
@@ -163,6 +163,8 @@ func _run() -> void:
 	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
 	bot.fabao_enabled = not OS.get_cmdline_user_args().has("--vp-no-fabao")
 	bot.bag_enabled = not OS.get_cmdline_user_args().has("--vp-no-bag")
+	bot.lottery_keep = int(_arg("--vp-lottery-keep", "2000"))
+	bot.greet_enabled = not OS.get_cmdline_user_args().has("--vp-no-greet")
 	bot.blood_enabled = not OS.get_cmdline_user_args().has("--vp-no-blood")
 	bot.guard_shop_enabled = not OS.get_cmdline_user_args().has("--vp-no-guard-shop")
 	bot.formation_enabled = not OS.get_cmdline_user_args().has("--vp-no-formation")
