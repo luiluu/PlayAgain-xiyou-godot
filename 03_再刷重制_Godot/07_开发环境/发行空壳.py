@@ -31,6 +31,7 @@ CLASS_RE = re.compile(r'^class_name (X(?:Tianqi\w*|RiftAlien))\b', re.M)
 KEEP = {'XTianqiTitle'}  # 发行包要用的真脚本（标题画面）：不换
 SCAN_DIRS = ('modes', 'core', 'scenes', 'addons')
 MARK = '## 发行空壳'
+HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
 
 
@@ -279,6 +280,13 @@ def build_all(root: Path = PROJECT) -> tuple:
     over = load_overrides()
     stubs, missing, how = {}, [], {}
     for c, p in tg.items():
+        if (HAND / f'{c}.gd').is_file():  # 手写空壳：只核西游用到的成员都在
+            s = (HAND / f'{c}.gd').read_text(encoding='utf-8')
+            info = parse(s)
+            stubs[p] = s
+            missing += [f'{c}.{m}' for m in refs[c] if m not in info['funcs'] and m not in info['vars'] and m not in ('new',)]
+            how.update({f'{c}.{k}': '手写' for k in info['funcs']})
+            continue
         s, miss, h = stub(c, p, refs[c], over, root)
         stubs[p] = s
         missing += [f'{c}.{m}' for m in miss]
