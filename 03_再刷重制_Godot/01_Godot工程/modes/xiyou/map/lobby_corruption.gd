@@ -148,7 +148,7 @@ static func record(s: XState) -> Dictionary:
 
 ## 画面特效（设置页「画面特效」）：关掉时不放粒子、不飘小字
 static func fx_on() -> bool:
-	return XConfig.flag("codexScreenFx")
+	return XGraphics.fx_on()  # 「画面特效」开着且没开省电模式
 
 
 func setup(map: XMapScene) -> void:

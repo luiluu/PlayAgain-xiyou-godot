@@ -112,6 +112,7 @@ static func slice() -> Dictionary:
 
 
 func _ready() -> void:
+	XGraphics.smooth_node(self)  # 顺滑移动：地图里按物理帧走的人物、镜头在两帧之间补位置（XGraphics.motion_on）
 	XPlatform.idle_probe = XHangUp.current_active  # 跨平台二期：后台补跑、挂机不锁屏看这个
 	XPlatform.pause_hook = _on_app_pause  # 安卓切后台自动存档（XAutoSave）
 	XPlatform.idle_stopper = XHangUp.stop_current  # 通知上按了「停止挂机」（android-bgidle1）

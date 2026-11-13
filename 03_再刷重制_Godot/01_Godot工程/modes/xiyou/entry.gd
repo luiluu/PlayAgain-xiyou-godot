@@ -33,6 +33,7 @@ func _ready() -> void:
 		return
 	XScreenScale.apply(XConfig.flag(XScreenScale.KEY), get_tree())  # 画面平滑（玩家反馈 v0.01；v0.01.06 起各平台默认关）
 	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
+	XGraphics.apply(get_tree())  # 画质设置：整数倍缩放、帧率上限、窗口大小、省电模式（默认都不干预）
 	theme = XUI.theme()
 	_build_background()
 	# MOG_TitleSplashScreen：一次运行第一次进标题前先放开场图，放完再出标题指令（XSplashScreen）

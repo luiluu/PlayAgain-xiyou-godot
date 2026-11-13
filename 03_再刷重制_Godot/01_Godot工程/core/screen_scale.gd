@@ -61,5 +61,7 @@ static func screen_to_view(viewport: Viewport) -> Transform2D:
 	if ws.x <= 0 or ws.y <= 0 or vs.x <= 0 or vs.y <= 0:
 		return Transform2D()
 	var k := minf(ws.x / vs.x, ws.y / vs.y)
+	if win.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER:  # 整数倍缩放（XGraphics）：只按整倍放大，其余留黑边
+		k = maxf(1.0, floorf(k))
 	var off := (ws - vs * k) / 2.0
 	return Transform2D(0.0, Vector2(k, k), 0.0, off).affine_inverse()
