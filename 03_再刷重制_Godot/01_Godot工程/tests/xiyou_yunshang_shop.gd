@@ -93,6 +93,8 @@ func wear(s: XState, a: XActor, k: int) -> void:
 
 
 func _run() -> void:
+	XMagicWeapon.LEVEL_99 = false  # 参照是原版：法宝上限回 888（法宝重构的新上限由 xiyou_fabao_rework 核）
+	XMagicWeapon.FLOOR_CAP = false
 	XSave.dir_override = "user://test_xiyou_yunshang_shop"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XYunshangOrders.path_override = XSave.dir().path_join(XYunshangOrders.FILE)

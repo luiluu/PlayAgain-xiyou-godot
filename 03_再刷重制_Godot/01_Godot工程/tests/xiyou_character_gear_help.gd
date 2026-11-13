@@ -70,6 +70,8 @@ func _ready() -> void:
 	var s := XState.new_game(2, 1, [8, 9, 10])
 	XState.current = s
 	XPower.SHOW_POWER_UI = true
+	XMagicWeapon.LEVEL_99 = false  # 参照是原版：法宝上限回 888（法宝重构的新上限由 xiyou_fabao_rework 核）
+	XMagicWeapon.FLOOR_CAP = false
 	XConfig.path_override = "user://xiyou_character_gear_help_none.json"  # 不读本机设置（正式默认：战力开）
 	check("template.count", data.templates.size() == 30, data.templates.size())
 	for c in data.templates:
