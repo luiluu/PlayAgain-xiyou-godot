@@ -1,6 +1,6 @@
 class_name XGraphics
 extends RefCounted
-## 画质设置（重制新增，Kyo 2026-11-13；设计见 00_设计/画质设置.md，O-待定）。
+## 画质设置（重制新增，Kyo 2026-11-13；设计见 00_设计/画质设置.md，O-待定-1）。
 ## 建在「画面平滑」（XScreenScale）之上，另加四项，存在配置的一个键 codexQuality（字典）里：
 ## - integer 整数倍缩放：根窗口 content_scale_stretch 设成整数倍，画面只按 1、2、3 倍放大，像素均匀、四周留黑边；
 ##   窗口比 1280×720 小时不生效（Godot 会按 1 倍画、裁掉画面）。
