@@ -294,14 +294,15 @@ var keep_unequippable := false
 
 ## O-待定-2：拿掉状态时原版判两遍卸装——removeState 里的 refresh 开头一遍，Game_Actor.removeState 末尾又一遍。
 ## 第一遍之后只剩 refresh 的后半（抹免疫状态、夹资源、同步阵亡）和状态自带的拿掉效果；这两段什么都没改
-## （状态、陈旧状态、层数、HP／MP／TP、等级、技能数、每格装备都和第一遍判完时一样，且该状态没有拿掉／到期效果）时，
+## （状态、陈旧状态、层数、HP／MP／TP、等级、技能数、每格装备都和第一遍判完时一样，且该状态不是 STATE_HARD：没有拿掉／到期效果、不加技能、不是阵亡）时，
 ## 第二遍的输入和第一遍判完时相同，必然一件不卸，跳过。RELEASE_ONCE = false 照原来判两遍。
 ## XIYOU_READ_VERIFY=1 时照判第二遍，卸下了东西当场崩。
 static var RELEASE_ONCE := true
 var _release_mark: Array = []
 
-func _release_repeat() -> bool:
-	if not RELEASE_ONCE or _release_mark.is_empty() or keep_unequippable:
+func _release_repeat(id: int) -> bool:
+	if not RELEASE_ONCE or _release_mark.is_empty() or keep_unequippable or XBattler.state_class(id) == XBattler.STATE_HARD:
+		_release_mark = []
 		return false
 	var m := _release_mark
 	_release_mark = []
@@ -353,7 +354,7 @@ func remove_state(id: int) -> void:
 	var had := state_ids.has(id)
 	_release_mark = []
 	super(id)
-	if had and not _release_repeat():
+	if had and not _release_repeat(id):
 		release_to_party()
 	XToji.revived(self, id, had)  # 甚尔 removeState 包装：战斗中复活且没有形态时回游云
 
@@ -866,6 +867,8 @@ func _carry_slot():
 			for id in fp[8]:
 				if not c.fp[8].has(id):
 					changed |= XBattler.state_trait_mask(id)
+			if changed == 0:
+				changed = CARRY_ALL_CODES  # 成员没变、次序变了：特性的先后跟着变，这组全丢
 			var tr: Dictionary = c.tr
 			for key in tr.keys():
 				if int(tr[key][0]) & changed != 0:

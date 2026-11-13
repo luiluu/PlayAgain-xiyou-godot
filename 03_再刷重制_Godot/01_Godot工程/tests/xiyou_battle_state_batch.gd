@@ -392,7 +392,12 @@ func _misc() -> void:
 	a._release_mark = []
 	logic._state_add(a, int(light[0]))
 	logic._state_remove(a, int(light[0]))
-	check("release.switch_off_no_mark", a._release_mark.is_empty() and not a._release_repeat())
+	check("release.switch_off_no_mark", a._release_mark.is_empty() and not a._release_repeat(int(light[0])))
+	# 带拿掉效果的状态（STATE_HARD）：第二遍照判
+	var hard := _states_where(func(id, r): return int(r.get("restriction", 0)) == 0 and _has_phase(r, ["remove"]), 1)
+	XActor.RELEASE_ONCE = true
+	a._release_mark = [1]
+	check("release.hard_state_runs", not hard.is_empty() and not a._release_repeat(int(hard[0])) and a._release_mark.is_empty())
 	XActor.RELEASE_ONCE = true
 	# 逐次快照：默认角色不留，LIFECYCLE_LOG = true 留
 	XBattleLogic.LIFECYCLE_LOG = false
