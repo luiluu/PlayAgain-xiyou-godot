@@ -37,6 +37,7 @@ var debug := false
 var atk_search := false
 var atk_target := 10.0   # --atk-search：找让基准队中位数撑到这么多回合团灭的攻击倍率
 var atk_scale := 1.0
+var iters := 7
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
 
@@ -51,6 +52,8 @@ func _ready() -> void:
 			turns = int(a.substr(8))
 		elif a.begins_with("--difficulty="):
 			difficulty = a.substr(13)
+		elif a.begins_with("--iters="):
+			iters = int(a.substr(8))
 		elif a == "--atk-search":
 			atk_search = true
 		elif a.begins_with("--atk-target="):
@@ -266,11 +269,11 @@ func _search(list: Array) -> void:
 	turns = int(atk_target) + 4
 	var rows := []
 	for f in floors:
-		var lo := log(1.0e-4)
-		var hi := log(4.0)
+		var lo := log(1.0e-5)
+		var hi := log(8.0)
 		var best := {}
 		var best_k := 1.0
-		for it in 7:
+		for it in iters:
 			var mid := (lo + hi) / 2.0
 			atk_scale = exp(mid)
 			var m := _measure(list, f)
