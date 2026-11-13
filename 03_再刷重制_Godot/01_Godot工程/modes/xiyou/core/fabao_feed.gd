@@ -7,6 +7,8 @@ extends RefCounted
 ##   品质门槛按法宝当前等级：1～24 级能吃普通，25～44 至少优秀，45～64 精良，65～84 史诗，85 以上传说；不够的喂不进去。
 ##   法宝已到当层上限（XMagicWeapon.max_level，跟楼层走）就不让喂；一次喂一批时喂到上限就停，剩下的装备不扣。
 ##   不能喂：法宝本身、出售锁定的、不在背包里的（穿在身上的不在背包）。
+## - 入口：物品页（武器／护甲分类列表含队员身上的）选中法宝 → 操作菜单在宝珠孔之后，从门槛档到神话每档一行
+##   「喂入背包里全部 X 装备（N 件，每件 E 经验）」，确定就把这一档没锁定的全部喂进去、到上限停，提示结果。想留的装备先「出售锁定」。
 ## - NO_PILLS：法宝经验丹（1901～1908、1987、1997）不上架、不能使用，MagicWeaponAllGainExp 不再加经验。
 ## 回退：`XFabaoFeed.ENABLED = false`（不能喂）；`XFabaoFeed.NO_PILLS = false`（经验丹照原版）。
 
@@ -97,6 +99,41 @@ static func _preview_reason(s: XState, work: Dictionary, item: Dictionary) -> St
 	if grade_of(item) < min_grade(XMagicWeapon.level_of(work)):
 		return "品质不够（至少%s）" % GRADE_NAMES[min_grade(XMagicWeapon.level_of(work))]
 	return ""
+
+
+## 背包里某一档、能喂给这件法宝的装备（没锁定、不是法宝）
+static func eligible(s: XState, fabao: Dictionary, grade: int) -> Array:
+	return s.gear.filter(func(e): return e is Dictionary and grade_of(e) == grade and reason(s, fabao, e) == "")
+
+
+## 穿着这件法宝的角色（没人穿为 null）
+static func owner_of(s: XState, fabao: Dictionary) -> XActor:
+	for id in s.party:
+		var a := s.actor(int(id))
+		if a.equips.any(func(e): return is_same(e, fabao)):
+			return a
+	return null
+
+
+## 物品页法宝的操作菜单：从门槛档到神话，每档一行「喂入背包里全部 X 装备（N 件）」
+static func actions(s: XState, fabao: Dictionary) -> Array:
+	if not ENABLED or not XMagicWeapon.is_magic(fabao):
+		return []
+	var out := []
+	var full := XMagicWeapon.level_of(fabao) >= XMagicWeapon.max_level(fabao)
+	for g in range(min_grade(XMagicWeapon.level_of(fabao)), GRADE_EXP.size()):
+		var n := 0 if full else eligible(s, fabao, g).size()
+		out.append({"text": "喂入背包里全部%s装备（%d 件，每件 %d 经验）" % [GRADE_NAMES[g], n, GRADE_EXP[g]], "symbol": "feed", "ext": g, "enabled": n > 0})
+	return out
+
+
+## 菜单「喂入」：喂完返回提示文字
+static func feed_grade(s: XState, fabao: Dictionary, grade: int) -> String:
+	var r := feed(s, fabao, eligible(s, fabao, grade), owner_of(s, fabao))
+	var text := "喂入 %d 件，经验 +%d，Lv %d → %d" % [int(r.used), int(r.exp), int(r.from), int(r.to)]
+	if r.capped:
+		text += "（已到本层上限 %d 级）" % int(XMagicWeapon.max_level(fabao))
+	return text
 
 
 # ---- 经验丹下架 ----
