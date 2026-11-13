@@ -112,6 +112,8 @@ static func table(name: String) -> Variant:
 			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-314，开关 XCanglong.REWORK）
 		if name == "Classes":
 			XCanglong.patch_classes(_tables[name])
+		if name == "States" and _tables[name] is Array:
+			XSukunaFx.patch_states(_tables[name])  # 宿傩新状态图标（content/sukuna/art_optional，开关 XSukunaFx.FX）
 		if name == "Armors" and _tables[name] is Array:
 			# H／U.describe 在 isDatabaseLoaded 里就地改四件成长装备原件的说明与成长行（installNativeHeartsteel／HubrisRuntime；
 			# v0.62.12 数据库里狂妄原件写「物理伤害忽略18%目标物防」，开机后才改成「效果：物防穿透18%」，锻造出的实例照抄改过的）
