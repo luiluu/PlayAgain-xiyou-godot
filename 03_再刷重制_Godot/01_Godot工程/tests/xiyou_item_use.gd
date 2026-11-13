@@ -62,13 +62,18 @@ func _run() -> void:
 	await frames()
 	var bad := []
 	var horns := []
+	var pills := []
 	for it in items:
 		# 直接记持有数：旧版祝福进阶石等得到时会被换成别的物品（XState.gain_item 的改记），这里只看「持有时能不能用」
 		s._gain_raw(int(it.id), 1)
 		if not page._usable(it):
 			# 导入角色平衡的禁用号角 canUse 全否，「使用」灰（attack_query_probe skip.horn*：menuEnabled 假）
-			(horns if XImportedBalance.is_disabled_horn(it) else bad).append(int(it.id))
+			if XFabaoFeed.is_pill(int(it.id)):
+				pills.append(int(it.id))   # 法宝经验丹下架（O-待定-3）：「使用」灰
+			else:
+				(horns if XImportedBalance.is_disabled_horn(it) else bad).append(int(it.id))
 	check("all_usable", bad.is_empty(), {"count": bad.size(), "first": bad.slice(0, 10)})
+	check("pills_greyed", pills == XFabaoFeed.PILLS, pills)
 	check("disabled_horns_gray", horns == XImportedBalance.DISABLED_HORNS, horns)
 	page.queue_free()
 	await frames()

@@ -295,7 +295,8 @@ func _augment_row() -> Dictionary:
 ## 导入角色平衡包了 canUse：禁用号角全否（「使用」灰）。
 func _usable(item: Dictionary) -> bool:
 	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) and not XImportedBalance.is_disabled_horn(item) and not XCat.horn_blocked(XState.current, item) \
-		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item)
+		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item) \
+		and not XFabaoFeed.is_pill(int(item.get("id", 0)))  # 法宝经验丹不能用（O-待定-3）
 
 
 func _make_actions() -> void:
@@ -304,6 +305,7 @@ func _make_actions() -> void:
 	if _item.has("instanceId"):
 		_actions.append({"text": str(XDB.plugin("YEP_X_ItemUpgradeSlots").get("Upgrade Command", "升级 %1")).replace("%1", label), "symbol": "upgrade", "enabled": true})
 		_actions.append_array(augment_actions(_item))
+		_actions.append_array(XFabaoFeed.actions(XState.current, _item))  # 法宝吃装备（O-待定-3）
 	else:
 		_actions.append({"text": "道具置顶", "symbol": "top", "enabled": true})
 	_actions.append({"text": "出售锁定", "symbol": "lock", "enabled": true})
@@ -728,6 +730,10 @@ func _ok_inner() -> void:
 					_up_top = 0
 				"augment":
 					_open_augment(int(a.ext))
+				"feed":
+					XToast.show_text(XFabaoFeed.feed_grade(XState.current, _item, int(a.ext)), true)
+					_make_actions()
+					_act = clampi(_act, 0, _actions.size() - 1)
 				"top", "lock":
 					# 物品的 _item 是列表里加了标记名的副本，改的是原记录；做完换成新的显示副本，操作菜单随之重画
 					var s := XState.current

@@ -408,6 +408,7 @@ static func setup(logic, s: XState) -> void:
 	params[0] = maxf(1.0, roundf(float(fd.max_hp) / maxf(0.0001, float(e._rates[0]))))
 	rec.params = params
 	rec.name = str(info.get("name", "七首之龙"))
+	rec["_ref"] = "dragon"  # 守层者重算（XGuardianRework）：按鸿蒙老祖重标的，出伤跟 33 层一档
 	rec.dropItems = []
 	rec.note = "NoElite"  # 普拉顿备注里的 <hp: …>、<Enemy Drops>、<Capture> 等不跟着借（同骑士的合成记录）
 	rec.meta = {}

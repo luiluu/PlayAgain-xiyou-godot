@@ -16,7 +16,7 @@ extends Node
 ## 输出：每层各队伍的每回合伤害、中位数、我方全灭的队伍数，以及按目标回合（寻常 6／艰险 8／九死 10／炼狱 12／证道 15）乘出来的血量。
 
 const LEVEL_CAP := [[1, 10], [5, 15], [6, 20], [8, 25], [10, 30], [12, 33], [13, 35], [14, 38], [15, 40], [16, 43], [17, 45],
-	[18, 48], [19, 50], [21, 55], [23, 60], [25, 65], [29, 75], [31, 80]]
+	[18, 48], [19, 50], [21, 55], [23, 60], [25, 65], [29, 75], [31, 80], [36, 81]]
 ## 每层守层者那场的敌群号（地图事件里「战斗后变量 20 加一」的那一场；5 层取群狼森林、7 层取科维努斯镇）
 const GUARDIAN := {1: 4, 2: 5, 3: 8, 4: 22, 5: 28, 6: 39, 7: 52, 8: 53, 9: 67, 10: 69, 11: 109, 12: 110, 13: 111, 14: 118, 15: 138,
 	16: 172, 17: 173, 18: 174, 19: 333, 20: 456, 21: 457, 22: 458, 23: 459, 24: 460, 25: 461, 26: 462, 27: 463, 28: 464, 29: 465,
@@ -34,6 +34,17 @@ var seed := 20261113
 var no_fabao := false
 var gear := true
 var debug := false
+var atk_search := false
+var atk_target := 10.0   # --atk-search：找让基准队中位数撑到这么多回合团灭的攻击倍率
+var atk_scale := 1.0
+var iters := 7
+var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
+var _cur_floor := 0
+var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
+var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者前的存档（floor_<层>*.json，XState.to_dict()），用它的真实队伍量（Kyo 11-13 定 C）
+var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
+var neutral := false   # --neutral：守层者元素抗性一律按 1 量
+var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
 
@@ -48,6 +59,25 @@ func _ready() -> void:
 			turns = int(a.substr(8))
 		elif a.begins_with("--difficulty="):
 			difficulty = a.substr(13)
+		elif a.begins_with("--iters="):
+			iters = int(a.substr(8))
+		elif a.begins_with("--atk-table="):
+			atk_table = JSON.parse_string(FileAccess.get_file_as_string(a.substr(12)))
+		elif a == "--neutral":
+			neutral = true
+		elif a.begins_with("--line="):
+			line = a.substr(7)
+		elif a.begins_with("--snapshots="):
+			snapshots = a.substr(12)
+			both = true
+		elif a == "--both":
+			both = true
+		elif a.begins_with("--resist="):
+			resist = float(a.substr(9))
+		elif a == "--atk-search":
+			atk_search = true
+		elif a.begins_with("--atk-target="):
+			atk_target = float(a.substr(13))
 		elif a == "--debug":
 			debug = true
 		elif a == "--no-gear":
@@ -190,6 +220,7 @@ static func _enemy_hp(logic: XBattleLogic) -> float:
 
 func _fight(s: XState, troop: int) -> Dictionary:
 	var logic := XBattleLogic.new()
+	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	logic.setup(troop, s)
 	logic.auto = true
 	var total := 0.0
@@ -232,10 +263,69 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
 
 
+## 撑到第几回合团灭（没团灭记 turns＋1）
+func _survive(r: Dictionary) -> float:
+	return float(r.turns) if bool(r.lost) else float(turns + 1)
+
+
+static func _median(a: Array) -> float:
+	var b := a.duplicate()
+	b.sort()
+	return (float(b[(b.size() - 1) / 2]) + float(b[b.size() / 2])) / 2.0
+
+
+func _measure(list: Array, f: int) -> Dictionary:
+	var per := []
+	for team in list:
+		per.append(_fight(_state(team, f), int(GUARDIAN[f])))
+	return {"survive": _median(per.map(func(r): return _survive(r))), "dmg": _median(per.map(func(r): return float(r.dmg))), "per": per}
+
+
+## 每层按对数二分找攻击倍率：中位数撑到 atk_target 回合左右团灭；倍率上限 4（前几层原版就偏弱时可以加）
+func _search(list: Array) -> void:
+	XEnemy.force_roll = 100.0
+	turns = int(atk_target) + 4
+	var rows := []
+	for f in floors:
+		var lo := log(1.0e-5)
+		var hi := log(8.0)
+		var best := {}
+		var best_k := 1.0
+		for it in iters:
+			var mid := (lo + hi) / 2.0
+			atk_scale = exp(mid)
+			var m := _measure(list, f)
+			if best.is_empty() or absf(float(m.survive) - atk_target) <= absf(float(best.survive) - atk_target):
+				best = m
+				best_k = atk_scale
+			if float(m.survive) < atk_target:
+				hi = mid   # 死得太快：降攻击
+			else:
+				lo = mid
+		atk_scale = 1.0
+		rows.append({"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": best_k, "survive": best.survive, "median": best.dmg,
+			"teams": best.per.map(func(r): return {"dmg": r.dmg, "turns": r.turns, "lost": r.lost, "partyHp": r.partyHp, "enemyAtk": r.enemyAtk})})
+		print("ATKSEARCH floor=%d atk_scale=%.5f survive=%.1f median=%.0f" % [f, best_k, float(best.survive), float(best.dmg)])
+	XEnemy.force_roll = -1.0
+	if out_path != "":
+		var fh := FileAccess.open(out_path, FileAccess.WRITE)
+		fh.store_string(JSON.stringify({"mode": "atk-search", "target": atk_target, "turns": turns, "teams": list, "rows": rows}, "\t"))
+	print("BASELINE_DONE")
+	get_tree().quit(0)
+
+
 func _run() -> void:
 	XEnemy.force_roll = 100.0   # 守层者不按神话
 	var list := _teams()
 	var rows := []
+	XGuardianRework.measure_resist = resist
+	XGuardianRework.measure_neutral = neutral
+	if atk_search:
+		_search(list)
+		return
+	if both:
+		_run_both(list)
+		return
 	for f in floors:
 		var per := []
 		for team in list:
@@ -262,3 +352,129 @@ func _run() -> void:
 		fh.store_string(JSON.stringify(out, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)
+
+
+static func _party_hp(logic: XBattleLogic) -> float:
+	var t := 0.0
+	for a in logic.actors:
+		t += maxf(0.0, float(a.hp))
+	return t
+
+
+## --both：两边每回合开始补满（我方倒下的先复活），量我方每回合伤害、守层者每回合对我方伤害、我方每次出手的伤害
+## 34～36 层（天启篇重做）：34 鸿钧（鸿蒙老祖那场换能力值）、35 本线影子、36 本线骑士本体；之前的层照守层者敌群
+func _troop_for(s: XState, f: int) -> int:
+	if f <= 33:
+		return int(GUARDIAN[f])
+	s.flags.tianqi["line"] = line
+	if f == 34:
+		XTianqiSummit.prepare_hongjun(s)
+		return int(XTianqiSummit.data().hongjun.troop)
+	XTianqiHorsemen.prepare(line, s, "shadow" if f == 35 else "body")
+	return int(XTianqiLine.data(line).shell_troop)
+
+
+func _fight_both(s: XState, troop: int) -> Dictionary:
+	var logic := XBattleLogic.new()
+	XState._become_current(s)
+	if troop <= 0:
+		troop = _troop_for(s, _cur_floor)
+	var k := float(atk_table.get(str(_cur_floor), atk_scale))
+	XGuardianRework.measure_atk = k if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0   # 没给就照游戏里的表
+	logic.setup(troop, s)
+	logic.auto = true
+	var ours := 0.0
+	var theirs := 0.0
+	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
+	var hits := []
+	var done := 0
+	for r in turns:
+		for e in logic.enemies:
+			if e.is_alive():
+				e.hp = e.mhp
+		for a in logic.actors:
+			if a.hp <= 0:
+				a.remove_state(1)
+			a.hp = a.mhp
+		logic.start_turn()
+		logic.take_turn_start_logs()
+		var count := 0
+		while count < 80:
+			var u := logic.next_subject()
+			if u == null:
+				break
+			count += 1
+			var cmd := logic.decide(u)
+			var eb := _enemy_hp(logic)
+			var pb := _party_hp(logic)
+			var db: float = logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)
+			logic.act(u, cmd[0], cmd[1])
+			if u is XActor:
+				var d := maxf(0.0, eb - _enemy_hp(logic))
+				ours += d
+				if d > 0.0:
+					hits.append(d)
+			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
+			if not u is XActor:
+				theirs += maxf(0.0, pb - _party_hp(logic))
+			if debug:
+				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
+			if logic.is_over():
+				break
+		done += 1
+		if logic.is_won() or logic.aborted:
+			break
+		if logic.is_lost():
+			continue   # 一回合内团灭：下回合开头复活补满接着量
+		logic.end_turn()
+	hits.sort()
+	var n := maxf(1.0, float(done))
+	return {"dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
+		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0)}
+
+
+func _run_both(list: Array) -> void:
+	var rows := []
+	for f in floors:
+		var per := []
+		_cur_floor = f
+		var states: Array = _snapshot_states(f) if snapshots != "" else list.map(func(team): return _state(team, f))
+		if states.is_empty():
+			continue
+		for st in states:
+			per.append(_fight_both(st, 0))
+		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
+			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
+			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
+			"enemyHp": per[0].enemyHp, "teams": per}
+		rows.append(row)
+		row["line"] = line if f >= 35 else ""
+		print("BOTH line=%s floor=%d raw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+	XEnemy.force_roll = -1.0
+	if out_path != "":
+		var fh := FileAccess.open(out_path, FileAccess.WRITE)
+		fh.store_string(JSON.stringify({"mode": "both", "resist": resist, "turns": turns, "teams": list, "rows": rows}, "\t"))
+	print("BASELINE_DONE")
+	get_tree().quit(0)
+
+
+
+## 这一层的快照（同一层可有多个种子）：floor_<层>.json、floor_<层>_<种子>.json
+func _snapshot_states(f: int) -> Array:
+	var out := []
+	var d := DirAccess.open(snapshots)
+	if d == null:
+		return out
+	for name in d.get_files():
+		if not name.ends_with(".json") or not (name == "floor_%d.json" % f or name.begins_with("floor_%d_" % f)):
+			continue
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(snapshots.path_join(name)))
+		if not parsed is Dictionary:
+			continue
+		var st := XState.from_dict(parsed)
+		st.set_variable(20, f)
+		for a in st.battle_members():
+			a.recover_all()
+		out.append(st)
+	return out

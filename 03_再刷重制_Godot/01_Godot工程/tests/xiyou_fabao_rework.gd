@@ -24,6 +24,9 @@ func _run() -> void:
 	lottery_ranges()
 	lottery_stream()
 	lottery_ev()
+	feed()
+	pills()
+	guardian()
 	XConfig.path_override = ""
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
@@ -193,3 +196,154 @@ func lottery_ev() -> void:
 	print("ev 1432 原版 %.1f" % old)
 	check("ev.1432_o-off_positive", old > 100.0, old)
 	XLotteryRework.EV_NOT_POSITIVE = true
+
+
+## 吃装备（O-待定-3）：一件经验看品质；门槛按法宝等级；喂到上限就停、剩下的不扣；锁定、不在背包的不喂；预览不改；回退
+func _gear_of_grade(g: int, kind := "armor") -> int:
+	for r in XDB.table("Armors" if kind == "armor" else "Weapons"):
+		if r is Dictionary and str(r.get("name", "")) != "" and not r.get("meta", {}).has("Magic Weapon") and not r.get("meta", {}).has("req_actors"):
+			var t := XGear.template(kind, int(r.id))
+			if t.has("instanceId") or true:
+				if XFabaoFeed.grade_of(t) == g and int(t.get("etypeId", 0)) != 13:
+					return int(r.id)
+	return 0
+
+
+func _bag(s: XState, base: int, n: int) -> Array:
+	var out := []
+	for i in n:
+		var it := XGear.create("armor", base, s)
+		s.gear.append(it)
+		s.register_gear(it)
+		out.append(it)
+	return out
+
+
+func feed() -> void:
+	var s := _blank()
+	s.set_variable(20, 1)   # 上限 12
+	var fabao := XGear.template("armor", 125)
+	fabao.level = 1.0
+	fabao.exp = 0.0
+	var common := _gear_of_grade(0)
+	var good := _gear_of_grade(2)
+	check("feed.grades_found", common > 0 and good > 0, [common, good])
+	var bag := _bag(s, common, 60)
+	check("feed.exp_common", XFabaoFeed.exp_of(bag[0]) == 18 and XFabaoFeed.min_grade(1) == 0 and XFabaoFeed.min_grade(25) == 1 and XFabaoFeed.min_grade(99) == 4)
+	# 预览不改
+	var pv := XFabaoFeed.feed(s, fabao, bag, null, true)
+	check("feed.preview_pure", s.gear.size() == 60 and XMagicWeapon.level_of(fabao) == 1.0 and pv.capped and int(pv.to) == 12, pv)
+	# 真喂：1→12 要 877 经验，普通 18 一件 → 49 件，剩 11 件不扣
+	var r := XFabaoFeed.feed(s, fabao, bag)
+	check("feed.to_cap", int(r.to) == 12 and r.capped and int(r.used) == 49 and s.gear.size() == 11, [r.used, r.to, s.gear.size()])
+	check("feed.preview_matches", int(pv.used) == int(r.used))
+	check("feed.full_reason", XFabaoFeed.reason(s, fabao, s.gear[0]) == "法宝已到本层上限")
+	# 门槛：法宝 30 级（上限放到 99）时普通装备不能喂，精良能
+	s.set_variable(20, 30)
+	fabao.level = 30.0
+	fabao.exp = 0.0
+	check("feed.gate_low", XFabaoFeed.reason(s, fabao, s.gear[0]).begins_with("品质不够"), XFabaoFeed.reason(s, fabao, s.gear[0]))
+	var g := _bag(s, good, 1)
+	check("feed.gate_ok", XFabaoFeed.reason(s, fabao, g[0]) == "")
+	# 锁定的不喂
+	XItemMarks.toggle_lock(s, g[0])
+	check("feed.locked", XFabaoFeed.reason(s, fabao, g[0]) == "已锁定")
+	XItemMarks.toggle_lock(s, g[0])
+	# 不在背包里（穿着的、别人的）
+	var loose := XGear.create("armor", good)
+	s.register_gear(loose)
+	s.lose_gear(loose, false)   # 有实例号、但不在背包里
+	check("feed.not_in_bag", XFabaoFeed.reason(s, fabao, loose) == "不在背包里", [XFabaoFeed.reason(s, fabao, loose), loose.has("instanceId")])
+	# 法宝不能喂法宝
+	var other := _bag(s, 3557, 1)
+	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "不能喂")
+	# 物品页菜单：法宝 30 级从「优秀」起每档一行；精良那行 1 件可喂；喂完提示、装备扣掉
+	var acts := XFabaoFeed.actions(s, fabao)
+	check("feed.actions", acts.size() == 6 and int(acts[0].ext) == 1 and acts[1].enabled and str(acts[1].text).contains("精良") and str(acts[1].text).contains("1 件"), acts.map(func(x): return x.text))
+	var before := s.gear.size()
+	var msg := XFabaoFeed.feed_grade(s, fabao, 2)
+	check("feed.grade_msg", msg.begins_with("喂入 1 件，经验 +30") and s.gear.size() == before - 1, msg)
+	# 回退
+	XFabaoFeed.ENABLED = false
+	check("feed.o-off_actions", XFabaoFeed.actions(s, fabao).is_empty())
+	check("feed.o-off", XFabaoFeed.reason(s, fabao, g[0]) == "未开放")
+	XFabaoFeed.ENABLED = true
+
+
+## 经验丹下架（O-待定-3）：商店不上、MagicWeaponAllGainExp 不加；回退照原版
+func pills() -> void:
+	var rows := [[0, 1901, 0, 0], [0, 1987, 0, 0], [0, 1693, 0, 0], [2, 125, 0, 0]]
+	check("pills.goods", XFabaoFeed.filter_goods(rows) == [[0, 1693, 0, 0], [2, 125, 0, 0]])
+	check("pills.bulk_off", not XBulkPills.supported_ids().has(1987))
+	var s := XState.new_game(3, 1, [])
+	s.set_variable(20, 30)
+	var a := s.actor(1)
+	var item := _wear(a, 125)
+	XMagicWeapon.plugin_command(s, PackedStringArray(["MagicWeaponAllGainExp", "1000000"]))
+	check("pills.no_exp", XMagicWeapon.level_of(item) == 1.0, XMagicWeapon.level_of(item))
+	XFabaoFeed.NO_PILLS = false
+	XMagicWeapon.plugin_command(s, PackedStringArray(["MagicWeaponAllGainExp", "1000000"]))
+	check("pills.o-off_exp", XMagicWeapon.level_of(item) == 99.0, XMagicWeapon.level_of(item))
+	check("pills.o-off_goods", XFabaoFeed.filter_goods(rows) == rows and XBulkPills.supported_ids().has(1987))
+	XFabaoFeed.NO_PILLS = true
+
+
+## 守层者重算（O-待定-4）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
+func guardian() -> void:
+	var s := _blank()
+	check("guardian.floor_of", XGuardianRework.floor_of(527) == 24 and XGuardianRework.floor_of(537) == 33 and XGuardianRework.floor_of(1) == 0,
+		[XGuardianRework.floor_of(527), XGuardianRework.floor_of(537)])
+	var plain := XEnemy.new().setup(527, 3, 100.0)
+	check("guardian.plain_save_untouched", plain.output_scale == 1.0 and float(plain.passive_cache().harmRe.get(1, 0.0)) == 50000000.0,
+		[plain.output_scale, plain.passive_cache().harmRe])
+	s.flags["tianqi"] = {"rules": 1}
+	var e := XEnemy.new().setup(527, 3, 100.0)
+	check("guardian.atk", is_equal_approx(e.output_scale, 0.0243), e.output_scale)
+	var hr: Dictionary = e.passive_cache().harmRe
+	check("guardian.resist", not hr.is_empty() and hr.values().all(func(v): return float(v) == 7300.0), hr)
+	var f1 := XEnemy.new().setup(int(XDB.rec("Troops", 4).members[0].enemyId), 3, 100.0)
+	check("guardian.floor1_not_raised", f1.output_scale == 1.0, f1.output_scale)
+	var normal := XEnemy.new().setup(1, 3, 100.0)
+	check("guardian.normal_enemy", normal.output_scale == 1.0, normal.output_scale)
+	# 实际出伤：同一下，开关开着是关掉的 0.0243 倍
+	var a := s.actor(1)
+	var skill := XDB.rec("Skills", 3562)
+	var calc := XDamage.calculate(skill, e, a, {"critical": false, "variance": false})
+	var on := XDamage.finish(calc.duplicate(true), skill, e, a)
+	XGuardianRework.ATK = false
+	XGuardianRework.RESIST = false
+	var e2 := XEnemy.new().setup(527, 3, 100.0)
+	var off := XDamage.finish(calc.duplicate(true), skill, e2, a)
+	check("guardian.atk_damage", off > 0.0 and absf(on - roundf(off * 0.0243)) <= 1.0, [on, off])
+	check("guardian.o-off", e2.output_scale == 1.0 and float(e2.passive_cache().harmRe.get(1, 0.0)) == 50000000.0, [e2.output_scale, e2.passive_cache().harmRe])
+	XGuardianRework.ATK = true
+	XGuardianRework.RESIST = true
+	# 34 层鸿钧、七印里副本（按鸿蒙老祖重标）各按自己那一档；骑士不归这里
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "jianxian", "line": "war"}
+	XTianqiSummit.prepare_hongjun(s)
+	var hl := XBattleLogic.new()
+	hl.setup(int(XTianqiSummit.data().hongjun.troop), s)
+	var hj: Array = hl.enemies.filter(func(x): return not x.horseman.is_empty())
+	check("guardian.hongjun_hp", absf(hl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 6110000.0 * 8) < 10.0, hl.enemies.map(func(x): return x.mhp))
+	check("guardian.hongjun", hj.size() == 1 and is_equal_approx(hj[0].output_scale, XGuardianRework.HONGJUN_SCALE), hl.enemies.map(func(x): return x.output_scale))
+	XTianqiQiyinRule.prepare("bai", true)
+	var ql := XBattleLogic.new()
+	ql.setup(int(XTianqiQiyin.seal_info("bai").troops[-1]), s)
+	check("guardian.qiyin_ref", not ql.enemies.is_empty() and ql.enemies.all(func(x): return is_equal_approx(x.output_scale, XGuardianRework.REF_SCALE)),
+		ql.enemies.map(func(x): return x.output_scale))
+	var boss_hp: float = ql.enemies.reduce(func(t, x): return maxf(t, x.mhp), 0.0)
+	check("guardian.qiyin_hp", boss_hp > 0.0 and boss_hp < 5690000.0 * 8, boss_hp)
+	var gl := XBattleLogic.new()
+	gl.setup(XGuardianRework.TROOPS[24], s)
+	check("guardian.hp", absf(gl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 3000000.0 * 8) < 10.0 and gl.enemies.all(func(x): return x.hp == x.mhp),
+		gl.enemies.map(func(x): return [x.hp, x.mhp]))
+	XGuardianRework.HP = false
+	var gl2 := XBattleLogic.new()
+	gl2.setup(XGuardianRework.TROOPS[24], s)
+	check("guardian.hp_o-off", gl2.enemies.reduce(func(t, x): return t + x.mhp, 0.0) > 1.0e13, gl2.enemies.map(func(x): return x.mhp))
+	XGuardianRework.HP = true
+	XTianqiHorsemen.prepare("war", s, "body")
+	var kl := XBattleLogic.new()
+	kl.setup(int(XTianqiLine.data("war").shell_troop), s)
+	check("guardian.knight_untouched", not kl.enemies.is_empty() and kl.enemies.all(func(x): return x.output_scale == 1.0), kl.enemies.map(func(x): return x.output_scale))
+	s.flags.erase("tianqi")

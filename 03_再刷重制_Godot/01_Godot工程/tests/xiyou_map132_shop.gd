@@ -24,6 +24,7 @@ static func _rows(a: Array) -> Array:
 
 
 func _run() -> void:
+	XFabaoFeed.NO_PILLS = false  # 对原版参照：法宝经验丹照原版（O-待定-3 下架由 tests/xiyou_fabao_rework 核）
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	var cases: Array = data.get("cases", []) if data is Dictionary else []
 	if check("map132_oracle_loaded", cases.size() >= 80, ORACLE):
