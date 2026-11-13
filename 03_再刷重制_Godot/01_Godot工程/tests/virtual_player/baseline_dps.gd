@@ -16,7 +16,7 @@ extends Node
 ## 输出：每层各队伍的每回合伤害、中位数、我方全灭的队伍数，以及按目标回合（寻常 6／艰险 8／九死 10／炼狱 12／证道 15）乘出来的血量。
 
 const LEVEL_CAP := [[1, 10], [5, 15], [6, 20], [8, 25], [10, 30], [12, 33], [13, 35], [14, 38], [15, 40], [16, 43], [17, 45],
-	[18, 48], [19, 50], [21, 55], [23, 60], [25, 65], [29, 75], [31, 80]]
+	[18, 48], [19, 50], [21, 55], [23, 60], [25, 65], [29, 75], [31, 80], [36, 81]]
 ## 每层守层者那场的敌群号（地图事件里「战斗后变量 20 加一」的那一场；5 层取群狼森林、7 层取科维努斯镇）
 const GUARDIAN := {1: 4, 2: 5, 3: 8, 4: 22, 5: 28, 6: 39, 7: 52, 8: 53, 9: 67, 10: 69, 11: 109, 12: 110, 13: 111, 14: 118, 15: 138,
 	16: 172, 17: 173, 18: 174, 19: 333, 20: 456, 21: 457, 22: 458, 23: 459, 24: 460, 25: 461, 26: 462, 27: 463, 28: 464, 29: 465,
@@ -40,6 +40,7 @@ var atk_scale := 1.0
 var iters := 7
 var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
 var _cur_floor := 0
+var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
@@ -63,6 +64,8 @@ func _ready() -> void:
 			atk_table = JSON.parse_string(FileAccess.get_file_as_string(a.substr(12)))
 		elif a == "--neutral":
 			neutral = true
+		elif a.begins_with("--line="):
+			line = a.substr(7)
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -213,10 +216,8 @@ static func _enemy_hp(logic: XBattleLogic) -> float:
 
 func _fight(s: XState, troop: int) -> Dictionary:
 	var logic := XBattleLogic.new()
+	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	logic.setup(troop, s)
-	if atk_scale != 1.0:
-		for e in logic.enemies:
-			e.output_scale = atk_scale   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	logic.auto = true
 	var total := 0.0
 	var done := 0
@@ -357,14 +358,27 @@ static func _party_hp(logic: XBattleLogic) -> float:
 
 
 ## --both：两边每回合开始补满（我方倒下的先复活），量我方每回合伤害、守层者每回合对我方伤害、我方每次出手的伤害
+## 34～36 层（天启篇重做）：34 鸿钧（鸿蒙老祖那场换能力值）、35 本线影子、36 本线骑士本体；之前的层照守层者敌群
+func _troop_for(s: XState, f: int) -> int:
+	if f <= 33:
+		return int(GUARDIAN[f])
+	s.flags.tianqi["line"] = line
+	if f == 34:
+		XTianqiSummit.prepare_hongjun(s)
+		return int(XTianqiSummit.data().hongjun.troop)
+	XTianqiHorsemen.prepare(line, s, "shadow" if f == 35 else "body")
+	return int(XTianqiLine.data(line).shell_troop)
+
+
 func _fight_both(s: XState, troop: int) -> Dictionary:
 	var logic := XBattleLogic.new()
+	XState._become_current(s)
+	if troop <= 0:
+		troop = _troop_for(s, _cur_floor)
+	var k := float(atk_table.get(str(_cur_floor), atk_scale))
+	XGuardianRework.measure_atk = k if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0   # 没给就照游戏里的表
 	logic.setup(troop, s)
 	logic.auto = true
-	var k := float(atk_table.get(str(_cur_floor), atk_scale))
-	if k != 1.0:
-		for e in logic.enemies:
-			e.output_scale = k
 	var ours := 0.0
 	var theirs := 0.0
 	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
@@ -422,13 +436,14 @@ func _run_both(list: Array) -> void:
 		var per := []
 		_cur_floor = f
 		for team in list:
-			per.append(_fight_both(_state(team, f), int(GUARDIAN[f])))
+			per.append(_fight_both(_state(team, f), 0))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
 		rows.append(row)
-		print("BOTH floor=%d raw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [f, row.enemyRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+		row["line"] = line if f >= 35 else ""
+		print("BOTH line=%s floor=%d raw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)

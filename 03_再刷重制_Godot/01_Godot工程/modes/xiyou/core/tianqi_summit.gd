@@ -405,6 +405,7 @@ static func setup(logic, s: XState) -> void:
 			p[i] = roundf(float(p[i]) * float(rate[i]))
 		rec.params = p
 		rec.name = str(h.name)
+		rec["_ref"] = "hongjun"  # 守层者重算（XGuardianRework）认鸿钧
 		rec.dropItems = []  # 鸿蒙老祖的奖碑等不跟着借（34 层的掉落等奖励车道按设计稿第 6 节给终焉词条）
 		e.horseman = {"rec": rec, "knight": false}  # 借骑士战的合成记录口子：XEnemy.data() 读它；_rates（难度倍率）不动
 		e.refresh_passive()

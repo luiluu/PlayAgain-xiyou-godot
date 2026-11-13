@@ -318,4 +318,20 @@ func guardian() -> void:
 	check("guardian.o-off", e2.output_scale == 1.0 and float(e2.passive_cache().harmRe.get(1, 0.0)) == 50000000.0, [e2.output_scale, e2.passive_cache().harmRe])
 	XGuardianRework.ATK = true
 	XGuardianRework.RESIST = true
+	# 34 层鸿钧、七印里副本（按鸿蒙老祖重标）各按自己那一档；骑士不归这里
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "jianxian", "line": "war"}
+	XTianqiSummit.prepare_hongjun(s)
+	var hl := XBattleLogic.new()
+	hl.setup(int(XTianqiSummit.data().hongjun.troop), s)
+	var hj: Array = hl.enemies.filter(func(x): return not x.horseman.is_empty())
+	check("guardian.hongjun", hj.size() == 1 and is_equal_approx(hj[0].output_scale, XGuardianRework.HONGJUN_SCALE), hl.enemies.map(func(x): return x.output_scale))
+	XTianqiQiyinRule.prepare("bai", true)
+	var ql := XBattleLogic.new()
+	ql.setup(int(XTianqiQiyin.seal_info("bai").troops[-1]), s)
+	check("guardian.qiyin_ref", not ql.enemies.is_empty() and ql.enemies.all(func(x): return is_equal_approx(x.output_scale, XGuardianRework.REF_SCALE)),
+		ql.enemies.map(func(x): return x.output_scale))
+	XTianqiHorsemen.prepare("war", s, "body")
+	var kl := XBattleLogic.new()
+	kl.setup(int(XTianqiLine.data("war").shell_troop), s)
+	check("guardian.knight_untouched", not kl.enemies.is_empty() and kl.enemies.all(func(x): return x.output_scale == 1.0), kl.enemies.map(func(x): return x.output_scale))
 	s.flags.erase("tianqi")

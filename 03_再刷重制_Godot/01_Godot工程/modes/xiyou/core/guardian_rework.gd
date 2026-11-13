@@ -5,6 +5,8 @@ extends RefCounted
 ##   精良以下装备）实测反推：守层者每回合打掉基准队合计生命的 1/6.4，即不治疗约 8 回合团灭。1～4 层原版就几乎不打人，不放大（取 1）。
 ## - RESIST：19 层起守层者自带的「伤害抵抗」（技能备注 passiveHarmRe，原版 5000～50 兆，24 层起把基准队每一下都扣成 0）
 ##   换成 RESIST_TABLE[层]，约等于基准队单下伤害中位数的 30%。
+##   34 层鸿钧（借鸿蒙老祖那场、能力值 × rate）单独一档 HONGJUN_SCALE；七印里副本的敌人、七首之龙都按鸿蒙老祖重标能力值
+##   （记录里 _ref），出伤一律乘 REF_SCALE（＝33 层的倍率：它们的攻击就是鸿蒙老祖的几成）。35、36 层骑士走自己的数值表，不在这里。
 ## - 血量：等 Kyo 定基准队口径（v0.3 第 5 条）后再加。
 ## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.RESIST = false`。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
@@ -16,6 +18,8 @@ const ATK_SCALE := {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 0.00884, 6: 3.07, 7: 1.29
 	12: 0.511, 13: 0.946, 14: 0.0151, 15: 0.284, 16: 0.439, 17: 0.115, 18: 0.634, 19: 0.33, 20: 0.074, 21: 0.0303, 22: 0.0585,
 	23: 0.0903, 24: 0.0243, 25: 0.0164, 26: 0.00149, 27: 0.0107, 28: 0.00191, 29: 0.00521, 30: 0.00417, 31: 0.00121,
 	32: 0.000161, 33: 0.0000256}
+const HONGJUN_SCALE := 0.0000109
+const REF_SCALE := 0.0000256
 const RESIST_TABLE := {19: 4500, 20: 4900, 21: 5500, 22: 6000, 23: 6700, 24: 7300, 25: 8100, 26: 8900, 27: 9900, 28: 10900,
 	29: 12000, 30: 13300, 31: 14600, 32: 16200, 33: 17800}
 
@@ -26,6 +30,8 @@ const TROOPS := {1: 4, 2: 5, 3: 8, 4: 22, 5: 28, 6: 39, 7: 52, 8: 53, 9: 67, 10:
 
 ## 工具用：≥0 时守层者的伤害抵抗（技能备注 passiveHarmRe，20 层起 200 万～50 兆）一律换成这个值；-1 不动
 static var measure_resist := -1.0
+## 工具用：≥0 时守层者（含鸿钧、按鸿蒙老祖重标的）出伤倍率一律取这个值；-1 照表
+static var measure_atk := -1.0
 
 ## 工具用：为真时我方打守层者一律按元素中性（抗性 1，不吸收、不免疫），量「不挑元素」的基准伤害
 static var measure_neutral := false
@@ -63,9 +69,17 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 
 ## XEnemy.setup 末尾调：守层者的出伤倍率（不是守层者、没开、不是天启篇存档为 1）
 static func atk_scale(e: XEnemy) -> float:
-	var f := floor_of(e.enemy_id)
-	if f == 0 or not ATK or not _on():
+	var rec: Dictionary = e.horseman.get("rec", {}) if not bool(e.horseman.get("knight", false)) else {}
+	var f := floor_of(e.enemy_id) if e.horseman.is_empty() else 0
+	var ref := rec.has("_ref")
+	if f == 0 and not ref:
 		return 1.0
+	if measure_atk >= 0.0:
+		return measure_atk
+	if not ATK or not _on():
+		return 1.0
+	if ref:
+		return HONGJUN_SCALE if str(rec.get("_ref", "")) == "hongjun" else REF_SCALE
 	return float(ATK_SCALE.get(f, 1.0))
 
 
