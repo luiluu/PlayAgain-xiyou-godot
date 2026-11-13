@@ -17,6 +17,7 @@ const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonof
 static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true, "battleCamera": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
+	"codexQuality": {"integer": false, "fps": 0, "window": "auto", "low": false},  # 重制新增「画质设置」（XGraphics）
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
@@ -63,6 +64,8 @@ static func ensure_loaded() -> void:
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
 				elif key == "battleAniSpeed":
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				elif key == XGraphics.KEY:
+					_values[key] = XGraphics.sanitize(data.get(key))
 				elif key == "codexNotices":
 					# 原版 applyData：只有存成 false 的类别才关闭
 					var saved = data.get(key)
@@ -136,7 +139,7 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS"]:
+	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -217,6 +220,18 @@ static func set_map_xy(value: bool) -> bool:
 
 
 ## 装备检索的排序选择（installEquipmentStatusRuntime：ConfigManager.codexEquipmentSort = {sort, term}）
+## 画质设置（XGraphics）：返回副本，改了用 set_quality 存
+static func quality() -> Dictionary:
+	ensure_loaded()
+	return XGraphics.sanitize(_values.get(XGraphics.KEY))
+
+
+static func set_quality(value: Dictionary) -> bool:
+	ensure_loaded()
+	_values[XGraphics.KEY] = XGraphics.sanitize(value)
+	return _write()
+
+
 static func equipment_sort() -> Dictionary:
 	ensure_loaded()
 	return (_values.codexEquipmentSort as Dictionary).duplicate()
