@@ -31,7 +31,7 @@
 
 ## 验证
 
-- 选测：`选测.py main --list` 列 191 个场景（xsave 被大量测试引用）；本车道跑存档与 178 相关的 15 个：xiyou_save_cat_slots、xiyou_save_corrupt、xiyou_save_page、xiyou_save_events、xiyou_autosave、xiyou_splash_autosave、xiyou_pause_save、xiyou_battleback_save、xiyou_hangup、xiyou_opening_branches、xiyou_cat、xiyou_cat_help、xiyou_cat_trial，全部通过；其余按总装合并选测跑（改动只在写盘前加校验、放宽 178 槽数，不碰战斗）。
+- 选测：`选测.py main --list` 列 191 个场景（xsave 被大量测试引用）；本车道跑存档与 178 相关的 13 个：xiyou_save_cat_slots、xiyou_save_corrupt、xiyou_save_page、xiyou_save_events、xiyou_autosave、xiyou_splash_autosave、xiyou_pause_save、xiyou_battleback_save、xiyou_hangup、xiyou_opening_branches、xiyou_cat、xiyou_cat_help、xiyou_cat_trial，全部通过；其余按总装合并选测跑（改动只在写盘前加校验、放宽 178 槽数，不碰战斗）。
 - 语法检查.py 通过。
 
 ## 本分支提交
