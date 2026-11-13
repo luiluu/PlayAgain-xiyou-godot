@@ -289,7 +289,7 @@ func _take_state_reserves() -> void:
 		XBattleCommonEvent.reserve(self, id)
 
 
-## 优化 O-待定（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」；v0.01.07 玩家木桩反馈伤害一场低一场高）：
+## 优化 O-397（原版缺陷，Kyo 2026-11-07「原版的 bug 要修」；v0.01.07 玩家木桩反馈伤害一场低一场高）：
 ## 原版 onBattleEnd 先 clearResult 再 removeBattleStates，移除记录留在 _result 里，isStateAddable 又拒绝「本次移除过」的状态，
 ## 要等地图上走一步（onPlayerWalk 的 clearResult）才清。所以不走动连着开战，上一场结束时去掉的开战状态（dsPassiveSkill
 ## StartPushState 等：神魔压制、神魔威压伤害×10%，变身、破阵增益……）这一场整批挂不上，隔一场漏一次（贝吉特木桩 762 对 7.61 万）。

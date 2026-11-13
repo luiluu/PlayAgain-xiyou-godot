@@ -81,7 +81,7 @@ func _ready() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
-	# 逐场对原版：O-待定（XBattleLogic.START_CLEAR_RESULT）修好的「不走动连战开战状态漏挂」在这里关掉，照原版比；修好的一支见 xiyou_start_clear_result
+	# 逐场对原版：O-397（XBattleLogic.START_CLEAR_RESULT）修好的「不走动连战开战状态漏挂」在这里关掉，照原版比；修好的一支见 xiyou_start_clear_result
 	XBattleLogic.START_CLEAR_RESULT = false
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/start_state_walk_oracle.json"))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)

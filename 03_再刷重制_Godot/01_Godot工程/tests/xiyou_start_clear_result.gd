@@ -1,5 +1,5 @@
 extends Node
-## O-待定（battle_logic.gd XBattleLogic.START_CLEAR_RESULT）：不走动连着开战，上一场结束时去掉的开战状态这一场照样挂上。
+## O-397（battle_logic.gd XBattleLogic.START_CLEAR_RESULT）：不走动连着开战，上一场结束时去掉的开战状态这一场照样挂上。
 ## 原版 onBattleEnd 先 clearResult 再 removeBattleStates，移除记录留到地图上走一步才清，isStateAddable 拒绝「本次移除过」的状态，
 ## 隔一场漏挂一次（v0.01.07 玩家贝吉特木桩：神魔压制×10% 隔场漏挂，伤害 762 对 7.61 万）。
 ## 这里用狼魂 1420（<StartPushState0157: 100%>，状态 157 战斗结束移除）：默认每场都挂上；回退 false 时第二场挂不上、走一步后又挂上。
