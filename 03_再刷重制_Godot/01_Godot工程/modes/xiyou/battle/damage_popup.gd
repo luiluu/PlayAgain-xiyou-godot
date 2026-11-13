@@ -99,13 +99,13 @@ static func format_number(value: float) -> String:
 		if value < u[0]:
 			if value > u[1]:
 				return _trim(roundf(value / u[1] * 100.0) / 100.0) + u[2]
-			return str(int(value))
+			return XMenu.int_text(value)
 	return _trim(roundf(value / 1e28 * 100.0) / 100.0) + "穰"
 
 
 static func _trim(v: float) -> String:
 	if v == floorf(v):
-		return str(int(v))
+		return XMenu.int_text(v)
 	return String.num(v, 2).rstrip("0").rstrip(".")
 
 

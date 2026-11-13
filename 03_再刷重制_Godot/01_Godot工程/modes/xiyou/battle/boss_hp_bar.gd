@@ -388,7 +388,7 @@ static func format_number(value: float) -> String:
 			unit = i
 			break
 	if unit == 0:
-		return str(int(floorf(shown)))
+		return XMenu.int_text(floorf(shown))
 	var places := 0
 	if shown < 100.0:
 		places = 2
@@ -404,7 +404,7 @@ static func format_number(value: float) -> String:
 static func _to_fixed(x: float, places: int) -> String:
 	var scale := pow(10.0, places)
 	var n := floorf(x * scale + 0.5)
-	var s := str(int(n))
+	var s := XMenu.int_text(n)
 	if places == 0:
 		return s
 	while s.length() <= places:

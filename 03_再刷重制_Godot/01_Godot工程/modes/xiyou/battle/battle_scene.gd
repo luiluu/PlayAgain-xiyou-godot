@@ -443,7 +443,7 @@ static func name_alpha_step(a: float, gone: bool, showing: bool, frames: float) 
 ## 名字居中在 (敌人 x, y−27) 的 640×72 内容位图；HP 内容 (x−90,y−16)，字号 26、居中、12px 粗条。
 func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var g: Dictionary = gauges[e]
-	var v := view(e)
+	var v := view_lite(e)
 	var rate: float = v.hp / maxf(v.mhp, 1.0)
 	var name_alpha: float = g.name_alpha / 255.0 if NAME_FADE else (1.0 if not v.dead and (g.name_timer > 0.0 or e == _hover) else 0.0)
 	if name_alpha > 0.0:
@@ -478,6 +478,19 @@ var shown := {}            # XBattler -> view
 
 func view(b: XBattler) -> Dictionary:
 	return shown[b] if shown.has(b) else logic.view_of(b)
+
+
+## 只要血量、上限、倒没倒的读数（敌人血条、名字淡入淡出、Boss 血条，每帧都读）。不在演出中时直接读实时状态，
+## 不再每帧整份算 view_of（状态格排序、能否行动、指示器……）：敌人身上状态多时（玩家反馈 v0.01.07 敌方异常 22 层）一次要
+## 1 毫秒以上，每帧四五次，行动之间整个画面变卡。三项与 view_of 里的取法相同（b.hp、b.mhp、b.is_dead()）。
+## 回退：VIEW_LITE = false 回到每次整份 view_of（O-待定）。
+static var VIEW_LITE := true
+
+
+func view_lite(b: XBattler) -> Dictionary:
+	if shown.has(b) or not VIEW_LITE:
+		return view(b)
+	return {"hp": b.hp, "mhp": b.mhp, "dead": b.is_dead()}
 
 
 func show_views(v: Dictionary) -> void:
@@ -517,7 +530,7 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 func _build_ui(vs: Vector2) -> void:
 	# Boss 血条（MOG_BossHP）：最先加，窗口在它上面（原版 hudField 在窗口层下）
 	boss_hp = XBossHpBar.new()
-	boss_hp.hp_source = func(e): return view(e)
+	boss_hp.hp_source = func(e): return view_lite(e)
 	boss_hp.busy_source = func(): return message._busy
 	var hp_holder := Node2D.new()
 	hp_holder.position = _origin
@@ -693,7 +706,7 @@ func update_gauges() -> void:
 	var dur := maxf(1.0, float(XDB.plugin("YEP_X_VisualHpGauge").get("Gauge Duration", "30")))
 	for e in gauges:
 		var g: Dictionary = gauges[e]
-		var hp: float = view(e).hp
+		var hp: float = view_lite(e).hp
 		if hp != g.cur:
 			g.cur = hp
 			g.drop = ceilf(absf(g.disp - hp) / dur)
@@ -754,7 +767,7 @@ func _process(delta: float) -> void:
 		g.timer = maxf(0, g.timer - delta)
 		g.name_timer = maxf(0, g.name_timer - delta)
 		XEnemyStateIcon.tick(g.icons, e, delta * 60.0)  # Sprite_StateIcon 每帧计数（按 60 帧／秒折算）
-		g.name_alpha = name_alpha_step(g.name_alpha, bool(view(e).dead) or e.hidden, g.name_timer > 0.0 or e == _hover, delta * 60.0)
+		g.name_alpha = name_alpha_step(g.name_alpha, bool(view_lite(e).dead) or e.hidden, g.name_timer > 0.0 or e == _hover, delta * 60.0)
 		g.box.queue_redraw()
 
 
