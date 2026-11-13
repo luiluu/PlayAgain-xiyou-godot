@@ -171,6 +171,13 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
         return tmp / 'Windows.pck'
     if len(set(shas.values())) != 1:
         raise Fail('三个预设导出的补丁不一样，不能当通用补丁发：' + json.dumps(shas, ensure_ascii=False))
+    # 发行内容审计（11-13 漩涡异化设计稿随 0.475 补丁外泄后加）：补丁里不许有没发行的内容
+    spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    bad = m.audit(tmp / 'Windows.pck')
+    if bad:
+        raise Fail(f'补丁带了 {len(bad)} 个没发行的文件，不能发：' + '、'.join(bad[:10]) + '（看 export_presets.cfg 发行预设的 exclude_filter）')
     return tmp / 'Windows.pck'
 
 

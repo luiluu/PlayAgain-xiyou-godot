@@ -26,6 +26,7 @@
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -227,6 +228,22 @@ def export_all(out: Path, logs: Path) -> list:
     return problems
 
 
+def audit_unreleased(out: Path) -> list:
+    """发行内容审计（11-13 漩涡异化设计稿外泄后加）：三个包里不许有没发行的内容，有就不往下走。"""
+    spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    problems = []
+    for pkg in (out / WIN_DIR / WIN_FILES[1], out / APK, out / MAC_ZIP):
+        if not pkg.is_file():
+            continue
+        bad = m.audit(pkg)
+        if bad:
+            problems.append(f'{pkg.name} 带了 {len(bad)} 个没发行的文件（{"、".join(bad[:5])}…）；看 export_presets.cfg 发行预设的 exclude_filter')
+    print('== 发行内容审计：' + ('有问题' if problems else '通过'))
+    return problems
+
+
 SMOKES = [
     ('Mac', lambda out: ['--zip', str(out / MAC_ZIP), '--keys']),
     ('Mac x86_64', lambda out: ['--zip', str(out / MAC_ZIP), '--arch', 'x86_64', '--keys']),
@@ -375,6 +392,8 @@ def main(argv=None) -> int:
     logs = out / '日志'
     logs.mkdir()
     problems = export_all(out, logs)
+    if not problems:
+        problems = audit_unreleased(out)
     if problems:
         print('✗ ' + '；'.join(problems))
         return 1
