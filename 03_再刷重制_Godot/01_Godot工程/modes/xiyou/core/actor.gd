@@ -292,7 +292,7 @@ func release_unequippable() -> Array:
 ## 只给参照对照夹具用：同 custom_params_probe 在实例上停掉 releaseUnequippableItems（直接装上别的角色专属的件）
 var keep_unequippable := false
 
-## O-待定-2：拿掉状态时原版判两遍卸装——removeState 里的 refresh 开头一遍，Game_Actor.removeState 末尾又一遍。
+## O-399：拿掉状态时原版判两遍卸装——removeState 里的 refresh 开头一遍，Game_Actor.removeState 末尾又一遍。
 ## 第一遍之后只剩 refresh 的后半（抹免疫状态、夹资源、同步阵亡）和状态自带的拿掉效果；这两段什么都没改
 ## （状态、陈旧状态、层数、HP／MP／TP、等级、技能数、每格装备都和第一遍判完时一样，且该状态不是 STATE_HARD：没有拿掉／到期效果、不加技能、不是阵亡）时，
 ## 第二遍的输入和第一遍判完时相同，必然一件不卸，跳过。RELEASE_ONCE = false 照原来判两遍。
@@ -749,7 +749,7 @@ static func read_touch() -> void:
 	_write_gen += 1
 
 
-# ---- 整批加减状态（O-待定-1，进出战斗卡顿 C 车道）----
+# ---- 整批加减状态（O-398，进出战斗卡顿 C 车道）----
 ## 开战每人挂二十来个状态、收场逐个拿掉，每加减一个都整套 refresh（卸装判断、夹三项资源、同步阵亡、重建被动缓存）。
 ## refresh 的次数、先后、每一步做的事都照原版不变，这里只省掉重复的计算（批＝XBattleLogic 里开战挂状态、开战与收场拿战斗状态的那几段）：
 ## - 表跨步保留：批里加减状态按类别（XBattler.state_class）只作废会变的表——没有特性的状态不动技能表、特性表；有特性但不加技能的
