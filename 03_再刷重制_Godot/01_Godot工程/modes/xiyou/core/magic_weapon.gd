@@ -69,15 +69,26 @@ static func max_level(item: Dictionary) -> float:
 ## - LEVEL_99：上限封到 99；回退 `XMagicWeapon.LEVEL_99 = false`（照原版 888）。
 ## - FLOOR_CAP：再跟楼层走，上限 ＝ min(99, 9 ＋ 3 × 最高到达层)，最高到达层＝变量 20（至少 1）：1 层 12、10 层 39、30 层 99；
 ##   回退 `XMagicWeapon.FLOOR_CAP = false`（只封 99）。
-## 超过上限的经验作废（照原版满级不得经验）；已经超过上限的法宝等级不降。天启篇存档不受影响（天启篇另定）。
+## 超过上限的经验作废（照原版满级不得经验）；已经超过上限的法宝等级不降。
+## - TIANQI_TOO：天启篇存档（现在的新开局入口）也照这个上限；`XMagicWeapon.TIANQI_TOO = false` 时天启篇照数据。
+## 天启篇法宝的阶（XTianqiAffixRoll.artifact_tier_of）按 top_level（封 99、不跟楼层）算，楼层上限不让阶提前满。
 static var LEVEL_99 := true
 static var FLOOR_CAP := true
+static var TIANQI_TOO := true
 const CAP_TOP := 99
+
+
+## 不跟楼层的满级（数据上限，LEVEL_99 时封到 99）
+static func top_level(item: Dictionary) -> float:
+	if not is_magic(item):
+		return -1.0
+	var own := _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
+	return minf(own, float(CAP_TOP)) if LEVEL_99 else own
 
 
 ## 当前存档的法宝等级上限；0＝不限（照数据）
 static func level_cap(s: XState) -> int:
-	if not LEVEL_99 or s == null or XTianqi.active(s):
+	if not LEVEL_99 or s == null or (not TIANQI_TOO and XTianqi.active(s)):
 		return 0
 	if not FLOOR_CAP:
 		return CAP_TOP

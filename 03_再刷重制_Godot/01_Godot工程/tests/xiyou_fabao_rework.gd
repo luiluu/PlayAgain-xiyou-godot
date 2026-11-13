@@ -1,6 +1,6 @@
 extends Node
 ## 法宝与积分重构 v0.2 一期（O-待定-1 法宝上限、O-待定-2 抽奖，Kyo 11-13 通过）：
-## - 法宝上限：XMagicWeapon.LEVEL_99／FLOOR_CAP（min(99, 9＋3×最高到达层)），超上限经验作废，天启篇存档不受影响，两档回退。
+## - 法宝上限：XMagicWeapon.LEVEL_99／FLOOR_CAP（min(99, 9＋3×最高到达层)），超上限经验作废，天启篇存档也照上限（TIANQI_TOO），三档回退。
 ## - 抽奖：XLotteryRework.SAVED_STREAM（抽奖随机流进存档：读档后同一抽结果相同，世界随机不影响它）、
 ##   EV_NOT_POSITIVE（范围与对话框文字换掉；批量模式真跑 1432／1431 各几千抽，平均积分变化不为正），两档回退。
 var checks := 0
@@ -75,9 +75,12 @@ func fabao_cap() -> void:
 	check("cap.o-off-all", XMagicWeapon.level_cap(s) == 0 and XMagicWeapon.max_level(plain) == 888.0 and XMagicWeapon.max_level(noted) == 888.0, XMagicWeapon.max_level(plain))
 	XMagicWeapon.LEVEL_99 = true
 	XMagicWeapon.FLOOR_CAP = true
-	# 天启篇存档不受影响
+	# 天启篇存档也照上限；TIANQI_TOO 关掉时照数据；阶按 top_level（99）
 	s.flags["tianqi"] = {"rules": 1}
-	check("cap.tianqi", XMagicWeapon.level_cap(s) == 0 and XMagicWeapon.max_level(plain) == 888.0, XMagicWeapon.max_level(plain))
+	check("cap.tianqi", XMagicWeapon.level_cap(s) == 39 and XMagicWeapon.max_level(plain) == 39.0 and XMagicWeapon.top_level(plain) == 99.0, XMagicWeapon.max_level(plain))
+	XMagicWeapon.TIANQI_TOO = false
+	check("cap.tianqi_o-off", XMagicWeapon.level_cap(s) == 0 and XMagicWeapon.max_level(plain) == 888.0, XMagicWeapon.max_level(plain))
+	XMagicWeapon.TIANQI_TOO = true
 	s.flags.erase("tianqi")
 	# 没有存档对象（工具、预览）照数据
 	XState.current = null
