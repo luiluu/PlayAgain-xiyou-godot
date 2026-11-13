@@ -311,6 +311,7 @@ func _process(delta: float) -> void:
 		_rift_tint(delta)
 		XTianqiQiyinArt.update_sprite(self)  # 七印祭坛首领新画：七首之龙断首藏头、守默者香炉两态
 	if battler is XActor:
+		XTianqiQiyinLook.update_sprite(self)  # 天启篇七印外观：脚下法阵
 		var k := str(view.get("look", _look_key)) if not view.is_empty() else XAppearance.battler_key(battler)
 		if k != _look_key:
 			swap_look(k)

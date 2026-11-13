@@ -288,6 +288,28 @@ static func huzhen_rate(t) -> float:
 	return XGuyu.curve(int(t.level) if t != null else 1, [0.85, 0.70], [20, 60])
 
 
+## ---- 天启篇（技能重构第七期，稿子 176 号）：只在 XTianqiSkills.cards_on() 时走 ----
+## 武装技能与支援技的系数在技能表（skill_rework.json）；模块倍率（淬纹、锁定、和鸣、六十级）收口去掉，按稿子补：
+## 进阶每次 +5%、开刃的武相持有者的招 +10%、锁定目标受贯日 +10%、和鸣敕令 +20%；护阵持有者受伤 −20%；
+## 铸环守护盾＝屠苏生命上限 20%、金汤全队护盾 5%；每回合第一次支援 +10%；镇魂重击 10% 击晕（首领无效）
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	var key := key_of(item)
+	if not key.begins_with("arm.") or not ARM_WEAPON.has(key.substr(4)):
+		return []
+	var w: String = ARM_WEAPON[key.substr(4)]
+	var m := (1.0 + 0.05 * clampi(XAdvance.rank(XState.current, ACTOR), 0, 4)) * (1.1 if has_kairen(w) else 1.0)
+	var wielder = holder(a) if is_tusu(a) and holder(a) != null else a
+	if key == "arm.guanri" and wielder is XBattler and is_same(lock_target(wielder), b):
+		m *= 1.1
+	if key == "arm.chiling" and wielder is XBattler and wielder.state_ids.has(state_id("heming")):
+		m *= 1.2
+	return [{"op": "mul", "field": "finalMultiplier", "value": m}] if m != 1.0 else []
+
+
 ## 伤害钩子 tusu（CodexDamageHooks）：武装技能按武相定物理／魔法、威力按持武者本回合行动次数分摊（2 次为基准）、
 ## 贯日打锁定目标、敕令带和鸣；护阵中的角色受伤减免。a 是出手者（武装技能时已是屠苏，见 apply_subject）
 ## 止戈环支援加成 CFG.relicBonus.support＝1（乘了也不变，不写）；支援上下限在 XDamage.finish 里（support_after）
@@ -310,7 +332,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	if a is XEnemy and _cuoshi.has(a):
 		ops.append({"op": "mul", "field": "finalMultiplier", "value": float(_cuoshi[a].rate)})  # 挫势：敌人出手 ×rate（到期由回合末删）
 	if b is XActor and state_id("huzhen") > 0 and b.state_ids.has(state_id("huzhen")):
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": huzhen_rate(tusu())})
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.8 if _tq() else huzhen_rate(tusu())})  # 天启篇：持有者受伤 −20%
 	return ops + _three60_ops(item, a, b)
 
 
@@ -408,7 +430,7 @@ static func apply_cuoshi(logic, e) -> bool:
 	for k in ["cuoshi", "cuoshi2"]:
 		_set_state(logic, e, state_id(k), false)
 	logic._state_add(e, sid)
-	if not hyper and logic._float("tusu_stun") < logic.state_rate(e, STUN_STATE) and not _resist(e, STUN_STATE):
+	if not hyper and logic._float("tusu_stun") < ((0.0 if e.boss_difficulty_boss or _hyper(e) else 0.1) if _tq() else logic.state_rate(e, STUN_STATE)) and not _resist(e, STUN_STATE):  # 天启篇：10% 击晕，首领无效
 		logic._state_add(e, STUN_STATE)
 	return true
 
@@ -585,13 +607,13 @@ static func user_effect(logic, u, skill: Dictionary, t) -> void:
 		logic._state_add(t, state_id("heming"))
 	if key == "support.jintang":
 		var o = u if is_tusu(u) else tusu()
-		var amount := shield_amount(o, t) * temper_rate(o, "support.jintang") * float(_act.get("support_bonus", 1.0)) * shield_support_rate(o)
+		var amount := (floorf(t.mhp * 0.05) * float(_act.get("support_bonus", 1.0))) if _tq() else shield_amount(o, t) * temper_rate(o, "support.jintang") * float(_act.get("support_bonus", 1.0)) * shield_support_rate(o)  # 天启篇：全队护盾 5%
 		var before := XShieldLedger.amount(t, "tusu.jintang")
 		XShieldLedger.grant(t, "tusu.jintang", amount, JINTANG_TURNS, ACTOR)
 		if XShieldLedger.amount(t, "tusu.jintang") > before:
 			_act.successful = true
 	if key == "body.guard" and is_tusu(u):
-		XShieldLedger.grant(t, "tusu.body", shield_amount(u, t) * BODY_GUARD_RATE, BODY_GUARD_TURNS, ACTOR)
+		XShieldLedger.grant(t, "tusu.body", floorf(u.mhp * 0.2) if _tq() else shield_amount(u, t) * BODY_GUARD_RATE, BODY_GUARD_TURNS, ACTOR)  # 天启篇：屠苏生命上限 20%
 	if key == "arm.huzhen":
 		logic._state_add(t, state_id("huzhen"))
 		if owner_actor() != null and _guard == null:
@@ -658,6 +680,8 @@ static func shield_amount(a, t) -> float:
 
 static func support_bonus(a, k: String) -> float:
 	var d = data(a)
+	if _tq():  # 天启篇：每回合第一次支援 +10%
+		return 1.1 if k in ["jianqi", "zhenhun", "jintang"] and (d == null or int(d.get("growth", 0)) != XBinding.current_round()) else 1.0
 	if k in ["jianqi", "zhenhun", "jintang"] and int(a.level) >= 40 and (d == null or int(d.get("growth", 0)) != XBinding.current_round()):
 		return XGuyu.curve(int(a.level), [1, 1.2], [40, 60])
 	return 1.0
@@ -696,6 +720,8 @@ static func support_after(item: Dictionary, a, value: float) -> float:
 	var key := key_of(item)
 	if key != "support.jianqi" and key != "support.zhenhun":
 		return value
+	if _tq():  # 天启篇：支援按屠苏自己的系数，不再按持武者伤害托底
+		return floorf(value * float(_act.get("support_bonus", 1.0)))
 	var t = a if is_tusu(a) else tusu()
 	var d = data(t)
 	var trig := float(d.get("trigger", 0.0)) if d != null else 0.0

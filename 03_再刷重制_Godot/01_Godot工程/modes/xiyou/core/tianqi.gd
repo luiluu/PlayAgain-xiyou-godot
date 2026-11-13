@@ -553,7 +553,7 @@ static func _pick_free(host, s: XState, tiers: Array, head: String) -> int:
 
 # ---- 选线（Kyo 11-11「选线做成单独的大厅内事件」；四线剧情与关卡设计稿 v0.4 第 2 节，已确认） ----
 ## 第一次通关第 5 层、回到大厅抽完角色后，小小鱼在方桌主持选线；选了不能换；没选线时 6 层的门不开（XTianqiLine.door_blocked）。
-## 四张卡（XTianqiLineCards）：骑士剪影＋一句话＋它会怎样改变战斗＋考什么；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
+## 四张卡（XTianqiLineCards）：骑士剪影＋一句话＋传闻＋本线特点；选中一张小小鱼补一句，二次确认后写 flags.tianqi.line。
 ## 只有做好了内容的线能选（line_playable）：XTianqiLine.KEYS 里的线（战争 cc/pro-tianqi-war、饥荒），别的线卡片照列、标「还没修好」。
 ## 开关（O-280）：LINE_EVENT_OPEN＝false 时大厅不出这个事件、门也不锁（回到第三批之前）。战争线做好后打开（cc/pro-tianqi-war）。
 static var LINE_EVENT_OPEN := true
@@ -561,19 +561,19 @@ static var LINE_EVENT_OPEN := true
 static var LINE_CHANGEABLE := false
 ## 第一次通关第几层后出选线（已确认：5 层）
 const LINE_FLOOR := 5
-## 四条线（骑士与原身 Kyo 已定；卡面文字照设计稿 v0.4 第 2.2 节）
+## 四条线（骑士与原身 Kyo 已定；卡面文字原照设计稿 v0.4 第 2.2 节，Kyo 11-13 改写：本线特点＋传闻（骑士来历，取四线设计稿第 4 节各线一句话）；test 键沿用，内容是传闻）
 const LINES := [
 	{"key": "war", "name": "战争", "knight": "莉co", "pick": "「烟火大会，开始啦！」",
-		"change": "敌人属性更高，会再动；火花攒满时一起动", "test": "清场：在下一波之前清掉场面",
+		"change": "「火花」异化怪每次行动积攒火花，积满时全体再动一轮。", "test": "她把战场当成烟火大会。\n一旦点燃，便不再停歇。",
 		"guide": "这个……会让敌人一直动。很吵。"},
 	{"key": "death", "name": "死亡", "knight": "勇者", "pick": "「现在一切结束了。」",
-		"change": "有人会被挂上死期，这回合结束时必死", "test": "速度：尽快结束战斗",
+		"change": "「死期」每回合宣判一人，回合结束时，此人必死。", "test": "做了十几年替身，仍未转正。\n如今，他来收尾。",
 		"guide": "这个……会有人突然死掉。你看得见是谁。"},
 	{"key": "plague", "name": "瘟疫", "knight": "混子", "pick": "「不服来打我。」",
-		"change": "中毒、混乱叠满身，减益越多人越虚", "test": "底子：属性和抗性够不够厚",
+		"change": "「病灶」我方不断染上减益，越积越虚弱，积满时爆发。", "test": "他最爱说「不服来打我」。\n后来，这句话成了一种病。",
 		"guide": "这个……会让人生病。一直病。"},
 	{"key": "famine", "name": "饥荒", "knight": "小镇做题家", "pick": "「噫~我中了！」",
-		"change": "技能更贵、回复更少，不花资源的技能也要交口粮", "test": "储备：开场那份资源怎么花",
+		"change": "「饥饿」技能消耗更高、回复更少，口粮比什么都重要。", "test": "一心刷题、没钱修仙的孩子。\n如今，他怎么也吃不饱。",
 		"guide": "这个会让人……很饿。"},
 ]
 
@@ -613,7 +613,7 @@ static func choose_line(s: XState, key: String) -> bool:
 
 
 static func _card_text(l: Dictionary) -> String:
-	return "%s·%s　%s\n它会怎样改变战斗：%s\n考什么：%s" % [l.name, l.knight, l.pick, l.change, l.test]
+	return "%s·%s　%s\n传闻：%s\n本线特点：%s" % [l.name, l.knight, l.pick, str(l.test).replace("\n", ""), l.change]  # 传闻在卡上分两行，对话框里接成一句
 
 
 ## 大厅选线对话（地图场景在大厅里、抽完角色后调）：「再想想」留到下次回大厅；选定后接着跑本线开场

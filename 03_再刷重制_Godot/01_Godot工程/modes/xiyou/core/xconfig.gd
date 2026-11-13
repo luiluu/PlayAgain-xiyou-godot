@@ -22,7 +22,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
 	"codexSkillLevelNotice": true, "cq": false, "codexPowerEnabled": true, "codexBossStatusPanel": true,
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
-	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [], "codexTianqiAliens": [], "codexTianqiGojo": false,
+	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [], "codexTianqiAliens": [], "codexTianqiQiyinParts": [], "codexTianqiGojo": false,
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
 	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没存过时按平台：触屏开、桌面关（ensure_loaded）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
@@ -90,6 +90,10 @@ static func ensure_loaded() -> void:
 					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
 				elif key == "codexTianqiAliens":
 					# 天启篇异化图鉴（重制新加，XTianqiAlienCodex）：数组才认，每项转字符串（"线:种类:级"）
+					var saved = data.get(key)
+					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
+				elif key == "codexTianqiQiyinParts":
+					# 天启篇七印外观（重制新加，XTianqiQiyinLook）：揭到过的套装件「印:部位」，数组才认，每项转字符串
 					var saved = data.get(key)
 					_values[key] = Array(saved).map(func(v): return str(v)) if saved is Array else []
 				elif key == "codexTianqiBadges":
@@ -290,6 +294,22 @@ static func tianqi_badge_mark(line: String) -> bool:
 	if (_values.codexTianqiBadges as Array).has(line):
 		return false
 	_values.codexTianqiBadges.append(line)
+	_write()
+	return true
+
+
+## 天启篇七印外观（XTianqiQiyinLook）：揭到过的套装件「印:部位」，记在配置 codexTianqiQiyinParts（跨存档，只带外观）
+static func tianqi_qiyin_parts() -> Array:
+	ensure_loaded()
+	return (_values.codexTianqiQiyinParts as Array).duplicate()
+
+
+## 记一件；返回这次是不是新记的
+static func tianqi_qiyin_part_mark(key: String) -> bool:
+	ensure_loaded()
+	if (_values.codexTianqiQiyinParts as Array).has(key):
+		return false
+	_values.codexTianqiQiyinParts.append(key)
 	_write()
 	return true
 

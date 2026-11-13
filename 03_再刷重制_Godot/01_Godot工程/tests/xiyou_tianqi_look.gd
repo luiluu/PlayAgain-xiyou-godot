@@ -112,7 +112,7 @@ func _choice() -> void:
 	_check("cards_used", h.picked.size() == 1 and int(h.picked[0][0]) == XTianqi.LINES.size() and h.asked.size() == 1, [h.picked, h.asked])
 	_check("cards_playable_list", h.picked.size() == 1 and h.picked[0][1] == XTianqi.LINES.map(func(l): return XTianqi.line_playable(str(l.key))), h.picked)
 	_check("cards_chose_war", XTianqi.line_of(s) == "war", XTianqi.line_of(s))
-	_check("cards_no_card_text", not h.said.any(func(t): return str(t).contains("它会怎样改变战斗")), h.said.slice(0, 3))
+	_check("cards_no_card_text", not h.said.any(func(t): return str(t).contains("本线特点")), h.said.slice(0, 3))
 	# 再想想：什么都不选
 	s = _state()
 	h = CardHost.new()
@@ -154,7 +154,27 @@ func _choice() -> void:
 	ev2.pressed = true
 	c._handle(ev2)
 	_check("cards_cancel", out == [-1], out)
+	# 立绘：没打过的线画剪影；打过（骑士徽记）的那张露出立绘；选中的抬起、其余压暗
+	_check("cards_silhouette_default", c._cards.all(func(k): return not k.portrait and k.fig.material != null))
+	_check("cards_selected_lifted", c._cards[3].position.y < c._cards[0].position.y or c._cards[3].selected)
 	c.queue_free()
+	XConfig.tianqi_badge_mark("war")
+	var c2 := XTianqiLineCards.new()
+	c2.lines = XTianqi.LINES
+	c2.playable = [true, true, true, true]
+	add_child(c2)
+	await _frames(2)
+	var war_i := XTianqi.LINES.map(func(l): return l.key).find("war")
+	var shown := []
+	for i in c2._cards.size():
+		if c2._cards[i].portrait and c2._cards[i].fig.material == null:
+			shown.append(i)
+	_check("cards_portrait_after_clear", shown == [war_i], shown)
+	# 骑士遗物：打过的那条线点亮、写名字，别的是「？？？」
+	var other := (war_i + 1) % c2._cards.size()
+	_check("cards_relic", c2._cards[war_i].relic_lit and c2._cards[war_i].relic_label.text == XTianqiRewards.relic_name("war", false)
+		and not c2._cards[other].relic_lit and c2._cards[other].relic_label.text == "？？？", [c2._cards[war_i].relic_label.text, c2._cards[other].relic_label.text])
+	c2.queue_free()
 
 
 func _table() -> void:

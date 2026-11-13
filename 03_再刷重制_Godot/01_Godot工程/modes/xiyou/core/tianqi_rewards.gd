@@ -169,6 +169,7 @@ static func make_item(kind: String, line: String, tier := 1, half := false) -> D
 		item.name = relic_name(line, half)
 		item.description = "效果：%s\n%s" % [relic_text(line, half), str(relic_info(line).get("desc", ""))]
 		item[FIELD] = {"kind": "relic", "line": line, "tier": 0, "half": half}
+		XTianqiQiyinArt.dress_item(item, XTianqiQiyinArt.small_icon("relic_%s%s" % [line, "_broken" if half else ""]))  # 美术 O3：残缺版用残图
 	item.baseName = str(item.name)
 	return item
 

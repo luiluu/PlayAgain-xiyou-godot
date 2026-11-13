@@ -156,21 +156,68 @@ static func formula(a, b, item: Dictionary) -> float:
 		value *= 1.2  # 共用觉醒只管直接施放，内部神灶：开自己乘一次
 	return value
 
+## ---- 天启篇（技能重构第七期，稿子 172 号）：只在 XTianqiSkills.cards_on() 时走 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+## 终式（空间斩 9.0、次元斩 10.8）、捌的冲击段／斩击段、领域 +20%、黑闪 +20%（领域中 +30%）、魔虚罗每层 +5%、
+## 捌打护盾 +30%、神武解对裂伤 +20%、神灶：开每点准备 +10%（最多 +30%）；终式无视物防 50%（不再是真实伤害）
+const TQ_TERMINAL := {10234: 9.0, 10235: 10.8}
+
+
+static func tq_ops(item: Dictionary, a, b) -> Array:
+	var ops := []
+	if own(b) and int(temp(b).adapt) > 0 and not own(a):  # 魔虚罗：每层受到的伤害 −5%
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 - 0.05 * int(temp(b).adapt)})
+	var id := int(item.get("id", 0))
+	if not own(a) or id < 10229 or id > 10238 or b == null:
+		return ops
+	var c: Dictionary = cast
+	var terminal := int(c.get("terminal", 0))
+	var actual := terminal if terminal != 0 else id
+	var m := 1.0
+	if terminal != 0 or actual in [10234, 10235]:
+		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.5})
+	if terminal != 0:
+		m *= float(TQ_TERMINAL.get(terminal, 9.0)) / maxf(0.01, float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0)))
+	if id == 10230 and terminal == 0:
+		m *= (0.3 if part == "impact" else 1.6) / 1.9
+	if actual == 10233:
+		m *= 1.0 + 0.1 * mini(3, preparation if internal else int(temp(a).prep))
+	if slash(actual, part):
+		m *= 1.0 + int(temp(a).adapt) * 0.05
+		if actual == 10230 and float(b.shield) > 0.0:
+			m *= 1.3
+		if active_domain(a) and actual != 10237:
+			m *= 1.2
+		if int(c.get("emp", 0)) > 0 and PRIMARY.has(id):
+			m *= 1.3 if active_domain(a) else 1.2
+	var wounded: bool = bool(c.wounded) if not c.is_empty() else b.state_ids.has(WOUND)
+	if wounded and artifact(a):
+		m *= 1.2
+	if m != 1.0:
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": m})
+	return ops
+
+
 static func param(a, i: int, v: float) -> float:
+	if _tq():  # 天启篇：二十指八项 ×3 去掉
+		return v
 	if not own(a) or stage(a) != 3:
 		return v
 	return XPower.js_round(minf(a.param_max(i), v * 3))
 
 
 static func xparam(a, i: int, v: float) -> float:
-	if not own(a) or not (i == 0 or i == 2):
+	if not own(a) or not (i == 0 or i == 2) or _tq():  # 天启篇：五指／十指／二十指的命中暴击去掉
 		return v
 	var s := stage(a)
 	return v + (0.0 if s == 0 else (9.99 if s == 3 else (6.66 if s == 2 else 3.0)))
 
 
 static func passive_cache(a, c: Dictionary) -> void:
-	if not own(a):
+	if not own(a) or _tq():  # 天启篇：终伤、暴伤池去掉
 		return
 	var s := stage(a)
 	var v := 9.99 if s == 3 else (6.66 if s == 2 else 0.0)
@@ -186,7 +233,11 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	var ops := []
 	if id >= 10229 and id <= 10238:
 		ops.append({"op": "set", "field": "mode", "value": "magical" if id == 10232 or id == 10233 else "physical"})
-		if true_hit(a, item):
+		if _tq():  # 天启篇：解无视物防 20%、捌 30%、终式 50%（不再是真实伤害），其余不无视
+			var keep := 1.0 if int(cast.get("terminal", 0)) != 0 or id in [10234, 10235] else (0.8 if id == 10229 else (0.7 if id == 10230 else 1.0))  # 终式的 50% 在 tq_ops（收口之后，不被夹到七成）
+			if keep < 1.0:
+				ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
+		elif true_hit(a, item):
 			ops.append({"op": "set", "field": "kind", "value": "true"})
 			ops.append({"op": "set", "field": "elements", "value": [13]})
 		else:
@@ -257,7 +308,7 @@ static func slash(id: int, p := "") -> bool:
 
 ## trueHit：宿傩的终式或空间斩／次元斩（真伤；免属性、物魔率、防御、harmRe，executeHpDamage 时护盾视为 0）
 static func true_hit(a, item: Dictionary) -> bool:
-	return own(a) and (int(cast.get("terminal", 0)) != 0 or int(item.get("id", 0)) in [10234, 10235])
+	return own(a) and not _tq() and (int(cast.get("terminal", 0)) != 0 or int(item.get("id", 0)) in [10234, 10235])
 
 
 static func _terminal(a, id: int, layers: int) -> int:
@@ -332,7 +383,7 @@ static func start_battle(logic) -> void:
 
 static func start_tp(logic) -> void:
 	for a in _members(logic):
-		a.tp = minf(a.max_tp(), maxf(a.tp, 60.0))
+		a.tp = minf(a.max_tp(), maxf(a.tp, 50.0 if _tq() else 60.0))  # 天启篇：开场至少 50
 
 
 static func end_battle(logic) -> void:
@@ -427,7 +478,7 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 		return []
 	var id := int(skill.get("id", 0))
 	if id == 10231:
-		temp(u).domain = 4
+		temp(u).domain = 3 if _tq() else 4  # 天启篇：领域 3 回合
 		temp(u).prep = 0
 		logic._state_add(u, DOMAIN)
 	if targets.is_empty() or id < 10229 or id > 10238:
@@ -590,4 +641,4 @@ static func on_death(b) -> void:
 
 ## gainHp 包装：带伤口的受治疗减半
 static func heal(b, amount: float) -> float:
-	return floorf(amount * 0.5) if amount > 0.0 and b.state_ids.has(WOUND) else amount
+	return floorf(amount * (0.7 if _tq() else 0.5)) if amount > 0.0 and b.state_ids.has(WOUND) else amount  # 天启篇：裂伤治疗 −30%

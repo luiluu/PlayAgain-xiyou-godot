@@ -262,8 +262,19 @@ static func height(b) -> float:
 
 
 ## healRatio：curve(.25,.30,.35,.40)×Π(1＋passiveHEUP%)
+## ---- 天启篇（技能重构第七期，稿子 175 号）：只在 XTianqiSkills.cards_on() 时走 ----
+## 治疗 10%；储备上限＝谷雨生命上限的 100%（百谷生 120%，所有人一样）；绽放付 20%、按付出量 ×1.0 追加（花荫挡过 +20%）；
+## 花荫每人不超过谷雨生命上限 20%；终结按储备 ×1.0；花期冷却 3；代命每场一次、再生回 30%；我即万物之春储备消耗减半；
+## 百谷生 60 级：开战谷雨自带 30% 储备
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+static var tq_substituted := false
+
+
 static func heal_ratio(a) -> float:
-	var p := curve(int(a.level), [0.25, 0.30, 0.35, 0.40])
+	var p := 0.1 if _tq() else curve(int(a.level), [0.25, 0.30, 0.35, 0.40])
 	for v in a.passive_values("passiveHEUP"):
 		p *= 1.0 + float(v) * 0.01
 	return p
@@ -393,12 +404,14 @@ static func reference_cap(b) -> float:
 	var g := _guyu()
 	if g == null:
 		return 0.0
+	if _tq():
+		return floorf(base_mhp(g) * (1.2 if has_relic(g) else 1.0))
 	return floorf((curve(int(g.level), CAP_CURVE) + 0.15 * stage(g)) * base_mhp(b))
 
 
 ## cap：谷雨本人无上限
 static func cap(b) -> float:
-	return INF if own(b) else reference_cap(b)
+	return INF if own(b) and not _tq() else reference_cap(b)
 
 
 ## param 包装（异化之外、种族之内）：战斗中角色的最大生命加储备
@@ -432,7 +445,7 @@ static func add_e(b, v: float) -> float:
 static func pay(b, q: float) -> float:
 	q = floorf(q)
 	var g := active()
-	var s := 0.0 if g != null and unlocked(g, "spring") else q
+	var s := (floorf(q * 0.5) if _tq() else 0.0) if g != null and unlocked(g, "spring") else q
 	if s > 0.0:
 		reserves[b.actor_id] = maxf(0.0, reserve(b) - s)
 		b.hp = minf(b.hp, b.mhp)
@@ -443,7 +456,7 @@ static func pay(b, q: float) -> float:
 static func close_flower() -> void:
 	flower_until = -1
 	seed = -1
-	open_at = round + 2
+	open_at = round + (3 if _tq() else 2)  # 天启篇：冷却 3
 	for id in rows:
 		rows[id].bud = false
 		rows[id].bud_flower = 0
@@ -483,8 +496,15 @@ static func reset() -> void:
 static func setup(logic) -> void:
 	reset()
 	active_battle = true
+	tq_substituted = false
 	totals = {"generated": 0.0, "wasted": 0.0, "spent": 0.0, "blooms": 0.0, "deaths": 0.0, "regenerations": 0.0, "shielded": 0.0, "transferred": 0.0}
 	_logic_ref = weakref(logic)
+
+
+## 天启篇开战（XTianqiModules.battle_start）：百谷生 60 级（万象长春盏）谷雨自带 30% 储备
+static func tq_battle_start(g) -> void:
+	if own(g) and active_battle and has_relic(g) and int(g.level) >= 60:
+		add_e(g, floorf(reference_cap(g) * 0.3))
 
 
 ## startTurn 包装：首行 round＝turnCount＋1，末行 round＝turnCount
@@ -620,6 +640,10 @@ static func protect(b) -> bool:
 		return false
 	if b.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) or b.immortal:  # 原有死亡免疫与 YEP 不死优先
 		return false
+	if _tq():  # 天启篇：代替倒下每场一次
+		if tq_substituted:
+			return false
+		tq_substituted = true
 	e.pending = true
 	b.hp = 1.0
 	return true
@@ -637,7 +661,7 @@ static func root(g, forced: bool) -> void:
 	if not unlocked(g, "root") or int(r.root_until) >= 0:
 		return
 	var q := floorf(reserve(g) * 0.5)
-	var s := 0.0 if unlocked(g, "spring") else q
+	var s := (floorf(q * 0.5) if _tq() else 0.0) if unlocked(g, "spring") else q
 	if s > 0.0:
 		reserves[g.actor_id] = reserve(g) - s
 		_total("spent", s)
@@ -681,10 +705,10 @@ static func regenerate(g) -> void:
 	internal += 1
 	r.root_until = -1
 	g.remove_state(1)
-	g.hp = g.mhp
+	g.hp = maxf(1.0, floorf(g.mhp * 0.3)) if _tq() else g.mhp  # 天启篇：复活回 30%
 	internal -= 1
 	_total("regenerations", 1.0)
-	if has_relic(g) and int(g.level) >= 60 and not spring_return_done:
+	if has_relic(g) and int(g.level) >= 60 and not spring_return_done and not _tq():  # 天启篇：归春换成开战自带 30% 储备
 		spring_return_done = true
 		var q := floorf(base_mhp(g) * 0.18)
 		add_e(g, q)
@@ -760,7 +784,7 @@ static func _special(logic, u, k: String, t) -> void:
 				return
 			_special_done = true
 			pay(u, _shield_value)
-		var v := minf(_shield_value, floorf(base_mhp(t)))
+		var v := minf(_shield_value, floorf(base_mhp(u) * 0.2 if _tq() else base_mhp(t)))  # 天启篇：每人不超过谷雨生命上限 20%
 		_grant_shield(u, t, v)
 		var r := _row(t)
 		if int(r.spring_action) != _action_serial:
@@ -773,7 +797,7 @@ static func _special(logic, u, k: String, t) -> void:
 			return
 		_special_done = true
 		var q := reserve(u)
-		_finish_power = q * curve(int(u.level), [33, 50], [40, 60])
+		_finish_power = q * (1.0 if _tq() else curve(int(u.level), [33, 50], [40, 60]))  # 天启篇：按储备 ×1.0
 		pay(u, q)
 		close_flower()
 
@@ -960,16 +984,16 @@ static func bloom(logic, b) -> Array:
 		return []
 	var r := _row(b)
 	var bud := has_bud(b) and int(r.bud_flower) == flower_serial
-	var q := floorf(reserve(b) * ((0.5 if has_spring(g) and int(g.level) >= 60 else 0.35) if bud else BLOOM_RATIO))
+	var q := floorf(reserve(b) * ((0.5 if has_spring(g) and int(g.level) >= 60 else 0.35) if bud else (0.2 if _tq() else BLOOM_RATIO)))  # 天启篇：每次出手耗 20%
 	if q < 1.0:
 		return []
 	pay(b, q)
 	r.bud = false
 	r.bud_flower = 0
 	_total("blooms", 1.0)
-	var boost := (1.2 if int(g.level) >= 60 else 1.1) if has_spring(g) and int(g.level) >= 20 and bool(r.spring_boost) else 1.0
+	var boost := (1.2 if int(g.level) >= 60 or _tq() else 1.1) if has_spring(g) and int(g.level) >= 20 and bool(r.spring_boost) else 1.0  # 天启篇：护盾吸收后 +20%
 	r.spring_boost = false
-	_bloom_power = q * curve(int(g.level), [5, 6, 7, 8]) * boost
+	_bloom_power = q * (1.0 if _tq() else curve(int(g.level), [5, 6, 7, 8])) * boost  # 天启篇：追加等量
 	calc_owner = g
 	var out: Dictionary = logic.apply(b, XDB.rec("Skills", BLOOM), target)
 	calc_owner = null

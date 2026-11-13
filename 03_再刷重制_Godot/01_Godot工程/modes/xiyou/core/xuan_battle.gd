@@ -289,8 +289,34 @@ static func weight(a) -> float:
 	return XGuyu.curve(int(a.level), WEIGHT_VALUES, WEIGHT_LEVELS)
 
 
+## ---- 天启篇（技能重构第七期，稿子 177 号）：只在 XTianqiSkills.cards_on() 时走 ----
+## 璃壁＝目标生命上限 20%（星影 5%）；共宿：被附身的队友伤害 +10%、星影 +5%，共享双防 20%；棱光每个星影多一段只算 +0.5（最多 +1.5）；
+## 璇玑星盘：列星持续 +1 回合
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+static func tq_ops(item: Dictionary, a, _b) -> Array:
+	if not XBinding.in_battle() or not a is XActor:
+		return []
+	if is_xuan(a) and key_of(item) == "lengguang" and not data.is_empty() and XBinding.current_round() <= int(data.liexingUntil):
+		var h = XBinding.host(a)
+		var n: int = beneficiaries(a).list.filter(func(t): return t != h).size()
+		if n > 0:
+			return [{"op": "mul", "field": "finalMultiplier", "value": (1.0 + 0.2 * mini(3, n)) / (1.0 + n)}]
+		return []
+	if is_xuan(a) or not int(item.get("damage", {}).get("type", 0)) in [1, 5]:
+		return []
+	var x = xuan()
+	if not _live(x) or not _gongsu(x) or not in_cover(x, a):
+		return []
+	return [{"op": "mul", "field": "finalMultiplier", "value": 1.1 if is_same(XBinding.host(x), a) else 1.05}]
+
+
 ## X.shieldAmount
 static func shield_amount(a, t) -> float:
+	if _tq():
+		return floorf(float(t.mhp) * (0.05 if t.state_ids.has(state_id("shadow")) and not is_same(XBinding.host(a), t) else 0.2))
 	return maxf((LIBI_MAT * float(a.mat) + LIBI_HP * float(a.mhp)) * weight(a), XGuyu.curve(int(a.level), [0.15, 0.35], [1, 60]) * float(t.mhp))
 
 
@@ -513,6 +539,8 @@ static func gongsu_damage_rate(a) -> float:
 
 
 static func gongsu_defense_rate(a) -> float:
+	if _tq():
+		return 0.2 if _gongsu(a) else 0.0
 	return XGuyu.curve(int(a.level), GONGSU_DEF[0], GONGSU_DEF[1]) if _gongsu(a) else 0.0
 
 
@@ -551,7 +579,7 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	if not str(XRaceBattle._damage_spec(item).get("kind", "normal")) in ["normal", "true"]:
 		return []
 	var x = xuan()
-	if not _live(x) or not _gongsu(x) or not in_cover(x, a):
+	if not _live(x) or not _gongsu(x) or not in_cover(x, a) or _tq():  # 天启篇在 tq_ops（收口之后）
 		return []
 	return [{"op": "mul", "field": "finalMultiplier", "value": 1.0 + gongsu_damage_rate(x)}]
 
@@ -652,7 +680,7 @@ static func shadow_candidates(logic, a) -> Array:
 static func _liexing(logic, u) -> void:
 	if data.is_empty():
 		return
-	data.liexingUntil = XBinding.current_round() + LIEXING_TURNS - 1
+	data.liexingUntil = XBinding.current_round() + LIEXING_TURNS - 1 + (1 if _tq() and relic_on(u) else 0)  # 天启篇：璇玑星盘列星 +1 回合
 	data.homeUsed = false
 	data.relicHealUsed = false
 	data.relicWallUsed = false

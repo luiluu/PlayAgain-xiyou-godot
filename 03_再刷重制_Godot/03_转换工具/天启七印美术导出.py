@@ -144,6 +144,8 @@ def main():
         copy(os.path.join(o3, "icons_32", "遗物", stem + "_残.png"), os.path.join(ic, "relic_%s_broken.png" % key))
     for stem, key in BADGES.items():
         copy(os.path.join(o3, "icons_32", "徽记", stem + ".png"), os.path.join(ic, "badge_%s.png" % key))
+        # 选线竖卡上「已通关」旁边画大一点的徽记：128 母版
+        copy(os.path.join(o3, "masters_128", "徽记", stem + ".png"), os.path.join(OUT, "badges_128", "%s.png" % key))
     n = sum(1 for _, _, fs in os.walk(OUT) for f in fs if f.endswith(".png"))
     print("写好 %d 张图 → %s" % (n, OUT))
 

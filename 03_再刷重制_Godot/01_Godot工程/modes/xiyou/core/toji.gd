@@ -106,6 +106,20 @@ const UNLOCK := {10203: 1, 10205: 1, 10206: 10, 10207: 20, 10208: 30, 10209: 35,
 const RECRUIT_TEXT := ["小伙伴 伏黑甚尔 加入队伍", "获得并装备专属法宝：藏兵咒灵"]
 
 
+## ---- 天启篇（技能重构第七期，稿子 171 号）：只在 XTianqiSkills.cards_on() 时走 ----
+static func _tq() -> bool:
+	return XTianqiSkills.cards_on()
+
+
+static func _boss(t) -> bool:
+	var meta: Dictionary = t.data().get("meta", {}) if t is XEnemy else {}
+	return meta.has("boss") or meta.has("Boss")
+
+
+## 天逆鉾：目标最近一次被封的回合（同一目标 3 回合内只封一次）
+static var seal_turn := {}
+
+
 static func own(a) -> bool:
 	return a is XActor and int(a.actor_id) == ACTOR
 
@@ -200,7 +214,7 @@ static func param(a, i: int, v: float) -> float:
 		return 0.0
 	if i != 0 and i != 2 and i != 6:
 		return v
-	var growth := _growth_level(a)
+	var growth := 0.0 if _tq() else _growth_level(a)  # 天启篇：暴君按等级的属性成长去掉（魔法并进生命、魔攻并进物攻保留）
 	if i == 0:
 		var source_mp: float = a.param_native(1) if knows(a, NO_MP) else 0.0
 		return maxf(1.0, XPower.js_round((v + source_mp) * (1 + growth * 0.10)))
@@ -212,20 +226,23 @@ static func param(a, i: int, v: float) -> float:
 	if fine or knows(a, BLOOD):
 		var hp: float = a.param(0)
 		var lost := maxf(0.0, minf(1.0, 1 - float(a.hp) / maxf(1.0, hp)))
-		result = (result + hp * (0.05 if fine else 0.025)) * (1 + lost * (0.15 if fine else 0.12))
-	if knows(a, POWER):
+		if _tq():  # 天启篇：物攻＋生命上限 2%，已损生命最多 +15%
+			result = (result + hp * 0.02) * (1 + lost * 0.15)
+		else:
+			result = (result + hp * (0.05 if fine else 0.025)) * (1 + lost * (0.15 if fine else 0.12))
+	if knows(a, POWER) and not _tq():  # 天启篇：大力并进预算
 		result *= 1.2
 	return maxf(1.0, XPower.js_round(result))
 
 
 static func xparam(a, i: int, v: float) -> float:
-	return v + 0.10 * float(a.level) if i == 2 and knows(a, TYRANT) else v
+	return v + 0.10 * float(a.level) if i == 2 and knows(a, TYRANT) and not _tq() else v  # 天启篇：按等级的暴击去掉
 
 
 static func passive_cache(a, c: Dictionary) -> void:
 	if not own(a):
 		return
-	var growth := 0.40 * float(a.level) if knows(a, TYRANT) else 0.0
+	var growth := 0.40 * float(a.level) if knows(a, TYRANT) and not _tq() else 0.0  # 天启篇：按等级的终伤、暴伤去掉
 	c.globalHarmRi += growth
 	c.critHarmRi += growth
 
@@ -275,6 +292,18 @@ static func damage_ops(item: Dictionary, a) -> Array:
 	if not own(a) or not (is_main(id) or is_random(id) or id == REFLECT):
 		return []
 	var ops := [{"op": "set", "field": "mode", "value": "magical" if id == REFLECT else "physical"}]
+	if _tq():  # 天启篇：五感无视物防 10%；释魂刀穿透最多 10%；倍率乘区去掉（游云按五段折、溅射比例在 tq_ops）
+		if knows(a, SENSES):
+			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.9})
+			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.9})
+		if id == MAIN[2] or id == RANDOM[2] or (is_main(id) and int(action.get("borrow", -1)) == 2):
+			ops.append({"op": "set", "field": "physicalIncomingPierce", "value": 0.1})
+		var m := spread_rate if spread_rate > 0.0 else 1.0
+		if id == MAIN[0]:
+			m *= 0.2
+		if m != 1.0:
+			ops.append({"op": "mul", "field": "skillMultiplier", "value": m})
+		return ops
 	if knows(a, SENSES):
 		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.67})
 		ops.append({"op": "mul", "field": "magicalDefenseRate", "value": 0.67})
@@ -404,6 +433,7 @@ static func start_battle(logic) -> void:
 	internal = false
 	spread_rate = 0.0
 	seal_charges.clear()
+	seal_turn.clear()
 	if logic.state.party.has(ACTOR):
 		set_shape(logic, logic.state.actor(ACTOR), 0)
 
@@ -460,7 +490,7 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 	action.merge({"extra": extra, "index": 0, "borrow": -1, "spear": false, "done": false})
 	var out := []
 	# 武器库（进阶后 10211）：50% 先用随机另一把可切咒具的武器库技能打一次，本次主技能借它的特效
-	if knows(u, ARMORY) and rank(u) >= 1 and logic._float("toji_armory") < 0.5:
+	if knows(u, ARMORY) and rank(u) >= 1 and logic._float("toji_armory") < ((0.3 + (0.1 if weapon(u) else 0.0)) if _tq() else 0.5):  # 天启篇：30%，藏兵咒灵 +10%
 		var pool := range(4).filter(func(n): return n != index and eligible_shape(u, n))
 		if not pool.is_empty():
 			var pick: int = pool[floori(logic._float("toji_pick") * pool.size())]
@@ -539,11 +569,14 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 	var borrow := int(action.get("borrow", -1))
 	var spear: bool = bool(action.get("spear", false))
 	if (is_main(id) and (id == MAIN[3] or (borrow == 3 and spear))) or (id == RANDOM[3] and spear):
-		logic._state_add(t, SEAL)
+		if not (_tq() and (_boss(t) or int(seal_turn.get(t, -99)) > logic.turn - 3)):  # 天启篇：首领不封，同一目标 3 回合内只封一次
+			logic._state_add(t, SEAL)
+			if _tq() and t.state_ids.has(SEAL):
+				seal_turn[t] = logic.turn
 		if t.state_ids.has(SEAL):
 			seal_charges[t] = maxi(maxi(seal_count(t), 1), 2 if id == MAIN[3] and awakened(u, id) else 1)
 	if spread_rate == 0.0 and is_main(id) and (id == MAIN[1] or borrow == 1):
-		out.append_array(_spread(logic, u, skill, t, (0.50 if awakened(u, id) else 0.33) if id == MAIN[1] else 0.16))
+		out.append_array(_spread(logic, u, skill, t, ((0.50 if awakened(u, id) else 0.30) if _tq() else (0.50 if awakened(u, id) else 0.33)) if id == MAIN[1] else 0.16))
 	elif spread_rate == 0.0 and id == RANDOM[1]:
 		out.append_array(_spread(logic, u, skill, t, 0.16))
 	return out
@@ -578,7 +611,7 @@ static func _spread(logic, u, skill: Dictionary, source, rate: float) -> Array:
 
 ## shadowRate：快的一方相对慢的一方速度比超出 1 的部分 ×0.15，夹到 0～cap
 static func _shadow(faster, slower, cap: float) -> float:
-	return minf(cap, maxf(0.0, float(faster.agi) / maxf(1.0, float(slower.agi)) - 1) * 0.15)
+	return minf(0.2 if _tq() else cap, maxf(0.0, float(faster.agi) / maxf(1.0, float(slower.agi)) - 1) * 0.15)  # 天启篇：最多 +20%
 
 
 ## itemHit 包装：天与咒缚的物理行动命中＋影速（夹值在外层）
@@ -635,14 +668,14 @@ static func _slayer_hit(item: Dictionary, a, b) -> bool:
 
 ## 伤害钩子 toji 受击一支：受伤 ×0.2
 static func incoming_ops(item: Dictionary, a, b) -> Array:
-	return [{"op": "mul", "field": "incomingMultiplier", "value": 0.2}] if _slayer_hit(item, a, b) else []
+	return [{"op": "mul", "field": "incomingMultiplier", "value": 0.7 if _tq() else 0.2}] if _slayer_hit(item, a, b) else []  # 天启篇：魔法伤害 −30%
 
 
 ## f.after：结算值为正时记反弹（返回原结算值）
 static func record(a, item: Dictionary, b, calc: Dictionary, value: float) -> float:
 	if _slayer_hit(item, a, b) and value > 0.0:
 		var row: Dictionary = calc.get("breakdown", {}).get("row", {})
-		pending = {"target": b, "source": a, "base": 0.264 * value / 0.2, "element": int(row.get("element", item.get("damage", {}).get("elementId", 0)))}
+		pending = {"target": b, "source": a, "base": (0.3 * value * (0.3 / 0.7)) if _tq() else 0.264 * value / 0.2, "element": int(row.get("element", item.get("damage", {}).get("elementId", 0)))}
 	return value
 
 
