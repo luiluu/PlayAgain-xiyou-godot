@@ -207,8 +207,21 @@ static func currency_text(c: XMVCanvas, value, avail: float) -> String:
 
 
 ## Yanfly.Util.toGroup：千位逗号
+## 整数写成字符串。int() 只到 ±9223372036854775807，更大的值（伤害、木桩血量上了千京）转出来是溢出值
+## （玩家反馈 v0.01.07 画面出现 9223372036854775808）：超出时按浮点数原样写出全部整数位。
+## 回退：BIG_INT_TEXT = false 回到直接 str(int())（O-待定）。
+static var BIG_INT_TEXT := true
+const INT_SAFE := 9.2e18
+
+
+static func int_text(v: float) -> String:
+	if BIG_INT_TEXT and absf(v) >= INT_SAFE:
+		return String.num(v, 0)
+	return str(int(v))
+
+
 static func _group(v: float) -> String:
-	var s := str(int(v))
+	var s := int_text(v)
 	var neg := s.begins_with("-")
 	if neg:
 		s = s.substr(1)
