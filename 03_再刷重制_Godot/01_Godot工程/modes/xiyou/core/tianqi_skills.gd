@@ -39,14 +39,23 @@ static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属
 static var _gear_cache: Dictionary = {}  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
 
 
+## 读表失败过（发行包排除了 tianqi_data/，见 07_开发环境/发行内容审计.py）：记下来不再重读、不再报错。
+## XGojo.patch_skills 每次建技能表都要问 has()，不记的话发行包里一场挂机战斗就要重试开文件、报错几千次。
+static var _load_failed := false
+
+
 static func data() -> Dictionary:
 	if _data.is_empty():
+		if _load_failed:
+			return {}
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:
+			_load_failed = true
 			push_error("XTianqiSkills: 读不到 " + PATH)
 			return {}
 		var parsed = JSON.parse_string(f.get_as_text())
 		if not parsed is Dictionary:
+			_load_failed = true
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
