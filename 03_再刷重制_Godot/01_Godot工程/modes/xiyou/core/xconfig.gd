@@ -24,7 +24,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
 	"codexWeakFiveClearV2": false, "codexWhisperSeen": [],
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
-	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没存过时按平台：触屏开、桌面关（ensure_loaded）
+	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -92,8 +92,10 @@ static func ensure_loaded() -> void:
 					# installWeakChallengeRuntime applyData：!!(d && d.codexWeakFiveClearV2 === true)（XWeakChallenge）
 					_values[key] = data.get(key) is bool and data[key] == true
 				elif key == XScreenScale.KEY:
-					# 画面平滑：存过 true／false 才认，没存过照平台默认
-					_values[key] = bool(data[key]) if data.get(key) is bool else XScreenScale.default_on()
+					# 画面平滑：玩家在设置页亲手选过才认存的值，没选过照默认（XScreenScale.saved_value）
+					_values[key] = XScreenScale.saved_value(data)
+					if data.get(XScreenScale.CHOSEN_KEY) == true:
+						_values[XScreenScale.CHOSEN_KEY] = true
 				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
@@ -131,6 +133,7 @@ static func set_flag(key: String, value: bool) -> bool:
 	if key == "MapXy":
 		_map_xy_configured = true
 	if key == XScreenScale.KEY:
+		_values[XScreenScale.CHOSEN_KEY] = true  # 亲手选过的记号，下次读配置才认这个值
 		XScreenScale.apply(value)
 	return _write()
 
