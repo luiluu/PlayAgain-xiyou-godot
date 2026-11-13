@@ -350,7 +350,7 @@ func _operation_resources(b: XBattler) -> XResourceContext:
 func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> void:
 	if resources != _action_resources and resources != _battle_resources:
 		resources.publish()
-		# O-待定-8：这份逐次快照只有测试看（lifecycle_effects），角色拍一次要现读三项上限；默认不留。
+		# O-待定-3：这份逐次快照只有测试看（lifecycle_effects），角色拍一次要现读三项上限；默认不留。
 		# 敌人开着 krz 能力值缓存时读上限会把格子填上（影响之后读到的值），照旧每次都拍。LIFECYCLE_LOG = true 回到全部都留。
 		if not LIFECYCLE_LOG and not b.param_cache_on:
 			return
