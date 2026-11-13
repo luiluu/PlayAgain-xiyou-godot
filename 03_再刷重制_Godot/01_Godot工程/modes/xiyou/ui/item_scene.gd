@@ -296,7 +296,7 @@ func _augment_row() -> Dictionary:
 func _usable(item: Dictionary) -> bool:
 	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) and not XImportedBalance.is_disabled_horn(item) and not XCat.horn_blocked(XState.current, item) \
 		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item) \
-		and not XFabaoFeed.is_pill(int(item.get("id", 0)))  # 法宝经验丹不能用（O-待定-3）
+		and not XFabaoFeed.is_pill(int(item.get("id", 0)))  # 法宝经验丹不能用（O-401）
 
 
 func _make_actions() -> void:
@@ -305,7 +305,7 @@ func _make_actions() -> void:
 	if _item.has("instanceId"):
 		_actions.append({"text": str(XDB.plugin("YEP_X_ItemUpgradeSlots").get("Upgrade Command", "升级 %1")).replace("%1", label), "symbol": "upgrade", "enabled": true})
 		_actions.append_array(augment_actions(_item))
-		_actions.append_array(XFabaoFeed.actions(XState.current, _item))  # 法宝吃装备（O-待定-3）
+		_actions.append_array(XFabaoFeed.actions(XState.current, _item))  # 法宝吃装备（O-401）
 	else:
 		_actions.append({"text": "道具置顶", "symbol": "top", "enabled": true})
 	_actions.append({"text": "出售锁定", "symbol": "lock", "enabled": true})
