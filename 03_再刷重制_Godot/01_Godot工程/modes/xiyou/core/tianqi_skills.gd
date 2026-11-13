@@ -258,6 +258,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for i in out.size():
 					if str(out[i][0]) == "action effect":
 						last = i
+				if last < 0:  # 这一段（多半是默认 whole）没有小写段：不加（以前会插到开头，多打一段）
+					continue
 				for k in int(op.get("n", 1)):
 					out.insert(last + 1, ["action effect", []])
 			"clear_effect_args":
@@ -562,6 +564,30 @@ static func _cond(c: Dictionary, a, b) -> float:
 				if owns(a, k):
 					v += float(c.offset_with[k])
 			return 1.0 + clampf(v * per, 0.0, cap)
+		"var_sum":  # 几个变量按权重相加（vars {变量号: 权重}）×per（非天吞剑：十把剑各一个变量）
+			var s2 := XState.current
+			var v2 := 0.0
+			if s2 != null:
+				for k in c.get("vars", {}):
+					v2 += float(s2.variable(int(k))) * float(c.vars[k])
+			return 1.0 + clampf(v2 * per, 0.0, cap)
+		"target_hp_lost":  # 目标已损生命比例×per（渡鸦黑翼裁决：最多 +50%）
+			return 1.0 + clampf((1.0 - float(b.hp) / maxf(1.0, float(b.mhp))) * per, 0.0, cap)
+		"raven_soul":  # 渡鸦灵魂进度（满 15 万为 1）×cap
+			return 1.0 + cap * XRaven.progress(a) if XRaven.own(a) else 1.0
+		"stat_ratio":  # 自己两项属性之比（num／den）到了 steps [[比, 倍率]…] 里的线取最高一档（黄泉幸运加段：幸运达到物攻一半、等于物攻）
+			var r := float(a.param(STATS.find(str(c.num)))) / maxf(1.0, float(a.param(STATS.find(str(c.den)))))
+			var m := 1.0
+			for st in c.get("steps", []):
+				if r >= float(st[0]):
+					m = maxf(m, float(st[1]))
+			return m
+		"battle_turn":  # 本场已过的回合数×per（拳一无限超越：每回合 +3%，最多 10 回合；offset_with 带着这件开局就算几层）
+			var nt := maxi(0, int(a.get_meta("xtq_turn", 0)) - 1) if a is Object else 0
+			for k in c.get("offset_with", {}):
+				if owns(a, k):
+					nt += int(c.offset_with[k])
+			return 1.0 + clampf(nt * per, 0.0, cap)
 		"target_states":
 			var n := 0
 			for id in b.state_ids:
@@ -643,14 +669,16 @@ static func _cond(c: Dictionary, a, b) -> float:
 			ok = (c.states as Array).any(func(id): return b.is_state_affected(int(id)))
 		"target_hp_above":
 			ok = float(b.hp) >= float(b.mhp) * float(c.get("rate", 1.0))
-		"target_hp_below":
-			ok = float(b.hp) < float(b.mhp) * float(c.get("rate", 0.0))
+		"target_hp_below":  # rate_with／rate_add_with {要有: 线}：专属物提高残血线（病娇巴雷特 25% → 35%）
+			ok = float(b.hp) < float(b.mhp) * _rate(a, c)
 		"self_hp_above":  # 自己生命不低于 rate（玉面狐狸朔月依依）
 			ok = float(a.hp) >= float(a.mhp) * float(c.get("rate", 1.0))
 		"self_hp_below":
 			ok = float(a.hp) < float(a.mhp) * float(c.get("rate", 0.0))
 		"target_full_hp":
 			ok = float(b.hp) >= float(b.mhp)
+		"raven_myth":  # 渡鸦神话形态里
+			ok = XRaven.own(a) and XRaven.is_myth(a)
 	return float(c.get("mult", 1.0)) if ok else 1.0
 
 
@@ -758,6 +786,7 @@ static func begin_action(logic, u, skill) -> void:
 	var casts: Dictionary = u.get_meta("xtq_casts") if u.has_meta("xtq_casts") else {}
 	casts[int(skill.get("id", 0))] = int(casts.get(int(skill.get("id", 0)), 0)) + 1
 	u.set_meta("xtq_casts", casts)
+	u.set_meta("xtq_turn", int(logic.get("turn")) if logic is Object and logic.get("turn") != null else 0)  # 本场第几回合（battle_turn 条件）
 
 
 static func after_apply(logic, u, skill, t, r := {}) -> void:
@@ -891,6 +920,7 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 					if e.is_state_affected(int(r.state)):
 						e.state_turns[int(r.state)] = int(r.turns)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
+		a.set_meta("xtq_turn", 0)
 		sync_learn(a)
 		for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("start_tp", []):  # 开场 TP（天蓬吞云）
 			if not r.has("need") or owns(a, r.need):
@@ -900,6 +930,33 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 				for x in (list if r.get("party", false) else [a]):  # party：开局挂给全队的状态（花木兰念乡：振奋多 1 回合）
 					if x is XBattler and x.is_state_affected(int(r.state)):
 						x.state_turns[int(r.state)] = int(r.turns)
+
+
+## 专属角色模块（渡鸦、米拉、黄泉、镜流、甚尔、宿傩、饿狼、云裳、璇、屠苏、流萤等）的伤害帧操作收口（第六期）：天启篇卡开着、放的是表里改写过的技能时，
+## 模块自己的增伤乘区（终伤／技能／结算倍率 >1、终伤／普通／元素／暴击加成 >0）去掉，增伤改由卡里的被动和条件按预算给；
+## 无视双防最多 30%（防御率乘数不低于 0.7），抗性穿透最多 10%；承伤、治疗、伤害种类这些照旧。原版档、卡没开、别的技能原样返回。
+static var MODULE_CAP := true
+
+
+static func module_ops(item: Dictionary, a, ops: Array) -> Array:
+	if not MODULE_CAP or not (a is XActor) or not has(int(item.get("id", 0))) or not cards_on():
+		return ops
+	var out := []
+	for o in ops:
+		var f := str(o.get("field", ""))
+		var kind := str(o.get("op", ""))
+		if kind == "mul" and f in ["finalMultiplier", "skillMultiplier", "settlementMultiplier"] and float(o.get("value", 1.0)) > 1.0:
+			continue
+		if kind == "add" and f in ["finalAdd", "normalAdd", "elementAdd", "criticalAdd"] and float(o.get("value", 0.0)) > 0.0:
+			continue
+		if kind == "mul" and f in ["magicalDefenseRate", "physicalDefenseRate"]:
+			o = o.duplicate()
+			o.value = maxf(float(o.value), 0.7)
+		elif kind == "add" and f == "resistancePierce":
+			o = o.duplicate()
+			o.value = minf(float(o.value), 0.1)
+		out.append(o)
+	return out
 
 
 ## 伤害钩子（XActorDamageHooks.capture）：技能行 pierce {rate, need} 无视目标一部分双防；角色行 heal_mult [{need, mult}] 治疗量

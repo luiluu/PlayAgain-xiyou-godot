@@ -45,6 +45,7 @@ func _run() -> void:
 	_p3()
 	_p4()
 	_p5()
+	_p6()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -747,11 +748,83 @@ func _p5() -> void:
 	lg.end_battle(0)
 
 
+func _p6() -> void:
+	var ids := [147, 155, 163, 167, 142]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg)
+	# 非天吞剑：十个变量加权相加，每点 +2%，满 +30%；纯阳破军上限 +35%
+	var ft: XActor = s.actor(147)
+	var tj: Dictionary = XTianqiSkills.data().skills["10072"].damage.conds[0]
+	for v in [1580, 1581, 1582]:
+		s.set_variable(v, 1)
+	var t4 := XTianqiSkills._cond(tj, ft, b)
+	for v in range(1580, 1590):
+		s.set_variable(v, 1)
+	_check("p6_var_sum", is_equal_approx(t4, 1.08) and is_equal_approx(XTianqiSkills._cond(tj, ft, b), 1.3), [t4, XTianqiSkills._cond(tj, ft, b)])
+	# 病娇爱之惩罚：残血线 25%，天外天·巴雷特提到 35%
+	var bj: XActor = s.actor(155)
+	var c25: Dictionary = XTianqiSkills.data().skills["10020"].damage.conds[0]
+	b.hp = float(b.mhp) * 0.3
+	var no85 := XTianqiSkills._cond(c25, bj, b)
+	_wear(bj, "weapon", 85)
+	var with85 := XTianqiSkills._cond(c25, bj, b)
+	b.hp = b.mhp
+	_check("p6_hp_below_rate_with", is_equal_approx(no85, 1.0) and is_equal_approx(with85, 1.5), [no85, with85])
+	# 拳一无限超越：本场第几回合（开始行动时记），每回合 +3%，最多 10 回合；一拳法宝开局就算 2 层
+	var qy: XActor = s.actor(163)
+	var bt := {"if": "battle_turn", "per": 0.03, "cap": 0.3, "offset_with": {"e124": 2}}
+	qy.set_meta("xtq_turn", 1)
+	var r1 := XTianqiSkills._cond(bt, qy, b)
+	qy.set_meta("xtq_turn", 5)
+	var r5 := XTianqiSkills._cond(bt, qy, b)
+	qy.set_meta("xtq_turn", 30)
+	_check("p6_battle_turn", is_equal_approx(r1, 1.0) and is_equal_approx(r5, 1.12) and is_equal_approx(XTianqiSkills._cond(bt, qy, b), 1.3), [r1, r5])
+	# 目标已损生命、两项属性之比
+	b.hp = float(b.mhp) * 0.5
+	_check("p6_target_hp_lost", is_equal_approx(XTianqiSkills._cond({"if": "target_hp_lost", "per": 0.5, "cap": 0.5}, qy, b), 1.25))
+	b.hp = b.mhp
+	var ratio := float(qy.luk) / maxf(1.0, float(qy.atk))
+	var want := 1.3 if ratio >= 1.0 else (1.15 if ratio >= 0.5 else 1.0)
+	_check("p6_stat_ratio", is_equal_approx(XTianqiSkills._cond({"if": "stat_ratio", "num": "luk", "den": "atk", "steps": [[0.5, 1.15], [1.0, 1.3]]}, qy, b), want))
+	# 专属模块收口：表里改写过的技能，模块的终伤／结算倍率、加成去掉，无视防御最多三成；别的技能原样
+	var rv: XActor = s.actor(167)
+	var mods := [{"op": "mul", "field": "settlementMultiplier", "value": 4.25}, {"op": "add", "field": "finalAdd", "value": 1.5},
+		{"op": "mul", "field": "magicalDefenseRate", "value": 0.1}, {"op": "set", "field": "mode", "value": "magical"},
+		{"op": "mul", "field": "incomingMultiplier", "value": 0.8}]
+	var capped := XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods)
+	var kept := XTianqiSkills.module_ops(XDB.rec("Skills", 1), rv, mods)
+	_check("p6_module_ops", capped.size() == 3 and is_equal_approx(float(capped[0].value), 0.7) and kept.size() == 5, capped)
+	XTianqiSkills.MODULE_CAP = false
+	_check("p6_module_cap_switch", XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods).size() == 5)
+	XTianqiSkills.MODULE_CAP = true
+	# 麒麟踏天来：人剑 20% 接地剑（半伤），麒麟对剑 +10%
+	var ql: XActor = s.actor(142)
+	ql.learn_skill(10109)
+	var fl := XTianqiSkills._follow_of(ql, XDB.rec("Skills", 10098))
+	_check("p6_qilin_follow", fl.size() == 1 and int(fl[0][0].id) == 10099 and is_equal_approx(float(fl[0][1]), 0.2) and is_equal_approx(float(fl[0][2]), 0.5), fl.size())
+	# 新招、补学、状态
+	_check("p6_new_skills", str(XDB.rec("Skills", 10737).name) == "剑*非天·一线" and int(XDB.rec("Skills", 10737).scope) == 1 and str(XDB.rec("Skills", 10753).name) == "万剑归宗·三段")
+	_check("p6_learn", (XTianqiSkills.data().learn.get("165", []) as Array).size() == 2 and (XTianqiSkills.data().learn.get("156", []) as Array).size() == 2)
+	_check("p6_states", str(XDB.rec("States", 10826).name) == "趴下" and is_equal_approx(float(XTianqiSkills._states[2550].get("reflect", 0.0)), 0.3))
+	lg.end_battle(0)
+
+
 func _smoke() -> void:
 	for group in [[3, 4, 5, 6, 7], [8, 9, 10, 11, 12], [13, 14, 15, 1, 2], [16, 17, 18, 19, 20], [21, 22, 23, 24, 25], [26, 27, 28, 29, 30],
 			[31, 32, 33, 34, 35], [36, 37, 38, 39, 40], [41, 42, 43, 44, 45], [46, 47, 48, 49, 50], [51, 52, 53, 54, 55], [56, 57, 58, 59, 60],
 			[61, 62, 63, 64, 65], [66, 67, 68, 69, 70], [71, 72, 73, 74, 75], [76, 77, 78, 79, 80], [81, 82, 83, 84, 85], [86, 87, 88, 89, 90], [91, 92, 93, 94, 61],
-			[95, 96, 97, 98, 99], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109], [115, 117, 118, 119, 120], [122, 123, 124, 127, 128], [129, 130, 131, 95, 100]]:
+			[95, 96, 97, 98, 99], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109], [115, 117, 118, 119, 120], [122, 123, 124, 127, 128], [129, 130, 131, 95, 100],
+			[142, 147, 148, 149, 150], [151, 153, 154, 155, 156], [158, 159, 162, 163, 164], [165, 142, 147, 148, 149],
+			[167, 168, 169, 170, 171], [172, 173, 174, 175, 176], [177, 178, 179, 167, 168]]:
 		_smoke_group(group)
 
 
