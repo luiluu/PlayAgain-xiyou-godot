@@ -579,7 +579,7 @@ static func native_smooth(id: int, spec: Dictionary) -> bool:
 static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	var src := Rect2(Vector2.ZERO, tex_size) if spec.get("multi", false) else Rect2(pattern * tex_size.x / 9.0, 0, tex_size.x / 9.0, tex_size.y / 6.0)
-	var prof: Array = XAppearance.PROFILES.get(str(spec.get("key", "")), []) if id >= 167 else []
+	var prof: Array = XAppearance.profile_of(str(spec.get("key", ""))) if id >= 167 else []
 	if prof.is_empty():
 		return [Rect2(center - src.size / 2.0, src.size), src]  # 原生：锚点居中、原尺寸
 	var w := float(prof[0])

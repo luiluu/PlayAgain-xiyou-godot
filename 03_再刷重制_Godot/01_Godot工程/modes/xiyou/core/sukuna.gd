@@ -33,6 +33,9 @@ extends RefCounted
 ##   否则 eraseState；Mx_SuperSV 按状态选逐帧图 Codex_Sukuna_QFull。原版 update 包装里的 y＝40、藏武器被 Codex_MiraRavenMultiFrame
 ##   之后的 applyVisual 盖掉（站姿归一＋多帧藏武器），不另做。
 const ACTOR := 172
+## 新美术（Kyo 2026-11-13 审过）：行走 u4、常态战斗图、完全体 52 帧在 content/sukuna/img/（XDB.img_path 优先读），
+## 两态归一档同时换新（XAppearance.profile_of）。false＝回到同步出的原版旧图和旧档。
+static var ART := true
 const ARMOR := 4581
 const WOUND := 2637
 const DOMAIN := 2636

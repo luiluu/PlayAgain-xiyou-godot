@@ -174,6 +174,11 @@ static func map(map_id: int) -> Dictionary:
 
 
 static func img_path(folder: String, name: String) -> String:
+	# 宿傩新美术（XSukuna.ART）：行走、常态战斗、完全体逐帧在 content/sukuna/img/，优先于同步出的原版图
+	if XSukuna.ART and name.trim_prefix("$").begins_with("Codex_Sukuna_"):
+		var own_s := "res://content/sukuna/img/%s/%s.png" % [folder, name]
+		if ResourceLoader.exists(own_s):
+			return own_s
 	for ext in [".png", ".jpg"]:
 		var p := "%simg/%s/%s%s" % [BASE, folder, name, ext]
 		if ResourceLoader.exists(p):
