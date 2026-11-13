@@ -59,10 +59,30 @@ shader_type canvas_item;
 uniform float hue = 0.0;
 uniform vec4 blend = vec4(0.0);
 uniform vec4 rift = vec4(0.0);
+uniform bool crisp = false;
 varying vec4 tint;
 void vertex() { tint = COLOR; }
+// 像素柔边（XGraphics，O-待定-2）：最近邻的图放大到非整数倍时，每个像素仍一样大，只在像素交界的一个屏幕像素里过渡。
+// 取相邻四个像素自己混（按预乘透明度混，透明边不发黑），过渡宽度按屏幕像素算（fwidth）；采样器仍是最近邻。
 void fragment() {
-	vec4 c = texture(TEXTURE, UV);
+	vec4 c;
+	if (crisp) {
+		// 内置 TEXTURE 不能当参数传进函数（引擎报错），所以写在这里
+		vec2 ps = TEXTURE_PIXEL_SIZE;
+		vec2 px = UV / ps - 0.5;
+		vec2 fw = max(fwidth(px), vec2(0.0001));
+		vec2 i = floor(px);
+		vec2 w = clamp((px - i - 0.5) / fw + 0.5, 0.0, 1.0);
+		vec4 s00 = texture(TEXTURE, (i + vec2(0.5, 0.5)) * ps);
+		vec4 s10 = texture(TEXTURE, (i + vec2(1.5, 0.5)) * ps);
+		vec4 s01 = texture(TEXTURE, (i + vec2(0.5, 1.5)) * ps);
+		vec4 s11 = texture(TEXTURE, (i + vec2(1.5, 1.5)) * ps);
+		s00.rgb *= s00.a; s10.rgb *= s10.a; s01.rgb *= s01.a; s11.rgb *= s11.a;
+		c = mix(mix(s00, s10, w.x), mix(s01, s11, w.x), w.y);
+		if (c.a > 0.0) { c.rgb /= c.a; }
+	} else {
+		c = texture(TEXTURE, UV);
+	}
 	float a = hue * 6.28318;
 	vec3 k = vec3(0.57735);
 	float ca = cos(a);
@@ -464,6 +484,16 @@ func _apply_smooth() -> void:
 		return
 	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
+	_apply_crisp(not smooth)
+
+
+## 像素柔边（XGraphics.crisp_on，O-待定-2）：最近邻的主图挂上身体材质并打开 crisp；平滑采样的图（归一缩小）不用。
+## 关着且本来没有材质时不建材质（同色相、闪光的约定）。过滤方式不改，仍是最近邻。
+func _apply_crisp(nearest: bool) -> void:
+	var on := nearest and XGraphics.crisp_on()
+	if not on and not sprite.material is ShaderMaterial:
+		return
+	_body_material().set_shader_parameter("crisp", on)
 
 
 ## 身体以脚底为原点；有归一档时可见范围的底边中点落在原点（anchor 0.5,1 再挪 ((宽／2−可见中线), (高−可见底边))×缩放），浮空往上
@@ -565,7 +595,9 @@ func set_anim_blend(c: Color) -> void:
 
 
 func anim_blend() -> Color:
-	return sprite.material.get_shader_parameter("blend") if sprite.material is ShaderMaterial else Color(0, 0, 0, 0)
+	# 材质在、但 blend 从没设过时取到的是 null（像素柔边让身体材质常在，dev.532 后 xiyou_mv_animation 挂在这里）
+	var c = sprite.material.get_shader_parameter("blend") if sprite.material is ShaderMaterial else null
+	return c if c is Color else Color(0, 0, 0, 0)
 
 
 ## Sprite_Base.hide/show（技能动画 flashScope 3）

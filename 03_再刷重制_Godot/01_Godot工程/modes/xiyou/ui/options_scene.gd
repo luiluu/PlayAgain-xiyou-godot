@@ -44,6 +44,8 @@ const SMOOTH_OPTION := ["画面平滑", "codexScreenSmooth", true]
 const TARGET_OPTION := ["定向遇怪", XEncounterTarget.KEY, true]
 ## 重制新增：进战斗默认自动（O-待定-1，XBattleScene.AUTO_DEFAULT）：ON 时每场战斗开局自动按钮就是开；默认 OFF
 const AUTO_OPTION := ["进战斗默认自动", "codexBattleAutoDefault", true]
+## 重制新增：画质设置（XGraphics）：状态「调整」，确定音后打开 XGraphicsOptionsScene，左右无作用
+const QUALITY_OPTION := ["画质设置", "codexQuality", true]
 
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
@@ -81,6 +83,8 @@ func _ready() -> void:
 		_list.append(FX_OPTION)
 	if XScreenScale.ENABLED:  # 画面平滑排在画面特效后、手机按键设置前；开关关掉时不列
 		_list.append(SMOOTH_OPTION)
+	if XGraphics.ENABLED:  # 画质设置排在画面平滑后、手机按键设置前；开关关掉时不列
+		_list.append(QUALITY_OPTION)
 	if XBattleScene.AUTO_DEFAULT:  # 进战斗默认自动排在画面平滑后、手机按键设置前；开关关掉时不列
 		_list.append(AUTO_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
@@ -122,7 +126,7 @@ func status_text(i: int) -> String:
 			return XConfig.notices_text()
 		"codexFollow":
 			return "ON" if _follow_on() else "OFF"
-		"codexAndroidControls":
+		"codexAndroidControls", "codexQuality":
 			return "调整"
 		"codexCostumes":
 			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
@@ -201,6 +205,9 @@ func ok() -> void:
 		"codexAndroidControls":
 			XSound.system(1)
 			_open_page(XTouchOptionsScene.new())
+		"codexQuality":
+			XSound.system(1)
+			_open_page(XGraphicsOptionsScene.new())
 		"codexTestMode":
 			if XTestMode.unlocked():
 				_set_test_mode(not XTestMode.enabled())
@@ -250,6 +257,8 @@ func _set_flag(sym: String, v: bool) -> void:
 	XConfig.set_flag(sym, v)
 	if sym == "codexPowerEnabled":
 		XPower.clear_cache()  # installCombatPowerRuntime changeValue：开关变了清缓存
+	if sym == XScreenScale.KEY:
+		XGraphics.apply()  # 省电模式开着时画面平滑恒生效，别让这里的开关把它切回去
 	XSound.system(0)
 	_refresh()
 

@@ -578,7 +578,12 @@ func _update_animation() -> void:
 
 func _sync_position() -> void:
 	var at := real + (tilemap.loop_shift(real) if tilemap and (tilemap.loop_x or tilemap.loop_y) else Vector2.ZERO)
-	position = Vector2(at.x * TS + TS / 2.0, at.y * TS + TS - (jump_height() if is_jumping() else 0.0) - altitude)
+	var to := Vector2(at.x * TS + TS / 2.0, at.y * TS + TS - (jump_height() if is_jumping() else 0.0) - altitude)
+	# 顺滑移动（XGraphics.motion_on）：一步挪了一格以上是传送、定位、循环地图回卷，不是走路，别在两帧之间补出一段滑行
+	var jumped := XGraphics.is_teleport(position, to)
+	position = to
+	if jumped and is_inside_tree():
+		reset_physics_interpolation()
 	# screenZ＝优先级×2＋1（1／3／5），上层图块 z 4（ShaderTilemap._upperLayer）：角色上方的压在上层图块（地图 z_index 10）之上
 	z_index = (0 if priority_type == 1 else (-1 if priority_type == 0 else ABOVE_UPPER_Z))
 	queue_redraw()

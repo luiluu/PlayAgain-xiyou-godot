@@ -681,6 +681,17 @@ func _read_memo() -> Dictionary:
 		store[self] = m
 	return m
 
+## 记忆命中时的比对（O-待定-1 等，同 _read_verify 的规矩）：不一样就记下、报错，XIYOU_READ_VERIFY=1 时当场崩
+static func verify_memo(what: String, b, cached, fresh) -> void:
+	read_hits += 1
+	if cached != fresh:
+		var who := int(b.actor_id) if b is XActor else -1
+		if read_mismatches.size() < 50:
+			read_mismatches.append([what, who, str(cached).left(300), str(fresh).left(300)])
+		push_error("记忆不一致：%s 角色 %d" % [what, who])
+		if READ_VERIFY_FATAL:
+			OS.crash("记忆不一致（XIYOU_READ_VERIFY=1）：%s 角色 %d" % [what, who])
+
 func _read_verify(what: String, cached, fresh) -> void:
 	read_hits += 1
 	if cached is float and fresh is float and is_nan(cached) and is_nan(fresh):
@@ -724,7 +735,40 @@ func trait_objects() -> Array:
 
 
 func states() -> Array:
-	var result := super.states()
+	if not STATES_MEMO:
+		return _actor_states_now()
+	return _actor_states_memo().duplicate()
+
+## O-待定-1：本体状态表没重算（_states_ver 没变）、套装给的状态也一样时直接用上次排好的表（不给副本，调用方自己复制）
+func _actor_states_memo() -> Array:
+	var base := _states_memo_list()
+	var suit_ids := XEquipSuits.ids(self, "states")
+	if _actor_states_ver == _states_ver and _actor_states_suits == suit_ids:
+		if READ_VERIFY:
+			verify_memo("actor_states", self, _actor_states_list, _actor_states_now())
+		return _actor_states_list
+	var result := base.duplicate()
+	for id in suit_ids:
+		var state := XDB.rec("States",id)
+		if not state.is_empty() and not result.has(state):result.append(state)
+	_actor_states_list = _sort_by_priority(result)
+	_actor_states_ver = _states_ver
+	_actor_states_suits = suit_ids
+	_actor_states_gen += 1
+	return _actor_states_list
+
+## 状态表的版本号：表重算一次加一（只在 STATES_MEMO 开时有意义）；侧栏格子按它记忆（XSideStatus.CELL_MEMO）
+func states_stamp() -> int:
+	_actor_states_memo()
+	return _actor_states_gen
+
+var _actor_states_gen := 0
+var _actor_states_ver := -1
+var _actor_states_suits: Array = []
+var _actor_states_list: Array = []
+
+func _actor_states_now() -> Array:
+	var result := _states_now()
 	for id in XEquipSuits.ids(self,"states"):
 		var state := XDB.rec("States",id)
 		if not state.is_empty() and not result.has(state):result.append(state)

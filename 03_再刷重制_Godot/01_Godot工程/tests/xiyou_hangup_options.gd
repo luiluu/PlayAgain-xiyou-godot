@@ -142,9 +142,9 @@ func _run() -> void:
 	var extra := 1 if XBossStatusPanel.TOGGLE else 0
 	# 重制新增「画面特效」排在最后（大厅初步异化，XLobbyCorruption.ENABLED 关掉时不列）
 	# 再后面是「画面平滑」（XScreenScale.ENABLED 关掉时不列，玩家反馈 v0.01）
-	# 再后面是「进战斗默认自动」（XBattleScene.AUTO_DEFAULT 关掉时不列）
-	var fx := (1 if XLobbyCorruption.ENABLED else 0) + (1 if XScreenScale.ENABLED else 0) + (1 if XBattleScene.AUTO_DEFAULT else 0)
-	var tail := "codexBattleAutoDefault" if XBattleScene.AUTO_DEFAULT else ("codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx")
+	# 再后面是「画质设置」「进战斗默认自动」（各自开关关掉时不列）
+	var fx := (1 if XLobbyCorruption.ENABLED else 0) + (1 if XScreenScale.ENABLED else 0) + (1 if XGraphics.ENABLED else 0) + (1 if XBattleScene.AUTO_DEFAULT else 0)
+	var tail := "codexBattleAutoDefault" if XBattleScene.AUTO_DEFAULT else ("codexQuality" if XGraphics.ENABLED else ("codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx"))
 	# 「定向遇怪」（XEncounterTarget.ENABLED）把原版三行合成一行，少两行
 	var merged := 2 if XEncounterTarget.ENABLED else 0
 	check("options_list", opt.symbols().size() == 33 + extra + fx - merged and (fx == 0 or opt.symbols().back() == tail) and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"

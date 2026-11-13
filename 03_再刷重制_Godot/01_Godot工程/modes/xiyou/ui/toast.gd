@@ -5,6 +5,7 @@ extends CanvasLayer
 ## 淡入 0.6 秒（jQuery "slow"），出现 3 秒后用 0.6 秒淡出并收起高度，后面的提示随之上移。消息里的 <br> 换行，其余标签去掉。
 ## 消息提醒（installV019UsabilityRuntime）：按文字分类，类别关闭时不弹；菜单里操作得到的反馈（in_menu）照常显示。
 ## 原版种族/真气两类靠调用栈识别，这里由调用方传 key。
+## 弹窗字号（XFontScale toast，重制新增，默认 100＝原版）：字号、行高按百分比放大，框宽跟着放宽、最多 1.5 倍（左边不动）。
 
 const LEFT := 450.0
 const TOP := 20.0
@@ -19,6 +20,7 @@ const BACK := Color(0, 0, 0, 0.7)
 const SHADOW := Color(0, 0, 0, 0.5)
 const FADE := 0.6
 const TIMEOUT := 3.0
+const MAX_WIDEN := 1.5
 
 static var shown: Array = []        # 出现过的提示文字（测试核对用）
 var stack: VBoxContainer
@@ -66,23 +68,34 @@ func _init() -> void:
 	add_child(stack)
 
 
+## 按弹窗字号算出的 [字号, 行高, 框宽]
+static func metrics() -> Array:
+	var k := XFontScale.scaled(1.0, "toast")
+	return [roundi(FONT_SIZE * k), roundi(LINE_HEIGHT * k), WIDTH * minf(k, MAX_WIDEN)]
+
+
 func _add(message: String) -> void:
 	var text := plain(message)
 	shown.append(text)
-	var inner := WIDTH - MARGIN * 2 - PADDING * 2
+	var m := metrics()
+	var font_size: int = m[0]
+	var line_height: int = m[1]
+	var width: float = m[2]
+	stack.custom_minimum_size.x = width - MARGIN * 2
+	var inner := width - MARGIN * 2 - PADDING * 2
 	var font := FontVariation.new()
 	font.base_font = XUI.font()
-	var trim := LINE_HEIGHT - int(font.get_height(FONT_SIZE))   # 上下合计要减的像素（回退字体更矮时可能为 -1 之类）
+	var trim := line_height - int(font.get_height(font_size))   # 上下合计要减的像素（回退字体更矮时可能为 -1 之类）
 	font.spacing_top = floori(trim / 2.0)
 	font.spacing_bottom = trim - floori(trim / 2.0)
 	# 外层只占高度、裁掉内容：收起时把高度缩到 0，后面的提示跟着上移（jQuery animate height → 0）
 	var slot := Control.new()
 	slot.clip_contents = true
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.custom_minimum_size.x = WIDTH - MARGIN * 2
+	slot.custom_minimum_size.x = width - MARGIN * 2
 	var box := PanelContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.size.x = WIDTH - MARGIN * 2
+	box.size.x = width - MARGIN * 2
 	var style := StyleBoxFlat.new()
 	style.bg_color = BACK
 	style.set_content_margin_all(PADDING)
@@ -92,7 +105,7 @@ func _add(message: String) -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 与浏览器一样：句末标点不单独起行
 	label.add_theme_font_override("font", font)
 	label.add_theme_constant_override("line_spacing", 0)
-	label.add_theme_font_size_override("font_size", FONT_SIZE)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_color_override("font_outline_color", SHADOW)
 	label.add_theme_constant_override("outline_size", 2)
