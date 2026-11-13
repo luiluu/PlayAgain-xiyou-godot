@@ -90,6 +90,31 @@ func _summary(rep: Dictionary) -> String:
 	return "\n".join(lines) + "\n"
 
 
+## 花钱的规矩（法宝与积分重构后）：法宝经验丹认得出来，摆在店里也不买；有人用得上的装备会买。
+## 用一家临时的店（法宝经验丹·究极＋新手戒指），钱和积分给足，买完看背包。
+func _check_spend_rules(climb: bool) -> void:
+	var st := XState.current
+	var map := get_tree().current_scene
+	if st == null or not map is XMapScene:
+		return
+	const PILL := 1987
+	_check("spend_knows_fabao_exp_pill", VP_GROWTH.is_fabao_exp_pill(XDB.rec("Items", PILL)) and not VP_GROWTH.is_fabao_exp_pill(XDB.rec("Items", 1685)))
+	st.gain_gold(100000)
+	st.set_variable(XCasinoBatch.VAR_POINTS, 99999)
+	var pills0 := st.item_count(PILL)
+	var shop := XShop.new()
+	shop.setup([[0, PILL, 0, 0], [2, 3793, 0, 0]], true)
+	map.ui.add_child(shop)
+	await get_tree().process_frame
+	var listed: bool = shop._buy_data().any(func(e): return int(e.kind) == 0 and int(e.gid) == PILL)
+	var res: Dictionary = VP_GROWTH.shop(shop, st)
+	_check("spend_skips_fabao_exp_pill", listed and st.item_count(PILL) == pills0, [listed, st.item_count(PILL), res.lines])
+	if not climb:                        # 爬塔局收工时可能早就戴上了，只在逛图局（新开局的队伍）查
+		_check("spend_buys_useful_gear", int(res.bought) >= 1, res.lines)
+	shop.queue_free()
+	await get_tree().process_frame
+
+
 func _run() -> void:
 	var free: bool = OS.get_cmdline_user_args().has("--vp-free")
 	var bot := VP.new()
@@ -165,6 +190,7 @@ func _run() -> void:
 			_check("climb_floors_cleared", rep.milestones.has("floor_%d_cleared" % floors), [rep.floor, rep.climb_stop])
 		print("VP_CLIMB=" + JSON.stringify({"floor": rep.floor, "stop": rep.climb_stop, "defeats": rep.defeats, "grind_battles": rep.grind_battles, "levels": rep.levels, "floor_log": rep.floor_log,
 			"dungeon": [rep.dungeon_runs, rep.dungeon_kills, rep.dungeon_defeats], "farm_block": rep.farm_block, "growth": rep.growth, "frames": rep.frames}))
+	await _check_spend_rules(climb)
 	# 报告：给了 --vp-out 就写文件；摘要总是打印
 	if bot.out_dir != "":
 		var f := FileAccess.open(bot.out_dir.path_join("report.json"), FileAccess.WRITE)
