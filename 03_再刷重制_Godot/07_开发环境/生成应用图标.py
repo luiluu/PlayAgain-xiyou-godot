@@ -12,6 +12,9 @@
   icon_256.png              窗口／通用
   android_main_192.png、android_foreground_432.png、android_background_432.png   安卓
   来源.json                 原图路径、SHA-256、参数、生成时间
+另写运行时窗口图标到 01_Godot工程/content/app_icon_runtime/（不带 .gdignore，随游戏包导出；project.godot 指向它们）：
+  icon.png                  application/config/icon：标题栏、任务栏、Dock（照 Mac 规格的 512 圆角图，Mac 包运行时不显得方）
+  icon.ico                  application/config/windows_native_icon：Windows 标题栏／任务栏用多尺寸 ico（同上面的 icon.ico）
 换图：把新图丢进来重跑这一条命令，再照常导出；预设已经指向这些文件，不用改预设。
 """
 import argparse
@@ -28,6 +31,7 @@ import tempfile
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 OUT = ROOT / '01_Godot工程' / 'content' / 'app_icon'
+RUNTIME_OUT = ROOT / '01_Godot工程' / 'content' / 'app_icon_runtime'
 GODOT = HERE / 'godot'
 ICO_SIZES = [16, 32, 48, 64, 128, 256]
 ICNS = [(16, 'icon_16x16'), (32, 'icon_16x16@2x'), (32, 'icon_32x32'), (64, 'icon_32x32@2x'),
@@ -86,11 +90,15 @@ def main() -> int:
                      'android_foreground_432.png', 'android_background_432.png']:
             shutil.copy(tmp / name, out / name)
         shutil.copy(tmp / 'icon_256.png', out / 'icon_256.png')
+        if out.resolve() == OUT.resolve():
+            RUNTIME_OUT.mkdir(parents=True, exist_ok=True)
+            shutil.copy(tmp / 'icon_mac_512.png', RUNTIME_OUT / 'icon.png')
+            shutil.copy(tmp / 'icon.ico', RUNTIME_OUT / 'icon.ico')
     info = {'source': src.name, 'sha256': hashlib.sha256(src.read_bytes()).hexdigest(), 'trim': a.trim,
             'androidScale': a.android_scale, 'background': '#' + bg,
             'generated': datetime.datetime.now().astimezone().isoformat(timespec='seconds')}
     (out / '来源.json').write_text(json.dumps(info, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'已生成到 {out}（暗底 #{bg}）')
+    print(f'已生成到 {out}（暗底 #{bg}）；运行时窗口图标在 {RUNTIME_OUT}，换图后用 godot --import 重导一次')
     return 0
 
 
