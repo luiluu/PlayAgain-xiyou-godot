@@ -293,7 +293,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	# 比原版翻译：副本的难度／挂机恢复优化（O-038／O-040）关掉，由 tests/xiyou_dungeon 单独对照
 	XDungeon.restore_difficulty = false
-	# 法宝与积分重构（O-待定-1、O-待定-2）：法宝上限、抽奖范围对照原版语义关掉；本身由 tests/xiyou_fabao_rework 核
+	# 法宝与积分重构（O-388、O-389）：法宝上限、抽奖范围对照原版语义关掉；本身由 tests/xiyou_fabao_rework 核
 	XMagicWeapon.LEVEL_99 = false
 	XLotteryRework.EV_NOT_POSITIVE = false
 	XFabaoFeed.NO_PILLS = false

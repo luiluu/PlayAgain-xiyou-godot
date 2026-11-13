@@ -118,6 +118,8 @@ static func table(name: String) -> Variant:
 				"Classes": XGojo.patch_classes(_tables[name])
 				"Skills": XGojo.patch_skills(_tables[name])
 				"States": XGojo.patch_states(_tables[name])
+		if name == "States" and _tables[name] is Array:
+			XSukunaFx.patch_states(_tables[name])  # 宿傩新状态图标（content/sukuna/art_optional，开关 XSukunaFx.FX）
 		if name == "Plugins" and _tables[name] is Dictionary:
 			XGojo.patch_plugins(_tables[name])  # 五条悟的进阶行
 		if name == "Armors" and _tables[name] is Array:
@@ -131,6 +133,11 @@ static func table(name: String) -> Variant:
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
+		if _tables[name] is Array:  # 贝吉特优化调整（XVegetaTune，v0.01.08）
+			match name:
+				"Skills": XVegetaTune.patch_skills(_tables[name])
+				"States": XVegetaTune.patch_states(_tables[name])
+				"CommonEvents": XVegetaTune.patch_common_events(_tables[name])
 	return _tables[name]
 
 
@@ -169,6 +176,11 @@ static func map(map_id: int) -> Dictionary:
 
 
 static func img_path(folder: String, name: String) -> String:
+	# 宿傩新美术（XSukuna.ART）：行走、常态战斗、完全体逐帧在 content/sukuna/img/，优先于同步出的原版图
+	if XSukuna.ART and name.trim_prefix("$").begins_with("Codex_Sukuna_"):
+		var own_s := "res://content/sukuna/img/%s/%s.png" % [folder, name]
+		if ResourceLoader.exists(own_s):
+			return own_s
 	for ext in [".png", ".jpg"]:
 		var p := "%simg/%s/%s%s" % [BASE, folder, name, ext]
 		if ResourceLoader.exists(p):

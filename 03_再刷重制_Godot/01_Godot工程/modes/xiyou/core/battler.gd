@@ -359,12 +359,47 @@ static func state_rec(id: int) -> Dictionary:
 	return _yinyue_2521
 
 func states() -> Array:
+	if not STATES_MEMO:
+		return _states_now()
+	return _states_memo_list().duplicate()
+
+func _states_now() -> Array:
 	var out := []
 	for id in state_ids:
 		var s := state_rec(id)
 		if not s.is_empty():
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
+
+## O-390 状态表记忆（战斗出招前停顿，Kyo 11-13）：一次行动里 states() 要调四五百次（能否行动、特性、侧栏格子……），
+## 每次逐个查状态记录。结果只取决于身上的状态编号、破甲·真气倍率、天启篇改写开没开、隐月 2521 修正和数据库状态表，
+## 这几样都没变就直接用上次的表（给副本）；任一样变了（含就地改 state_ids）当场重算。
+## 回退：STATES_MEMO = false（每次现查，同原来）。XIYOU_READ_VERIFY=1 时每次命中都重算比对（同 O-348）。
+static var STATES_MEMO := true
+var _states_key: Array = []
+var _states_list: Array = []
+var _states_ver := 0
+
+## 状态表的版本号：表重算一次加一（只在 STATES_MEMO 开时有意义；角色另算套装状态，见 XActor.states_stamp）
+func states_stamp() -> int:
+	_states_memo_list()
+	return _states_ver
+
+## 侧栏格子的记忆（XSideStatus.CELL_MEMO）：[状态表版本, 层数, 强化弱化, 结果]
+var _cell_memo: Array = []
+
+func _states_memo_list() -> Array:
+	var key := [state_ids, zq_pojia_rate, XTianqiSkills.cards_on(), FIX_YINYUE_2521, XDB._tables.get("States")]
+	if _states_key.size() == 5 and _states_key[0] == state_ids and _states_key[1] == zq_pojia_rate and _states_key[2] == key[2] \
+			and _states_key[3] == FIX_YINYUE_2521 and is_same(_states_key[4], key[4]):
+		if XActor.READ_VERIFY:
+			XActor.verify_memo("states", self, _states_list, _states_now())
+		return _states_list
+	key[0] = state_ids.duplicate()
+	_states_key = key
+	_states_list = _states_now()
+	_states_ver += 1
+	return _states_list
 
 ## KRZ cached phase lists can retain removed states until a dirty refresh.
 ## Preview reads an existing list, or computes a private list without warming it.

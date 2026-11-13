@@ -376,6 +376,9 @@ func cancel() -> void:
 ## Scene_Skill.useItem：付消耗、使用技能音，效果同物品（Game_Action.apply 的效果栏）；对象无效时蜂鸣
 func use_skill() -> void:
 	var s := current()
+	if int(s.get("id", 0)) == XActor.AFFIX_ABSORB_SKILL:
+		open_absorb()  # installIntegratedV029Runtime 的 Scene_Skill.useItem 包装：不付消耗，打开专武·特效吸取
+		return
 	var a := actor()
 	var members := XState.current.members()
 	var friend := _for_friend(s)
@@ -401,6 +404,24 @@ func use_skill() -> void:
 	if XState.current.peek_common_event() > 0:
 		to_map = true
 		closed.emit()
+
+
+## CodexAbyssMerchant.openAbsorb：商人界面开着时不开；吸取页盖在技能页上，关掉回到技能列表
+var absorb_page: Control = null
+func open_absorb() -> void:
+	if XAbyssMerchant.active or absorb_page != null:
+		return
+	XAbyssMerchant.active = true
+	help_card.show_for({})
+	var page := XMerchant29Page.new()
+	page.mode = "absorb"
+	absorb_page = page
+	add_child(page)
+	await page.closed
+	page.queue_free()
+	absorb_page = null
+	XAbyssMerchant.active = false
+	_refresh()
 
 
 ## Game_Action.isForFriend：scope 7～11
@@ -465,6 +486,8 @@ func _move(d: int, horizontal: bool, wrap: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if absorb_page != null:
+		return
 	var key := event as InputEventKey
 	var pressed := key != null and key.pressed and not key.echo
 	if event.is_action_pressed("ui_cancel"):
@@ -517,7 +540,7 @@ func _wheel(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if absorb_page != null or not (event is InputEventMouseButton and event.pressed):
 		return
 	var wd := XMenu.wheel_dir(event)
 	if wd != 0:

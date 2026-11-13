@@ -126,8 +126,11 @@ func _canglong_data() -> void:
 	# 关：回原版
 	XCanglong.REWORK = false
 	XCanglong.clear_cache()
+	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整也改 Skills，一并关掉，新行为由 xiyou_vegeta_tune 核
 	for t in ["Skills", "Classes", "Armors"]:
 		check("off.%s" % t, JSON.stringify(XDB.table(t)) == JSON.stringify(_source(t)))
+	XVegetaTune.ENABLED = true
+	XDB._tables.erase("Skills")
 	XCanglong.REWORK = true
 	XCanglong.clear_cache()
 

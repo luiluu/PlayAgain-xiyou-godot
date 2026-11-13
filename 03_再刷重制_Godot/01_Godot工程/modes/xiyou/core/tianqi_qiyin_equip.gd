@@ -323,7 +323,7 @@ static func in_bag(s: XState, kind := "") -> Array:
 static func worn(s: XState) -> Array:
 	var out := []
 	for a in s.actors.values():
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			if is_qiyin(e):
 				out.append(e)
 	return out

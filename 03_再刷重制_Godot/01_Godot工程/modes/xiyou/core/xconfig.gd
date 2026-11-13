@@ -25,7 +25,10 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
 	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [], "codexTianqiAliens": [], "codexTianqiQiyinParts": [], "codexTianqiGojo": false,
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
-	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
+	"codexScreenSmooth": false,  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
+	"codexBattleAutoDefault": false,  # 重制新增「进战斗默认自动」
+	"codexFontSize": {"global": 100, "toast": 100},  # 重制新增「字体大小」「弹窗字号」（XFontScale）
+	"codexEncounterTarget": 0}  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -64,8 +67,13 @@ static func ensure_loaded() -> void:
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
 				elif key == "battleAniSpeed":
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				elif key == XEncounterTarget.KEY:
+					var saved = data.get(key)
+					_values[key] = clampi(int(saved), 0, XEncounterTarget.NAMES.size() - 1) if (saved is float or saved is int) else 0
 				elif key == XGraphics.KEY:
 					_values[key] = XGraphics.sanitize(data.get(key))
+				elif key == XFontScale.KEY:
+					_values[key] = XFontScale.sanitize(data.get(key))
 				elif key == "codexNotices":
 					# 原版 applyData：只有存成 false 的类别才关闭
 					var saved = data.get(key)
@@ -141,7 +149,7 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality"]:
+	if key not in DEFAULTS or key in VOLUMES or key in [XEncounterTarget.KEY, "battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality", "codexFontSize"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -176,6 +184,18 @@ static func battle_speed() -> int:
 static func set_battle_speed(value: int) -> bool:
 	ensure_loaded()
 	_values.battleAniSpeed = clampi(value, 1, 4)
+	return _write()
+
+
+## 定向遇怪档位（XEncounterTarget）：0 关、1 罕见、2 十分罕见、3 稀有、4 前所未见、5 亘古未有
+static func encounter_target() -> int:
+	ensure_loaded()
+	return int(_values.get(XEncounterTarget.KEY, 0))
+
+
+static func set_encounter_target(value: int) -> bool:
+	ensure_loaded()
+	_values[XEncounterTarget.KEY] = clampi(value, 0, XEncounterTarget.NAMES.size() - 1)
 	return _write()
 
 
@@ -232,6 +252,21 @@ static func quality() -> Dictionary:
 static func set_quality(value: Dictionary) -> bool:
 	ensure_loaded()
 	_values[XGraphics.KEY] = XGraphics.sanitize(value)
+	return _write()
+
+
+## 字体大小（XFontScale）：global／toast 的百分比；不复制字典，MV 画布每次画字都会读
+static func font_size_percent(kind: String) -> int:
+	ensure_loaded()
+	var d = _values.get(XFontScale.KEY)
+	return int(d.get(kind, 100)) if d is Dictionary else 100
+
+
+static func set_font_size_percent(kind: String, pct: int) -> bool:
+	ensure_loaded()
+	var d := XFontScale.sanitize(_values.get(XFontScale.KEY))
+	d[kind] = pct
+	_values[XFontScale.KEY] = XFontScale.sanitize(d)
 	return _write()
 
 

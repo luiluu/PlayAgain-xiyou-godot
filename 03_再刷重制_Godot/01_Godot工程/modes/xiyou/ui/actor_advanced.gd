@@ -160,7 +160,7 @@ static var ADV_V108 := true
 func _v108(native_k: float, cw: float) -> void:
 	var w := status_win.canvas.size.x
 	var key := str(shown_actor.data().get("battlerName", "")) if shown_actor != null else ""
-	var p: Array = XAppearance.PROFILES.get(key, [])
+	var p: Array = XAppearance.profile_of(key)
 	var on := ADV_V108 and p.size() >= 6 and float(p[0]) > 64 and absf(cw - float(p[0])) <= 1.0
 	var sc := 0.0
 	if on:

@@ -66,7 +66,7 @@ func _run() -> void:
 	_check("exclusive_none", not XGear.create("armor", xid, s).has("tianqi_affixes"))
 	XGear.roll_fn = Callable()
 	# 升级：阶跟着变，说明跟着变
-	s.set_variable(20, 30)  # 法宝上限跟楼层走（O-待定-1）：30 层上限才到 99
+	s.set_variable(20, 30)  # 法宝上限跟楼层走（O-388）：30 层上限才到 99
 	var mx := XMagicWeapon.max_level(it)
 	it.level = 1.0
 	XTianqiAffixRoll.refresh_growth(it)

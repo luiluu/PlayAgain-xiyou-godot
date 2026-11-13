@@ -44,7 +44,7 @@ func setup(id: int) -> XActor:
 	return self
 
 
-## 专武·特效吸取（CodexV029.absorb）。吸取界面（CodexAbyssMerchant.openAbsorb）重制未移植：技能照原版学、照原版列，点了没有吸取窗口。
+## 专武·特效吸取（CodexV029.absorb）：技能页用它打开吸取页（XSkillScene.open_absorb → XMerchant29Page absorb 模式，XAffixAbsorb）。
 const AFFIX_ABSORB_SKILL := 10455
 static var _absorb_src = null
 static var _absorb_owners := {}  # 武器号 → 所属角色号
@@ -244,10 +244,17 @@ func can_equip(item: Dictionary) -> bool:
 	var at := int(item.atypeId)
 	return traits_set(52).has(at) or not passive_values("passiveEARM%02d" % at).is_empty()
 
+static var RELEASE_WINDOW := true
+
 ## 槽位类型不符或不能装备的卸下（MV releaseUnequippableItems，反复直到稳定）。返回卸下的件（换装时退回背包）。
 func release_unequippable() -> Array:
 	var removed := []
 	var changed := true
+	# O-394：逐件判断能不能穿是一串只读的读取（特性、被动标签），包进一个只读窗口（O-348 的机制）：
+	# 技能表、特性表整轮只算一次；真卸下一件时当场作废（下面的 read_touch）。RELEASE_WINDOW = false 照原来各算各的。
+	var window := RELEASE_WINDOW
+	if window:
+		read_begin()
 	while changed:
 		changed = false
 		var slots := equip_slots()   # 每轮重取：卸下带双持的武器后第 2 格变回副手
@@ -258,6 +265,8 @@ func release_unequippable() -> Array:
 				equips[i] = null
 				read_touch()
 				changed = true
+	if window:
+		read_end()
 	removed.append_array(XEquipment.release_dual_exclusive(self))  # 双持专武只留一把（installDualExclusiveRuntime）
 	return removed
 
@@ -278,6 +287,7 @@ func release_to_party() -> void:
 	var s := XState.current
 	if s != null and s.actors.get(actor_id) == self:
 		s.gear.append_array(removed)
+	read_touch()  # 卸了装备、重建了被动缓存：外层只读窗口（XResourceContext.REFRESH_WINDOW）里记的值作废
 
 func add_state(id: int, random: XRandomStream = null) -> void:
 	# 异化疫囊 addProtected：受保护状态直接走 Game_Battler.addState，绕过角色侧的拦截
@@ -305,9 +315,20 @@ func remove_state(id: int) -> void:
 func refresh_resources(random: XRandomStream = null) -> void:
 	super(random)
 
+## 身上的装备；吸取过特效的开放专武换成效果视图（XAffixAbsorb.view，原版 Game_Actor.equips 包装）。改装备本身用 raw_equip_list
 func equip_list() -> Array:
 	var out := []
 	for i in range(1 if _cat_bare else 0, equips.size()):  # 一次行动里调几千次：不走 slice＋filter 回调，结果一样
+		var e = equips[i]
+		if e != null and not e.is_empty():
+			out.append(XAffixAbsorb.view(e) if e.has(XAffixAbsorb.KEY) else e)
+	return out
+
+
+## 身上的装备本体（不换吸取视图）：登记、镶嵌、熔炼、按引用找装备时用
+func raw_equip_list() -> Array:
+	var out := []
+	for i in range(1 if _cat_bare else 0, equips.size()):
 		var e = equips[i]
 		if e != null and not e.is_empty():
 			out.append(e)
@@ -319,7 +340,7 @@ var _cat_bare := false
 func stat_equips() -> Array:
 	var list := equip_list()
 	if XCat.enabled_sword(self):
-		list[0] = XCat.sword_view(equips[0])
+		list[0] = XCat.sword_view(XAffixAbsorb.view(equips[0]))
 	return XTianqiGear.stat_list(list)  # 天启篇：普通坐骑原来的特性不算（只给表里的敏捷、先制）
 
 
@@ -688,6 +709,17 @@ func _read_memo() -> Dictionary:
 		store[self] = m
 	return m
 
+## 记忆命中时的比对（O-390 等，同 _read_verify 的规矩）：不一样就记下、报错，XIYOU_READ_VERIFY=1 时当场崩
+static func verify_memo(what: String, b, cached, fresh) -> void:
+	read_hits += 1
+	if cached != fresh:
+		var who := int(b.actor_id) if b is XActor else -1
+		if read_mismatches.size() < 50:
+			read_mismatches.append([what, who, str(cached).left(300), str(fresh).left(300)])
+		push_error("记忆不一致：%s 角色 %d" % [what, who])
+		if READ_VERIFY_FATAL:
+			OS.crash("记忆不一致（XIYOU_READ_VERIFY=1）：%s 角色 %d" % [what, who])
+
 func _read_verify(what: String, cached, fresh) -> void:
 	read_hits += 1
 	if cached is float and fresh is float and is_nan(cached) and is_nan(fresh):
@@ -731,7 +763,40 @@ func trait_objects() -> Array:
 
 
 func states() -> Array:
-	var result := super.states()
+	if not STATES_MEMO:
+		return _actor_states_now()
+	return _actor_states_memo().duplicate()
+
+## O-390：本体状态表没重算（_states_ver 没变）、套装给的状态也一样时直接用上次排好的表（不给副本，调用方自己复制）
+func _actor_states_memo() -> Array:
+	var base := _states_memo_list()
+	var suit_ids := XEquipSuits.ids(self, "states")
+	if _actor_states_ver == _states_ver and _actor_states_suits == suit_ids:
+		if READ_VERIFY:
+			verify_memo("actor_states", self, _actor_states_list, _actor_states_now())
+		return _actor_states_list
+	var result := base.duplicate()
+	for id in suit_ids:
+		var state := XDB.rec("States",id)
+		if not state.is_empty() and not result.has(state):result.append(state)
+	_actor_states_list = _sort_by_priority(result)
+	_actor_states_ver = _states_ver
+	_actor_states_suits = suit_ids
+	_actor_states_gen += 1
+	return _actor_states_list
+
+## 状态表的版本号：表重算一次加一（只在 STATES_MEMO 开时有意义）；侧栏格子按它记忆（XSideStatus.CELL_MEMO）
+func states_stamp() -> int:
+	_actor_states_memo()
+	return _actor_states_gen
+
+var _actor_states_gen := 0
+var _actor_states_ver := -1
+var _actor_states_suits: Array = []
+var _actor_states_list: Array = []
+
+func _actor_states_now() -> Array:
+	var result := _states_now()
 	for id in XEquipSuits.ids(self,"states"):
 		var state := XDB.rec("States",id)
 		if not state.is_empty() and not result.has(state):result.append(state)
@@ -1149,6 +1214,13 @@ func passive_element_values(e: int) -> Array:
 
 
 # ---- 伤害结算用的被动缓存（dsPassiveSkill refreshPassiveCache，单次汇总）----
+## O-396 的开关与上次的输入、结果（模块追加之前的那份）。false＝每次重建（同原来）
+static var PASSIVE_MEMO := true
+var _pm_base := {}
+var _pm_notes: Array = []
+var _pm_meta := PackedInt64Array()
+var _pm_fix := true
+
 func refresh_passive() -> void:
 	var c := {"harmRe": {}, "penetrateFixed": {}, "penetratePercent": {}, "skillPass": {}, "skillTypeDvup": {},
 		"SkETypeHarmRi": {}, "globalHarmRi": 0.0, "critHarmRi": 0.0, "itemRateUp": 0.0,
@@ -1157,14 +1229,39 @@ func refresh_passive() -> void:
 		"recPushStates": [], "pushStates": [], "pushSelfStates": [],
 		"critPush": {"bySkill": {}, "byType": {"Zj": 0.0, "Mf": 0.0}, "all": 0.0}}
 	var objs := stat_equips() + skills() + states()
+	# O-396：装备、技能、状态的备注与标签和上次一模一样时，直接用上次算好的表（给副本）。
+	# 备注逐段全文比对，标签表比哈希（标签是从备注解析出来的；就地改过的装备哈希会变）。
+	var sig_notes := []
+	var sig_meta := PackedInt64Array()
+	if PASSIVE_MEMO:
+		for o in objs:
+			sig_notes.append(str(o.get("note", "")))
+			sig_meta.append((o.get("meta", {}) as Dictionary).hash())
+		if not _pm_base.is_empty() and _pm_fix == FIX_CRIT_PUSH and _pm_meta == sig_meta and _pm_notes == sig_notes:
+			var memo: Dictionary = _pm_base.duplicate(true)
+			if READ_VERIFY:
+				PASSIVE_MEMO = false
+				var keep := _passive_cache
+				refresh_passive()
+				PASSIVE_MEMO = true
+				var fresh := _passive_cache
+				_passive_cache = keep
+				var again := memo.duplicate(true)
+				XActorModules.passive_cache(self, again)
+				verify_memo("refresh_passive", self, again, fresh)
+			XActorModules.passive_cache(self, memo)
+			_passive_cache = memo
+			_passive_states_sig = _passive_states_signature()
+			return
 	for o in objs:
 		var note := str(o.get("note", ""))
 		var meta: Dictionary = o.get("meta", {})
-		for m in _scan(note, "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
+		var sc := _note_scans(note)
+		for m in sc[0]:
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
 		# v0.62 parseDepassiveHarmRe：带正负号；同一对象内完全相同的标签只计一次
 		var pen_seen := {}
-		for m in _scan(note, "<DepassiveHarmRe(\\d+):\\s*([+-]?[\\d.]+%?)>"):
+		for m in sc[1]:
 			var pen_key := "%d|%s" % [int(m[0]), m[1]]
 			if pen_seen.has(pen_key):
 				continue
@@ -1180,13 +1277,13 @@ func refresh_passive() -> void:
 				else:
 					row.flat += _num(meta[k])
 				c.skillPass[sid] = row
-		for m in _scan(note, "<SkillTypesDvup([A-Za-z]+):\\s*([\\d.]+%?)>"):
+		for m in sc[2]:
 			c.skillTypeDvup[m[0]] = c.skillTypeDvup.get(m[0], 0.0) + _num(m[1]) / 100.0
-		for m in _scan(note, "<SkETypeHarmRi(\\d+):\\s*([\\d.]+%?)>"):
+		for m in sc[3]:
 			c.SkETypeHarmRi[int(m[0])] = c.SkETypeHarmRi.get(int(m[0]), 0.0) + _num(m[1]) / 100.0
-		for m in _scan(note, "(?i)<passiveHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>"):
+		for m in sc[4]:
 			c.globalHarmRi += float(m[0]) / 100.0
-		for m in _scan(note, "(?i)<passiveCrHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>"):
+		for m in sc[5]:
 			c.critHarmRi += float(m[0]) / 100.0
 		# 必中：<SkillCertainHitss> 全部技能，<SkillCertainHitN: 技能ID> 指定技能（命中率 1，且不会被反击/反射）
 		if meta.has("SkillCertainHitss"):
@@ -1200,11 +1297,12 @@ func refresh_passive() -> void:
 		if meta.has("passiveIRUP"):
 			c.itemRateUp += _num(meta.passiveIRUP)
 		# 伤害／治疗时挂状态（dsPassiveSkill 7～9 节）：状态号 parseInt、% 可省、概率只认整数（<PushsubState0742: 0.2%> 认不出）
-		for pair in [["RecPushState", "recPushStates"], ["PushState", "pushStates"], ["PushsubState", "pushSelfStates"]]:
-			for m in _scan(note, "<%s(\\d+):\\s*(\\d+)%%?>" % pair[0]):
+		for pi in PASSIVE_PUSH_PAIRS.size():
+			var pair: Array = PASSIVE_PUSH_PAIRS[pi]
+			for m in sc[6 + pi]:
 				c[pair[1]].append({"stateId": int(m[0]), "probability": float(m[1])})
 		# 暴击率增加 <SkillCriPushZj／Mf／All／技能号: n%>（itemCri 里加到攻击方暴击率上，见 XBattleLogic.item_cri）
-		for m in _scan(note, CRIT_PUSH_FIXED if FIX_CRIT_PUSH else CRIT_PUSH_ORIGINAL):
+		for m in sc[9 if FIX_CRIT_PUSH else 10]:
 			if m[0] in ["Zj", "Mf"]:
 				c.critPush.byType[m[0]] += float(m[1])
 			elif m[0] == "All":
@@ -1229,6 +1327,11 @@ func refresh_passive() -> void:
 			elif suffix.is_valid_int():
 				var id := int(suffix)
 				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
+	if PASSIVE_MEMO:
+		_pm_base = c.duplicate(true)
+		_pm_notes = sig_notes
+		_pm_meta = sig_meta
+		_pm_fix = FIX_CRIT_PUSH
 	XActorModules.passive_cache(self, c)  # 专属角色模块的 initPassiveCache 包装（渡鸦魂海刻度的暴伤／终伤池）
 	_passive_cache = c
 	_passive_states_sig = _passive_states_signature()
@@ -1267,7 +1370,62 @@ func passive_cache() -> Dictionary:
 		refresh_passive()
 	return _passive_cache
 
+## O-393：备注扫描记住结果。被动缓存 refresh_passive 对每件装备、每个技能、每个状态的备注各跑十来条正则，
+## 每次还现编译正则；穿满装备的角色一次约 6 毫秒，而每加减一个状态就 refresh 一次（开战状态一场一百多个），
+## 开战、收场各卡一两秒。同一段备注、同一条正则的结果不会变：按（正则，备注）记下，给出去的是副本。
+## false＝每次现编译现扫（同原来）。每条正则最多记 SCAN_MEMO_MAX 段备注，满了清空重记。
+static var SCAN_MEMO := true
+const SCAN_MEMO_MAX := 8192
+static var _scan_memo := {}
+
+## refresh_passive 对一段备注要跑的十一条正则（次序固定，refresh_passive 按下标取）
+const PASSIVE_PUSH_PAIRS := [["RecPushState", "recPushStates"], ["PushState", "pushStates"], ["PushsubState", "pushSelfStates"]]
+const PASSIVE_SCAN_PATTERNS := [
+	"<passiveHarmRe(\\d+):\\s*([\\d.]+)>",
+	"<DepassiveHarmRe(\\d+):\\s*([+-]?[\\d.]+%?)>",
+	"<SkillTypesDvup([A-Za-z]+):\\s*([\\d.]+%?)>",
+	"<SkETypeHarmRi(\\d+):\\s*([\\d.]+%?)>",
+	"(?i)<passiveHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>",
+	"(?i)<passiveCrHarmRi:([-]?\\d+(?:\\.\\d+)?)(%?)>",
+	"<RecPushState(\\d+):\\s*(\\d+)%?>",
+	"<PushState(\\d+):\\s*(\\d+)%?>",
+	"<PushsubState(\\d+):\\s*(\\d+)%?>",
+	CRIT_PUSH_FIXED,
+	CRIT_PUSH_ORIGINAL,
+]
+static var _note_scan_memo := {}
+
+## 一段备注的十一条扫描结果（只读，别改）；SCAN_MEMO 开着时按备注记一份，一件装备／一个技能只查一次表
+static func _note_scans(note: String) -> Array:
+	if SCAN_MEMO:
+		var hit = _note_scan_memo.get(note)
+		if hit != null:
+			return hit
+	var out := []
+	for p in PASSIVE_SCAN_PATTERNS:
+		out.append(_scan_now(note, p))
+	if SCAN_MEMO:
+		if _note_scan_memo.size() >= SCAN_MEMO_MAX:
+			_note_scan_memo.clear()
+		_note_scan_memo[note] = out
+	return out
+
 static func _scan(text: String, pattern: String) -> Array:
+	if not SCAN_MEMO:
+		return _scan_now(text, pattern)
+	var by_text = _scan_memo.get(pattern)
+	if by_text == null:
+		by_text = {}
+		_scan_memo[pattern] = by_text
+	var hit = by_text.get(text)
+	if hit == null:
+		if by_text.size() >= SCAN_MEMO_MAX:
+			by_text.clear()
+		hit = _scan_now(text, pattern)
+		by_text[text] = hit
+	return (hit as Array).duplicate(true) if not (hit as Array).is_empty() else []
+
+static func _scan_now(text: String, pattern: String) -> Array:
 	var out := []
 	for m in RegEx.create_from_string(pattern).search_all(text):
 		var g := []

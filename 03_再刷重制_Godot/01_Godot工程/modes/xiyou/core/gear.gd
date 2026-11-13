@@ -190,7 +190,7 @@ static func revert_exclusive_affixes(s: XState) -> Dictionary:
 		return stat
 	var all := s.gear.duplicate()
 	for a in s.actors.values():
-		all.append_array(a.equip_list())
+		all.append_array(a.raw_equip_list())
 	for w in s.warehouses.values():
 		for list in w.get("items", {}).values():
 			for v in list:

@@ -157,7 +157,7 @@ func _run() -> void:
 	await frames(2)
 	var page := opt._page as XGraphicsOptionsScene
 	check("page_open", page != null)
-	check("page_rows_desktop", page.keys() == ["crisp", "motion", "integer", "fps", "window", "low"], page.keys())
+	check("page_rows_desktop", page.keys() == ["crisp", "motion", "integer", "fps", "window", "low", "font", "toast"], page.keys())
 	check("page_status_default", page.status_text(2) == "关" and page.status_text(3) == "跟随屏幕" and page.status_text(4) == "自动" and page.status_text(5) == "关",
 		[page.status_text(2), page.status_text(3), page.status_text(4), page.status_text(5)])
 	page.index = 3
@@ -192,7 +192,7 @@ func _run() -> void:
 	await frames(1)
 	# 手机：不列窗口大小
 	XPlatform.force_mobile = true
-	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["crisp", "motion", "integer", "fps", "low"])
+	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["crisp", "motion", "integer", "fps", "low", "font", "toast"])
 	XPlatform.force_mobile = false
 
 	# ---- 回退开关 ----

@@ -55,7 +55,20 @@ func _init(l: XBattleLogic, a: XActor) -> void:
 ## 返回 {skill, target(XBattler 或 null＝全体/随机/自动), score, candidates:[{id, item, score, target}]}；没有可选时 skill 为空
 ## cannon_only（choose(actor, cannonOnly)）：只在六档魔炮里挑，不看物品、不退回攻击防御，没得挑返回空
 static func choose(l: XBattleLogic, a: XActor, cannon_only := false) -> Dictionary:
-	return XSmartAI.new(l, a)._choose(cannon_only)
+	if not CHOOSE_WINDOW:
+		return XSmartAI.new(l, a)._choose(cannon_only)
+	# 整段选招是只读的估算（几百次读能力值）：包进一个只读窗口（O-348 的机制），同一名角色的技能表、特性表、能力值只算一次。
+	# 估算里临时改写角色的几处（付费用后的 MP、铺垫后的视图）改写前后都作废（XActor.read_touch），读到的值和逐次重算一样。
+	XActor.read_begin()
+	var r := XSmartAI.new(l, a)._choose(cannon_only)
+	XActor.read_end()
+	return r
+
+
+## O-392：智能选招整段共用一个只读窗口（自动战斗每次轮到角色时算一遍，原来每读一项能力值各开各的窗口、
+## 技能表与特性表重算几百遍，电脑上一次 0.25 秒以上、手机上一两秒，开战第一下和每次行动前都停）。
+## false＝照原来每次读取各算各的。XIYOU_READ_VERIFY=1 时窗口里每次命中都重算比对（同 O-348）。
+static var CHOOSE_WINDOW := true
 
 
 # ---- 数据判断 ----
@@ -204,8 +217,10 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var before_mp := maxf(0.0, a.mp)
 	var hits := maxi(1, floori(before_mp * power / 2000.0))
 	a.mp = maxf(0.0, before_mp - float(logic.skill_cost(a, rec).mp))
+	XActor.read_touch()  # 临时改了 MP：只读窗口里记的值作废（CHOOSE_WINDOW）
 	var value := _safe_damage(a, t, rec)
 	a.mp = before_mp
+	XActor.read_touch()
 	return value * hits
 
 
@@ -532,6 +547,7 @@ func _followup_score(rec: Dictionary, p: Dictionary, ctx: Dictionary) -> float:
 	actor.hp = maxf(1.0, saved[0] - hp_cost)
 	_views += 1
 	_view = _views
+	XActor.read_touch()  # 进了铺垫后的视图、付了代价：只读窗口里记的值作废（CHOOSE_WINDOW）
 	var sub := ctx.duplicate()
 	sub.noSetup = true
 	var best := 0.0
@@ -549,6 +565,7 @@ func _followup_score(rec: Dictionary, p: Dictionary, ctx: Dictionary) -> float:
 	actor.mp = saved[1]
 	actor.tp = saved[2]
 	_view = saved[3]
+	XActor.read_touch()  # 视图与代价还原：同上
 	return best
 
 
@@ -614,7 +631,9 @@ func _choose(cannon_only := false) -> Dictionary:
 		if can_use(guard):
 			best = {"skill": guard, "target": actor}
 	if best.get("prepare", Callable()).is_valid():
+		XActor.read_touch()  # 记下选中的候选是写入：前后都作废（CHOOSE_WINDOW）
 		best.prepare.call()
+		XActor.read_touch()
 	best.erase("prepare")
 	ranking.sort_custom(func(x, y): return x.score > y.score)
 	best["score"] = best_score

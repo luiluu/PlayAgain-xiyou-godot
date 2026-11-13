@@ -297,7 +297,7 @@ static func resolve_pending(write := true) -> bool:
 static func _strip_tokens(s: XState) -> void:
 	var all: Array = s.gear.duplicate()
 	for a in s.actors.values():
-		all.append_array(a.equip_list())
+		all.append_array(a.raw_equip_list())
 	all.append_array(XPets.list(s))
 	for e in all:
 		if e is Dictionary and e.has("whToken") and not _pending.any(func(p): return str(p.token) == str(e.whToken)):

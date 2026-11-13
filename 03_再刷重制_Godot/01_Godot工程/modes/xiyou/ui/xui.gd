@@ -50,7 +50,7 @@ static func font() -> Font:
 static func theme() -> Theme:
 	var t := Theme.new()
 	t.default_font = font()
-	t.default_font_size = FONT_SIZE
+	t.default_font_size = XFontScale.size(FONT_SIZE)  # 字体大小（XFontScale），默认档不变
 	var outline := Color(0, 0, 0, 0.45)
 	for type in ["Label", "Button", "RichTextLabel"]:
 		t.set_constant("outline_size", type, 1)
@@ -72,7 +72,7 @@ static func theme() -> Theme:
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		t.set_color(k, "Button", TEXT)
 	t.set_color("font_disabled_color", "Button", DIM)
-	t.set_font_size("font_size", "Button", FONT_SIZE)
+	t.set_font_size("font_size", "Button", XFontScale.size(FONT_SIZE))
 	t.set_constant("h_separation", "Button", 8)
 	# 滚动条：细条，颜色取皮肤色板
 	var grab := StyleBoxFlat.new()
@@ -209,7 +209,7 @@ static func menu_background(parent: Control) -> void:
 static func label(text: String, size := FONT_SIZE, color := TEXT) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", XFontScale.size(size))
 	l.add_theme_color_override("font_color", color)
 	return l
 
@@ -249,6 +249,8 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return XQualityIcons.icon_texture(index)
 	if XTianqiQiyinArt.is_icon(index):  # 天启篇七印祭坛的装备图标（content/tianqi/qiyin/icons）
 		return XTianqiQiyinArt.icon_texture(index)
+	if XSukunaFx.is_icon(index):  # 宿傩新状态图标（content/sukuna/art_optional）
+		return XSukunaFx.icon_texture(index)
 	if XGojo.is_icon(index):  # 天启篇五条悟的技能、被动、眼罩图标（content/gojo/icons）
 		return XGojo.icon_texture(index)
 	if index == XDemonCrown.ICON:  # 魔冠自带的大图（CodexQualityIcons demonCrownArt）

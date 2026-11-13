@@ -50,6 +50,7 @@ func _run() -> void:
 	DirAccess.remove_absolute(XConfig.path())
 	XConfig._loaded_path = "<unloaded>"
 	XConfig._session.clear()
+	XEncounterTarget.ENABLED = false  # 下面对照原版三行与原版抽签（回退支）；定向遇怪在最后单测
 	var ref = XDB.load_json("oracle/options.json")
 	if not (ref is Dictionary and ref.has("misc")):
 		check("oracle_present", false)
@@ -288,7 +289,93 @@ func _run() -> void:
 	check("ydgb_no_battle", not map._in_battle and not map.busy and map.encounter_count > 0, [map._in_battle, map.encounter_count])
 	XConfig._session.clear()
 	map.queue_free()
+	await target_tests()
 	finish()
+
+
+## O-384「定向遇怪」：一行替换原版三行、档位切换与存盘、按档定向抽签、本层没有该档时退档、关着照原版、回退
+func target_tests() -> void:
+	XEncounterTarget.ENABLED = true
+	XConfig.set_encounter_target(0)
+	var opt := XOptionsScene.new()
+	add_child(opt)
+	await physics(2)
+	var syms := opt.symbols()
+	var plain := XOptionsScene.OPTIONS.map(func(o): return o[1])
+	check("target_row", syms.find(XEncounterTarget.KEY) == syms.find("seVolume") + 1 and syms[syms.find(XEncounterTarget.KEY) + 1] == "cq"
+		and not syms.has("Boss") and not syms.has("BOSS") and not syms.has("boss"), syms)
+	opt.index = syms.find(XEncounterTarget.KEY)
+	check("target_off_text", opt.status_text(opt.index) == "关")
+	opt.ok()
+	check("target_ok_next", XConfig.encounter_target() == 1 and opt.status_text(opt.index) == "罕见")
+	opt._side(false)
+	opt._side(false)
+	check("target_left_stops", XConfig.encounter_target() == 0)
+	for i in 6:
+		opt._side(true)
+	check("target_right_stops", XConfig.encounter_target() == 5 and opt.status_text(opt.index) == "亘古未有")
+	opt.ok()
+	check("target_ok_wraps", XConfig.encounter_target() == 0)
+	XConfig.set_encounter_target(4)
+	XConfig._loaded_path = "<unloaded>"
+	check("target_saved", XConfig.encounter_target() == 4)
+	var f := FileAccess.open(XConfig.path(), FileAccess.WRITE)
+	f.store_string(JSON.stringify({XEncounterTarget.KEY: 99}))
+	f.close()
+	XConfig._loaded_path = "<unloaded>"
+	check("target_clamp", XConfig.encounter_target() == 5)
+	opt.queue_free()
+	# 十四层神谕森林：普通、罕见、十分罕见、稀有、前所未见、亘古未有各一组
+	var list: Array = XDB.map(30).get("encounterList", [])
+	var tiers := list.map(func(en): return XEncounterTarget.troop_tier(int(en.troopId)))
+	check("map30_tiers", tiers == [0, 1, 2, 3, 4, 5], tiers)
+	var total := 0
+	for en in list:
+		total += int(en.weight)
+	XConfig._session.clear()
+	for t in range(0, 6):
+		XConfig.set_encounter_target(t)
+		var got := {}
+		var orig_ok := true
+		for r in total:
+			var id := XMapScene.encounter_troop(list, r)
+			got[XEncounterTarget.troop_tier(id)] = true
+			if t == 0:
+				XEncounterTarget.ENABLED = false
+				orig_ok = orig_ok and id == XMapScene.encounter_troop(list, r)
+				XEncounterTarget.ENABLED = true
+		if t == 0:
+			check("target0_original", orig_ok and got.size() == 6, got.keys())
+		else:
+			check("target%d_only_tier" % t, got.keys() == [t], got.keys())
+	# 二层只到十分罕见：选前所未见退到十分罕见；同档两组（四层两组稀有）按权重都能抽到
+	var list3: Array = XDB.map(3).get("encounterList", [])
+	XConfig.set_encounter_target(4)
+	var got3 := {}
+	for r in 100:
+		got3[XEncounterTarget.troop_tier(XMapScene.encounter_troop(list3, r))] = true
+	check("target_fallback", got3.keys() == [2], got3.keys())
+	var list7: Array = XDB.map(7).get("encounterList", [])
+	var total7 := 0
+	for en in list7:
+		total7 += int(en.weight)
+	XConfig.set_encounter_target(3)
+	var ids7 := {}
+	for r in total7:
+		ids7[XMapScene.encounter_troop(list7, r)] = true
+	check("target_same_tier_both", ids7.size() == 2 and ids7.keys().all(func(id): return XEncounterTarget.troop_tier(id) == 3), ids7.keys())
+	# 回退：定向遇怪不列、原版三行回来、抽签照原版（存着的档位不起作用）
+	XEncounterTarget.ENABLED = false
+	XConfig.set_encounter_target(5)
+	var opt2 := XOptionsScene.new()
+	add_child(opt2)
+	await physics(2)
+	check("target_rollback_rows", not opt2.symbols().has(XEncounterTarget.KEY) and opt2.symbols().has("Boss") and opt2.symbols().has("boss"))
+	check("target_rollback_draw", XMapScene.encounter_troop(list, 0) == int(list[0].troopId))
+	opt2.queue_free()
+	XEncounterTarget.ENABLED = true
+	XConfig.set_encounter_target(0)
+	await physics(1)
 
 
 func finish() -> void:

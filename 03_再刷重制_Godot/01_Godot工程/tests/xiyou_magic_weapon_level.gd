@@ -72,7 +72,7 @@ func _run_list(list: Array) -> void:
 
 
 func _run() -> void:
-	# 对原版参照：法宝上限照原版 888（O-待定-1 法宝上限 99／跟楼层走由 tests/xiyou_fabao_rework 单独核）
+	# 对原版参照：法宝上限照原版 888（O-388 法宝上限 99／跟楼层走由 tests/xiyou_fabao_rework 单独核）
 	XMagicWeapon.LEVEL_99 = false
 	XFabaoFeed.NO_PILLS = false  # 插件指令 MagicWeaponAllGainExp 照原版
 	var data = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE)) if FileAccess.file_exists(FIXTURE) else null

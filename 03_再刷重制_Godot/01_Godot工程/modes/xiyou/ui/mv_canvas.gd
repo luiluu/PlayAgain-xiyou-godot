@@ -85,17 +85,20 @@ func blink_alpha() -> float:
 	return 1.0 - (n if n < 20 else 40 - n) * 8.0 / 255.0
 
 
+## 画出来的宽度（已按「字体大小」放大，XFontScale）
 func text_width(s: String, size := XUI.FONT_SIZE) -> float:
-	return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, XFontScale.size(size)).x
 
 
 ## Window_Base.drawText(text, x, y, maxWidth, align)，行高 lh。
 ## zoom/pivot：整体以 pivot 为中心缩放（MV 精灵 scale，如胜利结算的「等级提升！」）。
+## size 是原版字号，实际按「字体大小」放大（XFontScale；行高 lh 不变，超出 max_w 照旧横向压缩）。
 ## outline：描边色（正式版 Bitmap 默认 rgba(0,0,0,0.45)；宽度被 installDisplayPreferencesRuntime 封顶 0.75px，颜色不封顶）。
 func text(s: String, x: float, y: float, max_w: float, align := "left", color := XUI.TEXT, size := XUI.FONT_SIZE, lh := XUI.LINE_HEIGHT, alpha := 1.0, zoom := 1.0, pivot := Vector2.ZERO, outline := OUTLINE) -> void:
 	if s == "":
 		return
-	var w := text_width(s, size)
+	size = XFontScale.size(size)
+	var w := font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var sx := 1.0
 	if max_w > 0 and w > max_w:
 		sx = max_w / w

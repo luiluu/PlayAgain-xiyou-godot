@@ -35,7 +35,7 @@ func _run() -> void:
 	XPetCapture.clock = func(): return {"day": 1, "hour": 12, "minute": 15}
 	XMessageBox.auto = true
 	MVEventCore.fixed_random = 0.5
-	# 对原版参照：抽奖范围照原版（O-待定-2 期望不为正由 tests/xiyou_fabao_rework 单独核）；随机流在固定随机时本来就不走
+	# 对原版参照：抽奖范围照原版（O-389 期望不为正由 tests/xiyou_fabao_rework 单独核）；随机流在固定随机时本来就不走
 	XLotteryRework.EV_NOT_POSITIVE = false
 	XCasinoBatch.frame_budget_ms = 1000000  # 参照一帧跑满 4 抽（停止那例靠它）
 	var f: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/casino_batch_oracle.json"))
