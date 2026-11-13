@@ -1457,8 +1457,10 @@ func _climb_dungeon(map: XMapScene, _st: XState, floor: int) -> void:
 				return
 			# 首领不在这张图或走不到：打一只走得到的小怪开路
 			for x in map.events:
-				if not x.erased and not x.page.is_empty() and x.trigger() == 0 and _dungeon_boss_troop(x) == 0 \
-						and x.command_list().any(func(c): return int(c.get("code", 0)) == 301) and _aim(map, x, "minion"):
+				# 小怪＝调查就开打、没有选项的事件；带选项的（首领打倒后才出现的隐藏对手那种）不去惹
+				var codes: Array = x.command_list().map(func(c): return int(c.get("code", 0))) if not x.page.is_empty() else []
+				if not x.erased and x.trigger() == 0 and _dungeon_boss_troop(x) == 0 \
+						and codes.has(301) and not codes.has(102) and _aim(map, x, "minion"):
 					await _goto_target(map)
 					return
 			# 这张图清完了还没见到首领：往里走
