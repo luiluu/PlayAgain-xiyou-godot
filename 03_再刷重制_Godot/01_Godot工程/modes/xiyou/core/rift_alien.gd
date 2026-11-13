@@ -58,6 +58,8 @@ static func data() -> Dictionary:
 	if stage2_only():
 		return STAGE2
 	if _data.is_empty():
+		if XDataFile.missing(PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:
 			push_error("XRiftAlien: 读不到 " + PATH)

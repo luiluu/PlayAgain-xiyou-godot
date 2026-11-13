@@ -155,22 +155,55 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
     tmp = out / '_export'
     tmp.mkdir(parents=True, exist_ok=True)
     shas = {}
+    src = PROJECT
+    if not dry and not REAL_SCRIPTS:  # 发行空壳（11-13）：天启篇脚本换成空壳的工程克隆里导补丁
+        spec = importlib.util.spec_from_file_location('发行空壳', HERE / '发行空壳.py')
+        sk = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sk)
+        src = out / '_空壳工程'
+        if src.exists():
+            shutil.rmtree(src)
+        sk.make_tree(src)
+        if sk.is_stub_tree(src):
+            raise Fail('发行空壳没换全：' + '、'.join(sk.is_stub_tree(src)))
+    try:
+        _export_presets(base, tmp, dry, shas, src)
+    finally:
+        if src != PROJECT:
+            shutil.rmtree(src, ignore_errors=True)
+    return _check_patch(tmp, dry, shas)
+
+
+REAL_SCRIPTS = False  # 回退开关：True＝补丁照旧带天启篇真脚本
+
+
+def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> None:
     for preset in PRESETS:
         dst = tmp / (preset.split(' ')[0] + '.pck')
         if dry:
             print(f'  [dry-run] godot --export-patch "{preset}" {dst} --patches {base}')
             continue
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-patch', preset, str(dst), '--patches', str(base)],
+        p = subprocess.run([str(GODOT), '--headless', '--path', str(src), '--export-patch', preset, str(dst), '--patches', str(base)],
                            capture_output=True, text=True)
         if '没有要导出的文件或更改' in p.stdout + p.stderr or 'No files or changes to export' in p.stdout + p.stderr:
             raise Fail('当前工程相对这个底包没有任何改动，没有补丁可发')
         if p.returncode != 0 or not dst.exists():
             raise Fail(f'「{preset}」补丁导出失败：{(p.stdout + p.stderr)[-800:]}')
         shas[preset] = sha256(dst)
+
+
+def _check_patch(tmp: Path, dry: bool, shas: dict) -> Path:
     if dry:
         return tmp / 'Windows.pck'
     if len(set(shas.values())) != 1:
         raise Fail('三个预设导出的补丁不一样，不能当通用补丁发：' + json.dumps(shas, ensure_ascii=False))
+    # 发行内容审计（11-13 漩涡异化设计稿随 0.475 补丁外泄后加）：补丁里不许有没发行的内容
+    spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    bad = m.audit(tmp / 'Windows.pck')
+    if bad:
+        raise Fail(f'补丁带了 {len(bad)} 个没发行的文件，不能发：' + '、'.join(bad[:10]) + '（看 export_presets.cfg 发行预设的 exclude_filter）')
     return tmp / 'Windows.pck'
 
 
