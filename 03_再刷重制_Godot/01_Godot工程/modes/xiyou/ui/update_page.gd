@@ -11,7 +11,7 @@ extends Control
 
 signal closed
 
-const GROUP_HINT := "请到 QQ 群文件下载"
+const GROUP_HINT := "请到 QQ 群 " + XFeedback.QQ_GROUP + " 的群文件下载"
 const W := 760.0
 const LAYER := 90
 const SCROLL_STEP := 72.0
@@ -167,6 +167,11 @@ func _ready() -> void:
 	_close.name = "Close"
 	_close.pressed.connect(close_page)
 	_buttons.add_child(_close)
+	# 反馈群（XFeedback）：按钮下面一行，点一下复制群号；不抢焦点，确定／取消键照旧
+	if XFeedback.SHOW:
+		var fb := XFeedback.make_button(18)
+		fb.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		box.add_child(fb)
 	_rollback = XUI.button("退回安装包自带版本", 36)
 	_rollback.name = "Rollback"
 	_rollback.alignment = HORIZONTAL_ALIGNMENT_CENTER
