@@ -1,7 +1,7 @@
 # 交付：cc/ultimate-pill-lag
 
 - 车道／工作者：修究极丹连用卡顿（玩家反馈 v0.01.06）／cc（究极丹卡顿）
-- 状态：进行中
+- 状态：可合并
 
 从 main（beaaf7649）切出，只改 `magic_weapon.gd` 和它的专项测试。
 
@@ -37,8 +37,9 @@
 
 - 语法检查通过；工具快速回归全部通过（120 秒）。
 - `xiyou_magic_weapon_level` 63/63。
-- 选测（选测.py main --list 列的 9 个）：待写
+- 选测（选测.py main --list 列的 9 个）：云端全部通过（提交 95bc98c17a，2 片，最长 3.5 分钟）。本机先跑过一次：`xiyou_bulk_pills`、`xiyou_garou_progress`、`xiyou_magic_weapon_level`、`xiyou_raven_artifact`、`xiyou_tianqi_artifact_aura` 通过，四份事件对照在本机负载 30 左右时 600 秒超时、没有输出，所以改到云端跑。
 
 ## 本分支提交
 
-- 待写
+- 95bc98c17 修究极丹连用卡顿：法宝连升只在最后重算一次角色
+- （本提交）交付单标可合并
