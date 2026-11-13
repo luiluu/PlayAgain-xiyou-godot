@@ -229,7 +229,7 @@ static func for_image(key: String, meta := {}, states := []) -> XAppearance:
 const PROFILES := {
 	"Raven_Normal_SV": [64, 64, 9, 4, 60, 64], "BlackDragon_Mira_SV": [64, 64, 10, 2, 55, 64],
 	"Codex_Yomi_SV": [64, 64, 0, 4, 63, 64], "Codex_Jingliu_SV": [64, 64, 11, 2, 54, 64],
-	"Codex_Toji_SV": [64, 64, 9, 3, 51, 64], "Codex_Sukuna_SV": [64, 64, 14, 5, 48, 63],
+	"Codex_Toji_SV": [64, 64, 9, 3, 51, 64], "Codex_Sukuna_SV": [64, 64, 11, 3, 53, 61],
 	"Garou_Human": [64, 64, 7, 0, 51, 64], "Raven_Mythic_SV": [64, 64, 11, 4, 58, 63],
 	"Garou_Cosmic": [64, 64, 18, 14, 46, 55], "UserSV_MiraHuman": [260, 240, 43, 48, 196, 178],
 	"UserSV_MiraDragon": [340, 280, 61, 58, 260, 217], "UserSV_RavenMythic": [380, 280, 84, 55, 268, 211],
@@ -242,7 +242,7 @@ const PROFILES := {
 	"Codex_Sukuna_Full": [270, 260, 79, 42, 190, 222], "garou_human_v2": [192, 176, 50, 37, 146, 172],
 	"garou_cosmic": [128, 128, 28, 8, 99, 120], "yunshang": [192, 192, 34, 52, 158, 184],
 	"Yunshang": [192, 192, 34, 52, 158, 184], "Codex_Garou_QHuman": [64, 64, 7, 0, 51, 64],
-	"Codex_Garou_QCosmic": [112, 112, 32, 24, 80, 96], "Codex_Sukuna_QFull": [64, 64, 8, 6, 47, 62],
+	"Codex_Garou_QCosmic": [112, 112, 32, 24, 80, 96], "Codex_Sukuna_QFull": [64, 64, 11, 3, 52, 61],
 	"CatSwordSaint_v3": [192, 160, 65, 72, 128, 144], "CatSwordSaint_SV_v3": [128, 128, 43, 64, 85, 113],
 	# 谷雨的档由 installNativeGuyuRuntime installVisualHooks（Scene_Boot.start）登记进同一张表，不走 inferProfile
 	"Codex_Guyu": [160, 160, 23, 45, 137, 145],
@@ -251,6 +251,15 @@ const PROFILES := {
 }
 ## v0.62 v1.07 bookScale：只在人物图鉴里再乘的倍率，战斗大小不变（流萤 0.8，Kyo 2026-10-31「图鉴里的精灵有点大」）
 const BOOK_SCALE := {"Codex_Liuying_SV": 0.8}
+## 宿傩新美术（XSukuna.ART，content/sukuna/）之前的旧图归一档；ART＝false 时 profile_of 用这两档，与旧图一起回退
+const SUKUNA_OLD_PROFILES := {"Codex_Sukuna_SV": [64, 64, 14, 5, 48, 63], "Codex_Sukuna_QFull": [64, 64, 8, 6, 47, 62]}
+
+
+## 按图名取归一档（PROFILES，宿傩看 XSukuna.ART 选新旧档）；没有时空数组
+static func profile_of(key: String) -> Array:
+	if not XSukuna.ART and SUKUNA_OLD_PROFILES.has(key):
+		return SUKUNA_OLD_PROFILES[key]
+	return PROFILES.get(key, [])
 const PROFILE_H := 72.0
 const PROFILE_W := 129.0
 ## inferProfile 量过的（按图名记一次）
@@ -263,7 +272,7 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	if key == "" or not f.has("tex"):
 		return {}
 	var multi := not (f.get("rect", Rect2()) as Rect2).has_area()
-	var p: Array = PROFILES.get(key, [])
+	var p: Array = profile_of(key)
 	if p.is_empty():
 		if not _inferred.has(key):
 			if multi and not motion in ["walk", "wait"]:

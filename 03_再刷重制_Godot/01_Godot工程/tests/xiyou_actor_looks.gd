@@ -79,8 +79,8 @@ func _sukuna() -> void:
 	sp.setup(a, 0.75)
 	sp.start_weapon(1)
 	check("sukuna.weapon_hidden", sp.weapon != null and not sp.weapon.visible)
-	# QFull 档 [64, 64, 8, 6, 47, 62]：缩放 min(72/56, 129/39)
-	check("sukuna.scale", is_equal_approx(sp.body_scale, 72.0 / 56.0), sp.body_scale)
+	# QFull 档 [64, 64, 11, 3, 52, 61]（新美术，XSukuna.ART）：缩放 min(72/58, 129/41)
+	check("sukuna.scale", is_equal_approx(sp.body_scale, 72.0 / 58.0), sp.body_scale)
 	sp.queue_free()
 	s.actor_advance[XSukuna.ACTOR] = 2
 	a.forget_skill(10245)
