@@ -115,6 +115,33 @@ def 拆战斗头(素材: Path, 名: str, 去领口=True) -> np.ndarray:
     return 出
 
 
+# ---------- 拆身 ----------
+
+def 拆身(类型: str, 素材: Path, 名: str) -> np.ndarray:
+    """把原版角色的头去掉，剩下的整张身体（行走 144×192／战斗 576×384）就是身体部件的底子。
+
+    做法是让生成器拿一个全透明的头部件去拼：旧头、旧下巴、垂下来的旧头发擦掉，盖住的身体照正下方补，
+    挡在脸前的手留着。所以拆出来的身体再配上头，和直接拿原版角色当身体供体拼出来的一样。
+    """
+    import tempfile
+    with tempfile.TemporaryDirectory() as 目录:
+        目录 = Path(目录)
+        if 类型 == "行走":
+            Image.fromarray(np.zeros((走.格, 3 * 走.格, 4), np.uint8), "RGBA").save(目录 / "空.png")
+            出, _ = 走.拼({"头部件": "空.png", "身体": 名}, 素材, 目录)
+        else:
+            Image.fromarray(np.zeros((战.格, 战.格, 4), np.uint8), "RGBA").save(目录 / "空.png")
+            出, _ = 战.拼({"头部件": "空.png", "身体": 名}, 素材, 目录)
+    return 出
+
+
+def 命令_拆身(参):
+    出 = 拆身(参.类型, Path(参.素材), 参.角色)
+    Path(参.输出).parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(出.astype(np.uint8), "RGBA").save(参.输出, optimize=False)
+    print(f"已拆出 {参.输出}（{出.shape[1]}×{出.shape[0]}，{参.类型}图身体部件，来自 {参.角色}）")
+
+
 def 命令_拆头(参):
     出 = (拆行走头 if 参.类型 == "行走" else 拆战斗头)(Path(参.素材), 参.角色, not 参.留领口)
     Path(参.输出).parent.mkdir(parents=True, exist_ok=True)
@@ -189,11 +216,100 @@ def 体检(路: Path, 类型: str):
     return 项
 
 
+身体规 = {   # 门槛照原版量：标准肤色的原版角色拆出来的身体，行走图全图颜色中位数 30、p75 39，每帧 24／31；战斗图全图 67／77，每帧最多 52／65
+    "行走身体": {"宽高": (144, 192), "帧": [(行, 列) for 行 in range(4) for 列 in range(3)], "每帧色": 40, "全图色": 48},
+    "战斗身体": {"宽高": (576, 384), "帧": list(range(54)), "每帧色": 64, "全图色": 96},
+}
+
+
+def 身体帧(图, 类型, f):
+    if 类型 == "行走身体":
+        return 图[f[0] * 走.格:(f[0] + 1) * 走.格, f[1] * 走.格:(f[1] + 1) * 走.格]
+    return 战.取帧(图, f)
+
+
+动作名 = ("前进", "待机", "咏唱", "防御", "受伤", "闪避", "突刺", "挥舞", "飞行道具", "技能", "魔法", "道具",
+          "逃跑", "胜利", "濒死", "异常", "睡眠", "倒地")
+
+
+def 帧名(类型, f):
+    return f"朝{走.方向名[f[0]]}第 {f[1] + 1} 帧" if 类型 == "行走身体" else f"第 {f + 1} 帧（{动作名[f // 3]}）"
+
+
+def 肤色量(图):
+    肤 = np.array([[int(c[i:i + 2], 16) for i in (1, 3, 5)] for c in 标准肤色])
+    rgb = 图[..., :3][图[..., 3] >= 128]
+    if not len(rgb):
+        return 0, 0
+    d = np.abs(rgb[:, None, :] - 肤[None]).sum(-1).min(1)
+    return int((d == 0).sum()), int(((d > 0) & (d < 30)).sum())
+
+
+def 体检身体(路: Path, 类型: str, 底子路: Path):
+    """身体部件体检：和拆出来的底子比，姿势不能改，颜色、描边、碎点不能比原版差。"""
+    规 = 身体规[类型]
+    原 = np.array(Image.open(路).convert("RGBA")).astype(np.int32)
+    底 = np.array(Image.open(底子路).convert("RGBA")).astype(np.int32)
+    高, 宽 = 原.shape[:2]
+    项 = []
+    对 = (宽, 高) == 规["宽高"]
+    项.append(("尺寸", 对, f"{宽}×{高}" + ("" if 对 else f"；要 {规['宽高'][0]}×{规['宽高'][1]}，和整张{'行走' if 类型 == '行走身体' else '战斗'}图一样")))
+    if not 对 or 底.shape != 原.shape:
+        if 对:
+            项.append(("底子", False, f"底子 {底子路.name} 的尺寸不对，要用 拆身 拆出来的那张"))
+        return 项
+    半 = int(((原[..., 3] > 0) & (原[..., 3] < 255)).sum())
+    项.append(("透明度只有 0 和 255", 半 == 0, f"半透明的点 {半} 个"))
+    实全 = 原[..., 3] >= 128
+    全色 = len(np.unique(色键(原)[实全]))
+    项.append(("全图颜色数", 全色 <= 规["全图色"], f"{全色} 种（上限 {规['全图色']}）；所有帧共用一套颜色，同一种布料每帧用同几个色"))
+    最多, 最多帧, 最偏, 最偏帧, 空帧, 比们 = 0, None, 0.0, None, [], []
+    碎, 底碎 = 0, 0
+    for f in 规["帧"]:
+        块, 底块 = 身体帧(原, 类型, f), 身体帧(底, 类型, f)
+        实, 底实 = 块[..., 3] >= 128, 底块[..., 3] >= 128
+        if 底实.sum() >= 50 and 实.sum() < 0.5 * 底实.sum():
+            空帧.append(帧名(类型, f))
+        if not 实.any():
+            continue
+        色 = len(np.unique(色键(块)[实]))
+        if 色 > 最多:
+            最多, 最多帧 = 色, f
+        偏 = float((实 ^ 底实).sum() / max(int(底实.sum()), 1))
+        if 偏 > 最偏:
+            最偏, 最偏帧 = 偏, f
+        碎 += len(小块(实))
+        底碎 += len(小块(底实))
+        边 = 外缘(实)
+        里 = 实 & ~边
+        if 边.any() and 里.any():
+            L = 亮度(块[..., :3])
+            比们.append(float(L[边].mean() / max(float(L[里].mean()), 1.0)))
+    项.append(("每帧有内容", not 空帧, "全部有" if not 空帧 else f"这几帧比底子少了一半以上：{'、'.join(空帧[:6])}"))
+    项.append(("每帧颜色数", 最多 <= 规["每帧色"], f"最多的是{帧名(类型, 最多帧) if 最多帧 is not None else ''} {最多} 种（上限 {规['每帧色']}）"))
+    姿 = 最偏 <= 0.35
+    项.append(("姿势没改", (None if 最偏 > 0.15 else True) if 姿 else False,
+              (f"和底子轮廓差得最多的是{帧名(类型, 最偏帧)}，差了底子点数的 {最偏:.0%}" if 最偏帧 is not None else "轮廓和底子一样") + "（超过 15% 提醒，超过 35% 不合格）"
+              + ("" if 姿 else "；动作要照底子，只改衣服和配色，不要重画姿势")))
+    项.append(("没有碎点", 碎 <= 底碎, f"落单的碎点 {碎} 个（底子 {底碎} 个）"))
+    中 = float(np.median(比们)) if 比们 else 1.0
+    项.append(("外缘描边", 中 <= 0.78, f"各帧外缘平均亮度是里面的 {中:.0%}（中位数；原版行走 62%、战斗 56%，上限 78%）"))
+    标, 近 = 肤色量(原)
+    底标, 底近 = 肤色量(底)
+    肤对 = 近 <= 底近 + 20 and (标 > 0 or 底标 == 0)
+    项.append(("皮肤用标准肤色", 肤对, f"标准肤色的点 {标} 个，像皮肤又不是标准肤色的点 {近} 个（底子 {底标}／{底近}）"
+              + ("" if 肤对 else "；脖子、手要用 " + " ".join(标准肤色) + "，和头对得上")))
+    return 项
+
+
 def 命令_体检(参):
     坏 = 0
+    if 参.类型 in 身体规 and not 参.底子:
+        raise SystemExit("身体部件体检要给 --底子（拆身 拆出来的那张），用来比姿势")
     for 文件 in 参.文件:
-        print(f"== {文件}（{参.类型}图头部件）")
-        for 名, 合, 说 in 体检(Path(文件), 参.类型):
+        身体 = 参.类型 in 身体规
+        print(f"== {文件}（{参.类型.replace('身体', '')}图{'身体' if 身体 else '头'}部件）")
+        for 名, 合, 说 in (体检身体(Path(文件), 参.类型, Path(参.底子)) if 身体 else 体检(Path(文件), 参.类型)):
             标 = "提醒" if 合 is None else ("合格" if 合 else "不合格")
             坏 += 合 is False
             print(f"  [{标}] {名}：{说}")
@@ -202,7 +318,7 @@ def 命令_体检(参):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description="头部件：拆头、体检")
+    p = argparse.ArgumentParser(description="部件：拆头、拆身、体检")
     子 = p.add_subparsers(dest="命令", required=True)
     a = 子.add_parser("拆头", help="把原版角色的头拆成头部件")
     a.add_argument("类型", choices=("行走", "战斗"))
@@ -211,9 +327,16 @@ def main(argv=None):
     a.add_argument("--素材", required=True)
     a.add_argument("--留领口", action="store_true", help="不擦掉脖子上方带着的旧领口（默认擦掉）")
     a.set_defaults(函数=命令_拆头)
-    b = 子.add_parser("体检", help="检查头部件合不合规格")
-    b.add_argument("类型", choices=("行走", "战斗"))
+    c = 子.add_parser("拆身", help="把原版角色的头去掉，剩下的身体当身体部件的底子")
+    c.add_argument("类型", choices=("行走", "战斗"))
+    c.add_argument("角色", help="行走：文件名#序号；战斗：文件名")
+    c.add_argument("输出")
+    c.add_argument("--素材", required=True)
+    c.set_defaults(函数=命令_拆身)
+    b = 子.add_parser("体检", help="检查头部件、身体部件合不合规格")
+    b.add_argument("类型", choices=("行走", "战斗", "行走身体", "战斗身体"))
     b.add_argument("文件", nargs="+")
+    b.add_argument("--底子", help="身体部件体检用：拆身 拆出来的那张")
     b.set_defaults(函数=命令_体检)
     参 = p.parse_args(argv)
     参.函数(参)
