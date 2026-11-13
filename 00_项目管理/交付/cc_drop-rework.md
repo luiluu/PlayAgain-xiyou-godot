@@ -1,7 +1,7 @@
 # 交付：cc/drop-rework
 
 - 车道／工作者：C 规则·机制／cc（掉落重构）
-- 状态：进行中
+- 状态：可合并
 
 掉落重构方案 v0.8（私密仓库 xiyou-design-docs `重制设定/掉落重构方案_v0.8.md`，Kyo 11-13 23:15「根据你的建议来」）四期一起交。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
 
@@ -46,6 +46,13 @@
 
 - 无
 
+## 验证
+
+- 云端选测整轮通过：提交 0671b69d32，573 个场景、16 片；偶发 1 个（`xiyou_fabao_rework.tscn` 并行时失败、单跑通过）。
+- 本机：专项 `xiyou_tianqi_drop` 73/73，`xiyou_tianqi_famine_reaper` 13/13、`xiyou_tianqi_alien_gear` 49/49、`xiyou_tianqi_affix_battle` 63/63；语法检查、工具快速回归通过。
+- 没做实机试玩；每小时场数、每层实际件数等虚拟玩家线实测。
+- 和金钱重构线（cc/tianqi-money）约好：难度倍率改读 `XTianqiBalance.reward_mult`、自动卖改调 `XTianqiMoney.sell_price`，由后合的那条改。
+
 ## 待交叉核查
 
 - 改了核心文件 `battle/battle_logic.gd`（drop_chances 签名加可选参数、_roll_drops、rewards、grant 各几行）。
@@ -55,4 +62,4 @@
 - b371f843d 第一期：通用掉落、加成、难度倍率
 - 84c380c28 第二期：招牌掉落递增概率
 - 6d1c2fdb0 第三期：守层者、副本档位、商店货不能喂
-- 第四期：屏蔽掉落折钱、图鉴指路
+- 3022181e3 第四期：屏蔽掉落折钱、图鉴指路
