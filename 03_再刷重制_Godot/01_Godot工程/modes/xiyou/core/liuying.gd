@@ -655,6 +655,7 @@ static func after_refresh(b) -> void:
 		if id != IMMUNE and is_negative(id):
 			b.state_ids.erase(id)
 			b.state_turns.erase(id)
+			XActor.read_touch()  # 直接抹了状态：只读窗口与跨步保留的表作废
 
 
 ## battlerName 包装：萨姆形态时 Codex_Sam_SV
