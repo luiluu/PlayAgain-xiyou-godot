@@ -32,6 +32,8 @@ static var _at := 0
 
 static func data() -> Dictionary:
 	if _data.is_empty():
+		if XDataFile.missing(PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:
 			push_error("XTianqiSummit: 读不到 " + PATH)

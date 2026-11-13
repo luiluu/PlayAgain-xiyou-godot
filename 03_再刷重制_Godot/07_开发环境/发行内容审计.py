@@ -24,6 +24,7 @@ DENY = [
     'content/tianqi/*',               # 天启篇美术（骑士、七印）
     'content/gojo/*',                 # 五条悟（只进天启篇）
     'modes/xiyou/rift_alien.json',    # 漩涡五阶段怪物异化设计数值
+    'modes/xiyou/ui/tianqi/*',        # 天启篇五档难度徽章
 ]
 RELEASE_PRESETS = ('Windows 发行', '安卓 发行', 'macOS 发行')
 
