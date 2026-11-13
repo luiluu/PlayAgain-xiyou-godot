@@ -239,7 +239,8 @@ func _tq_open_achievements() -> void:
 func _tq_check_update() -> void:
 	XUpdatePage.open(self)
 
-## 标题右下角「问题反馈 QQ 群」（XFeedback，Kyo 11-13）：版本说明上面一行，点一下复制群号；不抢键盘焦点
+## 标题右下角「问题反馈 QQ 群」（XFeedback，Kyo 11-13）：版本说明上面一行，点一下复制群号；不抢键盘焦点。
+## 有问卷时群号行上面再放「填写反馈问卷」
 func _add_feedback() -> void:
 	if not XFeedback.SHOW:
 		return
@@ -249,6 +250,13 @@ func _add_feedback() -> void:
 	var sz := b.get_combined_minimum_size()
 	b.size = sz
 	b.position = Vector2(vs.x - sz.x - 12.0, vs.y - 40.0 - sz.y - 6.0)
+	# 反馈问卷（XFeedback.has_form，腾讯问卷）：群号行上面一行，点了复制游戏信息并打开问卷
+	if XFeedback.has_form():
+		var f := XFeedback.make_form_button(16)
+		_layer.add_child(f)
+		var fs := f.get_combined_minimum_size()
+		f.size = fs
+		f.position = Vector2(vs.x - fs.x - 12.0, b.position.y - fs.y)
 
 ## 切后台时自动存的档（XAutoSave）：有就在左上角放一个「继续」，手动存档后那份就删了、按钮也就没了
 func _add_auto_button() -> void:
