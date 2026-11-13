@@ -3529,6 +3529,7 @@ func grant(r: Dictionary) -> Array:
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
 	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
+	XTianqiDrop.grant_sold(self)  # 天启篇通用掉落：挂机屏蔽掉落时低于门槛的折成钱
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0

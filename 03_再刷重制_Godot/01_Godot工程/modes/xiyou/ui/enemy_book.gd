@@ -305,6 +305,8 @@ static func drop_rows(e: XEnemy) -> Array:
 		var pct := float(r.rate)
 		var item: Dictionary = r.item.duplicate()
 		item.name = str(item.get("name", "")) + "   " + ("【绝对掉落】" if pct >= 100 else js_num(pct) + "%")
+		if int(r.get("fails", 0)) > 0 and pct < 100:
+			item.name += "（已连续 %d 次没出）" % int(r.fails)  # 天启篇招牌掉落：递增概率指路
 		out.append({"kind": r.type.to_lower(), "id": r.id, "item": item, "base": r.item})
 	return out
 

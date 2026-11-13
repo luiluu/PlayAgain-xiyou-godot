@@ -20,7 +20,10 @@ extends RefCounted
 ## - 第三期：守层者不走每场的掷法，固定给（首杀 1 件高一档＋3 件门槛档，再打 2 件，28～30 层没有随机遇敌、再打 6 件），不吃加成；
 ##   副本里按所选档位把高一档、高两档的权重乘 1／1.3／1.6／2（件数不变）；商店买来的装备打上 tq_bought，不能喂法宝（NO_FEED_BOUGHT）。
 ##
-## 回退（O-待定-1）：`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
+## - 第四期：挂机「屏蔽掉落」开着时，通用掉落里低于门槛档的自动按卖价折成钱、够门槛的留着（AUTO_SELL；原版是精良及以下全丢）；
+##   怪物图鉴、地图传送预览的掉率换成招牌掉落的面板概率，图鉴里标「已连续 N 次没出」。
+##
+## 回退（O-待定-1）：`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
@@ -28,6 +31,7 @@ static var BONUS := true
 static var DIFFICULTY := true
 static var SIGNATURE := true
 static var NO_FEED_BOUGHT := true
+static var AUTO_SELL := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -459,9 +463,40 @@ static func battle_drops(logic) -> Array:
 		var drops := []
 		if not logic.enemies.any(func(e): return e.zq_trial_loot) and logic.enemies.any(func(e): return not e.hidden):
 			drops = roll(logic.state, _members(logic), func(): return logic.random.reward.next_float("tianqi_generic", "battle"), int(logic.troop_id))
-			drops = XPingbi.filter_drops(logic.state, XHangUp.shield_drops(logic.state, drops))
+			drops = XPingbi.filter_drops(logic.state, _auto_sell(logic, drops))
 		logic.set_meta("tianqi_generic", drops)
 	return (logic.get_meta("tianqi_generic") as Array).duplicate(true)
+
+
+## 挂机「屏蔽掉落」开着时：通用掉落里低于这一层门槛档的不进背包，按卖价折成钱（原版是普通、优秀、精良一律丢掉；
+## 天启篇这些装备是法宝的口粮，够门槛的要留着）。折的钱记在本场，XBattleLogic.grant 里发。AUTO_SELL 关着时照原版丢。
+static func _auto_sell(logic, drops: Array) -> Array:
+	var s: XState = logic.state
+	if not (XHangUp.is_active(s) and bool(XHangUp.settings(s).DropShield)):
+		return drops
+	if not AUTO_SELL:
+		return XHangUp.shield_drops(s, drops)
+	var fixed = guardian_grades(s, int(logic.troop_id))
+	var gate := gate_grade(int(fixed[0]) if fixed is Array else floor_of(s))
+	var kept := []
+	var gold := 0
+	for d in drops:
+		var rec := XDB.rec("Weapons" if int(d.kind) == 2 else "Armors", int(d.id))
+		if XQuality.grade(rec) < gate:
+			gold += floori(float(rec.get("price", 0)) / 2.0)
+		else:
+			kept.append(d)
+	logic.set_meta("tianqi_generic_gold", gold)
+	return kept
+
+
+## XBattleLogic.grant 调：发自动卖掉的钱
+static func grant_sold(logic) -> int:
+	var gold := int(logic.get_meta("tianqi_generic_gold", 0))
+	if gold > 0:
+		logic.state.gain_gold(gold)
+		logic.set_meta("tianqi_generic_gold", 0)
+	return gold
 
 
 ## 数字避开 4（规则表自检）

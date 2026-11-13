@@ -32,6 +32,7 @@ func _run() -> void:
 	_battle()
 	_signature()
 	_guardian_and_dungeon()
+	_filter_and_book()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -276,6 +277,51 @@ func _guardian_and_dungeon() -> void:
 	old.gain_gear("weapon", 1, 1)
 	XTianqiDrop.mark_bought(old, ob)
 	_check("legacy_not_marked", not old.gear[ob].has("tq_bought"))
+
+
+## 第四期：挂机屏蔽掉落时低于门槛的折成钱；图鉴掉率用招牌面板概率、不列交给通用掉落的行
+func _filter_and_book() -> void:
+	var s := _tianqi_state()
+	s.map_id = 13  # 六层：门槛优秀，低一档是普通
+	s.set_variable(20, 6)
+	var troop := int(XDB.map(13).encounterList[0].troopId)
+	var lg := XBattleLogic.new()
+	lg.setup(troop, s)
+	var low := XTianqiDrop.pick(s, 6, 0, [], 0.9, 0.3)
+	var ok := XTianqiDrop.pick(s, 6, 1, [], 0.9, 0.3)
+	_check("filter_idle_keeps_all", XTianqiDrop._auto_sell(lg, [low, ok]).size() == 2)
+	s.hang_up_active = true
+	s.hang_up_origin = Vector2i(1, 1)
+	s.flags.erase("HangUpProhibited")
+	XHangUp.settings(s)["DropShield"] = true
+	var kept: Array = XTianqiDrop._auto_sell(lg, [low, ok])
+	var price := floori(float(XDB.rec("Weapons" if int(low.kind) == 2 else "Armors", int(low.id)).get("price", 0)) / 2.0)
+	_check("filter_sells_below_gate", XHangUp.is_active(s) and kept.size() == 1 and kept[0] == ok and int(lg.get_meta("tianqi_generic_gold", -1)) == price, [kept, lg.get_meta("tianqi_generic_gold", -1), price])
+	var gold := s.gold
+	_check("filter_gold_granted", XTianqiDrop.grant_sold(lg) == price and s.gold == gold + price and XTianqiDrop.grant_sold(lg) == 0)
+	s.hang_up_active = false
+	lg.end_battle(1)
+	# 图鉴：一只带低品质装备的怪，列表里不出现那些行；概率等于招牌面板概率
+	var enemy: Dictionary = {}
+	for e in XDB.table("Enemies"):
+		if not e is Dictionary:
+			continue
+		var all: Array = (e.get("dropItems", []) as Array).filter(func(d): return int(d.kind) > 0 and float(d.denominator) > 0).map(func(d): return [int(d.kind), int(d.dataId)])
+		all.append_array(XBattleLogic._extra_drops(e).map(func(x): return [int(x.kind), int(x.id)]))
+		if (e.get("dropItems", []) as Array).any(func(d): return int(d.kind) == 1 and float(d.denominator) > 1) and all.any(func(r): return not XTianqiDrop.keeps_row(s, r[0], r[1])):
+			enemy = e
+			break
+	var rows: Array = XMapTransfer.drops(s, enemy)
+	_check("book_rows_cut", not enemy.is_empty() and not rows.is_empty() and rows.all(func(r): return XTianqiDrop.keeps_row(s, int(r.kind), int(r.id))), rows.size())
+	var item_row: Dictionary = rows.filter(func(r): return int(r.kind) == 1)[0]
+	var raw := 0.0
+	for d in enemy.dropItems:
+		if int(d.kind) == 1 and int(d.dataId) == int(item_row.id):
+			raw = 1.0 / float(d.denominator)
+			break
+	_check("book_rate_signature", absf(float(item_row.rate) - minf(100.0, XTianqiDrop.signature_base(1, int(item_row.id), raw) * XTianqiDrop.party_mult(s) * 100.0)) < 0.002, [item_row.rate, raw])
+	XTianqiDrop.roll_signature(s, "%d:1:%d" % [int(enemy.id), int(item_row.id)], 0.0001)
+	_check("book_fails_shown", int(XMapTransfer.drops(s, enemy).filter(func(r): return int(r.kind) == 1 and int(r.id) == int(item_row.id))[0].fails) >= 0)
 
 
 func _switches() -> void:
