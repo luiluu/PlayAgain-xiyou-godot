@@ -140,6 +140,9 @@ func _run() -> void:
 	bot.rng_seed = int(_arg("--vp-seed", "20261113"))
 	bot.max_ticks = int(_arg("--vp-ticks", "6000"))
 	bot.out_dir = _arg("--vp-out")
+	bot.snapshot_dir = _arg("--vp-snapshot-dir")
+	if bot.out_dir != "":
+		DirAccess.make_dir_recursive_absolute(bot.out_dir)
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
 	bot.equip_enabled = not OS.get_cmdline_user_args().has("--vp-no-equip")
 	bot.farm_enabled = not OS.get_cmdline_user_args().has("--vp-no-farm")

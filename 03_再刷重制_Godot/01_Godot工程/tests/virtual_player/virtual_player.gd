@@ -61,6 +61,8 @@ var orbs_enabled := true           # 大厅里把神秘珠鉴定掉、给装备�
 var race_enabled := true           # 大厅里有进阶石就给种族祝福进阶（同菜单「种族祝福」）
 var lottery_enabled := true        # 大厅里有抽奖券就去希禾那里「自定义单抽」全部抽掉
 var spend_enabled := true          # 大厅里逛商店：买换上能变强的装备、出战的人能学的书、加属性的丹药，买完用掉（法宝经验丹不买）
+var snapshot_dir := ""             # 给了就在每层第一次去挑战守层者之前把存档写成 floor_<层>_<种子>.json（XState.to_dict()；法宝线拿真实队伍量守层者）
+var _snap_done := {}
 var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
 var fabao_feeds := 0               # 喂过几次法宝
 var spend_buys := 0                # 一共买了多少件
@@ -1384,6 +1386,7 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 			_need_grind = 0
 		return
 	if _aim(map, g, "challenge"):
+		_snapshot(st, floor)
 		if _arrived(map.player):
 			_floor_row()["challenges"] = int(_floor_row().get("challenges", 0)) + 1
 			_mark("guardian_challenged")
@@ -1785,6 +1788,19 @@ func _plan(map: XMapScene) -> void:
 # ---------------------------------------------------------------- 报告
 
 ## 养成现状（给报告用）：每人的真气和境界、抽奖券、肝帝积分、副本首领熟练度
+## 每层第一次去挑战守层者之前留一份队伍快照（基准伤害工具 baseline_dps --snapshots 读）
+func _snapshot(st: XState, floor: int) -> void:
+	if snapshot_dir == "" or _snap_done.has(floor):
+		return
+	_snap_done[floor] = true
+	DirAccess.make_dir_recursive_absolute(snapshot_dir)
+	var f := FileAccess.open(snapshot_dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(st.to_dict()))
+		f.close()
+		_mark("snapshot_%d" % floor)
+
+
 ## 这位 NPC 现在这一页开不开店（事件指令里有「商店处理」）
 func _is_shop(e: MVEvent) -> bool:
 	return e.page.get("list", []).any(func(c): return int(c.code) == 302)
