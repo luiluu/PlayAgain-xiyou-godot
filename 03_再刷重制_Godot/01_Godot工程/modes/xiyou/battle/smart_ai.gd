@@ -65,7 +65,7 @@ static func choose(l: XBattleLogic, a: XActor, cannon_only := false) -> Dictiona
 	return r
 
 
-## O-待定-1：智能选招整段共用一个只读窗口（自动战斗每次轮到角色时算一遍，原来每读一项能力值各开各的窗口、
+## O-392：智能选招整段共用一个只读窗口（自动战斗每次轮到角色时算一遍，原来每读一项能力值各开各的窗口、
 ## 技能表与特性表重算几百遍，电脑上一次 0.25 秒以上、手机上一两秒，开战第一下和每次行动前都停）。
 ## false＝照原来每次读取各算各的。XIYOU_READ_VERIFY=1 时窗口里每次命中都重算比对（同 O-348）。
 static var CHOOSE_WINDOW := true

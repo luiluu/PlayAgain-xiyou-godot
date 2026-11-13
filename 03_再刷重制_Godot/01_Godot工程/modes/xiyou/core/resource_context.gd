@@ -289,7 +289,7 @@ func refresh(b: XBattler) -> void:
 	var previous := b.lifecycle_context
 	b.lifecycle_context = state_context(b)
 	var was_dirty := b.effect_dirty
-	# O-待定-4：一次 refresh（卸掉不能穿的、抹掉免疫的状态、夹 HP／MP／TP、同步阵亡、重建被动缓存）读的是同一名角色的
+	# O-395：一次 refresh（卸掉不能穿的、抹掉免疫的状态、夹 HP／MP／TP、同步阵亡、重建被动缓存）读的是同一名角色的
 	# 特性、三项上限、技能表，包进一个只读窗口（O-348 的机制）：这些表只算一次；中间真改了东西（卸装、抹状态、
 	# 夹到了值、加减阵亡）当场作废。REFRESH_WINDOW = false 照原来各算各的。
 	var base := not (not b is XEnemy and XBattler._adding_state)

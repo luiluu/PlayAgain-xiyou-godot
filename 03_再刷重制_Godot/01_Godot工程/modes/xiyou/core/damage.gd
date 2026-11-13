@@ -395,6 +395,11 @@ static func apply_variance(value: float, variance: int, random: XRandomStream = 
 	if random == null:
 		return value # Preview midpoint; never consume a live/global stream.
 	var amp := floorf(maxf(absf(value) * variance / 100.0, 0.0))
+	if amp >= 4294967295.0:
+		# 幅度超过 2^32（伤害约 2.1e10 以上）：照原版 Math.randomInt(amp+1)＝floor(r×(amp+1))，用浮点算，int 装不下也不溢出
+		var va := floorf(random.next_float("variance_a") * (amp + 1.0))
+		var vb := floorf(random.next_float("variance_b") * (amp + 1.0))
+		return value + (va + vb - amp) if value >= 0.0 else value - (va + vb - amp)
 	var v := random.next_int_inclusive(0, int(amp), "variance_a") + random.next_int_inclusive(0, int(amp), "variance_b") - amp
 	return value + v if value >= 0.0 else value - v
 
