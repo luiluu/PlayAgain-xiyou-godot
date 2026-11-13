@@ -146,6 +146,20 @@ func _run() -> void:
 	await frames(60)
 	check("g_rollback_stays_prohibited", not XHangUp.enabled(s) and not XHangUp.is_active(s))
 	XHangUp.KEY_ENABLES = true
+	# 触屏（安卓没有 L 键）：禁用时也显示挂机按钮，点了照 L 开启（O-待定，XHangUp.TOUCH_SHOW_PROHIBITED）
+	XPlatform.force_mobile = true
+	await frames(2)
+	check("touch_prohibited_button_shown", ov.inter.visible and ov.button.is_visible_in_tree())
+	ov.button.pressed.emit()
+	check("touch_button_enables", await until(func(): return XHangUp.enabled(s) and not map.busy, 600) and not XHangUp.is_active(s), [s.flags.get("HangUpProhibited"), map.busy])
+	s.flags.HangUpProhibited = true
+	XHangUp.TOUCH_SHOW_PROHIBITED = false
+	await frames(2)
+	check("touch_rollback_hidden", not ov.inter.visible)
+	XHangUp.TOUCH_SHOW_PROHIBITED = true
+	XPlatform.force_mobile = null
+	await frames(2)
+	check("desktop_prohibited_hidden", not ov.inter.visible)
 	s.flags.HangUpProhibited = false
 	# 一层：G 键开始
 	await map.load_map(5, 11, 13, 2)

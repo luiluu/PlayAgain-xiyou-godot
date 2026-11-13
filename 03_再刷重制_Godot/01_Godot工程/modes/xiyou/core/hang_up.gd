@@ -61,8 +61,16 @@ static func current_active() -> bool:
 	return XState.current != null and is_active(XState.current)
 
 
+## O-待定：触屏设备上挂机被禁用时，原版连快捷界面带按钮一起藏起来；安卓没有 L 键，只能回大厅找大工匠开（v0.01.07 Kyo 反馈安卓挂机开不了）。
+## 这里触屏设备禁用时也显示快捷界面，点按钮走 XMapScene.toggle_hang_up：禁用时照 L 的公共事件 484 开启并提示（KEY_ENABLES）。
+## 设 false 恢复原版（禁用时不显示）。桌面有 G／L 键，照原版藏着。
+static var TOUCH_SHOW_PROHIBITED := true
+
+
 static func inter_show(s: XState) -> bool:
-	return enabled(s) and bool(settings(s).showInter)
+	if s == null:
+		return false
+	return (enabled(s) or (TOUCH_SHOW_PROHIBITED and KEY_ENABLES and XPlatform.is_touch())) and bool(settings(s).showInter)
 
 
 ## 挂机时长文字（不在挂机时「---」）
