@@ -35,15 +35,47 @@ func _arg(name: String, default := "") -> String:
 	return default
 
 
+## 给人看的小结（云端运行页摘要用）
+func _summary(rep: Dictionary) -> String:
+	var lines := ["## 虚拟玩家（%s，种子 %d）" % ["爬塔" if rep.mode == "climb" else "逛图", int(rep.seed)], ""]
+	if rep.mode == "climb":
+		lines.append("- 爬到：**第 %d 层**（已通过 %d 层）" % [int(rep.floor), maxi(0, int(rep.floor) - 1)])
+		lines.append("- 收工原因：%s" % (str(rep.climb_stop) if rep.climb_stop != "" else "步数用完或达到目标"))
+		lines.append("- 全灭 %d 次，挂机练级 %d 场，队伍等级 %s" % [int(rep.defeats), int(rep.grind_battles), str(rep.levels)])
+	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
+	if rep.aborted != "":
+		lines.append("- **卡死放弃**：%s" % str(rep.aborted))
+	if not rep.stuck.is_empty():
+		lines.append("- 卡住过 %d 次（自救后继续）：%s" % [rep.stuck.size(), "、".join(rep.stuck.slice(0, 6).map(func(st): return "第 %d 步 %s" % [int(st.tick), str(st.screen)]))])
+	for v in rep.violations:
+		lines.append("- %s：%s 角色 %d 数值 %s（第 %d 步，地图 %d）" % ["**出错**" if v.hard else "存疑", str(v.what), int(v.actor), str(v.value), int(v.tick), int(v.map)])
+	if rep.mode == "climb" and not rep.floor_log.is_empty():
+		lines.append("")
+		lines.append("| 层 | 到达（分钟） | 挑战次数 | 全灭 | 练级场数 | 到达时等级 |")
+		lines.append("| --- | --- | --- | --- | --- | --- |")
+		for r in rep.floor_log:
+			lines.append("| %d | %.1f | %d | %d | %d | %s |" % [int(r.floor), float(r.msec) / 60000.0, int(r.get("challenges", 0)), int(r.defeats), int(r.grind_battles), str(r.levels)])
+	return "\n".join(lines) + "\n"
+
+
 func _run() -> void:
-	var free := OS.get_cmdline_user_args().has("--vp-free")
+	var free: bool = OS.get_cmdline_user_args().has("--vp-free")
 	var bot := VP.new()
 	bot.rng_seed = int(_arg("--vp-seed", "20261113"))
 	bot.max_ticks = int(_arg("--vp-ticks", "6000"))
 	bot.out_dir = _arg("--vp-out")
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
 	var goals_arg := _arg("--vp-goals")
-	bot.goals = [] if free else (Array(goals_arg.split(",", false)) if goals_arg != "" else DEFAULT_GOALS.duplicate())
+	bot.mode = _arg("--vp-mode", "explore")
+	var climb := bot.mode == "climb"
+	var floors := int(_arg("--vp-floors", "0"))      # 爬塔：通过这么多层就收工（0＝爬到步数或时间用完）
+	if climb:
+		free = true
+		bot.max_ticks = int(_arg("--vp-ticks", "400000"))
+		bot.max_msec = int(float(_arg("--vp-minutes", "0")) * 60000.0)
+		bot.goals = ["floor_%d_cleared" % floors] if floors > 0 else []
+	else:
+		bot.goals = [] if free else (Array(goals_arg.split(",", false)) if goals_arg != "" else DEFAULT_GOALS.duplicate())
 	# 独立的存档与设置目录；漩涡过场（约 5000 帧）另有专项，这里标成看过
 	XSave.dir_override = "user://test_virtual_player/%d" % bot.rng_seed
 	XConfig.path_override = XSave.dir().path_join("options.json")
@@ -76,12 +108,22 @@ func _run() -> void:
 		_check("goal_" + str(g), rep.milestones.has(g), rep.milestones)
 	if free:
 		_check("ran_all_ticks_or_done", rep.ticks > 0)
+	if climb:
+		# 爬不动（打不过、找不到守层者）算失败，让人来看；只是步数或时间用完不算
+		_check("climb_not_blocked", rep.climb_stop == "" or rep.climb_stop == "时间用完", rep.climb_stop)
+		if floors > 0:
+			_check("climb_floors_cleared", rep.milestones.has("floor_%d_cleared" % floors), [rep.floor, rep.climb_stop])
+		print("VP_CLIMB=" + JSON.stringify({"floor": rep.floor, "stop": rep.climb_stop, "defeats": rep.defeats, "grind_battles": rep.grind_battles, "levels": rep.levels, "floor_log": rep.floor_log}))
 	# 报告：给了 --vp-out 就写文件；摘要总是打印
 	if bot.out_dir != "":
 		var f := FileAccess.open(bot.out_dir.path_join("report.json"), FileAccess.WRITE)
 		if f != null:
 			f.store_string(JSON.stringify(rep, "\t"))
 			f.close()
+		var md := FileAccess.open(bot.out_dir.path_join("summary.md"), FileAccess.WRITE)
+		if md != null:
+			md.store_string(_summary(rep))
+			md.close()
 	var brief := rep.duplicate()
 	brief.erase("timeline")
 	brief.erase("event_visits")
