@@ -152,6 +152,7 @@ func _title() -> void:
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.position = get_viewport_rect().size - Vector2(330, 40)
 	_layer.add_child(ver)
+	_add_feedback()
 	if XPlatform.is_touch():
 		_add_transfer_buttons()
 	if XSave.exists_auto():
@@ -194,6 +195,7 @@ func _tq_build_title() -> void:
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.position = get_viewport_rect().size - Vector2(330, 40)
 	_layer.add_child(ver)
+	_add_feedback()
 	if XPlatform.is_touch():
 		_add_transfer_buttons()
 	if XSave.exists_auto():
@@ -236,6 +238,17 @@ func _tq_open_achievements() -> void:
 ## 新标题「检查更新」：打开更新页（XUpdatePage，联网查清单、下载补丁、退回）
 func _tq_check_update() -> void:
 	XUpdatePage.open(self)
+
+## 标题右下角「问题反馈 QQ 群」（XFeedback，Kyo 11-13）：版本说明上面一行，点一下复制群号；不抢键盘焦点
+func _add_feedback() -> void:
+	if not XFeedback.SHOW:
+		return
+	var b := XFeedback.make_button(16)
+	_layer.add_child(b)
+	var vs := get_viewport_rect().size
+	var sz := b.get_combined_minimum_size()
+	b.size = sz
+	b.position = Vector2(vs.x - sz.x - 12.0, vs.y - 40.0 - sz.y - 6.0)
 
 ## 切后台时自动存的档（XAutoSave）：有就在左上角放一个「继续」，手动存档后那份就删了、按钮也就没了
 func _add_auto_button() -> void:
