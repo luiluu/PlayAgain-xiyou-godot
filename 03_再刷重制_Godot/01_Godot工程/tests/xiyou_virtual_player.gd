@@ -160,6 +160,7 @@ func _run() -> void:
 	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")
 	bot.spend_enabled = not OS.get_cmdline_user_args().has("--vp-no-spend")
 	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
+	bot.fabao_enabled = not OS.get_cmdline_user_args().has("--vp-no-fabao")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"

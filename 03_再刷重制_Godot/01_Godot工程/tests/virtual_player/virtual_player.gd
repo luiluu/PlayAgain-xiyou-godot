@@ -19,6 +19,8 @@ const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑�
 const TIER_NAMES := ["普通难度", "冒险难度", "勇士难度", "王者难度"]
 const TIER_SWITCHES := [1561, 1660] # 副本各档的开关：入口门和首领都按它分页（见 XDungeon 文件头）
 const LOBBY := 4                   # 方桌大厅
+const EXCHANGE := 132               # 兑换大厅（大厅有传送点过去）：节日礼物送法宝积分，铁匠卖法宝
+const FABAO_POINTS := 213          # 法宝积分
 const FLOOR_VAR := 20              # 变量 20＝神魔之塔当前层数（守层者打赢后加一，大厅的门按它送人）
 
 ## ---- 参数（开跑前设） ----
@@ -65,6 +67,10 @@ var snapshot_dir := ""             # 给了就在每层第一次去挑战守层�
 var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
+var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
+var _exchange_floor := -1          # 这一层去过兑换大厅了
+var _exchange_ticks := 0
+var _gift_tries := {}
 var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
 var fabao_feeds := 0               # 喂过几次法宝
 var spend_buys := 0                # 一共买了多少件
@@ -1073,7 +1079,10 @@ func _act_climb(obs: Dictionary) -> void:
 		return
 	if map.map_id == LOBBY:
 		_floor_entry = {LOBBY: floor}
+		_exchange_ticks = 0
 		await _climb_lobby(map, st)
+	elif map.map_id == EXCHANGE:
+		await _climb_exchange(map, st)
 	else:
 		await _climb_floor(map, st, floor)
 
@@ -1210,6 +1219,13 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				_shop_last = ""
 			await _goto_target(map)
 			return
+		# 法宝：出战的人有谁没戴，每层去一趟兑换大厅
+		if fabao_enabled and _exchange_floor != int(st.variable(FLOOR_VAR)) and Growth.lacks_fabao(st):
+			e = _transfer_event(map, EXCHANGE)
+			if e != null and _aim(map, e, "exchange"):
+				await _goto_target(map)
+				return
+			_exchange_floor = int(st.variable(FLOOR_VAR))   # 走不到传送点：这一层不去了
 	# 进门前存档（快捷键 ~）：全灭回标题后从这里接着来
 	var stamp := [int(st.variable(FLOOR_VAR)), battles.size()]
 	if stamp != _save_stamp:
@@ -1824,6 +1840,48 @@ func _snapshot(st: XState, floor: int) -> void:
 		_mark("snapshot_%d" % floor)
 
 
+## 这张图上把人送到 dest 的传送点（事件当前页里有「场所移动」到那张图）
+func _transfer_event(map: XMapScene, dest: int) -> MVEvent:
+	return _find_event(map, func(x): return x.page.get("list", []).any(func(c): return int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) == dest))
+
+
+## 兑换大厅：先领节日礼物（送法宝积分的那位，一次性），再找卖法宝的铁匠逛一遍，然后回大厅
+func _climb_exchange(map: XMapScene, st: XState) -> void:
+	_exchange_floor = int(st.variable(FLOOR_VAR))
+	_exchange_ticks += 1
+	if _exchange_ticks < 600:
+		var gift := _find_event(map, func(x): return int(_gift_tries.get(x.event_id, 0)) < 2 \
+			and x.page.get("list", []).any(func(c): return int(c.code) == 122 and int(c.parameters[0]) == FABAO_POINTS and int(c.parameters[2]) == 1))
+		if gift != null and _aim(map, gift, "gift"):
+			if _arrived(map.player):
+				_gift_tries[gift.event_id] = int(_gift_tries.get(gift.event_id, 0)) + 1
+				_mark("exchange_gift")
+			await _goto_target(map)
+			return
+		if Growth.lacks_fabao(st) and int(st.variable(FABAO_POINTS)) > 0:
+			for x in map.events:
+				var key: int = EXCHANGE * 1000 + x.event_id
+				if x.erased or x.page.is_empty() or not _is_shop(x) or not _has_choice(x, "法宝") or _shop_done.has(key) or int(_shop_visits.get(key, 0)) >= 12:
+					continue
+				if not _aim(map, x, "shop"):
+					_shop_done[key] = true
+					continue
+				_shop_event = key
+				if _arrived(map.player):
+					_shop_visits[key] = int(_shop_visits.get(key, 0)) + 1
+					_shop_last = ""
+				await _goto_target(map)
+				return
+	# 办完了（或逛太久）：回大厅；回去以后把换装和喂法宝再过一遍
+	_growth_stamp = null
+	_equip_sig = null
+	var back := _transfer_event(map, LOBBY)
+	if _exchange_ticks % 3 != 0 and back != null and _aim(map, back, "back"):
+		await _goto_target(map)
+		return
+	await _hotkey_lobby(map)
+
+
 ## 这位 NPC 现在这一页开不开店（事件指令里有「商店处理」）
 func _is_shop(e: MVEvent) -> bool:
 	return e.page.get("list", []).any(func(c): return int(c.code) == 302)
@@ -1861,7 +1919,7 @@ func _shop_choice(choices: Array) -> int:
 	for i in choices.size():
 		var t := str(choices[i])
 		var key := "%s#%d" % [k, i]
-		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武")):
+		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武") or t.contains("法宝")):
 			continue
 		_shop_tries[key] = int(_shop_tries.get(key, 0)) + 1
 		if int(_shop_tries[key]) >= 4:
