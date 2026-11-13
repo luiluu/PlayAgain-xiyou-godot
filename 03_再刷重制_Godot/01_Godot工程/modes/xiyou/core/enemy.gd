@@ -21,6 +21,8 @@ var elite := false
 var elite_hue := 0.0              # 0~1，画面偏色用
 ## 测试用：>= 0 时所有敌人按此值判定神话（0 必为神话，100 必不是）
 static var force_roll := -1.0
+## 出伤倍率：对我方的 HP 伤害／吸取最后乘它（XDamage.finish）。默认 1；守层者按楼层重算攻击、基准伤害工具量攻击时设
+var output_scale := 1.0
 
 ## installBossDifficultyRuntime：本场出战人数快照；倍率在原生缓存外结算。
 var boss_strong_count := 0
