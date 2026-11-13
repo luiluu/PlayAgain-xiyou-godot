@@ -329,7 +329,7 @@ func _rechallenge() -> void:
 
 func _hongjun_battle() -> void:
 	XTianqiSegAlien.ENABLED = false  # 只比鸿钧换能力值；按段异化（34 层守层者终焉、种类随机）另有专项 xiyou_tianqi_seg_alien
-	XGuardianRework.HP = false  # 只比 rate；守层者按层重标血量（O-待定-4）另有专项 xiyou_fabao_rework
+	XGuardianRework.HP = false  # 只比 rate；守层者按层重标血量（O-402）另有专项 xiyou_fabao_rework
 	var s := _state(34)
 	var plain := XBattleLogic.new()
 	plain.setup(469, s)

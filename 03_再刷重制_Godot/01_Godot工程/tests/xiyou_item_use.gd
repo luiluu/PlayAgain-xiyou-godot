@@ -69,7 +69,7 @@ func _run() -> void:
 		if not page._usable(it):
 			# 导入角色平衡的禁用号角 canUse 全否，「使用」灰（attack_query_probe skip.horn*：menuEnabled 假）
 			if XFabaoFeed.is_pill(int(it.id)):
-				pills.append(int(it.id))   # 法宝经验丹下架（O-待定-3）：「使用」灰
+				pills.append(int(it.id))   # 法宝经验丹下架（O-401）：「使用」灰
 			else:
 				(horns if XImportedBalance.is_disabled_horn(it) else bad).append(int(it.id))
 	check("all_usable", bad.is_empty(), {"count": bad.size(), "first": bad.slice(0, 10)})

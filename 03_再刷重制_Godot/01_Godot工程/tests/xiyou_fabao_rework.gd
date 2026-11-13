@@ -198,7 +198,7 @@ func lottery_ev() -> void:
 	XLotteryRework.EV_NOT_POSITIVE = true
 
 
-## 吃装备（O-待定-3）：一件经验看品质；门槛按法宝等级；喂到上限就停、剩下的不扣；锁定、不在背包的不喂；预览不改；回退
+## 吃装备（O-401）：一件经验看品质；门槛按法宝等级；喂到上限就停、剩下的不扣；锁定、不在背包的不喂；预览不改；回退
 func _gear_of_grade(g: int, kind := "armor") -> int:
 	for r in XDB.table("Armors" if kind == "armor" else "Weapons"):
 		if r is Dictionary and str(r.get("name", "")) != "" and not r.get("meta", {}).has("Magic Weapon") and not r.get("meta", {}).has("req_actors"):
@@ -270,7 +270,7 @@ func feed() -> void:
 	XFabaoFeed.ENABLED = true
 
 
-## 经验丹下架（O-待定-3）：商店不上、MagicWeaponAllGainExp 不加；回退照原版
+## 经验丹下架（O-401）：商店不上、MagicWeaponAllGainExp 不加；回退照原版
 func pills() -> void:
 	var rows := [[0, 1901, 0, 0], [0, 1987, 0, 0], [0, 1693, 0, 0], [2, 125, 0, 0]]
 	check("pills.goods", XFabaoFeed.filter_goods(rows) == [[0, 1693, 0, 0], [2, 125, 0, 0]])
@@ -288,7 +288,7 @@ func pills() -> void:
 	XFabaoFeed.NO_PILLS = true
 
 
-## 守层者重算（O-待定-4）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
+## 守层者重算（O-402）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
 func guardian() -> void:
 	var s := _blank()
 	check("guardian.elem", is_equal_approx(XGuardianRework.elem_factor(20), 0.5) and is_equal_approx(XGuardianRework.elem_factor(33), 0.05) and XGuardianRework.elem_factor(5) == 1.0,

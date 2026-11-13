@@ -33,7 +33,7 @@ static func supported_ids() -> Array:
 	for id in range(1702, 1718):
 		out.append(id)
 	out.append_array([1726, 1727, 1728])
-	if not XFabaoFeed.NO_PILLS:  # 法宝经验丹下架（O-待定-3）：不批量吃
+	if not XFabaoFeed.NO_PILLS:  # 法宝经验丹下架（O-401）：不批量吃
 		out.append_array(EXP_ITEMS)
 	return out
 

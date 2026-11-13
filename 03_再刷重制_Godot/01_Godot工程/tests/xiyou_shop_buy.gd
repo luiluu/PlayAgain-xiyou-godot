@@ -30,7 +30,7 @@ func _price(g: Array, rec: Dictionary) -> int:
 
 
 func _run() -> void:
-	XFabaoFeed.NO_PILLS = false  # 对原版参照：法宝经验丹照原版（O-待定-3 下架由 tests/xiyou_fabao_rework 核）
+	XFabaoFeed.NO_PILLS = false  # 对原版参照：法宝经验丹照原版（O-401 下架由 tests/xiyou_fabao_rework 核）
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("shop_buy_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 1000, ORACLE):
 		# 商品表：Scene_Shop.prepare 整条链的改写

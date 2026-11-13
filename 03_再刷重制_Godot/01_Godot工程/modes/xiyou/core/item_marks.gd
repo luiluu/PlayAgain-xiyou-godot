@@ -243,7 +243,7 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.horn_id_disabled(g[1])))
 	out = XAlienHide.filter_goods(out)  # installAlienationHide 包 Window_ShopBuy.makeItemList：隐藏生效时不卖六件异化物品（O-283）
 	out = XTianqiPetHide.filter_goods(out)  # 天启篇隐藏宠物：不卖宠物物品
-	out = XFabaoFeed.filter_goods(out)  # 法宝经验丹下架（O-待定-3）
+	out = XFabaoFeed.filter_goods(out)  # 法宝经验丹下架（O-401）
 	if map_id == LOBBY_MAP:
 		_lobby_additions(out, horn_before)
 	if out.any(func(g): return g[0] == 0 and g[1] == PILL_ANCHOR):
