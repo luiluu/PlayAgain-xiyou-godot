@@ -149,6 +149,8 @@ static func drop_item_rate(s: XState, enemy: Dictionary) -> float:
 ## rate_base ≥ 0 时用它作 dropItemRate（怪物图鉴按图鉴里那只敌人算，可能是神话）
 static func drops(s: XState, enemy: Dictionary, rate_base := -1.0) -> Array:
 	var base := drop_item_rate(s, enemy) if rate_base < 0.0 else rate_base
+	var tq_sig := XTianqiDrop.signature_on(s) and XTianqiDrop.bonus_on(s)
+	var tq_mult := XTianqiDrop.party_mult(s) * XTianqiDrop.difficulty_mult(s) if tq_sig else 1.0
 	var out := []
 	# YEP_ExtraEnemyDrops 在读数据库时把 <Enemy Drops> 的「Armor N: x%」追加进 dropItems（分母 = 1/几率）
 	var list: Array = enemy.get("dropItems", []).duplicate()
@@ -160,7 +162,13 @@ static func drops(s: XState, enemy: Dictionary, rate_base := -1.0) -> Array:
 			continue
 		var item := XDB.rec(TABLES[kind], int(d.dataId))
 		var rate := minf(XPower.js_round((1.0 / float(d.denominator)) * base * 100000.0) / 1000.0, 100.0)
-		out.append({"type": TYPES[kind], "kind": kind, "id": int(d.dataId), "rate": rate, "item": item, "order": out.size()})
+		var fails := 0
+		if tq_sig:  # 天启篇招牌掉落：面板概率（递增概率的长期平均）、连着没出几次；交给通用掉落的行不列
+			if not XTianqiDrop.keeps_row(s, kind, int(d.dataId)):
+				continue
+			rate = minf(XPower.js_round(XTianqiDrop.signature_base(kind, int(d.dataId), 1.0 / float(d.denominator)) * tq_mult * 100000.0) / 1000.0, 100.0)
+			fails = XTianqiDrop.signature_fails(s, "%d:%d:%d" % [int(enemy.get("id", 0)), kind, int(d.dataId)])
+		out.append({"type": TYPES[kind], "kind": kind, "id": int(d.dataId), "rate": rate, "item": item, "order": out.size(), "fails": fails})
 	out.sort_custom(func(a, b):
 		var qa := quality(a.item)
 		var qb := quality(b.item)

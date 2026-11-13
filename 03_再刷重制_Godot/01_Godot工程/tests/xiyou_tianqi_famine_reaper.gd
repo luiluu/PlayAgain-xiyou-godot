@@ -114,10 +114,10 @@ func _lean_year() -> void:
 	var s := _state("famine")
 	var plain_lg := XBattleLogic.new()
 	plain_lg.setup(TROOP3, s)
-	var base: Array = plain_lg.drop_chances(plain_lg.enemies[0])
+	var base: Array = plain_lg.drop_chances(plain_lg.enemies[0], true)  # 这只怪的表都是低品质装备，天启篇交给通用掉落了，这里连它们一起列
 	plain_lg.end_battle(1)
 	var lg := _fight(s, "famine", [[0, "shigu", "lean"]])
-	var cut: Array = lg.drop_chances(lg.enemies[0])
+	var cut: Array = lg.drop_chances(lg.enemies[0], true)
 	_check("lean_drop", not base.is_empty() and is_equal_approx(float(cut[0].chance), float(base[0].chance) * 0.67), [base, cut])
 	# 余粮：必掉（测试把几率调成 1）
 	var ly: Dictionary = XTianqiFamineAlien.data().lean_year

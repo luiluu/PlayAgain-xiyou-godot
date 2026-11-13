@@ -223,7 +223,7 @@ static func alien_units(logic) -> Array:
 ## 这只怪掉落表里能做本体的 [{kind, id}]
 static func bodies(logic, e) -> Array:
 	var out := []
-	for c in logic.drop_chances(e):
+	for c in logic.drop_chances(e, true):  # 连交给通用掉落的低品质行也算（XTianqiDrop）
 		if [2, 3].has(int(c.kind)):
 			var kind := "weapon" if int(c.kind) == 2 else "armor"
 			var tpl := XGear.template(kind, int(c.id))
