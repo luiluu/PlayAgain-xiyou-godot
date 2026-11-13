@@ -1,7 +1,7 @@
 # 交付：cc/abyss-droprate
 
 - 车道／工作者：十三层深渊爆率查修／cc（项目线程）
-- 状态：进行中
+- 状态：可合并
 
 （v0.01.08 玩家反馈：挂十三层深渊 20 分钟掉 36 个心之钢和狂妄、17 把天顶剑·封印。要进下一个在线更新；深渊两次提交 3300c19aa 等总装已摘进 0.01.09 补丁线。同一线程又修了玩家木桩反馈的「伤害一场低一场高」，见第二条。）
 
@@ -49,6 +49,7 @@
 - `语法检查.py`：818 个 .gd，0 个问题。
 - 新专项 xiyou_random_big_range 44/44；反向验证：random_stream.gd、damage.gd 换回旧版跑同一专项挂 10 项。
 - 选测：云端跑 `选测.py` 选出的 193 个场景（Kyo 11-13 定测试走云端），192 个通过；xiyou_flow 的 alt_enter_not_map_action（Alt+回车按键时序）失败 1 项，本机单跑 5 次：机器满载时 1 次同样失败，其余 4 次 50/50（换回旧代码跑 1 次 50/50）。两处出界分支在这个测试里一次都没走到（加打印核过），失败的是按键时序断言，与随机数无关，按偶发记。运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43454609590
+- 开战状态这项加进来后云端选测 297 个场景全过（xiyou_flow 偶发、单跑通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43463330532 ；第一轮挂的 xiyou_start_state_walk（原版对照，改为关开关比）、xiyou_state_effects_tp（修法改成只清 removedStates）已处理。
 - 新专项 xiyou_start_clear_result 4/4（回退支在同一专项里跑过）。
 - 待交叉核查：battle_logic.gd（`_start_battle_effects` 开头清移除记录）、random_stream.gd（出界分支）、damage.gd（apply_variance 大幅度分支）——两个都是战斗核心文件，甲档。
 
@@ -60,3 +61,5 @@
 
 - 3300c19aa 随机流范围出界不作废
 - 合并 main、补 .uid 与交付单
+- ac397f5e2 开战状态隔一场漏挂（O-待定）
+- 之后一次：只清移除记录、原版对照测试关开关比
