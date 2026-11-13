@@ -163,6 +163,8 @@ func _run() -> void:
 	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
 	bot.fabao_enabled = not OS.get_cmdline_user_args().has("--vp-no-fabao")
 	bot.bag_enabled = not OS.get_cmdline_user_args().has("--vp-no-bag")
+	for id in _arg("--vp-lineup").split(",", false):
+		bot.want_lineup.append(int(id))
 	bot.lottery_keep = int(_arg("--vp-lottery-keep", "2000"))
 	bot.greet_enabled = not OS.get_cmdline_user_args().has("--vp-no-greet")
 	bot.blood_enabled = not OS.get_cmdline_user_args().has("--vp-no-blood")

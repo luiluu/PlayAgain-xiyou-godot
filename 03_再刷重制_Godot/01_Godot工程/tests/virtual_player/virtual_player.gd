@@ -59,6 +59,7 @@ var _tq_slot := 0
 var _tq_key := ""
 var _lineup_fixed := false
 var lineup: Array = []
+var want_lineup: Array = []        # --vp-lineup=号,号,号,号,号：开局用这五个人（第一个是 1 号位），用来把每个角色都测到
 var debug_floor := 0                # 调试：开局第一次到大厅时把层数直接改成这个数（报告里会标出来，不算正常通关）
 var _debug_floor_done := false
 var debug_items := {}              # 调试：开局第一次到大厅时直接给这些物品 {物品号: 数量}（验证养成的代码路径用；报告里会标出来）
@@ -736,6 +737,13 @@ func _act_form(obs: Dictionary) -> void:
 		var r := RandomNumberGenerator.new()
 		r.seed = rng_seed
 		lineup = XTianqi.roll_lineup(_tq_key, r)
+		# 点名的阵容（--vp-lineup，Kyo 11-13「不重抽，未来要测完所有角色」）：合本档规矩才用，不合就照种子抽的
+		if not want_lineup.is_empty():
+			if XTianqi.lineup_ok(_tq_key, want_lineup):
+				lineup = want_lineup.duplicate()
+			else:
+				_log("点名的阵容 %s 不合本档规矩，照种子抽" % str(want_lineup))
+				_mark("lineup_rejected")
 		entry._tq_lineup(_tq_slot, _tq_key, lineup)
 		await _frames(2)
 		return
