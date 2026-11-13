@@ -392,6 +392,8 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 					hits.append(d)
 			else:
 				theirs += maxf(0.0, pb - _party_hp(logic))
+			if debug:
+				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
 			if logic.is_over():
 				break
 		done += 1
