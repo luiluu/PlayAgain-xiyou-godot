@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""行走图角色生成器（原型）：部件库＋配方 → 一键导出 `$` 行走图。
+"""行走图角色生成器（原型）：拿原版角色当部件库，选头、选身体、换色，一条命令导出 `$` 行走图。
 
-思路照 RPG Maker 的角色生成器，但部件全是自己的：
+原版的行走图绝大多数是同一套 Q 版骨架（48×48 一格，脚底贴格底，迈步时头往下沉 1 点），
+所以任意两个角色的头和身体可以直接对上。部件就是原版的像素，画工和原版完全一样；
+生成器只做三件事：换部件、换颜色、加几个点（纹、饰物）。
 
-  拆件  把一张已定稿的行走图拆成三类部件存进部件库
-          头    光头＋脸，下、左、右、上四个方向各一张
-          发    发型，四个方向各一张
-          身体  脖子以下 12 帧，带每帧「头该放在哪」的位置
-  导出  按配方选头、发、身体，换色，拼成 144×192 的行走图
-  总览  把部件库里的部件排成一张图，方便挑
+  目录  把素材目录里的角色排成带编号的一览图，用来挑部件
+  取色  列出某个角色头上、身上主要有哪几种颜色，写配方时照着填
+  导出  按配方拼头和身体、换色、加点缀，导出 144×192 的行走图
 
-同一个方向的三帧共用同一张头和发，只跟着身体上下左右平移，所以走路时头不会一帧一个样。
-同样的部件和配方，导出结果逐字节相同。
+部件写成「文件名#序号」：8 人一张的图序号 0～7（先上排从左到右，再下排）；`$` 单人图不用写序号。
+同样的素材和配方，导出结果逐字节相同。
 
-部件库是本地文件夹（图片不进仓库），路径由 --库 给。依赖：Pillow、numpy。
+素材目录是原版的 img/characters（不在仓库里，路径由 --素材 给）。依赖：Pillow、numpy。
 """
 from __future__ import annotations
 
@@ -23,20 +22,20 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from 行走图 import 亮度, 十六进制, 色带取色, 外缘, 方向名  # noqa: E402
+from 行走图 import 亮度, 十六进制, 色带取色, 方向名  # noqa: E402
 
 格 = 48
 列数, 行数 = 3, 4
 站立列 = 1
+默认脖子行 = 30      # 站立帧里身体的第一行；迈步帧再往下 1 行。量不出来时用它
 
 
-# ---------- 颜色规则 ----------
+# ---------- 读素材 ----------
 
 def 色相饱和(色: np.ndarray):
-    """返回 (色相 0～360, 饱和 0～1)，按 HSV。"""
     c = 色[..., :3].astype(float) / 255.0
     大, 小 = c.max(-1), c.min(-1)
     差 = 大 - 小
@@ -53,415 +52,452 @@ def 色相饱和(色: np.ndarray):
     return h * 60.0, s
 
 
-def 合规则(图: np.ndarray, 规: dict, 位置=None) -> np.ndarray:
-    """规则字段都可省：色相 [a,b]（a 为负表示跨过 0 度）、最低饱和、最高饱和、最低亮度、最高亮度、位置 [起,止]。"""
-    h, s = 色相饱和(图)
-    L = 亮度(图[..., :3])
-    罩 = np.ones(L.shape, bool)
-    if "色相" in 规:
-        a, b = 规["色相"]
-        罩 &= ((h >= a % 360) | (h <= b)) if a < 0 else ((h >= a) & (h <= b))
-    if "最低饱和" in 规:
-        罩 &= s >= 规["最低饱和"]
-    if "最高饱和" in 规:
-        罩 &= s <= 规["最高饱和"]
-    if "最低亮度" in 规:
-        罩 &= L >= 规["最低亮度"]
-    if "最高亮度" in 规:
-        罩 &= L <= 规["最高亮度"]
-    if "位置" in 规 and 位置 is not None:
-        罩 &= (位置 >= 规["位置"][0]) & (位置 < 规["位置"][1])
-    return 罩
-
-
-def 八邻(罩: np.ndarray) -> np.ndarray:
-    垫 = np.pad(罩, 1)
-    出 = np.zeros_like(罩)
-    for dy in (0, 1, 2):
-        for dx in (0, 1, 2):
-            if dy == 1 and dx == 1:
-                continue
-            出 |= 垫[dy:dy + 罩.shape[0], dx:dx + 罩.shape[1]]
-    return 出
-
-
-def 填洞(罩: np.ndarray) -> np.ndarray:
-    """把被罩完全围住的空洞也算进罩里（脸中间的眼睛、嘴、纹）。"""
-    高, 宽 = 罩.shape
-    外 = np.zeros_like(罩)
-    栈 = [(y, x) for y in range(高) for x in (0, 宽 - 1)] + [(y, x) for x in range(宽) for y in (0, 高 - 1)]
-    while 栈:
-        y, x = 栈.pop()
-        if y < 0 or x < 0 or y >= 高 or x >= 宽 or 外[y, x] or 罩[y, x]:
-            continue
-        外[y, x] = True
-        栈 += [(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]
-    return ~外
-
-
-def 去碎点(罩: np.ndarray, 最小: int) -> np.ndarray:
-    高, 宽 = 罩.shape
-    号 = np.zeros((高, 宽), int)
-    出 = np.zeros_like(罩)
-    n = 0
-    for y0 in range(高):
-        for x0 in range(宽):
-            if not 罩[y0, x0] or 号[y0, x0]:
-                continue
-            n += 1
-            栈, 块 = [(y0, x0)], []
-            号[y0, x0] = n
-            while 栈:
-                y, x = 栈.pop()
-                块.append((y, x))
-                for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
-                    if 0 <= yy < 高 and 0 <= xx < 宽 and 罩[yy, xx] and not 号[yy, xx]:
-                        号[yy, xx] = n
-                        栈.append((yy, xx))
-            if len(块) >= 最小:
-                for y, x in 块:
-                    出[y, x] = True
-    return 出
-
-
-def 平移(图: np.ndarray, dx: int, dy: int) -> np.ndarray:
-    出 = np.zeros_like(图)
+def 切块(图: np.ndarray, 名: str, 序: int):
+    """从一张素材图里取出一个角色的 12 帧。不是标准骨架时返回 None。"""
     高, 宽 = 图.shape[:2]
-    ys0, ys1 = max(0, dy), min(高, 高 + dy)
-    xs0, xs1 = max(0, dx), min(宽, 宽 + dx)
-    if ys0 < ys1 and xs0 < xs1:
-        出[ys0:ys1, xs0:xs1] = 图[ys0 - dy:ys1 - dy, xs0 - dx:xs1 - dx]
-    return 出
-
-
-def 盖(底: np.ndarray, 上: np.ndarray) -> np.ndarray:
-    出 = 底.copy()
-    罩 = 上[..., 3] > 0
-    出[罩] = 上[罩]
-    return 出
-
-
-def 读格(图: np.ndarray, 行: int, 列: int) -> np.ndarray:
-    块 = 图[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格].copy()
+    if 名.startswith("$") or 名.startswith("!$"):
+        块 = 图
+    else:
+        if 宽 % 12 or 高 % 8:
+            return None
+        行, 列 = divmod(序, 4)
+        块 = 图[行 * 高 // 2:(行 + 1) * 高 // 2, 列 * 宽 // 4:(列 + 1) * 宽 // 4]
+    if 块.shape[:2] != (行数 * 格, 列数 * 格):
+        return None
+    块 = 块.copy()
     实 = 块[..., 3] >= 128
-    块[..., 3] = np.where(实, 255, 0)      # alpha 二值化
+    块[..., 3] = np.where(实, 255, 0)
     块[~实] = 0
     return 块
 
 
-def 存图(数组: np.ndarray, 路径: Path):
-    路径.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(数组.astype(np.uint8), "RGBA").save(路径)
+def 读部件(素材: Path, 号: str) -> np.ndarray:
+    """返回 192×144 的 12 帧图（RGBA，alpha 只有 0 和 255）。"""
+    名, _, 序 = 号.partition("#")
+    路 = 素材 / 名
+    if not 路.exists():
+        raise SystemExit(f"素材目录里没有 {名}")
+    图 = np.array(Image.open(路).convert("RGBA")).astype(np.int32)
+    块 = 切块(图, 名, int(序 or 0))
+    if 块 is None:
+        raise SystemExit(f"{号} 一格不是 {格}×{格}，不是标准骨架，不能当部件")
+    return 块
 
 
-def 读图(路径) -> np.ndarray:
-    return np.array(Image.open(路径).convert("RGBA")).astype(np.int32)
+def 取格(图, 行, 列):
+    return 图[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格]
 
 
-# ---------- 拆件 ----------
+def 头沉(图, 行, 列) -> int:
+    """迈步帧的头比站立帧低几点。头顶被格子上边裁掉、量不出来时按原版骨架的 1。"""
+    if 列 == 站立列:
+        return 0
 
-def 拆头(块: np.ndarray, 脖: int, 档: dict, 行: int, 正面: dict | None):
-    """返回 (光头＋脸, 发, 锚点 [x, y], 正面信息)。正面信息＝正面那张量到的脸宽和肤色，四个方向共用。"""
-    实 = 块[..., 3] > 0
-    头罩 = 实.copy()
-    头罩[脖:] = False
-    规 = 档["头"]
-    肤 = 合规则(块, 规["肤"]) & 头罩
-    肤 = 去碎点(肤, 规.get("最小脸块", 2))
-    眼 = 合规则(块, 规["眼"]) & 头罩 if "眼" in 规 else np.zeros_like(头罩)
-    if 肤.any():
-        # 眼睛只认落在皮肤范围里的；头发边缘偶尔有同色相的点，不算
-        肤ys, 肤xs = np.where(肤)
-        框 = np.zeros_like(眼)
-        框[肤ys.min():肤ys.max() + 1, 肤xs.min():肤xs.max() + 1] = True
-        眼 = 去碎点(眼 & 框, 3)
-    脸 = 肤 | 眼
-    脸 = 填洞(脸) & 头罩
-    眼 = 眼 & 脸
-    L = 亮度(块[..., :3])
-    _, 饱 = 色相饱和(块)
-    ys, xs = np.where(脸)
-    if len(ys) == 0:
-        raise SystemExit(f"方向「{方向名[行]}」的头上找不到皮肤，检查素材档的肤色规则")
-    腰 = ys.mean()
-    行号 = np.arange(块.shape[0])[:, None] * np.ones((1, 块.shape[1]))
-    # 眼白：左右紧挨眼睛的亮点
-    if 眼.any():
-        旁 = np.zeros_like(眼)
-        旁[:, 1:] |= 眼[:, :-1]
-        旁[:, :-1] |= 眼[:, 1:]
-        脸 |= 头罩 & ~脸 & 旁 & (L >= 180)
-    # 被脸三面以上围住的点算脸（脸上的阴影、纹）
-    for _ in range(2):
-        垫 = np.pad(脸, 1).astype(int)
-        邻数 = 垫[:-2, 1:-1] + 垫[2:, 1:-1] + 垫[1:-1, :-2] + 垫[1:-1, 2:]
-        脸 |= 头罩 & (邻数 >= 3)
-    暗 = 头罩 & ~脸 & (L < 规.get("脸线最高亮度", 90))
-    # 下巴、脸颊的轮廓线：贴着脸、在脸的下半边的暗点
-    脸线 = 暗 & 八邻(脸) & (行号 >= 腰)
-    # 睫毛、眉：眼睛正上方两行内的暗点
-    if 眼.any():
-        上方 = np.zeros_like(眼)
-        上方[:-1] |= 眼[1:]
-        上方[:-2] |= 眼[2:]
-        脸线 |= 暗 & 上方
-    面 = 脸 | 脸线
-    # 头发里和主体不相连的碎点（多半是脸边的阴影）留在脸上，不跟着发型走
-    发罩 = 去碎点(头罩 & ~面, 规.get("最小发块", 6))
-    面 = 头罩 & ~发罩
-    if 正面 is None:
-        肤色 = 块[肤][:, :3]
-        肤亮 = 亮度(肤色)
-        取 = lambda 分位: 肤色[np.argsort(肤亮)[int((len(肤亮) - 1) * 分位)]].astype(float)
-        正面 = {"脸宽": int(xs.max() - xs.min() + 1), "亮": 取(0.85), "中": 取(0.55), "暗": 取(0.2)}
-    W = 规.get("头骨宽", 正面["脸宽"])
-    x0, x1 = int(xs.min()), int(xs.max())
-    if 行 == 1:      # 朝左：脸的前缘在左
-        锚x, 颅心 = x0, x0 + W / 2 - 0.5
-    elif 行 == 2:    # 朝右
-        锚x, 颅心 = x1, x1 - W / 2 + 0.5
-    elif 行 == 3:    # 背面看不到脸，用整个头的中线
-        头xs = np.where(头罩.any(0))[0]
-        颅心 = (int(头xs.min()) + int(头xs.max())) / 2
-        锚x = int(颅心)
-    else:
-        颅心 = (x0 + x1) / 2
-        锚x = int(颅心)
-    # 头骨：头发底下补一块头皮，换上别的发型时不会露洞
-    rw = W / 2 - 0.5
-    rh = rw * 规.get("头骨高宽比", 0.9)
-    颅腰 = (脖 - 1) - rh + 0.5
-    yy, xx = np.mgrid[0:块.shape[0], 0:块.shape[1]]
-    u, v = (xx - 颅心) / rw, (yy - 颅腰) / rh
-    椭 = (u * u + v * v <= 1.0) & (yy < 脖)
-    补 = 椭 & ~面
-    光头 = np.zeros_like(块)
-    光头[面] = 块[面]
-    向光 = -0.6 * u - 0.8 * v
-    光头[补, :3] = np.round(正面["中"])
-    光头[补 & (向光 > 0.5), :3] = np.round(正面["亮"])
-    光头[补 & (向光 < -0.45), :3] = np.round(正面["暗"])
-    垫 = np.pad(椭 | 面, 1)
-    内 = 垫[:-2, 1:-1] & 垫[2:, 1:-1] & 垫[1:-1, :-2] & 垫[1:-1, 2:]
-    圈 = 补 & ~内
-    圈[脖 - 1] = False      # 贴脖子的那一行不描，免得和身体之间多一道线
-    光头[圈, :3] = np.round(正面["暗"] * 0.45)
-    光头[补, 3] = 255
-    发 = np.zeros_like(块)
-    发[发罩] = 块[发罩]
-    return 光头, 发, [int(锚x), int(脖)], 正面
+    def 顶(块):
+        ys = np.where((块[..., 3] > 0).any(1))[0]
+        return int(ys.min()) if len(ys) else None
+
+    a, b = 顶(取格(图, 行, 站立列)), 顶(取格(图, 行, 列))
+    if a is None or b is None or a == 0 or b == 0 or not 0 <= b - a <= 2:
+        return 1
+    return b - a
 
 
-def 对头(块: np.ndarray, 站头: np.ndarray, 站脖: int):
-    """这一帧的头相对站立帧挪了多少：在 ±3 里找和站立帧的头最对得上的平移。"""
-    最好 = None
-    站实 = 站头[..., 3] > 0
-    for dy in range(-3, 4):
-        头 = 块.copy()
-        头[站脖 + dy:] = 0
-        实 = 头[..., 3] > 0
-        for dx in range(-3, 4):
-            移 = 平移(站头, dx, dy)
-            移实 = 移[..., 3] > 0
-            两 = 实 & 移实
-            差 = (实 ^ 移实).sum() * 1.0 + np.abs(头[两][:, :3] - 移[两][:, :3]).sum() / 255.0
-            键 = (差, abs(dx) + abs(dy))
-            if 最好 is None or 键 < 最好[0]:
-                最好 = (键, dx, dy)
-    return 最好[1], 最好[2]
+# ---------- 头和身体的分界 ----------
+
+def 找脖子行(图) -> int:
+    """身体的第一行（站立帧）。看正面：脸中间一列肤色往下走，走到下巴的描边为止，描边那一行的上一行算头的最后一行。
+
+    原版有两套头：生成器捏的（多数，结果是 30）和手绘的大头（31～34）。
+    不是肤色的脸（面具、兽人）量不出来，按 30；配方里可以用「头脖子行」「身体脖子行」直接写。
+    """
+    正 = 取格(图, 0, 站立列)
+    h, s = 色相饱和(正)
+    L = 亮度(正[..., :3])
+    肤 = (正[..., 3] > 0) & (h >= 5) & (h <= 45) & (s >= 0.12) & (s <= 0.8) & (L >= 90)
+    for y in range(28, 38):
+        if 肤[y, 21:26].sum() < 3:
+            return y - 1 if y >= 30 else 默认脖子行
+    return 默认脖子行
 
 
-def 命令_拆件(参):
-    档 = json.loads(Path(参.素材档).read_text("utf-8"))
-    图 = 读图(参.源图)
-    if 图.shape[:2] != (行数 * 格, 列数 * 格):
-        raise SystemExit(f"源图要 {列数 * 格}×{行数 * 格}，实际 {图.shape[1]}×{图.shape[0]}")
-    库 = Path(参.库)
-    名 = 参.名
-    头图 = np.zeros((行数 * 格, 格, 4), np.int32)
-    发图 = np.zeros_like(头图)
-    身图 = np.zeros_like(图)
-    头锚, 身锚 = [], []
-    正面 = None
+def 头的下摆(图, 脖) -> np.ndarray:
+    """头伸到脖子行以下的部分：压在肩膀上的下巴、垂下来的头发，连同贴着它们的描边。返回整块的罩。
+
+    认法是从脖子行的上一行往下「漫」：头发的颜色（头顶出现过的）能一直漫下去，
+    脸的颜色最多漫 3 行（下巴），碰到描边就停。
+    """
+    罩 = np.zeros(图.shape[:2], bool)
+    正 = 取格(图, 0, 站立列)
+    颈肤 = {tuple(正[y, x, :3]) for y in range(脖 - 8, 脖) for x in range(20, 28) if 正[y, x, 3] > 0}   # 脸下半截的颜色是皮肤，不算头发（光头）
     for 行 in range(行数):
-        站 = 读格(图, 行, 站立列)
+        站 = 取格(图, 行, 站立列)
         ys = np.where((站[..., 3] > 0).any(1))[0]
-        脖 = int(ys.max()) - 档["脖子距底"][行]
-        光头, 发, 锚, 正面 = 拆头(站, 脖, 档, 行, 正面)
-        头图[行 * 格:(行 + 1) * 格] = 光头
-        发图[行 * 格:(行 + 1) * 格] = 发
-        头锚.append(锚)
-        站头 = 站.copy()
-        站头[脖:] = 0
+        if len(ys) == 0:
+            continue
+        顶 = int(ys.min())
+        冠 = 站[顶:顶 + 10]
+        冠色: dict = {}
+        for 点 in 冠[(冠[..., 3] > 0) & (亮度(冠[..., :3]) >= 40)][:, :3]:
+            冠色[tuple(点)] = 冠色.get(tuple(点), 0) + 1
+        发色 = {色 for 色, 次 in 冠色.items() if 次 >= 2} - 颈肤
         for 列 in range(列数):
-            块 = 读格(图, 行, 列)
-            dx, dy = (0, 0) if 列 == 站立列 else 对头(块, 站头, 脖)
-            身 = 块.copy()
-            身[:脖 + dy] = 0
-            身图[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 身
-            身锚.append([锚[0] + dx, 锚[1] + dy])
-    存图(头图, 库 / "头" / f"{名}.png")
-    存图(发图, 库 / "发" / f"{名}.png")
-    存图(身图, 库 / "身体" / f"{名}.png")
-    (库 / "头" / f"{名}.json").write_text(json.dumps(
-        {"锚": 头锚, "分区": 档["头"], "来源": Path(参.源图).name}, ensure_ascii=False, indent=1), "utf-8")
-    (库 / "发" / f"{名}.json").write_text(json.dumps(
-        {"锚": 头锚, "来源": Path(参.源图).name}, ensure_ascii=False, indent=1), "utf-8")
-    (库 / "身体" / f"{名}.json").write_text(json.dumps(
-        {"头锚": 身锚, "分区": 档["身体"], "来源": Path(参.源图).name}, ensure_ascii=False, indent=1), "utf-8")
-    print(f"已入库「{名}」：头、发、身体各一份 → {库}")
-    return 0
+            块 = 取格(图, 行, 列)
+            切 = 脖 + 头沉(图, 行, 列)
+            实 = 块[..., 3] > 0
+            暗 = 实 & (亮度(块[..., :3]) < 40)
+            颌 = 块[切 - 3:切]
+            颌色 = {tuple(p) for p in 颌[(颌[..., 3] > 0) & (亮度(颌[..., :3]) >= 40)][:, :3]} - 发色
+            选 = np.zeros((格, 格), bool)
+            栈 = [(切 - 1, x) for x in range(格) if 实[切 - 1, x] and not 暗[切 - 1, x]]
+            见 = set(栈)
+            while 栈:
+                y, x = 栈.pop()
+                if y >= 切:
+                    选[y, x] = True
+                是发 = tuple(块[y, x, :3]) in 发色
+                for dy, dx in ((1, 0), (0, -1), (0, 1), (-1, 0)) + (((1, 1), (1, -1)) if 是发 else ()):
+                    yy, xx = y + dy, x + dx
+                    if not (切 - 1 <= yy < 格 and 0 <= xx < 格) or (yy, xx) in 见 or not 实[yy, xx] or 暗[yy, xx]:
+                        continue
+                    色 = tuple(块[yy, xx, :3])
+                    if 色 in 发色 or (色 in 颌色 and yy <= 切 + 2):
+                        见.add((yy, xx))
+                        栈.append((yy, xx))
+            边 = np.zeros((格, 格), bool)
+            for y, x in zip(*np.where(暗)):                   # 贴着下巴、发梢的描边
+                if y >= 切 and any(0 <= y + dy < 格 and 0 <= x + dx < 格 and 选[y + dy, x + dx]
+                                  for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
+                    边[y, x] = True
+            for y, x in zip(*np.where(暗)):                   # 描边有两点宽的地方，把外面那一点也带上
+                if y >= 切 and not 边[y, x] and any(0 <= x + dx < 格 and 边[y, x + dx] for dx in (-1, 1)):
+                    选[y, x] = True
+            选 |= 边
+            # 悬空的描边（正下方没有身体托着）是伸到身体外面的发梢，也算头的；只看脖子下 3 行，而且要和头连着
+            悬 = np.zeros((格, 格), bool)
+            底 = min(切 + 2, 格 - 1)
+            for y in range(底, 切 - 1, -1):
+                for x in np.where(暗[y] & ~选[y])[0]:
+                    下 = y + 1
+                    托 = 下 < 格 and 实[下, x] and not 选[下, x] and not 悬[下, x]
+                    悬[y, x] = not 托
+            栈 = [(y, x) for y, x in zip(*np.where(悬))
+                  if any(0 <= y + dy < 格 and 0 <= x + dx < 格 and (选[y + dy, x + dx] or (y + dy < 切 and 实[y + dy, x + dx]))
+                         for dy in (-1, 0, 1) for dx in (-1, 0, 1))]
+            连 = set(栈)
+            while 栈:
+                y, x = 栈.pop()
+                选[y, x] = True
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        yy, xx = y + dy, x + dx
+                        if 0 <= yy < 格 and 0 <= xx < 格 and 悬[yy, xx] and (yy, xx) not in 连:
+                            连.add((yy, xx))
+                            栈.append((yy, xx))
+            罩[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 选
+    return 罩
 
 
-# ---------- 导出 ----------
+def 去领口(图, 脖) -> int:
+    """头供体脖子上方几行里常带着它原来衣服的领口。认法：这种颜色在头的上半截从没出现过。就地擦掉，返回擦了几点。"""
+    数 = 0
+    for 行 in range(行数):
+        上色 = set()
+        for 列 in range(列数):
+            块 = 取格(图, 行, 列)
+            上 = 块[:脖 - 4]
+            上色 |= {tuple(p) for p in 上[上[..., 3] > 0][:, :3]}
+        for 列 in range(列数):
+            块 = 取格(图, 行, 列)
+            切 = 脖 + 头沉(图, 行, 列)
+            for y in range(切 - 4, 切):
+                for x in range(格):
+                    if 块[y, x, 3] > 0 and 亮度(块[y, x, :3]) >= 40 and tuple(块[y, x, :3]) not in 上色:
+                        块[y, x] = 0
+                        数 += 1
+            for _ in range(2):                                # 领口擦掉后落单的描边一并擦掉
+                for y in range(切 - 4, 切):
+                    for x in range(格):
+                        if 块[y, x, 3] > 0 and 亮度(块[y, x, :3]) < 40:
+                            邻 = [块[y + dy, x + dx] for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1))
+                                  if 0 <= y + dy < 切 and 0 <= x + dx < 格]
+                            if not any(p[3] > 0 and 亮度(p[:3]) >= 40 for p in 邻):
+                                块[y, x] = 0
+    return 数
 
-def 按色带换(图: np.ndarray, 罩: np.ndarray, 项: dict, 轮廓: np.ndarray):
-    """把罩里的像素按原来的明暗换到色带上；描边色用在轮廓和最暗的点。"""
-    if not 罩.any():
-        return
+
+# ---------- 换色 ----------
+
+def 选罩(图, 项) -> np.ndarray:
+    """按「选色」挑出同一种材质的像素：色相接近、饱和度接近；选的是灰白黑时按亮度挑。"""
+    实 = 图[..., 3] > 0
+    h, s = 色相饱和(图)
     L = 亮度(图[..., :3])
-    全 = np.sort(L[罩])
-    暗, 明 = float(np.percentile(全, 2)), float(np.percentile(全, 98))
+    if isinstance(项["选色"], list):           # 直接点名几种颜色，最准
+        罩 = np.zeros(图.shape[:2], bool)
+        for 色 in 项["选色"]:
+            罩 |= (图[..., :3] == np.round(十六进制(色)).astype(np.int32)).all(-1)
+        return 罩 & 实 & 限定(图, 项)
+    选 = 十六进制(项["选色"])[None, None, :]
+    sh, ss = 色相饱和(选)
+    sh, ss, sL = float(sh[0, 0]), float(ss[0, 0]), float(亮度(选)[0, 0])
+    if ss < 0.15:
+        罩 = 实 & (s < 项.get("最高饱和", 0.2)) & (np.abs(L - sL) <= 项.get("亮度容差", 70))
+    else:
+        距 = np.abs(h - sh)
+        距 = np.minimum(距, 360 - 距)
+        罩 = 实 & (距 <= 项.get("色相容差", 18)) & (s >= 项.get("最低饱和", 0.15)) & (np.abs(s - ss) <= 项.get("饱和容差", 0.35))
+        罩 &= L >= 项.get("最低亮度", 25)      # 近黑的描边不动
+    return 罩 & 限定(图, 项)
+
+
+def 限定(图, 项) -> np.ndarray:
+    罩 = np.ones(图.shape[:2], bool)
+    if "行范围" in 项:                         # 只换格子里第几行到第几行（含两头），比如只换裤子
+        上, 下 = 项["行范围"]
+        行号 = np.arange(图.shape[0]) % 格
+        罩 &= ((行号 >= 上) & (行号 <= 下))[:, None]
+    if "列范围" in 项:                         # 格子里第几列到第几列（含两头）
+        左, 右 = 项["列范围"]
+        列号 = np.arange(图.shape[1]) % 格
+        罩 &= ((列号 >= 左) & (列号 <= 右))[None, :]
+    if "方向" in 项:
+        限 = np.zeros(图.shape[:2], bool)
+        for 向 in 项["方向"] if isinstance(项["方向"], list) else [项["方向"]]:
+            行 = 方向名.index(向)
+            限[行 * 格:(行 + 1) * 格] = True
+        罩 &= 限
+    return 罩
+
+
+def 换色(图, 项) -> int:
+    罩 = 选罩(图, 项)
+    if not 罩.any():
+        return 0
+    L = 亮度(图[..., :3])
+    全 = L[罩]
+    暗, 明 = float(np.percentile(全, 1)), float(np.percentile(全, 99))
     t = np.clip((L[罩] - 暗) / max(明 - 暗, 1.0), 0, 1)
-    均衡 = 项.get("均衡", 0.0)
-    if 均衡:
-        名次 = np.searchsorted(全, L[罩]) / max(len(全) - 1, 1)
-        t = t * (1 - 均衡) + 名次 * 均衡
-    原暗线 = 罩 & (L <= 暗 + (明 - 暗) * 项.get("暗线比例", 0.06))
     图[罩, :3] = np.round(色带取色(项["色带"], t)).astype(np.int32)
-    if 项.get("描边"):
-        线 = (罩 & 轮廓) | 原暗线
-        图[线, :3] = np.round(十六进制(项["描边"])).astype(np.int32)
+    return int(罩.sum())
 
 
-def 头的分区(头: np.ndarray, 规: dict):
-    实 = 头[..., 3] > 0
-    肤 = 合规则(头, 规["肤"]) & 实
-    眼 = 合规则(头, 规["眼"]) & 实 if "眼" in 规 else np.zeros_like(实)
-    return 肤 & ~眼, 眼
+# ---------- 拼 ----------
 
-
-def 身体分区(身: np.ndarray, 规们: list, 头锚们: list):
-    """返回 {名: 罩}（整张 144×192）。规则按顺序，先中先得。"""
-    高, 宽 = 身.shape[:2]
-    实 = 身[..., 3] > 0
-    位置 = np.zeros((高, 宽))
-    for 行 in range(行数):
-        for 列 in range(列数):
-            块实 = 实[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格]
-            ys = np.where(块实.any(1))[0]
-            if len(ys) == 0:
+def 去孤点(块, 切):
+    """脖子附近和谁都不挨着的三两个点（旧发梢擦剩下的）擦掉。"""
+    实 = 块[..., 3] > 0
+    见 = np.zeros((格, 格), bool)
+    for y0 in range(max(切 - 1, 0), min(切 + 6, 格)):
+        for x0 in range(格):
+            if not 实[y0, x0] or 见[y0, x0]:
                 continue
-            顶, 底 = 头锚们[行 * 列数 + 列][1], int(ys.max())
-            比 = (np.arange(格) - 顶) / max(底 - 顶 + 1, 1)
-            位置[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 比[:, None]
-    剩 = 实.copy()
-    出 = {}
-    for 规 in 规们:
-        罩 = 合规则(身, 规, 位置) & 剩
-        出[规["名"]] = 出.get(规["名"], np.zeros_like(实)) | 罩
-        剩 &= ~罩
-    return 出
+            堆, 栈 = [], [(y0, x0)]
+            见[y0, x0] = True
+            while 栈:
+                y, x = 栈.pop()
+                堆.append((y, x))
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        yy, xx = y + dy, x + dx
+                        if 0 <= yy < 格 and 0 <= xx < 格 and 实[yy, xx] and not 见[yy, xx]:
+                            见[yy, xx] = True
+                            栈.append((yy, xx))
+            if len(堆) <= 4:
+                for y, x in 堆:
+                    块[y, x] = 0
 
 
-def 拼(配方: dict, 库: Path) -> np.ndarray:
-    def 取(类, 名):
-        return 读图(库 / 类 / f"{名}.png"), json.loads((库 / 类 / f"{名}.json").read_text("utf-8"))
-    头图, 头档 = 取("头", 配方["头"])
-    发图, 发档 = 取("发", 配方["发"]) if 配方.get("发") else (None, None)
-    身图, 身档 = 取("身体", 配方["身体"])
-    换 = 配方.get("换色", {})
-    # 先换色（在部件上换，12 帧自然一致），再拼
-    for 行 in range(行数):
-        头 = 头图[行 * 格:(行 + 1) * 格]
-        肤, 眼 = 头的分区(头, 头档["分区"])
-        边 = 外缘(头[..., 3] > 0)
-        if "肤" in 换:
-            按色带换(头, 肤, 换["肤"], 边)
-        if "眼" in 换:
-            按色带换(头, 眼, 换["眼"], np.zeros_like(边))
-        if 发图 is not None and "发" in 换:
-            发 = 发图[行 * 格:(行 + 1) * 格]
-            按色带换(发, 发[..., 3] > 0, 换["发"], 外缘(发[..., 3] > 0))
-    区们 = 身体分区(身图, 身档["分区"], 身档["头锚"])
-    身边 = 外缘(身图[..., 3] > 0)
-    for 名, 罩 in 区们.items():
-        键 = 名 if 名 == "肤" else f"身体.{名}"
-        if 键 in 换:
-            按色带换(身图, 罩, 换[键], 身边)
+def 拼(配方, 素材: Path, 配方目录: Path):
+    头图 = 读部件(素材, 配方["头"])
+    身图 = 读部件(素材, 配方["身体"])
+    头脖 = 配方.get("头脖子行") or 找脖子行(头图)
+    身脖 = 配方.get("身体脖子行") or 找脖子行(身图)
+    提示 = [f"脖子行：头 {头脖}，身体 {身脖}"]
+    if 配方.get("去领口", True):
+        去领口(头图, 头脖)
+    头摆 = 头的下摆(头图, 头脖)
+    身摆 = 头的下摆(身图, 身脖)
+    for 项 in 配方.get("换色", []):
+        部位 = 项.get("部位", "全部")
+        数 = 0
+        if 部位 in ("头", "全部"):
+            数 += 换色(头图, 项)
+        if 部位 in ("身体", "全部"):
+            数 += 换色(身图, 项)
+        if 数 == 0:
+            提示.append(f"换色「{项.get('名', 项['选色'])}」在{部位}上一个点都没选中")
     出 = np.zeros((行数 * 格, 列数 * 格, 4), np.int32)
-    偏 = 配方.get("发偏移", {})
+    空洞, 出顶 = 0, 0
     for 行 in range(行数):
-        头 = 头图[行 * 格:(行 + 1) * 格]
         for 列 in range(列数):
-            块 = 身图[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格].copy()
-            ax, ay = 身档["头锚"][行 * 列数 + 列]
-            块 = 盖(块, 平移(头, ax - 头档["锚"][行][0], ay - 头档["锚"][行][1]))
-            if 发图 is not None:
-                ox, oy = 偏.get(方向名[行], [0, 0])
-                发 = 发图[行 * 格:(行 + 1) * 格]
-                块 = 盖(块, 平移(发, ax - 发档["锚"][行][0] + ox, ay - 发档["锚"][行][1] + oy))
+            头, 身 = 取格(头图, 行, 列), 取格(身图, 行, 列)
+            头切 = 头脖 + 头沉(头图, 行, 列)
+            身切 = 身脖 + 头沉(身图, 行, 列)
+            块 = np.zeros((格, 格, 4), np.int32)
+            身罩 = 身[..., 3] > 0
+            身罩[:身切] = False
+            去 = 取格(身摆, 行, 列) & 身罩
+            空洞 = max(空洞, int(去.sum()))
+            身罩 &= ~去
+            块[身罩] = 身[身罩]
+            for y, x in sorted(zip(*np.where(去)), reverse=True):   # 擦掉的地方照正下方最近的非描边点补上；下面是空的就留空
+                for 下 in range(y + 1, min(y + 5, 格)):
+                    if 块[下, x, 3] == 0:
+                        break
+                    if 亮度(块[下, x, :3]) >= 40:
+                        块[y, x] = 块[下, x]
+                        break
+            移 = 身切 - 头切
+            头罩 = 头[..., 3] > 0
+            头罩[头切:] = False
+            头罩 |= 取格(头摆, 行, 列)
+            for y, x in zip(*np.where(头罩)):
+                yy = y + 移
+                if 0 <= yy < 格:
+                    块[yy, x] = 头[y, x]
+                elif yy < 0:
+                    出顶 += 1
+            去孤点(块, 身切)
             出[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 块
-    return 出
+    if 空洞 > 160:
+        提示.append(f"身体供体有一帧被它自己的长发遮了 {空洞} 个点，是照着正下方的颜色补的，放大看一眼；不行就换短发的身体供体")
+    if 出顶:
+        提示.append(f"头顶有 {出顶} 个点超出格子被裁掉了；换矮一点的发型，或者换脖子行更靠上的身体")
+    for 组 in 配方.get("点缀", []):
+        for 向 in 组["方向"] if isinstance(组["方向"], list) else [组["方向"]]:
+            行 = 方向名.index(向)
+            for 列 in range(列数):
+                沉 = 头沉(身图, 行, 列)
+                for x, y, 色 in 组["点"]:
+                    yy = y + (沉 if y < 身脖 else 0)
+                    if 0 <= yy < 格 and 0 <= x < 格:
+                        出[行 * 格 + yy, 列 * 格 + x] = [int(v) for v in np.round(十六进制(色))] + [255]
+    if 配方.get("图层"):
+        层 = np.array(Image.open(配方目录 / 配方["图层"]).convert("RGBA")).astype(np.int32)
+        if 层.shape != 出.shape:
+            raise SystemExit(f"图层尺寸要 {出.shape[1]}×{出.shape[0]}")
+        罩 = 层[..., 3] >= 128
+        出[罩] = 层[罩]
+        出[罩, 3] = 255
+    return 出, 提示
 
 
 def 命令_导出(参):
-    配方 = json.loads(Path(参.配方).read_text("utf-8"))
-    出 = 拼(配方, Path(参.库))
-    存图(出, Path(参.输出))
-    print(f"已导出 {参.输出}（头 {配方['头']}，发 {配方.get('发') or '无'}，身体 {配方['身体']}）")
-    return 0
-
-
-def 命令_总览(参):
-    库 = Path(参.库)
-    倍 = 参.倍数
-    行们 = []
-    for 类 in ("头", "发", "身体"):
-        for 文 in sorted((库 / 类).glob("*.png")):
-            图 = Image.open(文).convert("RGBA")
-            if 类 != "身体":      # 四个方向横着排
-                横 = Image.new("RGBA", (格 * 4, 格))
-                for i in range(4):
-                    横.alpha_composite(图.crop((0, i * 格, 格, (i + 1) * 格)), (i * 格, 0))
-                图 = 横
-            else:                 # 只放站立帧
-                横 = Image.new("RGBA", (格 * 4, 格))
-                for i in range(4):
-                    横.alpha_composite(图.crop((格, i * 格, 格 * 2, (i + 1) * 格)), (i * 格, 0))
-                图 = 横
-            行们.append(图.resize((图.width * 倍, 图.height * 倍), Image.NEAREST))
-    板 = Image.new("RGBA", (格 * 4 * 倍, 格 * 倍 * len(行们)), (29, 39, 51, 255))
-    for i, 图 in enumerate(行们):
-        板.alpha_composite(图, (0, i * 格 * 倍))
+    配方路 = Path(参.配方)
+    配方 = json.loads(配方路.read_text(encoding="utf-8"))
+    出, 提示 = 拼(配方, Path(参.素材), 配方路.parent)
     Path(参.输出).parent.mkdir(parents=True, exist_ok=True)
-    板.save(参.输出)
-    print(f"已生成 {参.输出}（{len(行们)} 个部件）")
-    return 0
+    Image.fromarray(出.astype(np.uint8), "RGBA").save(参.输出, optimize=False)
+    print(f"已导出 {参.输出}（头 {配方['头']}，身体 {配方['身体']}）")
+    for 句 in 提示:
+        print("注意：" + 句)
+
+
+# ---------- 目录 ----------
+
+def 全部部件(素材: Path, 排除=("Codex",)):
+    """素材目录里所有标准骨架的角色。文件名带「Codex」的是后来补画的，不是原版，默认不收。"""
+    for 路 in sorted(素材.glob("*.png")):
+        名 = 路.name
+        if 名.startswith("!") or any(词 in 名 for 词 in 排除):
+            continue
+        try:
+            图 = np.array(Image.open(路).convert("RGBA")).astype(np.int32)
+        except OSError:
+            continue
+        单 = 名.startswith("$")
+        for 序 in range(1 if 单 else 8):
+            块 = 切块(图, 名, 序)
+            if 块 is None or (块[..., 3] > 0).sum() < 200:
+                continue
+            yield (名 if 单 else f"{名}#{序}"), 块
+
+
+def 命令_目录(参):
+    字 = ImageFont.truetype(参.字体, 11) if 参.字体 else ImageFont.load_default()
+    倍 = 参.倍数
+    件 = [(号, 图) for 号, 图 in 全部部件(Path(参.素材)) if not 参.筛 or 参.筛 in 号]
+    if not 件:
+        raise SystemExit("没有符合条件的角色")
+    宽格, 高格 = 格 * 倍 * 2 + 8, 格 * 倍 + 16
+    每页 = 参.每行 * 参.每页行
+    出 = Path(参.输出)
+    出.mkdir(parents=True, exist_ok=True)
+    for 页 in range(0, len(件), 每页):
+        批 = 件[页:页 + 每页]
+        行 = (len(批) + 参.每行 - 1) // 参.每行
+        布 = Image.new("RGBA", (参.每行 * 宽格, 行 * 高格), (58, 62, 70, 255))
+        画 = ImageDraw.Draw(布)
+        for i, (号, 图) in enumerate(批):
+            x0, y0 = (i % 参.每行) * 宽格, (i // 参.每行) * 高格
+            for j, 向 in enumerate((0, 1)):                  # 正面和左侧的站立帧
+                小 = Image.fromarray(取格(图, 向, 站立列).astype(np.uint8), "RGBA")
+                小 = 小.resize((格 * 倍, 格 * 倍), Image.NEAREST)
+                布.alpha_composite(小, (x0 + j * 格 * 倍, y0))
+            画.text((x0 + 2, y0 + 格 * 倍 + 1), 号.replace(".png", ""), fill=(235, 235, 235, 255), font=字)
+        名 = 出 / f"目录_{页 // 每页 + 1:02d}.png"
+        布.save(名)
+        print(f"{名}：{len(批)} 个角色")
+    print(f"共 {len(件)} 个标准骨架的角色")
+
+
+# ---------- 取色 ----------
+
+def 命令_取色(参):
+    图 = 读部件(Path(参.素材), 参.部件)
+    脖 = 参.脖子行 or 找脖子行(图)
+    print(f"脖子行 {脖}")
+    行号 = (np.arange(图.shape[0]) % 格)[:, None] * np.ones((1, 图.shape[1]), int)
+    for 名, 区 in (("头", 行号 < 脖), ("身体", 行号 >= 脖)):
+        罩 = (图[..., 3] > 0) & 区
+        数: dict = {}
+        for 点 in 图[罩][:, :3]:
+            数[tuple(int(v) for v in 点)] = 数.get(tuple(int(v) for v in 点), 0) + 1
+        组: dict = {}
+        for 色, 次 in 数.items():
+            a = np.array(色, float)[None, None, :]
+            h, s = 色相饱和(a)
+            h, s, L = float(h[0, 0]), float(s[0, 0]), float(亮度(a)[0, 0])
+            键 = "近黑描边" if L < 25 else ("灰白" if s < 0.15 else f"色相{int(h // 24) * 24:03d}")
+            组.setdefault(键, []).append((L, 色, 次))
+        print(f"【{名}】")
+        for 键, 列 in sorted(组.items(), key=lambda kv: -sum(c for _, _, c in kv[1])):
+            总 = sum(c for _, _, c in 列)
+            if 总 < 6:
+                continue
+            列.sort()
+            多 = max(列, key=lambda v: v[2])[1]
+            列 = [v for v in 列 if v[2] >= 3] or 列
+            样 = " ".join("#%02X%02X%02X" % 色 for _, 色, _ in (列 if len(列) <= 12 else 列[:: len(列) // 10 + 1]))
+            print(f"  {键:8s} {总:5d} 点  选色 #%02X%02X%02X  从暗到亮：{样}" % 多)
 
 
 def main(argv=None):
-    解 = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    子 = 解.add_subparsers(dest="命令", required=True)
-    a = 子.add_parser("拆件", help="把定稿行走图拆成头、发、身体入库")
-    a.add_argument("源图")
-    a.add_argument("素材档")
-    a.add_argument("--名", required=True)
-    a.add_argument("--库", required=True)
-    a.set_defaults(函=命令_拆件)
-    b = 子.add_parser("导出", help="配方 → 行走图")
-    b.add_argument("配方")
-    b.add_argument("输出")
-    b.add_argument("--库", required=True)
-    b.set_defaults(函=命令_导出)
-    c = 子.add_parser("总览", help="部件库一览图")
-    c.add_argument("--库", required=True)
-    c.add_argument("--输出", required=True)
-    c.add_argument("--倍数", type=int, default=4)
-    c.set_defaults(函=命令_总览)
-    参 = 解.parse_args(argv)
-    return 参.函(参)
+    p = argparse.ArgumentParser(description="行走图角色生成器（原型）")
+    子 = p.add_subparsers(dest="命令", required=True)
+    a = 子.add_parser("目录", help="把素材目录里的角色排成带编号的一览图")
+    a.add_argument("--素材", required=True)
+    a.add_argument("--输出", required=True, help="放一览图的文件夹")
+    a.add_argument("--筛", help="只列文件名里带这段字的")
+    a.add_argument("--倍数", type=int, default=2)
+    a.add_argument("--每行", type=int, default=10)
+    a.add_argument("--每页行", type=int, default=8)
+    a.add_argument("--字体")
+    a.set_defaults(函数=命令_目录)
+    b = 子.add_parser("取色", help="列出一个角色头上、身上的主要颜色")
+    b.add_argument("部件")
+    b.add_argument("--素材", required=True)
+    b.add_argument("--脖子行", type=int, help="不写就自动量")
+    b.set_defaults(函数=命令_取色)
+    c = 子.add_parser("导出", help="按配方导出行走图")
+    c.add_argument("配方")
+    c.add_argument("输出")
+    c.add_argument("--素材", required=True)
+    c.set_defaults(函数=命令_导出)
+    参 = p.parse_args(argv)
+    参.函数(参)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
