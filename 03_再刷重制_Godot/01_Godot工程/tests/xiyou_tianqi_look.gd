@@ -170,6 +170,10 @@ func _choice() -> void:
 		if c2._cards[i].portrait and c2._cards[i].fig.material == null:
 			shown.append(i)
 	_check("cards_portrait_after_clear", shown == [war_i], shown)
+	# 骑士遗物：打过的那条线点亮、写名字，别的是「？？？」
+	var other := (war_i + 1) % c2._cards.size()
+	_check("cards_relic", c2._cards[war_i].relic_lit and c2._cards[war_i].relic_label.text == XTianqiRewards.relic_name("war", false)
+		and not c2._cards[other].relic_lit and c2._cards[other].relic_label.text == "？？？", [c2._cards[war_i].relic_label.text, c2._cards[other].relic_label.text])
 	c2.queue_free()
 
 

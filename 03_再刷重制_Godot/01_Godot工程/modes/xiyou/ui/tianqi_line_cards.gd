@@ -1,16 +1,18 @@
 class_name XTianqiLineCards
 extends Control
 ## 【cc·天启篇·未经审查】选线画面：四张竖卡并排（四线剧情与关卡设计稿 v0.4 第 2.2 节）。
-## 每张：骑士剪影（本线颜色；打过这条线、或 XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」。
+## 每张：骑士剪影（本线颜色；打过这条线、或 XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」＋卡底「骑士遗物」（打过才点亮）。
 ## 还没做好的线照列，压暗并标「还没修好」，仍可选中看说明（小小鱼会说这条路还没修好）。
 ## 左右键／鼠标选，确认键或点卡定；取消键或「再想想」返回 -1。开关 XTianqiLook.CARDS（O-322）。
 
 signal decided(index: int)
 
-const CARD := Vector2(250, 500)
+const CARD := Vector2(250, 524)  # 11-13 卡底加「骑士遗物」一行，高 500→524、整体上移 4
 const GAP := 26.0
-const TOP := 130.0
+const TOP := 126.0
 const FIG_H := 250.0
+## 卡底「骑士遗物」一行的位置（两段说明走到 481）
+const RELIC_Y := 486.0
 
 var lines: Array = []
 var playable: Array = []
@@ -146,6 +148,29 @@ func _make_card(i: int) -> Control:
 		body.size = Vector2(CARD.x - 32, 50)
 		card.add_child(body)
 		y += 52.0
+	# 骑士遗物（Kyo 11-13 选的加项）：本线遗物的图标和名字；打过这条线的骑士（完整遗物和骑士徽记是同一战给的）才点亮，没打过是暗的「？？？」
+	var relic_name := XTianqiRewards.relic_name(key, false)
+	if relic_name != "":
+		var got := XTianqiRewards.badges().has(key)
+		card.relic_lit = got
+		var icon := TextureRect.new()
+		icon.texture = XUI.icon_texture(XTianqiQiyinArt.small_icon("relic_" + key))
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.position = Vector2(16, RELIC_Y)
+		icon.size = Vector2(32, 32)
+		icon.modulate = Color.WHITE if got else Color(0.16, 0.16, 0.2)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(icon)
+		var rcap := XUI.label("骑士遗物", 13, XTianqiLook.accent_color(key).lightened(0.3))
+		rcap.position = Vector2(56, RELIC_Y - 2)
+		rcap.size = Vector2(CARD.x - 72, 16)
+		card.add_child(rcap)
+		var rname := XUI.label(relic_name if got else "？？？", 15, Color(0.96, 0.94, 0.9) if got else Color(0.55, 0.54, 0.6))
+		rname.position = Vector2(56, RELIC_Y + 13)
+		rname.size = Vector2(CARD.x - 72, 20)
+		card.add_child(rname)
+		card.relic_label = rname
 	if XTianqiRewards.badges().has(key):  # 跨存档（Kyo 11-11 选乙）：通关过这条线的，卡上点亮「已通关」
 		var done := XUI.label("★ 已通关", 18, main.lightened(0.35))
 		done.position = Vector2(0, 18)
@@ -239,6 +264,9 @@ class _Card extends Control:
 	var mark_rect: TextureRect
 	var done_tag: Label   # 跨存档通关过这条线：「★ 已通关」
 	var portrait := false  # 画的是立绘（打过这条线）还是剪影
+	var relic_lit := false  # 卡底骑士遗物点亮了没有
+	var relic_label: Label
+	const RELIC_LINE_Y := 481.5
 	const DIVIDER_Y := 333.5  # FIG_H＋名字＋台词之后（_make_card 里 y 走到 337）
 
 	func _draw() -> void:
@@ -253,6 +281,8 @@ class _Card extends Control:
 			draw_rect(Rect2(glow.position.x, glow.position.y + k, glow.size.x, 1), Color(main, (0.02 + 0.11 * k / glow.size.y) * (1.6 if selected else 1.0)))
 		# 名字、台词和下面两段说明之间一道本线颜色的细线
 		draw_line(Vector2(16, DIVIDER_Y), Vector2(size.x - 16, DIVIDER_Y), Color(main, 0.4), 1.0)
+		if relic_label != null:
+			draw_line(Vector2(16, RELIC_LINE_Y), Vector2(size.x - 16, RELIC_LINE_Y), Color(main, 0.25), 1.0)
 		var edge := main if selected else main.darkened(0.45)
 		var w := 3.0 if selected else 1.5
 		draw_rect(r.grow(-w / 2.0), Color(edge, 0.6 + 0.4 * pulse if selected else 0.85), false, w)
