@@ -153,6 +153,14 @@ class DirsTests(unittest.TestCase):
         self.assertIn('解开 再刷一把_天启篇_windows.zip', notes)
         self.assertNotIn('Windows：再刷一把_天启篇.exe 和', notes)
 
+    def test_notes_end_with_feedback_group_same_as_game(self):
+        """发行说明末尾带反馈 QQ 群，群号跟游戏里 XFeedback.QQ_GROUP 一致（2026-11-13）。"""
+        import re
+        notes = M.notes_text(386, 382, [])
+        self.assertIn('QQ 群 ' + M.FEEDBACK_QQ_GROUP, notes)
+        gd = (HERE.parent / '01_Godot工程' / 'core' / 'feedback.gd').read_text(encoding='utf-8')
+        self.assertEqual(re.search(r'const QQ_GROUP := "(\d+)"', gd).group(1), M.FEEDBACK_QQ_GROUP)
+
     def test_release_dirs_sorted_numeric(self):
         with tempfile.TemporaryDirectory() as t:
             for n in (1000, 99, 383):

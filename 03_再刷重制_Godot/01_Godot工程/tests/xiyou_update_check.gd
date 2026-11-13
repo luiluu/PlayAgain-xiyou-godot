@@ -213,7 +213,13 @@ func _run() -> void:
 	var body: Label = page.find_child("Body", true, false)
 	var title: Label = page.find_child("Title", true, false)
 	var primary: Button = page.find_child("Primary", true, false)
-	_check("有补丁但下载器没接：提示去 QQ 群，没有立即更新", page.state == C.PATCH and title.text == "有新版本" and body.text.contains("请到 QQ 群文件下载 0.%d" % (cur + 5)) and body.text.contains("· 修了一处") and not primary.visible)
+	_check("有补丁但下载器没接：提示去 QQ 群，没有立即更新", page.state == C.PATCH and title.text == "有新版本" and body.text.contains("%s 0.%d" % [XUpdatePage.GROUP_HINT, cur + 5]) and body.text.contains(XFeedback.QQ_GROUP) and body.text.contains("· 修了一处") and not primary.visible)
+	# 反馈群（XFeedback）：按钮下面一行，点一下复制群号；不抢焦点
+	var fb: Button = page.find_child("FeedbackGroup", true, false)
+	_check("更新页有反馈群一行", fb != null and fb.text.contains(XFeedback.QQ_GROUP) and fb.focus_mode == Control.FOCUS_NONE)
+	if fb != null:
+		fb.pressed.emit()
+		_check("更新页点反馈群显示已复制", fb.text == XFeedback.COPIED)
 	var called := []
 	XUpdatePage.patch_installer = func(p, res): called.append(res["patch"]["code"])
 	page.show_result(page.get_meta("result"))
@@ -225,7 +231,7 @@ func _run() -> void:
 	page.show_result({"state": C.LATEST, "current": "0.453", "version": "0.453"})
 	_check("已是最新", title.text == "已是最新版本" and body.text == "当前版本 0.453" and not primary.visible)
 	page.show_result({"state": C.FULL, "current": "0.453", "version": "0.470", "date": "2026-11-20", "notes": PackedStringArray(["说明"])})
-	_check("要换整包", body.text.contains("新版本 0.470（2026-11-20）") and body.text.contains("请到 QQ 群文件下载 0.470") and not primary.visible)
+	_check("要换整包", body.text.contains("新版本 0.470（2026-11-20）") and body.text.contains("请到 QQ 群 %s 的群文件下载 0.470" % XFeedback.QQ_GROUP) and not primary.visible)
 	page.show_result({"state": C.BAD, "current": "0.453"})
 	_check("读不到", title.text == "暂时查不到" and body.text.contains("当前版本 0.453") and body.text.contains("QQ 群"))
 	_check("大小写法", XUpdatePage.size_text(322000) == "315 KB" and XUpdatePage.size_text(18234567) == "17.4 MB")

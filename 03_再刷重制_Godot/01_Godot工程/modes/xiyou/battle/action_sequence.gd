@@ -7,14 +7,17 @@ extends RefCounted
 ##   正式版 eval 出错（如敌人没有 _skills）时为假。不认识的写法记入 unknown 并当作假。
 ## - 规则指令：ACTION EFFECT（可指定目标）、ADD/REMOVE STATE、HP/MP/TP ±（数值、百分比、变量）、ADD/REMOVE 能力 BUFF/DEBUFF。
 ##   ACTION COMMON EVENT／COMMON EVENT: X 预约公共事件（XBattleCommonEvent，行动结束后由敌群事件检查执行）。
-##   其余（动画、移动、等待、镜头、音效、变量、EVAL）不影响本函数的结算，跳过。
+##   CHANGE VARIABLE 照 actionChangeVariable 改变量（开关 CHANGE_VARIABLE）。
+##   其余（动画、移动、等待、镜头、音效、开关、EVAL）不影响本函数的结算，跳过。
 ## - 画面：照执行顺序在记录里插入 seq_phase（段开始）、seq_target（target 段换下一个目标）、seq（每条执行的指令，
 ##   带当时的目标与画面要用的对象组）与 seq_end，由 XSequencePlayer 逐帧演出；这些条目不影响结算。
 ## - IMMORTAL 期间 HP 为 0 也不倒下，解除时同步阵亡；资源增减与能力增减后按 MV refresh 同步夹值与阵亡状态。
 
 ## 会改数值或状态的指令：执行后记下全体读数（状态栏、血条）
 static var STATE_CMD := RegEx.create_from_string("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
-const PHASES := ["setup", "whole", "target", "follow", "finish"]
+## CHANGE VARIABLE 照原版改变量（五河琴里攒火力值，v0.01.07 玩家反馈攒不了）；false＝回退到旧重制（跳过，火力值永远 0）
+static var CHANGE_VARIABLE := true
+const PHASES :=["setup", "whole", "target", "follow", "finish"]
 const PARAMS := {"MAXHP": 0, "MHP": 0, "MAX HP": 0, "HP": 0, "MAXMP": 1, "MMP": 1, "MAX MP": 1, "MP": 1, "ATK": 2, "STR": 2,
 	"DEF": 3, "MAT": 4, "INT": 4, "SPI": 4, "MDF": 5, "RES": 5, "AGI": 6, "SPD": 6, "LUK": 7}
 
@@ -176,7 +179,10 @@ func _command(name: String, args: Array) -> void:
 		if name == "BREAK ACTION" or user.is_dead():
 			_break = true
 		return
-	var m := RegEx.create_from_string("^(?:ADD_STATE|ADD STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
+	if CHANGE_VARIABLE and name.begins_with("CHANGE VARIABLE "):
+		_change_variable(name)
+		return
+	var m :=RegEx.create_from_string("^(?:ADD_STATE|ADD STATE)[ ](\\d+(?:\\s*,\\s*\\d+)*)").search(name)
 	if m:
 		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
 			for id in _ids(m.get_string(1)):
@@ -202,6 +208,44 @@ func _command(name: String, args: Array) -> void:
 		for t in make_targets(str(args[0]) if not args.is_empty() else ""):
 			logic.sequence_buff(t, pid, m.get_string(1) == "ADD", m.get_string(3) == "BUFF", turns)
 		return
+
+
+## ActSeqPack1 actionChangeVariable：CHANGE VARIABLE X op VARIABLE Y／CHANGE VARIABLE X op 值（= += -= *= /= %=，也认不带等号的）。
+## 原版右边是 eval；正式数据只有五河琴里的火力值（变量 1510，10055～10058）用到，写的都是整数，这里只认数字与 VARIABLE Y，别的记 unknown。
+func _change_variable(name: String) -> void:
+	var id := 0
+	var op := ""
+	var value := 0.0
+	var m := RegEx.create_from_string("^CHANGE[ ](?:VARIABLE|VAR)[ ](\\d+)[ ](.*)[ ](?:VARIABLE|VAR)[ ](\\d+)").search(name)
+	if m:
+		id = int(m.get_string(1))
+		op = m.get_string(2)
+		value = logic.state.variable(int(m.get_string(3)))
+	else:
+		m = RegEx.create_from_string("^CHANGE[ ](?:VARIABLE|VAR)[ ](\\d+)[ ](.*?)[ ](.*)").search(name)
+		if not m:
+			return
+		id = int(m.get_string(1))
+		op = m.get_string(2)
+		var raw := m.get_string(3).strip_edges()
+		if not raw.is_valid_float():
+			unknown.append(name)
+			return
+		value = raw.to_float()
+	var cur := float(logic.state.variable(id))
+	match op:
+		"=":
+			logic.state.set_variable(id, value)
+		"+=", "+":
+			logic.state.set_variable(id, cur + value)
+		"-=", "-":
+			logic.state.set_variable(id, cur - value)
+		"*=", "*":
+			logic.state.set_variable(id, cur * value)
+		"/=", "/":
+			logic.state.set_variable(id, cur / value)
+		"%=", "%":
+			logic.state.set_variable(id, fmod(cur, value))
 
 
 ## BattleManager.actionActionEffect 本体：对指定目标（缺省为当前目标）各 invoke 一次

@@ -216,6 +216,13 @@ func _keyboard() -> void:
 	# 子页（设置、调按键位置、读档）底下垫的是天启篇底图，不是原版 PlayAgain 底图（安卓调按键位置页露出旧图，11-12）
 	var sub_bg = entry.get_node_or_null("TianqiSubpageBg")
 	var old_bg := entry.get_children().filter(func(c): return c is CPUParticles2D)
+	# 标题右下角反馈群（XFeedback）：在画面里、不抢焦点，点一下显示已复制，键盘选项不变
+	var fb = entry.find_child("FeedbackGroup", true, false)
+	var vr: Rect2 = entry.get_viewport_rect()
+	_check("title_feedback_group", fb is Button and (fb as Button).text.contains(XFeedback.QQ_GROUP) and fb.focus_mode == Control.FOCUS_NONE and vr.encloses(fb.get_global_rect()), fb.get_global_rect() if fb is Button else null)
+	if fb is Button:
+		fb.pressed.emit()
+		_check("title_feedback_copied", fb.text == XFeedback.COPIED and _sel(entry) == 0, fb.text)
 	_check("subpage_bg_is_tianqi", sub_bg is TextureRect and sub_bg.texture == load(XTianqiTitle.BG) and old_bg.is_empty(), old_bg.size())
 	await _key(KEY_ENTER)
 	_check("kb_slot_page", _find("TianqiSlot1") != null and _focus_name() == "TianqiSlot1", _focus_name())

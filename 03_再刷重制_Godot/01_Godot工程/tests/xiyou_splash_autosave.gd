@@ -108,6 +108,13 @@ func _run() -> void:
 	w.finished.connect(func(): wdone[0] = true)
 	check("warning_text_free", "免费" in XWarningScreen.LINES[0] and "倒卖" in XWarningScreen.LINES[1])
 	check("warning_red_bar", (w._root.get_node("Bar") as ColorRect).color == XWarningScreen.RED)
+	var wfb = w._root.get_node_or_null("Feedback")
+	check("warning_feedback_group", wfb is Label and (wfb as Label).text.contains(XFeedback.QQ_GROUP))
+	XFeedback.SHOW = false
+	var wn := XWarningScreen.play(host)
+	check("warning_feedback_off", wn._root.get_node_or_null("Feedback") == null)
+	wn.queue_free()
+	XFeedback.SHOW = true
 	check("warning_starts_hidden", w.state().opacity == 0 and w._root.modulate.a == 0.0)
 	for i in XWarningScreen.FADE:
 		w.step(true)  # 开头连按不算跳过

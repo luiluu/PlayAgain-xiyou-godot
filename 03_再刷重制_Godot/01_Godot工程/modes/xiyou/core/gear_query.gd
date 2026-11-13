@@ -18,6 +18,11 @@ const SORT_NAMES := {"original": "原有顺序", "power": "战力高 → 低", "
 const SCOPES := [["all", "背包 + 已装备"], ["bag", "仅背包"], ["worn", "仅已装备"]]
 
 static var _cache := {}
+## O-381（玩家反馈 v0.01.07 物品页「护甲」非常卡）：排序比较时每比一次都要对两件装备各取一次 record（把整段备注转成 JSON 当缓存键、
+## 说明文字过一遍正则），900 多件护甲一次排序上万次比较、约 0.9 秒，物品页一次刷新又要排好几遍。
+## 开着：筛选排序前每件装备先算好一次排序键（指标、品质名次、名字、ID），比较只比键，顺序与逐次 compare 相同；record 命中缓存时
+## 不再先算说明文字。false＝原来逐次 compare。
+static var PRESORT_KEYS := true
 static var _re := {}
 
 
@@ -124,13 +129,15 @@ static func is_gear(item: Dictionary) -> bool:
 
 ## record()：词条行、分类与搜索文字（按备注/描述/品质/能力缓存）
 static func record(item: Dictionary) -> Dictionary:
-	var description := text(XHelpCard.gear_text(str(item.get("description", ""))))
+	var description := "" if PRESORT_KEYS else text(XHelpCard.gear_text(str(item.get("description", ""))))
 	# 正式版 WeakMap 按装备对象隔离；这里按内容缓存，必须包含名字与底材身份。
 	var sig := JSON.stringify([item.get("kind", ""), item.get("base"), item.get("name", ""),
 		item.get("note", ""), item.get("description", ""), quality(item), item.get("params", [])])
 	var c = _cache.get(sig)
 	if c != null:
 		return c
+	if PRESORT_KEYS:
+		description = text(XHelpCard.gear_text(str(item.get("description", ""))))
 	# getBaseItem：随机词缀装备的底是 DreamX 生成时的模板（底装备＋词缀），词缀那几行算「固定」，之后加的才是「随机 / 附加」
 	var base := XGear.affix_template(item) if item.has("base") else item
 	if base.is_empty():
@@ -244,10 +251,43 @@ static func filter_entries(entries: Array, f: Dictionary) -> Array:
 			empty.append(e)
 		elif is_gear(e.rec) and matches(e.rec, f):
 			keyed.append([e, keyed.size()])
+	if PRESORT_KEYS:
+		var sort := str(f.sort)
+		if sort == "original":
+			return keyed.map(func(x): return x[0]) + empty
+		for x in keyed:
+			x.append(sort_key(x[0].rec, f))
+		keyed.sort_custom(func(x, y):
+			var c := compare_keys(x[2], y[2], sort)
+			return c < 0 if c != 0 else x[1] < y[1])
+		return keyed.map(func(x): return x[0]) + empty
 	keyed.sort_custom(func(x, y):
 		var c := compare(x[0].rec, y[0].rec, f)
 		return c < 0 if c != 0 else x[1] < y[1])
 	return keyed.map(func(x): return x[0]) + empty
+
+
+## 排序键（PRESORT_KEYS）：[指标, 品质名次, 名字, ID]，按名称排时只用名字；与 compare 的比较顺序一一对应
+static func sort_key(item: Dictionary, f: Dictionary) -> Array:
+	var sort := str(f.sort)
+	var m := 0.0 if sort == "name" or sort == "original" else metric(item, f)
+	return [m, rank(quality(item)), _name(item), _id(item)]
+
+
+## compare 的键版本：负数 a 在前
+static func compare_keys(a: Array, b: Array, sort: String) -> int:
+	if sort == "original":
+		return 0
+	if sort == "name":
+		return XZhCollation.compare(a[2], b[2])
+	if a[0] != b[0]:
+		return -1 if b[0] < a[0] else 1
+	if a[1] != b[1]:
+		return -1 if b[1] < a[1] else 1
+	var n := XZhCollation.compare(a[2], b[2])
+	if n != 0:
+		return n
+	return 0 if a[3] == b[3] else (-1 if a[3] < b[3] else 1)
 
 
 ## collection()：背包武器、防具，再加已有角色身上的装备（不招募角色）；每项 {item, owner, key}
