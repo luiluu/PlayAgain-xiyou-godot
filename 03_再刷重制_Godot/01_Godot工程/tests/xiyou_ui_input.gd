@@ -1,7 +1,8 @@
 extends Node
 ## 界面输入（ui-input1，Codex 审查报告第 13、14、16 项）。全部走真实事件分发：Input.parse_input_event 注入触屏、按键、手柄、动作事件，
 ## 经 GameApp 下的 XKeyRepeat 等节点，再看页面收到了什么；不直接调页面的处理方法。
-## - 第 13 项：虚拟确定键按住不连发（松开再按才算第二次）；虚拟方向键按住的连发是可识别的回显（echo），不是新的按下。
+## - 第 13 项：虚拟确定键按住只算一次新按下（松开再按才算第二次），其余是回显（O-待定 HOLD_OK_ECHO：战斗列表、选目标认回显连发）；
+##   虚拟方向键按住的连发是可识别的回显（echo），不是新的按下。
 ## - 第 14 项：网页面板、批量抽奖窗认 ui_cancel（虚拟取消键、安卓返回键、手柄 B、X 键）；输入框有焦点时打字键归输入框。
 ## - 第 16 项：标题初始化（光标）在 _title() 里，进标题就有光标、方向键能选；不是读自动存档失败后才出现。
 ## 回退开关两边都跑。
@@ -13,6 +14,10 @@ class Recorder extends Node:
 	var accept_echoes := 0
 	var down_presses := 0
 	var down_echoes := 0
+	var accept_just := 0  # 轮询 is_action_just_pressed 的次数（地图 mv_player 这样问），回显不能让它再触发
+	func _physics_process(_d: float) -> void:
+		if Input.is_action_just_pressed("ui_accept"):
+			accept_just += 1
 	func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed("ui_accept"):
 			accepts += 1
@@ -108,11 +113,13 @@ func _hold_ok(pad: XTouchControls, rec: Recorder, n: int) -> Array:
 	var ok_center: Vector2 = (pad.rects.ok as Rect2).get_center()
 	var a := rec.accepts
 	var ae := rec.accept_echoes
+	var aj := rec.accept_just
 	touch(0, ok_center, true)
 	await physics(n)
-	var held := [rec.accepts - a, rec.accept_echoes - ae]
+	var held := [rec.accepts - a, rec.accept_echoes - ae, rec.accept_just - aj]
 	touch(0, ok_center, false)
 	await frames(2)
+	held.append(Input.is_action_pressed("ui_accept"))  # 松开后不该还按着
 	return held
 
 func _hold_down(pad: XTouchControls, rec: Recorder, n: int) -> Array:
@@ -127,10 +134,12 @@ func _hold_down(pad: XTouchControls, rec: Recorder, n: int) -> Array:
 	return held
 
 func _item13(pad: XTouchControls, rec: Recorder) -> void:
-	# 按住确定 60 帧（过了 24 帧的连发点好几次）：只算一次确认，也不发回显
+	# 按住确定 60 帧（过了 24 帧的连发点好几次）：只算一次新按下，其余是回显（24 帧后每 6 帧），轮询也只触发一次，松开即松
 	var held: Array = await _hold_ok(pad, rec, 60)
 	check("13_ok_hold_confirms_once", held[0] == 1, held)
-	check("13_ok_hold_no_repeat", held[1] == 0, held)
+	check("13_ok_hold_repeats_as_echo", held[1] >= 4, held)
+	check("13_ok_hold_just_pressed_once", held[2] == 1, held)
+	check("13_ok_released_after_echo", not held[3], held)
 	# 松开再按：第二次确认
 	var again: Array = await _hold_ok(pad, rec, 4)
 	check("13_ok_release_then_press_again", again[0] == 1, again)
@@ -154,7 +163,25 @@ func _item13(pad: XTouchControls, rec: Recorder) -> void:
 	await frames(2)
 	check("13_hold_does_not_carry_to_next_scene", mid > e0 and after == mid, [e0, mid, after])
 	XTouchControls.scene_override = null
+	# 确定的连发也一样：按着换了场景就停
+	var oe0 := rec.accept_echoes
+	var ok_center: Vector2 = (pad.rects.ok as Rect2).get_center()
+	touch(0, ok_center, true)
+	await physics(30)
+	var omid := rec.accept_echoes
+	XTouchControls.scene_override = other
+	await physics(40)
+	var oafter := rec.accept_echoes
+	touch(0, ok_center, false)
+	await frames(2)
+	check("13_ok_hold_does_not_carry_to_next_scene", omid > oe0 and oafter == omid, [oe0, omid, oafter])
+	XTouchControls.scene_override = null
 	other.queue_free()
+	# 回退开关 HOLD_OK_ECHO = false：按住确定一点不连发（O-225 的样子）
+	XTouchControls.HOLD_OK_ECHO = false
+	var no_echo: Array = await _hold_ok(pad, rec, 60)
+	check("13_rollback_ok_no_echo", no_echo[0] == 1 and no_echo[1] == 0, no_echo)
+	XTouchControls.HOLD_OK_ECHO = true
 	# 回退开关：照旧所有键按住都按「新按下」连发
 	XTouchControls.HOLD_REPEAT_ECHO = false
 	var old_ok: Array = await _hold_ok(pad, rec, 60)

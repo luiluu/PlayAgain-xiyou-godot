@@ -135,6 +135,19 @@ func _press(action: String) -> void:
 	await _frames(2)
 
 
+## 按住键的回显（XKeyRepeat 按 24／6 帧补的那种）：带虚拟键标记，免得被 XKeyRepeat 当系统回显吞掉；发完补松开
+func _echo(code: Key) -> void:
+	for pressed in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = code
+		e.physical_keycode = code
+		e.pressed = pressed
+		e.echo = pressed
+		e.set_meta(XTouchControls.REPEAT_META, true)
+		get_viewport().push_input(e)
+		await _frames(2)
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
@@ -275,7 +288,12 @@ func _run() -> void:
 	await _press("ui_accept")
 	await _press("ui_accept")
 	_check("skill_opens_target", b._target_mode == "enemy")
-	await _press("ui_cancel")
+	# 按住取消（回显）也退出选目标（原版 Window_Selectable 认 isRepeated；O-待定 HOLD_OK_TARGET）；回退开关只认新按下
+	XBattleScene.HOLD_OK_TARGET = false
+	await _echo(KEY_ESCAPE)
+	_check("rollback_target_ignores_cancel_echo", b._target_mode == "enemy")
+	XBattleScene.HOLD_OK_TARGET = true
+	await _echo(KEY_ESCAPE)
 	_check("skill_target_cancel_to_list", b._target_mode == "" and b.list_win != null and b.list_win.active and not b.cmd_win.active)
 	await _press("ui_cancel")
 	_check("skill_list_second_cancel_to_command", b.list_win == null and b.cmd_win != null and b.cmd_win.active)
@@ -300,9 +318,15 @@ func _run() -> void:
 	await _press("ui_accept")
 	target = b._hover
 	var hp := target.hp
-	await _press("ui_accept")
+	# 按住确定（回显）在选目标也确认（玩家反馈：原版按住空格／J 连续出招）；回退开关只认新按下
+	XBattleScene.HOLD_OK_TARGET = false
+	await _echo(KEY_ENTER)
+	_check("rollback_target_ignores_ok_echo", b._target_mode == "enemy" and target.hp == hp)
+	XBattleScene.HOLD_OK_TARGET = true
+	await _echo(KEY_ENTER)
 	ok = await _until(func(): return b._target_mode == "" and target.hp < hp)
 	_check("keyboard_target_confirm_attacks", ok, [hp, target.hp])
+	_check("hold_ok_echo_confirms_target", ok)
 	await _frames(4)
 	await _shot("battle_48_attack")
 	await _frames(16)
