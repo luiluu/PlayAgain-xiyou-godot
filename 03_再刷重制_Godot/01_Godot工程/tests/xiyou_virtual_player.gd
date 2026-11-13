@@ -6,6 +6,8 @@ extends Node
 ## 存档与设置都写在 user://test_virtual_player/<种子>，跑完删除；不读写真实存档。
 
 const VP := preload("res://tests/virtual_player/virtual_player.gd")
+## 机器人的养成助手（virtual_player.gd 里用）。选测按「哪个测试引用了它」找场景，这里引用一次，改它时才会选中本专项
+const VP_GROWTH := preload("res://tests/virtual_player/vp_growth.gd")
 ## 默认目标只放每次都走得到的（探索带随机，同一个种子两次跑的路线也不完全一样：开局阵容、游戏自己的随机数没固定）；
 ## 想看它打没打上战斗：--vp-goals=title,in_game,second_map,battle_finished（走不到就跑满步数判失败）
 const DEFAULT_GOALS := ["title", "new_game_pressed", "in_game", "event_tried", "choice_made", "second_map"]

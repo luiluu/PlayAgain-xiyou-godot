@@ -37,7 +37,7 @@ var max_frames := 0                # 画面帧上限；0＝不限。无头模式
 var _f0 := 0
 var climb_manual_actions := 12     # 爬塔时每场战斗先手动按这么多步，再点战斗里的「自动」按钮
 var climb_max_defeats := 5         # 同一层守层者输这么多次就收工，报告写「打不过」
-var stalemate_turns := 40          # 爬塔时一场战斗打到这么多回合还没分出胜负算僵局：当成打不过，回标题读档（等于玩家关掉重来）
+var stalemate_turns := 40          # 爬塔时一场战斗打到这么多回合还没分出胜负算僵局：当成打不过认输（按游戏结束收场，再读档）
 var stalemates := 0
 var climb_grind_base := 6          # 第一次输了之后挂机练这么多场再来，之后每输一次翻倍
 var equip_enabled := true          # 爬塔时在大厅打开菜单 → 装备，把背包里更好的装备穿上
@@ -449,6 +449,8 @@ func _close_battle(obs: Dictionary, how: String) -> void:
 			res = "逃跑"
 		elif how == "结束":
 			res = "胜利"
+	if _battle.get("stalemate", false):
+		res = "僵局"
 	_battle["result"] = res
 	if res == "胜利" and not _dg.is_empty() and int(_battle.get("troop", 0)) == int(_dg.get("boss_troop", -1)):
 		_dg["won"] = true
@@ -787,26 +789,25 @@ func _act_battle(obs: Dictionary) -> void:
 		_battle.actions += 1
 		if not _battle.has("hp0"):
 			_battle["hp0"] = hp
-		_battle["hp"] = hp               # 收工时还剩多少血、打到第几回合（报告里看差多远）
-		_battle["turn"] = int(b.logic.turn)
+		if not _battle.get("stalemate", false):
+			_battle["hp"] = hp           # 收工时还剩多少血、打到第几回合（报告里看差多远）
+			_battle["turn"] = int(b.logic.turn)
 		if not _battle.has("frame0"):
 			_battle["frame0"] = Engine.get_process_frames()
 		if Engine.get_process_frames() - int(_battle.frame0) > battle_give_up_frames:
 			aborted = "一场战斗 %d 帧还没打完也逃不掉（地图 %d）" % [battle_give_up_frames, _battle.map]
 			return
-	if mode == "climb" and _battle != null and int(b.logic.turn) >= stalemate_turns:
+	if mode == "climb" and _battle != null and int(b.logic.turn) >= stalemate_turns and not _battle.get("stalemate", false):
+		# 认输：按「游戏结束」收场（同敌群事件里的游戏结束指令），之后照全灭的流程回标题读档。
+		# 不直接切场景：战斗的协程还悬着，退出时引擎会报资源没释放。
 		stalemates += 1
 		_mark("stalemate")
+		_battle["stalemate"] = true
 		_battle["hp"] = hp
 		_battle["turn"] = int(b.logic.turn)
-		_log("僵局：打到第 %d 回合敌人还剩 %d 血，放弃这一场，回标题读档" % [int(b.logic.turn), int(hp)])
-		_close_battle(obs, "僵局")
-		_on_defeat()
-		obs.map.return_to_title()
-		for i in 240:
-			await _frames(1)
-			if observe().screen != "battle":
-				break
+		_log("僵局：打到第 %d 回合敌人还剩 %d 血，放弃这一场" % [int(b.logic.turn), int(hp)])
+		b.logic.game_over = true
+		await _frames(6)
 		return
 	if b.logic.auto:
 		# 自动战斗里也有要按键才走的消息（「被击败了」、逃跑、战斗事件的对话）

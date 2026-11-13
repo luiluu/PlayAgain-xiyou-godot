@@ -30,8 +30,12 @@ on:
         type: choice
         options: [climb, explore]
         default: climb
-  # 定时先不开（cc 2026-11-13）：机器人还不会配装备，眼下每局都会停在前几层并判红，天天红没有新信息。
-  # 等它学会养成后去掉下面两行的 #，每天北京时间 03:00 在默认分支上跑一次。
+      extra:
+        description: 额外参数（原样传给机器人，如 --vp-no-farm --vp-frames=150000；见 虚拟玩家.md）
+        type: string
+        default: ''
+  # 定时先不开（cc 2026-11-13）：机器人学会了游戏内向导写的养成路线，但还不会花钱（商店的饰品、战技书、功法、丹药），
+  # 眼下多数阵容仍停在前几层并判红，天天红没有新信息。等它稳定爬过前十层后去掉下面两行的 #，每天北京时间 03:00 在默认分支上跑一次。
   # schedule:
   #   - cron: '0 19 * * *'
 
@@ -50,6 +54,7 @@ env:
   MINUTES: ${{ inputs.minutes || '30' }}
   FLOORS: ${{ inputs.floors || '0' }}
   MODE: ${{ inputs.mode || 'climb' }}
+  EXTRA: ${{ inputs.extra || '' }}
 
 jobs:
   # 取引擎、解开产物、godot --import 一次，存进 Actions 缓存（键和「云端选测」一样，两边互相命中）
@@ -148,7 +153,7 @@ jobs:
           fi
           rc=0
           timeout $(( (MINUTES + 15) * 60 )) "$GODOT" --headless --path "$PROJECT" -s res://tests/test_main_loop.gd \
-            res://tests/xiyou_virtual_player.tscn -- --vp-seed="$SEED" --vp-out="$out" $args > "$out/godot.log" 2>&1 || rc=$?
+            res://tests/xiyou_virtual_player.tscn -- --vp-seed="$SEED" --vp-out="$out" $args $EXTRA > "$out/godot.log" 2>&1 || rc=$?
           {
             if [ -f "$out/summary.md" ]; then cat "$out/summary.md"; else echo "## 虚拟玩家（种子 $SEED）"; echo; echo "- **没出报告**：进程退出码 $rc（超时是 124），看附件里的 godot.log"; fi
             errors=$(grep -cE 'SCRIPT ERROR|^ERROR:' "$out/godot.log" || true)
