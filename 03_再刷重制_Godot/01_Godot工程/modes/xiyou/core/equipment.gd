@@ -94,6 +94,7 @@ static func preview(a: XActor, slot: int, item) -> XActor:
 	var b := clone(a)
 	if can_change(b, slot):
 		b.equips[slot] = item.duplicate(true) if item is Dictionary else null
+		XActor.read_touch()  # 换了装备：只读窗口里记的特性表、技能表作废（装备页在窗口里调预览，原来漏了，带全程比对跑 xiyou_panels 会报不一致）
 		b.refresh_passive()
 		b.release_unequippable()
 		b.refresh_passive()
