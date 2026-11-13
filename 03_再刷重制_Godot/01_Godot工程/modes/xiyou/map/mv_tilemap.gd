@@ -30,7 +30,7 @@ const LOOP_MARGIN := Vector2i(28, 16)
 ## 循环地图上角色的显示位置取离这一点（玩家的 real）最近的那一份，同 Game_Map.adjustX/adjustY
 var view_anchor := Vector2.ZERO
 static var CHUNKED := true
-## 回退开关（O-待定）：true＝分块绘制时按「格内次序 → 图集」归组再画，同图集连成一批；false＝回到逐格逐层画（图集来回换，一块断成几百次绘制）
+## 回退开关（O-待定-2）：true＝分块绘制时按「格内次序 → 图集」归组再画，同图集连成一批；false＝回到逐格逐层画（图集来回换，一块断成几百次绘制）
 static var SORTED_DRAW := true
 const CHUNK := 16
 ## 当前画到哪个 CanvasItem 上（整张画时是自己，分块时是块节点）

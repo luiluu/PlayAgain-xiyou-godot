@@ -19,7 +19,7 @@ void fragment() {
 }
 """
 
-## 回退开关（O-待定）：true＝天气的暗幕与全部雨／雪合成一次绘制；false＝回到逐片设变换、逐片画（下雪 70 片＝多 70 次绘制）
+## 回退开关（O-待定-1）：true＝天气的暗幕与全部雨／雪合成一次绘制；false＝回到逐片设变换、逐片画（下雪 70 片＝多 70 次绘制）
 static var BATCH_WEATHER := true
 
 var camera: Camera2D

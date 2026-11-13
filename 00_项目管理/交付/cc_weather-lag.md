@@ -13,8 +13,8 @@
   - 天气：`XScreenFxView._WeatherCanvas._draw` 每片雨／雪各设一次变换再画，每片断成一次绘制；下雪多约 70 次绘制，本机帧时间多 1～2.5 毫秒（约两到四成）。
   - 图块：`MVTilemap` 每块逐格画四层，相邻图块常在不同图集（A1～E、阴影色块），图集一换就断批；整屏一层 160 次、十三层 790 次、十九层 690 次。层越往后图越杂，这是「越往后越卡」最可能的来源（手机上每次绘制比 Mac 贵得多）。
 - 改法：
-  - 天气（O-待定，`XScreenFxView.BATCH_WEATHER`）：暗幕和全部粒子拼成一组三角形，`canvas_item_add_triangle_array` 一次画完；雪用 64 边形（同 `draw_circle`）。
-  - 图块（O-待定，`MVTilemap.SORTED_DRAW`）：每块按「格内第几个 → 哪张图集」分桶再画。格与格不重叠，同一格内次序不变，所以叠放结果相同；绘制命令抽成 `part_commands`。
+  - 天气（O-待定-1，`XScreenFxView.BATCH_WEATHER`）：暗幕和全部粒子拼成一组三角形，`canvas_item_add_triangle_array` 一次画完；雪用 64 边形（同 `draw_circle`）。
+  - 图块（O-待定-2，`MVTilemap.SORTED_DRAW`）：每块按「格内第几个 → 哪张图集」分桶再画。格与格不重叠，同一格内次序不变，所以叠放结果相同；绘制命令抽成 `part_commands`。
 - 结果（本机，负载约 10）：十三层 790→69 次绘制、一层 500→82、十二层 355→49；下雪不再多出绘制次数。新旧画法真窗口逐像素比对：九张图（含水面 Map069、循环 Map030、大厅）与雨、雪、暴风雨都是 0 像素差。
 - 安卓：本机没连安卓机，没实机量；手机每次绘制比 Mac 贵，合批的收益应比本机更大。另查了色调（读屏幕的着色器）：各层进图都把色调归零，不会一路带到高层。
 - 天启篇读表残留：`XTianqiSkills`、`XTianqiAffixTable` 已有「读不到只读一次」；其余天启篇表的脚本在发行包里换成空壳（发行空壳.py），走不到读表。这一轮没在真发行 pck 上量（本机找不到 v0.01.07 的 pck）。
@@ -25,8 +25,8 @@
 
 | 编号 | 位置 | 原版 | 优化 | 依据 | 回退 | 提出 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定 | `modes/xiyou/map/screen_fx_view.gd` `XScreenFxView.BATCH_WEATHER`；`_WeatherCanvas._draw_batched` | 天气每片雨／雪单独一个精灵（重制里每片设一次变换、算一次绘制，下雪 70 片＝多 70 次绘制） | 暗幕和全部粒子合成一组三角形一次画完；形状、位置、旋转、透明度不变 | v0.01.06 玩家反馈 12 层下雪变卡；本机下雪多 1～2.5 毫秒／帧→不再多出绘制；真窗口截图 0 像素差；Kyo 11-11 优化直接接受 | `XScreenFxView.BATCH_WEATHER = false`（逐片画） | cc | 保留 |
-| O-待定 | `modes/xiyou/map/mv_tilemap.gd` `MVTilemap.SORTED_DRAW`；`part_commands`、`sheet_of` | 图块逐格逐层画（重制分块后每块仍按格换图集，一屏断成 160～790 次绘制） | 每块按「格内次序 → 图集」归组再画，同图集连成一批；格内次序不变、格间不重叠，画面相同 | 同上反馈「越往后越卡」；十三层 790→69 次绘制；九张图真窗口截图 0 像素差；专项 xiyou_map_draw_batching；Kyo 11-11 优化直接接受 | `MVTilemap.SORTED_DRAW = false`（逐格画） | cc | 保留 |
+| O-待定-1 | `modes/xiyou/map/screen_fx_view.gd` `XScreenFxView.BATCH_WEATHER`；`_WeatherCanvas._draw_batched` | 天气每片雨／雪单独一个精灵（重制里每片设一次变换、算一次绘制，下雪 70 片＝多 70 次绘制） | 暗幕和全部粒子合成一组三角形一次画完；形状、位置、旋转、透明度不变 | v0.01.06 玩家反馈 12 层下雪变卡；本机下雪多 1～2.5 毫秒／帧→不再多出绘制；真窗口截图 0 像素差；Kyo 11-11 优化直接接受 | `XScreenFxView.BATCH_WEATHER = false`（逐片画） | cc | 保留 |
+| O-待定-2 | `modes/xiyou/map/mv_tilemap.gd` `MVTilemap.SORTED_DRAW`；`part_commands`、`sheet_of` | 图块逐格逐层画（重制分块后每块仍按格换图集，一屏断成 160～790 次绘制） | 每块按「格内次序 → 图集」归组再画，同图集连成一批；格内次序不变、格间不重叠，画面相同 | 同上反馈「越往后越卡」；十三层 790→69 次绘制；九张图真窗口截图 0 像素差；专项 xiyou_map_draw_batching；Kyo 11-11 优化直接接受 | `MVTilemap.SORTED_DRAW = false`（逐格画） | cc | 保留 |
 
 ## 交接板
 
