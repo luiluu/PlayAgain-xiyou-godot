@@ -55,12 +55,14 @@ func _sign(key: CryptoKey, raw: PackedByteArray) -> PackedByteArray:
 	ctx.update(raw)
 	return Crypto.new().sign(HashingContext.HASH_SHA256, ctx.finish(), key)
 
-func _cleanup() -> void:
-	var da := DirAccess.open(DIR)
+func _cleanup(path := DIR) -> void:
+	var da := DirAccess.open(path)
 	if da:
 		for n in da.get_files():
 			da.remove(n)
-		DirAccess.remove_absolute(DIR)
+		for sub in da.get_directories():  # 存档包测试建了 saves/、out/
+			_cleanup(path.path_join(sub))
+		DirAccess.remove_absolute(path)
 
 func _run() -> void:
 	# 出整包后 build_info 的 releaseVersion 有值（v0.01），检查更新页会把版本号显示成 0.01.N；这里只测按编号的写法，
@@ -207,6 +209,26 @@ func _run() -> void:
 	host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	get_tree().root.add_child(host)
 	XUpdateInstall.ENABLED = false  # 先验「游戏内装补丁关着」时的提示
+	# 反馈问卷（XFeedback.FORM_URL）：没链接不放按钮；有链接时点了复制游戏信息、打开问卷
+	var form_url := XFeedback.FORM_URL
+	_check("正式问卷链接是腾讯问卷", form_url.begins_with("https://wj.qq.com/"))
+	XFeedback.FORM_URL = ""
+	_check("没有问卷链接不放问卷按钮", not XFeedback.has_form())
+	XFeedback.FORM_URL = "https://wj.qq.com/s2/test/ab12"
+	var opened := []
+	XFeedback.opener = func(u): opened.append(u)
+	# 存档包：存档目录、输出目录都换到测试目录，不碰真存档和真「下载」文件夹
+	var save_dir_old := XSave.dir_override
+	XSave.dir_override = DIR + "/saves"
+	DirAccess.make_dir_recursive_absolute(DIR + "/saves/sub")
+	DirAccess.make_dir_recursive_absolute(DIR + "/out")
+	var f1 := FileAccess.open(DIR + "/saves/save_3.json", FileAccess.WRITE)
+	f1.store_string("{\"a\":1}")
+	f1.close()
+	var f2 := FileAccess.open(DIR + "/saves/sub/x.json", FileAccess.WRITE)
+	f2.store_string("sub")
+	f2.close()
+	XFeedback.export_dir_override = DIR + "/out"
 	var page := XUpdatePage.open(host)
 	_check("打开先显示正在检查", page.state == "checking" and (page.get_node("../UpdatePage") == page))
 	await _frames(12)
@@ -220,6 +242,35 @@ func _run() -> void:
 	if fb != null:
 		fb.pressed.emit()
 		_check("更新页点反馈群显示已复制", fb.text == XFeedback.COPIED)
+	var ff: Button = page.find_child("FeedbackForm", true, false)
+	_check("更新页有反馈问卷按钮", ff != null and ff.focus_mode == Control.FOCUS_NONE and ff.text == XFeedback.FORM_LINE)
+	if ff != null:
+		ff.pressed.emit()
+		_check("点问卷按钮打开问卷并提示粘贴、上传存档包", opened == [XFeedback.FORM_URL] and ff.text == XFeedback.FORM_DONE_SAVES)
+	var info := XFeedback.info_line()
+	_check("游戏信息带版本和系统", info.begins_with("再刷一把 ") and info.contains(OS.get_name()) and info.contains(XVersionLabel.version_text()))
+	var copied := XFeedback.open_form()
+	var zip_path := XFeedback.last_export
+	_check("open_form 复制游戏信息并带上存档包名", copied == info + " · 存档包 " + zip_path.get_file() and zip_path.get_file().begins_with(XFeedback.ZIP_PREFIX) and zip_path.begins_with(DIR + "/out"))
+	var zr := ZIPReader.new()
+	var zok := zr.open(zip_path) == OK
+	var zfiles := zr.get_files() if zok else PackedStringArray()
+	_check("存档包里有全部存档（含子目录）、内容不变", zok and "save_3.json" in zfiles and "sub/x.json" in zfiles and zr.read_file("save_3.json").get_string_from_utf8() == "{\"a\":1}")
+	if zok:
+		zr.close()
+	XSave.dir_override = DIR + "/empty"
+	_check("没有存档不打包、只复制游戏信息", XFeedback.open_form() == info and XFeedback.last_export == "")
+	XSave.dir_override = DIR + "/saves"
+	XFeedback.EXPORT_SAVES = false
+	_check("存档包开关关了不打包", XFeedback.open_form() == info and XFeedback.last_export == "")
+	XFeedback.EXPORT_SAVES = true
+	XSave.dir_override = save_dir_old
+	XFeedback.export_dir_override = ""
+	XFeedback.FORM = false
+	_check("问卷开关关了不放按钮", not XFeedback.has_form())
+	XFeedback.FORM = true
+	XFeedback.FORM_URL = form_url
+	XFeedback.opener = Callable()
 	var called := []
 	XUpdatePage.patch_installer = func(p, res): called.append(res["patch"]["code"])
 	page.show_result(page.get_meta("result"))
