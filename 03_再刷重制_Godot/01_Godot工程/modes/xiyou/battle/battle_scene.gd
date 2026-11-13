@@ -1796,6 +1796,12 @@ func _text_help(text: String, b: XBattler, side: String, near: bool) -> void:
 	help_card.position += _origin
 
 
+## 玩家反馈（v0.01.06，O-待定）：原版选敌／选我方窗也是 Window_Selectable，确定、取消认 Input.isRepeated（按住 24 帧后每 6 帧一次），
+## 按住确定能从技能列表一路确认到目标、连续出招。重制的选目标原先只认新按下，按住确定会停在选目标。现在确定、取消也认回显（连发）。
+## 回退开关 HOLD_OK_TARGET = false：选目标只认新按下。
+static var HOLD_OK_TARGET := true
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if book_page != null:
 		return
@@ -1812,9 +1818,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_select_target(_target_pool[(i + 1) % _target_pool.size()])
 		elif event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_up", true):
 			_select_target(_target_pool[posmod(i - 1, _target_pool.size())])
-		elif event.is_action_pressed("ui_accept"):
+		elif event.is_action_pressed("ui_accept", HOLD_OK_TARGET):
 			_picked.emit(_hover)
-		elif event.is_action_pressed("ui_cancel"):
+		elif event.is_action_pressed("ui_cancel", HOLD_OK_TARGET):
 			_picked.emit("cancel")
 		else:
 			return
