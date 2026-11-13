@@ -16,7 +16,8 @@ extends Control
 ## - 抽取：标题「分组抽奖　路线名」「同一分组内基础装备等概率，必出本档指定类别1条。」；三行「30点　必出1条Mod特效」等（点数够且次数没用完才能选），
 ##   行的说明「消耗本路线战利品点30；装备本体和具体特效随机。」；抽到提示「获得 名字（类别）」并刷新本页。取消回首页。
 ## 详情字号沿用说明卡的 O-007（XHelpCard.MIN_FONT，设 0＝原版 10／12 号）。
-## 还没移植：专武·特效吸取（openAbsorb）、路线预览（openPreview），见交付单 cc_bajie-newsrc4.md。
+## 专武·特效吸取（openAbsorb，mode＝"absorb"）：技能页用 10455 打开，见下方「专武·特效吸取」与 XAffixAbsorb。
+## 还没移植：路线预览（openPreview），见交付单 cc_bajie-newsrc4.md。
 signal closed
 
 const LEFT_W := 550.0          # Math.floor(Graphics.boxWidth × 0.43)
@@ -66,6 +67,8 @@ var origin_y := 0.0
 var _lines: Array = []
 var _ok: Callable
 var _back: Callable
+## M.mode：merchant（商人）／absorb（专武·特效吸取）
+var mode := "merchant"
 
 
 func _ready() -> void:
@@ -90,7 +93,10 @@ func _ready() -> void:
 	list.chosen.connect(func(i): if i >= 0 and i < rows.size(): _ok.call(rows[i]))
 	list.cancelled.connect(func(): _back.call())
 	list.turn.connect(turn)
-	home()
+	if mode == "absorb":
+		absorb_home()
+	else:
+		home()
 
 
 ## Scene_Merchant29.list29：换标题与行，光标回第一项，刷新详情
@@ -128,6 +134,7 @@ func set_text(t: String) -> void:
 
 ## setEquipment29：absorbView（池里是数据库原件，没有吸取）后 RJO.HE.getDescParams，武器 1、防具 2
 func set_equipment(e: Dictionary) -> void:
+	e = XAffixAbsorb.view(e)
 	var key := "item:%s:%s:%s" % [str(e.get("id", "")), str(e.get("note", "")), JSON.stringify(e.get("params", []))]
 	if detail_key == key:
 		return
@@ -283,3 +290,73 @@ func _tier_pick(r: Dictionary, g: String) -> void:
 
 func _close() -> void:
 	closed.emit()
+
+
+# ---- 专武·特效吸取（Scene_Merchant29 absorb 模式：absorbHome29 → slots29 → materials29 → affixes29 → 确认） ----
+
+static func absorb_rows(s: XState) -> Array:
+	return XAffixAbsorb.targets(s).map(func(t):
+		return {"text": "%s（%d／%d条）" % [str(t.get("name", "")), XAffixAbsorb.absorptions(t).filter(func(d): return d != null).size(), XAffixAbsorb.capacity(t, s)],
+			"item": t})
+
+
+func absorb_home() -> void:
+	choose(absorb_rows(XState.current), func(r): absorb_slots(r.item), _close,
+		["专武·特效吸取", "按所属角色等级开放：1级一条，35级两条，60级三条。"])
+
+
+static func slot_rows(s: XState, target: Dictionary) -> Array:
+	var stored := XAffixAbsorb.absorptions(target)
+	var cap := XAffixAbsorb.capacity(target, s)
+	var out := []
+	for n in 3:
+		var d = stored[n] if n < stored.size() else null
+		var open := n < cap
+		out.append({"text": "槽位%d：%s" % [n + 1, (XAffixAbsorb.label(d) if d != null else "空槽") if open else ("所属角色35级开放" if n == 1 else "所属角色60级开放")],
+			"help": XAffixAbsorb.label(d) if d != null else "选择空槽吸取，或替换指定槽位的特效。", "enabled": open, "slot": n})
+	return out
+
+
+func absorb_slots(target: Dictionary) -> void:
+	choose(slot_rows(XState.current, target), func(r): absorb_materials(target, int(r.slot)), absorb_home,
+		["选择吸取槽位", "替换只影响所选槽位。"])
+
+
+func absorb_materials(target: Dictionary, slot: int) -> void:
+	var rows := XAffixAbsorb.materials(XState.current, target).map(func(i): return {"text": str(i.get("name", "")), "item": i})
+	choose(rows, func(r): absorb_affixes(target, r.item, slot), absorb_slots.bind(target),
+		["选择要消耗的材料装备", "已装备、锁定装备不会消耗。"])
+
+
+func absorb_affixes(target: Dictionary, material: Dictionary, slot: int) -> void:
+	var rows := XAffixAbsorb.extra_affixes(material).map(func(d):
+		var t := XAffixAbsorb.label(d)
+		return {"text": t, "help": t, "d": d})
+	choose(rows, func(r): absorb_confirm(target, material, r.d, slot), absorb_materials.bind(target, slot), ["选择一条额外特效"])
+
+
+func absorb_confirm(target: Dictionary, material: Dictionary, d: Dictionary, slot: int) -> void:
+	var stored := XAffixAbsorb.absorptions(target)
+	var replace: bool = slot < stored.size() and stored[slot] != null
+	var t := XAffixAbsorb.label(d)
+	choose([{"text": "确认消耗并吸取", "help": t, "go": "ok"}, {"text": "取消", "go": "cancel"}],
+		_confirm_pick.bind(target, material, d, slot), absorb_affixes.bind(target, material, slot),
+		["确认消耗 " + str(material.get("name", "")), ("原槽位特效会被替换。" if replace else "吸取至空槽位。") + "当前最多保留%d条。" % XAffixAbsorb.capacity(target, XState.current)])
+
+
+func _confirm_pick(r: Dictionary, target: Dictionary, material: Dictionary, d: Dictionary, slot: int) -> void:
+	if str(r.go) == "ok":
+		_absorb_now(target, material, d, slot)
+	else:
+		absorb_affixes(target, material, slot)
+
+
+## 出错（choose29 的 catch）：提示错误文字，详情也显示它
+func _absorb_now(target: Dictionary, material: Dictionary, d: Dictionary, slot: int) -> void:
+	var err := XAffixAbsorb.absorb(XState.current, target, material, d, slot)
+	if err != "":
+		XToast.show_text(err, true)
+		set_text(err)
+		return
+	XToast.show_text("特效吸取完成。", true)
+	absorb_slots(target)

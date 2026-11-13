@@ -177,7 +177,7 @@ static func find_uid(s: XState, uid: String) -> Dictionary:
 		if str(e.get("_yunUid", "")) == uid:
 			return e
 	for a in s.actors.values():
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			if str(e.get("_yunUid", "")) == uid:
 				return e
 	return {}

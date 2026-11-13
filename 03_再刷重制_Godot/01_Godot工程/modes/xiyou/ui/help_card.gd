@@ -1209,6 +1209,8 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 		visible = false
 		_set_extras({})
 		return
+	if obj.has(XAffixAbsorb.KEY):
+		obj = XAffixAbsorb.view(obj)  # Sprite_ItemHelp.setItem 包装：吸取过特效的专武显示效果视图
 	list_costs = _list_costs_scene()
 	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
 	quality = _quality(obj)

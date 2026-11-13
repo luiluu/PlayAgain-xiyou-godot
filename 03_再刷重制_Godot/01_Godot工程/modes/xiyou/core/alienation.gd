@@ -76,7 +76,7 @@ static func owned(s: XState) -> Array:
 static func _equipped(s: XState) -> Array:
 	var out := []
 	for a in s.actors.values():
-		out.append_array(a.equip_list())
+		out.append_array(a.raw_equip_list())
 	return out
 
 

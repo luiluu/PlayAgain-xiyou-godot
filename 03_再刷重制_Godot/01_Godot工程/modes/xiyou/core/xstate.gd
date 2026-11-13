@@ -324,7 +324,7 @@ func actor(id: int) -> XActor:
 			_apply_actor_op(actors[id], op)
 		actors[id].refresh_passive()
 		XWeakChallenge.on_setup(self, actors[id])  # 弱者挑战 Game_Actor.setup 包装：同步 10357，新学到就回满
-		for e in actors[id].equip_list():register_gear(e)
+		for e in actors[id].raw_equip_list():register_gear(e)
 		XRace.on_actor_created(self, actors[id])  # installNativeRaceRuntime：Game_Actor.setup 包装建种族数据
 	return actors[id]
 
@@ -820,7 +820,7 @@ func owns_gear(item: Dictionary) -> bool:
 	for e in gear:
 		if is_same(e,item):return true
 	for a in actors.values():
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			if is_same(e,item):return true
 	return false
 
@@ -945,7 +945,7 @@ static func from_dict(d: Dictionary) -> XState:
 			s.orb_state[key][str(k)] = int(os[key][k])
 	s.orb_seed = int(d.orbSeed) if d.has("orbSeed") else XOrbs.hash32(JSON.stringify([float(d.get("playSeconds", 0)), s.gold, d.party]))
 	for a in s.actors.values():
-		for e in a.equip_list():s.register_gear(e)
+		for e in a.raw_equip_list():s.register_gear(e)
 	for e in s.gear:s.register_gear(e)
 	s.warehouses = XWarehouse.from_save(s, d.get("phwarehouse", {}))
 	s.saved_actors = XActorWarehouse.from_save(d.get("saveactors", []))

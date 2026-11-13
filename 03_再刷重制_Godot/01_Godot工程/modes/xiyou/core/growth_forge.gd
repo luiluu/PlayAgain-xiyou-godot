@@ -53,7 +53,7 @@ static func owned_gear(s: XState, id: int) -> Array:
 	var out: Array = []
 	var items: Array = s.gear.duplicate()
 	for a in s.members():
-		items.append_array(a.equip_list())
+		items.append_array(a.raw_equip_list())
 	for e in items:
 		if e is Dictionary and _kind_of(e) == id and out.find_custom(func(x): return is_same(x, e)) < 0:
 			out.append(e)
@@ -183,7 +183,7 @@ static func forge(s: XState, id: int, source) -> Dictionary:
 		s.gain_item(HAMMER, n - s.item_count(HAMMER))
 		return {}
 	for a in s.members():
-		if a.equip_list().any(func(e): return is_same(e, source)):
+		if a.raw_equip_list().any(func(e): return is_same(e, source)):
 			a.refresh_passive()
 			a.param_mark_dirty()
 			a.hp = minf(a.hp, a.mhp)
@@ -237,5 +237,5 @@ static func growth_of(id: int, item) -> int:
 
 ## 选原件列表第二行：品质 · 层数 · 已装备／背包
 static func source_row(s: XState, id: int, item: Dictionary) -> String:
-	var worn := s.members().any(func(a): return a.equip_list().any(func(e): return is_same(e, item)))
+	var worn := s.members().any(func(a): return a.raw_equip_list().any(func(e): return is_same(e, item)))
 	return "%s · %s:%d%s" % [XGear.quality_name(item), KINDS[id].label, growth_of(id, item), " · 已装备" if worn else " · 背包"]

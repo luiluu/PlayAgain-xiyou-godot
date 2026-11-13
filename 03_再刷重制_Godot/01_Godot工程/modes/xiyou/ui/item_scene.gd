@@ -210,7 +210,7 @@ func entries() -> Array:
 	for i in range(bag.size()):
 		out.append({"rec": bag[i], "carry": i + 1})
 	for a in s.members():
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			if e.kind == sym and not out.any(func(x): return is_same(x.rec, e)):
 				out.append({"rec": e, "owner": a})
 	if CACHE_GEAR_ENTRIES:

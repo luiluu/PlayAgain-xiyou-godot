@@ -303,7 +303,7 @@ static func collection(s: XState) -> Array:
 	ids.sort()
 	for id in ids:
 		var a: XActor = s.actors[id]
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			_add(out, seen, e, a.display_name())
 	return out
 
