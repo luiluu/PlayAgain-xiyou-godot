@@ -421,6 +421,7 @@ static func open(logic, a) -> Array:
 	if not active_domain(a) or p < 1 or not knows(a, 10233):
 		return []
 	var logs := [_text(a.display_name() + "发动了神灶：开！")]
+	logs[0].sukuna_fx = "flame"  # 战斗画面播到这行时放神灶：开特效（XSukunaFx）
 	for t in logic.alive(logic.enemies).duplicate():
 		logs.append_array(perform(logic, a, 10233, t, p))
 	_end_domain(logic, a)

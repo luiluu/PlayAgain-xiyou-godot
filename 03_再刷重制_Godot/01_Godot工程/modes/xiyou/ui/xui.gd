@@ -249,6 +249,8 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return XQualityIcons.icon_texture(index)
 	if XTianqiQiyinArt.is_icon(index):  # 天启篇七印祭坛的装备图标（content/tianqi/qiyin/icons）
 		return XTianqiQiyinArt.icon_texture(index)
+	if XSukunaFx.is_icon(index):  # 宿傩新状态图标（content/sukuna/art_optional）
+		return XSukunaFx.icon_texture(index)
 	if XGojo.is_icon(index):  # 天启篇五条悟的技能、被动、眼罩图标（content/gojo/icons）
 		return XGojo.icon_texture(index)
 	if index == XDemonCrown.ICON:  # 魔冠自带的大图（CodexQualityIcons demonCrownArt）

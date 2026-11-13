@@ -154,6 +154,7 @@ func _ready() -> void:
 	_origin = Vector2((vs.x - BOX.x) / 2.0, (vs.y - BOX.y) / 2.0)
 	_build_background()
 	_build_gojo_domain()
+	_build_sukuna_domain()
 	field = Node2D.new()
 	field.position = _origin
 	add_child(field)
@@ -363,6 +364,53 @@ func _tick_gojo_domain(delta: float) -> void:
 	var target := 1.0 if XGojo.domain_shown(logic) else 0.0
 	_gojo_domain.modulate.a = move_toward(_gojo_domain.modulate.a, target, delta * 2.0)
 	_gojo_domain.visible = _gojo_domain.modulate.a > 0.0
+
+
+## 宿傩伏魔御厨子（XSukunaFx）：展开动画放完起铺领域背景，我方宿傩都没有领域了就淡出
+var _sukuna_domain: TextureRect = null
+var _sukuna_domain_on := false
+
+
+func _build_sukuna_domain() -> void:
+	if not XSukunaFx.FX or not ResourceLoader.exists(XSukunaFx.SHRINE_BG):
+		return
+	_sukuna_domain = TextureRect.new()
+	_sukuna_domain.texture = load(XSukunaFx.SHRINE_BG)
+	_sukuna_domain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sukuna_domain.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_sukuna_domain.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_sukuna_domain.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sukuna_domain.modulate.a = 0.0
+	_sukuna_domain.visible = false
+	add_child(_sukuna_domain)
+
+
+func _tick_sukuna_domain(delta: float) -> void:
+	if _sukuna_domain == null:
+		return
+	if _sukuna_domain_on and not XSukunaFx.domain_active(logic):
+		_sukuna_domain_on = false
+	var target := 1.0 if _sukuna_domain_on else 0.0
+	_sukuna_domain.modulate.a = move_toward(_sukuna_domain.modulate.a, target, delta * 2.0)
+	_sukuna_domain.visible = _sukuna_domain.modulate.a > 0.0
+
+
+## 宿傩特效：伏魔御厨子展开（画面中央，放完铺领域背景）、神灶：开（敌群中间）。「显示技能动画」关着时只铺背景
+func _sukuna_fx(kind: String) -> void:
+	if XConfig.flag("CombatSkillAnimation"):
+		var at := BOX / 2.0 - Vector2(0, 40)
+		if kind == "flame":
+			var foes := logic.enemies.filter(func(e): return sprites.has(e) and e.is_alive())
+			if not foes.is_empty():
+				at = Vector2.ZERO
+				for e in foes:
+					at += sprites[e].position - Vector2(0, sprites[e].height() / 2.0)
+				at /= foes.size()
+		var hold := XConfig.battle_speed()
+		if XSukunaFx.play(fx, kind, at, hold) != null:
+			await _wait_frames(XSukunaFx.wait_frames(hold))
+	if kind == "shrine":
+		_sukuna_domain_on = true
 
 
 ## Codex_MiraRavenMultiFrame partyLayout：中线 x = 宽×0.64；1～4 人竖排一列（上 max(高+36, 高×0.32)、下 高×0.73，
@@ -769,6 +817,7 @@ func apply_camera() -> void:
 
 func _process(delta: float) -> void:
 	_tick_gojo_domain(delta)
+	_tick_sukuna_domain(delta)
 	for e in gauges:
 		var g: Dictionary = gauges[e]
 		g.box.position = sprites[e].position + Vector2(-320, -27)
@@ -1921,6 +1970,8 @@ func _play(logs: Array) -> void:
 			combo.action_started()
 			if l.user is XActor:
 				_set_active(l.user)
+			if XSukunaFx.shrine_action(l):
+				await _sukuna_fx("shrine")
 			await XSequencePlayer.create(self, l, logs.slice(i, j + 1)).play()
 			combo.action_ended()
 			_banner("")
@@ -1941,6 +1992,9 @@ func _play(logs: Array) -> void:
 				_log_action(l.skill)
 				if l.user is XActor:
 					_set_active(l.user)
+				if XSukunaFx.shrine_action(l):
+					await _sukuna_fx("shrine")
+					started = Engine.get_physics_frames()
 				await _wait_frames(ACT_MOTION_FRAMES)
 				if l.user is XActor:
 					_perform_action(l.user, l.skill)
@@ -1968,6 +2022,8 @@ func _play(logs: Array) -> void:
 					await movie.finished
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
+				if l.has("sukuna_fx"):
+					await _sukuna_fx(str(l.sukuna_fx))
 			"enemy_change":
 				if l.kind == "vanish" or l.has("tianqi_horseman"):  # 天启四骑士：援军、小怪战斗中出场
 					_apply_enemy_change(l)  # die＋hide（XPetCapture：逃跑；被捕的在公共事件 173 里，由 _play_troop_events 处理）

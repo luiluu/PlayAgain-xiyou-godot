@@ -118,6 +118,8 @@ static func table(name: String) -> Variant:
 				"Classes": XGojo.patch_classes(_tables[name])
 				"Skills": XGojo.patch_skills(_tables[name])
 				"States": XGojo.patch_states(_tables[name])
+		if name == "States" and _tables[name] is Array:
+			XSukunaFx.patch_states(_tables[name])  # 宿傩新状态图标（content/sukuna/art_optional，开关 XSukunaFx.FX）
 		if name == "Plugins" and _tables[name] is Dictionary:
 			XGojo.patch_plugins(_tables[name])  # 五条悟的进阶行
 		if name == "Armors" and _tables[name] is Array:
