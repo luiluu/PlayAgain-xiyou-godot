@@ -20,7 +20,7 @@ static var SAFE_HANDLED := true
 static var POPUP_CANCEL_ACTION := true
 ## 地图上右键（两指点按）呼出菜单（platform-keys2，原版 isMenuCalled 含 TouchInput.isCancelled）
 static var MV_MAP_RIGHT_MENU := true
-## O-待定-1：触屏点一下，Godot 会送两份按下（第一指转出的鼠标左键＋触屏事件本身），按下即触发
+## O-378：触屏点一下，Godot 会送两份按下（第一指转出的鼠标左键＋触屏事件本身），按下即触发
 ## （ACTION_MODE_BUTTON_PRESS）的按钮会触发两次：挂机按钮开了又关（Kyo 11-13 反馈 v0.01.07 安卓点了不开始），
 ## 回城枫叶连播两声、预约两次回大厅。按钮的 pressed 里先问 first_press(按钮)：相隔不超过 2 帧的第二次不算。
 ## 回退开关 ONE_PRESS_PER_TAP = false：每份都算。

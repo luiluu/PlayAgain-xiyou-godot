@@ -65,7 +65,7 @@ func _ready() -> void:
 		return_button.texture_normal = load(p)
 	add_child(return_button)
 	return_button.pressed.connect(func():
-		if XKeyMap.first_press(return_button):  # 触屏一下只算一次（O-待定-1，XKeyMap.ONE_PRESS_PER_TAP）
+		if XKeyMap.first_press(return_button):  # 触屏一下只算一次（O-378，XKeyMap.ONE_PRESS_PER_TAP）
 			return_requested.emit())
 	coords = XMVCanvas.new()
 	# Star_Inter.move(10,10) + setFrame(-50,-50,...) 的 pivot，实际内容原点 (60,60)。

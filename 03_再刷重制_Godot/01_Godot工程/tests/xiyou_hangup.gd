@@ -160,7 +160,7 @@ func _run() -> void:
 	await frames(60)
 	check("g_rollback_stays_prohibited", not XHangUp.enabled(s) and not XHangUp.is_active(s))
 	XHangUp.KEY_ENABLES = true
-	# 触屏（安卓没有 L 键）：禁用时也显示挂机按钮，点了照 L 开启（O-待定-2，XHangUp.TOUCH_SHOW_PROHIBITED）
+	# 触屏（安卓没有 L 键）：禁用时也显示挂机按钮，点了照 L 开启（O-379，XHangUp.TOUCH_SHOW_PROHIBITED）
 	XPlatform.force_mobile = true
 	await frames(2)
 	check("touch_prohibited_button_shown", ov.inter.visible and ov.button.is_visible_in_tree())
@@ -180,7 +180,7 @@ func _run() -> void:
 	await frames(2)
 	map.encounter_count = 999
 	# 触屏点挂机按钮（Kyo 11-13 安卓：点了不会开始）：Godot 把一下触屏送成鼠标键＋触屏两份按下，按下即触发的按钮开了又关；
-	# 现在同一下只认一次（O-待定-1，XKeyMap.ONE_PRESS_PER_TAP）
+	# 现在同一下只认一次（O-378，XKeyMap.ONE_PRESS_PER_TAP）
 	var emu := Input.emulate_mouse_from_touch
 	Input.emulate_mouse_from_touch = true
 	var at := ov.button.get_global_rect().get_center()

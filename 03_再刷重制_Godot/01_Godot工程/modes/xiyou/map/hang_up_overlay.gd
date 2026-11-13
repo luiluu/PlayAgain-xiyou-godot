@@ -83,7 +83,7 @@ func _ready() -> void:
 		button.add_theme_stylebox_override(key, StyleBoxEmpty.new())
 	inter.add_child(button)
 	button.pressed.connect(func():
-		if not XKeyMap.first_press(button):  # 触屏一下的第二份按下（O-待定-1，XKeyMap.ONE_PRESS_PER_TAP）
+		if not XKeyMap.first_press(button):  # 触屏一下的第二份按下（O-378，XKeyMap.ONE_PRESS_PER_TAP）
 			return
 		press()
 		toggle_requested.emit())
