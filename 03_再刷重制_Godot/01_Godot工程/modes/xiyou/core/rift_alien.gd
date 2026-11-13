@@ -409,7 +409,8 @@ static func end_turn(logic) -> Array:
 	if not active(logic):
 		return []
 	var f := fight(logic)
-	var rate := float(kind_info("gland").poison[maxi(0, _max_idx(logic, "gland"))])  # 毒腺倒下后已挂的中毒照侵染档走完
+	# 发行版二阶只有画面（data() 只给 STAGE2，没有 kinds）：没人中毒就不查毒腺表，否则 kind_info 是空表、.poison 报错打断回合末
+	var rate := float(kind_info("gland").poison[maxi(0, _max_idx(logic, "gland"))]) if not (f.poison as Dictionary).is_empty() else 0.0  # 毒腺倒下后已挂的中毒照侵染档走完
 	for a in f.poison.keys():
 		var list: Array = f.poison[a]
 		if a.is_alive():
