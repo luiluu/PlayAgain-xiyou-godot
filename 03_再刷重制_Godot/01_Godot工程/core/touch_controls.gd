@@ -96,7 +96,7 @@ static var HOLD_REPEAT_ECHO := true
 ## 方向回显用的键（XKeyRepeat 看到带这个标记的回显就放行，不当成系统回显吞掉）。
 const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
 const REPEAT_META := &"xiyou_touch_repeat"
-## 玩家反馈（v0.01.06，O-待定）：原版战斗里按住确定，技能列表、选目标会按 24／6 帧连着确认（Window_Selectable.isOkTriggered＝Input.isRepeated）。
+## 玩家反馈（v0.01.06，O-375）：原版战斗里按住确定，技能列表、选目标会按 24／6 帧连着确认（Window_Selectable.isOkTriggered＝Input.isRepeated）。
 ## O-225 之后虚拟确定键按住一点不连发，手机上按住确定连续出招没了。现在按住确定照方向的做法发回车键的回显（is_echo() 为 true）：
 ## 只认新按下的页面（商店、标题这些）照旧只确认一次，认回显的地方（战斗技能列表、选目标）按原版节奏连发；换场景即停，松开时补发回车松开。
 ## 回退开关 HOLD_OK_ECHO = false：回到 O-225 的样子（按住确定不连发）。

@@ -288,7 +288,7 @@ func _run() -> void:
 	await _press("ui_accept")
 	await _press("ui_accept")
 	_check("skill_opens_target", b._target_mode == "enemy")
-	# 按住取消（回显）也退出选目标（原版 Window_Selectable 认 isRepeated；O-待定 HOLD_OK_TARGET）；回退开关只认新按下
+	# 按住取消（回显）也退出选目标（原版 Window_Selectable 认 isRepeated；O-375 HOLD_OK_TARGET）；回退开关只认新按下
 	XBattleScene.HOLD_OK_TARGET = false
 	await _echo(KEY_ESCAPE)
 	_check("rollback_target_ignores_cancel_echo", b._target_mode == "enemy")
