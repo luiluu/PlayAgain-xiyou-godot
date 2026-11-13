@@ -117,6 +117,41 @@ func _run() -> void:
 	check("button_initial", b.speed_btn.text == "变速 OFF")
 	b.speed_btn.pressed.emit()
 	check("button_shared_config", XConfig.battle_speed() == 1 and b.speed_btn.text == "变速 四倍" and Engine.time_scale == 1.0)
+	# O-待定「进战斗默认自动」：默认 OFF 照原来开局为关；ON 时开局自动按钮就是开；回退 AUTO_DEFAULT＝false 时不看设置、设置页不列
+	check("auto_default_off", not XConfig.flag("codexBattleAutoDefault") and not b.logic.auto and b.auto_btn.text == "自动：关")
+	var opt_auto := XOptionsScene.new()
+	add_child(opt_auto)
+	await frames()
+	opt_auto.index = opt_auto.symbols().find("codexBattleAutoDefault")
+	check("auto_option_row", opt_auto.index >= 0 and opt_auto.status_text(opt_auto.index) == "OFF")
+	opt_auto.ok()
+	check("auto_option_toggle", XConfig.flag("codexBattleAutoDefault") and opt_auto.status_text(opt_auto.index) == "ON")
+	XConfig._loaded_path = "<unloaded>"
+	check("auto_option_saved", XConfig.flag("codexBattleAutoDefault"))
+	opt_auto.queue_free()
+	var auto_on := QuietBattle.new()
+	auto_on.setup(2, true, false, {})
+	add_child(auto_on)
+	await frames()
+	check("auto_default_on", auto_on.logic.auto and auto_on.auto_btn.text == "自动：开")
+	auto_on.auto_btn.pressed.emit()
+	check("auto_button_off_keeps_option", not auto_on.logic.auto and XConfig.flag("codexBattleAutoDefault"))
+	auto_on.logic.end_battle()
+	auto_on.queue_free()
+	XBattleScene.AUTO_DEFAULT = false
+	var auto_off := QuietBattle.new()
+	auto_off.setup(2, true, false, {})
+	add_child(auto_off)
+	var opt_off := XOptionsScene.new()
+	add_child(opt_off)
+	await frames()
+	check("auto_rollback", not auto_off.logic.auto and not opt_off.symbols().has("codexBattleAutoDefault"))
+	opt_off.queue_free()
+	auto_off.logic.end_battle()
+	auto_off.queue_free()
+	XBattleScene.AUTO_DEFAULT = true
+	XConfig.set_flag("codexBattleAutoDefault", false)
+	await frames()
 	# 所有弹出种类受同一开关控制，实战计数单独验证。
 	var enemy: XEnemy = b.logic.enemies[0]
 	for row in ref.display:

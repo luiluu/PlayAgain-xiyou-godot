@@ -118,6 +118,9 @@ var _fade: XSceneFade
 var screen_fx: XBattleScreen
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
+## O-待定：设置「进战斗默认自动」开着时，每场战斗开局自动按钮就是开（玩家反馈：想让自动一直开着，不用每场点）。
+## 设置默认关＝照原来开局为关；回退＝设 false（设置页不列这一项，开局恒为关）。挂机另走 XHangUp，不受影响。
+static var AUTO_DEFAULT := true
 ## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
 var book_appeared: Array = []
 ## 战斗内「怪物信息」（AB_EnemyBook，Shift 打开；见 _open_battle_book）
@@ -134,8 +137,13 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	if random_encounter:
 		logic.roll_encounter()  # Game_Player.executeEncounter：BattleManager.setup 之后 onEncounter 掷先制／偷袭
 	XPetCapture.roll_battle(logic)  # Star_PetSystem 的 Scene_Battle.start 包装：掷可捕捉（名字加「宝宝」）
-	logic.auto = force_auto
+	logic.auto = force_auto or start_auto()
 	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
+
+
+## 开局自动按钮的状态（O-待定）：开关开着且设置「进战斗默认自动」为 ON
+static func start_auto() -> bool:
+	return AUTO_DEFAULT and XConfig.flag("codexBattleAutoDefault")
 
 
 func _ready() -> void:
