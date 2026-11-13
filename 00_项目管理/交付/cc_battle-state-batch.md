@@ -1,7 +1,7 @@
 # 交付：cc/battle-state-batch
 
 - 车道／工作者：C 规则·进出战斗卡顿续（cc，项目线程）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -50,7 +50,14 @@
 
 ## 验证
 
-（待写）
+- 语法检查通过（822 个 .gd，0 问题）；工具快速回归全部通过。
+- 专项 `xiyou_battle_state_batch` 本机单跑 54/54；带 `XIYOU_READ_VERIFY=1` 单跑也是 54/54。
+- 本机选测：`xiyou_battle_state_batch`、`xiyou_battle_enter_exit_lag`、`xiyou_determinism`、`xiyou_start_clear_result`、`xiyou_state_effects_tp`、`xiyou_act_stat_memo` 全部通过；`xiyou_determinism` 带 `XIYOU_READ_VERIFY=1` 单跑通过。
+- 云端选测（提交 c530927eb，基准 150b77038）：436 个场景、16 片全部通过。
+- 云端带全程比对再跑一轮（临时分支 cc/battle-state-batch-verify 把 `READ_VERIFY`／`READ_VERIFY_FATAL` 默认改成开，只为这一轮，不合并）：436 个场景里 435 个通过、零不一致。`xiyou_flow` 没过：等战败结束画面的那段循环走完画面还没出来，随后对空对象调 `step` 报脚本错（首次与重跑一样），日志里没有「不一致」。本机带 `XIYOU_READ_VERIFY=1` 单跑 `xiyou_flow` 通过，不带比对的云端那轮它也通过，判断是比对模式下云端机器太慢、按帧数等不到，没有再深查。
+- 上面两轮云端之后又改了两处（带拿掉效果的状态照判第二遍卸装、状态次序变了特性这组全丢）并加了一项测试，最终提交另推了一轮云端选测，结果见本节末行。
+- 临时探针、逐句计时脚本、玩家存档副本都在会话临时目录，不入库。
+- 最终提交云端选测（提交 1ab90f830，基准 c530927eb）：338 个场景、13 片全部通过。
 
 ## 待交叉核查
 
@@ -67,4 +74,7 @@
 
 ## 本分支提交
 
-（待写）
+- 97f0d2f7d、7b4aa3ea6、8bbfbfa70 三个开关的实现（分三步）
+- 专项 xiyou_battle_state_batch、批没关时复位
+- 1ab90f830 自查收紧两处判断、交付单草稿
+- 本交付单定稿
