@@ -11,11 +11,15 @@ extends RefCounted
 ##   各成员按原来的血量比例分；34 层鸿钧用 HP_BASE[34]。七印里副本的敌人（按鸿蒙老祖重标）血量一律乘
 ##   HP_BASE[33] × 本档回合 ÷ 鸿蒙老祖原血量。35、36 层骑士和七首之龙是天启篇自己的数值，不动。
 ##   HP_BASE 暂用基准队（只算等级、法宝、精良装备）每回合伤害的平滑值，Kyo 11-13 定改用虚拟玩家每层实队（C）重量，量好换表。
-## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.RESIST = false`。
+## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
 static var ATK := true
 static var HP := true
+## 楼层里别的敌人（小怪、副本首领、精英）跟着本层守层者一起缩：血量按「本层守层者新血量 ÷ 原血量」同比缩，
+## 出伤、伤害抵抗用本层守层者那一档。层数按战斗所在地图（XDungeon.map_floor，沿地图树找「N层」）。
+## 虚拟玩家 11-13 实测：只改守层者时 20 层的普通敌群 2.1 万亿血、打掉 0%，后面的层根本走不动。
+static var WORLD := true
 static var RESIST := true
 
 const ATK_SCALE := {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 0.00884, 6: 3.07, 7: 1.29, 8: 1.9, 9: 0.589, 10: 1.09, 11: 0.952,
@@ -62,7 +66,7 @@ static func floor_of(enemy_id: int) -> int:
 
 ## XEnemy.refresh_passive 末尾调：守层者的元素固定减伤
 static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
-	var f := floor_of(e.enemy_id)
+	var f := _floor(e)
 	if f == 0 or table.is_empty():
 		return table
 	var v := measure_resist
@@ -79,7 +83,7 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 ## XEnemy.setup 末尾调：守层者的出伤倍率（不是守层者、没开、不是天启篇存档为 1）
 static func atk_scale(e: XEnemy) -> float:
 	var rec: Dictionary = e.horseman.get("rec", {}) if not bool(e.horseman.get("knight", false)) else {}
-	var f := floor_of(e.enemy_id) if e.horseman.is_empty() else 0
+	var f := _floor(e) if e.horseman.is_empty() else 0
 	var ref := rec.has("_ref")
 	if f == 0 and not ref:
 		return 1.0
@@ -90,6 +94,26 @@ static func atk_scale(e: XEnemy) -> float:
 	if ref:
 		return HONGJUN_SCALE if str(rec.get("_ref", "")) == "hongjun" else REF_SCALE
 	return float(ATK_SCALE.get(f, 1.0))
+
+
+## 守层者认敌人号；楼层里别的敌人认 setup 记下的层（WORLD）
+static func _floor(e: XEnemy) -> int:
+	var f := floor_of(e.enemy_id)
+	return f if f > 0 else int(e.get_meta(META_FLOOR, 0))
+
+
+const META_FLOOR := "xgr_floor"
+static var _old_total := {}
+
+
+## 第 f 层守层者那场原来的总血量（数据里的生命，不含难度倍率）
+static func old_total(f: int) -> float:
+	if not _old_total.has(f):
+		var t := 0.0
+		for m in XDB.rec("Troops", int(TROOPS.get(f, 0))).get("members", []):
+			t += float(XDB.rec("Enemies", int(m.get("enemyId", 0))).get("params", [0])[0])
+		_old_total[f] = t
+	return float(_old_total[f])
 
 
 static func _on() -> bool:
@@ -130,7 +154,10 @@ static func setup(logic, s: XState) -> void:
 				_scale_hp(e, float(HP_BASE[33]) * turns(s) / maxf(1.0, ref_hp * float(e._rates[0])))
 		return
 	var f := troop_floor(logic)
-	if f == 0 or not HP_BASE.has(f):
+	if f == 0:
+		_world(logic, s)
+		return
+	if not HP_BASE.has(f):
 		return
 	var total := 0.0
 	for e in logic.enemies:
@@ -147,3 +174,20 @@ static func _scale_hp(e: XEnemy, k: float) -> void:
 	e._rates[0] = float(e._rates[0]) * k
 	e.param_mark_dirty()
 	e.recover_all()
+
+
+
+## 楼层里别的敌群：按所在地图的层同比缩血量，出伤、伤害抵抗跟本层守层者（天启篇骑士、七首之龙、按鸿蒙老祖重标的不动）
+static func _world(logic, s: XState) -> void:
+	if not WORLD:
+		return
+	var f := mini(XDungeon.map_floor(s.map_id), 33)
+	if f <= 0 or not HP_BASE.has(f) or old_total(f) <= 0.0:
+		return
+	for e in logic.enemies:
+		if not e.horseman.is_empty() or floor_of(e.enemy_id) > 0:
+			continue
+		e.set_meta(META_FLOOR, f)
+		e.refresh_passive()
+		# 本层守层者原总血量（乘本档难度倍率）→ 新总血量，同一比例
+		_scale_hp(e, float(HP_BASE[f]) * turns(s) / (old_total(f) * float(e._rates[0])))

@@ -121,6 +121,9 @@ static func gear_gain(st: XState, item: Dictionary, taken: Dictionary) -> Dictio
 			var score := 0.0
 			for k in 8:
 				score += W8[k] * (float(then[k]) - float(now[k])) / maxf(absf(float(now[k])), 1.0)
+			# 法宝：这一格还空着就值得买（一级法宝属性不多，靠喂装备升上去）；本人专属的排在通用的前面
+			if XMagicWeapon.is_magic(item) and not (a.equips[slot] is Dictionary and not a.equips[slot].is_empty()):
+				score = maxf(score, 0.06) + (1.0 if str(item.get("note", "")).contains("req_actors") else 0.0)
 			if score > float(best.score):
 				best = {"score": score, "actor": a.actor_id, "slot": slot}
 	return best
@@ -200,6 +203,11 @@ static func shop(shop_page: XShop, st: XState) -> Dictionary:
 		var cost := _wallet(st)
 		if _buy(shop_page, i, 1) > 0:
 			taken["%d:%d" % [int(g.actor), int(g.slot)]] = true
+			if XMagicWeapon.is_magic(d[i].item):
+				# 法宝买来直接戴上（同装备页的更换）：一级法宝属性涨得少，换装比较不一定挑它
+				var mine: Array = st.gear.filter(func(x): return XMagicWeapon.is_magic(x) and str(x.get("name", "")) == str(d[i].item.get("name", "")))
+				if not mine.is_empty():
+					XEquipment.change(st, st.actor(int(g.actor)), int(g.slot), mine[-1])
 			out.bought += 1
 			out.lines.append("买装备 %s（给 %d 号，预计涨 %d%%）%s" % [str(d[i].rec.get("name", "")), int(g.actor), int(float(g.score) * 100), _spent(st, cost)])
 	books.sort_custom(func(x, y): return int(d[x].price) > int(d[y].price))
@@ -267,6 +275,14 @@ static func use_item(host: Node, st: XState, id: int, a: XActor, n: int) -> int:
 			await page._bulk_ok()
 	page.queue_free()
 	return before - st.item_count(id)
+
+
+## 出战的人里有没有人法宝格还空着
+static func lacks_fabao(st: XState) -> bool:
+	for a in st.battle_members():
+		if not a.equips.any(func(e): return XMagicWeapon.is_magic(e)):
+			return true
+	return false
 
 
 ## 法宝现状（给报告用）：当前存档的等级上限（0＝不限）和出战的人身上每件法宝的等级
