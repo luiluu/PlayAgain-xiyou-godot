@@ -134,6 +134,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XGuyu.setup(self)  # 谷雨 BattleManager.setup 包装（原 setup 之前）：reset、activeBattle
 	XShieldLedger.setup(self)  # 护盾账本 startBattle 包装：清空、开始记账
 	s.sync_difficulty_on_battle()
+	XVegetaTune.battle_setup(s)  # 贝吉特优化调整：自我极意功层数每场清零
 	random = random_context if random_context != null else s.reserve_battle_random()
 	replay_runtime_start = s.runtime_random_snapshot()
 	replay_battle_start = random.snapshot()

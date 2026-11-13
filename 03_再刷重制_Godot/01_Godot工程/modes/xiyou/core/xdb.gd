@@ -122,6 +122,11 @@ static func table(name: String) -> Variant:
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
+		if _tables[name] is Array:  # 贝吉特优化调整（XVegetaTune，v0.01.08）
+			match name:
+				"Skills": XVegetaTune.patch_skills(_tables[name])
+				"States": XVegetaTune.patch_states(_tables[name])
+				"CommonEvents": XVegetaTune.patch_common_events(_tables[name])
 	return _tables[name]
 
 

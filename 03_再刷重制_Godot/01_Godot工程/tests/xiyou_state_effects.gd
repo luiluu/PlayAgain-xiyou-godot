@@ -138,6 +138,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 func _ready() -> void:
 	_fixes_off()
+	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整（2561／2777）关掉，新行为由 xiyou_vegeta_tune 核
 	_run.call_deferred()
 
 
