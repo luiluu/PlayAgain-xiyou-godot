@@ -289,20 +289,43 @@ func refresh(b: XBattler) -> void:
 	var previous := b.lifecycle_context
 	b.lifecycle_context = state_context(b)
 	var was_dirty := b.effect_dirty
-	_refresh_type_before(b)
+	# O-待定-4：一次 refresh（卸掉不能穿的、抹掉免疫的状态、夹 HP／MP／TP、同步阵亡、重建被动缓存）读的是同一名角色的
+	# 特性、三项上限、技能表，包进一个只读窗口（O-348 的机制）：这些表只算一次；中间真改了东西（卸装、抹状态、
+	# 夹到了值、加减阵亡）当场作废。REFRESH_WINDOW = false 照原来各算各的。
+	var base := not (not b is XEnemy and XBattler._adding_state)
+	if REFRESH_WINDOW:
+		b.param_refresh()
+		XActor.read_begin()
+		if b is XActor:
+			b.release_to_party()
+		if base:
+			_refresh_base(b)
+	else:
+		_refresh_type_before(b)
+		if base:
+			_refresh_base(b)
 	# The base/actor refresh reaches the global add lock; enemy's saved alias
 	# still reaches the base clamp. Both retain their outer KRZ refresh work.
-	if not (not b is XEnemy and XBattler._adding_state):
-		_refresh_base(b)
+	if base:
 		var alive_before := not b.state_ids.has(1)
+		var gen_before := XActor._read_gen
+		var blocked_before := b.resource_death_blocked
 		_refresh_death(b)
+		if gen_before != XActor._read_gen or blocked_before != b.resource_death_blocked:
+			XActor.read_touch()  # 加减了阵亡状态（或倒下标记变了）：窗口里记的值作废（REFRESH_WINDOW）
 		if was_dirty and alive_before and b.state_ids.has(1):
 			# krz：这次 refresh 只把列表标脏、用时才重建，所以死亡清掉的状态不再进列表；没标脏时旧列表照用（state_effects_probe revive.blocks）
 			b.effect_lists.clear()
 			b.effect_snapshot_valid = false
-	_refresh_type_after(b)
+			XActor.read_touch()
+	_refresh_type_after(b)  # 被动缓存重建也在窗口里：和前半段共用同一份技能表（中间没写入时）
+	if REFRESH_WINDOW:
+		XActor.read_touch()  # 被动缓存换了新的
+		XActor.read_end()
 	XLiuying.after_refresh(b)  # 流萤 refresh 包装：负面免疫中清掉绕过 addState 的负面状态
 	b.lifecycle_context = previous
+
+static var REFRESH_WINDOW := true
 
 func _refresh_type_before(b: XBattler) -> void:
 	b.param_refresh()
@@ -315,9 +338,17 @@ func _refresh_base(b: XBattler) -> void:
 		if resisted.has(id) and not XLiuying.keeps_resisted(b, id):  # 流萤 stateResistSet 包装：强制眩晕期间不抹
 			b.state_ids.erase(id)
 			b.state_turns.erase(id)
-	b.hp = clampf(b.hp, 0.0, b.mhp)
-	b.mp = clampf(b.mp, 0.0, b.mmp)
-	b.tp = clampf(b.tp, 0.0, b.max_tp())
+			XActor.read_touch()  # 抹了状态：只读窗口里记的值作废（REFRESH_WINDOW）
+	# 值没变就不写：hp／mp／tp 的写入器只做一件事（作废只读窗口缓存），没变的写入不算写入（REFRESH_WINDOW）
+	var hp := clampf(b.hp, 0.0, b.mhp)
+	if hp != b.hp or is_nan(hp) or not REFRESH_WINDOW:
+		b.hp = hp
+	var mp := clampf(b.mp, 0.0, b.mmp)
+	if mp != b.mp or is_nan(mp) or not REFRESH_WINDOW:
+		b.mp = mp
+	var tp := clampf(b.tp, 0.0, b.max_tp())
+	if tp != b.tp or is_nan(tp) or not REFRESH_WINDOW:
+		b.tp = tp
 
 func _refresh_death(b: XBattler) -> void:
 	var r := result(b)
