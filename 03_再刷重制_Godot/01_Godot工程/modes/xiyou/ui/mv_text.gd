@@ -107,8 +107,9 @@ func at_end() -> bool:
 	return index >= text.length()
 
 
+## 逐字排版用画出来的宽度（XMVCanvas.text 会按「字体大小」放大，这里跟着放大；glyph 里记的 size 仍是原字号）
 func text_width(s: String, font_size := -1) -> float:
-	return _font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size if font_size < 0 else font_size).x
+	return _font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, XFontScale.size(size if font_size < 0 else font_size)).x
 
 
 ## Window_Base.calcTextHeight(textState, false)

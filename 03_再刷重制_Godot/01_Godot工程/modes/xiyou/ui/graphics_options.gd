@@ -6,6 +6,7 @@ extends Control
 ## - 确定：确定音，换到下一档（开关取反）；左右：开关右开左关，多档的左右各走一档、到头不动；值变了才存并播光标音。
 ##   上下首按循环；点非当前行＝选中，点当前行＝确定；取消播取消音返回设置。每次改动即存盘并生效。
 ## - 「窗口大小」只在桌面列出。
+## - 最后两行「字体大小」「弹窗字号」（XFontScale，存 codexFontSize，不在 codexQuality 里）；改弹窗字号时弹一条示例提示。
 
 signal closed
 
@@ -26,7 +27,12 @@ const ROWS := [["crisp", "像素柔边", "战斗图放大后像素均匀、不�
 	["integer", "整数倍缩放", "画面只放大整数倍，像素均匀，四周留黑边"],
 	["fps", "帧率上限", "降低可省电、少发热；游戏速度不变"],
 	["window", "窗口大小", "自动＝按屏幕大小；也可用 F11 切全屏"],
-	["low", "省电模式", "低配手机用：30 帧、柔和放大、关画面特效"]]
+	["low", "省电模式", "低配手机用：30 帧、柔和放大、关画面特效"],
+	["font", "字体大小", "界面文字放大；100% 是原版大小"],
+	["toast", "弹窗字号", "地图上「肝帝积分 +1」这类提示框的字"]]
+## 字体两行对应 XFontScale 的哪一项
+const FONT_ROWS := {"font": "global", "toast": "toast"}
+const TOAST_SAMPLE := "弹窗字号示例：肝帝积分 +1"
 const WINDOW_NAMES := {"auto": "自动", "1280x720": "1280×720", "1600x900": "1600×900", "1920x1080": "1920×1080", "full": "全屏"}
 
 var index := 0
@@ -48,7 +54,7 @@ func _ready() -> void:
 
 ## 本平台列出的行（窗口大小只在桌面；像素柔边的回退开关关掉时不列）
 static func rows() -> Array:
-	return ROWS.filter(func(r): return (r[0] != "window" or not XPlatform.is_mobile()) and (r[0] != "crisp" or XGraphics.CRISP) and (r[0] != "motion" or XGraphics.MOTION))
+	return ROWS.filter(func(r): return (r[0] != "window" or not XPlatform.is_mobile()) and (r[0] != "crisp" or XGraphics.CRISP) and (r[0] != "motion" or XGraphics.MOTION) and (not FONT_ROWS.has(r[0]) or XFontScale.ENABLED))
 
 
 func list_rect() -> Rect2:
@@ -66,13 +72,24 @@ static func choices(key: String) -> Array:
 			return XGraphics.FPS_CHOICES
 		"window":
 			return XGraphics.WINDOW_CHOICES
+		"font", "toast":
+			return XFontScale.CHOICES[FONT_ROWS[key]]
 	return [false, true]
+
+
+## 某一项现在存的值（字体两行读 XFontScale，其余读 codexQuality）
+static func value(key: String) -> Variant:
+	if FONT_ROWS.has(key):
+		return XFontScale.percent(FONT_ROWS[key])
+	return XGraphics.settings()[key]
 
 
 func status_text(i: int) -> String:
 	var key: String = _rows[i][0]
-	var v = XGraphics.settings()[key]
+	var v = value(key)
 	match key:
+		"font", "toast":
+			return "%d%%" % int(v)
 		"integer":
 			if not v:
 				return "关"
@@ -87,6 +104,8 @@ func status_text(i: int) -> String:
 
 func _is_default(i: int) -> bool:
 	var key: String = _rows[i][0]
+	if FONT_ROWS.has(key):
+		return int(value(key)) == XFontScale.DEFAULTS[FONT_ROWS[key]]
 	return XGraphics.settings()[key] == XGraphics.DEFAULTS[key]
 
 
@@ -123,14 +142,24 @@ func select(i: int) -> void:
 func _set_choice(n: int) -> void:
 	var key: String = _rows[index][0]
 	var list := choices(key)
-	if XGraphics.set_value(key, list[clampi(n, 0, list.size() - 1)]):
+	var v = list[clampi(n, 0, list.size() - 1)]
+	if FONT_ROWS.has(key):
+		if XFontScale.set_value(FONT_ROWS[key], int(v)):
+			XSound.system(0)
+			# 全局字号：本页标题与列表立刻按新字号重画；弹窗字号：弹一条示例
+			head_win.refresh()
+			_refresh()
+			if key == "toast":
+				XToast.show_text(TOAST_SAMPLE, true)
+		return
+	if XGraphics.set_value(key, v):
 		XSound.system(0)
 		_refresh()
 
 
 func _current() -> int:
 	var key: String = _rows[index][0]
-	return maxi(0, choices(key).find(XGraphics.settings()[key]))
+	return maxi(0, choices(key).find(value(key)))
 
 
 ## 确定：换到下一档，过了最后一档回到第一档
