@@ -453,6 +453,29 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.erase("dot")
 	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）
 		r.erase("effects")
+	if sp.has("revive") and r.get("effects") is Array:  # 自动复活（rules3 的 revive 块）：rate 回血比例（不再回满魔法、TP）、chance 几率、once 复活后自己去掉（每场一次）
+		var rv: Dictionary = sp.revive
+		for e in r.effects:
+			if not (e is Dictionary) or str(e.get("op", "")) != "revive":
+				continue
+			var steps: Array = []
+			var removed := false
+			for st in e.steps:
+				if str(st.get("do", "")) == "gain" and str(st.get("resource", "")) in ["mp", "tp"] and rv.has("rate"):
+					continue
+				if str(st.get("do", "")) == "gain" and str(st.get("resource", "")) == "hp" and rv.has("rate") and not st.has("amount"):
+					st.rate = float(rv.rate)
+					st.round = "floor"
+				removed = removed or str(st.get("do", "")) == "remove_self"
+				steps.append(st)
+			if bool(rv.get("once", false)) and not removed:
+				steps.push_front({"do": "remove_self"})
+			e.steps = steps
+			if rv.has("chance"):
+				if str(e.cond.get("kind", "")) == "down_each":
+					e.cond.above = 1.0 - float(rv.chance)
+				elif str(e.cond.get("kind", "")) == "down":
+					e.cond.below = float(rv.chance)
 	if sp.has("dot"):  # 层数持续伤害：XExtDot 遇到 kind＝tianqi 时读 dot_value
 		var d: Dictionary = (sp.dot as Dictionary).duplicate(true)
 		d.kind = "tianqi"
@@ -651,6 +674,9 @@ static func _cond(c: Dictionary, a, b) -> float:
 	match str(c.get("if", "")):
 		"always":
 			ok = true
+		"var_at_least":  # 变量（按 cap 封顶）至少 n（白起断天休：杀气 6 点时变大招）
+			var vs := XState.current
+			ok = vs != null and mini(int(c.get("cap", 999999)), int(vs.variable(int(c["var"])))) >= int(c.n)
 		"agi_below_target":
 			ok = float(a.agi) < float(b.agi)
 		"agi_above_target":
@@ -777,6 +803,8 @@ static func _fstore(logic) -> Dictionary:
 
 
 static func begin_action(logic, u, skill) -> void:
+	if not (logic.has_meta("xtqs") and int(_fstore(logic).depth) > 0):
+		_act_skill = int(skill.get("id", 0)) if u is XActor and skill is Dictionary else 0
 	if not cards_on() or not (u is XActor) or not (skill is Dictionary):
 		return
 	var st := _fstore(logic)
@@ -796,6 +824,8 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 	var f: Dictionary = _fstore(logic).act
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
+	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
+		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）
 	_kill_grow(logic, u, skill, t)
 	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
@@ -817,14 +847,81 @@ static func _reflect(u, t, r: Dictionary) -> void:
 			for k in sp.get("reflect_with", {}):  # 带着这件反弹更多（张楚岚雷符：金光在时 30%）
 				if owns(t, k):
 					v = maxf(v, float(sp.reflect_with[k]))
+			if sp.has("reflect_var") and XState.current != null:  # 按变量加成（马宝国肝帝积分：每 10 分 +1%，最多 +30%）
+				var rv: Dictionary = sp.reflect_var
+				v *= 1.0 + minf(float(rv.get("cap", 0.0)), maxf(0.0, float(XState.current.variable(int(rv.var)))) * float(rv.get("per", 0.0)))
 			pct = maxf(pct, v)
 	if pct <= 0.0:
 		return
-	if u is XEnemy and XEnemy.boss_id(int(u.enemy_id)):
+	if u is XEnemy and u.boss_difficulty_boss:  # 首领（开战时按 boss_id 记）
 		pct *= 0.5
 	u.hp = maxf(0.0, float(u.hp) - floorf(dmg * pct))
 	if u.hp <= 0.0:
 		u.add_state(1)
+
+
+## 首领减半（稿子第一节「控制 1～2 回合，对首领减半或无效」；各期待办里的通用项）：卡开着时，角色给首领（boss_difficulty_boss）挂的
+## 控制状态（XEnemy.boss_control_state）回合数减半、向下取整，1 回合的控制无效；其余减益（XBossStatus.kind_of＝Debuff：属性降低、持续伤害等）
+## 回合数减半、向上取整、至少 1 回合。整场的状态（autoRemovalTiming 0）、敌人自己挂的不动。
+## 技能行 boss {"状态号": "immune"／"half"／"ceil"／"full"／换成的状态号} 按招覆盖默认（申公豹神来之笔、碧霄伏龙击的眩晕在首领身上换成伤害 −30%）。
+## 接在 XEnemy.add_state（无效、替换）和 XEnemy.reset_state_counts（回合数）
+static var BOSS_RULE := true
+static var _act_skill := 0  # 角色正在放的技能号（begin_action 记、end_action 清）
+
+
+static func boss_rule(e, id: int):
+	if not BOSS_RULE or not CARDS or not (e is XEnemy) or not e.boss_difficulty_boss or not cards_on():
+		return ""
+	if XImportedBalance.acting_battler() is XEnemy:
+		return ""
+	if _act_skill > 0:
+		var o = spec(_act_skill).get("boss", {}).get(str(id))
+		if o != null:
+			return o if o is String else int(o)
+	var st := XDB.rec("States", id)
+	if st.is_empty() or int(st.get("autoRemovalTiming", 0)) == 0:
+		return ""
+	if XEnemy.boss_control_state(id):
+		var u = XImportedBalance.acting_battler()
+		var need = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("boss_control", "") if u is XActor else ""
+		return "ceil" if need != "" and owns(u, need) else "half"  # 角色行 boss_control：带着这件时控制按向上取整减半（唐三昊天锤：1 回合的也有效）
+	var dot = st.get("dot")
+	if XBossStatus.kind_of(st) == "Debuff" or (dot is Dictionary and not bool(dot.get("healing", false))):  # 持续伤害（卡里的 dot 状态没有减益标记）
+		return "ceil"
+	return ""
+
+
+## 双持副手只算一半属性（稿子町甄悬胆、紫霞紫青缠绕、张三丰太极剑、艾琳幽璇、三笠红色围巾、夜隐重霞等，统一做）：
+## 卡开着时，XActor._param_plus 里第二把武器的属性（含武器类型放大、法宝成长、自定义属性）×0.5；特性、被动照算
+static var OFFHAND_HALF := true
+
+
+static func offhand_half() -> bool:
+	return OFFHAND_HALF and CARDS and cards_on()
+
+
+## 百分比生命伤害对首领无效（第一节）：表里的技能在行动序列里按目标生命上限比例扣血（Hp -n%）时，首领不扣
+static func boss_pct_immune(u, t, skill_id: int) -> bool:
+	return BOSS_RULE and CARDS and u is XActor and t is XEnemy and t.boss_difficulty_boss and has(skill_id) and cards_on()
+
+
+## add_state 之前：返回 -1 不挂、0 照常、>0 换成这个状态
+static func boss_add(e, id: int) -> int:
+	var r = boss_rule(e, id)
+	if r is int:
+		return r
+	if r == "immune" or (r == "half" and int(XDB.rec("States", id).get("maxTurns", 1)) <= 1):
+		return -1
+	return 0
+
+
+static func boss_turns(e, id: int, n: int) -> int:
+	match boss_rule(e, id):
+		"half":
+			return maxi(1, n / 2)
+		"ceil":
+			return maxi(1, ceili(n / 2.0))
+	return n
 
 
 ## 技能行 shield {pct, self}：放这招时给目标（self：给自己）加施放者生命上限这个比例的护盾（钟离、立希、云霄；只在正式结算时加）
@@ -919,6 +1016,14 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 				for e in foes:
 					if e.is_state_affected(int(r.state)):
 						e.state_turns[int(r.state)] = int(r.turns)
+		var ch: Dictionary = data().get("actors", {}).get(str(int(a.actor_id)), {}).get("charge", {})
+		if not ch.is_empty() and XState.current != null:  # 积攒点数开战归零（白起杀气不跨战斗累计），专属物给起始点数
+			var n0 := 0
+			for r in ch.get("start", []):
+				if owns(a, r.need):
+					n0 = maxi(n0, int(r.n))
+			XState.current.set_variable(int(ch["var"]), n0)
+			a.set_meta("xtq_charge_again", false)
 		a.set_meta("xtq_casts", {})  # 本场放技能次数（cast_count 条件）
 		a.set_meta("xtq_turn", 0)
 		sync_learn(a)
@@ -1045,6 +1150,88 @@ static func _self_heal(u, skill: Dictionary) -> void:
 
 
 ## 技能行 consume [状态…]：放完把打到的目标身上这些状态去掉（劲夫乱打引爆怒拳）；consume_keep_with {要有: 几率} 有几率不去
+## 角色行 charge（白起杀气，第四期待办）：{var, cap, gain {技能号: 点}, gain_crit {need, n}, spend {技能号: [低档, 高档]}, refund_kill {need, rate}, start [{need, n}], full_again 技能号}。
+## 卡开着时原版的凝聚／释放公共事件（422／423）从技能上去掉，由这里接管：放 gain 里的招得点（这次行动暴击过、学了 gain_crit.need 再多 n），封顶 cap；
+## spend 里的招够高档耗高档、不然耗低档（不够低档不能放，技能行 need_var，见 meets）；这招打倒了目标、学了 refund_kill.need 时返还耗掉的 rate；
+## 开战点数归零，专属物 start 给起始点数；学了 full_again 的，点数第一次攒满 cap 的那次行动之后本回合再动一次（每场一次）。伤害的高档加成写在技能的 var_at_least 条件里
+static func _charge(logic, u, f: Dictionary) -> void:
+	if not (u is XActor) or XState.current == null:
+		return
+	var ch: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("charge", {})
+	if ch.is_empty():
+		return
+	var s := XState.current
+	var vid := int(ch["var"])
+	var cap := int(ch.get("cap", 6))
+	var sid := str(int(f.skill.get("id", 0)))
+	var v := mini(cap, int(s.variable(vid)))
+	var before := v
+	if ch.get("gain", {}).has(sid):
+		v += int(ch.gain[sid])
+		var gc: Dictionary = ch.get("gain_crit", {})
+		if bool(f.get("crit", false)) and not gc.is_empty() and owns(u, gc.need):
+			v += int(gc.get("n", 1))
+	if ch.get("spend", {}).has(sid):
+		var tiers: Array = ch.spend[sid]
+		var cost := int(tiers[1]) if tiers.size() > 1 and v >= int(tiers[1]) else int(tiers[0])
+		cost = mini(cost, v)
+		v -= cost
+		var rk: Dictionary = ch.get("refund_kill", {})
+		if not rk.is_empty() and owns(u, rk.need) and (f.targets as Array).any(func(t): return t is XBattler and not t.is_alive()):
+			v += int(floorf(cost * float(rk.get("rate", 0.5))))
+	v = clampi(v, 0, cap)
+	s.set_variable(vid, v)
+	if ch.has("full_again") and v >= cap and before < cap and owns(u, ch.full_again) and not bool(u.get_meta("xtq_charge_again", false)) and u.is_alive():
+		u.set_meta("xtq_charge_again", true)
+		logic.current_order.append(u)
+
+
+## 技能行 ally_state {need, state}：学了 need 时，放完再给生命比例最低的一个队友挂这个状态（诸葛逆天改命：七星续命给队友）
+static func _ally_state(u, skill: Dictionary) -> void:
+	var r: Dictionary = spec(int(skill.get("id", 0))).get("ally_state", {})
+	if r.is_empty() or not (u is XActor) or not owns(u, r.need) or XState.current == null:
+		return
+	var best = null
+	for x in XState.current.battle_members():
+		if x != u and x is XActor and x.is_alive() and not x.is_state_affected(int(r.state)) and (best == null or float(x.hp) / maxf(1.0, float(x.mhp)) < float(best.hp) / maxf(1.0, float(best.mhp))):
+			best = x
+	if best != null:
+		best.add_state(int(r.state))
+
+
+## 技能行 foe_drain：放完敌人全体各掉当前生命的这个比例（首领无效；唐三寄生 0.03）
+static func _foe_drain(logic, u, skill: Dictionary) -> void:
+	var pct := float(spec(int(skill.get("id", 0))).get("foe_drain", 0.0))
+	if pct <= 0.0 or not (u is XActor):
+		return
+	for e in logic.enemies:
+		if e is XEnemy and e.is_alive() and not e.hidden and not (BOSS_RULE and e.boss_difficulty_boss):
+			e.hp = maxf(1.0, float(e.hp) - floorf(float(e.hp) * pct))
+
+
+## BattleLogic.battle_skills：角色行 battle_extra [{need, skill}]：带着这件时战斗技能列表多出这一招（诸葛命星：战斗中的五行移位）
+static func battle_extra(a) -> Array:
+	if not CARDS or not (a is XActor) or not cards_on():
+		return []
+	var out := []
+	for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("battle_extra", []):
+		if owns(a, r.need):
+			var rec := XDB.rec("Skills", int(r.skill))
+			if not rec.is_empty():
+				out.append(rec)
+	return out
+
+
+## BattleLogic.can_use：技能行 need_var {var, min}：变量不够不能放（白起断天休要 3 点杀气）
+static func meets(a, skill: Dictionary) -> bool:
+	if not (a is XActor) or not CARDS:
+		return true
+	var nv: Dictionary = spec(int(skill.get("id", 0))).get("need_var", {})
+	if nv.is_empty() or not cards_on() or XState.current == null:
+		return true
+	return int(XState.current.variable(int(nv["var"]))) >= int(nv.get("min", 0))
+
+
 static func _consume(logic, u, f: Dictionary) -> void:
 	var sp := spec(int(f.skill.get("id", 0)))
 	if not sp.has("consume"):
@@ -1173,12 +1360,19 @@ static func end_action(logic, u, skill) -> Array:
 	var st := _fstore(logic)
 	var f: Dictionary = st.act
 	st.act = {}
+	if int(st.depth) == 0:
+		_act_skill = 0
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_var_add(u, f.skill)
 		_foe_states(logic, u, f.skill)
 		if bool(spec(int(f.skill.get("id", 0))).get("tp_drain", false)):
 			u.tp = 0.0  # 技能行 tp_drain：放完耗光 TP（天蓬神霄净世诀）
 		_consume(logic, u, f)
+		_charge(logic, u, f)
+		_ally_state(u, f.skill)
+		_foe_drain(logic, u, f.skill)
+		if bool(spec(int(f.skill.get("id", 0))).get("free_action", false)) and u.is_alive():
+			logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
 		if u.is_alive():

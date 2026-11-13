@@ -675,6 +675,8 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 			return false
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(int(skill.id)):
 		return false
+	if not XTianqiSkills.meets(a, skill):  # 天启篇技能重构：点数不够不能放（白起断天休要 3 点杀气）
+		return false
 	if not XTianqiQiyinRule.can_use(self, a, skill):  # 七印祭坛：寂静双数回合、限时用满时只能普攻、防御、用物品
 		return false
 	if XAlienBattle.sealed(self, a, skill):  # 异化蚀术 isSkillSealed 包装：被封印的技能
@@ -763,6 +765,7 @@ func battle_skills(a: XActor) -> Array:
 	for s in a.skills():
 		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and XSukuna.listed(a, s) and XToji.listed(a, s) and XGojo.listed(a, s):
 			out.append(s)
+	out.append_array(XTianqiSkills.battle_extra(a))  # 天启篇技能重构：专属物给的战斗招（诸葛命星：五行移位）
 	return out
 
 ## 战斗中可用的物品（MV Window_BattleItem：场合为「总是」或「战斗中」且持有）

@@ -46,6 +46,9 @@ func _run() -> void:
 	_p4()
 	_p5()
 	_p6()
+	_fill()
+	_fill_charge()
+	_fill_hits()
 	_smoke()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -815,6 +818,196 @@ func _p6() -> void:
 	_check("p6_new_skills", str(XDB.rec("Skills", 10737).name) == "剑*非天·一线" and int(XDB.rec("Skills", 10737).scope) == 1 and str(XDB.rec("Skills", 10753).name) == "万剑归宗·三段")
 	_check("p6_learn", (XTianqiSkills.data().learn.get("165", []) as Array).size() == 2 and (XTianqiSkills.data().learn.get("156", []) as Array).size() == 2)
 	_check("p6_states", str(XDB.rec("States", 10826).name) == "趴下" and is_equal_approx(float(XTianqiSkills._states[2550].get("reflect", 0.0)), 0.3))
+	lg.end_battle(0)
+
+
+## 补完：首领减半（控制减半、1 回合控制无效、减益减半至少 1 回合、按招换减伤）、百分比生命伤害对首领无效
+func _fill() -> void:
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var b := _enemy(lg) as XEnemy
+	b.boss_difficulty_boss = true
+	b.boss_hyper_armor = false
+	XTianqiSkills._act_skill = 0
+	var two := 0  # 卡里 2 回合的控制状态（晴明失魄这类）
+	for id in XTianqiSkills._states:
+		var r := XDB.rec("States", int(id))
+		if XEnemy.boss_control_state(int(id)) and int(r.get("minTurns", 0)) == 2 and int(r.get("maxTurns", 0)) == 2 and int(r.get("autoRemovalTiming", 0)) > 0:
+			two = int(id)
+			break
+	b.add_state(two)
+	_check("fill_boss_ctrl_half", two > 0 and b.is_state_affected(two) and int(b.state_turns.get(two, 0)) == 1, [two, b.state_turns.get(two)])
+	b.remove_state(two)
+	b.add_state(1043)
+	_check("fill_boss_ctrl_1turn_immune", not b.is_state_affected(1043))
+	XTianqiSkills._act_skill = 4830
+	b.add_state(1043)
+	_check("fill_boss_sub", not b.is_state_affected(1043) and b.is_state_affected(10827) and str(XDB.rec("States", 10827).name) == "首领压制")
+	XTianqiSkills._act_skill = 0
+	b.add_state(1819)
+	var base := int(XDB.rec("States", 1819).maxTurns)
+	_check("fill_boss_debuff_ceil", int(b.state_turns.get(1819, 0)) == maxi(1, ceili(base / 2.0)), [base, b.state_turns.get(1819)])
+	var n := lg.enemies[1] as XEnemy if lg.enemies.size() > 1 else null
+	if n != null:
+		n.boss_difficulty_boss = false
+		n.add_state(two)
+		_check("fill_nonboss_full", int(n.state_turns.get(two, 0)) == 2, n.state_turns.get(two))
+	var a: XActor = s.actor(XIAOYAO)
+	_check("fill_pct_immune", XTianqiSkills.boss_pct_immune(a, b, 1067) and not XTianqiSkills.boss_pct_immune(a, b, 1) and (n == null or not XTianqiSkills.boss_pct_immune(a, n, 1067)))
+	# 双持副手只算一半属性：第二把武器的物攻贡献 ×0.5
+	var w0 = a.equips[0]
+	var keep1 = a.equips[1] if a.equips.size() > 1 else null
+	if w0 is Dictionary and not w0.is_empty() and a.equips.size() > 1:
+		a.equips[1] = {}
+		var one := a._param_plus(2)
+		a.equips[1] = w0.duplicate(true)
+		var half := a._param_plus(2)
+		XTianqiSkills.OFFHAND_HALF = false
+		var full := a._param_plus(2)
+		XTianqiSkills.OFFHAND_HALF = true
+		a.equips[1] = keep1
+		_check("fill_offhand_half", full > one and is_equal_approx(half - one, (full - one) * 0.5), [one, half, full])
+	else:
+		_check("fill_offhand_half", false, "没有武器")
+	# 马宝国混元：反弹受到伤害的 30%，肝帝积分每 10 分 +1%（最多 +30%），首领减半
+	if n != null:
+		a.add_state(908)
+		s.set_variable(206, 100)
+		n.hp = n.mhp
+		var h0 := float(n.hp)
+		XTianqiSkills._reflect(n, a, {"hp": 1000.0})
+		_check("fill_mabaoguo_reflect", is_equal_approx(h0 - float(n.hp), 330.0), h0 - float(n.hp))
+		b.hp = b.mhp
+		var hb := float(b.hp)
+		XTianqiSkills._reflect(b, a, {"hp": 1000.0})
+		_check("fill_mabaoguo_boss_half", is_equal_approx(hb - float(b.hp), 165.0), hb - float(b.hp))
+		a.remove_state(908)
+	# 唐三寄生：敌全体各掉 3% 当前生命，首领无效
+	if n != null:
+		n.hp = n.mhp
+		b.hp = b.mhp
+		XTianqiSkills._foe_drain(lg, a, XDB.rec("Skills", 7021))
+		_check("fill_foe_drain", is_equal_approx(float(n.hp), float(n.mhp) - floorf(float(n.mhp) * 0.03)) and is_equal_approx(float(b.hp), float(b.mhp)), [n.hp, n.mhp, b.hp, b.mhp])
+	XTianqiSkills.CARDS = false
+	b.remove_state(1043)
+	b.add_state(1043)
+	_check("fill_cards_off", b.is_state_affected(1043))
+	XTianqiSkills.CARDS = true
+	lg.end_battle(0)
+
+
+## 补完：白起杀气（上限 6、耗 3／6、不够不能放、暴击多攒、击杀返还、满 6 再动、开战归零）
+func _fill_charge() -> void:
+	var ids := [80, 60, 71, 95, 100]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var a: XActor = s.actor(80)
+	s.set_variable(369, 7)
+	XTianqiSkills.start_turns([a], [])
+	var dt := XDB.rec("Skills", 4450)
+	_check("fill_charge_start", int(s.variable(369)) == 0 and not lg.can_use(a, dt) and not XTianqiSkills.meets(a, dt))
+	_check("fill_charge_no_ce", not (XDB.rec("Skills", 4448).effects as Array).any(func(e): return int(e.code) == 44) and not (dt.effects as Array).any(func(e): return int(e.code) == 44))
+	var kz := XDB.rec("Skills", 4448)
+	for i in 3:
+		XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_gain", int(s.variable(369)) == 3 and XTianqiSkills.meets(a, dt), s.variable(369))
+	if not a.skill_ids.has(4459):
+		a.learn_skill(4459)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_crit", int(s.variable(369)) == 5, s.variable(369))
+	var b := _enemy(lg)
+	_check("fill_charge_low", is_equal_approx(XTianqiSkills._cond({"if": "var_at_least", "var": 369, "n": 6, "cap": 6, "mult": 1.6667}, a, b), 1.0))
+	if not a.skill_ids.has(4456):
+		a.learn_skill(4456)
+	var q := lg.current_order.size()
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": true})
+	_check("fill_charge_full_again", int(s.variable(369)) == 6 and lg.current_order.size() == q + 1, [s.variable(369), lg.current_order.size(), q])
+	s.set_variable(369, 5)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": kz, "targets": [], "crit": false})
+	_check("fill_charge_again_once", lg.current_order.size() == q + 1)
+	_check("fill_charge_high", is_equal_approx(XTianqiSkills._cond({"if": "var_at_least", "var": 369, "n": 6, "cap": 6, "mult": 1.6667}, a, b), 1.6667))
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": dt, "targets": []})
+	_check("fill_charge_spend_high", int(s.variable(369)) == 0, s.variable(369))
+	s.set_variable(369, 5)
+	if not a.skill_ids.has(4461):
+		a.learn_skill(4461)
+	b.hp = 0.0
+	b.add_state(1)
+	XTianqiSkills._charge(lg, a, {"u": a, "skill": dt, "targets": [b]})
+	_check("fill_charge_refund", int(s.variable(369)) == 3, s.variable(369))
+	# 复活类状态：七星续命回 30%；预感的庇护 30% 几率、回 30%、每场一次（复活后去掉自己）、不再回满魔法
+	var qx := XDB.rec("States", 252)
+	var qx_hp: Array = (qx.effects[0].steps as Array).filter(func(x): return str(x.do) == "gain")
+	_check("fill_revive_rate", qx_hp.size() == 1 and is_equal_approx(float(qx_hp[0].rate), 0.3), qx.effects)
+	var yg := XDB.rec("States", 1099)
+	var ye: Dictionary = yg.effects[0]
+	_check("fill_revive_once", is_equal_approx(float(ye.cond.above), 0.7) and str(ye.steps[0].do) == "remove_self" and not (ye.steps as Array).any(func(x): return str(x.get("resource", "")) == "mp"), ye)
+	# 诸葛：命星给战斗中的五行移位（不占行动）；逆天改命把七星续命再给生命最低的队友
+	var zg: XActor = s.actor(71)
+	var wx := XDB.rec("Skills", 10755)
+	_check("fill_zhuge_switch_rec", int(wx.stypeId) == 2 and not wx.get("meta", {}).has("Hide in Battle") and bool(XTianqiSkills.spec(10755).get("free_action", false)))
+	_check("fill_zhuge_no_star", XTianqiSkills.battle_extra(zg).is_empty() and not lg.battle_skills(zg).any(func(x): return int(x.id) == 10755))
+	if not zg.skill_ids.has(2547):
+		zg.learn_skill(2547)
+	var low: XActor = s.actor(100)
+	low.hp = 1.0
+	XTianqiSkills._ally_state(zg, XDB.rec("Skills", 2516))
+	_check("fill_zhuge_ally_star", low.is_state_affected(252) and not zg.is_state_affected(252), [s.battle_members().map(func(x): return [x.actor_id, x.hp, x.is_state_affected(252), is_same(x, low)])])
+	lg.end_battle(0)
+
+
+## 第六期没判准的 7 条段数：真跑行动序列数打到主目标的段数（条件技能学没学两种都跑），和说明的段数比
+func _seq_hits(lg: XBattleLogic, u: XActor, id: int) -> int:
+	var rec := XDB.rec("Skills", id)
+	var t = lg.enemies[0]
+	var list := []
+	for x in lg.targets_for(u, rec, t):
+		list.append(x)
+	var n := 0
+	for l in XActionSequence.create(lg, u, rec, list).run():
+		if l.get("type") == "hit" and is_same(l.get("target"), t) and not l.get("counter", false) and not l.get("reflected", false):
+			n += 1
+	for e in lg.enemies:
+		e.hp = e.mhp
+		if e.is_state_affected(1):
+			e.remove_state(1)
+	u.hp = u.mhp
+	u.mp = u.mmp
+	return n
+
+
+func _fill_hits() -> void:
+	var ids := [64, 67, 86, 87, 100]
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var rows := [[64, 2358, 2361, 3], [67, 2377, 2376, 1], [86, 5860, 5866, 4], [86, 5868, 5866, 4], [86, 5862, 5866, 4], [86, 5869, 5866, 4], [87, 5853, 5849, 4]]
+	var got := []
+	for r in rows:
+		var u: XActor = s.actor(int(r[0]))
+		if u.skill_ids.has(int(r[2])):
+			u.forget_skill(int(r[2]))
+		var without := _seq_hits(lg, u, int(r[1]))
+		u.learn_skill(int(r[2]))
+		var with := _seq_hits(lg, u, int(r[1]))
+		got.append([r[1], without, with, r[3]])
+	_check("fill_hits_measured", got.size() == rows.size() and got.all(func(g): return g[1] == g[3] and g[2] == g[3]), got)
 	lg.end_battle(0)
 
 
