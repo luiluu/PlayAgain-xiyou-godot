@@ -38,6 +38,11 @@ const CMD_ROWS := 4
 const COMPARE_NAME_W := 137.21
 const COMPARE_GAP := 8.0
 static var DETAIL_V041 := true
+## O-待定（玩家反馈 v0.01.06 换装备卡顿）：候选列表一次操作里要用六七遍（刷新、行数、详情、说明卡、绘制、工具条计数、对比预览），
+## 原来每遍都把背包全部装备逐件判能不能装（装备多时一遍几十到上百毫秒，挪一下光标要半秒多）。
+## 开着：候选按（角色、槽位、筛选条件、排序设置、背包件数、换装次数）记住，同样的条件直接取；逐件判定放进只读窗口（O-348），
+## 角色的技能表、特性表只算一次。换装、清空、换角色、改筛选都会重算，结果与每次重算相同。false＝每次重算（原来的做法）。
+static var CACHE_CANDIDATES := true
 
 var actor_index := 0
 var _mode := "command"              # command / slot / item
@@ -58,6 +63,9 @@ var gear_filter := {}
 var toolbar: HBoxContainer
 var search_panel: XGearSearch
 var gear_detail: XGearDetail
+var _cand_cache: Array = []
+var _cand_key: Array = []
+var _cand_rev := 0  # 换装、清空后加一：背包件数不变（对换）时也让候选重算
 
 
 func _ready() -> void:
@@ -166,17 +174,29 @@ func slot_name_width(c: XMVCanvas) -> float:
 
 ## Window_EquipItem.makeItemList：背包里能装进该槽的装备（Codex 默认排序）＋末行「卸载」（{}）
 func candidates() -> Array:
-	return XGearQuery.filter_entries(_raw_candidates(), _filter_view())
+	if not CACHE_CANDIDATES:
+		return XGearQuery.filter_entries(_raw_candidates(), _filter_view())
+	var s := XState.current
+	var key := [s.get_instance_id() if s != null else 0, actor().get_instance_id(), _slot, _cand_rev, s.gear.size() if s != null else 0,
+		gear_filter.duplicate(true), XConfig.equipment_sort()]
+	if key != _cand_key:
+		_cand_cache = XGearQuery.filter_entries(_raw_candidates(), _filter_view())
+		_cand_key = key
+	return _cand_cache
 
 
 func _raw_candidates() -> Array:
 	var a := actor()
 	var out := []
+	if CACHE_CANDIDATES:
+		XActor.read_begin()  # 只读窗口（O-348）：逐件判能不能装只读角色的特性、被动
 	for kind in ["weapon", "armor"]:
 		var bag := XItemScene.bag_gear(kind)
 		for i in range(bag.size()):
 			if XEquipment.fits(a, _slot, bag[i]):
 				out.append({"rec": bag[i], "carry": i + 1})
+	if CACHE_CANDIDATES:
+		XActor.read_end()
 	out.append({"rec": {}})
 	return out
 
@@ -352,7 +372,11 @@ func _sync_lower() -> void:
 
 func _paint_lower(c: XMVCanvas) -> void:
 	if _compare or gear_detail != null:
+		if CACHE_CANDIDATES:
+			XActor.read_begin()  # 只读窗口（O-348）：两名角色各读 8 项能力值
 		paint_compare(c, actor(), _temp_actor())
+		if CACHE_CANDIDATES:
+			XActor.read_end()
 	else:
 		XItemScene.paint_info(c, _shown_item())
 
@@ -528,6 +552,7 @@ func _keep_rates(change: Callable) -> void:
 	var hp_rate := a.hp / maxf(1.0, a.mhp)
 	var mp_rate := a.mp / maxf(1.0, a.mmp)
 	XPowerNotice.around(a, change)
+	_cand_rev += 1
 	a.hp = maxf(0.0 if a.is_dead() else 1.0, floorf(a.mhp * hp_rate))
 	a.mp = floorf(a.mmp * mp_rate)
 
