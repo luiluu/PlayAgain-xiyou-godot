@@ -38,6 +38,8 @@ var atk_search := false
 var atk_target := 10.0   # --atk-search：找让基准队中位数撑到这么多回合团灭的攻击倍率
 var atk_scale := 1.0
 var iters := 7
+var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
+var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
 
@@ -54,6 +56,10 @@ func _ready() -> void:
 			difficulty = a.substr(13)
 		elif a.begins_with("--iters="):
 			iters = int(a.substr(8))
+		elif a == "--both":
+			both = true
+		elif a.begins_with("--resist="):
+			resist = float(a.substr(9))
 		elif a == "--atk-search":
 			atk_search = true
 		elif a.begins_with("--atk-target="):
@@ -300,8 +306,12 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0   # 守层者不按神话
 	var list := _teams()
 	var rows := []
+	XGuardianRework.measure_resist = resist
 	if atk_search:
 		_search(list)
+		return
+	if both:
+		_run_both(list)
 		return
 	for f in floors:
 		var per := []
@@ -327,5 +337,83 @@ func _run() -> void:
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
 		fh.store_string(JSON.stringify(out, "\t"))
+	print("BASELINE_DONE")
+	get_tree().quit(0)
+
+
+static func _party_hp(logic: XBattleLogic) -> float:
+	var t := 0.0
+	for a in logic.actors:
+		t += maxf(0.0, float(a.hp))
+	return t
+
+
+## --both：两边每回合开始补满（我方倒下的先复活），量我方每回合伤害、守层者每回合对我方伤害、我方每次出手的伤害
+func _fight_both(s: XState, troop: int) -> Dictionary:
+	var logic := XBattleLogic.new()
+	logic.setup(troop, s)
+	logic.auto = true
+	var ours := 0.0
+	var theirs := 0.0
+	var hits := []
+	var done := 0
+	for r in turns:
+		for e in logic.enemies:
+			if e.is_alive():
+				e.hp = e.mhp
+		for a in logic.actors:
+			if a.hp <= 0:
+				a.remove_state(1)
+			a.hp = a.mhp
+		logic.start_turn()
+		logic.take_turn_start_logs()
+		var count := 0
+		while count < 80:
+			var u := logic.next_subject()
+			if u == null:
+				break
+			count += 1
+			var cmd := logic.decide(u)
+			var eb := _enemy_hp(logic)
+			var pb := _party_hp(logic)
+			logic.act(u, cmd[0], cmd[1])
+			if u is XActor:
+				var d := maxf(0.0, eb - _enemy_hp(logic))
+				ours += d
+				if d > 0.0:
+					hits.append(d)
+			else:
+				theirs += maxf(0.0, pb - _party_hp(logic))
+			if logic.is_over():
+				break
+		done += 1
+		if logic.is_won() or logic.aborted:
+			break
+		if logic.is_lost():
+			continue   # 一回合内团灭：下回合开头复活补满接着量
+		logic.end_turn()
+	hits.sort()
+	var n := maxf(1.0, float(done))
+	return {"dmg": ours / n, "enemyDmg": theirs / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
+		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0)}
+
+
+func _run_both(list: Array) -> void:
+	var rows := []
+	for f in floors:
+		var per := []
+		for team in list:
+			per.append(_fight_both(_state(team, f), int(GUARDIAN[f])))
+		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": atk_scale,
+			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)),
+			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
+			"enemyHp": per[0].enemyHp, "teams": per}
+		rows.append(row)
+		print("BOTH floor=%d dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [f, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+	XEnemy.force_roll = -1.0
+	if out_path != "":
+		var fh := FileAccess.open(out_path, FileAccess.WRITE)
+		fh.store_string(JSON.stringify({"mode": "both", "resist": resist, "turns": turns, "teams": list, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)

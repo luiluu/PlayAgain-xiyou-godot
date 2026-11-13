@@ -366,6 +366,7 @@ func refresh_passive() -> void:
 	for o in objs:
 		for m in XActor._scan(str(o.get("note", "")), "<passiveHarmRe(\\d+):\\s*([\\d.]+)>"):
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
+	c.harmRe = XGuardianRework.harm_re(self, c.harmRe)  # 守层者重算（O-待定-4）：量数时换伤害抵抗
 	_passive_cache = c
 	_passive_sig = _passive_signature()
 
