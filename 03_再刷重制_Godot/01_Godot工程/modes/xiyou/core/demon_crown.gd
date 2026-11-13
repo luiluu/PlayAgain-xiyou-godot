@@ -129,7 +129,7 @@ static func owned(s: XState) -> Array:
 		if is_gear(e) and base_id(e) == ARMOR:
 			out.append(e)
 	for a in s.actors.values():
-		for e in a.equip_list():
+		for e in a.raw_equip_list():
 			if is_gear(e) and base_id(e) == ARMOR and not out.any(func(x): return is_same(x, e)):
 				out.append(e)
 	return out
