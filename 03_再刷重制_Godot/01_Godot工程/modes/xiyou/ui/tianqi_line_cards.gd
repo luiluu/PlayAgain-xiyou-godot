@@ -151,6 +151,16 @@ func _make_card(i: int) -> Control:
 		done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		card.add_child(done)
 		card.done_tag = done
+		var badge_tex := XTianqiQiyinArt.badge_texture(key)  # 美术 O3 骑士徽记
+		if badge_tex != null:
+			var badge := TextureRect.new()
+			badge.texture = badge_tex
+			badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			badge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			badge.size = Vector2(64, 64)
+			badge.position = Vector2(CARD.x - 72, 8)
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(badge)
 	if not ok:
 		var tag := XUI.label("还没修好", 18, Color(0.85, 0.82, 0.86))
 		tag.position = Vector2(0, FIG_H / 2.0)
