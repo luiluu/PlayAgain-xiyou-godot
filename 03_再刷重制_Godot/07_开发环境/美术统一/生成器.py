@@ -121,80 +121,96 @@ def 找脖子行(图) -> int:
     return 默认脖子行
 
 
-def 头的下摆(图, 脖) -> np.ndarray:
-    """头伸到脖子行以下的部分：压在肩膀上的下巴、垂下来的头发，连同贴着它们的描边。返回整块的罩。
+def 头发色(站, 颈肤) -> set:
+    """头顶 10 行里出现过两次以上的非描边颜色算头发的颜色；脸上的肤色不算（光头）。"""
+    ys = np.where((站[..., 3] > 0).any(1))[0]
+    if len(ys) == 0:
+        return set()
+    顶 = int(ys.min())
+    冠 = 站[顶:顶 + 10]
+    冠色: dict = {}
+    for 点 in 冠[(冠[..., 3] > 0) & (亮度(冠[..., :3]) >= 40)][:, :3]:
+        冠色[tuple(点)] = 冠色.get(tuple(点), 0) + 1
+    return {色 for 色, 次 in 冠色.items() if 次 >= 2} - 颈肤
 
-    认法是从脖子行的上一行往下「漫」：头发的颜色（头顶出现过的）能一直漫下去，
-    脸的颜色最多漫 3 行（下巴），碰到描边就停。
+
+def 下摆一格(块, 切, 发色, 头上=None) -> np.ndarray:
+    """一格里，头伸到分界行「切」以下的部分：压在肩膀上的下巴、垂下来的头发，连同贴着它们的描边。
+
+    认法是从分界行的上一行往下「漫」：头发的颜色能一直漫下去，脸的颜色最多漫 3 行（下巴），碰到描边就停。
+    「头上」是分界行以上哪些点算头（不给就是全部）；行走图、战斗图共用。
     """
+    高, 宽 = 块.shape[:2]
+    实 = 块[..., 3] > 0
+    if 头上 is None:
+        头上 = 实.copy()
+        头上[切:] = False
+    暗 = 实 & (亮度(块[..., :3]) < 40)
+    选 = np.zeros((高, 宽), bool)
+    if not 0 < 切 < 高:
+        return 选
+    颌 = 块[max(切 - 3, 0):切]
+    颌罩 = 头上[max(切 - 3, 0):切] & (亮度(颌[..., :3]) >= 40)
+    颌色 = {tuple(p) for p in 颌[颌罩][:, :3]} - 发色
+    栈 = [(切 - 1, x) for x in range(宽) if 头上[切 - 1, x] and not 暗[切 - 1, x]]
+    见 = set(栈)
+    while 栈:
+        y, x = 栈.pop()
+        if y >= 切:
+            选[y, x] = True
+        是发 = tuple(块[y, x, :3]) in 发色
+        for dy, dx in ((1, 0), (0, -1), (0, 1), (-1, 0)) + (((1, 1), (1, -1)) if 是发 else ()):
+            yy, xx = y + dy, x + dx
+            if not (切 - 1 <= yy < 高 and 0 <= xx < 宽) or (yy, xx) in 见 or not 实[yy, xx] or 暗[yy, xx]:
+                continue
+            if yy == 切 - 1 and not 头上[yy, xx]:
+                continue
+            色 = tuple(块[yy, xx, :3])
+            if 色 in 发色 or (色 in 颌色 and yy <= 切 + 2):
+                见.add((yy, xx))
+                栈.append((yy, xx))
+    边 = np.zeros((高, 宽), bool)
+    for y, x in zip(*np.where(暗)):                   # 贴着下巴、发梢的描边
+        if y >= 切 and any(0 <= y + dy < 高 and 0 <= x + dx < 宽 and 选[y + dy, x + dx]
+                          for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
+            边[y, x] = True
+    for y, x in zip(*np.where(暗)):                   # 描边有两点宽的地方，把外面那一点也带上
+        if y >= 切 and not 边[y, x] and any(0 <= x + dx < 宽 and 边[y, x + dx] for dx in (-1, 1)):
+            选[y, x] = True
+    选 |= 边
+    # 悬空的描边（正下方没有身体托着）是伸到身体外面的发梢，也算头的；只看分界行下 3 行，而且要和头连着
+    悬 = np.zeros((高, 宽), bool)
+    底 = min(切 + 2, 高 - 1)
+    for y in range(底, 切 - 1, -1):
+        for x in np.where(暗[y] & ~选[y])[0]:
+            下 = y + 1
+            托 = 下 < 高 and 实[下, x] and not 选[下, x] and not 悬[下, x]
+            悬[y, x] = not 托
+    栈 = [(y, x) for y, x in zip(*np.where(悬))
+          if any(0 <= y + dy < 高 and 0 <= x + dx < 宽 and (选[y + dy, x + dx] or (y + dy < 切 and 头上[y + dy, x + dx]))
+                 for dy in (-1, 0, 1) for dx in (-1, 0, 1))]
+    连 = set(栈)
+    while 栈:
+        y, x = 栈.pop()
+        选[y, x] = True
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                yy, xx = y + dy, x + dx
+                if 0 <= yy < 高 and 0 <= xx < 宽 and 悬[yy, xx] and (yy, xx) not in 连:
+                    连.add((yy, xx))
+                    栈.append((yy, xx))
+    return 选
+
+
+def 头的下摆(图, 脖) -> np.ndarray:
+    """行走图 12 帧的头的下摆，返回整块的罩。"""
     罩 = np.zeros(图.shape[:2], bool)
     正 = 取格(图, 0, 站立列)
-    颈肤 = {tuple(正[y, x, :3]) for y in range(脖 - 8, 脖) for x in range(20, 28) if 正[y, x, 3] > 0}   # 脸下半截的颜色是皮肤，不算头发（光头）
+    颈肤 = {tuple(正[y, x, :3]) for y in range(脖 - 8, 脖) for x in range(20, 28) if 正[y, x, 3] > 0}   # 脸下半截的颜色是皮肤
     for 行 in range(行数):
-        站 = 取格(图, 行, 站立列)
-        ys = np.where((站[..., 3] > 0).any(1))[0]
-        if len(ys) == 0:
-            continue
-        顶 = int(ys.min())
-        冠 = 站[顶:顶 + 10]
-        冠色: dict = {}
-        for 点 in 冠[(冠[..., 3] > 0) & (亮度(冠[..., :3]) >= 40)][:, :3]:
-            冠色[tuple(点)] = 冠色.get(tuple(点), 0) + 1
-        发色 = {色 for 色, 次 in 冠色.items() if 次 >= 2} - 颈肤
+        发色 = 头发色(取格(图, 行, 站立列), 颈肤)
         for 列 in range(列数):
-            块 = 取格(图, 行, 列)
-            切 = 脖 + 头沉(图, 行, 列)
-            实 = 块[..., 3] > 0
-            暗 = 实 & (亮度(块[..., :3]) < 40)
-            颌 = 块[切 - 3:切]
-            颌色 = {tuple(p) for p in 颌[(颌[..., 3] > 0) & (亮度(颌[..., :3]) >= 40)][:, :3]} - 发色
-            选 = np.zeros((格, 格), bool)
-            栈 = [(切 - 1, x) for x in range(格) if 实[切 - 1, x] and not 暗[切 - 1, x]]
-            见 = set(栈)
-            while 栈:
-                y, x = 栈.pop()
-                if y >= 切:
-                    选[y, x] = True
-                是发 = tuple(块[y, x, :3]) in 发色
-                for dy, dx in ((1, 0), (0, -1), (0, 1), (-1, 0)) + (((1, 1), (1, -1)) if 是发 else ()):
-                    yy, xx = y + dy, x + dx
-                    if not (切 - 1 <= yy < 格 and 0 <= xx < 格) or (yy, xx) in 见 or not 实[yy, xx] or 暗[yy, xx]:
-                        continue
-                    色 = tuple(块[yy, xx, :3])
-                    if 色 in 发色 or (色 in 颌色 and yy <= 切 + 2):
-                        见.add((yy, xx))
-                        栈.append((yy, xx))
-            边 = np.zeros((格, 格), bool)
-            for y, x in zip(*np.where(暗)):                   # 贴着下巴、发梢的描边
-                if y >= 切 and any(0 <= y + dy < 格 and 0 <= x + dx < 格 and 选[y + dy, x + dx]
-                                  for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
-                    边[y, x] = True
-            for y, x in zip(*np.where(暗)):                   # 描边有两点宽的地方，把外面那一点也带上
-                if y >= 切 and not 边[y, x] and any(0 <= x + dx < 格 and 边[y, x + dx] for dx in (-1, 1)):
-                    选[y, x] = True
-            选 |= 边
-            # 悬空的描边（正下方没有身体托着）是伸到身体外面的发梢，也算头的；只看脖子下 3 行，而且要和头连着
-            悬 = np.zeros((格, 格), bool)
-            底 = min(切 + 2, 格 - 1)
-            for y in range(底, 切 - 1, -1):
-                for x in np.where(暗[y] & ~选[y])[0]:
-                    下 = y + 1
-                    托 = 下 < 格 and 实[下, x] and not 选[下, x] and not 悬[下, x]
-                    悬[y, x] = not 托
-            栈 = [(y, x) for y, x in zip(*np.where(悬))
-                  if any(0 <= y + dy < 格 and 0 <= x + dx < 格 and (选[y + dy, x + dx] or (y + dy < 切 and 实[y + dy, x + dx]))
-                         for dy in (-1, 0, 1) for dx in (-1, 0, 1))]
-            连 = set(栈)
-            while 栈:
-                y, x = 栈.pop()
-                选[y, x] = True
-                for dy in (-1, 0, 1):
-                    for dx in (-1, 0, 1):
-                        yy, xx = y + dy, x + dx
-                        if 0 <= yy < 格 and 0 <= xx < 格 and 悬[yy, xx] and (yy, xx) not in 连:
-                            连.add((yy, xx))
-                            栈.append((yy, xx))
-            罩[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 选
+            罩[行 * 格:(行 + 1) * 格, 列 * 格:(列 + 1) * 格] = 下摆一格(取格(图, 行, 列), 脖 + 头沉(图, 行, 列), 发色)
     return 罩
 
 
@@ -228,7 +244,7 @@ def 去领口(图, 脖) -> int:
 
 # ---------- 换色 ----------
 
-def 选罩(图, 项) -> np.ndarray:
+def 选罩(图, 项, 格子=格) -> np.ndarray:
     """按「选色」挑出同一种材质的像素：色相接近、饱和度接近；选的是灰白黑时按亮度挑。"""
     实 = 图[..., 3] > 0
     h, s = 色相饱和(图)
@@ -237,7 +253,7 @@ def 选罩(图, 项) -> np.ndarray:
         罩 = np.zeros(图.shape[:2], bool)
         for 色 in 项["选色"]:
             罩 |= (图[..., :3] == np.round(十六进制(色)).astype(np.int32)).all(-1)
-        return 罩 & 实 & 限定(图, 项)
+        return 罩 & 实 & 限定(图, 项, 格子)
     选 = 十六进制(项["选色"])[None, None, :]
     sh, ss = 色相饱和(选)
     sh, ss, sL = float(sh[0, 0]), float(ss[0, 0]), float(亮度(选)[0, 0])
@@ -248,18 +264,18 @@ def 选罩(图, 项) -> np.ndarray:
         距 = np.minimum(距, 360 - 距)
         罩 = 实 & (距 <= 项.get("色相容差", 18)) & (s >= 项.get("最低饱和", 0.15)) & (np.abs(s - ss) <= 项.get("饱和容差", 0.35))
         罩 &= L >= 项.get("最低亮度", 25)      # 近黑的描边不动
-    return 罩 & 限定(图, 项)
+    return 罩 & 限定(图, 项, 格子)
 
 
-def 限定(图, 项) -> np.ndarray:
+def 限定(图, 项, 格子=格) -> np.ndarray:
     罩 = np.ones(图.shape[:2], bool)
     if "行范围" in 项:                         # 只换格子里第几行到第几行（含两头），比如只换裤子
         上, 下 = 项["行范围"]
-        行号 = np.arange(图.shape[0]) % 格
+        行号 = np.arange(图.shape[0]) % 格子
         罩 &= ((行号 >= 上) & (行号 <= 下))[:, None]
     if "列范围" in 项:                         # 格子里第几列到第几列（含两头）
         左, 右 = 项["列范围"]
-        列号 = np.arange(图.shape[1]) % 格
+        列号 = np.arange(图.shape[1]) % 格子
         罩 &= ((列号 >= 左) & (列号 <= 右))[None, :]
     if "方向" in 项:
         限 = np.zeros(图.shape[:2], bool)
@@ -270,8 +286,16 @@ def 限定(图, 项) -> np.ndarray:
     return 罩
 
 
-def 换色(图, 项) -> int:
-    罩 = 选罩(图, 项)
+def 换色(图, 项, 格子=格) -> int:
+    if "对应" in 项:                           # 一种颜色换成指定的另一种，逐个点名，最听话
+        限 = (图[..., 3] > 0) & 限定(图, 项, 格子)
+        改 = [((图[..., :3] == np.round(十六进制(旧)).astype(np.int32)).all(-1) & 限, 新) for 旧, 新 in 项["对应"].items()]
+        数 = 0
+        for 罩, 新 in 改:
+            图[罩, :3] = np.round(十六进制(新)).astype(np.int32)
+            数 += int(罩.sum())
+        return 数
+    罩 = 选罩(图, 项, 格子)
     if not 罩.any():
         return 0
     L = 亮度(图[..., :3])
@@ -285,11 +309,12 @@ def 换色(图, 项) -> int:
 # ---------- 拼 ----------
 
 def 去孤点(块, 切):
-    """脖子附近和谁都不挨着的三两个点（旧发梢擦剩下的）擦掉。"""
+    """分界行附近和谁都不挨着的三两个点（旧发梢擦剩下的）擦掉。"""
+    高, 宽 = 块.shape[:2]
     实 = 块[..., 3] > 0
-    见 = np.zeros((格, 格), bool)
-    for y0 in range(max(切 - 1, 0), min(切 + 6, 格)):
-        for x0 in range(格):
+    见 = np.zeros((高, 宽), bool)
+    for y0 in range(max(切 - 1, 0), min(切 + 6, 高)):
+        for x0 in range(宽):
             if not 实[y0, x0] or 见[y0, x0]:
                 continue
             堆, 栈 = [], [(y0, x0)]
@@ -300,7 +325,7 @@ def 去孤点(块, 切):
                 for dy in (-1, 0, 1):
                     for dx in (-1, 0, 1):
                         yy, xx = y + dy, x + dx
-                        if 0 <= yy < 格 and 0 <= xx < 格 and 实[yy, xx] and not 见[yy, xx]:
+                        if 0 <= yy < 高 and 0 <= xx < 宽 and 实[yy, xx] and not 见[yy, xx]:
                             见[yy, xx] = True
                             栈.append((yy, xx))
             if len(堆) <= 4:
@@ -326,7 +351,7 @@ def 拼(配方, 素材: Path, 配方目录: Path):
         if 部位 in ("身体", "全部"):
             数 += 换色(身图, 项)
         if 数 == 0:
-            提示.append(f"换色「{项.get('名', 项['选色'])}」在{部位}上一个点都没选中")
+            提示.append(f"换色「{项.get('名', 项.get('选色'))}」在{部位}上一个点都没选中")
     出 = np.zeros((行数 * 格, 列数 * 格, 4), np.int32)
     空洞, 出顶 = 0, 0
     for 行 in range(行数):
@@ -444,33 +469,38 @@ def 命令_目录(参):
 
 # ---------- 取色 ----------
 
+def 列颜色(名, 点们):
+    """把一堆像素的颜色按色相分组打印出来，每组给一个建议的「选色」和从暗到亮的全部颜色。"""
+    数: dict = {}
+    for 点 in 点们:
+        色 = tuple(int(v) for v in 点[:3])
+        数[色] = 数.get(色, 0) + 1
+    组: dict = {}
+    for 色, 次 in 数.items():
+        a = np.array(色, float)[None, None, :]
+        h, s = 色相饱和(a)
+        h, s, L = float(h[0, 0]), float(s[0, 0]), float(亮度(a)[0, 0])
+        键 = "近黑描边" if L < 25 else ("灰白" if s < 0.15 else f"色相{int(h // 24) * 24:03d}")
+        组.setdefault(键, []).append((L, 色, 次))
+    print(f"【{名}】")
+    for 键, 列 in sorted(组.items(), key=lambda kv: -sum(c for _, _, c in kv[1])):
+        总 = sum(c for _, _, c in 列)
+        if 总 < 6:
+            continue
+        列.sort()
+        多 = max(列, key=lambda v: v[2])[1]
+        列 = [v for v in 列 if v[2] >= 3] or 列
+        样 = " ".join("#%02X%02X%02X" % 色 for _, 色, _ in (列 if len(列) <= 12 else 列[:: len(列) // 10 + 1]))
+        print(f"  {键:8s} {总:5d} 点  选色 #%02X%02X%02X  从暗到亮：{样}" % 多)
+
+
 def 命令_取色(参):
     图 = 读部件(Path(参.素材), 参.部件)
     脖 = 参.脖子行 or 找脖子行(图)
     print(f"脖子行 {脖}")
     行号 = (np.arange(图.shape[0]) % 格)[:, None] * np.ones((1, 图.shape[1]), int)
     for 名, 区 in (("头", 行号 < 脖), ("身体", 行号 >= 脖)):
-        罩 = (图[..., 3] > 0) & 区
-        数: dict = {}
-        for 点 in 图[罩][:, :3]:
-            数[tuple(int(v) for v in 点)] = 数.get(tuple(int(v) for v in 点), 0) + 1
-        组: dict = {}
-        for 色, 次 in 数.items():
-            a = np.array(色, float)[None, None, :]
-            h, s = 色相饱和(a)
-            h, s, L = float(h[0, 0]), float(s[0, 0]), float(亮度(a)[0, 0])
-            键 = "近黑描边" if L < 25 else ("灰白" if s < 0.15 else f"色相{int(h // 24) * 24:03d}")
-            组.setdefault(键, []).append((L, 色, 次))
-        print(f"【{名}】")
-        for 键, 列 in sorted(组.items(), key=lambda kv: -sum(c for _, _, c in kv[1])):
-            总 = sum(c for _, _, c in 列)
-            if 总 < 6:
-                continue
-            列.sort()
-            多 = max(列, key=lambda v: v[2])[1]
-            列 = [v for v in 列 if v[2] >= 3] or 列
-            样 = " ".join("#%02X%02X%02X" % 色 for _, 色, _ in (列 if len(列) <= 12 else 列[:: len(列) // 10 + 1]))
-            print(f"  {键:8s} {总:5d} 点  选色 #%02X%02X%02X  从暗到亮：{样}" % 多)
+        列颜色(名, 图[(图[..., 3] > 0) & 区])
 
 
 def main(argv=None):
