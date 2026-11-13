@@ -491,7 +491,7 @@ func view(b: XBattler) -> Dictionary:
 ## 只要血量、上限、倒没倒的读数（敌人血条、名字淡入淡出、Boss 血条，每帧都读）。不在演出中时直接读实时状态，
 ## 不再每帧整份算 view_of（状态格排序、能否行动、指示器……）：敌人身上状态多时（玩家反馈 v0.01.07 敌方异常 22 层）一次要
 ## 1 毫秒以上，每帧四五次，行动之间整个画面变卡。三项与 view_of 里的取法相同（b.hp、b.mhp、b.is_dead()）。
-## 回退：VIEW_LITE = false 回到每次整份 view_of（O-待定）。
+## 回退：VIEW_LITE = false 回到每次整份 view_of（O-385）。
 static var VIEW_LITE := true
 
 

@@ -567,7 +567,7 @@ static func weapon_masters() -> Array:
 ## （原版另排除 CodexV029.hiddenGear，v0.62.12 恒为 false）
 ## 战斗胜利结算（unlock_specs）每场都要算一遍：扫全部武器（四千件）＋本命兵技能表，桌面约 3～4 毫秒、第一次 70 毫秒以上，
 ## 手机上是退出战斗时的一下卡顿（玩家反馈 v0.01.07）。数据库不变，按武器表、技能表、系统表留一份；拿到的是副本。
-## 回退：WEAPON_TYPES_CACHE = false 回到每次现算、技能备注逐条跑正则（O-待定）。
+## 回退：WEAPON_TYPES_CACHE = false 回到每次现算、技能备注逐条跑正则（O-386）。
 static var WEAPON_TYPES_CACHE := true
 static var _weapon_types_memo := []
 static var _weapon_types_key := []

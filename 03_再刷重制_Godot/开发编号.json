@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.546",
-  "sequence": 546,
-  "next": "dev.547",
-  "nextSequence": 547,
+  "current": "dev.547",
+  "sequence": 547,
+  "next": "dev.548",
+  "nextSequence": 548,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "battle-auto-default",
+  "currentChange": "battle-lag",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
