@@ -40,15 +40,23 @@ func _summary(rep: Dictionary) -> String:
 	var lines := ["## 虚拟玩家（%s，种子 %d）" % ["爬塔" if rep.mode == "climb" else "逛图", int(rep.seed)], ""]
 	if rep.mode == "climb":
 		lines.append("- 爬到：**第 %d 层**（已通过 %d 层）" % [int(rep.floor), maxi(0, int(rep.floor) - 1)])
+		if int(rep.debug_floor) > 0 or not rep.debug_items.is_empty():
+			lines.append("- **调试局**：层数直接改成了 %d、开局给了物品 %s，结果不算正常通关" % [int(rep.debug_floor), str(rep.debug_items)])
+		lines.append("- 开局阵容：%s%s" % [str(rep.lineup), "" if rep.fixed_random else "（随机没有固定）"])
 		lines.append("- 收工原因：%s" % (str(rep.climb_stop) if rep.climb_stop != "" else "步数用完或达到目标"))
 		lines.append("- 全灭 %d 次，挂机练级 %d 场，队伍等级 %s" % [int(rep.defeats), int(rep.grind_battles), str(rep.levels)])
 		lines.append("- 去装备页 %d 次，一共换上 %d 件装备" % [int(rep.equip_passes), int(rep.equip_changes)])
-		lines.append("- 副本：进了 %d 次，打倒首领 %d 次，在副本里全灭 %d 次" % [int(rep.dungeon_runs), int(rep.dungeon_kills), int(rep.dungeon_defeats)])
+		lines.append("- 副本：进了 %d 次，打倒首领 %d 次，在副本里全灭或僵局 %d 次" % [int(rep.dungeon_runs), int(rep.dungeon_kills), int(rep.dungeon_defeats)])
+		if int(rep.stalemates) > 0:
+			lines.append("- **僵局 %d 场**（打了 40 回合以上还分不出胜负，当成打不过放弃）" % int(rep.stalemates))
 		for f in rep.farm_block:
 			lines.append("  - 第 %s 层不再刷副本：%s" % [str(f), str(rep.farm_block[f])])
 		var g: Dictionary = rep.growth
 		if not g.is_empty():
 			lines.append("- 养成：真气 %s，境界 %s，抽奖券 %d，肝帝积分 %d" % [str(g.zhenqi), "、".join(g.realms), int(g.tickets), int(g.points)])
+			var m: Dictionary = g.get("materials", {})
+			if not m.is_empty():
+				lines.append("- 宝珠：身上镶了 %d 颗，背包里神秘珠 %d、残片 %d；种族阶位 %s，进阶石 %s；抽奖 %d 次" % [int(m.gems), int(m.pearls), int(m.fragments), str(m.race_ranks), str(m.stones), int(g.get("lottery_draws", 0))])
 		if not rep.growth_log.is_empty():
 			lines.append("- 养成动作 %d 次：%s" % [rep.growth_log.size(), "；".join(rep.growth_log.slice(0, 12).map(func(x): return "第 %d 层 %s" % [int(x.floor), str(x.what)]))])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
@@ -66,12 +74,12 @@ func _summary(rep: Dictionary) -> String:
 			lines.append("| %d | %.1f | %d | %d | %d | %d／%d／%d | %s |" % [int(r.floor), float(r.msec) / 60000.0, int(r.get("challenges", 0)), int(r.defeats), int(r.grind_battles),
 				int(r.get("dungeon_kills", 0)), int(r.get("dungeon_runs", 0)), int(r.get("dungeon_defeats", 0)), str(r.levels)])
 		# 全灭的那几场差多远：敌人开打时的血、收工时剩的血、打到第几回合
-		var fights: Array = rep.battles.filter(func(b): return b.get("result", "") == "全灭" and b.has("hp0"))
+		var fights: Array = rep.battles.filter(func(b): return ["全灭", "僵局"].has(b.get("result", "")) and b.has("hp0"))
 		if not fights.is_empty():
 			lines.append("")
-			lines.append("全灭的战斗（最近 8 场）：")
-			for b in fights.slice(-8):
-				lines.append("- 第 %d 层 敌群 %d：敌人血量 %s → 剩 %s（打掉 %.1f%%），第 %d 回合" % [int(b.get("floor", 0)), int(b.get("troop", 0)), str(int(b.hp0)), str(int(b.get("hp", b.hp0))),
+			lines.append("没打赢的战斗（最近 10 场）：")
+			for b in fights.slice(-10):
+				lines.append("- 第 %d 层 敌群 %d %s：敌人血量 %s → 剩 %s（打掉 %.1f%%），第 %d 回合" % [int(b.get("floor", 0)), int(b.get("troop", 0)), str(b.result), str(int(b.hp0)), str(int(b.get("hp", b.hp0))),
 					100.0 * (1.0 - float(b.get("hp", b.hp0)) / maxf(1.0, float(b.hp0))), int(b.get("turn", 0))])
 	return "\n".join(lines) + "\n"
 
@@ -88,7 +96,12 @@ func _run() -> void:
 	bot.farm_first = int(_arg("--vp-farm-first", "0"))
 	bot.fixed_random = not OS.get_cmdline_user_args().has("--vp-loose-random")
 	bot.debug_floor = int(_arg("--vp-debug-floor", "0"))
+	for pair in _arg("--vp-debug-items").split(",", false):
+		bot.debug_items[int(pair.get_slice(":", 0))] = int(pair.get_slice(":", 1))
 	bot.zhenqi_enabled = not OS.get_cmdline_user_args().has("--vp-no-zhenqi")
+	bot.orbs_enabled = not OS.get_cmdline_user_args().has("--vp-no-orbs")
+	bot.race_enabled = not OS.get_cmdline_user_args().has("--vp-no-race")
+	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
@@ -106,6 +119,9 @@ func _run() -> void:
 	# --vp-tag：同一个种子同时跑两局（对比用）时给存档目录加个后缀，免得两局互相读到对方的存档
 	XSave.dir_override = "user://test_virtual_player/%d%s" % [bot.rng_seed, _arg("--vp-tag")]
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	# 上一局被中途杀掉时存档会留在测试目录里，机器人在标题看到存档会去读它：开局前先清掉（只清这个测试目录）
+	for i in range(1, XSave.SLOTS + 1):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(XSave.path(i)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
