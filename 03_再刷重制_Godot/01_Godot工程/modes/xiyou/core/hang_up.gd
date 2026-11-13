@@ -30,6 +30,10 @@ static var AUTO_SAVE_SETTING := true
 ## 原版看全局标记：开始挂机时设、按键停止时清，读档、回标题都不清，读档后没在挂机也会被拦；这里改看是否正在挂机。
 ## 设 false 恢复原版（看 started_flag：开始挂机时设、stop 时清，同一次运行内读档不清）。
 static var GATE_ACTIVE_ONLY := true
+## O-373：挂机被禁用（新游戏开局 Map001 就 ProhibitHangUp，要先按 L＝公共事件 484 或找大厅大工匠开启）时，
+## 原版按 G 什么都不做、也没有提示，玩家以为挂机坏了（v0.01.06 玩家反馈）。这里改成按 G 时照 L 的公共事件走一遍：
+## 副本外直接开启并提示「摆烂功能已开启」，副本里提示去传送门重置；开启后再按 G 才开始挂机。设 false 恢复原版（只清除状态）。
+static var KEY_ENABLES := true
 ## 原版的 GuaJiStartBettleOk（只在 GATE_ACTIVE_ONLY＝false 时用）：运行期全局，不进存档
 static var started_flag := false
 

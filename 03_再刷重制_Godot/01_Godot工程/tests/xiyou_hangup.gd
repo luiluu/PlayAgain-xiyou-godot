@@ -126,6 +126,26 @@ func _run() -> void:
 	check("plugin_enable", XHangUp.enabled(s) and interp.skipped.is_empty())
 	interp._plugin_command("ProhibitHangUp")
 	check("plugin_prohibit", not XHangUp.enabled(s))
+	# 禁用时按 G（v0.01.06 玩家反馈「挂机没反应」：新游戏开局就禁用，原版要先按 L）：照 L 的公共事件 484 开启，不直接开始（O-373）
+	await frames(2)
+	await key_g()
+	check("g_enables_when_prohibited", await until(func(): return XHangUp.enabled(s) and not map.busy, 600) and not XHangUp.is_active(s), [s.flags.get("HangUpProhibited"), map.busy])
+	# 副本里（变量 21 非 0）：公共事件只提示去重置，仍禁用
+	s.flags.HangUpProhibited = true
+	s.set_variable(21, 1)
+	s.set_variable(6, 1)
+	await key_g()
+	await frames(60)
+	await until(func(): return not map.busy, 600)
+	check("g_in_dungeon_stays_prohibited", not XHangUp.enabled(s) and not XHangUp.is_active(s))
+	s.set_variable(21, 0)
+	s.set_variable(6, 0)
+	# 回退开关：原版禁用时 G 只清除状态
+	XHangUp.KEY_ENABLES = false
+	await key_g()
+	await frames(60)
+	check("g_rollback_stays_prohibited", not XHangUp.enabled(s) and not XHangUp.is_active(s))
+	XHangUp.KEY_ENABLES = true
 	s.flags.HangUpProhibited = false
 	# 一层：G 键开始
 	await map.load_map(5, 11, 13, 2)

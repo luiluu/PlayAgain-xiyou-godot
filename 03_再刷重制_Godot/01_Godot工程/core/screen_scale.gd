@@ -6,17 +6,31 @@ extends RefCounted
 ## 战斗图最近邻放大 1.5、2.25 这类非整数倍，像素宽窄不一，看着发硬发锐。
 ## 开着「画面平滑」时根窗口改用 viewport 缩放：先画 1280×720，再整幅双线性放大到屏幕，与原版观感一致（安卓上还少画像素）。
 ## 关掉回到 canvas_items（文字、图标按屏幕分辨率画，最清晰）。
-## 默认：触屏（安卓）开、桌面关（桌面窗口多是 1:1 或 Retina 2 倍，原先已按物理像素处理过清晰度）。设置页「画面平滑」可改，存配置。
+## 默认：各平台都关（玩家反馈 v0.01.06「画质变低」，O-369）。dev497 起触屏默认开，手机屏多是 2400×1080 这类，
+## 1280×720 整幅放大 1.5 倍后文字、图标发糊；现在照 v0.01 默认清晰，想要柔和的在设置页「画面平滑」自己开，存配置。
 ## 回退：ENABLED = false 时不论设置都用 canvas_items、设置页也不列这一项。
+## 回退：TOUCH_DEFAULT_ON = true 回到 dev497（触屏默认开；配置里存过的值不论是不是玩家自己选的都认）。
 
 static var ENABLED := true
+## O-369：true＝dev497 的默认（触屏开、桌面关）；false＝各平台默认关，且只认玩家在设置页亲手选过的值
+static var TOUCH_DEFAULT_ON := false
 ## 配置键（XConfig）；没存过时按 default_on()
 const KEY := "codexScreenSmooth"
+## 玩家在设置页亲手改过「画面平滑」的记号（XConfig 原样存读）。dev497～ 的配置会把触屏默认的 true 连同别的设置一起写进文件，
+## 没有这个记号就分不清是玩家选的还是默认写进去的，所以没记号的一律当没选过、按 default_on()
+const CHOSEN_KEY := "codexScreenSmoothChosen"
 
 
-## 没存过设置时的默认值：触屏开、桌面关
+## 没存过设置时的默认值：都关（TOUCH_DEFAULT_ON 时触屏开、桌面关）
 static func default_on() -> bool:
-	return XPlatform.is_touch()
+	return TOUCH_DEFAULT_ON and XPlatform.is_touch()
+
+
+## 读配置文件里的「画面平滑」：玩家亲手选过（有 CHOSEN_KEY）才认存的值，否则按 default_on()
+static func saved_value(data: Dictionary) -> bool:
+	if data.get(KEY) is bool and (TOUCH_DEFAULT_ON or data.get(CHOSEN_KEY) == true):
+		return data[KEY]
+	return default_on()
 
 
 ## 现在该不该平滑（开关关掉恒为否）
@@ -47,5 +61,7 @@ static func screen_to_view(viewport: Viewport) -> Transform2D:
 	if ws.x <= 0 or ws.y <= 0 or vs.x <= 0 or vs.y <= 0:
 		return Transform2D()
 	var k := minf(ws.x / vs.x, ws.y / vs.y)
+	if win.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER:  # 整数倍缩放（XGraphics）：只按整倍放大，其余留黑边
+		k = maxf(1.0, floorf(k))
 	var off := (ws - vs * k) / 2.0
 	return Transform2D(0.0, Vector2(k, k), 0.0, off).affine_inverse()

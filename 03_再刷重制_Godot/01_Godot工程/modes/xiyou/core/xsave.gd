@@ -10,6 +10,12 @@ const BACKUP_FIRST := 11
 static var dir_override := ""
 ## 最近一次成功存档/读档的格（installV010UsabilityRuntime：一键存档存到这一格）；新游戏到第一次存档前为 0，一键存档改为选格
 static var current_slot := 0
+## 【cc·未经审查】玩家反馈 v0.01.06「存档之后存不上，读档页看不到存档」：178 哈基米去掉副手（XCat.equip_slots）后装备栏只有 18 格，
+## 读档校验却要求每名角色都是 19 格，队里建过 178 的档整份判成坏档（读档页当空格、标题「旧的回忆」灰），存档照写照覆盖旧档。
+## true：178 按自己的槽数（少副手一格）也算合法；false 回旧校验（只认 19 格）。
+static var CAT_SLOTS_OK := true
+## 【cc·未经审查】同上：写盘前先按读档校验核一遍要写的内容，读不回来就不写、返回 false（旧档留着，界面报存档失败）；false 回旧写法（照写）。
+static var SAVE_GUARD := true
 
 
 static func dir() -> String:
@@ -44,11 +50,15 @@ static func save(slot: int) -> bool:
 
 ## 先写同目录临时文件，成功后替换；失败不截断原有存档。
 static func _write(target: String, data: Dictionary) -> bool:
+	var text := JSON.stringify(data)
+	if SAVE_GUARD and not valid_data(JSON.parse_string(text)):
+		push_warning("XSave: 要写的存档读档校验不过，不写，保留旧档：" + target)
+		return false
 	var temp := target + ".tmp"
 	var f := FileAccess.open(temp, FileAccess.WRITE)
 	if f == null:
 		return false
-	f.store_string(JSON.stringify(data))
+	f.store_string(text)
 	f.flush()
 	var ok := f.get_error() == OK
 	f.close()
@@ -189,7 +199,7 @@ static func valid_data(d) -> bool:
 		for field in ["skills", "equips", "states"]:
 			if not row.get(field) is Array:
 				return false
-		if row.equips.size() != XDB.system().equipTypes.size() - 1:
+		if not equips_size_ok(int(key), row.equips.size()):
 			return false
 		if row.has("cooldowns") and not row.cooldowns is Dictionary:
 			return false
@@ -233,6 +243,12 @@ static func valid_data(d) -> bool:
 			seen[int(id)] = true
 	# from_dict 及读完就跑的包装实际读到的其余字段（审计第 10 项）：坏一处就整个不读，不留半个新局
 	return XSaveCheck.top(d)
+
+
+## 角色装备栏格数：数据库装备类型数减 1（19 格）；178 哈基米去掉副手少一格（CAT_SLOTS_OK）
+static func equips_size_ok(actor_id: int, n: int) -> bool:
+	var full: int = XDB.system().equipTypes.size() - 1
+	return n == full or (CAT_SLOTS_OK and actor_id == XCat.ACTOR and n == full - 1)
 
 
 static func _valid_gear(e) -> bool:

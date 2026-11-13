@@ -112,6 +112,7 @@ static func slice() -> Dictionary:
 
 
 func _ready() -> void:
+	XGraphics.smooth_node(self)  # 顺滑移动：地图里按物理帧走的人物、镜头在两帧之间补位置（XGraphics.motion_on）
 	XPlatform.idle_probe = XHangUp.current_active  # 跨平台二期：后台补跑、挂机不锁屏看这个
 	XPlatform.pause_hook = _on_app_pause  # 安卓切后台自动存档（XAutoSave）
 	XPlatform.idle_stopper = XHangUp.stop_current  # 通知上按了「停止挂机」（android-bgidle1）
@@ -2072,6 +2073,12 @@ func toggle_hang_up() -> void:
 		return
 	if XHangUp.is_active(s):
 		XHangUp.stop(s)
+		return
+	if XHangUp.KEY_ENABLES and not XHangUp.enabled(s):
+		# 挂机被禁用：照 L 键的公共事件开启（或在副本里提示），不直接开始（O-373，见 XHangUp.KEY_ENABLES）
+		var ce := XMapHotkeys.event_of(KEY_L)
+		if ce > 0 and hotkeys_open():
+			s.reserve_common_event(ce)
 		return
 	if _vehicle_menu_locked():
 		XSound.system(3)

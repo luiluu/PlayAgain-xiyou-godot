@@ -541,7 +541,7 @@ static func tint(e, t: float) -> Color:
 	var tier := str(look.get("tier", ""))
 	if tier != "":
 		a = float(lk.get("tier_glow", {}).get(tier, 0.0))
-	var fx := XConfig.flag("codexScreenFx")  # 二阶的预兆跟大厅「画面特效」设置一起，可关；异化怪的常亮不关
+	var fx := XGraphics.fx_on()  # 二阶的预兆跟大厅「画面特效」设置一起，可关；异化怪的常亮不关
 	if fx and bool(look.get("pulse", false)):
 		a = maxf(a, float(lk.get("guardian_pulse", 0.0)) * (0.5 - 0.5 * cos(TAU * t / maxf(float(lk.get("period", 6)), 0.01))))
 	if fx and bool(look.get("flash", false)) and t < float(lk.get("fade", 1)):

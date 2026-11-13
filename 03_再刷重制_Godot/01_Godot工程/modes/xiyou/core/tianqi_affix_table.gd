@@ -11,18 +11,22 @@ const GRADES := ["normal", "fine", "perfect"]  # 普通、上品、极
 const MAX_TIER := 4
 
 static var _data := {}
+## 读表失败过（发行包排除了 tianqi_data/）：不再每次查词条都重读、报 JSON 解析错（同 XTianqiSkills._load_failed）
+static var _load_failed := false
 
 
 static func data() -> Dictionary:
-	if _data.is_empty():
-		var d = JSON.parse_string(FileAccess.get_file_as_string(DATA))
+	if _data.is_empty() and not _load_failed:
+		var d = JSON.parse_string(FileAccess.get_file_as_string(DATA)) if FileAccess.file_exists(DATA) else null
 		_data = d if d is Dictionary else {}
+		_load_failed = _data.is_empty()
 	return _data
 
 
 ## 测试用：换掉表（传空字典＝下次重新读文件）
 static func reload(d := {}) -> void:
 	_data = d
+	_load_failed = false
 
 
 static func _find(list_key: String, key: String) -> Dictionary:
