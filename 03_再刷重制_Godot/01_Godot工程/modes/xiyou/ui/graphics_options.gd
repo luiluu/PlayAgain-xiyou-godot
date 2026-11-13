@@ -22,6 +22,7 @@ const TITLE := "画质设置"
 const NOTE := "改了立刻生效并保存。灰色是默认档。"
 ## [键, 名字, 说明]
 const ROWS := [["crisp", "像素柔边", "战斗图放大后像素均匀、不发硬；文字不变"],
+	["motion", "顺滑移动", "走路和镜头不再一顿一顿；游戏速度不变"],
 	["integer", "整数倍缩放", "画面只放大整数倍，像素均匀，四周留黑边"],
 	["fps", "帧率上限", "降低可省电、少发热；游戏速度不变"],
 	["window", "窗口大小", "自动＝按屏幕大小；也可用 F11 切全屏"],
@@ -47,7 +48,7 @@ func _ready() -> void:
 
 ## 本平台列出的行（窗口大小只在桌面；像素柔边的回退开关关掉时不列）
 static func rows() -> Array:
-	return ROWS.filter(func(r): return (r[0] != "window" or not XPlatform.is_mobile()) and (r[0] != "crisp" or XGraphics.CRISP))
+	return ROWS.filter(func(r): return (r[0] != "window" or not XPlatform.is_mobile()) and (r[0] != "crisp" or XGraphics.CRISP) and (r[0] != "motion" or XGraphics.MOTION))
 
 
 func list_rect() -> Rect2:

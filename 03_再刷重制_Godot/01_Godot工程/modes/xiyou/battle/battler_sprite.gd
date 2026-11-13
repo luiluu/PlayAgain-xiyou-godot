@@ -62,7 +62,7 @@ uniform vec4 rift = vec4(0.0);
 uniform bool crisp = false;
 varying vec4 tint;
 void vertex() { tint = COLOR; }
-// 像素柔边（XGraphics，O-待定-1）：最近邻的图放大到非整数倍时，每个像素仍一样大，只在像素交界的一个屏幕像素里过渡。
+// 像素柔边（XGraphics，O-待定-2）：最近邻的图放大到非整数倍时，每个像素仍一样大，只在像素交界的一个屏幕像素里过渡。
 // 取相邻四个像素自己混（按预乘透明度混，透明边不发黑），过渡宽度按屏幕像素算（fwidth）；采样器仍是最近邻。
 void fragment() {
 	vec4 c;
@@ -489,7 +489,7 @@ func _apply_smooth() -> void:
 	_apply_crisp(not smooth)
 
 
-## 像素柔边（XGraphics.crisp_on，O-待定-1）：最近邻的主图挂上身体材质并打开 crisp；平滑采样的图（归一缩小）不用。
+## 像素柔边（XGraphics.crisp_on，O-待定-2）：最近邻的主图挂上身体材质并打开 crisp；平滑采样的图（归一缩小）不用。
 ## 关着且本来没有材质时不建材质（同色相、闪光的约定）。过滤方式不改，仍是最近邻。
 func _apply_crisp(nearest: bool) -> void:
 	var on := nearest and XGraphics.crisp_on()

@@ -7,8 +7,9 @@ extends RefCounted
 ## - fps 帧率上限：0 跟随屏幕、60、30。只限画面刷新（Engine.max_fps）；游戏逻辑按物理帧走（XSpeedGear），速度不变。
 ## - window 窗口大小（只桌面）：auto 照旧（WindowFit 按屏幕九成）、三档固定大小、full 全屏。
 ## - crisp 像素柔边（默认开）：战斗图放大到 1.5 倍这类非整数倍时，像素不再宽窄不一；文字、图标不受影响。
+## - motion 顺滑移动（默认开）：地图里走路、镜头在两个逻辑帧之间补位置，不再一顿一顿；游戏速度不变。
 ## - low 省电模式：帧率上限当作 30、画面按 1280×720 画再放大（同画面平滑开）、画面特效当作关；只覆盖生效值，不改那几项存的值。
-## 除像素柔边外默认全部「不干预」。
+## 像素柔边、顺滑移动默认开，其余默认「不干预」。
 ## 回退：ENABLED = false 时设置页不列「画质设置」，apply 什么都不碰，画面特效只看它自己的开关。
 
 static var ENABLED := true
@@ -16,7 +17,7 @@ static var ENABLED := true
 static var HEADLESS_APPLY := false
 
 const KEY := "codexQuality"
-const DEFAULTS := {"integer": false, "fps": 0, "window": "auto", "low": false, "crisp": true}
+const DEFAULTS := {"integer": false, "fps": 0, "window": "auto", "low": false, "crisp": true, "motion": true}
 const FPS_CHOICES := [0, 60, 30]
 const WINDOW_CHOICES := ["auto", "1280x720", "1600x900", "1920x1080", "full"]
 const LOW_FPS := 30
@@ -37,6 +38,8 @@ static func sanitize(saved: Variant) -> Dictionary:
 		out["low"] = saved["low"]
 	if saved.get("crisp") is bool:
 		out["crisp"] = saved["crisp"]
+	if saved.get("motion") is bool:
+		out["motion"] = saved["motion"]
 	var fps = saved.get("fps")
 	if (fps is int or fps is float) and FPS_CHOICES.has(int(fps)):
 		out["fps"] = int(fps)
@@ -54,10 +57,44 @@ static func low_power() -> bool:
 
 
 ## 像素柔边现在开不开（XBattlerSprite 的身体材质用）：战斗图放大到非整数倍时像素仍一样大、交界处一个屏幕像素过渡。
-## CRISP = false 是这一项自己的回退开关（O-待定-1）：不论设置都照旧最近邻，子页也不列。
+## CRISP = false 是这一项自己的回退开关（O-待定-2）：不论设置都照旧最近邻，子页也不列。
 static var CRISP := true
 static func crisp_on() -> bool:
 	return ENABLED and CRISP and bool(settings()["crisp"])
+
+
+## 顺滑移动现在开不开。游戏逻辑按物理帧走（变速齿轮下每秒 96 步），屏幕 60 帧时一帧里有时走 1 步有时走 2 步，
+## 跑步时画面一帧挪 12 像素、一帧挪 24 像素，看着一顿一顿（原版 MV 的主循环同样如此）。开着时用引擎的物理插值，
+## 在两步之间按时间补位置（量过：每帧稳定挪 19 像素）。只画面补位置，逻辑、帧数、速度都不变。
+## 只对登记过的节点（smooth_node，现在是地图场景）开，根节点关，别的界面不受影响。
+## MOTION = false 是这一项自己的回退开关（O-待定-3）：不论设置都不补，子页也不列。
+static var MOTION := true
+const MOTION_GROUP := "xgraphics_motion"
+static func motion_on() -> bool:
+	return ENABLED and MOTION and bool(settings()["motion"])
+
+
+## 登记一个要补位置的节点（连同它下面的）；之后设置改了 apply 会跟着改
+static func smooth_node(node: Node) -> void:
+	node.add_to_group(MOTION_GROUP)
+	node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON if motion_on() else Node.PHYSICS_INTERPOLATION_MODE_INHERIT
+
+
+## 一步挪这么远算传送（最快的移动速度 6 是每步四分之一格，差一格以上不会是走出来的）
+static func is_teleport(from: Vector2, to: Vector2) -> bool:
+	return absf(to.x - from.x) >= 47.0 or absf(to.y - from.y) >= 47.0
+
+
+static func _apply_motion(tree: SceneTree) -> void:
+	var on := motion_on()
+	if on:
+		tree.root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	if tree.physics_interpolation != on:
+		tree.physics_interpolation = on
+	for node in tree.get_nodes_in_group(MOTION_GROUP):
+		node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON if on else Node.PHYSICS_INTERPOLATION_MODE_INHERIT
+		if on:
+			node.reset_physics_interpolation()
 
 
 ## 「画面特效」现在放不放（XLobbyCorruption、XRiftAlien 用）：省电模式开着当作关
@@ -117,6 +154,7 @@ static func apply(tree: SceneTree = null) -> void:
 	if not root.size_changed.is_connected(_resized):
 		root.size_changed.connect(_resized)
 	_apply_integer(root, q)
+	_apply_motion(tree)
 	var real := DisplayServer.get_name() != "headless"
 	if real or HEADLESS_APPLY:
 		Engine.max_fps = fps_cap(q)

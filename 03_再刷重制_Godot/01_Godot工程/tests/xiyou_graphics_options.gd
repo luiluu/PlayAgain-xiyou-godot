@@ -54,7 +54,7 @@ func _run() -> void:
 	check("sanitize_bad", bad == XGraphics.DEFAULTS, bad)
 	check("sanitize_not_dict", XGraphics.sanitize(null) == XGraphics.DEFAULTS and XGraphics.sanitize([1]) == XGraphics.DEFAULTS)
 	var good := XGraphics.sanitize({"integer": true, "fps": 30.0, "window": "full", "low": true})
-	check("sanitize_good", good == {"integer": true, "fps": 30, "window": "full", "low": true, "crisp": true}, good)
+	check("sanitize_good", good == {"integer": true, "fps": 30, "window": "full", "low": true, "crisp": true, "motion": true}, good)
 	check("set_wrong_type", not XGraphics.set_value("fps", "60") and not XGraphics.set_value("nope", true))
 	check("set_flag_refused", not XConfig.set_flag(XGraphics.KEY, true) and XGraphics.settings() == XGraphics.DEFAULTS)
 
@@ -114,6 +114,27 @@ func _run() -> void:
 	XGraphics.set_value("integer", false)
 	check("integer_root_off", root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_FRACTIONAL)
 
+	# ---- 顺滑移动：默认开，只给登记的节点开物理插值，根节点关 ----
+	check("motion_default", XGraphics.motion_on() and get_tree().physics_interpolation
+		and root.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_OFF, [get_tree().physics_interpolation, root.physics_interpolation_mode])
+	var world := Node2D.new()
+	add_child(world)
+	XGraphics.smooth_node(world)
+	check("motion_node_on", world.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_ON)
+	XGraphics.set_value("motion", false)
+	check("motion_off", not get_tree().physics_interpolation and world.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_INHERIT)
+	XGraphics.set_value("motion", true)
+	check("motion_back_on", get_tree().physics_interpolation and world.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_ON)
+	XGraphics.MOTION = false
+	XGraphics.apply(get_tree())
+	check("motion_switch_off", not XGraphics.motion_on() and not get_tree().physics_interpolation
+		and not XGraphicsOptionsScene.rows().any(func(x): return x[0] == "motion"))
+	XGraphics.MOTION = true
+	XGraphics.apply(get_tree())
+	world.queue_free()
+	check("teleport", XGraphics.is_teleport(Vector2(0, 0), Vector2(48, 0)) and XGraphics.is_teleport(Vector2(0, 0), Vector2(0, -480))
+		and not XGraphics.is_teleport(Vector2(0, 0), Vector2(24, 12)))
+
 	# ---- 固定窗口大小 ----
 	var rc := XGraphics.window_rect("1600x900", Rect2i(0, 25, 1920, 1055))
 	check("window_center", rc == Rect2i(160, 102, 1600, 900), rc)
@@ -136,12 +157,12 @@ func _run() -> void:
 	await frames(2)
 	var page := opt._page as XGraphicsOptionsScene
 	check("page_open", page != null)
-	check("page_rows_desktop", page.keys() == ["crisp", "integer", "fps", "window", "low"], page.keys())
-	check("page_status_default", page.status_text(1) == "关" and page.status_text(2) == "跟随屏幕" and page.status_text(3) == "自动" and page.status_text(4) == "关",
-		[page.status_text(1), page.status_text(2), page.status_text(3), page.status_text(4)])
-	page.index = 2
+	check("page_rows_desktop", page.keys() == ["crisp", "motion", "integer", "fps", "window", "low"], page.keys())
+	check("page_status_default", page.status_text(2) == "关" and page.status_text(3) == "跟随屏幕" and page.status_text(4) == "自动" and page.status_text(5) == "关",
+		[page.status_text(2), page.status_text(3), page.status_text(4), page.status_text(5)])
+	page.index = 3
 	page.ok()
-	check("page_ok_cycles", XGraphics.settings()["fps"] == 60 and page.status_text(2) == "60 帧", page.status_text(2))
+	check("page_ok_cycles", XGraphics.settings()["fps"] == 60 and page.status_text(3) == "60 帧", page.status_text(3))
 	page.side(true)
 	page.side(true)
 	check("page_right_stops", XGraphics.settings()["fps"] == 30)
@@ -149,9 +170,9 @@ func _run() -> void:
 	check("page_ok_wraps", XGraphics.settings()["fps"] == 0)
 	page.side(false)
 	check("page_left_stops", XGraphics.settings()["fps"] == 0)
-	page.index = 4
+	page.index = 5
 	page.side(true)
-	check("page_low_on", XGraphics.settings()["low"] and page.status_text(4) == "开")
+	check("page_low_on", XGraphics.settings()["low"] and page.status_text(5) == "开")
 	page.side(true)
 	check("page_low_stays", XGraphics.settings()["low"])
 	# 省电模式开着时，在设置页关「画面平滑」不会把缩放切回去
@@ -160,9 +181,9 @@ func _run() -> void:
 	check("low_keeps_viewport", root.content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT, root.content_scale_mode)
 	page.side(false)
 	check("page_low_off", not XGraphics.settings()["low"] and root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS)
-	page.index = 1
+	page.index = 2
 	page.ok()
-	check("page_integer_status", page.status_text(1).begins_with("开"), page.status_text(1))
+	check("page_integer_status", page.status_text(2).begins_with("开"), page.status_text(2))
 	page.ok()
 	page.cancel()
 	await frames(2)
@@ -171,7 +192,7 @@ func _run() -> void:
 	await frames(1)
 	# 手机：不列窗口大小
 	XPlatform.force_mobile = true
-	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["crisp", "integer", "fps", "low"])
+	check("page_rows_mobile", XGraphicsOptionsScene.rows().map(func(x): return x[0]) == ["crisp", "motion", "integer", "fps", "low"])
 	XPlatform.force_mobile = false
 
 	# ---- 回退开关 ----
@@ -179,10 +200,11 @@ func _run() -> void:
 	XGraphics.set_value("integer", true)
 	XGraphics.ENABLED = false
 	Engine.max_fps = 0
+	get_tree().physics_interpolation = false
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
 	XGraphics.apply(get_tree())
-	check("disabled_untouched", Engine.max_fps == 0 and root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	check("disabled_untouched", Engine.max_fps == 0 and not get_tree().physics_interpolation and root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 		and root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_FRACTIONAL)
 	check("disabled_fx", XGraphics.fx_on() and not XGraphics.low_power())
 	var opt2 := XOptionsScene.new()
@@ -197,6 +219,7 @@ func _run() -> void:
 	XGraphics.HEADLESS_APPLY = false
 	XPlatform.force_mobile = null
 	Engine.max_fps = fps0
+	get_tree().physics_interpolation = false
 	root.content_scale_mode = mode0
 	await frames(1)
 	var passed := results.filter(func(r): return r.passed).size()
