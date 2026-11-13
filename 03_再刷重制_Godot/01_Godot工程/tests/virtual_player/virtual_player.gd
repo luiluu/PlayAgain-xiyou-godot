@@ -68,6 +68,7 @@ var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
+var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
 var _exchange_floor := -1          # 这一层去过兑换大厅了
 var _exchange_ticks := 0
 var _gift_tries := {}
@@ -1238,6 +1239,11 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			_mark("saved")
 		return
 	e = _find_event(map, func(x): return _has_choice(x, "进入该层"))
+	if e != null:
+		_door_id = e.event_id
+	elif _door_id > 0:
+		# 过了 20 层塔门换了一页：不再问「进入该层」，调查就直接送进去。认之前记下的那扇门
+		e = _find_event(map, func(x): return x.event_id == _door_id)
 	if e != null and _aim(map, e, "enter"):
 		await _goto_target(map)
 		return
