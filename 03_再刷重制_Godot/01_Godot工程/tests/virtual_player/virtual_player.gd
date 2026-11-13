@@ -63,6 +63,8 @@ var lottery_enabled := true        # 大厅里有抽奖券就去希禾那里「�
 var spend_enabled := true          # 大厅里逛商店：买换上能变强的装备、出战的人能学的书、加属性的丹药，买完用掉（法宝经验丹不买）
 var snapshot_dir := ""             # 给了就在每层第一次去挑战守层者之前把存档写成 floor_<层>_<种子>.json（XState.to_dict()；法宝线拿真实队伍量守层者）
 var _snap_done := {}
+var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
+var gifted_floors: Array = []      # 放水通过的层
 var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
 var fabao_feeds := 0               # 喂过几次法宝
 var spend_buys := 0                # 一共买了多少件
@@ -744,13 +746,13 @@ func _act_choice(obs: Dictionary) -> void:
 			break
 	if _intent == "zhenqi":
 		want = _zhenqi_choice(obs.message._choices)
+	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
+		want = 0                     # 天启篇选线的确认：要通关就得选一条线（排在逛店前面：逛店的意图还留着时会选「再想想」兜圈子）
 	elif _intent == "shop":
 		want = _shop_choice(obs.message._choices)
 	elif _intent == "dungeon" and _dungeon_tier_choice(obs.message._choices) >= 0:
 		want = _dungeon_tier_choice(obs.message._choices)
 		_dg_tier = want
-	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
-		want = 0                     # 天启篇选线的确认：要通关就得选一条线
 	counts[want] = int(counts[want]) + 1
 	choice_counts[ckey] = counts
 	var cur: int = obs.index
@@ -822,6 +824,15 @@ func _act_battle(obs: Dictionary) -> void:
 	var hp := 0.0
 	for e in b.logic.enemies:
 		hp += float(e.hp)
+	# 放水（只在量数时开）：这一层已经输满 pass_after 次，这次挑战把守层者的血压到 1
+	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent == "challenge" and int(_floor_row().get("defeats", 0)) >= pass_after:
+		for e in b.logic.enemies:
+			if float(e.hp) > 1.0:
+				e.hp = 1.0
+		if not gifted_floors.has(_floor):
+			gifted_floors.append(_floor)
+			_mark("gifted_%d" % _floor)
+			_log("放水：第 %d 层守层者输了 %d 次，这次把它的血压到 1" % [_floor, int(_floor_row().get("defeats", 0))])
 	if _battle != null:
 		_battle.actions += 1
 		if not _battle.has("hp0"):
@@ -922,7 +933,7 @@ func _on_defeat() -> void:
 	if farm_enabled and not _farm_block.has(_floor):
 		_need_farm = farm_base * int(row.defeats)
 	_log("全灭：第 %d 层第 %d 次，下次先练 %d 场、刷 %d 次副本首领" % [_floor, row.defeats, _need_grind, _need_farm])
-	if int(row.defeats) >= climb_max_defeats:
+	if int(row.defeats) >= climb_max_defeats and pass_after <= 0:
 		climb_stop = "第 %d 层守层者打不过：输了 %d 次，中间挂机练了 %d 场、打倒副本首领 %d 次%s，队伍等级 %s" % [_floor, row.defeats,
 			int(row.get("grind_battles", 0)), int(row.get("dungeon_kills", 0)), ("（%s）" % str(_farm_block[_floor])) if _farm_block.has(_floor) else "", str(_levels())]
 
@@ -1790,14 +1801,22 @@ func _plan(map: XMapScene) -> void:
 ## 养成现状（给报告用）：每人的真气和境界、抽奖券、肝帝积分、副本首领熟练度
 ## 每层第一次去挑战守层者之前留一份队伍快照（基准伤害工具 baseline_dps --snapshots 读）
 func _snapshot(st: XState, floor: int) -> void:
-	if snapshot_dir == "" or _snap_done.has(floor):
+	if snapshot_dir == "":
 		return
-	_snap_done[floor] = true
-	DirAccess.make_dir_recursive_absolute(snapshot_dir)
-	var f := FileAccess.open(snapshot_dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
-	if f != null:
-		f.store_string(JSON.stringify(st.to_dict()))
-		f.close()
+	# 第一次挑战前的写在目录里（floor_<层>_<种子>.json）；最近一次挑战前的另写一份到 last/（输了几次、养成过之后的队伍）
+	var stamp := [floor, battles.size()]
+	if _snap_done.get("last") == stamp:
+		return
+	_snap_done["last"] = stamp
+	var text := JSON.stringify(st.to_dict())
+	for dir in ([snapshot_dir] if not _snap_done.has(floor) else []) + [snapshot_dir.path_join("last")]:
+		DirAccess.make_dir_recursive_absolute(dir)
+		var f := FileAccess.open(dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
+		if f != null:
+			f.store_string(text)
+			f.close()
+	if not _snap_done.has(floor):
+		_snap_done[floor] = true
 		_mark("snapshot_%d" % floor)
 
 
@@ -1874,7 +1893,7 @@ func report() -> Dictionary:
 	var st := XState.current
 	return {
 		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
-		"aborted": aborted, "settled": settled, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
+		"aborted": aborted, "settled": settled, "pass_after": pass_after, "gifted_floors": gifted_floors, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
