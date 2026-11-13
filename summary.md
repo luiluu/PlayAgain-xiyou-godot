@@ -1,0 +1,5 @@
+## ✗ 云端选测有失败
+
+- 提交 a4a81de45b（ci-full/cc/stubv-ref），整轮，499 个场景、16 片，最长一片 41.2 分钟
+- 失败场景 36 个：ui_smoke.tscn、xiyou_actor_book_review.tscn、xiyou_alien_affix.tscn、xiyou_alien_battle.tscn、xiyou_alien_config.tscn、xiyou_alien_workshop.tscn、xiyou_autosave.tscn、xiyou_battle_end_ce.tscn、xiyou_common_scripts.tscn、xiyou_cover_interp.tscn、xiyou_difficulty_actor.tscn、xiyou_dungeon.tscn、xiyou_entry_release.tscn、xiyou_equipment.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_floor_run.tscn、xiyou_floor_run_b.tscn、xiyou_floor_run_c.tscn、xiyou_flow.tscn、xiyou_hangup_options.tscn、xiyou_honghuang_curse.tscn、xiyou_honghuang_reward.tscn、xiyou_list_paging.tscn、xiyou_lobby_shops.tscn、xiyou_notice_options.tscn、xiyou_panels.tscn、xiyou_quality_icons.tscn、xiyou_random_streams.tscn、xiyou_review135.tscn、xiyou_script_census.tscn、xiyou_seal_doors.tscn、xiyou_star_warehouse.tscn、xiyou_stunned_turn.tscn、xiyou_version_label.tscn（日志在运行页的 logs-shard-* 附件）
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43347097692
