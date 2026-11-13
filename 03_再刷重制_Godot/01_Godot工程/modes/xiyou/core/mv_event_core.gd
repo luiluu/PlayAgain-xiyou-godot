@@ -93,6 +93,8 @@ var _wait_arg = null
 var casino_draw = null
 ## 批量抽奖最外层的那条：缩进 5 的选项记「二阶段」，212 显示动画、230 等待直接跳过（子游标不带）
 var casino_root := false
+## 抽奖类公共事件（XLotteryRework.EVENTS）里运行时为该事件号，子游标跟着带上；不在抽奖里为 0
+var lottery_id := 0
 
 
 func state() -> XState:
@@ -105,6 +107,12 @@ func rule_random() -> XRandomStream:
 
 
 func _variable_random(lo: int, hi: int) -> int:
+	if lottery_id != 0:
+		var r := XLotteryRework.remap(lottery_id, lo, hi)
+		lo = r[0]
+		hi = r[1]
+		if XLotteryRework.SAVED_STREAM and fixed_random < 0.0 and random_sequence.is_empty() and state() != null:
+			return XLotteryRework.roll(state(), lo, hi)
 	var stream := rule_random()
 	return stream.next_int_inclusive(lo, hi, "event_variable", _random_event_key()) if stream != null else random_int(lo, hi, state())
 
@@ -259,7 +267,7 @@ func _execute(c: Dictionary):
 				"position": int(p[3]) if p.size() > 3 else 2, "lines": []}
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
-				msg.lines.append(message_text(str(list[index].parameters[0])))
+				msg.lines.append(message_text(XLotteryRework.text(lottery_id, str(list[index].parameters[0])) if lottery_id != 0 else str(list[index].parameters[0])))
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
 				_merge_choices(index)
@@ -317,6 +325,7 @@ func _execute(c: Dictionary):
 					_child = _make_child(ce.get("list", []))
 					_child._depth = _depth + 1
 					_child.common_id = ce_id
+					_child.lottery_id = ce_id if XLotteryRework.is_lottery(ce_id) else lottery_id
 					_child.pending_lines = pending_lines
 					_child.receipt = receipt
 					_child.casino_draw = casino_draw
@@ -507,6 +516,7 @@ func setup_child(commands: Array, ce_id := 0) -> void:
 	_child = _make_child(commands)
 	_child._depth = _depth + 1
 	_child.common_id = ce_id
+	_child.lottery_id = ce_id if XLotteryRework.is_lottery(ce_id) else lottery_id
 	_child.pending_lines = pending_lines
 	_child.receipt = receipt
 	_child.casino_draw = casino_draw

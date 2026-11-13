@@ -59,7 +59,29 @@ static func level_of(item) -> float:
 static func max_level(item: Dictionary) -> float:
 	if not is_magic(item):
 		return -1.0
-	return _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
+	var own := _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
+	var cap := level_cap(XState.current)
+	return minf(own, float(cap)) if cap > 0 else own
+
+
+## O-待定（法宝与积分重构 v0.2，Kyo 11-13 通过）：西游本体的法宝上限。原版插件参数 Max Level 888 对全部法宝生效（另有 18 件
+## 备注也写 888），一颗究极丹（100 万经验）就到 331 级，10 级角色几十万生命。
+## - LEVEL_99：上限封到 99；回退 `XMagicWeapon.LEVEL_99 = false`（照原版 888）。
+## - FLOOR_CAP：再跟楼层走，上限 ＝ min(99, 9 ＋ 3 × 最高到达层)，最高到达层＝变量 20（至少 1）：1 层 12、10 层 39、30 层 99；
+##   回退 `XMagicWeapon.FLOOR_CAP = false`（只封 99）。
+## 超过上限的经验作废（照原版满级不得经验）；已经超过上限的法宝等级不降。天启篇存档不受影响（天启篇另定）。
+static var LEVEL_99 := true
+static var FLOOR_CAP := true
+const CAP_TOP := 99
+
+
+## 当前存档的法宝等级上限；0＝不限（照数据）
+static func level_cap(s: XState) -> int:
+	if not LEVEL_99 or s == null or XTianqi.active(s):
+		return 0
+	if not FLOOR_CAP:
+		return CAP_TOP
+	return mini(CAP_TOP, 9 + 3 * maxi(1, int(s.variable(20))))
 
 
 static func exp_of(item: Dictionary) -> float:

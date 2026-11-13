@@ -100,6 +100,9 @@ var random_master := ""
 var battle_serial := 0
 var _equipment_random: XRandomStream
 var _world_random: XRandomStream
+## XLotteryRework（O-待定）：抽奖随机流 {seed, state, draws}，随存档保存，读档后同一抽结果相同；_lottery_rng 是它的运行时对象
+var lottery_random := {}
+var _lottery_rng: RandomNumberGenerator = null
 
 func _ensure_random_master() -> void:
 	if random_master.is_empty():
@@ -886,7 +889,7 @@ func to_dict() -> Dictionary:
 		"items": items, "lastItem": last_item, "gear": gear, "nextGearId":next_gear_id, "orbSeed": orb_seed, "saveCount": save_count, "orbState": orb_state, "switches": switches, "variables": variables, "selfSwitches": self_switches,
 		"mapId": map_id, "x": x, "y": y, "direction": direction, "steps": steps, "playSeconds": play_seconds, "rom": rom,
 		"seen": seen.keys(), "flags": flags, "actorName": actor_name, "designation": designation, "actorOps": actor_ops,
-		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "playerMoveSpeed": player_move_speed, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
+		"unlockedMaps": unlocked_maps.keys(), "hangUp": hang_up, "hangUpTotal": hang_up_total, "lotteryRandom": lottery_random, "pingbiQuality": pingbi_quality, "followersVisible": followers_visible, "playerMoveSpeed": player_move_speed, "battleBgm": battle_bgm, "vehicles": [vehicle(0), vehicle(1), vehicle(2)], "vehicleType": vehicle_type, "walkingBgm": walking_bgm, "battleback": battleback, "erasedEvents": erased_events, "mapEvents": map_event_snapshot.call() if map_event_snapshot.is_valid() else map_events, "encounterEnabled": encounter_enabled, "allowAutosave": allow_autosave, "screen": screen.to_dict(), "actorMaxLevel": actor_max_level,
 		"dungeon": dungeon, "bossMastery": boss_mastery, "raceSupply": race_supply, "race": race, "alienLedger": alien_ledger, "unknownOrigin": unknown_origin, "ecoFrac": eco_frac,
 		"shopStock": shop_stock, "zhenqiSpec": zhenqi_spec, "guideSeen": guide_seen, "achievements": achievements, "enemyBook": enemy_book, "crafting": crafting, "pets": pets, "training": training, "mvParamPlus": mv_param_plus, "phwarehouse": warehouses, "saveactors": saved_actors, "playerCostume": player_costume, "costumeOff": costume_off, "actorAdvance": XAdvance.to_save(actor_advance), "partySkills": XPartySkills.to_save(party_skills), "codexRaven": XRaven.to_save(raven), "codexGarou": XGarou.to_save(garou)}
 
@@ -1033,6 +1036,7 @@ static func from_dict(d: Dictionary) -> XState:
 		for k in (zs.get(part, {}) if zs is Dictionary and zs.get(part, {}) is Dictionary else {}):
 			s.zhenqi_spec[part][str(k)] = 1
 	s.hang_up_total = int(d.get("hangUpTotal", 0))
+	s.lottery_random = (d.get("lotteryRandom", {}) as Dictionary).duplicate() if d.get("lotteryRandom", {}) is Dictionary else {}
 	s.pingbi_quality = Array(d.get("pingbiQuality", [])).map(func(v): return bool(v))
 	s.followers_visible = bool(d.get("followersVisible", XDB.system().get("optFollowers", false)))
 	s.player_move_speed = clampi(int(d.get("playerMoveSpeed", 4)), 1, 6)

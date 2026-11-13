@@ -123,6 +123,7 @@ static func update() -> void:
 		var draw := MVInterpreter.new(se.host, s.map_id, int(se.parent.event_id), native_list(int(se.rules.event)), 1)
 		draw.casino_draw = {"second": false}
 		draw.casino_root = true
+		draw.lottery_id = int(se.rules.event)  # XLotteryRework：抽奖随机流、范围
 		draw.pending_lines = se.parent.pending_lines
 		drawing = true
 		await draw.run()
