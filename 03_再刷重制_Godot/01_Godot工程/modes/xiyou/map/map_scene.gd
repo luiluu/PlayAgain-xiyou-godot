@@ -898,6 +898,7 @@ static func encounter_progress_value(bush: bool, half := false) -> float:
 
 
 ## Game_Player.makeEncounterTroopId（正式核心改动版）：r 为 0～权重和−1 的随机数。
+## 设置「定向遇怪」开着时改按敌群档位定向（XEncounterTarget.pick），下面原版算法只在关着时走。
 ## 「极其稀有」boss 取权重和−1、「只遇稀有」Boss 取权重和−2 作为抽签值；「只遇罕见」BOSS 时每项都减权重和−1。
 static func encounter_troop(list: Array, r: int) -> int:
 	var total := 0
@@ -905,6 +906,9 @@ static func encounter_troop(list: Array, r: int) -> int:
 		total += int(en.weight)
 	if total <= 0:
 		return 0
+	var targeted := XEncounterTarget.pick(list, r, total)  # 设置「定向遇怪」（O-待定-2）：按档定向；关着照原版
+	if targeted >= 0:
+		return targeted
 	var value := total - 1 if XConfig.flag("boss") else (total - 2 if XConfig.flag("Boss") else r)
 	for en in list:
 		value -= total - 1 if XConfig.flag("BOSS") else int(en.weight)
