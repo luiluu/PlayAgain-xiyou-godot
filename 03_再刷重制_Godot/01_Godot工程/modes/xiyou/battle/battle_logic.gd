@@ -96,6 +96,7 @@ var _stale_frames: Array = []  # 进行中的 apply（同一角色可嵌套）�
 static func stale_refreshed(b) -> void:
 	if STALE_TIMING and b is XActor and not b.stale_state_ids.is_empty():
 		b.stale_state_ids.clear()
+		XActor.read_touch()  # 陈旧状态的特性重新算进特性表
 
 
 static func _mark_stale(t: XActor, before: Array) -> bool:
@@ -228,10 +229,12 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	if XStateEffects.FIX_QUEUE_CLEAR:
 		XStateEffects.clear_queues()  # rules9 审查 39 P3-5：先清上一场遗留，再移除 removeAtBattleEnd 状态（1307 崩坏能 remove 阶段预约的 CE1505 要留下）
 	for a in actors:
+		XActor.batch_begin()
 		for sid in a.state_ids.duplicate():
 			if not bool(XDB.rec("States", sid).get("removeAtBattleEnd", false)):
 				continue
 			_state_remove(a, sid)
+		XActor.batch_end()
 	_start_battle_effects()
 	for b in actors + enemies:
 		b.start_warmups()
@@ -334,7 +337,13 @@ func _operation_resources(b: XBattler) -> XResourceContext:
 func _finish_lifecycle_operation(resources: XResourceContext, b: XBattler) -> void:
 	if resources != _action_resources and resources != _battle_resources:
 		resources.publish()
+		# O-待定-8：这份逐次快照只有测试看（lifecycle_effects），角色拍一次要现读三项上限；默认不留。
+		# 敌人开着 krz 能力值缓存时读上限会把格子填上（影响之后读到的值），照旧每次都拍。LIFECYCLE_LOG = true 回到全部都留。
+		if not LIFECYCLE_LOG and not b.param_cache_on:
+			return
 		lifecycle_effects.append({"member": stable_id(b), "after": resources.snapshot(b).duplicate(true), "journal": resources.journal.duplicate(true), "error": resources.error})
+
+static var LIFECYCLE_LOG := false
 
 func _state_add(b: XBattler, id: int) -> void:
 	var resources := _operation_resources(b)
@@ -364,6 +373,11 @@ func _refresh_battler(b: XBattler) -> void:
 ## dsPassiveSkill Scene_Battle.start：每个出战角色依次处理开战状态标签——自己、随机队友、随机敌人、随机任一目标、
 ## 全体敌人、全队；之后刷新所有角色的被动缓存。
 func _battle_start_states(list = null) -> void:
+	XActor.batch_begin()  # 整批加减状态（XActor.STATE_BATCH）：表跨步保留、被动缓存到末尾再建
+	_battle_start_states_now(list)
+	XActor.batch_end()
+
+func _battle_start_states_now(list = null) -> void:
 	for a in (actors if list == null else list):
 		for tag in a.battle_start_state_tags():
 			if _float("start_state") * 100.0 >= float(tag[2]):
@@ -3504,9 +3518,11 @@ func end_battle(result := -1) -> void:
 		e.sync_boss_armor(false, _rule())
 	if result == 0:
 		for b in state.members():
+			XActor.batch_begin()  # 整批加减状态（XActor.STATE_BATCH）：一名角色的战斗状态一批拿完
 			for id in b.state_ids.duplicate():
 				if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 					_state_remove(b, id)
+			XActor.batch_end()
 	if result >= 0 and result <= 2:
 		XStateEffects.run_unit(["victory", "escape", "defeat"][result], state.members(), {"random": _rule(), "variables": vars()})
 	_clear_event_cursor()
@@ -3555,10 +3571,12 @@ func end_battle(result := -1) -> void:
 		if not b.is_preserve_tp():
 			b.tp = 0.0
 		b.end_battle_cooldowns()
+		XActor.batch_begin()
 		for id in b.state_ids.duplicate():
 			if bool(XDB.rec("States", id).get("removeAtBattleEnd", false)):
 				_state_remove(b, id)
 		b.refresh_passive()
+		XActor.batch_end()
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)
 	# 原 endBattle 之后：利维坦锻造包装掷心之钢、再掷锻造锤（Map176 来源 108／165、570～575、20%），狂妄包装再掷狂妄（各 10%，不朽未知存在 454／455 胜利、每场一次）
