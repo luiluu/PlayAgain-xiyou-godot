@@ -32,7 +32,7 @@ const DROP_COLS := 3                 # floor((1072 − 230 − 30) / 190) 限 1�
 const COOLDOWN := 10
 const SELECT_COLOR := Color("ffff00")
 static var DETAIL_LOCKS_DROPS := true
-## O-待定：点选也能传送。原版只认键盘 F（mapTransferConfirm），手机没有 F 键：选好地图进了掉落页就再也传不出去，
+## O-380：点选也能传送。原版只认键盘 F（mapTransferConfirm），手机没有 F 键：选好地图进了掉落页就再也传不出去，
 ## 点列表也没反应，玩家以为卡死（Kyo 11-13 转安卓玩家反馈 v0.01.07「一点传送就卡了」）。
 ## 现在掉落页里再点一次选中的地图名、或点底部提示行＝按 F；点别的地图名回到列表并选中它；提示写「再点地图名传送」。
 ## 设 false 恢复原版（只有 F 键能传送）。

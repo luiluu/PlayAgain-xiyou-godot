@@ -1,7 +1,7 @@
 extends Node
 ## 安卓地图传送（Kyo 11-13 转玩家反馈 v0.01.07「一点传送就卡了」，Kyo「验证一下是否真的能传送」）：
 ## 全程用触屏事件（ScreenTouch，开着鼠标模拟，和安卓一样）：点 HUD「地图传送」开页 → 点地图名选中 → 再点进掉落页
-## → 再点一次地图名开确认（原版只认 F 键，O-待定 XMapTransferScene.TAP_TRANSFER）→ 点「确定」→ 真的到了目标地图。
+## → 再点一次地图名开确认（原版只认 F 键，O-380 XMapTransferScene.TAP_TRANSFER）→ 点「确定」→ 真的到了目标地图。
 ## 另测：掉落页点别的地图名回列表并选中、提示行写「再点地图名传送」、点提示行也能传、未解锁蜂鸣不开确认、回退开关下点不出确认。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
