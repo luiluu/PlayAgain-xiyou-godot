@@ -106,6 +106,42 @@ static func is_fabao_exp_pill(item: Dictionary) -> bool:
 	return bool(_exp_pill_cache[id])
 
 
+## 开关（--vp-plain-score 关掉）：换装比较除了八项能力，还看暴击率、爆伤、终伤和天启篇词条里的伤害加成。
+## false＝回到只比八项能力（第五轮及以前的比法）。
+static var full_score := true
+
+
+## 一个人的「出手」估值：物攻、魔攻里高的那项 ×（1＋暴击率×暴击多出来的倍数）×（1＋终伤＋天启篇词条的伤害加成）。
+## 只用来比较同一个人换装前后，不是伤害公式。
+static func offense(a: XActor) -> float:
+	var pc: Dictionary = a.passive_cache()
+	var crit_extra := 0.5 + float(pc.get("critHarmRi", 0.0))
+	var dmg := float(pc.get("globalHarmRi", 0.0))
+	if XTianqiAffixBattle.on():
+		var v: Dictionary = XTianqiAffixBattle.view(a)
+		if not v.is_empty():
+			crit_extra += float(v.d.crit_add) / 100.0
+			for k in v.p:
+				var pool := str(XTianqiAffixTable.affix(str(k).get_slice(":", 0)).get("pool", ""))
+				if pool == "final_damage" or pool == "skill_damage":
+					dmg += float(v.p[k]) / 100.0
+	return maxf(float(a.atk), float(a.mat)) * (1.0 + clampf(float(a.cri), 0.0, 1.0) * maxf(crit_extra, 0.0)) * maxf(1.0 + dmg, 0.1)
+
+
+## 换装前（now）后（then）的涨幅，加权相对值。full_score 关着时只比八项能力（同装备页「属性对比」）
+static func gain_score(now: XActor, then: XActor) -> float:
+	var a := [now.mhp, now.mmp, now.atk, now.def, now.mat, now.mdf, now.agi, now.luk]
+	var b := [then.mhp, then.mmp, then.atk, then.def, then.mat, then.mdf, then.agi, then.luk]
+	var score := 0.0
+	for k in 8:
+		if full_score and (k == 2 or k == 4):
+			continue                     # 物攻、魔攻并进「出手」估值里算
+		score += W8[k] * (float(b[k]) - float(a[k])) / maxf(absf(float(a[k])), 1.0)
+	if full_score:
+		score += (W8[2] + W8[4]) * (offense(then) - offense(now)) / maxf(absf(offense(now)), 1.0)
+	return score
+
+
 ## 这件装备给谁、换到哪一格涨得最多：返回 {score, actor, slot}（没人用得上 score＝0）。算法同装备页的「属性对比」
 static func gear_gain(st: XState, item: Dictionary, taken: Dictionary) -> Dictionary:
 	var best := {"score": 0.0, "actor": 0, "slot": -1}
@@ -116,11 +152,7 @@ static func gear_gain(st: XState, item: Dictionary, taken: Dictionary) -> Dictio
 			var t := XEquipment.preview(a, slot, item)
 			if t == null:
 				continue
-			var now := [a.mhp, a.mmp, a.atk, a.def, a.mat, a.mdf, a.agi, a.luk]
-			var then := [t.mhp, t.mmp, t.atk, t.def, t.mat, t.mdf, t.agi, t.luk]
-			var score := 0.0
-			for k in 8:
-				score += W8[k] * (float(then[k]) - float(now[k])) / maxf(absf(float(now[k])), 1.0)
+			var score := gain_score(a, t)
 			# 法宝：这一格还空着就值得买（一级法宝属性不多，靠喂装备升上去）；本人专属的排在通用的前面
 			if XMagicWeapon.is_magic(item) and not (a.equips[slot] is Dictionary and not a.equips[slot].is_empty()):
 				score = maxf(score, 0.06) + (1.0 if str(item.get("note", "")).contains("req_actors") else 0.0)
@@ -170,9 +202,19 @@ static func _buy(shop: XShop, index: int, n: int) -> int:
 
 ## 逛一家开着的店：先买有人换上能变强的装备（含法宝），再买出战的人能学的书（贵的先买），最后买永久加属性的丹药。
 ## 返回 {lines: 给报告的文字, uses: [{id, actor, n}] 买完要用掉的, bought: 件数}。法宝经验丹不买。
-static func shop(shop_page: XShop, st: XState) -> Dictionary:
+static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dictionary:
 	var out := {"lines": [], "uses": [], "bought": 0}
 	var d := shop_page._buy_data()
+	# 点名要的物品（如角色进阶缺的魂灯）：{物品号: 还差几个}，先买这些
+	for i in d.size():
+		var e0: Dictionary = d[i]
+		if int(e0.kind) != 0 or not wanted.has(int(e0.gid)) or not shop_page._buy_enabled(e0):
+			continue
+		var cost0 := _wallet(st)
+		var got := _buy(shop_page, i, int(wanted[int(e0.gid)]))
+		if got > 0:
+			out.bought += got
+			out.lines.append("买 %s×%d %s" % [str(e0.rec.get("name", "")), got, _spent(st, cost0)])
 	var gears := []
 	var books := []
 	var pills := []
@@ -322,3 +364,90 @@ static func feed_fabao(st: XState) -> Array:
 			if int(res.used) > 0:
 				out.append("给 %s 的法宝 %s 喂了 %d 件装备：%d 级 → %d 级%s" % [a.display_name(), str(eq.get("name", "")), int(res.used), int(res.from), int(res.to), "（到当层上限）" if bool(res.capped) else ""])
 	return out
+
+
+# ---------------------------------------------------------------- 第六轮（Kyo 2026-11-13「盘点所有变强途径，教会虚拟玩家」）第一批
+
+## 出战的人按「出手」估值从高到低排（一本书只有一个人能学时先给主力）
+static func fighters_by_offense(st: XState) -> Array:
+	var team: Array = st.battle_members()
+	team.sort_custom(func(x, y): return offense(x) > offense(y))
+	return team
+
+
+## 背包里捡到的、还没用的东西（抽奖出的被动书、副本首领掉的专属书和流派书、装备盒、精魂补给包）：返回 [{id, actor, n}]。
+## 书：效果只有「学会技能」的物品，出战的人里谁还没学会、学得了就给谁（主力优先，一人一本）；
+## 盒子：说明以「宝箱」开头的装备盒和名字带「补给包」的，每样每层试一次（没到开启条件的游戏自己会拒绝）。
+## tried 记用过没成的（"物品号:角色号"），不再重复试；boxes 记这一层试过的盒子。
+static func bag_uses(st: XState, tried: Dictionary, boxes: Dictionary) -> Array:
+	var out := []
+	var floor_now := int(st.variable(20))
+	var ids: Array = st.items.keys()
+	ids.sort()
+	for id in ids:
+		var n := int(st.items[id])
+		if n <= 0:
+			continue
+		var item: Dictionary = XDB.rec("Items", int(id))
+		if item.is_empty() or not [0, 2].has(int(item.get("occasion", 0))):
+			continue
+		var effects: Array = item.get("effects", [])
+		var name := str(item.get("name", ""))
+		if not effects.is_empty() and effects.all(func(x): return int(x.code) == 43) and int(item.get("scope", 0)) == 7 and not name.begins_with("错误数据"):
+			var who := book_learners(st, item)
+			var order: Array = fighters_by_offense(st).map(func(a): return a.actor_id)
+			who.sort_custom(func(x, y): return order.find(x) < order.find(y))
+			for aid in who:
+				if n <= 0:
+					break
+				if tried.has("%d:%d" % [int(id), int(aid)]):
+					continue
+				out.append({"id": int(id), "actor": int(aid), "n": 1, "kind": "book"})
+				n -= 1
+		elif (str(item.get("description", "")).strip_edges().begins_with("宝箱") or name.contains("补给包")) and effects.any(func(x): return int(x.code) == 44):
+			if int(boxes.get(int(id), -1)) == floor_now or st.battle_members().is_empty():
+				continue
+			out.append({"id": int(id), "actor": int(st.battle_members()[0].actor_id), "n": 1, "kind": "box"})
+	return out
+
+
+## 角色进阶（兑换大厅奉神老妪「进阶」页背后的同一个函数）：出战的人和助力位，条件够（等级、金币、材料）就一阶阶进。
+## 返回这次做了什么。条件由 XAdvance.missing 判，扣金币和材料照游戏的。
+static func advance(st: XState) -> Array:
+	var out := []
+	var team: Array = st.battle_members()
+	if st.helper() != null:
+		team.append(st.helper())
+	for a in team:
+		var guard := 0
+		while guard < 8 and XAdvance.missing(st, a).is_empty():
+			guard += 1
+			var before := XAdvance.rank(st, a.actor_id)
+			if not XAdvance.advance(st, a) or XAdvance.rank(st, a.actor_id) == before:
+				break
+			out.append("%s 进阶到第 %d 阶" % [a.display_name(), XAdvance.rank(st, a.actor_id)])
+	return out
+
+
+## 进阶只差材料的：{物品号: 一共还差几个}（等级、金币都够，只缺物品的那些人）。用来决定要不要去兑换大厅买魂灯
+static func advance_needs(st: XState) -> Dictionary:
+	var need := {}
+	var have := {}
+	for a in st.battle_members():
+		var r = XAdvance.row(st, a.actor_id)
+		if r == null or XGarou.own(a) or a.level < int(r.level) or st.gold < int(r.gold):
+			continue
+		for p in r.items:
+			var id := int(p[0])
+			if not have.has(id):
+				have[id] = st.item_count(id)
+			var lack: int = int(p[1]) - int(have[id])
+			have[id] = maxi(int(have[id]) - int(p[1]), 0)
+			if lack > 0:
+				need[id] = int(need.get(id, 0)) + lack
+	return need
+
+
+## 每人的进阶次数（给报告用）
+static func advance_ranks(st: XState) -> Array:
+	return st.battle_members().map(func(a): return XAdvance.rank(st, a.actor_id))
