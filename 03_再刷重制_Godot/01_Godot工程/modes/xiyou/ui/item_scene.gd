@@ -72,6 +72,13 @@ var search_panel: XGearSearch
 var power_page: XPowerForget
 var gear_detail: XGearDetail
 static var DETAIL_V043 := true
+## O-待定（同 XGearQuery.PRESORT_KEYS，玩家反馈 v0.01.07 物品页护甲卡）：物品页一次刷新要取六七遍列表（行数、详情、说明卡、状态、
+## 列表、信息窗、工具条件数），武器／护甲每遍都筛选排序全部装备。开着：武器、护甲两类按（存档、分类、筛选条件、排序设置、
+## 背包全部装备内容的哈希、队员与身上装备的哈希、异化隐藏）记住，同样就直接取；装备增减、强化镶嵌改了内容、换装、换队员都让哈希变，
+## 所以结果与每次重算相同。物品类不缓存（本来就快）。false＝每次重算。
+static var CACHE_GEAR_ENTRIES := true
+var _gear_cache: Array = []
+var _gear_key: Array = []
 var bulk_win: XMVWindow
 var _bulk: Dictionary = {}          # 批量服用数量窗：{item, available, number, targets, for_friend}；空＝没开
 var _bulk_busy := false             # 正在逐颗服用（挡住输入）
@@ -193,6 +200,12 @@ func entries() -> Array:
 			if (sym == "item" and itype == 1) or (sym == "keyItem" and itype == 2) or (sym == "consumable" and bool(rec.get("consumable", false))):
 				out.append({"rec": rec, "count": s.item_count(id)})
 		return XItemMarks.apply_list(s, out)
+	var key := []
+	if CACHE_GEAR_ENTRIES:
+		key = [s.get_instance_id(), sym, gear_filter.duplicate(true), XConfig.equipment_sort(), s.gear.size(), s.gear.hash(),
+			s.party.duplicate(), s.members().map(func(a): return a.equips).hash(), XAlienHide.active()]
+		if key == _gear_key:
+			return _gear_cache
 	var bag := bag_gear(sym)
 	for i in range(bag.size()):
 		out.append({"rec": bag[i], "carry": i + 1})
@@ -200,6 +213,10 @@ func entries() -> Array:
 		for e in a.equip_list():
 			if e.kind == sym and not out.any(func(x): return is_same(x.rec, e)):
 				out.append({"rec": e, "owner": a})
+	if CACHE_GEAR_ENTRIES:
+		_gear_cache = filter_gear(out)
+		_gear_key = key
+		return _gear_cache
 	return filter_gear(out)
 
 
