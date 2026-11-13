@@ -480,7 +480,7 @@ func push_state_result(key: String, id: int) -> void:
 			result[key].append(id)
 
 func add_state(id: int, random: XRandomStream = null) -> void:
-	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里的轻状态不作废跨步保留的表，见 XActor.STATE_BATCH）
+	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里按状态的类别只作废会变的表，见 XActor.STATE_BATCH）
 	if id == 1 and XGuyu.protect(self):
 		return  # 谷雨 addState 包装（最外层）：众生之劫代命，生命改 1、不加死亡
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
@@ -599,7 +599,7 @@ func remove_state_auto(id: int) -> void:
 	_leaving_state = false
 
 func remove_state(id: int) -> void:
-	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里的轻状态不作废跨步保留的表）
+	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里按状态的类别只作废会变的表）
 	if id == 1 and XGuyu.rooted(self) and XGuyu.internal == 0:
 		return  # 谷雨 removeState／revive 包装：归根中去不掉死亡
 	if XLiuying.mark_locked(self, id):
@@ -727,33 +727,40 @@ func param_mark_dirty() -> void:
 	if param_cache_on:
 		param_dirty = true
 
-## 加减状态末尾的标脏：同 param_mark_dirty，只是整批加减里的轻状态不作废跨步保留的表（XActor.STATE_BATCH）
+## 加减状态末尾的标脏：同 param_mark_dirty，只是整批加减里按状态的类别只作废会变的表（XActor.STATE_BATCH）
 func _state_mark_dirty(id: int) -> void:
 	XActor.state_touch(id)
 	effect_dirty = true
 	if param_cache_on:
 		param_dirty = true
 
-## 「轻状态」：没有特性、也没有挂上／拿掉／到期时要跑的效果的状态（开战自带的状态大多如此，只带确认、受击等时机的效果）。
-## 角色的技能表、特性表只从状态的特性里读状态（native_skill_ids 的特性 43、trait_objects 的状态段；心钢、云裳、异化、渡鸦／米拉、
-## 谷雨、屠苏／璇、吞噬、专武吸取、法宝、套装、宝珠、三相成长这条链上的模块都不读身上的状态），所以加减轻状态不改这两张表。
-## 阵亡 1、破甲·真气（记录随倍率改写）一律不算轻。按状态表对象记，表换了（天启篇改写等）重来。
-static var _light_states := {}
-static var _light_table = null
-static func light_state(id: int) -> bool:
+## 加减一个状态会不会改角色的技能表、特性表（整批加减时哪些表能留到下一步，见 XActor.STATE_BATCH）：
+## - STATE_LIGHT：没有特性、也没有挂上／拿掉／到期时要跑的效果（开战自带的状态大多如此，只带确认、受击等时机的效果）——两张表都不变；
+## - STATE_TRAITS：有特性但不加技能（特性 43）——特性表变，技能表不变；
+## - STATE_HARD：其余（加技能的、带挂上／拿掉／到期效果的、阵亡 1、破甲·真气（记录随倍率改写）、查不到的）——按普通写入全部作废。
+## 依据：角色的技能表只从状态的特性 43 里读状态（native_skill_ids）；之后的心钢、云裳、异化、渡鸦／米拉、谷雨、屠苏／璇、吞噬、
+## 专武吸取、套装、法宝、真气与天启篇的技能视图都不读身上的状态、特性、能力值、HP／MP／TP。特性表读状态只在 trait_objects 的状态段。
+## 按状态表对象记，表换了重来；天启篇改写过的状态另记（XTianqiSkills.state_key）。
+enum {STATE_LIGHT, STATE_TRAITS, STATE_HARD}
+static var _state_classes := {}
+static var _state_class_table = null
+static func state_class(id: int) -> int:
 	var table = XDB._tables.get("States")
-	if not is_same(table, _light_table):
-		_light_table = table
-		_light_states = {}
+	if not is_same(table, _state_class_table):
+		_state_class_table = table
+		_state_classes = {}
 	var key := XTianqiSkills.state_key(id)
-	var hit = _light_states.get(key)
+	var hit = _state_classes.get(key)
 	if hit != null:
 		return hit
 	var st := state_rec(id)
-	var light := id != 1 and id != XZhenqi.POJIA_STATE and not st.is_empty() and (st.get("traits", []) as Array).is_empty() \
-		and not (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) in ["apply", "remove", "leave"])
-	_light_states[key] = light
-	return light
+	var traits: Array = st.get("traits", [])
+	var cls := STATE_LIGHT if traits.is_empty() else STATE_TRAITS
+	if id == 1 or id == XZhenqi.POJIA_STATE or st.is_empty() or traits.any(func(t): return int(t.code) == TRAIT_SKILL_ADD) \
+			or (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) in ["apply", "remove", "leave"]):
+		cls = STATE_HARD
+	_state_classes[key] = cls
+	return cls
 
 ## 加减状态时跑状态自带的效果。整批加减（XActor.STATE_BATCH）里，效果是任意代码：跑之前把欠着的被动缓存都建好，
 ## 跑完按「有写入」算（跨步保留的表全部作废）。批外同原来。

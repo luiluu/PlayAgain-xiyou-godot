@@ -252,6 +252,18 @@ func release_unequippable() -> Array:
 	var changed := true
 	# O-待定-3：逐件判断能不能穿是一串只读的读取（特性、被动标签），包进一个只读窗口（O-348 的机制）：
 	# 技能表、特性表整轮只算一次；真卸下一件时当场作废（下面的 read_touch）。RELEASE_WINDOW = false 照原来各算各的。
+	# 整批加减状态（STATE_BATCH）：上次判完一件都不用卸、之后特性表这一组没作废过（技能表、等级、装备也没变）就不用再判
+	var slot = _carry_slot(true)
+	var rel_key := "rel1" if _cat_bare else "rel0"
+	if slot != null and slot.has(rel_key):
+		if not READ_VERIFY:
+			return []
+		slot.erase(rel_key)
+		if not release_unequippable().is_empty():
+			push_error("保留的「一件都不用卸」不成立：角色 %d" % actor_id)
+			if READ_VERIFY_FATAL:
+				OS.crash("保留的「一件都不用卸」不成立（XIYOU_READ_VERIFY=1）：角色 %d" % actor_id)
+		return []
 	var window := RELEASE_WINDOW
 	if window:
 		read_begin()
@@ -268,6 +280,8 @@ func release_unequippable() -> Array:
 	if window:
 		read_end()
 	removed.append_array(XEquipment.release_dual_exclusive(self))  # 双持专武只留一把（installDualExclusiveRuntime）
+	if slot != null and removed.is_empty() and is_same(slot, _carry_slot(true)):
+		slot[rel_key] = true
 	return removed
 
 ## Game_Actor.refresh 开头 releaseUnequippableItems(false)：不能再装的卸下、退回队伍背包，之后不自动穿回。
@@ -652,12 +666,12 @@ func all_traits() -> Array:
 				_read_verify("all_traits", m[key], _all_traits_now())
 			return (m[key] as Array).duplicate()
 		var gen := _read_gen
-		var fresh: Array = _carry_fetch(key, _all_traits_now)
+		var fresh: Array = _carry_fetch(key, _all_traits_now, true)
 		if gen == _read_gen:  # 算的过程里有写入就不记
 			m[key] = fresh
 		return fresh.duplicate()
 	if _batch_depth > 0:
-		return (_carry_fetch("tr1" if _cat_bare else "tr0", _all_traits_now) as Array).duplicate()
+		return (_carry_fetch("tr1" if _cat_bare else "tr0", _all_traits_now, true) as Array).duplicate()
 	return _all_traits_now()
 
 func _all_traits_now() -> Array:
@@ -731,20 +745,21 @@ static func read_touch() -> void:
 	_write_gen += 1
 
 
-# ---- 整批加减状态（O-待定-6～8，进出战斗卡顿 C 车道）----
-## 开战每人挂二十来个状态、收场逐个拿掉，每加减一个都整套 refresh（卸装判断、夹三项资源、同步阵亡、重建被动缓存），
-## refresh 的次数与先后照原版不变，这里只省掉重复的计算：
-## - 表跨步保留（STATE_BATCH）：批里加减「轻状态」（XBattler.light_state：没有特性、没有挂上／拿掉效果）不改角色的技能表、
-##   特性表、按标签取的被动值，这几张表按角色留到下一步用（只读窗口照旧每次新开，能力值、三项上限每步照算）。
-##   别的已知写入（read_touch、HP／MP／TP 写入）照旧全部作废；每代首次取用再比一遍指纹（带特性的状态、陈旧状态、层数、
-##   装备、学会的技能、等级、职业），对不上就丢。
-## - 被动缓存延后（同一开关）：批里的 refresh_passive 只记「欠着」，读的时候（passive_cache）、跑状态效果之前、批结束时再建；
+# ---- 整批加减状态（O-待定-6，进出战斗卡顿 C 车道）----
+## 开战每人挂二十来个状态、收场逐个拿掉，每加减一个都整套 refresh（卸装判断、夹三项资源、同步阵亡、重建被动缓存）。
+## refresh 的次数、先后、每一步做的事都照原版不变，这里只省掉重复的计算（批＝XBattleLogic 里开战挂状态、开战与收场拿战斗状态的那几段）：
+## - 表跨步保留：批里加减状态按类别（XBattler.state_class）只作废会变的表——没有特性的状态不动技能表、特性表；有特性但不加技能的
+##   只作废特性表这一组（特性表、按特性码取的集合、「一件都不用卸」的结论）。留下的表按角色存到下一步用；只读窗口照旧每次新开，
+##   能力值、三项上限每步照算。别的已知写入（read_touch、HP／MP／TP 写入、跑状态效果）照旧全部作废；每代首次取用再比一遍指纹
+##   （会改技能表的状态、陈旧状态、层数、学会的技能、等级、职业、每格装备；特性表这组另比带特性的状态），对不上就丢。
+## - 被动缓存延后：批里的 refresh_passive 只记「欠着」，读的时候（passive_cache）、跑状态效果之前、批结束时再建；
 ##   中间没人读的重建本来就会被下一次重建盖掉。
 ## 回退：STATE_BATCH = false（同原来：每步全部作废、每步重建）。XIYOU_READ_VERIFY=1：保留的表每次取用都重算比对、
 ## 欠着的被动缓存当场也建一份、补建时比对，不一样当场崩。
 static var STATE_BATCH := true
 static var _batch_depth := 0
 static var _write_gen := 0
+static var _trait_gen := 0
 static var _carry := {}
 static var _passive_owed: Array = []
 static var carry_hits := 0
@@ -761,12 +776,15 @@ static func batch_end() -> void:
 		passive_flush_all()
 		_carry = {}
 
-## 加减状态：批里的轻状态只作废只读窗口（能力值等），不作废跨步保留的表；其余同 read_touch
+## 加减状态：批里按状态的类别作废——只读窗口（能力值等）总是作废；有特性的再作废特性表这一组；其余同 read_touch
 static func state_touch(id: int) -> void:
-	if STATE_BATCH and _batch_depth > 0 and XBattler.light_state(id):
-		_read_gen += 1
-	else:
+	var cls := XBattler.state_class(id) if STATE_BATCH and _batch_depth > 0 else XBattler.STATE_HARD
+	if cls == XBattler.STATE_HARD:
 		read_touch()
+		return
+	_read_gen += 1
+	if cls == XBattler.STATE_TRAITS:
+		_trait_gen += 1
 
 ## 被动缓存换新：它不是技能表、特性表的输入，批里只作废只读窗口
 static func passive_touch() -> void:
@@ -793,11 +811,15 @@ var _passive_pending := false
 var _passive_expect := {}
 
 func _carry_fp() -> Array:
-	var heavy: Array[int] = []
+	var hard: Array[int] = []
+	var traited: Array[int] = []
 	for id in state_ids:
-		if not XBattler.light_state(id):
-			heavy.append(id)
-	return [heavy, stale_state_ids.duplicate(), state_floors.duplicate(), skill_ids.duplicate(), _lv, class_id, zq_pojia_rate, equips.duplicate()]
+		var cls := XBattler.state_class(id)
+		if cls == XBattler.STATE_HARD:
+			hard.append(id)
+		elif cls == XBattler.STATE_TRAITS:
+			traited.append(id)
+	return [hard, stale_state_ids.duplicate(), state_floors.duplicate(), skill_ids.duplicate(), _lv, class_id, zq_pojia_rate, equips.duplicate(), traited]
 
 static func _carry_fp_same(a: Array, b: Array) -> bool:
 	for i in 7:
@@ -812,23 +834,26 @@ static func _carry_fp_same(a: Array, b: Array) -> bool:
 			return false
 	return true
 
-## 本角色跨步保留的表；不在批里、或三处重入护栏开着时没有
-func _carry_slot():
+## 本角色跨步保留的表（for_traits＝特性表这一组）；不在批里、或三处重入护栏开着时没有
+func _carry_slot(for_traits := false):
 	if _batch_depth <= 0 or not STATE_BATCH or XYunshang._pair_guard or XXuanBattle._param_guard or XTusu._param_guard:
 		return null
 	var c = _carry.get(self)
-	if c != null and c.wgen == _write_gen and c.rgen == _read_gen:
-		return c
-	var fp := _carry_fp()
-	if c == null or c.wgen != _write_gen or not _carry_fp_same(c.fp, fp):
-		c = {"wgen": _write_gen, "fp": fp}
-		_carry[self] = c
-	c.rgen = _read_gen
-	return c
+	if c == null or c.wgen != _write_gen or c.rgen != _read_gen:
+		var fp := _carry_fp()
+		if c == null or c.wgen != _write_gen or not _carry_fp_same(c.fp, fp):
+			c = {"wgen": _write_gen, "fp": fp, "tr": {}, "tgen": _trait_gen}
+			_carry[self] = c
+		elif c.tgen != _trait_gen or c.fp[8] != fp[8]:
+			c.tr = {}
+			c.tgen = _trait_gen
+			c.fp = fp
+		c.rgen = _read_gen
+	return c.tr if for_traits else c
 
 ## 取一张保留的表（不要改它；要改先复制）。没有就现算，算的过程里没有写入才留下
-func _carry_fetch(key: String, compute: Callable):
-	var c = _carry_slot()
+func _carry_fetch(key: String, compute: Callable, for_traits := false):
+	var c = _carry_slot(for_traits)
 	if c == null:
 		return compute.call()
 	if c.has(key):
@@ -837,8 +862,9 @@ func _carry_fetch(key: String, compute: Callable):
 			verify_memo("carry " + key, self, c[key], compute.call())
 		return c[key]
 	var wgen := _write_gen
+	var tgen := _trait_gen
 	var fresh = compute.call()
-	if wgen == _write_gen:
+	if wgen == _write_gen and (not for_traits or tgen == _trait_gen):
 		c[key] = fresh
 	return fresh
 
@@ -1097,6 +1123,11 @@ func attack_states_rate(id: int) -> float:
 ## 只认技能（含特性 43 加的、状态给的）上的标签，防具 4088 阎罗兜帽备注里的同名标签原版不读（参照 passive_probe streg）。
 ## 原版 stateResistSet 跟着角色 refresh 才重算；这里随技能表即时读，时序同其它被动标签与特性 14。
 func traits_set(code: int) -> Array:
+	if STATE_BATCH and _batch_depth > 0:
+		return (_carry_fetch(("ts1:" if _cat_bare else "ts0:") + str(code), _traits_set_now.bind(code), true) as Array).duplicate()
+	return _traits_set_now(code)
+
+func _traits_set_now(code: int) -> Array:
 	var out := super.traits_set(code)
 	if code == TRAIT_STATE_RESIST:
 		for id in passive_state_resists():
