@@ -2074,6 +2074,12 @@ func toggle_hang_up() -> void:
 	if XHangUp.is_active(s):
 		XHangUp.stop(s)
 		return
+	if XHangUp.KEY_ENABLES and not XHangUp.enabled(s):
+		# 挂机被禁用：照 L 键的公共事件开启（或在副本里提示），不直接开始（O-待定，见 XHangUp.KEY_ENABLES）
+		var ce := XMapHotkeys.event_of(KEY_L)
+		if ce > 0 and hotkeys_open():
+			s.reserve_common_event(ce)
+		return
 	if _vehicle_menu_locked():
 		XSound.system(3)
 		return
