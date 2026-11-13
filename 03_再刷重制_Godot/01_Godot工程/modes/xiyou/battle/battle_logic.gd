@@ -3391,6 +3391,7 @@ func rewards() -> Dictionary:
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	drops.append_array(_liuying_core())  # 流萤 makeRewards 包装（第 34 个，奖励最后）：萨姆残核
+	drops.append_array(XTianqiDrop.battle_drops(self))  # 天启篇通用掉落：每场掷一次（带 generic 标记，倒下即发的锁不拦它，见 grant）
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 	# 真气 makeRewards 包装（装在奖励插件之后）：幻化之战清掉物品（含地图额外掉落）；v0.45 神兵试炼经验、金钱也为 0
@@ -3453,15 +3454,20 @@ func _roll_drops(e: XEnemy) -> Array:
 ## （XAlienBattle.drop_item_rate）。<Enemy Drops> 的 x% 运行时并进 dropItems（分母 100/x），同一式。
 ## 难度不影响：Vitsuno_Difficulty 的按序号掉率在原版整段注释掉了。原来这里按难度「Drop Rate」×(1＋出战 passiveIRUP 最大值)×套装算，
 ## 没有 0.2 底、没有亡魂汲取，难度 2 时约多掉十几倍（悟空 drops1 改）。
-func drop_chances(e: XEnemy) -> Array:
+## all_rows＝true：连天启篇交给通用掉落的那些行也列出来（异化装备挑本体用，XTianqiAlienGear.bodies）
+func drop_chances(e: XEnemy, all_rows := false) -> Array:
 	var rate := XAlienBattle.drop_item_rate(state, e) * XTianqiAffixBattle.drop_mult(self) * XTianqiFamineAlien.drop_mult(self)  # 天启篇饥荒线「荒年」：掉落减少  # 天启篇词条「物品掉落」（全队相加，助力位也算）
+	var tq_drop := XTianqiDrop.bonus_on(state)
+	if tq_drop:  # 天启篇掉落重构：全队加成相加后递减、难度倍率；没有寻宝猎人 ×5、神话怪 ×5（XTianqiDrop）
+		rate = XTianqiDrop.table_rate(self) * XTianqiFamineAlien.drop_mult(self)
 	var out := []
 	var di: Array = e.data().get("dropItems", [])
 	for drop: Dictionary in di:
-		if int(drop.kind) > 0 and float(drop.denominator) > 0:
+		if int(drop.kind) > 0 and float(drop.denominator) > 0 and (all_rows or XTianqiDrop.keeps_row(state, int(drop.kind), int(drop.dataId))):  # 天启篇：精良及以下的装备交给通用掉落
 			out.append({"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false})
 	for extra in _extra_drops(e.data()):
-		out.append({"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true})
+		if all_rows or XTianqiDrop.keeps_row(state, int(extra.kind), int(extra.id)):
+			out.append({"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true})
 	return out
 
 
@@ -3505,6 +3511,8 @@ func grant(r: Dictionary) -> Array:
 	state.gain_gold(r.gold)
 	if not drop_lock:
 		gain_drops(r.drops)
+	else:
+		gain_drops((r.drops as Array).filter(func(d): return d.get("generic", false)))  # 天启篇通用掉落不是哪只怪倒下时发的，锁着也要发
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
 	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
