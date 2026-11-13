@@ -329,6 +329,7 @@ func _rechallenge() -> void:
 
 func _hongjun_battle() -> void:
 	XTianqiSegAlien.ENABLED = false  # 只比鸿钧换能力值；按段异化（34 层守层者终焉、种类随机）另有专项 xiyou_tianqi_seg_alien
+	XGuardianRework.HP = false  # 只比 rate；守层者按层重标血量（O-待定-4）另有专项 xiyou_fabao_rework
 	var s := _state(34)
 	var plain := XBattleLogic.new()
 	plain.setup(469, s)
@@ -343,6 +344,7 @@ func _hongjun_battle() -> void:
 	_check("hongjun_atk", is_equal_approx(float(e.atk) / float(p0.atk), 1.5), [e.atk, p0.atk])
 	_check("hongjun_no_borrowed_drops", e.data().dropItems.is_empty() and not p0.data().dropItems.is_empty())
 	_check("hongjun_pending_used", XTianqiSummit.pending() == "")
+	XGuardianRework.HP = true
 	plain.end_battle(0)
 	lg.end_battle(0)
 	XTianqiSegAlien.ENABLED = true
