@@ -164,7 +164,7 @@ func _choose_and_opening() -> void:
 	host.results = [2]
 	await XTianqi.run_line_choice(host, s)
 	_check("chosen_famine", XTianqi.line_of(s) == "famine" and XTianqiFamineLine.allowed(s) and not XTianqiWarLine.allowed(s))
-	_check("card_shown", host.said.any(func(t): return str(t).contains("刷题机器")))
+	_check("card_shown", host.said.any(func(t): return str(t).contains("怎么也吃不饱")))
 	_check("choose_said", host.said.any(func(t): return str(t).contains("批改") or str(t).contains("红笔叉")))
 	_check("omen_battle", host.battles.size() == 1 and host.battles[0].troop == 11 and host.battles[0].alien == "omen" and host.battles[0].lose, host.battles)
 	_check("omen_went_field", not host.moves.is_empty() and host.moves[0] == [6, 6, 21, 6], host.moves)

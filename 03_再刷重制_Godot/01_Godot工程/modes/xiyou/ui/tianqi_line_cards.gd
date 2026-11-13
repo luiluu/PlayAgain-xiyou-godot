@@ -1,7 +1,7 @@
 class_name XTianqiLineCards
 extends Control
 ## 【cc·天启篇·未经审查】选线画面：四张竖卡并排（四线剧情与关卡设计稿 v0.4 第 2.2 节）。
-## 每张：骑士剪影（本线颜色；XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」。
+## 每张：骑士剪影（本线颜色；打过这条线、或 XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」。
 ## 还没做好的线照列，压暗并标「还没修好」，仍可选中看说明（小小鱼会说这条路还没修好）。
 ## 左右键／鼠标选，确认键或点卡定；取消键或「再想想」返回 -1。开关 XTianqiLook.CARDS（O-322）。
 
@@ -115,7 +115,9 @@ func _make_card(i: int) -> Control:
 	fig.position = Vector2(0, 16)
 	fig.size = Vector2(CARD.x, FIG_H)
 	fig.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if not XTianqiLook.CARD_PORTRAIT:
+	# 剪影还是立绘：打过这条线的骑士（跨存档的骑士徽记）才露出立绘（Kyo 11-13「打过了再开立绘」）；CARD_PORTRAIT 开时全画立绘
+	card.portrait = XTianqiLook.CARD_PORTRAIT or XTianqiRewards.badges().has(key)
+	if not card.portrait:
 		fig.material = XTianqiLook.silhouette_material(key)
 	card.add_child(fig)
 	card.fig = fig
@@ -236,6 +238,7 @@ class _Card extends Control:
 	var fig: TextureRect
 	var mark_rect: TextureRect
 	var done_tag: Label   # 跨存档通关过这条线：「★ 已通关」
+	var portrait := false  # 画的是立绘（打过这条线）还是剪影
 	const DIVIDER_Y := 333.5  # FIG_H＋名字＋台词之后（_make_card 里 y 走到 337）
 
 	func _draw() -> void:

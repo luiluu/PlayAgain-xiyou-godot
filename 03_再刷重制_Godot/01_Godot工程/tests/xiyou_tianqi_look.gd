@@ -154,7 +154,23 @@ func _choice() -> void:
 	ev2.pressed = true
 	c._handle(ev2)
 	_check("cards_cancel", out == [-1], out)
+	# 立绘：没打过的线画剪影；打过（骑士徽记）的那张露出立绘；选中的抬起、其余压暗
+	_check("cards_silhouette_default", c._cards.all(func(k): return not k.portrait and k.fig.material != null))
+	_check("cards_selected_lifted", c._cards[3].position.y < c._cards[0].position.y or c._cards[3].selected)
 	c.queue_free()
+	XConfig.tianqi_badge_mark("war")
+	var c2 := XTianqiLineCards.new()
+	c2.lines = XTianqi.LINES
+	c2.playable = [true, true, true, true]
+	add_child(c2)
+	await _frames(2)
+	var war_i := XTianqi.LINES.map(func(l): return l.key).find("war")
+	var shown := []
+	for i in c2._cards.size():
+		if c2._cards[i].portrait and c2._cards[i].fig.material == null:
+			shown.append(i)
+	_check("cards_portrait_after_clear", shown == [war_i], shown)
+	c2.queue_free()
 
 
 func _table() -> void:

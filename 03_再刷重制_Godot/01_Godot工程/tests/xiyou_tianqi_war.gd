@@ -143,7 +143,7 @@ func _choose_and_opening() -> void:
 	host.results = [2]
 	await XTianqi.run_line_choice(host, s)
 	_check("chosen_war", XTianqi.line_of(s) == "war" and XTianqiWarLine.allowed(s))
-	_check("card_shown", host.said.any(func(t): return str(t).contains("轰炸再也停不下来")), host.said.slice(0, 3))
+	_check("card_shown", host.said.any(func(t): return str(t).contains("便不再停歇")), host.said.slice(0, 3))
 	_check("choose_line_said", host.said.any(func(t): return str(t).contains("你帮我验收")))
 	_check("omen_battle", host.battles.size() == 1 and host.battles[0].troop == 30 and host.battles[0].alien == "omen" and host.battles[0].lose, host.battles)
 	_check("omen_went_tribe", host.moves.size() >= 1 and host.moves[0] == [13, 27, 24, 8], host.moves)
