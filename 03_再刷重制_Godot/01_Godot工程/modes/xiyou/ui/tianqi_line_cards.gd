@@ -133,13 +133,13 @@ func _make_card(i: int) -> Control:
 	card.add_child(pick)
 	y += 32.0
 	for row in [["传闻", str(l.test)], ["本线特点", str(l.change)]]:  # Kyo 11-13：先传闻，再特点
-		var cap := XUI.label(str(row[0]), 15, XTianqiLook.accent_color(key).lightened(0.1))
+		var cap := XUI.label(str(row[0]), 15, XTianqiLook.accent_color(key).lightened(0.3))  # 小标题提亮：瘟疫的暗紫、死亡的冷蓝压在深底上看不清
 		cap.position = Vector2(16, y)
 		cap.size = Vector2(CARD.x - 32, 20)
 		card.add_child(cap)
 		y += 20.0
 		var body := XUI.label(str(row[1]), 15, Color(0.88, 0.87, 0.9))
-		body.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 按中文断行规则折行：逗号、句号、引号不落在行首
 		body.position = Vector2(16, y)
 		body.size = Vector2(CARD.x - 32, 50)
 		card.add_child(body)
@@ -160,10 +160,23 @@ func _make_card(i: int) -> Control:
 	return card
 
 
+## 选中的那张抬起 LIFT、原亮度，其余压暗一点（原来只有边框变亮，四张看着差不多）
+const LIFT := 10.0
+const UNSELECTED := Color(0.8, 0.8, 0.82)
+
 func _highlight() -> void:
 	for i in _cards.size():
 		var c: _Card = _cards[i]
 		c.selected = i == index
+		var y := TOP - (LIFT if c.selected else 0.0)
+		var tint := Color.WHITE if c.selected else UNSELECTED
+		if is_inside_tree() and (not is_equal_approx(c.position.y, y) or c.modulate != tint):
+			var tw := c.create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(c, "position:y", y, 0.12)
+			tw.tween_property(c, "modulate", tint, 0.12)
+		else:
+			c.position.y = y
+			c.modulate = tint
 		c.queue_redraw()
 
 
@@ -223,6 +236,7 @@ class _Card extends Control:
 	var fig: TextureRect
 	var mark_rect: TextureRect
 	var done_tag: Label   # 跨存档通关过这条线：「★ 已通关」
+	const DIVIDER_Y := 333.5  # FIG_H＋名字＋台词之后（_make_card 里 y 走到 337）
 
 	func _draw() -> void:
 		var main := XTianqiLook.main_color(key)
@@ -230,9 +244,12 @@ class _Card extends Control:
 		var r := Rect2(Vector2.ZERO, size)
 		draw_rect(r, Color(dark.darkened(0.4), 0.92))
 		# 人像框底下一道本线颜色的光（裂纹里透出来的）
+		# 一像素一条，渐变是平的（原来六条十像素的色带，看得出台阶）
 		var glow := Rect2(0, 210, size.x, 60)
-		for k in 6:
-			draw_rect(Rect2(glow.position.x, glow.position.y + k * 10, glow.size.x, 10), Color(main, (0.03 + k * 0.02) * (1.6 if selected else 1.0)))
+		for k in int(glow.size.y):
+			draw_rect(Rect2(glow.position.x, glow.position.y + k, glow.size.x, 1), Color(main, (0.02 + 0.11 * k / glow.size.y) * (1.6 if selected else 1.0)))
+		# 名字、台词和下面两段说明之间一道本线颜色的细线
+		draw_line(Vector2(16, DIVIDER_Y), Vector2(size.x - 16, DIVIDER_Y), Color(main, 0.4), 1.0)
 		var edge := main if selected else main.darkened(0.45)
 		var w := 3.0 if selected else 1.5
 		draw_rect(r.grow(-w / 2.0), Color(edge, 0.6 + 0.4 * pulse if selected else 0.85), false, w)
