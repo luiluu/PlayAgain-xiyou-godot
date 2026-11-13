@@ -3444,7 +3444,10 @@ func _roll_drops(e: XEnemy) -> Array:
 		random = XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed())) # standalone fixture owner; real battles initialize in setup
 	var drops := []
 	for c in drop_chances(e):
-		if random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
+		if c.has("sig"):  # 天启篇招牌掉落：递增概率，结果由存档里的种子和次数定（读档重打一样）
+			if XTianqiDrop.roll_signature(state, str(c.sig), float(c.chance)):
+				drops.append({"kind": c.kind, "id": c.id})
+		elif random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
 			drops.append({"kind": c.kind, "id": c.id})
 	return drops
 
@@ -3462,12 +3465,22 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 		rate = XTianqiDrop.table_rate(self) * XTianqiFamineAlien.drop_mult(self)
 	var out := []
 	var di: Array = e.data().get("dropItems", [])
+	var sig := tq_drop and XTianqiDrop.signature_on(state)  # 天启篇招牌掉落：按品质定范围、递增概率（_roll_drops 认 sig 键）
+	var sig_mult := XTianqiDrop.party_mult(state, XTianqiDrop._members(self)) * XTianqiDrop.difficulty_mult(state) * XTianqiFamineAlien.drop_mult(self) if sig else 1.0
 	for drop: Dictionary in di:
 		if int(drop.kind) > 0 and float(drop.denominator) > 0 and (all_rows or XTianqiDrop.keeps_row(state, int(drop.kind), int(drop.dataId))):  # 天启篇：精良及以下的装备交给通用掉落
-			out.append({"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false})
+			var row := {"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false}
+			if sig:
+				row.chance = minf(1.0, XTianqiDrop.signature_base(int(drop.kind), int(drop.dataId), 1.0 / float(drop.denominator)) * sig_mult)
+				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(drop.kind), int(drop.dataId)]
+			out.append(row)
 	for extra in _extra_drops(e.data()):
 		if all_rows or XTianqiDrop.keeps_row(state, int(extra.kind), int(extra.id)):
-			out.append({"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true})
+			var row := {"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true}
+			if sig:
+				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate)) * sig_mult)
+				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
+			out.append(row)
 	return out
 
 

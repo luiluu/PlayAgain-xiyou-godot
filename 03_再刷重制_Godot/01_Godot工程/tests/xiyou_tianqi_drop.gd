@@ -30,6 +30,7 @@ func _run() -> void:
 	_generic()
 	_table_rows()
 	_battle()
+	_signature()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -177,6 +178,61 @@ func _battle() -> void:
 	lg2.setup(troop, old)
 	_check("battle_legacy_no_generic", (lg2.rewards().drops as Array).filter(func(d): return d.get("generic", false)).is_empty())
 	lg2.end_battle(1)
+
+
+## 招牌掉落：品质范围、材料概率不变、递增概率的长期平均、存档记账、读档重打结果一样
+func _signature() -> void:
+	var s := _tianqi_state()
+	var by_grade := {}
+	for t in ["Weapons", "Armors"]:
+		for rec in XDB.table(t):
+			if rec is Dictionary and str(rec.get("name", "")) != "" and not by_grade.has(XQuality.grade(rec)):
+				by_grade[XQuality.grade(rec)] = [2 if t == "Weapons" else 3, int(rec.id)]
+	var got := []
+	for g in [3, 4, 5, 6]:
+		var k: Array = by_grade[g]
+		got.append([XTianqiDrop.signature_base(k[0], k[1], 0.0001), XTianqiDrop.signature_base(k[0], k[1], 0.5), XTianqiDrop.signature_base(k[0], k[1], 1.0)])
+	_check("gear_ranges", got == [[0.03, 0.1, 1.0], [0.02, 0.06, 1.0], [0.01, 0.03, 1.0], [0.005, 0.02, 1.0]], got)
+	var epic: Array = by_grade[3]
+	_check("gear_in_range_kept", _near(XTianqiDrop.signature_base(epic[0], epic[1], 0.05), 0.05))
+	_check("item_unchanged", _near(XTianqiDrop.signature_base(1, 1, 0.1), 0.02) and _near(XTianqiDrop.signature_base(1, 1, 1.0), 0.2) and _near(XTianqiDrop.signature_base(1, 1, 0.001), 0.005),
+		[XTianqiDrop.signature_base(1, 1, 0.1), XTianqiDrop.signature_base(1, 1, 0.001)])
+	# 递增步长：0.25 → 约 0.0847，0.05 → 约 0.0038（Dota 2 的表）
+	_check("prd_step", absf(XTianqiDrop.prd_step(0.25) - 0.0847) < 0.001 and absf(XTianqiDrop.prd_step(0.05) - 0.0038) < 0.0002 and XTianqiDrop.prd_step(1.0) == 1.0,
+		[XTianqiDrop.prd_step(0.25), XTianqiDrop.prd_step(0.05)])
+	_check("chance_grows", XTianqiDrop.signature_chance(0.1, 0) < 0.1 and XTianqiDrop.signature_chance(0.1, 20) > 0.1 and XTianqiDrop.signature_chance(0.1, 1000) == 1.0)
+	# 长期平均：10% 掷 6000 次，命中率在 10% 上下；最长连黑不超过步长的倒数
+	XTianqiDrop.store(s)["seed"] = 20261113
+	var hits := 0
+	var streak := 0
+	var worst := 0
+	for i in 6000:
+		if XTianqiDrop.roll_signature(s, "9:2:9", 0.1):
+			hits += 1
+			streak = 0
+		else:
+			streak += 1
+			worst = maxi(worst, streak)
+	_check("prd_mean", absf(float(hits) / 6000.0 - 0.1) < 0.01, float(hits) / 6000.0)
+	_check("prd_bounded", worst <= ceili(1.0 / XTianqiDrop.prd_step(0.1)), worst)
+	_check("pity_saved", (XTianqiDrop.store(s).pity["9:2:9"] as Array)[1] == 6000 and s.flags.tianqi.drop is Dictionary)
+	# 读档重打：同样的账本，同一次掷结果相同
+	var snap: Dictionary = s.flags.tianqi.drop.duplicate(true)
+	var first := range(30).map(func(_i): return XTianqiDrop.roll_signature(s, "7:3:7", 0.2))
+	s.flags.tianqi["drop"] = snap
+	var again := range(30).map(func(_i): return XTianqiDrop.roll_signature(s, "7:3:7", 0.2))
+	_check("reload_same", first == again and first.has(true) and first.has(false), first)
+	_check("fails_view", XTianqiDrop.signature_fails(s, "7:3:7") >= 0 and XTianqiDrop.signature_fails(s, "nope") == 0)
+	# 接进战斗：留下的行带 sig 键、概率不再乘 0.2
+	s.map_id = 5
+	var lg := XBattleLogic.new()
+	lg.setup(int(XDB.map(5).encounterList[0].troopId), s)
+	var rows: Array = lg.drop_chances(lg.enemies[0], true)
+	_check("rows_have_sig", not rows.is_empty() and rows.all(func(r): return r.has("sig") and float(r.chance) > 0.0 and float(r.chance) <= 1.0), rows)
+	XTianqiDrop.SIGNATURE = false
+	_check("switch_signature", lg.drop_chances(lg.enemies[0], true).all(func(r): return not r.has("sig")))
+	XTianqiDrop.SIGNATURE = true
+	lg.end_battle(1)
 
 
 func _switches() -> void:

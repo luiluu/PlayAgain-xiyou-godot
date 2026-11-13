@@ -11,14 +11,19 @@ extends RefCounted
 ##   来源：被动 passiveIRUP（技能重构改过的照它的值，别的按原值落五档 5／10／15／20／30）、套装物品掉率（同样落档）、
 ##   寻宝猎人状态 +30（原版是把 0.2 底率变成 1）、亡魂汲取 +20、词条「物品掉落」。原版是全部连乘。
 ## - 难度倍率（DIFFICULTY）：寻常 1、艰险 1.1、九死 1.3、炼狱 1.5、证道 1.8，和全队倍率相乘。
-## 招牌掉落的改率与递增概率是第二期；本期怪物表里史诗及以上的装备、材料仍照原表 × 0.2 底率，只是加成换了新算法。
+## - 招牌掉落（SIGNATURE，第二期）：怪物表里留下的行。史诗及以上的装备不再乘 0.2，按品质夹在范围里
+##   （史诗 3%～10%、传说 2%～6%、不朽 1%～3%、神话 0.5%～2%，原来必掉的还是必掉）；材料和道具实际概率不变（原表 × 0.2），最低 0.5%。
+##   乘全队倍率和难度倍率后按递增概率掷（Dota 2 的伪随机分布）：同一只怪的同一件东西每次没出，下一次概率涨一截，出了归零，
+##   长期平均等于面板概率。连着没出的次数、掷过的总次数、种子都记在存档（flags.tianqi.drop），随机数由它们算出来，读档重打结果一样。
+##   SIGNATURE 关着（或 BONUS 关着，招牌的倍率要用新加成）时：留下的行照原表 × 0.2 × 加成，用战斗随机流掷。
 ##
-## 回退（O-待定-1）：`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY` 各关一项。
+## 回退（O-待定-1）：`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
 static var BONUS := true
 static var DIFFICULTY := true
+static var SIGNATURE := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -159,6 +164,109 @@ static func keeps_row(s: XState, kind: int, id: int) -> bool:
 		return true
 	var rec := XDB.rec("Weapons" if kind == 2 else "Armors", id)
 	return XQuality.grade(rec) > int(table().get("generic", {}).get("table_cut_grade", 2))
+
+
+# ---- 招牌掉落 ----
+
+static func signature_on(s = null) -> bool:
+	return SIGNATURE and on(s)
+
+
+## 一行的面板概率（没乘全队倍率、难度倍率）：raw 是原表的概率（1÷分母，或 <Enemy Drops> 的百分数）
+static func signature_base(kind: int, id: int, raw: float) -> float:
+	var g: Dictionary = table().get("signature", {})
+	var item_p := minf(1.0, maxf(raw * float(g.get("item_base", BASE_RATE)), float(g.get("item_floor", 0.005))))
+	if kind < 2:
+		return item_p
+	if raw >= 1.0:
+		return 1.0
+	var range_ = g.get("gear_range", {}).get(str(XQuality.grade(XDB.rec("Weapons" if kind == 2 else "Armors", id))))
+	if not range_ is Array:
+		return item_p  # 精良及以下（通用掉落关着或异化装备挑本体时才会问到）
+	return clampf(raw, float(range_[0]), float(range_[1]))
+
+
+## 递增概率的步长 C：第 n 次（从 1 数）掷中的几率是 min(1, C×n)，长期平均是 p
+static var _prd: Dictionary = {}
+static func prd_step(p: float) -> float:
+	if p <= 0.0:
+		return 0.0
+	if p >= 1.0:
+		return 1.0
+	var key := snappedf(p, 0.001)
+	if key <= 0.0:
+		return PI * p * p / 2.0
+	if _prd.has(key):
+		return float(_prd[key])
+	var c: float
+	if key < float(table().get("signature", {}).get("prd_exact_from", 0.05)):
+		c = PI * key * key / 2.0  # 小概率的近似式，误差百分之几
+	else:
+		var lo := 0.0
+		var hi := key
+		for i in 40:
+			c = (lo + hi) / 2.0
+			if _prd_mean(c) > key:
+				hi = c
+			else:
+				lo = c
+		c = (lo + hi) / 2.0
+	_prd[key] = c
+	return c
+
+
+## 步长 c 时的长期平均概率
+static func _prd_mean(c: float) -> float:
+	var by := 0.0
+	var expect := 0.0
+	var n := 1
+	while by < 1.0 - 1e-12 and n <= 100000:
+		var on_n := minf(1.0, c * n) * (1.0 - by)
+		by += on_n
+		expect += n * on_n
+		n += 1
+	return 1.0 / expect if expect > 0.0 else 1.0
+
+
+## 存档里的掉落账：{seed, pity: {键: [连着没出的次数, 掷过的总次数]}}
+static func store(s: XState) -> Dictionary:
+	var tq: Dictionary = s.flags.tianqi
+	if not tq.get("drop") is Dictionary:
+		tq["drop"] = {"seed": randi(), "pity": {}}
+	var d: Dictionary = tq.drop
+	if not d.get("pity") is Dictionary:
+		d["pity"] = {}
+	return d
+
+
+## 这一次掷中的几率（已经连着没出 n 次）
+static func signature_chance(p: float, fails: int) -> float:
+	return minf(1.0, prd_step(p) * float(fails + 1)) if p < 1.0 else 1.0
+
+
+## 掷一次招牌掉落：key＝「敌人号:种类:编号」，p＝乘完倍率的面板概率。结果由存档里的种子和次数算出，记账后返回中没中
+static func roll_signature(s: XState, key: String, p: float) -> bool:
+	if p >= 1.0:
+		return true
+	if p <= 0.0:
+		return false
+	var d := store(s)
+	var row = d.pity.get(key)
+	var fails := int(row[0]) if row is Array and row.size() >= 2 else 0
+	var total := int(row[1]) if row is Array and row.size() >= 2 else 0
+	# 字符串自带的 hash 对相邻的次数不够散（实测命中率偏低），用 sha256 的前 32 位
+	var r := float(("%d|%s|%d" % [int(d.get("seed", 0)), key, total]).sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+	var hit := r < signature_chance(p, fails)
+	d.pity[key] = [0 if hit else fails + 1, total + 1]
+	return hit
+
+
+## 连着没出几次了（图鉴指路用）
+static func signature_fails(s: XState, key: String) -> int:
+	if not signature_on(s) or not s.flags.tianqi.get("drop") is Dictionary:
+		return 0
+	var row = s.flags.tianqi.drop.get("pity", {}).get(key)
+	return int(row[0]) if row is Array and row.size() >= 2 else 0
 
 
 # ---- 通用掉落 ----
