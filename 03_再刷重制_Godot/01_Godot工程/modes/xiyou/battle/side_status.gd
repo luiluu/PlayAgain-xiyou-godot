@@ -122,7 +122,25 @@ const KIND_ORDER := ["异常", "增益", "常驻"]
 const PARAM_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 
 
+## O-待定-2 侧栏格子记忆（战斗出招前停顿，Kyo 11-13）：行动里每拍一次画面快照都要给每名战斗者排一遍格子（按中文名排序），
+## 一次行动几百次。结果只取决于状态表、各状态层数、强化弱化等级（和 CELL_FILTER），这几样跟上次一样就用上次的（给副本）。
+## 状态表看 states_stamp（O-待定-1 状态表记忆的版本号），所以要两个开关都开才记。回退：CELL_MEMO = false（每次现排）。
+static var CELL_MEMO := true
+
 static func cell_rows(b: XBattler) -> Array:
+	if not CELL_MEMO or not XBattler.STATES_MEMO:
+		return _cell_rows_now(b)
+	var stamp := b.states_stamp()
+	var m: Array = b._cell_memo
+	if m.size() == 5 and m[0] == stamp and m[1] == b.state_floors and m[2] == b.buffs and m[3] == CELL_FILTER:
+		if XActor.READ_VERIFY:
+			XActor.verify_memo("cell_rows", b, m[4], _cell_rows_now(b))
+		return m[4].duplicate(true)
+	var out := _cell_rows_now(b)
+	b._cell_memo = [stamp, b.state_floors.duplicate(), b.buffs.duplicate(), CELL_FILTER, out.duplicate(true)]
+	return out
+
+static func _cell_rows_now(b: XBattler) -> Array:
 	var out := []
 	var seen := {}
 	for st in b.states():
