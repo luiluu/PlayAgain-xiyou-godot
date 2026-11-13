@@ -83,16 +83,30 @@ func next_uint(reason: String, event_key := "") -> int:
 	var value = _take("uint32", reason, event_key)
 	return int(value) if value != null else 0
 
+## 范围出界不再让整条流作废（v0.01.08 玩家反馈：十三层深渊心之钢、狂妄、天顶剑几乎每轮都掉）。
+## 原先 error 一旦写上，这条流之后每次都取不到数：next_float 恒为 0、next_int_inclusive 恒为下限，
+## 于是 10% 的心之钢／狂妄、1/300 的天顶剑之后次次命中。最常见的触发是伤害浮动：伤害超过约 2.1e10（浮动 20%）时
+## 浮动幅度超过 2^32（XDamage.apply_variance）。原版是 Math.randomInt(n)＝floor(Math.random()×n)，没有上限，n≤0 时得 0。
+## 现在照原版：幅度 ≥ 2^32 用一次浮点取数 floor(r×n)；n≤0、上限小于下限时取一次数、返回下限（index 0），流照常可用。
+## 磁带（scripted）模式照旧按原规则报错。
 func next_index_mod(n: int, reason: String, event_key := "") -> int:
 	if n <= 0:
-		error = "invalid_random_modulus"
+		if _scripted:
+			error = "invalid_random_modulus"
+			return 0
+		next_uint(reason, event_key)
 		return 0
 	return next_uint(reason, event_key) % n
 
 func next_int_inclusive(lo: int, hi: int, reason: String, event_key := "") -> int:
 	if hi < lo or hi - lo >= 4294967295:
-		error = "invalid_random_range"
-		return lo
+		if _scripted:
+			error = "invalid_random_range"
+			return lo
+		if hi < lo:
+			next_uint(reason, event_key)
+			return lo
+		return lo + int(floorf(next_float(reason, event_key) * (float(hi - lo) + 1.0)))
 	# PCG bounded distribution (same inclusive range distribution as Godot).
 	# Even a singleton range consumes one raw draw, as the existing rule path does.
 	var bound := hi - lo + 1
