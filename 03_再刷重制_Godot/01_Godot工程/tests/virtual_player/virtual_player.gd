@@ -11,7 +11,7 @@ extends Node
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const KEYS := {"accept": KEY_ENTER, "cancel": KEY_ESCAPE, "up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "f": KEY_F,
-	"g": KEY_G, "tilde": KEY_QUOTELEFT, "one": KEY_1}
+	"g": KEY_G, "tilde": KEY_QUOTELEFT, "one": KEY_1, "e": KEY_E}
 const DIR_KEY := {2: "down", 4: "left", 6: "right", 8: "up"}
 const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑战"], "heal": ["治愈"]}
 const LOBBY := 4                   # 方桌大厅
@@ -32,6 +32,7 @@ var max_msec := 0                  # 墙钟上限（毫秒）；0＝不限。云
 var climb_manual_actions := 12     # 爬塔时每场战斗先手动按这么多步，再点战斗里的「自动」按钮
 var climb_max_defeats := 5         # 同一层守层者输这么多次就收工，报告写「打不过」
 var climb_grind_base := 6          # 第一次输了之后挂机练这么多场再来，之后每输一次翻倍
+var equip_enabled := true          # 爬塔时在大厅打开菜单 → 装备，把背包里更好的装备穿上
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
@@ -68,6 +69,10 @@ var _intent := ""
 var _explore_here := 0
 var _lost_guardian := 0
 var _t0 := 0
+var equip_changes := 0             # 一共换上了多少件装备
+var equip_passes := 0
+var _equip_job = null              # 正在进行的换装：{actor, row, started, want, changes, ticks, done, tries}
+var _equip_sig = null
 var _last_over_tick := -1
 var settled := false
 
@@ -223,6 +228,13 @@ func _signature(obs: Dictionary) -> Array:
 					sig.append(obs.index)
 				if obs.has("page"):
 					sig.append([obs.page.mode, obs.page.index])
+				if obs.screen == "overlay":
+					var menu := _find_ui(obs.map, XMenu)
+					if menu != null:
+						sig.append([str(menu._mode), int(menu._cmd_index)])
+						var eq := _equip_scene(menu)
+						if eq != null:
+							sig.append([str(eq._mode), int(eq._slot), int(eq._item_index), int(eq.actor_index)])
 	return sig
 
 
@@ -443,6 +455,9 @@ func _act(obs: Dictionary) -> void:
 		"overlay":
 			# 菜单、商店、子页（种族祝福、衣橱……）：先随手按几下（确定为主，夹着方向键），再按取消一路退出来
 			_mark("overlay_seen")
+			if _equip_job != null:
+				await _act_equip(obs)
+				return
 			if _overlay_budget > 0:
 				_overlay_budget -= 1
 				var r := _rng.randf()
@@ -831,6 +846,21 @@ func _act_climb(obs: Dictionary) -> void:
 	if map.player.is_moving():
 		await _frames(1)
 		return
+	if _equip_job != null:
+		# 回到地图了：换装做完就收尾；菜单没开起来就再按几次，还不行就算了
+		_equip_job.tries += 1
+		if _equip_job.done or _equip_job.tries > 5:
+			equip_passes += 1
+			equip_changes += int(_equip_job.changes)
+			_log("换装结束：换上 %d 件" % int(_equip_job.changes))
+			if int(_equip_job.changes) > 0:
+				_mark("equipped")
+			_equip_job = null
+			_equip_sig = _gear_sig(st)
+		else:
+			await _tap("cancel", 3)
+			await _frames(6)
+		return
 	if map.map_id == LOBBY:
 		_floor_entry = {LOBBY: floor}
 		await _climb_lobby(map, st)
@@ -860,6 +890,16 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				_heal_tries += 1
 			await _goto_target(map)
 			return
+	# 背包里的装备变了（打到新的）：打开菜单去装备页，把更好的穿上
+	if equip_enabled:
+		var gsig := _gear_sig(st)
+		if gsig != _equip_sig:
+			_equip_sig = gsig
+			_equip_job = {"actor": 0, "row": 0, "started": false, "want": -1, "changes": 0, "ticks": 0, "done": false, "tries": 0}
+			_log("去装备页看看有没有更好的装备")
+			await _tap("cancel", 3)
+			await _frames(6)
+			return
 	# 进门前存档（快捷键 ~）：全灭回标题后从这里接着来
 	var stamp := [int(st.variable(FLOOR_VAR)), battles.size()]
 	if stamp != _save_stamp:
@@ -878,6 +918,130 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 	# 门走不到或认不出：退回随便逛
 	_intent = ""
 	await _act_map({"map": map})
+
+
+func _gear_sig(st: XState) -> Array:
+	return [XItemScene.bag_gear("weapon").size(), XItemScene.bag_gear("armor").size(), st.party.duplicate()]
+
+
+func _equip_scene(menu: Node) -> XEquipScene:
+	for c in menu.get_children():
+		if c is XEquipScene and not c.is_queued_for_deletion():
+			return c
+	return null
+
+
+## 候选里哪一件最值得换上：看装备页「属性对比」会显示的那组数（装上后的八项能力对比现在的），加权算涨幅。
+## 返回候选序号；都不比身上的好返回 -1。
+func _best_candidate(eq: XEquipScene) -> int:
+	var a := eq.actor()
+	var cands: Array = eq.candidates()
+	var best := -1
+	var best_score := 0.02
+	for i in cands.size():
+		var rec: Dictionary = cands[i].rec
+		if rec.is_empty() or XEquipment.dual_blocked(a, eq._slot, rec):
+			continue
+		var t := XEquipment.preview(a, eq._slot, rec)
+		if t == null:
+			continue
+		var score := 0.0
+		var now := [a.mhp, a.mmp, a.atk, a.def, a.mat, a.mdf, a.agi, a.luk]
+		var then := [t.mhp, t.mmp, t.atk, t.def, t.mat, t.mdf, t.agi, t.luk]
+		var weight := [1.0, 0.3, 1.5, 1.0, 1.5, 1.0, 0.5, 0.2]
+		for k in 8:
+			score += weight[k] * (float(then[k]) - float(now[k])) / maxf(absf(float(now[k])), 1.0)
+		if score > best_score:
+			best_score = score
+			best = i
+	return best
+
+
+## 换装（菜单已经开着）：主菜单选「装备」→ 选人 → 装备页里逐个槽位看候选，有更好的就换上 → E 换下一个人 → 全队看完退出来。
+## 全程只按键：上下挪光标、确定、取消、E。
+func _act_equip(obs: Dictionary) -> void:
+	var job: Dictionary = _equip_job
+	job.ticks += 1
+	var menu := _find_ui(obs.map, XMenu)
+	if menu == null or job.ticks > 4000:
+		job.done = true
+		await _tap("cancel")
+		await _frames(3)
+		return
+	var eq := _equip_scene(menu)
+	if eq == null:
+		if job.done:
+			await _tap("cancel")
+			await _frames(3)
+			return
+		match str(menu._mode):
+			"command":
+				var want: int = menu.command_names().find("装备")
+				if want < 0:
+					job.done = true
+				elif int(menu._cmd_index) != want:
+					await _tap("down" if want > int(menu._cmd_index) else "up")
+				else:
+					await _tap("accept")
+					await _frames(3)
+			"actor":
+				await _tap("accept")
+				await _frames(4)
+			_:
+				await _tap("cancel")
+		return
+	var party_n: int = XState.current.party.size()
+	match str(eq._mode):
+		"command":
+			if job.started:
+				job.started = false
+				job.actor += 1
+				job.row = 0
+			if job.done or int(job.actor) >= party_n:
+				job.done = true
+				await _tap("cancel")
+				await _frames(3)
+			elif int(job.actor) > 0 and int(job.get("switched", 0)) < int(job.actor):
+				job["switched"] = int(job.actor)
+				await _tap("e")                 # 下一个人
+				await _frames(2)
+			elif int(eq._cmd) != 0:
+				await _tap("up")
+			else:
+				job.started = true
+				await _tap("accept")
+		"slot":
+			var view: Array = eq.slot_view()
+			if int(job.row) >= view.size():
+				await _tap("cancel")
+				return
+			var row: int = eq._slot_row()
+			if row != int(job.row):
+				await _tap("down" if int(job.row) > row else "up")
+				return
+			var best := _best_candidate(eq) if XEquipment.can_change(eq.actor(), eq._slot) else -1
+			if best < 0:
+				job.row += 1
+				return
+			job.want = best
+			await _tap("accept")
+		"item":
+			var n: int = eq.candidates().size()
+			var cur := int(eq._item_index)
+			var want := int(job.want)
+			if want < 0 or want >= n:
+				await _tap("cancel")
+				job.row += 1
+			elif cur != want:
+				# 列表首尾相接：走近的那一边
+				var down := posmod(want - cur, n)
+				await _tap("down" if down <= n - down else "up")
+			else:
+				await _tap("accept")
+				await _frames(2)
+				job.changes += 1
+				job.row += 1
+				job.want = -1
 
 
 var _grind_start := 0
@@ -1106,7 +1270,7 @@ func report() -> Dictionary:
 	return {
 		"seed": rng_seed, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
 		"aborted": aborted, "settled": settled, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
-		"defeats": defeats, "grind_battles": _grind_total, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
+		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
 		"timeline": timeline, "messages": messages_seen, "transcript": transcript,

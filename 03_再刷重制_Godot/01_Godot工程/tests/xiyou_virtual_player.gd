@@ -42,6 +42,7 @@ func _summary(rep: Dictionary) -> String:
 		lines.append("- 爬到：**第 %d 层**（已通过 %d 层）" % [int(rep.floor), maxi(0, int(rep.floor) - 1)])
 		lines.append("- 收工原因：%s" % (str(rep.climb_stop) if rep.climb_stop != "" else "步数用完或达到目标"))
 		lines.append("- 全灭 %d 次，挂机练级 %d 场，队伍等级 %s" % [int(rep.defeats), int(rep.grind_battles), str(rep.levels)])
+		lines.append("- 去装备页 %d 次，一共换上 %d 件装备" % [int(rep.equip_passes), int(rep.equip_changes)])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
 	if rep.aborted != "":
 		lines.append("- **卡死放弃**：%s" % str(rep.aborted))
@@ -65,6 +66,7 @@ func _run() -> void:
 	bot.max_ticks = int(_arg("--vp-ticks", "6000"))
 	bot.out_dir = _arg("--vp-out")
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
+	bot.equip_enabled = not OS.get_cmdline_user_args().has("--vp-no-equip")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
