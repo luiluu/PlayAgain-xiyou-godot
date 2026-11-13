@@ -31,7 +31,7 @@ func _ready() -> void:
 		back.pressed.connect(GameApp.return_to_menu)
 		column.add_child(back)
 		return
-	XScreenScale.apply(XConfig.flag(XScreenScale.KEY), get_tree())  # 画面平滑（玩家反馈 v0.01，触屏默认开）
+	XScreenScale.apply(XConfig.flag(XScreenScale.KEY), get_tree())  # 画面平滑（玩家反馈 v0.01；v0.01.06 起各平台默认关）
 	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	theme = XUI.theme()
 	_build_background()
