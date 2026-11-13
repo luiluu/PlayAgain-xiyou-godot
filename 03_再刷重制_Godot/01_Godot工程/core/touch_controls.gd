@@ -96,6 +96,13 @@ static var HOLD_REPEAT_ECHO := true
 ## 方向回显用的键（XKeyRepeat 看到带这个标记的回显就放行，不当成系统回显吞掉）。
 const DIR_KEYS := {"ui_up": KEY_UP, "ui_down": KEY_DOWN, "ui_left": KEY_LEFT, "ui_right": KEY_RIGHT}
 const REPEAT_META := &"xiyou_touch_repeat"
+## 玩家反馈（v0.01.06，O-待定）：原版战斗里按住确定，技能列表、选目标会按 24／6 帧连着确认（Window_Selectable.isOkTriggered＝Input.isRepeated）。
+## O-225 之后虚拟确定键按住一点不连发，手机上按住确定连续出招没了。现在按住确定照方向的做法发回车键的回显（is_echo() 为 true）：
+## 只认新按下的页面（商店、标题这些）照旧只确认一次，认回显的地方（战斗技能列表、选目标）按原版节奏连发；换场景即停，松开时补发回车松开。
+## 回退开关 HOLD_OK_ECHO = false：回到 O-225 的样子（按住确定不连发）。
+static var HOLD_OK_ECHO := true
+const OK_ECHO_KEY := KEY_ENTER
+var _ok_echoed := false
 
 ## 摇杆拖动翻页（ui6，Kyo 11-07「先做吧，然后设置里做开关」；O-238）：照原版 Mehmet_GhostButtons
 ## Sprite_JoyStick.processTouch——摇杆往左／右推到半径的 65% 以上、按住满 36 帧后，每 24 帧对当前列表翻一页
@@ -393,6 +400,8 @@ func _release(what: String) -> void:
 			elif spec.has("action"):
 				_send_action(spec.action, false)
 				_held.erase(spec.action)
+				if spec.action == "ui_accept":
+					_end_ok_echo()
 			elif spec.has("key"):
 				_send_key(spec.key, false)
 			if not ghost():
@@ -435,6 +444,13 @@ func _set_dir(action: String) -> void:
 		_hold(action)
 
 
+## 确定连发发过回车回显的，松开时补发回车松开（回显把 ui_accept 记成键盘上按着，见 DIR_KEYS 上方说明）
+func _end_ok_echo() -> void:
+	if _ok_echoed:
+		_ok_echoed = false
+		_send_key(OK_ECHO_KEY, false)
+
+
 func _hold(action: String) -> void:
 	_held[action] = 0
 	_held_scene[action] = _current_scene()
@@ -470,6 +486,7 @@ func release_all() -> void:
 	for action in _held.keys():
 		_send_action(action, false)
 	_held.clear()
+	_end_ok_echo()
 	_held_scene.clear()
 
 
@@ -493,6 +510,9 @@ func _physics_process(_delta: float) -> void:
 				_send_action(action, true)
 			elif DIR_KEYS.has(action) and _held_scene.get(action) == _current_scene():
 				_send_echo(DIR_KEYS[action])
+			elif HOLD_OK_ECHO and action == "ui_accept" and _held_scene.get(action) == _current_scene():
+				_send_echo(OK_ECHO_KEY)
+				_ok_echoed = true
 
 
 ## 摇杆翻页是否开着（代码开关＋玩家设置）
