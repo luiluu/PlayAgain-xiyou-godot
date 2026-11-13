@@ -1,6 +1,6 @@
 # 交付：cc/affix-absorb
 - 车道／工作者：B 界面＋C 机制／cc（玩家反馈线程「专武特效吸收点了没反应」）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -30,7 +30,7 @@
 
 ## 验证
 - `语法检查.py` 通过；`xiyou_affix_absorb` 42/42。
-- 本机选测（相关子集，见下）；`选测.py main --list` 因改了 actor.gd／xstate.gd 列出 535 个场景（近全量），按派单「不推」没走云端，留给总装合并时按影响面选测。
+- 本机选测 29 个相关场景全过（xiyou_affix_absorb、merchant29、equipment、determinism、combat、skill_page、help_card、item_bag、item_list、gear_ui、growth_forge、orbs、orb_ui、star_warehouse、alien_affix、demon_crown、tianqi_qiyin_equip、yunshang、gear_query_cache、save_events、param_cache、act_stat_memo、cat、dual_exclusive、custom_params、imported_balance、skill_menu_events、gear_detail、heartsteel，892 秒）；`选测.py main --list` 因改了 actor.gd／xstate.gd 列出 535 个场景（近全量），按派单「不推」没走云端，留给总装合并时按影响面选测。
 
 ## 本分支提交
-- 待写
+- edb2f476f 专武·特效吸取移植（XAffixAbsorb、equip_list 吸取视图、商人页 absorb 模式、技能页入口、专项）
