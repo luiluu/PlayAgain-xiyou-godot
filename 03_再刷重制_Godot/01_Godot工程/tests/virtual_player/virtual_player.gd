@@ -101,6 +101,9 @@ var advance_enabled := true        # 角色进阶（兑换大厅奉神老妪）�
 var advances := 0                  # 进阶了几次
 var fragments_enabled := true      # 肝帝积分够了就找绪绪换人道意志碎片，再去人族首领那里买功法、丹药、法宝（--vp-no-fragments 关）
 var formation_enabled := true      # 整队：板凳上有明显更强的人就换上场，领袖放 1 号位，助力位放档位高的；通关抽角色挑档位最高的（--vp-no-formation 关）
+var guard_shop_enabled := true     # 打赢守层者后回头找它：13 层起它会卖东西（种族祝福石、专属书）、送礼（--vp-no-guard-shop 关）
+var _gshop_done := {}              # 地图 → 这位守层者的店逛过了
+var guard_shops := 0               # 逛了几位守层者的店
 var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
@@ -1473,6 +1476,22 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 		return
 	# 进来之后层数变了＝这层打完了：回大厅去下一层
 	if int(_floor_entry.get(map.map_id, floor)) != floor:
+		# 先回头找守层者：打赢后它那一页有「购买物品」「向守层者索要礼物」（13 层起）
+		if guard_shop_enabled and spend_enabled and not _gshop_done.has(map.map_id):
+			var gs := _find_event(map, func(x): return _has_choice(x, "向守层者索要礼物"))
+			var gkey: int = map.map_id * 1000 + (gs.event_id if gs != null else 0)
+			if gs == null or _shop_done.has(gkey) or int(_shop_visits.get(gkey, 0)) >= 8 or not _aim(map, gs, "shop"):
+				_gshop_done[map.map_id] = true
+				if gs != null:
+					guard_shops += 1
+					_growth_stamp = null      # 买了祝福石：回大厅把种族进阶再过一遍
+			else:
+				_shop_event = gkey
+				if _arrived(map.player):
+					_shop_visits[gkey] = int(_shop_visits.get(gkey, 0)) + 1
+					_shop_last = ""
+				await _goto_target(map)
+				return
 		await _hotkey_lobby(map)
 		return
 	if _need_farm > 0 and _need_grind <= 0 and await _go_dungeon(map, st, floor):
@@ -2062,7 +2081,7 @@ func _shop_choice(choices: Array) -> int:
 	for i in choices.size():
 		var t := str(choices[i])
 		var key := "%s#%d" % [k, i]
-		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武") or t.contains("法宝")):
+		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武") or t.contains("法宝") or t.contains("索要礼物")):
 			continue
 		_shop_tries[key] = int(_shop_tries.get(key, 0)) + 1
 		if int(_shop_tries[key]) >= 4:
@@ -2091,7 +2110,7 @@ func _growth_state(st: XState) -> Dictionary:
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
 		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
-		"formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
+		"guard_shops": guard_shops, "formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
 		"fragments": st.item_count(FRAGMENT), "lamps": st.item_count(LAMP),
 	}
 

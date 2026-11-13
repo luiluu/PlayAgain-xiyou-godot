@@ -215,6 +215,19 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 		if got > 0:
 			out.bought += got
 			out.lines.append("买 %s×%d %s" % [str(e0.rec.get("name", "")), got, _spent(st, cost0)])
+	# 种族祝福进阶石（13 层起打赢的守层者卖，七族通用）：出战的人和助力位里谁正好差这一阶，就按人数买
+	var stone_need := stone_needs(st)
+	for i in d.size():
+		var e1: Dictionary = d[i]
+		var rank := stone_rank(e1.item) if int(e1.kind) == 0 else 0
+		if rank <= 0 or int(stone_need.get(rank, 0)) <= 0 or not shop_page._buy_enabled(e1):
+			continue
+		var cost1 := _wallet(st)
+		var got1 := _buy(shop_page, i, int(stone_need[rank]))
+		if got1 > 0:
+			stone_need[rank] = int(stone_need[rank]) - got1
+			out.bought += got1
+			out.lines.append("买 %s×%d %s" % [str(e1.rec.get("name", "")), got1, _spent(st, cost1)])
 	var gears := []
 	var books := []
 	var pills := []
@@ -556,3 +569,38 @@ static func draw_choice(choices: Array) -> int:
 			best_rank = rank
 			best = i
 	return best
+
+
+# ---------------------------------------------------------------- 第三批：种族祝福石（打赢的守层者卖）
+
+const ROMAN := {"Ⅱ": 2, "Ⅲ": 3, "Ⅳ": 4, "Ⅴ": 5, "Ⅵ": 6, "Ⅶ": 7}
+
+
+## 这件物品是第几阶的祝福进阶石（不是返回 0）
+static func stone_rank(item: Dictionary) -> int:
+	var name := str(item.get("name", ""))
+	if not name.begins_with("祝福进阶石·"):
+		return 0
+	for k in ROMAN:
+		if name.contains(k + "阶"):
+			return int(ROMAN[k])
+	return 0
+
+
+## 各阶进阶石还差几块：{阶: 块数}。出战的人和助力位里现在是第 r 阶的，要一块第 r＋1 阶的；手里已有的先抵掉
+static func stone_needs(st: XState) -> Dictionary:
+	var need := {}
+	if XRace.config().is_empty():
+		return need
+	var team: Array = st.battle_members()
+	if st.helper() != null:
+		team.append(st.helper())
+	for a in team:
+		var d := XRace.data(st, a)
+		if int(d.race) >= 0 and int(d.rank) >= 1 and int(d.rank) < 7:
+			need[int(d.rank) + 1] = int(need.get(int(d.rank) + 1, 0)) + 1
+	var stones: Array = XRace.config().get("stones", [])
+	for rank in need.keys():
+		if rank - 2 < stones.size():
+			need[rank] = maxi(0, int(need[rank]) - st.item_count(int(stones[rank - 2])))
+	return need
