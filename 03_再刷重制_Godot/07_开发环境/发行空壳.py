@@ -31,6 +31,7 @@ CLASS_RE = re.compile(r'^class_name (X(?:Tianqi\w*|RiftAlien))\b', re.M)
 KEEP = {'XTianqiTitle'}  # 发行包要用的真脚本（标题画面）：不换
 SCAN_DIRS = ('modes', 'core', 'scenes', 'addons')
 MARK = '## 发行空壳'
+NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
 
 
 def _strip_comment(line: str) -> str:
@@ -282,6 +283,8 @@ def build_all(root: Path = PROJECT) -> tuple:
         stubs[p] = s
         missing += [f'{c}.{m}' for m in miss]
         how.update({f'{c}.{k}': v for k, v in h.items()})
+        info = parse((root / p).read_text(encoding='utf-8'))
+        NUMERIC.update(f'{c}.{k}' for k in h if info['funcs'][k]['ret'] in ('int', 'float'))
     return stubs, missing, how
 
 
@@ -324,6 +327,11 @@ def main(argv) -> int:
         return 0
     if missing:
         print('发行空壳缺成员：' + '、'.join(missing))
+        return 1
+    # 返回数字的函数按类型给 0 多半不对（倍率该是 1、次数该原样返回）：要在特例表里明确写
+    guess = [k for k, v in how.items() if v == '按类型空值' and k in NUMERIC]
+    if guess:
+        print('发行空壳：这些返回数字的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
         return 1
     print(f'发行空壳：{len(stubs)} 个脚本，{len(how)} 个函数都有')
     return 0

@@ -31,5 +31,9 @@
   "XTianqiMerchant.bodies": "[]",
   "XTianqiSummit.run_event": "false",
   "XTianqiSkills.level_scale": "0.5 + 0.5 * clampf((float(a.level) - 1.0) / 98.0, 0.0, 1.0) if a is XActor else 1.0",
-  "XTianqiMeter.make": "BODY:var m := XTianqiMeter.new()\nm.visible = false\nreturn m"
+  "XTianqiMeter.make": "BODY:var m := XTianqiMeter.new()\nm.visible = false\nreturn m",
+  "XTianqiReforge.cost": "0",
+  "XTianqiSkills.boss_add": "0",
+  "XTianqiSkills.dot_value": "0.0",
+  "XTianqiSkills.formula": "0.0"
 }
