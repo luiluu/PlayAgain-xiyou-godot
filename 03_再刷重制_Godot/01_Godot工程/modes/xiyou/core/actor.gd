@@ -688,7 +688,7 @@ func _read_memo() -> Dictionary:
 		store[self] = m
 	return m
 
-## 记忆命中时的比对（O-待定-1 等，同 _read_verify 的规矩）：不一样就记下、报错，XIYOU_READ_VERIFY=1 时当场崩
+## 记忆命中时的比对（O-390 等，同 _read_verify 的规矩）：不一样就记下、报错，XIYOU_READ_VERIFY=1 时当场崩
 static func verify_memo(what: String, b, cached, fresh) -> void:
 	read_hits += 1
 	if cached != fresh:
@@ -746,7 +746,7 @@ func states() -> Array:
 		return _actor_states_now()
 	return _actor_states_memo().duplicate()
 
-## O-待定-1：本体状态表没重算（_states_ver 没变）、套装给的状态也一样时直接用上次排好的表（不给副本，调用方自己复制）
+## O-390：本体状态表没重算（_states_ver 没变）、套装给的状态也一样时直接用上次排好的表（不给副本，调用方自己复制）
 func _actor_states_memo() -> Array:
 	var base := _states_memo_list()
 	var suit_ids := XEquipSuits.ids(self, "states")

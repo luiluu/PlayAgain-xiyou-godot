@@ -371,7 +371,7 @@ func _states_now() -> Array:
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
 	return out
 
-## O-待定-1 状态表记忆（战斗出招前停顿，Kyo 11-13）：一次行动里 states() 要调四五百次（能否行动、特性、侧栏格子……），
+## O-390 状态表记忆（战斗出招前停顿，Kyo 11-13）：一次行动里 states() 要调四五百次（能否行动、特性、侧栏格子……），
 ## 每次逐个查状态记录。结果只取决于身上的状态编号、破甲·真气倍率、天启篇改写开没开、隐月 2521 修正和数据库状态表，
 ## 这几样都没变就直接用上次的表（给副本）；任一样变了（含就地改 state_ids）当场重算。
 ## 回退：STATES_MEMO = false（每次现查，同原来）。XIYOU_READ_VERIFY=1 时每次命中都重算比对（同 O-348）。
