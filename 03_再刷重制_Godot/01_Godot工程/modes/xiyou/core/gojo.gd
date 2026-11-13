@@ -167,15 +167,15 @@ static func patch_skills(t: Array) -> void:
 		if not _free(t, id, "技能"):
 			return
 	var defs := {
-		STRIKE: ["咒力打击", 1, 1, 1, 64, 1],
-		BLUE: ["术式顺转「苍」", 2, 2, 1, 512, 473],
-		RED: ["术式反转「赫」", 2, 1, 1, 426, 697],
-		REVERSE: ["反转术式", 2, 11, 3, 72, 45],
-		BLUE_MAX: ["苍·最大出力", 2, 2, 1, 512, 561],
-		RED_MAX: ["赫·最大出力", 2, 1, 1, 426, 697],
-		PURPLE_IN: ["虚式「茈」·收", 2, 2, 1, 467, 120],
-		PURPLE_OUT: ["虚式「茈」·放", 2, 1, 1, 467, 120],
-		DOMAIN: ["领域展开「无量空处」", 2, 2, 1, 5789, 784],
+		STRIKE: ["咒力打击", 1, 1, 1, icon(2), 1],
+		BLUE: ["术式顺转「苍」", 2, 2, 1, icon(3), 473],
+		RED: ["术式反转「赫」", 2, 1, 1, icon(4), 697],
+		REVERSE: ["反转术式", 2, 11, 3, icon(5), 45],
+		BLUE_MAX: ["苍·最大出力", 2, 2, 1, icon(6), 561],
+		RED_MAX: ["赫·最大出力", 2, 1, 1, icon(7), 697],
+		PURPLE_IN: ["虚式「茈」·收", 2, 2, 1, icon(8), 120],
+		PURPLE_OUT: ["虚式「茈」·放", 2, 1, 1, icon(9), 120],
+		DOMAIN: ["领域展开「无量空处」", 2, 2, 1, icon(10), 784],
 	}  # 名字、命中类型、范围（1 敌单体、2 敌全体、11 自己）、伤害类型（1 伤害、3 回复）、图标、动画
 	for id in defs:
 		var d: Array = defs[id]
@@ -201,8 +201,8 @@ static func patch_skills(t: Array) -> void:
 		_set_module(r, "gojo" if id in [PURPLE_IN, PURPLE_OUT] else XTianqiSkills.MODULE)
 		t[id] = XTianqiSkills.build(id, r) if XTianqiSkills.has(id) else r
 		t[id].id = id
-	var passives := {SIX_EYES: ["六眼", 615], INFINITY: ["无下限", 622], STRONGEST: ["最强", 881], AWAKENING: ["黑闪觉醒：五条悟", 881],
-		ADV[0]: ["进阶·茈收束", 467], ADV[1]: ["进阶·茈贯穿", 467], ADV[2]: ["进阶·自动反转", 72], ADV[3]: ["进阶·领域强化", 5789]}
+	var passives := {SIX_EYES: ["六眼", icon(11)], INFINITY: ["无下限", icon(12)], STRONGEST: ["最强", icon(13)], AWAKENING: ["黑闪觉醒：五条悟", icon(14)],
+		ADV[0]: ["进阶·茈收束", icon(15)], ADV[1]: ["进阶·茈贯穿", icon(16)], ADV[2]: ["进阶·自动反转", icon(17)], ADV[3]: ["进阶·领域强化", icon(10)]}
 	for id in passives:
 		var r: Dictionary = (t[TEMPLATE_PASSIVE] as Dictionary).duplicate(true)
 		r.id = id
@@ -222,6 +222,7 @@ static func patch_armors(t: Array) -> void:
 	r._gojo = true
 	r.name = "眼罩"
 	r.description = "法宝\n五条悟遮住六眼的黑色眼罩。"
+	r.iconIndex = icon(18)
 	r.traits = []
 	r.note = "<req_level:1>\n<req_actors: %d>\n<pos=APs text=\\c[2]专属：五条悟 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效：虚式「茈」结算后，返还苍印、赫印各1 size=18 color=rgba(255,255,255,1) line=false align=0>" % ACTOR
 	r.meta = XTianqiSkills.parse_meta(r.note)
@@ -285,7 +286,7 @@ static func patch_states(t: Array) -> void:
 			return
 	var names := {ST_BLUE: "苍印·一", ST_BLUE + 1: "苍印·二", ST_BLUE + 2: "苍印·三", ST_RED: "赫印·一", ST_RED + 1: "赫印·二", ST_RED + 2: "赫印·三",
 		ST_DOMAIN: "无量空处", ST_AWAKE: "觉醒：五条悟", ST_SLOW: "赫·减速"}
-	var icons := {ST_BLUE: 512, ST_RED: 426, ST_DOMAIN: 5789, ST_AWAKE: 881, ST_SLOW: 828}
+	var icons := {ST_BLUE: icon(3), ST_RED: icon(4), ST_DOMAIN: icon(10), ST_AWAKE: icon(14), ST_SLOW: 828}
 	var notes := {ST_DOMAIN: "无量空处：用苍类赫印另＋1、用赫类苍印另＋1；敌人行动前判信息过载；五条悟的术式必中。",
 		ST_AWAKE: "直接术式伤害×1.2，黑闪概率＋15%；咒力打击给较少的那种印＋1。持续后续3个完整回合。", ST_SLOW: "速度－10%"}
 	for id in names:
@@ -319,6 +320,50 @@ static func patch_plugins(p: Dictionary) -> void:
 		adv[key] = JSON.stringify({"AdvancedName": "五条悟%s" % ["一阶", "二阶", "三阶", "四阶"][i], "AdvancedActNum": str(r[0]), "AdvancedActNumMaX": "4",
 			"AdvancedActId": str(ACTOR), "AdvancedActLevel": str(r[1]), "AdvancedGold": str(r[2]), "AdvancedItem": r[3],
 			"AdvancedSkiId": "[%d,%d]" % [r[4], ADV[i]], "AdvancedForId": "[]", "AdvancedNote": "\"\""})
+
+
+# ---- 正式美术（content/gojo/，导出 03_转换工具/五条悟美术导出.py） ----
+## 图标号 ICON_BASE＋序号（序号＝定稿任务号：2～10 主动、11～14 被动、15～17 进阶、18 眼罩），图在 icons/NN.png（128×128）；
+## XUI.icon_texture 分流到这里。ART＝false 时技能、状态、眼罩照旧借原来的图标（开表时定）。
+const ICON_BASE := 320000
+const ICON_COUNT := 19
+const ART_DIR := "res://content/gojo/"
+const DOMAIN_BG := "res://content/gojo/domain_bg.png"
+static var ART := true
+static var _icons := {}
+const _OLD_ICONS := {2: 64, 3: 512, 4: 426, 5: 72, 6: 512, 7: 426, 8: 467, 9: 467, 10: 5789, 11: 615, 12: 622, 13: 881, 14: 881, 15: 467, 16: 467, 17: 72, 18: 6410}
+
+
+static func icon(n: int) -> int:
+	return ICON_BASE + n if ART else int(_OLD_ICONS.get(n, 0))
+
+
+static func is_icon(index: int) -> bool:
+	return index >= ICON_BASE and index < ICON_BASE + ICON_COUNT
+
+
+static func icon_texture(index: int) -> AtlasTexture:
+	if _icons.has(index):
+		return _icons[index]
+	var p := ART_DIR + "icons/%02d.png" % (index - ICON_BASE)
+	if not ResourceLoader.exists(p):
+		return null
+	var tex: Texture2D = load(p)
+	var a := AtlasTexture.new()
+	a.atlas = tex
+	a.region = Rect2(Vector2.ZERO, tex.get_size())
+	_icons[index] = a
+	return a
+
+
+## 战斗画面：我方有五条悟的无量空处开着时，铺领域背景（battle_scene 每帧问）
+static func domain_shown(logic) -> bool:
+	if not ENABLED or not ART or logic == null:
+		return false
+	for a in _members(logic):
+		if active_domain(a):
+			return true
+	return false
 
 
 # ---- 公式 ----

@@ -93,6 +93,15 @@ func _data() -> void:
 	var row = XAdvance.rows().filter(func(r): return int(r.actor) == GOJO)
 	_check("advance_rows", row.size() == 4 and (row[0].learn as Array).has(1240) and (row[3].learn as Array).has(XGojo.ADV[3]), row.size())
 	_check("art", XDB.img_path("sv_actors", "Codex_Gojo_SV") != "" and XDB.img_path("characters", "$Codex_Gojo_Walk") != "" and XDB.img_path("faces", "Codex_Gojo_Face") != "")
+	var icon_ids := [int(XDB.rec("Skills", XGojo.STRIKE).iconIndex), int(XDB.rec("Skills", XGojo.ADV[3]).iconIndex), int(XDB.rec("Armors", XGojo.ARMOR).iconIndex), int(XDB.rec("States", XGojo.ST_BLUE).iconIndex)]
+	_check("art_icon_ids", icon_ids == [XGojo.ICON_BASE + 2, XGojo.ICON_BASE + 10, XGojo.ICON_BASE + 18, XGojo.ICON_BASE + 3], icon_ids)
+	var missing := []
+	for n in range(2, 19):
+		var tex := XUI.icon_texture(XGojo.ICON_BASE + n)
+		if tex == null or tex.get_size() != Vector2(128, 128):
+			missing.append(n)
+	_check("art_icons_load", missing.is_empty(), missing)
+	_check("art_domain_bg", ResourceLoader.exists(XGojo.DOMAIN_BG))
 	_check("hidden_outside", XImportedBalance.is_disabled_actor(GOJO) and XImportedBalance.is_hidden_actor(GOJO) and not XActorBook.index_ids().has(GOJO))
 	XGojo.unlock_override = 0
 	_check("locked_closed", XTianqiSkills.tier_of(GOJO, true) == "" and not XTianqi.pool("lianyu")[XTier.SUPER].has(GOJO) and XGojo.locked(GOJO))
@@ -214,6 +223,7 @@ func _domain_flash() -> void:
 		n += 1 if XGojo.overload(lg, e) else 0
 	_check("overload_rate", n > 20 and n < 120, n)
 	_check("overload_not_actor", not XGojo.overload(lg, a))
+	_check("domain_bg_shown", XGojo.domain_shown(lg))
 	_check("domain_sure", XGojo.sure(a, XDB.rec("Skills", XGojo.RED)) and not XGojo.sure(a, XDB.rec("Skills", XGojo.STRIKE)))
 	a.mp = 0.0
 	XGojo.on_black_flash(a)

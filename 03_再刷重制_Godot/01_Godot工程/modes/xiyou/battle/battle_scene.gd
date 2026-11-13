@@ -145,6 +145,7 @@ func _ready() -> void:
 	var vs := get_viewport_rect().size
 	_origin = Vector2((vs.x - BOX.x) / 2.0, (vs.y - BOX.y) / 2.0)
 	_build_background()
+	_build_gojo_domain()
 	field = Node2D.new()
 	field.position = _origin
 	add_child(field)
@@ -328,6 +329,32 @@ func _build_background() -> void:
 		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		add_child(t)
+
+
+## 天启篇五条悟的无量空处：领域开着时在战斗背景上铺一层领域背景（淡入淡出），XGojo.domain_shown 每帧问
+var _gojo_domain: TextureRect = null
+
+
+func _build_gojo_domain() -> void:
+	if not ResourceLoader.exists(XGojo.DOMAIN_BG):
+		return
+	_gojo_domain = TextureRect.new()
+	_gojo_domain.texture = load(XGojo.DOMAIN_BG)
+	_gojo_domain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_gojo_domain.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_gojo_domain.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_gojo_domain.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gojo_domain.modulate.a = 0.0
+	_gojo_domain.visible = false
+	add_child(_gojo_domain)
+
+
+func _tick_gojo_domain(delta: float) -> void:
+	if _gojo_domain == null:
+		return
+	var target := 1.0 if XGojo.domain_shown(logic) else 0.0
+	_gojo_domain.modulate.a = move_toward(_gojo_domain.modulate.a, target, delta * 2.0)
+	_gojo_domain.visible = _gojo_domain.modulate.a > 0.0
 
 
 ## Codex_MiraRavenMultiFrame partyLayout：中线 x = 宽×0.64；1～4 人竖排一列（上 max(高+36, 高×0.32)、下 高×0.73，
@@ -720,6 +747,7 @@ func apply_camera() -> void:
 
 
 func _process(delta: float) -> void:
+	_tick_gojo_domain(delta)
 	for e in gauges:
 		var g: Dictionary = gauges[e]
 		g.box.position = sprites[e].position + Vector2(-320, -27)
