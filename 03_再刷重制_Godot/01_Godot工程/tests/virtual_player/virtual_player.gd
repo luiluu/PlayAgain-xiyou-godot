@@ -825,7 +825,11 @@ func _act_battle(obs: Dictionary) -> void:
 	for e in b.logic.enemies:
 		hp += float(e.hp)
 	# 放水（只在量数时开）：这一层已经输满 pass_after 次，这次挑战把守层者的血压到 1
-	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent in ["challenge", "enter"] and int(_floor_row().get("defeats", 0)) >= pass_after:
+	# 进门就自动开打的战斗（天启篇选线后的关卡、第 20 层这类）输了不一定是全灭回标题：按「进门开打了几次」另数
+	if pass_after > 0 and _battle != null and not _battle.has("hp0") and _dg.is_empty() and _intent == "enter":
+		_floor_row()["enter_fights"] = int(_floor_row().get("enter_fights", 0)) + 1
+	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent in ["challenge", "enter"] \
+			and (int(_floor_row().get("defeats", 0)) >= pass_after or int(_floor_row().get("enter_fights", 0)) > pass_after + 1):
 		for e in b.logic.enemies:
 			if float(e.hp) > 1.0:
 				e.hp = 1.0
