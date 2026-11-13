@@ -101,19 +101,26 @@ static func _eval(formula: String, lv: float) -> float:
 	return float(v)
 
 
-## Game_Item.gainExp：满级不得；加完按下一级所需逐级升
+## Game_Item.gainExp：满级不得；加完按下一级所需逐级升。
+## 连升多级时角色只在最后重算一次（原版每级 user.refresh()）：重算不影响下一级所需，法宝成长是线性的、生命魔法夹值
+## 取最后一次与逐级夹出来一样，结果相同；究极丹（100 万经验，上限 888 级）一颗连升几百级，逐级重算一颗要一秒以上。
 static func gain_exp(item: Dictionary, amount: float, user: XActor = null) -> void:
 	if not is_magic(item) or level_of(item) >= max_level(item):
 		return
 	var real := XPower.js_round(exp_of(item) + amount)
 	item.exp = real
+	var leveled := false
 	while level_of(item) < max_level(item) and real >= next_level_exp(item):
-		level_up(item, user)
+		level_up(item, user, false)
+		leveled = true
 		real = exp_of(item)
+	if leveled:
+		_refresh_user(user)
 
 
-## Game_Item.levelUp：所需按升级前的等级算；已满级时只把经验设成所需（MagicWeaponLevelUp 对满级法宝）
-static func level_up(item: Dictionary, user: XActor = null) -> bool:
+## Game_Item.levelUp：所需按升级前的等级算；已满级时只把经验设成所需（MagicWeaponLevelUp 对满级法宝）。
+## refresh 为假时不重算角色（连升时由调用方最后重算一次）
+static func level_up(item: Dictionary, user: XActor = null, refresh := true) -> bool:
 	if not is_magic(item):
 		return false
 	var cur := exp_of(item)
@@ -122,17 +129,21 @@ static func level_up(item: Dictionary, user: XActor = null) -> bool:
 		item.level = level_of(item) + 1.0
 		item.exp = maxf(0.0, cur - need)
 		XTianqiAffixRoll.refresh_growth(item)  # 天启篇：通用法宝的光环随养成升阶
-		_level_up_effect(item, user)
+		_level_up_effect(item, user if refresh else null)
 	else:
 		item.exp = need
 	return true
 
 
-## CP_X_MagicWeaponLearnSkill 先 user.refresh()（学技能缓存作废），再跑 <Magic Weapon LevelUp Effect>
-static func _level_up_effect(item: Dictionary, user: XActor) -> void:
+static func _refresh_user(user: XActor) -> void:
 	if user != null:
 		user.refresh_passive()
 		user.refresh_resources()
+
+
+## CP_X_MagicWeaponLearnSkill 先 user.refresh()（学技能缓存作废），再跑 <Magic Weapon LevelUp Effect>
+static func _level_up_effect(item: Dictionary, user: XActor) -> void:
+	_refresh_user(user)
 	if str(item.get("note", "")).contains("<Magic Weapon LevelUp Effect>"):
 		unsupported_effects.append({"base": int(item.get("base", 0)), "level": level_of(item)})
 
@@ -178,9 +189,13 @@ static func plugin_command(s: XState, args: PackedStringArray) -> bool:
 			var times := int(_arg(args, 3))
 			var a: XActor = s.actor(aid) if aid > 0 and not XDB.rec("Actors", aid).is_empty() else null
 			if a != null and slot >= 0 and slot < a.equips.size():
+				var leveled := false
 				for i in range(times):
 					if is_magic(a.equips[slot]):
-						level_up(a.equips[slot], a)
+						level_up(a.equips[slot], a, false)
+						leveled = true
+				if leveled:
+					_refresh_user(a)  # 同 gain_exp：连升只在最后重算一次
 			return true
 	return false
 
