@@ -17,6 +17,7 @@ const SESSION_FLAGS := ["Boss", "BOSS", "boss", "wxxonoff", "wxlonoff", "wxtonof
 static var _session := {}
 const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "commandRemember": true, "battleCamera": true,
 	"bgmVolume": 40, "bgsVolume": 40, "meVolume": 40, "seVolume": 40,
+	"codexQuality": {"integer": false, "fps": 0, "window": "auto", "low": false, "crisp": true, "motion": true},  # 重制新增「画质设置」（XGraphics）
 	"CombatDamageShow": true, "CombatSkillAnimation": false, "battleAniSpeed": 4,
 	"MOG_TrPopUpBattle_Key": false, "CombatDamageRecordKey": false,
 	"codexNotices": {"race": true, "chest": true, "zhenqi": true, "points": true, "drop": true, "learn": true, "dungeon": true, "share": true},
@@ -24,7 +25,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexEquipmentSort": {"sort": "quality", "term": ""}, "SAchievementS": {}, "ChangeClothesLite": [], "DesignationN": {},
 	"codexWeakFiveClearV2": false, "codexWhisperSeen": [], "codexTianqiBadges": [], "codexTianqiAliens": [], "codexTianqiQiyinParts": [], "codexTianqiGojo": false,
 	"codexScreenFx": true,  # 重制新增「画面特效」（大厅初步异化的光尘与小字，XLobbyCorruption）
-	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没存过时按平台：触屏开、桌面关（ensure_loaded）
+	"codexScreenSmooth": false}  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -63,6 +64,8 @@ static func ensure_loaded() -> void:
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
 				elif key == "battleAniSpeed":
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				elif key == XGraphics.KEY:
+					_values[key] = XGraphics.sanitize(data.get(key))
 				elif key == "codexNotices":
 					# 原版 applyData：只有存成 false 的类别才关闭
 					var saved = data.get(key)
@@ -104,8 +107,10 @@ static func ensure_loaded() -> void:
 					# installWeakChallengeRuntime applyData：!!(d && d.codexWeakFiveClearV2 === true)（XWeakChallenge）
 					_values[key] = data.get(key) is bool and data[key] == true
 				elif key == XScreenScale.KEY:
-					# 画面平滑：存过 true／false 才认，没存过照平台默认
-					_values[key] = bool(data[key]) if data.get(key) is bool else XScreenScale.default_on()
+					# 画面平滑：玩家在设置页亲手选过才认存的值，没选过照默认（XScreenScale.saved_value）
+					_values[key] = XScreenScale.saved_value(data)
+					if data.get(XScreenScale.CHOSEN_KEY) == true:
+						_values[XScreenScale.CHOSEN_KEY] = true
 				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
@@ -136,13 +141,14 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS"]:
+	if key not in DEFAULTS or key in VOLUMES or key in ["battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
 	if key == "MapXy":
 		_map_xy_configured = true
 	if key == XScreenScale.KEY:
+		_values[XScreenScale.CHOSEN_KEY] = true  # 亲手选过的记号，下次读配置才认这个值
 		XScreenScale.apply(value)
 	return _write()
 
@@ -217,6 +223,18 @@ static func set_map_xy(value: bool) -> bool:
 
 
 ## 装备检索的排序选择（installEquipmentStatusRuntime：ConfigManager.codexEquipmentSort = {sort, term}）
+## 画质设置（XGraphics）：返回副本，改了用 set_quality 存
+static func quality() -> Dictionary:
+	ensure_loaded()
+	return XGraphics.sanitize(_values.get(XGraphics.KEY))
+
+
+static func set_quality(value: Dictionary) -> bool:
+	ensure_loaded()
+	_values[XGraphics.KEY] = XGraphics.sanitize(value)
+	return _write()
+
+
 static func equipment_sort() -> Dictionary:
 	ensure_loaded()
 	return (_values.codexEquipmentSort as Dictionary).duplicate()

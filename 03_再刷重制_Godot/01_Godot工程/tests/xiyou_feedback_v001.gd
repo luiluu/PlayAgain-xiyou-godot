@@ -7,7 +7,7 @@ extends Node
 ##   关掉时一次按键现算多次（打印两边次数与用时）；
 ## - 说明卡元素表只读一次（XHelpCard.ELEMENT_DATA_CACHE）：商店每移一行原先 40～100 ms 都花在重读 1 MB 的元素表；
 ## - 神话敌人画面 1 倍（XBattleScene.ELITE_SCALE，原版 1.8 倍被 YEP 呼吸更新当帧改回）；
-## - 画面平滑（XScreenScale）：触屏默认开、桌面默认关，设置改了立刻切根窗口缩放方式，开关关掉恒为 canvas_items；
+## - 画面平滑（XScreenScale）：v0.01.06 起各平台默认关、老配置没亲手选过的 true 不认（回退 TOUCH_DEFAULT_ON＝dev497 触屏默认开），设置改了立刻切根窗口缩放方式，开关关掉恒为 canvas_items；
 ##   viewport 缩放时屏幕→画面的换算按 keep 比例算（安全区用）。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
@@ -218,20 +218,42 @@ func _screen() -> void:
 	var before := root.content_scale_mode
 	# 没存过这一项（v0.01 老配置）：按平台默认。TestEnv 写过一次配置（会连默认值一起写进去），先删掉
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	# v0.01.06 起（O-369）：触屏、桌面没选过都默认关
 	XPlatform.force_mobile = true
 	XConfig._loaded_path = "<unloaded>"
-	check("smooth_default_touch", XConfig.flag(XScreenScale.KEY))
+	check("smooth_default_touch_off", not XConfig.flag(XScreenScale.KEY))
 	XPlatform.force_mobile = false
 	XConfig._loaded_path = "<unloaded>"
 	check("smooth_default_desktop", not XConfig.flag(XScreenScale.KEY))
+	# dev497～ 的老配置：触屏默认的 true 被连同别的设置写进文件、没有亲手选过的记号 → 不认，按默认关
+	var f := FileAccess.open(XConfig.path_override, FileAccess.WRITE)
+	f.store_string(JSON.stringify({XScreenScale.KEY: true, "alwaysDash": false}))
+	f.close()
+	XPlatform.force_mobile = true
+	XConfig._loaded_path = "<unloaded>"
+	check("smooth_old_true_ignored", not XConfig.flag(XScreenScale.KEY))
+	check("smooth_old_other_kept", not XConfig.flag("alwaysDash"))
+	# 回退 TOUCH_DEFAULT_ON = true：触屏默认开、老配置里的 true 照认（dev497 行为）
+	XScreenScale.TOUCH_DEFAULT_ON = true
+	XConfig._loaded_path = "<unloaded>"
+	check("smooth_rollback_old_true_kept", XConfig.flag(XScreenScale.KEY))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	XConfig._loaded_path = "<unloaded>"
+	check("smooth_rollback_default_touch", XConfig.flag(XScreenScale.KEY))
+	XPlatform.force_mobile = false
+	XConfig._loaded_path = "<unloaded>"
+	check("smooth_rollback_default_desktop", not XConfig.flag(XScreenScale.KEY))
+	XScreenScale.TOUCH_DEFAULT_ON = false
+	XConfig._loaded_path = "<unloaded>"
 	XConfig.set_flag(XScreenScale.KEY, true)
 	check("smooth_on_viewport", root.content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT, root.content_scale_mode)
 	XConfig._loaded_path = "<unloaded>"
 	check("smooth_saved", XConfig.flag(XScreenScale.KEY))
-	# 存过 true 后，触屏／桌面默认都不再覆盖它
+	# 亲手存过 true 后（带记号），触屏／桌面默认都不再覆盖它
 	XPlatform.force_mobile = true
 	XConfig._loaded_path = "<unloaded>"
 	check("smooth_saved_kept", XConfig.flag(XScreenScale.KEY))
+	check("smooth_chosen_mark", JSON.parse_string(FileAccess.get_file_as_string(XConfig.path_override)).get(XScreenScale.CHOSEN_KEY) == true)
 	XPlatform.force_mobile = null
 	XConfig.set_flag(XScreenScale.KEY, false)
 	check("smooth_off_canvas", root.content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS, root.content_scale_mode)

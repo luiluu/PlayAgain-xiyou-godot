@@ -11,16 +11,16 @@ config_version=5
 [application]
 
 config/name="再刷重制"
-config/name.tianqi_release="再刷一把：天启篇"
 config/description="西游改版优先重制，新版保留入口。"
-config/version="dev.530"
+config/version="dev.535"
 run/main_scene="res://scenes/entry_menu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="KYO/再刷重制_开发"
-config/custom_user_dir_name.release="KYO/再刷重制"
 config/features=PackedStringArray("4.7")
-boot_splash/show_image=false
 boot_splash/bg_color=Color(0, 0, 0, 1)
+boot_splash/show_image=false
+config/name.tianqi_release="再刷一把：天启篇"
+config/custom_user_dir_name.release="KYO/再刷重制"
 
 [autoload]
 
