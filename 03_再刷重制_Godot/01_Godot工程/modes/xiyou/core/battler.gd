@@ -736,7 +736,7 @@ func _state_mark_dirty(id: int) -> void:
 
 ## 加减一个状态会不会改角色的技能表、特性表（整批加减时哪些表能留到下一步，见 XActor.STATE_BATCH）：
 ## - STATE_LIGHT：没有特性、也没有挂上／拿掉／到期时要跑的效果（开战自带的状态大多如此，只带确认、受击等时机的效果）——两张表都不变；
-## - STATE_TRAITS：有特性但不加技能（特性 43）——特性表变，技能表不变；
+## - STATE_TRAITS：有特性但不加技能（特性 43）——特性表变（按特性码取的集合只有用到它那几个码的变），技能表不变；
 ## - STATE_HARD：其余（加技能的、带挂上／拿掉／到期效果的、阵亡 1、破甲·真气（记录随倍率改写）、查不到的）——按普通写入全部作废。
 ## 依据：角色的技能表只从状态的特性 43 里读状态（native_skill_ids）；之后的心钢、云裳、异化、渡鸦／米拉、谷雨、屠苏／璇、吞噬、
 ## 专武吸取、套装、法宝、真气与天启篇的技能视图都不读身上的状态、特性、能力值、HP／MP／TP。特性表读状态只在 trait_objects 的状态段。
@@ -749,6 +749,7 @@ static func state_class(id: int) -> int:
 	if not is_same(table, _state_class_table):
 		_state_class_table = table
 		_state_classes = {}
+		_state_masks = {}
 	var key := XTianqiSkills.state_key(id)
 	var hit = _state_classes.get(key)
 	if hit != null:
@@ -760,7 +761,18 @@ static func state_class(id: int) -> int:
 			or (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) in ["apply", "remove", "leave"]):
 		cls = STATE_HARD
 	_state_classes[key] = cls
+	var mask := 0
+	for t in traits:
+		var code := int(t.code)
+		mask = -1 if code < 0 or code > 62 else mask | (1 << code)
+	_state_masks[key] = mask
 	return cls
+
+## 状态带的特性码（按位，码 c 在第 c 位；超出 0～62 的算全部）。整批加减时只作废用到这些码的那几项（XActor._carry_slot）
+static var _state_masks := {}
+static func state_trait_mask(id: int) -> int:
+	state_class(id)
+	return _state_masks.get(XTianqiSkills.state_key(id), -1)
 
 ## 加减状态时跑状态自带的效果。整批加减（XActor.STATE_BATCH）里，效果是任意代码：跑之前把欠着的被动缓存都建好，
 ## 跑完按「有写入」算（跨步保留的表全部作废）。批外同原来。
