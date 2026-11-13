@@ -214,7 +214,8 @@ static func party_gain_exp(s: XState, amount: float) -> void:
 static func plugin_command(s: XState, args: PackedStringArray) -> bool:
 	match args[0]:
 		"MagicWeaponAllGainExp":
-			party_gain_exp(s, _arg(args, 1))
+			if not XFabaoFeed.NO_PILLS:  # 经验丹下架（O-待定-3）：不再加经验
+				party_gain_exp(s, _arg(args, 1))
 			return true
 		"MagicWeaponLevelUp":
 			var aid := int(_arg(args, 1))

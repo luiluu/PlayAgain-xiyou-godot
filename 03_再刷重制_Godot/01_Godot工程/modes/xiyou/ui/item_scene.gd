@@ -295,7 +295,8 @@ func _augment_row() -> Dictionary:
 ## 导入角色平衡包了 canUse：禁用号角全否（「使用」灰）。
 func _usable(item: Dictionary) -> bool:
 	return not item.has("instanceId") and [0, 2].has(int(item.get("occasion", 0))) and not XImportedBalance.is_disabled_horn(item) and not XCat.horn_blocked(XState.current, item) \
-		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item)
+		and XState.current.item_count(int(item.get("id", 0))) > 0 and XItemMarks.can_acquire_item(XState.current, item) \
+		and not XFabaoFeed.is_pill(int(item.get("id", 0)))  # 法宝经验丹不能用（O-待定-3）
 
 
 func _make_actions() -> void:

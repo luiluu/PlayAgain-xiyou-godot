@@ -296,6 +296,7 @@ func _run() -> void:
 	# 法宝与积分重构（O-待定-1、O-待定-2）：法宝上限、抽奖范围对照原版语义关掉；本身由 tests/xiyou_fabao_rework 核
 	XMagicWeapon.LEVEL_99 = false
 	XLotteryRework.EV_NOT_POSITIVE = false
+	XFabaoFeed.NO_PILLS = false
 	# 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12，O-354）：比原版翻译时照原版整页，由 tests/xiyou_lobby_debug_npc 单独量
 	XLobbyDebugNpc.BOOK_ONLY = false
 	XDungeon.restore_hang_up = false

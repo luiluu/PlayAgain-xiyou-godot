@@ -24,6 +24,8 @@ func _run() -> void:
 	lottery_ranges()
 	lottery_stream()
 	lottery_ev()
+	feed()
+	pills()
 	XConfig.path_override = ""
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
@@ -193,3 +195,86 @@ func lottery_ev() -> void:
 	print("ev 1432 原版 %.1f" % old)
 	check("ev.1432_o-off_positive", old > 100.0, old)
 	XLotteryRework.EV_NOT_POSITIVE = true
+
+
+## 吃装备（O-待定-3）：一件经验看品质；门槛按法宝等级；喂到上限就停、剩下的不扣；锁定、不在背包的不喂；预览不改；回退
+func _gear_of_grade(g: int, kind := "armor") -> int:
+	for r in XDB.table("Armors" if kind == "armor" else "Weapons"):
+		if r is Dictionary and str(r.get("name", "")) != "" and not r.get("meta", {}).has("Magic Weapon") and not r.get("meta", {}).has("req_actors"):
+			var t := XGear.template(kind, int(r.id))
+			if t.has("instanceId") or true:
+				if XFabaoFeed.grade_of(t) == g and int(t.get("etypeId", 0)) != 13:
+					return int(r.id)
+	return 0
+
+
+func _bag(s: XState, base: int, n: int) -> Array:
+	var out := []
+	for i in n:
+		var it := XGear.create("armor", base, s)
+		s.gear.append(it)
+		s.register_gear(it)
+		out.append(it)
+	return out
+
+
+func feed() -> void:
+	var s := _blank()
+	s.set_variable(20, 1)   # 上限 12
+	var fabao := XGear.template("armor", 125)
+	fabao.level = 1.0
+	fabao.exp = 0.0
+	var common := _gear_of_grade(0)
+	var good := _gear_of_grade(2)
+	check("feed.grades_found", common > 0 and good > 0, [common, good])
+	var bag := _bag(s, common, 60)
+	check("feed.exp_common", XFabaoFeed.exp_of(bag[0]) == 18 and XFabaoFeed.min_grade(1) == 0 and XFabaoFeed.min_grade(25) == 1 and XFabaoFeed.min_grade(99) == 4)
+	# 预览不改
+	var pv := XFabaoFeed.feed(s, fabao, bag, null, true)
+	check("feed.preview_pure", s.gear.size() == 60 and XMagicWeapon.level_of(fabao) == 1.0 and pv.capped and int(pv.to) == 12, pv)
+	# 真喂：1→12 要 877 经验，普通 18 一件 → 49 件，剩 11 件不扣
+	var r := XFabaoFeed.feed(s, fabao, bag)
+	check("feed.to_cap", int(r.to) == 12 and r.capped and int(r.used) == 49 and s.gear.size() == 11, [r.used, r.to, s.gear.size()])
+	check("feed.preview_matches", int(pv.used) == int(r.used))
+	check("feed.full_reason", XFabaoFeed.reason(s, fabao, s.gear[0]) == "法宝已到本层上限")
+	# 门槛：法宝 30 级（上限放到 99）时普通装备不能喂，精良能
+	s.set_variable(20, 30)
+	fabao.level = 30.0
+	fabao.exp = 0.0
+	check("feed.gate_low", XFabaoFeed.reason(s, fabao, s.gear[0]).begins_with("品质不够"), XFabaoFeed.reason(s, fabao, s.gear[0]))
+	var g := _bag(s, good, 1)
+	check("feed.gate_ok", XFabaoFeed.reason(s, fabao, g[0]) == "")
+	# 锁定的不喂
+	XItemMarks.toggle_lock(s, g[0])
+	check("feed.locked", XFabaoFeed.reason(s, fabao, g[0]) == "已锁定")
+	XItemMarks.toggle_lock(s, g[0])
+	# 不在背包里（穿着的、别人的）
+	var loose := XGear.create("armor", good)
+	s.register_gear(loose)
+	s.lose_gear(loose, false)   # 有实例号、但不在背包里
+	check("feed.not_in_bag", XFabaoFeed.reason(s, fabao, loose) == "不在背包里", [XFabaoFeed.reason(s, fabao, loose), loose.has("instanceId")])
+	# 法宝不能喂法宝
+	var other := _bag(s, 3557, 1)
+	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "不能喂")
+	# 回退
+	XFabaoFeed.ENABLED = false
+	check("feed.o-off", XFabaoFeed.reason(s, fabao, g[0]) == "未开放")
+	XFabaoFeed.ENABLED = true
+
+
+## 经验丹下架（O-待定-3）：商店不上、MagicWeaponAllGainExp 不加；回退照原版
+func pills() -> void:
+	var rows := [[0, 1901, 0, 0], [0, 1987, 0, 0], [0, 1693, 0, 0], [2, 125, 0, 0]]
+	check("pills.goods", XFabaoFeed.filter_goods(rows) == [[0, 1693, 0, 0], [2, 125, 0, 0]])
+	check("pills.bulk_off", not XBulkPills.supported_ids().has(1987))
+	var s := XState.new_game(3, 1, [])
+	s.set_variable(20, 30)
+	var a := s.actor(1)
+	var item := _wear(a, 125)
+	XMagicWeapon.plugin_command(s, PackedStringArray(["MagicWeaponAllGainExp", "1000000"]))
+	check("pills.no_exp", XMagicWeapon.level_of(item) == 1.0, XMagicWeapon.level_of(item))
+	XFabaoFeed.NO_PILLS = false
+	XMagicWeapon.plugin_command(s, PackedStringArray(["MagicWeaponAllGainExp", "1000000"]))
+	check("pills.o-off_exp", XMagicWeapon.level_of(item) == 99.0, XMagicWeapon.level_of(item))
+	check("pills.o-off_goods", XFabaoFeed.filter_goods(rows) == rows and XBulkPills.supported_ids().has(1987))
+	XFabaoFeed.NO_PILLS = true
