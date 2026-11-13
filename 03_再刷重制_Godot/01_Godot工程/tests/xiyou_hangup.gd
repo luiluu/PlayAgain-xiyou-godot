@@ -68,6 +68,20 @@ func key_g() -> void:
 	await frames(1)
 
 
+## 触屏点一下（坐标是视口坐标，换成窗口坐标再送）
+func tap(at: Vector2) -> void:
+	var e := InputEventScreenTouch.new()
+	e.index = 0
+	e.position = get_viewport().get_final_transform() * at
+	e.pressed = true
+	Input.parse_input_event(e)
+	await frames(3)
+	e = e.duplicate()
+	e.pressed = false
+	Input.parse_input_event(e)
+	await frames(3)
+
+
 func _run() -> void:
 	TestEnv.isolate("xiyou_hangup")   # 新源大厅（Map4 EV76）首次进入的漩涡过场当作播过：过场占住地图，按挂机键被忽略、no_enemy 挂（集成分支 run 42343228257；本机留着上次的 options.json 才过）
 	XMessageBox.auto = true
@@ -146,7 +160,7 @@ func _run() -> void:
 	await frames(60)
 	check("g_rollback_stays_prohibited", not XHangUp.enabled(s) and not XHangUp.is_active(s))
 	XHangUp.KEY_ENABLES = true
-	# 触屏（安卓没有 L 键）：禁用时也显示挂机按钮，点了照 L 开启（O-待定，XHangUp.TOUCH_SHOW_PROHIBITED）
+	# 触屏（安卓没有 L 键）：禁用时也显示挂机按钮，点了照 L 开启（O-待定-2，XHangUp.TOUCH_SHOW_PROHIBITED）
 	XPlatform.force_mobile = true
 	await frames(2)
 	check("touch_prohibited_button_shown", ov.inter.visible and ov.button.is_visible_in_tree())
@@ -163,6 +177,26 @@ func _run() -> void:
 	s.flags.HangUpProhibited = false
 	# 一层：G 键开始
 	await map.load_map(5, 11, 13, 2)
+	await frames(2)
+	map.encounter_count = 999
+	# 触屏点挂机按钮（Kyo 11-13 安卓：点了不会开始）：Godot 把一下触屏送成鼠标键＋触屏两份按下，按下即触发的按钮开了又关；
+	# 现在同一下只认一次（O-待定-1，XHangUpOverlay.ONE_PRESS_PER_TAP）
+	var emu := Input.emulate_mouse_from_touch
+	Input.emulate_mouse_from_touch = true
+	var at := ov.button.get_global_rect().get_center()
+	await tap(at)
+	check("touch_tap_starts", XHangUp.is_active(s) and map.player.touch_target == Vector2i(-1, -1), [XHangUp.is_active(s), map.player.touch_target])
+	await frames(4)
+	await tap(at)
+	check("touch_tap_again_stops", not XHangUp.is_active(s))
+	XHangUpOverlay.ONE_PRESS_PER_TAP = false
+	await frames(4)
+	await tap(at)
+	check("touch_tap_rollback_toggles_twice", not XHangUp.is_active(s))
+	XHangUpOverlay.ONE_PRESS_PER_TAP = true
+	Input.emulate_mouse_from_touch = emu
+	await physics(10)
+	await map.load_map(5, 11, 13, 2)  # 挂机时随机走过，回到原点再测 G 键
 	await frames(2)
 	map.encounter_count = 999
 	await key_g()
