@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-trumpet-scrolls
 
 - 车道／工作者：C 规则·机制／cc（号卷）
-- 状态：草稿
+- 状态：可合并
 
 权能书重做方案 v0.4（私密仓库 xiyou-design-docs `重制设定/天启篇_权能书重做方案_v0.4.md`，Kyo 11-14 00:07「都可以」、协调转「ok开工」）。只对天启篇存档生效，原版档、洪荒路线不变；合进本地，不推玩家。
 
@@ -44,7 +44,9 @@
 
 ## 验证
 
-- （跑完填）
+- 云端整轮通过：提交 a33cf7efcb，574 个场景、16 片（ci-full/cc/tianqi-trumpet-scrolls）。
+- 本机：专项 `xiyou_tianqi_trumpet` 89/89；`xiyou_tianqi_drop`、`xiyou_honghuang_reward`、`xiyou_power_books`、`xiyou_power_books_boundary`、`xiyou_power_books_menu`、`xiyou_dot` 通过；语法检查、工具快速回归通过。
+- 没做实机试玩。和金钱线（cc/tianqi-money）都在奖励的金钱那里加了一行，后合的那条注意顺序（七号 −30% 放在最后乘）。
 
 ## 待交叉核查
 
@@ -52,4 +54,5 @@
 
 ## 本分支提交
 
-- （交付时填）
+- d49ec5570 数据、记录改写、学习上限、掉落、战斗钩子
+- a33cf7efc 专项与交付单
