@@ -142,6 +142,29 @@ func _run() -> void:
 	legacy[XAffixAbsorb.KEY] = d1
 	check("legacy", XAffixAbsorb.absorptions(legacy) == [d1] and XAffixAbsorb.view(legacy, s).has(XAffixAbsorb.VIEW_FLAG))
 
+	# 核查 P3（11-15）：lose_gear 传吸取视图也能拿掉背包里的原始实体；视图缓存满 64 只丢最早的一条、不整表清空
+	var held := XGear.create("weapon", wid, s)
+	s.register_gear(held)
+	held[XAffixAbsorb.KEY] = [d1]
+	s.gear.append(held)
+	var held_view: Dictionary = XAffixAbsorb.view(held, s)
+	var n_gear := s.gear.size()
+	check("lose_gear.view", held_view.has(XAffixAbsorb.VIEW_FLAG) and s.lose_gear(held_view, false) and s.gear.size() == n_gear - 1 and not s.gear.any(func(e): return is_same(e, held)))
+	var first_src := XGear.create("weapon", wid, s)
+	s.register_gear(first_src)
+	first_src[XAffixAbsorb.KEY] = [d1]
+	var first_view: Dictionary = XAffixAbsorb.view(first_src, s)
+	for i in range(64):
+		var w := XGear.create("weapon", wid, s)
+		s.register_gear(w)
+		w[XAffixAbsorb.KEY] = [d1]
+		XAffixAbsorb.view(w, s)
+		if i == 0:
+			first_src = w
+			first_view = XAffixAbsorb.view(w, s)
+	check("views.keep_recent", is_same(XAffixAbsorb.real(first_view), first_src))
+	check("has_absorb_weapon.raw", a.has_absorb_weapon())
+
 	# 技能页入口
 	var sc := XSkillScene.new()
 	add_child(sc)

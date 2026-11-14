@@ -312,16 +312,36 @@ func _plague() -> void:
 		lg.act(attacker, XDB.rec("Skills", 1), kn)
 		tries += 1
 	_check("plague_defiance", int(mk.get("defiance", 0)) == 1, [mk.get("defiance"), tries])
+	# 不服满 6 失控、传 3 层给队友后，接收方也立即再判一次满层（稿 5.3；Kyo 11-15）：全员 4 层，攒到 6 的那位失控传 3 → 队友 7 层也立即失控，不会停在 6～8 层
+	var all_live: Array = lg.alive(lg.actors)
+	for x in all_live:
+		XTianqiHorsemen.mark_of(lg, x).defiance = 4
+	XTianqiHorsemen._defiance(lg, f, attacker, 2)
+	_check("plague_defiance_pass_full", all_live.all(func(x): return int(XTianqiHorsemen.mark_of(lg, x).get("defiance", 0)) < 6) and all_live.filter(func(x): return x.is_state_affected(124)).size() >= 2,
+		all_live.map(func(x): return [XTianqiHorsemen.mark_of(lg, x).get("defiance", 0), x.is_state_affected(124)]))
+	for x in all_live:
+		XTianqiHorsemen.mark_of(lg, x).defiance = 0
+		x.remove_state(124)
 	# 第二阶段：盾累计到 22% 就碎，下一回合嘲讽解除
 	kn.hp = kn.mhp * 0.6
 	lg.run_turn(_guard_all(lg))
 	_check("plague_phase2", int(f.phase) == 2 and bool(f.shield_open))
 	_hp(lg, attacker, kn, kn.mhp * 0.23)
 	_check("plague_shield_break", int(f.broken_turn) == lg.turn, [f.broken_turn, lg.turn])
+	# 碎盾当回合剩余也全力打混子：不记入累计（碎盾已清零）
+	_hp(lg, attacker, kn, kn.mhp * 0.3)
+	_check("plague_shield_acc_zero_after_break", float(f.shield_acc) == 0.0 and int(f.broken_turn) == lg.turn, [f.shield_acc, f.broken_turn])
 	lg.run_turn(_guard_all(lg))
 	_check("plague_taunt_off", not bool(f.taunt) and _near(XTianqiHorsemen.taken_mult(kn), 0.89))
+	# 嘲讽解除的窗口回合再全力打混子：同样不累计
+	_hp(lg, attacker, kn, kn.mhp * 0.3)
+	_check("plague_shield_acc_zero_window", float(f.shield_acc) == 0.0, f.shield_acc)
 	lg.run_turn(_guard_all(lg))
 	_check("plague_taunt_back", bool(f.taunt))
+	# 嘲讽恢复后第一下不会再碎：从 0 重新攒（22% 内不碎，累满才再碎）
+	var broken_before := int(f.broken_turn)
+	_hp(lg, attacker, kn, kn.mhp * 0.05)
+	_check("plague_no_rebreak", int(f.broken_turn) == broken_before and float(f.shield_acc) > 0.0 and float(f.shield_acc) < kn.mhp * 0.22, [f.broken_turn, f.shield_acc])
 	lg.end_battle(0)
 	a.param_mark_dirty()
 	# 战斗结束：疫病等标记不带出战斗（开战状态的加成也随战斗结束去掉，所以不和战斗中的数比）

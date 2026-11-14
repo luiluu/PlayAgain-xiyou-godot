@@ -188,10 +188,28 @@ func _release() -> void:
 	check("rel.others_still", XImportedBalance.is_disabled_actor(141) and XImportedBalance.is_hidden_actor(141))
 	check("rel.horn", not XImportedBalance.horn_id_disabled(274) and XImportedBalance.horn_id_disabled(255))
 	check("rel.horn_item", not XImportedBalance.is_disabled_horn(XDB.rec("Items", 274)))
-	var goods := XItemMarks.shop_goods([[0, 274, 0, 0], [0, 255, 0, 0]], 0)
-	check("rel.shop", goods.any(func(g): return g[1] == 274) and not goods.any(func(g): return g[1] == 255), goods)
+	# 苍龙破晓号角要等 rift2 过场之后才上架（Kyo 11-15，#005）：新档看不到、看过 rift2 能买、已有号角／已入队的老档不受影响
 	var s := XState.new_game_blank()
 	XState.current = s
+	var rows := [[0, 274, 0, 0], [0, 255, 0, 0]]
+	var new_goods := XItemMarks.shop_goods(rows, 132)
+	check("rel.shop_new_save", not new_goods.any(func(g): return g[1] == 274) and not new_goods.any(func(g): return g[1] == 255), new_goods)
+	s.items[274] = 1
+	check("rel.shop_owner", XItemMarks.shop_goods(rows, 132).any(func(g): return g[1] == 274))
+	XState.current = XState.new_game_blank()
+	s = XState.current
+	s.saved_actors.append(146)
+	check("rel.shop_recruited", XItemMarks.shop_goods(rows, 132).any(func(g): return g[1] == 274))
+	XState.current = XState.new_game_blank()
+	s = XState.current
+	XConfig.whisper_mark("rift2")
+	var goods := XItemMarks.shop_goods(rows, 0)
+	check("rel.shop", goods.any(func(g): return g[1] == 274) and not goods.any(func(g): return g[1] == 255), goods)
+	XImportedBalance.HORN_AFTER_RIFT2 = false
+	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	check("rel.gate_off", XItemMarks.shop_goods(rows, 132).any(func(g): return g[1] == 274))
+	XImportedBalance.HORN_AFTER_RIFT2 = true
+	XConfig.whisper_mark("rift2")
 	s.party.assign([1])
 	s.add_actor(146)
 	check("rel.super_gate", not s.party.has(146), s.party)  # 超强者门槛照旧：地狱以下不能入队

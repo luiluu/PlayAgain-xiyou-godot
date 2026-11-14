@@ -814,6 +814,7 @@ func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
 ## gainItem 包装记进订单账本（重放时由账本移除，读更早的档也移除）；账本不可用时照常拿掉（原版这里会抛错、卖不掉）。
 ## 穿上／卸下（XEquipment.change、专属角色招募时装上法宝）是交换，不走这里。
 func lose_gear(item: Dictionary, record := true) -> bool:
+	item = XAffixAbsorb.real(item)  # 吸取视图规范回原始实体（原版 installAbyssMerchantRuntime.loseItem 先 real）；传进来的本来就是实体时原样返回（核查 P3，11-15）
 	var i := gear.find_custom(func(e): return is_same(e, item))
 	if i < 0:
 		return false
