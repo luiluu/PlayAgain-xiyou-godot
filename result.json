@@ -1,0 +1,33 @@
+{
+ "sha": "e76a794556a28eb98434886ab371c0653a348bf9",
+ "branch": "ci/cc/tianqi-qiyin-endgame",
+ "mode": "affected",
+ "base": "c77712a723c5478ce7786e38d892e1aaf7b694b4",
+ "passed": true,
+ "scenes": 12,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 345.3,
+ "testSeconds": 685,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43582475567",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_fabao_rework.tscn",
+  "xiyou_tianqi_alien_affix.tscn",
+  "xiyou_tianqi_alien_gear.tscn",
+  "xiyou_tianqi_qiyin_altar.tscn",
+  "xiyou_tianqi_qiyin_art.tscn",
+  "xiyou_tianqi_qiyin_dragon_run.tscn",
+  "xiyou_tianqi_qiyin_endgame.tscn",
+  "xiyou_tianqi_qiyin_equip.tscn"
+ ],
+ "time": "2026-11-14T10:03:41+00:00"
+}
