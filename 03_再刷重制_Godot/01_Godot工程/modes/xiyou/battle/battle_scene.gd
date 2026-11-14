@@ -650,6 +650,7 @@ func _build_ui(vs: Vector2) -> void:
 	boss_panel.enemies_source = func(): return logic.enemies
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
 	boss_panel.help_source = _boss_panel_help_rect
+	boss_panel.logic_source = func(): return logic
 	ui.add_child(boss_panel)
 	# 天启篇本线计量（XTianqiMeter：火花、饥饿、死期、病灶）：自动／变速按钮下面；场上没有本线异化怪时不画
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
@@ -1536,6 +1537,9 @@ func _list_entry(a: XActor, e: Dictionary, items: bool) -> Dictionary:
 		var custom := XSkillScene.custom_cost_row(e, XBattleList.FS)  # YEP drawCustomDisplayCost（Olivia 缩放后的标准字号）
 		if not custom.is_empty():
 			row.costs.append(custom)
+		var elem_badge := XTianqiElements.skill_badge(a, e, logic.enemies, logic)
+		if not elem_badge.is_empty():
+			row.costs.append(elem_badge)
 	return row
 
 
@@ -2174,8 +2178,8 @@ func _hit_visual(l: Dictionary) -> bool:
 		# 本次结果的弹字行（popupQueue 中段，前后是行动中途拷下的弹字）
 		var q: Array = l.get("popupQueue", [])
 		var mid: Array = q.slice(split, q.size() - (started.size() - split))
-		# hpAffected 时伤害为 0 也弹「0」（LGP startDamagePopup 按 hpAffected 拷 HP 行；正式版读数 s10250）
-		if float(shown.hp) != 0.0 or l.has("popup_hp") or mid.any(func(row): return bool(row.get("hpAffected", false))):
+		# hpAffected 时伤害为 0 也弹「0」（LGP startDamagePopup 按 hpAffected 拷 HP 行；正式版读数 s10250）；天启篇元素免疫已弹「无效」时不再叠「0」
+		if not bool(l.get("element_immune", false)) and (float(shown.hp) != 0.0 or l.has("popup_hp") or mid.any(func(row): return bool(row.get("hpAffected", false)))):
 			_popup(t, float(l.get("popup_hp", shown.hp)), l.critical)
 			# MV performDamage：敌人闪烁（requestEffect blink），角色做受伤动作
 			if float(shown.hp) > 0.0:

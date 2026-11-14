@@ -388,8 +388,11 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 		var m := _taken_mult(logic, item, a, b)
 		if m != 1.0:
 			ops.append({"op": "mul", "field": "incomingMultiplier", "value": m})
-	elif st.units.has(b) and int(st.units[b].expose_turns) > 0:
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 + float(st.units[b].expose) / 100.0})
+	else:
+		var affix_expose := float(st.units[b].expose) if st.units.has(b) and int(st.units[b].expose_turns) > 0 else 0.0
+		var total_expose := XTianqiElements.combined_exposure_pct(logic, b, affix_expose)
+		if total_expose > 0.0:
+			ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 + total_expose / 100.0})
 	return ops
 
 

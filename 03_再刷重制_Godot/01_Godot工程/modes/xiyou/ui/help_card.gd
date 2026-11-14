@@ -761,7 +761,7 @@ static func _element_wrapper(obj: Dictionary, type: int, rows: Array) -> Array:
 			var eid := _migrated_element(obj)
 			var es := [eid]
 			es.append_array(obj.get("yep", {}).get("multipleElements", []))
-			es = es.map(func(e): return int(e)).filter(func(e): return e > 0)
+			es = es.map(func(e): return XTianqiElements.map_element_id(int(e))).filter(func(e): return e > 0)
 			var uniq := []
 			for e in es:
 				if not uniq.has(e):
