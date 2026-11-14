@@ -1,0 +1,68 @@
+# 交付：cc/tianqi-weak-clear
+
+- 车道／工作者：C 规则·机制／cc（天启篇全弱者通关资格）
+- 状态：可合并
+
+依据：私密仓库 xiyou-design-docs `重制设定/天启篇_设计总览_v0.2.md` 第二节 3「全弱者通关资格跟本档走，奖励另行标定」（Kyo 11-08）；`天启篇_对重制内容影响审查_v0.6.md` 第 245、268 行（原版弱者挑战在天启篇作废，新判定「全弱者通关 36 层」没做）。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
+
+## 变更记录草稿
+
+## 2026-11-14 【cc·全弱者通关·未经审查】天启篇全弱者通关资格：36 层决战全弱者打赢记本档资格（dev.待定）
+
+- 新模块 `core/tianqi_weak_clear.gd`（`XTianqiWeakClear`，O-待定-1），只认天启篇存档。
+- 判定：36 层决战（`XTianqiLine.run_final`，四线共用）打赢时，这一场出现过的我方角色全是弱者档才记。「出现过」＝开战时上场 4 人＋助力位、结束时上场 4 人＋助力位、战斗中每个行动过的我方角色（`battle_logic` 行动开头一行，接住战斗中换上来又换回去的）。档位读 `XTianqiSkills.battle_tier`（成长型角色按当前进度，五条悟照天启篇表）。
+- 记录：存档 `flags.tianqi.weak_clear = {本档难度 key: {line, members}}`，跟本档走；读档后还在；同档再打赢不重复记。
+- 原版弱者挑战（`XWeakChallenge`，Map157＋敌群 469＋混沌难度 9）在天启篇走不到：天启篇借的原版难度号最高 6（统一后都是 3），牢妲改难度菜单已删（O-405）。新资格达成时点亮原版成就 142（开关 `ACHIEVEMENT`，成就自带物品照发）；不写全局 `codexWeakFiveClearV2`（那是西游档新局学 10357 的奖励）。
+- 奖励不做：留 `XTianqiWeakClear.reward(s, diff)` 空接口，另行标定后填。
+- 只算 36 层首通路线（`run_final`）；大厅再挑战 36 层（`XTianqiSummit.rechallenge`，不记通关）不算。
+- 接线：`core/tianqi_line.gd` `run_final` 开战前一行 `begin`、返回前一行 `finish`；`battle/battle_logic.gd` 行动开头一行 `note_actor`（不在跟踪时什么都不做）；`ui/save_scene.gd` 天启之路一行末尾接 `save_mark`。
+- 专项 `xiyou_tianqi_weak_clear` 29 项。
+- 玩家可见（只在本地）：天启篇 36 层决战用全弱者打赢，结算多一行「全弱者通关（本档）　某难度，出战的全是弱者。」，读档界面天启之路一行末尾标「全弱者」，成就「弱者挑战」点亮。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版 | 优化 | 依据 | 回退 | 提出 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定-1 | `modes/xiyou/core/tianqi_weak_clear.gd` `XTianqiWeakClear.ENABLED`、`ACHIEVEMENT`；`core/tianqi_line.gd`（run_final 两行）、`battle/battle_logic.gd`（行动开头一行）、`ui/save_scene.gd`（天启之路一行）；`tests/xiyou_tianqi_weak_clear.gd` | 弱者挑战＝混沌难度最终战五名弱者，入口靠牢妲改难度号，天启篇走不到 | 天启篇存档：36 层决战全弱者（上场＋助力位＋战斗中行动过的）打赢记本档资格，点亮成就 142；奖励留接口 | 天启篇设计总览 v0.2 第二节 3（Kyo 11-08「全弱者通关资格跟本档走，奖励另行标定」）；影响审查 v0.6 | `ENABLED = false`（不判不记、读档界面不标）；`ACHIEVEMENT = false` 只记资格不点亮 142 | cc | 保留 |
+
+## 交接板
+
+- 下一步：全弱者通关奖励标定后填 `XTianqiWeakClear.reward`；36 层正式地图做好后入口照旧走 `run_final`，不用再接。
+- 用户试玩说明：天启篇 36 层决战全用弱者（含助力位，战斗中也别换上强者）打赢，结算多一行「全弱者通关（本档）」，读档界面天启之路一行末尾标「全弱者」。只在本地。
+- 需要用户决定（按默认继续）：
+  1. 判定口径：默认「最终战出现过的上场 4 人＋助力位＋战斗中行动过的我方角色全是弱者」；备选「整局全程只用弱者」（要从开局记每场出战，30 多层里任何一场用了强者都作废）。
+  2. 档位按战斗档（`battle_tier`，成长型角色练到强者档就不算弱者）还是按名单档（`tier_of`，成长型角色永远按名单的弱者算）：默认战斗档。
+  3. 大厅再挑战 36 层用全弱者打赢算不算（默认不算，它不记通关；算的话先通关、再用全弱者重打就能拿）。
+  4. 点亮成就 142 时成就自带的物品照发（默认照发）；不想发的话设 `ACHIEVEMENT = false` 或另做「只点亮不发物」。
+
+## 进度账
+
+- 无（天启篇新机制）。
+
+## 可优化（流程／工具／效率）
+
+- 无
+
+## 待交叉核查
+
+- 改了核心文件 `battle/battle_logic.gd`（行动开头加一行 `XTianqiWeakClear.note_actor(u)`，不在 36 层决战跟踪时直接返回）。
+- 别车道独占文件一个没碰（damage、battler、tianqi_horsemen、tianqi_affix_battle、tianqi_qiyin_*、balance_table、难度被动）。
+
+## 验证
+
+- 专项 `xiyou_tianqi_weak_clear` 29/29：
+  - 全弱者通关：`win`、`record_members`、`result_line`、`achievement_142`、`only_this_difficulty`（别的四档没有）、`after_load`（to_dict→JSON→from_dict 后还在）、`save_mark`、`second_win_keeps`、`no_global_weak_flag`、`lineup_weak`；输了 `lost_no_record`、`lost_no_line`。
+  - 强者上场不记：`fighter_strong`、`helper_strong`、`join_helper_mid_battle`（战斗中入队进助力位）。
+  - 战斗中换进强者不记：`swap_in_strong`、`swap_seen_by_action`、`swap_back_all_weak`（真 `XBattleLogic` 换上强者、行动一回合、再换回去，结束时又是全弱者，靠行动记录判出）。
+  - 再挑战不算 `rechallenge_not_counted`；另一档 `xunchang_win`、`xunchang_line`。
+  - 西游档照旧：`plain_not_tracked`、`plain_finish`、`plain_save_mark`；原版入口走不到 `legacy_unreachable`；开关 `switch_off`、`switch_off_save_mark`、`achievement_off`；`pool`。
+- 反向验证（`反向验证.py`，4 项全咬住）：去掉 battle_logic 行动记录、判定不看档位、结束时不并当前阵容、不按难度分。
+- 选测（`选测.py main`，battle_logic 改动波及 278 个场景）：走云端 `云端选测.py run`：提交 e524b0a1a0，278 个场景、16 片全部通过（Actions run 43558694922）。
+- 语法检查通过；工具回归全部通过。
+- 不跑 `--oracle`（天启篇新机制，没碰移植的原版逻辑）。
+
+## 本分支提交
+
+- 8c41caaf6 模块、接线、专项
+- e524b0a1a 专项补「战斗中入队进助力位」用例
+- 本提交：交付单
