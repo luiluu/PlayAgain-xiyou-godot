@@ -64,6 +64,7 @@ func advance() -> void:
 		win.queue_free()
 	win = null
 	var page := XActorAdvancedScene.new()
+	page.allow_trial = false  # 天启篇五条悟试炼：这里关页后没人接着开战
 	add_child(page)
 	await page.closed
 	page.queue_free()

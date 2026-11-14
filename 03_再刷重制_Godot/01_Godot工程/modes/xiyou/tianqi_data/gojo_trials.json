@@ -1,0 +1,37 @@
+{
+ "_note": "天启篇五条悟专属试炼战（XGojoTrial；设计：私密仓 重制设定/天启篇_五条悟_角色设计_v0.3.md）。影子强度按五条悟开战时的等级算：生命＝hp_units × 一单位输出 U（职业 L 级本体魔攻 × 等级缩放 × 天启出伤倍率）；出招伤害＝职业 L 级本体生命 × 比例 ÷ 承伤倍率 ÷ def_nominal（攻击＝本体防御 × atk_def，打本体防御时防御率正好是 def_nominal）。",
+ "troop": 30,
+ "shell_enemy": 71,
+ "tint": [0.55, 0.5, 0.8],
+ "def_nominal": 0.75,
+ "settle": 6,
+ "_settle_note": "天启篇我方的结算乘区：开局借原版「普通」全员学普通难度、难度适应、天道诅咒（cc/tianqi-no-diff-passive 合并后改读 balance_table 的 legacy_passive，强度不变），正伤害合计 ×1.5×5×0.8＝×6、五档一样。一单位输出 U 乘它；数值线改这个乘区时一起改。",
+ "trials": {
+  "1": {
+   "key": "huaiyu",
+   "name": "怀玉",
+   "foe": "伏黑甚尔的影子",
+   "sv": "Codex_Toji_SV",
+   "hp_units": 16,
+   "atk_def": 3,
+   "mdf_mat": 0,
+   "agi_rate": 1.5,
+   "actions": 2,
+   "ratio": {"spear": 0.1, "cloud": 0.08, "soul": 0.18},
+   "awaken_below": 0.3
+  },
+  "2": {
+   "key": "xinsu",
+   "name": "新宿",
+   "foe": "两面宿傩的影子",
+   "sv": "Codex_Sukuna_SV",
+   "hp_units": 60,
+   "atk_def": 3,
+   "mdf_mat": 0.5,
+   "agi_rate": 1.2,
+   "actions": 1,
+   "ratio": {"dismantle": 0.09, "cleave": 0.16, "fuga": 0.25, "slash": 0.5},
+   "domain": {"first": 2, "every": 5, "turns": 3}
+  }
+ }
+}
