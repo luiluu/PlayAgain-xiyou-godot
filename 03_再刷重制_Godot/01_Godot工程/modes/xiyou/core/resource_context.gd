@@ -253,6 +253,8 @@ func _set_resource(b: XBattler, resource: String, value: float) -> void:
 	boss_output.enter_direct(b, resource)
 	if resource == "hp" and value < old:
 		value = old - b.absorb_shield(old - value)
+	if resource == "hp" and value < old:
+		value = old - XTianqiGojoTrial.final_loss(b, old - value, not preview)  # 天启篇五条悟试炼怀玉：Boss 输出、护盾吸收之后，只截落到生命上的那部分：觉醒前致命留 1 点、甚尔影子只有茈能打倒（不在试炼原样）
 	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
 	if value != old:
 		b.set(resource, value)

@@ -261,6 +261,7 @@ static func start_new_game(slot: int, key: String, lineup: Array) -> XState:
 	s.direction = HALL_POS.z
 	s.flags["tianqi"] = {"rules": RULES_VERSION, "difficulty": key, "lineup": lineup.map(func(v): return int(v))}
 	XTianqiNoDiffPassive.mark_new_game(s)  # 开局不发难度被动：记迁移标记，关开关读档能补回（O-421）
+	XTianqiGojoTrial.mark_table(s)  # 五条悟两阶进阶：新档一开始就记进阶表版本，读档不当旧四阶折半
 	_pending = opening_commands(slot, key, lineup)
 	return s
 

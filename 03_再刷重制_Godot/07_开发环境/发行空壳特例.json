@@ -44,5 +44,6 @@
   "XTianqiReforge.cost": "0",
   "XTianqiSkills.boss_add": "0",
   "XTianqiSkills.dot_value": "0.0",
-  "XTianqiSkills.formula": "0.0"
+  "XTianqiSkills.formula": "0.0",
+  "XTianqiGojoTrial.tint": "Color.WHITE"
 }

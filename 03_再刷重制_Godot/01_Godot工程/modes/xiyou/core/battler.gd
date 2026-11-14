@@ -483,6 +483,8 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 	XActor.state_touch(id)  # 只读窗口缓存（O-348）：写入当场作废（整批加减里按状态的类别只作废会变的表，见 XActor.STATE_BATCH）
 	if id == 1 and XGuyu.protect(self):
 		return  # 谷雨 addState 包装（最外层）：众生之劫代命，生命改 1、不加死亡
+	if id == 1 and XTianqiGojoTrial.blocks_death(self):
+		return  # 天启篇五条悟试炼怀玉兜底（直接写生命的路）：觉醒前的五条悟、不是茈打的甚尔影子，生命改 1、不加死亡
 	# _Fix_StackOverflow: one global lock, including additions to another battler.
 	if _adding_state:
 		return
