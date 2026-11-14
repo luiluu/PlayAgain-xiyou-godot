@@ -787,7 +787,8 @@ func _gain_raw(id: int, amount: int) -> void:
 	if items[id] == 0:
 		items.erase(id)
 
-func gain_gear(kind: String, base_id: int, amount: int) -> void:
+## source：天启篇装备随机身份的来源键（XTianqi.on_register）；来源读档稳定的入口才传，空＝照 instanceId
+func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
 	if amount > 0 and XAlienHide.blocks_base(kind, base_id):
 		return  # installAlienationHide：隐藏生效时深渊残刃／残杖／残甲／残环得不到（O-283）
 	if amount > 0:
@@ -795,9 +796,11 @@ func gain_gear(kind: String, base_id: int, amount: int) -> void:
 			XDemonCrown.grant(self, amount)  # 魔冠 gainItem 包装：得到数据库那件改由成长账本发
 			return
 		for i in range(amount):
+			XTianqiAffixRoll.source_hint = source  # 天启篇词条也按来源键掷（XTianqiAffixRoll._default_rng）
 			var inst := XGear.create(kind, base_id, self)
+			XTianqiAffixRoll.source_hint = ""
 			if not inst.is_empty():
-				register_gear(inst)
+				register_gear(inst, source)
 				gear.append(inst)
 				# 至臻装备入包闪光（installTreasureBatchRuntime 包 gainIndependentItem，XTreasureBatch／XPrestigeNotice）
 				XTreasureBatch.note_gain(self, kind, base_id, str(inst.get("name", "")), int(inst.get("iconIndex", 0)), 1)
@@ -825,7 +828,7 @@ func lose_gear(item: Dictionary, record := true) -> bool:
 		gear.remove_at(i)
 	return true
 
-func register_gear(item: Dictionary) -> void:
+func register_gear(item: Dictionary, source := "") -> void:
 	var defaults := XGear.template(str(item.kind),int(item.base))
 	for key in ["equipment","upgradeSlots","originalUpgradeSlots","boostCount","upgrades","affixIds","baseName"]:
 		if not item.has(key):item[key]=defaults.get(key)
@@ -835,7 +838,7 @@ func register_gear(item: Dictionary) -> void:
 	else:
 		next_gear_id = maxi(next_gear_id,int(str(item.instanceId).get_slice(":",1))+1)
 	XOrbs.layout(item, orb_seed)
-	XTianqi.on_register(self, item)  # 天启篇装备随机身份 tq_seed_id：入包即分配（读档时 flags 还没读进来，由 from_dict 末尾 assign_all 补）
+	XTianqi.on_register(self, item, source)  # 天启篇装备随机身份 tq_seed_id：入包即分配（读档时 flags 还没读进来，由 from_dict 末尾 assign_all 补）
 
 func owns_gear(item: Dictionary) -> bool:
 	for e in gear:

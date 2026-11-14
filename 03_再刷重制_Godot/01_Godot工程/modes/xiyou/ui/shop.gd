@@ -950,7 +950,7 @@ func _trade() -> void:
 	if _number_from == "buy":
 		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
 		var gear_before := s.gear.size()
-		XItemMarks.buy(s, e.item, int(e.price), _number)
+		XItemMarks.buy(s, e.item, int(e.price), _number, "shop|%d|%s" % [s.map_id, stock_group])  # 来源键：同一家店同一件商品的第几件（XTianqi.on_register）
 		XTianqiDrop.mark_bought(s, gear_before, int(e.price))  # 天启篇：商店买的装备不能喂法宝，记下单价（回售价封顶）
 		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
 		if _baby_free and XBabyAllActors.is_horn(e.item):

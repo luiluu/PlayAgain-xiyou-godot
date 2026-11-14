@@ -177,10 +177,10 @@ static func make_item(kind: String, line: String, tier := 1, half := false) -> D
 
 
 ## 放进背包
-static func _give(s: XState, item: Dictionary) -> Dictionary:
+static func _give(s: XState, item: Dictionary, source := "") -> Dictionary:
 	if item.is_empty():
 		return {}
-	s.register_gear(item)
+	s.register_gear(item, source)
 	s.gear.append(item)
 	return item
 
@@ -206,7 +206,7 @@ static func grant_seal(s: XState, line: String, source: String) -> Dictionary:
 	if not on(s) or tier <= 0 or got(s, key):
 		return {}
 	_mark_got(s, key)
-	return _give(s, make_item("seal", line, tier))
+	return _give(s, make_item("seal", line, tier), "reward|" + key)
 
 
 ## 遗物：half＝35 层影子那件
@@ -215,7 +215,7 @@ static func grant_relic(s: XState, line: String, half: bool) -> Dictionary:
 	if not on(s) or relic_info(line).is_empty() or got(s, key):
 		return {}
 	_mark_got(s, key)
-	return _give(s, make_item("relic", line, 0, half))
+	return _give(s, make_item("relic", line, 0, half), "reward|" + key)
 
 
 ## 终焉异化核：本线 4 条里随机 1 条（每赢一场都给）。from 记来源（34／35／36、rechallenge 等）

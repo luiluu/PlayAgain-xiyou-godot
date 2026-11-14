@@ -195,7 +195,7 @@ static func draw(s: XState, tier, g := "") -> Variant:
 	var affix = _choose(candidates(CATEGORIES[tier], str(d.db)), random)
 	if affix == null:
 		return "对应类别没有可用特效。"
-	var made := generate(s, d, affix, random)
+	var made := generate(s, d, affix, random, "abyss|%s" % key)
 	if made.is_empty():
 		return "装备生成失败，未扣除点数。"
 	ledger(s).balances[key] = balance(s, key) - cost
@@ -205,7 +205,7 @@ static func draw(s: XState, tier, g := "") -> Variant:
 
 ## M.generate：去掉模板自带的词缀表，换成「这条特效 100%」的前缀，照 DreamX makeItem 生成；随机数全用 random，
 ## 预掷池（RomDreamX 等）这次从空开始、用完还原
-static func generate(s: XState, d: Dictionary, affix: Dictionary, random: Callable) -> Dictionary:
+static func generate(s: XState, d: Dictionary, affix: Dictionary, random: Callable, source := "") -> Dictionary:
 	var kind := "weapon" if str(d.db) == "Weapons" else "armor"
 	var blue := XGear.template(kind, int(d.id))
 	if blue.is_empty():
@@ -238,6 +238,6 @@ static func generate(s: XState, d: Dictionary, affix: Dictionary, random: Callab
 		return {}
 	made._codexExtraAffix29 = {"db": str(affix.db), "id": int(affix.id)}
 	made._codexMerchant29 = true
-	s.register_gear(made)
+	s.register_gear(made, source)
 	s.gear.append(made)
 	return made

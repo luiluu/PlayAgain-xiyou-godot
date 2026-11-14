@@ -306,10 +306,10 @@ static func affix_line(a: Dictionary) -> String:
 # ---- 背包 ----
 
 ## 放进背包
-static func give(s: XState, item: Dictionary) -> Dictionary:
+static func give(s: XState, item: Dictionary, source := "") -> Dictionary:
 	if item.is_empty():
 		return {}
-	s.register_gear(item)
+	s.register_gear(item, source)
 	s.gear.append(item)
 	return item
 

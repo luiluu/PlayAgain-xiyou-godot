@@ -9,6 +9,15 @@ const SLOT := 1
 var results: Array = []
 
 
+class EventHost extends Node:
+	func refresh_events() -> void:
+		pass
+	func character(_id: int, _event_id: int):
+		return null
+	func toast(_t) -> void:
+		pass
+
+
 func _ready() -> void:
 	_run.call_deferred()
 
@@ -400,6 +409,132 @@ func _seed_order() -> void:
 	_check("ord_twin_distinct", tw1.size() == 2 and tw1[0] != tw1[1] and tw1[0] == ids1[aid] and tw1 == tw2, [tw1, tw2, ids1[aid]])
 
 
+# ---- 来源稳定的装备：身份与词条按来源键派生，先拿别的来源不影响 ----
+
+func _other_weapon(wid: int) -> int:
+	for r in XDB.table("Weapons"):
+		if r is Dictionary and str(r.get("name", "")) != "" and int(r.id) != wid and not XEquipment.is_exclusive(XGear.template("weapon", int(r.id))):
+			return int(r.id)
+	return 0
+
+
+func _new_of(s: XState, before: Array, wid: int) -> Array:
+	return s.gear.filter(func(g): return int(g.base) == wid and str(g.kind) == "weapon" and not before.any(func(x): return is_same(x, g)))
+
+
+## A 的指纹：身份、生成时的天启篇词条、第一次重铸
+func _print_of(s: XState, a: Dictionary) -> String:
+	var head := "%s|%s" % [str(a.get("tq_seed_id", "")), JSON.stringify(a.get("tianqi_affixes", []))]
+	return head + "|" + _reforge_once(s, a) if not (a.get("tianqi_affixes", []) as Array).is_empty() else head
+
+
+## 读档后在店里依次买 picks（商品序号），返回每次买到的新装备
+func _shop_run(goods: Array, picks: Array, count := 1) -> Array:
+	var s := _load()
+	s.gold = 100000000
+	var shop := XShop.new()
+	shop.setup(goods, false)
+	add_child(shop)
+	var out := []
+	for i in picks:
+		var before := s.gear.duplicate()
+		shop._mode = "number"
+		shop._buy_index = int(i)
+		shop._number_from = "buy"
+		shop._number = count
+		shop._trade()
+		out.append(_new_of(s, before, int(goods[int(i)][1])))
+	shop.queue_free()
+	return out
+
+
+func _event_run(lists: Array) -> Array:
+	var s := _load()
+	var out := []
+	for l in lists:
+		var before := s.gear.duplicate()
+		var host := EventHost.new()
+		add_child(host)
+		await MVInterpreter.new(host, int(l[0]), int(l[1]), [{"code": 127, "indent": 0, "parameters": [int(l[2]), 0, 0, 1, false]}, {"code": 0, "indent": 0, "parameters": []}]).run()
+		host.queue_free()
+		out.append(_new_of(s, before, int(l[2])))
+	return out
+
+
+func _sig_run(rows: Array) -> Array:
+	var s := _load()
+	var lg := XBattleLogic.new()
+	lg.state = s
+	var out := []
+	for d in rows:
+		var before := s.gear.duplicate()
+		lg.gain_drops([d])
+		out.append(_new_of(s, before, int(d.id)))
+	return out
+
+
+func _sources() -> void:
+	var s := _state()
+	s.map_id = 4
+	var wa := _find_weapon()
+	var wb := _other_weapon(wa)
+	_check("src_weapons", wa > 0 and wb > 0)
+	_save()
+	# 商店：真实 _trade。直接买 A ／ 先买便宜的 B 再买 A：A 的身份、词条、第一次重铸都一样
+	var goods := [[1, wa, 1, 10], [1, wb, 1, 1]]
+	var r1 := _shop_run(goods, [0])
+	var r1s := XState.current
+	var a1: Dictionary = r1[0][0] if not r1.is_empty() and not (r1[0] as Array).is_empty() else {}
+	var p1 := _print_of(r1s, a1) if not a1.is_empty() else ""
+	var r2 := _shop_run(goods, [1, 0])
+	var r2s := XState.current
+	var a2: Dictionary = r2[1][0] if r2.size() == 2 and not (r2[1] as Array).is_empty() else {}
+	var p2 := _print_of(r2s, a2) if not a2.is_empty() else "none"
+	_check("shop_bought", not a1.is_empty() and not a2.is_empty() and XTianqi.has_seed_id(a1), [r1, r2])
+	_check("shop_affixed", not (a1.get("tianqi_affixes", []) as Array).is_empty(), a1.get("tianqi_affixes"))
+	_check("shop_order_swap_same", p1 == p2, [p1, p2])
+	# 同一 SKU 连买两件：各自独立、读档再买一样
+	var fp := func(r: Array) -> Array:
+		var o := []
+		for l in r:
+			for g in l:
+				o.append(str(g.tq_seed_id) + JSON.stringify(g.get("tianqi_affixes", [])))
+		return o
+	var t1p: Array = fp.call(_shop_run(goods, [0, 0]))
+	var t2p: Array = fp.call(_shop_run(goods, [0, 0]))
+	_check("shop_same_sku_two", t1p.size() == 2 and t1p[0] != t1p[1] and t1p == t2p, [t1p, t2p])
+	_check("shop_same_sku_ids_differ", t1p.size() == 2 and str(t1p[0]).left(16) != str(t1p[1]).left(16), t1p)
+	_check("shop_first_matches_single", t1p.size() == 2 and str(t1p[0]).begins_with(str(a1.get("tq_seed_id", "?"))), [t1p, a1.get("tq_seed_id")])
+	# 事件赠送（真实事件指令 127）：直接领 A ／ 先在别的事件领 B 再领 A
+	var e1: Array = await _event_run([[4, 30, wa]])
+	var e2: Array = await _event_run([[4, 31, wb], [4, 30, wa]])
+	var ea: Dictionary = e1[0][0] if not (e1[0] as Array).is_empty() else {}
+	var eb: Dictionary = e2[1][0] if e2.size() == 2 and not (e2[1] as Array).is_empty() else {}
+	_check("event_got", not ea.is_empty() and not eb.is_empty(), [e1.size(), e2.size()])
+	_check("event_order_swap_same", not ea.is_empty() and not eb.is_empty() and str(ea.tq_seed_id) == str(eb.tq_seed_id) \
+		and JSON.stringify(ea.get("tianqi_affixes", [])) == JSON.stringify(eb.get("tianqi_affixes", [])))
+	_check("event_vs_shop_differ", not ea.is_empty() and str(ea.tq_seed_id) != str(a1.get("tq_seed_id", "")))
+	# 招牌掉落（gain_drops 带 sig）：直接掉 A ／ 先掉别的招牌 B 再掉 A
+	var sa := {"kind": 2, "id": wa, "sig": "901:2:%d" % wa}
+	var sb := {"kind": 2, "id": wb, "sig": "902:2:%d" % wb}
+	var g1 := _sig_run([sa])
+	var g2 := _sig_run([sb, sa])
+	var ga: Dictionary = g1[0][0] if not (g1[0] as Array).is_empty() else {}
+	var gb: Dictionary = g2[1][0] if g2.size() == 2 and not (g2[1] as Array).is_empty() else {}
+	_check("sig_order_swap_same", not ga.is_empty() and not gb.is_empty() and str(ga.tq_seed_id) == str(gb.tq_seed_id) \
+		and JSON.stringify(ga.get("tianqi_affixes", [])) == JSON.stringify(gb.get("tianqi_affixes", [])), [ga.get("tq_seed_id"), gb.get("tq_seed_id")])
+	# 普通掉落（不带 sig）照 instanceId：先掉 B 会改 A 的号（这一类不在本单，见交付单）
+	var n1 := _sig_run([{"kind": 2, "id": wa}])
+	var n2 := _sig_run([{"kind": 2, "id": wb}, {"kind": 2, "id": wa}])
+	_check("plain_drop_by_instance", not (n1[0] as Array).is_empty() and not (n2[1] as Array).is_empty() \
+		and str(n1[0][0].tq_seed_id) != str(n2[1][0].tq_seed_id))
+	# 来源计数随存档：买一件、存档，读档再买，拿到的就是一次买两件里的第 2 件
+	_shop_run(goods, [0])
+	_save()
+	var k2p: Array = fp.call(_shop_run(goods, [0]))
+	_check("src_n_saved", t1p.size() == 2 and k2p == [t1p[1]], [k2p, t1p])
+
+
 # ---- 通关抽角色候选 ----
 
 func _offer_run() -> Array:
@@ -458,6 +593,7 @@ func _run() -> void:
 	_offer()
 	_seed_ids()
 	_seed_order()
+	await _sources()
 	XTianqi.SEED_FROM_SAVE = true
 	XSave.remove(SLOT)
 	XSave.dir_override = ""

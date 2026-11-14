@@ -85,8 +85,12 @@ static func save_roll(s: XState, key: String) -> Callable:
 
 ## 装备的随机身份 tq_seed_id：写在装备字典上随物品走，一经分配永不重编（instanceId、异化 uid 会在星辰仓库取出等路径上重编，
 ## 不能直接当随机身份）。号只取决于这件装备和本档存档种子，与先洗哪件、什么时候洗无关：
-##   - 入包登记时（XState.register_gear，天启篇存档里所有产生装备的入口都经它：掉落、商店、商人、揭开、事件赠送、七印、
-##     复制品重新登记）立刻分配：derive(orb_seed, "tq_seed_id|" + instanceId)，instanceId 在本档里唯一、登记后才定。
+##   - 入包登记时（XState.register_gear，天启篇存档里所有产生装备的入口都经它）立刻分配，分两类：
+##     ① 来源本身读档稳定的入口传来源键 source（固定货单商店、事件赠送、号角专属装备、招牌掉落、净印／遗物、七印揭开与神器、
+##        天启篇商人、深渊商人、合成），号＝derive(orb_seed, "tq_seed_src|" + source + "|" + 本档该来源键的第几件)，
+##        计数在 flags.tianqi.src_n[source]，只看同一来源，先拿别的来源的装备不影响它；
+##     ② 来源本身随运行时随机的（普通战斗掉落等）不传，号＝derive(orb_seed, "tq_seed_id|" + instanceId)。这一类掉什么本来就随
+##        运行时战斗流变，「普通掉落是否抗读档」是上层问题，不在这里。
 ##   - 读档（XState.from_dict 末尾）和新开天启篇档时 assign_all 给还没号的老件一次性补号，遍历顺序写死：
 ##     背包 s.gear（列表顺序）→ 身上（角色号从小到大，每人 raw_equip_list 顺序）→ 各仓库（仓库名排序，类别按 XWarehouse.CATEGORIES，列表顺序）。
 ##     已有号的不动；新派生的号和已有号撞了（只有原版仓库复制那种同 instanceId 的复制品会撞）就按这个顺序加后缀，结果只取决于存档内容。
@@ -109,10 +113,19 @@ static func has_seed_id(item) -> bool:
 	return item is Dictionary and XRandomStream.valid_hex(str(item.get("tq_seed_id", "")))
 
 
-## 入包登记时调（XState.register_gear）
-static func on_register(s: XState, item: Dictionary) -> void:
-	if seeds_on(s) and not has_seed_id(item):
+## 入包登记时调（XState.register_gear）；source 见上
+static func on_register(s: XState, item: Dictionary, source := "") -> void:
+	if not seeds_on(s) or has_seed_id(item):
+		return
+	if source == "":
 		item["tq_seed_id"] = _derive_seed_id(s, _who(item))
+		return
+	var tq: Dictionary = s.flags.tianqi
+	if not tq.get("src_n") is Dictionary:
+		tq["src_n"] = {}
+	var n := int(tq.src_n.get(source, 0))
+	tq.src_n[source] = n + 1
+	item["tq_seed_id"] = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tq_seed_src|%s|%d" % [source, n])
 
 
 ## 星辰仓库取出、重编 instanceId 之前调：没号的老件用旧 instanceId＋整件内容补号
