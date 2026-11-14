@@ -18,6 +18,7 @@
   "XTianqiAlienGear.affix_view": "XAlienation.affix(key).duplicate()",
   "XTianqiAlienGear.dismantle_gain": "1",
   "XTianqiCombat.enemy_rates": "XEnemy.difficulty_rates(difficulty)",
+  "XTianqiNoX6.flat_unit": "1.0",
   "XTianqiDrop.grant_sold": "0",
   "XTianqiDrop.party_mult": "1.0",
   "XTianqiDrop.signature_base": "0.0",
