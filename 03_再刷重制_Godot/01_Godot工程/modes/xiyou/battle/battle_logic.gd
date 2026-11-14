@@ -798,6 +798,7 @@ func battle_skills(a: XActor) -> Array:
 		if int(s.id) > GUARD_SKILL and int(s.stypeId) != 4 and not s.get("meta", {}).has("Hide in Battle") and XSukuna.listed(a, s) and XToji.listed(a, s) and XGojo.listed(a, s):
 			out.append(s)
 	out.append_array(XTianqiSkills.battle_extra(a))  # 天启篇技能重构：专属物给的战斗招（诸葛命星：五行移位）
+	out.append_array(XTianqiQiyinEffects.battle_skills(a))  # 天启篇默印 5 件：附带技能「万籁俱寂」
 	return out
 
 ## 战斗中可用的物品（MV Window_BattleItem：场合为「总是」或「战斗中」且持有）
