@@ -51,6 +51,7 @@ MIXED_OK = {
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
 PASSTHRU = set()  # 返回字典／数组、真脚本会原样传回同类型参数的成员（如消耗表 c）：按类型给空值会把参数吞掉，check 要求写特例
+COPIED_TRUE = set()  # 规则 2 照搬出 return true 的成员（check 要求在 发行空壳特例.json「已确认放行」名单里）
 
 
 def _strip_comment(line: str) -> str:
@@ -275,6 +276,8 @@ def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> t
             f = info['funcs'][n]
             body, src = func_body(cls, n, f, over)
             how[n] = src
+            if src == '照搬关着时的返回' and body.strip() == 'return true':
+                COPIED_TRUE.add(f'{cls}.{n}')
             sig = f['sig']
             if f['params'] and body != 'pass' or True:
                 # 参数没用到会报警告（发行包不在意），参数名前加下划线会改签名，所以照留
@@ -291,7 +294,18 @@ def load_overrides() -> dict:
     if not OVERRIDES.is_file():
         return {}
     d = json.loads(OVERRIDES.read_text(encoding='utf-8'))
-    return {k: v for k, v in d.items() if not k.startswith('_')}
+    return {k: v for k, v in d.items() if not k.startswith('_') and k != '已确认放行'}
+
+
+def load_allow_true() -> dict:
+    """特例表里「已确认放行」的 return true 名单：类.成员 → 放行理由。"""
+    if not OVERRIDES.is_file():
+        return {}
+    d = json.loads(OVERRIDES.read_text(encoding='utf-8'))
+    raw = d.get('已确认放行') or d.get('_已确认放行') or {}
+    if not isinstance(raw, dict):
+        return {}
+    return {k: v.strip() for k, v in raw.items() if isinstance(k, str) and isinstance(v, str) and v.strip()}
 
 
 def _passes_through(f: dict) -> bool:
@@ -306,6 +320,7 @@ def _passes_through(f: dict) -> bool:
 def build_all(root: Path = PROJECT) -> tuple:
     NUMERIC.clear()
     PASSTHRU.clear()
+    COPIED_TRUE.clear()
     tg = targets(root)
     refs = external_refs(root, tg)
     over = load_overrides()
@@ -394,6 +409,10 @@ def check_errors(missing: list, how: dict, sus: list = None) -> list:
     guess = [k for k, v in how.items() if v == '按类型空值' and (k in NUMERIC or k in PASSTHRU)]
     if guess:
         errs.append('发行空壳：这些返回数字（或原样传回参数）的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
+    allow_true = load_allow_true()
+    unapproved_true = sorted(COPIED_TRUE - set(allow_true))
+    if unapproved_true:
+        errs.append('发行空壳：这些函数由规则 2 照搬出 return true，但不在 发行空壳特例.json 的「已确认放行」名单里（逐个核对调用处后放行或写特例）：' + '、'.join(unapproved_true))
     return errs
 
 
@@ -431,16 +450,20 @@ def main(argv) -> int:
     if argv[0] == 'tree':
         print(make_tree(Path(argv[1]).resolve()))
         return 0
-    stubs, missing, how = build_all()
+    stubs, missing, how = build_all(PROJECT)
     if argv[0] == 'show':
-        tg = targets()
+        tg = targets(PROJECT)
         print(stubs[tg[argv[1]]])
         return 0
     if argv[0] == 'report':
+        if COPIED_TRUE:
+            print('警告：以下函数由规则 2 照搬出 return true：' + '、'.join(sorted(COPIED_TRUE)))
         for k in sorted(how):
             print(f'{k}\t{how[k]}')
         return 0
-    errs = check_errors(missing, how, suspects())
+    if COPIED_TRUE:
+        print('警告：以下函数由规则 2 照搬出 return true：' + '、'.join(sorted(COPIED_TRUE)))
+    errs = check_errors(missing, how, suspects(PROJECT))
     if errs:
         print('\n'.join(errs))
         return 1
