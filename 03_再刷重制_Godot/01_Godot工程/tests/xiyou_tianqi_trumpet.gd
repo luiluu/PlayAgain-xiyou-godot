@@ -375,6 +375,14 @@ func _cavalry_pay() -> void:
 		_check(tag + ".can_use", lg.can_use(b, sk), [b.hp, b.mhp])
 		lg.pay_skill_cost(b, sk)
 		_check(tag + ".not_paid", _near(b.hp, 100.0) and _near(b.mp, 0.0) and _near(b.tp, 0.0) and s.item_count(item) == 0, [b.hp, b.mp, b.tp, s.item_count(item)])
+	# 余额够时也一样不扣（余额 0 时扣成负会被夹回 0，看不出扣没扣）
+	b.recover_all()
+	b.tp = 100.0
+	s.gain_item(item, 5)
+	var full_hp := b.hp
+	var full_mp := b.mp
+	lg.pay_skill_cost(b, all)
+	_check("cavalry.pay.rich_not_paid", _near(b.hp, full_hp) and _near(b.mp, full_mp) and _near(b.tp, 100.0) and s.item_count(item) == 5, [full_hp, b.hp, full_mp, b.mp, b.tp, s.item_count(item)])
 	_check("cavalry.pay.hp_cost_zero", XBattleLogic.skill_hp_cost(b, hp_flat) == 0 and XBattleLogic.skill_hp_cost(b, hp_per) == 0)
 	# 第 1 回合、没学六号的人：付不起被挡；付得起照扣
 	poor.call(a)
