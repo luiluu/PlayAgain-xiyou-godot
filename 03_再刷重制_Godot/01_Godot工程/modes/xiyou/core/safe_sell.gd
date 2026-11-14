@@ -180,6 +180,7 @@ static func plan(s: XState, grade := -1) -> Dictionary:
 	var members := XHangUpAuto.legacy_of(grade) if grade >= 0 else XHangUpAuto.sell_legacy(s)
 	var sell := []
 	var keep := []
+	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
 	for e in s.gear:
 		if not members.has(XQuality.legacy(e)):
 			continue
@@ -188,6 +189,7 @@ static func plan(s: XState, grade := -1) -> Dictionary:
 			keep.append({"item": e, "reason": why})
 		else:
 			sell.append(e)
+	XAlienation.end_batch()
 	return {"sell": sell, "keep": keep}
 
 
@@ -195,9 +197,11 @@ static func plan(s: XState, grade := -1) -> Dictionary:
 static func sell_plan(s: XState, p: Dictionary) -> Array:
 	var n := 0
 	var gold := 0
+	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
 	for e in p.sell:
 		if s.gear.has(e) and reason(s, e) == "":
 			gold += XItemMarks.selling_price(e)
 			XItemMarks.sell(s, e, 1)
 			n += 1
+	XAlienation.end_batch()
 	return [n, gold]
