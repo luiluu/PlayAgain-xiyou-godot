@@ -24,7 +24,7 @@ extends RefCounted
 ## 第二期（cc/gojo-p2）：
 ## - 专属法宝「眼罩」（护甲 8001，装备类型 13，只能五条悟装）：茈结算后返还苍印、赫印各 1。五条悟在天启篇入队时（XState.add_actor）
 ##   背包有就拿、没有就生成，装进装备类型 13 的槽（照宿傩神武解）。
-## - 开放方式「最强之名」：证道难度、36 层骑士战（XTianqiRewards.after_final）赢了、那场上场的人里有宿傩 172 或甚尔 171
+## - 开放方式「最强之名」：证道难度（证道开放前临时炼狱，Kyo 11-14）、36 层骑士战（XTianqiRewards.after_final）赢了、那场上场的人里有宿傩 172 或甚尔 171
 ##  （开战时记下出战的人，中途阵亡也算）→ 全局配置 codexTianqiGojo 记一次（跨存档），右上角提示。没解锁时天启篇也当他停用
 ##  （XImportedBalance.is_disabled_actor、XTianqiSkills.tier_of 返回空），解锁后按技能表名单进超强者候选池（寻常、艰险照超强者上限抽不到）。
 ## - 头像：还是战斗图截的临时图，等 GPT 出的正式图。
@@ -75,6 +75,10 @@ const ARMOR_SLOT_TYPE := 13
 const TEMPLATE_ARMOR := 4581  # 宿傩「神武解」
 const UNLOCK_KEY := "codexTianqiGojo"
 const UNLOCK_DIFFICULTY := "zhengdao"
+## 证道开放前临时降到炼狱（Kyo 11-14）：XTianqi.ZHENGDAO_OPEN 还关着时炼狱 36 层也解锁；证道一开放自动只认证道。
+## 已解锁的记在全局配置里、不收回。开关（O-待定）：false 回到只认证道
+static var BEFORE_ZHENGDAO_LIANYU := true
+const UNLOCK_DIFFICULTY_BEFORE_OPEN := "lianyu"
 const UNLOCK_WITH := [171, 172]
 const UNLOCK_TEXT := "五条悟：「你们打得不错嘛。」\n最强之名已解锁：之后天启篇的候选池里会出现五条悟。"
 ## 测试用：-1 读全局配置，0／1 强制没解锁／已解锁
@@ -259,11 +263,16 @@ static func on_join(s, id: int) -> void:
 	a.refresh_passive()
 
 
-## 骑士战（36 层）打赢后：证道、上场的人里有宿傩或甚尔，就解锁最强之名；返回这次是不是新解锁
+## 这会儿哪些难度通关算数：证道开放了只认证道，没开放时临时也认炼狱
+static func unlock_difficulties() -> Array:
+	return [UNLOCK_DIFFICULTY_BEFORE_OPEN, UNLOCK_DIFFICULTY] if BEFORE_ZHENGDAO_LIANYU and not XTianqi.ZHENGDAO_OPEN else [UNLOCK_DIFFICULTY]
+
+
+## 骑士战（36 层）打赢后：证道（证道开放前是炼狱）、上场的人里有宿傩或甚尔，就解锁最强之名；返回这次是不是新解锁
 static func strongest_check(s) -> bool:
 	if not ENABLED or unlocked() or not XTianqi.active(s):
 		return false
-	if str(s.flags.tianqi.get("difficulty", "")) != UNLOCK_DIFFICULTY:
+	if not unlock_difficulties().has(str(s.flags.tianqi.get("difficulty", ""))):
 		return false
 	if not _fighters.any(func(id): return UNLOCK_WITH.has(int(id))):
 		return false

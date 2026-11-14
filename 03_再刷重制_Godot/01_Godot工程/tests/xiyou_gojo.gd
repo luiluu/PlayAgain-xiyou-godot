@@ -275,22 +275,75 @@ func _real_turns() -> void:
 	XTianqiNoDiffPassive.ENABLED = true
 
 
-## 最强之名：证道、36 层骑士战上场的人里有宿傩或甚尔才解锁
+## 最强之名：证道、36 层骑士战上场的人里有宿傩或甚尔才解锁；证道开放前临时炼狱也算（Kyo 11-14），开放后只认证道；
+## 已解锁的真写进全局配置，换存档（XSave 写盘、读档）、证道开放后都不收回
 func _unlock() -> void:
+	var open0 := XTianqi.ZHENGDAO_OPEN
 	XGojo.unlock_override = 0
+	XTianqi.ZHENGDAO_OPEN = true  # 证道开放：照原条件
 	var s := XTianqi.start_new_game(3, "zhengdao", [1])
 	XState.current = s
 	XGojo._fighters = [1, 2, 3]
 	_check("unlock_needs_partner", not XGojo.strongest_check(s) and not XGojo.unlocked())
 	XGojo._fighters = [1, 172]
 	s.flags.tianqi.difficulty = "lianyu"
-	_check("unlock_needs_zhengdao", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	_check("unlock_open_lianyu_no", not XGojo.strongest_check(s) and not XGojo.unlocked())
 	s.flags.tianqi.difficulty = "zhengdao"
 	_check("unlock_ok", XGojo.strongest_check(s) and XGojo.unlocked())
 	_check("unlock_once", not XGojo.strongest_check(s))
+	# 证道没开放：炼狱达成即解锁；艰险不算；开关关掉回到只认证道
+	XTianqi.ZHENGDAO_OPEN = false
+	XGojo.unlock_override = 0
+	s.flags.tianqi.difficulty = "jianxian"
+	_check("unlock_closed_jianxian_no", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	XGojo.BEFORE_ZHENGDAO_LIANYU = false
+	s.flags.tianqi.difficulty = "lianyu"
+	_check("unlock_switch_off_lianyu_no", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	XGojo.BEFORE_ZHENGDAO_LIANYU = true
+	XGojo._fighters = [1, 2]
+	_check("unlock_closed_needs_partner", not XGojo.strongest_check(s) and not XGojo.unlocked())
+	XGojo._fighters = [1, 171]
+	_check("unlock_closed_lianyu_ok", XGojo.strongest_check(s) and XGojo.unlocked())
 	XGojo.unlock_override = 0
 	XGojo._fighters = [171]
 	var plain := XState.new()
 	XState.current = plain
 	_check("unlock_not_outside", not XGojo.strongest_check(plain) and not XGojo.unlocked())
+	_unlock_persist()
+	XTianqi.ZHENGDAO_OPEN = open0
 	XGojo.unlock_override = 1
+
+
+## 真写盘：炼狱解锁写进测试自己的 options.json，存档写盘；清掉内存、证道开放后读配置、读档，照旧解锁、五条悟不再锁
+func _unlock_persist() -> void:
+	XSave.dir_override = "user://test_xiyou_gojo_unlock"
+	XConfig.path_override = XSave.dir_override.path_join("options.json")
+	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
+	DirAccess.remove_absolute(XConfig.path_override)
+	XConfig._loaded_path = "<unloaded>"
+	XGojo.unlock_override = -1
+	XTianqi.ZHENGDAO_OPEN = false
+	var s := XTianqi.start_new_game(3, "lianyu", [1])
+	XState.current = s
+	XGojo._fighters = [1, 172]
+	_check("persist.fresh_locked", not XGojo.unlocked() and XGojo.locked(XGojo.ACTOR))
+	_check("persist.unlock", XGojo.strongest_check(s) and XGojo.unlocked())
+	_check("persist.saved", XSave.save(1))
+	XConfig._loaded_path = "<unloaded>"  # 丢掉内存，下一次从盘上读
+	XConfig._values = {}
+	XState.current = XState.new()
+	XTianqi.ZHENGDAO_OPEN = true
+	_check("persist.loaded", XSave.load_slot(1))
+	_check("persist.kept_after_open", XGojo.unlocked() and not XGojo.locked(XGojo.ACTOR))
+	var cfg = JSON.parse_string(FileAccess.get_file_as_string(XConfig.path_override))
+	_check("persist.on_disk", cfg is Dictionary and cfg.get(XGojo.UNLOCK_KEY) == true, cfg.get(XGojo.UNLOCK_KEY) if cfg is Dictionary else cfg)
+	# 收拾：删测试档、回到内存配置
+	if XSave.exists(1):
+		DirAccess.remove_absolute(XSave.path(1))
+	DirAccess.remove_absolute(XConfig.path_override)
+	for f in DirAccess.get_files_at(XSave.dir_override):
+		DirAccess.remove_absolute(XSave.dir_override.path_join(f))
+	DirAccess.remove_absolute(XSave.dir_override)
+	XConfig.path_override = ""
+	XSave.dir_override = ""
+	XConfig._loaded_path = "<unloaded>"
