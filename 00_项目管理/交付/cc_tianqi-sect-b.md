@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-sect-b
 
 - 车道／工作者：C 规则·天启篇教派连带内容包乙（cc，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -46,10 +46,12 @@
 ## 验证
 
 - 专项 `xiyou_tianqi_sect_b` 60/60；反向验证 6/6 咬住。
-- 本机联跑：待写
-- 云端选测：待写
-- `语法检查.py` 通过；`发行空壳.py check` 通过（53 个脚本、420 个函数都有；新函数 `touches_skill`→false、`skill_rec`→base、`after_beat`／`after_map_battle` 空）；`工具回归.py`：待写
+- 本机联跑 13 个天启篇相关场景（sect_a／b、四线、rewards、trumpet、skills、elements、opening、e2e、passive）：包甲专项 `hides_only_those`／`real_ev003_kept` 两条原先断言 EV003 留着（注明归包乙），改成在 `YI` 关时测，其余全过。
+- 云端选测（`xdb.gd`、`map_scene.gd` 一改选测扩成整轮）：a3d7e7cfe，590 个场景、16 片全部通过。
+- `语法检查.py` 通过；`发行空壳.py check` 通过（53 个脚本、420 个函数都有；新函数 `touches_skill`→false、`skill_rec`→base、`after_beat`／`after_map_battle` 空）；`工具回归.py` 全部通过
 
 ## 本分支提交
 
 - c84a5e455 天启篇教派连带内容包乙：小小鱼破枷锁（XTianqiSect.YI）
+- 合并 main（`xdb.gd` 冲突：main 把 `rec` 改成链式 out，本包那行接在号卷之后）
+- a3d7e7cfe 包甲专项 EV003 断言改在 YI 关时测；交付单初稿
