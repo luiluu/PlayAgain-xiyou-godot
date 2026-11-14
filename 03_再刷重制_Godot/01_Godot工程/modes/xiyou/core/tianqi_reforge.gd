@@ -89,7 +89,7 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 	if int(s.gold) < price:
 		return {"error": "金钱不足（要 %d）" % price}
 	if not rng.is_valid():
-		rng = XTianqi.item_roll(s, item, "reforge")  # 存档派生（装备 instanceId＋tq_rng_n），读档不能重掷（O-待定）
+		rng = XTianqi.item_roll(s, item, "reforge")  # 存档派生（装备 instanceId＋tq_rng_n），读档不能重掷（O-449）
 	var key := XTianqiAffixRoll._pick(c, rng)
 	var old: Dictionary = list[index]
 	var e := XTianqiAffixRoll._entry(key, int(old.get("tier", 1)), XTianqiAffixRoll.quality_key(item), rng)

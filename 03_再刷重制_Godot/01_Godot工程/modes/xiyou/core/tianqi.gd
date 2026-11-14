@@ -64,7 +64,7 @@ static var NO_LEGACY_ALIEN := true
 ## 开关（同上）：true＝天启篇存档里怪物不变「【神话】」（EliteEnemy：能力 ×3.5、经验金钱 ×1.2、掉率 ×5、放大偏色）；
 ## 照原版照样掷一次（随机流不变），掷中了也当普通怪。false＝照原版。
 static var NO_MYTH := true
-## 开关（O-待定）：true＝装备重铸、锁词条重铸、异化词条兜底和重抽、通关抽角色候选的随机由存档种子派生
+## 开关（O-449）：true＝装备重铸、锁词条重铸、异化词条兜底和重抽、通关抽角色候选的随机由存档种子派生
 ## （存档种子＋对象标识＋该对象随存档的次数，见 save_roll），先存档再掷、读档再掷结果相同；false＝回到全局随机（可读档重掷）
 static var SEED_FROM_SAVE := true
 
@@ -604,7 +604,7 @@ static func draw_offer(s: XState, rng: RandomNumberGenerator = null) -> Array:
 		return saved.map(func(id): return int(id))
 	if rng == null:
 		rng = RandomNumberGenerator.new()
-		if SEED_FROM_SAVE:  # 存档派生：第几次抽（draws 随存档）定种子，没选之前读档也是这几个（O-待定）
+		if SEED_FROM_SAVE:  # 存档派生：第几次抽（draws 随存档）定种子，没选之前读档也是这几个（O-449）
 			rng.seed = XRandomStream.parse64(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tianqi|offer|%d" % draws_used(s)))
 		else:
 			rng.randomize()

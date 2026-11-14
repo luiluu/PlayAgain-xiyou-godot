@@ -19,7 +19,7 @@ extends RefCounted
 static var ENABLED := true
 ## 开关（O-409）：true＝必出行里整行都是神话／混沌神话的也跳过；false＝必出行一律照合
 static var SKIP_HIGH_ROWS := true
-## 开关（O-待定-2）：true＝天启篇存档新装备掷天启篇词条的随机由存档派生（存档种子 orb_seed＋本档计数 flags.tianqi.affix_roll_n，
+## 开关（O-450）：true＝天启篇存档新装备掷天启篇词条的随机由存档派生（存档种子 orb_seed＋本档计数 flags.tianqi.affix_roll_n，
 ## 每掷一件 +1、随存档），先存档、打出掉落、读档再打同一场，词条一样；false＝照旧走运行时装备流（XGear.roll，读档会换）。
 ## 只管天启篇存档、只管 apply 不传 rng 时；测试磁带（XGear.roll_seq／force_roll）、深渊商人的本轮种子（XGear.roll_fn）照旧优先。
 static var SEED_FROM_SAVE := true
