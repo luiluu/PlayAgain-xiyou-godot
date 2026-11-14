@@ -52,8 +52,9 @@ const WIRED := [
 ]
 ## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate
 const ROOT_KEYS := ["rules", "difficulty", "lineup", "line", "draws", "offer", "reincarnate", VKEY]
-## 根上的随机计数（随机门面 XTianqi.save_stream 一族，cc/tianqi-seed-fix）：不搬位置，老档缺当 0
-const COUNTER_KEYS := ["affix_roll_n", "affix_src_n", "src_n"]
+## 根上的随机计数（随机门面 XTianqi.save_stream 一族，cc/tianqi-seed-fix）：不搬位置，老档缺当 0。
+## rng：门面新开的域的计数（R3 起：rng["battle|敌群号"]＝本档打这个敌群几次，XTianqiRandom.battle_key／note_battle），老档缺当空
+const COUNTER_KEYS := ["affix_roll_n", "affix_src_n", "src_n", "rng"]
 ## flags 顶层归天启篇的键（不在 tianqi 区里）：_gojoTrial 进行中的五条悟试炼
 const OUTSIDE_KEYS := ["_gojoTrial"]
 

@@ -265,6 +265,15 @@ func _gear_base() -> void:
 	take.call(st, "event|other")
 	var c: Array = take.call(st, "shop|test")
 	_check("base_other_source_no_shift", c.slice(0, 2) == a.slice(0, 2), [a, c])
+	# 共享预掷池里是什么都不影响（换一池别的数再拿，同一来源一样）
+	var stp := kit.reload()
+	var pool := []
+	for i in 20:
+		pool.append(0.05 * i)
+	stp.rom.x = pool
+	stp.rom.xn = 0
+	var p2: Array = take.call(stp, "shop|test")
+	_check("base_pool_independent", p2.slice(0, 2) == a.slice(0, 2), [a, p2])
 	# 没有来源键的照旧走共享预掷池
 	var st2 := kit.reload()
 	var x0 = JSON.stringify([st2.rom.get("x"), st2.rom.get("xn")])
