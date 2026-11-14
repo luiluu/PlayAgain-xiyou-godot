@@ -17,6 +17,9 @@ var _sel := 0
 var _cursor: TextureRect
 var _cursor_t := 0.0
 var _tq_title: XTianqiTitle       # 天启篇新标题（O-306）；不用新标题或已换到别的页面时为 null
+## 窗口页（_window 建的）的「返回／取消」：取消键（Esc、X／K、手柄 B、虚拟取消键、安卓返回键都发 ui_cancel）照按它。
+## 换页（_clear）时清掉；标题页、读档页、设置页等不设，各自照旧（pro-newgame-back2：天启篇开局三页原先只能点按钮退）。
+var _back := Callable()
 
 
 func _ready() -> void:
@@ -121,6 +124,7 @@ func _clear() -> void:
 	_cursor = null
 	column = null
 	_tq_title = null
+	_back = Callable()
 
 
 ## 原版坐标（1280×720）换算到当前画面：横向居中对齐，纵向按比例。
@@ -277,7 +281,7 @@ func _confirm_auto() -> void:
 	column.add_child(XUI.label(XSave.auto_summary()))
 	column.add_child(XUI.label("读的是切到后台那一刻的进度；你的存档位不受影响。手动存一次档后，这份自动存档就作废。", 18, XUI.DIM))
 	_add(XUI.button("读取"), _load_auto)
-	_add(XUI.button("取消"), _title)
+	_add_back("取消", _title)
 	_focus_first()
 
 
@@ -373,6 +377,10 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _commands.is_empty():
+		# 窗口页：取消键退回上一页（标题页、读档页等 _back 无效，不管）
+		if _back.is_valid() and event.is_action_pressed("ui_cancel"):
+			XKeyMap.handled(self)
+			_back.call()
 		return
 	if event.is_action_pressed("ui_down") or event.is_action_pressed("ui_up"):
 		var step := 1 if event.is_action_pressed("ui_down") else -1
@@ -411,6 +419,14 @@ func _add(b: Button, fn: Callable) -> void:
 	column.add_child(b)
 
 
+## 窗口页的「返回／取消」按钮：同时登记成取消键的去处（见 _back）
+func _add_back(text: String, fn: Callable) -> void:
+	var b := XUI.button(text)
+	b.name = "WindowBack"
+	_add(b, fn)
+	_back = fn
+
+
 ## 平台三期：原版二合一包标题右上的「导入存档」「导出存档」（只在触屏；虚拟按键「隐藏按键」在它们右边）。
 ## 刘海机右缩进或调过按键位置，「隐藏按键」（存档键回退成所有页面显示时连同存档键）挡在这一行时，两个按钮整体往左让（审查 50 P2-1）。
 func _add_transfer_buttons() -> void:
@@ -438,7 +454,7 @@ func _add_transfer_buttons() -> void:
 func _notice(title: String, text: String) -> void:
 	_window(title)
 	column.add_child(XUI.label(text))
-	_add(XUI.button("返回"), _title)
+	_add_back("返回", _title)
 	_focus_first()
 
 
@@ -451,7 +467,7 @@ func _export_save() -> void:
 	_window("导出存档：选择存档（导出最近一次保存的进度）")
 	for slot in slots:
 		_add(XUI.button(XSave.summary(slot)), _export_slot.bind(slot))
-	_add(XUI.button("取消"), _title)
+	_add_back("取消", _title)
 	_focus_first()
 
 
@@ -495,7 +511,7 @@ func _choose_import_slot(data: Dictionary) -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_import_slot.bind(slot, data))
 		grid.add_child(b)
-	_add(XUI.button("取消"), _title)
+	_add_back("取消", _title)
 	_focus_first()
 
 
@@ -549,7 +565,7 @@ func _tq_slot() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_tq_slot_chosen.bind(slot))
 		grid.add_child(b)
-	_add(XUI.button("返回"), _title)
+	_add_back("返回", _title)
 	_focus_first()
 
 
@@ -560,7 +576,7 @@ func _tq_slot_chosen(slot: int) -> void:
 	_window("%d 号存档位已有存档" % slot)
 	column.add_child(XUI.label("开始新的一局后，第一次到达方桌大厅时会覆盖这一格。"))
 	_add(XUI.button("覆盖它"), _tq_difficulty.bind(slot))
-	_add(XUI.button("换一格"), _tq_slot)
+	_add_back("换一格", _tq_slot)
 	_focus_first()
 
 
@@ -579,7 +595,7 @@ func _tq_difficulty(slot: int) -> void:
 			b.add_theme_constant_override("icon_max_width", 64)
 		b.disabled = lock
 		_add(b, _tq_lineup.bind(slot, str(d.key), []))
-	_add(XUI.button("返回"), _tq_slot)
+	_add_back("返回", _tq_slot)
 	_focus_first()
 
 
@@ -598,7 +614,7 @@ func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
 	var ok := XUI.button("就是他们了")
 	ok.name = "TianqiConfirm"
 	_add(ok, _tq_start.bind(slot, key, lineup))
-	_add(XUI.button("返回"), _tq_difficulty.bind(slot))
+	_add_back("返回", _tq_difficulty.bind(slot))
 	_focus_first()
 
 
