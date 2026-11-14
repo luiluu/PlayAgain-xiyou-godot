@@ -217,7 +217,13 @@ func _huaiyu_mechanics() -> void:
 	XTianqiGojoTrial.SHADOW_TINT = true
 	_check("h_appearance", XAppearance.for_battler(e) != null)
 	_check("h_actions", XTianqiGojoTrial.action_times(lg, e) == 2 and XTianqiGojoTrial.action_times(lg, a) == 0 and lg.make_action_times(e) == 2)
-	_check("h_rewards", lg.rewards() == {"exp": 0, "gold": 0, "drops": []})
+	e.data().exp = 500
+	e.data().gold = 500
+	_check("h_rewards", lg.rewards() == {"exp": 0, "gold": 0, "drops": []}, lg.rewards())
+	var gold0 := s.gold
+	_check("h_grant_none", lg.grant({"exp": 999, "gold": 999, "drops": [{"kind": 1, "id": 1}]}) == [] and s.gold == gold0 and s.item_count(1) == 0, [s.gold, gold0])
+	e.data().exp = 0
+	e.data().gold = 0
 	_check("h_fast", e.agi > a.agi)
 	lg.turn = 1
 	var seq := []

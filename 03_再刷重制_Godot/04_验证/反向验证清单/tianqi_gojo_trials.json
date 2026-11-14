@@ -1,0 +1,97 @@
+{
+ "tests": [
+  "xiyou_gojo_trials"
+ ],
+ "items": [
+  {
+   "name": "天逆鉾不破无下限",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/gojo.gd",
+   "find": " or XTianqiGojoTrial.pierces_infinity(logic, skill):",
+   "replace": ":"
+  },
+  {
+   "name": "天逆鉾不拆印",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\t\tXGojo.add_marks(logic, t, -1, 0)\n",
+   "replace": "\t\tpass\n"
+  },
+  {
+   "name": "甚尔影子谁都能打倒",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "not (int(item.get(\"id\", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT])",
+   "replace": "false"
+  },
+  {
+   "name": "领悟反转术式不回血",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tlogic.gain_hp(t, float(t.mhp))\n",
+   "replace": "\tpass\n"
+  },
+  {
+   "name": "领域对拼不抵消斩击",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif bool(f.clash):\n\t\tlogs.append(_text(\"无量空处与伏魔御厨子",
+   "replace": "\tif false:\n\t\tlogs.append(_text(\"无量空处与伏魔御厨子"
+  },
+  {
+   "name": "领域对拼不废必中",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/gojo.gd",
+   "find": " and not XTianqiGojoTrial.clashing()",
+   "replace": ""
+  },
+  {
+   "name": "到期不放神灶",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\t\tf.fuga = true\n",
+   "replace": "\t\tf.fuga = false\n"
+  },
+  {
+   "name": "输了不恢复生命",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\ta.hp = clampf(float(d.get(\"hp\", a.mhp)), 1.0, a.mhp)\n",
+   "replace": "\tpass\n"
+  },
+  {
+   "name": "进阶条件不要试炼",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/advance.gd",
+   "find": "\tout.append_array(XTianqiGojoTrial.lack(s, a))",
+   "replace": "\tpass"
+  },
+  {
+   "name": "试炼有战斗奖励",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "\tif XTianqiGojoTrial.no_rewards(self):\n\t\treturn {",
+   "replace": "\tif false:\n\t\treturn {"
+  },
+  {
+   "name": "甚尔每回合一次",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "maxi(XTianqiHorsemen.action_times(self, b), XTianqiGojoTrial.action_times(self, b))",
+   "replace": "XTianqiHorsemen.action_times(self, b)"
+  },
+  {
+   "name": "金钱走四阶价",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/advance.gd",
+   "find": " if not XTianqiGojoTrial.own_gold(actor_id) else -1",
+   "replace": ""
+  },
+  {
+   "name": "茈领域不提前学",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "const LEARN_LEVELS := {10640: 25, 10641: 25, 10642: 55}",
+   "replace": "const LEARN_LEVELS := {}"
+  },
+  {
+   "name": "迁移不折半",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tvar n := old / 2\n",
+   "replace": "\tvar n := old\n"
+  },
+  {
+   "name": "试炼发奖励（grant）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "\tif XTianqiGojoTrial.no_rewards(self):\n\t\treturn []",
+   "replace": "\tif false:\n\t\treturn []"
+  }
+ ]
+}
