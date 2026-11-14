@@ -206,6 +206,11 @@ static func img_path(folder: String, name: String) -> String:
 			var own_ms := "res://content/mira/img/sv_actors/Codex_Mira_SV_u2.png"
 			if ResourceLoader.exists(own_ms):
 				return own_ms
+	# 渡鸦神话新美术（XRaven.ART）：20 帧逐帧在 content/raven/img/sv_actors/sv/UserSV_RavenMythic/，优先于同步出的原版图
+	if XRaven.ART and name.get_file().begins_with("UserSV_RavenMythic"):
+		var own_r := "res://content/raven/img/%s/%s.png" % [folder, name]
+		if ResourceLoader.exists(own_r):
+			return own_r
 	for ext in [".png", ".jpg"]:
 		var p := "%simg/%s/%s%s" % [BASE, folder, name, ext]
 		if ResourceLoader.exists(p):

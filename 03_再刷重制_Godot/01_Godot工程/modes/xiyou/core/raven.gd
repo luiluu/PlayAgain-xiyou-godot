@@ -41,6 +41,9 @@ extends RefCounted
 ## 表现模块：RavenSkillEffects 已移植（battle/raven_fx.gd）；地图步行帧 ×1.35 在 MVCharacter.animation_wait；RavenMonsterVisual 神话静态大图见 appearance.gd 注释。
 
 const ACTOR := 167
+## 神话形态新美术（O-待定，Kyo 2026-11-15 定稿）：20 帧逐帧图 UserSV_RavenMythic 在 content/raven/img/sv_actors/sv/UserSV_RavenMythic/
+## （XDB.img_path 优先读、XAppearance.PROFILES 同步换新档）。false＝回到同步出的原版 UserSV_RavenMythic 与旧归一档。
+static var ART := true
 const CLASS := 165
 const ARTIFACT := 4001
 const HORN := 2902
