@@ -196,10 +196,10 @@ static func img_path(folder: String, name: String) -> String:
 		var own_s := "res://content/sukuna/img/%s/%s.png" % [folder, name]
 		if ResourceLoader.exists(own_s):
 			return own_s
-	# 米拉人形新美术（XMira.ART）：行走 $Codex_Mira_Walk_u2、战斗 Codex_Mira_SV_u2 在 content/mira/img/，优先于同步出的原版图
+	# 米拉人形新美术（XMira.ART）：行走 $Codex_Mira_Walk_Final、战斗 Codex_Mira_SV_u2 在 content/mira/img/，优先于同步出的原版图
 	if XMira.ART:
-		if folder == "characters" and name in ["$BlackDragon_Mira", "$Codex_Mira_Walk_u2"]:
-			var own_mw := "res://content/mira/img/characters/$Codex_Mira_Walk_u2.png"
+		if folder == "characters" and name in ["$BlackDragon_Mira", "$Codex_Mira_Walk_Final"]:
+			var own_mw := "res://content/mira/img/characters/$Codex_Mira_Walk_Final.png"
 			if ResourceLoader.exists(own_mw):
 				return own_mw
 		if folder == "sv_actors" and name in ["BlackDragon_Mira_SV", "Codex_Mira_SV_u2"]:
