@@ -8,6 +8,10 @@
       --min-base <号>          低于这个号的底包提示去换整包（默认沿用清单原值）
       --revoke <号>（可多次）   撤回某个补丁版本（装了它的客户端下次启动退回）
       --drop-base <号>（可多次） 清单里不再给这个底包发补丁
+      --min-playable <号>｜latest｜0   强制更新（Kyo 11-14）：运行的开发编号低于它的客户端进标题前被拦住、必须更新
+                               （latest＝本次发布的编号，所有旧版都强制；0＝取消强制）。不给就沿用清单原值（默认不改）。
+                               不能比本次发布的编号大。只有装了强制更新逻辑的客户端认它，更老的客户端照旧只看红点。
+      --download-url <https 地址>｜none   强制更新框「手动下载」打开的页面（不给就沿用原值；none＝去掉，客户端改指 QQ 群）
       --out <目录>             输出目录（默认 05_发布/补丁/dev<号>/，不入 Git）
       --stage                  把补丁和清单提交到两个发版仓库的本机副本（先提交包、再提交清单，清单里的包地址固定到包提交）
       --old-tree <目录>        底包对应的工程目录：顺带调 生成更新清单.py 比对它和当前工程，写签名的补丁文件清单
@@ -241,6 +245,27 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
         m['bases'].pop(str(b), None)
     if a.min_base is not None:
         m['min_base'] = a.min_base
+    for k in ('min_playable', 'download_url'):  # 强制更新的两项：默认沿用原值
+        if old and k in old:
+            m[k] = old[k]
+    if a.min_playable is not None:
+        try:
+            mp = code if a.min_playable == 'latest' else int(str(a.min_playable).replace('dev.', ''))
+        except ValueError:
+            raise Fail(f'--min-playable 要给开发编号（如 580）、latest 或 0，不认 {a.min_playable}')
+        if mp > code:
+            raise Fail(f'--min-playable {mp} 比本次发布的编号 {code} 还大：玩家装到最新也过不了，会一直卡在更新框')
+        if mp > 0:
+            m['min_playable'] = mp
+        else:
+            m.pop('min_playable', None)
+    if a.download_url is not None:
+        if a.download_url == 'none':
+            m.pop('download_url', None)
+        elif not a.download_url.startswith('https://'):
+            raise Fail('--download-url 要 https:// 开头（客户端不认别的）')
+        else:
+            m['download_url'] = a.download_url
     for r in a.revoke or []:
         if r not in m['revoked']:
             m['revoked'].append(r)
@@ -348,6 +373,8 @@ def main(argv=None) -> int:
     ap.add_argument('--min-base', type=int)
     ap.add_argument('--revoke', type=int, action='append')
     ap.add_argument('--drop-base', type=int, action='append')
+    ap.add_argument('--min-playable')
+    ap.add_argument('--download-url')
     ap.add_argument('--out')
     ap.add_argument('--stage', action='store_true')
     ap.add_argument('--repos', nargs=2)
@@ -440,7 +467,8 @@ def main(argv=None) -> int:
         manifest = build_manifest(old, code, date, notes, base_code, entry, a)
         write_channel(out, manifest, key, pub)
         print(f'· 清单 channel.json、channel.sig 已写并验签：最新 0.{code}，有补丁的底包 {sorted(manifest["bases"])}，'
-              f'min_base {manifest["min_base"]}，撤回 {manifest["revoked"]}')
+              f'min_base {manifest["min_base"]}，撤回 {manifest["revoked"]}，'
+              + (f'强制更新：开发编号低于 {manifest["min_playable"]} 的进不了游戏' if manifest.get('min_playable') else '不强制更新'))
         if a.stage:
             for r in repos:
                 (r / SUBDIR).mkdir(exist_ok=True)
