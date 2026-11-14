@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-weak-clear
 
 - 车道／工作者：C 规则·机制／cc（天启篇全弱者通关资格）
-- 状态：进行中
+- 状态：可合并
 
 依据：私密仓库 xiyou-design-docs `重制设定/天启篇_设计总览_v0.2.md` 第二节 3「全弱者通关资格跟本档走，奖励另行标定」（Kyo 11-08）；`天启篇_对重制内容影响审查_v0.6.md` 第 245、268 行（原版弱者挑战在天启篇作废，新判定「全弱者通关 36 层」没做）。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
 
@@ -99,6 +99,7 @@
   - 断言：`growth_missing_closed`（删掉 growth）、`growth_empty_closed`（设为空）、`growth_restored_records`（放回后照记）。
   - 数据校验：`03_转换工具/天启篇数据校验.py` 的 skill_rework 规则加一条「tiers.growth 非空」；`测试天启篇数据校验.py` 加 `SkillReworkGrowth` 三例（真表过、缺失报、为空报），51 例全过。
 - 反向验证（4 项都咬住）：单格写入不记、整列赋值不记、名单读不到照放行、`tianqi_swap` 改回直接写格子（`slot_write_choke` 抓到）。
+- 专项 45/45；云端选测（基准 ffddb04ca）：ea295a562，546 个场景通过，`xiyou_fabao_rework` 偶发一次（并行时失败、单跑通过，不碰本车道文件）（Actions run 43581272231）；工具回归通过。
 
 ## 本分支提交
 
