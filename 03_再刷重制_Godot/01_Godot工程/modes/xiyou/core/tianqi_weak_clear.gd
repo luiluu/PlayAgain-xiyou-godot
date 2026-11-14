@@ -16,7 +16,7 @@ extends RefCounted
 ##   新资格达成时点亮原版成就 142（开关 ACHIEVEMENT）；不写全局 codexWeakFiveClearV2（那是西游档新局学 10357 的奖励）。
 ## - 奖励不做（另行标定）：达成时调 reward(s, diff)，现在是空的。
 ## - 玩家看得到：达成时结算多一行「全弱者通关（本档）」；读档界面天启之路一行末尾标「全弱者」。
-## 开关（O-待定）：ENABLED＝false 整套不判不记（已记的存档字段留着，界面不显示）。
+## 开关（O-430）：ENABLED＝false 整套不判不记（已记的存档字段留着，界面不显示）。
 
 static var ENABLED := true
 ## 达成时点亮原版成就 142「弱者挑战」（XAchievement.reward：成就本身带的物品照发）
