@@ -22,6 +22,39 @@ OUT = GEN / 'oracle/event_states.json'
 SRC = ORACLE / '.sandbox/event_states.json'
 
 
+# 天启篇默认（Kyo 11-14，cc 检查模式）：产物在时不再按修改时间自动补量。新工作树检出的预设、探针修改时间总比克隆来的产物新，
+# 11-14 清理又清掉了 .sandbox 里的增量账，按修改时间判就变成每个新工作树跑 检查.sh 都整份重量约 1 小时、占 4 槽（本车道与 tianqi-elements 同时踩到）。
+# 现在只在产物缺失时自动补；比产物新的依赖与主工作区内容不同（本树真改了）时提示手动跑。XIYOU_LEGACY_SYNC=1 回到按修改时间自动补量。
+LEGACY = os.environ.get('XIYOU_LEGACY_SYNC') == '1'
+
+
+def main_root():
+    """主工作区根（git 公共目录的上一级）；就在主工作区或读不到时返回 None。"""
+    try:
+        gd = subprocess.run(['git', '-C', str(ENV), 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'],
+                            capture_output=True, text=True, check=True).stdout.split()
+    except (subprocess.CalledProcessError, OSError):
+        return None
+    if len(gd) < 2 or gd[0] == gd[1]:
+        return None
+    return Path(gd[1]).parent
+
+
+def same_as_main(path):
+    """本树这份与主工作区同一路径的那份逐字节相同；对不上（含主工作区没有、本树就是主工作区）返回 False。"""
+    main = main_root()
+    if main is None:
+        return False
+    other = main / path.resolve().relative_to(ENV.parent.parent.resolve())
+    try:
+        a, b = path.stat(), other.stat()
+        if a.st_size != b.st_size:
+            return False
+        return hashlib.sha256(path.read_bytes()).digest() == hashlib.sha256(other.read_bytes()).digest()
+    except (OSError, ValueError):
+        return False
+
+
 def needs(force):
     if force or not OUT.exists():
         return True
@@ -31,7 +64,16 @@ def needs(force):
     missing = [str(p.relative_to(ENV.parent)) for p in deps if not p.exists()]
     if missing:
         print('⚠ 判断要不要补跑时找不到：' + '、'.join(missing))
-    return any(p.exists() and p.stat().st_mtime > stamp for p in deps)
+    newer = [p for p in deps if p.exists() and p.stat().st_mtime > stamp]
+    if LEGACY or not newer:
+        return bool(newer)
+    changed = [str(p.relative_to(ENV.parent)) for p in newer if not same_as_main(p)]
+    if changed:
+        print('⚠ ' + '、'.join(changed) + ' 比 event_states.json 新、且与主工作区不同；天启篇默认不自动补量（11-14）。'
+              '本树真改了预设或探针时手动跑 python3 03_再刷重制_Godot/07_开发环境/补跑事件状态探针.py'
+              '（主工作区 .sandbox 的增量账 11-14 已清，多半整份重量约 1 小时、占 4 槽，先约总装）；'
+              'XIYOU_LEGACY_SYNC=1 回到按修改时间自动补量', flush=True)
+    return False
 
 
 # 分段并行（BO，派单第十一批）：5833 个变体单进程补跑约 14 分钟（新源上 24 分钟）。每个变体都从新局快照起跑、互不依赖，
