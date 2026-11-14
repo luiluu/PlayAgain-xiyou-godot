@@ -11,6 +11,11 @@ extends RefCounted
 ##   CodexElements 的备注元素文字统一（baseNote46）重制版不改实例备注，模板与实例原样比。
 
 static var ENABLED := true
+## O-待定-2（性能，卖装卡顿）：原版按计划卖时每件卖前再判一次保留原因（doSell 前 if(!S.reason(i))），整批要判两遍。
+## 同一帧里刚算出来的计划（挂机战后自动卖出、商店确认时重算的计划）中间没有别的东西能改保留原因：
+## 吞器本身带异化标记不卖、被借的供体卖不掉，卖一件只加钱和报酬、拿掉这一件，所以第二遍结果必然相同。
+## ONE_PASS 开着时这种计划卖前只查「还在背包里」；跨帧的旧计划照原版再判。设 false 恢复每件都再判。
+static var ONE_PASS := true
 
 const TIERS := [{"label": "普通及以上", "rank": 0}, {"label": "优秀及以上", "rank": 18}, {"label": "精良及以上", "rank": 35},
 	{"label": "史诗及以上", "rank": 52}, {"label": "传说及以上", "rank": 69}, {"label": "不朽及以上", "rank": 88},
@@ -180,6 +185,7 @@ static func plan(s: XState, grade := -1) -> Dictionary:
 	var members := XHangUpAuto.legacy_of(grade) if grade >= 0 else XHangUpAuto.sell_legacy(s)
 	var sell := []
 	var keep := []
+	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
 	for e in s.gear:
 		if not members.has(XQuality.legacy(e)):
 			continue
@@ -188,16 +194,20 @@ static func plan(s: XState, grade := -1) -> Dictionary:
 			keep.append({"item": e, "reason": why})
 		else:
 			sell.append(e)
-	return {"sell": sell, "keep": keep}
+	XAlienation.end_batch()
+	return {"sell": sell, "keep": keep, "frame": Engine.get_process_frames()}
 
 
 ## 按计划卖：每件卖前再判一次（原版 doSell 前 if(!S.reason(i))）。返回 [件数, 金额]
 static func sell_plan(s: XState, p: Dictionary) -> Array:
 	var n := 0
 	var gold := 0
+	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
+	var fresh: bool = ONE_PASS and int(p.get("frame", -1)) == Engine.get_process_frames()   # O-待定-2：同一帧的计划不再判第二遍
 	for e in p.sell:
-		if s.gear.has(e) and reason(s, e) == "":
+		if s.gear.has(e) and (fresh or reason(s, e) == ""):
 			gold += XItemMarks.selling_price(e)
 			XItemMarks.sell(s, e, 1)
 			n += 1
+	XAlienation.end_batch()
 	return [n, gold]

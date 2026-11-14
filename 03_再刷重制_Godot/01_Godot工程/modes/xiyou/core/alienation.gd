@@ -94,10 +94,52 @@ static func locked(i: Dictionary) -> bool:
 static var o_reserved_onekey := true
 
 
+## O-待定-1（性能，v0.01.09 反馈「卖装卡顿、黑几秒」）：原来每问一件都把整个背包筛两遍、按获得先后排序再拼上身上的装备，
+## 一次卖 n 件要问 2～3n 次，背包上千件时整批卖出要好几秒。FAST_RESERVED 开着：
+## - 单问：直接扫背包与身上（「有没有」跟顺序无关，不排序、不拼数组）；
+## - 整批（begin_batch／end_batch 之间，一键出售、挂机自动卖出、安全出售的计划与执行）：开头把「被吞器借用的供体 instanceId」收成一张表，批内查表。
+##   批内卖出不会改这张表：吞器本身带异化标记，安全出售判「已培养或镶嵌」、旧筛法跳过异化装备，都不卖；被借的供体 loseItem 被挡、仍在背包。
+## 设 false 恢复逐件现算（结果相同，只是慢）。
+static var FAST_RESERVED := true
+static var _batch_depth := 0
+static var _batch_state: XState = null
+static var _batch_donors := {}
+
+
+## 供体表：背包＋身上所有吞器异化装备记着的 donorId（except 那件不算）
+static func donor_ids(s: XState, except = null) -> Dictionary:
+	var out := {}
+	for list in [s.gear, _equipped(s)]:
+		for item in list:
+			var m := mark(item)
+			if not m.is_empty() and not is_same(item, except) and str(m.affix) == "swallow":
+				out[str(m.get("config", {}).get("donorId", ""))] = true
+	return out
+
+
+## 整批判断开始／结束（可嵌套，最外层建表、最外层清表）
+static func begin_batch(s: XState) -> void:
+	if _batch_depth == 0 or not is_same(_batch_state, s):
+		_batch_state = s
+		_batch_donors = donor_ids(s)
+	_batch_depth += 1
+
+
+static func end_batch() -> void:
+	_batch_depth = maxi(0, _batch_depth - 1)
+	if _batch_depth == 0:
+		_batch_state = null
+		_batch_donors = {}
+
+
 ## A.reserved：被某件吞器异化装备选作供体的武器
 static func reserved(s: XState, i: Dictionary, except = null) -> bool:
 	if kind(i) != "w":
 		return false
+	if FAST_RESERVED:
+		if except == null and _batch_depth > 0 and is_same(_batch_state, s):
+			return _batch_donors.has(str(i.get("instanceId", "")))
+		return donor_ids(s, except).has(str(i.get("instanceId", "")))
 	for item in owned(s) + _equipped(s):
 		var m := mark(item)
 		if not m.is_empty() and not is_same(item, except) and str(m.affix) == "swallow" and str(m.get("config", {}).get("donorId", "")) == str(i.get("instanceId", "")):
