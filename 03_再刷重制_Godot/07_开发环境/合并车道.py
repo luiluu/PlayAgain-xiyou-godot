@@ -1443,13 +1443,28 @@ def replace_versions(root, state, state_file):
         path.write_bytes(after)
 
 
-def validate_version_edits(root, state):
+def validate_version_edits(root, state, state_file=None):
+    also = set(state.get('also', []))
+    hand = set(state.get('versionHandEdits', []))
+    changed_also = False
     for rel, hashes in state.get('versionEdits', {}).items():
         if rel in COMMON:
             continue  # 共用登记允许唐僧在暂停点继续编辑。
         path = root / rel
-        if path.is_symlink() or not path.is_file() or digest(path.read_bytes()) != hashes['after']:
+        if path.is_symlink() or not path.is_file():
             raise RuntimeError('编号替换文件还有其它改动，保留现场：' + rel)
+        cur = digest(path.read_bytes())
+        if cur != hashes['after']:
+            if rel not in also:
+                raise RuntimeError('编号替换文件还有其它改动，保留现场：' + rel + '（确须手补时留成未提交，重跑 --finish 加 --also ' + rel + '）')
+            hashes['after'] = cur
+            hand.add(rel)
+            changed_also = True
+            print('放行编号替换文件的手补（--also）：' + rel, flush=True)
+    if changed_also:
+        state['versionHandEdits'] = sorted(hand)
+        if state_file is not None:
+            save(state_file, state)
 
 
 def review_status(root, state):
@@ -1981,7 +1996,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         if changed - allowed:
             hint = '（只是 00_项目管理/ 下手修的文档可加 --accept-doc-edits 一并暂存）' if doc_edits(changed - allowed) else ''
             raise RuntimeError('不自动暂存预期外文件：' + '、'.join(sorted(changed - allowed)) + hint)
-        validate_version_edits(root, state)
+        validate_version_edits(root, state, state_file)
         run(root, [sys.executable, ENV / '进度账.py', '--check'])
         # 检查.sh 按 git ls-files 枚举交付单；仅删除工作区文件仍会被它列出。
         # 先核对全部改动范围，再只暂存本批交付单的删除，不提前暂存其它内容。
@@ -2014,7 +2029,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         changed = dirty(root)
         if changed - allowed:
             raise RuntimeError('检查后出现预期外改动，先人工处理：' + '、'.join(sorted(changed - allowed)))
-        validate_version_edits(root, state)
+        validate_version_edits(root, state, state_file)
         if any((root / s).exists() for s in sheets(state)):
             raise RuntimeError('检查后交付单重新出现，先人工核对')
         if changed & uids:
@@ -2044,12 +2059,15 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             note = snapshot_note(root)
             if note.is_file():
                 snapshot = note.read_text().strip() or None
+        version_hand = set(state.get('versionHandEdits', []))
         if not batch:
-            hand = sorted(p for p in changed if not release_only_path(p))
+            hand = sorted({p for p in changed if not release_only_path(p)} | version_hand)
             if hand:  # 收尾提交里手补的代码：云端选测.py 不把这样的收尾提交当基准，退回合并提交（tools60，审查 37 P2-3）
                 trailer += '\n手补: ' + '、'.join(hand)
                 if snapshot:   # 手补的代码随快照提交在云端测过：云端选测.py 的基准链可以认这个收尾提交（BK2）
                     trailer += '\n手补已验: 快照 ' + snapshot[:9]
+        elif version_hand:
+            trailer += '\n手补: ' + '、'.join(sorted(version_hand))
         run(root, ['git', 'commit', '-m', '合并 ' + state['branch'] + '（' + state['version'] + '）收尾', '-m', trailer], env=MAIN_COMMIT_ENV)
         state.update(phase='committed', head=git(root, 'rev-parse', 'HEAD'), batch=batch)
         save(state_file, state)
@@ -2415,7 +2433,7 @@ def main(argv=None):
     ap.add_argument('--no-parse-check', action='store_true',
                     help='准备阶段跳过合并后的快速解析检查（只管本次运行；检查卡住或误报、确认无误时用）')
     ap.add_argument('--also', action='append', default=[], metavar='路径',
-                    help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则、修好的代码）；准备阶段停在冲突标记或解析检查时，'
+                    help='--finish 时一并提交的额外改动（如要删的另一张交付单、顺带改的规则、修好的代码、或对已替换编号文件的手补）；准备阶段停在冲突标记或解析检查时，'
                          '重跑同一命令加它点名修正的文件，工具并进合并提交。可重复')
     a = ap.parse_args(argv)
     a.executor = 'cc' if a.executor == 'Claude' else a.executor
