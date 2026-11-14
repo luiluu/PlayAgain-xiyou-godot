@@ -4086,6 +4086,58 @@ sys.exit(0)
         self.assertIn('AGENTS.md', self.g('show', '--name-only', '--format=', 'HEAD'))
         self.assertIn('手补: AGENTS.md', self.g('log', '-1', '--format=%B'))   # tools60：收尾带了非版本／登记／文档的改动就记下，基准函数据此退回合并提交
 
+    def test_also_allows_hand_edit_on_version_replaced_file(self):
+        """编号替换过的文件在 --finish 时默认不许带手改；--also 显式点名后放行，更新替换后哈希并在尾注记「手补: <文件>」。"""
+        self.located_lane(
+            [('-1', '`core/tianqi_random.gd` `FIX`', '`XTianqi.FIX = false`')],
+            {'modes/xiyou/core/tianqi_random.gd': '## 说明段\n## 开关（TOK，回退＝改回 false）。\nstatic var FIX := true\n'})
+        rel = str(merge.PROJECT / 'modes/xiyou/core/tianqi_random.gd')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        replaced = (self.root / rel).read_text()
+        self.assertIn('O-119', replaced)
+        patched = replaced.replace('## 开关（', '\n## 开关（', 1)
+        (self.root / rel).write_text(patched)
+        # 没带 --also：拦下
+        self.assertEqual(self.call('--finish'), 1)
+        self.assertIn('编号替换文件还有其它改动', self.last_output)
+        self.assertIn(rel, self.last_output)
+        # --also 点了别的文件：照旧拦
+        self.assertEqual(self.call('--finish', '--also', 'AGENTS.md'), 1)
+        self.assertIn('编号替换文件还有其它改动', self.last_output)
+        # --also 点名该文件：放行，且尾注记录「手补: <文件>」
+        self.assertEqual(self.call('--finish', '--also', rel), 0, self.last_output)
+        self.assertIn(rel, self.g('-c', 'core.quotepath=false', 'show', '--name-only', '--format=', 'HEAD'))
+        self.assertIn('手补: ' + rel, self.g('log', '-1', '--format=%B'))
+        self.assertEqual((self.root / rel).read_text(), patched)
+
+    def test_also_allows_hand_edit_on_version_replaced_file_in_batch(self):
+        """--finish --batch 时：没列在 --also 的编号替换文件手改照拦，列在 --also 的放行并在尾注记「手补: <文件>」。"""
+        self.located_lane(
+            [('-1', '`core/a.gd` `FIX_A`', '`XA.FIX_A = false`'),
+             ('-2', '`core/b.gd` `FIX_B`', '`XB.FIX_B = false`')],
+            {'modes/xiyou/core/a.gd': '## 开关 A（TOK，回退＝改回 false）。\nstatic var FIX_A := true\n',
+             'modes/xiyou/core/b.gd': '## 开关 B（TOK，回退＝改回 false）。\nstatic var FIX_B := true\n'})
+        rel_a = str(merge.PROJECT / 'modes/xiyou/core/a.gd')
+        rel_b = str(merge.PROJECT / 'modes/xiyou/core/b.gd')
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        replaced_b = (self.root / rel_b).read_text()
+        patched_a = (self.root / rel_a).read_text().replace('## 开关 A', '\n## 开关 A', 1)
+        (self.root / rel_a).write_text(patched_a)
+        (self.root / rel_b).write_text(replaced_b + '# unlisted hand edit\n')
+        # 只列了 rel_a，没列 rel_b：照旧拦 rel_b
+        self.assertEqual(self.call('--finish', '--batch', '--also', rel_a), 1)
+        self.assertIn('编号替换文件还有其它改动', self.last_output)
+        self.assertIn(rel_b, self.last_output)
+        # 还原 rel_b，只保留 rel_a 的手补并点名 rel_a：放行且尾注只记 rel_a
+        (self.root / rel_b).write_text(replaced_b)
+        self.assertEqual(self.call('--finish', '--batch', '--also', rel_a), 0, self.last_output)
+        body = self.g('log', '-1', '--format=%B')
+        self.assertIn('手补: ' + rel_a, body)
+        self.assertNotIn(rel_b, body)
+        self.assertEqual((self.root / rel_a).read_text(), patched_a)
+
     def test_release_only_path_matches_cloud_tool(self):
         cloud = load('cloud_select_for_release', HERE / '云端选测.py')
         for path, expect in [('03_再刷重制_Godot/开发编号.json', True), ('00_项目管理/变更记录.md', True), ('03_再刷重制_Godot/00_设计/优化登记.md', True),
