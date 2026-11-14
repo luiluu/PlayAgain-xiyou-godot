@@ -478,10 +478,24 @@ static func hp_damage(logic, u, t, value: float) -> float:
 
 ## 技能消耗：六号第 1 回合不花（普攻、道具本来就不花）
 static func cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:
+	return {"mp": 0, "tp": 0} if free_turn(a) else c
+
+
+## 六号持有者自己、本场第 1 回合（天启篇战斗里、开关开着）
+static func free_turn(a) -> bool:
 	var logic = _logic()
-	if not _active(logic) or int(logic.turn) != 1 or not _has_now(logic, a, 6):
-		return c
-	return {"mp": 0, "tp": 0}
+	return _active(logic) and int(logic.turn) == 1 and _has_now(logic, a, 6)
+
+
+## 六号「这一回合自己的技能不花消耗」覆盖全部费用（Kyo 11-14 定：真全免）：除 MP／TP（cost）外，
+## HP 定值／比例（skill_hp_cost）、道具（can_pay_items／pay_items）、屠苏噬主代付、异化缄默锁生命上限、米拉禁忌生命代价、
+## 饥荒线异化的口粮与透支都不检查、不扣。冷却、熟练度计次、残梦／镜流月／五条悟印这类战斗里攒的量照旧（不是费用）。
+## 开关（O-待定）：FREE_ALL＝false 回到只免 MP／TP 的旧行为
+static var FREE_ALL := true
+
+
+static func free_all(a) -> bool:
+	return FREE_ALL and free_turn(a)
 
 
 ## 持续伤害、持续回复（XExtDot，施加者 a）：三号 ×(1＋33%)

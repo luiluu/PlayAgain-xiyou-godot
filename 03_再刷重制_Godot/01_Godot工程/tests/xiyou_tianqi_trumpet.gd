@@ -6,6 +6,9 @@ extends Node
 ## 四、商店：封卷只在炼狱、证道上架。
 ## 五、战斗：初号范围／单体、二号残血／满血、三号持续效果与受治疗、四号承伤／留一口气／暴击、五号站起来与之后减伤、
 ##    六号先手／免消耗／第 6 回合起减伤、七号掉率与金钱、七号齐鸣；整回合实跑不报错。
+## 五之二、六号全免（Kyo 11-14 真全免）：走真 XBattleLogic.can_use＋pay_skill_cost，MP、TP、HP 定值／比例、物品第 1 回合不看不扣，
+##    第 2 回合、非持有者照扣照挡；FREE_ALL 关掉回到只免 MP／TP。
+## 五之三、五号起身那一回合的行动顺序：中途阵亡（带追加行动）、终焉锁复活、开场就阵亡。
 ## 六、开关关掉：一条都不生效。
 
 var results: Array = []
@@ -84,6 +87,8 @@ func _run() -> void:
 	_drops()
 	_shop()
 	_battle()
+	_cavalry_pay()
+	_abyss_order()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -328,6 +333,145 @@ func _battle() -> void:
 	_check("run.turns", lg3.turn >= 1, lg3.turn)
 	lg3.end_battle(0)
 	_check("run.cleared", not lg3.has_meta("xtrumpet"))
+
+
+## 带费用的测试技能：stypeId 0 不看技能类别，id 用不存在的号免得撞上各角色的专属规则
+func _cost_skill(id: int, note: String, mp := 0, tp := 0) -> Dictionary:
+	return {"id": id, "name": "测试", "occasion": 0, "scope": 11, "stypeId": 0, "mpCost": mp, "tpCost": tp, "note": note,
+		"damage": {"type": 0, "elementId": 0, "critical": false, "variance": 0, "formula": "0"}, "effects": []}
+
+
+func _cost_item() -> int:
+	for id in range(1, 200):
+		if not XDB.rec("Items", id).is_empty():
+			return id
+	return 1
+
+
+func _cavalry_pay() -> void:
+	var s := _state()
+	var ms: Array = s.members()
+	var a: XActor = ms[0]  # 没学六号
+	var b: XActor = ms[1]  # 学了六号
+	_learn(b, 6)
+	var lg := _logic(s)
+	XTianqiTrumpet.start(lg)
+	lg.turn = 1
+	var item := _cost_item()
+	var hp_flat := _cost_skill(99991, "<HP Cost: 500>")
+	var hp_per := _cost_skill(99992, "<HP Cost: 90%>")
+	var items := _cost_skill(99993, "<Item %d Cost: 3>" % item)
+	var mptp := _cost_skill(99994, "", 100, 20)
+	var all := _cost_skill(99995, "<HP Cost: 500>\n<Item %d Cost: 3>" % item, 100, 20)
+	var poor := func(x: XActor) -> void:
+		x.hp = 100.0
+		x.mp = 0.0
+		x.tp = 0.0
+		s.gain_item(item, -s.item_count(item))
+	# 第 1 回合、六号持有者：样样付不起也能放，放了一样不扣
+	for sk in [hp_flat, hp_per, items, mptp, all]:
+		poor.call(b)
+		var tag := "cavalry.pay.%d" % int(sk.id)
+		_check(tag + ".can_use", lg.can_use(b, sk), [b.hp, b.mhp])
+		lg.pay_skill_cost(b, sk)
+		_check(tag + ".not_paid", _near(b.hp, 100.0) and _near(b.mp, 0.0) and _near(b.tp, 0.0) and s.item_count(item) == 0, [b.hp, b.mp, b.tp, s.item_count(item)])
+	_check("cavalry.pay.hp_cost_zero", XBattleLogic.skill_hp_cost(b, hp_flat) == 0 and XBattleLogic.skill_hp_cost(b, hp_per) == 0)
+	# 第 1 回合、没学六号的人：付不起被挡；付得起照扣
+	poor.call(a)
+	_check("cavalry.pay.other_blocked_hp", not lg.can_use(a, hp_flat))
+	_check("cavalry.pay.other_blocked_per", not lg.can_use(a, hp_per))
+	_check("cavalry.pay.other_blocked_item", not lg.can_use(a, items))
+	_check("cavalry.pay.other_blocked_mp", not lg.can_use(a, mptp))
+	a.recover_all()
+	a.tp = 100.0
+	s.gain_item(item, 5)
+	var hp0 := a.hp
+	lg.pay_skill_cost(a, all)
+	_check("cavalry.pay.other_paid", _near(a.hp, hp0 - 500.0) and s.item_count(item) == 2, [hp0, a.hp, s.item_count(item)])
+	# 第 2 回合、六号持有者：照扣照挡
+	lg.turn = 2
+	poor.call(b)
+	_check("cavalry.pay.t2_blocked_hp", not lg.can_use(b, hp_flat))
+	_check("cavalry.pay.t2_blocked_per", not lg.can_use(b, hp_per))
+	_check("cavalry.pay.t2_blocked_item", not lg.can_use(b, items))
+	_check("cavalry.pay.t2_blocked_mp", not lg.can_use(b, mptp))
+	b.recover_all()
+	b.tp = 100.0
+	s.gain_item(item, 5)
+	hp0 = b.hp
+	var mp0 := b.mp
+	lg.pay_skill_cost(b, all)
+	_check("cavalry.pay.t2_paid", _near(b.hp, hp0 - 500.0) and s.item_count(item) == 2 and b.mp < mp0 and _near(b.tp, 80.0), [hp0, b.hp, mp0, b.mp, b.tp, s.item_count(item)])
+	# 开关关掉：第 1 回合只免 MP／TP（旧行为），生命、物品照挡照扣
+	lg.turn = 1
+	XTianqiTrumpet.FREE_ALL = false
+	poor.call(b)
+	_check("cavalry.off.hp_blocked", not lg.can_use(b, hp_flat))
+	_check("cavalry.off.item_blocked", not lg.can_use(b, items))
+	_check("cavalry.off.mptp_still_free", lg.can_use(b, mptp))
+	b.recover_all()
+	s.gain_item(item, 5)
+	hp0 = b.hp
+	lg.pay_skill_cost(b, all)
+	_check("cavalry.off.paid", _near(b.hp, hp0 - 500.0) and s.item_count(item) == 2, [hp0, b.hp, s.item_count(item)])
+	XTianqiTrumpet.FREE_ALL = true
+	lg.end_battle(0)
+
+
+## 五号起身那一回合不行动：这一回合的顺序是上一回合排的，阵亡时 _sync_orders 已把人（连追加行动）从下回合顺序里拿掉
+func _abyss_order() -> void:
+	var s := _state()
+	var ms: Array = s.members()
+	var b: XActor = ms[1]
+	_learn(b, 5)
+	var lg := _logic(s)
+	XTianqiTrumpet.start(lg)
+	lg.start_turn()  # 第 1 回合
+	_check("abyss.order.t1_has", lg.current_order.has(b))
+	# 追加行动：下回合顺序里排两次
+	lg.next_order.insert(lg.next_order.find(b), b)
+	var before := lg._movable_snapshot()
+	b.add_state(1)
+	b.hp = 0.0
+	lg._sync_orders(before, true)
+	_check("abyss.order.dead_cleared", not lg.next_order.has(b) and not lg.current_order.has(b), [lg.next_order.count(b), lg.current_order.count(b)])
+	lg.current_order.clear()
+	lg.start_turn()  # 第 2 回合：站起来，但这一回合不动
+	_check("abyss.order.risen", b.is_alive() and lg.turn == 2)
+	_check("abyss.order.risen_no_act", not lg.current_order.has(b), lg.current_order.count(b))
+	_check("abyss.order.next_turn_back", lg.next_order.has(b))
+	lg.end_battle(0)
+	# 终焉锁复活：不站起来、不算用掉、也不进顺序
+	var lg2 := _logic(s)
+	b.recover_all()
+	XTianqiTrumpet.start(lg2)
+	lg2.start_turn()
+	b.add_state(1)
+	b.hp = 0.0
+	lg2._sync_orders({b: true}, true)
+	lg2.set_meta(XTianqiDeathAlien.META, {"preset": "", "units": {}, "queue": [], "doom": {}, "dead": {}, "lock": {}, "no_revive": {b: true}, "knell_lock": -1, "absorbed": {}})
+	var old_ref = XTianqiDeathAlien._logic_ref
+	XTianqiDeathAlien._logic_ref = weakref(lg2)
+	lg2.current_order.clear()
+	lg2.start_turn()
+	_check("abyss.lock.stays_dead", b.is_dead() and int(XTianqiTrumpet._unit(lg2, b).revives) == 0)
+	_check("abyss.lock.no_order", not lg2.current_order.has(b) and not lg2.next_order.has(b))
+	lg2.remove_meta(XTianqiDeathAlien.META)
+	XTianqiDeathAlien._logic_ref = old_ref
+	lg2.end_battle(0)
+	# 开场就阵亡：第 1 回合开始站起来
+	b.remove_state(1)
+	b.recover_all()
+	var lg3 := _logic(s)
+	XTianqiTrumpet.start(lg3)
+	b.add_state(1)
+	b.hp = 0.0
+	lg3.start_turn()
+	_check("abyss.t1dead.risen", b.is_alive())
+	_check("abyss.t1dead.no_act", not lg3.current_order.has(b), lg3.current_order.count(b))
+	lg3.end_battle(0)
+	b.remove_state(1)
+	b.recover_all()
 
 
 func _switches() -> void:
