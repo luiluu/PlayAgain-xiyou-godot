@@ -2018,6 +2018,7 @@ func relocate_race_guide() -> void:
 		guide.set_direction(2)
 
 
+## 菜单或事件页面（_add_scene_page）关掉的那一帧：本帧地图不开菜单（XKeyMap.menu_call_blocked）
 var _menu_closed_frame := -1
 
 
