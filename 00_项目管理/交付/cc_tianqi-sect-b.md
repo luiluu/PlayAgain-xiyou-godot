@@ -55,3 +55,9 @@
 - c84a5e455 天启篇教派连带内容包乙：小小鱼破枷锁（XTianqiSect.YI）
 - 合并 main（`xdb.gd` 冲突：main 把 `rec` 改成链式 out，本包那行接在号卷之后）
 - a3d7e7cfe 包甲专项 EV003 断言改在 YI 关时测；交付单初稿
+
+## 核查返修（小A 甲档「通过」附 2 条 P3，2026-11-14，cc）
+
+1. `tianqi_line.gd` `run_arrival` 原先先 `mark_seen` 再演出、演完才发枷锁：演出中途存档再读，节点已 seen、这一重漏发。改成 `XTianqiSect.grant_for_beat` 在 `mark_seen` 之前发（变量 9、被动、`flags.tianqi.fetters` 和 seen 同一步落定），台词演完由 `after_beat(host, s, 重数)` 说。20 层使徒那条本来就是先发后说。反向验证「先标 seen 后发」咬住。
+2. 专项 `_chain` 改成实跑：开局指令经 `MVInterpreter`（宿主用事件对照的 EventHost）跑完，阵容、变量 9（九死 10）、变量 14 由开局指令写；存读档走 `XSave.save`／`load_slot` 真实写盘（测试目录 `user://test_xiyou_tianqi_sect_b`，跑完删）；新增「回声演出第一句时存档→读回：已 seen、已发第一重、变量 9 +1、已学 6178」断言（四线各一）。60 → 76 条全过。
+- 验证：`xiyou_tianqi_sect_b` 76/76；本机联跑 sect_a、四线、e2e 全过；语法检查、发行空壳 check（54 个脚本、446 个函数）通过。只动了天启篇模块和专项，没再跑云端整轮。

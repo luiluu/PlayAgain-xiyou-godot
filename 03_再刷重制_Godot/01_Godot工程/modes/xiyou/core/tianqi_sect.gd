@@ -267,18 +267,29 @@ static func grant_fetter(s, tier: int) -> bool:
 
 ## 小小鱼说一句、松一重（台词三句四线共用）
 static func run_fetter(host, s, tier: int) -> void:
-	if not grant_fetter(s, tier):
-		return
-	if host == null or not host.has_method("show_text"):
+	if grant_fetter(s, tier):
+		await say_fetter(host, s, tier)
+
+
+## 松过第 tier 重之后小小鱼的台词（0＝这次没发，不说）
+static func say_fetter(host, s, tier: int) -> void:
+	if tier < 1 or tier > YI_LINES.size() or host == null or not host.has_method("show_text"):
 		return
 	await host.show_text("", 0, [XTianqiLine.line_text([XTianqi.GUIDE_NAME, YI_LINES[tier - 1]])])
 	await host.show_text("", 0, ["\\c[2]挣脱枷锁·%s\\c[0]　全队抽奖被动上限+1（现在%d）。" % [YI_NAMES[tier - 1], int(s.variable(YI_CAP_VAR))]])
 
 
-## XTianqiLine.run_arrival 末尾：本线楼层节点（echo15／rumor25）演完
-static func after_beat(host, s, beat: String) -> void:
-	if YI and YI_BEATS.has(beat):
-		await run_fetter(host, s, int(YI_BEATS[beat]))
+## XTianqiLine.run_arrival 标记 seen 之前：本线楼层节点（echo15／rumor25）先把这一重发掉，和 seen 同一步落定；
+## 返回这次发的重数（没发为 0），演完再交给 after_beat 说台词
+static func grant_for_beat(s, beat: String) -> int:
+	if YI and YI_BEATS.has(beat) and grant_fetter(s, int(YI_BEATS[beat])):
+		return int(YI_BEATS[beat])
+	return 0
+
+
+## XTianqiLine.run_arrival 末尾：节点演完，小小鱼说一句（tier 是 grant_for_beat 的返回）
+static func after_beat(host, s, tier: int) -> void:
+	await say_fetter(host, s, tier)
 
 
 ## 这一场是不是本线 20 层的使徒（开场打完之后才算）

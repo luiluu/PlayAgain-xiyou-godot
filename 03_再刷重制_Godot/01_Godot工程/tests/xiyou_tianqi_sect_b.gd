@@ -10,9 +10,13 @@ extends Node
 ## 地图场景的替身：文字记下，开战按 results 依次给结果
 class FakeHost extends RefCounted:
 	var said: Array = []
+	var save_on_first_text := false
 	var results: Array = []
 	var map_id := 4
 	func show_text(_f: String, _i: int, lines: Array) -> void:
+		if save_on_first_text:  # 演出中途存档（节点已标 seen、台词还没演完）
+			save_on_first_text = false
+			XSave.save(3)
 		said.append_array(lines)
 	func show_text_with_choices(_f: String, _i: int, _lines: Array, options: Array, _cancel: int) -> int:
 		return options.size() - 1
@@ -25,7 +29,13 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+class InterpHost:
+	extends "res://tests/xiyou_event_compare.gd".EventHost
+
+
 var results: Array = []
+const SLOT := 3
+const SAVE_DIR := "user://test_xiyou_tianqi_sect_b"
 
 
 func _ready() -> void:
@@ -38,6 +48,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _run() -> void:
 	XMessageBox.auto = true
+	XSave.dir_override = SAVE_DIR
 	_hall_and_floors()
 	_opening()
 	_skills()
@@ -45,6 +56,9 @@ func _run() -> void:
 		await _chain(line)
 	await _guards()
 	_original()
+	for slot in range(1, 11):
+		DirAccess.remove_absolute(XSave.path(slot))
+	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -160,20 +174,40 @@ func _skills() -> void:
 	_check("skills_original", str(XDB.rec("Skills", 6179).note).contains("StartPushState1002"))
 
 
-## 实跑：一条线从开场打完到 25 层
+## 实跑：开局指令经 MVInterpreter 跑完（阵容、变量 9 都由开局指令写），一条线从开场打完到 25 层；存读档走 XSave 真实写盘
 func _chain(line: String) -> void:
-	var s := _tianqi("jiusi", line)
+	var lineup := _ids().slice(0, 5)
+	XMessageBox.auto_answers = ["测试道号"]
+	XTianqi.start_new_game(3, "jiusi", lineup)
+	var s := XState.current
+	s.map_id = 4
+	var ih := InterpHost.new()  # 地图场景的解释器宿主替身（事件对照用的那个）
+	add_child(ih)
+	var interp := MVInterpreter.new(ih, 4, 0, XTianqi.take_pending())
+	await interp.run()
+	ih.queue_free()
+	_check(line + "_opening_ran", s.party == lineup and int(s.variable(9)) == 10 and int(s.variable(14)) == 1, [s.party, s.variable(9), interp.skipped.slice(0, 3)])
+	s.set_variable(20, 6)
+	s.flags.tianqi["line"] = line
 	XTianqiLine.progress(line, s)["stage"] = XTianqiLine.stage_done(line)
-	s.set_variable(9, _cap_of(XTianqi.opening_commands(1, "jiusi", [1, 2, 3, 5, 6])))  # 开局指令里的上限（start_new_game 不跑开局指令）
 	var host := FakeHost.new()
 	var cap0 := int(s.variable(9))
 	var a := s.actor(int(s.party[0]))
 	var atk0 := a.param(2)
-	await XTianqiLine.run_arrival(host, s, 32)  # 15 层回声
+	# 15 层回声：演出第一句时存档（已标 seen、台词还没说完），读回来这一重也已经在
+	host.save_on_first_text = true
+	await XTianqiLine.run_arrival(host, s, 32)
+	host.save_on_first_text = false
 	_check(line + "_echo15", int(s.variable(9)) == cap0 + 1 and a.skill_ids.has(6178) and not a.skill_ids.has(6179) \
 			and host.said.any(func(t): return str(t).contains("我改一下")), [s.variable(9), host.said])
 	_check(line + "_no_stats", is_equal_approx(a.param(2), atk0), [atk0, a.param(2)])
 	_check(line + "_all_actors", s.actor(int(_ids()[7])).skill_ids.has(6178))  # 不在队的也学（原版 for $dataActors）
+	_check(line + "_load_slot", XSave.load_slot(SLOT))
+	var mid: XState = XState.current
+	_check(line + "_mid_beat_save_kept", mid != s and XTianqiLine.seen(line, mid, "echo15") and XTianqiSect.fetters_given(mid) == [1] \
+			and int(mid.variable(9)) == cap0 + 1 and mid.actor(int(mid.party[0])).skill_ids.has(6178), [XTianqiSect.fetters_given(mid), mid.variable(9)])
+	s = mid
+	a = s.actor(int(s.party[0]))
 	await XTianqiLine.run_arrival(host, s, 32)
 	_check(line + "_echo15_once", int(s.variable(9)) == cap0 + 1)
 	# 20 层使徒：输了不发、赢了发第二重
@@ -185,9 +219,9 @@ func _chain(line: String) -> void:
 	await XTianqiSect.after_map_battle(host, s, troop, 0)
 	_check(line + "_apostle20", int(s.variable(9)) == cap0 + 2 and a.skill_ids.has(6179) and host.said.any(func(t): return str(t).contains("再松一格")))
 	# 存档读回：已发的不再发
-	var back := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
-	XState.current = back
-	_check(line + "_saved", XTianqiSect.fetters_given(back).map(func(x): return int(x)) == [1, 2], XTianqiSect.fetters_given(back))
+	_check(line + "_save", XSave.save(SLOT) and XSave.load_slot(SLOT))
+	var back: XState = XState.current
+	_check(line + "_saved", back != s and XTianqiSect.fetters_given(back) == [1, 2], XTianqiSect.fetters_given(back))
 	await XTianqiSect.after_map_battle(host, back, troop, 0)
 	await XTianqiLine.run_arrival(host, back, 32)
 	_check(line + "_load_no_repeat", int(back.variable(9)) == cap0 + 2, back.variable(9))

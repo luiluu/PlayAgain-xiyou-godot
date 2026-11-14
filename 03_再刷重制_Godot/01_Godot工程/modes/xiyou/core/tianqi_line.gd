@@ -359,13 +359,14 @@ static func run_arrival(host, s: XState, map_id: int) -> void:
 		await XTianqiFamineLine.run_prologue(host, s, beat)
 		return
 	var key := current(s)
+	var fetter := XTianqiSect.grant_for_beat(s, beat)  # 天启篇教派连带内容包乙：和 seen 同一步落定（演出中途存档也不漏发），台词演完再说
 	mark_seen(key, s, beat)
 	await say(host, key, beat)
 	if key == XTianqiFamineLine.KEY:
 		await XTianqiFamineLine.after_beat(host, s, beat)
 	if key == XTianqiPlagueLine.KEY:
 		await XTianqiPlagueLine.after_beat(host, s, beat)
-	await XTianqiSect.after_beat(host, s, beat)  # 天启篇教派连带内容包乙：15／25 层节点演完，小小鱼松一重枷锁
+	await XTianqiSect.after_beat(host, s, fetter)  # 天启篇教派连带内容包乙：15／25 层节点演完，小小鱼说一句（上面已发）
 
 
 # ---- 35、36 层（31～36 层重做之后接地图） ----
