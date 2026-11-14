@@ -315,8 +315,10 @@ func _menu_cmd(sym: String) -> bool:
 	if menu == null:
 		return false
 	await _frames(STEP)
-	for i in XMenu.COMMANDS.size() + 1:
-		if str(XMenu.COMMANDS[menu._cmd_index][1]) == sym:
+	# 按 commands()（实际显示的指令）找：天启篇隐藏宠物、发行隐藏异化工坊时少几项，下标和 COMMANDS 对不上
+	var cmds: Array = XMenu.commands()
+	for i in cmds.size() + 1:
+		if str(cmds[menu._cmd_index][1]) == sym:
 			await _key(KEY_ENTER)
 			return true
 		await _key(KEY_DOWN)
@@ -498,7 +500,8 @@ func _load_back(lineup: Array) -> void:
 	_check("load.state", s.actor_name == DAO_KEY and Array(s.party) == lineup and XTianqi.active(s) and str(s.flags.tianqi.difficulty) == "jiusi"
 		and XTianqi.super_cap(s) == 1 and s.fixed_save_slot() == SLOT, [s.actor_name, s.party, s.flags.get("tianqi")])
 	# 准备：队里两名超强者（A 在上场格，B 不在出战栏）。招募走通关抽角色，测试直接写进队伍（同 xiyou_tianqi_opening 的 _rules）
-	var sup: Array = XTier.ids(XTier.SUPER).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	# 超强者按整队上限的同一口径挑（XItemMarks._super_in：天启篇技能重构 TIERS 开着时按 XTianqiSkills 的档，和 XTier 不全一样）
+	var sup: Array = XTier.ids(XTier.SUPER).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and XItemMarks._super_in(s, id))
 	var in_party := sup.filter(func(id): return s.party.has(id))
 	var a: int = in_party[0] if not in_party.is_empty() else sup[0]
 	var b: int = sup.filter(func(id): return id != a)[0]
@@ -543,7 +546,7 @@ func _load_back(lineup: Array) -> void:
 		await _list_to(page, helper_before)
 		await _key(KEY_ENTER)
 		_check("deploy.normal_swap", int(s.battle_slots[1]) == helper_before, s.battle_slots)
-	var fighters := s.battle_slots.slice(0, XTianqi.FIGHTERS).filter(func(id): return XTier.is_super(int(id)))
+	var fighters := s.battle_slots.slice(0, XTianqi.FIGHTERS).filter(func(id): return XItemMarks._super_in(s, int(id)))
 	_check("deploy.cap_holds", fighters.size() <= XTianqi.super_cap(s), s.battle_slots)
 	await _key(KEY_ESCAPE)  # 出战栏 → 指令
 	await _key(KEY_ESCAPE)  # 指令取消＝完成，回主菜单
