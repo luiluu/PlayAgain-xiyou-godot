@@ -517,6 +517,7 @@ func _difficulty_profile() -> Dictionary:
 			if i >= 1 and i <= 3:
 				skills.append(5980)
 			break
+	skills = XTianqiNoDiffPassive.filter_profile_skills(self, skills)  # 天启篇不再按难度开关补这三个被动（O-待定）
 	for i in 3:
 		if switch(DIFFICULTY_TIER_SWITCHES[i]):
 			tiers[i] = true
@@ -585,6 +586,7 @@ func sync_native_tier(a: XActor) -> void:
 
 ## DataManager.extractSaveContents 钩子：读档后 ≥167 的角色走完整同步，其余补补强档
 func sync_difficulty_after_load() -> void:
+	XTianqiNoDiffPassive.sync_after_load(self)  # 天启篇存档：开关开剥掉三个难度被动，关了补回（O-待定）
 	for aid in actors.keys():
 		actors[aid].repair_strong_classified()
 	for aid in actors.keys():
