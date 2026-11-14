@@ -122,7 +122,16 @@ func stop_at(tag: String, when: Callable, limit := 6000, prep := Callable(), exp
 	var at_frame := Engine.get_physics_frames()
 	_toggles = 0
 	_downs = 0
+	# 点按那几帧按正常时钟走：快时钟一帧跑几十个物理帧，黑幕（24／60 帧）会在按下送到之前就结束，测不到被盖住的情形
+	var clock := [Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame, Engine.time_scale]
+	Engine.physics_ticks_per_second = 60
+	Engine.max_physics_steps_per_frame = 1
+	Engine.time_scale = 1.0
+	var fade_at_tap := fade_on()
 	await tap(button_at())
+	Engine.physics_ticks_per_second = clock[0]
+	Engine.max_physics_steps_per_frame = clock[1]
+	Engine.time_scale = clock[2]
 	var stopped_now := not XHangUp.is_active(s)
 	await settle()
 	var b0 := battles
@@ -131,7 +140,9 @@ func stop_at(tag: String, when: Callable, limit := 6000, prep := Callable(), exp
 	var ok := not XHangUp.is_active(s) and battles == b0 and map.player.grid == g0
 	if not expect_stop:
 		ok = not stopped_now and _toggles == 0
-	check("stop_" + tag, ok, {"toggles": _toggles, "downs": _downs, "fades": _fade_note, "stopped_at_tap": stopped_now, "active": XHangUp.is_active(s), "battles_after": battles - b0,
+	if tag.contains("effect") or tag.contains("returning") or tag.contains("fade"):
+		ok = ok and fade_at_tap  # 这几项要真在黑幕下点
+	check("stop_" + tag, ok, {"fade_at_tap": fade_at_tap, "toggles": _toggles, "downs": _downs, "fades": _fade_note, "stopped_at_tap": stopped_now, "active": XHangUp.is_active(s), "battles_after": battles - b0,
 		"moved": map.player.grid != g0, "frame": at_frame, "touch_target": map.player.touch_target})
 
 
