@@ -20,6 +20,7 @@
 
 查的：
   - 包名、CFBundleName／CFBundleDisplayName 是「再刷一把：天启篇」，包里有 icns 图标且和 content/app_icon/icon.icns 一致
+  - Windows：.pck 里原样带着运行时窗口图标 content/app_icon_runtime/icon.png、icon.ico（标题栏、任务栏用）
   - 版本号（平台 EC）：Mac CFBundleShortVersionString／CFBundleVersion＝0.<号>／<号>，Windows exe 资源里有 0.<号>.0.0；
     号取当前工程的 build_info（查旧包时号对不上会报失败）；XDesktopVersion.AUTO 关着就不查
   - 包内运行（--headless --quit-after，加 --report-entry 让游戏打印进了哪个场景）：只出现 ENTRY_SCENE=res://modes/xiyou/entry.tscn
@@ -93,6 +94,11 @@ def windows(work: Path, check, keys=False, win_dir=None) -> int:
     n = struct.unpack('<H', ico[4:6])[0]
     size, off = struct.unpack('<II', ico[6 + 16 * (n - 1) + 8:6 + 16 * (n - 1) + 16])
     check('exe_icon_256', ico[off:off + size] in blob)
+    # 运行时窗口图标（标题栏／任务栏）：project.godot 的 config/icon 与 windows_native_icon 原样进 .pck（11-13，原来是 Godot 默认图标）
+    pck_blob = pck.read_bytes()
+    runtime = PROJECT / 'content' / 'app_icon_runtime'
+    check('pck_window_icon_png', (runtime / 'icon.png').read_bytes() in pck_blob)
+    check('pck_window_icon_ico', (runtime / 'icon.ico').read_bytes() in pck_blob)
     want_v = desktop_version('windows')
     if want_v:
         check('exe_version', want_v.encode('utf-16-le') in blob, f'资源里{"有" if want_v.encode("utf-16-le") in blob else "没有"} {want_v}')
