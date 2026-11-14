@@ -5,7 +5,7 @@ extends Node
 ##   退回进阶 2 去掉 2643；多帧时藏武器。
 ## - garou.*：形态 0 的状态 2644 → Codex_Garou_QHuman（角色 <SVspeed:12>）；形态 6 → 2650 Codex_Garou_QCosmic，战斗图与头像换 Garou_Cosmic。
 ## - raven.*：平时 Raven_Normal_SV；神话中 Raven_Mythic_SV＋|form:RavenMythic，UserSV_RavenMythic（待机借 0 号 4 帧、受伤 4 号 1 帧）、藏影子、速度 10。
-## - mira.*：平时 UserSV_MiraHuman（待机 1 号自己 1 帧）；进阶 3、学了 10161、带 2592 → UserSV_MiraDragon。
+## - mira.*：平时按 XMira.ART 取 Codex_Mira_SV_u2（关掉回到 UserSV_MiraHuman 多帧，待机 1 号自己 1 帧）；进阶 3、学了 10161、带 2592 → UserSV_MiraDragon。
 ## - cat.*：小猫剑圣 CatSwordSaint_v3（1 号 1 帧、别的 3 帧、速度 12）。
 ## - card.*：开着换装卡时键只有 |card，不按状态换图。
 ## - order.*：带 <sv:> 的状态按传入次序（键里 ID 从大到小），某动作缺图就退到下一个。
@@ -133,9 +133,15 @@ func _raven() -> void:
 func _mira() -> void:
 	var s := _game()
 	var a := s.actor(XMira.ACTOR)
+	XMira.ART = true
 	var look := XAppearance.for_battler(a)
-	check("mira.human", XAppearance.battler_key(a) == "BlackDragon_Mira_SV|form:MiraHuman" and _all_from(look, "UserSV_MiraHuman")
+	check("mira.human", XAppearance.battler_key(a) == "BlackDragon_Mira_SV|form:MiraHuman_u2" and _all_from(look, "Codex_Mira_SV_u2")
+		and _src(look, "wait") == "Codex_Mira_SV_u2" and _src(look, "walk") == "Codex_Mira_SV_u2", [XAppearance.battler_key(a), _src(look, "wait")])
+	XMira.ART = false
+	look = XAppearance.for_battler(a)
+	check("mira.human_old", XAppearance.battler_key(a) == "BlackDragon_Mira_SV|form:MiraHuman" and _all_from(look, "UserSV_MiraHuman")
 		and _src(look, "wait") == "UserSV_MiraHuman1_0" and _src(look, "walk") == "UserSV_MiraHuman0_0", [XAppearance.battler_key(a), _src(look, "wait")])
+	XMira.ART = true
 	s.actor_advance[XMira.ACTOR] = 3
 	a.learn_skill(10161)
 	a.state_ids.append(XMira.DRAGON)
