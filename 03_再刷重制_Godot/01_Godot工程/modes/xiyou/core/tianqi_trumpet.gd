@@ -510,7 +510,7 @@ static func free_turn(a) -> bool:
 static var FREE_ALL := true
 ## 饥荒线异化的口粮与透支不在全免里（Kyo 11-14 定，保住饥荒线压力）：第 1 回合照常扣，口粮按「没有六号时」的原始费用判断
 ## （原本就零消耗的技能才交，被六号免成零的不交）。口粮 MP 不够改扣生命、透支只扣到 1 点，本来就不挡技能，所以 can_use 不用改。
-## 开关（O-待定）：FAMINE_PAYS＝false 回到 11-14 早先的「口粮、透支也免」
+## 开关（O-待定-1）：FAMINE_PAYS＝false 回到 11-14 早先的「口粮、透支也免」
 static var FAMINE_PAYS := true
 static var _raw := false
 
