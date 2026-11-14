@@ -694,6 +694,8 @@ static func _statements(js: String, interp) -> Array:
 		# 角色进阶（Star_ActorAdvanced，见 XAdvance）：兑换大厅奉神老妪 Map132 EV6「进阶」
 		if st == "SceneManager.push(Scene_ActorAdvanced)" and interp.host.has_method("open_actor_advanced"):
 			await interp.host.open_actor_advanced()
+			if XTianqiGojoTrial.has_request():  # 天启篇五条悟：进阶界面选了挑战试炼，关页后在这里开战（XTianqiGojoTrial.run_request）
+				await XTianqiGojoTrial.run_request(interp.host)
 			continue
 		# 宠物（Star_PetSystem）：公共事件 169
 		if st == "SceneManager.push(Scene_PetSystem)" and interp.host.has_method("open_pets"):

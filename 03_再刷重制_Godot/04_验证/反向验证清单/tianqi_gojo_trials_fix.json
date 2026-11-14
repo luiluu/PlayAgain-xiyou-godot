@@ -1,0 +1,79 @@
+{
+ "tests": [
+  "xiyou_gojo_trials"
+ ],
+ "items": [
+  {
+   "name": "从不记进阶表版本",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif on() and s != null and XTianqi.active(s) and s.flags.get(\"tianqi\") is Dictionary:\n\t\ts.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION",
+   "replace": "\tif false:\n\t\ts.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION"
+  },
+  {
+   "name": "迁移不看标记（不幂等）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif v >= TABLE_VERSION:\n\t\treturn\n\tmark_table(s)",
+   "replace": "\tmark_table(s)"
+  },
+  {
+   "name": "关开关不反迁移",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\t\t\t\ts.actor_advance[XGojo.ACTOR] = mini(r * 2, 4)",
+   "replace": "\t\t\t\tpass"
+  },
+  {
+   "name": "去掉底层夹扣血",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
+   "find": "\t\tvalue = old - XTianqiGojoTrial.final_loss(b, old - value, not preview)",
+   "replace": "\t\tpass"
+  },
+  {
+   "name": "去掉阵亡兜底",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/battler.gd",
+   "find": "\tif id == 1 and XTianqiGojoTrial.blocks_death(self):",
+   "replace": "\tif false:"
+  },
+  {
+   "name": "行动开始不补领悟",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/gojo.gd",
+   "find": "\tXTianqiGojoTrial.check_awaken(logic)  # 专属试炼战怀玉：持续伤害",
+   "replace": "\tpass  # 专属试炼战怀玉：持续伤害"
+  },
+  {
+   "name": "茈也被锁血",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\treturn int(XGojo.cast.get(\"skill\", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]",
+   "replace": "\treturn false"
+  },
+  {
+   "name": "觉醒后还锁五条悟",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif is_same(b, f.gojo) and not bool(f.awakened):\n\t\tb.hp = maxf(1.0, float(b.hp))",
+   "replace": "\tif is_same(b, f.gojo):\n\t\tb.hp = maxf(1.0, float(b.hp))"
+  },
+  {
+   "name": "锁放回盾前（盾少扣、血多保）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
+   "find": "\t\tamount = -b.absorb_shield(-amount)\n",
+   "replace": "\t\tamount = -b.absorb_shield(XTianqiGojoTrial.final_loss(b, -amount))\n"
+  },
+  {
+   "name": "有通过记录也不封顶",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif not pure:\n\t\tvar streak := 0",
+   "replace": "\tif false:\n\t\tvar streak := 0"
+  },
+  {
+   "name": "纯旧四阶档不补通过",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif pure:\n\t\tfor i in range(n):",
+   "replace": "\tif false:\n\t\tfor i in range(n):"
+  },
+  {
+   "name": "一律当纯旧档（补通过和技能）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tvar pure := v == 0 and done.is_empty()",
+   "replace": "\tvar pure := true"
+  }
+ ]
+}
