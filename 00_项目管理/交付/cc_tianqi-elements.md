@@ -7,16 +7,16 @@
 
 ## 2026-11-14 【cc·Antigravity·未经审查】天启篇元素系统重做 v0.7（dev.待定）
 
-- 核心与数据（[tianqi_elements.gd](../03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_elements.gd)、[elements_table.json](../03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/elements_table.json)）：
+- 核心与数据（`tianqi_elements.gd`、`elements_table.json`）：
   - **60/60/20 楼层牌组与体质约束（O-待定-2）**：按存档种子确定性发牌并持久化，10 枚基础元素各占 6 弱/6 抗/2 免（27 层双弱双抗＋6 层单弱单抗），1~5 层无免疫、6~33 层共 20 枚单免疫；严格避开守层者体质禁用与同层弱/抗/免冲突；读档自动将 JSON 浮点配列归一化为整数。
   - **固定入口与异化怪规则（O-待定-2）**：34 层鸿钧（2 弱/2 抗/1 免，弱点排除圣/暗）、35 层影子（2 弱/2 抗/1 免）、36 层骑士三阶段（每相 1 弱/2 抗/1 免且连续相位弱点不重复）、里副本 Boss 与塔外首领独立发牌；化形/终焉级异化怪仅继承当前楼层免疫；七印精英等普通怪不带弱/抗/免。
   - **物理无属性化与战斗倍率（O-待定-2）**：物理（1）在天启篇下按无属性（0）结算（保留 `hitType=1`）；移除天启篇旧属性克制网（`XDamage.matchup`）与原版守层者吸/免/抗；弱点 +50%（1.5）、转换书命中的弱点 +25%（1.25）、抗性 -33%（0.67）、免疫 0%（0.0 并跳过 0 伤害跳字触发「无效」弹字）。
   - **弱点暴露（O-待定-3）**：首次以弱点或高阶元素命中首领/守层者后挂起本回合「弱点暴露」（+11%），与词条「破绽」取 `max` 不叠加，回合末清除。
   - **高阶元素特性与七印无视抗性（O-待定-4）**：11 虚空（+25%，当场挂起「吞没」并清除目标本回合 -33% 抗性，保留免疫 0%）、12 混沌（随机 +11%/+22%/+33%，preview 取保底）、13 空间（+25%，净扣血量触发 `floor(net_hp_loss * 15%)` 真实空蚀，全被护盾吸收时不触发、无二次触发）；七印天卷 `resist_down` 在天启篇下改走无视首领 -33% 抗性（免疫仍为 0%）。
   - **技能/被动转属与转换书生态（O-待定-5）**：接管甲/乙/高阶改招、8 个自然物攻物理转水/风（默认方案 A 单水/单风，`PHYSICAL_DUAL_KEEP_NEUTRAL = false` 可切回方案 B 双属性）及被动 `<passiveELUP>` 转属，并同步更新 `skill_rework.json` 13 条技能说明；1039 改名「元素转换:自然」（CE 641 改名「元素自然」）；新增合成转换书 `3101~3105`（技能 `11201~11205`、公共事件 `9101~9105`），8 号当铺（Map204）上架水/风，炼狱/证道首领/守层者战按单档每本限 1 次几率掉落虚空/混沌/空间；新旧全部 13 个转换技能学得时自动互斥遗忘。
-- 界面与检验（`battle_scene.gd`、`boss_status_panel.gd`、`help_card.gd`、`status_page.gd`、`map_hud.gd`、`map_transfer.gd`、`party_scene.gd`、[天启篇数据校验.py](../03_再刷重制_Godot/03_转换工具/天启篇数据校验.py)）：
+- 界面与检验（`battle_scene.gd`、`boss_status_panel.gd`、`help_card.gd`、`status_page.gd`、`map_hud.gd`、`map_transfer.gd`、`party_scene.gd`、`天启篇数据校验.py`）：
   - 战中技能栏显示 `[弱点]`/`[抗性]`/`[免疫]`/`[高阶]` 徽标、Boss 状态面板动态高度展示 P1/P2/P3 与弱/抗/免明细、地图 HUD/传送列表/队伍面板与帮助卡补齐楼层/高阶提示。
-  - 新增专项测试 [xiyou_tianqi_elements.tscn](../03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_elements.tscn)（41/41 通过），联跑 19 个关联场景全过（含 `xiyou_event_compare.tscn` 西游原版不回归），`语法检查.py`、`天启篇数据校验.py`、`发行空壳.py check`、`工具回归.py`（18 项）全通过。
+  - 新增专项测试 `xiyou_tianqi_elements.tscn`（41/41 通过），联跑 19 个关联场景全过（含 `xiyou_event_compare.tscn` 西游原版不回归），`语法检查.py`、`天启篇数据校验.py`、`发行空壳.py check`、`工具回归.py`（18 项）全通过。
 - 玩家可见：天启篇档 1~33 层守层者与固定首领启用随机元素弱/抗/免牌组（物理改无属性、弱点 +50%/转换书 +25%/抗性 -33%/免疫 0%「无效」），新增弱点暴露与虚空/混沌/空间高阶特性，8 号当铺上架水/风转换书，炼狱/证道首领战限定掉落虚空/混沌/空间转换书；原版西游档不变。
 
 ## 优化登记草稿
@@ -57,7 +57,10 @@
 - 新编号不撞生成数据库：`review_new_ids_no_db_clash`（Items 3101～3105、Skills 11201～11205、CommonEvents 9101～9105 原表为空或在表外，且不被 `XTianqiSkills` 表外补招占用）、`review_new_ids_resolve_to_synthetic`（2 条）。
 - 牌组存取往返与浮点归一：`review_save_roundtrip_deck_equal`（`to_dict`→JSON→`from_dict` 后层牌组、固定入口、种子一致）、`review_fixed_entries_float_normalized`（1 条＋1 条）。补证时发现固定入口（hongjun／yingzi／knight／dungeon_boss）读档后弱抗免是浮点、原只归一层牌组，已加 `_norm_entry` 在 `fixed_deal` 里一并归一。
 
-验证：专项 53/53；选测（基准 5331d152f）`检查.sh --oracle --affected 5331d152f --cloud`，结果见下。
+顺带修的连带失败：云端整轮（c114ae41f，577 场景）只挂 `xiyou_fabao_rework` 的 `guardian.elem_resist`——首版交付后天启篇档 `element_rate` 走元素牌组，这条直接读 `element_rate(1)` 期望旧一刀切 0.5；实战 `XDamage` 在元素重做开着时不调 `XGuardianRework.resistance`，不是结算问题。改测试：这条在 `XTianqiElements.ENABLED=false` 下测 ELEM 回退路径（86/86）。`xiyou_flow` 云端偶发、本机单跑 50/50。
+另把本交付单里 4 个 `../03_…` 相对链接改成代码字（交付单在 `交付/` 下，检查.sh 文档链接检查报失效；其余 20 个失效链接在旧核查报告里，是本工作树没有 `04_验证/本地结果` 的本地文件，与本分支无关）。
+
+验证：专项 53/53；`检查.sh --oracle --keep-going --affected 5331d152f --cloud`：云端整轮 577 场景除上述外全过，MV 参照引擎、事件对照、内容覆盖、守卫均过；修后本机复跑 `xiyou_fabao_rework`／`xiyou_tianqi_elements`／`xiyou_flow` 全过。
 
 ## 本分支提交
 
