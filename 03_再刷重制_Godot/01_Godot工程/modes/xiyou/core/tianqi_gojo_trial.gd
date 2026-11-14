@@ -62,6 +62,7 @@ const LAST_STATE := 2802
 
 const TEXT_LOST := "试炼未通过，可以再次挑战。"
 const TEXT_WIN := "试炼「%s」通过！五条悟完成%s进阶。"
+const TEXT_PASSED := "试炼「%s」通过！条件够了就能在进阶界面进阶。"
 const TEXT_LACK := "试炼：%s"
 
 static var _data := {}
@@ -190,7 +191,7 @@ static func after_load(s: XState) -> void:
 	if s == null:
 		return
 	if s.flags.has(SAVE_KEY):
-		_restore(s, false)
+		_restore(s)
 	migrate(s)
 
 
@@ -280,8 +281,9 @@ static func finish(s: XState, result: int) -> String:
 		return TEXT_LOST
 	_mark_passed(s, tier)
 	var a: XActor = s.actor(XGojo.ACTOR)
-	if XAdvance.rank(s, XGojo.ACTOR) == tier - 1 and XAdvance.missing(s, a).is_empty():
-		XAdvance.advance(s, a)
+	if XAdvance.rank(s, XGojo.ACTOR) != tier - 1 or not XAdvance.missing(s, a).is_empty():
+		return TEXT_PASSED % trial_name(tier)  # 界面开战前查过等级金钱，正常走不到；记了通过，之后照常进阶
+	XAdvance.advance(s, a)
 	return TEXT_WIN % [trial_name(tier), ["", "一阶", "二阶"][clampi(tier, 0, 2)]]
 
 

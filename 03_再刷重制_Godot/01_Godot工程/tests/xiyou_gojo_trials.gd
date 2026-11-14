@@ -159,8 +159,9 @@ func _solo_and_restore() -> void:
 	XTianqiGojoTrial.begin(s, 2)
 	var mid := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
 	_check("mid_saved", XTianqiGojoTrial.in_trial(mid) and mid.party == [GOJO])
+	mid.actor(GOJO).hp = 3.0
 	XTianqiGojoTrial.after_load(mid)
-	_check("load_restores", not XTianqiGojoTrial.in_trial(mid) and mid.party == party, mid.party)
+	_check("load_restores", not XTianqiGojoTrial.in_trial(mid) and mid.party == party and mid.actor(GOJO).hp == hp0, [mid.party, mid.actor(GOJO).hp, hp0])
 	XTianqiGojoTrial.finish(s, 2)
 	# 赢了但 RESTORE_ON_WIN 关：生命不回到战前
 	s.gold = 600000
@@ -368,7 +369,7 @@ func _fight(s: XState, tier: int, policy: String) -> Dictionary:
 		lg.end_turn()
 	var out := {"shadow_states": e.state_ids.duplicate(), "gojo_states": a.state_ids.duplicate(), "won": lg.is_won(), "lost": lg.is_lost(), "rounds": rounds, "awakened": XTianqiGojoTrial.fight(lg).get("awakened"), "held": XTianqiGojoTrial.fight(lg).get("held"), "shadow_hp": e.hp, "shadow_mhp": e.mhp, "gojo_hp": a.hp, "mhp": a.mhp}
 	lg.end_battle(0 if lg.is_won() else 2)
-	XTianqiGojoTrial.finish(s, 0 if out.won else 2)
+	out.note = XTianqiGojoTrial.finish(s, 0 if out.won else 2)
 	return out
 
 
@@ -424,7 +425,7 @@ func _scripted() -> void:
 		stats.huaiyu_smart.append(r1)
 		awakened += 1 if bool(r1.awakened) else 0
 		_check("huaiyu_smart_wins_%d" % k, r1.won and int(r1.rounds) >= 5 and int(r1.rounds) <= 20, r1)
-		_check("huaiyu_win_marks_passed_%d" % k, XTianqiGojoTrial.has_passed(s1, 1) and XAdvance.rank(s1, GOJO) == 0)  # 金钱不够：记通过、不进阶
+		_check("huaiyu_win_marks_passed_%d" % k, XTianqiGojoTrial.has_passed(s1, 1) and XAdvance.rank(s1, GOJO) == 0 and r1.note == XTianqiGojoTrial.TEXT_PASSED % "怀玉", r1.note)  # 金钱不够：记通过、不进阶
 		var r1b := _fight(_seeded(25, k), 1, "no_purple")
 		stats.huaiyu_no_purple.append(r1b)
 		_check("huaiyu_no_purple_fails_%d" % k, not r1b.won and float(r1b.shadow_hp) >= 1.0, r1b)
