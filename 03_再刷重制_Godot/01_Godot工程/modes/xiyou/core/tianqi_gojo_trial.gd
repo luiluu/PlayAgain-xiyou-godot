@@ -23,7 +23,7 @@ extends RefCounted
 ##  （给印照常）。
 ## 战斗挂点：battle_logic setup／decide／make_action_times／rewards／grant 各一行；扣血底层 XResourceContext._set_resource（final_loss）、阵亡兜底 XBattler.add_state（blocks_death）各一行；其余走 XGojo 的现成挂点（begin、finish、end_round、
 ## infinity_block、overload、sure、after_apply、after_hit、formula）。影子色调在 battler_sprite 一行。
-## 开关（O-待定）：ENABLED＝false 回到 v0.2 四阶表、没有试炼；LEARN_SHIFT／OWN_GOLD／RESTORE_ON_WIN／SHADOW_TINT 分项回退。
+## 开关（O-431）：ENABLED＝false 回到 v0.2 四阶表、没有试炼；LEARN_SHIFT／OWN_GOLD／RESTORE_ON_WIN／SHADOW_TINT 分项回退。
 
 const PATH := "res://modes/xiyou/tianqi_data/gojo_trials.json"
 const META := "xgojo_trial"
