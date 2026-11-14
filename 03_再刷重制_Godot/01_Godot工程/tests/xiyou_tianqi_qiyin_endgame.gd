@@ -430,7 +430,7 @@ func _scroll_exempt() -> void:
 	var ok_prep := XTianqiHorsemen.prepare("war", s, "body")
 	var k := XBattleLogic.new()
 	k.setup(int(XTianqiSummit.data().shell_troop), s)
-	var logs := XTianqiQiyinRule.take_logs(k)
+	var logs: Array = k.turn_start_logs + XTianqiQiyinRule.take_logs(k)  # 开场 setup 里已经取进 turn_start_logs
 	_check("exempt_knight", ok_prep and XTianqiHorsemen.active(k) and XTianqiQiyinEffects.enemy_only_rule(k) == ""
 		and XTianqiQiyinRule.rule_of(k) == "" and logs.any(func(l): return str(l.get("text", "")).contains("沉寂")), [ok_prep, logs])
 	k.start_turn()
