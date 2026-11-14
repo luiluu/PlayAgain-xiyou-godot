@@ -64,10 +64,7 @@ static func _sec(key: String) -> Dictionary:
 
 
 static func money(s: XState) -> Dictionary:
-	var tq: Dictionary = s.flags.tianqi
-	if not (tq.get("money") is Dictionary):
-		tq["money"] = {}
-	return tq.money
+	return XTianqiSave.section(s, "money")
 
 
 # ---- 场钱与价格 ----

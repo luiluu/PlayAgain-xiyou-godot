@@ -211,7 +211,7 @@ static func grant_spec(s: XState, spec: Dictionary) -> void:
 		return
 	var n := spec.duplicate(true)
 	n.erase("instanceId")
-	n.erase("tq_seed_id")  # 天启篇随机身份不随复制品走（XTianqi.seed_id）
+	XTianqiSave.strip_on_copy(n)  # 天启篇随机身份、随机计数等不随复制品走（GEAR_KEYS copy=false）
 	s.register_gear(n)
 	s.gear.append(n)
 

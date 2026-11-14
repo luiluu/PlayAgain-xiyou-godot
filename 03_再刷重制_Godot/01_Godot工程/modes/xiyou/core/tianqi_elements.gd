@@ -104,16 +104,16 @@ static func element_name(e: int) -> String:
 static func store(s: XState) -> Dictionary:
 	if s == null or not XTianqi.active(s):
 		return {}
-	var tq: Dictionary = s.flags.tianqi
-	if not tq.get("elements") is Dictionary:
-		tq["elements"] = {
-			"seed": derived_seed(s),
-			"floors": {},
-			"fixed": {},
-			"dropped_books": {},
-			"book_fails": {},
-		}
-	return tq.elements
+	return XTianqiSave.section(s, "elements")
+
+
+## 存档门面的补法（XTianqiSave._fill）：made＝刚建的空表
+static func fill(s: XState, d: Dictionary, made: bool) -> void:
+	if made or not d.has("seed"):
+		d["seed"] = derived_seed(s)
+	for k in ["floors", "fixed", "dropped_books", "book_fails"]:
+		if not d.get(k) is Dictionary:
+			d[k] = {}
 
 
 ## 首次建牌组的种子：由存档自带的宝珠种子（orb_seed，新游戏随机、随存档保存，旧档读档时按存档内容算出）

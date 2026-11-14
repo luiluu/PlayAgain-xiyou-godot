@@ -43,8 +43,13 @@ const SECTIONS := {
 	"sect_bing": {"v": 1, "owner": "XTianqiSect"},  # 教派包丙（总装合并时补登记）
 	"fetters": {"v": 1, "owner": "XTianqiSect", "array": true},  # 教派包乙小小鱼破枷锁：发过的重数
 }
-## 已接进门面（section／after_load 管迁移）的分区；其余只登记，模块里照旧就地补（S2 批逐个接）
-const WIRED := ["qiyin", "drop", "gojo"]
+## 已接进门面（section／after_load 管迁移）的分区（no_diff_passive 是 vkey 标记，由 sync_difficulty_after_load 在能力刷新前跑）
+const WIRED := [
+	"war", "famine", "plague", "death",
+	"famine_prologue", "summit", "weak_clear", "rewards",
+	"qiyin", "drop", "elements", "money", "trumpet", "skill_grow",
+	"gojo", "sect_bing", "fetters",
+]
 ## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate
 const ROOT_KEYS := ["rules", "difficulty", "lineup", "line", "draws", "offer", "reincarnate", VKEY]
 ## 根上的随机计数（随机门面 XTianqi.save_stream 一族，cc/tianqi-seed-fix）：不搬位置，老档缺当 0
@@ -189,10 +194,18 @@ static func after_load(s: XState) -> void:
 ## 缺键按默认补（逐行直呼各模块；结果与模块原来的就地补逐键相同）。made＝这个分区是刚建的空表
 static func _fill(s: XState, name: String, d, made: bool) -> void:
 	match name:
+		"war", "famine", "plague", "death":
+			XTianqiLine.fill(d)
+		"rewards":
+			XTianqiRewards.fill(d)
 		"qiyin":
 			XTianqiQiyin.fill(s, d)
 		"drop":
 			XTianqiDrop.fill(s, d, made)
+		"elements":
+			XTianqiElements.fill(s, d, made)
+		"trumpet":
+			XTianqiTrumpet.fill(d)
 
 
 ## 复制装备时去掉 copy＝false 的键（复制品另拿随机身份）
