@@ -398,11 +398,15 @@ static func turn_begin(logic) -> void:
 		a.hp = maxf(1.0, floorf(a.mhp * _p(5, "revive_hp", 33) / 100.0))
 		u.revives = int(u.revives) + 1
 		u.risen = true
+		u.risen_turn = int(logic.turn)  # start_turn 排完顺序后据此把人拿出本回合顺序
 
 
-## 回合开始、排顺序之后：六号第 1 回合排到所有人前面
+## 回合开始、排顺序之后：五号本回合起身的人这一回合不行动；六号第 1 回合排到所有人前面
 static func start_turn(logic) -> void:
-	if not _active(logic) or int(logic.turn) != 1:
+	if not _active(logic):
+		return
+	_rest_risen(logic)
+	if int(logic.turn) != 1:
 		return
 	var front := []
 	for a in _store(logic).holders.get(6, []):
@@ -412,6 +416,16 @@ static func start_turn(logic) -> void:
 				front.append(a)
 	for i in range(front.size() - 1, -1, -1):
 		logic.current_order.push_front(front[i])
+
+
+## 五号起身当回合不行动。第 2 回合起本回合顺序是上回合排的，阵亡时 _sync_orders 已把人拿掉，这里是空操作；
+## 第 1 回合的顺序取全体角色（_make_action_orders 首回合不筛活着的），开场就阵亡、第 1 回合开始起身的人会被排进来，在这里拿掉。
+## 只动本回合顺序（下回合顺序照排，第 2 回合照常行动）；不碰状态回合数（没行动，行动结束型状态本回合不减，和中途阵亡一样）
+static func _rest_risen(logic) -> void:
+	for a in _store(logic).holders.get(5, []):
+		if int(_unit(logic, a).get("risen_turn", -1)) == int(logic.turn):
+			while logic.current_order.has(a):
+				logic.current_order.erase(a)
 
 
 ## 伤害帧（XActorDamageHooks.capture）：都进伤害加成池；四号承伤、三号受治疗是乘

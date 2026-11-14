@@ -8,7 +8,7 @@ extends Node
 ##    六号先手／免消耗／第 6 回合起减伤、七号掉率与金钱、七号齐鸣；整回合实跑不报错。
 ## 五之二、六号全免（Kyo 11-14 真全免）：走真 XBattleLogic.can_use＋pay_skill_cost，MP、TP、HP 定值／比例、物品第 1 回合不看不扣，
 ##    第 2 回合、非持有者照扣照挡；FREE_ALL 关掉回到只免 MP／TP。
-## 五之三、五号起身那一回合的行动顺序：中途阵亡（带追加行动）、终焉锁复活、开场就阵亡。
+## 五之三、五号起身那一回合的行动顺序：中途阵亡（带追加行动）、终焉锁复活、开场就阵亡（第 1 回合起身不行动、第 2 回合照常）。
 ## 六、开关关掉：一条都不生效。
 
 var results: Array = []
@@ -469,6 +469,25 @@ func _abyss_order() -> void:
 	lg3.start_turn()
 	_check("abyss.t1dead.risen", b.is_alive())
 	_check("abyss.t1dead.no_act", not lg3.current_order.has(b), lg3.current_order.count(b))
+	_check("abyss.t1dead.next_has", lg3.next_order.has(b))
+	# 拿掉只动本回合顺序：别人的先后不变，状态回合数不碰
+	var others: Array = lg3.current_order.duplicate()
+	var timed := -1
+	for st in XDB.table("States"):
+		if st is Dictionary and int(st.get("id", 0)) > 10 and int(st.get("autoRemovalTiming", 0)) == 1 and int(st.get("maxTurns", 0)) >= 3:
+			timed = int(st.id)
+			break
+	if timed > 0:
+		b.add_state(timed)
+	var turns0: Dictionary = b.state_turns.duplicate()
+	lg3.current_order.insert(mini(2, lg3.current_order.size()), b)
+	XTianqiTrumpet._rest_risen(lg3)
+	_check("abyss.t1dead.order_kept", lg3.current_order == others, [lg3.current_order.size(), others.size()])
+	_check("abyss.t1dead.state_turns_kept", timed > 0 and b.state_turns == turns0, [timed, b.state_turns, turns0])
+	if timed > 0:
+		b.remove_state(timed)
+	lg3.start_turn()  # 第 2 回合：照常行动
+	_check("abyss.t1dead.t2_acts", lg3.turn == 2 and lg3.current_order.has(b), lg3.current_order.count(b))
 	lg3.end_battle(0)
 	b.remove_state(1)
 	b.recover_all()
