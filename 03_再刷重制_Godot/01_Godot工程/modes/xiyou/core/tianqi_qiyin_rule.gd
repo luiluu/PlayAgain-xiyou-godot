@@ -28,9 +28,9 @@ extends RefCounted
 
 const META := "xqiyin_rule"
 
-## 开关（O-待定-3）：true＝七印书卷揭开的规则佩戴者自己也受；false＝回到只对敌方
+## 开关（O-425）：true＝七印书卷揭开的规则佩戴者自己也受；false＝回到只对敌方
 static var SCROLL_COST := true
-## 开关（O-待定-3）：true＝有天启四骑士或 34～36 层首领的战斗里书卷不揭；false＝回到哪场都揭
+## 开关（O-425）：true＝有天启四骑士或 34～36 层首领的战斗里书卷不揭；false＝回到哪场都揭
 static var SCROLL_BOSS_EXEMPT := true
 
 static var _pending: Dictionary = {}

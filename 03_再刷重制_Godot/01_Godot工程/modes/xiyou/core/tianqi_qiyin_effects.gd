@@ -31,7 +31,7 @@ const TUNE := {
 }
 const ARTIFACT_ETYPE := 17
 
-## 开关（O-待定-4）：true＝默印 5 件在战斗技能列表里多出「万籁俱寂」（TUNE.silence_skill_id），放了就 use_silence_all；false＝不给
+## 开关（O-426）：true＝默印 5 件在战斗技能列表里多出「万籁俱寂」（TUNE.silence_skill_id），放了就 use_silence_all；false＝不给
 static var SILENCE_SKILL := true
 
 ## 七印书卷：开战揭的规则（只对敌方）。里副本规则由祭坛车道（cc/qiyin-altar）实现，读 enemy_only_rule(logic)。
@@ -226,7 +226,7 @@ static func start(logic) -> void:
 			break
 	var owner = st.artifact_owner
 	if owner != null and _has(logic, owner, "reveal_rift_rule"):
-		if XTianqiQiyinRule.scroll_exempt(logic):  # 天启四骑士、34～36 层首领：不揭、不付代价（O-待定-3）
+		if XTianqiQiyinRule.scroll_exempt(logic):  # 天启四骑士、34～36 层首领：不揭、不付代价（O-425）
 			st["scroll_exempt"] = true
 			return
 		var rules: Array = TUNE.rift_rules

@@ -265,7 +265,7 @@ static func recruit_offer(s: XState, rng: RandomNumberGenerator = null) -> Array
 		return saved.map(func(id): return int(id))
 	if rng == null:
 		rng = RandomNumberGenerator.new()
-		rng.seed = XRandomStream.parse64(XTianqiQiyin.next_seed(s, "qiyin_recruit"))  # 存档派生：读档不能重抽候选（O-待定-5）
+		rng.seed = XRandomStream.parse64(XTianqiQiyin.next_seed(s, "qiyin_recruit"))  # 存档派生：读档不能重抽候选（O-427）
 	XTianqi._shuffle(pool, rng)
 	var offer := pool.slice(0, int(r.count))
 	state(s)["offer"] = offer

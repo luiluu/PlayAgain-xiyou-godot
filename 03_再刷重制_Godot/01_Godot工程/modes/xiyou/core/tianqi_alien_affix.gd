@@ -13,7 +13,7 @@ extends RefCounted
 ##
 ## 开关（O-337）：false＝四条新词条在战斗里没有效果（装备照样能掉、能刻，详情写「未生效」）
 static var ENABLED := true
-## 开关（O-待定-6）：true＝再动间隔按表（四级 6／5／3／2，Kyo 授权优化）；false＝回到原来的 5／3／3／2（蚀骨和化形一样）
+## 开关（O-428）：true＝再动间隔按表（四级 6／5／3／2，Kyo 授权优化）；false＝回到原来的 5／3／3／2（蚀骨和化形一样）
 static var AGAIN_EVERY_V2 := true
 const AGAIN_EVERY_OLD := [5, 3, 3, 2]
 

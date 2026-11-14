@@ -57,7 +57,7 @@ static func nice_number_violations() -> Array:
 	return out
 
 
-## 开关（O-待定-5）：true＝祭坛和七首之龙的随机流由存档派生（progress.seed＋存档里的计数 rng_n），读档不能重掷；
+## 开关（O-427）：true＝祭坛和七首之龙的随机流由存档派生（progress.seed＋存档里的计数 rng_n），读档不能重掷；
 ## false＝回到每次现开一条（XRandomStream.fresh_seed）
 static var SEED_FROM_SAVE := true
 
@@ -520,7 +520,7 @@ static func settle(host, s: XState, key: String, offering: Dictionary, run: Dict
 	return got
 
 
-## 开关（O-待定-1）：true＝七印的套装件、毕业武器几率乘全队掉率加成（和常规掉落同一套：XTianqiDrop.party_mult，
+## 开关（O-423）：true＝七印的套装件、毕业武器几率乘全队掉率加成（和常规掉落同一套：XTianqiDrop.party_mult，
 ## 技能、套装、号卷、寻宝猎人、亡魂汲取、词条「物品掉落」相加后按 合计×200÷(合计＋200) 递减，最高逼近 3 倍）；false＝按 1
 static var DROP_BONUS := true
 
@@ -534,7 +534,7 @@ static func drop_mult(s: XState, members = null) -> float:
 
 # ---- 神器：保底、防重（Kyo 11-14） ----
 
-## 开关（O-待定-2）：true＝能掉神器的战斗（里副本 Boss、七首之龙）共用一个保底计数 artifact_miss，连着 pity_after－1 次没出、
+## 开关（O-424）：true＝能掉神器的战斗（里副本 Boss、七首之龙）共用一个保底计数 artifact_miss，连着 pity_after－1 次没出、
 ## 下一次必出；已有的神器不再掉，五件齐了不掷也不计。false＝回到原来（五件里随机、没有保底、可重复）
 static var ARTIFACT_PITY := true
 
