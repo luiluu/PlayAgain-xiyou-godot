@@ -557,7 +557,7 @@ static func item_cost_rows(skill: Dictionary) -> Array:
 
 ## Game_Actor.canPaySkillItemCost：队伍持有数不少于费用；敌人不看物品（Game_BattlerBase 恒真）
 func can_pay_items(a: XBattler, skill: Dictionary) -> bool:
-	if not a.is_actor() or is_item(skill):
+	if not a.is_actor() or is_item(skill) or XTianqiTrumpet.free_all(a):  # 天启篇号卷六号：第 1 回合不看物品
 		return true
 	for c in skill_item_costs(skill):
 		if state.item_count(int(c[0])) < int(c[1]):
@@ -566,7 +566,7 @@ func can_pay_items(a: XBattler, skill: Dictionary) -> bool:
 
 ## Game_Actor.paySkillItemCost：$gameParty.loseItem（敌人不扣）
 func pay_items(a: XBattler, skill: Dictionary) -> void:
-	if not a.is_actor() or is_item(skill):
+	if not a.is_actor() or is_item(skill) or XTianqiTrumpet.free_all(a):  # 天启篇号卷六号：第 1 回合不扣物品
 		return
 	for c in skill_item_costs(skill):
 		state.gain_item(int(c[0]), -int(c[1]))
@@ -579,7 +579,7 @@ static func skill_hp_cost(a: XBattler, skill: Dictionary) -> int:
 	var nc := note_costs(skill)
 	if not nc.has("hpCost") and not nc.has("hpCostPer"):
 		return 0
-	if XTianqiSkills.hp_free(a, skill):  # 天启篇技能重构：心法免生命消耗（晴明两仪四象②）
+	if XTianqiSkills.hp_free(a, skill) or XTianqiTrumpet.free_all(a):  # 天启篇技能重构：心法免生命消耗（晴明两仪四象②）；号卷六号第 1 回合
 		return 0
 	var cost := maxi(0, floori(float(nc.get("hpCost", 0)) + XAlienBattle.hp_cost_mhp(a) * float(nc.get("hpCostPer", 0.0))))
 	return XTianqiFamineAlien.hp_cost(a, XSkillMastery.cost(a, skill, "hp", cost))  # YEP_SkillMasteryLevels skillHpCost 包装；天启篇饥荒线化形枯竭者再提高
@@ -741,12 +741,13 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not can_pay_items(a, skill):  # YEP_X_SkillCostItems canPaySkillCost：物品不够不能用
 		return false
-	var tusu_pay = XTusu.can_pay(a, skill, float(skill_cost(a, skill).tp))  # 屠苏噬主 canPaySkillCost 包装：屠苏或持武者付得起
+	var free := XTianqiTrumpet.free_all(a)  # 天启篇号卷六号：第 1 回合噬主代付、HP 费用都不看（缄默锁上限按面板 MP 算，MP 已是 0）
+	var tusu_pay = null if free else XTusu.can_pay(a, skill, float(skill_cost(a, skill).tp))  # 屠苏噬主 canPaySkillCost 包装：屠苏或持武者付得起
 	if tusu_pay != null:
 		return bool(tusu_pay)
 	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
 		return false
-	if not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用
+	if not free and not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用（号卷六号第 1 回合不看：异化空壳／嫁祸／连命零费也严格比较，会把免费的挡住）
 		return false
 	var c := skill_cost(a, skill)
 	var mp = XAlienBattle.glutton_mp(a)  # 异化饕餮 canPaySkillCost：MP 费用看饥饿储备
@@ -2031,14 +2032,15 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 
 ## Game_BattlerBase.paySkillCost（含各包装）与 YEP 冷却：execute 付费、专项直接付费共用
 func pay_skill_cost(u, skill: Dictionary) -> void:
-	var tusu_who = XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
+	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、米拉代价、饥荒口粮都免（MP／TP／HP／物品在各自函数里免；缄默锁上限按面板 MP 算，MP 已是 0）
+	var tusu_who = null if free else XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
 	if not (tusu_who is String and tusu_who.is_empty()):  # ""：都付不起（支付前已查），整次不付
 		XNanoha.note_cost(u, skill)  # <Custom MP Cost> 的副作用：付费时那次 skillMpCost 按付前 MP 写 _costmp（段数）
 		var c := skill_cost(u, skill)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
 		if XAlienBattle.pay_silence(self, u, skill):
 			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
-			XMira.pay(u, skill)  # 米拉禁忌 paySkillCost 包装：登记生命代价
+			XMira.pay(u, skill, free)  # 米拉禁忌 paySkillCost 包装：登记生命代价
 			if XAlienBattle.glutton_mp(u) != null:
 				XAlienBattle.pay_glutton(u, c.mp)
 			else:
@@ -2047,7 +2049,8 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 			pay_hp(u, skill)  # YEP_SkillCore paySkillCost：MP／TP 之后扣 HP 费用
 			pay_items(u, skill)  # YEP_X_SkillCostItems paySkillCost：再扣物品
 			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
-			XTianqiFamineAlien.after_pay(self, u, skill, c)  # 天启篇饥荒线异化：零消耗技能交口粮、透支者另扣生命
+			if not free:
+				XTianqiFamineAlien.after_pay(self, u, skill, c)  # 天启篇饥荒线异化：零消耗技能交口粮、透支者另扣生命
 	XTusu.pay_after(u, skill, tusu_who)
 	u.pay_cooldown(skill)
 
