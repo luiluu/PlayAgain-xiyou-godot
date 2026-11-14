@@ -7,6 +7,9 @@ extends Node
 ##     掉率加成、金钱加成、难度奖励倍率。另验「新」和「什么都不乘」不同（等价项真乘上了）。容差：伤害、敏捷逐项完全相等（同样逐步 ceil），小数项 1e-9。
 ## 三、老存档：手造带三个被动和常驻状态的天启篇档，存读一轮后被动和状态都没了，伤害与旧相等、没有叠两遍；开战同步不补回。
 ## 四、实跑开局：艰险、固定阵容 → 大厅跑完开局指令与 EV020 → 全部有名字的角色都没学这三个被动。
+## 五、回退（gpt 甲档核查 P2）：开关关掉再读档，本功能接管过的天启篇档（老档剥过的、开关开着新开局的）按原开局补回三个被动，
+##     开战照原样挂状态，伤害／敏捷／暴击和旧做法相等；开→关→开→关往返两次不叠加、不丢；实跑开局建的档同样能回退；
+##     五条悟在本功能开着时（实跑开局后入队）伤害和旧做法相等。
 ## 存档写到 user://test_xiyou_tianqi_ndp，测试结束删除。
 
 const SKILLS := [5548, 5980, 6168]
@@ -81,6 +84,7 @@ func _run() -> void:
 	await _learn_blocked()
 	_equivalence()
 	_old_save()
+	_rollback_old_save()
 	await _real_opening()
 	for slot in range(1, 11):
 		DirAccess.remove_absolute(XSave.path(slot))
@@ -327,3 +331,148 @@ func _real_opening() -> void:
 	await _wait(func():
 		var sc = get_tree().current_scene
 		return sc is XMapScene and not sc.busy and s.self_switch(4, 76, "A") and (not XRift.STAGE2 or s.self_switch(4, XRift.RIFT2, "A")))
+	_rollback_opening(s, lineup)
+
+
+# ---- 五、回退 ----
+
+const GOJO := 180
+
+
+## 开战：照 StartPushState 把学着的被动的状态挂上（同 XBattleLogic._battle_start_states）
+func _battle_start(a: XActor) -> Array:
+	var got := []
+	for tag in a.battle_start_state_tags():
+		var st := int(tag[1])
+		if STATES.has(st):
+			got.append(st)
+			if not a.state_ids.has(st):
+				a.add_state(st)
+	a.refresh_passive()
+	return got
+
+
+func _clear_states(a: XActor) -> void:
+	for st in STATES:
+		if a.state_ids.has(st):
+			a.remove_state(st)
+
+
+func _counts(s: XState, ids: Array) -> Array:
+	var out := []
+	for id in ids:
+		var a := s.actor(int(id))
+		out.append(SKILLS.map(func(sid): return a.skill_ids.count(sid)))
+	return out
+
+
+func _reload(s: XState, enabled: bool) -> XState:
+	var d = JSON.parse_string(JSON.stringify(s.to_dict()))
+	XTianqiNoDiffPassive.ENABLED = enabled
+	return XState.from_dict(d)
+
+
+func _rollback_old_save() -> void:
+	var lineup := _lineup()
+	var s := _state("jianxian", lineup)
+	var enemy := XEnemy.new().setup(1, 3, 100.0)
+	var a := s.actor(lineup[0])
+	_legacy_on(a)
+	var old := _snapshot(s, a, enemy, s.actor(lineup[1]))
+	_legacy_off(a)
+	for id in lineup:
+		var x := s.actor(int(id))
+		for sid in SKILLS:
+			if not x.skill_ids.has(sid):
+				x.skill_ids.append(sid)
+		for st in [1691, 995]:
+			if not x.state_ids.has(st):
+				x.state_ids.append(st)
+	s.set_switch(2491, true)
+	s.set_variable(14, 1)
+	# 开：剥、记标记
+	var s1 := _reload(s, true)
+	_check("rb_on_marked", int(s1.flags.tianqi.get(XTianqiNoDiffPassive.MARK, 0)) == 1 and _has_any(s1.actor(lineup[0])).is_empty())
+	# 关：补回、清标记
+	var s2 := _reload(s1, false)
+	var a2 := s2.actor(lineup[0])
+	_check("rb_off_restored", _counts(s2, lineup).all(func(c): return c == [1, 1, 1]) and not s2.flags.tianqi.has(XTianqiNoDiffPassive.MARK), _counts(s2, lineup))
+	var tags: Array = a2.battle_start_state_tags().map(func(tg): return int(tg[1])).filter(func(st): return STATES.has(st))
+	_check("rb_off_start_tags", STATES.all(func(st): return tags.count(st) == 1), tags)
+	a2.recover_all()
+	_battle_start(a2)
+	_compare("rb_off1", _snapshot(s2, a2, enemy, s2.actor(lineup[1])), old)
+	_clear_states(a2)
+	# 再开、再关（往返第二次）：不叠加、不丢
+	var s3 := _reload(s2, true)
+	var a3 := s3.actor(lineup[0])
+	a3.recover_all()
+	_check("rb_on2_stripped", lineup.all(func(id): return _has_any(s3.actor(int(id))).is_empty()) and int(s3.flags.tianqi.get(XTianqiNoDiffPassive.MARK, 0)) == 1)
+	_compare("rb_on2", _snapshot(s3, a3, enemy, s3.actor(lineup[1])), old)
+	var s4 := _reload(s3, false)
+	var a4 := s4.actor(lineup[0])
+	_check("rb_off2_once", _counts(s4, lineup).all(func(c): return c == [1, 1, 1]), _counts(s4, lineup))
+	a4.recover_all()
+	_battle_start(a4)
+	_battle_start(a4)  # 开战两次也只挂一层
+	_check("rb_off2_states_once", STATES.all(func(st): return a4.state_ids.count(st) == 1), a4.state_ids)
+	_compare("rb_off2", _snapshot(s4, a4, enemy, s4.actor(lineup[1])), old)
+	_clear_states(a4)
+	# 关着再读一次：没标记了，不再补（也不重复学）
+	var s5 := _reload(s4, false)
+	_check("rb_off_again_noop", _counts(s5, lineup).all(func(c): return c == [1, 1, 1]) and XTianqiNoDiffPassive.sync_after_load(s5) == 0)
+	# 没标记的老档（功能上线前、开关关着建的）开关关着不碰
+	var plain := _state("jianxian", lineup)
+	plain.flags.tianqi.erase(XTianqiNoDiffPassive.MARK)
+	XTianqiNoDiffPassive.ENABLED = false
+	_check("rb_unmarked_untouched", XTianqiNoDiffPassive.sync_after_load(plain) == 0 and _has_any(plain.actor(lineup[0])).is_empty())
+	XTianqiNoDiffPassive.ENABLED = true
+
+
+## 实跑开局建的档：五条悟入队后伤害和旧做法相等；存档后关开关读档，补回被动，伤害相等；再开再关不叠加
+func _rollback_opening(s: XState, lineup: Array) -> void:
+	_check("op_marked", int(s.flags.tianqi.get(XTianqiNoDiffPassive.MARK, 0)) == 1)
+	var enemy := XEnemy.new().setup(1, 3, 100.0)
+	XTianqi._joining = true
+	s.add_actor(GOJO)
+	XTianqi._joining = false
+	var g := s.actor(GOJO)
+	g.change_level(99)
+	g.recover_all()
+	_check("op_gojo_clean", _has_any(g).is_empty())
+	var items := [XDB.rec("Skills", 1), XDB.rec("Skills", XGojo.BLUE), XDB.rec("Skills", XGojo.RED)]
+	var new_g := []
+	g.param_cache_begin()
+	for it in items:
+		new_g.append(_hit(it, g, enemy, false))
+	g.param_cache_end()
+	_legacy_on(g)
+	g.param_cache_begin()
+	var old_g := []
+	for it in items:
+		old_g.append(_hit(it, g, enemy, false))
+	g.param_cache_end()
+	_legacy_off(g)
+	_check("op_gojo_equal", new_g == old_g and float(new_g[1]) > 0.0, [new_g, old_g])
+	var a := s.actor(lineup[0])
+	var ref := _snapshot(s, a, enemy, s.actor(lineup[1]))
+	var s2 := _reload(s, false)
+	var named: Array = XDB.table("Actors").filter(func(r): return r != null and str(r.get("name", "")) != "").map(func(r): return int(r.id))
+	var missing: Array = named.filter(func(id): return _has_any(s2.actor(id)) != SKILLS)
+	_check("op_off_restored_all_named", missing.is_empty(), missing.slice(0, 10))
+	var a2 := s2.actor(lineup[0])
+	_battle_start(a2)
+	_compare("op_off", _snapshot(s2, a2, enemy, s2.actor(lineup[1])), ref)
+	var g2 := s2.actor(GOJO)
+	_battle_start(g2)
+	g2.param_cache_begin()
+	var off_g := []
+	for it in items:
+		off_g.append(_hit(it, g2, enemy, false))
+	g2.param_cache_end()
+	_check("op_off_gojo_equal", off_g == new_g, [off_g, new_g])
+	_clear_states(a2)
+	_clear_states(g2)
+	var s3 := _reload(_reload(s2, true), false)
+	_check("op_roundtrip_once", _counts(s3, lineup + [GOJO]).all(func(c): return c == [1, 1, 1]), _counts(s3, lineup + [GOJO]))
+	XTianqiNoDiffPassive.ENABLED = true

@@ -17,7 +17,7 @@ extends RefCounted
 ## 已知差别（交付单写明）：身上少三个状态，按状态个数算的效果（三重气元拳 user.states().length≥5、虚无按目标状态数增伤）少算 3 个；
 ## 开战少掷三次「开战状态」随机数，同一种子后面的随机流会错位；战斗外的敏捷不再 ×0.8（原版首战后状态留在身上，影响先制判定）。
 ##
-## 开关（O-待定）：ENABLED＝false 回到原来（照学三个被动，不加等价项，读档不剥）。
+## 开关（O-待定）：ENABLED＝false 回到原来（照学三个被动，不加等价项，读档不剥；本功能接管过的档读档时补回被动，见 sync_after_load）。
 
 static var ENABLED := true
 
@@ -44,6 +44,61 @@ static func table() -> Dictionary:
 ## XActor.learn_skill：天启篇存档里这三个被动不学
 static func blocks_learn(id: int) -> bool:
 	return SKILLS.has(id) and on()
+
+
+## 存档里的迁移标记（flags.tianqi[MARK]＝1）：这份档的三个被动已经由本功能接管（读档剥过、或开关开着时新开局）。
+## 开关关掉再读档时据它反迁移、补回被动，读完清掉标记；没有标记的档（功能上线前、开关关着时建的）开关关着不碰。
+const MARK := "no_diff_passive"
+
+
+## 读档（XState.sync_difficulty_after_load 开头）：开关开＝剥掉并记标记；开关关且有标记＝补回原开局所得的被动并清标记。
+## 开→关→开往返：剥／补都按「有没有」判断，不叠加、不丢。返回剥掉或补回了几项。
+static func sync_after_load(s: XState) -> int:
+	if s == null or not XTianqi.active(s):
+		return 0
+	if ENABLED:
+		var n := strip(s)
+		s.flags.tianqi[MARK] = 1
+		return n
+	if int(s.flags.tianqi.get(MARK, 0)) != 1:
+		return 0
+	var m := restore(s)
+	s.flags.tianqi.erase(MARK)
+	return m
+
+
+## 新开局（XTianqi.start_new_game）：开关开着就记标记，以后关开关读档能补回
+static func mark_new_game(s: XState) -> void:
+	if ENABLED and s != null and s.flags.get("tianqi") is Dictionary:
+		s.flags.tianqi[MARK] = 1
+
+
+## 反迁移：照原开局补学，和原来所得一致——有名字的角色全学（原版 learnSkill 循环 $dataActors）；
+## 5548 看开关 2491（大厅 EV020 按普通难度学），5980 看开关 2492／2491／2500（Map001 简单／普通／困难分支），6168 看变量 14＝1（公共事件 1319）。
+## 状态 1631／1691／995 是开战 StartPushState 挂的，补学技能后下一场开战照原样挂上。
+static func restore(s: XState) -> int:
+	var want := []
+	if s.switch(2491):
+		want.append(5548)
+	if s.switch(2492) or s.switch(2491) or s.switch(2500):
+		want.append(5980)
+	if int(s.variable(14)) == 1:
+		want.append(6168)
+	if want.is_empty():
+		return 0
+	var n := 0
+	for rec in XDB.table("Actors"):
+		if rec == null or str(rec.get("name", "")) == "":
+			continue
+		var a := s.actor(int(rec.id))
+		var before := n
+		for sid in want:
+			if not a.skill_ids.has(sid):
+				a.learn_skill(sid)
+				n += 1
+		if n > before:
+			a.refresh_passive()
+	return n
 
 
 ## 读档（XState.sync_difficulty_after_load 开头）：剥掉老天启篇存档里已学的三个被动和它们挂上的状态；返回剥掉了几项
