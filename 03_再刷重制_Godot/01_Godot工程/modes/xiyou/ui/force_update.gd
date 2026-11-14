@@ -9,9 +9,9 @@ extends RefCounted
 ##   - 还没查完 → 先盖强制更新框的「正在检查」状态（不能关），查完按上面处理；等满 WAIT_SEC 还没回来就放行，
 ##     之后结果回来、人还在标题且要强制，再把框盖上来。
 ## 一次运行只拦这一处（标题），进了游戏不再弹。
-## 回退开关 ENABLED（O-待定）= false：启动不查、不拦，回到原来只有红点的样子。
+## 回退开关 ENABLED（O-待定-1）= false：启动不查、不拦，回到原来只有红点的样子。
 
-## O-待定 开关：false 回退为不强制（启动不查，只有标题的每天一次静默查和红点）。
+## O-待定-1 开关：false 回退为不强制（启动不查，只有标题的每天一次静默查和红点）。
 static var ENABLED := true
 ## 出标题时还没查完，最多等这么久就放行（秒）。单个源的超时在 XUpdateClient.TIMEOUT_SEC。
 static var WAIT_SEC := 15.0
@@ -83,8 +83,9 @@ static func on_title(host: Node, hint_parent: Control = null) -> XUpdatePage:
 
 
 static func _wait(host: Node, page: XUpdatePage, hint_parent: Control) -> void:
-	var client := XUpdateClient.instance(host.get_tree())
-	var timer := host.get_tree().create_timer(WAIT_SEC, true, false, true)
+	var tree := host.get_tree()  # 等的时候标题节点可能已经换掉：后面只用 tree，不再碰 host 的方法（发行模板对已释放对象调方法会崩）
+	var client := XUpdateClient.instance(tree)
+	var timer := tree.create_timer(WAIT_SEC, true, false, true)
 	var state := {"timed_out": false}
 	timer.timeout.connect(func():
 		if not _done and is_instance_valid(page) and not page.is_queued_for_deletion():
@@ -92,7 +93,7 @@ static func _wait(host: Node, page: XUpdatePage, hint_parent: Control) -> void:
 			page.close_page())  # 等太久：放行，结果回来再说
 	while not _done:
 		await client.checked
-		await host.get_tree().process_frame  # 让 _run 先记下结果
+		await tree.process_frame  # 让 _run 先记下结果
 	if not is_instance_valid(host) or not host.is_inside_tree():
 		return
 	if blocks(result):
