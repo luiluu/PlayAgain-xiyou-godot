@@ -1,0 +1,2027 @@
+{
+	"expected": {
+		"has_seed_id": [
+			true,
+			false,
+			false
+		],
+		"ids": [
+			"45fd9176c6491245",
+			"ea20c18b14d34719",
+			"3044981060bd142b",
+			"85855bc5a58633f0",
+			"7cbe89d3eab8172b",
+			"36d221a093b6f8bb",
+			"3a107779e28efa44",
+			"f9153a9b4c069674",
+			"50889bb9b883de70",
+			"5a0a4e45b4bc808e",
+			"1eebfd9435f2ddc3",
+			"b6604be1747fa6f6",
+			"c95f380463eb6733",
+			"cd71b39148182d53",
+			"1b3a1b19c0ec5fbf"
+		],
+		"item_roll_1": [
+			0.121706783772,
+			0.161007824354,
+			0.352069981163
+		],
+		"item_roll_2": [
+			0.149849361973,
+			0.32523399475,
+			0.737277492648
+		],
+		"item_roll_lock": [
+			0.098641165299,
+			0.899540654151
+		],
+		"order": [
+			"xg:8",
+			"xg:9",
+			"xg:10",
+			"xg:11",
+			"xg:8",
+			"xg:12",
+			"xg:1",
+			"xg:2",
+			"xg:3",
+			"xg:4",
+			"xg:5",
+			"xg:6",
+			"xg:7",
+			"xg:14",
+			"xg:13"
+		],
+		"reg_plain": "204e7b83db368a19",
+		"reg_src": [
+			"2855d36a4d4c3955",
+			"7571708e6913d08f",
+			"0ee0364cbb78f8da"
+		],
+		"rng_n": 3,
+		"save_roll": [
+			0.947859392501,
+			0.971910840366,
+			0.085432464257,
+			0.87059038505
+		],
+		"save_stream": [
+			0.858351444593
+		],
+		"save_stream_seq": [
+			0.528632204514,
+			0.665587897645,
+			0.360844895709,
+			0.618210522924
+		],
+		"seed_id_lazy": "52c91c8aeb638b91",
+		"seeds_on": true,
+		"src_n": {
+			"event|4|7|0|weapon:1042": 1.0,
+			"event|9|probe": 1,
+			"shop|4|g1:1": 2.0,
+			"shop|9|probe": 2
+		},
+		"star": "3f594fe0d53b432a"
+	},
+	"note": "搬家前（main 61b2786ca，XTianqi.*）生成；不要重生成",
+	"save": {
+		"_fixture_kept_id": "ea20c18b14d34719",
+		"achievements": {},
+		"actorAdvance": {},
+		"actorMaxLevel": 0.0,
+		"actorName": "",
+		"actorOps": [],
+		"actors": {
+			"2": {
+				"buffTurns": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"buffs": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"cooldowns": {},
+				"equips": [
+					null,
+					{
+						"affixIds": [],
+						"animationId": 1.0,
+						"augmentSlotEnable": [
+							true,
+							true,
+							true
+						],
+						"augmentSlotItems": [
+							"none",
+							"none",
+							"none"
+						],
+						"augmentSlots": [
+							"武器宝珠",
+							"武器宝珠",
+							"武器宝珠"
+						],
+						"base": 1043.0,
+						"baseName": "秘法天球",
+						"boostCount": 0.0,
+						"description": "武器种类:法杖(双手)\n蕴含奇异魔力的法杖\n物攻 +2%\n命中 +2%\n每回合回复最大魔法 2%",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 70.0
+						},
+						"etypeId": 1.0,
+						"iconIndex": 347.0,
+						"id": 1043.0,
+						"instanceId": "xg:12",
+						"kind": "weapon",
+						"meta": {
+							"/Prefixes": true,
+							"Element Amplify 11": " +60%",
+							"Element Amplify 12": " +60%",
+							"Element Amplify 13": " +60%",
+							"Element Amplify 14": " +60%",
+							"Element Amplify 15": " +60%",
+							"Element Amplify 2": " +60%",
+							"Element Amplify 3": " +60%",
+							"Element Amplify 4": " +60%",
+							"Element Amplify 5": " +60%",
+							"Element Amplify 6": " +60%",
+							"Element Amplify 7": " +60%",
+							"Element Amplify 8": " +60%",
+							"Element Amplify 9": " +60%",
+							"Prefixes": true,
+							"Random Variance": " 70",
+							"Variable 199 Buy Price": " 50",
+							"Variable 199 sell Price": " 1",
+							"Weapon Image": " 14",
+							"dh": "183",
+							"ici": "9",
+							"pos=APs text=\\c[1]特效": "秘法加持(所有元素伤害+60%) size=18 color=rgba(255,255,255,1) line=false align=0",
+							"pos=APs text=暴击率+15% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=等级需求": "35 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "8",
+							"req_level": "35"
+						},
+						"name": "秘法天球",
+						"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<Weapon Image: 14>\n<Element Amplify 2: +60%>\n<Element Amplify 3: +60%>\n<Element Amplify 4: +60%>\n<Element Amplify 5: +60%>\n<Element Amplify 6: +60%>\n<Element Amplify 7: +60%>\n<Element Amplify 8: +60%>\n<Element Amplify 9: +60%>\n<req_level:35>\n<ici:9>\n<Random Variance: 70>\n<dh:183>\n<quality:8>\n<pos=APs text=等级需求:35 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:秘法加持(所有元素伤害+60%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+15% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>\n<Element Amplify 11: +60%>\n<Element Amplify 12: +60%>\n<Element Amplify 13: +60%>\n<Element Amplify 14: +60%>\n<Element Amplify 15: +60%>",
+						"originalUpgradeSlots": 2.0,
+						"params": [
+							367.0,
+							346.0,
+							0.0,
+							0.0,
+							165.0,
+							0.0,
+							34.0,
+							47.0
+						],
+						"price": 0.0,
+						"tianqi_affixes": [
+							{
+								"extra": {},
+								"grade": "normal",
+								"key": "atk",
+								"tier": 2.0
+							},
+							{
+								"extra": {},
+								"grade": "normal",
+								"key": "hit",
+								"tier": 2.0
+							},
+							{
+								"extra": {},
+								"grade": "normal",
+								"key": "mrg",
+								"tier": 2.0
+							}
+						],
+						"tianqi_desc_base": "武器种类:法杖(双手)\n蕴含奇异魔力的法杖",
+						"traits": [
+							{
+								"code": 54.0,
+								"dataId": 2.0,
+								"value": 1.0
+							},
+							{
+								"code": 31.0,
+								"dataId": 1.0,
+								"value": 0.0
+							},
+							{
+								"code": 33.0,
+								"dataId": 0.0,
+								"value": -3.0
+							},
+							{
+								"code": 22.0,
+								"dataId": 2.0,
+								"value": 0.15
+							}
+						],
+						"upgradeSlots": 2.0,
+						"upgrades": [],
+						"wtypeId": 6.0,
+						"yep": {
+							"elementAmplify": {
+								"11": 0.6,
+								"12": 0.6,
+								"13": 0.6,
+								"14": 0.6,
+								"15": 0.6,
+								"2": 0.6,
+								"3": 0.6,
+								"4": 0.6,
+								"5": 0.6,
+								"6": 0.6,
+								"7": 0.6,
+								"8": 0.6,
+								"9": 0.6
+							}
+						}
+					},
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				],
+				"exp": 0.0,
+				"hp": 520.0,
+				"lastBattleSkill": 0.0,
+				"lastCommand": "",
+				"level": 1.0,
+				"mp": 200.0,
+				"skills": [
+					2771.0
+				],
+				"stateTurns": {},
+				"states": [],
+				"tp": 0.0,
+				"zhenqi": {}
+			},
+			"3": {
+				"buffTurns": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"buffs": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"cooldowns": {},
+				"equips": [
+					{
+						"affixIds": [],
+						"animationId": 1.0,
+						"augmentSlotEnable": [
+							true,
+							true,
+							true
+						],
+						"augmentSlotItems": [
+							"none",
+							"none",
+							"none"
+						],
+						"augmentSlots": [
+							"武器宝珠",
+							"武器宝珠",
+							"武器宝珠"
+						],
+						"base": 6.0,
+						"baseName": "指虎",
+						"boostCount": 0.0,
+						"description": "武器种类:拳/爪(双手)\n可以有效用来加强格斗拳法家的杀伤力，其变化多端",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 0.0
+						},
+						"etypeId": 1.0,
+						"iconIndex": 1837.0,
+						"id": 6.0,
+						"instanceId": "xg:1",
+						"kind": "weapon",
+						"meta": {
+							"Random Variance": " 0",
+							"ici": "1",
+							"pos=APs text=\\c[1]连击": "攻击次数+1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"pos=APs text=命中率+1% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=攻击速度+1 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=暴击率+1% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "指虎",
+						"note": "<req_level:1>\n<ici:1>\n<Random Variance: 0>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]连击:攻击次数+1 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+1 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+1% size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中率+1% size=18 color=rgba(255,255,255,1) line=false align=0>\n\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							10.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"price": 220.0,
+						"traits": [
+							{
+								"code": 22.0,
+								"dataId": 0.0,
+								"value": 0.01
+							},
+							{
+								"code": 31.0,
+								"dataId": 1.0,
+								"value": 0.0
+							},
+							{
+								"code": 22.0,
+								"dataId": 2.0,
+								"value": 0.01
+							},
+							{
+								"code": 33.0,
+								"dataId": 0.0,
+								"value": 1.0
+							},
+							{
+								"code": 34.0,
+								"dataId": 0.0,
+								"value": 1.0
+							},
+							{
+								"code": 54.0,
+								"dataId": 2.0,
+								"value": 1.0
+							}
+						],
+						"upgradeSlots": 6.0,
+						"upgrades": [],
+						"wtypeId": 5.0
+					},
+					null,
+					null,
+					{
+						"affixIds": [],
+						"atypeId": 1.0,
+						"augmentSlotEnable": [],
+						"augmentSlotItems": [],
+						"augmentSlots": [],
+						"base": 50.0,
+						"baseName": "挑战者服饰",
+						"boostCount": 0.0,
+						"description": "盔甲·布甲\n挑战者所穿戴的服饰",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 10.0
+						},
+						"etypeId": 4.0,
+						"iconIndex": 1.0,
+						"id": 50.0,
+						"instanceId": "xg:2",
+						"kind": "armor",
+						"meta": {
+							"/Prefixes": true,
+							"Prefixes": true,
+							"Random Variance": " 10",
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "挑战者服饰",
+						"note": "<req_level:1>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Random Variance: 10>\n<Random Variance: 10>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							0.0,
+							5.0,
+							0.0,
+							5.0,
+							0.0,
+							0.0
+						],
+						"price": 100.0,
+						"traits": [],
+						"upgradeSlots": 6.0,
+						"upgrades": []
+					},
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				],
+				"exp": 0.0,
+				"hp": 500.0,
+				"lastBattleSkill": 0.0,
+				"lastCommand": "",
+				"level": 1.0,
+				"mp": 200.0,
+				"skills": [
+					2765.0
+				],
+				"stateTurns": {},
+				"states": [],
+				"tp": 0.0,
+				"zhenqi": {}
+			},
+			"4": {
+				"buffTurns": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"buffs": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"cooldowns": {},
+				"equips": [
+					null,
+					null,
+					null,
+					{
+						"affixIds": [],
+						"atypeId": 1.0,
+						"augmentSlotEnable": [],
+						"augmentSlotItems": [],
+						"augmentSlots": [],
+						"base": 50.0,
+						"baseName": "挑战者服饰",
+						"boostCount": 0.0,
+						"description": "盔甲·布甲\n挑战者所穿戴的服饰",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 10.0
+						},
+						"etypeId": 4.0,
+						"iconIndex": 1.0,
+						"id": 50.0,
+						"instanceId": "xg:3",
+						"kind": "armor",
+						"meta": {
+							"/Prefixes": true,
+							"Prefixes": true,
+							"Random Variance": " 10",
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "挑战者服饰",
+						"note": "<req_level:1>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Random Variance: 10>\n<Random Variance: 10>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							0.0,
+							5.0,
+							0.0,
+							5.0,
+							0.0,
+							0.0
+						],
+						"price": 100.0,
+						"traits": [],
+						"upgradeSlots": 6.0,
+						"upgrades": []
+					},
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				],
+				"exp": 0.0,
+				"hp": 500.0,
+				"lastBattleSkill": 0.0,
+				"lastCommand": "",
+				"level": 1.0,
+				"mp": 200.0,
+				"skills": [],
+				"stateTurns": {},
+				"states": [],
+				"tp": 0.0,
+				"zhenqi": {}
+			},
+			"5": {
+				"buffTurns": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"buffs": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"cooldowns": {},
+				"equips": [
+					{
+						"affixIds": [],
+						"animationId": 1.0,
+						"augmentSlotEnable": [
+							true
+						],
+						"augmentSlotItems": [
+							"none"
+						],
+						"augmentSlots": [
+							"武器宝珠"
+						],
+						"base": 5.0,
+						"baseName": "木杖",
+						"boostCount": 0.0,
+						"description": "武器种类:法杖(双手)\n木头制作的长杖，能够有效的进行施法",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 0.0
+						},
+						"etypeId": 1.0,
+						"iconIndex": 240.0,
+						"id": 5.0,
+						"instanceId": "xg:4",
+						"kind": "weapon",
+						"meta": {
+							"Random Variance": " 0",
+							"ici": "1",
+							"pos=APs text=攻击速度-3 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "木杖",
+						"note": "<req_level:1>\n<ici:1>\n<Random Variance: 0>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度-3 size=18 color=rgba(255,255,255,1) line=false align=0>",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							8.0,
+							0.0,
+							20.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"price": 260.0,
+						"traits": [
+							{
+								"code": 54.0,
+								"dataId": 2.0,
+								"value": 1.0
+							},
+							{
+								"code": 31.0,
+								"dataId": 1.0,
+								"value": 0.0
+							},
+							{
+								"code": 33.0,
+								"dataId": 0.0,
+								"value": -3.0
+							}
+						],
+						"upgradeSlots": 6.0,
+						"upgrades": [],
+						"wtypeId": 6.0
+					},
+					null,
+					null,
+					{
+						"affixIds": [],
+						"atypeId": 1.0,
+						"augmentSlotEnable": [
+							true
+						],
+						"augmentSlotItems": [
+							"none"
+						],
+						"augmentSlots": [
+							"防具宝珠"
+						],
+						"base": 50.0,
+						"baseName": "挑战者服饰",
+						"boostCount": 0.0,
+						"description": "盔甲·布甲\n挑战者所穿戴的服饰",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 10.0
+						},
+						"etypeId": 4.0,
+						"iconIndex": 1.0,
+						"id": 50.0,
+						"instanceId": "xg:5",
+						"kind": "armor",
+						"meta": {
+							"/Prefixes": true,
+							"Prefixes": true,
+							"Random Variance": " 10",
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "挑战者服饰",
+						"note": "<req_level:1>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Random Variance: 10>\n<Random Variance: 10>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							0.0,
+							5.0,
+							0.0,
+							5.0,
+							0.0,
+							0.0
+						],
+						"price": 100.0,
+						"traits": [],
+						"upgradeSlots": 6.0,
+						"upgrades": []
+					},
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				],
+				"exp": 0.0,
+				"hp": 450.0,
+				"lastBattleSkill": 0.0,
+				"lastCommand": "",
+				"level": 1.0,
+				"mp": 230.0,
+				"skills": [
+					2770.0
+				],
+				"stateTurns": {},
+				"states": [],
+				"tp": 0.0,
+				"zhenqi": {}
+			},
+			"6": {
+				"buffTurns": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"buffs": [
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"cooldowns": {},
+				"equips": [
+					{
+						"affixIds": [],
+						"animationId": 11.0,
+						"augmentSlotEnable": [
+							true
+						],
+						"augmentSlotItems": [
+							"none"
+						],
+						"augmentSlots": [
+							"武器宝珠"
+						],
+						"base": 8.0,
+						"baseName": "短矛",
+						"boostCount": 0.0,
+						"description": "武器种类:矛(双手)\n长柄上装有锐利尖头的兵械",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 0.0
+						},
+						"etypeId": 1.0,
+						"iconIndex": 176.0,
+						"id": 8.0,
+						"instanceId": "xg:6",
+						"kind": "weapon",
+						"meta": {
+							"Random Variance": " 0",
+							"Weapon Image": " 48",
+							"ici": "1",
+							"pos=APs text=命中率+3% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=攻击速度-3 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=暴击率-5% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "短矛",
+						"note": "<req_level:1>\n<ici:1>\n<Weapon Image: 48>\n<Random Variance: 0>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度-3 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率-5% size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中率+3% size=18 color=rgba(255,255,255,1) line=false align=0>\n\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							18.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"price": 240.0,
+						"traits": [
+							{
+								"code": 31.0,
+								"dataId": 1.0,
+								"value": 0.0
+							},
+							{
+								"code": 22.0,
+								"dataId": 0.0,
+								"value": 0.03
+							},
+							{
+								"code": 22.0,
+								"dataId": 2.0,
+								"value": -0.05
+							},
+							{
+								"code": 33.0,
+								"dataId": 0.0,
+								"value": -3.0
+							},
+							{
+								"code": 54.0,
+								"dataId": 2.0,
+								"value": 1.0
+							}
+						],
+						"upgradeSlots": 6.0,
+						"upgrades": [],
+						"wtypeId": 9.0
+					},
+					null,
+					null,
+					{
+						"affixIds": [],
+						"atypeId": 1.0,
+						"augmentSlotEnable": [
+							true,
+							true
+						],
+						"augmentSlotItems": [
+							"none",
+							"none"
+						],
+						"augmentSlots": [
+							"防具宝珠",
+							"防具宝珠"
+						],
+						"base": 50.0,
+						"baseName": "挑战者服饰",
+						"boostCount": 0.0,
+						"description": "盔甲·布甲\n挑战者所穿戴的服饰",
+						"equipment": {
+							"requirements": {
+								"actors": []
+							},
+							"slotVariance": 6.0,
+							"slots": 6.0,
+							"suits": [],
+							"variance": 10.0
+						},
+						"etypeId": 4.0,
+						"iconIndex": 1.0,
+						"id": 50.0,
+						"instanceId": "xg:7",
+						"kind": "armor",
+						"meta": {
+							"/Prefixes": true,
+							"Prefixes": true,
+							"Random Variance": " 10",
+							"pos=APs text=等级需求": "1 size=18 color=rgba(255,255,255,1) line=false align=0",
+							"quality": "1",
+							"req_level": "1"
+						},
+						"name": "挑战者服饰",
+						"note": "<req_level:1>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Prefixes>\n3125-3160 1%\n3011-3045 1%\n3087-3122 1%\n3049-3084 1%\n4338-4344 1%\n4348-4356 1%\n</Prefixes>\n<Random Variance: 10>\n<Random Variance: 10>\n<quality:1>\n<pos=APs text=等级需求:1 size=18 color=rgba(255,255,255,1) line=false align=0>\n",
+						"originalUpgradeSlots": 6.0,
+						"params": [
+							0.0,
+							0.0,
+							0.0,
+							5.0,
+							0.0,
+							5.0,
+							0.0,
+							0.0
+						],
+						"price": 100.0,
+						"traits": [],
+						"upgradeSlots": 6.0,
+						"upgrades": []
+					},
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				],
+				"exp": 0.0,
+				"hp": 550.0,
+				"lastBattleSkill": 0.0,
+				"lastCommand": "",
+				"level": 1.0,
+				"mp": 200.0,
+				"skills": [
+					2766.0
+				],
+				"stateTurns": {},
+				"states": [],
+				"tp": 0.0,
+				"zhenqi": {}
+			}
+		},
+		"alienLedger": {},
+		"allowAutosave": true,
+		"battleBgm": {},
+		"battleSlots": [
+			2.0,
+			3.0,
+			4.0,
+			5.0,
+			6.0
+		],
+		"battleback": [],
+		"bossMastery": {},
+		"codexGarou": {
+			"breakthroughs": 0.0,
+			"catalyst": false
+		},
+		"codexRaven": {
+			"forged": -1.0,
+			"hunter": false,
+			"residue": 0.0,
+			"soul": 0.0
+		},
+		"costumeOff": [],
+		"crafting": {
+			"exp": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"known": {},
+			"level": [
+				1.0,
+				1.0,
+				1.0,
+				1.0
+			]
+		},
+		"designation": {},
+		"difficulty": 2.0,
+		"direction": 8.0,
+		"dungeon": {},
+		"ecoFrac": {},
+		"encounterEnabled": true,
+		"enemyBook": {
+			"defeat": {},
+			"flags": {},
+			"maps": {}
+		},
+		"erasedEvents": [],
+		"flags": {
+			"tianqi": {
+				"affix_roll_n": 4.0,
+				"affix_src_n": {
+					"event|4|7|0|weapon:1042": 1.0,
+					"shop|4|g1:1": 2.0
+				},
+				"difficulty": "jianxian",
+				"gojo_adv_v": 3.0,
+				"line": "war",
+				"lineup": [
+					2.0,
+					3.0,
+					4.0,
+					5.0,
+					6.0
+				],
+				"money": {},
+				"no_diff_passive": 1.0,
+				"rules": 1.0,
+				"src_n": {
+					"event|4|7|0|weapon:1042": 1.0,
+					"shop|4|g1:1": 2.0
+				},
+				"war": {
+					"seen": [],
+					"stage": 3.0
+				}
+			}
+		},
+		"followersVisible": true,
+		"gear": [
+			{
+				"affixIds": [],
+				"animationId": 1.0,
+				"augmentSlotEnable": [
+					true
+				],
+				"augmentSlotItems": [
+					"none"
+				],
+				"augmentSlots": [
+					"武器宝珠"
+				],
+				"base": 738.0,
+				"baseName": "黄金之王战鎚",
+				"boostCount": 0.0,
+				"description": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"\n魔攻 +2%\n上品·命中 +3%\n魔法 +3%",
+				"equipment": {
+					"requirements": {
+						"actors": []
+					},
+					"slotVariance": 6.0,
+					"slots": 6.0,
+					"suits": [],
+					"variance": 60.0
+				},
+				"etypeId": 1.0,
+				"iconIndex": 239.0,
+				"id": 738.0,
+				"instanceId": "xg:8",
+				"kind": "weapon",
+				"meta": {
+					"/Prefixes": true,
+					"Prefixes": true,
+					"Random Variance": " 60",
+					"Variable 199 Buy Price": " 50",
+					"Variable 199 sell Price": " 1",
+					"Weapon Image": " 83",
+					"dh": "183",
+					"ici": "9",
+					"passiveHarmRi": "20",
+					"pos=APs text=\\c[1]特效": "王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0",
+					"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=等级需求": "30 size=18 color=rgba(255,255,255,1) line=false align=0",
+					"quality": "8",
+					"req_level": "30"
+				},
+				"name": "黄金之王战鎚",
+				"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<req_level:30>\n<Weapon Image: 83>\n<passiveHarmRi:20>\n<ici:9>\n<Random Variance: 60>\n<dh:183>\n<quality:8>\n<pos=APs text=等级需求:30 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>",
+				"originalUpgradeSlots": 7.0,
+				"params": [
+					1035.0,
+					20.0,
+					189.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"price": 0.0,
+				"tianqi_affixes": [
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mat",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "fine",
+						"key": "hit",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mmp",
+						"tier": 2.0
+					}
+				],
+				"tianqi_desc_base": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"",
+				"traits": [
+					{
+						"code": 31.0,
+						"dataId": 1.0,
+						"value": 0.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 2.0,
+						"value": 0.1
+					}
+				],
+				"upgradeSlots": 7.0,
+				"upgrades": [],
+				"wtypeId": 3.0
+			},
+			{
+				"affixIds": [],
+				"animationId": 1.0,
+				"augmentSlotEnable": [
+					true,
+					true
+				],
+				"augmentSlotItems": [
+					"none",
+					"none"
+				],
+				"augmentSlots": [
+					"武器宝珠",
+					"武器宝珠"
+				],
+				"base": 961.0,
+				"baseName": "哈耳庇厄之爪",
+				"boostCount": 0.0,
+				"description": "武器种类:拳/爪(双手)\n令人胆寒的长爪，轻易就能撕裂敌人\n幸运 +3%\n每回合回复最大魔法 2%\n敏捷 +2%",
+				"equipment": {
+					"requirements": {
+						"actors": []
+					},
+					"slotVariance": 6.0,
+					"slots": 6.0,
+					"suits": [],
+					"variance": 70.0
+				},
+				"etypeId": 1.0,
+				"iconIndex": 1941.0,
+				"id": 961.0,
+				"instanceId": "xg:9",
+				"kind": "weapon",
+				"meta": {
+					"/Prefixes": true,
+					"KyoUnique": " 鹰踏",
+					"Prefixes": true,
+					"Random Variance": " 70",
+					"Replace Attack": " 767",
+					"Variable 199 Buy Price": " 50",
+					"Variable 199 sell Price": " 1",
+					"Weapon Image": " 10",
+					"dh": "183",
+					"ici": "9",
+					"item 180 Sell Price": " 1",
+					"passiveCrHarmRi": "15",
+					"pos=APs text=\\c[1]特效": "鹰踏(普通攻击变为鹰踏，额外攻击一次。伤害提高50%) size=18 color=rgba(255,255,255,1) line=false align=0",
+					"pos=APs text=命中率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=攻击速度+5 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=等级需求": "38 size=18 color=rgba(255,255,255,1) line=false align=0",
+					"quality": "8",
+					"req_level": "38"
+				},
+				"name": "哈耳庇厄之爪",
+				"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<Weapon Image: 10>\n<item 180 Sell Price: 1>\n<Replace Attack: 767>\n<req_level:38>\n<dh:183>\n<ici:9>\n<passiveCrHarmRi:15>\n<Random Variance: 70>\n<quality:8>\n<pos=APs text=等级需求:38 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:鹰踏(普通攻击变为鹰踏，额外攻击一次。伤害提高50%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>\n<KyoUnique: 鹰踏>",
+				"originalUpgradeSlots": 1.0,
+				"params": [
+					0.0,
+					0.0,
+					24.0,
+					0.0,
+					0.0,
+					0.0,
+					12.0,
+					0.0
+				],
+				"price": 0.0,
+				"tianqi_affixes": [
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "luk",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mrg",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "agi",
+						"tier": 2.0
+					}
+				],
+				"tianqi_desc_base": "武器种类:拳/爪(双手)\n令人胆寒的长爪，轻易就能撕裂敌人",
+				"tq_seed_id": "ea20c18b14d34719",
+				"traits": [
+					{
+						"code": 31.0,
+						"dataId": 1.0,
+						"value": 0.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 2.0,
+						"value": 0.1
+					},
+					{
+						"code": 33.0,
+						"dataId": 0.0,
+						"value": 5.0
+					},
+					{
+						"code": 54.0,
+						"dataId": 2.0,
+						"value": 1.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 0.0,
+						"value": 0.1
+					}
+				],
+				"upgradeSlots": 1.0,
+				"upgrades": [],
+				"wtypeId": 5.0
+			},
+			{
+				"affixIds": [],
+				"animationId": 1.0,
+				"augmentSlotEnable": [
+					true,
+					true
+				],
+				"augmentSlotItems": [
+					"none",
+					"none"
+				],
+				"augmentSlots": [
+					"武器宝珠",
+					"武器宝珠"
+				],
+				"base": 961.0,
+				"baseName": "哈耳庇厄之爪",
+				"boostCount": 0.0,
+				"description": "武器种类:拳/爪(双手)\n令人胆寒的长爪，轻易就能撕裂敌人\n技能放完后 1% 几率再放一次\n魔法 +3%\n物攻 +2%",
+				"equipment": {
+					"requirements": {
+						"actors": []
+					},
+					"slotVariance": 6.0,
+					"slots": 6.0,
+					"suits": [],
+					"variance": 70.0
+				},
+				"etypeId": 1.0,
+				"iconIndex": 1941.0,
+				"id": 961.0,
+				"instanceId": "xg:10",
+				"kind": "weapon",
+				"meta": {
+					"/Prefixes": true,
+					"KyoUnique": " 鹰踏",
+					"Prefixes": true,
+					"Random Variance": " 70",
+					"Replace Attack": " 767",
+					"Variable 199 Buy Price": " 50",
+					"Variable 199 sell Price": " 1",
+					"Weapon Image": " 10",
+					"dh": "183",
+					"ici": "9",
+					"item 180 Sell Price": " 1",
+					"passiveCrHarmRi": "15",
+					"pos=APs text=\\c[1]特效": "鹰踏(普通攻击变为鹰踏，额外攻击一次。伤害提高50%) size=18 color=rgba(255,255,255,1) line=false align=0",
+					"pos=APs text=命中率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=攻击速度+5 size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=等级需求": "38 size=18 color=rgba(255,255,255,1) line=false align=0",
+					"quality": "8",
+					"req_level": "38"
+				},
+				"name": "哈耳庇厄之爪",
+				"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<Weapon Image: 10>\n<item 180 Sell Price: 1>\n<Replace Attack: 767>\n<req_level:38>\n<dh:183>\n<ici:9>\n<passiveCrHarmRi:15>\n<Random Variance: 70>\n<quality:8>\n<pos=APs text=等级需求:38 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:鹰踏(普通攻击变为鹰踏，额外攻击一次。伤害提高50%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=攻击速度+5 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>\n<KyoUnique: 鹰踏>",
+				"originalUpgradeSlots": 9.0,
+				"params": [
+					0.0,
+					0.0,
+					127.0,
+					0.0,
+					0.0,
+					0.0,
+					104.0,
+					0.0
+				],
+				"price": 0.0,
+				"tianqi_affixes": [
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "recast",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mmp",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "atk",
+						"tier": 2.0
+					}
+				],
+				"tianqi_desc_base": "武器种类:拳/爪(双手)\n令人胆寒的长爪，轻易就能撕裂敌人",
+				"traits": [
+					{
+						"code": 31.0,
+						"dataId": 1.0,
+						"value": 0.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 2.0,
+						"value": 0.1
+					},
+					{
+						"code": 33.0,
+						"dataId": 0.0,
+						"value": 5.0
+					},
+					{
+						"code": 54.0,
+						"dataId": 2.0,
+						"value": 1.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 0.0,
+						"value": 0.1
+					}
+				],
+				"upgradeSlots": 9.0,
+				"upgrades": [],
+				"wtypeId": 5.0
+			},
+			{
+				"affixIds": [],
+				"animationId": 6.0,
+				"augmentSlotEnable": [
+					true
+				],
+				"augmentSlotItems": [
+					"none"
+				],
+				"augmentSlots": [
+					"武器宝珠"
+				],
+				"base": 1042.0,
+				"baseName": "血吼",
+				"boostCount": 0.0,
+				"description": "武器种类:斧(双手)\n无论如何，以这把武器的战绩和其背负的荣耀来说，赋予“传奇”二字确实毫不为过\n敏捷 +2%\n幸运 +3%\n上品·物攻 +3%",
+				"equipment": {
+					"requirements": {
+						"actors": []
+					},
+					"slotVariance": 6.0,
+					"slots": 6.0,
+					"suits": [],
+					"variance": 70.0
+				},
+				"etypeId": 1.0,
+				"iconIndex": 368.0,
+				"id": 1042.0,
+				"instanceId": "xg:11",
+				"kind": "weapon",
+				"meta": {
+					"Element Amplify 1": " +15%",
+					"Random Variance": " 70",
+					"Variable 199 Buy Price": " 50",
+					"Variable 199 sell Price": " 1",
+					"dh": "183",
+					"ici": "9",
+					"passiveCrHarmRi": "15",
+					"passiveHarmRi": "15",
+					"pos=APs text=\"这把战斧令无数的敌人闻风丧胆\" size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=\\c[1]特效": "血吼(物理伤害+15%，最终伤害+15%，暴击伤害+15%) size=18 color=rgba(255,255,255,1) line=false align=0",
+					"pos=APs text=命中率+25% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=暴击率+25% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=等级需求": "35 size=18 color=rgba(255,255,255,1) line=false align=0",
+					"quality": "8",
+					"req_level": "35"
+				},
+				"name": "血吼",
+				"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<Element Amplify 1: +15%>\n<req_level:35>\n<dh:183>\n<ici:9>\n<passiveHarmRi:15>\n<passiveCrHarmRi:15>\n<Random Variance: 70>\n<quality:8>\n<pos=APs text=\"这把战斧令无数的敌人闻风丧胆\" size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=等级需求:35 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:血吼(物理伤害+15%，最终伤害+15%，暴击伤害+15%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+25% size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=命中率+25% size=18 color=rgba(255,255,255,1) line=false align=0>\n\n\n",
+				"originalUpgradeSlots": 11.0,
+				"params": [
+					0.0,
+					0.0,
+					130.0,
+					0.0,
+					0.0,
+					0.0,
+					79.0,
+					0.0
+				],
+				"price": 0.0,
+				"tianqi_affixes": [
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "agi",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "luk",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "fine",
+						"key": "atk",
+						"tier": 2.0
+					}
+				],
+				"tianqi_desc_base": "武器种类:斧(双手)\n无论如何，以这把武器的战绩和其背负的荣耀来说，赋予“传奇”二字确实毫不为过",
+				"traits": [
+					{
+						"code": 31.0,
+						"dataId": 1.0,
+						"value": 0.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 0.0,
+						"value": 0.25
+					},
+					{
+						"code": 33.0,
+						"dataId": 0.0,
+						"value": -8.0
+					},
+					{
+						"code": 54.0,
+						"dataId": 2.0,
+						"value": 1.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 2.0,
+						"value": 0.25
+					}
+				],
+				"upgradeSlots": 11.0,
+				"upgrades": [],
+				"wtypeId": 4.0,
+				"yep": {
+					"elementAmplify": {
+						"1": 0.15
+					}
+				}
+			},
+			{
+				"affixIds": [],
+				"animationId": 1.0,
+				"augmentSlotEnable": [
+					true
+				],
+				"augmentSlotItems": [
+					"none"
+				],
+				"augmentSlots": [
+					"武器宝珠"
+				],
+				"base": 738.0,
+				"baseName": "黄金之王战鎚",
+				"boostCount": 0.0,
+				"description": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"\n魔攻 +2%\n上品·命中 +3%\n魔法 +3%",
+				"equipment": {
+					"requirements": {
+						"actors": []
+					},
+					"slotVariance": 6.0,
+					"slots": 6.0,
+					"suits": [],
+					"variance": 60.0
+				},
+				"etypeId": 1.0,
+				"iconIndex": 239.0,
+				"id": 738.0,
+				"instanceId": "xg:8",
+				"kind": "weapon",
+				"meta": {
+					"/Prefixes": true,
+					"Prefixes": true,
+					"Random Variance": " 60",
+					"Variable 199 Buy Price": " 50",
+					"Variable 199 sell Price": " 1",
+					"Weapon Image": " 83",
+					"dh": "183",
+					"ici": "9",
+					"passiveHarmRi": "20",
+					"pos=APs text=\\c[1]特效": "王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0",
+					"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+					"pos=APs text=等级需求": "30 size=18 color=rgba(255,255,255,1) line=false align=0",
+					"quality": "8",
+					"req_level": "30"
+				},
+				"name": "黄金之王战鎚",
+				"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<req_level:30>\n<Weapon Image: 83>\n<passiveHarmRi:20>\n<ici:9>\n<Random Variance: 60>\n<dh:183>\n<quality:8>\n<pos=APs text=等级需求:30 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>",
+				"originalUpgradeSlots": 7.0,
+				"params": [
+					1035.0,
+					20.0,
+					189.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"price": 0.0,
+				"tianqi_affixes": [
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mat",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "fine",
+						"key": "hit",
+						"tier": 2.0
+					},
+					{
+						"extra": {},
+						"grade": "normal",
+						"key": "mmp",
+						"tier": 2.0
+					}
+				],
+				"tianqi_desc_base": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"",
+				"traits": [
+					{
+						"code": 31.0,
+						"dataId": 1.0,
+						"value": 0.0
+					},
+					{
+						"code": 22.0,
+						"dataId": 2.0,
+						"value": 0.1
+					}
+				],
+				"upgradeSlots": 7.0,
+				"upgrades": [],
+				"wtypeId": 3.0
+			}
+		],
+		"gold": 0.0,
+		"guideSeen": {},
+		"hangUp": {},
+		"hangUpTotal": 0.0,
+		"items": {},
+		"lastItem": 0.0,
+		"lotteryRandom": {},
+		"mapEvents": {},
+		"mapId": 0.0,
+		"mode": "xiyou",
+		"mvParamPlus": {},
+		"nextGearId": 15.0,
+		"orbSeed": 20261114.0,
+		"orbState": {
+			"inbox": {},
+			"n": {},
+			"recent": [],
+			"returns": {}
+		},
+		"party": [
+			2.0,
+			3.0,
+			4.0,
+			5.0,
+			6.0
+		],
+		"partySkills": {},
+		"pets": {
+			"list": [],
+			"team_a": 0.0,
+			"war": -1.0
+		},
+		"phwarehouse": {
+			"随机门面测试仓库": {
+				"currentCapacity": 0.0,
+				"items": {
+					"armor": [],
+					"item": [],
+					"keyItem": [],
+					"weapon": [
+						{
+							"affixIds": [],
+							"animationId": 1.0,
+							"augmentSlotEnable": [
+								true,
+								true
+							],
+							"augmentSlotItems": [
+								"none",
+								"none"
+							],
+							"augmentSlots": [
+								"武器宝珠",
+								"武器宝珠"
+							],
+							"base": 738.0,
+							"baseName": "黄金之王战鎚",
+							"boostCount": 0.0,
+							"description": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"\n幸运 +3%\n魔法 +3%\n物攻 +2%",
+							"equipment": {
+								"requirements": {
+									"actors": []
+								},
+								"slotVariance": 6.0,
+								"slots": 6.0,
+								"suits": [],
+								"variance": 60.0
+							},
+							"etypeId": 1.0,
+							"iconIndex": 239.0,
+							"id": 738.0,
+							"instanceId": "xg:14",
+							"kind": "weapon",
+							"meta": {
+								"/Prefixes": true,
+								"Prefixes": true,
+								"Random Variance": " 60",
+								"Variable 199 Buy Price": " 50",
+								"Variable 199 sell Price": " 1",
+								"Weapon Image": " 83",
+								"dh": "183",
+								"ici": "9",
+								"passiveHarmRi": "20",
+								"pos=APs text=\\c[1]特效": "王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0",
+								"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+								"pos=APs text=等级需求": "30 size=18 color=rgba(255,255,255,1) line=false align=0",
+								"quality": "8",
+								"req_level": "30"
+							},
+							"name": "黄金之王战鎚",
+							"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<req_level:30>\n<Weapon Image: 83>\n<passiveHarmRi:20>\n<ici:9>\n<Random Variance: 60>\n<dh:183>\n<quality:8>\n<pos=APs text=等级需求:30 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>",
+							"originalUpgradeSlots": 0.0,
+							"params": [
+								1033.0,
+								0.0,
+								135.0,
+								0.0,
+								0.0,
+								0.0,
+								0.0,
+								0.0
+							],
+							"price": 0.0,
+							"tianqi_affixes": [
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "luk",
+									"tier": 2.0
+								},
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "mmp",
+									"tier": 2.0
+								},
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "atk",
+									"tier": 2.0
+								}
+							],
+							"tianqi_desc_base": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"",
+							"tq_seed_id": "cd71b39148182d53",
+							"traits": [
+								{
+									"code": 31.0,
+									"dataId": 1.0,
+									"value": 0.0
+								},
+								{
+									"code": 22.0,
+									"dataId": 2.0,
+									"value": 0.1
+								}
+							],
+							"upgradeSlots": 0.0,
+							"upgrades": [],
+							"wtypeId": 3.0
+						},
+						{
+							"affixIds": [],
+							"animationId": 1.0,
+							"augmentSlotEnable": [],
+							"augmentSlotItems": [],
+							"augmentSlots": [],
+							"base": 738.0,
+							"baseName": "黄金之王战鎚",
+							"boostCount": 0.0,
+							"description": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"\n魔攻 +2%\n敏捷 +2%\n技能伤 +5%",
+							"equipment": {
+								"requirements": {
+									"actors": []
+								},
+								"slotVariance": 6.0,
+								"slots": 6.0,
+								"suits": [],
+								"variance": 60.0
+							},
+							"etypeId": 1.0,
+							"iconIndex": 239.0,
+							"id": 738.0,
+							"instanceId": "xg:13",
+							"kind": "weapon",
+							"meta": {
+								"/Prefixes": true,
+								"Prefixes": true,
+								"Random Variance": " 60",
+								"Variable 199 Buy Price": " 50",
+								"Variable 199 sell Price": " 1",
+								"Weapon Image": " 83",
+								"dh": "183",
+								"ici": "9",
+								"passiveHarmRi": "20",
+								"pos=APs text=\\c[1]特效": "王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0",
+								"pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0": true,
+								"pos=APs text=等级需求": "30 size=18 color=rgba(255,255,255,1) line=false align=0",
+								"quality": "8",
+								"req_level": "30"
+							},
+							"name": "黄金之王战鎚",
+							"note": "<Variable 199 Buy Price: 50>\n<Variable 199 sell Price: 1>\n<req_level:30>\n<Weapon Image: 83>\n<passiveHarmRi:20>\n<ici:9>\n<Random Variance: 60>\n<dh:183>\n<quality:8>\n<pos=APs text=等级需求:30 size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=\\c[1]特效:王之力(最终伤害+20%) size=18 color=rgba(255,255,255,1) line=false align=0>\n<pos=APs text=暴击率+10% size=18 color=rgba(255,255,255,1) line=false align=0>\n<Prefixes>\n85-101 3%\n</Prefixes>",
+							"originalUpgradeSlots": 2.0,
+							"params": [
+								1043.0,
+								90.0,
+								164.0,
+								0.0,
+								0.0,
+								0.0,
+								36.0,
+								0.0
+							],
+							"price": 0.0,
+							"tianqi_affixes": [
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "mat",
+									"tier": 2.0
+								},
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "agi",
+									"tier": 2.0
+								},
+								{
+									"extra": {},
+									"grade": "normal",
+									"key": "skill_damage",
+									"tier": 2.0
+								}
+							],
+							"tianqi_desc_base": "武器种类:钝器\n相传在遥远的岁月之前，有一位哥布林之王统治了世界，他拥有无尽的黄金，被称之为\"黄金之王\"",
+							"tq_seed_id": "1b3a1b19c0ec5fbf",
+							"traits": [
+								{
+									"code": 31.0,
+									"dataId": 1.0,
+									"value": 0.0
+								},
+								{
+									"code": 22.0,
+									"dataId": 2.0,
+									"value": 0.1
+								}
+							],
+							"upgradeSlots": 2.0,
+							"upgrades": [],
+							"wtypeId": 3.0
+						}
+					]
+				},
+				"lootBonus": true,
+				"maxCapacity": 50.0,
+				"qtty": {
+					"armor": {},
+					"item": {},
+					"keyItem": {},
+					"weapon": {}
+				},
+				"rule": null,
+				"title": "随机门面测试仓库"
+			}
+		},
+		"pingbiQuality": [],
+		"playSeconds": 0.0,
+		"playerCostume": {},
+		"playerMoveSpeed": 4.0,
+		"race": {
+			"actors": {
+				"2": {
+					"blood": false,
+					"free": true,
+					"legacy": [],
+					"race": -1.0,
+					"rank": 1.0
+				},
+				"3": {
+					"blood": false,
+					"free": true,
+					"legacy": [],
+					"race": -1.0,
+					"rank": 1.0
+				},
+				"4": {
+					"blood": false,
+					"free": true,
+					"legacy": [],
+					"race": -1.0,
+					"rank": 1.0
+				},
+				"5": {
+					"blood": false,
+					"free": true,
+					"legacy": [],
+					"race": -1.0,
+					"rank": 1.0
+				},
+				"6": {
+					"blood": false,
+					"free": true,
+					"legacy": [],
+					"race": -1.0,
+					"rank": 1.0
+				}
+			},
+			"default": -1.0
+		},
+		"raceSupply": {},
+		"rom": {
+			"g": [],
+			"gn": 0.0,
+			"m": [],
+			"x": [
+				0.853908549295738,
+				0.827521447557956,
+				0.282071833033115,
+				0.718286693794653,
+				0.775020959088579,
+				0.0267159263603389,
+				0.0481389425694942,
+				0.0372642709407955,
+				0.761668434133753,
+				0.783168843248859,
+				0.133728398475796,
+				0.87738705589436,
+				0.00946056679822505,
+				0.61100277164951,
+				0.134483575122431,
+				0.0271064271219075,
+				0.58841915987432,
+				0.860164815327153,
+				0.799228176474571,
+				0.629798286827281
+			],
+			"xn": 8.0,
+			"xs": [],
+			"xsn": 0.0
+		},
+		"saveCount": 1.0,
+		"saveSlim": 1.0,
+		"saveactors": [],
+		"savedAt": "2026-11-14T18:55:24",
+		"screen": {
+			"tone": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"toneDuration": 0.0,
+			"toneTarget": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"weatherDuration": 0.0,
+			"weatherPower": 0.0,
+			"weatherPowerTarget": 0.0,
+			"weatherType": "none"
+		},
+		"seen": [],
+		"selfSwitches": {},
+		"shopStock": {
+			"inv": {},
+			"schedules": []
+		},
+		"steps": 0.0,
+		"switches": {},
+		"training": {},
+		"unknownOrigin": null,
+		"unlockedMaps": [],
+		"variables": {
+			"20": 3.0
+		},
+		"vehicleType": "walk",
+		"vehicles": [
+			{
+				"altitude": 0.0,
+				"bgm": null,
+				"characterIndex": 0.0,
+				"characterName": "Vehicle",
+				"direction": 4.0,
+				"driving": false,
+				"mapId": 0.0,
+				"x": 0.0,
+				"y": 0.0
+			},
+			{
+				"altitude": 0.0,
+				"bgm": null,
+				"characterIndex": 1.0,
+				"characterName": "Vehicle",
+				"direction": 4.0,
+				"driving": false,
+				"mapId": 0.0,
+				"x": 0.0,
+				"y": 0.0
+			},
+			{
+				"altitude": 0.0,
+				"bgm": null,
+				"characterIndex": 3.0,
+				"characterName": "Vehicle",
+				"direction": 4.0,
+				"driving": false,
+				"mapId": 186.0,
+				"x": 50.0,
+				"y": 49.0
+			}
+		],
+		"version": 2.0,
+		"walkingBgm": null,
+		"x": 14.0,
+		"y": 23.0,
+		"zhenqiSpec": {
+			"e": {},
+			"w": {},
+			"weaponTrials": {}
+		}
+	}
+}
