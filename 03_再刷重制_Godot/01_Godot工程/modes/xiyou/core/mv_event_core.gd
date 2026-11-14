@@ -268,6 +268,7 @@ func _execute(c: Dictionary):
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
 				msg.lines.append(message_text(XLotteryRework.text(lottery_id, str(list[index].parameters[0])) if lottery_id != 0 else str(list[index].parameters[0])))
+			msg = XTianqiSect.rewrite_message(state(), _map_id(), _event_id(), msg)
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
 				_merge_choices(index)

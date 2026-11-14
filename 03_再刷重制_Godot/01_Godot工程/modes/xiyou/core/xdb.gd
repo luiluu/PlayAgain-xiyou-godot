@@ -148,8 +148,14 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
+	if name == "Enemies" and XTianqiSect.has_enemy(XState.current, id):
+		return XTianqiSect.enemy_rec(id, t)  # 天启篇教派连带内容（包丙）：老钱／小钱及打手
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
+	if name == "Items" and XTianqiSect.has_item(XState.current, id):
+		return XTianqiSect.item_rec(id, t[id])  # 天启篇教派连带内容（包丙）：老钱／小钱的账本
+	if name == "Troops" and XTianqiSect.has_troop(XState.current, id):
+		return XTianqiSect.troop_rec(id, t[id])  # 天启篇教派连带内容（包丙）：讨债战敌群 747／766
 	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):
 		return XTianqiTrumpet.rec(name, id, t[id])  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
 	if name == "Skills" and XTianqiSkills.has(id):
