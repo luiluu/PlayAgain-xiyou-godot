@@ -787,7 +787,7 @@ func _gain_raw(id: int, amount: int) -> void:
 	if items[id] == 0:
 		items.erase(id)
 
-## source：天启篇装备随机身份的来源键（XTianqi.on_register）；来源读档稳定的入口才传，空＝照 instanceId
+## source：天启篇装备随机身份的来源键（XTianqiRandom.on_register）；来源读档稳定的入口才传，空＝照 instanceId
 func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
 	if amount > 0 and XAlienHide.blocks_base(kind, base_id):
 		return  # installAlienationHide：隐藏生效时深渊残刃／残杖／残甲／残环得不到（O-283）
@@ -838,7 +838,7 @@ func register_gear(item: Dictionary, source := "") -> void:
 	else:
 		next_gear_id = maxi(next_gear_id,int(str(item.instanceId).get_slice(":",1))+1)
 	XOrbs.layout(item, orb_seed)
-	XTianqi.on_register(self, item, source)  # 天启篇装备随机身份 tq_seed_id：入包即分配（读档时 flags 还没读进来，由 from_dict 末尾 assign_all 补）
+	XTianqiRandom.on_register(self, item, source)  # 天启篇装备随机身份 tq_seed_id：入包即分配（读档时 flags 还没读进来，由 XTianqiSave.after_load 末尾补号）
 
 func owns_gear(item: Dictionary) -> bool:
 	for e in gear:
@@ -1100,10 +1100,9 @@ static func from_dict(d: Dictionary) -> XState:
 	XGuyu.after_load(s)
 	XGarou.after_load(s)  # 饿狼 extractSaveContents 包装：clearBattle＋sync
 	XPets.loaded(s)
-	XTianqiSave.after_load(s)  # 天启篇存档门面：唯一的读档后入口（分区迁移、五条悟进阶表版本），幂等
+	XTianqiSave.after_load(s)  # 天启篇存档门面：唯一的读档后入口（分区迁移、五条悟进阶表版本、装备随机身份补号），幂等
 	XWeakChallenge.after_load(s)  # 弱者挑战 extractSaveContents 包装：按本局标记学／忘 10357（不回满）
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
-	XTianqi.assign_all(s)  # 天启篇装备随机身份：老件按固定顺序一次性补号（XTianqi.seed_id）
 	for a in s.actors.values():
 		a.param_mark_dirty()
 		a.param_refresh()

@@ -23,7 +23,7 @@ static var SKIP_HIGH_ROWS := true
 ## 每掷一件 +1、随存档），先存档、打出掉落、读档再打同一场，词条一样；false＝照旧走运行时装备流（XGear.roll，读档会换）。
 ## 只管天启篇存档、只管 apply 不传 rng 时；测试磁带（XGear.roll_seq／force_roll）、深渊商人的本轮种子（XGear.roll_fn）照旧优先。
 static var SEED_FROM_SAVE := true
-## 正在生成的装备的来源键（XState.gain_gear 生成前设、生成后清；见 XTianqi.on_register）：有来源键时词条流按「来源键＋本档该来源第几件」
+## 正在生成的装备的来源键（XState.gain_gear 生成前设、生成后清；见 XTianqiRandom.on_register）：有来源键时词条流按「来源键＋本档该来源第几件」
 ## 派生（计数 flags.tianqi.affix_src_n），先拿别的来源的装备不影响它；没有时照 affix_roll_n 全档计数
 static var source_hint := ""
 
@@ -82,7 +82,7 @@ static func _default_rng(s: XState) -> Callable:
 		var n := int(tq.get("affix_roll_n", 0))
 		tq["affix_roll_n"] = n + 1
 		key = "affix_roll|%d" % n
-	var st := XTianqi.save_stream(s, key)
+	var st := XTianqiRandom.save_stream(s, key)
 	return func(): return st.next_float(key)
 
 
