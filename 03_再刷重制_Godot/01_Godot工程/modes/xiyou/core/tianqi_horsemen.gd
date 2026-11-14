@@ -33,9 +33,9 @@ const META := "xhorseman"
 
 ## 开关：false＝四骑士战一概不开（prepare 不收、挂钩不动）
 static var ENABLED := true
-## O-待定-1：评审 v0.1 第 1 条，破产一剑是法术、打的是法防，破产标记原来只降物防，对这一击不起作用；true＝破产同时降法防。false＝照旧只降物防
+## O-438：评审 v0.1 第 1 条，破产一剑是法术、打的是法防，破产标记原来只降物防，对这一击不起作用；true＝破产同时降法防。false＝照旧只降物防
 static var BANKRUPT_MDF := true
-## O-待定-2：评审 v0.1 第 2 条，战斗中敌人能力值有 krz 缓存，add_param 后同一行动读到的还是旧值（宝石加攻后的追加普攻、骑士队长、百亿仙剑）；
+## O-439：评审 v0.1 第 2 条，战斗中敌人能力值有 krz 缓存，add_param 后同一行动读到的还是旧值（宝石加攻后的追加普攻、骑士队长、百亿仙剑）；
 ## true＝天启篇骑士加属性后当场刷新缓存格。false＝照旧等回合边界
 static var FRESH_PARAM := true
 

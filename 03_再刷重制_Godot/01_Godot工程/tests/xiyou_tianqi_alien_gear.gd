@@ -104,13 +104,18 @@ func _data() -> void:
 	var sv := _state()
 	_check("review6_tier_dying", str(XTianqiAlienGear.affix_view(sv, "dying", "qinran").benefit).contains("提高 20%") and str(XTianqiAlienGear.affix_view(sv, "dying", "zhongyan").benefit).contains("提高 80%"),
 		[XTianqiAlienGear.affix_view(sv, "dying", "qinran").benefit, XTianqiAlienGear.affix_view(sv, "dying", "zhongyan").benefit])
-	_check("review6_tier_again", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 5 回合多行动一次。" and str(XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit) == "每 2 回合多行动一次。")
+	# 再动间隔跟 XTianqiAlienAffix.again_every（七印终局 O-428 起 6／5／3／2）
+	_check("review6_tier_again", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(0) and str(XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(3),
+		[XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit, XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit])
 	_check("review6_tier_thrift_venom", str(XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit) == "技能消耗降低 25%。" and str(XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit) == "攻击有 50% 几率附带中毒。",
 		[XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit, XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit])
-	for k in ["dying", "again", "thrift", "venom"]:
+	# 再动不在内：不给级时文案是四级合写（「按级每 6／5／3／2 回合…」），给化形级就是化形那一格
+	_check("review6_huaxing_again", str(XTianqiAlienGear.affix_view(sv, "again", "huaxing").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(2), XTianqiAlienGear.affix_view(sv, "again", "huaxing").benefit)
+	for k in ["dying", "thrift", "venom"]:
 		_check("review6_huaxing_same_" + k, str(XTianqiAlienGear.affix_view(sv, k, "huaxing").benefit) == str(XTianqiAlienGear.affix_view(sv, k).benefit), [XTianqiAlienGear.affix_view(sv, k, "huaxing").benefit, XTianqiAlienGear.affix_view(sv, k).benefit])
 	XTianqiAlienGear.TIER_TEXT = false
-	_check("review6_o-off", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 3 回合多行动一次。")
+	_check("review6_o-off", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == str(XTianqiAlienGear.affix_view(sv, "again").benefit) and not str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit).contains("{every}"),
+		XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit)
 	XTianqiAlienGear.TIER_TEXT = true
 
 
