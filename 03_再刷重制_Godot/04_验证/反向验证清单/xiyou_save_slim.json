@@ -111,6 +111,12 @@
       "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
       "find": "var level := 2 if do_pool else 1\n",
       "replace": "var level := 1\n"
+    },
+    {
+      "name": "测试用的「读回的样子」不去选项表",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "var stat := {\"gear\": 0, \"strip\": GEAR_ROLL_TABLE, \"pool\": false",
+      "replace": "var stat := {\"gear\": 0, \"strip\": false, \"pool\": false"
     }
   ]
 }

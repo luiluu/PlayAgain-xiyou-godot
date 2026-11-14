@@ -326,7 +326,8 @@ func _run() -> void:
 	await _frames(3)
 	# 存档 / 读档
 	_check("save", XSave.save(1))
-	var before := JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
+	# 装备选项表、失效已看过标记写盘时不写（XSaveSlim，O-待定-1／2），存档前那份按读回的样子比
+	var before := JSON.stringify(JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s.to_dict()))))
 	_check("load", XSave.load_slot(1))
 	var after := JSON.stringify(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
 	var diff := []

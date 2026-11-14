@@ -24,6 +24,13 @@ func check(name: String, ok: bool, detail = null) -> void:
 		print("FAIL ", name, " ", JSON.stringify(detail).left(900))
 
 
+func _diff_at(a: String, b: String) -> Array:
+	for i in range(mini(a.length(), b.length())):
+		if a[i] != b[i]:
+			return [a.substr(maxi(0, i - 80), 160), b.substr(maxi(0, i - 80), 160)]
+	return [a.length(), b.length()]
+
+
 func _text(p: String) -> String:
 	return FileAccess.get_file_as_string(p)
 
@@ -221,6 +228,11 @@ func _run() -> void:
 	var mem_tables := _affix_tables(XState.current.to_dict())
 	var mem_seen: int = XState.current.seen.size()
 	check("slim_write", XSave.save(1))
+	# 存档之后取（saveCount 存时加一）：内存这份按「读回的样子」应和真读回来的逐字相同
+	var mem_d := XState.current.to_dict()
+	var last_before: Dictionary = XSaveSlim.last.duplicate(true)
+	var as_rel := JSON.stringify(JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(mem_d))))
+	check("as_reloaded_pure", _affix_tables(mem_d) == mem_tables and XState.current.seen.size() == mem_seen and XSaveSlim.last == last_before)
 	var slim_text := _text(XSave.path(1))
 	var slim_d = _read(1)
 	check("slim_marked", slim_d.get("saveSlim") == 1.0 and _affix_tables(slim_d) == 0, _affix_tables(slim_d))
@@ -231,6 +243,9 @@ func _run() -> void:
 	check("memory_untouched", _affix_tables(XState.current.to_dict()) == mem_tables and XState.current.seen.size() == mem_seen)
 	check("backup_exact", FileAccess.get_file_as_bytes(bak.call(1)) == old_text.to_utf8_buffer())
 	check("slim_load", XSave.load_slot(1))
+	var reloaded := JSON.stringify(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
+	check("as_reloaded_matches_load", as_rel == reloaded, _diff_at(as_rel, reloaded))
+	check("as_reloaded_differs_raw", as_rel != JSON.stringify(JSON.parse_string(JSON.stringify(mem_d))))
 	_same("old_vs_slim_visible", vis_old, _visible(XState.current))
 	check("loaded_no_tables", _affix_tables(XState.current.to_dict()) == 0)
 	# 读回来的还能用：换装、卖掉、再掉一件

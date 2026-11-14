@@ -106,6 +106,19 @@ static func _slim(data: Dictionary, target: String, backup: bool, do_gear: bool,
 	return out
 
 
+## 这份内容存盘再读回会是什么样（给「存前存后整份逐字比」的测试用）：只去掉写盘时按开关不写的两样
+## （装备选项表、失效的已看过标记），不备份、不加记号、不动 last；同档去重读回时就地还原，不算差别。
+static func as_reloaded(data: Dictionary) -> Dictionary:
+	var stat := {"gear": 0, "strip": GEAR_ROLL_TABLE, "pool": false, "copies": []}
+	var live := {}
+	var out: Dictionary = _walk(data, live, stat)
+	if is_same(out, data):
+		out = data.duplicate(false)
+	if SEEN_STALE and data.get("seen") is Array:
+		out["seen"] = (data.seen as Array).filter(func(k): return not str(k).begins_with("xg:") or live.has(str(k)))
+	return out
+
+
 ## 写盘成功之后调（data_before＝没瘦的那份内容，text_after＝写进文件的字）：记下这个文件已瘦；
 ## 由没瘦变瘦（含新写的一格）的记一条日志，没瘦时的字节数只在这时算一次
 static func written(data_before: Dictionary, target: String, text_after: String) -> void:
