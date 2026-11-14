@@ -81,7 +81,7 @@
 - `反向验证.py`（`xiyou_tianqi_battle_seed`）7 处改坏全部咬住：奖励不分子流、布阵不走 setup 流、孔数不按来源键、底子不用空预掷池（第一轮没咬住，补了「共享预掷池内容不影响」断言后咬住）、计数不推进、掉落不带战斗来源键。
 - `检查.sh --oracle --affected main --cloud`：云端选测 895c32b1e，569 个场景、16 片全部通过（GitHub Actions run 43634956593）；MV 参照引擎启动、西游来源／转换产物／六难度参照同源、守卫、内容覆盖、事件空绿全过。
 - `语法检查.py` 0 问题；`工具回归.py` 全过；`随机守卫.py` 60 个脚本通过；`天启篇存档登记.py` 通过（`rng` 登记进 `COUNTER_KEYS`）。
-- 交付单之后的提交只动交付单。
+- 合并 main（R2，dev.593）：`tianqi_random.gd` 两边都是新增，并存（R2 包装在前、R3 在后）；合并后本机重跑 13 个专项全过：`xiyou_tianqi_battle_seed`、`xiyou_tianqi_random`、`xiyou_tianqi_drop`、`xiyou_tianqi_elements`、`xiyou_tianqi_affix_seed`、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_qiyin_altar`、`xiyou_tianqi_qiyin_dragon_run`、`xiyou_merchant29`、`xiyou_tianqi_seed_fix`、`xiyou_tianqi_save`、`xiyou_determinism`、`xiyou_random_streams`。云端那一轮是合并前的 895c32b1e。
 
 ## 待交叉核查
 
@@ -94,4 +94,6 @@
 ## 本分支提交
 
 - 619ecee2d WIP：随机门面 R3 实现＋专项
+- 895c32b1e rng 登记、专项补预掷池断言、交付单草稿
+- 70dc4525f 合并 main（R2）
 - （其余见 `git log main..cc/tianqi-random-r3`）
