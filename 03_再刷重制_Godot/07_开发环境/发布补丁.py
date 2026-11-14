@@ -12,6 +12,8 @@
                                （latest＝本次发布的编号，所有旧版都强制；0＝取消强制）。不给就沿用清单原值（默认不改）。
                                不能比本次发布的编号大。只有装了强制更新逻辑的客户端认它，更老的客户端照旧只看红点。
       --download-url <https 地址>｜none   强制更新框「手动下载」打开的页面（不给就沿用原值；none＝去掉，客户端改指 QQ 群）
+                               设了 min_playable 时必须有：参数没给、清单里也没有就默认填 Gitee 发行版页面
+                               （DEFAULT_DOWNLOAD_URL，Kyo 11-14）；同时给 none 拒绝发布
       --out <目录>             输出目录（默认 05_发布/补丁/dev<号>/，不入 Git）
       --stage                  把补丁和清单提交到两个发版仓库的本机副本（先提交包、再提交清单，清单里的包地址固定到包提交）
       --old-tree <目录>        底包对应的工程目录：顺带调 生成更新清单.py 比对它和当前工程，写签名的补丁文件清单
@@ -53,6 +55,8 @@ PRESETS = ('Windows 发行', '安卓 发行', 'macOS 发行')
 DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_update_private.pem'
 DEFAULT_REPOS = [Path.home() / 'Documents/DSH/小小鱼/发版' / n for n in ('zaishuayiba-updates-gitee', 'zaishuayiba-updates-github')]
 SUBDIR = 'godot'
+# 强制更新的手动下载页默认值（Kyo 11-14 定：Gitee 更新仓的发行版页面）。只写进清单，客户端不写死
+DEFAULT_DOWNLOAD_URL = 'https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases'
 MAX_PATCH = 30 * 1024 * 1024
 SCHEMA = 1
 DIR_RE = re.compile(r'^dev(\d+)_三平台发行$')
@@ -266,6 +270,12 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
             raise Fail('--download-url 要 https:// 开头（客户端不认别的）')
         else:
             m['download_url'] = a.download_url
+    if m.get('min_playable') and not str(m.get('download_url', '')).startswith('https://'):
+        if a.download_url == 'none':
+            raise Fail('设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：'
+                       '底包太旧的玩家只能靠它换整包，没有就卡在更新框里')
+        m['download_url'] = DEFAULT_DOWNLOAD_URL  # Kyo 11-14：没给就用 Gitee 发行版页面
+        print(f'· 强制更新没给下载页，默认用 {DEFAULT_DOWNLOAD_URL}')
     for r in a.revoke or []:
         if r not in m['revoked']:
             m['revoked'].append(r)
@@ -437,6 +447,7 @@ def main(argv=None) -> int:
         old_path = repos[0] / SUBDIR / 'channel.json'
         if old_path.exists():
             old = json.loads(old_path.read_text(encoding='utf-8'))
+        build_manifest(old, code, date, notes, base_code, entry, a)  # 先按清单规则试一遍（如强制更新缺下载页），不过就在提交任何东西之前停下
         if a.dry_run:
             print('  [dry-run] ' + ('比对 --old-tree 写补丁文件清单、' if a.old_tree and not a.no_files_manifest and not a.full_only else '')
                   + '写清单、签名' + ('、提交到两个发版仓库副本（不推送）' if a.stage else ''))

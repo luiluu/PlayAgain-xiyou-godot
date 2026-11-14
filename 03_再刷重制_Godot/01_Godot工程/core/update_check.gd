@@ -160,6 +160,8 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	var p = bases[str(base_code)].get("patch")
 	if not valid_patch(p) or int(p["code"]) <= current_code:
 		return out
+	if out["forced"] and int(p["code"]) < out["min_playable"]:
+		return out  # 强制时补丁不够新（装完重启还是被拦）：当整包，只给手动下载（gpt 核查 P2-1）
 	out["state"] = PATCH
 	out["patch"] = {"code": int(p["code"]), "size": int(p["size"]), "sha256": str(p["sha256"]).to_lower(), "urls": p["urls"].duplicate()}
 	return out

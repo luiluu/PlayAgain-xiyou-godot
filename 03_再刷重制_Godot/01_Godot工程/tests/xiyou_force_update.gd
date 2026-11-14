@@ -148,6 +148,13 @@ func _run() -> void:
 	_check("清单没有更新的版本时不强制（拦了也没东西可更新）", not r["forced"] and r["state"] == C.LATEST)
 	r = C.evaluate(_manifest(470, 400, 470, {"min_playable": 465, "download_url": "https://example.invalid/dl"}), 453, 460)
 	_check("底包没有补丁＝强制且只能整包，带下载页", r["forced"] and r["state"] == C.FULL and r["download_url"] == "https://example.invalid/dl")
+	r = C.evaluate(_manifest(480, 453, 470, {"min_playable": 480}), 453, 460)
+	_check("强制时补丁不够新（470 < 480）＝整包，不让装了还被拦", r["forced"] and r["state"] == C.FULL and r["patch"].is_empty())
+	r = C.evaluate(_manifest(480, 453, 480, {"min_playable": 480}), 453, 460)
+	_check("强制时补丁够新＝补丁", r["forced"] and r["state"] == C.PATCH)
+	r = C.evaluate(_manifest(480, 453, 470), 453, 460)
+	_check("不强制时旧一点的补丁照旧可装", not r["forced"] and r["state"] == C.PATCH)
+	_check("等待上限默认 8 秒", XForceUpdate.DEFAULT_WAIT_SEC == 8.0 and XForceUpdate.WAIT_SEC == 8.0)
 	r = C.evaluate(_manifest(470, 453, 470, {"min_playable": 465, "download_url": "http://example.invalid/dl"}), 453, 460)
 	_check("下载页不是 https 不认", r["download_url"] == "")
 	_check("清单多了字段 parse 照样认（老客户端只看 schema 和 latest）", not C.parse(JSON.stringify(_manifest(470, 453, 0, {"min_playable": 465, "download_url": "https://x"}))).is_empty())
@@ -219,7 +226,7 @@ func _run() -> void:
 	var close_b: Button = page.find_child("Close", true, false)
 	var link: Button = page.find_child("Link", true, false)
 	_check("强制框文字：需要更新、版本号、大小", title.text == "需要更新" and body.text.contains("请更新到 0.%d" % (cur + 5)) and body.text.contains("更新大小") and body.text.contains("· 修了一处"))
-	_check("强制框按钮：更新＋退出游戏，没有关闭、没有手动下载", primary.visible and primary.text == "更新" and close_b.text == "退出游戏" and not link.visible)
+	_check("强制框按钮：更新＋退出游戏，没有关闭、没有手动下载、没有重新检查", primary.visible and primary.text == "更新" and close_b.text == "退出游戏" and not link.visible and not (page.find_child("Recheck", true, false) as Button).visible)
 	_check("强制框盖住整个画面", page.get_parent() is CanvasLayer and (page.find_child("Dim", true, false) as ColorRect).color.a > 0.9)
 	_send("ui_cancel")
 	await _frames(3)
@@ -271,15 +278,34 @@ func _run() -> void:
 	primary = page.find_child("Primary", true, false)
 	body = page.find_child("Body", true, false)
 	_check("只能整包：主按钮是打开下载页、文字带链接", page.state == C.FULL and primary.visible and primary.text == "打开下载页" and body.text.contains("游戏内更新不了") and body.text.contains("https://example.invalid/download"))
+	_check("只能整包：有重新检查", (page.find_child("Recheck", true, false) as Button).visible and body.text.contains(XFeedback.QQ_GROUP))
 	_opened.clear()
 	primary.pressed.emit()
 	_check("只能整包：点了打开下载页", _opened == ["https://example.invalid/download"])
+	# 重新检查：连不上留在框里；Kyo 取消了强制就放行
+	var recheck: Button = page.find_child("Recheck", true, false)
+	_served = {}
+	recheck.pressed.emit()
+	for i in range(30):
+		await get_tree().process_frame
+	_check("重新检查连不上：留在框里并提示", is_instance_valid(page) and not page.is_queued_for_deletion() and page.state == C.FULL and body.text.contains("暂时连不上") and not recheck.disabled)
+	_serve_manifest(_manifest(cur + 5, base + 999, cur + 5, {"min_playable": cur + 5, "download_url": "https://example.invalid/download"}))
+	recheck.pressed.emit()
+	for i in range(30):
+		await get_tree().process_frame
+	_check("重新检查还要强制：留在框里", is_instance_valid(page) and not page.is_queued_for_deletion() and page.state == C.FULL)
+	_serve_manifest(_manifest(cur + 5, base + 999, cur + 5))
+	recheck.pressed.emit()
+	for i in range(30):
+		await get_tree().process_frame
+	_check("重新检查不用强制了：放行", not is_instance_valid(page) or page.is_queued_for_deletion())
+	await _frames(2)
 	_close_all(host)
 	_serve_manifest(_manifest(cur + 5, base + 999, cur + 5, {"min_playable": cur + 5}))
 	page = await _gate(host, hint)
 	await _frames(3)
 	body = page.find_child("Body", true, false)
-	_check("只能整包且清单没给下载页：指 QQ 群、没有主按钮", page.forced and body.text.contains(XUpdatePage.GROUP_HINT) and not (page.find_child("Primary", true, false) as Button).visible)
+	_check("只能整包且清单没给下载页：指 QQ 群、没有主按钮、有重新检查", page.forced and body.text.contains(XUpdatePage.GROUP_HINT) and not (page.find_child("Primary", true, false) as Button).visible and (page.find_child("Recheck", true, false) as Button).visible)
 	_close_all(host)
 
 	# ── 出标题时还没查完：先盖「正在检查」，查完再定

@@ -14,7 +14,8 @@ extends RefCounted
 ## O-待定-1 开关：false 回退为不强制（启动不查，只有标题的每天一次静默查和红点）。
 static var ENABLED := true
 ## 出标题时还没查完，最多等这么久就放行（秒）。单个源的超时在 XUpdateClient.TIMEOUT_SEC。
-static var WAIT_SEC := 15.0
+const DEFAULT_WAIT_SEC := 8.0  # Kyo 还没定，协调 11-14 建议 8 秒
+static var WAIT_SEC := DEFAULT_WAIT_SEC
 ## 只给测试用：无头也照发行构建走（真无头跑的冒烟默认不联网、不拦）。
 static var allow_headless := false
 

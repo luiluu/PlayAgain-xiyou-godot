@@ -49,6 +49,7 @@ var forced := false
 var _forced_result: Dictionary = {}
 var _action := ""   # 强制模式下主按钮做什么：install／retry／link／cancel／restart
 var _link: Button   # 强制模式：下载失败时的「手动下载」按钮
+var _recheck: Button  # 强制模式：只能整包时的「重新检查」（重新拉清单，不因失败次数放行）
 
 
 ## 页面放进单独的 CanvasLayer（盖在标题、logo 和一切画面之上，按整个视口居中），挂在 host 下，关页面时一起删。
@@ -88,7 +89,7 @@ static func forced_texts(result: Dictionary, can_install: bool) -> Dictionary:
 	var cur := str(result.get("current", ""))
 	var ver := str(result.get("version", ""))
 	var url := download_link(result)
-	var manual := ("手动下载：" + url) if url != "" else "%s %s" % [GROUP_HINT, ver]
+	var manual := ("手动下载：%s\n（也可以%s %s）" % [url, GROUP_HINT, ver]) if url != "" else "%s %s" % [GROUP_HINT, ver]
 	match str(result.get("state", "")):
 		"checking":
 			return {"title": "检查更新", "body": "正在检查更新……", "primary": "", "action": ""}
@@ -249,6 +250,12 @@ func _ready() -> void:
 		_link.visible = false
 		_buttons.add_child(_link)
 		_buttons.move_child(_link, 1)
+		_recheck = _make_button("重新检查")
+		_recheck.name = "Recheck"
+		_recheck.pressed.connect(_on_recheck)
+		_recheck.visible = false
+		_buttons.add_child(_recheck)
+		_buttons.move_child(_recheck, 2)
 	# 反馈群（XFeedback）：按钮下面一行，点一下复制群号；不抢焦点，确定／取消键照旧
 	if XFeedback.SHOW:
 		var fb := XFeedback.make_button(18)
@@ -321,6 +328,8 @@ func show_result(result: Dictionary) -> void:
 		_close.text = "退出游戏"
 		# 失败时、或上次的更新没用上（_notice）时，旁边给「手动下载」（主按钮已经是打开下载页时不重复）
 		_link.visible = download_link(result) != "" and _action != "link" and (state == FAILED or _notice != "")
+		_recheck.visible = state == XUpdateCheck.FULL or (state == XUpdateCheck.PATCH and _action != "install")
+		_recheck.disabled = false
 	else:
 		_close.text = "稍后再说" if state == XUpdateCheck.PATCH and _primary.visible else "关闭"
 	_scroll.scroll_vertical = 0
@@ -372,7 +381,7 @@ func _focus_default() -> void:
 
 func _focus_buttons() -> Array[Button]:
 	var out: Array[Button] = []
-	for b in [_primary, _link, _close, _rollback]:
+	for b in [_primary, _link, _recheck, _close, _rollback]:
 		if b != null and b.visible:
 			out.append(b)
 	return out
@@ -474,6 +483,29 @@ func _on_rollback() -> void:
 	XUpdateInstall.rollback(true)
 	_rollback.visible = false
 	show_result({"state": ROLLED})
+
+
+## 强制更新「重新检查」：重新拉清单。不用再强制了（Kyo 调低了 min_playable、或已是最新）就关框放行；
+## 还要强制就换成新结果；连不上就留在框里提示，不因为查不到放行（启动时连不上才放行）。
+func _on_recheck() -> void:
+	if client == null or client.checking:
+		return
+	_recheck.disabled = true
+	_recheck.text = "正在检查……"
+	var r: Dictionary = await client.check()
+	if not is_inside_tree():
+		return
+	_recheck.text = "重新检查"
+	_recheck.disabled = false
+	if str(r.get("state", "")) == XUpdateCheck.BAD:
+		show_result(get_meta("result"))
+		_set_body("暂时连不上更新服务器，请稍后再点「重新检查」。\n" + _body.text)
+		return
+	XForceUpdate.result = r
+	if not XForceUpdate.blocks(r):
+		close_page()
+		return
+	show_forced(r)
 
 
 ## 右边的按钮：平时是关闭；强制更新时是退出游戏
