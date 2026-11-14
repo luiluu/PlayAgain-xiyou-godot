@@ -64,6 +64,33 @@ static var NO_LEGACY_ALIEN := true
 ## 开关（同上）：true＝天启篇存档里怪物不变「【神话】」（EliteEnemy：能力 ×3.5、经验金钱 ×1.2、掉率 ×5、放大偏色）；
 ## 照原版照样掷一次（随机流不变），掷中了也当普通怪。false＝照原版。
 static var NO_MYTH := true
+## 开关（O-待定）：true＝装备重铸、锁词条重铸、异化词条兜底和重抽、通关抽角色候选的随机由存档种子派生
+## （存档种子＋对象标识＋该对象随存档的次数，见 save_roll），先存档再掷、读档再掷结果相同；false＝回到全局随机（可读档重掷）
+static var SEED_FROM_SAVE := true
+
+
+## 存档派生的随机流：种子＝存档种子 orb_seed（随存档；更老的档由存档内容算出，XState.from_dict）＋ key。
+## key 由调用方给：对象标识＋该对象的次数（计数随存档，调用方负责推进），同一次操作读档后种子相同，不同次、不同对象各自独立
+static func save_stream(s: XState, key: String) -> XRandomStream:
+	return XRandomStream.create(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tianqi|" + key), "tianqi_save")
+
+
+## 同上，包成返回 [0,1) 的 Callable（重铸、异化用）；开关关着或没有存档时回到全局 randf
+static func save_roll(s: XState, key: String) -> Callable:
+	if s == null or not SEED_FROM_SAVE:
+		return func(): return randf()
+	var st := save_stream(s, key)
+	return func(): return st.next_float(key)
+
+
+## 装备上的次数计数 tq_rng_n（随装备存进存档；老装备没有当 0）：用 key「domain|instanceId|n」开流并把计数 +1。
+## 开关关着时不写装备、返回全局 randf
+static func item_roll(s: XState, item: Dictionary, domain: String) -> Callable:
+	if s == null or not SEED_FROM_SAVE:
+		return func(): return randf()
+	var n := int(item.get("tq_rng_n", 0))
+	item["tq_rng_n"] = n + 1
+	return save_roll(s, "%s|%s|%d" % [domain, str(item.get("instanceId", "")), n])
 
 ## 通关抽角色（数值重构方案「招募改成通关抽角色」，Kyo 11-08 定的表）：每通关 5 层一次，最多 6 次。
 ## 每档 6 行，依次是第 1～6 次：[档位, 几选一]；几选一为 0＝自选（档位内本局还没有的全部）。不能重抽。
@@ -468,7 +495,10 @@ static func draw_offer(s: XState, rng: RandomNumberGenerator = null) -> Array:
 		return saved.map(func(id): return int(id))
 	if rng == null:
 		rng = RandomNumberGenerator.new()
-		rng.randomize()
+		if SEED_FROM_SAVE:  # 存档派生：第几次抽（draws 随存档）定种子，没选之前读档也是这几个（O-待定）
+			rng.seed = XRandomStream.parse64(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tianqi|offer|%d" % draws_used(s)))
+		else:
+			rng.randomize()
 	_shuffle(pool, rng)
 	var offer := pool.slice(0, int(r.count))
 	s.flags.tianqi["offer"] = offer
