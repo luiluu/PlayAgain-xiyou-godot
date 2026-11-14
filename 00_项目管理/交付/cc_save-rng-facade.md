@@ -1,7 +1,7 @@
 # 交付：cc/save-rng-facade
 
 - 车道／工作者：C 规则·存档与随机／cc 车道（Opus＋high，协调派单 task_80144e6aa6f3）
-- 状态：进行中
+- 状态：可合并
 
 ## 方案（第一步，只读，2026-11-14）
 
@@ -330,8 +330,8 @@ static func qiyin_seed(s, domain) / drop_hash(seed, key, total) / elements_seed(
 - 新专项 `xiyou_tianqi_save` 36/36（全部存读走夹具的 `XSave.save`→`XSave.load_slot`）：登记表自洽（`wired_registered`、`vkey_sections`）；新档懒建、版本（`new_lazy`、`new_versions`、`drop_made`、`drop_same_dict`、`qiyin_made`）；残缺七印区补法与老写法逐键相同（`qiyin_fill_like_old`）；必掉不新建账、有账才清连败（`sure_no_new_acct`、`fails_no_acct`、`sure_resets_existing`）；真实存读（`rt_*`，含连续两次存读天启篇区一字不差 `rt_idempotent`）；老档整账缺失读档不建、首次用种子同新档公式（`legacy_drop_lazy`、`legacy_drop_seed`）；老档缺 `pity`／`v`／七印 `seed`／`rng_n` 读档补上、种子不动、记版本（`legacy_raw_stripped`、`legacy_after_load_fills`、`legacy_qiyin_seed`、`legacy_stamped`）；门面开关关→不迁不记、模块照补，再开补记（`off_no_stamp`、`off_module_fills`、`on_again_stamps`）；五条悟只走 `from_dict` 也迁移、关两阶表反迁移且幂等、门面关时 `load_slot` 照旧迁（`gojo_*` 5 条）；非天启篇档不建区、`after_load` 不动（`plain_*` 3 条）；复制去键（`strip_on_copy`）；三个种子懒建种子按公式、存读不变、种子间不同（`each_seed_*`）。
 - 反向验证（`反向验证.py`，专项 `xiyou_tianqi_save`）9 处各改坏一次全部咬住：读档入口不挂、读档迁移不记版本、新建分区不记版本、门面开关不管读档、必掉也建账、七印老档不补种子、七印老档不补计数、复制不去键、五条悟反迁移版本不经门面写；源文件按备份还原。
 - 本机专项：`xiyou_gojo_trials`、`xiyou_tianqi_drop*`、`xiyou_tianqi_qiyin*`、`xiyou_tianqi_e2e`、`xiyou_tianqi_title_flow`、`xiyou_tianqi_no_diff_passive`、`xiyou_determinism` 共 15 个场景全部通过。
-- 选测：`选测.py main --list` 因为改了 `xstate.gd` 面很广，走 `云端选测.py run`：（待填）。
-- 语法检查 0 个问题；`发行空壳.py check` 55 个脚本、445 个函数都有（`XTianqiSave` 自动进空壳）；`测试天启篇存档登记.py` 8/8；`测试选测.py CheckerTests CheckerStubParseTests` 32/32；工具回归（待填）。
+- 选测：`选测.py main --list` 因为改了 `xstate.gd` 面很广，走 `云端选测.py run`（合 main `b6f94202f` 后，提交 `525fac8a6d`）：**通过**，486 个场景、9 片，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43607873770 。
+- 语法检查 0 个问题；`发行空壳.py check` 55 个脚本、445 个函数都有（`XTianqiSave` 自动进空壳）；`测试天启篇存档登记.py` 8/8；`测试选测.py CheckerTests CheckerStubParseTests` 32/32；`工具回归.py` 全部通过（131 秒）。
 - 不需要 `--oracle`：西游档路径没变（`after_load` 对非天启篇档直接返回），没碰原版移植逻辑。
 
 ## 待交叉核查
