@@ -1031,7 +1031,7 @@ static func grant_higher_books(logic) -> Array:
 	var boss_win: bool = logic.enemies.any(func(e): return not e.hidden and is_boss_enemy(e))
 	if not boss_win:
 		return []
-	return roll_higher_books(s, logic, func(): return logic.random.reward.next_float("tianqi_elem_book", "battle"))
+	return roll_higher_books(s, logic, func(): return logic.random.reward_for("elem_book").next_float("tianqi_elem_book", "battle"))
 
 
 static func roll_higher_books(s: XState, _logic = null, rand: Callable = Callable()) -> Array:

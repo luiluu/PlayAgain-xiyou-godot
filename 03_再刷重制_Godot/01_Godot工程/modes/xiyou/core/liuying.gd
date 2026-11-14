@@ -793,6 +793,6 @@ static func core_drops(logic) -> Array:
 		if e.hidden or e.is_alive():
 			continue  # deadMembers
 		var rate := core_rate_for(s, str(e.data().get("note", "")))
-		if rate > 0.0 and logic.random.reward.next_float("liuying_core", "0") < rate:
+		if rate > 0.0 and logic.random.reward_for(logic.stable_id(e) + "|liuying").next_float("liuying_core", "0") < rate:
 			out.append({"kind": 1, "id": CORE_ITEM})
 	return out

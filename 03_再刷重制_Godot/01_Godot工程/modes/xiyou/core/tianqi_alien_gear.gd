@@ -225,11 +225,12 @@ static func attach(s: XState, i: Dictionary, line: String, level: String, affix 
 
 
 ## 新建一件（不放进背包）
-static func create(s: XState, kind: String, id: int, line: String, level: String, affix := "", rng := Callable()) -> Dictionary:
-	var inst := XGear.create(kind, id, s)
+## source：来源键（战斗掉落时 b|战斗键|敌人|alien，见 grant）；给了就按它派生本体的随机身份、词条、底子（XTianqiRandom.create_gear）
+static func create(s: XState, kind: String, id: int, line: String, level: String, affix := "", rng := Callable(), source := "") -> Dictionary:
+	var inst := XTianqiRandom.create_gear(s, kind, id, source) if source != "" else XGear.create(kind, id, s)
 	if inst.is_empty():
 		return {"error": "本体缺失"}
-	s.register_gear(inst)
+	s.register_gear(inst, source)
 	return attach(s, inst, line, level, affix, rng)
 
 
@@ -275,7 +276,8 @@ static func grant(logic) -> Array:
 		if info.is_empty() or not e.is_dead():
 			continue
 		var id: String = logic.stable_id(e)
-		var rng := func(): return logic.random.reward.next_float("tianqi_alien_gear", id)
+		var sub: XRandomStream = logic.random.reward_for(id + "|alien")  # 天启篇钉住时按敌人分子流
+		var rng := func(): return sub.next_float("tianqi_alien_gear", id)
 		if _roll(rng) >= float(info.get("rate", 0.0)):
 			continue
 		var list := bodies(logic, e)
@@ -285,7 +287,8 @@ static func grant(logic) -> Array:
 				got.append(core_label(core))
 			continue
 		var b: Dictionary = _pick(list, rng)
-		var r := create(s, str(b.kind), int(b.id), str(u.line), str(u.level), "", rng)
+		var src: String = "b|%s|%s|alien" % [logic.random.battle_key, id] if logic.random.pinned() else ""  # 钉住的本场：本体按来源键
+		var r := create(s, str(b.kind), int(b.id), str(u.line), str(u.level), "", rng, src)
 		if r.has("error"):
 			continue
 		var i: Dictionary = r.ok

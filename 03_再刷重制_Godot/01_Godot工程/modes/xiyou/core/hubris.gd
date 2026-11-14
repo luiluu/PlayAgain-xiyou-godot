@@ -287,6 +287,6 @@ static func clear_reward(logic, result: int) -> bool:
 	_reward_rolled = true
 	if logic._rule().next_float("hubris.reward") >= REWARD_RATE:
 		return false
-	s.gain_gear("armor", ARMOR, 1)
+	s.gain_gear("armor", ARMOR, 1, XTianqiRandom.battle_source(logic, "hubris"))  # 天启篇钉住的本场：整件按战斗来源键（底子、词条、孔数读档同）
 	XToast.show_text("获得%s：狂妄！" % XTianqiGear.type_name(17))  # 天启篇叫神器
 	return true
