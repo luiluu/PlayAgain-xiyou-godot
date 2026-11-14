@@ -275,6 +275,7 @@ def load_overrides() -> dict:
 
 
 def build_all(root: Path = PROJECT) -> tuple:
+    NUMERIC.clear()
     tg = targets(root)
     refs = external_refs(root, tg)
     over = load_overrides()
@@ -296,17 +297,29 @@ def build_all(root: Path = PROJECT) -> tuple:
     return stubs, missing, how
 
 
+def check_errors(missing: list, how: dict) -> list:
+    errs = []
+    if missing:
+        errs.append('发行空壳缺成员：' + '、'.join(missing))
+    # 返回数字的函数按类型给 0 多半不对（倍率该是 1、次数该原样返回）：要在特例表里明确写
+    guess = [k for k, v in how.items() if v == '按类型空值' and k in NUMERIC]
+    if guess:
+        errs.append('发行空壳：这些返回数字的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
+    return errs
+
+
 def make_tree(out: Path) -> Path:
     """克隆工程到 out 并换上空壳。out 不能已存在。"""
     if out.exists():
         raise SystemExit(f'{out} 已存在')
+    stubs, missing, how = build_all(PROJECT)
+    errs = check_errors(missing, how)
+    if errs:
+        raise SystemExit('\n'.join(errs))
     out.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(['cp', '-cR', str(PROJECT), str(out)])
     if r.returncode:
         shutil.copytree(PROJECT, out, symlinks=True)
-    stubs, missing, _ = build_all(PROJECT)
-    if missing:
-        raise SystemExit('空壳缺成员（加进 发行空壳特例.json 或核对默认值）：' + '、'.join(missing))
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
     return out
@@ -333,13 +346,9 @@ def main(argv) -> int:
         for k in sorted(how):
             print(f'{k}\t{how[k]}')
         return 0
-    if missing:
-        print('发行空壳缺成员：' + '、'.join(missing))
-        return 1
-    # 返回数字的函数按类型给 0 多半不对（倍率该是 1、次数该原样返回）：要在特例表里明确写
-    guess = [k for k, v in how.items() if v == '按类型空值' and k in NUMERIC]
-    if guess:
-        print('发行空壳：这些返回数字的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
+    errs = check_errors(missing, how)
+    if errs:
+        print('\n'.join(errs))
         return 1
     print(f'发行空壳：{len(stubs)} 个脚本，{len(how)} 个函数都有')
     return 0
