@@ -53,7 +53,12 @@ func defer_common_events(ids: Array) -> void:
 var difficulty := 3
 var party: Array[int] = []          # 队伍顺序（$gameParty._actors；出战成员在前，见 battle_slots）
 ## YEP_PartySystem 的 $gameParty._battleMembers：出战栏位（长度＝上限 5，空位为 0）
-var battle_slots: Array = []
+## 出战栏 5 格（天启篇第 5 格是助力位）。整列赋值走这个 setter，单格写入走 set_battle_slot：
+## 天启篇全弱者通关资格（XTianqiWeakClear）在这两处记进栏的角色，不在 36 层决战跟踪时直接返回
+var battle_slots: Array = []:
+	set(v):
+		battle_slots = v
+		XTianqiWeakClear.note_slots(self)
 var actors := {}                    # actor_id -> XActor
 var gold := 0
 var items := {}                     # item_id -> 数量
@@ -406,7 +411,7 @@ func _add_actor(id: int, notice := Callable()) -> void:
 	_ensure_slots()
 	if battle_slots.has(id) or not battle_slots.has(0):
 		return
-	battle_slots[battle_slots.find(0)] = id
+	set_battle_slot(battle_slots.find(0), id)
 	rearrange_actors()
 
 ## installNativeDifficultyInheritanceRuntime（冻结 v0.28）：CodexDifficulty.syncActor 在入队（Game_Party.addActor 前）、读档（extractSaveContents，角色号 ≥167）、
@@ -596,13 +601,19 @@ func sync_difficulty_on_battle() -> void:
 		if int(aid) >= 167 and actors.has(int(aid)):
 			inherit_difficulty(actors[int(aid)])
 
+## 出战栏单格写入（游戏代码里给某一格写角色号都走这里；全弱者通关资格在写入那一刻记，同一事件里写进又改回也接得住）
+func set_battle_slot(i: int, id: int) -> void:
+	battle_slots[i] = id
+	XTianqiWeakClear.note_slot_id(self, id)
+
+
 ## Game_Party.removeActor：出战栏位里的变成空位并重排
 func remove_actor(id: int) -> void:
 	party.erase(id)
 	_ensure_slots()
 	if not battle_slots.has(id):
 		return
-	battle_slots[battle_slots.find(id)] = 0
+	set_battle_slot(battle_slots.find(id), 0)
 	rearrange_actors()
 	XWeakChallenge.check(self)  # 弱者挑战 removeActor 包装
 
@@ -611,9 +622,10 @@ func remove_actor(id: int) -> void:
 ## （前后各清一次超强者，同 add_actor）
 func init_battle_slots() -> void:
 	XItemMarks.enforce_party(self)
-	battle_slots = []
+	var slots := []
 	for i in MAX_BATTLE_MEMBERS:
-		battle_slots.append(party[i] if i < party.size() else 0)
+		slots.append(party[i] if i < party.size() else 0)
+	battle_slots = slots
 	XItemMarks.enforce_party(self)
 	XPets.sync_team_a(self)
 

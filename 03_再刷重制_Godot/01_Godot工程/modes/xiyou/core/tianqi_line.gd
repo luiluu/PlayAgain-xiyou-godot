@@ -388,6 +388,7 @@ static func run_final(host, s: XState, key: String) -> int:
 	await say(host, key, "final_before")
 	if not XTianqiHorsemen.prepare(key, s, "body"):
 		return -1
+	XTianqiWeakClear.begin(s)  # 全弱者通关资格：开战时记上场＋助力位
 	var r: int = await host.start_battle(int(data(key).shell_troop), false, true)
 	if r == 0:
 		await say(host, key, "final_win")
@@ -399,4 +400,5 @@ static func run_final(host, s: XState, key: String) -> int:
 			await host.show_text("", 0, ["\\c[2]%s线·终\\c[0]　本档获得了「可轮回」。" % str(XTianqi.line_info(key).get("name", key))])
 	else:
 		await say(host, key, "final_lost")
+	await XTianqiWeakClear.finish(host, s, r)  # 全弱者通关资格：打赢且全弱者就记本档（输了只收场）
 	return r
