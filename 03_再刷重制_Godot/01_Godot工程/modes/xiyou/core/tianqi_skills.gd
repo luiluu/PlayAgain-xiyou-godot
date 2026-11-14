@@ -1283,9 +1283,8 @@ static func _ally_has(actor_id: int, skill_id: int) -> bool:
 static func grow_count(key: String, s = null) -> int:
 	if s == null:
 		s = XState.current
-	if s == null or not s.flags.get("tianqi") is Dictionary:
-		return 0
-	return int(s.flags.tianqi.get("skill_grow", {}).get(key, 0))
+	var grow = XTianqiSave.peek(s, "skill_grow")
+	return int(grow.get(key, 0)) if grow is Dictionary else 0
 
 
 static func _kill_grow(logic, u, skill, t) -> void:
@@ -1305,10 +1304,8 @@ static func _kill_grow(logic, u, skill, t) -> void:
 		return
 	var s := XState.current
 	var cap := roundi(_grow_cap(g, u) / maxf(0.0001, float(g.get("per", 0.01))))
-	var tq: Dictionary = s.flags.tianqi
-	if not tq.get("skill_grow") is Dictionary:
-		tq.skill_grow = {}
-	tq.skill_grow[key] = mini(cap, int(tq.skill_grow.get(key, 0)) + 1)
+	var grow: Dictionary = XTianqiSave.section(s, "skill_grow")
+	grow[key] = mini(cap, int(grow.get(key, 0)) + 1)
 	u.param_mark_dirty()
 
 

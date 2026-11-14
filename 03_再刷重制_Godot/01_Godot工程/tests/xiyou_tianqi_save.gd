@@ -231,6 +231,139 @@ func _misc() -> void:
 	_check("each_seed_differs", seeds[0] != seeds[1] and seeds[1] != seeds[2], seeds)
 
 
+# ---- S2：其余 14 个分区搬进门面（新旧写法对删键老档补出来逐键相等，全部走 roundtrip） ----
+
+func _s2_sections() -> void:
+	var s2_names := ["war", "famine", "plague", "death", "famine_prologue", "summit", "weak_clear", "rewards", "elements", "money", "trumpet", "skill_grow", "sect_bing", "fetters"]
+	_check("s2_all_wired", s2_names.all(func(n): return XTianqiSave.WIRED.has(n)))
+	# 1. 删键老档：全部分区都不预建，逐个取出来与旧写法默认逐键相等
+	var s := Kit.new_game("jianxian", "war")
+	_check("s2_save_base", kit.save())
+	kit.legacy(s2_names + ["v"])
+	var l := kit.reload()
+	_check("s2_legacy_lazy", l != null and s2_names.all(func(n): return XTianqiSave.peek(l, n) == null), l.flags.tianqi.keys() if l != null else null)
+	# 只读接口用 peek，不建区
+	_check("s2_read_only_lazy", not XTianqiWeakClear.has(l) and not XTianqiTrumpet.dropped(l, 1) and XTianqiSkills.grow_count("baijingjing", l) == 0 \
+		and XTianqiSect.fetters_given(l).is_empty() \
+		and XTianqiSave.peek(l, "weak_clear") == null and XTianqiSave.peek(l, "trumpet") == null \
+		and XTianqiSave.peek(l, "skill_grow") == null and XTianqiSave.peek(l, "fetters") == null)
+	# 四线：{"stage": 0, "seen": []}
+	for lk in ["war", "famine", "plague", "death"]:
+		var got_l := XTianqiLine.progress(lk, l)
+		_check("s2_fill_" + lk, got_l == {"stage": 0, "seen": []} and XTianqiSave.version(l, lk) == 1, got_l)
+	# famine_prologue（数组形）：[]
+	var got_fp := XTianqiFamineLine._said(l)
+	_check("s2_fill_famine_prologue", got_fp == [] and is_same(got_fp, l.flags.tianqi.get("famine_prologue")) and XTianqiSave.version(l, "famine_prologue") == 1, got_fp)
+	# summit / money / sect_bing / weak_clear / skill_grow：{}
+	var got_sum := XTianqiSummit.progress(l)
+	_check("s2_fill_summit", got_sum == {} and XTianqiSave.version(l, "summit") == 1, got_sum)
+	var got_wc: Dictionary = XTianqiSave.section(l, "weak_clear")
+	_check("s2_fill_weak_clear", got_wc == {} and XTianqiSave.version(l, "weak_clear") == 1, got_wc)
+	var got_mon := XTianqiMoney.money(l)
+	_check("s2_fill_money", got_mon == {} and XTianqiSave.version(l, "money") == 1, got_mon)
+	var got_sg: Dictionary = XTianqiSave.section(l, "skill_grow")
+	_check("s2_fill_skill_grow", got_sg == {} and XTianqiSave.version(l, "skill_grow") == 1, got_sg)
+	var got_sb := XTianqiSect._bing_flag(l)
+	_check("s2_fill_sect_bing", got_sb == {} and XTianqiSave.version(l, "sect_bing") == 1, got_sb)
+	# rewards：{"got": [], "cores": []}
+	var got_rw := XTianqiRewards.progress(l)
+	_check("s2_fill_rewards", got_rw == {"got": [], "cores": []} and XTianqiSave.version(l, "rewards") == 1, got_rw)
+	# elements：{"seed": derived_seed(l), "floors": {}, "fixed": {}, "dropped_books": {}, "book_fails": {}}
+	var exp_el := {"seed": XTianqiElements.derived_seed(l), "floors": {}, "fixed": {}, "dropped_books": {}, "book_fails": {}}
+	var got_el := XTianqiElements.store(l)
+	_check("s2_fill_elements", got_el == exp_el and XTianqiSave.version(l, "elements") == 1, [got_el, exp_el])
+	# trumpet：{"dropped": {}, "fails": {}}
+	var got_tr := XTianqiTrumpet.store(l)
+	_check("s2_fill_trumpet", got_tr == {"dropped": {}, "fails": {}} and XTianqiSave.version(l, "trumpet") == 1, got_tr)
+	# fetters（数组形）：grant_fetter(l, 1) → [1]
+	_check("s2_fill_fetters", XTianqiSect.grant_fetter(l, 1) and l.flags.tianqi.get("fetters") is Array and XTianqiSect.fetters_given(l) == [1] \
+		and XTianqiSave.version(l, "fetters") == 1, l.flags.tianqi.get("fetters"))
+	# 2. 写入各分区实际数据 → 写盘 → 删 v 及部分子键（测老档部分缺键读档补法）→ 读档
+	XTianqiLine.progress("war", l)["stage"] = 2
+	XTianqiFamineLine._said(l).append("prologue")
+	XTianqiSummit.progress(l)["hongjun"] = true
+	XTianqiSave.section(l, "weak_clear")["jianxian"] = {"line": "war", "members": [1]}
+	XTianqiRewards.progress(l)["got"].append("r1")
+	XTianqiElements.store(l)["seed"] = 12345
+	XTianqiElements.store(l)["floors"]["1"] = {"weak": [2]}
+	XTianqiMoney.money(l)["training"] = {"2": 3}
+	XTianqiTrumpet.store(l)["dropped"]["1"] = true
+	XTianqiSave.section(l, "skill_grow")["baijingjing"] = 7
+	XTianqiSect._bing_flag(l)["zhige"] = true
+	_check("s2_save_partial", kit.save())
+	kit.legacy(["v", "war/seen", "rewards/cores", "elements/fixed", "elements/dropped_books", "elements/book_fails", "trumpet/fails"])
+	var l2 := kit.reload()
+	_check("s2_partial_war", l2 != null and int(l2.flags.tianqi.war.stage) == 2 and l2.flags.tianqi.war.get("seen") is Array and l2.flags.tianqi.war.seen.is_empty())
+	_check("s2_partial_rewards", l2 != null and l2.flags.tianqi.rewards.get("got") == ["r1"] and l2.flags.tianqi.rewards.get("cores") is Array)
+	_check("s2_partial_elements", l2 != null and int(l2.flags.tianqi.elements.seed) == 12345 and l2.flags.tianqi.elements.get("fixed") is Dictionary \
+		and l2.flags.tianqi.elements.get("dropped_books") is Dictionary and l2.flags.tianqi.elements.get("book_fails") is Dictionary)
+	_check("s2_partial_trumpet", l2 != null and XTianqiTrumpet.dropped(l2, 1) and l2.flags.tianqi.trumpet.get("fails") is Dictionary)
+	_check("s2_partial_rest", l2 != null and XTianqiFamineLine._said(l2) == ["prologue"] and bool(XTianqiSummit.progress(l2).get("hongjun", false)) \
+		and XTianqiWeakClear.has(l2, "jianxian") and int(XTianqiMoney.money(l2).get("training", {}).get("2", 0)) == 3 \
+		and XTianqiSkills.grow_count("baijingjing", l2) == 7 and bool(XTianqiSect._bing_flag(l2).get("zhige", false)) \
+		and XTianqiSect.grant_fetter(l2, 2) and XTianqiSect.fetters_given(l2) == [1, 2])
+	_check("s2_partial_stamped", l2 != null and s2_names.all(func(n): return XTianqiSave.version(l2, n) == 1), XTianqiSave.versions(l2))
+	# 3. 关门面开关读档：after_load 不跑不记版本；模块调用照旧填出同结构；非天启篇档不建区
+	kit.save()
+	kit.legacy(["v", "war", "rewards", "elements", "trumpet", "fetters"])
+	XTianqiSave.ENABLED = false
+	var off := kit.reload()
+	_check("s2_off_no_stamp", off != null and not off.flags.tianqi.has("v") and XTianqiSave.peek(off, "rewards") == null)
+	var off_rw := XTianqiRewards.progress(off)
+	var off_tr := XTianqiTrumpet.store(off)
+	_check("s2_off_module_fills", off_rw == {"got": [], "cores": []} and off_tr == {"dropped": {}, "fails": {}} and not off.flags.tianqi.has("v"))
+	XTianqiSave.ENABLED = true
+	var plain := XState.new()
+	_check("s2_plain_no_root", XTianqiRewards.progress(plain) == {"got": [], "cores": []} and XTianqiElements.store(plain) == {} and not plain.flags.has("tianqi"))
+
+
+func _s2_strip_on_copy() -> void:
+	var s := Kit.new_game("jianxian", "war")
+	var wid := 0
+	for r in XDB.table("Weapons"):
+		if r is Dictionary and str(r.get("name", "")) != "" and not XEquipment.is_exclusive(XGear.template("weapon", int(r.id))):
+			wid = int(r.id)
+			break
+	var orig := XGear.create("weapon", wid, s)
+	s.register_gear(orig)
+	s.gear.append(orig)
+	orig["tq_rng_n"] = 3
+	orig["tq_reforges"] = 2
+	var orig_sid := str(orig.get("tq_seed_id", ""))
+	# 云裳发货复制
+	var y_spec := orig.duplicate(true)
+	y_spec["_yunUid"] = "s2-copy-test"
+	var before := s.gear.duplicate()
+	XYunshangOrders.grant_spec(s, y_spec)
+	var y_copy := {}
+	for g in s.gear:
+		if not before.has(g):
+			y_copy = g
+			break
+	_check("s2_yun_strip", not y_copy.is_empty() and not y_copy.has("tq_rng_n") and int(y_copy.get("tq_reforges", 0)) == 2 and str(y_copy.get("tq_seed_id", "")) != orig_sid, y_copy)
+	# 魔冠重发复制
+	var c_before := s.gear.duplicate()
+	XDemonCrown._grant(s, {"spec": orig.duplicate(true), "bonus": 0.0, "removed": false}, "s2-crown-test")
+	var c_copy := {}
+	for g in s.gear:
+		if not c_before.has(g):
+			c_copy = g
+			break
+	_check("s2_crown_strip", not c_copy.is_empty() and not c_copy.has("tq_rng_n") and int(c_copy.get("tq_reforges", 0)) == 2 and str(c_copy.get("tq_seed_id", "")) != orig_sid, c_copy)
+	# 仓库原版复制（吞噬异化占用）
+	var sw := XGear.create("weapon", wid, s)
+	s.register_gear(sw)
+	s.gear.append(sw)
+	sw["alien"] = {"affix": "swallow", "config": {"donorId": str(orig.instanceId)}}
+	XWarehouse.create(s, "<S2复制测试仓>")
+	XWarehouse.o_reserved_no_dup = false
+	XWarehouse.deposit(s, "weapon", orig)
+	XWarehouse.o_reserved_no_dup = true
+	var w_dup: Dictionary = XWarehouse.current(s).items.weapon[-1]
+	_check("s2_warehouse_strip", not w_dup.has("tq_seed_id") and not w_dup.has("tq_rng_n") and int(w_dup.get("tq_reforges", 0)) == 2 \
+		and str(orig.get("tq_seed_id", "")) == orig_sid and int(orig.get("tq_rng_n", 0)) == 3, w_dup)
+
+
 func _run() -> void:
 	seed(20261114)
 	kit = Kit.new("xiyou_tianqi_save")
@@ -240,6 +373,8 @@ func _run() -> void:
 	_gojo_in_trial()
 	_review_fixes()
 	_misc()
+	_s2_sections()
+	_s2_strip_on_copy()
 	XTianqiSave.ENABLED = true
 	XTianqiGojoTrial.ENABLED = true
 	kit.teardown()

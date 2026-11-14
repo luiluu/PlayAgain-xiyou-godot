@@ -61,11 +61,14 @@ static func on(s: XState = null) -> bool:
 
 
 static func progress(s: XState) -> Dictionary:
-	if not s.flags.get("tianqi") is Dictionary:
-		s.flags["tianqi"] = {}
-	if not s.flags.tianqi.get("rewards") is Dictionary:
-		s.flags.tianqi["rewards"] = {"got": [], "cores": []}
-	return s.flags.tianqi.rewards
+	return XTianqiSave.section(s, "rewards")
+
+
+## 存档门面的补法（XTianqiSave._fill）：缺键按默认补
+static func fill(p: Dictionary) -> void:
+	for k in ["got", "cores"]:
+		if not p.get(k) is Array:
+			p[k] = []
 
 
 static func got(s: XState, key: String) -> bool:

@@ -129,11 +129,10 @@ static func finish(host, s: XState, r: int) -> bool:
 	if not ok:
 		return false
 	var diff := str(s.flags.tianqi.get("difficulty", ""))
-	var rec: Dictionary = s.flags.tianqi.get(FLAG, {}) if s.flags.tianqi.get(FLAG) is Dictionary else {}
+	var rec: Dictionary = XTianqiSave.section(s, FLAG)
 	var first := not rec.has(diff)
 	if first:
 		rec[diff] = {"line": XTianqi.line_of(s), "members": members}
-		s.flags.tianqi[FLAG] = rec
 		reward(s, diff)
 		if ACHIEVEMENT:
 			XAchievement.reward(ACHIEVEMENT_ID, s)
@@ -153,7 +152,7 @@ static func has(s: XState, diff := "") -> bool:
 		return false
 	if diff == "":
 		diff = str(s.flags.tianqi.get("difficulty", ""))
-	var rec = s.flags.tianqi.get(FLAG)
+	var rec = XTianqiSave.peek(s, FLAG)
 	return rec is Dictionary and rec.has(diff)
 
 

@@ -68,9 +68,7 @@ static func allowed(s: XState = null) -> bool:
 
 
 static func progress(s: XState) -> Dictionary:
-	if not s.flags.tianqi.get("summit") is Dictionary:
-		s.flags.tianqi["summit"] = {}
-	return s.flags.tianqi["summit"]
+	return XTianqiSave.section(s, "summit")
 
 
 static func top() -> int:

@@ -100,10 +100,7 @@ static func _bing_on(s) -> bool:
 
 
 static func _bing_flag(s) -> Dictionary:
-	var tq: Dictionary = s.flags.tianqi
-	if not (tq.get("sect_bing") is Dictionary):
-		tq["sect_bing"] = {}
-	return tq.sect_bing
+	return XTianqiSave.section(s, "sect_bing")
 
 
 static func _bing_loan_meta(event_id: int) -> Dictionary:
@@ -617,9 +614,7 @@ static func ren_sync(s: XState, id: int, target: int) -> int:
 
 ## 发过的重数（1～3；存档读回来是浮点，统一成整数）
 static func fetters_given(s) -> Array:
-	if s == null or not s.flags.get("tianqi") is Dictionary:
-		return []
-	var v = s.flags.tianqi.get("fetters")
+	var v = XTianqiSave.peek(s, "fetters")
 	return (v as Array).map(func(x): return int(x)) if v is Array else []
 
 
@@ -631,7 +626,7 @@ static func grant_fetter(s, tier: int) -> bool:
 	if given.has(tier):
 		return false
 	given.append(tier)
-	s.flags.tianqi["fetters"] = given
+	(XTianqiSave.section(s, "fetters") as Array).assign(given)
 	s.set_variable(YI_CAP_VAR, int(s.variable(YI_CAP_VAR)) + 1)
 	var sid := int(YI_SKILLS[tier - 1])
 	for rec in XDB.table("Actors"):  # 原版公共事件 1324～1326：for $dataActors → learnSkill

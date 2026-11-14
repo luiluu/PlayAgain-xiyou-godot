@@ -260,16 +260,19 @@ static func segment(floor_no: int) -> int:
 
 ## 存档里的账：{dropped: {"n": true}, fails: {"n": 次数}}
 static func store(s: XState) -> Dictionary:
-	var tq: Dictionary = s.flags.tianqi
-	if not tq.get("trumpet") is Dictionary:
-		tq["trumpet"] = {"dropped": {}, "fails": {}}
-	return tq.trumpet
+	return XTianqiSave.section(s, "trumpet")
+
+
+## 存档门面的补法（XTianqiSave._fill）：缺键按默认补
+static func fill(d: Dictionary) -> void:
+	for k in ["dropped", "fails"]:
+		if not d.get(k) is Dictionary:
+			d[k] = {}
 
 
 static func dropped(s: XState, n: int) -> bool:
-	if not XTianqi.active(s) or not s.flags.tianqi.get("trumpet") is Dictionary:
-		return false
-	return bool(s.flags.tianqi.trumpet.get("dropped", {}).get(str(n), false))
+	var st = XTianqiSave.peek(s, "trumpet")
+	return st is Dictionary and bool(st.get("dropped", {}).get(str(n), false))
 
 
 ## 这一次掷中的概率（0～1）

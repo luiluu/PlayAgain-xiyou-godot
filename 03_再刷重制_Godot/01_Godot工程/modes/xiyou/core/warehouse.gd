@@ -143,7 +143,7 @@ static func deposit(s: XState, cat: String, rec: Dictionary) -> bool:
 		if not o_reserved_no_dup and XAlienation.reserved(s, rec):
 			# 原版：先 deposit 记进仓库，再 loseItem 被 Adv:88 挡下，供体留在背包，仓库里多一份
 			var dup := rec.duplicate(true)
-			dup.erase("tq_seed_id")  # 复制品不带天启篇随机身份（XTianqi.seed_id），要用时另拿新号
+			XTianqiSave.strip_on_copy(dup)  # 复制品不带天启篇随机身份、随机计数等（GEAR_KEYS copy=false），要用时另拿新号
 			w.items[cat].append(dup)
 			w.currentCapacity = int(w.currentCapacity) + 1
 			return true

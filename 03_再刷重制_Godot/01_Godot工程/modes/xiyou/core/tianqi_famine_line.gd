@@ -32,9 +32,7 @@ static func progress(s: XState) -> Dictionary:
 
 
 static func _said(s: XState) -> Array:
-	if not s.flags.tianqi.get("famine_prologue") is Array:
-		s.flags.tianqi["famine_prologue"] = []
-	return s.flags.tianqi["famine_prologue"]
+	return XTianqiSave.section(s, "famine_prologue")
 
 
 ## 三层训练场的序幕：天启篇存档第一次到（不分线）说 prologue；饥荒线通关后第一次到说 after_clear

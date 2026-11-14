@@ -153,9 +153,15 @@ static func stage_done(key: String) -> int:
 
 
 static func progress(key: String, s: XState) -> Dictionary:
-	if not s.flags.tianqi.get(key) is Dictionary:
-		s.flags.tianqi[key] = {"stage": 0, "seen": []}
-	return s.flags.tianqi[key]
+	return XTianqiSave.section(s, key)
+
+
+## 存档门面的补法（XTianqiSave._fill）：缺键按默认补
+static func fill(p: Dictionary) -> void:
+	if not p.has("stage"):
+		p["stage"] = 0
+	if not p.get("seen") is Array:
+		p["seen"] = []
 
 
 static func stage(key: String, s: XState) -> int:
