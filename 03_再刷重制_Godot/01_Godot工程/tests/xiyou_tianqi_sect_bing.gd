@@ -28,6 +28,38 @@ class MockHost:
 		shops.append({"goods": goods, "purchase_only": purchase_only})
 
 
+class Map46Harness:
+	extends MVEventCore
+	var messages: Array = []
+	var battles: Array = []
+
+	func _map_id() -> int:
+		return 46
+
+	func _event_id() -> int:
+		return 1
+
+	func _execute_env(c: Dictionary):
+		if int(c.code) == 301:
+			battles.append(int(c.parameters[1]))
+			return null
+		if int(c.code) == 314:
+			return null
+		return super(c)
+
+	func run_debt_slice(cmds: Array) -> void:
+		list = cmds
+		index = 0
+		_branch.clear()
+		while true:
+			var req := advance()
+			if req.kind == "done":
+				break
+			if req.kind == "message":
+				messages.append(req.msg)
+			resume(null)
+
+
 func _ready() -> void:
 	if has_meta("runner"):
 		_run.call_deferred()
@@ -130,20 +162,51 @@ func _loan_hall() -> void:
 func _debt_battle() -> void:
 	var s := _tianqi_state()
 	s.map_id = 46
-	# 模拟 Map046 EV001 台词改写
-	var msg_lao := {"face": "Evil", "index": 3, "lines": ["\\n<天道使者>嘿嘿，你居然打过了深渊骑士，不过，你没还我钱，我是不会放过你的，言而无信之人，接招吧！"]}
-	var msg_xiao := {"face": "Actor112", "index": 1, "lines": ["\\n<求道者>我说了我会动真格的，接招吧！"]}
-	msg_lao = XTianqiSect.rewrite_message(s, 46, 1, msg_lao)
-	msg_xiao = XTianqiSect.rewrite_message(s, 46, 1, msg_xiao)
-	_check("battle_text_rewritten", _clean_text(JSON.stringify([msg_lao, msg_xiao])) and msg_lao.lines[0].contains("老钱") and msg_xiao.lines[0].contains("小钱"), [msg_lao, msg_xiao])
+	# 1. 经 Map046 EV001 真实事件指令 + 解释器跑讨债分支（未还钱）
+	var ev001: Dictionary = XDB.map(46).events[1]
+	var slice: Array = (ev001.pages[0].list as Array).slice(11, 25)
+	s.set_variable(850, 1)
+	s.set_variable(849, 1)
+	var h := Map46Harness.new()
+	h.run_debt_slice(slice)
+	_check("ev001_interp_debt_msgs",
+		h.messages.size() == 2
+		and h.battles == [747, 766]
+		and str(h.messages[0].face) == "People1"
+		and str(h.messages[0].lines[0]).contains("老钱")
+		and str(h.messages[1].lines[0]).contains("小钱")
+		and _clean_text(JSON.stringify(h.messages)),
+		[h.messages, h.battles]
+	)
+	# 还了钱就没有讨债战
+	s.set_variable(850, 0)
+	s.set_variable(849, 0)
+	var h_paid := Map46Harness.new()
+	h_paid.run_debt_slice(slice)
+	_check("ev001_paid_no_debt_battle", h_paid.messages.is_empty() and h_paid.battles.is_empty(), [h_paid.messages, h_paid.battles])
 
-	# 实跑老钱讨债战（敌群 747）：1 主将 + 2 打手，打赢掉 1958 老钱的账本
+	# 2. 缓存命中验证（enemy_rec / troop_rec）
+	_check("rec_cache_hit", is_same(XDB.rec("Enemies", 871), XDB.rec("Enemies", 871)) and is_same(XDB.rec("Troops", 747), XDB.rec("Troops", 747)))
+
+	# 3. 脚本化真打老钱讨债战（敌群 747）：1 主将 + 2 打手，打倒全员判胜、打手不掉落、主将掉 1958 老钱的账本
+	s.flags.tianqi.lineup = [1]
+	s.init_battle_slots()
+	XTianqi._joining = true
+	s.add_actor(1)
+	XTianqi._joining = false
+	s.set_battle_slot(0, 1)
 	var t747 := XDB.rec("Troops", 747)
 	_check("troop_747_three_members", str(t747.name) == "老钱" and (t747.members as Array).size() == 3, t747)
 	var lg := XBattleLogic.new()
 	lg.setup(747, s)
 	var names747 := lg.enemies.map(func(e): return str(e.data().name))
 	_check("battle_747_names_and_sv", names747 == ["老钱", "老钱的打手", "老钱的打手"] and str(lg.enemies[0].data().note).contains("Enemy_Mage"), names747)
+	_check("battle_747_thugs_no_drops", lg.drop_chances(lg.enemies[1]).is_empty() and lg.drop_chances(lg.enemies[2]).is_empty())
+	for e in lg.enemies:
+		e.hp = 0.0
+		e.add_state(1)
+	lg.resolve_collapses()
+	_check("battle_747_victory_state", lg.enemies.all(func(e): return e.is_dead()) and not lg.actors.is_empty(), [lg.enemies.map(func(e): return e.is_dead()), lg.actors.size(), s.battle_slots])
 	var drops747 := []
 	for _i in 400:
 		lg._treasure.clear()
@@ -155,13 +218,18 @@ func _debt_battle() -> void:
 	lg.end_battle(1)
 	_check("battle_747_dropped_lao_ledger", s.item_count(1958) == 1, [s.item_count(1958), lg.drop_chances(lg.enemies[0])])
 
-	# 实跑小钱讨债战（敌群 766）：1 主将 + 2 打手，打赢掉 1961 小钱的账本
+	# 4. 实跑小钱讨债战（敌群 766）：1 主将 + 2 打手，打手不掉、打赢掉 1961 小钱的账本
 	var t766 := XDB.rec("Troops", 766)
 	_check("troop_766_three_members", str(t766.name) == "小钱" and (t766.members as Array).size() == 3, t766)
 	var lg2 := XBattleLogic.new()
 	lg2.setup(766, s)
 	var names766 := lg2.enemies.map(func(e): return str(e.data().name))
 	_check("battle_766_names_and_sv", names766 == ["小钱", "小钱的打手", "小钱的打手"] and str(lg2.enemies[0].data().note).contains("Actor12_2"), names766)
+	_check("battle_766_thugs_no_drops", lg2.drop_chances(lg2.enemies[1]).is_empty() and lg2.drop_chances(lg2.enemies[2]).is_empty())
+	for e in lg2.enemies:
+		e.hp = 0.0
+		e.add_state(1)
+	lg2.resolve_collapses()
 	var drops766 := []
 	for _i in 400:
 		lg2._treasure.clear()
@@ -205,6 +273,21 @@ func _merchant_and_items() -> void:
 	s.gain_item(1958, 1)
 	_check("merchant_once_only", not XTianqiSect.bing_can_exchange(s, "lao") and not XTianqiSect.bing_exchange_ledger(s, "lao").ok)
 
+	# 4. 真实写盘读档往返（XSave.save -> load_slot）：兑换标记与账本/被动书一致，读档后仍不可重复换
+	var saved_ok := XSave.save(1)
+	XState.current = XState.new_game_blank()
+	var loaded_ok := XSave.load_slot(1)
+	var rs := XState.current
+	_check("save_load_roundtrip",
+		saved_ok and loaded_ok
+		and rs.item_count(1958) == 1
+		and rs.item_count(1959) == 1
+		and rs.item_count(1962) == 1
+		and not XTianqiSect.bing_can_exchange(rs, "lao")
+		and not XTianqiSect.bing_can_exchange(rs, "xiao"),
+		[saved_ok, loaded_ok, rs.flags.get("tianqi", {}).get("sect_bing")]
+	)
+
 
 func _hydroponics() -> void:
 	_tianqi_state()
@@ -213,6 +296,7 @@ func _hydroponics() -> void:
 
 func _switch_off_and_original() -> void:
 	var tq := _tianqi_state()
+	var raw_msg := {"face": "Evil", "index": 3, "lines": ["\\n<天道使者>讨债"]}
 	XTianqiSect.BING = false
 	_check("switch_off_restores",
 		not XTianqiSect.hides(187, 105)
@@ -222,6 +306,7 @@ func _switch_off_and_original() -> void:
 		and str(XDB.rec("Items", 1961).name) == "天道研究日志[典藏版]"
 		and (XDB.rec("Troops", 747).members as Array).size() == 1
 		and str(XDB.rec("Enemies", 871).name) == "天道使者"
+		and str(XTianqiSect.rewrite_message(tq, 46, 1, raw_msg.duplicate(true)).lines[0]) == "\\n<天道使者>讨债"
 	)
 	XTianqiSect.BING = true
 

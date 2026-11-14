@@ -90,7 +90,7 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 			"face_index": 6,
 			"var_id": BING_LAO_VAR,
 			"intro": "\\n<老钱>嘿嘿，天平那摊子忙不过来，我在这儿顺手放点小贷。你要是缺用，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
-			"no_courage": "\\n<老钱>你……还不到时候，先去攒点胆气再来吧。",
+			"no_courage": "\\n<老钱>连胆气都没有，这种买卖可做不成，算了。",
 			"repaid_ok": "\\n<老钱>不错不错，你果然是言而有信之人！",
 			"short_money": "\\n<老钱>钱都不够，还想糊弄我？",
 			"remind": "\\n<老钱>记得赶紧把钱还了！别拖延，不然有你好瞧的！",
@@ -103,7 +103,7 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 		"face_index": 2,
 		"var_id": BING_XIAO_VAR,
 		"intro": "\\n<小钱>攀登这座塔也太难了，不如跟老爷子一块儿放点贷款赚外快。我这里有些肝帝积分，你要是需要，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
-		"no_courage": "\\n<小钱>你还是先去攒够胆气再来吧。",
+		"no_courage": "\\n<小钱>你还是没有那份胆量，这单生意不做了。",
 		"repaid_ok": "\\n<小钱>有借有还，再借不难！",
 		"short_money": "\\n<小钱>这些钱不够啊，你可别糊弄我！",
 		"remind": "\\n<小钱>记得还钱，不然我可是要动真格了！",
@@ -310,34 +310,44 @@ static func _bing_thug_params(base_params: Array) -> Array:
 	return out
 
 
+static var _bing_enemy_cache: Dictionary = {}
+static var _bing_enemy_table_ref: Array = []
+static var _bing_troop_cache: Dictionary = {}
+static var _bing_troop_base_ref: Dictionary = {}
+
+
 static func enemy_rec(id: int, table: Array) -> Dictionary:
+	if not is_same(_bing_enemy_table_ref, table):
+		_bing_enemy_cache.clear()
+		_bing_enemy_table_ref = table
+	if _bing_enemy_cache.has(id):
+		return _bing_enemy_cache[id]
+	var out := {}
 	if id == BING_LAO_ENEMY and id < table.size() and table[id] != null:
-		var d: Dictionary = (table[id] as Dictionary).duplicate(true)
-		d["name"] = "老钱"
-		d["note"] = "NoElite\n<EnemyNote>\n天平摊旁的放贷人老钱，欠债不还就会亲自上门讨债。\n</EnemyNote>\n<EnemyRace: 3>\n<hp: 100000000000>\n<Sideview Battler: Enemy_Mage>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
-		return d
-	if id == BING_XIAO_ENEMY and id < table.size() and table[id] != null:
-		var d: Dictionary = (table[id] as Dictionary).duplicate(true)
-		d["name"] = "小钱"
-		d["note"] = "NoElite\n<EnemyNote>\n老钱的儿子小钱，一样放贷收账，讨债从不手软。\n</EnemyNote>\n<EnemyRace: 3>\n<hp: 90000000000>\n<Sideview Battler: Actor12_2>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
-		return d
-	if id == BING_LAO_THUG and BING_LAO_ENEMY < table.size() and table[BING_LAO_ENEMY] != null:
-		var d: Dictionary = (table[BING_LAO_ENEMY] as Dictionary).duplicate(true)
-		d["id"] = BING_LAO_THUG
-		d["name"] = "老钱的打手"
-		d["dropItems"] = []
-		d["params"] = _bing_thug_params(d.get("params", []))
-		d["note"] = "NoElite\n<EnemyNote>\n老钱带出来的讨债打手。\n</EnemyNote>\n<EnemyRace: 3>\n<Sideview Battler: Enemy_Mage>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
-		return d
-	if id == BING_XIAO_THUG and BING_XIAO_ENEMY < table.size() and table[BING_XIAO_ENEMY] != null:
-		var d: Dictionary = (table[BING_XIAO_ENEMY] as Dictionary).duplicate(true)
-		d["id"] = BING_XIAO_THUG
-		d["name"] = "小钱的打手"
-		d["dropItems"] = []
-		d["params"] = _bing_thug_params(d.get("params", []))
-		d["note"] = "NoElite\n<EnemyNote>\n小钱带出来的讨债打手。\n</EnemyNote>\n<EnemyRace: 3>\n<Sideview Battler: Actor12_2>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
-		return d
-	return {}
+		out = (table[id] as Dictionary).duplicate(true)
+		out["name"] = "老钱"
+		out["note"] = "NoElite\n<EnemyNote>\n天平摊旁的放贷人老钱，欠债不还就会亲自上门讨债。\n</EnemyNote>\n<EnemyRace: 3>\n<hp: 100000000000>\n<Sideview Battler: Enemy_Mage>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
+	elif id == BING_XIAO_ENEMY and id < table.size() and table[id] != null:
+		out = (table[id] as Dictionary).duplicate(true)
+		out["name"] = "小钱"
+		out["note"] = "NoElite\n<EnemyNote>\n老钱的儿子小钱，一样放贷收账，讨债从不手软。\n</EnemyNote>\n<EnemyRace: 3>\n<hp: 90000000000>\n<Sideview Battler: Actor12_2>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
+	elif id == BING_LAO_THUG and BING_LAO_ENEMY < table.size() and table[BING_LAO_ENEMY] != null:
+		out = (table[BING_LAO_ENEMY] as Dictionary).duplicate(true)
+		out["id"] = BING_LAO_THUG
+		out["name"] = "老钱的打手"
+		out["dropItems"] = []
+		out["params"] = _bing_thug_params(out.get("params", []))
+		out["note"] = "NoElite\n<EnemyNote>\n老钱带出来的讨债打手。\n</EnemyNote>\n<EnemyRace: 3>\n<Sideview Battler: Enemy_Mage>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
+	elif id == BING_XIAO_THUG and BING_XIAO_ENEMY < table.size() and table[BING_XIAO_ENEMY] != null:
+		out = (table[BING_XIAO_ENEMY] as Dictionary).duplicate(true)
+		out["id"] = BING_XIAO_THUG
+		out["name"] = "小钱的打手"
+		out["dropItems"] = []
+		out["params"] = _bing_thug_params(out.get("params", []))
+		out["note"] = "NoElite\n<EnemyNote>\n小钱带出来的讨债打手。\n</EnemyNote>\n<EnemyRace: 3>\n<Sideview Battler: Actor12_2>\n<Breathing Speed: 11>\n<Sideview No Collapse>\n<Sideview Weapon: 0, swing, 1>\n<Sideview Show Shadow>\n<Hide HP Gauge>\nEmerge Motion: 0\n<DontEsc>"
+	if not out.is_empty():
+		_bing_enemy_cache[id] = out
+	return out
 
 
 static func has_troop(s, id: int) -> bool:
@@ -345,6 +355,8 @@ static func has_troop(s, id: int) -> bool:
 
 
 static func troop_rec(id: int, base: Dictionary) -> Dictionary:
+	if _bing_troop_cache.has(id) and is_same(_bing_troop_base_ref.get(id), base):
+		return _bing_troop_cache[id]
 	var d := base.duplicate(true)
 	if id == BING_LAO_TROOP:
 		d["name"] = "老钱"
@@ -360,6 +372,8 @@ static func troop_rec(id: int, base: Dictionary) -> Dictionary:
 			{"enemyId": BING_XIAO_THUG, "x": 130, "y": 260, "hidden": false},
 			{"enemyId": BING_XIAO_THUG, "x": 130, "y": 380, "hidden": false},
 		]
+	_bing_troop_base_ref[id] = base
+	_bing_troop_cache[id] = d
 	return d
 
 
