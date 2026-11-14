@@ -30,7 +30,8 @@ extends RefCounted
 ##   derive(orb_seed, "tq_gear_src|来源键|该来源第几件")，并用一份空的预掷池（rom.x／xs），生成完还原，所以只看来源键、
 ##   不受先拿了别的装备影响；镶嵌孔数也按来源键（socket_number 代替实例编号）；天启篇词条仍按 affix_src 那一路（同一来源键的不同域，互不挪号）。
 ##   深渊商人等自己设了 XGear.roll_fn 的、测试磁带（roll_seq／force_roll）照旧优先，不绑。
-## 开关：BATTLE_FROM_SAVE（战斗钉住）、GEAR_BASE_FROM_SAVE（底子钉住），同一个 O 号（O-待定），false 各自回到运行时流。
+
+## 开关：BATTLE_FROM_SAVE（战斗钉住）、GEAR_BASE_FROM_SAVE（底子钉住），同一个 O 号（O-464），false 各自回到运行时流。
 static var BATTLE_FROM_SAVE := true
 static var GEAR_BASE_FROM_SAVE := true
 ## create_gear 正在用来源键底子流（XTianqiAffixRoll._default_rng 据此不把它当成深渊商人的 roll_fn）
