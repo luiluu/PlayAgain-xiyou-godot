@@ -144,7 +144,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
 	if b is XEnemy and (b as XEnemy).elite:
 		_body_material().set_shader_parameter("hue", (b as XEnemy).elite_hue)
-	sprite.self_modulate = XGojoTrial.tint(b)  # 天启篇五条悟专属试炼：甚尔／宿傩的影子压暗紫色调（别的战斗者白色）
+	sprite.self_modulate = XTianqiGojoTrial.tint(b)  # 天启篇五条悟专属试炼：甚尔／宿傩的影子压暗紫色调（别的战斗者白色）
 	set_motion("walk" if b.is_alive() else "dead")
 	if not sv:
 		_show_frame(look.frame("walk", 0))

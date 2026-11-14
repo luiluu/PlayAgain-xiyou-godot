@@ -18,7 +18,7 @@ extends Control
 ## - 确认「是」（onConfirmOk 包装）：XYunshangOrders.advance（扣碎片、移除所选天衣、账本进阶＋1，提示「云裳完成第N次进阶」），出错蜂鸣＋提示；
 ##   不走进阶表那一行的学技能、扣金钱。「否」／取消：选的作废。
 ## - 状态窗（drawAllContents 包装）：还有下一阶时，第 12 行起用 18 号字写「背包天衣×N（确认时选择）」「已装备的天衣须先卸下」。
-## 天启篇五条悟专属试炼（XGojoTrial，设计 v0.3）：进阶需求下多一行「试炼：怀玉（未通过／已通过）」；底部确定时缺的只有试炼，
+## 天启篇五条悟专属试炼（XTianqiGojoTrial，设计 v0.3）：进阶需求下多一行「试炼：怀玉（未通过／已通过）」；底部确定时缺的只有试炼，
 ## 确认窗写「挑战试炼「怀玉」」，选「是」记下请求、关掉本页（地图上 mv_script 接着开战）。云裳天衣铺里打开的本页不开试炼（allow_trial）。
 
 signal closed
@@ -38,7 +38,7 @@ const PATTERNS := [0, 1, 2, 1]
 
 var mode := "list"          # list / bottom / confirm / yun（云裳选天衣）
 var confirm_text := CONFIRM_TEXT
-var trial_tier := 0         # 确认窗是「挑战试炼」时是第几阶（XGojoTrial）
+var trial_tier := 0         # 确认窗是「挑战试炼」时是第几阶（XTianqiGojoTrial）
 var allow_trial := true     # 云裳天衣铺里打开时为 false：关页后没人接着开战
 var yun_win: XYunChoicesWindow
 var yun_selection = null    # 云裳选好的天衣 {actor, stage, items}（_yunAdvanceSelection）
@@ -90,7 +90,7 @@ func _ready() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	status_win.add_child(sprite)
 	members = XState.current.members()
-	XGojoTrial.request(0)
+	XTianqiGojoTrial.request(0)
 	_select(0)
 
 
@@ -239,10 +239,10 @@ func _paint_status(c: XMVCanvas) -> void:
 	c.text("等级:%d" % int(r.level), 0, y, cw)
 	y += LH
 	_currency(c, int(r.gold), 0, y, cw * 2)
-	if XGojoTrial.applies(s, a):
+	if XTianqiGojoTrial.applies(s, a):
 		var tier := XAdvance.rank(s, a.actor_id) + 1
 		y += LH
-		c.text("试炼:%s（%s）" % [XGojoTrial.trial_name(tier), "已通过" if XGojoTrial.has_passed(s, tier) else "未通过"], 0, y, cw * 2)
+		c.text("试炼:%s（%s）" % [XTianqiGojoTrial.trial_name(tier), "已通过" if XTianqiGojoTrial.has_passed(s, tier) else "未通过"], 0, y, cw * 2)
 	y = top_y
 	c.text("进化技能:", c2, y, cw)
 	y += LH
@@ -322,10 +322,10 @@ func ok() -> void:
 			var s := XState.current
 			var lack := XAdvance.missing(s, current_actor())
 			bottom = -1
-			trial_tier = XGojoTrial.challengeable(s, current_actor(), lack) if allow_trial else 0
+			trial_tier = XTianqiGojoTrial.challengeable(s, current_actor(), lack) if allow_trial else 0
 			if lack.is_empty() or trial_tier > 0:
 				XSound.system(1)
-				confirm_text = CONFIRM_TEXT if trial_tier == 0 else "挑战试炼「%s」" % XGojoTrial.trial_name(trial_tier)
+				confirm_text = CONFIRM_TEXT if trial_tier == 0 else "挑战试炼「%s」" % XTianqiGojoTrial.trial_name(trial_tier)
 				mode = "confirm"
 				confirm_index = 0
 				confirm_win.visible = true
@@ -346,7 +346,7 @@ func ok() -> void:
 				_close_confirm()
 				return
 			if trial_tier > 0:  # 天启篇五条悟：挑战试炼，关掉本页由地图开战
-				XGojoTrial.request(trial_tier)
+				XTianqiGojoTrial.request(trial_tier)
 				_close_confirm()
 				closed.emit()
 				return

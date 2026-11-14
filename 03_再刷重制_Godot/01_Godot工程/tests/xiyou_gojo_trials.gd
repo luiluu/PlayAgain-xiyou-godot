@@ -1,5 +1,5 @@
 extends Node
-## 天启篇五条悟两次进阶与专属试炼（XGojoTrial，设计 v0.3）专项：
+## 天启篇五条悟两次进阶与专属试炼（XTianqiGojoTrial，设计 v0.3）专项：
 ## 一、进阶表两行（25／55 级、10 万／50 万、无材料、学会分组）、茈 25／领域 55 级学、影子的招和状态补进表。
 ## 二、条件：只差试炼时可挑战、缺等级／金钱照常列；金钱不走金钱重构四阶价；别的角色、西游档不受影响。
 ## 三、单挑换队、输了恢复（队伍、生命魔法 TP 状态、不扣钱、可重打）、赢了恢复并扣钱进阶、存读档、读档还原进行中的试炼、旧四阶迁移。
@@ -84,25 +84,25 @@ func _tables() -> void:
 		lv[int(l.skillId)] = int(l.level)
 	_check("learn_shift", lv.get(XGojo.PURPLE_IN) == 25 and lv.get(XGojo.PURPLE_OUT) == 25 and lv.get(XGojo.DOMAIN) == 55 and lv.get(XGojo.BLUE_MAX) == 30, lv)
 	var names := []
-	for id in range(XGojoTrial.FIRST_SKILL, XGojoTrial.LAST_SKILL + 1):
+	for id in range(XTianqiGojoTrial.FIRST_SKILL, XTianqiGojoTrial.LAST_SKILL + 1):
 		names.append(str(XDB.rec("Skills", id).get("name", "")))
 	_check("trial_skills", names == ["天逆鉾", "游云", "释魂刀", "解", "捌", "领域展开「伏魔御厨子」", "御厨子·斩击", "神灶：开"], names)
-	_check("trial_states", str(XDB.rec("States", XGojoTrial.ST_SHRINE).get("name", "")) == "伏魔御厨子" and str(XDB.rec("States", XGojoTrial.ST_CLASH).get("name", "")) == "领域对拼")
-	_check("trial_skill_module", str(XDB.rec("Skills", XGojoTrial.SPEAR).damage.formulaProgram.get("module", "")) == "gojo" and int(XDB.rec("Skills", XGojoTrial.SPEAR).hitType) == 0)
-	_check("data_nice", not JSON.stringify(XGojoTrial.data().get("trials", {})).contains("4"), XGojoTrial.data().get("trials"))
+	_check("trial_states", str(XDB.rec("States", XTianqiGojoTrial.ST_SHRINE).get("name", "")) == "伏魔御厨子" and str(XDB.rec("States", XTianqiGojoTrial.ST_CLASH).get("name", "")) == "领域对拼")
+	_check("trial_skill_module", str(XDB.rec("Skills", XTianqiGojoTrial.SPEAR).damage.formulaProgram.get("module", "")) == "gojo" and int(XDB.rec("Skills", XTianqiGojoTrial.SPEAR).hitType) == 0)
+	_check("data_nice", not JSON.stringify(XTianqiGojoTrial.data().get("trials", {})).contains("4"), XTianqiGojoTrial.data().get("trials"))
 
 
 func _conditions() -> void:
 	var s := _state(25)
 	var a: XActor = s.actor(GOJO)
 	s.gold = 100000
-	_check("pending_1", XGojoTrial.pending_tier(s, a) == 1)
+	_check("pending_1", XTianqiGojoTrial.pending_tier(s, a) == 1)
 	var miss := XAdvance.missing(s, a)
 	_check("missing_only_trial", miss == ["试炼：怀玉"], miss)
-	_check("challengeable", XGojoTrial.challengeable(s, a, miss) == 1)
+	_check("challengeable", XTianqiGojoTrial.challengeable(s, a, miss) == 1)
 	s.gold = 99999
 	miss = XAdvance.missing(s, a)
-	_check("missing_gold_too", miss.size() == 2 and XGojoTrial.challengeable(s, a, miss) == 0, miss)
+	_check("missing_gold_too", miss.size() == 2 and XTianqiGojoTrial.challengeable(s, a, miss) == 0, miss)
 	s.gold = 100000
 	a.change_level(24)
 	miss = XAdvance.missing(s, a)
@@ -110,17 +110,17 @@ func _conditions() -> void:
 	a.change_level(25)
 	_check("own_gold_rank0", int(XAdvance.row(s, GOJO).gold) == 100000)
 	s.actor_advance[GOJO] = 1
-	_check("own_gold_rank1", int(XAdvance.row(s, GOJO).gold) == 500000 and XGojoTrial.pending_tier(s, a) == 2, XAdvance.row(s, GOJO).gold)
-	XGojoTrial.OWN_GOLD = false
+	_check("own_gold_rank1", int(XAdvance.row(s, GOJO).gold) == 500000 and XTianqiGojoTrial.pending_tier(s, a) == 2, XAdvance.row(s, GOJO).gold)
+	XTianqiGojoTrial.OWN_GOLD = false
 	_check("own_gold_off", int(XAdvance.row(s, GOJO).gold) == XTianqiMoney.advance_gold(s, 1), [XAdvance.row(s, GOJO).gold, XTianqiMoney.advance_gold(s, 1)])
-	XGojoTrial.OWN_GOLD = true
+	XTianqiGojoTrial.OWN_GOLD = true
 	s.actor_advance[GOJO] = 2
-	_check("full_no_trial", XGojoTrial.pending_tier(s, a) == 0 and XAdvance.row(s, GOJO) == null)
+	_check("full_no_trial", XTianqiGojoTrial.pending_tier(s, a) == 0 and XAdvance.row(s, GOJO) == null)
 	s.actor_advance.erase(GOJO)
 	var other: XActor = s.actor(int(s.party[0]))
-	_check("other_actor_untouched", XGojoTrial.lack(s, other).is_empty() and XGojoTrial.pending_tier(s, other) == 0)
+	_check("other_actor_untouched", XTianqiGojoTrial.lack(s, other).is_empty() and XTianqiGojoTrial.pending_tier(s, other) == 0)
 	var plain := XState.new()
-	_check("xiyou_untouched", not XGojoTrial.applies(plain, a) and XGojoTrial.lack(plain, a).is_empty())
+	_check("xiyou_untouched", not XTianqiGojoTrial.applies(plain, a) and XTianqiGojoTrial.lack(plain, a).is_empty())
 
 
 func _solo_and_restore() -> void:
@@ -132,75 +132,75 @@ func _solo_and_restore() -> void:
 	a.hp = floorf(a.mhp * 0.7)
 	a.mp = 33.0
 	var hp0: float = a.hp
-	_check("begin", XGojoTrial.begin(s, 1) and s.party == [GOJO] and s.battle_slots == [GOJO, 0, 0, 0, 0] and XGojoTrial.in_trial(s))
-	_check("begin_once", not XGojoTrial.begin(s, 1))
+	_check("begin", XTianqiGojoTrial.begin(s, 1) and s.party == [GOJO] and s.battle_slots == [GOJO, 0, 0, 0, 0] and XTianqiGojoTrial.in_trial(s))
+	_check("begin_once", not XTianqiGojoTrial.begin(s, 1))
 	a.hp = 0.0
 	a.add_state(1)
 	a.mp = 0.0
-	var note := XGojoTrial.finish(s, 2)
-	_check("lose_text", note == XGojoTrial.TEXT_LOST, note)
-	_check("lose_restore", s.party == party and s.battle_slots == slots and not XGojoTrial.in_trial(s) and a.hp == hp0 and a.mp == 33.0 and not a.is_dead(), [s.party, a.hp, hp0, a.mp])
-	_check("lose_no_cost", s.gold == 150000 and XAdvance.rank(s, GOJO) == 0 and not XGojoTrial.has_passed(s, 1))
-	XGojoTrial.begin(s, 1)
-	note = XGojoTrial.finish(s, 1)
-	_check("escape_same_as_lose", note == XGojoTrial.TEXT_LOST and XAdvance.rank(s, GOJO) == 0)
-	XGojoTrial.begin(s, 1)
+	var note := XTianqiGojoTrial.finish(s, 2)
+	_check("lose_text", note == XTianqiGojoTrial.TEXT_LOST, note)
+	_check("lose_restore", s.party == party and s.battle_slots == slots and not XTianqiGojoTrial.in_trial(s) and a.hp == hp0 and a.mp == 33.0 and not a.is_dead(), [s.party, a.hp, hp0, a.mp])
+	_check("lose_no_cost", s.gold == 150000 and XAdvance.rank(s, GOJO) == 0 and not XTianqiGojoTrial.has_passed(s, 1))
+	XTianqiGojoTrial.begin(s, 1)
+	note = XTianqiGojoTrial.finish(s, 1)
+	_check("escape_same_as_lose", note == XTianqiGojoTrial.TEXT_LOST and XAdvance.rank(s, GOJO) == 0)
+	XTianqiGojoTrial.begin(s, 1)
 	a.hp = 5.0
-	note = XGojoTrial.finish(s, 0)
+	note = XTianqiGojoTrial.finish(s, 0)
 	_check("win_text", note.contains("怀玉") and note.contains("一阶"), note)
-	_check("win_advance", XAdvance.rank(s, GOJO) == 1 and s.gold == 50000 and XGojoTrial.has_passed(s, 1), [XAdvance.rank(s, GOJO), s.gold])
+	_check("win_advance", XAdvance.rank(s, GOJO) == 1 and s.gold == 50000 and XTianqiGojoTrial.has_passed(s, 1), [XAdvance.rank(s, GOJO), s.gold])
 	_check("win_learn", [1240, 1241, XGojo.ADV[2], XGojo.ADV[1]].all(func(id): return a.skill_ids.has(id)) and not a.skill_ids.has(XGojo.ADV[3]))
 	_check("win_restore", a.hp == hp0, [a.hp, hp0])
 	var d := s.to_dict()
 	var back := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
-	_check("save_roundtrip", XGojoTrial.has_passed(back, 1) and XAdvance.rank(back, GOJO) == 1 and XGojoTrial.pending_tier(back, back.actor(GOJO)) == 2,
-		[XGojoTrial.passed(back), XAdvance.rank(back, GOJO), XGojoTrial.pending_tier(back, back.actor(GOJO)), back.flags.get("tianqi", {}).keys()])
+	_check("save_roundtrip", XTianqiGojoTrial.has_passed(back, 1) and XAdvance.rank(back, GOJO) == 1 and XTianqiGojoTrial.pending_tier(back, back.actor(GOJO)) == 2,
+		[XTianqiGojoTrial.passed(back), XAdvance.rank(back, GOJO), XTianqiGojoTrial.pending_tier(back, back.actor(GOJO)), back.flags.get("tianqi", {}).keys()])
 	# 读档还原：存档里留着进行中的试炼
-	XGojoTrial.begin(s, 2)
+	XTianqiGojoTrial.begin(s, 2)
 	var mid := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
-	_check("mid_saved", XGojoTrial.in_trial(mid) and mid.party == [GOJO])
-	XGojoTrial.after_load(mid)
-	_check("load_restores", not XGojoTrial.in_trial(mid) and mid.party == party, mid.party)
-	XGojoTrial.finish(s, 2)
+	_check("mid_saved", XTianqiGojoTrial.in_trial(mid) and mid.party == [GOJO])
+	XTianqiGojoTrial.after_load(mid)
+	_check("load_restores", not XTianqiGojoTrial.in_trial(mid) and mid.party == party, mid.party)
+	XTianqiGojoTrial.finish(s, 2)
 	# 赢了但 RESTORE_ON_WIN 关：生命不回到战前
 	s.gold = 600000
 	a.change_level(55)
-	XGojoTrial.RESTORE_ON_WIN = false
-	XGojoTrial.begin(s, 2)
+	XTianqiGojoTrial.RESTORE_ON_WIN = false
+	XTianqiGojoTrial.begin(s, 2)
 	a.hp = 7.0
-	XGojoTrial.finish(s, 0)
+	XTianqiGojoTrial.finish(s, 0)
 	_check("restore_on_win_off", a.hp == 7.0 and XAdvance.rank(s, GOJO) == 2 and s.gold == 100000, [a.hp, XAdvance.rank(s, GOJO), s.gold])
-	XGojoTrial.RESTORE_ON_WIN = true
+	XTianqiGojoTrial.RESTORE_ON_WIN = true
 
 
 func _migrate() -> void:
 	var s := _state(72)
 	var a: XActor = s.actor(GOJO)
-	s.flags.tianqi.erase(XGojoTrial.MIGRATE_KEY)
+	s.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
 	s.actor_advance[GOJO] = 3
 	for id in [1240, 1241, 1242, XGojo.ADV[0], XGojo.ADV[1], XGojo.ADV[2]]:
 		a.learn_skill(id)
-	XGojoTrial.migrate(s)
-	_check("migrate_rank", XAdvance.rank(s, GOJO) == 1 and XGojoTrial.passed(s) == [1], [XAdvance.rank(s, GOJO), XGojoTrial.passed(s)])
+	XTianqiGojoTrial.migrate(s)
+	_check("migrate_rank", XAdvance.rank(s, GOJO) == 1 and XTianqiGojoTrial.passed(s) == [1], [XAdvance.rank(s, GOJO), XTianqiGojoTrial.passed(s)])
 	_check("migrate_keep", [1240, 1241, 1242, XGojo.ADV[0], XGojo.ADV[1], XGojo.ADV[2]].all(func(id): return a.skill_ids.has(id)))
-	XGojoTrial.migrate(s)
+	XTianqiGojoTrial.migrate(s)
 	_check("migrate_once", XAdvance.rank(s, GOJO) == 1)
 	var s1 := _state(30)
 	var a1: XActor = s1.actor(GOJO)
-	s1.flags.tianqi.erase(XGojoTrial.MIGRATE_KEY)
+	s1.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
 	s1.actor_advance[GOJO] = 1
 	a1.forget_skill(XGojo.PURPLE_IN)
-	XGojoTrial.migrate(s1)
-	_check("migrate_rank1_to_0", XAdvance.rank(s1, GOJO) == 0 and XGojoTrial.passed(s1).is_empty() and a1.skill_ids.has(XGojo.PURPLE_IN))
+	XTianqiGojoTrial.migrate(s1)
+	_check("migrate_rank1_to_0", XAdvance.rank(s1, GOJO) == 0 and XTianqiGojoTrial.passed(s1).is_empty() and a1.skill_ids.has(XGojo.PURPLE_IN))
 
 
 # ---- 战斗 ----
 
 func _battle(s: XState, tier: int) -> XBattleLogic:
-	XGojoTrial.begin(s, tier)
-	XGojoTrial.prepare(tier)
+	XTianqiGojoTrial.begin(s, tier)
+	XTianqiGojoTrial.prepare(tier)
 	var lg := XBattleLogic.new()
-	lg.setup(int(XGojoTrial.data().troop), s)
+	lg.setup(int(XTianqiGojoTrial.data().troop), s)
 	return lg
 
 
@@ -208,15 +208,15 @@ func _huaiyu_mechanics() -> void:
 	var s := _state(25)
 	var a: XActor = s.actor(GOJO)
 	var lg := _battle(s, 1)
-	_check("h_active", XGojoTrial.active(lg) and lg.enemies.size() == 1 and lg.actors.size() == 1)
+	_check("h_active", XTianqiGojoTrial.active(lg) and lg.enemies.size() == 1 and lg.actors.size() == 1)
 	var e: XEnemy = lg.enemies[0]
-	_check("h_shadow", e.display_name() == "伏黑甚尔的影子" and str(e.data().meta.get("Sideview Battler", "")) == "Codex_Toji_SV" and XGojoTrial.is_shadow(lg, e))
-	_check("h_tint", XGojoTrial.tint(e) != Color.WHITE and XGojoTrial.tint(a) == Color.WHITE)
-	XGojoTrial.SHADOW_TINT = false
-	_check("h_tint_off", XGojoTrial.tint(e) == Color.WHITE)
-	XGojoTrial.SHADOW_TINT = true
+	_check("h_shadow", e.display_name() == "伏黑甚尔的影子" and str(e.data().meta.get("Sideview Battler", "")) == "Codex_Toji_SV" and XTianqiGojoTrial.is_shadow(lg, e))
+	_check("h_tint", XTianqiGojoTrial.tint(e) != Color.WHITE and XTianqiGojoTrial.tint(a) == Color.WHITE)
+	XTianqiGojoTrial.SHADOW_TINT = false
+	_check("h_tint_off", XTianqiGojoTrial.tint(e) == Color.WHITE)
+	XTianqiGojoTrial.SHADOW_TINT = true
 	_check("h_appearance", XAppearance.for_battler(e) != null)
-	_check("h_actions", XGojoTrial.action_times(lg, e) == 2 and XGojoTrial.action_times(lg, a) == 0 and lg.make_action_times(e) == 2)
+	_check("h_actions", XTianqiGojoTrial.action_times(lg, e) == 2 and XTianqiGojoTrial.action_times(lg, a) == 0 and lg.make_action_times(e) == 2)
 	_check("h_rewards", lg.rewards() == {"exp": 0, "gold": 0, "drops": []})
 	_check("h_fast", e.agi > a.agi)
 	lg.turn = 1
@@ -224,12 +224,12 @@ func _huaiyu_mechanics() -> void:
 	for n in [1, 1, 2, 2, 3, 3]:
 		lg.turn = n
 		seq.append(int(lg.decide(e)[0].id))
-	_check("h_schedule", seq == [XGojoTrial.SPEAR, XGojoTrial.CLOUD, XGojoTrial.CLOUD, XGojoTrial.CLOUD, XGojoTrial.SPEAR, XGojoTrial.SOUL], seq)
+	_check("h_schedule", seq == [XTianqiGojoTrial.SPEAR, XTianqiGojoTrial.CLOUD, XTianqiGojoTrial.CLOUD, XTianqiGojoTrial.CLOUD, XTianqiGojoTrial.SPEAR, XTianqiGojoTrial.SOUL], seq)
 	# 天逆鉾：无下限挡不住，命中打掉多的那种印
 	XGojo.temp(a).blue = 2
 	XGojo.temp(a).red = 1
-	var spear := XDB.rec("Skills", XGojoTrial.SPEAR)
-	_check("h_spear_pierce", not XGojo.infinity_block(lg, e, spear, a) and XGojo.infinity_block(lg, e, XDB.rec("Skills", XGojoTrial.CLOUD), a))
+	var spear := XDB.rec("Skills", XTianqiGojoTrial.SPEAR)
+	_check("h_spear_pierce", not XGojo.infinity_block(lg, e, spear, a) and XGojo.infinity_block(lg, e, XDB.rec("Skills", XTianqiGojoTrial.CLOUD), a))
 	XGojo.temp(a).guard_round = -1
 	XGojo.temp(a).blue = 2
 	a.hp = a.mhp
@@ -238,65 +238,65 @@ func _huaiyu_mechanics() -> void:
 	lg.apply(e, spear, a)
 	_check("h_spear_tie_blue", XGojo.marks(a) == [0, 1], XGojo.marks(a))
 	var dmg: float = a.mhp - a.hp
-	var expect := float(XGojoTrial.fight(lg).base.mhp) * 0.1 * 2.0
+	var expect := float(XTianqiGojoTrial.fight(lg).base.mhp) * 0.1 * 2.0
 	_check("h_spear_scale", dmg > expect * 0.5 and dmg < expect * 1.5, [dmg, expect])
 	# 只有茈能打倒
 	e.hp = 10.0
-	XGojoTrial.fight(lg).queue = []
-	_check("h_lock", XGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.RED)) == 9.0)
-	_check("h_lock_any", XGojoTrial.hp_damage(lg, a, e, 999999.0, {}) == 9.0 and XGojoTrial.hp_damage(lg, a, e, 3.0, {}) == 3.0)
-	_check("h_lock_said", XGojoTrial.fight(lg).held and XGojoTrial.take_logs(lg).size() == 1)
-	_check("h_purple_kills", XGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_OUT)) == 999999.0 and XGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_IN)) == 999999.0)
+	XTianqiGojoTrial.fight(lg).queue = []
+	_check("h_lock", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.RED)) == 9.0)
+	_check("h_lock_any", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, {}) == 9.0 and XTianqiGojoTrial.hp_damage(lg, a, e, 3.0, {}) == 3.0)
+	_check("h_lock_said", XTianqiGojoTrial.fight(lg).held and XTianqiGojoTrial.take_logs(lg).size() == 1)
+	_check("h_purple_kills", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_OUT)) == 999999.0 and XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_IN)) == 999999.0)
 	# 领悟反转术式：会被打死时留 1 点，回满、印满，只一次
 	a.hp = 50.0
 	XGojo.temp(a).blue = 0
 	XGojo.temp(a).red = 1
-	_check("h_one_left", XGojoTrial.hp_damage(lg, e, a, 999999.0, XDB.rec("Skills", XGojoTrial.SOUL)) == 49.0)
+	_check("h_one_left", XTianqiGojoTrial.hp_damage(lg, e, a, 999999.0, XDB.rec("Skills", XTianqiGojoTrial.SOUL)) == 49.0)
 	a.hp = 1.0
 	XGojo.after_hit(lg, a)
-	_check("h_awaken", a.hp == a.mhp and XGojo.marks(a) == [3, 3] and XGojoTrial.fight(lg).awakened, [a.hp, a.mhp, XGojo.marks(a)])
-	var said: Array = XGojo.finish(lg, e, XDB.rec("Skills", XGojoTrial.SOUL))
+	_check("h_awaken", a.hp == a.mhp and XGojo.marks(a) == [3, 3] and XTianqiGojoTrial.fight(lg).awakened, [a.hp, a.mhp, XGojo.marks(a)])
+	var said: Array = XGojo.finish(lg, e, XDB.rec("Skills", XTianqiGojoTrial.SOUL))
 	_check("h_awaken_lines", said.any(func(l): return str(l.get("text", "")).contains("天上天下")), said)
 	a.hp = floorf(a.mhp * 0.1)
 	XGojo.after_hit(lg, a)
 	_check("h_awaken_once", a.hp == floorf(a.mhp * 0.1))
-	_check("h_can_die_after", XGojoTrial.hp_damage(lg, e, a, 999999.0, {}) == 999999.0)
+	_check("h_can_die_after", XTianqiGojoTrial.hp_damage(lg, e, a, 999999.0, {}) == 999999.0)
 	lg.end_battle(2)
-	_check("h_end_clears", not XGojoTrial.active(lg))
-	XGojoTrial.finish(s, 2)
+	_check("h_end_clears", not XTianqiGojoTrial.active(lg))
+	XTianqiGojoTrial.finish(s, 2)
 
 
 func _xinsu_mechanics() -> void:
 	var s := _state(55)
 	var a: XActor = s.actor(GOJO)
 	s.actor_advance[GOJO] = 1
-	for id in XGojoTrial.TIERS[0].learn:
+	for id in XTianqiGojoTrial.TIERS[0].learn:
 		a.learn_skill(int(id))
 	a.refresh_passive()
 	var lg := _battle(s, 2)
 	var e: XEnemy = lg.enemies[0]
-	var f := XGojoTrial.fight(lg)
+	var f := XTianqiGojoTrial.fight(lg)
 	_check("x_shadow", e.display_name() == "两面宿傩的影子" and lg.make_action_times(e) == 1 and e.mdf > 0.0)
 	lg.turn = 1
-	_check("x_r1", int(lg.decide(e)[0].id) == XGojoTrial.DISMANTLE)
+	_check("x_r1", int(lg.decide(e)[0].id) == XTianqiGojoTrial.DISMANTLE)
 	lg.turn = 2
 	var d2 := lg.decide(e)
-	_check("x_r2_shrine", int(d2[0].id) == XGojoTrial.SHRINE and is_same(d2[1], e))
+	_check("x_r2_shrine", int(d2[0].id) == XTianqiGojoTrial.SHRINE and is_same(d2[1], e))
 	XGojo.begin(lg, e, d2[0])
-	_check("x_shrine_on", int(f.domain) == 3 and e.state_ids.has(XGojoTrial.ST_SHRINE) and not f.clash)
+	_check("x_shrine_on", int(f.domain) == 3 and e.state_ids.has(XTianqiGojoTrial.ST_SHRINE) and not f.clash)
 	# 回合末必中斩击：有苍印、无下限也挡不住
 	XGojo.temp(a).blue = 3
 	a.hp = a.mhp
 	var logs := XGojo.end_round(lg)
 	var cut: float = a.mhp - a.hp
-	var expect := float(f.base.mhp) * float(XGojoTrial.trial(2).ratio.slash)
+	var expect := float(f.base.mhp) * float(XTianqiGojoTrial.trial(2).ratio.slash)
 	_check("x_slash", cut > expect * 0.5 and cut < expect * 1.5 and XGojo.marks(a)[0] == 3, [cut, expect, XGojo.marks(a)])
 	_check("x_slash_log", logs.any(func(l): return str(l.get("type", "")) == "hit"))
 	_check("x_domain_tick", int(f.domain) == 2)
 	# 领域对拼：五条悟展开无量空处
 	lg.turn = 3
 	XGojo.begin(lg, a, XDB.rec("Skills", XGojo.DOMAIN))
-	_check("x_clash", bool(f.clash) and a.state_ids.has(XGojoTrial.ST_CLASH) and e.state_ids.has(XGojoTrial.ST_CLASH))
+	_check("x_clash", bool(f.clash) and a.state_ids.has(XTianqiGojoTrial.ST_CLASH) and e.state_ids.has(XTianqiGojoTrial.ST_CLASH))
 	_check("x_clash_no_sure", not XGojo.sure(a, XDB.rec("Skills", XGojo.RED)))
 	var n := 0
 	for i in range(100):
@@ -310,22 +310,22 @@ func _xinsu_mechanics() -> void:
 	logs = XGojo.end_round(lg)
 	_check("x_clash_cancels", a.hp == a.mhp and logs.any(func(l): return str(l.get("text", "")).contains("抵消")), a.hp)
 	XGojo.end_round(lg)
-	_check("x_shrine_ends", int(f.domain) == 0 and bool(f.fuga) and not e.state_ids.has(XGojoTrial.ST_SHRINE) and not f.clash and not a.state_ids.has(XGojoTrial.ST_CLASH))
+	_check("x_shrine_ends", int(f.domain) == 0 and bool(f.fuga) and not e.state_ids.has(XTianqiGojoTrial.ST_SHRINE) and not f.clash and not a.state_ids.has(XTianqiGojoTrial.ST_CLASH))
 	lg.turn = 5
-	_check("x_fuga", int(lg.decide(e)[0].id) == XGojoTrial.FUGA)
+	_check("x_fuga", int(lg.decide(e)[0].id) == XTianqiGojoTrial.FUGA)
 	lg.turn = 6
-	_check("x_cleave", int(lg.decide(e)[0].id) == XGojoTrial.CLEAVE)
+	_check("x_cleave", int(lg.decide(e)[0].id) == XTianqiGojoTrial.CLEAVE)
 	lg.turn = 7
-	_check("x_shrine_again", int(lg.decide(e)[0].id) == XGojoTrial.SHRINE)
+	_check("x_shrine_again", int(lg.decide(e)[0].id) == XTianqiGojoTrial.SHRINE)
 	# 无量空处不对拼时（宿傩领域没开）：信息过载按首领 15%
 	f.domain = 0
-	XGojoTrial.after_round(lg)
+	XTianqiGojoTrial.after_round(lg)
 	n = 0
 	for i in range(400):
 		n += 1 if XGojo.overload(lg, e) else 0
 	_check("x_overload_boss_rate", n > 20 and n < 110, n)
 	lg.end_battle(2)
-	XGojoTrial.finish(s, 2)
+	XTianqiGojoTrial.finish(s, 2)
 
 
 func _cast_blue(lg: XBattleLogic, a) -> void:
@@ -360,9 +360,9 @@ func _fight(s: XState, tier: int, policy: String) -> Dictionary:
 		if lg.is_over():
 			break
 		lg.end_turn()
-	var out := {"shadow_states": e.state_ids.duplicate(), "gojo_states": a.state_ids.duplicate(), "won": lg.is_won(), "lost": lg.is_lost(), "rounds": rounds, "awakened": XGojoTrial.fight(lg).get("awakened"), "held": XGojoTrial.fight(lg).get("held"), "shadow_hp": e.hp, "shadow_mhp": e.mhp, "gojo_hp": a.hp, "mhp": a.mhp}
+	var out := {"shadow_states": e.state_ids.duplicate(), "gojo_states": a.state_ids.duplicate(), "won": lg.is_won(), "lost": lg.is_lost(), "rounds": rounds, "awakened": XTianqiGojoTrial.fight(lg).get("awakened"), "held": XTianqiGojoTrial.fight(lg).get("held"), "shadow_hp": e.hp, "shadow_mhp": e.mhp, "gojo_hp": a.hp, "mhp": a.mhp}
 	lg.end_battle(0 if lg.is_won() else 2)
-	XGojoTrial.finish(s, 0 if out.won else 2)
+	XTianqiGojoTrial.finish(s, 0 if out.won else 2)
 	return out
 
 
@@ -371,7 +371,7 @@ func _ok(lg: XBattleLogic, a, id: int) -> bool:
 
 
 func _pick(lg: XBattleLogic, a, e, tier: int, policy: String) -> Dictionary:
-	var f := XGojoTrial.fight(lg)
+	var f := XTianqiGojoTrial.fight(lg)
 	var pairs := XGojo.pairs(a)
 	var last := str(XGojo.temp(a).last)
 	if tier == 2 and policy == "smart" and int(f.domain) > 0 and not XGojo.active_domain(a) and _ok(lg, a, XGojo.DOMAIN):
@@ -403,7 +403,7 @@ func _seeded(level: int, k: int) -> XState:
 func _xinsu_ready(s: XState) -> void:
 	var a: XActor = s.actor(GOJO)
 	s.actor_advance[GOJO] = 1
-	for id in XGojoTrial.TIERS[0].learn:
+	for id in XTianqiGojoTrial.TIERS[0].learn:
 		a.learn_skill(int(id))
 	a.refresh_passive()
 	a.recover_all()
@@ -418,7 +418,7 @@ func _scripted() -> void:
 		stats.huaiyu_smart.append(r1)
 		awakened += 1 if bool(r1.awakened) else 0
 		_check("huaiyu_smart_wins_%d" % k, r1.won and int(r1.rounds) >= 5 and int(r1.rounds) <= 20, r1)
-		_check("huaiyu_win_marks_passed_%d" % k, XGojoTrial.has_passed(s1, 1) and XAdvance.rank(s1, GOJO) == 0)  # 金钱不够：记通过、不进阶
+		_check("huaiyu_win_marks_passed_%d" % k, XTianqiGojoTrial.has_passed(s1, 1) and XAdvance.rank(s1, GOJO) == 0)  # 金钱不够：记通过、不进阶
 		var r1b := _fight(_seeded(25, k), 1, "no_purple")
 		stats.huaiyu_no_purple.append(r1b)
 		_check("huaiyu_no_purple_fails_%d" % k, not r1b.won and float(r1b.shadow_hp) >= 1.0, r1b)
@@ -438,7 +438,7 @@ func _scripted() -> void:
 			str(stats[key].map(func(r): return snappedf(float(r.shadow_hp) / maxf(1.0, float(r.shadow_mhp)), 0.01)))])
 
 
-## 假地图：start_battle 照真的建战斗（换不换影子看 XGojoTrial.setup），按 result 收场
+## 假地图：start_battle 照真的建战斗（换不换影子看 XTianqiGojoTrial.setup），按 result 收场
 class FakeHost extends Node:
 	var result := 0
 	var shadow_seen := false
@@ -448,7 +448,7 @@ class FakeHost extends Node:
 	func start_battle(troop: int, _can_escape: bool, _can_lose: bool) -> int:
 		var lg := XBattleLogic.new()
 		lg.setup(troop, XState.current)
-		shadow_seen = XGojoTrial.active(lg) and lg.enemies.size() == 1
+		shadow_seen = XTianqiGojoTrial.active(lg) and lg.enemies.size() == 1
 		solo = lg.actors.size() == 1
 		lg.end_battle(result)
 		await get_tree().process_frame
@@ -474,24 +474,24 @@ func _page_and_request() -> void:
 	var closed := [false]
 	page.closed.connect(func(): closed[0] = true)
 	page.ok()
-	_check("page_request", closed[0] and XGojoTrial.has_request() and s.gold == 120000 and XAdvance.rank(s, GOJO) == 0)
+	_check("page_request", closed[0] and XTianqiGojoTrial.has_request() and s.gold == 120000 and XAdvance.rank(s, GOJO) == 0)
 	page.queue_free()
 	var host := FakeHost.new()
 	add_child(host)
 	var party := s.party.duplicate()
 	host.result = 2
-	var r: int = await XGojoTrial.run_request(host)
-	_check("run_lose", r == 2 and host.shadow_seen and host.solo and s.party == party and s.gold == 120000 and not XGojoTrial.has_request() and host.toasts == [XGojoTrial.TEXT_LOST], [r, host.toasts])
-	XGojoTrial.request(1)
+	var r: int = await XTianqiGojoTrial.run_request(host)
+	_check("run_lose", r == 2 and host.shadow_seen and host.solo and s.party == party and s.gold == 120000 and not XTianqiGojoTrial.has_request() and host.toasts == [XTianqiGojoTrial.TEXT_LOST], [r, host.toasts])
+	XTianqiGojoTrial.request(1)
 	host.result = 0
-	r = await XGojoTrial.run_request(host)
+	r = await XTianqiGojoTrial.run_request(host)
 	_check("run_win", r == 0 and XAdvance.rank(s, GOJO) == 1 and s.gold == 20000 and s.party == party and str(host.toasts.back()).contains("通过"), [r, XAdvance.rank(s, GOJO), s.gold, host.toasts])
-	XGojoTrial.request(1)
-	_check("run_stale_request", await XGojoTrial.run_request(host) == -1)
+	XTianqiGojoTrial.request(1)
+	_check("run_stale_request", await XTianqiGojoTrial.run_request(host) == -1)
 	# 云裳天衣铺里打开的进阶页：不开试炼，照常提示缺什么
 	s.actor_advance.erase(GOJO)
-	XGojoTrial.passed(s)
-	s.flags.tianqi[XGojoTrial.PASSED_KEY] = []
+	XTianqiGojoTrial.passed(s)
+	s.flags.tianqi[XTianqiGojoTrial.PASSED_KEY] = []
 	var page2 := XActorAdvancedScene.new()
 	page2.allow_trial = false
 	add_child(page2)
@@ -499,13 +499,13 @@ func _page_and_request() -> void:
 	page2._select(page2.members.find(a))
 	page2.ok()
 	page2.ok()
-	_check("page_no_trial_in_shop", page2.mode == "list" and page2.trial_tier == 0 and not XGojoTrial.has_request())
+	_check("page_no_trial_in_shop", page2.mode == "list" and page2.trial_tier == 0 and not XTianqiGojoTrial.has_request())
 	page2.queue_free()
 	host.queue_free()
 
 
 func _switches() -> void:
-	XGojoTrial.ENABLED = false
+	XTianqiGojoTrial.ENABLED = false
 	_reload_tables()
 	var rows := _rows()
 	_check("off_rows_four", rows.size() == 4 and int(rows[0].level) == 50, rows.size())
@@ -515,18 +515,18 @@ func _switches() -> void:
 	_check("off_learn_old", lv.get(XGojo.PURPLE_IN) == 50 and lv.get(XGojo.DOMAIN) == 60, lv)
 	var s := _state(50)
 	var a: XActor = s.actor(GOJO)
-	_check("off_no_trial", XGojoTrial.lack(s, a).is_empty() and XGojoTrial.pending_tier(s, a) == 0)
-	XGojoTrial.prepare(1)
+	_check("off_no_trial", XTianqiGojoTrial.lack(s, a).is_empty() and XTianqiGojoTrial.pending_tier(s, a) == 0)
+	XTianqiGojoTrial.prepare(1)
 	var lg := XBattleLogic.new()
-	lg.setup(int(XGojoTrial.data().troop), s)
-	_check("off_no_shadow", not XGojoTrial.active(lg) and not lg.enemies.any(func(x): return x.display_name() == "伏黑甚尔的影子"))
+	lg.setup(int(XTianqiGojoTrial.data().troop), s)
+	_check("off_no_shadow", not XTianqiGojoTrial.active(lg) and not lg.enemies.any(func(x): return x.display_name() == "伏黑甚尔的影子"))
 	lg.end_battle(0)
-	XGojoTrial.ENABLED = true
-	XGojoTrial.LEARN_SHIFT = false
+	XTianqiGojoTrial.ENABLED = true
+	XTianqiGojoTrial.LEARN_SHIFT = false
 	_reload_tables()
 	lv = {}
 	for l in XDB.rec("Classes", XGojo.CLASS).learnings:
 		lv[int(l.skillId)] = int(l.level)
 	_check("learn_shift_off", lv.get(XGojo.PURPLE_IN) == 50 and _rows().size() == 2, lv)
-	XGojoTrial.LEARN_SHIFT = true
+	XTianqiGojoTrial.LEARN_SHIFT = true
 	_reload_tables()

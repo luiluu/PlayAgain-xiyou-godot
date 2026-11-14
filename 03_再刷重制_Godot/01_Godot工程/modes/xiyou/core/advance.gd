@@ -81,7 +81,7 @@ static func row(s: XState, actor_id: int):
 	var n := rank(s, actor_id)
 	for r in rows():
 		if int(r.actor) == actor_id and int(r.num) == n:
-			var tq := XTianqiMoney.advance_gold(s, n) if not XGojoTrial.own_gold(actor_id) else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XGojoTrial）
+			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial）
 			if tq >= 0 and tq != int(r.gold):
 				var out: Dictionary = r.duplicate()
 				out.gold = tq
@@ -114,7 +114,7 @@ static func missing(s: XState, a: XActor) -> Array:
 		var have := s.item_count(int(p[0]))
 		if have < int(p[1]):
 			out.append("%s %d/%d" % [str(XDB.rec("Items", int(p[0])).get("name", "")), have, int(p[1])])
-	out.append_array(XGojoTrial.lack(s, a))  # 天启篇五条悟：这一阶的专属试炼还没打赢
+	out.append_array(XTianqiGojoTrial.lack(s, a))  # 天启篇五条悟：这一阶的专属试炼还没打赢
 	return out
 
 

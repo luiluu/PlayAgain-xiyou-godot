@@ -155,7 +155,7 @@ static func patch_classes(t: Array) -> void:
 	r.learnings = []
 	for row in [[1, STRIKE], [1, BLUE], [10, RED], [20, REVERSE], [30, BLUE_MAX], [30, RED_MAX], [50, PURPLE_IN], [50, PURPLE_OUT], [60, DOMAIN],
 			[1, SIX_EYES], [1, INFINITY], [1, STRONGEST], [1, XBlackFlash.SKILL], [15, AWAKENING]]:
-		r.learnings.append({"level": XGojoTrial.learn_level(row[1], row[0]), "skillId": row[1], "note": ""})  # 试炼版（v0.3）：茈 25、领域 55
+		r.learnings.append({"level": XTianqiGojoTrial.learn_level(row[1], row[0]), "skillId": row[1], "note": ""})  # 试炼版（v0.3）：茈 25、领域 55
 	t[CLASS] = r
 
 
@@ -212,7 +212,7 @@ static func patch_skills(t: Array) -> void:
 		r.note = "<quality:13>\n<ici:13>\n<Hide in Battle>\n<Max Mastery Level: 0>\n<No Damage Mastery Effect>\n<HelpWidth: 520>"
 		t[id] = XTianqiSkills.build(id, r) if XTianqiSkills.has(id) else r
 		t[id].id = id
-	XGojoTrial.patch_skills(t)  # 专属试炼战影子的招（10651～10658）
+	XTianqiGojoTrial.patch_skills(t)  # 专属试炼战影子的招（10651～10658）
 
 
 static func patch_armors(t: Array) -> void:
@@ -304,16 +304,16 @@ static func patch_states(t: Array) -> void:
 			r.minTurns = 1
 			r.maxTurns = 1
 		t[id] = r
-	XGojoTrial.patch_states(t)  # 专属试炼战：伏魔御厨子、领域对拼（2801、2802）
+	XTianqiGojoTrial.patch_states(t)  # 专属试炼战：伏魔御厨子、领域对拼（2801、2802）
 
 
-## 进阶四次（照狗逍遥的花费；每次另学通用的超越极限 I～IV）。试炼版（XGojoTrial.on，设计 v0.3）：两次（25／55 级），条件另加打赢试炼
+## 进阶四次（照狗逍遥的花费；每次另学通用的超越极限 I～IV）。试炼版（XTianqiGojoTrial.on，设计 v0.3）：两次（25／55 级），条件另加打赢试炼
 static func patch_plugins(p: Dictionary) -> void:
 	if not ENABLED or not p.get("Star_ActorAdvanced") is Dictionary:
 		return
 	var adv: Dictionary = p.Star_ActorAdvanced
-	if XGojoTrial.on():
-		var two := XGojoTrial.advance_rows()
+	if XTianqiGojoTrial.on():
+		var two := XTianqiGojoTrial.advance_rows()
 		for i in two.size():
 			var key2 := "Advanced %d" % (ADVANCE_ROW + i)
 			if str(adv.get(key2, "")).strip_edges() != "":
@@ -382,8 +382,8 @@ static func domain_shown(logic) -> bool:
 ## 茈：表里 gojo_pairs 按对数取满级系数（收 1.8／3.6／6.0，放 3.6／7.2／10.8），乘魔攻和等级缩放
 static func formula(a, b, item: Dictionary) -> float:
 	var id := int(item.get("id", 0))
-	if XGojoTrial.owns_skill(id):
-		return XGojoTrial.formula(a, b, item)  # 专属试炼战影子的招
+	if XTianqiGojoTrial.owns_skill(id):
+		return XTianqiGojoTrial.formula(a, b, item)  # 专属试炼战影子的招
 	var sp := XTianqiSkills.spec(id)
 	var pairs: Array = sp.get("gojo_pairs", [])
 	var n := int(cast.get("pairs", 0)) if own(a) else MARK_CAP
@@ -472,7 +472,7 @@ static func start_battle(logic) -> void:
 
 
 static func end_battle(logic) -> void:
-	XGojoTrial.end(logic)
+	XTianqiGojoTrial.end(logic)
 	for a in _members(logic):
 		_clear(logic, a)
 	_temp.clear()
@@ -488,7 +488,7 @@ static func on_death(b) -> void:
 static func begin(logic, u, skill: Dictionary) -> Array:
 	cast = {}
 	if not own(u) or XBattleLogic.is_item(skill) or skill.is_empty():
-		return XGojoTrial.begin_action(logic, u, skill) if skill is Dictionary and not skill.is_empty() else []  # 专属试炼战：宿傩影子展开伏魔御厨子
+		return XTianqiGojoTrial.begin_action(logic, u, skill) if skill is Dictionary and not skill.is_empty() else []  # 专属试炼战：宿傩影子展开伏魔御厨子
 	var id := int(skill.get("id", 0))
 	cast = {"skill": id, "pairs": pairs(u)}
 	if id == DOMAIN:
@@ -496,13 +496,13 @@ static func begin(logic, u, skill: Dictionary) -> Array:
 		logic._state_add(u, ST_DOMAIN)
 		if knows(u, ADV[3]):
 			add_marks(logic, u, 1, 1)
-		return [_text(u.display_name() + "展开了领域「无量空处」！")] + XGojoTrial.gojo_domain(logic)  # 专属试炼战：领域对拼
+		return [_text(u.display_name() + "展开了领域「无量空处」！")] + XTianqiGojoTrial.gojo_domain(logic)  # 专属试炼战：领域对拼
 	return []
 
 
 ## endAction：加印、改 last、茈清印、六眼再动
 static func finish(logic, u, skill) -> Array:
-	var logs: Array = XGojoTrial.take_logs(logic) + XGojoTrial.defeat_line(logic)  # 专属试炼战：天逆鉾拆印、领悟反转术式、影子压住、倒下的台词
+	var logs: Array = XTianqiGojoTrial.take_logs(logic) + XTianqiGojoTrial.defeat_line(logic)  # 专属试炼战：天逆鉾拆印、领悟反转术式、影子压住、倒下的台词
 	var id := int(skill.get("id", 0)) if skill is Dictionary and not skill.is_empty() else 0
 	if not own(u) or id == 0 or not u.is_alive():
 		cast = {}
@@ -550,7 +550,7 @@ static func queue_again(logic, u) -> void:
 
 
 static func end_round(logic) -> Array:
-	var logs: Array = XGojoTrial.end_round(logic)  # 专属试炼战：伏魔御厨子的必中斩击（无量空处计时之前看对拼）
+	var logs: Array = XTianqiGojoTrial.end_round(logic)  # 专属试炼战：伏魔御厨子的必中斩击（无量空处计时之前看对拼）
 	for a in _members(logic):
 		var d := temp(a)
 		if int(d.domain) > 0:
@@ -559,7 +559,7 @@ static func end_round(logic) -> Array:
 				logic._state_remove(a, ST_DOMAIN)
 				logs.append(_text(a.display_name() + "的无量空处消散了。"))
 	round += 1
-	XGojoTrial.after_round(logic)  # 无量空处到期，对拼跟着结束
+	XTianqiGojoTrial.after_round(logic)  # 无量空处到期，对拼跟着结束
 	return logs
 
 
@@ -567,11 +567,11 @@ static func end_round(logic) -> Array:
 static func overload(logic, u) -> bool:
 	if not u is XEnemy or not u.is_alive():
 		return false
-	if XGojoTrial.clashing(logic):
+	if XTianqiGojoTrial.clashing(logic):
 		return false  # 专属试炼战领域对拼：信息过载失效
 	for a in _members(logic):
 		if active_domain(a):
-			return logic._float("gojo_overload") < (OVERLOAD_BOSS if XBossStatus.is_boss(u) or XGojoTrial.is_shadow(logic, u) else OVERLOAD)
+			return logic._float("gojo_overload") < (OVERLOAD_BOSS if XBossStatus.is_boss(u) or XTianqiGojoTrial.is_shadow(logic, u) else OVERLOAD)
 	return false
 
 
@@ -581,7 +581,7 @@ static func overload_text(u) -> Dictionary:
 
 ## 无下限：每回合第一次被敌人单体生命伤害攻击，有苍印就花 1 苍印整次拦下
 static func infinity_block(logic, u, skill: Dictionary, t) -> bool:
-	if not knows(t, INFINITY) or not t.is_alive() or not u is XEnemy or XBattleLogic.is_item(skill) or XGojoTrial.pierces_infinity(logic, skill):
+	if not knows(t, INFINITY) or not t.is_alive() or not u is XEnemy or XBattleLogic.is_item(skill) or XTianqiGojoTrial.pierces_infinity(logic, skill):
 		return false  # 专属试炼战：天逆鉾破术式
 	if int(skill.get("scope", 0)) != 1 or int(skill.get("damage", {}).get("type", 0)) != 1:
 		return false
@@ -595,7 +595,7 @@ static func infinity_block(logic, u, skill: Dictionary, t) -> bool:
 
 ## 自动反转（进阶三）：每场一次，挨打后生命低于 30% 立刻回复 30%
 static func after_hit(logic, t) -> void:
-	XGojoTrial.after_hit(logic, t)  # 专属试炼战怀玉：领悟反转术式（在自动反转之前）
+	XTianqiGojoTrial.after_hit(logic, t)  # 专属试炼战怀玉：领悟反转术式（在自动反转之前）
 	if not knows(t, ADV[2]) or not t.is_alive() or bool(temp(t).reversed) or float(t.hp) >= float(t.mhp) * AUTO_REVERSE_BELOW:
 		return
 	temp(t).reversed = true
@@ -640,7 +640,7 @@ static func listed(a, skill: Dictionary) -> bool:
 
 ## 领域中术式必中
 static func sure(u, skill: Dictionary) -> bool:
-	return active_domain(u) and TECHNIQUES.has(int(skill.get("id", 0))) and not XGojoTrial.clashing()  # 专属试炼战领域对拼：必中失效
+	return active_domain(u) and TECHNIQUES.has(int(skill.get("id", 0))) and not XTianqiGojoTrial.clashing()  # 专属试炼战领域对拼：必中失效
 
 
 ## 伤害钩子：进阶二 茈「放」无视 50% 防御
@@ -652,6 +652,6 @@ static func damage_ops(item: Dictionary, a) -> Array:
 
 ## 进阶一：茈「收」命中的敌人减速 10% 一回合
 static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
-	XGojoTrial.after_apply(logic, u, skill, t, r)  # 专属试炼战怀玉：天逆鉾打掉 1 个印
+	XTianqiGojoTrial.after_apply(logic, u, skill, t, r)  # 专属试炼战怀玉：天逆鉾打掉 1 个印
 	if knows(u, ADV[0]) and int(skill.get("id", 0)) == PURPLE_IN and t is XEnemy and t.is_alive() and not bool(r.get("missed", false)) and not bool(r.get("evaded", false)):
 		logic._state_add(t, ST_SLOW)

@@ -1,4 +1,4 @@
-class_name XGojoTrial
+class_name XTianqiGojoTrial
 extends RefCounted
 ## 【cc·未经审查】天启篇五条悟 180 的两次进阶与专属试炼战（设计：私密仓 重制设定/天启篇_五条悟_角色设计_v0.3.md，Kyo 2026-11-14 细案）。
 ## 数值表 tianqi_data/gojo_trials.json（只读）。只在天启篇（XTianqi.active），西游档里五条悟本来就不出现。
@@ -78,13 +78,13 @@ static func data() -> Dictionary:
 			return {}
 		var f := FileAccess.open(PATH, FileAccess.READ)
 		if f == null:
-			push_error("XGojoTrial: 读不到 " + PATH)
+			push_error("XTianqiGojoTrial: 读不到 " + PATH)
 			return {}
 		var parsed = JSON.parse_string(f.get_as_text())
 		if parsed is Dictionary:
 			_data = parsed
 		else:
-			push_error("XGojoTrial: JSON 解析失败 " + PATH)
+			push_error("XTianqiGojoTrial: JSON 解析失败 " + PATH)
 	return _data
 
 
@@ -107,7 +107,9 @@ static func on() -> bool:
 
 
 static func learn_level(id: int, old: int) -> int:
-	return int(LEARN_LEVELS.get(id, old)) if on() and LEARN_SHIFT else old
+	if not on() or not LEARN_SHIFT:
+		return old  # 发行空壳照搬这一句：天启篇没开放时原样
+	return int(LEARN_LEVELS.get(id, old))
 
 
 ## XAdvance.row：五条悟的进阶金钱不走金钱重构的四阶价
@@ -169,6 +171,8 @@ static func lack(s: XState, a) -> Array:
 
 ## 进阶界面：缺的只有试炼 → 可以挑战（返回第几阶，否则 0）
 static func challengeable(s: XState, a, missing: Array) -> int:
+	if not applies(s, a):
+		return 0
 	var t := pending_tier(s, a)
 	return t if t > 0 and missing == lack(s, a) else 0
 
@@ -614,7 +618,7 @@ static func no_rewards(logic) -> bool:
 ## battler_sprite：影子压暗紫色调（没有返回白色）
 static func tint(b) -> Color:
 	if not SHADOW_TINT or not b is XEnemy or not (b as XEnemy).has_meta("shadow_tint"):
-		return Color.WHITE
+		return Color.WHITE  # 发行空壳：特例表给白色（按类型空值是透明，会把敌人画没）
 	var c: Array = (b as XEnemy).get_meta("shadow_tint")
 	return Color(float(c[0]), float(c[1]), float(c[2])) if c.size() >= 3 else Color.WHITE
 

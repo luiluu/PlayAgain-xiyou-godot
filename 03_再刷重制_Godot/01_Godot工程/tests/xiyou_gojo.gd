@@ -91,7 +91,7 @@ func _data() -> void:
 	_check("skills", not names.has("") and names[0] == "咒力打击" and names[6] == "虚式「茈」·收", names)
 	_check("states", str(XDB.rec("States", XGojo.ST_BLUE + 2).get("name", "")) == "苍印·三" and str(XDB.rec("States", XGojo.ST_SLOW).get("name", "")) == "赫·减速")
 	var row = XAdvance.rows().filter(func(r): return int(r.actor) == GOJO)
-	_check("advance_rows", row.size() == 2 and (row[0].learn as Array).has(1240) and (row[1].learn as Array).has(XGojo.ADV[3]), row.size())  # 试炼版两阶（XGojoTrial；四阶在 xiyou_gojo_trials 的开关检查）
+	_check("advance_rows", row.size() == 2 and (row[0].learn as Array).has(1240) and (row[1].learn as Array).has(XGojo.ADV[3]), row.size())  # 试炼版两阶（XTianqiGojoTrial；四阶在 xiyou_gojo_trials 的开关检查）
 	_check("art", XDB.img_path("sv_actors", "Codex_Gojo_SV") != "" and XDB.img_path("characters", "$Codex_Gojo_Walk") != "" and XDB.img_path("faces", "Codex_Gojo_Face") != "")
 	var icon_ids := [int(XDB.rec("Skills", XGojo.STRIKE).iconIndex), int(XDB.rec("Skills", XGojo.ADV[3]).iconIndex), int(XDB.rec("Armors", XGojo.ARMOR).iconIndex), int(XDB.rec("States", XGojo.ST_BLUE).iconIndex)]
 	_check("art_icon_ids", icon_ids == [XGojo.ICON_BASE + 2, XGojo.ICON_BASE + 10, XGojo.ICON_BASE + 18, XGojo.ICON_BASE + 3], icon_ids)
