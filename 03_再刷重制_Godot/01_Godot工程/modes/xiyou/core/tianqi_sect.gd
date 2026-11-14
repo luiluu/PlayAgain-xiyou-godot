@@ -204,3 +204,37 @@ static func opening_commands() -> Array:
 
 	# ---- 槽位：壬 ----
 	return c
+
+
+# ==== 包壬：入队等级同步 ====
+## 通关抽到的新角色入队时，等级同步成「当前上场队员（上场 4 人＋助力位）的平均等级（四舍五入）」，不超过本层等级上限（XState.max_level，
+## 各层守层者打完才抬）；经验同步到该级。只管 XTianqi.take_draw 的通关抽角色，开局阵容不动；只升不降。回退开关 REN（O-待定）。
+static var REN := true
+
+
+## 入队前算：上场队员平均等级（四舍五入）；没人上场（空队）返回 0
+static func ren_target(s: XState) -> int:
+	var total := 0
+	var n := 0
+	for a in s.battle_members():
+		total += a._level()
+		n += 1
+	var h: XActor = s.helper()
+	if h != null:
+		total += h._level()
+		n += 1
+	if n == 0:
+		return 0
+	return mini((total * 2 + n) / (n * 2), s.max_level())
+
+
+## XTianqi.take_draw 入队后调：把新角色同步到 target（入队前算的平均）；返回同步后的等级，没动返回 0
+static func ren_sync(s: XState, id: int, target: int) -> int:
+	if not REN or not on(s) or target <= 0 or not s.party.has(id):
+		return 0
+	var a: XActor = s.actor(id)
+	if a._level() >= target:
+		return 0
+	a.change_level_mv(target)
+	return a._level()
+
