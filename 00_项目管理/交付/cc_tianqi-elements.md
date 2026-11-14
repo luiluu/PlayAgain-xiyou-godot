@@ -45,6 +45,21 @@
 
 - 建议：`03_再刷重制_Godot/07_开发环境/选测对照.json` 目前对 `modes/xiyou/tianqi_data/elements_table.json` 与 `skill_rework.json` 会因找不到直接同名词加载测试而触发整轮，后续可由工具车道补充精准映射，减少选测误扩整轮。
 
+## 核查返修（gpt 甲档「修完再合」3 项 P2，2026-11-14，cc）
+
+专项 `tests/xiyou_tianqi_elements.gd` 新增 `_test_review_fixes`，42 → 53 条断言全过；修法与测试同在提交 3d2923a1b。
+
+1. **首次建牌组用全局 `randi()`**（`core/tianqi_elements.gd` `store`）→ 新增 `derived_seed(s)`：由存档自带宝珠种子 `orb_seed`（新游戏随机、随存档保存；无 `orbSeed` 的旧档读档时按存档内容算出）加难度取 `XOrbs.hash32`，不吃全局随机流与战斗随机流。旧天启篇档（无 `elements` 字段）不存档重读，牌组不变。测试：`review1_first_deck_no_global_randi`、`review1_old_save_reload_same_deck`、`review1_seed_follows_save`（3 条）。
+2. **Boss 面板不传 logic，影子／生存战回落成 knight 牌组**（`battle/boss_status_panel.gd`）→ 面板加 `logic_source`，`battle_scene.gd` 建面板时传本场 `logic`，`_tq_profile` 按实际结算模式取牌组：35 层影子显示 yingzi 2弱2抗1免，生存战不显示牌组（面板隐藏元素行）。测试：`review2_panel_shadow_shows_yingzi`、`review2_panel_survival_no_knight_deck`（2 条）。
+3. **免疫命中仍走 respond／establish**（`battle/battle_logic.gd` `_apply`）→ 新增 `XTianqiElements.immune_hit()`（条件与 `after_apply` 免疫分支一致：天启篇 `on()`、角色打敌人、HP 伤害 1／5 型、`best_row` 为 immune 且倍率 0），命中时跳过 `_establish`（respond／establish 状态回调）；`after_apply` 照旧标 `element_immune` 和「无效」弹字。`on()` 为假（西游档、`ENABLED=false`、发行关闭）恒为假，西游档零改动。测试：`review3_immune_skips_establish`、`review3_switch_off_establish_runs`、`review3_west_zero_damage_establish_runs`（3 条，用子类记 `_establish` 调用次数）。
+
+顺带补证：
+- 新编号不撞生成数据库：`review_new_ids_no_db_clash`（Items 3101～3105、Skills 11201～11205、CommonEvents 9101～9105 原表为空或在表外，且不被 `XTianqiSkills` 表外补招占用）、`review_new_ids_resolve_to_synthetic`（2 条）。
+- 牌组存取往返与浮点归一：`review_save_roundtrip_deck_equal`（`to_dict`→JSON→`from_dict` 后层牌组、固定入口、种子一致）、`review_fixed_entries_float_normalized`（1 条＋1 条）。补证时发现固定入口（hongjun／yingzi／knight／dungeon_boss）读档后弱抗免是浮点、原只归一层牌组，已加 `_norm_entry` 在 `fixed_deal` 里一并归一。
+
+验证：专项 53/53；选测（基准 5331d152f）`检查.sh --oracle --affected 5331d152f --cloud`，结果见下。
+
 ## 本分支提交
 
 - a601e98e1 天启篇元素系统重做 v0.7 实装与专项测试
+- 3d2923a1b 天启篇元素：gpt 核查 3 项 P2 返修＋补证专项
