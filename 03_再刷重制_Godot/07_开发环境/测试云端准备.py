@@ -338,7 +338,7 @@ class CloudWaitTests(unittest.TestCase):
         # 版本号／文档差异照旧过户
         (self.repo / '00_项目管理').mkdir(exist_ok=True)
         (self.repo / '00_项目管理/板.md').write_text('docs')
-        self.git('add', '.'); self.git('commit', '-q', '-m', 'docs')
+        self.git('add', '00_项目管理/板.md'); self.git('commit', '-q', '-m', 'docs')
         docs = self.git('rev-parse', 'HEAD')
         self.run_tool('adopt', snap, docs)
         self.assertIn('refs/ci/results/%s/affected' % docs, self.results())
