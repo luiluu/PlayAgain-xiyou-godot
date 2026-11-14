@@ -45,6 +45,7 @@ var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
+var duel := false   # --duel：不补血、打到分出胜负或 turns 回合，量真实回合数（去全队 ×6 开关对照，cc/tianqi-no-x6）
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
 
@@ -70,6 +71,12 @@ func _ready() -> void:
 		elif a.begins_with("--snapshots="):
 			snapshots = a.substr(12)
 			both = true
+		elif a == "--duel":
+			duel = true
+		elif a == "--x6=off":
+			XTianqiNoX6.ENABLED = false   # 回到全队 ×6 与原血量（O-待定-1 关）
+		elif a == "--guardian-heal=off":
+			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-待定-2 关）
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -231,7 +238,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	for r in turns:
 		# 每回合开始把敌人血量补满（不动状态），这一回合掉的血就是这一回合的伤害；血量用真值，按比例扣血的技能才不失真
 		for e in logic.enemies:
-			if e.is_alive():
+			if e.is_alive() and not duel:
 				e.hp = e.mhp
 		var turn_dmg := 0.0
 		logic.start_turn()
@@ -344,7 +351,13 @@ func _run() -> void:
 		var wiped := per.filter(func(r): return int(r.alive) == 0).size()
 		rows.append({"floor": f, "troop": GUARDIAN[f], "level": level_cap(f), "fabao": fabao_cap(f), "median": median,
 			"min": dmg[0], "max": dmg[-1], "wiped": wiped, "hp": hp, "teams": per})
-		print("BASELINE floor=%d level=%d fabao=%d median=%.0f min=%.0f max=%.0f wiped=%d/%d" % [f, level_cap(f), fabao_cap(f), median, dmg[0], dmg[-1], wiped, per.size()])
+		var won: Array = per.filter(func(r): return bool(r.won))
+		var won_turns: Array = won.map(func(r): return float(r.turns))
+		rows[-1]["won"] = won.size()
+		rows[-1]["wonTurnsMedian"] = _median(won_turns) if not won_turns.is_empty() else -1.0
+		rows[-1]["enemyHp"] = _median(per.map(func(r): return float(r.enemyHp)))
+		print("BASELINE floor=%d level=%d fabao=%d median=%.0f min=%.0f max=%.0f wiped=%d/%d won=%d wonTurns=%.1f enemyHp=%.0f" % [f, level_cap(f), fabao_cap(f), median, dmg[0], dmg[-1], wiped, per.size(),
+			won.size(), float(rows[-1].wonTurnsMedian), float(rows[-1].enemyHp)])
 	XEnemy.force_roll = -1.0
 	var out := {"gear": gear, "maxQuality": max_quality, "skippedActors": skipped_ids, "noFabao": no_fabao, "difficulty": difficulty, "teams": list, "turns": turns, "seed": seed, "rows": rows}
 	if out_path != "":
