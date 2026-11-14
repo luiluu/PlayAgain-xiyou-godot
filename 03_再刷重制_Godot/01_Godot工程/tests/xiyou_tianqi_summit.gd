@@ -38,7 +38,9 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -77,12 +79,9 @@ func _has(host: FakeHost, text: String) -> bool:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_summit")
 	seed(20261111)
-	XSave.dir_override = "user://test_xiyou_tianqi_summit"
-	XConfig.path_override = XSave.dir().path_join("options.json")
-	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
-	DirAccess.remove_absolute(XSave.dir_override.path_join("global.json"))
+	DirAccess.remove_absolute(XSave.dir().path_join("global.json"))
 	_data()
 	await _door34()
 	await _door35()
@@ -94,6 +93,7 @@ func _run() -> void:
 	_level_cap()
 	await _plain()
 	DirAccess.remove_absolute(XGlobalVars.path())
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -151,7 +151,9 @@ func _door34() -> void:
 	host.results = [0]
 	await XTianqiSummit.run_door(host, s)
 	_check("hongjun_win", int(s.variable(20)) == 35 and XTianqiSummit.hongjun_beaten(s) and _has(host, "第 34 层") and host.moves[-1][0] == 4)
-	var back := XState.from_dict(s.to_dict())
+	XState.current = s
+	var back := kit.roundtrip()
+	XState.current = s
 	_check("progress_saved", XTianqiSummit.hongjun_beaten(back))
 	# 别的线还没做好（四条线都接上了，借关掉死亡线来模拟）：34 层鸿钧照样打
 	XTianqiDeathLine.ENABLED = false

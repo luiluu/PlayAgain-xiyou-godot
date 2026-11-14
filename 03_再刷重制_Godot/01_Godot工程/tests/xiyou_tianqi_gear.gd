@@ -6,6 +6,7 @@ extends Node
 ## 四、界面：装备页只列 13 栏、光标按显示行走、神器栏能装白名单；状态页装备列按天启篇排列。
 ## 五、开关 XTianqiGear.ENABLED=false：天启篇存档也回到原版 19 栏与原规则。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 
 
@@ -38,11 +39,9 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## 天启篇状态（与 XTianqi.start_new_game 写的规则版本一样，不跑开局）
+## 天启篇状态（经 Kit.new_game 真开局）
 func _tianqi_state() -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "jiusi", "lineup": []}
-	return s
+	return Kit.new_game("jiusi")
 
 
 func _types(a: XActor) -> Array:
@@ -138,9 +137,7 @@ func _soft_bound() -> void:
 
 func _ui() -> void:
 	var s := _tianqi_state()
-	s.flags.tianqi.lineup = [1]  # 天启篇 NO_RECRUIT（天启第二批）只放开局阵容入队
-	s.add_actor(1)
-	var a := s.actor(1)
+	var a: XActor = s.battle_members()[0]
 	a.change_level(80)
 	var art := XGear.template("armor", 7901)
 	s.gear.append(art)

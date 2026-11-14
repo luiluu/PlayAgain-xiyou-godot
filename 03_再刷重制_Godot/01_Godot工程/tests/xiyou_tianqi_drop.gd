@@ -6,7 +6,9 @@ extends Node
 ## 四、怪物表：精良及以下的装备不掷，史诗以上和材料照掷；倍率不再有 ×5。
 ## 五、开关：ENABLED／GENERIC／BONUS／DIFFICULTY 各自回退。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -24,7 +26,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_drop")
 	_bonus()
 	_difficulty()
 	_generic()
@@ -34,6 +36,7 @@ func _run() -> void:
 	_guardian_and_dungeon()
 	_filter_and_book()
 	_switches()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -43,10 +46,7 @@ func _run() -> void:
 
 
 func _tianqi_state(diff := "xunchang") -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": []}
-	XState.current = s
-	return s
+	return Kit.new_game(diff)
 
 
 func _near(a: float, b: float, eps := 0.001) -> bool:
@@ -228,18 +228,19 @@ func _signature() -> void:
 	# 返修 P2：没有掉落账的旧档，首次的种子由存档派生，读同一个档再掷结果一样（不用手设种子）
 	var old_s := _tianqi_state()
 	old_s.flags.tianqi.erase("drop")
-	var save_d := old_s.to_dict()
+	XState.current = old_s
+	kit.save()
+	kit.legacy(["drop"])
 	var first_rolls := []
 	var first_seeds := []
 	for _k in 2:
-		var ld := XState.from_dict(save_d.duplicate(true))
-		XState.current = ld
+		var ld := kit.reload()
 		_check("legacy_no_drop", not ld.flags.tianqi.has("drop"))
 		first_rolls.append(range(20).map(func(_i): return XTianqiDrop.roll_signature(ld, "5:3:5", 0.3)))
 		first_seeds.append(int(ld.flags.tianqi.drop.seed))
 	_check("legacy_reload_same", first_rolls[0] == first_rolls[1] and first_seeds[0] == first_seeds[1] and first_rolls[0].has(true), [first_seeds, first_rolls[0]])
 	XTianqiDrop.SEED_FROM_SAVE = false
-	var ld_off := XState.from_dict(save_d.duplicate(true))
+	var ld_off := kit.reload()
 	XTianqiDrop.store(ld_off)
 	XTianqiDrop.SEED_FROM_SAVE = true
 	_check("legacy_seed_switch", int(ld_off.flags.tianqi.drop.seed) != first_seeds[0], [ld_off.flags.tianqi.drop.seed, first_seeds[0]])

@@ -3,8 +3,9 @@ extends Node
 ## 场钱与标价（避开 4、各档价格倍数、难度奖励倍率）、装备卖价按品质、战斗金钱加成相加递减、重铸涨价／封顶／锁一条、
 ## 进阶四阶价、修炼八项全队共享与开放层、天平三样（价格翻倍、上限、饥荒线、换层清掉、出伤承伤、开战回满）、原版档与开关不变。
 
-const CONFIG := "user://xiyou_tianqi_money_config.json"
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 class FakeEnemy:
@@ -62,12 +63,8 @@ func _weapon_of_grade(g: int) -> int:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
 	seed(20261114)
-	XConfig.path_override = ProjectSettings.globalize_path(CONFIG)
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig._loaded_path = "<unloaded>"
+	kit = Kit.new("xiyou_tianqi_money")
 	var M := XTianqiMoney
 	# ---- 表与取整 ----
 	_check("table", not M.data().is_empty() and (M.data().field_gold.by_floor as Array).size() == 36)
@@ -154,9 +151,10 @@ func _run() -> void:
 	_check("wh_withdraw", XWarehouse.withdraw(s, "weapon", bought2))
 	var back: Dictionary = s.gear[s.gear.find_custom(func(e): return is_same(e, bought2))]
 	_check("wh_keeps_marks", bool(back.get("tq_bought", false)) and int(back.get("tq_buy_price", -1)) == buy_p and XItemMarks.selling_price(back) <= buy_p / 2)
-	var rs := XState.from_dict(s.to_dict())
-	var back2 = rs.gear.filter(func(e): return str(e.get("instanceId", "")) == str(back.get("instanceId", "")))
-	_check("save_keeps_marks", back2.size() == 1 and bool(back2[0].get("tq_bought", false)) and int(back2[0].get("tq_buy_price", -1)) == buy_p, back2.size())
+	XState.current = s
+	var rs := kit.roundtrip()
+	var back2 = rs.gear.filter(func(e): return str(e.get("instanceId", "")) == str(back.get("instanceId", ""))) if rs != null else []
+	_check("save_keeps_marks", rs != null and back2.size() == 1 and bool(back2[0].get("tq_bought", false)) and int(back2[0].get("tq_buy_price", -1)) == buy_p, back2.size())
 	XState.current = s
 	# ---- 战斗金钱 ----
 	_check("effective_200", is_equal_approx(M.effective(200.0), 100.0) and is_equal_approx(M.effective(-150.0), -90.0) and M.effective(10000.0) < 200.0)
@@ -345,10 +343,7 @@ func _run() -> void:
 	M.ENABLED = false
 	_check("all_off", not M.on(s) and XItemMarks.selling_price(potion) == 50 and not M.training_on(s) and is_equal_approx(M.scale_dealt_mult(s), 1.0))
 	M.ENABLED = true
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig.path_override = ""
-	XConfig._loaded_path = "<unloaded>"
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

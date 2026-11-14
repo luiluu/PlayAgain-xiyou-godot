@@ -5,6 +5,7 @@ extends Node
 ## 三、城隍庙（Map189 EV021）天启篇照随机页走（四小强无损学 3920），去掉 6216／6241 两步与「随机模式下」字样；
 ## 四、事件经 MVInterpreter 真跑、XSave 真实写盘读档验证；开关 GENG 关掉回原样；西游普通档不受影响。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 
 
@@ -63,9 +64,8 @@ func _run() -> void:
 
 
 func _tianqi_state() -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "jiusi", "lineup": [8, 9, 10, 11]}
-	XState.current = s
+	var s := Kit.new_game("jiusi")
+	s.flags.tianqi.lineup = [8, 9, 10, 11]
 	return s
 
 

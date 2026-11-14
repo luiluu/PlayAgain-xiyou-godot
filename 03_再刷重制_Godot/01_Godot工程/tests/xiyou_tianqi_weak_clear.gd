@@ -25,14 +25,15 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 var weak: Array = []
 var strong: Array = []
 
 
 func _ready() -> void:
-	XSave.dir_override = DIR
-	XConfig.path_override = DIR.path_join("options.json")
+	kit = Kit.new("xiyou_tianqi_weak_clear")
 	_run.call_deferred()
 
 
@@ -77,6 +78,7 @@ func _run() -> void:
 	_slot_write_guard()
 	await _growth_fail_closed()
 	await _legacy_and_switches()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -103,7 +105,9 @@ func _all_weak() -> void:
 	_check("achievement_142", s.achievements.get("142") == true)
 	_check("no_global_weak_flag", not XConfig.flag(XWeakChallenge.CONFIG_KEY) and s.flags.get(XWeakChallenge.FLAG) != true)
 	var d := s.to_dict()
-	var back := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
+	XState.current = s
+	var back := kit.roundtrip()
+	XState.current = s
 	_check("after_load", XTianqiWeakClear.has(back, "jianxian") and not XTianqiWeakClear.has(back, "xunchang"))
 	_check("save_mark", XTianqiWeakClear.save_mark(d) == "　全弱者" and XTianqiWeakClear.save_mark(_state("jianxian", weak.slice(0, 5)).to_dict()) == "")
 	# 再打一次：不重复记（成员不覆盖），结算照说一行

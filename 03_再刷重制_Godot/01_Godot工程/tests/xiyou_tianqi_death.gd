@@ -34,7 +34,9 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -92,8 +94,8 @@ func _texts(logs: Array) -> Array:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
 	seed(20261111)
+	kit = Kit.new("xiyou_tianqi_death")
 	_data()
 	await _choose_and_opening()
 	await _beats()
@@ -105,6 +107,7 @@ func _run() -> void:
 	_survival()
 	_shadow()
 	await _plain()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -168,8 +171,9 @@ func _choose_and_opening() -> void:
 	_check("opening_done", XTianqiLine.opening_done("death", s) and bool(XTianqiDeathLine.progress(s).get("survived", false)))
 	_check("throne_said", host.said.any(func(t): return str(t).contains("现在一切结束了")) and host.said.any(func(t): return str(t).contains("来收尾")))
 	_check("door_open", not XTianqiLine.door_blocked(s))
-	var back := XState.from_dict(s.to_dict())
-	_check("progress_saved", XTianqiLine.opening_done("death", back) and XTianqi.line_of(back) == "death")
+	XState.current = s
+	var back := kit.roundtrip()
+	_check("progress_saved", back != null and XTianqiLine.opening_done("death", back) and XTianqi.line_of(back) == "death")
 
 
 func _beats() -> void:

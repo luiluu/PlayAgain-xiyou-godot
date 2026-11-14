@@ -4,6 +4,7 @@ extends Node
 ## 五、必出的神话／混沌神话行也跳过；六、洪荒奖励、洪荒女皇店取消，仙道模式并进人族首领；
 ## 七、副本档系数；八、路线系数（真气、流萤残核、星爆书、抽奖被动上限）；九、原版档不受影响、各开关回退。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 
 
@@ -41,10 +42,7 @@ func _run() -> void:
 
 
 func _tianqi_state(diff := "jiusi") -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": []}
-	XState.current = s
-	return s
+	return Kit.new_game(diff)
 
 
 func _plain_state() -> XState:

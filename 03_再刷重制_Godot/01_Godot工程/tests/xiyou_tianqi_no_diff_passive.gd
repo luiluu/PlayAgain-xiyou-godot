@@ -15,7 +15,9 @@ extends Node
 const SKILLS := [5548, 5980, 6168]
 const STATES := [1631, 1691, 995]
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -77,18 +79,15 @@ func _wait(cond: Callable, timeout := 6000) -> bool:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_no_diff_passive")
 	XBattleScene.force_auto = true
-	XSave.dir_override = "user://test_xiyou_tianqi_ndp"
 	seed(20261114)
 	await _learn_blocked()
 	_equivalence()
 	_old_save()
 	_rollback_old_save()
 	await _real_opening()
-	for slot in range(1, 11):
-		DirAccess.remove_absolute(XSave.path(slot))
-	DirAccess.remove_absolute(XSave.dir())
+	kit.teardown()
 	Engine.time_scale = 1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -141,7 +140,9 @@ func _learn_blocked() -> void:
 		await MVScript.run(_learn_all_script(sid), MVInterpreter.new(self, 0, 0, []))
 	_check("xiyou_learns", _has_any(p.actor(lineup[0])) == SKILLS, _has_any(p.actor(lineup[0])))
 	p.actor(lineup[0]).add_state(995)
-	var p2 := XState.from_dict(p.to_dict())
+	XState.current = p
+	var p2 := kit.roundtrip()
+	XState.current = p
 	_check("xiyou_load_untouched", _has_any(p2.actor(lineup[0])) == SKILLS and p2.actor(lineup[0]).state_ids.has(995) and XTianqiNoDiffPassive.strip(p2) == 0)
 
 
@@ -290,8 +291,8 @@ func _old_save() -> void:
 			if not x.state_ids.has(st):
 				x.state_ids.append(st)
 	s.set_switch(2491, true)
-	var d := s.to_dict()
-	var s2 := XState.from_dict(JSON.parse_string(JSON.stringify(d)))
+	XState.current = s
+	var s2 := kit.roundtrip()
 	XState.current = s2
 	var left := []
 	for id in lineup:
@@ -367,9 +368,10 @@ func _counts(s: XState, ids: Array) -> Array:
 
 
 func _reload(s: XState, enabled: bool) -> XState:
-	var d = JSON.parse_string(JSON.stringify(s.to_dict()))
+	XState.current = s
+	kit.save()
 	XTianqiNoDiffPassive.ENABLED = enabled
-	return XState.from_dict(d)
+	return kit.reload()
 
 
 func _rollback_old_save() -> void:

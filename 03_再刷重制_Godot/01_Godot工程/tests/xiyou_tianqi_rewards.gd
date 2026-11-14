@@ -31,8 +31,9 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
-const CONFIG := "user://xiyou_tianqi_rewards_config.json"
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -94,12 +95,8 @@ func _rewards_in(s: XState) -> Array:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
 	seed(20261112)
-	XConfig.path_override = ProjectSettings.globalize_path(CONFIG)
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig._loaded_path = "<unloaded>"
+	kit = Kit.new("xiyou_tianqi_rewards")
 	_data()
 	_items()
 	await _rift()
@@ -108,10 +105,7 @@ func _run() -> void:
 	_seal_effects()
 	_relic_effects()
 	await _plain()
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig.path_override = ""
-	XConfig._loaded_path = "<unloaded>"
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -163,10 +157,11 @@ func _items() -> void:
 	var a: XActor = s.members()[0]
 	_check("relic_wear", _wear(s, a, relic) and a.equip_list().has(relic))
 	_check("seal_wear", _wear(s, a, seal) and a.equip_list().has(seal))
-	var back := XState.from_dict(s.to_dict())
-	var ba: XActor = back.members()[0]
-	var tags := ba.equip_list().map(func(e): return XTianqiRewards.tag(e)).filter(func(t): return not t.is_empty())
-	_check("saved_tags", tags.size() == 2 and tags.any(func(t): return t.kind == "relic" and t.half == true and t.line == "plague"), tags)
+	XState.current = s
+	var back := kit.roundtrip()
+	var ba: XActor = back.members()[0] if back != null else null
+	var tags := ba.equip_list().map(func(e): return XTianqiRewards.tag(e)).filter(func(t): return not t.is_empty()) if ba != null else []
+	_check("saved_tags", back != null and tags.size() == 2 and tags.any(func(t): return t.kind == "relic" and t.half == true and t.line == "plague"), tags)
 
 
 # ---- 三、发奖流程 ----
@@ -259,8 +254,9 @@ func _summit() -> void:
 	# 鸿钧
 	await XTianqiRewards.after_hongjun(host, s, 0)
 	_check("hongjun_core", XTianqiRewards.cores(s).size() == 5 and XTianqiRewards.cores(s)[4].from == "34")
-	var back := XState.from_dict(s.to_dict())
-	_check("cores_saved", XTianqiRewards.cores(back).size() == 5 and XTianqiRewards.got(back, "relic_famine_full"))
+	XState.current = s
+	var back := kit.roundtrip()
+	_check("cores_saved", back != null and XTianqiRewards.cores(back).size() == 5 and XTianqiRewards.got(back, "relic_famine_full"))
 
 
 # ---- 四、战斗效果 ----

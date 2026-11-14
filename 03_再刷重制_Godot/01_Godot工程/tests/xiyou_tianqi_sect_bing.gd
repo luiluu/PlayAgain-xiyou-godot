@@ -6,7 +6,9 @@ extends Node
 ## 四、水栽培 Map187 EV105/EV106 在天启篇不出；
 ## 五、开关 BING 关掉回原样，原版西游档不受影响。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 class MockHost:
@@ -75,12 +77,13 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_sect_bing")
 	await _loan_hall()
 	await _debt_battle()
 	await _merchant_and_items()
 	_hydroponics()
 	_switch_off_and_original()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -90,10 +93,7 @@ func _run() -> void:
 
 
 func _tianqi_state(diff := "jiusi") -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": []}
-	XState.current = s
-	return s
+	return Kit.new_game(diff)
 
 
 func _plain_state() -> XState:
