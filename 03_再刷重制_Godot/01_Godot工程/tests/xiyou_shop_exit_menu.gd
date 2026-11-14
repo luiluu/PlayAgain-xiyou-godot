@@ -121,6 +121,10 @@ func _run() -> void:
 	await _case(map, "esc", func(): _key(KEY_ESCAPE, true), func(): _key(KEY_ESCAPE, false))
 	await _case(map, "pad_b", func(): _pad(JOY_BUTTON_B, true), func(): _pad(JOY_BUTTON_B, false))
 	await _case(map, "right_click", func(): _mouse_right(true), func(): _mouse_right(false))
+	# 发行模式同样不开（菜单与商店都不分发行，这里防以后有人只在调试版里挡）
+	ReleaseEntry.simulate_release = true
+	await _case(map, "release_esc", func(): _key(KEY_ESCAPE, true), func(): _key(KEY_ESCAPE, false))
+	ReleaseEntry.simulate_release = false
 	# 关店后正常按 Esc 仍能开菜单（不能把菜单键整个挡掉）
 	await until(func(): return not map.busy)
 	await frames(5)

@@ -51,6 +51,13 @@ func _run() -> void:
 		await _use_pill(id, int(PILLS[id]))
 	await _cap()
 	_save_roundtrip()
+	# 发行模式（天启篇关着、发行隐藏生效）同样能吃：淬元丹是本体内容，不受发行隐藏影响
+	ReleaseEntry.simulate_release = true
+	var n0 := results.size()
+	await _use_pill(2882, 0)
+	for i in range(n0, results.size()):
+		results[i].name = "release_" + results[i].name
+	ReleaseEntry.simulate_release = false
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
