@@ -1548,10 +1548,14 @@ class MergeTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_merge_fixture_')
         self.root = Path(self.tmp.name) / 'main'
         self.root.mkdir()
-        self.old_env = {k: os.environ.get(k) for k in ['GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL']}
+        self.old_env = {k: os.environ.get(k) for k in ['GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL',
+                                                       'XIYOU_LEGACY_SYNC', 'XIYOU_MERGE_SYNC', 'XIYOU_MERGE_ORACLE']}
         for kind in ['AUTHOR', 'COMMITTER']:
             os.environ['GIT_' + kind + '_NAME'] = 'fixture'
             os.environ['GIT_' + kind + '_EMAIL'] = 'fixture@example.invalid'
+        # 天启篇默认合并不自动同步（停下等总装定）；既有同步用例测的是同步那条路径，这里统一点名照旧同步，默认停下另有用例
+        os.environ.pop('XIYOU_LEGACY_SYNC', None); os.environ.pop('XIYOU_MERGE_ORACLE', None)
+        os.environ['XIYOU_MERGE_SYNC'] = '1'
         self.g('init', '-b', 'main')
         env = self.root / merge.ENV
         env.mkdir(parents=True)
@@ -3329,7 +3333,7 @@ for name in filter(None, files):
         self.assertEqual(self.call('--finish', '--cloud', '--batch'), 1)
         self.assertIn('--cloud 不配 --batch', self.last_output)
         self.assertEqual(self.call('--finish', '--affected', '--cloud'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base, '--cloud', 'upload_skip=1'])
+        self.assertEqual(log.read_text().split(), ['--affected', base, '--cloud', 'upload_skip=1'])
         self.assertIn('验证: 选测（基准 ' + base[:9], self.g('log', '-1', '--format=%B', 'main'))  # tools43：原来写成「基准 --cloud」
         self.assertFalse(self.wt.exists())
         self.assertEqual(self.g('rev-parse', 'main', cwd=bare), self.g('rev-parse', 'main'))
@@ -3392,7 +3396,7 @@ for name in filter(None, files):
         self.assertEqual(self.call(), 0, self.last_output)
         self.register()
         self.assertEqual(self.call('--finish', '--cloud'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle', '--cloud'])
+        self.assertEqual(log.read_text().split(), ['--cloud'])
         self.assertIn('验证: 全量（云端）', self.g('log', '-1', '--format=%B', 'main'))
 
     def test_finish_cloud_failure_keeps_lane_and_does_not_push(self):
@@ -3470,7 +3474,7 @@ for name in filter(None, files):
         self.register()
         self.assertEqual(self.call('--finish', '--batch', '--affected'), 1)
         self.assertEqual(self.call('--finish', '--affected'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        self.assertEqual(log.read_text().split(), ['--affected', base])
         body = self.g('log', '-1', '--format=%B')
         self.assertIn('验证: 选测（基准 ' + base[:9], body)
         self.assertFalse(self.wt.exists())
@@ -3516,16 +3520,60 @@ for name in filter(None, files):
         self.assertEqual(self.call_task('task2'), 0, self.last_output)
         self.register_both()
         self.assertEqual(self.call_task('task2', '--finish', '--affected'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        self.assertEqual(log.read_text().split(), ['--affected', base])
         self.assertFalse(wt2.exists())
         self.assertFalse(self.wt.exists())
+
+    def test_tianqi_check_cmd_oracle_only_on_legacy_switch_or_refresh(self):
+        """天启篇检查模式（11-14）：合并检查默认不带 --oracle；XIYOU_LEGACY_SYNC=1、XIYOU_MERGE_ORACLE=1 或本批有 refresh 车道才带。"""
+        plain = [merge.ENV / '检查.sh']
+        self.assertEqual(merge.check_cmd({'refresh': False}, {'refresh': False}), plain)
+        self.assertEqual(merge.check_cmd(), plain)
+        self.assertEqual(merge.check_cmd({'refresh': False}, {'refresh': True}), plain + ['--oracle'])
+        for key in ('XIYOU_LEGACY_SYNC', 'XIYOU_MERGE_ORACLE'):
+            with mock.patch.dict(os.environ, {key: '1'}):
+                self.assertEqual(merge.check_cmd({'refresh': False}), plain + ['--oracle'])
+
+    def test_tianqi_merge_sync_mode_switches(self):
+        with mock.patch.dict(os.environ, {'XIYOU_MERGE_SYNC': ''}):
+            self.assertEqual(merge.merge_sync_mode(), 'stop')
+            with mock.patch.dict(os.environ, {'XIYOU_LEGACY_SYNC': '1'}):
+                self.assertEqual(merge.merge_sync_mode(), 'run')
+        for value, mode in (('1', 'run'), ('skip', 'skip'), ('0', 'stop'), ('yes', 'stop')):
+            with mock.patch.dict(os.environ, {'XIYOU_MERGE_SYNC': value}):
+                self.assertEqual(merge.merge_sync_mode(), mode)
+
+    def test_tianqi_slice_lane_stops_before_sync_then_skip_resumes(self):
+        """改了切片的车道：天启篇默认合并停在同步前（不自动跑 同步正式西游.py），XIYOU_MERGE_SYNC=skip 重跑接着合、不调同步。"""
+        slice_file = self.wt / merge.TOOLS / 'xiyou_slice.json'
+        slice_file.parent.mkdir(parents=True, exist_ok=True); slice_file.write_text('{"maps": []}\n')
+        self.g('add', '.', cwd=self.wt); self.g('commit', '-m', 'slice', cwd=self.wt)
+        with mock.patch.dict(os.environ, {'XIYOU_MERGE_SYNC': ''}):
+            self.assertEqual(self.call(), 1)
+        self.assertIn('天启篇默认不自动同步', self.last_output)
+        self.assertIn('XIYOU_MERGE_SYNC=skip', self.last_output)
+        state = json.loads((self.root / '.git/lane-merge/state.json').read_text())
+        self.assertEqual(state['phase'], 'merged')
+        self.assertNotIn('syncSince', state)
+        # main 上没有 同步正式西游.py：真去调同步就会失败，返回 0 说明 skip 没碰同步
+        with mock.patch.dict(os.environ, {'XIYOU_MERGE_SYNC': 'skip'}):
+            self.assertEqual(self.call(), 0, self.last_output)
+        self.assertIn('按总装决定不同步', self.last_output)
+
+    def test_tianqi_legacy_switch_restores_oracle_in_merge_check(self):
+        log = self.args_checker()
+        self.assertEqual(self.call(), 0, self.last_output)
+        self.register()
+        with mock.patch.dict(os.environ, {'XIYOU_LEGACY_SYNC': '1'}):
+            self.assertEqual(self.call('--finish'), 0, self.last_output)
+        self.assertEqual(log.read_text().split(), ['--oracle'])
 
     def test_finish_without_affected_runs_full_check(self):
         log = self.args_checker()
         self.assertEqual(self.call(), 0, self.last_output)
         self.register()
         self.assertEqual(self.call('--finish'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle'])
+        self.assertEqual(log.read_text().split(), [])  # 天启篇默认（11-14）：合并检查不带 --oracle
         body = self.g('log', '-1', '--format=%B')
         self.assertIn('验证: 全量', body)             # tools60（审查 37 P3）：全量 finish 也写尾注，云端选测.py 的基准认它
         self.assertNotIn('验证: 选测', body)
@@ -3864,7 +3912,7 @@ for name in filter(None, files):
         self.assertEqual(self.close(), 1)
         (self.root / 'stray').unlink()
         self.assertEqual(self.close('--affected'), 0, self.last_output)
-        self.assertEqual(log.read_text().split(), ['--oracle', '--affected', base])
+        self.assertEqual(log.read_text().split(), ['--affected', base])
 
     def fake_sync(self):
         """main 上放一个假同步：记下参数；没带 --accept-changes 时按「测量有改变」退出 2。"""

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 
@@ -234,6 +235,7 @@ class PrecheckTests(Fixture):
         self.assertEqual(r['problems'], [])
         self.assertTrue(any('没有转换产物' in h for h in r['hints']))
 
+    @mock.patch.dict(os.environ, {'XIYOU_LEGACY_SYNC': '1'})
     def test_slow_lane_without_sync_stamp_is_a_problem(self):
         wt = self.lane('cc/task', files={str(merge.TOOLS / 'mv_oracle/x_probe.cjs'): '// probe\n', '.gitignore': '/' + str(pre.GENERATED) + '/\n'})
         (wt / pre.GENERATED).mkdir(parents=True)
@@ -241,6 +243,19 @@ class PrecheckTests(Fixture):
         r = pre.check(wt, 'cc/task')
         self.assertTrue(any('没有同步指纹' in p for p in r['problems']), r['problems'])
 
+    @mock.patch.dict(os.environ, {'XIYOU_LEGACY_SYNC': ''})
+    def test_tianqi_slow_lane_sync_stamp_is_only_a_hint(self):
+        """天启篇默认（11-14）合并不自动同步：慢车道没有同步指纹只提示，不挡「可合并」；分道说明写合并停在同步前。"""
+        wt = self.lane('cc/task', files={str(merge.TOOLS / 'mv_oracle/x_probe.cjs'): '// probe\n', '.gitignore': '/' + str(pre.GENERATED) + '/\n'})
+        (wt / pre.GENERATED).mkdir(parents=True)
+        (wt / pre.GENERATED / 'db.json').write_text('{}')
+        r = pre.check(wt, 'cc/task')
+        self.assertEqual(r['problems'], [])
+        self.assertTrue(any('没有同步指纹' in h for h in r['hints']), r['hints'])
+        self.assertTrue(any('天启篇默认合并不自动同步' in h for h in r['hints']), r['hints'])
+        self.assertIn('XIYOU_MERGE_SYNC', pre.lane_class(r))
+
+    @mock.patch.dict(os.environ, {'XIYOU_LEGACY_SYNC': '1'})
     def test_pending_acceptance_needs_sheet_covering_every_change(self):
         # merge18：main 同步拒收，接受单先是没有、后来 15 处变化只带了 1 条
         tools = str(merge.TOOLS)
