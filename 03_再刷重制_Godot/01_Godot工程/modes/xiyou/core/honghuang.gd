@@ -140,7 +140,8 @@ static func segment(floor_no: int) -> int:
 
 ## BattleManager.setup／startBattle 包装：记本场身份
 static func battle_started(s: XState, troop: int) -> void:
-	power_battle = {"eligible": is_honghuang(s) and XYunshangOrders.immortal_clear(s, troop), "troop": troop,
+	var tq = XTianqiTrumpet.eligible(s, troop)  # 天启篇号卷：炼狱、证道的不朽存在（不看洪荒开关）
+	power_battle = {"eligible": bool(tq) if tq != null else is_honghuang(s) and XYunshangOrders.immortal_clear(s, troop), "troop": troop,
 		"floor": XDungeon.boss_floor(s.map_id), "won": false, "rolled": false}
 
 
@@ -156,6 +157,9 @@ static func roll_power(s: XState, rand: Callable) -> Dictionary:
 	if b.is_empty() or not bool(b.eligible) or not bool(b.won) or bool(b.rolled):
 		return {"got": [], "toasts": []}
 	b.rolled = true
+	var tq := XTianqiTrumpet.roll(s, int(b.floor), rand)  # 天启篇号卷：递增概率、每存档每卷一次，不乘诅咒倍率
+	if not tq.is_empty():
+		return tq
 	var p := minf(1.0, power_chance(s) * XDungeon.power_factor(s, int(b.troop)))
 	var got := []
 	var toasts := []

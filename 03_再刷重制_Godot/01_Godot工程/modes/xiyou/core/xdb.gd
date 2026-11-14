@@ -150,6 +150,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
+	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):
+		return XTianqiTrumpet.rec(name, id, t[id])  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
 	if name == "Skills" and XTianqiSkills.has(id):
 		return XTianqiSkills.rec(id, t[id])  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	if name == "States" and XTianqiSkills.has_state(id):

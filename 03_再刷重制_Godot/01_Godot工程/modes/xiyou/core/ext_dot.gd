@@ -101,6 +101,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 			_diag(st, b, "formula_unavailable" if not out.available else "formula_" + str(out.sourceValueKind))
 			return
 		value = float(out.value)
+	value = XTianqiTrumpet.dot_value(a, value)  # 天启篇号卷三号：自己上的持续伤害、持续回复 +33%
 	var healing := bool(d.healing)
 	value = value if healing else -value
 	var variance := int(d.get("variance", 20))

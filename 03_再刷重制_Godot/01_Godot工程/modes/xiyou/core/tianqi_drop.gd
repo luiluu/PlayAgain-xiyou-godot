@@ -113,6 +113,7 @@ static func sources_of(a: XActor) -> Array:
 		var plus: Array = b.get("bResultPlus", [])
 		if plus.size() > 2 and float(plus[2]) != 0.0:
 			out.append({"name": "套装", "value": tier(float(plus[2]))})
+	out.append_array(XTianqiTrumpet.drop_sources(a))  # 天启篇号卷七号·赏赐（定值，不落档）
 	return out
 
 

@@ -571,6 +571,7 @@ func _add_state(id: int, random: XRandomStream = null) -> void:
 	var source := XImportedBalance.acting_battler()
 	if source != null:
 		state_origins[id] = weakref(source)
+	XTianqiTrumpet.state_added(self, id, source)  # 天启篇号卷三号：自己上的减益回合数 ×1.33
 	# Game_Battler.addState：新附加的状态 refresh 后由 krz 标 dirty；已有状态（_Fix_StackOverflow 分支）只续回合
 	if fresh:
 		if lifecycle_context.get("resources") != null:
