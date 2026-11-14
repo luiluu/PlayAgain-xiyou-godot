@@ -1,7 +1,7 @@
 {
   "version": 1,
   "source": "掉落重构方案 v0.8（Kyo 2026-11-13 23:15「根据你的建议来」）",
-  "_note": "天启篇掉落规则表（XTianqiDrop），只读。只对天启篇存档生效。数字避开 4；难度倍率以后并进 balance_table 的奖励倍率列。",
+  "_note": "天启篇掉落规则表（XTianqiDrop），只读。只对天启篇存档生效。数字避开 4；难度倍率已并进 balance_table.json 每档 scaling.reward（和金钱共用，XTianqiBalance.reward_mult）。",
   "nice_number_exempt": ["version", "ignore_skills", "level_by_floor"],
   "generic": {
     "_note": "通用掉落：每场打赢掷一次。pieces＝每场期望件数；floor_mult 是个别层的件数倍数（第 1 层翻倍）；floors＝生效的层（31 层起归七印祭坛）。quality_weights 依次是低一档、门槛、高一档、高两档；门槛档＝这一层法宝上限对应的喂养门槛（XFabaoFeed.min_grade）。top_grade＝通用池最高品质（5 不朽）。level_window＝挑装备时等级需求离这一层等级上限最多低多少；smart_share＝偏向当前队伍能穿的比例。",
@@ -42,13 +42,5 @@
     "item_base": 0.2,
     "item_floor": 0.005,
     "prd_exact_from": 0.05
-  },
-  "difficulty": {
-    "_note": "难度这一桶：和全队加成相乘，不递减。",
-    "xunchang": 1.0,
-    "jianxian": 1.1,
-    "jiusi": 1.3,
-    "lianyu": 1.5,
-    "zhengdao": 1.8
   }
 }
