@@ -71,7 +71,7 @@ static func save_rng(s: XState, domain := "qiyin") -> XRandomStream:
 ## 下一条流的种子（十六进制）；存档派生关掉或没有存档时现开
 static func next_seed(s: XState, domain: String) -> String:
 	if s == null or not SEED_FROM_SAVE:
-		return XRandomStream.fresh_seed()
+		return XRandomStream.fresh_seed()  # 随机守卫：开关关时的旧路
 	var p := progress(s)
 	var n := int(p.rng_n)
 	p.rng_n = n + 1

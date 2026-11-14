@@ -174,8 +174,13 @@ static func versions(s: XState) -> Dictionary:
 	return out
 
 
-## 唯一的读档后入口（XState.from_dict 末尾）。幂等
+## 唯一的读档后入口（XState.from_dict 末尾）。幂等。先分区迁移，再随机门面补老件随机身份（后者不受 ENABLED 影响，只认 XTianqi.SEED_FROM_SAVE）
 static func after_load(s: XState) -> void:
+	_migrate(s)
+	XTianqiRandom.after_load(s)
+
+
+static func _migrate(s: XState) -> void:
 	if not ENABLED or not live(s):
 		return
 	var tq: Dictionary = s.flags.tianqi
