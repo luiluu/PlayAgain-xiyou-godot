@@ -72,11 +72,11 @@ func is_shown() -> bool:
 	return tabs.visible
 
 
-## setEquipment：内容变了才重排（编号、备注、属性、宝珠、镶嵌记录）
+## setEquipment：内容变了才重排（编号、备注、属性、宝珠、镶嵌记录、说明——天启篇融印、洗词条原地改说明，评审 v0.1 第 7 条）
 func set_item(e: Dictionary) -> void:
-	var k := "" if e.is_empty() else "%s:%s:%s:%s:%s:%s" % [str(e.get("instanceId", e.get("id", ""))), str(e.get("note", "")),
+	var k := "" if e.is_empty() else "%s:%s:%s:%s:%s:%s:%s" % [str(e.get("instanceId", e.get("id", ""))), str(e.get("note", "")),
 		JSON.stringify(e.get("params", [])), JSON.stringify(e.get("augmentSlotItems", [])), JSON.stringify(e.get("upgrades", [])),
-		str(e.get("upgradeSlots", ""))]
+		str(e.get("upgradeSlots", "")), str(e.get("description", ""))]
 	if k == key:
 		return
 	key = k

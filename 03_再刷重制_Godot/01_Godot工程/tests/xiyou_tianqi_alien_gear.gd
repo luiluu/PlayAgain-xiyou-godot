@@ -100,6 +100,18 @@ func _data() -> void:
 		XTianqiAlienGear.family("plague", "shigu"))
 	_check("new_affix_view", str(XTianqiAlienGear.affix_view(_state(), "dying").name) == "临终" and XTianqiAlienGear.is_new_affix("venom"))
 	_check("old_affix_new_name", str(XTianqiAlienGear.affix_view(_state(), "hollow").name) == "血铠")
+	# 评审 v0.1 第 6 条：新词条收益按装备真实级出文案（侵染 20%／每 5 回合／20%／50% 几率；化形同原文案）
+	var sv := _state()
+	_check("review6_tier_dying", str(XTianqiAlienGear.affix_view(sv, "dying", "qinran").benefit).contains("提高 20%") and str(XTianqiAlienGear.affix_view(sv, "dying", "zhongyan").benefit).contains("提高 80%"),
+		[XTianqiAlienGear.affix_view(sv, "dying", "qinran").benefit, XTianqiAlienGear.affix_view(sv, "dying", "zhongyan").benefit])
+	_check("review6_tier_again", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 5 回合多行动一次。" and str(XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit) == "每 2 回合多行动一次。")
+	_check("review6_tier_thrift_venom", str(XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit) == "技能消耗降低 25%。" and str(XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit) == "攻击有 50% 几率附带中毒。",
+		[XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit, XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit])
+	for k in ["dying", "again", "thrift", "venom"]:
+		_check("review6_huaxing_same_" + k, str(XTianqiAlienGear.affix_view(sv, k, "huaxing").benefit) == str(XTianqiAlienGear.affix_view(sv, k).benefit), [XTianqiAlienGear.affix_view(sv, k, "huaxing").benefit, XTianqiAlienGear.affix_view(sv, k).benefit])
+	XTianqiAlienGear.TIER_TEXT = false
+	_check("review6_o-off", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 3 回合多行动一次。")
+	XTianqiAlienGear.TIER_TEXT = true
 
 
 # ---- 二、掉落 ----

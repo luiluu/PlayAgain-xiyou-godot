@@ -636,6 +636,7 @@ static func _derived(logic, u, skill: Dictionary, t, scale: float) -> Array:
 	st.act = {"u": u, "skill": skill, "hits": 0, "per_target": {}, "planned": 1, "weight": 0, "mp_bonus": 0.0, "idle": false,
 		"judged": {}, "star": true, "killed": [], "targets": [], "sacrifice": false, "double": false, "hit_on_holder": {}, "derived": true}
 	var r: Dictionary = logic.apply(u, skill, t)
+	logic.mark_views([r])  # 这一击打完当场取画面快照（多段打同一目标时逐段的血量，评审 v0.1 第 8 条）
 	st.act = prev_act
 	st.scale = prev
 	return [{"type": "action", "user": u, "skill": skill, "views": logic.views()}, r]

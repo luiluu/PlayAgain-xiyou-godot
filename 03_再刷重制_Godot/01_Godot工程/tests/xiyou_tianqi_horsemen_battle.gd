@@ -6,6 +6,7 @@ extends Node
 ## 四、饥荒·小镇做题家：开场 3 只小怪、结党吞小怪并饿出新的、资历、绝粮挡回蓝回 TP。
 ## 五、瘟疫·混子：疫病降属性、每回合掉血、治疗减半、嘲讽只能打混子、减伤、不服、盾。
 ## 六、原版档、开关关掉：照原版敌群，一处都不动。
+## 七、评审 v0.1 第 1、2 条（cc/tianqi-review-fixes）：破产一剑是法术，破产标记要降法防才对这一击起作用；宝石加攻后的追加普攻当场读新攻。
 
 var results: Array = []
 
@@ -79,6 +80,7 @@ func _run() -> void:
 	_famine()
 	_plague()
 	_plain()
+	_review_fixes()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -352,3 +354,54 @@ func _plain() -> void:
 	XTianqiHorsemen.ENABLED = true
 	_check("switch_off", not lg3.has_meta(XTianqiHorsemen.META))
 	lg3.end_battle(0)
+
+
+## 七、评审 v0.1 第 1、2 条：各跑开关开、关两遍，关着时复现原问题
+func _review_fixes() -> void:
+	var famine := XTianqiHorsemen.knight("famine")
+	var keep := 1.0 - float(famine.bankrupt.def_down)
+	for on in [true, false]:
+		XTianqiHorsemen.BANKRUPT_MDF = on
+		var tag := "on" if on else "off"
+		var lg := _logic("famine")
+		var f := XTianqiHorsemen.fight(lg)
+		var kn: XEnemy = lg.enemies[0]
+		for e in f.adds:  # 去掉小怪：不结党，倍率只剩资历
+			e.hp = 0.0
+			e.refresh_resources()
+			lg._die(e)
+		var t: XActor = lg.actors[0]
+		var mdf0 := t.mdf
+		var sk := XTianqiHorsemen._skill("bankrupt", "仙法：破产一剑", 1, 1, float(famine.bankrupt.coef), true)
+		var mult := 1.0 + float(famine.seniority.per) * int(f.seniority)
+		var base := kn.mat * float(sk.coef) * mult
+		# 不挂破产的同一击（法术、打法防）
+		var plain: float = XTianqiHorsemen._strike(lg, kn, t, sk, base, false).hp
+		t.hp = t.mhp
+		var logs := XTianqiHorsemen._famine_perform(lg, f, kn, sk, t)
+		var hits := logs.filter(func(l): return l.type == "hit" and is_same(l.target, t))
+		var hp: float = hits[0].hp if not hits.is_empty() else -1.0
+		var want := plain * XTianqiHorsemen.hit_value(kn.mat, roundf(mdf0 * keep), base, 1.0) / maxf(1.0, XTianqiHorsemen.hit_value(kn.mat, mdf0, base, 1.0))
+		if on:
+			_check("review1_bankrupt_hits_mdf_" + tag, hp > plain and absf(hp - want) <= maxf(2.0, want * 0.01), [hp, plain, want, mdf0])
+		else:
+			_check("review1_bankrupt_mark_useless_" + tag, absf(hp - plain) <= 1.0, [hp, plain])
+		_check("review1_bankrupt_cleared_" + tag, not XTianqiHorsemen.mark_of(lg, t).has("bankrupt") and _near(t.mdf, mdf0), [t.mdf, mdf0])
+		lg.end_battle(0)
+	XTianqiHorsemen.BANKRUPT_MDF = true
+	# 第 2 条：红宝石加攻后，同一行动里的追加普攻读攻击（_follow_up 读 u.atk）
+	for on in [true, false]:
+		XTianqiHorsemen.FRESH_PARAM = on
+		var tag := "on" if on else "off"
+		var lg := _logic("death")
+		var kn: XEnemy = lg.enemies[0]
+		var atk0 := kn.atk  # 读一次：缓存格变热
+		var logs := XTianqiHorsemen.perform(lg, kn, XTianqiHorsemen._skill("red", "红宝石", 1, 1, 0.0, false), null)
+		var follow := logs.any(func(l): return l.type == "hit" and str(l.skill.get("tianqi_horseman", "")) == "follow")
+		var atk1 := kn.atk  # 追加普攻同一时刻读的就是它
+		if on:
+			_check("review2_red_fresh_atk_" + tag, follow and atk1 > atk0, [follow, atk0, atk1])
+		else:
+			_check("review2_red_stale_atk_" + tag, follow and _near(atk1, atk0), [follow, atk0, atk1])
+		lg.end_battle(0)
+	XTianqiHorsemen.FRESH_PARAM = true

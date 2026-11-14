@@ -69,7 +69,7 @@ static func feed(s: XState, fabao: Dictionary, items: Array, owner: XActor = nul
 	var out := {"used": 0, "exp": 0, "from": XMagicWeapon.level_of(fabao), "to": XMagicWeapon.level_of(fabao), "skipped": [], "capped": false}
 	var work := fabao if not preview else fabao.duplicate(true)
 	for item in items:
-		var why := reason(s, work, item) if not preview else _preview_reason(s, work, item)
+		var why := reason(s, work, item)  # 预览也走同一套判断（评审 v0.1 第 5 条：原来预览另写一份，漏了商店买的不能喂）
 		if why == "法宝已到本层上限":
 			out.capped = true
 			break
@@ -86,21 +86,6 @@ static func feed(s: XState, fabao: Dictionary, items: Array, owner: XActor = nul
 	if not out.capped and out.to >= XMagicWeapon.max_level(work):
 		out.capped = true
 	return out
-
-
-## 预览时法宝是副本：is_same 判断换成看原件
-static func _preview_reason(s: XState, work: Dictionary, item: Dictionary) -> String:
-	if XMagicWeapon.level_of(work) >= XMagicWeapon.max_level(work):
-		return "法宝已到本层上限"
-	if not item.has("instanceId") or XMagicWeapon.is_magic(item):
-		return "不能喂"
-	if not s.gear.any(func(e): return is_same(e, item)):
-		return "不在背包里"
-	if XItemMarks.is_locked(s, item):
-		return "已锁定"
-	if grade_of(item) < min_grade(XMagicWeapon.level_of(work)):
-		return "品质不够（至少%s）" % GRADE_NAMES[min_grade(XMagicWeapon.level_of(work))]
-	return ""
 
 
 ## 背包里某一档、能喂给这件法宝的装备（没锁定、不是法宝）

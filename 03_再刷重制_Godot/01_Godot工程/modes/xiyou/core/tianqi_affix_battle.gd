@@ -525,7 +525,7 @@ static func end_action(logic, u, skill) -> Array:
 	for t in f.targets:
 		if t.is_alive():
 			logs.append({"type": "action", "user": u, "skill": skill, "views": logic.views()})
-			logs.append(logic.apply(u, skill, t))
+			logs.append_array(logic.mark_views([logic.apply(u, skill, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 	st.depth = int(st.depth) - 1
 	return logs
 
