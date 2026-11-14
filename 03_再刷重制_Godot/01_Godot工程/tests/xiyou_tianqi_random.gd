@@ -216,6 +216,115 @@ func _switches() -> void:
 	_check("plain_no_assign", not XTianqiRandom.has_seed_id(plain.gear[0]))
 
 
+func _r2_baselines() -> void:
+	# R2（第 2、3、5、7 类旧写法收进门面）：用改动前实测序列写死当基线，验证老档同种子序列一字不变
+	# 1. 第 2 类（drop_hash / XTianqiDrop.roll_signature）
+	Kit.new_game("jianxian", "war", ORB_SEED)
+	kit.save()
+	kit.legacy(["drop"])
+	var s_drop := kit.reload()
+	_check("r2_drop_legacy_absent", s_drop != null and not s_drop.flags.tianqi.has("drop"))
+	var d_store := XTianqiDrop.store(s_drop)
+	_check("r2_drop_seed", int(d_store.seed) == 1189011166, d_store.seed)
+	var drop_seq1 := range(20).map(func(_i): return XTianqiDrop.roll_signature(s_drop, "9:2:9", 0.1))
+	var drop_seq2 := range(15).map(func(_i): return XTianqiDrop.roll_signature(s_drop, "7:3:7", 0.25))
+	_check("r2_drop_seq_9_2_9", drop_seq1 == [false,false,false,false,false,false,true,false,false,false,false,false,true,false,false,false,false,false,false,false], drop_seq1)
+	_check("r2_drop_seq_7_3_7", drop_seq2 == [false,false,false,false,false,false,true,false,false,false,true,false,false,true,false], drop_seq2)
+	_check("r2_drop_hash_direct", is_equal_approx(XTianqiRandom.drop_hash(1189011166, "9:2:9", 0), float(("1189011166|9:2:9|0").sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0))
+	Kit.new_game("jianxian", "war", ORB_SEED)
+	_check("r2_drop_reload_same", kit.reload_same(func(st): return range(15).map(func(_i): return XTianqiDrop.roll_signature(st, "9:2:9", 0.1))))
+
+	# 2. 第 3 类（qiyin_seed / XTianqiQiyin.next_seed / save_rng）
+	Kit.new_game("jianxian", "war", ORB_SEED)
+	kit.save()
+	kit.legacy(["qiyin"])
+	var s_qy := kit.reload()
+	_check("r2_qiyin_legacy_absent", s_qy != null and not s_qy.flags.tianqi.has("qiyin"))
+	var qp := XTianqiQiyin.progress(s_qy)
+	_check("r2_qiyin_seed", str(qp.seed) == "1f8a6c43ed44da1a", qp.seed)
+	var qy_seeds := ["qiyin", "qiyin", "qiyin_dragon", "qiyin_recruit", "qiyin"].map(func(dom): return XTianqiQiyin.next_seed(s_qy, dom))
+	_check("r2_qiyin_next_seeds", qy_seeds == ["e98b358314c4a976","6e8a7b8d078ae4b7","9c866e837e00acf3","cb7d7c84a9b31d25","fb029a661e8d0e85"], qy_seeds)
+	_check("r2_qiyin_rng_n", int(qp.rng_n) == 5, qp.rng_n)
+	var qy_st := XTianqiQiyin.save_rng(s_qy, "qiyin")
+	var qy_floats := _floats(func(): return qy_st.next_float("probe"), 6)
+	_check("r2_qiyin_floats", _norm(qy_floats) == _norm([0.041818859056,0.345350468298,0.313256254885,0.337641534628,0.858056242345,0.278290233109]), qy_floats)
+	_check("r2_qiyin_reload_same", kit.reload_same(func(st):
+		var rng := XTianqiQiyin.save_rng(st, "qiyin")
+		return _floats(func(): return rng.next_float("probe"), 4)))
+	XTianqiQiyin.SEED_FROM_SAVE = false
+	var n_before := int(XTianqiQiyin.progress(s_qy).rng_n)
+	var off_seed := XTianqiQiyin.next_seed(s_qy, "qiyin")
+	var n_after := int(XTianqiQiyin.progress(s_qy).rng_n)
+	XTianqiQiyin.SEED_FROM_SAVE = true
+	_check("r2_qiyin_switch_off", off_seed != "" and n_before == n_after, [off_seed, n_before, n_after])
+
+	# 3. 第 5 类（merchant_roll / XTianqiMerchant.draw）
+	var mr_seq := range(3).map(func(u): return _floats(XTianqiRandom.merchant_roll(12345, u), 5))
+	_check("r2_merchant_raw_floats", _norm(mr_seq) == _norm([
+		[0.020402685739,0.016547848238,0.543155794498,0.634904056089,0.910029513761],
+		[0.608380826423,0.331169624813,0.355809666915,0.321889439132,0.254739272641],
+		[0.196358967107,0.645791401388,0.168463539332,0.008874822175,0.599449031521],
+	]), mr_seq)
+	var s_m := Kit.new_game("jianxian", "war", ORB_SEED)
+	s_m.map_id = 141
+	s_m.flags[XAbyssMerchant.RUN_FLAG] = {"sequence": 1, "claimed": true, "appeared": true, "used": 0, "seed": 12345,
+		"identity": {"key": "abyss:141", "kind": "深渊商人"}}
+	XAbyssMerchant.ledger(s_m).balances["abyss:141"] = 500
+	var s_m_rt := kit.roundtrip()
+	var m_items := []
+	for spec in [["treasure", ""], ["collection", "first_strike"], ["treasure", ""]]:
+		var got = XTianqiMerchant.draw(s_m_rt, spec[0], "武器", spec[1])
+		m_items.append({"id": int(got.id), "kind": str(got.kind), "name": str(got.name),
+			"tq_seed_id": str(got.get("tq_seed_id", "")), "affixes": got.get("tianqi_affixes", [])})
+	var exp_m := [
+		{"affixes":[{"extra":{},"grade":"normal","key":"mmp","tier":3},{"extra":{},"grade":"normal","key":"atk","tier":3},{"extra":{},"grade":"fine","key":"skill_cost","tier":3}],"id":1431,"kind":"weapon","name":"旧神的契约书","tq_seed_id":"eb9d7179d0ea7fac"},
+		{"affixes":[{"extra":{},"grade":"fine","key":"hit","tier":3},{"extra":{},"grade":"normal","key":"mat","tier":3},{"extra":{},"grade":"fine","key":"first_strike","tier":3}],"id":1579,"kind":"weapon","name":"劈~！","tq_seed_id":"4fb6c9d95f40fa61"},
+		{"affixes":[{"extra":{},"grade":"fine","key":"atk","tier":3},{"extra":{},"grade":"normal","key":"mat","tier":3},{"extra":{},"grade":"normal","key":"skill_cost","tier":3}],"id":1432,"kind":"weapon","name":"圣甲虫巨弩","tq_seed_id":"448f521e98956631"},
+	]
+	_check("r2_merchant_items", _norm(m_items) == _norm(exp_m), m_items)
+	Kit.new_game("jianxian", "war", ORB_SEED)
+	XState.current.map_id = 141
+	XState.current.flags[XAbyssMerchant.RUN_FLAG] = {"sequence": 1, "claimed": true, "appeared": true, "used": 0, "seed": 12345,
+		"identity": {"key": "abyss:141", "kind": "深渊商人"}}
+	XAbyssMerchant.ledger(XState.current).balances["abyss:141"] = 500
+	_check("r2_merchant_reload_same", kit.reload_same(func(st):
+		var g = XTianqiMerchant.draw(st, "treasure", "武器")
+		return [int(g.id), str(g.get("tq_seed_id", "")), g.get("tianqi_affixes", [])]))
+
+	# 4. 第 7 类（elements_seed / elements_rng / XTianqiElements）
+	Kit.new_game("jianxian", "war", ORB_SEED)
+	kit.save()
+	kit.legacy(["elements"])
+	var s_el := kit.reload()
+	_check("r2_elements_legacy_absent", s_el != null and not s_el.flags.tianqi.has("elements"))
+	_check("r2_elements_derived_seed_jx", XTianqiElements.derived_seed(s_el) == 1276351530, XTianqiElements.derived_seed(s_el))
+	_check("r2_elements_derived_seed_ly", XTianqiElements.derived_seed(Kit.new_game("lianyu", "war", ORB_SEED)) == 349736755)
+	var floors := XTianqiElements.ensure_deck(s_el)
+	_check("r2_elements_floors_hash", JSON.stringify(floors).sha256_text() == "04a0099be700dfd793e7b31da89769f268d9e06ad03d41fb3cfa157e633b69b3", JSON.stringify(floors).sha256_text())
+	_check("r2_elements_floors_1_17_33", _norm([floors["1"], floors["17"], floors["33"]]) == _norm([
+		{"immune":[],"resist":[4,7],"weak":[5,6]},
+		{"immune":[15],"resist":[7,2],"weak":[6,14]},
+		{"immune":[],"resist":[7],"weak":[15]},
+	]))
+	_check("r2_elements_fixed_hongjun", _norm(XTianqiElements.fixed_deal(s_el, "hongjun")) == _norm({"immune":[3],"resist":[7,8],"weak":[15,4]}))
+	_check("r2_elements_fixed_yingzi", _norm(XTianqiElements.fixed_deal(s_el, "yingzi")) == _norm({"immune":[7],"resist":[2,6],"weak":[9,8]}))
+	_check("r2_elements_fixed_db", _norm(XTianqiElements.fixed_deal(s_el, "dungeon_boss:1")) == _norm({"immune":[3],"resist":[7,2],"weak":[8,9]}))
+	_check("r2_elements_fixed_knight", _norm([
+		XTianqiElements.fixed_deal(s_el, "knight", 1),
+		XTianqiElements.fixed_deal(s_el, "knight", 2),
+		XTianqiElements.fixed_deal(s_el, "knight", 3),
+	]) == _norm([
+		{"immune":[14],"resist":[6,5],"weak":[4,15]},
+		{"immune":[2],"resist":[15,4],"weak":[9,7]},
+		{"immune":[8],"resist":[9,14],"weak":[6,2]},
+	]))
+	XState.current = s_el
+	var s_el_rt := kit.roundtrip()
+	_check("r2_elements_roundtrip", s_el_rt != null
+		and JSON.stringify(XTianqiElements.ensure_deck(s_el_rt)).sha256_text() == "04a0099be700dfd793e7b31da89769f268d9e06ad03d41fb3cfa157e633b69b3"
+		and _norm(XTianqiElements.fixed_deal(s_el_rt, "knight", 2)) == _norm({"immune":[2],"resist":[15,4],"weak":[9,7]}))
+
+
 func _run() -> void:
 	seed(20261114)
 	kit = Kit.new("xiyou_tianqi_random")
@@ -225,6 +334,7 @@ func _run() -> void:
 		_premove()
 		_reload_same()
 		_switches()
+		_r2_baselines()
 	XTianqiSave.ENABLED = true
 	XTianqi.SEED_FROM_SAVE = true
 	kit.teardown()
