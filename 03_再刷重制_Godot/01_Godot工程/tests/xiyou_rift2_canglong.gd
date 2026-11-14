@@ -111,6 +111,10 @@ func _canglong_data() -> void:
 	check("zhumie.cd_kept", str(XDB.rec("Skills", 10092).meta.get("Cooldown", "")).strip_edges() == "3")
 	var p := str(XDB.rec("Skills", 10089).note)
 	check("passive.text", not p.contains("\\v[1497]") and p.contains("真龙之力＝1+等级×等级×2%"), p)
+	var aw := XDB.rec("Skills", 10091)
+	var pass_10092 := str(aw.meta.get("SkillPass10092", "")).strip_edges()
+	var pass_10093 := str(aw.meta.get("SkillPass10093", "")).strip_edges()
+	check("awaken.text", str(aw.note).contains("+" + pass_10093) and str(aw.note).contains("雷霆天罚*诛灭+" + pass_10092), [aw.note, pass_10092, pass_10093])
 	check("shangxie", str(XDB.rec("Armors", 137).note).contains("专属:苍龙破晓") and not str(XDB.rec("Armors", 137).note).contains("云无迹"))
 	# 习得：9 级没有玉玺，10 级有；49 级没有诛灭，50 级有
 	XState.current = XState.new_game_blank()
@@ -125,13 +129,16 @@ func _canglong_data() -> void:
 	check("lv60", a.skill_ids.has(10092) and a.skill_ids.has(10096))
 	# 关：回原版
 	XCanglong.REWORK = false
+	XCanglong.FIX_10091_DESC = false
 	XCanglong.clear_cache()
 	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整也改 Skills，一并关掉，新行为由 xiyou_vegeta_tune 核
 	for t in ["Skills", "Classes", "Armors"]:
 		check("off.%s" % t, JSON.stringify(XDB.table(t)) == JSON.stringify(_source(t)))
+	check("off.awaken_text", not str(XDB.rec("Skills", 10091).note).contains("雷霆天罚*诛灭+250%"))
 	XVegetaTune.ENABLED = true
 	XDB._tables.erase("Skills")
 	XCanglong.REWORK = true
+	XCanglong.FIX_10091_DESC = true
 	XCanglong.clear_cache()
 
 

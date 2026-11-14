@@ -95,6 +95,25 @@
 3. **`XCanglong.formula` 与天启篇 `XTianqiSkills.MASTERY`（潜在代码兼容项，暂不急修）**：
    - **证据**：[canglong.gd#L87-L89](file:///Users/kyo/orca/workspaces/再刷项目资料库/xa-canglong-check/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/canglong.gd#L87-L89) 直接读 `a.skillMasteryLevel(id)`，绕过了 [formula_execution.gd#L131](file:///Users/kyo/orca/workspaces/再刷项目资料库/xa-canglong-check/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/formula_execution.gd#L131) 的 `XTianqiSkills.mastery_on()` 归零。后续天启篇开启 `MASTERY=true` 时需一并处理。
 
+## 修复
+
+- **10091「觉醒*苍龙」说明更正（O-待定，开关 `XCanglong.FIX_10091_DESC = true`）**：
+  - 在 [canglong.gd](file:///Users/kyo/orca/workspaces/再刷项目资料库/xa-canglong-check/03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/canglong.gd) 的 `XCanglong.patch_skills` 中，经 `_set_aps(t[AWAKEN], "\\c[1]效果", AWAKEN_TEXT)` 将 `10091` 的说明文字改为 `苍龙独特技能伤害+125%（雷霆天罚*诛灭+250%）`，与数据库备注 `<SkillPass10092: 250%>` 一致（西游本体与发行版均生效）；`XCanglong.original_data()` 同步置 `FIX_10091_DESC = false`。
+  - **不改项（留给数值线）**：① `10093～10095`、`5140` 的公式 `(1+技能等级)` 与 `YEP_SkillMasteryLevels` 全局 `+10%/级` 双乘算（原版机制，0.8 倍狂刀基准在此机制下测出）；② `XCanglong.formula` 直接读 `a.skillMasteryLevel(id)` 未接 `XTianqiSkills.MASTERY`（留待天启篇数值线/开启 `MASTERY` 时统一处理）。
+- **新增断言**：在 [xiyou_rift2_canglong.gd](file:///Users/kyo/orca/workspaces/再刷项目资料库/xa-canglong-check/03_再刷重制_Godot/01_Godot工程/tests/xiyou_rift2_canglong.gd) 新增 `awaken.text`（核对 `10091` 说明文字中的 `+125%`、`雷霆天罚*诛灭+250%` 与 `meta` 中 `SkillPass10093`、`SkillPass10092` 实际值一致）与 `off.awaken_text`（关闭 `XCanglong.FIX_10091_DESC = false` 后回退原文）。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/canglong.gd` `XCanglong.FIX_10091_DESC`、`patch_skills` | 10091「觉醒*苍龙」说明只写 `苍龙独特技能伤害+125%`，未写明 `SkillPass10092` 实际为 `+250%` | 说明补明 `苍龙独特技能伤害+125%（雷霆天罚*诛灭+250%）` | 原版文案与实际备注数值不符，按「原版的错也要修」补齐（西游本体与发行版均生效） | `XCanglong.FIX_10091_DESC` 设 `false`（或调 `XCanglong.original_data()`） | 小A | 保留 |
+
 ## 变更记录草稿
 
-（只读调研，不改游戏代码与测试，无变更记录条目。）
+## 2026-11-14 【小A·未经审查】10091 觉醒*苍龙说明补明雷霆天罚*诛灭+250%（dev.待定）
+
+- 核对苍龙全技能公式与实测伤害（`xa_canglong-formula-check.md`）：重制 `XCanglong` 结算与原版 `v0.62.12` 一致，发现 `10091 觉醒*苍龙` 说明写 `+125%` 而备注 `<SkillPass10092: 250%>` 漏标。
+- 修复（O-待定，开关 `XCanglong.FIX_10091_DESC`）：在 `XCanglong.patch_skills` 改写 `10091` 的 `<pos=APs text=\c[1]效果:...>` 使其写明 `雷霆天罚*诛灭+250%`，西游本体与发行版均生效；`XCanglong.original_data()` 关回原文。
+- 熟练度与 YEP `+10%/级` 双乘算、`XCanglong.formula` 未接 `XTianqiSkills.MASTERY` 均保留不动，留给数值线。
+- 玩家可见：苍龙破晓被动「觉醒*苍龙」说明现在明确标出「雷霆天罚*诛灭+250%」，与实际伤害一致。
+- 验证：`xiyou_rift2_canglong`、`语法检查.py`、`工具回归.py`。
