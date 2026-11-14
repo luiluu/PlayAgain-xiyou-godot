@@ -204,10 +204,14 @@ static func after_load(s: XState) -> void:
 	migrate(s)
 
 
-## 读档时按标记迁移（幂等：以标记为准，迁移完就记上，再读不动）：
-## - 两阶表开着、档里没有标记＝旧四阶表（v0.2）的阶数：新阶数＝旧阶数 ÷ 2，包含的试炼记通过；技能不收回，新阶数对应的缺哪个补哪个。
-##   例外：档里已有试炼通过记录（本功能早期版本建的档，没记标记），阶数本来就是两阶表的，只补标记不折半。
-## - 两阶表关着（ENABLED＝false，五条悟本身开着）、档里标记是 3＝两阶表的阶数：反迁移成旧四阶阶数 ×2、标记记成 2（再开时照旧四阶折半回来）。
+## 读档时按标记迁移（幂等：以标记为准，迁移完就记上 3，再读不动）。档型（返修第二轮，协调 11-14 定）：
+## - 标记 3：阶数就是两阶表的，不动。
+## - 没有标记、也没有任何试炼通过记录＝纯旧四阶表（v0.2）的档，旧规则下正当拿到的：新阶数＝旧阶数 ÷ 2，
+##   补上包含的试炼通过记录，这几阶的学会缺哪个补哪个。
+## - 有任何试炼通过记录，或是标记 2（关开关反迁移留下的，阶数是旧四阶的）＝碰过两阶表、阶数来历不纯：
+##   新阶数＝min(旧阶数 ÷ 2, 从一阶起连续通过的试炼数)；不补通过记录、不补技能，多退少不补；已付的钱不退，以后进阶照常收。
+## 已学的技能任何情况都不收回。
+## - 两阶表关着（ENABLED＝false，五条悟本身开着）、档里标记是 3：反迁移成旧四阶阶数 ×2、标记记成 2（再开时按上面第三种折半封顶）。
 static func migrate(s: XState) -> void:
 	if s == null or not XTianqi.active(s) or not s.flags.get("tianqi") is Dictionary:
 		return
@@ -226,12 +230,19 @@ static func migrate(s: XState) -> void:
 		return
 	var a: XActor = s.actors[XGojo.ACTOR]
 	var old := XAdvance.rank(s, XGojo.ACTOR)
-	var n := mini(old / 2 if passed(s).is_empty() or v == OLD_VERSION else old, TIERS.size())
-	if old > 0:
-		if n > 0:
-			s.actor_advance[XGojo.ACTOR] = n
-		else:
-			s.actor_advance.erase(XGojo.ACTOR)
+	var done := passed(s)
+	var pure := v == 0 and done.is_empty()
+	var n := mini(old / 2, TIERS.size())
+	if not pure:
+		var streak := 0
+		while streak < TIERS.size() and done.has(streak + 1):
+			streak += 1
+		n = mini(n, streak)
+	if n > 0:
+		s.actor_advance[XGojo.ACTOR] = n
+	else:
+		s.actor_advance.erase(XGojo.ACTOR)
+	if pure:
 		for i in range(n):
 			_mark_passed(s, i + 1)
 			for id in TIERS[i].learn:

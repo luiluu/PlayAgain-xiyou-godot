@@ -274,13 +274,36 @@ func _disk_roundtrip() -> void:
 			and int(m.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION, [old, XAdvance.rank(m, GOJO), XTianqiGojoTrial.passed(m)])
 		var m2 := _disk(m)
 		_check("disk_old%d_once" % old, XAdvance.rank(m2, GOJO) == want and XTianqiGojoTrial.passed(m2).size() == want and m2.gold == 12345)
-	# 本功能早期版本建的档（有试炼通过、没有标记）：阶数已是两阶表的，只补标记不折半
+	# 有通过记录、没有标记（只在本分支早期版本出现过）：min(旧阶数 ÷ 2, 连续通过数)，不补通过和技能，多退少不补
 	var e := _state(55)
 	e.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
 	e.flags.tianqi[XTianqiGojoTrial.PASSED_KEY] = [1]
 	e.actor_advance[GOJO] = 1
+	e.gold = 300000
 	var eb := _disk(e)
-	_check("disk_early_unmarked", XAdvance.rank(eb, GOJO) == 1 and XTianqiGojoTrial.pending_tier(eb, eb.actor(GOJO)) == 2)
+	_check("disk_passed_unmarked_capped", XAdvance.rank(eb, GOJO) == 0 and XTianqiGojoTrial.passed(eb) == [1] and eb.gold == 300000
+		and XTianqiGojoTrial.pending_tier(eb, eb.actor(GOJO)) == 0 and int(XAdvance.row(eb, GOJO).gold) == 100000, [XAdvance.rank(eb, GOJO), XTianqiGojoTrial.passed(eb)])
+	# gpt 举的混合档：早期版本过了一阶（rank1、passed[1]），关开关按旧四阶升到 rank2 存档，再开着读：落到 1 阶，二阶要打新宿
+	var mx := _state(55)
+	var mxa: XActor = mx.actor(GOJO)
+	mx.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
+	mx.flags.tianqi[XTianqiGojoTrial.PASSED_KEY] = [1]
+	for id in XTianqiGojoTrial.TIERS[0].learn:
+		mxa.learn_skill(int(id))
+	mx.actor_advance[GOJO] = 2
+	mx.gold = 777777
+	var mb := _disk(mx)
+	var mba: XActor = mb.actor(GOJO)
+	_check("disk_mixed_capped", XAdvance.rank(mb, GOJO) == 1 and XTianqiGojoTrial.passed(mb) == [1] and mb.gold == 777777
+		and _learned(mba, XTianqiGojoTrial.TIERS[0].learn) and not XTianqiGojoTrial.TIERS[1].learn.any(func(id): return mba.skill_ids.has(int(id))), [XAdvance.rank(mb, GOJO), XTianqiGojoTrial.passed(mb)])
+	_check("disk_mixed_needs_xinsu", XTianqiGojoTrial.pending_tier(mb, mba) == 2 and XAdvance.missing(mb, mba).has("试炼：新宿"))
+	var mb2 := _disk(mb)
+	_check("disk_mixed_once", XAdvance.rank(mb2, GOJO) == 1 and XTianqiGojoTrial.passed(mb2) == [1])
+	# 用来接下面关开关往返的：标准两阶档，一阶、passed[1]、有标记
+	var e2 := _state(55)
+	e2.flags.tianqi[XTianqiGojoTrial.PASSED_KEY] = [1]
+	e2.actor_advance[GOJO] = 1
+	eb = _disk(e2)
 	# 以标记为准：有两阶表标记的档，就算没有通过记录（调试工具改过阶数之类）也不折半
 	var k := _state(55)
 	k.actor_advance[GOJO] = 2
@@ -295,6 +318,13 @@ func _disk_roundtrip() -> void:
 	XTianqiGojoTrial.ENABLED = true
 	var on := _disk(off)
 	_check("disk_on_again", XAdvance.rank(on, GOJO) == 1 and int(on.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION, XAdvance.rank(on, GOJO))
+	# 标记 2、关开关期间又按旧四阶多进了两阶（rank 4、只过了一阶）：折半得 2，按连续通过数封顶成 1，不补二阶
+	XTianqiGojoTrial.ENABLED = false
+	var off3 := _disk(on)
+	off3.actor_advance[GOJO] = 4
+	XTianqiGojoTrial.ENABLED = true
+	var on3 := _disk(off3)
+	_check("disk_old_marker_capped", XAdvance.rank(on3, GOJO) == 1 and XTianqiGojoTrial.passed(on3) == [1], [XAdvance.rank(on3, GOJO), XTianqiGojoTrial.passed(on3)])
 	# 五条悟中途入队的档也记上（老档读档时已先迁移）
 	var j := _state(25)
 	j.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)

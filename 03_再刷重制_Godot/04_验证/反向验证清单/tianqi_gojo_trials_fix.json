@@ -16,12 +16,6 @@
    "replace": "\tmark_table(s)"
   },
   {
-   "name": "有通过记录也折半",
-   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
-   "find": "old / 2 if passed(s).is_empty() or v == OLD_VERSION else old",
-   "replace": "old / 2"
-  },
-  {
    "name": "关开关不反迁移",
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
    "find": "\t\t\t\ts.actor_advance[XGojo.ACTOR] = mini(r * 2, 4)",
@@ -62,6 +56,24 @@
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
    "find": "\t\tamount = -b.absorb_shield(-amount)\n",
    "replace": "\t\tamount = -b.absorb_shield(XTianqiGojoTrial.final_loss(b, -amount))\n"
+  },
+  {
+   "name": "有通过记录也不封顶",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif not pure:\n\t\tvar streak := 0",
+   "replace": "\tif false:\n\t\tvar streak := 0"
+  },
+  {
+   "name": "纯旧四阶档不补通过",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tif pure:\n\t\tfor i in range(n):",
+   "replace": "\tif false:\n\t\tfor i in range(n):"
+  },
+  {
+   "name": "一律当纯旧档（补通过和技能）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
+   "find": "\tvar pure := v == 0 and done.is_empty()",
+   "replace": "\tvar pure := true"
   }
  ]
 }
