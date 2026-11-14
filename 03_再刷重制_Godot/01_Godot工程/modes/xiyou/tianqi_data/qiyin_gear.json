@@ -61,12 +61,12 @@
    "skill_dmg_pct": "技能伤害 +value%",
    "execute_normal": "对生命低于 below_pct% 的普通敌人直接处决",
    "boss_low_hp_dmg_pct": "对首领生命低于 below_pct% 时伤害 +value%",
-   "reveal_rift_rule": "战斗开始时从七个里副本的规则里随机揭 count 条，只对 target 生效",
+   "reveal_rift_rule": "战斗开始时从七个里副本的规则里随机揭 count 条，对 target 生效；有天启四骑士或 34～36 层首领的战斗不揭（开关 SCROLL_BOSS_EXEMPT）",
    "heal_taken_pct": "受到的治疗 +value%（负数＝减少）",
    "dmg_taken_pct": "受到的伤害 +value%",
    "skill_cost_mult": "技能消耗 ×mult",
    "no_revive": "佩戴者不能被复活",
-   "reveal_luck": "每场只揭 count 条，揭到哪条看运气（代价只是说明，没有额外判定）"
+   "reveal_self": "揭开的规则佩戴者自己也受（其余队友不受；XTianqiQiyinRule，开关 SCROLL_COST）"
   }
  },
  "nice_number_exempt": [
@@ -1191,14 +1191,14 @@
      "code": "reveal_rift_rule",
      "count": 1,
      "target": "enemy",
-     "text": "战斗开始时从七个里副本的规则里随机揭一条，只对敌方生效"
+     "text": "战斗开始时从七个里副本的规则里随机揭一条，对敌方生效；有天启四骑士或 34～36 层首领的战斗不揭"
     }
    ],
    "costs": [
     {
-     "code": "reveal_luck",
+     "code": "reveal_self",
      "count": 1,
-     "text": "每场只揭一条，揭到哪条看运气"
+     "text": "揭开的规则佩戴者自己也受（其余队友不受）"
     }
    ]
   }

@@ -57,10 +57,31 @@ static func nice_number_violations() -> Array:
 	return out
 
 
-static func _rng() -> XRandomStream:
+## 开关（O-待定-5）：true＝祭坛和七首之龙的随机流由存档派生（progress.seed＋存档里的计数 rng_n），读档不能重掷；
+## false＝回到每次现开一条（XRandomStream.fresh_seed）
+static var SEED_FROM_SAVE := true
+
+
+## 本档的七印随机流：种子由存档种子 orb_seed 派生（老档第一次用到时补；orb_seed 本身随存档保存），每开一条流计数 +1，
+## 计数也在存档里，所以读档后同样的操作掷出同样的结果。domain 区分祭坛（qiyin）和七首之龙（qiyin_dragon）
+static func save_rng(s: XState, domain := "qiyin") -> XRandomStream:
+	return XRandomStream.create(next_seed(s, domain), domain)
+
+
+## 下一条流的种子（十六进制）；存档派生关掉或没有存档时现开
+static func next_seed(s: XState, domain: String) -> String:
+	if s == null or not SEED_FROM_SAVE:
+		return XRandomStream.fresh_seed()
+	var p := progress(s)
+	var n := int(p.rng_n)
+	p.rng_n = n + 1
+	return XRandomStream.derive(str(p.seed), "%s|%d" % [domain, n])
+
+
+static func _rng(s: XState = null) -> XRandomStream:
 	if rng_override != null:
 		return rng_override
-	return XRandomStream.create(XRandomStream.fresh_seed(), "qiyin")
+	return save_rng(s, "qiyin")
 
 
 # ---- 开关与本档进度 ----
@@ -75,16 +96,19 @@ static func allowed(s: XState = null) -> bool:
 
 ## 本档的祭坛记录（flags.tianqi.qiyin）：
 ##   opened 祭坛开过；keys 印钥；shards 印屑；drop 掉落状态（XTianqiQiyinDrop.new_state 的字段）；
-##   bag 印库 [物品…]（XTianqiQiyinDrop 的物品字典＋revealed: bool）；artifacts 拿到的神器键；field_keys 野外捡到还没报的印钥
+##   bag 印库 [物品…]（XTianqiQiyinDrop 的物品字典＋revealed: bool）；artifacts 拿到的神器键；field_keys 野外捡到还没报的印钥；
+##   seed、rng_n 本档随机流的种子和已开的条数（save_rng）；artifact_miss 神器保底计数（roll_artifact）
 static func progress(s: XState) -> Dictionary:
 	if not s.flags.tianqi.get("qiyin") is Dictionary:
 		s.flags.tianqi["qiyin"] = {}
 	var p: Dictionary = s.flags.tianqi["qiyin"]
 	if not p.get("drop") is Dictionary:
 		p["drop"] = XTianqiQiyinDrop.new_state()
-	for k in ["keys", "shards", "field_keys"]:
+	for k in ["keys", "shards", "field_keys", "rng_n", "artifact_miss"]:
 		if not p.has(k):
 			p[k] = 0
+	if str(p.get("seed", "")) == "":  # 老档没有：由存档种子派生（同一个档每次都一样）
+		p["seed"] = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "qiyin")
 	for k in ["bag", "artifacts"]:
 		if not p.get(k) is Array:
 			p[k] = []
@@ -219,7 +243,7 @@ static func sync(s: XState) -> Array:
 	for n in [31, 32, 33, 34, 35]:
 		if not floor_beaten(s, n) or bool(p.drop.get("floor_kill", {}).get(str(n), false)):
 			continue
-		var r := XTianqiQiyinDrop.floor_first_kill(p.drop, n, difficulty_key(s), _owned_by_seal(s), _rng())
+		var r := XTianqiQiyinDrop.floor_first_kill(p.drop, n, difficulty_key(s), _owned_by_seal(s), _rng(s))
 		p.drop = r.state
 		for item in r.set_pieces:
 			if XTianqiQiyinGear.set_rule().get("first_kill_floors", []).any(func(f): return int(f) == n):
@@ -394,7 +418,7 @@ static func run_dungeon(host, s: XState, key: String, direct: bool, offering: Di
 		return -1
 	p.keys = keys(s) - int(data().keys.cost)
 	p.shards = shards(s) - int(chk.shards)
-	var en := XTianqiQiyinDrop.on_enter(p.drop, unlocked_seals(s), _rng())
+	var en := XTianqiQiyinDrop.on_enter(p.drop, unlocked_seals(s), _rng(s))
 	p.drop = en.state
 	if str(en.restless) != "":
 		await say(host, "restless", [str(seal_info(str(en.restless)).get("seal", ""))])
@@ -416,7 +440,7 @@ static func run_dungeon(host, s: XState, key: String, direct: bool, offering: Di
 			result = 1
 			break
 		if f < troops.size() - 1:
-			var e := XTianqiQiyinDrop.roll_elite(p.drop, _rng())
+			var e := XTianqiQiyinDrop.roll_elite(p.drop, _rng(s))
 			p.drop = e.state
 			run.shards = int(run.shards) + int(e.shards)
 	if result != 0:
@@ -442,13 +466,16 @@ static func _pick_gem(host, run: Dictionary) -> void:
 ## Boss 打赢后的结算：掉落、首通、印钥退还、印屑；当场揭（方案 6.5 节第 3 条）。返回这一场掉的物品（测试用）
 static func settle(host, s: XState, key: String, offering: Dictionary, run: Dictionary) -> Array:
 	var p := progress(s)
-	var rng := _rng()
-	var r := XTianqiQiyinDrop.roll_boss(p.drop, key, difficulty_key(s), _owned_by_seal(s), offering, drop_mult(s), rng)
+	var rng := _rng(s)
+	var r := XTianqiQiyinDrop.roll_boss(p.drop, key, difficulty_key(s), _owned_by_seal(s), offering, drop_mult(s), rng,
+		not ARTIFACT_PITY)  # 神器保底开着时神器不在 roll_boss 里掷，下面 roll_artifact 掷（同一条流、同一位置）
 	var got := []
 	if str(r.error) != "":
 		push_error("XTianqiQiyin: roll_boss " + str(r.error))
 		return got
 	p.drop = r.state
+	if ARTIFACT_PITY:
+		r.artifact = roll_artifact(s, float(XTianqiQiyinDrop.data().get("artifact", {}).get("chance", 0.0)), rng)
 	got.append_array(r.set_pieces)
 	if not r.weapon.is_empty():
 		got.append(r.weapon)
@@ -493,9 +520,71 @@ static func settle(host, s: XState, key: String, offering: Dictionary, run: Dict
 	return got
 
 
-## 物品掉落加成（方案 6.2 节：对套装件、毕业武器照常生效）。原版的掉落词条还没接进天启篇的掉落，先按 1（交付单「未做」）
-static func drop_mult(_s: XState) -> float:
-	return 1.0
+## 开关（O-待定-1）：true＝七印的套装件、毕业武器几率乘全队掉率加成（和常规掉落同一套：XTianqiDrop.party_mult，
+## 技能、套装、号卷、寻宝猎人、亡魂汲取、词条「物品掉落」相加后按 合计×200÷(合计＋200) 递减，最高逼近 3 倍）；false＝按 1
+static var DROP_BONUS := true
+
+
+## 物品掉落加成（方案 6.2 节：对套装件、毕业武器照常生效；真印、神器、龙隙不吃）。基础掉率不动（Kyo 11-14：接上，但要非常低）
+static func drop_mult(s: XState, members = null) -> float:
+	if not DROP_BONUS or s == null or not XTianqiDrop.on(s):
+		return 1.0
+	return XTianqiDrop.party_mult(s, members)
+
+
+# ---- 神器：保底、防重（Kyo 11-14） ----
+
+## 开关（O-待定-2）：true＝能掉神器的战斗（里副本 Boss、七首之龙）共用一个保底计数 artifact_miss，连着 pity_after－1 次没出、
+## 下一次必出；已有的神器不再掉，五件齐了不掷也不计。false＝回到原来（五件里随机、没有保底、可重复）
+static var ARTIFACT_PITY := true
+
+
+## 保底次数（qiyin_drop.json artifact.pity_after）：第这么多次必出
+static func artifact_pity_after() -> int:
+	return int(XTianqiQiyinDrop.data().get("artifact", {}).get("pity_after", 333))
+
+
+## 本档拿到过的神器键（印库里没领的、领过的、背包和身上的）
+static func owned_artifacts(s: XState) -> Array:
+	var p := progress(s)
+	var out := []
+	for k in p.artifacts + p.get("artifacts_got", []):
+		if not out.has(str(k)):
+			out.append(str(k))
+	for e in s.gear + XTianqiQiyinEquip.worn(s):
+		var m := XTianqiQiyinEffects.mark_of(e)
+		if str(m.get("kind", "")) == "artifact" and not out.has(str(m.get("key", ""))):
+			out.append(str(m.key))
+	return out
+
+
+## 还能掉的神器（五件里还没有的，表里的顺序）
+static func artifact_pool(s: XState) -> Array:
+	var owned := owned_artifacts(s)
+	return XTianqiQiyinDrop.artifact_keys().filter(func(k): return not owned.has(str(k)))
+
+
+## 掷一次神器（里副本 Boss、七首之龙共用）。chance 是这场的几率（不吃掉率加成）。返回神器键或 ""。
+## 抽取：五件齐了不抽；到保底不抽浮点数；中了、还剩两件以上时 next_index_mod 一次。reason 前缀区分来源（磁带测试用）
+static func roll_artifact(s: XState, chance: float, rng: XRandomStream, reason := "qiyin_artifact") -> String:
+	if not ARTIFACT_PITY:
+		if rng.next_float(reason) < chance:
+			var keys := XTianqiQiyinDrop.artifact_keys()
+			return str(keys[rng.next_index_mod(keys.size(), reason + "_pick")])
+		return ""
+	var p := progress(s)
+	var pool := artifact_pool(s)
+	if pool.is_empty():
+		return ""
+	var miss := int(p.artifact_miss)
+	var hit := miss + 1 >= artifact_pity_after()
+	if not hit:
+		hit = rng.next_float(reason) < chance
+	if not hit:
+		p.artifact_miss = miss + 1
+		return ""
+	p.artifact_miss = 0
+	return str(pool[0]) if pool.size() == 1 else str(pool[rng.next_index_mod(pool.size(), reason + "_pick")])
 
 
 static func _stash(s: XState, item: Dictionary) -> void:
@@ -573,7 +662,7 @@ static func reveal(s: XState, idx: int) -> Dictionary:
 	bag[idx]["revealed"] = true
 	XTianqiQiyinLook.note(bag[idx])  # 七印外观：一套六件都揭到过就解锁（跨存档）
 	if XTianqiQiyinEquip.on(s) and str(bag[idx].get("gear", "")) == "":
-		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng()))
+		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng(s)))
 		if not gear.is_empty():
 			bag[idx]["gear"] = str(gear.instanceId)
 			bag[idx]["affix_text"] = XTianqiQiyinEffects.mark_of(gear).get("affixes", []).map(func(a): return XTianqiQiyinEquip.affix_line(a))
@@ -628,7 +717,7 @@ static func field_drop(s: XState, map_id: int, troop_name: String, rng: XRandomS
 			n = 1
 	if n == 0:
 		if rng == null:
-			rng = _rng()
+			rng = _rng(s)
 		n = 1 if rng.next_float("qiyin_field_key") < float(data().keys.field_chance) else 0
 	if n > 0:
 		var p := progress(s)

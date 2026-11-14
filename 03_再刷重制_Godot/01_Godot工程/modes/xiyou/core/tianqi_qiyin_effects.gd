@@ -26,10 +26,13 @@ const TUNE := {
 	"sacrifice_min_hp_pct": 50,            # 以身饲虎：自己生命高于这个比例才献
 	"star_elements": [2, 3, 5, 6, 7, 8, 9], # 落星随机的元素号（不含物理 1）
 	"followup_max_per_action": 2,          # 补刀：一次队友行动最多跟几刀
-	"silence_skill_id": 0,                 # 默印 5 件附带技能的技能号；0＝还没分配（等数据车道在数据库里加技能）
+	"silence_skill_id": 10777,             # 默印 5 件附带技能「万籁俱寂」的技能号（天启篇表外号段，skill_rework.json new_skills 按 6065 复制）
 	"rift_rules": ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"],  # 七印书卷能揭的里副本规则（键同印）
 }
 const ARTIFACT_ETYPE := 17
+
+## 开关（O-待定-4）：true＝默印 5 件在战斗技能列表里多出「万籁俱寂」（TUNE.silence_skill_id），放了就 use_silence_all；false＝不给
+static var SILENCE_SKILL := true
 
 ## 七印书卷：开战揭的规则（只对敌方）。里副本规则由祭坛车道（cc/qiyin-altar）实现，读 enemy_only_rule(logic)。
 ## 免死对这个即死无效：死期（终焉规则）结算时由实现方把它置真、结算完置假。
@@ -223,6 +226,9 @@ static func start(logic) -> void:
 			break
 	var owner = st.artifact_owner
 	if owner != null and _has(logic, owner, "reveal_rift_rule"):
+		if XTianqiQiyinRule.scroll_exempt(logic):  # 天启四骑士、34～36 层首领：不揭、不付代价（O-待定-3）
+			st["scroll_exempt"] = true
+			return
 		var rules: Array = TUNE.rift_rules
 		st.scroll_rule = str(rules[int(logic._int(0, rules.size() - 1, "qiyin_scroll"))])
 
@@ -233,9 +239,19 @@ static func finish(logic) -> void:
 		logic.remove_meta("xqiyin")
 
 
-## 七印书卷揭开的里副本规则（只对敌方生效）；没有为空
+## 七印书卷揭开的里副本规则（对敌方和佩戴者生效，见 XTianqiQiyinRule）；没有为空
 static func enemy_only_rule(logic) -> String:
 	return str(_store(logic).get("scroll_rule", "")) if logic != null and logic.has_meta("xqiyin") else ""
+
+
+## 七印书卷这场被豁免了（有天启四骑士或 34～36 层首领）
+static func scroll_exempted(logic) -> bool:
+	return logic != null and logic.has_meta("xqiyin") and bool(_store(logic).get("scroll_exempt", false))
+
+
+## 本场生效的那件神器的佩戴者（没有为 null）
+static func artifact_owner(logic):
+	return _store(logic).get("artifact_owner") if logic != null and logic.has_meta("xqiyin") else null
 
 
 static func _active(logic) -> bool:
@@ -346,6 +362,8 @@ static func begin_action(logic, u, skill: Dictionary) -> void:
 		return
 	var un := _unit(logic, u)
 	un.acted = int(un.acted) + 1
+	if is_silence_skill(skill) and use_silence_all(logic, u):  # 默印 5 件附带技能
+		st.logs.append({"type": "battle_text", "text": "万籁俱寂：敌方全体沉默，我方下一回合技能不耗魔法和 TP。"})
 	if not damage:
 		return
 	if _has(logic, u, "weight_stack") and int(un.weights) > 0:
@@ -831,7 +849,33 @@ static func param_rate(a, i: int) -> float:
 	return 1.0
 
 
-## 默印 5 件附带技能：敌方全体沉默、我方下一回合技能不耗魔法和 TP（每场 per_battle 次）。技能号未分配前不会被调用。
+static func is_silence_skill(skill) -> bool:
+	return SILENCE_SKILL and skill is Dictionary and int(TUNE.silence_skill_id) > 0 and int(skill.get("id", 0)) == int(TUNE.silence_skill_id)
+
+
+## BattleLogic.battle_skills：默印 5 件的人战斗技能列表多出「万籁俱寂」
+static func battle_skills(a) -> Array:
+	if not SILENCE_SKILL or not ENABLED or not (a is XActor) or int(TUNE.silence_skill_id) <= 0 or not on():
+		return []
+	if fold(gear_effects(a)).get("grant_skill_silence_all", {}).is_empty():
+		return []
+	var rec := XDB.rec("Skills", int(TUNE.silence_skill_id))
+	return [] if rec.is_empty() else [rec]
+
+
+## BattleLogic.can_use（经 XTianqiQiyinRule.can_use）：「万籁俱寂」本场用满 per_battle 次、或没穿满 5 件时不能放
+static func skill_usable(logic, a, skill) -> bool:
+	if not is_silence_skill(skill):
+		return true
+	if not (a is XActor):
+		return false
+	var p: Dictionary = _p(logic, a, "grant_skill_silence_all") if _active(logic) else fold(gear_effects(a)).get("grant_skill_silence_all", {})
+	if p.is_empty():
+		return false
+	return not _active(logic) or int(_unit(logic, a).silence_used) < int(p.get("per_battle", 1))
+
+
+## 默印 5 件附带技能：敌方全体沉默、我方下一回合技能不耗魔法和 TP（每场 per_battle 次）。放「万籁俱寂」时 begin_action 调
 static func use_silence_all(logic, u) -> bool:
 	var p := _p(logic, u, "grant_skill_silence_all")
 	if p.is_empty():

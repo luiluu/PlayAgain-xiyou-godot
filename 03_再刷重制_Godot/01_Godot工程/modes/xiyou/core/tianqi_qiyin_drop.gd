@@ -264,9 +264,9 @@ static func boss_set_chance(state: Dictionary, seal: String, drop_mult := 1.0) -
 ## 抽取顺序：
 ##   1 套装件：没到暗保底抽 1 个浮点数定掉不掉；掉了再逐件抽连掉（最多到 max_pieces）；然后逐件：部位（献印屑的第一件不抽）→ 真印（暗保底不抽）→ 成色（真印不抽）
 ##   2 毕业武器：没到暗保底抽 1 个浮点数；掉了：类型（献武器的不抽）→ 真印 → 成色
-##   3 神器：抽 1 个浮点数；中了再 next_index_mod 一次
+##   3 神器：抽 1 个浮点数；中了再 next_index_mod 一次（with_artifact false 时不抽，由调用方掷）
 static func roll_boss(state: Dictionary, seal: String, difficulty: String, owned_parts, offering: Dictionary,
-		drop_mult: float, rng: XRandomStream) -> Dictionary:
+		drop_mult: float, rng: XRandomStream, with_artifact := true) -> Dictionary:
 	var out := {"state": _copy(state), "set_pieces": [], "weapon": {}, "artifact": "", "shards": 0, "refund": 0,
 		"restless": false, "error": ""}
 	if not seals().has(seal):
@@ -320,9 +320,9 @@ static func roll_boss(state: Dictionary, seal: String, difficulty: String, owned
 		out.weapon = _make_weapon(s, seal, forced_w, difficulty, true_mult, rng)
 	else:
 		s.weapon_miss[seal] = wmiss + 1
-	# 3 神器
+	# 3 神器（with_artifact false 时不掷：祭坛流程开着神器保底，由 XTianqiQiyin.roll_artifact 接着掷）
 	var a := _sec("artifact")
-	if rng.next_float("qiyin_artifact") < float(a.get("chance", 0.0)):
+	if with_artifact and rng.next_float("qiyin_artifact") < float(a.get("chance", 0.0)):
 		var keys: Array = a.get("keys", [])
 		out.artifact = str(keys[rng.next_index_mod(keys.size(), "qiyin_artifact_pick")])
 	# 躁动打赢一次就平息

@@ -26,7 +26,7 @@ static var _data: Dictionary = {}
 ## prepare 过的下一场（BattleLogic.setup 取走）：{difficulty}
 static var _pending: Dictionary = {}
 ## 测试注入：龙隙判定、奖励用的随机流。null 时：XTianqiQiyin 注入了测试流就用固定种子的一条（不动祭坛那条流的消耗，
-## 祭坛专项照旧），否则每次现开一条
+## 祭坛专项照旧），否则由存档派生（XTianqiQiyin.save_rng）
 static var rng_override: XRandomStream = null
 const TEST_SEED := "7777777777777777"
 
@@ -57,12 +57,12 @@ static func nice_number_violations() -> Array:
 	return out
 
 
-static func _rng() -> XRandomStream:
+static func _rng(s: XState = null) -> XRandomStream:
 	if rng_override != null:
 		return rng_override
 	if XTianqiQiyin.rng_override != null:
 		return XRandomStream.create(TEST_SEED, "qiyin_dragon")
-	return XRandomStream.create(XRandomStream.fresh_seed(), "qiyin_dragon")
+	return XTianqiQiyin.save_rng(s, "qiyin_dragon")  # 存档派生（XTianqiQiyin.SEED_FROM_SAVE 关掉回到每次现开）
 
 
 static func allowed(s: XState) -> bool:
@@ -119,7 +119,7 @@ static func after_boss(host, s: XState, rng: XRandomStream = null) -> bool:
 	if not allowed(s):
 		return false
 	if rng == null:
-		rng = _rng()
+		rng = _rng(s)
 	var r := XTianqiQiyinDragon.roll_rift(state(s), XTianqiQiyin.difficulty_key(s), rng)
 	_put(s, r.state)
 	if not bool(r.get("appeared", false)):
@@ -193,17 +193,20 @@ static func run_fight(host, s: XState) -> int:
 ## 打赢的奖励：选印 → XTianqiQiyinDragon.reward → 进印库、龙血、首杀招募。返回进印库的物品（测试用）
 static func settle(host, s: XState, rng: XRandomStream = null) -> Array:
 	if rng == null:
-		rng = _rng()
+		rng = _rng(s)
 	var seals := XTianqiQiyinDragon.seals()
 	var labels: Array = seals.map(func(k): return "%s（%s）" % [str(XTianqiQiyin.seal_info(k).get("seal", k)),
 		str(XTianqiQiyinGear.set_of(k).get("name", ""))])
 	var i: int = await ask(host, "pick_seal", labels)
 	var chosen := str(seals[clampi(i, 0, seals.size() - 1)])
-	var r := XTianqiQiyinDragon.reward(state(s), chosen, rng)
+	var r := XTianqiQiyinDragon.reward(state(s), chosen, rng, not XTianqiQiyin.ARTIFACT_PITY)
 	if r.has("error"):
 		push_error("XTianqiQiyinDragonRun: reward " + str(r.error))
 		return []
 	_put(s, r.state)
+	if XTianqiQiyin.ARTIFACT_PITY:  # 神器保底、防重（和里副本共用计数），掷的位置同原来（奖励的最后一步）
+		var art0 := XTianqiQiyin.roll_artifact(s, float(XTianqiQiyinDragon.data().get("reward", {}).get("artifact_chance", 0.0)), rng, "qiyin_dragon.artifact")
+		r.artifact = art0 if art0 != "" else null
 	var got := []
 	var ts: Dictionary = r.true_set_piece
 	got.append({"kind": XTianqiQiyinDrop.KIND_SET, "seal": str(ts.seal), "part": str(ts.part), "true_seal": true,
@@ -262,7 +265,7 @@ static func recruit_offer(s: XState, rng: RandomNumberGenerator = null) -> Array
 		return saved.map(func(id): return int(id))
 	if rng == null:
 		rng = RandomNumberGenerator.new()
-		rng.randomize()
+		rng.seed = XRandomStream.parse64(XTianqiQiyin.next_seed(s, "qiyin_recruit"))  # 存档派生：读档不能重抽候选（O-待定-5）
 	XTianqi._shuffle(pool, rng)
 	var offer := pool.slice(0, int(r.count))
 	state(s)["offer"] = offer

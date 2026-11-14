@@ -160,7 +160,7 @@ static func fight_data(difficulty: String) -> Dictionary:
 ## 返回 {state, true_set_piece:{seal, part, true_seal:true}, dragon_blood:1, weapon:null|{seal, true_seal:true},
 ##       artifact:null|神器键, extra_recruit:bool, recruit_floor}；
 ## 龙血同时记进 state.blood_stock，first_kill 置 true，龙隙关上。印不对或不在打返回 {state, error}（状态不变）。
-static func reward(state: Dictionary, chosen_seal: String, rng: XRandomStream) -> Dictionary:
+static func reward(state: Dictionary, chosen_seal: String, rng: XRandomStream, with_artifact := true) -> Dictionary:
 	var s := _norm(state)
 	if str(s.rift) != RIFT_FIGHTING:
 		return {"state": s, "error": "not_fighting"}
@@ -174,7 +174,7 @@ static func reward(state: Dictionary, chosen_seal: String, rng: XRandomStream) -
 	if rng.next_float("qiyin_dragon.weapon") < float(r.get("weapon_chance", 0.0)):
 		weapon = {"seal": str(all_seals[rng.next_index_mod(all_seals.size(), "qiyin_dragon.weapon_seal")]), "true_seal": true}
 	var artifact = null
-	if rng.next_float("qiyin_dragon.artifact") < float(r.get("artifact_chance", 0.0)):
+	if with_artifact and rng.next_float("qiyin_dragon.artifact") < float(r.get("artifact_chance", 0.0)):  # false：神器保底开着，调用方掷
 		var arts: Array = r.get("artifacts", [])
 		artifact = str(arts[rng.next_index_mod(arts.size(), "qiyin_dragon.artifact_pick")])
 	var blood := int(r.get("dragon_blood", 0))
