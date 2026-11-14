@@ -154,6 +154,7 @@ func _run() -> void:
 	s.flags.SaveGameId = 1
 	XPlatform.force_mobile = true
 	Input.emulate_mouse_from_touch = true
+	ReleaseEntry.simulate_release = true  # 玩家用的是发行包：按发行模式跑（天启篇关着）
 	XBattleTransition.IN_HEADLESS = true  # 手机上有遇敌演出与回地图淡出（盖住挂机按钮的黑幕）
 	map = XMapScene.new()
 	add_child(map)
@@ -223,6 +224,7 @@ func double_tap(tag: String, expect_active: bool) -> void:
 
 func _finish() -> void:
 	XPlatform.force_mobile = null
+	ReleaseEntry.simulate_release = false
 	var failed := results.filter(func(r): return not r.passed)
 	print("TEST_RESULT=" + JSON.stringify({"passed": results.size() - failed.size(), "total": results.size()}))
 	for i in range(1, 31):
