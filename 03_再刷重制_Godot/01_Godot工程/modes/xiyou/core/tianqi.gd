@@ -520,7 +520,7 @@ static func draw_offer(s: XState, rng: RandomNumberGenerator = null) -> Array:
 		if SEED_FROM_SAVE:  # 存档派生：第几次抽（draws 随存档）定种子，没选之前读档也是这几个（O-449）
 			rng.seed = XRandomStream.parse64(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tianqi|offer|%d" % draws_used(s)))
 		else:
-			rng.randomize()
+			rng.randomize()  # 随机守卫：开关关时的旧路
 	_shuffle(pool, rng)
 	var offer := pool.slice(0, int(r.count))
 	s.flags.tianqi["offer"] = offer

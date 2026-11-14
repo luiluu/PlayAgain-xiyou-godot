@@ -74,7 +74,7 @@ static func stream(s: XState) -> RandomNumberGenerator:
 			rng.seed = XRandomStream.parse64(saved.seed)  # 建了流还没抽就存了：从种子开头
 			saved["draws"] = 0
 		else:
-			var seed_hex := XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "lottery") if SEED_FROM_ORB else XRandomStream.fresh_seed()
+			var seed_hex := XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "lottery") if SEED_FROM_ORB else XRandomStream.fresh_seed()  # 随机守卫：开关关时的旧路
 			rng.seed = XRandomStream.parse64(seed_hex)
 			saved = {"seed": seed_hex, "draws": 0}
 		s._lottery_rng = rng

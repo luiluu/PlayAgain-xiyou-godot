@@ -630,7 +630,7 @@ static func element_rate_for(b, e: int, converted := false, logic = null, option
 					r_val = float(choices[0]) if not choices.is_empty() else 1.22
 				else:
 					var rng = options.get("random")
-					var idx: int = rng.next_int_inclusive(0, choices.size() - 1, "tianqi_chaos") if rng is XRandomStream else randi_range(0, choices.size() - 1)
+					var idx: int = rng.next_int_inclusive(0, choices.size() - 1, "tianqi_chaos") if rng is XRandomStream else randi_range(0, choices.size() - 1)  # 随机守卫：调用方没给存档派生流时的兜底（R2 查能不能走到）
 					r_val = float(choices[clampi(idx, 0, choices.size() - 1)])
 				return {"rate": r_val, "kind": "higher_chaos"}
 			13:
@@ -1059,7 +1059,7 @@ static func roll_higher_books(s: XState, _logic = null, rand: Callable = Callabl
 			continue
 		var nfail := int(fails.get(key, 0))
 		var chance := clampf((0.05 + 0.05 * nfail) * rate_mult, 0.0, 1.0)
-		var r := float(rand.call()) if rand.is_valid() else randf()
+		var r := float(rand.call()) if rand.is_valid() else randf()  # 随机守卫：rand 无效时的兜底（R2 查能不能走到）
 		if r < chance:
 			dropped[key] = true
 			fails.erase(key)
