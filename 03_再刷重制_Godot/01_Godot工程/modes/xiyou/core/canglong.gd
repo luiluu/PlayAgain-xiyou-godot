@@ -14,7 +14,7 @@ extends RefCounted
 ## 开关 REWORK＝false 后 clear_cache() 回原版数据。解放（停用、隐藏、号角）另见 XImportedBalance.RELEASE_CANGLONG。
 
 static var REWORK := true
-## O-待定：10091「觉醒*苍龙」说明补明雷霆天罚*诛灭+250%（与实际备注 SkillPass10092 一致，原版漏标）
+## O-448：10091「觉醒*苍龙」说明补明雷霆天罚*诛灭+250%（与实际备注 SkillPass10092 一致，原版漏标）
 static var FIX_10091_DESC := true
 
 const ACTOR := 146
