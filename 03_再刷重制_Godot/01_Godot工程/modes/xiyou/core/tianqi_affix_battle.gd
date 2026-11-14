@@ -481,7 +481,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		var ls := float(p.get("lifesteal", 0.0))
 		if ls > 0.0 and u.is_alive():
 			var cap := float(XTianqiAffixTable.affix("lifesteal").get("cap_per_hit_mhp", 10))
-			var heal := floorf(minf(dmg * ls / 100.0, u.mhp * cap / 100.0))
+			var heal := floorf(minf(dmg * XTianqiNoX6.steal_mult(u) * ls / 100.0, u.mhp * cap / 100.0))  # 去全队 ×6：按 ×6 前的伤害算（O-待定-1）
 			u.hp = minf(u.mhp, u.hp + heal)
 		if p.has("expose"):
 			var tu := _unit(logic, t)

@@ -80,6 +80,7 @@ func _wait(cond: Callable, timeout := 6000) -> bool:
 
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_no_diff_passive")
+	XTianqiNoX6.ENABLED = false  # 本专项验的是 O-421「强度不变」的等价（含 ×6）；去 ×6（O-待定-1）另有 xiyou_tianqi_no_x6
 	XBattleScene.force_auto = true
 	seed(20261114)
 	await _learn_blocked()
@@ -88,6 +89,7 @@ func _run() -> void:
 	_rollback_old_save()
 	await _real_opening()
 	kit.teardown()
+	XTianqiNoX6.ENABLED = true
 	Engine.time_scale = 1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:

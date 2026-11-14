@@ -2959,7 +2959,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 ## YEP_LifeSteal：技能 <HP Life Steal: N%>，见 XLifeSteal。吸血量 ≤0 不掷 RecPushState 也不回血（原版 return）；
 ## RecPushState 掷骰与挂状态在回血之前，已有的状态也再挂一次（原版直接 addState，参照 life_steal 的 rec.already）。
 func _life_steal(u: XBattler, damage: float, item: Dictionary) -> void:
-	var steal := XLifeSteal.amount(u, item, damage)
+	var steal := XLifeSteal.amount(u, item, damage * XTianqiNoX6.steal_mult(u)) * XTianqiNoX6.heal_scale(u)  # 天启篇去全队 ×6（O-待定-1）：我方按 ×6 前算、敌人跟血量同缩
 	if steal <= 0.0:
 		return
 	for row in XLifeSteal.push_rows(u):
@@ -2989,7 +2989,7 @@ func _execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool) -> 
 		if t.tp != tp_before:
 			XRaven.on_tp_refresh(t)  # setTp 的 refresh：消耗待刷新标记，并让前一击留下的黑暗侵蚀特性缓存生效
 	if drain:
-		_action_resources.gain(u, "hp", value)
+		_action_resources.gain(u, "hp", XTianqiNoX6.drain_gain(u, value))  # 天启篇去全队 ×6（O-待定-1）：吸取回血我方按 ×6 前算、敌人跟血量同缩
 	return value
 
 

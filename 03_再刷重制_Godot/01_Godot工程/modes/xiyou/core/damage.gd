@@ -342,10 +342,12 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			var crit: float = 1.0 if absorb else critical_mult
 			var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
 			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
+			if not absorb:
+				flat *= XTianqiNoX6.flat_unit(a)  # 去全队 ×6：固定减伤在确认阶段之后扣，跟着缩 1/6 才和原来等价（O-待定-1）
 			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
 			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard * tianqi
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
-			var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
+			var value: float = -maxf(0.0, before_fixed - flat) * guard * XTianqiNoX6.heal_scale(b) if absorb else gross  # 天启篇：敌人被元素吸收的回血跟血量同缩
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
 			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
@@ -376,6 +378,8 @@ static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, 
 	# 敌人出伤倍率（XEnemy.output_scale；守层者按楼层重算攻击用，默认 1 不动）：只乘对我方的 HP 伤害／吸取
 	if a is XEnemy and a.output_scale != 1.0 and out > 0.0 and int(item.damage.type) in [1, 5]:
 		out = roundf(out * a.output_scale)
+	if a is XEnemy and b is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5] and XTianqiNoX6.heal_scale(b) != 1.0:
+		out = maxf(1.0, roundf(out * XTianqiNoX6.heal_scale(b)))  # 去全队 ×6：敌人打敌人（混乱、魔法反射）不带 ×6，敌人血量缩了也跟着缩（O-待定-1）
 	if execute and a is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5]:
 		a.dealt += out   # 量数用：守层者打出的伤害（扣血前，不受我方剩余血量截断）
 	return out
@@ -410,6 +414,7 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 			mult += _module_element_bonus(a, e, frame)
 		mult /= es.size()
 	var value: float = base * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)
+	value *= XTianqiNoX6.enemy_heal(item, a, b)  # 天启篇：敌人给敌人的绝对值回复跟血量同缩（O-待定-1／O-待定-2）
 	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
 	if value < 0.0 and a is XActor and not XGuyu.skip_heal_rate(item, a):  # 谷雨 applyPassiveHealRate 包装：泽苍生已算过
 		for bonus in a.passive_values("passiveHEUP"):
