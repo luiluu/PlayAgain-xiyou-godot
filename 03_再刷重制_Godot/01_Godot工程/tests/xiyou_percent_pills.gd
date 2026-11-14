@@ -136,14 +136,52 @@ func _cap() -> void:
 	await frames()
 
 
-## 计数随存档：存了再读，计数与能力值都在
+## 计数随存档：走 XSave 真实写盘读档（测试目录 user://test_xiyou_percent_pills），计数与能力值都在；
+## 老存档（没有 _codexPills 键）读进来计数为 0、能力值不加成。
 func _save_roundtrip() -> void:
+	var old_dir := XSave.dir_override
+	XSave.dir_override = "user://test_xiyou_percent_pills"
 	var s := _state()
 	var a := s.actor(1)
+	var base := a.param(4)
 	XPercentPills.apply(XDB.rec("Items", 2885), a)
 	XPercentPills.apply(XDB.rec("Items", 2885), a)
 	var mat := a.param(4)
-	var s2 := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
-	var b := s2.actor(1)
+	check("save_write", XSave.save(1) and FileAccess.file_exists(XSave.path(1)))
+	check("save_on_disk", FileAccess.get_file_as_string(XSave.path(1)).contains("_codexPills"))
+	XState.current = null
+	check("save_load", XSave.load_slot(1))
+	var b := XState.current.actor(1)
 	check("save_count", XPercentPills.count(b, 4) == 2, b.state_data)
-	check("save_param", b.param(4) == mat, [mat, b.param(4)])
+	check("save_param", b.param(4) == mat and mat > base, [base, mat, b.param(4)])
+	# 老存档：把文件里的 _codexPills 键整个删掉再读
+	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var removed := _strip_key(d, "_codexPills")
+	var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
+	f.store_string(JSON.stringify(d))
+	f.close()
+	check("old_save_key_removed", removed > 0 and not FileAccess.get_file_as_string(XSave.path(1)).contains("_codexPills"), removed)
+	XState.current = null
+	check("old_save_load", XSave.load_slot(1))
+	var c := XState.current.actor(1)
+	check("old_save_count_zero", XPercentPills.count(c, 4) == 0, c.state_data)
+	check("old_save_param_base", c.param(4) == base, [base, c.param(4)])
+	check("old_save_can_eat", XPercentPills.valid(XDB.rec("Items", 2885), c) != 0)
+	DirAccess.remove_absolute(XSave.path(1))
+	DirAccess.remove_absolute(XSave.path(1) + ".bak")
+	DirAccess.remove_absolute(XSave.dir())
+	XSave.dir_override = old_dir
+
+
+func _strip_key(v, key: String) -> int:
+	var n := 0
+	if v is Dictionary:
+		if v.has(key):
+			v.erase(key)
+			n += 1
+		for k in v:
+			n += _strip_key(v[k], key)
+	elif v is Array:
+		for x in v:
+			n += _strip_key(x, key)
+	return n
