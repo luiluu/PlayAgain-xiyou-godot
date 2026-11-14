@@ -36,6 +36,17 @@ const DESCRIPTION := "神武\n欲加冕成王，必承其重"
 const STORAGE_TEXT := "\"头顶\"成长记录暂不可用，请恢复对应成长记录后重开游戏"
 const DROP_TEXT := "获得了\"头顶\"！"
 
+## O-待定·账本压缩（Kyo 2026-11-14，存档与缓存清理 ②）：原版每场战斗在账本里留一行明细、永不删，开战、结算各整份重写一次，
+## 长期穿着头顶挂机的档账本只增不减（每场约 157 字节）、每场两次整份读写。true（默认）：
+## - 已结算的场次折进水位 battlesDone：序号小于水位、又没有明细行的，一律当「已结算、没人倒下」（读旧档重打同一场照样不涨、不重掷掉落）；
+##   有人倒下过的场次留一行最小的 {settled, deaths}（重打时倒下过的那几次不再减半）；没结算的行原样留着。成长在 items[uid].bonus，不动。
+## - 开战不写盘：这一场的行先留在内存（battle.row），结算时连同结果一次写进账本；中途有人倒下要记减半时提前写。
+##   与原版的差别只有一种情况：开战后没人倒下就被杀进程——原版留下一行未结算（下次同一场沿用当时的掷点和穿戴），现在等于这一场没打过。
+## false：不折叠、开战照写（原版写法）。已经折叠过的账本关掉开关后水位照认（不会因此能重刷），只是不再继续折。
+## 账本 version 仍是 1：退回旧补丁也读得了（旧代码不认水位，折掉的场次读旧档重打会被当成新的一场）。
+static var COMPACT := true
+const DONE := "battlesDone"
+
 ## 测试改路径；空则跟 XSave.dir()
 static var path_override := ""
 static var _loaded_path := "<unloaded>"
@@ -45,7 +56,8 @@ static var _legacy := ""
 static var storage_error := ""
 static var error := ""
 static var _mutating := false
-## 本场：{key, ordinal, wears [{actor, uid, valid}], serial {角色号: 次数}, same, finished}；没有为 null
+## 本场：{key, ordinal, wears [{actor, uid, valid}], serial {角色号: 次数}, same, finished, row}；没有为 null。
+## row＝开战时建好、还没写进账本的那一行（COMPACT）；已在账本里或是重打旧场次时为 null
 static var battle = null
 
 
@@ -195,7 +207,12 @@ static func save_ledger(n: Dictionary) -> bool:
 	_loaded_path = path()
 	return true
 
+## 注意：别从外面写 XDemonCrown.reload()——那会调到引擎的 Script.reload，把本类所有静态变量（路径覆盖、开关）清回默认。
+## 要丢掉内存里的账本、下次重读文件，用 forget_ledger()。
 static func reload() -> void:
+	forget_ledger()
+
+static func forget_ledger() -> void:
 	_ledger = null
 	_loaded_path = "<unloaded>"
 
@@ -292,9 +309,54 @@ static func transaction(s: XState, fn: Callable) -> bool:
 		return false
 	var n: Dictionary = _ledger.duplicate(true)
 	var p: Dictionary = n.profiles[str(s.flags[PROFILE_FLAG])]
+	if COMPACT:
+		for q in n.profiles.values():  # 之前结算好的场次折进水位（这次 fn 刚结算的那行留到下次，finish 还要读它的掉落）
+			if q is Dictionary:
+				fold(q)
 	fn.call(p)
 	p.revision = int(p.get("revision", 0)) + 1
 	return save_ledger(n) and replay(s)
+
+## 把一条档案里已结算的场次折进水位。水位＝从 0 起连续有过行的序号个数（碰到没有行的序号停，不把没打过的序号算进去）；
+## 水位以下：已结算、没人倒下的行删掉，已结算、有人倒下过的只留 {settled, deaths}，没结算的原样留着（有行的以行为准）。返回折了几行
+static func fold(p: Dictionary) -> int:
+	if not p.get("battles") is Dictionary:
+		return 0
+	var battles: Dictionary = p.battles
+	var done := int(p.get(DONE, 0))
+	while battles.has("b:%d" % done):
+		done += 1
+	var folded := 0
+	for key in battles.keys():
+		var r = battles[key]
+		if int(str(key).trim_prefix("b:")) >= done or not r is Dictionary or not bool(r.get("settled", false)):
+			continue
+		var deaths = r.get("deaths", {})
+		if not deaths is Dictionary or deaths.is_empty():
+			battles.erase(key)
+			folded += 1
+		elif r.size() > 2:
+			battles[key] = {"settled": true, "deaths": deaths}
+			folded += 1
+	if done > 0:
+		p[DONE] = done
+	return folded
+
+static func _has_row(p: Dictionary, key: String) -> bool:
+	return (p.battles as Dictionary).has(key) or int(key.trim_prefix("b:")) < int(p.get(DONE, 0))
+
+## 账本里这一场的记录；折掉的＝已结算、没人倒下
+static func _row(p: Dictionary, key: String) -> Dictionary:
+	if (p.battles as Dictionary).has(key):
+		return p.battles[key]
+	return {"settled": true, "deaths": {}}
+
+## 本场那一行在写进账本的副本 n 里的样子：还没写的（battle.row）这时放进去，折掉的补一行最小的
+static func _materialize(n: Dictionary, b: Dictionary) -> Dictionary:
+	if not (n.battles as Dictionary).has(b.key):
+		n.battles[b.key] = (b.row as Dictionary).duplicate(true) if b.get("row") != null else {"settled": true, "deaths": {}}
+	return n.battles[b.key]
+
 
 ## safely／fail：出错记下、提示一次，已有的魔冠倍率退回 1
 static func _safely(s: XState, fn: Callable) -> bool:
@@ -386,15 +448,18 @@ static func begin(s: XState, troop: int, roll: Callable) -> void:
 		var p = profile(s)
 		if p == null:
 			return false
-		if not (p.battles as Dictionary).has(key):
+		var pending = null
+		if not _has_row(p, key):
 			var row := {"troop": troop, "map": s.map_id, "eligible": eligible, "roll": float(roll.call()) if eligible else null, "wears": wears, "deaths": {}, "settled": false}
-			if not transaction(s, func(n): n.battles[key] = row):
+			if COMPACT:
+				pending = row  # 先不写盘：结算（或中途有人倒下）时一起写
+			elif not transaction(s, func(n): n.battles[key] = row):
 				return false
-		var r: Dictionary = profile(s).battles[key]
+		var r: Dictionary = pending if pending != null else _row(profile(s), key)
 		var list := []
 		for x in wears:
-			list.append({"actor": x.actor, "uid": x.uid, "valid": (r.wears as Array).any(func(y): return int(y.actor) == x.actor and str(y.uid) == x.uid)})
-		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.map) == s.map_id and int(r.troop) == troop, "finished": false}
+			list.append({"actor": x.actor, "uid": x.uid, "valid": (r.get("wears", []) as Array).any(func(y): return int(y.actor) == x.actor and str(y.uid) == x.uid)})
+		battle = {"key": key, "ordinal": ordinal, "wears": list, "serial": {}, "same": int(r.get("map", -1)) == s.map_id and int(r.get("troop", -1)) == troop, "finished": false, "row": pending}
 		return true)
 
 static func _drop_battle(s: XState, troop: int) -> bool:
@@ -410,15 +475,15 @@ static func finish(s: XState, result: int) -> void:
 		var p = profile(s)
 		if p == null:
 			return false
-		if not (p.battles as Dictionary).has(b.key):
+		if b.get("row") == null and not _has_row(p, b.key):
 			return _fail("战斗成长记录缺失") != null
-		if not bool(p.battles[b.key].settled):
+		if b.get("row") != null or not bool(_row(p, b.key).settled):
 			var members := s.battle_members()
 			var winners := (b.wears as Array).filter(func(x):
 				var a: XActor = s.actors.get(int(x.actor))
 				return bool(x.valid) and a != null and a.is_alive() and members.has(a) and str(gear(a).get(UID, "")) == str(x.uid))
 			var ok := transaction(s, func(n):
-				var r: Dictionary = n.battles[b.key]
+				var r: Dictionary = _materialize(n, b)
 				r.settled = true
 				r.result = result
 				if result != 0 or not bool(b.same):
@@ -432,7 +497,8 @@ static func finish(s: XState, result: int) -> void:
 					n.items[r.dropUid] = {"spec": _spec(s), "bonus": 0.0, "removed": false})
 			if not ok:
 				return false
-			if result == 0 and str(profile(s).battles[b.key].get("dropUid", "")) != "":
+			b["row"] = null
+			if result == 0 and str(_row(profile(s), b.key).get("dropUid", "")) != "":
 				XToast.show_text(DROP_TEXT)
 		s.flags[SEQ_FLAG] = int(b.ordinal) + 1
 		return true)
@@ -455,13 +521,18 @@ static func on_death(s: XState, a) -> void:
 			var p = profile(s)
 			if p == null:
 				return false
-			if (p.battles[battle.key].deaths as Dictionary).has(key):
+			var now: Dictionary = battle.row if battle.get("row") != null else _row(p, battle.key)
+			if (now.get("deaths", {}) as Dictionary).has(key):
 				return true
-			return transaction(s, func(n):
-				n.battles[battle.key].deaths[key] = true
+			var b: Dictionary = battle
+			var done := transaction(s, func(n):
+				_materialize(n, b).deaths[key] = true
 				var r = n.items.get(uid)
 				if r != null and not bool(r.get("removed", false)):
 					r.bonus = float(r.bonus) * 0.5)
+			if done:
+				b["row"] = null  # 这一行已经在账本里了
+			return done
 		var serial := int(s.flags.get(WORLD_FLAG, 0))
 		var key := "w:%d:%d:%s" % [serial, id, uid]
 		s.flags[WORLD_FLAG] = serial + 1

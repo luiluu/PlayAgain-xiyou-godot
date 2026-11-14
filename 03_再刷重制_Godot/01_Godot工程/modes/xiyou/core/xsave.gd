@@ -39,7 +39,7 @@ static func save(slot: int) -> bool:
 	XDemonCrown.before_save(XState.current)  # 魔冠 makeSaveContents 包装：收编、重放
 	var data := XState.current.to_dict()
 	data["savedAt"] = Time.get_datetime_string_from_system()
-	if not _write(path(slot), data):
+	if not _write(path(slot), data, true):
 		return false
 	XStarWarehouse.after_save(XState.current)  # 仓库取出事务：存档写好才算取走（O-222·仓库取出事务）
 	current_slot = slot
@@ -49,7 +49,10 @@ static func save(slot: int) -> bool:
 
 
 ## 先写同目录临时文件，成功后替换；失败不截断原有存档。
-static func _write(target: String, data: Dictionary) -> bool:
+## 写之前过一遍 XSaveSlim（装备词缀选项表、已不存在装备的已看过标记不进存档；slim_backup＝覆盖没瘦过的旧文件前先备份，自动存档不备份）。
+static func _write(target: String, data: Dictionary, slim_backup := false) -> bool:
+	var full := data
+	data = XSaveSlim.for_write(full, target, slim_backup)
 	var text := JSON.stringify(data)
 	if SAVE_GUARD and not valid_data(JSON.parse_string(text)):
 		push_warning("XSave: 要写的存档读档校验不过，不写，保留旧档：" + target)
@@ -68,6 +71,7 @@ static func _write(target: String, data: Dictionary) -> bool:
 	if DirAccess.rename_absolute(temp, target) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
+	XSaveSlim.written(full, target, text)
 	return true
 
 
@@ -172,8 +176,11 @@ static func exists(slot: int) -> bool:
 
 
 ## 在创建角色／替换当前状态前检查完整结构；损坏或未来版本的档不进入反序列化。
+## 同档去重的新格式（顶层带 gearPool，见 XSaveSlim）先就地还原成普通内容再查：读存档的地方都先过这里，所以新旧格式都读得了。
 static func valid_data(d) -> bool:
 	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
+		return false
+	if not XSaveSlim.unpool(d):
 		return false
 	if not (d.get("version") is int or d.get("version") is float) or int(d.version) not in [1, XState.SAVE_VERSION]:
 		return false

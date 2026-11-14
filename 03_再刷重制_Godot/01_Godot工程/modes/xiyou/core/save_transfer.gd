@@ -115,4 +115,6 @@ static func import_to(slot: int, data: Dictionary) -> String:
 	if DirAccess.rename_absolute(temp, target) != OK:
 		DirAccess.remove_absolute(temp)
 		return "替换存档失败"
+	XSaveSlim.forget(target)  # 这格换成了导入的内容：瘦没瘦过下次存档重新看
+	XSaveSlim.prune_import_backups(target)  # 导入前的备份每格只留最近几份（XSaveSlim.IMPORT_BACKUPS）
 	return ""
