@@ -60,7 +60,8 @@
     - ③ 往返两次不叠加：`rb_on2_stripped`、`rb_on2_*` 15 项、`rb_off2_once`、`rb_off2_states_once`、`rb_off2_*` 15 项、`rb_off_again_noop`、`rb_unmarked_untouched`、`op_roundtrip_once`。
     - 五条悟集成：`op_gojo_clean`、`op_gojo_equal`：实跑开局后入队、本功能开着，普攻、苍、赫的伤害和旧做法（学被动挂状态）完全相等。
   - 交付单措辞：xiyou_gojo 改写成「临时关闭本功能、保留旧基线」；已知差别写全四项（含指南页少显示 ×6），不再说成严格全行为等价。
-  - 提交：见「本分支提交」。
+  - 验证：语法检查通过；本专项 176/176（本机）；云端选测（提交 89aa198ef，运行 43561689470，整轮 584 个场景）583 过，`xiyou_gojo` 这次通过；唯一失败 `xiyou_tianqi_e2e`（main 上 1a90b90bf 新加的标题到大厅贯通专项，本机复现 6/14，卡在标题「新的游戏」之后存档位页没出来）。把本分支改的四个钩子文件（actor.gd、state_effects.gd、xstate.gd、tianqi.gd）换回 main 版本再跑，同样失败，不是本分支引起的，请总装／该专项车道看。
+  - 提交：89aa198ef（反迁移＋断言）、本提交（交付单）。
 
 ## 可优化（流程／工具／效率）
 
@@ -68,4 +69,5 @@
 
 ## 本分支提交
 
+- 89aa198ef 关开关读档反迁移补回被动＋回退与五条悟集成断言（甲档核查 P2）
 - 24c2ea28a WIP: 天启篇开局不发难度被动（XTianqiNoDiffPassive）＋专项
