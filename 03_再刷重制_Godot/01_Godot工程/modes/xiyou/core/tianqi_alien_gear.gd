@@ -125,7 +125,7 @@ static func affix_view(s: XState, key: String, level := "") -> Dictionary:
 	return f
 
 
-## O-待定-3：评审 v0.1 第 6 条，新词条收益文案按装备真实级出。false＝照旧用表里写死的化形文案
+## O-440：评审 v0.1 第 6 条，新词条收益文案按装备真实级出。false＝照旧用表里写死的化形文案
 static var TIER_TEXT := true
 
 ## 新词条这一级的收益文案（数同 XTianqiAlienAffix.value 取的那一档）；认不出级或不是这四条返回空
