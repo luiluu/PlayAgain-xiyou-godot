@@ -12,7 +12,8 @@
 - 公共入口在 `XTianqi.save_stream`／`save_roll`／`on_register`／`assign_all`／`before_renumber`／`seed_id`／`item_roll`（`modes/xiyou/core/tianqi.gd`），开关 `XTianqi.SEED_FROM_SAVE`（O-待定-1），关掉回到全局随机、不写计数字段。
 - 天启篇存档新装备掷天启篇词条（掉落、商店、事件都经 `XTianqiAffixRoll.apply`）不传随机流时，改由 `orb_seed`＋`flags.tianqi.affix_roll_n`（每掷一件 +1、随存档）派生：打出掉落后读档再打同一场，词条一样。测试磁带、深渊商人的本轮种子照旧优先。开关 `XTianqiAffixRoll.SEED_FROM_SAVE`（O-待定-2）。西游档不进这条分支，装备流、对照不变。
 - 西游档不变（全部只在天启篇路径上；魔冠、云裳、仓库三处只多去掉一个天启篇字段，西游装备上本来没有）。掉哪几件仍由运行时战斗奖励流决定（整局既有设计，不在本单）。
-- 玩家可见：天启篇里重铸、异化重抽、通关抽角色候选，先存档再掷、读档再掷，出来的还是同一个结果；新装备的天启篇词条，以及有稳定来源的装备（商店、事件、招牌掉落等）的随机身份，读档后照同样的拿法也一样。普通战斗掉什么照旧随运行时战斗流变。
+- **西游本体也改**：抽奖（公共事件 1431～1434）的随机流在存档里还没有时（从没抽过的档），种子改由存档种子 `orb_seed` 派生，不再首次使用时现开；「从没抽过就存档→抽→读档再抽」首抽不再变。随机算法不变，分布与原版一样。开关 `XLotteryRework.SEED_FROM_ORB`（O-待定-3）。
+- 玩家可见：抽奖（西游本体与天启篇）从没抽过的档，存档后抽、读档再抽，结果一样。天启篇里重铸、异化重抽、通关抽角色候选，先存档再掷、读档再掷，出来的还是同一个结果；新装备的天启篇词条，以及有稳定来源的装备（商店、事件、招牌掉落等）的随机身份，读档后照同样的拿法也一样。普通战斗掉什么照旧随运行时战斗流变。
 
 ## 优化登记草稿
 
@@ -20,6 +21,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | O-待定-1 | `modes/xiyou/core/tianqi.gd` `XTianqi.SEED_FROM_SAVE`（`save_stream`、`save_roll`、`seed_id`、`item_roll`、`draw_offer`）；`modes/xiyou/core/tianqi_reforge.gd`（`reforge`、`reforge_locked` 兜底）；`modes/xiyou/core/tianqi_alien_gear.gd`（`attach` 兜底、`reroll`）；入包分配与读档补号：`xstate.gd` `register_gear`、`from_dict` 末尾，`star_warehouse.gd` `withdraw_gear`；复制路径去号：`demon_crown.gd` `_grant`、`yunshang_orders.gd` `grant_spec`、`warehouse.gd` `deposit`；`tests/xiyou_tianqi_seed_fix.gd` | 天启篇重铸、锁词条重铸、异化兜底选词条、异化重抽用全局 `randf`，抽角色候选首次抽用 `randomize()`，都能先存档再掷、不满意读档重掷 | 改由存档种子＋对象标识＋随存档的次数派生，读档后同一次操作结果相同 | cc/tianqi-econ-fix 交付单「同类盘点」；协调派单 cc/tianqi-seed-fix | `XTianqi.SEED_FROM_SAVE = false` | cc | 保留 |
 | O-待定-2 | `modes/xiyou/core/tianqi_affix_roll.gd` `XTianqiAffixRoll.SEED_FROM_SAVE`（`_default_rng`、`apply`）；`tests/xiyou_tianqi_affix_seed.gd` | 天启篇存档新装备掷天启篇词条不传 rng 时走运行时装备流（`XState.random_master`，不随存档），打出掉落后读档再打词条会换 | 改由 `orb_seed`＋`flags.tianqi.affix_roll_n` 派生；只管天启篇存档 | gpt 甲档核 cc/tianqi-seed-fix | `XTianqiAffixRoll.SEED_FROM_SAVE = false` | gpt | 保留 |
+| O-待定-3 | `modes/xiyou/core/lottery_rework.gd` `XLotteryRework.SEED_FROM_ORB`（`stream`）；`tests/xiyou_lottery_seed.gd` | O-389 的抽奖流只在首次使用时 `fresh_seed` 建，从没抽过就存的档读回再抽，首抽每次不同（西游本体与天启篇） | 存档里没有流时种子＝`derive(orb_seed, lottery)`；有种子没进度的照用那颗种子从头接着 | gpt 补核积压 #088（cc/fabao-rework） | `XLotteryRework.SEED_FROM_ORB = false` | gpt | 保留 |
 
 ## 改了什么
 
@@ -125,6 +127,14 @@ gpt 认可：存档里已有装备的先洗顺序已固定；15 处登记都经 
 测试（`xiyou_tianqi_seed_fix` 64→77，全部通过）：`shop_order_swap_same`（真实 `XShop._trade`：直接买 A ／ 先买便宜 B 再买 A，A 的号、词条、第一次重铸都相同）、`shop_bought`、`shop_affixed`、`shop_same_sku_two`／`shop_same_sku_ids_differ`（同一商品连买两件各自独立、读档再买一样）、`shop_first_matches_single`、`src_n_saved`（买一件存档、读档再买＝连买两件的第 2 件）、`event_got`／`event_order_swap_same`（真实 `MVInterpreter` 跑事件指令 127，先在别的事件领 B 再领 A）、`event_vs_shop_differ`、`sig_order_swap_same`（`gain_drops` 带 sig）、`plain_drop_by_instance`（普通掉落照 instanceId，先掉 B 会改 A 的号——记录边界）。`_roll_drops` 把 `sig` 带出那一行没有单独断言（要造带招牌行的怪），由 `xiyou_tianqi_drop` 现有招牌掉落用例跑到。
 反向验证（专项 `xiyou_tianqi_seed_fix`）：商店不传来源键、事件不传、招牌掉落不传、登记不认来源键、词条不按来源键、来源计数不推进 6 处全部咬住（计数那刀第一次没咬住——两件词条照样不同，补了 `shop_same_sku_ids_differ` 后咬住）。
 
+### 追加：抽奖首抽读档重掷（西游本体，gpt 补核 #088）
+
+| 问题 | 修法 | 测试（断言） |
+| --- | --- | --- |
+| P2 `lottery_rework.gd` `stream`：抽奖流只在首次使用时 `fresh_seed` 建，首次抽奖前存的档没有 `lotteryRandom.seed/state`，读档后现开，首抽／整串能 SL；`xiyou_fabao_rework` 先抽 7 次才存，盖住了这个入口 | 5a7f8f851：没有流时种子＝`derive(orb_seed, "lottery")`（`orb_seed` 随存档；更老的档由存档内容算，确定性），不用 `fresh_seed`。没另在新档里预建流：派生只看存档内容，新档存档前后、建没建流结果都一样，等同预建。存档里有种子没进度（建了流还没抽就存了，含旧版现开的种子）照用那颗种子从头接着。随机算法（`RandomNumberGenerator.randi_range`）不变，分布与原版一样，只是种子来源固定；参照对照用的固定随机照旧优先 | 新专项 `xiyou_lottery_seed` 12 条（XSave 实盘存读、`MVEventCore` 事件 1432 真实取数）：`never_drawn`、`file_no_stream`、`first_draws_same`（从没抽过就存档→抽→读→再抽，10 抽整串相同）、`draws_vary`、`continue_same`、`no_orb_same`（去掉 orbSeed 与抽奖流的老档）、`seed_only_saved`／`seed_only_same`、`old_seed_kept`（存档里的旧种子照用）、`orb_decides`、`off_fresh`（开关关回现开） |
+
+反向验证（专项 `xiyou_lottery_seed`）：没有流时仍 fresh_seed、有种子没进度时重派生、开关关时仍派生 3 处全部咬住。`--oracle`：`mv_oracle/boot_check.cjs` 通过（db true、modulesFailed 空、errors 空，v0.62.12）；抽奖相关的 `xiyou_casino_batch`、`xiyou_event_compare*` 在云端选测里。`xiyou_fabao_rework` 86/86。
+
 说明：随机身份换存档也不变，是有意的——星辰仓库跨存档，若流掺当前存档种子，同一件在 A、B 两档各能掷出一条，多一条分支可挑。
 
 ## 验证
@@ -133,6 +143,7 @@ gpt 认可：存档里已有装备的先洗顺序已固定；15 处登记都经 
 - 反向验证（`反向验证.py`，专项 `xiyou_tianqi_seed_fix`）：8 处各改坏一次（重铸／锁词条重铸回到 randf、装备计数不推进、异化兜底回到 randf、重抽计数不推进、重抽回到 randf、候选回到 randomize、开关关时仍派生）全部让专项失败，咬得住；源文件按备份还原。
 - 语法检查：0 个问题（返修后重跑）。工具回归 `工具回归.py` 全部通过（首轮、返修后各一次）。
 - 返修本机专项：`xiyou_tianqi_seed_fix` 56/56、`xiyou_tianqi_affix_seed` 18/18，连同 `xiyou_tianqi_affix_roll`、`xiyou_tianqi_drop`、`xiyou_star_warehouse`、`xiyou_tianqi_reforge`、`xiyou_tianqi_alien_gear` 全部通过。
+- 追加（抽奖）选测：`云端选测.py run`（提交 5a7f8f851，整轮 592 个场景、15 片）：591 个通过，唯一失败 `xiyou_tianqi_alien_gear` 仍是上条所说 main 本身的 3 条（`review6_tier_again`、`review6_huaxing_same_again`、`review6_o-off`），与本单无关。本机 `xiyou_lottery_seed` 12/12、`xiyou_fabao_rework` 86/86。
 - 返修四选测：合 main 后 `云端选测.py run`（提交 337270ec9，整轮 591 个场景）：590 个通过，`xiyou_star_warehouse` 偶发（单跑通过）；**`xiyou_tianqi_alien_gear` 3 条失败（`review6_tier_again`、`review6_huaxing_same_again`、`review6_o-off`）是 main 本身的**：把本工作树的 `modes/`、`tests/` 临时换成 main（d45643f0b，总装正在合 cc/tianqi-review-fixes、还没收尾）的版本单跑，同样这 3 条失败（main 的 `alien_gear.json` 再动文案已改成「按级每 6／5／3／2 回合…」模板，review-fixes 的断言要具体数），换回本分支后同样 3 条，本单没碰这块文案。本机：`xiyou_tianqi_seed_fix` 77/77、`xiyou_tianqi_affix_seed` 22/22，连同 `xiyou_shop_buy`、`xiyou_shop_stock`、`xiyou_tianqi_drop`、`xiyou_tianqi_qiyin_altar`、`xiyou_tianqi_rewards`、`xiyou_tianqi_elements` 全部通过；语法检查通过。
 - 返修三选测：合 main 后 `云端选测.py run`（提交 a735aaf34，基准 c9302d704，改了 `xstate.gd` 所以面广），489 个场景全部通过；本机 `xiyou_tianqi_seed_fix` 64/64、`xiyou_tianqi_affix_seed` 22/22；语法检查、工具回归通过。
 - 返修选测：`云端选测.py run`（提交 cf1cad1a2，基准 6ae0b0469），65 个场景全部通过。
@@ -140,6 +151,7 @@ gpt 认可：存档里已有装备的先洗顺序已固定；15 处登记都经 
 
 ## 待交叉核查
 
+- 追加只复核 5a7f8f851（`core/lottery_rework.gd` `stream`、新专项 `xiyou_lottery_seed`），西游本体改动。
 - 返修四只复核 8ab6a8250（`xstate.gd` `gain_gear`／`register_gear` 签名与生成时来源键、`tianqi.gd` `on_register`、`tianqi_affix_roll.gd` `source_hint`／`_default_rng`、上表各入口一行、测试）和合并 337270ec9 里 `battle_logic.gd` 的冲突解法（main 的 `_drop_entry`／`count` 保留，招牌行另加 `sig`）。
 - 返修三已复核：644ba74f5（`core/tianqi.gd` `seeds_on`／`on_register`／`before_renumber`／`all_gear`／`assign_all`／`seed_id`、`start_new_game` 一行；`core/xstate.gd` `register_gear`、`from_dict` 各一行；`core/star_warehouse.gd` 一行；两个测试）。
 - 返修一、二已复核：f10073d43（`core/tianqi.gd` `seed_id`／`item_roll`、`core/tianqi_alien_gear.gd` `reroll`、`demon_crown.gd`／`yunshang_orders.gd`／`warehouse.gd` 各一行、测试）和 cf1cad1a2（`core/tianqi_affix_roll.gd` `_default_rng`、新专项 `xiyou_tianqi_affix_seed`）。
@@ -148,6 +160,8 @@ gpt 认可：存档里已有装备的先洗顺序已固定；15 处登记都经 
 
 ## 本分支提交
 
+- 5a7f8f851 抽奖首抽读档重掷修复（O-待定-3）
+- e948393b8 交付单（返修四）
 - 337270ec9 合并 main（解 battle_logic.gd 冲突）
 - 8ab6a8250 返修四：来源稳定的装备随机身份与词条按来源键派生
 - a735aaf34 合并 main
