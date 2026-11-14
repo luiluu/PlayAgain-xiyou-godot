@@ -331,20 +331,10 @@ static func reroll(s: XState, i: Dictionary) -> Dictionary:
 	if s.item_count(XAlienation.stone_id()) < _cost("reroll"):
 		return {"error": "缺少异化石"}
 	s.gain_item(XAlienation.stone_id(), -_cost("reroll"))
-	var roll := reroll_roll(s, str(m.uid))
+	var roll := XTianqi.item_roll(s, i, "alien_reroll")  # 存档派生（装备随机身份 tq_seed_id＋tq_rng_n），读档、进出仓库都不能重抽出别的（O-待定）
 	XAlienation.ledger(s).pending = {"uid": m.uid, "kind": XAlienation.kind(i), "id": str(i.get("instanceId", "")), "old": m.affix,
 		"next": _pick(pool, func(): return XAlienation.force_roll if XAlienation.force_roll >= 0 else float(roll.call()))}
 	return {"ok": XAlienation.ledger(s).pending}
-
-
-## 重抽用的流：存档派生（异化 uid＋账本里的重抽次数 tq_reroll_n，随存档；老档没有当 0），读档不能重抽出别的（O-待定）
-static func reroll_roll(s: XState, uid: String) -> Callable:
-	if not XTianqi.SEED_FROM_SAVE:
-		return func(): return randf()
-	var l := XAlienation.ledger(s)
-	var n := int(l.get("tq_reroll_n", 0))
-	l["tq_reroll_n"] = n + 1
-	return XTianqi.save_roll(s, "alien_reroll|%s|%d" % [uid, n])
 
 
 ## 取核：装备没了，得一颗同线同级同词条的异化核

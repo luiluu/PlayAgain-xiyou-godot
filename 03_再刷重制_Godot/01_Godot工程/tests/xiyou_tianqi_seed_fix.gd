@@ -197,13 +197,14 @@ func _alien() -> void:
 	_check("al_reroll_same", r1.size() == 6 and r1 == r2, [r1, r2])
 	_check("al_reroll_varies", r1.any(func(x): return x != r1[0]) and r1.all(func(x): return fam.has(x) and x != str(fam[0])), r1)
 	_check("al_reroll_prefix", _reroll_run(iid, 3) == r1.slice(0, 3))
-	_check("al_reroll_counter", int(XAlienation.ledger(XState.current).get("tq_reroll_n", -1)) == 3, XAlienation.ledger(XState.current))
-	# 老档：账本没有 tq_reroll_n
-	_strip_file(func(dd): (dd.alienLedger as Dictionary).erase("tq_reroll_n"))
+	_check("al_reroll_counter", int(_gear(XState.current, iid).get("tq_rng_n", -1)) == 3, _gear(XState.current, iid))
+	# 老档：存档里那件没有 tq_rng_n（随机身份还在），从 0 接着掷，和第一次读档一样
+	_save()
+	_strip_file(func(dd): for g in dd.gear: (g as Dictionary).erase("tq_rng_n"))
 	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
-	_check("al_legacy_stripped", not (raw.alienLedger as Dictionary).has("tq_reroll_n"))
+	_check("al_legacy_stripped", (raw.gear as Array).all(func(g): return not (g as Dictionary).has("tq_rng_n")))
 	var leg := _reroll_run(iid, 2)
-	_check("al_legacy_init", leg == r1.slice(0, 2) and int(XAlienation.ledger(XState.current).get("tq_reroll_n", -1)) == 2, [leg, r1])
+	_check("al_legacy_init", leg == r1.slice(0, 2) and int(_gear(XState.current, iid).get("tq_rng_n", -1)) == 2, [leg, r1])
 	# 测试钩子 force_roll 照旧优先
 	XAlienation.force_roll = 0.0
 	var fr := _reroll_run(iid, 1)
@@ -215,10 +216,121 @@ func _alien() -> void:
 	var o1 := _reroll_run(iid, 6) + _create_run(6)
 	var o2 := _reroll_run(iid, 6) + _create_run(6)
 	_check("al_off_differs", o1 != o2, [o1, o2])
-	var n_saved := int(XAlienation.ledger(_load()).get("tq_reroll_n", 0))
+	var n_saved := int(_gear(_load(), iid).get("tq_rng_n", 0))
 	_reroll_run(iid, 2)
-	_check("al_off_no_counter", int(XAlienation.ledger(XState.current).get("tq_reroll_n", 0)) == n_saved, n_saved)
+	_check("al_off_no_counter", int(_gear(XState.current, iid).get("tq_rng_n", 0)) == n_saved, n_saved)
 	XTianqi.SEED_FROM_SAVE = true
+
+
+# ---- 随机身份 tq_seed_id：进出仓库、重编号不换流；复制品拿新号 ----
+
+func _reforge_once(s: XState, it: Dictionary) -> String:
+	s.gold = 10000000
+	return JSON.stringify(XTianqiReforge.reforge(s, it, 2).get("ok", {}))
+
+
+func _reroll_once(s: XState, it: Dictionary) -> String:
+	var r := XAlienation.reroll(s, it)
+	XAlienation.resolve(s, false)
+	return str(r.ok.next) if r.has("ok") else JSON.stringify(r)
+
+
+func _new_gear(s: XState, before: Array) -> Dictionary:
+	for g in s.gear:
+		if not before.any(func(x): return is_same(x, g)):
+			return g
+	return {}
+
+
+func _seed_ids() -> void:
+	XStarWarehouse.path_override = ""
+	XStarWarehouse._loaded_path = "<unloaded>"
+	var s := _state()
+	var it := _make(s, _find_weapon())
+	if XStarWarehouse.push_dct(it):  # 这把带「不可存放」标签：测试件去掉它（只测随机身份，不测存放规则）
+		if it.get("meta") is Dictionary:
+			(it.meta as Dictionary).erase(XStarWarehouse.PUSH_DCT)
+		it["note"] = str(it.get("note", "")).replace("<" + XStarWarehouse.PUSH_DCT + ">", "")
+	_check("sw_storable", not XStarWarehouse.push_dct(it))
+	var iid := str(it.instanceId)
+	var fam := XTianqiAlienGear.family("war", "shigu")
+	var al: Dictionary = XTianqiAlienGear.create(s, "armor", 52, "war", "shigu", str(fam[0])).ok
+	s.register_gear(al)
+	s.gear.append(al)
+	s.gain_item(XAlienation.stone_id(), 30)
+	var aid := str(al.instanceId)
+	var uid0 := str(al.alien.uid)
+	_save()
+	# 基准：读档直接掷（第一次掷时才分配随机身份）
+	s = _load()
+	var base_rf := _reforge_once(s, _gear(s, iid))
+	var base_al := _reroll_once(s, _gear(s, aid))
+	var sid := str(_gear(s, iid).get("tq_seed_id", ""))
+	_check("sid_assigned", XRandomStream.valid_hex(sid) and XRandomStream.valid_hex(str(_gear(s, aid).get("tq_seed_id", ""))) and sid != str(_gear(s, aid).tq_seed_id), [sid, _gear(s, aid).get("tq_seed_id")])
+	# 读档 → 存进星辰仓库再取出（instanceId 重编、异化 uid 重分）→ 掷：结果不变
+	s = _load()
+	for iid_x in [iid, aid]:
+		var g := _gear(s, iid_x)
+		_check("star_deposit_%s" % iid_x, XStarWarehouse.deposit_gear(s, g) == "")
+		var before := s.gear.duplicate()
+		_check("star_withdraw_%s" % iid_x, XStarWarehouse.withdraw_gear(s, g))
+	var w_rf: Dictionary = s.gear.filter(func(g): return int(g.base) == int(it.base) and str(g.kind) == "weapon")[0]
+	var w_al: Dictionary = s.gear.filter(func(g): return XTianqiAlienGear.is_tq(g))[0]
+	_check("star_renumbered", str(w_rf.instanceId) != iid and str(w_al.instanceId) != aid and str(w_al.alien.uid) != uid0, [w_rf.instanceId, w_al.instanceId, w_al.alien.uid])
+	_check("star_reforge_same", _reforge_once(s, w_rf) == base_rf, [base_rf])
+	_check("star_reroll_same", _reroll_once(s, w_al) == base_al, [base_al])
+	_check("star_sid_kept", str(w_rf.get("tq_seed_id", "")) == sid)
+	# 普通仓库：存进去、存档、读档、取出再掷，结果也不变
+	s = _load()
+	XWarehouse.create(s, "<种子测试仓:99>")
+	var g2 := _gear(s, iid)
+	_check("wh_deposit", XWarehouse.deposit(s, "weapon", g2))
+	_save()
+	s = _load()
+	var stored: Dictionary = (XWarehouse.current(s).items.weapon as Array).filter(func(e): return e is Dictionary and str(e.get("instanceId", "")) == iid)[0]
+	_check("wh_withdraw", XWarehouse.withdraw(s, "weapon", stored))
+	_check("wh_reforge_same", _reforge_once(s, _gear(s, iid)) == base_rf)
+	_reroll_once(s, _gear(s, aid))
+	# 同一档里分配的号各不相同、存档里不会出现两件同号
+	_save()
+	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var ids := (raw.gear as Array).map(func(g): return str(g.get("tq_seed_id", ""))).filter(func(x): return x != "")
+	var uniq := {}
+	for x in ids:
+		uniq[x] = true
+	_check("sid_unique", ids.size() >= 2 and uniq.size() == ids.size(), ids)
+	# 复制路径：云裳发货（spec 复制）、仓库原版复制（O 开关关时被吞噬占用的武器多出一份）不带号，要用时拿新号
+	s = _load()
+	var spec := (_gear(s, iid) as Dictionary).duplicate(true)
+	spec["_yunUid"] = "seed-fix-test"
+	var before2 := s.gear.duplicate()
+	XYunshangOrders.grant_spec(s, spec)
+	var copy := _new_gear(s, before2)
+	_check("yun_copy_no_sid", not copy.is_empty() and not copy.has("tq_seed_id"), copy.keys())
+	_reforge_once(s, copy)
+	_check("yun_copy_new_sid", XRandomStream.valid_hex(str(copy.get("tq_seed_id", ""))) and str(copy.tq_seed_id) != sid)
+	var crown_spec := {"spec": (_gear(s, iid) as Dictionary).duplicate(true), "bonus": 0.0, "removed": false}
+	var before3 := s.gear.duplicate()
+	XDemonCrown._grant(s, crown_spec, "seed-fix-crown")
+	var crown := _new_gear(s, before3)
+	_check("crown_copy_no_sid", not crown.is_empty() and not crown.has("tq_seed_id"))
+	# 仓库原版复制：吞噬异化占着的武器
+	var donor := _gear(s, iid)
+	var sw := _gear(s, aid) if not _gear(s, aid).is_empty() else (s.gear.filter(func(g): return XTianqiAlienGear.is_tq(g))[0] as Dictionary)
+	XAlienation.mark(sw).affix = "swallow"
+	XAlienation.mark(sw).config = {"donorId": str(donor.instanceId)}
+	_check("dup_reserved", XAlienation.reserved(s, donor))
+	XWarehouse.create(s, "<种子测试仓:99>")
+	XWarehouse.o_reserved_no_dup = false
+	var n0: int = (XWarehouse.current(s).items.weapon as Array).size()
+	XWarehouse.deposit(s, "weapon", donor)
+	XWarehouse.o_reserved_no_dup = true
+	var wl: Array = XWarehouse.current(s).items.weapon
+	_check("dup_copy_no_sid", wl.size() == n0 + 1 and not (wl[-1] as Dictionary).has("tq_seed_id") and donor.has("tq_seed_id"), wl.size())
+	XStarWarehouse.path_override = ""
+	XStarWarehouse._loaded_path = "<unloaded>"
+	if FileAccess.file_exists(XStarWarehouse.path()):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(XStarWarehouse.path()))
 
 
 # ---- 通关抽角色候选 ----
@@ -277,6 +389,7 @@ func _run() -> void:
 	_reforge()
 	_alien()
 	_offer()
+	_seed_ids()
 	XTianqi.SEED_FROM_SAVE = true
 	XSave.remove(SLOT)
 	XSave.dir_override = ""

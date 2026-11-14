@@ -83,14 +83,36 @@ static func save_roll(s: XState, key: String) -> Callable:
 	return func(): return st.next_float(key)
 
 
-## 装备上的次数计数 tq_rng_n（随装备存进存档；老装备没有当 0）：用 key「domain|instanceId|n」开流并把计数 +1。
+## 装备的随机身份 tq_seed_id：第一次要掷时分配，写在装备字典上随物品走，一经分配永不重编
+## （instanceId、异化 uid 会在星辰仓库取出等路径上重编，不能当随机身份）。
+## 号＝由本档存档种子和本档单调计数 flags.tianqi.seed_id_n 派生的 64 位十六进制，跨存档也几乎不会撞号。
+## 复制装备的合法路径（魔冠账本重发、云裳订单发货）在复制时去掉它，复制品要用时另拿新号。
+static func seed_id(s: XState, item: Dictionary) -> String:
+	var id := str(item.get("tq_seed_id", ""))
+	if XRandomStream.valid_hex(id):
+		return id
+	var tq = s.flags.get("tianqi")
+	var n := 0
+	if tq is Dictionary:
+		n = int(tq.get("seed_id_n", 0))
+		tq["seed_id_n"] = n + 1
+	id = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tq_seed_id|%d" % n)
+	item["tq_seed_id"] = id
+	return id
+
+
+## 装备的存档派生流：种子＝随机身份 tq_seed_id＋domain＋装备上的次数 tq_rng_n（随装备存进存档；老装备没有当 0），
+## 每开一条计数 +1。流只看装备自己带的东西，存进仓库再取出、换存档都还是那一串。
 ## 开关关着时不写装备、返回全局 randf
 static func item_roll(s: XState, item: Dictionary, domain: String) -> Callable:
 	if s == null or not SEED_FROM_SAVE:
 		return func(): return randf()
+	var id := seed_id(s, item)
 	var n := int(item.get("tq_rng_n", 0))
 	item["tq_rng_n"] = n + 1
-	return save_roll(s, "%s|%s|%d" % [domain, str(item.get("instanceId", "")), n])
+	var key := "%s|%d" % [domain, n]
+	var st := XRandomStream.create(XRandomStream.derive(id, "tianqi_item|" + key), "tianqi_item")
+	return func(): return st.next_float(key)
 
 ## 通关抽角色（数值重构方案「招募改成通关抽角色」，Kyo 11-08 定的表）：每通关 5 层一次，最多 6 次。
 ## 每档 6 行，依次是第 1～6 次：[档位, 几选一]；几选一为 0＝自选（档位内本局还没有的全部）。不能重抽。
