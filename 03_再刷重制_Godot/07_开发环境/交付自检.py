@@ -274,6 +274,13 @@ def local_checks(wt, state, result):
                                                                merge.EVIDENCE_DIRS[1]))
     if not state or not state.get('refresh'):
         return
+    # 天启篇默认（Kyo 11-14）合并不自动同步：同步指纹与接受单只在总装定了照旧同步（XIYOU_MERGE_SYNC=1）时用得上，降为提示；
+    # XIYOU_LEGACY_SYNC=1 回到重制期旧规矩（算问题）
+    legacy = merge.legacy_sync()
+    problems = result['problems'] if legacy else result['hints']
+    if not legacy:
+        result['hints'].append('天启篇默认合并不自动同步：本车道改了切片／转换器／参照探针，总装合并会停在同步前，由总装定 XIYOU_MERGE_SYNC=1'
+                               '（照旧同步，有本树同步指纹可直接用本树产物）或 XIYOU_MERGE_SYNC=skip；下面同步指纹与接受单的检查只作提示')
     gen = wt / GENERATED
     if not gen.is_dir():
         result['hints'].append('本机没有转换产物（云端车道）：总装合并时要在 main 上完整同步，按慢车道排队')
@@ -284,7 +291,7 @@ def local_checks(wt, state, result):
     except (OSError, ValueError):
         stamp = None
     if not isinstance(stamp, dict):
-        result['problems'].append('慢车道没有同步指纹（%s）：交付前在本树跑一次 同步正式西游.py --accept-additions，总装合并才能直接用本树产物，'
+        problems.append('慢车道没有同步指纹（%s）：交付前在本树跑一次 同步正式西游.py --accept-additions，总装合并才能直接用本树产物，'
                                   '否则 main 上整份重跑、堵住全队' % (GENERATED / 'sync_stamp.json'))
         return
     try:
@@ -294,7 +301,7 @@ def local_checks(wt, state, result):
         result['hints'].append('同步指纹没核对成（%s）' % str(e)[:80])
         stale = False
     if stale:
-        result['problems'].append('同步之后又改了转换工具文件，指纹失效：重新跑一次 同步正式西游.py --accept-additions 再交付')
+        problems.append('同步之后又改了转换工具文件，指纹失效：重新跑一次 同步正式西游.py --accept-additions 再交付')
         return
     if not stamp.get('pendingAcceptance'):
         return
@@ -304,12 +311,12 @@ def local_checks(wt, state, result):
     sheet = merge.ACCEPT / (state['branch'].replace('/', '_') + '.json')
     make = 'python3 %s --out %s --reason-from %s' % (merge.TOOLS / '生成接受单.py', sheet, state['delivery'])
     if not state.get('acceptChanges'):
-        result['problems'].append('本树同步有待接受的测量变化，分支里却没有接受单（%s 下）：合并到同步那步会被拒。核对变化无误后 %s，'
+        problems.append('本树同步有待接受的测量变化，分支里却没有接受单（%s 下）：合并到同步那步会被拒。核对变化无误后 %s，'
                                   '逐条补理由（至少 4 字）并提交' % (merge.ACCEPT, make))
     elif need is not None:
         missing = [k for k in need if k not in have]
         if missing:
-            result['problems'].append('接受单少 %d 条（最新同步报告有 %d 处变化，如 %s）：重跑 %s 补齐（只追加没有的条目），核对后提交'
+            problems.append('接受单少 %d 条（最新同步报告有 %d 处变化，如 %s）：重跑 %s 补齐（只追加没有的条目），核对后提交'
                                       % (len(missing), len(need), ' / '.join(map(str, missing[0])), make))
 
 
@@ -437,7 +444,10 @@ def check(root, ref, task=None, main=None, sandbox=None, local=None):
 
 def lane_class(result):
     if result['slow']:
-        return '慢车道（改了 %s；合并要跑同步，排队尾或夜里）' % '、'.join(result['slowWhy'][:5] or ['切片／转换器／探针'])
+        why = '、'.join(result['slowWhy'][:5] or ['切片／转换器／探针'])
+        if merge.legacy_sync():
+            return '慢车道（改了 %s；合并要跑同步，排队尾或夜里）' % why
+        return '慢车道（改了 %s；天启篇默认合并停在同步前，等总装定 XIYOU_MERGE_SYNC=1／skip）' % why
     return '快车道（不动切片、转换器、参照探针，合并不用同步，先合先推）'
 
 

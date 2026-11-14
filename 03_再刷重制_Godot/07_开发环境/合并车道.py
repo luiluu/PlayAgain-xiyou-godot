@@ -2,7 +2,7 @@
 """总装合并：默认准备合并；手改交接板/进度账后 --finish 检查、提交、清理。失败保留现场。
 
 几条车道同时可合时（用户 2026-10-20 同意）：前几条 --finish --batch，照常登记、提交收尾，但不跑检查、
-不清理工作树、不推送，记进本批清单；最后一条不加 --batch 的 --finish 跑一次 检查.sh --oracle，
+不清理工作树、不推送，记进本批清单；最后一条不加 --batch 的 --finish 跑一次 检查.sh（是否带 --oracle 见 check_cmd），
 通过后提交、清理本批全部工作树并推送。最后的检查失败时 main 上已有的本批收尾提交不推送、工作树都保留，
 并列出本批每条车道的合并提交与改动文件，便于对照失败项定位；要撤出某条就 --abort-batch：先把当前 main
 （含未提交的登记改动）存成 refs/lane-merge/aborted-* 备份，再退回本批开始前的 main，各车道工作树不动，
@@ -44,6 +44,30 @@ ENV = SUB / '07_开发环境'
 TOOLS = SUB / '03_转换工具'
 PROJECT = SUB / '01_Godot工程'
 ACCEPT = SUB / '04_验证/测量接受'
+# 天启篇默认模式（Kyo 2026-11-14：RPGMV 停更，正式源永久定在 冻结正式源/v0.62.12，停用 同步正式西游.py 自动同步）：
+# 合并不再自动跑同步，检查不再默认带 --oracle。XIYOU_LEGACY_SYNC=1 整个回到重制期旧路径（合并自动同步、检查一律 --oracle）。
+# 单项：XIYOU_MERGE_SYNC=1 本次合并照旧同步、=skip 不同步接着合；XIYOU_MERGE_ORACLE=1 检查带 --oracle。
+
+
+def legacy_sync():
+    return os.environ.get('XIYOU_LEGACY_SYNC') == '1'
+
+
+def check_cmd(*lanes):
+    """合并检查命令：天启篇默认不带 --oracle；旧路径、XIYOU_MERGE_ORACLE=1、或本批有车道改了切片／转换器／参照探针
+    （refresh，产物跟着变、要核同源）时带上。"""
+    cmd = [ENV / '检查.sh']
+    if legacy_sync() or os.environ.get('XIYOU_MERGE_ORACLE') == '1' or any(isinstance(l, dict) and l.get('refresh') for l in lanes):
+        cmd.append('--oracle')
+    return cmd
+
+
+def merge_sync_mode():
+    """本批车道改了切片／转换器／参照探针时合并怎么处理产物：run＝照旧跑 同步正式西游.py；skip＝不同步接着合；
+    stop＝天启篇默认，停下等总装定（不自动同步）。"""
+    if legacy_sync():
+        return 'run'
+    return {'1': 'run', 'skip': 'skip'}.get(os.environ.get('XIYOU_MERGE_SYNC', ''), 'stop')
 BOARD = Path('00_项目管理/交接板.md')
 LOG = Path('00_项目管理/变更记录.md')
 COMMON = {str(p) for p in [BOARD, LOG, Path('00_项目管理/交接板归档.md'), Path('00_项目管理/重制步骤清单.md'),
@@ -1527,7 +1551,14 @@ def prepare(root, state, state_file, executor, also=()):
         state.update(phase='merged', head=head, mergeCommit=head)
         save(state_file, state)
     if state['phase'] == 'merged':
-        if state['refresh']:
+        sync_mode = merge_sync_mode() if state['refresh'] else 'run'
+        if sync_mode == 'stop':
+            raise RuntimeError('本车道改了切片、转换器或参照探针（或带测量接受单），重制期这里会自动跑 同步正式西游.py 重生成产物；'
+                               '天启篇默认不自动同步（Kyo 11-14），已合并、停在同步前。要重生成产物：XIYOU_MERGE_SYNC=1 重跑同一命令'
+                               '（照旧同步）；确认产物不用动：XIYOU_MERGE_SYNC=skip 重跑同一命令接着合；放弃就 合并车道.sh %s --abort' % state['task'])
+        if sync_mode == 'skip':
+            print('XIYOU_MERGE_SYNC=skip：本车道改了切片／转换器／参照探针，按总装决定不同步，main 的 generated/ 不动', flush=True)
+        if state['refresh'] and sync_mode == 'run':
             if 'syncSince' not in state:
                 # --abort 凭它找本次合并第一轮同步前的产物备份（同步脚本备份目录名同样以时间戳开头）
                 state['syncSince'] = time.strftime('%Y%m%d_%H%M%S')
@@ -1960,9 +1991,9 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
             if git(root, 'ls-files', '--', s):
                 run(root, ['git', 'add', '--', s])
         if batch:
-            print('本批延后检查：等最后一条不加 --batch 的 --finish 统一跑 检查.sh --oracle', flush=True)
+            print('本批延后检查：等最后一条不加 --batch 的 --finish 统一跑 检查.sh', flush=True)
         else:
-            check = [ENV / '检查.sh', '--oracle']
+            check = check_cmd(state, *load_batch(state_file.parent))
             if affected:
                 # 选测（三级检查②）：基准取本批第一条合并前的 main，攒着的几条一并覆盖
                 pending_batch = load_batch(state_file.parent)
@@ -2068,7 +2099,7 @@ def add_acceptances(root, state, paths):
 
 
 def close_batch(root, folder, affected=False, cloud=False):
-    """本批都 --finish --batch 收尾、没有新车道要合时统一收口：跑一次 检查.sh --oracle（--affected 时以本批第一条合并前的 main 为基准），
+    """本批都 --finish --batch 收尾、没有新车道要合时统一收口：跑一次 检查.sh（--oracle 见 check_cmd；--affected 时以本批第一条合并前的 main 为基准），
     通过后清理本批工作树、删 batch.json、推送；失败照 report_batch 列出各条车道带进来的改动，什么都不清理、不推送。"""
     pending = load_batch(folder)
     if not pending:
@@ -2080,7 +2111,7 @@ def close_batch(root, folder, affected=False, cloud=False):
               flush=True)
     if dirty(root):
         raise RuntimeError('main 有未提交改动，先提交或移走再收口')
-    check = [ENV / '检查.sh', '--oracle'] + (['--affected', pending[0]['base']] if affected else []) + (['--cloud'] if cloud else [])
+    check = check_cmd(*pending) + (['--affected', pending[0]['base']] if affected else []) + (['--cloud'] if cloud else [])
     try:
         if affected:
             tool_gate(root)
@@ -2364,7 +2395,7 @@ def main(argv=None):
     ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex', 'gpt', '小A', 'xa'], default='cc',
                     help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），小A/xa 用于额度接力总装')
     modes.add_argument('--close-batch', action='store_true',
-                       help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
+                       help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh（可加 --affected；--oracle 见 check_cmd），通过后清理本批工作树、推送')
     modes.add_argument('--abort', action='store_true',
                        help='单条合并要撤出 main 时：存备份后退回本条合并前的 main，撤掉本次同步写出的产物与同步基线，删 state.json；车道工作树保留')
     modes.add_argument('--abort-batch', action='store_true',
@@ -2376,7 +2407,7 @@ def main(argv=None):
                     help='--finish 或 --close-batch 时：Godot 场景交给 GitHub Actions 云端跑（云端选测.py run＋wait）；加 --affected 跑选中的场景，'
                          '不加则跑整轮（run --full，尾注「验证: 全量（云端）」，tools73）；非 Godot 检查仍在本机；云端不可用时明确失败，不静默改本机（账单／额度没启动任务时 检查.sh 改本机跑）')
     ap.add_argument('--affected', action='store_true',
-                    help='--finish 时只跑选测（检查.sh --oracle --affected <本次合并前的 main>），通过后照常提交、清理、推送；不和 --batch 同用')
+                    help='--finish 时只跑选测（检查.sh --affected <本次合并前的 main>；--oracle 见 check_cmd），通过后照常提交、清理、推送；不和 --batch 同用')
     ap.add_argument('--accept-changes', action='append', default=[], metavar='接受单',
                     help='同步因测量改变被拒后：把接受单记进本次合并状态再接着同步（不用手改 state.json），可重复')
     ap.add_argument('--accept-doc-edits', action='store_true',

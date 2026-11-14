@@ -106,6 +106,21 @@ class ScanTests(Fixture):
         g('merge', '--no-ff', 'cc/lane4', '-m', '合并 cc/lane4')
         self.assertTrue(rb.last_lane(self.root, 'core/pets2.gd', 'CLAMP2').startswith('合并 cc/lane4 · '))
 
+    def test_gap_line_names_tianqi_lane_prefixes(self):
+        """天启篇三方（11-14）：gpt/、xa/ 车道与 Orca 工作树分支 luiluu/ 的合并也认得出，不退回只报提交。"""
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 'f', 'GIT_AUTHOR_EMAIL': 'f@x.invalid', 'GIT_COMMITTER_NAME': 'f', 'GIT_COMMITTER_EMAIL': 'f@x.invalid'}
+        g = lambda *a: subprocess.run(['git', '-C', str(self.root), *a], check=True, capture_output=True, text=True, env=env).stdout
+        self.put('core/base.gd', 'class_name XBase\n')
+        g('init', '-b', 'main'); g('add', '.'); g('commit', '-m', 'base')
+        for i, lane in enumerate(['gpt/art1', 'xa/ui1', 'luiluu/Antigravity']):
+            name = 'FIX%d' % i
+            g('switch', '-c', lane)
+            self.put('core/t%d.gd' % i, 'class_name XT%d\nstatic var %s := true\n' % (i, name))
+            g('add', '.'); g('commit', '-m', lane + ' work'); g('switch', 'main')
+            g('merge', '--no-ff', lane, '-m', '合并 ' + lane)
+            got = rb.last_lane(self.root, 'core/t%d.gd' % i, name)
+            self.assertTrue(got.startswith('合并 %s · ' % lane), got)
+
     def test_coverage_literal_dynamic_and_gap(self):
         self.put('core/pets.gd', 'class_name XPets\nstatic var BOOK_FIX := true\nstatic var CLAMP := true\nstatic var EXACT := true\n')
         self.put('ui/card.gd', 'class_name XCard\nconst NEAR := true\n')
