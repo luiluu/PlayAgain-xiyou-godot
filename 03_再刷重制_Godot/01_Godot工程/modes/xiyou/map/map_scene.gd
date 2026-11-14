@@ -1458,6 +1458,7 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	refresh_events()
 	if not random_encounter:
 		await XTianqiRewards.after_map_battle(self, XState.current, troop_id, result)  # 天启篇奖励：使徒掉净印、31～33 层终焉 Boss 掉核
+		await XTianqiSect.after_map_battle(self, XState.current, troop_id, result)  # 天启篇教派连带内容包乙：20 层使徒打赢，小小鱼松第二重枷锁
 	return result
 
 ## 遇敌演出要用的战斗 BGM（归地图；战斗拿去当自己的 bgm，打完由 _end_battle_bgm 收掉）

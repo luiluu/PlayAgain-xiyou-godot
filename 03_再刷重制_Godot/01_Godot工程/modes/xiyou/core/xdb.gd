@@ -161,6 +161,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiSect.troop_rec(id, out)  # 天启篇教派连带内容（包丙）：讨债战敌群 747／766
 	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):
 		out = XTianqiTrumpet.rec(name, id, out)  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
+	if name == "Skills" and XTianqiSect.touches_skill(id):
+		out = XTianqiSect.skill_rec(id, out)  # 天启篇教派连带内容包乙：挣脱枷锁三个被动只留抽奖被动上限 +1
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	if name == "States" and XTianqiSkills.has_state(id):

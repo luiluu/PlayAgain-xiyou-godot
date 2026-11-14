@@ -25,6 +25,31 @@ extends RefCounted
 
 static var JIA := true
 
+## ==== 包乙：小小鱼破枷锁 ====
+## - 15／20／25 层原来破枷锁的人（Map032 EV007、Map116 EV006、Map147 EV004）和大厅讲抽奖被动上限的人（Map004 EV003）不出。
+## - 改由小小鱼在本线三个节点之后各松一重：15 层「原身的回声」（beats 的 echo15，XTianqiLine.run_arrival 末尾）、
+##   20 层第二使徒打赢之后（XMapScene.start_battle 末尾，认本线 apostle20 预设的敌群）、25 层「传闻」（rumor25）。四线共用。
+## - 每重：全队抽奖被动上限（变量 9）+1，全体角色学「挣脱枷锁·一重／二重／三重」（技能 6178～6180，原版公共事件 1324～1326 的做法）；
+##   发过的记在 flags.tianqi.fetters（[1, 2, 3] 里发过的重数），读档不重复发。
+## - 三个被动在天启篇改写（XDB.rec 挂点）：去掉伤害结果乘区（开战状态 1001～1003）和全属性，说明只留「抽奖被动上限+1」。
+## - 抽奖被动上限的说明改由小小鱼在开局说一句；开局值仍按五档（5／5／10／17／22），三重全破后 8／8／13／20／25。
+static var YI := true
+
+const YI_HIDDEN := {4: [3], 32: [7], 116: [6], 147: [4]}
+const YI_SKILLS := [6178, 6179, 6180]
+const YI_CAP_VAR := 9
+## 楼层节点 → 第几重
+const YI_BEATS := {"echo15": 1, "rumor25": 3}
+const YI_APOSTLE := "apostle20"
+const YI_APOSTLE_TIER := 2
+const YI_NAMES := ["一重", "二重", "三重"]
+const YI_LINES := [
+	"这条规矩……我改一下，就一下。",
+	"又碰上它了。再松一格，你别声张。",
+	"再改就要被发现了。最后一次。",
+]
+const YI_OPENING_LINE := "抽奖学来的被动，每个人能学几个是有上限的。往上走的路上，这条规矩我找机会替你松一松。"
+
 const HALL_MAP := 4
 ## 包甲：大厅两位使者
 const JIA_HIDDEN := {4: [16, 35]}
@@ -384,7 +409,8 @@ static func hides(map_id: int, event_id: int) -> bool:
 	if JIA and JIA_HIDDEN.has(map_id) and (JIA_HIDDEN[map_id] as Array).has(event_id) and on(XState.current):
 		return true
 	# ---- 槽位：乙 ----
-
+	if YI and YI_HIDDEN.has(map_id) and (YI_HIDDEN[map_id] as Array).has(event_id) and on(XState.current):
+		return true
 	# ---- 槽位：丙 ----
 	if BING and BING_HIDDEN.has(map_id) and (BING_HIDDEN[map_id] as Array).has(event_id) and on(XState.current):
 		return true
@@ -537,7 +563,9 @@ static func opening_commands() -> Array:
 		c.append({"code": 101, "indent": 0, "parameters": ["", 0, 0, 2, ""]})
 		c.append({"code": 401, "indent": 0, "parameters": ["\\n<%s>先收好这两样：一个是去副本协会的传送阵控制器，一个是牛马关的指路灯。塔里的事，多问问身边的人。" % XTianqi.GUIDE_NAME]})
 	# ---- 槽位：乙 ----
-
+	if YI:
+		c.append({"code": 101, "indent": 0, "parameters": ["", 0, 0, 2, ""]})
+		c.append({"code": 401, "indent": 0, "parameters": ["\\n<%s>%s" % [XTianqi.GUIDE_NAME, YI_OPENING_LINE]]})
 	# ---- 槽位：丙 ----
 
 	# ---- 槽位：丁一 ----
@@ -584,3 +612,101 @@ static func ren_sync(s: XState, id: int, target: int) -> int:
 	a.change_level_mv(target)
 	return a._level()
 
+
+# ==== 包乙：小小鱼破枷锁 ====
+
+## 发过的重数（1～3；存档读回来是浮点，统一成整数）
+static func fetters_given(s) -> Array:
+	if s == null or not s.flags.get("tianqi") is Dictionary:
+		return []
+	var v = s.flags.tianqi.get("fetters")
+	return (v as Array).map(func(x): return int(x)) if v is Array else []
+
+
+## 松第 tier 重（1～3）：变量 9 +1、全体角色学对应被动、记进存档；已发过或不该发返回 false
+static func grant_fetter(s, tier: int) -> bool:
+	if not YI or not on(s) or tier < 1 or tier > YI_SKILLS.size():
+		return false
+	var given := fetters_given(s)
+	if given.has(tier):
+		return false
+	given.append(tier)
+	s.flags.tianqi["fetters"] = given
+	s.set_variable(YI_CAP_VAR, int(s.variable(YI_CAP_VAR)) + 1)
+	var sid := int(YI_SKILLS[tier - 1])
+	for rec in XDB.table("Actors"):  # 原版公共事件 1324～1326：for $dataActors → learnSkill
+		if rec == null or str(rec.get("name", "")) == "":
+			continue
+		var a: XActor = s.actor(int(rec.id))
+		if not a.skill_ids.has(sid):
+			a.learn_skill(sid)
+			a.refresh_passive()
+	return true
+
+
+## 小小鱼说一句、松一重（台词三句四线共用）
+static func run_fetter(host, s, tier: int) -> void:
+	if grant_fetter(s, tier):
+		await say_fetter(host, s, tier)
+
+
+## 松过第 tier 重之后小小鱼的台词（0＝这次没发，不说）
+static func say_fetter(host, s, tier: int) -> void:
+	if tier < 1 or tier > YI_LINES.size() or host == null or not host.has_method("show_text"):
+		return
+	await host.show_text("", 0, [XTianqiLine.line_text([XTianqi.GUIDE_NAME, YI_LINES[tier - 1]])])
+	await host.show_text("", 0, ["\\c[2]挣脱枷锁·%s\\c[0]　全队抽奖被动上限+1（现在%d）。" % [YI_NAMES[tier - 1], int(s.variable(YI_CAP_VAR))]])
+
+
+## XTianqiLine.run_arrival 标记 seen 之前：本线楼层节点（echo15／rumor25）先把这一重发掉，和 seen 同一步落定；
+## 返回这次发的重数（没发为 0），演完再交给 after_beat 说台词
+static func grant_for_beat(s, beat: String) -> int:
+	if YI and YI_BEATS.has(beat) and grant_fetter(s, int(YI_BEATS[beat])):
+		return int(YI_BEATS[beat])
+	return 0
+
+
+## XTianqiLine.run_arrival 末尾：节点演完，小小鱼说一句（tier 是 grant_for_beat 的返回）
+static func after_beat(host, s, tier: int) -> void:
+	await say_fetter(host, s, tier)
+
+
+## 这一场是不是本线 20 层的使徒（开场打完之后才算）
+static func is_apostle20(s, troop_id: int) -> bool:
+	var key := XTianqiLine.current(s) if s != null else ""
+	if key == "" or not XTianqiLine.opening_done(key, s):
+		return false
+	return int(XTianqiLine.alien_preset(key, YI_APOSTLE).get("troop", 0)) == troop_id
+
+
+## XMapScene.start_battle 末尾（不是随机遇敌）：20 层使徒打赢之后
+static func after_map_battle(host, s, troop_id: int, result: int) -> void:
+	if YI and result == 0 and on(s) and is_apostle20(s, troop_id):
+		await run_fetter(host, s, YI_APOSTLE_TIER)
+
+
+## XDB.rec 的快路径：要改写的技能
+static func touches_skill(id: int) -> bool:
+	return YI and id >= int(YI_SKILLS[0]) and id <= int(YI_SKILLS[-1])
+
+
+static var _skill_recs: Dictionary = {}
+
+
+## 挣脱枷锁三个被动：去掉全属性（passivePBST）、伤害结果乘区（开战状态 StartPushState1001～1003）和对应的两行说明
+static func skill_rec(id: int, base: Dictionary) -> Dictionary:
+	if base.is_empty() or not touches_skill(id) or not on(XState.current):
+		return base
+	var hit = _skill_recs.get(id)
+	if hit is Array and is_same(hit[0], base):
+		return hit[1]
+	var r: Dictionary = base.duplicate(true)
+	var keep := []
+	for line in str(r.get("note", "")).split("\n"):
+		if line.begins_with("<passivePBST") or line.begins_with("<StartPushState") or line.contains("伤害结果") or line.contains("全属性"):
+			continue
+		keep.append(line)
+	r.note = "\n".join(keep)
+	r.meta = XTianqiSkills.parse_meta(r.note)
+	_skill_recs[id] = [base, r]
+	return r
