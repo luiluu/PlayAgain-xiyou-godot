@@ -235,6 +235,12 @@ static func battle_random(s: XState, troop_id: int) -> XBattleRandom:
 	return out
 
 
+## 钉住的本场里按战斗得到的装备的来源键 b|战斗键|who（心之钢、狂妄这类结算奖励）；没钉住（西游档、关开关、测试自建的流）返回空＝照旧
+static func battle_source(logic, who: String) -> String:
+	var r = logic.get("random") if logic is Object else null  # 测试替身没有 random 属性时当没钉住
+	return "b|%s|%s" % [r.battle_key, who] if r is XBattleRandom and r.pinned() else ""
+
+
 ## BattleLogic.setup 里调：本场钉住的话，把这个敌群的计数推到战斗键之后（回放从开战前的档重放也推到同一个数）
 static func note_battle(s: XState, random: XBattleRandom) -> void:
 	if s == null or random == null or not random.pinned() or not s.flags.get("tianqi") is Dictionary:

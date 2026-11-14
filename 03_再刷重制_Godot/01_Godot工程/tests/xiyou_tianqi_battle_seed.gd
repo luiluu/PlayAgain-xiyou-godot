@@ -8,6 +8,9 @@ extends Node
 ##   ⑦ 带来源键的装备底子：读档再拿同一来源一样、不动共享预掷池；关开关回运行时装备流
 ##   ⑧ 回放：钉住的本场快照能还原（种子、布阵流、子流），从开战前的档重放结果相同
 ##   ⑨ 掉率统计：多种子下钉住与运行时（关开关）每场掉落件数均值落在误差内
+##   ⑩ 结算段（grant／end_battle 里的规则取数，co 甲档核查 R3 P2）：不朽之书、谷雨石、心之钢、狂妄、锻造锤逐项触发，
+##      钉住后读档同结果、取数在各自的结算子流（回合流在结算期间一次不取）、关开关回到回合流且读档不同；
+##      心之钢、狂妄命中时整件装备（底子、词条、孔数）读档相同，先拿别的装备再打也相同；各项命中率分项统计
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 var kit: Kit
@@ -427,6 +430,146 @@ func _stats() -> void:
 	_check("stats_mean_within_error", absf(float(m[true]) - float(m[false])) <= 4.0 * maxf(se, 0.01), [m, se])
 
 
+# ---- ⑩ 结算段 ----
+const END_KEYS := ["grant", "end|guyu", "end", "end|heartsteel", "end|forge", "end|hubris"]
+const GUYU := 175
+
+
+## 打赢一场（rewards → grant → end_battle(0)），返回各结算子流的取数、回合流在结算期间的取数、新得的装备与关注的物品数
+func _win(st: XState, map: int, origin: int, troop: int) -> Dictionary:
+	st.map_id = map
+	st.unknown_origin = origin
+	var before := st.gear.duplicate()
+	var watch := [XGuyu.STONE, XGrowthForge.HAMMER, XStarburstBooks.IMMORTAL_BOOK]
+	var items0 := watch.map(func(i): return st.item_count(i))
+	var lg := XBattleLogic.new()
+	lg.setup(troop, st)
+	var r := lg.random
+	for e in lg.enemies:
+		e.hp = 0
+		e.add_state(1)
+	var n0 := r.rule.draws
+	lg.grant(lg.rewards())
+	lg.end_battle(0)
+	var subs := {}
+	for k in END_KEYS:
+		if r._subs.has(k):
+			subs[k] = (r._subs[k] as XRandomStream).journal.map(func(j): return [str(j.reason), j.value])
+	var rule_end: Array = r.rule.journal.slice(n0).map(func(j): return [str(j.reason), j.value])
+	var got := {}
+	for g in st.gear:
+		if not before.any(func(x): return is_same(x, g)):
+			got[int(g.base)] = _sig(g)
+	var items := []
+	for i in watch.size():
+		items.append(st.item_count(watch[i]) - int(items0[i]))
+	return {"key": r.battle_key, "pinned": r.pinned(), "seed": r.pin_seed, "subs": subs, "rule_end": rule_end, "gear": got, "items": items}
+
+
+func _reasons(rows: Array) -> Array:
+	return rows.map(func(x): return x[0])
+
+
+## 读档后把敌群计数拨到 k
+func _at(troop: int, k: int) -> XState:
+	var st := kit.reload()
+	if not st.flags.tianqi.get("rng") is Dictionary:
+		st.flags.tianqi["rng"] = {}
+	st.flags.tianqi.rng["battle|%d" % troop] = k
+	return st
+
+
+func _end_phase() -> void:
+	XStarburstBooks.IMMORTAL_CLEAR_TEST = 1  # 不朽存在通关判定直接算过（真判定要云裳订单的路线记录）
+	var s := _new(424242)
+	XTianqi._joining = true
+	s.add_actor(GUYU)  # 谷雨在队：谷种金缮石才掷
+	XTianqi._joining = false
+	_check("end_guyu_in_party", s.party.has(GUYU), s.party)
+	kit.save()
+	var T := XHeartsteel.REWARD_TROOPS[0]
+	var M := XHeartsteel.REWARD_MAP
+	var O := XHeartsteel.REWARD_ORIGIN
+	# 触发：各项落在自己的结算子流；回合流在结算期间一次不取
+	var a := _win(_at(T, 0), M, O, T)
+	_check("end_pinned", a.pinned)
+	_check("end_starburst_in_grant", _reasons(a.subs.get("grant", [])).has("starburst.immortal"), a.subs)
+	_check("end_guyu_in_sub", _reasons(a.subs.get("end|guyu", [])) == ["guyu_stone"], a.subs)
+	_check("end_heartsteel_in_sub", _reasons(a.subs.get("end|heartsteel", [])) == ["heartsteel.reward"], a.subs)
+	_check("end_hubris_in_sub", _reasons(a.subs.get("end|hubris", [])) == ["hubris.reward"], a.subs)
+	_check("end_rule_untouched", (a.rule_end as Array).is_empty(), a.rule_end)
+	# 子流取到的数就是 derive(本场种子, "reward|段") 的第一个数（算式钉住，分项统计用同一算式）
+	_check("end_formula", float(a.subs["end|heartsteel"][0][1]) == _first(str(a.seed), "end|heartsteel") \
+		and float(a.subs["end|hubris"][0][1]) == _first(str(a.seed), "end|hubris"), [a.subs["end|heartsteel"], a.seed])
+	# 读档再打：取数、物品、装备全同
+	var b := _win(_at(T, 0), M, O, T)
+	_check("end_reload_same", JSON.stringify(a.subs) == JSON.stringify(b.subs) and a.items == b.items and a.gear == b.gear, [a, b])
+	# 锻造锤：Map176、来源 165、敌群 570～575
+	var FT := XGrowthForge.CORE_TROOPS[0]
+	var f1 := _win(_at(FT, 0), XGrowthForge.CORE_MAP, 165, FT)
+	var f2 := _win(_at(FT, 0), XGrowthForge.CORE_MAP, 165, FT)
+	_check("end_forge_in_sub", _reasons(f1.subs.get("end|forge", [])) == ["growth_forge.core"] and (f1.rule_end as Array).is_empty(), f1.subs)
+	_check("end_forge_reload_same", JSON.stringify(f1.subs) == JSON.stringify(f2.subs) and f1.items == f2.items, [f1.items, f2.items])
+	# 关开关：回到回合流（结算期间在 rule 上取），两次读档取到的数不同
+	XTianqiRandom.BATTLE_FROM_SAVE = false
+	var o1 := _win(_at(T, 0), M, O, T)
+	var o2 := _win(_at(T, 0), M, O, T)
+	var of1 := _win(_at(FT, 0), XGrowthForge.CORE_MAP, 165, FT)
+	XTianqiRandom.BATTLE_FROM_SAVE = true
+	var want := ["starburst.immortal", "guyu_stone", "heartsteel.reward", "hubris.reward"]
+	_check("end_off_on_rule", not o1.pinned and (o1.subs as Dictionary).is_empty() and want.all(func(w): return _reasons(o1.rule_end).has(w)) \
+		and _reasons(of1.rule_end).has("growth_forge.core"), [o1.rule_end, of1.rule_end])
+	_check("end_off_differs", JSON.stringify(o1.rule_end) != JSON.stringify(o2.rule_end), [o1.rule_end, o2.rule_end])
+	# 心之钢、狂妄命中：找到命中的战斗键，读档再打整件相同；先拿一件别的装备（挪了实例编号、全档词条计数、共享预掷池）再打也相同
+	for pair in [["heartsteel", XHeartsteel.ARMOR], ["hubris", XHubris.ARMOR]]:
+		var who: String = pair[0]
+		var armor: int = pair[1]
+		var hit := -1
+		for k in 300:
+			if _first(XRandomStream.derive(XRandomStream.hex64(424242), "battle|%d|%d" % [T, k]), "end|" + who) < 0.10:
+				hit = k
+				break
+		_check("end_%s_hit_found" % who, hit >= 0)
+		if hit < 0:
+			continue
+		var h1 := _win(_at(T, hit), M, O, T)
+		var h2 := _win(_at(T, hit), M, O, T)
+		var st3 := _at(T, hit)
+		st3.gain_gear("weapon", _any_weapon(), 1)  # 先拿一件没来源键的装备
+		var h3 := _win(st3, M, O, T)
+		_check("end_%s_dropped" % who, (h1.gear as Dictionary).has(armor), h1.gear.keys())
+		_check("end_%s_whole_same" % who, h1.gear.get(armor, "a") == h2.gear.get(armor, "b"), [h1.gear.get(armor), h2.gear.get(armor)])
+		_check("end_%s_after_other_same" % who, h1.gear.get(armor, "a") == h3.gear.get(armor, "c"), [h1.gear.get(armor), h3.gear.get(armor)])
+	XStarburstBooks.IMMORTAL_CLEAR_TEST = -1
+	# 分项统计：钉住的各段第一个数（=该项掷的数）在 2000 个战斗键上的命中率，对名义几率 4 个标准误之内；运行时同样 2000 次
+	var n := 2000
+	for item in [["end|heartsteel", XHeartsteel.REWARD_RATE], ["end|hubris", XHubris.REWARD_RATE], ["end|forge", XGrowthForge.CORE_RATE],
+			["end|guyu", 1.0 / float(XGuyu.STONE_ONE_IN)], ["grant", 1.0 / 66.0]]:
+		var p: float = item[1]
+		var hits := 0
+		var hits_rt := 0
+		for k in n:
+			if _first(XRandomStream.derive(XRandomStream.hex64(424242), "battle|%d|%d" % [T, k]), str(item[0])) < p:
+				hits += 1
+			if XRandomStream.create(XRandomStream.fresh_seed(), "rule").next_float("x") < p:  # 随机守卫：运行时对照
+				hits_rt += 1
+		var se := sqrt(p * (1.0 - p) / float(n))
+		print("INFO end_rate %s nominal=%.4f pinned=%.4f runtime=%.4f se=%.4f" % [item[0], p, float(hits) / n, float(hits_rt) / n, se])
+		_check("end_rate_%s" % item[0], absf(float(hits) / n - p) <= 4.0 * se and absf(float(hits_rt) / n - p) <= 4.0 * se, [hits, hits_rt, n])
+
+
+## 本场种子派生的结算子流（段 key）的第一个数
+static func _first(pin_seed: String, key: String) -> float:
+	return XRandomStream.create(XRandomStream.derive(pin_seed, "reward|" + key), "reward").next_float("x")
+
+
+static func _any_weapon() -> int:
+	for row in XDB.table("Weapons"):
+		if row is Dictionary and str(row.get("name", "")) != "" and not XEquipment.is_exclusive(XGear.template("weapon", int(row.id))):
+			return int(row.id)
+	return 1
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	kit = Kit.new("xiyou_tianqi_battle_seed")
@@ -441,9 +584,12 @@ func _run() -> void:
 		_replay()
 	if only in ["", "stats"]:
 		_stats()
+	if only in ["", "end"]:
+		_end_phase()
 	XTianqiRandom.BATTLE_FROM_SAVE = true
 	XTianqiRandom.GEAR_BASE_FROM_SAVE = true
 	XTianqiDrop.SIGNATURE = true
+	XStarburstBooks.IMMORTAL_CLEAR_TEST = -1
 	kit.teardown()
 	var passed := results.filter(func(x): return x.passed).size()
 	for x in results:

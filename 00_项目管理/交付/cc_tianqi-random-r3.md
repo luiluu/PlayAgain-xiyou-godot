@@ -46,17 +46,28 @@
 - `battle/battle_logic.gd`：`setup` 取战斗流改经 `XTianqiRandom.battle_random`，整段 `phase = "setup"`；`_rule()` 改取 `random.rule_now()`；`drops_of`／`_roll_drops` 改 `reward_for(敌人|drop)`；`_tag_src` 给钉住本场的敌人掉落与通用掉落里的装备打来源键 `b|战斗键|敌人或 generic|第几件`，`gain_drops` 按 `_gear_src`（招牌掉落 `sig|键` 优先）入包；`grant`、`end_battle` 里按段切 `phase`（见上表）。
 - `xstate.gd` `gain_gear` 生成改调 `XTianqiRandom.create_gear`（`source_hint` 的设与清挪进去）；`tianqi_affix_roll.gd` `_default_rng` 认出 `create_gear` 绑的底子流（`gear_binding`），词条仍走 `affix_src` 那一路；`orbs.gd` `layout` 加可选 `number`（代替实例编号，同一个哈希式）。
 - `tianqi_alien_gear.gd`：掉落取数改 `reward_for(敌人|alien)`，钉住的本场本体带来源键 `b|战斗键|敌人|alien`（`create` 加可选 `source`）；`tianqi_drop.gd`／`tianqi_elements.gd`／`mira.gd`／`liuying.gd` 各一处改 `reward_for`。
+- `heartsteel.gd`／`hubris.gd`：不朽未知存在胜利奖励的那件装备在钉住的本场带来源键 `b|战斗键|heartsteel`／`hubris`（`XTianqiRandom.battle_source`；没钉住返回空，西游档照旧）。锻造锤是材料（`gain_item`），不涉及来源键。
 - `battle_replay.gd`：取数记录钉住时多记 `setup` 与各子流（`_journal`）。
 - 新专项 `tests/xiyou_tianqi_battle_seed`（49 条）：存→打→读→再打（布阵取数、名字即异化挂谁、整件装备、掉落全同，rule 流布阵阶段不取数，计数存档）；同档再打同一敌群换键；换击杀顺序（整件装备、各敌人掉落、各敌人掉落子流取数记录全同）；逃掉一只只少它那一份；换敌群不同、先打别的敌群这一场不变；关开关回运行时；西游档不钉、快照键不变、各取数口是原流；带来源键装备读档同、两件不同、不动共享预掷池、先拿别的来源不挪、没来源键照旧用池、关开关回运行时、深渊商人 `roll_fn` 优先；快照还原（含子流）、坏种子拒收、带快照从开战前重来布阵与计数相同、整场回放钉住不带来新的不符；掉率统计（40 个种子×2 敌群×4 场，钉住 1.80 对运行时 1.75 件／场，标准误 0.052，4 倍标准误内）。
+- 专项另有结算段一节（返修补，见「返修」）：不朽之书、谷雨石、心之钢、狂妄、锻造锤逐项触发，钉住后读档同、关开关回回合流；心之钢、狂妄命中时整件装备读档同、先拿别的装备再打也同；五项命中率分项统计。
 - `tests/xiyou_tianqi_affix_seed`：`real_*` 那条 INFO 改成断言 `real_pinned_drops_equal`（真实结算入口两次读档、根不同，掉落连词条相同）；关开关的旧口径改打 INFO。
 - 提交：见本分支提交
-- 未完成／已知问题：天启篇档用 `XBattleReplay` 整场回放本来就对不上（关开关同样报 `replay_result_mismatch:logs`，与本单无关，见「可优化」）；心之钢、狂妄掉的那件装备掉不掉已钉住，但入包没带来源键（底子仍随运行时）；异化装备的 `attach`（异化词条）用的就是钉住的子流，没另设来源键。
+- 未完成／已知问题：天启篇档用 `XBattleReplay` 整场回放本来就对不上（关开关同样报 `replay_result_mismatch:logs`，与本单无关，见「可优化」）；异化装备的 `attach`（异化词条）用的就是钉住的子流，没另设来源键。
 
 ## 优化登记草稿
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 |---|---|---|---|---|---|---|---|
-| O-待定 | `modes/xiyou/core/tianqi_random.gd` `XTianqiRandom.BATTLE_FROM_SAVE`（`battle_random`、`note_battle`）、`GEAR_BASE_FROM_SAVE`（`create_gear`、`gear_stream`、`socket_number`）；`modes/xiyou/core/battle_random.gd`（`pin`、`reward_for`、`rule_now`）；`battle/battle_logic.gd`（`setup`、`_rule`、`drops_of`、`_roll_drops`、`_tag_src`、`gain_drops`、`grant`、`end_battle`）；`xstate.gd` `gain_gear`；`orbs.gd` `layout`；`tianqi_alien_gear.gd`、`tianqi_drop.gd`、`tianqi_elements.gd`、`mira.gd`、`liuying.gd`；`tests/xiyou_tianqi_battle_seed.gd` | 战斗布阵（神话／精英、敌人等级、按段异化挂谁、初始 TP、开战状态）和结算（掉哪几件、异化装备、元素书、米拉、流萤残核、心钢等）都从运行时主种子派生，主种子不进存档：存档→打→不满意读档→再打就换一套；带来源键的装备（商店、事件、掉落）底子和孔数随运行时装备流和实例编号，先拿别的装备或读档都会变 | 天启篇档：布阵与结算按战斗键（敌群号｜本档打这个敌群第几次，计数随存档）钉住，结算按敌人分子流，谁先倒下不串号；回合内照旧可变。带来源键的装备底子与孔数按「来源键＋本档该来源第几件」派生。西游档不变 | Kyo 11-14 读档总原则（打完或点完就出结果的读档不变）；cc/save-rng-facade 方案 2.4、2.5，协调批复三条 | `XTianqiRandom.BATTLE_FROM_SAVE = false`（战斗回运行时流）；`XTianqiRandom.GEAR_BASE_FROM_SAVE = false`（底子、孔数回运行时） | cc | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_random.gd` `XTianqiRandom.BATTLE_FROM_SAVE`（`battle_random`、`note_battle`、`battle_source`）；`heartsteel.gd`、`hubris.gd` `clear_reward`、`GEAR_BASE_FROM_SAVE`（`create_gear`、`gear_stream`、`socket_number`）；`modes/xiyou/core/battle_random.gd`（`pin`、`reward_for`、`rule_now`）；`battle/battle_logic.gd`（`setup`、`_rule`、`drops_of`、`_roll_drops`、`_tag_src`、`gain_drops`、`grant`、`end_battle`）；`xstate.gd` `gain_gear`；`orbs.gd` `layout`；`tianqi_alien_gear.gd`、`tianqi_drop.gd`、`tianqi_elements.gd`、`mira.gd`、`liuying.gd`；`tests/xiyou_tianqi_battle_seed.gd` | 战斗布阵（神话／精英、敌人等级、按段异化挂谁、初始 TP、开战状态）和结算（掉哪几件、异化装备、元素书、米拉、流萤残核、心钢等）都从运行时主种子派生，主种子不进存档：存档→打→不满意读档→再打就换一套；带来源键的装备（商店、事件、掉落）底子和孔数随运行时装备流和实例编号，先拿别的装备或读档都会变 | 天启篇档：布阵与结算按战斗键（敌群号｜本档打这个敌群第几次，计数随存档）钉住，结算按敌人分子流，谁先倒下不串号；回合内照旧可变。带来源键的装备底子与孔数按「来源键＋本档该来源第几件」派生。西游档不变 | Kyo 11-14 读档总原则（打完或点完就出结果的读档不变）；cc/save-rng-facade 方案 2.4、2.5，协调批复三条 | `XTianqiRandom.BATTLE_FROM_SAVE = false`（战斗回运行时流）；`XTianqiRandom.GEAR_BASE_FROM_SAVE = false`（底子、孔数回运行时） | cc | 保留 |
+
+## 返修（co 甲档核查 R3：2 条 P2＋1 处误报，2026-11-14）
+
+- co 甲档结论：布阵取数盘全、西游档与关开关路径不变、战斗计数按「第几次开战」推进、读战前档复用同键、`roll_encounter` 留在回合流，均认可；两条 P2 如下。
+- P2-1 心之钢、狂妄整件装备可刷：掉不掉已钉住，但入包没带来源键，底子／词条走运行时或全档计数。改：`XTianqiRandom.battle_source(logic, who)`（钉住的本场返回 `b|战斗键|who`，否则空），`heartsteel.gd:309`、`hubris.gd:290` 的 `gain_gear` 带上它。专项加：找到命中的战斗键，XSave 真实写盘读档两次各打一场，整件装备（底子、词条、孔数，去掉 instanceId）相同；读档后先拿一件没来源键的装备（挪了实例编号、全档词条计数、共享预掷池）再打，整件仍相同。
+- P2-2 结算段没测到（掉率统计只调 `rewards`／`end_battle(-1)`、map_id＝0）：专项新加「⑩ 结算段」：Map152、来源 38、敌群 454 打赢（`rewards`→`grant`→`end_battle(0)`），谷雨入队、不朽存在通关判定置真（`XStarburstBooks.IMMORTAL_CLEAR_TEST`）；Map176、来源 165、敌群 570 打锻造锤。逐项断言：不朽之书（`starburst.immortal`）在 `grant` 子流、谷雨石在 `end|guyu`、心之钢在 `end|heartsteel`、狂妄在 `end|hubris`、锻造锤在 `end|forge`；子流第一个数等于 `derive(本场种子, "reward|段")` 的算式；结算期间回合流一次不取；读档再打取数、物品、装备全同；关开关后这五项都回到回合流、两次读档取到的数不同。分项统计：五项各 2000 个战斗键的命中率与 2000 次运行时取数，对名义几率（10%／10%／20%／1/50／1/66）都在 4 个标准误内（实测钉住 9.15%／10.15%／19.30%／2.00%／1.10%）。
+- 触发不到的两处（写明原因）：`grant` 里升级时的 `gain_exp(…, _rule())`、`end` 段的首领护甲 `sync_boss_armor` 和胜逃败效果 `run_unit`——只有身上挂着带随机效果的状态时才取数，本专项的队伍和敌群没有这类状态。专项用「结算期间回合流一次不取」（`end_rule_untouched`）兜着：这几处一旦取数也只会进 `grant`／`end` 子流。
+- 误报更正：原交付单把锻造锤列为「缺来源键的装备」，它走 `gain_item`（材料），已从「可优化」删掉。
+- 反向验证（返修新断言）：见「验证」。
 
 ## 交接板
 
@@ -71,7 +82,6 @@
 ## 可优化（流程／工具／效率）
 
 - 发现：天启篇档用 `XBattleReplay` 记一场再重放，在本单之前就报 `replay_result_mismatch:logs`（关 `BATTLE_FROM_SAVE` 同样），西游档的回放（`xiyou_random_streams`、`xiyou_determinism`）正常。多半是天启篇各模块的本场状态没进回放的初始存档。只是调试工具，不影响玩家；建议随战斗门面那一单查（Opus＋medium）。
-- 建议：心之钢、狂妄、锻造锤三处 `gain_gear` 不带来源键（底子仍随运行时），可在 `heartsteel.gd`／`hubris.gd` 补 `b|战斗键|heartsteel` 一类来源键（小，Sonnet＋medium，西游档不受影响）。
 - 建议：`XBattleRandom.phase` 现在由 `battle_logic.gd` 手动切段；战斗门面落地时可改成 `with_phase(name, fn)` 包一层，免得新加的结束包装忘了切段。
 
 ## 验证
