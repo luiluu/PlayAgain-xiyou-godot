@@ -387,6 +387,11 @@ func skill_types(b: XBattleScene, who: Array) -> void:
 	var ly_want: Array = page.actor().skills().filter(func(sk): return int(sk.get("stypeId", 0)) == 6)
 	check("types.gongfa.liuying.entries", ly_entries == ly_want and ly_entries.any(func(sk): return int(sk.id) == 7136)
 		and ly_entries.all(func(sk): return int(sk.get("stypeId", 0)) == 6), ly_entries.map(func(sk): return int(sk.id)))
+	# 发行构建（ReleaseEntry.is_release；天启篇空壳、异化发行隐藏都看它）下同样有功法页、内容不变
+	var saved_release := ReleaseEntry.simulate_release
+	ReleaseEntry.simulate_release = true
+	check("types.gongfa.liuying.release", ReleaseEntry.is_release() and page.types() == ly_types and page.entries() == ly_entries, [page.types(), page.entries().size()])
+	ReleaseEntry.simulate_release = saved_release
 	if not ly_had:
 		page.actor().forget_skill(7136)
 	XState.current.party = party_before
