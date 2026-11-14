@@ -19,6 +19,13 @@ extends RefCounted
 static var ENABLED := true
 ## 开关（O-409）：true＝必出行里整行都是神话／混沌神话的也跳过；false＝必出行一律照合
 static var SKIP_HIGH_ROWS := true
+## 开关（O-待定-2）：true＝天启篇存档新装备掷天启篇词条的随机由存档派生（存档种子 orb_seed＋本档计数 flags.tianqi.affix_roll_n，
+## 每掷一件 +1、随存档），先存档、打出掉落、读档再打同一场，词条一样；false＝照旧走运行时装备流（XGear.roll，读档会换）。
+## 只管天启篇存档、只管 apply 不传 rng 时；测试磁带（XGear.roll_seq／force_roll）、深渊商人的本轮种子（XGear.roll_fn）照旧优先。
+static var SEED_FROM_SAVE := true
+## 正在生成的装备的来源键（XState.gain_gear 生成前设、生成后清；见 XTianqi.on_register）：有来源键时词条流按「来源键＋本档该来源第几件」
+## 派生（计数 flags.tianqi.affix_src_n），先拿别的来源的装备不影响它；没有时照 affix_roll_n 全档计数
+static var source_hint := ""
 
 const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
 const QUALITY_KEYS := ["putong", "youxiu", "jingliang", "shishi", "chuanshuo", "buxiu", "shenhua"]
@@ -58,12 +65,33 @@ static func tier_of(item: Dictionary) -> int:
 	return T.tier_of_level(maxi(1, int(str(item.get("meta", {}).get("req_level", "1")))))
 
 
+## apply 没给 rng 时用的流（见 SEED_FROM_SAVE）
+static func _default_rng(s: XState) -> Callable:
+	if not SEED_FROM_SAVE or XGear.roll_fn.is_valid() or not XGear.roll_seq.is_empty() or XGear.force_roll >= 0 \
+			or s == null or not s.flags.get("tianqi") is Dictionary:
+		return func(): return XGear.roll(s)
+	var tq: Dictionary = s.flags.tianqi
+	var key := ""
+	if source_hint != "":
+		if not tq.get("affix_src_n") is Dictionary:
+			tq["affix_src_n"] = {}
+		var m := int(tq.affix_src_n.get(source_hint, 0))
+		tq.affix_src_n[source_hint] = m + 1
+		key = "affix_src|%s|%d" % [source_hint, m]
+	else:
+		var n := int(tq.get("affix_roll_n", 0))
+		tq["affix_roll_n"] = n + 1
+		key = "affix_roll|%d" % n
+	var st := XTianqi.save_stream(s, key)
+	return func(): return st.next_float(key)
+
+
 ## XGear.roll_item 末尾：天启篇存档的新装备掷天启篇词条（rng 返回 [0,1)，缺省 XGear.roll）
 static func apply(item: Dictionary, s: XState, rng := Callable()) -> void:
 	if item.is_empty() or not on(s) or item.has("tianqi_affixes") or item.has("qiyin") or item.has("tq_reward"):
 		return
 	if not rng.is_valid():
-		rng = func(): return XGear.roll(s)
+		rng = _default_rng(s)
 	if general_artifact(item):  # 通用法宝：50% 带一条光环，阶随养成（词条稿第 7 节）
 		var aura := roll_artifact(item, rng)
 		if not aura.is_empty():

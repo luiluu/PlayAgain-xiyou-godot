@@ -269,7 +269,7 @@ static func claim(s: XState) -> Array:
 	if not p.get("artifacts_got") is Array:
 		p["artifacts_got"] = []
 	for k in p.artifacts:
-		var item := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make_artifact(str(k)))
+		var item := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make_artifact(str(k)), "qiyin_artifact|" + str(k))
 		if not item.is_empty():
 			got.append(item)
 			p.artifacts_got.append(str(k))
@@ -659,10 +659,11 @@ static func reveal(s: XState, idx: int) -> Dictionary:
 	var bag: Array = progress(s).bag
 	if idx < 0 or idx >= bag.size():
 		return {}
+	var src := "qiyin_bag|%d" % hash(JSON.stringify(bag[idx]))  # 来源键：印库这件（掉落时已掷定的内容），揭开前取
 	bag[idx]["revealed"] = true
 	XTianqiQiyinLook.note(bag[idx])  # 七印外观：一套六件都揭到过就解锁（跨存档）
 	if XTianqiQiyinEquip.on(s) and str(bag[idx].get("gear", "")) == "":
-		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng(s)))
+		var gear := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make(bag[idx], difficulty_key(s), _rng(s)), src)
 		if not gear.is_empty():
 			bag[idx]["gear"] = str(gear.instanceId)
 			bag[idx]["affix_text"] = XTianqiQiyinEffects.mark_of(gear).get("affixes", []).map(func(a): return XTianqiQiyinEquip.affix_line(a))

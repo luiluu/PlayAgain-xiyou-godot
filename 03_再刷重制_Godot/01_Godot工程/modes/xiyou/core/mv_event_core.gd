@@ -367,7 +367,7 @@ func _execute(c: Dictionary):
 		127, 128:
 			var n := _operand(int(p[2]), int(p[3]))
 			var kind := "weapon" if code == 127 else "armor"
-			state().gain_gear(kind, int(p[0]), n if int(p[1]) == 0 else -n)
+			state().gain_gear(kind, int(p[0]), n if int(p[1]) == 0 else -n, "event|%d|%d|%d|%s:%d" % [_map_id(), _event_id(), common_id, kind, int(p[0])])  # 来源键（XTianqi.on_register）
 			var rec := XDB.rec("Weapons" if code == 127 else "Armors", int(p[0]))
 			_treasure_popup(rec, n if int(p[1]) == 0 else -n)
 			# 装备都是独立物品（YEP_ItemCore）：原版按数据库原件数 $gameParty.numItems 计，所得恒为 0，不进宝箱收获

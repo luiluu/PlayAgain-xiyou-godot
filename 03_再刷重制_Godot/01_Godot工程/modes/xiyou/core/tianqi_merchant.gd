@@ -106,7 +106,7 @@ static func draw(s: XState, shelf_key: String, g: String, affix := "") -> Varian
 		return "装备生成失败，未扣除点数。"
 	made._codexMerchant29 = true
 	made._tianqiShelf = shelf_key
-	s.register_gear(made)
+	s.register_gear(made, "tq_merchant|%s|%s" % [key, shelf_key])  # 来源键：这一位商人这一格货架的第几件
 	s.gear.append(made)
 	XAbyssMerchant.ledger(s).balances[key] = XAbyssMerchant.balance(s, key) - price
 	cur.used = int(cur.used) + 1

@@ -633,7 +633,8 @@ static func max_buy(s: XState, rec: Dictionary, price: int) -> int:
 
 
 ## Scene_Shop.doBuy(number)：doBuyGold 扣金币与各变量、物品买入价×数量，doBuyItem 得到商品（有代购时得到代购件）
-static func buy(s: XState, rec: Dictionary, price: int, number := 1) -> void:
+## source：天启篇装备随机身份的来源前缀（商店传「shop|地图|库存组」，这里接上商品），见 XTianqi.on_register
+static func buy(s: XState, rec: Dictionary, price: int, number := 1, source := "") -> void:
 	s.gain_gold(-price * number)
 	var r := sell_rewards(rec)
 	for v in r.buy_vars:
@@ -643,7 +644,7 @@ static func buy(s: XState, rec: Dictionary, price: int, number := 1) -> void:
 	var pid := proxy_buy(rec)
 	var id := pid if pid > 0 else int(rec.get("id", 0))
 	if is_gear(rec):
-		s.gain_gear(str(rec.get("kind", "weapon")), id, number)
+		s.gain_gear(str(rec.get("kind", "weapon")), id, number, "" if source == "" else "%s|%s:%d" % [source, str(rec.get("kind", "weapon")), id])
 	else:
 		s.gain_item(id, number)
 

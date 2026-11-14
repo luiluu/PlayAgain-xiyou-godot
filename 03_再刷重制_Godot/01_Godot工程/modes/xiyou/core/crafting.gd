@@ -195,7 +195,7 @@ static func craft(s: XState, r: Dictionary, roll := -1.0) -> Dictionary:
 	if t == "item":
 		s.gain_item(int(res.id), int(res.amount))
 	else:
-		s.gain_gear(t, int(res.id), int(res.amount))
+		s.gain_gear(t, int(res.id), int(res.amount), "craft|%d" % int(r.id))  # 来源键：这张配方的第几件
 	gain_exp(s, category_id(r), xp_gain(s, r))
 	if int(r.get("pxp", 0)) != 0:
 		for a in s.members():

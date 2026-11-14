@@ -209,7 +209,9 @@ static func attach(s: XState, i: Dictionary, line: String, level: String, affix 
 	if affix == "":
 		if fam.is_empty():
 			return {"error": "这一级没有能出的词条"}
-		affix = str(_pick(fam, rng if rng.is_valid() else func(): return randf()))
+		if not rng.is_valid():  # 兜底：存档派生（账本 sequence 每打一件 +1、随存档），读档不能重掷（O-待定）
+			rng = XTianqi.save_roll(s, "alien_attach|%d" % int(XAlienation.ledger(s).sequence))
+		affix = str(_pick(fam, rng))
 	elif not line_keys(line).has(affix):
 		return {"error": "这条词条不是本线的"}
 	var old := XAlienation.mark(i)
@@ -354,8 +356,9 @@ static func reroll(s: XState, i: Dictionary) -> Dictionary:
 	if s.item_count(XAlienation.stone_id()) < _cost("reroll"):
 		return {"error": "缺少异化石"}
 	s.gain_item(XAlienation.stone_id(), -_cost("reroll"))
+	var roll := XTianqi.item_roll(s, i, "alien_reroll")  # 存档派生（装备随机身份 tq_seed_id＋tq_rng_n），读档、进出仓库都不能重抽出别的（O-待定）
 	XAlienation.ledger(s).pending = {"uid": m.uid, "kind": XAlienation.kind(i), "id": str(i.get("instanceId", "")), "old": m.affix,
-		"next": _pick(pool, func(): return XAlienation.force_roll if XAlienation.force_roll >= 0 else randf())}
+		"next": _pick(pool, func(): return XAlienation.force_roll if XAlienation.force_roll >= 0 else float(roll.call()))}
 	return {"ok": XAlienation.ledger(s).pending}
 
 

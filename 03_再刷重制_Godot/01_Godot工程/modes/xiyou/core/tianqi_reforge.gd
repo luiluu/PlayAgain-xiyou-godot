@@ -73,7 +73,7 @@ static func choices(item: Dictionary, index: int) -> Array:
 		and (bool(data().get("allow_rare", false)) or not bool(T.affix(k).get("rare", false))))
 
 
-## 重铸第 index 条；rng 返回 [0,1)（缺省 randf）。返回 {ok: 新的那条} 或 {error}
+## 重铸第 index 条；rng 返回 [0,1)（缺省存档派生流 XTianqi.item_roll，开关关着回到 randf）。返回 {ok: 新的那条} 或 {error}
 static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) -> Dictionary:
 	if not on(s):
 		return {"error": "现在不能重铸"}
@@ -89,7 +89,7 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 	if int(s.gold) < price:
 		return {"error": "金钱不足（要 %d）" % price}
 	if not rng.is_valid():
-		rng = func(): return randf()
+		rng = XTianqi.item_roll(s, item, "reforge")  # 存档派生（装备 instanceId＋tq_rng_n），读档不能重掷（O-待定）
 	var key := XTianqiAffixRoll._pick(c, rng)
 	var old: Dictionary = list[index]
 	var e := XTianqiAffixRoll._entry(key, int(old.get("tier", 1)), XTianqiAffixRoll.quality_key(item), rng)
@@ -118,7 +118,7 @@ static func reforge_locked(s: XState, item: Dictionary, keep: int, rng := Callab
 	if int(s.gold) < price:
 		return {"error": "金钱不足（要 %d）" % price}
 	if not rng.is_valid():
-		rng = func(): return randf()
+		rng = XTianqi.item_roll(s, item, "reforge_lock")  # 同上
 	var work: Array = list.duplicate(true)
 	for i in work.size():
 		if i == keep:

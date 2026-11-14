@@ -259,6 +259,7 @@ static func _grant(s: XState, r: Dictionary, uid: String) -> void:
 			return
 		item = (r.spec as Dictionary).duplicate(true)
 		item.erase("instanceId")
+		item.erase("tq_seed_id")  # 天启篇随机身份不随复制品走，复制品要用时另拿新号（XTianqi.seed_id）
 		item[UID] = uid
 		s.register_gear(item)
 		s.gear.append(item)

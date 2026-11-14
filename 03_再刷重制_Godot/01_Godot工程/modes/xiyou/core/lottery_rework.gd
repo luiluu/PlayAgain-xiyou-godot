@@ -12,10 +12,15 @@ extends RefCounted
 ##   1434 一阶段与二阶段附加 −300～330 → −315～315：＋17 → 0；
 ##   1433 二阶段格子 −350～380／−350～500 → −365～365／−425～425、附加 −50～60 → −55～55：＋11 → 0。
 ##   对话框里写的范围同步改。只换下表列出的（下限, 上限）组合，别的随机（选格子、星神瞥视）不动。
-## 回退：`XLotteryRework.SAVED_STREAM = false`（回世界随机流）；`XLotteryRework.EV_NOT_POSITIVE = false`（原版范围与文字）。
+## O-待定（SEED_FROM_ORB）：存档里还没有抽奖流（从没抽过的档）时，种子由存档种子 orb_seed 派生（orb_seed 随存档；更老的档
+##   由存档内容算出，XState.from_dict），不再首次使用时 fresh_seed——否则「从没抽过就存档→抽→读档再抽」首抽每次不同。
+##   存档里已有种子的照旧用存档里的；有种子没进度（建了流还没抽就存了）从种子开头接着。随机算法不变，分布与原版一样，只是种子来源固定了。
+## 回退：`XLotteryRework.SAVED_STREAM = false`（回世界随机流）；`XLotteryRework.EV_NOT_POSITIVE = false`（原版范围与文字）；
+##   `XLotteryRework.SEED_FROM_ORB = false`（没有流时现开 fresh_seed）。
 
 static var SAVED_STREAM := true
 static var EV_NOT_POSITIVE := true
+static var SEED_FROM_ORB := true
 
 const EVENTS := [1431, 1432, 1433, 1434]
 
@@ -65,8 +70,11 @@ static func stream(s: XState) -> RandomNumberGenerator:
 		if saved.get("seed") is String and XRandomStream.valid_hex(saved.seed) and saved.get("state") is String and XRandomStream.valid_hex(saved.state):
 			rng.seed = XRandomStream.parse64(saved.seed)
 			rng.state = XRandomStream.parse64(saved.state)
+		elif SEED_FROM_ORB and saved.get("seed") is String and XRandomStream.valid_hex(saved.seed):
+			rng.seed = XRandomStream.parse64(saved.seed)  # 建了流还没抽就存了：从种子开头
+			saved["draws"] = 0
 		else:
-			var seed_hex := XRandomStream.fresh_seed()
+			var seed_hex := XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "lottery") if SEED_FROM_ORB else XRandomStream.fresh_seed()
 			rng.seed = XRandomStream.parse64(seed_hex)
 			saved = {"seed": seed_hex, "draws": 0}
 		s._lottery_rng = rng

@@ -525,7 +525,7 @@ static func _statements(js: String, interp) -> Array:
 		if m:
 			var kind := "weapon" if m.get_string(1) == "Weapons" else "armor"
 			if not _has_gear(s, kind, int(m.get_string(2))):
-				s.gain_gear(kind, int(m.get_string(2)), int(m.get_string(3)))
+				s.gain_gear(kind, int(m.get_string(2)), int(m.get_string(3)), "horn|%s:%s" % [kind, m.get_string(2)])  # 来源键：号角专属装备（XTianqi.on_register）
 			continue
 		m = _re("^\\$gameParty\\.gainItem\\(\\$dataItems\\[\\$gameVariables\\.value\\((\\d+)\\)\\]\\s*,\\s*(\\d+)").search(st)
 		if m:

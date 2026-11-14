@@ -3484,7 +3484,9 @@ func _roll_drops(e: XEnemy) -> Array:
 	for c in drop_chances(e):
 		if c.has("sig"):  # 天启篇招牌掉落：递增概率，结果由存档里的种子和次数定（读档重打一样）
 			if XTianqiDrop.roll_signature(state, str(c.sig), float(c.chance)):
-				drops.append(_drop_entry(c))
+				var sd := _drop_entry(c)
+				sd["sig"] = str(c.sig)  # sig 带到 gain_drops 当装备随机身份的来源键
+				drops.append(sd)
 		elif random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
 			drops.append(_drop_entry(c))
 	return drops
@@ -3529,8 +3531,8 @@ func gain_drops(drops: Array) -> void:
 			XTestMode.boost_depth += 1
 		match int(d.kind):
 			1: state.gain_item(d.id, int(d.get("count", 1)))  # count：XTianqiSect 掉落行一次掉几个
-			2: state.gain_gear("weapon", d.id, 1)
-			3: state.gain_gear("armor", d.id, 1)
+			2: state.gain_gear("weapon", d.id, 1, "sig|" + str(d.sig) if d.has("sig") else "")  # 招牌掉落走掉落账，来源键稳定；普通掉落照 instanceId
+			3: state.gain_gear("armor", d.id, 1, "sig|" + str(d.sig) if d.has("sig") else "")
 		if d.get("boost", false):
 			XTestMode.boost_depth -= 1
 
