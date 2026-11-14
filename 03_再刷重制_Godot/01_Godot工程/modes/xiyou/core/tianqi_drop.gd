@@ -277,8 +277,8 @@ static func roll_signature(s: XState, key: String, p: float) -> bool:
 	var row = d.pity.get(key)
 	var fails := int(row[0]) if row is Array and row.size() >= 2 else 0
 	var total := int(row[1]) if row is Array and row.size() >= 2 else 0
-	# 字符串自带的 hash 对相邻的次数不够散（实测命中率偏低），用 sha256 的前 32 位
-	var r := float(("%d|%s|%d" % [int(d.get("seed", 0)), key, total]).sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+	# 字符串自带的 hash 对相邻的次数不够散（实测命中率偏低），用 sha256 的前 32 位（R2 收进 XTianqiRandom.drop_hash，公式不变）
+	var r := XTianqiRandom.drop_hash(int(d.get("seed", 0)), key, total)
 	var hit := r < signature_chance(p, fails)
 	d.pity[key] = [0 if hit else fails + 1, total + 1]
 	return hit
