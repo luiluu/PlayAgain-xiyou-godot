@@ -23,13 +23,44 @@ class GuardTests(unittest.TestCase):
 
     def test_unseeded_rng(self):
         self.assertEqual(len(self.errs('\tvar rng := RandomNumberGenerator.new()\n\tvar x := rng.randf()')), 1)
-        self.assertEqual(self.errs('\tvar rng := RandomNumberGenerator.new()\n\tif ok:\n\t\trng.seed = 3'), [])
+        self.assertEqual(self.errs('\tvar rng := RandomNumberGenerator.new()\n\trng.seed = 3'), [])
+        # 中间先做与发生器无关的事（抽奖流先取存档字段）不算
+        self.assertEqual(self.errs('\tvar rng := RandomNumberGenerator.new()\n\tvar saved := s.x\n\tif a:\n\t\trng.seed = 1\n\telse:\n\t\trng.seed = 2'), [])
 
     def test_allowed(self):
         for line in ['\tvar r := randf()  # 表现', '\tvar r := randf()  # 随机守卫：开关关时的旧路', '\tvar r := st.next_float("k")',
                      '\tvar r := rng.randf()', '\t# randf() 只在注释里', '\tvar t := "randf() 在字符串里"', 'static func seed(s) -> int:',
                      '\tvar n := XRandomStream.derive(a, "b")', '\tvar my_randf := 1']:
             self.assertEqual(self.errs(line), [], line)
+
+    # 返修（ag 甲档 P2-1）：放行只认真正的行尾注释；.seed = 按分支判断
+    def test_allow_only_real_comment(self):
+        self.assertEqual(len(self.errs('\tvar r := randf(); var t := "# 表现"')), 1)
+        self.assertEqual(len(self.errs("\tvar r := randf(); var t := '# 随机守卫：假'")), 1)
+        self.assertEqual(self.errs('\tvar r := randf(); var t := "# x"  # 表现'), [])
+
+    def test_seed_per_branch(self):
+        one_branch = '\tvar rng := RandomNumberGenerator.new()\n\tif ok:\n\t\trng.seed = 3\n\tvar x := rng.randf()'
+        self.assertEqual(len(self.errs(one_branch)), 1)
+        no_seed_else = ('\tvar rng := RandomNumberGenerator.new()\n\tif ok:\n\t\trng.seed = 3\n\telse:\n\t\tpass\n'
+                        '\tvar x := rng.randf()')
+        self.assertEqual(len(self.errs(no_seed_else)), 1)
+        both = ('\tvar rng := RandomNumberGenerator.new()\n\tif ok:\n\t\trng.seed = 3\n\telif b:\n\t\trng.seed = 4\n'
+                '\telse:\n\t\trng.randomize()  # 随机守卫：开关关时的旧路\n\tvar x := rng.randf()')
+        self.assertEqual(self.errs(both), [])
+        loop = '\tvar rng := RandomNumberGenerator.new()\n\tfor k in 4:\n\t\trng.seed = k\n\t\tvar x := rng.randf()'
+        self.assertEqual(self.errs(loop), [])
+        late = '\tvar rng := RandomNumberGenerator.new()\n\tvar x := rng.randf()\n\trng.seed = 3'
+        self.assertEqual(len(self.errs(late)), 1)
+
+    # 返修（ag 甲档 P2-2）：.new() 后紧跟注了「# 表现」的 randomize 不误报；三引号多行字符串里的 randf() 不误报
+    def test_new_then_annotated_randomize(self):
+        self.assertEqual(self.errs('\tvar rng := RandomNumberGenerator.new()\n\trng.randomize()  # 表现\n\tvar x := rng.randf()'), [])
+
+    def test_triple_quoted(self):
+        self.assertEqual(self.errs('\tvar doc := """说明：\n不要用 randf() 或 arr.shuffle()\n"""\n\tvar y := 1'), [])
+        self.assertEqual(self.errs("\tvar doc := '''\nrandi()\n'''"), [])
+        self.assertEqual(len(self.errs('\tvar doc := """一行"""\n\tvar r := randf()')), 1)
 
     def test_scope(self):
         fs = guard.files()
