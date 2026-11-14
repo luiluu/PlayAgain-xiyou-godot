@@ -365,6 +365,7 @@ static func run_arrival(host, s: XState, map_id: int) -> void:
 		await XTianqiFamineLine.after_beat(host, s, beat)
 	if key == XTianqiPlagueLine.KEY:
 		await XTianqiPlagueLine.after_beat(host, s, beat)
+	await XTianqiSect.after_beat(host, s, beat)  # 天启篇教派连带内容包乙：15／25 层节点演完，小小鱼松一重枷锁
 
 
 # ---- 35、36 层（31～36 层重做之后接地图） ----
