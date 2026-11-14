@@ -1,5 +1,5 @@
 extends Node
-## 卖装卡顿（v0.01.09 玩家反馈「卖装卡、黑几秒」，O-待定-1 XAlienation.FAST_RESERVED）：
+## 卖装卡顿（v0.01.09 玩家反馈「卖装卡、黑几秒」，O-441 XAlienation.FAST_RESERVED）：
 ## - 等价：同一背包（几百件真模板装备，含吞器异化装备与被借的供体、身上的吞器）在开关开／关下，
 ##   挂机自动卖出（安全出售与旧筛法）、一键出售卖掉的件、所得金钱、剩下的背包完全一样；reserved 逐件（批内、批外、带 except）一致。
 ## - 提速：同一背包整批自动卖出，开着比关着快 3 倍以上（关着是 v0.01.09 的写法，背包每多一倍耗时约翻四倍）。
@@ -135,7 +135,7 @@ func _run() -> void:
 	check("batch_other_state", not XAlienation.reserved(other, other.gear.filter(func(e): return str(e.instanceId) == p.donors[0])[0]))
 	XAlienation.end_batch()
 
-	# O-待定-2：跨帧的旧计划照原版每件再判（期间锁定的那件不卖）；同一帧的计划只查还在不在背包
+	# O-442：跨帧的旧计划照原版每件再判（期间锁定的那件不卖）；同一帧的计划只查还在不在背包
 	var sp := fresh(p)
 	var plan := XSafeSell.plan(sp)
 	check("plan_has_frame", int(plan.frame) == Engine.get_process_frames())

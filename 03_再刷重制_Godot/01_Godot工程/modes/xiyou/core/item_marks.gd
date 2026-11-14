@@ -684,7 +684,7 @@ static func onekey_members(g: int) -> Array:
 ## 吞器占用的供体：挂机卖出原版挡了（Adv:89）；一键出售原版照卖、loseItem 被挡（Adv:88）只给钱不扣件，onekey 时按 O-118 决定
 static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 	var out := []
-	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
+	XAlienation.begin_batch(s)  # O-441：整批查吞器供体表
 	for e in s.gear:
 		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
 		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-081）
@@ -703,7 +703,7 @@ static func onekey_sell(s: XState, g: int) -> Array:
 		return XSafeSell.sell_plan(s, XSafeSell.plan(s, g))
 	var gold := 0
 	var list := sellable_gear(s, onekey_members(g), true)
-	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
+	XAlienation.begin_batch(s)  # O-441：整批查吞器供体表
 	for e in list:
 		gold += selling_price(e)
 		sell(s, e, 1)
