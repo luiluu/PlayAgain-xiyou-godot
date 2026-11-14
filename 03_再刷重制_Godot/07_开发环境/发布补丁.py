@@ -201,9 +201,9 @@ def _check_patch(tmp: Path, dry: bool, shas: dict) -> Path:
     spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
-    bad = m.audit(tmp / 'Windows.pck')
+    bad = m.audit(tmp / 'Windows.pck', [] if REAL_SCRIPTS else None)  # 回退带真脚本时只查没发行的文件（11-14）
     if bad:
-        raise Fail(f'补丁带了 {len(bad)} 个没发行的文件，不能发：' + '、'.join(bad[:10]) + '（看 export_presets.cfg 发行预设的 exclude_filter）')
+        raise Fail(f'补丁有 {len(bad)} 个问题，不能发：' + '、'.join(bad[:10]) + '（没发行的文件看 export_presets.cfg 发行预设的 exclude_filter，天启篇真脚本看 发行空壳.py 的 EXTRA）')
     return tmp / 'Windows.pck'
 
 

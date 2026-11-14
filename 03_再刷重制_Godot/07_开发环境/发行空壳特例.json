@@ -49,5 +49,8 @@
   "XTianqiSect.hides": "false",
   "XTianqiSect.page_blocked": "false",
   "XTianqiSect.shop_goods": "goods",
-  "XTianqiGojoTrial.tint": "Color.WHITE"
+  "XTianqiGojoTrial.tint": "Color.WHITE",
+  "XGojo.formula": "0.0",
+  "XGojo.hidden": "id == ACTOR",
+  "XGojo.locked": "id == ACTOR"
 }

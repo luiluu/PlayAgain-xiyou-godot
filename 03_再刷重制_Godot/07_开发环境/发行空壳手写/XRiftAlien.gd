@@ -4,6 +4,7 @@ extends RefCounted
 ## 三阶起的异化（级、种类、掉落、图鉴）不进包。画面和真脚本二阶一样：分类、颜色、节奏同 rift_alien.json 的 classes／look，
 ## 闪不闪用同一条派生随机流、同样的取数顺序。其余钩子都是「没有异化怪」时的结果。改真脚本的二阶画面要同步改这里。
 
+const _RELEASE_STUB := "xiyou-release-stub-v1"
 const LOOK := "xrift_look"
 static var ENABLED := true
 static var STAGE_OVERRIDE := 0

@@ -108,6 +108,61 @@ class T(unittest.TestCase):
             (self.root / p).write_text(src, encoding='utf-8')
         self.assertEqual(K.is_stub_tree(self.root), [])
 
+    def test_stub_tag_compiled_marker(self):
+        # 注释导出时会去掉，空壳要带一个字符串常量标记，发行内容审计才认得出包里的空壳（11-14）
+        stubs, _, _ = K.build_all(self.root)
+        s = stubs[Path('modes/xiyou/core/tianqi_foo.gd')]
+        self.assertIn(K.STUB_TAG_LINE, s)
+        # 只有 MARK 没有标记的不算换好
+        (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(s.replace(K.STUB_TAG_LINE, ''), encoding='utf-8')
+        self.assertEqual(K.is_stub_tree(self.root), ['modes/xiyou/core/tianqi_foo.gd'])
+
+    def test_extra_list_without_prefix(self):
+        # 类名不带天启篇前缀的专属脚本（如 XGojo）靠 EXTRA 名单换空壳（11-14 release-stub-gojo）
+        (self.root / 'modes/xiyou/core/hero.gd').write_text(
+            'class_name XHeroOnly\nextends RefCounted\n## 只在天启篇：设计说明\nconst ACTOR := 180\n'
+            'static func hidden(id: int) -> bool:\n\treturn id == ACTOR\n', encoding='utf-8')
+        (self.root / 'modes/xiyou/core/user2.gd').write_text('extends Node\nfunc f():\n\tprint(XHeroOnly.ACTOR, XHeroOnly.hidden(1))\n', encoding='utf-8')
+        self.assertNotIn('XHeroOnly', K.targets(self.root))
+        sus = K.suspects(self.root)
+        self.assertEqual([p for p, _ in sus], ['modes/xiyou/core/hero.gd'])
+        _, missing, how = K.build_all(self.root)
+        self.assertTrue(any('hero.gd' in e for e in K.check_errors(missing, how, sus)))
+        old = set(K.EXTRA)
+        K.EXTRA.add('XHeroOnly')
+        try:
+            self.assertIn('XHeroOnly', K.targets(self.root))
+            self.assertEqual(K.suspects(self.root), [])
+            stubs, missing, _ = K.build_all(self.root)
+            self.assertEqual(missing, [])
+            s = stubs[Path('modes/xiyou/core/hero.gd')]
+            self.assertNotIn('设计说明', s)
+            self.assertIn('const ACTOR := 180', s)
+        finally:
+            K.EXTRA.clear()
+            K.EXTRA.update(old)
+
+    def test_suspect_signals(self):
+        core = self.root / 'modes/xiyou/core'
+        (core / 'gojo_extra.gd').write_text('extends RefCounted\n', encoding='utf-8')                       # 文件名
+        (core / 'a.gd').write_text('extends RefCounted\n## 天启篇专属的东西\nvar x := 1\n', encoding='utf-8')  # 头注释
+        (core / 'b.gd').write_text('extends RefCounted\nconst P := "res://modes/xiyou/tianqi_data/x.json"\n', encoding='utf-8')  # 没发行的路径
+        (core / 'c.gd').write_text('extends RefCounted\n## 西游的\nfunc f():\n\tpass  # 只在天启篇（函数里的注释不算）\n'
+                                   '\t# "res://content/gojo/x.png" 注释里的路径不算\n', encoding='utf-8')
+        got = dict(K.suspects(self.root))
+        self.assertEqual(sorted(got), ['modes/xiyou/core/a.gd', 'modes/xiyou/core/b.gd', 'modes/xiyou/core/gojo_extra.gd'])
+        self.assertIn('tianqi_data', got['modes/xiyou/core/b.gd'])
+
+    def test_real_project_covers_tianqi_only_scripts(self):
+        # 真工程：五条悟、守层者重算换空壳；没有没归类的天启篇专属脚本（检查.sh 的 发行空壳.py check 也查这条）
+        tg = K.targets()
+        self.assertEqual(str(tg['XGojo']), 'modes/xiyou/core/gojo.gd')
+        self.assertIn('XGuardianRework', tg)
+        self.assertNotIn('XTianqiTitle', tg)
+        self.assertEqual(K.suspects(), [])
+        hand = (K.HAND / 'XRiftAlien.gd').read_text(encoding='utf-8')
+        self.assertIn(K.STUB_TAG_LINE, hand)
+
     def test_numeric_default_zero_rejected_in_make_tree_for_build_and_patch(self):
         # 构造一个返回 1.0 的天启篇倍率函数、无早退无特例，西游代码会调用它
         (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(

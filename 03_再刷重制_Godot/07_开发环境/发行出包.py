@@ -272,9 +272,11 @@ def audit_unreleased(out: Path) -> list:
     for pkg in (out / WIN_DIR / WIN_FILES[1], out / APK, out / MAC_ZIP):
         if not pkg.is_file():
             continue
-        bad = m.audit(pkg)
+        # 回退（--real-scripts）时天启篇本来就是真脚本，只查没发行的文件；平时还要查天启篇脚本都是空壳（11-14）
+        bad = m.audit(pkg, [] if REAL_SCRIPTS else None)
         if bad:
-            problems.append(f'{pkg.name} 带了 {len(bad)} 个没发行的文件（{"、".join(bad[:5])}…）；看 export_presets.cfg 发行预设的 exclude_filter')
+            problems.append(f'{pkg.name} 有 {len(bad)} 个问题（{"、".join(bad[:5])}…）：没发行的文件看 export_presets.cfg 发行预设的 exclude_filter，'
+                            '天启篇真脚本看 发行空壳.py 的 EXTRA')
     print('== 发行内容审计：' + ('有问题' if problems else '通过'))
     return problems
 
