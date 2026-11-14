@@ -153,24 +153,7 @@ func _tianqi_state() -> XState:
 	s.map_id = 4
 	XState.current = s
 	s.gold = 5000000
-	# 一件带三条天启篇词条的神话四阶武器（同 xiyou_tianqi_reforge 的造法）
-	var wid := 0
-	for r in XDB.table("Weapons"):
-		if r is Dictionary and str(r.get("name", "")) != "":
-			var tpl := XGear.template("weapon", int(r.id))
-			if XQuality.grade(tpl) == 6 and XTianqiAffixRoll.tier_of(tpl) == 4 and not XEquipment.is_exclusive(tpl):
-				wid = int(r.id)
-				break
-	var it := XGear.create("weapon", wid, s)
-	XTianqiAffixRoll.set_affixes(it, [{"key": str(XTianqiAffixRoll.layer_candidates(it, "base")[0]), "tier": 4, "grade": "normal", "extra": {}},
-		{"key": str(XTianqiAffixRoll.layer_candidates(it, "special")[0]), "tier": 4, "grade": "normal", "extra": {}},
-		{"key": "first_strike", "tier": 4, "grade": "normal", "extra": {}}])
-	s.register_gear(it)
-	s.gear.append(it)
-	# 一件天启篇异化装备、几颗异化石
-	var alien: Dictionary = XTianqiAlienGear.create(s, "armor", 52, "war", "shigu", "inversebone").get("ok", {})
-	if not alien.is_empty():
-		s.gear.append(alien)
+	# v0.01.10 补丁线没有天启篇词条／重铸／天启篇异化装备脚本，这里不造那两件（main 上的专项照旧造）
 	s.gain_item(XAlienation.stone_id(), 5)
 	for id in _with_tables("armor", 4):
 		s.gain_gear("armor", id, 1)
@@ -187,10 +170,10 @@ func _rework(s: XState) -> Dictionary:
 	var out := {}
 	var weapon = s.gear.filter(func(e): return not (e.get("tianqi_affixes", []) as Array).is_empty() and XAlienation.mark(e).is_empty())
 	var w: Dictionary = weapon[0] if not weapon.is_empty() else {}
-	out["reforge"] = XTianqiReforge.reforge(s, w, 0, rng) if not w.is_empty() else {"error": "没找到"}
-	out["locked"] = XTianqiReforge.reforge_locked(s, w, 1, rng) if not w.is_empty() else {"error": "没找到"}
+	out["reforge"] = {"error": "补丁线没有"}
+	out["locked"] = {"error": "补丁线没有"}
 	out["weapon"] = [w.get("name"), w.get("tianqi_affixes"), w.get("params"), w.get("traits"), w.get("note"), w.get("description")]
-	var aliens = s.gear.filter(func(e): return XTianqiAlienGear.is_tq(e))
+	var aliens = []
 	var a: Dictionary = aliens[0] if not aliens.is_empty() else {}
 	XAlienation.force_roll = 0.3
 	out["reroll"] = XAlienation.reroll(s, a) if not a.is_empty() else {"error": "没找到"}
