@@ -9,7 +9,7 @@ extends RefCounted
 ## 公共入口函数里每个包留了一个槽位（槽位之间隔着注释行，并行加行不冲突）：
 ## - hides(map_id, event_id)            整件事件不出（挂点 MVEvent._find_page，和 XTianqiTrim.hides 并列）
 ## - page_blocked(s, cond)              某一页的出现条件改写（挂点 MVEvent._meets）：返回 true＝这一页当不满足
-## - intercepts(s, map_id, event_id)    要接管的事件 → run_event(host, s, map_id, event_id)（挂点 XMapScene._run_action_event 一处）
+## - intercepts(s, map_id, event_id)    要接管的事件 → run_event(host, s, map_id, event_id)（挂点 XMapScene.run_event 一处）
 ## - shop_goods(s, map_id, event_id, goods)  指令 302 的货单改写（挂点 MVInterpreter 302）
 ## - drop_rows(s, enemy_id, rows)       掉落行改写（挂点 XBattleLogic.drop_chances 末尾）；行可带 count（一次掉几个）
 ## - opening_commands()                开局补发的事件指令（挂点 XTianqi.opening_commands；开局一定是天启篇，不看状态）
@@ -107,7 +107,7 @@ static func intercepts(_s, _map_id: int, _event_id: int) -> bool:
 	return false
 
 
-## XMapScene._run_action_event 接管后调用（host 是地图场景）；各包在 match 里加自己的分支
+## XMapScene.run_event 接管后调用（host 是地图场景）；各包在 match 里加自己的分支
 static func run_event(_host, _s, _map_id: int, _event_id: int) -> void:
 	# ---- 槽位：乙 ----
 
