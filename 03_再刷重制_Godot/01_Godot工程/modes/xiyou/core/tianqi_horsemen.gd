@@ -33,6 +33,11 @@ const META := "xhorseman"
 
 ## 开关：false＝四骑士战一概不开（prepare 不收、挂钩不动）
 static var ENABLED := true
+## O-待定（评审 v0.1 第 1 条）：破产一剑是法术、打的是法防，破产标记原来只降物防，对这一击不起作用；true＝破产同时降法防。false＝照旧只降物防
+static var BANKRUPT_MDF := true
+## O-待定（评审 v0.1 第 2 条）：战斗中敌人能力值有 krz 缓存，add_param 后同一行动读到的还是旧值（宝石加攻后的追加普攻、骑士队长、百亿仙剑）；
+## true＝天启篇骑士加属性后当场刷新缓存格。false＝照旧等回合边界
+static var FRESH_PARAM := true
 
 static var _data: Dictionary = {}
 ## 下一场开战要换成哪位骑士（prepare 设、setup 取走）
@@ -510,6 +515,7 @@ static func _check_phase(logic, f: Dictionary) -> void:
 					var up := float(knight("famine").sword_rain.all_up)
 					for i in [2, 3, 4, 5, 6]:
 						f.knight.add_param(i, float(f.knight.data().params[i]) * up)
+					fresh_param(f.knight)
 					_say(f, "今日方知我是我：领悟仙法·百亿仙剑。")
 			"plague":
 				if int(f.phase) == 2:
@@ -555,6 +561,7 @@ static func _captain(logic, f: Dictionary) -> void:
 	var up := float(knight("death").captain)
 	f.knight.add_param(2, float(f.base.atk) * up)
 	f.knight.add_param(3, float(f.base.def) * up)
+	fresh_param(f.knight)
 	logic.can_escape = false
 	_say(f, "勇者变身骑士队长：逃跑必定失败。")
 
@@ -797,6 +804,7 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 				var plus := float(f.base.hp) * float(g.holy)
 				u.add_param(0, plus)
 				u.hp += plus
+			fresh_param(u)
 			f.gems = int(f.gems) + 1
 			f.unique = int(f.unique) + 1
 			logs.append_array(_follow_up(logic, f, u))
@@ -1167,6 +1175,8 @@ static func actor_param(a, i: int, v: float) -> float:
 			mult *= 1.0 - float(knight("famine").seen.def_down)
 		if m.get("bankrupt", false):
 			mult *= 1.0 - float(knight("famine").bankrupt.def_down)
+	if i == 5 and BANKRUPT_MDF and m.get("bankrupt", false):
+		mult *= 1.0 - float(knight("famine").bankrupt.def_down)
 	if i == 0 and float(m.get("mhp_down", 0.0)) > 0.0:
 		mult *= 1.0 - float(m.mhp_down)
 	return roundf(v * mult) if mult != 1.0 else v
@@ -1182,6 +1192,12 @@ static func debuff_count(f: Dictionary, m: Dictionary) -> int:
 		n += 1 if int(m.get(k, 0)) > 0 else 0
 	n += 1 if m.get("bankrupt", false) else 0
 	return n
+
+
+## 加属性后当场让缓存格变冷（同 alien_battle 的做法），FRESH_PARAM 关掉时不动
+static func fresh_param(b) -> void:
+	if FRESH_PARAM and b != null:
+		b.param_refresh()
 
 
 static func _flush_params(logic) -> void:
