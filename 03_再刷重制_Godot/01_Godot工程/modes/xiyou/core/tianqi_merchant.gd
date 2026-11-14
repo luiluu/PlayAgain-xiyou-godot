@@ -88,7 +88,7 @@ static func draw(s: XState, shelf_key: String, g: String, affix := "") -> Varian
 	var list := bodies(s, g, shelf_key, affix)
 	if list.is_empty():
 		return "本路线没有能出%s的装备。" % ("这条传说词条" if shelf_key == "collection" else "特效词条")
-	var random := XAbyssMerchant.seed_random(int(cur.seed) + int(cur.used) * 104729)
+	var random := XTianqiRandom.merchant_roll(int(cur.seed), int(cur.used))
 	var d: Dictionary = list[mini(floori(float(random.call()) * list.size()), list.size() - 1)]
 	var saved_fn := XGear.roll_fn
 	XGear.roll_fn = random

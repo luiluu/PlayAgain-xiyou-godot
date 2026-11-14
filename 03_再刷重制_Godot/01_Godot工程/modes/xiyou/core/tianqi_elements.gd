@@ -117,12 +117,9 @@ static func fill(s: XState, d: Dictionary, made: bool) -> void:
 
 
 ## 首次建牌组的种子：由存档自带的宝珠种子（orb_seed，新游戏随机、随存档保存，旧档读档时按存档内容算出）
-## 加难度派生，不吃全局 randi 和战斗随机流。旧天启篇档（没有 elements 字段）不存档重读，牌组不变（gpt 核查 P2-1）
+## 加难度派生，不吃全局 randi 和战斗随机流。旧天启篇档（没有 elements 字段）不存档重读，牌组不变（gpt 核查 P2-1；R2 收进 XTianqiRandom.elements_seed，公式不变）
 static func derived_seed(s: XState) -> int:
-	if s == null:
-		return 1
-	var diff := str(s.flags.get("tianqi", {}).get("difficulty", "")) if s.flags.get("tianqi") is Dictionary else ""
-	return XOrbs.hash32(JSON.stringify(["tianqi_elements", int(s.orb_seed), diff])) & 0x7fffffff
+	return XTianqiRandom.elements_seed(s)
 
 
 static func ensure_deck(s: XState, rng_seed := -1) -> Dictionary:
@@ -166,7 +163,7 @@ static func _generate_floor_deck(seed_val: int) -> Dictionary:
 	var per_i := int(rules.get("per_element_immune", 2))
 	var single_count := int(rules.get("single_floors", 6))
 	var imm_min := int(rules.get("immune_min_floor", 6))
-	var rng := RandomNumberGenerator.new()
+	var rng := XTianqiRandom.elements_rng(seed_val)
 	for attempt in range(400):
 		rng.seed = int(seed_val) + attempt * 9973
 		var out := _try_generate_floors(rng, constits, per_w, per_r, per_i, single_count, imm_min)
@@ -365,8 +362,7 @@ static func fixed_deal(s: XState, key: String, phase := 1) -> Dictionary:
 	var spec: Dictionary = data().get("fixed_entries", {}).get(kind, {})
 	if spec.is_empty():
 		return {"weak": [], "resist": [], "immune": []}
-	var rng := RandomNumberGenerator.new()
-	rng.seed = ("%d|%s" % [int(st.get("seed", 1)), key]).hash()
+	var rng := XTianqiRandom.elements_rng(int(st.get("seed", 1)), key)
 	var ban := (spec.get("constitutions", []) as Array).map(func(x): return int(x))
 	var dealt := _deal_single_entry(rng, int(spec.get("weak", 2)), int(spec.get("resist", 2)), int(spec.get("immune", 1)), ban)
 	fixed[key] = dealt
@@ -423,8 +419,7 @@ static func _deal_knight(_s: XState, st: Dictionary) -> void:
 	var nw := int(spec.weak)
 	var nr := int(spec.resist)
 	var ni := int(spec.immune)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = ("%d|knight" % int(st.get("seed", 1))).hash()
+	var rng := XTianqiRandom.elements_rng(int(st.get("seed", 1)), "knight")
 	# 配置已在 _knight_spec() 校验并夹紧（单类 <= 5，单阶段总数 <= 10），不进入超容退化分支；
 	# 三阶段（P1/P2/P3）尽量各自在弱、抗、免三组内全不重复，且至少保证相邻阶段不重复。
 	var used_w := []
@@ -630,7 +625,7 @@ static func element_rate_for(b, e: int, converted := false, logic = null, option
 					r_val = float(choices[0]) if not choices.is_empty() else 1.22
 				else:
 					var rng = options.get("random")
-					var idx: int = rng.next_int_inclusive(0, choices.size() - 1, "tianqi_chaos") if rng is XRandomStream else randi_range(0, choices.size() - 1)  # 随机守卫：调用方没给存档派生流时的兜底（R2 查能不能走到）
+					var idx: int = rng.next_int_inclusive(0, choices.size() - 1, "tianqi_chaos") if rng is XRandomStream else randi_range(0, choices.size() - 1)  # 随机守卫：R2 排查走不到（所有调用经 XDamage.calculate 或 preview=true，非预览且 random!=null 只有 battle_logic._rule 等 XRandomStream），注明并保留
 					r_val = float(choices[clampi(idx, 0, choices.size() - 1)])
 				return {"rate": r_val, "kind": "higher_chaos"}
 			13:
@@ -1059,7 +1054,7 @@ static func roll_higher_books(s: XState, _logic = null, rand: Callable = Callabl
 			continue
 		var nfail := int(fails.get(key, 0))
 		var chance := clampf((0.05 + 0.05 * nfail) * rate_mult, 0.0, 1.0)
-		var r := float(rand.call()) if rand.is_valid() else randf()  # 随机守卫：rand 无效时的兜底（R2 查能不能走到）
+		var r := float(rand.call()) if rand.is_valid() else randf()  # 随机守卫：R2 排查走不到（唯一生产调用 grant_higher_books 与测试均传有效 Callable），注明并保留
 		if r < chance:
 			dropped[key] = true
 			fails.erase(key)

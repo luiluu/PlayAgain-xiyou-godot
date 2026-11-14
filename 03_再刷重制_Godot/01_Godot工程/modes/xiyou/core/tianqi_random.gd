@@ -15,6 +15,7 @@ extends RefCounted
 ## R1：seed-fix（cc/tianqi-seed-fix，dev.585）的 save_stream／save_roll／seeds_on／has_seed_id／on_register／before_renumber／
 ## all_gear／assign_all／seed_id／item_roll 原样搬到这里，派生字符串一字不改（老档的号和序列不变，tests/xiyou_tianqi_random 拿搬家前
 ## 生成的存档夹具逐件比）。XTianqi 留同名转发，保留一个发行版本后删。
+## R2：第 2、3、5、7 类旧写法（drop_hash／qiyin_seed／merchant_roll／elements_seed／elements_rng）收进门面同名包装，公式与次序不变。
 ## 开关仍是 XTianqi.SEED_FROM_SAVE（O-449，搬家不换号；抽角色候选也认它，留在原处，随 R2 再看要不要挪）。
 ## 读档补号：XTianqiSave.after_load 末尾调 after_load（不受存档门面开关影响，只认 SEED_FROM_SAVE）。
 
@@ -152,3 +153,40 @@ static func item_roll(s: XState, item: Dictionary, domain: String) -> Callable:
 ## 读档后（XTianqiSave.after_load 末尾，即 XState.from_dict 末尾）：老件补随机身份。以前直接挂在 from_dict
 static func after_load(s: XState) -> void:
 	assign_all(s)
+
+
+# ---- R2：旧写法收进门面同名包装（公式不变、取数次序不变） ----
+
+## 第 2 类（原 tianqi_drop.gd roll_signature）：招牌掉落，按掉落账种子＋键＋该键总次数做 sha256 取前 32 位
+static func drop_hash(drop_seed: int, key: String, total: int) -> float:
+	return float(("%d|%s|%d" % [drop_seed, key, total]).sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+
+
+## 第 3 类（原 tianqi_qiyin.gd next_seed）：七印祭坛、七首之龙、首杀招募，按 qiyin.seed＋qiyin.rng_n 派生
+static func qiyin_seed(s: XState, domain: String) -> String:
+	if s == null or not XTianqiQiyin.SEED_FROM_SAVE:
+		return XRandomStream.fresh_seed()  # 随机守卫：开关关时的旧路
+	var p := XTianqiQiyin.progress(s)
+	var n := int(p.rng_n)
+	p.rng_n = n + 1
+	return XRandomStream.derive(str(p.seed), "%s|%d" % [domain, n])
+
+
+## 第 5 类（原 tianqi_merchant.gd draw）：天启篇深渊商人，按本轮种子＋已用次数×104729 构造线性同余流
+static func merchant_roll(round_seed: int, used: int) -> Callable:
+	return XAbyssMerchant.seed_random(round_seed + used * 104729)
+
+
+## 第 7 类（原 tianqi_elements.gd derived_seed）：元素牌组存档种子，由 orb_seed＋难度 hash32
+static func elements_seed(s: XState) -> int:
+	if s == null:
+		return 1
+	var diff := str(s.flags.get("tianqi", {}).get("difficulty", "")) if s.flags.get("tianqi") is Dictionary else ""
+	return XOrbs.hash32(JSON.stringify(["tianqi_elements", int(s.orb_seed), diff])) & 0x7fffffff
+
+
+## 第 7 类（原 tianqi_elements.gd 楼层牌组／固定入口／骑士）：按元素种子与键拼接 hash 构造 RandomNumberGenerator（空键亦同原式）
+static func elements_rng(elem_seed: int, key := "") -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ("%d|%s" % [elem_seed, key]).hash()
+	return rng
