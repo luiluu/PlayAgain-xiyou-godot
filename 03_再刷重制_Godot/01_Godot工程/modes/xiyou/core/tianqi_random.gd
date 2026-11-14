@@ -8,7 +8,8 @@ extends RefCounted
 ## 2. 同一个东西反复试、要带保底（招牌掉落、号卷）→ 按「键＋该键第几次」派生，保底计数和键放在一起。
 ## 3. 对这件装备做第几次操作，装备会被搬来搬去 → item_roll；身份 tq_seed_id 写在装备上，复制时不带走（XTianqiSave.GEAR_KEYS）。
 ## 4. 有稳定来源的东西进包（商店、事件、掉落）→ 入包时按来源键分配身份（on_register 带 source）；同一个来源键在本档第几件。
-## 5. 战斗：回合内 → 规则流；开战布阵和结算 → 天启篇档由战斗键钉住（R3，待 Kyo 定方案第 4 节）；纯表现 → 随便取，行尾注「# 表现」。
+## 5. 战斗：回合内 → 规则流；开战布阵和结算 → 天启篇档由战斗键钉住（R3：battle_random，战斗键＝敌群号｜本档打这个敌群的第几次）；
+##    纯表现 → 随便取，行尾注「# 表现」。
 ## （另：掷完要给玩家看、不能重来的，掷完就把结果存下来，如抽角色候选 offer、深渊商人货架。）
 ## 不许用全局 randf／randi／randomize／shuffle／pick_random（07_开发环境/随机守卫.py 查）；确需的行尾注「# 表现」或「# 随机守卫：<理由>」。
 ##
@@ -17,6 +18,22 @@ extends RefCounted
 ## 生成的存档夹具逐件比）。XTianqi 留同名转发，保留一个发行版本后删。
 ## 开关仍是 XTianqi.SEED_FROM_SAVE（O-449，搬家不换号；抽角色候选也认它，留在原处，随 R2 再看要不要挪）。
 ## 读档补号：XTianqiSave.after_load 末尾调 after_load（不受存档门面开关影响，只认 SEED_FROM_SAVE）。
+##
+## R3（cc/tianqi-random-r3，协调批复：战斗键＝敌群号＋本档打这个敌群第几次；开战布阵掷的算结果一起钉；西游档不钉）：
+## - battle_random：天启篇档开战取战斗流，rule／pet 照旧运行时（XState.reserve_battle_random），另按战斗键钉一条种子
+##   （XBattleRandom.pin）：布阵阶段（BattleLogic.setup 整段：神话／精英判定、敌人等级、按段异化挂谁、七印书卷、初始 TP、开战状态
+##   及其回合数）取 setup 流；结算（敌人掉落与删栏重抽按敌人分子流、通用掉落、异化装备、元素书、米拉、流萤残核，grant／end_battle
+##   里各段规则取数）取 reward_for(键)。先手／偷袭（roll_encounter，在 setup 之后）、回合内的暴击命中 AI 照旧 rule。
+##   计数 flags.tianqi.rng["battle|敌群号"]，随存档；note_battle 在 setup 里推进（回放从开战前的档重放也推到同一个数）。
+## - create_gear：带来源键的装备生成（XState.gain_gear、异化装备掉落）时，底子数值（属性浮动、插槽、强化随机）改走
+##   derive(orb_seed, "tq_gear_src|来源键|该来源第几件")，并用一份空的预掷池（rom.x／xs），生成完还原，所以只看来源键、
+##   不受先拿了别的装备影响；镶嵌孔数也按来源键（socket_number 代替实例编号）；天启篇词条仍按 affix_src 那一路（同一来源键的不同域，互不挪号）。
+##   深渊商人等自己设了 XGear.roll_fn 的、测试磁带（roll_seq／force_roll）照旧优先，不绑。
+## 开关：BATTLE_FROM_SAVE（战斗钉住）、GEAR_BASE_FROM_SAVE（底子钉住），同一个 O 号（O-待定），false 各自回到运行时流。
+static var BATTLE_FROM_SAVE := true
+static var GEAR_BASE_FROM_SAVE := true
+## create_gear 正在用来源键底子流（XTianqiAffixRoll._default_rng 据此不把它当成深渊商人的 roll_fn）
+static var gear_binding := false
 
 
 ## 存档派生的随机流：种子＝存档种子 orb_seed（随存档；更老的档由存档内容算出，XState.from_dict）＋ key。
@@ -152,3 +169,95 @@ static func item_roll(s: XState, item: Dictionary, domain: String) -> Callable:
 ## 读档后（XTianqiSave.after_load 末尾，即 XState.from_dict 末尾）：老件补随机身份。以前直接挂在 from_dict
 static func after_load(s: XState) -> void:
 	assign_all(s)
+
+
+# ---- B 战斗（R3） ----
+
+static func battle_on(s: XState) -> bool:
+	return s != null and BATTLE_FROM_SAVE and XTianqi.active(s)
+
+
+static func _battle_domain(troop_id: int) -> String:
+	return "battle|%d" % troop_id
+
+
+## 本档下一次打这个敌群的战斗键「敌群号|第几次」（只看，不推进）
+static func battle_key(s: XState, troop_id: int) -> String:
+	var rng = s.flags.get("tianqi", {}).get("rng")
+	var n := int(rng.get(_battle_domain(troop_id), 0)) if rng is Dictionary else 0
+	return "%d|%d" % [troop_id, n]
+
+
+## BattleLogic.setup 没给战斗流时取：rule／pet 照旧运行时；天启篇档另按战斗键钉住布阵与结算
+static func battle_random(s: XState, troop_id: int) -> XBattleRandom:
+	var out := s.reserve_battle_random()
+	if battle_on(s):
+		var key := battle_key(s, troop_id)
+		out.pin(key, XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "battle|" + key))
+	return out
+
+
+## BattleLogic.setup 里调：本场钉住的话，把这个敌群的计数推到战斗键之后（回放从开战前的档重放也推到同一个数）
+static func note_battle(s: XState, random: XBattleRandom) -> void:
+	if s == null or random == null or not random.pinned() or not s.flags.get("tianqi") is Dictionary:
+		return
+	var parts := random.battle_key.split("|")
+	if parts.size() != 2:
+		return
+	var tq: Dictionary = s.flags.tianqi
+	if not tq.get("rng") is Dictionary:
+		tq["rng"] = {}
+	var dom := _battle_domain(int(parts[0]))
+	tq.rng[dom] = maxi(int(tq.rng.get(dom, 0)), int(parts[1]) + 1)
+
+
+# ---- A 装备底子（R3，方案 2.5） ----
+
+static func gear_base_on(s: XState) -> bool:
+	return GEAR_BASE_FROM_SAVE and seeds_on(s) and not XGear.roll_fn.is_valid() and XGear.roll_seq.is_empty() and XGear.force_roll < 0
+
+
+## 有来源键的装备的底子流：derive(orb_seed, "tq_gear_src|来源键|n")，n＝本档该来源键已登记几件（on_register 随后用同一个 n 分配随机身份）
+static func gear_stream(s: XState, source: String) -> Callable:
+	var src_n = s.flags.tianqi.get("src_n")
+	var n := int(src_n.get(source, 0)) if src_n is Dictionary else 0
+	var key := "tq_gear_src|%s|%d" % [source, n]
+	var st := XRandomStream.create(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), key), "tianqi_gear")
+	return func(): return st.next_float(key)
+
+
+## 带来源键的装备排孔用的编号（代替实例编号，同一个哈希式，分布不变）：derive(orb_seed, "tq_gear_socket|来源键|n") 的低 31 位
+static func socket_number(s: XState, source: String) -> int:
+	var src_n = s.flags.tianqi.get("src_n")
+	var n := int(src_n.get(source, 0)) if src_n is Dictionary else 0
+	return XRandomStream.parse64(XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tq_gear_socket|%s|%d" % [source, n])) & 0x7fffffff
+
+
+## 生成一件装备（不登记）：天启篇词条按来源键（source_hint）；有来源键且 gear_base_on 时底子也按来源键、用空预掷池
+static func create_gear(s: XState, kind: String, base_id: int, source := "") -> Dictionary:
+	XTianqiAffixRoll.source_hint = source  # 天启篇词条也按来源键掷（XTianqiAffixRoll._default_rng）
+	if source == "" or not gear_base_on(s):
+		var plain := XGear.create(kind, base_id, s)
+		XTianqiAffixRoll.source_hint = ""
+		return plain
+	var saved := {}
+	for k in ["x", "xn", "xs", "xsn"]:
+		saved[k] = s.rom.get(k)
+	s.rom.x = []
+	s.rom.xn = 0
+	s.rom.xs = []
+	s.rom.xsn = 0
+	XGear.roll_fn = gear_stream(s, source)
+	gear_binding = true
+	var inst := XGear.create(kind, base_id, s)
+	gear_binding = false
+	XGear.roll_fn = Callable()
+	# 镶嵌孔数：原版按 orb_seed＋实例编号哈希（先拿了别的装备就会挪号）；这里先按来源键给一个编号排好孔，register_gear 见已有孔不再排
+	XOrbs.layout(inst, s.orb_seed, socket_number(s, source))
+	for k in saved:
+		if saved[k] == null:
+			s.rom.erase(k)
+		else:
+			s.rom[k] = saved[k]
+	XTianqiAffixRoll.source_hint = ""
+	return inst

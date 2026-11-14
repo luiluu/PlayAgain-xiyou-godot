@@ -353,7 +353,7 @@ static func abyss_bonus(logic) -> Array:
 	var out := []
 	var s: XState = logic.state
 	if s != null and logic.random != null and str(XDB.rec("MapInfos", s.map_id).get("name", "")).begins_with("深渊") and not XDB.rec("Items", ABYSS_STONE).is_empty():
-		if floori(logic.random.reward.next_float("mira_abyss_stone", "0") * 30) == 0:
+		if floori(logic.random.reward_for("mira").next_float("mira_abyss_stone", "0") * 30) == 0:
 			out.append({"kind": 1, "id": ABYSS_STONE})
 	logic.set_meta("mira_abyss", out)
 	return out

@@ -95,12 +95,13 @@ static func socket_count(eq: Dictionary, seed: int) -> int:
 	var w := str(eq.get("kind", "")) == "weapon" and int(eq.get("wtypeId", 0)) != 0
 	return socket_count_for(seed, is_weapon_socket(eq), w, instance_number(eq))
 
-## layoutItem：新实例排孔（已有孔的不动）
-static func layout(eq: Dictionary, seed: int) -> void:
+## layoutItem：新实例排孔（已有孔的不动）。number≥0 时用它代替实例编号（天启篇带来源键的装备按来源键排孔，XTianqiRandom.create_gear）
+static func layout(eq: Dictionary, seed: int, number := -1) -> void:
 	if eq.is_empty() or eq.has("augmentSlots") or config().is_empty():
 		return
 	var type := socket_type(eq)
-	var n := socket_count(eq, seed)
+	var n := socket_count(eq, seed) if number < 0 else \
+		socket_count_for(seed, is_weapon_socket(eq), str(eq.get("kind", "")) == "weapon" and int(eq.get("wtypeId", 0)) != 0, number)
 	var slots := []
 	var enable := []
 	var held := []

@@ -54,7 +54,7 @@ func _rule() -> XRandomStream:
 		return state.world_random()
 	if random == null:
 		random = state.reserve_battle_random() if state != null else XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed()))
-	return random.rule
+	return random.rule_now()  # 天启篇钉住的本场：布阵阶段取 setup 流、结算段取奖励子流（XBattleRandom.phase）；其余就是 rule
 
 func _float(reason: String) -> float:
 	return _rule().next_float(reason, str(turn))
@@ -137,9 +137,11 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XShieldLedger.setup(self)  # 护盾账本 startBattle 包装：清空、开始记账
 	s.sync_difficulty_on_battle()
 	XVegetaTune.battle_setup(s)  # 贝吉特优化调整：自我极意功层数每场清零
-	random = random_context if random_context != null else s.reserve_battle_random()
+	random = random_context if random_context != null else XTianqiRandom.battle_random(s, troop)  # 天启篇档按战斗键钉住布阵与结算（R3）；西游档同 reserve_battle_random
 	replay_runtime_start = s.runtime_random_snapshot()
 	replay_battle_start = random.snapshot()
+	XTianqiRandom.note_battle(s, random)  # 钉住的本场：这个敌群的计数推到战斗键之后（随存档）
+	random.phase = "setup"  # 布阵阶段：钉住时 _rule 取 setup 流（setup 末尾还原）
 	_ids.clear()
 	turn = 0
 	escaped = false
@@ -271,6 +273,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	turn_start_logs.append_array(XTianqiDeathAlien.take_logs(self))
 	turn_start_logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：开场报哪只异化、丧钟倒数
 	turn_start_logs.append_array(XTianqiQiyinRule.take_logs(self))  # 七印祭坛：开场报本印规则
+	random.phase = ""  # 布阵结束：之后（先手偷袭、回合内）取 rule
 
 func _new_lifecycle_resources() -> XResourceContext:
 	var resources := XResourceContext.new()
@@ -3422,7 +3425,7 @@ func rewards() -> Dictionary:
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	drops.append_array(_liuying_core())  # 流萤 makeRewards 包装（第 34 个，奖励最后）：萨姆残核
-	drops.append_array(XTianqiDrop.battle_drops(self))  # 天启篇通用掉落：每场掷一次（带 generic 标记，倒下即发的锁不拦它，见 grant）
+	drops.append_array(_tag_src(XTianqiDrop.battle_drops(self), "generic"))  # 天启篇通用掉落：每场掷一次（带 generic 标记，倒下即发的锁不拦它，见 grant）
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
 	# 真气 makeRewards 包装（装在奖励插件之后）：幻化之战清掉物品（含地图额外掉落）；v0.45 神兵试炼经验、金钱也为 0
@@ -3448,7 +3451,8 @@ func drops_of(e: XEnemy) -> Array:
 		return []
 	var id := stable_id(e)
 	if not _treasure.has(id):
-		_treasure[id] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, XTianqiGear.reroll_drops(_roll_drops(e), func(): return random.reward.next_float("tianqi_reroll", id))))  # 天启篇：删除栏位的防具重抽
+		var sub := random.reward_for(id + "|drop")  # 天启篇钉住时按敌人分子流（谁先倒下不串号）；没钉住就是 reward
+		_treasure[id] = XPingbi.filter_drops(state, XHangUp.shield_drops(state, XTianqiGear.reroll_drops(_tag_src(_roll_drops(e), id), func(): return sub.next_float("tianqi_reroll", id))))  # 天启篇：删除栏位的防具重抽
 	return _treasure[id].duplicate(true)
 
 
@@ -3490,7 +3494,7 @@ func _roll_drops(e: XEnemy) -> Array:
 				var sd := _drop_entry(c)
 				sd["sig"] = str(c.sig)  # sig 带到 gain_drops 当装备随机身份的来源键
 				drops.append(sd)
-		elif random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
+		elif random.reward_for(stable_id(e) + "|drop").next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
 			drops.append(_drop_entry(c))
 	return drops
 
@@ -3534,10 +3538,26 @@ func gain_drops(drops: Array) -> void:
 			XTestMode.boost_depth += 1
 		match int(d.kind):
 			1: state.gain_item(d.id, int(d.get("count", 1)))  # count：XTianqiSect 掉落行一次掉几个
-			2: state.gain_gear("weapon", d.id, 1, "sig|" + str(d.sig) if d.has("sig") else "")  # 招牌掉落走掉落账，来源键稳定；普通掉落照 instanceId
-			3: state.gain_gear("armor", d.id, 1, "sig|" + str(d.sig) if d.has("sig") else "")
+			2: state.gain_gear("weapon", d.id, 1, _gear_src(d))  # 招牌掉落走掉落账，来源键稳定；天启篇钉住的本场带战斗来源键；其余照 instanceId
+			3: state.gain_gear("armor", d.id, 1, _gear_src(d))
 		if d.get("boost", false):
 			XTestMode.boost_depth -= 1
+
+
+## 掉落装备的来源键：招牌掉落 sig|键；天启篇钉住的本场 src（_tag_src 打的 b|战斗键|敌人|第几件）；都没有＝空（照 instanceId）
+static func _gear_src(d: Dictionary) -> String:
+	return "sig|" + str(d.sig) if d.has("sig") else str(d.get("src", ""))
+
+
+## 天启篇钉住的本场：给掉落里的装备打来源键 b|战斗键|who|第几件（XState.gain_gear 按它派生随机身份、词条、底子）；没钉住原样返回
+func _tag_src(drops: Array, who: String) -> Array:
+	if random == null or not random.pinned():
+		return drops
+	for k in drops.size():
+		var d = drops[k]
+		if d is Dictionary and [2, 3].has(int(d.get("kind", 0))) and not d.has("sig"):
+			d["src"] = "b|%s|%s|%d" % [random.battle_key, who, k]
+	return drops
 
 
 ## YEP_ExtraEnemyDrops：<Enemy Drops> Item/Weapon/Armor x: y% </Enemy Drops>
@@ -3560,6 +3580,7 @@ func grant(r: Dictionary) -> Array:
 	_rewards_granted = true
 	if XTianqiGojoTrial.no_rewards(self):
 		return []  # 天启篇五条悟专属试炼：不发经验、金钱、掉落、法宝经验、真气等
+	_phase("grant")  # 天启篇钉住的本场：发奖里的规则取数（不朽之书、升级）走结算子流
 	var garou_text := XGarou.credit_victory(state, _garou, _garou_boss)  # 饿狼 processVictory 包装：累计突破、神之触媒
 	if garou_text != "":
 		victory_texts.append(garou_text)
@@ -3587,7 +3608,14 @@ func grant(r: Dictionary) -> Array:
 	# CP_MagicWeapon 包在 gainRewards 之后：法宝经验（$gameTroop.members()：enemies 已含没出场的隐藏成员）
 	XMagicWeapon.gain_victory_exp(state.members(), actors, enemies)
 	XLiuying.gain_rewards(actors)  # 流萤 gainRewards 包装：出战且戴专武，逐火
+	_phase("")
 	return ups
+
+
+## 天启篇钉住的本场换取数段（XBattleRandom.phase）；没有本场随机时不动
+func _phase(name: String) -> void:
+	if random != null:
+		random.phase = name
 
 
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
@@ -3596,7 +3624,9 @@ func end_battle(result := -1) -> void:
 	XActor.batch_reset()
 	var weak_award := XWeakChallenge.before_end(self, result)  # 弱者挑战 endBattle 包装（原 endBattle 之前判定，之后发）
 	XAlienBattle.restore_gear(self)  # 异化 endBattle 包装（Adv:196，最外层，原 endBattle 之前）：吞器、献器空出的装备栏放回
+	_phase("end|guyu")  # 天启篇钉住的本场：谷种金缮石按自己的结算子流
 	XGuyu.end_battle(self, result)  # 谷雨 endBattle 包装（原 endBattle 之前）：清储备与花期、生命夹回，胜利掉谷种金缮石
+	_phase("end")  # 结束时的其余规则取数（首领护甲、胜逃败效果）
 	for e in enemies:
 		e.sync_boss_armor(false, _rule())
 	if result == 0:
@@ -3665,9 +3695,13 @@ func end_battle(result := -1) -> void:
 		b.hp = minf(b.hp, b.mhp)
 		b.mp = minf(b.mp, b.mmp)
 	# 原 endBattle 之后：利维坦锻造包装掷心之钢、再掷锻造锤（Map176 来源 108／165、570～575、20%），狂妄包装再掷狂妄（各 10%，不朽未知存在 454／455 胜利、每场一次）
+	_phase("end|heartsteel")  # 天启篇钉住的本场：心之钢、锻造锤、狂妄各掷各的结算子流
 	XHeartsteel.clear_reward(self, result)
+	_phase("end|forge")
 	XGrowthForge.award_core(self, result)
+	_phase("end|hubris")
 	XHubris.clear_reward(self, result)
+	_phase("")
 	XHonghuang.battle_ended(result)  # 洪荒 endBattle 包装：记胜负
 	XAbyssMerchant.battle_ended(result)  # 深渊商人 endBattle 包装：记胜负
 	XDemonCrown.finish(state, result)  # 魔冠 endBattle 包装（最外层，原 endBattle 之后）：胜利成长、掉落，遭遇序号＋1

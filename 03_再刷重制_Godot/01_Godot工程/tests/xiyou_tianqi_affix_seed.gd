@@ -165,8 +165,8 @@ func _battle() -> void:
 
 
 ## 真实战斗结算入口（setup 里 XState.reserve_battle_random 取战斗流，rewards→grant）不钉战斗种子：
-## 掉哪几件由战斗奖励流决定，它的根 XState.random_master 只在运行时、不进存档（读档后现开一条），所以读档再打同一场
-## 掉落件本身就会不同——这一层是整局既有口径（招牌掉落另走存档里的掉落账，读档一样），不是词条流的问题。
+## 回合内的规则流仍由 XState.random_master（只在运行时、不进存档）派生；掉哪几件在天启篇档由战斗键钉住（随机门面 R3，
+## XTianqiRandom.battle_random），读档再打同一场掉落件一样；关 BATTLE_FROM_SAVE 时回到旧口径（随运行时奖励流变）。
 ## 这里把这一层查清楚：①存档里没有 random_master；②读档后两次真打，只要战斗流的根一样（restore_runtime_random，正式的调试回放入口），
 ## 整场掉落（敌人掉落、通用掉落、招牌掉落）连同词条完全一样；③根不同时掉落件可以不同（只记录，不断言相等）。
 func _real_run(map: int, troop: int, master: String) -> Dictionary:
@@ -222,7 +222,14 @@ func _real_battle() -> void:
 	var u1 := _real_run(int(chosen[0]), int(chosen[1]), "")
 	var u2 := _real_run(int(chosen[0]), int(chosen[1]), "")
 	_check("real_root_fresh_each_load", str(u1.master) != str(u2.master), [u1.master, u2.master])
-	print("INFO real_unpinned_drops_equal=", u1.gear == u2.gear, " ", JSON.stringify([u1.gear, u2.gear]))
+	# 随机门面 R3（XTianqiRandom.BATTLE_FROM_SAVE）：天启篇档战斗奖励按战斗键（敌群号｜本档第几次）钉住，根不同也掉同样的装备（连词条）
+	_check("real_pinned_drops_equal", u1.gear == u2.gear and u1.drops == u2.drops, [u1.gear, u2.gear])
+	XTianqiRandom.BATTLE_FROM_SAVE = false
+	var r1 := _real_run(int(chosen[0]), int(chosen[1]), "")
+	var r2 := _real_run(int(chosen[0]), int(chosen[1]), "")
+	var r3 := _real_run(int(chosen[0]), int(chosen[1]), "")
+	XTianqiRandom.BATTLE_FROM_SAVE = true
+	print("INFO real_runtime_drops_equal=", r1.gear == r2.gear and r2.gear == r3.gear)  # 关开关回运行时：掉落件可能变（只记录）
 
 
 func _run() -> void:

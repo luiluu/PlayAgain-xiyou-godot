@@ -67,7 +67,7 @@ static func tier_of(item: Dictionary) -> int:
 
 ## apply 没给 rng 时用的流（见 SEED_FROM_SAVE）
 static func _default_rng(s: XState) -> Callable:
-	if not SEED_FROM_SAVE or XGear.roll_fn.is_valid() or not XGear.roll_seq.is_empty() or XGear.force_roll >= 0 \
+	if not SEED_FROM_SAVE or (XGear.roll_fn.is_valid() and not XTianqiRandom.gear_binding) or not XGear.roll_seq.is_empty() or XGear.force_roll >= 0 \
 			or s == null or not s.flags.get("tianqi") is Dictionary:
 		return func(): return XGear.roll(s)
 	var tq: Dictionary = s.flags.tianqi

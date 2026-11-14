@@ -32,9 +32,17 @@ static func record(logic: XBattleLogic, initial: Dictionary, commands: Array, lo
 		"initialRuntime": logic.replay_runtime_start.duplicate(true), "battleStart": logic.replay_battle_start.duplicate(true),
 		"finalRuntime": logic.state.runtime_random_snapshot(),
 		"rules": {"advanceLootOnCollapse": logic.advance_loot_on_collapse}, "commands": commands.duplicate(true),
-		"random": logic.random.snapshot(), "journal": {"rule": logic.random.rule.journal.duplicate(true), "reward": logic.random.reward.journal.duplicate(true)},
+		"random": logic.random.snapshot(), "journal": _journal(logic.random),
 		"logs": freeze(logs, logic), "final": freeze(logic.state.to_dict(), logic),
 		"enemies": logic.enemies.map(func(e): return [logic.stable_id(e), e.hp, e.mp, e.tp, e.state_ids.duplicate(), e.state_turns.duplicate(true)])}
+
+## 取数记录：rule、reward；天启篇钉住的本场另记布阵流和各奖励子流（西游档与原来逐字节相同）
+static func _journal(random: XBattleRandom) -> Dictionary:
+	var out := {"rule": random.rule.journal.duplicate(true), "reward": random.reward.journal.duplicate(true)}
+	if random.pinned():
+		out["setup"] = random.setup.journal.duplicate(true)
+		out["subs"] = random.sub_journals()
+	return out
 
 static func replay(data: Dictionary) -> Dictionary:
 	if not valid(data):

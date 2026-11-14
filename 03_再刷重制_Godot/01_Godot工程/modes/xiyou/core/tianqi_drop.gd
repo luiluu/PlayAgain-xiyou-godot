@@ -481,7 +481,7 @@ static func battle_drops(logic) -> Array:
 	if not logic.has_meta("tianqi_generic"):
 		var drops := []
 		if not logic.enemies.any(func(e): return e.zq_trial_loot) and logic.enemies.any(func(e): return not e.hidden):
-			drops = roll(logic.state, _members(logic), func(): return logic.random.reward.next_float("tianqi_generic", "battle"), int(logic.troop_id))
+			drops = roll(logic.state, _members(logic), func(): return logic.random.reward_for("tianqi_generic").next_float("tianqi_generic", "battle"), int(logic.troop_id))
 			drops = XPingbi.filter_drops(logic.state, _auto_sell(logic, drops))
 		logic.set_meta("tianqi_generic", drops)
 	return (logic.get_meta("tianqi_generic") as Array).duplicate(true)

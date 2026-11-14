@@ -796,9 +796,7 @@ func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
 			XDemonCrown.grant(self, amount)  # 魔冠 gainItem 包装：得到数据库那件改由成长账本发
 			return
 		for i in range(amount):
-			XTianqiAffixRoll.source_hint = source  # 天启篇词条也按来源键掷（XTianqiAffixRoll._default_rng）
-			var inst := XGear.create(kind, base_id, self)
-			XTianqiAffixRoll.source_hint = ""
+			var inst := XTianqiRandom.create_gear(self, kind, base_id, source)  # 天启篇：词条按来源键；有来源键时底子也按来源键（R3）
 			if not inst.is_empty():
 				register_gear(inst, source)
 				gear.append(inst)
