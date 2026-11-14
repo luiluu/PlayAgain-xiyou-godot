@@ -8,7 +8,11 @@ extends RefCounted
 ##   {"schema": 1,
 ##    "latest": {"version": "0.470", "code": 470, "date": "2026-11-20", "notes": ["……"]},
 ##    "bases": {"453": {"patch": {"code": 470, "size": 123, "sha256": "…", "urls": ["…"]}}},
-##    "min_base": 453, "revoked": [468]}
+##    "min_base": 453, "revoked": [468],
+##    "min_playable": 470, "download_url": "https://…"}   ← 强制更新（Kyo 11-14），两项都可以没有
+## 强制更新：min_playable 是最低可玩的开发编号，现在运行的号低于它（且清单真有更新的版本）就在进标题前拦住、必须更新；
+## 没有这项、或是 0 ＝不强制。download_url 是手动下载页（https 才认），没有就照旧指 QQ 群。
+## 老客户端只认上面那几项，多出的字段读到也不出错（schema 不变）。
 ## 同目录的 channel.sig 是对 channel.json 原始字节的 SHA256withRSA 签名（PKCS#1 v1.5，`openssl dgst -sha256 -sign` 的输出）。
 ## 公钥写在这里；私钥只在 Kyo 的 Mac 上仓库之外，不进任何仓库。验签不过的清单一律当读不到。
 
@@ -118,12 +122,17 @@ static func _newer(a: Dictionary, b: Dictionary) -> bool:
 ## current_code 是现在实际运行的（装了补丁就是补丁的号）。
 ## 返回 {"state", "current", "version", "code", "date", "notes", "patch", "revoked"}：
 ##   current／version 是给玩家看的版本号；patch 只在 state＝patch 时非空（code、size、sha256、urls）；
-##   revoked＝现在运行的这一版被撤回了（第②批用它自动退回）。
+##   revoked＝现在运行的这一版被撤回了（第②批用它自动退回）；
+##   forced＝要强制更新（min_playable 比现在运行的号大，且有更新的版本）；min_playable、download_url 照清单（没有是 0／空）。
 static func evaluate(manifest: Dictionary, base_code: int, current_code: int) -> Dictionary:
 	var out := {"state": BAD, "current": version_of(current_code), "version": "", "code": 0, "date": "",
-		"notes": PackedStringArray(), "patch": {}, "revoked": false}
+		"notes": PackedStringArray(), "patch": {}, "revoked": false, "forced": false, "min_playable": 0, "download_url": ""}
 	if manifest.is_empty():
 		return out
+	var mp = manifest.get("min_playable")
+	out["min_playable"] = int(mp) if (mp is int or mp is float) and mp > 0 else 0
+	var du = manifest.get("download_url")
+	out["download_url"] = du if du is String and du.begins_with("https://") else ""
 	var latest: Dictionary = manifest["latest"]
 	out["code"] = int(latest["code"])
 	out["version"] = version_of(out["code"]) if release_name != "" else str(latest["version"])
@@ -142,6 +151,7 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 		out["state"] = LATEST
 		return out
 	out["state"] = FULL
+	out["forced"] = out["min_playable"] > current_code  # 走到这里已确定有更新的版本；清单最新号比 min_playable 还小时照样拦，只能手动下载
 	if base_code < int(manifest.get("min_base", 0)):
 		return out
 	var bases = manifest.get("bases")
@@ -150,6 +160,8 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	var p = bases[str(base_code)].get("patch")
 	if not valid_patch(p) or int(p["code"]) <= current_code:
 		return out
+	if out["forced"] and int(p["code"]) < out["min_playable"]:
+		return out  # 强制时补丁不够新（装完重启还是被拦）：当整包，只给手动下载（gpt 核查 P2-1）
 	out["state"] = PATCH
 	out["patch"] = {"code": int(p["code"]), "size": int(p["size"]), "sha256": str(p["sha256"]).to_lower(), "urls": p["urls"].duplicate()}
 	return out

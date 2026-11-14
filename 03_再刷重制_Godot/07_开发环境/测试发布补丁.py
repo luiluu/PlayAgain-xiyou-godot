@@ -229,6 +229,44 @@ class RuleTests(Base):
         p, code = M.resolve_base(str(d.parent), None)
         self.assertEqual((p.name, code), ('再刷一把_天启篇.pck', 453))
 
+    def _channel(self):
+        return json.loads((self.repos[0] / 'godot/channel.json').read_text(encoding='utf-8'))
+
+    def test_min_playable_default_unchanged(self):
+        # 强制更新（Kyo 11-14）：不给参数就不写、也不改原值
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
+        self.assertNotIn('min_playable', self._channel())
+        self.assertNotIn('download_url', self._channel())
+        M.current_code = lambda: 475
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--min-playable', '470',
+                                       '--download-url', 'https://example.invalid/dl'), 0)
+        self.assertEqual((self._channel()['min_playable'], self._channel()['download_url']), (470, 'https://example.invalid/dl'))
+        M.current_code = lambda: 480
+        self.assertEqual(self.run_tool('--full-only', '--stage'), 0)
+        self.assertEqual((self._channel()['min_playable'], self._channel()['download_url']), (470, 'https://example.invalid/dl'))
+
+    def test_min_playable_latest_zero_and_limits(self):
+        # 强制更新同时去掉下载页：拒绝，且发版仓库里什么都没提交
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--min-playable', 'latest',
+                                       '--download-url', 'none'), 1)
+        self.assertFalse((self.repos[0] / 'godot').exists())
+        # 没给下载页：默认填 Gitee 发行版页面（Kyo 11-14）
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--min-playable', 'latest'), 0)
+        self.assertEqual(self._channel()['download_url'], M.DEFAULT_DOWNLOAD_URL)
+        self.assertTrue(M.DEFAULT_DOWNLOAD_URL.startswith('https://gitee.com/') and M.DEFAULT_DOWNLOAD_URL.endswith('/releases'))
+        self.assertEqual(self._channel()['min_playable'], 470)
+        M.current_code = lambda: 475
+        self.assertEqual(self.run_tool('--full-only', '--stage', '--min-playable', '0', '--download-url', 'none'), 0)
+        self.assertNotIn('min_playable', self._channel())
+        self.assertEqual(self.run_tool('--full-only', '--min-playable', '476'), 1)   # 比本次发布还大：会一直卡住
+        self.assertEqual(self.run_tool('--full-only', '--min-playable', 'abc'), 1)
+        self.assertEqual(self.run_tool('--full-only', '--download-url', 'http://example.invalid/dl'), 1)
+        self.assertEqual(self.run_tool('--full-only', '--min-playable', 'dev.475', '--download-url', 'none'), 1)
+        self.assertEqual(self.run_tool('--full-only', '--min-playable', 'dev.475'), 0)   # 清单里已去掉：默认补上
+        self.assertEqual(json.loads((self.t / 'out/channel.json').read_text(encoding='utf-8'))['download_url'], M.DEFAULT_DOWNLOAD_URL)
+        self.assertEqual(self.run_tool('--full-only', '--min-playable', 'dev.475', '--download-url', 'https://example.invalid/dl'), 0)
+        self.assertEqual(json.loads((self.t / 'out/channel.json').read_text(encoding='utf-8'))['min_playable'], 475)
+
     def test_embedded_key_is_read_from_game_code(self):
         self.assertIn('BEGIN PUBLIC KEY', self._saved[0]())
 
