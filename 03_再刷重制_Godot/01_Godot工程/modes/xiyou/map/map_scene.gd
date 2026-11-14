@@ -1741,6 +1741,11 @@ func save_game(slot: int) -> bool:
 func _add_scene_page(page: Node) -> void:
 	ui.add_child(page)
 	_scene_pages.append(page)
+	# 玩家反馈 v0.01.09：Esc／手柄 B／触屏「取消」关掉商店等页面的同一帧，地图 _process 还看得到「取消刚按下」，
+	# 事件当帧收尾放开 busy 就立刻又开菜单。同关菜单：关页面那帧记下，本帧不开（XKeyMap.menu_call_blocked）。
+	# 原版 popScene 回 Scene_Map 至少隔一帧，Input.isTriggered 已过，不会再开。
+	if page.has_signal("closed"):
+		page.connect("closed", func(_a = null, _b = null): _menu_closed_frame = Engine.get_process_frames(), CONNECT_ONE_SHOT)
 
 
 ## 有没有事件打开的独立页面还开着（关掉、已排队释放的不算）。
