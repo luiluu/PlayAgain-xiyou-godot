@@ -48,7 +48,7 @@ def load(name, path):
 merge = load('lane_merge_for_precheck', HERE / '合并车道.py')
 git = merge.git
 SHEET_DIR = '00_项目管理/交付/'
-SHEET_NAME = re.compile(r'(?:cc|claude|codex)_(.+)\.md')
+SHEET_NAME = re.compile(r'(?:cc|gpt|xa|claude|codex)_(.+)\.md')
 GENERATED = merge.PROJECT / 'modes/xiyou/generated'
 # 沙盒里没有工作树停在车道分支上，plan() 每次都打这句，对车道没有信息量；缺 .gd.uid 的提示本工具另算成问题，不重复
 NOISE = ('没有工作树停在', '没提交同名 .gd.uid')
