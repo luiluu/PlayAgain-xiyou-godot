@@ -269,6 +269,9 @@ static func opening_commands(slot: int, key: String, lineup: Array) -> Array:
 	c.append(_var(13, 1))
 	c.append(_var(14, 1))
 	c.append_array(_legacy_difficulty(legacy))
+	var lottery := int(XTianqiBalance.route(key).get("lottery_cap", 0)) if XTianqiTrim.ROUTE_TABLE else 0
+	if lottery > 0:
+		c.append(_var(9, lottery))  # 抽奖被动上限按吸收的旧路线（O-待定-8；_legacy_difficulty 之后写，盖过借来的难度加的数）
 	# Map002 EV2 第 1 页：预掷池、阎王剧情做完
 	c.append_array(_lines([
 		"",

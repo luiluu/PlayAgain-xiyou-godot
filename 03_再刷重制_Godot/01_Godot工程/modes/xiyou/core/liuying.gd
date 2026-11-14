@@ -756,6 +756,9 @@ static var _core_re: RegEx = null
 
 
 static func core_rate(s: XState) -> float:
+	var tq := XTianqiTrim.route(s)  # 天启篇：前四档 3%、证道 6%（O-待定-8）
+	if tq.has("liuying_core"):
+		return float(tq.liuying_core)
 	if PRIMORDIAL_SW.any(func(id): return s.switch(id)):
 		var holder := XHonghuang.curse_holder(s)
 		var h := minf(HH_MAX, maxf(1.0, XHonghuang.curse_bonus(holder) if holder != null else 1.0))

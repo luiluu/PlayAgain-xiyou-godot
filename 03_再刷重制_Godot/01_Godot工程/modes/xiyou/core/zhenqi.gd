@@ -101,6 +101,16 @@ static func from_save(d) -> Dictionary:
 
 # ---- 路线、楼层 ----
 static func route(s: XState) -> Dictionary:
+	var tq := XTianqiTrim.route(s)  # 天启篇：按吸收的旧路线取系数（O-待定-8），名字用五档档名
+	if not tq.is_empty():
+		var coef := int(tq.get("zhenqi_coef", 1))
+		var base: Dictionary = ROUTES[0]
+		for r in ROUTES:
+			if int(r.coef) <= coef:
+				base = r  # 系数相同的旧路线（comp_for、首通记录按它的 key）
+		var out := base.duplicate()
+		out.name = str(XTianqi.difficulty(str(s.flags.tianqi.get("difficulty", ""))).get("name", base.name))
+		return out
 	if s.switch(2483) or s.switch(2463):
 		return ROUTES[5]
 	if s.switch(2487) or s.switch(2462):

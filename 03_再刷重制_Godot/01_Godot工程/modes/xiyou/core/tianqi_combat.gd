@@ -49,10 +49,23 @@ static func enemy_rates(difficulty: int, s = null) -> Array:
 	if r.is_empty():
 		return XEnemy.difficulty_rates(difficulty)
 	var out := XEnemy.difficulty_rates(base_legacy(s))
-	out[0] = float(out[0]) * float(r.enemy_hp)
-	out[2] = float(out[2]) * float(r.enemy_atk)
-	out[4] = float(out[4]) * float(r.enemy_atk)
+	var dt := dungeon_tier(s)
+	out[0] = float(out[0]) * float(r.enemy_hp) * float(dt.get("enemy_hp", 1.0))
+	out[2] = float(out[2]) * float(r.enemy_atk) * float(dt.get("enemy_atk", 1.0))
+	out[4] = float(out[4]) * float(r.enemy_atk) * float(dt.get("enemy_atk", 1.0))
 	return out
+
+
+## 开关（O-待定-7，Kyo 11-13「副本档位也跟着变强」）：true＝副本里敌人血量、攻击再乘副本档系数（balance_table 的 dungeon_tiers，draft）；
+## false＝副本里和塔里一样只看本档难度
+static var DUNGEON_TIER := true
+
+
+## 在副本里时本副本所选档（变量 450）的系数 {enemy_hp, enemy_atk}；不在副本、开关关着为空
+static func dungeon_tier(s: XState) -> Dictionary:
+	if not DUNGEON_TIER or s == null or not XDungeon.inside(s):
+		return {}
+	return XTianqiBalance.dungeon_tier(int(s.variable(XDungeon.VAR_TIER)))
 
 
 # ---- 我方 ----

@@ -817,6 +817,13 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇大厅牢妲（XTianqiTrim，O-待定-1）：只剩挑战守层者，难度开关和怪物难度属性不出
+	if XTianqiTrim.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiTrim.run_laoda(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
 	# 天启篇 31～36 层重做（XTianqiSummit）：门在 34 层以上接新 34～36 层、158 的决战事件不跑、打过 34 层后再挑战多几位
 	if XTianqiSummit.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)

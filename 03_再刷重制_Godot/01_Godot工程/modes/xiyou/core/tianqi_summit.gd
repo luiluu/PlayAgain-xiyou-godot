@@ -304,6 +304,8 @@ static func _home(host, s: XState) -> void:
 
 ## 洪荒通关奖励（原 158 事件 1 第 2 页）：开关 2483 开着才有；打过本档鸿钧给奖励，没打过照原版学 6213（天启篇默认不学）
 static func _honghuang(host, s: XState) -> void:
+	if XTianqiTrim.no_honghuang(s):
+		return  # 天启篇取消洪荒通关奖励（O-待定-6，Kyo 11-13：跨存档只通图鉴、成就、外观）
 	var h: Dictionary = data().get("honghuang", {})
 	if not s.switch(int(h.switch)) or bool(progress(s).get("honghuang", false)):
 		return
@@ -347,7 +349,12 @@ static func run_rechallenge(host, s: XState) -> bool:
 		return false
 	if i < 0 or i > opts.size():
 		return true
-	var n := int(opts[i])
+	await rechallenge(host, s, int(opts[i]))
+	return true
+
+
+## 再挑战一层（34～36）；大厅牢妲在天启篇的菜单（XTianqiTrim.run_laoda）也走这里
+static func rechallenge(host, s: XState, n: int) -> void:
 	var line := XTianqi.line_of(s)
 	match n:
 		34:
@@ -365,7 +372,6 @@ static func run_rechallenge(host, s: XState) -> bool:
 				await XTianqiRewards.after_final(host, s, line, r36, "rechallenge36")  # 天启篇奖励：终焉试炼只给终焉核
 			else:
 				await say(host, "not_ready")
-	return true
 
 
 static func _rechallenge_label(s: XState, n: int) -> String:
