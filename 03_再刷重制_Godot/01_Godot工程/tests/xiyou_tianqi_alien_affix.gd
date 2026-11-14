@@ -214,6 +214,12 @@ func _tiers() -> void:
 	var r_six := []
 	XTianqiAlienAffix.action_plus_set(q, r_six)
 	_check("again_every_qinran_6", not r_new.has(1.0) and r_old.has(1.0) and r_six.has(1.0), [r_new, r_old, r_six])
+	# 文案和实际间隔同一个来源：开关关掉文案跟着回到 5／3／3／2
+	var txt := str(XTianqiAlienGear.affix_view(sq, "again").get("benefit", ""))
+	XTianqiAlienAffix.AGAIN_EVERY_V2 = false
+	var txt_old := str(XTianqiAlienGear.affix_view(sq, "again").get("benefit", ""))
+	XTianqiAlienAffix.AGAIN_EVERY_V2 = true
+	_check("again_text_follows", txt.contains("6／5／3／2") and txt_old.contains("5／3／3／2") and not txt.contains("{"), [txt, txt_old])
 	lq.end_battle(1)
 	var want := {"qinran": [1.2, 20, 6, 50], "zhongyan": [1.8, 50, 2, 100]}
 	for lv in want:

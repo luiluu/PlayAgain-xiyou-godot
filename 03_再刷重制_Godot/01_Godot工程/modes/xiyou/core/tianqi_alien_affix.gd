@@ -134,12 +134,24 @@ static func cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:
 	return {"mp": maxi(0, floori(float(c.mp) * m)), "tp": maxi(0, floori(float(c.tp) * m))}
 
 
+## 再动的实际间隔（第 level_idx 级；开关 AGAIN_EVERY_V2 关掉用旧表）
+static func again_every(level_idx: int) -> int:
+	if not AGAIN_EVERY_V2:
+		return int(AGAIN_EVERY_OLD[clampi(level_idx, 0, AGAIN_EVERY_OLD.size() - 1)])
+	return maxi(1, int(value("again", "every", level_idx, 3.0)))
+
+
+## 四级的实际间隔（文案用，和行为同一个来源）
+static func again_every_all() -> Array:
+	return [0, 1, 2, 3].map(func(i): return again_every(i))
+
+
 ## 再动：第 every、2×every…回合多行动一次（必定）
 static func action_plus_set(a, rates: Array) -> void:
 	var logic = _logic()
 	if _store(logic).is_empty() or key_of(a) != "again":
 		return
-	var every := maxi(1, int(value("again", "every", level_of(a), 3.0)) if AGAIN_EVERY_V2 else int(AGAIN_EVERY_OLD[clampi(level_of(a), 0, 3)]))
+	var every := again_every(level_of(a))
 	if int(logic.turn) > 0 and int(logic.turn) % every == 0:
 		rates.append(1.0)
 

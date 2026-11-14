@@ -20,6 +20,9 @@ extends RefCounted
 ##   不愈：敌人和佩戴者的减益不到期；杀声：打在敌人和佩戴者身上的伤害按倒下数加；限时：敌方合计、佩戴者自己各算 5 个技能，
 ##   敌人和佩戴者魔法、TP 不自然恢复；魔塔：敌人和佩戴者不能暴击；献祭：敌方生命最高那只和佩戴者各失去 10% 当前生命（都不加伤）；
 ##   星坠：敌人和佩戴者失去当前生命的 33%；寂静：双数回合敌人只普攻、佩戴者只能普攻、防御、用物品。
+##   代价跟着佩戴者走（协调 11-14，gpt 核查 P2）：佩戴者被天启换人换到助力位，只要活着星坠、献祭照扣；不愈、魔塔、寂静、限时、杀声
+##   只在他行动、被打、回合结算时才有落点，人在助力位不行动、不挨打、状态不走回合，等于暂停，换回场上接着生效；佩戴者阵亡后代价停、
+##   揭开的规则对敌方照旧生效。
 ## 豁免（Kyo 11-14，开关 SCROLL_BOSS_EXEMPT）：战斗里有天启四骑士（含影子、生存战）或 34～36 层首领（鸿钧）时书卷不揭、不付代价，
 ##   开场说一句。里副本里本印规则优先，书卷不再叠一条。
 
@@ -217,8 +220,11 @@ static func start_turn(logic) -> Array:
 			if every > 0 and t % every == 0:
 				var loss := float(param("star_fall").get("hp_loss", 0.33))
 				for b in logic.actors + logic.enemies:
-					if b.is_alive() and _hits(logic, b):
+					if b.is_alive() and _hits(logic, b) and not _is_owner(logic, b):
 						_lose(b, loss)
+				var own1 = scroll_owner(logic)
+				if own1 != null and own1.is_alive():  # 书卷的代价跟着佩戴者走：换到助力位也照付（死了不付）
+					_lose(own1, loss)
 				var who := "全场"
 				if enemy_only(logic):
 					var own2 = scroll_owner(logic)

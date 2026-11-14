@@ -110,6 +110,7 @@ func _run() -> void:
 	await _artifact_pity()
 	await _artifact_dragon()
 	_scroll_cost()
+	_scroll_cost_bench()
 	_scroll_exempt()
 	_silence_skill()
 	XTianqiQiyin.rng_override = null
@@ -157,6 +158,26 @@ func _seed() -> void:
 	s.flags.tianqi["qiyin"] = saved.duplicate(true)
 	var g2: Array = await _settle_items(s)
 	_check("seed_settle_reload_same", g1 == g2 and int(XTianqiQiyin.progress(s).rng_n) > 0, [g1, g2])
+	# 完整磁盘存读档：存档写盘再读回，种子、计数、神器保底计数、已得神器都在，读回后掷出和存档前一样
+	s.flags.tianqi["qiyin"] = saved.duplicate(true)
+	var pq := XTianqiQiyin.progress(s)
+	pq.artifact_miss = 217
+	pq.artifacts = ["scales"]
+	pq["artifacts_got"] = ["bow_crown"]
+	XTianqiQiyin._rng(s)
+	var disk_ok := XSave.save(1)
+	var before := XTianqiQiyin._rng(s).next_float("t")
+	var orb0 := int(s.orb_seed)
+	var loaded := XSave.load_slot(1)
+	var s2 := XState.current
+	var q2 := XTianqiQiyin.progress(s2)
+	var after := XTianqiQiyin._rng(s2).next_float("t")
+	_check("seed_disk_roundtrip", disk_ok and loaded and s2 != s and int(s2.orb_seed) == orb0 and str(q2.seed) == want
+		and int(q2.rng_n) == 2 and int(q2.artifact_miss) == 217 and q2.artifacts == ["scales"] and q2.artifacts_got == ["bow_crown"]
+		and before == after and not XTianqiQiyin.artifact_pool(s2).has("scales") and not XTianqiQiyin.artifact_pool(s2).has("bow_crown"),
+		[disk_ok, loaded, q2.get("rng_n"), q2.get("artifact_miss"), q2.get("artifacts"), before, after])
+	XSave.remove(1)
+	s = s2
 	# 开关关掉：每次现开，读档后不一样、计数不动
 	XTianqiQiyin.SEED_FROM_SAVE = false
 	s.flags.tianqi["qiyin"] = saved.duplicate(true)
@@ -404,6 +425,45 @@ func _scroll_cost() -> void:
 	_check("cost_off", off.actors[0].hp == f0 and not XTianqiQiyinRule.no_crit(off, off.actors[0]))
 	off.end_battle(0)
 	XTianqiQiyinRule.SCROLL_COST = true
+
+
+## 代价跟着佩戴者走（gpt 核查 P2）：换到助力位照付、阵亡后停；每段用新存档（换人、阵亡会改出战栏）
+func _scroll_cost_bench() -> void:
+	# 代价跟着佩戴者走：第 3 回合前被换到助力位，星坠照扣（敌方照挨）；献祭同
+	var s := _state()
+	var sw := _scroll_fight(s, "zhen", 187)
+	var wo: XActor = sw.actors[0]
+	sw.start_turn()
+	sw.start_turn()
+	var h0 := s.helper()
+	var swapped = sw.tianqi_swap(wo)
+	var w0 := wo.hp
+	var we0: float = sw.enemies[0].hp
+	sw.start_turn()
+	_check("cost_star_bench", swapped != null and not sw.actors.has(wo) and is_equal_approx(wo.hp, maxf(1.0, w0 - floorf(w0 * 0.33)))
+		and sw.enemies[0].hp < we0, [h0 != null, swapped != null, w0, wo.hp])
+	sw.end_battle(0)
+	s = _state()
+	var sb := _scroll_fight(s, "xun", 122)
+	var bo: XActor = sb.actors[0]
+	sb.tianqi_swap(bo)
+	var b0 := bo.hp
+	sb.start_turn()
+	_check("cost_sacrifice_bench", not sb.actors.has(bo) and is_equal_approx(bo.hp, maxf(1.0, b0 - floorf(b0 * 0.1))), [b0, bo.hp])
+	sb.end_battle(0)
+	# 佩戴者阵亡：代价停，敌方照挨星坠
+	s = _state()
+	var sd := _scroll_fight(s, "zhen", 187)
+	var dd: XActor = sd.actors[0]
+	sd.start_turn()
+	sd.start_turn()
+	dd.hp = 0.0
+	sd._die(dd)
+	var dh := dd.hp
+	var de0: float = sd.enemies[0].hp
+	sd.start_turn()
+	_check("cost_dead_stops", dd.is_dead() and dd.hp == dh and sd.enemies[0].hp < de0, [dh, dd.hp, de0, sd.enemies[0].hp])
+	sd.end_battle(0)
 
 
 ## 第一个人戴上七印书卷（直接塞实例，同 xiyou_tianqi_qiyin_effects 的 _wear）

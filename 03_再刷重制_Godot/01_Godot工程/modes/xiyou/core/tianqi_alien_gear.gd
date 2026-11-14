@@ -114,6 +114,8 @@ static func affix_view(s: XState, key: String) -> Dictionary:
 	if is_new_affix(key):
 		var n: Dictionary = data().new_affixes[key]
 		f = {"key": key, "name": key, "benefit": str(n.get("benefit", "")), "cost": str(n.get("cost", ""))}
+		if f.benefit.contains("{every}"):  # 再动间隔按实际生效的表填（回退开关关掉时文案跟着变）
+			f.benefit = f.benefit.replace("{every}", "／".join(XTianqiAlienAffix.again_every_all().map(func(x): return str(x))))
 	if s != null and XTianqiLine.open_for(s) and not f.is_empty():
 		f.name = affix_name(key)
 	return f
