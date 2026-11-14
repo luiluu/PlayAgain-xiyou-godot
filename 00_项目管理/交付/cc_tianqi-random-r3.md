@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-random-r3
 
 - 车道／工作者：C 规则·随机门面 R3／cc 车道（Opus＋high 先做规则核定、再实现；协调派单 task_8373eaab232f；方案见 `git show 12cd35586^:00_项目管理/交付/cc_save-rng-facade.md` 第 2.4、2.5、3.1、3.3 节与「协调批复」）
-- 状态：进行中
+- 状态：可合并
 
 ## 规则核定：布阵阶段取了哪几次（实现前先盘，方案 3.3 风险①）
 
@@ -76,7 +76,12 @@
 
 ## 验证
 
-（待写）
+- 规则核定探针（临时、不入库）：main 代码上天启篇四线 × 3/12/25 层 × 敌群 69、30 与西游档各一场，列 `setup()` 的 rule 取数（见「规则核定」）；改后同一探针：天启篇档 `setup()` 内 rule 取数 0、全部进 setup 流，`roll_encounter` 仍在 rule（2 次），结算段 rule 取数 0；西游档照旧在 rule。
+- 本机专项（`并行测试.py`，70 个全过）：`xiyou_tianqi_*` 全部 58 个、`xiyou_determinism`、`xiyou_random_streams`、`xiyou_battle_drop`、`xiyou_mira_abyss`、`xiyou_liuying`／`2`／`3`、`xiyou_heartsteel`、`xiyou_growth_forge`、`xiyou_guyu_battle`、`xiyou_starburst_books`、`xiyou_drop_record`。之后单跑新专项 `xiyou_tianqi_battle_seed` 50/50（掉率统计：钉住 1.80、运行时 1.75 件／场，标准误 0.052）。
+- `反向验证.py`（`xiyou_tianqi_battle_seed`）7 处改坏全部咬住：奖励不分子流、布阵不走 setup 流、孔数不按来源键、底子不用空预掷池（第一轮没咬住，补了「共享预掷池内容不影响」断言后咬住）、计数不推进、掉落不带战斗来源键。
+- `检查.sh --oracle --affected main --cloud`：云端选测 895c32b1e，569 个场景、16 片全部通过（GitHub Actions run 43634956593）；MV 参照引擎启动、西游来源／转换产物／六难度参照同源、守卫、内容覆盖、事件空绿全过。
+- `语法检查.py` 0 问题；`工具回归.py` 全过；`随机守卫.py` 60 个脚本通过；`天启篇存档登记.py` 通过（`rng` 登记进 `COUNTER_KEYS`）。
+- 交付单之后的提交只动交付单。
 
 ## 待交叉核查
 
