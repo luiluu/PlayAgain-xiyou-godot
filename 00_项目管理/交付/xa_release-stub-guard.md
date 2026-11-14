@@ -54,7 +54,8 @@
 
 - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check`：打印 7 个照搬 `return true` 警告列表，均在「已确认放行」名单内，通过（56 个脚本，460 个函数都有）。
 - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py show XTianqiSect`：核对 `intercepts` 返回 `false`、`run_event` 为 `pass`。
-- `python3 03_再刷重制_Godot/07_开发环境/测试发行空壳.py`：10 项测试全部通过。
+- `python3 03_再刷重制_Godot/07_开发环境/测试发行空壳.py`：11 项测试全部通过（含合并 `main` 保留的 `test_real_project_sect_stub`，以及 `override\w*|\w+_override`、`run_\w+` 扩展模式）。
+- 补丁：合并 `main` 解冲突并扩展拦截／接管类模式至 `override\w*|\w+_override` 与 `run_\w+`，`发行空壳.py check`（56 个脚本，471 个函数）通过。
 - `python3 03_再刷重制_Godot/07_开发环境/工具回归.py`：工具回归未在车道跑完（已通过 15/18 项，余 3 项仍在跑），请总装合并时跑。
 - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py`：通过（855 个 `.gd`，0 个问题，25 秒）。
 

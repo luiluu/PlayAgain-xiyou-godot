@@ -69,10 +69,12 @@ func _page_of(map_id: int, event_id: int) -> int:
 func _hall() -> void:
 	_tianqi_state()
 	_check("hides_two_envoys", XTianqiSect.hides(4, 16) and XTianqiSect.hides(4, 35))
+	XTianqiSect.YI = false  # 讲抽奖被动上限的使者 EV003 归包乙（xiyou_tianqi_sect_b 测）；这里只看包甲自己隐藏的
 	_check("hides_only_those", not XTianqiSect.hides(4, 3) and not XTianqiSect.hides(4, 38) and not XTianqiSect.hides(4, 39) and not XTianqiSect.hides(5, 16))
 	_check("real_ev016_no_page", _page_of(4, 16) == -1, _page_of(4, 16))
 	_check("real_ev035_no_page", _page_of(4, 35) == -1, _page_of(4, 35))
-	_check("real_ev003_kept", _page_of(4, 3) >= 0, _page_of(4, 3))  # 讲抽奖被动上限的使者归包乙
+	_check("real_ev003_kept", _page_of(4, 3) >= 0, _page_of(4, 3))
+	XTianqiSect.YI = true
 	_plain_state()
 	_check("original_ev016_shown", _page_of(4, 16) >= 0 and _page_of(4, 35) >= 0)
 	_tianqi_state()

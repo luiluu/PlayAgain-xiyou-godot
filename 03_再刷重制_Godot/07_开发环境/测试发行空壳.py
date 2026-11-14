@@ -250,17 +250,30 @@ class T(unittest.TestCase):
         finally:
             K.PROJECT = old_proj
 
+    def test_real_project_sect_stub(self):
+        real_proj = HERE.parent / '01_Godot工程'
+        old_ov = K.OVERRIDES
+        K.OVERRIDES = HERE / '发行空壳特例.json'
+        try:
+            stubs, missing, how = K.build_all(real_proj)
+            self.assertEqual(K.check_errors(missing, how), [])
+            sect_stub = next(v for k, v in stubs.items() if str(k).endswith('modes/xiyou/core/tianqi_sect.gd'))
+            self.assertIn('static func intercepts(_s, _map_id: int, _event_id: int) -> bool:\n\treturn false', sect_stub)
+            self.assertIn('static func page_override(s, map_id: int, event_id: int, pages: Array) -> Dictionary:\n\treturn {}', sect_stub)
+        finally:
+            K.OVERRIDES = old_ov
+
     def test_intercept_and_takeover_stubs_return_falsy_or_empty(self):
         # 通用护栏：全部生成的空壳里，凡「拦截／接管类」函数必须返回 false 或空／pass（防再出现 XTianqiSect.intercepts 照搬 return true）
         exact = {
-            'intercepts', 'run_event', 'handles', 'override', 'overrides',
+            'intercepts', 'handles', 'overrides',
             'hides', 'silenced', 'forced_state', 'redirect', 'infinity_block', 'reforge_locked',
-            'run_door', 'run_arrival', 'run_laoda', 'run_draw', 'run_line_choice', 'run_scale',
             'hide_affix_rate', 'skips_row', 'skips_rate',
             'no_encounter', 'no_rewards', 'no_crit', 'no_regen',
         }
-        pat = re.compile(r'^(intercept\w*|handle\w*|override\w*|blocks_\w+|\w+_blocked|hide_\w+|skips_\w+)$')
+        pat = re.compile(r'^(intercept\w*|handle\w*|override\w*|\w+_override|run_\w+|blocks_\w+|\w+_blocked|hide_\w+|skips_\w+)$')
         falsy_bodies = {'pass', 'return false', 'return null', 'return []', 'return {}', 'return ""', 'return 0', 'return 0.0'}
+        sentinels = {'XTianqiGojoTrial.run_request': 'return -1'}  # -1 表示无试炼请求
         over_saved = K.OVERRIDES
         K.OVERRIDES = self._over
         try:
@@ -285,9 +298,10 @@ class T(unittest.TestCase):
                         body.append(sub.strip())
                     break
             self.assertTrue(body, f'{k} 未找到空壳函数体')
-            self.assertIn(' ; '.join(body), falsy_bodies, f'{k} 属于拦截/接管类，空壳返回值必须为 false/空，实际为: {body}')
-        for expected in ('XTianqiSect.intercepts', 'XTianqiSummit.intercepts', 'XTianqiSummit.run_event',
-                         'XTianqiMoney.intercepts', 'XTianqiQiyin.intercepts', 'XTianqiTrim.intercepts'):
+            allowed = falsy_bodies | ({sentinels[k]} if k in sentinels else set())
+            self.assertIn(' ; '.join(body), allowed, f'{k} 属于拦截/接管类，空壳返回值必须为 false/空，实际为: {body}')
+        for expected in ('XTianqiSect.intercepts', 'XTianqiSect.page_override', 'XTianqiSummit.intercepts',
+                         'XTianqiSummit.run_event', 'XTianqiMoney.intercepts', 'XTianqiQiyin.intercepts', 'XTianqiTrim.intercepts'):
             self.assertIn(expected, checked)
 
     def test_copied_return_true_requires_allowlist_and_warns(self):

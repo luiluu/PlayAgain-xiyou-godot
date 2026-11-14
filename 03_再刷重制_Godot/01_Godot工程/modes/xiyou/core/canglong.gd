@@ -14,11 +14,14 @@ extends RefCounted
 ## 开关 REWORK＝false 后 clear_cache() 回原版数据。解放（停用、隐藏、号角）另见 XImportedBalance.RELEASE_CANGLONG。
 
 static var REWORK := true
+## O-448：10091「觉醒*苍龙」说明补明雷霆天罚*诛灭+250%（与实际备注 SkillPass10092 一致，原版漏标）
+static var FIX_10091_DESC := true
 
 const ACTOR := 146
 const CLASS := 144
 const SHANGXIE := 137
 const PASSIVE := 10089
+const AWAKEN := 10091
 const ZHUMIE := 10092
 const YUXI := 10093
 const XUELANG := 10094
@@ -48,6 +51,7 @@ const DAMAGE_TEXT := {
 	ZHUDAO: "(物攻+魔攻+幸运)*TP*1000*真龙之力",
 }
 const DRAGON_TEXT := "效果:真龙之力＝1+等级×等级×2%，独特技能伤害都乘它，不封顶"
+const AWAKEN_TEXT := "苍龙独特技能伤害+125%（雷霆天罚*诛灭+250%）"
 const _APS_TAIL := " size=18 color=rgba(255,255,255,1) line=false align=0"
 
 
@@ -56,6 +60,7 @@ static func original_data() -> void:
 	XRift.STAGE2 = false
 	XRift.clear_cache()
 	REWORK = false
+	FIX_10091_DESC = false
 	clear_cache()
 	XImportedBalance.RELEASE_CANGLONG = false
 
@@ -95,7 +100,11 @@ static func formula(a, item: Dictionary) -> float:
 
 
 static func patch_skills(t) -> void:
-	if not REWORK or not (t is Array) or t.size() <= ZHUDAO:
+	if not (t is Array):
+		return
+	if FIX_10091_DESC and t.size() > AWAKEN and t[AWAKEN] is Dictionary:
+		_set_aps(t[AWAKEN], "\\c[1]效果", AWAKEN_TEXT)
+	if not REWORK or t.size() <= ZHUDAO:
 		return
 	for id in SKILLS:
 		var s = t[id]

@@ -41,11 +41,13 @@ func setup_event(map: int, ev: Dictionary) -> void:
 
 
 func refresh() -> void:
-	var idx := -1 if erased else _find_page()
+	var hidden := erased or _is_hidden_event()
+	var ov: Dictionary = {} if hidden else XTianqiSect.page_override(XState.current, map_id, event_id, data.pages)
+	var idx: int = int(ov.index) if not ov.is_empty() else (-1 if hidden else _find_page())
 	if idx == page_index:
 		return
 	page_index = idx
-	page = data.pages[idx] if idx >= 0 else {}
+	page = ov.page if not ov.is_empty() else (data.pages[idx] if idx >= 0 else {})
 	# 换页（含消除、出现条件都不满足）：Game_Event.setupPageSettings／clearPageSettings 换掉 _interpreter，旧页的并行解释器不再更新
 	stop_parallel()
 	if page.is_empty():
@@ -84,13 +86,19 @@ func refresh() -> void:
 static var removed_events := {"148:42": true, "148:43": true}
 
 
-func _find_page() -> int:
+func _is_hidden_event() -> bool:
 	if not removed_events.is_empty() and removed_events.has("%d:%d" % [map_id, event_id]):
-		return -1
+		return true
 	if XTianqiTrim.hides(map_id, event_id):
-		return -1  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-410）
+		return true  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-410）
 	if XTianqiSect.hides(map_id, event_id):
-		return -1  # 天启篇教派连带内容：大厅两位使者等整件不出（XTianqiSect）
+		return true  # 天启篇教派连带内容：大厅两位使者等整件不出（XTianqiSect）
+	return false
+
+
+func _find_page() -> int:
+	if _is_hidden_event():
+		return -1
 	var merchant29 := str(data.get("note", "")).contains("<CodexMerchant29>")
 	for i in range(data.pages.size() - 1, -1, -1):
 		if merchant29 and i == 1 and not merchant29_present():

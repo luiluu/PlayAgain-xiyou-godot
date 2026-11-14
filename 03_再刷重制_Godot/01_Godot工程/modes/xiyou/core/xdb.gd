@@ -150,11 +150,19 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
 	if id >= t.size() and XTianqiElements.has_new(name, id):
 		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
+	if name == "Enemies" and XTianqiSect.has_enemy(XState.current, id):
+		return XTianqiSect.enemy_rec(id, t)  # 天启篇教派连带内容（包丙）：老钱／小钱及打手
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	var out: Dictionary = t[id]
+	if name == "Items" and XTianqiSect.has_item(XState.current, id):
+		out = XTianqiSect.item_rec(id, out)  # 天启篇教派连带内容（包丙）：老钱／小钱的账本
+	if name == "Troops" and XTianqiSect.has_troop(XState.current, id):
+		out = XTianqiSect.troop_rec(id, out)  # 天启篇教派连带内容（包丙）：讨债战敌群 747／766
 	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):
 		out = XTianqiTrumpet.rec(name, id, out)  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
+	if name == "Skills" and XTianqiSect.touches_skill(id):
+		out = XTianqiSect.skill_rec(id, out)  # 天启篇教派连带内容包乙：挣脱枷锁三个被动只留抽奖被动上限 +1
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	if name == "States" and XTianqiSkills.has_state(id):
