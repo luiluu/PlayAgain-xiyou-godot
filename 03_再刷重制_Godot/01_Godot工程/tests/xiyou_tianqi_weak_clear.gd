@@ -3,6 +3,7 @@ extends Node
 ## 一、全弱者打赢 36 层决战：本档资格记上、别的档没有、结算有一行、成就 142 点亮、读档后还在、读档界面标「全弱者」。
 ## 二、输了、上场有强者、助力位是强者、战斗中换进强者（行动过再换回去、中途加入又撤下没行动、换上来没行动就倒下）；成长型角色（三笠、饿狼）不管练没练、在哪个位置：不记（Kyo 11-14）。
 ## 五、战斗中断留下的跟踪：换了存档不记不收，下一次开战重置。
+## 六、出战栏写入收拢在 XState（set_battle_slot／setter），同一事件里写进又改回也记；源码里不许再直接写格子；成长型名单缺失或为空时不授予。
 ## 三、另开一档（寻常）：只记寻常，和艰险档互不影响。
 ## 四、原版弱者挑战在天启篇走不到；原版档一切照旧；开关关掉不记、成就开关关掉只记不点亮。
 
@@ -73,6 +74,8 @@ func _run() -> void:
 	await _all_weak()
 	await _not_weak()
 	await _other_difficulty()
+	_slot_write_guard()
+	await _growth_fail_closed()
 	await _legacy_and_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -173,6 +176,32 @@ func _not_weak() -> void:
 		lg.end_battle(0)
 	_check("join_then_leave_no_action", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
 		and seen_turn.get("acted") == false and not s.battle_slots.has(int(strong[0])), seen_turn)
+	# gpt 复核 P2：同一事件里 add_actor 强者→设助力槽→恢复原弱者，不过任何回合、行动、换人边界——写入那一刻记（XState.set_battle_slot）
+	s = _state("jianxian", weak.slice(0, 5))
+	var ev := {}
+	host.during = func():
+		var w: XActor = s.helper()
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))
+		XTianqi._joining = false
+		s.set_battle_slot(XTianqi.HELPER_SLOT, int(strong[0]))
+		ev["mid"] = XTianqiWeakClear._seen.has(int(strong[0]))
+		s.set_battle_slot(XTianqi.HELPER_SLOT, w.actor_id)
+	_check("same_event_slot_write", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
+		and ev.get("mid") == true and not s.battle_slots.has(int(strong[0])), ev)
+	# 整列赋值（setter）同样记：换成带强者的一列再换回
+	s = _state("jianxian", weak.slice(0, 5))
+	host.during = func():
+		var keep: Array = s.battle_slots.duplicate()
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))
+		XTianqi._joining = false
+		var bad := keep.duplicate()
+		bad[XTianqi.HELPER_SLOT] = int(strong[0])
+		s.battle_slots = bad
+		s.battle_slots = keep
+	_check("same_event_slots_assign", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s))
+	host.during = Callable()
 	# 换上来没行动就倒下、再撤走——换人那一刻记
 	s = _state("jianxian", weak.slice(0, 5))
 	var sw := {}
@@ -245,6 +274,57 @@ func _not_weak() -> void:
 	XTianqiSummit.progress(s2)["cleared"] = true
 	await XTianqiSummit.rechallenge(host, s2, 36)
 	_check("rechallenge_not_counted", not XTianqiWeakClear.has(s2))
+
+
+## gpt 复核 P2：游戏代码里给出战栏某一格写角色号只能走 XState.set_battle_slot（整列赋值走 setter）。
+## 白名单：只写 0 的（清超强者、移出）和 36 层决战里打不开的整队页（ui/party_scene.gd）。新加一处直接写就挂。
+func _slot_write_guard() -> void:
+	var allow := {
+		"res://modes/xiyou/core/xstate.gd": 1,  # set_battle_slot 本身
+		"res://modes/xiyou/ui/party_scene.gd": 6,  # 整队页：战斗里打不开
+		"res://modes/xiyou/core/imported_balance.gd": 1,  # 写 0（停用角色移出）
+	}
+	var re := RegEx.create_from_string("battle_slots\\[[^\\]]*\\]\\s*=[^=]")
+	var found := {}
+	var stack := ["res://modes/xiyou"]
+	while not stack.is_empty():
+		var dir: String = stack.pop_back()
+		for sub in DirAccess.get_directories_at(dir):
+			stack.append(dir.path_join(sub))
+		for f in DirAccess.get_files_at(dir):
+			if not f.ends_with(".gd"):
+				continue
+			var path := dir.path_join(f)
+			var n := 0
+			for line in FileAccess.get_file_as_string(path).split("\n"):
+				var code := line.split("#")[0]
+				if code.contains("battle_slots[") and re.search(code) != null:
+					n += 1
+			if n > 0:
+				found[path] = n
+	_check("slot_write_choke", found == allow, found)
+
+
+func _growth_fail_closed() -> void:
+	var host := FakeHost.new()
+	var tiers: Dictionary = XTianqiSkills.data().tiers
+	var keep: Dictionary = tiers.growth
+	XTianqiWeakClear._growth_warned = true  # 游戏里报一次 push_error；测试里先压掉（并行测试把 ERROR: 行判失败）
+	# 名单缺失
+	tiers.erase("growth")
+	var s := _state("jianxian", weak.slice(0, 5))
+	s.achievements.erase("142")
+	_check("growth_missing_closed", not XTianqiWeakClear.growth_ok() and await XTianqiWarLine.run_final(host, s) == 0
+		and not XTianqiWeakClear.has(s) and not s.achievements.has("142") and not host.said.any(func(t): return str(t).contains("全弱者通关")))
+	# 名单为空
+	tiers["growth"] = {}
+	s = _state("jianxian", weak.slice(0, 5))
+	s.achievements.erase("142")
+	_check("growth_empty_closed", not XTianqiWeakClear.growth_ok() and await XTianqiWarLine.run_final(host, s) == 0
+		and not XTianqiWeakClear.has(s) and not s.achievements.has("142"))
+	tiers["growth"] = keep
+	s = _state("jianxian", weak.slice(0, 5))
+	_check("growth_restored_records", XTianqiWeakClear.growth_ok() and await XTianqiWarLine.run_final(host, s) == 0 and XTianqiWeakClear.has(s))
 
 
 func _other_difficulty() -> void:

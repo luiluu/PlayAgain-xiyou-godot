@@ -3,10 +3,12 @@ extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇全弱者通关资格（天启篇设计总览 v0.2 第二节 3「全弱者通关资格跟本档走，奖励另行标定」，Kyo 11-08；
 ## 对重制内容影响审查 v0.6 第 245、268 行：原版弱者挑战在天启篇作废，换成「全弱者通关 36 层」）。
 ## - 判定（Kyo 11-14 定，默认口径）：36 层决战（XTianqiLine.run_final）打赢时，这一场出现过的我方角色全是弱者档才记。
-##   「出现过」＝开战前、每回合开头、每次行动开头、天启篇换人、战斗中入队（XState.add_actor）、结束时出战栏 5 格（上场＋助力位）
-##   里的角色，加上行动者——中途加入又撤下、换上来没行动就倒下的都接住（gpt 甲档核查 P2）。
+##   「出现过」＝出战栏 5 格（上场＋助力位）里出现过的角色和行动者。出战栏的写入收拢在 XState：整列赋值走 battle_slots 的 setter，
+##   单格写入走 set_battle_slot，写入那一刻就记（同一事件里写进又改回也接得住，gpt 复核 P2）；开战前、每回合开头、每次行动开头、
+##   结束时再各扫一次出战栏，作兜底。
 ##   档位读 XTianqiSkills.battle_tier（五条悟照天启篇表），每次见到时按当时档位记，见到一次不是弱者就一直不算。
 ##   成长型角色（数值表 tiers.growth，现在是三笠 95、饿狼 173）不管练没练一律不算弱者（Kyo 11-14 定）；只管这里，别处档位、弱者光环照旧。
+##   名单读不到或为空时失败即关闭：一律不授予（growth_ok，报一次错）。
 ## - 跟踪绑定存档（_state）：战斗中断没走到 finish 时，下一次 begin 重置；换了存档不记也不能收。
 ## - 记在存档 flags.tianqi.weak_clear：{本档难度 key: {"line": 线, "members": [角色号]}}，跟本档走（一份存档只有一档难度）。
 ## - 只认 36 层首通路线（run_final；之后从门再打 36 层也算）；大厅再挑战（XTianqiSummit.rechallenge 36，不记通关）不算。
@@ -33,9 +35,29 @@ static func on(s) -> bool:
 	return ENABLED and s is XState and XTianqi.active(s)
 
 
-## 成长型角色（skill_rework.json tiers.growth：三笠 95 按锻炼、饿狼 173 按进阶变档）：全弱者判定里一律不算弱者（Kyo 11-14）
+## 成长型角色名单（skill_rework.json tiers.growth：三笠 95 按锻炼、饿狼 173 按进阶变档）；读不到或不是非空字典返回 {}
+static func growth_table() -> Dictionary:
+	var t = XTianqiSkills.data().get("tiers", {})
+	var g = t.get("growth") if t is Dictionary else null
+	return g if g is Dictionary else {}
+
+
+## 成长型角色：全弱者判定里一律不算弱者（Kyo 11-14）
 static func is_growth(id: int) -> bool:
-	return XTianqiSkills.data().get("tiers", {}).get("growth", {}).has(str(id))
+	return growth_table().has(str(id))
+
+
+static var _growth_warned := false
+
+
+## 成长型名单读得到且非空；读不到（缺失、为空）就失败即关闭：不授予资格、不点亮成就，报一次错（gpt 复核 P2）
+static func growth_ok() -> bool:
+	if not growth_table().is_empty():
+		return true
+	if not _growth_warned:
+		_growth_warned = true
+		push_error("XTianqiWeakClear: skill_rework.json tiers.growth 读不到或为空，全弱者通关资格不授予")
+	return false
 
 
 static func is_weak(id: int, s: XState) -> bool:
@@ -60,13 +82,19 @@ static func _note(id: int, s: XState) -> void:
 
 
 ## 出战栏 5 格（上场＋助力位）里在队的都记下；直接读栏位，不调 battle_members（那个会清超强者，有副作用）。
-## 时机：开战前、XBattleLogic 每回合开头和每次行动开头、天启篇换人、XState.add_actor（战斗中入队）、结束时
+## 时机：XState.battle_slots 整列赋值（setter）；兜底：开战前、XBattleLogic 每回合开头和每次行动开头、天启篇换人、结束时
 static func note_slots(s) -> void:
 	if not _live(s):
 		return
 	for id in s.battle_slots:
 		if int(id) > 0 and s.party.has(int(id)):
 			_note(int(id), s)
+
+
+## XState.set_battle_slot 写入一格之后：写进来的在队角色记下
+static func note_slot_id(s, id: int) -> void:
+	if _live(s) and id > 0 and s.party.has(id):
+		_note(id, s)
 
 
 ## XBattleLogic 行动开头：行动的我方角色＋此刻出战栏
@@ -85,6 +113,8 @@ static func eligible(s: XState) -> bool:
 	if not _live(s) or not on(s):
 		return false
 	note_slots(s)
+	if not growth_ok():
+		return false
 	return not _seen.is_empty() and _seen.keys().all(func(id): return bool(_seen[id]) and is_weak(int(id), s))
 
 

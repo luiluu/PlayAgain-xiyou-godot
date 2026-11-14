@@ -1102,9 +1102,9 @@ func tianqi_swap(out: XActor) -> XActor:
 	_acted[h] = _acted.get(out, 0)
 	_speed[h] = _speed.get(out, h.agi)
 	var si := state.battle_slots.find(out.actor_id)
-	state.battle_slots[XTianqi.HELPER_SLOT] = out.actor_id
+	state.set_battle_slot(XTianqi.HELPER_SLOT, out.actor_id)
 	if si >= 0:
-		state.battle_slots[si] = h.actor_id
+		state.set_battle_slot(si, h.actor_id)
 	h.param_mark_dirty()
 	h.param_refresh()
 	if XTianqi.SWAP_INIT:
