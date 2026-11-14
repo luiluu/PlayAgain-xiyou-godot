@@ -35,6 +35,9 @@ static var _data: Dictionary = {}
 static var _load_failed := false
 static var _recs: Dictionary = {}
 static var _synthetic: Dictionary = {}
+static var _knight_clamp_warned := false
+static var _silence_knight_clamp_error := false
+static var _last_knight_clamp_error := ""
 
 
 # ---- 数据与开关 ----
@@ -58,6 +61,8 @@ static func reload() -> void:
 	_load_failed = false
 	_recs = {}
 	_synthetic = {}
+	_knight_clamp_warned = false
+	_last_knight_clamp_error = ""
 
 
 static func on(s = null) -> bool:
@@ -368,11 +373,37 @@ static func fixed_deal(s: XState, key: String, phase := 1) -> Dictionary:
 	return dealt
 
 
-static func _knight_needs_redeal(fixed: Dictionary) -> bool:
+## 读取并校验骑士三阶段牌组配置：基础十系下，单类上限为 5（超 5 无法保证相邻阶段不重复），
+## 且单阶段总数上限为 10（超 10 无法做到同阶段互不重复）。超容时按上限夹紧并 push_error 一次，
+## 确保发牌与 _knight_needs_redeal 使用同一夹紧口径，避免少发及读档反复重发。
+static func _knight_spec() -> Dictionary:
 	var spec: Dictionary = data().get("fixed_entries", {}).get("knight", {})
-	var nw := int(spec.get("weak", 2))
-	var nr := int(spec.get("resist", 2))
-	var ni := int(spec.get("immune", 1))
+	var raw_nw := int(spec.get("weak", 2))
+	var raw_nr := int(spec.get("resist", 2))
+	var raw_ni := int(spec.get("immune", 1))
+	var max_per_kind := BASE_ELEMENTS.size() / 2  # 10 / 2 = 5
+	var nw := clampi(raw_nw, 0, max_per_kind)
+	var nr := clampi(raw_nr, 0, max_per_kind)
+	var ni := clampi(raw_ni, 0, max_per_kind)
+	var cap := BASE_ELEMENTS.size()
+	nw = mini(nw, cap)
+	cap -= nw
+	nr = mini(nr, cap)
+	cap -= nr
+	ni = mini(ni, cap)
+	if (nw != raw_nw or nr != raw_nr or ni != raw_ni) and not _knight_clamp_warned:
+		_knight_clamp_warned = true
+		_last_knight_clamp_error = "XTianqiElements: knight 配置超容 (weak=%d, resist=%d, immune=%d)，已夹紧为 (%d, %d, %d)" % [raw_nw, raw_nr, raw_ni, nw, nr, ni]
+		if not _silence_knight_clamp_error:
+			push_error(_last_knight_clamp_error)
+	return {"weak": nw, "resist": nr, "immune": ni}
+
+
+static func _knight_needs_redeal(fixed: Dictionary) -> bool:
+	var spec := _knight_spec()
+	var nw := int(spec.weak)
+	var nr := int(spec.resist)
+	var ni := int(spec.immune)
 	for p in range(1, 4):
 		var k := "knight:%d" % p
 		if not fixed.has(k) or not (fixed[k] is Dictionary):
@@ -388,13 +419,14 @@ static func _knight_needs_redeal(fixed: Dictionary) -> bool:
 
 
 static func _deal_knight(_s: XState, st: Dictionary) -> void:
-	var spec: Dictionary = data().get("fixed_entries", {}).get("knight", {})
-	var nw := int(spec.get("weak", 2))
-	var nr := int(spec.get("resist", 2))
-	var ni := int(spec.get("immune", 1))
+	var spec := _knight_spec()
+	var nw := int(spec.weak)
+	var nr := int(spec.resist)
+	var ni := int(spec.immune)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = ("%d|knight" % int(st.get("seed", 1))).hash()
-	# 三阶段（P1/P2/P3）尽量各自在弱、抗、免三组内全不重复；若配置超容则退化为至少相邻阶段不重复
+	# 配置已在 _knight_spec() 校验并夹紧（单类 <= 5，单阶段总数 <= 10），不进入超容退化分支；
+	# 三阶段（P1/P2/P3）尽量各自在弱、抗、免三组内全不重复，且至少保证相邻阶段不重复。
 	var used_w := []
 	var used_r := []
 	var used_i := []

@@ -196,18 +196,112 @@ func _test_fixed_and_alien() -> void:
 		if JSON.stringify(a_d.weak) != JSON.stringify(b_d.weak) or JSON.stringify(a_d.resist) != JSON.stringify(b_d.resist) or JSON.stringify(a_d.immune) != JSON.stringify(b_d.immune):
 			same_ok = false
 	_check("knight_same_seed_reload_unchanged", same_ok)
+	# 真实 XSave 存盘/读档：含旧 1 弱点骑士牌组的老档 → 读回迁移成 2 弱 → 再存再读不变 → 非骑士条目一字不变
+	var prev_save_dir := XSave.dir_override
+	var prev_state := XState.current
+	var test_save_dir := OS.get_user_data_dir().path_join("test_tianqi_elements_%d" % OS.get_process_id())
+	DirAccess.make_dir_recursive_absolute(test_save_dir)
+	XSave.dir_override = test_save_dir
 	var s_legacy := _tq_state()
 	XTianqiElements.ensure_deck(s_legacy, 99911)
+	XTianqiElements.fixed_deal(s_legacy, "hongjun")
+	XTianqiElements.fixed_deal(s_legacy, "yingzi")
+	XTianqiElements.fixed_deal(s_legacy, "dungeon_boss:1")
+	var pre_floors := JSON.stringify(s_legacy.flags.tianqi.elements.floors)
+	var pre_hj := JSON.stringify(s_legacy.flags.tianqi.elements.fixed["hongjun"])
+	var pre_yz := JSON.stringify(s_legacy.flags.tianqi.elements.fixed["yingzi"])
+	var pre_db := JSON.stringify(s_legacy.flags.tianqi.elements.fixed["dungeon_boss:1"])
 	s_legacy.flags.tianqi.elements.fixed["knight:1"] = {"weak": [2], "resist": [3, 4], "immune": [5]}
 	s_legacy.flags.tianqi.elements.fixed["knight:2"] = {"weak": [6], "resist": [7, 8], "immune": [9]}
 	s_legacy.flags.tianqi.elements.fixed["knight:3"] = {"weak": [14], "resist": [15, 2], "immune": [3]}
-	var legacy_redeal_ok := true
+	XState.current = s_legacy
+	var saved_1 := XSave.save(1)
+	XState.current = _tq_state()
+	var loaded_1 := XSave.load_slot(1)
+	var s_after1 := XState.current
+	var kn_after1 := []
+	var migrated_2w := true
 	for ph in range(1, 4):
-		var a_l := XTianqiElements.fixed_deal(s_legacy, "knight", ph)
-		var b_l := XTianqiElements.fixed_deal(s, "knight", ph)
-		if JSON.stringify(a_l.weak) != JSON.stringify(b_l.weak) or JSON.stringify(a_l.resist) != JSON.stringify(b_l.resist) or JSON.stringify(a_l.immune) != JSON.stringify(b_l.immune):
-			legacy_redeal_ok = false
-	_check("knight_legacy_1w_save_redeals_deterministically", legacy_redeal_ok)
+		var d1 := XTianqiElements.fixed_deal(s_after1, "knight", ph)
+		if d1.weak.size() != 2 or d1.resist.size() != 2 or d1.immune.size() != 1:
+			migrated_2w = false
+		kn_after1.append(JSON.stringify({"weak": d1.weak, "resist": d1.resist, "immune": d1.immune}))
+	var saved_2 := XSave.save(1)
+	XState.current = _tq_state()
+	var loaded_2 := XSave.load_slot(1)
+	var s_after2 := XState.current
+	var kn_after2 := []
+	for ph in range(1, 4):
+		var d2 := XTianqiElements.fixed_deal(s_after2, "knight", ph)
+		kn_after2.append(JSON.stringify({"weak": d2.weak, "resist": d2.resist, "immune": d2.immune}))
+	XTianqiElements.ensure_deck(s_after2)
+	var post_hj := JSON.stringify(XTianqiElements.fixed_deal(s_after2, "hongjun"))
+	var post_yz := JSON.stringify(XTianqiElements.fixed_deal(s_after2, "yingzi"))
+	var post_db := JSON.stringify(XTianqiElements.fixed_deal(s_after2, "dungeon_boss:1"))
+	var non_knight_unchanged := (
+		JSON.stringify(s_after2.flags.tianqi.elements.floors) == pre_floors
+		and post_hj == pre_hj
+		and post_yz == pre_yz
+		and post_db == pre_db
+	)
+	_check("knight_legacy_1w_save_redeals_deterministically",
+		saved_1 and loaded_1 and saved_2 and loaded_2 and migrated_2w
+		and JSON.stringify(kn_after1) == JSON.stringify(kn_after2)
+		and non_knight_unchanged,
+		[saved_1, loaded_1, saved_2, loaded_2, migrated_2w, non_knight_unchanged])
+	# 骑士战进行中（已进第 2 阶段）存档再读，第 2 阶段牌组不变
+	var p2_before := JSON.stringify(XTianqiElements.fixed_deal(s_after2, "knight", 2))
+	var saved_p2 := XSave.save(2)
+	XState.current = _tq_state()
+	var loaded_p2 := XSave.load_slot(2)
+	var lg_p2 := XBattleLogic.new()
+	lg_p2.setup(2, XState.current)
+	var kn_p2 := XEnemy.new()
+	kn_p2.setup(1, 3)
+	kn_p2.horseman = {"rec": {"_ref": ""}, "knight": true}
+	lg_p2.set_meta(XTianqiHorsemen.META, {"mode": "body", "phase": 2})
+	var p2_prof := XTianqiElements.enemy_profile(kn_p2, lg_p2, XState.current)
+	var p2_after := JSON.stringify({"weak": p2_prof.weak, "resist": p2_prof.resist, "immune": p2_prof.immune})
+	_check("knight_phase2_save_reload_unchanged",
+		saved_p2 and loaded_p2 and p2_before == p2_after, [p2_before, p2_after])
+	# 超容配置边界：单类 >5 且单阶段总数 >10 → 夹紧到 (5,4,1) 并 push_error 一次，能正常发满且读档不反复重发
+	var orig_knight_spec: Dictionary = XTianqiElements.data()["fixed_entries"]["knight"].duplicate()
+	XTianqiElements.data()["fixed_entries"]["knight"] = {"floor": 36, "weak": 6, "resist": 4, "immune": 2, "phases": 3, "constitutions": []}
+	XTianqiElements._knight_clamp_warned = false
+	XTianqiElements._last_knight_clamp_error = ""
+	XTianqiElements._silence_knight_clamp_error = true
+	var clamp_spec := XTianqiElements._knight_spec()
+	var s_over := _tq_state()
+	XTianqiElements.ensure_deck(s_over, 88811)
+	var over_ok := int(clamp_spec.weak) == 5 and int(clamp_spec.resist) == 4 and int(clamp_spec.immune) == 1 and XTianqiElements._knight_clamp_warned and XTianqiElements._last_knight_clamp_error.contains("已夹紧为 (5, 4, 1)")
+	var over_p := []
+	for ph in range(1, 4):
+		var od := XTianqiElements.fixed_deal(s_over, "knight", ph)
+		if od.weak.size() != 5 or od.resist.size() != 4 or od.immune.size() != 1:
+			over_ok = false
+		over_p.append(JSON.stringify(od))
+	XState.current = s_over
+	var saved_over := XSave.save(3)
+	XState.current = _tq_state()
+	var loaded_over := XSave.load_slot(3)
+	var over_redeal_needed := XTianqiElements._knight_needs_redeal(XState.current.flags.tianqi.elements.fixed)
+	var over_p_after := []
+	for ph in range(1, 4):
+		over_p_after.append(JSON.stringify(XTianqiElements.fixed_deal(XState.current, "knight", ph)))
+	XTianqiElements.data()["fixed_entries"]["knight"] = orig_knight_spec
+	XTianqiElements._silence_knight_clamp_error = false
+	XTianqiElements.reload()
+	_check("knight_oversized_spec_clamped_and_no_redeal",
+		over_ok and saved_over and loaded_over and not over_redeal_needed
+		and JSON.stringify(over_p) == JSON.stringify(over_p_after),
+		[clamp_spec, over_ok, over_redeal_needed])
+	for i in range(1, 4):
+		XSave.remove(i)
+	for f in DirAccess.get_files_at(test_save_dir):
+		DirAccess.remove_absolute(test_save_dir.path_join(f))
+	DirAccess.remove_absolute(test_save_dir)
+	XSave.dir_override = prev_save_dir
+	XState.current = prev_state
 	# 里副本 Boss vs 精英；普通怪
 	var qb := XEnemy.new()
 	qb.setup(1, 3)

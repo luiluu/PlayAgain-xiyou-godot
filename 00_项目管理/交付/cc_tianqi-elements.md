@@ -71,10 +71,11 @@
 
 - **改动内容**：
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/elements_table.json`：`fixed_entries.knight.weak` 由 `1` 改为 `2`。
-  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_elements.gd`：`_deal_knight` 缺省值改为 `2`，新增 `_deal_knight_phase`、`_pick_from_pool` 与 `_knight_needs_redeal`。在基础十系与每阶段 2 弱／2 抗／1 免的约束下，**三阶段做到弱点 6 系全不重复、抗性 6 系全不重复、免疫 3 系全不重复，且同一阶段内弱／抗／免 5 系互不重复**（代码同时保留若未来配置超容时退化为至少相邻阶段不重复的保底逻辑）。仍由存档 `seed` 确定性派生，不用全局随机。
+  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_elements.gd`：`_deal_knight` 缺省值改为 `2`，新增 `_knight_spec`、`_deal_knight_phase`、`_pick_from_pool` 与 `_knight_needs_redeal`。`_knight_spec` 在读配置时校验：单类上限 5、单阶段总数上限 10，超容时按上限夹紧并 `push_error` 一次（不进入超容退化分支），发牌与 `_knight_needs_redeal` 共用同一夹紧口径。在基础十系与每阶段 2 弱／2 抗／1 免的约束下，**三阶段做到弱点 6 系全不重复、抗性 6 系全不重复、免疫 3 系全不重复，且同一阶段内弱／抗／免 5 系互不重复**。仍由存档 `seed` 确定性派生，不用全局随机。
   - 首领面板（`boss_status_panel.gd`）与换阶段提示（`on_horsemen_phase`）均走 `format_profile_line`，无写死「1 个弱点」处，无需改动。
-  - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_elements.gd`：更新 `knight_3_phases_2w_2r_1i_no_repeat_weak`，新增 `knight_same_seed_reload_unchanged`、`knight_legacy_1w_save_redeals_deterministically`。
-- **老存档处理**：`fixed_deal(..., "knight")` 通过 `_knight_needs_redeal` 检查 `knight:1..3` 的弱／抗／免数量是否符合当前配置（2/2/1）。若已有存档里存的是按旧规则掷好的 1 弱点牌组，读取时自动用原存档 `seed` 确定性重掷为 2 弱点并写回 `st.fixed`；重掷后规格匹配，后续读档保持不变。
+  - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_elements.gd`：更新 `knight_3_phases_2w_2r_1i_no_repeat_weak`，新增同种子重读不变、`XSave` 真实存盘读回迁移与再存再读不变（含非骑士条目一字不变）、骑士战第 2 阶段存档再读不变、超容配置夹紧边界断言（57/57）。
+- **老存档处理**：`fixed_deal(..., "knight")` 通过 `_knight_needs_redeal` 检查 `knight:1..3` 的弱／抗／免数量是否符合当前配置（2/2/1）。若已有存档里存的是按旧规则掷好的 1 弱点牌组，读取时自动用原存档 `seed` 确定性重掷为 2 弱点并写回 `st.fixed`；重掷后规格匹配，后续读档保持不变，1～33 层与鸿钧／影子／里副本首领条目一字不变。
+- **P3 复核补完（gpt 复核 9e3bbbe4d 后）**：补齐 `XSave` 真实存盘读回迁移/二期存档不变测试与 `_knight_spec` 超容配置夹紧校验（单类 >5 或总数 >10 时按上限夹紧并 `push_error` 一次）及边界断言，专项 57/57、语法检查与工具回归 18 项均过。
 - **测试结果**：
   - `xiyou_tianqi_elements.tscn`：55/55 通过；`xiyou_boss_status.tscn`：57/57 通过；`xiyou_fabao_rework.tscn`：86/86 通过；`xiyou_event_compare.tscn`（14/14）及 `_b/_c/_d`（各 6/6）全过。
   - `语法检查.py`（842 个 `.gd`，0 问题）、`天启篇数据校验.py`、`发行空壳.py check`、`工具回归.py`（18 项）、`反向验证.py`（2 项均咬住）全部通过。
