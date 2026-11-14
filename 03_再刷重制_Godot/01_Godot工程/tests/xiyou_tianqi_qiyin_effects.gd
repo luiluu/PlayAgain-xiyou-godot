@@ -103,6 +103,7 @@ func _run() -> void:
 	_damage()
 	_cost_hp()
 	_actions()
+	_burst_views()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -344,3 +345,26 @@ func _switches() -> void:
 	_fresh(lg3)
 	_check("legacy_no_store", not lg3.has_meta("xqiyin"))
 	_check("legacy_cost_unchanged", XTianqiQiyinEffects.cost_mult(b, _hit()) == 1.0)
+
+
+## 评审 v0.1 第 8 条（gpt 核查返修）：攒段横扫多段打同一目标，走整次行动时每段命中的画面快照是那一段打完的血量
+func _burst_views() -> void:
+	var lg := _logic()
+	var u: XActor = lg.actors[0]
+	_wear(u, [{"kind": "weapon", "seal": "mo", "key": "buliwenzi", "unique": "zhige"}])
+	_fresh(lg)
+	var e: XEnemy = lg.enemies[0]
+	for x in lg.enemies:
+		x.recover_all()
+		x.shield = 0.0
+	XTianqiQiyinEffects._unit(lg, u).burst = 1
+	lg.current_order.clear()
+	var logs := lg.act(u, u.attack_skill(), e)
+	var hits := logs.filter(func(l): return l is Dictionary and l.get("type") == "hit" and is_same(l.get("target"), e) and float(l.get("hp", 0.0)) > 0.0)
+	var hps := hits.map(func(l): return float(l.get("views", {}).get(e, {}).get("hp", -1.0)))
+	var down := hps.size() >= 3 and not hps.has(-1.0)
+	for i in range(1, hps.size()):
+		down = down and hps[i] < hps[i - 1]
+	_check("review8_burst_views_each_hit", down, hps)
+	_check("review8_burst_first_not_final", hps.size() >= 2 and hps[0] > e.hp, [hps, e.hp])
+	lg.end_battle(0)

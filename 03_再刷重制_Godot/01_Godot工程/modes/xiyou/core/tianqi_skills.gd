@@ -1417,7 +1417,7 @@ static func end_action(logic, u, skill) -> Array:
 	follow_scale = float(hit[2])
 	for t in targets:
 		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
-		logs.append(logic.apply(u, cast, t))
+		logs.append_array(logic.mark_views([logic.apply(u, cast, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 	follow_scale = 1.0
 	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
 	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
@@ -1429,7 +1429,7 @@ static func end_action(logic, u, skill) -> Array:
 		var left: Array = logic.alive(logic.enemies) if on_kill else targets.filter(func(t): return t.is_alive())
 		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
 			logs.append({"type": "action", "user": u, "skill": nxt, "views": logic.views()})
-			logs.append(logic.apply(u, nxt, left[0]))
+			logs.append_array(logic.mark_views([logic.apply(u, nxt, left[0])]))
 	st.depth = int(st.depth) - 1
 	return logs
 
