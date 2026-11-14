@@ -14,7 +14,7 @@
   2. 真脚本第一句是 `if …: return <参数名或字面量>`：照搬那个返回值（关着时原样返回、返回 1.0／false 之类）；
   3. 按返回类型给空值：bool→false、int→0、float→0.0、String→""、Array→[]、Dictionary→{}、Color→透明、其余→null。
 常量和 static var：数字、布尔照留（不透露设计），字符串→""，数组→[]，字典→{}，其余表达式→特例表或 null。
-验收：发行模式（ReleaseEntry.simulate_release）下真脚本和空壳各跑一遍西游测试，结果一致（见 发行空壳验收.py）。
+验收：发行模式（ReleaseEntry.simulate_release 改 true）下真脚本工程和空壳工程各跑一遍西游测试，PASS/FAIL 行一致（开发模式下天启篇开着，两边本来就不同，不能拿来比）。
 新加天启篇脚本被西游代码引用：check 会列出缺的成员，照真脚本发行时的行为加进特例表或确认默认值对。
 """
 import json
@@ -27,12 +27,30 @@ import sys
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent / '01_Godot工程'
 OVERRIDES = HERE / '发行空壳特例.json'
-CLASS_RE = re.compile(r'^class_name (X(?:Tianqi\w*|RiftAlien))\b', re.M)
+CLASS_RE = re.compile(r'^class_name (\w+)\b', re.M)
+PREFIX_RE = re.compile(r'^X(?:Tianqi\w*|RiftAlien)$')  # 天启篇模块按惯例的类名
+# 类名不带天启篇前缀、但整份只在天启篇用的脚本（显式名单；cc 11-14 release-stub-gojo：XGojo 曾漏在名单外）
+EXTRA = {
+    'XGojo',            # 五条悟 180（只在天启篇，modes/xiyou/core/gojo.gd）
+    'XGuardianRework',  # 守层者按新成长重算（只管天启篇存档）
+}
 KEEP = {'XTianqiTitle'}  # 发行包要用的真脚本（标题画面）：不换
 SCAN_DIRS = ('modes', 'core', 'scenes', 'addons')
 MARK = '## 发行空壳'
+# 编进包里也认得出的空壳标记（注释导出时会去掉，字符串常量不会）：发行内容审计.py 解开包里的 .gdc 找它
+STUB_TAG = 'xiyou-release-stub-v1'
+STUB_TAG_LINE = f'const _RELEASE_STUB := "{STUB_TAG}"'
+# 天启篇专属的迹象（suspects 用）：文件名、头注释里的说法
+SUSPECT_NAME = re.compile(r'tianqi|gojo|qiyin|horsem', re.I)
+SUSPECT_HEAD = re.compile(r'只在天启篇|只管天启篇|只进天启篇|天启篇专属|只用于天启篇')
+# 有迹象、但确认是西游也要用的真脚本（路径 → 理由）；加这里要写清为什么能带真脚本进包
+MIXED_OK = {
+    'modes/xiyou/ui/tianqi_title.gd': '标题画面，发行包要用（KEEP）',
+    'modes/xiyou/core/xdb.gd': '数据库总表；只有 content/gojo 贴图路径一行，图在 DENY 里不进包',
+}
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
+PASSTHRU = set()  # 返回字典／数组、真脚本会原样传回同类型参数的成员（如消耗表 c）：按类型给空值会把参数吞掉，check 要求写特例
 
 
 def _strip_comment(line: str) -> str:
@@ -58,7 +76,7 @@ def targets(root: Path = PROJECT) -> dict:
     for d in ('modes',):
         for p in sorted((root / d).rglob('*.gd')):
             m = CLASS_RE.search(p.read_text(encoding='utf-8'))
-            if m and m.group(1) not in KEEP:
+            if m and (PREFIX_RE.match(m.group(1)) or m.group(1) in EXTRA) and m.group(1) not in KEEP:
                 out[m.group(1)] = p.relative_to(root)
     return out
 
@@ -232,7 +250,7 @@ def var_value(cls: str, name: str, v: dict, over: dict) -> str:
 def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> tuple:
     """返回 (空壳源码, 缺的成员, 每个函数的来历)。"""
     info = parse((root / path).read_text(encoding='utf-8'))
-    out = [f'class_name {cls}', f'extends {info["extends"]}', f'{MARK}：发行包里天启篇没开放，这里只留西游代码用到的名字（07_开发环境/发行空壳.py 生成）。', '']
+    out = [f'class_name {cls}', f'extends {info["extends"]}', f'{MARK}：发行包里天启篇没开放，这里只留西游代码用到的名字（07_开发环境/发行空壳.py 生成）。', STUB_TAG_LINE, '']
     node = info['extends'] not in ('RefCounted', 'Object', 'Resource')
     out += info['signals']
     missing, how = [], {}
@@ -241,6 +259,8 @@ def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> t
         want |= {n for n in info['funcs'] if not n.startswith('_')} | {n for n, v in info['vars'].items() if not n.startswith('_') and v['kind'] == 'var'}
     if '_init' in info['funcs']:
         want.add('_init')
+    # 特例表里写了的成员也留（西游代码没用到、但发行验收要跑的西游测试读它，如 XGojo.ENABLED）
+    want |= {k.split('.', 1)[1] for k in over if k.startswith(cls + '.') and k.split('.', 1)[1] in info['vars'] | info['funcs'].keys()}
     for n in sorted(want):
         if n in info['vars']:
             v = info['vars'][n]
@@ -274,8 +294,18 @@ def load_overrides() -> dict:
     return {k: v for k, v in d.items() if not k.startswith('_')}
 
 
+def _passes_through(f: dict) -> bool:
+    """返回 Dictionary／Array，函数体里有「return … 参数」（含 `… else 参数`）且该参数同类型。"""
+    base = f['ret'].split('[')[0]
+    if base not in ('Dictionary', 'Array'):
+        return False
+    same = [n for n, t in re.findall(r'(\w+)\s*:\s*([\w\[\]]+)', f['params']) if t.split('[')[0] == base]
+    return any(re.search(r'^return\b.*\b' + n + r'\s*$', ln) for n in same for ln in f['body'])
+
+
 def build_all(root: Path = PROJECT) -> tuple:
     NUMERIC.clear()
+    PASSTHRU.clear()
     tg = targets(root)
     refs = external_refs(root, tg)
     over = load_overrides()
@@ -286,6 +316,8 @@ def build_all(root: Path = PROJECT) -> tuple:
             info = parse(s)
             stubs[p] = s
             missing += [f'{c}.{m}' for m in refs[c] if m not in info['funcs'] and m not in info['vars'] and m not in ('new',)]
+            if STUB_TAG not in s:
+                missing.append(f'{c}.{STUB_TAG_LINE}（手写空壳要带这行，发行内容审计靠它认空壳）')
             how.update({f'{c}.{k}': '手写' for k in info['funcs']})
             continue
         s, miss, h = stub(c, p, refs[c], over, root)
@@ -294,17 +326,74 @@ def build_all(root: Path = PROJECT) -> tuple:
         how.update({f'{c}.{k}': v for k, v in h.items()})
         info = parse((root / p).read_text(encoding='utf-8'))
         NUMERIC.update(f'{c}.{k}' for k in h if info['funcs'][k]['ret'] in ('int', 'float'))
+        PASSTHRU.update(f'{c}.{k}' for k in h if _passes_through(info['funcs'][k]))
     return stubs, missing, how
 
 
-def check_errors(missing: list, how: dict) -> list:
+def _literal_paths(src: str) -> list:
+    """代码（不算注释）里的 res:// 路径字面量。"""
+    out = []
+    for line in src.splitlines():
+        if line.lstrip().startswith('#'):
+            continue
+        out += re.findall(r'"res://([^"%]+)', _strip_comment(line))
+    return out
+
+
+def suspects(root: Path = PROJECT, tg: dict = None) -> list:
+    """看着是天启篇专属、却既不换空壳也不在 MIXED_OK 的脚本：[(路径, 理由)]。空＝都归了类。
+    迹象：文件名带 tianqi／gojo／qiyin／horsem；头注释（第一段代码前）说只在／只管／只进天启篇；
+    代码里有指向没发行内容（发行内容审计.DENY）的 res:// 路径。"""
+    tg = targets(root) if tg is None else tg
+    done = {str(p) for p in tg.values()}
+    try:
+        import importlib.util
+        sp = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
+        audit = importlib.util.module_from_spec(sp)
+        sp.loader.exec_module(audit)
+        denied = audit.denied
+    except Exception:  # noqa: BLE001
+        denied = lambda _p: False  # noqa: E731
+    out = []
+    for d in SCAN_DIRS:
+        base = root / d
+        if not base.exists():
+            continue
+        for p in sorted(base.rglob('*.gd')):
+            rel = str(p.relative_to(root))
+            if rel in done or rel in MIXED_OK or rel.startswith(('tests/', '.godot/')):
+                continue
+            src = p.read_text(encoding='utf-8', errors='replace')
+            head = []
+            for ln in src.splitlines():
+                if ln.startswith('#') or ln.startswith('class_name') or ln.startswith('extends') or not ln.strip():
+                    head.append(ln)
+                    continue
+                break
+            why = []
+            if SUSPECT_NAME.search(p.name):
+                why.append('文件名')
+            if SUSPECT_HEAD.search('\n'.join(head)):
+                why.append('头注释说只在天启篇')
+            bad = [x for x in _literal_paths(src) if denied(x)]
+            if bad:
+                why.append('引用没发行内容 ' + bad[0])
+            if why:
+                out.append((rel, '、'.join(why)))
+    return out
+
+
+def check_errors(missing: list, how: dict, sus: list = None) -> list:
     errs = []
+    if sus:
+        errs.append('发行空壳：这些脚本像是天启篇专属，却既不换空壳也没登记成西游要用（发行空壳.py 的 EXTRA 或 MIXED_OK 二选一）：'
+                    + '；'.join(f'{p}（{w}）' for p, w in sus))
     if missing:
         errs.append('发行空壳缺成员：' + '、'.join(missing))
     # 返回数字的函数按类型给 0 多半不对（倍率该是 1、次数该原样返回）：要在特例表里明确写
-    guess = [k for k, v in how.items() if v == '按类型空值' and k in NUMERIC]
+    guess = [k for k, v in how.items() if v == '按类型空值' and (k in NUMERIC or k in PASSTHRU)]
     if guess:
-        errs.append('发行空壳：这些返回数字的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
+        errs.append('发行空壳：这些返回数字（或原样传回参数）的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
     return errs
 
 
@@ -313,7 +402,7 @@ def make_tree(out: Path) -> Path:
     if out.exists():
         raise SystemExit(f'{out} 已存在')
     stubs, missing, how = build_all(PROJECT)
-    errs = check_errors(missing, how)
+    errs = check_errors(missing, how, suspects(PROJECT))
     if errs:
         raise SystemExit('\n'.join(errs))
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -326,8 +415,13 @@ def make_tree(out: Path) -> Path:
 
 
 def is_stub_tree(root: Path) -> list:
-    """root 里还没换成空壳的天启篇脚本（空＝都换了）。"""
-    return [str(p) for c, p in targets(root).items() if MARK not in (root / p).read_text(encoding='utf-8')]
+    """root 里还没换成空壳的天启篇脚本（空＝都换了）：要有头注释 MARK 和编进包的 STUB_TAG。"""
+    out = []
+    for c, p in targets(root).items():
+        s = (root / p).read_text(encoding='utf-8')
+        if MARK not in s or STUB_TAG not in s:
+            out.append(str(p))
+    return out
 
 
 def main(argv) -> int:
@@ -346,7 +440,7 @@ def main(argv) -> int:
         for k in sorted(how):
             print(f'{k}\t{how[k]}')
         return 0
-    errs = check_errors(missing, how)
+    errs = check_errors(missing, how, suspects())
     if errs:
         print('\n'.join(errs))
         return 1
