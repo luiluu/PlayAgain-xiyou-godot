@@ -9,7 +9,7 @@
 
 - 玩家可见：168 号角色「米拉」人形行走图与战斗图、图鉴与行动条展示同步切换为 u2 重绘新美术（黑龙变身形态与原版战斗图保持不变，由开关 `XMira.ART` 控制一键回退）。
 - `03_再刷重制_Godot/01_Godot工程/content/mira/`：
-  - 复制定稿素材 `img/characters/$Codex_Mira_Walk_u2.png`（144×192，3×4 格 48×48，格内脚底第 45 行）与 `img/sv_actors/Codex_Mira_SV_u2.png`（576×384，9×6 格 64×64，格内脚底第 61 行）并生成对应 `.import` 与 `README.md`。
+  - 复制定稿素材 `img/characters/$Codex_Mira_Walk_u2.png`（144×192，3×4 格 48×48，实测脚底第 47 行（0-based 末行；12 帧由原第 44 行整体下移 3px 对齐原版 `$BlackDragon_Mira`，上方补透明））与 `img/sv_actors/Codex_Mira_SV_u2.png`（576×384，9×6 格 64×64，格内脚底第 61 行）并生成对应 `.import` 与 `README.md`。
 - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/mira.gd`：新增回退开关 `XMira.ART := true`。
 - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xdb.gd`：`img_path()` 在 `XMira.ART` 开启时优先把 `$BlackDragon_Mira`／`$Codex_Mira_Walk_u2`（characters）与 `BlackDragon_Mira_SV`／`Codex_Mira_SV_u2`（sv_actors）指到 `res://content/mira/img/...`。
 - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/appearance.gd`：`sv_form()` 在 `XMira.ART` 开启时返回 `"MiraHuman_u2"`（关闭回 `"MiraHuman"`，`MiraDragon` 保持不变）；`for_look()` 接入 `"MiraHuman_u2"`；`PROFILES` 新增 `"Codex_Mira_SV_u2": [64, 64, 8, 3, 53, 61]`（64×64 格、脚底 61 行）。
@@ -27,7 +27,7 @@
   - `测试工具回归.py`：6/6 通过；
   - `语法检查.py`（核心与新测试修改后、调整旧测试前）：876 个 `.gd`，0 个问题；
   - `回退开关覆盖.py`：通过（退出码 0）。
-- 提交：e801c9a63
+- 提交：e801c9a63、e27d9c7da
 
 ## 优化登记草稿
 
@@ -42,7 +42,7 @@
 
 ## 进度账
 
-- 美术接入：米拉人形 u2 行走图（144×192，48×48 格脚底第 45 行）与战斗图（576×384，64×64 格脚底第 61 行）已接入工程，黑龙形态维持原版不变。
+- 美术接入：米拉人形 u2 行走图（144×192，48×48 格实测脚底第 47 行（0-based，由第 44 行下移 3px 对齐原版））与战斗图（576×384，64×64 格脚底第 61 行）已接入工程，黑龙形态维持原版不变。
 
 ## 对比截图
 
@@ -64,3 +64,5 @@
 ## 本分支提交
 
 - e801c9a63 米拉人形 u2 新美术接入（O-待定）
+- a518e7a0e 交付单：xa/mira-art 可合并
+- e27d9c7da 米拉人形行走图下移 3px 对齐原版脚底第 47 行
