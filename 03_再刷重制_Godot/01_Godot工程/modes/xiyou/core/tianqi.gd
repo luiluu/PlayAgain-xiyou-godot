@@ -481,9 +481,11 @@ static func draw_offer(s: XState, rng: RandomNumberGenerator = null) -> Array:
 static func take_draw(s: XState, id: int) -> bool:
 	if not draw_ready(s) or not draw_offer(s).has(id):
 		return false
+	var ren_lv := XTianqiSect.ren_target(s) if XTianqiSect.REN else 0  # 包壬：入队前算上场平均等级
 	_joining = true
 	s.add_actor(id)
 	_joining = false
+	XTianqiSect.ren_sync(s, id, ren_lv)
 	s.flags.tianqi["draws"] = draws_used(s) + 1
 	s.flags.tianqi.erase("offer")
 	return s.party.has(id)
