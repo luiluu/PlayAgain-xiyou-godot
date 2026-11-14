@@ -254,6 +254,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XTianqiQiyinEffects.start(self)  # 天启篇七印装备：本场数据、全队那一件神器、七印书卷（原版档不建）
 	XTianqiAffixBattle.start(self)  # 天启篇词条：本场数据、全队光环、开场护盾、初始 TP
+	XTianqiTrumpet.start(self)  # 天启篇号卷：本场谁学了哪卷、七号齐鸣
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	XLiuying.start_battle(self)  # 流萤 startBattle／onBattleStart 包装（原 startBattle 之后，开战移除状态之后）：萨姆形态、负面免疫、免死；萤火清零
@@ -664,6 +665,7 @@ func _skill_cost(a: XBattler, skill: Dictionary, panel: bool, shift: float) -> D
 	cost.mp = XTusu.mp_cost(a, skill, int(cost.mp))  # 屠苏 skillMpCost 包装（谷雨之外、种族之内）：专属技能按比例、噬主费用、书相省蓝
 	cost = XTianqiQiyinEffects.cost(a, skill, cost)  # 天启篇七印装备：黑印 2 件少耗、天平翻倍、默印 5 件免耗
 	cost = XTianqiAffixBattle.cost(a, skill, cost)  # 天启篇词条「技能消耗」（全身最多 −50%）
+	cost = XTianqiTrumpet.cost(a, skill, cost)  # 天启篇号卷六号：第 1 回合技能不花消耗
 	return {"mp": XRaceBattle.cost(a, int(cost.mp)), "tp": XRaceBattle.cost(a, int(cost.tp))}
 
 ## paySkillHpCost：直接减生命（_hp -= 费用，不走伤害）；异化连命扣池、嫁祸扣保护者、空壳扣护盾（Adv:128）
@@ -1149,7 +1151,9 @@ func start_turn() -> void:
 		# krz onTurnStart 标 dirty，Game_Unit.onTurnStart 紧接 refresh：本回合起能力值重新读取
 		b.param_mark_dirty()
 		b.param_refresh()
+	XTianqiTrumpet.turn_begin(self)  # 天启篇号卷五号：阵亡的人下一回合开始时站起来（排顺序之前）
 	_make_action_orders()
+	XTianqiTrumpet.start_turn(self)  # 天启篇号卷六号：第 1 回合排到所有人前面
 	XTianqiQiyinEffects.start_turn(self)  # 天启篇七印装备：砝码、震印 5 件计数、一力降十会少动一次
 	XYunshang.start_turn(self)  # 云裳 startTurn 包装：resetRound（储行加份、神纹自鸣随机唤醒）
 	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
@@ -2506,6 +2510,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	cri = XTianqiSkills.item_cri(u, skill, dt, cri)  # 天启篇技能重构：心法条件必暴
 	cri *= XTianqiRewards.cri_mult(u)  # 天启篇奖励：替身的钥匙串（暴击率归零，半强度减半）
 	cri = XTianqiQiyinEffects.cri(self, u, cri)  # 天启篇黑印 5 件：一次用掉 5 层砝码必定暴击
+	cri = XTianqiTrumpet.cri(u, cri)  # 天启篇号卷四号：暴击率 −10%
 	return clampf(cri, 0.0, 1.0)
 
 
@@ -2878,6 +2883,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
 	value = XTianqiQiyinEffects.hp_damage(self, u, t, value)  # 天启篇七印装备：殉印 3 件替挡一半、灰印 5 件免死
 	value = XTianqiAlienAffix.hp_damage(self, u, t, value)  # 天启篇新异化词条「临终」：致命一击留一口气
+	value = XTianqiTrumpet.hp_damage(self, u, t, value)  # 天启篇号卷四号：每场一次致命伤留 1 点
 	var tusu_cuoshi := XTusu.hp_before(u, t, value, item)  # 止戈环 60 级 executeHpDamage 包装（护盾账本之外）：护阵首伤护盾、打前有没有挫势
 	var hubris_before := t.hp
 	var out := _execute_hp_damage_ledger(u, t, value, drain, item)
@@ -3403,6 +3409,7 @@ func rewards() -> Dictionary:
 		out.gold = 0
 	XTianqiAffixBattle.rewards(self, out)  # 天启篇词条「阅历」：经验、金钱（全队相加，助力位也算）
 	XTianqiMoney.battle_gold(self, out)  # 天启篇金钱重构：金钱加成相加后递减、乘难度奖励倍率（阅历并进同一桶）
+	XTianqiTrumpet.gold(self, out)  # 天启篇号卷七号：金钱 −30%
 	return out
 
 
@@ -3576,6 +3583,7 @@ func end_battle(result := -1) -> void:
 	XTianqiQiyinRule.end(self, result)  # 七印祭坛：清本场规则；31～35 层野外打赢掉印钥
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据
 	XTianqiAffixBattle.finish(self)  # 天启篇词条：清本场数据
+	XTianqiTrumpet.finish(self)  # 天启篇号卷：清本场数据
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

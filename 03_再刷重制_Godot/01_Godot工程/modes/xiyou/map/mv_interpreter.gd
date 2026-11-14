@@ -364,6 +364,7 @@ func _host_command(c: Dictionary):
 			if XTianqi.active(state()) and XTianqi.NO_RECRUIT:  # 天启篇：号角不上架（只卖号角的店就是空的）
 				goods = goods.filter(func(g): return int(g[0]) != 0 or not XTianqi.horn_blocked(state(), XDB.rec("Items", int(g[1]))))
 			goods = XTianqiTrim.shop_goods(state(), map_id, event_id, goods)  # 天启篇：洪荒女皇独有三件不上架、仙道模式并进人族首领神武页（O-410）
+			goods = XTianqiTrumpet.shop_goods(state(), goods)  # 天启篇：封卷只在炼狱、证道上架
 			XShopStock.set_context(map_id, event_id)   # installBalanceShopV041Runtime 包 command302：当铺／大厅 EV54 的商店规则
 			await host.open_shop(goods, bool(p[4]))
 			XShopStock.shop_context = {}

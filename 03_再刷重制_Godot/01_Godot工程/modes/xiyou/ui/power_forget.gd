@@ -25,19 +25,21 @@ func actors() -> void:
 	for a in XState.current.members():
 		var n := XPowerBooks.learned(a).size()
 		rows.append({"actor":a,"label":a.display_name()+"  %d / %d" % [n,XPowerBooks.limit(a)],"enabled":n > 0})
-	choose(rows,func(r): skills(r.actor),back,["权能遗忘符","选择角色；每遗忘一本消耗1枚，不返还书","剩余道具："+str(XState.current.item_count(3044))])
+	var tq := XTianqiTrumpet.on()  # 天启篇：号卷、封卷
+	choose(rows,func(r): skills(r.actor),back,[XTianqiTrumpet.forget_name(),"选择角色；每封上一卷消耗1枚，号卷不返还" if tq else "选择角色；每遗忘一本消耗1枚，不返还书","剩余道具："+str(XState.current.item_count(3044))])
 
 func skills(a: XActor) -> void:
 	var ids := XPowerBooks.learned(a)
 	var rows := ids.map(func(id): return {"id":id,"label":str(XDB.rec("Skills",id).name)})
-	choose(rows,func(r): confirm(a,int(r.id)),actors,[a.display_name()+" · "+XPowerBooks.actor_class(a),"已学权能 %d / %d" % [ids.size(),XPowerBooks.limit(a)],"选择想要遗忘的一项权能"])
+	choose(rows,func(r): confirm(a,int(r.id)),actors,[a.display_name()+" · "+XPowerBooks.actor_class(a),("已学号卷 %d / %d" if XTianqiTrumpet.on() else "已学权能 %d / %d") % [ids.size(),XPowerBooks.limit(a)],"选择想要封上的一卷号卷" if XTianqiTrumpet.on() else "选择想要遗忘的一项权能"])
 
 func confirm(a: XActor, id: int) -> void:
-	choose([{"yes":true,"label":"消耗1枚，遗忘这项权能"},{"label":"取消"}],func(r):
+	var tq := XTianqiTrumpet.on()
+	choose([{"yes":true,"label":"消耗1枚，封上这卷号卷" if tq else "消耗1枚，遗忘这项权能"},{"label":"取消"}],func(r):
 		if not r.get("yes",false):
 			skills(a)
 			return
 		var result := XPowerBooks.forget_paid(XState.current,a,id)
-		var title: String = "遗忘完成："+a.display_name()+" · "+str(XDB.rec("Skills",id).name) if result.ok else str(result.reason)
-		choose([{"label":"返回物品"}],func(_row): back(),back,[title,"剩余权能：%d / %d" % [XPowerBooks.learned(a).size(),XPowerBooks.limit(a)]])
-	,func(): skills(a),["确认遗忘 · "+a.display_name(),str(XDB.rec("Skills",id).name),"消耗1枚权能遗忘符，不返还权能书"])
+		var title: String = ("封卷完成：" if tq else "遗忘完成：")+a.display_name()+" · "+str(XDB.rec("Skills",id).name) if result.ok else str(result.reason)
+		choose([{"label":"返回物品"}],func(_row): back(),back,[title,("剩余号卷：%d / %d" if tq else "剩余权能：%d / %d") % [XPowerBooks.learned(a).size(),XPowerBooks.limit(a)]])
+	,func(): skills(a),[("确认封卷 · " if tq else "确认遗忘 · ")+a.display_name(),str(XDB.rec("Skills",id).name),"消耗1枚封卷，号卷不返还" if tq else "消耗1枚权能遗忘符，不返还权能书"])

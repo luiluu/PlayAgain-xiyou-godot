@@ -38,11 +38,15 @@ static func strong_ids() -> Array:
 	return XTier.ids(XTier.STRONG) if XTier.tagged() else STRONG_IDS
 
 static func actor_class(a: XActor) -> String:
+	if XTianqiTrumpet.on():
+		return XTianqiTrumpet.tier_of(a)  # 天启篇号卷：按天启篇名单
 	if XItemMarks.is_super_strong(a.actor_id):
 		return "超强者"
 	return "强者" if strong_ids().has(a.actor_id) else "弱者"
 
 static func limit(a: XActor) -> int:
+	if XTianqiTrumpet.on():
+		return XTianqiTrumpet.limit(a)  # 天启篇号卷：弱者 3、强者 2、超强者 1
 	return {"超强者":3, "强者":4, "弱者":6}[actor_class(a)]
 
 static func learn_reason(a: XActor, id: int) -> String:
@@ -50,8 +54,10 @@ static func learn_reason(a: XActor, id: int) -> String:
 		return "请选择角色"
 	var ids := learned(a)
 	if ids.has(id):
-		return "已经学会这项权能"
+		return "已经学会这卷号卷" if XTianqiTrumpet.on() else "已经学会这项权能"
 	if ids.size() >= limit(a):
+		if XTianqiTrumpet.on():
+			return actor_class(a) + "最多学习" + str(limit(a)) + "卷号卷，请先用" + XTianqiTrumpet.forget_name() + "封上已有号卷"
 		return actor_class(a) + "最多学习" + str(limit(a)) + "本权能书，请先遗忘已有权能"
 	return ""
 
@@ -68,7 +74,7 @@ static func forget_paid(s: XState, a: XActor, id: int) -> Dictionary:
 	if a == null or not learned(a).has(id):
 		return {"ok":false, "reason":"角色尚未学会这项权能"}
 	if s.item_count(FORGET_ITEM) <= 0:
-		return {"ok":false, "reason":"缺少权能遗忘符"}
+		return {"ok":false, "reason":"缺少" + XTianqiTrumpet.forget_name()}
 	a.skill_ids.erase(id)
 	s.gain_item(FORGET_ITEM, -1)
 	a.refresh_passive()
@@ -80,6 +86,8 @@ static func forget_paid(s: XState, a: XActor, id: int) -> Dictionary:
 static func param_rate_bonus(a: XActor, param: int) -> float:
 	var sum := 0.0
 	for id in a.skill_ids:
+		if XTianqiTrumpet.skips_rate(id):
+			continue  # 天启篇号卷：原洪荒权能的属性倍率不算
 		if not _rates.has(id):
 			var values := {}
 			var hit := RegEx.create_from_string("(?i)<CodexParamRate:\\s*([^>]+)>").search(str(XDB.rec("Skills", id).get("note", "")))
