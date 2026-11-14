@@ -293,7 +293,7 @@ class T(unittest.TestCase):
             for i, ln in enumerate(lines):
                 if re.match(rf'^(?:static\s+)?func\s+{re.escape(fn)}\s*\(', ln):
                     for sub in lines[i + 1:]:
-                        if not sub.strip():
+                        if not sub.strip() or not sub[:1].isspace():  # 函数体止于空行或顶格行（特例成员 static var 可能紧跟其后）
                             break
                         body.append(sub.strip())
                     break
