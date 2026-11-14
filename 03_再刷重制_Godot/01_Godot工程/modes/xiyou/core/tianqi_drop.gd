@@ -453,9 +453,10 @@ static func roll(s: XState, members: Array, roll_fn: Callable, troop_id := 0) ->
 	return out
 
 
-## 商店成交后调：这次买进来的装备（背包里 from 之后新增的）打上标记，不能喂法宝；price≥0 时记下单价（回售价封顶用，XTianqiMoney.sell_price）
+## 商店成交后调：这次买进来的装备（背包里 from 之后新增的）打上标记，不能喂法宝；price≥0 时记下单价（回售价封顶用，XTianqiMoney.sell_price）。
+## 标记只是记账，天启篇档都打，不看掉落总开关：用不用由各自的开关定（NO_FEED_BOUGHT 管喂、XTianqiMoney.SELL_BOUGHT_CAP 管卖）
 static func mark_bought(s: XState, from: int, price := -1) -> void:
-	if not on(s):
+	if s == null or not XTianqi.active(s):
 		return
 	for i in range(maxi(0, from), s.gear.size()):
 		if s.gear[i] is Dictionary:

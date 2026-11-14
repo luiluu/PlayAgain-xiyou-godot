@@ -315,9 +315,10 @@ static func scale_floor_now(s: XState) -> int:
 	return f if f > 0 else top_floor(s)
 
 
-## 离开买时那一层就清掉：人在别的层的地图里时整条记录作废（大厅、不属于哪层的地图不清）
+## 离开买时那一层就清掉：人在别的层的地图里时整条记录作废（大厅、不属于哪层的地图不清）。
+## 进地图时 map_scene.load_map 调（换了 s.map_id 之后），查效果、价格时也再对一次
 static func scale_sync(s: XState) -> void:
-	if not SCALE_FLOOR_ONLY:
+	if not SCALE_FLOOR_ONLY or not scale_on(s):
 		return
 	var m := money(s)
 	var sc = m.get("scale")
