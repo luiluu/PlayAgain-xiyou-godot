@@ -91,6 +91,22 @@ static func team_taken(tiers: Array) -> float:
 	return sum * (1.0 + float(assist_bonus(tiers.count(XTier.WEAK)).damage_taken))
 
 
+# ---- 路线系数与副本档（O-待定-8、O-待定-7） ----
+
+## 本档按吸收的旧路线取的系数：zhenqi_coef、liuying_core、starburst_denom、lottery_cap。没有这一档为空
+static func route(key: String) -> Dictionary:
+	var r = data().get("routes", {}).get(key)
+	return r if r is Dictionary else {}
+
+
+## 副本档（变量 450：1 普通…4 王者）的敌人系数 {enemy_hp, enemy_atk}；档号不在表里为空
+static func dungeon_tier(n: int) -> Dictionary:
+	var list: Array = data().get("dungeon_tiers", {}).get("list", [])
+	if n < 1 or n > list.size() or not list[n - 1] is Dictionary:
+		return {}
+	return list[n - 1]
+
+
 # ---- 五档难度 ----
 
 static func difficulty_keys() -> Array:

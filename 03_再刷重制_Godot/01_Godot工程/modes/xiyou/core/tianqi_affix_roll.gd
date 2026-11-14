@@ -17,6 +17,8 @@ extends RefCounted
 
 ## 开关：false＝回到原版词缀
 static var ENABLED := true
+## 开关（O-待定-5）：true＝必出行里整行都是神话／混沌神话的也跳过；false＝必出行一律照合
+static var SKIP_HIGH_ROWS := true
 
 const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
 const QUALITY_KEYS := ["putong", "youxiu", "jingliang", "shishi", "chuanshuo", "buxiu", "shenhua"]
@@ -30,14 +32,17 @@ static func on(s: XState = null) -> bool:
 	return ENABLED and s != null and XTianqiAffixBattle.on(s)
 
 
-## 原版的这一行词缀在天启篇里跳过（几率合计不到 100 的随机行）
-static func skips_row(row: Dictionary, s: XState) -> bool:
+## 原版的这一行词缀在天启篇里跳过：几率合计不到 100 的随机行；SKIP_HIGH_ROWS 开着时，必出行里整行都是神话／混沌神话的
+## （XAffixRate.line_tier，落芸之力等）也跳过（Kyo 11-13「不留」：混沌神话词条已定删除，留着等于后门）。table 是 Weapons／Armors
+static func skips_row(row: Dictionary, s: XState, table := "") -> bool:
 	if not on(s):
 		return false
 	var total := 0
 	for c in row.get("choices", []):
 		total += int(c.get("chance", 0))
-	return total < 100
+	if total < 100:
+		return true
+	return SKIP_HIGH_ROWS and table != "" and XAffixRate.line_tier(row.get("choices", []), table) > 0
 
 
 static func slot_key(item: Dictionary) -> String:

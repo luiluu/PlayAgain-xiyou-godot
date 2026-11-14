@@ -274,14 +274,22 @@ static func run(code: String, interp) -> Array:
 		return []
 	var roster := _re("^if\\(window\\.CodexBossDifficulty\\)\\{CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);\\}else\\{.*\\}this\\.setWaitMode\\('message'\\);?$").search(js)
 	if roster:
-		await _boss_roster(roster.get_string(1), interp)
+		var tq0 := XTianqiTrim.roster(roster.get_string(1), XState.current)
+		if not tq0.is_empty():
+			await _boss_roster(roster.get_string(1), interp, tq0.ids, tq0.notes)
+		else:
+			await _boss_roster(roster.get_string(1), interp)
 		return []
 	# v0.44 起（新源）：裸调用、不再 setWaitMode，名单是 CodexTier 两档（D.superStrongIds／strongIds 由 <KyoTier> 原地重建，不另加小猫）。
 	# 原版只 $gameMessage.add 进待显示文字；大厅 EV41 两条各在一个选项分支里、后面没有别的指令，当场显示与原版看到的一样
 	roster = _re("^CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);?$").search(js)
 	if roster:
 		var kind := roster.get_string(1)
-		await _boss_roster(kind, interp, XState.tier_ids(["超强者"] if kind == "super" else ["强者"]))
+		var tq := XTianqiTrim.roster(kind, XState.current)  # 天启篇：读天启篇档位表（O-待定-2）
+		if not tq.is_empty():
+			await _boss_roster(kind, interp, tq.ids, tq.notes)
+		else:
+			await _boss_roster(kind, interp, XState.tier_ids(["超强者"] if kind == "super" else ["强者"]))
 		return []
 	# 更衣解锁（Star_ChangeClothes，见 XChangeClothes）：衣橱管理员 Map4 EV17 与各层宝箱、特殊事件，全游戏只这一种写法（CE367 两号不同）
 	var lite := _re("^if\\s*\\(\\s*ConfigManager\\.ChangeClothesLite\\.indexOf\\((-?\\d+)\\)\\s*==\\s*-1\\s*\\)\\s*\\{\\s*ConfigManager\\.ChangeClothesLite\\.push\\((-?\\d+)\\);?\\s*\\}$").search(js)
@@ -742,7 +750,7 @@ static func _guide_advise(interp) -> void:
 const _STRONG_IDS := [1, 8, 9, 10, 11, 13, 17, 38, 45, 47, 50, 59, 70, 71, 82, 84, 85, 92, 93, 95, 99, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 128, 129, 130, 131, 170]
 
 
-static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
+static func _boss_roster(kind: String, interp, tier_ids = null, notes = null) -> void:
 	var is_super := kind == "super"
 	var ids: Array
 	if tier_ids is Array:
@@ -763,7 +771,9 @@ static func _boss_roster(kind: String, interp, tier_ids = null) -> void:
 		line += ("、" if line != "" else "") + nm
 	if line != "":
 		lines.append(line)
-	if is_super:
+	if notes is Array:
+		lines.append_array(notes)
+	elif is_super:
 		lines.append_array(["超强者仅限地狱及以上难度出战。", "每名出战超强者：Boss八项属性+20%。", "第2、4、6…回合霸体，持续一整回合。",
 			"霸体回合每名超强者再令Boss输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
 	else:

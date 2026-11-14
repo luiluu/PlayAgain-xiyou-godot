@@ -3,7 +3,7 @@ extends Node
 ## 一、数据：数字避开 4、台词齐全、借的图和敌群在。
 ## 二、门：变量 20 到 33 照原版；34 起接管，34 层鸿钧（赢了 → 35、输了／不上回大厅），35 层本线影子（→ 36），36 层本线决战（记通关、可轮回），
 ##    打完 36 层门上说「空了」；地图名换新层名、换色、回大厅复原。
-## 三、洪荒通关奖励和 6213 挪到 36 层：开关 2483 开着才有；打过鸿钧给奖励，没打过照原版学 6213（天启篇默认不学）。
+## 三、洪荒通关奖励和 6213 挪到 36 层：天启篇默认取消（XTianqiTrim.NO_HONGHUANG）；开关关掉时开关 2483 开着才有，打过鸿钧给奖励，没打过照原版学 6213（天启篇默认不学）。
 ## 四、旧 34 层（158）：天启篇不随机遇敌、决战事件不跑。
 ## 五、再挑战（大厅 EV062）：打过的 34～36 层守层者能再打，不改进度；「别的事」照原事件。
 ## 六、鸿钧：鸿蒙老祖那只换名字、能力值乘 rate。
@@ -257,6 +257,16 @@ func _door36() -> void:
 
 
 func _honghuang() -> void:
+	# 天启篇默认取消洪荒通关奖励（XTianqiTrim.NO_HONGHUANG，O-待定-6）：开关 2483 开着、打过鸿钧也不问不给
+	var s0 := _state(36)
+	XTianqiSummit.progress(s0)["hongjun"] = true
+	s0.set_switch(2483, true)
+	var host0 := FakeHost.new()
+	host0.answers = [0, 0, 0]
+	await XTianqiSummit.run_door(host0, s0)
+	_check("honghuang_cancelled", int(s0.variable(1476)) == 0 and not _has(host0, "完美通关") and not XTianqiSummit.progress(s0).get("honghuang", false), host0.said)
+	# 下面是开关关掉（回到改之前）的行为
+	XTianqiTrim.NO_HONGHUANG = false
 	# 开关 2483 没开：没有奖励
 	var s := _state(36)
 	XTianqiSummit.progress(s)["hongjun"] = true
@@ -288,6 +298,7 @@ func _honghuang() -> void:
 	await XTianqiSummit.run_door(host, s4)
 	XTianqi.NO_HEAVEN_GAZE = true
 	_check("gaze_learn", s4.members().all(func(a): return a.native_skill_ids().has(6213)))
+	XTianqiTrim.NO_HONGHUANG = true
 
 
 func _old158() -> void:
@@ -307,6 +318,10 @@ func _rechallenge() -> void:
 	host.answers = [0]
 	_check("rechallenge_fight", await XTianqiSummit.run_event(host, s, 4, 62) and host.battles.size() == 1 and host.battles[0].summit == "hongjun"
 		and int(s.variable(20)) == 35 and host.moves.is_empty(), host.battles)
+	host = FakeHost.new()
+	host.answers = [0]
+	await XTianqiTrim.run_laoda(host, s)  # 天启篇牢妲（O-待定-1）：第一项是打过的 34 层
+	_check("laoda_rechallenge", host.battles.size() == 1 and host.battles[0].summit == "hongjun" and not str(host.asked).contains("debuff"), host.asked)
 	host = FakeHost.new()
 	host.answers = [1]
 	_check("rechallenge_other", not await XTianqiSummit.run_event(host, s, 4, 62) and host.battles.is_empty())

@@ -102,7 +102,7 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 	if item.get("meta", {}).has("prefixSuffixUseArmorDatabase"): table = "Armors"
 	if item.get("meta", {}).has("prefixSuffixUseWeaponDatabase"): table = "Weapons"
 	for row in ([] if XTestMode.boost_depth > 0 else definition.get("affixes", [])):
-		if XTianqiAffixRoll.skips_row(row, owner if owner != null else XState.current):
+		if XTianqiAffixRoll.skips_row(row, owner if owner != null else XState.current, table):
 			continue  # 天启篇：原版随机词缀行不掷（必出的行照合），改掷天启篇词条（XTianqiAffixRoll，见末尾）
 		var affix_id := choose_affix(row.choices, table, owner)
 		if affix_id > 0:
