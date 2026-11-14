@@ -55,6 +55,7 @@ func _make(s: XState, wid: int) -> Dictionary:
 
 func _run() -> void:
 	XMessageBox.auto = true
+	XTianqiMoney.REFORGE = false  # 这里测 reforge.json 的老定价；金钱重构的定价在 xiyou_tianqi_money
 	seed(20261112)
 	XConfig.path_override = ProjectSettings.globalize_path(CONFIG)
 	if FileAccess.file_exists(CONFIG):
@@ -123,6 +124,7 @@ func _run() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
 	XConfig.path_override = ""
 	XConfig._loaded_path = "<unloaded>"
+	XTianqiMoney.REFORGE = true
 	var passed := results.filter(func(x): return x.passed).size()
 	for x in results:
 		if not x.passed:
