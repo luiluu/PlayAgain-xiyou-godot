@@ -844,6 +844,9 @@ func _targets() -> Array:
 func _effective(t: XActor) -> bool:
 	if t.is_dead() != (_scope() in [9, 10]):
 		return false
+	var pill := XPercentPills.valid(_item, t)  # 淬元丹（Codex_PercentPills 的 hasItemAnyValidEffects 包装）：没满 20 颗才有效
+	if pill >= 0:
+		return pill == 1
 	for e in _item.get("effects", []):
 		match int(e.code):
 			11:
@@ -913,6 +916,7 @@ func _use() -> void:
 			continue
 		for e in _item.get("effects", []):
 			logic._effect(user, t, e, {"skill": _item, "hp": 0.0, "mp": 0.0, "added": [], "removed": []})
+		XPercentPills.apply(_item, t)  # 淬元丹 applyItemUserEffect 包装：计数 +1
 	_after_use(ctx)
 
 
