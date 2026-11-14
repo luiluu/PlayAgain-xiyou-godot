@@ -628,8 +628,8 @@ def sheets(state):
 
 
 def lane_branches(task, branch=None):
-    """这个任务可能对应的分支：给了 --branch 就只认它（任务名仍是交付单名）；否则 cc/、claude/、codex/ 加任务名。"""
-    return [branch] if branch else ['cc/' + task, 'claude/' + task, 'codex/' + task]
+    """这个任务可能对应的分支：给了 --branch 就只认它（任务名仍是交付单名）；否则 cc/、gpt/、xa/、claude/、codex/ 加任务名。"""
+    return [branch] if branch else ['cc/' + task, 'gpt/' + task, 'xa/' + task, 'claude/' + task, 'codex/' + task]
 
 
 def branch_hint(root, task):
@@ -644,7 +644,7 @@ def branch_hint(root, task):
             names = git(root, 'ls-tree', '--name-only', ref, '00_项目管理/交付/').splitlines()
         except RuntimeError:
             continue
-        if any(re.fullmatch(r'00_项目管理/交付/(?:cc|claude|codex)_' + re.escape(task) + r'\.md', n) for n in names):
+        if any(re.fullmatch(r'00_项目管理/交付/(?:cc|gpt|xa|claude|codex)_' + re.escape(task) + r'\.md', n) for n in names):
             found.append(ref)
     return '；交付单名对得上的分支有：%s（用 --branch <分支> 指定）' % '、'.join(found) if found else ''
 
@@ -735,7 +735,7 @@ def plan(root, task, branch=None):
     # 交付单：按分支名（/ 换成 _），再按任务名找 cc_／claude_／codex_<任务>.md。分支与交付单前缀常对不上：
     # --branch 指定的 app 随机名分支；10-31 八戒分支 cc/bajie-blackflash 交付单却叫 claude_bajie-blackflash.md（tools22）
     own = Path('00_项目管理/交付') / (branch.replace('/', '_') + '.md')
-    names = dict.fromkeys([own] + [Path('00_项目管理/交付') / ('%s_%s.md' % (p, task)) for p in ('cc', 'claude', 'codex')])
+    names = dict.fromkeys([own] + [Path('00_项目管理/交付') / ('%s_%s.md' % (p, task)) for p in ('cc', 'gpt', 'xa', 'claude', 'codex')])
     found = {d: s for d, s in ((d, read(d)) for d in names) if s is not None}
     if not found:
         raise RuntimeError('车道分支缺少交付单：' + '、'.join(map(str, names)) + ' 都没有')
@@ -1478,7 +1478,7 @@ def prepare(root, state, state_file, executor, also=()):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
-        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
+        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'gpt', '小A': '小A（总装接力）', 'xa': '小A（总装接力）'}.get(executor, executor)
         message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: ' + review_status(root, state)]
         if merge_head(root) == state['target']:
             # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
@@ -1999,7 +1999,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         remaining = {p for p in changed - set(sheets(state)) if (root / p).exists() or p in tracked}
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
-        actor = 'cc（唐僧）' if executor == 'cc' else 'Codex（沙僧）'
+        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'gpt', '小A': '小A（总装接力）', 'xa': '小A（总装接力）'}.get(executor, executor)
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1 - ('--cloud' in check)][:9]
@@ -2361,8 +2361,8 @@ def main(argv=None):
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
-    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex'], default='cc',
-                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），两者等价，写进提交尾注的都是 cc')
+    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex', 'gpt', '小A', 'xa'], default='cc',
+                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），小A/xa 用于额度接力总装')
     modes.add_argument('--close-batch', action='store_true',
                        help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh --oracle（可加 --affected），通过后清理本批工作树、推送')
     modes.add_argument('--abort', action='store_true',

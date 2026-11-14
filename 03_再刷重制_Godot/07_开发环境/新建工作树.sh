@@ -200,8 +200,8 @@ if [[ $1 == --补齐 ]]; then
   prepare "$wt"
   exit 0
 fi
-name=$1 who=${2:-cc}   # Kyo 10-31 起前缀叫 cc；claude 是旧写法，仍可显式给
-[[ $who == cc || $who == claude || $who == codex ]] || usage
+name=$1 who=${2:-cc}   # Kyo 11-14 起三方前缀 cc / gpt / xa；claude / codex 是旧写法，仍可显式给
+[[ $who == cc || $who == gpt || $who == xa || $who == claude || $who == codex ]] || usage
 [[ $name != */* && $name != -* ]] || { print -u2 "✗ 任务名不能含 / 或以 - 开头"; exit 64; }
 branch=$who/$name
 dest=$MAIN/.claude/worktrees/$name

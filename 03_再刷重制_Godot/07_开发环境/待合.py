@@ -40,7 +40,7 @@ def load(name, path):
 pre = load('lane_precheck', HERE / '交付自检.py')
 quiet, git = pre.quiet, pre.git
 # 车道分支只有这三种前缀（合并车道.py lane_branches）；ci/、ci-full/、ci-export/（云端测试与导出用的推送分支）、backup/ 等都不是车道
-LANE = re.compile(r'^(?:cc|claude|codex)/')
+LANE = re.compile(r'^(?:cc|gpt|xa|claude|codex)/')
 WORKER = re.compile(r'^\s*[-*]\s*车道[／/]工作者[：:]\s*(.+?)\s*$', re.M)
 
 
