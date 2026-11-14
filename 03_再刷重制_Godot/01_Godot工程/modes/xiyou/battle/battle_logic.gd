@@ -3455,6 +3455,14 @@ func resolve_collapse(e: XEnemy) -> void:
 			gain_drops(candidates)
 
 
+## 掉落行 → 掉落项；带 count 的行（XTianqiSect）一次掉多个
+static func _drop_entry(c: Dictionary) -> Dictionary:
+	var d := {"kind": c.kind, "id": c.id}
+	if c.has("count"):
+		d["count"] = int(c.count)
+	return d
+
+
 func _roll_drops(e: XEnemy) -> Array:
 	if random == null:
 		random = XBattleRandom.create(XRandomStream.hex64(XState._fresh_seed())) # standalone fixture owner; real battles initialize in setup
@@ -3462,9 +3470,9 @@ func _roll_drops(e: XEnemy) -> Array:
 	for c in drop_chances(e):
 		if c.has("sig"):  # 天启篇招牌掉落：递增概率，结果由存档里的种子和次数定（读档重打一样）
 			if XTianqiDrop.roll_signature(state, str(c.sig), float(c.chance)):
-				drops.append({"kind": c.kind, "id": c.id})
+				drops.append(_drop_entry(c))
 		elif random.reward.next_float("extra_drop" if c.extra else "drop", stable_id(e)) < c.chance:
-			drops.append({"kind": c.kind, "id": c.id})
+			drops.append(_drop_entry(c))
 	return drops
 
 
@@ -3497,7 +3505,7 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate)) * sig_mult)
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
 			out.append(row)
-	return out
+	return XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
 
 
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）
@@ -3506,7 +3514,7 @@ func gain_drops(drops: Array) -> void:
 		if d.get("boost", false):
 			XTestMode.boost_depth += 1
 		match int(d.kind):
-			1: state.gain_item(d.id, 1)
+			1: state.gain_item(d.id, int(d.get("count", 1)))  # count：XTianqiSect 掉落行一次掉几个
 			2: state.gain_gear("weapon", d.id, 1)
 			3: state.gain_gear("armor", d.id, 1)
 		if d.get("boost", false):

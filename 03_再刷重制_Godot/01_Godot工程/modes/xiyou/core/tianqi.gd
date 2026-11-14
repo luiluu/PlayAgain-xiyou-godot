@@ -305,6 +305,7 @@ static func opening_commands(slot: int, key: String, lineup: Array) -> Array:
 	# 原版这里进教派选择（Map221），雕像给指路灯与难度修正后进大厅；教派删了，物品照给
 	c.append(_item(4, 1))
 	c.append(_item(2896, 1))
+	c.append_array(XTianqiSect.opening_commands())  # 大厅两位使者撤了：他们送的副本协会控制器、牛马关指路灯改开局给（XTianqiSect 包甲）
 	for ce in [839, 1319, 1322, 1328]:
 		c.append({"code": 117, "indent": 0, "parameters": [ce]})
 	# 原版开局英雄在大厅 EV020 学「万众一心」「SupperStar」，天启篇给 1 号位
