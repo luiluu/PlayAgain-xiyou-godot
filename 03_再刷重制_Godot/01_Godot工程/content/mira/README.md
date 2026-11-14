@@ -13,5 +13,5 @@ co 2026-11-13 出图、Kyo 已确认定稿的人形 u2 美术，代替原版人�
 
 | 文件 | 内容 | 尺寸 |
 | --- | --- | --- |
-| `img/characters/$Codex_Mira_Walk_u2.png` | u4 四方向三帧行走（脚底第 45 行） | 144×192，每格 48×48 |
+| `img/characters/$Codex_Mira_Walk_u2.png` | u4 四方向三帧行走（实测脚底第 47 行，0-based；原第 44 行整体下移 3px 对齐原版） | 144×192，每格 48×48 |
 | `img/sv_actors/Codex_Mira_SV_u2.png` | 人形战斗图，18 动作×3 帧（脚底第 61 行） | 576×384，每格 64×64 |

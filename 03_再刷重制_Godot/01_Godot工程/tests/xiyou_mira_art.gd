@@ -96,10 +96,10 @@ func _walk() -> void:
 			var box := _bbox(t, Rect2(col * 48, row * 48, 48, 48))
 			if box[2] <= box[0]:
 				empty.append([row, col])
-			elif box[3] != 45:
-				bad_foot.append([row, col, box[3]])
+			elif box[3] != 48 or box[1] < 3:
+				bad_foot.append([row, col, box[1], box[3]])
 	check("walk.4x3_frames", empty.is_empty(), empty)
-	check("walk.foot_row_45", bad_foot.is_empty(), bad_foot)
+	check("walk.foot_row_47", bad_foot.is_empty(), bad_foot)
 
 
 func _battle() -> void:
