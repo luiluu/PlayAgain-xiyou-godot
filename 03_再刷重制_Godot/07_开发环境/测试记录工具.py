@@ -183,6 +183,12 @@ class ReviewListTests(unittest.TestCase):
         items = self.labels()
         for n in names:
             self.assertNotIn(n, items)
+        # Kyo 11-14 改名：co（原 gpt）、ag（原小A）的核查条目同样销「待审查」
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【co】核查 xa/ui1\n\n- 通过\n\n'
+                   '## 2099-01-01 【ag·审查】核查 gpt/art1、luiluu/Antigravity\n\n- 通过\n')
+        items = self.labels()
+        for n in names:
+            self.assertNotIn(n, items)
 
     def test_only_scope_lines_count(self):
         # 沙僧复现：别的核查条目验证行写「开发编号（dev.005）通过」，不能销 dev.005 整批；证据、结论行里的提交号也不算

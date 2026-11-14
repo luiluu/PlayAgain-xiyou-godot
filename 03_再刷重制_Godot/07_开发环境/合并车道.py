@@ -1502,7 +1502,7 @@ def prepare(root, state, state_file, executor, also=()):
     if state['phase'] != 'planned' and git(root, 'rev-parse', 'HEAD') != state['head']:
         raise RuntimeError('准备过程中 main HEAD 已改变，先人工核对')
     if state['phase'] == 'planned':
-        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'gpt', '小A': '小A（总装接力）', 'xa': '小A（总装接力）'}.get(executor, executor)
+        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'co', 'co': 'co', '小A': 'ag（总装接力）', 'xa': 'ag（总装接力）', 'ag': 'ag（总装接力）'}.get(executor, executor)
         message = ['-m', '合并 ' + state['branch'], '-m', '执行者: ' + actor + '\n核查: ' + review_status(root, state)]
         if merge_head(root) == state['target']:
             # 上次合并停在冲突：唐僧解决并 git add 后重跑本工具，由它照规范提交合并，再往下接续。
@@ -2030,7 +2030,7 @@ def finish(root, state, state_file, executor, batch=False, affected=False, cloud
         remaining = {p for p in changed - set(sheets(state)) if (root / p).exists() or p in tracked}
         if remaining:
             run(root, ['git', 'add', '--', *sorted(remaining)])
-        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'gpt', '小A': '小A（总装接力）', 'xa': '小A（总装接力）'}.get(executor, executor)
+        actor = {'cc': 'cc（唐僧）', 'Codex': 'Codex（沙僧）', 'gpt': 'co', 'co': 'co', '小A': 'ag（总装接力）', 'xa': 'ag（总装接力）', 'ag': 'ag（总装接力）'}.get(executor, executor)
         trailer = '执行者: ' + actor + '\n核查: ' + review_status(root, state)
         if affected and not batch:
             trailer += '\n验证: 选测（基准 %s，当天全量前算选测已验）' % check[-1 - ('--cloud' in check)][:9]
@@ -2392,8 +2392,8 @@ def main(argv=None):
     modes = ap.add_mutually_exclusive_group()
     modes.add_argument('--dry-run', action='store_true')
     modes.add_argument('--finish', action='store_true')
-    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex', 'gpt', '小A', 'xa'], default='cc',
-                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），小A/xa 用于额度接力总装')
+    ap.add_argument('--executor', choices=['cc', 'Claude', 'Codex', 'co', 'ag', 'gpt', '小A', 'xa'], default='cc',
+                    help='执行者；Claude 是 cc 的旧写法（Kyo 10-31 改叫 cc），ag（旧名小A、xa）用于额度接力总装；co 旧名 gpt（Kyo 11-14 改名）')
     modes.add_argument('--close-batch', action='store_true',
                        help='本批都 --finish --batch 收尾后、没有新车道要合时：统一跑 检查.sh（可加 --affected；--oracle 见 check_cmd），通过后清理本批工作树、推送')
     modes.add_argument('--abort', action='store_true',

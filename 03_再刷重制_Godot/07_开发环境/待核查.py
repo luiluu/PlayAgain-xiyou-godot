@@ -29,7 +29,7 @@ LOG = '00_项目管理/变更记录.md'
 VOLUMES = '00_项目管理/变更记录卷'
 TRAILER = re.compile(r'^核查[:：]\s*待(Codex|Claude|审查)\s*$', re.M)
 EXECUTOR = re.compile(r'^执行者[:：]\s*(.+?)\s*$', re.M)
-REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|cc|Codex|gpt|小A)([^】]*)】\s*核查', re.M)   # Kyo 10-31 起写 cc；旧条目写 Claude；天启篇三方（11-14）gpt、小A 核查算「审查」
+REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|cc|Codex|gpt|小A|co|ag)([^】]*)】\s*核查', re.M)   # Kyo 10-31 起写 cc；旧条目写 Claude；天启篇三方（11-14）gpt、小A 核查算「审查」；Kyo 11-14 改名 co（原 gpt）、ag（原小A），新旧名都认
 REVIEWER_LINE = re.compile(r'^\s*[-*]?\s*(?:\*\*)?核查者(?:\*\*)?[:：]\s*(?:Claude|cc|Codex)[（(]审查[）)]', re.M)
 ENTRY = re.compile(r'^## \d{4}-\d{2}-\d{2}\b', re.M)
 HASH = re.compile(r'(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])')  # 纯数字的提交号（如 7432182）也算
@@ -154,7 +154,7 @@ def reviews(root):
             if m:
                 body = text[s:e]
                 audit = '审查' in m.group(3) or REVIEWER_LINE.search(body) is not None
-                audit = audit or m.group(2) in ('gpt', '小A')   # 天启篇三方：gpt、小A 的核查都是跨模型核查（核查矩阵），销「待审查」
+                audit = audit or m.group(2) in ('gpt', '小A', 'co', 'ag')   # 天启篇三方：gpt、小A 的核查都是跨模型核查（核查矩阵），销「待审查」
                 out.append((m.group(1), '审查' if audit else ('Claude' if m.group(2) == 'cc' else m.group(2)), body))
     return out
 
