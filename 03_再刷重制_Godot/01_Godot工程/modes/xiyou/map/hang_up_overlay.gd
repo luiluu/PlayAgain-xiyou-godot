@@ -24,14 +24,14 @@ const TEXT_COLOR := Color8(0, 200, 0)
 ## O-022：摘要随状态清除。false 按状态保留并叠画旧文字，恢复原版残留。
 static var CLEAR_SUMMARY := true
 static var TIP_WORD := true
-## O-待定-1：挂机中黑幕盖住按钮也能点停（v0.01.09 玩家反馈：安卓前台挂了一小时，关挂机关不掉，狂按回城才回去）。
+## O-460：挂机中黑幕盖住按钮也能点停（v0.01.09 玩家反馈：安卓前台挂了一小时，关挂机关不掉，狂按回城才回去）。
 ## 遇敌演出（60 帧）和战斗收场淡出（24 帧）的黑幕 XSceneFade 是挡鼠标的，加在挂机界面之后、盖在按钮上，这两段里点按钮
 ## 整个被吞掉（xiyou_hangup_stop 实测按钮一次按下都没收到，挂机照跑、接着又遇敌）；手机上进出战斗本来就卡几秒，
 ## 卡顿正落在这两段里，频繁遇敌时按钮大半时间点不到。原版按钮看的是 TouchInput（HangUp_Inter.updateTouch，Scene_Base.update 里
 ## 地图和战斗场景都跑），这两段照样能点。这里挂机中在 _input 先看点没点在按钮上（鼠标左键、触屏第一指），点中就停，不再经过界面层。
 ## 不在挂机时（开始挂机）仍走按钮本身。设 false 恢复（黑幕下点不到）。
 static var TAP_THROUGH_FADE := true
-## O-待定-2：点停之后这么久（毫秒，真实时间）里再点按钮不重新开始（同上反馈：按钮没反应时玩家连点，点中一下停了、
+## O-461：点停之后这么久（毫秒，真实时间）里再点按钮不重新开始（同上反馈：按钮没反应时玩家连点，点中一下停了、
 ## 下一下又开回来，看上去「关不掉」；手机卡顿时攒着的几下会在卡完后连着送到）。G 键不受影响。设 0 恢复（每下都切换）。
 static var RESTART_GUARD_MSEC := 500
 
@@ -105,14 +105,14 @@ func _tap() -> void:
 	var now := Time.get_ticks_msec()
 	var was_active := XHangUp.current_active()
 	if not was_active and RESTART_GUARD_MSEC > 0 and now - _stopped_msec < RESTART_GUARD_MSEC:
-		return  # 刚点停又点：不重新开始（O-待定-2）
+		return  # 刚点停又点：不重新开始（O-461）
 	press()
 	toggle_requested.emit()
 	if was_active and not XHangUp.current_active():
 		_stopped_msec = now
 
 
-## 挂机中黑幕盖住按钮时也能点停（O-待定-1，TAP_THROUGH_FADE）：鼠标左键、触屏第一指按下落在按钮上就当点了按钮
+## 挂机中黑幕盖住按钮时也能点停（O-460，TAP_THROUGH_FADE）：鼠标左键、触屏第一指按下落在按钮上就当点了按钮
 func _input(event: InputEvent) -> void:
 	if not TAP_THROUGH_FADE or button == null or not button.is_visible_in_tree() or not XHangUp.current_active():
 		return

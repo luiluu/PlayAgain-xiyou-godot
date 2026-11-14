@@ -2,8 +2,8 @@ extends Node
 ## 关挂机（v0.01.09 玩家反馈：安卓前台挂了一小时，关挂机之后停不下来，狂按回城才回去）。
 ## 触屏真点左上挂机按钮（ScreenTouch＋触屏转鼠标，按手机打开遇敌演出），在挂机的各个时刻点：走路中、遇敌演出（黑幕盖着按钮）、
 ## 战斗刚开始、战斗中、战斗收场淡出（黑幕盖着按钮）、回到地图、挂满一小时自动存档之后；点完断言挂机停了、之后不再走动遇敌。
-## 根因：两段黑幕 XSceneFade 挡鼠标、盖在按钮上，点了整个被吞掉（XHangUpOverlay.TAP_THROUGH_FADE，O-待定-1）；
-## 连点时停了又开回来（RESTART_GUARD_MSEC，O-待定-2）。末尾两个回退开关各验一次原来的坏表现。
+## 根因：两段黑幕 XSceneFade 挡鼠标、盖在按钮上，点了整个被吞掉（XHangUpOverlay.TAP_THROUGH_FADE，O-460）；
+## 连点时停了又开回来（RESTART_GUARD_MSEC，O-461）。末尾两个回退开关各验一次原来的坏表现。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results := []
@@ -197,7 +197,7 @@ func _run() -> void:
 	await stop_at("after_hour_autosave", func(): return XSave.exists(1) and not map.busy and not map._in_battle, 6000, func():
 		map.encounter_count = 999
 		s.hang_up_count = 3600 * 60 - 3)
-	# 连点（以为没点到再点一下）：点停后半秒内再点不重新开始（O-待定-2）
+	# 连点（以为没点到再点一下）：点停后半秒内再点不重新开始（O-461）
 	await double_tap("double_tap_stays_stopped", false)
 	# 过了半秒再点照常开始
 	await start_hanging()
@@ -207,7 +207,7 @@ func _run() -> void:
 		await frames(1)
 	await tap(button_at())
 	check("tap_after_guard_starts", XHangUp.is_active(s))
-	# 回退开关：黑幕下点不到（O-待定-1），连点又开回来（O-待定-2）
+	# 回退开关：黑幕下点不到（O-460），连点又开回来（O-461）
 	XHangUpOverlay.TAP_THROUGH_FADE = false
 	await stop_at("rollback_fade_swallows", func():
 		for c in map.ui.get_children():
