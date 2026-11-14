@@ -1,7 +1,9 @@
-# 交付：claude/project-thread-n6hozb
+# 交付：cc/tianqi-e2e-fix
 
-- 车道／工作者：测试·天启篇标题到大厅贯通＋交接板清理清单／cc（Pro，浏览器云端会话）
+- 车道／工作者：测试·天启篇标题到大厅贯通（claude/project-thread-n6hozb 原样带入）＋ 11-14 总装修三处测试过时／cc（总装）
 - 状态：可合并
+
+> 11-14 说明：claude/project-thread-n6hozb 06:09 合进过 main（dev.567），因为 `xiyou_tianqi_e2e` 在 main 上挂（云端 584 场景唯一失败、本机 6/14），09:57 被退回、没推过。本分支＝main＋n6hozb＋修测试两笔（e1153af29、b57f973a8），只改 `tests/xiyou_tianqi_e2e.gd`，不改游戏代码。下面原交付单内容照旧保留。
 
 > 设计仓库交接单 `协作交接/20261111_天启篇标题到大厅贯通测试.md`（Max 发给 Pro）。本分支只加一个专项（`tests/xiyou_tianqi_e2e.*`）和这张交付单，不改游戏代码、不改共用文件；交接板等的清理写在下面「交接板清理（给总装照做）」，总装照着改。
 
@@ -18,10 +20,16 @@
   - 开关回退：`XTianqi.ENABLED = false` 时同样按「新的游戏」进原版 Map001、局里没有 `flags.tianqi`；改回 true 后读 3 号档仍按天启篇规则（炼狱、超强者上限 2）。
 - 标题菜单项写成一处常量 `TITLE_ITEM`；PR #29 的新标题（`XTianqiTitle`）合并接线后，测试自动改读 `_tq_title._items`，不用再改测试。
 - 存档、设置写到 `user://test_xiyou_tianqi_e2e`，结束删掉；`XConfig.path_override` 指到测试目录，不读本机设置。
+- 11-14 合并前修测试（这个专项写在新标题、宠物隐藏、技能重构档位、取消键四样合进 main 之前，三处过时，都是测试的问题、不是游戏故障）：
+  - 新标题声明屏后放睁眼进场，进场中第一下按键只用来跳过进场、被吃掉；测试第一下按的正好是「确定」，于是「新的游戏」没触发、存档位页不出（6/14 起连锁失败的根因）。改成和玩家一样先按一下跳过进场（`_skip_title_entrance`）。
+  - 天启篇隐藏宠物后主菜单 `XMenu.commands()` 少「宠物」一项，测试按全表 `COMMANDS[_cmd_index]` 找「游戏结束」「整队」，下标错一位找不到；改按 `commands()`。
+  - 整队超强者上限按 `XItemMarks._super_in`（技能重构 TIERS 开着时按 `XTianqiSkills` 的档），测试按 `XTier` 挑超强者，挑到的人在新档位里不算超强者、没被拦；改用同一口径挑。
+  - `ESC_BACK` 改 true：cc/pro-newgame-back2（dev.567）起三页认取消键，专项改测按取消键逐页退回。
+  - 验证：本机 `xiyou_tianqi_e2e` 58/58 连跑两次，`xiyou_newgame_back` 68/68、`xiyou_tianqi_title` 46/46，语法检查通过。
 
 ## 交接板
 
-- 下一步：把 `xiyou_tianqi_e2e` 交 Mac 上跑一遍（见「验证」）；PR #29 接线后再跑一次（测试已兼容新标题）；派界面车道修「天启篇开局三页不认取消键」（见「发现的问题」），修好把专项的 `ESC_BACK` 改 true。
+- 下一步：无（Mac 已跑、新标题已接、取消键已修，`ESC_BACK` 已改 true）。
 - 用户试玩说明：无（只加测试）。
 - 需要用户决定：见文末「需要 Kyo 决定的」。
 
@@ -34,7 +42,7 @@
 - `entry` 组 `scenes` 加 `xiyou_tianqi_e2e.tscn`（改标题入口就跑贯通）；`intro_video` 组也加上（启动动画跳过在主线上）。
 - 建议另把 `modes/xiyou/core/tianqi.gd` 指到一个新组 `tianqi`：`{"说明": "天启篇开局与规则（XTianqi）：开局专项、贯通专项、第二批专项", "scenes": ["xiyou_tianqi_opening.tscn", "xiyou_tianqi_e2e.tscn", "xiyou_tianqi_party.tscn"], "refs": true, "checks": ["guards"]}`；现在它落到哪组请总装按 `选测.py` 结果定。
 
-## 交接板清理（给总装照做）
+## 交接板清理（11-11 写的，11-14 总装只照做了 #4；其余多已过时，留作参考）
 
 核对基准：`main` `cb6a21d`（dev.451，本分支已合入）。以代码、优化登记和变更记录为准；只改说法，不改决定。
 
