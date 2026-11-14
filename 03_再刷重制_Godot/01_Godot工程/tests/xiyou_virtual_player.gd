@@ -42,6 +42,8 @@ func _summary(rep: Dictionary) -> String:
 	var lines := ["## 虚拟玩家（%s，种子 %d）" % ["爬塔" if rep.mode == "climb" else "逛图", int(rep.seed)], ""]
 	if rep.mode == "climb":
 		lines.append("- 爬到：**第 %d 层**（已通过 %d 层）" % [int(rep.floor), maxi(0, int(rep.floor) - 1)])
+		if int(rep.get("pass_after", 0)) > 0:
+			lines.append("- **量数局**：守层者输满 %d 次就放水通过（血压到 1）。放水的层：%s" % [int(rep.pass_after), str(rep.gifted_floors) if not rep.gifted_floors.is_empty() else "无"])
 		if int(rep.debug_floor) > 0 or not rep.debug_items.is_empty():
 			lines.append("- **调试局**：层数直接改成了 %d、开局给了物品 %s，结果不算正常通关" % [int(rep.debug_floor), str(rep.debug_items)])
 		lines.append("- 开局阵容：%s%s" % [str(rep.lineup), "" if rep.fixed_random else "（随机没有固定）"])
@@ -63,6 +65,7 @@ func _summary(rep: Dictionary) -> String:
 			if not fb.is_empty():
 				lines.append("- 法宝：当层上限 %s；出战的人身上 %s" % [str(int(fb.cap)) if int(fb.cap) > 0 else "不限", "、".join(fb["items"].map(func(x): return "%s %d 级" % [str(x.name), int(x.level)])) if not fb["items"].is_empty() else "没有法宝"])
 			lines.append("- 花钱：买了 %d 件，用掉书和丹药 %d 个，喂法宝 %d 次，收工时金币 %d" % [int(g.get("spend_buys", 0)), int(g.get("spend_uses", 0)), int(g.get("fabao_feeds", 0)), int(g.get("gold", 0))])
+			lines.append("- 第六轮养成：用掉捡到的书和盒子 %d 个；角色进阶 %d 次（出战的人各 %s 阶，手里魂灯 %d）；换人道意志碎片 %d 次（剩 %d 个）；整队 %d 次，出战栏 %s；见面礼交了 %s 层、交不起 %s 层" % [int(g.get("bag_uses", 0)), int(g.get("advances", 0)), str(g.get("advance_ranks", [])), int(g.get("lamps", 0)), int(g.get("fragment_buys", 0)), int(g.get("fragments", 0)), int(g.get("formations", 0)), str(g.get("slots", [])), str(g.get("greet_paid", [])), str(g.get("greet_failed", []))])
 		if not rep.growth_log.is_empty():
 			lines.append("- 养成动作 %d 次：%s" % [rep.growth_log.size(), "；".join(rep.growth_log.slice(0, 12).map(func(x): return "第 %d 层 %s" % [int(x.floor), str(x.what)]))])
 	lines.append("- 用了 %d 步、%d 帧、%.1f 分钟，按键 %d 次，战斗 %d 场，对话 %d 条" % [int(rep.ticks), int(rep.frames), float(rep.msec) / 60000.0, int(rep.keys), rep.battles.size(), int(rep.messages)])
@@ -140,6 +143,10 @@ func _run() -> void:
 	bot.rng_seed = int(_arg("--vp-seed", "20261113"))
 	bot.max_ticks = int(_arg("--vp-ticks", "6000"))
 	bot.out_dir = _arg("--vp-out")
+	bot.snapshot_dir = _arg("--vp-snapshot-dir")
+	bot.pass_after = int(_arg("--vp-pass-after", "0"))
+	if bot.out_dir != "":
+		DirAccess.make_dir_recursive_absolute(bot.out_dir)
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
 	bot.equip_enabled = not OS.get_cmdline_user_args().has("--vp-no-equip")
 	bot.farm_enabled = not OS.get_cmdline_user_args().has("--vp-no-farm")
@@ -154,6 +161,18 @@ func _run() -> void:
 	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")
 	bot.spend_enabled = not OS.get_cmdline_user_args().has("--vp-no-spend")
 	bot.feed_enabled = not OS.get_cmdline_user_args().has("--vp-no-feed")
+	bot.fabao_enabled = not OS.get_cmdline_user_args().has("--vp-no-fabao")
+	bot.bag_enabled = not OS.get_cmdline_user_args().has("--vp-no-bag")
+	for id in _arg("--vp-lineup").split(",", false):
+		bot.want_lineup.append(int(id))
+	bot.lottery_keep = int(_arg("--vp-lottery-keep", "2000"))
+	bot.greet_enabled = not OS.get_cmdline_user_args().has("--vp-no-greet")
+	bot.blood_enabled = not OS.get_cmdline_user_args().has("--vp-no-blood")
+	bot.guard_shop_enabled = not OS.get_cmdline_user_args().has("--vp-no-guard-shop")
+	bot.formation_enabled = not OS.get_cmdline_user_args().has("--vp-no-formation")
+	bot.advance_enabled = not OS.get_cmdline_user_args().has("--vp-no-advance")
+	bot.fragments_enabled = not OS.get_cmdline_user_args().has("--vp-no-fragments")
+	VP_GROWTH.full_score = not OS.get_cmdline_user_args().has("--vp-plain-score")
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
@@ -175,6 +194,11 @@ func _run() -> void:
 	for i in range(1, XSave.SLOTS + 1):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XSave.path(i)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	# --vp-resume=<存档文件>：从一份存档接着玩（虚拟玩家每层进门前另抄的那份，见 --vp-snapshot-dir 的 saves/）。放进 1 号格，机器人在标题看到有档会读它
+	if _arg("--vp-resume") != "":
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(XSave.dir()))
+		var err := DirAccess.copy_absolute(_arg("--vp-resume"), ProjectSettings.globalize_path(XSave.path(1)))
+		_check("resume_save_copied", err == OK, [_arg("--vp-resume"), err])
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")

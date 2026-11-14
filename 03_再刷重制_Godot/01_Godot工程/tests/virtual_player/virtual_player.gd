@@ -19,6 +19,14 @@ const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑�
 const TIER_NAMES := ["普通难度", "冒险难度", "勇士难度", "王者难度"]
 const TIER_SWITCHES := [1561, 1660] # 副本各档的开关：入口门和首领都按它分页（见 XDungeon 文件头）
 const LOBBY := 4                   # 方桌大厅
+const EXCHANGE := 132               # 兑换大厅（大厅有传送点过去）：节日礼物送法宝积分，铁匠卖法宝
+const FABAO_POINTS := 213          # 法宝积分
+const GREET_VAR := 842             # 变量 842＝当前层是否缴纳见面礼
+const GREET_ITEM := 182            # 不朽残渣（见面礼的一种）
+const FRAG_MIN := 4500             # 绪绪最便宜的一档（10 个人道意志碎片）要的肝帝积分
+const FRAGMENT := 2530             # 人道意志碎片
+const LAMP := 188                  # 魂灯（角色进阶的材料，兑换大厅魂灯兑换商店卖）
+const LAMP_CURRENCY := 199         # 买魂灯用的货币（不朽碎片）
 const FLOOR_VAR := 20              # 变量 20＝神魔之塔当前层数（守层者打赢后加一，大厅的门按它送人）
 
 ## ---- 参数（开跑前设） ----
@@ -51,6 +59,7 @@ var _tq_slot := 0
 var _tq_key := ""
 var _lineup_fixed := false
 var lineup: Array = []
+var want_lineup: Array = []        # --vp-lineup=号,号,号,号,号：开局用这五个人（第一个是 1 号位），用来把每个角色都测到
 var debug_floor := 0                # 调试：开局第一次到大厅时把层数直接改成这个数（报告里会标出来，不算正常通关）
 var _debug_floor_done := false
 var debug_items := {}              # 调试：开局第一次到大厅时直接给这些物品 {物品号: 数量}（验证养成的代码路径用；报告里会标出来）
@@ -61,6 +70,15 @@ var orbs_enabled := true           # 大厅里把神秘珠鉴定掉、给装备�
 var race_enabled := true           # 大厅里有进阶石就给种族祝福进阶（同菜单「种族祝福」）
 var lottery_enabled := true        # 大厅里有抽奖券就去希禾那里「自定义单抽」全部抽掉
 var spend_enabled := true          # 大厅里逛商店：买换上能变强的装备、出战的人能学的书、加属性的丹药，买完用掉（法宝经验丹不买）
+var snapshot_dir := ""             # 给了就在每层第一次去挑战守层者之前把存档写成 floor_<层>_<种子>.json（XState.to_dict()；法宝线拿真实队伍量守层者）
+var _snap_done := {}
+var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
+var gifted_floors: Array = []      # 放水通过的层
+var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
+var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
+var _exchange_floor := -1          # 这一层去过兑换大厅了
+var _exchange_ticks := 0
+var _gift_tries := {}
 var feed_enabled := true           # 大厅里把背包里没人穿的装备喂给没到上限的法宝（XFabaoFeed 合进来以后才生效）
 var fabao_feeds := 0               # 喂过几次法宝
 var spend_buys := 0                # 一共买了多少件
@@ -78,6 +96,28 @@ var _shop_seen := 0                # 已经逛过的商店页（实例号）
 var _shop_bought := {}             # 这一轮在这位 NPC 买了几件
 var _shop_memo := {}               # NPC → 上次看完时 {gold, floor, bought}：没买到东西、钱也没翻倍就先不再去
 var _use_queue: Array = []         # 买完等着用掉的 [{id, actor, n}]
+var bag_enabled := true            # 背包里捡到的书（抽奖、副本首领掉的）给出战的人学掉，装备盒、精魂补给包打开（--vp-no-bag 关）
+var _bag_tried := {}               # 用过没成的书（"物品号:角色号"）
+var _bag_boxes := {}               # 盒子 → 试过的那一层
+var bag_uses := 0                  # 用掉多少本捡到的书、多少个盒子
+var advance_enabled := true        # 角色进阶（兑换大厅奉神老妪）：条件够就进阶，只缺魂灯就去兑换大厅买（--vp-no-advance 关）
+var advances := 0                  # 进阶了几次
+var fragments_enabled := true      # 肝帝积分够了就找绪绪换人道意志碎片，再去人族首领那里买功法、丹药、法宝（--vp-no-fragments 关）
+var formation_enabled := true      # 整队：板凳上有明显更强的人就换上场，领袖放 1 号位，助力位放档位高的；通关抽角色挑档位最高的（--vp-no-formation 关）
+var guard_shop_enabled := true     # 打赢守层者后回头找它：13 层起它会卖东西（种族祝福石、专属书）、送礼（--vp-no-guard-shop 关）
+var _gshop_done := {}              # 地图 → 这位守层者的店逛过了
+var guard_shops := 0               # 逛了几位守层者的店
+var blood_enabled := true          # 手里的头颅多了就去兑换大厅把店逛一遍（嫦娥用头颅换血脉被动）（--vp-no-blood 关）
+var _heads_seen := 0               # 上次去兑换大厅时手里的头颅数
+var greet_enabled := true          # 13 层起守层者要见面礼（不朽残渣或肝帝积分）：没交它会开大道领域、给我方挂天道灭绝。挑战前先交（--vp-no-greet 关）
+var _greet_sig := {}               # 层 → 上次试着交时手里的 [不朽残渣, 肝帝积分]（没变就不再试）
+var _greet_asked := -1             # 刚在这一层点了「给」，等着看交成没有
+var greet_paid: Array = []         # 交过见面礼的层
+var greet_failed: Array = []       # 想交没交成的层（东西不够）
+var lottery_keep := 2000           # 抽奖期望调成零以下后长期抽一定亏：肝帝积分低于这个数不抽，抽的次数也按每抽最多亏 500 留够这个数（--vp-lottery-keep=N，0＝有券就全抽）
+var formations := 0                # 整队改了几次
+var fragment_buys := 0             # 换了几次碎片
+var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
@@ -470,6 +510,12 @@ func _close_battle(obs: Dictionary, how: String) -> void:
 	if _battle.get("stalemate", false):
 		res = "僵局"
 	_battle["result"] = res
+	if res == "胜利":
+		_battle["boss_left"] = 0.0
+	_battle["gifted"] = gifted_floors.has(_floor) and _dg.is_empty()
+	if mode == "climb" and (res == "全灭" or res == "僵局" or _intent in ["challenge", "enter"]):
+		_log("战斗记录 第 %d 层 敌群 %d %s%s 第 %d 回合 敌人剩 %.1f%% 首领剩 %.1f%% 逐回合[回合,敌总血,我血,站着,首领血,敌人数]=%s" % [_floor, int(_battle.get("troop", 0)), res, "（副本）" if not _dg.is_empty() else "",
+			int(_battle.get("turn", 0)), 100.0 * float(_battle.get("hp", 0.0)) / maxf(1.0, float(_battle.get("hp0", 1.0))), 100.0 * float(_battle.get("boss_left", 0.0)), str(_battle.get("trace", []))])
 	if res == "胜利" and not _dg.is_empty() and int(_battle.get("troop", 0)) == int(_dg.get("boss_troop", -1)):
 		_dg["won"] = true
 		dungeon_kills += 1
@@ -523,6 +569,8 @@ func _recover(_obs: Dictionary) -> void:
 
 
 func _act(obs: Dictionary) -> void:
+	if _greet_asked >= 0 and obs.screen in ["battle", "map"]:
+		_greet_check()
 	match obs.screen:
 		"none", "other":
 			await _frames(2)
@@ -563,7 +611,7 @@ func _act(obs: Dictionary) -> void:
 					_shop_seen = shop_page.get_instance_id()
 					if _shop_last != "":
 						_shop_exh[_shop_last] = true
-					var res: Dictionary = Growth.shop(shop_page, XState.current)
+					var res: Dictionary = Growth.shop(shop_page, XState.current, Growth.advance_needs(XState.current) if advance_enabled else {})
 					for line in res.lines:
 						_note_growth(str(line))
 					_use_queue.append_array(res.uses)
@@ -582,6 +630,8 @@ func _act(obs: Dictionary) -> void:
 			# 抽奖的数量框开着：填最多、开始抽（等于在框里把数量拉满再点「开始抽取」）
 			if XCasinoBatch.is_open() and str(XCasinoBatch.session.get("state", "")) == "quantity":
 				var n := XCasinoBatch.maximum(XState.current, str(XCasinoBatch.session.mode))
+				if lottery_keep > 0:
+					n = mini(n, maxi(0, (int(XState.current.variable(XCasinoBatch.VAR_POINTS)) - lottery_keep) / 500))
 				var p0 := int(XState.current.variable(XCasinoBatch.VAR_POINTS))
 				if n > 0 and XCasinoBatch.begin(n):
 					lottery_draws += n
@@ -687,6 +737,13 @@ func _act_form(obs: Dictionary) -> void:
 		var r := RandomNumberGenerator.new()
 		r.seed = rng_seed
 		lineup = XTianqi.roll_lineup(_tq_key, r)
+		# 点名的阵容（--vp-lineup，Kyo 11-13「不重抽，未来要测完所有角色」）：合本档规矩才用，不合就照种子抽的
+		if not want_lineup.is_empty():
+			if XTianqi.lineup_ok(_tq_key, want_lineup):
+				lineup = want_lineup.duplicate()
+			else:
+				_log("点名的阵容 %s 不合本档规矩，照种子抽" % str(want_lineup))
+				_mark("lineup_rejected")
 		entry._tq_lineup(_tq_slot, _tq_key, lineup)
 		await _frames(2)
 		return
@@ -708,6 +765,24 @@ func _act_form(obs: Dictionary) -> void:
 
 
 # ---------------------------------------------------------------- 对话选项
+
+## 点了「给」之后：进了战斗或回到地图时看变量 842，记这一层见面礼交成没有（打赢后游戏会把它清零，所以要在战斗里看）
+func _greet_check() -> void:
+	if _greet_asked >= 0 and XState.current != null:
+		if int(XState.current.variable(GREET_VAR)) != 0:
+			if not greet_paid.has(_greet_asked):
+				greet_paid.append(_greet_asked)
+				greet_failed.erase(_greet_asked)
+				_mark("greet_paid_%d" % _greet_asked)
+				_note_growth("给第 %d 层守层者交了见面礼" % _greet_asked)
+				_snap_done.erase(_greet_asked)       # 快照重拍一份交过见面礼之后的（变量 842＝1）
+				_snap_done.erase("last")
+				_snapshot(XState.current, _greet_asked)
+		elif not greet_failed.has(_greet_asked) and not greet_paid.has(_greet_asked):
+			greet_failed.append(_greet_asked)
+			_note_growth("第 %d 层的见面礼交不起（不朽残渣 %d、肝帝积分 %d）" % [_greet_asked, XState.current.item_count(GREET_ITEM), int(XState.current.variable(XCasinoBatch.VAR_POINTS))])
+		_greet_asked = -1
+
 
 func _act_choice(obs: Dictionary) -> void:
 	var n: int = obs.count
@@ -742,13 +817,31 @@ func _act_choice(obs: Dictionary) -> void:
 			break
 	if _intent == "zhenqi":
 		want = _zhenqi_choice(obs.message._choices)
+	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
+		want = 0                     # 天启篇选线的确认：要通关就得选一条线（排在逛店前面：逛店的意图还留着时会选「再想想」兜圈子）
+	elif _intent == "fragments":
+		want = _fragment_choice(obs.message._choices)
 	elif _intent == "shop":
 		want = _shop_choice(obs.message._choices)
 	elif _intent == "dungeon" and _dungeon_tier_choice(obs.message._choices) >= 0:
 		want = _dungeon_tier_choice(obs.message._choices)
 		_dg_tier = want
-	elif mode == "climb" and n == 2 and str(obs.message._choices[0]) == "确定" and str(obs.message._choices[1]) == "再想想":
-		want = 0                     # 天启篇选线的确认：要通关就得选一条线
+	# 见面礼（13 层起守层者的选项多一项「缴纳见面礼」；变量 842＝这一层交过没有）
+	if greet_enabled and mode == "climb":
+		var gst := XState.current
+		var gnow := [gst.item_count(GREET_ITEM), int(gst.variable(XCasinoBatch.VAR_POINTS))]
+		var gi: int = obs.message._choices.find("缴纳见面礼")
+		if gi >= 0 and _intent == "challenge" and int(gst.variable(GREET_VAR)) == 0 and _greet_sig.get(_floor) != gnow:
+			want = gi
+		elif obs.message._choices.size() == 3 and str(obs.message._choices[0]) == "给" and str(obs.message._choices[2]) == "先准备准备":
+			want = 0
+			_greet_sig[_floor] = gnow
+			_greet_asked = _floor
+	if formation_enabled and mode == "climb":
+		var dp: int = Growth.draw_choice(obs.message._choices)
+		if dp >= 0:
+			want = dp                # 通关抽角色：挑档位最高的
+			_mark("draw_picked")
 	counts[want] = int(counts[want]) + 1
 	choice_counts[ckey] = counts
 	var cur: int = obs.index
@@ -820,10 +913,49 @@ func _act_battle(obs: Dictionary) -> void:
 	var hp := 0.0
 	for e in b.logic.enemies:
 		hp += float(e.hp)
+	# 放水（只在量数时开）：这一层已经输满 pass_after 次，这次挑战把守层者的血压到 1
+	# 进门就自动开打的战斗（天启篇选线后的关卡、第 20 层这类）输了不一定是全灭回标题：按「进门开打了几次」另数
+	if pass_after > 0 and _battle != null and not _battle.has("hp0") and _dg.is_empty() and _intent == "enter":
+		_floor_row()["enter_fights"] = int(_floor_row().get("enter_fights", 0)) + 1
+	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent in ["challenge", "enter"] \
+			and (int(_floor_row().get("defeats", 0)) >= pass_after or int(_floor_row().get("enter_fights", 0)) > pass_after + 1):
+		for e in b.logic.enemies:
+			if float(e.hp) > 1.0:
+				e.hp = 1.0
+		if not gifted_floors.has(_floor):
+			gifted_floors.append(_floor)
+			_mark("gifted_%d" % _floor)
+			_log("放水：第 %d 层守层者输了 %d 次，这次把它的血压到 1" % [_floor, int(_floor_row().get("defeats", 0))])
 	if _battle != null:
 		_battle.actions += 1
 		if not _battle.has("hp0"):
 			_battle["hp0"] = hp
+		# 每回合记一笔：敌人剩几成血、我方剩几成血、还站着几个（看是一回合被秒还是慢慢磨死）
+		var tr: Array = _battle.get("trace", [])
+		if (tr.is_empty() or int(tr[-1][0]) != int(b.logic.turn)) and tr.size() < 60:
+			var ph := 0.0
+			var pm := 0.0
+			var alive := 0
+			for a in b.logic.actors:
+				ph += maxf(0.0, float(a.hp))
+				pm += float(a.mhp)
+				alive += 1 if float(a.hp) > 0.0 else 0
+			# 首领＝开战时生命上限最高的那只（守层者带小怪、会叫帮手时敌人总血会涨，单看它才知道守层者掉了多少）
+			if not _battle.has("boss"):
+				var top := 0
+				for i in b.logic.enemies.size():
+					if float(b.logic.enemies[i].mhp) > float(b.logic.enemies[top].mhp):
+						top = i
+				_battle["boss"] = top
+			var boss_left := 0.0
+			var foes := 0
+			for i in b.logic.enemies.size():
+				foes += 1 if float(b.logic.enemies[i].hp) > 0.0 else 0
+				if i == int(_battle.boss):
+					boss_left = float(b.logic.enemies[i].hp) / maxf(1.0, float(b.logic.enemies[i].mhp))
+			_battle["boss_left"] = boss_left
+			tr.append([int(b.logic.turn), snappedf(hp / maxf(1.0, float(_battle.get("hp0", hp))), 0.001), snappedf(ph / maxf(1.0, pm), 0.01), alive, snappedf(boss_left, 0.001), foes])
+			_battle["trace"] = tr
 		if not _battle.get("stalemate", false):
 			_battle["hp"] = hp           # 收工时还剩多少血、打到第几回合（报告里看差多远）
 			_battle["turn"] = int(b.logic.turn)
@@ -916,11 +1048,11 @@ func _on_defeat() -> void:
 		return
 	defeats += 1
 	row["defeats"] = int(row.get("defeats", 0)) + 1
-	_need_grind = climb_grind_base * int(pow(2, int(row.defeats) - 1))
+	_need_grind = climb_grind_base * int(pow(2, mini(int(row.defeats) - 1, 6)))   # 最多翻到 384 场
 	if farm_enabled and not _farm_block.has(_floor):
 		_need_farm = farm_base * int(row.defeats)
 	_log("全灭：第 %d 层第 %d 次，下次先练 %d 场、刷 %d 次副本首领" % [_floor, row.defeats, _need_grind, _need_farm])
-	if int(row.defeats) >= climb_max_defeats:
+	if int(row.defeats) >= climb_max_defeats and pass_after <= 0:
 		climb_stop = "第 %d 层守层者打不过：输了 %d 次，中间挂机练了 %d 场、打倒副本首领 %d 次%s，队伍等级 %s" % [_floor, row.defeats,
 			int(row.get("grind_battles", 0)), int(row.get("dungeon_kills", 0)), ("（%s）" % str(_farm_block[_floor])) if _farm_block.has(_floor) else "", str(_levels())]
 
@@ -1056,7 +1188,10 @@ func _act_climb(obs: Dictionary) -> void:
 		return
 	if map.map_id == LOBBY:
 		_floor_entry = {LOBBY: floor}
+		_exchange_ticks = 0
 		await _climb_lobby(map, st)
+	elif map.map_id == EXCHANGE:
+		await _climb_exchange(map, st)
 	else:
 		await _climb_floor(map, st, floor)
 
@@ -1148,13 +1283,26 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			var fed: Array = Growth.feed_fabao(st)
 			fabao_feeds += fed.size()
 			did.append_array(fed)
+		if formation_enabled:
+			var fm: Array = Growth.formation(st)
+			if not fm.is_empty():
+				formations += 1
+				_equip_sig = null          # 换了人：装备重新分一遍
+				_mark("formation_changed")
+			did.append_array(fm)
+		if advance_enabled:
+			var adv: Array = Growth.advance(st)
+			advances += adv.size()
+			did.append_array(adv)
+		if bag_enabled:
+			_use_queue.append_array(Growth.bag_uses(st, _bag_tried, _bag_boxes))
 		for line in did:
 			_note_growth(str(line))
 		if not did.is_empty():
 			_mark("growth_done")
 	# 抽奖：有券就去希禾那里选「自定义单抽」，数量填最多（数量框由 _act 里代填）
 	var tickets := XCasinoBatch.stock(st)
-	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp:
+	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp and (lottery_keep <= 0 or int(st.variable(XCasinoBatch.VAR_POINTS)) >= lottery_keep + 500):
 		e = _find_event(map, func(x): return _has_choice(x, "自定义单抽"))
 		if e != null and _aim(map, e, "lottery"):
 			if _arrived(map.player):
@@ -1162,21 +1310,41 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			await _goto_target(map)
 			return
 		_lottery_stamp = tickets         # 找不到或走不到希禾：这批券先不管
-	# 花钱：买来的书和丹药先用掉；每次打过仗回大厅逛一轮店
-	if spend_enabled:
-		if not _use_queue.is_empty():
-			if st.peek_common_event() > 0:
-				await _frames(4)         # 上一样东西带出来的事件还没跑：等它
-				return
-			var u: Dictionary = _use_queue.pop_front()
-			var who: XActor = st.actor(int(u.actor))
-			var used: int = await Growth.use_item(map.ui, st, int(u.id), who, int(u.n))
-			spend_uses += used
-			_note_growth("%s 用 %s×%d" % [who.display_name(), str(XDB.rec("Items", int(u.id)).get("name", u.id)), used])
-			if used > 0:
-				_mark("item_used")
-			await _frames(2)
+	# 买来的、捡到的书、丹药、盒子先用掉
+	if not _use_queue.is_empty():
+		if st.peek_common_event() > 0:
+			await _frames(4)             # 上一样东西带出来的事件还没跑：等它
 			return
+		var u: Dictionary = _use_queue.pop_front()
+		var who: XActor = st.actor(int(u.actor))
+		var used: int = await Growth.use_item(map.ui, st, int(u.id), who, int(u.n))
+		var kind := str(u.get("kind", ""))
+		if kind == "":
+			spend_uses += used
+		else:
+			bag_uses += used
+			if kind == "box":
+				_bag_boxes[int(u.id)] = int(st.variable(FLOOR_VAR))
+			elif used <= 0:
+				_bag_tried["%d:%d" % [int(u.id), int(u.actor)]] = true
+		if used > 0 or kind == "":
+			_note_growth("%s 用 %s×%d" % [who.display_name(), str(XDB.rec("Items", int(u.id)).get("name", u.id)), used])
+		if used > 0:
+			_mark("item_used" if kind == "" else "bag_used")
+		await _frames(2)
+		return
+	# 肝帝积分换人道意志碎片（绪绪）：积分够最便宜的一档就去；换到了把店重新逛一遍（人族首领的功法、丹药、法宝用碎片买）
+	var points := int(st.variable(XCasinoBatch.VAR_POINTS))
+	if fragments_enabled and spend_enabled and points >= FRAG_MIN and points != _frag_stamp:
+		e = _find_event(map, func(x): return _has_choice(x, "人道意志碎片"))
+		if e != null and _aim(map, e, "fragments"):
+			if _arrived(map.player):
+				_frag_stamp = points
+			await _goto_target(map)
+			return
+		_frag_stamp = points
+	# 花钱：每次打过仗回大厅逛一轮店
+	if spend_enabled:
 		var sstamp := [int(st.variable(FLOOR_VAR)), battles.size()]
 		if sstamp != _shop_stamp:
 			_shop_stamp = sstamp
@@ -1193,6 +1361,13 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				_shop_last = ""
 			await _goto_target(map)
 			return
+		# 法宝：出战的人有谁没戴，每层去一趟兑换大厅
+		if _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st) or _want_blood(st)):
+			e = _transfer_event(map, EXCHANGE)
+			if e != null and _aim(map, e, "exchange"):
+				await _goto_target(map)
+				return
+			_exchange_floor = int(st.variable(FLOOR_VAR))   # 走不到传送点：这一层不去了
 	# 进门前存档（快捷键 ~）：全灭回标题后从这里接着来
 	var stamp := [int(st.variable(FLOOR_VAR)), battles.size()]
 	if stamp != _save_stamp:
@@ -1203,8 +1378,17 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		await _frames(10)
 		if is_instance_valid(map) and map.toasts.size() > before:
 			_mark("saved")
+			# 接着玩用：把刚存的档另抄一份到快照目录 saves/（每层留最近一次进门前的），下次用 --vp-resume 从这一层接着爬
+			if snapshot_dir != "" and XSave.current_slot >= 1 and FileAccess.file_exists(XSave.path(XSave.current_slot)):
+				DirAccess.make_dir_recursive_absolute(snapshot_dir.path_join("saves"))
+				DirAccess.copy_absolute(ProjectSettings.globalize_path(XSave.path(XSave.current_slot)), snapshot_dir.path_join("saves").path_join("floor_%d_%d.json" % [int(st.variable(FLOOR_VAR)), rng_seed]))
 		return
 	e = _find_event(map, func(x): return _has_choice(x, "进入该层"))
+	if e != null:
+		_door_id = e.event_id
+	elif _door_id > 0:
+		# 过了 20 层塔门换了一页：不再问「进入该层」，调查就直接送进去。认之前记下的那扇门
+		e = _find_event(map, func(x): return x.event_id == _door_id)
 	if e != null and _aim(map, e, "enter"):
 		await _goto_target(map)
 		return
@@ -1238,12 +1422,7 @@ func _best_candidate(eq: XEquipScene) -> int:
 		var t := XEquipment.preview(a, eq._slot, rec)
 		if t == null:
 			continue
-		var score := 0.0
-		var now := [a.mhp, a.mmp, a.atk, a.def, a.mat, a.mdf, a.agi, a.luk]
-		var then := [t.mhp, t.mmp, t.atk, t.def, t.mat, t.mdf, t.agi, t.luk]
-		var weight := [1.0, 0.3, 1.5, 1.0, 1.5, 1.0, 0.5, 0.2]
-		for k in 8:
-			score += weight[k] * (float(then[k]) - float(now[k])) / maxf(absf(float(now[k])), 1.0)
+		var score: float = Growth.gain_score(a, t)
 		if score > best_score:
 			best_score = score
 			best = i
@@ -1350,6 +1529,22 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 		return
 	# 进来之后层数变了＝这层打完了：回大厅去下一层
 	if int(_floor_entry.get(map.map_id, floor)) != floor:
+		# 先回头找守层者：打赢后它那一页有「购买物品」「向守层者索要礼物」（13 层起）
+		if guard_shop_enabled and spend_enabled and not _gshop_done.has(map.map_id):
+			var gs := _find_event(map, func(x): return _has_choice(x, "向守层者索要礼物"))
+			var gkey: int = map.map_id * 1000 + (gs.event_id if gs != null else 0)
+			if gs == null or _shop_done.has(gkey) or int(_shop_visits.get(gkey, 0)) >= 8 or not _aim(map, gs, "shop"):
+				_gshop_done[map.map_id] = true
+				if gs != null:
+					guard_shops += 1
+					_growth_stamp = null      # 买了祝福石：回大厅把种族进阶再过一遍
+			else:
+				_shop_event = gkey
+				if _arrived(map.player):
+					_shop_visits[gkey] = int(_shop_visits.get(gkey, 0)) + 1
+					_shop_last = ""
+				await _goto_target(map)
+				return
 		await _hotkey_lobby(map)
 		return
 	if _need_farm > 0 and _need_grind <= 0 and await _go_dungeon(map, st, floor):
@@ -1384,6 +1579,7 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 			_need_grind = 0
 		return
 	if _aim(map, g, "challenge"):
+		_snapshot(st, floor)
 		if _arrived(map.player):
 			_floor_row()["challenges"] = int(_floor_row().get("challenges", 0)) + 1
 			_mark("guardian_challenged")
@@ -1785,6 +1981,146 @@ func _plan(map: XMapScene) -> void:
 # ---------------------------------------------------------------- 报告
 
 ## 养成现状（给报告用）：每人的真气和境界、抽奖券、肝帝积分、副本首领熟练度
+## 每层第一次去挑战守层者之前留一份队伍快照（基准伤害工具 baseline_dps --snapshots 读）
+func _snapshot(st: XState, floor: int) -> void:
+	if snapshot_dir == "":
+		return
+	# 第一次挑战前的写在目录里（floor_<层>_<种子>.json）；最近一次挑战前的另写一份到 last/（输了几次、养成过之后的队伍）
+	var stamp := [floor, battles.size()]
+	if _snap_done.get("last") == stamp:
+		return
+	_snap_done["last"] = stamp
+	var text := JSON.stringify(st.to_dict())
+	for dir in ([snapshot_dir] if not _snap_done.has(floor) else []) + [snapshot_dir.path_join("last")]:
+		DirAccess.make_dir_recursive_absolute(dir)
+		var f := FileAccess.open(dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
+		if f != null:
+			f.store_string(text)
+			f.close()
+	if not _snap_done.has(floor):
+		_snap_done[floor] = true
+		_mark("snapshot_%d" % floor)
+
+
+## 这张图上把人送到 dest 的传送点（事件当前页里有「场所移动」到那张图）
+func _transfer_event(map: XMapScene, dest: int) -> MVEvent:
+	return _find_event(map, func(x): return x.page.get("list", []).any(func(c): return int(c.code) == 201 and int(c.parameters[0]) == 0 and int(c.parameters[1]) == dest))
+
+
+## 兑换大厅：先领节日礼物（送法宝积分的那位，一次性），再找卖法宝的铁匠逛一遍，然后回大厅
+func _climb_exchange(map: XMapScene, st: XState) -> void:
+	_exchange_floor = int(st.variable(FLOOR_VAR))
+	_exchange_ticks += 1
+	if _exchange_ticks < 600:
+		var gift := _find_event(map, func(x): return int(_gift_tries.get(x.event_id, 0)) < 2 \
+			and x.page.get("list", []).any(func(c): return int(c.code) == 122 and int(c.parameters[0]) == FABAO_POINTS and int(c.parameters[2]) == 1))
+		if gift != null and _aim(map, gift, "gift"):
+			if _arrived(map.player):
+				_gift_tries[gift.event_id] = int(_gift_tries.get(gift.event_id, 0)) + 1
+				_mark("exchange_gift")
+			await _goto_target(map)
+			return
+		if Growth.lacks_fabao(st) and int(st.variable(FABAO_POINTS)) > 0:
+			for x in map.events:
+				var key: int = EXCHANGE * 1000 + x.event_id
+				if x.erased or x.page.is_empty() or not _is_shop(x) or not _has_choice(x, "法宝") or _shop_done.has(key) or int(_shop_visits.get(key, 0)) >= 12:
+					continue
+				if not _aim(map, x, "shop"):
+					_shop_done[key] = true
+					continue
+				_shop_event = key
+				if _arrived(map.player):
+					_shop_visits[key] = int(_shop_visits.get(key, 0)) + 1
+					_shop_last = ""
+				await _goto_target(map)
+				return
+		if _want_blood(st):
+			# 头颅多了：把兑换大厅带「购买物品」的店都看一遍（嫦娥的血脉用头颅换；别的店没有用得上的就不会买）
+			var any := false
+			for x in map.events:
+				var key3: int = EXCHANGE * 1000 + x.event_id
+				if x.erased or x.page.is_empty() or not _is_shop(x) or not _has_choice(x, "购买物品") or _shop_done.has(key3) or int(_shop_visits.get(key3, 0)) >= 6:
+					continue
+				if not _aim(map, x, "shop"):
+					_shop_done[key3] = true
+					continue
+				_shop_event = key3
+				if _arrived(map.player):
+					_shop_visits[key3] = int(_shop_visits.get(key3, 0)) + 1
+					_shop_last = ""
+				any = true
+				await _goto_target(map)
+				return
+			if not any:
+				_heads_seen = Growth.heads(st)
+		if _want_lamps(st):
+			for x in map.events:
+				var key2: int = EXCHANGE * 1000 + x.event_id
+				if x.erased or x.page.is_empty() or not _is_shop(x) or not _has_choice(x, "魂灯兑换商店") or _shop_done.has(key2) or int(_shop_visits.get(key2, 0)) >= 6:
+					continue
+				if not _aim(map, x, "shop"):
+					_shop_done[key2] = true
+					continue
+				_shop_event = key2
+				if _arrived(map.player):
+					_shop_visits[key2] = int(_shop_visits.get(key2, 0)) + 1
+					_shop_last = ""
+				await _goto_target(map)
+				return
+	# 办完了（或逛太久）：回大厅；回去以后把换装、喂法宝、进阶再过一遍
+	_growth_stamp = null
+	_equip_sig = null
+	var back := _transfer_event(map, LOBBY)
+	if _exchange_ticks % 3 != 0 and back != null and _aim(map, back, "back"):
+		await _goto_target(map)
+		return
+	await _hotkey_lobby(map)
+
+
+## 手里的头颅比上次去兑换大厅时多了 4 个以上：值得去看看嫦娥的血脉
+func _want_blood(st: XState) -> bool:
+	return blood_enabled and spend_enabled and Growth.heads(st) >= _heads_seen + 4
+
+
+## 进阶只差魂灯、手里又有能买魂灯的不朽碎片：值得去一趟兑换大厅
+func _want_lamps(st: XState) -> bool:
+	if not advance_enabled:
+		return false
+	var need: Dictionary = Growth.advance_needs(st)
+	return need.has(LAMP) and int(st.variable(LAMP_CURRENCY)) >= 1
+
+
+## 找绪绪换碎片的选项：先点「人道意志碎片」，再挑买得起的最大一档；买不起就走
+func _fragment_choice(choices: Array) -> int:
+	var points := int(XState.current.variable(XCasinoBatch.VAR_POINTS))
+	var re := RegEx.create_from_string("（(\\d+)积分）")
+	var best := -1
+	var best_cost := 0
+	var leave := choices.size() - 1
+	for i in choices.size():
+		var t := str(choices[i])
+		var m := re.search(t)
+		if m != null:
+			var cost := int(m.get_string(1))
+			if cost <= points and cost > best_cost:
+				best_cost = cost
+				best = i
+		elif t.contains("离开") or t.contains("就看看"):
+			leave = i
+	if best >= 0:
+		fragment_buys += 1
+		_mark("fragments_bought")
+		_note_growth("找绪绪换人道意志碎片：花 %d 积分" % best_cost)
+		_shop_done = {}                  # 有碎片了：这一轮的店重新逛
+		_shop_memo = {}
+		_shop_visits = {}
+		return best
+	for i in choices.size():
+		if str(choices[i]) == "人道意志碎片" and points >= FRAG_MIN:
+			return i
+	return leave
+
+
 ## 这位 NPC 现在这一页开不开店（事件指令里有「商店处理」）
 func _is_shop(e: MVEvent) -> bool:
 	return e.page.get("list", []).any(func(c): return int(c.code) == 302)
@@ -1822,7 +2158,7 @@ func _shop_choice(choices: Array) -> int:
 	for i in choices.size():
 		var t := str(choices[i])
 		var key := "%s#%d" % [k, i]
-		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武")):
+		if _shop_exh.has(key) or t.contains("抽奖") or not (t.contains("购买") or t.contains("兑换") or t.contains("功法") or t.contains("神武") or t.contains("法宝") or t.contains("索要礼物")):
 			continue
 		_shop_tries[key] = int(_shop_tries.get(key, 0)) + 1
 		if int(_shop_tries[key]) >= 4:
@@ -1851,6 +2187,8 @@ func _growth_state(st: XState) -> Dictionary:
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
 		"fabao": Growth.fabao(st), "spend_buys": spend_buys, "spend_uses": spend_uses, "fabao_feeds": fabao_feeds,
+		"greet_paid": greet_paid, "greet_failed": greet_failed, "guard_shops": guard_shops, "formations": formations, "slots": st.battle_slots.duplicate(), "bag_uses": bag_uses, "advances": advances, "advance_ranks": Growth.advance_ranks(st), "fragment_buys": fragment_buys,
+		"fragments": st.item_count(FRAGMENT), "lamps": st.item_count(LAMP),
 	}
 
 
@@ -1858,7 +2196,7 @@ func report() -> Dictionary:
 	var st := XState.current
 	return {
 		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
-		"aborted": aborted, "settled": settled, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
+		"aborted": aborted, "settled": settled, "pass_after": pass_after, "gifted_floors": gifted_floors, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
