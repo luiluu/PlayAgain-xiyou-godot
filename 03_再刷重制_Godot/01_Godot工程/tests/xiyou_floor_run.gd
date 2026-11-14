@@ -505,7 +505,7 @@ func _state_json(s: XState) -> String:
 	return JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
 
 
-## 存档前那份按「写盘再读回」的样子比：装备选项表、失效已看过标记写盘时不写（XSaveSlim，O-待定-1／2）
+## 存档前那份按「写盘再读回」的样子比：装备选项表、失效已看过标记写盘时不写（XSaveSlim，O-453／2）
 func _saved_json(s: XState) -> String:
 	return JSON.stringify(JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s.to_dict()))))
 

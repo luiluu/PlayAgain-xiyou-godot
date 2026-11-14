@@ -30,15 +30,15 @@ extends RefCounted
 ## 复制失败这次就不瘦身、照原样写。已经瘦过的文件之后普通存档不再复制。自动存档 save_auto.json 是临时文件（手动存过就删），不备份。
 ## 日志：某个文件由没瘦变瘦、删了临时文件或导入备份时，往引擎日志打一行，并记进存档目录的 cleanup_log.json（只留最近 LOG_KEEP 条）。
 
-## O-待定-1：存档不带装备词缀选项表：false＝照旧整份写
+## O-453：存档不带装备词缀选项表：false＝照旧整份写
 static var GEAR_ROLL_TABLE := true
-## O-待定-2：存档不带已不存在装备的已看过标记：false＝照旧全写
+## O-454：存档不带已不存在装备的已看过标记：false＝照旧全写
 static var SEEN_STALE := true
-## O-待定-3：启动时清残留临时文件：false＝不清
+## O-455：启动时清残留临时文件：false＝不清
 static var TEMP_FILES := true
-## O-待定-4：星级仓库文件不带装备词缀选项表：false＝照旧整份写
+## O-456：星级仓库文件不带装备词缀选项表：false＝照旧整份写
 static var STAR_WAREHOUSE := true
-## O-待定-5：导入存档前的备份每格只留最近 IMPORT_KEEP 份：false＝照旧永远留着
+## O-457：导入存档前的备份每格只留最近 IMPORT_KEEP 份：false＝照旧永远留着
 static var IMPORT_BACKUPS := true
 
 const MARK := "saveSlim"
@@ -47,7 +47,7 @@ const LOG_FILE := "cleanup_log.json"
 const LOG_KEEP := 20
 const TEMP_SUFFIX := ".tmp"
 const TEMP_AGE_SEC := 3600
-## O-待定-7：存档里装备实例相同的备注等字段只存一份（同档去重，新格式）：默认 false＝写旧格式；读新格式不受这个开关管
+## O-459：存档里装备实例相同的备注等字段只存一份（同档去重，新格式）：默认 false＝写旧格式；读新格式不受这个开关管
 static var GEAR_POOL := false
 
 const POOL_KEY := "gearPool"
