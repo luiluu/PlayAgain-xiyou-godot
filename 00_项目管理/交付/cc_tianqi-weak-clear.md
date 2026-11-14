@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-weak-clear
 
 - 车道／工作者：C 规则·机制／cc（天启篇全弱者通关资格）
-- 状态：进行中
+- 状态：可合并
 
 依据：私密仓库 xiyou-design-docs `重制设定/天启篇_设计总览_v0.2.md` 第二节 3「全弱者通关资格跟本档走，奖励另行标定」（Kyo 11-08）；`天启篇_对重制内容影响审查_v0.6.md` 第 245、268 行（原版弱者挑战在天启篇作废，新判定「全弱者通关 36 层」没做）。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
 
@@ -77,6 +77,7 @@
 - 判定：`XTianqiWeakClear.is_weak` 前加 `is_growth`（`skill_rework.json` `tiers.growth` 有这个号就不算弱者）。结算行「出战的全是弱者」、成就 142 文案没写弱者定义，不用改。
 - 测试：删掉拿三笠当弱者的 `tier_change_mid_battle`、`tier_steady_records`，换成 `growth_list`（95、173 在名单里，测试的固定弱者池里没有成长型）、`growth_untrained_not_counted`（三笠没练，战斗档是弱者也不记）、`growth_trained_not_counted`（练满也不记）、`growth_wolf_not_counted`（饿狼没进阶放在上场位也不记）、`growth_mid_battle_not_counted`（真战斗里三笠换上来行动一回合再换回去，也不记）、`fixed_weak_records`（纯固定弱者照记）。39/39。
 - 反向验证（3 项都咬住）：成长型照档位算、成长型名单只认三笠、判定恒假。
+- 云端选测（基准 b1b69bccc，只改模块和专项）：801bef583，5 个场景全部通过（Actions run 43580010877）。
 - 上次返修的「见到时按当时档位记」现在只防以后新加的会变档、又不在成长型名单里的角色；眼下能变档的只有成长型，已经一律不算，所以这一层暂时没有能单独咬住的用例。
 
 ## 本分支提交
