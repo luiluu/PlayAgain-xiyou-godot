@@ -2,7 +2,7 @@ extends Node
 ## 审查 78 P3-1（XTianqi.SWAP_INIT）：战斗中换上来的助力位补开战初始化——初始 TP、技能预热重置、开战状态标签、种族本场数据；
 ## 心钢蓄力开战时就按全队（含助力位）建了；开关关掉照第二批什么都不补。
 
-const START_SKILL := 2122  # 虎狩：<StartPushState196: 100%>（原用普通难度 5548，天启篇不再学难度被动，O-待定）
+const START_SKILL := 2122  # 虎狩：<StartPushState196: 100%>（原用普通难度 5548，天启篇不再学难度被动，O-421）
 const START_STATE := 196
 
 var results: Array = []

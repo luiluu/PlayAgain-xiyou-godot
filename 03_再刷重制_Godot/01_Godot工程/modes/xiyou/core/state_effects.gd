@@ -301,7 +301,7 @@ static func run(phase: String, holder: XBattler, ctx := {}) -> float:
 	# processStateEval uses states directly; typestates owns all action/turn lists.
 	var rows: Array = holder.states().duplicate() if phase in ["battle", "victory", "escape", "defeat"] else holder.effect_states(phase, execute).duplicate()
 	if phase == "confirm":
-		rows = XTianqiNoDiffPassive.confirm_rows(holder, rows)  # 天启篇：三个难度被动的结算伤害改读数值表，按原状态位置插入（O-待定）
+		rows = XTianqiNoDiffPassive.confirm_rows(holder, rows)  # 天启篇：三个难度被动的结算伤害改读数值表，按原状态位置插入（O-421）
 	for st in rows:
 		var next := ctx.duplicate()
 		next.execute = execute
