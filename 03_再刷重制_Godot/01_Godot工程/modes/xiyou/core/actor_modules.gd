@@ -147,7 +147,7 @@ static func visible_skill_types(types: Array) -> Array:
 ## 技能菜单（Window_SkillType.makeCommandList）对 167～177 号新角色和流萤 179 固定多一页「功法」（技能类型 6，没学功法也列）：
 ## 先去掉已有的 6，再插到被动 4 前面；没有 4 就插到 min(2, 长度) 位。只管技能菜单，战斗指令保持原样
 ## （installV010UsabilityRuntime 的 newActor＋Window_SkillType.makeCommandList 包装，冻结源 v0.62.12：
-## newActor＝id>=167 && id<=177 || id===179；ui7 移植时只照了 167～177，流萤 179 漏了，v0.01.09 玩家反馈「流萤看不到功法页面」，dev.待定 补上）。
+## newActor＝id>=167 && id<=177 || id===179；ui7 移植时只照了 167～177，流萤 179 漏了，v0.01.09 玩家反馈「流萤看不到功法页面」，dev.578 补上）。
 ## 178 不在内（原版也不在）；180 五条悟只进天启篇、原版没有，不加。
 const GONGFA_SKILL_TYPE := 6
 const GONGFA_ACTOR_MIN := 167
