@@ -442,8 +442,10 @@ static func after_battle_sell(s: XState) -> int:
 	if XSafeSell.ENABLED:   # O-293：OnekeyWPSell 改走 CodexSafeSell.plan()
 		return int(XSafeSell.sell_plan(s, XSafeSell.plan(s))[0])
 	var list := XItemMarks.sellable_gear(s, sell_legacy(s))
+	XAlienation.begin_batch(s)  # O-待定-1：整批查吞器供体表
 	for e in list:
 		XItemMarks.sell(s, e, 1)   # XdRsData.hangUp.doSell：同商店，含 YEP_X_MoreCurrencies 卖出报酬
+	XAlienation.end_batch()
 	return list.size()
 
 
