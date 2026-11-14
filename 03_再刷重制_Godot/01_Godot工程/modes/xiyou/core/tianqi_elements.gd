@@ -351,7 +351,7 @@ static func fixed_deal(s: XState, key: String, phase := 1) -> Dictionary:
 		_norm_entry(fixed[fk])  # 读档后的浮点归一（条目数个位数）
 	if key == "knight":
 		var base_key := "knight:%d" % clampi(phase, 1, 3)
-		if not fixed.has("knight:1"):
+		if _knight_needs_redeal(fixed):
 			_deal_knight(s, st)
 		return fixed.get(base_key, {"weak": [], "resist": [], "immune": []})
 	if fixed.has(key):
@@ -368,16 +368,77 @@ static func fixed_deal(s: XState, key: String, phase := 1) -> Dictionary:
 	return dealt
 
 
-static func _deal_knight(s: XState, st: Dictionary) -> void:
+static func _knight_needs_redeal(fixed: Dictionary) -> bool:
 	var spec: Dictionary = data().get("fixed_entries", {}).get("knight", {})
+	var nw := int(spec.get("weak", 2))
+	var nr := int(spec.get("resist", 2))
+	var ni := int(spec.get("immune", 1))
+	for p in range(1, 4):
+		var k := "knight:%d" % p
+		if not fixed.has(k) or not (fixed[k] is Dictionary):
+			return true
+		var row: Dictionary = fixed[k]
+		if (row.get("weak", []) as Array).size() != nw:
+			return true
+		if (row.get("resist", []) as Array).size() != nr:
+			return true
+		if (row.get("immune", []) as Array).size() != ni:
+			return true
+	return false
+
+
+static func _deal_knight(_s: XState, st: Dictionary) -> void:
+	var spec: Dictionary = data().get("fixed_entries", {}).get("knight", {})
+	var nw := int(spec.get("weak", 2))
+	var nr := int(spec.get("resist", 2))
+	var ni := int(spec.get("immune", 1))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = ("%d|knight" % int(st.get("seed", 1))).hash()
-	var prev_weak := -1
+	# 三阶段（P1/P2/P3）尽量各自在弱、抗、免三组内全不重复；若配置超容则退化为至少相邻阶段不重复
+	var used_w := []
+	var used_r := []
+	var used_i := []
+	var prev_w := []
+	var prev_r := []
+	var prev_i := []
 	for p in range(1, 4):
-		var dealt := _deal_single_entry(rng, int(spec.get("weak", 1)), int(spec.get("resist", 2)), int(spec.get("immune", 1)), [prev_weak] if prev_weak > 0 else [])
-		if not dealt.weak.is_empty():
-			prev_weak = int(dealt.weak[0])
+		var dealt := _deal_knight_phase(rng, nw, nr, ni, used_w, used_r, used_i, prev_w, prev_r, prev_i)
+		prev_w = dealt.weak.duplicate()
+		prev_r = dealt.resist.duplicate()
+		prev_i = dealt.immune.duplicate()
+		for e in dealt.weak:
+			if not used_w.has(e):
+				used_w.append(e)
+		for e in dealt.resist:
+			if not used_r.has(e):
+				used_r.append(e)
+		for e in dealt.immune:
+			if not used_i.has(e):
+				used_i.append(e)
 		st.fixed["knight:%d" % p] = dealt
+
+
+static func _pick_from_pool(rng: RandomNumberGenerator, count: int, exclude: Array, prefer_ban: Array, fallback_ban: Array) -> Array:
+	var pool := BASE_ELEMENTS.duplicate()
+	_shuffle_rng(pool, rng)
+	var picked := []
+	for ban in [prefer_ban, fallback_ban, []]:
+		for e in pool:
+			if picked.size() >= count:
+				return picked
+			var ei := int(e)
+			if exclude.has(ei) or picked.has(ei) or ban.has(ei):
+				continue
+			picked.append(ei)
+	return picked
+
+
+static func _deal_knight_phase(rng: RandomNumberGenerator, nw: int, nr: int, ni: int, used_w: Array, used_r: Array, used_i: Array, prev_w: Array, prev_r: Array, prev_i: Array) -> Dictionary:
+	var weak := _pick_from_pool(rng, nw, [], used_w, prev_w)
+	var resist := _pick_from_pool(rng, nr, weak, used_r, prev_r)
+	var wr := weak + resist
+	var immune := _pick_from_pool(rng, ni, wr, used_i, prev_i)
+	return {"weak": weak, "resist": resist, "immune": immune}
 
 
 static func _deal_single_entry(rng: RandomNumberGenerator, nw: int, nr: int, ni: int, weak_ban: Array) -> Dictionary:

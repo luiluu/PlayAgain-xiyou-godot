@@ -95,7 +95,7 @@
   "fixed_entries": {
     "hongjun": {"floor": 34, "weak": 2, "resist": 2, "immune": 1, "phases": 1, "constitutions": [7, 8]},
     "yingzi": {"floor": 35, "weak": 2, "resist": 2, "immune": 1, "phases": 1, "constitutions": []},
-    "knight": {"floor": 36, "weak": 1, "resist": 2, "immune": 1, "phases": 3, "constitutions": []},
+    "knight": {"floor": 36, "weak": 2, "resist": 2, "immune": 1, "phases": 3, "constitutions": []},
     "dungeon_boss": {"floor": 0, "weak": 2, "resist": 2, "immune": 1, "phases": 1, "constitutions": []}
   },
   "skill_shifts": {

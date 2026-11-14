@@ -145,7 +145,7 @@ func _test_fixed_and_alien() -> void:
 	lg_sh.set_meta(XTianqiHorsemen.META, {"mode": "shadow", "phase": 1})
 	var yp := XTianqiElements.enemy_profile(yz, lg_sh, s)
 	_check("yingzi_2w_2r_1i", yp.weak.size() == 2 and yp.resist.size() == 2 and yp.immune.size() == 1 and yp.source == "yingzi", yp)
-	# 36 骑士三阶段且弱点不连续重复
+	# 36 骑士三阶段：每阶段 2 弱 2 抗 1 免、同阶段互不重复、三阶段各自全不重复、同种子重读不变、旧 1 弱存档重掷
 	var lg_kn := XBattleLogic.new()
 	lg_kn.setup(2, s)
 	var kn := XEnemy.new()
@@ -157,11 +157,57 @@ func _test_fixed_and_alien() -> void:
 	var kp2 := XTianqiElements.enemy_profile(kn, lg_kn, s)
 	XTianqiElements.on_horsemen_phase(lg_kn, kn, 3)
 	var kp3 := XTianqiElements.enemy_profile(kn, lg_kn, s)
-	_check("knight_3_phases_1w_2r_1i_no_repeat_weak",
-		kp1.weak.size() == 1 and kp2.weak.size() == 1 and kp3.weak.size() == 1
-		and kp1.resist.size() == 2 and kp1.immune.size() == 1
-		and int(kp1.weak[0]) != int(kp2.weak[0]) and int(kp2.weak[0]) != int(kp3.weak[0])
+	var k_phases := [kp1, kp2, kp3]
+	var k_counts_ok := true
+	var k_intra_distinct := true
+	var all_w := {}
+	var all_r := {}
+	var all_i := {}
+	for kp in k_phases:
+		if kp.weak.size() != 2 or kp.resist.size() != 2 or kp.immune.size() != 1:
+			k_counts_ok = false
+		var seen := {}
+		for e in kp.weak:
+			seen[int(e)] = true
+			all_w[int(e)] = true
+		for e in kp.resist:
+			seen[int(e)] = true
+			all_r[int(e)] = true
+		for e in kp.immune:
+			seen[int(e)] = true
+			all_i[int(e)] = true
+		if seen.size() != 5:
+			k_intra_distinct = false
+	var adj_no_repeat := true
+	for idx in range(2):
+		for e in k_phases[idx].weak:
+			if (k_phases[idx + 1].weak as Array).has(int(e)):
+				adj_no_repeat = false
+	_check("knight_3_phases_2w_2r_1i_no_repeat_weak",
+		k_counts_ok and k_intra_distinct and adj_no_repeat
+		and all_w.size() == 6 and all_r.size() == 6 and all_i.size() == 3
 		and msg2.contains("P2"), [kp1, kp2, kp3])
+	var s_same := _tq_state()
+	XTianqiElements.ensure_deck(s_same, 99911)
+	var same_ok := true
+	for ph in range(1, 4):
+		var a_d := XTianqiElements.fixed_deal(s_same, "knight", ph)
+		var b_d := XTianqiElements.fixed_deal(s, "knight", ph)
+		if JSON.stringify(a_d.weak) != JSON.stringify(b_d.weak) or JSON.stringify(a_d.resist) != JSON.stringify(b_d.resist) or JSON.stringify(a_d.immune) != JSON.stringify(b_d.immune):
+			same_ok = false
+	_check("knight_same_seed_reload_unchanged", same_ok)
+	var s_legacy := _tq_state()
+	XTianqiElements.ensure_deck(s_legacy, 99911)
+	s_legacy.flags.tianqi.elements.fixed["knight:1"] = {"weak": [2], "resist": [3, 4], "immune": [5]}
+	s_legacy.flags.tianqi.elements.fixed["knight:2"] = {"weak": [6], "resist": [7, 8], "immune": [9]}
+	s_legacy.flags.tianqi.elements.fixed["knight:3"] = {"weak": [14], "resist": [15, 2], "immune": [3]}
+	var legacy_redeal_ok := true
+	for ph in range(1, 4):
+		var a_l := XTianqiElements.fixed_deal(s_legacy, "knight", ph)
+		var b_l := XTianqiElements.fixed_deal(s, "knight", ph)
+		if JSON.stringify(a_l.weak) != JSON.stringify(b_l.weak) or JSON.stringify(a_l.resist) != JSON.stringify(b_l.resist) or JSON.stringify(a_l.immune) != JSON.stringify(b_l.immune):
+			legacy_redeal_ok = false
+	_check("knight_legacy_1w_save_redeals_deterministically", legacy_redeal_ok)
 	# 里副本 Boss vs 精英；普通怪
 	var qb := XEnemy.new()
 	qb.setup(1, 3)
