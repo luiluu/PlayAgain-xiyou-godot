@@ -208,7 +208,7 @@ static func opening_commands() -> Array:
 
 # ==== 包壬：入队等级同步 ====
 ## 通关抽到的新角色入队时，等级同步成「当前上场队员（上场 4 人＋助力位）的平均等级（四舍五入）」，不超过本层等级上限（XState.max_level，
-## 各层守层者打完才抬）；经验同步到该级。只管 XTianqi.take_draw 的通关抽角色，开局阵容不动；只升不降。回退开关 REN（O-待定）。
+## 各层守层者打完才抬）；经验同步到该级。只管 XTianqi.take_draw 的通关抽角色，开局阵容不动；只升不降。回退开关 REN（O-444）。
 static var REN := true
 
 
