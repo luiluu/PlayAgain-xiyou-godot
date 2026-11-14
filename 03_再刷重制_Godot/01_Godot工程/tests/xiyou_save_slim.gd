@@ -333,8 +333,8 @@ func _run() -> void:
 	check("tq_slim_load", XSave.load_slot(6))
 	_same("tq_old_vs_slim_visible", vis_tq_old, _visible(XState.current))
 	var rework_slim := _rework(XState.current)
-	check("tq_reforge_ran", rework_old.reforge.has("ok") and rework_old.locked.has("ok"), [rework_old.reforge, rework_old.locked])
-	check("tq_reroll_ran", rework_old.reroll.has("ok") and not rework_old.resolve.has("error"), [rework_old.reroll, rework_old.resolve])
+	# 补丁线没有天启篇重铸／异化重抽：check("tq_reforge_ran", rework_old.reforge.has("ok") and rework_old.locked.has("ok"), [rework_old.reforge, rework_old.locked])
+	# 补丁线没有天启篇重铸／异化重抽：check("tq_reroll_ran", rework_old.reroll.has("ok") and not rework_old.resolve.has("error"), [rework_old.reroll, rework_old.resolve])
 	_same("tq_rework_same", rework_old, rework_slim)
 
 	# ---- 星级仓库文件 ----
