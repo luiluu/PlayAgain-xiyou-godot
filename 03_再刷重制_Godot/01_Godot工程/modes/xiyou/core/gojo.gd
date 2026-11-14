@@ -76,7 +76,7 @@ const TEMPLATE_ARMOR := 4581  # 宿傩「神武解」
 const UNLOCK_KEY := "codexTianqiGojo"
 const UNLOCK_DIFFICULTY := "zhengdao"
 ## 证道开放前临时降到炼狱（Kyo 11-14）：XTianqi.ZHENGDAO_OPEN 还关着时炼狱 36 层也解锁；证道一开放自动只认证道。
-## 已解锁的记在全局配置里、不收回。开关（O-待定-2）：false 回到只认证道
+## 已解锁的记在全局配置里、不收回。开关（O-463）：false 回到只认证道
 static var BEFORE_ZHENGDAO_LIANYU := true
 const UNLOCK_DIFFICULTY_BEFORE_OPEN := "lianyu"
 const UNLOCK_WITH := [171, 172]
