@@ -1,6 +1,6 @@
 {
-  "developmentVersion": "dev.564",
+  "developmentVersion": "dev.565",
   "releaseVersion": "0.01",
-  "kind": "playable_slice",
+  "kind": "工具",
   "gameplayAvailable": true
 }

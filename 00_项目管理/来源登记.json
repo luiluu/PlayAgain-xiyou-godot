@@ -67,7 +67,7 @@
    "frozenSince": "2026-10-15",
    "developmentVersion": null,
    "frozenCopyTarget": "03_再刷重制_Godot/02_内容与素材/冻结正式源/v0.62.12/app.nw",
-   "previousFrozenCopy": "03_再刷重制_Godot/02_内容与素材/冻结正式源/v0.28/app.nw"
+   "previousFrozenCopy": "retired_removed_20261114_was_v0.28"
   },
   {
    "id": "historical_xiyou_source_157",
@@ -91,7 +91,7 @@
     "xiyou": "legacy_xiyou_mod_kyo",
     "new": null
    },
-   "developmentVersion": "dev.564"
+   "developmentVersion": "dev.565"
   }
  ]
 }
