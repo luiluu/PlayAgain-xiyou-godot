@@ -40,6 +40,8 @@ const SECTIONS := {
 	"skill_grow": {"v": 1, "owner": "XTianqiSkills"},
 	"no_diff_passive": {"v": 1, "owner": "XTianqiNoDiffPassive", "vkey": "no_diff_passive"},
 	"gojo": {"v": 3, "owner": "XTianqiGojoTrial", "vkey": "gojo_adv_v", "keys": ["gojo_trials"]},
+	"sect_bing": {"v": 1, "owner": "XTianqiSect"},  # 教派包丙（总装合并时补登记）
+	"fetters": {"v": 1, "owner": "XTianqiSect", "array": true},  # 教派包乙小小鱼破枷锁：发过的重数
 }
 ## 已接进门面（section／after_load 管迁移）的分区；其余只登记，模块里照旧就地补（S2 批逐个接）
 const WIRED := ["qiyin", "drop", "gojo"]
