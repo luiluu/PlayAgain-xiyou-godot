@@ -18,6 +18,7 @@ var out_dir := ""
 
 func _ready() -> void:
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
+	XMira.ART = false  # 参照为 v0.62.12（168 用 UserSV_MiraHuman1_0）；米拉新美术见 xiyou_mira_art
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
@@ -195,6 +196,7 @@ func _run() -> void:
 			pl.stream = null
 	await get_tree().create_timer(0.3, true, false, true).timeout
 	await frames(3)
+	XMira.ART = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

@@ -551,6 +551,9 @@ static func sprite_spec(id: int) -> Dictionary:
 	var multi := ""
 	if id == 173:
 		multi = "Codex_Garou_QCosmic" if XGarou.stage() >= 6 else "Codex_Garou_QHuman"
+	elif id == XMira.ACTOR and XMira.ART and name == "BlackDragon_Mira_SV":
+		var mp_u2 := XDB.img_path("sv_actors", "Codex_Mira_SV_u2")
+		return {"path": mp_u2, "key": "Codex_Mira_SV_u2", "multi": false, "name": "Codex_Mira_SV_u2"} if mp_u2 != "" else {}
 	elif BOOK_MULTI.has(id) and (BOOK_MULTI[id][0] == "" or name == BOOK_MULTI[id][0]):
 		multi = BOOK_MULTI[id][1]
 	if multi != "":

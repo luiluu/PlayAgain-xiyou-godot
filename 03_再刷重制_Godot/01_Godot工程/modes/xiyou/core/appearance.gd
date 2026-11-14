@@ -112,6 +112,8 @@ static func for_look(a: XActor, key: String) -> XAppearance:
 				var st: Dictionary = XDB.rec("States", int(id))
 				if not st.is_empty():
 					states.append(st.get("meta", {}))
+	if form == "MiraHuman_u2" or (form == "MiraHuman" and XMira.ART):
+		return for_image("sv_actors/Codex_Mira_SV_u2", XXuanTusuArt.meta(name, meta, art), states)
 	return for_image("sv_actors/" + name, XXuanTusuArt.meta(name, sv_provider(a, name, meta, form), art), states)
 
 
@@ -151,7 +153,9 @@ static func sv_states(a: XActor) -> Array:
 ## 渡鸦（167）神话剩余回合 > 0 换神话（只在战斗中有）。卡图生效时没有形态。
 static func sv_form(a: XActor) -> String:
 	if XMira.own(a):
-		return "MiraDragon" if XMira.dragon(a) else "MiraHuman"
+		if XMira.dragon(a):
+			return "MiraDragon"
+		return "MiraHuman_u2" if XMira.ART else "MiraHuman"
 	if XRaven.own(a) and XRaven.is_myth(a):
 		return "RavenMythic"
 	return ""
@@ -230,6 +234,7 @@ const PROFILES := {
 	"Raven_Normal_SV": [64, 64, 9, 4, 60, 64], "BlackDragon_Mira_SV": [64, 64, 10, 2, 55, 64],
 	"Codex_Yomi_SV": [64, 64, 0, 4, 63, 64], "Codex_Jingliu_SV": [64, 64, 11, 2, 54, 64],
 	"Codex_Toji_SV": [64, 64, 9, 3, 51, 64], "Codex_Sukuna_SV": [64, 64, 11, 3, 53, 61],
+	"Codex_Mira_SV_u2": [64, 64, 8, 3, 53, 61],
 	"Garou_Human": [64, 64, 7, 0, 51, 64], "Raven_Mythic_SV": [64, 64, 11, 4, 58, 63],
 	"Garou_Cosmic": [64, 64, 18, 14, 46, 55], "UserSV_MiraHuman": [260, 240, 43, 48, 196, 178],
 	"UserSV_MiraDragon": [340, 280, 61, 58, 260, 217], "UserSV_RavenMythic": [380, 280, 84, 55, 268, 211],
