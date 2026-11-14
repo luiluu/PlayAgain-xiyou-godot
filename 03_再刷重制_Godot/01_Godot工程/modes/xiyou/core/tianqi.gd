@@ -233,6 +233,7 @@ static func start_new_game(slot: int, key: String, lineup: Array) -> XState:
 	s.y = HALL_POS.y
 	s.direction = HALL_POS.z
 	s.flags["tianqi"] = {"rules": RULES_VERSION, "difficulty": key, "lineup": lineup.map(func(v): return int(v))}
+	XTianqiNoDiffPassive.mark_new_game(s)  # 开局不发难度被动：记迁移标记，关开关读档能补回（O-待定）
 	_pending = opening_commands(slot, key, lineup)
 	return s
 

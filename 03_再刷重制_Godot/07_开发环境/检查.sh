@@ -16,6 +16,9 @@
 #             去掉 --cloud 改本机跑，不静默降级。例外（tools29）：GitHub 根本没启动任务——账单问题（付款失败、花费上限）或本月额度用完——
 #             时明说原因（不是代码问题），自动改用本机跑同一批场景（CHECK_JOBS 默认 3）；CHECK_CLOUD_FALLBACK=0 回到判失败。
 #             环境变量：CHECK_CLOUD_NO_UPLOAD=1 不重传转换产物，CHECK_CLOUD_TIMEOUT=秒（默认 2700）
+#   天启篇默认模式（Kyo 2026-11-14 RPGMV 停更，正式源永久定在 冻结正式源/v0.62.12）：不跑、不提示正式源同步／跟进冻结后改动；
+#             --oracle 照旧非默认（改原版移植来的底层逻辑时手动加），原版对照探针与专项照旧在选测里。
+#             XIYOU_LEGACY_SYNC=1 回到重制期旧提示（选测选中同源检查却没加 --oracle 时提醒）；合并工具同一开关另见 合并车道.py check_cmd
 #   --keep-going  文档与登记检查（JSON／链接／开发编号）失败后仍跑 Godot 测试与其余检查（默认此时立即失败退出，免得白跑几十分钟）
 set -u
 ENV_DIR=${0:A:h}
@@ -304,7 +307,8 @@ if [[ $RELEASE_KEYS == 1 ]]; then
   if python3 "$ENV_DIR/发行入口冒烟.py" --keys; then ok "发行包入口与按键冒烟"; else bad "发行包入口／按键冒烟失败，见上方 FAIL 行与日志目录"; fi
 fi
 
-if (( ! ORACLE && ! SEL_FULL && ${SEL_CHECKS[(Ie)same_source]} )); then
+# 重制期提醒：同源检查（验证西游来源.py）只在 --oracle 下跑。天启篇默认不提示（正式源已永久冻结，同源只在改原版移植逻辑时手动 --oracle 核）
+if [[ ${XIYOU_LEGACY_SYNC:-0} == 1 ]] && (( ! ORACLE && ! SEL_FULL && ${SEL_CHECKS[(Ie)same_source]} )); then
   print -r -- "  ⚠ 选测选中了同源检查，但没加 --oracle，未跑（合并车道.sh --affected 会带 --oracle）"
 fi
 

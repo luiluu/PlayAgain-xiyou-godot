@@ -29,15 +29,17 @@ LOG = '00_项目管理/变更记录.md'
 VOLUMES = '00_项目管理/变更记录卷'
 TRAILER = re.compile(r'^核查[:：]\s*待(Codex|Claude|审查)\s*$', re.M)
 EXECUTOR = re.compile(r'^执行者[:：]\s*(.+?)\s*$', re.M)
-REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|cc|Codex)([^】]*)】\s*核查', re.M)   # Kyo 10-31 起写 cc；旧条目写 Claude
+REVIEW = re.compile(r'^## (\d{4}-\d{2}-\d{2}) 【(Claude|cc|Codex|gpt|小A)([^】]*)】\s*核查', re.M)   # Kyo 10-31 起写 cc；旧条目写 Claude；天启篇三方（11-14）gpt、小A 核查算「审查」
 REVIEWER_LINE = re.compile(r'^\s*[-*]?\s*(?:\*\*)?核查者(?:\*\*)?[:：]\s*(?:Claude|cc|Codex)[（(]审查[）)]', re.M)
 ENTRY = re.compile(r'^## \d{4}-\d{2}-\d{2}\b', re.M)
 HASH = re.compile(r'(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])')  # 纯数字的提交号（如 7432182）也算
-BRANCH = re.compile(r'(?<![A-Za-z0-9_])(?:claude|cc|codex)/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
+# 车道分支前缀：重制期 claude/、cc/、codex/；天启篇三方（11-14）加 gpt/、xa/ 与 Orca 工作树分支 luiluu/
+LANE_PREFIX = r'(?:claude|cc|codex|gpt|xa|luiluu)'
+BRANCH = re.compile(r'(?<![A-Za-z0-9_])' + LANE_PREFIX + r'/[A-Za-z0-9_\-.]*[A-Za-z0-9_\-]')
 DEV = re.compile(r'dev\.(\d{3})((?:\s*[～~至到\-]\s*(?:dev\.)?\d{3})?)((?:[／/]\s*(?:dev\.)?\d{3}|、\d{3})*)')
 # 核查条目里的销账范围行（标题行另算）：列表行开头是这些标签，后面不紧跟别的汉字（「核查结果」不算）
 SCOPE_LINE = re.compile(r'^\s*[-*]\s*(?:\*\*)?(?:核查覆盖|核查范围|范围|核查文档登记|核查|提交)(?![\u4e00-\u9fff])')
-MERGE = re.compile(r'^(?:合并|并入)\s+((?:claude|cc|codex)/[^\s（(]+)')
+MERGE = re.compile(r'^(?:合并|并入)\s+(' + LANE_PREFIX + r'/[^\s（(]+)')
 SHORT = re.compile(r'(?<![A-Za-z0-9_/.\-#])[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?![A-Za-z0-9_\-/.])')   # 不带 cc/ 前缀的小写名字
 SHORT_SPLIT = re.compile(r'^(.*?)(\d+)([a-z]?)$')
 SHORT_RANGE = re.compile(r'^\s*[～~至到]\s*(\d+)')
@@ -152,6 +154,7 @@ def reviews(root):
             if m:
                 body = text[s:e]
                 audit = '审查' in m.group(3) or REVIEWER_LINE.search(body) is not None
+                audit = audit or m.group(2) in ('gpt', '小A')   # 天启篇三方：gpt、小A 的核查都是跨模型核查（核查矩阵），销「待审查」
                 out.append((m.group(1), '审查' if audit else ('Claude' if m.group(2) == 'cc' else m.group(2)), body))
     return out
 

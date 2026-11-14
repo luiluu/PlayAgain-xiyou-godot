@@ -320,6 +320,54 @@ class StateShardMergeTests(unittest.TestCase):
         self.assertLess(seed, text.index('补跑事件状态探针.py'))
         self.assertIn('[[ -e $tools/mv_oracle/.sandbox/$n ||', text[seed:seed + 300])
 
+    def test_tianqi_stale_mtime_does_not_rerun(self):
+        """天启篇（11-14）：产物在、只是依赖修改时间更新时不自动补量（新工作树检出就是这样，.sandbox 增量账已清会整份重量）；
+        与主工作区不同才提示；XIYOU_LEGACY_SYNC=1 回到按修改时间补；产物缺失照旧补。"""
+        import contextlib, io, time
+        mod = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tools, oracle, gen = root / 'tools', root / 'tools/mv_oracle', root / 'gen'
+            (gen / 'oracle').mkdir(parents=True); oracle.mkdir(parents=True)
+            out = gen / 'oracle/event_states.json'; out.write_text('{}')
+            old = time.time() - 100
+            os.utime(out, (old, old))
+            for f in (tools / 'event_presets.json', oracle / 'event_state_probe.cjs', gen / 'oracle/events.json'):
+                f.write_text('x')
+            def run(same, legacy):
+                buf = io.StringIO()
+                with mock.patch.object(mod, 'TOOLS', tools), mock.patch.object(mod, 'ORACLE', oracle), mock.patch.object(mod, 'GEN', gen), \
+                        mock.patch.object(mod, 'ENV', root / 'env'), mock.patch.object(mod, 'OUT', out), \
+                        mock.patch.object(mod, 'LEGACY', legacy), mock.patch.object(mod, 'same_as_main', lambda p: same), \
+                        contextlib.redirect_stdout(buf):
+                    return mod.needs(False), buf.getvalue()
+            got, text = run(same=True, legacy=False)
+            self.assertFalse(got); self.assertEqual(text, '')                 # 与主工作区相同：静默不补
+            got, text = run(same=False, legacy=False)
+            self.assertFalse(got); self.assertIn('天启篇默认不自动补量', text)   # 本树真改了：只提示
+            got, _ = run(same=True, legacy=True)
+            self.assertTrue(got)                                               # 旧路径：按修改时间补
+            out.unlink()
+            got, _ = run(same=True, legacy=False)
+            self.assertTrue(got)                                               # 产物缺失：照旧补
+
+    def test_same_as_main_compares_bytes(self):
+        mod = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main, wt = root / 'main', root / 'wt'
+            for r in (main, wt):
+                (r / 'sub/env').mkdir(parents=True)
+            (main / 'sub/a.txt').write_text('same'); (wt / 'sub/a.txt').write_text('same')
+            (main / 'sub/b.txt').write_text('one'); (wt / 'sub/b.txt').write_text('two')
+            (wt / 'sub/c.txt').write_text('only here')
+            with mock.patch.object(mod, 'ENV', wt / 'sub/env'), mock.patch.object(mod, 'main_root', lambda: main):
+                self.assertTrue(mod.same_as_main(wt / 'sub/a.txt'))
+                self.assertFalse(mod.same_as_main(wt / 'sub/b.txt'))
+                self.assertFalse(mod.same_as_main(wt / 'sub/c.txt'))
+            with mock.patch.object(mod, 'ENV', wt / 'sub/env'), mock.patch.object(mod, 'main_root', lambda: None):
+                self.assertFalse(mod.same_as_main(wt / 'sub/a.txt'))
+
     def test_changed_probe_needs_confirm_full(self):
         """GC：探针相对 main 改过时补跑只提示、不跑；--confirm-full 才跑；关守卫退回旧行为。"""
         import contextlib, io, sys

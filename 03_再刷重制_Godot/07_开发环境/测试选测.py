@@ -1692,10 +1692,15 @@ class CheckerTests(Fixture):
 
     def test_battle_without_oracle_warns_same_source(self):
         self.put(CORE / 'battler.gd', 'class_name XBattler\n# 2\n')
-        rc, out, ran = self.check('--affected', self.base)
+        # 天启篇默认（11-14）：选中同源检查但没加 --oracle 不再提示；XIYOU_LEGACY_SYNC=1 回到重制期提醒
+        rc, out, ran = self.check('--affected', self.base, env={'XIYOU_LEGACY_SYNC': '0'})
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn('没加 --oracle', out)
+        self.assertIn('内容覆盖检查.py', self.names(ran))
+        self.assertNotIn('验证西游来源.py', self.names(ran))
+        rc, out, ran = self.check('--affected', self.base, env={'XIYOU_LEGACY_SYNC': '1'})
         self.assertEqual(rc, 0, out)
         self.assertIn('没加 --oracle', out)
-        self.assertIn('内容覆盖检查.py', self.names(ran))
         self.assertNotIn('验证西游来源.py', self.names(ran))
         rc, out, ran = self.check('--oracle', '--affected', self.base)
         self.assertIn('验证西游来源.py', self.names(ran))
