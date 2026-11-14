@@ -233,6 +233,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	var total := 0.0
 	var done := 0
 	var hp0 := 0.0
+	var trace := []   # --duel：每次行动 [回合, 行动者, 技能, 目标, 敌方各人血量, 我方各人血量]，开关对照找首个分歧点
 	for e in logic.enemies:
 		hp0 += float(e.mhp) if e.is_alive() else 0.0
 	for r in turns:
@@ -254,6 +255,9 @@ func _fight(s: XState, troop: int) -> Dictionary:
 			var logs = logic.act(u, cmd[0], cmd[1])
 			if u is XActor:
 				turn_dmg += maxf(0.0, hp_before - _enemy_hp(logic))
+			if duel:
+				trace.append([r, logic.stable_id(u), int(cmd[0].id) if cmd[0] != null else 0, logic.stable_id(cmd[1]) if cmd[1] is XBattler else str(cmd[1]),
+					logic.enemies.map(func(e): return int(e.hp)), logic.actors.map(func(a): return int(a.hp))])
 			if debug:
 				print("DBG t%d %s skill=%s enemyHp=%s logs=%s" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-",
 					str(logic.enemies.map(func(e): return int(e.hp))), JSON.stringify(logs).left(300)])
@@ -264,7 +268,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		if logic.is_over():
 			break
 	var alive := logic.actors.filter(func(a): return a.hp > 0).size()
-	return {"dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
+	return {"trace": trace, "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}

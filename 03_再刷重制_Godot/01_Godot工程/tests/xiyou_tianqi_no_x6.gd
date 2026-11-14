@@ -57,6 +57,8 @@ func _run() -> void:
 	_enemy_hp()
 	_enemy_heal()
 	_drain_direct()
+	_mp_flat_absorb()
+	_programs()
 	_xiyou()
 	_save_and_dependency()
 	XTianqiNoX6.ENABLED = true
@@ -220,14 +222,93 @@ func _drain_direct() -> void:
 	var a := s.actor(int(s.battle_slots[0]))
 	var b := s.actor(int(s.battle_slots[1]))
 	var e := XEnemy.new().setup(1, 3, 100.0)
-	var d := _both(func(): return [XTianqiNoX6.drain_gain(a, 100.0), XTianqiNoX6.drain_gain(e, 600.0), XTianqiNoX6.steal_mult(a)])
-	_check("drain_gain", d[0] == [600.0, 100.0, 6.0] and d[1] == [100.0, 600.0, 1.0], d)
+	var e2 := XEnemy.new().setup(1, 3, 100.0)
+	var d := _both(func(): return [XTianqiNoX6.drain_gain(a, e, 100.0), XTianqiNoX6.drain_gain(e, a, 600.0), XTianqiNoX6.steal_mult(a),
+		XTianqiNoX6.drain_gain(e, e2, 600.0), XTianqiNoX6.drain_gain(a, b, 600.0)])
+	_check("drain_gain", d[0] == [600.0, 100.0, 6.0, 600.0, 600.0] and d[1] == [100.0, 600.0, 1.0, 600.0, 600.0], d)
+	# 返修 P2-3：普通敌人混乱／反射打普通敌人，伤害已在 finish ÷6，吸取、吸血回血不能再 ÷6（原来成了 1/36）
+	var bm := _both(func(): return [XTianqiNoX6.back_mult(e, e2), XTianqiNoX6.back_mult(e, a), XTianqiNoX6.back_mult(a, e), XTianqiNoX6.back_mult(a, b)])
+	_check("back_mult", bm[0] == [1.0, 1.0 / 6.0, 6.0, 1.0] and bm[1] == [1.0, 1.0, 1.0, 1.0], bm)
+	# 混乱打队友：确认阶段照旧 ×6（只对敌人目标不乘）
+	b.hp = b.mhp
+	var ff := _both(func(): return _hit(XDB.rec("Skills", 1), a, b))
+	_check("party_on_party_kept_x6", float(ff[0]) > 0.0 and ff[0] == ff[1], ff)
 	var x := _both(func(): return [XTianqiNoX6.scale_direct(a, e, 600.0), XTianqiNoX6.scale_direct(a, b, 600.0), XTianqiNoX6.scale_direct(e, a, 600.0), XTianqiNoX6.scale_direct(a, e, 3.0)])
 	_check("scale_direct", x[0] == [100.0, 600.0, 600.0, 1.0] and x[1] == [600.0, 600.0, 600.0, 3.0], x)
 	# YEP 吸血：一次 30% 吸血的技能，按 ×6 前的伤害回
 	var item := {"lifeSteal": {"hpRate": 0.3}, "hitType": 1}
 	var ls := _both(func(): return XLifeSteal.amount(a, item, 1000.0 * XTianqiNoX6.steal_mult(a)))
 	_check("life_steal", ls == [1800.0, 300.0], ls)
+
+
+# ---- 返修 P2-1：MP 伤害＋固定减伤、元素吸收 ----
+
+func _mp_flat_absorb() -> void:
+	var s := _state("jianxian")
+	var a := s.actor(int(s.battle_slots[0]))
+	var g := XEnemy.new().setup(1, 3, 100.0)
+	var mp: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	mp.damage.type = 2
+	var raw := _both(func(): return _hit(mp, a, g))
+	var hr := {}
+	for el in range(0, 16):
+		hr[el] = float(raw[1]) * 0.5
+	var v := _both(func():
+		g.passive_cache()["harmRe"] = hr
+		return _hit(mp, a, g))
+	g.refresh_passive()
+	_check("mp_flat_kept", float(v[1]) > 0.0 and float(v[1]) < float(raw[1]) * 0.6 and v[0] == v[1], [raw, v])
+	# 元素吸收（元素牌组关着时才走得到；天启篇默认牌组开、敌人不吸收）：HP 吸收回血 ÷6，MP 吸收不缩
+	var deck := XTianqiElements.DECK
+	XTianqiElements.DECK = false
+	var rec: Dictionary = XDB.rec("Enemies", 1).duplicate(true)
+	rec.traits = (rec.get("traits", []) as Array) + [{"code": 11, "dataId": 2, "value": -1.0}]
+	rec["_ref"] = "test"  # 按守层者口径重标过的敌人（heal_scale＝1/6）
+	var ab := XEnemy.new()
+	ab.setup_horseman(1, rec, false)
+	var hp_item: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+	hp_item.damage.elementId = 2
+	var mp_item: Dictionary = hp_item.duplicate(true)
+	mp_item.damage.type = 2
+	var h := _both(func(): return float(XDamage.calculate(hp_item, a, ab, {"variance": false}).value))
+	var m := _both(func(): return float(XDamage.calculate(mp_item, a, ab, {"variance": false}).value))
+	XTianqiElements.DECK = deck
+	_check("hp_absorb_div6", float(h[1]) < 0.0 and absf(float(h[0]) - XPower.js_round(float(h[1]) / 6.0)) <= 1.0, h)
+	_check("mp_absorb_kept", float(m[1]) < 0.0 and m[0] == m[1], m)
+
+
+# ---- 返修 P2-2：状态脚本里绝对值的 gainHp ----
+
+func _programs() -> void:
+	var s := _state("jianxian")
+	var a := s.actor(int(s.battle_slots[0]))
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var r := _both(func(): return [
+		XTianqiNoX6.program_hp({"state_id": 50, "origin": a, "user": a}, e, -1250.0),      # 雷鸣符文手套：我方固定附伤 → ÷6
+		XTianqiNoX6.program_hp({"state_id": 260, "origin": a, "user": a}, e, -600.0),      # 附骨之疽：我方来源扣敌人 → ÷6
+		XTianqiNoX6.program_hp({"state_id": 260, "origin": e, "user": e}, a, -600.0),      # 敌人来源扣我方 → 不动
+		XTianqiNoX6.program_hp({"state_id": 260, "origin": e, "user": e}, e, 2400000.0),   # 敌人来源给自己回（mat×5×4000）→ ×heal_scale
+		XTianqiNoX6.program_hp({"state_id": 1061, "origin": a, "user": e}, e, -900.0),     # 混元护体：我方受击反弹给敌人 → ÷6
+		XTianqiNoX6.program_hp({"state_id": 1299, "origin": a, "user": a}, e, -600.0),     # 半步真仙：等于本次伤害（新口径）→ 不动
+		XTianqiNoX6.program_hp({"state_id": 1642, "origin": a, "user": a}, e, -600.0),     # 千刃乱雨：目标当前生命百分比 → 不动
+	])
+	_check("program_hp", r[0] == [-208.0, -100.0, -600.0, 400000.0, -150.0, -600.0, -600.0] and r[1] == [-1250.0, -600.0, -600.0, 2400000.0, -900.0, -600.0, -600.0], r)
+	# 真跑一次：状态 50（雷鸣符文手套）的确认脚本，我方普攻打敌人：固定 1250×属性有效度的附伤 ÷6；敌人持有时不缩
+	var run50 := func(holder: XBattler, target: XBattler) -> float:
+		var rc := XResourceContext.new()
+		var before: float = target.hp
+		var atk: Dictionary = XDB.rec("Skills", 1).duplicate(true)
+		atk.hitType = 1  # 脚本只认物理普攻（本作 1 号技能是魔法类型）
+		XStateEffects.run_one("confirm", holder, XDB.rec("States", 50), {"attacker": holder, "defender": target, "item": atk,
+			"resources": rc, "value": 100.0, "execute": true})
+		return before - target.hp
+	var t := XEnemy.new().setup(1, 3, 100.0)
+	t.add_param(0, 1.0e7)
+	var hit50 := _both(func():
+		t.recover_all()
+		a.recover_all()
+		return [run50.call(a, t), ceilf(t.element_rate(5) * 1250.0)])
+	_check("state50_extra_div6", absf(float(hit50[1][0]) - float(hit50[1][1])) <= 1.0 and absf(float(hit50[0][0]) - maxf(1.0, floorf(float(hit50[1][1]) / 6.0))) <= 1.0, hit50)
 
 
 # ---- 六、西游档 ----

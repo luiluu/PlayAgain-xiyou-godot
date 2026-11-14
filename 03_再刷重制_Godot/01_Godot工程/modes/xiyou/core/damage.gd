@@ -319,6 +319,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	# 多属性取最有利的一个候选（installDamageElementRuntime）。<Multi-Element Rule: …> 被它接管，原版改五种规则数值都不变（multi_element_probe）。
 	var best := {}
 	var cands := []
+	var hp_type := int(item.get("damage", {}).get("type", 0)) in [1, 5]  # 去全队 ×6 只动 HP 伤害、HP 吸取（XTianqiNoX6）
 	for raw_e in es:
 		var e := XTianqiElements.map_element_id(int(raw_e))
 		for oe in (originals if not originals.is_empty() else [e]):
@@ -342,12 +343,12 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			var crit: float = 1.0 if absorb else critical_mult
 			var before_fixed: float = multiplied * defense * match_rate * absf(resistance) * incoming * crit
 			var flat: float = 0.0 if kind == "true" else _flat_mitigation(a, b, e, frame) + race.flat
-			if not absorb:
-				flat *= XTianqiNoX6.flat_unit(a)  # 去全队 ×6：固定减伤在确认阶段之后扣，跟着缩 1/6 才和原来等价（O-待定-1）
+			if not absorb and hp_type:
+				flat *= XTianqiNoX6.flat_unit(a, b)  # 去全队 ×6：HP 伤害、吸取的固定减伤在确认阶段之后扣，跟着缩 1/6 才和原来等价（O-待定-1）；MP 照旧 ×6、不缩
 			var independent: float = 1.0 if absorb else _independent(a, item, oe, frame)
 			var gross: float = 0.0 if resistance == 0.0 else maxf(0.0, before_fixed) * independent * guard * tianqi
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
-			var value: float = -maxf(0.0, before_fixed - flat) * guard * XTianqiNoX6.heal_scale(b) if absorb else gross  # 天启篇：敌人被元素吸收的回血跟血量同缩
+			var value: float = -maxf(0.0, before_fixed - flat) * guard * (XTianqiNoX6.heal_scale(b) if hp_type else 1.0) if absorb else gross  # 天启篇：敌人被元素吸收的 HP 回血跟血量同缩（MP 不缩）
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
 			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,

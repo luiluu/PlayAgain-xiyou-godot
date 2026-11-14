@@ -152,6 +152,8 @@ class PhaseValueProgram:
 
 	func _gain(receiver: String, resource: String, amount: float):
 		if effects.get("execute", false):
+			if resource == "hp":
+				amount = XTianqiNoX6.program_hp(effects.get("context", {}), _battlers[receiver], amount)  # 天启篇去全队 ×6：状态脚本里按绝对值写的扣血／回血（O-待定-1）
 			(effects.resources as XResourceContext).gain(_battlers[receiver], resource, amount)
 		return UNDEFINED
 
@@ -880,8 +882,8 @@ static func _query_elements(ctx: Dictionary, user: XBattler) -> Array:
 static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
 	var dtype := int(ctx.get("item", {}).get("damage", {}).get("type", 0))
 	var hp: bool = dtype in [1, 3, 5]
-	if effect.has("skipTypes") and dtype in effect.skipTypes:
-		return false  # 只有天启篇难度被动的合成行带它（XTianqiNoX6，去全队 ×6）；原版数据没有这个键
+	if effect.has("skipTypes") and dtype in effect.skipTypes and ctx.get("target") is XEnemy:
+		return false  # 只有天启篇难度被动的合成行带它（XTianqiNoX6，去全队 ×6）：打敌人的 HP 伤害不乘；打自己人（混乱）照旧 ×6。原版数据没有这个键
 	var cond := str(effect.get("cond", ""))
 	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
 	return active and (not effect.get("hpOnly", false) or hp)
