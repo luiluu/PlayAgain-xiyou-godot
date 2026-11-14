@@ -176,8 +176,11 @@ static func exists(slot: int) -> bool:
 
 
 ## 在创建角色／替换当前状态前检查完整结构；损坏或未来版本的档不进入反序列化。
+## 同档去重的新格式（顶层带 gearPool，见 XSaveSlim）先就地还原成普通内容再查：读存档的地方都先过这里，所以新旧格式都读得了。
 static func valid_data(d) -> bool:
 	if not d is Dictionary or str(d.get("mode", "")) != "xiyou":
+		return false
+	if not XSaveSlim.unpool(d):
 		return false
 	if not (d.get("version") is int or d.get("version") is float) or int(d.version) not in [1, XState.SAVE_VERSION]:
 		return false

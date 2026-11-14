@@ -6,6 +6,8 @@ extends Node
 ## - 备份：覆盖没瘦过的文件前留 before_slim.bak（与原文件逐字节相同）、瘦过的不再复制、又换成没瘦过的（导入）再存就换成新的；备份不了就不瘦。
 ## - 幂等：瘦过的读回再存，内容相同、没有东西可去。内存里的装备和标记不被改。
 ## - 各开关关掉回旧写法；星级仓库文件；导入前备份每格留 2 份；残留临时文件；日志。
+## - 同档去重（GEAR_POOL，写新格式默认关）：默认关着时写出的文件与没有这项功能时逐字相同；打开后写新格式（顶层 gearPool＋实例 "@"），
+##   读回玩家可见的一切一致、各实例互不牵连；新旧格式互读、开关来回；导出的是还原后的内容；编号对不上的当坏档；天启篇档重铸等结果一致。
 
 const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
 var results := []
@@ -31,6 +33,7 @@ func _read(slot: int):
 
 
 func _switches(on: bool) -> void:
+	XSaveSlim.GEAR_POOL = false  # 写新格式默认关；同档去重那一节自己开
 	XSaveSlim.GEAR_ROLL_TABLE = on
 	XSaveSlim.SEEN_STALE = on
 	XSaveSlim.STAR_WAREHOUSE = on
@@ -195,6 +198,7 @@ func _rework(s: XState) -> Dictionary:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261114)
+	check("pool_default_off", XSaveSlim.GEAR_POOL == false)
 	_dir = OS.get_user_data_dir().path_join("test_xiyou_save_slim_%d" % OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(_dir)
 	XSave.dir_override = _dir
@@ -417,6 +421,106 @@ func _run() -> void:
 	XSaveSlim._swept = false
 	XSaveSlim.sweep_once()
 	check("tmp_once", XSaveSlim._swept)
+
+	# ---- 同档去重（写新格式的开关默认关） ----
+	_switches(true)
+	var s6 := _old_state()
+	s6.gain_gear("armor", _with_tables("armor", 1)[0], 6)  # 同一种装备多拿几件：备注等大多相同
+	s6.gain_gear("weapon", _with_tables("weapon", 1)[0], 6)
+	# 关着：写出的文件与没有这项功能时逐字相同（照「去选项表、去失效标记、末尾加记号」另算一份来比）
+	check("pool_off_write", XSave.save(8))
+	var off_text := _text(XSave.path(8))
+	var plain: Dictionary = s6.to_dict().duplicate(true)
+	var plain_live := {}
+	for e in _instances(plain, []):
+		plain_live[str(e.instanceId)] = true
+		if e.get("equipment") is Dictionary:
+			e.equipment.erase("affixes")
+	plain.seen = (plain.seen as Array).filter(func(k): return not str(k).begins_with("xg:") or plain_live.has(str(k)))
+	plain["savedAt"] = _read(8).savedAt
+	plain["saveSlim"] = 1
+	check("pool_off_same_bytes", off_text == JSON.stringify(plain), [off_text.length(), JSON.stringify(plain).length()])
+	check("pool_off_no_marks", not off_text.contains("gearPool") and not off_text.contains("\"@\""))
+	check("pool_off_load", XSave.load_slot(8))
+	var vis_plain := _visible(XState.current)
+	var plain_bytes := FileAccess.get_file_as_bytes(XSave.path(8))
+	# 打开：写新格式；覆盖前把原来那份（旧格式）备份成最新的一份
+	XSaveSlim.GEAR_POOL = true
+	check("pool_on_write", XSave.save(8) and int(XSaveSlim.last.pooled) > 0 and str(XSaveSlim.last.backup) != "", XSaveSlim.last)
+	var on_text := _text(XSave.path(8))
+	var raw = JSON.parse_string(on_text)
+	check("pool_format", raw.get("saveSlim") == 2.0 and raw.get("gearPool") is Array and (raw.gearPool as Array).size() >= 2 \
+		and _instances(raw, []).any(func(e): return e.has("@") and not e.has("note")), [raw.get("saveSlim"), (raw.get("gearPool", []) as Array).size()])
+	check("pool_has_dict_values", (raw.gearPool as Array).any(func(v): return v is Dictionary) and (raw.gearPool as Array).any(func(v): return v is String))
+	check("pool_smaller", on_text.length() < off_text.length() * 0.9, [off_text.length(), on_text.length()])
+	check("pool_backup_is_old_format", FileAccess.get_file_as_bytes(bak.call(8)) == plain_bytes)
+	check("pool_memory_untouched", XState.current.gear.all(func(e): return e.has("note") and e.has("meta") and not e.has("@")))
+	check("pool_summary_readable", not XSave.summary(8).ends_with("无法读取"), XSave.summary(8))
+	check("pool_load", XSave.load_slot(8))
+	_same("pool_vs_plain_visible", vis_plain, _visible(XState.current))
+	check("pool_loaded_plain_in_memory", XState.current.gear.all(func(e): return e.has("note") and e.has("meta") and e.has("traits") and not e.has("@")))
+	# 读回来的各实例互不牵连：改一件的 meta，原来和它共用一份的别的实例不变
+	var twins: Array = XState.current.gear.filter(func(e): return JSON.stringify(e.meta) == JSON.stringify(XState.current.gear[XState.current.gear.size() - 1].meta))
+	check("pool_twins_exist", twins.size() >= 2, twins.size())
+	twins[0].meta["__probe"] = "x"
+	check("pool_instances_independent", twins.size() >= 2 and not twins[1].meta.has("__probe"))
+	twins[0].meta.erase("__probe")
+	# 再存：幂等、不再备份
+	check("pool_idem", XSave.save(8) and str(XSaveSlim.last.backup) == "" and FileAccess.get_file_as_bytes(bak.call(8)) == plain_bytes)
+	var again_pool = _read(8)
+	for k in ["savedAt", "saveCount"]:
+		again_pool.erase(k)
+		raw.erase(k)
+	_same("pool_idem_same", raw, again_pool)
+	# 新格式在开关关着时照样读得了；再存写回旧格式（不备份）；再开又写新格式
+	XSaveSlim.GEAR_POOL = false
+	check("pool_read_when_off", XSave.load_slot(8))
+	_same("pool_read_when_off_visible", vis_plain, _visible(XState.current))
+	check("pool_back_to_old", XSave.save(8) and not _text(XSave.path(8)).contains("gearPool") and _read(8).get("saveSlim") == 1.0 and str(XSaveSlim.last.backup) == "")
+	check("pool_old_again_load", XSave.load_slot(8))
+	_same("pool_old_again_visible", vis_plain, _visible(XState.current))
+	XSaveSlim.GEAR_POOL = true
+	check("pool_on_again", XSave.save(8) and _text(XSave.path(8)).contains("gearPool") and str(XSaveSlim.last.backup) != "")
+	# 导出的是还原后的内容（旧版本也能导入）；导入到别的格再读，一致
+	var exported := XSaveTransfer.export_text(8)
+	check("pool_export_plain", exported.has("text") and not str(exported.text).contains("gearPool") and not str(exported.text).contains("\"@\""))
+	var parsed := XSaveTransfer.parse_import(str(exported.get("text", "")))
+	check("pool_import", parsed.has("data") and XSaveTransfer.import_to(9, parsed.data) == "" and XSave.load_slot(9))
+	_same("pool_import_visible", vis_plain, _visible(XState.current))
+	# 没包外层的新格式文件直接导入也行
+	check("pool_import_raw", XSaveTransfer.parse_import(_text(XSave.path(8))).has("data"))
+	# 编号对不上：当坏档，不读
+	var broken = JSON.parse_string(_text(XSave.path(8)))
+	(broken.gearPool as Array).resize(1)
+	var fb := FileAccess.open(XSave.path(12), FileAccess.WRITE)
+	fb.store_string(JSON.stringify(broken))
+	fb.close()
+	check("pool_broken_rejected", not XSave.load_slot(12) and XSave.summary(12).ends_with("无法读取"))
+	# 只有备注的编号对不上（别的字段都还原得了）：也当坏档，不能读成一件没有备注的装备
+	var broken2 = JSON.parse_string(_text(XSave.path(8)))
+	var victim = _instances(broken2, []).filter(func(e): return e.get("@") is Dictionary and e["@"].has("note"))[0]
+	for k in victim["@"].keys():
+		if k != "note":
+			victim[k] = broken2.gearPool[int(victim["@"][k])]
+			victim["@"].erase(k)
+	victim["@"]["note"] = 99999
+	fb = FileAccess.open(XSave.path(12), FileAccess.WRITE)
+	fb.store_string(JSON.stringify(broken2))
+	fb.close()
+	check("pool_broken_note_rejected", not XSave.load_slot(12) and XSave.summary(12).ends_with("无法读取"))
+	check("unpool_plain_untouched", XSaveSlim.unpool(JSON.parse_string(off_text)) and XSaveSlim.unpool({}) and not XSaveSlim.unpool({"gearPool": 3}))
+	# 自动存档也走新格式、读得回
+	check("pool_reload", XSave.load_slot(8))
+	check("pool_auto", XSave.save_auto() and _text(XSave.auto_path()).contains("gearPool") and XSave.load_auto())
+	_same("pool_auto_visible", vis_plain, _visible(XState.current))
+	XSave.remove_auto()
+	# 天启篇档：新格式读回一致，重铸、锁一条重铸、异化重抽结果一致
+	check("tq_pool_src", XSave.load_slot(5))
+	check("tq_pool_write", XSave.save(13) and _text(XSave.path(13)).contains("saveSlim\":2"))
+	check("tq_pool_load", XSave.load_slot(13))
+	_same("tq_pool_visible", vis_tq_old, _visible(XState.current))
+	_same("tq_pool_rework_same", rework_old, _rework(XState.current))
+	XSaveSlim.GEAR_POOL = false
 
 	# ---- 日志只留最近 20 条 ----
 	for i in 25:

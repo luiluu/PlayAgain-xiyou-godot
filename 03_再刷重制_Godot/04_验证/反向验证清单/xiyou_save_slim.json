@@ -1,17 +1,116 @@
 {
-  "tests": ["xiyou_save_slim", "xiyou_demon_crown_compact"],
+  "tests": [
+    "xiyou_save_slim",
+    "xiyou_demon_crown_compact"
+  ],
   "items": [
-    {"name": "装备选项表不去掉", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "eq.erase(\"affixes\")", "replace": "eq.erase(\"affixes_none\")"},
-    {"name": "失效已看过标记不去掉", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "return not str(k).begins_with(\"xg:\") or live.has(str(k)))", "replace": "return true)"},
-    {"name": "还在的装备的标记也去掉", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "live[str(v.instanceId)] = true", "replace": "pass"},
-    {"name": "覆盖没瘦过的文件前不备份", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "if backup and FileAccess.file_exists(target) and not was_slim:", "replace": "if false and backup and FileAccess.file_exists(target) and not was_slim:"},
-    {"name": "备份不了也照样瘦", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "\t\t\tpush_warning(\"XSaveSlim: 备份不了，这次不瘦身：\" + target)\n\t\t\treturn data", "replace": "\t\t\tpush_warning(\"XSaveSlim: 备份不了，这次不瘦身：\" + target)"},
-    {"name": "瘦身改到内存里的装备", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "var eq: Dictionary = (v.equipment as Dictionary).duplicate(false)", "replace": "var eq: Dictionary = (v.equipment as Dictionary)"},
-    {"name": "导入备份不删旧的", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "while names.size() > IMPORT_KEEP:", "replace": "while names.size() > 99:"},
-    {"name": "刚写的临时文件也删", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd", "find": "if mtime <= 0 or now - float(mtime) < TEMP_AGE_SEC:", "replace": "if mtime <= 0:"},
-    {"name": "星级仓库不走瘦身", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/star_warehouse.gd", "find": "var data := XSaveSlim.for_warehouse(full, p)", "replace": "var data := full"},
-    {"name": "魔冠折掉的场次不认水位", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd", "find": "return (p.battles as Dictionary).has(key) or int(key.trim_prefix(\"b:\")) < int(p.get(DONE, 0))", "replace": "return (p.battles as Dictionary).has(key)"},
-    {"name": "魔冠有人倒下过的场次也整行删", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd", "find": "\t\telif r.size() > 2:\n\t\t\tbattles[key] = {\"settled\": true, \"deaths\": deaths}", "replace": "\t\telif r.size() > 2:\n\t\t\tbattles.erase(key)"},
-    {"name": "魔冠压缩时开战照写盘", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd", "find": "\t\t\tif COMPACT:\n\t\t\t\tpending = row", "replace": "\t\t\tif false:\n\t\t\t\tpending = row"}
+    {
+      "name": "装备选项表不去掉",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "eq.erase(\"affixes\")",
+      "replace": "eq.erase(\"affixes_none\")"
+    },
+    {
+      "name": "失效已看过标记不去掉",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "return not str(k).begins_with(\"xg:\") or live.has(str(k)))",
+      "replace": "return true)"
+    },
+    {
+      "name": "还在的装备的标记也去掉",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "live[str(v.instanceId)] = true",
+      "replace": "pass"
+    },
+    {
+      "name": "覆盖没瘦过的文件前不备份",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "if backup and FileAccess.file_exists(target) and not was_slim:",
+      "replace": "if false and backup and FileAccess.file_exists(target) and not was_slim:"
+    },
+    {
+      "name": "备份不了也照样瘦",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "\t\t\tpush_warning(\"XSaveSlim: 备份不了，这次不瘦身：\" + target)\n\t\t\treturn data",
+      "replace": "\t\t\tpush_warning(\"XSaveSlim: 备份不了，这次不瘦身：\" + target)"
+    },
+    {
+      "name": "瘦身改到内存里的装备",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "var eq: Dictionary = (v.equipment as Dictionary).duplicate(false)",
+      "replace": "var eq: Dictionary = (v.equipment as Dictionary)"
+    },
+    {
+      "name": "导入备份不删旧的",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "while names.size() > IMPORT_KEEP:",
+      "replace": "while names.size() > 99:"
+    },
+    {
+      "name": "刚写的临时文件也删",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "if mtime <= 0 or now - float(mtime) < TEMP_AGE_SEC:",
+      "replace": "if mtime <= 0:"
+    },
+    {
+      "name": "星级仓库不走瘦身",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/star_warehouse.gd",
+      "find": "var data := XSaveSlim.for_warehouse(full, p)",
+      "replace": "var data := full"
+    },
+    {
+      "name": "魔冠折掉的场次不认水位",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd",
+      "find": "return (p.battles as Dictionary).has(key) or int(key.trim_prefix(\"b:\")) < int(p.get(DONE, 0))",
+      "replace": "return (p.battles as Dictionary).has(key)"
+    },
+    {
+      "name": "魔冠有人倒下过的场次也整行删",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd",
+      "find": "\t\telif r.size() > 2:\n\t\t\tbattles[key] = {\"settled\": true, \"deaths\": deaths}",
+      "replace": "\t\telif r.size() > 2:\n\t\t\tbattles.erase(key)"
+    },
+    {
+      "name": "魔冠压缩时开战照写盘",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/demon_crown.gd",
+      "find": "\t\t\tif COMPACT:\n\t\t\t\tpending = row",
+      "replace": "\t\t\tif false:\n\t\t\t\tpending = row"
+    },
+    {
+      "name": "同档去重：读档不还原",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/xsave.gd",
+      "find": "\tif not XSaveSlim.unpool(d):\n\t\treturn false",
+      "replace": "\tif false:\n\t\treturn false"
+    },
+    {
+      "name": "同档去重：还原时各实例共用一份",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "v[k] = value.duplicate(true) if (value is Dictionary or value is Array) else value",
+      "replace": "v[k] = value"
+    },
+    {
+      "name": "同档去重：编号越界不当坏档",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "or int(i) < 0 or int(i) >= pool.size() or v.has(k):\n\t\t\t\t\treturn false",
+      "replace": "or int(i) < 0 or int(i) >= pool.size() or v.has(k):\n\t\t\t\t\tcontinue"
+    },
+    {
+      "name": "同档去重：开关关着也写新格式",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "return _slim(data, target, backup, GEAR_ROLL_TABLE, SEEN_STALE, GEAR_POOL)",
+      "replace": "return _slim(data, target, backup, GEAR_ROLL_TABLE, SEEN_STALE, true)"
+    },
+    {
+      "name": "同档去重：改到内存里的装备",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "\t\t\tvar item: Dictionary = v.duplicate(false)\n\t\t\tif strip:",
+      "replace": "\t\t\tvar item: Dictionary = v\n\t\t\tif strip:"
+    },
+    {
+      "name": "同档去重：换格式前不备份",
+      "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/save_slim.gd",
+      "find": "var level := 2 if do_pool else 1\n",
+      "replace": "var level := 1\n"
+    }
   ]
 }
