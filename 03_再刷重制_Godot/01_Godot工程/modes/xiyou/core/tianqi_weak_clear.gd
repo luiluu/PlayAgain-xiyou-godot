@@ -3,8 +3,10 @@ extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇全弱者通关资格（天启篇设计总览 v0.2 第二节 3「全弱者通关资格跟本档走，奖励另行标定」，Kyo 11-08；
 ## 对重制内容影响审查 v0.6 第 245、268 行：原版弱者挑战在天启篇作废，换成「全弱者通关 36 层」）。
 ## - 判定（默认口径，待 Kyo 确认）：36 层决战（XTianqiLine.run_final）打赢时，这一场出现过的我方角色全是弱者档才记。
-##   「出现过」＝开战时的上场 4 人＋助力位、结束时的上场 4 人＋助力位、战斗中每个行动过的我方角色（XBattleLogic 行动开头一行，
-##   接住战斗中换人、事件入队这类中途换进来的）。档位读 XTianqiSkills.battle_tier（成长型角色按当前进度，五条悟照天启篇表）。
+##   「出现过」＝开战前、每回合开头、每次行动开头、天启篇换人、战斗中入队（XState.add_actor）、结束时出战栏 5 格（上场＋助力位）
+##   里的角色，加上行动者——中途加入又撤下、换上来没行动就倒下的都接住（gpt 甲档核查 P2）。
+##   档位读 XTianqiSkills.battle_tier（成长型角色按当前进度，五条悟照天启篇表），每次见到时按当时档位记，见到一次不是弱者就一直不算。
+## - 跟踪绑定存档（_state）：战斗中断没走到 finish 时，下一次 begin 重置；换了存档不记也不能收。
 ## - 记在存档 flags.tianqi.weak_clear：{本档难度 key: {"line": 线, "members": [角色号]}}，跟本档走（一份存档只有一档难度）。
 ## - 只认 36 层首通路线（run_final；之后从门再打 36 层也算）；大厅再挑战（XTianqiSummit.rechallenge 36，不记通关）不算。
 ## - 原版弱者挑战（XWeakChallenge）要 Map157、敌群 469、混沌难度 9，天启篇借的原版难度最高 6、牢妲改难度菜单已删（O-405），走不到。
@@ -19,9 +21,11 @@ static var ACHIEVEMENT := true
 const ACHIEVEMENT_ID := 142
 const FLAG := "weak_clear"
 
-## 本场 36 层决战见过的我方角色号（begin 开始记，finish 收）
+## 本场 36 层决战见过的我方角色：角色号 → 每次见到时都是弱者档（见到一次不是就一直 false）。begin 开始记，finish 收
 static var _seen := {}
 static var _tracking := false
+## 跟踪的是哪份存档（中途回标题、读档没走到 finish 时，换了存档的战斗不记、不能收）
+static var _state: XState = null
 
 
 static func on(s) -> bool:
@@ -32,34 +36,50 @@ static func is_weak(id: int, s: XState) -> bool:
 	return XTianqiSkills.battle_tier(id, s) == XTier.WEAK
 
 
+static func _live(s) -> bool:
+	return _tracking and s != null and is_same(s, _state)
+
+
 ## 36 层决战开战前（XTianqiLine.run_final）
 static func begin(s: XState) -> void:
 	_seen = {}
 	_tracking = on(s)
-	if _tracking:
-		_note_party(s)
+	_state = s if _tracking else null
+	note_slots(s)
 
 
-## XBattleLogic 行动开头：行动的我方角色记下（战斗中换上来的也在这里接住）
-static func note_actor(u) -> void:
-	if _tracking and u is XActor:
-		_seen[int(u.actor_id)] = true
+static func _note(id: int, s: XState) -> void:
+	if id > 0:
+		_seen[id] = bool(_seen.get(id, true)) and is_weak(id, s)
 
 
-static func _note_party(s: XState) -> void:
-	for a in s.battle_members():
-		_seen[int(a.actor_id)] = true
-	var h := s.helper()
-	if h != null:
-		_seen[int(h.actor_id)] = true
+## 出战栏 5 格（上场＋助力位）里在队的都记下；直接读栏位，不调 battle_members（那个会清超强者，有副作用）。
+## 时机：开战前、XBattleLogic 每回合开头和每次行动开头、天启篇换人、XState.add_actor（战斗中入队）、结束时
+static func note_slots(s) -> void:
+	if not _live(s):
+		return
+	for id in s.battle_slots:
+		if int(id) > 0 and s.party.has(int(id)):
+			_note(int(id), s)
 
 
-## 本场到现在算不算全弱者（结束时再并一次当前的上场＋助力位）
+## XBattleLogic 行动开头：行动的我方角色＋此刻出战栏
+static func note_actor(u, s = null) -> void:
+	if s == null:
+		s = _state
+	if not _live(s):
+		return
+	if u is XActor:
+		_note(int(u.actor_id), s)
+	note_slots(s)
+
+
+## 本场到现在算不算全弱者（结束时再并一次当前出战栏，档位按此刻再核一次）
 static func eligible(s: XState) -> bool:
-	if not _tracking or not on(s):
+	if not _live(s) or not on(s):
 		return false
-	_note_party(s)
-	return not _seen.is_empty() and _seen.keys().all(func(id): return is_weak(int(id), s))
+	note_slots(s)
+	return not _seen.is_empty() and _seen.keys().all(func(id): return bool(_seen[id]) and is_weak(int(id), s))
 
 
 ## 36 层决战结束（r 是战斗结果，0 胜）：全弱者打赢就记本档资格。返回这次新记上没有
@@ -69,6 +89,7 @@ static func finish(host, s: XState, r: int) -> bool:
 	members.sort()
 	_seen = {}
 	_tracking = false
+	_state = null
 	if not ok:
 		return false
 	var diff := str(s.flags.tianqi.get("difficulty", ""))

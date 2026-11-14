@@ -1093,6 +1093,7 @@ func tianqi_swap(out: XActor) -> XActor:
 	if not can_tianqi_swap(out):
 		return null
 	var h := state.helper()
+	XTianqiWeakClear.note_actor(h, state)  # 天启篇全弱者通关资格：换上场的记下（没行动就倒下也算）
 	actors[actors.find(out)] = h
 	for list in [current_order, next_order]:
 		for k in list.size():
@@ -1211,7 +1212,7 @@ func act(u: XBattler, skill, target) -> Array:
 		return logs
 	XTianqiQiyinRule.on_act(self, u, skill)  # 七印祭坛限时：记我方本回合放了几个技能
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
-	XTianqiWeakClear.note_actor(u)  # 天启篇全弱者通关资格：行动过的我方角色记下（中途换上来的）
+	XTianqiWeakClear.note_actor(u, state)  # 天启篇全弱者通关资格：行动的我方角色和此刻出战栏记下（中途换上来的）
 	# 行动无效（敌人没有行动、或 isValid 假整次跳过）：原版 processTurn 不 startAction／endAction，onAllActionsEnd 在
 	# _processTurn 里不 updateStateActionEnd（YEP_BattleEngineCore:4166），行动结束的状态不减回合
 	var started := true
@@ -1403,6 +1404,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 func run_turn(commands: Dictionary) -> Array:
 	var logs := run_events() if turn == 0 else []
 	start_turn()
+	XTianqiWeakClear.note_slots(state)  # 天启篇全弱者通关资格：每回合开头记出战栏（助力位不行动也在吃光环）
 	logs.append_array(take_turn_start_logs())
 	var first := true
 	while true:

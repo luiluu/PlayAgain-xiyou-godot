@@ -376,6 +376,7 @@ func add_actor(id: int, notice := Callable()) -> void:
 	_add_actor(id, notice)
 	XItemMarks.enforce_party(self)
 	XWeakChallenge.check(self)  # 弱者挑战 addActor 包装：最终战阵容重判
+	XTianqiWeakClear.note_slots(self)  # 天启篇全弱者通关资格：战斗中入队进了出战栏的记下
 
 
 func _add_actor(id: int, notice := Callable()) -> void:

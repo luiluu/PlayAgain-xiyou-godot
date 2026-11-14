@@ -1,7 +1,8 @@
 extends Node
 ## 天启篇全弱者通关资格专项（XTianqiWeakClear）。
 ## 一、全弱者打赢 36 层决战：本档资格记上、别的档没有、结算有一行、成就 142 点亮、读档后还在、读档界面标「全弱者」。
-## 二、输了、上场有强者、助力位是强者、战斗中换进强者（行动过再换回去也算）：不记。
+## 二、输了、上场有强者、助力位是强者、战斗中换进强者（行动过再换回去、中途加入又撤下没行动、换上来没行动就倒下）、战斗中变档：不记。
+## 五、战斗中断留下的跟踪：换了存档不记不收，下一次开战重置。
 ## 三、另开一档（寻常）：只记寻常，和艰险档互不影响。
 ## 四、原版弱者挑战在天启篇走不到；原版档一切照旧；开关关掉不记、成就开关关掉只记不点亮。
 
@@ -152,6 +153,71 @@ func _not_weak() -> void:
 		XTianqi._joining = false
 		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
 	_check("join_helper_mid_battle", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s))
+	# gpt 甲档核查 P2：中途加入又撤下、没行动（助力位不行动也在吃光环）——每回合开头记出战栏
+	s = _state("jianxian", weak.slice(0, 5))
+	var seen_turn := {}
+	host.during = func():
+		var lg := XBattleLogic.new()
+		lg.setup(1, s)
+		var w: XActor = s.helper()
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))
+		XTianqi._joining = false
+		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
+		var c := {}
+		for a in lg.actors:
+			c[a] = [XDB.rec("Skills", 2), null]
+		lg.run_turn(c)
+		seen_turn["acted"] = lg.actors.any(func(a): return a is XActor and int(a.actor_id) == int(strong[0]))
+		s.battle_slots[XTianqi.HELPER_SLOT] = w.actor_id
+		lg.end_battle(0)
+	_check("join_then_leave_no_action", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
+		and seen_turn.get("acted") == false and not s.battle_slots.has(int(strong[0])), seen_turn)
+	# 换上来没行动就倒下、再撤走——换人那一刻记
+	s = _state("jianxian", weak.slice(0, 5))
+	var sw := {}
+	host.during = func():
+		var lg := XBattleLogic.new()
+		lg.setup(1, s)
+		var w: XActor = s.helper()
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))
+		XTianqi._joining = false
+		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
+		var st: XActor = lg.tianqi_swap(lg.actors[0])
+		sw["in"] = st != null and int(st.actor_id) == int(strong[0])
+		if st != null:
+			st.hp = 0
+			sw["dead"] = st.is_dead()
+			sw["back"] = lg.tianqi_swap(st) != null
+		s.battle_slots[XTianqi.HELPER_SLOT] = w.actor_id
+		lg.end_battle(0)
+	_check("swap_in_dead_no_action", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
+		and sw.get("in") == true and sw.get("dead") == true and sw.get("back") == true and not s.battle_slots.has(int(strong[0])), sw)
+	# 战斗中变档：三笠（95）锻炼没满是弱者，打到一半满了（强者）再改回去——见到时按当时档位记
+	var mk := 95
+	var tier_slots := weak.slice(0, 4) + [mk]
+	s = _state("jianxian", tier_slots)
+	s.set_variable(1490, 0)
+	var tw := {"start_weak": XTianqiWeakClear.is_weak(mk, s)}
+	host.during = func():
+		var lg := XBattleLogic.new()
+		lg.setup(1, s)
+		s.set_variable(1490, 10)
+		tw["mid_strong"] = not XTianqiWeakClear.is_weak(mk, s)
+		var c := {}
+		for a in lg.actors:
+			c[a] = [XDB.rec("Skills", 2), null]
+		lg.run_turn(c)
+		s.set_variable(1490, 0)
+		lg.end_battle(0)
+	_check("tier_change_mid_battle", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
+		and tw.get("start_weak") == true and tw.get("mid_strong") == true and XTianqiWeakClear.is_weak(mk, s), tw)
+	# 对照：同样阵容全程没变档就记
+	var s3 := _state("jianxian", tier_slots)
+	s3.set_variable(1490, 0)
+	host.during = Callable()
+	_check("tier_steady_records", await XTianqiWarLine.run_final(host, s3) == 0 and XTianqiWeakClear.has(s3))
 	host.during = Callable()
 	# 再挑战 36 层（不记通关）不算
 	var s2 := _state("jianxian", weak.slice(0, 5))
@@ -168,6 +234,22 @@ func _other_difficulty() -> void:
 
 
 func _legacy_and_switches() -> void:
+	# 战斗中断（run_final 没走到 finish）：跟踪绑着旧存档，换了存档不记、不能收；下一次 begin 重置
+	var old := _state("jianxian", weak.slice(0, 5))
+	XTianqiWeakClear.begin(old)
+	var fresh := _state("jiusi", weak.slice(0, 5))
+	XTianqiWeakClear.note_slots(fresh)
+	var sh := FakeHost.new()
+	_check("stale_other_save", XTianqiWeakClear._live(old) and not XTianqiWeakClear._live(fresh)
+		and not await XTianqiWeakClear.finish(sh, fresh, 0) and not XTianqiWeakClear.has(fresh) and sh.said.is_empty())
+	XTianqiWeakClear.begin(old)
+	var slots := weak.slice(0, 5)
+	slots[0] = strong[0]
+	var s0 := _state("jianxian", slots)
+	XTianqiWeakClear.begin(s0)
+	var w2 := _state("jianxian", weak.slice(0, 5))
+	_check("stale_reset_by_begin", await XTianqiWarLine.run_final(sh, w2) == 0 and XTianqiWeakClear.has(w2)
+		and not XTianqiWeakClear._tracking and XTianqiWeakClear._seen.is_empty())
 	# 原版弱者挑战：天启篇存档的难度号到不了混沌（9），Map157／敌群 469 也不判
 	var s := _state("zhengdao", weak.slice(0, 5))
 	s.map_id = XWeakChallenge.FINAL_MAP
