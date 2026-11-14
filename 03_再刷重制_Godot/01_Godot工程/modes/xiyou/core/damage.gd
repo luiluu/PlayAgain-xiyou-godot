@@ -53,6 +53,8 @@ static func affinity(b: XBattler) -> Array:
 	return out.slice(0, 2)
 
 static func matchup(element: int, body: Array) -> float:
+	if XTianqiElements.deck_on():
+		return 1.0
 	if not ACTIVE.has(element) or body.is_empty():
 		return 1.0
 	var edges: Array = elements_data().edges
@@ -70,18 +72,21 @@ static func action_elements(item: Dictionary, a: XBattler) -> Array:
 		id = int(item.damage.elementId)
 	var es: Array = a.attack_elements() if id < 0 else ([id] if id > 0 else [])
 	es = es.duplicate()
-	es.append_array(item.get("yep", {}).get("multipleElements", []))
+	var multi: Array = item.get("yep", {}).get("multipleElements", [])
+	es.append_array(multi)
 	var out := []
+	var keep_zero := XTianqiElements.deck_on() and multi.has(0)
 	for e in es:
-		if int(e) >= 1 and int(e) <= 15 and not out.has(int(e)):
-			out.append(int(e))
+		var ei := XTianqiElements.map_element_id(int(e))
+		if ((ei >= 1 and ei <= 15) or (keep_zero and ei == 0)) and not out.has(ei):
+			out.append(ei)
 	return out
 
 ## v0.62 conversionId：被动缓存的属性转换（<DamageElements>）只改目标承伤；宿傩 172 终式与 10234／10235 不算转换。
 static func conversion_id(item: Dictionary, a: XBattler) -> int:
 	if a is XActor and a.actor_id == 172 and int(item.get("id", 0)) in [10234, 10235]:
 		return 0
-	var id := int(a.passive_cache().get("damageElement", 0))
+	var id := XTianqiElements.map_element_id(int(a.passive_cache().get("damageElement", 0)))
 	return id if id >= 1 and id <= 15 else 0
 
 
@@ -92,11 +97,14 @@ static func original_elements(item: Dictionary, a: XBattler) -> Array:
 	var id := int(item.damage.elementId)
 	var es: Array = a.attack_elements() if id < 0 else ([id] if id > 0 else [])
 	es = es.duplicate()
-	es.append_array(item.get("yep", {}).get("multipleElements", []))
+	var multi: Array = item.get("yep", {}).get("multipleElements", [])
+	es.append_array(multi)
 	var out := []
+	var keep_zero := XTianqiElements.deck_on() and multi.has(0)
 	for e in es:
-		if int(e) >= 1 and int(e) <= 15 and not out.has(int(e)):
-			out.append(int(e))
+		var ei := XTianqiElements.map_element_id(int(e))
+		if ((ei >= 1 and ei <= 15) or (keep_zero and ei == 0)) and not out.has(ei):
+			out.append(ei)
 	return out
 
 ## 战斗者相关的全部对象：特性对象＋技能（角色已学、敌人行动表）
@@ -305,15 +313,29 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
 	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）
+	var tq_elem := XTianqiElements.deck_on() and b is XEnemy
+	var conv_e := 0 if (explicit != null or frame.noElement) else conversion_id(item, a)
+	var orig_list := originals if not originals.is_empty() else ([] if explicit != null or frame.noElement else original_elements(item, a))
 	# 多属性取最有利的一个候选（installDamageElementRuntime）。<Multi-Element Rule: …> 被它接管，原版改五种规则数值都不变（multi_element_probe）。
 	var best := {}
 	var cands := []
-	for e in es:
+	for raw_e in es:
+		var e := XTianqiElements.map_element_id(int(raw_e))
 		for oe in (originals if not originals.is_empty() else [e]):
-			var resistance: float = 1.0 if kind == "true" or e == 0 or XGuardianRework.neutral(b) else XGuardianRework.resistance(b, b.element_rate(e))  # 守层者一刀切抗性折进血量（O-402 ELEM）
-			var absorb := resistance < 0.0
-			resistance = apply_resistance_pierce(resistance, frame, e)
-			var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
+			var resistance := 1.0
+			var absorb := false
+			var tq_kind := ""
+			if kind != "true" and e != 0:
+				if tq_elem:
+					var is_conv := conv_e != 0 and conv_e == e and not orig_list.has(e)
+					var er := XTianqiElements.element_rate_for(b, e, is_conv, options.get("tianqi_logic"), options)
+					resistance = float(er.rate)
+					tq_kind = str(er.kind)
+				else:
+					resistance = 1.0 if XGuardianRework.neutral(b) else XGuardianRework.resistance(b, b.element_rate(e))  # 守层者一刀切抗性折进血量（O-402 ELEM）
+					absorb = resistance < 0.0
+					resistance = apply_resistance_pierce(resistance, frame, e)
+			var match_rate: float = 1.0 if kind == "true" or tq_elem else matchup(e, affinity(b))
 			var bonus: float = 1.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _module_element_bonus(a, oe, frame)
 			var flat_element := 0.0 if frame.noElement or (not originals.is_empty() and oe <= 0) else _sum_yep(a, "elementAmplifyN", oe, _yep_objects(a))
 			var multiplied: float = (basis + flat_element * mastery_rate * float(frame.skillMultiplier)) * normal_mult * bonus * race.multiplier * final_mult * (1.0 if absorb else growth)
@@ -325,7 +347,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			# 固定减伤（harmRe、种族减免）在 Confirm 之后、React 之前扣（apply_fixed_mitigation），这里只算扣之前的；吸收时照原版先扣
 			var value: float = -maxf(0.0, before_fixed - flat) * guard if absorb else gross
 			cands.append({"gross": value, "flat": flat, "resistance": resistance})
-			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance,
+			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
 				"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
 			if best.is_empty() or value > best.value:

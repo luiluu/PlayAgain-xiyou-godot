@@ -148,17 +148,22 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
+	if id >= t.size() and XTianqiElements.has_new(name, id):
+		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
+	var out: Dictionary = t[id]
 	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):
-		return XTianqiTrumpet.rec(name, id, t[id])  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
+		out = XTianqiTrumpet.rec(name, id, out)  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
 	if name == "Skills" and XTianqiSect.touches_skill(id):
-		return XTianqiSect.skill_rec(id, t[id])  # 天启篇教派连带内容包乙：挣脱枷锁三个被动只留抽奖被动上限 +1
+		out = XTianqiSect.skill_rec(id, out)  # 天启篇教派连带内容包乙：挣脱枷锁三个被动只留抽奖被动上限 +1
 	if name == "Skills" and XTianqiSkills.has(id):
-		return XTianqiSkills.rec(id, t[id])  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
+		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	if name == "States" and XTianqiSkills.has_state(id):
-		return XTianqiSkills.rec_state(id, t[id])
-	return t[id]
+		out = XTianqiSkills.rec_state(id, out)
+	if XTianqiElements.touches(name, id):
+		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
+	return out
 
 
 static func system() -> Dictionary:

@@ -256,6 +256,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiQiyinEffects.start(self)  # 天启篇七印装备：本场数据、全队那一件神器、七印书卷（原版档不建）
 	XTianqiAffixBattle.start(self)  # 天启篇词条：本场数据、全队光环、开场护盾、初始 TP
 	XTianqiTrumpet.start(self)  # 天启篇号卷：本场谁学了哪卷、七号齐鸣
+	XTianqiElements.start(self)  # 天启篇元素重做：确认牌组、清本场吞没/弱点暴露
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
 	XCat.trial_start_battle(self)  # 小猫试炼 startBattle 包装（之后）：178 回满、TP 满
 	XLiuying.start_battle(self)  # 流萤 startBattle／onBattleStart 包装（原 startBattle 之后，开战移除状态之后）：萨姆形态、负面免疫、免死；萤火清零
@@ -1362,6 +1363,7 @@ func end_turn() -> Array:
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XTianqiQiyinEffects.end_turn(self))  # 天启篇七印装备：疫结算与传染、各计时
 	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时；新异化词条：临终必死、带毒续毒
+	XTianqiElements.end_turn(self)  # 天启篇元素重做：回合末清虚空吞没、弱点暴露
 	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
@@ -2571,6 +2573,8 @@ func _damage_value(u: XBattler, skill: Dictionary, t: XBattler, critical: bool, 
 	if skill.get("_alienMode", "") == "prayer":
 		return XAlienBattle.prayer_heal(self, u, skill, t)  # 异化逆祷 makeDamageValue 包装：按治疗技能算预算再分摊
 	var calc := _calculate_damage(u, skill, t, critical)
+	if not _damage_record.is_empty():
+		_damage_record["best_row"] = calc.get("breakdown", {}).get("row", {})
 	var ctx := _state_context(u, skill, t, _damage_record)
 	if push:
 		var sign := float(calc.value)  # 按 makeDamageValue（CodexDamage.calculate）的正负
@@ -2583,7 +2587,7 @@ func _calculate_damage(u: XBattler, skill: Dictionary, t: XBattler, critical: bo
 	critical = critical or XBlackFlash.boosted(t)  # 黑闪 modifyCritical 包装：黑闪必暴击
 	XTianqiAffixBattle.crit_now = critical  # 天启篇词条「坚韧」：伤害钩子里看这一击是不是暴击
 	var options := {"critical": critical, "vars": vars(), "rawValue": raw, "random": _rule(),
-		"battleRound": maxi(1, turn), "raceAction": true}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
+		"battleRound": maxi(1, turn), "raceAction": true, "tianqi_logic": self}  # 自然回合（原版 round()＝max(1, turnCount)），哈基米巨龙减伤钩子要
 	var outcome := _formula_outcome
 	# 云裳伤害钩子 split：七曜流霞元素、万法同裳两路、千军入袖收袖的各目标（公式对别的目标重新求值；没有就照常算一次）
 	var res := XYunshang.calculate_split(skill, u, t, options, func(pt): return _formula_raw(u, skill, pt))
@@ -2666,6 +2670,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_mark_stale(t, states_before)
 	XTianqiQiyinEffects.after_apply(self, u, skill, t, r)  # 天启篇七印装备：疫、判决、落星、处决、击倒记录
 	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
+	XTianqiElements.after_apply(self, u, skill, t, r, r.get("best_row", {}))  # 天启篇元素重做：免疫弹字、虚空吞没、弱点暴露
 	XTianqiSkills.after_apply(self, u, skill, t, r)  # 天启篇技能重构：追加释放的目标、反弹（reflect）
 	return r
 
@@ -2802,12 +2807,14 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 		_action_resources.result(dt).success = true
 		match type:
 			1, 3, 5:
+				var hp_pre_elem := dt.hp
 				var race_mark := XRaceBattle.before_hp(self, u, skill, dt)
 				r.hp = execute_hp_damage(u, dt, value, type == 5, skill)
 				var flash := XBlackFlash.take_announced()  # 黑闪 announce：出手者头上弹字、日志一行（画面）
 				if not flash.is_empty():
 					r.custom_popups = flash
 				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
+				XTianqiElements.apply_space_erosion(self, u, skill, dt, maxf(0.0, hp_pre_elem - dt.hp), r.get("best_row", {}), r)
 				if dt != t:
 					XAlienBattle.sync_relations(self)
 				XNanoha.post_damage(self, u, dt, skill, value, r)  # YEP_SkillCore <Post-Damage Eval>（BSC Respond／Establish 之前）：奈叶大招按 _costmp 补段
@@ -2816,7 +2823,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				r.mp = execute_mp_damage(u, t, value, type == 6)
 				XRaceBattle.after_mp(self, skill, t, mp_before)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
-		_establish(u, t, r)
+		if not XTianqiElements.immune_hit(self, u, skill, dt, r):
+			_establish(u, t, r)  # 天启篇元素免疫（0%）跳过零伤害触发链：respond／establish 不跑
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)
@@ -3562,6 +3570,7 @@ func grant(r: Dictionary) -> Array:
 	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
 	XTianqiDrop.grant_sold(self)  # 天启篇通用掉落：挂机屏蔽掉落时低于门槛的折成钱
+	victory_texts.append_array(XTianqiElements.grant_higher_books(self))  # 天启篇元素重做：炼狱/证道掉落高阶转换书（单档每本限一次）
 	# MV BattleManager.gainExp：全队（含阵亡与后备）都得经验；后备按 System「后备成员获得经验」（optExtraExp）
 	var ups := []
 	var bench_rate := 1.0 if bool(XDB.system().get("optExtraExp", false)) else 0.0
@@ -3607,6 +3616,7 @@ func end_battle(result := -1) -> void:
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据
 	XTianqiAffixBattle.finish(self)  # 天启篇词条：清本场数据
 	XTianqiTrumpet.finish(self)  # 天启篇号卷：清本场数据
+	XTianqiElements.finish(self)  # 天启篇元素重做：清本场数据
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
