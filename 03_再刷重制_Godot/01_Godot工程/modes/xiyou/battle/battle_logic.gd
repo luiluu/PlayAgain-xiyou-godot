@@ -195,6 +195,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		enemies.append(e)
 	XTianqiQiyinDragonRun.setup(self, s)  # 天启篇七首之龙（prepare 过才换）：借来的普拉顿换成七首之龙（在各线异化之前，名字不带【首领】就不会被按段异化）
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
+	XTianqiGojoTrial.setup(self, s)  # 天启篇五条悟专属试炼（prepare 过才换）：整组换成甚尔／宿傩的影子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
 	XTianqiPlagueAlien.setup(self, s)  # 天启篇瘟疫线异化（prepare 过才变）：病灶、病弱、毒腺、混乱者、挑衅者、传染者、疫源
@@ -1184,6 +1185,9 @@ func next_subject() -> XBattler:
 ## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
+		var trial := XTianqiGojoTrial.decide(self, b)  # 天启篇五条悟专属试炼：影子按回合表出招
+		if not trial.is_empty():
+			return trial
 		var horse := XTianqiHorsemen.decide(self, b)  # 天启四骑士：骑士按阶段和计量出招，援军普攻，小怪不出手
 		if not horse.is_empty():
 			return horse
@@ -1892,7 +1896,7 @@ func make_action_times(b: XBattler) -> int:
 
 
 func _make_action_times(b: XBattler) -> int:
-	var horse := XTianqiHorsemen.action_times(self, b)  # 天启四骑士：每回合固定次数（战争另加再动），不掷追加行动
+	var horse := maxi(XTianqiHorsemen.action_times(self, b), XTianqiGojoTrial.action_times(self, b))  # 天启四骑士、五条悟试炼的影子：每回合固定次数（战争另加再动），不掷追加行动
 	if horse > 0:
 		return horse
 	if XGarou.own(b) and not XTianqiSkills.cards_on():  # 饿狼 makeActionTimes 包装：形态行动次数，不掷追加行动（天启篇改再动 10%，走下面）
@@ -3382,6 +3386,8 @@ func _liuying_core() -> Array:
 
 
 func rewards() -> Dictionary:
+	if XTianqiGojoTrial.no_rewards(self):
+		return {"exp": 0, "gold": 0, "drops": []}  # 天启篇五条悟专属试炼：没有任何战斗奖励
 	var exp := 0
 	var gold := 0.0
 	var drops := []
@@ -3539,6 +3545,8 @@ func grant(r: Dictionary) -> Array:
 	if _rewards_granted:
 		return []
 	_rewards_granted = true
+	if XTianqiGojoTrial.no_rewards(self):
+		return []  # 天启篇五条悟专属试炼：不发经验、金钱、掉落、法宝经验、真气等
 	var garou_text := XGarou.credit_victory(state, _garou, _garou_boss)  # 饿狼 processVictory 包装：累计突破、神之触媒
 	if garou_text != "":
 		victory_texts.append(garou_text)

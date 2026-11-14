@@ -289,6 +289,7 @@ static func _load_data(d: Dictionary, slot: int, text: String) -> bool:
 	XDemonCrown.after_load(XState.current, XDemonCrown.identity(text))  # 魔冠 extractSaveContents 包装（在云裳外层）：收编、重放成长账本
 	XTusuXuan.after_load(XState.current)  # 屠苏／璇 extractSaveContents 包装：专属技能按习得表同步
 	XCat.restore_trial(XState.current, -1)  # 小猫 extractSaveContents 包装：存档里留着试炼就还原队伍
+	XTianqiGojoTrial.after_load(XState.current)  # 天启篇五条悟：存档里留着试炼就还原队伍和战前状态；旧四阶进阶迁移成两阶
 	XStarWarehouse.after_load(XState.current, text)  # 仓库取出事务：存档里带着的 whToken 记成取走，别的局没存档的取出退回仓库
 	# dev.015 及以前忽略 ConfigManager 脚本，没有配置文件。已完成大厅 EV20 的 Godot 档补其 MapXy=true；
 	# 已有配置（包括显式 false）始终优先，不从存档回滚局外选项，不读取 MV 存档。
