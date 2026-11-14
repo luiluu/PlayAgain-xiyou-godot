@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.570",
-  "sequence": 570,
-  "next": "dev.571",
-  "nextSequence": 571,
+  "current": "dev.571",
+  "sequence": 571,
+  "next": "dev.572",
+  "nextSequence": 572,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "tianqi-qiyin-endgame",
+  "currentChange": "tianqi-econ-fix",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

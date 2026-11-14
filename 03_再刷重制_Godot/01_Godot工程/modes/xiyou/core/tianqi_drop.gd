@@ -23,7 +23,7 @@ extends RefCounted
 ## - 第四期：挂机「屏蔽掉落」开着时，通用掉落里低于门槛档的自动按卖价折成钱、够门槛的留着（AUTO_SELL；原版是精良及以下全丢）；
 ##   怪物图鉴、地图传送预览的掉率换成招牌掉落的面板概率，图鉴里标「已连续 N 次没出」。
 ##
-## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-待定，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
+## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-429，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
@@ -32,7 +32,7 @@ static var DIFFICULTY := true
 static var SIGNATURE := true
 static var NO_FEED_BOUGHT := true
 static var AUTO_SELL := true
-## 返修（O-待定）：旧档首次掉落种子由存档种子派生；必掉也清连败、推进总次数
+## 返修（O-429）：旧档首次掉落种子由存档种子派生；必掉也清连败、推进总次数
 static var SEED_FROM_SAVE := true
 static var PITY_RESET_ON_SURE := true
 

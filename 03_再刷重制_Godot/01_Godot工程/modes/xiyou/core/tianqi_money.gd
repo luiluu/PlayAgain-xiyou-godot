@@ -15,7 +15,7 @@ extends RefCounted
 ##   油（承伤 −10%）、酒（出伤 ＋10%），只管买时那一层（只在那一层的地图里生效，进了别的层就清掉）；一层最多买 3 次、第 n 次价格 ×2^(n−1)；饥荒线贵五成。
 ## 存档：flags.tianqi.money {"training": {"能力编号": 等级}, "scale": {"floor": 层, "goods": [..], "buys": 次数}}；装备上记重铸次数 tq_reforges。
 ##
-## 开关（O-404）：SELL_BOUGHT_CAP／SCALE_FLOOR_ONLY（O-待定，返修）关掉回到返修前；ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
+## 开关（O-404）：SELL_BOUGHT_CAP／SCALE_FLOOR_ONLY（O-429，返修）关掉回到返修前；ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
 
 static var ENABLED := true
 static var INCOME := true
@@ -24,9 +24,9 @@ static var REFORGE := true
 static var ADVANCE := true
 static var TRAINING := true
 static var SCALE := true
-## 返修（O-待定，gpt 甲档补核 P2）：商店买来的装备回售价＝min(品质卖价, 购入价×0.5)，堵买了就卖的套利；关掉回到只看品质
+## 返修（O-429，gpt 甲档补核 P2）：商店买来的装备回售价＝min(品质卖价, 购入价×0.5)，堵买了就卖的套利；关掉回到只看品质
 static var SELL_BOUGHT_CAP := true
-## 返修（O-待定，同上）：天平只在买时那一层的地图里生效，进了别的层就清掉（设计稿「只管当前这一层」）；关掉回到绑定最高到达层
+## 返修（O-429，同上）：天平只在买时那一层的地图里生效，进了别的层就清掉（设计稿「只管当前这一层」）；关掉回到绑定最高到达层
 static var SCALE_FLOOR_ONLY := true
 
 const PATH := "res://modes/xiyou/tianqi_data/money_table.json"
