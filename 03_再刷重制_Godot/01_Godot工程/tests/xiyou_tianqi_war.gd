@@ -107,6 +107,7 @@ func _run() -> void:
 	_survival()
 	_shadow()
 	_plain()
+	_review_berserk()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -438,3 +439,23 @@ func _plain() -> void:
 	await XTianqiWarLine.before_battle(host, s2, 69)
 	_check("switch_off", not XTianqiWarLine.allowed(s2) and XTianqiWarAlien.pending() == "" and host.said.is_empty())
 	XTianqiWarLine.ENABLED = true
+
+
+## 评审 v0.1 第 2 条（cc/tianqi-review-fixes）核实：化形战狂受伤加攻，伤害结算末尾的 refresh 已让缓存格变冷，打完这一下就读到新攻（误报，钉住）
+func _review_berserk() -> void:
+	var lg := _alien_logic("omen", 30)
+	var e: XEnemy = lg.enemies[0]
+	XTianqiWarAlien.unit(lg, e).idx = 2
+	var atk1 := e.atk  # 读一次：缓存格变热
+	var a: XActor = lg.actors[0]
+	var hit := false
+	for i in range(10):
+		lg.current_order.clear()
+		var logs := lg.act(a, XDB.rec("Skills", 1), e)
+		if logs.any(func(l): return l.type == "hit" and is_same(l.target, e) and float(l.get("hp", 0.0)) > 0.0):
+			hit = true
+			break
+	var atk2 := e.atk
+	_check("review2_berserk_hit", hit)
+	_check("review2_berserk_atk_after_hit", atk2 > atk1, [atk1, atk2])
+	lg.end_battle(0)

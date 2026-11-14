@@ -388,8 +388,11 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 		var m := _taken_mult(logic, item, a, b)
 		if m != 1.0:
 			ops.append({"op": "mul", "field": "incomingMultiplier", "value": m})
-	elif st.units.has(b) and int(st.units[b].expose_turns) > 0:
-		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 + float(st.units[b].expose) / 100.0})
+	else:
+		var affix_expose := float(st.units[b].expose) if st.units.has(b) and int(st.units[b].expose_turns) > 0 else 0.0
+		var total_expose := XTianqiElements.combined_exposure_pct(logic, b, affix_expose)
+		if total_expose > 0.0:
+			ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 + total_expose / 100.0})
 	return ops
 
 
@@ -522,7 +525,7 @@ static func end_action(logic, u, skill) -> Array:
 	for t in f.targets:
 		if t.is_alive():
 			logs.append({"type": "action", "user": u, "skill": skill, "views": logic.views()})
-			logs.append(logic.apply(u, skill, t))
+			logs.append_array(logic.mark_views([logic.apply(u, skill, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 	st.depth = int(st.depth) - 1
 	return logs
 

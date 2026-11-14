@@ -97,7 +97,7 @@ func _paint_transfer(c: XMVCanvas) -> void:
 
 func coordinate_text() -> String:
 	var s := XState.current
-	return "坐标<%d,%d> " % [s.x, s.y] if s else ""
+	return ("坐标<%d,%d> " % [s.x, s.y]) + XTianqiElements.hud_floor_line(s) if s else ""
 
 
 func difficulty_text() -> String:

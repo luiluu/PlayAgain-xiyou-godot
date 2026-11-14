@@ -47,6 +47,7 @@ const FRAME_BACK := Color8(24, 24, 34, 230)
 var enemies_source: Callable  # -> Array：本场敌人
 var target_source: Callable  # -> 选目标时选中的战斗者，没在选为空
 var help_source: Callable  # -> Rect2：正在显示的说明卡，没有时大小为 0
+var logic_source: Callable  # -> 本场 BattleLogic：天启篇元素牌组按实际结算的模式（35 层影子／生存）显示
 var battler = null
 var open := false
 var page := 0
@@ -137,15 +138,30 @@ func _process(_delta: float) -> void:
 	_layout()
 
 
+func _tq_profile() -> Dictionary:
+	if battler == null or not XTianqiElements.deck_on():
+		return {}
+	var p := XTianqiElements.enemy_profile(battler, logic_source.call() if logic_source.is_valid() else null, XState.current)
+	if (p.get("weak", []) as Array).is_empty() and (p.get("resist", []) as Array).is_empty() and (p.get("immune", []) as Array).is_empty():
+		return {}
+	return p
+
+
+func _bar_height() -> float:
+	return 124.0 if not _tq_profile().is_empty() else BAR_HEIGHT
+
+
 func _layout() -> void:
+	var bh := _bar_height()
+	bar.size.y = bh
 	var help: Rect2 = help_source.call() if help_source.is_valid() else Rect2()
 	var y := XBossHpBar.layout_bottom() + 8.0  # 贴在 Boss 血条框下方，隔 8
-	var bar_rect := Rect2(XBossHpBar.layout_pos().x, y, WIDTH, BAR_HEIGHT)
+	var bar_rect := Rect2(XBossHpBar.layout_pos().x, y, WIDTH, bh)
 	if help.has_area() and bar_rect.intersects(help):
-		y = maxf(12.0, minf(y, help.position.y - BAR_HEIGHT - 8.0))
+		y = maxf(12.0, minf(y, help.position.y - bh - 8.0))
 	bar.position = Vector2(XBossHpBar.layout_pos().x, y)
 	var dx := maxf(12.0, minf(XBossHpBar.layout_pos().x, BOX.x - DETAIL_W - 12.0))
-	var dy := maxf(12.0, minf(y + BAR_HEIGHT + 6.0, BOX.y - DETAIL_H - 12.0))
+	var dy := maxf(12.0, minf(y + bh + 6.0, BOX.y - DETAIL_H - 12.0))
 	detail.position = Vector2(dx, dy)
 	detail.visible = open and not (help.has_area() and Rect2(dx, dy, DETAIL_W, DETAIL_H).intersects(help))
 
@@ -156,7 +172,11 @@ func refresh(force := false) -> void:
 	page = clampi(page, 0, pages - 1)
 	if selected != null and not list.any(func(r): return str(r.id) == str(selected)):
 		selected = null
-	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", power_total(), XBossStatus.entries(battler), page, filter, open, selected, description_page])
+	var prof := _tq_profile()
+	var tip := XTianqiElements.profile_tooltip(prof)
+	if bar != null:
+		bar.tooltip_text = tip
+	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", power_total(), XBossStatus.entries(battler), page, filter, open, selected, description_page, tip])
 	if not force and stamp == _stamp:
 		return
 	_stamp = stamp
@@ -304,7 +324,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 	if battler == null:
 		return
 	var all := XBossStatus.entries(battler)
-	_frame_box(c, WIDTH, BAR_HEIGHT, true)
+	_frame_box(c, WIDTH, _bar_height(), true)
 	c.text("BOSS", 12, 3, 44, "left", BLUE, 14, 24)
 	var name_text := XBossStatus.clean(battler.display_name())
 	var power := power_of()
@@ -317,6 +337,11 @@ func _paint_bar(c: XMVCanvas) -> void:
 	c.draw_rect(Rect2(12, 28, WIDTH - 24.0, 1), EDGE)
 	_preview(c, all.filter(func(r): return r.kind == "Debuff"), "Debuff", 32.0)
 	_preview(c, all.filter(func(r): return r.kind == "Buff"), "Buff", 64.0)
+	var prof := _tq_profile()
+	if not prof.is_empty():
+		var head := "[P%d] " % int(prof.phase) if str(prof.get("source", "")) == "knight" and int(prof.get("phase", 0)) > 0 else ""
+		var line := head + XTianqiElements.format_profile_line(prof)
+		c.text(fit(c, line, WIDTH - 24.0, 12), 12, 96.0, WIDTH - 24.0, "left", Color("#9be4ff"), 12, 22)
 
 
 func _preview(c: XMVCanvas, list: Array, kind: String, y: float) -> void:
@@ -397,6 +422,12 @@ func _paint_detail(c: XMVCanvas) -> void:
 
 ## CodexElements.drawAttributes：「敌人属性：」＋元素名，总宽超出时字号按比例缩
 func _attributes(c: XMVCanvas, x: float, y: float, width: float, height: float) -> void:
+	var prof := _tq_profile()
+	if not prof.is_empty():
+		var head := "[P%d] " % int(prof.phase) if str(prof.get("source", "")) == "knight" and int(prof.get("phase", 0)) > 0 else ""
+		var text := head + XTianqiElements.format_profile_line(prof)
+		c.text(fit(c, text, width, 13), x, y, width, "left", Color("#9be4ff"), 13, height)
+		return
 	var names: Array = XDamage.elements_data().get("names", [])
 	var parts := [["敌人属性：", INK]]
 	var ids := XDamage.affinity(battler)

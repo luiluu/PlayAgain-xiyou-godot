@@ -209,6 +209,14 @@ func _run() -> void:
 	# 换装备回第一页
 	probe.set_item(XGear.template("weapon", 2))
 	check("new_item_first_page", probe.page == 0 and probe.origin_y == 0.0)
+	# 评审 v0.1 第 7 条：同一件装备原地改了说明（融印、洗词条），再选中要重排
+	var same := XGear.template("weapon", 2)
+	same.description = "旧说明"
+	probe.set_item(same)
+	var k0: String = probe.key
+	same.description = "新说明"
+	probe.set_item(same)
+	check("review7_description_rerender", probe.key != k0 and str(probe.item.get("description", "")) == "新说明", [k0, probe.key])
 	for w in [probe.tabs, probe.detail, probe.nav]:
 		w.queue_free()
 	# 原版 fullHeight（MIN_FONT 0＝原版字号）：练习剑 259、无极西瓜刀 389、卍解-斩月 404
