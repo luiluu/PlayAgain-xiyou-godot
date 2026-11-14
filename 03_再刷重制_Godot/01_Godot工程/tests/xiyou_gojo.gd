@@ -247,6 +247,9 @@ func _domain_flash() -> void:
 
 ## 真走 act：花费、加印、伤害都经过整条链
 func _real_turns() -> void:
+	# 夹具没跑开局，原来就没学难度被动；天启篇改读数值表后结算 ×6，苍一下就打死敌人、后面几招没对象。
+	# 这里测的是五条悟的花费与印记，不测难度被动等价（见 xiyou_tianqi_no_diff_passive），照原来不乘
+	XTianqiNoDiffPassive.ENABLED = false
 	var s := _state()
 	var a := _gojo(s)
 	var lg := _logic(s)
@@ -269,6 +272,7 @@ func _real_turns() -> void:
 	lg.act(a, XDB.rec("Skills", XGojo.REVERSE), a)
 	_check("act_reverse_heals", a.hp > hp1 and XGojo.marks(a)[1] == 2, [a.hp, hp1, a.mhp, XGojo.marks(a)])
 	lg.end_battle(0)
+	XTianqiNoDiffPassive.ENABLED = true
 
 
 ## 最强之名：证道、36 层骑士战上场的人里有宿傩或甚尔才解锁

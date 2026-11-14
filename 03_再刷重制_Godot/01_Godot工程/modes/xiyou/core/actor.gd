@@ -576,6 +576,8 @@ func learn_skill(id: int) -> void:
 		return
 	if STRONG_SKILL_REPLACE.has(id) and is_strong_classified():
 		id = STRONG_SKILL_REPLACE[id]
+	if XTianqiNoDiffPassive.blocks_learn(id):  # 天启篇开局不发难度被动（普通难度、难度适应、天道诅咒；O-待定）
+		return
 	if not XWeakChallenge.can_learn(self, id):  # 弱者挑战 learnSkill 包装：10357 只给本局已通关的弱者
 		return
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
@@ -1351,6 +1353,11 @@ func add_param(i: int, value: float) -> void:
 		XParamPlus.add(XState.current, actor_id, i, value)
 
 
+## 天启篇：天道诅咒 995 的敏捷 ×0.8 改读数值表，战斗中加算进能力倍率（XTianqiNoDiffPassive，O-待定）
+func traits_pi(code: int, id: int) -> float:
+	return XTianqiNoDiffPassive.traits_pi(self, code, id, super.traits_pi(code, id))
+
+
 ## Star_PetSystem 在 traitsSum 层相加，先于被动／套装倍率与命中保底。
 func traits_sum(code: int, id: int) -> float:
 	var v := super.traits_sum(code, id)
@@ -1382,6 +1389,7 @@ func _xparam_now(i: int) -> float:
 	var v := super.xparam(i)
 	for m in passive_values(_tag("passiveXPBST", i)):
 		v += _num(m) * 0.01
+	v += XTianqiNoDiffPassive.xparam_add(self, i)  # 天启篇：天道诅咒的暴击率 +50% 改读数值表（O-待定）
 	# passiveXPBSTEX（968 暴击率、3886 TP 回复率）：<…EXn:上升量,条件,判定值>，条件满足才加（passive_probe xpbstex）
 	for m in passive_values(_tag("passiveXPBSTEX", i)):
 		var parts := str(m).split(",")
