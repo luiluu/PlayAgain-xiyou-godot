@@ -295,7 +295,8 @@ func _filter_and_book() -> void:
 	s.flags.erase("HangUpProhibited")
 	XHangUp.settings(s)["DropShield"] = true
 	var kept: Array = XTianqiDrop._auto_sell(lg, [low, ok])
-	var price := floori(float(XDB.rec("Weapons" if int(low.kind) == 2 else "Armors", int(low.id)).get("price", 0)) / 2.0)
+	var price := XTianqiMoney.sell_price_grade(s, XQuality.grade(XDB.rec("Weapons" if int(low.kind) == 2 else "Armors", int(low.id))))  # 金钱重构：按品质的卖价
+	_check("auto_sell_uses_money_price", price > 0, price)
 	_check("filter_sells_below_gate", XHangUp.is_active(s) and kept.size() == 1 and kept[0] == ok and int(lg.get_meta("tianqi_generic_gold", -1)) == price, [kept, lg.get_meta("tianqi_generic_gold", -1), price])
 	var gold := s.gold
 	_check("filter_gold_granted", XTianqiDrop.grant_sold(lg) == price and s.gold == gold + price and XTianqiDrop.grant_sold(lg) == 0)

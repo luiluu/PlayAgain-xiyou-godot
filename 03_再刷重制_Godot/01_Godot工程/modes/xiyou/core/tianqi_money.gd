@@ -176,11 +176,17 @@ static func sell_price(rec: Dictionary, s: XState = null) -> int:
 		s = XState.current
 	if not SELL or s == null or not on(s) or not XItemMarks.is_gear(rec):
 		return -1
+	return sell_price_grade(s, XFabaoFeed.grade_of(rec))
+
+
+## 品质档 grade（0 普通～6 神话）的装备卖价；不归这里管的返回 -1。掉落线挂机折钱（XTianqiDrop._auto_sell）也调它
+static func sell_price_grade(s: XState, grade: int) -> int:
+	if not SELL or s == null or not on(s):
+		return -1
 	var t: Array = _sec("sell").get("by_grade", [])
 	if t.is_empty():
 		return -1
-	var g := clampi(XFabaoFeed.grade_of(rec), 0, t.size() - 1)
-	return nice(float(t[g]) * field_money(s))
+	return nice(float(t[clampi(grade, 0, t.size() - 1)]) * field_money(s))
 
 
 # ---- 重铸 ----

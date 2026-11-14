@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-money
 
 - 车道／工作者：C 规则·机制／cc（金钱重构）
-- 状态：可合并
+- 状态：进行中
 
 金钱重构方案 v0.2（私密仓库 xiyou-design-docs `重制设定/天启篇_金钱重构方案_v0.2.md`，Kyo 11-14 00:44「全可以，按你的建议来，9的话根据难度调整」）第四节 1～5 步。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
 
@@ -12,7 +12,7 @@
 - 起因：Kyo「西游的钱没什么用，要重构」。盘点：钱 10 层起花不完，好东西都用别的货币，100 万到 1 亿之间没有去处，修炼一级 2 亿起买不起。
 - 规则表 `tianqi_data/money_table.json`（数是草案，等虚拟玩家实测），代码 `core/tianqi_money.gd`（`XTianqiMoney`，O-待定-1），只认天启篇存档。
 - 场钱：最高到达层（变量 20）一场随机遇敌的平均金钱 × 难度奖励倍率。1～27 层按方案盘点的锚点平滑补齐，28 层起按 ×1.2 补到 36 层。新增消耗都按场钱标价，再乘各档价格倍数（寻常 0.6、艰险 0.8、九死 1、炼狱 1.5、证道 1.7）；算出的价取两位有效数字、避开 4。
-- 难度奖励倍率：`balance_table.json` 每档 `scaling.reward`（1／1.1／1.3／1.5／1.8），`XTianqiBalance.reward_mult`，金钱和掉率共用（掉落线合进来后改读这里，见下）。
+- 难度奖励倍率：`balance_table.json` 每档 `scaling.reward`（1／1.1／1.3／1.5／1.8），`XTianqiBalance.reward_mult`，金钱和掉率共用。掉落线（已在 main）对接：`XTianqiDrop.difficulty_mult` 改读它，`drop_table.json` 的 difficulty 段删掉；挂机屏蔽掉落折钱（`_auto_sell`）改调 `XTianqiMoney.sell_price_grade`（按品质的卖价，金钱关掉时照旧数据库价一半）；`xiyou_tianqi_drop` 的折钱一项改成按新卖价比、多一项 auto_sell_uses_money_price。
 - 战斗金钱（`INCOME`）：全队（上场＋助力位）被动 passiveGRUP、套装、词条阅历、金钱翻倍全部相加，再按 合计×200÷(合计＋200) 递减（同掉落），乘难度奖励倍率。原版难度被动（普通难度等 6 个）不算；牢妲改的难度号金钱倍率（Vitsuno Drop Rate）不算。原版算出 0 的（神兵试炼）照旧 0。`battle_logic.rewards` 末尾一行。
 - 卖价（`SELL`）：装备按品质 0.1／0.2／0.3／0.5／1／1.5／2 场钱（普通～神话），不看原价；物品（奖碑、古董等）照旧。`XItemMarks.selling_price` 开头一行，商店、一键出售、挂机出售、说明卡都跟着变。
 - 重铸（`REFORGE`）：一条 3 场钱 × 阶系数（1／2／3／5）；同一件每重铸一次 ×1.3、封顶 10 倍（装备记 `tq_reforges`）；新加「锁第 N 条洗其余」，其余各条起步价之和 ×3。异化工坊页每条多一个按钮、底下写已重铸几次。关掉回到 reforge.json 的老价。
@@ -32,7 +32,7 @@
 
 ## 交接板
 
-- 下一步：掉落线（cc/drop-rework）合进来后对接两处——`XTianqiDrop.difficulty_mult` 改读 `XTianqiBalance.reward_mult`（drop_table.json 的 difficulty 段可删），`_auto_sell` 折钱那行改调 `XTianqiMoney.sell_price`，`xiyou_tianqi_drop` 的 difficulty_mults、pieces_difficulty、filter_sells_below_gate 三项跟着改（谁后合谁改，两边已约好）。请虚拟玩家线学会花钱（重铸、修炼、天平），实测每层收入和余额，回来校 `money_table.json`；修炼每级加值等数值线定。
+- 下一步：请虚拟玩家线学会花钱（重铸、修炼、天平），实测每层收入和余额，回来校 `money_table.json`；修炼每级加值等数值线定。
 - 用户试玩说明：天启篇新档：卖装备看品质给钱；异化工坊重铸能锁一条；修炼页是八项全队共享；大厅左边动保协会成员的位置是天平。只在本地。
 - 需要用户决定：无
 
@@ -46,7 +46,7 @@
 
 ## 待交叉核查
 
-- 改了核心文件 `battle/battle_logic.gd`（rewards 末尾、setup 各加一行）。
+- 改了核心文件 `battle/battle_logic.gd`（rewards 末尾、setup 各加一行）；另改了掉落线的 `core/tianqi_drop.gd`（difficulty_mult、_auto_sell 各一行）和 `drop_table.json`（删 difficulty 段）。
 
 ## 本分支提交
 
