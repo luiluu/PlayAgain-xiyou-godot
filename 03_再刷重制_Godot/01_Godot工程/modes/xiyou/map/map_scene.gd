@@ -818,6 +818,13 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇教派连带内容（XTianqiSect）：各包接管的事件（包甲没有）
+	if XTianqiSect.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiSect.run_event(self, XState.current, map_id, e.event_id)
+		_set_busy(false)
+		refresh_events()
+		return
 	# 天启篇天平（XTianqiMoney）：大厅 EV043（原宠物商店）换成天平
 	if XTianqiMoney.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)

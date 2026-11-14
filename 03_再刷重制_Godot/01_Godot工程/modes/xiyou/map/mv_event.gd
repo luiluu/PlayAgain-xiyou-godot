@@ -89,6 +89,8 @@ func _find_page() -> int:
 		return -1
 	if XTianqiTrim.hides(map_id, event_id):
 		return -1  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-410）
+	if XTianqiSect.hides(map_id, event_id):
+		return -1  # 天启篇教派连带内容：大厅两位使者等整件不出（XTianqiSect）
 	var merchant29 := str(data.get("note", "")).contains("<CodexMerchant29>")
 	for i in range(data.pages.size() - 1, -1, -1):
 		if merchant29 and i == 1 and not merchant29_present():
@@ -134,6 +136,8 @@ func _meets(c: Dictionary) -> bool:
 	var s := XState.current
 	if s == null:
 		return false
+	if XTianqiSect.page_blocked(s, c):
+		return false  # 天启篇：教派、随机、轮回开关当条件的页不出（XTianqiSect 包甲）
 	if c.switch1Valid and not _switch_on(s, int(c.switch1Id)):
 		return false
 	if c.switch2Valid and not _switch_on(s, int(c.switch2Id)):
