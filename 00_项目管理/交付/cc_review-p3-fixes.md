@@ -46,7 +46,7 @@
 ## 验证
 
 - 语法检查：876 个 .gd，0 个问题。
-- 本机专项（全部通过）：见变更记录草稿里列的 13 个，另跑了 `xiyou_determinism`、`xiyou_imported_balance`、`xiyou_vegeta_tune`、`xiyou_item_marks`、`xiyou_heartsteel`、`xiyou_power_hidden`、`xiyou_status_power`、`xiyou_growth_forge`、`xiyou_warehouse`、`xiyou_equipment`、`xiyou_tianqi_death`、`xiyou_tianqi_war`、`xiyou_tianqi_save`、`xiyou_hidden_actors`、`xiyou_shop_buy`（结果见下）。
+- 本机专项（全部通过）：见变更记录草稿里列的 13 个，另跑了 `xiyou_determinism`、`xiyou_imported_balance`、`xiyou_vegeta_tune`、`xiyou_item_marks`、`xiyou_heartsteel`、`xiyou_power_hidden`、`xiyou_status_power`、`xiyou_growth_forge`、`xiyou_warehouse`、`xiyou_equipment`、`xiyou_tianqi_death`、`xiyou_tianqi_war`、`xiyou_tianqi_save`、`xiyou_hidden_actors`、`xiyou_shop_buy`（15 个全部通过）；工具快速回归 `工具回归.py` 全部通过；交付自检 `交付自检.py` 通过（快车道）。
 - 没跑：`选测.py main --list` 给出的 575 个场景（改了 `actor.gd`、`xstate.gd` 被扩成战斗核心＋全部引用面）。原因：本机跑不动，且这两处只是一行替换（`raw_equip_list`、`lose_gear` 开头规范化），按规则交给总装合并时 `--affected --cloud`。合并碰 `actor.gd`：这两处不是原版移植逻辑本身（吸取视图是重制自有层），不加 `--oracle`。
 
 ## 待交叉核查
