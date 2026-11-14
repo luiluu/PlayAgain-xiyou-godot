@@ -6,10 +6,11 @@ extends Node
 ## 四、工坊页：天启篇存档多出取核、净化、异化核一节，按钮点得动；原版档没有这些。
 ## 数字避开 4（Kyo 11-11）。
 
-const CONFIG := "user://xiyou_tianqi_alien_gear_config.json"
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 const TROOP_GEAR := 1     # 嘤嘤怪：掉草帽（52）、毛布裤（53）
 const TROOP_NO_GEAR := 69 # 灵狼祭祀：只掉物品
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -60,22 +61,15 @@ func _tq_gear(s: XState) -> Array:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
 	seed(20261112)
-	XConfig.path_override = ProjectSettings.globalize_path(CONFIG)
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig._loaded_path = "<unloaded>"
+	kit = Kit.new("xiyou_tianqi_alien_gear")
 	_data()
 	_drops()
 	_rules()
 	await _page()
 	XTianqiAlienGear.force_roll = -1.0
 	XAlienation.force_roll = -1.0
-	if FileAccess.file_exists(CONFIG):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
-	XConfig.path_override = ""
-	XConfig._loaded_path = "<unloaded>"
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -187,9 +181,11 @@ func _rules() -> void:
 	var det := XAlienation.details(s, i)
 	_check("details", str(det[0]).contains("装甲冲击") and str(det[0]).contains("蚀骨") and str(det[3]).contains("2点"), det)
 	# 存档往返
-	var back := XState.from_dict(s.to_dict())
-	var bi = back.gear.filter(func(e): return XTianqiAlienGear.is_tq(e))
-	_check("saved", bi.size() == 1 and str(XTianqiAlienGear.tq(bi[0]).level) == "shigu" and str(bi[0].name) == str(i.name))
+	XState.current = s
+	var back := kit.roundtrip()
+	XState.current = s
+	var bi = back.gear.filter(func(e): return XTianqiAlienGear.is_tq(e)) if back != null else []
+	_check("saved", back != null and bi.size() == 1 and str(XTianqiAlienGear.tq(bi[0]).level) == "shigu" and str(bi[0].name) == str(i.name))
 	# 重抽：本线本级、沿用原版待选
 	s.gain_item(XAlienation.stone_id(), 5)
 	XAlienation.force_roll = 0.0

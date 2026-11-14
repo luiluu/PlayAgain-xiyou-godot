@@ -5,6 +5,7 @@ extends Node
 ## 三、天道研究日志不在货单和掉落里，夏娜心魔（敌人 2026）掉人道意志碎片 × 10（实跑一场）；
 ## 四、回退开关 JIA 关掉回原样；原版档不受影响。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 
 
@@ -40,10 +41,7 @@ func _run() -> void:
 
 
 func _tianqi_state(diff := "jiusi") -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": []}
-	XState.current = s
-	return s
+	return Kit.new_game(diff)
 
 
 func _plain_state() -> XState:

@@ -34,7 +34,9 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -92,7 +94,7 @@ func _texts(logs: Array) -> Array:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_plague")
 	seed(20261111)
 	_data()
 	await _choose_and_opening()
@@ -108,6 +110,7 @@ func _run() -> void:
 	_shadow()
 	_segment()
 	await _plain()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -167,7 +170,9 @@ func _choose_and_opening() -> void:
 	_check("opening_done", XTianqiLine.opening_done("plague", s) and bool(XTianqiPlagueLine.progress(s).get("survived", false)))
 	_check("rift_said", host.said.any(func(t): return str(t).contains("不服来打我")) and host.said.any(func(t): return str(t).contains("也不服")))
 	_check("door_open", not XTianqiLine.door_blocked(s))
-	var back := XState.from_dict(s.to_dict())
+	XState.current = s
+	var back := kit.roundtrip()
+	XState.current = s
 	_check("progress_saved", XTianqiLine.opening_done("plague", back) and XTianqi.line_of(back) == "plague")
 
 

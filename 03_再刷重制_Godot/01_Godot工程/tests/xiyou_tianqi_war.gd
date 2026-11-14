@@ -35,7 +35,9 @@ class FakeHost extends RefCounted:
 		return int(results.pop_front()) if not results.is_empty() else 0
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -94,7 +96,7 @@ func _texts(logs: Array) -> Array:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	kit = Kit.new("xiyou_tianqi_war")
 	seed(20261111)
 	_data()
 	_choose_and_opening()
@@ -108,6 +110,7 @@ func _run() -> void:
 	_shadow()
 	_plain()
 	_review_berserk()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -171,7 +174,9 @@ func _choose_and_opening() -> void:
 	await XTianqiWarLine.run_due(h2, s2)
 	_check("rift_survived_flag", bool(XTianqiWarLine.progress(s2).survived) and XTianqiWarLine.opening_done(s2) and h2.said.any(func(t): return str(t).contains("第六声")))
 	# 存档来回
-	var back := XState.from_dict(s2.to_dict())
+	XState.current = s2
+	var back := kit.roundtrip()
+	XState.current = s2
 	_check("progress_saved", XTianqiWarLine.opening_done(back) and bool(XTianqiWarLine.progress(back).survived))
 
 

@@ -17,7 +17,9 @@ class FakeHost extends RefCounted:
 		return int(answers.pop_front()) if not answers.is_empty() else options.size() - 1
 
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
+var kit: Kit
 
 
 func _ready() -> void:
@@ -57,14 +59,15 @@ func _plain_state(lineup: Array) -> XState:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
 	seed(20261111)
+	kit = Kit.new("xiyou_tianqi_numbers")
 	_enemy_rates()
 	_damage_mult()
 	_damage_end_to_end()
 	_opening()
 	await _heaven_gaze()
 	await _lines()
+	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -227,8 +230,10 @@ func _lines() -> void:
 	_check("line_chosen", XTianqi.choose_line(s, "war") and XTianqi.line_of(s) == "war" and not XTianqi.line_ready(s), XTianqi.line_of(s))
 	_check("line_no_change", not XTianqi.choose_line(s, "plague") and XTianqi.line_of(s) == "war")
 	_check("line_unknown", not XTianqi.choose_line(s, "nope"))
-	var saved := XState.from_dict(s.to_dict())
-	_check("line_saved", XTianqi.line_of(saved) == "war")
+	XState.current = s
+	var saved := kit.roundtrip()
+	XState.current = s
+	_check("line_saved", saved != null and XTianqi.line_of(saved) == "war")
 	var p := _plain_state(w.slice(0, 5))
 	p.set_variable(20, 6)
 	_check("line_plain", not XTianqi.line_ready(p) and not XTianqi.choose_line(p, "war"))

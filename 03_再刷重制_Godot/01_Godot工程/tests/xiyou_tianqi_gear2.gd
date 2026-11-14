@@ -8,6 +8,7 @@ extends Node
 ## 五、表里的设计数值不带 4（与 03_转换工具/天启篇数据校验.py 的 gear_table 检查同一套）。
 ## 验收方式：天启篇新规则没有 mv_oracle 参照，按交接单的占位表逐项比；反向验证清单在 04_验证/反向验证清单/xiyou_tianqi_gear2.json。
 
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 
 ## 旧 0～15 档里各取一个落在七档 0～6 的（XQuality 头注：1 普通、2 优秀、3 精良、4 史诗、6 传说、8 不朽、12 神话）
@@ -51,10 +52,7 @@ func _run() -> void:
 
 ## 天启篇状态（同 xiyou_tianqi_gear：只写规则版本，不跑开局）；设成当前档
 func _tianqi_state() -> XState:
-	var s := XState.new_game_blank()
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "jiusi", "lineup": []}
-	XState.current = s
-	return s
+	return Kit.new_game("jiusi")
 
 
 func _legacy_state() -> XState:
