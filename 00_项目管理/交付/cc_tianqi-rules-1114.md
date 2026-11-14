@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-rules-1114
 
 - 车道／工作者：C 规则·机制／cc（Orca 车道 tianqi-rules-1114，claude-opus-5-5＋medium）
-- 状态：进行中
+- 状态：已交付
 
 ## 变更记录草稿
 
@@ -28,7 +28,7 @@ Kyo 11-14 定（协调转派）。三项分开提交，各有专项断言和反�
 - 专项（本机）：`xiyou_tianqi_trumpet`（新断言 cavalry.famine.*、cavalry.overdraw.*）、`xiyou_gojo`（新 unlock_*、persist.*：XSave 真写盘读档＋XConfig 从盘重读）、`xiyou_tianqi_ending`（final_clear_said、final_no_old_name、save_clear_mark、old_save.* 4 条、card_lit、截图）、`xiyou_tianqi_famine`、`xiyou_tusu_battle`、`xiyou_tianqi_look`、`xiyou_tianqi_war`、`xiyou_tianqi_summit` 全过。
 - 反向验证（`反向验证.py`）三份清单 12 项全部咬住：六号回到全免、口粮改按免后费用、raw 视角失效、FAMINE_PAYS 失效；证道关着只认证道、证道开了还认炼狱、开关失效、解锁不写盘；叫法退回可轮回、读档不标、卡上退回已通关、剪影不点亮。
 - 选测：`选测.py main --list` 289 个场景（battle_logic 改动带出战斗核心），超 40 走云端：`云端选测.py run --no-upload`（提交 1e6cb589d，云端按基准取整轮 589 个），结果见下行。
-- 云端结果：待写
+- 云端结果：589 个场景 588 过，挂 1 个 `xiyou_tianqi_alien_gear`（review6_tier_again、review6_huaxing_same_again、review6_o-off：「再动」按级文案）。**与本分支无关**：把本分支 13 个改动文件全退回分叉点后本机重跑同样 54/57 失败；是 11-14 合并 cc/tianqi-review-fixes（d45643f0b）带进 main 的既有失败，main 至今没修。该文件属在跑的 tianqi_alien_gear 车道，本单没碰，请总装转给它或核查。运行页 actions/runs/43604531253。
 - 语法检查 0 问题；工具回归全部通过（149 秒）。
 - 截图：[选线竖卡·战争线已清除异化](cc_tianqi-rules-1114_截图/line_cards_war_cleared.png)（窗口模式 `-- --out=`；中间的成就弹窗是测试流程带出来的）。
 
@@ -44,10 +44,11 @@ Kyo 11-14 定（协调转派）。三项分开提交，各有专项断言和反�
 
 ## 可优化（流程／工具／效率）
 
-- 无
+- main 上 `xiyou_tianqi_alien_gear` 3 条 review6 断言失败（见验证），合并 cc/tianqi-review-fixes 时没被拦下，建议派给七印／异化装备车道修。
 
 ## 本分支提交
 
 - 9446b53f0 号卷六号第 1 回合饥荒口粮、透支照扣
 - 89a81a4e6 五条悟证道开放前炼狱也解锁
 - 1e6cb589d 「可轮回」改名「已清除异化·某线」、剪影点亮断言与截图
+- 34438a506 交付单、开关注释 O-待定-1／-2
