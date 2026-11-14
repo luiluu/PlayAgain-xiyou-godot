@@ -88,7 +88,7 @@ static func _first_slot_fix(s: XState) -> void:
 	for i in 4:
 		if int(s.battle_slots[i]) != 0:
 			return
-	s.battle_slots[0] = s.party[0]
+	s.set_battle_slot(0, s.party[0])
 
 
 static func from_save(v) -> Array[int]:

@@ -12,10 +12,10 @@ extends RefCounted
 ## - ADVANCE：进阶四阶 10 万／30 万／60 万／100 万（XAdvance.row 读 advance_gold），一次性的，不乘价格倍数。
 ## - TRAINING：修炼重做，八项各 10 级、全队共享、每 3 层开 1 级，每级加本体基础值 1%（占位）；原表 65 项不用（XTraining 读这里）。
 ## - SCALE：天平，大厅原「动保协会成员」（Map004 EV043，宠物商店，天启篇宠物全隐藏）换成天平：麦（每场开战全队回满）、
-##   油（承伤 −10%）、酒（出伤 ＋10%），只管当前这一层；一层最多买 3 次、第 n 次价格 ×2^(n−1)；饥荒线贵五成。
+##   油（承伤 −10%）、酒（出伤 ＋10%），只管买时那一层（只在那一层的地图里生效，进了别的层就清掉）；一层最多买 3 次、第 n 次价格 ×2^(n−1)；饥荒线贵五成。
 ## 存档：flags.tianqi.money {"training": {"能力编号": 等级}, "scale": {"floor": 层, "goods": [..], "buys": 次数}}；装备上记重铸次数 tq_reforges。
 ##
-## 开关（O-404）：ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
+## 开关（O-404）：SELL_BOUGHT_CAP／SCALE_FLOOR_ONLY（O-429，返修）关掉回到返修前；ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
 
 static var ENABLED := true
 static var INCOME := true
@@ -24,6 +24,10 @@ static var REFORGE := true
 static var ADVANCE := true
 static var TRAINING := true
 static var SCALE := true
+## 返修（O-429，gpt 甲档补核 P2）：商店买来的装备回售价＝min(品质卖价, 购入价×0.5)，堵买了就卖的套利；关掉回到只看品质
+static var SELL_BOUGHT_CAP := true
+## 返修（O-429，同上）：天平只在买时那一层的地图里生效，进了别的层就清掉（设计稿「只管当前这一层」）；关掉回到绑定最高到达层
+static var SCALE_FLOOR_ONLY := true
 
 const PATH := "res://modes/xiyou/tianqi_data/money_table.json"
 const SCALE_MAP := 4
@@ -176,7 +180,12 @@ static func sell_price(rec: Dictionary, s: XState = null) -> int:
 		s = XState.current
 	if not SELL or s == null or not on(s) or not XItemMarks.is_gear(rec):
 		return -1
-	return sell_price_grade(s, XFabaoFeed.grade_of(rec))
+	var p := sell_price_grade(s, XFabaoFeed.grade_of(rec))
+	if SELL_BOUGHT_CAP and p >= 0 and bool(rec.get("tq_bought", false)):
+		# 商店货：不超过购入价的一半（没记购入价的旧货按原价，等于原版半价）
+		var paid := int(rec.get("tq_buy_price", rec.get("price", 0)))
+		p = mini(p, maxi(0, paid) / 2)
+	return p
 
 
 ## 品质档 grade（0 普通～6 神话）的装备卖价；不归这里管的返回 -1。掉落线挂机折钱（XTianqiDrop._auto_sell）也调它
@@ -300,12 +309,34 @@ static func scale_on(s: XState) -> bool:
 	return SCALE and s != null and on(s)
 
 
-## 本层的天平记录（最高到达层变了就清掉）
-static func scale_state(s: XState) -> Dictionary:
+## 天平买时记下的层：在某一层的地图里就是那一层，在大厅（不属于哪层）就是最高到达层
+static func scale_floor_now(s: XState) -> int:
+	var f := XDungeon.map_floor(s.map_id) if SCALE_FLOOR_ONLY else 0
+	return f if f > 0 else top_floor(s)
+
+
+## 离开买时那一层就清掉：人在别的层的地图里时整条记录作废（大厅、不属于哪层的地图不清）。
+## 进地图时 map_scene.load_map 调（换了 s.map_id 之后），查效果、价格时也再对一次
+static func scale_sync(s: XState) -> void:
+	if not SCALE_FLOOR_ONLY or not scale_on(s):
+		return
 	var m := money(s)
 	var sc = m.get("scale")
-	if not (sc is Dictionary) or int(sc.get("floor", 0)) != top_floor(s):
-		sc = {"floor": top_floor(s), "goods": [], "buys": 0}
+	if not (sc is Dictionary):
+		return
+	var f := XDungeon.map_floor(s.map_id)
+	if f > 0 and f != int(sc.get("floor", 0)):
+		m.erase("scale")
+
+
+## 本层的天平记录（换了层就清掉）
+static func scale_state(s: XState) -> Dictionary:
+	scale_sync(s)
+	var m := money(s)
+	var sc = m.get("scale")
+	var now := scale_floor_now(s)
+	if not (sc is Dictionary) or int(sc.get("floor", 0)) != now:
+		sc = {"floor": now, "goods": [], "buys": 0}
 		m["scale"] = sc
 	return sc
 
@@ -313,8 +344,13 @@ static func scale_state(s: XState) -> Dictionary:
 static func has_good(s: XState, good: String) -> bool:
 	if not scale_on(s):
 		return false
+	scale_sync(s)
 	var sc = money(s).get("scale")
-	return sc is Dictionary and int(sc.get("floor", 0)) == top_floor(s) and (sc.get("goods", []) as Array).has(good)
+	if not (sc is Dictionary) or not (sc.get("goods", []) as Array).has(good):
+		return false
+	if SCALE_FLOOR_ONLY:
+		return XDungeon.map_floor(s.map_id) == int(sc.get("floor", 0))  # 只在买时那一层的地图里生效
+	return int(sc.get("floor", 0)) == top_floor(s)
 
 
 ## 下一次买的价钱
@@ -377,7 +413,7 @@ static func run_scale(host, s: XState) -> void:
 		for g in GOODS:
 			labels.append(_good_label(s, g, sc))
 		labels.append("离开")
-		var head := "第 %d 层　已买 %d／%d　下一样 %d%s　身上 %d" % [top_floor(s), int(sc.buys), int(_sec("scale").get("max_buys", 3)),
+		var head := "第 %d 层　已买 %d／%d　下一样 %d%s　身上 %d" % [int(sc.floor), int(sc.buys), int(_sec("scale").get("max_buys", 3)),
 			scale_price(s), str(XDB.system().get("currencyUnit", "")), int(s.gold)]
 		var i: int = await host.show_text_with_choices("", 0, [head], labels, labels.size() - 1)
 		if i < 0 or i >= GOODS.size():

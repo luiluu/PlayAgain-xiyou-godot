@@ -16,36 +16,83 @@ extends RefCounted
 ## 计量和提示只在战斗日志里报（battle_text）。
 ##
 ## 七印书卷（神器，方案 6.4 节）：别的战斗里开战从七条规则随机揭一条（XTianqiQiyinEffects 掷、记在 enemy_only_rule），
-## 本模块按「只对敌方生效」跑：减益只在敌人身上不到期、杀声只加打在敌人身上的伤害、限时只限敌人、敌人不能暴击、
-## 献祭只扣敌方最高生命那只（不给敌方加伤）、星坠只砸敌人、寂静只封敌人。里副本里本印规则优先，书卷不再叠一条。
+## 本模块按「对敌方和佩戴者生效」跑（佩戴者自己也受是书卷的代价，其余队友不受；Kyo 11-14，开关 SCROLL_COST）：
+##   不愈：敌人和佩戴者的减益不到期；杀声：打在敌人和佩戴者身上的伤害按倒下数加；限时：敌方合计、佩戴者自己各算 5 个技能，
+##   敌人和佩戴者魔法、TP 不自然恢复；魔塔：敌人和佩戴者不能暴击；献祭：敌方生命最高那只和佩戴者各失去 10% 当前生命（都不加伤）；
+##   星坠：敌人和佩戴者失去当前生命的 33%；寂静：双数回合敌人只普攻、佩戴者只能普攻、防御、用物品。
+##   代价跟着佩戴者走（协调 11-14，gpt 核查 P2）：佩戴者被天启换人换到助力位，只要活着星坠、献祭照扣；不愈、魔塔、寂静、限时、杀声
+##   只在他行动、被打、回合结算时才有落点，人在助力位不行动、不挨打、状态不走回合，等于暂停，换回场上接着生效；佩戴者阵亡后代价停、
+##   揭开的规则对敌方照旧生效。
+## 豁免（Kyo 11-14，开关 SCROLL_BOSS_EXEMPT）：战斗里有天启四骑士（含影子、生存战）或 34～36 层首领（鸿钧）时书卷不揭、不付代价，
+##   开场说一句。里副本里本印规则优先，书卷不再叠一条。
 
 const META := "xqiyin_rule"
+
+## 开关（O-425）：true＝七印书卷揭开的规则佩戴者自己也受；false＝回到只对敌方
+static var SCROLL_COST := true
+## 开关（O-425）：true＝有天启四骑士或 34～36 层首领的战斗里书卷不揭；false＝回到哪场都揭
+static var SCROLL_BOSS_EXEMPT := true
 
 static var _pending: Dictionary = {}
 
 
-## 规则是不是只对敌方（七印书卷）
+## 规则是不是七印书卷揭的（只对敌方和佩戴者）
 static func enemy_only(logic) -> bool:
 	return bool(fight(logic).get("enemy_only", false))
 
 
-## 这一下规则落不落在 b 身上（书卷只落在敌人身上；b 为 null 时按「落」）
+## 七印书卷的佩戴者（代价落在他身上）；不是书卷的战斗或代价关着时 null
+static func scroll_owner(logic):
+	if not enemy_only(logic) or not SCROLL_COST:
+		return null
+	return fight(logic).get("owner")
+
+
+static func _is_owner(logic, b) -> bool:
+	var o = scroll_owner(logic)
+	return o != null and b != null and is_same(o, b)
+
+
+## 这一下规则落不落在 b 身上（书卷落在敌人和佩戴者身上；b 为 null 时按「落」）
 static func _hits(logic, b) -> bool:
-	return not enemy_only(logic) or b == null or b is XEnemy
+	return not enemy_only(logic) or b == null or b is XEnemy or _is_owner(logic, b)
+
+
+## 书卷豁免：这场有天启四骑士（本体、影子、生存战）或 34～36 层首领（鸿钧；35、36 层就是骑士的影子和本体）
+static func scroll_exempt(logic) -> bool:
+	if not SCROLL_BOSS_EXEMPT or logic == null:
+		return false
+	if XTianqiHorsemen.active(logic) or XTianqiSummit._at in [34, 35, 36]:
+		return true
+	for e in logic.enemies:
+		var rec = e.horseman.get("rec", {}) if e.horseman is Dictionary else {}
+		if bool(e.horseman.get("knight", false)) or (rec is Dictionary and str(rec.get("_ref", "")) == "hongjun"):
+			return true
+	return false
 
 
 ## 七印书卷：不是里副本的战斗、装备者的神器揭了规则时，第一次用到时建本场记录（XTianqiQiyinEffects.start 之后）
 static func _ensure_scroll(logic) -> void:
 	if logic == null or logic.has_meta(META) or logic.state == null or not XTianqiQiyin.allowed(logic.state):
 		return
+	if XTianqiQiyinEffects.scroll_exempted(logic):  # 豁免的战斗：不揭、不付代价，只说一句（规则名空，各钩子都不动）
+		var fe := {"seal": "", "rule": "", "boss": false, "gems": {}, "queue": [], "skills_used": 0, "owner_skills": 0,
+			"side_bonus": "", "silent": false, "enemy_only": true, "exempt": true}
+		logic.set_meta(META, fe)
+		_say(fe, "七印书卷沉寂了：天启的骑士与登顶之战面前，七印不肯揭开。")
+		return
 	var key := XTianqiQiyinEffects.enemy_only_rule(logic)
 	var info := XTianqiQiyin.seal_info(key)
 	if info.is_empty():
 		return
-	var f := {"seal": key, "rule": str(info.rule), "boss": false, "gems": {}, "queue": [], "skills_used": 0,
-		"side_bonus": "", "silent": false, "enemy_only": true}
+	var owner = XTianqiQiyinEffects.artifact_owner(logic)
+	var f := {"seal": key, "rule": str(info.rule), "boss": false, "gems": {}, "queue": [], "skills_used": 0, "owner_skills": 0,
+		"side_bonus": "", "silent": false, "enemy_only": true, "owner": owner}
 	logic.set_meta(META, f)
-	_say(f, "七印书卷揭开了【%s】，只对敌方生效：%s" % [str(info.rule_name), str(info.rule_text)])
+	if SCROLL_COST and owner != null:
+		_say(f, "七印书卷揭开了【%s】，对敌方和%s生效：%s" % [str(info.rule_name), str(owner.display_name()), str(info.rule_text)])
+	else:
+		_say(f, "七印书卷揭开了【%s】，只对敌方生效：%s" % [str(info.rule_name), str(info.rule_text)])
 
 
 ## 下一场按这一印的规则打（is_boss＝第三场 Boss 战；gems＝魔塔累计的宝石 {atk, def, hp}）
@@ -148,13 +195,14 @@ static func start_turn(logic) -> Array:
 		return []
 	var f := fight(logic)
 	f.skills_used = 0
+	f.owner_skills = 0
 	f.side_bonus = ""
 	var t := int(logic.turn)
 	match str(f.rule):
 		"sacrifice":
 			var top = null
 			for b in logic.actors + logic.enemies:
-				if b.is_alive() and _hits(logic, b) and (top == null or b.hp > top.hp):
+				if b.is_alive() and _hits(logic, b) and not _is_owner(logic, b) and (top == null or b.hp > top.hp):
 					top = b
 			if top != null:
 				_lose(top, float(param("sacrifice").get("hp_loss", 0.1)))
@@ -163,19 +211,35 @@ static func start_turn(logic) -> Array:
 				else:
 					f.side_bonus = "actor" if top is XActor else "enemy"
 					_say(f, "献祭：%s失去生命，%s本回合出伤提升。" % [top.display_name(), "我方" if f.side_bonus == "actor" else "敌方"])
+			var own = scroll_owner(logic)
+			if own != null and own.is_alive():  # 书卷的代价：佩戴者每回合也献一次（不加伤；和敌人比生命基本轮不到他，单算）
+				_lose(own, float(param("sacrifice").get("hp_loss", 0.1)))
+				_say(f, "献祭：%s失去生命。" % own.display_name())
 		"star_fall":
 			var every := int(param("star_fall").get("every_turns", 3))
 			if every > 0 and t % every == 0:
 				var loss := float(param("star_fall").get("hp_loss", 0.33))
 				for b in logic.actors + logic.enemies:
-					if b.is_alive() and _hits(logic, b):
+					if b.is_alive() and _hits(logic, b) and not _is_owner(logic, b):
 						_lose(b, loss)
-				_say(f, "星坠：天上落下了星星，%s失去当前生命的 %d%%。" % ["敌方" if enemy_only(logic) else "全场", roundi(loss * 100.0)])
+				var own1 = scroll_owner(logic)
+				if own1 != null and own1.is_alive():  # 书卷的代价跟着佩戴者走：换到助力位也照付（死了不付）
+					_lose(own1, loss)
+				var who := "全场"
+				if enemy_only(logic):
+					var own2 = scroll_owner(logic)
+					who = "敌方和%s" % own2.display_name() if own2 != null else "敌方"
+				_say(f, "星坠：天上落下了星星，%s失去当前生命的 %d%%。" % [who, roundi(loss * 100.0)])
 		"silence":
 			f.silent = t % 2 == 0
 			XTianqiQiyinArt.silence_turn(logic, not f.silent)
 			if f.silent:
-				_say(f, "寂静：这一回合敌人说不出话。" if enemy_only(logic) else "寂静：这一回合谁都说不出话。")
+				if not enemy_only(logic):
+					_say(f, "寂静：这一回合谁都说不出话。")
+				elif scroll_owner(logic) != null:
+					_say(f, "寂静：这一回合敌人和%s说不出话。" % scroll_owner(logic).display_name())
+				else:
+					_say(f, "寂静：这一回合敌人说不出话。")
 	return take_logs(logic)
 
 
@@ -198,19 +262,30 @@ static func _plain(logic, a, skill: Dictionary) -> bool:
 
 ## BattleLogic.can_use 末尾：寂静的双数回合、限时用满 5 个技能时，我方只能普攻、防御、用物品
 static func can_use(logic, a, skill: Dictionary) -> bool:
+	if not XTianqiQiyinEffects.skill_usable(logic, a, skill):  # 默印 5 件「万籁俱寂」每场次数、没穿满
+		return false
 	if not active(logic) or _plain(logic, a, skill):
 		return true
 	var f := fight(logic)
 	if bool(f.silent) and _hits(logic, a):
 		return false
-	if str(f.rule) == "exam" and _exam_side(logic, a) and int(f.skills_used) >= int(param("exam").get("skills_per_turn", 5)):
-		return false
+	if str(f.rule) == "exam":
+		var k := _exam_key(logic, a)
+		if k != "" and int(f.get(k, 0)) >= int(param("exam").get("skills_per_turn", 5)):
+			return false
 	return true
 
 
 ## 限时的技能数算哪一方：里副本算我方，七印书卷算敌方
 static func _exam_side(logic, a) -> bool:
 	return a is XEnemy if enemy_only(logic) else a is XActor
+
+
+## 限时记数的格子：一方合计 skills_used；书卷的佩戴者自己单算 owner_skills；不受限的 ""
+static func _exam_key(logic, a) -> String:
+	if _exam_side(logic, a):
+		return "skills_used"
+	return "owner_skills" if _is_owner(logic, a) else ""
 
 
 ## BattleLogic.decide（敌人）：寂静的双数回合只普攻
@@ -222,11 +297,12 @@ static func decide_enemy(logic, b) -> Array:
 
 ## BattleLogic.act 开头：记我方这回合放了几个技能（限时）
 static func on_act(logic, u, skill) -> void:
-	if not active(logic) or str(fight(logic).rule) != "exam" or not _exam_side(logic, u):
+	if not active(logic) or str(fight(logic).rule) != "exam":
 		return
-	if not skill is Dictionary or _plain(logic, u, skill):
+	var k := _exam_key(logic, u)
+	if k == "" or not skill is Dictionary or _plain(logic, u, skill):
 		return
-	fight(logic).skills_used = int(fight(logic).skills_used) + 1
+	fight(logic)[k] = int(fight(logic).get(k, 0)) + 1
 
 
 # ---- 不愈、限时（再生）、魔塔（暴击） ----

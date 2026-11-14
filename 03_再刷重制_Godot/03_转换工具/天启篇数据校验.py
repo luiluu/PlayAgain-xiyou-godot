@@ -1132,6 +1132,9 @@ def skill_rework_rules(table: dict) -> list:
         bad.append('超强者名单 %d 人（应 17：18 人里轮回者·里德另做；五条悟 180 在名单里，没解锁最强之名时游戏里当他不开放）' % len(sup))
     if len(strong) != 52:
         bad.append('强者名单 %d 人（应 52）' % len(strong))
+    growth = tiers.get('growth')
+    if not isinstance(growth, dict) or not any(str(k).isdigit() for k in growth):
+        bad.append('tiers.growth 成长型角色名单要非空（全弱者通关资格靠它排除三笠、饿狼，空了 XTianqiWeakClear 一律不授予）')
     for a, b, name in ((sup, strong, '超强者∩强者'), (sup, hidden, '超强者∩不开放'), (strong, hidden, '强者∩不开放')):
         if a & b:
             bad.append('%s 重叠：%s' % (name, sorted(a & b)))

@@ -224,11 +224,11 @@ static func cost(a, skill: Dictionary, v: int) -> int:
 
 
 ## 禁忌 paySkillCost 包装：只登记，行动结束才扣
-static func pay(a, skill: Dictionary) -> void:
+static func pay(a, skill: Dictionary, free := false) -> void:  # free：天启篇号卷六号第 1 回合，不登记生命代价
 	if not own(a):
 		return
 	_due = null
-	if ACTIVE_SKILLS.has(int(skill.get("id", 0))) and has(a, 10166, 2):
+	if not free and ACTIVE_SKILLS.has(int(skill.get("id", 0))) and has(a, 10166, 2):
 		_due = {"skill": int(skill.id), "cost": maxf(1.0, floorf(a.mhp * (0.05 if XTianqiSkills.cards_on() else 0.1)))}  # 天启篇：扣 5%
 
 

@@ -489,5 +489,25 @@ class Batch3Fixture(unittest.TestCase):
         self.assertIn('/base_id=4533', out)
 
 
+class SkillReworkGrowth(unittest.TestCase):
+    """tiers.growth 成长型名单非空（XTianqiWeakClear 失败即关闭靠它，gpt 复核 P2）。"""
+
+    def _table(self):
+        return json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+
+    def test_real_ok(self):
+        self.assertFalse([b for b in chk.skill_rework_rules(self._table()) if 'growth' in b])
+
+    def test_missing(self):
+        t = self._table()
+        del t['tiers']['growth']
+        self.assertTrue(any('growth' in b for b in chk.skill_rework_rules(t)))
+
+    def test_empty(self):
+        t = self._table()
+        t['tiers']['growth'] = {}
+        self.assertTrue(any('growth' in b for b in chk.skill_rework_rules(t)))
+
+
 if __name__ == '__main__':
     unittest.main()

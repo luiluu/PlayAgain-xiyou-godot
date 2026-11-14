@@ -37,7 +37,7 @@
   ]
  },
  "legacy_passive": {
-  "_note": "天启篇开局不发难度被动（Kyo 11-08；XTianqiNoDiffPassive，O-待定）。原来借原版「普通」全员学普通难度 5548、难度适应 5980、天道诅咒 6168，净效果改读这一节，强度不变：settle＝攻击方确认阶段照原状态（state 号定位次序）逐个 ceil 乘，cond positive 只乘正伤害、nonzero 连治疗一起乘，合计正伤害 ×1.5×5×0.8＝×6、治疗 ×5，和因果丝线等别的确认乘区照旧连乘；agi_rate＝战斗中敏捷能力倍率加算（原状态特性 21 ×0.8）；crit_add＝暴击率（原 passiveXPBST2 50%）。掉率、金钱 +10% 天启篇本来不算（drop_table／金钱表 ignore_skills），走 difficulties 的 scaling.reward。",
+  "_note": "天启篇开局不发难度被动（Kyo 11-08；XTianqiNoDiffPassive，O-421）。原来借原版「普通」全员学普通难度 5548、难度适应 5980、天道诅咒 6168，净效果改读这一节，强度不变：settle＝攻击方确认阶段照原状态（state 号定位次序）逐个 ceil 乘，cond positive 只乘正伤害、nonzero 连治疗一起乘，合计正伤害 ×1.5×5×0.8＝×6、治疗 ×5，和因果丝线等别的确认乘区照旧连乘；agi_rate＝战斗中敏捷能力倍率加算（原状态特性 21 ×0.8）；crit_add＝暴击率（原 passiveXPBST2 50%）。掉率、金钱 +10% 天启篇本来不算（drop_table／金钱表 ignore_skills），走 difficulties 的 scaling.reward。",
   "settle": [
    {"state": 1631, "cond": "positive", "k": 1.5, "round": "ceil"},
    {"state": 1691, "cond": "nonzero", "k": 5, "round": "ceil"},

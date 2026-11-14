@@ -549,25 +549,24 @@ static func enforce_party(s: XState) -> bool:
 	var cap := XTianqi.super_cap(s)  # 天启篇：按格序留前 cap 个超强者，多的清出；原版档 -1
 	if cap < 0 and super_enabled(s):
 		return false
-	var slots := s.battle_slots
 	var vacancies := []
 	var kept := 0
-	for i in (XTianqi.FIGHTERS if cap >= 0 else slots.size()):  # 天启篇：助力位不算
-		if _super_in(s, int(slots[i])):
+	for i in (XTianqi.FIGHTERS if cap >= 0 else s.battle_slots.size()):  # 天启篇：助力位不算
+		if _super_in(s, int(s.battle_slots[i])):
 			if cap >= 0 and kept < cap:
 				kept += 1
 				continue
 			vacancies.append(i)
-			slots[i] = 0
+			s.set_battle_slot(i, 0)  # 出战栏写入都走 XState.set_battle_slot（天启篇全弱者通关资格在那里记）
 	if vacancies.is_empty():
 		return false
 	# 原版另要求 isAppeared（隐藏角色不补）；重制没有隐藏角色
 	var reserves := []
 	for id in s.party:
-		if not _super_in(s, id) and not slots.has(id):
+		if not _super_in(s, id) and not s.battle_slots.has(id):
 			reserves.append(id)
 	for i in vacancies:
-		slots[i] = reserves.pop_front() if not reserves.is_empty() else 0
+		s.set_battle_slot(i, reserves.pop_front() if not reserves.is_empty() else 0)
 	_deploy_notice = weakref(s)
 	return true
 

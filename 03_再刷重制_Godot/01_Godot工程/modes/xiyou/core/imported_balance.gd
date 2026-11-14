@@ -69,7 +69,7 @@ static func migrate_party(s: XState) -> bool:
 		if is_disabled_actor(int(s.battle_slots[i])):
 			s.battle_slots[i] = 0
 	if not s.battle_slots.is_empty() and not s.battle_slots.any(func(id): return int(id) > 0):
-		s.battle_slots[0] = s.party[0]
+		s.set_battle_slot(0, s.party[0])
 	return true
 
 ## 当前行动者（弱引用）：YEP 附加状态时把它记成状态来源（stateOrigin），持续伤害据此判断。用 set_acting／acting_battler 读写。

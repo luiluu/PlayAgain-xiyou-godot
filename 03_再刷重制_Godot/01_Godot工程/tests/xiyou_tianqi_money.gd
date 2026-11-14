@@ -47,6 +47,13 @@ func _state(diff := "jianxian") -> XState:
 	return s
 
 
+func _map_of_floor(f: int) -> int:
+	for i in range(1, 1000):
+		if not XDB.rec("MapInfos", i).is_empty() and XDungeon.map_floor(i) == f:
+			return i
+	return 0
+
+
 func _weapon_of_grade(g: int) -> int:
 	for r in XDB.table("Weapons"):
 		if r is Dictionary and str(r.get("name", "")) != "" and XQuality.grade(r) == g and not XEquipment.is_exclusive(r):
@@ -110,6 +117,47 @@ func _run() -> void:
 	M.SELL = false
 	_check("sell_off", XItemMarks.selling_price(hi) == int(hi.get("price", 0)) / 2 or hi.has("sellPrice"))
 	M.SELL = true
+	# 返修 P2：商店买的普通装备立刻卖，到手不超过购入价一半；掉落来的同品质照品质卖价
+	var lo_drop_price := XItemMarks.selling_price(lo)
+	var lo_rec: Dictionary = XDB.rec("Weapons", w_lo).duplicate()
+	lo_rec["kind"] = "weapon"  # 商店货架条目带种类
+	var buy_p := maxi(2, lo_drop_price)  # 购价不高于品质卖价时就是旧写法的套利
+	s.gold = 1000000
+	var gb0 := s.gold
+	var gear_n := s.gear.size()
+	XItemMarks.buy(s, lo_rec, buy_p, 1)
+	XTianqiDrop.mark_bought(s, gear_n, buy_p)
+	var bought: Dictionary = s.gear[gear_n]
+	_check("bought_price_saved", bool(bought.get("tq_bought", false)) and int(bought.get("tq_buy_price", -1)) == buy_p, bought.get("tq_buy_price"))
+	var g_mid := s.gold
+	XItemMarks.sell(s, bought, 1)
+	_check("bought_sell_capped", s.gold - g_mid <= buy_p / 2 and s.gold < gb0, [s.gold - g_mid, buy_p])
+	_check("drop_sell_kept", XItemMarks.selling_price(XGear.create("weapon", w_lo, s)) == lo_drop_price and lo_drop_price > 0, lo_drop_price)
+	var legacy_bought := XGear.create("weapon", w_lo, s)
+	legacy_bought["tq_bought"] = true
+	_check("bought_legacy_price", XItemMarks.selling_price(legacy_bought) == mini(lo_drop_price, int(legacy_bought.get("price", 0)) / 2), XItemMarks.selling_price(legacy_bought))
+	M.SELL_BOUGHT_CAP = false
+	_check("bought_cap_switch", XItemMarks.selling_price(legacy_bought) == lo_drop_price)
+	M.SELL_BOUGHT_CAP = true
+	# 返修二 P2：掉落总开关关着、金钱开着时，商店货照样打标记、照样封顶
+	XTianqiDrop.ENABLED = false
+	var gear_n2 := s.gear.size()
+	XItemMarks.buy(s, lo_rec, buy_p, 1)
+	XTianqiDrop.mark_bought(s, gear_n2, buy_p)
+	var bought2: Dictionary = s.gear[gear_n2]
+	_check("drop_off_still_marked", bool(bought2.get("tq_bought", false)) and int(bought2.get("tq_buy_price", -1)) == buy_p, bought2)
+	_check("drop_off_still_capped", XItemMarks.selling_price(bought2) <= buy_p / 2, XItemMarks.selling_price(bought2))
+	XTianqiDrop.ENABLED = true
+	# 进出仓库、存读档后标记和购入价都还在
+	XWarehouse.create(s, "<econfix:50>")
+	_check("wh_deposit", XWarehouse.deposit(s, "weapon", bought2))
+	_check("wh_withdraw", XWarehouse.withdraw(s, "weapon", bought2))
+	var back: Dictionary = s.gear[s.gear.find_custom(func(e): return is_same(e, bought2))]
+	_check("wh_keeps_marks", bool(back.get("tq_bought", false)) and int(back.get("tq_buy_price", -1)) == buy_p and XItemMarks.selling_price(back) <= buy_p / 2)
+	var rs := XState.from_dict(s.to_dict())
+	var back2 = rs.gear.filter(func(e): return str(e.get("instanceId", "")) == str(back.get("instanceId", "")))
+	_check("save_keeps_marks", back2.size() == 1 and bool(back2[0].get("tq_bought", false)) and int(back2[0].get("tq_buy_price", -1)) == buy_p, back2.size())
+	XState.current = s
 	# ---- 战斗金钱 ----
 	_check("effective_200", is_equal_approx(M.effective(200.0), 100.0) and is_equal_approx(M.effective(-150.0), -90.0) and M.effective(10000.0) < 200.0)
 	var lg := FakeLogic.new()
@@ -207,13 +255,21 @@ func _run() -> void:
 	_check("train_price_step", M.training_price(s, 2) == M.price(s, 30 * 1.3))
 	_check("train_line", XTraining.lines(s, a.actor_id)[0].contains("下一级费用"), XTraining.lines(s, a.actor_id)[0])
 	s.set_variable(20, 10)
-	# ---- 天平 ----
+	# ---- 天平 ----（大厅买、只在买时那一层的地图里生效）
+	var m10 := _map_of_floor(10)
+	var m11 := _map_of_floor(11)
+	var m20 := _map_of_floor(20)
+	var m5 := _map_of_floor(5)
+	_check("floor_maps", m10 > 0 and m11 > 0 and m20 > 0 and m5 > 0, [m10, m11, m20, m5])
+	s.map_id = M.SCALE_MAP
 	s.gold = 100000000
 	var sp1 := M.scale_price(s)
 	var r1 := M.buy_good(s, "oil")
 	var sp2 := M.scale_price(s)
 	_check("scale_buy", r1.has("ok") and sp1 == M.price(s, 30) and sp2 == M.price(s, 60), [r1, sp1, sp2])
 	_check("scale_no_twice", M.buy_good(s, "oil").has("error"))
+	_check("scale_lobby_off", is_equal_approx(M.scale_taken_mult(s), 1.0))
+	s.map_id = m10
 	_check("scale_taken", is_equal_approx(M.scale_taken_mult(s), 0.9) and is_equal_approx(M.scale_dealt_mult(s), 1.0))
 	M.buy_good(s, "wine")
 	_check("scale_dealt", is_equal_approx(M.scale_dealt_mult(s), 1.1))
@@ -230,7 +286,50 @@ func _run() -> void:
 	_check("combat_parts", is_equal_approx(float(XTianqiCombat.dealt_parts(a, s).get("scale", 0.0)), 1.1) and is_equal_approx(float(XTianqiCombat.taken_parts(a, s).get("scale", 0.0)), 0.9))
 	# 换层清掉
 	s.set_variable(20, 11)
+	_check("scale_same_floor_stays", M.has_good(s, "oil"))
+	s.map_id = m11
 	_check("scale_reset", not M.has_good(s, "oil") and int(M.scale_state(s).buys) == 0 and is_equal_approx(M.scale_taken_mult(s), 1.0))
+	# 返修 P2：20 层买，回 5 层不生效；20 层生效；离开 20 层就清掉
+	s.set_variable(20, 20)
+	s.map_id = M.SCALE_MAP
+	M.money(s).erase("scale")
+	var ok3 := ["wheat", "oil", "wine"].all(func(g): return M.buy_good(s, g).has("ok"))
+	_check("scale20_bought", ok3 and int(M.money(s).scale.floor) == 20, M.money(s).get("scale"))
+	s.map_id = m20
+	_check("scale20_on", M.has_good(s, "wheat") and is_equal_approx(M.scale_taken_mult(s), 0.9) and is_equal_approx(M.scale_dealt_mult(s), 1.1))
+	M.SCALE_FLOOR_ONLY = false
+	s.map_id = m5
+	_check("scale_floor_switch", is_equal_approx(M.scale_dealt_mult(s), 1.1))
+	M.SCALE_FLOOR_ONLY = true
+	_check("scale20_off_at5", not M.has_good(s, "wheat") and is_equal_approx(M.scale_taken_mult(s), 1.0) and is_equal_approx(M.scale_dealt_mult(s), 1.0))
+	_check("scale20_cleared", not M.money(s).has("scale"))
+	s.map_id = m20
+	_check("scale20_gone", not M.has_good(s, "oil") and is_equal_approx(M.scale_dealt_mult(s), 1.0))
+	# 返修二 P2：纯地图往返（中间不查任何效果、价格），清理挂在进地图上（XMapScene.load_map）
+	s.map_id = M.SCALE_MAP
+	M.money(s).erase("scale")
+	M.buy_good(s, "oil")
+	s.x = 14
+	s.y = 25
+	var map := XMapScene.new()
+	add_child(map)
+	for _f in 300:
+		await get_tree().process_frame
+		if map.player != null and map.map_id == M.SCALE_MAP:
+			break
+	_check("rt_lobby_kept", M.money(s).get("scale") is Dictionary and int(M.money(s).scale.floor) == 20, M.money(s).get("scale"))
+	map.load_map(m20, 0, 0, 2)
+	_check("rt_at20_kept", M.money(s).get("scale") is Dictionary)
+	map.load_map(m5, 0, 0, 2)
+	_check("rt_at5_cleared_raw", not M.money(s).has("scale"), M.money(s).get("scale"))  # 只读存档字典，不经 has_good
+	map.load_map(m20, 0, 0, 2)
+	_check("rt_back20_off", not M.has_good(s, "oil") and is_equal_approx(M.scale_taken_mult(s), 1.0))
+	map.queue_free()
+	for _f in 3:
+		await get_tree().process_frame
+	XState.current = s
+	s.set_variable(20, 11)
+	s.map_id = m11
 	# 饥荒线贵五成
 	var base_p := M.scale_price(s)
 	s.flags.tianqi["line"] = "famine"

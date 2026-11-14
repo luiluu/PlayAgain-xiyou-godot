@@ -225,6 +225,39 @@ func _signature() -> void:
 	var again := range(30).map(func(_i): return XTianqiDrop.roll_signature(s, "7:3:7", 0.2))
 	_check("reload_same", first == again and first.has(true) and first.has(false), first)
 	_check("fails_view", XTianqiDrop.signature_fails(s, "7:3:7") >= 0 and XTianqiDrop.signature_fails(s, "nope") == 0)
+	# 返修 P2：没有掉落账的旧档，首次的种子由存档派生，读同一个档再掷结果一样（不用手设种子）
+	var old_s := _tianqi_state()
+	old_s.flags.tianqi.erase("drop")
+	var save_d := old_s.to_dict()
+	var first_rolls := []
+	var first_seeds := []
+	for _k in 2:
+		var ld := XState.from_dict(save_d.duplicate(true))
+		XState.current = ld
+		_check("legacy_no_drop", not ld.flags.tianqi.has("drop"))
+		first_rolls.append(range(20).map(func(_i): return XTianqiDrop.roll_signature(ld, "5:3:5", 0.3)))
+		first_seeds.append(int(ld.flags.tianqi.drop.seed))
+	_check("legacy_reload_same", first_rolls[0] == first_rolls[1] and first_seeds[0] == first_seeds[1] and first_rolls[0].has(true), [first_seeds, first_rolls[0]])
+	XTianqiDrop.SEED_FROM_SAVE = false
+	var ld_off := XState.from_dict(save_d.duplicate(true))
+	XTianqiDrop.store(ld_off)
+	XTianqiDrop.SEED_FROM_SAVE = true
+	_check("legacy_seed_switch", int(ld_off.flags.tianqi.drop.seed) != first_seeds[0], [ld_off.flags.tianqi.drop.seed, first_seeds[0]])
+	XState.current = s
+	# 返修 P2：必掉也算出了——同一键先累计连败，再 p＝1 必掉，连败清零、总次数推进，回到低概率从 0 起
+	var pk := "6:2:6"
+	XTianqiDrop.store(s).pity[pk] = [7, 7]
+	_check("sure_hit", XTianqiDrop.roll_signature(s, pk, 1.0))
+	_check("sure_resets_fails", (XTianqiDrop.store(s).pity[pk] as Array) == [0, 8], XTianqiDrop.store(s).pity[pk])
+	var r_low := XTianqiDrop.roll_signature(s, pk, 0.01)
+	var row_low: Array = XTianqiDrop.store(s).pity[pk]
+	_check("low_after_sure_from_zero", int(row_low[1]) == 9 and int(row_low[0]) == (0 if r_low else 1), row_low)
+	_check("sure_no_new_row", XTianqiDrop.roll_signature(s, "nope:1:1", 1.0) and not XTianqiDrop.store(s).pity.has("nope:1:1"))
+	XTianqiDrop.PITY_RESET_ON_SURE = false
+	XTianqiDrop.store(s).pity[pk] = [5, 5]
+	XTianqiDrop.roll_signature(s, pk, 1.0)
+	_check("sure_switch_off", (XTianqiDrop.store(s).pity[pk] as Array) == [5, 5])
+	XTianqiDrop.PITY_RESET_ON_SURE = true
 	# 接进战斗：留下的行带 sig 键、概率不再乘 0.2
 	s.map_id = 5
 	var lg := XBattleLogic.new()
