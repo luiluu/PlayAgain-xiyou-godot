@@ -1,7 +1,7 @@
 # 交付：xa/tianqi-sect-geng
 
 - 车道／工作者：小A（xa/tianqi-sect-geng）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -12,7 +12,12 @@
 - **城隍庙**（Map189 EV021）：天启篇未领过武运时照随机页（第 2 页）走（四小强无损学 3920 一丝武运），去掉「忘掉强者压制 6216、学强者压制·削弱 6241」两步及选项中的「随机模式下，」字样；领过后照第 4 页走。
 - **先查结论**：魔塔外围由大厅 `Map004 EV029`（塔外）进入，第 1 页无任何层数／开关／变量条件，开局即可进；15 层传承人关闭条件仍一并放宽到 `var 20 >= 31`。
 - **回退开关**：`XTianqiSect.GENG`（O-待定，设 `false` 回原样）；仅在 `XTianqi.active` 为真时生效，不改 `generated` 原数据，西游普通档不受影响。
-- **验证**：`xiyou_tianqi_sect_geng.tscn`、`xiyou_tianqi_sect_a.tscn`、语法检查、发行空壳检查、工具回归及云端选测通过（见下）。
+- **验证**：
+  - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py`：851 个 `.gd`，0 个问题。
+  - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check`：54 个脚本，445 个函数都有。
+  - `python3 03_再刷重制_Godot/07_开发环境/工具回归.py`：18 项全部通过（232 秒）。
+  - 本地专项：`xiyou_tianqi_sect_geng.tscn`（80/80 通过）、`xiyou_tianqi_sect_a.tscn`（41/41 通过）。
+  - 云端选测（提交 `f26f2f7cd6`，基准 `fbb2d9b960`，运行页 `https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43602473585`）：590 个场景通过 589/590（`选测.py` 列出的 95 个场景全过）；唯一失败 `xiyou_tianqi_alien_gear.tscn`（本地复测 54/57，挂在 `review6_tier_again` / `review6_huaxing_same_again` / `review6_o-off`）为 `main` 既有问题，与本车道无关。
 
 ## 交接板
 
@@ -30,4 +35,5 @@
 
 ## 本分支提交
 
-- 待提交后补全
+- `f26f2f7cd` 天启篇教派连带重做·包庚：传承与武运
+- 后续提交：补齐交付单验证结果并标为可合并
