@@ -39,7 +39,7 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## 天启篇状态（与 XTianqi.start_new_game 写的规则版本一样，不跑开局）
+## 天启篇状态（经 Kit.new_game 真开局）
 func _tianqi_state() -> XState:
 	return Kit.new_game("jiusi")
 
