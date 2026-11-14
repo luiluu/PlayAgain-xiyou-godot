@@ -1,5 +1,14 @@
 {
   "_说明": "发行空壳.py 的特例：「类.成员」→ 发行时的返回表达式（不写 return），或 BODY: 开头的多行函数体（行用 \\n 分）。只写天启篇关着时真脚本在西游存档上的结果；不要写天启篇的数值和文字。",
+  "已确认放行": {
+    "XGojo.listed": "战斗技能列表过滤：非五条悟角色返回 true，否则西游全员技能列表为空",
+    "XGojo.meets": "战斗技能可用条件：非五条悟角色返回 true，否则西游全员无法放技能",
+    "XTianqi.join_allowed": "入队门槛：天启篇未开时返回 true，否则西游无法招募角色",
+    "XTianqiDrop.keeps_row": "掉落表行过滤：天启篇通用掉落未开时返回 true，否则西游怪物不掉原表物品",
+    "XTianqiGear.allows": "穿戴栏位与神器白名单：天启篇未开时返回 true，否则西游无法穿戴防具饰品",
+    "XTianqiQiyinRule.can_use": "七印战斗规则：天启篇未开时返回 true，否则西游全员无法放技能",
+    "XTianqiSkills.meets": "天启篇技能重构条件：未开时返回 true，否则西游全员无法放技能"
+  },
   "XRiftAlien.gear_energy": "-1",
   "XTianqi.fighter_slots": "XState.MAX_BATTLE_MEMBERS",
   "XTianqi.super_cap": "-1",

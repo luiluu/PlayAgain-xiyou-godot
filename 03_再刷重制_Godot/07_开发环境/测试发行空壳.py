@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """发行空壳.py 的回归：假工程里一个天启篇脚本、一个西游脚本，看空壳留了西游用到的成员、函数体取对了值。"""
+import contextlib
 import importlib.util
+import io
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -244,6 +247,80 @@ class T(unittest.TestCase):
                 importlib.util.module_from_spec = old_load
                 if old_mod is not None:
                     sys.modules['发行空壳'] = old_mod
+        finally:
+            K.PROJECT = old_proj
+
+    def test_intercept_and_takeover_stubs_return_falsy_or_empty(self):
+        # 通用护栏：全部生成的空壳里，凡「拦截／接管类」函数必须返回 false 或空／pass（防再出现 XTianqiSect.intercepts 照搬 return true）
+        exact = {
+            'intercepts', 'run_event', 'handles', 'override', 'overrides',
+            'hides', 'silenced', 'forced_state', 'redirect', 'infinity_block', 'reforge_locked',
+            'run_door', 'run_arrival', 'run_laoda', 'run_draw', 'run_line_choice', 'run_scale',
+            'hide_affix_rate', 'skips_row', 'skips_rate',
+            'no_encounter', 'no_rewards', 'no_crit', 'no_regen',
+        }
+        pat = re.compile(r'^(intercept\w*|handle\w*|override\w*|blocks_\w+|\w+_blocked|hide_\w+|skips_\w+)$')
+        falsy_bodies = {'pass', 'return false', 'return null', 'return []', 'return {}', 'return ""', 'return 0', 'return 0.0'}
+        over_saved = K.OVERRIDES
+        K.OVERRIDES = self._over
+        try:
+            stubs, missing, how = K.build_all(K.PROJECT)
+            tg = K.targets(K.PROJECT)
+        finally:
+            K.OVERRIDES = over_saved
+        self.assertEqual(missing, [])
+        checked = set()
+        for k in sorted(how):
+            cls, fn = k.split('.', 1)
+            if fn not in exact and not pat.match(fn):
+                continue
+            checked.add(k)
+            lines = stubs[tg[cls]].splitlines()
+            body = []
+            for i, ln in enumerate(lines):
+                if re.match(rf'^(?:static\s+)?func\s+{re.escape(fn)}\s*\(', ln):
+                    for sub in lines[i + 1:]:
+                        if not sub.strip():
+                            break
+                        body.append(sub.strip())
+                    break
+            self.assertTrue(body, f'{k} 未找到空壳函数体')
+            self.assertIn(' ; '.join(body), falsy_bodies, f'{k} 属于拦截/接管类，空壳返回值必须为 false/空，实际为: {body}')
+        for expected in ('XTianqiSect.intercepts', 'XTianqiSummit.intercepts', 'XTianqiSummit.run_event',
+                         'XTianqiMoney.intercepts', 'XTianqiQiyin.intercepts', 'XTianqiTrim.intercepts'):
+            self.assertIn(expected, checked)
+
+    def test_copied_return_true_requires_allowlist_and_warns(self):
+        # 规则 2 照搬出 return true 时：check 打印警告列表，且不在 发行空壳特例.json「已确认放行」名单里就失败
+        (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(
+            TQ + '\nstatic func intercepts(x) -> bool:\n\tif not ENABLED and x == null:\n\t\treturn true\n\treturn false\n',
+            encoding='utf-8')
+        (self.root / 'modes/xiyou/core/user.gd').write_text(
+            XIYOU + '\tif XTianqiFoo.intercepts(null):\n\t\tpass\n', encoding='utf-8')
+        _, missing, how = K.build_all(self.root)
+        self.assertIn('XTianqiFoo.intercepts', K.COPIED_TRUE)
+        errs = K.check_errors(missing, how)
+        self.assertEqual(len(errs), 1)
+        self.assertIn('XTianqiFoo.intercepts', errs[0])
+        self.assertIn('已确认放行', errs[0])
+
+        old_proj = K.PROJECT
+        K.PROJECT = self.root
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = K.main(['check'])
+            self.assertEqual(rc, 1)
+            self.assertIn('警告：以下函数由规则 2 照搬出 return true', buf.getvalue())
+            self.assertIn('XTianqiFoo.intercepts', buf.getvalue())
+
+            K.OVERRIDES.write_text('{"已确认放行": {"XTianqiFoo.intercepts": "测试放行"}}', encoding='utf-8')
+            buf2 = io.StringIO()
+            with contextlib.redirect_stdout(buf2):
+                rc2 = K.main(['check'])
+            self.assertEqual(rc2, 0)
+            self.assertIn('警告：以下函数由规则 2 照搬出 return true', buf2.getvalue())
+            self.assertIn('XTianqiFoo.intercepts', buf2.getvalue())
         finally:
             K.PROJECT = old_proj
 
