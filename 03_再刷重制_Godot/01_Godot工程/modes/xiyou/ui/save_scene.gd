@@ -218,12 +218,17 @@ func _paint_info(c: XMVCanvas) -> void:
 		if c.is_inside_tree():
 			c.draw_rect(Rect2(cw + 1, y + 1, 4, LH - 2), XTianqiLook.main_color(line))
 		c.text("天启之路", cw + 12, y, cw - 30, "left", XUI.SYSTEM, 20, LH)
-		c.text("%s·%s%s" % [str(l.get("name", "")), str(l.get("knight", "")), ("　可轮回" if can_reincarnate(d) else "") + XTianqiWeakClear.save_mark(d)], cw, y, cw - 12, "right", XTianqiLook.main_color(line), 20, LH)
+		c.text("%s·%s%s" % [str(l.get("name", "")), str(l.get("knight", "")), clear_mark(d, line) + XTianqiWeakClear.save_mark(d)], cw, y, cw - 12, "right", XTianqiLook.main_color(line), 20, LH)
 
 
-## 这一档通关过本线（36 层打赢骑士，XTianqiLine.run_final 记 flags.tianqi.reincarnate）
+## 这一档通关过本线（36 层打赢骑士，XTianqiLine.run_final 记 flags.tianqi.reincarnate；字段名沿用旧的「可轮回」）
 static func can_reincarnate(d) -> bool:
 	return d is Dictionary and d.get("flags", {}).get("tianqi", {}) is Dictionary and bool(d.flags.tianqi.get("reincarnate", false))
+
+
+## 读档界面线名后面的通关标记：「　已清除异化·战争线」（Kyo 11-14 由「可轮回」改名；只改显示，旧档照常显示新名字）；没通关为空串
+static func clear_mark(d, line: String) -> String:
+	return "　" + XTianqiLine.clear_title(line) if can_reincarnate(d) else ""
 
 
 ## 天启篇存档选的线（开关关掉、不是天启篇存档、没选线为空串）

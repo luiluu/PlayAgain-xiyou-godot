@@ -383,7 +383,12 @@ static func run_shadow(host, s: XState, key: String) -> int:
 	return r
 
 
-## 36 层决战：本线骑士本体（XTianqiHorsemen 的 body），赢了放结局、记通关和可轮回
+## 36 层通关标记的叫法：「已清除异化·战争线」（Kyo 11-14 由「可轮回」改名；存档字段 flags.tianqi.reincarnate 不改）
+static func clear_title(key: String) -> String:
+	return "已清除异化·%s线" % str(XTianqi.line_info(key).get("name", key))
+
+
+## 36 层决战：本线骑士本体（XTianqiHorsemen 的 body），赢了放结局、记通关和「已清除异化」
 static func run_final(host, s: XState, key: String) -> int:
 	if not opening_done(key, s):
 		return -1
@@ -398,8 +403,8 @@ static func run_final(host, s: XState, key: String) -> int:
 		var first := not bool(s.flags.tianqi.get("reincarnate", false))
 		s.flags.tianqi["reincarnate"] = true
 		await XTianqiRewards.after_final(host, s, key, r)  # 天启篇奖励：遗物、徽记、终焉核
-		if first and host != null and host.has_method("show_text"):  # 结局结算：本档可轮回（读档界面线名后面标「可轮回」）
-			await host.show_text("", 0, ["\\c[2]%s线·终\\c[0]　本档获得了「可轮回」。" % str(XTianqi.line_info(key).get("name", key))])
+		if first and host != null and host.has_method("show_text"):  # 结局结算：本档记下「已清除异化·某线」（读档界面线名后面也标）
+			await host.show_text("", 0, ["\\c[2]%s线·终\\c[0]　本档记下了「%s」。" % [str(XTianqi.line_info(key).get("name", key)), clear_title(key)]])
 	else:
 		await say(host, key, "final_lost")
 	await XTianqiWeakClear.finish(host, s, r)  # 全弱者通关资格：打赢且全弱者就记本档（输了只收场）

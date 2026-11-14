@@ -8,7 +8,8 @@ extends Node
 ##    六号先手／免消耗／第 6 回合起减伤、七号掉率与金钱、七号齐鸣；整回合实跑不报错。
 ## 五之二、六号全免（Kyo 11-14 真全免）：走真 XBattleLogic.can_use＋pay_skill_cost，MP、TP、HP 定值／比例、物品第 1 回合不看不扣，
 ##    第 2 回合、非持有者照扣照挡；FREE_ALL 关掉回到只免 MP／TP。
-##    特殊费用也走真路径：异化空壳零盾／嫁祸／连命（零费也严格比较的 HP 分支）、缄默锁上限、屠苏噬主、米拉禁忌代价、饥荒口粮。
+##    特殊费用也走真路径：异化空壳零盾／嫁祸／连命（零费也严格比较的 HP 分支）、缄默锁上限、屠苏噬主、米拉禁忌代价；
+##    饥荒口粮、透支不免（Kyo 11-14）：第 1 回合照扣，按原始费用判断零消耗，FAMINE_PAYS 关掉回到也免。
 ## 五之三、五号起身那一回合的行动顺序：中途阵亡（带追加行动）、终焉锁复活、开场就阵亡（第 1 回合起身不行动、第 2 回合照常）。
 ## 六、开关关掉：一条都不生效。
 
@@ -564,7 +565,8 @@ func _mira_cost() -> void:
 	lg.end_battle(0)
 
 
-## 饥荒口粮：零消耗技能交口粮（Kyo 待定，现按免）；第 1 回合六号不交、第 2 回合照交（不挡技能，只看付费）
+## 饥荒口粮、透支（Kyo 11-14 定：六号第 1 回合照扣，其余费用仍免）：零消耗技能第 1 回合也交口粮；带 MP 的技能被六号免成零、不交口粮；
+## MP 不够改扣生命、照样能放（口粮本来不挡技能，第 2 回合同样）；透支者第 1 回合照扣生命、MP 照免；FAMINE_PAYS 关掉回到口粮透支也免
 func _famine_cost() -> void:
 	var w := _weak()
 	var lineup := [w[0], w[1], w[2], w[3], w[5]]
@@ -587,14 +589,58 @@ func _famine_cost() -> void:
 	XTianqiTrumpet.start(lg)
 	_check("cavalry.famine.setup", ok and XTianqiFamineAlien.hungry(lg) and lg.actors.has(b))
 	var zero := _cost_skill(99998, "")
+	var mpsk := _cost_skill(99997, "", 50)
+	var need := floorf(b.mmp * XTianqiFamineAlien.ration_rate(lg))
 	lg.turn = 1
 	b.mp = b.mmp
 	lg.pay_skill_cost(b, zero)
-	_check("cavalry.famine.t1_no_ration", _near(b.mp, b.mmp), [b.mp, b.mmp])
+	_check("cavalry.famine.t1_ration", need > 0.0 and _near(b.mp, b.mmp - need), [b.mp, b.mmp, need])
+	b.mp = b.mmp
+	lg.pay_skill_cost(b, mpsk)
+	_check("cavalry.famine.t1_mp_free_no_ration", _near(b.mp, b.mmp), [b.mp, b.mmp])
+	# MP 不够：照样能放（不挡），改扣生命（和第 2 回合一样）
+	b.mp = 0.0
+	var hp0 := b.hp
+	_check("cavalry.famine.t1_poor_usable", lg.can_use(b, zero) and lg.can_use(b, mpsk))
+	lg.pay_skill_cost(b, zero)
+	_check("cavalry.famine.t1_poor_hp", b.hp < hp0 and _near(b.mp, 0.0), [hp0, b.hp])
 	lg.turn = 2
 	b.mp = b.mmp
 	lg.pay_skill_cost(b, zero)
-	_check("cavalry.famine.t2_ration", b.mp < b.mmp, [b.mp, b.mmp])
+	_check("cavalry.famine.t2_ration", _near(b.mp, b.mmp - need), [b.mp, b.mmp, need])
+	b.mp = 0.0
+	_check("cavalry.famine.t2_poor_usable", lg.can_use(b, zero) and not lg.can_use(b, mpsk))
+	# 开关关掉：第 1 回合口粮也免
+	lg.turn = 1
+	XTianqiTrumpet.FAMINE_PAYS = false
+	b.mp = b.mmp
+	lg.pay_skill_cost(b, zero)
+	_check("cavalry.famine.off_no_ration", _near(b.mp, b.mmp), [b.mp, b.mmp])
+	XTianqiTrumpet.FAMINE_PAYS = true
+	lg.end_battle(0)
+	# 透支者（化形·透支者：按最大生命 6%）：第 1 回合 MP 照免、透支照扣
+	_check("cavalry.overdraw.prepare", XTianqiFamineAlien.prepare("apostle30", s))
+	lg = XBattleLogic.new()
+	lg.setup(466, s)
+	XTianqiTrumpet.start(lg)
+	b = s.actor(w[1]) if lg.actors.has(s.actor(w[1])) else null
+	_check("cavalry.overdraw.setup", b != null and XTianqiFamineAlien.hungry(lg) and XTianqiFamineAlien._max_idx(lg, "overdraw") >= 2)
+	if b == null:
+		lg.end_battle(0)
+		return
+	lg.turn = 1
+	b.recover_all()
+	hp0 = b.hp
+	lg.pay_skill_cost(b, mpsk)
+	var lose := floorf(b.mhp * XTianqiFamineAlien._sum(lg, "overdraw", "hp_cost"))
+	var mp_fin := floorf(b.mmp * float(XTianqiFamineAlien.kind_info("overdraw").get("finale_mp", 0.1))) if XTianqiFamineAlien._max_idx(lg, "overdraw") >= 3 else 0.0
+	_check("cavalry.overdraw.t1_paid", lose > 0.0 and _near(b.hp, hp0 - lose) and _near(b.mp, b.mmp - mp_fin), [hp0, b.hp, lose, b.mp, b.mmp])
+	XTianqiTrumpet.FAMINE_PAYS = false
+	b.recover_all()
+	hp0 = b.hp
+	lg.pay_skill_cost(b, mpsk)
+	_check("cavalry.overdraw.off_free", _near(b.hp, hp0) and _near(b.mp, b.mmp), [hp0, b.hp])
+	XTianqiTrumpet.FAMINE_PAYS = true
 	lg.end_battle(0)
 
 

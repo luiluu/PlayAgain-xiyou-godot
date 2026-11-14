@@ -171,8 +171,8 @@ func _make_card(i: int) -> Control:
 		rname.size = Vector2(CARD.x - 72, 20)
 		card.add_child(rname)
 		card.relic_label = rname
-	if XTianqiRewards.badges().has(key):  # 跨存档（Kyo 11-11 选乙）：通关过这条线的，卡上点亮「已通关」
-		var done := XUI.label("★ 已通关", 18, main.lightened(0.35))
+	if XTianqiRewards.badges().has(key):  # 跨存档（Kyo 11-11 选乙）：通关过这条线的，卡上点亮「已清除异化」（Kyo 11-14 由「已通关」改名）
+		var done := XUI.label("★ 已清除异化", 18, main.lightened(0.35))
 		done.position = Vector2(0, 18)
 		done.size = Vector2(CARD.x, 26)
 		done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -272,7 +272,7 @@ class _Card extends Control:
 	var pulse := 0.0
 	var fig: TextureRect
 	var mark_rect: TextureRect
-	var done_tag: Label   # 跨存档通关过这条线：「★ 已通关」
+	var done_tag: Label   # 跨存档通关过这条线：「★ 已清除异化」
 	var portrait := false  # 画的是立绘（打过这条线）还是剪影
 	var relic_lit := false  # 卡底骑士遗物点亮了没有
 	var relic_label: Label
