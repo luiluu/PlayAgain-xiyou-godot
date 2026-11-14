@@ -310,7 +310,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var cands := []
 	for e in es:
 		for oe in (originals if not originals.is_empty() else [e]):
-			var resistance: float = 1.0 if kind == "true" or e == 0 or XGuardianRework.neutral(b) else b.element_rate(e)
+			var resistance: float = 1.0 if kind == "true" or e == 0 or XGuardianRework.neutral(b) else XGuardianRework.resistance(b, b.element_rate(e))  # 守层者一刀切抗性折进血量（O-402 ELEM）
 			var absorb := resistance < 0.0
 			resistance = apply_resistance_pierce(resistance, frame, e)
 			var match_rate: float = 1.0 if kind == "true" else matchup(e, affinity(b))
