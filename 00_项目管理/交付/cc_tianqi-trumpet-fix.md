@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-trumpet-fix
 
 - 车道／工作者：C 规则·机制／cc（Orca 车道 tianqi-trumpet-fix，claude-opus-5-5＋medium）
-- 状态：可合并
+- 状态：进行中
 
 ## 变更记录草稿
 
@@ -15,24 +15,39 @@
   | HP 定值 `<HP Cost: n>`、比例 `<HP Cost: n%>` | 免 | `skill_hp_cost` 返回 0：`can_pay_hp`、`pay_hp`、列表显示同源 |
   | 物品 `<Item n Cost: m>` | 免 | `can_pay_items`／`pay_items` 直接放行 |
   | 屠苏噬主（屠苏／持武者代付 MP） | 免 | 代付是这招的 MP 费用换人付；`can_use`、`pay_skill_cost` 跳过噬主包装 |
-  | 异化缄默（选定技能改锁生命上限） | 免 | 锁上限是替代 MP 的费用；不查、不锁 |
+  | 异化缄默（选定技能改锁生命上限） | 免 | 锁上限是替代 MP 的费用；按面板 MP 费用算，六号置 0 后自然不查、不锁（核查返修撤掉了多余钩子） |
   | 米拉禁忌生命代价（主动技扣最大生命 5%／10%） | 免 | 用技能付的生命；`XMira.pay(…, free)` 不登记 |
   | 饥荒线异化口粮、透支扣血扣蓝 | 免（拿不准，按默认免） | 放技能时交的代价；见「需要用户决定」 |
   | 异化饕餮（MP 从饥饿储备扣） | 免 | MP 已是 0，自然不扣 |
   | 冷却 | 不免 | 冷却不是消耗，稿子只说消耗 |
   | 熟练度计次 | 不免（照记） | 不是费用 |
   | 黄泉残梦 9 层、镜流月魄、五条悟苍／赫印、白起杀气 | 不免 | 战斗中攒的计量，是招式前提和连段机制，不是费用；第 1 回合本来也攒不满 |
-  - 改动：`tianqi_trumpet.gd`（判定＋开关）、`battle_logic.gd`（`can_pay_items`、`pay_items`、`skill_hp_cost`、`can_use` 噬主／缄默两行、`pay_skill_cost` 噬主／缄默／米拉／饥荒四处，均一行钩子）、`mira.gd`（`pay` 加可选参数 `free := false`，调用处只有 `pay_skill_cost` 一处，已 rg 全工程含 tests）。西游档、其他回合、非持有者、敌人行为不变。
+  - 改动：`tianqi_trumpet.gd`（判定＋开关）、`battle_logic.gd`（`can_pay_items`、`pay_items`、`skill_hp_cost`、`can_use` 噬主／HP 费用两行（HP 那行是核查返修加的）、`pay_skill_cost` 噬主／米拉／饥荒三处，均一行钩子）、`mira.gd`（`pay` 加可选参数 `free := false`，调用处只有 `pay_skill_cost` 一处，已 rg 全工程含 tests）。西游档、其他回合、非持有者、敌人行为不变。
 - 五号（补测发现，Kyo 经协调同意本分支修）：开场就阵亡的五号持有者，第 1 回合开始 `turn_begin` 让他站起来，而第 1 回合顺序取全体角色（`_make_action_orders` 首回合不筛活着的），于是起身当回合就行动，违反「起身当回合不行动」。修法：`turn_begin` 记 `risen_turn`，`start_turn`（排完顺序后）`_rest_risen` 把本回合起身的人拿出本回合顺序；下回合顺序照排，第 2 回合照常行动。第 2 回合起本来就成立（阵亡时 `_sync_orders` 已把人连追加行动拿出下回合顺序），`_rest_risen` 在那里是空操作。只动 `current_order`：别人先后不变、状态回合数不碰（没行动，行动结束型状态本回合不减，与中途阵亡一样）；OTB 顺序条读的就是 `current_order`／`next_order`，显示为本回合没有他、下回合有他。挂在原 `ENABLED`（O-413）下，不另开开关。
 - 测试 `xiyou_tianqi_trumpet` 89 → 128 项（+39）：六号走真 `XBattleLogic.can_use`＋`pay_skill_cost`，带 hpCost、hpCostPer、SkillCostItems、MP／TP 和全带的技能，第 1 回合余额不足也能放、放了不扣，余额够也不扣；第 2 回合照挡照扣；非持有者照挡照扣；`FREE_ALL = false` 回到只免 MP／TP。五号：中途阵亡带追加行动、终焉锁复活（不起身、不算用掉、不进顺序）、开场阵亡第 1 回合起身不行动、第 2 回合照常、拿出顺序不动别人先后和状态回合数。
 - 反向验证 9 项全咬住：HP 不免、物品检查不免、物品扣除不免（首轮没咬住：余额 0 扣成负被夹回 0，补「余额够也不扣」后咬住）、不看回合、不看持有者、开关失效、五号不拿出、五号连下回合也拿。
 - 玩家可见：天启篇号卷六号第 1 回合，自己的技能连生命、物品消耗也不花了；上场前就倒下的五号持有者，第 1 回合起身后要到第 2 回合才行动。
 
+## 核查返修
+
+gpt 甲档只读复核前四个提交，余均通过，1 项 P2＋1 项测试缺口，本节一个提交修完：
+
+- P2（`battle_logic.gd` `can_use` 的 HP 费用检查）：六号免费时 `skill_hp_cost` 已是 0，但 `can_pay_hp` 里异化 `XAlienBattle.can_pay_hp` 的空壳／嫁祸／连命分支是「资源严格大于费用」，零费也不放行（空壳零盾、保护者 1 血以下、连命池 0 时被挡）。修法：只在 `free`（`XTianqiTrumpet.free_all`）时跳过这层 HP 可用性检查；西游原有「零费也严格比较」语义不动。付费侧零费 `pay_hp` 对三个分支都不扣（连命池 −0、保护者 −0、空壳只在费用为正时扣），不另加钩子。
+- 测试缺口：特殊费用每种补走真 `can_use`＋`pay_skill_cost` 的断言（`xiyou_tianqi_trumpet` `_cavalry_special`／`_mira_cost`／`_famine_cost`，128 → 152 项）：
+  - 异化空壳零盾、嫁祸（保护者 1 血）、连命（池 0）：第 1 回合能放、第 2 回合被挡；空壳、嫁祸第 1 回合放了不扣盾、不扣保护者
+  - 异化缄默（锁上限 95%＋本次 20%）：第 1 回合能放、不加锁，第 2 回合被挡
+  - 屠苏噬主（持武者放武装技能，屠苏与持武者都没 MP）：第 1 回合能放、不扣，屠苏有 MP 时第 1 回合也不扣，第 2 回合被挡、照扣
+  - 米拉禁忌（进阶 2、主动技）：第 1 回合放了 endAction 不扣生命代价，第 2 回合照扣（这项不挡技能，只看付费）
+  - 饥荒口粮（侵染级、零消耗技能）：第 1 回合不交，第 2 回合照交（不挡技能，只看付费；免不免仍待 Kyo 定，现状免）
+- 顺带收窄：原来给缄默加的两处 `free` 钩子（`silence_blocks`、`pay_silence`）是多余的——锁上限按面板 MP 费用算，六号已把它置 0（反向验证时这两处改回去测试照过，属等价变异），撤掉；缄默免费改由「六号不把 MP 置 0」这一反向项咬住。
+- 反向验证 6 项全咬住：free 仍查异化 HP、噬主可用性不免、噬主付费不免、米拉代价不免、饥荒口粮不免、六号不把 MP 置 0（缄默跟着回来）。
+- 验证：专项 152/152、语法检查、工具回归通过；云端选测见下。
+
 ## 优化登记草稿
 
 | 编号 | 位置 | 原版 | 优化 | 依据 | 回退 | 提出 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定-1 | `modes/xiyou/core/tianqi_trumpet.gd` `XTianqiTrumpet.FREE_ALL`；`battle/battle_logic.gd`、`core/mira.gd`；`tests/xiyou_tianqi_trumpet.gd` | （天启篇新增）号卷六号第 1 回合只免 MP／TP，生命、物品费用照查照扣 | 六号第 1 回合自己的技能全部费用都免：MP、TP、生命定值与比例、物品、屠苏噬主代付、异化缄默锁上限、米拉生命代价、饥荒口粮与透支 | gpt 甲档补核 P2；Kyo 11-14「真全免」 | `FREE_ALL = false`（回到只免 MP／TP） | cc | 保留 |
+| O-待定-1 | `modes/xiyou/core/tianqi_trumpet.gd` `XTianqiTrumpet.FREE_ALL`；`battle/battle_logic.gd`、`core/mira.gd`；`tests/xiyou_tianqi_trumpet.gd` | （天启篇新增）号卷六号第 1 回合只免 MP／TP，生命、物品费用照查照扣 | 六号第 1 回合自己的技能全部费用都免：MP、TP、生命定值与比例（含异化空壳／嫁祸／连命的 HP 费用检查）、物品、屠苏噬主代付、异化缄默锁上限、米拉生命代价、饥荒口粮与透支 | gpt 甲档补核 P2；Kyo 11-14「真全免」 | `FREE_ALL = false`（回到只免 MP／TP） | cc | 保留 |
 
 ## 交接板
 

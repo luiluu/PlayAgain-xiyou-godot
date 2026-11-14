@@ -741,13 +741,13 @@ func can_use(a: XBattler, skill: Dictionary) -> bool:
 		return false
 	if not can_pay_items(a, skill):  # YEP_X_SkillCostItems canPaySkillCost：物品不够不能用
 		return false
-	var free := XTianqiTrumpet.free_all(a)  # 天启篇号卷六号：第 1 回合噬主代付、缄默锁上限都不看
+	var free := XTianqiTrumpet.free_all(a)  # 天启篇号卷六号：第 1 回合噬主代付、HP 费用都不看（缄默锁上限按面板 MP 算，MP 已是 0）
 	var tusu_pay = null if free else XTusu.can_pay(a, skill, float(skill_cost(a, skill).tp))  # 屠苏噬主 canPaySkillCost 包装：屠苏或持武者付得起
 	if tusu_pay != null:
 		return bool(tusu_pay)
-	if not free and XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
+	if XAlienBattle.silence_blocks(self, a, skill):  # 异化缄默 canPaySkillCost：生命上限锁不下了
 		return false
-	if not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用
+	if not free and not can_pay_hp(a, skill):  # YEP_SkillCore canPaySkillCost：先看 HP 费用（号卷六号第 1 回合不看：异化空壳／嫁祸／连命零费也严格比较，会把免费的挡住）
 		return false
 	var c := skill_cost(a, skill)
 	var mp = XAlienBattle.glutton_mp(a)  # 异化饕餮 canPaySkillCost：MP 费用看饥饿储备
@@ -2032,13 +2032,13 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 
 ## Game_BattlerBase.paySkillCost（含各包装）与 YEP 冷却：execute 付费、专项直接付费共用
 func pay_skill_cost(u, skill: Dictionary) -> void:
-	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、缄默、米拉代价、饥荒口粮都免（MP／TP／HP／物品在各自函数里免）
+	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、米拉代价、饥荒口粮都免（MP／TP／HP／物品在各自函数里免；缄默锁上限按面板 MP 算，MP 已是 0）
 	var tusu_who = null if free else XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
 	if not (tusu_who is String and tusu_who.is_empty()):  # ""：都付不起（支付前已查），整次不付
 		XNanoha.note_cost(u, skill)  # <Custom MP Cost> 的副作用：付费时那次 skillMpCost 按付前 MP 写 _costmp（段数）
 		var c := skill_cost(u, skill)
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
-		if free or XAlienBattle.pay_silence(self, u, skill):
+		if XAlienBattle.pay_silence(self, u, skill):
 			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
 			XMira.pay(u, skill, free)  # 米拉禁忌 paySkillCost 包装：登记生命代价
 			if XAlienBattle.glutton_mp(u) != null:

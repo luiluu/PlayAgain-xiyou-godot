@@ -8,6 +8,7 @@ extends Node
 ##    六号先手／免消耗／第 6 回合起减伤、七号掉率与金钱、七号齐鸣；整回合实跑不报错。
 ## 五之二、六号全免（Kyo 11-14 真全免）：走真 XBattleLogic.can_use＋pay_skill_cost，MP、TP、HP 定值／比例、物品第 1 回合不看不扣，
 ##    第 2 回合、非持有者照扣照挡；FREE_ALL 关掉回到只免 MP／TP。
+##    特殊费用也走真路径：异化空壳零盾／嫁祸／连命（零费也严格比较的 HP 分支）、缄默锁上限、屠苏噬主、米拉禁忌代价、饥荒口粮。
 ## 五之三、五号起身那一回合的行动顺序：中途阵亡（带追加行动）、终焉锁复活、开场就阵亡（第 1 回合起身不行动、第 2 回合照常）。
 ## 六、开关关掉：一条都不生效。
 
@@ -88,6 +89,7 @@ func _run() -> void:
 	_shop()
 	_battle()
 	_cavalry_pay()
+	_cavalry_special()
 	_abyss_order()
 	_switches()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -423,6 +425,176 @@ func _cavalry_pay() -> void:
 	lg.pay_skill_cost(b, all)
 	_check("cavalry.off.paid", _near(b.hp, hp0 - 500.0) and s.item_count(item) == 2, [hp0, b.hp, s.item_count(item)])
 	XTianqiTrumpet.FREE_ALL = true
+	lg.end_battle(0)
+
+
+## 一个技能在第 1 回合能放、第 2 回合被挡（同一 lg、同一人）
+func _t1_t2(lg: XBattleLogic, who: XActor, sk: Dictionary, tag: String, prep: Callable) -> void:
+	lg.turn = 1
+	prep.call()
+	_check(tag + ".t1_can_use", lg.can_use(who, sk))
+	lg.turn = 2
+	prep.call()
+	_check(tag + ".t2_blocked", not lg.can_use(who, sk))
+
+
+func _cavalry_special() -> void:
+	var w := _weak()
+	var lineup := [w[0], w[1], XTusu.ACTOR, w[2], w[3]]
+	var s := XTianqi.start_new_game(3, "lianyu", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	for id in lineup:
+		s.actor(id).recover_all()
+	var b: XActor = s.actor(w[1])
+	_learn(b, 6)
+	var lg := _logic(s)
+	XTianqiTrumpet.start(lg)
+	var hp_sk := _cost_skill(99996, "<HP Cost: 500>")
+	# 异化 HP 费用三个分支（XAlienBattle.can_pay_hp：零费也要严格大于）
+	var st: Dictionary = XAlienBattle._store(lg)
+	var had_status = st.get("status", false)
+	st.status = true
+	st.party[b] = {"item": 0, "affix": "hollow", "config": {}, "observed": [], "selected": 0}
+	_t1_t2(lg, b, hp_sk, "cavalry.alien.hollow", func(): b.shield = 0.0)
+	lg.turn = 1
+	lg.pay_skill_cost(b, hp_sk)
+	_check("cavalry.alien.hollow.t1_not_paid", _near(b.shield, 0.0) and b.hp > 0.0)
+	st.party.erase(b)
+	var guard: XActor = s.actor(w[0])
+	b.set_meta("xalien_protector", guard)
+	_t1_t2(lg, b, hp_sk, "cavalry.alien.scapegoat", func(): guard.hp = 1.0)
+	lg.turn = 1
+	lg.pay_skill_cost(b, hp_sk)
+	_check("cavalry.alien.scapegoat.t1_not_paid", _near(guard.hp, 1.0))
+	b.remove_meta("xalien_protector")
+	guard.recover_all()
+	var pool := {"current": 0.0}
+	b.set_meta("xalien_life", pool)
+	_t1_t2(lg, b, hp_sk, "cavalry.alien.lifelink", func(): pool.current = 0.0)
+	b.remove_meta("xalien_life")
+	# 异化缄默：选定技能改锁生命上限，锁满了付不起
+	var mp_sk := _cost_skill(99997, "", 100)
+	var sil := {"item": 0, "affix": "silence", "config": {"skillId": 99997}, "observed": [], "selected": 0, "referenceMp": 100.0, "capLock": 0.95}
+	st.party[b] = sil
+	_t1_t2(lg, b, mp_sk, "cavalry.alien.silence", func(): sil.capLock = 0.95)
+	lg.turn = 1
+	lg.pay_skill_cost(b, mp_sk)
+	_check("cavalry.alien.silence.t1_not_locked", _near(sil.capLock, 0.95), sil.capLock)
+	st.party.erase(b)
+	st.status = had_status
+	b.param_mark_dirty()
+	b.recover_all()
+	# 屠苏噬主：持武者放武装技能，屠苏、持武者都没 MP 时付不起
+	var t: XActor = s.actor(XTusu.ACTOR)
+	var arm_id := -1
+	for id in XTusuXuan.keys(XTusu.ACTOR):
+		if str(XTusuXuan.keys(XTusu.ACTOR)[id]) == "arm.zhanfeng":
+			arm_id = int(id)
+	var bound := arm_id > 0 and lg.actors.has(t) and XBinding.bind(t, b)
+	_check("cavalry.tusu.setup", bound, [arm_id, lg.actors.has(t)])
+	if bound:
+		XTusu._d.weapon = "sword"
+		var arm: Dictionary = XDB.rec("Skills", arm_id)
+		var broke := func():
+			t.mp = 0.0
+			b.mp = 0.0
+		lg.turn = 2
+		broke.call()
+		var meets: bool = XTusu.meets(b, arm) and XTusuXuan.meets(b, arm)
+		_check("cavalry.tusu.meets", meets)
+		if meets:
+			_t1_t2(lg, b, arm, "cavalry.tusu", broke)
+			lg.turn = 1
+			broke.call()
+			lg.pay_skill_cost(b, arm)
+			_check("cavalry.tusu.t1_not_paid", _near(t.mp, 0.0) and _near(b.mp, 0.0), [t.mp, b.mp])
+			t.recover_all()
+			b.recover_all()
+			var tfull: float = t.mp
+			lg.pay_skill_cost(b, arm)
+			_check("cavalry.tusu.t1_rich_not_paid", _near(t.mp, tfull) and _near(b.mp, b.mmp), [tfull, t.mp, b.mp])
+			t.recover_all()
+			b.recover_all()
+			lg.turn = 2
+			var tmp0: float = t.mp
+			lg.pay_skill_cost(b, arm)
+			_check("cavalry.tusu.t2_paid", t.mp < tmp0, [tmp0, t.mp])
+	lg.end_battle(0)
+	# 米拉禁忌：主动技的生命代价第 1 回合不登记、第 2 回合照扣（不挡技能，只看付费）
+	_mira_cost()
+	_famine_cost()
+
+
+func _mira_cost() -> void:
+	var w := _weak()
+	var lineup := [w[0], XMira.ACTOR, w[2], w[3], w[5]]
+	var s := XTianqi.start_new_game(3, "lianyu", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var m: XActor = s.actor(XMira.ACTOR)
+	s.actor_advance[XMira.ACTOR] = 2
+	_learn(m, 6)
+	m.recover_all()
+	var lg := _logic(s)
+	XTianqiTrumpet.start(lg)
+	if not m.skill_ids.has(10166):
+		m.skill_ids.append(10166)  # 开战后补（技能进度同步会把没解锁的禁忌拿掉）
+	var sk: Dictionary = XDB.rec("Skills", XMira.ACTIVE_SKILLS[0])
+	_check("cavalry.mira.setup", XMira.has(m, 10166, 2) and lg.actors.has(m), [XMira.rank(m), m.skill_ids.has(10166), lg.actors.has(m), lg.actors.map(func(x): return x.actor_id)])
+	lg.turn = 1
+	var hp0: float = m.hp
+	lg.pay_skill_cost(m, sk)
+	XMira.pay_hp(m, sk)
+	_check("cavalry.mira.t1_not_paid", _near(m.hp, hp0), [hp0, m.hp])
+	lg.turn = 2
+	lg.pay_skill_cost(m, sk)
+	XMira.pay_hp(m, sk)
+	_check("cavalry.mira.t2_paid", m.hp < hp0, [hp0, m.hp])
+	lg.end_battle(0)
+
+
+## 饥荒口粮：零消耗技能交口粮（Kyo 待定，现按免）；第 1 回合六号不交、第 2 回合照交（不挡技能，只看付费）
+func _famine_cost() -> void:
+	var w := _weak()
+	var lineup := [w[0], w[1], w[2], w[3], w[5]]
+	var s := XTianqi.start_new_game(3, "jianxian", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+		s.actor(id).add_param(0, 20000000.0)
+		s.actor(id).recover_all()
+	s.map_id = 4
+	s.set_variable(20, 6)
+	s.flags.tianqi["line"] = "famine"
+	XState.current = s
+	var b: XActor = s.actor(w[1])
+	_learn(b, 6)
+	var ok := XTianqiFamineAlien.prepare("omen", s)
+	var lg := _logic(s)
+	XTianqiTrumpet.start(lg)
+	_check("cavalry.famine.setup", ok and XTianqiFamineAlien.hungry(lg) and lg.actors.has(b))
+	var zero := _cost_skill(99998, "")
+	lg.turn = 1
+	b.mp = b.mmp
+	lg.pay_skill_cost(b, zero)
+	_check("cavalry.famine.t1_no_ration", _near(b.mp, b.mmp), [b.mp, b.mmp])
+	lg.turn = 2
+	b.mp = b.mmp
+	lg.pay_skill_cost(b, zero)
+	_check("cavalry.famine.t2_ration", b.mp < b.mmp, [b.mp, b.mmp])
 	lg.end_battle(0)
 
 
