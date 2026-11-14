@@ -1,7 +1,7 @@
 # 交付：cc/fix-shop-bag-cuiyuan
 
 - 车道／工作者：B 界面＋物品／cc（Orca worker，Opus＋medium）
-- 状态：进行中
+- 状态：已交付（待合并）
 
 依据：v0.01.09 玩家反馈①「随便开一个商店，退出后自动又打开背包」、③「淬元丹无法使用」（Kyo 11-14 转述）；协调追加「PC 按键好像按一次会响应多次」。
 v0.01.09 补丁线（`release/v0.01`，`966c578f4`）上这三处代码与 main 相同（`_add_scene_page` 没有关页面记帧、`mv_player.gd` 物理帧轮询确认键、物品页没有淬元丹分支），所以在 main 上复现即可。
@@ -31,7 +31,7 @@ v0.01.09 补丁线（`release/v0.01`，`966c578f4`）上这三处代码与 main 
 | `xiyou_item_use`、`xiyou_bulk_pills`、`xiyou_key_map`、`xiyou_entry_release` | 相关回归 | 通过 |
 
 - 反向验证（`07_开发环境/反向验证.py`）7 项全咬住：去掉可用判定（＝修前）、去掉吃下计数、去掉能力值包装、去掉 20 颗上限、步长改 3%、去掉关页面记帧（＝修前，`xiyou_shop_exit_menu` 咬住）、玩家改回轮询 just_pressed（＝修前，`xiyou_one_press` 咬住）。
-- `选测.py main --list` 选中 420 个（改了 `actor.gd`），走 `云端选测.py run`：云端判整轮 591 个场景（基准取上次云端通过的祖先 `fbb2d9b96`），结果见下。
+- `选测.py main --list` 选中 420 个（改了 `actor.gd`），走 `云端选测.py run`：云端判整轮 591 个场景（基准取上次云端通过的祖先 `fbb2d9b96`）：提交 `52f59180b`，592 个场景、15 片，591 个通过（`xiyou_star_warehouse` 并行偶发、单跑通过），失败 1 个 `xiyou_tianqi_alien_gear`（`review6_tier_again`／`review6_huaxing_same_again`／`review6_o-off`，天启篇异化词条文案的 O 号开关）。这是本分支基准 `d45643f0b` 上已有的问题，main 已在 `1b4a6fb9f`（合并 cc/tianqi-review-fixes 收尾，手补 `tianqi_alien_gear.gd` 与该专项）修好；本分支没碰天启篇异化装备代码，合并后随 main 一起通过。运行页 actions/runs/43604071774。
 - 语法检查 853 个 .gd 0 问题；工具回归全部通过。
 - 触屏：虚拟键是 `XTouchControls._send_action`（动作事件），`xiyou_one_press` 用同样的动作事件走了一遍；没有安卓实机测。
 - `--oracle`：淬元丹没有现成参照探针（插件逻辑 50 行，按源码逐行移植；数值断言照插件公式），云端整轮里的参照对照场景照跑。
