@@ -175,7 +175,7 @@ static func dim(tex: Texture2D) -> Texture2D:
 	return _dim[key]
 
 
-## 骑士徽记大图（选线竖卡「已通关」那张卡上画）
+## 骑士徽记大图（选线竖卡「已清除异化」那张卡上画）
 static func badge_texture(line: String) -> Texture2D:
 	var p := DIR + "badges_128/%s.png" % line
 	if not ResourceLoader.exists(p):
