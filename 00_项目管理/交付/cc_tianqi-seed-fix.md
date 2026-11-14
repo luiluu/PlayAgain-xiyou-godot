@@ -63,7 +63,7 @@
 
 ## 验证
 
-- 新专项 `xiyou_tianqi_seed_fix`（真实 `XSave.save`→`XSave.load_slot` 写盘读档）40/40：每处「存→掷→读→再掷相同」（`rf_reload_same`、`al_create_same`、`al_reroll_same`、`of_same`、`of_second_same`）；连掷不全相同、读档后前缀可复现（`rf_runs_differ`、`rf_prefix_same`、`rf_continues`、`al_create_varies`、`al_reroll_varies`、`al_reroll_prefix`、`rf_items_independent`、`of_draws_independent`）；老档去掉计数字段写回存档文件再读能补上（`rf_legacy_*`、`al_legacy_*`），去掉 `orbSeed` 也可复现（`rf_no_orb_same`、`of_no_orb_same`）；开关关掉两次读档结果不同、不写计数（`rf_off_*`、`al_off_*`、`of_off_differs`）；`force_roll` 测试钩子照旧优先。本机连同 `xiyou_tianqi_reforge`、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_party` 全部通过。
+- 新专项 `xiyou_tianqi_seed_fix`（真实 `XSave.save`→`XSave.load_slot` 写盘读档）37/37：每处「存→掷→读→再掷相同」（`rf_reload_same`、`al_create_same`、`al_reroll_same`、`of_same`、`of_second_same`）；连掷不全相同、读档后前缀可复现（`rf_runs_differ`、`rf_prefix_same`、`rf_continues`、`al_create_varies`、`al_reroll_varies`、`al_reroll_prefix`、`rf_items_independent`、`of_draws_independent`）；老档去掉计数字段写回存档文件再读能补上（`rf_legacy_*`、`al_legacy_*`），去掉 `orbSeed` 也可复现（`rf_no_orb_same`、`of_no_orb_same`）；开关关掉两次读档结果不同、不写计数（`rf_off_*`、`al_off_*`、`of_off_differs`）；`force_roll` 测试钩子照旧优先。本机连同 `xiyou_tianqi_reforge`、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_party` 全部通过。
 - 反向验证（`反向验证.py`，专项 `xiyou_tianqi_seed_fix`）：8 处各改坏一次（重铸／锁词条重铸回到 randf、装备计数不推进、异化兜底回到 randf、重抽计数不推进、重抽回到 randf、候选回到 randomize、开关关时仍派生）全部让专项失败，咬得住；源文件按备份还原。
 - 语法检查：846 个 .gd，0 个问题。工具回归 `工具回归.py` 全部通过。
 - 选测：合 main 后 `云端选测.py run`（提交 6ae0b0469），471 个场景、16 片全部通过（基准 3b7033b56，名单含 main 新合进的改动，比 `选测.py main --list` 的 54 个多）。不需要 `--oracle`（新机制，没碰原版移植逻辑）。
