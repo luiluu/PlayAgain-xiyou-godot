@@ -151,9 +151,18 @@ func _run() -> void:
 	if DisplayServer.get_name() == "headless":
 		# 先等首次到达的自动事件（存档提示等）真的结束：上面的 600 帧在满负载并行时可能不够，
 		# 地图仍忙时按键本来就不会调查，测不出 ⌘Enter 的问题，结束后的 busy 也只是残留（偶发失败的原因）。
+		# 「空闲」要连续满 45 帧（>30）才算稳：地图空闲时每 30 个非忙帧会查一次修行里程碑（_check_milestone），
+		# 没看过就置 busy 约 3 帧放说明。刚空闲那一刻 _milestone_tick 的相位取决于机器快慢（云端与本机不同），
+		# 里程碑落在按键窗口内就会得到 [true,0,true]（本机把 _milestone_tick 拨到 10／12 可稳定复现）。
+		# 连续空闲 45 帧里必经过一次检查点，里程碑已放完且记为看过，按键窗口里就没有别的自发 busy。
 		var idle_before := false
-		for i in range(3000):
-			if not map.busy:
+		var idle_since := -1   # 开始连续空闲时的 process 帧号（里程碑按 process 帧计，快时钟下物理帧数不等于它）
+		for i in range(6000):
+			if map.busy:
+				idle_since = -1
+			elif idle_since < 0:
+				idle_since = Engine.get_process_frames()
+			elif Engine.get_process_frames() - idle_since >= 45:
 				idle_before = true
 				break
 			await _wait_frame()
