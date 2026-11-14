@@ -1,7 +1,7 @@
 # 交付：cc/fix-liuying-gongfa
 
 - 车道／工作者：B 界面／cc（Orca 车道，claude-opus-5-5＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -34,11 +34,13 @@
 - 专项：`xiyou_battle_log` 本机 77/77（26 秒）。
 - 反向验证：3/3 咬住。
 - 工具回归：全部通过（251 秒）。
-- 云端选测（`选测.py main` 选中 54 个，超 40 走云端；基准取上次云端通过的祖先 fbb2d9b96，结论是整轮 589 场景）：待写
+- 云端选测（`选测.py main` 选中 54 个，超 40 走云端；基准取上次云端通过的祖先 fbb2d9b96，结论是整轮）：提交 a32d8fbbe，589 个场景 588 过，唯一失败 `xiyou_tianqi_alien_gear`（review6_tier_again／review6_huaxing_same_again／review6_o-off，54/57）。**这是 main 上已有的失败，跟本单无关**：把本单 actor_modules.gd 换回 d45643f0b（当前 main）的版本本机单跑照样 54/57；该测试与 alien 文案最近一次改动是 301a756ff（cc/tianqi-review-fixes，已合进 main）。请总装转给那条线修。266a3062c 只加测试断言，`xiyou_battle_log` 本机 77/77。
 - `--oracle` 没跑：改的是技能菜单分类列表，不碰战斗逻辑与数值链。
 - 发行入口冒烟（导出整包）没跑：改动不在空壳名单、不看 is_release，专项已用 simulate_release 覆盖；本机测试车道已满，导整包不划算。
 
 ## 本分支提交
+
+- （本交付单提交）
 
 - a32d8fbbe 流萤 179 技能菜单补「功法」页；xiyou_battle_log 补流萤功法页与内容断言
 - 266a3062c xiyou_battle_log：发行构建（simulate_release）下同样断言
