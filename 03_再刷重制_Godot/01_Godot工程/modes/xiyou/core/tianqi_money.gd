@@ -15,7 +15,7 @@ extends RefCounted
 ##   油（承伤 −10%）、酒（出伤 ＋10%），只管当前这一层；一层最多买 3 次、第 n 次价格 ×2^(n−1)；饥荒线贵五成。
 ## 存档：flags.tianqi.money {"training": {"能力编号": 等级}, "scale": {"floor": 层, "goods": [..], "buys": 次数}}；装备上记重铸次数 tq_reforges。
 ##
-## 开关（O-待定）：ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
+## 开关（O-404）：ENABLED＝false 全部回到之前；各分项单独设 false 回到之前那一项。
 
 static var ENABLED := true
 static var INCOME := true
