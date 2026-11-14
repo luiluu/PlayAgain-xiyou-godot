@@ -323,6 +323,11 @@ func _r2_baselines() -> void:
 	_check("r2_elements_roundtrip", s_el_rt != null
 		and JSON.stringify(XTianqiElements.ensure_deck(s_el_rt)).sha256_text() == "04a0099be700dfd793e7b31da89769f268d9e06ad03d41fb3cfa157e633b69b3"
 		and _norm(XTianqiElements.fixed_deal(s_el_rt, "knight", 2)) == _norm({"immune":[2],"resist":[15,4],"weak":[9,7]}))
+	var rng_empty := XTianqiRandom.elements_rng(1276351530)
+	var rng_empty_ref := RandomNumberGenerator.new()
+	rng_empty_ref.seed = ("1276351530|").hash()
+	_check("r2_elements_rng_empty_key", rng_empty.seed == ("1276351530|").hash()
+		and [rng_empty.randi(), rng_empty.randi()] == [rng_empty_ref.randi(), rng_empty_ref.randi()], rng_empty.seed)
 
 
 func _run() -> void:

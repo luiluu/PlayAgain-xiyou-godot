@@ -185,8 +185,8 @@ static func elements_seed(s: XState) -> int:
 	return XOrbs.hash32(JSON.stringify(["tianqi_elements", int(s.orb_seed), diff])) & 0x7fffffff
 
 
-## 第 7 类（原 tianqi_elements.gd 楼层牌组／固定入口／骑士）：按元素种子与可选键构造 RandomNumberGenerator
+## 第 7 类（原 tianqi_elements.gd 楼层牌组／固定入口／骑士）：按元素种子与键拼接 hash 构造 RandomNumberGenerator（空键亦同原式）
 static func elements_rng(elem_seed: int, key := "") -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = ("%d|%s" % [elem_seed, key]).hash() if key != "" else elem_seed
+	rng.seed = ("%d|%s" % [elem_seed, key]).hash()
 	return rng
