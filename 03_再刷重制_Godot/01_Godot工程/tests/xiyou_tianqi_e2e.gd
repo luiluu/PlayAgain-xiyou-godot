@@ -22,9 +22,9 @@ const DAO_TOUCH := "触屏道号"
 const ENTRY_MENU := "res://scenes/entry_menu.tscn"
 ## 标题菜单项：键 → 原版标题 _commands 的下标（新标题按 _items 的 key 找）
 const TITLE_ITEM := {"new_game": 0, "load": 1}
-## 天启篇开局三页（选存档位、难度、阵容）按取消键退回上一页。现状 entry.gd 的 _unhandled_input 只管标题图片指令，
-## 窗口页不认取消键（安卓返回键经 XPlatform 也发 ui_cancel，同样不动），交付单「发现的问题」已报；修好后改成 true，测试就改测取消键退回。
-const ESC_BACK := false
+## 天启篇开局三页（选存档位、难度、阵容）按取消键退回上一页。cc/pro-newgame-back2（dev.567）起 entry.gd 窗口页认 ui_cancel
+## （_add_back 登记 _back），所以是 true；回退到旧行为时改 false，测试改成验证取消键不动、按「返回」按钮走。
+const ESC_BACK := true
 ## 每按一下键后等几帧（按下与松开之间另等 2 帧）
 const STEP := 4
 
@@ -167,7 +167,18 @@ func _title_sel_node() -> Control:
 	return t._items[t._sel].node if t != null else _entry()._commands[_entry()._sel].node
 
 
+## 新标题在声明屏后放睁眼进场（XTianqiTitle.play_entrance）：进场中第一下按键只用来跳过进场、被吃掉不漏给菜单。
+## 玩家要先按一下再选，测试照做；不跳过的话下一下「确定」会被吃掉，存档位页就不出来（11-14 e2e 卡 6/14 的根因）。
+func _skip_title_entrance() -> void:
+	var t = _title_obj()
+	if t == null or not t.entering():
+		return
+	await _key(KEY_SPACE)
+	_check("title.entrance_skipped", not t.entering())
+
+
 func _title_key(key: String) -> bool:
+	await _skip_title_entrance()
 	var target := _title_node(key)
 	for i in 8:
 		if _title_sel_node() == target:
@@ -657,6 +668,7 @@ func _revert() -> void:
 
 ## 移到标题项后只发「按下」：原版开局在按下这一下就建局并切场景，测试看到新局的同一帧就切回标题（不跑原版 Map001 开局事件）
 func _title_key_press_only(key: String) -> bool:
+	await _skip_title_entrance()
 	var target := _title_node(key)
 	for i in 8:
 		if _title_sel_node() == target:
