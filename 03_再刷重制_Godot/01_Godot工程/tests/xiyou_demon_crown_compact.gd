@@ -156,7 +156,8 @@ func _run() -> void:
 	# ---- 同一套剧本两种写法结果一样 ----
 	var plain := _script(false)
 	var plain_rows := _rows().size()
-	var plain_bytes := FileAccess.get_file_as_bytes(XDemonCrown.path_override).size()
+	# 只比场次记录那一段的大小：整个文件里头顶的随机词缀长短每次不同，会盖过这点差别
+	var plain_bytes := JSON.stringify(_rows()).length()
 	var compact := _script(true)
 	# 步号：0～2 连胜，3 倒下一次，4 输，5 掉落掷中，6 没掷中，7 战斗外倒下，8～9 胜；10 读旧档，11 重打第 3 场（同一次倒下），
 	# 12 重打第 4 场（倒下两次），13 重打掉落战斗，14～16 重打，17 新的一场；18～20 读最早的档重打，21 读回最后的档
@@ -173,7 +174,7 @@ func _run() -> void:
 	check("compact_watermark", int(p.get(XDemonCrown.DONE, 0)) >= 9, p.get(XDemonCrown.DONE))
 	check("compact_death_rows_min", (p.battles as Dictionary).has("b:3") and (p.battles["b:3"] as Dictionary).keys().size() == 2 \
 		and (p.battles["b:3"].deaths as Dictionary).size() == 1 and (p.battles["b:4"] as Dictionary).keys().size() == 2 and (p.battles["b:4"].deaths as Dictionary).size() == 2, p.battles)
-	check("compact_smaller", FileAccess.get_file_as_bytes(XDemonCrown.path_override).size() < plain_bytes, [plain_bytes, FileAccess.get_file_as_bytes(XDemonCrown.path_override).size()])
+	check("compact_smaller", JSON.stringify(p.battles).length() < plain_bytes / 2, [plain_bytes, JSON.stringify(p.battles).length()])
 
 	# ---- 每场只写一次（关着两次） ----
 	XDemonCrown.COMPACT = false
