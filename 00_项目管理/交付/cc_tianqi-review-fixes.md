@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-review-fixes
 
 - 车道／工作者：C 规则·机制／cc（Orca worker，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 依据：私密设计仓《天启篇_内容与设计全面评审_v0.1》（小A，基线 `2f11c424e`）第二节第 1、2、5、6、7、8、9 条。第 3、4 条按派单不做，只写现状；第三、四节的设计取舍不碰。
 
@@ -26,16 +26,16 @@
 | 场景 | 新断言 | 断言数 |
 | --- | --- | --- |
 | `xiyou_tianqi_horsemen_battle` | `review1_bankrupt_hits_mdf_on`、`review1_bankrupt_mark_useless_off`、`review1_bankrupt_cleared_on/off`、`review2_red_fresh_atk_on`、`review2_red_stale_atk_off`（6 条） | 106/106 |
-| `xiyou_tianqi_war` | `review2_berserk_hit`、`review2_berserk_atk_after_hit`（2 条） | 待最终数 |
-| `xiyou_tianqi_drop` | `review5_preview_skips_bought`、`review5_preview_keeps_own`（2 条） | 通过 |
-| `xiyou_fabao_rework` | 测例固定品质（无新断言） | 通过 |
+| `xiyou_tianqi_war` | `review2_berserk_hit`、`review2_berserk_atk_after_hit`（2 条） | 99/99 |
+| `xiyou_tianqi_drop` | `review5_preview_skips_bought`、`review5_preview_keeps_own`（2 条） | 76/76 |
+| `xiyou_fabao_rework` | 测例固定品质（无新断言） | 86/86 |
 | `xiyou_tianqi_alien_gear` | `review6_tier_dying`、`review6_tier_again`、`review6_tier_thrift_venom`、`review6_huaxing_same_*`（4 条）、`review6_o-off`（共 8 条） | 57/57 |
 | `xiyou_tianqi_affix_battle` | `review8_recast_hits_have_views`（1 条） | 64/64 |
-| `xiyou_gear_detail` | `review7_description_rerender`（1 条） | 通过 |
+| `xiyou_gear_detail` | `review7_description_rerender`（1 条） | 56/56 |
 
 反向验证（手动把被测文件换回修之前跑）：第 5 条 `review5_preview_skips_bought` 失败、第 8 条 `review8_recast_hits_have_views` 失败；第 1、2 条的「开关关」断言本身就是复现。
 
-选测：`选测.py main --list` 因改了 `battle_logic.gd` 选出 284 个场景（战斗核心全套）。这次 `battle_logic.gd` 只给天启篇三处 `end_action` 的返回值包 `mark_views`，不在天启篇战斗里时这三处返回空数组，`mark_views` 什么也不做，所以没跑 `xiyou_rules*`、`xiyou_smart_ai*`、事件对照这几大类；跑了全部 31 个 `xiyou_tianqi_*`，以及 `xiyou_determinism`、`xiyou_param_cache`、`xiyou_rift_alien`、`xiyou_gojo`、`xiyou_gear_detail`、`xiyou_alien_workshop`、`xiyou_alien_config`、`xiyou_fabao_rework`、`xiyou_bulk_pills`。没改 `battler.gd`／原版缓存语义，所以没加跑 `--oracle`。
+选测：`选测.py main --list` 因改了 `battle_logic.gd` 选出 284 个场景（战斗核心全套）。这次 `battle_logic.gd` 只给天启篇三处 `end_action` 的返回值包 `mark_views`，不在天启篇战斗里时这三处返回空数组，`mark_views` 什么也不做，所以没跑 `xiyou_rules*`、`xiyou_smart_ai*`、事件对照这几大类；跑了全部 31 个 `xiyou_tianqi_*`（773 秒，全部通过），以及 `xiyou_determinism`、`xiyou_param_cache`、`xiyou_rift_alien`、`xiyou_gojo`、`xiyou_gear_detail`、`xiyou_alien_workshop`、`xiyou_alien_config`、`xiyou_fabao_rework`、`xiyou_bulk_pills`。没改 `battler.gd`／原版缓存语义，所以没加跑 `--oracle`。另跑 `语法检查.py`、`工具回归.py`，都通过。
 
 ## 变更记录草稿
 
@@ -76,3 +76,4 @@
 - 02034680e 法宝喂养预览与实喂同一套判断、法宝测例固定品质
 - 301a756ff 异化新词条收益按真实级出文案、天启篇行动末尾追加命中补画面快照
 - 18af3dca6 装备详情缓存键加说明、两处陈旧注释
+- 236b91773 交付单、优化号占位分号
