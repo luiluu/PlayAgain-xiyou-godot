@@ -8,6 +8,9 @@ extends Control
 ## 下载中可以取消，已下的部分留着下次接着下。XUpdateInstall.ENABLED 关着时照「要换整包」提示去 QQ 群。
 ## 正在用补丁时页面下方有「退回安装包自带版本」（点两次才执行）；启动失败被自动退回、或版本被撤回时在这里说明。
 ## 确定／取消键、点按钮、点页面外的暗处都能关。不自动打开网页、不下载任何东西。
+## 强制更新（open_forced，XForceUpdate 在进标题前盖上来，Kyo 11-14）：同一页的另一种样子——底色不透明、关不掉（取消键、
+## 点暗处都不关），右边的按钮是「退出游戏」；能装补丁时「更新」，下载失败「再试一次」并给手动下载链接，
+## 底包太旧（只能换整包）只给手动下载。链接取清单的 download_url，没有就照旧指 QQ 群。玩家点了才打开浏览器。
 
 signal closed
 
@@ -18,6 +21,8 @@ const SCROLL_STEP := 72.0
 
 ## 换掉下载安装那一步（测试用）：Callable(page: XUpdatePage, result: Dictionary)。空＝用 XUpdateInstall。
 static var patch_installer: Callable
+## 换掉「打开网页」（测试用）：Callable(url: String)。空＝OS.shell_open（安卓会打开系统浏览器）。
+static var link_opener: Callable
 
 const DOWNLOADING := "downloading"
 const READY := "ready"          # 已下载登记好，等重启
@@ -39,6 +44,12 @@ var _form: Button  # 反馈问卷按钮（没有问卷时为 null）
 var _rollback_armed := false
 var _notice := ""
 var installer: XUpdateInstall
+## 强制更新模式（open_forced 建的）：关不掉，只能更新、手动下载或退出游戏
+var forced := false
+var _forced_result: Dictionary = {}
+var _action := ""   # 强制模式下主按钮做什么：install／retry／link／cancel／restart
+var _link: Button   # 强制模式：下载失败时的「手动下载」按钮
+var _recheck: Button  # 强制模式：只能整包时的「重新检查」（重新拉清单，不因失败次数放行）
 
 
 ## 页面放进单独的 CanvasLayer（盖在标题、logo 和一切画面之上，按整个视口居中），挂在 host 下，关页面时一起删。
@@ -51,6 +62,70 @@ static func open(host: Node) -> XUpdatePage:
 	layer.add_child(p)
 	host.add_child(layer)
 	return p
+
+
+## 强制更新框（XForceUpdate 用）：result 是 XUpdateClient.check 的结果（forced＝true），或 {"state": "checking"}（还在查）。
+static func open_forced(host: Node, result: Dictionary) -> XUpdatePage:
+	var layer := CanvasLayer.new()
+	layer.name = "UpdateLayer"
+	layer.layer = LAYER
+	var p := XUpdatePage.new()
+	p.name = "UpdatePage"
+	p.forced = true
+	p._forced_result = result
+	layer.add_child(p)
+	host.add_child(layer)
+	return p
+
+
+## 手动下载的去处：清单的 download_url（https）；没有就是空（文字里照旧指 QQ 群）
+static func download_link(result: Dictionary) -> String:
+	var u = result.get("download_url", "")
+	return u if u is String and u.begins_with("https://") else ""
+
+
+## 强制更新各状态的文字（纯函数）。比 texts 多一个 action：主按钮做什么。
+static func forced_texts(result: Dictionary, can_install: bool) -> Dictionary:
+	var cur := str(result.get("current", ""))
+	var ver := str(result.get("version", ""))
+	var url := download_link(result)
+	var manual := ("手动下载：%s\n（也可以%s %s）" % [url, GROUP_HINT, ver]) if url != "" else "%s %s" % [GROUP_HINT, ver]
+	match str(result.get("state", "")):
+		"checking":
+			return {"title": "检查更新", "body": "正在检查更新……", "primary": "", "action": ""}
+		XUpdateCheck.PATCH, XUpdateCheck.FULL:
+			var lines := PackedStringArray()
+			var installable: bool = result["state"] == XUpdateCheck.PATCH and can_install
+			lines.append("当前版本 %s 已不能继续游戏，请更新到 %s。" % [cur, ver])
+			if installable:
+				lines.append("更新大小 %s，下载完重启游戏即可，存档会先备份。" % size_text(int(result.get("patch", {}).get("size", 0))))
+			else:
+				lines.append("这个版本要换新的安装包，游戏内更新不了。")
+				lines.append(manual)
+			var notes: Array = Array(result.get("notes", PackedStringArray()))
+			if not notes.is_empty():
+				lines.append("")
+				lines.append("更新内容")
+				for n in notes:
+					lines.append("· " + str(n))
+			if installable:
+				return {"title": "需要更新", "body": "\n".join(lines), "primary": "更新", "action": "install"}
+			return {"title": "需要更新", "body": "\n".join(lines), "primary": "打开下载页" if url != "" else "", "action": "link" if url != "" else ""}
+		DOWNLOADING:
+			var t := texts(result, true)
+			t["body"] = "%s / %s\n可以取消，已下的部分会留着。" % [size_text(int(result.get("done", 0))), size_text(int(result.get("total", 0)))]
+			t["action"] = "cancel"
+			return t
+		FAILED:
+			return {"title": "更新没完成", "body": "%s\n可以再试一次（已下的部分接着下），或者%s" % [result.get("message", "网络不通或空间不够。"), manual],
+				"primary": "再试一次", "action": "retry"}
+		READY:
+			var t := texts(result, true)
+			t["action"] = "restart"
+			return t
+	var t := texts(result, can_install)
+	t["action"] = ""
+	return t
 
 
 ## 各状态显示的标题和正文（纯函数，测试直接比文字）。
@@ -107,7 +182,7 @@ func _ready() -> void:
 	theme = XUI.theme()
 	var dim := ColorRect.new()
 	dim.name = "Dim"
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(0, 0, 0, 0.95 if forced else 0.72)  # 强制更新：标题整个盖住
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
@@ -164,10 +239,23 @@ func _ready() -> void:
 	_primary.name = "Primary"
 	_primary.pressed.connect(_on_primary)
 	_buttons.add_child(_primary)
-	_close = _make_button("关闭")
+	_close = _make_button("退出游戏" if forced else "关闭")
 	_close.name = "Close"
-	_close.pressed.connect(close_page)
+	_close.pressed.connect(_on_close)
 	_buttons.add_child(_close)
+	if forced:
+		_link = _make_button("手动下载")
+		_link.name = "Link"
+		_link.pressed.connect(_open_link)
+		_link.visible = false
+		_buttons.add_child(_link)
+		_buttons.move_child(_link, 1)
+		_recheck = _make_button("重新检查")
+		_recheck.name = "Recheck"
+		_recheck.pressed.connect(_on_recheck)
+		_recheck.visible = false
+		_buttons.add_child(_recheck)
+		_buttons.move_child(_recheck, 2)
 	# 反馈群（XFeedback）：按钮下面一行，点一下复制群号；不抢焦点，确定／取消键照旧
 	if XFeedback.SHOW:
 		var fb := XFeedback.make_button(18)
@@ -183,7 +271,7 @@ func _ready() -> void:
 	_rollback.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_rollback.add_theme_font_size_override("font_size", 18)
 	_rollback.pressed.connect(_on_rollback)
-	_rollback.visible = bool(XUpdateInstall.BootPatchScript.result.get("loaded", false))
+	_rollback.visible = bool(XUpdateInstall.BootPatchScript.result.get("loaded", false)) and not forced
 	box.add_child(_rollback)
 	_fit()
 	installer = XUpdateInstall.instance(get_tree())
@@ -193,6 +281,9 @@ func _ready() -> void:
 		_notice = "上次的更新 %s 没能用上（%s），已退回。\n" % [XUpdateCheck.version_of(int(rb.get("code", 0))), rb.get("reason", "")]
 	client = XUpdateClient.instance(get_tree())
 	var pending := XUpdateInstall.pending_code()
+	if forced:
+		show_forced(_forced_result)
+		return
 	if pending > 0:  # 已经下好登记了，只差重启
 		show_result({"state": READY, "version": XUpdateCheck.version_of(pending)})
 		return
@@ -210,15 +301,37 @@ func _check() -> void:
 	show_result(r)
 
 
+## 强制更新框换成查到的结果（XForceUpdate 查完时调；还在查时给 {"state": "checking"}）。
+## 已经下好、只差重启的补丁够新时直接显示「已准备好」。
+func show_forced(result: Dictionary) -> void:
+	_forced_result = result
+	var pending := XUpdateInstall.pending_code()
+	if pending > 0 and pending >= int(result.get("min_playable", 0)) and str(result.get("state", "")) != "checking":
+		show_result({"state": READY, "version": XUpdateCheck.version_of(pending), "download_url": download_link(result)})
+		return
+	show_result(result)
+
+
 func show_result(result: Dictionary) -> void:
 	state = str(result.get("state", XUpdateCheck.BAD))
+	if forced and download_link(result) == "" and download_link(_forced_result) != "":
+		result["download_url"] = _forced_result["download_url"]  # 下载中、失败这些状态也带着手动下载链接
 	set_meta("result", result)
-	var t := texts(result, patch_installer.is_valid() or XUpdateInstall.ENABLED)
+	var can_install := patch_installer.is_valid() or XUpdateInstall.ENABLED
+	var t := forced_texts(result, can_install) if forced else texts(result, can_install)
+	_action = str(t.get("action", ""))
 	_title.text = t["title"]
 	_set_body(_notice + t["body"])
 	_primary.visible = t["primary"] != ""
 	_primary.text = t["primary"] if t["primary"] != "" else "立即更新"
-	_close.text = "稍后再说" if state == XUpdateCheck.PATCH and _primary.visible else "关闭"
+	if forced:
+		_close.text = "退出游戏"
+		# 失败时、或上次的更新没用上（_notice）时，旁边给「手动下载」（主按钮已经是打开下载页时不重复）
+		_link.visible = download_link(result) != "" and _action != "link" and (state == FAILED or _notice != "")
+		_recheck.visible = state == XUpdateCheck.FULL or (state == XUpdateCheck.PATCH and _action != "install")
+		_recheck.disabled = false
+	else:
+		_close.text = "稍后再说" if state == XUpdateCheck.PATCH and _primary.visible else "关闭"
 	_scroll.scroll_vertical = 0
 	_focus_default.call_deferred()
 
@@ -268,7 +381,7 @@ func _focus_default() -> void:
 
 func _focus_buttons() -> Array[Button]:
 	var out: Array[Button] = []
-	for b in [_primary, _close, _rollback]:
+	for b in [_primary, _link, _recheck, _close, _rollback]:
 		if b != null and b.visible:
 			out.append(b)
 	return out
@@ -307,6 +420,17 @@ func _make_button(text: String) -> Button:
 
 
 func _on_primary() -> void:
+	if forced:
+		match _action:
+			"link":
+				_open_link()
+				return
+			"install":
+				if patch_installer.is_valid():
+					patch_installer.call(self, get_meta("result"))
+				else:
+					_install(get_meta("result"))
+				return
 	match state:
 		XUpdateCheck.PATCH:
 			if patch_installer.is_valid():
@@ -348,7 +472,7 @@ func _on_progress(done: int, total: int) -> void:
 		var r: Dictionary = get_meta("result")
 		r["done"] = done
 		r["total"] = total
-		_body.text = _notice + texts(r, true)["body"]
+		_body.text = _notice + (forced_texts(r, true) if forced else texts(r, true))["body"]
 
 
 func _on_rollback() -> void:
@@ -361,6 +485,56 @@ func _on_rollback() -> void:
 	show_result({"state": ROLLED})
 
 
+## 强制更新「重新检查」：重新拉清单。不用再强制了（Kyo 调低了 min_playable、或已是最新）就关框放行；
+## 还要强制就换成新结果；连不上就留在框里提示，不因为查不到放行（启动时连不上才放行）。
+func _on_recheck() -> void:
+	if client == null or client.checking:
+		return
+	_recheck.disabled = true
+	_recheck.text = "正在检查……"
+	var r: Dictionary = await client.check()
+	if not is_inside_tree():
+		return
+	_recheck.text = "重新检查"
+	_recheck.disabled = false
+	if str(r.get("state", "")) == XUpdateCheck.BAD:
+		show_result(get_meta("result"))
+		_set_body("暂时连不上更新服务器，请稍后再点「重新检查」。\n" + _body.text)
+		return
+	XForceUpdate.result = r
+	if not XForceUpdate.blocks(r):
+		close_page()
+		return
+	show_forced(r)
+
+
+## 右边的按钮：平时是关闭；强制更新时是退出游戏
+func _on_close() -> void:
+	if forced:
+		get_tree().quit()
+	else:
+		close_page()
+
+
+## 打开手动下载页（系统浏览器；安卓打开默认浏览器），同时把链接复制到剪贴板，打不开也能自己粘贴
+func _open_link() -> void:
+	var url := download_link(get_meta("result", {}))
+	if url == "":
+		url = download_link(_forced_result)
+	if url == "":
+		return
+	DisplayServer.clipboard_set(url)
+	if link_opener.is_valid():
+		link_opener.call(url)
+	else:
+		OS.shell_open(url)
+	if _link != null and _link.visible:
+		_link.text = "已打开（链接已复制）"
+	elif _action == "link":
+		_primary.text = "已打开（链接已复制）"
+
+
+## 关掉这一页。强制更新框只由 XForceUpdate 关（查完不用拦、或等太久放行），玩家的按键、点击关不掉。
 func close_page() -> void:
 	if is_queued_for_deletion():
 		return
@@ -376,7 +550,7 @@ func _gui_input(event: InputEvent) -> void:
 	# 点到框外的暗处才关（框里的空白、滚轮都不算）
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 		accept_event()
-		if not _panel.get_global_rect().has_point(event.global_position):
+		if not forced and not _panel.get_global_rect().has_point(event.global_position):
 			close_page()
 
 
@@ -389,7 +563,8 @@ func _input(event: InputEvent) -> void:
 	if is_queued_for_deletion() or not event.is_pressed():
 		return
 	if event.is_action_pressed("ui_cancel"):
-		close_page()
+		if not forced:  # 强制更新关不掉
+			close_page()
 	elif event.is_action_pressed("ui_accept"):
 		focused_button().pressed.emit()
 	elif event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_focus_prev", true):

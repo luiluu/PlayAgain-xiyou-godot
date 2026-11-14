@@ -34,6 +34,7 @@ func _ready() -> void:
 		back.pressed.connect(GameApp.return_to_menu)
 		column.add_child(back)
 		return
+	XForceUpdate.begin(get_tree())  # 强制更新（Kyo 11-14）：片头、声明屏放的时候后台查清单，出标题时按结果拦或放行
 	XScreenScale.apply(XConfig.flag(XScreenScale.KEY), get_tree())  # 画面平滑（玩家反馈 v0.01；v0.01.06 起各平台默认关）
 	XSpeedGear.apply()  # 原版 Drill_SpeedGear：整个游戏每秒 96 帧（1.6 倍），见 speed_gear.gd
 	XGraphics.apply(get_tree())  # 画质设置：整数倍缩放、帧率上限、窗口大小、省电模式（默认都不干预）
@@ -173,6 +174,7 @@ func _title() -> void:
 	# 原版 selectLast：上回按过的项 → 有存档选「旧的回忆」（XTianqiTitle.initial_index，MV_SELECT_LAST 关掉回第一项）
 	_sel = XTianqiTitle.initial_index(_commands.map(func(c): return [str(c.get("key", "")), bool(c.enabled)]))
 	_select(_sel, true)
+	XForceUpdate.on_title(self, _layer)
 
 
 ## 天启篇新标题（XTianqiTitle，O-306）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
@@ -214,6 +216,7 @@ func _tq_build_title() -> void:
 	if not client.checked.is_connected(_tq_on_update_checked):
 		client.checked.connect(_tq_on_update_checked)
 	client.auto_check()
+	XForceUpdate.on_title(self, _layer)  # 低于清单的最低可玩版本：盖强制更新框，不能进标题
 
 
 func _tq_on_update_checked(_result: Dictionary) -> void:

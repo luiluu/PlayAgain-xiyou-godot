@@ -31,6 +31,7 @@
 - `云端准备.sh`：Claude 云端会话里装 Godot Linux 版、解开转换产物，让 Godot 测试和 `检查.sh` 能在云端跑（`检查.sh` 的 `GODOT` 可用环境变量覆盖），见[云端测试](./云端测试.md)。
 - `待核查.py`：由提交尾注（`核查: 待Codex|待Claude`）减去变更记录里的核查条目，生成待交叉核查清单，`检查.sh` 每次打印；规则见[文件职责与记录](../../00_项目管理/规则/文件职责与记录.md)「待交叉核查清单」。
 - `变更记录分卷.py split`：总装合并时把较早的变更记录整条移进 `00_项目管理/变更记录卷/`；`--check` 供 `检查.sh` 核对历史只追加。
+- `发布补丁.py`：导补丁、写版本清单 `channel.json`、签名、备好两个发版仓库的本机提交（不推送），用法见文件头注释。强制更新（Kyo 11-14）：`--min-playable <开发编号>｜latest｜0` 设最低可玩版本（低于它的客户端进标题前必须更新；0 取消），`--download-url <https 地址>｜none` 设强制更新框的手动下载页；两项不给就沿用原值，设了强制却没有下载页时自动填 Gitee 发行版页面（Kyo 11-14）。说明见 [发布 README](../05_发布/README.md)「强制更新」。
 - `开发编号.py`：不带参数时显示开发编号；`bump "说明"` 递增编号，并同步 `开发编号.json`、`project.godot` 与 `build_info.json`。
 
 - `并行测试.py`：并行运行 `tests/*.tscn`（主工作区默认 CPU 数一半、最多 6 个，worktree 里默认 2 个，`CHECK_JOBS` 可改；每个测试独立临时 HOME，不碰真实用户数据）。按上次耗时慢的先跑；所有工作树共用并发上限 `CHECK_GLOBAL_JOBS`（默认 CPU 数一半）；整轮运行时工程指纹没变就沿用上轮通过的场景、只重跑失败的（`--full`／`CHECK_FULL=1` 强制整轮，`检查.sh --full` 传过去）；共用状态（耗时、整轮结果、偶发记录 flaky.jsonl）在 `.git/xiyou_test_state/`。`检查.sh` 调用它；也可跟场景名前缀只跑几个专项（指定场景时不沿用）。单跑一个场景（在本目录下）：`python3 并行测试.py ./godot ../01_Godot工程 --full <场景名>`，如 `xiyou_floor_reach069`；不要裸跑 `godot --path ... tests/x.tscn`，那样读本机 `options.json`（真实 user://），会误报。
