@@ -301,6 +301,14 @@ func _guardian_and_dungeon() -> void:
 	s.gain_gear("weapon", 1, 2)
 	XTianqiDrop.mark_bought(s, before + 1)
 	_check("bought_marked", not XTianqiDrop.feed_blocked(s, s.gear[before]) and XTianqiDrop.feed_blocked(s, s.gear[before + 1]))
+	# 评审 v0.1 第 5 条：法宝喂养预览与实喂同口径，商店货预览也不算
+	var fb := XGear.template("armor", 125)
+	fb.level = 1.0
+	fb.exp = 0.0
+	var pv_bought := XFabaoFeed.feed(s, fb, [s.gear[before + 1]], null, true)
+	var pv_own := XFabaoFeed.feed(s, fb, [s.gear[before]], null, true)
+	_check("review5_preview_skips_bought", int(pv_bought.used) == 0 and pv_bought.skipped.size() == 1 and str(pv_bought.skipped[0].reason) == XFabaoFeed.reason(s, fb, s.gear[before + 1]) and XFabaoFeed.reason(s, fb, s.gear[before + 1]) == "商店买的不能喂", [pv_bought, XFabaoFeed.reason(s, fb, s.gear[before + 1])])
+	_check("review5_preview_keeps_own", int(pv_own.used) == 1 and XFabaoFeed.reason(s, fb, s.gear[before]) == "", [pv_own, XFabaoFeed.reason(s, fb, s.gear[before])])
 	XTianqiDrop.NO_FEED_BOUGHT = false
 	_check("switch_feed_bought", not XTianqiDrop.feed_blocked(s, s.gear[before + 1]))
 	XTianqiDrop.NO_FEED_BOUGHT = true

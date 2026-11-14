@@ -213,6 +213,8 @@ func _bag(s: XState, base: int, n: int) -> Array:
 	var out := []
 	for i in n:
 		var it := XGear.create("armor", base, s)
+		# 掷词缀可能把品质抬上去（评审 v0.1 第 9 条：并行时偶发「不朽」，exp／件数对不上），固定成模板的品质
+		it.meta.quality = XGear.template("armor", base).get("meta", {}).get("quality", it.meta.get("quality", "0"))
 		s.gear.append(it)
 		s.register_gear(it)
 		out.append(it)
@@ -295,9 +297,13 @@ func guardian() -> void:
 		[XGuardianRework.elem_factor(20), XGuardianRework.elem_factor(33), XGuardianRework.elem_factor(5)])
 	s.flags["tianqi"] = {"rules": 1}
 	var g24 := XEnemy.new().setup(527, 3, 100.0)
+	# 天启篇元素重做开着时 element_rate 走牌组、XDamage 不再调 resistance；这里测的是关掉元素重做时的 ELEM 回退路径
+	var elem_was := XTianqiElements.ENABLED
+	XTianqiElements.ENABLED = false
 	var r1 := XGuardianRework.resistance(g24, g24.element_rate(1))
 	var r14 := XGuardianRework.resistance(g24, g24.element_rate(14))
 	check("guardian.elem_resist", is_equal_approx(r1, 1.0) and is_equal_approx(r14, 1.0) and is_equal_approx(g24.element_rate(1), 0.5), [r1, r14, g24.element_rate(1)])
+	XTianqiElements.ENABLED = elem_was
 	s.flags.erase("tianqi")
 	check("guardian.floor_of", XGuardianRework.floor_of(527) == 24 and XGuardianRework.floor_of(537) == 33 and XGuardianRework.floor_of(1) == 0,
 		[XGuardianRework.floor_of(527), XGuardianRework.floor_of(537)])

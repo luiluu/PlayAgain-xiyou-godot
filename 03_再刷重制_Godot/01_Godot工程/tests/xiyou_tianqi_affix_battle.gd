@@ -344,6 +344,13 @@ func _actions() -> void:
 		_check("recast_no_chain", int(XTianqiAffixBattle._store(lg2).depth) == 0)
 		var none := XTianqiAffixBattle.end_action(lg2, u, real)
 		_check("recast_needs_action", none.is_empty())
+		# 评审 v0.1 第 8 条：走整次行动时，再释放那一下的命中也带画面快照（血条跟着动）
+		tgt.hp = tgt.mhp
+		lg2.current_order.clear()
+		var acted := lg2.act(u, real, tgt)
+		var hits := acted.filter(func(l): return l is Dictionary and l.get("type") == "hit")
+		var acts := acted.filter(func(l): return l is Dictionary and l.get("type") == "action" and is_same(l.get("user"), u))
+		_check("review8_recast_hits_have_views", acts.size() >= 2 and hits.size() >= 2 and hits.all(func(l): return l.has("views")), [acts.size(), hits.size(), hits.map(func(l): return l.has("views"))])
 	lg2.end_battle(0)
 
 

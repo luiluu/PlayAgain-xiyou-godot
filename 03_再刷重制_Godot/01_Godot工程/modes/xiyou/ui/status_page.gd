@@ -352,7 +352,8 @@ static func _resist_ops(a: XActor) -> Array:
 	var cache := a.passive_cache()
 	for e in range(1, elements.size()):
 		var x := left + 120
-		ops.append(_t(str(elements[e]) if str(elements[e]) != "" else "元素%d" % e, x, y, name_w, "left", _element_color(e)))
+		var el_label := "无属性" if (e == 1 and XTianqiElements.deck_on()) else (str(elements[e]) if str(elements[e]) != "" else "元素%d" % e)
+		ops.append(_t(el_label, x, y, name_w, "left", _element_color(0 if (e == 1 and XTianqiElements.deck_on()) else e)))
 		x += name_w + gap
 		ops.append(_t(_pct2(XDamage.element_bonus(a, e)), x, y, passive_w, "center"))
 		x += passive_w + gap

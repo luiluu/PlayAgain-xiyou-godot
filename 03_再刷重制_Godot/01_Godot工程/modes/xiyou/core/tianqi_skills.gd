@@ -1,7 +1,7 @@
 class_name XTianqiSkills
 extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇全角色技能重构（设计仓库《天启篇_全角色技能重构_v0.1》，Kyo 11-12 全部确认）。只对天启篇存档（XTianqi.active）生效，原版档不变。
-## 数据：modes/xiyou/tianqi_data/skill_rework.json（只读）。分期补卡，第一期：全局规则、档位名单、狗逍遥与绿司机两张卡、共用的超越极限 I～IV。
+## 数据：modes/xiyou/tianqi_data/skill_rework.json（只读）。分期补卡（第一期是全局规则、档位名单、狗逍遥与绿司机两张卡、共用的超越极限 I～IV；之后各期已补到表里全部角色，以 skill_rework.json 为准）。
 ##
 ## 怎么接：
 ## - 技能记录：XDB.rec("Skills", id) 遇到表里有的技能、且当前是天启篇存档时，换成改写后的副本（rec）。改写只动表里写的字段：
@@ -1417,7 +1417,7 @@ static func end_action(logic, u, skill) -> Array:
 	follow_scale = float(hit[2])
 	for t in targets:
 		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
-		logs.append(logic.apply(u, cast, t))
+		logs.append_array(logic.mark_views([logic.apply(u, cast, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 	follow_scale = 1.0
 	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
 	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
@@ -1429,7 +1429,7 @@ static func end_action(logic, u, skill) -> Array:
 		var left: Array = logic.alive(logic.enemies) if on_kill else targets.filter(func(t): return t.is_alive())
 		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
 			logs.append({"type": "action", "user": u, "skill": nxt, "views": logic.views()})
-			logs.append(logic.apply(u, nxt, left[0]))
+			logs.append_array(logic.mark_views([logic.apply(u, nxt, left[0])]))
 	st.depth = int(st.depth) - 1
 	return logs
 
