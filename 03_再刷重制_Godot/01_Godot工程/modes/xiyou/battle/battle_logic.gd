@@ -2812,7 +2812,8 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				r.mp = execute_mp_damage(u, t, value, type == 6)
 				XRaceBattle.after_mp(self, skill, t, mp_before)
 		r.record_hp += floorf(maxf(0.0, float(r.hp)))
-		_establish(u, t, r)
+		if not XTianqiElements.immune_hit(self, u, skill, dt, r):
+			_establish(u, t, r)  # 天启篇元素免疫（0%）跳过零伤害触发链：respond／establish 不跑
 	for eff in skill.get("effects", []):
 		_effect(u, t, eff, r)
 	_otb_target_shift(skill, t)

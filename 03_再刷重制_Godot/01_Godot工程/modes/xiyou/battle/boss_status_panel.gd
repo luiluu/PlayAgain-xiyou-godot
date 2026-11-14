@@ -47,6 +47,7 @@ const FRAME_BACK := Color8(24, 24, 34, 230)
 var enemies_source: Callable  # -> Array：本场敌人
 var target_source: Callable  # -> 选目标时选中的战斗者，没在选为空
 var help_source: Callable  # -> Rect2：正在显示的说明卡，没有时大小为 0
+var logic_source: Callable  # -> 本场 BattleLogic：天启篇元素牌组按实际结算的模式（35 层影子／生存）显示
 var battler = null
 var open := false
 var page := 0
@@ -140,7 +141,7 @@ func _process(_delta: float) -> void:
 func _tq_profile() -> Dictionary:
 	if battler == null or not XTianqiElements.deck_on():
 		return {}
-	var p := XTianqiElements.enemy_profile(battler, null, XState.current)
+	var p := XTianqiElements.enemy_profile(battler, logic_source.call() if logic_source.is_valid() else null, XState.current)
 	if (p.get("weak", []) as Array).is_empty() and (p.get("resist", []) as Array).is_empty() and (p.get("immune", []) as Array).is_empty():
 		return {}
 	return p

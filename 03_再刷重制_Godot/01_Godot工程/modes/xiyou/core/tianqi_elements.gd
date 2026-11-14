@@ -102,13 +102,22 @@ static func store(s: XState) -> Dictionary:
 	var tq: Dictionary = s.flags.tianqi
 	if not tq.get("elements") is Dictionary:
 		tq["elements"] = {
-			"seed": randi(),
+			"seed": derived_seed(s),
 			"floors": {},
 			"fixed": {},
 			"dropped_books": {},
 			"book_fails": {},
 		}
 	return tq.elements
+
+
+## 首次建牌组的种子：由存档自带的宝珠种子（orb_seed，新游戏随机、随存档保存，旧档读档时按存档内容算出）
+## 加难度派生，不吃全局 randi 和战斗随机流。旧天启篇档（没有 elements 字段）不存档重读，牌组不变（gpt 核查 P2-1）
+static func derived_seed(s: XState) -> int:
+	if s == null:
+		return 1
+	var diff := str(s.flags.get("tianqi", {}).get("difficulty", "")) if s.flags.get("tianqi") is Dictionary else ""
+	return XOrbs.hash32(JSON.stringify(["tianqi_elements", int(s.orb_seed), diff])) & 0x7fffffff
 
 
 static func ensure_deck(s: XState, rng_seed := -1) -> Dictionary:
@@ -120,15 +129,20 @@ static func ensure_deck(s: XState, rng_seed := -1) -> Dictionary:
 		st["floors"] = {}
 	if st.floors.size() == 33:
 		for k in st.floors:
-			var r = st.floors[k]
-			if r is Dictionary:
-				for fld in ["weak", "resist", "immune"]:
-					var arr = r.get(fld)
-					if arr is Array and not arr.is_empty() and not (arr[0] is int):
-						r[fld] = arr.map(func(x): return int(x))
+			_norm_entry(st.floors[k])
 		return st.floors
 	st.floors = _generate_floor_deck(int(st.get("seed", 1)))
 	return st.floors
+
+
+## 读档后 JSON 数字是浮点：牌组条目的弱／抗／免列表归一成整数（层牌组与固定入口共用）
+static func _norm_entry(r) -> void:
+	if not (r is Dictionary):
+		return
+	for fld in ["weak", "resist", "immune"]:
+		var arr = r.get(fld)
+		if arr is Array and arr.any(func(x): return not (x is int)):
+			r[fld] = arr.map(func(x): return int(x))
 
 
 static func floor_deck(s: XState, floor_no: int) -> Dictionary:
@@ -333,6 +347,8 @@ static func fixed_deal(s: XState, key: String, phase := 1) -> Dictionary:
 		return {"weak": [], "resist": [], "immune": []}
 	var st := store(s)
 	var fixed: Dictionary = st.fixed
+	for fk in fixed:
+		_norm_entry(fixed[fk])  # 读档后的浮点归一（条目数个位数）
 	if key == "knight":
 		var base_key := "knight:%d" % clampi(phase, 1, 3)
 		if not fixed.has("knight:1"):
@@ -626,6 +642,19 @@ static func has_void_engulfed(logic, target) -> bool:
 	if logic == null or not higher_on(logic.state):
 		return false
 	return bool(_battle(logic).get("void_engulfed", {}).get(target, false))
+
+
+## 本次 HP 伤害是天启篇元素免疫命中（0%）：BattleLogic._apply 据此跳过 respond／establish 零伤害触发链（gpt 核查 P2-3）。
+## 条件与 after_apply 的免疫分支一致；西游档（on() 为假）恒为假
+static func immune_hit(logic, u: XBattler, skill: Dictionary, t: XBattler, r: Dictionary) -> bool:
+	if logic == null or not on(logic.state):
+		return false
+	if not (u is XActor) or not (t is XEnemy):
+		return false
+	if not (int(skill.get("damage", {}).get("type", 0)) in [1, 5]):
+		return false
+	var row: Dictionary = r.get("best_row", {})
+	return str(row.get("tianqiKind", "")) == "immune" and float(row.get("resistance", 1.0)) == 0.0
 
 
 ## after_apply 入口：处理免疫弹字标记、虚空吞没、弱点暴露

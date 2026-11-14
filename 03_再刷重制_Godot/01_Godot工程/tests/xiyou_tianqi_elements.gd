@@ -6,6 +6,8 @@ extends Node
 ## 四、弱点暴露 + 破绽取 max；高阶 11 虚空吞没 / 12 混沌随机 / 13 空间空蚀 15% 真伤；七印天卷 resist_down。
 ## 五、技能转属（水/风/虚空/混沌/Option A vs B/passiveELUP）、转换书（1039 改名/3101~3105/互斥/当铺/炼狱证道掉落）。
 ## 六、开关关闭与西游原版档完全不回归。
+## 七、gpt 甲档核查返修：旧档首建牌组由存档种子派生、Boss 面板按实际模式显示、免疫跳过 respond／establish、
+##     新编号不撞生成数据库、牌组 JSON 往返与固定入口浮点归一。
 
 var results: Array = []
 
@@ -72,6 +74,15 @@ func _enemy_floor(floor_no: int) -> XEnemy:
 	return e
 
 
+## 记 _establish（respond／establish 状态回调入口）调用次数
+class _EstablishCounter extends XBattleLogic:
+	var establish_calls := 0
+
+	func _establish(u: XBattler, t: XBattler, r: Dictionary) -> void:
+		establish_calls += 1
+		super(u, t, r)
+
+
 func _run() -> void:
 	seed(20261114)
 	_test_deck_invariants()
@@ -80,6 +91,7 @@ func _run() -> void:
 	_test_exposure_higher_qiyin()
 	_test_shifts_books_shop_drop()
 	_test_switches_and_west_regression()
+	_test_review_fixes()
 	XState.current = null
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -361,3 +373,114 @@ func _test_switches_and_west_regression() -> void:
 		and str(XDB.rec("Items", 1039).name) == "元素转换:风"
 		and int(XDB.rec("Skills", 1117).damage.elementId) == 14
 		and XTianqiElements.shop_goods(ws, 204, [[0, 1039, 0, 0]]).size() == 1)
+
+
+func _test_review_fixes() -> void:
+	# P2-1：旧天启篇档（无 elements 字段）首次建牌组由存档种子派生，不吃全局随机流；不存档重读牌组不变
+	var s := _tq_state()
+	s.flags.tianqi.erase("elements")
+	seed(4242)
+	var expect_next := randi()
+	seed(4242)
+	var deck_a := JSON.stringify(XTianqiElements.ensure_deck(s))
+	var seed_a := int(s.flags.tianqi.elements.seed)
+	_check("review1_first_deck_no_global_randi", randi() == expect_next)
+	s.flags.tianqi.erase("elements")
+	seed(9999)
+	var deck_b := JSON.stringify(XTianqiElements.ensure_deck(s))
+	_check("review1_old_save_reload_same_deck",
+		deck_a == deck_b and seed_a == int(s.flags.tianqi.elements.seed) and seed_a == XTianqiElements.derived_seed(s), [seed_a, s.flags.tianqi.elements.seed])
+	var s2 := _tq_state()
+	s2.orb_seed = s.orb_seed + 1
+	s2.flags.tianqi.erase("elements")
+	_check("review1_seed_follows_save", XTianqiElements.derived_seed(s2) != seed_a and XTianqiElements.validate_floor_deck(XTianqiElements.ensure_deck(s2)))
+	# 存档往返：to_dict → JSON → from_dict 后牌组、固定入口不变且是整数
+	XState.current = s
+	XTianqiElements.fixed_deal(s, "yingzi")
+	XTianqiElements.fixed_deal(s, "hongjun")
+	XTianqiElements.fixed_deal(s, "knight", 2)
+	var before := JSON.stringify(s.flags.tianqi.elements)
+	var s_rt := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	XState.current = s_rt
+	var floors_rt := XTianqiElements.ensure_deck(s_rt)
+	var yz := XTianqiElements.fixed_deal(s_rt, "yingzi")
+	var hj := XTianqiElements.fixed_deal(s_rt, "hongjun")
+	var kn := XTianqiElements.fixed_deal(s_rt, "knight", 2)
+	var all_int := true
+	for entry in [floors_rt["17"], yz, hj, kn]:
+		for fld in ["weak", "resist", "immune"]:
+			for x in entry[fld]:
+				if not (x is int):
+					all_int = false
+	var el_rt: Dictionary = s_rt.flags.tianqi.elements
+	var el0: Dictionary = s.flags.tianqi.elements
+	_check("review_save_roundtrip_deck_equal",
+		JSON.stringify(el_rt.floors) == JSON.stringify(el0.floors) and JSON.stringify(el_rt.fixed) == JSON.stringify(el0.fixed)
+		and int(el_rt.seed) == int(el0.seed) and int(s_rt.orb_seed) == int(s.orb_seed), [before, JSON.stringify(el_rt)])
+	_check("review_fixed_entries_float_normalized", all_int and yz.weak.size() == 2 and (yz.weak as Array).has(int(yz.weak[0])), [yz, hj, kn])
+	# 新编号 3101~3105／11201~11205／9101~9105 不撞生成数据库（原表该号为空或在表外），且没被别的表外补招占用
+	var clash := []
+	for pair in [["Items", 3101], ["Skills", 11201], ["CommonEvents", 9101]]:
+		var t: Array = XDB.table(pair[0])
+		for k in range(5):
+			var id: int = int(pair[1]) + k
+			if id < t.size() and t[id] != null:
+				clash.append("%s:%d" % [pair[0], id])
+			if pair[0] == "Skills" and XTianqiSkills.has_new(id):
+				clash.append("XTianqiSkills:%d" % id)
+	_check("review_new_ids_no_db_clash", clash.is_empty(), clash)
+	var synth_ok := true
+	for k in range(5):
+		if int(XDB.rec("Items", 3101 + k).get("id", 0)) != 3101 + k or int(XDB.rec("Skills", 11201 + k).get("id", 0)) != 11201 + k or int(XDB.rec("CommonEvents", 9101 + k).get("id", 0)) != 9101 + k:
+			synth_ok = false
+	_check("review_new_ids_resolve_to_synthetic", synth_ok)
+	# P2-2：Boss 面板传本场 logic，影子战显示 yingzi 牌组、生存战不显示骑士牌组
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var kb := XEnemy.new()
+	kb.setup(1, 3)
+	kb.horseman = {"rec": {"_ref": ""}, "knight": true}
+	var panel := XBossStatusPanel.new()
+	panel.battler = kb
+	panel.logic_source = func(): return lg
+	lg.set_meta(XTianqiHorsemen.META, {"mode": "shadow", "phase": 1})
+	var pp: Dictionary = panel._tq_profile()
+	var yd := XTianqiElements.fixed_deal(s, "yingzi")
+	_check("review2_panel_shadow_shows_yingzi",
+		str(pp.get("source", "")) == "yingzi" and JSON.stringify(pp.weak) == JSON.stringify(yd.weak) and pp.weak.size() == 2, pp)
+	lg.set_meta(XTianqiHorsemen.META, {"mode": "survival", "phase": 1})
+	_check("review2_panel_survival_no_knight_deck", panel._tq_profile().is_empty(), panel._tq_profile())
+	panel.free()
+	# P2-3：免疫命中跳过 respond／establish；中立命中照跑；西游档照跑
+	XTianqiElements.ensure_deck(s, 55112)
+	var a: XActor = s.battle_members()[0]
+	var lc := _EstablishCounter.new()
+	lc.setup(int(XGuardianRework.TROOPS[12]), s)
+	XTianqiElements.start(lc)
+	var boss: XEnemy = lc.enemies[0]
+	boss.recover_all()
+	var prof := XTianqiElements.enemy_profile(boss, lc, s)
+	var n_elem := 0
+	for e in XTianqiElements.BASE_ELEMENTS:
+		if not prof.weak.has(e) and not prof.resist.has(e) and not prof.immune.has(e):
+			n_elem = e
+			break
+	var r_imm := lc.apply(a, _skill_stub(98101, int(prof.immune[0]), 2, "1000"), boss)
+	var calls_imm := lc.establish_calls
+	var r_neu := lc.apply(a, _skill_stub(98102, n_elem, 2, "1000"), boss)
+	_check("review3_immune_skips_establish",
+		calls_imm == 0 and bool(r_imm.get("element_immune", false)) and float(r_imm.hp) == 0.0
+		and lc.establish_calls >= 1 and float(r_neu.hp) > 0.0, [calls_imm, lc.establish_calls, r_imm.hp, r_neu.hp])
+	XTianqiElements.ENABLED = false
+	var before_off := lc.establish_calls
+	lc.apply(a, _skill_stub(98103, int(prof.immune[0]), 2, "1000"), boss)
+	_check("review3_switch_off_establish_runs", lc.establish_calls > before_off)
+	XTianqiElements.ENABLED = true
+	var ws := _west_state()
+	var lw := _EstablishCounter.new()
+	lw.setup(2, ws)
+	var we: XEnemy = lw.enemies[0]
+	we.recover_all()
+	lw.apply(ws.battle_members()[0], _skill_stub(98104, 2, 2, "0"), we)
+	_check("review3_west_zero_damage_establish_runs", lw.establish_calls >= 1 and not XTianqiElements.immune_hit(lw, ws.battle_members()[0], _skill_stub(98104, 2), we, {"best_row": {"tianqiKind": "immune", "resistance": 0.0}}))

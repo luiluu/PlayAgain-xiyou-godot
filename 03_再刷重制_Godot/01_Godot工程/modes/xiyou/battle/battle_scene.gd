@@ -650,6 +650,7 @@ func _build_ui(vs: Vector2) -> void:
 	boss_panel.enemies_source = func(): return logic.enemies
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
 	boss_panel.help_source = _boss_panel_help_rect
+	boss_panel.logic_source = func(): return logic
 	ui.add_child(boss_panel)
 	# 天启篇本线计量（XTianqiMeter：火花、饥饿、死期、病灶）：自动／变速按钮下面；场上没有本线异化怪时不画
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
