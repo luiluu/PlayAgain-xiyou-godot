@@ -835,6 +835,7 @@ func register_gear(item: Dictionary) -> void:
 	else:
 		next_gear_id = maxi(next_gear_id,int(str(item.instanceId).get_slice(":",1))+1)
 	XOrbs.layout(item, orb_seed)
+	XTianqi.on_register(self, item)  # 天启篇装备随机身份 tq_seed_id：入包即分配（读档时 flags 还没读进来，由 from_dict 末尾 assign_all 补）
 
 func owns_gear(item: Dictionary) -> bool:
 	for e in gear:
@@ -1098,6 +1099,7 @@ static func from_dict(d: Dictionary) -> XState:
 	XPets.loaded(s)
 	XWeakChallenge.after_load(s)  # 弱者挑战 extractSaveContents 包装：按本局标记学／忘 10357（不回满）
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
+	XTianqi.assign_all(s)  # 天启篇装备随机身份：老件按固定顺序一次性补号（XTianqi.seed_id）
 	for a in s.actors.values():
 		a.param_mark_dirty()
 		a.param_refresh()

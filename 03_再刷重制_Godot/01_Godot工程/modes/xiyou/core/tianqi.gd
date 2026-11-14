@@ -83,22 +83,93 @@ static func save_roll(s: XState, key: String) -> Callable:
 	return func(): return st.next_float(key)
 
 
-## 装备的随机身份 tq_seed_id：第一次要掷时分配，写在装备字典上随物品走，一经分配永不重编
-## （instanceId、异化 uid 会在星辰仓库取出等路径上重编，不能当随机身份）。
-## 号＝由本档存档种子和本档单调计数 flags.tianqi.seed_id_n 派生的 64 位十六进制，跨存档也几乎不会撞号。
-## 复制装备的合法路径（魔冠账本重发、云裳订单发货）在复制时去掉它，复制品要用时另拿新号。
+## 装备的随机身份 tq_seed_id：写在装备字典上随物品走，一经分配永不重编（instanceId、异化 uid 会在星辰仓库取出等路径上重编，
+## 不能直接当随机身份）。号只取决于这件装备和本档存档种子，与先洗哪件、什么时候洗无关：
+##   - 入包登记时（XState.register_gear，天启篇存档里所有产生装备的入口都经它：掉落、商店、商人、揭开、事件赠送、七印、
+##     复制品重新登记）立刻分配：derive(orb_seed, "tq_seed_id|" + instanceId)，instanceId 在本档里唯一、登记后才定。
+##   - 读档（XState.from_dict 末尾）和新开天启篇档时 assign_all 给还没号的老件一次性补号，遍历顺序写死：
+##     背包 s.gear（列表顺序）→ 身上（角色号从小到大，每人 raw_equip_list 顺序）→ 各仓库（仓库名排序，类别按 XWarehouse.CATEGORIES，列表顺序）。
+##     已有号的不动；新派生的号和已有号撞了（只有原版仓库复制那种同 instanceId 的复制品会撞）就按这个顺序加后缀，结果只取决于存档内容。
+##   - 星辰仓库（跨存档）取出的老件在重编 instanceId 之前补号（before_renumber），号用旧 instanceId＋整件内容派生，与取出顺序无关。
+## 复制装备的合法路径（魔冠账本重发、云裳订单发货、仓库原版复制）在复制时去掉它，复制品重新登记时另拿新号。
+static func seeds_on(s: XState) -> bool:
+	return s != null and SEED_FROM_SAVE and active(s)
+
+
+static func _derive_seed_id(s: XState, who: String) -> String:
+	return XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tq_seed_id|" + who)
+
+
+static func _who(item: Dictionary) -> String:
+	var iid := str(item.get("instanceId", ""))
+	return iid if iid != "" else "noid|%d" % hash(JSON.stringify(item))
+
+
+static func has_seed_id(item) -> bool:
+	return item is Dictionary and XRandomStream.valid_hex(str(item.get("tq_seed_id", "")))
+
+
+## 入包登记时调（XState.register_gear）
+static func on_register(s: XState, item: Dictionary) -> void:
+	if seeds_on(s) and not has_seed_id(item):
+		item["tq_seed_id"] = _derive_seed_id(s, _who(item))
+
+
+## 星辰仓库取出、重编 instanceId 之前调：没号的老件用旧 instanceId＋整件内容补号
+static func before_renumber(s: XState, item: Dictionary) -> void:
+	if seeds_on(s) and not has_seed_id(item):
+		item["tq_seed_id"] = _derive_seed_id(s, "star|%s|%d" % [str(item.get("instanceId", "")), hash(JSON.stringify(item))])
+
+
+## 本档全部装备，按补号的固定顺序（见上）
+static func all_gear(s: XState) -> Array:
+	var out: Array = s.gear.filter(func(e): return e is Dictionary)
+	var ids := s.actors.keys()
+	ids.sort()
+	for id in ids:
+		for e in s.actors[id].raw_equip_list():
+			if e is Dictionary:
+				out.append(e)
+	var titles := s.warehouses.keys()
+	titles.sort()
+	for title in titles:
+		var items = s.warehouses[title].get("items", {})
+		for cat in XWarehouse.CATEGORIES:
+			for e in (items.get(cat, []) if items is Dictionary else []):
+				if e is Dictionary:
+					out.append(e)
+	return out
+
+
+## 给本档还没号的装备补号（读档、新开档时）；已有号的不动
+static func assign_all(s: XState) -> void:
+	if not seeds_on(s):
+		return
+	var list := all_gear(s)
+	var used := {}
+	for e in list:
+		if has_seed_id(e):
+			used[str(e.tq_seed_id)] = true
+	for e in list:
+		if has_seed_id(e):  # 同一件出现两次（不该有）时第二次已有号，跳过
+			continue
+		var who := _who(e)
+		var id := _derive_seed_id(s, who)
+		var k := 1
+		while used.has(id):
+			k += 1
+			id = _derive_seed_id(s, "%s|%d" % [who, k])
+		e["tq_seed_id"] = id
+		used[id] = true
+
+
+## 掷的时候取号；正常都已在登记／读档时分好，没有的（没经登记的装备）先整档补一遍再取
 static func seed_id(s: XState, item: Dictionary) -> String:
-	var id := str(item.get("tq_seed_id", ""))
-	if XRandomStream.valid_hex(id):
-		return id
-	var tq = s.flags.get("tianqi")
-	var n := 0
-	if tq is Dictionary:
-		n = int(tq.get("seed_id_n", 0))
-		tq["seed_id_n"] = n + 1
-	id = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "tq_seed_id|%d" % n)
-	item["tq_seed_id"] = id
-	return id
+	if not has_seed_id(item):
+		assign_all(s)
+	if not has_seed_id(item):
+		item["tq_seed_id"] = _derive_seed_id(s, _who(item))
+	return str(item.tq_seed_id)
 
 
 ## 装备的存档派生流：种子＝随机身份 tq_seed_id＋domain＋装备上的次数 tq_rng_n（随装备存进存档；老装备没有当 0），
@@ -285,6 +356,7 @@ static func start_new_game(slot: int, key: String, lineup: Array) -> XState:
 	XTianqiNoDiffPassive.mark_new_game(s)  # 开局不发难度被动：记迁移标记，关开关读档能补回（O-421）
 	XTianqiGojoTrial.mark_table(s)  # 五条悟两阶进阶：新档一开始就记进阶表版本，读档不当旧四阶折半
 	_pending = opening_commands(slot, key, lineup)
+	assign_all(s)  # 装备随机身份（seed_id）
 	return s
 
 

@@ -164,6 +164,67 @@ func _battle() -> void:
 	_check("battle_off_differs", not (off1 == off2 and off2 == off3), [off1, off2, off3])
 
 
+## 真实战斗结算入口（setup 里 XState.reserve_battle_random 取战斗流，rewards→grant）不钉战斗种子：
+## 掉哪几件由战斗奖励流决定，它的根 XState.random_master 只在运行时、不进存档（读档后现开一条），所以读档再打同一场
+## 掉落件本身就会不同——这一层是整局既有口径（招牌掉落另走存档里的掉落账，读档一样），不是词条流的问题。
+## 这里把这一层查清楚：①存档里没有 random_master；②读档后两次真打，只要战斗流的根一样（restore_runtime_random，正式的调试回放入口），
+## 整场掉落（敌人掉落、通用掉落、招牌掉落）连同词条完全一样；③根不同时掉落件可以不同（只记录，不断言相等）。
+func _real_run(map: int, troop: int, master: String) -> Dictionary:
+	var s := _load()
+	if s == null:
+		return {}
+	s.map_id = map
+	if master != "":
+		s.restore_runtime_random({"version": 1, "engine": XRandomStream.ENGINE, "master": master, "battleSerial": 0, "world": {}, "equipment": {}})
+	var before := s.gear.duplicate()
+	var lg := XBattleLogic.new()
+	lg.setup(troop, s)
+	for e in lg.enemies:
+		e.hp = 0
+		e.add_state(1)
+	var rw: Dictionary = lg.rewards()
+	lg.grant(rw)
+	lg.end_battle(0)
+	var got := []
+	for g in s.gear:
+		if not before.any(func(x): return is_same(x, g)):
+			got.append("%s:%d:%s" % [str(g.kind), int(g.base), JSON.stringify(g.get("tianqi_affixes", []))])
+	return {"master": s.random_master, "drops": JSON.stringify(rw.drops), "gear": got}
+
+
+func _real_battle() -> void:
+	var s := _state()
+	s.reserve_battle_random()  # 开出战斗流的根（运行时）
+	XSave.save(SLOT)
+	var text := FileAccess.get_file_as_string(XSave.path(SLOT))
+	_check("real_master_not_saved", s.random_master != "" and not text.contains(s.random_master), s.random_master)
+	var pick := []
+	for m in range(1, 400):
+		if XDungeon.map_floor(m) < 20 or not FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % m):
+			continue
+		var info := XDB.map(m)
+		if not (info.get("encounterList", []) as Array).is_empty():
+			pick.append([m, int(info.encounterList[0].troopId)])
+	var master := "00112233445566aa"
+	var chosen := []
+	var first := {}
+	for p in pick.slice(0, 40):
+		var r := _real_run(int(p[0]), int(p[1]), master)
+		if (r.gear as Array).any(func(x): return not str(x).ends_with(":[]")):
+			chosen = p
+			first = r
+			break
+	_check("real_affixed_drop", not chosen.is_empty())
+	if chosen.is_empty():
+		return
+	var again := _real_run(int(chosen[0]), int(chosen[1]), master)
+	_check("real_same_root_same", again.drops == first.drops and again.gear == first.gear, [first, again])
+	var u1 := _real_run(int(chosen[0]), int(chosen[1]), "")
+	var u2 := _real_run(int(chosen[0]), int(chosen[1]), "")
+	_check("real_root_fresh_each_load", str(u1.master) != str(u2.master), [u1.master, u2.master])
+	print("INFO real_unpinned_drops_equal=", u1.gear == u2.gear, " ", JSON.stringify([u1.gear, u2.gear]))
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261114)
@@ -172,6 +233,7 @@ func _run() -> void:
 	XConfig._loaded_path = "<unloaded>"
 	_direct()
 	_battle()
+	_real_battle()
 	XTianqiAffixRoll.SEED_FROM_SAVE = true
 	XSave.remove(SLOT)
 	XSave.dir_override = ""

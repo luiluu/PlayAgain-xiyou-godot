@@ -306,14 +306,14 @@ func _seed_ids() -> void:
 	var before2 := s.gear.duplicate()
 	XYunshangOrders.grant_spec(s, spec)
 	var copy := _new_gear(s, before2)
-	_check("yun_copy_no_sid", not copy.is_empty() and not copy.has("tq_seed_id"), copy.keys())
+	_check("yun_copy_own_sid", not copy.is_empty() and XTianqi.has_seed_id(copy) and str(copy.tq_seed_id) != sid, copy.get("tq_seed_id"))
 	_reforge_once(s, copy)
 	_check("yun_copy_new_sid", XRandomStream.valid_hex(str(copy.get("tq_seed_id", ""))) and str(copy.tq_seed_id) != sid)
 	var crown_spec := {"spec": (_gear(s, iid) as Dictionary).duplicate(true), "bonus": 0.0, "removed": false}
 	var before3 := s.gear.duplicate()
 	XDemonCrown._grant(s, crown_spec, "seed-fix-crown")
 	var crown := _new_gear(s, before3)
-	_check("crown_copy_no_sid", not crown.is_empty() and not crown.has("tq_seed_id"))
+	_check("crown_copy_own_sid", not crown.is_empty() and XTianqi.has_seed_id(crown) and str(crown.tq_seed_id) != sid)
 	# 仓库原版复制：吞噬异化占着的武器
 	var donor := _gear(s, iid)
 	var sw := _gear(s, aid) if not _gear(s, aid).is_empty() else (s.gear.filter(func(g): return XTianqiAlienGear.is_tq(g))[0] as Dictionary)
@@ -331,6 +331,73 @@ func _seed_ids() -> void:
 	XStarWarehouse._loaded_path = "<unloaded>"
 	if FileAccess.file_exists(XStarWarehouse.path()):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XStarWarehouse.path()))
+
+
+# ---- 随机身份与洗装备的先后无关；老档补号只看存档内容；新装备落袋即有号 ----
+
+func _seed_order() -> void:
+	var s := _state()
+	var wid := _find_weapon()
+	var a := _make(s, wid)
+	var b := _make(s, wid)
+	_check("ord_ids_on_register", XTianqi.has_seed_id(a) and XTianqi.has_seed_id(b) and str(a.tq_seed_id) != str(b.tq_seed_id))
+	var before := s.gear.duplicate()
+	s.gain_gear("weapon", wid, 1)  # 真实入包入口
+	var fresh: Array = s.gear.filter(func(g): return not before.any(func(x): return is_same(x, g)))
+	_check("ord_new_gear_has_id", fresh.size() == 1 and XTianqi.has_seed_id(fresh[0]))
+	var aid := str(a.instanceId)
+	var bid := str(b.instanceId)
+	_save()
+	# 老档：存档里所有装备都去掉号（读档时按固定顺序补）
+	_strip_file(func(dd): for g in dd.gear: (g as Dictionary).erase("tq_seed_id"))
+	var s1 := _load()
+	var ids1 := {}
+	for g in XTianqi.all_gear(s1):
+		ids1[str(g.instanceId)] = str(g.get("tq_seed_id", ""))
+	_check("ord_legacy_all_assigned", XTianqi.all_gear(s1).all(func(g): return XTianqi.has_seed_id(g)))
+	var ra := _reforge_once(s1, _gear(s1, aid))  # 直接洗 A
+	var s2 := _load()
+	var ids2 := {}
+	for g in XTianqi.all_gear(s2):
+		ids2[str(g.instanceId)] = str(g.get("tq_seed_id", ""))
+	_check("ord_legacy_ids_stable", ids1 == ids2 and not ids1.is_empty(), [ids1, ids2])
+	_reforge_once(s2, _gear(s2, bid))  # 先洗 B
+	_check("ord_b_then_a_same", _reforge_once(s2, _gear(s2, aid)) == ra, ra)
+	# 没号的装备 A、B 都没经登记（直接塞进背包）：先洗 B 再洗 A 与直接洗 A 一样
+	var s3 := _load()
+	var na := (_gear(s3, aid) as Dictionary)
+	var nb := (_gear(s3, bid) as Dictionary)
+	na.erase("tq_seed_id")
+	nb.erase("tq_seed_id")
+	var ra3 := _reforge_once(s3, na)
+	var s4 := _load()
+	(_gear(s4, aid) as Dictionary).erase("tq_seed_id")
+	(_gear(s4, bid) as Dictionary).erase("tq_seed_id")
+	_reforge_once(s4, _gear(s4, bid))
+	_check("ord_lazy_b_then_a_same", _reforge_once(s4, _gear(s4, aid)) == ra3, ra3)
+	# 星辰仓库的老件（没号）：补号与取出先后无关
+	var c1 := (_gear(s4, aid) as Dictionary).duplicate(true)
+	var c2 := (_gear(s4, bid) as Dictionary).duplicate(true)
+	c1.erase("tq_seed_id")
+	c2.erase("tq_seed_id")
+	var d1 := c1.duplicate(true)
+	var d2 := c2.duplicate(true)
+	XTianqi.before_renumber(s4, c1)
+	XTianqi.before_renumber(s4, c2)
+	XTianqi.before_renumber(s4, d2)
+	XTianqi.before_renumber(s4, d1)
+	_check("ord_star_order_free", str(c1.tq_seed_id) == str(d1.tq_seed_id) and str(c2.tq_seed_id) == str(d2.tq_seed_id) and str(c1.tq_seed_id) != str(c2.tq_seed_id))
+	# 同 instanceId 的两件（原版仓库复制）读档补号：已有号的不动，新补的撞号加后缀，两次读档一样
+	var s5 := _load()
+	var twin := (_gear(s5, aid) as Dictionary).duplicate(true)
+	twin.erase("tq_seed_id")
+	s5.gear.append(twin)
+	_save()
+	var t1 := _load()
+	var tw1: Array = t1.gear.filter(func(g): return str(g.instanceId) == aid).map(func(g): return str(g.get("tq_seed_id", "")))
+	var t2 := _load()
+	var tw2: Array = t2.gear.filter(func(g): return str(g.instanceId) == aid).map(func(g): return str(g.get("tq_seed_id", "")))
+	_check("ord_twin_distinct", tw1.size() == 2 and tw1[0] != tw1[1] and tw1[0] == ids1[aid] and tw1 == tw2, [tw1, tw2, ids1[aid]])
 
 
 # ---- 通关抽角色候选 ----
@@ -390,6 +457,7 @@ func _run() -> void:
 	_alien()
 	_offer()
 	_seed_ids()
+	_seed_order()
 	XTianqi.SEED_FROM_SAVE = true
 	XSave.remove(SLOT)
 	XSave.dir_override = ""

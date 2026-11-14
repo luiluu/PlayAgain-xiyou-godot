@@ -147,6 +147,7 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 		_take_pending(token)
 		last_error = WRITE_FAILED
 		return false
+	XTianqi.before_renumber(s, rec)  # 天启篇装备随机身份：没号的老件趁旧 instanceId 还在补号，与取出顺序无关
 	rec.erase("instanceId")
 	s.register_gear(rec)
 	if XAlienHide.active():
