@@ -949,7 +949,9 @@ func _trade() -> void:
 	XSound.system(21)   # Scene_Shop.onNumberOk：SoundManager.playShop（数量窗本身不响确定音）
 	if _number_from == "buy":
 		# Scene_Shop.doBuy：先付款得物（XItemMarks.buy），再扣库存、登记补货（KMS）
+		var gear_before := s.gear.size()
 		XItemMarks.buy(s, e.item, int(e.price), _number)
+		XTianqiDrop.mark_bought(s, gear_before)  # 天启篇：商店买的装备不能喂法宝
 		XShopStock.record_purchase(s, stock_group, int(e.kind), int(e.gid), _number)
 		if _baby_free and XBabyAllActors.is_horn(e.item):
 			goods = XBabyAllActors.bought(s, e.item, goods)  # 领过的记下、从列表拿掉

@@ -56,6 +56,8 @@ static func reason(s: XState, fabao: Dictionary, item: Dictionary) -> String:
 		return "不在背包里"
 	if XItemMarks.is_locked(s, item):
 		return "已锁定"
+	if XTianqiDrop.feed_blocked(s, item):
+		return "商店买的不能喂"
 	if grade_of(item) < min_grade(XMagicWeapon.level_of(fabao)):
 		return "品质不够（至少%s）" % GRADE_NAMES[min_grade(XMagicWeapon.level_of(fabao))]
 	return ""
