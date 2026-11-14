@@ -14,7 +14,7 @@
   2. 真脚本第一句是 `if …: return <参数名或字面量>`：照搬那个返回值（关着时原样返回、返回 1.0／false 之类）；
   3. 按返回类型给空值：bool→false、int→0、float→0.0、String→""、Array→[]、Dictionary→{}、Color→透明、其余→null。
 常量和 static var：数字、布尔照留（不透露设计），字符串→""，数组→[]，字典→{}，其余表达式→特例表或 null。
-验收：发行模式（ReleaseEntry.simulate_release）下真脚本和空壳各跑一遍西游测试，结果一致（见 发行空壳验收.py）。
+验收：发行模式（ReleaseEntry.simulate_release 改 true）下真脚本工程和空壳工程各跑一遍西游测试，PASS/FAIL 行一致（开发模式下天启篇开着，两边本来就不同，不能拿来比）。
 新加天启篇脚本被西游代码引用：check 会列出缺的成员，照真脚本发行时的行为加进特例表或确认默认值对。
 """
 import json
@@ -50,6 +50,7 @@ MIXED_OK = {
 }
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
+PASSTHRU = set()  # 返回字典／数组、真脚本会原样传回同类型参数的成员（如消耗表 c）：按类型给空值会把参数吞掉，check 要求写特例
 
 
 def _strip_comment(line: str) -> str:
@@ -258,6 +259,8 @@ def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> t
         want |= {n for n in info['funcs'] if not n.startswith('_')} | {n for n, v in info['vars'].items() if not n.startswith('_') and v['kind'] == 'var'}
     if '_init' in info['funcs']:
         want.add('_init')
+    # 特例表里写了的成员也留（西游代码没用到、但发行验收要跑的西游测试读它，如 XGojo.ENABLED）
+    want |= {k.split('.', 1)[1] for k in over if k.startswith(cls + '.') and k.split('.', 1)[1] in info['vars'] | info['funcs'].keys()}
     for n in sorted(want):
         if n in info['vars']:
             v = info['vars'][n]
@@ -291,8 +294,18 @@ def load_overrides() -> dict:
     return {k: v for k, v in d.items() if not k.startswith('_')}
 
 
+def _passes_through(f: dict) -> bool:
+    """返回 Dictionary／Array，函数体里有「return … 参数」（含 `… else 参数`）且该参数同类型。"""
+    base = f['ret'].split('[')[0]
+    if base not in ('Dictionary', 'Array'):
+        return False
+    same = [n for n, t in re.findall(r'(\w+)\s*:\s*([\w\[\]]+)', f['params']) if t.split('[')[0] == base]
+    return any(re.search(r'^return\b.*\b' + n + r'\s*$', ln) for n in same for ln in f['body'])
+
+
 def build_all(root: Path = PROJECT) -> tuple:
     NUMERIC.clear()
+    PASSTHRU.clear()
     tg = targets(root)
     refs = external_refs(root, tg)
     over = load_overrides()
@@ -313,6 +326,7 @@ def build_all(root: Path = PROJECT) -> tuple:
         how.update({f'{c}.{k}': v for k, v in h.items()})
         info = parse((root / p).read_text(encoding='utf-8'))
         NUMERIC.update(f'{c}.{k}' for k in h if info['funcs'][k]['ret'] in ('int', 'float'))
+        PASSTHRU.update(f'{c}.{k}' for k in h if _passes_through(info['funcs'][k]))
     return stubs, missing, how
 
 
@@ -377,9 +391,9 @@ def check_errors(missing: list, how: dict, sus: list = None) -> list:
     if missing:
         errs.append('发行空壳缺成员：' + '、'.join(missing))
     # 返回数字的函数按类型给 0 多半不对（倍率该是 1、次数该原样返回）：要在特例表里明确写
-    guess = [k for k, v in how.items() if v == '按类型空值' and k in NUMERIC]
+    guess = [k for k, v in how.items() if v == '按类型空值' and (k in NUMERIC or k in PASSTHRU)]
     if guess:
-        errs.append('发行空壳：这些返回数字的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
+        errs.append('发行空壳：这些返回数字（或原样传回参数）的函数没有明确的发行值，照真脚本发行时的行为写进 发行空壳特例.json：' + '、'.join(sorted(guess)))
     return errs
 
 

@@ -153,6 +153,21 @@ class T(unittest.TestCase):
         self.assertEqual(sorted(got), ['modes/xiyou/core/a.gd', 'modes/xiyou/core/b.gd', 'modes/xiyou/core/gojo_extra.gd'])
         self.assertIn('tianqi_data', got['modes/xiyou/core/b.gd'])
 
+    def test_passthrough_needs_override(self):
+        # 真脚本「不开就原样返回参数 c」、空壳按类型给 {} 会吞掉消耗表（11-14 XTianqiTrumpet.cost 就这样漏过）：要写特例
+        (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(
+            TQ + '\nstatic func cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:\n\treturn {"mp": 0} if a else c\n', encoding='utf-8')
+        (self.root / 'modes/xiyou/core/user.gd').write_text(XIYOU + '\tvar c := XTianqiFoo.cost(null, {}, {"mp": 3})\n', encoding='utf-8')
+        _, missing, how = K.build_all(self.root)
+        self.assertEqual(how['XTianqiFoo.cost'], '按类型空值')
+        errs = K.check_errors(missing, how)
+        self.assertEqual(len(errs), 1)
+        self.assertIn('XTianqiFoo.cost', errs[0])
+        K.OVERRIDES.write_text('{"XTianqiFoo.cost": "c"}', encoding='utf-8')
+        stubs, missing, how = K.build_all(self.root)
+        self.assertEqual(K.check_errors(missing, how), [])
+        self.assertIn('-> Dictionary:\n\treturn c', stubs[Path('modes/xiyou/core/tianqi_foo.gd')])
+
     def test_real_project_covers_tianqi_only_scripts(self):
         # 真工程：五条悟、守层者重算换空壳；没有没归类的天启篇专属脚本（检查.sh 的 发行空壳.py check 也查这条）
         tg = K.targets()
