@@ -161,6 +161,29 @@ class ReviewListTests(unittest.TestCase):
         self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧】核查 dev.003～006\n')
         self.assertNotIn('合并 claude/lane', self.labels())
 
+    def test_tianqi_prefixes_and_reviewers(self):
+        """天启篇三方（11-14）：xa/、gpt/、luiluu/ 车道合并认成一批，gpt、小A 的核查条目销「待审查」。"""
+        r = self.repo
+        names = []
+        for i, lane in enumerate(['xa/ui1', 'gpt/art1', 'luiluu/Antigravity']):
+            r.git('checkout', '-q', '-b', lane)
+            r.put('03_再刷重制_Godot/t%d.gd' % i, 'x')
+            r.commit(lane + ' 功能', '审查', '小A')
+            r.git('checkout', '-q', 'main')
+            r.git('merge', '-q', '--no-ff', lane, '-m', '合并 %s\n\n执行者: cc\n核查: 待审查\n' % lane)
+            r.commit('合并 %s（dev.00%d）收尾' % (lane, 6 + i), '审查', 'cc')
+            names.append('合并 ' + lane)
+        items = self.labels()
+        for n in names:
+            self.assertIn(n, items)
+            self.assertEqual(len(items[n]['commits']), 3, items[n])   # 车道提交、合并、收尾归同一批
+        self.assertNotIn('合并 xa/ui1（dev.006）收尾', items)
+        r.put(LOG, '# 变更记录\n\n## 2099-01-01 【gpt】核查 xa/ui1\n\n- 通过\n\n'
+                   '## 2099-01-01 【小A】核查 gpt/art1、luiluu/Antigravity\n\n- 通过\n')
+        items = self.labels()
+        for n in names:
+            self.assertNotIn(n, items)
+
     def test_only_scope_lines_count(self):
         # 沙僧复现：别的核查条目验证行写「开发编号（dev.005）通过」，不能销 dev.005 整批；证据、结论行里的提交号也不算
         self.repo.put(LOG, '# 变更记录\n\n## 2099-01-01 【Codex·沙僧】核查 c6d964a：提案需改\n\n- 结论：需改\n'

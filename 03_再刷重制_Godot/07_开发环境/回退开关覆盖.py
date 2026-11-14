@@ -244,7 +244,7 @@ def last_lane(root, rel, name):
         if not commit:
             return ''
         own = git('log', '-1', '--format=%h %s', commit)
-        merges = git('log', '--merges', '--ancestry-path', '--reverse', '-E', '--grep=^合并 (cc|claude|codex)/', '--format=%H %s', commit + '..HEAD')
+        merges = git('log', '--merges', '--ancestry-path', '--reverse', '-E', '--grep=^合并 (cc|claude|codex|gpt|xa|luiluu)/', '--format=%H %s', commit + '..HEAD')
         for line in merges.splitlines()[:200]:
             sha, _, title = line.partition(' ')
             if ancestor(commit, sha + '^2') and not ancestor(commit, sha + '^1'):
