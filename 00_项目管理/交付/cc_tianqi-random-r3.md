@@ -67,7 +67,9 @@
 - P2-2 结算段没测到（掉率统计只调 `rewards`／`end_battle(-1)`、map_id＝0）：专项新加「⑩ 结算段」：Map152、来源 38、敌群 454 打赢（`rewards`→`grant`→`end_battle(0)`），谷雨入队、不朽存在通关判定置真（`XStarburstBooks.IMMORTAL_CLEAR_TEST`）；Map176、来源 165、敌群 570 打锻造锤。逐项断言：不朽之书（`starburst.immortal`）在 `grant` 子流、谷雨石在 `end|guyu`、心之钢在 `end|heartsteel`、狂妄在 `end|hubris`、锻造锤在 `end|forge`；子流第一个数等于 `derive(本场种子, "reward|段")` 的算式；结算期间回合流一次不取；读档再打取数、物品、装备全同；关开关后这五项都回到回合流、两次读档取到的数不同。分项统计：五项各 2000 个战斗键的命中率与 2000 次运行时取数，对名义几率（10%／10%／20%／1/50／1/66）都在 4 个标准误内（实测钉住 9.15%／10.15%／19.30%／2.00%／1.10%）。
 - 触发不到的两处（写明原因）：`grant` 里升级时的 `gain_exp(…, _rule())`、`end` 段的首领护甲 `sync_boss_armor` 和胜逃败效果 `run_unit`——只有身上挂着带随机效果的状态时才取数，本专项的队伍和敌群没有这类状态。专项用「结算期间回合流一次不取」（`end_rule_untouched`）兜着：这几处一旦取数也只会进 `grant`／`end` 子流。
 - 误报更正：原交付单把锻造锤列为「缺来源键的装备」，它走 `gain_item`（材料），已从「可优化」删掉。
-- 反向验证（返修新断言）：见「验证」。
+- 返修中顺手修：`battle_source` 改用 `logic.get("random")`（`xiyou_heartsteel` 的奖励测试用替身对象，没有 `random` 属性，直接取会报 SCRIPT ERROR）。
+- 返修提交：56f2e16b9。
+- 返修验证：`反向验证.py` 5 处改坏全咬住（心钢不带来源键、狂妄不带来源键、发奖不切段、谷雨石不切段、锻造锤不切段）；本机 `xiyou_tianqi_battle_seed` 76/76、`xiyou_heartsteel` 676/676（无 SCRIPT ERROR）、`xiyou_growth_forge`、`xiyou_starburst_books`、`xiyou_guyu_battle`、`xiyou_random_big_range` 全过；`语法检查.py`、`工具回归.py`、`随机守卫.py` 全过。**在返修提交 56f2e16b9（已含合并 R2）上重跑 `检查.sh --oracle --affected main --cloud`**：云端 559 个场景、15 片全过（GitHub Actions run 43638486690；另 10 个沿用 70dc4525f 本机结果），MV 参照引擎启动、西游来源／转换产物／六难度参照同源全过。
 
 ## 交接板
 
@@ -106,4 +108,6 @@
 - 619ecee2d WIP：随机门面 R3 实现＋专项
 - 895c32b1e rng 登记、专项补预掷池断言、交付单草稿
 - 70dc4525f 合并 main（R2）
+- 8dd66f955 交付单：合并 R2 后的复测
+- 56f2e16b9 返修：心之钢、狂妄带战斗来源键；专项补结算段
 - （其余见 `git log main..cc/tianqi-random-r3`）
