@@ -1096,6 +1096,7 @@ static func from_dict(d: Dictionary) -> XState:
 	XGuyu.after_load(s)
 	XGarou.after_load(s)  # 饿狼 extractSaveContents 包装：clearBattle＋sync
 	XPets.loaded(s)
+	XTianqiSave.after_load(s)  # 天启篇存档门面：唯一的读档后入口（分区迁移、五条悟进阶表版本），幂等
 	XWeakChallenge.after_load(s)  # 弱者挑战 extractSaveContents 包装：按本局标记学／忘 10357（不回满）
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():

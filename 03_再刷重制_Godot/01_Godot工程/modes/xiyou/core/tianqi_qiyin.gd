@@ -99,20 +99,21 @@ static func allowed(s: XState = null) -> bool:
 ##   bag 印库 [物品…]（XTianqiQiyinDrop 的物品字典＋revealed: bool）；artifacts 拿到的神器键；field_keys 野外捡到还没报的印钥；
 ##   seed、rng_n 本档随机流的种子和已开的条数（save_rng）；artifact_miss 神器保底计数（roll_artifact）
 static func progress(s: XState) -> Dictionary:
-	if not s.flags.tianqi.get("qiyin") is Dictionary:
-		s.flags.tianqi["qiyin"] = {}
-	var p: Dictionary = s.flags.tianqi["qiyin"]
+	return XTianqiSave.section(s, "qiyin")
+
+
+## 存档门面的补法（XTianqiSave._fill）：缺键按默认补
+static func fill(s: XState, p: Dictionary) -> void:
 	if not p.get("drop") is Dictionary:
 		p["drop"] = XTianqiQiyinDrop.new_state()
 	for k in ["keys", "shards", "field_keys", "rng_n", "artifact_miss"]:
 		if not p.has(k):
 			p[k] = 0
 	if str(p.get("seed", "")) == "":  # 老档没有：由存档种子派生（同一个档每次都一样）
-		p["seed"] = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed)), "qiyin")
+		p["seed"] = XRandomStream.derive(XRandomStream.hex64(int(s.orb_seed if s != null else 0)), "qiyin")
 	for k in ["bag", "artifacts"]:
 		if not p.get(k) is Array:
 			p[k] = []
-	return p
 
 
 static func keys(s: XState) -> int:

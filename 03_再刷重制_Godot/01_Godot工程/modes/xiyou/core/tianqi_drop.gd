@@ -240,17 +240,19 @@ static func _prd_mean(c: float) -> float:
 	return 1.0 / expect if expect > 0.0 else 1.0
 
 
-## 存档里的掉落账：{seed, pity: {键: [连着没出的次数, 掷过的总次数]}}
+## 存档里的掉落账：{seed, pity: {键: [连着没出的次数, 掷过的总次数]}}（存档门面分区 drop，XTianqiSave）
 static func store(s: XState) -> Dictionary:
-	var tq: Dictionary = s.flags.tianqi
-	if not tq.get("drop") is Dictionary:
+	return XTianqiSave.section(s, "drop")
+
+
+## 存档门面的补法（XTianqiSave._fill）：made＝刚建的空账
+static func fill(s: XState, d: Dictionary, made: bool) -> void:
+	if made:
 		# 没有掉落账的旧档：种子由存档里已有的宝珠种子（orbSeed，随存档保存；更旧的档由存档内容算出）派生，
 		# 读同一个档每次都一样，首次招牌掉落不能靠读档重掷（gpt 甲档补核 P2）。SEED_FROM_SAVE 关掉回到全局随机
-		tq["drop"] = {"seed": XOrbs.hash32("tianqi-drop|%d" % int(s.orb_seed)) if SEED_FROM_SAVE else randi(), "pity": {}}
-	var d: Dictionary = tq.drop
+		d["seed"] = XOrbs.hash32("tianqi-drop|%d" % int(s.orb_seed if s != null else 0)) if SEED_FROM_SAVE else randi()  # 随机守卫：开关关时的旧路
 	if not d.get("pity") is Dictionary:
 		d["pity"] = {}
-	return d
 
 
 ## 这一次掷中的几率（已经连着没出 n 次）
@@ -265,10 +267,11 @@ static func roll_signature(s: XState, key: String, p: float) -> bool:
 	if p >= 1.0:
 		# 必掉也算出了：已有账的清掉连败、推进总次数（「出了归零」，gpt 甲档补核 P2）；没账的不新建，免得存档里堆一堆必掉行。
 		# PITY_RESET_ON_SURE 关掉回到直接返回
-		if PITY_RESET_ON_SURE and s.flags.tianqi.get("drop") is Dictionary:
-			var row0 = s.flags.tianqi.drop.get("pity", {}).get(key)
+		var acct = XTianqiSave.peek(s, "drop")
+		if PITY_RESET_ON_SURE and acct is Dictionary:
+			var row0 = acct.get("pity", {}).get(key)
 			if row0 is Array and row0.size() >= 2:
-				s.flags.tianqi.drop.pity[key] = [0, int(row0[1]) + 1]
+				store(s).pity[key] = [0, int(row0[1]) + 1]
 		return true
 	var d := store(s)
 	var row = d.pity.get(key)
@@ -283,9 +286,10 @@ static func roll_signature(s: XState, key: String, p: float) -> bool:
 
 ## 连着没出几次了（图鉴指路用）
 static func signature_fails(s: XState, key: String) -> int:
-	if not signature_on(s) or not s.flags.tianqi.get("drop") is Dictionary:
+	var acct = XTianqiSave.peek(s, "drop")
+	if not signature_on(s) or not acct is Dictionary:
 		return 0
-	var row = s.flags.tianqi.drop.get("pity", {}).get(key)
+	var row = acct.get("pity", {}).get(key)
 	return int(row[0]) if row is Array and row.size() >= 2 else 0
 
 
