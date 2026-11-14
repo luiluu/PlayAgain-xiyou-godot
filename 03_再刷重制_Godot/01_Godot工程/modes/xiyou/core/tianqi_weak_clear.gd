@@ -2,10 +2,11 @@ class_name XTianqiWeakClear
 extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇全弱者通关资格（天启篇设计总览 v0.2 第二节 3「全弱者通关资格跟本档走，奖励另行标定」，Kyo 11-08；
 ## 对重制内容影响审查 v0.6 第 245、268 行：原版弱者挑战在天启篇作废，换成「全弱者通关 36 层」）。
-## - 判定（默认口径，待 Kyo 确认）：36 层决战（XTianqiLine.run_final）打赢时，这一场出现过的我方角色全是弱者档才记。
+## - 判定（Kyo 11-14 定，默认口径）：36 层决战（XTianqiLine.run_final）打赢时，这一场出现过的我方角色全是弱者档才记。
 ##   「出现过」＝开战前、每回合开头、每次行动开头、天启篇换人、战斗中入队（XState.add_actor）、结束时出战栏 5 格（上场＋助力位）
 ##   里的角色，加上行动者——中途加入又撤下、换上来没行动就倒下的都接住（gpt 甲档核查 P2）。
-##   档位读 XTianqiSkills.battle_tier（成长型角色按当前进度，五条悟照天启篇表），每次见到时按当时档位记，见到一次不是弱者就一直不算。
+##   档位读 XTianqiSkills.battle_tier（五条悟照天启篇表），每次见到时按当时档位记，见到一次不是弱者就一直不算。
+##   成长型角色（数值表 tiers.growth，现在是三笠 95、饿狼 173）不管练没练一律不算弱者（Kyo 11-14 定）；只管这里，别处档位、弱者光环照旧。
 ## - 跟踪绑定存档（_state）：战斗中断没走到 finish 时，下一次 begin 重置；换了存档不记也不能收。
 ## - 记在存档 flags.tianqi.weak_clear：{本档难度 key: {"line": 线, "members": [角色号]}}，跟本档走（一份存档只有一档难度）。
 ## - 只认 36 层首通路线（run_final；之后从门再打 36 层也算）；大厅再挑战（XTianqiSummit.rechallenge 36，不记通关）不算。
@@ -32,8 +33,13 @@ static func on(s) -> bool:
 	return ENABLED and s is XState and XTianqi.active(s)
 
 
+## 成长型角色（skill_rework.json tiers.growth：三笠 95 按锻炼、饿狼 173 按进阶变档）：全弱者判定里一律不算弱者（Kyo 11-14）
+static func is_growth(id: int) -> bool:
+	return XTianqiSkills.data().get("tiers", {}).get("growth", {}).has(str(id))
+
+
 static func is_weak(id: int, s: XState) -> bool:
-	return XTianqiSkills.battle_tier(id, s) == XTier.WEAK
+	return not is_growth(id) and XTianqiSkills.battle_tier(id, s) == XTier.WEAK
 
 
 static func _live(s) -> bool:

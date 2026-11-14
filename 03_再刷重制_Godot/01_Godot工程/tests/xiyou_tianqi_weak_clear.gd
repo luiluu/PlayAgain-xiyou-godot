@@ -1,7 +1,7 @@
 extends Node
 ## 天启篇全弱者通关资格专项（XTianqiWeakClear）。
 ## 一、全弱者打赢 36 层决战：本档资格记上、别的档没有、结算有一行、成就 142 点亮、读档后还在、读档界面标「全弱者」。
-## 二、输了、上场有强者、助力位是强者、战斗中换进强者（行动过再换回去、中途加入又撤下没行动、换上来没行动就倒下）、战斗中变档：不记。
+## 二、输了、上场有强者、助力位是强者、战斗中换进强者（行动过再换回去、中途加入又撤下没行动、换上来没行动就倒下）；成长型角色（三笠、饿狼）不管练没练、在哪个位置：不记（Kyo 11-14）。
 ## 五、战斗中断留下的跟踪：换了存档不记不收，下一次开战重置。
 ## 三、另开一档（寻常）：只记寻常，和艰险档互不影响。
 ## 四、原版弱者挑战在天启篇走不到；原版档一切照旧；开关关掉不记、成就开关关掉只记不点亮。
@@ -67,7 +67,7 @@ func _run() -> void:
 	seed(20261113)
 	XTianqiWarLine.reload()
 	XTianqiHorsemen.reload()
-	weak = XTianqiSkills.ids(XTier.WEAK, true).filter(_usable)
+	weak = XTianqiSkills.ids(XTier.WEAK, true).filter(_usable).filter(func(id): return not XTianqiWeakClear.is_growth(int(id)))
 	strong = XTianqiSkills.ids(XTier.STRONG, true).filter(_usable)
 	_check("pool", weak.size() >= 6 and strong.size() >= 1, [weak.size(), strong.size()])
 	await _all_weak()
@@ -194,31 +194,52 @@ func _not_weak() -> void:
 		lg.end_battle(0)
 	_check("swap_in_dead_no_action", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
 		and sw.get("in") == true and sw.get("dead") == true and sw.get("back") == true and not s.battle_slots.has(int(strong[0])), sw)
-	# 战斗中变档：三笠（95）锻炼没满是弱者，打到一半满了（强者）再改回去——见到时按当时档位记
+	# 成长型角色一律不算弱者（Kyo 11-14）：三笠 95（锻炼变量 1490）、饿狼 173（进阶）
+	_check("growth_list", XTianqiWeakClear.is_growth(95) and XTianqiWeakClear.is_growth(173) and not weak.any(func(id): return XTianqiWeakClear.is_growth(int(id))))
+	host.during = Callable()
 	var mk := 95
-	var tier_slots := weak.slice(0, 4) + [mk]
-	s = _state("jianxian", tier_slots)
+	var gslots := weak.slice(0, 4) + [mk]
+	# 未练：战斗档是弱者（档位加成照弱者算，别处不动），全弱者判定不算
+	s = _state("jianxian", gslots)
 	s.set_variable(1490, 0)
-	var tw := {"start_weak": XTianqiWeakClear.is_weak(mk, s)}
+	var raw_weak := XTianqiSkills.battle_tier(mk, s) == XTier.WEAK
+	_check("growth_untrained_not_counted", raw_weak and not XTianqiWeakClear.is_weak(mk, s)
+		and await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s), raw_weak)
+	# 练满：强者，也不算
+	s = _state("jianxian", gslots)
+	s.set_variable(1490, 10)
+	_check("growth_trained_not_counted", XTianqiSkills.battle_tier(mk, s) != XTier.WEAK
+		and await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s))
+	# 饿狼没进阶（人类形态，战斗档弱者）放在上场位：也不算
+	var wolf := 173
+	s = _state("jianxian", [wolf] + weak.slice(0, 4))
+	var wolf_weak := XTianqiSkills.battle_tier(wolf, s) == XTier.WEAK
+	_check("growth_wolf_not_counted", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s), wolf_weak)
+	# 只在战斗中行动过（不在开战、结束的出战栏）也不算：真战斗里换上三笠行动一回合再换回去
+	s = _state("jianxian", weak.slice(0, 5))
+	s.set_variable(1490, 0)
 	host.during = func():
 		var lg := XBattleLogic.new()
 		lg.setup(1, s)
-		s.set_variable(1490, 10)
-		tw["mid_strong"] = not XTianqiWeakClear.is_weak(mk, s)
+		var w: XActor = s.helper()
+		XTianqi._joining = true
+		s.add_actor(mk)
+		XTianqi._joining = false
+		s.battle_slots[XTianqi.HELPER_SLOT] = mk
+		var st: XActor = lg.tianqi_swap(lg.actors[0])
 		var c := {}
-		for a in lg.actors:
-			c[a] = [XDB.rec("Skills", 2), null]
+		for x in lg.actors:
+			c[x] = [XDB.rec("Skills", 2), null]
 		lg.run_turn(c)
-		s.set_variable(1490, 0)
+		if st != null:
+			lg.tianqi_swap(st)
+		s.battle_slots[XTianqi.HELPER_SLOT] = w.actor_id
 		lg.end_battle(0)
-	_check("tier_change_mid_battle", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)
-		and tw.get("start_weak") == true and tw.get("mid_strong") == true and XTianqiWeakClear.is_weak(mk, s), tw)
-	# 对照：同样阵容全程没变档就记
-	var s3 := _state("jianxian", tier_slots)
-	s3.set_variable(1490, 0)
+	_check("growth_mid_battle_not_counted", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s) and not s.battle_slots.has(mk))
 	host.during = Callable()
-	_check("tier_steady_records", await XTianqiWarLine.run_final(host, s3) == 0 and XTianqiWeakClear.has(s3))
-	host.during = Callable()
+	# 对照：纯固定弱者照记
+	var s3 := _state("jianxian", weak.slice(0, 5))
+	_check("fixed_weak_records", await XTianqiWarLine.run_final(host, s3) == 0 and XTianqiWeakClear.has(s3))
 	# 再挑战 36 层（不记通关）不算
 	var s2 := _state("jianxian", weak.slice(0, 5))
 	XTianqiSummit.progress(s2)["cleared"] = true
