@@ -365,11 +365,31 @@ func skill_types(b: XBattleScene, who: Array) -> void:
 		and XActorModules.menu_page_types(177, [1, 2, 4, 5]) == [1, 2, 6, 4, 5]
 		and XActorModules.menu_page_types(170, [1, 2, 4, 5, 6]) == [1, 2, 6, 4, 5]
 		and XActorModules.menu_page_types(170, [1]) == [1, 6] and XActorModules.menu_page_types(170, []) == [6]
-		and XActorModules.menu_page_types(166, [1, 2, 4, 5]) == [1, 2, 4, 5] and XActorModules.menu_page_types(178, [1]) == [1])
+		and XActorModules.menu_page_types(166, [1, 2, 4, 5]) == [1, 2, 4, 5] and XActorModules.menu_page_types(178, [1]) == [1]
+		and XActorModules.menu_page_types(XLiuying.ACTOR, [1, 2, 4, 5]) == [1, 2, 6, 4, 5] and XActorModules.menu_page_types(180, [1]) == [1])
 	for id in range(167, 178):
 		if XState.current.party.has(id):
 			page.actor_index = XState.current.party.find(id)
 			check("types.gongfa.%d" % id, page.types().has(6) and page.types().find(6) < (page.types().find(4) if page.types().has(4) else 99), page.types())
+	# 流萤 179（原版 newActor 含 id===179；v0.01.09 玩家反馈「流萤看不到功法页面」）：技能菜单有功法页、排在被动前，
+	# 选中功法页列的就是流萤学到的类型 6 技能
+	var party_before: Array = XState.current.party.duplicate()
+	if not XState.current.party.has(XLiuying.ACTOR):
+		XState.current.party.append(XLiuying.ACTOR)
+	page.actor_index = XState.current.party.find(XLiuying.ACTOR)
+	var ly_had := page.actor().skill_ids.has(7136)
+	page.actor().learn_skill(7136)  # 玄天功·入门（技能类型 6）
+	var ly_types := page.types()
+	check("types.gongfa.liuying", int(page.actor().actor_id) == XLiuying.ACTOR and ly_types.has(6)
+		and ly_types.find(6) < (ly_types.find(4) if ly_types.has(4) else 99), ly_types)
+	page.type_index = ly_types.find(6)
+	var ly_entries := page.entries()
+	var ly_want: Array = page.actor().skills().filter(func(sk): return int(sk.get("stypeId", 0)) == 6)
+	check("types.gongfa.liuying.entries", ly_entries == ly_want and ly_entries.any(func(sk): return int(sk.id) == 7136)
+		and ly_entries.all(func(sk): return int(sk.get("stypeId", 0)) == 6), ly_entries.map(func(sk): return int(sk.id)))
+	if not ly_had:
+		page.actor().forget_skill(7136)
+	XState.current.party = party_before
 	page.queue_free()
 
 
