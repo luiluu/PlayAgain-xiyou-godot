@@ -102,7 +102,7 @@ func coordinate_text() -> String:
 
 func difficulty_text() -> String:
 	var s := XState.current
-	var tq := XTianqiTrim.difficulty_name(s)  # 天启篇显示五档档名（O-待定-3）
+	var tq := XTianqiTrim.difficulty_name(s)  # 天启篇显示五档档名（O-407）
 	if tq != "":
 		return tq
 	if s:

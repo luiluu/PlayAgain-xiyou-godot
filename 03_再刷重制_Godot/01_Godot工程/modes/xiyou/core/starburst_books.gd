@@ -46,7 +46,7 @@ static func _gift(s: XState, floor_no: int, why: String) -> void:
 
 ## B.immortalRate：天灾（系数 5）及以下 1/66，往上线性加，洪荒（13）到 1/33 封顶
 static func immortal_rate(s: XState) -> float:
-	var tq := XTianqiTrim.route(s)  # 天启篇：前四档 1/66、证道 1/33（O-待定-8）
+	var tq := XTianqiTrim.route(s)  # 天启篇：前四档 1/66、证道 1/33（O-412）
 	if float(tq.get("starburst_denom", 0)) > 0.0:
 		return 1.0 / float(tq.starburst_denom)
 	var coef := float(XZhenqi.route(s).get("coef", 1)) if s != null else 1.0

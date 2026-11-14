@@ -101,7 +101,7 @@ static func from_save(d) -> Dictionary:
 
 # ---- 路线、楼层 ----
 static func route(s: XState) -> Dictionary:
-	var tq := XTianqiTrim.route(s)  # 天启篇：按吸收的旧路线取系数（O-待定-8），名字用五档档名
+	var tq := XTianqiTrim.route(s)  # 天启篇：按吸收的旧路线取系数（O-412），名字用五档档名
 	if not tq.is_empty():
 		var coef := int(tq.get("zhenqi_coef", 1))
 		var base: Dictionary = ROUTES[0]

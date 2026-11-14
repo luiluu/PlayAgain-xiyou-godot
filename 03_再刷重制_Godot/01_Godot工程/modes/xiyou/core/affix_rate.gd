@@ -134,7 +134,7 @@ static func pick(s: XState, choices: Array, table: String, r: float) -> Array:
 
 ## G.detailRows 包装：末尾加的几行（开关关着返回空）
 static func detail_rows(s: XState) -> Array:
-	if not ENABLED or not DETAIL_SHOWN or XTianqiTrim.hide_affix_rate(s):  # 天启篇不显示（O-待定-4）
+	if not ENABLED or not DETAIL_SHOWN or XTianqiTrim.hide_affix_rate(s):  # 天启篇不显示（O-408）
 		return []
 	var m := factor(s)
 	var r := route(s)

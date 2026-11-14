@@ -285,7 +285,7 @@ static func run(code: String, interp) -> Array:
 	roster = _re("^CodexBossDifficulty\\.showRoster\\('(strong|super)'\\);?$").search(js)
 	if roster:
 		var kind := roster.get_string(1)
-		var tq := XTianqiTrim.roster(kind, XState.current)  # 天启篇：读天启篇档位表（O-待定-2）
+		var tq := XTianqiTrim.roster(kind, XState.current)  # 天启篇：读天启篇档位表（O-406）
 		if not tq.is_empty():
 			await _boss_roster(kind, interp, tq.ids, tq.notes)
 		else:

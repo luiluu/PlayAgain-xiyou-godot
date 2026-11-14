@@ -56,7 +56,7 @@ static func enemy_rates(difficulty: int, s = null) -> Array:
 	return out
 
 
-## 开关（O-待定-7，Kyo 11-13「副本档位也跟着变强」）：true＝副本里敌人血量、攻击再乘副本档系数（balance_table 的 dungeon_tiers，draft）；
+## 开关（O-411，Kyo 11-13「副本档位也跟着变强」）：true＝副本里敌人血量、攻击再乘副本档系数（balance_table 的 dungeon_tiers，draft）；
 ## false＝副本里和塔里一样只看本档难度
 static var DUNGEON_TIER := true
 

@@ -305,7 +305,7 @@ static func _home(host, s: XState) -> void:
 ## 洪荒通关奖励（原 158 事件 1 第 2 页）：开关 2483 开着才有；打过本档鸿钧给奖励，没打过照原版学 6213（天启篇默认不学）
 static func _honghuang(host, s: XState) -> void:
 	if XTianqiTrim.no_honghuang(s):
-		return  # 天启篇取消洪荒通关奖励（O-待定-6，Kyo 11-13：跨存档只通图鉴、成就、外观）
+		return  # 天启篇取消洪荒通关奖励（O-410，Kyo 11-13：跨存档只通图鉴、成就、外观）
 	var h: Dictionary = data().get("honghuang", {})
 	if not s.switch(int(h.switch)) or bool(progress(s).get("honghuang", false)):
 		return

@@ -19,7 +19,7 @@
   "team_damage_dealt": 0.05
  },
  "routes": {
-  "_note": "五档按吸收的旧路线取的系数（天启篇设计总览 v0.2 第五节路线映射表，Kyo 11-13 定）：zhenqi_coef 真气路线系数，liuying_core 流萤残核掉率，starburst_denom 星爆书（不朽存在送阐释者）概率的分母，lottery_cap 抽奖被动上限（开局变量 9）。XTianqiBalance.route；O-待定-8。",
+  "_note": "五档按吸收的旧路线取的系数（天启篇设计总览 v0.2 第五节路线映射表，Kyo 11-13 定）：zhenqi_coef 真气路线系数，liuying_core 流萤残核掉率，starburst_denom 星爆书（不朽存在送阐释者）概率的分母，lottery_cap 抽奖被动上限（开局变量 9）。XTianqiBalance.route；O-412。",
   "xunchang": {"zhenqi_coef": 1, "liuying_core": 0.03, "starburst_denom": 66, "lottery_cap": 5},
   "jianxian": {"zhenqi_coef": 1, "liuying_core": 0.03, "starburst_denom": 66, "lottery_cap": 5},
   "jiusi": {"zhenqi_coef": 2, "liuying_core": 0.03, "starburst_denom": 66, "lottery_cap": 10},
@@ -28,7 +28,7 @@
  },
  "dungeon_tiers": {
   "draft": true,
-  "_note": "副本四档（变量 450：1 普通 2 冒险 3 勇士 4 王者，按下面顺序）在本档难度的敌人倍率上再乘的系数（Kyo 11-13「副本档位也跟着变强」；起点照原版四档敌人倍率的比例，攻击同比，待数值线定）。XTianqiCombat.enemy_rates；O-待定-7。",
+  "_note": "副本四档（变量 450：1 普通 2 冒险 3 勇士 4 王者，按下面顺序）在本档难度的敌人倍率上再乘的系数（Kyo 11-13「副本档位也跟着变强」；起点照原版四档敌人倍率的比例，攻击同比，待数值线定）。XTianqiCombat.enemy_rates；O-411。",
   "list": [
    {"key": "putong", "name": "普通", "enemy_hp": 0.5, "enemy_atk": 0.5},
    {"key": "maoxian", "name": "冒险", "enemy_hp": 0.75, "enemy_atk": 0.75},

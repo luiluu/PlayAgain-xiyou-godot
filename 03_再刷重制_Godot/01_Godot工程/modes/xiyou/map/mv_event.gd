@@ -88,7 +88,7 @@ func _find_page() -> int:
 	if not removed_events.is_empty() and removed_events.has("%d:%d" % [map_id, event_id]):
 		return -1
 	if XTianqiTrim.hides(map_id, event_id):
-		return -1  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-待定-6）
+		return -1  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-410）
 	var merchant29 := str(data.get("note", "")).contains("<CodexMerchant29>")
 	for i in range(data.pages.size() - 1, -1, -1):
 		if merchant29 and i == 1 and not merchant29_present():

@@ -824,7 +824,7 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
-	# 天启篇大厅牢妲（XTianqiTrim，O-待定-1）：只剩挑战守层者，难度开关和怪物难度属性不出
+	# 天启篇大厅牢妲（XTianqiTrim，O-405）：只剩挑战守层者，难度开关和怪物难度属性不出
 	if XTianqiTrim.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)
 		await XTianqiTrim.run_laoda(self, XState.current)

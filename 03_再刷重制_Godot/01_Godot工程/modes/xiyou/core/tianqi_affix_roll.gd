@@ -17,7 +17,7 @@ extends RefCounted
 
 ## 开关：false＝回到原版词缀
 static var ENABLED := true
-## 开关（O-待定-5）：true＝必出行里整行都是神话／混沌神话的也跳过；false＝必出行一律照合
+## 开关（O-409）：true＝必出行里整行都是神话／混沌神话的也跳过；false＝必出行一律照合
 static var SKIP_HIGH_ROWS := true
 
 const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")

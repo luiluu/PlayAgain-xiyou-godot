@@ -74,7 +74,7 @@ func advance(ms: float, current: int, render := true, frame := 0) -> void:
 func paint(frame := 0) -> void:
 	showing = remaining > 0
 	if showing:
-		var tq := XTianqiTrim.difficulty_name(XState.current)  # 天启篇显示五档档名（副本里带副本档，O-待定-3）
+		var tq := XTianqiTrim.difficulty_name(XState.current)  # 天启篇显示五档档名（副本里带副本档，O-407）
 		text = "当前难度：" + (tq if tq != "" else str(NAMES[difficulty]) if difficulty >= 0 and difficulty < NAMES.size() else "undefined")
 		color = difficulty_color(difficulty, frame)
 		bounce_y = 10.0 + sin((240 - remaining) * 0.1) * 3.0

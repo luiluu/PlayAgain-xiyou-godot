@@ -257,7 +257,7 @@ func _door36() -> void:
 
 
 func _honghuang() -> void:
-	# 天启篇默认取消洪荒通关奖励（XTianqiTrim.NO_HONGHUANG，O-待定-6）：开关 2483 开着、打过鸿钧也不问不给
+	# 天启篇默认取消洪荒通关奖励（XTianqiTrim.NO_HONGHUANG，O-410）：开关 2483 开着、打过鸿钧也不问不给
 	var s0 := _state(36)
 	XTianqiSummit.progress(s0)["hongjun"] = true
 	s0.set_switch(2483, true)
@@ -320,7 +320,7 @@ func _rechallenge() -> void:
 		and int(s.variable(20)) == 35 and host.moves.is_empty(), host.battles)
 	host = FakeHost.new()
 	host.answers = [0]
-	await XTianqiTrim.run_laoda(host, s)  # 天启篇牢妲（O-待定-1）：第一项是打过的 34 层
+	await XTianqiTrim.run_laoda(host, s)  # 天启篇牢妲（O-405）：第一项是打过的 34 层
 	_check("laoda_rechallenge", host.battles.size() == 1 and host.battles[0].summit == "hongjun" and not str(host.asked).contains("debuff"), host.asked)
 	host = FakeHost.new()
 	host.answers = [1]

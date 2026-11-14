@@ -91,7 +91,7 @@ static func team_taken(tiers: Array) -> float:
 	return sum * (1.0 + float(assist_bonus(tiers.count(XTier.WEAK)).damage_taken))
 
 
-# ---- 路线系数与副本档（O-待定-8、O-待定-7） ----
+# ---- 路线系数与副本档（O-412、O-411） ----
 
 ## 本档按吸收的旧路线取的系数：zhenqi_coef、liuying_core、starburst_denom、lottery_cap。没有这一档为空
 static func route(key: String) -> Dictionary:

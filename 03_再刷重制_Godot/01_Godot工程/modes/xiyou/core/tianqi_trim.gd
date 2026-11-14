@@ -3,15 +3,15 @@ extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇里关掉、改读档位表的原版难度挂钩（天启篇设计总览 v0.2 第四、五节；审查线开工单甲、乙两组）。
 ## 只认天启篇存档（XTianqi.active），原版档不变。各项一个开关，设 false 回到改之前。
 ##
-## - O-待定-1 LAODA：大厅牢妲（Map004 EV062）在天启篇只剩「挑战强大的守层者」：打过的 34～36 层（XTianqiSummit 再挑战）、
+## - O-405 LAODA：大厅牢妲（Map004 EV062）在天启篇只剩「挑战强大的守层者」：打过的 34～36 层（XTianqiSummit 再挑战）、
 ##   30～33 层守层者、兑换商店。难度 debuff 开关、选择怪物难度属性、花积分开启都不出（原版进菜单时还会关掉全部难度开关，含洪荒 2483）。
-## - O-待定-2 ROSTER：破阵·投影的强者／超强者名单改读天启篇档位表（XTianqiSkills.ids），说明换成天启篇的出伤加成与各档超强者上限。
-## - O-待定-3 DIFF_NAME：地图左下的难度名（XMapHud.difficulty_text）、难度变化提示（XDifficultyNotice）显示五档档名。
-## - O-待定-4 HIDE_AFFIX_RATE：修行·详细页末尾的「高阶词条概率」一段不显示（XAffixRate.detail_rows）。
-## - O-待定-6 NO_HONGHUANG：洪荒通关奖励取消（XTianqiSummit._honghuang 不跑）；大厅 EV065 洪荒女皇、EV066 兑换大厅传送、
+## - O-406 ROSTER：破阵·投影的强者／超强者名单改读天启篇档位表（XTianqiSkills.ids），说明换成天启篇的出伤加成与各档超强者上限。
+## - O-407 DIFF_NAME：地图左下的难度名（XMapHud.difficulty_text）、难度变化提示（XDifficultyNotice）显示五档档名。
+## - O-408 HIDE_AFFIX_RATE：修行·详细页末尾的「高阶词条概率」一段不显示（XAffixRate.detail_rows）。
+## - O-410 NO_HONGHUANG：洪荒通关奖励取消（XTianqiSummit._honghuang 不跑）；大厅 EV065 洪荒女皇、EV066 兑换大厅传送、
 ##   EV068 强者的礼物不出现；混元星河剑 4555、黎明—破晓 5199、技能书免疫转换 1991 不上架；仙道模式 5198 并进人族首领 EV054 的神武页。
-## - O-待定-8 ROUTE_TABLE：真气路线系数、流萤残核掉率、星爆书概率、开局抽奖被动上限（变量 9）读 balance_table 的 routes（按吸收的旧路线映射）。
-## 另两项开关在各自模块：O-待定-5 XTianqiAffixRoll.SKIP_HIGH_ROWS、O-待定-7 XTianqiCombat.DUNGEON_TIER。
+## - O-412 ROUTE_TABLE：真气路线系数、流萤残核掉率、星爆书概率、开局抽奖被动上限（变量 9）读 balance_table 的 routes（按吸收的旧路线映射）。
+## 另两项开关在各自模块：O-409 XTianqiAffixRoll.SKIP_HIGH_ROWS、O-411 XTianqiCombat.DUNGEON_TIER。
 
 static var LAODA := true
 static var ROSTER := true
@@ -42,7 +42,7 @@ static func _key(s: XState) -> String:
 	return str(s.flags.tianqi.get("difficulty", ""))
 
 
-# ---- 难度名（O-待定-3） ----
+# ---- 难度名（O-407） ----
 
 ## 本档档名，在副本里后面接副本档（「九死·王者」）；不是天启篇存档或开关关着为空
 static func difficulty_name(s) -> String:
@@ -56,13 +56,13 @@ static func difficulty_name(s) -> String:
 	return name
 
 
-# ---- 修行页（O-待定-4） ----
+# ---- 修行页（O-408） ----
 
 static func hide_affix_rate(s) -> bool:
 	return HIDE_AFFIX_RATE and on(s)
 
 
-# ---- 路线系数（O-待定-8） ----
+# ---- 路线系数（O-412） ----
 
 ## 本档的路线系数一行；不是天启篇存档、开关关着或表里没有为空
 static func route(s) -> Dictionary:
@@ -71,7 +71,7 @@ static func route(s) -> Dictionary:
 	return XTianqiBalance.route(_key(s))
 
 
-# ---- 强者名单（O-待定-2） ----
+# ---- 强者名单（O-406） ----
 
 ## 天启篇的名单：{ids, notes}；不接管为空
 static func roster(kind: String, s) -> Dictionary:
@@ -89,7 +89,7 @@ static func roster(kind: String, s) -> Dictionary:
 	return {"ids": XTianqiSkills.ids(tier), "notes": notes}
 
 
-# ---- 洪荒（O-待定-6） ----
+# ---- 洪荒（O-410） ----
 
 static func no_honghuang(s) -> bool:
 	return NO_HONGHUANG and on(s)
@@ -111,7 +111,7 @@ static func shop_goods(s, map_id: int, event_id: int, goods: Array) -> Array:
 	return out
 
 
-# ---- 牢妲（O-待定-1） ----
+# ---- 牢妲（O-405） ----
 
 static func intercepts(s, map_id: int, event_id: int) -> bool:
 	return LAODA and on(s) and map_id == HALL_MAP and event_id == LAODA_EVENT
