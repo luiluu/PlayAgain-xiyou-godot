@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-gojo-trials
 
 - 车道／工作者：天启篇五条悟进阶两次＋两场专属试炼战／cc（Opus＋high）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -57,7 +57,7 @@
   - 六、脚本化整场（夹具按真实开局学三个难度被动；五个存档种子各一遍）：怀玉会用机制全赢 7～14 回合、不放茈全输（甚尔一直剩 1 点）；新宿会用机制全赢 14～15 回合、不开无量空处全输（第 4 回合）。`huaiyu_*_0～4`、`xinsu_*_0～4`、`huaiyu_awakening_usual`。
   - 七、界面到开战：`page_confirm_trial`、`page_request`、`run_lose`、`run_win`、`run_stale_request`、`page_no_trial_in_shop`；开关 `off_*`、`learn_shift_off`。
 - 反向验证（`04_验证/反向验证清单/tianqi_gojo_trials.json`）：15 处改坏全部咬住（天逆鉾破无下限／拆印、只有茈能打倒、领悟回血、对拼抵消斩击／废必中、到期神灶、输了恢复、条件要试炼、rewards／grant 无奖励、甚尔两次、自己的金钱、提前学、迁移折半）。
-- 选测（云端，`选测.py main` 选中 444 个场景，含 xiyou_rules 全部段、xiyou_determinism、事件对照；提交 c5b62c615）：待写
+- 选测（云端，`选测.py main` 选中 444 个场景，含 xiyou_rules 全部段、xiyou_determinism、事件对照；提交 c5b62c615，运行 43581720835）：444 个场景全部通过，16 片、最长一片 11.9 分钟。之后的 93bde989d（专项加断言、反向验证清单）、aaa7b4cdd（读档还原整个恢复五条悟、没进阶时的提示语）只动了 `tianqi_gojo_trial.gd` 两个函数和专项，本机重跑 `xiyou_gojo_trials` 115/115、`xiyou_gojo` 74/74、语法检查、发行空壳 check 通过，没再上云端。
 - 没跑 `--oracle`：没改原版移植的底层逻辑；battle_logic 的挂钩只在试炼战（`active(logic)`）生效，西游档和别的天启篇战斗原样返回。
 
 ## 可优化（流程／工具／效率）
@@ -71,3 +71,4 @@
 - 77311fec5 发行防泄漏：类改名 XTianqiGojoTrial、空壳特例
 - c5b62c615 专项头注释写明数值表（选测认引用）
 - 93bde989d 专项补无奖励断言；反向验证清单
+- aaa7b4cdd 读档还原整个恢复五条悟；没进阶时的提示语
