@@ -347,6 +347,9 @@ static func prune_import_backups(target: String) -> Array:
 	var removed := []
 	if not IMPORT_BACKUPS:
 		return removed
+	# 空的、不是 .json、没有目录的 target 不认（否则会去列当前目录、按 ".before_import_" 前缀删别的文件）
+	if target == "" or not target.ends_with(".json") or target.get_base_dir() == "" or target.get_file() == ".json":
+		return removed
 	var dir := target.get_base_dir()
 	var prefix := target.get_file() + IMPORT_MARK
 	var names := Array(DirAccess.get_files_at(dir)).filter(func(n): return str(n).begins_with(prefix) and str(n).ends_with(".json"))

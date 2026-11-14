@@ -408,6 +408,10 @@ func _run() -> void:
 	check("imp_off_import", XSaveTransfer.import_to(1, imported) == "")
 	check("imp_off_keeps_all", Array(DirAccess.get_files_at(_dir)).filter(func(f): return str(f).begins_with("save_1.json.before_import_")).size() >= 4)
 	XSaveSlim.IMPORT_BACKUPS = true
+	var n_before := Array(DirAccess.get_files_at(_dir)).size()
+	check("imp_bad_target_noop", XSaveSlim.prune_import_backups("").is_empty() and XSaveSlim.prune_import_backups("save_1.json").is_empty()
+		and XSaveSlim.prune_import_backups(_dir).is_empty() and XSaveSlim.prune_import_backups(_dir.path_join(".json")).is_empty()
+		and Array(DirAccess.get_files_at(_dir)).size() == n_before)
 	check("imp_log", XSaveSlim.read_log().any(func(e): return str(e.kind) == "import_backup" and (e.files as Array).has(f_a)))
 
 	# ---- 残留临时文件 ----
