@@ -87,7 +87,8 @@ static func dealt_parts(a, s = null) -> Dictionary:
 	var party := float(r.party_damage)
 	var assist := 1.0 + float(XTianqiBalance.assist_bonus(field_weak_count(s)).damage_dealt)
 	var aura := 1.0 + (XTianqiBalance.assist_slot_aura() if has_helper(s) else 0.0)
-	return {"mult": tier * party * assist * aura, "tier": tier, "party": party, "assist": assist, "aura": aura}
+	var scale := XTianqiMoney.scale_dealt_mult(s)  # 天平「酒」
+	return {"mult": tier * party * assist * aura * scale, "tier": tier, "party": party, "assist": assist, "aura": aura, "scale": scale}
 
 
 ## 打到角色身上的伤害要乘的倍率（档位承伤 × 弱者协力承伤）
@@ -98,7 +99,8 @@ static func taken_parts(b, s = null) -> Dictionary:
 		return {"mult": 1.0}
 	var tier := XTianqiBalance.tier_taken_mult(XTianqiSkills.battle_tier(b, s))
 	var assist := 1.0 + float(XTianqiBalance.assist_bonus(field_weak_count(s)).damage_taken)
-	return {"mult": maxf(0.0, tier * assist), "tier": tier, "assist": assist}
+	var scale := XTianqiMoney.scale_taken_mult(s)  # 天平「油」
+	return {"mult": maxf(0.0, tier * assist * scale), "tier": tier, "assist": assist, "scale": scale}
 
 
 ## 伤害结算用：攻击者 a 打目标 b 的天启篇倍率（出伤 × 承伤）。不是天启篇存档恒 1。

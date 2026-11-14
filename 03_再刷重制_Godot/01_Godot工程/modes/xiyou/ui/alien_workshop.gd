@@ -347,10 +347,16 @@ func _reforge_section(st: XState) -> Dictionary:
 		var list: Array = item.tianqi_affixes
 		for n in list.size():
 			var a: Dictionary = list[n]
-			var price := XTianqiReforge.cost(a)
-			kids.append(el("div", null, "alien-actions", [el("p", XTianqiAffixText.line(str(a.key), int(a.tier), str(a.grade), a.get("extra", {}))),
-				btn("重铸第%d条（%d金钱）" % [n + 1, price], _reforge.bind(n), st.gold < price or XTianqiReforge.choices(item, n).is_empty())]))
+			var price := XTianqiReforge.price_of(st, item, n)
+			var row := [el("p", XTianqiAffixText.line(str(a.key), int(a.tier), str(a.grade), a.get("extra", {}))),
+				btn("重铸第%d条（%d金钱）" % [n + 1, price], _reforge.bind(n), st.gold < price or XTianqiReforge.choices(item, n).is_empty())]
+			if XTianqiReforge.can_lock(st, item):  # 天启篇金钱重构：锁这一条、洗其余
+				var lp := XTianqiMoney.lock_price(st, item, n)
+				row.append(btn("锁第%d条洗其余（%d金钱）" % [n + 1, lp], _reforge_lock.bind(n), st.gold < lp))
+			kids.append(el("div", null, "alien-actions", row))
 		kids.append(el("p", "在同一层里重抽一条（不会和这件别的词条重复），成色重新掷；连击、再动重铸不出来。", "alien-note"))
+		if XTianqiMoney.reforge_on(st):
+			kids.append(el("p", "这件已重铸 %d 次：每重铸一次涨价三成，最多涨到 10 倍；锁一条洗其余三倍价。" % int(item.get("tq_reforges", 0)), "alien-note"))
 	return el("section", null, "alien-reforge", kids)
 
 
@@ -363,6 +369,14 @@ func _reforge(index: int) -> void:
 	var st := s()
 	var item = _reforge_target(st)
 	var r: Dictionary = XTianqiReforge.reforge(st, item, index) if item != null else {"error": "先选重铸哪件"}
+	error_text = str(r.error) if r.has("error") else ""
+	render(r.has("error"))
+
+
+func _reforge_lock(keep: int) -> void:
+	var st := s()
+	var item = _reforge_target(st)
+	var r: Dictionary = XTianqiReforge.reforge_locked(st, item, keep) if item != null else {"error": "先选重铸哪件"}
 	error_text = str(r.error) if r.has("error") else ""
 	render(r.has("error"))
 

@@ -81,6 +81,11 @@ static func row(s: XState, actor_id: int):
 	var n := rank(s, actor_id)
 	for r in rows():
 		if int(r.actor) == actor_id and int(r.num) == n:
+			var tq := XTianqiMoney.advance_gold(s, n)  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万
+			if tq >= 0 and tq != int(r.gold):
+				var out: Dictionary = r.duplicate()
+				out.gold = tq
+				return out
 			return r
 	return null
 
