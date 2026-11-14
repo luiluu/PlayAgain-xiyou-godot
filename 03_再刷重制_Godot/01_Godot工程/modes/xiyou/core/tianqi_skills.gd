@@ -1,7 +1,7 @@
 class_name XTianqiSkills
 extends RefCounted
 ## 【cc·天启篇·未经审查】天启篇全角色技能重构（设计仓库《天启篇_全角色技能重构_v0.1》，Kyo 11-12 全部确认）。只对天启篇存档（XTianqi.active）生效，原版档不变。
-## 数据：modes/xiyou/tianqi_data/skill_rework.json（只读）。分期补卡，第一期：全局规则、档位名单、狗逍遥与绿司机两张卡、共用的超越极限 I～IV。
+## 数据：modes/xiyou/tianqi_data/skill_rework.json（只读）。分期补卡（第一期是全局规则、档位名单、狗逍遥与绿司机两张卡、共用的超越极限 I～IV；之后各期已补到表里全部角色，以 skill_rework.json 为准）。
 ##
 ## 怎么接：
 ## - 技能记录：XDB.rec("Skills", id) 遇到表里有的技能、且当前是天启篇存档时，换成改写后的副本（rec）。改写只动表里写的字段：
