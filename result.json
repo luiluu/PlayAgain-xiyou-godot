@@ -1,0 +1,26 @@
+{
+ "sha": "801bef583b0f3a6c3ee139d11e6f7d4721854884",
+ "branch": "ci/cc/tianqi-weak-clear",
+ "mode": "affected",
+ "base": "b1b69bccc49798ade17bcb9a5cf229b83078582a",
+ "passed": true,
+ "scenes": 5,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 310.2,
+ "testSeconds": 615,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43580010877",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_weak_clear.tscn"
+ ],
+ "time": "2026-11-14T09:28:20+00:00"
+}
