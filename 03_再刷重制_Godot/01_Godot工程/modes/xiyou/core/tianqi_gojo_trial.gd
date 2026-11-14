@@ -192,10 +192,12 @@ static func has_request() -> bool:
 ## 开始和结束试炼都记；记了以后读档不再迁移。只在两阶表开着时记（关着时阶数是旧四阶的）
 static func mark_table(s: XState) -> void:
 	if on() and s != null and XTianqi.active(s) and s.flags.get("tianqi") is Dictionary:
-		s.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION
+		XTianqiSave.set_version(s, "gojo", TABLE_VERSION)  # 存在 MIGRATE_KEY（存档门面分区 gojo 的 vkey）
 
 
-## 读档（XSave._load_data）：进行中的试炼还原队伍和战前状态；进阶表版本对不上就迁移一次
+## 读档（XSave._load_data）：进行中的试炼还原队伍和战前状态；进阶表版本对不上就迁移一次。
+## 迁移本身已由存档门面在 XState.from_dict 末尾先跑过（XTianqiSave.after_load），这里再调一次是幂等的空转；
+## 门面开关关着时由这里照旧迁移
 static func after_load(s: XState) -> void:
 	if s == null:
 		return
@@ -215,10 +217,10 @@ static func after_load(s: XState) -> void:
 static func migrate(s: XState) -> void:
 	if s == null or not XTianqi.active(s) or not s.flags.get("tianqi") is Dictionary:
 		return
-	var v := int(s.flags.tianqi.get(MIGRATE_KEY, 0))
+	var v := XTianqiSave.version(s, "gojo")  # 即 flags.tianqi[MIGRATE_KEY]
 	if not on():
 		if XGojo.ENABLED and v >= TABLE_VERSION:
-			s.flags.tianqi[MIGRATE_KEY] = OLD_VERSION
+			XTianqiSave.set_version(s, "gojo", OLD_VERSION)
 			var r := XAdvance.rank(s, XGojo.ACTOR)
 			if r > 0:
 				s.actor_advance[XGojo.ACTOR] = mini(r * 2, 4)

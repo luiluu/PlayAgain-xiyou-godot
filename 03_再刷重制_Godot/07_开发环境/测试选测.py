@@ -1586,7 +1586,7 @@ class CheckerTests(Fixture):
         self.assertIn('跳过导入与测试', out)
         self.assertIn('选测全部通过', out)
         # 补跑事件状态探针（缺文件才补量）每次跑；回退开关覆盖属文档与登记（读优化登记），只改文档也跑（tools26，不到 1 秒、只警告）；探针登记检查同样每次跑（tools31 守卫，不到 1 秒）
-        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '待核查.py', '探针登记检查.py', '补跑事件状态探针.py'])
+        self.assertEqual(self.names(ran), ['boot_check.cjs', '变更记录分卷.py', '回退开关覆盖.py', '天启篇存档登记.py', '待核查.py', '探针登记检查.py', '补跑事件状态探针.py'])
 
     def test_ui_change_runs_selected_scenes_only(self):
         self.put(UI / 'shop.gd', 'class_name XShopScene\n# 2\n')
