@@ -79,6 +79,8 @@ gpt 静态核五个提交：保底、种子、掉率、默印没发现问题；2
 | 补验证 a：完整磁盘存读档 | 只补测试 | `seed_disk_roundtrip`：`XSave.save(1)` 写盘、`load_slot(1)` 读回新的 XState，orb_seed、qiyin.seed、rng_n、artifact_miss（217）、artifacts／artifacts_got 都在，读回后下一次掷数和存档后不读档时一样，已得神器不在池子里 |
 | 补验证 b：技能号 10777 冲突核对 | 只核对 | 冻结正式源 `app.nw/data/Skills.json` 共 10634 条、最大号 10633，没有 10777；转换产物 Skills.json 同（10633）；天启篇表外号段 skill_rework.json `new_skills` 41 个（10701～10777），10777 只出现一次；`new_states` 从 10801 起（状态表，不同表）；五条悟 10634～10650；`modes/` 全部 .gd／.json 和 tests 里只有本车道三处用到 10777；本机 31 个分支 `git grep` 都没有别处占用 10777。结论：无冲突 |
 
+返修验证：语法检查 0 问题；本机 `xiyou_tianqi_qiyin_endgame` 62/62、`xiyou_tianqi_alien_affix` 38/38、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_qiyin_altar` 通过；反向验证 3 处全咬住；云端选测（基准 c77712a72，12 个场景，运行 43582475567）全部通过。
+
 书卷「佩戴者在助力位」逐条落点（补进上面「书卷逐条」）：星坠、献祭照扣（活着就付）；不愈、魔塔、寂静、限时、杀声只在他行动、被打、状态走回合时才有落点，人在助力位不行动、不挨打、状态不走回合，等于暂停，换回场上接着生效；佩戴者阵亡后代价全停，收益（敌方那份）照旧。
 
 ## 交接板
