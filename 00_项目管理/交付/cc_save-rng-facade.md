@@ -266,15 +266,54 @@ static func qiyin_seed(s, domain) / drop_hash(seed, key, total) / elements_seed(
 
 （其余都按推荐默认继续：旧写法只搬家不改公式；分区懒建；计数不搬位置。）
 
+## 协调批复（2026-11-14）
+
+方案批了，三条按推荐：①战斗键＝敌群号＋本档打这个敌群第几次；②开战布阵掷的（按段异化挂谁、神话判定）算结果、一起钉住；③西游档不钉（协调转告 Kyo，有异议再改）。本车道做 S1；R1 等 seed-fix 合并后再开；R3 合并加 `--oracle`；S2、S3、R2 由协调另派。
+
+## S1 实现（本分支）
+
+| 处 | 做了什么 |
+|---|---|
+| 新 `modes/xiyou/core/tianqi_save.gd`（`XTianqiSave`） | 登记表：`SECTIONS` 16 个分区（版本、归谁、`vkey`、分区自带的根上老键）、`ROOT_KEYS`、`COUNTER_KEYS`（seed-fix 的 `affix_roll_n`／`affix_src_n`／`src_n`）、`OUTSIDE_KEYS`（`_gojoTrial`）、`GEAR_KEYS` 10 个装备键（`copy`）；`WIRED` 列已接进门面的 3 个分区。接口 `root`／`peek`／`section`／`version`／`set_version`／`versions`／`after_load`／`strip_on_copy`。头注释是规矩一页 |
+| `xstate.gd` `from_dict` | 一行 `XTianqiSave.after_load(s)`（在 `XPets.loaded` 之后、`XWeakChallenge.after_load` 之前） |
+| `tianqi_drop.gd` | `store` 改走 `section(s, "drop")`；原来的建账、补 `pity` 搬成 `fill(s, d, made)`（种子公式一字不改，只在新建时给）；两处「有没有账」的判断改 `peek`（必掉不新建账的行为不变） |
+| `tianqi_qiyin.gd` | `progress` 改走 `section(s, "qiyin")`；逐键补搬成 `fill(s, p)`，逐键与原来相同 |
+| `tianqi_gojo_trial.gd` | 版本读写改走 `XTianqiSave.version`／`set_version(s, "gojo", …)`，存储仍是 `flags.tianqi.gojo_adv_v`；`after_load` 照旧（还原试炼现场＋迁移），迁移幂等所以门面先迁一次、这里再调是空转 |
+| 新 `tests/lib/tq_save_kit.gd` | 共用夹具：`new_game`（真开局）、`roundtrip`／`reload`（`XSave.save`→`XSave.load_slot` 真写盘读档）、`raw`／`edit_raw`／`legacy`（改存档文件造老档）、`reload_same`、`each_seed`、`teardown`；构造时把存档目录和配置指到 `user://test_<名>/` |
+| 新专项 `xiyou_tianqi_save` | 36 条，见「验证」 |
+| 新 `07_开发环境/天启篇存档登记.py`＋`测试天启篇存档登记.py`（8 条） | 游戏代码里字面量／同文件 const 的 `flags.tianqi` 键、别名 `var tq = s.flags.tianqi` 的键、`XTianqiSave.section(s, "名")` 的分区名、装备 `["tq_x"] =` 赋值，不在登记表的逐条报；接进 `检查.sh`（文档与登记段，探针登记检查之后，失败算 FAIL）、`检查.sh` tools 组、`工具回归.py` 门禁；`测试选测.py` 文档类改动的检查名单随之加一项 |
+
+**与方案的两处出入**（都是往保守走）：
+
+1. 方案说「两个自带标记并进 `v`，旧键只读兼容」。实际改成**不搬标记**：登记了 `vkey` 的分区（`gojo` → `gojo_adv_v`、`no_diff_passive` → `no_diff_passive`）版本就存在原来的键里，门面统一读写、`versions()` 一处看全。理由：搬标记就要一次数据迁移，而门面开关一关模块又要认旧键，两套位置并存更容易出错；不搬则零迁移、开关回退天然成立。
+2. 方案说五条悟迁移「从 `XSave._load_data` 挪到 `from_dict`」并删 `_load_data` 那半行。实际**没动 `xsave.gd`**：门面在 `from_dict` 末尾先迁，`_load_data` 里的 `after_load` 照旧调（迁移幂等，第二次空转）；门面开关关着时由它照旧迁。好处是本单不碰 `xsave.gd`（save-data-cleanup 在改它）。次序变化：迁移现在在试炼现场还原（`_restore`）之前。两者不读对方写的东西；唯一交集是 `_restore` 把生命夹到 `mhp`，而反迁移（只在关两阶表开关时）会改阶数——只影响「关开关＋存档时正在试炼」这一种，可接受，记在这里。
+
+**挂钩那一行**：协调说等 seed-fix 合并后再提交。我先试了合并：本分支与 `cc/tianqi-seed-fix`（`337270ec9`）、`cc/save-data-cleanup`（`9f333861f`）各做 `git merge-tree`，都**无冲突**（挂钩放在 `XPets.loaded` 后，和 seed-fix 加 `assign_all` 那行隔着两行），所以一并提交了。若总装仍想等 seed-fix 先合，本分支照样能后合（已验证三方都能干净合并）。
+
 ## 变更记录草稿
 
-（实现阶段再写）
+## 2026-11-14 【cc·存档门面·未经审查】天启篇存档门面 XTianqiSave 骨架，掉落账／七印／五条悟三处打样（dev.待定）
+
+- 新 `XTianqiSave`（`modes/xiyou/core/tianqi_save.gd`）：`flags.tianqi` 的分区登记表（16 个分区＋根上散键、随机计数、区外键）、装备上天启篇键的登记表（复制时带不带走），统一的 `section`（缺了按默认建、缺键按默认补）、`peek`（只看不建）、版本 `version`／`set_version`（一般分区记 `flags.tianqi.v`，五条悟、难度被动沿用原标记键）、读档后唯一入口 `after_load`（挂在 `XState.from_dict` 末尾，只给已存在的分区补迁移、幂等）。
+- 打样三个分区：招牌掉落账（`XTianqiDrop.store`）、七印祭坛（`XTianqiQiyin.progress`）改走门面，补法逐键与原来相同；五条悟进阶表版本经门面读写，读档迁移改在 `from_dict` 末尾先跑（只走 `to_dict`／`from_dict` 的测试也测得到），`XSave._load_data` 里照旧再调一次（幂等）。其余 13 个分区只登记，模块里照旧就地补，下一批接。
+- 共用测试夹具 `tests/lib/tq_save_kit.gd`：真开局、真写盘读档、改存档文件造老档、读档再掷对照、多种子。新专项 `xiyou_tianqi_save`。
+- 新检查 `天启篇存档登记.py`：游戏代码里读写的 `flags.tianqi` 键、装备上新写的 `tq_` 键没在门面登记就报，进 `检查.sh` 与工具回归门禁。
+- 开关 `XTianqiSave.ENABLED`（O-待定）：关掉读档不跑门面迁移、不记版本，模块取分区时照旧就地补，结果相同。
+- 西游档不受影响（门面只认天启篇档；`from_dict` 上非天启篇档 `after_load` 直接返回）。存档里多一个 `flags.tianqi.v`（各分区版本，几十字节）。
+- 玩家可见：无。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版 | 优化 | 依据 | 回退 | 提出 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_save.gd` `XTianqiSave.ENABLED`（`after_load`、`section` 记版本）；`xstate.gd` `from_dict` 一行；`tianqi_drop.gd` `store`／`fill`；`tianqi_qiyin.gd` `progress`／`fill`；`tianqi_gojo_trial.gd` 版本读写；`tests/xiyou_tianqi_save.gd` | 天启篇存档字段散在各模块，旧档缺字段三种处理法并存（就地补／自带标记／不处理），读档后入口两处、测试只碰得到一处 | 存档门面统一登记分区、默认值、版本与读档迁移，读档后入口一处（`from_dict` 末尾） | 架构二第四、五节；协调派单 cc/save-rng-facade | `XTianqiSave.ENABLED = false` | cc | 保留 |
 
 ## 交接板
 
-- 下一步：等协调回复方案；S1 可先开。
-- 用户试玩说明：无（方案阶段）
-- 需要用户决定：见「方案」第 4 节三条（战斗键用敌群＋次数还是全局第几场；开战布阵掷骰算不算结果；西游档不钉）。
+- 下一步：gpt 甲档核 cc/save-rng-facade S1；seed-fix 合并后派 R1（随机门面骨架，Opus＋medium）；S2（其余 13 个分区接门面＋`strip_on_copy` 接 seed-fix 三处复制路径，Sonnet＋medium）、S3（旧专项改真实存读）、R2 由协调派；R3 等战斗门面时机。
+- 车道须知短表（私密设计仓架构二第七节）「存档字段写哪」「测试怎么写才算数」两行，S1 合并后改成「现在」就用门面与夹具（设计仓由协调改）。
+- 用户试玩说明：无（玩家看不到变化）。
+- 需要用户决定：无（方案三条协调已按推荐定，转告 Kyo）。
 
 ## 进度账
 
@@ -283,12 +322,20 @@ static func qiyin_seed(s, domain) / drop_hash(seed, key, total) / elements_seed(
 ## 可优化（流程／工具／效率）
 
 - 建议：`XSaveSlim` 写盘时去掉的装备字段与 `GEAR_KEYS` 合成一张登记表（加 `save` 列），以后加装备字段一处登记（S2 之后，归存档车道）。
-- 建议：发行空壳清单制落地后，`随机守卫.py`、`天启篇存档登记.py` 都直接读那份清单认「天启篇脚本」，不再各写一套文件名规则。
+- 建议：发行空壳清单制落地后，`天启篇存档登记.py`（以及 R1 的随机守卫）直接读那份清单认「天启篇脚本」。
+- 已做：`天启篇存档登记.py` 接进 `检查.sh` 与工具回归门禁（回退：删 `检查.sh` 那两行和门禁一项）。
 
 ## 验证
 
-- 方案阶段只读：没跑 Godot、没改代码。行号基于 main `d45643f0b` 与 seed-fix `8ab6a8250`。
+- 新专项 `xiyou_tianqi_save` 36/36（全部存读走夹具的 `XSave.save`→`XSave.load_slot`）：登记表自洽（`wired_registered`、`vkey_sections`）；新档懒建、版本（`new_lazy`、`new_versions`、`drop_made`、`drop_same_dict`、`qiyin_made`）；残缺七印区补法与老写法逐键相同（`qiyin_fill_like_old`）；必掉不新建账、有账才清连败（`sure_no_new_acct`、`fails_no_acct`、`sure_resets_existing`）；真实存读（`rt_*`，含连续两次存读天启篇区一字不差 `rt_idempotent`）；老档整账缺失读档不建、首次用种子同新档公式（`legacy_drop_lazy`、`legacy_drop_seed`）；老档缺 `pity`／`v`／七印 `seed`／`rng_n` 读档补上、种子不动、记版本（`legacy_raw_stripped`、`legacy_after_load_fills`、`legacy_qiyin_seed`、`legacy_stamped`）；门面开关关→不迁不记、模块照补，再开补记（`off_no_stamp`、`off_module_fills`、`on_again_stamps`）；五条悟只走 `from_dict` 也迁移、关两阶表反迁移且幂等、门面关时 `load_slot` 照旧迁（`gojo_*` 5 条）；非天启篇档不建区、`after_load` 不动（`plain_*` 3 条）；复制去键（`strip_on_copy`）；三个种子懒建种子按公式、存读不变、种子间不同（`each_seed_*`）。
+- 反向验证（`反向验证.py`，专项 `xiyou_tianqi_save`）9 处各改坏一次全部咬住：读档入口不挂、读档迁移不记版本、新建分区不记版本、门面开关不管读档、必掉也建账、七印老档不补种子、七印老档不补计数、复制不去键、五条悟反迁移版本不经门面写；源文件按备份还原。
+- 本机专项：`xiyou_gojo_trials`、`xiyou_tianqi_drop*`、`xiyou_tianqi_qiyin*`、`xiyou_tianqi_e2e`、`xiyou_tianqi_title_flow`、`xiyou_tianqi_no_diff_passive`、`xiyou_determinism` 共 15 个场景全部通过。
+- 选测：`选测.py main --list` 因为改了 `xstate.gd` 面很广，走 `云端选测.py run`：（待填）。
+- 语法检查 0 个问题；`发行空壳.py check` 55 个脚本、445 个函数都有（`XTianqiSave` 自动进空壳）；`测试天启篇存档登记.py` 8/8；`测试选测.py CheckerTests CheckerStubParseTests` 32/32；工具回归（待填）。
+- 不需要 `--oracle`：西游档路径没变（`after_load` 对非天启篇档直接返回），没碰原版移植逻辑。
 
 ## 待交叉核查
 
-- 方案阶段无代码提交。
+- 甲档（存档）：`core/tianqi_save.gd` 全文；`core/xstate.gd` `from_dict` 一行；`core/tianqi_drop.gd` `store`／`fill`／两处 `peek`；`core/tianqi_qiyin.gd` `progress`／`fill`；`core/tianqi_gojo_trial.gd` `mark_table`／`migrate` 版本读写两处；`tests/lib/tq_save_kit.gd`、`tests/xiyou_tianqi_save.gd`。
+- 工具：`07_开发环境/天启篇存档登记.py`、`测试天启篇存档登记.py`、`检查.sh` 两行、`工具回归.py` 一项、`测试选测.py` 一处期望。
+- 重点：①补法逐键与原来相同（尤其掉落账只在新建时给种子、老账缺种子不补——与原写法一致）；②五条悟迁移挪到 `_restore` 之前的次序影响（上面「出入」第 2 条）；③`section` 对非天启篇档返回不落盘的临时表，原来 `progress`／`store` 在这种档上会直接报错，现在不会。
