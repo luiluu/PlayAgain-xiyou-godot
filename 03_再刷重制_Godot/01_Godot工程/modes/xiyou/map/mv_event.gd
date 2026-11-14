@@ -41,11 +41,12 @@ func setup_event(map: int, ev: Dictionary) -> void:
 
 
 func refresh() -> void:
-	var idx := -1 if erased else _find_page()
+	var ov: Dictionary = {} if erased else XTianqiSect.page_override(XState.current, map_id, event_id, data.pages)
+	var idx: int = int(ov.index) if not ov.is_empty() else (-1 if erased else _find_page())
 	if idx == page_index:
 		return
 	page_index = idx
-	page = data.pages[idx] if idx >= 0 else {}
+	page = ov.page if not ov.is_empty() else (data.pages[idx] if idx >= 0 else {})
 	# 换页（含消除、出现条件都不满足）：Game_Event.setupPageSettings／clearPageSettings 换掉 _interpreter，旧页的并行解释器不再更新
 	stop_parallel()
 	if page.is_empty():
