@@ -24,6 +24,9 @@ extends RefCounted
 ## shadow 35 层影子（战争线：每回合一招焰浪轰击／噼啪三响，带兵临；饥荒线：每回合一招题海战术，带绝粮，没有小怪；
 ## 死亡线：奇数回合弱化的神圣剑（固定 6 段）、偶数回合给一人挂死期，带终焉：死去的人本场不能复活）。
 ##
+## 瘟疫本体战的混子小弟 A／B／C（天启篇_混子小弟ABC设计 v0.2，Kyo 11-15 D10～D13；cc/hunzi-minions）：A·板砖单体物理打不服最多的人、
+## B·喷嚏全体魔法、C·喇叭起哄两人各 +1 不服且在场时嘲讽削伤 −33%；站在混子身后，嘲讽在时打不到；倒下空 2 回合再重混。
+##
 ## 还没做（交付单「未做」）：画面上的计量条和死期、不服标记（现在只在战斗日志里报）；（瘟疫的生存战和影子已由 cc 瘟疫线车道做了）
 ## 绝粮的「消耗再提高一档」和口粮；骑士队长让免即死、不屈失效；疫病让减益清不掉；识破的反击、爆闪几率。
 
@@ -213,22 +216,32 @@ static func setup(logic, s: XState) -> void:
 		"famine":
 			slots = 0 if mode == "shadow" else int(knight(line).start_adds)  # 影子没有异化追加（不吃小怪）
 		"plague":
-			slots = int(knight(line).adds.max)
+			slots = int(knight(line).adds.max) if mode == "body" else 0  # 混子小弟只上本体战；生存战、35 层影子不上（v0.2 第 4.4 节）
 	var adds := []
+	var minion_keys := []
 	for i in range(slots):
 		var e := XEnemy.new()
 		var sv: Dictionary = data().get("survival", {})
 		var add_shell := int(sv.get("add_enemy_" + line, sv.get("add_enemy", 0))) if mode == "survival" else 0
+		var mkey := minion_key_at(i) if line == "plague" else ""
 		if add_shell > 0:
 			e.setup_horseman(add_shell, _survival_add_rec(add_shell, key, line))
+		elif mkey != "":
+			e.setup_horseman(minion_shell(mkey), _minion_rec(minion_shell(mkey), mkey, key))
 		else:
 			e.setup_horseman(int(shell.get("add", 2)), _add_rec(int(shell.get("add", 2)), line, key))
-		e.set_meta("x", 300.0 + 70.0 * (i % 3))
-		e.set_meta("y", 240.0 + 110.0 * floorf(i / 3.0))
+		if mkey != "":
+			# 混子站前（x 600 靠我方一侧），三个小弟排一列站在他身后：A 上、B 中、C 下，重混回原位
+			e.set_meta("x", 420.0)
+			e.set_meta("y", 250.0 + 110.0 * i)
+		else:
+			e.set_meta("x", 300.0 + 70.0 * (i % 3))
+			e.set_meta("y", 240.0 + 110.0 * floorf(i / 3.0))
 		e.hidden = true
 		logic.enemies.append(e)
 		adds.append(e)
-	var f := {"line": line, "mode": mode, "key": key, "knight": kn, "adds": adds, "base": st, "phase": 1, "marks": {},
+		minion_keys.append(mkey)
+	var f := {"line": line, "mode": mode, "key": key, "knight": kn, "adds": adds, "minion_keys": minion_keys, "base": st, "phase": 1, "marks": {},
 		"queue": [], "down": {}, "acted": {}, "survived": false}
 	match line:
 		"death":
@@ -238,7 +251,9 @@ static func setup(logic, s: XState) -> void:
 		"famine":
 			f.merge({"seniority": 0, "broke1": false, "broke2": false})
 		"plague":
-			f.merge({"taunt": true, "shield_acc": 0.0, "shield_open": false, "broken_turn": -1, "plague_down": 0.0, "last_add": 0})
+			# minion_down：小弟（A／B／C）倒下的回合；minion_seen：出过场的
+			f.merge({"taunt": true, "shield_acc": 0.0, "shield_open": false, "broken_turn": -1, "plague_down": 0.0, "last_add": 0,
+				"minion_down": {}, "minion_seen": {}})
 	logic.set_meta(META, f)
 	_logic_ref = weakref(logic)
 
@@ -281,6 +296,50 @@ static func _add_rec(shell_id: int, line: String, key: String) -> Dictionary:
 	rec.exp = 0
 	rec.gold = 0
 	return rec
+
+
+## 混子小弟 A／B／C 的表（knights.plague.minions）
+static func minions() -> Dictionary:
+	var m = knight("plague").get("minions")
+	return m if m is Dictionary else {}
+
+
+## 瘟疫第 i 个小怪位是哪只小弟（照 order：A／B／C）；表里没有就 ""
+static func minion_key_at(i: int) -> String:
+	var order: Array = minions().get("order", [])
+	return str(order[i]) if i >= 0 and i < order.size() else ""
+
+
+static func minion(mkey: String) -> Dictionary:
+	var m = minions().get(mkey)
+	return m if m is Dictionary else {}
+
+
+## 外观接口：每只小弟借哪个敌人的外观（表里 shell 给了就用它的，没给用 shell_enemy.add 占位；co 画好后在表里各填一个号）
+static func minion_shell(mkey: String) -> int:
+	return int(minion(mkey).get("shell", data().get("shell_enemy", {}).get("add", 2)))
+
+
+## 混子小弟：生命 × 本档敌人血量，攻击、魔攻是共用小怪攻击 × 本档敌人攻击，防御、魔防照表
+static func _minion_rec(shell_id: int, mkey: String, key: String) -> Dictionary:
+	var rec := _add_rec(shell_id, "plague", key)
+	var m := minion(mkey)
+	var row := XTianqiBalance.difficulty(key)
+	rec.name = str(m.get("name", rec.name))
+	rec.params[0] = roundf(float(m.get("hp", 0)) * float(row.enemy_hp))
+	rec.params[3] = float(m.get("def", rec.params[3]))
+	rec.params[5] = float(m.get("mdf", rec.params[5]))
+	return rec
+
+
+## 这只敌人是哪只混子小弟（"A"／"B"／"C"；不是返回 ""）
+static func minion_key_of(logic, e) -> String:
+	if not active(logic):
+		return ""
+	var f := fight(logic)
+	var i: int = f.adds.find(e)
+	var keys: Array = f.get("minion_keys", [])
+	return str(keys[i]) if i >= 0 and i < keys.size() else ""
 
 
 ## 生存战的援军：开场在第 5 层左右，借本线开场地图的普通怪（survival.add_enemy，六层火焰哥布林）原数值 × 本档敌人血量／攻击；
@@ -456,12 +515,7 @@ static func end_turn(logic) -> Array:
 	if str(f.line) == "plague":
 		var p: Dictionary = knight("plague").plague
 		f.plague_down = minf(float(p.down_cap), float(f.plague_down) + float(p.down_per))
-		# 小怪每回合给一人 +1 不服
-		for e in f.adds:
-			if e.is_alive():
-				var live := _alive_actors(logic)
-				if not live.is_empty():
-					_defiance(logic, f, live[logic._int(0, live.size() - 1, "horseman_defiance")], int(knight("plague").defiance.per_add))
+		# v0.2：回合末小怪不再给不服，改由混子小弟C·喇叭出手「起哄」
 	if str(f.line) == "death" and int(f.phase) >= 3:  # 阶段只进不退（圣水加最大生命会把血量比例往回拉）
 		f.finale = mini(int(knight("death").finale.full), int(f.finale) + 1)
 		_say(f, "终末 %d／%d。" % [int(f.finale), int(knight("death").finale.full)])
@@ -626,20 +680,43 @@ static func _plague_turn_start(logic, f: Dictionary, turn: int) -> void:
 	if int(f.broken_turn) >= 0:
 		if turn == int(f.broken_turn) + 1:
 			f.taunt = false
-			_say(f, "盾碎了：这一回合不服来打我失效。")
+			_say(f, "盾碎了：这一回合不服来打我失效。" + ("小弟们露出来了。" if f.adds.any(func(e): return e.is_alive()) else ""))
 		elif turn > int(f.broken_turn) + 1:
 			f.taunt = true
 			f.broken_turn = -1
 	if int(f.phase) >= 2 and turn - int(f.last_add) >= int(k.adds.every):
-		for e in f.adds:
-			if not e.is_alive():
-				_summon(logic, f, e)
-				f.last_add = turn
-				_say(f, "混出了一只小怪。")
-				break
+		var e = _next_minion(f, turn)
+		if e != null:
+			_summon(logic, f, e)
+			f.last_add = turn
+			var mkey := str(f.minion_keys[f.adds.find(e)])
+			f.minion_seen[mkey] = true
+			_say(f, "%s混出来了：「%s」" % [e.display_name(), {"A": "谁不服？站出来！", "B": "阿——阿——", "C": "大哥说不服，那就是不服！"}.get(mkey, "")])
 	for a in _alive_actors(logic):
 		if _mark(f, a).get("plague", false) and logic._float("horseman_plague_confuse") < float(k.plague.confuse):
 			_confuse(logic, a)
+
+
+## 这一回合该混出哪只小弟：没上场、且（没出过场，或倒下后已空满 respawn_gap 个整回合）；
+## 没出过的先出（照 order），其次倒下最早的。都不行返回 null
+static func _next_minion(f: Dictionary, turn: int):
+	var gap := int(minions().get("respawn_gap", 2))
+	var best = null
+	var best_rank := []
+	for i in f.adds.size():
+		var e = f.adds[i]
+		if e.is_alive():
+			continue
+		var mkey := str(f.minion_keys[i])
+		var seen := bool(f.minion_seen.get(mkey, false))
+		var down_t := int(f.minion_down.get(mkey, 0))
+		if seen and turn - down_t <= gap:
+			continue  # 第 T 回合倒下，最早第 T＋gap＋1 回合开始时回来
+		var rank := [1 if seen else 0, down_t if seen else 0, i]
+		if best == null or rank < best_rank:
+			best = e
+			best_rank = rank
+	return best
 
 
 static func _confuse(logic, a) -> void:
@@ -674,7 +751,7 @@ static func _shield_hit(f: Dictionary, value: float, turn: int) -> void:
 	if float(f.shield_acc) >= need and int(f.broken_turn) < 0:
 		f.shield_acc = 0.0
 		f.broken_turn = turn
-		_say(f, "混子之盾碎了！")
+		_say(f, "混子之盾碎了！下一回合他挡不住身后的小弟。")
 
 
 # ---- 骑士出手 ----
@@ -696,7 +773,10 @@ static func decide(logic, b) -> Array:
 		return []
 	var f := fight(logic)
 	if is_add(logic, b):
-		# 援军普攻；饥荒、瘟疫的小怪不主动攻击
+		var mkey := minion_key_of(logic, b)
+		if mkey != "":
+			return _minion_pick(mkey)
+		# 援军普攻；饥荒的小怪不主动攻击
 		return [_skill("add_attack", "攻击", 1, 1, float(data().adds.coef), false), null] if str(f.line) == "war" else [{}, null]
 	if not is_knight(logic, b):
 		return []
@@ -725,6 +805,36 @@ static func _skill(kind: String, name: String, scope: int, hits: int, coef: floa
 		"animationId": 0, "iconIndex": 0, "message1": "", "message2": "", "note": "", "meta": {}, "effects": [],
 		"damage": {"type": 1, "elementId": 0, "formula": "0", "variance": 0, "critical": false}, "repeats": 1, "stypeId": 0,
 		"mpCost": 0, "tpCost": 0, "speed": 0, "successRate": 100, "hitType": 0}
+
+
+## 混子小弟每回合出手一次：A 拍板砖（单体物理，打不服最多的人，目标出手时再挑）、B 打喷嚏（全体魔法）、C 起哄（两人各 +1 不服，不打伤害）
+static func _minion_pick(mkey: String) -> Array:
+	var m := minion(mkey)
+	match mkey:
+		"A":
+			return [_skill("minion_brick", str(m.get("skill", "拍板砖")), 1, 1, float(m.get("coef", 1.0)), false), null]
+		"B":
+			return [_skill("minion_sneeze", str(m.get("skill", "打喷嚏")), 2, 1, float(m.get("coef", 0.5)), bool(m.get("magical", true))), null]
+		"C":
+			return [_skill("minion_cheer", str(m.get("skill", "起哄")), 2, 0, 0.0, false), null]
+	return [{}, null]
+
+
+## 混子小弟A：我方活着的人里不服层数最多的；一样多时带标签随机（horseman_minion_target）
+static func _most_defiance(logic, f: Dictionary):
+	var live := _alive_actors(logic)
+	if live.is_empty():
+		return null
+	var top := -1
+	var pool := []
+	for a in live:
+		var n := int(_mark(f, a).get("defiance", 0))
+		if n > top:
+			top = n
+			pool = [a]
+		elif n == top:
+			pool.append(a)
+	return pool[0] if pool.size() == 1 else pool[logic._int(0, pool.size() - 1, "horseman_minion_target")]
 
 
 static func _death_pick(logic, f: Dictionary, i: int) -> Array:
@@ -843,6 +953,28 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 			var t = _pick_target(logic, chosen)
 			if t != null:
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * (1.0 - float(knight("plague").self_atk_down)) * float(skill.coef), false))
+		"minion_brick":
+			var t = _most_defiance(logic, f)
+			if t != null:
+				_say(f, "%s拍了%s一板砖。" % [u.display_name(), t.display_name()])
+				logs.append_array(take_logs(logic))
+				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef), false))
+		"minion_sneeze":
+			for t in _alive_actors(logic):
+				logs.append(_strike(logic, u, t, skill, float(u.mat) * float(skill.coef), false))
+		"minion_cheer":
+			var live := _alive_actors(logic)
+			var picked := []
+			var n := mini(int(minion("C").get("defiance_targets", 2)), live.size())
+			for _n in range(n):
+				var t = live[logic._int(0, live.size() - 1, "horseman_defiance")]
+				live.erase(t)
+				picked.append(t)
+			if not picked.is_empty():
+				_say(f, "%s起哄：%s不服 +1。" % [u.display_name(), "、".join(picked.map(func(x): return x.display_name()))])
+			for t in picked:
+				if t.is_alive():
+					_defiance(logic, f, t, 1)
 		"fireworks", "bomb", "kindle", "wave", "crackle":
 			logs.append_array(_war_perform(logic, f, u, skill, chosen))
 		"sea", "landing", "bankrupt", "sword_rain":
@@ -1043,6 +1175,10 @@ static func _check_kills(logic, f: Dictionary) -> void:
 			f.down[e] = true
 			if str(f.line) == "war":
 				f.sparks = int(f.sparks) + int(knight("war").sparks.rally)
+			var mkey := minion_key_of(logic, e)
+			if mkey != "" and f.knight.is_alive():
+				f.minion_down[mkey] = int(logic.turn)  # 重混从倒下回合起算
+				_say(f, "%s：「%s」" % [e.display_name(), {"A": "砖……砖碎了……", "B": "……阿嚏。（倒）", "C": "喇叭……给我留着……"}.get(mkey, "")])
 	if f.knight.is_dead():
 		for e in f.adds:
 			if e.is_alive():
@@ -1059,7 +1195,7 @@ static func after_action(logic, u) -> Array:
 	var f := fight(logic)
 	if str(f.line) == "plague" and u is XActor and bool(f.get("hit_knight", {}).get(u, false)):
 		f.hit_knight.erase(u)
-		_defiance(logic, f, u, 1)
+		_defiance(logic, f, u, int(knight("plague").defiance.get("per_add", 1)))
 	_check_kills(logic, f)
 	_check_phase(logic, f)
 	if str(f.line) == "war" and str(f.mode) == "survival" and not bool(f.survived):
@@ -1092,7 +1228,7 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	return value
 
 
-## XTianqiCombat.damage_mult：打到骑士身上的倍率（混子自我修养减伤 11%，嘲讽在时再 −22%）
+## XTianqiCombat.damage_mult：打到骑士身上的倍率（混子自我修养减伤 11%，嘲讽在时再 −22%；混子小弟C·喇叭在场时嘲讽削伤改 −33%）
 static func taken_mult(b) -> float:
 	var logic = active_logic()
 	if logic == null or not is_knight(logic, b):
@@ -1101,7 +1237,16 @@ static func taken_mult(b) -> float:
 	if str(f.line) != "plague":
 		return 1.0
 	var k := knight("plague")
-	return (1.0 - float(k.self_reduce)) * ((1.0 - float(k.taunt_reduce)) if bool(f.taunt) else 1.0)
+	var taunt := float(k.taunt_reduce)
+	if _minion_alive(logic, f, "C"):
+		taunt = float(minion("C").get("taunt_reduce", taunt))
+	return (1.0 - float(k.self_reduce)) * ((1.0 - taunt) if bool(f.taunt) else 1.0)
+
+
+static func _minion_alive(_logic, f: Dictionary, mkey: String) -> bool:
+	var keys: Array = f.get("minion_keys", [])
+	var i := keys.find(mkey)
+	return i >= 0 and i < f.adds.size() and f.adds[i].is_alive()
 
 
 ## BattleLogic.item_cri：勇者暴击免疫
