@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-weak-clear
 
 - 车道／工作者：C 规则·机制／cc（天启篇全弱者通关资格）
-- 状态：可合并
+- 状态：进行中
 
 依据：私密仓库 xiyou-design-docs `重制设定/天启篇_设计总览_v0.2.md` 第二节 3「全弱者通关资格跟本档走，奖励另行标定」（Kyo 11-08）；`天启篇_对重制内容影响审查_v0.6.md` 第 245、268 行（原版弱者挑战在天启篇作废，新判定「全弱者通关 36 层」没做）。只对天启篇存档生效，原版档不变；合进本地，不推玩家。
 
@@ -15,8 +15,8 @@
 - 原版弱者挑战（`XWeakChallenge`，Map157＋敌群 469＋混沌难度 9）在天启篇走不到：天启篇借的原版难度号最高 6（统一后都是 3），牢妲改难度菜单已删（O-405）。新资格达成时点亮原版成就 142（开关 `ACHIEVEMENT`，成就自带物品照发）；不写全局 `codexWeakFiveClearV2`（那是西游档新局学 10357 的奖励）。
 - 奖励不做：留 `XTianqiWeakClear.reward(s, diff)` 空接口，另行标定后填。
 - 只算 36 层首通路线（`run_final`）；大厅再挑战 36 层（`XTianqiSummit.rechallenge`，不记通关）不算。
-- 接线：`core/tianqi_line.gd` `run_final` 开战前一行 `begin`、返回前一行 `finish`；`battle/battle_logic.gd` 三处（行动开头 `note_actor`、`run_turn` 回合开头 `note_slots`、`tianqi_swap` 换人 `note_actor`，换人的两次写格子改走 `set_battle_slot`），`core/xstate.gd`（`battle_slots` setter、新函数 `set_battle_slot`，`add_actor`／`remove_actor` 写格子改走它，`init_battle_slots` 改成整列赋值），`core/imported_balance.gd`、`core/actor_warehouse.gd` 各一处写格子改走 `set_battle_slot`（不在跟踪时都直接返回，西游档行为不变）；`ui/save_scene.gd` 天启之路一行末尾接 `save_mark`。
-- 专项 `xiyou_tianqi_weak_clear` 45 项。
+- 接线：`core/tianqi_line.gd` `run_final` 开战前一行 `begin`、返回前一行 `finish`；`battle/battle_logic.gd` 三处（行动开头 `note_actor`、`run_turn` 回合开头 `note_slots`、`tianqi_swap` 换人 `note_actor`，换人的两次写格子改走 `set_battle_slot`），`core/xstate.gd`（`battle_slots` setter、新函数 `set_battle_slot`，`add_actor`／`remove_actor` 写格子改走它，`init_battle_slots` 改成整列赋值），`core/imported_balance.gd`、`core/actor_warehouse.gd` 各一处、`core/item_marks.gd` `enforce_party` 两处写格子改走 `set_battle_slot`（不在跟踪时都直接返回，西游档行为不变）；`ui/save_scene.gd` 天启之路一行末尾接 `save_mark`。
+- 专项 `xiyou_tianqi_weak_clear` 46 项。
 - 玩家可见（只在本地）：天启篇 36 层决战用全弱者打赢，结算多一行「全弱者通关（本档）　某难度，出战的全是弱者。」，读档界面天启之路一行末尾标「全弱者」，成就「弱者挑战」点亮。
 
 ## 优化登记草稿
@@ -50,7 +50,7 @@
 
 ## 验证
 
-- 专项 `xiyou_tianqi_weak_clear` 45/45（首交 29 项，返修加 6 项，Kyo 定口径后换 2 加 6，二次复核返修加 6，见「核查返修」）：
+- 专项 `xiyou_tianqi_weak_clear` 46/46（首交 29 项，返修加 6 项，Kyo 定口径后换 2 加 6，二次复核返修加 6，三次复核返修加 1，见「核查返修」）：
   - 全弱者通关：`win`、`record_members`、`result_line`、`achievement_142`、`only_this_difficulty`（别的四档没有）、`after_load`（to_dict→JSON→from_dict 后还在）、`save_mark`、`second_win_keeps`、`no_global_weak_flag`、`lineup_weak`；输了 `lost_no_record`、`lost_no_line`。
   - 强者上场不记：`fighter_strong`、`helper_strong`、`join_helper_mid_battle`（战斗中入队进助力位）。
   - 战斗中换进强者不记：`swap_in_strong`、`swap_seen_by_action`、`swap_back_all_weak`（真 `XBattleLogic` 换上强者、行动一回合、再换回去，结束时又是全弱者，靠行动记录判出）。
@@ -87,7 +87,7 @@
   - 没改走咽喉点、36 层决战里够不着或只写 0 的（逐条依据）：
     - `ui/party_scene.gd` 6 处：整队页，战斗场景里没有菜单入口，36 层决战期间打不开。
     - `core/imported_balance.gd` 第 70 行：只写 0（停用的导入角色移出），移出不会带进新人；`migrate_party` 只在读档迁移时跑。
-    - `core/item_marks.gd` `enforce_party`：经别名 `slots[i] = 0` 只写 0（清超强者），同上。
+    - ~~`core/item_marks.gd` `enforce_party`：经别名只写 0~~ 依据写错了（gpt 三次复核指出）：它清掉超出上限的超强者后会把替补的正角色号补进空格，三次复核返修已改走 `set_battle_slot`，见下一节。
     - `core/actor_warehouse.gd` `battle_slots.erase(id)`：移出；角色仓库是大厅页面，战斗里打不开。
     - `core/cat.gd`、`XState.from_dict`：整列赋值，本来就经 setter。
     - 事件改队伍（指令 129）走 `add_actor`／`remove_actor`；本场战斗成员 `XBattleLogic.actors` 从 `battle_members()`（读出战栏）取，换人走 `tianqi_swap`。召唤／替身没有写出战栏的代码（`rg` 过 `battle_slots` 全部写入，见专项 `slot_write_choke`）。
@@ -101,6 +101,19 @@
 - 反向验证（4 项都咬住）：单格写入不记、整列赋值不记、名单读不到照放行、`tianqi_swap` 改回直接写格子（`slot_write_choke` 抓到）。
 - 专项 45/45；云端选测（基准 ffddb04ca）：ea295a562，546 个场景通过，`xiyou_fabao_rework` 偶发一次（并行时失败、单跑通过，不碰本车道文件）（Actions run 43581272231）；工具回归通过。
 
+## gpt 三次复核返修（ea295a562 之后，一项 P2；本次单独提交，供 gpt 只复核这一个）
+
+- P2 `core/item_marks.gd` `enforce_party` 经别名 `slots := s.battle_slots` 把替补的正角色号写进空格（`slots[i] = reserves.pop_front()`），绕过 `set_battle_slot`，也绕过只搜 `battle_slots[…] =` 的源码守卫；上一节把它写成「只写 0」是错的。
+  - 修法：去掉别名，清空格和补替补两处都改走 `s.set_battle_slot`；行为不变（同一个数组，顺序一样），只是写入时多一次记录。
+  - 断言：`enforce_party_fill_noted`（寻常档超强者上限 +1 名摆进上场格、替补只剩一名强者，跟踪中跑 `enforce_party`：超出的超强者清出、强者补进那一格，且写入当时就记成「不是弱者」）。
+- 守卫 `slot_write_choke` 扩成三类，逐文件计数和白名单比：`index`（`battle_slots[…] =`）、`mutate`（`battle_slots.append／insert／erase／remove_at／clear／fill／assign／resize／push_*／pop_*／reverse／sort*／shuffle(`）、`alias`（把 `battle_slots` 本身交给变量、函数参数或字典值——之后经别名原地写就绕过前两条）。
+- 全库 rg 结果（`modes/xiyou` 全部 `.gd`，`var x := *.battle_slots` 不带 duplicate、函数参数、字典值、原地修改方法、下标赋值；tests 不算游戏代码）：
+  - 别名：原来只有 `item_marks.gd` 552 行一处（已去掉）；另一处是 `xstate.gd` `to_dict` 把 `battle_slots` 放进存档字典（只用来写盘，不经它改格子），白名单 `alias: 1`。
+  - 原地修改：只有 `actor_warehouse.gd` `battle_slots.erase(id)`（角色仓库，大厅页面，战斗里打不开；移出不会带进新人），白名单 `mutate: 1`。
+  - 下标赋值：`xstate.gd` 1 处（`set_battle_slot` 本身）、`ui/party_scene.gd` 6 处（整队页，战斗里打不开）、`imported_balance.gd` 1 处（写 0，读档迁移）。
+  - 其余读取 `battle_slots` 的都是读（`find`、`has`、下标读、`duplicate()`、`filter`），守卫不算。
+- 反向验证（3 项都咬住）：补替补改回经别名直接写（断言和守卫都挂）、只加一个别名不写（守卫挂）、加一处原地修改 `push_back`（守卫挂）。
+
 ## 本分支提交
 
 - 8c41caaf6 模块、接线、专项
@@ -111,4 +124,6 @@
 - b1b69bccc 交付单（核查返修）
 - 801bef583 Kyo 定口径，成长型角色不算弱者（模块＋专项＋交付单）
 - ffddb04ca 交付单记云端结果
-- 本提交：gpt 二次复核返修（出战栏写入咽喉点、成长型名单失败即关闭）
+- ea295a562 gpt 二次复核返修（出战栏写入咽喉点、成长型名单失败即关闭）
+- 07fdbfa77 交付单记云端结果
+- 本提交：gpt 三次复核返修（enforce_party 改走 set_battle_slot、守卫扩到原地修改和别名）

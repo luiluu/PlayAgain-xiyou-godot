@@ -202,6 +202,31 @@ func _not_weak() -> void:
 		s.battle_slots = keep
 	_check("same_event_slots_assign", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s))
 	host.during = Callable()
+	# gpt 三次复核 P2：enforce_party（清超出上限的超强者）补进来的替补是正角色号写入，要走 set_battle_slot 记上
+	var supers: Array = XTianqiSkills.ids(XTier.SUPER, true).filter(_usable).filter(func(id): return not XTianqiWeakClear.is_growth(int(id)))
+	s = _state("xunchang", weak.slice(0, 5))
+	var cap := XTianqi.super_cap(s)
+	var ep := {"cap": cap}
+	if cap >= 0 and cap + 1 <= XTianqi.FIGHTERS and supers.size() > cap:
+		XTianqiWeakClear.begin(s)
+		var sl: Array = supers.slice(0, cap + 1) + weak.slice(cap + 1, XTianqi.FIGHTERS) + [weak[4]]
+		for id in sl + [strong[0]]:
+			if not s.party.has(int(id)):
+				XTianqi._joining = true
+				s.add_actor(int(id))
+				XTianqi._joining = false
+		for id in weak.slice(0, 5):
+			if not sl.has(id):
+				s.party.erase(id)  # 替补只剩那名强者
+		for i in sl.size():
+			s.battle_slots[i] = int(sl[i])  # 测试里直接摆好（模拟绕过上限的阵容）
+		XTianqiWeakClear._seen.erase(int(strong[0]))
+		ep["changed"] = XItemMarks.enforce_party(s)
+		ep["slot"] = int(s.battle_slots[cap])
+		ep["seen"] = XTianqiWeakClear._seen.get(int(strong[0]))
+		XTianqiWeakClear._tracking = false
+		XTianqiWeakClear._state = null
+	_check("enforce_party_fill_noted", ep.get("changed") == true and ep.get("slot") == int(strong[0]) and ep.get("seen") == false, ep)
 	# 换上来没行动就倒下、再撤走——换人那一刻记
 	s = _state("jianxian", weak.slice(0, 5))
 	var sw := {}
@@ -276,15 +301,24 @@ func _not_weak() -> void:
 	_check("rechallenge_not_counted", not XTianqiWeakClear.has(s2))
 
 
-## gpt 复核 P2：游戏代码里给出战栏某一格写角色号只能走 XState.set_battle_slot（整列赋值走 setter）。
-## 白名单：只写 0 的（清超强者、移出）和 36 层决战里打不开的整队页（ui/party_scene.gd）。新加一处直接写就挂。
+## gpt 复核 P2：游戏代码里写出战栏只能走 XState.set_battle_slot（单格）或 battle_slots 的 setter（整列赋值）。
+## 扫 modes/xiyou 全部 .gd，三类绕过写法逐文件计数，和白名单比（新加一处就挂）：
+## - index：battle_slots[…] = 直接下标赋值
+## - mutate：battle_slots.append／insert／erase／pop_* 等原地修改
+## - alias：把 battle_slots 本身（不是 duplicate）交给别的变量、函数参数或字典值——之后经别名原地写就绕过了上面两条
+## 白名单依据见交付单「核查返修」三次复核一节。
 func _slot_write_guard() -> void:
 	var allow := {
-		"res://modes/xiyou/core/xstate.gd": 1,  # set_battle_slot 本身
-		"res://modes/xiyou/ui/party_scene.gd": 6,  # 整队页：战斗里打不开
-		"res://modes/xiyou/core/imported_balance.gd": 1,  # 写 0（停用角色移出）
+		"res://modes/xiyou/core/xstate.gd": {"index": 1, "alias": 1},  # set_battle_slot 本身；to_dict 存档字典（存盘只读）
+		"res://modes/xiyou/ui/party_scene.gd": {"index": 6},  # 整队页：战斗里打不开
+		"res://modes/xiyou/core/imported_balance.gd": {"index": 1},  # 写 0（读档迁移时停用角色移出）
+		"res://modes/xiyou/core/actor_warehouse.gd": {"mutate": 1},  # erase：角色仓库（大厅页面）移出
 	}
-	var re := RegEx.create_from_string("battle_slots\\[[^\\]]*\\]\\s*=[^=]")
+	var kinds := {
+		"index": RegEx.create_from_string("battle_slots\\[[^\\]]*\\]\\s*=[^=]"),
+		"mutate": RegEx.create_from_string("battle_slots\\.(append|append_array|insert|erase|remove_at|clear|fill|assign|resize|push_back|push_front|pop_back|pop_front|pop_at|reverse|sort|sort_custom|shuffle)\\("),
+		"alias": RegEx.create_from_string("(=|\\(|,|:)\\s*(?:[A-Za-z_][A-Za-z0-9_()]*\\.)*battle_slots\\s*(\\)|,|\\}|$)"),
+	}
 	var found := {}
 	var stack := ["res://modes/xiyou"]
 	while not stack.is_empty():
@@ -295,13 +329,16 @@ func _slot_write_guard() -> void:
 			if not f.ends_with(".gd"):
 				continue
 			var path := dir.path_join(f)
-			var n := 0
+			var counts := {}
 			for line in FileAccess.get_file_as_string(path).split("\n"):
-				var code := line.split("#")[0]
-				if code.contains("battle_slots[") and re.search(code) != null:
-					n += 1
-			if n > 0:
-				found[path] = n
+				var code := line.split("#")[0].strip_edges()
+				if not code.contains("battle_slots"):
+					continue
+				for k in kinds:
+					if kinds[k].search(code) != null:
+						counts[k] = int(counts.get(k, 0)) + 1
+			if not counts.is_empty():
+				found[path] = counts
 	_check("slot_write_choke", found == allow, found)
 
 
