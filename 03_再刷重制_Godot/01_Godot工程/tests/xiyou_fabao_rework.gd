@@ -291,6 +291,14 @@ func pills() -> void:
 ## 守层者重算（O-402）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
 func guardian() -> void:
 	var s := _blank()
+	check("guardian.elem", is_equal_approx(XGuardianRework.elem_factor(20), 0.5) and is_equal_approx(XGuardianRework.elem_factor(33), 0.05) and XGuardianRework.elem_factor(5) == 1.0,
+		[XGuardianRework.elem_factor(20), XGuardianRework.elem_factor(33), XGuardianRework.elem_factor(5)])
+	s.flags["tianqi"] = {"rules": 1}
+	var g24 := XEnemy.new().setup(527, 3, 100.0)
+	var r1 := XGuardianRework.resistance(g24, g24.element_rate(1))
+	var r14 := XGuardianRework.resistance(g24, g24.element_rate(14))
+	check("guardian.elem_resist", is_equal_approx(r1, 1.0) and is_equal_approx(r14, 1.0) and is_equal_approx(g24.element_rate(1), 0.5), [r1, r14, g24.element_rate(1)])
+	s.flags.erase("tianqi")
 	check("guardian.floor_of", XGuardianRework.floor_of(527) == 24 and XGuardianRework.floor_of(537) == 33 and XGuardianRework.floor_of(1) == 0,
 		[XGuardianRework.floor_of(527), XGuardianRework.floor_of(537)])
 	var plain := XEnemy.new().setup(527, 3, 100.0)
@@ -342,6 +350,28 @@ func guardian() -> void:
 	gl2.setup(XGuardianRework.TROOPS[24], s)
 	check("guardian.hp_o-off", gl2.enemies.reduce(func(t, x): return t + x.mhp, 0.0) > 1.0e13, gl2.enemies.map(func(x): return x.mhp))
 	XGuardianRework.HP = true
+	# 楼层里别的敌群（WORLD）：20 层地图上的普通敌群按本层守层者同比缩
+	var m20 := -1
+	for i in range(1, 400):
+		if not XDB.rec("MapInfos", i).is_empty() and XDungeon.map_floor(i) == 20:
+			m20 = i
+			break
+	s.map_id = m20
+	var wl := XBattleLogic.new()
+	wl.setup(453, s)
+	var raw453 := 0.0
+	for mm in XDB.rec("Troops", 453).members:
+		raw453 += float(XDB.rec("Enemies", int(mm.enemyId)).params[0])
+	var want := raw453 / XGuardianRework.old_total(20) * 2250000.0 * 8
+	var got: float = wl.enemies.reduce(func(t, x): return t + x.mhp, 0.0)
+	check("guardian.world_hp", m20 > 0 and absf(got - want) / want < 0.01, [m20, got, want])
+	check("guardian.world_atk", wl.enemies.all(func(x): return is_equal_approx(x.output_scale, 0.074)), wl.enemies.map(func(x): return x.output_scale))
+	XGuardianRework.WORLD = false
+	var wl2 := XBattleLogic.new()
+	wl2.setup(453, s)
+	check("guardian.world_o-off", wl2.enemies.reduce(func(t, x): return t + x.mhp, 0.0) > got * 100.0 and wl2.enemies.all(func(x): return x.output_scale == 1.0))
+	XGuardianRework.WORLD = true
+	s.map_id = 0
 	XTianqiHorsemen.prepare("war", s, "body")
 	var kl := XBattleLogic.new()
 	kl.setup(int(XTianqiLine.data("war").shell_troop), s)
