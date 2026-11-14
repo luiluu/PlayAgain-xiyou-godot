@@ -69,13 +69,14 @@ func _build_legacy_raw() -> Dictionary:
 			for e in ad.get("equips", []):
 				if e is Dictionary:
 					e.erase("tq_seed_id")
-	for w in d.get("warehouses", {}).values():
+	for w in d.get("phwarehouse", {}).values():  # 存档里仓库键名照原版 phwarehouse
 		for e in w.get("items", {}).get("weapon", []):
 			if e is Dictionary:
 				e.erase("tq_seed_id")
 	var twin: Dictionary = (d.gear[0] as Dictionary).duplicate(true)
 	d.gear.append(twin)
 	d["_fixture_kept_id"] = keep
+	d["_fixture_had_ids"] = JSON.stringify(d).count("\"tq_seed_id\"")
 	return d
 
 
@@ -121,6 +122,11 @@ func _probe(s: XState, api) -> Dictionary:
 	return out
 
 
+## 夹具经过 JSON（整数读成浮点）：两边都过一遍 JSON 再比
+func _norm(v) -> String:
+	return JSON.stringify(JSON.parse_string(JSON.stringify(v)))
+
+
 func _load_fixture_raw(raw: Dictionary) -> XState:
 	XSave._write(XSave.path(Kit.SLOT), raw)
 	return kit.reload()
@@ -149,11 +155,13 @@ func _premove() -> void:
 			continue
 		var got := _probe(s, XTianqiRandom if api_name == "XTianqiRandom" else XTianqi)
 		for k in exp:
-			_check("%s_same_%s" % [api_name, k], JSON.stringify(got.get(k)) == JSON.stringify(exp[k]), [got.get(k), exp[k]])
+			_check("%s_same_%s" % [api_name, k], _norm(got.get(k)) == _norm(exp[k]), [got.get(k), exp[k]])
 	# 夹具本身有意义：7 件以上、全补上号、旧号原样保留、复制品撞号加后缀与原件不同
 	var ids: Array = exp.ids
 	_check("fx_all_assigned", ids.size() >= 7 and ids.all(func(x): return XRandomStream.valid_hex(str(x))), ids)
 	_check("fx_kept_old_id", str(fx.save.get("_fixture_kept_id", "")) != "" and ids.has(str(fx.save._fixture_kept_id)))
+	_check("fx_legacy_only_one_id", int(fx.save.get("_fixture_had_ids", -1)) == 1, fx.save.get("_fixture_had_ids"))
+	_check("fx_has_worn_and_wh", int(exp.order.size()) >= 8, exp.order)
 	var order: Array = exp.order
 	_check("fx_twin_distinct", order.count(order[0]) == 2 and ids[0] != ids[order.rfind(order[0])], [order, ids])
 
@@ -199,7 +207,7 @@ func _switches() -> void:
 	var r1 := _floats(XTianqiRandom.save_roll(off, "x|0"), 3)
 	var r2 := _floats(XTianqiRandom.save_roll(off, "x|0"), 3)
 	XTianqi.SEED_FROM_SAVE = true
-	_check("off_no_assign", unassigned.size() == exp_ids.size() - 1, unassigned.size())
+	_check("off_no_assign", unassigned.size() == exp_ids.size() - int(fx.save._fixture_had_ids), [unassigned.size(), fx.save._fixture_had_ids])
 	_check("off_global_random", r1 != r2, [r1, r2])
 	# 西游档：不补号
 	var plain := XState.new()
