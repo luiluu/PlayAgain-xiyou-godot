@@ -167,6 +167,13 @@ func _run() -> void:
 	ov.button.pressed.emit()
 	check("touch_button_enables", await until(func(): return XHangUp.enabled(s) and not map.busy, 600) and not XHangUp.is_active(s), [s.flags.get("HangUpProhibited"), map.busy])
 	s.flags.HangUpProhibited = true
+	# 副本里（变量 21 非 0）原版就不能挂机：触屏也照原版藏起来（v0.01.09 玩家反馈「进副本挂机按钮也没消失」）
+	s.set_variable(21, 1)
+	await frames(2)
+	check("touch_dungeon_button_hidden", not ov.inter.visible)
+	s.set_variable(21, 0)
+	await frames(2)
+	check("touch_after_dungeon_button_shown", ov.inter.visible)
 	XHangUp.TOUCH_SHOW_PROHIBITED = false
 	await frames(2)
 	check("touch_rollback_hidden", not ov.inter.visible)
