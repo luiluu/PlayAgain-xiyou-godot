@@ -64,13 +64,15 @@ static func current_active() -> bool:
 ## O-379：触屏设备上挂机被禁用时，原版连快捷界面带按钮一起藏起来；安卓没有 L 键，只能回大厅找大工匠开（v0.01.07 Kyo 反馈安卓挂机开不了）。
 ## 这里触屏设备禁用时也显示快捷界面，点按钮走 XMapScene.toggle_hang_up：禁用时照 L 的公共事件 484 开启并提示（KEY_ENABLES）。
 ## 设 false 恢复原版（禁用时不显示）。桌面有 G／L 键，照原版藏着。
+## 副本里（变量 21 非 0，进门时 ProhibitHangUp）原版本来就不能挂机，这里照原版藏起来（v0.01.09 玩家反馈「进副本挂机按钮也没消失」，
+## O-379 原先连副本里也显示；点了只会提示去传送门重置）。只改副本这一处，开局 Map001 等其他禁用场景照 O-379 显示。
 static var TOUCH_SHOW_PROHIBITED := true
 
 
 static func inter_show(s: XState) -> bool:
 	if s == null:
 		return false
-	return (enabled(s) or (TOUCH_SHOW_PROHIBITED and KEY_ENABLES and XPlatform.is_touch())) and bool(settings(s).showInter)
+	return (enabled(s) or (TOUCH_SHOW_PROHIBITED and KEY_ENABLES and XPlatform.is_touch() and not XDungeon.inside(s))) and bool(settings(s).showInter)
 
 
 ## 挂机时长文字（不在挂机时「---」）
