@@ -213,6 +213,8 @@ func _bag(s: XState, base: int, n: int) -> Array:
 	var out := []
 	for i in n:
 		var it := XGear.create("armor", base, s)
+		# 掷词缀可能把品质抬上去（评审 v0.1 第 9 条：并行时偶发「不朽」，exp／件数对不上），固定成模板的品质
+		it.meta.quality = XGear.template("armor", base).get("meta", {}).get("quality", it.meta.get("quality", "0"))
 		s.gear.append(it)
 		s.register_gear(it)
 		out.append(it)
