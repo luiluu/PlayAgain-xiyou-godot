@@ -23,7 +23,7 @@ extends RefCounted
 ## - 第四期：挂机「屏蔽掉落」开着时，通用掉落里低于门槛档的自动按卖价折成钱、够门槛的留着（AUTO_SELL；原版是精良及以下全丢）；
 ##   怪物图鉴、地图传送预览的掉率换成招牌掉落的面板概率，图鉴里标「已连续 N 次没出」。
 ##
-## 回退（O-403）：`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
+## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-待定，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
 static var GENERIC := true
@@ -32,6 +32,9 @@ static var DIFFICULTY := true
 static var SIGNATURE := true
 static var NO_FEED_BOUGHT := true
 static var AUTO_SELL := true
+## 返修（O-待定）：旧档首次掉落种子由存档种子派生；必掉也清连败、推进总次数
+static var SEED_FROM_SAVE := true
+static var PITY_RESET_ON_SURE := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -241,7 +244,9 @@ static func _prd_mean(c: float) -> float:
 static func store(s: XState) -> Dictionary:
 	var tq: Dictionary = s.flags.tianqi
 	if not tq.get("drop") is Dictionary:
-		tq["drop"] = {"seed": randi(), "pity": {}}
+		# 没有掉落账的旧档：种子由存档里已有的宝珠种子（orbSeed，随存档保存；更旧的档由存档内容算出）派生，
+		# 读同一个档每次都一样，首次招牌掉落不能靠读档重掷（gpt 甲档补核 P2）。SEED_FROM_SAVE 关掉回到全局随机
+		tq["drop"] = {"seed": XOrbs.hash32("tianqi-drop|%d" % int(s.orb_seed)) if SEED_FROM_SAVE else randi(), "pity": {}}
 	var d: Dictionary = tq.drop
 	if not d.get("pity") is Dictionary:
 		d["pity"] = {}
@@ -255,10 +260,16 @@ static func signature_chance(p: float, fails: int) -> float:
 
 ## 掷一次招牌掉落：key＝「敌人号:种类:编号」，p＝乘完倍率的面板概率。结果由存档里的种子和次数算出，记账后返回中没中
 static func roll_signature(s: XState, key: String, p: float) -> bool:
-	if p >= 1.0:
-		return true
 	if p <= 0.0:
 		return false
+	if p >= 1.0:
+		# 必掉也算出了：已有账的清掉连败、推进总次数（「出了归零」，gpt 甲档补核 P2）；没账的不新建，免得存档里堆一堆必掉行。
+		# PITY_RESET_ON_SURE 关掉回到直接返回
+		if PITY_RESET_ON_SURE and s.flags.tianqi.get("drop") is Dictionary:
+			var row0 = s.flags.tianqi.drop.get("pity", {}).get(key)
+			if row0 is Array and row0.size() >= 2:
+				s.flags.tianqi.drop.pity[key] = [0, int(row0[1]) + 1]
+		return true
 	var d := store(s)
 	var row = d.pity.get(key)
 	var fails := int(row[0]) if row is Array and row.size() >= 2 else 0
@@ -442,13 +453,16 @@ static func roll(s: XState, members: Array, roll_fn: Callable, troop_id := 0) ->
 	return out
 
 
-## 商店成交后调：这次买进来的装备（背包里 from 之后新增的）打上标记，不能喂法宝
-static func mark_bought(s: XState, from: int) -> void:
-	if not on(s):
+## 商店成交后调：这次买进来的装备（背包里 from 之后新增的）打上标记，不能喂法宝；price≥0 时记下单价（回售价封顶用，XTianqiMoney.sell_price）。
+## 标记只是记账，天启篇档都打，不看掉落总开关：用不用由各自的开关定（NO_FEED_BOUGHT 管喂、XTianqiMoney.SELL_BOUGHT_CAP 管卖）
+static func mark_bought(s: XState, from: int, price := -1) -> void:
+	if s == null or not XTianqi.active(s):
 		return
 	for i in range(maxi(0, from), s.gear.size()):
 		if s.gear[i] is Dictionary:
 			s.gear[i]["tq_bought"] = true
+			if price >= 0:
+				s.gear[i]["tq_buy_price"] = price
 
 
 ## 这件装备因为是商店买的不能喂法宝
