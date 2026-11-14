@@ -247,6 +247,19 @@ class T(unittest.TestCase):
         finally:
             K.PROJECT = old_proj
 
+    def test_real_project_sect_stub(self):
+        real_proj = HERE.parent / '01_Godot工程'
+        old_ov = K.OVERRIDES
+        K.OVERRIDES = HERE / '发行空壳特例.json'
+        try:
+            stubs, missing, how = K.build_all(real_proj)
+            self.assertEqual(K.check_errors(missing, how), [])
+            sect_stub = next(v for k, v in stubs.items() if str(k).endswith('modes/xiyou/core/tianqi_sect.gd'))
+            self.assertIn('static func intercepts(_s, _map_id: int, _event_id: int) -> bool:\n\treturn false', sect_stub)
+            self.assertIn('static func page_override(s, map_id: int, event_id: int, pages: Array) -> Dictionary:\n\treturn {}', sect_stub)
+        finally:
+            K.OVERRIDES = old_ov
+
 
 if __name__ == '__main__':
     unittest.main()

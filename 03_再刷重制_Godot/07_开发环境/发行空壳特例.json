@@ -54,6 +54,7 @@
   "XTianqiSect.intercepts": "false",
   "XTianqiSect.item_rec": "base",
   "XTianqiSect.page_blocked": "false",
+  "XTianqiSect.page_override": "{}",
   "XTianqiSect.rewrite_message": "msg",
   "XTianqiSect.shop_goods": "goods",
   "XTianqiSect.troop_rec": "base",

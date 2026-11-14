@@ -710,3 +710,124 @@ static func skill_rec(id: int, base: Dictionary) -> Dictionary:
 	r.meta = XTianqiSkills.parse_meta(r.note)
 	_skill_recs[id] = [base, r]
 	return r
+
+
+## ==== 包庚：传承与武运（O-待定）====
+## - 魔塔外围五位传承 NPC（Map195 EV016～020）：天启篇默认开放（按原 sw1:2303 线，轮回页不选），台词「他必须不被两派所束缚」改写。
+## - 15／20／25 层传承人（Map032 EV008、Map116 EV007、Map147 EV005）：默认开放，第 2 页关闭条件放宽到变量 20 >= 31（30 层前都能补），提示台词改写。
+## - 城隍庙（Map189 EV021）：未领过武运时照随机页（第 2 页）走，去掉「随机模式下」字样及「忘掉强者压制 6216、学强者压制·削弱 6241」两步；领过后照第 4 页走。
+
+static var GENG := true
+
+const GENG_OUTSKIRTS := {195: [16, 17, 18, 19, 20]}
+const GENG_INHERITORS := {32: 8, 116: 7, 147: 5}
+const GENG_CHENGHUANG_MAP := 189
+const GENG_CHENGHUANG_EV := 21
+const GENG_FLOOR_VAR := 20
+const GENG_CLOSE_FLOOR := 31
+const GENG_STRIP_SKILLS := [6216, 6241]
+
+
+static func _geng_is_target(map_id: int, event_id: int) -> bool:
+	if GENG_OUTSKIRTS.has(map_id) and (GENG_OUTSKIRTS[map_id] as Array).has(event_id):
+		return true
+	if GENG_INHERITORS.get(map_id, -1) == event_id:
+		return true
+	return map_id == GENG_CHENGHUANG_MAP and event_id == GENG_CHENGHUANG_EV
+
+
+## MVEvent.refresh 挂点：为包庚接管的事件提供改写后的页，走普通 run_event（保留 e.locked 与转向玩家），不改变 MVEvent._find_page() 对教派开关页的拦截
+static func page_override(s, map_id: int, event_id: int, pages: Array) -> Dictionary:
+	if not GENG or not _geng_is_target(map_id, event_id) or not on(s):
+		return {}
+	if map_id == GENG_CHENGHUANG_MAP and event_id == GENG_CHENGHUANG_EV:
+		if s.self_switch(map_id, event_id, "A") or pages.size() < 2:
+			return {}
+		return {"index": 101, "page": _geng_rewrite_chenghuang_page(pages[1])}
+	if GENG_INHERITORS.get(map_id, -1) == event_id:
+		if pages.size() >= 2 and s.variable(GENG_FLOOR_VAR) >= GENG_CLOSE_FLOOR:
+			return {"index": 101, "page": pages[1]}
+		if pages.size() >= 1:
+			return {"index": 100, "page": _geng_rewrite_inheritor_page(pages[0])}
+		return {}
+	# 魔塔外围五位传承 NPC：只在 sw1:2303 线（pages[0..3] 中满足 switch1Id == 2303 的页）里从高到低匹配，忽略 sw1:2303 本身
+	for i in range(pages.size() - 1, -1, -1):
+		var p: Dictionary = pages[i]
+		var c: Dictionary = p.get("conditions", {})
+		if not bool(c.get("switch1Valid", false)) or int(c.get("switch1Id", 0)) != 2303:
+			continue
+		if _geng_meets_except_sw1(s, map_id, event_id, c):
+			return {"index": 100 + i, "page": _geng_rewrite_outskirts_page(p)}
+	return {}
+
+
+static func _geng_meets_except_sw1(s, map_id: int, event_id: int, c: Dictionary) -> bool:
+	if bool(c.get("switch2Valid", false)) and not s.switch(int(c.switch2Id)):
+		return false
+	if bool(c.get("variableValid", false)) and s.variable(int(c.variableId)) < float(c.variableValue):
+		return false
+	if bool(c.get("selfSwitchValid", false)) and not s.self_switch(map_id, event_id, str(c.selfSwitchCh)):
+		return false
+	if bool(c.get("itemValid", false)) and s.item_count(int(c.itemId)) <= 0:
+		return false
+	if bool(c.get("actorValid", false)) and not s.party.has(int(c.actorId)):
+		return false
+	return true
+
+
+static func _geng_rewrite_outskirts_page(page: Dictionary) -> Dictionary:
+	var p := page.duplicate(true)
+	var out := []
+	for cmd in p.get("list", []):
+		var d: Dictionary = (cmd as Dictionary).duplicate(true)
+		if int(d.get("code", 0)) == 401:
+			var params: Array = d.get("parameters", [])
+			if params.size() > 0:
+				params[0] = str(params[0]).replace("他必须不被两派所束缚，", "他必须不被世俗所束缚，")
+				d["parameters"] = params
+		out.append(d)
+	p["list"] = out
+	return p
+
+
+static func _geng_rewrite_inheritor_page(page: Dictionary) -> Dictionary:
+	var p := page.duplicate(true)
+	var out := []
+	for cmd in p.get("list", []):
+		var d: Dictionary = (cmd as Dictionary).duplicate(true)
+		if int(d.get("code", 0)) == 401:
+			var params: Array = d.get("parameters", [])
+			if params.size() > 0:
+				params[0] = str(params[0]).replace(
+					"除此之外，一旦通过该层守护者，传承自动关闭，你无法重新获得",
+					"踏上第 31 层前都可回来补领传承，登上 31 层后自动关闭"
+				)
+				d["parameters"] = params
+		out.append(d)
+	p["list"] = out
+	return p
+
+
+static func _geng_rewrite_chenghuang_page(page: Dictionary) -> Dictionary:
+	var p := page.duplicate(true)
+	var out := []
+	for cmd in p.get("list", []):
+		var code := int(cmd.get("code", 0))
+		var params: Array = cmd.get("parameters", [])
+		if code == 318 and params.size() >= 4 and GENG_STRIP_SKILLS.has(int(params[3])):
+			continue  # 天启篇无损学先天武运：去掉「忘掉强者压制 6216、学强者压制·削弱 6241」
+		var d: Dictionary = (cmd as Dictionary).duplicate(true)
+		if code == 102 and params.size() > 0 and params[0] is Array:
+			var choices: Array = (params[0] as Array).duplicate()
+			for idx in choices.size():
+				choices[idx] = str(choices[idx]).replace("随机模式下，", "")
+			params = params.duplicate()
+			params[0] = choices
+			d["parameters"] = params
+		elif code == 402 and params.size() >= 2:
+			params = params.duplicate()
+			params[1] = str(params[1]).replace("随机模式下，", "")
+			d["parameters"] = params
+		out.append(d)
+	p["list"] = out
+	return p
