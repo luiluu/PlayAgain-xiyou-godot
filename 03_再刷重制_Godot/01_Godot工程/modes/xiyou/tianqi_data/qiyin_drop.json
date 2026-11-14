@@ -67,8 +67,9 @@
   "guardian": 0.03
  },
  "artifact": {
-  "_note": "里副本 Boss 每次按这个几率掉一件神器，五件里随机一件。不随难度变、没有保底、不吃物品掉落加成。",
+  "_note": "里副本 Boss 每次按这个几率掉一件神器。不随难度变、不吃物品掉落加成。保底和防重（Kyo 11-14，XTianqiQiyin.roll_artifact）：能掉神器的战斗（里副本 Boss、七首之龙）共用一个计数，连着没出 pity_after－1 次、第 pity_after 次必出，出了清零；只从本档还没有的里出，五件齐了不再掷也不再计。",
   "chance": 0.001,
+  "pity_after": 333,
   "keys": ["bow_crown", "great_sword", "scales", "grey_scythe", "seven_seal_scroll"]
  },
  "restless": {

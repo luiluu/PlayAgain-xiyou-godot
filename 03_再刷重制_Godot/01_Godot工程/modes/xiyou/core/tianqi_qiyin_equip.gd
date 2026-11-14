@@ -536,7 +536,7 @@ static func _run_exchange(host, s: XState) -> void:
 	var j: int = await _ask(host, str(n.exchange_seal), labels)
 	if j < 0 or j >= seals.size():
 		return
-	var r := exchange(s, kind, str(seals[j]), XTianqiQiyin._rng())
+	var r := exchange(s, kind, str(seals[j]), XTianqiQiyin._rng(s))
 	if not r.ok:
 		await _say(host, str(n.get("fail_" + str(r.reason), n.fail_other)))
 		return
