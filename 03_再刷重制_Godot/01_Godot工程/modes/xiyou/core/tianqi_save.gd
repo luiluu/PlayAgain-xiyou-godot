@@ -15,7 +15,7 @@ extends RefCounted
 ##   难度被动的剥／补仍在 XState.sync_difficulty_after_load（要在角色能力刷新之前），门面只登记它的版本。
 ##   要存档原文或存档位的（五条悟试炼现场还原、星辰仓库取出事务）留在 XSave._load_data。
 ## - 装备上的键登记在 GEAR_KEYS：copy＝false 的在复制装备（魔冠重发、云裳发货、仓库原版复制）时由 strip_on_copy 去掉。
-## 开关（O-待定）：ENABLED＝false 时 after_load 不跑迁移、section 不记版本（各模块取分区时照旧就地补，结果相同）。
+## 开关（O-452）：ENABLED＝false 时 after_load 不跑迁移、section 不记版本（各模块取分区时照旧就地补，结果相同）。
 
 static var ENABLED := true
 
