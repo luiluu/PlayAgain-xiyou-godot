@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.565",
-  "sequence": 565,
-  "next": "dev.566",
-  "nextSequence": 566,
+  "current": "dev.566",
+  "sequence": 566,
+  "next": "dev.567",
+  "nextSequence": 567,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "合并 luiluu/Antigravity：Orca 三方协作规则与合并工具 gpt/xa 前缀",
+  "currentChange": "app-window-icon",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
