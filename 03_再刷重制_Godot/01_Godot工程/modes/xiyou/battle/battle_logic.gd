@@ -203,6 +203,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XRiftAlien.setup(self, s)  # 漩涡阶段怪物异化（西游，天启篇存档不动）：二阶只有画面，三阶起稀有、首领、守层者、深渊怪按阶段表异化（自己的随机流）
 	XTianqiSegAlien.setup(self, s)  # 天启篇按段异化（四线共用）：6 层起稀有、首领、守层者、深渊怪按段表异化，交给本线异化模块（在各线预设异化、34 层鸿钧之后）
 	XTianqiRewards.setup(self, s)  # 天启篇奖励：穿着骑士遗物的人记本场资历、火花
+	XTianqiMoney.battle_setup(self, s)  # 天启篇天平「麦」：本层每场开战全队回满
 	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
 	XGuardianRework.setup(self, s)  # 守层者重算（O-402）：天启篇守层者、鸿钧、七印里副本的血量按层重标（在重标能力值之后）
 	XTianqiQiyinDragonRun.setup_rules(self)  # 天启篇七首之龙：七段揭印的规则记录（在里副本规则之后，免得被它清掉）
@@ -3401,6 +3402,7 @@ func rewards() -> Dictionary:
 		out.exp = 0
 		out.gold = 0
 	XTianqiAffixBattle.rewards(self, out)  # 天启篇词条「阅历」：经验、金钱（全队相加，助力位也算）
+	XTianqiMoney.battle_gold(self, out)  # 天启篇金钱重构：金钱加成相加后递减、乘难度奖励倍率（阅历并进同一桶）
 	return out
 
 

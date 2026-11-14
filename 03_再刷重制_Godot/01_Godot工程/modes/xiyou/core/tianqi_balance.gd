@@ -121,12 +121,26 @@ static func difficulty(key: String) -> Dictionary:
 			var sc: Dictionary = d.get("scaling", {})
 			for k in ["enemy_hp", "enemy_atk", "party_damage", "quality_offset"]:
 				out[k] = float(sc.get(k, 0.0))
+			out["reward"] = float(sc.get("reward", 1.0))
 			var r: Dictionary = d.get("roster", {})
 			out["pool"] = r.get("pool", []).duplicate()
 			out["super_cap"] = int(r.get("super_cap", 0))
 			out["min_weak"] = int(r.get("min_weak", 0))
 			return out
 	return {}
+
+
+## 难度奖励倍率（scaling.reward；金钱和掉率共用，金钱重构 v0.2、掉落重构 v0.8）。key 是难度键；没有这一档为 1
+static func reward_of(key: String) -> float:
+	var d := difficulty(key)
+	return float(d.get("reward", 1.0)) if not d.is_empty() else 1.0
+
+
+## 这一档存档的难度奖励倍率（不是天启篇存档为 1）
+static func reward_mult(s: XState) -> float:
+	if not XTianqi.active(s):
+		return 1.0
+	return reward_of(str(s.flags.tianqi.get("difficulty", "")))
 
 
 # ---- 数值要好看（Kyo 11-10）----

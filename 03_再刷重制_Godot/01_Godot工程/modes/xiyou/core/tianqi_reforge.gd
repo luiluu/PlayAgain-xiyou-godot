@@ -5,6 +5,8 @@ extends RefCounted
 ## - 选背包里（没穿、没锁）一件带天启篇词条的装备，选其中一条：在同一层、这件能出的词条里重抽（不含这件已有的别的词条），成色重新掷。
 ## - 阶不变（法宝光环的阶照旧随养成），槽数不变；allow_perfect＝能不能出极（草案：能），allow_rare＝能不能抽到连击、再动（草案：不能）。
 ## - 花金钱：按这条的阶 1000／3000／6000／10000。
+## - 金钱重构 v0.2（XTianqiMoney.reforge_on，Kyo 11-14）：价钱改成 3 场钱 × 阶系数（1／2／3／5）× 各档价格倍数，同一件每重铸一次
+##   涨 30%、最多 10 倍（装备上记 tq_reforges）；另加「锁一条洗其余」（reforge_locked），总价 ×3。关掉 XTianqiMoney.REFORGE 回到上面的定价。
 ## 界面在异化工坊页（天启篇存档）底下「装备重铸」一节。只认天启篇存档（XTianqiAffixRoll.on）。
 ##
 ## 开关（O-360）：false＝没有重铸
@@ -40,6 +42,21 @@ static func cost(entry: Dictionary) -> int:
 	return int(c[clampi(int(entry.get("tier", 1)) - 1, 0, c.size() - 1)]) if not c.is_empty() else 0
 
 
+## 重铸第 index 条的价钱（金钱重构开着按场钱，否则照 reforge.json）
+static func price_of(s: XState, item: Dictionary, index: int) -> int:
+	var list: Array = item.get("tianqi_affixes", [])
+	if index < 0 or index >= list.size():
+		return 0
+	if XTianqiMoney.reforge_on(s):
+		return XTianqiMoney.reforge_price(s, item, list[index])
+	return cost(list[index])
+
+
+## 能不能锁一条洗其余：金钱重构开着、这件至少两条
+static func can_lock(s: XState, item: Dictionary) -> bool:
+	return XTianqiMoney.reforge_on(s) and (item.get("tianqi_affixes", []) as Array).size() >= 2
+
+
 ## 这一条能重铸成的词条
 static func choices(item: Dictionary, index: int) -> Array:
 	var list: Array = item.get("tianqi_affixes", [])
@@ -68,7 +85,7 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 	var c := choices(item, index)
 	if c.is_empty():
 		return {"error": "这条没有别的词条可重铸"}
-	var price := cost(list[index])
+	var price := price_of(s, item, index)
 	if int(s.gold) < price:
 		return {"error": "金钱不足（要 %d）" % price}
 	if not rng.is_valid():
@@ -83,4 +100,42 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 	list[index] = e
 	s.gain_gold(-price)
 	XTianqiAffixRoll.set_affixes(item, list)
+	if XTianqiMoney.reforge_on(s):
+		XTianqiMoney.count_reforge(item)
 	return {"ok": e}
+
+
+## 锁住第 keep 条，其余各条依次重抽（每条都不和这件当时别的词条重复）。返回 {ok: 新列表} 或 {error}
+static func reforge_locked(s: XState, item: Dictionary, keep: int, rng := Callable()) -> Dictionary:
+	if not on(s) or not can_lock(s, item):
+		return {"error": "现在不能锁词条重铸"}
+	if not targets(s).any(func(i): return is_same(i, item)):
+		return {"error": "只能重铸背包里没穿、没锁定的装备"}
+	var list: Array = item.get("tianqi_affixes", [])
+	if keep < 0 or keep >= list.size():
+		return {"error": "没有这条词条"}
+	var price := XTianqiMoney.lock_price(s, item, keep)
+	if int(s.gold) < price:
+		return {"error": "金钱不足（要 %d）" % price}
+	if not rng.is_valid():
+		rng = func(): return randf()
+	var work: Array = list.duplicate(true)
+	for i in work.size():
+		if i == keep:
+			continue
+		var probe := item.duplicate()
+		probe["tianqi_affixes"] = work
+		var c := choices(probe, i)
+		if c.is_empty():
+			continue
+		var old: Dictionary = work[i]
+		var e := XTianqiAffixRoll._entry(XTianqiAffixRoll._pick(c, rng), int(old.get("tier", 1)), XTianqiAffixRoll.quality_key(item), rng)
+		if not bool(data().get("allow_perfect", true)) and str(e.grade) == "perfect":
+			e.grade = "fine"
+		if bool(old.get("growth", false)):
+			e["growth"] = true
+		work[i] = e
+	s.gain_gold(-price)
+	XTianqiAffixRoll.set_affixes(item, work)
+	XTianqiMoney.count_reforge(item)
+	return {"ok": work}

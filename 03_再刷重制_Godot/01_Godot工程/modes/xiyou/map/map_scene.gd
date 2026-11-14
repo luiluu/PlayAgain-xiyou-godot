@@ -817,6 +817,13 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇天平（XTianqiMoney）：大厅 EV043（原宠物商店）换成天平
+	if XTianqiMoney.intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiMoney.run_scale(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
 	# 天启篇大厅牢妲（XTianqiTrim，O-待定-1）：只剩挑战守层者，难度开关和怪物难度属性不出
 	if XTianqiTrim.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)

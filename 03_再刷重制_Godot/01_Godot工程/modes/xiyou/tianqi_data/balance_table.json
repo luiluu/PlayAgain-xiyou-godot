@@ -2,7 +2,7 @@
  "version": 1,
  "source": "天启篇数值测算 参数.json（设计仓库 xiyou-design-docs 提交 7767262）",
  "dev": "dev.448",
- "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。第三批起接进战斗与开局（XTianqiCombat：敌人血量／攻击、档位出伤／承伤、弱者协力、助力位光环；XTianqi：候选池、超强者上限、至少弱者）；quality_offset 还没接。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
+ "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。第三批起接进战斗与开局（XTianqiCombat：敌人血量／攻击、档位出伤／承伤、弱者协力、助力位光环；XTianqi：候选池、超强者上限、至少弱者）；quality_offset 还没接；reward＝难度奖励倍率（金钱、掉率共用，金钱重构 v0.2／掉落重构 v0.8，XTianqiBalance.reward_mult）。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
  "nice_number_exempt": ["version", "secret_cap", "super_cap", "min_weak"],
  "tiers": {
   "弱者": {"damage_dealt": 0.0, "damage_taken": 0.0, "secret_cap": 6},
@@ -38,19 +38,19 @@
  },
  "difficulties": [
   {"key": "xunchang", "name": "寻常",
-   "scaling": {"draft": true, "enemy_hp": 0.7, "enemy_atk": 0.8, "party_damage": 1.0, "quality_offset": -0.3},
+   "scaling": {"draft": true, "enemy_hp": 0.7, "enemy_atk": 0.8, "party_damage": 1.0, "quality_offset": -0.3, "reward": 1.0},
    "roster": {"pool": ["弱者", "强者"], "super_cap": 0, "min_weak": 4}},
   {"key": "jianxian", "name": "艰险",
-   "scaling": {"draft": true, "enemy_hp": 1.0, "enemy_atk": 1.0, "party_damage": 1.0, "quality_offset": 0.0},
+   "scaling": {"draft": true, "enemy_hp": 1.0, "enemy_atk": 1.0, "party_damage": 1.0, "quality_offset": 0.0, "reward": 1.1},
    "roster": {"pool": ["弱者", "强者"], "super_cap": 0, "min_weak": 3}},
   {"key": "jiusi", "name": "九死",
-   "scaling": {"draft": true, "enemy_hp": 1.5, "enemy_atk": 1.25, "party_damage": 1.0, "quality_offset": 0.3},
+   "scaling": {"draft": true, "enemy_hp": 1.5, "enemy_atk": 1.25, "party_damage": 1.0, "quality_offset": 0.3, "reward": 1.3},
    "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 1, "min_weak": 3}},
   {"key": "lianyu", "name": "炼狱",
-   "scaling": {"draft": true, "enemy_hp": 2.0, "enemy_atk": 1.5, "party_damage": 1.0, "quality_offset": 0.6},
+   "scaling": {"draft": true, "enemy_hp": 2.0, "enemy_atk": 1.5, "party_damage": 1.0, "quality_offset": 0.6, "reward": 1.5},
    "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 2, "min_weak": 2}},
   {"key": "zhengdao", "name": "证道",
-   "scaling": {"draft": true, "enemy_hp": 2.8, "enemy_atk": 1.8, "party_damage": 1.0, "quality_offset": 0.9},
+   "scaling": {"draft": true, "enemy_hp": 2.8, "enemy_atk": 1.8, "party_damage": 1.0, "quality_offset": 0.9, "reward": 1.8},
    "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 3, "min_weak": 2}}
  ]
 }

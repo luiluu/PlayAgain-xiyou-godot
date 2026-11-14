@@ -204,6 +204,9 @@ static func sell(s: XState, rec: Dictionary, number := 1) -> void:
 
 ## Scene_Shop.sellingPrice（YEP_ShopMenuCore：<Sell Price> 优先，否则 MV 半价向下取整）
 static func selling_price(rec: Dictionary) -> int:
+	var tq := XTianqiMoney.sell_price(rec)  # 天启篇金钱重构：装备卖价按品质（场钱），不看原价
+	if tq >= 0:
+		return tq
 	if rec.has("sellPrice"):
 		return int(rec.sellPrice)
 	return int(rec.get("price", 0)) / 2

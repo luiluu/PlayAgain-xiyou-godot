@@ -10,7 +10,7 @@ extends RefCounted
 ## - 掉率加成（BONUS）：上场＋助力位的全部来源相加，再按 有效＝合计×k÷(合计＋k) 递减（k＝200，最高逼近 3 倍）。
 ##   来源：被动 passiveIRUP（技能重构改过的照它的值，别的按原值落五档 5／10／15／20／30）、套装物品掉率（同样落档）、
 ##   寻宝猎人状态 +30（原版是把 0.2 底率变成 1）、亡魂汲取 +20、词条「物品掉落」。原版是全部连乘。
-## - 难度倍率（DIFFICULTY）：寻常 1、艰险 1.1、九死 1.3、炼狱 1.5、证道 1.8，和全队倍率相乘。
+## - 难度倍率（DIFFICULTY）：寻常 1、艰险 1.1、九死 1.3、炼狱 1.5、证道 1.8，和全队倍率相乘；读 balance_table.json 每档 scaling.reward（XTianqiBalance.reward_mult，和金钱共用）。
 ## - 招牌掉落（SIGNATURE，第二期）：怪物表里留下的行。史诗及以上的装备不再乘 0.2，按品质夹在范围里
 ##   （史诗 3%～10%、传说 2%～6%、不朽 1%～3%、神话 0.5%～2%，原来必掉的还是必掉）；材料和道具实际概率不变（原表 × 0.2），最低 0.5%。
 ##   乘全队倍率和难度倍率后按递增概率掷（Dota 2 的伪随机分布）：同一只怪的同一件东西每次没出，下一次概率涨一截，出了归零，
@@ -152,7 +152,7 @@ static func party_mult(s: XState, members = null) -> float:
 static func difficulty_mult(s: XState) -> float:
 	if not DIFFICULTY or s == null or not s.flags.get("tianqi") is Dictionary:
 		return 1.0
-	return float(table().get("difficulty", {}).get(str(s.flags.tianqi.get("difficulty", "")), 1.0))
+	return XTianqiBalance.reward_mult(s)  # 难度奖励倍率：balance_table.json scaling.reward，和金钱共用（金钱重构 v0.2）
 
 
 ## 怪物表掉落的倍率（XBattleLogic.drop_chances；本期仍带 0.2 底率，不再有寻宝猎人的 ×5 和神话怪）
@@ -483,7 +483,8 @@ static func _auto_sell(logic, drops: Array) -> Array:
 	for d in drops:
 		var rec := XDB.rec("Weapons" if int(d.kind) == 2 else "Armors", int(d.id))
 		if XQuality.grade(rec) < gate:
-			gold += floori(float(rec.get("price", 0)) / 2.0)
+			var tq := XTianqiMoney.sell_price_grade(s, XQuality.grade(rec))  # 金钱重构：按品质的卖价（场钱）
+			gold += tq if tq >= 0 else floori(float(rec.get("price", 0)) / 2.0)
 		else:
 			kept.append(d)
 	logic.set_meta("tianqi_generic_gold", gold)
