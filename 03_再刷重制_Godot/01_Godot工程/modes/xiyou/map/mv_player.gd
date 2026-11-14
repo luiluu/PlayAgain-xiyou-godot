@@ -26,9 +26,19 @@ var dash := true
 var vehicle_speed := 0
 
 
+## 确认键要真的落到地图上（没被商店、菜单、对话框等界面用掉）才算调查（玩家反馈 v0.01.09「PC 按一次响应多次」）。
+## 原来在物理帧里轮询 Input.is_action_just_pressed：轮询不看 set_input_as_handled，商店里按确认选「取消」关店、事件当帧收尾，
+## 紧接着的物理帧又看到「刚按下」，再调查一次 NPC（又开对话、又开店）；高刷新率显示器上处理帧多于物理帧，更容易撞上。
+## 原版 popScene 回地图要隔帧，Input.isTriggered 早已过去。这里在 _unhandled_input 记下这一下，下一次物理帧用掉。
+var _accept_queued := false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
+	# ⌘Enter（macOS）／Alt+Enter（其它平台）是切全屏（GameApp），不算调查
+	if event.is_action_pressed("ui_accept") and not WindowFit.fullscreen_modifier_held():
+		_accept_queued = true
 	# 手机按键设置「地图移动：仅方向键／轮盘移动」（改版 mapTouch，Scene_Map.processMapTouch 不处理）：触屏点按不走路
 	if not XTouchControls.map_tap_allowed() and (event is InputEventScreenTouch or (event is InputEventMouseButton and event.device == InputEvent.DEVICE_ID_EMULATION)):
 		return
@@ -78,6 +88,9 @@ func _update_hold() -> void:
 func update_character() -> void:
 	super.update_character()
 	_update_hold()
+	# 这一下确认键只给紧接着的这一个物理帧（同原版 isTriggered 只在按下那帧为真；走动中、不收输入时按的作废）
+	var accept := _accept_queued
+	_accept_queued = false
 	if not is_moving() and auto_step.is_valid():
 		for d in auto_step.call():
 			if move_straight(d):
@@ -105,8 +118,7 @@ func update_character() -> void:
 			if front_cell(d) == touch_target and vehicle_speed <= 0:
 				action_pressed.emit()
 			touch_target = Vector2i(-1, -1)
-	elif Input.is_action_just_pressed("ui_accept") and not WindowFit.fullscreen_modifier_held():
-		# ⌘Enter（macOS）／Alt+Enter（其它平台）是切全屏（GameApp），轮询不受 set_input_as_handled 影响，这里排除
+	elif accept:
 		action_pressed.emit()
 
 

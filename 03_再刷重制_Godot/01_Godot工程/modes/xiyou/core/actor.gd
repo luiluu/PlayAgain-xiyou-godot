@@ -1324,7 +1324,7 @@ func param_before_alien(i: int) -> float:
 	# 原版安装先后由内到外：专属角色模块（米拉、黄泉、甚尔、宿傩，modules.json 第 2～18 个）→小猫剑圣（installImportedBalanceRuntime，第 20 个）
 	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
-	var v := XTianqiGear.param(self, i, XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, super.param(i))))))  # 天启篇坐骑敏捷％在最外（云裳夹值之前）；心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
+	var v := XTianqiGear.param(self, i, XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, XPercentPills.param(self, i, super.param(i)))))))  # 天启篇坐骑敏捷％在最外（云裳夹值之前）；淬元丹（插件 Codex_PercentPills，在运行时包装之前装）紧贴插件层；心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
 	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
 
 ## O-177：战斗中升级按新上限回满 HP／MP（原版 krz 能力值缓存让它回到升级前的上限）。false＝照原版
