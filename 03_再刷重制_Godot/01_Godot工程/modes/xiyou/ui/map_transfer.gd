@@ -233,6 +233,9 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.text("确定查看详情 / " + _transfer_hint(), 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 	else:
 		c.text("确认地图后可选择掉落物查看详情", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+	var elem_line := XTianqiElements.transfer_floor_line(XState.current, map_id)
+	if elem_line != "":
+		c.text(elem_line, 0, prompt_y - LH, INFO_RECT.size.x, "left", Color("#9be4ff"))
 	if pages.size() > 1:
 		var t := "第 %d/%d 页（Q上一页 / E下一页）" % [page + 1, pages.size()]
 		var tw := c.text_width(t)

@@ -1166,6 +1166,41 @@ def check_skill_rework(_args) -> bool:
     return _report('skill_rework.json', '规则自检', bad)
 
 
+def elements_table_rules(table: dict) -> list:
+    bad = []
+    exempt = set(table.get('nice_number_exempt', []))
+    nice_violations(table, 'elements_table', exempt, bad)
+    base = table.get('base_elements', [])
+    higher = table.get('higher_elements', [])
+    if sorted(base) != [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]:
+        bad.append('base_elements 应为 10 个基础属性 [2..9, 14, 15]：%s' % (base,))
+    if sorted(higher) != [11, 12, 13]:
+        bad.append('higher_elements 应为 [11, 12, 13]：%s' % (higher,))
+    rules = table.get('deck_rules', {})
+    n_base = len(base)
+    if int(rules.get('total_floors', 0)) != 33:
+        bad.append('total_floors 应为 33')
+    if int(rules.get('per_element_weak', 0)) * n_base != int(rules.get('double_floors', 0)) * 2 + int(rules.get('single_floors', 0)):
+        bad.append('弱点总量与双单层分布不匹配')
+    if int(rules.get('per_element_resist', 0)) * n_base != int(rules.get('double_floors', 0)) * 2 + int(rules.get('single_floors', 0)):
+        bad.append('抗性总量与双单层分布不匹配')
+    if int(rules.get('immune_min_floor', 0)) != 6:
+        bad.append('immune_min_floor 应为 6（1~5 层无免疫）')
+    return bad
+
+
+def check_elements_table(_args) -> bool:
+    path = DATA_DIR / 'elements_table.json'
+    if not path.is_file():
+        print('跳过：没有 elements_table.json')
+        return True
+    try:
+        bad = elements_table_rules(json.loads(path.read_text(encoding='utf-8')))
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('elements_table.json', '规则自检', bad)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1185,6 +1220,7 @@ CHECKS = [
     ('qiyin_altar', lambda _args: check_qiyin('altar')),
     ('qiyin_refs', check_qiyin_refs),
     ('skill_rework', check_skill_rework),
+    ('elements_table', check_elements_table),
 ]
 
 

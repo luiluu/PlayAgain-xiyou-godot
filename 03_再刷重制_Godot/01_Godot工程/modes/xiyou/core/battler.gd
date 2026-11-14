@@ -851,6 +851,8 @@ func passive_element_values(_e: int) -> Array:
 	return []
 
 func element_rate(e: int) -> float:
+	if self is XEnemy and XTianqiElements.deck_on():
+		return XTianqiElements.static_enemy_rate(self as XEnemy, e)
 	# 原生链（MV 连乘＋dsPassiveSkill 再乘被动）得到 current，再交给加算池
 	var passive := passive_element_values(e)
 	var current := traits_pi(TRAIT_ELEMENT_RATE, e)
@@ -898,6 +900,8 @@ func additive_rate(code: int, id: int, current: float, passive: Array) -> float:
 ## <Element Absorb: x>、<Element Absorb: x, x>、<Element Absorb: x to y>、<Element Absorb: 名字, 名字>
 static var _absorb_cache := {}
 func is_absorb_element(e: int) -> bool:
+	if self is XEnemy and XTianqiElements.deck_on():
+		return false
 	for o in trait_objects():
 		var note := str(o.get("note", ""))
 		if note == "":

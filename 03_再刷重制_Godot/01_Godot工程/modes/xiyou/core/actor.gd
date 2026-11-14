@@ -586,6 +586,7 @@ func learn_skill(id: int) -> void:
 	XToji.learned(self, id)  # 甚尔 learnSkill 包装：学暴君时清负面状态与弱化
 	XTianqiGear.learned(self, id)  # 天启篇：茉蕾觉醒时学嘤雄
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
+	XTianqiElements.learned_skill(self, id)  # 天启篇元素重做：元素转换书技能互斥遗忘
 
 func forget_skill(id: int) -> void:
 	read_touch()

@@ -122,6 +122,16 @@ func _paint_slots(c: XMVCanvas) -> void:
 			if tex != null:
 				c._keep.append(tex)  # XMVCanvas：本帧画的纹理要引用到下次重画，局部变量一释放就画成白块（八戒_71 期三对图时发现）
 				c.draw_texture(tex, Vector2(inner.size.x - tex.get_width(), 0))
+	var s_cur := XState.current
+	if XTianqiElements.deck_on(s_cur):
+		var fl := XDungeon.map_floor(s_cur.map_id)
+		if fl >= 1 and fl <= 33:
+			var prof := XTianqiElements.floor_deck(s_cur, fl)
+			var cov := XTianqiElements.party_coverage(s_cur, prof)
+			var w_tx := "可击弱点:" + ("、".join((cov.weak_hits as Array).map(func(e): return XTianqiElements.element_name(int(e)))) if not cov.weak_hits.is_empty() else "无")
+			if cov.has_higher:
+				w_tx += "  高阶:有"
+			c.text("%s  |  %s" % [XTianqiElements.format_profile_line(prof), w_tx], 8, c.size.y - 26, c.size.x - 16, "left", Color("#9be4ff"), 16)
 
 
 ## 图要随切片的 systemImages 导出（交付单 claude_bajie-skillshare 提案）；没导出时不画

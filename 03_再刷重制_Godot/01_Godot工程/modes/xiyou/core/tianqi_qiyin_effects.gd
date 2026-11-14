@@ -202,6 +202,12 @@ static func effects(logic, a) -> Dictionary:
 	return st.fx[a]
 
 
+static func has_resist_down(logic, b) -> bool:
+	if logic == null or not on(logic.state):
+		return false
+	return int(_unit(logic, b).resist_down) > 0
+
+
 static func _has(logic, a, code: String) -> bool:
 	return a is XActor and effects(logic, a).has(code)
 
@@ -675,7 +681,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		if elemental:
 			mult *= 1.0 + float(_p(logic, a, "element_dmg_pct").get("value", 0)) / 100.0
 			mult *= 1.0 + int(un.switch) * float(_p(logic, a, "element_switch_stack").get("per_stack_pct", 0)) / 100.0
-			if int(bu.resist_down) > 0:
+			if int(bu.resist_down) > 0 and not XTianqiElements.deck_on(logic.state):
 				ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 - float(_p_any(logic, "star_pages").get("value", 0)) / 100.0})
 		var sa := _p(logic, a, "single_action_dmg_pct")
 		if not sa.is_empty() and not f.is_empty() and not f.has("derived") and int(un.acted) <= 1 and not logic.current_order.has(a):

@@ -495,6 +495,9 @@ static func _check_phase(logic, f: Dictionary) -> void:
 		return
 	while int(f.phase) < p:
 		f.phase = int(f.phase) + 1
+		var elem_msg := XTianqiElements.on_horsemen_phase(logic, f.knight, int(f.phase))
+		if elem_msg != "":
+			_say(f, elem_msg)
 		match str(f.line):
 			"death":
 				if int(f.phase) == 2:
