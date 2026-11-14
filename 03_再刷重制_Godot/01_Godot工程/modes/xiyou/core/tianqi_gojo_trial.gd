@@ -21,7 +21,7 @@ extends RefCounted
 ## - 新宿（宿傩）：第 2 回合起每 5 回合展开伏魔御厨子 3 回合（含当回合），每回合结束必中斩击（不判命中、无下限挡不住）；
 ##   领域到期的下一回合神灶：开；其余回合 3 的倍数捌、否则解。两边领域都开着＝领域对拼：御厨子斩击不落、无量空处的必中和信息过载失效
 ##  （给印照常）。
-## 战斗挂点：battle_logic setup／decide／make_action_times／hp 账本／rewards／grant 各一行；其余走 XGojo 的现成挂点（begin、finish、end_round、
+## 战斗挂点：battle_logic setup／decide／make_action_times／rewards／grant 各一行；扣血底层 XResourceContext._gain（final_loss）、阵亡兜底 XBattler.add_state（blocks_death）各一行；其余走 XGojo 的现成挂点（begin、finish、end_round、
 ## infinity_block、overload、sure、after_apply、after_hit、formula）。影子色调在 battler_sprite 一行。
 ## 开关（O-待定）：ENABLED＝false 回到 v0.2 四阶表、没有试炼；LEARN_SHIFT／OWN_GOLD／RESTORE_ON_WIN／SHADOW_TINT 分项回退。
 
@@ -589,29 +589,70 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		_say(logic, "天逆鉾强制解除了术式：赫印 −1。")
 
 
-## BattleLogic 的 hp 账本：怀玉里五条悟第一次会被打死时留 1 点（好触发领悟）；影子只有茈能打倒
-static func hp_damage(logic, _u, t, value: float, item: Dictionary) -> float:
-	if not active(logic) or value <= 0.0:
-		return value
+## 茈「收」「放」正在结算（XGojo.cast：五条悟的行动开始时记、结束时清；别人的行动开始也清）
+static func purple_casting() -> bool:
+	return int(XGojo.cast.get("skill", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]
+
+
+## XResourceContext._gain（所有扣血都走这里：技能伤害、持续伤害、模块直接扣血；在各种倍率、遗物增伤、Boss 输出、护盾之后，
+## 真写生命之前）：怀玉里五条悟觉醒前这一下会打死他就留 1 点（记下待领悟）；甚尔影子不是茈打的最多压到 1 点。返回实际要扣的量。
+## live＝false（伤害预览）只算不记。
+static func final_loss(b, loss: float, live := true) -> float:
+	if loss <= 0.0:
+		return loss
+	var logic = active_logic()
+	if logic == null:
+		return loss
 	var f := fight(logic)
 	if int(f.tier) != 1:
-		return value
-	if is_same(t, f.gojo) and not bool(f.awakened) and value >= float(t.hp):
-		return maxf(0.0, float(t.hp) - 1.0)
-	if is_same(t, f.shadow) and not (int(item.get("id", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]) and value >= float(t.hp) - 1.0:
-		if not bool(f.held):
-			f.held = true
-			_say(logic, "伏黑甚尔的影子还站着——只有虚式「茈」才能打倒他。")
-		return maxf(0.0, float(t.hp) - 1.0)
-	return value
+		return loss
+	if is_same(b, f.gojo) and not bool(f.awakened) and loss >= float(b.hp):
+		return maxf(0.0, float(b.hp) - 1.0)
+	if is_same(b, f.shadow) and not purple_casting() and loss >= float(b.hp) - 1.0:
+		if live:
+			_held(logic)
+		return maxf(0.0, float(b.hp) - 1.0)
+	return loss
 
 
-## XGojo.after_hit（进阶·自动反转之前）：怀玉里第一次掉到 30% 以下领悟反转术式
+## XBattler.add_state(1) 兜底：不经 _gain 直接写生命再判阵亡的路（种族伤害、七印行动外扣血、反弹、即死、异化词条临终等）。
+## 怀玉里觉醒前的五条悟、不是茈打的甚尔影子：生命改 1、不加阵亡（同谷雨代命的写法）。返回 true＝拦下了。
+static func blocks_death(b) -> bool:
+	var logic = active_logic()
+	if logic == null:
+		return false
+	var f := fight(logic)
+	if int(f.tier) != 1:
+		return false
+	if is_same(b, f.gojo) and not bool(f.awakened):
+		b.hp = maxf(1.0, float(b.hp))
+		return true
+	if is_same(b, f.shadow) and not purple_casting():
+		b.hp = maxf(1.0, float(b.hp))
+		_held(logic)
+		return true
+	return false
+
+
+static func _held(logic) -> void:
+	var f := fight(logic)
+	if not bool(f.held):
+		f.held = true
+		_say(logic, "伏黑甚尔的影子还站着——只有虚式「茈」才能打倒他。")
+
+
+## 怀玉：五条悟第一次掉到 30% 以下领悟反转术式（挨打后 XGojo.after_hit；持续伤害等别的路在下一个行动开始／结束时补）
 static func after_hit(logic, t) -> void:
+	if active(logic) and is_same(t, fight(logic).gojo):
+		check_awaken(logic)
+
+
+static func check_awaken(logic) -> void:
 	if not active(logic):
 		return
 	var f := fight(logic)
-	if int(f.tier) != 1 or bool(f.awakened) or not is_same(t, f.gojo) or not t.is_alive():
+	var t = f.gojo
+	if int(f.tier) != 1 or bool(f.awakened) or not t.is_alive():
 		return
 	if float(t.hp) >= float(t.mhp) * float(trial(1).get("awaken_below", 0.3)):
 		return

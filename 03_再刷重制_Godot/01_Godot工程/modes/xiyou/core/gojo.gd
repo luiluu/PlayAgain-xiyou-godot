@@ -487,6 +487,7 @@ static func on_death(b) -> void:
 
 ## startAction：茈记下开始时的对数；领域展开
 static func begin(logic, u, skill: Dictionary) -> Array:
+	XTianqiGojoTrial.check_awaken(logic)  # 专属试炼战怀玉：持续伤害等不经挨打的路掉到 30% 以下，下一个行动开始前补领悟
 	cast = {}
 	if not own(u) or XBattleLogic.is_item(skill) or skill.is_empty():
 		return XTianqiGojoTrial.begin_action(logic, u, skill) if skill is Dictionary and not skill.is_empty() else []  # 专属试炼战：宿傩影子展开伏魔御厨子
@@ -503,6 +504,7 @@ static func begin(logic, u, skill: Dictionary) -> Array:
 
 ## endAction：加印、改 last、茈清印、六眼再动
 static func finish(logic, u, skill) -> Array:
+	XTianqiGojoTrial.check_awaken(logic)
 	var logs: Array = XTianqiGojoTrial.take_logs(logic) + XTianqiGojoTrial.defeat_line(logic)  # 专属试炼战：天逆鉾拆印、领悟反转术式、影子压住、倒下的台词
 	var id := int(skill.get("id", 0)) if skill is Dictionary and not skill.is_empty() else 0
 	if not own(u) or id == 0 or not u.is_alive():

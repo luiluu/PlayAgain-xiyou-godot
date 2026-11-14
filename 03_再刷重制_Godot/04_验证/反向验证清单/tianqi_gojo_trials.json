@@ -16,10 +16,10 @@
    "replace": "\t\tpass\n"
   },
   {
-   "name": "甚尔影子谁都能打倒",
+   "name": "甚尔影子谁都能打倒（底层夹扣血）",
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
-   "find": "not (int(item.get(\"id\", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT])",
-   "replace": "false"
+   "find": "\tif is_same(b, f.shadow) and not purple_casting() and loss >= float(b.hp) - 1.0:",
+   "replace": "\tif false:"
   },
   {
    "name": "领悟反转术式不回血",
@@ -84,8 +84,8 @@
   {
    "name": "迁移不折半",
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
-   "find": "\tvar n := old / 2\n",
-   "replace": "\tvar n := old\n"
+   "find": "old / 2 if passed(s).is_empty() or v == OLD_VERSION else old",
+   "replace": "old"
   },
   {
    "name": "试炼发奖励（grant）",

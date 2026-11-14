@@ -2899,7 +2899,6 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 
 func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTianqiHorsemen.hp_damage(self, u, t, value)  # 天启四骑士：混子之盾累计、打混子记不服；疫病治疗 −50%
-	value = XTianqiGojoTrial.hp_damage(self, u, t, value, item)  # 天启篇五条悟试炼怀玉：五条悟第一次致命留 1 点、甚尔影子只有茈能打倒
 	value = XTianqiWarAlien.hp_damage(self, u, t, value)  # 天启篇战争线异化：交锋加伤、战意记被打、战狂化形加攻
 	value = XTianqiFamineAlien.hp_damage(self, u, t, value)  # 天启篇饥荒线异化：掠夺者命中夺 MP、TP
 	value = XTianqiPlagueAlien.hp_damage(self, u, t, value, item)  # 天启篇瘟疫线异化：毒腺中毒、混乱者混乱、挑衅者不服与化形群攻减半

@@ -31,6 +31,7 @@ func _run() -> void:
 	_migrate()
 	_disk_roundtrip()
 	_huaiyu_mechanics()
+	_huaiyu_last_resort()
 	_xinsu_mechanics()
 	_scripted()
 	await _page_and_request()
@@ -356,30 +357,117 @@ func _huaiyu_mechanics() -> void:
 	var dmg: float = a.mhp - a.hp
 	var expect := float(XTianqiGojoTrial.fight(lg).base.mhp) * 0.1 * 2.0
 	_check("h_spear_scale", dmg > expect * 0.5 and dmg < expect * 1.5, [dmg, expect])
-	# 只有茈能打倒
+	# 只有茈能打倒（走真实付伤链：horseman_strike → execute_hp_damage → 各倍率 → XResourceContext._gain）
+	var red := XDB.rec("Skills", XGojo.RED)
 	e.hp = 10.0
 	XTianqiGojoTrial.fight(lg).queue = []
-	_check("h_lock", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.RED)) == 9.0)
-	_check("h_lock_any", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, {}) == 9.0 and XTianqiGojoTrial.hp_damage(lg, a, e, 3.0, {}) == 3.0)
+	var hit := lg.horseman_strike(a, e, red, 999999.0, false)
+	_check("h_lock", e.hp == 1.0 and e.is_alive() and float(hit.hp) == 9.0, [e.hp, hit.hp])
+	lg.horseman_strike(a, e, red, 999999.0, false)
+	_check("h_lock_any", e.hp == 1.0 and e.is_alive())
 	_check("h_lock_said", XTianqiGojoTrial.fight(lg).held and XTianqiGojoTrial.take_logs(lg).size() == 1)
-	_check("h_purple_kills", XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_OUT)) == 999999.0 and XTianqiGojoTrial.hp_damage(lg, a, e, 999999.0, XDB.rec("Skills", XGojo.PURPLE_IN)) == 999999.0)
+	# 直接写生命再判阵亡的路（种族伤害、七印行动外扣血、反弹、即死）：阵亡兜底
+	e.hp = 0.0
+	e.refresh_resources()
+	_check("h_lock_direct_refresh", e.hp == 1.0 and e.is_alive(), e.hp)
+	e.hp = 0.0
+	lg._die(e)
+	_check("h_lock_direct_die", e.hp == 1.0 and e.is_alive(), e.hp)
+	e.add_state(1)
+	_check("h_lock_instant_death", e.is_alive() and not e.state_ids.has(1))
+	lg.gain_hp(e, -999999.0)
+	_check("h_lock_gain", e.hp == 1.0 and e.is_alive())
+	XGojo.cast = {"skill": XGojo.PURPLE_OUT}
+	e.hp = 10.0
+	lg.horseman_strike(a, e, XDB.rec("Skills", XGojo.PURPLE_OUT), 999999.0, false)
+	_check("h_purple_kills", e.is_dead(), e.hp)
+	XGojo.cast = {}
+	e.remove_state(1)
+	e.hp = e.mhp
+	XGojo.cast = {"skill": XGojo.PURPLE_IN}
+	e.hp = 0.0
+	e.add_state(1)
+	_check("h_purple_kills_direct", e.is_dead())
+	XGojo.cast = {}
+	e.remove_state(1)
+	e.hp = e.mhp
 	# 领悟反转术式：会被打死时留 1 点，回满、印满，只一次
 	a.hp = 50.0
 	XGojo.temp(a).blue = 0
 	XGojo.temp(a).red = 1
-	_check("h_one_left", XTianqiGojoTrial.hp_damage(lg, e, a, 999999.0, XDB.rec("Skills", XTianqiGojoTrial.SOUL)) == 49.0)
-	a.hp = 1.0
+	var soul := XDB.rec("Skills", XTianqiGojoTrial.SOUL)
+	var cut := lg.horseman_strike(e, a, soul, 999999.0, false)
+	_check("h_one_left", a.hp == 1.0 and a.is_alive() and float(cut.hp) == 49.0, [a.hp, cut.hp])
 	XGojo.after_hit(lg, a)
 	_check("h_awaken", a.hp == a.mhp and XGojo.marks(a) == [3, 3] and XTianqiGojoTrial.fight(lg).awakened, [a.hp, a.mhp, XGojo.marks(a)])
-	var said: Array = XGojo.finish(lg, e, XDB.rec("Skills", XTianqiGojoTrial.SOUL))
+	var said: Array = XGojo.finish(lg, e, soul)
 	_check("h_awaken_lines", said.any(func(l): return str(l.get("text", "")).contains("天上天下")), said)
 	a.hp = floorf(a.mhp * 0.1)
 	XGojo.after_hit(lg, a)
 	_check("h_awaken_once", a.hp == floorf(a.mhp * 0.1))
-	_check("h_can_die_after", XTianqiGojoTrial.hp_damage(lg, e, a, 999999.0, {}) == 999999.0)
+	lg.horseman_strike(e, a, soul, 999999.0, false)
+	_check("h_can_die_after", a.is_dead())
 	lg.end_battle(2)
 	_check("h_end_clears", not XTianqiGojoTrial.active(lg))
 	XTianqiGojoTrial.finish(s, 2)
+
+
+## 返修 P2-2：觉醒前的致命保护在伤害链最末——戴最后一枚雷火弹（受到的伤害 +15%，在保护原来的位置之后乘）残血挨天逆鉾也留 1 点；
+## 持续伤害、直接写生命的路也留 1 点，并在下一个行动开始时补领悟
+func _huaiyu_last_resort() -> void:
+	var s := _state(25)
+	var a: XActor = s.actor(GOJO)
+	var relic := XTianqiRewards.make_item("relic", "war", 0, false)
+	s.register_gear(relic)
+	s.gear.append(relic)
+	var slot := a.equip_slots().find(int(relic.etypeId))
+	_check("r_relic_worn", slot >= 0 and XEquipment.change(s, a, slot, relic) and not XTianqiRewards.relic_of(a).is_empty())
+	var lg := _battle(s, 1)
+	var e: XEnemy = lg.enemies[0]
+	var spear := XDB.rec("Skills", XTianqiGojoTrial.SPEAR)
+	a.hp = a.mhp
+	var plain := XTianqiRewards.hp_damage(lg, e, a, 1000.0)
+	_check("r_relic_amplifies", plain == 1150.0, plain)
+	a.hp = 20.0
+	var r: Dictionary = lg.apply(e, spear, a)
+	_check("r_relic_survives_and_awakens", a.is_alive() and a.hp == a.mhp and XTianqiGojoTrial.fight(lg).awakened and not bool(r.get("evaded", false)), [a.hp, a.mhp, r.get("hp")])
+	lg.end_battle(2)
+	XTianqiGojoTrial.finish(s, 2)
+	# 持续伤害（不经挨打）：留 1 点，下一个行动开始时领悟
+	var s2 := _state(25)
+	var a2: XActor = s2.actor(GOJO)
+	var lg2 := _battle(s2, 1)
+	var e2: XEnemy = lg2.enemies[0]
+	a2.hp = 30.0
+	lg2.gain_hp(a2, -999999.0)
+	_check("r_dot_one_left", a2.hp == 1.0 and a2.is_alive() and not XTianqiGojoTrial.fight(lg2).awakened, a2.hp)
+	XGojo.begin(lg2, e2, XDB.rec("Skills", XTianqiGojoTrial.CLOUD))
+	_check("r_dot_awaken_next_action", XTianqiGojoTrial.fight(lg2).awakened and a2.hp == a2.mhp)
+	# 直接写生命再判阵亡（七印行动外扣血、异化词条临终那样）：觉醒前拦下
+	var s3 := _state(25)
+	var a3: XActor = s3.actor(GOJO)
+	var lg3 := _battle(s3, 1)
+	a3.hp = 0.0
+	a3.refresh_resources()
+	_check("r_direct_one_left", a3.hp == 1.0 and a3.is_alive(), a3.hp)
+	a3.hp = 0.0
+	lg3._state_add(a3, 1)
+	_check("r_direct_death_blocked", a3.hp == 1.0 and not a3.state_ids.has(1))
+	XTianqiGojoTrial.check_awaken(lg3)
+	a3.hp = 0.0
+	a3.refresh_resources()
+	_check("r_direct_dies_after", a3.is_dead())
+	lg3.end_battle(2)
+	XTianqiGojoTrial.finish(s3, 2)
+	# 新宿和别的战斗：没有这两道锁
+	var s4 := _state(55)
+	var a4: XActor = s4.actor(GOJO)
+	var lg4 := _battle(s4, 2)
+	a4.hp = 0.0
+	a4.refresh_resources()
+	_check("r_xinsu_no_lock", a4.is_dead())
+	lg4.end_battle(2)
+	XTianqiGojoTrial.finish(s4, 2)
 
 
 func _xinsu_mechanics() -> void:
