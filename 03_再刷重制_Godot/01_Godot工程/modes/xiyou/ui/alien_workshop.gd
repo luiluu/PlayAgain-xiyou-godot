@@ -140,7 +140,7 @@ func build() -> Array:
 		pane.append(el("h3", i.name))
 		var cards := []
 		for x in [[p.old, "保留旧异化", false], [p.next, "采用新异化", true]]:
-			var f := XTianqiAlienGear.affix_view(st, str(x[0]))  # 天启篇存档换新名字、新词条读天启篇的表；原版档同 XAlienation.affix
+			var f := XTianqiAlienGear.affix_view(st, str(x[0]), str(XTianqiAlienGear.tq(i).get("level", "")))  # 天启篇存档换新名字、新词条读天启篇的表；原版档同 XAlienation.affix
 			cards.append(el("section", null, "", [el("h2", f.name), el("p", "收益：" + str(f.benefit), "alien-benefit"),
 				el("p", "代价：" + str(f.cost), "alien-cost"), btn(x[1], _act.bind(XAlienation.resolve.bind(st, x[2])))]))
 		pane.append(el("div", null, "alien-choices", cards))

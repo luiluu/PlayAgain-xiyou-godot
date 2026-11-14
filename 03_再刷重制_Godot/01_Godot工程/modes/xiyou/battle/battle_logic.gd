@@ -1289,9 +1289,9 @@ func act(u: XBattler, skill, target) -> Array:
 		XLiuying.end_action(self, u, skill)  # 流萤 endAction 包装（原 endAction 之后）：燃烧后刷新负面免疫与免死
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	XGojo.queue_again(self, u)  # 天启篇五条悟六眼：再动插队
-	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
-	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」
-	logs.append_array(XTianqiSkills.end_action(self, u, skill))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）
+	logs.append_array(mark_views(XTianqiQiyinEffects.end_action(self, u, skill)))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
+	logs.append_array(mark_views(XTianqiAffixBattle.end_action(self, u, skill)))  # 天启篇词条「再释放」
+	logs.append_array(mark_views(XTianqiSkills.end_action(self, u, skill)))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）。这三处的命中补画面快照（评审 v0.1 第 8 条，同谷雨）
 	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）

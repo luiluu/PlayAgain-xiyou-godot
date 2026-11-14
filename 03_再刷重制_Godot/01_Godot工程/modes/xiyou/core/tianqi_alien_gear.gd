@@ -108,15 +108,40 @@ static func is_new_affix(key: String) -> bool:
 	return data().get("new_affixes", {}).has(key) and key != "_note"
 
 
-## 工坊卡片用的词条说明 {key, name, benefit, cost}：天启篇存档里换新名字、新词条读本表；原版档照原版
-static func affix_view(s: XState, key: String) -> Dictionary:
+## 工坊卡片用的词条说明 {key, name, benefit, cost}：天启篇存档里换新名字、新词条读本表；原版档照原版。
+## level 给了（侵染／蚀骨／化形／终焉）且 TIER_TEXT 开着时，新词条的收益按这一级 effects 的数出文案（评审 v0.1 第 6 条：原来一律是化形的数）
+static func affix_view(s: XState, key: String, level := "") -> Dictionary:
 	var f := XAlienation.affix(key).duplicate()
 	if is_new_affix(key):
 		var n: Dictionary = data().new_affixes[key]
 		f = {"key": key, "name": key, "benefit": str(n.get("benefit", "")), "cost": str(n.get("cost", ""))}
+		var tier := tier_benefit(key, level_index(level)) if TIER_TEXT and level != "" else ""
+		if tier != "":
+			f.benefit = tier
 	if s != null and XTianqiLine.open_for(s) and not f.is_empty():
 		f.name = affix_name(key)
 	return f
+
+
+## O-待定：新词条收益文案按装备真实级出。false＝照旧用表里写死的化形文案
+static var TIER_TEXT := true
+
+## 新词条这一级的收益文案（数同 XTianqiAlienAffix.value 取的那一档）；认不出级或不是这四条返回空
+static func tier_benefit(key: String, idx: int) -> String:
+	if idx < 0:
+		return ""
+	var v := func(field: String) -> String: return String.num(XTianqiAlienAffix.value(key, field, idx), 0)
+	match key:
+		"dying":
+			return "受到致命伤害时本回合不死（每场一次），本回合攻击提高 %s%%。" % v.call("atk_rate")
+		"again":
+			return "每 %s 回合多行动一次。" % v.call("every")
+		"thrift":
+			return "技能消耗降低 %s%%。" % v.call("cost")
+		"venom":
+			var c := XTianqiAlienAffix.value(key, "chance", idx, 100.0)
+			return "攻击附带中毒。" if c >= 100.0 else "攻击有 %s%% 几率附带中毒。" % String.num(c, 0)
+	return ""
 
 
 ## 这一级能出的词条（共生、夺舍、寄生要化形及以上）
@@ -392,7 +417,7 @@ static func details(s: XState, i: Dictionary) -> Array:
 	var m := XAlienation.mark(i)
 	var t := tq(i)
 	var key := str(m.get("affix", ""))
-	var f := affix_view(s, key)
+	var f := affix_view(s, key, str(t.get("level", "")))
 	var out := ["异化：%s（%s）" % [affix_name(key), level_name(str(t.level))],
 		"收益：" + str(f.get("benefit", "")), "代价：" + str(f.get("cost", "")),
 		"来源：%s线异化怪；分解获得%d点能量" % [str(XTianqi.line_info(str(t.line)).get("name", t.line)), dismantle_gain(i)]]
