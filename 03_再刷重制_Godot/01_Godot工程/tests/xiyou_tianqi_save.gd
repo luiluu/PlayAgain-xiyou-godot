@@ -132,12 +132,87 @@ func _gojo() -> void:
 	_check("gojo_off_facade_load_slot", d != null and XTianqiSave.version(d, "gojo") == XTianqiGojoTrial.TABLE_VERSION)
 
 
+# 五条悟真实角色＋存档时正在试炼（小A 甲档漏测）：老档（没有进阶表标记、旧四阶 4 阶）存档时人在试炼里，
+# 读档门面先迁移（from_dict 末尾）、XSave._load_data 再还原试炼现场；两者交集只有生命夹值，断言迁移和还原都对
+func _gojo_in_trial() -> void:
+	var s := Kit.new_game()
+	var before_party := s.party.duplicate()
+	XTianqi._joining = true
+	s.add_actor(XGojo.ACTOR)
+	XTianqi._joining = false
+	var a: XActor = s.actor(XGojo.ACTOR)
+	a.change_level(80)
+	a.recover_all()
+	a.refresh_passive()
+	var party := s.party.duplicate()
+	var slots := s.battle_slots.duplicate()
+	var want_hp := maxf(1.0, floorf(a.mhp / 3.0))
+	a.hp = want_hp
+	_check("gojo_trial_begin", XTianqiGojoTrial.begin(s, 1) and s.party == [XGojo.ACTOR], [before_party, s.party])
+	a.hp = 1.0  # 试炼里打残了
+	s.actor_advance[XGojo.ACTOR] = 4  # 旧四阶表
+	_check("gojo_trial_saved", kit.save())
+	kit.legacy([XTianqiGojoTrial.MIGRATE_KEY])  # 老档：没有进阶表标记、也没有通过记录＝纯旧四阶
+	var b := kit.reload()
+	var ba: XActor = b.actor(XGojo.ACTOR) if b != null else null
+	_check("gojo_trial_migrated", b != null and XAdvance.rank(b, XGojo.ACTOR) == 2 and XTianqiGojoTrial.passed(b) == [1, 2]
+		and XTianqiSave.version(b, "gojo") == XTianqiGojoTrial.TABLE_VERSION, [XAdvance.rank(b, XGojo.ACTOR), XTianqiGojoTrial.passed(b)] if b != null else null)
+	_check("gojo_trial_restored", b != null and not XTianqiGojoTrial.in_trial(b) and b.party == party and b.battle_slots == slots
+		and ba != null and is_equal_approx(ba.hp, minf(want_hp, ba.mhp)), [b.party, party, ba.hp if ba != null else null, want_hp] if b != null else null)
+	var c := kit.roundtrip()
+	_check("gojo_trial_stable", c != null and XAdvance.rank(c, XGojo.ACTOR) == 2 and XTianqiGojoTrial.passed(c) == [1, 2] and c.party == party)
+
+
+# ---- 小A 甲档返修 ----
+
+func _review_fixes() -> void:
+	# P2-1：西游档残留空 tianqi 表（rules 缺）：门面一律当非天启篇档，取分区不写进去；真实写盘读档后仍是空表
+	var w := XState.new()
+	w.flags["tianqi"] = {}
+	XState.current = w
+	var wd: Dictionary = XTianqiSave.section(w, "drop")
+	var wq := XTianqiQiyin.progress(w)
+	var wf = XTianqiSave.section(w, "famine_prologue")
+	XTianqiSave.set_version(w, "drop", 9)
+	_check("xiyou_empty_tq_detached", wd.pity is Dictionary and wq.has("seed") and wf is Array and (w.flags.tianqi as Dictionary).is_empty()
+		and XTianqiSave.peek(w, "drop") == null and XTianqiSave.versions(w).is_empty() and XTianqiSave.root(w).is_empty(), w.flags.tianqi)
+	var wb := kit.roundtrip()
+	_check("xiyou_empty_tq_disk", wb != null and wb.flags.get("tianqi") is Dictionary and (wb.flags.tianqi as Dictionary).is_empty()
+		and XTianqiSave.version(wb, "drop") == 0, wb.flags.get("tianqi") if wb != null else null)
+	XTianqiDrop.store(wb)
+	var wb2 := kit.roundtrip()
+	_check("xiyou_empty_tq_disk_after_use", wb2 != null and (wb2.flags.get("tianqi", {}) as Dictionary).is_empty(), wb2.flags.get("tianqi") if wb2 != null else null)
+	# 天启篇档 root() 是 flags.tianqi 本体：经它写的键存读后还在
+	var s := Kit.new_game()
+	var r := XTianqiSave.root(s)
+	r["line"] = "plague"
+	_check("root_is_live", is_same(r, s.flags.tianqi) and not r.is_empty())
+	var rb := kit.roundtrip()
+	_check("root_roundtrip", rb != null and str(XTianqiSave.root(rb).get("line")) == "plague" and is_same(XTianqiSave.root(rb), rb.flags.tianqi))
+	# P2-3：数组形分区（famine_prologue）section 返回／新建数组，记版本，存读后还是数组
+	var s2 := Kit.new_game()
+	s2.flags.tianqi.erase("famine_prologue")
+	var fp = XTianqiSave.section(s2, "famine_prologue")
+	_check("array_section_made", fp is Array and is_same(fp, s2.flags.tianqi.get("famine_prologue")) and XTianqiSave.version(s2, "famine_prologue") == 1
+		and XTianqiSave.peek(s2, "famine_prologue") is Array, s2.flags.tianqi.get("famine_prologue"))
+	fp.append(3)
+	var again = XTianqiSave.section(s2, "famine_prologue")
+	_check("array_section_same", is_same(again, fp) and again == [3])
+	s2.flags.tianqi["famine_prologue"] = {"bad": 1}  # 形状不对：peek 不认、section 换成数组
+	_check("array_section_shape", XTianqiSave.peek(s2, "famine_prologue") == null and XTianqiSave.section(s2, "famine_prologue") is Array)
+	XTianqiSave.section(s2, "famine_prologue").append(5)
+	var fb := kit.roundtrip()
+	_check("array_section_disk", fb != null and fb.flags.tianqi.get("famine_prologue") is Array and (XTianqiSave.section(fb, "famine_prologue") as Array).map(func(v): return int(v)) == [5],
+		fb.flags.tianqi.get("famine_prologue") if fb != null else null)
+	_check("dict_section_not_array", XTianqiSave.section(fb, "drop") is Dictionary and not XTianqiSave.is_array("drop") and XTianqiSave.is_array("famine_prologue"))
+
+
 # ---- 其它 ----
 
 func _misc() -> void:
 	var plain := XState.new()
 	_check("plain_peek", XTianqiSave.peek(plain, "drop") == null and XTianqiSave.root(plain).is_empty())
-	var tmp := XTianqiSave.section(plain, "drop")
+	var tmp: Dictionary = XTianqiSave.section(plain, "drop")
 	_check("plain_section_detached", tmp.pity is Dictionary and not plain.flags.has("tianqi"))
 	var pb := XState.from_dict(JSON.parse_string(JSON.stringify(plain.to_dict())))
 	_check("plain_after_load_noop", not pb.flags.has("tianqi"))
@@ -162,6 +237,8 @@ func _run() -> void:
 	_registry()
 	_disk()
 	_gojo()
+	_gojo_in_trial()
+	_review_fixes()
 	_misc()
 	XTianqiSave.ENABLED = true
 	XTianqiGojoTrial.ENABLED = true

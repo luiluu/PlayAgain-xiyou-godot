@@ -5,8 +5,8 @@
   SECTIONS（分区名、分区自带的根上老键 keys、版本标记键 vkey）、ROOT_KEYS、COUNTER_KEYS、OUTSIDE_KEYS；装备键 GEAR_KEYS。
 认的写法（只认字面量键和同文件 const 字符串；flags.tianqi[变量] 这种动态键认不出，跳过）：
   flags.tianqi["k"]、flags.tianqi.get("k" …)、.has("k")、.erase("k")、flags.tianqi.k；
-  同文件里 var X = …flags.tianqi 的别名 X["k"]、X.get("k" …)、X.has("k")、X.k；
-  装备键：["tq_xxx"] = …（赋值处）；XTianqiSave.section／peek／version／set_version(s, "名") 的分区名。
+  同文件里 var X = …flags.tianqi 或 var X = XTianqiSave.root(s) 的别名 X["k"]、X.get("k" …)、X.has("k")、X.k；
+  装备键（赋值处）：["tq_xxx"] = …、.tq_xxx = …、[同文件 const 值是 "tq_xxx"] = …；XTianqiSave.section／peek／version／set_version(s, "名") 的分区名。
 用法：
   python3 天启篇存档登记.py             检查，没登记的逐条打出 文件:行，退出码 1
   python3 天启篇存档登记.py --list      打印登记表认到的键
@@ -68,12 +68,13 @@ def registry(text):
 
 
 TQ = r'flags(?:\.tianqi|\["tianqi"\])'
+ROOT_CALL = r'XTianqiSave\.root\(\s*[\w.]*\s*\)'
 
 
 def uses(text):
     """一份 .gd 里读写 flags.tianqi 的字面量键：[(行号, 键)]；装备 tq_ 键赋值：[(行号, 键)]"""
     consts = dict(re.findall(r'^const (\w+)\s*:?=\s*"(\w+)"', text, re.M))
-    aliases = set(re.findall(r'var (\w+)(?:\s*:\s*Dictionary)?\s*:?=\s*[\w.]*' + TQ + r'\s*(?:#.*)?$', text, re.M))
+    aliases = set(re.findall(r'var (\w+)(?:\s*:\s*Dictionary)?\s*:?=\s*(?:[\w.]*' + TQ + r'|' + ROOT_CALL + r')\s*(?:#.*)?$', text, re.M))
     heads = [TQ] + [r'\b%s' % re.escape(a) for a in aliases]
     pat = re.compile(r'(?:%s)(?:\[\s*(?:"(\w+)"|([A-Z_][A-Z0-9_]*))\s*\]|\.(?:get|has|erase)\(\s*(?:"(\w+)"|([A-Z_][A-Z0-9_]*))|\.([a-z_]\w*)\b(?!\s*\())' % '|'.join(heads))
     out, gear = [], []
@@ -87,6 +88,12 @@ def uses(text):
                 out.append((n, key))
         for m in re.finditer(r'\["(tq_\w+)"\]\s*=[^=]', code):
             gear.append((n, m.group(1)))
+        for m in re.finditer(r'\w\.(tq_\w+)\s*=[^=]', code):
+            gear.append((n, m.group(1)))
+        for m in re.finditer(r'\[\s*([A-Z_][A-Z0-9_]*)\s*\]\s*=[^=]', code):
+            v = consts.get(m.group(1), '')
+            if v.startswith('tq_'):
+                gear.append((n, v))
         for m in re.finditer(r'XTianqiSave\.(?:section|peek|version|set_version)\(\s*[\w.]+\s*,\s*"(\w+)"', code):
             out.append((n, m.group(1)))
     return out, gear

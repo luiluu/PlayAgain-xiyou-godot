@@ -65,6 +65,19 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(len(bad), 1, bad)
         self.assertIn('tq_new', bad[0])
 
+    def test_root_alias(self):
+        # 小A 甲档 P2-2：var X = XTianqiSave.root(s) 的别名也要认
+        bad = self.run_on('func f(s):\n\tvar tq := XTianqiSave.root(s)\n\ttq["sect"] = 1\n\ttq.get("rules")\n'
+                          '\tvar t2: Dictionary = XTianqiSave.root(XState.current)\n\tt2.cult = 2\n')
+        self.assertEqual(sorted(b.split('flags.tianqi.')[1].split(' ')[0] for b in bad), ['cult', 'sect'], bad)
+
+    def test_gear_dot_and_const(self):
+        # 小A 甲档 P2-2：装备键点号赋值、const 键赋值也要认；非 tq_ 的 const、比较、set_meta 不算
+        bad = self.run_on('const F := "tq_new"\nconst OK := "tq_seed_id"\nconst M := "tq_meta"\nconst X := "plain"\n'
+                          'func f(item, a):\n\titem.tq_dot = 1\n\titem[F] = 2\n\titem[OK] = 3\n\titem[X] = 4\n'
+                          '\tif item.tq_dot == 1: pass\n\ta.set_meta(M, 1)\n\titem.tq_seed_id = "y"\n')
+        self.assertEqual(sorted(b.split('装备键 ')[1].split(' ')[0] for b in bad), ['tq_dot', 'tq_new'], bad)
+
     def test_real_project_clean(self):
         bad, _, _ = reg.check()
         self.assertEqual(bad, [])

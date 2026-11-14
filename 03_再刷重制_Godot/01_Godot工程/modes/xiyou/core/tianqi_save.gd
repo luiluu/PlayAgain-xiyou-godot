@@ -73,34 +73,56 @@ static func wired(name: String) -> bool:
 	return ENABLED and WIRED.has(name)
 
 
+## 这一档算不算天启篇档：门面所有入口统一只认 XTianqi.active（flags.tianqi 是字典且 rules≥1）。
+## 西游档里残留的空 tianqi 表（或没有 rules 的）一律当没有，门面不往里写（小A 甲档 P2-1）
+static func live(s: XState) -> bool:
+	return s != null and XTianqi.active(s)
+
+
+## 分区是不是数组形（登记了 array: true，如 famine_prologue）
+static func is_array(name: String) -> bool:
+	return bool(SECTIONS.get(name, {}).get("array", false))
+
+
+## 分区的空形：数组形分区是 []，其余是 {}
+static func _blank(name: String):
+	return [] if is_array(name) else {}
+
+
+## 档里这个值是不是该分区的形状
+static func _shaped(name: String, v) -> bool:
+	return v is Array if is_array(name) else v is Dictionary
+
+
 ## 天启篇区：天启篇档（XTianqi.active）返回 flags.tianqi 本体；否则返回不落盘的空表
 static func root(s: XState) -> Dictionary:
-	if s != null and XTianqi.active(s):
+	if live(s):
 		return s.flags.tianqi
 	return {}
 
 
 ## 只看不建：分区不存在返回 null
 static func peek(s: XState, name: String):
-	if s == null or not s.flags.get("tianqi") is Dictionary:
+	if not live(s):
 		return null
 	var v = s.flags.tianqi.get(name)
-	return v if v is Dictionary or v is Array else null
+	return v if _shaped(name, v) else null
 
 
-## 取分区：缺了按默认建并记现行版本，缺键按默认补。非天启篇档（没有 flags.tianqi）返回不落盘的空分区
-static func section(s: XState, name: String) -> Dictionary:
+## 取分区：缺了按默认建并记现行版本，缺键按默认补。返回字典；登记了 array: true 的分区返回数组。
+## 非天启篇档（不是 XTianqi.active，含西游档残留的空 tianqi 表）返回不落盘的空分区
+static func section(s: XState, name: String):
 	assert(SECTIONS.has(name), "XTianqiSave: 未登记的分区 " + name)
-	if s == null or not s.flags.get("tianqi") is Dictionary:
-		var tmp := {}
+	if not live(s):
+		var tmp = _blank(name)
 		_fill(s, name, tmp, true)
 		return tmp
 	var tq: Dictionary = s.flags.tianqi
 	var made := false
-	if not tq.get(name) is Dictionary:
-		tq[name] = {}
+	if not _shaped(name, tq.get(name)):
+		tq[name] = _blank(name)
 		made = true
-	var d: Dictionary = tq[name]
+	var d = tq[name]
 	_fill(s, name, d, made)
 	if made and ENABLED and not SECTIONS[name].has("vkey"):
 		set_version(s, name, int(SECTIONS[name].v))
@@ -109,7 +131,7 @@ static func section(s: XState, name: String) -> Dictionary:
 
 ## 档里这个分区的版本（没有记录＝0）
 static func version(s: XState, name: String) -> int:
-	if s == null or not s.flags.get("tianqi") is Dictionary:
+	if not live(s):
 		return 0
 	var tq: Dictionary = s.flags.tianqi
 	var row: Dictionary = SECTIONS.get(name, {})
@@ -120,7 +142,7 @@ static func version(s: XState, name: String) -> int:
 
 
 static func set_version(s: XState, name: String, v: int) -> void:
-	if s == null or not s.flags.get("tianqi") is Dictionary:
+	if not live(s):
 		return
 	var tq: Dictionary = s.flags.tianqi
 	var row: Dictionary = SECTIONS.get(name, {})
@@ -135,7 +157,7 @@ static func set_version(s: XState, name: String, v: int) -> void:
 ## 一处看全：本档各分区 → 版本（只列存在的分区和有标记的）
 static func versions(s: XState) -> Dictionary:
 	var out := {}
-	if s == null or not s.flags.get("tianqi") is Dictionary:
+	if not live(s):
 		return out
 	var tq: Dictionary = s.flags.tianqi
 	for name in SECTIONS:
@@ -147,7 +169,7 @@ static func versions(s: XState) -> Dictionary:
 
 ## 唯一的读档后入口（XState.from_dict 末尾）。幂等
 static func after_load(s: XState) -> void:
-	if not ENABLED or s == null or not XTianqi.active(s):
+	if not ENABLED or not live(s):
 		return
 	var tq: Dictionary = s.flags.tianqi
 	for name in SECTIONS:
@@ -157,13 +179,13 @@ static func after_load(s: XState) -> void:
 			"gojo":
 				XTianqiGojoTrial.migrate(s)  # 自带版本（vkey）、档型判断和关开关反迁移；以前在 XSave._load_data
 			_:
-				if tq.get(name) is Dictionary and version(s, name) < int(SECTIONS[name].v):
+				if _shaped(name, tq.get(name)) and version(s, name) < int(SECTIONS[name].v):
 					_fill(s, name, tq[name], false)
 					set_version(s, name, int(SECTIONS[name].v))
 
 
 ## 缺键按默认补（逐行直呼各模块；结果与模块原来的就地补逐键相同）。made＝这个分区是刚建的空表
-static func _fill(s: XState, name: String, d: Dictionary, made: bool) -> void:
+static func _fill(s: XState, name: String, d, made: bool) -> void:
 	match name:
 		"qiyin":
 			XTianqiQiyin.fill(s, d)
