@@ -94,6 +94,14 @@ func _make_host() -> MockHost:
 	return h
 
 
+func _run_ev_interp(host: MockHost, map_id: int, event_id: int) -> void:
+	var e := _make_event(map_id, event_id)
+	var cmds := e.command_list().duplicate(true)
+	e.free()
+	var interp := MVInterpreter.new(host, map_id, event_id, cmds)
+	await interp.run()
+
+
 func _test_outskirts_inheritance() -> void:
 	var s := _tianqi_state()
 	var host := _make_host()
@@ -108,11 +116,11 @@ func _test_outskirts_inheritance() -> void:
 		var e := _make_event(195, eid)
 		_check("outskirts_ev%d_find_page_kept_blocked" % eid, e._find_page() == -1, e._find_page())
 		_check("outskirts_ev%d_refresh_visible" % eid, e.page_index == 100 and not e.page.is_empty() and not e.command_list().is_empty(), e.page_index)
-		_check("outskirts_ev%d_intercepts" % eid, XTianqiSect.intercepts(s, 195, eid))
+		_check("outskirts_ev%d_normal_run_event_not_intercepted" % eid, not XTianqiSect.intercepts(s, 195, eid))
 		e.free()
 		XMessageBox.transcript.clear()
 		XMessageBox.auto_answers = [0]
-		await XTianqiSect.run_event(host, s, 195, eid)
+		await _run_ev_interp(host, 195, eid)
 		var book_id: int = expected[eid]
 		_check("outskirts_ev%d_gives_book_%d" % [eid, book_id], s.item_count(book_id) == 1, s.item_count(book_id))
 		_check("outskirts_ev%d_sets_self_a" % eid, s.self_switch(195, eid, "A"))
@@ -146,7 +154,7 @@ func _test_floor_inheritors() -> void:
 	s.set_variable(857, 8)
 	XMessageBox.transcript.clear()
 	XMessageBox.auto_answers = [0]
-	await XTianqiSect.run_event(host, s, 32, 8)
+	await _run_ev_interp(host, 32, 8)
 	_check("inheritor_m32_learns_6218_at_floor20", s.actor(8).skill_ids.has(6218), s.actor(8).skill_ids)
 	_check("inheritor_m32_sets_var810", int(s.variable(810)) == 1, s.variable(810))
 	var msg := JSON.stringify(XMessageBox.transcript)
@@ -166,13 +174,13 @@ func _test_chenghuang_wuyun() -> void:
 	for aid in [8, 9, 10, 11]:
 		s.actor(aid).learn_skill(6216)
 	var e := _make_event(189, 21)
-	_check("chenghuang_before_page", e.page_index == 101 and XTianqiSect.intercepts(s, 189, 21), e.page_index)
+	_check("chenghuang_before_page", e.page_index == 101 and not XTianqiSect.intercepts(s, 189, 21), e.page_index)
 	var choices_text := JSON.stringify(e.command_list())
 	_check("chenghuang_no_random_mode_text", not choices_text.contains("随机模式下"), choices_text)
 	e.free()
 	XMessageBox.transcript.clear()
 	XMessageBox.auto_answers = [0, 0]
-	await XTianqiSect.run_event(host, s, 189, 21)
+	await _run_ev_interp(host, 189, 21)
 	for aid in [8, 9, 10, 11]:
 		var sk: Array = s.actor(aid).skill_ids
 		_check("chenghuang_actor%d_learns_3920" % aid, sk.has(3920), sk)
@@ -198,11 +206,11 @@ func _test_xsave_roundtrip() -> void:
 	s.set_variable(857, 8)
 	s.actor(8).learn_skill(6216)
 	XMessageBox.auto_answers = [0]
-	await XTianqiSect.run_event(host, s, 195, 16)
+	await _run_ev_interp(host, 195, 16)
 	XMessageBox.auto_answers = [0]
-	await XTianqiSect.run_event(host, s, 32, 8)
+	await _run_ev_interp(host, 32, 8)
 	XMessageBox.auto_answers = [0, 0]
-	await XTianqiSect.run_event(host, s, 189, 21)
+	await _run_ev_interp(host, 189, 21)
 	var saved := XSave.save(1)
 	_check("xsave_write_ok", saved)
 	XState.current = null
@@ -227,6 +235,12 @@ func _test_xsave_roundtrip() -> void:
 
 func _test_switch_off_and_plain() -> void:
 	var s := _tianqi_state()
+	MVEvent.removed_events["195:16"] = true
+	var e195_removed := _make_event(195, 16)
+	_check("removed_events_blocks_page_override", e195_removed.page_index == -1 and e195_removed.page.is_empty(), e195_removed.page_index)
+	e195_removed.free()
+	MVEvent.removed_events.erase("195:16")
+
 	XTianqiSect.GENG = false
 	_check("switch_off_no_intercept_195", not XTianqiSect.intercepts(s, 195, 16))
 	_check("switch_off_no_intercept_32", not XTianqiSect.intercepts(s, 32, 8))

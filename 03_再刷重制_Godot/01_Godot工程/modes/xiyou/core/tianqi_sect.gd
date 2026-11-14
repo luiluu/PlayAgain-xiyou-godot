@@ -90,7 +90,7 @@ static func page_blocked(s, cond: Dictionary) -> bool:
 # ---- 事件拦截 ----
 
 ## 要接管的事件（包甲没有）。各包加一行 `or _intercepts_x(...)`，并在 run_event 里加对应分支
-static func intercepts(s, map_id: int, event_id: int) -> bool:
+static func intercepts(_s, _map_id: int, _event_id: int) -> bool:
 	# ---- 槽位：乙 ----
 
 	# ---- 槽位：丙 ----
@@ -100,8 +100,6 @@ static func intercepts(s, map_id: int, event_id: int) -> bool:
 	# ---- 槽位：己 ----
 
 	# ---- 槽位：庚 ----
-	if GENG and _geng_intercepts(s, map_id, event_id):
-		return true
 
 	# ---- 槽位：辛 ----
 
@@ -110,7 +108,7 @@ static func intercepts(s, map_id: int, event_id: int) -> bool:
 
 
 ## XMapScene.run_event 接管后调用（host 是地图场景）；各包在 match 里加自己的分支
-static func run_event(host, s, map_id: int, event_id: int) -> void:
+static func run_event(_host, _s, _map_id: int, _event_id: int) -> void:
 	# ---- 槽位：乙 ----
 
 	# ---- 槽位：丙 ----
@@ -120,9 +118,6 @@ static func run_event(host, s, map_id: int, event_id: int) -> void:
 	# ---- 槽位：己 ----
 
 	# ---- 槽位：庚 ----
-	if GENG and _geng_intercepts(s, map_id, event_id):
-		await _geng_run_event(host, s, map_id, event_id)
-		return
 
 	# ---- 槽位：辛 ----
 
@@ -235,17 +230,9 @@ static func _geng_is_target(map_id: int, event_id: int) -> bool:
 	return map_id == GENG_CHENGHUANG_MAP and event_id == GENG_CHENGHUANG_EV
 
 
-static func _geng_intercepts(s, map_id: int, event_id: int) -> bool:
-	if not on(s) or not _geng_is_target(map_id, event_id):
-		return false
-	if map_id == GENG_CHENGHUANG_MAP and event_id == GENG_CHENGHUANG_EV:
-		return not s.self_switch(map_id, event_id, "A")
-	return true
-
-
-## MVEvent.refresh 挂点：为包庚接管的事件提供改写后的页，不改变 MVEvent._find_page() 对教派开关页的拦截
+## MVEvent.refresh 挂点：为包庚接管的事件提供改写后的页，走普通 run_event（保留 e.locked 与转向玩家），不改变 MVEvent._find_page() 对教派开关页的拦截
 static func page_override(s, map_id: int, event_id: int, pages: Array) -> Dictionary:
-	if not GENG or not on(s) or not _geng_is_target(map_id, event_id):
+	if not GENG or not _geng_is_target(map_id, event_id) or not on(s):
 		return {}
 	if map_id == GENG_CHENGHUANG_MAP and event_id == GENG_CHENGHUANG_EV:
 		if s.self_switch(map_id, event_id, "A") or pages.size() < 2:
@@ -338,17 +325,3 @@ static func _geng_rewrite_chenghuang_page(page: Dictionary) -> Dictionary:
 		out.append(d)
 	p["list"] = out
 	return p
-
-
-static func _geng_run_event(host, s, map_id: int, event_id: int) -> void:
-	for ev in XDB.map(map_id).get("events", []):
-		if ev != null and int(ev.id) == event_id:
-			var ov := page_override(s, map_id, event_id, ev.get("pages", []))
-			if ov.is_empty():
-				return
-			var cmds: Array = ov.page.get("list", [])
-			if cmds.is_empty():
-				return
-			var interp := MVInterpreter.new(host, map_id, event_id, cmds)
-			await interp.run()
-			return

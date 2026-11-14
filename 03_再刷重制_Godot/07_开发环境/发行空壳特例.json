@@ -47,7 +47,9 @@
   "XTianqiSkills.formula": "0.0",
   "XTianqiSect.drop_rows": "rows",
   "XTianqiSect.hides": "false",
+  "XTianqiSect.intercepts": "false",
   "XTianqiSect.page_blocked": "false",
+  "XTianqiSect.page_override": "{}",
   "XTianqiSect.shop_goods": "goods",
   "XTianqiGojoTrial.tint": "Color.WHITE"
 }

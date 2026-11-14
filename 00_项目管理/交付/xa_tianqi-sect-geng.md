@@ -39,7 +39,16 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | O-待定 | `modes/xiyou/core/tianqi_sect.gd`、`modes/xiyou/map/mv_event.gd` | 魔塔外围五条传承、15/20/25 层传承人及城隍庙无损武运受随机／轮回开关与过层关闭限制 | 天启篇默认开放五条传承与无损武运，传承人关闭条件放宽至 31 层并改写教派／两派台词 | Kyo 11-14 拍板天启篇教派连带重做·包庚 | `XTianqiSect.GENG = false` | 小A | 保留 |
 
+## 返修（cc 核查退回修复）
+
+- **【甲级·阻断】发行空壳特例与回归**：在 `03_再刷重制_Godot/07_开发环境/发行空壳特例.json` 新增 `"XTianqiSect.intercepts": "false"` 与 `"XTianqiSect.page_override": "{}"`；`发行空壳.py show XTianqiSect` 确认 `intercepts` 返回 `false`、`page_override` 返回 `{}`；在 `03_再刷重制_Godot/07_开发环境/测试发行空壳.py` 新增 `test_real_project_sect_stub` 回归断言。
+- **【丙级】去掉 intercepts 走普通 run_event**：移除 `XTianqiSect` 包庚段在 `intercepts`／`run_event` 的接管分支及 `_geng_intercepts`／`_geng_run_event`，仅保留 `page_override` 注入 `e.page`，使 NPC 对话保留 `e.locked` 与确定键转向玩家。
+- **【丙级·隐患】hides 优先于 page_override**：在 `MVEvent` 抽取 `_is_hidden_event()`，令 `MVEvent.refresh()` 先判 `erased or _is_hidden_event()` 再调 `XTianqiSect.page_override`；`page_override` 内同步将 `_geng_is_target` 提前到 `on(s)` 之前。
+- **返修验证**：`语法检查.py`（852 个 `.gd`，0 问题）、`发行空壳.py check`（54 脚本 445 函数）、`发行空壳.py show XTianqiSect`（`intercepts` 返回 `false`、`page_override` 返回 `{}`）、`测试发行空壳.py`（4/4 OK）、`工具回归.py`（18/18 通过，161 秒）、`xiyou_tianqi_sect_geng.tscn`（81/81）、`xiyou_tianqi_sect_a.tscn`（41/41）全部通过。
+
 ## 本分支提交
 
 - `f26f2f7cd` 天启篇教派连带重做·包庚：传承与武运
-- 后续提交：补齐交付单验证结果并标为可合并
+- `f3dd3bf56` 交付单：补齐包庚测试结果并标为可合并
+- `014e0ad50` 交付自检修复：补齐 .gd.uid 与优化登记草稿表
+- 返修提交（见 `git log`）
