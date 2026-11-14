@@ -42,6 +42,32 @@
       "abyss": {"rate": 100, "tier": "huaxing"}
     }
   },
+  "_stages_aligned_note": "O-待定（Kyo 11-15 拍板 D8 选 A）：怪物异化的阶段对齐大厅稿——二阶侵染、三阶蚀骨、四阶化形、五阶对终焉。开关 XRiftAlien.ALIGN_LOBBY（默认开）读本表：旧表 stages 的三、四、五阶整体前移成二、三、四阶；怪物端没有终焉，五阶先按「化形且几率最高」（几率同旧五阶，各类一律化形、不再升级），终焉怪物端待补。关掉读旧表 stages（三阶起才异化）。",
+  "stages_aligned": {
+    "2": {
+      "rare": {"rate": 11, "tier": "qinran"},
+      "very_rare": {"rate": 22, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "guardian": {"rate": 33, "bands": [{"from": 1, "to": 20, "tier": "qinran"}, {"from": 21, "to": 30, "tier": "shigu"}]}
+    },
+    "3": {
+      "rare": {"rate": 15, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "very_rare": {"rate": 33, "tier": "shigu"},
+      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 20, "tier": "shigu"}, {"from": 21, "to": 30, "tier": "huaxing"}]},
+      "abyss": {"rate": 50, "tier": "huaxing"}
+    },
+    "4": {
+      "rare": {"rate": 20, "tier": "qinran", "up": "shigu", "up_rate": 10},
+      "very_rare": {"rate": 50, "tier": "shigu", "up": "huaxing", "up_rate": 10},
+      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 20, "tier": "shigu"}, {"from": 21, "to": 30, "tier": "huaxing"}]},
+      "abyss": {"rate": 100, "tier": "huaxing"}
+    },
+    "5": {
+      "rare": {"rate": 20, "tier": "huaxing"},
+      "very_rare": {"rate": 50, "tier": "huaxing"},
+      "guardian": {"rate": 100, "tier": "huaxing"},
+      "abyss": {"rate": 100, "tier": "huaxing"}
+    }
+  },
   "difficulty": {
     "_note": "西游难度（Vitsuno_Difficulty 1～9）没有天启篇的寻常／九死／炼狱，cc 读作：宝宝、简单＝寻常（稀有几率减半、最高侵染、守层者低一级）；普通、困难＝渐险（不改）；地狱、天灾＝九死（+10）；灭世、洪荒、混沌＝炼狱（+20，稀有级上限高一级）。rate_mult、rate_add 只改稀有、精英、首领。",
     "map": {"1": "low", "2": "low", "3": "mid", "5": "high", "6": "high", "7": "top", "8": "top", "9": "top"},

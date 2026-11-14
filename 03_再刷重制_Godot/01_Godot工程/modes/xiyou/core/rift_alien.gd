@@ -19,6 +19,8 @@ extends RefCounted
 ## 外观的纹路贴图、附加件、化形替换件和变形演出还没有美术，先用 tint() 给 XBattlerSprite 的幽紫偏色顶着。
 ##
 ## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
+## 阶段对齐大厅稿（O-待定，Kyo 11-15 拍板 D8 选 A）：ALIGN_LOBBY（默认开）读 stages_aligned——二阶就出侵染、三阶蚀骨、四阶化形，
+## 即旧表三～五阶整体前移一档；五阶怪物端没有终焉，先按「化形且几率最高」（设计稿 漩涡五阶段 v0.3 待补）。关掉回上面写的旧表（三阶起才异化）。
 
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"
@@ -28,6 +30,8 @@ const LOOK := "xrift_look"
 static var ENABLED := true
 ## 测试用／以后扩阶段：>0 时当作这一阶（1～5），0＝读 XRift.stage()
 static var STAGE_OVERRIDE := 0
+## 阶段对齐大厅稿（O-待定）：true＝读 stages_aligned（二阶起异化）；false＝旧表 stages（三阶起异化）
+static var ALIGN_LOBBY := true
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
 static var RELEASE_OPEN := false
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
@@ -118,9 +122,18 @@ static func _tier_at(i: int) -> String:
 	return str(t[clampi(i, 0, t.size() - 1)])
 
 
+## 出异化怪的最低阶：对齐大厅稿二阶，旧表三阶
+static func first_alien_stage() -> int:
+	return 2 if ALIGN_LOBBY else 3
+
+
+static func _stage_table() -> Dictionary:
+	return data().get("stages_aligned" if ALIGN_LOBBY else "stages", {})
+
+
 ## 某类怪在这一阶、这一层、这一档难度下的规则 {rate 百分数, tier, up, up_rate}；不异化为空
 static func rule(cls: String, st: int, floor_no: int, difficulty: int) -> Dictionary:
-	var row = data().get("stages", {}).get(str(st), {}).get(cls)
+	var row = _stage_table().get(str(st), {}).get(cls)
 	if not row is Dictionary:
 		return {}
 	var r: Dictionary = row.duplicate(true)
@@ -168,7 +181,7 @@ static func rule(cls: String, st: int, floor_no: int, difficulty: int) -> Dictio
 ## 给一场敌群定异化：[{enemy, tier, kind, class}]。roll(理由, 键) 返回 [0,1)（战斗里是本模块自己的随机流，测试可换）
 static func plan(s: XState, enemies: Array, roll: Callable) -> Array:
 	var st := stage()
-	if not on(s) or st < 3:
+	if not on(s) or st < first_alien_stage():
 		return []
 	var floor_no := floor_of(s)
 	var order: Array = data().get("priority", [])
