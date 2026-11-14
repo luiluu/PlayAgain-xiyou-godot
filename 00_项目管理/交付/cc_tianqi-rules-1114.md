@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-rules-1114
 
 - 车道／工作者：C 规则·机制／cc（Orca 车道 tianqi-rules-1114，claude-opus-5-5＋medium）
-- 状态：已交付
+- 状态：可合并（已交付，ag 核查通过）
 
 ## 变更记录草稿
 
