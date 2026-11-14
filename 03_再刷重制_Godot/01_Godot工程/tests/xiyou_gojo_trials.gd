@@ -29,6 +29,7 @@ func _run() -> void:
 	_conditions()
 	_solo_and_restore()
 	_migrate()
+	_disk_roundtrip()
 	_huaiyu_mechanics()
 	_xinsu_mechanics()
 	_scripted()
@@ -193,6 +194,114 @@ func _migrate() -> void:
 	a1.forget_skill(XGojo.PURPLE_IN)
 	XTianqiGojoTrial.migrate(s1)
 	_check("migrate_rank1_to_0", XAdvance.rank(s1, GOJO) == 0 and XTianqiGojoTrial.passed(s1).is_empty() and a1.skill_ids.has(XGojo.PURPLE_IN))
+
+
+# ---- 真实写盘读档（XSave.save → load_slot → _load_data → after_load） ----
+
+const SAVE_DIR := "user://test_xiyou_gojo_trials"
+
+
+func _clean_dir() -> void:
+	var d := DirAccess.open(SAVE_DIR)
+	if d != null:
+		for f in d.get_files():
+			d.remove(f)
+
+
+## 存到第 1 格再读回来，返回读回的当前状态
+func _disk(s: XState) -> XState:
+	XState.current = s
+	var ok := XSave.save(1)
+	var back := XSave.load_slot(1)
+	if not ok or not back:
+		_check("disk_io", false, [ok, back])
+	return XState.current
+
+
+func _learned(a: XActor, ids: Array) -> bool:
+	return ids.all(func(id): return a.skill_ids.has(int(id)))
+
+
+## 旧四阶表 v0.2 的学会（第 n 阶学超越极限 I～IV 和 ADV[n]）
+const OLD_LEARN := [[1240, 10647], [1241, 10648], [1242, 10649], [1244, 10650]]
+
+
+func _disk_roundtrip() -> void:
+	XSave.dir_override = SAVE_DIR
+	XConfig.path_override = SAVE_DIR.path_join("config.json")
+	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	_clean_dir()
+	# 新档：一阶后存读、二阶后存读，阶数、技能、金钱都不变，不会再付一次一阶
+	var s := _state(25)
+	_check("new_game_marked", int(s.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION)
+	s.gold = 700000
+	XTianqiGojoTrial.begin(s, 1)
+	XTianqiGojoTrial.finish(s, 0)
+	var t1 := _disk(s)
+	var a1: XActor = t1.actor(GOJO)
+	_check("disk_tier1_rank", XAdvance.rank(t1, GOJO) == 1 and t1.gold == 600000 and XTianqiGojoTrial.passed(t1) == [1], [XAdvance.rank(t1, GOJO), t1.gold, XTianqiGojoTrial.passed(t1)])
+	_check("disk_tier1_skills", _learned(a1, XTianqiGojoTrial.TIERS[0].learn))
+	_check("disk_tier1_next_is_tier2", XTianqiGojoTrial.pending_tier(t1, a1) == 2 and int(XAdvance.row(t1, GOJO).level) == 55 and int(XAdvance.row(t1, GOJO).gold) == 500000)
+	a1.change_level(55)
+	XTianqiGojoTrial.begin(t1, 2)
+	XTianqiGojoTrial.finish(t1, 0)
+	var t2 := _disk(t1)
+	_check("disk_tier2_rank", XAdvance.rank(t2, GOJO) == 2 and t2.gold == 100000 and XTianqiGojoTrial.passed(t2) == [1, 2], [XAdvance.rank(t2, GOJO), t2.gold])
+	_check("disk_tier2_skills", _learned(t2.actor(GOJO), XTianqiGojoTrial.TIERS[0].learn + XTianqiGojoTrial.TIERS[1].learn))
+	var t2b := _disk(t2)
+	_check("disk_tier2_again", XAdvance.rank(t2b, GOJO) == 2 and t2b.gold == 100000 and XTianqiGojoTrial.pending_tier(t2b, t2b.actor(GOJO)) == 0 and XAdvance.row(t2b, GOJO) == null)
+	# 旧四阶表的档（没有标记）：0～4 阶迁移成 0、0、1、1、2 阶；再存读不二次迁移
+	for old in range(5):
+		var o := _state(80)
+		o.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
+		o.gold = 12345
+		var oa: XActor = o.actor(GOJO)
+		for i in range(old):
+			for id in OLD_LEARN[i]:
+				oa.learn_skill(id)
+		if old > 0:
+			o.actor_advance[GOJO] = old
+		var m := _disk(o)
+		var ma: XActor = m.actor(GOJO)
+		var want := old / 2
+		var keep := []
+		for i in range(old):
+			keep.append_array(OLD_LEARN[i])
+		for i in range(want):
+			keep.append_array(XTianqiGojoTrial.TIERS[i].learn)
+		_check("disk_old%d_migrated" % old, XAdvance.rank(m, GOJO) == want and XTianqiGojoTrial.passed(m).size() == want and m.gold == 12345 and _learned(ma, keep)
+			and int(m.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION, [old, XAdvance.rank(m, GOJO), XTianqiGojoTrial.passed(m)])
+		var m2 := _disk(m)
+		_check("disk_old%d_once" % old, XAdvance.rank(m2, GOJO) == want and XTianqiGojoTrial.passed(m2).size() == want and m2.gold == 12345)
+	# 本功能早期版本建的档（有试炼通过、没有标记）：阶数已是两阶表的，只补标记不折半
+	var e := _state(55)
+	e.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
+	e.flags.tianqi[XTianqiGojoTrial.PASSED_KEY] = [1]
+	e.actor_advance[GOJO] = 1
+	var eb := _disk(e)
+	_check("disk_early_unmarked", XAdvance.rank(eb, GOJO) == 1 and XTianqiGojoTrial.pending_tier(eb, eb.actor(GOJO)) == 2)
+	# 以标记为准：有两阶表标记的档，就算没有通过记录（调试工具改过阶数之类）也不折半
+	var k := _state(55)
+	k.actor_advance[GOJO] = 2
+	var kb := _disk(k)
+	_check("disk_marker_rules", XAdvance.rank(kb, GOJO) == 2 and XTianqiGojoTrial.passed(kb).is_empty(), XAdvance.rank(kb, GOJO))
+	# 关开关读档：反迁移成旧四阶（×2、去标记）；再开读档折半回来
+	XTianqiGojoTrial.ENABLED = false
+	var off := _disk(eb)
+	_check("disk_off_reverse", XAdvance.rank(off, GOJO) == 2 and int(off.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.OLD_VERSION, XAdvance.rank(off, GOJO))
+	var off2 := _disk(off)
+	_check("disk_off_once", XAdvance.rank(off2, GOJO) == 2)
+	XTianqiGojoTrial.ENABLED = true
+	var on := _disk(off)
+	_check("disk_on_again", XAdvance.rank(on, GOJO) == 1 and int(on.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION, XAdvance.rank(on, GOJO))
+	# 五条悟中途入队的档也记上（老档读档时已先迁移）
+	var j := _state(25)
+	j.flags.tianqi.erase(XTianqiGojoTrial.MIGRATE_KEY)
+	XGojo.on_join(j, GOJO)
+	_check("join_marks", int(j.flags.tianqi.get(XTianqiGojoTrial.MIGRATE_KEY, 0)) == XTianqiGojoTrial.TABLE_VERSION)
+	_clean_dir()
+	XSave.dir_override = ""
+	XConfig.path_override = ""
 
 
 # ---- 战斗 ----

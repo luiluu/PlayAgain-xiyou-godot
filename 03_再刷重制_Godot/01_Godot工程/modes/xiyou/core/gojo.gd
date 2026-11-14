@@ -241,6 +241,7 @@ static func wears_blindfold(a) -> bool:
 static func on_join(s, id: int) -> void:
 	if not ENABLED or id != ACTOR or not XTianqi.active(s):
 		return
+	XTianqiGojoTrial.mark_table(s)  # 两阶进阶表版本（老天启篇档在读档时先迁移再记）
 	var a: XActor = s.actor(ACTOR)
 	var slot := a.equip_slots().find(ARMOR_SLOT_TYPE)
 	if slot < 0 or wears_blindfold(a):

@@ -30,6 +30,8 @@ const META := "xgojo_trial"
 const SAVE_KEY := "_gojoTrial"  # s.flags：进行中的试炼（队伍、出战栏、战前状态）
 const PASSED_KEY := "gojo_trials"  # s.flags.tianqi：通过的试炼 [1, 2]
 const MIGRATE_KEY := "gojo_adv_v"  # s.flags.tianqi：进阶表版本（3＝本稿两阶）
+const TABLE_VERSION := 3
+const OLD_VERSION := 2  # 关开关反迁移后记的：阶数明确是旧四阶表的
 
 static var ENABLED := true
 static var LEARN_SHIFT := true
@@ -186,7 +188,14 @@ static func has_request() -> bool:
 	return _request > 0
 
 
-## 读档（XSave._load_data）：进行中的试炼还原队伍和战前状态；旧四阶表的进阶迁移一次
+## 这份档的五条悟阶数按两阶表算（标记 MIGRATE_KEY＝3）。新开局（XTianqi.start_new_game）、五条悟入队（XGojo.on_join）、
+## 开始和结束试炼都记；记了以后读档不再迁移。只在两阶表开着时记（关着时阶数是旧四阶的）
+static func mark_table(s: XState) -> void:
+	if on() and s != null and XTianqi.active(s) and s.flags.get("tianqi") is Dictionary:
+		s.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION
+
+
+## 读档（XSave._load_data）：进行中的试炼还原队伍和战前状态；进阶表版本对不上就迁移一次
 static func after_load(s: XState) -> void:
 	if s == null:
 		return
@@ -195,18 +204,29 @@ static func after_load(s: XState) -> void:
 	migrate(s)
 
 
-## 旧四阶表（v0.2）进阶过的存档：新阶数＝旧阶数 ÷ 2，包含的试炼记通过；技能不收回，新阶数对应的缺哪个补哪个
+## 读档时按标记迁移（幂等：以标记为准，迁移完就记上，再读不动）：
+## - 两阶表开着、档里没有标记＝旧四阶表（v0.2）的阶数：新阶数＝旧阶数 ÷ 2，包含的试炼记通过；技能不收回，新阶数对应的缺哪个补哪个。
+##   例外：档里已有试炼通过记录（本功能早期版本建的档，没记标记），阶数本来就是两阶表的，只补标记不折半。
+## - 两阶表关着（ENABLED＝false，五条悟本身开着）、档里标记是 3＝两阶表的阶数：反迁移成旧四阶阶数 ×2、标记记成 2（再开时照旧四阶折半回来）。
 static func migrate(s: XState) -> void:
-	if not on() or s == null or not XTianqi.active(s) or not s.flags.get("tianqi") is Dictionary:
+	if s == null or not XTianqi.active(s) or not s.flags.get("tianqi") is Dictionary:
 		return
-	if int(s.flags.tianqi.get(MIGRATE_KEY, 0)) >= 3:
+	var v := int(s.flags.tianqi.get(MIGRATE_KEY, 0))
+	if not on():
+		if XGojo.ENABLED and v >= TABLE_VERSION:
+			s.flags.tianqi[MIGRATE_KEY] = OLD_VERSION
+			var r := XAdvance.rank(s, XGojo.ACTOR)
+			if r > 0:
+				s.actor_advance[XGojo.ACTOR] = mini(r * 2, 4)
 		return
-	s.flags.tianqi[MIGRATE_KEY] = 3
-	var old := XAdvance.rank(s, XGojo.ACTOR)
+	if v >= TABLE_VERSION:
+		return
+	mark_table(s)  # 先记上：下面迁移完以后再读档不再动
 	if not s.actors.has(XGojo.ACTOR):
 		return
 	var a: XActor = s.actors[XGojo.ACTOR]
-	var n := old / 2
+	var old := XAdvance.rank(s, XGojo.ACTOR)
+	var n := mini(old / 2 if passed(s).is_empty() or v == OLD_VERSION else old, TIERS.size())
 	if old > 0:
 		if n > 0:
 			s.actor_advance[XGojo.ACTOR] = n
@@ -239,6 +259,7 @@ static func begin(s: XState, tier: int) -> bool:
 		"hp": a.hp, "mp": a.mp, "tp": a.tp, "states": a.state_ids.duplicate(), "turns": turns}
 	s.party.assign([XGojo.ACTOR])
 	s.battle_slots = [XGojo.ACTOR, 0, 0, 0, 0]
+	mark_table(s)
 	XZhenqi.pending_trial = {}  # 不让一笔待开的瓶颈之战吃掉这场（同小猫试炼）
 	return true
 
@@ -277,6 +298,7 @@ static func finish(s: XState, result: int) -> String:
 		return ""
 	var tier := int(s.flags[SAVE_KEY].get("tier", 0))
 	_restore(s, result != 0 or RESTORE_ON_WIN)
+	mark_table(s)
 	if result != 0 or tier <= 0:
 		return TEXT_LOST
 	_mark_passed(s, tier)

@@ -1,0 +1,9 @@
+{
+ "tests": ["xiyou_gojo_trials"],
+ "items": [
+  {"name": "从不记进阶表版本", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd", "find": "\tif on() and s != null and XTianqi.active(s) and s.flags.get(\"tianqi\") is Dictionary:\n\t\ts.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION", "replace": "\tif false:\n\t\ts.flags.tianqi[MIGRATE_KEY] = TABLE_VERSION"},
+  {"name": "迁移不看标记（不幂等）", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd", "find": "\tif v >= TABLE_VERSION:\n\t\treturn\n\tmark_table(s)", "replace": "\tmark_table(s)"},
+  {"name": "有通过记录也折半", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd", "find": "old / 2 if passed(s).is_empty() or v == OLD_VERSION else old", "replace": "old / 2"},
+  {"name": "关开关不反迁移", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd", "find": "\t\t\t\ts.actor_advance[XGojo.ACTOR] = mini(r * 2, 4)", "replace": "\t\t\t\tpass"}
+ ]
+}
