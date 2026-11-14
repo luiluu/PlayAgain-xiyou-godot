@@ -15,6 +15,7 @@
 - seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
 - skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
+- reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，数字避开 4（各表 nice_number_exempt 豁免）、类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1166,6 +1167,353 @@ def check_skill_rework(_args) -> bool:
     return _report('skill_rework.json', '规则自检', bad)
 
 
+# ---- 第三批：reforge／alien_gear／abyss_shelves／qiyin_equip／qiyin_show／qiyin_dragon_run（cc/pro-tianqi-datacheck3）----
+# 只查代码真读的字段（读表的模块写在各函数说明里）；字段缺了不查，不认识的键不报错。
+# 跨表引用的那张表不在就跳过那一项（例如没有 qiyin_gear.json 就不查部位、武器类型对不对得上）。
+
+TIANQI_AFFIX_ROLL_GD = PROJECT / 'modes' / 'xiyou' / 'core' / 'tianqi_affix_roll.gd'
+HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
+RM_PARAMS = 8  # RPG Maker 八项能力值
+
+
+def quality_keys(path: Path = None) -> list:
+    """从 core/tianqi_affix_roll.gd 的 QUALITY_KEYS 取七档品质键（只读）。"""
+    text = Path(path or TIANQI_AFFIX_ROLL_GD).read_text(encoding='utf-8')
+    m = re.search(r'const QUALITY_KEYS\s*:?=\s*\[([^\]]*)\]', text)
+    if not m:
+        raise ValueError('tianqi_affix_roll.gd 里找不到 QUALITY_KEYS')
+    return re.findall(r'"([^"]*)"', m.group(1))
+
+
+def _load_opt(fname: str):
+    path = DATA_DIR / fname
+    return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else None
+
+
+def _is_int(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _fours(table: dict, extra=()) -> list:
+    """数字避开 4：表自己的 nice_number_exempt 豁免（加上 extra）；_note、dev 不查。"""
+    out = []
+    nice_violations({k: v for k, v in table.items() if k not in ('_note', 'dev')}, '',
+                    set(table.get('nice_number_exempt', [])) | set(extra), out)
+    return ['设计数值不带 4：' + '、'.join(out)] if out else []
+
+
+def _checker():
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+    return bad, check
+
+
+def _run_table(fname: str, rules) -> bool:
+    """表不在就跳过；读坏、缺键也算失败。rules(table) 返回失败说明列表。"""
+    if not (DATA_DIR / fname).is_file():
+        print('跳过：没有 %s' % fname)
+        return True
+    try:
+        bad = rules(json.loads((DATA_DIR / fname).read_text(encoding='utf-8')))
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report(fname, '规则自检', bad)
+
+
+def affix_tier_ids(affix: dict) -> list:
+    return [t.get('tier') for t in affix.get('tiers', []) if isinstance(t, dict)]
+
+
+def affix_layer_keys(affix: dict) -> list:
+    return [l.get('key') for l in affix.get('layers', []) if isinstance(l, dict)]
+
+
+# reforge.json：XTianqiReforge（costs 按词条的阶取、超出取最后一档；allow_perfect、allow_rare 开关）
+
+def reforge_rules(table: dict, affix: dict = None) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    if 'costs' in table:
+        c = table['costs']
+        check('costs 是非空列表', isinstance(c, list) and c, c)
+        if isinstance(c, list) and c:
+            check('costs 都是非负整数', all(_is_int(x) and x >= 0 for x in c), c)
+            if all(_is_int(x) for x in c):
+                check('costs 随阶不降', all(c[i] <= c[i + 1] for i in range(len(c) - 1)), c)
+            if affix is not None and affix_tier_ids(affix):
+                n = len(affix_tier_ids(affix))
+                check('costs 档数不超过 affix_table 的阶数 %d' % n, len(c) <= n, len(c))
+    for k in ('allow_perfect', 'allow_rare'):
+        if k in table:
+            check('%s 是布尔' % k, isinstance(table[k], bool), table[k])
+    return bad
+
+
+def check_reforge(_args) -> bool:
+    return _run_table('reforge.json', lambda t: reforge_rules(t, _load_opt('affix_table.json')))
+
+
+# alien_gear.json：XTianqiAlienGear（levels、level_order、late_only、costs、new_affixes）、XTianqiAlienAffix（effects）
+
+ALIEN_PCT_FIELDS = {('thrift', 'cost'), ('thrift', 'heal'), ('venom', 'chance'), ('again', 'taken')}
+
+
+def alien_gear_rules(table: dict, rewards: dict = None) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    levels = {k: v for k, v in table.get('levels', {}).items() if k != '_note'}
+    for k, lv in levels.items():
+        if not isinstance(lv, dict):
+            check('异化级是字典：' + k, False, lv)
+            continue
+        if 'rate' in lv:
+            check('异化几率在 0～1：' + k, _is_num(lv['rate']) and 0 <= lv['rate'] <= 1, lv['rate'])
+        if 'energy' in lv:
+            check('分解能量是正整数：' + k, _is_int(lv['energy']) and lv['energy'] > 0, lv['energy'])
+        if 'refund' in lv:
+            check('净化退还是非负整数：' + k, _is_int(lv['refund']) and lv['refund'] >= 0, lv['refund'])
+            if _is_int(lv.get('energy')) and _is_int(lv['refund']):
+                check('净化退还不超过分解能量：' + k, lv['refund'] <= lv['energy'], [lv['refund'], lv['energy']])
+        if 'name' in lv:
+            check('级名非空：' + k, isinstance(lv['name'], str) and lv['name'] != '', lv['name'])
+    order = table.get('level_order')
+    if order is not None and levels:
+        check('level_order 不重复', len(order) == len(set(order)), order)
+        check('level_order 都在 levels 里', all(k in levels for k in order), [k for k in order if k not in levels])
+        check('levels 都排进 level_order', all(k in order for k in levels), [k for k in levels if k not in order])
+        rates = [levels[k].get('rate') for k in order if k in levels and isinstance(levels[k], dict)]
+        if all(_is_num(r) for r in rates):
+            check('异化几率随级不降', all(rates[i] <= rates[i + 1] for i in range(len(rates) - 1)), rates)
+        en = [levels[k].get('energy') for k in order if k in levels and isinstance(levels[k], dict)]
+        if all(_is_int(e) for e in en):
+            check('分解能量随级不降', all(en[i] <= en[i + 1] for i in range(len(en) - 1)), en)
+    late = table.get('late_only', {})
+    if 'min_level' in late and levels:
+        check('late_only.min_level 在 levels 里', late['min_level'] in levels, late['min_level'])
+    for k, v in table.get('costs', {}).items():
+        if k != '_note':
+            check('工坊花费是非负整数：' + k, _is_int(v) and v >= 0, v)
+    new = {k for k in table.get('new_affixes', {}) if k != '_note'}
+    n_lv = len(order) if isinstance(order, list) else 0
+    for key, fx in table.get('effects', {}).items():
+        if key == '_note':
+            continue
+        if new:
+            check('effects 的词条在 new_affixes 里：' + key, key in new, key)
+        if not isinstance(fx, dict):
+            continue
+        for f, v in fx.items():
+            vals = v if isinstance(v, list) else [v]
+            check('effects 数值都是非负数：%s.%s' % (key, f), vals and all(_is_num(x) and x >= 0 for x in vals), v)
+            if isinstance(v, list) and n_lv:
+                check('effects 分级数组 %d 个（同 level_order）：%s.%s' % (n_lv, key, f), len(v) == n_lv, len(v))
+            if (key, f) in ALIEN_PCT_FIELDS and all(_is_num(x) for x in vals):
+                check('effects 百分比在 0～100：%s.%s' % (key, f), all(0 <= x <= 100 for x in vals), v)
+            if (key, f) in (('again', 'every'), ('dying', 'per_battle')) and all(_is_num(x) for x in vals):
+                check('effects 至少 1：%s.%s' % (key, f), all(x >= 1 for x in vals), v)
+    # 跨表：词条键要在 rewards.json 的 finale.lines 里（XTianqiAlienGear.line_keys 从那里取）
+    lines = (rewards or {}).get('finale', {}).get('lines', {})
+    known = {k for ks in lines.values() if isinstance(ks, list) for k in ks}
+    if known:
+        miss = [k for k in late.get('keys', []) if k not in known]
+        check('late_only.keys 在 rewards.json 的 finale.lines 里', not miss, miss)
+        miss = sorted(k for k in new if k not in known)
+        check('new_affixes 在 rewards.json 的 finale.lines 里', not miss, miss)
+    return bad
+
+
+def check_alien_gear(_args) -> bool:
+    return _run_table('alien_gear.json', lambda t: alien_gear_rules(t, _load_opt('rewards.json')))
+
+
+# abyss_shelves.json：XTianqiMerchant（treasure／collection 两档：cost、rare_cost、layer、min_tier、min_quality）
+
+ABYSS_SHELVES = ('treasure', 'collection')
+
+
+def abyss_shelves_rules(table: dict, affix: dict = None, qualities: list = None) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    layers = affix_layer_keys(affix) if affix else []
+    tiers = affix_tier_ids(affix) if affix else []
+    for k in ABYSS_SHELVES:
+        sh = table.get(k)
+        if sh is None:
+            continue
+        if not isinstance(sh, dict):
+            check('货架是字典：' + k, False, sh)
+            continue
+        for c in ('cost', 'rare_cost'):
+            if c in sh:
+                check('%s.%s 是非负整数' % (k, c), _is_int(sh[c]) and sh[c] >= 0, sh[c])
+        if _is_int(sh.get('cost')) and _is_int(sh.get('rare_cost')):
+            check('%s 稀有价不低于原价' % k, sh['rare_cost'] >= sh['cost'], [sh['cost'], sh['rare_cost']])
+        if 'layer' in sh and layers:
+            check('%s.layer 在 affix_table 的 layers 里' % k, sh['layer'] in layers, '%s 不在 %s' % (sh['layer'], layers))
+        if 'min_tier' in sh:
+            check('%s.min_tier 是正整数' % k, _is_int(sh['min_tier']) and sh['min_tier'] > 0, sh['min_tier'])
+            if tiers:
+                check('%s.min_tier 在 affix_table 的 tiers 里' % k, sh['min_tier'] in tiers, '%s 不在 %s' % (sh['min_tier'], tiers))
+        if 'min_quality' in sh and qualities:
+            check('%s.min_quality 在 QUALITY_KEYS 里' % k, sh['min_quality'] in qualities, '%s 不在 %s' % (sh['min_quality'], qualities))
+    return bad
+
+
+def check_abyss_shelves(_args) -> bool:
+    return _run_table('abyss_shelves.json',
+                      lambda t: abyss_shelves_rules(t, _load_opt('affix_table.json'), quality_keys()))
+
+
+# qiyin_equip.json：XTianqiQiyinEquip（armor.parts[部位].base_id／params、armor.atype、weapons[武器类型键]、artifact.base_id、quality_legacy、names）
+
+def _params_ok(p) -> bool:
+    return isinstance(p, list) and len(p) == RM_PARAMS and all(_is_num(x) and x >= 0 for x in p)
+
+
+def qiyin_equip_rules(table: dict, gear: dict = None) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    if 'quality_legacy' in table:
+        check('quality_legacy 是非负整数', _is_int(table['quality_legacy']) and table['quality_legacy'] >= 0, table['quality_legacy'])
+    armor = table.get('armor', {})
+    if 'atype' in armor:
+        check('armor.atype 是正整数', _is_int(armor['atype']) and armor['atype'] > 0, armor['atype'])
+    if 'any_class' in armor:
+        check('armor.any_class 是布尔', isinstance(armor['any_class'], bool), armor['any_class'])
+    parts = {k: v for k, v in armor.get('parts', {}).items() if k != '_note'}
+    rows = [('armor.parts.' + k, v) for k, v in parts.items()]
+    weapons = {k: v for k, v in table.get('weapons', {}).items() if k != '_note'}
+    rows += [('weapons.' + k, v) for k, v in weapons.items()]
+    for where, row in rows:
+        if not isinstance(row, dict):
+            check('底子是字典：' + where, False, row)
+            continue
+        check('base_id 是正整数：' + where, _is_int(row.get('base_id')) and row['base_id'] > 0, row.get('base_id'))
+        check('params 是 %d 个非负数：%s' % (RM_PARAMS, where), _params_ok(row.get('params')), row.get('params'))
+    art = table.get('artifact')
+    if isinstance(art, dict) and 'base_id' in art:
+        check('artifact.base_id 是正整数', _is_int(art['base_id']) and art['base_id'] > 0, art['base_id'])
+    for k in parts:
+        check('部位键只有 %s：armor.parts 里有 %s' % ('、'.join(QIYIN_PARTS), k), k in QIYIN_PARTS)
+    for k, v in table.get('names', {}).items():
+        if k != '_note':
+            check('names 是字符串：' + k, isinstance(v, str), v)
+    # 跨表：qiyin_gear 的六个部位、各武器类型都要有底子（_make_set／_make_weapon 找不到就做不出来）
+    if gear:
+        if 'parts' in gear and 'parts' in armor:
+            gp = [p.get('key') for p in gear['parts'] if isinstance(p, dict)]
+            check('qiyin_gear 的部位都有底子', all(k in parts for k in gp), [k for k in gp if k not in parts])
+            check('armor.parts 的部位在 qiyin_gear 的 parts 里', all(k in gp for k in parts), [k for k in parts if k not in gp])
+        if 'weapon_types' in gear and 'weapons' in table:
+            wt = [t.get('key') for t in gear['weapon_types'] if isinstance(t, dict)]
+            check('qiyin_gear 的武器类型都有底子', all(k in weapons for k in wt), [k for k in wt if k not in weapons])
+            check('weapons 的类型在 qiyin_gear 的 weapon_types 里', all(k in wt for k in weapons), [k for k in weapons if k not in wt])
+    return bad
+
+
+def check_qiyin_equip(_args) -> bool:
+    return _run_table('qiyin_equip.json', lambda t: qiyin_equip_rules(t, _qiyin_load('gear')))
+
+
+# qiyin_show.json：XTianqiQiyinShow（seals[印].glyph／color／accent、true_glow、各段 se／hold／dim／power…、art 路径）
+
+SHOW_SECTIONS = ('set', 'weapon', 'true_seal', 'artifact', 'reveal', 'rift', 'dragon_cut')
+SHOW_SECONDS = ('hold', 'flash', 'fade_out', 'step')
+SHOW_SHAKE = ('power', 'speed', 'frames')
+
+
+def qiyin_show_rules(table: dict, gear: dict = None) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    seals = {k: v for k, v in table.get('seals', {}).items() if k != '_note'}
+    if 'seals' in table:
+        check('seals 七印齐全', sorted(seals) == sorted(QIYIN_SEALS), sorted(seals))
+    for k, s in seals.items():
+        if k not in QIYIN_SEALS:
+            check('印键只有 %s：seals 里有 %s' % ('、'.join(QIYIN_SEALS), k), False)
+        if not isinstance(s, dict):
+            continue
+        for c in ('color', 'accent'):
+            if c in s:
+                check('%s.%s 是 #RRGGBB' % (k, c), isinstance(s[c], str) and HEX_COLOR_RE.match(s[c]), s[c])
+        if 'glyph' in s:
+            check('%s.glyph 非空' % k, isinstance(s['glyph'], str) and s['glyph'] != '', s['glyph'])
+    if 'true_glow' in table:
+        check('true_glow 是 #RRGGBB', isinstance(table['true_glow'], str) and HEX_COLOR_RE.match(table['true_glow']), table['true_glow'])
+    for sec in SHOW_SECTIONS:
+        d = table.get(sec)
+        if not isinstance(d, dict):
+            continue
+        for k in ('se', 'light_se'):
+            if k in d:
+                check('%s.%s 是字符串' % (sec, k), isinstance(d[k], str), d[k])
+        for k in SHOW_SECONDS:
+            if k in d:
+                check('%s.%s 秒数非负' % (sec, k), _is_num(d[k]) and d[k] >= 0, d[k])
+        if 'dim' in d:
+            check('%s.dim 在 0～1' % sec, _is_num(d['dim']) and 0 <= d['dim'] <= 1, d['dim'])
+        for k in SHOW_SHAKE:
+            if k in d:
+                check('%s.%s 是正整数' % (sec, k), _is_int(d[k]) and d[k] > 0, d[k])
+    for k, v in table.get('art', {}).items():
+        if k != '_note':
+            check('art.%s 是 res:// 路径' % k, isinstance(v, str) and v.startswith('res://'), v)
+    if gear and 'seals' in gear and seals:
+        gs = {s.get('key') for s in gear['seals'] if isinstance(s, dict)}
+        miss = sorted(gs - set(seals))
+        check('qiyin_gear 的印都有演出', not miss, miss)
+    return bad
+
+
+def check_qiyin_show(_args) -> bool:
+    return _run_table('qiyin_show.json', lambda t: qiyin_show_rules(t, _qiyin_load('gear')))
+
+
+# qiyin_dragon_run.json：XTianqiQiyinDragonRun（fight.troop／shell_enemy／rate／extra_actions／tone／name／battler、scenes、logs）
+
+def qiyin_dragon_run_rules(table: dict) -> list:
+    bad, check = _checker()
+    bad += _fours(table)
+    f = table.get('fight', {})
+    for k in ('troop', 'shell_enemy'):
+        if k in f:
+            check('fight.%s 是正整数' % k, _is_int(f[k]) and f[k] > 0, f[k])
+    if 'extra_actions' in f:
+        check('fight.extra_actions 是非负整数', _is_int(f['extra_actions']) and f['extra_actions'] >= 0, f['extra_actions'])
+    if 'rate' in f:
+        r = f['rate']
+        check('fight.rate 是 %d 个正数' % RM_PARAMS,
+              isinstance(r, list) and len(r) == RM_PARAMS and all(_is_num(x) and x > 0 for x in r), r)
+    if 'tone' in f:
+        t = f['tone']
+        ok = isinstance(t, list) and len(t) == 4 and all(_is_num(x) for x in t)
+        check('fight.tone 是四个数（红绿蓝 -255～255、灰 0～255）',
+              ok and all(-255 <= x <= 255 for x in t[:3]) and 0 <= t[3] <= 255, t)
+    for k in ('name', 'battler'):
+        if k in f:
+            check('fight.%s 非空' % k, isinstance(f[k], str) and f[k] != '', f[k])
+    for k in ('open_reveal', 'segment_lock'):
+        if k in f:
+            check('fight.%s 是布尔' % k, isinstance(f[k], bool), f[k])
+    for k, rows in table.get('scenes', {}).items():
+        if k == '_note':
+            continue
+        ok = isinstance(rows, list) and rows and all(
+            isinstance(r, list) and len(r) == 2 and all(isinstance(x, str) for x in r) for r in rows)
+        check('scenes.%s 是 [说话人, 台词] 的列表' % k, ok, rows)
+    for k, v in table.get('logs', {}).items():
+        if k != '_note':
+            check('logs.%s 是非空字符串' % k, isinstance(v, str) and v != '', v)
+    return bad
+
+
+def check_qiyin_dragon_run(_args) -> bool:
+    return _run_table('qiyin_dragon_run.json', qiyin_dragon_run_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1185,6 +1533,12 @@ CHECKS = [
     ('qiyin_altar', lambda _args: check_qiyin('altar')),
     ('qiyin_refs', check_qiyin_refs),
     ('skill_rework', check_skill_rework),
+    ('reforge', check_reforge),
+    ('alien_gear', check_alien_gear),
+    ('abyss_shelves', check_abyss_shelves),
+    ('qiyin_equip', check_qiyin_equip),
+    ('qiyin_show', check_qiyin_show),
+    ('qiyin_dragon_run', check_qiyin_dragon_run),
 ]
 
 

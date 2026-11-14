@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""天启篇数据校验.py 的回归：七印祭坛四张表的检查和跨表引用。
+"""天启篇数据校验.py 的回归：七印祭坛四张表的检查和跨表引用；第三批六张表（reforge、alien_gear、abyss_shelves、qiyin_equip、qiyin_show、qiyin_dragon_run）。
 
   python3 03_再刷重制_Godot/03_转换工具/测试天启篇数据校验.py
 
@@ -24,6 +24,8 @@ spec.loader.exec_module(chk)
 REAL_DIR = chk.DATA_DIR
 REAL_GD = chk.TIANQI_GEAR_GD
 NAMES = ('gear', 'drop', 'dragon', 'altar')
+BATCH3 = ('reforge.json', 'alien_gear.json', 'abyss_shelves.json', 'qiyin_equip.json', 'qiyin_show.json', 'qiyin_dragon_run.json')
+REFS3 = ('affix_table.json', 'rewards.json', 'qiyin_gear.json')  # 第三批跨表要读的参照表
 
 
 def run(fn, *a):
@@ -43,6 +45,13 @@ class RealTables(unittest.TestCase):
         for n in NAMES:
             self.assertIn('qiyin_%s.json 规则自检：通过' % n, buf.getvalue())
         self.assertIn('跨表引用：通过', buf.getvalue())
+        for f in BATCH3:
+            self.assertIn('%s 规则自检：通过' % f, buf.getvalue())
+
+    def test_quality_keys_parsed_from_gd(self):
+        q = chk.quality_keys()
+        self.assertEqual(len(q), 7)
+        self.assertIn('buxiu', q)
 
     def test_order_parsed_from_gd(self):
         order = chk.tianqi_gear_order()
@@ -268,6 +277,216 @@ class QiyinFixture(unittest.TestCase):
         self.write(skip=('drop',))
         ok, out = run(chk.check_qiyin_refs, None)
         self.assertTrue(ok, out)
+
+
+def _set(path, value):
+    """返回一个改坏函数：按路径（键或下标）把那一处改成 value；value 是 DEL 就删掉。"""
+    def f(t):
+        for k in path[:-1]:
+            t = t[k]
+        if value is DEL:
+            del t[path[-1]]
+        else:
+            t[path[-1]] = value
+    return f
+
+
+DEL = object()
+
+
+def _seq(*fns):
+    def f(t):
+        for fn in fns:
+            fn(t)
+    return f
+
+
+# (表, 改坏法, 输出里应有的字)。每条规则一个反例；表名不带 .json；'ref:xxx' 表示改的是参照表 xxx。
+BATCH3_CASES = [
+    # reforge.json
+    ('reforge', _set(['costs', 1], 3400), '设计数值不带 4：/costs/1=3400'),
+    ('reforge', _set(['costs'], []), 'costs 是非空列表'),
+    ('reforge', _set(['costs', 0], -1), 'costs 都是非负整数'),
+    ('reforge', _set(['costs', 0], 1.5), 'costs 都是非负整数'),
+    ('reforge', _set(['costs', 3], 2000), 'costs 随阶不降'),
+    ('reforge', _set(['costs'], [1000, 3000, 6000, 10000, 20000]), 'costs 档数不超过 affix_table 的阶数'),
+    ('reforge', _set(['allow_rare'], 'no'), 'allow_rare 是布尔'),
+    # alien_gear.json
+    ('alien_gear', _set(['levels', 'shigu', 'energy'], 4), '设计数值不带 4：/levels/shigu/energy=4'),
+    ('alien_gear', _set(['levels', 'shigu', 'rate'], 8), '异化几率在 0～1：shigu'),
+    ('alien_gear', _set(['levels', 'qinran', 'energy'], 0), '分解能量是正整数：qinran'),
+    ('alien_gear', _set(['levels', 'qinran', 'refund'], -1), '净化退还是非负整数：qinran'),
+    ('alien_gear', _set(['levels', 'huaxing', 'refund'], 4 + 2), '净化退还不超过分解能量：huaxing'),
+    ('alien_gear', _set(['levels', 'zhongyan', 'name'], ''), '级名非空：zhongyan'),
+    ('alien_gear', _set(['levels', 'qinran'], 3), '异化级是字典：qinran'),
+    ('alien_gear', _set(['level_order', 3], 'qinran'), 'level_order 不重复'),
+    ('alien_gear', lambda t: t['level_order'].append('bogus'), 'level_order 都在 levels 里'),
+    ('alien_gear', lambda t: t['level_order'].pop(), 'levels 都排进 level_order'),
+    ('alien_gear', _set(['levels', 'huaxing', 'rate'], 0.01), '异化几率随级不降'),
+    ('alien_gear', _set(['levels', 'zhongyan', 'energy'], 3), '分解能量随级不降'),
+    ('alien_gear', _set(['late_only', 'min_level'], 'bogus'), 'late_only.min_level 在 levels 里'),
+    ('alien_gear', _set(['costs', 'reroll'], -1), '工坊花费是非负整数：reroll'),
+    ('alien_gear', lambda t: t['effects'].__setitem__('bogus', {'x': 1}), 'effects 的词条在 new_affixes 里：bogus'),
+    ('alien_gear', _set(['effects', 'again', 'taken'], -5), 'effects 数值都是非负数：again.taken'),
+    ('alien_gear', lambda t: t['effects']['dying']['atk_rate'].pop(), 'effects 分级数组 4 个（同 level_order）：dying.atk_rate'),
+    ('alien_gear', _set(['effects', 'venom', 'chance', 3], 150), 'effects 百分比在 0～100：venom.chance'),
+    ('alien_gear', _set(['effects', 'again', 'every', 0], 0), 'effects 至少 1：again.every'),
+    ('alien_gear', lambda t: t['late_only']['keys'].append('bogus'), 'late_only.keys 在 rewards.json 的 finale.lines 里'),
+    ('alien_gear', lambda t: t['new_affixes'].__setitem__('bogus', {}), 'new_affixes 在 rewards.json 的 finale.lines 里'),
+    ('ref:rewards', lambda t: t['finale']['lines']['war'].remove('again'), 'new_affixes 在 rewards.json 的 finale.lines 里'),
+    # abyss_shelves.json
+    ('abyss_shelves', _set(['treasure', 'cost'], 14), '设计数值不带 4：/treasure/cost=14'),
+    ('abyss_shelves', _set(['treasure', 'cost'], -10), 'treasure.cost 是非负整数'),
+    ('abyss_shelves', _set(['collection', 'rare_cost'], 30), 'collection 稀有价不低于原价'),
+    ('abyss_shelves', _set(['treasure', 'layer'], 'epic'), 'treasure.layer 在 affix_table 的 layers 里'),
+    ('abyss_shelves', _set(['collection', 'min_tier'], 0), 'collection.min_tier 是正整数'),
+    ('abyss_shelves', _set(['collection', 'min_tier'], 9), 'collection.min_tier 在 affix_table 的 tiers 里'),
+    ('abyss_shelves', _set(['collection', 'min_quality'], 'shenqi'), 'collection.min_quality 在 QUALITY_KEYS 里'),
+    ('abyss_shelves', _set(['treasure'], 'x'), '货架是字典：treasure'),
+    # qiyin_equip.json
+    ('qiyin_equip', _set(['armor', 'parts', 'head', 'params', 3], 94), '设计数值不带 4：/armor/parts/head/params/3=94'),
+    ('qiyin_equip', _set(['quality_legacy'], -1), 'quality_legacy 是非负整数'),
+    ('qiyin_equip', _set(['armor', 'atype'], 0), 'armor.atype 是正整数'),
+    ('qiyin_equip', _set(['armor', 'any_class'], 1), 'armor.any_class 是布尔'),
+    ('qiyin_equip', _set(['weapons', 'bow', 'base_id'], DEL), 'base_id 是正整数：weapons.bow'),
+    ('qiyin_equip', lambda t: t['armor']['parts']['feet']['params'].pop(), 'params 是 8 个非负数：armor.parts.feet'),
+    ('qiyin_equip', _set(['weapons', 'axe', 'params', 2], -350), 'params 是 8 个非负数：weapons.axe'),
+    ('qiyin_equip', _set(['artifact', 'base_id'], '4537'), 'artifact.base_id 是正整数'),
+    ('qiyin_equip', lambda t: t['armor']['parts'].__setitem__('tail', t['armor']['parts']['feet']), '部位键只有 head、body、hands、waist、legs、feet：armor.parts 里有 tail'),
+    ('qiyin_equip', _set(['names', 'cost'], 3), 'names 是字符串：cost'),
+    ('qiyin_equip', _set(['armor', 'parts', 'waist'], DEL), 'qiyin_gear 的部位都有底子'),
+    ('ref:qiyin_gear', lambda t: t['parts'].pop(), 'armor.parts 的部位在 qiyin_gear 的 parts 里'),
+    ('qiyin_equip', _set(['weapons', 'book'], DEL), 'qiyin_gear 的武器类型都有底子'),
+    ('qiyin_equip', lambda t: t['weapons'].__setitem__('whip', t['weapons']['bow']), 'weapons 的类型在 qiyin_gear 的 weapon_types 里'),
+    # qiyin_show.json
+    ('qiyin_show', _set(['set', 'hold'], 0.4), '设计数值不带 4：/set/hold=0.4'),
+    ('qiyin_show', _set(['seals', 'mo'], DEL), 'seals 七印齐全'),
+    ('qiyin_show', lambda t: t['seals'].__setitem__('qing', t['seals']['bai']), '印键只有 bai、hong、hei、hui、xun、zhen、mo：seals 里有 qing'),
+    ('qiyin_show', _set(['seals', 'hong', 'color'], 'red'), 'hong.color 是 #RRGGBB'),
+    ('qiyin_show', _set(['seals', 'hei', 'glyph'], ''), 'hei.glyph 非空'),
+    ('qiyin_show', _set(['true_glow'], '#E026'), 'true_glow 是 #RRGGBB'),
+    ('qiyin_show', _set(['reveal', 'se'], 5), 'reveal.se 是字符串'),
+    ('qiyin_show', _set(['rift', 'fade_out'], -1), 'rift.fade_out 秒数非负'),
+    ('qiyin_show', _set(['weapon', 'dim'], 1.5), 'weapon.dim 在 0～1'),
+    ('qiyin_show', _set(['true_seal', 'frames'], 0), 'true_seal.frames 是正整数'),
+    ('qiyin_show', _set(['art', 'rift'], 'content/rift.png'), 'art.rift 是 res:// 路径'),
+    ('ref:qiyin_gear', lambda t: t['seals'].append({'key': 'qing'}), 'qiyin_gear 的印都有演出'),
+    # qiyin_dragon_run.json
+    ('qiyin_dragon_run', _set(['fight', 'rate', 2], 0.4), '设计数值不带 4：/fight/rate/2=0.4'),
+    ('qiyin_dragon_run', _set(['fight', 'troop'], 0), 'fight.troop 是正整数'),
+    ('qiyin_dragon_run', _set(['fight', 'shell_enemy'], '238'), 'fight.shell_enemy 是正整数'),
+    ('qiyin_dragon_run', _set(['fight', 'extra_actions'], -1), 'fight.extra_actions 是非负整数'),
+    ('qiyin_dragon_run', lambda t: t['fight']['rate'].pop(), 'fight.rate 是 8 个正数'),
+    ('qiyin_dragon_run', _set(['fight', 'tone', 3], -5), 'fight.tone 是四个数'),
+    ('qiyin_dragon_run', _set(['fight', 'name'], ''), 'fight.name 非空'),
+    ('qiyin_dragon_run', _set(['fight', 'segment_lock'], 'true'), 'fight.segment_lock 是布尔'),
+    ('qiyin_dragon_run', _set(['scenes', 'win'], [['', '七首之龙倒下了。', '多一列']]), 'scenes.win 是 [说话人, 台词] 的列表'),
+    ('qiyin_dragon_run', _set(['logs', 'cut'], ''), 'logs.cut 是非空字符串'),
+]
+
+# 表自己的 nice_number_exempt 认：加进豁免就不报
+BATCH3_EXEMPT = [
+    ('qiyin_equip', _set(['quality_legacy'], 14), None),
+    ('qiyin_show', _set(['true_seal', 'power'], 4), None),
+    ('qiyin_dragon_run', _set(['fight', 'troop'], 241), None),
+    ('qiyin_dragon_run', _seq(lambda t: t['nice_number_exempt'].append('rate'), _set(['fight', 'rate', 0], 0.4)), None),
+]
+
+
+class Batch3Fixture(unittest.TestCase):
+    """临时目录里放第三批六张表和参照表的真表副本，各用例改坏一处。"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix='tianqi_check3_'))
+        chk.DATA_DIR = self.tmp
+
+    def tearDown(self):
+        chk.DATA_DIR = REAL_DIR
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def copy_all(self):
+        return {f: json.loads((REAL_DIR / f).read_text(encoding='utf-8')) for f in BATCH3 + REFS3}
+
+    def write(self, tables):
+        for f, t in tables.items():
+            (self.tmp / f).write_text(json.dumps(t, ensure_ascii=False), encoding='utf-8')
+
+    def run_all(self):
+        """跑第三批六个检查，返回 (都通过, 打印内容)。"""
+        buf = io.StringIO()
+        ok = True
+        with contextlib.redirect_stdout(buf):
+            for name, fn in chk.CHECKS:
+                if name + '.json' in BATCH3:
+                    ok = fn(None) and ok
+        return ok, buf.getvalue()
+
+    def test_copy_passes(self):
+        self.write(self.copy_all())
+        ok, out = self.run_all()
+        self.assertTrue(ok, out)
+        self.assertEqual(out.count('规则自检：通过'), len(BATCH3), out)
+
+    def test_missing_tables_skip(self):
+        ok, out = self.run_all()
+        self.assertTrue(ok, out)
+        self.assertEqual(out.count('跳过'), len(BATCH3), out)
+
+    def test_missing_ref_tables_skip_cross_checks(self):
+        t = self.copy_all()
+        t['qiyin_equip.json']['weapons'].pop('book')
+        t['alien_gear.json']['late_only']['keys'].append('bogus')
+        t['abyss_shelves.json']['treasure']['layer'] = 'epic'
+        self.write({f: v for f, v in t.items() if f not in REFS3})
+        ok, out = self.run_all()
+        self.assertTrue(ok, out)
+
+    def test_unknown_keys_ok(self):
+        t = self.copy_all()
+        for f in BATCH3:
+            t[f]['future_field'] = {'whatever': 'x', 'rate': 9, 'cost': -1}
+        t['alien_gear.json']['levels']['qinran']['future'] = 'x'
+        t['qiyin_show.json']['seals']['bai']['future'] = -1
+        t['qiyin_dragon_run.json']['fight']['future'] = [-1]
+        self.write(t)
+        ok, out = self.run_all()
+        self.assertTrue(ok, out)
+
+    def test_broken_json_fails(self):
+        self.write(self.copy_all())
+        (self.tmp / 'reforge.json').write_text('{', encoding='utf-8')
+        ok, out = self.run_all()
+        self.assertFalse(ok)
+        self.assertIn('能读表并跑完全部检查', out)
+
+    def test_each_rule_has_counterexample(self):
+        for i, (name, mutate, needle) in enumerate(BATCH3_CASES):
+            with self.subTest(i=i, table=name, needle=needle):
+                t = self.copy_all()
+                key = (name[4:] if name.startswith('ref:') else name) + '.json'
+                mutate(t[key])
+                self.write(t)
+                ok, out = self.run_all()
+                self.assertFalse(ok, out)
+                self.assertIn(needle, out)
+
+    def test_own_exempt_respected(self):
+        for i, (name, mutate, _) in enumerate(BATCH3_EXEMPT):
+            with self.subTest(i=i, table=name):
+                t = self.copy_all()
+                mutate(t[name + '.json'])
+                self.write(t)
+                ok, out = self.run_all()
+                self.assertTrue(ok, out)
+
+    def test_exempt_not_borrowed(self):
+        # 豁免只认本表的：reforge 没豁免 base_id
+        t = self.copy_all()
+        t['reforge.json']['base_id'] = 4533
+        self.write(t)
+        ok, out = self.run_all()
+        self.assertFalse(ok, out)
+        self.assertIn('/base_id=4533', out)
 
 
 if __name__ == '__main__':
