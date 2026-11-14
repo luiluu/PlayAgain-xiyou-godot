@@ -2042,11 +2042,12 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 
 ## Game_BattlerBase.paySkillCost（含各包装）与 YEP 冷却：execute 付费、专项直接付费共用
 func pay_skill_cost(u, skill: Dictionary) -> void:
-	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、米拉代价、饥荒口粮都免（MP／TP／HP／物品在各自函数里免；缄默锁上限按面板 MP 算，MP 已是 0）
+	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、米拉代价都免，饥荒口粮、透支照扣（MP／TP／HP／物品在各自函数里免；缄默锁上限按面板 MP 算，MP 已是 0）
 	var tusu_who = null if free else XTusu.pay_begin(u, skill)  # 屠苏噬主包装在最外层：屠苏自付或持武者三倍代付，里层照走（审查第 24 期 P2-1）
 	if not (tusu_who is String and tusu_who.is_empty()):  # ""：都付不起（支付前已查），整次不付
 		XNanoha.note_cost(u, skill)  # <Custom MP Cost> 的副作用：付费时那次 skillMpCost 按付前 MP 写 _costmp（段数）
 		var c := skill_cost(u, skill)
+		var c_raw: Dictionary = XTianqiTrumpet.famine_raw(func(): return skill_cost(u, skill)) if free and XTianqiFamineAlien.hungry(self) else c  # 付费前算：原始费用给饥荒口粮判断
 		# 异化 paySkillCost 包装：缄默先锁生命上限（付不起整次不付 MP／TP），饕餮的 MP 费用从饥饿储备扣
 		if XAlienBattle.pay_silence(self, u, skill):
 			XYomiJingliu.pay(u, skill)  # 黄泉 paySkillCost 包装：10174 扣 9 层残梦
@@ -2061,6 +2062,8 @@ func pay_skill_cost(u, skill: Dictionary) -> void:
 			XSkillMastery.record(u, skill)  # YEP_SkillMasteryLevels paySkillCost 包装：战斗里记下技能，onAllActionsEnd 计次
 			if not free:
 				XTianqiFamineAlien.after_pay(self, u, skill, c)  # 天启篇饥荒线异化：零消耗技能交口粮、透支者另扣生命
+			elif not XTianqiTrumpet.famine_free(u):  # 号卷六号第 1 回合：口粮、透支照扣（Kyo 11-14），按没有六号时的原始费用判断零消耗
+				XTianqiTrumpet.famine_raw(func(): XTianqiFamineAlien.after_pay(self, u, skill, c_raw))
 	XTusu.pay_after(u, skill, tusu_who)
 	u.pay_cooldown(skill)
 

@@ -497,19 +497,40 @@ static func cost(a, skill: Dictionary, c: Dictionary) -> Dictionary:
 
 ## 六号持有者自己、本场第 1 回合（天启篇战斗里、开关开着）
 static func free_turn(a) -> bool:
+	if _raw:
+		return false  # famine_raw 里：按没有六号的原始费用算
 	var logic = _logic()
 	return _active(logic) and int(logic.turn) == 1 and _has_now(logic, a, 6)
 
 
 ## 六号「这一回合自己的技能不花消耗」覆盖全部费用（Kyo 11-14 定：真全免）：除 MP／TP（cost）外，
-## HP 定值／比例（skill_hp_cost）、道具（can_pay_items／pay_items）、屠苏噬主代付、异化缄默锁生命上限、米拉禁忌生命代价、
-## 饥荒线异化的口粮与透支都不检查、不扣。冷却、熟练度计次、残梦／镜流月／五条悟印这类战斗里攒的量照旧（不是费用）。
+## HP 定值／比例（skill_hp_cost）、道具（can_pay_items／pay_items）、屠苏噬主代付、异化缄默锁生命上限、米拉禁忌生命代价
+## 都不检查、不扣。冷却、熟练度计次、残梦／镜流月／五条悟印这类战斗里攒的量照旧（不是费用）。
 ## 开关（O-422）：FREE_ALL＝false 回到只免 MP／TP 的旧行为
 static var FREE_ALL := true
+## 饥荒线异化的口粮与透支不在全免里（Kyo 11-14 定，保住饥荒线压力）：第 1 回合照常扣，口粮按「没有六号时」的原始费用判断
+## （原本就零消耗的技能才交，被六号免成零的不交）。口粮 MP 不够改扣生命、透支只扣到 1 点，本来就不挡技能，所以 can_use 不用改。
+## 开关（O-待定）：FAMINE_PAYS＝false 回到 11-14 早先的「口粮、透支也免」
+static var FAMINE_PAYS := true
+static var _raw := false
 
 
 static func free_all(a) -> bool:
 	return FREE_ALL and free_turn(a)
+
+
+## 六号第 1 回合饥荒口粮、透支是不是也免（BattleLogic.pay_skill_cost 用）
+static func famine_free(a) -> bool:
+	return not FAMINE_PAYS and free_all(a)
+
+
+## 在「六号不生效」的视角下跑 f（算原始费用给饥荒口粮判断）；不论 f 怎样都复原
+static func famine_raw(f: Callable) -> Variant:
+	var was := _raw
+	_raw = true
+	var out = f.call()
+	_raw = was
+	return out
 
 
 ## 持续伤害、持续回复（XExtDot，施加者 a）：三号 ×(1＋33%)
