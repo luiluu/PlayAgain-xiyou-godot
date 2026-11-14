@@ -21,7 +21,7 @@ extends RefCounted
 ## - 新宿（宿傩）：第 2 回合起每 5 回合展开伏魔御厨子 3 回合（含当回合），每回合结束必中斩击（不判命中、无下限挡不住）；
 ##   领域到期的下一回合神灶：开；其余回合 3 的倍数捌、否则解。两边领域都开着＝领域对拼：御厨子斩击不落、无量空处的必中和信息过载失效
 ##  （给印照常）。
-## 战斗挂点：battle_logic setup／decide／make_action_times／rewards／grant 各一行；扣血底层 XResourceContext._gain（final_loss）、阵亡兜底 XBattler.add_state（blocks_death）各一行；其余走 XGojo 的现成挂点（begin、finish、end_round、
+## 战斗挂点：battle_logic setup／decide／make_action_times／rewards／grant 各一行；扣血底层 XResourceContext._set_resource（final_loss）、阵亡兜底 XBattler.add_state（blocks_death）各一行；其余走 XGojo 的现成挂点（begin、finish、end_round、
 ## infinity_block、overload、sure、after_apply、after_hit、formula）。影子色调在 battler_sprite 一行。
 ## 开关（O-待定）：ENABLED＝false 回到 v0.2 四阶表、没有试炼；LEARN_SHIFT／OWN_GOLD／RESTORE_ON_WIN／SHADOW_TINT 分项回退。
 
@@ -594,8 +594,8 @@ static func purple_casting() -> bool:
 	return int(XGojo.cast.get("skill", 0)) in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]
 
 
-## XResourceContext._gain（所有扣血都走这里：技能伤害、持续伤害、模块直接扣血；在各种倍率、遗物增伤、Boss 输出、护盾之后，
-## 真写生命之前）：怀玉里五条悟觉醒前这一下会打死他就留 1 点（记下待领悟）；甚尔影子不是茈打的最多压到 1 点。返回实际要扣的量。
+## XResourceContext._set_resource（gainHp、setHp 两条路最后都到这里：技能伤害、持续伤害、模块直接扣血；在各种倍率、遗物增伤、
+## Boss 输出、护盾账本和原生护盾吸收之后，真写生命之前，只截落到生命上的那部分）：怀玉里五条悟觉醒前这一下会打死他就留 1 点（记下待领悟）；甚尔影子不是茈打的最多压到 1 点。返回实际要扣的量。
 ## live＝false（伤害预览）只算不记。
 static func final_loss(b, loss: float, live := true) -> float:
 	if loss <= 0.0:

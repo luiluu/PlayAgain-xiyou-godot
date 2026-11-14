@@ -362,7 +362,7 @@ func _huaiyu_mechanics() -> void:
 	e.hp = 10.0
 	XTianqiGojoTrial.fight(lg).queue = []
 	var hit := lg.horseman_strike(a, e, red, 999999.0, false)
-	_check("h_lock", e.hp == 1.0 and e.is_alive() and float(hit.hp) == 9.0, [e.hp, hit.hp])
+	_check("h_lock", e.hp == 1.0 and e.is_alive() and not hit.is_empty(), [e.hp, hit.get("hp")])
 	lg.horseman_strike(a, e, red, 999999.0, false)
 	_check("h_lock_any", e.hp == 1.0 and e.is_alive())
 	_check("h_lock_said", XTianqiGojoTrial.fight(lg).held and XTianqiGojoTrial.take_logs(lg).size() == 1)
@@ -397,7 +397,7 @@ func _huaiyu_mechanics() -> void:
 	XGojo.temp(a).red = 1
 	var soul := XDB.rec("Skills", XTianqiGojoTrial.SOUL)
 	var cut := lg.horseman_strike(e, a, soul, 999999.0, false)
-	_check("h_one_left", a.hp == 1.0 and a.is_alive() and float(cut.hp) == 49.0, [a.hp, cut.hp])
+	_check("h_one_left", a.hp == 1.0 and a.is_alive() and not cut.is_empty(), [a.hp, cut.get("hp")])
 	XGojo.after_hit(lg, a)
 	_check("h_awaken", a.hp == a.mhp and XGojo.marks(a) == [3, 3] and XTianqiGojoTrial.fight(lg).awakened, [a.hp, a.mhp, XGojo.marks(a)])
 	var said: Array = XGojo.finish(lg, e, soul)
@@ -443,6 +443,48 @@ func _huaiyu_last_resort() -> void:
 	_check("r_dot_one_left", a2.hp == 1.0 and a2.is_alive() and not XTianqiGojoTrial.fight(lg2).awakened, a2.hp)
 	XGojo.begin(lg2, e2, XDB.rec("Skills", XTianqiGojoTrial.CLOUD))
 	_check("r_dot_awaken_next_action", XTianqiGojoTrial.fight(lg2).awakened and a2.hp == a2.mhp)
+	# 有盾（返修第二轮）：盾先被打穿，落到生命上的才截成留 1 点
+	var s5 := _state(25)
+	var a5: XActor = s5.actor(GOJO)
+	var lg5 := _battle(s5, 1)
+	var e5: XEnemy = lg5.enemies[0]
+	a5.hp = 100.0
+	a5.shield = 100.0
+	lg5.gain_hp(a5, -1000.0)
+	_check("r_shield_direct", a5.shield == 0.0 and a5.hp == 1.0 and a5.is_alive(), [a5.shield, a5.hp])
+	XGojo.begin(lg5, e5, XDB.rec("Skills", XTianqiGojoTrial.CLOUD))
+	_check("r_shield_direct_awaken", XTianqiGojoTrial.fight(lg5).awakened and a5.hp == a5.mhp)
+	e5.hp = 10.0
+	e5.shield = 50.0
+	lg5.gain_hp(e5, -1000.0)
+	_check("r_shield_shadow", e5.shield == 0.0 and e5.hp == 1.0 and e5.is_alive(), [e5.shield, e5.hp])
+	e5.hp = 500.0
+	e5.shield = 300.0
+	lg5.gain_hp(e5, -200.0)
+	_check("r_shield_untouched_when_not_lethal", e5.shield == 100.0 and e5.hp == 500.0, [e5.shield, e5.hp])
+	lg5.end_battle(2)
+	XTianqiGojoTrial.finish(s5, 2)
+	var s6 := _state(25)
+	var a6: XActor = s6.actor(GOJO)
+	var lg6 := _battle(s6, 1)
+	# 再生率那条持续伤害（中毒）：原版先按「持续伤害不致死」夹到剩 1、再吸收护盾、直接写生命，本来打不死人，也不经过试炼的锁；
+	# 这里断言有盾时试炼里的结算和关掉锁时一模一样（锁没改它）
+	var dot := func(hp: float, shield: float) -> Array:
+		a6.hp = hp
+		a6.shield = shield
+		lg6.turn_end_battler(a6, [])
+		return [a6.hp, a6.shield]
+	a6.add_state(4)  # 中毒：回合末最大生命 −10%
+	var with_lock: Array = [dot.call(50.0, 30.0), dot.call(2.0, 3.0), dot.call(300.0, 20.0)]
+	XTianqiGojoTrial.ENABLED = false
+	var no_lock: Array = [dot.call(50.0, 30.0), dot.call(2.0, 3.0), dot.call(300.0, 20.0)]
+	XTianqiGojoTrial.ENABLED = true
+	_check("r_shield_dot", a6.state_ids.has(4) and with_lock == no_lock and with_lock[0][1] == 0.0 and with_lock[1][0] >= 1.0, [with_lock, no_lock])
+	a6.hp = floorf(a6.mhp * 0.2)
+	XGojo.begin(lg6, lg6.enemies[0], XDB.rec("Skills", XTianqiGojoTrial.CLOUD))
+	_check("r_shield_dot_awaken", XTianqiGojoTrial.fight(lg6).awakened and a6.hp == a6.mhp)
+	lg6.end_battle(2)
+	XTianqiGojoTrial.finish(s6, 2)
 	# 直接写生命再判阵亡（七印行动外扣血、异化词条临终那样）：觉醒前拦下
 	var s3 := _state(25)
 	var a3: XActor = s3.actor(GOJO)

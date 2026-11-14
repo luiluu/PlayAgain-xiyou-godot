@@ -170,8 +170,6 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 		amount = 0.0  # 异化 gainHp 包装（Runtime wrapHp）：逆祷者的帧里对敌人扣血归零
 	elif resource == "hp" and amount < 0.0 and not boss_output.is_settled(b, "hp"):
 		amount = -XAlienBattle.frame_outgoing(-amount)  # 同一包装：不在 executeHpDamage 里的行动帧扣血也吃烈变／小怪异化加成
-	if resource == "hp" and amount < 0.0:
-		amount = -XTianqiGojoTrial.final_loss(b, -amount, not preview)  # 天启篇五条悟试炼怀玉：所有倍率、护盾之后真扣血之前，觉醒前致命留 1 点、甚尔影子只有茈能打倒
 	# 同一包装末尾：不在任何 executeHpDamage 里（原版 executeDepth 是全局的）时，按实际掉的生命给镜骸记账（frame_record）
 	var mirror_hp := b.hp if resource == "hp" and amount < 0.0 and not preview and boss_output.settled.is_empty() else -1.0
 	var before := snapshot(b)
@@ -255,6 +253,8 @@ func _set_resource(b: XBattler, resource: String, value: float) -> void:
 	boss_output.enter_direct(b, resource)
 	if resource == "hp" and value < old:
 		value = old - b.absorb_shield(old - value)
+	if resource == "hp" and value < old:
+		value = old - XTianqiGojoTrial.final_loss(b, old - value, not preview)  # 天启篇五条悟试炼怀玉：Boss 输出、护盾吸收之后，只截落到生命上的那部分：觉醒前致命留 1 点、甚尔影子只有茈能打倒（不在试炼原样）
 	# YEP compares the requested input before refresh/clamp; an equal input does no refresh.
 	if value != old:
 		b.set(resource, value)

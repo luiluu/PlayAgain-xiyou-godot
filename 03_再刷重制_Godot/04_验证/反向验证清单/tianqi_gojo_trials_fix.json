@@ -30,7 +30,7 @@
   {
    "name": "去掉底层夹扣血",
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
-   "find": "\t\tamount = -XTianqiGojoTrial.final_loss(b, -amount, not preview)",
+   "find": "\t\tvalue = old - XTianqiGojoTrial.final_loss(b, old - value, not preview)",
    "replace": "\t\tpass"
   },
   {
@@ -56,6 +56,12 @@
    "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd",
    "find": "\tif is_same(b, f.gojo) and not bool(f.awakened):\n\t\tb.hp = maxf(1.0, float(b.hp))",
    "replace": "\tif is_same(b, f.gojo):\n\t\tb.hp = maxf(1.0, float(b.hp))"
+  },
+  {
+   "name": "锁放回盾前（盾少扣、血多保）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/resource_context.gd",
+   "find": "\t\tamount = -b.absorb_shield(-amount)\n",
+   "replace": "\t\tamount = -b.absorb_shield(XTianqiGojoTrial.final_loss(b, -amount))\n"
   }
  ]
 }
