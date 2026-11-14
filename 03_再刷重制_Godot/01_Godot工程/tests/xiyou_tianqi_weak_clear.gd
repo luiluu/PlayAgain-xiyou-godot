@@ -126,7 +126,10 @@ func _not_weak() -> void:
 		var lg := XBattleLogic.new()
 		lg.setup(1, s)
 		var w: XActor = s.helper()
-		s.battle_slots[XTianqi.HELPER_SLOT] = strong[0]
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))  # 中途入队的强者
+		XTianqi._joining = false
+		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
 		var st: XActor = lg.tianqi_swap(lg.actors[0])
 		var c := {}
 		for a in lg.actors:
@@ -141,6 +144,14 @@ func _not_weak() -> void:
 	_check("swap_seen_by_action", acted.get("swap") == true and acted.get("seen") == true and acted.get("back") == true, acted)
 	_check("swap_back_all_weak", s.battle_members().all(func(a): return XTianqiWeakClear.is_weak(a.actor_id, s))
 		and not s.battle_slots.has(int(strong[0])), s.battle_slots)
+	# 战斗中强者入队进了助力位、没上场没行动：结束时出战栏有他，不记
+	s = _state("jianxian", weak.slice(0, 5))
+	host.during = func():
+		XTianqi._joining = true
+		s.add_actor(int(strong[0]))
+		XTianqi._joining = false
+		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
+	_check("join_helper_mid_battle", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s))
 	host.during = Callable()
 	# 再挑战 36 层（不记通关）不算
 	var s2 := _state("jianxian", weak.slice(0, 5))
