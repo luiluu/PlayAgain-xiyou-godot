@@ -30,6 +30,19 @@
 
 断言数：`xiyou_tianqi_drop` 74→83，`xiyou_tianqi_money` 53→67，全部通过。提交见「本分支提交」。
 
+### 第二轮（gpt 只读复核 44091c85c／a70f5d976）
+
+掉落两项（种子、必掉清连败）gpt 已销账。商店、天平各剩 1 项 P2 边界，本轮修：
+
+| 问题 | 修法 | 测试（断言） |
+| --- | --- | --- |
+| P2 天平离层清理只在 has_good／scale_state 被查时发生：买 20 层→进 5 层（期间没查）→回 20 层，记录还在、效果恢复 | `map/map_scene.gd` `load_map` 在换 `s.map_id` 之后调 `XTianqiMoney.scale_sync(s)`（只加一行；同图重放置那条路不换层，不用调）；`scale_sync` 加 `scale_on` 守卫，西游档、金钱关着时不碰存档 | `xiyou_tianqi_money`：真建 `XMapScene`，大厅买油→`load_map` 20 层→5 层→20 层，中间不查效果：`rt_lobby_kept`、`rt_at20_kept`、`rt_at5_cleared_raw`（直接读存档字典）、`rt_back20_off` |
+| P2 `mark_bought` 看 `XTianqiDrop.on`：掉落总开关关、金钱开时商店货不打标记，封顶被跳过 | 标记改成天启篇档都打（`XTianqi.active`），用不用交给各自的开关（`NO_FEED_BOUGHT` 管喂、`XTianqiMoney.SELL_BOUGHT_CAP` 管卖） | `drop_off_still_marked`、`drop_off_still_capped`（`XTianqiDrop.ENABLED=false`） |
+| 顺带核：进出仓库、特殊装备变体转换后标记是否保留 | 不用改：大厅仓库（`XWarehouse`）、星辰仓库（`XStarWarehouse`）存取都是整件字典搬运；异化刻印／重抽、异化隐藏还原（`XAlienHide.restore`）、专武前缀还原（`XGear._revert_one`）都是原地改那件装备；存读档 `s.gear = d.gear` 原样保留。被吃掉的（分解、取核、喂法宝）本来就没了 | `wh_deposit`、`wh_withdraw`、`wh_keeps_marks`、`save_keeps_marks` |
+
+断言数：`xiyou_tianqi_money` 67→77，`xiyou_tianqi_drop` 83 不变；连同 `xiyou_transfer`、`xiyou_lobby_corruption`（`map_scene.gd` 改动）全部通过。提交 690d8dd49。
+反向验证（`反向验证.py`，专项 `xiyou_tianqi_money`）：三处各改坏一次（去掉 load_map 里的 scale_sync、mark_bought 改回看 `on(s)`、去掉回售封顶）都让专项失败，咬得住；源文件已按备份还原。
+
 说明：「当前层」在大厅里没有现成的量，天平买时取最高到达层（对话头显示的就是它）；人在第 N 层地图里买（目前事件只在大厅）则记 N。停手条件「改种子派生让已有天启篇存档的保底账本整体变化」没有触发：只有还没有掉落账的档才走派生，已有账的种子不动。
 
 ## 同类盘点（只报告，不修）
@@ -73,8 +86,11 @@
 
 ## 待交叉核查
 
+- 第二轮只复核 690d8dd49：`map/map_scene.gd` 一行、`core/tianqi_money.gd` scale_sync 守卫、`core/tianqi_drop.gd` mark_bought 守卫、`tests/xiyou_tianqi_money.gd`。
 - `core/tianqi_drop.gd`（store 种子、roll_signature 必掉分支、mark_bought 单价）、`core/tianqi_money.gd`（sell_price 封顶、天平 scale_sync／has_good）、`ui/shop.gd` 一行。甲档（存档相关）。
 
 ## 本分支提交
 
 - 44091c85c 天启篇经济返修：掉落旧档种子由存档派生、必掉清连败；商店货回售封顶、天平只管买时那一层
+- a70f5d976 交付单
+- 690d8dd49 天启篇经济返修二：天平进地图即清理、商店货标记不看掉落总开关
