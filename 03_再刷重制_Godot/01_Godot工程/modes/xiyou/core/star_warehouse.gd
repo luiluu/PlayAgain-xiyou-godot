@@ -316,19 +316,23 @@ static func _save() -> bool:
 	var p := path()
 	if DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
 		return false
+	var full := {"version": 1, "mode": "xiyou", "gear": _gear, "pets": _pets}
+	if not _pending.is_empty():
+		full["pending"] = _pending
+	# 装备的词缀选项表不进文件（XSaveSlim.STAR_WAREHOUSE；只改写出去的那份，覆盖没瘦过的旧文件前先备份）
+	var data := XSaveSlim.for_warehouse(full, p)
 	var temp := p + ".tmp"
 	var f := FileAccess.open(temp, FileAccess.WRITE)
 	if f == null:
 		return false
-	var data := {"version": 1, "mode": "xiyou", "gear": _gear, "pets": _pets}
-	if not _pending.is_empty():
-		data["pending"] = _pending
-	f.store_string(JSON.stringify(data))
+	var text := JSON.stringify(data)
+	f.store_string(text)
 	f.flush()
 	var ok := f.get_error() == OK
 	f.close()
 	if not ok or DirAccess.rename_absolute(temp, p) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
+	XSaveSlim.written(full, p, text)
 	_dirty = false
 	return true
