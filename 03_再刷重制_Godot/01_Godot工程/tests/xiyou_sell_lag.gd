@@ -71,12 +71,14 @@ func compare(name: String, p: Dictionary, sell: Callable) -> Array:
 	var out := []
 	for fast in [true, false]:
 		XAlienation.FAST_RESERVED = fast
+		XSafeSell.ONE_PASS = fast
 		var s := fresh(p)
 		var t0 := Time.get_ticks_usec()
 		var n = sell.call(s)
 		var us := Time.get_ticks_usec() - t0
 		out.append({"n": n, "gold": s.gold, "left": ids(s), "us": us})
 	XAlienation.FAST_RESERVED = true
+	XSafeSell.ONE_PASS = true
 	check(name + "_same_count", out[0].n == out[1].n, [out[0].n, out[1].n])
 	check(name + "_same_gold", out[0].gold == out[1].gold and out[0].gold > 0, [out[0].gold, out[1].gold])
 	check(name + "_same_left", out[0].left == out[1].left, [out[0].left.size(), out[1].left.size()])
@@ -97,13 +99,14 @@ func onekey_all(st: XState) -> int:
 
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_sell_lag"
+	check("default_on", XAlienation.FAST_RESERVED and XSafeSell.ONE_PASS)
 	var p := proto()
 	# reserved 逐件一致：批外、批内、带 except（排除借第 10 件的那件吞器后，第 10 件不算被借）
 	var s := fresh(p)
 	var holder: Dictionary = s.gear.filter(func(e): return str(e.kind) == "weapon")[3]
 	var slow := []
 	var slow_except := []
-	XAlienation.FAST_RESERVED = false
+	XAlienation.FAST_RESERVED = false   # 回退支：v0.01.09 的逐件现算
 	for e in s.gear:
 		slow.append(XAlienation.reserved(s, e))
 		slow_except.append(XAlienation.reserved(s, e, holder))
@@ -131,6 +134,24 @@ func _run() -> void:
 	other.gear = other.gear.filter(func(e): return not e.has("alien"))
 	check("batch_other_state", not XAlienation.reserved(other, other.gear.filter(func(e): return str(e.instanceId) == p.donors[0])[0]))
 	XAlienation.end_batch()
+
+	# O-待定-2：跨帧的旧计划照原版每件再判（期间锁定的那件不卖）；同一帧的计划只查还在不在背包
+	var sp := fresh(p)
+	var plan := XSafeSell.plan(sp)
+	check("plan_has_frame", int(plan.frame) == Engine.get_process_frames())
+	var locked: Dictionary = plan.sell[0]
+	plan.frame = int(plan.frame) - 1
+	locked.name = XItemMarks.LOCK + str(locked.name)
+	var gone: Dictionary = plan.sell[1]
+	sp.lose_gear(gone)
+	var r := XSafeSell.sell_plan(sp, plan)
+	check("stale_plan_rechecks", sp.gear.has(locked) and int(r[0]) == plan.sell.size() - 2, [r, plan.sell.size()])
+	sp = fresh(p)
+	plan = XSafeSell.plan(sp)
+	gone = plan.sell[1]
+	sp.lose_gear(gone)
+	r = XSafeSell.sell_plan(sp, plan)
+	check("fresh_plan_skips_missing", int(r[0]) == plan.sell.size() - 1, [r, plan.sell.size()])
 
 	# 挂机自动卖出（安全出售，v0.01.09 默认）、旧筛法、一键出售
 	compare("hangup_safe", p, func(st: XState):
