@@ -195,7 +195,27 @@ func _off() -> void:
 
 ## 四级分档：收益按装备的级取，代价各级一样
 func _tiers() -> void:
-	var want := {"qinran": [1.2, 20, 5, 50], "zhongyan": [1.8, 50, 2, 100]}
+	# 再动间隔四级 6／5／3／2（Kyo 授权优化：原 5／3／3／2 蚀骨和化形一样，升级没变化）
+	var every: Array = [0, 1, 2, 3].map(func(i): return int(XTianqiAlienAffix.value("again", "every", i, 0.0)))
+	_check("again_every_tiers", every == [6, 5, 3, 2], every)
+	_check("again_every_strict", every[0] > every[1] and every[1] > every[2] and every[2] > every[3], every)
+	# 侵染第 5 回合：新表（6）不动、开关关掉回到旧表（5）就动
+	var sq := _state()
+	var q := _wear(sq, "war", "again", "qinran")
+	var lq := _logic(sq)
+	lq.turn = 5
+	var r_new := []
+	XTianqiAlienAffix.action_plus_set(q, r_new)
+	XTianqiAlienAffix.AGAIN_EVERY_V2 = false
+	var r_old := []
+	XTianqiAlienAffix.action_plus_set(q, r_old)
+	XTianqiAlienAffix.AGAIN_EVERY_V2 = true
+	lq.turn = 6
+	var r_six := []
+	XTianqiAlienAffix.action_plus_set(q, r_six)
+	_check("again_every_qinran_6", not r_new.has(1.0) and r_old.has(1.0) and r_six.has(1.0), [r_new, r_old, r_six])
+	lq.end_battle(1)
+	var want := {"qinran": [1.2, 20, 6, 50], "zhongyan": [1.8, 50, 2, 100]}
 	for lv in want:
 		var w: Array = want[lv]
 		var s := _state()
