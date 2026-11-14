@@ -505,6 +505,11 @@ func _state_json(s: XState) -> String:
 	return JSON.stringify(JSON.parse_string(JSON.stringify(s.to_dict())))
 
 
+## 存档前那份按「写盘再读回」的样子比：装备选项表、失效已看过标记写盘时不写（XSaveSlim，O-待定-1／2）
+func _saved_json(s: XState) -> String:
+	return JSON.stringify(JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s.to_dict()))))
+
+
 func _first_diff(a: String, b: String) -> Array:
 	for i in range(mini(a.length(), b.length())):
 		if a[i] != b[i]:
@@ -717,7 +722,7 @@ func _floor(f: Dictionary, full: bool) -> bool:
 	var toasts_before := map.toasts.size()
 	await map.run_common_event(1)
 	_check(tag + "_saved", map.toasts.slice(toasts_before).has("存档成功，储存到了%d号存档！" % slot), map.toasts.slice(toasts_before))
-	var before := _state_json(s)
+	var before := _saved_json(s)
 	var runtime_fixture := s.runtime_random_snapshot() # Test-only deterministic continuation.
 	var pos: Vector2i = map.player.grid
 	var dir: int = map.player.direction

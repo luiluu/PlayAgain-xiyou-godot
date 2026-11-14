@@ -51,7 +51,7 @@ func _cmp(tag: String, got, want) -> void:
 
 func _fresh() -> void:
 	DirAccess.remove_absolute(XDemonCrown.path_override)
-	XDemonCrown.reload()
+	XDemonCrown.forget_ledger()
 	s = XState.new_game(2, 1, [8, 9, 10])
 	XState.current = s
 	s.battle_slots = PARTY.duplicate()
@@ -345,7 +345,7 @@ func _run(c: Dictionary) -> void:
 			for k in [XDemonCrown.PROFILE_FLAG, XDemonCrown.SEQ_FLAG, XDemonCrown.WORLD_FLAG, XDemonCrown.KNOWN_FLAG]:
 				d.flags.erase(k)
 			DirAccess.remove_absolute(XDemonCrown.path_override)
-			XDemonCrown.reload()
+			XDemonCrown.forget_ledger()
 			_restore(JSON.stringify(d))
 			var got := _crowns()
 			_cmp(id, {"count": got.size(), "ledger": _ledger(), "profile": str(s.flags.get(XDemonCrown.PROFILE_FLAG, "")) != ""},
@@ -370,6 +370,7 @@ func _ready() -> void:
 
 
 func _main() -> void:
+	XDemonCrown.COMPACT = false  # 这里逐例对原版参照（每场一行明细、开战即写）；账本压缩在 xiyou_demon_crown_compact
 	XDemonCrown.path_override = XSave.dir().path_join("crown_progress_test.json")
 	var data = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	for c in data.cases:

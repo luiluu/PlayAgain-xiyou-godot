@@ -210,6 +210,7 @@ func _tq_build_title() -> void:
 		n.reparent(_tq_title.extras, false)
 	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟：标题有没有「继续」（安卓实机冒烟.py）
 		print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
+	XSaveSlim.sweep_once()  # 残留临时文件：每次启动进标题清一次（XSaveSlim.TEMP_FILES）
 	# 自动更新接线（update-check1 交付单）：进标题静默查一次（一天最多一次，只在发行构建），按钮红点看上次结果，查完刷新
 	var client := XUpdateClient.instance(get_tree())
 	_tq_title.set_badge("check_update", client.has_update())
