@@ -4,7 +4,7 @@ extends RefCounted
 ## 活动各模块（甲车道冠军之路 XFestRoad、乙车道大厅庆典叠加层、第 2 天的签到／兑换／成就／彩蛋）都只读这里，不各自判断日期。
 ## 时间只看本机日期（游戏没有服务器时间）；改本机时间能提前或延后，单机防不住、奖励也不值钱，不做防护（方案 2.4）。
 ##
-## 三个阶段（D20 未定，按推荐 10 天＋3 天收尾做成可配置，改 START／DAYS／GRACE_DAYS 即可）：
+## 三个阶段（D20 Kyo 11-15 定开半个月：15 天＋3 天收尾；改 START／DAYS／GRACE_DAYS 即可）：
 ## - 进行中 active()：START 起 DAYS 天（含 START 当天）。大厅装饰、使者、冠军之路、签到都开。
 ## - 收尾期 in_grace()：之后 GRACE_DAYS 天。只留使者兑换（方案第 4 节「没花完的庆典币留 3 天」），冠军之路、装饰、签到都关。
 ## - 结束：都关；已拿到的称号永久保留（称号表照常列，见 XDesignation.table）。
@@ -14,8 +14,8 @@ static var ENABLED := true
 
 ## 活动开始日（本机日期，含当天）。补丁哪天推，Kyo 定；默认 11-15（Kyo 拍板做庆典的当天）
 static var START := "2026-11-15"
-## 进行天数（D20 推荐 10 天）
-static var DAYS := 10
+## 进行天数（D20 Kyo 11-15 定：半个月）
+static var DAYS := 15
 ## 收尾天数（D20 推荐 3 天）
 static var GRACE_DAYS := 3
 
