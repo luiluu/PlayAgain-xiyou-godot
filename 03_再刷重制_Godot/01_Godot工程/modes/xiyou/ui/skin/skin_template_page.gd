@@ -168,9 +168,10 @@ func relayout() -> void:
 	ring.size = Vector2(lb.x, d)
 	ring.position = Vector2(0, maxf((lb.y - d) / 2.0 - 24.0, 0.0))
 	var cs := layout.center.size
-	list.position = Vector2(8, LIST_TOP)
+	var lx := 28.0 if XSkinArt.select_on() else 8.0   # 第一期正式美术：外置箭头（左探 22）收在烟底里（小A核 P2-1）
+	list.position = Vector2(lx, LIST_TOP)
 	var rows := floori((cs.y - LIST_TOP - FOOTER_H) / float(row_height))
-	list.size = Vector2(cs.x - 16, rows * row_height)
+	list.size = Vector2(cs.x - lx - 8.0, rows * row_height)
 	_place_targets()
 	_place_menu()
 	var view := layout.view_size()

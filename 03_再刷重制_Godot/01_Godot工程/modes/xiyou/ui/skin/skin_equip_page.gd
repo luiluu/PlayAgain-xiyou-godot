@@ -31,7 +31,7 @@ var expanded := false
 const RING_MAX := 10
 ## 13 栏一页（O-待定，Kyo 11-15「除了这个装备，我要所有栏位都在一页」）：栏位全部排在一圈上、不翻页、环下不再写「栏位第 a / b 页」。
 ## 一圈 13 颗：环半径 140、球半径 22（触屏点按半径 26，相邻两球中心隔 68，不会点串）；栏位名写在环内侧（球挨得近，写在球上下会压到邻球），
-## 环心头像跟着缩到半径 78。上下左右／Q E 照旧：上、左＝逆时针一格，下、右＝顺时针一格（就是显示顺序），Q／E 换人。
+## 环心头像跟着缩到半径 72。上下左右／Q E 照旧：上、左＝逆时针一格，下、右＝顺时针一格（就是显示顺序），Q／E 换人。
 ## 4:3 屏：视口照 O-483 锁 1280×720 上下留边，左块宽度不变，和 16:9 同一个摆法。false＝回 7＋6 分两页。
 static var ONE_PAGE := true
 const ONE_PAGE_RING_R := 140.0
@@ -70,7 +70,7 @@ var _plan := {}
 
 ## 当前用不用分支摆法
 static func branched() -> bool:
-	return ONE_PAGE and LAYOUTS.has(LAYOUT)
+	return ONE_PAGE and LAYOUTS.has(LAYOUT) and XTianqiGear.on()   # 只给天启篇 13 栏；19 栏（非天启篇、XTianqiGear 关）回分页（小A核 P2-4）
 
 
 ## 分支摆法：显示行号的导航顺序（nav）、环上每项的摆法（custom，和 nav 一一对应）、枝丫连线（links）。
@@ -134,8 +134,9 @@ func _init(s: XEquipScene) -> void:
 	row_height = XUiSkin.ROW_H
 	left_w = 384.0
 	right_w = 476.0
-	ring_radius = (BRANCH_R if branched() else ONE_PAGE_RING_R) if ONE_PAGE else 132.0
-	orb_radius = (BRANCH_ORB_R if branched() else ONE_PAGE_ORB_R) if ONE_PAGE else 26.0
+	var one := ONE_PAGE and XTianqiGear.on()
+	ring_radius = (BRANCH_R if branched() else ONE_PAGE_RING_R) if one else 132.0
+	orb_radius = (BRANCH_ORB_R if branched() else ONE_PAGE_ORB_R) if one else 26.0
 	auto_nav = false
 	currencies = []
 	hint_list = slot_hints()
@@ -152,7 +153,7 @@ func _ready() -> void:
 	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
-	if ONE_PAGE:
+	if ONE_PAGE and XTianqiGear.on():
 		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
 		ring.label_sel_boost = 1
 	ring.changed.connect(_on_ring_changed)
@@ -253,7 +254,7 @@ func sync() -> void:
 
 ## 栏位分页：一圈放不下时平均分（13 → 7＋6）
 static func ring_pages(n: int) -> Array:
-	if ONE_PAGE:
+	if ONE_PAGE and n <= 13:   # 13 栏一页；19 栏一圈太挤，照旧分页（小A核 P2-4）
 		return [1, maxi(n, 1)]
 	var pages := maxi(1, ceili(n / float(RING_MAX)))
 	var per := ceili(n / float(pages))
@@ -504,7 +505,7 @@ func _draw_ring_extra() -> void:
 	var a := scene.actor()
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
-		var r := ring_radius - (68.0 if ONE_PAGE else 62.0)   # 一页 13 栏：头像 72，给环内侧的栏位名让出位置
+		var r := ring_radius - (68.0 if ring.label_inner > 0.0 else 62.0)   # 一页 13 栏：头像 72，给环内侧的栏位名让出位置
 		if branched():
 			r = ring_radius - BRANCH_LABEL_R - 2.0   # 分支摆法：头像半径 42，给环内侧的栏位名让地方
 		ring_top.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
@@ -525,7 +526,7 @@ func _draw_ring_extra() -> void:
 	var cap := caption()
 	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 	var cy := layout.left.size.y - ring.position.y - 6.0
-	ring_top.draw_string(body, Vector2(c.x - cw / 2.0, cy), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	XSkinArt.bg_string(ring_top, body, Vector2(c.x - cw / 2.0, cy), cap, XUiSkin.FS_AUX, XSkinArt.bg_text_2())   # 直接在背景上（小A核 P3-3）
 
 
 func _draw_list_count() -> void:

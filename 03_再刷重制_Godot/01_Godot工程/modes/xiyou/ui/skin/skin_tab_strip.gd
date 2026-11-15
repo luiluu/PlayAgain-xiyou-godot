@@ -12,6 +12,7 @@ var font_size := 17
 const TAB_H := 38.0
 const TAB_PAD := 14.0
 const TAB_GAP := 4.0
+const TAB_GAP_ART := 18.0
 
 
 func _init() -> void:
@@ -69,8 +70,9 @@ func current_direct() -> String:
 func tab_rect(i: int) -> Rect2:
 	var f := XUiSkin.font("body")
 	var x := 0.0
+	var gap := TAB_GAP_ART if XSkinArt.select_on() else TAB_GAP   # 第一期正式美术：外置箭头（1×，左探 15）落在页签缝里（小A核 P2-1）
 	for k in range(i):
-		x += f.get_string_size(str(groups[k].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2 + TAB_GAP
+		x += f.get_string_size(str(groups[k].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2 + gap
 	var w := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2
 	return Rect2(x, 0, w, TAB_H)
 

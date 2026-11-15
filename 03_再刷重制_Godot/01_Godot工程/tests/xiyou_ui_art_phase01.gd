@@ -144,14 +144,34 @@ func _backdrop() -> void:
 # ---- 烟色面板 ----
 func _panel() -> void:
 	XUiSkin._styles.clear()
-	var st := XUiSkin.panel_style() as StyleBoxTexture
-	check("panel_smoke", st != null and st.texture == XSkinArt.part("smoke_reading_128x128") and st.texture_margin_left == 16 and st.content_margin_left == XUiSkin.PAD)
+	var st = XUiSkin.panel_style()
+	check("panel_smoke", st is XSkinArt.SmokeStyle and not st.short and st.content_margin_left == 24 and st.content_margin_top == XUiSkin.PAD)
 	check("panel_no_shadow", XUiSkin.shadow_style() is StyleBoxEmpty)
-	var sh := XSkinArt.smoke_style(true) as StyleBoxTexture
-	check("panel_short_secondary", sh.texture == XSkinArt.part("smoke_secondary_128x64"))
+	check("panel_short_secondary", XSkinArt.smoke_style(true).short)
+	check("panel_alpha_085", XSkinArt.SMOKE_ALPHA == 0.85 and XSkinArt.SMOKE_ALPHA_SHORT == 0.88)
+	var gt := XSkinArt.grain_texture(Vector2i(300, 200))
+	check("panel_grain_tiled", gt != null and Vector2i(gt.get_size()) == Vector2i(300, 200) \
+		and gt.get_image().get_pixel(45, 47) == gt.get_image().get_pixel(77, 79) and gt.get_image().get_pixel(0, 50).a == 0.0, gt.get_size() if gt != null else null)
+	# 像素件预放大（最近邻、1:1 画）：2× 箭头 14×18，每个像素都是原图的 2×2 块
+	var a2 := XSkinArt.scaled("selection_arrow_7x9", Vector2i(14, 18))
+	var a1 := XSkinArt.part("selection_arrow_7x9").get_image()
+	a1.decompress()
+	var ai := a2.get_image()
+	var crisp := true
+	for y in 18:
+		for x in 14:
+			if not ai.get_pixel(x, y).is_equal_approx(a1.get_pixel(x / 2, y / 2)):
+				if crisp:
+					print("arrow px ", x, ",", y, " ", ai.get_pixel(x, y), " vs ", a1.get_pixel(x / 2, y / 2), " fmt ", ai.get_format(), "/", a1.get_format())
+				crisp = false
+	check("arrow_2x_nearest", crisp)
+	check("wash_w_quantized", XSkinArt.wash_w(301.0) == 300 and XSkinArt.wash_w(303.0) == 304)
+	for part in ["smoke_grain_tile_32x32", "seven_seal_128x128", "helper_tag_32x12"]:
+		check("part_" + part, XSkinArt.part(part) != null)
+	check("helper_tag_2x", XSkinArt.helper_tag_rect(Rect2(0, 0, 340, 92)) == Rect2(272, 4, 64, 24))
 	XSkinArt.PANEL = false
 	XUiSkin._styles.clear()
-	var old := XUiSkin.panel_style() as StyleBoxTexture
+	var old = XUiSkin.panel_style() as StyleBoxTexture
 	check("panel_off_old", old != null and old.texture == XUiSkin.panel_texture() and old.texture_margin_left == 24)
 	check("panel_off_shadow", XUiSkin.shadow_style() is StyleBoxFlat)
 	XSkinArt.PANEL = true
@@ -168,6 +188,7 @@ func _select() -> void:
 	var small := XSkinArt.arrow_rect(Rect2(100, 0, 200, 24))
 	check("arrow_1x_small", small.size == Vector2(7, 9) and small.end.x == 92.0, small)
 	check("select_on", XSkinArt.select_on())
+	check("main_menu_row_x_28", XSkinMainMenu.row_x() == 28.0 and XSkinArt.arrow_rect(Rect2(28, 0, 300, 56)).position.x >= 6.0)
 	# 页签：箭头 1×，落在前一个页签的右侧内边距里，不压前一个页签的字
 	var tabs := XSkinTabStrip.new()
 	add_child(tabs)
@@ -179,9 +200,21 @@ func _select() -> void:
 		if a.position.x < tabs.tab_rect(i - 1).end.x - XSkinTabStrip.TAB_PAD + 1.0 or a.end.x > tabs.tab_rect(i).position.x - 8.0:
 			ok = false
 	check("tab_arrow_in_gap", ok, tabs.groups.size())
+	check("tab_gap_18", tabs.tab_rect(1).position.x - tabs.tab_rect(0).end.x == 18.0)
 	tabs.queue_free()
+	# 双列列表：列缝 ≥ 26，右列 2× 箭头落在缝里、不进左列
+	var l := XSkinList.new()
+	l.columns = 2
+	l.size = Vector2(600, 46 * 4)
+	add_child(l)
+	l.set_items([{"text": "甲"}, {"text": "乙"}])
+	var ra := XSkinArt.arrow_rect(l.cell_rect(1))
+	check("list_two_col_gap", l.gap() == 26.0 and ra.position.x >= l.cell_rect(0).end.x and l.item_at(l.cell_rect(1).get_center()) == 1, [l.gap(), ra, l.cell_rect(0)])
+	l.queue_free()
 	XSkinArt.SELECT = false
+	check("list_gap_off", true)
 	check("select_off", not XSkinArt.select_on())
+	check("main_menu_row_x_off", XSkinMainMenu.row_x() == 10.0)
 	XSkinArt.SELECT = true
 
 
@@ -314,6 +347,14 @@ func _equip_layout(lay: int) -> void:
 		page.queue_free()
 		await frames(3)
 	XUiSkin.touch_override = 0
+	# 非天启篇 19 栏（XTianqiGear 关）：不走分支摆法、不挤一圈，照旧分页（小A核 P2-4）
+	XTianqiGear.ENABLED = false
+	var p19 := await _build_equip(false)
+	check("equip19_no_branch", not XSkinEquipPage.branched() and p19.slot_view().size() == 19 and p19.skin.ring.custom.is_empty() \
+		and p19.skin.ring.items.size() == 10 and p19.skin.caption().contains("栏位第 1 / 2 页"), [p19.slot_view().size(), p19.skin.ring.items.size(), p19.skin.caption()])
+	p19.queue_free()
+	await frames(3)
+	XTianqiGear.ENABLED = true
 	# 关掉 ONE_PAGE：回 7＋6 两页、环下写页数
 	XSkinEquipPage.ONE_PAGE = false
 	var p2 := await _build_equip(false)

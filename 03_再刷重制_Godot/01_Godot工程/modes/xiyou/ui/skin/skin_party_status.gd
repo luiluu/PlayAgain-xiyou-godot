@@ -132,11 +132,12 @@ func tabs() -> Array:
 func tab_rects() -> Array:
 	var f := XUiSkin.font("body")
 	var out := []
-	var x := 0.0
+	var art := XSkinArt.select_on()   # 第一期正式美术：第一个往右 16、页签间 20，外置箭头不压前一个（小A核 P2-1）
+	var x := 16.0 if art else 0.0
 	for t in tabs():
 		var w := f.get_string_size(t[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 28.0
 		out.append(Rect2(x, 0, w, TAB_H))
-		x += w + 4.0
+		x += w + (20.0 if art else 4.0)
 	return out
 
 
@@ -149,7 +150,10 @@ func _draw_tabs() -> void:
 		var r: Rect2 = rects[i]
 		var on: bool = ts[i][0] == tab
 		if on:
-			XUiSkin.draw_select(ci, r)
+			if XSkinArt.select_on():
+				XSkinArt.draw_tab(ci, r)
+			else:
+				XUiSkin.draw_select(ci, r)
 		var col := XUiSkin.TEXT if on else XUiSkin.TEXT_2
 		var tw := f.get_string_size(ts[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
 		tab_row.draw_string(f, Vector2(r.position.x + (r.size.x - tw) / 2.0, TAB_H / 2.0 + 17 * 0.36), ts[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, col)

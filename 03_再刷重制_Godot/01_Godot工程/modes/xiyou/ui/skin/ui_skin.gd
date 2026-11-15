@@ -733,7 +733,7 @@ static func menu_backdrop(parent: Control) -> Control:
 	parent.add_child(root)
 	if XSkinArt.BG and XSkinArt.bg_texture(XSkinArt.route(), Vector2(1280, 720)) != null:   # 第一期正式美术：按骑士线、按比例的背景图
 		XSkinArt.add_backdrop(root)
-		_add_embers(parent, root)
+		_add_embers(parent, root, XSkinArt.EMBER_ALPHA)
 		return root
 	var base := ColorRect.new()
 	base.color = BG
@@ -771,7 +771,7 @@ static func menu_backdrop(parent: Control) -> Control:
 	return root
 
 
-static func _add_embers(parent: Control, root: Control) -> void:
+static func _add_embers(parent: Control, root: Control, alpha := 1.0) -> void:
 	var n: int = [10, 4, 0][motion()]
 	if n > 0:
 		var vs := parent.get_viewport_rect().size if parent.is_inside_tree() else Vector2(1280, 720)
@@ -793,7 +793,7 @@ static func _add_embers(parent: Control, root: Control) -> void:
 		p.scale_amount_max = 0.6
 		var ramp := Gradient.new()
 		ramp.offsets = PackedFloat32Array([0.0, 1.0])
-		ramp.colors = PackedColorArray([Color(1.0, 0.86, 0.8, 0.9), Color(SEL_LINE, 0.0)])
+		ramp.colors = PackedColorArray([Color(1.0, 0.86, 0.8, 0.9 * alpha), Color(SEL_LINE, 0.0)])
 		p.color_ramp = ramp
 		var mat := CanvasItemMaterial.new()
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD

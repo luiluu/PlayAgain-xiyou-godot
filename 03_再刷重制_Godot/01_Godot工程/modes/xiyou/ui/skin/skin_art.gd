@@ -51,6 +51,15 @@ const PRESS_DARK := 0.42
 static var _tex := {}
 static var _styles := {}
 static var _safe := {}
+static var _scaled := {}
+const SMOKE_ALPHA := 0.85
+const SMOKE_ALPHA_SHORT := 0.88
+const GRAIN_ALPHA := 0.4
+const GRAIN_FADE := 24.0
+## 烟底面板左右内容边距（文字离渐隐边再 8：16＋8）
+const SMOKE_CONTENT_X := 24
+## 正式背景上加法火星减半（背景图里已经烘了余烬，小A核 P2-3②）
+const EMBER_ALPHA := 0.55
 
 
 ## ---- 背景 ----
@@ -233,25 +242,100 @@ static func select_on() -> bool:
 static func smoke_style(short := false) -> StyleBox:
 	var key := "smoke_short" if short else "smoke"
 	if not _styles.has(key):
-		var s := StyleBoxTexture.new()
-		s.texture = part("smoke_secondary_128x64" if short else "smoke_reading_128x128")
+		var st := SmokeStyle.new()
+		st.short = short
 		for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-			s.set_texture_margin(side, SMOKE_MARGIN)
-			s.set_content_margin(side, XUiSkin.PAD)
-		_styles[key] = s
+			st.set_content_margin(side, SMOKE_CONTENT_X if side in [SIDE_LEFT, SIDE_RIGHT] else XUiSkin.PAD)
+		_styles[key] = st
 	return _styles[key]
 
 
-## 在画布项上画烟色面板（MV 窗口框用）；a 是整体透明度
-static func draw_smoke(ci: RID, rect: Rect2, a := 1.0) -> void:
-	var short := rect.size.y < SMOKE_SHORT
+## 烟色面板的 StyleBox：画法同 draw_smoke（透景、颗粒）；short＝强制用 secondary
+class SmokeStyle extends StyleBox:
+	var short := false
+
+	func _draw(ci: RID, rect: Rect2) -> void:
+		XSkinArt.draw_smoke(ci, rect, 1.0, short)
+
+
+## 在画布项上画烟色面板；a 是整体透明度。小A核 P2-3：烟底乘 0.85（secondary 0.88）透一点背景；
+## 大面板（宽 > 160、高 > 120）内缩 16 叠一层 smoke_grain_tile 颗粒（预先按最近邻铺好的整图，1:1 画，不靠纹理重复）
+static func draw_smoke(ci: RID, rect: Rect2, a := 1.0, force_short := false) -> void:
+	var short := force_short or rect.size.y < SMOKE_SHORT
 	var tex := part("smoke_secondary_128x64" if short else "smoke_reading_128x128")
 	var src := Rect2(Vector2.ZERO, tex.get_size())
 	var m := float(SMOKE_MARGIN)
 	var mx := minf(m, rect.size.x / 2.0)
 	var my := minf(m, rect.size.y / 2.0)
+	var k := SMOKE_ALPHA_SHORT if short else SMOKE_ALPHA
 	RenderingServer.canvas_item_add_nine_patch(ci, rect, src, tex.get_rid(), Vector2(mx, my), Vector2(mx, my),
-		RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color(1, 1, 1, a))
+		RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color(1, 1, 1, a * k))
+	if not short and rect.size.x > 160.0 and rect.size.y > 120.0:
+		var inner := Rect2(rect.position.round() + Vector2(m, m), (rect.size - Vector2(m, m) * 2.0).round())
+		var g := grain_texture(Vector2i(inner.size))
+		if g != null:
+			RenderingServer.canvas_item_add_texture_rect(ci, inner, g.get_rid(), false, Color(1, 1, 1, a * GRAIN_ALPHA))
+
+
+## 颗粒底纹铺成 size 大的整图（按 32 取整、缓存）
+static func grain_texture(size: Vector2i) -> Texture2D:
+	var tile := part("smoke_grain_tile_32x32")
+	if tile == null or size.x <= 0 or size.y <= 0:
+		return null
+	var key := "grain_%d_%d" % [size.x, size.y]
+	if not _scaled.has(key):
+		var src := tile.get_image()
+		src.decompress()
+		var img := Image.create(size.x, size.y, false, src.get_format())
+		for y in range(0, size.y, src.get_height()):
+			for x in range(0, size.x, src.get_width()):
+				img.blit_rect(src, Rect2i(0, 0, mini(src.get_width(), size.x - x), mini(src.get_height(), size.y - y)), Vector2i(x, y))
+		# 四边 GRAIN_FADE 像素内 alpha 渐到 0，颗粒层不出硬边
+		img.convert(Image.FORMAT_RGBA8)
+		for y in size.y:
+			var fy := clampf(minf(y, size.y - 1 - y) / GRAIN_FADE, 0.0, 1.0)
+			for x in size.x:
+				var f := minf(fy, clampf(minf(x, size.x - 1 - x) / GRAIN_FADE, 0.0, 1.0))
+				if f < 1.0:
+					var c := img.get_pixel(x, y)
+					c.a *= f * f * (3.0 - 2.0 * f)
+					img.set_pixel(x, y, c)
+		_cache_scaled(key, ImageTexture.create_from_image(img))
+	return _scaled[key]
+
+
+## 像素切图按最近邻预先放大到 size（缓存）。小A核 P2-2：控件本身是线性过滤（字要平滑），像素件预先放大后按 1:1、整数像素画，
+## 不论画在哪个画布项上都是硬边（箭头、Bayer 抖动横幅、助力签、七芒印）
+static func scaled(name: String, size: Vector2i) -> Texture2D:
+	var t := part(name)
+	if t == null or size.x <= 0 or size.y <= 0:
+		return null
+	if Vector2i(t.get_size()) == size:
+		return t
+	var key := "%s_%d_%d" % [name, size.x, size.y]
+	if not _scaled.has(key):
+		var src := t.get_image()
+		src.decompress()
+		_cache_scaled(key, ImageTexture.create_from_image(nearest(src, size)))
+	return _scaled[key]
+
+
+## 最近邻放大：目标像素 (x, y) 取原图 (x·w／W, y·h／H) 向下取整那一格（整数倍时正好是 k×k 的块；Image.resize 的最近邻不保证）
+static func nearest(src: Image, size: Vector2i) -> Image:
+	var img := Image.create(size.x, size.y, false, src.get_format())
+	var sw := src.get_width()
+	var sh := src.get_height()
+	for y in size.y:
+		var sy := mini(y * sh / size.y, sh - 1)
+		for x in size.x:
+			img.set_pixel(x, y, src.get_pixel(mini(x * sw / size.x, sw - 1), sy))
+	return img
+
+
+static func _cache_scaled(key: String, t: Texture2D) -> void:
+	if _scaled.size() >= 96:   # 滑动途中尺寸会变：缓存满了整个清掉重来
+		_scaled.clear()
+	_scaled[key] = t
 
 
 ## 箭头倍率：行高 ≥ 40 用 2×，否则 1×
@@ -276,19 +360,44 @@ static func draw_select(ci: RID, rect: Rect2, alpha := 1.0, state := 0, wash := 
 	if state == XUiSkin.SelState.PRESSED:
 		r.position.y += 1.0
 		mod = Color(1.0 - PRESS_DARK, 1.0 - PRESS_DARK, 1.0 - PRESS_DARK, a)
-	var w := part(wash)
+	r = Rect2(r.position.round(), r.size.round())
+	var w := scaled(wash, Vector2i(wash_w(r.size.x), int(r.size.y)))
 	RenderingServer.canvas_item_add_texture_rect(ci, r, w.get_rid(), false, mod)
 	if state == XUiSkin.SelState.HOVER:
 		return
-	var ar := part("selection_arrow_7x9")
-	RenderingServer.canvas_item_add_texture_rect(ci, arrow_rect(r), ar.get_rid(), false, Color(1, 1, 1, alpha))
+	var ar_r := arrow_rect(r)
+	var ar := scaled("selection_arrow_7x9", Vector2i(ar_r.size))
+	RenderingServer.canvas_item_add_texture_rect(ci, ar_r, ar.get_rid(), false, Color(1, 1, 1, alpha))
+
+
+## 横幅预放大的宽：按 4 取整（滑动途中不每帧新建贴图），画时只差 0～2px 的拉伸
+static func wash_w(w: float) -> int:
+	return maxi(4, int(roundf(w / 4.0)) * 4)
 
 
 ## 页签选中（tab_selected_assembly 的几何：箭头 1×、离页签底 8px）
 static func draw_tab(ci: RID, rect: Rect2) -> void:
-	var w := part("tab_selected_wash_64x24")
-	RenderingServer.canvas_item_add_texture_rect(ci, rect, w.get_rid(), false)
-	RenderingServer.canvas_item_add_texture_rect(ci, arrow_rect(rect, 1), part("selection_arrow_7x9").get_rid(), false)
+	var r := Rect2(rect.position.round(), rect.size.round())
+	var w := scaled("tab_selected_wash_64x24", Vector2i(wash_w(r.size.x), int(r.size.y)))
+	RenderingServer.canvas_item_add_texture_rect(ci, r, w.get_rid(), false)
+	RenderingServer.canvas_item_add_texture_rect(ci, arrow_rect(r, 1), part("selection_arrow_7x9").get_rid(), false)
+
+
+## 助力位卡（小A核 P2-3：去旧金描边）：smoke_secondary 0.72＋七芒暗印（64，原 alpha 最高 28，不再减透明）＋helper_tag 2×（64×24）
+static func draw_helper(ci: RID, box: Rect2) -> void:
+	draw_smoke(ci, box, 0.72, true)
+	var seal := scaled("seven_seal_128x128", Vector2i(64, 64))
+	if seal != null:
+		var sr := Rect2(Vector2(box.end.x - 64 - 12, box.position.y + (box.size.y - 64) / 2.0).round(), Vector2(64, 64))
+		RenderingServer.canvas_item_add_texture_rect(ci, sr, seal.get_rid(), false)
+	var tag := scaled("helper_tag_32x12", Vector2i(64, 24))
+	if tag != null:
+		RenderingServer.canvas_item_add_texture_rect(ci, helper_tag_rect(box), tag.get_rid(), false)
+
+
+## 助力签的矩形（卡内右上，2× 64×24）
+static func helper_tag_rect(box: Rect2) -> Rect2:
+	return Rect2(Vector2(box.end.x - 64 - 4, box.position.y + 4).round(), Vector2(64, 24))
 
 
 ## 环高亮：图标边长 px（64 或 32）→ 外圈贴图和它的矩形（中心对齐，整数像素）
