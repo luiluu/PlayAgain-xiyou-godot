@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.603",
-  "sequence": 603,
-  "next": "dev.604",
-  "nextSequence": 604,
+  "current": "dev.604",
+  "sequence": 604,
+  "next": "dev.605",
+  "nextSequence": 605,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "review-p3-fixes",
+  "currentChange": "hunzi-minions",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
