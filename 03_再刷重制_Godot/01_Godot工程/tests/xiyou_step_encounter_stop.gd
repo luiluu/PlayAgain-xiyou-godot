@@ -261,6 +261,8 @@ func stale_target_hangup(tag: String, expect_walk := false) -> void:
 	await tap(button_at())  # 开挂机
 	var started := XHangUp.is_active(s)
 	await physics(200)
+	# 挂机前留下的目的地还在（不靠点按时机；选第 13 行上走得到的一格，tap_walk 走过这一行）
+	map.player.touch_target = Vector2i(14, 13) if map.player.grid != Vector2i(14, 13) else Vector2i(11, 13)
 	map.encounter_count = 999
 	await tap(button_at())  # 停挂机
 	var stopped := not XHangUp.is_active(s)
