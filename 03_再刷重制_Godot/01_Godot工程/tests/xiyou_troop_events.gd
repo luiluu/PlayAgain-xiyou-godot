@@ -56,6 +56,8 @@ var _only_ce: Array = Array(OS.get_environment("XIYOU_CE_ONLY").split(",", false
 
 
 func _ready() -> void:
+	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--coverage="):
 			coverage_out = arg.substr(11)

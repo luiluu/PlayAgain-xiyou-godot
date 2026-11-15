@@ -13,6 +13,8 @@ var results: Array = []
 
 
 func _ready() -> void:
+	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	_run.call_deferred()
 
