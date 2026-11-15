@@ -210,7 +210,7 @@ func set_items(arr: Array, index := -1) -> void:
 
 
 func set_card(d: Dictionary) -> void:
-	var base := {"icon": null, "title": "", "title_color": XUiSkin.TEXT, "subtitle": "", "desc": "", "sections": [], "buttons": [], "button_index": -1}
+	var base := {"icon": null, "title": "", "title_color": XUiSkin.TEXT, "subtitle": "", "notice": "", "desc": "", "sections": [], "buttons": [], "button_index": -1}
 	base.merge(d, true)
 	if focus == "card" and not d.has("button_index") and not (base.buttons as Array).is_empty():
 		base.button_index = 0   # 焦点在牌上时换了牌内容，仍落在第一个按钮

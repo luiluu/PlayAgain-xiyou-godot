@@ -59,19 +59,28 @@ var list_win: XMVWindow
 var info_win: XMVWindow
 var detail_win: XMVWindow
 var confirm_win: XMVWindow
+var _header: Control
+var _hints: XSkinKeyHints
+var _wide_requested := false
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	theme = XUI.theme()
+	var skinned := XUiSkin.on()
+	theme = XUiSkin.theme() if skinned else XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	var black := ColorRect.new()
-	black.color = Color.BLACK
-	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	black.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(black)
-	if background:
-		add_child(XUI.blurred_background(background))
+	if skinned:
+		XSkinLayout.request_wide(self)
+		_wide_requested = true
+		XUI.menu_background(self)
+	else:
+		var black := ColorRect.new()
+		black.color = Color.BLACK
+		black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		black.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(black)
+		if background:
+			add_child(XUI.blurred_background(background))
 	list_win = XMVWindow.make(self, LIST_RECT, 255, _paint_list)
 	list_win.canvas.blink = true
 	info_win = XMVWindow.make(self, INFO_RECT, 255, _paint_info)
@@ -82,7 +91,110 @@ func _ready() -> void:
 	confirm_win.canvas.blink = true
 	confirm_win.openness = 0
 	confirm_win.visible = false
+	if skinned:
+		_header = Control.new()
+		_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_header.draw.connect(_draw_header)
+		add_child(_header)
+		_hints = XSkinKeyHints.new()
+		add_child(_hints)
+		resized.connect(_relayout_skin)
+		get_viewport().size_changed.connect(_relayout_skin)
+		_relayout_skin()
 	_select(0)
+
+
+func _view_size() -> Vector2:
+	var vp := get_viewport()
+	return vp.get_visible_rect().size if vp != null else Vector2(1280, 720)
+
+
+func _relayout_skin() -> void:
+	if not XUiSkin.on() or list_win == null:
+		return
+	var vs := _view_size()
+	var m := XSkinLayout.margin_for(vs.x)
+	var top_y := float(XUiSkin.TOP)
+	var bot_y := vs.y - 52.0
+	var h := maxf(240.0, bot_y - top_y)
+	var lw := 240.0
+	var gap := float(XUiSkin.PANEL_GAP)
+	list_win.position = Vector2(m, top_y)
+	list_win.size = Vector2(lw, h)
+	info_win.position = Vector2(m + lw + gap, top_y)
+	info_win.size = Vector2(maxf(400.0, vs.x - m * 2.0 - lw - gap), h)
+	var dw := minf(620.0, vs.x - m * 2.0)
+	var dh := minf(440.0, vs.y - 120.0)
+	detail_win.position = Vector2(roundf((vs.x - dw) / 2.0), roundf((vs.y - dh) / 2.0))
+	detail_win.size = Vector2(dw, dh)
+	var cw := 420.0
+	var ch := 180.0
+	confirm_win.position = Vector2(roundf((vs.x - cw) / 2.0), roundf((vs.y - ch) / 2.0))
+	confirm_win.size = Vector2(cw, ch)
+	if _header != null:
+		_header.position = Vector2.ZERO
+		_header.size = Vector2(vs.x, top_y)
+		_header.queue_redraw()
+	_sync_hints()
+	_layout_pages()
+	_refresh_list()
+
+
+func _draw_header() -> void:
+	if _header == null or not XUiSkin.on():
+		return
+	var vs := _view_size()
+	var m := XSkinLayout.margin_for(vs.x)
+	var head := XUiSkin.font("title")
+	var body := XUiSkin.font("body")
+	var title_txt := "传送"
+	_header.draw_string(head, Vector2(m, 50), title_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	var cur := current_map()
+	var sub := "???" if cur.is_empty() or XMapTransfer.is_locked(XState.current, cur) else str(cur.get("name", ""))
+	if sub != "":
+		var tw := head.get_string_size(title_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x
+		_header.draw_string(body, Vector2(m + tw + 16.0, 48), "·  " + sub, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.GOLD_LIGHT)
+
+
+func _sync_hints() -> void:
+	if _hints == null or not XUiSkin.on():
+		return
+	var arr := []
+	match mode:
+		"list":
+			arr = [["确定", "查看掉落"], ["Q / E", "翻页"], ["取消", "返回"]]
+		"drops":
+			var m := current_map()
+			var can_go := not m.is_empty() and bool(m.canTransfer) and not (XMapTransfer.REQUIRE_UNLOCK and XMapTransfer.is_locked(XState.current, m))
+			if can_go:
+				var k := "再点地图名" if (TAP_TRANSFER and XPlatform.is_touch()) else "F"
+				arr = [[k, "传送"], ["确定", "掉落详情"], ["Q / E", "翻页"], ["取消", "重选地图"]]
+			else:
+				arr = [["确定", "掉落详情"], ["Q / E", "翻页"], ["取消", "重选地图"]]
+		"detail":
+			arr = [["确定", "关闭"], ["取消", "返回掉落"]]
+		"confirm":
+			arr = [["确定", "确认传送"], ["取消", "返回"]]
+	_hints.set_hints(arr)
+	_hints.place(_view_size())
+
+
+func _list_rows() -> int:
+	if XUiSkin.on() and list_win != null:
+		return maxi(1, floori((list_win.size.y - XMVWindow.PADDING * 2.0) / LH))
+	return LIST_ROWS
+
+
+func _info_inner_w() -> float:
+	if XUiSkin.on() and info_win != null:
+		return maxf(320.0, info_win.size.x - XMVWindow.PADDING * 2.0)
+	return 1072.0
+
+
+func _info_inner_h() -> float:
+	if XUiSkin.on() and info_win != null:
+		return maxf(200.0, info_win.size.y - XMVWindow.PADDING * 2.0)
+	return CONTENT_H
 
 
 func current_map() -> Dictionary:
@@ -108,7 +220,7 @@ func set_map(id: int) -> void:
 func _layout_pages() -> void:
 	heights.clear()
 	pages.clear()
-	var limit := CONTENT_H - LH * 2
+	var limit := _info_inner_h() - LH * 2
 	var cur: Array = []
 	var h := 0.0
 	for i in enemies.size():
@@ -154,10 +266,13 @@ func _refresh_info() -> void:
 				drop_rects.append(Rect2(x, y + PAD + floori(k / float(DROP_COLS)) * (LH + 10), dw, LH))
 			y += heights[i]
 	info_win.refresh()
+	if _header != null:
+		_header.queue_redraw()
+	_sync_hints()
 
 
 func _drop_width() -> float:
-	var right_w := 1072.0 - ENEMY_COL - PAD * 3
+	var right_w := _info_inner_w() - ENEMY_COL - PAD * 3
 	return (right_w - PAD * (DROP_COLS - 1)) / DROP_COLS
 
 
@@ -167,35 +282,55 @@ func selected_drop() -> Dictionary:
 
 # ---- 画面 ----
 func _paint_list(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	var list := XMapTransfer.maps()
-	for i in range(top, mini(list.size(), top + LIST_ROWS)):
+	var rows := _list_rows()
+	for i in range(top, mini(list.size(), top + rows)):
 		var y := (i - top) * LH
 		if i == index:
 			c.cursor(Rect2(0, y, c.size.x, LH), mode == "list")
 		var m: Dictionary = list[i]
-		c.text("???" if XMapTransfer.is_locked(XState.current, m) else str(m.name), 6, y, c.size.x - 12, "center")
+		var locked := XMapTransfer.is_locked(XState.current, m)
+		var col := (XUiSkin.TEXT_3 if locked else (XUiSkin.GOLD_LIGHT if i == index else XUiSkin.TEXT)) if on else XUI.TEXT
+		c.text("???" if locked else str(m.name), 6, y, c.size.x - 12, "left" if on else "center", col)
 
 
 func _paint_info(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	var w := c.size.x
 	if map_id < 0 or XMapTransfer.setting(map_id).is_empty():
-		c.text("请从左侧选择地图", 0, 0, w, "center")
+		c.text("请从左侧选择地图", 0, (c.size.y - LH) / 2.0 if on else 0.0, w, "center", XUiSkin.TEXT_2 if on else XUI.TEXT)
 		return
 	var m := XMapTransfer.setting(map_id)
 	if XMapTransfer.is_locked(XState.current, m):
-		c.text("未解锁该地图", 0, 0, w, "center")
+		c.text("未解锁该地图", 0, (c.size.y - LH) / 2.0 if on else 0.0, w, "center", XUiSkin.TEXT_3 if on else XUI.TEXT)
 		return
 	if enemies.is_empty():
-		c.text("该地图没有敌人信息", 0, 0, w, "center")
+		c.text("该地图没有敌人信息", 0, (c.size.y - LH) / 2.0 if on else 0.0, w, "center", XUiSkin.TEXT_2 if on else XUI.TEXT)
 		return
 	if pages.is_empty():
 		return
 	var y := 0.0
 	var n := 0
 	var difficulty := XState.current.difficulty if XState.current else 2
+	var inner_w := _info_inner_w()
 	for i in pages[page]:
 		var e: Dictionary = enemies[i]
-		c.text(str(e.name), PAD, y + PAD, ENEMY_COL, "left", XEnemy.name_color(str(e.name), difficulty))
+		if on:
+			var box := StyleBoxFlat.new()
+			box.bg_color = Color(1, 1, 1, 0.028)
+			box.border_color = Color(XUiSkin.LINE, 0.14)
+			box.set_border_width_all(1)
+			box.set_corner_radius_all(8)
+			c.draw_style_box(box, Rect2(0.0, y + 3.0, w, heights[i] - 6.0))
+			c.font = XUiSkin.font("title")
+		c.text(str(e.name), PAD, y + PAD, ENEMY_COL, "left", XEnemy.name_color(str(e.name), difficulty, XUiSkin.TEXT if on else XUI.TEXT))
+		if on:
+			c.font = XUiSkin.font("body")
 		var tex := XMapTransfer.enemy_texture(e)
 		var image_y := y + PAD + LH + 5
 		var hp_y := image_y + LH + 10
@@ -204,12 +339,16 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.draw_texture_rect(tex, Rect2(PAD, image_y, tex.get_width() * s, tex.get_height() * s), false)
 			hp_y = image_y + tex.get_height() * s + 10
 		else:
-			c.text("(图片加载中...)", PAD, image_y, 150)
+			c.text("(图片加载中…)" if on else "(图片加载中...)", PAD, image_y, 150, "left", XUiSkin.TEXT_3 if on else XUI.TEXT)
 			hp_y = image_y + 10
-		c.text("HP: " + XMapTransfer.format_hp(float(e.get("params", [0])[0])), PAD, hp_y, ENEMY_COL)
+		if on:
+			c.font = XUiSkin.font("num")
+		c.text(("HP " if on else "HP: ") + XMapTransfer.format_hp(float(e.get("params", [0])[0])), PAD, hp_y, ENEMY_COL, "left", XUiSkin.TEXT_2 if on else XUI.TEXT)
+		if on:
+			c.font = XUiSkin.font("body")
 		var list: Array = drops[int(e.id)]
 		if list.is_empty():
-			c.text("没有掉落物品", ENEMY_COL + PAD * 2, y + PAD, 1072.0 - ENEMY_COL - PAD * 3)
+			c.text("没有掉落物品", ENEMY_COL + PAD * 2, y + PAD, inner_w - ENEMY_COL - PAD * 3, "left", XUiSkin.TEXT_3 if on else XUI.TEXT)
 		for d in list:
 			var r: Rect2 = drop_rects[n]
 			_paint_drop(c, d, r, difficulty)
@@ -218,47 +357,67 @@ func _paint_info(c: XMVCanvas) -> void:
 			n += 1
 		y += heights[i]
 	var prompt_y := c.size.y - LH
+	var sys_col := XUiSkin.GOLD if on else XUI.SYSTEM
 	if mode in ["drops", "detail", "confirm"]:
 		if not bool(m.canTransfer):
-			c.text("当前地图不可传送", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+			c.text("当前地图不可传送", 0, prompt_y, w, "left", XUiSkin.DOWN if on else sys_col)
 		elif int(m.transferItem) > 0:
 			var item := XDB.rec("Items", int(m.transferItem))
-			var head := ("确定看详情 / %s，消耗 " % _transfer_hint()) if XState.current and XState.current.item_count(int(m.transferItem)) > 0 else "确定看详情；不可传送，需 "
-			c.text(head, 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+			var has_item := XState.current and XState.current.item_count(int(m.transferItem)) > 0
+			var head := (("消耗 " if on else "确定看详情 / %s，消耗 " % _transfer_hint()) if has_item else ("缺少传送凭证，需 " if on else "确定看详情；不可传送，需 "))
+			c.text(head, 0, prompt_y, w, "left", (XUiSkin.GOLD if has_item else XUiSkin.DOWN) if on else sys_col)
 			var tw := c.text_width(head)
 			c.icon(int(item.get("iconIndex", 0)), tw, prompt_y + 2)
-			c.text(str(item.get("name", "")), tw + 36, prompt_y, INFO_RECT.size.x - tw - 30 - 36)
-			c.text("x1", tw + c.text_width(str(item.get("name", ""))) + 36, prompt_y, 30, "left", XUI.SYSTEM)
+			c.text(str(item.get("name", "")), tw + 36, prompt_y, w - tw - 48 - 36, "left", XUiSkin.TEXT if on else XUI.TEXT)
+			c.text(" × 1" if on else "x1", tw + c.text_width(str(item.get("name", ""))) + 36, prompt_y, 48, "left", XUiSkin.GOLD_LIGHT if on else sys_col)
 		else:
-			c.text("确定查看详情 / " + _transfer_hint(), 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+			var msg := ("可传送至当前选中地图" if on else ("确定查看详情 / " + _transfer_hint()))
+			c.text(msg, 0, prompt_y, w, "left", sys_col)
 	else:
-		c.text("确认地图后可选择掉落物查看详情", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
+		c.text("确认地图后可选择掉落物查看详情", 0, prompt_y, w, "left", XUiSkin.TEXT_2 if on else sys_col)
 	var elem_line := XTianqiElements.transfer_floor_line(XState.current, map_id)
 	if elem_line != "":
-		c.text(elem_line, 0, prompt_y - LH, INFO_RECT.size.x, "left", Color("#9be4ff"))
+		c.text(elem_line, 0, prompt_y - LH, w, "left", Color("#9be4ff"))
 	if pages.size() > 1:
-		var t := "第 %d/%d 页（Q上一页 / E下一页）" % [page + 1, pages.size()]
+		var t := ("第 %d / %d 页" % [page + 1, pages.size()]) if on else ("第 %d/%d 页（Q上一页 / E下一页）" % [page + 1, pages.size()])
 		var tw := c.text_width(t)
-		c.text(t, w - tw, c.size.y - LH * 2, tw, "right")
+		c.text(t, w - tw, c.size.y - (LH if on else LH * 2), tw, "right", XUiSkin.TEXT_2 if on else XUI.TEXT)
 
 
 func _paint_drop(c: XMVCanvas, d: Dictionary, r: Rect2, difficulty: int) -> void:
+	var on := XUiSkin.on()
+	if on:
+		var slot := StyleBoxFlat.new()
+		slot.bg_color = Color(0, 0, 0, 0.28)
+		slot.border_color = Color(XUiSkin.LINE, 0.14)
+		slot.set_border_width_all(1)
+		slot.set_corner_radius_all(6)
+		c.draw_style_box(slot, r)
 	var item: Dictionary = d.item
-	c.icon(int(item.get("iconIndex", 0)), r.position.x, r.position.y)
+	c.icon(int(item.get("iconIndex", 0)), r.position.x + (4.0 if on else 0.0), r.position.y + (2.0 if on else 0.0))
 	var name := str(item.get("name", ""))
 	if name.length() > 12:
-		name = name.substr(0, 11) + "..."
+		name = name.substr(0, 11) + ("…" if on else "...")
 	else:
 		# 星级（v0.18 在名字前）：starScope 只在画出的文字正好是 item.name 时加星，截断的名字不加
 		name = XQuality.stars(item) + name
 	# 西游 v0.18：掉落名字与列表一样，有品质按七档色，否则按 <ici>
 	var color := XQuality.list_color(item)
-	c.text(name, r.position.x + 32, r.position.y, r.size.x - 32 - 60, "left", XEnemy.name_color(name, difficulty, color))
-	c.text("%.2f%%" % float(d.rate), r.position.x + r.size.x - 60, r.position.y, 60, "right")
+	var name_x := r.position.x + (38.0 if on else 32.0)
+	var rate_w := 64.0 if on else 60.0
+	c.text(name, name_x, r.position.y, r.size.x - (name_x - r.position.x) - rate_w, "left", XEnemy.name_color(name, difficulty, color))
+	if on:
+		c.font = XUiSkin.font("num")
+	c.text("%.2f%%" % float(d.rate), r.position.x + r.size.x - rate_w - (6.0 if on else 0.0), r.position.y, rate_w, "right", XUiSkin.GOLD_LIGHT if on else XUI.TEXT)
+	if on:
+		c.font = XUiSkin.font("body")
 
 
-## drawSelectionRect：2px 黄框，外扩 2
+## drawSelectionRect：2px 黄框，外扩 2；新皮肤用红乙选中框
 func _select_rect(c: XMVCanvas, r: Rect2) -> void:
+	if XUiSkin.on():
+		XUiSkin.draw_select(c.get_canvas_item(), r.grow(2), XUiSkin.breath_alpha())
+		return
 	var x := r.position.x - 2
 	var y := r.position.y - 2
 	var w := r.size.x + 4
@@ -273,21 +432,39 @@ func _paint_detail(c: XMVCanvas) -> void:
 	var item: Dictionary = _detail.get("item", {})
 	if item.is_empty():
 		return
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
+	var lbl_col := XUiSkin.GOLD if on else XUI.SYSTEM
+	var val_col := XUiSkin.TEXT if on else XUI.TEXT
 	var w := c.size.x
 	var y := 0.0
-	c.text("掉落物详情", 0, y, w, "center", XUI.SYSTEM)
+	if on:
+		c.font = XUiSkin.font("title")
+	c.text("掉落物详情", 0, y, w, "center", lbl_col)
+	if on:
+		c.font = XUiSkin.font("body")
+		c.draw_line(Vector2(8, y + LH + 2), Vector2(w - 8, y + LH + 2), Color(XUiSkin.LINE, 0.2), 1.0)
 	y += LH + 8
 	c.icon(int(item.get("iconIndex", 0)), 8, y)
 	var difficulty := XState.current.difficulty if XState.current else 2
 	var name := str(item.get("name", "未知物品"))
-	c.text(name, 32 + 16, y, w - 32 - 16, "left", XEnemy.name_color(name, difficulty))
+	if on:
+		c.font = XUiSkin.font("title")
+	c.text(name, 32 + 16, y, w - 32 - 16, "left", XEnemy.name_color(name, difficulty, XQuality.list_color(item) if on else XUI.TEXT))
+	if on:
+		c.font = XUiSkin.font("body")
 	y += LH + 8
 	var meta: Dictionary = item.get("meta", {})
 	var quality := "　品质：" + str(meta.quality) if meta.has("quality") and str(meta.quality) != "" else ""
-	c.text("掉落概率：", 8, y, 120, "left", XUI.SYSTEM)
-	c.text("%.3f%%" % float(_detail.rate), 118, y, 120)
-	c.text("类型：", 250, y, 70, "left", XUI.SYSTEM)
-	c.text(str(_detail.type) + quality, 305, y, w - 305)
+	c.text("掉落概率：", 8, y, 120, "left", lbl_col)
+	if on:
+		c.font = XUiSkin.font("num")
+	c.text("%.3f%%" % float(_detail.rate), 118, y, 120, "left", XUiSkin.GOLD_LIGHT if on else val_col)
+	if on:
+		c.font = XUiSkin.font("body")
+	c.text("类型：", 250, y, 70, "left", lbl_col)
+	c.text(str(_detail.type) + quality, 305, y, w - 305, "left", val_col)
 	y += LH + 8
 	var stats: Array = []
 	var params: Array = item.get("params", [])
@@ -296,20 +473,20 @@ func _paint_detail(c: XMVCanvas) -> void:
 		if v != 0:
 			stats.append("%s%s%d" % [PARAM_NAMES[i], "+" if v > 0 else "", v])
 	if not stats.is_empty():
-		c.text("基础属性：", 8, y, 100, "left", XUI.SYSTEM)
+		c.text("基础属性：", 8, y, 100, "left", lbl_col)
 		y = _wrapped(c, "　".join(stats), 108, y, w - 116) + 4
-	c.text("说明：", 8, y, 70, "left", XUI.SYSTEM)
+	c.text("说明：", 8, y, 70, "left", lbl_col)
 	var desc := str(item.get("description", ""))
 	y = _wrapped(c, desc if desc != "" else "暂无说明", 8, y + LH, w - 16) + 8
 	var traits := fixed_traits(item)
 	if not traits.is_empty() and y < c.size.y - LH * 2:
-		c.text("装备固定特性", 8, y, w - 16, "left", XUI.SYSTEM)
+		c.text("装备固定特性", 8, y, w - 16, "left", lbl_col)
 		y += LH
 		for t in traits:
 			if y >= c.size.y - LH * 2:
 				break
 			y = _wrapped(c, t, 12, y, w - 24) + 2
-	c.text("确认或取消返回掉落列表", 0, c.size.y - LH, w, "center", XUI.SYSTEM)
+	c.text("确认或取消返回掉落列表", 0, c.size.y - LH, w, "center", XUiSkin.TEXT_3 if on else lbl_col)
 
 
 ## drawWrapped：逐字量宽折行，换行符当空格；返回下一行 y
@@ -317,15 +494,16 @@ func _wrapped(c: XMVCanvas, text: String, x: float, y: float, width: float) -> f
 	var chars := RegEx.create_from_string("[\\r\\n]+").sub(text, " ", true)
 	var line := ""
 	var row := 0
+	var col := XUiSkin.TEXT_2 if XUiSkin.on() else XUI.TEXT
 	for ch in chars:
 		if c.text_width(line + ch) > width:
-			c.text(line, x, y + row * LH, width)
+			c.text(line, x, y + row * LH, width, "left", col)
 			row += 1
 			line = ch
 		else:
 			line += ch
 	if line != "":
-		c.text(line, x, y + row * LH, width)
+		c.text(line, x, y + row * LH, width, "left", col)
 	return y + (row + 1) * LH
 
 
@@ -342,25 +520,31 @@ static func fixed_traits(item: Dictionary) -> Array:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	for i in 2:
 		var y := LH + 12 + i * LH
 		if i == confirm_index:
 			c.cursor(Rect2(0, y, c.size.x, LH), mode == "confirm")
-		c.text(["确认", "取消"][i], 6, y, c.size.x - 12)
-	c.text("是否传送至 %s?" % str(current_map().get("name", "未知地图")), 0, 0, c.size.x, "center")
+		c.text(["确认", "取消"][i], 6, y, c.size.x - 12, "center" if on else "left", XUiSkin.TEXT if on else XUI.TEXT)
+	if on:
+		c.font = XUiSkin.font("title")
+	var q_txt := ("确认传送至 %s？" if on else "是否传送至 %s?") % str(current_map().get("name", "未知地图"))
+	c.text(q_txt, 0, 0, c.size.x, "center", XUiSkin.GOLD_LIGHT if on else XUI.TEXT)
 
 
 # ---- 操作 ----
 func _select(i: int) -> void:
 	index = i
-	top = XMenu._scroll_to(index, top, LIST_ROWS)
+	top = XMenu._scroll_to(index, top, _list_rows())
 	set_map(int(current_map().get("id", 0)))
 	_refresh_list()
 
 
 func _refresh_list() -> void:
 	list_win.up_arrow = top > 0
-	list_win.down_arrow = top + LIST_ROWS < XMapTransfer.maps().size()
+	list_win.down_arrow = top + _list_rows() < XMapTransfer.maps().size()
 	list_win.refresh()
 
 
@@ -375,7 +559,7 @@ func _list_move(d: int, wrap: bool) -> void:
 func _list_page(d: int) -> void:
 	var n := XMapTransfer.maps().size()
 	XSound.system(0)
-	_select(clampi(index + d * LIST_ROWS, 0, n - 1))
+	_select(clampi(index + d * _list_rows(), 0, n - 1))
 
 
 func confirm_map() -> void:
@@ -436,6 +620,7 @@ func open_detail() -> void:
 	detail_win.openness = 0
 	detail_win.open()
 	detail_win.refresh()
+	_sync_hints()
 	XSound.system(1)
 
 
@@ -596,34 +781,38 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
+	var list_r := list_win.get_rect()
+	var info_r := info_win.get_rect()
+	var confirm_r := confirm_win.get_rect()
+	var rows := _list_rows()
 	match event.button_index:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
-			if mode == "list" and LIST_RECT.has_point(p):
+			if mode == "list" and list_r.has_point(p):
 				var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
-				top = clampi(top + d, 0, maxi(0, XMapTransfer.maps().size() - LIST_ROWS))
+				top = clampi(top + d, 0, maxi(0, XMapTransfer.maps().size() - rows))
 				_refresh_list()
 		MOUSE_BUTTON_LEFT:
-			if mode == "list" and LIST_RECT.has_point(p):
-				var i := top + floori((p - LIST_RECT.position - pad).y / LH)
+			if mode == "list" and list_r.has_point(p):
+				var i := top + floori((p - list_r.position - pad).y / LH)
 				if i == index:
 					confirm_map()
-				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + LIST_ROWS:
+				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + rows:
 					XSound.system(0)
 					_select(i)
-			elif TAP_TRANSFER and mode == "drops" and LIST_RECT.has_point(p):
-				var i := top + floori((p - LIST_RECT.position - pad).y / LH)
+			elif TAP_TRANSFER and mode == "drops" and list_r.has_point(p):
+				var i := top + floori((p - list_r.position - pad).y / LH)
 				if i == index:
 					_tap_transfer()
-				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + LIST_ROWS:
+				elif i >= 0 and i < XMapTransfer.maps().size() and i < top + rows:
 					back_to_list()
 					XSound.system(0)
 					_select(i)
-			elif TAP_TRANSFER and mode == "drops" and INFO_RECT.has_point(p) and p.y >= INFO_RECT.end.y - pad.y - LH:
+			elif TAP_TRANSFER and mode == "drops" and info_r.has_point(p) and p.y >= info_r.end.y - pad.y - LH:
 				_tap_transfer()
-			elif mode == "confirm" and CONFIRM_RECT.has_point(p):
-				var row := floori(((p - CONFIRM_RECT.position - pad).y - LH - 12) / LH)
+			elif mode == "confirm" and confirm_r.has_point(p):
+				var row := floori(((p - confirm_r.position - pad).y - LH - 12) / LH)
 				if row == confirm_index:
 					confirm_ok()
 				elif row >= 0 and row < 2:
