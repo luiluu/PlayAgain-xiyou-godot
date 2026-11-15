@@ -68,7 +68,7 @@
 
 - 语法检查：937 个 .gd 0 问题。
 - 本地单跑专项（前台、一次一两个）：`xiyou_ui_skin` 104/104、`xiyou_ui_skin_menu` 91/91、`xiyou_ui_skin_battle` 66/66（16:9、`--wide`、`--tablet` 窗口模式各一遍也全过）、`xiyou_ui_skin_p1fix` 窗口 40/40、`xiyou_ui_skin_1b`、`xiyou_ui_skin_offshot`、`xiyou_battle_ui` 182/182、`xiyou_tianqi_title` 46/46。
-- 云端选测：提交 406e3174a（三条必改＋u4）整轮 628 场景 16 片全过，偶发 1 个 `xiyou_pet_capture`（单跑通过，与本单无关）；运行页 actions/runs/43742669754。350efeaab（两级＋助力卡）另跑一轮选测 9 场景：`xiyou_tianqi_e2e` 挂（它的 `_menu_cmd` 按旧一级菜单一路按下键找子项），已改成两级走法（环上右键到大类、确定、下键到子项、确定），本地重跑 90/90；改后再跑云端，结果见 worker_done。
+- 云端选测：提交 406e3174a（三条必改＋u4）整轮 628 场景 16 片全过，偶发 1 个 `xiyou_pet_capture`（单跑通过，与本单无关）；运行页 actions/runs/43742669754。350efeaab（两级＋助力卡）另跑一轮选测 9 场景：`xiyou_tianqi_e2e` 挂（它的 `_menu_cmd` 按旧一级菜单一路按下键找子项），已改成两级走法（环上右键到大类、确定、下键到子项、确定），本地重跑 90/90；改后云端选测 e4e1f3e62 9 场景全过（actions/runs/43745251092）。
 - 工具回归全过；`发行空壳.py check`：62 个脚本 534 个函数都有（警告是既有的照搬 return true 名单，与本单无关）。
 - 只在新皮肤生效：`wide_skin_off_noop`、`xiyou_old_menu`、`skin_off` 等既有断言照过；`SELECT_V2`／`GROUP_ICONS_U4`／`TWO_LEVEL`／`HELPER_CARD` 都只在 `XUiSkin.on()` 的新组件里读。
 
