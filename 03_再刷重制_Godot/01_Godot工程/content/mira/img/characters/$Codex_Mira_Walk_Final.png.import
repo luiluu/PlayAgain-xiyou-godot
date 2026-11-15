@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://doh2gcifprvlv"
-path="res://.godot/imported/$Codex_Mira_Walk_u2.png-49a74aebd690c2705013ce8a93d72dd3.ctex"
+uid="uid://cfwh177qjru2"
+path="res://.godot/imported/$Codex_Mira_Walk_Final.png-858b16df80324246a93365f34ccd5592.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://content/mira/img/characters/$Codex_Mira_Walk_u2.png"
-dest_files=["res://.godot/imported/$Codex_Mira_Walk_u2.png-49a74aebd690c2705013ce8a93d72dd3.ctex"]
+source_file="res://content/mira/img/characters/$Codex_Mira_Walk_Final.png"
+dest_files=["res://.godot/imported/$Codex_Mira_Walk_Final.png-858b16df80324246a93365f34ccd5592.ctex"]
 
 [params]
 
