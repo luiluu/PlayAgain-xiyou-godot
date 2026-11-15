@@ -10,8 +10,9 @@ var results := []
 var out_dir := ""
 
 const USABLE_RIGHT := 1080.0   # 右侧状态栏左边
+const LINE_X := 819.0          # 阵型最右不过原版竖排那条线（指令窗贴在它右边）
 const USABLE_BOTTOM := 600.0   # 脚底最低（底部行动顺序条约在 610）
-const USABLE_LEFT := 620.0     # 半身最左（敌人一侧）
+const USABLE_LEFT := 480.0     # 半身最左（敌人一侧，敌群成员 x 九成五在 406 以内）
 const BIG_W := 180.0           # ×1.35 大体型可视宽
 const BIG_H := 215.0           # ×1.35 大体型可视高
 const TOP_MIN := 60.0          # 大体型头顶最高（顶部 Boss 信息框）
@@ -85,7 +86,7 @@ func _points() -> void:
 				continue
 			var bad := []
 			for p in pts:
-				if p.x + BIG_W / 2.0 > USABLE_RIGHT or p.x - BIG_W / 2.0 < USABLE_LEFT or p.y > USABLE_BOTTOM or p.y - BIG_H < TOP_MIN:
+				if p.x > LINE_X or p.x + BIG_W / 2.0 > USABLE_RIGHT or p.x - BIG_W / 2.0 < USABLE_LEFT or p.y > USABLE_BOTTOM or p.y - BIG_H < TOP_MIN:
 					bad.append(p)
 			check("usable." + tag, bad.is_empty(), bad)
 			var close := []
@@ -190,9 +191,9 @@ func _scene() -> void:
 func _anchor() -> void:
 	XConfig.set_party_formation(XPartyFormation.ROWS)
 	var back: Vector2 = XPartyFormation.points(XPartyFormation.ROWS, 4)[3] + Vector2(32, -64)
-	check("anchor_capped", XPartyFormation.window_anchor(back) == Vector2(851, 462), XPartyFormation.window_anchor(back))
+	check("anchor_low_capped", XPartyFormation.window_anchor(back) == Vector2(851, 462), XPartyFormation.window_anchor(back))
 	var front: Vector2 = XPartyFormation.points(XPartyFormation.ROWS, 4)[0] + Vector2(32, -64)
-	check("anchor_front_kept", XPartyFormation.window_anchor(front) == front)
+	check("anchor_front_right_of_formation", XPartyFormation.window_anchor(front) == Vector2(851, front.y), XPartyFormation.window_anchor(front))
 	XConfig.set_party_formation(XPartyFormation.COLUMN)
 	check("anchor_column_untouched", XPartyFormation.window_anchor(Vector2(982, 516)) == Vector2(982, 516))
 
@@ -222,23 +223,26 @@ func _rollback() -> void:
 
 ## 截图：敌群 693，渡鸦神话／五条悟／米拉黑龙／宿傩
 func _shots() -> void:
+	const LINEUP := [167, 180, 168, 172]
+	# 天启篇一场只上 3 人，截图要 4 人：用普通档，五条悟（只在天启篇）直接放进队伍与出战栏，只为看站位
 	var s := XState.new_game_blank()
 	XState.current = s
 	s.actor_max_level = 99
+	s.switches[2494] = true
 	s.party.clear()
 	s.battle_slots.clear()
-	for id in [167, 180, 168, 172]:
-		XTianqi._joining = true
+	for id in [167, 168, 172]:
 		s.add_actor(id)
-		XTianqi._joining = false
+	s.party.assign(LINEUP.duplicate())
+	s.battle_slots.assign(LINEUP.duplicate() + [0])
 	s.actor_advance[XMira.ACTOR] = 3
-	for id in [167, 180, 168, 172]:
+	for id in LINEUP:
 		s.actor(id).change_level(99)
 	var mira := s.actor(XMira.ACTOR)
 	mira.learn_skill(10161)
 	mira.state_ids.append(XMira.DRAGON)
 	s.raven["myth"] = 3
-	for id in [167, 180, 168, 172]:
+	for id in LINEUP:
 		s.actor(id).recover_all()
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	for kind in [XPartyFormation.ROWS, XPartyFormation.DIAMOND, XPartyFormation.COLUMN]:
@@ -250,10 +254,13 @@ func _shots() -> void:
 			await frames(1)
 			if b.cmd_win != null:
 				break
+		var m: XActor = s.actor(XMira.ACTOR)
+		if not m.state_ids.has(XMira.DRAGON):  # 开战清掉了的话，在战斗里再挂上黑龙形态
+			m.add_new_state(XMira.DRAGON)
 		await frames(20)
 		await RenderingServer.frame_post_draw
 		var name: String = ["rows", "diamond", "column"][kind]
 		check("shot_" + name, get_viewport().get_texture().get_image().save_png(out_dir.path_join("party_%s.png" % name)) == OK)
-		print("SHOT ", name, " party=", s.battle_slots, " homes=", _battle_homes(b))
+		print("SHOT ", name, " party=", b.logic.actors.map(func(a): return a.actor_id), " homes=", _battle_homes(b), " looks=", b.logic.actors.map(func(a): return b.sprites[a]._look_key))
 		b.queue_free()
 		await frames(4)

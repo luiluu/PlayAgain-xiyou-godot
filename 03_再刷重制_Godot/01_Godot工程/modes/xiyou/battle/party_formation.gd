@@ -10,8 +10,9 @@ extends RefCounted
 ## - 1～3 人：两排 1 人居中；2 人 1 前上、2 前下；3 人 1 前上、2 前下、3 后中。
 ##   菱形 1 人居中；2 人 1 前尖、2 后尖（斜开）；3 人 1 前尖、2 上角、3 下角。
 ## - 6 人以上（目前没有）照原版竖排。
-## 点位是脚底坐标（1280×720 画面）。可用区：x ≤ 1080 − 半身宽（右侧状态栏）、脚底 y ≤ 600（底部行动顺序条约在 610）、
-## 头顶留顶部 Boss 信息框；按将来大体型 ×1.35（可视宽约 180、高约 215）留空：上下相邻同列间隔 ≥ 200、前后排 x 差 160。
+## 点位是脚底坐标（1280×720 画面）。整个阵型在原版竖排那条线（x 819）及其左边：指令窗照原版贴在 x 851 起（右侧到状态栏前），
+## 不会盖住轮到的人；脚底 y ≤ 600（底部行动顺序条约在 610），头顶留顶部信息框；按将来大体型 ×1.35（可视宽约 180、高约 215）留空：
+## 同列上下相邻间隔 ≥ 150（4 人两排同列 200）、前后排 x 差 150（菱形尖到角 120）。左边最前的半身不越过 x 480（敌群成员 x 九成五在 406 以内）。
 ## 回退：ENABLED＝false，设置页不列这一项，站位照原版竖排。
 
 static var ENABLED := true
@@ -23,12 +24,12 @@ const NAMES := ["两排错开", "菱形", "原版竖排"]
 const DEFAULT := ROWS
 
 ## 两排错开：前排 x、后排 x、4 人时四个脚底 y（前上、后上、前下、后下依次低半格）
-const ROW_FRONT_X := 790.0
-const ROW_BACK_X := 950.0
+const ROW_FRONT_X := 669.0
+const ROW_BACK_X := 819.0
 const ROW_Y := [280.0, 380.0, 480.0, 580.0]
 ## 菱形：中线 x、前后尖离中线、上下角离中线、中线 y
-const DIA_CX := 860.0
-const DIA_DX := 125.0
+const DIA_CX := 699.0
+const DIA_DX := 120.0
 const DIA_DY := 150.0
 const DIA_CY := 430.0
 ## 各点位的名字（交付单、编队提示用），按编队顺序
@@ -38,15 +39,16 @@ const SLOT_NAMES := {
 }
 
 
-## 指令窗等贴在角色旁的窗口（XBattleScene._place_near_actor，角色位置＋(32, −64)）：两排错开、菱形时后排角色更靠右、更靠下，
-## 窗口会盖住右侧状态栏和底部行动顺序条；锚点最右、最下不超过原版竖排 4 人最下那位的锚点 (851, 462)。原版竖排不变。
-const WINDOW_ANCHOR_MAX := Vector2(851, 462)
+## 指令窗等贴在角色旁的窗口（XBattleScene._place_near_actor，角色位置＋(32, −64)）：两排错开、菱形时左上角固定在 x 851
+## （原版竖排的位置，整个阵型的右边，不盖住轮到的人，也不伸进右侧状态栏），y 跟着角色、最低不超过原版竖排 4 人最下那位的 462
+## （不压底部行动顺序条）。原版竖排不变。
+const WINDOW_ANCHOR := Vector2(851, 462)
 
 
 static func window_anchor(p: Vector2) -> Vector2:
 	if current() == COLUMN:
 		return p
-	return Vector2(minf(p.x, WINDOW_ANCHOR_MAX.x), minf(p.y, WINDOW_ANCHOR_MAX.y))
+	return Vector2(WINDOW_ANCHOR.x, minf(p.y, WINDOW_ANCHOR.y))
 
 
 static func current() -> int:
