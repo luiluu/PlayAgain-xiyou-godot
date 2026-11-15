@@ -84,3 +84,58 @@
 - （专项）xiyou_ui_skin_4a
 - e292689ad 截图返修：窄地图快照、触屏指令环让开 A／B、圆键 2px 边
 - c4041269e 交付单＋发行空壳登记
+
+## 小A乙档核查
+
+- **结论**：**不通过（待修 1 项 P2 后可合）**；`FLASH_V2` 经逐行代码与专项核查未改帧数、时序与伤害结算，**无需升甲档**。
+
+### 一、问题清单（P1 / P2 / P3）
+
+- **P1**：无。
+- **P2-1【触屏默认「原版虚拟按键」下，右上 `Save` 键与「地图传送」胶囊上下重叠 10px】**（像素核查＋代码核查）
+  - 位置：`03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/map_hud.gd`（`SKIN_TOUCH_Y := 60.0`、`_layout_skin`）、`03_再刷重制_Godot/01_Godot工程/core/touch_controls.gd`（`GHOST_TOP` 中 `"save": Rect2(110, 2, 80, 60)`）。
+  - 现象：`map_hud.gd` 按改版顶栏高 40（底边 `y = 48`）设定 `SKIN_TOUCH_Y = 60.0`，但触屏默认样式为 `original`（`ghost() == true`），`Save` 键实际占 `y = 10..70`，导致 `y = 60..70` 与地图 HUD 第一排最右的「地图传送」胶囊（`y = 60..100`）重叠。
+  - 证据：PNG 像素对比 `map_16x9_after_touch.png` 与 `map_16x9_after.png`（`x = 1196..1256, y = 60..70` 重叠 `60×10px`）、`map_20x9_after_touch.png` 与 `map_20x9_after.png`（`x = 1516..1544, y = 60..70` 重叠 `28×10px`）；`XTouchControls` 位于 `CanvasLayer 120` 压在 HUD 之上，点该交叠区会触发一键存档而非地图传送。
+  - 建议修法：`_layout_skin()` 改按 `XTouchControls.instance.group_rects.get("top")`（或 `save` 实际矩形）的 `end.y + 8.0` 计算下移起点（或将 `SKIN_TOUCH_Y` 提高至 `78.0`），同时兼容 `original` 与 `modern` 两种虚拟键样式。
+- **P3-1【5 人出战阵型下 20:9 触屏指令环与队伍栏底行有 6px 轻触风险】**（只看代码）
+  - 位置：`modes/xiyou/ui/skin/skin_side_status.gd`、`skin_battle_ring.gd`、`battle_scene.gd`。
+  - 现象：4 人队（实测无头与像素均正常）队伍条底在 `12 + 2 + 4×58 = 246`，指令环顶在 `y ≈ 298` 无重叠；若为 5 人出战阵型（底边 `304`），20:9 触屏下指令环被 `avoid_touch_keys` 左移后右缘约在 `1278`、落入队伍面板横向范围（`1134..1424`）内，可能与第 5 行底边轻触约 `6px`。
+- **P3-2【`MVAnimation` 目标闪白系数只看动画 `rate`，未叠 `XConfig.battle_speed()`】**（只看代码）
+  - 位置：`modes/xiyou/battle/mv_animation.gd:289, 293`。
+  - 现象：常规战斗动画均按 `XConfig.battle_speed()` 传 `frame_rate`，主路径一致；仅当个别特殊演出在 3 倍速下仍固定以 `rate = 4` 播 MV 动画时，动画内 `flashScope = 1/2` 不会随战斗变速降半／熄灭。
+- **P3-3【文字审与范围外记录】**（实测＋代码核查）
+  - **文字审通过**：新增可见文字——设置项「战斗背景压暗」、状态「关」「15%」「30%」、说明「在战斗背景上盖一层暗色，雪地、沙漠这类亮背景上的字和角色更清楚。可选关、15%、30%。」、地图 HUD 胶囊「回城」——全部通顺无错字、全角标点一致、与设置键名和口径吻合。挂机胶囊「开启/关闭挂机:G」与提示条沿用原插件参数 `tipWord`/`huWord`，非本单新增（触屏下保留 `:G` 后续可再简）。
+  - 交付单「没做的」已如实列明敌人头顶名/血量底重叠、首领血弧后公告与回合提示挪正上方、触屏战斗右上「隐藏按键」压队伍右上角、战斗 UI 未拆两边锚点、无真机测试等，均在派单已定边界之外。
+
+### 二、六项核查明细（分清实测与只看代码）
+
+1. **界面审稿对照（4A／战斗可读性）**：
+   - **实测确认**：`HUD_V2` 黑金胶囊（右上三钮＋坐标胶囊、左上挂机胶囊＋居中黑金条、触屏虚拟键黑金边 2px）与 `小A审_美化舒适 9` 一致；`TEXT_V2` 深色胶囊底已画到回合提示、首领名与血量、敌人头顶名与血量；`DIM_V2` 设置默认 `15%`、写 `codexBattleDim`、背景层盖在背景（含五条／宿傩领域）之上与角色之下，像素实测 `battle_16x9_after_desert.png` 较 `before` 亮度准确压至 `85.0%`（左 `199.2→169.3`、右 `192.0→163.4`）。
+   - **唯一问题**：见 **P2-1**。
+2. **20:9 铺满与 4:3**：
+   - **实测确认**：`battle_20x9_after.png`／`battle_20x9_after_desert.png`（`1600×720`）左右黑边均为 0（沙漠满铺、窄地图 5 用 `SnapshotExtend` 延展两侧）；`map_20x9_after.png`（`1600×720`）两侧地图外自然留黑，HUD 贴 `safe_rect`（56px）；`battle_20x9_after.png` 左上挂机胶囊与 `自动`/`变速` 左对齐 `x = 56`；`4:3` 截图（`1024×576`，比例 `1.7778`）按 16:9 居中留边不挤；`xiyou_ui_skin_4a` 实测打开旧页面收回 16:9、关闭再铺满。
+   - **只看代码**：`screen_fx_view.gd` 天气覆盖与 `lobby_corruption.gd` 大厅氛围小字居中按 `XSkin4A.view_size` 适配。
+3. **FLASH_V2 时序／帧数／结算核查（重点）**：
+   - **只看代码＋专项实测**：逐行核查 `skin_4a.gd`、`battle_screen.gd`、`mv_animation.gd`、`battler_sprite.gd`，仅在绘制／着色时乘 `flash_gain`/`target_gain`/`screen_gain` 或做 `Color.WHITE.lerp(..., g)`；`battle_screen.gd` 的 `flash_duration`、`flash_color[3]`、`step()`、`busy()`、`trace`，`mv_animation.gd` 的 `duration`、`wait`、`flash_duration`、`screen_duration`、`hiding_duration`、`flash_opacity()`、`done`，以及行动时序、随机数、伤害结算均完全未改；`xiyou_ui_skin_4a`（46/46）与 `xiyou_mv_animation`（21/21）实测通过。**不触发升甲档条件。**
+4. **五开关单独关闭与皮肤关闭全回旧**：
+   - **实测确认**：`xiyou_ui_skin_4a` 实测五开关置 `false` 与 `XUiSkin.FORCE = false` 断言全部通过；`03_再刷重制_Godot/04_验证/本地结果/ui_skin_4a/skin_off/` 内 `base` 与 `branch` 32/32 张 PNG SHA-256 完全一致。
+   - **只看代码**：逐项核实 `HUD_V2`/`WIDE_V2`/`TEXT_V2`/`DIM_V2`/`FLASH_V2` 各自独立置 `false` 及 `XUiSkin.on() == false` 时所有修改路径均可完整回到改前。
+5. **触屏指令环不压 A/B、不挡队伍信息**：
+   - **实测确认**：`battle_16x9_after_touch.png` 与 `battle_20x9_after_touch.png` 像素核查，4 人队队伍栏占 `y = 12..246`，指令环在 `y ≈ 302..712` 且经 `avoid_touch_keys` 避让至 `A/B` 键组左侧 `12px` 外，不压 `A/B` 也不挡队伍信息。
+   - **只看代码**：5 人队边界见 **P3-1**；`modern` 样式与自定义拖放矩形下 `avoid_touch_keys` 读 `pad.group_rects["actions"]` 逻辑自洽。
+6. **文字审**：见 **P3-3**（通过）。
+
+### 三、本轮运行记录与留给总装
+
+- **本轮前台实测通过**：
+  - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py`：952 个 `.gd`，0 问题。
+  - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check`：62 脚本、534 函数全部对齐。
+  - `python3 03_再刷重制_Godot/07_开发环境/交付自检.py --task ui-skin-4a --main 7c37b8321`：合并准备阶段检查全过。
+  - `python3 03_再刷重制_Godot/07_开发环境/回退开关覆盖.py`：388 个开关，`XSkin4A` 五开关均已覆盖，无新缺口。
+  - `xiyou_ui_skin_4a.tscn` `46/46`、`xiyou_ui_skin_hud.tscn` `104/104`、`xiyou_ui_skin_battle.tscn` `61/61`、`xiyou_ui_skin_5c.tscn` `79/79`、`xiyou_mv_animation.tscn` `21/21`。
+  - 本地 36 张截图像素核查＋`skin_off/` 32/32 PNG SHA-256 校验（32/32 全同）。
+- **留给总装／云端的长测试**：
+  - `检查.sh --full`（如含对照加 `--oracle`）与 `皮肤关闭对照.py` 现场重跑；
+  - 合并时接入 `main` 上 `501b6e99b` 以消除云端整轮中已知的 11 项 `XTextFix` 参照失败；
+  - 安卓／iOS 真机刘海安全区与触屏实机手测。
+
