@@ -17,7 +17,7 @@ extends RefCounted
 ##   从第一关起一次不败连穿（称号＋币）。戒指每档一枚（XFestRing.grant，记在进度的 ring 上），输过也给。
 ##   改三档前的「冠军之路·洪荒」（45）没发给玩家过，并进「冠军之路」（41）：洪荒档全胜也发 41，45 不再发（XFestReward 读档时把手里有 45 的补成 41）。
 ## - 只开给重制版存档（天启篇档的守层者另有一套血量，进去打不动；报名处说一句就走，见 talk）。
-## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定·冠军之路。
+## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-510。
 
 static var ENABLED := true
 

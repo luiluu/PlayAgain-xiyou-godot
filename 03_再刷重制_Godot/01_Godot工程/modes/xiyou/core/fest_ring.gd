@@ -12,7 +12,7 @@ extends RefCounted
 ##   所有战斗都生效；层数记在战斗里的角色身上（meta），开战清零、战斗结束清零。
 ## - 防刷（第 3 节）：实例 meta["PushDct"]=true（星级仓库只看 meta）＋备注 <PushDct>；法宝喂装备拦（XFabaoFeed.reason）；
 ##   发放时默认锁定（名字带「[锁定]」，玩家可以手动解锁）；卖价 0、一键出售和挂机自动卖都跳过（XItemMarks）。
-## 开关 GRANT＝false：冠军之路全胜不再发戒指（已发的照旧在）。O-待定·冠军戒指。
+## 开关 GRANT＝false：冠军之路全胜不再发戒指（已发的照旧在）。O-511。
 
 static var GRANT := true
 
