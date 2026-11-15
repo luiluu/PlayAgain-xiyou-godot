@@ -32,6 +32,8 @@ class Icon extends Node2D:
 	var base_scale := 1.0
 	var face: Sprite2D
 	var _t := 0.0
+	## 新界面 2B：换画法（XSkinOTBBar 设，painter.call(self) 代替菱形和头像缩放）；空＝原版
+	var painter: Callable
 
 	func _init(b: XBattler) -> void:
 		battler = b
@@ -68,6 +70,10 @@ class Icon extends Node2D:
 		return minf(1.0, 2.0 * base_scale)
 
 	func _process(delta: float) -> void:
+		if painter.is_valid():
+			_t += delta
+			queue_redraw()
+			return
 		var want := base_scale
 		if selected:
 			_t += delta
@@ -81,6 +87,9 @@ class Icon extends Node2D:
 		queue_redraw()
 
 	func _draw() -> void:
+		if painter.is_valid():
+			painter.call(self)
+			return
 		var s := LH * (2.0 if (big or selected) else 1.0)
 		var h := s / 2.0
 		var pts := PackedVector2Array([Vector2(0, -h), Vector2(-h, 0), Vector2(0, h), Vector2(h, 0)])
@@ -94,6 +103,11 @@ class Icon extends Node2D:
 
 func _init() -> void:
 	z_index = 8
+
+
+## 建一个图标（新界面 2B 的 XSkinOTBBar 覆写来换画法）
+func _icon(b: XBattler) -> Icon:
+	return Icon.new(b)
 
 
 func setup(width: float) -> void:
@@ -198,7 +212,7 @@ func show_orders(current: Array, next: Array, instant := false) -> void:
 		var pos: Vector2 = want[k][1]
 		var node: Icon = _nodes.get(k)
 		if node == null:
-			node = Icon.new(b)
+			node = _icon(b)
 			add_child(node)
 			_nodes[k] = node
 			node.position = pos if instant else Vector2(bar_width if k.begins_with("n|") else x1 + width1, LH)
@@ -241,7 +255,7 @@ func set_preview(entries: Array) -> void:
 			if order[i] != b:
 				continue
 			var index := clampi(i - change, minimum, order.size())
-			var node := Icon.new(b)
+			var node := _icon(b)
 			node.set_meta("preview", true)
 			var w := _step(order.size(), width1 if row == "c" else width2)
 			node.position = Vector2(_slot_x(row, index, order.size()) - roundf(w / 2.0), 0)
