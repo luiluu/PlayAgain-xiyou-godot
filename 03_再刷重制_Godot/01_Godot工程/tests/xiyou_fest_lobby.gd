@@ -3,7 +3,7 @@ extends Node
 ## - 活动内外显隐：进行中＝叠加层、使者、报名处、奖杯、换 BGM；收尾期＝只剩使者；活动前、结束后＝什么都没有；
 ## - 开关关掉无痕：XFest.ENABLED／XFestLobby.ENABLED 关掉，地图事件表、通行、BGM 与没有活动时逐项相同，不建任何节点；
 ## - 贺礼每个存档只领一次（庆典币、精魂、物品都只加一次，第二次对话出菜单）；
-## - 奖杯两格挡路、(14,16) 留空；报名处在冠军之路没接上时放占位对话、接上后调它的 enter；
+## - 奖杯两格挡路、全在异化圈外；报名处在冠军之路没接上时放占位对话、接上后调它的 enter；
 ## - 画面特效关掉不放彩带烟花；
 ## - 文案：真名只在贺词一处、不出现选手／官方／赛事字眼、没有西游词；四支战队、四个称号、五条成就都齐。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
@@ -40,9 +40,10 @@ func frames(n: int) -> void:
 
 
 ## 开大厅。today 是「今天」（XFest.TODAY_OVERRIDE）；先清地图缓存让补丁按当天重做
-func open_lobby(today: String, x := 14, y := 24) -> XMapScene:
+func open_lobby(today: String, x := 14, y := 24, reload := true) -> XMapScene:
 	XFest.TODAY_OVERRIDE = today
-	XFestLobby.reload_map()
+	if reload:
+		XFestLobby.reload_map()
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	s.set_variable(206, -3000)
 	s.map_id = 4
@@ -145,24 +146,25 @@ func _run() -> void:
 	check("active.bgm_exists", XDB.audio_path("bgm", XFestLobby.BGM) != "", XFestLobby.BGM)
 	check("active.art_textured", m1.fest_fx.banner_textured() and m1.fest_fx.trophy_textured())
 	var pass1 := passability(m1)
-	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进；(14,16) 留空
-	m1.player.locate(12, 17)
+	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进
+	m1.player.locate(21, 18)
 	m1.player.direction = 8
-	check("active.trophy_blocks_12", not m1.player.can_pass(8))
-	m1.player.locate(13, 17)
-	check("active.trophy_blocks_13", not m1.player.can_pass(8))
-	m1.player.locate(14, 17)
-	check("active.landing_cell_passable", m1.player.can_pass(8))
-	check("active.landing_cell_free", ids(m1).all(func(i): return ev(m1, i).grid != Vector2i(14, 16) or i == 0))
+	check("active.trophy_blocks_21", not m1.player.can_pass(8))
+	m1.player.locate(22, 18)
+	check("active.trophy_blocks_22", not m1.player.can_pass(8))
 	check("active.passability_unchanged", pass1 == base_pass)
-	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(12, 16) and ev(m1, 81).grid == Vector2i(13, 16))
+	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(21, 17) and ev(m1, 81).grid == Vector2i(22, 17))
+	# 方案 2.1：使者、报名处、奖杯都在异化中心 (14,19) 的 6 格圈外
+	for id in [78, 79, 80, 81]:
+		var d := Vector2(ev(m1, id).grid - XLobbyCorruption.CENTER).length()
+		check("active.outside_corruption_circle.%d" % id, d > XLobbyCorruption.RADIUS, d)
 	# 彩带烟花
 	await frames(60)
 	check("active.confetti", m1.fest_fx.confetti_count() > 0, m1.fest_fx.confetti_count())
 	m1.player.locate(14, 21)
 	await frames(10)
 	await shot("fest_lobby_south.png")
-	m1.player.locate(14, 18)
+	m1.player.locate(19, 19)
 	await frames(10)
 	await shot("fest_lobby_trophy.png")
 	m1.fest_fx._next_firework = 0.0
@@ -251,6 +253,20 @@ func _run() -> void:
 		await close(mo)
 	XFest.ENABLED = true
 	XFestLobby.ENABLED = true
+
+	# ---- 地图缓存：不手动清缓存，跨过活动起止日再进大厅也要跟着变（正式游戏没人调 reload_map）----
+	var mc0 := await open_lobby(day_before)
+	check("cache.before.none", mc0.fest_fx == null and ids(mc0) == base_ids)
+	await close(mc0)
+	var mc1 := await open_lobby(day1, 14, 24, false)
+	check("cache.start_day.npcs_and_layer", mc1.fest_fx != null and ids(mc1).has(78) and ids(mc1).has(79) and str(mc1.map_data.get("bgm", {}).get("name", "")) == XFestLobby.BGM, ids(mc1))
+	await close(mc1)
+	var mcg := await open_lobby(grace_day, 14, 24, false)
+	check("cache.grace.only_envoy", mcg.fest_fx == null and ids(mcg).has(78) and not ids(mcg).has(79), ids(mcg))
+	await close(mcg)
+	var mce := await open_lobby(after_day, 14, 24, false)
+	check("cache.ended.clean", mce.fest_fx == null and ids(mce) == base_ids and str(mce.map_data.get("bgm", {}).get("name", "")) == base_bgm, ids(mce))
+	await close(mce)
 
 	# ---- 文案 ----
 	var strs: Array = []
