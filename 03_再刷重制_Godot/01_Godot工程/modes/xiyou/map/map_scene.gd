@@ -498,6 +498,8 @@ func _process(delta: float) -> void:
 	if player:
 		var hanging := XHangUp.is_active(XState.current)
 		player.input_enabled = not busy and not _menu_open and not hanging and vehicle_can_move()
+		if not player.input_enabled and MVPlayer.MV_CLEAR_DEST:
+			player.clear_destination()  # Scene_Map.updateDestination：不能动时清目的地（MVPlayer.MV_CLEAR_DEST）
 		player.auto_step = _hang_up_step if hanging else Callable()
 		hang_overlay.visible = not _menu_open and transfer_page == null
 		hang_overlay.refresh()
@@ -1401,6 +1403,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	var hud_was := hud.visible
 	hud.visible = false
 	var shot := await _snapshot()
+	if MVPlayer.MV_CLEAR_DEST and player:
+		player.clear_destination()  # Scene_Map.stop 后 isActive 假，遇敌演出第一帧就清目的地
 	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot, random_encounter)
