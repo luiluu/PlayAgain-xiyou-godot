@@ -110,9 +110,9 @@ func _run() -> void:
 	page.set_value("reforge", str(it.instanceId))
 	await get_tree().process_frame
 	var texts := XAlienWorkshop.flatten(page.tree).map(func(x): return str(x.get("text", "")))
-	_check("page_section", texts.has("装备重铸") and texts.has("重铸第1条（10000金钱）"), texts)
+	_check("page_section", texts.has("装备重铸") and texts.has("重铸第1条（10000精魂）"), texts)
 	var g0 := s.gold
-	_check("page_click", page.click("重铸第1条（10000金钱）") and s.gold == g0 - 10000)
+	_check("page_click", page.click("重铸第1条（10000精魂）") and s.gold == g0 - 10000)
 	page.queue_free()
 	# 开关关掉、原版档
 	XTianqiReforge.ENABLED = false

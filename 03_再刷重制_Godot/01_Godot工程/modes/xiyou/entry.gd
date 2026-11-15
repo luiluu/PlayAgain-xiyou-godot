@@ -480,7 +480,7 @@ func _export_slot(slot: int) -> void:
 	if out.has("error"):
 		_notice("导出存档", "存档未导出：" + str(out.error))
 		return
-	var opened := XSaveTransfer.pick(true, XSaveTransfer.file_name(slot), func(path: String):
+	var opened := XSaveTransfer.pick(true, XSaveTransfer.file_name(slot, bool(out.get("tianqi", false))), func(path: String):
 		if path == "":
 			_title()
 			return

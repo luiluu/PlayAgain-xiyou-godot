@@ -50,7 +50,7 @@ func _run() -> void:
 	var map := XMapScene.new()
 	add_child(map)
 	await frames(4)
-	check("coordinates", map.map_hud.coords.visible and map.map_hud.coordinate_text() == "坐标<14,23> " and map.map_hud.difficulty_text() == "挑战模式 普通")
+	check("coordinates", map.map_hud.coords.visible and map.map_hud.coordinate_text() == "坐标（14, 23） " and map.map_hud.difficulty_text() == "挑战模式 普通")
 	check("map_button_rects", map.map_hud.backup_button.get_rect() == XMapHUD.BACKUP_RECT and map.map_hud.return_button.get_rect() == XMapHUD.RETURN_RECT)
 	# 配置是局外事实，局内回滚不会改它；重开配置也能读到同一个值。
 	XConfig._loaded_path = "<unloaded>"

@@ -162,12 +162,13 @@ func _make_card(i: int) -> Control:
 		icon.modulate = Color.WHITE if got else Color(0.16, 0.16, 0.2)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(icon)
-		var rcap := XUI.label("骑士遗物", 13, XTianqiLook.accent_color(key).lightened(0.3))
-		rcap.position = Vector2(56, RELIC_Y - 2)
-		rcap.size = Vector2(CARD.x - 72, 16)
+		# 文字审 1-013：小标题 13→15 号（原 13 号在手机上看不清），名字下移 2 格让开；名字底到 521，仍在卡高 524 内
+		var rcap := XUI.label("骑士遗物", 15, XTianqiLook.accent_color(key).lightened(0.3))
+		rcap.position = Vector2(56, RELIC_Y - 3)
+		rcap.size = Vector2(CARD.x - 72, 18)
 		card.add_child(rcap)
 		var rname := XUI.label(relic_name if got else "？？？", 15, Color(0.96, 0.94, 0.9) if got else Color(0.55, 0.54, 0.6))
-		rname.position = Vector2(56, RELIC_Y + 13)
+		rname.position = Vector2(56, RELIC_Y + 15)
 		rname.size = Vector2(CARD.x - 72, 20)
 		card.add_child(rname)
 		card.relic_label = rname

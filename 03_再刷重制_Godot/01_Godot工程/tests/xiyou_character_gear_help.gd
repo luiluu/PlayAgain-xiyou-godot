@@ -54,7 +54,8 @@ func _card(tag: String, obj: Dictionary, c: Dictionary) -> void:
 	for i in range(mini(got.size(), want.size())):
 		var g: Array = got[i]
 		var w: Array = want[i]
-		var same_text := str(g[0]) == str(w[0]) or (_is_power(g) and _is_power(w))
+		# 冒号宽度不比：文字审 16-003 把饿狼法宝说明统一成全角冒号，原版只换每行第一个半角冒号（参照里「法宝形态:」「敏捷倍率:」还是半角）
+		var same_text := str(g[0]).replace(":", "：") == str(w[0]).replace(":", "：") or (_is_power(g) and _is_power(w))
 		if not (same_text and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) \
 				and (null if g[4] == null else int(g[4])) == (null if w[4] == null else int(w[4])) and (not with_y or is_equal_approx(float(ys[i]), float(w[3])))):
 			ok = false
@@ -97,6 +98,6 @@ func _ready() -> void:
 	# 形态字段坏了按模板号
 	var odd := inst.duplicate(true)
 	odd.garouStage = 9
-	check("bad_stage_falls_back", str(XGarou.relic_help_lines(odd).back()).contains("法宝形态:半怪人"), XGarou.relic_help_lines(odd))
+	check("bad_stage_falls_back", str(XGarou.relic_help_lines(odd).back()).contains("法宝形态：半怪人"), XGarou.relic_help_lines(odd))
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_character_gear_help", "passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)

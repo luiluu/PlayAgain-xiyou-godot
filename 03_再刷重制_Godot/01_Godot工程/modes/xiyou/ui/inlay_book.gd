@@ -163,7 +163,7 @@ static func status_ops(r: Dictionary, kind: int) -> Array:
 	var names: Array = XDB.system().get("weaponTypes" if weapon else "equipTypes", [])
 	var nx := _w("  ") + x
 	for t in r.get("weaponTypes" if weapon else "armorSlots", []):
-		var n := str(names[int(t)]) if int(t) < names.size() else "undefined"
+		var n := str(names[int(t)]) if int(t) >= 0 and int(t) < names.size() else XUI.undef_text("未知类型")
 		ops.append(_t(n, nx, y, COLW))
 		nx += _w(n + "  ")
 	y += LH * 2
