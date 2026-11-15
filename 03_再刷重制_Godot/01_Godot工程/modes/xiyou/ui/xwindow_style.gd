@@ -14,7 +14,7 @@ var cursor_alpha := 1.0
 
 
 func _draw(ci: RID, rect: Rect2) -> void:
-	# 天启篇新皮肤（XUiSkin，O-待定）：黑面板＋细线、红乙选中条；关着时下面一行旧代码都不变
+	# 天启篇新皮肤（XUiSkin，O-467）：黑面板＋细线、红乙选中条；关着时下面一行旧代码都不变
 	if XUiSkin.on():
 		if cursor:
 			XUiSkin.draw_select(ci, rect, XUiSkin.breath_alpha())
