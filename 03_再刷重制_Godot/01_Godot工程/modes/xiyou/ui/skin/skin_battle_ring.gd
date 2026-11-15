@@ -100,6 +100,18 @@ static func fixed_corner() -> bool:
 	return XUiSkin.TOUCH_V2 and XUiSkin.touch()
 
 
+## 实际画出来的范围（本节点坐标）：各球加上方「某某的回合」一行（新界面 4A 让位用）
+func drawn_rect() -> Rect2:
+	if entries.is_empty():
+		return Rect2(center - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+	var r := Rect2(orb_pos(0) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0)
+	for i in range(1, entries.size()):
+		r = r.merge(Rect2(orb_pos(i) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0))
+	r.position.y -= 30.0   # 名字一行（字号 17，离球顶 10）
+	r.size.y += 30.0
+	return r
+
+
 ## 环心在父节点里的位置（测试、截图看）
 func ring_center() -> Vector2:
 	return position + center
@@ -152,6 +164,8 @@ func _draw() -> void:
 		if top == INF:
 			top = center.y - radius
 		var pos := Vector2(center.x - tw / 2.0, top - 10.0)
+		if XSkin4A.text_on():  # 新界面 4A（A5）：回合提示垫深色胶囊底
+			XSkin4A.draw_text_backing(self, pos.x, pos.y, tw, fs)
 		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7))
 		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
 	# 球

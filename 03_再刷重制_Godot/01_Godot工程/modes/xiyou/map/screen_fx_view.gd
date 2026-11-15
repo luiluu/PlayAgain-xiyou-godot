@@ -66,8 +66,10 @@ func _physics_process(_delta: float) -> void:
 	_weather.visible = raining or _weather.has_sprites()
 	if _weather.visible:
 		var origin := Vector2.ZERO
+		var vs := XSkin4A.view_size(self)  # 新界面 4A：铺满时天气照可见宽度铺（关着就是 1280×720）
+		_weather.view = vs
 		if camera != null and camera.is_inside_tree():
-			origin = camera.get_screen_center_position() - Vector2(640, 360)
+			origin = camera.get_screen_center_position() - vs / 2.0
 		_weather.step(fx.weather_type, fx.weather_power, origin)
 
 
@@ -76,6 +78,8 @@ class _WeatherCanvas extends Node2D:
 	var _type := "none"
 	var _power := 0.0
 	var _origin := Vector2.ZERO
+	## 画面大小（新界面 4A 铺满时比 1280 宽）
+	var view := Vector2(1280, 720)
 	var _sprites: Array = []     # {ax, ay, op}
 	## 粒子只是画面效果，用自己的随机流，不动全局随机（遇敌、事件、战斗各有各的流）
 	var _rng := RandomNumberGenerator.new()
@@ -114,7 +118,7 @@ class _WeatherCanvas extends Node2D:
 				sp.ay += speed * cos(rot)
 				sp.op -= speed
 			if sp.op < 40.0:
-				sp.ax = float(_rng.randi() % 1380) - 100.0 + origin.x
+				sp.ax = float(_rng.randi() % (int(view.x) + 100)) - 100.0 + origin.x
 				sp.ay = float(_rng.randi() % 920) - 200.0 + origin.y
 				sp.op = 160.0 + float(_rng.randi() % 60)
 		queue_redraw()
@@ -127,7 +131,7 @@ class _WeatherCanvas extends Node2D:
 		if XScreenFxView.BATCH_WEATHER:
 			_draw_batched(dim)
 			return
-		draw_rect(Rect2(0, 0, 1280, 720), dim)
+		draw_rect(Rect2(Vector2.ZERO, view), dim)
 		if _type == "none":
 			return
 		var rot := _rotation()
@@ -149,7 +153,7 @@ class _WeatherCanvas extends Node2D:
 		var pts := PackedVector2Array()
 		var cols := PackedColorArray()
 		var idx := PackedInt32Array()
-		_quad(pts, cols, idx, [Vector2(0, 0), Vector2(1280, 0), Vector2(1280, 720), Vector2(0, 720)], dim)
+		_quad(pts, cols, idx, [Vector2(0, 0), Vector2(view.x, 0), view, Vector2(0, view.y)], dim)
 		if _type != "none":
 			var rot := _rotation()
 			var size := Vector2(1, 60) if _type == "rain" else Vector2(2, 100)

@@ -91,6 +91,8 @@ func _draw() -> void:
 	var nm := _name_text
 	var nw := title.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
 	var shadow := Color(0, 0, 0, 0.75 * al)
+	if XSkin4A.text_on():  # 新界面 4A（A5）：首领名垫深色胶囊底
+		XSkin4A.draw_text_backing(self, CENTER.x - nw / 2.0, NAME_Y + 27, nw, 27, al)
 	draw_string_outline(title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, 4, shadow)
 	draw_string(title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Color(name_color(), al))
 	if digits.is_empty():   # 插件参数关了血量数字
@@ -100,6 +102,8 @@ func _draw() -> void:
 	var cw := num.get_string_size(cur, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 	var mw := num.get_string_size(mx, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 	var x0 := CENTER.x - (cw + mw) / 2.0
+	if XSkin4A.text_on():  # 新界面 4A（A5）：血量数字垫深色胶囊底
+		XSkin4A.draw_text_backing(self, x0, NUM_Y + 30, cw + mw, 30, al)
 	draw_string_outline(num, Vector2(x0, NUM_Y + 30), cur, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, 4, shadow)
 	draw_string(num, Vector2(x0, NUM_Y + 30), cur, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color(XUiSkin.HP_TEXT, al))
 	draw_string_outline(num, Vector2(x0 + cw, NUM_Y + 30), mx, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 3, shadow)

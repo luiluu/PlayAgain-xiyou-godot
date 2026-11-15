@@ -150,11 +150,16 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	if XSkin4A.wide_on():  # 新界面 4A：宽屏横向铺满（窗口比 16:9 宽才换，离开战斗自动还原）；原版坐标的东西照旧按 _origin 居中
+		XSkinLayout.request_wide(self)
 	var vs := get_viewport_rect().size
 	_origin = Vector2((vs.x - BOX.x) / 2.0, (vs.y - BOX.y) / 2.0)
 	_build_background()
 	_build_gojo_domain()
 	_build_sukuna_domain()
+	var dim := XSkin4A.make_dim_layer(vs)  # 新界面 4A（C8）：背景压暗，盖在背景（含领域）上、角色和界面下；关着不加
+	if dim != null:
+		add_child(dim)
 	field = Node2D.new()
 	field.position = _origin
 	add_child(field)
@@ -324,6 +329,21 @@ func _build_background() -> void:
 		t.texture = snapshot
 		t.position = _origin
 		t.size = BOX
+		if XSkin4A.wide_on() and snapshot.get_width() > snapshot.get_height() * BOX.x / BOX.y + 1:
+			# 新界面 4A：地图铺满时快照本来就是宽的（XMapScene._snapshot 保留宽度），照原尺寸居中铺开，两边不留黑
+			var sw := roundf(BOX.y * snapshot.get_width() / float(snapshot.get_height()))
+			t.position = Vector2(roundf((get_viewport_rect().size.x - sw) / 2.0), _origin.y)
+			t.size = Vector2(sw, BOX.y)
+		elif XSkin4A.wide_on() and get_viewport_rect().size.x > BOX.x + 1:
+			# 快照只有 16:9（地图当时没铺满）：底下先垫一张放大铺满、压暗的同图，两侧是背景延展而不是黑边
+			var ext := TextureRect.new()
+			ext.name = "SnapshotExtend"
+			ext.texture = snapshot
+			ext.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			ext.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			ext.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			ext.modulate = Color(0.55, 0.55, 0.55)
+			add_child(ext)
 		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		t.stretch_mode = TextureRect.STRETCH_SCALE
 		add_child(t)
@@ -519,6 +539,9 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var name_alpha: float = g.name_alpha / 255.0 if NAME_FADE else (1.0 if not v.dead and (g.name_timer > 0.0 or e == _hover) else 0.0)
 	if name_alpha > 0.0:
 		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
+		if XSkin4A.text_on():  # 新界面 4A（A5）：名字垫深色胶囊底，亮背景上也看得清
+			var nw := c.text_width(e.display_name(), 18)
+			XSkin4A.draw_text_backing(c, 320.0 - nw / 2.0, 26.0, nw, 18, name_alpha)
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
 		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
 	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
@@ -534,7 +557,11 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var fill := maxf(0, floorf(w * g.disp / maxf(v.mhp, 1.0)) - 4)
 	if fill > 0:
 		c.gradient(Rect2(x + 2, gy + 2, fill, 8), XUI.text_color(20), XUI.text_color(21))
-	c.text(XMenu._group(g.disp), x, y, w, "center", XUI.TEXT, 26, 36)
+	var num := XMenu._group(g.disp)
+	if XSkin4A.text_on():  # 新界面 4A（A5）：血量数字垫深色胶囊底
+		var tw := c.text_width(num, 26)
+		XSkin4A.draw_text_backing(c, x + (w - tw) / 2.0, y + 26.0, tw, 26)
+	c.text(num, x, y, w, "center", XUI.TEXT, 26, 36)
 
 
 ## EnemyNameColorByDifficulty 只为与数据库原名完全相同的文字上色。
@@ -1289,12 +1316,31 @@ func _command_entries(a: XActor) -> Array:
 	return opts
 
 
+## 右侧队伍面板（各行连同新皮肤的面板底）合起来的范围（画面坐标；没有行为空）
+func party_rect() -> Rect2:
+	var r := Rect2()
+	for row in status_rows.values():
+		if not (row is Control):
+			continue
+		for c in (row as Control).get_parent().get_children():
+			if c is Control and (c as Control).is_visible_in_tree():
+				var g := (c as Control).get_global_rect()
+				r = g if r.size == Vector2.ZERO else r.merge(g)
+		break
+	return r
+
+
 ## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
 	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
 		w.place_for_actor(s.position, BOX)
 		w.position += _origin
+		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner():
+			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏固定右下的指令环让开 A／B 键组
+			var ring := w as XSkinBattleRing
+			var dr := ring.get_global_transform() * ring.drawn_rect()
+			XSkin4A.avoid_rect(w, dr, party_rect(), _origin.x + XSkinBattleRing.MARGIN)  # 再让开右上队伍面板（5 人出战时面板高到环顶）
 		return
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
@@ -1938,6 +1984,9 @@ func _open_battle_book(w: XBattleList) -> void:
 	book_page = XEnemyBookPage.new()
 	book_page.setup_battle(logic.enemies)
 	ui.add_child(book_page)
+	if _origin.x > 0.0 and XSkin4A.wide_on():  # 新界面 4A：铺满的战斗里旧图鉴页按 1280 排，收在中间 16:9
+		book_page.offset_left = _origin.x
+		book_page.offset_right = -_origin.x
 	await book_page.closed
 	book_page.queue_free()
 	book_page = null

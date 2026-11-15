@@ -564,7 +564,7 @@ func show_ambient() -> Label:
 	_ambient.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_ambient.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ambient.position = Vector2(0, 640)
-	_ambient.size = Vector2(1280, 40)
+	_ambient.size = Vector2(XSkin4A.view_size(host).x, 40)  # 新界面 4A：铺满时按可见宽度居中（关着 1280）
 	_ambient.modulate.a = 0.0
 	host.ui.add_child(_ambient)
 	var tw := _ambient.create_tween()

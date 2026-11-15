@@ -49,6 +49,8 @@ MIXED_OK = {
     'modes/xiyou/core/xdb.gd': '数据库总表；只有 content/gojo 贴图路径一行，图在 DENY 里不进包',
     'modes/xiyou/ui/skin/ui_skin.gd': '新界面皮肤开关（ui-skin-p0）：XWindowStyle／XUI 每次画都问 on()，发行包里恒为 false（天启篇发行门）；'
         '字体与法阵在 DENY 里不进包，缺了落回原字体',
+    'modes/xiyou/ui/skin/skin_4a.gd': '新界面 4A（地图 HUD、铺满、战斗可读性）开关：地图、战斗、虚拟键每次画都问 XUiSkin.on()，发行包里恒为 false；'
+        'content/ui_skin/hud/ 的替换图在 DENY 里不进包，缺了走程序画',
 }
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）

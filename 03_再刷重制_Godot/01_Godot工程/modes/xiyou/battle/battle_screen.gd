@@ -16,6 +16,8 @@ var fade_out_duration := 0
 var fade_in_duration := 0
 var flash_color := [0.0, 0.0, 0.0, 0.0]
 var flash_duration := 0
+## 新界面 4A（C7）：这次闪烁画出来乘的系数（变速高时减弱、整屏闪烁每秒最多 3 次）；只压画出来的透明度，flash_color 与帧数不变
+var flash_gain := 1.0
 var _started_frame := -1
 ## 对照测试用（默认 null＝不记）：设成数组后每帧 step 记 [距开始的帧数, 亮度, 闪烁强度]
 var trace = null
@@ -37,6 +39,7 @@ func start_fade(out: bool, duration: int = FADE_SPEED) -> void:
 func start_flash(color: Array, duration: int) -> void:
 	flash_color = [float(color[0]), float(color[1]), float(color[2]), float(color[3])]
 	flash_duration = duration
+	flash_gain = XSkin4A.screen_flash_gain(XSkin4A.battle_speed_mult()) if flash_color[3] > 0.0 and duration > 0 else 1.0
 	_started_frame = Engine.get_physics_frames()
 	queue_redraw()
 
@@ -82,8 +85,9 @@ func _draw() -> void:
 	var fa := clampf(float(flash_color[3]), 0.0, 255.0)
 	if fa > 0.0:
 		var c := Color8(clampi(roundi(flash_color[0]), 0, 255), clampi(roundi(flash_color[1]), 0, 255), clampi(roundi(flash_color[2]), 0, 255))
-		c.a = fa / 255.0
-		draw_rect(r, c)
+		c.a = fa / 255.0 * flash_gain
+		if c.a > 0.0:
+			draw_rect(r, c)
 	var o := fade_opacity()
 	if o > 0.0:
 		draw_rect(r, Color(0, 0, 0, o / 255.0))
