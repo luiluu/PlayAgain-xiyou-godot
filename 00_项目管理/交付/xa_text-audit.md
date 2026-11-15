@@ -2,11 +2,11 @@
 
 - 车道／工作者：文字盘点与审查（ag）
 - 分支：`xa/text-audit`
-- 状态：进行中（已完成盘点＋批 1～批 2，继续推进批 3～）
+- 状态：进行中（已完成盘点＋批 1～批 3，继续推进批 4～）
 
 ## 三句话总结
 
-本次在 `03_再刷重制_Godot/01_Godot工程` 盘出玩家可见文字总计约 **65,200 段**，其中甲类（重制／天启篇新写或改写）约 **11,080 段**、乙类（原版 MV 转换数据与地图对话）约 **54,140 段**，按每批 300～600 段拆为甲类 20 批、乙类约 108 批推进。目前已审完**批 1～批 2**（引擎入口、通用壳、全部 40 个 `tianqi*` GDScript 及 `tianqi_data/` 非七印非技能改写类 17 个 JSON，累计 45 条记录：必改 15 条、建议 23 条、可不改 7 条），突出问题包括天启篇残留「初入西行」「道号」「修炼」、多处把「精魂」误写为「金钱」、未开放路线直出「还没修好」、`alien_gear.json` 回退文本残留 `{every}` 占位符、`trumpet.json`「掺着」误作「搀着」以及 `summit.json` 句号断句错误。批 3 起将按甲类顺序继续审查七印与词条表、`skill_rework.json` 及 UI／共用核心模块，每审完一批即提交一次。
+本次在 `03_再刷重制_Godot/01_Godot工程` 盘出玩家可见文字总计约 **65,200 段**，其中甲类（重制／天启篇新写或改写）约 **11,080 段**、乙类（原版 MV 转换数据与地图对话）约 **54,140 段**，按每批 300～600 段拆为甲类 20 批、乙类约 108 批推进。目前已审完**批 1～批 3**（引擎入口、通用壳、全部 40 个 `tianqi*` GDScript 及 `tianqi_data/` 非 `skill_rework.json` 全部 27 个 JSON，累计 54 条记录：必改 17 条、建议 29 条、可不改 8 条），突出问题包括天启篇残留「初入西行」「道号」「修炼」、多处（含词条表 `affix_text.json` 与七号号卷）把「精魂」误写为「金钱」、未开放路线直出「还没修好」、`alien_gear.json` 残留 `{every}` 占位符、`trumpet.json`「掺着」误作「搀着」以及 `summit.json` 句号断句错误。批 4 起将按甲类顺序继续审查 `skill_rework.json`、UI 界面与共用核心模块，每审完一批即提交一次。
 
 ---
 
@@ -126,3 +126,22 @@
 | 2-012 | `tianqi_data/rewards.json` `seal.lines.death.text`、`seal.lines.war.text`、`relic.lines.death.text` | `……有 %d%% 几率……` | 概率用词与其余系统「概率」不一致 | `……有 %d%% 概率……` | 建议 | 天启篇 |
 | 2-013 | `tianqi_data/rewards.json` `relic.lines.war.text` | `满 %d 点对敌全体火焰轰炸一次` | 与 `tianqi_war_alien.gd`「我方全体」及 `tianqi_qiyin_effects.gd`「敌方全体」写法不统一 | `满 %d 点对敌方全体火焰轰炸一次` | 建议 | 天启篇 |
 | 2-014 | `tianqi_data/alien_gear.json` `new_affixes.again.benefit` | `按级每 {every} 回合（侵染／蚀骨／化形／终焉）多行动一次。` | 回退文案中残留未替换模板占位符 `{every}`（且 `dying`/`thrift` 硬编码化形档数值，与分档数组不一致）；当 `TIER_TEXT=false` 或 `idx < 0` 时会直接显示给玩家 | 改为不带 `{every}` 的安全兜底文案（如 `按异化等级每数回合多行动一次。`），或确保所有调用走分档拼接 `tier_benefit` | 必改 | 天启篇 |
+
+
+---
+
+### 批 3：天启篇配置表（二）——七印体系、词条表与元素转换表（10 个 JSON）
+
+> 范围：`modes/xiyou/tianqi_data/` 下 `qiyin_altar.json`、`qiyin_gear.json`、`qiyin_drop.json`、`qiyin_equip.json`、`qiyin_dragon.json`、`qiyin_dragon_run.json`、`qiyin_show.json`、`affix_table.json`、`affix_text.json`、`elements_table.json`（共约 560 段玩家可见文字）。
+
+| 序号 | 位置 | 原文 | 问题 | 建议改成 | 级别 | 版本 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3-001 | `tianqi_data/affix_text.json` `affixes[28].line`、`affixes[28].detail` | `经验、金钱 +{v}%` / `战斗获得的经验、金钱 +{v}%。全队相加，助力位身上的也算。` | 词条面板与详情说明直接把游戏货币「精魂」写成了「金钱」（同 `affix_table.json` `affixes[28].effect`），属新写词条表与全局货币名冲突 | `经验、精魂 +{v}%` / `战斗获得的经验、精魂 +{v}%。全队相加，助力位身上的也算。` | 必改 | 天启篇 |
+| 3-002 | `tianqi_data/affix_table.json` `affixes[14].effect` | `最终伤害 +%` | 内部表 `affixes[14]`（`final_damage`）写作「最终伤害」，但 `affix_text.json` 对玩家明确写明「造成的伤害 +{v}%。和其他伤害加成、先声、背水、猎首在同一个池里相加，不另乘一次」，且玩家界面不直接读该字段 | 仅同步内部表口径：`造成的伤害 +%`（`affix_text` 面向玩家的解释已准确） | 可不改 | 天启篇 |
+| 3-003 | `tianqi_data/affix_text.json` `affixes[20,23,25,41]` | `……几率……` | 与游戏其他新写系统（「概率」）混用 | 统一为 `概率` | 建议 | 天启篇 |
+| 3-004 | `tianqi_data/qiyin_gear.json` `schools.zhen.mark[0].text`、`artifacts[0].effects[0].text` | `……33% 几率……` | 同 3-003，「几率」与「概率」混用 | 统一为 `33% 概率` | 建议 | 天启篇 |
+| 3-005 | `tianqi_data/qiyin_gear.json` `artifacts[3].effects[1].text` | `对首领生命低于 33% 时伤害 +33%` | 语序缺主谓结构（「对首领……时伤害」） | `对生命低于 33% 的首领伤害 +33%` | 必改 | 天启篇 |
+| 3-006 | `tianqi_data/qiyin_gear.json` `weapons[6].effects[0].text` | `打倒敌人后对另一个敌人再斩一次（伤害 50%），能一直连下去` | 实际代码 `tianqi_qiyin_effects.gd:25` 设了防死循环上限 `chain_max = 9`（通常敌群不超过 9 只，玩家感知基本等同连斩，仅作核实记录） | 保持原文（或标注 `最多连斩 9 次`） | 可不改 | 天启篇 |
+| 3-007 | `tianqi_data/qiyin_altar.json` `scenes.first_clear[0][1]` | `首通：多给了一件本印套装件。` | 「套装件」略生硬（同 `qiyin_equip.json` `exchange_set`），建议稍作顺口化 | `首通：多给了一件本印套装部位。`（或 `本印套装装备`） | 建议 | 天启篇 |
+| 3-008 | `tianqi_data/qiyin_equip.json` `names.melt_none`、`names.exchange_set` | `……副件在背包里。` / `一件随机部位的套装件（%d 个）` | 「穿着的先卸下」（`dismantle_none`）用「穿着的」，而 `melt_none` 写「副件在背包里」，略欠统一；「套装件」同 3-007 | `dismantle_none` 建议改 `已装备的先卸下`；`套装件` 建议改 `套装部位` | 建议 | 天启篇 |
+| 3-009 | `tianqi_data/elements_table.json` `conversion_books.*.name` | `元素转换:自然` / `元素转换:水` / `元素转换:风` / `元素转换:虚空` 等 | 新写道具名用了半角冒号 `:`（同 1-026），与 `号卷：`（全角）不统一 | `元素转换：自然` 等（全角冒号；若保留原版道具命名风格则全系统一） | 建议 | 天启篇 |
