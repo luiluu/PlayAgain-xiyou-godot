@@ -318,6 +318,9 @@ func _item_page() -> void:
 	click.pressed = true
 	click.position = cell.get_center()
 	sk.list._gui_input(click)
+	var release := click.duplicate() as InputEventMouseButton
+	release.pressed = false   # 收口批 TOUCH_V2：列表松手才算点
+	sk.list._gui_input(release)
 	check("item_click_selects", page._mode == "list" and page._index == 2)
 	# 武器类：装备详情行照说明卡
 	page._mode = "category"

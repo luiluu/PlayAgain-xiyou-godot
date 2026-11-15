@@ -213,6 +213,6 @@ class Disk extends Node2D:
 			ring = XUiSkin.SEL_LINE
 			w = 2.5
 		elif icon.selected:
-			ring = Color(XUiSkin.GOLD, 0.6 + 0.4 * absf(sin(icon._t * TAU)))
+			ring = Color(XUiSkin.GOLD, XUiSkin.target_pulse(icon._t))
 			w = 2.5
 		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, ring, w, true)

@@ -25,6 +25,40 @@ static var CORE_V2 := true
 ## TOUCH_V2（O-待定，触屏）：底部按键提示触屏时变成能点的胶囊、整页左上「‹」返回、列表手指拖动、进全屏菜单收起虚拟摇杆／AB 键、
 ## 触屏战斗指令环固定右下（Kyo 定）。false＝同 p1fix（提示只看、没有返回钮、指令环跟着角色）。
 static var TOUCH_V2 := true
+## COMFORT_V2（O-待定，舒适）：正文骨白、禁用灰提亮、「优秀」绿调柔、常驻主按钮平时旧金选中才红、行动条选目标去 2Hz 急闪（改 2.4 秒慢呼吸）、
+## 队伍血条 5→8px、七印状态字加 ◆／◇／·、u4 组图标选中红底调暗。false＝同 p1fix。
+static var COMFORT_V2 := true
+## WARM_BG（D44，只出对比图，默认 false＝冷黑）：底、面板、线换暖炭黑（小A审 美化 1）
+static var WARM_BG := false
+const U4_SEL_DISC := Color("7a1a14")     # u4 组图标选中时的暗红圆底
+const BTN_IDLE_FILL := Color("2b2318")   # 主按钮平时：深褐金底
+const TARGET_PULSE := 2.4                 # 选目标金圈一呼一吸的秒数（原 sin·TAU 绝对值＝每秒 2 闪）
+
+
+## 量条高：COMFORT_V2 时血条 8、其余 5
+static func bar_h(kind: String) -> float:
+	return 8.0 if COMFORT_V2 and kind == "hp" else 5.0
+
+
+## 主按钮（使用、装备、揭印）的底：COMFORT_V2 时平时深褐金底＋旧金边、焦点或按下才红；false＝一直红
+static func primary_button_style(sb: StyleBoxFlat, focused: bool) -> void:
+	if not COMFORT_V2 or focused:
+		sb.bg_color = SEL_FILL
+		sb.shadow_color = Color(SEL_FILL, 0.5)
+		sb.shadow_size = 7
+		return
+	sb.bg_color = BTN_IDLE_FILL
+	sb.border_color = Color(GOLD, 0.85)
+	sb.set_border_width_all(2)
+
+
+## 选目标的金圈亮度（0.6～1）：COMFORT_V2 时 2.4 秒余弦慢呼吸；false＝原来每秒两闪
+static func target_pulse(t: float) -> float:
+	if COMFORT_V2:
+		return 0.6 + 0.4 * (0.5 - 0.5 * cos(t * TAU / TARGET_PULSE))
+	return 0.6 + 0.4 * absf(sin(t * TAU))
+
+
 ## 测试用：-1 按设备（XPlatform.is_touch）；0 强制非触屏；1 强制触屏
 static var touch_override := -1
 
@@ -63,17 +97,26 @@ static func fs(base: int) -> int:
 	return roundi(base * font_mult())
 
 ## ---- 颜色（第三节定稿）----
-const BG := Color("050506")          # 底
-const BG_MID := Color("0b0b0d")      # 底的径向渐变中段
-const BG_HI := Color("1b1c20")       # 底的径向渐变亮心
-const PANEL := Color("18191c")       # 面板（渐变上沿）
-const PANEL_LOW := Color("0e0e10")   # 面板（渐变下沿）
-const LINE := Color("a2a5ab")        # 线
+static var BG: Color:                  # 底（WARM_BG：暖炭黑 D44 对比方案，默认冷黑）
+	get: return Color("080708") if WARM_BG else Color("050506")
+static var BG_MID: Color:              # 底的径向渐变中段
+	get: return Color("0f0d0e") if WARM_BG else Color("0b0b0d")
+static var BG_HI: Color:               # 底的径向渐变亮心
+	get: return Color("1f1b1c") if WARM_BG else Color("1b1c20")
+static var PANEL: Color:               # 面板（渐变上沿）
+	get: return Color("1c1a1d") if WARM_BG else Color("18191c")
+static var PANEL_LOW: Color:           # 面板（渐变下沿）
+	get: return Color("121113") if WARM_BG else Color("0e0e10")
+static var LINE: Color:                # 线
+	get: return Color("b0a79b") if WARM_BG else Color("a2a5ab")
 const ORB_HI := Color("34363b")      # 环上圆球的亮面
 const ORB_LOW := Color("121315")     # 环上圆球的暗面
-const TEXT := Color("f0f0ee")        # 正文
+static var TEXT: Color:                # 正文（COMFORT_V2：骨白 #e6e2dc，原 #f0f0ee 只留给 TEXT_HI）
+	get: return Color("e6e2dc") if COMFORT_V2 else Color("f0f0ee")
+const TEXT_HI := Color("f0f0ee")       # 最亮的字（收口批后只给名字、选中行用；现在没有地方用，留着给后续页）
 const TEXT_2 := Color("a8aaaf")      # 次要字
-const TEXT_3 := Color("7d8086")      # 最暗的字（对比度 4.4，只用于「空」「没有词条」「未开启」）
+static var TEXT_3: Color:              # 最暗的字（禁用、「空」；COMFORT_V2 提亮到 #8e8982，面板上对比度过 5）
+	get: return Color("8e8982") if COMFORT_V2 else Color("7d8086")
 const SEL_LINE := Color("ff5a48")    # 选中：细线用朱红
 const SEL_FILL := Color("cf2a1f")    # 选中：大块用绯红
 const GOLD := Color("e3bd72")        # 旧金：标题、提醒、点缀；事件（回合提示、换装成功）
@@ -87,7 +130,9 @@ const TP_TEXT := Color("bff3e2")
 const UP := Color("6fe3a1")          # 提升
 const DOWN := Color("ffa35c")        # 下降、不够（橙）
 ## 品质七档：普通、优秀、精良、史诗（v0.7 改 #9d88ff）、传说、不朽、神话
-const QUALITY := [Color("ebf0f7"), Color("80ff1c"), Color("39b9ff"), Color("9d88ff"), Color("ffa040"), Color("ffd65a"), Color("ff483c")]
+## COMFORT_V2：「优秀」绿 #80ff1c→#8fdc5a 调柔（Kyo 11-15 定）
+static var QUALITY: Array:
+	get: return [Color("ebf0f7"), Color("8fdc5a") if COMFORT_V2 else Color("80ff1c"), Color("39b9ff"), Color("9d88ff"), Color("ffa040"), Color("ffd65a"), Color("ff483c")]
 const QUALITY_NAMES := ["普通", "优秀", "精良", "史诗", "传说", "不朽", "神话"]
 
 ## ---- 字号四级（第二节）：页名 34／牌上的名字 26～38／列表 19～24／辅助 14～17；下限 14 ----

@@ -20,7 +20,9 @@ const SEAL_SIZE := 96.0
 const RING_R := 212.0
 const BUTTON_H := 44.0
 ## 三种状态的字（小A文字审：「可以揭」→「可揭开」）
-const STATE_TEXT := ["未开启", "可揭开", "已揭开"]
+## 收口批 COMFORT_V2：前面加形状（· 未开启、◇ 可揭开、◆ 已揭开），色弱不看颜色也分得清（小A审 舒适 7）
+static var STATE_TEXT: Array:
+	get: return ["· 未开启", "◇ 可揭开", "◆ 已揭开"] if XUiSkin.COMFORT_V2 else ["未开启", "可揭开", "已揭开"]
 const RULES := [
 	"打过对应的层，这一印就开启，可以进它的里副本",
 	"掉下来的东西都是封着的，先进印库",
@@ -527,9 +529,7 @@ func _draw_card() -> void:
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(int(br.size.y / 2.0))
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
-			sb.bg_color = XUiSkin.SEL_FILL
-			sb.shadow_color = Color(XUiSkin.SEL_FILL, 0.5)
-			sb.shadow_size = 7
+			XUiSkin.primary_button_style(sb, i == button and not rules_open)
 		else:
 			sb.bg_color = Color(0, 0, 0, 0)
 			sb.border_color = Color(XUiSkin.LINE, 0.55)

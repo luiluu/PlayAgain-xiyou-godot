@@ -76,16 +76,24 @@ func _tokens() -> void:
 		"SEL_LINE": "ff5a48", "SEL_FILL": "cf2a1f", "GOLD": "e3bd72", "GOLD_LIGHT": "f2d08a", "HP": "ff78b0", "MP": "4d8dff",
 		"TP": "46e0b0", "UP": "6fe3a1", "DOWN": "ffa35c"}
 	var bad := []
-	var consts := (load("res://modes/xiyou/ui/skin/ui_skin.gd") as Script).get_script_constant_map()
+	# 收口批把部分颜色、字号改成按开关取值（COMFORT_V2、FONT_V2、WARM_BG）：这里验第三节定稿值＝开关全关时
+	XUiSkin.COMFORT_V2 = false
+	XUiSkin.FONT_V2 = false
+	XUiSkin.WARM_BG = false
+	var got := {"BG": XUiSkin.BG, "PANEL": XUiSkin.PANEL, "LINE": XUiSkin.LINE, "TEXT": XUiSkin.TEXT, "TEXT_2": XUiSkin.TEXT_2, "TEXT_3": XUiSkin.TEXT_3,
+		"SEL_LINE": XUiSkin.SEL_LINE, "SEL_FILL": XUiSkin.SEL_FILL, "GOLD": XUiSkin.GOLD, "GOLD_LIGHT": XUiSkin.GOLD_LIGHT, "HP": XUiSkin.HP, "MP": XUiSkin.MP,
+		"TP": XUiSkin.TP, "UP": XUiSkin.UP, "DOWN": XUiSkin.DOWN}
 	for k in want:
-		if (consts[k] as Color).to_html(false) != want[k]:
-			bad.append([k, (consts[k] as Color).to_html(false)])
+		if (got[k] as Color).to_html(false) != want[k]:
+			bad.append([k, (got[k] as Color).to_html(false)])
 	check("colors", bad.is_empty(), bad)
 	check("quality", XUiSkin.QUALITY.map(func(c): return (c as Color).to_html(false))
 		== ["ebf0f7", "80ff1c", "39b9ff", "9d88ff", "ffa040", "ffd65a", "ff483c"] and XUiSkin.QUALITY_NAMES.size() == 7)
 	check("font_tiers", XUiSkin.FONT_TIERS == {"page": [34, 34], "card": [26, 38], "list": [19, 24], "aux": [14, 17]}
 		and XUiSkin.FS_PAGE == 34 and XUiSkin.FS_CARD == 26 and XUiSkin.FS_CARD_MAX == 38 and XUiSkin.FS_LIST == 19
 		and XUiSkin.FS_LIST_MAX == 24 and XUiSkin.FS_AUX == 14 and XUiSkin.FS_AUX_MAX == 17 and XUiSkin.FS_MIN == 14)
+	XUiSkin.COMFORT_V2 = true
+	XUiSkin.FONT_V2 = true
 	var eights := [XUiSkin.GRID, XUiSkin.TOP, XUiSkin.PANEL_GAP, XUiSkin.PAD, XUiSkin.PAD_LG, XUiSkin.EDGE, XUiSkin.SAFE_X, XUiSkin.CENTER_MAX]
 	check("spacing_x8", eights.all(func(v): return v % 8 == 0) and XUiSkin.TOP == 72 and XUiSkin.BOTTOM == 668
 		and XUiSkin.PANEL_GAP == 16 and XUiSkin.SAFE_X == 56 and XUiSkin.CENTER_MAX == 720 and XUiSkin.HINT_BOTTOM == 10, eights)

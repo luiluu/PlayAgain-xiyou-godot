@@ -123,10 +123,10 @@ func _paint_now(c: XMVCanvas) -> void:
 		var txt := XMenu._group(floorf(cur))
 		var tw := maxf(num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, 24)
 		var bw := maxf(w - tw - 4, 6)
-		var track := Rect2(bx, y2 - 3, bw, 5)
+		var track := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), bw, XUiSkin.bar_h(spec[0]))
 		_pill(ci, track, Color(1, 1, 1, 0.12))
 		if mx > 0 and cur > 0:
-			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), 5)), Color(spec[2], alpha))
+			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), track.size.y)), Color(spec[2], alpha))
 		if spec[0] == "hp":
 			_shield_seg(ci, track, v)
 		c.draw_string(num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(spec[3], alpha))

@@ -81,6 +81,11 @@ func _draw_art() -> void:
 		if has_art(i):
 			var tex: Texture2D = items[i].get("art_selected" if i == index else "art_normal")
 			var r := art_rect(i)
+			if i == index and XUiSkin.COMFORT_V2 and items[i].get("art_normal") is Texture2D:
+				# 收口批：选中不用烤死亮红盘的贴图，程序画暗红圆底（#7a1a14，和选中条一个色）＋常态贴图，红药瓶不再红压红（Fable 审 u4-3）
+				tex = items[i].art_normal
+				r = Rect2((item_pos(i) - tex.get_size() / 2.0).round(), tex.get_size())
+				RenderingServer.canvas_item_add_circle(_art_ci, item_pos(i), r.size.x * 0.47, XUiSkin.U4_SEL_DISC, true)
 			RenderingServer.canvas_item_add_texture_rect(_art_ci, r, tex.get_rid())
 			art_drawn.append({"i": i, "tex": tex, "rect": r})
 

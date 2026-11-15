@@ -60,6 +60,7 @@ func _run() -> void:
 	_core()
 	_font()
 	await _touch()
+	_comfort()
 	if windowed():
 		await _shots()
 	_set_all(true)
@@ -78,6 +79,7 @@ func _set_all(on: bool) -> void:
 	XUiSkin.CORE_V2 = on
 	XUiSkin.FONT_V2 = on
 	XUiSkin.TOUCH_V2 = on
+	XUiSkin.COMFORT_V2 = on
 	XUiSkin._styles.clear()
 	XUiSkin._tex.clear()
 
@@ -211,6 +213,44 @@ func _touch() -> void:
 	check("ring_keyboard_follows", ring.position + ring.size != XBattleScene.BOX - Vector2(XSkinBattleRing.MARGIN, XSkinBattleRing.MARGIN))
 	holder.queue_free()
 	await frames(1)
+
+
+# ---- 3 舒适 ----
+func _comfort() -> void:
+	XUiSkin.COMFORT_V2 = true
+	check("comfort_text", XUiSkin.TEXT == Color("e6e2dc") and XUiSkin.TEXT_3 == Color("8e8982") and XUiSkin.QUALITY[1] == Color("8fdc5a"))
+	check("comfort_hp_bar", XUiSkin.bar_h("hp") == 8.0 and XUiSkin.bar_h("mp") == 5.0)
+	var sb := StyleBoxFlat.new()
+	XUiSkin.primary_button_style(sb, false)
+	check("comfort_button_idle_gold", sb.bg_color == XUiSkin.BTN_IDLE_FILL and sb.border_color.is_equal_approx(Color(XUiSkin.GOLD, 0.85)))
+	XUiSkin.primary_button_style(sb, true)
+	check("comfort_button_focus_red", sb.bg_color == XUiSkin.SEL_FILL)
+	# 去急闪：一秒内亮度最多升降一次（原来 sin·TAU 绝对值一秒两峰）
+	var peaks := 0
+	var prev := XUiSkin.target_pulse(0.0)
+	var up := true
+	for k in range(1, 101):
+		var v := XUiSkin.target_pulse(k / 100.0)
+		if up and v < prev:
+			peaks += 1
+		up = v >= prev
+		prev = v
+	check("comfort_pulse_slow", peaks == 0, peaks)
+	check("comfort_altar_shapes", XTianqiSkinAltar.STATE_TEXT[2].begins_with("◆") and XTianqiSkinAltar.STATE_TEXT[1].begins_with("◇"))
+	check("warm_bg_default_off", not XUiSkin.WARM_BG and XUiSkin.BG == Color("050506"))
+	XUiSkin.COMFORT_V2 = false
+	check("comfort_off", XUiSkin.TEXT == Color("f0f0ee") and XUiSkin.TEXT_3 == Color("7d8086") and XUiSkin.QUALITY[1] == Color("80ff1c") and XUiSkin.bar_h("hp") == 5.0 \
+		and XTianqiSkinAltar.STATE_TEXT[0] == "未开启")
+	XUiSkin.primary_button_style(sb, false)
+	check("comfort_off_button_red", sb.bg_color == XUiSkin.SEL_FILL)
+	var p2 := 0.0
+	for k in range(0, 100):
+		p2 = maxf(p2, absf(XUiSkin.target_pulse(k / 100.0) - XUiSkin.target_pulse(k / 100.0 + 0.25)))
+	check("comfort_off_old_pulse", p2 > 0.3)
+	XUiSkin.COMFORT_V2 = true
+	XUiSkin.WARM_BG = true
+	check("warm_bg_on", XUiSkin.BG == Color("080708") and XUiSkin.LINE == Color("b0a79b"))
+	XUiSkin.WARM_BG = false
 
 
 func _mb(p: Vector2, pressed: bool) -> InputEventMouseButton:

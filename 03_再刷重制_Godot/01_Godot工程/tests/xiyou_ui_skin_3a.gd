@@ -186,8 +186,8 @@ func _rows() -> void:
 	check("rows_sealed_counts", int(rows[2].set) == 2 and int(rows[2].weapon) == 1 and int(rows[0].set) == 0, [rows[2].set, rows[2].weapon])
 	check("sealed_lines", XTianqiSkinAltar.sealed_lines(rows[2]) == [["封着的套装件", 2], ["封着的毕业武器", 1]] and XTianqiSkinAltar.sealed_lines(rows[0]).is_empty())
 	var lines := XTianqiSkinAltar._card_lines(rows[1])
-	check("card_lines", lines[0][0] == "可揭开" and lines[1][0] == "打过第 31 层开启" and lines[2][0] == "躁动中", lines.map(func(l): return l[0]))
-	check("state_texts", XTianqiSkinAltar.STATE_TEXT == ["未开启", "可揭开", "已揭开"])
+	check("card_lines", lines[0][0] == XTianqiSkinAltar.STATE_TEXT[1] and lines[1][0] == "打过第 31 层开启" and lines[2][0] == "躁动中", lines.map(func(l): return l[0]))
+	check("state_texts", XTianqiSkinAltar.STATE_TEXT == (["· 未开启", "◇ 可揭开", "◆ 已揭开"] if XUiSkin.COMFORT_V2 else ["未开启", "可揭开", "已揭开"]))
 
 
 func _buttons() -> void:
