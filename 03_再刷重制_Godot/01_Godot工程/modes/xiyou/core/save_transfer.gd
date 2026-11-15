@@ -59,7 +59,7 @@ static func export_text(slot: int) -> Dictionary:
 	var d = XSave._parse(r.text)
 	if not XSave.valid_data(d):
 		return {"error": "存档为空或损坏"}
-	if XSaveSeal.ENABLED:
+	if XSaveSeal.active_now():
 		# valid_data 会就地还原同档去重，导出原文（读出来的那份字）再封一次，内容与存档一字不差
 		return {"text": JSON.stringify({"format": FORMAT_SEALED, "game": GAME, "slot": slot,
 			"exportedAt": Time.get_datetime_string_from_system(), "sealed": Marshalls.raw_to_base64(XSaveSeal.seal(str(r.text)))})}
@@ -86,6 +86,9 @@ static func read_import(path: String) -> Dictionary:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		return {"error": "打不开这个文件（%s）" % error_string(FileAccess.get_open_error())}
+	if f.get_length() > XSaveSeal.MAX_FILE:  # 导入文件大小上限（co 甲档核查 P2②）
+		f.close()
+		return {"error": "文件太大，不是本游戏的存档"}
 	var bytes := f.get_buffer(f.get_length())
 	f.close()
 	if XSaveSeal.is_sealed(bytes):  # 直接选了一份封存格式的存档文件
@@ -118,7 +121,7 @@ static func parse_import(text: String) -> Dictionary:
 			var raw := Marshalls.base64_to_raw(str(value.get("sealed", ""))) if value.get("sealed") is String else PackedByteArray()
 			return _parse_sealed(raw)
 		data = value.get("data")
-	if XSaveSeal.ENABLED and not ACCEPT_PLAIN_IMPORT:
+	if XSaveSeal.active_now() and not ACCEPT_PLAIN_IMPORT:
 		return {"error": "这是旧版本导出的存档（没有签名），不能导入；请用当前版本重新导出"}
 	if not XSave.valid_data(data):
 		return {"error": "JSON 缺少完整的游戏存档数据，或是更新版本的存档"}
@@ -132,13 +135,15 @@ static func import_to(slot: int, data: Dictionary) -> String:
 	if DirAccess.make_dir_recursive_absolute(XSave.dir()) != OK:
 		return "建不了存档目录"
 	var target := XSave.path(slot)
+	# 校验失败的旧档（D28）：不管备不备份，先改名成唯一的 .failed_<时间>，不进导入备份的自动清理（co 甲档核查 P2①）
+	if not XSaveSeal.quarantine_if_failed(target):
+		return "原来那格存档校验失败、留不下来，没有导入"
 	if BACKUP_BEFORE_IMPORT and FileAccess.file_exists(target):
-		var keep := "%s.before_import_%s.json" % [target, Time.get_datetime_string_from_system().replace(":", "")]
+		# 同一秒导入两次不再盖掉上一份备份：重名加 _2、_3……（仍以 .json 结尾，清理照旧按时间留最近几份）
+		var keep := XSaveSeal.unique_name("%s.before_import_%s" % [target, Time.get_datetime_string_from_system().replace(":", "")], ".json")
 		if DirAccess.copy_absolute(target, keep) != OK:
 			return "原来那格存档备份不了，没有导入"
-	if not BACKUP_BEFORE_IMPORT and not XSaveSeal.quarantine_if_failed(target):  # 校验失败的旧档不覆盖：改名留着
-		return "原来那格存档校验失败、留不下来，没有导入"
-	if not XSaveSeal.store(target, JSON.stringify(data)):  # 按封存开关写（封存／明文）
+	if not XSaveSeal.write_file(target, JSON.stringify(data)):  # .ksv 封存、.json 明文；读回核对后才替换
 		return "替换存档失败"
 	XSaveSlim.forget(target)  # 这格换成了导入的内容：瘦没瘦过下次存档重新看
 	XSaveSlim.prune_import_backups(target)  # 导入前的备份每格只留最近几份（XSaveSlim.IMPORT_BACKUPS）

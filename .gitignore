@@ -47,3 +47,6 @@ export_credentials.cfg
 03_再刷重制_Godot/01_Godot工程/addons/xiyou_export/android/
 03_再刷重制_Godot/01_Godot工程/addons/xiyou_export/android_src/build/
 03_再刷重制_Godot/01_Godot工程/addons/xiyou_export/android_src/.gradle/
+
+# 存档封存发行密钥（D28）：出包时由 发行出包.py 从私密设计仓注入导出用的工程副本，绝不进本仓库
+03_再刷重制_Godot/01_Godot工程/content/save_seal_key.json

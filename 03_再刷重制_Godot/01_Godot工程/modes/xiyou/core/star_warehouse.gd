@@ -47,7 +47,7 @@ const SEAL_FAILED := "仓库文件" + XSaveSeal.FAIL_TEXT + "，暂时不能存�
 
 
 static func path() -> String:
-	return path_override if path_override != "" else XSave.dir().path_join("star_warehouse.json")
+	return XSaveSeal.resolve(path_override if path_override != "" else XSave.dir().path_join("star_warehouse.json"))  # 封存时 .ksv
 
 
 static func ensure_loaded() -> void:
@@ -336,19 +336,9 @@ static func _save() -> bool:
 		full["pending"] = _pending
 	# 装备的词缀选项表不进文件（XSaveSlim.STAR_WAREHOUSE；只改写出去的那份，覆盖没瘦过的旧文件前先备份）
 	var data := XSaveSlim.for_warehouse(full, p)
-	var temp := p + ".tmp"
-	var f := FileAccess.open(temp, FileAccess.WRITE)
-	if f == null:
-		return false
 	var text := JSON.stringify(data)
-	f.store_buffer(XSaveSeal.encode(text))
-	f.flush()
-	var ok := f.get_error() == OK
-	f.close()
-	if not ok or DirAccess.rename_absolute(temp, p) != OK:
-		DirAccess.remove_absolute(temp)
+	if not XSaveSeal.write_file(p, text):  # 临时文件 → 读回核对 → 改名（.ksv 封存、.json 明文）
 		return false
-	XSaveSeal.wrote(p)
 	XSaveSlim.written(full, p, text)
 	_dirty = false
 	return true

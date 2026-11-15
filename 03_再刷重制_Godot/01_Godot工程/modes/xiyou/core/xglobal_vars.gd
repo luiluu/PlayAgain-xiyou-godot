@@ -33,7 +33,7 @@ static func variable_ids() -> Array:
 
 
 static func path() -> String:
-	return path_override if path_override != "" else XSave.dir().path_join("global.json")
+	return XSaveSeal.resolve(path_override if path_override != "" else XSave.dir().path_join("global.json"))  # 封存时 global.ksv
 
 
 static func ensure_loaded() -> void:
@@ -111,16 +111,7 @@ static func _save() -> bool:
 		sw[str(k)] = _switches[k]
 	for k in _variables:
 		vars[str(k)] = _variables[k]
-	var temp := p + ".tmp"
-	var f := FileAccess.open(temp, FileAccess.WRITE)
-	if f == null:
+	# 临时文件 → 读回核对 → 改名（XSaveSeal.write_file：.ksv 封存、.json 明文）
+	if not XSaveSeal.write_file(p, JSON.stringify({"version": 1, "mode": "xiyou", "switches": sw, "variables": vars})):
 		return false
-	f.store_buffer(XSaveSeal.encode(JSON.stringify({"version": 1, "mode": "xiyou", "switches": sw, "variables": vars})))
-	f.flush()
-	var ok := f.get_error() == OK
-	f.close()
-	if not ok or DirAccess.rename_absolute(temp, p) != OK:
-		DirAccess.remove_absolute(temp)
-		return false
-	XSaveSeal.wrote(p)
 	return true

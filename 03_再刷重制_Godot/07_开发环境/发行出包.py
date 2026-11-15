@@ -226,15 +226,42 @@ def stub_tree(out: Path) -> Path:
 
 REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚本（--real-scripts）
 
+# 存档封存发行密钥（D28，co 甲档核查 P2④）：放在私密设计仓，不进本仓库；出包时写进导出用的工程（res://content/save_seal_key.json），
+# 导完就删。没有密钥时发行包不封存存档（照旧写明文），所以缺密钥算出包问题、不出包；--no-save-key 明知故出（不封存）。
+# 第一次准备：python3 存档密钥.py --init（在私密设计仓生成，见该脚本说明）。
+SAVE_KEY_SRC = Path(os.environ.get('XIYOU_SAVE_KEY') or Path.home() / 'Documents' / 'xiyou-design-docs' / '发行密钥' / 'save_seal_key.json')
+SAVE_KEY_DEST = 'content/save_seal_key.json'
+NO_SAVE_KEY = False
+
+
+def inject_save_key(src: Path) -> str:
+    """把发行密钥写进 src 工程；返回问题（空＝好了或 --no-save-key）。"""
+    if NO_SAVE_KEY:
+        print('== 存档密钥：--no-save-key，发行包不封存存档（照旧明文）')
+        return ''
+    if not SAVE_KEY_SRC.is_file():
+        return f'存档封存密钥不在 {SAVE_KEY_SRC}（先跑 存档密钥.py --init，或 --no-save-key 出不封存的包）'
+    d = json.loads(SAVE_KEY_SRC.read_text(encoding='utf-8'))
+    if not isinstance(d.get('keys'), dict) or str(d.get('current')) not in d['keys'] or int(d.get('current', 0)) < 1:
+        return f'存档封存密钥格式不对：{SAVE_KEY_SRC}'
+    shutil.copyfile(SAVE_KEY_SRC, src / SAVE_KEY_DEST)
+    print(f'== 存档密钥：已注入（号 {d["current"]}，不进仓库）')
+    return ''
+
 
 def export_all(out: Path, logs: Path) -> list:
     problems = []
     src = stub_tree(out)
     try:
+        bad = inject_save_key(src)
+        if bad:
+            return [bad]
         return _export_all(out, logs, src, problems)
     finally:
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)
+        else:
+            (PROJECT / SAVE_KEY_DEST).unlink(missing_ok=True)  # --real-scripts 直接用工程导：导完删掉，不留在工作区
 
 
 def _export_all(out: Path, logs: Path, src: Path, problems: list) -> list:
@@ -383,14 +410,16 @@ def main(argv=None) -> int:
     ap.add_argument('--out', help='发行目录的上一级')
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--real-scripts', action='store_true', help='回退：发行包带天启篇真脚本（不换空壳）')
+    ap.add_argument('--no-save-key', action='store_true', help='不注入存档封存密钥（发行包不封存存档，照旧明文）')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
-    global REAL_SCRIPTS
+    global REAL_SCRIPTS, NO_SAVE_KEY
     REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
+    NO_SAVE_KEY = NO_SAVE_KEY or a.no_save_key
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'
     dev = dev_number()
     out = parent / f'dev{dev}_三平台发行'

@@ -62,7 +62,7 @@ static var battle = null
 
 
 static func path() -> String:
-	return path_override if path_override != "" else XSave.dir().path_join(FILE)
+	return XSaveSeal.resolve(path_override if path_override != "" else XSave.dir().path_join(FILE))  # 封存时 .ksv
 
 static func uuid() -> String:
 	return Crypto.new().generate_random_bytes(16).hex_encode()

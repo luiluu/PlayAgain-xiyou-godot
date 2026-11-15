@@ -25,8 +25,9 @@ static func dir() -> String:
 	var mode_dir: String = GameApp.save_directory()
 	return mode_dir if mode_dir != "" else "user://modes/xiyou"
 
+## 封存（XSaveSeal）开着时是 save_<N>.ksv（旧代码看不见，不会覆盖），关着时是 save_<N>.json
 static func path(slot: int) -> String:
-	return dir().path_join("save_%d.json" % slot)
+	return XSaveSeal.resolve(dir().path_join("save_%d.json" % slot))
 
 
 static func save(slot: int) -> bool:
@@ -57,24 +58,11 @@ static func _write(target: String, data: Dictionary, slim_backup := false) -> bo
 	if SAVE_GUARD and not valid_data(JSON.parse_string(text)):
 		push_warning("XSave: 要写的存档读档校验不过，不写，保留旧档：" + target)
 		return false
-	# 封存（XSaveSeal）：这格原来是校验失败的档就先改名留着，不覆盖；写盘按开关封存或明文
+	# 封存（XSaveSeal）：这格原来是校验失败的档就先改名留着，不覆盖；.ksv 写封存格式（读回解开核对后才替换），.json 写明文
 	if not XSaveSeal.quarantine_if_failed(target):
 		return false
-	var temp := target + ".tmp"
-	var f := FileAccess.open(temp, FileAccess.WRITE)
-	if f == null:
+	if not XSaveSeal.write_file(target, text):
 		return false
-	f.store_buffer(XSaveSeal.encode(text))
-	f.flush()
-	var ok := f.get_error() == OK
-	f.close()
-	if not ok:
-		DirAccess.remove_absolute(temp)
-		return false
-	if DirAccess.rename_absolute(temp, target) != OK:
-		DirAccess.remove_absolute(temp)
-		return false
-	XSaveSeal.wrote(target)
 	XSaveSlim.written(full, target, text)
 	return true
 
@@ -125,7 +113,7 @@ static func _write_sealed_ledger(target: String, text: String, keep_backup: bool
 		var json := JSON.new()
 		if json.parse(str(old.text)) == OK and json.data is Dictionary:
 			DirAccess.copy_absolute(target, target + ".bak")
-	return XSaveSeal.store(target, text)
+	return XSaveSeal.write_file(target, text)
 
 
 ## 读一格存档文件（封存或明文旧档）：{"status": "missing"|"sealed"|"plain"|"failed", "text": …}，见 XSaveSeal.read
@@ -144,7 +132,7 @@ static func auto_seal_failed() -> bool:
 ## 安卓切后台自动存档（XAutoSave，O-215·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
 ## 不加保存次数、不改 current_slot（一键存档仍存回玩家自己的档位）；记下当时的档位，读回来时接着用那一格。
 static func auto_path() -> String:
-	return dir().path_join("save_auto.json")
+	return XSaveSeal.resolve(dir().path_join("save_auto.json"))
 
 static func save_auto() -> bool:
 	if XState.current == null:

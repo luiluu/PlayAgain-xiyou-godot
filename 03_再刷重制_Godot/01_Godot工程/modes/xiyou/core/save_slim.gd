@@ -348,7 +348,7 @@ static func prune_import_backups(target: String) -> Array:
 	if not IMPORT_BACKUPS:
 		return removed
 	# 空的、不是 .json、没有目录的 target 不认（否则会去列当前目录、按 ".before_import_" 前缀删别的文件）
-	if target == "" or not target.ends_with(".json") or target.get_base_dir() == "" or target.get_file() == ".json":
+	if target == "" or not (target.ends_with(".json") or target.ends_with(XSaveSeal.EXT)) or target.get_base_dir() == "" or target.get_file() in [".json", XSaveSeal.EXT]:
 		return removed
 	var dir := target.get_base_dir()
 	var prefix := target.get_file() + IMPORT_MARK
