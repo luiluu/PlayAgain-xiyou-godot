@@ -247,15 +247,16 @@ func _run() -> void:
 	XFestRoadProbe.ENABLED = true
 	XFestLobby.ROAD_CLASS = "NoSuchRoad"
 
-	# 报名处对话截图（真窗口：关掉自动应答，起对话后截）
-	var en := ev(m1, 79)
-	m1.player.locate(en.grid.x, en.grid.y + 1)
-	m1.player.direction = 8
-	XMessageBox.auto = false
-	m1._on_action()
-	await frames(40)
-	await shot("fest_lobby_enroll.png")
-	XMessageBox.auto = true
+	# 报名处对话截图（真窗口：关掉自动应答，起对话后截）。无头不截：对话会卡在消息框，关图时协程没收尾，退出报资源泄漏（总装 11-15 云端选测）
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		var en := ev(m1, 79)
+		m1.player.locate(en.grid.x, en.grid.y + 1)
+		m1.player.direction = 8
+		XMessageBox.auto = false
+		m1._on_action()
+		await frames(40)
+		await shot("fest_lobby_enroll.png")
+		XMessageBox.auto = true
 	# 画面特效关掉：不放粒子
 	XConfig.set_flag("codexScreenFx", false)
 	check("fx_off.no_confetti", m1.fest_fx.confetti_count() == 0)
