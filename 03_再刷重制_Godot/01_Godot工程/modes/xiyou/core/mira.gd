@@ -36,8 +36,11 @@ extends RefCounted
 
 const ACTOR := 168
 ## 人形新美术（O-465，co 11-13 出、Kyo 定稿 u2；11-15 行走定稿 u3）：行走 $Codex_Mira_Walk_Final 与战斗图 Codex_Mira_SV_u2 在 content/mira/img/
-## （XDB.img_path／XAppearance／XActorBook 优先读），黑龙形态仍用原版 UserSV_MiraDragon。false＝回到原版人形行走与 UserSV_MiraHuman 多帧。
+## （XDB.img_path／XAppearance／XActorBook 优先读），黑龙形态见下面 DRAGON_ART。false＝回到原版人形行走与 UserSV_MiraHuman 多帧。
 static var ART := true
+## 黑龙无剑新美术（O-479，co 出 21 张无剑动作＋召剑特效 u2，Kyo 11-15 通过）：UserSV_MiraDragon 多帧换成 content/mira/img/sv_actors/sv/UserSV_MiraDragon/（XDB.img_path，
+## 站姿归一档不变）；头顶召剑是独立层 XMiraSwordFx（触发技能名单待 Kyo 定）。false＝回到原版带剑黑龙图，召剑层也不建。
+static var DRAGON_ART := true
 const ARMOR := 4577
 const DRAGON := 2592
 const DRAGON_ATTACKS := [10148, 10149, 10150, 10151]
