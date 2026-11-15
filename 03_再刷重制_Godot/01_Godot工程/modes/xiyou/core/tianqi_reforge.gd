@@ -78,7 +78,7 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 	if not on(s):
 		return {"error": "现在不能重铸"}
 	if not targets(s).any(func(i): return is_same(i, item)):
-		return {"error": "只能重铸背包里没穿、没锁定的装备"}
+		return {"error": "只能重铸背包里未装备、未锁定的装备"}
 	var list: Array = (item.get("tianqi_affixes", []) as Array).duplicate(true)
 	if index < 0 or index >= list.size():
 		return {"error": "没有这条词条"}
@@ -87,7 +87,7 @@ static func reforge(s: XState, item: Dictionary, index: int, rng := Callable()) 
 		return {"error": "这条没有别的词条可重铸"}
 	var price := price_of(s, item, index)
 	if int(s.gold) < price:
-		return {"error": "金钱不足（要 %d）" % price}
+		return {"error": "%s不足（要 %d）" % [str(XDB.system().get("currencyUnit", "精魂")), price]}
 	if not rng.is_valid():
 		rng = XTianqiRandom.item_roll(s, item, "reforge")  # 存档派生（装备 instanceId＋tq_rng_n），读档不能重掷（O-449）
 	var key := XTianqiAffixRoll._pick(c, rng)
@@ -110,13 +110,13 @@ static func reforge_locked(s: XState, item: Dictionary, keep: int, rng := Callab
 	if not on(s) or not can_lock(s, item):
 		return {"error": "现在不能锁词条重铸"}
 	if not targets(s).any(func(i): return is_same(i, item)):
-		return {"error": "只能重铸背包里没穿、没锁定的装备"}
+		return {"error": "只能重铸背包里未装备、未锁定的装备"}
 	var list: Array = item.get("tianqi_affixes", [])
 	if keep < 0 or keep >= list.size():
 		return {"error": "没有这条词条"}
 	var price := XTianqiMoney.lock_price(s, item, keep)
 	if int(s.gold) < price:
-		return {"error": "金钱不足（要 %d）" % price}
+		return {"error": "%s不足（要 %d）" % [str(XDB.system().get("currencyUnit", "精魂")), price]}
 	if not rng.is_valid():
 		rng = XTianqiRandom.item_roll(s, item, "reforge_lock")  # 同上
 	var work: Array = list.duplicate(true)

@@ -189,7 +189,7 @@ func _make_card(i: int) -> Control:
 			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			card.add_child(badge)
 	if not ok:
-		var tag := XUI.label("还没修好", 18, Color(0.85, 0.82, 0.86))
+		var tag := XUI.label("暂未开放", 18, Color(0.85, 0.82, 0.86))
 		tag.position = Vector2(0, FIG_H / 2.0)
 		tag.size = Vector2(CARD.x, 30)
 		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

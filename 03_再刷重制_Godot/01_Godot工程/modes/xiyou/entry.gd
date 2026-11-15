@@ -281,7 +281,7 @@ func _add_auto_button() -> void:
 
 
 func _confirm_auto() -> void:
-	_window("继续切后台时自动存的档")
+	_window("继续（切后台自动存档）")
 	column.add_child(XUI.label(XSave.auto_summary()))
 	column.add_child(XUI.label("读的是切到后台那一刻的进度；你的存档位不受影响。手动存一次档后，这份自动存档就作废。", 18, XUI.DIM))
 	_add(XUI.button("读取"), _load_auto)

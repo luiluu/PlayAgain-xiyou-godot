@@ -846,7 +846,7 @@ static func new_rec(table: String, id: int, base_table: Array) -> Dictionary:
 		return {}
 	var elem := int(spec.get("element", 0))
 	var ename := element_name(elem)
-	var sname := str(spec.get("name", "元素转换:" + ename))
+	var sname := str(spec.get("name", "元素转换：" + ename))
 	var sid := int(spec.get("skill", 0))
 	var ceid := int(spec.get("ce", 0))
 	var iid := int(spec.get("item", 0))
@@ -1181,7 +1181,7 @@ static func profile_tooltip(prof: Dictionary) -> String:
 		return ""
 	var lines := []
 	if int(prof.get("phase", 0)) > 0 and str(prof.get("source", "")) == "knight":
-		lines.append("当前阶段：P%d" % int(prof.phase))
+		lines.append("当前阶段：第 %d 阶段" % int(prof.phase))
 	var fmt := func(arr: Array): return "、".join(arr.map(func(e): return element_name(int(e)))) if not arr.is_empty() else "无"
 	lines.append("弱点（+50%% / 转换书+25%%）：%s" % fmt.call(prof.get("weak", [])))
 	lines.append("抗性（-33%%）：%s" % fmt.call(prof.get("resist", [])))

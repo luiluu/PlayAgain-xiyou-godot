@@ -378,7 +378,7 @@ static func _ask_offering(host, s: XState, key: String):
 	if can_shards:
 		opts.append("献 %d 个印屑，指定第一件的部位" % cost)
 	if not weapons.is_empty():
-		opts.append("献一把本印毕业武器（这次毕业武器几率翻倍、必是同类）")
+		opts.append("献一把本印毕业武器（本次毕业武器概率翻倍、必为同类型武器）")
 	opts.append("返回")
 	var i: int = await ask(host, "offer_head", opts, [shards(s)])
 	if i == 0:
@@ -625,8 +625,8 @@ static func sealed_label(item: Dictionary) -> String:
 	var seal := str(seal_info(str(item.get("seal", ""))).get("seal", item.get("seal", "")))
 	var glow := str(data().names.true_glow if bool(item.get("true_seal", false)) else data().names.set_glow)
 	if str(item.get("kind", "")) == XTianqiQiyinDrop.KIND_WEAPON:
-		return "%s·毕业武器（%s）〔%s〕" % [seal, str(item.get("wtype", "")), glow]
-	return "%s·%s〔%s〕" % [seal, part_name(str(item.get("part", ""))), glow]
+		return "%s·毕业武器（%s）【%s】" % [seal, str(item.get("wtype", "")), glow]
+	return "%s·%s【%s】" % [seal, part_name(str(item.get("part", ""))), glow]
 
 
 ## 揭开后的名字：套装件名或武器名、真印、三条成色
