@@ -65,9 +65,10 @@ const DESC := {
 	"codexAndroidControls": "调整手机屏幕上的虚拟按键，进入后设置。",
 	"codexTestMode": "打开本机的测试功能。",
 	"codexGM": "打开测试工具。",
+	"codexWhatsNew": "再看一次这次更新了哪些内容。",
 }
 ## 子页类（确定进入，左右无用）
-const PAGE_SYMBOLS := ["HangUp", "pingbiDrop", "codexNotices", "codexAndroidControls", "codexQuality", "codexCostumes", "codexGM"]
+const PAGE_SYMBOLS := ["HangUp", "pingbiDrop", "codexNotices", "codexAndroidControls", "codexQuality", "codexCostumes", "codexGM", "codexWhatsNew"]
 
 var scene: XOptionsScene
 var cats: Array = []   # [{key, name, icon, idx:[_list 下标]}]

@@ -55,6 +55,9 @@ const SKIN_OPTION := ["界面风格", "codexUiSkin", true]
 const MOTION_OPTION := ["界面动效", "codexUiMotion", true]
 const MOTION_NAMES := ["全部", "简化", "关"]
 
+## 重制新增：本次更新内容（XWhatsNew，update-whatsnew）：现在运行的这一版有更新说明时才列，状态「查看」，确定再看一次「本次更新内容」弹窗
+const WHATS_NEW_OPTION := ["本次更新内容", "codexWhatsNew", true]
+
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
 
@@ -117,6 +120,8 @@ func _build_list() -> void:
 		_list.append(AUTO_OPTION)
 	if XPartyFormation.ENABLED:  # 战斗站位排在进战斗默认自动后、手机按键设置前；开关关掉时不列
 		_list.append(FORMATION_OPTION)
+	if XWhatsNew.ENABLED and not XWhatsNew.current(XUpdateClient.current_code()).is_empty():  # 本次更新内容排在手机按键设置前；没有说明或开关关掉时不列
+		_list.append(WHATS_NEW_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
 		_list.append(TOUCH_OPTION)
 
@@ -179,6 +184,8 @@ func status_text(i: int) -> String:
 			return "ON" if _follow_on() else "OFF"
 		"codexAndroidControls", "codexQuality":
 			return "调整"
+		"codexWhatsNew":
+			return "查看"
 		"codexUiSkin":
 			return "新" if XConfig.ui_skin_new() else "原版"
 		"codexUiMotion":
@@ -272,6 +279,13 @@ func ok() -> void:
 		"codexQuality":
 			XSound.system(1)
 			_open_page(XGraphicsOptionsScene.new())
+		"codexWhatsNew":
+			var rec := XWhatsNew.current(XUpdateClient.current_code())
+			if rec.is_empty():
+				XSound.system(3)
+			else:
+				XSound.system(1)
+				XWhatsNewPage.open(self, rec, skin != null)
 		"codexTestMode":
 			if XTestMode.unlocked():
 				_set_test_mode(not XTestMode.enabled())
