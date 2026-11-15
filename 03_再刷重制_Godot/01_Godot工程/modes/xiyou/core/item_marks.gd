@@ -182,7 +182,7 @@ static func draws_gold(rec: Dictionary) -> bool:
 ## 正式数据没有 <Can Sell>／<Cannot Sell>／<Price>／<Sell Price> 备注。
 ## installAlienationRuntime：异化装备不能在商店出售（Window_ShopSell.isEnabled）；installAlienationAdvanced 90：吞器占用的供体也不能
 static func can_sell(rec: Dictionary) -> bool:
-	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec)) and XAlienation.mark(rec).is_empty() \
+	return not rec.is_empty() and (int(rec.get("price", 0)) > 0 or has_sell_rewards(rec)) and XAlienation.mark(rec).is_empty() and not XFestRing.is_ring(rec) \
 		and not (XState.current != null and XAlienation.reserved(XState.current, rec))
 
 
@@ -691,7 +691,7 @@ static func sellable_gear(s: XState, legacy: Array, onekey := false) -> Array:
 	for e in s.gear:
 		var q := str(e.get("meta", {}).get("quality", "")).strip_edges()
 		# 异化装备跳过：原版挂机卖出（XdRsData.hangUp.doSell）挡了；一键出售原版没挡，这里一并跳过（O-081）
-		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty() \
+		if q.is_valid_int() and legacy.has(int(q)) and not is_locked(s, e) and XAlienation.mark(e).is_empty() and not XFestRing.is_ring(e) \
 				and (onekey and not XAlienation.o_reserved_onekey or not XAlienation.reserved(s, e)):
 			out.append(e)
 	XAlienation.end_batch()

@@ -60,8 +60,8 @@ static var EXTRA_MENU: Array = []
 static var ROAD_CLASS := "XFestRoad"
 const ROAD_METHOD := "enter"
 
-## 贺礼（D21 先按「称号成就为主、少量资源」填，量都在表里可改）：庆典币、精魂、物品 [[物品号, 数量]]
-static var GIFT := {"coins": 50, "gold": 5000, "items": [[26, 10], [27, 10]]}
+## 贺礼（v0.3.1 2.4，发放在 XFestReward.gift；这里只留总数给说明和测试看）：庆典币、精魂；另有副本挑战符文 ×2、肝帝积分抽奖券 ×10
+const GIFT := {"coins": XFestReward.GIFT_COINS, "gold": XFestReward.GIFT_GOLD}
 
 var host: XMapScene
 var rng := RandomNumberGenerator.new()
@@ -207,18 +207,29 @@ static func trophy(interp) -> void:
 	await say(interp, [XFestText.TROPHY_TEXTS[n % XFestText.TROPHY_TEXTS.size()]])
 
 
-## 庆典使者：第一次＝贺词＋贺礼＋介绍；之后出菜单；收尾期只说收尾话（第 2 天的兑换从 EXTRA_MENU 进）
+## 庆典使者：第一次＝贺词＋贺礼＋介绍；之后出菜单（签到、兑换店由 XFestReward.menu 加）；收尾期只说收尾话、留兑换。
+## 天启篇存档（v0.3.1 第 4 节）：只送纪念称号「冠军观赛团」和成就「我在现场」，不开签到、兑换店
 static func envoy(interp) -> void:
 	var s := XState.current
 	if s == null:
 		return
 	var d := XFest.data(s)
+	if XFestReward.tianqi(s):
+		d["envoy_met"] = true
+		if bool(d.get("envoy_gift", false)):
+			await say(interp, XFestText.ENVOY_TIANQI_AGAIN)
+			return
+		await say(interp, XFestText.ENVOY_TIANQI)
+		interp.host.toast(XFestReward.tianqi_gift(s))
+		return
 	if XFest.in_grace():
-		await say(interp, XFestText.ENVOY_GRACE if not EXTRA_MENU.is_empty() else XFestText.ENVOY_GRACE_NONE)
-		if not EXTRA_MENU.is_empty():
+		var has_menu := not EXTRA_MENU.is_empty() or not XFestReward.menu(s).is_empty()
+		await say(interp, XFestText.ENVOY_GRACE if has_menu else XFestText.ENVOY_GRACE_NONE)
+		if has_menu:
 			await _menu(interp, false)
 		return
-	d["envoy_met"] = true   # 成就「我在现场」（第 2 天）读这个
+	d["envoy_met"] = true
+	XFestReward.achieve(s, "scene")   # 成就「我在现场」
 	if not bool(d.get("envoy_gift", false)):
 		await say(interp, XFestText.ENVOY_FIRST)
 		var toast := give_gift(s)
@@ -238,6 +249,9 @@ static func _menu(interp, with_info: bool) -> void:
 			acts.append("road")
 			options.append(XFestText.ENVOY_MENU_TEAMS)
 			acts.append("teams")
+		for e in XFestReward.menu(XState.current):
+			options.append(str(e.label))
+			acts.append(e)
 		for e in EXTRA_MENU:
 			options.append(str(e.label))
 			acts.append(e)
@@ -252,28 +266,15 @@ static func _menu(interp, with_info: bool) -> void:
 			await say(interp, XFestText.ENVOY_ROAD_INFO if road_ready() else XFestText.ENVOY_ROAD_INFO_SOON)
 		elif act is String and act == "teams":
 			await say(interp, team_lines())
+		elif act is Dictionary and act.has("act"):
+			await XFestReward.run_menu(interp, str(act.act))
 		else:
 			await (act.call as Callable).call(interp)
 
 
-## 贺礼：每个存档一次；返回提示条文字。表 GIFT 里可改
+## 贺礼：每个存档一次；返回提示条文字（XFestReward.gift；天启篇存档改发纪念品）
 static func give_gift(s: XState) -> String:
-	var d := XFest.data(s)
-	if bool(d.get("envoy_gift", false)):
-		return ""
-	d["envoy_gift"] = true
-	var coins := int(GIFT.get("coins", 0))
-	XFest.add_coins(s, coins)
-	var gold := int(GIFT.get("gold", 0))
-	if gold > 0:
-		s.gain_gold(gold)
-	var items := ""
-	for it in GIFT.get("items", []):
-		s.gain_item(int(it[0]), int(it[1]))
-		items += "、%s ×%d" % [str(XDB.rec("Items", int(it[0])).get("name", "")), int(it[1])]
-	if gold > 0:
-		items = "、精魂 ×%d" % gold + items
-	return XFestText.ENVOY_GIFT_TOAST.replace("{coins}", str(coins)).replace("{items}", items)
+	return XFestReward.tianqi_gift(s) if XFestReward.tianqi(s) else XFestReward.gift(s)
 
 
 ## 报名处：问候 → 报名（进甲车道的冠军之路）／看战队／再想想

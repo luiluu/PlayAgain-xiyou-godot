@@ -197,6 +197,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		enemies.append(e)
 	XTianqiQiyinDragonRun.setup(self, s)  # 天启篇七首之龙（prepare 过才换）：借来的普拉顿换成七首之龙（在各线异化之前，名字不带【首领】就不会被按段异化）
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
+	XFestRing.battle_setup(self)  # 冠军戒指「一穿四」：开战清层数
+	XFestRoad.battle_setup(self)  # 冠军庆典·冠军之路：敌人固定吃本档难度倍率（普通版天灾／困难版洪荒），不看存档难度
 	XTianqiGojoTrial.setup(self, s)  # 天启篇五条悟专属试炼（prepare 过才换）：整组换成甚尔／宿傩的影子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者
@@ -3465,6 +3467,7 @@ func resolve_collapses() -> void:
 	for e in enemies:
 		if e.is_dead():
 			resolve_collapse(e)
+	XFestRing.on_collapses(self)  # 冠军戒指「一穿四」：新倒下的敌人给佩戴者加层
 
 
 func resolve_collapse(e: XEnemy) -> void:
@@ -3652,6 +3655,7 @@ func end_battle(result := -1) -> void:
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据
 	XTianqiAffixBattle.finish(self)  # 天启篇词条：清本场数据
 	XTianqiTrumpet.finish(self)  # 天启篇号卷：清本场数据
+	XFestRing.finish(self)  # 冠军戒指「一穿四」：层数清零
 	XTianqiElements.finish(self)  # 天启篇元素重做：清本场数据
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零

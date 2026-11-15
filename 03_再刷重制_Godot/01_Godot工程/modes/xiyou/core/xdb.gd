@@ -131,6 +131,7 @@ static func table(name: String) -> Variant:
 					XGrowthHelp.describe(_tables[name][id])
 			XCanglong.patch_armors(_tables[name])  # 【上邪】专属名
 			XGojo.patch_armors(_tables[name])  # 天启篇五条悟专属法宝「眼罩」
+			XFestRing.patch_armors(_tables[name])  # 冠军庆典三枚冠军戒指 8010～8012（常驻，不看活动开关）
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
@@ -151,6 +152,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
 	if id >= t.size() and XTianqiElements.has_new(name, id):
 		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
+	if id >= t.size() and (name == "Enemies" or name == "Troops" or name == "Skills") and XFestRoad.has(name, id):
+		return XFestRoad.rec(name, id, t)  # 冠军庆典·冠军之路：四支五人队、四个敌群、辅助的「应援」（表外号段 9300／19300）
 	if name == "Enemies" and XTianqiSect.has_enemy(XState.current, id):
 		return XTianqiSect.enemy_rec(id, t)  # 天启篇教派连带内容（包丙）：老钱／小钱及打手
 	if id <= 0 or id >= t.size() or t[id] == null:
