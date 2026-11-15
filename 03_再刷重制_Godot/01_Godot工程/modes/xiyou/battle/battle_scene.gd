@@ -438,7 +438,9 @@ func _place_battlers() -> void:
 		_make_enemy_sprite(e)
 		_make_enemy_gauge(e)
 		_set_enemy_shown(e)
-	var points := party_layout(logic.actors.size())
+	# 战斗站位（XPartyFormation，设置页「战斗站位」）：编队第 k 位站阵型第 k 个点；原版竖排＝party_layout
+	var points := XPartyFormation.points(XPartyFormation.current(), logic.actors.size())
+	var mine := []
 	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
 		var s := XBattlerSprite.new()
@@ -447,6 +449,19 @@ func _place_battlers() -> void:
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
+		mine.append(s)
+	_sort_actor_sprites(mine)
+
+
+## 我方精灵按脚底 y 排绘制次序（靠下的画在上面）：两排错开、菱形时编队次序与上下次序不一致；
+## 原版竖排本来就是自上而下，排完不变。只在我方精灵已占的那几个子节点位置里互换。
+func _sort_actor_sprites(mine: Array) -> void:
+	var slots := mine.map(func(s): return s.get_index())
+	slots.sort()
+	var by_y := mine.duplicate()
+	by_y.sort_custom(func(a, b): return a.home.y < b.home.y if a.home.y != b.home.y else a.home.x > b.home.x)
+	for k in range(by_y.size()):
+		field.move_child(by_y[k], slots[k])
 
 
 
@@ -1153,6 +1168,7 @@ func _tianqi_swap(out: XActor) -> void:
 	var old: XBattlerSprite = sprites[out]
 	var s := XBattlerSprite.new()
 	field.add_child(s)
+	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
 	s.setup(h, ACTOR_SCALE)
 	s.home = old.home
 	s.position = old.home

@@ -28,7 +28,8 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexScreenSmooth": false,  # 重制新增「画面平滑」（XScreenScale）；没亲手选过时按 XScreenScale.default_on()（默认都关，ensure_loaded）
 	"codexBattleAutoDefault": false,  # 重制新增「进战斗默认自动」
 	"codexFontSize": {"global": 100, "toast": 100},  # 重制新增「字体大小」「弹窗字号」（XFontScale）
-	"codexEncounterTarget": 0}  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
+	"codexEncounterTarget": 0,  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
+	"codexPartyFormation": 0}  # 重制新增「战斗站位」（O-待定，XPartyFormation）：0 两排错开（默认）、1 菱形、2 原版竖排
 const VOLUMES := ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]
 ## 消息提醒（installV019UsabilityRuntime NOTICE 顺序＋技能升级通告）：[键, 名字, 说明]
 const NOTICES := [["race", "种族消息", "种族祝福、猎物、血契、反攻等"], ["chest", "宝箱消息", "开宝箱后的收获汇总"],
@@ -70,6 +71,8 @@ static func ensure_loaded() -> void:
 				elif key == XEncounterTarget.KEY:
 					var saved = data.get(key)
 					_values[key] = clampi(int(saved), 0, XEncounterTarget.NAMES.size() - 1) if (saved is float or saved is int) else 0
+				elif key == XPartyFormation.KEY:
+					_values[key] = XPartyFormation.sanitize(data.get(key))
 				elif key == XGraphics.KEY:
 					_values[key] = XGraphics.sanitize(data.get(key))
 				elif key == XFontScale.KEY:
@@ -149,7 +152,7 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in [XEncounterTarget.KEY, "battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality", "codexFontSize"]:
+	if key not in DEFAULTS or key in VOLUMES or key in [XEncounterTarget.KEY, XPartyFormation.KEY, "battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality", "codexFontSize"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -184,6 +187,18 @@ static func battle_speed() -> int:
 static func set_battle_speed(value: int) -> bool:
 	ensure_loaded()
 	_values.battleAniSpeed = clampi(value, 1, 4)
+	return _write()
+
+
+## 战斗站位（XPartyFormation）：0 两排错开、1 菱形、2 原版竖排
+static func party_formation() -> int:
+	ensure_loaded()
+	return XPartyFormation.sanitize(_values.get(XPartyFormation.KEY, XPartyFormation.DEFAULT))
+
+
+static func set_party_formation(value: int) -> bool:
+	ensure_loaded()
+	_values[XPartyFormation.KEY] = clampi(value, 0, XPartyFormation.NAMES.size() - 1)
 	return _write()
 
 
