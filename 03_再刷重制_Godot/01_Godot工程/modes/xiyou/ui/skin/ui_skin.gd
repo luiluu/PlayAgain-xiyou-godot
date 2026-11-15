@@ -381,7 +381,7 @@ static func draw_panel(ci: RID, rect: Rect2, opacity := 1.0) -> void:
 			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color(1, 1, 1, a))
 		return
 	# 很矮的窗口（如 28 高的提示条）：九宫格角放不下，改用纯色圆角框
-	var s := StyleBoxFlat.new()
+	var s := _flat("panel_small")
 	s.bg_color = Color(PANEL, a)
 	s.border_color = Color(LINE, 0.42 * a)
 	s.set_border_width_all(1)
@@ -395,8 +395,7 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0) ->
 		return
 	var rs := RenderingServer
 	# 外晕（0 0 12px 绯红 30%）
-	var halo := StyleBoxFlat.new()
-	halo.bg_color = Color(0, 0, 0, 0)
+	var halo := _flat("sel_halo")
 	halo.draw_center = false
 	halo.shadow_color = Color(SEL_FILL, 0.30 * alpha)
 	halo.shadow_size = 6
@@ -411,7 +410,7 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0) ->
 	_hquad(ci, Rect2(inner.position, Vector2(x68 - inner.position.x, inner.size.y)), c0, c1)
 	_hquad(ci, Rect2(Vector2(x68, inner.position.y), Vector2(inner.end.x - x68, inner.size.y)), c1, c2)
 	# 描边
-	var edge := StyleBoxFlat.new()
+	var edge := _flat("sel_edge")
 	edge.draw_center = false
 	edge.border_color = Color(SEL_LINE, OUTLINE_ALPHA * alpha)
 	edge.set_border_width_all(1)
@@ -424,10 +423,17 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0) ->
 		var ba := bar_alpha * alpha
 		var glow := glow_texture()
 		rs.canvas_item_add_texture_rect(ci, bar.grow_individual(10, 10, 10, 10), glow.get_rid(), false, Color(SEL_LINE, 0.55 * ba))
-		var b := StyleBoxFlat.new()
+		var b := _flat("sel_bar")
 		b.bg_color = Color(SEL_LINE, ba)
 		b.set_corner_radius_all(2)
 		b.draw(ci, bar)
+
+
+## 画法里反复用的 StyleBoxFlat（选中条每帧都可能重画，不每次新建）；取到后照用处重设颜色再画
+static func _flat(key: String) -> StyleBoxFlat:
+	if not _styles.has(key):
+		_styles[key] = StyleBoxFlat.new()
+	return _styles[key]
 
 
 static func _hquad(ci: RID, r: Rect2, left: Color, right: Color) -> void:
