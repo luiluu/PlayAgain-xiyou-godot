@@ -295,7 +295,8 @@ static func skill_rec(id: int, table: Array) -> Dictionary:
 	return out
 
 
-## 开战（XBattleLogic.setup 建完敌人后调）：冠军之路的敌人固定吃本档难度倍率（天灾／洪荒），不看玩家存档的难度，再回满
+## 开战（XBattleLogic.setup 建完敌人后调）：冠军之路的敌人固定吃本档难度倍率（天灾／洪荒），不看玩家存档的难度，
+## 也不吃存档 DCultyL1～5 的仓库倍率（warehouse_rate），再回满
 static func battle_setup(logic) -> void:
 	var d := _decode_troop(int(logic.troop_id))
 	if not on() or d.is_empty():
@@ -304,6 +305,7 @@ static func battle_setup(logic) -> void:
 	for e in logic.enemies:
 		if not _decode_enemy(int(e.enemy_id)).is_empty():
 			e._rates = rates
+			e.set_meta("fest_road", true)  # XEnemy.warehouse_rate 见此恒为 1：不读存档的 DCultyL1～5（Star_Warehouse 难度怪物属性）
 			e.recover_all()
 
 

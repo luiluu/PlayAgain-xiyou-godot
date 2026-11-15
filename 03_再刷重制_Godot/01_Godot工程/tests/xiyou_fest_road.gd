@@ -324,6 +324,22 @@ func _two_tiers() -> void:
 			ok = ok and absf(got_hp - XFestRoad.effective_param(tier, 3, 0, 0)) / got_hp < 0.001
 	_check("tier_effective_params_fixed_difficulty", ok, detail)
 	var h6 := XFestRoad.effective_param(1, 0, 0, 0) / XFestRoad.effective_param(0, 0, 0, 0)
+	# 存档的 DCultyL1～5（Star_Warehouse 难度怪物属性）开或关，冠军之路敌人属性都一样；普通敌人照样吃
+	var sw := _state()
+	var dl := []
+	for flag in [false, true]:
+		for k in range(1, 6):
+			sw.flags["DCultyL%d" % k] = false
+		sw.flags["DCultyL2"] = flag
+		var lgw := XBattleLogic.new()
+		lgw.setup(XFestRoad.troop_id(0, 0), sw)
+		var ew = lgw.enemies[0]
+		var plain := XEnemy.new().setup(6, sw.difficulty)
+		dl.append([float(ew.mhp), float(ew.param(2)), float(ew.xparam(0)), float(ew.sparam(0)), plain.warehouse_rate()])
+	for k in range(1, 6):
+		sw.flags.erase("DCultyL%d" % k)
+	_check("dcultyl_does_not_touch_road", dl[0][0] == dl[1][0] and dl[0][1] == dl[1][1] and dl[0][2] == dl[1][2] and dl[0][3] == dl[1][3]
+		and dl[0][4] == 1.0 and dl[1][4] > 1.0, dl)
 	_check("hard_is_honghuang_over_tianzai", absf(h6 - float(r8[0]) / float(r6[0])) < 0.001, h6)
 	_check("hard_troops_and_enemies", (XDB.rec("Troops", 9313).members as Array).size() == 5 and str(XDB.rec("Troops", 9313).name) == "冠军之路·内战幻神队"
 		and str(XDB.rec("Enemies", 9434).name) == "内战幻神队·辅助" and XDB.rec("Troops", 9320).is_empty() and XDB.rec("Enemies", 9500).is_empty())

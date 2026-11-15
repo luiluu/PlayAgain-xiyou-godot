@@ -27,12 +27,28 @@ static func table() -> Array:
 			out.append({"id": i, "name": str(d.get("DesignationName", "")), "icon": int(float(str(d.get("DesignationIcon", "0")))), "color": str(d.get("DesignationColor", ""))})
 	if not out.any(func(d): return int(d.id) == KYO_ID):
 		out.append({"id": KYO_ID, "name": "kyo专属", "icon": 240202, "color": "#f5f7fa"})
-	if XFest.ENABLED:  # 冠军庆典称号 41～44 接在最后（开关关掉整件不列；活动期间都列，没拿到的显示 ???；活动结束后只列拿到了的，永久可选）
-		var during := XFest.visible()
+	if XFest.ENABLED:  # 冠军庆典称号 41～46 接在最后（开关关掉整件不列；活动期间且冠军之路已开放时都列，没拿到的显示 ???；否则只列拿到了的，永久可选）
+		var during := XFest.visible() and _fest_road_ready()
 		for t in XFest.TITLES:
 			if (during or unlocked(int(t.id))) and not out.any(func(d): return int(d.id) == int(t.id)):
 				out.append((t as Dictionary).duplicate())
 	return out
+
+## 大厅庆典（乙车道 XFestLobby）说冠军之路开放了没有；没有这个类（单独合冠军之路）当作开放。按名字找全局类，不直接写类名，免得没有它时解析报错
+static var _lobby_script = null
+static var _lobby_looked := false
+
+
+static func _fest_road_ready() -> bool:
+	if not _lobby_looked:
+		_lobby_looked = true
+		for c in ProjectSettings.get_global_class_list():
+			if str(c.get("class", "")) == "XFestLobby":
+				_lobby_script = load(str(c.get("path", "")))
+	if _lobby_script == null or not (_lobby_script as Script).get_script_method_list().any(func(m): return str(m.name) == "road_ready"):
+		return true
+	return bool(_lobby_script.call("road_ready"))
+
 
 static func unlocked(id: int) -> bool:
 	if id == KYO_ID:
