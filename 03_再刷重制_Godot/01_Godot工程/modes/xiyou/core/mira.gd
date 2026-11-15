@@ -35,7 +35,7 @@ extends RefCounted
 ## 共用的 MiraRavenNumberBoost 在 XNumberBoost。
 
 const ACTOR := 168
-## 人形新美术（O-465，co 11-13 出、Kyo 定稿 u2）：行走 $Codex_Mira_Walk_u2 与战斗图 Codex_Mira_SV_u2 在 content/mira/img/
+## 人形新美术（O-465，co 11-13 出、Kyo 定稿 u2；11-15 行走定稿 u3）：行走 $Codex_Mira_Walk_Final 与战斗图 Codex_Mira_SV_u2 在 content/mira/img/
 ## （XDB.img_path／XAppearance／XActorBook 优先读），黑龙形态仍用原版 UserSV_MiraDragon。false＝回到原版人形行走与 UserSV_MiraHuman 多帧。
 static var ART := true
 const ARMOR := 4577
