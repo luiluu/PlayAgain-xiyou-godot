@@ -392,7 +392,7 @@ static func engrave(s: XState, index: int, target: Dictionary) -> Dictionary:
 	if XAlienation.ledger(s).pending != null:
 		return {"error": "先完成待选重抽"}
 	if not engrave_targets(s).any(func(e): return is_same(e, target)):
-		return {"error": "只能刻到背包里没穿、没锁定、没被占用的武器或防具上"}
+		return {"error": "只能刻到背包里未装备、未锁定、未绑定的武器或防具上"}
 	if s.item_count(XAlienation.stone_id()) < _cost("engrave"):
 		return {"error": "缺少异化石"}
 	var core: Dictionary = list[index]
@@ -430,5 +430,5 @@ static func details(s: XState, i: Dictionary) -> Array:
 		"收益：" + str(f.get("benefit", "")), "代价：" + str(f.get("cost", "")),
 		"来源：%s线异化怪；分解获得%d点能量" % [str(XTianqi.line_info(str(t.line)).get("name", t.line)), dismantle_gain(i)]]
 	if is_new_affix(key) and not XTianqiAlienAffix.ENABLED:
-		out.append("未生效：本线新词条的战斗效果关着。")
+		out.append("未生效：本路线新词条的战斗效果暂未启用。")
 	return out

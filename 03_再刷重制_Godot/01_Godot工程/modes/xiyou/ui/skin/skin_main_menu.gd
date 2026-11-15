@@ -47,14 +47,14 @@ var ii := 0
 var party_top := 0
 var _rows: Array = []
 var _wide_token: Node
-## 两级操作开关（cc/ui-skin-p1fix 追加，O-待定）：false＝回旧的一级分组列表
+## 两级操作开关（cc/ui-skin-p1fix 追加，O-486）：false＝回旧的一级分组列表
 static var TWO_LEVEL := true
 ## 第几级：0 环上选大类、1 中块选子项（TWO_LEVEL 时才用）
 var level := 0
 ## 上次停在哪：{g: 组键, items: {组键: 子项键}}（跨次打开菜单；每个大类各记各的子项）
 static var _mem := {}
 const NOTE_H := 56.0
-## 右栏队伍框加助力位卡（Kyo 11-15「不是还有助力位置吗」，O-待定）：天启篇第 5 张卡＝出战栏第 5 格（XState.helper），
+## 右栏队伍框加助力位卡（Kyo 11-15「不是还有助力位置吗」，O-487）：天启篇第 5 张卡＝出战栏第 5 格（XState.helper），
 ## 空着写「助力位 · 空」；队伍框拉到和中间栏底边对齐、卡按高度均分（最高 ROW_MAX）。false＝旧的随人数排、框高随内容。
 static var HELPER_CARD := true
 const PARTY_ROW_MAX := 120.0

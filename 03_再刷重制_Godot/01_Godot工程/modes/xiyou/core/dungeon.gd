@@ -270,7 +270,7 @@ static func race_supply(s: XState) -> String:
 	var pending := total - (s.item_count(id) - before)
 	if pending > 0:
 		sup.inbox[str(id)] = int(sup.inbox.get(str(id), 0)) + pending
-	return "获得%s×%d%s" % [str(XDB.rec("Items", id).get("name", "")), total, "；背包已满，暂存祝福管理" if pending > 0 else ""]
+	return "获得%s×%d%s" % [str(XDB.rec("Items", id).get("name", "")), total, "；背包已满，已暂存至种族祝福" if pending > 0 else ""]
 
 
 ## 甚尔／宿傩的进阶石（rollAdvanceStone）：甚尔已进阶或背包已有一枚、宿傩还差的枚数（3－进阶次数）不大于背包数时不掷；否则 1/50 得一枚

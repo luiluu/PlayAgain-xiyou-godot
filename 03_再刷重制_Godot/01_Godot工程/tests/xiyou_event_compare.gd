@@ -309,6 +309,8 @@ func _run() -> void:
 	XDeadContent.ICHIGO_BANKAI = false
 	XDeadContent.DOMAIN_ALL_MATK = false
 	XDeadContent.clear_cache()
+	# 原版文字错的加载时修正（XTextFix，乙类文字审，O 号见优化登记）：参照是原版文字，对照时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	# 漩涡二阶段、苍龙重做与解放（XRift／XCanglong／RELEASE_CANGLONG，优化登记三条）：对照原版语义，关掉；本身由 tests/xiyou_rift2_canglong 核
 	XCanglong.original_data()
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
@@ -886,6 +888,9 @@ func _trace_norm(trace: Array) -> Array:
 			# 选项里的控制符：原版脚本拼的选项直接带 ESC（\x1b，即 convertEscapeCharacters 之后的写法，如称号选项 \x1bI[0]），
 			# 重制写成反斜杠；显示时两者一样，比较前统一成反斜杠（悟空 dmg2，m4e1p2／p3）
 			x.choices = (x.choices as Array).map(func(t): return str(t).replace(char(27), "\\"))
+		if x.t == "msg" and x.has("lines"):
+			# 已移除地图提示（CodexMapRemoval.notice）文字审批 19 改写：原版「【区域已移除】X因地图文件损坏，已从当前版本移除。」→「（X 区域暂未开放。）」
+			x.lines = (x.lines as Array).map(func(t): return RegEx.create_from_string("^【区域已移除】(.*)因地图文件损坏，已从当前版本移除。$").sub(str(t), "（$1 区域暂未开放。）"))
 		return _norm(x))
 
 

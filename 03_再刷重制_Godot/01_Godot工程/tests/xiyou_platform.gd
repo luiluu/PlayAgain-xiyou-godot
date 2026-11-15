@@ -151,7 +151,7 @@ func _touch_styles(platform: XPlatform, rec: Recorder) -> void:
 	# 原多键：前页＝ui_page_up
 	g.set_choice("layout", "full")
 	var ups := rec.page_ups
-	check("modern_full_keys", g.active.has("pageup") and g.active.has("ctrl") and ((g._buttons.ok as Panel).get_node("Label") as Label).text == "确认", g.active)
+	check("modern_full_keys", g.active.has("pageup") and g.active.has("ctrl") and ((g._buttons.ok as Panel).get_node("Label") as Label).text == "确定", g.active)
 	touch(0, g.rects.pageup.get_center(), true)
 	await frames(2)
 	touch(0, g.rects.pageup.get_center(), false)

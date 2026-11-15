@@ -244,7 +244,7 @@ func _run() -> void:
 	s.gold = 100000000
 	var g0 := s.gold
 	var msg := XTraining.confirm(s, a.actor_id, 2)
-	_check("train_ok", msg == "修炼成功" and M.training_level(s, 2) == 1 and s.gold == g0 - M.training_price(s, 1), [msg, s.gold])
+	_check("train_ok", msg == "强化成功" and M.training_level(s, 2) == 1 and s.gold == g0 - M.training_price(s, 1), [msg, s.gold])
 	_check("train_shared", XTraining.level(s, b.actor_id, 2) == 1)
 	var want_bonus := floorf(a.param_base_direct(2) * 0.01)
 	_check("train_bonus", is_equal_approx(XTraining.param_bonus(a, 2), want_bonus), [XTraining.param_bonus(a, 2), want_bonus, atk0])

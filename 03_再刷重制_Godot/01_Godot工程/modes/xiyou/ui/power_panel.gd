@@ -143,9 +143,9 @@ func blocks(a: XActor, data: Dictionary) -> Array:
 			["自身 " + XPower.format(float(data.selfParts[i])) + " · 装备提升 " + XPowerNotice.delta(float(data.gearParts[i])), 13, MUTED, 20.8]], w))
 	for line in evaluation_lines(data):
 		out.append(text_block(line, 13, MUTED, 20.8, w))
-	out.append(h3_block("已穿装备", w))
+	out.append(h3_block("已装备", w))
 	if data.equipment.is_empty():
-		out.append(spaced(text_block("未穿装备，自身战力仍然有效。", 18, MUTED, 28.8, w - 40), 20, 20, w))
+		out.append(spaced(text_block("未装备，自身战力仍然有效。", 18, MUTED, 28.8, w - 40), 20, 20, w))
 	for r in data.equipment:
 		out.append(card_block([[equipment_title(r), 18, TEXT, 28.8, true], [equipment_meta(r), 13, MUTED, 20.8],
 			[" · ".join(range(3).map(func(i): return XPower.LABELS[i] + " " + XPower.format(float(r.score.parts[i])))), 13, MUTED, 20.8]], w))

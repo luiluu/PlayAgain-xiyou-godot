@@ -105,11 +105,12 @@ static func style_button(b: Button, pad := Vector2(10, 6)) -> void:
 	b.add_theme_stylebox_override("focus", focus)
 
 
+## 字号跟「字体大小」全局档位（XFontScale，文字审 13-009：检索面板 12／13 号字小）；默认 100 档与原版读数相同
 static func _label(text: String, size: int, color: Color, bold := false) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", _font(bold))
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", XFontScale.size(size))
 	l.add_theme_color_override("font_color", skin_color(color))
 	_outline(l)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -124,8 +125,9 @@ static func _para(text: String, size: int, color: Color, line_h: float, bold := 
 	return l
 
 
-## 行高按 CSS line-height（字号 × 1.6），不用字体自身的行高
+## 行高按 CSS line-height（字号 × 1.6），不用字体自身的行高；字号放大时行高同比放大（默认档不变）
 static func _fixed(l: Label, line_h: float) -> Label:
+	line_h = XFontScale.scaled(line_h)
 	var ls := LabelSettings.new()
 	ls.font = l.get_theme_font("font")
 	ls.font_size = l.get_theme_font_size("font_size")

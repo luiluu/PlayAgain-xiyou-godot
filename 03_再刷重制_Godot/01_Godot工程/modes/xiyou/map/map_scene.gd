@@ -1331,7 +1331,9 @@ func _tween_alpha(rect: ColorRect, out: bool) -> void:
 
 func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
 	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
-		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
+		# 文字审 19-001：玩家不看内部地图号；号写进日志便于查是哪条事件指过来的（重制已开放全部原版路线，正常走不到这里）
+		push_warning("场所移动到没收录的地图：Map%03d" % id)
+		await message.show_text("", 0, ["\\c[2]（该区域暂未开放）"])
 		return
 	await transfer_fade(true, fade_type)
 	await load_map(id, x, y, d if d > 0 else player.direction)

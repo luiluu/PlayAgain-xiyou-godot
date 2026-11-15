@@ -478,10 +478,10 @@ func _test_shifts_books_shop_drop() -> void:
 	# passiveELUP 改属
 	_check("passive_1116_elup14", str(XDB.rec("Skills", 1116).note).contains("<passiveELUP14:") and str(XDB.rec("Skills", 2505).note).contains("<passiveELUP14:"))
 	# 转换书 1039 改名 + 3101~3105 + 8 号当铺 + 互斥 + 仅炼狱/证道单档限1次掉落
-	_check("book_1039_renamed_nature", str(XDB.rec("Items", 1039).name) == "元素转换:自然" and str(XDB.rec("CommonEvents", 641).name) == "元素自然")
+	_check("book_1039_renamed_nature", str(XDB.rec("Items", 1039).name) == "元素转换：自然" and str(XDB.rec("CommonEvents", 641).name) == "元素自然")
 	var item_water := XDB.rec("Items", 3101)
 	var item_void := XDB.rec("Items", 3103)
-	_check("new_books_exist_3101_3105", str(item_water.name) == "元素转换:水" and str(item_void.name) == "元素转换:虚空")
+	_check("new_books_exist_3101_3105", str(item_water.name) == "元素转换：水" and str(item_void.name) == "元素转换：虚空")
 	var shop := XTianqiElements.shop_goods(s, 204, [[0, 1039, 0, 0]])
 	_check("pawnshop_adds_water_wind", shop.any(func(g): return int(g[1]) == 3101) and shop.any(func(g): return int(g[1]) == 3102))
 	var act: XActor = s.battle_members()[0]

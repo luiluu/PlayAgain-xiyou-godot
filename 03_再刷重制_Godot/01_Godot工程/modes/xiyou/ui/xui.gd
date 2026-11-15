@@ -12,6 +12,14 @@ const FONT_SIZE := 26
 const LINE_HEIGHT := 36
 const MENU_WINDOW_OPACITY := 30
 
+## O-488（文字审 13-006／15-001／16-001）：原版名字表越界时 drawText 出「undefined」，
+## 重制照搬过来会让玩家看到 JS 残字。开着时改显示 undef_text 给的中文（未知／未知属性…）；false＝照原版写 undefined。
+static var UNDEF_TEXT_FIX := true
+
+
+static func undef_text(text: String) -> String:
+	return text if UNDEF_TEXT_FIX else "undefined"
+
 ## Window.png textColor(0..31)
 const PALETTE := ["ffffff", "20a0d6", "ff784c", "66cc40", "99ccff", "ccc0ff", "ffffa0", "808080",
 	"c0c0c0", "2080cc", "ff3810", "00a010", "3e9ade", "a098ff", "ffcc20", "000000",

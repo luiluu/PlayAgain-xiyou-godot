@@ -339,7 +339,7 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.draw_texture_rect(tex, Rect2(PAD, image_y, tex.get_width() * s, tex.get_height() * s), false)
 			hp_y = image_y + tex.get_height() * s + 10
 		else:
-			c.text("(图片加载中…)" if on else "(图片加载中...)", PAD, image_y, 150, "left", XUiSkin.TEXT_3 if on else XUI.TEXT)
+			c.text("（图片加载中……）", PAD, image_y, 150, "left", XUiSkin.TEXT_3 if on else XUI.TEXT)
 			hp_y = image_y + 10
 		if on:
 			c.font = XUiSkin.font("num")
@@ -364,7 +364,7 @@ func _paint_info(c: XMVCanvas) -> void:
 		elif int(m.transferItem) > 0:
 			var item := XDB.rec("Items", int(m.transferItem))
 			var has_item := XState.current and XState.current.item_count(int(m.transferItem)) > 0
-			var head := (("消耗 " if on else "确定看详情 / %s，消耗 " % _transfer_hint()) if has_item else ("缺少传送凭证，需 " if on else "确定看详情；不可传送，需 "))
+			var head := (("消耗 " if on else "确定查看详情 / %s，消耗 " % _transfer_hint()) if has_item else ("缺少传送凭证，需 " if on else "确定查看详情；不可传送，需 "))
 			c.text(head, 0, prompt_y, w, "left", (XUiSkin.GOLD if has_item else XUiSkin.DOWN) if on else sys_col)
 			var tw := c.text_width(head)
 			c.icon(int(item.get("iconIndex", 0)), tw, prompt_y + 2)
@@ -530,7 +530,7 @@ func _paint_confirm(c: XMVCanvas) -> void:
 		c.text(["确认", "取消"][i], 6, y, c.size.x - 12, "center" if on else "left", XUiSkin.TEXT if on else XUI.TEXT)
 	if on:
 		c.font = XUiSkin.font("title")
-	var q_txt := ("确认传送至 %s？" if on else "是否传送至 %s?") % str(current_map().get("name", "未知地图"))
+	var q_txt := ("确认传送至 %s？" if on else "是否传送至 %s？") % str(current_map().get("name", "未知地图"))
 	c.text(q_txt, 0, 0, c.size.x, "center", XUiSkin.GOLD_LIGHT if on else XUI.TEXT)
 
 

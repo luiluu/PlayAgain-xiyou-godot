@@ -731,9 +731,9 @@ func button_text(name: String) -> String:
 		return BUTTONS.info.text
 	match name:
 		"ok":
-			return {"ab": "A", "full": "确认"}.get(layout(), BUTTONS.ok.text)
+			return {"ab": "A", "full": "确定"}.get(layout(), BUTTONS.ok.text)
 		"cancel":
-			return {"ab": "B", "full": "返回"}.get(layout(), BUTTONS.cancel.text)
+			return {"ab": "B", "full": "取消"}.get(layout(), BUTTONS.cancel.text)
 		"run":
 			return "跑" if layout() != "classic" else BUTTONS.run.text
 	return BUTTONS[name].text

@@ -188,7 +188,7 @@ const BAR_W := 4.0           # 左侧光标宽（v0.6 是 5）
 const BAR_INSET := 5.0       # 上下各缩 5，不顶到头
 const OUTLINE_ALPHA := 0.45  # 外圈描边（v0.6 是 60%）
 const FILL_ALPHA := 0.40     # 底光（v0.6 是 46%）
-## 选中条加厚版（cc/ui-skin-p1fix，小A审 v0.7 P1-1，Kyo 11-15「修」）：false＝回到 v0.7 打磨版（上面四个常量），可回退。
+## 选中条加厚版（cc/ui-skin-p1fix，小A审 v0.7 P1-1，Kyo 11-15「修」，O-482）：false＝回到 v0.7 打磨版（上面四个常量），可回退。
 static var SELECT_V2 := true
 const SEL2_BAR_W := 6.0                  # 左侧光标 4→6
 const SEL2_BAR_INSET := 2.0              # 上下只缩 2
@@ -238,7 +238,7 @@ const GROUPS := [
 ]
 
 ## ---- 组入口图标 u4（Kyo 11-15 定稿；co 画，content/ui_skin/group_icons/）----
-## GROUP_ICONS_U4（默认开，O-待定）：组带 art 的用 u4 贴图（{art}_{normal|selected}_{64|32}.png），原生大小、最近邻、选中只换贴图不缩放；
+## GROUP_ICONS_U4（默认开，O-485）：组带 art 的用 u4 贴图（{art}_{normal|selected}_{64|32}.png），原生大小、最近邻、选中只换贴图不缩放；
 ## false＝回旧图标号（icon）和旧画法（40px、选中 ×1.16）。宠物组暂无 art（u4 的 party 号角留着，宠物组放开时再定）。
 static var GROUP_ICONS_U4 := true
 const GROUP_ICON_DIR := "res://content/ui_skin/group_icons/"
