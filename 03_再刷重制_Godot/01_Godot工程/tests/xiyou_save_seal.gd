@@ -90,7 +90,7 @@ func _run() -> void:
 	XSaveSeal.simulate_template = false
 	XSaveSeal.key_file_override = ""
 	XSaveSeal.reload_keys()
-	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
 	XFeedback.export_dir_override = ""
 	_reset_caches()
 	_clean(dir)
@@ -363,10 +363,14 @@ func _transfer() -> void:
 	v.sealed = Marshalls.raw_to_base64(raw)
 	check("xfer.tampered_refused", str(XSaveTransfer.parse_import(JSON.stringify(v)).get("error", "")).contains(XSaveSeal.FAIL_TEXT))
 	var plain_export := JSON.stringify({"format": XSaveTransfer.FORMAT, "game": XSaveTransfer.GAME, "slot": 1, "data": imp.data})
-	check("xfer.plain_refused", str(XSaveTransfer.parse_import(plain_export).get("error", "")).contains("没有签名"))
-	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
-	check("xfer.plain_accepted_when_allowed", XSaveTransfer.parse_import(plain_export).has("data"))
+	# D37：旧版明文导出照收，导入时写成封存格式
+	var plain_imp := XSaveTransfer.parse_import(plain_export)
+	check("xfer.plain_accepted_d37", plain_imp.has("data"), plain_imp)
+	check("xfer.plain_import_sealed", XSaveTransfer.import_to(11, plain_imp.data) == "" and XSaveSeal.is_sealed(_bytes(XSave.path(11))) and XSave.load_slot(11)
+		and not FileAccess.file_exists(dir.path_join("save_11.json")))
 	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
+	check("xfer.plain_refused_when_off", str(XSaveTransfer.parse_import(plain_export).get("error", "")).contains("没有签名"))
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
 	check("xfer.raw_sealed_file", XSaveTransfer.read_import(XSave.path(1)).has("data"))
 	check("xfer.import_writes_sealed", XSaveTransfer.import_to(9, imp.data) == "" and XSaveSeal.is_sealed(_bytes(XSave.path(9))) and XSave.load_slot(9))
 

@@ -507,9 +507,7 @@ func _run() -> void:
 	check("pool_import", parsed.has("data") and XSaveTransfer.import_to(9, parsed.data) == "" and XSave.load_slot(9))
 	_same("pool_import_visible", vis_plain, _visible(XState.current))
 	# 没包外层的新格式文件直接导入也行
-	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true  # 直接一份明文存档的导入（封存开着时默认拒，见 xiyou_save_seal）
-	check("pool_import_raw", XSaveTransfer.parse_import(_text(XSave.path(8))).has("data"))
-	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
+	check("pool_import_raw", XSaveTransfer.parse_import(_text(XSave.path(8))).has("data"))  # 直接一份明文存档也能导入（D37）
 	# 编号对不上：当坏档，不读
 	var broken = JSON.parse_string(_text(XSave.path(8)))
 	(broken.gearPool as Array).resize(1)

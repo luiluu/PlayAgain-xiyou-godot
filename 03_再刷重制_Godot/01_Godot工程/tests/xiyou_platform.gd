@@ -732,9 +732,9 @@ func _run() -> void:
 	XSaveTransfer.dialog_override = Callable()
 	var got := XSaveTransfer.read_import(file)
 	check("transfer_read_back", got.has("data") and JSON.stringify(got.data) == JSON.stringify(XSaveTransfer.parse_import(str(out.text)).data), got.get("error"))
-	# 直接选一份存档文件：封存格式的能导入；明文的（没签名）封存开着时默认拒（D28，XSaveTransfer.ACCEPT_PLAIN_IMPORT）
+	# 直接选一份存档文件：封存格式、明文（D37 照收，导入时封存）都能导入
 	check("transfer_bare_save_ok", XSaveTransfer.read_import(XSave.path(1)).has("data")
-		and XSaveTransfer.parse_import(XSaveSeal.read_text(XSave.path(1))).has("error"))
+		and XSaveTransfer.parse_import(XSaveSeal.read_text(XSave.path(1))).has("data"))
 	var mv_err := str(XSaveTransfer.parse_import(JSON.stringify({"format": "kyo-save-json-v1", "game": "org.kyo.xiyou", "data": {}})).get("error", ""))
 	check("transfer_rejects_mv", mv_err.contains("原版"), mv_err)
 	check("transfer_rejects_junk", XSaveTransfer.parse_import("not json").has("error") and XSaveTransfer.parse_import("{\"format\":\"x\"}").has("error")

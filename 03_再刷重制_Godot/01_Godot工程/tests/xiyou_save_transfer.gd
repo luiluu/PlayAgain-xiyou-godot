@@ -47,8 +47,7 @@ func _run() -> void:
 		DirAccess.remove_absolute(dir.path_join(f))
 	XSaveTransfer.dialog_override = Callable()
 	XSaveTransfer.BACKUP_BEFORE_IMPORT = true
-	# 这里查的是外层格式与旧明文导出（kyo-remake-save-json-v1）的各种情形，所以放行明文导入；
-	# 封存导出、改过的拒收、默认拒明文在 xiyou_save_seal 里查（D28）
+	# 旧明文导出（kyo-remake-save-json-v1）照收（D37，默认）；封存导出、改过的拒收、关掉后拒明文在 xiyou_save_seal 里查
 	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
 
 	var s := XState.new_game(3, 1, [8, 9, 10])
@@ -176,7 +175,7 @@ func _run() -> void:
 		DirAccess.remove_absolute(dir.path_join(f))
 	DirAccess.remove_absolute(dir)
 	XSave.dir_override = ""
-	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
 	finish()
 
 
