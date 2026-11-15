@@ -18,6 +18,8 @@ var title := ""
 var bar: XSkinSelectBar
 const HEAD := 42.0
 const TITLE_H := 44.0
+## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
+const HELPER_TAG_ROOM := 36.0
 
 
 func _init() -> void:
@@ -149,7 +151,7 @@ func _draw() -> void:
 			info += " · " + str(m.cls)
 		draw_string(body, Vector2(x + nw + 8, y1), info, HORIZONTAL_ALIGNMENT_LEFT, maxf(right - x - nw - 8 - 80, 10), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var states: Array = m.get("states", [])
-		var sx := right
+		var sx := right - (HELPER_TAG_ROOM if bool(m.get("helper", false)) else 0.0)   # 助力卡：状态图标让开右上角标（小A核 P3-2）
 		for k in range(mini(states.size(), 4)):
 			var tex := XUiSkin.icon(int(states[k]))
 			sx -= 22
@@ -175,6 +177,20 @@ func _draw() -> void:
 			bx += w + 8
 
 
+## 「助力」角标的矩形（行矩形 r 里，右上角）
+static func helper_tag_rect(r: Rect2, head: Font) -> Rect2:
+	var box := r.grow_individual(-2, -3, -2, -3)
+	var tw := head.get_string_size("助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	return Rect2(box.end.x - tw - 14, box.position.y, tw + 14, 20)
+
+
+## 第 k 个状态图标的矩形（行矩形 r 里；_draw 同一算法，测试用）
+func state_icon_rect(r: Rect2, k: int, helper: bool) -> Rect2:
+	var c := Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
+	var right := c.end.x - 12 - (HELPER_TAG_ROOM if helper else 0.0)
+	return Rect2(right - 22 * (k + 1), c.position.y + 6, 22, 22)
+
+
 ## 助力位卡：略暗底＋旧金细边＋右上「助力」角标
 func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 	var box := r.grow_individual(-2, -3, -2, -3)
@@ -185,8 +201,7 @@ func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 	sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
 	sb.draw(ci, box)
 	var tag := "助力"
-	var tw := head.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-	var tr := Rect2(box.end.x - tw - 14, box.position.y, tw + 14, 20)
+	var tr := helper_tag_rect(r, head)
 	var tb := StyleBoxFlat.new()
 	tb.bg_color = Color(XUiSkin.GOLD, 0.9)
 	tb.corner_radius_bottom_left = 6

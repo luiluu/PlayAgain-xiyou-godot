@@ -426,6 +426,26 @@ func _two_level(s: XState) -> void:
 	await frames(2)
 	check("two_back_from_page", menu._mode == "command" and m.level == 1 and m.gi == 3 and m.ii == 1)
 	_press(m, "ui_cancel")
+	# 小A核 P2-1：第二级用 Q／E 切到单项组＝回第一级（不留幽灵第二级）
+	m._set_group(2, 0)
+	m.level = 0
+	_press(m, "ui_accept")
+	check("two_qe_setup", m.level == 1 and m.gi == 2)
+	_key(m, KEY_Q)
+	_key(m, KEY_Q)
+	check("two_qe_single_drops_level", m.gi == 0 and m.level == 0 and m.hints.hints[0] == ["确定", "进入"], [m.gi, m.level])
+	_key(m, KEY_E)
+	_key(m, KEY_E)
+	check("two_qe_multi_keeps_ring", m.gi == 2 and m.level == 0)
+	# 小A核 P1-1：右键／两指＝取消：选人→列表、第二级→环、第一级→回地图（最后一步在下面重开菜单里测）
+	_press(m, "ui_accept")
+	_right(m)
+	check("two_right_l1_to_ring", m.level == 0 and menu._mode == "command")
+	m._set_group(1, 0)
+	_press(m, "ui_accept")
+	check("two_right_setup_actor", menu._mode == "actor")
+	_right(m)
+	check("two_right_actor_back", menu._mode == "command" and not m.party.selectable)
 	# 单项组确定直接打开（物品）
 	m._set_group(0, 0)
 	_press(m, "ui_accept")
@@ -459,9 +479,20 @@ func _two_level(s: XState) -> void:
 	menu2.closed.connect(func(): closed2[0] = true)
 	_press(menu2.skin, "ui_cancel")
 	check("two_cancel_closes", closed2[0])
+	var closed3 := [false]
+	menu2.closed.connect(func(): closed3[0] = true)
+	_right(menu2.skin)
+	check("two_right_l0_closes", closed3[0])
 	menu2.queue_free()
 	await frames(2)
 	XSkinMainMenu._mem = {}
+
+
+func _right(m: XSkinMainMenu) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_RIGHT
+	e.pressed = true
+	m._input(e)
 
 
 func _click_ring(m: XSkinMainMenu, i: int) -> void:
@@ -493,6 +524,16 @@ func _helper_card(s: XState) -> void:
 		_press(m, "ui_down")
 	check("helper_skip_empty", menu._mode == "actor" and menu._actor_index >= 0 and menu._actor_index < n)
 	_press(m, "ui_cancel")
+	# 小A核 P3-2：助力卡的状态图标（最多 4 个）在行高 60～120 时都不压「助力」角标
+	var head := XUiSkin.font("title")
+	var hit := []
+	for rh in [60.0, 64.0, 72.0, 86.0, 120.0]:
+		var r := Rect2(4, 44, 352, rh)
+		var tag := XSkinPartyStrip.helper_tag_rect(r, head)
+		for k in 4:
+			if m.party.state_icon_rect(r, k, true).intersects(tag):
+				hit.append([rh, k])
+	check("helper_tag_clear_of_states", hit.is_empty() and m.party.state_icon_rect(Rect2(4, 44, 352, 60), 0, false).intersects(XSkinPartyStrip.helper_tag_rect(Rect2(4, 44, 352, 60), head)), hit)
 	XSkinMainMenu.HELPER_CARD = false
 	m.refresh()
 	check("helper_switch_off", m.party.members.size() == n and m.party.row_height == XUiSkin.MEMBER_H)

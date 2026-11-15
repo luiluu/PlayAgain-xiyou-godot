@@ -490,6 +490,8 @@ func _set_group(g: int, i: int) -> void:
 	if changed:
 		XSound.system(0)
 	if TWO_LEVEL:
+		if level == 1 and group_items(current_group()).size() <= 1:   # 小A核 P2-1：切到单项组不留在「幽灵第二级」
+			level = 0
 		_remember()
 		hints.set_hints(hint_list())
 	_layout_rows()
@@ -599,6 +601,30 @@ func _pane_input(event: InputEvent) -> void:
 					_set_group(r.g, r.i)
 				pane.accept_event()
 				return
+
+
+## 鼠标右键／触屏两指（Platform.two_finger_cancel 发的就是右键）＝取消（小A核 P1-1）：
+## 子控件 ring／pane／party 都是 MOUSE_FILTER_STOP，右键到不了 XMenu，这里在 GUI 之前接住
+func _input(event: InputEvent) -> void:
+	if host == null or host._mode == "page" or not is_visible_in_tree():
+		return
+	if event is InputEventMouseButton and event.pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT:
+		get_viewport().set_input_as_handled()
+		cancel()
+
+
+## 取消一步：选人→回列表；第二级→回环上；第一级（或旧一级）→回地图
+func cancel() -> void:
+	if host == null:
+		return
+	if host._mode == "actor":
+		XSound.system(2)
+		host._mode = "command"
+		refresh()
+	elif TWO_LEVEL and level == 1:
+		leave()
+	else:
+		host._cancel()
 
 
 func _unhandled_input(event: InputEvent) -> void:

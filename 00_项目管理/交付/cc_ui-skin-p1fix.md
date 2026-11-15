@@ -137,3 +137,11 @@
 - **只看代码／留给总装或云端（本轮未跑）**：
   - 真窗口运行与目测（4:3 窗口实际上下黑边、20:9 实机锐度、`xiyou_ui_skin_battle` 5 项窗口模式断言、`xiyou_ui_skin_p1fix` 40 项窗口截图与 4:3 断言）、`xiyou_tianqi_e2e`（90 项）、`皮肤关闭对照.py` 逐像素克隆对比、全量 `检查.sh`（注：交付单已附云端 628＋9 场景通过记录）。
 
+
+## 返修（小A乙档核查 0e26f8ce5 四条）
+
+- **P1-1 右键／两指取消失效**：`XSkinMainMenu._input` 在 GUI 之前接住 `MOUSE_BUTTON_RIGHT`（`Platform.two_finger_cancel` 发的就是右键；ring／pane／party 都是 STOP，右键到不了 XMenu），交给新的 `cancel()`：选人→回列表、第二级→回环上、第一级（及旧一级）→回地图。专项 `two_right_l1_to_ring`、`two_right_actor_back`、`two_right_l0_closes`。
+- **P2-1 Q／E 切到单项组卡幽灵第二级**：`_set_group` 在 TWO_LEVEL 下落到只一项的组时 `level` 归 0（选中条、按键提示跟着回第一级）。专项 `two_qe_single_drops_level`、`two_qe_multi_keeps_ring`。
+- **P3-1 截图对比失效**：`xiyou_ui_skin_p1fix` 的主菜单先进第二级选中「真气」、装备页确定进候选列表再拍；陈列板 `request_wide`，20:9 截成 1600×720。脚本加断言：每组前后图像素不同（`differs_*`）、20:9 宽高比对（`wide_*`）。已重拍：六组 `p1_select_*_v07`／`_v2` SHA-256 两两不同，`*_20x9` 宽 1600。窗口跑 49/49。
+- **P3-2 助力角标压状态图标**：助力卡上状态图标从右让出 `HELPER_TAG_ROOM`＝36；抽出 `XSkinPartyStrip.helper_tag_rect`／`state_icon_rect`（与绘制同算法）。专项 `helper_tag_clear_of_states`：行高 60／64／72／86／120 下 4 个图标都不碰角标，且不让位时会碰（咬得住）。
+- 验证：语法检查通过；本地 `xiyou_ui_skin_menu` 99/99、`xiyou_ui_skin` 104/104、`xiyou_tianqi_e2e` 58/58、`xiyou_ui_skin_p1fix` 窗口 49/49。

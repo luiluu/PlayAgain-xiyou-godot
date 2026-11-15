@@ -96,6 +96,9 @@ func _pair(name: String, build: Callable) -> void:
 		save(img, name + ("_v2" if v2 else "_v07"))
 		node.queue_free()
 		await frames(2)
+	check("differs_" + name, imgs[0].get_data() != imgs[1].get_data())   # 前后图必须不一样（小A核 P3-1）
+	if name.ends_with("20x9"):
+		check("wide_" + name, absf(float(imgs[0].get_width()) / imgs[0].get_height() - 20.0 / 9.0) < 0.02, imgs[0].get_size())
 	save_compare(imgs[0], imgs[1], name + "_compare")
 
 
@@ -114,6 +117,8 @@ func _board() -> Node:
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
+	XSkinLayout.request_wide(root)   # 小A核 P3-1：陈列板也按新页面铺满（20:9 原来截成 1280 宽）
+	await frames(3)
 	XUiSkin.menu_backdrop(root)
 	var view := get_viewport().get_visible_rect().size
 	var title := Label.new()
@@ -185,8 +190,12 @@ func _menu() -> Node:
 	var menu := XMenu.new()
 	add_child(menu)
 	await frames(4)
-	if menu.skin != null:
+	if menu.skin != null:   # 小A核 P3-1：进第二级、选中「真气」，选中条才画出来（原来停在第一级、前后图一样）
+		menu.skin.level = 0
+		menu.skin._set_group(2, 0)
+		menu.skin.enter()
 		menu.skin._set_group(2, 2)
+		await frames(3)
 	return menu
 
 
@@ -194,6 +203,12 @@ func _equip() -> Node:
 	_state()
 	var page := XEquipScene.new()
 	add_child(page)
+	await frames(4)
+	# 小A核 P3-1：确定进候选列表（列表有焦点才画选中条；原来停在左环、前后图一样）
+	var e := InputEventAction.new()
+	e.action = "ui_accept"
+	e.pressed = true
+	page._unhandled_input(e)
 	await frames(4)
 	return page
 
