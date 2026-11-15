@@ -41,6 +41,9 @@ static var _owners := {}
 ## 最近一次存取失败的原因（写盘失败时画面提示用）；成功为空
 static var last_error := ""
 const WRITE_FAILED := "仓库写盘失败，这次没有存取"
+## 仓库文件校验失败（XSaveSeal，D28）：不读、不覆盖，存取都不做
+static var seal_failed := false
+const SEAL_FAILED := "仓库文件" + XSaveSeal.FAIL_TEXT + "，暂时不能存取。" + XSaveSeal.FAIL_HINT
 
 
 static func path() -> String:
@@ -56,10 +59,16 @@ static func ensure_loaded() -> void:
 	_pets = []
 	_pending = []
 	_dirty = false
+	seal_failed = false
 	if not FileAccess.file_exists(p):
 		return
+	var r := XSaveSeal.read(p)
+	if str(r.status) == "failed":
+		seal_failed = true
+		push_warning("XStarWarehouse: " + SEAL_FAILED + " " + p)
+		return
 	var json := JSON.new()  # 不用 parse_string：损坏时不往日志打错误
-	var d = json.data if json.parse(FileAccess.get_file_as_string(p)) == OK else null
+	var d = json.data if json.parse(str(r.text)) == OK else null
 	if not d is Dictionary:
 		return  # 损坏的文件按空处理；下次存取时整份重写
 	for e in (d.get("gear") if d.get("gear") is Array else []):
@@ -127,8 +136,8 @@ static func deposit_gear(s: XState, rec: Dictionary) -> String:
 		_restore_pending(undo, rec, token)
 		if config != null:
 			XAlienation.mark(rec).config = config
-		last_error = WRITE_FAILED
-		return WRITE_FAILED
+		last_error = SEAL_FAILED if seal_failed else WRITE_FAILED
+		return last_error
 	s.lose_gear(rec, false)  # 原版直接改 $gameParty._armors，不经 gainItem，不记云裳账本
 	return ""
 
@@ -145,7 +154,7 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 	if not _changed():
 		_gear.insert(i, rec)
 		_take_pending(token)
-		last_error = WRITE_FAILED
+		last_error = SEAL_FAILED if seal_failed else WRITE_FAILED
 		return false
 	XTianqiRandom.before_renumber(s, rec)  # 天启篇装备随机身份：没号的老件趁旧 instanceId 还在补号，与取出顺序无关
 	rec.erase("instanceId")
@@ -176,7 +185,7 @@ static func deposit_pet(s: XState, index: int) -> bool:
 	if not _changed():
 		_pets.pop_back()
 		_restore_pending(undo, pet, token)
-		last_error = WRITE_FAILED
+		last_error = SEAL_FAILED if seal_failed else WRITE_FAILED
 		return false
 	XPets.release(s, index)
 	return true
@@ -193,7 +202,7 @@ static func withdraw_pet(s: XState, pet: Dictionary) -> bool:
 	if not _changed():
 		_pets.insert(i, pet)
 		_take_pending(token)
-		last_error = WRITE_FAILED
+		last_error = SEAL_FAILED if seal_failed else WRITE_FAILED
 		return false
 	_own(token, s, pet)
 	XPets.list(s).append(pet)
@@ -202,6 +211,8 @@ static func withdraw_pet(s: XState, pet: Dictionary) -> bool:
 
 ## 写盘成功（或 o_save_now 关时记脏、等 XConfig 写盘）返回 true；写盘失败返回 false，脏标记不清
 static func _changed() -> bool:
+	if seal_failed:
+		return false
 	if o_save_now:
 		return _save()
 	_dirty = true
@@ -280,9 +291,9 @@ static func resolve_pending(write := true) -> bool:
 	var texts := []
 	for slot in range(1, XSave.SLOTS + 1):
 		if XSave.exists(slot):
-			texts.append(FileAccess.get_file_as_string(XSave.path(slot)))
+			texts.append(XSaveSeal.read_text(XSave.path(slot)))
 	if XSave.exists_auto():
-		texts.append(FileAccess.get_file_as_string(XSave.auto_path()))
+		texts.append(XSaveSeal.read_text(XSave.auto_path()))
 	for e in loose:
 		_pending.erase(e)
 		var token := str(e.token)
@@ -315,6 +326,9 @@ static func flush_pending() -> bool:
 ## 同 XGlobalVars：先写临时文件再替换。写盘失败返回 false，脏标记不清（Codex 审查第 4 项：原来写盘前就清了）
 static func _save() -> bool:
 	var p := path()
+	if seal_failed:
+		last_error = SEAL_FAILED
+		return false
 	if DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
 		return false
 	var full := {"version": 1, "mode": "xiyou", "gear": _gear, "pets": _pets}
@@ -327,13 +341,14 @@ static func _save() -> bool:
 	if f == null:
 		return false
 	var text := JSON.stringify(data)
-	f.store_string(text)
+	f.store_buffer(XSaveSeal.encode(text))
 	f.flush()
 	var ok := f.get_error() == OK
 	f.close()
 	if not ok or DirAccess.rename_absolute(temp, p) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
+	XSaveSeal.wrote(p)
 	XSaveSlim.written(full, p, text)
 	_dirty = false
 	return true

@@ -149,7 +149,7 @@ static func _file_level(target: String) -> int:
 	if known is Array and known.size() == 3 and known.slice(0, 2) == st:
 		return int(known[2])
 	# 不整份解析：JSON.stringify 写出的顶层记号就是这几个字（字符串值里的引号会带反斜杠，对不上）
-	var text := FileAccess.get_file_as_string(target)
+	var text := XSaveSeal.read_text(target)  # 封存格式先解开（XSaveSeal）
 	var level := 2 if text.contains("\"%s\":2" % MARK) else (1 if text.contains("\"%s\":1" % MARK) else 0)
 	_slim_files[target] = st + [level]
 	return level

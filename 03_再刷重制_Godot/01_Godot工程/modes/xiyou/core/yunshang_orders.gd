@@ -100,8 +100,11 @@ static func load_ledger():
 		return _ledger
 	var next = {"version": 2, "profiles": {}, "legacyProfiles": {}}
 	if FileAccess.file_exists(p):
+		var r := XSaveSeal.read(p)  # 封存（D28）：校验失败不读、不覆盖（save_ledger 也拒写）
+		if str(r.status) == "failed":
+			return _fail("云裳订单记录" + XSaveSeal.FAIL_TEXT)
 		var json := JSON.new()
-		if json.parse(FileAccess.get_file_as_string(p)) != OK or not json.data is Dictionary:
+		if json.parse(str(r.text)) != OK or not json.data is Dictionary:
 			return _fail("云裳订单记录损坏")
 		next = json.data
 		if int(next.get("version", 0)) != 1 and int(next.get("version", 0)) != 2:

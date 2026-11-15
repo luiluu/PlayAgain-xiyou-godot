@@ -11,6 +11,11 @@ extends RefCounted
 ## 原版导入还会带 aux（魔冠、云裳在存档外的成长记录），这里没做：只搬存档本身（O-208）。
 
 const FORMAT := "kyo-remake-save-json-v1"
+## 封存（XSaveSeal，D28）开着时的导出格式：外层 JSON 照旧，存档本身是封存字节的 base64（sealed），改了就导不进来
+const FORMAT_SEALED := "kyo-remake-save-sealed-v2"
+## O-待定·存档封存：封存开着时，没签名的导出文件（旧版 v1 明文导出、直接一份明文存档）不让导入（否则改了明文再导入就绕过了校验）。
+## true＝照旧接受明文导出（导入后写成封存格式）。
+static var ACCEPT_PLAIN_IMPORT := false
 const GAME := "org.kyo.xiyou.remake"
 ## 原版二合一包的格式名（认出来给明确提示）
 const MV_FORMAT := "kyo-save-json-v1"
@@ -48,9 +53,16 @@ static func file_name(slot: int) -> String:
 static func export_text(slot: int) -> Dictionary:
 	if not XSave.exists(slot):
 		return {"error": "这一格没有存档"}
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot)))
+	var r := XSave.read_file(XSave.path(slot))
+	if str(r.status) == "failed":
+		return {"error": XSaveSeal.FAIL_TEXT}
+	var d = XSave._parse(r.text)
 	if not XSave.valid_data(d):
 		return {"error": "存档为空或损坏"}
+	if XSaveSeal.ENABLED:
+		# valid_data 会就地还原同档去重，导出原文（读出来的那份字）再封一次，内容与存档一字不差
+		return {"text": JSON.stringify({"format": FORMAT_SEALED, "game": GAME, "slot": slot,
+			"exportedAt": Time.get_datetime_string_from_system(), "sealed": Marshalls.raw_to_base64(XSaveSeal.seal(str(r.text)))})}
 	return {"text": JSON.stringify({"format": FORMAT, "game": GAME, "slot": slot,
 		"exportedAt": Time.get_datetime_string_from_system(), "data": d})}
 
@@ -74,9 +86,21 @@ static func read_import(path: String) -> Dictionary:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		return {"error": "打不开这个文件（%s）" % error_string(FileAccess.get_open_error())}
-	var text := f.get_as_text()
+	var bytes := f.get_buffer(f.get_length())
 	f.close()
-	return parse_import(text)
+	if XSaveSeal.is_sealed(bytes):  # 直接选了一份封存格式的存档文件
+		return _parse_sealed(bytes)
+	return parse_import(bytes.get_string_from_utf8())
+
+
+static func _parse_sealed(bytes: PackedByteArray) -> Dictionary:
+	var r := XSaveSeal.unseal(bytes)
+	if not r.ok:
+		return {"error": XSaveSeal.FAIL_TEXT + "：这个存档文件被改动过或已损坏，不能导入"}
+	var data = XSave._parse(r.text)
+	if not XSave.valid_data(data):
+		return {"error": "JSON 缺少完整的游戏存档数据，或是更新版本的存档"}
+	return {"data": data}
 
 
 static func parse_import(text: String) -> Dictionary:
@@ -88,9 +112,14 @@ static func parse_import(text: String) -> Dictionary:
 	if value.has("format"):
 		if str(value.format) == MV_FORMAT:
 			return {"error": "这是原版（西游 MOD）的存档，重制版读不了原版存档"}
-		if str(value.format) != FORMAT or str(value.get("game", "")) != GAME:
+		if str(value.get("game", "")) != GAME or not str(value.format) in [FORMAT, FORMAT_SEALED]:
 			return {"error": "这不是本游戏的 JSON 存档"}
+		if str(value.format) == FORMAT_SEALED:
+			var raw := Marshalls.base64_to_raw(str(value.get("sealed", ""))) if value.get("sealed") is String else PackedByteArray()
+			return _parse_sealed(raw)
 		data = value.get("data")
+	if XSaveSeal.ENABLED and not ACCEPT_PLAIN_IMPORT:
+		return {"error": "这是旧版本导出的存档（没有签名），不能导入；请用当前版本重新导出"}
 	if not XSave.valid_data(data):
 		return {"error": "JSON 缺少完整的游戏存档数据，或是更新版本的存档"}
 	return {"data": data}
@@ -107,13 +136,9 @@ static func import_to(slot: int, data: Dictionary) -> String:
 		var keep := "%s.before_import_%s.json" % [target, Time.get_datetime_string_from_system().replace(":", "")]
 		if DirAccess.copy_absolute(target, keep) != OK:
 			return "原来那格存档备份不了，没有导入"
-	var temp := target + ".tmp"
-	var err := write_file(temp, JSON.stringify(data))
-	if err != "":
-		DirAccess.remove_absolute(temp)
-		return err
-	if DirAccess.rename_absolute(temp, target) != OK:
-		DirAccess.remove_absolute(temp)
+	if not BACKUP_BEFORE_IMPORT and not XSaveSeal.quarantine_if_failed(target):  # 校验失败的旧档不覆盖：改名留着
+		return "原来那格存档校验失败、留不下来，没有导入"
+	if not XSaveSeal.store(target, JSON.stringify(data)):  # 按封存开关写（封存／明文）
 		return "替换存档失败"
 	XSaveSlim.forget(target)  # 这格换成了导入的内容：瘦没瘦过下次存档重新看
 	XSaveSlim.prune_import_backups(target)  # 导入前的备份每格只留最近几份（XSaveSlim.IMPORT_BACKUPS）

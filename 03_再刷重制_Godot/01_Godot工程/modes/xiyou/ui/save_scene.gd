@@ -45,6 +45,7 @@ var confirm_win: XMVWindow
 var confirm_back: Control
 var confirm_background: Control
 var _cache := {}                    # 格 → 读出的存档字典（无效为 null）
+var _failed := {}                   # 格 → 存档校验失败（XSaveSeal：被改过或坏了；原文件留着）
 var dark_rects: Array = []          # 信息窗最近一次画的暗底（测试核对用）
 
 
@@ -89,12 +90,21 @@ func page_rows() -> int:
 func data(slot: int):
 	if not _cache.has(slot):
 		var d = null
+		_failed.erase(slot)
 		if XSave.exists(slot):
-			d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot)))
+			var r := XSave.read_file(XSave.path(slot))
+			_failed[slot] = str(r.status) == "failed"
+			d = XSave._parse(r.text)
 			if not XSave.valid_data(d):
 				d = null
 		_cache[slot] = d
 	return _cache[slot]
+
+
+## 这格存档校验失败（D28）：列表、信息窗标「存档校验失败」，读取弹提示
+func seal_failed(slot: int) -> bool:
+	data(slot)
+	return bool(_failed.get(slot, false))
 
 
 func slot() -> int:
@@ -119,7 +129,7 @@ func first_index() -> int:
 func action_enabled(i: int) -> bool:
 	match str(ACTIONS[i][1]):
 		"load":
-			return data(slot()) != null
+			return data(slot()) != null or seal_failed(slot())
 		"save":
 			return mode == "save"
 		_:
@@ -154,6 +164,8 @@ func _paint_list(c: XMVCanvas) -> void:
 		var a := 1.0 if valid else XUI.DIM.a
 		c.icon(int(plugin("Saved Icon" if valid else "Empty Icon", "0")), 2, y + 2, a)
 		c.text("%s %d" % [str(XDB.system().get("terms", {}).get("messages", {}).get("file", "文件")), i + 1], 36, y, 180, "left", XUI.TEXT, XUI.FONT_SIZE, LH, a)
+		if seal_failed(i + 1):
+			c.text(XSaveSeal.FAIL_TEXT, 36, y, c.size.x - 40, "right", XUI.DEATH, 18, LH)
 		var line := save_line(data(i + 1))
 		if line != "" and c.is_inside_tree():   # 天启篇选过线的档：这一格右边一道本线颜色（四线设计稿 v0.4 第 2.1 节第 6 步；XTianqiLook.SAVE_COLOR）
 			c.draw_rect(Rect2(c.size.x - 8, y + 6, 4, LH - 12), XTianqiLook.main_color(line))
@@ -167,7 +179,7 @@ func action_rect(i: int) -> Rect2:
 func _paint_action(c: XMVCanvas) -> void:
 	for i in range(ACTIONS.size()):
 		var r := action_rect(i)
-		if _phase in ["action", "confirm"] and i == act:
+		if _phase in ["action", "confirm", "notice"] and i == act:
 			c.cursor(r, _phase == "action")
 		c.text(plugin(["Load Command", "Save Command", "Delete Command"][i], ACTIONS[i][0]), r.position.x + 6, 0, r.size.x - 12, "center",
 			XUI.TEXT, XUI.FONT_SIZE, LH, 1.0 if action_enabled(i) else XUI.DIM.a)
@@ -185,8 +197,12 @@ func _paint_info(c: XMVCanvas) -> void:
 	var d = data(slot())
 	var w := c.size.x
 	if d == null:
-		# drawInvalidText：没有存档信息时整块暗底＋「空」
+		# drawInvalidText：没有存档信息时整块暗底＋「空」；校验失败的档写「存档校验失败」和原文件留着的说明
 		_dark(c, Rect2(0, 0, w, c.size.y))
+		if seal_failed(slot()):
+			c.text(XSaveSeal.FAIL_TEXT, 0, floorf(c.size.y / 2.0) - LH, w, "center", XUI.SYSTEM, XUI.FONT_SIZE, LH)
+			c.text(XSaveSeal.FAIL_HINT, 0, floorf(c.size.y / 2.0), w, "center", XUI.TEXT, 20, LH)
+			return
 		c.text(plugin("Empty Game Text", "空"), 0, floorf((c.size.y - LH) / 2.0), w, "center", XUI.SYSTEM, XUI.FONT_SIZE, LH)
 		return
 	c.text(str(XDB.system().get("gameTitle", "")), 0, 0, w, "center", XUI.TEXT, XUI.FONT_SIZE, LH)
@@ -293,7 +309,7 @@ static func file_size(slot_no: int) -> String:
 		bytes = f.get_length()
 		f.close()
 	else:
-		for ch in FileAccess.get_file_as_string(XSave.path(slot_no)):
+		for ch in XSaveSeal.read_text(XSave.path(slot_no)):
 			if not URI_KEEP.contains(ch):
 				bytes += ch.to_utf8_buffer().size()
 	if bytes < 1024:
@@ -304,6 +320,14 @@ static func file_size(slot_no: int) -> String:
 
 
 func _paint_confirm(c: XMVCanvas) -> void:
+	if _phase == "notice":
+		# 存档校验失败的提示（D28）：两行说明＋「确定」
+		var lines := confirm_text.split("\n")
+		for i in range(lines.size()):
+			c.text(lines[i], 6, LH * i, c.size.x - 12, "center", XUI.TEXT, 20 if i > 0 else XUI.FONT_SIZE, LH)
+		c.cursor(Rect2(0, LH * lines.size(), c.size.x, LH))
+		c.text("确定", 6, LH * lines.size(), c.size.x - 12, "center", XUI.TEXT, XUI.FONT_SIZE, LH)
+		return
 	var t := XMVText.new(XMVText.convert_escapes(confirm_text), 6, 0, c.size.x)
 	t.run()
 	XMVText.paint(c, t.glyphs)
@@ -375,6 +399,8 @@ func _gui_input(event: InputEvent) -> void:
 						XSound.system(0)
 						_update_action_help()
 					break
+		"notice":
+			ok()
 		"confirm":
 			var i := floori(p.y / LH) - 1
 			if i not in [0, 1]:
@@ -435,7 +461,10 @@ func ok() -> void:
 				return
 			match str(ACTIONS[act][1]):
 				"load":
-					_start_confirm(plugin("Load Text", "是否加载此保存文件？"))
+					if data(slot()) == null and seal_failed(slot()):
+						_start_notice(XSaveSeal.FAIL_TEXT + "，无法读取。\n" + XSaveSeal.FAIL_HINT)
+					else:
+						_start_confirm(plugin("Load Text", "是否加载此保存文件？"))
 				"save":
 					if XSave.exists(slot()):
 						_start_confirm(plugin("Save Text", "是否要覆盖此保存文件？"))
@@ -443,6 +472,10 @@ func ok() -> void:
 						_perform("save")
 				_:
 					_start_confirm(plugin("Delete Text", "是否要删除此保存文件？"))
+		"notice":
+			XSound.system(1)
+			confirm_win.visible = false
+			_phase = "action"
 		"confirm":
 			XSound.system(1)
 			confirm_win.visible = false
@@ -461,7 +494,7 @@ func cancel() -> void:
 			return
 		"action":
 			_back_to_list()
-		"confirm":
+		"confirm", "notice":
 			confirm_win.visible = false
 			_phase = "action"
 	_refresh()
@@ -484,6 +517,24 @@ func _start_confirm(text: String) -> void:
 	confirm_win.position = Vector2(floorf((1280.0 - w) / 2.0), floorf((720.0 - confirm_win.size.y) / 2.0))
 	confirm_win.visible = true
 	_phase = "confirm"
+
+
+## 只有「确定」的提示框（存档校验失败）：宽按最长一行，高＝行数＋1
+func _start_notice(text: String) -> void:
+	XSound.system(3)
+	confirm_text = text
+	confirm_index = 0
+	var lines := text.split("\n")
+	var w := 0.0
+	for i in range(lines.size()):
+		var t := XMVText.new(lines[i], 0, 0, 1280, 20 if i > 0 else XUI.FONT_SIZE)
+		t.run()
+		w = maxf(w, _width(t.glyphs))
+	w += XMVWindow.PADDING * 2 + 24.0
+	confirm_win.size = Vector2(w, LH * (lines.size() + 1) + XMVWindow.PADDING * 2)
+	confirm_win.position = Vector2(floorf((1280.0 - w) / 2.0), floorf((720.0 - confirm_win.size.y) / 2.0))
+	confirm_win.visible = true
+	_phase = "notice"
 
 
 func _perform(kind: String) -> void:
