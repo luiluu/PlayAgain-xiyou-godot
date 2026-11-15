@@ -127,7 +127,7 @@ func _run() -> void:
 	get_tree().quit(0 if passed == results.size() else 1)
 
 
-## O-待定·越界兜底不显示undefined（文字审 13-006／15-001／16-001）：名字表越界时显示中文；XUI.UNDEF_TEXT_FIX = false 回到原版 undefined
+## O-488（文字审 13-006／15-001／16-001）：名字表越界时显示中文；XUI.UNDEF_TEXT_FIX = false 回到原版 undefined
 func _undef_fallbacks(c: XDifficultyNotice) -> void:
 	var tr_rec := {"traits": [{"code": 22, "dataId": 99, "value": 0.1}]}
 	var cond := {"conditionType": 6, "conditionParam1": 999999, "rating": 5}

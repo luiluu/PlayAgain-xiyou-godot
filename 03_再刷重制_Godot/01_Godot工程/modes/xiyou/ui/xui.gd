@@ -12,7 +12,7 @@ const FONT_SIZE := 26
 const LINE_HEIGHT := 36
 const MENU_WINDOW_OPACITY := 30
 
-## O-待定·越界兜底不显示undefined（文字审 13-006／15-001／16-001）：原版名字表越界时 drawText 出「undefined」，
+## O-488（文字审 13-006／15-001／16-001）：原版名字表越界时 drawText 出「undefined」，
 ## 重制照搬过来会让玩家看到 JS 残字。开着时改显示 undef_text 给的中文（未知／未知属性…）；false＝照原版写 undefined。
 static var UNDEF_TEXT_FIX := true
 
