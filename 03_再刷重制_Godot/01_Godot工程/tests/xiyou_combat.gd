@@ -42,6 +42,8 @@ func _fake_state(xparam_id: int, value: float) -> int:
 
 func _run() -> void:
 	seed(20261012)
+	# 敌人数值按原版对照：漩涡怪物异化对齐大厅稿（Kyo 11-15 D8）二阶就会把守层者变成异化怪，这里关掉，由 tests/xiyou_rift_alien 核
+	XRiftAlien.ALIGN_LOBBY = false
 	# ---- 神话敌人 ----
 	var s := _new_state()
 	var logic := XBattleLogic.new()

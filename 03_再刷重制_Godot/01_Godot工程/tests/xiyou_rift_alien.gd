@@ -7,6 +7,8 @@ extends Node
 ## 五、种类：战狂、荒年者、毒腺、丧钟（含化形效果）。
 ## 六、掉落：倒下按级掉原版异化装备，名字「级·词条·原名」，分解按级给能量；原版异化隐藏时不掉；点亮天启篇异化图鉴。
 ## 数字避开 4：用例里的层号、敌群号照实写。
+## 一～六按旧表（ALIGN_LOBBY＝false，回退后的行为）核；七、阶段对齐大厅稿（ALIGN_LOBBY 默认开，O-待定，Kyo 11-15 D8）：
+##   二阶就出侵染、三阶蚀骨、四阶化形（新表＝旧表三～五阶整体前移一档），五阶一律化形、几率同旧五阶；二阶选中时规则随机流照样逐条相同。
 
 const SEED := "5a17c0de00112233"
 const DIR := "user://test_rift_alien"
@@ -75,6 +77,10 @@ func _run() -> void:
 	if FileAccess.file_exists(XConfig.path_override):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XRiftAlien.reload()
+	# 默认开，测试与玩家同一条路（不按显示后端切）
+	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
+	_default_path()
+	XRiftAlien.ALIGN_LOBBY = false
 	_data()
 	_rules()
 	_plan()
@@ -82,6 +88,8 @@ func _run() -> void:
 	_battle_setup()
 	_kinds()
 	_drops()
+	XRiftAlien.ALIGN_LOBBY = true
+	_aligned()
 	XRiftAlien.STAGE_OVERRIDE = 0
 	XRiftAlien.force_drop = -1.0
 	XConfig.path_override = ""
@@ -363,3 +371,126 @@ func _drops() -> void:
 	XRiftAlien.force_drop = 0.0
 	_check("drop_alive_none", XRiftAlien.grant(la).is_empty())
 	la.end_battle(0)
+
+
+## 七、阶段对齐大厅稿（ALIGN_LOBBY 开）
+func _aligned() -> void:
+	XRiftAlien.ALIGN_LOBBY = true
+	# 新表二～四阶＝旧表三～五阶：各类、各层、各难度逐项相同
+	var diffs := []
+	for st in [2, 3, 4]:
+		for cls in ["rare", "very_rare", "guardian", "abyss"]:
+			for f in [1, 10, 11, 20, 21, 30]:
+				for d in [1, 3, 5, 7, 9]:
+					XRiftAlien.ALIGN_LOBBY = true
+					var now := _r(cls, st, f, d)
+					XRiftAlien.ALIGN_LOBBY = false
+					var old := _r(cls, st + 1, f, d)
+					if now != old:
+						diffs.append([st, cls, f, d, now, old])
+	XRiftAlien.ALIGN_LOBBY = true
+	_check("al_shift_one_stage", diffs.is_empty(), diffs.slice(0, 5))
+	_check("al_st1_none", _r("rare", 1, 10).is_empty() and _r("guardian", 1, 30).is_empty())
+	_check("al_st2_rare", _r("rare", 2, 10) == [11.0, "qinran", "", 0.0], _r("rare", 2, 10))
+	_check("al_st3_shigu", _r("very_rare", 3, 10) == [33.0, "shigu", "", 0.0], _r("very_rare", 3, 10))
+	_check("al_st4_huaxing", _r("guardian", 4, 30)[1] == "huaxing" and _r("abyss", 4, 10) == [100.0, "huaxing", "", 0.0])
+	# 五阶：怪物端没有终焉，先按「化形且几率最高」（几率同旧五阶，一律化形、不升级）
+	var st5 := []
+	for cls in ["rare", "very_rare", "guardian", "abyss"]:
+		for f in [1, 15, 30]:
+			XRiftAlien.ALIGN_LOBBY = false
+			var old_rate: float = _r(cls, 5, f)[0]
+			XRiftAlien.ALIGN_LOBBY = true
+			var r := _r(cls, 5, f)
+			if r != [old_rate, "huaxing", "", 0.0]:
+				st5.append([cls, f, r, old_rate])
+	_check("al_st5_huaxing_max", st5.is_empty(), st5)
+	_check("al_st5_rates_ge_st4", ["rare", "very_rare", "guardian", "abyss"].all(func(c): return _r(c, 5, 10)[0] >= _r(c, 4, 10)[0]))
+	# 难度修正照旧作用在新表上：宝宝稀有最高侵染、守层者低一级；炼狱 +20
+	_check("al_st5_low", _r("rare", 5, 10, 1) == [10.0, "qinran", "", 0.0] and _r("guardian", 5, 10, 2)[1] == "shigu", [_r("rare", 5, 10, 1), _r("guardian", 5, 10, 2)])
+	_check("al_st5_top", _r("rare", 5, 10, 9) == [40.0, "huaxing", "", 0.0], _r("rare", 5, 10, 9))
+	_check("al_no_zhongyan", not XRiftAlien.data().stages_aligned.values().any(func(row): return JSON.stringify(row).contains("zhongyan")))
+	# 判定：二阶就出侵染（守层者 33%），一阶不出
+	var s := _plain(10)
+	XRiftAlien.STAGE_OVERRIDE = 1
+	_check("al_st1_plan_none", XRiftAlien.plan(s, _enemies(69), _const(0.0)).is_empty())
+	XRiftAlien.STAGE_OVERRIDE = 2
+	var g := XRiftAlien.plan(s, _enemies(69), _const(0.0))
+	_check("al_st2_guard_hit", g.size() == 1 and g[0].tier == "qinran" and g[0]["class"] == "guardian", g)
+	_check("al_st2_guard_miss", XRiftAlien.plan(s, _enemies(69), _const(0.33)).is_empty())
+	_check("al_st2_abyss_none", XRiftAlien.plan(s, _enemies(145), _const(0.0)).is_empty())
+	XRiftAlien.STAGE_OVERRIDE = 3
+	_check("al_st3_guard_always", XRiftAlien.plan(s, _enemies(69), _const(0.99)).size() == 1)
+	XRiftAlien.STAGE_OVERRIDE = 5
+	var g5 := XRiftAlien.plan(s, _enemies(69), _const(0.99))
+	_check("al_st5_guard_huaxing", g5.size() == 1 and g5[0].tier == "huaxing", g5)
+	_check("al_tianqi_none", XRiftAlien.plan(_tianqi(10), _enemies(69), _const(0.0)).is_empty())
+	# 回退：关掉开关二阶不出
+	XRiftAlien.ALIGN_LOBBY = false
+	XRiftAlien.STAGE_OVERRIDE = 2
+	_check("al_off_st2_none", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).is_empty())
+	XRiftAlien.ALIGN_LOBBY = true
+	# 随机流：二阶开战（几率调成 100 必选中）规则随机流取数与一阶逐条相同；几率 0 时敌人数值也逐值相同
+	var sb := _plain(10, true)
+	var l1 := _battle(37, sb, 1)
+	var base := _sig(l1)
+	l1.end_battle(0)
+	var st2: Dictionary = XRiftAlien.data().stages_aligned["2"]
+	var keep: Dictionary = st2.duplicate(true)
+	for k in ["rare", "very_rare", "guardian"]:
+		st2[k].rate = 0
+	var lm := _battle(37, sb, 2)
+	_check("al_st2_miss_same", _sig(lm) == base and XRiftAlien.fight(lm).units.is_empty())
+	lm.end_battle(0)
+	for k in ["rare", "very_rare", "guardian"]:
+		st2[k].rate = 100
+	var lh := _battle(37, sb, 2)
+	_check("al_st2_hit_rule_stream_same", _sig(lh)[0] == base[0] and XRiftAlien.fight(lh).units.size() == 1, _sig(lh)[1])
+	var e = XRiftAlien.fight(lh).units.keys()[0] if XRiftAlien.fight(lh).units.size() == 1 else null
+	var u2 := XRiftAlien.unit(lh, e) if e != null else {}
+	_check("al_st2_named", e != null and ["qinran", "shigu"].has(str(u2.get("tier", ""))) and e.display_name().begins_with(str(XRiftAlien.tier_info(str(u2.tier)).name) + "·"), [u2, e.display_name() if e != null else null])
+	lh.end_battle(0)
+	XRiftAlien.data().stages_aligned["2"] = keep
+
+
+## 默认配置（ALIGN_LOBBY 开、不设 STAGE_OVERRIDE、阶段读真的 XRift.stage()）下的整场：玩家路径。
+## 西游档、守层者敌群 69（10 层，二阶 33% 侵染），换几个种子开战：有的出异化怪、有的不出；出了的那场打几回合到结束不出错，
+## 规则随机流取数与关掉异化的同种子一场逐条相同。
+func _default_path() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	_check("dp_stage_is_2", XRift.stage() == 2 and XRiftAlien.stage() == 2, XRift.stage())
+	var s := _plain(10, true)
+	var hit_seed := ""
+	var misses := 0
+	for i in 24:
+		var sd := "%016x" % (0x5a17c0de00000000 + i)
+		var lg := XBattleLogic.new()
+		lg.setup(69, s, XBattleRandom.create(sd, 1))
+		var n: int = XRiftAlien.fight(lg).get("units", {}).size()
+		lg.end_battle(0)
+		if n == 1 and hit_seed == "":
+			hit_seed = sd
+		elif n == 0:
+			misses += 1
+	_check("dp_some_alien_some_not", hit_seed != "" and misses > 0, [hit_seed, misses])
+	if hit_seed == "":
+		return
+	XRiftAlien.ENABLED = false
+	var off := XBattleLogic.new()
+	off.setup(69, s, XBattleRandom.create(hit_seed, 1))
+	var base_j: Array = off.random.rule.journal.map(func(x): return [x.reason, x.event, x.value])
+	off.end_battle(0)
+	XRiftAlien.ENABLED = true
+	var lg2 := XBattleLogic.new()
+	lg2.setup(69, s, XBattleRandom.create(hit_seed, 1))
+	var e: XEnemy = lg2.enemies[0]
+	var u := XRiftAlien.unit(lg2, e)
+	_check("dp_alien_named", str(u.get("tier", "")) == "qinran" and e.display_name().begins_with("侵染·"), [u, e.display_name()])
+	_check("dp_rule_stream_same", lg2.random.rule.journal.map(func(x): return [x.reason, x.event, x.value]) == base_j)
+	var turns := 0
+	while not lg2.is_over() and turns < 8:
+		lg2.run_turn({})
+		turns += 1
+	_check("dp_turns_ran", turns > 0, turns)
+	lg2.end_battle(0)
+	_check("dp_end_clean", not XRiftAlien.active(lg2))
