@@ -88,7 +88,7 @@ const BREATH_MIN := 0.75
 
 ## ---- 动效档（「界面动效：全部／简化／关」）----
 enum Motion { FULL, SIMPLE, OFF }
-## 测试或设置页写这里（-1＝没设：省电模式下按简化，否则全部）。设置项的存盘与设置页那一行留给第 1 期（交付单）。
+## 测试写这里（-1＝没设）；玩家在设置页选的档存在 XConfig（codexUiMotion，5C），没选过时省电模式按简化、否则全部。
 static var motion_override := -1
 
 ## ---- 主菜单的组（D25；Kyo 11-15 更正：整队并入角色，宠物以后单独一组）。组配置只在这一处，页签条、环形导航都按可见组数排。----
@@ -136,6 +136,19 @@ static func on() -> bool:
 	var c := cli_mode()
 	if c >= 0:
 		return c == 1
+	return XTianqiLine.open_for(XState.current) and XConfig.ui_skin_new()   # 设置页「界面风格」选了原版就回旧界面（5C）
+
+
+## 设置页要不要列「界面风格」「界面动效」：新皮肤在这个存档里有机会开（总开关开着，且天启篇存档或调试强开）；重制版（西游存档）里不出现。
+## 和 on() 的区别：玩家选了「原版」时 on() 是 false，但这一行还得在，好让人选回「新」。
+static func selectable() -> bool:
+	if not ENABLED:
+		return false
+	if FORCE:
+		return true
+	var c := cli_mode()
+	if c >= 0:
+		return c == 1
 	return XTianqiLine.open_for(XState.current)
 
 
@@ -161,6 +174,9 @@ static func parse_cli(args: PackedStringArray, release: bool) -> int:
 static func motion() -> int:
 	if motion_override >= 0:
 		return clampi(motion_override, Motion.FULL, Motion.OFF)
+	var chosen := XConfig.ui_motion()
+	if chosen >= 0:
+		return clampi(chosen, Motion.FULL, Motion.OFF)
 	return Motion.SIMPLE if XGraphics.low_power() else Motion.FULL
 
 
