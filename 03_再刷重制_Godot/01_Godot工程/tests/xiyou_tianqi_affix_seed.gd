@@ -49,7 +49,7 @@ func _load() -> XState:
 
 
 func _strip_file(fn: Callable) -> void:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	fn.call(d)
 	XSave._write(XSave.path(SLOT), d)
 
@@ -80,7 +80,7 @@ func _direct() -> void:
 	_check("prefix", _create_run(wid, 3) == a.slice(0, 3))
 	# 老档：flags.tianqi 没有 affix_roll_n
 	_strip_file(func(d): (d.flags.tianqi as Dictionary).erase("affix_roll_n"))
-	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	_check("legacy_stripped", not (raw.flags.tianqi as Dictionary).has("affix_roll_n"))
 	var l1 := _create_run(wid, 3)
 	_check("legacy_init", int(XState.current.flags.tianqi.get("affix_roll_n", -1)) == 3 and l1 == _create_run(wid, 3), l1)
@@ -196,7 +196,7 @@ func _real_battle() -> void:
 	var s := _state()
 	s.reserve_battle_random()  # 开出战斗流的根（运行时）
 	XSave.save(SLOT)
-	var text := FileAccess.get_file_as_string(XSave.path(SLOT))
+	var text := XSaveSeal.read_text(XSave.path(SLOT))
 	_check("real_master_not_saved", s.random_master != "" and not text.contains(s.random_master), s.random_master)
 	var pick := []
 	for m in range(1, 400):

@@ -81,7 +81,7 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_tianqi_qiyin_altar"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
-	DirAccess.remove_absolute(XSave.dir_override.path_join("global.json"))
+	for _g in ["global.json", "global.ksv"]: DirAccess.remove_absolute(XSave.dir_override.path_join(_g))
 	_data()
 	_unlock()
 	_entries()

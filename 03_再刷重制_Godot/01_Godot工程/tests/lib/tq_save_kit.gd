@@ -71,7 +71,7 @@ func roundtrip(slot := SLOT) -> XState:
 
 ## 存档文件原文（字典）
 func raw(slot := SLOT) -> Dictionary:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(slot)))
 	return d if d is Dictionary else {}
 
 

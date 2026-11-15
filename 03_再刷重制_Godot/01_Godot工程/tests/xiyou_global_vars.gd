@@ -51,7 +51,7 @@ func _same_map(mv: Dictionary, gd: Dictionary) -> bool:
 
 
 func _file() -> Dictionary:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XGlobalVars.path())) if FileAccess.file_exists(XGlobalVars.path()) else null
+	var d = JSON.parse_string(XSaveSeal.read_text(XGlobalVars.path())) if FileAccess.file_exists(XGlobalVars.path()) else null
 	if not d is Dictionary:
 		return {}
 	var out := {"switches": {}, "variables": {}}
@@ -94,7 +94,7 @@ func _ready() -> void:
 func _run() -> void:
 	XSave.dir_override = DIR
 	DirAccess.make_dir_recursive_absolute(DIR)
-	DirAccess.remove_absolute(DIR.path_join("global.json"))
+	for _g in ["global.json", "global.ksv"]: DirAccess.remove_absolute(DIR.path_join(_g))
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if not parsed is Dictionary:
 		check("oracle_present", false, ORACLE + "（先跑 同步正式西游.py）")
@@ -104,7 +104,7 @@ func _run() -> void:
 	oracle = parsed
 	check("params", XGlobalVars.switch_ids() == oracle.params.switchIds.map(func(v): return int(v))
 		and XGlobalVars.variable_ids() == oracle.params.variableIds.map(func(v): return int(v)), [XGlobalVars.switch_ids(), XGlobalVars.variable_ids(), oracle.params])
-	check("path_follows_save_dir", XGlobalVars.path() == DIR.path_join("global.json"), XGlobalVars.path())
+	check("path_follows_save_dir", XGlobalVars.path() == DIR.path_join("global.ksv"), XGlobalVars.path())
 
 	var s := XState.new_game_blank()
 	_compare("boot_new_game", s)
@@ -156,9 +156,7 @@ func _run() -> void:
 	XState.new_game_blank()
 	check("untracked_not_carried", not XState.current.variables.has(901), XState.current.variables)
 	# 损坏的文件按空处理，改值时整份重写
-	var f := FileAccess.open(XGlobalVars.path(), FileAccess.WRITE)
-	f.store_string("{坏")
-	f.close()
+	XSaveSeal.store(XGlobalVars.path(), "{坏")
 	XGlobalVars._loaded_path = "<unloaded>"
 	s = XState.new_game_blank()
 	check("corrupt_file_empty", not s.variables.has(900) and XGlobalVars.stored().variables.is_empty(), s.variables)
@@ -167,7 +165,7 @@ func _run() -> void:
 	# 换存档目录（另一套存档）就是另一份全局存储
 	XSave.dir_override = DIR.path_join("other")
 	s = XState.new_game_blank()
-	check("other_dir_separate", not s.variables.has(1000) and XGlobalVars.path() == DIR.path_join("other/global.json"), [s.variables, XGlobalVars.path()])
+	check("other_dir_separate", not s.variables.has(1000) and XGlobalVars.path() == DIR.path_join("other/global.ksv"), [s.variables, XGlobalVars.path()])
 
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

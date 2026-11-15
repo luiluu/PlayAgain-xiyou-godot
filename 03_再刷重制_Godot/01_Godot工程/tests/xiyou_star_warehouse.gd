@@ -121,7 +121,7 @@ func _fresh_store() -> void:
 	XSave.dir_override = DIR
 	XStarWarehouse.path_override = ""
 	DirAccess.make_dir_recursive_absolute(DIR)
-	for f in ["star_warehouse.json", "star_warehouse.json.tmp"]:
+	for f in ["star_warehouse.json", "star_warehouse.json.tmp", "star_warehouse.ksv"]:
 		DirAccess.remove_absolute(DIR.path_join(f))
 	XStarWarehouse._loaded_path = "<unloaded>"
 	XStarWarehouse.o_save_now = true
@@ -491,12 +491,10 @@ func _store() -> void:
 	check("withdraw_after_reload", XStarWarehouse.withdraw_gear(t, XStarWarehouse.gear()[0]) and t.gear.size() == 1 and XStarWarehouse.withdraw_pet(t, XStarWarehouse.pets()[0]) and XPets.list(t).size() == 1)
 	XStarWarehouse._loaded_path = "<unloaded>"
 	check("written_after_withdraw", XStarWarehouse.gear().is_empty() and XStarWarehouse.pets().is_empty())
-	var f := FileAccess.open(XStarWarehouse.path(), FileAccess.WRITE)
-	f.store_string("{坏")
-	f.close()
+	XSaveSeal.store(XStarWarehouse.path(), "{坏")
 	XStarWarehouse._loaded_path = "<unloaded>"
 	check("corrupt_empty", XStarWarehouse.gear().is_empty() and XStarWarehouse.pets().is_empty())
-	check("path_follows_save_dir", XStarWarehouse.path() == DIR.path_join("star_warehouse.json"), XStarWarehouse.path())
+	check("path_follows_save_dir", XStarWarehouse.path() == DIR.path_join("star_warehouse.ksv"), XStarWarehouse.path())
 	# 出战宠物不收
 	check("war_pet_refused", not XStarWarehouse.deposit_pet(t, XPets.war_index(t)) if XPets.war_index(t) >= 0 else true)
 
@@ -606,7 +604,7 @@ func _txn_killed(saved: bool) -> void:
 	var in_bag := XState.current.gear.filter(func(e): return int(e.base) == base).size() - bag_before
 	var in_wh := XStarWarehouse.gear().filter(func(e): return int(e.base) == base).size()
 	check(tag + "_exactly_once", [in_bag, in_wh] == ([1, 0] if saved else [0, 1]), {"bag": in_bag, "warehouse": in_wh})
-	check(tag + "_no_pending_left", XStarWarehouse._pending.is_empty() and not FileAccess.get_file_as_string(XStarWarehouse.path()).contains("pending"), XStarWarehouse._pending)
+	check(tag + "_no_pending_left", XStarWarehouse._pending.is_empty() and not XSaveSeal.read_text(XStarWarehouse.path()).contains("pending"), XStarWarehouse._pending)
 	check(tag + "_token_stripped", not JSON.stringify(XState.current.gear).contains("whToken"))
 
 

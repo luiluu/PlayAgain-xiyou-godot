@@ -226,15 +226,93 @@ def stub_tree(out: Path) -> Path:
 
 REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚本（--real-scripts）
 
+# 存档封存发行密钥（D28，co 甲档核查 P2④）：放在私密设计仓，不进本仓库；出包时写进导出用的工程（res://content/save_seal_key.json），
+# 导完就删。没有密钥时发行包不封存存档（照旧写明文），所以缺密钥算出包问题、不出包；--no-save-key 明知故出（不封存）。
+# 第一次准备：python3 存档密钥.py --init（在私密设计仓生成，见该脚本说明）。
+SAVE_KEY_SRC = Path(os.environ.get('XIYOU_SAVE_KEY') or Path.home() / 'Documents' / 'xiyou-design-docs' / '发行密钥' / 'save_seal_key.json')
+SAVE_KEY_DEST = 'content/save_seal_key.json'
+NO_SAVE_KEY = False
+
+
+def _key_tool():
+    spec = importlib.util.spec_from_file_location('存档密钥', HERE / '存档密钥.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def inject_save_key(src: Path) -> str:
+    """把发行密钥写进 src 工程；返回问题（空＝好了或 --no-save-key）。
+    注入前按游戏运行时的要求逐条查（存档密钥.py check，与 XSaveSeal.key_file_problem 一致）；写进去后读回逐字节比。
+    任何一步不对都返回问题、不出包（不会把运行时不认的密钥报成「已注入」，那样发行包会悄悄写明文）。"""
+    if NO_SAVE_KEY:
+        print('== 存档密钥：--no-save-key，发行包不封存存档（照旧明文）')
+        return ''
+    if not SAVE_KEY_SRC.is_file():
+        return f'存档封存密钥不在 {SAVE_KEY_SRC}（先跑 存档密钥.py --init，或 --no-save-key 出不封存的包）'
+    raw = SAVE_KEY_SRC.read_bytes()
+    try:
+        d = json.loads(raw.decode('utf-8'))
+    except (ValueError, UnicodeDecodeError):
+        return f'存档封存密钥不是 JSON：{SAVE_KEY_SRC}'
+    bad = _key_tool().check(d)
+    if bad:
+        return f'存档封存密钥格式不对（游戏运行时不认，发行包会写明文）：{bad}；{SAVE_KEY_SRC}'
+    dest = src / SAVE_KEY_DEST
+    shutil.copyfile(SAVE_KEY_SRC, dest)
+    if dest.read_bytes() != raw:
+        return f'存档封存密钥写进 {dest} 后读回不一致'
+    print(f'== 存档密钥：已注入（号 {d["current"]}，不进仓库）')
+    return ''
+
+
+def artifact_has_key(path: Path, key: bytes) -> bool:
+    """导出的包里读得到注入的密钥文件吗：zip（mac 包、apk）逐项看，名字是 save_seal_key.json 的比内容，.pck 在里面找这段字节；
+    单独的 .pck（Windows）直接找。Godot 打包 .json 不改内容，所以找原字节。"""
+    import mmap
+    def in_blob(data) -> bool:
+        return data.find(key) >= 0
+    if zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as z:
+            for info in z.infolist():
+                if info.filename.endswith('save_seal_key.json') and z.read(info) == key:
+                    return True
+                if info.filename.endswith('.pck') and in_blob(z.read(info)):
+                    return True
+        return False
+    with open(path, 'rb') as f:
+        if os.path.getsize(path) == 0:
+            return False
+        with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as m:
+            return in_blob(m)
+
+
+def verify_save_key(out: Path) -> list:
+    """导完在产物里读回密钥；没注入（--no-save-key）不查。返回问题。"""
+    if NO_SAVE_KEY:
+        return []
+    key = SAVE_KEY_SRC.read_bytes()
+    problems = []
+    for p in [out / MAC_ZIP, out / WIN_DIR / WIN_FILES[1], out / APK]:
+        if p.is_file() and not artifact_has_key(p, key):
+            problems.append(f'存档密钥：{p.name} 里读不到注入的密钥（发行包会写明文，不出包）')
+    return problems
+
 
 def export_all(out: Path, logs: Path) -> list:
     problems = []
     src = stub_tree(out)
     try:
-        return _export_all(out, logs, src, problems)
+        bad = inject_save_key(src)
+        if bad:
+            return [bad]
+        problems = _export_all(out, logs, src, problems)
+        return problems or verify_save_key(out)
     finally:
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)
+        else:
+            (PROJECT / SAVE_KEY_DEST).unlink(missing_ok=True)  # --real-scripts 直接用工程导：导完删掉，不留在工作区
 
 
 def _export_all(out: Path, logs: Path, src: Path, problems: list) -> list:
@@ -383,14 +461,16 @@ def main(argv=None) -> int:
     ap.add_argument('--out', help='发行目录的上一级')
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--real-scripts', action='store_true', help='回退：发行包带天启篇真脚本（不换空壳）')
+    ap.add_argument('--no-save-key', action='store_true', help='不注入存档封存密钥（发行包不封存存档，照旧明文）')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
-    global REAL_SCRIPTS
+    global REAL_SCRIPTS, NO_SAVE_KEY
     REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
+    NO_SAVE_KEY = NO_SAVE_KEY or a.no_save_key
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'
     dev = dev_number()
     out = parent / f'dev{dev}_三平台发行'

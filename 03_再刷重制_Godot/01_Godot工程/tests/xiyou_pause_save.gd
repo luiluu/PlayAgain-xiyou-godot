@@ -125,6 +125,8 @@ func _run() -> void:
 	platform.on_paused()
 	check("fail_logged_no_popup", XAutoSave.last_result == "fail" and not XSave.exists_auto() and not map.busy and XSave.current_slot == 1, XAutoSave.last_result)
 	DirAccess.remove_absolute(XSave.auto_path() + ".tmp")
+	for f in DirAccess.get_files_at(bad_dir):
+		DirAccess.remove_absolute(bad_dir.path_join(f))  # 封存记号等
 	DirAccess.remove_absolute(bad_dir)
 	XSave.dir_override = good_dir
 
@@ -201,7 +203,7 @@ func _run() -> void:
 		done.v = true
 	go.call()
 	await _until(func(): return _battle(map) != null)
-	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	var saved = JSON.parse_string(XSaveSeal.read_text(XSave.auto_path()))
 	check("event_battle_no_checkpoint", XAutoSave.last_result == "skip:in_event" and gs.gold == 400, "%s gold=%d" % [XAutoSave.last_result, gs.gold])
 	check("event_battle_auto_keeps_pre_event", saved is Dictionary and int(saved.get("gold", -1)) == 500, str(saved.get("gold", null) if saved is Dictionary else saved))
 	await _end_battle(map)
@@ -216,7 +218,7 @@ func _run() -> void:
 	done.v = false
 	go.call()
 	await _until(func(): return _battle(map) != null)
-	saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	saved = JSON.parse_string(XSaveSeal.read_text(XSave.auto_path()))
 	check("event_battle_rollback_saves_after_deduct", XAutoSave.last_result == "checkpoint:battle" and saved is Dictionary and int(saved.get("gold", -1)) == 400, XAutoSave.last_result)
 	await _end_battle(map)
 	await _until(func(): return done.v)

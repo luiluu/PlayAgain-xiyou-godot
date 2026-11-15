@@ -10,6 +10,8 @@ extends RefCounted
 ## 测试改路径；空则跟 XSave.dir()（测试的 XSave.dir_override 也跟着走临时目录）
 static var path_override := ""
 static var _loaded_path := "<unloaded>"
+## 文件校验失败（XSaveSeal，D28）：本次运行只在内存里改，不写盘（不覆盖原文件）
+static var seal_failed := false
 static var _switches := {}      # id -> bool
 static var _variables := {}     # id -> 原值
 static var _id_cache := {}      # 插件参数键 -> id 列表（每次改变量都要查，只解析一次）
@@ -31,7 +33,7 @@ static func variable_ids() -> Array:
 
 
 static func path() -> String:
-	return path_override if path_override != "" else XSave.dir().path_join("global.json")
+	return XSaveSeal.resolve(path_override if path_override != "" else XSave.dir().path_join("global.json"))  # 封存时 global.ksv
 
 
 static func ensure_loaded() -> void:
@@ -41,10 +43,16 @@ static func ensure_loaded() -> void:
 	_loaded_path = p
 	_switches = {}
 	_variables = {}
+	seal_failed = false
 	if not FileAccess.file_exists(p):
 		return
+	var r := XSaveSeal.read(p)
+	if str(r.status) == "failed":
+		seal_failed = true
+		push_warning("XGlobalVars: 跨存档变量文件" + XSaveSeal.FAIL_TEXT + "，不读、不覆盖：" + p)
+		return
 	var json := JSON.new()  # 不用 parse_string：损坏时不往日志打错误
-	var d = json.data if json.parse(FileAccess.get_file_as_string(p)) == OK else null
+	var d = json.data if json.parse(str(r.text)) == OK else null
 	if not d is Dictionary:
 		return  # 损坏的文件按空处理（正式版 JSON.parse 会直接报错停机）；下次改值时整份重写
 	var sw = d.get("switches", {})
@@ -95,7 +103,7 @@ static func apply(s: XState) -> void:
 ## 同 XSave：先写临时文件再替换；写盘失败只丢这一次（内存里仍有，本次运行照常生效），不影响游戏
 static func _save() -> bool:
 	var p := path()
-	if DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
+	if seal_failed or DirAccess.make_dir_recursive_absolute(p.get_base_dir()) != OK:
 		return false
 	var sw := {}
 	var vars := {}
@@ -103,15 +111,7 @@ static func _save() -> bool:
 		sw[str(k)] = _switches[k]
 	for k in _variables:
 		vars[str(k)] = _variables[k]
-	var temp := p + ".tmp"
-	var f := FileAccess.open(temp, FileAccess.WRITE)
-	if f == null:
-		return false
-	f.store_string(JSON.stringify({"version": 1, "mode": "xiyou", "switches": sw, "variables": vars}))
-	f.flush()
-	var ok := f.get_error() == OK
-	f.close()
-	if not ok or DirAccess.rename_absolute(temp, p) != OK:
-		DirAccess.remove_absolute(temp)
+	# 临时文件 → 读回核对 → 改名（XSaveSeal.write_file：.ksv 封存、.json 明文）
+	if not XSaveSeal.write_file(p, JSON.stringify({"version": 1, "mode": "xiyou", "switches": sw, "variables": vars})):
 		return false
 	return true

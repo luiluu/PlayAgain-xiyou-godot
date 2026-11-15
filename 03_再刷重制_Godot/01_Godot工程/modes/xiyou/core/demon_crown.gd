@@ -62,7 +62,7 @@ static var battle = null
 
 
 static func path() -> String:
-	return path_override if path_override != "" else XSave.dir().path_join(FILE)
+	return XSaveSeal.resolve(path_override if path_override != "" else XSave.dir().path_join(FILE))  # 封存时 .ksv
 
 static func uuid() -> String:
 	return Crypto.new().generate_random_bytes(16).hex_encode()
@@ -185,8 +185,11 @@ static func load_ledger():
 		return _ledger
 	var next_l = {"version": 1, "profiles": {}, "legacy": {}}
 	if FileAccess.file_exists(p):
+		var r := XSaveSeal.read(p)  # 封存（D28）：校验失败不读、不覆盖（save_ledger 也拒写）
+		if str(r.status) == "failed":
+			return _fail("\"头顶\"成长记录" + XSaveSeal.FAIL_TEXT)
 		var json := JSON.new()
-		if json.parse(FileAccess.get_file_as_string(p)) != OK or not json.data is Dictionary:
+		if json.parse(str(r.text)) != OK or not json.data is Dictionary:
 			return _fail("\"头顶\"成长记录损坏或版本不兼容")
 		next_l = json.data
 		if int(next_l.get("version", 0)) != 1 or not next_l.get("profiles") is Dictionary:

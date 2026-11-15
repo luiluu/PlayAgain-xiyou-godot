@@ -182,7 +182,7 @@ func _old_save_mark(s: XState) -> void:
 	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
 	XState.current = s
 	_check("old_save.written", XSave.save(1))
-	var text := FileAccess.get_file_as_string(XSave.path(1))
+	var text := XSaveSeal.read_text(XSave.path(1))
 	_check("old_save.field_kept", text.contains("\"reincarnate\"") and not text.contains("已清除异化"))
 	XState.current = XState.new()
 	_check("old_save.loaded", XSave.load_slot(1) and bool(XState.current.flags.tianqi.get("reincarnate", false)))

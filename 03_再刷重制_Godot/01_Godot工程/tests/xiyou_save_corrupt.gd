@@ -89,14 +89,12 @@ func _run() -> void:
 	s.set_switch(5, true)
 	check("good_save_written", XSave.save(1))
 	check("good_save_loads", XSave.load_slot(1) and XState.current.gold == 4321 and XSave.current_slot == 1)
-	var good: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var good: Dictionary = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
 	var aid := str(int(good.party[0]))
 	for c in _cases(aid):
 		var d: Dictionary = good.duplicate(true)
 		_patch(d, c[1], c[2])
-		var f := FileAccess.open(XSave.path(2), FileAccess.WRITE)
-		f.store_string(JSON.stringify(d))
-		f.close()
+		XSaveSeal.store(XSave.path(2), JSON.stringify(d))
 		var before := XState.current
 		var ok := XSave.load_slot(2)
 		check("rejects_" + c[0], not ok and is_same(XState.current, before) and XSave.current_slot == 1 \
@@ -105,9 +103,7 @@ func _run() -> void:
 	var auto: Dictionary = good.duplicate(true)
 	auto.orbState = []
 	auto.autoFromSlot = 1
-	var fa := FileAccess.open(XSave.auto_path(), FileAccess.WRITE)
-	fa.store_string(JSON.stringify(auto))
-	fa.close()
+	XSaveSeal.store(XSave.auto_path(), JSON.stringify(auto))
 	var keep := XState.current
 	check("auto_rejects_orbState_array", not XSave.load_auto() and is_same(XState.current, keep) and XSave.auto_summary() == "")
 	# 坏档拒掉之后，完好的档照常能读

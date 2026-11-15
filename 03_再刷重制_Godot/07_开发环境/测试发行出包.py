@@ -2,6 +2,7 @@
 """发行出包.py 离线部分（cc 平台 EA 2026-11-06）：发行说明摘取与去内部信息、旧目录压 zip 不删、体积表、发行目录排序、dry-run。
 真导出加冒烟约 15 分钟，不在这里跑：手动 `python3 发行出包.py`。"""
 import importlib.util
+import json
 import subprocess
 import sys
 import tempfile
@@ -175,6 +176,107 @@ class DirsTests(unittest.TestCase):
             self.assertEqual(out.returncode, 0, out.stderr)
             self.assertIn('冒烟全过后会删旧发行：dev1_三平台发行', out.stdout)
             self.assertTrue(all((Path(t) / f'dev{n}_三平台发行').is_dir() for n in (1, 2, 3)))
+
+
+
+KEY_CASES = HERE.parent / '01_Godot工程' / 'tests' / 'fixtures' / 'save_key_cases.json'
+
+
+class SaveKeyTests(unittest.TestCase):
+    """存档封存发行密钥（D28 复核 P2）：格式与游戏运行时一致（同一批样例，GDScript 侧在 xiyou_save_seal 的 keys.cases_*）；
+    注入前查、注入后读回、导完在产物里读回，任一不符不出包。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.saved = (M.SAVE_KEY_SRC, M.NO_SAVE_KEY)
+        M.NO_SAVE_KEY = False
+
+    def tearDown(self):
+        M.SAVE_KEY_SRC, M.NO_SAVE_KEY = self.saved
+        self.tmp.cleanup()
+
+    def _key(self, d) -> bytes:
+        M.SAVE_KEY_SRC = self.dir / 'key.json'
+        M.SAVE_KEY_SRC.write_text(json.dumps(d), encoding='utf-8')
+        return M.SAVE_KEY_SRC.read_bytes()
+
+    def test_cases_match_runtime_rules(self):
+        tool = M._key_tool()
+        for c in json.loads(KEY_CASES.read_text(encoding='utf-8')):
+            with self.subTest(c['name']):
+                self.assertEqual(tool.check(c['data']) == '', c['ok'], tool.check(c['data']))
+
+    def test_inject_rejects_runtime_invalid(self):
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        for d in ({'current': 256, 'keys': {'256': 'x'}}, {'current': 1, 'keys': {'1': ''}}):
+            self._key(d)
+            bad = M.inject_save_key(proj)
+            self.assertIn('格式不对', bad)
+            self.assertFalse((proj / M.SAVE_KEY_DEST).exists())
+        M.SAVE_KEY_SRC = self.dir / 'none.json'
+        self.assertIn('不在', M.inject_save_key(proj))
+        (self.dir / 'bad.json').write_text('{坏', encoding='utf-8')
+        M.SAVE_KEY_SRC = self.dir / 'bad.json'
+        self.assertIn('不是 JSON', M.inject_save_key(proj))
+
+    def test_inject_ok_reads_back(self):
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        raw = self._key({'current': 1, 'keys': {'1': 'ab' * 32}})
+        self.assertEqual(M.inject_save_key(proj), '')
+        self.assertEqual((proj / M.SAVE_KEY_DEST).read_bytes(), raw)
+
+    def test_no_save_key_flag(self):
+        M.NO_SAVE_KEY = True
+        M.SAVE_KEY_SRC = self.dir / 'none.json'
+        self.assertEqual(M.inject_save_key(self.dir), '')
+        self.assertEqual(M.verify_save_key(self.dir), [])
+
+    def test_export_all_stops_before_export(self):
+        self._key({'current': 256, 'keys': {'256': 'x'}})
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        saved = (M.stub_tree, M._export_all)
+        called = []
+        M.stub_tree = lambda out: proj
+        M._export_all = lambda *a: called.append(1) or []
+        try:
+            problems = M.export_all(self.dir / 'out', self.dir)
+        finally:
+            M.stub_tree, M._export_all = saved
+        self.assertEqual(len(problems), 1)
+        self.assertIn('格式不对', problems[0])
+        self.assertEqual(called, [])
+
+    def test_artifacts_read_back(self):
+        key = self._key({'current': 1, 'keys': {'1': 'cd' * 32}})
+        out = self.dir / 'out'
+        (out / M.WIN_DIR).mkdir(parents=True)
+        pck_ok = b'GDPC....' + key + b'....'
+        with zipfile.ZipFile(out / M.MAC_ZIP, 'w') as z:
+            z.writestr('再刷.app/Contents/Resources/再刷.pck', pck_ok)
+        (out / M.WIN_DIR / M.WIN_FILES[1]).write_bytes(pck_ok)
+        with zipfile.ZipFile(out / M.APK, 'w') as z:
+            z.writestr('assets/content/save_seal_key.json', key)
+        self.assertEqual(M.verify_save_key(out), [])
+        # 产物里没有：报出来
+        (out / M.WIN_DIR / M.WIN_FILES[1]).write_bytes(b'GDPC....no key....')
+        with zipfile.ZipFile(out / M.APK, 'w') as z:
+            z.writestr('assets/content/save_seal_key.json', key[:-1] + b' ')
+        bad = M.verify_save_key(out)
+        self.assertEqual(len(bad), 2, bad)
+        self.assertTrue(all('读不到' in b for b in bad))
+
+    def test_key_tool_init_passes_check(self):
+        tool = M._key_tool()
+        p = self.dir / 'k' / 'save_seal_key.json'
+        self.assertEqual(tool.main(['--init', '--file', str(p)]), 0)
+        self.assertEqual(tool.check(json.loads(p.read_text(encoding='utf-8'))), '')
+        self.assertEqual(tool.main(['--rotate', '--file', str(p)]), 0)
+        d = json.loads(p.read_text(encoding='utf-8'))
+        self.assertEqual((tool.check(d), d['current'], len(d['keys'])), ('', 2, 2))
 
 
 if __name__ == '__main__':

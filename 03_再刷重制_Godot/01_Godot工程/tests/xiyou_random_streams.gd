@@ -81,9 +81,7 @@ func _ready() -> void:
 	check("foreign_engine_load_rebuild", migrated != null and migrated.random_master.is_empty() and migrated._equipment_random == null and equal(migrated.rom, encoded.rom) and equal(migrated.gear, encoded.gear) and migrated.orb_seed == loaded.orb_seed)
 	XSave.dir_override = "user://rng_migration"
 	DirAccess.make_dir_recursive_absolute(XSave.dir())
-	var file := FileAccess.open(XSave.path(1), FileAccess.WRITE)
-	file.store_string(JSON.stringify(legacy_rng))
-	file.close()
+	XSaveSeal.store(XSave.path(1), JSON.stringify(legacy_rng))
 	check("foreign_engine_disk_load", XSave.load_slot(1) and XState.current.random_master.is_empty() and not XSave.summary(1).contains("无法读取"))
 	check("foreign_engine_disk_preserves_pools", equal(XState.current.rom, encoded.rom) and equal(XState.current.gear, encoded.gear) and XState.current.orb_seed == loaded.orb_seed)
 	var fresh_equipment := second.equipment_random()

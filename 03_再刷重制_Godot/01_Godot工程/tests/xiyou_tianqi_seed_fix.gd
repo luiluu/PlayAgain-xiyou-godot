@@ -82,7 +82,7 @@ func _load() -> XState:
 
 ## 改存档文件：去掉 fn 指明的字段，模拟老档
 func _strip_file(fn: Callable) -> void:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	fn.call(d)
 	XSave._write(XSave.path(SLOT), d)
 
@@ -137,7 +137,7 @@ func _reforge() -> void:
 	_check("rf_items_independent", not (r2 == r3 and r3 == r4), [r2, r3, r4])
 	# 老档：存档里那件装备已重铸过、却没有 tq_rng_n（去掉字段），读档能补上从 0 开始、照样可复现
 	_strip_file(func(dd): for g in dd.gear: (g as Dictionary).erase("tq_rng_n"))
-	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	_check("rf_legacy_stripped", (raw.gear as Array).all(func(g): return not (g as Dictionary).has("tq_rng_n")))
 	var leg := _reforge_run(iid, 1)
 	_check("rf_legacy_init", leg.size() == 1 and not leg[0].contains("error") and int(_gear(XState.current, iid).get("tq_rng_n", -1)) == 1, leg)
@@ -210,7 +210,7 @@ func _alien() -> void:
 	# 老档：存档里那件没有 tq_rng_n（随机身份还在），从 0 接着掷，和第一次读档一样
 	_save()
 	_strip_file(func(dd): for g in dd.gear: (g as Dictionary).erase("tq_rng_n"))
-	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	_check("al_legacy_stripped", (raw.gear as Array).all(func(g): return not (g as Dictionary).has("tq_rng_n")))
 	var leg := _reroll_run(iid, 2)
 	_check("al_legacy_init", leg == r1.slice(0, 2) and int(_gear(XState.current, iid).get("tq_rng_n", -1)) == 2, [leg, r1])
@@ -302,7 +302,7 @@ func _seed_ids() -> void:
 	_reroll_once(s, _gear(s, aid))
 	# 同一档里分配的号各不相同、存档里不会出现两件同号
 	_save()
-	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	var ids := (raw.gear as Array).map(func(g): return str(g.get("tq_seed_id", ""))).filter(func(x): return x != "")
 	var uniq := {}
 	for x in ids:

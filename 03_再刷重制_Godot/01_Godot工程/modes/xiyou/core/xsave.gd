@@ -25,8 +25,9 @@ static func dir() -> String:
 	var mode_dir: String = GameApp.save_directory()
 	return mode_dir if mode_dir != "" else "user://modes/xiyou"
 
+## 封存（XSaveSeal）开着时是 save_<N>.ksv（旧代码看不见，不会覆盖），关着时是 save_<N>.json
 static func path(slot: int) -> String:
-	return dir().path_join("save_%d.json" % slot)
+	return XSaveSeal.resolve(dir().path_join("save_%d.json" % slot))
 
 
 static func save(slot: int) -> bool:
@@ -57,19 +58,10 @@ static func _write(target: String, data: Dictionary, slim_backup := false) -> bo
 	if SAVE_GUARD and not valid_data(JSON.parse_string(text)):
 		push_warning("XSave: 要写的存档读档校验不过，不写，保留旧档：" + target)
 		return false
-	var temp := target + ".tmp"
-	var f := FileAccess.open(temp, FileAccess.WRITE)
-	if f == null:
+	# 封存（XSaveSeal）：这格原来是校验失败的档就先改名留着，不覆盖；.ksv 写封存格式（读回解开核对后才替换），.json 写明文
+	if not XSaveSeal.quarantine_if_failed(target):
 		return false
-	f.store_string(text)
-	f.flush()
-	var ok := f.get_error() == OK
-	f.close()
-	if not ok:
-		DirAccess.remove_absolute(temp)
-		return false
-	if DirAccess.rename_absolute(temp, target) != OK:
-		DirAccess.remove_absolute(temp)
+	if not XSaveSeal.write_file(target, text):
 		return false
 	XSaveSlim.written(full, target, text)
 	return true
@@ -77,7 +69,10 @@ static func _write(target: String, data: Dictionary, slim_backup := false) -> bo
 
 ## 账本类文件（头顶成长、云裳订单）共用的写法（Codex 审查第 2 项，哪吒 save1）：写到同目录临时文件，flush 后查写入错误，
 ## 写不完整就删掉临时文件、不替换旧文件、返回 false；替换前把旧文件（能解析的才算有效）复制成 <文件>.bak，留上一版。
+## 封存管的文件（XSaveSeal.covered）按开关封存写；校验失败的旧文件不覆盖、不写（返回 false）。别的文件（瘦身日志）照旧写明文。
 static func write_text_safely(target: String, text: String, keep_backup := true) -> bool:
+	if XSaveSeal.covered(target):
+		return _write_sealed_ledger(target, text, keep_backup)
 	if DirAccess.make_dir_recursive_absolute(target.get_base_dir()) != OK:
 		return false
 	var temp := "%s.%s.tmp" % [target, Crypto.new().generate_random_bytes(8).hex_encode()]
@@ -107,10 +102,37 @@ static func write_text_safely(target: String, text: String, keep_backup := true)
 	return true
 
 
+static func _write_sealed_ledger(target: String, text: String, keep_backup: bool) -> bool:
+	var old := XSaveSeal.read(target)
+	if str(old.status) == "failed":
+		push_warning("XSave: 账本校验失败，不覆盖：" + target)
+		return false
+	if DirAccess.make_dir_recursive_absolute(target.get_base_dir()) != OK:
+		return false
+	if keep_backup and str(old.status) != "missing":
+		var json := JSON.new()
+		if json.parse(str(old.text)) == OK and json.data is Dictionary:
+			DirAccess.copy_absolute(target, target + ".bak")
+	return XSaveSeal.write_file(target, text)
+
+
+## 读一格存档文件（封存或明文旧档）：{"status": "missing"|"sealed"|"plain"|"failed", "text": …}，见 XSaveSeal.read
+static func read_file(p: String) -> Dictionary:
+	return XSaveSeal.read(p)
+
+
+## 这格存档有文件但校验失败（被改过或坏了）
+static func seal_failed(slot: int) -> bool:
+	return exists(slot) and str(read_file(path(slot)).status) == "failed"
+
+static func auto_seal_failed() -> bool:
+	return exists_auto() and str(read_file(auto_path()).status) == "failed"
+
+
 ## 安卓切后台自动存档（XAutoSave，O-215·安卓切后台存档）：单独一个文件，不占手动存档位 1～30。
 ## 不加保存次数、不改 current_slot（一键存档仍存回玩家自己的档位）；记下当时的档位，读回来时接着用那一格。
 static func auto_path() -> String:
-	return dir().path_join("save_auto.json")
+	return XSaveSeal.resolve(dir().path_join("save_auto.json"))
 
 static func save_auto() -> bool:
 	if XState.current == null:
@@ -130,12 +152,14 @@ static func exists_auto() -> bool:
 	return FileAccess.file_exists(auto_path())
 
 static func remove_auto() -> void:
-	if exists_auto():
+	if exists_auto() and XSaveSeal.quarantine_if_failed(auto_path()):  # 校验失败的改名留着，不删
 		DirAccess.remove_absolute(auto_path())
 
 ## 标题页按钮上的一句话
 static func auto_summary() -> String:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(auto_path())) if exists_auto() else null
+	if auto_seal_failed():
+		return "自动存档：" + XSaveSeal.FAIL_TEXT
+	var d = _parse(read_file(auto_path()).text) if exists_auto() else null
 	if not valid_data(d):
 		return ""
 	return "自动存档：%s" % str(d.get("savedAt", "")).replace("T", " ")
@@ -144,8 +168,8 @@ static func auto_summary() -> String:
 static func load_auto() -> bool:
 	if not exists_auto():
 		return false
-	var text := FileAccess.get_file_as_string(auto_path())
-	var d = JSON.parse_string(text)
+	var text := str(read_file(auto_path()).text)
+	var d = _parse(text)
 	if not valid_data(d):
 		return false
 	var from := int(d.get("autoFromSlot", 0))
@@ -168,6 +192,8 @@ static func backup() -> int:
 static func remove(slot: int) -> bool:
 	if not exists(slot):
 		return false
+	if seal_failed(slot):  # 校验失败的档不删：改名留着（XSaveSeal.quarantine_if_failed），这格空出来
+		return XSaveSeal.quarantine_if_failed(path(slot))
 	return DirAccess.remove_absolute(path(slot)) == OK
 
 
@@ -267,7 +293,10 @@ static func _valid_gear(e) -> bool:
 static func summary(slot: int) -> String:
 	if not exists(slot):
 		return "存档 %d：空" % slot
-	var d = JSON.parse_string(FileAccess.get_file_as_string(path(slot)))
+	var r := read_file(path(slot))
+	if str(r.status) == "failed":
+		return "存档 %d：%s" % [slot, XSaveSeal.FAIL_TEXT]
+	var d = _parse(r.text)
 	if not valid_data(d):
 		return "存档 %d：无法读取" % slot
 	var leader := str(XDB.rec("Actors", int(d.party[0])).get("name", "")) if not d.party.is_empty() else ""
@@ -279,8 +308,8 @@ static func summary(slot: int) -> String:
 static func load_slot(slot: int) -> bool:
 	if not exists(slot):
 		return false
-	var text := FileAccess.get_file_as_string(path(slot))
-	var d = JSON.parse_string(text)
+	var text := str(read_file(path(slot)).text)
+	var d = _parse(text)
 	if not valid_data(d):
 		return false
 	if not _load_data(d, slot, text):
@@ -303,3 +332,11 @@ static func _load_data(d: Dictionary, slot: int, text: String) -> bool:
 	if not XConfig.has_map_xy() and XState.current.self_switch(4, 20, "A"):
 		XConfig.set_map_xy(true)
 	return true
+
+
+## 不往日志打 ERROR 的解析（校验失败读出的是空串）
+static func _parse(text):
+	if str(text) == "":
+		return null
+	var json := JSON.new()
+	return json.data if json.parse(str(text)) == OK else null

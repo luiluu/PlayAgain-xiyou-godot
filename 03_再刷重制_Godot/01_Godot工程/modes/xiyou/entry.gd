@@ -323,7 +323,7 @@ func _load_auto() -> void:
 	if XSave.load_auto():
 		get_tree().change_scene_to_file(MAP_SCENE)
 	else:
-		_notice("自动存档", "这份自动存档读不出来。")
+		_notice("自动存档", (XSaveSeal.FAIL_TEXT + "，这份自动存档无法读取。" + XSaveSeal.FAIL_HINT) if XSave.auto_seal_failed() else "这份自动存档读不出来。")
 
 
 ## 图片指令：Command_N.png 上半为选中（彩色），下半为未选中（灰）；没有图片的用文字代替。
