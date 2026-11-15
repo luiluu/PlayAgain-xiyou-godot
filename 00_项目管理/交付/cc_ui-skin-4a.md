@@ -51,7 +51,7 @@
 - `语法检查.py` 通过；`皮肤关闭对照.py` 32/32 SAME；`发行空壳.py check` 通过（`skin_4a.gd` 登记进 `MIXED_OK`：西游代码直接调、发行包里 `XUiSkin.on()` 恒假）；`工具回归.py` 全过。
 - 回退：五个开关在 `xiyou_ui_skin_4a` 里都有字面量设 false 的断言。
 - 云端选测：见下一行（`选测.py` 名单很长：改到战斗场景、MV 动画、虚拟键、设置页，按派单本地只跑单个专项，其余走云端）。
-- 云端结果：待写
+- 云端结果：c4041269e 整轮 636 场景 16 片（actions/runs/43760971632；基准 8398a28e7，收口批没进 main 所以选成整轮），625 过、11 挂：`text_fix_dump`、`text_fix_shots`、`xiyou_common_scripts`、`xiyou_dungeon`、`xiyou_enemy_book`、`xiyou_equipment`、`xiyou_gear_search`、`xiyou_inlay_book`、`xiyou_rift2_canglong`、`xiyou_troop_events_d`、`xiyou_troop_events_half`。这 11 个正是 main 上 501b6e99b（「比原版文字的参照专项关 XTextFix」、text_fix 工具场景无参数报跳过）改的测试，本分支从收口批切、还没有这次修；挂的内容都是 XTextFix 改字（如「寂静」→「寂净」、`off.same_as_source`），和 4A 无关。本地把 `xiyou_rift2_canglong`、`xiyou_enemy_book` 换成 main 的测试文件单跑 90/90、96/96（已还原）。合 main 后这 11 个随 501b6e99b 一起过。
 
 ## 交接板
 
@@ -80,5 +80,7 @@
 
 ## 本分支提交
 
-- f0dde788a WIP 4A 本体（XSkin4A 五开关）
-- 后续提交见 `git log cc/ui-skin-close..cc/ui-skin-4a`
+- f0dde788a 4A 本体（XSkin4A 五开关）
+- （专项）xiyou_ui_skin_4a
+- e292689ad 截图返修：窄地图快照、触屏指令环让开 A／B、圆键 2px 边
+- c4041269e 交付单＋发行空壳登记
