@@ -239,12 +239,17 @@ static func gain_rewards(members: Array) -> void:
 
 # ---- 学忘同步 ----
 
-static func sync(a) -> void:
+## state：这名角色所属的那一局（读档时是正在读的新档）；不给就看 XState.current。
+## 【cc·未经审查】玩家反馈 v0.01.10「强退后读档流萤二阶进阶的被动和主动都没了」：读档同步（after_load）在 XState.from_dict 里、
+## 换成新档（_become_current）之前跑，原来按 XState.current 取进阶次数——冷启动读档时它是 null（进阶算 0），局中读别的档时是读档前那一局，
+## 进阶技能 10628、10623、10629、10630、10631、10632 与梦应被当成「不够」忘掉（进阶次数本身还在，进阶页照样显示 2）。
+## 原版 extractSaveContents 包装读的是新档角色身上的 _AdvancedNum，不会错；同镜流 setup(a, state)、谷雨挪到换档之后（沙僧二审 S2-2-01）。
+static func sync(a, state: XState = null) -> void:
 	if not own(a) or _syncing:
 		return
 	_syncing = true
 	var lv := int(a.level)
-	var r := rank(a)
+	var r := XAdvance.rank(state, ACTOR) if state != null else rank(a)
 	for pair in LEVEL_MAP:
 		_keep(a, int(pair[1]), lv >= int(pair[0]))
 	var rmap: Array = RANK_MAP.duplicate()
@@ -274,7 +279,7 @@ static func learned_skill(a, id: int) -> void:
 ## extractSaveContents 包装：角色数据里有流萤就整理一次（不在队也整理）
 static func after_load(s: XState) -> void:
 	if s.actors.has(ACTOR):
-		sync(s.actors[ACTOR])
+		sync(s.actors[ACTOR], s)
 
 
 # ---- 招募 ----
