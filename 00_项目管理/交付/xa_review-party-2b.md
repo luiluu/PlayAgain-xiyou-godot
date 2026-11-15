@@ -154,7 +154,9 @@
 
 ## 2026-11-15 【ag·小A·未经审查】乙档核查 cc/party-formation 与 2B 文字审（dev.待定）
 - 核查结论：`cc/party-formation`（`dev.614`）功能本身通过，已实跑 `xiyou_party_formation`（74/74）、`xiyou_ui_skin_battle`（58/58）、`xiyou_hangup_options`（57/57）、`xiyou_ui_skin_5c`（79/79）、`xiyou_ui_skin_hud`（104/104）及 `语法检查.py`（931 文件 0 问题）；`cc/ui-skin-2b`（`dev.610`）对照 `ba1f7ed` 复核无新增必改文字（`skin_party_status.gd:204` 已改好）。
-- 发现待派修问题（P2 两项）：（1）`modes/xiyou/ui/skin/skin_options_page.gd` 的 `CATS["battle"]` 与 `DESC` 漏加 `codexPartyFormation`，导致天启篇新界面设置页该项落入「其他」且说明为空；（2）代码坐标核对确认两排错开时旧指令窗（右缘 `1071 > 1032`）与新指令环（右缘 `1009+ > 974`）压右侧状态栏、菱形 3 号位时旧指令窗（底 `658+ > 618`）与新指令环左下（`509..565, 627..712`）压底部顺序条（截图目录未入库，未见实拍图）。
+- 发现问题与现场修复：
+  - （已修）P2-1：`modes/xiyou/ui/skin/skin_options_page.gd` 的 `CATS["battle"]` 已补 `codexPartyFormation`，`DESC` 已补说明「设置我方战斗中的站位阵型，按编队顺序站位。下一场战斗生效。」（不再落入「其他」或空说明；见提交 `a03f45787`）。
+  - （待定）P2-2：代码坐标核对确认两排错开时旧指令窗（右缘 `1071 > 1032`）与新指令环（右缘 `1009+ > 974`）压右侧状态栏、菱形 3 号位时旧指令窗（底 `658+ > 618`）与新指令环左下（`509..565, 627..712`）压底部顺序条（截图目录未入库，未见实拍图；等 Kyo 定指令位置，本轮未改）。
 - 交付记录：见交付单 `xa_review-party-2b.md`（分支 `xa/review-party-2b`）。
 
 ---
@@ -162,14 +164,13 @@
 ## 交接板
 
 - 下一步：
-  1. 派修 `skin_options_page.gd` 补全 `codexPartyFormation` 的分类（`"battle"`）与 `DESC` 说明文字（顺手可补 `options_scene.gd:55` 注释编号）。
-  2. 结合 Kyo 指令位置定稿调整两排／菱形指令窗（旧版 `WINDOW_ANCHOR`）与指令环（`XSkinBattleRing`）安全框或站位坐标，并补复跑 `xiyou_battle_ui`、`xiyou_battle_pixel`、`xiyou_costume_battle`、`xiyou_sequence_visual`、`xiyou_xuan_tusu_art` 及 2B 字库／236 场景 `选测.py`。
-- 用户试玩说明：无（本单为只读核查交付）。
+  1. 结合 Kyo 指令位置定稿调整两排／菱形指令窗（旧版 `WINDOW_ANCHOR`）与指令环（`XSkinBattleRing`）安全框或站位坐标，并补复跑 `xiyou_battle_ui`、`xiyou_battle_pixel`、`xiyou_costume_battle`、`xiyou_sequence_visual`、`xiyou_xuan_tusu_art` 及 2B 字库／236 场景 `选测.py`。
+- 用户试玩说明：无（核查＋设置分类补登）。
 - 需要用户决定：无（指令窗／指令环遮挡位置方案已附坐标建议，供 Kyo 拍板）。
 
 ## 进度账
 
-- 无工程进度变更（仅核查交付）。
+- 无工程进度变更。
 
 ## 可优化（流程／工具／效率）
 
@@ -177,4 +178,23 @@
 
 ## 本分支提交
 
-- （本交付单提交，见 `git log -1`）
+- `6ace5ae4e` 核查：cc/party-formation 乙档核查与 cc/ui-skin-2b 文字审
+- `a03f45787` 修复：新界面设置页战斗分类补 codexPartyFormation 与说明（P2-1）
+- （本修复记录追加提交，见 `git log -1`）
+
+---
+
+## 修复
+
+- **派单**：`task_eb43908ad10a` / `ctx_c2e156cd5692`（在 `xa/review-party-2b` 续修 P2-1 与 P3-2，不动 P2-2 指令窗位置）。
+- **1）P2-1 已修**（提交 `a03f45787`）：
+  - 文件：`03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/skin_options_page.gd`
+  - 改动：`CATS["battle"]` 列表（位于 `"codexBattleAutoDefault"` 之后）加入 `"codexPartyFormation"`；`DESC` 新增 `"codexPartyFormation": "设置我方战斗中的站位阵型，按编队顺序站位。下一场战斗生效。"`（照 `ba1f7ed` 简明口径及同组战斗项风格定稿）。
+- **2）P3-2 复核（无需改动）**：
+  - 核对 `main` 现行 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/options_scene.gd:47`（及 `modes/xiyou/battle/party_formation.gd:3`），合并收尾提交 `35cd2f289` 已将原本的占位编号替换为正式号 **`O-473`**（`## 重制新增：战斗站位（O-473，XPartyFormation）：...`）；全文件检索无残留占位，前面报告误记行号 `55` 系核查旧提交 `c4bf3eb75` 所致，故 `options_scene.gd` 无需再改。
+- **3）P2-2 未动**：指令窗／指令环遮挡位置按派单等 Kyo 定稿，未改动。
+- **4）修后前台验证（全通过）**：
+  - `./03_再刷重制_Godot/07_开发环境/godot --headless --path 03_再刷重制_Godot/01_Godot工程 res://tests/xiyou_party_formation.tscn`：`74/74`
+  - `./03_再刷重制_Godot/07_开发环境/godot --headless --path 03_再刷重制_Godot/01_Godot工程 res://tests/xiyou_ui_skin_5c.tscn`：`79/79`
+  - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py`：`931 个 .gd，0 个问题`
+
