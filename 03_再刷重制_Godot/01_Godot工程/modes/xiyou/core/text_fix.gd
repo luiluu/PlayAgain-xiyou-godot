@@ -7,7 +7,7 @@ extends RefCounted
 ## 公共事件／敌群／地图事件的 401／405 对话行与 102 选项。备注的其余部分（notetag、动作序列、脚本）、伤害公式、插件参数都不碰。
 ##
 ## 六个开关各一个 O 号（00_设计/优化登记.md），默认开；关掉后 clear_cache() 让表重读即回原版文字：
-## - STRIP_ZW（O-待定-1）：剥零宽控制符 U+FEFF、U+200B。
+## - STRIP_ZW（O-待定-1）：剥零宽控制符 U+FEFF、U+200B、U+200C。
 ## - NAMEBOX（O-待定-2）：事件对话名字框——行首 <名字> 补前导 \n、/n< 写反改 \n<、\c\[ 双转义改 \c[、行首孤立 \n（后面不是 <、[、字母）删掉。
 ## - PAIRS（O-待定-3）：成对标点——只有左单引号／只有右双引号的成对改回 ‘…’／“…”；括号能配平而半角全角混搭的一对改全角。
 ## - DICT（O-待定-4）：词典替换（text_fix/rules.json 的 dict：挑符文、超级Boos、奥数→奥术、终级、枪决……）。
@@ -26,7 +26,7 @@ static var OVERRIDES := true
 const RULES_PATH := "res://modes/xiyou/text_fix/rules.json"
 const OVERRIDES_PATH := "res://modes/xiyou/text_fix/overrides.json"
 ## 改了修正逻辑（不只是 rules／overrides 数据）就加 1，让旧的修正缓存作废（导出版脚本源码可能读不到，不能只靠源码哈希）
-const CACHE_VER := 1
+const CACHE_VER := 3
 const TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "States", "Troops", "CommonEvents",
 	"MapInfos", "EquipSuits", "Runewords"]
 const TEXT_KEYS := ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
@@ -88,6 +88,7 @@ static func rules() -> Dictionary:
 			_dict.append([re, from, str(e.get("to", ""))])
 		gate.append("\ufeff")
 		gate.append("\u200b")
+		gate.append("\u200c")
 		_gate = RegEx.create_from_string("|".join(gate))
 		_pos_re = RegEx.create_from_string("^(<pos=\\S+\\s+text=)([\\s\\S]*?)(\\s+size=[\\s\\S]*)$")
 		_namebox_re = RegEx.create_from_string("^<([^<>\\\\:]{1,20})>")
@@ -218,7 +219,7 @@ static func fix(s: String, event := false) -> String:
 		s = _namebox(s)
 	if _gate.search(s) != null:
 		if STRIP_ZW:
-			s = s.replace("\ufeff", "").replace("\u200b", "")
+			s = s.replace("\ufeff", "").replace("\u200b", "").replace("\u200c", "")
 		if TRAD:
 			var trad: Dictionary = _rules.get("trad", {})
 			for k in trad:
@@ -248,7 +249,7 @@ static func _namebox(s: String) -> String:
 	return s
 
 
-## 备注里只处理行首的 <pos=… text=… size=…> 行（其余是 notetag、动作序列、脚本，体积大，不扫）
+## 备注里只处理 <pos=… text=… size=…> 行（其余是 notetag、动作序列、脚本，体积大，不扫）
 static func _fix_note(note: String) -> String:
 	var i := note.find("<pos=")
 	if i < 0:
@@ -259,12 +260,11 @@ static func _fix_note(note: String) -> String:
 		var e := note.find("\n", i)
 		if e < 0:
 			e = note.length()
-		if i == 0 or note[i - 1] == "\n":
-			var line := note.substr(i, e - i)
-			var u := _fix_pos_line(line)
-			if u != line:
-				out += note.substr(last, i - last) + u
-				last = e
+		var line := note.substr(i, e - i)  # 不要求行首：原版有「<<pos=」的笔误行（Items:800），help_card 照样显示
+		var u := _fix_pos_line(line)
+		if u != line:
+			out += note.substr(last, i - last) + u
+			last = e
 		i = note.find("<pos=", e)
 	return note if last == 0 else out + note.substr(last)
 

@@ -61,6 +61,8 @@ PLACEHOLDER_RE = re.compile(
 
 # 极少数虽在 GB2312 中但现代简体不作正字使用的繁体字
 EXTRA_TRAD_CHARS = set("後餘裏準藉")
+# 规范简体但不在 GB2312 里的字（文字修正换上去的，别再报成繁简混用）：涅槃的「槃」
+SIMPLIFIED_NOT_GB2312 = set("槃")
 
 
 def find_trad_chars(text: str) -> list[str]:
@@ -69,6 +71,8 @@ def find_trad_chars(text: str) -> list[str]:
         if "\u4e00" <= ch <= "\u9fff":
             if ch in EXTRA_TRAD_CHARS:
                 out.add(ch)
+            elif ch in SIMPLIFIED_NOT_GB2312:
+                continue
             else:
                 try:
                     ch.encode("gb2312")
@@ -77,9 +81,19 @@ def find_trad_chars(text: str) -> list[str]:
     return sorted(out)
 
 
+def _int_float(v: str) -> Any:
+    """Godot 导出的 JSON 整数写成 134.0，读回整数，免得位置写成 Skills.json:134.0 与原归档对不上。"""
+    f = float(v)
+    return int(f) if f.is_integer() and "e" not in v.lower() else f
+
+
 def load_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    text = path.read_text(encoding="utf-8")
+    try:
+        return json.loads(text, parse_float=_int_float)
+    except json.JSONDecodeError:
+        # Godot JSON.stringify 把 U+000B 写成 \v（不是合法 JSON；text_fix_dump 导出的修正后数据会遇到）
+        return json.loads(re.sub(r"(?<!\\)((?:\\\\)*)\\v", r"\1\\u000b", text), parse_float=_int_float)
 
 
 def check_escapes(text: str, allow_rich: bool) -> list[tuple[str, str]]:
@@ -773,7 +787,16 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=50, help="抽读样本段数（默认 50）")
     parser.add_argument("--include-reworked", action="store_true", help="不跳过天启篇 skill_rework 覆盖的技能")
     parser.add_argument("--include-terms", action="store_true", help="一并打印术语/口径提示")
+    parser.add_argument("--gen-dir", help="扫这个目录下的 db/、maps/（如 tests/text_fix_dump 导出的 XTextFix 修正后数据），代替 generated")
+    parser.add_argument("--out-dir", help="归档写到这里，代替脚本所在目录（扫修正后数据时别覆盖原归档）")
     args = parser.parse_args()
+    global GEN_DIR, DB_DIR, MAPS_DIR, OUT_DIR
+    if args.gen_dir:
+        GEN_DIR = Path(args.gen_dir).resolve()
+        DB_DIR = GEN_DIR / "db"
+        MAPS_DIR = GEN_DIR / "maps"
+    if args.out_dir:
+        OUT_DIR = Path(args.out_dir).resolve()
 
     if args.scan:
         run_scan()
