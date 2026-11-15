@@ -607,8 +607,17 @@ func anim_blend() -> Color:
 
 
 ## Sprite_Base.hide/show（技能动画 flashScope 3）
+var anim_hidden := false  # 升空变身层（XMiraLiftFx）也改 sprite.visible，两边都认这个标志，互不覆盖
+
+
 func set_anim_hidden(h: bool) -> void:
-	sprite.visible = not h
+	anim_hidden = h
+	var lift := XMiraLiftFx.layer_of(self)
+	if lift != null:
+		lift.visible = not h
+		sprite.visible = not h and not lift.body_shown()
+	else:
+		sprite.visible = not h
 
 
 func flash(color := Color(1, 1, 1)) -> void:
