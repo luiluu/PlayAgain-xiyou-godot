@@ -35,7 +35,8 @@ static func from_actor(a: XActor) -> Dictionary:
 			states.append(ic)
 	return {"name": a.display_name(), "level": a.level, "cls": str(a.class_data().get("name", "")),
 		"face": XUiSkin.face(str(d.get("faceName", "")), int(d.get("faceIndex", 0))),
-		"hp": a.hp, "mhp": a.mhp, "mp": a.mp, "mmp": a.mmp, "tp": a.tp, "mtp": a.max_tp(), "states": states}
+		"hp": a.hp, "mhp": a.mhp, "mp": a.mp, "mmp": a.mmp, "tp": a.tp, "mtp": a.max_tp(), "states": states,
+		"look": XTianqiSkinShow.look_seal(a)}   # 天启篇七印外观（3A，#81）：头像外圈本印颜色＋小印
 
 
 func set_members(arr: Array) -> void:
@@ -123,6 +124,7 @@ func _draw() -> void:
 		if face != null:
 			XSkinPartyStrip.draw_round_texture(self, face, hc, HEAD / 2.0 - 2.0)
 		draw_circle(hc, HEAD / 2.0, Color(XUiSkin.LINE, 0.65), false, 1.5, true)
+		XTianqiSkinShow.draw_look(self, str(m.get("look", "")), hc, HEAD / 2.0)
 		var x := r.position.x + 14 + HEAD + 12
 		var right := r.end.x - 12
 		var y1 := r.position.y + 6 + 18

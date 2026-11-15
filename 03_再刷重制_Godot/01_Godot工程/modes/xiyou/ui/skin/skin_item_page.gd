@@ -279,6 +279,7 @@ static func card_data(rec: Dictionary) -> Dictionary:
 	if gear:
 		d.desc = ""
 		d.sections = [{"title": "", "rows": XSkinTemplatePage.help_rows(XHelpCard.detail_rows(rec, 300.0))}]
+		XTianqiSkinShow.dress_card(rec, d)   # 天启篇七印装备（3A，#82）：印、类别、真印、成色
 		return d
 	var fx := effect_lines(rec)
 	var lines := []
@@ -295,6 +296,7 @@ static func card_data(rec: Dictionary) -> Dictionary:
 			var sk := XDB.rec("Skills", int(ef.get("dataId", 0)))
 			if not sk.is_empty():
 				d.sections.append({"title": "「%s」" % str(sk.get("name", "")), "rows": XSkinTemplatePage.help_rows(XHelpCard.content(sk, "skill", false, 300.0))})
+	XTianqiSkinShow.dress_card(rec, d)   # 天启篇号卷（3A，#82）：效果、代价、获得、限制
 	return d
 
 
@@ -379,8 +381,10 @@ func target_rows(rec: Dictionary) -> Array:
 			elif gain > 0:
 				right = "+%d" % gain
 				rc = XUiSkin.UP
-		out.append({"name": a.display_name(), "face": XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0))),
-			"kind": kind, "cur": cur, "max": mx, "right": right, "right_color": rc, "dim": not scene._effective_for(rec, a)})
+		var row := {"name": a.display_name(), "face": XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0))),
+			"kind": kind, "cur": cur, "max": mx, "right": right, "right_color": rc, "dim": not scene._effective_for(rec, a)}
+		XTianqiSkinShow.dress_target(rec, a, row)   # 天启篇号卷（3A，#82）：已学几卷
+		out.append(row)
 	return out
 
 
