@@ -532,16 +532,16 @@ static func relic_help_lines(item: Dictionary) -> Array:
 		return []
 	var r: Array = RELIC_STATS[st]
 	var lv := _num(item.get("level", 0))
-	var lines := ["专属:饿狼；法宝形态:%s；等级上限:%d" % [FORM_NAMES[st], RELIC_MAX_LEVEL],
-		"当前等级:%s / %d；经验:%s" % [_js_num(lv if lv != 0.0 else 1.0), RELIC_MAX_LEVEL, _js_num(_num(item.get("exp", 0)))],
-		"进阶继承:等级、经验及额外词条全部保留",
-		"每级成长:生命/物攻/魔攻/敏捷+%d" % r[0],
-		"每级成长:魔法/物防/魔防/幸运+%d" % r[1],
-		"物攻倍率:×%s" % r[2],
-		"魔攻倍率:×%s；敏捷倍率:×%s" % [r[3], r[4]],
+	var lines := ["专属：饿狼；法宝形态：%s；等级上限：%d" % [FORM_NAMES[st], RELIC_MAX_LEVEL],
+		"当前等级：%s / %d；经验：%s" % [_js_num(lv if lv != 0.0 else 1.0), RELIC_MAX_LEVEL, _js_num(_num(item.get("exp", 0)))],
+		"进阶继承：等级、经验及额外词条全部保留",
+		"每级成长：生命/物攻/魔攻/敏捷+%d" % r[0],
+		"每级成长：魔法/物防/魔防/幸运+%d" % r[1],
+		"物攻倍率：×%s" % r[2],
+		"魔攻倍率：×%s；敏捷倍率：×%s" % [r[3], r[4]],
 		"终伤+%d%%；爆伤+%d%%" % [r[5], r[6]],
 		"命中+%d%%；暴击+%d%%；闪避+%d%%" % [r[7], r[8], r[9]],
-		("进化强化:每层额外伤害+%d%%；最多3层" % RELIC_EVOLUTION[st]) if st > 0 else "进化强化:赤发形态起生效；最多3层"]
+		("进化强化：每层额外伤害+%d%%；最多3层" % RELIC_EVOLUTION[st]) if st > 0 else "进化强化：赤发形态起生效；最多3层"]
 	lines.reverse()
 	return lines.map(func(t): return "<pos=APs text=%s size=18 color=rgba(255,255,255,1) line=false align=0>" % t)
 
