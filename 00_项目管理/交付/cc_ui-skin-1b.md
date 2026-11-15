@@ -103,3 +103,53 @@
 - 0091d4709 WIP：按键提示随状态、让出版本号
 - a3f0895e6 1A 主菜单专项改断言、交付单验证
 - 另有合并：cc/ui-skin-p0、main（dev.598）、cc/ui-skin-1a（6c8a98368）
+
+## 小A 乙档核查
+
+- **核查对象**：`cc/ui-skin-1b`（交付提交 `d6c36554e`，相对已合入的 `cc/ui-skin-1a` `6c8a98368` 的 19 个变更文件），执行者：小A（只读核查＋轻量前台无头验证，未改游戏代码）。
+- **结论：不通过**（P1 0 条；**P2 文字／按键提示必改 1 条**：`XSkinSkillPage` 未随状态切换 `hint_list`，列表态仍显示 `Q / E 换人` 与实际翻页行为不符；另有 P3 提示 3 条、模板页套用说明不清处 5 点）。
+
+### 核查项与核实深度（分清规则本身／只看代码）
+
+1. **开关隔离与旧页行为不变（核了源码＋跑无头专项＋跑已有对照图 `--compare`）**：
+   - 读代码核实：`item_scene.gd`、`skill_scene.gd` 仅在 `XUiSkin.on()` 时构建 `skin = XSkinItemPage.new(self)`／`XSkinSkillPage.new(self)`，并在 `_refresh` 末尾 `skin.sync()`、`_unhandled_input` 开头 `skin.input(event)`、`_gui_input` 截断鼠标点击；`help_card.gd` 仅在 `skinned()`（即 `XUiSkin.on()`）时改画黑面板与 1px 品质色描边。原 `XItemScene`（使用／给谁用／批量／藏宝图／升级／镶嵌／法宝吃装备／检索／遗忘）与 `XSkillScene`（类型／列表／选人／吸取／Q/E 换人与翻页）状态机与逻辑一行未动，`gear_shown()` 在 `skin != null` 时返回 `false`、关皮肤时照旧。
+   - 实跑无头测试：`语法检查.py`（902 个 `.gd` 0 问题）、`xiyou_ui_skin_1b.tscn`（79/79，含西游存档与 `ENABLED = false` 回退旧页）、`xiyou_ui_skin_menu.tscn`（51/51）、`xiyou_ui_skin.tscn`（88/88）、`xiyou_ui_skin_offshot.tscn`（12/12）；对工程内既有 `04_验证/本地结果/ui_skin_1b/关闭对照/` 12 张图实跑 `--compare` 全部 `SAME`（12/12，含新增 `XSkillScene` × `xiyou`/`tq_off`）。
+   - `发行空壳.py check` 仅报合入自 1A 的 `XTianqiQiyin.shards`，1B 新增／修改文件未触发问题（只看代码＋实跑自检）。
+2. **「给谁用」四人量条 `+n/满` 预估（核了 `battle_logic.gd` 计算规则本身＋读代码）**：
+   - 对照 `XBattleLogic._apply_effect`（`battle_logic.gd:3097-3108`）：`11/12` 为 `(t.mhp/mmp * v1 + v2) * t.rec * u.pha`，`13` 为 `v1`。`XSkinItemPage.preview_gain` 与 `target_rows`、`XItemScene._effective_for` 均为纯只读计算，不写 `XActor` 字段、不碰 `_action_resources`、不改 `XItemScene._use()`；`_effective_for` 临时替换并立即恢复 `_item` 仅用于只读判定 `dim`。
+   - 细小差异（只看代码）：`battle_logic.gd` 对每条效果分别 `floorf`，`preview_gain` 先累加再 `floorf`（同一物品含多条同类回复时可能有 1 点舍入差）；无 `can_move` 角色时预览按 `pha=1.0` 算而实际 `_use()` 会蜂鸣拒绝；复数回复（同时回血回蓝）仅展示 HP 条与 HP 预估（受单条限制）。
+3. **1A 专项 `xiyou_ui_skin_menu.gd` 断言修改（核了 `XSkinLayout` 计数机制＋读代码＋跑专项）**：
+   - **正当的行为变化（非放松断言）**：1A 时物品页仍为旧 1280×720 布局，主菜单打开物品页会让出 `KEEP_HEIGHT`；1B 起 `XItemScene` 在天启篇下自建 `XSkinItemPage`（继承 `XSkinTemplatePage`，`_ready` 调 `XSkinLayout.request_wide(self)`），主菜单让出 1、物品页接上 1。新断言 `wide_held_by_new_item_page` 同时核 `page.get("skin") != null`、`KEEP_HEIGHT` 和 `XSkinLayout._wide_users == 1`，比原来更严且无泄漏（51/51 通过）。
+4. **模板页套用要点 9 条对 5A／5B 可用性（读完组件与模板源码，站在后续使用者视角核对）**：
+   - 整体思路清晰可用，但存在 **5 处说明不清／易踩坑点**（见下「模板说明不清处」），其中 `show_ring = false` 时模板默认 `focus` 仍为 `"ring"` 最易在 5A／5B 踩坑。
+5. **文字审与两列名字截断（对照 `cc_ui-skin-p0.md`／`cc_ui-skin-1a.md` 所记 `ba1f7ed` 口径＋源码全量提取＋核对交付单表）**：
+   - **两列名字截断**：已解决（读代码＋专项验证 `fit_short_keeps`/`fit_shrinks_first`/`fit_ellipsis`）。`XSkinList.fit_text()` 先将字号从 19 缩至最低 `min_font_size = 16`，仍超宽再按像素宽度截断并加 `…`（`XSkinCard` 标题亦同法缩至 20 号再加 `…`），第 0 期陈列图「治疗药水(」硬裁问题已消除。
+   - **已有文字核对**：货币「精魂」、分类「种／件」、持有与类别名「重要物品／消耗品／物品 · 持有 %d」、效果／用法（`效果　回复生命 500` 等全角空格分隔）、「给谁用／给谁学」「满」「+n」「使用」「升级材料」「镶嵌宝珠」「（已筛选）」「第 %d / %d 页」「类型名 · %d 个」均符合 `ba1f7ed` 与 `v0.7` 口径（样稿有但游戏无的「丢弃」未做，正确）。
+   - **文字必改 1 处（P2）**：见下问题清单与改好文字。
+
+### 问题清单（P1/P2/P3）
+
+- **P1**：无。
+- **P2（文字／按键提示必改 1 条）**：`modes/xiyou/ui/skin/skin_skill_page.gd`（`L24` 及 `sync()`）未按 `scene.mode` 切换 `hint_list`，始终显示 `确定 选择／取消 返回／Q / E 换人`。实际在 `skill_scene.gd:516-519` 中，`mode == "list"` 时 `Q / E` 走 `XMenu.page_dir` 是**翻页**（不是换人），且 `取消` 是回类型环；`mode == "actor"` 时 `change_actor` 直接 `return`（`Q / E` 无效）。
+  - **必改改法（给改好的字）**：在 `XSkinSkillPage.sync()` 中按 `sc.mode` 调用 `set_hint_list(...)`：
+    - `"type"` 态：`[["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]]`
+    - `"list"` 态：`[["确定", "选择"], ["取消", "回类型"], ["Q / E", "翻页"]]`
+    - `"actor"` 态：`[["确定", "选择"], ["取消", "返回"]]`
+  - 同步把 `回类型`、`翻页` 补入本交付单「新增可见文字」表。
+- **P3-1（模板页 `show_ring = false` 默认焦点隐患）**：`skin_template_page.gd:71,139` `focus` 默认 `"ring"`；若 5A／5B 设 `show_ring = false` 而忘手改 `focus = "list"`，首帧列表无选中条且方向键空打隐藏环、按取消直接退出。建议模板 `_ready()` 加 `if not show_ring and focus == "ring": focus = "list"`。
+- **P3-2（鼠标点击环／列表与旧态拦截微差）**：`skin_item_page.gd`、`skin_skill_page.gd` 的 `_on_ring_changed` 未拦截 `actor`／`action`／`upgrade`／`augment` 态下鼠标点左环（会直接切回 `category`/`type`）；另 `skin_item_page.gd:229` 镶嵌列表停在「取下镶嵌物」（`rec` 为空）时右牌会退回显示分类统计标题而非「取下镶嵌物」；`skin_target_list.gd:127` 角色名 `name_w = 72` 直接限宽截断未用 `fit_text`（5 字以上角色名会硬裁）。
+- **P3-3（交付单文字表小遗漏）**：1B 代码中复用的「空」（`XSkinList.empty_text`）、「取下镶嵌物」（`YEP_X_AttachAugments` 兜底）、「LV.%1」（`YEP_SkillMasteryLevels` 兜底）、「减少魔法」未单独写进上表（均为既有／衍生字，文字本身无问题）。
+
+### 模板页套用要点（5A／5B）说明不清处
+
+1. **要点 1 截断输入漏了 `XKeyMap.handled(self)` 与弹窗层级**：要点 1 写 `if skin != null and skin.input(event): return`（与要点 4 `set_input_as_handled()` 不一致；不调 `XKeyMap.handled(self)` 会漏按键给底层）；沿用旧弹窗（数量窗、确认窗）须在 `_ready` 建完 `skin` 后 `move_child(弹窗, -1)`；且模板页默认 `mouse_filter = IGNORE`，**右键取消**不会自动生效，需像物品／技能页那样自设 `MOUSE_FILTER_PASS` 接 `gui_input`。
+2. **要点 2 漏写 `show_ring = false` 的焦点与左块安排**：设 `show_ring = false` 时必须同时设 `focus = "list"`（或等模板修 P3-1），且 `left_w` 默认仍占 300（需写明是 `layout.left.add_child(...)` 自放信息还是缩 `left_w`，以及 `group_key = ""` 用于商店／仓库等非主菜单页）；页内若会改货币（如商店买卖），需同步刷新 `currencies` 并调 `top_layer.queue_redraw()`。
+3. **要点 3 图标／角标类型不统一、部分字段缺失**：写「图标用图标号」仅对 `set_categories`/`set_items`/`open_menu` 的 `icon` 成立；**`set_card({icon})`**、**`show_targets([{face}])`** 与 **`set_items` 的 `badge`** 均要求传 `Texture2D`（不能传 `int`）。另缺 `show_targets` 行字段格式（`{name, face, kind, cur, max, right, right_color, dim}`）与 `targets.title` 说明、未说明 `set_items(arr, -1)` 传 `-1` 会重置光标到第 0 项、未说明 `sections` 还支持 `{title, text}` 及 `ring` 中心放贴图需连 `ring.draw`／`center_texture`。
+4. **要点 4（自动导航）缺鼠标点列表切焦点与 `"card"` 焦点说明**：`auto_nav = true` 时在 `"ring"` 态用鼠标点击列表行不会自动把 `focus` 切到 `"list"`；`auto_nav` 不会主动进入 `"card"` 焦点，且 `set_card` 会把 `button_index` 重置为 `-1`（`set_focus("card")` 后需按左右才会选中按钮 0）。
+5. **要点 5 手动开操作菜单**：要点 5 只写 `set_focus("menu")`，实际手动模式打开操作菜单应调 `open_menu(rows, idx)`（`set_focus("menu")` 不会自动显示 `menu_panel` 与重算位置）。
+
+### 没核到的（留给总装 `--affected --cloud`）
+
+- 未重跑有窗模式的 `皮肤关闭对照.py --base main` 与 `xiyou_ui_skin_1b.tscn -- --out=...` 截图重拍（本次仅对工程内已有对照图运行了 `--compare`）；
+- 未跑 `并行测试.py`、`选测.py` 全集、`工具回归.py`、`xiyou_tianqi_e2e`、`xiyou_virtual_player` 及事件对照四段（按派单要求留给总装 `--affected --cloud`）；
+- 未在仓库外读取私密设计仓 `重制设定/界面风格提案_v0.7/` 原件，文字审对照 `cc_ui-skin-p0.md` 与 `cc_ui-skin-1a.md` 所载 `ba1f7ed` 核查口径完成。
