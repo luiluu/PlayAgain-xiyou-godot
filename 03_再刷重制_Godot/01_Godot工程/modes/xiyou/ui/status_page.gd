@@ -214,7 +214,7 @@ static func header_ops(a: XActor) -> Array:
 	var nick := str(a.nickname)
 	if nick != "":
 		var nw := _tw(name)
-		ops.append(_t(", \"%s\"" % nick, x + nw, 0, w - nw - PAD))
+		ops.append(_t("，「%s」" % nick, x + nw, 0, w - nw - PAD))
 	ops.append(_t(name, x, 0, 168, "left", XMenu._hp_color(a)))
 	var cls := str(a.class_data().get("name", ""))
 	if cls != "":
