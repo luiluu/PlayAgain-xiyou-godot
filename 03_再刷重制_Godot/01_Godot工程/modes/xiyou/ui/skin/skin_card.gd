@@ -48,7 +48,7 @@ func handle_input(event: InputEvent) -> bool:
 		return false
 	if event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):
 		var d := -1 if event.is_action("ui_left") else 1
-		button_index = posmod(maxi(button_index, 0) + d, buttons.size())
+		button_index = 0 if button_index < 0 else posmod(button_index + d, buttons.size())   # 第一次按左右先落到第一个按钮
 		queue_redraw()
 		return true
 	if event.is_action_pressed("ui_accept") and button_index >= 0:
@@ -76,7 +76,7 @@ func _draw() -> void:
 	var head := XUiSkin.font("title")
 	var num := XUiSkin.font("num")
 	var w := size.x - pad * 2
-	var bottom := size.y - pad - (BUTTON_H + XUiSkin.PAD if not buttons.is_empty() else 0.0)
+	var bottom := size.y - pad - (BUTTON_H + XUiSkin.GRID if not buttons.is_empty() else 0.0)
 	var y := float(pad)
 	var x := float(pad)
 	if icon != null:
@@ -96,11 +96,11 @@ func _draw() -> void:
 	for sec in sections:
 		if y + SECTION_H > bottom:
 			break
-		y += 8
-		draw_line(Vector2(pad, y), Vector2(pad + w, y), Color(XUiSkin.LINE, 0.14), 1.0)
 		y += 6
-		draw_string(body, Vector2(pad, y + 21 * 0.86), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
-		y += SECTION_H - 6
+		draw_line(Vector2(pad, y), Vector2(pad + w, y), Color(XUiSkin.LINE, 0.14), 1.0)
+		y += 4
+		draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+		y += SECTION_H - 10
 		if sec.has("text"):
 			y = _paragraph(body, str(sec.text), y, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2, bottom)
 		for ln in sec.get("lines", []):

@@ -92,19 +92,19 @@ enum Motion { FULL, SIMPLE, OFF }
 static var motion_override := -1
 
 ## ---- 主菜单的组（D25；Kyo 11-15 更正：整队并入角色，宠物以后单独一组）。组配置只在这一处，页签条、环形导航都按可见组数排。----
-## 每组 {key, name, items:[{key, name}]}；组或子项可带 hide（按存档判断的隐藏规则，见 hide_rule）或 hidden（写死隐藏）。
+## 每组 {key, name, icon（占位图标号，样稿从旧图标里挑的，美术出了再换）, items:[{key, name}]}；组或子项可带 hide（按存档判断的隐藏规则，见 hide_rule）或 hidden（写死隐藏）。
 ## 宠物组现在天启篇随 XTianqiPetHide 整组隐藏（可见 6 组）；放开后自动出现（7 组），不用改布局。文字照小A文字审口径。
 const GROUPS := [
-	{"key": "items", "name": "物品", "items": [{"key": "item", "name": "物品"}]},
-	{"key": "equip", "name": "装备", "items": [{"key": "equip", "name": "装备"}]},
-	{"key": "actor", "name": "角色", "items": [{"key": "status", "name": "状态"}, {"key": "skill", "name": "技能"},
+	{"key": "items", "name": "物品", "icon": 100, "items": [{"key": "item", "name": "物品"}]},
+	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备"}]},
+	{"key": "actor", "name": "角色", "icon": 1001, "items": [{"key": "status", "name": "状态"}, {"key": "skill", "name": "技能"},
 		{"key": "zhenqi", "name": "真气"}, {"key": "race", "name": "种族祝福"}, {"key": "formation", "name": "整队"}]},
-	{"key": "pets", "name": "宠物", "hide": "pet", "items": [{"key": "pets", "name": "宠物"}]},
-	{"key": "workshop", "name": "工坊", "items": [{"key": "crafting", "name": "制作"}, {"key": "orb_shop", "name": "宝珠坊"},
+	{"key": "pets", "name": "宠物", "icon": 384, "hide": "pet", "items": [{"key": "pets", "name": "宠物"}]},
+	{"key": "workshop", "name": "工坊", "icon": 193, "items": [{"key": "crafting", "name": "制作"}, {"key": "orb_shop", "name": "宝珠坊"},
 		{"key": "alien_workshop", "name": "异化工坊"}]},
-	{"key": "codex", "name": "图鉴", "items": [{"key": "actor_book", "name": "人物图鉴"}, {"key": "enemy_book", "name": "怪物图鉴"},
+	{"key": "codex", "name": "图鉴", "icon": 1360, "items": [{"key": "actor_book", "name": "人物图鉴"}, {"key": "enemy_book", "name": "怪物图鉴"},
 		{"key": "achievement", "name": "成就"}]},
-	{"key": "system", "name": "系统", "items": [{"key": "save", "name": "存档"}, {"key": "options", "name": "设置"},
+	{"key": "system", "name": "系统", "icon": 688, "items": [{"key": "save", "name": "存档"}, {"key": "options", "name": "设置"},
 		{"key": "feedback", "name": "反馈"}, {"key": "game_end", "name": "游戏结束"}]},
 ]
 
