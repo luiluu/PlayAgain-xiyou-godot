@@ -50,6 +50,11 @@
 | %d %s（如「19 种」） | 物品页分类阶段牌上的小字 | 新写 |
 | 类型名 · %d 个 | 技能页类型阶段牌上的小字 | 新写 |
 | 确定 选择／取消 返回／取消 回分类／X 检索排序／Q / E 换人 | 右下按键提示 | 「回分类」「检索排序」样稿原文（套框）；「选择」「换人」新写（样稿物品页写「确定 使用」，这里确定是打开操作菜单，所以写「选择」） |
+| 取消 回类型／Q / E 翻页 | 技能页列表态的按键提示（类型态「Q / E 换人」、选人态只有确定／取消） | 小A核查 P2 给的字 |
+| 空 | 列表没有项时（`XSkinList.empty_text`），物品／技能牌没东西时的说明 | 第 0 期已有、复用 |
+| 取下镶嵌物 | 镶嵌列表首行与停在那一行时的牌标题 | 插件原文（`YEP_X_AttachAugments` Remove Augment），复用 |
+| LV.%1 | 技能名后的熟练度等级小字 | 插件原文（`YEP_SkillMasteryLevels` Text Format），复用 |
+| 减少魔法 | 物品「效果」行（魔法为负的效果） | 同「减少生命」，衍生 |
 
 操作菜单里的「使用 %1」「升级 %1」「道具置顶」「出售锁定」「取消」、孔位行、说明卡的行、物品名和说明都是游戏原有文字，没改。
 
@@ -65,11 +70,28 @@
 
 ## 模板页套用要点（给 5A／5B 套模板用）
 
-1. **开关**：页面 `_ready` 里 `if XUiSkin.on():` 才建新布局，否则走旧页、旧代码一行别动。旧页本来就有状态机的（商店、仓库、存读档……）照物品页做法：`skin = XSkinXxxPage.new(self)`，旧页 `_refresh` 末尾 `skin.sync()`，`_unhandled_input` 开头 `if skin != null and skin.input(event): return`，`_gui_input` 新布局时直接 return（点击交给组件）。新页面类放 `modes/xiyou/ui/skin/skin_<页>_page.gd`，`extends XSkinTemplatePage`。
-2. **配置**（在 `_init` 里设，`_ready` 前）：`title`（页名）、`group_key`（顶上高亮哪组，`XUiSkin.GROUPS` 的 key）、`columns`（1 或 2）、`row_height`（`XUiSkin.ROW_H` 46／`ROW_H_ITEMS` 48）、`left_w`／`right_w`（默认 300／336，中块自动变宽封顶 720）、`show_ring`（不要分类环设 false）、`auto_nav`、`hint_list`、`currencies`（默认只写精魂；要写印屑等传 `[[名字, 数值字]]`）。
-3. **喂数据**：`set_categories([{key, name, icon, count}], 当前)`（名字后自动带数量）；`ring_center = [大字, 小字]`；`list_title`；`set_items([{text, icon, color, right, right_color, sub, disabled, badge}], 选中)`；`set_card({icon, title, title_color, subtitle, desc, sections, buttons})`（`sections` 用 `{title, lines:[{left,right}]}` 或 `{title, rows:[{text,color}]}`，说明卡的行用 `XSkinTemplatePage.help_rows(XHelpCard.content(...))` 转）；要「给谁用」时 `show_targets(行, 能不能选, 全体, 选中)`；操作菜单 `open_menu(行, 选中)`／`close_menu()`。图标用图标号（组件内部走 `XUiSkin.icon()` 缓存），自己画贴图时也从 `XUiSkin.icon()`／`face()` 取，**别在 `_draw` 里直接 `XUI.icon_texture()`**（白块）。
+1. **开关与挂钩**：页面 `_ready` 里 `if XUiSkin.on():` 才建新布局，否则走旧页、旧代码一行别动。旧页本来就有状态机的（商店、仓库、存读档……）照物品页做法：
+   - `_ready` 末尾 `skin = XSkinXxxPage.new(self)`、`add_child(skin)`；**还要沿用的旧弹窗（数量窗、确认窗）建完 skin 后 `move_child(弹窗, -1)`**，不然被新布局盖住；
+   - 旧页 `_refresh` 末尾 `if skin != null: skin.sync()`；
+   - `_unhandled_input` 开头 `if skin != null and skin.input(event): XKeyMap.handled(self); return`（**必须 `XKeyMap.handled`**，不然按键漏给底下的地图）；没用掉的按键照旧走旧代码；
+   - `_gui_input` 新布局时直接 return（点击由组件接）；**右键取消**要自己接：页面类 `_ready` 里 `mouse_filter = Control.MOUSE_FILTER_PASS`，`gui_input` 收到右键调旧页的取消（模板根节点默认 IGNORE，见 `XSkinItemPage._on_gui`）。
+   - 新页面类放 `modes/xiyou/ui/skin/skin_<页>_page.gd`，`extends XSkinTemplatePage`。
+2. **配置**（在 `_init` 里设，`_ready` 前）：`title`（页名）、`group_key`（顶上高亮哪组，`XUiSkin.GROUPS` 的 key；**商店、仓库这类不在主菜单的页写 `""`，不画页签条**）、`columns`（1 或 2）、`row_height`（`XUiSkin.ROW_H` 46／`ROW_H_ITEMS` 48）、`left_w`／`right_w`（默认 300／336，中块自动变宽封顶 720）、`auto_nav`、`hint_list`、`currencies`（默认只写精魂；要写印屑等传 `[[名字, 数值字]]`）。
+   - `show_ring = false`（不要分类环）：模板自动把默认焦点放到列表（1B 返工起）；左块仍占 `left_w`，要么往 `layout.left.add_child(...)` 放自己的东西（技能页放了角色条），要么把 `left_w` 设小（不能为 0，最少留 8）。
+   - 页内会变的货币（商店买卖）：改 `currencies` 后调 `top_layer.queue_redraw()`；默认的精魂每次重画都现读，不用管。
+3. **喂数据**（图标的类型要分清）：
+   - **传图标号（int）也行、传 Texture2D 也行**：`set_categories` 的 `icon`、`set_items` 的 `icon`、`open_menu` 的 `icon`（组件内部走 `XUiSkin.icon()` 缓存）。
+   - **只认 Texture2D**：`set_card` 的 `icon`、`show_targets` 每行的 `face`、`set_items` 的 `badge`。从 `XUiSkin.icon(号)`／`XUiSkin.face(头像名, 格)` 取（缓存过的）；**别在 `_draw` 里直接 `XUI.icon_texture()`／`face_texture()`**（取完就释放，画出来白块）。
+   - `set_categories([{key, name, icon, count}], 当前)`（名字后自动带数量）；`ring_center = [大字, 小字]`；环心要放贴图（头像）时 `ring.draw.connect(你的画法)`，参考 `XSkinSkillPage._draw_face`。
+   - `set_items([{text, icon, color, right, right_color, sub, disabled, badge}], 选中)`：**第二个参数不传或传 -1＝光标回第 0 项、滚回顶**；传号＝保留并选中那项。
+   - `set_card({icon, title, title_color, subtitle, desc, sections, buttons})`：`sections` 三种写法 `{title, lines:[{left,right,color,right_color}]}`／`{title, rows:[{text,color}]}`／`{title, text}`，title 可空；说明卡的行用 `XSkinTemplatePage.help_rows(XHelpCard.content(...))` 转；`buttons` 是 `[{text, primary, disabled}]`。
+   - 「给谁用」：`show_targets(行, 能不能选, 全体, 选中)`，每行 `{name, face(Texture2D), kind("hp"/"mp"/"tp"), cur, max, right, right_color, dim}`，标题改 `targets.title`（默认「给谁用」）；传空数组收起。
 4. **简单页（没有旧状态机）用自动导航**：`auto_nav = true`，接 `item_activated(i)`（列表确定）、`card_button(i)`、`category_changed(i)`（换分类后重新 `set_items`）、`back`（顶层取消：关页）；按键在页面 `_unhandled_input` 里 `if handle_input(event): get_viewport().set_input_as_handled()`。
-5. **有旧状态机的页用手动**：`auto_nav = false`，`sync()` 里按旧状态 `set_focus("ring"/"list"/"card"/"targets"/"menu")`，旧页确定／取消逻辑照用；信号回调里先判 `_syncing`（sync 时 `select` 会发 `index_changed`，别回写成死循环）；列表数据有变化才 `set_items`（比一个 key），不然每按一下都重建会卡。两列网格走法用 `XSkinItemPage.grid_move()`。
+   - 自动导航只走「环 ⇄ 列表」：环上确定进列表、列表取消回环、环上取消发 `back`；环上时鼠标点列表行也会进列表（1B 返工起）。
+   - **不会自己进详情牌**：要让玩家在牌上点按钮，在 `item_activated` 里 `set_focus("card")`（焦点到牌时自动落在第一个按钮，左右换、确定发 `card_button`，取消回列表）；鼠标点按钮不用切焦点。
+5. **有旧状态机的页用手动**：`auto_nav = false`，`sync()` 里按旧状态 `set_focus("ring"/"list"/"card"/"targets")`；**要弹操作菜单时调 `open_menu(行, 选中)`**（它会显示面板、算位置并把焦点设成 menu；只 `set_focus("menu")` 不会显示菜单），不用了 `close_menu()`；旧页确定／取消逻辑照用。
+   - 信号回调里先判 `_syncing`（sync 时 `select` 会发 `index_changed`，别回写成死循环）；鼠标点环／列表时先看旧状态允不允许（选人、操作时点环不跨态，见 `XSkinItemPage._on_ring_changed`）。
+   - 列表数据有变化才 `set_items`（比一个 key），不然每按一下都重建会卡。两列网格走法用 `XSkinItemPage.grid_move()`。
 6. **按键提示**：随状态变用 `set_hint_list()`，键名套框是组件画的；提示右边已让出版本号。按小A口径：确定／取消／Q / E／X 这类键名，说明写两个字左右。
 7. **宽屏**：模板进树就 `request_wide`（KEEP_HEIGHT），离开自动还原。沿用旧窗口的弹窗（数量窗等）按 1280 坐标摆，宽屏时自己平移 `(视口宽−1280)/2`、点击坐标减回去（见 `XSkinItemPage.legacy_offset()`）。
 8. **测试**：照 `tests/xiyou_ui_skin_1b.gd`：建天启篇存档（`s.flags["tianqi"] = {"rules": 1}`）开页，查旧窗口隐藏、焦点、按键走法、用一次东西数量／数值对；西游存档、`XUiSkin.ENABLED = false` 各开一次查走旧页；关闭对照把页加进 `tests/xiyou_ui_skin_offshot.gd` 的 `PAGES`，跑 `07_开发环境/皮肤关闭对照.py --base main`。
@@ -88,6 +110,7 @@
 - 选测（本地，`选测.py main --list` 87 个去掉事件对照四片和 `xiyou_floor_reach041`：本批没碰事件、楼层；82 个）：78 个一次过；`xiyou_ui_skin_menu`（1A 的）1 项按本批改了断言（物品页现在自己铺满，见上「改」）后 51/51；`xiyou_battle_log`（indicator.outline-sync）、`xiyou_map_hotkeys`（touch_save_slot1）、`xiyou_star_warehouse`（星级仓库名字色）在 82 个并行时各挂 1～4 项、单跑三个都全过（77/77、36/36、99/99），按偶发记，没碰这三处的代码。日志 `04_验证/本地结果/并行测试/20261115_072608_27q8o2m_/`、`20261115_073410_rrl5r3jq/`。
 - `工具回归.py`：全部通过（98 秒）。`语法检查.py`：0 个问题。
 - `发行空壳.py check`：**不过，但不是本批的**——报 `XTianqiQiyin.shards` 没有发行值，来源是合进来的 1A `skin_main_menu.gd`（本车道的文件不调 `XTianqiQiyin`）；请总装合 1A 时处理（或派回 1A 在 `发行空壳特例.json` 补一条）。
+- **核查后返工复验**（小A c02f2b70e 之后）：`xiyou_ui_skin_1b` 无头 85/85、有窗口 98/98（截图重拍，覆盖原目录）；`皮肤关闭对照.py --base main` 12 张全 SAME；`语法检查.py` 0 问题；`发行空壳.py check` 仍只报 1A 的 `XTianqiQiyin.shards`（本车道文件不调它，等 1A 处理）。
 - 给总装：`合并车道.sh --finish --affected --cloud`（事件对照四片本地没跑：本批只动物品、技能页和说明卡画法，事件对照不开这些页）。
 
 ## 可优化（流程／工具／效率）
@@ -103,6 +126,17 @@
 - 0091d4709 WIP：按键提示随状态、让出版本号
 - a3f0895e6 1A 主菜单专项改断言、交付单验证
 - 另有合并：cc/ui-skin-p0、main（dev.598）、cc/ui-skin-1a（6c8a98368）
+
+## 核查后返工（小A 乙档 c02f2b70e）
+
+- P2：技能页按键提示随状态换：类型「确定 选择／取消 返回／Q / E 换人」、列表「确定 选择／取消 回类型／Q / E 翻页」、选人「确定 选择／取消 返回」；「回类型」「翻页」补进文字表。
+- P3-1：模板 `show_ring = false` 时默认焦点自动放列表。
+- P3-2：物品页在操作／选人／升级／镶嵌时、技能页在选人时，鼠标点环不跨态（环弹回原类）；镶嵌列表停在「取下镶嵌物」时牌标题写「取下镶嵌物」、小字写孔里现在镶的；目标列表名字放不下先缩字（≥14）再加省略号。
+- P3-3：文字表补「空」「取下镶嵌物」「LV.%1」「减少魔法」。
+- 套用要点 1～5 按小A指出的五处重写（XKeyMap.handled、弹窗层级、右键取消；show_ring=false、group_key 空、货币重绘；图标类型、show_targets 行格式、set_items(-1)、sections 三种、环心贴图；自动导航点列表与牌焦点；手动用 open_menu）。
+- 模板顺手两处（为了要点 4 写得通）：自动导航时环上点列表行会进列表；`set_focus("card")`（以及焦点在牌上时 `set_card`）落在第一个按钮。
+- **接口兼容**（1C 从这棵切的）：没有改任何函数签名、信号、字段名；行为变化只有上面三处默认值（无环默认焦点、自动导航点列表切焦点、牌焦点落第一个按钮），手动导航的页（物品、技能、1C 装备）不受影响，除非它自己 `set_focus("card")` 后还按一次「右」去选第一个按钮——那现在会选到第二个，1C 若这样用请改成直接确定。
+- 验证：`xiyou_ui_skin_1b` 无头 85/85（新增 6 项：牌焦点第一个按钮、自动导航点列表、无环默认焦点、技能列表／类型提示、选人时点环不跨态）；见「验证」节后补的返工复验。
 
 ## 小A 乙档核查
 
