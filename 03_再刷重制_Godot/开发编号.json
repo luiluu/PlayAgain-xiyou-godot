@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.626",
-  "sequence": 626,
-  "next": "dev.627",
-  "nextSequence": 627,
+  "current": "dev.627",
+  "sequence": 627,
+  "next": "dev.628",
+  "nextSequence": 628,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "mira-lift-d40",
+  "currentChange": "save-integrity",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

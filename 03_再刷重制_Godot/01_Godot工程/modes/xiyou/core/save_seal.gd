@@ -1,6 +1,6 @@
 class_name XSaveSeal
 extends RefCounted
-## 存档封存：加密＋签名（Kyo 11-15 D28「不允许玩家修改存档」，O-待定·存档封存）。
+## 存档封存：加密＋签名（Kyo 11-15 D28「不允许玩家修改存档」，O-495）。
 ##
 ## 管哪些文件（covered）：存档目录里的存档 save_<N>、自动存档 save_auto、云裳账本 yunshang_orders_v1、魔冠账本 crown_progress_v1、
 ## 星级仓库 star_warehouse、跨存档变量 global。设置（options.json）、触屏设置、测试模式、瘦身日志、各种备份不封。
@@ -42,7 +42,7 @@ extends RefCounted
 ## 开关关闭（ENABLED＝false，回退）：读写都回到 .json 明文；第一次读某个目录时，比 .json 新的 .ksv 先解开写回 .json（两种格式都读得到），
 ## 并去掉记号——再打开开关时重新迁移比 .ksv 新的 .json。
 
-## O-待定·存档封存。true：封存（有密钥时）；false：照旧写明文 .json，.ksv 解开写回 .json（回退）。
+## O-495。true：封存（有密钥时）；false：照旧写明文 .json，.ksv 解开写回 .json（回退）。
 static var ENABLED := true
 ## 目录迁移完（有记号）后不再读 .json。false：每次进目录都把比 .ksv 新的 .json 重新封存（不防把改过的明文丢回目录）。
 static var STRICT_AFTER_MIGRATE := true

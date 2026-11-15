@@ -13,7 +13,7 @@ extends RefCounted
 const FORMAT := "kyo-remake-save-json-v1"
 ## 封存（XSaveSeal，D28）开着时的导出格式：外层 JSON 照旧，存档本身是封存字节的 base64（sealed），改了就导不进来
 const FORMAT_SEALED := "kyo-remake-save-sealed-v2"
-## O-待定·存档封存：没签名的导出文件（旧版 v1 明文导出、直接一份明文存档）照收，导入时写成封存格式（Kyo 11-15 D37：老玩家的备份不作废）。
+## O-497：没签名的导出文件（旧版 v1 明文导出、直接一份明文存档）照收，导入时写成封存格式（Kyo 11-15 D37：老玩家的备份不作废）。
 ## 代价：改过的明文导出也能这样导进来（封存只管住游戏自己写的文件）。false＝封存开着时不收没签名的导出。
 static var ACCEPT_PLAIN_IMPORT := true
 const GAME := "org.kyo.xiyou.remake"
