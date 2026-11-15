@@ -12,9 +12,9 @@ extends RefCounted
 ## 一律不改补丁格式和清单格式：只读清单里本来就有的 latest.version／code／date／notes。
 ## 什么时候弹（pending）：开关开着、记录完整、记录的号＝现在运行的号（XUpdateClient.current_code）、没看过、说明不空。
 ## 退回补丁、换了别的号：号对不上，不弹；记录留着无害，下次记新号时覆盖。
-## 回退开关 ENABLED（O-待定）＝false：不记、不弹、设置页不列入口，回到只有「有新版本」框里能看说明的样子。
+## 回退开关 ENABLED（O-480）＝false：不记、不弹、设置页不列入口，回到只有「有新版本」框里能看说明的样子。
 
-## O-待定 开关：false 回退为不记录、不弹「本次更新内容」
+## O-480 开关：false 回退为不记录、不弹「本次更新内容」
 static var ENABLED := true
 ## 查清单时补记（整包首次启动、旧客户端装的补丁）。false 只认游戏内装补丁时记下的。
 static var FROM_CHECK := true
