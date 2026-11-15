@@ -168,3 +168,40 @@
 
 - `XUiSkin.CENTER_STYLE` 默认改成 `SPRITE`：主菜单环心是像素小人，头像留在右栏队伍卡；回退 `XUiSkin.CENTER_STYLE = 0`（大头像）。方案 B 的代码留着没删。断言 `d48_default_sprite`、`d48_rollback_face`；`xiyou_ui_skin_close` 68/68（窗口 213/213），`_menu` 99、`_p1fix` 1、`_3b` 40、`_offshot` 29。截图 `menu_*_after*.png`、`d45_*` 已按新默认重拍。D44（`WARM_BG`）照旧默认关。
 - 这一提交只动主菜单环心，没再跑云端（上一轮整轮在它前一个提交）；相关专项本地都过了。
+
+## 小A复核（2026-11-15，Antigravity）
+
+- **结论**：**通过**（可合并）。`939675d1d` 所提 P1-1、P1-2、P2-1、P2-2、P2-3、P3 及 Kyo 11-15 定 `D48=A` 均已修好并通过复核；无阻断 P1/P2/P3 新问题。
+
+### 一、逐条复核（P1 / P2 / P3 / D48）
+
+- **P1-1（祭坛／标题触屏胶囊按实高排位）**：**通过**。
+  - **实测**：`xiyou_ui_skin_close` `r_altar_hints_inside`（68/68）与 `xiyou_ui_skin_3b` `title_touch_hints_inside`（40/40）通过；PNG 像素核查 `altar_16x9_after_touch.png`（`1280×720`）与 `altar_20x9_after_touch.png`（`1600×720`）胶囊底边均止于 `y=709`（bottom-9px 区域 `0` 非背景像素）、`altar_4x3_after_touch.png`（`960×540`）止于 `y=532`（同全页统一边距）、`title_touch/ui_skin_3b_title_16x9.png` 金边在 `y=666..709`，均不再裁切。
+- **P1-2（`"Y / 取消"` 单键与 `"上下"` 两向键）**：**通过**。
+  - **实测**：`xiyou_ui_skin_close` 断言 `r_y_cancel_single`、`r_updown_pair`、`r_chip_texts` 及真发事件探测 `r_fire_reaches`（`ui_cancel` / `ui_down` 均直达 `_input`）全部通过。
+  - **只看代码**：`skin_key_hints.gd` `PAIR_KEYS` 收口为 `["Q/E", "←/→", "↑/↓", "左右", "上下"]`，非双向斜杠写法按动作优先取首个识别键，单键渲染不再带 `‹ ›`；`map_transfer.gd` 旧页 `"再点地图名"` 仍返回 `[]`（属旧页既有文案，低优先级）。
+- **P2-1（主菜单与祭坛左上 `‹` 返回、模板页货币不左移）**：**通过**。
+  - **实测**：`xiyou_ui_skin_close` `r_menu_back`、`r_altar_back`、`r_back_place` 与 `xiyou_ui_skin_p1fix`（1/1）通过；PNG 像素核查 `menu_16x9_after_touch.png`、`altar_16x9_after_touch.png`、`items_16x9_after_touch.png` 左上均有 `74` 个金边像素，且 `after` 与 `after_touch` 右上货币区域像素差异为 `0`（不左移）。
+  - **只看代码**：`skin_main_menu.gd` 与 `tianqi_skin_altar.gd` 均挂 `XSkinBackButton`（`z_index = 10`），左上区无 `MOUSE_FILTER_STOP` 遮挡控件（祭坛规则遮罩时 `rules` 为 `MOUSE_FILTER_IGNORE`，点 `‹` 发 `ui_cancel` 可先关规则再退祭坛）；`skin_template_page.gd` `_draw_top()` 用局部 `tx` 偏移页名，保留 `m` 给货币与页签偏移 `XSkinBackButton.W`。
+- **P2-2（`XSkinDrag` 拖动与 `skin_fullscreen` 收虚拟键）**：**通过**。
+  - **实测**：`xiyou_ui_skin_close` `r_drag_slop`、`r_drag_tap`、`r_battle_press_no_select`、`r_battle_drag_scrolls`、`r_battle_off_press_selects`、`r_search_in_fullscreen` 与 `xiyou_ui_skin_battle`（61/61）、`xiyou_ui_skin_1c`（78/78）、`xiyou_input_handled`（10/10）通过。
+  - **只看代码**：`XSkinDrag`（`SLOP = 10.0`）已接入 `skin_status_page.gd`（滚动条宽 `8.0`）、`skin_gear_detail.gd`（像素滚动）与 `skin_battle_list.gd`（按下暂存 `_press_event` 不选中、过阈值按行滚、未拖松手重放，滚动条宽 `6.0`）；`XGearSearch.open()`（`XUiSkin.on()` 时）、`options_scene._open_page_skin()`（排除 `XTouchOptionsScene`）、`XAlienWorkshop`、`XMapTransfer`、`XSkinPartyStatusPanel` 已进 `FULLSCREEN_GROUP`，`touch_controls.gd` 排除 `layout_editing`。三处拖动均沿用引擎 `emulate_mouse_from_touch` 默认左键模拟，且 `XSkinDrag` 未按 `scrollable()` 门控（短表手指晃动 >10px 会安全取消误点）。
+- **P2-3（大字号适配：左环 `label_room`、列表／环字号现取、状态页上限、战技名 `fit_text`）**：**通过（已知 4:3 窄中栏留 4A）**。
+  - **实测**：`xiyou_ui_skin_close` `r_ring_label_room`、`r_fit_shrinks`、`r_list_font_follows`、`r_list_font_follows_back`、`r_list_font_override` 通过；重拍 `equip_detail_*`、`status_*` 与全部 7 页 × 3 比例 `*_after_touch_130.png` 均已生成且与 `before` / `100%` 存在正常排版差异（`99～432` 变化行）。
+  - **只看代码**：`XSkinList.font_size`/`sub_size` 与 `XSkinRingNav.label_size` 改为动态属性（未显式覆写时随 `XUiSkin` 现取；`skin_template_page.gd` 在 `_ready()` 按当次字号设 `FS_AUX_MAX`，`options` 无环而其 `XSkinList` 可即时跟变）；`skin_status_page.gd` 字号上限提至 `mini(XUiSkin.fs(20), 24)`；`skin_battle_list.gd` 战技名接入 `XSkinList.fit_text`。4:3 窄中栏 `130%+触屏` 长名缩到 15 号截 `…` 不越界，按约定留 4A 改窄屏版面。
+- **P3（祭坛环心「已揭开」、新文字补列）**：**通过**。
+  - **实测**：`r_ring_done_text`（`RING_DONE_TEXT == "已揭开"`）与 `xiyou_ui_skin_3a`（90/90）通过。
+  - **只看代码**：`tianqi_skin_altar.gd` 环心计数用 `RING_DONE_TEXT`（「已揭开」，不带 `◆`），状态栏仍保持 `STATE_TEXT`（「◆ 已揭开」）；交付单「新文字补列」已补全 `‹ 切换印 ›`、`‹ 选入口 ›`、`‹ 滚动 ›`、`‹ 换页 ›`、`‹ 换位 ›`、`‹ 调数 ›`、单键 `收起`/`关闭` 与环心 `已揭开`，与代码一致。
+- **D48=A（`CENTER_STYLE` 默认像素小人、`0 = FACE` 回退）**：**通过**。
+  - **实测**：`xiyou_ui_skin_close` `d48_default_sprite`、`d48_rollback_face`（68/68）与 `xiyou_ui_skin_menu`（99/99）通过；PNG SHA-256 核对 `menu_16x9_after.png` 与 `d45_A_sprite_16x9.png` 完全一致（`64e3964719aba3c4`），与 `d45_now_face_16x9.png`（`ebaeda9a1f121e53`）不同。
+
+### 二、核查口径汇总（实测 vs 只看代码 vs 留交总装）
+
+- **本轮前景实测通过（HEAD `2bfe47e13`）**：
+  - Godot 无头专项：`xiyou_ui_skin_close` `68/68`、`xiyou_ui_skin_3b` `40/40`、`xiyou_ui_skin_battle` `61/61`、`xiyou_ui_skin_menu` `99/99`、`xiyou_ui_skin_3a` `90/90`、`xiyou_ui_skin_1c` `78/78`、`xiyou_ui_skin_p1fix` `1/1`、`xiyou_input_handled` `10/10`。
+  - 工具与图集核验：`回退开关覆盖.py`（388 开关，本单 4 个开关 `CORE_V2`/`FONT_V2`/`TOUCH_V2`/`COMFORT_V2` 无缺口，`CENTER_STYLE` 已在 `xiyou_ui_skin_close.gd` 用 `= 0` 覆盖，入主后随优化登记同步纳入）；`skin_off/base` 与 `skin_off/branch` 32/32 PNG SHA-256 全同；重拍 `altar_*`、`title_touch`、`menu_*`、`equip_detail_*`、`status_*`、`*_after_touch_130.png` 像素边界与哈希校验通过。
+- **只看代码（未上真机／未做人工目视全览）**：
+  - `XSkinDrag` 三处页面与 `touch_controls` 全屏收起的实时触屏手势交互、4:3 窄栏 `130%+触屏` 截字观感；`语法检查.py` 本轮未重跑（耗时超 10s，沿用车道汇报并通过）。
+- **留交总装**：
+  - 按 `检查.sh` 规范跑合入前后常规／全量检查（云端已知 `text-fix-b` 11 项同 main 失败与本单无关），并安排安卓真机触屏手感实测；合入时将 `D48` (`CENTER_STYLE`) 正式写入 `00_项目管理/优化登记.md` 赋 `O-xxx` 编号。
+
