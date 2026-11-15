@@ -303,7 +303,7 @@ static func end_turn(logic) -> Array:
 		var times := 1 + (int(_p(logic, src, "dot_extra_tick").get("times", 0)) if src != null else 0)
 		for i in times:
 			if e.is_alive():
-				_lose_hp(logic, e, floorf(XTianqiNoX6.scale_direct(src, e, plague_tick(logic, src, e, int(u.plague)))), logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
+				_lose_hp(logic, e, floorf(XTianqiNoX6.scale_direct(src, e, plague_tick(logic, src, e, int(u.plague)))), logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
 		if src != null and _has(logic, src, "plague_spread"):
 			spread.append([e, src, int(_p(logic, src, "plague_spread").per_turn)])
 		u.plague_turns = int(u.plague_turns) - 1
@@ -440,7 +440,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	if u is XEnemy and t is XActor and hit and hp_dmg > 0.0 and _has(logic, t, "judgment:on_hit") and t.is_alive():
 		if not f.is_empty() and not f.hit_on_holder.has(t):
 			f.hit_on_holder[t] = true
-			_lose_hp(logic, u, floorf(XTianqiNoX6.scale_direct(t, u, floorf(t.mhp * float(_p(logic, t, "judgment:on_hit").max_hp_pct) / 100.0))), st.logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
+			_lose_hp(logic, u, floorf(XTianqiNoX6.scale_direct(t, u, floorf(t.mhp * float(_p(logic, t, "judgment:on_hit").max_hp_pct) / 100.0))), st.logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
 	if not (u is XActor) or f.is_empty() or not is_same(f.u, u):
 		return
 	if t is XActor:
@@ -471,7 +471,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	var jp := _p(logic, u, "judgment:on_attack")
 	if not jp.is_empty() and not f.judged.has(t) and t.is_alive():
 		f.judged[t] = true
-		_lose_hp(logic, t, floorf(XTianqiNoX6.scale_direct(u, t, judgment_value(logic, u, f))), st.logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
+		_lose_hp(logic, t, floorf(XTianqiNoX6.scale_direct(u, t, judgment_value(logic, u, f))), st.logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
 	# 落星（震流派）：每次行动掷一次
 	var star := _p(logic, u, "star_fall")
 	if not star.is_empty() and not bool(f.star) and hp_dmg > 0.0 and not u.is_attack(skill):
@@ -491,7 +491,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	if not heal.is_empty() and u.is_attack(skill) and hp_dmg > 0.0:
 		var low = _lowest(logic.actors)
 		if low != null:
-			logic.gain_hp(low, floorf(hp_dmg * XTianqiNoX6.steal_mult(u) * float(heal.heal_pct) / 100.0 * heal_mult(logic, u, low)))  # 去全队 ×6：按 ×6 前的伤害回（O-待定-1）
+			logic.gain_hp(low, floorf(hp_dmg * XTianqiNoX6.steal_mult(u) * float(heal.heal_pct) / 100.0 * heal_mult(logic, u, low)))  # 去全队 ×6：按 ×6 前的伤害回（O-470）
 	if t.is_dead() and not f.killed.has(t):
 		f.killed.append(t)
 		f.overflow = maxf(0.0, float(r.get("state_value", 0.0)) - float(f.get("cur_hp", 0.0)))

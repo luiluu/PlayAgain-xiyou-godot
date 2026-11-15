@@ -143,7 +143,7 @@ static func confirm_rows(holder: XBattler, rows: Array) -> Array:
 	if settle.is_empty():
 		return rows
 	var out := rows
-	var skip := XTianqiNoX6.skip_types()  # 去全队 ×6（O-待定-1）：HP 伤害、吸取不乘，MP 伤害与回复照旧
+	var skip := XTianqiNoX6.skip_types()  # 去全队 ×6（O-470）：HP 伤害、吸取不乘，MP 伤害与回复照旧
 	for row in settle:
 		var sid := int(row.get("state", 0))
 		if sid <= 0 or holder.is_state_affected(sid):

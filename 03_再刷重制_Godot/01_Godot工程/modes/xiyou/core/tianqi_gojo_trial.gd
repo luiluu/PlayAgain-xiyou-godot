@@ -379,7 +379,7 @@ static func shadow_of(b) -> bool:
 	return b is XEnemy and is_shadow(active_logic(), b)
 
 
-## 我方结算乘区：去全队 ×6（XTianqiNoX6，O-待定-1）开着为 1；关着照表（6）
+## 我方结算乘区：去全队 ×6（XTianqiNoX6，O-470）开着为 1；关着照表（6）
 static func settle() -> float:
 	return 1.0 if XTianqiNoX6.on() else float(data().get("settle", 1.0))
 

@@ -4,21 +4,21 @@ extends RefCounted
 ## 只对天启篇存档（XTianqi.active）生效，西游档一个字不改。
 ##
 ## ×6 原来只有一处：XTianqiNoDiffPassive.confirm_rows 在攻击方确认阶段替三个难度被动插 ×1.5、×5、×0.8（legacy_passive.settle）。
-## 本功能开着时（ENABLED，O-待定-1）：
+## 本功能开着时（ENABLED，O-470）：
 ## - HP 伤害、HP 吸取（类型 1、5）不再插这三步：我方输出 ÷6。MP 伤害照旧 ×6、HP／MP 回复照旧 ×5（我方治疗绝对值不变，
 ##   留到数值线第 4 步并进技能预算）。合成行带 skipTypes，XStateEffects._active 认它；三步本来就不掷随机数，同一种子随机流不变。
 ## - 敌人生命 ×hp_unit()（＝1/6）：XTianqiCombat.enemy_rates 管走难度倍率的敌人，XGuardianRework.hp_base 管按绝对值重标的
 ##   守层者、楼层敌群、七印里副本、鸿钧（两处互相约掉，所以两处都乘）。骑士、援军、影子、七首之龙按数值测算定（本来不含 ×6），不动。
 ## - 固定减伤（伤害抵抗 harmRe、种族减免、扣过穿透之后）在攻击方是天启篇角色时 ×hp_unit()：max(0, x－F/6)＝max(0, 6x－F)/6，和原来等价。
 ## - 我方吸取回血、YEP 吸血、词条吸血按 ×6 前的伤害算（steal_mult）。
-## - 敌人回血：绝对值回复（公式不读 mhp 的技能回复、吸取回血、吸血、元素吸收）×1/6（heal_scale）；GUARDIAN_HEAL（O-待定-2）开着时，
+## - 敌人回血：绝对值回复（公式不读 mhp 的技能回复、吸取回血、吸血、元素吸收）×1/6（heal_scale）；GUARDIAN_HEAL（O-469）开着时，
 ##   按敌人自己能力值算的技能回复再乘守层者重算的血量缩放比 k（守层者、楼层敌群、七印里副本、鸿钧；例 26 层清心咒 450＋魔攻×1000）。
 ## - 五条悟试炼影子生命的 settle 改读 settle_product()（开 1、关 6）。
 ## - 绕过确认阶段直接扣敌人血的我方效果：按目标生命百分比的不动；按绝对值的逐条见交付单分类表（scale_direct）。
 ## 开关只在代码里，不写存档，老档读进来下一场起按新数；关掉＝回到 ×6 和原血量。
 
 static var ENABLED := true
-## O-待定-2：守层者等按绝对值重标血量的敌人，回血跟着血量缩放比同比缩（Kyo 11-14 协调批，默认开）
+## O-469：守层者等按绝对值重标血量的敌人，回血跟着血量缩放比同比缩（Kyo 11-14 协调批，默认开）
 static var GUARDIAN_HEAL := true
 
 ## 敌人记下的守层者重算血量缩放比（XGuardianRework._scale_hp 累乘）

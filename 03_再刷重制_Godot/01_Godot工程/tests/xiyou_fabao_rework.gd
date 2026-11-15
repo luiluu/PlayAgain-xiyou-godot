@@ -368,7 +368,7 @@ func guardian() -> void:
 	var raw453 := 0.0
 	for mm in XDB.rec("Troops", 453).members:
 		raw453 += float(XDB.rec("Enemies", int(mm.enemyId)).params[0])
-	var want := raw453 / XGuardianRework.old_total(20) * 2250000.0 * 8 * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-待定-1）开着时 1/6
+	var want := raw453 / XGuardianRework.old_total(20) * 2250000.0 * 8 * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-470）开着时 1/6
 	var got: float = wl.enemies.reduce(func(t, x): return t + x.mhp, 0.0)
 	check("guardian.world_hp", m20 > 0 and absf(got - want) / want < 0.01, [m20, got, want])
 	check("guardian.world_atk", wl.enemies.all(func(x): return is_equal_approx(x.output_scale, 0.074)), wl.enemies.map(func(x): return x.output_scale))

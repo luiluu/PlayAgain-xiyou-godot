@@ -50,7 +50,7 @@ static func enemy_rates(difficulty: int, s = null) -> Array:
 		return XEnemy.difficulty_rates(difficulty)
 	var out := XEnemy.difficulty_rates(base_legacy(s))
 	var dt := dungeon_tier(s)
-	out[0] = float(out[0]) * float(r.enemy_hp) * float(dt.get("enemy_hp", 1.0)) * XTianqiNoX6.hp_unit(s)  # 去全队 ×6：敌人生命同缩 1/6（O-待定-1）
+	out[0] = float(out[0]) * float(r.enemy_hp) * float(dt.get("enemy_hp", 1.0)) * XTianqiNoX6.hp_unit(s)  # 去全队 ×6：敌人生命同缩 1/6（O-470）
 	out[2] = float(out[2]) * float(r.enemy_atk) * float(dt.get("enemy_atk", 1.0))
 	out[4] = float(out[4]) * float(r.enemy_atk) * float(dt.get("enemy_atk", 1.0))
 	return out

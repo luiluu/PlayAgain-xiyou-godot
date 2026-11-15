@@ -74,9 +74,9 @@ func _ready() -> void:
 		elif a == "--duel":
 			duel = true
 		elif a == "--x6=off":
-			XTianqiNoX6.ENABLED = false   # 回到全队 ×6 与原血量（O-待定-1 关）
+			XTianqiNoX6.ENABLED = false   # 回到全队 ×6 与原血量（O-470 关）
 		elif a == "--guardian-heal=off":
-			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-待定-2 关）
+			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-469 关）
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):

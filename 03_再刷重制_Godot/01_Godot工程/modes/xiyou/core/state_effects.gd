@@ -153,7 +153,7 @@ class PhaseValueProgram:
 	func _gain(receiver: String, resource: String, amount: float):
 		if effects.get("execute", false):
 			if resource == "hp":
-				amount = XTianqiNoX6.program_hp(effects.get("context", {}), _battlers[receiver], amount)  # 天启篇去全队 ×6：状态脚本里按绝对值写的扣血／回血（O-待定-1）
+				amount = XTianqiNoX6.program_hp(effects.get("context", {}), _battlers[receiver], amount)  # 天启篇去全队 ×6：状态脚本里按绝对值写的扣血／回血（O-470）
 			(effects.resources as XResourceContext).gain(_battlers[receiver], resource, amount)
 		return UNDEFINED
 
@@ -440,7 +440,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				var amount := float(c.user.get(str(p)))
 				if amount > 0.0 and c.user is XEnemy and c.user.output_scale != 1.0:
 					amount = maxf(1.0, roundf(amount * c.user.output_scale))  # 守层者重算（O-402）：轮回困难附加的「攻击＋魔攻」真伤也乘出伤倍率
-				amount = XTianqiNoX6.scale_direct(c.user, c.target, amount)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
+				amount = XTianqiNoX6.scale_direct(c.user, c.target, amount)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
 				if amount > 0.0:
 					ctx.resources.gain(c.target, "hp", -amount)
 					r.extra = r.get("extra", []) + [amount]
@@ -792,7 +792,7 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 	var rc: XResourceContext = ctx.resources
 	# regenerateStateEffects clears this holder's result, while retaining the source domain.
 	rc.seed_result(holder, XResourceContext.empty_result())
-	rc.gain(holder, "hp", -XTianqiNoX6.scale_direct(c.get("origin"), holder, float(out.value)))  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
+	rc.gain(holder, "hp", -XTianqiNoX6.scale_direct(c.get("origin"), holder, float(out.value)))  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
 	var r := rc.result(holder)
 	if ctx.get("emit") is Callable and ctx.emit.is_valid():
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})

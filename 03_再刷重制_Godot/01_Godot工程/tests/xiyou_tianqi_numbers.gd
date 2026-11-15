@@ -84,7 +84,7 @@ func _enemy_rates() -> void:
 		var row := XTianqiBalance.difficulty(key)
 		var got := XTianqiCombat.enemy_rates(int(XTianqi.difficulty(key).legacy))
 		var want := base.duplicate()
-		want[0] = float(base[0]) * float(row.enemy_hp) * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-待定-1）：敌人生命同缩 1/6
+		want[0] = float(base[0]) * float(row.enemy_hp) * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-470）：敌人生命同缩 1/6
 		want[2] = float(base[2]) * float(row.enemy_atk)
 		want[4] = float(base[4]) * float(row.enemy_atk)
 		_check("enemy_rates_" + key, range(8).all(func(i): return _near(float(got[i]), float(want[i]))), [got, want])

@@ -272,7 +272,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if type == 1 and a is XActor:
 		extra *= maxf(0.0, 1.0 + float(a.passive_cache().get("globalHarmRi", 0.0)))
 	var balance := 0.01 if a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
-	var tq := XTianqiNoX6.dealt_scale(a, t) if type in [1, 5] else 1.0  # 天启篇去全队 ×6（O-待定-1）：AI 估伤本来不含 ×6，目标血量缩了它也跟着缩，选目标、选招和原来一样
+	var tq := XTianqiNoX6.dealt_scale(a, t) if type in [1, 5] else 1.0  # 天启篇去全队 ×6（O-470）：AI 估伤本来不含 ×6，目标血量缩了它也跟着缩，选目标、选招和原来一样
 	return maxf(0.0, value) * rate * defense * clampf(repeats, 1, 32) * extra * mastery * balance * tq
 
 

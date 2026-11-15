@@ -172,7 +172,7 @@ static func troop_floor(logic) -> int:
 	return 0
 
 
-## 第 f 层每回合基准血量：HP_BASE 是 11-13 带全队 ×6 实测的，去 ×6（XTianqiNoX6，O-待定-1）开着时乘 1/6。
+## 第 f 层每回合基准血量：HP_BASE 是 11-13 带全队 ×6 实测的，去 ×6（XTianqiNoX6，O-470）开着时乘 1/6。
 ## 以后用虚拟玩家按去 ×6 后的伤害重量、换表时，把这里的 hp_unit 去掉。
 static func hp_base(f: int) -> float:
 	return float(HP_BASE[f]) * XTianqiNoX6.hp_unit()
@@ -212,7 +212,7 @@ static func setup(logic, s: XState) -> void:
 
 
 static func _scale_hp(e: XEnemy, k: float) -> void:
-	e.set_meta(XTianqiNoX6.META_HP_K, float(e.get_meta(XTianqiNoX6.META_HP_K, 1.0)) * k)  # 守层者回血同比缩用（O-待定-2）
+	e.set_meta(XTianqiNoX6.META_HP_K, float(e.get_meta(XTianqiNoX6.META_HP_K, 1.0)) * k)  # 守层者回血同比缩用（O-469）
 	e._rates = e._rates.duplicate()
 	e._rates[0] = float(e._rates[0]) * k
 	e.param_mark_dirty()

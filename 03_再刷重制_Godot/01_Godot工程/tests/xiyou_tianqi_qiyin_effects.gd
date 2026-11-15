@@ -95,7 +95,7 @@ func _fresh(lg: XBattleLogic) -> void:
 	XTianqiQiyinEffects.start(lg)
 
 
-static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-待定-1）开着时，按绝对值直接扣敌人血的跟着缩 1/6
+static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开着时，按绝对值直接扣敌人血的跟着缩 1/6
 	var u := XTianqiNoX6.hp_unit()
 	return v if u == 1.0 else maxf(1.0, floorf(v * u))
 
