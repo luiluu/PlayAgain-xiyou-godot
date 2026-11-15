@@ -46,6 +46,13 @@ static func _pct(v: float) -> String:
 	return "%d%%" % roundi(v * 100.0)
 
 
+## 2565 与 2803 互斥（co 核查 P2，协调 11-15 裁定）：同时在身上时只算 2565。原版 9940、9933 都挂 2565，同号只算一份；
+## 拆开后两技能都会（或身上留着 9933 的 2565 再学 9940）会两份都结算。甲档两者相同，只算 2565 与原版一致；乙档 9933 本来不改。
+## XBattler._states_now 每个状态问一次（开关关掉时 2803 可能是别的模块或测试在表尾用的号，不管）
+static func shadowed(id: int, ids: Array) -> bool:
+	return id == ST_FUSION and ENABLED and ids.has(ST_FUSION_SRC)
+
+
 ## 每场战斗开局：自我极意功的层数清零（原版是全局变量、从不清零）；合体赛亚人拆开前后的存档迁移
 static func battle_setup(s) -> void:
 	if s == null:
@@ -82,6 +89,7 @@ static func _migrate_fusion(s) -> void:
 			gives[int(tag[1])] = true
 		if gives.has(ST_FUSION) and not gives.has(ST_FUSION_SRC):
 			a.remove_state(ST_FUSION_SRC)
+		# 两者都在、都会的（两技能都会）不用动：shadowed() 让 2803 不算
 
 
 static func patch_states(t: Array) -> void:

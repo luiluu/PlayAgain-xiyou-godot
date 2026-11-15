@@ -6,6 +6,7 @@ extends Node
 ## 四、别的状态、技能不动；ENABLED＝false 回原版。
 ## 五、合体赛亚人拆开（Kyo 11-15 拍板 D3 选 B）：9940 改挂 2565 的复制 2803，9933「普通一拳」照旧挂 2565；
 ##     甲档 9940 挂的状态结算与原版逐值相同、2803 与 2565 除号外一字不差；乙档只改 2803，2565 与 9933 不变。
+## 六、2565 与 2803 互斥（co 核查 P2）：两技能都会、先有 2565 再学 9940，整场出手伤害与原版相同；战中存读档往返、关掉开关回退也相同。
 var results: Array = []
 
 
@@ -57,6 +58,7 @@ func _run() -> void:
 		and b.src_fusion == orig.fusion and b.src_fusion_crit == orig.fusion_crit, [b.src_fusion, b.src_fusion_crit])
 	_reset_per_battle()
 	_migrate()
+	_fusion_battles()
 	XVegetaTune.ENABLED = true
 	XVegetaTune.TIER = "甲"
 	_reload()
@@ -206,3 +208,94 @@ func _migrate() -> void:
 	_check("migrate_off_back_to_2565", not after3.has(XVegetaTune.ST_FUSION) and after3.has(2565), after3)
 	XVegetaTune.ENABLED = true
 	_reload()
+
+
+
+const FB_SEED := "c0ffee0011223344"
+
+
+## 开一场（敌群 4，500 万血首领，漩涡异化关掉免得干扰），角色 1 会 skills、身上先挂 pre；返回 [逻辑, 存档, 角色]
+func _fb_setup(skills: Array, pre: Array, s: XState = null) -> Array:
+	if s == null:
+		s = XState.new_game(3, 1, [])
+		var a0 := s.actor(1)
+		a0.skill_ids.assign(skills)
+		for id in pre:
+			a0.state_ids.append(int(id))
+		a0.read_touch()
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.setup(4, s, XBattleRandom.create(FB_SEED, 1))
+	return [lg, s, s.actor(1)]
+
+
+## 角色 1 普攻首领三下，返回每下伤害
+func _fb_hits(lg: XBattleLogic, a) -> Array:
+	var out := []
+	var e: XEnemy = lg.enemies[0]
+	for i in 3:
+		var hp0 := e.hp
+		lg.execute(a, XDB.rec("Skills", 1), e)
+		out.append(hp0 - e.hp)
+	return out
+
+
+func _fb_case(on: bool, skills: Array, pre: Array) -> Dictionary:
+	if on:
+		XVegetaTune.ENABLED = true
+		XVegetaTune.TIER = "甲"
+		_reload()
+	else:
+		XVegetaTune.original_data()
+	var r := _fb_setup(skills, pre)
+	var a = r[2]
+	var out := {"ids": a.state_ids.duplicate(), "rows": a.states().map(func(st): return int(st.id))}
+	out.hits = _fb_hits(r[0], a)
+	r[0].end_battle(0)
+	out.save = JSON.stringify(r[1].to_dict())
+	return out
+
+
+func _fusion_battles() -> void:
+	XRiftAlien.ENABLED = false
+	var F := XVegetaTune.ST_FUSION
+	# 两技能都会：原版只挂一份 2565；新版 2565＋2803 都在身上，但只算 2565
+	var o1 := _fb_case(false, [9940, 9933], [])
+	var n1 := _fb_case(true, [9940, 9933], [])
+	_check("both_orig_one", o1.ids.count(2565) == 1 and not o1.ids.has(F), o1.ids)
+	_check("both_new_two_on_body", n1.ids.has(2565) and n1.ids.has(F), n1.ids)
+	_check("both_new_rows_shadowed", n1.rows.has(2565) and not n1.rows.has(F), n1.rows)
+	_check("both_damage_same", n1.hits == o1.hits and o1.hits.all(func(x): return x > 0.0), [n1.hits, o1.hits])
+	# 先有 2565（以前 9933 留下的）再只学 9940
+	var o2 := _fb_case(false, [9940], [2565])
+	var n2 := _fb_case(true, [9940], [2565])
+	_check("pre2565_damage_same", n2.hits == o2.hits, [n2.hits, o2.hits])
+	_check("pre2565_one_counted", n2.rows.count(2565) + n2.rows.count(F) == 1, n2.rows)
+	# 先有 2565 且仍会 9933，再学 9940（同「两技能都会」，但 2565 是存档带来的）
+	var n3 := _fb_case(true, [9933, 9940], [2565])
+	_check("pre2565_both_damage_same", n3.hits == o1.hits, [n3.hits, o1.hits])
+	# 战中存档再读档：两技能都会的那场，开战后存、读回来接着打，伤害与不存读相同
+	XVegetaTune.ENABLED = true
+	XVegetaTune.TIER = "甲"
+	_reload()
+	var r := _fb_setup([9940, 9933], [])
+	var back := XState.from_dict(JSON.parse_string(JSON.stringify(r[1].to_dict())))
+	r[0].end_battle(0)
+	var b = back.actor(1)
+	_check("roundtrip_ids", b.state_ids.has(2565) and b.state_ids.has(F) and not b.states().map(func(st): return int(st.id)).has(F), b.state_ids)
+	var r2 := _fb_setup([], [], back)
+	var h2 := _fb_hits(r2[0], r2[2])
+	r2[0].end_battle(0)
+	_check("roundtrip_damage_same", h2 == o1.hits, [h2, o1.hits])
+	# 关掉开关回退：带着新版存档（身上有 2803）读回原版，2803 抹掉、伤害与原版相同
+	XVegetaTune.original_data()
+	var old_save := XState.from_dict(JSON.parse_string(n2.save))
+	_check("rollback_save_has_copy", old_save.actor(1).state_ids.has(F), old_save.actor(1).state_ids)
+	var r3 := _fb_setup([], [], old_save)
+	var h3 := _fb_hits(r3[0], r3[2])
+	var ids3: Array = r3[2].state_ids.duplicate()
+	r3[0].end_battle(0)
+	_check("rollback_damage_same", h3 == o2.hits and not ids3.has(F) and ids3.has(2565), [h3, o2.hits, ids3])
+	XVegetaTune.ENABLED = true
+	_reload()
+	XRiftAlien.ENABLED = true

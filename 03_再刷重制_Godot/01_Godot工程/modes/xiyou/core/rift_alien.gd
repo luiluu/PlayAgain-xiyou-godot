@@ -21,8 +21,8 @@ extends RefCounted
 ## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
 ## 阶段对齐大厅稿（O-待定，Kyo 11-15 拍板 D8 选 A）：ALIGN_LOBBY（默认开）读 stages_aligned——二阶就出侵染、三阶蚀骨、四阶化形，
 ## 即旧表三～五阶整体前移一档；五阶怪物端没有终焉，先按「化形且几率最高」（设计稿 漩涡五阶段 v0.3 待补）。关掉回上面写的旧表（三阶起才异化）。
-## XRift.stage() 只要 STAGE2 开着就恒为 2，所以对齐后非发行构建里西游每场都可能出异化怪；无画面（headless 测试）默认仍走旧表，
-## 免得按原版对照的战斗测试（xiyou_combat、xiyou_rules 等）被二阶异化冲掉；测本功能的专项设 IN_HEADLESS（同 XBattleTransition 先例）。
+## XRift.stage() 只要 STAGE2 开着就恒为 2（没按进度接线，旧问题），所以对齐后非发行构建里西游每场都可能出异化怪；
+## 测试和玩家走同一条路，按原版对照的测试（xiyou_event_compare、xiyou_combat 等）自己显式关 ALIGN_LOBBY。
 
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"
@@ -34,8 +34,6 @@ static var ENABLED := true
 static var STAGE_OVERRIDE := 0
 ## 阶段对齐大厅稿（O-待定）：true＝读 stages_aligned（二阶起异化）；false＝旧表 stages（三阶起异化）
 static var ALIGN_LOBBY := true
-## 测试用：headless 下也按 ALIGN_LOBBY 对齐（平时 headless 走旧表）
-static var IN_HEADLESS := false
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
 static var RELEASE_OPEN := false
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
@@ -131,9 +129,9 @@ static func first_alien_stage() -> int:
 	return 2 if aligned() else 3
 
 
-## 这一次按对齐表走：开关开着，且不是无画面（headless 测试另要 IN_HEADLESS）
+## 这一次按对齐表走（＝开关）
 static func aligned() -> bool:
-	return ALIGN_LOBBY and (IN_HEADLESS or DisplayServer.get_name() != "headless")
+	return ALIGN_LOBBY
 
 
 static func _stage_table() -> Dictionary:

@@ -77,10 +77,9 @@ func _run() -> void:
 	if FileAccess.file_exists(XConfig.path_override):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XRiftAlien.reload()
-	# headless 默认走旧表（按原版对照的战斗测试不被二阶异化冲掉）；IN_HEADLESS 打开才对齐
-	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and not XRiftAlien.IN_HEADLESS and not XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 3)
-	XRiftAlien.IN_HEADLESS = true
-	_check("align_in_headless", XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
+	# 默认开，测试与玩家同一条路（不按显示后端切）
+	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
+	_default_path()
 	XRiftAlien.ALIGN_LOBBY = false
 	_data()
 	_rules()
@@ -92,7 +91,6 @@ func _run() -> void:
 	XRiftAlien.ALIGN_LOBBY = true
 	_aligned()
 	XRiftAlien.STAGE_OVERRIDE = 0
-	XRiftAlien.IN_HEADLESS = false
 	XRiftAlien.force_drop = -1.0
 	XConfig.path_override = ""
 	var passed := results.filter(func(r): return r.passed).size()
@@ -453,3 +451,46 @@ func _aligned() -> void:
 	_check("al_st2_named", e != null and ["qinran", "shigu"].has(str(u2.get("tier", ""))) and e.display_name().begins_with(str(XRiftAlien.tier_info(str(u2.tier)).name) + "·"), [u2, e.display_name() if e != null else null])
 	lh.end_battle(0)
 	XRiftAlien.data().stages_aligned["2"] = keep
+
+
+## 默认配置（ALIGN_LOBBY 开、不设 STAGE_OVERRIDE、阶段读真的 XRift.stage()）下的整场：玩家路径。
+## 西游档、守层者敌群 69（10 层，二阶 33% 侵染），换几个种子开战：有的出异化怪、有的不出；出了的那场打几回合到结束不出错，
+## 规则随机流取数与关掉异化的同种子一场逐条相同。
+func _default_path() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	_check("dp_stage_is_2", XRift.stage() == 2 and XRiftAlien.stage() == 2, XRift.stage())
+	var s := _plain(10, true)
+	var hit_seed := ""
+	var misses := 0
+	for i in 24:
+		var sd := "%016x" % (0x5a17c0de00000000 + i)
+		var lg := XBattleLogic.new()
+		lg.setup(69, s, XBattleRandom.create(sd, 1))
+		var n: int = XRiftAlien.fight(lg).get("units", {}).size()
+		lg.end_battle(0)
+		if n == 1 and hit_seed == "":
+			hit_seed = sd
+		elif n == 0:
+			misses += 1
+	_check("dp_some_alien_some_not", hit_seed != "" and misses > 0, [hit_seed, misses])
+	if hit_seed == "":
+		return
+	XRiftAlien.ENABLED = false
+	var off := XBattleLogic.new()
+	off.setup(69, s, XBattleRandom.create(hit_seed, 1))
+	var base_j: Array = off.random.rule.journal.map(func(x): return [x.reason, x.event, x.value])
+	off.end_battle(0)
+	XRiftAlien.ENABLED = true
+	var lg2 := XBattleLogic.new()
+	lg2.setup(69, s, XBattleRandom.create(hit_seed, 1))
+	var e: XEnemy = lg2.enemies[0]
+	var u := XRiftAlien.unit(lg2, e)
+	_check("dp_alien_named", str(u.get("tier", "")) == "qinran" and e.display_name().begins_with("侵染·"), [u, e.display_name()])
+	_check("dp_rule_stream_same", lg2.random.rule.journal.map(func(x): return [x.reason, x.event, x.value]) == base_j)
+	var turns := 0
+	while not lg2.is_over() and turns < 8:
+		lg2.run_turn({})
+		turns += 1
+	_check("dp_turns_ran", turns > 0, turns)
+	lg2.end_battle(0)
+	_check("dp_end_clean", not XRiftAlien.active(lg2))
