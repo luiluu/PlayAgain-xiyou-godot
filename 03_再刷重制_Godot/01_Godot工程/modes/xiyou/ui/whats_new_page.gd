@@ -67,6 +67,7 @@ static func show_pending(host: Node, use_skin: bool) -> XWhatsNewPage:
 	if rec.is_empty():
 		return null
 	XWhatsNew.mark_seen(code)  # 弹出来就算看过：关掉、或开着时退出游戏都不再弹（设置页能再看）
+	print("WHATS_NEW shown code=%d" % code)  # 冷启动验证看这一行
 	return open(host, rec, use_skin)
 
 
