@@ -208,9 +208,9 @@ func _fill_list() -> void:
 	queue_redraw()
 
 
-## 「类别 · 时长 · N层」（同原卡片的说明行）
+## 「类别 · 时长 · N 层」（同原卡片的说明行，数字和单位间空一格）
 static func meta_text(row: Dictionary) -> String:
-	return "%s · %s" % [row.kind, row.duration] + (" · %d层" % int(row.stack) if int(row.stack) > 1 else "")
+	return XSkinBossStatus.spaced("%s · %s" % [row.kind, row.duration] + (" · %d 层" % int(row.stack) if int(row.stack) > 1 else ""))
 
 
 func _fill_card() -> void:

@@ -75,7 +75,7 @@ func _run() -> void:
 	get_tree().quit(0)
 
 
-## 战斗三张：指令窗、战技列表（第 2 项）、选目标（攻击）。随机数钉住（种子、random_master、敌人出场掷骰）；返回 [建了几次, 拍了几张]
+## 战斗四张：指令窗、我方状态详情（2B）、战技列表（第 2 项）、选目标（攻击）。随机数钉住（种子、random_master、敌人出场掷骰）；返回 [建了几次, 拍了几张]
 func _battle_shots(scenario: String) -> Array:
 	seed(20261013)
 	XState.current.random_master = "2026101300000001"
@@ -96,7 +96,7 @@ func _battle_shots(scenario: String) -> Array:
 		b.queue_free()
 		return [0, 0]
 	n = 1
-	var steps := [["cmd", []], ["list", ["ui_down", "ui_accept"]], ["target", ["ui_cancel", "ui_up", "ui_accept"]]]
+	var steps := [["cmd", []], ["status", []], ["list", ["ui_down", "ui_accept"]], ["target", ["ui_cancel", "ui_up", "ui_accept"]]]
 	for st in steps:
 		for act in st[1]:
 			for down in [true, false]:
@@ -106,6 +106,8 @@ func _battle_shots(scenario: String) -> Array:
 				get_viewport().push_input(e)
 				for k in range(2):
 					await get_tree().process_frame
+		if st[0] == "status":   # 2B：我方状态详情（点右侧状态格那条路）
+			b.call("_open_status", b.get("_active"))
 		for i in range(40):
 			await get_tree().process_frame
 		_freeze(b)
@@ -117,6 +119,10 @@ func _battle_shots(scenario: String) -> Array:
 			DirAccess.make_dir_recursive_absolute(out_dir)
 			get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_battle_%s.png" % [scenario, st[0]]))
 			shots += 1
+		if st[0] == "status" and b.get("status_panel") != null:
+			b.get("status_panel").close()
+			for i in range(5):
+				await get_tree().process_frame
 	b.queue_free()
 	for i in range(5):
 		await get_tree().process_frame

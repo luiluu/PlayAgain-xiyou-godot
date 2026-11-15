@@ -16,7 +16,7 @@ static var R_ROW := 22.0
 static var R_SELECTED := 26.0
 static var R_PREVIEW := 15.0
 const STEP_MAX := 50.0       # 两个小圆圆心最远隔多少（44 的圆＋6 的缝）
-const SEP := 30.0            # 本回合与下回合之间多留的缝（放「下回合」）
+const SEP := 40.0            # 本回合与下回合之间多留的缝（放「下回合」）
 const SEP_TEXT := "下回合"
 const ENEMY_DARK := Color("1a1226")
 const ENEMY_LIGHT := Color("4a3566")
@@ -69,12 +69,12 @@ func _draw() -> void:
 	if sep_x < 0.0:
 		return
 	var f := XUiSkin.font("body")
-	draw_line(Vector2(sep_x - 6.0, LH - 20.0), Vector2(sep_x - 6.0, LH + 20.0), Color(XUiSkin.LINE, 0.5), 1.0)
+	draw_line(Vector2(sep_x - 8.0, LH - 20.0), Vector2(sep_x - 8.0, LH + 20.0), Color(XUiSkin.LINE, 0.5), 1.0)
 	var fs := 12
 	for i in SEP_TEXT.length():
 		var ch := SEP_TEXT[i]
 		var w := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		draw_string(f, Vector2(sep_x + 3.0 - w / 2.0 + 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+		draw_string(f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 
 
 func _icon(b: XBattler) -> Icon:
@@ -96,12 +96,16 @@ static func radius_of(node: Icon) -> float:
 	return R_SELECTED if node.selected else R_ROW
 
 
-## 名字只给当前的人（大圆）和敌人
+## 名字只给当前的人（大圆）和敌人；人多挤得圆叠起来时（间距小于一个小圆）敌人名字会互相压住，只给被选为目标的敌人标
 static func name_of(node: Icon) -> String:
 	if node.has_meta("preview") or node.battler == null:
 		return ""
-	if node.big or node.battler is XEnemy:
+	if node.big:
 		return node.battler.display_name()
+	if node.battler is XEnemy:
+		var bar := node.get_parent() as XSkinOTBBar
+		if bar == null or bar.step_px >= R_ROW * 2.0 or node.selected:
+			return node.battler.display_name()
 	return ""
 
 

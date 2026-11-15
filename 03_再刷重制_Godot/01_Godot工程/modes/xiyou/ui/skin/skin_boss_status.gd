@@ -30,10 +30,17 @@ func arc_shows_boss() -> bool:
 
 
 static func turns_text(row: Dictionary) -> String:
-	var t := str(row.get("turns", ""))
-	var re := RegEx.create_from_string("^(\\d+)回合$")
-	var m := re.search(t)
-	return (m.get_string(1) + " 回合") if m != null else t
+	return spaced(str(row.get("turns", "")))
+
+
+## 数字和单位之间空一格（小A文字审口径：「冷却 2 回合」）：「4回合」→「4 回合」、「3层」→「3 层」
+static func spaced(t: String) -> String:
+	if _re_unit == null:
+		_re_unit = RegEx.create_from_string("(\\d)(回合|层)")
+	return _re_unit.sub(t, "$1 $2", true)
+
+
+static var _re_unit: RegEx
 
 
 ## 折叠行的胶囊：[{kind: name|state|more|detail, text, icon, w}]
@@ -152,7 +159,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 				_capsule(ci, r, Color(XUiSkin.LINE, 0.5))
 				_txt(c, f, str(cap.text), r.position.x, 0, r.size.x, "center", XUiSkin.TEXT_2, CAP_FS, ROW_H)
 			"detail":
-				_capsule(ci, r, XUiSkin.GOLD, Color(XUiSkin.GOLD, 0.14))
+				_capsule(ci, r, XUiSkin.GOLD, Color(XUiSkin.BG.lerp(XUiSkin.GOLD, 0.16), 0.92))
 				_txt(c, f, str(cap.text), r.position.x, 0, r.size.x, "center", XUiSkin.GOLD, CAP_FS, ROW_H)
 		x += float(cap.w) + CAP_GAP
 	var prof := _tq_profile()
@@ -212,7 +219,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 				c.draw_texture_rect(tex, Rect2(22, y + 9.0, 27, 27), false)
 		var x := 58.0 if row.icon != 0 else 24.0
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.name), w - x - 122.0, 17), x, y + 2.0, w - x - 122.0, "left", XUiSkin.TEXT, 17, 26)
-		_txt(c, f, XSkinOTBBar.fit(f, _meta(row), 110.0, 14), w - 125.0, y + 2.0, 109, "right", col, 14, 26)
+		_txt(c, f, XSkinOTBBar.fit(f, spaced(_meta(row)), 110.0, 14), w - 125.0, y + 2.0, 109, "right", col, 14, 26)
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.description).replace("\n", " "), w - 48.0, 14), 24, y + 29.0, w - 48.0, "left", XUiSkin.TEXT_2, 14, 25)
 	_footer(c, page, maxi(1, ceili(list.size() / float(page_size()))), "")
 
@@ -258,7 +265,7 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	var names := wrap_lines(tf, str(row.name), w - x - 20.0, 19)
 	for i in mini(names.size(), 2):
 		_txt(c, tf, names[i], x, BODY_Y + 3.0 + i * 24.0, w - x - 20.0, "left", XUiSkin.TEXT, 19, 25)
-	_txt(c, f, _meta(row), 23, BODY_Y + 62.0, w - 46.0, "left", col, 14, 22)
+	_txt(c, f, spaced(_meta(row)), 23, BODY_Y + 62.0, w - 46.0, "left", col, 14, 22)
 	var lines := wrap_lines(f, str(row.description), w - 44.0, 16)
 	var start := BODY_Y + 94.0
 	var per := maxi(1, floori((DETAIL_H - FOOTER_HEIGHT - start - 8.0) / 24.0))

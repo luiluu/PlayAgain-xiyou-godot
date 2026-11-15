@@ -220,3 +220,30 @@ static func status_panel(parent: Node, list: Array, who: XBattler) -> XPartyStat
 	p.index = maxi(0, list.find(who))
 	parent.add_child(p)
 	return p
+
+
+## 自动／变速两个按钮：开着新皮肤时换成黑底细线的胶囊（按下、悬停是红乙选中条），挪到挂机快捷界面（左上 20,10,240×74）下面，
+## 免得被顶上的首领血弧压住；字和点了做什么都不变。关着什么也不做。
+static var TOGGLE_POS := Vector2(20, 84)
+
+static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> void:
+	if not on():
+		return
+	side.position = origin + TOGGLE_POS
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(XUiSkin.BG, 0.85)
+	normal.border_color = Color(XUiSkin.LINE, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(20)
+	normal.content_margin_left = 14
+	normal.content_margin_right = 14
+	for b in buttons:
+		var btn := b as Button
+		btn.custom_minimum_size = Vector2(104, 40)
+		btn.add_theme_font_override("font", XUiSkin.font("body"))
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.add_theme_stylebox_override("normal", normal)
+		for k in ["hover", "pressed"]:
+			btn.add_theme_stylebox_override(k, XUiSkin.select_style())
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			btn.add_theme_color_override(k, XUiSkin.TEXT)

@@ -640,6 +640,7 @@ func _build_ui(vs: Vector2) -> void:
 		speed_btn.text = "变速 " + XConfig.battle_speed_text())
 	side.add_child(speed_btn)
 	_refresh_auto()
+	XSkinBattle.style_toggles(side, [auto_btn, speed_btn], _origin)  # 新界面 2B：开着新皮肤换胶囊、挪到挂机界面下（关着什么也不做）
 	# 行动顺序条：宽 = 画面宽 - x - 状态宽 - 左移量 - 状态图标 4.5 个
 	otb = XSkinBattle.otb()  # 新界面 2B：开着是左下圆头像一排（自己挪到 XSkinOTBBar.POS），关着同 XOTBBar.new()
 	otb.position = _origin + OTB_POS
