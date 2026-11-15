@@ -84,6 +84,8 @@ func _run() -> void:
 	_check("ov_line_removed", not _rec("Weapons", 68).note.contains("特效:???") and _rec("Weapons", 68).note.count("<pos=") == raw_count("Weapons", 68) - 1,
 		[_rec("Weapons", 68).note.count("<pos="), raw_count("Weapons", 68)])
 	_check("ov_map186", JSON.stringify(XDB.map(186).events[27]).count("兽人元帅\\\\c[0]，咬牙切齿") == 3)
+	_check("ov_565_current_mp", _pos_texts(_rec("Skills", 565).note).has("\\c[1]基础伤害：（5000+己·魔法攻击x30）*（1+当前蓝量/（最大蓝量*0.002））；防御按攻防比例结算"), _pos_texts(_rec("Skills", 565).note))
+	_check("ov_1615_kept", _rec("Armors", 1615).name == "奇拉美魔皮护手" and _rec("Armors", 1615).note.contains("奇拉美之力"))
 	var probe := [null, {"id": 1, "name": "甲乙"}]
 	var before := XTextFix.warnings.size()
 	XTextFix._apply_override({"at": "Probe:1/name", "from": "丙", "to": "丁", "ref": "test"}, probe, "Probe")
