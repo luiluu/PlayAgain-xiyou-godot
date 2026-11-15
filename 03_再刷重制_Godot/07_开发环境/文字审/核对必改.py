@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """逐条核对乙类文字审「必改」项在 XTextFix 修正后是否改掉了（cc/text-fix-b）。
 
-读 00_项目管理/交付/xa_text-audit-b.md 各批表里「必改」行的来源位置，比较 generated 原文与
+读 00_项目管理/核查/文字审查乙类_xa_text-audit-b.md 各批表里「必改」行的来源位置，比较 generated 原文与
 tests/text_fix_dump 导出的修正后数据在这些位置的玩家可见文字：位置上的文字全都变了算「已改」，
 有没变的列出来。报告里登记「不改」的（原文其实没错、原版刻意命名）写在 KNOWN 里并给理由。
 
 用法：
   XIYOU_TEXT_FIX_DUMP=<目录> 07_开发环境/godot --headless --path 01_Godot工程 res://tests/text_fix_dump.tscn
-  python3 07_开发环境/文字审/核对必改.py --gen-dir <目录> [--report 00_项目管理/交付/xa_text-audit-b.md]
+  python3 07_开发环境/文字审/核对必改.py --gen-dir <目录> [--report 00_项目管理/核查/文字审查乙类_xa_text-audit-b.md]
 退出码：全部已改或已登记不改＝0，否则 1。只读。
 """
 
@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_beta_text import GEN_DIR, POS_RE, REPO_ROOT, load_json  # noqa: E402
 
-REPORT = REPO_ROOT / "00_项目管理/交付/xa_text-audit-b.md"
+REPORT = REPO_ROOT / "00_项目管理/核查/文字审查乙类_xa_text-audit-b.md"
 TEXT_KEYS = ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
 
 # 报告判「必改」、核对后不改的（编号 → 理由）

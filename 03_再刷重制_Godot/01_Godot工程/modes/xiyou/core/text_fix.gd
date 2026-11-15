@@ -1,6 +1,6 @@
 class_name XTextFix
 extends RefCounted
-## 【cc·未经审查】原版文字错的加载时修正（乙类文字审 00_项目管理/交付/xa_text-audit-b.md，cc/text-fix-b）。
+## 【cc·未经审查】原版文字错的加载时修正（乙类文字审 00_项目管理/核查/文字审查乙类_xa_text-audit-b.md，cc/text-fix-b）。
 ## XDB 读进数据库表、地图时就地改玩家看得到的字，不动 generated 产物；重制版与天启篇都生效。
 ##
 ## 改哪些字段：数据库 name／nickname／profile／description／message1～4、备注里 <pos=… text=… size=…> 的 text 段、
