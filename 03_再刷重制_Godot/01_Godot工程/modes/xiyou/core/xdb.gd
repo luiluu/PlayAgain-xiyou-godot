@@ -107,6 +107,7 @@ static func _cache_write(path: String, file: String, value: Variant) -> void:
 static func table(name: String) -> Variant:
 	if not _tables.has(name):
 		_tables[name] = load_json("db/%s.json" % name)
+		XTextFix.patch_table(name, _tables[name])  # 原版文字错的统一规则与逐条覆盖（乙类文字审，开关见 XTextFix）
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
 			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-314，开关 XCanglong.REWORK）
@@ -186,6 +187,7 @@ static func map(map_id: int) -> Dictionary:
 		_tables.erase(key)  # 冠军庆典：活动状态变了（跨日期、开关）大厅补丁要重做
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
+		XTextFix.patch_map(map_id, _tables[key])  # 原版文字错（名字框、挑战符文等；开关见 XTextFix）
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
 		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-312，开关 XRift.STAGE2）
 		XLobbyDebugNpc.patch_map(map_id, _tables[key])  # 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12）
