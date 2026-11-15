@@ -1,7 +1,8 @@
 extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
-## 拍的页：主菜单、状态、物品、装备、设置。两种情形：
+## 拍的页：主菜单、状态、物品、装备、设置；天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：
+## 标题还没读档，新皮肤按构建开，发行构建不开）。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
 ##   tq_off     天启篇存档、XUiSkin.ENABLED = false（新皮肤关掉回退）。main 上没有 XUiSkin，两种都是旧界面。
 ## 去掉不确定因素：菜单粒子隐藏、MV 光标不闪烁、每页等固定帧数。
@@ -9,7 +10,7 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XEquipScene", "XOptionsScene"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XEquipScene", "XOptionsScene", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop"]
 
 var out_dir := ""
 var compare := ""
@@ -45,11 +46,25 @@ func _run() -> void:
 			if page == null:
 				print("SKIP ", cls)
 				continue
+			var sim_release := false
+			if cls == "XTianqiTitle":   # ui-skin-3b：五项给空函数；西游情形按发行构建（重制版玩家看到的）
+				sim_release = scenario == "xiyou"
+				ReleaseEntry.simulate_release = sim_release
+				var noop := func(): pass
+				page.call("setup", {"new_game": noop, "load": noop, "options": noop, "achievements": noop, "check_update": noop}, [])
+			elif cls == "XTianqiLineCards":
+				page.set("lines", XTianqi.LINES)
+				page.set("playable", [true, true, false, true])
+			ReleaseEntry.simulate_release = sim_release
 			add_child(page)
 			built += 1
 			for i in range(30):
 				await get_tree().process_frame
 			_freeze(page)
+			if cls == "XTianqiLineCards":   # 选中卡的边按真实时间脉动：钉在同一相位再拍
+				page.set_process(false)
+				page.set("_t", 0.0)
+				page.call("_process", 0.0)
 			for i in range(3):
 				await get_tree().process_frame
 			if out_dir != "" and DisplayServer.get_name() != "headless":   # 无头时没有 frame_post_draw，只把各页建一遍
@@ -58,6 +73,7 @@ func _run() -> void:
 				get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_%s.png" % [scenario, cls]))
 				shots += 1
 			page.queue_free()
+			ReleaseEntry.simulate_release = false
 			for i in range(3):
 				await get_tree().process_frame
 	for pl in XSound._players:
