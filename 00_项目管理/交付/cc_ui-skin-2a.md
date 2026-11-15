@@ -85,3 +85,41 @@
 
 - 5174252af WIP：新界面 2A 战斗指令环、战技／物品列表、目标提示与专项
 - （其余见 git log）
+
+## 小A 乙档核查
+
+- **核查对象**：`cc/ui-skin-2a` @ `c228b5e5a`（只读核查，未改游戏代码）。
+- **结论**：**通过**（P1 0、P2 0、P3 3；文字必改：无；**不需要转 co 甲档**）。
+- **核查方式分清**：
+  - **前台实跑（核了规则／运行行为）**：`tests/xiyou_ui_skin_battle.tscn --headless` 58/58 通过；`tests/xiyou_ui_skin_offshot.tscn --headless -- --compare=...` 复核既有 `关闭对照/base` vs `branch` 13/13 全部 SAME；`语法检查.py` 900 个 `.gd` 0 问题；`发行空壳.py check` 58 脚本 484 函数通过；`content/ui_skin/fonts/charset_hei.txt`／`charset_song.txt` 覆盖全部 2A 新增汉字 0 缺字。
+  - **只看代码（未重跑耗时长检查）**：逐行核对 `c4e5a375a..c228b5e5a` 差异及 `battle_scene.gd`、`battle_list.gd`、`battle_logic.gd`、`skin_battle*.gd`、`skin_target_hint.gd`、`alien_battle.gd`、`tusu.gd`、`tianqi_qiyin_effects.gd` 与 `xiyou-design-docs`（`ba1f7ed` `文字审_小A.md`、`README.md`）。
+- **逐项核查**：
+  1. **`battle_scene.gd` 四处开关分支与 13 张 SAME 口径（核代码＋复核 `--compare` 13/13）**：
+     - 建指令窗 `_command_for` → `XSkinBattle.command`：关时直接返回 `XBattleList.create(parent, opts, width, "center")`。
+     - 建列表 `_pick_from_list` → `XSkinBattle.list`（及 `decorate_all` 前置 `if XSkinBattle.on():`）：关时不调 `decorate_all`，直接返回 `XBattleList.create(parent, rows, width)`；`title` 读取 `cmd_win.entries[cmd_win.index].text` 为纯只读。
+     - 摆位 `_place_near_actor` → `w.has_method("place_for_actor")`：原 `XBattleList` 无此方法，关时完全走原逻辑。
+     - 说明卡定位 `_help` → `list_win.row_rect()`：原 `XBattleList.row_rect` 为原式子搬移，数值一致；选目标 `_select_target` → `XSkinBattle.target_hint` 首行 `if not on(): return`。
+     - 皮肤关闭对照 13 张口径合理：第 0 期 10 张（西游／天启关各 5 页）＋西游战斗 3 张（指令窗、战技列表含说明卡、选目标）；天启篇关皮肤时 `XUiSkin.ENABLED = false` 使 `XUiSkin.on()` 与西游档走同一 `false` 分支，停呼吸与隐藏我方待机主体仅去帧率／随机相位抖动，保留光标、名字、血条与窗口像素对比。
+  2. **战斗流程逻辑只读核查（只看代码＋58 项专项）**：
+     - 未改动行动顺序（OTB）、随机数取用（`_rule()`／`XBattleRandom`）与技能可用判定：`battle_scene.gd` `_list_entry` 仍由 `logic.can_use(a, e)` 算 `enabled`，`XSkinBattle.decorate` 仅原样读取 `row.enabled`（不重算不改写），`XSkinBattleRing`／`XSkinBattleSkillList` 继承 `XBattleList._ok()`／`chosen`／`cancelled`，仅覆写 `_hit` 点选几何区域；`XSkinTargetHint` 不触碰 `_target_pool`、`_hover`、`_picked` 与返回值；`reason`／`skin_costs`／`target_text`／`left_text`／`target_hint` 均无状态写回与 RNG 调用。不涉及转 co 甲档。
+  3. **「不能用才写原因」「目标 · 用完剩多少」数据来源（只看代码＋专项局部覆盖）**：
+     - `decorate` 仅在 `not enabled` 时调 `reason()`；`foot_text`／`_draw_row` 在 `enabled` 时不画 `reason`。
+     - `reason` 按 `XBattleLogic.can_use` 顺序读取 `warmups`、`cooldowns`、`XTianqiQiyinEffects.silenced`、`TRAIT_STYPE_SEAL`／`TRAIT_SKILL_SEAL`、`can_pay_items`、`can_pay_hp`、`skill_cost`（TP／MP，含 `XAlienBattle.glutton_mp`），其余专属条件兜底「现在不能用」。
+     - `target_text` 经 `XAlienBattle.project(a, e)` 投影后读 `SCOPE_TEXT[scope]`；`target_hint` 复读已投影的 `_target_skill` 与 `group.size()`（`group.size() > 1` 拼 `· N 个`）；`left_text` 读 `logic.state.item_count`、`logic.skill_cost`、`XBattleLogic.skill_hp_cost`。
+  4. **两排站位相关参数现状（只看代码）**：
+     - 交付单「现状与没做的」及「交接板」已写明：`party_layout(5)` 前后两列差 100、当前环跟行动者走且后排环会压到前排小人，留作 `XSkinBattleRing` static var：`OFFSET`（默认 `(0, -32)`）、`START_DEG`（`258.0`）、`STEP_DEG`（`36.0`）、`MAX_SPAN_DEG`（`252.0`）、`RADIUS`／`MAX_RADIUS`／`ORB_R` 及 `XSkinBattleSkillList.GAP_TO_ACTOR`（`37.0`），已标待 Kyo 拍板并在 2B 交接带出。
+  5. **文字审（`ba1f7ed` 口径＋按键提示统一）**：
+     - 新增可见文字表与 `skin_battle*.gd` 字面量一致，符合 `ba1f7ed`（`文字审_小A.md`）：`#200` 用「`%s`的回合」（不用「的行动」）；`#212` 列表说明栏支持两行换行（`draw_multiline_string(..., 2)`，`FOOT_H = 52`）并兼容 MP／TP／生命／物品；全角中文括号「（倒下的）」、中文与数字半角空格（「冷却 2 回合」「预热 1 回合」「敌方随机 1 个」「TP 不够」「敌方全体 · 3 个」）、名词口径（「生命」「物品」「技能」「空」）均统一；`charset_hei`／`charset_song` 零缺字。
+     - 按键提示：2A 战斗界面同 `v0.7` 样稿 `battle` 未加底部按键提示条，无新增按键文案（第 0 期既有 `XSkinKeyHints` 为统一胶囊套框）。
+     - **文字必改**：无。
+- **P1 / P2 / P3**：
+  - **P1**：0。
+  - **P2**：0。
+  - **P3（3 处边界显示差异，不影响可用判定与正常流程，可并后顺手补或留 2B）**：
+    1. `skin_battle.gd` `left_text`（及 `header_text`）读 `a.mp` 计算「用完剩 MP …」，但异化饕餮词条（`XAlienBattle.glutton_mp(a)`）实际由饥饿储备代扣 MP（`a.mp == 0`）、屠苏噬主可由队友代付 MP（`XTusu.can_pay`），该情形下技能可用但 `left_text` 会算出负余量（如 `用完剩 MP -50`）。
+    2. `skin_battle.gd` `reason` 先于 `XYunshang.eye_bypass(a, e)` 判 `cooldowns`、先于 `XAlienBattle.silence_bypass`／`XToji.switch_unsealed` 判 `TRAIT_STYPE_SEAL`：若绕过冷却或绕过类别封印后仍因另一原因（如 MP 不够）不可用，`reason` 会优先报成「冷却 X 回合」或「被封印」。
+    3. `选测对照.json` `ui_skin` 组 `scenes` 尚未列入 `xiyou_ui_skin_battle.tscn`（改 `tests/xiyou_ui_skin_battle.gd` 自身会进 `test` 组跑，后续只改 `skin_*.gd` 时依 `refs: true` 也会引用到，但补进 `ui_skin` 组更稳）。
+- **没核到的**：
+  - 有窗口实拍（`xiyou_ui_skin_battle.tscn` 16:9／20:9 实机截图、`皮肤关闭对照.py` 现场重跑与 2A 截图肉眼逐像素审看未重跑，仅以 `--headless` 58/58 及已有 `关闭对照/` `--compare` 13/13 核对）。
+  - 选测全量 130 场景（含楼层 `xiyou_floor*`、map186、事件对照 `xiyou_event_compare*`）及 `工具回归.py`，留待总装 `--affected --cloud`。
+
