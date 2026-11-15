@@ -34,7 +34,7 @@
 
 ## 交接板
 
-- 下一步：3B 完成；1C 合入 main 后工坊无须再改（新皮肤开着时工坊不读 `XWebPanel` 颜色）。
+- 下一步：3B 完成（1C 已在 main；新皮肤开着时工坊不读 `XWebPanel` 颜色，1C 的 P3-1 工坊部分收掉）；`xiyou_input_handled` 挂在 `skin_showcase.gd`（见「验证」），main 上同样挂，待修。
 - 用户试玩说明：无（天启篇没对玩家开放；发行构建标题照旧）。开发版进标题、天启篇存档在方桌选线、开异化工坊能看到；截图见「验证」。
 - 需要用户决定：无。
 
@@ -45,17 +45,17 @@
 ## 验证
 
 - 新专项 `tests/xiyou_ui_skin_3b.tscn`：有窗口 48/48（含 12 张截图）、无头 36/36。覆盖：标题 `skin_on()` 开发开／发行关／`ENABLED = false` 关、`XUiSkin.on()` 在标题照旧为假、选中条垫在选中项后且跟着走、extras 换皮且大小不变、按键提示、确定执行同旧、关掉没有选中条且光标照旧；选线卡开着 skin 画法、字不小于 14、卡在安全边距内、左右循环、确定／取消返回值同旧、关掉走旧画法；方桌提示三种字、面朝方桌才显示、忙时／背对／关掉不显示；工坊开着页签（异化装备、异化核、装备重铸…）、列表与操作栏、Q／E 换页再换回、**点屏上的「分解为…」出确认框、焦点在「确认分解」、点「确认分解」真的分解掉一件**、关掉照旧（PaneFrame）、开关两边节点树结构一致。
-- **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main`（合 main 后，main＝85577b3ab）→ 主菜单、状态、物品、技能、装备、设置、天启篇标题、选线四卡、异化工坊 × 西游存档默认／天启篇存档 `ENABLED = false` 共 18 张逐像素 SAME。合 main 前对分支切出点 17c4ba6b2 也是 16 张全 SAME。
+- **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main`（合 main 后，main＝e3ffadf43，含 1A、1B、1C）→ 主菜单、状态、物品、技能、装备、设置、装备检索、天启篇标题、选线四卡、异化工坊 × 西游存档默认／天启篇存档 `ENABLED = false` 共 20 张逐像素 SAME。合 main 前对分支切出点 17c4ba6b2 也是 16 张全 SAME。
 - 选测（本地，`选测.py main --list` 78 个里挑和改动直接相关的 23 个）：ui_smoke、xiyou_alien_config、xiyou_alien_workshop、xiyou_tianqi_alien_gear、xiyou_tianqi_e2e、xiyou_tianqi_ending、xiyou_tianqi_look、xiyou_tianqi_reforge、xiyou_tianqi_title*、xiyou_ui_skin*（含 1a、1b、3b、offshot）、xiyou_ui_input、xiyou_input_handled、xiyou_newgame_back、xiyou_update_check、xiyou_map、xiyou_map_dispatch、xiyou_flow、xiyou_splash_autosave：22 个通过；**`xiyou_input_handled` 挂在 `modes/xiyou/ui/skin/skin_showcase.gd` 直接调 `set_input_as_handled`（1A 带进 main 的，本分支没改这个文件，main 上同样会挂）**——请总装或 1A 返工改成 `XKeyMap.handled(self)`。日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_084800_r6j56xxy/`。其余 55 个（楼层、事件对照四片、地图）是因为改了 `modes/xiyou/map/tianqi_table.gd` 被按目录选上，本地没跑：方桌只多一个只在 `XUiSkin.on()` 时显示的胶囊节点，调查逻辑没动。
 - 给总装：`合并车道.sh --finish --affected --cloud`。
 - `语法检查.py`：0 个问题。`发行空壳.py check`：通过。`工具回归.py`：全部通过（96 秒）。
-- 截图（git 忽略目录 `03_再刷重制_Godot/04_验证/本地结果/ui_skin_3b/`）：`ui_skin_3b_title_16x9.png`／`_20x9.png`、`ui_skin_3b_line_cards_16x9.png`／`_20x9.png`、`ui_skin_3b_table_chip_16x9.png`／`_20x9.png`（黑底上看胶囊）、`ui_skin_3b_alien_workshop_16x9.png`／`_20x9.png`、`ui_skin_3b_alien_workshop_tab2_*`（异化核页）、`ui_skin_3b_alien_workshop_confirm_*`（分解确认框）；`关闭对照/base`、`关闭对照/branch` 各 18 张。
+- 截图（git 忽略目录 `03_再刷重制_Godot/04_验证/本地结果/ui_skin_3b/`）：`ui_skin_3b_title_16x9.png`／`_20x9.png`、`ui_skin_3b_line_cards_16x9.png`／`_20x9.png`、`ui_skin_3b_table_chip_16x9.png`／`_20x9.png`（黑底上看胶囊）、`ui_skin_3b_alien_workshop_16x9.png`／`_20x9.png`、`ui_skin_3b_alien_workshop_tab2_*`（异化核页）、`ui_skin_3b_alien_workshop_confirm_*`（分解确认框）；`关闭对照/base`、`关闭对照/branch` 各 20 张。
 
 ## 要注意的
 
 - 标题按构建开新界面（开发构建就开），和别的页「天启篇存档才开」不同：标题没读档，没法按存档判断；发行构建恒关，重制版玩家看到的不变。若 Kyo 要开发版标题也默认旧样子，把 `XTianqiTitle.skin_on()` 最后一行改成 `return false` 即可。
 - 选线卡、标题在 20:9 下：选线卡 `request_wide` 横向铺开；标题没有 `request_wide`（底图本来按 cover 铺满，菜单居中），20:9 截图是窗口按原拉伸方式显示的样子。
-- 合并冲突：`tests/xiyou_ui_skin_offshot.gd` 的 `PAGES` 一行和头注释，1C 也改了（加 `XGearSearch` 与检索源两行）；合并时把三页并进去即可。
+- 已合 main 到 e3ffadf43（1A、1B、1C 都在）：`tests/xiyou_ui_skin_offshot.gd` 和 1B、1C 的冲突已解（页名单并在一起）；合 1C 后重跑 3B 专项、1b／1c 专项、装备检索、工坊三个旧专项、关闭对照，全过。
 
 ## 可优化（流程／工具／效率）
 
