@@ -78,3 +78,28 @@
 - b08046f10 WIP：弹窗打印一行给冷启动验证；交付单初稿
 - 58bbebaed 发行空壳：内部类类型标注换成 Variant＋单测
 - 51c1b523a 合并 main
+
+
+## co 甲档核查
+
+- 核查者：co；对象 cc/update-whatsnew 至 d5abf4b1d（含 58bbebaed）；2026-11-15。
+- **58bbebaed：通过，可单独挑入**，已优先回报协调。实跑 `测试发行空壳.py` 12/12；调用 `build_all` 实际生成 62 份空壳，missing=[]。逐个检查所有目标的内部类：XTianqiQiyinShow.Overlay、XTianqiTable._Chip、XTianqiLineCards._Card 在生成物均无残留。全工程搜 `: _`／`-> _` 后，另一个真正的内部类标注为 screen_fx_view._WeatherCanvas，此文件不换空壳，类本体仍在，不受影响。新增单测确实覆盖标量、Array 元素、参数、返回值，但它只检查生成文本，不是引擎编译测试；下述发行冷启动补足当前实际工程编译覆盖。未发现当前代码漏网；不据此承诺未来任意嵌套／限定内部类语法也支持。
+- **整体不通过：P1 0，P2 1，P3 0**（只读核查，未修改实现）。
+
+### P2：坏记录缺少字段／字段类型错误没有统一拒绝
+
+位置：`core/whats_new.gd:81,91,97,109`。`_read` 只验证 JSON 顶层是字典，之后直接 `int(code)`、`seen == true`。独立 Godot 实测：写入 `{"code":618,"notes":["hello"]}` 后 `pending(618)` 返回非空（缺少 version/date/seen 仍会弹）；写入 code 为 `[618]` 时 current 第 91 行报 `Invalid call. Nonexistent 'int' constructor`；seen 为字符串时第 97 行报 `Invalid operands 'String' and 'bool'`。这是脚本错误，未观察到进程退出，不能称为整游戏崩溃。同号损坏记录还会被 note_check 的同号早退保留。现有 57 条专项只覆盖截断 JSON，没覆盖合法 JSON 的缺字段／错类型；应由执行轨补统一字段及类型校验并加上述回归，再复核。
+
+### 已实测
+
+- 原专项 `xiyou_whats_new` 57/57，退出 0（此次独立复跑，日志 `04_验证/本地结果/并行测试/20261115_185337_al360pvo/`）。包括两种样式对象、真标题开发／发行模拟、ENABLED/FROM_CHECK、真 HTTP 安装登记、check.json notes 往返；原断言通过不覆盖上述新反例。
+- 独立复制车道冷启动脚本到 `/tmp/co_whatsnew_review/` 后重新出补丁并运行，未复用旧冷启动结果：底包 477＋本树发行空壳补丁 619（5.3 MB），macOS 发行模板替身、隔离 HOME。首次载入补丁→进标题→弹出→记已读；再次启动不弹；记录号错不弹；无补丁底包进标题，脚本全部检查通过，无 SCRIPT ERROR／Parse Error。脚本为四次启动、8 个具名 check（车道此前写 9/9，不沿用这个计数）。
+- 新反例与冷启动摘要／四次日志：`04_验证/本地结果/co_whatsnew_review/`（本地证据，不入 Git）。
+
+### 只看代码的结论与边界
+
+- boot_patch.gd 未改；project.godot 仅随 main 合并改变开发编号，BootPatch 仍为首个自动加载，其 `_init` 载补丁、不引用 class_name 的做法未动。新增 XWhatsNew 在后续更新客户端／标题／设置页使用。
+- 未改 update_check 的清单解析、补丁下载／校验／登记格式；新增只消费原 latest.notes 等字段，check.json 仅加可缺省 notes。因此 0.481 原格式清单可直接消费；未联网重新拉取实际线上 0.481 清单或签名。
+- FROM_CHECK 明确允许无补丁、整包首次启动也弹：仅清单结果 LATEST 且 code 等于当前运行号时补记。底包号低于清单最新号不会误记最新说明；若产品要求“只有装过补丁才弹”，当前行为不满足，但本单交付已明确把整包首次启动列作预期，不另报缺陷。
+- 两种标题分别传入旧样式／新皮肤标识，设置页按 skin 选择。ENABLED=false 阻断记录、自动弹出和设置入口；check.json 新增 notes 仍会写入，这是旁路缓存修复，玩家流程恢复旧行为。
+- 未核到：真实窗口观感及遮挡／手柄体验、真实 Windows／安卓机、线上清单实时请求；没有重跑车道 51 个选测（此次为只读核查，复跑专项＋发行冷启动，相关报告边界如上）。
