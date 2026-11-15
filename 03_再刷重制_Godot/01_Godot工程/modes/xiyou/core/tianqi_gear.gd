@@ -64,6 +64,16 @@ static func type_name(etype: int) -> String:
 
 
 ## 显示用的槽位（槽位序号的列表，按天启篇排列；不是天启篇就是 0..n-1）
+## 槽位序号 → 原装备类型（和 view 同源：双持时第 2 格照旧算副手 2；178 哈基米没有副手，槽 1 起是类型 3…）
+static func base_types(a: XActor) -> Array:
+	var base := []
+	for i in range(a.equip_slots().size() + (1 if XCat.own(a) else 0)):
+		base.append(i + 1)
+	if XCat.own(a):
+		base = base.filter(func(t): return t != 2)
+	return base
+
+
 static func view(a: XActor) -> Array:
 	var slots := a.equip_slots()
 	var out := []

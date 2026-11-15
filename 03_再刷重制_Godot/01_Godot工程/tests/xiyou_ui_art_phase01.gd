@@ -275,10 +275,41 @@ func _equip() -> void:
 	var names := (plan.nav as Array).map(func(r): return int(view[r]) + 1)
 	check("branch_nav_c", names == [1, 17, 2, 13, 3, 9, 4, 6, 10, 8, 5, 7, 16], names)
 	check("branch_links_c", (plan.links as Array).size() == 5)
-	# 没有副手栏（猫）：主环 7 颗，挂在副手上的法宝改挂主环第一颗
-	var cat := view.filter(func(sl): return sl != 1)
-	var pc := XSkinEquipPage.ring_plan(cat, 3)
-	check("branch_cat_all_placed", (pc.nav as Array).size() == 12 and (pc.custom as Array).filter(func(c): return c.has("deg")).size() == 7)
+	# 178 哈基米（真槽位，18 槽、没有副手）：类型按 XTianqiGear.base_types 认，主栏 7 颗留在固定罗盘角（副手位空），
+	# 项链不上主环，法宝改挂武器，5 条连线、没有掉到底下兜底排的（小A核 v4 P2-1）
+	var cs := _state("war")
+	XCat.recruit(cs)
+	var ca := cs.actor(XCat.ACTOR)
+	var cview := XTianqiGear.view(ca)
+	var ctypes := XTianqiGear.base_types(ca)
+	var pc := XSkinEquipPage.ring_plan(cview, 3, ctypes)
+	var on_ring_types := []
+	var angles := {}
+	for i in (pc.nav as Array).size():
+		if (pc.custom[i] as Dictionary).has("deg"):
+			var t := int(ctypes[int(cview[int(pc.nav[i])])])
+			on_ring_types.append(t)
+			angles[t] = roundi(float(pc.custom[i].deg))
+	var spare := (pc.custom as Array).filter(func(c): return not c.has("deg") and (c.pos as Vector2).y == 200.0).size()
+	check("branch_cat_types", ctypes.size() == ca.equip_slots().size() and int(ctypes[1]) == 3 and int(ctypes[7]) == 9, ctypes)
+	check("branch_cat_all_placed", (pc.nav as Array).size() == 12 and on_ring_types.size() == 7 and not on_ring_types.has(9) and spare == 0 \
+		and (pc.links as Array).size() == 5, [on_ring_types, spare, (pc.links as Array).size()])
+	check("branch_cat_fixed_angles", angles.get(1) == -90 and angles.get(3) == 0 and angles.get(7) == 225 and not angles.has(2), angles)
+	# 选中放大的过渡（XUiSkin.sel_scale_step，全界面共用）：动效开时 0.12 秒过渡、关时直接到位
+	var rn := XSkinRingNav.new()
+	rn.items = [{"name": "甲"}, {"name": "乙"}, {"name": "丙"}]
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	rn.advance(0.0)
+	rn.select(1)
+	rn.advance(0.06)
+	var mid := rn.item_scale(1)
+	rn.advance(0.1)
+	var done := rn.item_scale(1)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn.select(2, false)
+	check("sel_scale_ease", mid > 1.02 and mid < XUiSkin.SEL_SCALE - 0.02 and is_equal_approx(done, XUiSkin.SEL_SCALE) \
+		and is_equal_approx(rn.item_scale(2), XUiSkin.SEL_SCALE) and is_equal_approx(rn.item_scale(1), 1.0), [mid, done])
+	rn.free()
 
 
 func _equip_layout(lay: int) -> void:
@@ -305,7 +336,7 @@ func _equip_layout(lay: int) -> void:
 			if ring.item_at(p) != i or ring.item_at(p + Vector2(hit_r - 1.0, 0)) != i:
 				hit_ok = false
 			var gp := ring.position + p
-			var er := ring.orb_radius * 1.16
+			var er := ring.orb_radius * XSkinRingNav.SEL_SCALE
 			if gp.x - er < 0.0 or gp.x + er > sk.layout.left.size.x or gp.y - er < XSkinEquipPage.STRIP_H or gp.y + er > sk.layout.left.size.y - XSkinEquipPage.CAPTION_H:
 				inside = false
 		check("equip13_orbs_apart_" + tag, sep_ok)
@@ -316,35 +347,17 @@ func _equip_layout(lay: int) -> void:
 		var face_r := (sk.ring_radius - XSkinEquipPage.BRANCH_LABEL_R - 2.0) if lay > 0 else sk.ring_radius - 68.0
 		check("equip13_labels_inner_" + tag, ring.label_inner > 0.0 and ring.label_inner + 18.0 <= ring.radius - ring.orb_radius \
 			and ring.label_inner - 18.0 >= face_r, [ring.label_inner, ring.radius, face_r])
-		if lay == 3:   # C 第四版（Kyo 11-16）：名字互不相压、不压别的球、不出左块；连线是三点折线（根→径向拐点→副栏）
-			var rects := []
-			for i in n:
-				rects.append(ring.label_layout(i).rect)
-			var lab_ok := true
-			var bad := []
-			for i in n:
-				var ri: Rect2 = rects[i]
-				if ri.position.x < 0.0 or ri.end.x > ring.size.x or ri.position.y < 0.0 or ri.end.y > ring.size.y:
-					lab_ok = false
-					bad.append(["out", i])
-				for j in n:
-					if j > i and ri.intersects(rects[j]):
-						lab_ok = false
-						bad.append(["lab", i, j])
-					var q := ring.item_pos(j)
-					var near := Vector2(clampf(q.x, ri.position.x, ri.end.x), clampf(q.y, ri.position.y, ri.end.y))
-					if j != i and near.distance_to(q) < ring.orb_radius * 1.16:
-						lab_ok = false
-						bad.append(["orb", i, j])
-			check("equip13_c_labels_clear_" + tag, lab_ok, bad)
-			# 连线：三点钝角斜折，拐点在根栏径向上、不贴根栏（拐点前一段占全程四成五以上），拐角大于 105°（Kyo 11-16 v6）
+		if lay == 3:   # C：每颗选中时（放大后）名字互不相压、不压别的球、选中球不碰邻居、不出环区
+			_c_labels_check(ring, tag)
+			# 连线：三点钝角斜折，拐点在根栏径向上、不贴根栏（拐点离选中球边还有 10 以上、拐点前一段占全程三成五以上），拐角大于 95°
+			# （Kyo 11-16 v6／v7；项链靠左块右边只容径向伸 40、拐角约 100°，其余四条约 125°）
 			var link_ok := ring.links.size() == 5
 			for l in ring.links:
 				var r0: Vector2 = l[0]
 				var k: Vector2 = l[1] if (l as Array).size() == 3 else Vector2.ZERO
 				var a1 := k.distance_to(r0)
-				if (l as Array).size() != 3 or absf(k.angle_to(r0)) > 0.01 or (r0 - k).normalized().dot((l[2] - k).normalized()) > -0.26 \
-					or a1 < 0.45 * (a1 + k.distance_to(l[2])):
+				if (l as Array).size() != 3 or absf(k.angle_to(r0)) > 0.01 or (r0 - k).normalized().dot((l[2] - k).normalized()) > -0.08 \
+					or a1 < 0.35 * (a1 + k.distance_to(l[2])) or a1 - ring.orb_radius * XSkinRingNav.SEL_SCALE < 10.0:
 					link_ok = false
 			check("equip13_c_links_elbow_" + tag, link_ok, ring.links)
 			check("equip13_no_notches_" + tag, not bool(ring.sty("notches")))
@@ -400,6 +413,44 @@ func _equip_layout(lay: int) -> void:
 	p2.queue_free()
 	await frames(3)
 	XSkinEquipPage.ONE_PAGE = true
+
+
+## C 摆法：轮流选中每一颗（动效关、放大直接到位），查放大后的球和名字
+func _c_labels_check(ring: XSkinRingNav, tag: String) -> void:
+	var n := ring.items.size()
+	var keep := ring.index
+	var lab_ok := true
+	var grow_ok := true
+	var bad := []
+	for sel in n:
+		ring.select(sel, false)
+		if absf(ring.item_scale(sel) - XSkinRingNav.SEL_SCALE) > 0.001 or ring.label_layout(sel).fs <= ring.label_size:
+			grow_ok = false
+		var ps := ring.item_pos(sel)
+		for j in n:   # 选中球放大后和邻居至少隔 4
+			if j != sel and ps.distance_to(ring.item_pos(j)) < ring.orb_radius * (XSkinRingNav.SEL_SCALE + 1.0) + 4.0:
+				grow_ok = false
+				bad.append(["grow", sel, j])
+		var rects := []
+		for i in n:
+			rects.append(ring.label_layout(i).rect)
+		for i in n:
+			var ri: Rect2 = rects[i]
+			if ri.position.x < 0.0 or ri.end.x > ring.size.x or ri.position.y < 0.0 or ri.end.y > ring.size.y:
+				lab_ok = false
+				bad.append(["out", sel, i])
+			for j in n:
+				if j > i and ri.intersects(rects[j]):
+					lab_ok = false
+					bad.append(["lab", sel, i, j])
+				var q := ring.item_pos(j)
+				var near := Vector2(clampf(q.x, ri.position.x, ri.end.x), clampf(q.y, ri.position.y, ri.end.y))
+				if j != i and near.distance_to(q) < ring.orb_radius * ring.item_scale(j):
+					lab_ok = false
+					bad.append(["orb", sel, i, j])
+	ring.select(keep, false)
+	check("equip13_c_labels_clear_" + tag, lab_ok, bad)
+	check("equip13_c_sel_grow_" + tag, grow_ok, bad)
 
 
 # ---- 全关＝回旧；新皮肤关时一概不碰 ----
@@ -473,6 +524,21 @@ func _shots() -> void:
 	XSkinEquipPage.LINK_CURVE = false
 	get_window().size = Vector2i(1280, 720)
 	await frames(6)
+	# v7：选中放大（选中项链＝下 5 格、选中主栏副手＝下 2 格），178 哈基米 A／B 各一张
+	for shot in [["equip_sel_necklace_16x9", 5, false, false], ["equip_sel_main_16x9", 2, false, false],
+			["equip_cat_16x9", 3, true, false], ["equip_cat_curve_16x9", 3, true, true]]:
+		XSkinEquipPage.LINK_CURVE = shot[3]
+		var e4: Node = await _shot_equip(shot[1], shot[2])
+		await frames(6)
+		if shot[2]:
+			var sk4: XSkinEquipPage = (e4 as XEquipScene).skin
+			check("cat_shot_actor", (e4 as XEquipScene).actor().actor_id == XCat.ACTOR and sk4.ring.items.size() == 12 and sk4.ring.links.size() == 5,
+				[sk4.ring.items.size(), sk4.ring.links.size()])
+			_c_labels_check(sk4.ring, "cat_" + str(shot[3]))
+		await _save_shot(shot[0], SIZES[0])
+		e4.queue_free()
+		await frames(3)
+	XSkinEquipPage.LINK_CURVE = false
 	for line in ["death", "war", "famine", "plague"]:
 		var m: Node = await _build_menu(line)
 		await frames(6)
@@ -511,12 +577,15 @@ func _shot_items() -> Node:
 	return page
 
 
-func _shot_equip() -> Node:
-	_state("war")
+func _shot_equip(downs := 3, cat := false) -> Node:
+	var s := _state("war")
+	if cat:   # 178 哈基米排第一个（没有副手的 12 栏）
+		s.party.erase(XCat.ACTOR)   # 直接排进队伍（天启篇里 recruit 会弹「只从大厅招募」提示，挡截图）
+		s.party.insert(0, XCat.ACTOR)
 	var page := XEquipScene.new()
 	add_child(page)
 	await frames(4)
-	for i in 3:
+	for i in downs:
 		page._unhandled_input(_key("ui_down"))
 	await frames(2)
 	return page

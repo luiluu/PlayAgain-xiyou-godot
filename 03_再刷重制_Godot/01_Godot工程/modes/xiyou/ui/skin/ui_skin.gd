@@ -324,6 +324,29 @@ static func breathing() -> bool:
 	return motion() == Motion.FULL
 
 
+## ---- 选中放大（Kyo 11-16：选中的东西稍微放大、带一点过渡；先用在装备栏位环，T024 推广到新界面各页的选中项）----
+## 用法：每项存一个当前倍数 cur（初值 1），每帧 cur = XUiSkin.sel_scale_step(cur, 选中否, delta)，变了就重画；
+## 画球／图标／名字时乘 cur（名字字号可按 sel_scale_frac(cur) 加几号）。动效关时直接到位。
+const SEL_SCALE := 1.15
+const SEL_TIME := 0.12
+
+
+static func sel_scale_target(on: bool) -> float:
+	return SEL_SCALE if on else 1.0
+
+
+static func sel_scale_step(cur: float, on: bool, delta: float) -> float:
+	var target := sel_scale_target(on)
+	if motion() == Motion.OFF:
+		return target
+	return move_toward(cur, target, (SEL_SCALE - 1.0) * delta / SEL_TIME)
+
+
+## 放大进度 0～1（给字号加几号用）
+static func sel_scale_frac(cur: float) -> float:
+	return clampf((cur - 1.0) / (SEL_SCALE - 1.0), 0.0, 1.0)
+
+
 ## 行间滑动用时：动效关时 0（直接跳）
 static func slide_time() -> float:
 	return 0.0 if motion() == Motion.OFF else SLIDE_TIME

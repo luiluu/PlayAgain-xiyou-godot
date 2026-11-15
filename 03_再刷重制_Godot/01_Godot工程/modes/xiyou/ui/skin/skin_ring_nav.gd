@@ -5,7 +5,7 @@ extends Control
 ## - 主环 1.5px 线色 75%＋外侧 10px 绯红 5% 的光带＋一圈 22% 细线；
 ## - 七道旧金菱形刻痕（七印意象，固定七道，和项数无关），落在项与项之间；
 ## - 项是环上的圆球（亮面→暗面径向，线色 65% 描边），图标居中，名字在球外（上半圈写在球上方、下半圈写在球下方）；
-##   选中的球放大 1.16、朱红 2.5px 描边＋绯红外晕，名字白色加大；
+##   选中的球放大 SEL_SCALE（1.15，0.12 秒过渡）、朱红 2.5px 描边＋绯红外晕，名字白色加大；
 ## - 焦点光弧：主环上 9% 周长的朱红弧，转到选中项（0.14 秒冲过 4°、0.2 秒回正；动效关时直接到）。
 ## 项按 items 排（第一项在正上方，顺时针等分），项数随数据（可见组 6 或 7）变，不用改布局。
 ## 项带 art_normal／art_selected（组入口 u4，XUiSkin.GROUP_ICONS_U4）时：贴图按原生大小画（64）、最近邻、整数像素位置，选中只换贴图；
@@ -38,6 +38,9 @@ const ARC_FRAC := 0.09
 const ARC_TIME := 0.2
 const ARC_OVERSHOOT := 4.0
 const NOTCHES := 7
+## 选中放大（球、图标、名字一起；倍数和过渡时长在 XUiSkin.SEL_SCALE／SEL_TIME，全界面共用）
+const SEL_SCALE := XUiSkin.SEL_SCALE
+var _scales := {}   # 项 → 现在的放大倍数（过渡中）
 
 
 ## u4 贴图画在这个子画布项（最近邻；法阵 svg 照旧线性过滤）。_draw 里同步清空重画，不另排一帧
@@ -132,6 +135,9 @@ var center_shift := Vector2.ZERO
 var custom: Array = []
 ## 枝丫连线（相对环心的折线点列）：[[Vector2, Vector2, …], …]；中间的拐点画小菱形节点
 var links: Array = []
+## 每条连线上的副栏是第几项（选中时提亮那条线）；links_elbowed＝连线中间点是拐点（弧线模式只认首尾）
+var link_items: Array = []
+var links_elbowed := false
 ## 环的样式表（留给「高品质装备改变主环样式」：换一张表就换环的描边、光带、虚线、刻痕、枝丫、球的颜色和线宽；没给的键用 DEFAULT_STYLE）
 var style: Dictionary = {}
 const DEFAULT_STYLE := {
@@ -152,6 +158,22 @@ func sty(key: String):
 func ring_line_color() -> Color:
 	var c: Color = sty("ring_line")
 	return Color(XUiSkin.LINE, float(sty("ring_line_a"))) if c.a < 0.0 else c
+
+
+## 第 i 项现在的放大倍数：选中项过渡到 SEL_SCALE，其余回 1（动效关时直接到）
+func item_scale(i: int) -> float:
+	if XUiSkin.motion() == XUiSkin.Motion.OFF:
+		return XUiSkin.sel_scale_target(i == index)
+	return float(_scales.get(i, XUiSkin.sel_scale_target(i == index)))
+
+
+func _ease_scales(delta: float) -> void:
+	for i in items.size():
+		var cur := item_scale(i)
+		var nxt := XUiSkin.sel_scale_step(cur, i == index, delta)
+		_scales[i] = nxt
+		if nxt != cur:
+			queue_redraw()
 
 
 func center() -> Vector2:
@@ -182,19 +204,25 @@ func label_layout(i: int) -> Dictionary:
 	var body := XUiSkin.font("body")
 	var p := item_pos(i)
 	var on := i == index
-	var r := orb_radius * (1.16 if on else 1.0)
+	var k := item_scale(i)
+	var r := orb_radius * k
 	var name := str(items[i].get("name", ""))
-	var fs := label_size + (label_sel_boost if on else 0)
+	var fs := label_size + roundi(label_sel_boost * XUiSkin.sel_scale_frac(k))
 	var tw := body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var lab := str(custom[i].get("label", "")) if not custom.is_empty() and i < custom.size() else ""
 	if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：字号放大后标签不越出环的左右边（先缩到 15，再加「…」）
-		var fit := XSkinList.fit_text(body, name, label_room(p), fs, XUiSkin.FS_MIN)
+		var room := label_room(p)
+		if lab == "right" and size.x > 0.0:   # 写在球一侧的名字：按那一侧到边的距离算（小A核 v4 P3-1）
+			room = maxf(24.0, size.x - 4.0 - (p.x + r + 8.0))
+		elif lab == "left" and size.x > 0.0:
+			room = maxf(24.0, p.x - r - 8.0 - 4.0)
+		var fit := XSkinList.fit_text(body, name, room, fs, XUiSkin.FS_MIN)
 		name = str(fit[0])
 		fs = int(fit[1])
 		tw = body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var above := sin(deg_to_rad(item_deg(i))) < -0.2
 	var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
 	var lx := p.x - tw / 2.0
-	var lab := str(custom[i].get("label", "")) if not custom.is_empty() and i < custom.size() else ""
 	if lab != "":   # 分支布局：枝丫上的球名字写在指定一侧
 		match lab:
 			"up":
@@ -249,6 +277,7 @@ func step(d: int) -> void:
 
 
 func advance(delta: float) -> void:
+	_ease_scales(delta)
 	if _arc_t < 1.0:
 		_arc_t = minf(1.0, _arc_t + delta / ARC_TIME)
 		var over := ARC_OVERSHOOT * signf(_arc_to - _arc_from)
@@ -351,14 +380,21 @@ func _draw() -> void:
 		var k := minf((R - 50.0) * 2.0 / maxf(ts.x, ts.y), 4.0)
 		draw_texture_rect(center_texture, Rect2(c - ts * k / 2.0, ts * k), false)
 	# 枝丫连线：旧金细线＋节点小菱形（星座连线）
-	for path in links:
-		if bool(sty("link_curve")) and (path as Array).size() >= 2:
-			draw_polyline(curve_points(c, path[0], path[-1]), sty("link"), float(sty("link_w")), true)
+	for li in links.size():
+		var path: Array = links[li]
+		var hot := li < link_items.size() and (link_items[li] as Array).has(index)   # 选中的是这条线上的副栏：线提亮加粗（小A核 v4 P3-2）
+		var lc: Color = sty("link")
+		if hot:
+			lc = Color(lc, minf(1.0, lc.a + 0.4))
+		var lw := float(sty("link_w")) + (0.75 if hot else 0.0)
+		if bool(sty("link_curve")) and links_elbowed and path.size() <= 3:   # 弧线只给「根→拐点→副栏」这种单副栏枝（一枝串两颗的 A／B 摆法照旧折线）
+			draw_polyline(curve_points(c, path[0], path[-1]), lc, lw, true)
 			continue
-		for k in range((path as Array).size() - 1):
-			draw_line(c + path[k], c + path[k + 1], sty("link"), float(sty("link_w")), true)
-		for k in range(1, (path as Array).size() - 1):   # 拐点：小菱形节点（七印环刻痕同款）
-			_diamond(c + path[k], float(sty("knot_size")), sty("knot"))
+		for k in range(path.size() - 1):
+			draw_line(c + path[k], c + path[k + 1], lc, lw, true)
+		if links_elbowed:   # 拐点：小菱形节点（七印环刻痕同款）；A／B 摆法中间点是副栏本身，不画
+			for k in range(1, path.size() - 1):
+				_diamond(c + path[k], float(sty("knot_size")), sty("knot"))
 	# 焦点光弧
 	if not items.is_empty() and on_ring(index):
 		var half := PI * ARC_FRAC
@@ -370,7 +406,7 @@ func _draw() -> void:
 	for i in items.size():
 		var p := item_pos(i)
 		var on := i == index
-		var r := orb_radius * (1.16 if on else 1.0)
+		var r := orb_radius * item_scale(i)
 		var art := has_art(i)
 		if on:
 			var g := XUiSkin.glow_texture()
@@ -385,7 +421,7 @@ func _draw() -> void:
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null and not art:
-			var s := 40.0 * (1.16 if on else 1.0)
+			var s := 40.0 * item_scale(i)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
 		var lay := label_layout(i)
 		var name: String = lay.text

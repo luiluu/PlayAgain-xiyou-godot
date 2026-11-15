@@ -39,14 +39,15 @@ const ONE_PAGE_ORB_R := 22.0
 const ONE_PAGE_LABEL_R := 98.0
 ## 13 栏一页的摆法（O-待定，Kyo 11-15 看审图：「一圈 13 个太密，可以扩展一些不规则的分支子类」）：
 ## 0＝一圈 13 颗（上一版）；1＝A 下垂三枝；2＝B 星座斜出；3＝C 挂主栏（默认；Kyo 11-16 选定 C，A／B 只留作开关）。
-## C 第六版（Kyo 11-16 看 v5：不要直角）：连线是钝角斜折——从根栏沿径向伸出约 48 拐（小菱形），再斜着接副栏，拐角约 125°，
-## 拐点在全程五成多、不贴根栏；项链靠左块右边，只能伸 32。LINK_CURVE＝true 换弧线（径向出发平滑弯过去，不画拐点）。
-## 副栏离环心 167～187；项链在头部斜上方；装备页环上不画七印刻痕（8 栏不是 7，那几颗点没含义）。nodes 第 4 项＝拐点（相对环心）。
+## C 第七版（Kyo 11-16 看 v6）：连线默认钝角斜折——从根栏沿径向伸出约 48 拐（小菱形），再斜着接副栏，拐角约 125°；
+## LINK_CURVE＝true 换弧线（径向出发平滑弯过去，不画拐点）。项链挪到头部右上 (164, −68)，线比 v6 长一倍多（左块右边只容它径向伸 40）。
+## 主栏固定罗盘角（45° 一格）：178 哈基米没有副手，副手位留空、其余栏和拐点不动，法宝改挂武器、直连（小A核 v4 P2-1）。
+## 选中的球和名字放大（1.15 倍、0.12 秒过渡）；选中副栏时它那条连线提亮。装备页环上不画七印刻痕。nodes 第 4 项＝拐点（相对环心）。
 static var LINK_CURVE := false
 static var LAYOUT := 3
 const BRANCH_R := 112.0
 const BRANCH_ORB_R := 24.0
-const BRANCH_LABEL_R := 68.0
+const BRANCH_LABEL_R := 70.0   # 70：130% 字号时主栏名内缘离头像还留几像素（小A核 v4 P3-1）
 ## 主环上的装备类型（显示顺序）；枝丫里的类型 9 项链 10 戒指 13 法宝 16 坐骑 17 神器
 const CORE_TYPES := [1, 2, 3, 4, 6, 8, 5, 7]
 ## 每种摆法：shift＝环心相对环区中心的偏移；branches＝[{root: 根上的装备类型, nodes: [[类型, 相对环心的位置, 名字写哪边], …]}]
@@ -59,10 +60,10 @@ const LAYOUTS := {
 		{"root": 2, "nodes": [[13, Vector2(140, -150), "down"], [17, Vector2(90, -215), "up"]]},
 		{"root": 6, "nodes": [[16, Vector2(100, 190), "right"]]},
 		{"root": 7, "nodes": [[9, Vector2(-140, -150), "down"], [10, Vector2(-90, -215), "up"]]}]},
-	3: {"name": "C 挂主栏", "shift": Vector2(0, 0), "branches": [
+	3: {"name": "C 挂主栏", "shift": Vector2(0, 0), "fixed_angles": true, "branches": [
 		{"root": 1, "nodes": [[17, Vector2(-34, -184), "left", Vector2(0, -160)]]},
 		{"root": 2, "nodes": [[13, Vector2(106, -154), "right", Vector2(113, -113)]]},
-		{"root": 3, "nodes": [[9, Vector2(164, -30), "up", Vector2(144, 0)]]},
+		{"root": 3, "nodes": [[9, Vector2(164, -68), "up", Vector2(152, 0)]]},
 		{"root": 6, "nodes": [[10, Vector2(34, 184), "right", Vector2(0, 160)]]},
 		{"root": 7, "nodes": [[16, Vector2(-154, -106), "down", Vector2(-113, -113)]]}]},
 }
@@ -76,53 +77,63 @@ static func branched() -> bool:
 
 ## 分支摆法：显示行号的导航顺序（nav）、环上每项的摆法（custom，和 nav 一一对应）、枝丫连线（links）。
 ## 按装备类型摆（槽位号＋1）：没有副手栏的角色（猫）主环 7 颗，根不在时挂到主环第一颗上。
-static func ring_plan(view: Array, layout_id: int = -1) -> Dictionary:
+## types：槽位序号 → 原装备类型（XTianqiGear.base_types）；不给时按 槽位＋1（19 槽常规角色）。
+static func ring_plan(view: Array, layout_id: int = -1, types: Array = []) -> Dictionary:
 	var lay: Dictionary = LAYOUTS.get(LAYOUT if layout_id < 0 else layout_id, {})
 	var rows := range(view.size())
 	if lay.is_empty():
-		return {"nav": rows, "custom": [], "links": [], "shift": Vector2.ZERO}
+		return {"nav": rows, "custom": [], "links": [], "link_items": [], "elbows": false, "shift": Vector2.ZERO}
 	var type_row := {}
+	var row_type := {}
 	for k in view.size():
-		type_row[int(view[k]) + 1] = k
+		var sl := int(view[k])
+		row_type[k] = int(types[sl]) if sl < types.size() else sl + 1
+		type_row[row_type[k]] = k
 	var core := []
 	for t in CORE_TYPES:
 		if type_row.has(t):
 			core.append(type_row[t])
 	var n := core.size()
+	var fixed := lay.has("fixed_angles")   # C：主栏固定罗盘角（45° 一格），缺的栏（哈基米没副手）留空位，拐点不乱
 	var nav := []
 	var custom := []
 	var links := []
+	var link_items := []   # 每条连线上的副栏是环上第几项（选中副栏时提亮它那条线）
 	var placed := {}
 	for j in n:
 		var row: int = core[j]
-		var deg := -90.0 + j * 360.0 / n
+		var deg := -90.0 + (CORE_TYPES.find(row_type[row]) * 45.0 if fixed else j * 360.0 / n)
 		var rp := Vector2.from_angle(deg_to_rad(deg)) * BRANCH_R
 		nav.append(row)
 		custom.append({"pos": rp, "deg": deg, "label": ""})
 		placed[row] = true
 		for b in lay.branches:
+			var own_root := type_row.has(int(b.root))
 			if int(type_row.get(int(b.root), core[0])) != row:
 				continue
 			var path := [rp]
+			var its := []
 			for nd in b.nodes:
 				if not type_row.has(int(nd[0])) or placed.has(type_row[int(nd[0])]):
 					continue
 				var r2: int = type_row[int(nd[0])]
+				its.append(nav.size())
 				nav.append(r2)
 				custom.append({"pos": nd[1], "label": nd[2]})
 				placed[r2] = true
-				if (nd as Array).size() > 3:   # 折线拐点（在根栏径向上，画小菱形）
+				if (nd as Array).size() > 3 and own_root:   # 折线拐点（在根栏径向上，画小菱形）；根栏不在、改挂第一颗时直连
 					path.append(nd[3])
 				path.append(nd[1])
 			if path.size() > 1:
 				links.append(path)
+				link_items.append(its)
 	var spare := 0
 	for k in view.size():   # 没摆上的（正常没有）：底下一排
 		if not placed.has(k):
 			nav.append(k)
 			custom.append({"pos": Vector2(-120 + spare * 60, 200), "label": "down"})
 			spare += 1
-	return {"nav": nav, "custom": custom, "links": links, "shift": lay.shift}
+	return {"nav": nav, "custom": custom, "links": links, "link_items": link_items, "elbows": fixed, "shift": lay.shift}
 const STRIP_H := 72.0
 const CAPTION_H := 28.0
 const COUNT_W := 96.0
@@ -159,7 +170,7 @@ func _ready() -> void:
 	ring.style = {"notches": false, "link_curve": LINK_CURVE}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
 	if ONE_PAGE and XTianqiGear.on():
 		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
-		ring.label_sel_boost = 1
+		ring.label_sel_boost = 3 if branched() else 1   # 分支摆法：选中的名字跟球一起放大（Kyo 11-16 v7）
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(_equip_ring_activated)
 	list.right2_w = 58.0
@@ -305,9 +316,11 @@ func _sync_ring_branched(a: XActor) -> void:
 	var row := scene._slot_row()
 	var cheap := [a.get_instance_id(), LAYOUT, scene._cand_rev, view.size()]
 	if _ring_key.is_empty() or _ring_key[0] != cheap:
-		_plan = ring_plan(view)
+		_plan = ring_plan(view, -1, XTianqiGear.base_types(a))
 		ring.custom = _plan.custom
 		ring.links = _plan.links
+		ring.link_items = _plan.link_items
+		ring.links_elbowed = _plan.elbows
 		ring.center_shift = _plan.shift
 	var nav: Array = _plan.nav
 	var idx := maxi(nav.find(row), 0)
@@ -520,7 +533,7 @@ func _draw_ring_extra() -> void:
 		var it: Dictionary = ring.items[i]
 		var p := ring.item_pos(i)
 		var on := i == ring.index
-		var r := ring.orb_radius * (1.16 if on else 1.0)
+		var r := ring.orb_radius * ring.item_scale(i)
 		if bool(it.get("empty", false)):
 			var t := "空"
 			var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
