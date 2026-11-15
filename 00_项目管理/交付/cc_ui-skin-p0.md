@@ -120,3 +120,31 @@
 - 0b0a1162b WIP：皮肤层与通用组件、裁字
 - 074a2a071 WIP：组件陈列页、按键提示、专项测试
 - （其余见 git log）
+
+## 小A 乙档核查
+
+- 核查对象：`cc/ui-skin-p0`（交付提交 `cbbaf293c`），执行者：小A（ag，未改游戏代码，只读核查＋轻量前台验证）。
+- **结论：通过**（乙档 5 项均通过；文字必改 0 条；4 条 P3 提示不阻塞合并，长测试与有窗像素比对留给总装 `--affected --cloud`）。
+
+### 核查项与核实深度
+
+1. **开关（核了规则本身＋读代码＋跑专项）**：`XUiSkin.on()` 与 `cli_mode()`／`parse_cli()` 路径正确：`ENABLED = false` 最优先压过一切；`--ui-skin=new/old` 在 `ReleaseEntry.is_release()` 时 `parse_cli` 恒返 `-1`（发行不认）；正常下走 `XTianqiLine.open_for(XState.current)`（要求天启篇存档 `XTianqi.active(s)` 且在发行构建需 `XTianqi.RELEASE_OPEN`），西游存档、无存档（`null`）、发行门均不开；`GLOBAL_FONT` 默认 `false`。无头 `tests/xiyou_ui_skin.tscn` 88/88 通过（含全部开关与 CLI 断言）。
+2. **关着时与 main 一致（读代码与对照工具口径＋跑无头建页；未重跑有窗像素对比）**：
+   - `xwindow_style.gd`（`_draw`）、`xui.gd`（`font()`、`menu_background()`）、`mv_canvas.gd`（`arrows()`）、`mv_window.gd`（`_draw` 的 `pause`）相对 `main`（`f66cda7a0`）diff 均仅在最外层加 `if XUiSkin.on(): ... return`（`font()` 另加 `GLOBAL_FONT`），关着时不走新分支、原代码未改。
+   - `07_开发环境/皮肤关闭对照.py` 与 `tests/xiyou_ui_skin_offshot.gd` 对照口径站得住：临时 `--shared` 克隆基线运行同一无新类依赖的 `offshot` 脚本，双方同样隐藏粒子并设 `blink = false`，对 5 个旧菜单页 × 2 档（西游默认／天启 `ENABLED = false`）共 10 张图逐像素比对 RGBA8 数据。无头实跑 `tests/xiyou_ui_skin_offshot.tscn` 10/10 建页通过。
+3. **发行排除（核了规则本身＋跑发行工具自检）**：`export_presets.cfg` 三个发行预设（`macOS 发行`、`Windows 发行`、`安卓 发行`）的 `exclude_filter` 均含 `content/ui_skin/*`（三个验收预设保留）；`07_开发环境/发行内容审计.py` `DENY` 含 `'content/ui_skin/*'`（`denied()` 剥后缀后亦拦 `.import`）；`07_开发环境/发行空壳.py` `MIXED_OK` 已登记 `modes/xiyou/ui/skin/ui_skin.gd`，且字体与法阵均经 `ResourceLoader.exists()` 落回 `GameFont.current()`／`null`。实跑 `测试导出过滤.py`（通过）、`测试发行空壳.py`（11/11 OK）、`发行空壳.py check`（通过）、`语法检查.py`（895 `.gd` 0 问题）。
+4. **组配置 `XUiSkin.GROUPS`（核了 Kyo 11-15 拍板原件＋读代码＋跑专项）**：对照 `xiyou-design-docs/协作交接/待Kyo拍板.json`（`D25`）与协调 11-15 转 Kyo 更正口径，`XUiSkin.GROUPS` 含 7 组 18 项：物品(1)｜装备(1)｜角色(状态、技能、真气、种族祝福、整队)｜宠物(1, `hide: "pet"`)｜工坊(制作、宝珠坊、异化工坊)｜图鉴(人物图鉴、怪物图鉴、成就)｜系统(存档、设置、反馈、游戏结束)。天启篇下 `XTianqiPetHide.active(s)` 为真时整组隐藏变为 6 组 17 项，`XTianqiPetHide.ENABLED = false` 或西游档变回 7 组 18 项；`XUiSkin.direct_item()` 与 `XSkinTabStrip.current_direct()` 在仅剩 1 项时直接返回子项键（`items→"item"`、`equip→"equip"`、`pets→"pets"`）。
+5. **文字审（逐条核交付单表＋源码全量提取核对）**：对照 `ba1f7ed`（`界面风格提案_v0.7/文字审_小A.md`）必改口径，逐条核对交付单「新增可见文字」及 `modes/xiyou/ui/skin/*.gd` 全部 UI 字串：**必改 0 条**——已用「精魂」（非「精魄」）、已用「已装备」（非「装备中／现在装着这件」）、属性统一「攻击力」（非「物理攻击力／物攻」）、`宠物` 已随 `XTianqiPetHide` 隐藏、`XSkinKeyHints` 统一给键名套胶囊框（`[确定] 进入`、`[取消] 返回`、`[Q / E] 换组`），且无新增西游元素。
+
+### 问题清单（P1/P2 零条；P3 提示 4 条）
+
+- **P3-1（代码边界）**：`ui_skin.gd` `on()` 中 `if FORCE: return true` 未叠加 `not ReleaseEntry.is_release()`（因 `FORCE` 默认 `false` 且发行包无入口开启，不影响实际发行；若测试同时设 `FORCE = true` 与 `simulate_release = true` 会跳过发行门）。
+- **P3-2（交付单记录）**：`cc_ui-skin-p0.md`「验证」节末写「合 main 后重比见下」，合并 `main`（`0cb776a3f`）后正文下方未补写重比结果。
+- **P3-3（留给 1A 提示）**：旧 `XMenu.commands()` 在 `XAlienBattle.hidden()` 时还会隐藏「异化工坊」，`XUiSkin.GROUPS` 暂未配该规则（当前天启篇正常开启，不影响第 0 期）。
+- **P3-4（交付单文字表小遗漏）**：`XUiSkin.QUALITY_NAMES`（`普通、优秀、精良、史诗、传说、不朽、神话`）沿用游戏七档品质名、无文字问题，交付单「新增可见文字」表未单列。
+
+### 没核到的（留给总装）
+
+- 有窗 10 张逐像素对照（`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py`）与陈列页／旧菜单有窗截图；
+- `选测.py main --list` 列出的 56 个 Godot 场景（含事件对照 4 段 `xiyou_event_compare*`）与完整 `工具回归.py`（总装跑 `--affected --cloud` 覆盖）；
+- `XMVWindow._draw` 的 `draw_pause` 菱形翻页标记未在 5 个菜单页截图范围中触发，仅通过代码 diff 确认关开关时不走新分支。
