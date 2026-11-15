@@ -6,7 +6,7 @@ extends Node2D
 ## - 按时间轴拼（不播 116 张帧序列）：人形（Codex_Mira_SV_u2 第 1 行第 1 列格，锚 [32,61]）→ 8 张过渡姿势（340×280，锚 [160,217]）
 ##   → 黑龙 Final（UserSV_MiraDragon0_0，与 dragon.png 字节相同）。位置、姿势交叉淡化（下一姿势前 120ms，1210ms 起 60ms）、
 ##   四层火屑（[毫秒, 透明度, 缩放, dx, dy]，区间外隐藏）都照 时间轴.json，相邻关键帧 smoothstep，位置取整。
-##   路径：x＝56＋dx、y＝−高度（原点＝最终脚点＝战斗者脚底），落地后 dx＝−56 正好回到脚底。
+##   路径（D40，Kyo 11-15）：x 从脚底 0 起、整段向左挪、落地约 −25，再平滑回正到 0（1800ms）；y＝−高度（原点＝最终脚点＝战斗者脚底）。
 ## - 时钟：elapsed_ms += delta×1000×战斗动画倍速（battleAniSpeed：4＝1×、3＝2×、2＝3×、1＝4×；_process 的 delta 只含变速齿轮，
 ##   不含这一份，所以这里乘）；战斗暂停（树暂停）时 _process 不走，时钟同停；速度中途变下一帧就按新倍速走。
 ## - 大小：素材按原尺寸画（人形 64 格、黑龙可见高 159），游戏里两种形态都归一到站姿高 72（人形缩放约 1.24、黑龙约 0.45）。
@@ -24,16 +24,15 @@ const HUMAN_CELL := Rect2(64, 64, 64, 64)
 const DURATION := 2320.0
 ## 层缩放从人形过渡到黑龙所用的时长（姿势 1800ms 落到 Final）
 const SETTLE_MS := 1800.0
-const X_OFFSET := 56.0
 const HUMAN_ANCHOR := Vector2(32, 61)
 const POSE_ANCHOR := Vector2(160, 217)
 const FX_ANCHOR := Vector2(128, 128)
-## [毫秒, 姿势, 高度, dx]（时间轴.json keyframes）
+## [毫秒, 姿势, 高度, x]（时间轴.json keyframes；x＝相对最终脚点的水平位置，D40：起点在脚下、整段轨迹左挪、落地后回正）
 const KEYS := [
 	[0, "human", 0, 0], [140, "MiraLift", 1, 0], [260, "MiraHover", 24, 0], [480, "MiraWingHuman", 89, -4],
 	[600, "MiraWingHuman", 107, -6], [680, "MiraHybrid", 112, -8], [800, "MiraAir", 115, -11], [920, "MiraAir", 116, -16],
-	[1050, "MiraAir", 113, -23], [1210, "MiraDescend", 84, -33], [1380, "MiraDescend", 38, -44], [1460, "MiraTouchdown", 14, -52],
-	[1530, "MiraTouchdown", 0, -56], [1660, "MiraSettle", 0, -56], [1800, "dragon", 0, -56], [2320, "dragon", 0, -56],
+	[1050, "MiraAir", 113, -23], [1210, "MiraDescend", 84, -28], [1380, "MiraDescend", 38, -27], [1460, "MiraTouchdown", 14, -26],
+	[1530, "MiraTouchdown", 0, -25], [1660, "MiraSettle", 0, -12], [1800, "dragon", 0, 0], [2320, "dragon", 0, 0],
 ]
 const POSE_FADE_MS := 120.0
 const DRAGON_FADE_MS := 60.0
@@ -167,7 +166,7 @@ static func pose_at(t: float) -> Array:
 ## 此刻的身体脚点（素材像素，原点＝最终脚点；取整）
 static func body_point(t: float) -> Vector2:
 	var v := interp(t, KEYS, [2, 3])
-	return Vector2(roundf(X_OFFSET + v[1]), roundf(-v[0]))
+	return Vector2(roundf(v[1]), roundf(-v[0]))
 
 
 ## 第 i 层火屑此刻 [显示, 透明度, 缩放, 位置]
@@ -248,7 +247,8 @@ func _draw_at(sp: XBattlerSprite, t: float) -> void:
 			spr.scale = Vector2(f[2], f[2])
 			spr.position = f[3]
 	var body_on := t < SETTLE_MS
-	sp.sprite.visible = not body_on
+	sp.sprite.visible = not body_on and not sp.anim_hidden  # 与 set_anim_hidden 不互相覆盖（P3）
+	visible = not sp.anim_hidden
 	_a.visible = body_on
 	_b.visible = false
 	if body_on:
@@ -258,6 +258,11 @@ func _draw_at(sp: XBattlerSprite, t: float) -> void:
 		if pose[1] != "":
 			_b.visible = true
 			_put(_b, pose[1], at, float(pose[2]))
+
+
+## 变身层此刻是否自己在画身体（是的话本体该藏）
+func body_shown() -> bool:
+	return not done and elapsed < SETTLE_MS
 
 
 func _put(s: Sprite2D, pose: String, at: Vector2, alpha: float) -> void:
@@ -277,7 +282,7 @@ func finish(free_now := true) -> void:
 		(c as CanvasItem).visible = false
 	var sp := get_parent() as XBattlerSprite
 	if sp != null and is_instance_valid(sp.sprite):
-		sp.sprite.visible = true
+		sp.sprite.visible = not sp.anim_hidden
 	if free_now:
 		name = "MiraLiftFx_done"  # layer_of 不再找到它
 		queue_free()

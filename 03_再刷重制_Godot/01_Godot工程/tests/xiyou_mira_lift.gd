@@ -1,13 +1,13 @@
 extends Node
 ## 【cc·未经审查】米拉升空变身演出 u7（XMiraLiftFx，开关 XMira.LIFT_ART，素材 content/mira/fx/lift_u7/）：
 ## - asset.*：8 张过渡姿势 340×280、4 张火屑 256×256 都在；人形取 Codex_Mira_SV_u2 第 1 行第 1 列格；Final 就是黑龙待机图。
-## - timeline.*：起点在最终脚点右 56、落地回到脚点；姿势 1800ms 落到黑龙、龙化前 120ms／1210ms 起 60ms 交叉淡化；火屑区间外隐藏、地面层贴地。
+## - timeline.*：起点在最终脚点（D40）、整段左挪约 25 再回正；姿势 1800ms 落到黑龙、龙化前 120ms／1210ms 起 60ms 交叉淡化；火屑区间外隐藏、地面层贴地。
 ## - speed.*：战斗动画 1×／2×／4×（battleAniSpeed 4／3／1）按 60 帧走完的帧数＝2320／倍速；中途变速照走；树暂停时不走。
 ## - finish.*：放完钳到 2320、层清掉、本体显示原样黑龙、身体缩放回到黑龙的、完成回调只调一次。
 ## - off.*：「显示技能动画」关着（默认）不建层、直接是黑龙、完成回调立即调；中途关掉立即收尾；状态与能力值与开着时一样（只是画面）。
 ## - cancel.*：取消、外观换回人形、阵亡、精灵释放都清干净（无层、本体可见、回调一次）。
 ## - rollback.*：XMira.LIFT_ART = false 不放演出（旧表现：直接换黑龙）。
-## 窗口模式加 -- --out=<目录> 时存 6 张变身过程截图（240／600／900／1300／1600／2000ms，2 倍）。
+## 窗口模式加 -- --out=<目录> 时存 6 张变身过程截图（0／600／920／1300／1530／2000ms，2 倍）。
 var results := []
 var out_dir := ""
 var _done_calls := 0
@@ -41,6 +41,8 @@ func _run() -> void:
 	_speeds()
 	await _pause()
 	_finish_once()
+	_d40_path()
+	_anim_hidden_p3()
 	_cancel()
 	_rollback()
 	if out_dir != "" and DisplayServer.get_name() != "headless":
@@ -123,9 +125,9 @@ func _assets() -> void:
 
 
 func _timeline() -> void:
-	check("timeline.start_right_56", XMiraLiftFx.body_point(0) == Vector2(56, 0), XMiraLiftFx.body_point(0))
-	check("timeline.land_at_foot", XMiraLiftFx.body_point(1530) == Vector2.ZERO and XMiraLiftFx.body_point(2320) == Vector2.ZERO)
-	check("timeline.peak", XMiraLiftFx.body_point(920) == Vector2(40, -116), XMiraLiftFx.body_point(920))
+	check("timeline.start_at_foot", XMiraLiftFx.body_point(0) == Vector2.ZERO, XMiraLiftFx.body_point(0))
+	check("timeline.land_at_foot", XMiraLiftFx.body_point(1530).y == 0.0 and XMiraLiftFx.body_point(2320) == Vector2.ZERO)
+	check("timeline.peak", XMiraLiftFx.body_point(920) == Vector2(-16, -116), XMiraLiftFx.body_point(920))
 	check("timeline.pose_human", XMiraLiftFx.pose_at(0) == ["human", "", 0.0] and XMiraLiftFx.pose_at(19)[1] == "")
 	var p := XMiraLiftFx.pose_at(80)  # MiraLift 在 140，前 120ms 起淡化
 	check("timeline.fade120", p[0] == "human" and p[1] == "MiraLift" and absf(float(p[2]) - 0.5) < 0.01, p)
@@ -259,6 +261,68 @@ func _finish_once() -> void:
 	sp.queue_free()
 
 
+## D40：首帧在脚下、末帧回原位、全程（1×／2×／4× 的帧步长）无单帧跳变 >8px
+func _d40_path() -> void:
+	var p0 := XMiraLiftFx.body_point(0)
+	check("d40.first_frame_at_foot", absf(p0.x) <= 2.0 and absf(p0.y) <= 2.0, p0)
+	var pe := XMiraLiftFx.body_point(XMiraLiftFx.DURATION)
+	check("d40.last_frame_home", pe == Vector2.ZERO, pe)
+	var land := XMiraLiftFx.body_point(1530)
+	check("d40.land_left_about_25", absf(land.x + 25.0) <= 3.0 and land.y == 0.0, land)
+	for mult: float in [1.0, 2.0, 4.0]:
+		var step: float = 1000.0 / 60.0 * mult
+		var worst := 0.0
+		var prev := XMiraLiftFx.body_point(0)
+		var t := step
+		while t <= XMiraLiftFx.DURATION + step:
+			var cur := XMiraLiftFx.body_point(minf(t, XMiraLiftFx.DURATION))
+			worst = maxf(worst, prev.distance_to(cur) if mult == 1.0 else absf(prev.x - cur.x))  # 2×／4× 只看水平（升空的垂直速度本来就快）
+			prev = cur
+			t += step
+		check("d40.no_jump_x%d" % int(mult), worst <= 8.0, worst)
+	var r := _lift_sprite(true)
+	var sp: XBattlerSprite = r[0]
+	var l := _trigger(sp)
+	check("d40.layer_first_frame", l != null and absf(l._a.position.x) <= 2.0, l._a.position if l != null else null)
+	sp.queue_free()
+
+
+## P3：技能动画把角色隐藏（set_anim_hidden）与变身层的本体显隐不互相覆盖
+func _anim_hidden_p3() -> void:
+	var r := _lift_sprite(true)
+	var sp: XBattlerSprite = r[0]
+	var l := _trigger(sp)
+	if l == null:
+		check("p3.layer", false)
+		return
+	l.tick(900.0)
+	sp.set_anim_hidden(true)
+	check("p3.hidden_midway", not sp.sprite.visible and not l.visible)
+	l.tick(100.0)
+	check("p3.hidden_survives_tick", not sp.sprite.visible and not l.visible)
+	l.tick(900.0)  # 过了 SETTLE：本体本该显示，但仍被技能动画藏着
+	check("p3.hidden_after_settle", not sp.sprite.visible)
+	sp.set_anim_hidden(false)
+	check("p3.shown_again", sp.sprite.visible and l.visible)
+	sp.set_anim_hidden(true)
+	l.finish()
+	check("p3.finish_keeps_hidden", not sp.sprite.visible and l.done and _done_calls >= 1)
+	sp.set_anim_hidden(false)
+	check("p3.unhide_after_finish", sp.sprite.visible)
+	# 变身中取消：藏着时不闪出，放出来后正常
+	var r2 := _lift_sprite(true)
+	var sp2: XBattlerSprite = r2[0]
+	var l2 := _trigger(sp2)
+	l2.tick(300.0)
+	sp2.set_anim_hidden(true)
+	XMiraLiftFx.cancel(sp2)
+	check("p3.cancel_keeps_hidden", not sp2.sprite.visible)
+	sp2.set_anim_hidden(false)
+	check("p3.cancel_then_shown", sp2.sprite.visible)
+	sp.queue_free()
+	sp2.queue_free()
+
+
 func _cancel() -> void:
 	# 跳过／取消
 	var r := _lift_sprite(true)
@@ -318,7 +382,7 @@ func _frames(n: int) -> void:
 ## 变身过程截图：灰底、2 倍，6 个时刻
 func _capture_shots() -> void:
 	DirAccess.make_dir_recursive_absolute(out_dir)
-	for ms in [240, 600, 900, 1300, 1600, 2000]:
+	for ms in [0, 600, 920, 1300, 1530, 2000]:
 		var root := Node2D.new()
 		add_child(root)
 		var bg := ColorRect.new()
@@ -340,7 +404,7 @@ func _capture_shots() -> void:
 		if l != null:
 			l.tick(float(ms))
 		var lab := Label.new()
-		lab.text = "米拉升空变身 u7  %dms / 2320ms（游戏内缩放，画面 2 倍）" % ms
+		lab.text = "米拉升空变身 D40  %dms / 2320ms（游戏内缩放，画面 2 倍）" % ms
 		lab.position = Vector2(16, 12)
 		lab.add_theme_font_size_override("font_size", 20)
 		root.add_child(lab)
