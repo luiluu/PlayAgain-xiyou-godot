@@ -201,3 +201,26 @@
 - 专项工具串行抽跑：`xiyou_save_seal` **120/120**、`xiyou_save_transfer` **39/39**（skipped=[]），退出 0、14 秒；日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_200650_alt3f92e/`。确认实际是 120 而非交付单验证栏遗留的 119。
 - `xiyou_step_encounter_stop` 本分支 **7/7**、工具退出 0（64 秒），日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_200713_puk2j8ex/`。独立在 main 工作区 **58b657d90** 跑同专项，断言 **7/7**（rollback_stale_target_walks 也 PASS），但出现三条 `stop_fade` 传入 previously freed 对象的 SCRIPT ERROR，工具判失败（退出 1，54 秒），日志 `/tmp/co_seal_main_step/xiyou_step_encounter_stop.log`。这是**不同失败类型**，不能拿它证明原 rollback_stale_target_walks 断言是 main 已有偶发；当前对原断言与本改动的因果关系仍无法判定，保留执行方“未证实有关／无关”的修订结论。无存档读写的局部路径支持相关性较低的推断，但不是排除时序影响的证据。
 - 临时 Python／Godot 实验仅使用自建临时目录，生成的测试数据已清理，不碰真实存档／options／私密发行密钥；公开仓没有此次注入实验产物。未重跑云端 254 项，未实际出包检查 PCK 内密钥、未做真实旧底包回退、Windows／安卓、磁盘满／断电或历史 Git 秘密清理。以上未核项不能标通过；两项剩余 P2 修后只需针对性复核。
+
+## 小o 甲档复核二
+
+- 复核者 co（派单 gpt-6.1-sol＋medium），2026-11-15；对象 **df0e71aba**（返修主体 b5c17de81，合并 main 后导出修复 df0e71aba）。**结论：本次存档甲档通过，上轮两项 P2 与 marker P3 关闭，无剩余存档 P1／P2／P3 阻断。** 步步遇敌另定位到 main 本身可复现的 P2 测试计数时序缺陷，需工具／专项车道修，不能把当前整轮 CI 称为全绿。本轮未改游戏代码，只追加本节。
+
+### 两项 P2 与 P3 复核
+
+- **P2-1 关闭（代码＋实测）**：inject_save_key 注入前调用存档密钥.py check；current=256、空种子两个旧复现配置本轮均被真实 inject 函数拒绝，目标文件均未生成。Python SaveKeyTests **7/7**，包含无效配置拒绝、导出前停止、有效配置读回、三类模拟产物漏密钥检测；运行时在 seal 专项共享样例中逐个加载验证。代码审阅确认导出前读回副本逐字节核对，导出后 verify_save_key 检查 Mac zip 的 pck、Windows pck、apk，问题沿 export_all 返回并使出包失败。包后验证是查找注入原始字节，不是实际启动包读取资源；本轮未实际出三个包，产物内检查实测来自工具的模拟产物测试。
+- **P2-2 关闭（代码＋实测）**：迁移替换现有 `.ksv` 前 archive_before_replace 复制到唯一 `.replaced_*`，读回 bytes 相等才 rename 成备份，备份失败阻止覆盖；回退明文 `.json` 同样留底，备份不匹配封存／导入清理。重跑上轮同一个临时恢复探针：有 marker 仍优先 `.ksv`；删 marker 恢复较新 `.json` 后，**previous_ksv_archived 从 false 变成 true**，旧有效封存字节在目录内可找到。seal 专项的 previous_ksv_archived／archive_restorable／plainmode.json_archived 等也通过。跨版本分叉仍不自动接续，但 D36 整包与人工恢复范围内，两条进度均可保留，已满足本轮修复要求。
+- **P3 关闭（代码审阅）**：_put_marker 写临时文件后读回与预期字节相等，并确认预期字节 unseal 成功后才 rename；因读回字节已相同，等价于解开读回文件。未做介质错误注入。
+- 本轮专项实测（工具退出 0，77 秒）：**xiyou_save_seal 127/127、xiyou_save_transfer 47/47（skipped=[]）、xiyou_step_encounter_stop 7/7**；日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_205203_e1vpc__q/`。导出合 main 修复正确：封存分支返回值增加外侧 `tianqi` 元信息，不改封存内容；普通／天启篇命名、封存往返、旧明文导入加载等 47 项通过，未发现需再次全量云端验证的专属差异。
+
+### 步步遇敌：已定位独立于存档的测试时序缺陷
+
+- 读取云端 run **43751580029**（8d2450c1f）失败日志，确认为 rollback_stale_target_walks，walking／started／stopped 都 true，但 battles_after=0、from=now、touch_target=(-1,-1)，6/7；不是把此前的 stop_fade 错误混为同一失败。原始日志摘取在 `/tmp/co_seal_cloud_failed.log`。
+- main 基准 **cdf35cb92** 与本分支的原始专项和 map／移动实现无差异。临时复制原测试到 `/tmp`，仅增加 before_stop、after_stop、baseline 打点，在 main 与本分支各跑完整原逻辑，两边均 **7/7**（日志 `/tmp/co_step_main_diag.log`、`/tmp/co_step_branch_diag.log`）。本轮不能复述“本分支稳定挂”，但云端首跑／重跑失败事实保留。
+- **根因证据**：测试在设置旧目的地后 `await tap(button_at())`，tap 按下／松开间会等待数个 process_frame，期间游戏继续跑物理帧；测试却在 tap 完成、重新打开 yd100、再等移动完成**之后**才采集 b0／g0。旧目的地可在采集前已经走完并清空，采集后自然没走、没新战斗，导致“旧坏表现没有出现”的假阴性。它实际测的是“采样后还走没走”，漏掉了“点击停挂机期间已经继续走”。
+- **main 独立复现相同断言，不含任何存档分支代码**：使用完整原测试临时副本，唯一调度调整是在回退开关臂设 Engine.max_fps=15（模拟低渲染帧率下多物理帧批次），main 得到 **6/7，rollback_stale_target_walks FAIL**，日志 `/tmp/co_step_main_slow.log`。打点为 before_stop grid=(15,16)、target=(14,16)，after_stop grid=(13,15)、target=(-1,-1)，baseline 已在(13,15)，最终 from=now、battles_after=0——**人物确实在 tap 等待期走了，断言漏记**。再用同一 stale_target_hangup 函数的缩小探针在 main 连跑三次，**3/3 同型假阴性**，其中一次 (17,12)→(17,11) 已走回旧目标，baseline 后仍被判没有走；日志 `/tmp/co_step_main_probe.log`。这些是临时测试副本／调度实验，不修改仓库测试或生产逻辑。
+- **判断**：已有实测证明该断言失败无需本分支即可触发，归为 **P2：原专项采样时机依赖渲染／物理帧调度**，不是存档功能回归；封存初始化增加的耗时可以改变运行调度和触发概率，不等于封存破坏移动行为。不能声称逐帧证明了那一轮云端的唯一原因，但云端同型失败已有 main 可复现机制，足以撤销“本分支独有逻辑错误”的阻断判断。建议专项车道在点击前采集基线并记录实际 stepped／位置变化，或把点击期间也纳入观察，固定该段时钟；修复应保留 MV_CLEAR_DEST=true 停住、false 继续走的双向断言，禁止靠重跑通过销账。stop_fade 已释放对象错误另行修，不是此断言的根因证据。
+
+### 未核到与交接
+
+- 未重跑整轮云端或那 13 个 main 文字审失败；未验证真实发行包中的资源路径加载、三平台实机、真实旧底包回退、磁盘满／断电。密钥实测均为公开测试样例和临时文件，不读取私密发行密钥、不触真实存档／options；临时存档实验已清理。真实出包仍需总装跑默认密钥守卫与冒烟，步步遇敌独立 P2 请登记专项车道修复；存档分支本轮无需再返修。
