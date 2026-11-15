@@ -1091,7 +1091,11 @@ func can_tianqi_swap(out) -> bool:
 	var h := state.helper()
 	if h == null or h == out or actors.has(h) or not h.is_alive() or XActorModules.IDS.has(h.actor_id) or XActorModules.IDS.has(out.actor_id):
 		return false
+	if XTianqi.HELPER_RULES and not XTianqi.helper_super_ok(state) \
+			and (XTianqiSkills.is_super(h.actor_id) or XTianqiSkills.is_super(out.actor_id)):
+		return false  # D57：本档助力位不许超强者——助力位的超强者不能换上来（读档清理漏了也拦），场上的超强者也不能换进助力位
 	if XTianqiSkills.is_super(h.actor_id) and not XTianqiSkills.is_super(out.actor_id):
+		# 场上超强者（倒下的也算，仍占出战栏）已满额就不能把强者／弱者换成超强者；超强者换超强者、超强者换下强者照常
 		return actors.filter(func(a): return a is XActor and XTianqiSkills.is_super(a.actor_id)).size() < XTianqi.super_cap(state)
 	return true
 

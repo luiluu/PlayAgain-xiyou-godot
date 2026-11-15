@@ -639,7 +639,10 @@ func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
 		_tq_rng.randomize()
 		lineup = XTianqi.roll_lineup(key, _tq_rng)
 	var d := XTianqi.difficulty(key)
-	_window("随机阵容 · %s（同一场最多上阵 %d 名超强者）" % [d.name, int(d.super_cap)], 760.0)
+	var cap_text := "同一场最多上阵 %d 名超强者" % int(d.super_cap)
+	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
+		cap_text += "，助力位可再放 1 名"  # D57：只有证道的助力位能放超强者
+	_window("随机阵容 · %s（%s）" % [d.name, cap_text], 760.0)
 	for i in lineup.size():
 		column.add_child(_tq_actor_row(int(lineup[i]), i == 0))
 	var roll := XUI.button("重新随机")

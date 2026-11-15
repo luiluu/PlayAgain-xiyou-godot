@@ -491,7 +491,7 @@ static func field_value(a: XActor) -> float:
 
 
 ## 整队（同菜单「整队」改出战栏再点「完成」）：上场 4 人里最弱的，板凳上有明显更强的就换下去（超强者不超过本档上限）；
-## 有领袖技能的人放 1 号位；助力位放剩下的人里档位最高、等级最高的（助力位拿满经验）。换下场的人身上的装备卸回背包给别人用。
+## 有领袖技能的人放 1 号位；助力位放剩下的人里档位最高、等级最高的（助力位拿满经验；只有证道的助力位能放超强者，D57）。换下场的人身上的装备卸回背包给别人用。
 ## 返回这次改了什么；没改返回空。
 static func formation(st: XState) -> Array:
 	var out := []
@@ -535,6 +535,8 @@ static func formation(st: XState) -> Array:
 		slots.append(int(a.actor_id))
 	while slots.size() < XTianqi.FIGHTERS:
 		slots.append(0)
+	if not XTianqi.helper_super_ok(st):
+		rest = rest.filter(func(a): return tier_rank(a.actor_id) != 2)  # D57：本档助力位不许超强者（只有证道能放）
 	slots.append(int(rest[0].actor_id) if not rest.is_empty() else 0)
 	while slots.size() < XState.MAX_BATTLE_MEMBERS:
 		slots.append(0)

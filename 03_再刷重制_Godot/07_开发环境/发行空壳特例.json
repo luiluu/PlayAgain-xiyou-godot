@@ -12,6 +12,7 @@
   "XRiftAlien.gear_energy": "-1",
   "XTianqi.fighter_slots": "XState.MAX_BATTLE_MEMBERS",
   "XTianqi.super_cap": "-1",
+  "XTianqi.helper_super_ok": "true",
   "XTianqiAffixBattle.cost": "c",
   "XTianqiAffixBattle.drop_mult": "1.0",
   "XTianqiAffixBattle.param_rate": "1.0",

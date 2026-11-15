@@ -85,7 +85,11 @@ static func roster(kind: String, s) -> Dictionary:
 		for d in XTianqi.DIFFICULTIES:
 			caps.append("%s %d" % [str(d.name), int(XTianqiBalance.difficulty(str(d.key)).get("super_cap", 0))])
 		notes.append("每场上阵上限：" + "，".join(caps) + "。")
-		notes.append("多出来的只能当替补。")
+		var helper_ok := XTianqi.DIFFICULTIES.filter(func(d): return XTianqi.helper_super_key(str(d.key))).map(func(d): return str(d.name))
+		if XTianqi.HELPER_RULES and not helper_ok.is_empty():
+			notes.append("助力位只有%s能放超强者，多出来的只能当替补。" % "、".join(helper_ok))  # D57
+		else:
+			notes.append("多出来的只能当替补。")
 	return {"ids": XTianqiSkills.ids(tier), "notes": notes}
 
 

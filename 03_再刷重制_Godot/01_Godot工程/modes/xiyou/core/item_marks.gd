@@ -518,18 +518,25 @@ static func acquisition_notice() -> void:
 ## ---- 出战限制（D.enforceParty／canDeploy，参照 mv_oracle/super_deploy_probe.cjs） ----
 const DEPLOY_NOTICE := "超强者仅限地狱及以上难度出战，已移至替补。"
 const TIANQI_DEPLOY_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移至替补。"
+## D57／D77（XTianqi.HELPER_RULES）：助力位不许放超强者的档清出助力位；证道上场多出的超强者挪进助力位
+const TIANQI_HELPER_NOTICE := "本难度助力位不能放超强者，已移至替补。"
+const TIANQI_TO_HELPER_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移至助力位。"
 ## deploymentNotice：清出过超强者的那份 XState（只在内存，不进存档）；回地图／开整队页时弹一次
 static var _deploy_notice: WeakRef = null
+## 那次清理要弹的话（HELPER_RULES 下按清理种类拼好；空＝照旧按难度选一句）
+static var _deploy_notice_text := ""
 
 
 ## D.canDeploy：不是超强者，或已开挑战开关／混沌难度
-## 天启篇：超强者上限只算上场的前 4 格，助力位不限；slot＝要放进的格（整队页换人时传，先模拟换完再数），-1 只问能不能编进来
+## 天启篇：超强者上限只算上场的前 4 格；HELPER_RULES 下助力位只有证道能放超强者、整栏校验（_tianqi_can_deploy），关掉时助力位不限；slot＝要放进的格（整队页换人时传，先模拟换完再数），-1 只问能不能编进来
 ## 天启篇存档按天启篇档位名单（XTianqiSkills），原版档照 super_strong_ids
 static func _super_in(s: XState, actor_id: int) -> bool:
 	return XTianqiSkills.is_super(actor_id, true) if XTianqi.active(s) and XTianqiSkills.ENABLED and XTianqiSkills.TIERS else is_super_strong(actor_id)
 
 
 static func can_deploy(s: XState, actor_id: int, slot := -1) -> bool:
+	if XTianqi.active(s) and XTianqi.HELPER_RULES:
+		return _tianqi_can_deploy(s, actor_id, slot)
 	if XTianqi.active(s):
 		if not _super_in(s, actor_id) or slot < 0 or slot == XTianqi.HELPER_SLOT:
 			return true  # 不指定格时总能放进助力位
@@ -548,6 +555,8 @@ static func can_deploy(s: XState, actor_id: int, slot := -1) -> bool:
 static func enforce_party(s: XState) -> bool:
 	if s == null or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
 		return false
+	if XTianqi.active(s) and XTianqi.HELPER_RULES:
+		return _tianqi_enforce(s)
 	var cap := XTianqi.super_cap(s)  # 天启篇：按格序留前 cap 个超强者，多的清出；原版档 -1
 	if cap < 0 and super_enabled(s):
 		return false
@@ -570,6 +579,7 @@ static func enforce_party(s: XState) -> bool:
 	for i in vacancies:
 		s.set_battle_slot(i, reserves.pop_front() if not reserves.is_empty() else 0)
 	_deploy_notice = weakref(s)
+	_deploy_notice_text = ""
 	return true
 
 
@@ -587,7 +597,115 @@ static func flush_deploy_notice(s: XState) -> void:
 	if owner != s:
 		return
 	_deploy_notice = null
-	XToast.show_text(TIANQI_DEPLOY_NOTICE % XTianqi.super_cap(s) if XTianqi.active(s) else DEPLOY_NOTICE)
+	var text := _deploy_notice_text
+	_deploy_notice_text = ""
+	if text == "":
+		text = TIANQI_DEPLOY_NOTICE % XTianqi.super_cap(s) if XTianqi.active(s) else DEPLOY_NOTICE
+	XToast.show_text(text)
+
+
+## ---- 天启篇整栏规则（D57／D76／D77，XTianqi.HELPER_RULES） ----
+
+## 出战栏（5 格）合不合规：上场前 4 格超强者 ≤ super_cap；助力位是超强者时本档要 helper_super。只读，不迁移、不调 battle_members／helper。
+static func tianqi_slots_ok(s: XState, slots: Array) -> bool:
+	if slots.size() != XState.MAX_BATTLE_MEMBERS:
+		return false
+	var supers := 0
+	for i in XTianqi.FIGHTERS:
+		supers += 1 if int(slots[i]) > 0 and _super_in(s, int(slots[i])) else 0
+	if supers > XTianqi.super_cap(s):
+		return false
+	var h := int(slots[XTianqi.HELPER_SLOT])
+	return h <= 0 or not _super_in(s, h) or XTianqi.helper_super_ok(s)
+
+
+## 整队页把 actor_id 放进 slot：先模拟换完整栏（他原来在栏里就和 slot 里的人对调），再整栏校验——
+## 不管放进去的是不是超强者（非超强者挪进助力位会把助力位的超强者顶上场，旧写法漏了）。
+## slot < 0：只问能不能编进来（名单半透明用）＝至少有一格放得下。
+static func _tianqi_can_deploy(s: XState, actor_id: int, slot: int) -> bool:
+	if s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
+		return true
+	if slot < 0:
+		for i in XState.MAX_BATTLE_MEMBERS:
+			if _tianqi_can_deploy(s, actor_id, i):
+				return true
+		return false
+	if slot >= XState.MAX_BATTLE_MEMBERS:
+		return false
+	var after: Array = s.battle_slots.duplicate()
+	var at := after.find(actor_id) if actor_id > 0 else -1
+	if at >= 0:
+		after[at] = after[slot]
+	after[slot] = maxi(actor_id, 0)
+	return tianqi_slots_ok(s, after)
+
+
+## 整队页两格对调（翻页键）后合不合规
+static func can_swap_slots(s: XState, a: int, b: int) -> bool:
+	if not XTianqi.active(s) or not XTianqi.HELPER_RULES or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
+		return true
+	var after: Array = s.battle_slots.duplicate()
+	var t = after[a]
+	after[a] = after[b]
+	after[b] = t
+	return tianqi_slots_ok(s, after)
+
+
+## 天启篇清理（读档、进图、开整队页、battle_members 前都会走）：先在副本上算出最终 5 格，再逐格写回（只写变了的格，走 set_battle_slot）。
+## 1. 上场前 4 格按格序留前 super_cap 个超强者，多的拿出来；
+## 2. 助力位是超强者而本档不许（九死、炼狱的旧档）→ 拿出来（去替补）；
+## 3. 证道（本档许可）：助力位不是超强者（或空）时，第 1 步拿出来的第一个超强者挪进助力位，助力位原来的人去替补（D77）；
+##    助力位已经是超强者就都去替补；
+## 4. 空出来的格（第 1 步的上场格，第 2 步的助力位）按 party 顺序补「不是超强者、不在出战栏」的人，补不到留 0。
+##    原来的助力位在 party 里排在替补前面，所以第 3 步之后他通常就补回空出的上场格（等于和第 3 个超强者对调）。
+## 原本就空的格不动；party 不重排、角色都还在队伍里；已合规时什么都不写、不提示（幂等）。
+static func _tianqi_enforce(s: XState) -> bool:
+	var slots: Array = s.battle_slots.duplicate()
+	var cap := XTianqi.super_cap(s)
+	var helper_ok := XTianqi.helper_super_ok(s)
+	var extras := []
+	var vacancies := []
+	var kept := 0
+	for i in XTianqi.FIGHTERS:
+		var id := int(slots[i])
+		if id > 0 and _super_in(s, id):
+			if kept < cap:
+				kept += 1
+				continue
+			extras.append(id)
+			vacancies.append(i)
+			slots[i] = 0
+	var hs := XTianqi.HELPER_SLOT
+	var helper_banned := false
+	if int(slots[hs]) > 0 and _super_in(s, int(slots[hs])) and not helper_ok:
+		slots[hs] = 0
+		helper_banned = true
+		vacancies.append(hs)
+	var to_helper := false
+	if not extras.is_empty() and helper_ok and not (int(slots[hs]) > 0 and _super_in(s, int(slots[hs]))):
+		slots[hs] = extras.pop_front()
+		to_helper = true
+	if slots == s.battle_slots:
+		return false
+	var reserves := []
+	for id in s.party:
+		if not _super_in(s, id) and not slots.has(id):
+			reserves.append(id)
+	for i in vacancies:
+		slots[i] = reserves.pop_front() if not reserves.is_empty() else 0
+	for i in slots.size():
+		if int(slots[i]) != int(s.battle_slots[i]):
+			s.set_battle_slot(i, int(slots[i]))  # 出战栏写入都走 XState.set_battle_slot（天启篇全弱者通关资格在那里记）
+	var parts := []
+	if to_helper:
+		parts.append(TIANQI_TO_HELPER_NOTICE % cap)
+	if not extras.is_empty():
+		parts.append(TIANQI_DEPLOY_NOTICE % cap)
+	if helper_banned:
+		parts.append(TIANQI_HELPER_NOTICE)
+	_deploy_notice = weakref(s)
+	_deploy_notice_text = "".join(parts)
+	return true
 
 
 

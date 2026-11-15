@@ -73,15 +73,15 @@ func _slots() -> void:
 	_check("party_lineup", s.party == [w[0], w[1], w[2], w[3], w[4]], s.party)
 	_check("fighters_four", s.battle_members().map(func(a): return a.actor_id) == [w[0], w[1], w[2], w[3]], s.battle_slots)
 	_check("helper_fifth", s.helper() != null and s.helper().actor_id == w[4])
-	# 超强者：九死上限 1，只算上场 4 格；助力位放超强者不算
+	# 超强者：九死上限 1，只算上场 4 格；助力位九死不许放超强者（D57，XTianqi.HELPER_RULES），清到替补、助力位补非超强者
 	XTianqi._joining = true
 	for id in sup.slice(0, 3):
 		s.add_actor(id)
 	XTianqi._joining = false
 	s.battle_slots = [sup[0], w[1], w[2], w[3], sup[1]]
 	XItemMarks.enforce_party(s)
-	_check("helper_super_kept", s.battle_slots == [sup[0], w[1], w[2], w[3], sup[1]], s.battle_slots)
-	_check("can_deploy_slot", not XItemMarks.can_deploy(s, sup[2], 1) and XItemMarks.can_deploy(s, sup[2], XTianqi.HELPER_SLOT)
+	_check("helper_super_cleared", s.battle_slots == [sup[0], w[1], w[2], w[3], w[0]], s.battle_slots)  # 补位按 party 顺序：w0 在 w4 前
+	_check("can_deploy_slot", not XItemMarks.can_deploy(s, sup[2], 1) and not XItemMarks.can_deploy(s, sup[2], XTianqi.HELPER_SLOT)
 		and XItemMarks.can_deploy(s, sup[2], 0) and XItemMarks.can_deploy(s, sup[2]))
 	s.battle_slots = [sup[0], sup[1], w[2], w[3], w[4]]
 	XItemMarks.enforce_party(s)
