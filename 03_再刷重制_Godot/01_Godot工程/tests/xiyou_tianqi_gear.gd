@@ -145,7 +145,8 @@ func _ui() -> void:
 	add_child(equip)
 	await get_tree().process_frame
 	_check("ui_rows", equip.slot_view().size() == 13 and equip.slot_name(equip.slot_view().back()) == "神器")
-	equip._ok()  # 指令「装备」→ 槽位
+	if equip._mode == "command":   # 新界面（天启篇开着 XUiSkin，ui-skin-1c）没有指令窗，开页就在槽位
+		equip._ok()  # 指令「装备」→ 槽位
 	await get_tree().process_frame
 	var seen := [equip._slot]
 	for i in 12:
