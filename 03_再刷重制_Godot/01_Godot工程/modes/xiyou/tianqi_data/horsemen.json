@@ -2,7 +2,7 @@
  "version": 1,
  "source": "天启篇_四骑士Boss数值稿 v0.4（Kyo 2026-11-11 10:22 定稿）、数值测算 参数.json「骑士」一节（设计仓库 xiyou-design-docs）",
  "_note": "天启四骑士 36 层本体战的数值与技能表，只读（XTianqiHorsemen）。全部以艰险为基准：生命乘 hp_rate（骑士单用的血量倍率，hp_override 直接给某档生命），攻击、魔攻乘 balance_table.json 的敌人攻击；防御、魔防、敏捷、系数、冷却、计量、终焉五档一样。改数先改设计仓库的 参数.json 和数值稿，再改这里并跑 天启篇数据校验.py --params。",
- "nice_number_exempt": ["version", "actions", "hits", "fire_hits", "bonus_hits", "full", "every", "per_wave", "max_adds", "start_adds", "lines", "survive_turns", "turns", "max", "rand_hits", "cap_layers", "interval", "phase_interval", "confusion_state", "knight", "add", "add_enemy_famine"],
+ "nice_number_exempt": ["respawn_gap", "defiance_targets", "version", "actions", "hits", "fire_hits", "bonus_hits", "full", "every", "per_wave", "max_adds", "start_adds", "lines", "survive_turns", "turns", "max", "rand_hits", "cap_layers", "interval", "phase_interval", "confusion_state", "knight", "add", "add_enemy_famine"],
  "pass_rate": "atk / (atk + def)：骑士打我方照重制版公式，36 层骑士攻击远大于我方防御，约 0.9（测算占位 0.9）",
  "phase_hp": [0.66, 0.33],
  "hp_rate": {"xunchang": 0.7, "jianxian": 1.0, "jiusi": 1.5, "lianyu": 3.0, "zhengdao": 5.0},
@@ -13,7 +13,7 @@
   "add": 2
  },
  "adds": {
-  "_note": "援军、小怪：36 层本线普通怪（艰险血量约 7.5 万、一击约 2.3 万），不掉东西、不给经验。饥荒、瘟疫的小怪不主动攻击。",
+  "_note": "援军、小怪：36 层本线普通怪（艰险血量约 7.5 万、一击约 2.3 万），不掉东西、不给经验。饥荒的小怪不主动攻击；瘟疫的混子小弟另见 knights.plague.minions（攻击用这里的 atk）。",
   "hp": 75000,
   "atk": 25500,
   "def": 11000,
@@ -100,8 +100,16 @@
    "self_reduce": 0.11,
    "taunt_reduce": 0.22,
    "bash": {"coef": 1.1},
-   "defiance": {"full": 6, "pass": 3, "per_add": 1},
+   "defiance": {"full": 6, "pass": 3, "per_add": 1, "_note": "per_add：打混子每次行动 +几层（v0.2 起瘟疫小怪回合末不再给不服，改由小弟C 起哄）"},
    "adds": {"every": 2, "max": 3},
+   "minions": {
+    "_note": "混子小弟 A／B／C（天启篇_混子小弟ABC设计 v0.2，Kyo 11-15 D10～D13 全按推荐定；测试参数）。只上 36 层本体战，生存战和 35 层影子没有。站在混子身后（A 上 B 中 C 下），嘲讽在时打不到；第二阶段起每 adds.every 回合混出一只，第一次照 order 出场，倒下后空 respawn_gap 个整回合才能重混（没出过的先出，其次倒下最早的）。攻击、魔攻是共用 adds.atk（乘本档敌人攻击），生命乘本档敌人血量。shell 是借来的外观（敌人号），不写就用 shell_enemy.add，美术出来后每只换各自的号。",
+    "order": ["A", "B", "C"],
+    "respawn_gap": 2,
+    "A": {"name": "混子小弟A·板砖", "hp": 66000, "def": 11000, "mdf": 11000, "skill": "拍板砖", "coef": 1.0, "target": "most_defiance"},
+    "B": {"name": "混子小弟B·喷嚏", "hp": 55000, "def": 11000, "mdf": 11000, "skill": "打喷嚏", "coef": 0.5, "scope": "all", "magical": true},
+    "C": {"name": "混子小弟C·喇叭", "hp": 100000, "def": 15000, "mdf": 15000, "skill": "起哄", "defiance_targets": 2, "taunt_reduce": 0.33}
+   },
    "shield": {"break": 0.22, "break3": 0.33},
    "plague": {"dot": 0.05, "heal_down": 0.5, "confuse": 0.15, "down_start": 0.1, "down_per": 0.05, "down_cap": 0.33},
    "frail": {"per": 0.03, "cap": 0.6},
