@@ -31,7 +31,24 @@ static func _read() -> Dictionary:
 	var j := JSON.new()
 	if j.parse(FileAccess.get_file_as_string(path)) != OK or typeof(j.data) != TYPE_DICTIONARY:
 		return {}
-	return j.data
+	return validate(j.data)
+
+
+## 记录逐项查字段和类型（co 甲档核查 P2）：code 正整数（JSON 读出来是浮点，要是整数值）、version／date 字符串、
+## notes 数组、seen 布尔；缺一项或类型不对一律当坏数据（返回空字典：不弹、不报错，查清单时同号也会重记）。
+## 通过的返回整理过的副本（code 为 int）。
+static func validate(d: Variant) -> Dictionary:
+	if typeof(d) != TYPE_DICTIONARY:
+		return {}
+	for k in ["code", "version", "date", "notes", "seen"]:
+		if not d.has(k):
+			return {}
+	var c = d["code"]
+	if not ((c is int and c > 0) or (c is float and c > 0.0 and c == floorf(c) and c < 2147483647.0)):
+		return {}
+	if not (d["version"] is String) or not (d["date"] is String) or not (d["notes"] is Array) or not (d["seen"] is bool):
+		return {}
+	return {"code": int(c), "version": d["version"], "date": d["date"], "notes": d["notes"], "seen": d["seen"]}
 
 
 static func _write(d: Dictionary) -> bool:
@@ -79,7 +96,7 @@ static func note_check(result: Dictionary, running_code: int) -> bool:
 	if str(result.get("state", "")) != XUpdateCheck.LATEST or int(result.get("code", 0)) != running_code:
 		return false
 	if int(_read().get("code", 0)) == running_code:
-		return false  # 这一版已经记过（看没看过都不动）
+		return false  # 这一版已经记过（看没看过都不动）；坏记录 _read 返回空，照样重记
 	return remember(running_code, str(result.get("version", "")), str(result.get("date", "")), result.get("notes", []))
 
 
@@ -88,13 +105,13 @@ static func current(running_code: int) -> Dictionary:
 	if not ENABLED or running_code <= 0:
 		return {}
 	var d := _read()
-	if int(d.get("code", 0)) != running_code:
+	if d.is_empty() or d["code"] != running_code:
 		return {}
 	var n := clean_notes(d.get("notes"))
 	if n.is_empty():
 		return {}
 	return {"code": running_code, "version": str(d.get("version", "")), "date": str(d.get("date", "")),
-		"notes": n, "seen": d.get("seen", false) == true}
+		"notes": n, "seen": d["seen"]}
 
 
 ## 要弹的那份（没看过的）；没有返回空字典。
@@ -106,7 +123,7 @@ static func pending(running_code: int) -> Dictionary:
 ## 记已读（弹出来就算看过：玩家关掉、或弹的时候退出游戏都不再弹）。
 static func mark_seen(running_code: int) -> void:
 	var d := _read()
-	if int(d.get("code", 0)) != running_code or d.get("seen", false) == true:
+	if d.is_empty() or d["code"] != running_code or d["seen"]:
 		return
 	d["seen"] = true
 	_write(d)

@@ -103,3 +103,10 @@
 - FROM_CHECK 明确允许无补丁、整包首次启动也弹：仅清单结果 LATEST 且 code 等于当前运行号时补记。底包号低于清单最新号不会误记最新说明；若产品要求“只有装过补丁才弹”，当前行为不满足，但本单交付已明确把整包首次启动列作预期，不另报缺陷。
 - 两种标题分别传入旧样式／新皮肤标识，设置页按 skin 选择。ENABLED=false 阻断记录、自动弹出和设置入口；check.json 新增 notes 仍会写入，这是旁路缓存修复，玩家流程恢复旧行为。
 - 未核到：真实窗口观感及遮挡／手柄体验、真实 Windows／安卓机、线上清单实时请求；没有重跑车道 51 个选测（此次为只读核查，复跑专项＋发行冷启动，相关报告边界如上）。
+
+## 返修（co 甲档 P2：坏记录字段校验）
+
+- 修法：`XWhatsNew._read` 读出的记录先过 `validate`：五个字段（code、version、date、notes、seen）缺一项、或类型不对（code 不是正整数（JSON 读出的浮点要是整数值）、version／date 不是字符串、notes 不是数组、seen 不是布尔），一律当坏数据返回空字典。current／pending／mark_seen／note_check 都只经 `_read`，所以坏记录不弹、不报脚本错误、mark_seen 不改文件；查清单时同号坏记录不再挡住重记（原来 note_check 同号早退会把坏记录留住）。
+- 回归：`xiyou_whats_new` 加 11 种坏记录（缺 version／date／seen、缺 seen、code 为数组／字符串／小数／负数、seen 为字符串／数字、notes 为字符串、version 为数字、date 为 null），每种查「不弹、current 空、标题 show_pending 不弹、mark_seen 不改文件」和「查清单同号照样重记」，再加一条 JSON 浮点 code 当整数认。80/80，日志无 SCRIPT ERROR／ERROR。
+- 反向验证：把 whats_new.gd 换回修前版本跑同一专项，新加的断言挂 8 条以上（缺字段会弹、同号坏记录不重记、code 为数组／seen 为字符串报脚本错误），换回修后版本恢复 80/80。
+- 复跑：xiyou_whats_new、xiyou_update_check、xiyou_update_install 通过；语法检查 0 问题。只改了 `core/whats_new.gd` 和专项，没碰更新链路其他文件，没重跑冷启动。

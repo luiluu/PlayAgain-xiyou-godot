@@ -177,6 +177,35 @@ func _run() -> void:
 	f.close()
 	_check("记录坏了：不弹、查清单照常补记", W.pending(cur).is_empty() and W.note_check(latest, cur) and not W.pending(cur).is_empty())
 
+	# ── 合法 JSON 但缺字段／类型不对（co 甲档核查 P2）：一律当坏数据，不弹、不报错，查清单同号照样重记
+	var host0 := Control.new()
+	get_tree().root.add_child(host0)
+	var bads := {
+		"缺 version／date／seen": {"code": cur, "notes": ["hello"]},
+		"缺 seen": {"code": cur, "version": "v", "date": "", "notes": ["hello"]},
+		"code 是数组": {"code": [cur], "version": "v", "date": "", "notes": ["hello"], "seen": false},
+		"code 是字符串": {"code": str(cur), "version": "v", "date": "", "notes": ["hello"], "seen": false},
+		"code 是小数": {"code": cur + 0.5, "version": "v", "date": "", "notes": ["hello"], "seen": false},
+		"code 是负数": {"code": -cur, "version": "v", "date": "", "notes": ["hello"], "seen": false},
+		"seen 是字符串": {"code": cur, "version": "v", "date": "", "notes": ["hello"], "seen": "false"},
+		"seen 是数字": {"code": cur, "version": "v", "date": "", "notes": ["hello"], "seen": 0},
+		"notes 是字符串": {"code": cur, "version": "v", "date": "", "notes": "hello", "seen": false},
+		"version 是数字": {"code": cur, "version": 1, "date": "", "notes": ["hello"], "seen": false},
+		"date 是 null": {"code": cur, "version": "v", "date": null, "notes": ["hello"], "seen": false},
+	}
+	for why in bads:
+		var bf := FileAccess.open(W.path, FileAccess.WRITE)
+		bf.store_string(JSON.stringify(bads[why]))
+		bf.close()
+		W.mark_seen(cur)  # 坏记录：不改、不报错
+		var shown := XWhatsNewPage.show_pending(host0, false)
+		_check("坏记录（%s）：不弹、current 空、mark_seen 不改文件" % why, W.pending(cur).is_empty() and W.current(cur).is_empty()
+			and shown == null and host0.get_node_or_null("WhatsNewLayer") == null
+			and FileAccess.get_file_as_string(W.path) == JSON.stringify(bads[why]))
+		_check("坏记录（%s）：查清单同号照样重记" % why, W.note_check(latest, cur) and not W.pending(cur).is_empty())
+	_check("正常记录：JSON 读回的浮点 code 当整数认", W.validate(JSON.parse_string(JSON.stringify({"code": cur, "version": "v", "date": "", "notes": [], "seen": false}))).get("code") == cur)
+	host0.free()
+
 	# ── 回退开关：不记、不弹、设置页不列
 	DirAccess.remove_absolute(W.path)
 	W.ENABLED = false
