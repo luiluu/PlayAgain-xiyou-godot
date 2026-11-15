@@ -58,6 +58,9 @@ static func patch_states(t: Array) -> void:
 		return
 	_set_literal(t, ST_CHIBIE, 0.1, float(c.chibie))
 	_set_literal(t, ST_EGO, 1.5, float(c.ego_per))
+	# 注意（核查 #087 P3，11-15）：状态 2565 不只 9940「合体赛亚人」挂，技能 9933「普通一拳」也 <StartPushState2565>（说明写 +488%、原版同挂 188%）。
+	# 切「乙」档（fusion≥0）会连带改 9933 的 2565。甲档 fusion＝-1 不改、没有实际影响；切乙档前要先定「普通一拳」跟不跟着改，
+	# 或把 9940 改挂复制出的新状态（交付单已问协调）。
 	if float(c.fusion) >= 0.0 and ST_FUSION < t.size() and t[ST_FUSION] is Dictionary:
 		for e in t[ST_FUSION].get("effects", []):
 			for g in e.get("groups", []):

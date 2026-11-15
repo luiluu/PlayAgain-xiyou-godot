@@ -630,6 +630,7 @@ static func _plague_turn_start(logic, f: Dictionary, turn: int) -> void:
 		elif turn > int(f.broken_turn) + 1:
 			f.taunt = true
 			f.broken_turn = -1
+			f.shield_acc = 0.0
 	if int(f.phase) >= 2 and turn - int(f.last_add) >= int(k.adds.every):
 		for e in f.adds:
 			if not e.is_alive():
@@ -660,14 +661,15 @@ static func _defiance(logic, f: Dictionary, a, n: int) -> void:
 		var mates: Array = _alive_actors(logic).filter(func(x): return not is_same(x, a))
 		if not mates.is_empty():
 			var to = mates[logic._int(0, mates.size() - 1, "horseman_defiance_pass")]
-			var mm := _mark(f, to)
-			mm.defiance = int(mm.get("defiance", 0)) + int(k.pass)
+			_defiance(logic, f, to, int(k.pass))  # 传过去的 3 层也要立即再判一次满 6（稿 5.3「满 6 层失控」；Kyo 11-15，#016 P3）；每次失控都清零，传递必收敛
 
 
 ## 混子之盾：累计伤害到最大生命的 22%（第三阶段 33%）就碎
 static func _shield_hit(f: Dictionary, value: float, turn: int) -> void:
 	if not bool(f.shield_open) or value <= 0.0:
 		return
+	if int(f.broken_turn) >= 0:
+		return  # 碎盾后到嘲讽恢复前（碎的当回合剩余＋解除的那回合）的伤害不记入累计；碎盾时已清零，恢复后从 0 重新攒（Kyo 11-15，#016）
 	f.shield_acc = float(f.shield_acc) + value
 	var k: Dictionary = knight("plague").shield
 	var need := float(f.knight.mhp) * float(k.break3 if int(f.phase) >= 3 else k.break) * XTianqiPlagueLine.shield_need_mult()  # 瘟疫线 25 层捡了盾碎片：降低
@@ -1111,6 +1113,8 @@ static func crit_immune(dt) -> bool:
 
 
 ## BattleLogic.targets_for：混子嘲讽在时，我方打敌人的技能只能打混子
+## 【口径 Kyo 11-15，#016 P3】混子嘲讽是**全体挑衅**：群攻也只能打混子、小怪打不到（与同线异化「挑衅者」只限单体不同，那条群攻不受限）。
+## 二阶段小怪「不攻击、只传不服」，群攻清不掉，只有碎混子之盾那一回合能清——这是想要的设计，不改；设计稿四骑士数值稿已写明。
 static func filter_targets(logic, a, list: Array) -> Array:
 	if not active(logic) or not a is XActor:
 		return list
