@@ -87,3 +87,48 @@
 - 2d5d0ea29 收口批 3 舒适
 - eedda4502 收口批 4 D45／D44
 - 358954804 合并 main
+
+## 小A乙档核查（2026-11-15，Antigravity）
+
+- **结论**：**不通过（需修 2 项 P1 触屏硬伤后再合）**。CORE_V2、COMFORT_V2 与 D45/D44 对比图整体实装扎实、四个开关回退完备；但 TOUCH_V2 存在两处可直接复现的触屏故障（祭坛胶囊底边裁切、`"Y / 取消"` 与 `"上下"` 胶囊点按无效且文案错位），另有三项 P2 覆盖度／宽窄屏适配问题及文字审细节需处理或记录。
+
+### 一、问题清单（P1 / P2 / P3）
+
+- **P1-1【祭坛触屏提示胶囊底边被裁切出屏幕】**（实测＋像素核查）
+  - 位置：`modes/xiyou/ui/skin/tianqi_skin_altar.gd:220`（同款隐患：`modes/xiyou/ui/tianqi_title.gd:305`）。
+  - 现象：`relayout()` 用固定常量 `XSkinKeyHints.H`（`22`）算 `y`，未调 `hints.height()`（触屏为 `TOUCH_H = 44`），导致触屏下 `y = 688`、底边伸到 `732 > 720`。
+  - 证据：无头探测实测 `altar_hints rect=(707,688,494,44)` 超出视口底边；PNG 像素检测 `altar_16x9_after_touch.png`、`altar_20x9_after_touch.png`、`altar_4x3_after_touch.png` 最底一行（`y = h - 1`）均见 16～20 个胶囊非背景像素（其余页面底部均正常留空 10px）。
+- **P1-2【`"Y / 取消"` 与 `"上下"` 触屏胶囊点击无效且显示错位】**（实测＋代码核查）
+  - 位置：`modes/xiyou/ui/skin/skin_key_hints.gd:42-67`、`skin_equip_page.gd:107`、`tianqi_skin_altar.gd:211`、`skin_status_page.gd:37`（旧页附带：`map_transfer.gd:170` `再点地图名`）。
+  - 现象：① `detail_hints()`（`["Y / 取消", "收起"]`）与祭坛规则态（`["Y / 取消", "关闭"]`）：`is_pair()` 因包含 `"/"` 误判为双向键，把单键胶囊画成 `‹ 收起 ›` / `‹ 关闭 ›`，且 `key_events("Y / 取消")` 返回 `[]`，触屏点按无反应（`fire()` 返回 `false`）；② `["上下", "滚动"]` 未被 `is_pair()` 与 `key_events()` 识别（只认 `"左右"` 与 `"↑ / ↓"`），既少画了 `‹ ›`，点击也完全无反应。
+- **P2-1【左上 `‹` 返回未覆盖主菜单与祭坛页，且模板页右货币被连带左移 36px】**（像素核查＋代码核查）
+  - 位置：`skin_template_page.gd:151, 406-412`、`skin_main_menu.gd`、`tianqi_skin_altar.gd`、`skin_party_status.gd`。
+  - 现象：交付单玩家可见描述写「每页左上有『‹』返回」，`Fable审 P2-1/A4` 也要求整页左上固定 `‹`；目前仅 `XSkinTemplatePage` 子类（物品/装备/技能/状态/设置）有 `XSkinBackButton`，`XSkinMainMenu` 与 `XTianqiSkinAltar`（尤其规则态无 `‹` 易卡住）均未加。另 `skin_template_page.gd:408` 把 `m += XSkinBackButton.W` 加在共享 `m` 上，使顶栏右上货币 `view.x - m` 也多左移 36px。
+- **P2-2【列表触屏拖动未覆盖状态页／战斗列表，部分全屏子页未进 `skin_fullscreen`】**（只看代码）
+  - 位置：`skin_status_page.gd:311-323`、`skin_battle_list.gd`（继承 `battle_list.gd:160-200`）、`skin_gear_detail.gd`、`skin_party_status.gd`。
+  - 现象：`小A审 P1-1` 点名了 `skin_list.gd`、`skin_status_page.gd`、`skin_battle_list.gd` 三处，本单只改了 `XSkinList`；状态页与战斗列表仍无 `InputEventScreenDrag`、仍用 `2/4px` 滚动条且战斗列表仍是按下即选中/触发。另 `XSkinPartyStatusPanel`、`XAlienWorkshop`、`XMapTransfer` 未进 `skin_fullscreen` 组；物品/装备打开 `search_panel` 或设置进子页藏起 `skin` 时，虚拟摇杆与 AB 键会重新弹出盖在子页上。
+- **P2-3【130%＋触屏字号在窄屏／左环／未接入控件处局部越界或未跟放】**（实测字宽＋只看代码）
+  - 位置：`skin_ring_nav.gd:268`、`skin_list.gd:22-23`、`skin_battle_list.gd:10, 184`、`skin_status_page.gd:242`、`skin_main_menu.gd`。
+  - 现象：① 实测字体宽度：`130%`＋触屏（`FS_LIST=25, FS_AUX_MAX=22`）下，`XSkinRingNav` 选中态按 `25px` 画字，右侧球位（`item_pos.x=258`）的「重要物品 0」（宽 120px）、「挂机与操作」（宽 125px）会超出左栏右沿 `300px` 约 18～20px 伸入间隙；`4:3`（`960×720`）下设置中栏宽仅 `228px`，长设置项（需 `367px`）和两列物品名（每列约 `110px`）需缩到 16 号并大量截成 `…`。② 只看代码：`XSkinList.font_size` 在构造时取值，设置页现场改字号不即时刷新当前列表；`skin_status_page.gd:242` 字号上限写死 20；`skin_battle_list.gd:184` 行高固定 44 且技能名未用 `fit_text` 截字，长技能名配右消耗＋「TP不足」仅余约 116px 宽，大字号有压字风险。
+- **P3【文字审与小瑕疵】**（实测＋代码核查）
+  - **文字审 1（漏列与冲突）**：`tianqi_skin_altar.gd:212` 新增 `["← / →", "切换印"]`（显示 `‹ 切换印 ›`），交付单「新文字」一节漏列（另 `message_box.gd` 有 `‹ 换位 ›`、`‹ 调数 ›`）；`"Y / 取消"` 被误判后呈现为带双向箭头的 `‹ 收起 ›`/`‹ 关闭 ›`（修 P1-2 即除）；`tianqi_skin_altar.gd:418` 环心进度数字下方直接复用了 `STATE_TEXT[2]`，导致环心显示 `◆ 已揭开`，建议环心去掉 `◆ ` 仅留「已揭开」。
+  - **文字审 2（复核通过）**：分节标题「自带」「词条」「套装」「说明」（实测 152 武器＋254 防具走 `help_rows`/`help_sections` 后 `bad_rows_count=0`，无残留品质/种类/价格行或 `\c[...]`）、祭坛状态「· 未开启」「◇ 可揭开」「◆ 已揭开」、左上「‹」无字、设置「界面动效」新说明（核 `ui_skin.gd:313-325` `breathing()` 逻辑一致）均通顺准确。
+  - **P3-3（范围外留后续与键盘记号）**：`XSkinBackButton` 在 `TOUCH_V2=true` 且非触屏时也常驻显示（代码已注“只是个记号”）；战斗旧 `XHelpCard` 仅挪位未换卡、技能与消耗品未分节、触屏指令环未淡出重排、无真机触屏测试，交付单均已如实标明留后续批。
+
+### 二、核查对照与验证口径（实测 vs 只看代码）
+
+1. **三份审稿对照**
+   - **已修实测确认**：`CORE_V2` 旧色表去纯黄（`items_16x9` 黄像素 `254→0`）＋装备分节（152 武器/254 防具实测 `0` 残留行）＋战斗说明卡收至行动条上方（`battle_after` 差异框底止 `y≤541`）；`COMFORT_V2` 骨白正文 `#e6e2dc`、提亮灰 `#8e8982`、柔和绿 `#8fdc5a`、主按钮平时旧金 `#2b2318`（`equip_16x9` 亮红像素 `18814→0`）、血条 8px、祭坛 `◆◇·`（`xiyou_ui_skin_close`＋像素采样确认）；`target_pulse` 2.4s 慢呼吸与 `u4` 暗红选底 `#7a1a14`（专项断言＋代码确认）；D45 与 D44 默认态未改、对比图准确落在环心／徽章／底色。
+   - **未修／部分修**：见 P1-1、P1-2、P2-1、P2-2、P2-3。
+2. **本轮实测通过（前台单独运行）**
+   - `语法检查.py`：949 `.gd`，0 问题。
+   - `回退开关覆盖.py`：388 个开关，`ui-skin-close` 4 个新开关（`CORE_V2`/`FONT_V2`/`TOUCH_V2`/`COMFORT_V2`）均已有字面量回退覆盖，新缺口 0。
+   - 专项无头：`xiyou_ui_skin_close.tscn` `47/47`、`xiyou_ui_skin_battle.tscn` `61/61`、`xiyou_ui_skin_3a.tscn` `90/90`（`xiyou_ui_skin` 104、`1b` 85、`1c` 78、`menu` 99 亦于本分支核查前期同过）。
+   - 像素与数据验证：纯 Python 校验 `*_compare.png` 左右拼接与 `before`/`after_touch` 一致、`d44_*`/`d45_*`/`battle_after_touch/` 坐标与色值；`skin_off/base` 与 `skin_off/branch` 32/32 PNG SHA-256 全同；Godot 无头脚本实测全库 152 武器/254 防具/188 物品及 `130%`＋触屏字宽。
+3. **只看代码**
+   - `XTouchControls` 全屏隐藏交互、`XSkinStatusPage`/`XSkinBattleSkillList`/`XSkinGearDetail` 拖动缺口、键盘手柄下各页 `‹` 显隐与交互、`4:3`/`20:9` 列表实时交互效果（非实机手动点拖）。
+4. **留给总装的长测试**
+   - `03_再刷重制_Godot/07_开发环境/检查.sh --full`（含 `--oracle` 对照）；
+   - 窗口模式实拍 `xiyou_ui_skin_close -- --out=...`（141 断言）及 `皮肤关闭对照.py` 全量重跑；
+   - 云端选测／全量与安卓真机触屏实测。
+
