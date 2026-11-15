@@ -116,6 +116,9 @@ func _skin_dress() -> void:
 			if l is Label:
 				_skin_label(c, l)
 	XSkinButton.apply(_back, "", XUiSkin.FS_LIST)
+	_back.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_back.custom_minimum_size = Vector2(180, 40)
+	_back.size = Vector2(180, 40)
 	_hints = XSkinKeyHints.new()
 	_hints.name = "SkinKeyHints"
 	_hints.set_hints([["← / →", "选择"], ["确定", "选定"], ["取消", "再想想"]])
@@ -161,7 +164,7 @@ func _skin_layout() -> void:
 		_cards[i].position.x = x0 + i * (CARD.x + gap)
 	_title.size.x = vw
 	_sub.size.x = vw
-	_back.position = Vector2(roundf((vw - _back.size.x) / 2.0), vh - 68)
+	_back.position = Vector2(roundf((vw - _back.size.x) / 2.0), vh - XUiSkin.HINT_BOTTOM - _back.size.y)
 	_hints.place(Vector2(vw, vh))
 	if XPlatform.is_touch():
 		_hints.visible = false

@@ -22,6 +22,15 @@ static func style(kind := "") -> StyleBoxFlat:
 	return sb
 
 
+## 红乙选中条，内边距和平时那一档一样（换状态时字不跳）
+static func select(like: StyleBox = null) -> StyleBox:
+	var sel := XSkinSelectStyle.new()
+	var src: StyleBox = like if like != null else style()
+	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
+		sel.set_content_margin(side, src.get_content_margin(side))
+	return sel
+
+
 ## 文字颜色：危险橙、其余正文白
 static func text_color(kind := "") -> Color:
 	return XUiSkin.DOWN if kind == "danger" else XUiSkin.TEXT
@@ -31,8 +40,9 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	var normal := style(kind)
 	for st in ["normal", "disabled"]:
 		b.add_theme_stylebox_override(st, normal)
+	var sel := select(normal)
 	for st in ["hover", "pressed", "focus", "hover_pressed"]:
-		b.add_theme_stylebox_override(st, XUiSkin.select_style())
+		b.add_theme_stylebox_override(st, sel)
 	b.add_theme_font_override("font", XUiSkin.font("body"))
 	var fs := font_size if font_size > 0 else clampi(b.get_theme_font_size("font_size"), XUiSkin.FS_AUX, XUiSkin.FS_LIST)
 	b.add_theme_font_size_override("font_size", fs)

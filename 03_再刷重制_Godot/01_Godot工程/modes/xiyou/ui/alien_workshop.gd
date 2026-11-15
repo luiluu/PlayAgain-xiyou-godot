@@ -986,6 +986,10 @@ func _make(n: Dictionary) -> Control:
 			for k in kids:
 				var c := _make(k)
 				if c != null:
+					if skin:   # 新界面：一行里的说明占满剩下的宽，按钮竖向居中不拉高
+						c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+						if c is Label:
+							c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					h.add_child(c)
 			return h
 		"alien-body", "alien-choices":
@@ -1093,7 +1097,7 @@ func _skin_button(b: Button, cls: String) -> Button:
 	XSkinButton.apply(b, kind, XUiSkin.FS_AUX_MAX)
 	b.custom_minimum_size.y = 40
 	if cls == "selected":
-		b.add_theme_stylebox_override("normal", XUiSkin.select_style())
+		b.add_theme_stylebox_override("normal", XSkinButton.select())
 	if b.disabled:
 		b.add_theme_stylebox_override("disabled", b.get_theme_stylebox("normal"))
 		b.modulate.a = 0.4
@@ -1247,7 +1251,7 @@ func _render_skin(nodes: Array) -> void:
 			XSkinButton.apply(tb, "", XUiSkin.FS_AUX_MAX)
 			tb.custom_minimum_size.y = SKIN_TAB_H
 			if i == skin_tab:
-				tb.add_theme_stylebox_override("normal", XUiSkin.select_style())
+				tb.add_theme_stylebox_override("normal", XSkinButton.select())
 				tb.add_theme_color_override("font_color", XUiSkin.TEXT)
 			else:
 				tb.add_theme_color_override("font_color", XUiSkin.TEXT_2)
@@ -1331,9 +1335,16 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 	var items := _vbox(6)
 	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lsc.add_child(items)
+	# 选中的那件画红乙选中条（旧版照原版只在整页重画时按当时的 selected 标，首次打开不标；新界面按现在选中的标，节点树不动）
+	var uids := XAlienation.owned(s()).filter(func(e): return not XAlienation.mark(e).is_empty()).map(func(e): return str(XAlienation.mark(e).uid))
+	var sel_i := uids.find(selected)
+	var bi := 0
 	for k in list_node.children:
 		var c := _make(k)
 		if c is Button:
+			if bi == sel_i:
+				c.add_theme_stylebox_override("normal", XSkinButton.select())
+			bi += 1
 			(c as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
 			(c as Button).text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			(c as Button).clip_text = true
