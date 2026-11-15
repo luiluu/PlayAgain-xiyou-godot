@@ -713,8 +713,8 @@ func _help(entry = null) -> void:
 	help_card.show_for(XGrowthHelp.skill_view(entry, _active) if XHelpCard.kind_of(entry) == "skill" else entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
-	var row := Rect2(list_win.position - _origin + Vector2(0, list_win.padding + (list_win.index - list_win.top) * XBattleList.LH),
-		Vector2(list_win.size.x, XBattleList.LH))
+	var row := list_win.row_rect()
+	row.position -= _origin
 	help_card.place_for_row(row, true)
 	help_card.position += _origin
 
@@ -1272,6 +1272,10 @@ func _command_entries(a: XActor) -> Array:
 ## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
+	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
+		w.place_for_actor(s.position, BOX)
+		w.position += _origin
+		return
 	var p := s.position + Vector2(32, -64)
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
@@ -1282,7 +1286,7 @@ func _command_for(a: XActor):
 	var last_index := initial_command_index(a, opts)
 	while true:
 		_close_windows()
-		cmd_win = XBattleList.create(ui, opts, CMD_W, "center")
+		cmd_win = XSkinBattle.command(ui, opts, CMD_W, a)  # 新界面 2A：开着新皮肤是指令环，关着同 XBattleList.create
 		cmd_win.cancel_enabled = false
 		cmd_win.index_changed.connect(func(i): _preview(a, opts[i].get("preview") if i >= 0 else null))
 		cmd_win.chosen.connect(func(i): _picked.emit(opts[i].key))
@@ -1553,8 +1557,11 @@ func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0)
 	_close_list()
 	XActor.read_begin()  # 只读窗口缓存（O-348）：逐行算能不能用、费用都是只读
 	var rows := entries.map(func(e): return _list_entry(a, e, items))
+	if XSkinBattle.on():
+		rows = XSkinBattle.decorate_all(logic, a, entries, rows, items)  # 新界面 2A：不能用的原因、目标、用完剩多少（只读）
 	XActor.read_end()
-	list_win = XBattleList.create(ui, rows, LIST_W)
+	var title := str(cmd_win.entries[cmd_win.index].text) if cmd_win != null and is_instance_valid(cmd_win) and cmd_win.index >= 0 and cmd_win.index < cmd_win.entries.size() else ""
+	list_win = XSkinBattle.list(ui, rows, LIST_W, items, a, title)  # 关着同 XBattleList.create(ui, rows, LIST_W)
 	list_win.index_changed.connect(func(i):
 		if i >= 0 and i < entries.size():
 			_help(entries[i])
@@ -1814,6 +1821,7 @@ func _select_target(b) -> void:
 		_poison_help(b)
 	elif b is XActor and _target_mode == "ally" and XGuyu.key(_target_skill) == "transfer":
 		_transfer_help(b)
+	XSkinBattle.target_hint(self, b, _target_skill, group)  # 新界面 2A：目标提示（关着什么也不做）
 
 
 ## 优化 O-107：选敌时的毒鸡汤说明卡贴在该敌人旁边，选到没有毒鸡汤的敌人就收起。
