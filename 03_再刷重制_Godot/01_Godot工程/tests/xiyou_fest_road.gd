@@ -173,6 +173,11 @@ func _real_damage() -> void:
 	XFestRoad.battle_streak = 0
 	var d_off := float(lg._damage_value(u, sk, t, false))
 	_check("streak_reaches_real_damage", d0 > 0.0 and absf(d3 / d0 - 1.3) < 0.02 and absf(d_off - d0) / d0 < 0.02, [d0, d3, d_off])
+	# 辅助「应援」按目标最大生命 4% 回复
+	var sup = lg.enemies[4]
+	var tgt = lg.enemies[0]
+	var hv := float(lg._damage_value(sup, XDB.rec("Skills", XFestRoad.HEAL_SKILL), tgt, false))
+	_check("support_heal_4pct", absf(absf(hv) / float(tgt.mhp) - XFestRoad.HEAL_RATE) < 0.005, [hv, tgt.mhp])
 	# 天启篇档不开
 	var tq := Kit.new_game()
 	var h := MockHost.new()

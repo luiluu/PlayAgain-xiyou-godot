@@ -269,6 +269,13 @@ static func skill_rec(id: int, table: Array) -> Dictionary:
 	var dmg: Dictionary = (out.get("damage", {}) as Dictionary).duplicate()
 	dmg["type"] = 3
 	dmg["formula"] = "b.mhp * %s" % str(HEAL_RATE)
+	dmg["formulaGd"] = dmg["formula"]
+	# 伤害结算读转换器预编译的公式程序（XFormulaExecution），不读 formula 字符串，所以手写同一条式子的程序
+	dmg["formulaProgram"] = {"version": 1, "source": {"table": "Skills", "id": id, "custom": false, "sha256": ""}, "status": "pure",
+		"capabilities": ["read.battler"], "locals": [], "result": "completion",
+		"steps": [{"op": "expr", "pos": 0, "value": {"op": "binary", "pos": 0, "operator": "*",
+			"left": {"op": "property", "pos": 0, "receiver": "b", "name": "mhp"},
+			"right": {"op": "literal", "pos": 8, "value": HEAL_RATE}}}]}
 	dmg["variance"] = 0
 	dmg["critical"] = false
 	out["damage"] = dmg
