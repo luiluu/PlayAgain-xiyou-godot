@@ -12,9 +12,11 @@ var title_color := XUiSkin.TEXT
 var title_size := XUiSkin.FS_CARD
 var subtitle := ""
 var desc := ""
-## [{title, lines: [{left, right, color, right_color}]}] 或 [{title, text}]
+## [{title, lines: [{left, right, color, right_color}]}] 或 [{title, text}] 或 [{title, rows: [{text, color}]}]（每行自动换行、各自颜色；title 可空）
 var sections: Array = []
-## [{text, primary}]
+## 底部按钮之上给别的控件（如「给谁用」目标列表）留的高度：说明、分节画到这里为止
+var reserve_bottom := 0.0
+## [{text, primary, disabled}]（disabled：变暗、不触发）
 var buttons: Array = []
 var button_index := -1
 var pad := XUiSkin.PAD_LG
@@ -35,6 +37,11 @@ func setup(d: Dictionary) -> XSkinCard:
 	return self
 
 
+## 说明、分节能画到的最低处（按钮和 reserve_bottom 之上）
+func content_bottom() -> float:
+	return size.y - pad - (BUTTON_H + XUiSkin.GRID if not buttons.is_empty() else 0.0) - reserve_bottom
+
+
 func button_rect(i: int) -> Rect2:
 	var n := buttons.size()
 	if n == 0:
@@ -52,7 +59,8 @@ func handle_input(event: InputEvent) -> bool:
 		queue_redraw()
 		return true
 	if event.is_action_pressed("ui_accept") and button_index >= 0:
-		button_pressed.emit(button_index)
+		if not bool(buttons[button_index].get("disabled", false)):
+			button_pressed.emit(button_index)
 		return true
 	return false
 
@@ -63,7 +71,8 @@ func _gui_input(event: InputEvent) -> void:
 			if button_rect(i).has_point(event.position):
 				button_index = i
 				queue_redraw()
-				button_pressed.emit(i)
+				if not bool(buttons[i].get("disabled", false)):
+					button_pressed.emit(i)
 				accept_event()
 				return
 
@@ -76,7 +85,7 @@ func _draw() -> void:
 	var head := XUiSkin.font("title")
 	var num := XUiSkin.font("num")
 	var w := size.x - pad * 2
-	var bottom := size.y - pad - (BUTTON_H + XUiSkin.GRID if not buttons.is_empty() else 0.0)
+	var bottom := content_bottom()
 	var y := float(pad)
 	var x := float(pad)
 	if icon != null:
@@ -84,7 +93,8 @@ func _draw() -> void:
 		x += 48 + 12
 	if title != "":
 		var ty := y + (48 - title_size) / 2.0 + title_size * 0.86 if icon != null else y + title_size * 0.86
-		draw_string(head, Vector2(x, ty), title, HORIZONTAL_ALIGNMENT_LEFT, pad + w - x, title_size, title_color)
+		var fit := XSkinList.fit_text(head, title, pad + w - x, title_size, 20)   # 长名字先缩到 20 号，再放不下加省略号
+		draw_string(head, Vector2(x, ty), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], title_color)
 		y += maxf(48.0 if icon != null else 0.0, title_size * 1.25)
 	if subtitle != "":
 		y += 4
@@ -99,8 +109,11 @@ func _draw() -> void:
 		y += 6
 		draw_line(Vector2(pad, y), Vector2(pad + w, y), Color(XUiSkin.LINE, 0.14), 1.0)
 		y += 4
-		draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
-		y += SECTION_H - 10
+		if str(sec.get("title", "")) != "":
+			draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+			y += SECTION_H - 10
+		for row in sec.get("rows", []):
+			y = _paragraph(body, str(row.get("text", "")), y, w, XUiSkin.FS_AUX, row.get("color", XUiSkin.TEXT_2), bottom)
 		if sec.has("text"):
 			y = _paragraph(body, str(sec.text), y, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2, bottom)
 		for ln in sec.get("lines", []):
@@ -118,7 +131,7 @@ func _draw() -> void:
 		var b: Dictionary = buttons[i]
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(int(BUTTON_H / 2))
-		if bool(b.get("primary", false)):
+		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
 			sb.bg_color = XUiSkin.SEL_FILL
 			sb.shadow_color = Color(XUiSkin.SEL_FILL, 0.5)
 			sb.shadow_size = 7
@@ -132,7 +145,7 @@ func _draw() -> void:
 		var t := str(b.get("text", ""))
 		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST).x
 		draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + XUiSkin.FS_LIST * 0.36), t,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT)
+			HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
 
 
 func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, bottom: float) -> float:

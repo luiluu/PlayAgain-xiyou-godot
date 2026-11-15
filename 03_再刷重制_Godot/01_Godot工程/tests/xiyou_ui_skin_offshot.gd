@@ -1,7 +1,7 @@
 extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
-## 拍的页：主菜单、状态、物品、装备、设置。两种情形：
+## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
 ##   tq_off     天启篇存档、XUiSkin.ENABLED = false（新皮肤关掉回退）。main 上没有 XUiSkin，两种都是旧界面。
 ## 去掉不确定因素：菜单粒子隐藏、MV 光标不闪烁、每页等固定帧数。
@@ -9,7 +9,7 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XEquipScene", "XOptionsScene"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene"]
 
 var out_dir := ""
 var compare := ""
