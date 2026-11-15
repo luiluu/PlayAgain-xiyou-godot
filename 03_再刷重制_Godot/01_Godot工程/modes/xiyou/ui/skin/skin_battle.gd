@@ -229,17 +229,17 @@ static var TOGGLE_POS := Vector2(20, 84)
 static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> void:
 	if not on():
 		return
-	side.position = origin + TOGGLE_POS
+	side.position = Vector2(TOGGLE_POS.x, origin.y + TOGGLE_POS.y)   # x 贴屏幕左边（同挂机快捷界面），宽屏不跟 1280 居中（核查返工）
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(XUiSkin.BG, 0.85)
 	normal.border_color = Color(XUiSkin.LINE, 0.6)
 	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(20)
+	normal.set_corner_radius_all(23)
 	normal.content_margin_left = 14
 	normal.content_margin_right = 14
 	for b in buttons:
 		var btn := b as Button
-		btn.custom_minimum_size = Vector2(104, 40)
+		btn.custom_minimum_size = Vector2(120, 46)   # 点击区同原按钮（XUI.button 高 46、最小宽 120；核查返工，原 104×40）
 		btn.add_theme_font_override("font", XUiSkin.font("body"))
 		btn.add_theme_font_size_override("font_size", 16)
 		btn.add_theme_stylebox_override("normal", normal)

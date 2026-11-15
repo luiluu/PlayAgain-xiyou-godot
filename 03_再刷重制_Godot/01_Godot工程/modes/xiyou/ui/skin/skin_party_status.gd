@@ -201,7 +201,7 @@ func _fill_list() -> void:
 	for row in shown:
 		items.append({"text": str(row.name), "icon": int(row.icon), "sub": meta_text(row),
 			"color": XUiSkin.DOWN if row.kind == "异常" else XUiSkin.TEXT})
-	list.empty_text = "没有%s状态" % ("" if tab == "全部" else tab)
+	list.empty_text = "当前没有%s状态" % ("" if tab == "全部" else tab)   # 同首领详情的「当前没有异常状态」（核查文字必改）
 	list.set_items(items)
 	tab_row.queue_redraw()
 	_fill_card()
@@ -229,13 +229,31 @@ func _fill_card() -> void:
 		"subtitle": meta_text(row), "desc": str(row.description), "sections": sections})
 
 
-## 人物属性一节：元素属性＋各元素承伤（XPowerPanel 同一份取数，去掉开头「人物属性：」）
-static func attr_text(a: XActor) -> String:
+## 人物属性一节：元素属性＋各元素承伤（XPowerPanel 同一份取数，去掉开头「人物属性：」）。
+## 承伤一项（「火焰承伤 90%」）不拆开：按牌的文字宽自己排行、行间用换行，免得在词中间折（核查返工）
+static func attr_text(a: XActor, width := RIGHT_W - XUiSkin.PAD_LG * 2.0) -> String:
 	var parts := XPowerPanel.attribute_parts(a).map(func(p): return str(p[0]))
 	if not parts.is_empty() and str(parts[0]).begins_with("人物属性"):
 		parts.remove_at(0)
 	var res := XPowerPanel.resistance_parts(a).map(func(p): return str(p[0]))
-	return "".join(PackedStringArray(parts)) + "\n" + "　".join(PackedStringArray(res))
+	return "".join(PackedStringArray(parts)) + "\n" + "\n".join(PackedStringArray(pack_lines(res, width)))
+
+
+## 一组组字排成行：放得下就用全角空格接在本行后面，放不下另起一行（字号同详情牌分节正文）
+static func pack_lines(groups: Array, width: float, fs := XUiSkin.FS_AUX) -> Array:
+	var f := XUiSkin.font("body")
+	var lines := []
+	var line := ""
+	for g in groups:
+		var t := str(g) if line == "" else line + "　" + str(g)
+		if line != "" and f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width - 2.0:
+			lines.append(line)
+			line = str(g)
+		else:
+			line = t
+	if line != "":
+		lines.append(line)
+	return lines
 
 
 func _draw() -> void:

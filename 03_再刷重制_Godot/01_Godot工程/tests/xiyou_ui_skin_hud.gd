@@ -111,7 +111,7 @@ func _run() -> void:
 	var a: XActor = b._active
 	_check("fixture_actor", a == s.actor(10), null if a == null else a.actor_id)
 	_party(b, a)
-	_check("toggles_moved", b.auto_btn.get_parent().position == b._origin + XSkinBattle.TOGGLE_POS and b.auto_btn.custom_minimum_size == Vector2(104, 40), b.auto_btn.get_parent().position)
+	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(XSkinBattle.TOGGLE_POS.x, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.get_parent().position)
 	_otb(b, a)
 	await _boss(b)
 	await _shot("battle_2b_hud")
@@ -318,6 +318,15 @@ func _status_panel(b: XBattleScene, a: XActor) -> void:
 	if not rows.is_empty():
 		_check("status_card_first", p.state_card.title == str(rows[0].name) and p.state_card.subtitle == XSkinPartyStatusPanel.meta_text(rows[0]), [p.state_card.title, p.state_card.subtitle])
 	_check("status_card_attr", not p.state_card.sections.is_empty() and p.state_card.sections[0].title == "人物属性" and str(p.state_card.sections[0].text).contains("承伤"))
+	# 承伤一项不拆开：每行都由整组拼成
+	var groups := XPowerPanel.resistance_parts(a).map(func(q): return str(q[0]))
+	var lines := str(p.state_card.sections[0].text).split("\n").slice(1)
+	var ok_lines := lines.size() > 1
+	for ln in lines:
+		for piece in ln.split("　"):
+			if not groups.has(piece):
+				ok_lines = false
+	_check("status_attr_no_split", ok_lines, lines)
 	var d := XSkinLayout.compute(p.view_size(), XSkinPartyStatusPanel.LEFT_W, XSkinPartyStatusPanel.RIGHT_W)
 	_check("status_layout", p.party.position == (d.left as Rect2).position and p.state_card.position == (d.right as Rect2).position, [p.party.position, p.state_card.position])
 	await _shot("battle_2b_status")
@@ -331,7 +340,7 @@ func _status_panel(b: XBattleScene, a: XActor) -> void:
 	var other: XActor = mem[(mem.find(a) + 1) % mem.size()]
 	_check("status_step_actor", p.actor() == other and p.party.index == p.index, [p.index])
 	_check("status_keep_tab", p.tab == "异常")
-	_check("status_empty_text", p.list.empty_text == "没有异常状态")
+	_check("status_empty_text", p.list.empty_text == "当前没有异常状态")
 	p.close()
 	await _frames(3)
 	_check("status_closed", b.status_panel == null and b.cmd_win.active)

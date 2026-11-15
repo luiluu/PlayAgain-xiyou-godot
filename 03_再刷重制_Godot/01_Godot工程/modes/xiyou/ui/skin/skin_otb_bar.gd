@@ -16,7 +16,7 @@ static var R_ROW := 22.0
 static var R_SELECTED := 26.0
 static var R_PREVIEW := 15.0
 const STEP_MAX := 50.0       # 两个小圆圆心最远隔多少（44 的圆＋6 的缝）
-const SEP := 40.0            # 本回合与下回合之间多留的缝（放「下回合」）
+const SEP := 48.0            # 本回合与下回合之间多留的缝（放「下回合」；核查返工 40→48）
 const SEP_TEXT := "下回合"
 const ENEMY_DARK := Color("1a1226")
 const ENEMY_LIGHT := Color("4a3566")
@@ -24,6 +24,8 @@ const ENEMY_NAME := Color("d9c8f5")
 
 var step_px := STEP_MAX
 var sep_x := -1.0            # 分隔线 x（没有下回合时为 −1，不画）
+## 「下回合」画在这个子节点上、z 高一层：头像都是条的子节点，画在条自己 _draw 之上，挤的时候会把竖字盖住（核查返工）
+var sep_node: Node2D
 
 
 func setup(_width: float) -> void:
@@ -33,6 +35,10 @@ func setup(_width: float) -> void:
 	x2 = x1
 	width1 = 0.0
 	width2 = 0.0
+	sep_node = Node2D.new()
+	sep_node.z_index = 1
+	sep_node.draw.connect(_draw_sep)
+	add_child(sep_node)
 
 
 ## 按两段人数摆：圆心间距统一，整条不超过 WIDTH；挤不下就缩间距（会叠，同原版压缩）
@@ -66,15 +72,25 @@ func _slot_x(row: String, index: int, _n: int) -> float:
 
 
 func _draw() -> void:
+	if sep_node != null:
+		sep_node.queue_redraw()
+
+
+func _draw_sep() -> void:
 	if sep_x < 0.0:
 		return
 	var f := XUiSkin.font("body")
-	draw_line(Vector2(sep_x - 8.0, LH - 20.0), Vector2(sep_x - 8.0, LH + 20.0), Color(XUiSkin.LINE, 0.5), 1.0)
+	var col_w := 18.0
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(XUiSkin.BG, 0.82)
+	sb.set_corner_radius_all(6)
+	sb.draw(sep_node.get_canvas_item(), Rect2(sep_x + 2.0 - col_w / 2.0, LH - 22.0, col_w, 44.0))
+	sep_node.draw_line(Vector2(sep_x - 8.0, LH - 20.0), Vector2(sep_x - 8.0, LH + 20.0), Color(XUiSkin.LINE, 0.5), 1.0)
 	var fs := 12
 	for i in SEP_TEXT.length():
 		var ch := SEP_TEXT[i]
 		var w := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		draw_string(f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+		sep_node.draw_string(f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 
 
 func _icon(b: XBattler) -> Icon:
