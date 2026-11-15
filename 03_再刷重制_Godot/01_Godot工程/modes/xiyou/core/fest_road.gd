@@ -11,6 +11,7 @@ extends RefCounted
 ## - 输了：回到大厅、队伍回满；下次可以从输的那关接着打，但接着打的这趟不算「不败」。
 ## - 奖励（每个存档各算各的；称号全局）：每关首胜庆典币 ×30；四关全胜称号「冠军之路」；从第一关起一次不败连穿称号「一穿四」（金）＋庆典币 ×100。
 ##   庆典成就（第 2 天，模块 G）读存档 flags.fest_champion.road 的 cleared／flawless_done 就够，本文件不发成就。
+## - 只开给原版档（天启篇档的守层者另有一套血量，第 1 天不开）。
 ## - 档位：第 1 天只开正赛（基准 20 层守层者石日天，敌群 456）；海选（10 层）、巅峰（30 层）第 2 天补进 TIERS。
 ## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定。
 
@@ -56,8 +57,10 @@ const ROLES := [
 	{"name": "辅助", "hp": 1.0, "atk": 0.8, "mat": 1.0, "def": 1.1, "mdf": 1.1, "agi": 1.0,
 		"actions": [[HEAL_SKILL, 5], [1025, 3]]},
 ]
-const HP_SHARE := 0.25
-const ATK_SHARE := 0.6
+## 第一版（11-15，没实测）：一关五人血量合计约 0.4～0.8 只守层者、四关合计约 2.4 只；每人攻击、魔攻是守层者的 0.35 倍再乘位置与队强度。
+## 守层者基准队探针（tests/virtual_player/fest_road_probe）用的是天启篇弱者队，不代表原版档玩家，数值要等试打再调
+const HP_SHARE := 0.1
+const ATK_SHARE := 0.35
 
 ## 站位（照 853 号五人敌群的范围摆）：上单、打野、下路前排，中单、辅助后排
 const POS := [[470, 340], [440, 230], [250, 290], [440, 450], [250, 410]]
@@ -435,6 +438,10 @@ static func talk(host, s = null) -> void:
 		return
 	if s == null or s.battle_members().is_empty():
 		await _say(host, [SPEAKER + "先组好出战的队伍再来报名吧。"])
+		return
+	if XTianqi.active(s):
+		# 天启篇守层者另有一套血量（XGuardianRework），本表按原版守层者定的数值对不上；天启篇档先不开（第 1 天）
+		await _say(host, [SPEAKER + "这份存档暂时不能报名冠军之路。"])
 		return
 	var resume := resume_stage(s)
 	var opts := ["从第一关开始", "接着打第%d关（不算不败）" % (resume + 1), "规则说明", "离开"] if resume > 0 else ["从第一关开始", "规则说明", "离开"]

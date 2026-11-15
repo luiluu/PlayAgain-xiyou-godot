@@ -61,6 +61,7 @@ func _run() -> void:
 	XFest.TODAY_OVERRIDE = "2026-11-16"
 	_records()
 	_battle_setup()
+	await _real_damage()
 	await _flow_flawless()
 	await _flow_loss_resume()
 	await _pause_and_quit()
@@ -153,6 +154,31 @@ func _records() -> void:
 	_check("support_uses_heal", (sup.actions as Array).any(func(a): return int(a.skillId) == XFestRoad.HEAL_SKILL))
 	# 原表不动：表外号段，表长不变
 	_check("generated_tables_untouched", XDB.table("Enemies").size() < XFestRoad.ENEMY_BASE and XDB.table("Troops").size() < XFestRoad.TROOP_BASE)
+
+
+func _real_damage() -> void:
+	# 势如破竹真的乘进伤害：同一下普攻（打队友，避开敌人的伤害抵抗被动），3 层比 0 层多三成
+	var s := _state()
+	var lg := XBattleLogic.new()
+	lg.setup(XFestRoad.troop_id(0, 0), s)
+	var u = lg.actors[0]
+	var t = lg.actors[1]
+	var sk := XDB.rec("Skills", 1)
+	XFestRoad.in_road_battle = true
+	XFestRoad.battle_streak = 0
+	var d0 := float(lg._damage_value(u, sk, t, false))
+	XFestRoad.battle_streak = 3
+	var d3 := float(lg._damage_value(u, sk, t, false))
+	XFestRoad.in_road_battle = false
+	XFestRoad.battle_streak = 0
+	var d_off := float(lg._damage_value(u, sk, t, false))
+	_check("streak_reaches_real_damage", d0 > 0.0 and absf(d3 / d0 - 1.3) < 0.02 and absf(d_off - d0) / d0 < 0.02, [d0, d3, d_off])
+	# 天启篇档不开
+	var tq := Kit.new_game()
+	var h := MockHost.new()
+	h.choices_queue = [0]
+	await XFestRoad.talk(h, tq)
+	_check("tianqi_save_closed", h.battles.is_empty())
 
 
 func _battle_setup() -> void:
