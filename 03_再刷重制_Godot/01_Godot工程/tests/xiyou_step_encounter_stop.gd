@@ -201,6 +201,12 @@ func _run() -> void:
 	MVPlayer.MV_CLEAR_DEST = true
 	XConfig.set_session("yd100", null)  # 收尾：不再遇敌，等手上这场打完再退出（退出时战斗没收完会报已释放的音频）
 	await wait_still()
+	for i in 60:  # 战斗场景（含收场淡出里的）都走完再退出
+		if battle_scene() == null and not map._in_battle and not map.busy:
+			break
+		await settle()
+		await physics(60)
+	await frames(10)
 	_finish()
 
 
@@ -261,8 +267,11 @@ func stale_target_hangup(tag: String, expect_walk := false) -> void:
 	await tap(button_at())  # 开挂机
 	var started := XHangUp.is_active(s)
 	await physics(200)
-	# 挂机前留下的目的地还在（不靠点按时机；选第 13 行上走得到的一格，tap_walk 走过这一行）
-	map.player.touch_target = Vector2i(14, 13) if map.player.grid != Vector2i(14, 13) else Vector2i(11, 13)
+	# 挂机前留下的目的地还在（不靠点按时机）：取人刚离开的那一格，停后走得回去（固定格子在云端随机走到别处时可能走不过去）
+	await until(func(): return not map.player.is_moving(), 200)
+	var left := map.player.grid
+	await until(func(): return map.player.grid != left, 400)
+	map.player.touch_target = left
 	map.encounter_count = 999
 	await tap(button_at())  # 停挂机
 	var stopped := not XHangUp.is_active(s)
