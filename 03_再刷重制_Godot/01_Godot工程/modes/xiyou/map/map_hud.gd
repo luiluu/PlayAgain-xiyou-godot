@@ -194,6 +194,10 @@ func _layout_skin() -> void:
 	var y := safe.position.y + 4.0
 	if XUiSkin.touch() and XTouchControls.instance != null:
 		y = maxf(y, SKIN_TOUCH_Y)
+		# 小A核查 P2-1：排在虚拟键顶上那一组（隐藏／存档）实际底边下面 8——原版虚拟按键的 Save 键高 60，底边到 70
+		var top = XTouchControls.instance.group_rects.get("top")
+		if top is Rect2 and (top as Rect2).size.y > 0:
+			y = maxf(y, (top as Rect2).end.y + 8.0)
 	var x := safe.end.x
 	var h := XSkin4A.CAP_H
 	for pair in [[transfer_button, "地图传送", _transfer_canvas], [backup_button, "存档备份", _backup_canvas], [return_button, "回城", null]]:

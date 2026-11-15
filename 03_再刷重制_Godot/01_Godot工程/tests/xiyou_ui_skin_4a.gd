@@ -8,7 +8,7 @@ extends Node
 ## - 开关关、皮肤关：HUD 回原位置原画法、视口回 1280、压暗 0、闪白系数 1。
 ## 内存新游戏（地图 5、敌群 2、队伍 8/9/10），XUiSkin.FORCE 强开；设置写到临时文件。
 ## 窗口模式：-- --out=<目录> 截图；--wide（1600×720）／--tablet（1024×768）；--before（4A 五个开关全关＝改前）；--touch（按触屏画、建虚拟键）；
-## --desert（战斗用沙漠战斗背景，不带时是雪地地图快照）。
+## --desert（战斗用沙漠战斗背景，不带时是雪地地图快照）；--five（5 人出战）。无头时按触屏＋5 人出战跑。
 
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const OPTIONS := "user://test_xiyou_ui_skin_4a_options.json"
@@ -18,6 +18,8 @@ var wide := false
 var tablet := false
 var before := false
 var touch := false
+## 5 人出战（小A核查 P3-1：队伍面板高到指令环顶）
+var five := false
 var desert := false
 var pad: XTouchControls
 
@@ -34,6 +36,8 @@ func _ready() -> void:
 			before = true
 		elif arg == "--touch":
 			touch = true
+		elif arg == "--five":
+			five = true
 		elif arg == "--desert":
 			desert = true
 	if has_meta("runner"):
@@ -72,7 +76,7 @@ func _shot(name: String) -> void:
 	await _frames(20)
 	RenderingServer.force_draw(false)
 	var ratio := "4x3" if tablet else ("20x9" if wide else "16x9")
-	var tag := ("before" if before else ("after_touch" if touch else "after")) + ("_desert" if desert else "")
+	var tag := ("before" if before else ("after_touch" if touch else "after")) + ("_desert" if desert else "") + ("_five" if five else "")
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	_check("screenshot_%s_%s_%s" % [name, ratio, tag], get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_%s_%s.png" % [name, ratio, tag])) == OK)
 
@@ -98,6 +102,9 @@ func _run() -> void:
 	XConfig.ensure_loaded()
 	if before:
 		_set_all(false)
+	if not _windowed():   # 无头：按触屏＋5 人出战验（覆盖虚拟键让位、指令环让开队伍面板）；键盘画法在窗口参数里拍
+		touch = true
+		five = true
 	if _windowed():
 		if tablet:
 			get_window().size = Vector2i(1024, 768)
@@ -121,7 +128,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	seed(20261115)
-	var s := XState.new_game(3, 1, [8, 9, 10])
+	var s := XState.new_game(3, 1, [8, 9, 10, 11] if five else [8, 9, 10])
 	s.random_master = "2026111500000001"
 	s.map_id = 5
 	s.x = 10
@@ -139,7 +146,8 @@ func _run() -> void:
 		_map_hud(map)
 		await _map_wide(map)
 		if touch:
-			_touch_keys()
+			await _touch_keys()
+			_touch_hud(map)
 	await _shot("map")
 	if _windowed() and not before and wide:
 		var shot := await map._snapshot()
@@ -290,6 +298,22 @@ func _map_wide(map: XMapScene) -> void:
 		await _frames(2)
 
 
+## 小A核查 P2-1：触屏时地图 HUD 一排不压虚拟键顶组（原版虚拟按键 Save 高 60，底边到 70）
+func _touch_hud(map: XMapScene) -> void:
+	if pad == null:
+		return
+	map.map_hud.refresh()
+	var top: Rect2 = pad.group_rects.get("top", Rect2())
+	var save: Rect2 = pad.rects.get("save", Rect2())
+	var clear := true
+	for b in [map.map_hud.return_button, map.map_hud.backup_button, map.map_hud.transfer_button]:
+		if (b as Control).visible:
+			var r := Rect2(b.position, b.size)
+			clear = clear and not r.intersects(top) and not r.intersects(save)
+	_check("touch_hud_clear_of_top_keys", clear and top.size.y > 0 and map.map_hud.transfer_button.position.y >= top.end.y + 8.0 - 0.5,
+		[top, save, map.map_hud.transfer_button.position])
+
+
 func _touch_keys() -> void:
 	if pad == null:
 		return
@@ -348,6 +372,22 @@ func _battle_checks(map: XMapScene) -> void:
 	XSkin4A.TEXT_V2 = true
 	b.cmd_win.queue_redraw()
 	await _shot("battle")
+	if five:
+		_check("five_members", b.logic.actors.size() == 5, b.logic.actors.size())
+	if touch and pad != null and b.cmd_win is XSkinBattleRing:
+		var ring := b.cmd_win as XSkinBattleRing
+		var dr := ring.get_global_transform() * ring.drawn_rect()
+		var act: Rect2 = pad.group_rects.get("actions", Rect2())
+		_check("touch_ring_clear_of_keys", not Rect2(ring.position, ring.size).intersects(act), [ring.position, ring.size, act])
+		_check("touch_ring_clear_of_party", not dr.intersects(b.party_rect()), [dr, b.party_rect()])
+		# avoid_rect 本身：画出来的范围压到面板就挪到面板左边空 8；不压不动
+		var probe := Control.new()
+		probe.position = Vector2(1000, 300)
+		XSkin4A.avoid_rect(probe, Rect2(1000, 300, 300, 200), Rect2(1134, 12, 290, 300), 100.0)
+		var moved := probe.position.x
+		XSkin4A.avoid_rect(probe, Rect2(probe.position.x, 330, 300, 200), Rect2(1134, 12, 290, 300), 100.0)
+		_check("avoid_rect_moves_left", is_equal_approx(moved, 1134.0 - 8.0 - 300.0) and is_equal_approx(probe.position.x, moved), [moved, probe.position.x])
+		probe.free()
 	# 3 倍速：受击闪白、整屏闪光不画（帧数照旧）
 	var saved_speed := XConfig.battle_speed()
 	XConfig.set_battle_speed(2)   # 三倍
@@ -357,6 +397,14 @@ func _battle_checks(map: XMapScene) -> void:
 	XSkin4A.reset_flash_clock()
 	b.screen_fx.start_flash([255, 255, 255, 200], 12)
 	_check("x3_no_screen_flash", b.screen_fx.flash_gain == 0.0 and b.screen_fx.flash_duration == 12, [b.screen_fx.flash_gain, b.screen_fx.flash_duration])
+	# 小A核查 P3-2：战斗里固定 rate 4 播的 MV 动画，闪白倍数也跟战斗变速（3 倍→不闪）；战斗外照 rate
+	var anim := MVAnimation.play(b.fx, 1, Vector2.ZERO, false, 4)
+	var loose := MVAnimation.play(self, 1, Vector2.ZERO, false, 4)
+	_check("anim_rate4_in_battle_follows_speed", anim != null and XSkin4A.flash_gain(anim._flash_mult()) == 0.0, anim._flash_mult() if anim else null)
+	_check("anim_outside_battle_by_rate", loose != null and is_equal_approx(loose._flash_mult(), XSkin4A.speed_mult_for_rate(4)), loose._flash_mult() if loose else null)
+	for n in [anim, loose]:
+		if n != null:
+			n.queue_free()
 	XConfig.set_battle_speed(4)   # 原速
 	sp.flash(Color(1, 1, 1))
 	_check("x1_white_flash", sp.sprite.modulate.is_equal_approx(Color(1, 1, 1) * 2.0), sp.sprite.modulate)

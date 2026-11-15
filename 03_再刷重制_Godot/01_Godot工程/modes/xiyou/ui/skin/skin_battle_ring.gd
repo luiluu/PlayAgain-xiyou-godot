@@ -100,6 +100,18 @@ static func fixed_corner() -> bool:
 	return XUiSkin.TOUCH_V2 and XUiSkin.touch()
 
 
+## 实际画出来的范围（本节点坐标）：各球加上方「某某的回合」一行（新界面 4A 让位用）
+func drawn_rect() -> Rect2:
+	if entries.is_empty():
+		return Rect2(center - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+	var r := Rect2(orb_pos(0) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0)
+	for i in range(1, entries.size()):
+		r = r.merge(Rect2(orb_pos(i) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0))
+	r.position.y -= 30.0   # 名字一行（字号 17，离球顶 10）
+	r.size.y += 30.0
+	return r
+
+
 ## 环心在父节点里的位置（测试、截图看）
 func ring_center() -> Vector2:
 	return position + center

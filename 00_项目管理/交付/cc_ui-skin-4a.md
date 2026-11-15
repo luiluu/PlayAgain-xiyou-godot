@@ -139,3 +139,15 @@
   - 合并时接入 `main` 上 `501b6e99b` 以消除云端整轮中已知的 11 项 `XTextFix` 参照失败；
   - 安卓／iOS 真机刘海安全区与触屏实机手测。
 
+
+## 返修（小A乙档核查 4af3c896b）
+
+本单配 Opus＋medium（同首轮）。逐条：
+
+- **P2-1 已修**：`XMapHUD._layout_skin` 触屏时第一排的 y 取 `max(60, 虚拟键顶组 group_rects.top 的底边＋8)`——原版虚拟按键的 Save 高 60、底边到 70，胶囊排到 y 78；改版按键（顶组高 40）仍是 60。断言 `touch_hud_clear_of_top_keys`（三枚胶囊不碰顶组、不碰 Save、地图传送顶 ≥ 顶组底＋8）；撤掉修复时这条挂（反向验证过）。
+- **P3-1 已修（防线）**：新 `XSkinBattleRing.drawn_rect()`（各球＋上方名字一行）、`XBattleScene.party_rect()`（右侧队伍各行连同面板底）、`XSkin4A.avoid_rect`；触屏固定右下的指令环让开 A／B 键组后，画出来的范围再压到队伍面板就继续往左挪到面板左边空 8（HUD_V2 关着不动）。实测 5 人出战 20:9 触屏：面板底约 y 304、「某某的回合」那行顶约 y 318，本来就没压上，所以这道防线在这个布局下没触发；断言 `touch_ring_clear_of_party`（实际布局不压）＋`avoid_rect_moves_left`（压上时挪到面板左边、不压不动）。
+- **P3-2 已修（只改画法）**：`MVAnimation._flash_mult()`——按本动画 rate 算倍数，在战斗里（祖先有 `XBattleScene`）再和 `XSkin4A.battle_speed_mult()` 取大；目标闪光、屏幕闪光的系数都用它。帧数、`flash_duration`、时序不动。断言 `anim_rate4_in_battle_follows_speed`（战斗里固定 rate 4、3 倍速→系数 0）、`anim_outside_battle_by_rate`（战斗外照 rate）；撤掉修复时前一条挂（反向验证过）。
+- 专项无头默认改成按触屏＋5 人出战跑（键盘画法在窗口参数里拍），新增 `--five` 参数。
+- 截图（同目录 `04_验证/本地结果/ui_skin_4a/`）：`map_16x9_after_touch.png`、`map_20x9_after_touch.png`（右上胶囊在 Save 下）、`battle_20x9_after_touch_five.png`、`battle_16x9_after_touch_five.png`（5 人出战）、`map_*_after_touch_five.png`。
+- 验证：`xiyou_ui_skin_4a` 无头 57/57；窗口 `--touch`（16:9／20:9／4:3）、`--touch --five`（16:9／20:9）52～61 条全过；`xiyou_ui_skin_battle` 61、`_hud` 104、`_close` 68、`_5c` 79、`_4b` 77、`xiyou_mv_animation` 21、`xiyou_input_handled` 10 全过；`语法检查.py` 通过。
+- 顺带发现（不是本单引起，没修）：16:9 窗口下原版虚拟摇杆头上的队长行走图画成一块白方块（20:9 正常；4A 开关全关、旧样式下同样有），留给虚拟键车道查 `XTouchControls._draw_ghost_knob` 的取图区域。

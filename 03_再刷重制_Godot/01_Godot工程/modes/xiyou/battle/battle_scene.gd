@@ -1316,6 +1316,20 @@ func _command_entries(a: XActor) -> Array:
 	return opts
 
 
+## 右侧队伍面板（各行连同新皮肤的面板底）合起来的范围（画面坐标；没有行为空）
+func party_rect() -> Rect2:
+	var r := Rect2()
+	for row in status_rows.values():
+		if not (row is Control):
+			continue
+		for c in (row as Control).get_parent().get_children():
+			if c is Control and (c as Control).is_visible_in_tree():
+				var g := (c as Control).get_global_rect()
+				r = g if r.size == Vector2.ZERO else r.merge(g)
+		break
+	return r
+
+
 ## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
@@ -1324,6 +1338,9 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 		w.position += _origin
 		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner():
 			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏固定右下的指令环让开 A／B 键组
+			var ring := w as XSkinBattleRing
+			var dr := ring.get_global_transform() * ring.drawn_rect()
+			XSkin4A.avoid_rect(w, dr, party_rect(), _origin.x + XSkinBattleRing.MARGIN)  # 再让开右上队伍面板（5 人出战时面板高到环顶）
 		return
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)

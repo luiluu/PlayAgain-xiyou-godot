@@ -179,6 +179,13 @@ static func avoid_touch_keys(c: Control, min_x: float) -> void:
 	c.position.x = maxf(min_x, (act as Rect2).position.x - 12.0 - c.size.x)
 
 
+## 小A核查 P3-1：c 实际画出来的范围（drawn，画面坐标）压到 avoid（如 5 人出战时的队伍面板）就再往左挪到它左边空 8；最左不过 min_x。HUD_V2 关着不动
+static func avoid_rect(c: Control, drawn: Rect2, avoid: Rect2, min_x: float) -> void:
+	if not hud_on() or avoid.size == Vector2.ZERO or not drawn.intersects(avoid):
+		return
+	c.position.x = maxf(min_x, c.position.x - (drawn.end.x - (avoid.position.x - 8.0)))
+
+
 ## ---- C8 战斗背景压暗 ----
 ## 现在的压暗档（0／15／30）；没开（皮肤关、DIM_V2 关）恒为 0
 static func dim_percent() -> int:

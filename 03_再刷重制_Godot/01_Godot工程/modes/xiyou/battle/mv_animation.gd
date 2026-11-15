@@ -286,11 +286,11 @@ func _timing(t: Dictionary) -> void:
 		1:
 			flash_color = col
 			flash_duration = span
-			target_gain = XSkin4A.flash_gain(XSkin4A.speed_mult_for_rate(rate))
+			target_gain = XSkin4A.flash_gain(_flash_mult())
 		2:
 			screen_color = col
 			screen_duration = span
-			screen_gain = XSkin4A.screen_flash_gain(XSkin4A.speed_mult_for_rate(rate)) if col.a > 0.0 and span > 0 else 1.0
+			screen_gain = XSkin4A.screen_flash_gain(_flash_mult()) if col.a > 0.0 and span > 0 else 1.0
 		3:
 			hiding_duration = span
 			_target_call("set_anim_hidden", true)
@@ -308,6 +308,18 @@ func _timing(t: Dictionary) -> void:
 			se_player.pitch_scale = float(se.get("pitch", 100)) / 100.0
 			se_player.play()
 			se_play_count += 1
+
+
+## 新界面 4A（C7）：算闪白系数用的变速倍数——按本动画的 rate 算，在战斗里再和战斗变速（XConfig.battle_speed）取大
+## （小A核查 P3-2：个别演出固定 rate 4 播，3 倍速下也要不闪白）。只用来压画出来的透明度
+func _flash_mult() -> float:
+	var m := XSkin4A.speed_mult_for_rate(rate)
+	var n: Node = get_parent()
+	while n != null:
+		if n is XBattleScene:
+			return maxf(m, XSkin4A.battle_speed_mult())
+		n = n.get_parent()
+	return m
 
 
 ## ScreenSprite：画面 (−5W, −5H) 起 10 倍画面大小的纯色矩形，跟着画面原点（不随动画镜像/镜头）
