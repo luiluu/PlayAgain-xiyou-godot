@@ -125,6 +125,8 @@ func _swap_slots() -> void:
 		and XItemMarks.can_swap_slots(z, 0, 4) and XItemMarks.can_swap_slots(z, 2, 3))
 	var j := _state("jiusi", [sup[0]], [sup[0], w[1], w[2], w[3], w[4]])
 	_check("swap_jiusi", not XItemMarks.can_swap_slots(j, 0, 4) and XItemMarks.can_swap_slots(j, 3, 4) and XItemMarks.can_swap_slots(j, 0, 1))
+	_check("swap_overflow_slot", not XItemMarks.can_swap_slots(j, 5, 3) and not XItemMarks.can_swap_slots(j, 3, 5))
+	_check("swap_negative_slot", not XItemMarks.can_swap_slots(j, -1, 3) and not XItemMarks.can_swap_slots(j, 3, -1))
 	# 整队页翻页键：被拦时蜂鸣、出战栏不变
 	var page := XPartyScene.new()
 	add_child(page)
@@ -341,6 +343,20 @@ func _battle_swap() -> void:
 	_check("bswap_jiusi_super_out_blocked", not lg3.can_tianqi_swap(_actor(lg3, sup[0])) and lg3.can_tianqi_swap(_actor(lg3, w[1])))
 	j.battle_slots[4] = sup[1]
 	_check("bswap_jiusi_helper_super_blocked", not lg3.can_tianqi_swap(_actor(lg3, w[1])))
+
+
+	# 跨存档：原版超强者在天启篇降档后，换人仍按战斗存档判定。
+	var changed := (_ids(XTier.WEAK) + _ids(XTier.STRONG)).filter(func(id): return XTier.is_super(id))
+	_check("bswap_cross_save_fixture", not changed.is_empty())
+	if not changed.is_empty():
+		var cs := _state("jiusi", [sup[0], changed[0]], [sup[0], changed[0], w[2], w[3], w[4]])
+		var cl := _logic(cs)
+		var saved := XState.current
+		for other in [XState.new_game_blank(), null]:
+			XState.current = other
+			_check("bswap_cross_save_%s" % ("null" if other == null else "legacy"),
+				cl.can_tianqi_swap(_actor(cl, changed[0])) and not cl.can_tianqi_swap(_actor(cl, sup[0])))
+		XState.current = saved
 
 
 ## 七、开关回退：照旧助力位都能放超强者、整队页只查被放进去的人、随机阵容最多 super_cap 个

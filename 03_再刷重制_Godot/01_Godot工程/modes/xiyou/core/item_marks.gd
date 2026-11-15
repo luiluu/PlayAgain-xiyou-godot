@@ -642,6 +642,8 @@ static func _tianqi_can_deploy(s: XState, actor_id: int, slot: int) -> bool:
 
 ## 整队页两格对调（翻页键）后合不合规
 static func can_swap_slots(s: XState, a: int, b: int) -> bool:
+	if a < 0 or b < 0 or a >= XState.MAX_BATTLE_MEMBERS or b >= XState.MAX_BATTLE_MEMBERS:
+		return false
 	if not XTianqi.active(s) or not XTianqi.HELPER_RULES or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
 		return true
 	var after: Array = s.battle_slots.duplicate()
