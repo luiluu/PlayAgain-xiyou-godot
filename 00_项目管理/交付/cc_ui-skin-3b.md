@@ -65,3 +65,40 @@
 ## 本分支提交
 
 - 见 `git log main..cc/ui-skin-3b`（WIP 标题、选线卡、方桌提示、异化工坊新界面；专项与版面修正；关闭对照加三页；合并 main；标题角落按钮保持原大小）。
+
+## 小A 乙档核查
+
+- 核查对象：`cc/ui-skin-3b`（交付提交 `c3f3ce8bc`，已合 `main` `e3ffadf43`），执行者：小A（只读核查、未改游戏代码，仅前台运行轻量检查）。
+- **结论：不通过**（P1 零条、**P2 1 条**、P3 2 条；**文字必改 1 条**；`xiyou_input_handled` 挂在 `main` 既有 `skin_showcase.gd` 属实，待 1A 或总装修）。
+
+### 核查项与核实深度
+
+1. **开关与标题发行安全（核了规则本身＋跑专项＋跑发行空壳检查）**：
+   - 皮肤关时四页走旧分支：实跑无头 `tests/xiyou_ui_skin_offshot.tscn` 20/20 通过，`--compare` 比对既有 `关闭对照/base` 与 `branch` 20/20 全 `SAME`；源码对照 `e3ffadf43` diff 确认 `ENABLED = false` 或西游档下四页均不建／不显 `skin_*` 节点。
+   - 标题按构建开新皮肤（`XTianqiTitle.skin_on()`，`modes/xiyou/ui/tianqi_title.gd:96-104`）：标题在读档前运行（`XState.current == null`，此时 `XUiSkin.on()` 恒为 `false`），按构建切换（开发构建开、发行构建 `ReleaseEntry.is_release()` 恒关；`XUiSkin.cli_mode()` 在发行构建亦忽略 CLI 参数）做法正确。实跑 `tests/xiyou_ui_skin_3b.tscn` 36/36、`tests/xiyou_tianqi_title.tscn` 46/46、`tests/xiyou_entry_release.tscn` 16/16 通过。
+   - 发行包不会露天启篇或新皮肤内容：实跑 `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check` 通过（58 脚本、493 函数），`syntax` 校验 `python3 03_再刷重制_Godot/07_开发环境/语法检查.py` 0 问题（908 `.gd`）；`XTianqiTitle` 为 `KEEP`，本次改动与新增 `XSkinButton`（`modes/xiyou/ui/skin/skin_button.gd`，文件名与头注释无天启字样）仅引用 `XUiSkin`/`XSkinSelectBar`/`XSkinKeyHints`/`XSkinButton`/`ReleaseEntry`/`XPlatform`/`XSound`，未引入天启篇专属类或资源，发行构建下 `skin_on()` 恒假不加载 `content/ui_skin/*`（且已由 `发行内容审计.py` `DENY` 排除）。
+2. **操作逻辑未改与方桌提示（只看 `e3ffadf43..c3f3ce8bc` 全量 diff＋跑专项）**：
+   - `tianqi_line_cards.gd` 的 `_handle`、`pick`、`decided` 信号与按键／鼠标选择逻辑未改；`alien_workshop.gd` 的 `build()`、`flatten()`、`click()`、重抽／分解／取核／净化／配置（`_act`、`_select`、`_confirm`、`_confirm_core`、`_dismantle`、`_extract_core`、`_core_section`、`_reforge_section`、`_codex_section`、`_config_section`、`set_value` 等）一行未改，仅在 `skin` 分支重排同棵 DOM 节点并收掉 1C P3-1 工坊半换色（改用 `XUiSkin.panel_style()` 与 `XSkinButton`，不再读 `XWebPanel` 配色、`#16161f` 底与青色按钮）；`modes/xiyou/map/tianqi_table.gd` 仅新增 `chip`（`_Chip`，`z_index = 200`）、`chip_text()` 与 `_update_chip()`，调查逻辑、`wanted`、`refresh` 未动。实跑 `xiyou_alien_workshop.tscn`（45/45）、`xiyou_alien_config.tscn`（95/95）、`xiyou_tianqi_reforge.tscn`（16/16）通过。
+3. **异化工坊发行隐藏（只看源码）**：
+   - 全库检索确认 `XAlienBattle.RELEASE_HIDE := true`、`XAlienBattle.hidden()`（`alien_battle.gd:69-74`）、`XAlienHide`（`alien_hide.gd`）、`XMenu.commands()`（`menu.gd:63,496`）与 `XUiSkin.hide_rule("alien")`（`ui_skin.gd:592`）均未修改，发行隐藏未被破坏。
+4. **协调截图发现两项（只看源码＋git 历史追溯）**：
+   - **① 选线卡「瘟疫·混子」剪影写「还没修好」**：位于 `modes/xiyou/ui/tianqi_line_cards.gd:282`，为旧代码既有文案，**非 3B 新写**。`github/ci/xa/text-audit`（`10577b912` 文字审 `1-012`）已将该处改为 **`暂未开放`**（并同步在 `1-011` 将 `tianqi.gd:697` 改为 `……这条路暂未开放，换一条吧。`），但 `xa/text-audit`（`565fbeeb7`）尚未合入 `main`／本分支。改好文字：**`暂未开放`**。
+   - **② 选线卡、异化工坊右下按键提示压住版本号 `dev.601`**：确认属实，详情见下 **P2-1**。
+5. **`xiyou_input_handled` 挂在 `skin_showcase.gd`（跑专项＋只看源码与 git diff）**：
+   - 实跑 `tests/xiyou_input_handled.tscn` 9/10，唯一失败为 `no_direct_set_input_as_handled ["res://modes/xiyou/ui/skin/skin_showcase.gd"]`（第 162、166、169 行直接调用 `get_viewport().set_input_as_handled()`）；`git diff e3ffadf43..c3f3ce8bc` 确认本分支未触碰 `skin_showcase.gd`（1A 带入 `main`），车道说明属实。
+6. **文字审（按 `ba1f7ed` 口径核交付单表＋四页可见字串＋字集检查）**：
+   - **交付单表与新字**：`tianqi_title.gd:183`（`[["↑ / ↓", "选择"], ["确定", "进入"]]`）、`tianqi_line_cards.gd:124`（`[["← / →", "选择"], ["确定", "选定"], ["取消", "再想想"]]`）、`tianqi_table.gd:108-117`（`"调查"`、`"选一条路"`、`"<线名>之路"`、键名框 `"确定"`）、`alien_workshop.gd:1278,1300-1302`（`"异化装备"`、`异化核（N）`、`装备重铸`、`本线异化图鉴（N／M）`、`最近异化掉落（N）`、`[["Q / E", "换页"], ["确定", "选择"], ["取消", "返回"]]`）表码一致；键名框、斜杠空格（`Q / E`、`↑ / ↓`、`← / →`）与 `确定`/`取消` 口径符合 `ba1f7ed`；`tianqi.gd:623-637` `LINES` 传闻与本线特点无问题；全部新增可见字均在 `charset_hei.txt`／`charset_song.txt` 中（缺失 0 字）。
+   - **既有未合入文字**：除必改 **`"还没修好"` → `"暂未开放"`**（`tianqi_line_cards.gd:282`）外，`alien_workshop.gd` 旧 `build()` 内的 `金钱`→`精魂`、`几率`→`概率`、`穿着的`→`已装备` 等修改已在未合入的 `github/ci/xa/text-audit`（`565fbeeb7`）中，待文字审分支合入。
+
+### 问题清单（P1/P2/P3）与文字必改
+
+- **P1**：无。
+- **P2-1（右下按键提示压住版本号 `dev.601`）**：`XVersionLabel`（`core/version_label.gd:8-9,35-39`）固定显示在视口右下（`MARGIN = (10, 6)`，`FONT_SIZE = 14`）；而 `XSkinKeyHints.place(view)`（`modes/xiyou/ui/skin/skin_key_hints.gd:35-36`）直接贴安全右边距 `view.x - XSkinLayout.margin_for(view.x) - total_width()`（`y` 落在 `view.y - 32..view.y - 10`），未给版本号让位，导致 `tianqi_line_cards.gd:168`、`alien_workshop.gd:1304`（及 `skin_showcase.gd:132`）的提示压住 `dev.601`；1A（`skin_main_menu.gd:245,252-257`）与 1B/1C/2B（`skin_template_page.gd:179`）此前是通过 `XSkinMainMenu.hint_right(view)` 各自绕开。**建议**：将让位逻辑统一收口进 `XSkinKeyHints.place(view)`（`modes/xiyou/ui/skin/skin_key_hints.gd:35-36`，当 `XVersionLabel.SHOW` 时取 `minf(safe_right, view.x - XVersionLabel.MARGIN.x - vw - 16.0)`），并让 `skin_main_menu.gd:245` 与 `skin_template_page.gd:179` 改调 `hints.place(view)`，统一解决各页（含 1A/2B/3B）重叠问题。
+- **P3-1（工坊页签未绑手柄换页动作）**：`alien_workshop.gd:111-113` 仅处理 `KEY_Q` / `KEY_E`，未同步绑定 `ui_page_up` / `ui_page_down`。
+- **P3-2（选测对照分组未收录）**：`03_再刷重制_Godot/07_开发环境/选测对照.json` 的 `ui_skin` 分组暂未加入 `xiyou_ui_skin_3b.tscn`。
+- **文字必改（1 条）**：`modes/xiyou/ui/tianqi_line_cards.gd:282` `"还没修好"` → **`"暂未开放"`**（需合入 `xa/text-audit` 或就地改正，避免玩家在未开放路线看到「还没修好」）。
+
+### 没核到的（留给总装 `--affected --cloud`）
+
+- 有窗截图实观与重拍比对（本次未装 PIL、未跑 `xiyou_ui_skin_3b.tscn -- --out=...` 与 `皮肤关闭对照.py --base main` 重拍，仅就既有 `关闭对照` 运行 `--compare` 20/20 `SAME` 并以源码核坐标）；
+- 其余长测试：选测余下 55 个场景（楼层、事件对照四段、地图等）与 `并行测试.py`、`工具回归.py`。
