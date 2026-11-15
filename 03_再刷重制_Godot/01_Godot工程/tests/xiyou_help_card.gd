@@ -5,6 +5,7 @@ extends Node
 ## 参照里每类第一件真装备（水果刀、学徒斗篷）没有战力行（参照引擎里首次 setItem 的现象，正式版游戏中不确定），
 ## 这几张比较时去掉 Godot 的战力行。
 
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const ORACLE := "res://modes/xiyou/generated/oracle/help_cards.json"
 const POWER_PREFIX := "装备战力："
 
@@ -13,6 +14,7 @@ var detail_left := 12
 
 
 func _ready() -> void:
+	TestEnv.isolate("xiyou_help_card")
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整的说明（9942／10568）关掉，新说明由 xiyou_vegeta_tune 核
 	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致

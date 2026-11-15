@@ -232,18 +232,17 @@ func _sync_card(mode: String) -> void:
 	if rec.is_empty() and mode == "augment" and not sc._augment_row().is_empty():
 		# 停在「取下镶嵌物」那一行
 		var t := str(XDB.plugin("YEP_X_AttachAugments").get("Remove Augment", "\\i[1348]取下镶嵌物"))
-		set_card({"icon": XUiSkin.icon(_first_icon(t)), "title": _strip(t), "subtitle": _strip(XItemScene.augment_name(sc._item, sc._aug_slot))})   # 孔里现在镶的（空孔写「- 空 -」）
+		set_card({"icon": XUiSkin.icon(_first_icon(t)), "title": _strip(t), "subtitle": _strip(XItemScene.augment_name(sc._item, sc._aug_slot)), "notice": ""})   # 孔里现在镶的（空孔写「- 空 -」）
 		show_targets([])
 		return
 	if rec.is_empty():
 		var n: int = _cat_counts()[sc._cat]
-		set_card({"title": XShop.CATEGORIES[sc._cat][0], "subtitle": "%d %s" % [n, ring_center[1]] if n > 0 else "", "desc": "" if n > 0 else list.empty_text})
+		set_card({"title": XShop.CATEGORIES[sc._cat][0], "subtitle": "%d %s" % [n, ring_center[1]] if n > 0 else "", "desc": "" if n > 0 else list.empty_text, "notice": ""})
 		show_targets([])
 		return
 	var d := card_data(rec)
-	# 用完的提示（notifyBag）：光标没离开那一行就一直写在牌上
-	if not sc._notice.is_empty() and mode == "list" and sc._index == int(sc._notice.get("index", -1)):
-		d.sections = [{"title": "", "rows": [{"text": str(sc._notice.text), "color": XUiSkin.GOLD_LIGHT}]}] + d.sections
+	# 用完的提示（notifyBag）：光标没离开那一行就一直写在牌上（含动作菜单返回）
+	d.notice = str(sc._notice.text) if (not sc._notice.is_empty() and mode in ["list", "action"] and sc._index == int(sc._notice.get("index", -1))) else ""
 	var usable := mode in ["list", "action", "actor"] and not XItemMarks.is_gear(rec) and sc._usable(rec)
 	if mode == "list" and usable:
 		d.buttons = [{"text": "使用", "primary": true}]

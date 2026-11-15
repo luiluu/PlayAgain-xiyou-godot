@@ -111,10 +111,12 @@ func pump() -> void:
 	if XState.current == null or not XConfig.notice_on("skillLevel"):
 		queue.clear()
 		return
+	var on := XUiSkin.on()
 	while shown.size() < MAX_VISIBLE and not queue.is_empty():
 		var row: Dictionary = queue.pop_front()
 		var box := NoticeBox.new()
 		box.row = row
+		box.skinned = on
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		host.add_child(box)
 		shown.append(box)
@@ -132,13 +134,15 @@ func pump() -> void:
 
 func _layout() -> void:
 	var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
-	var w := minf(WIDTH, vs.x - RIGHT * 2)
-	var y := TOP
+	var on := XUiSkin.on()
+	var rm := XSkinLayout.margin_for(vs.x) if on else RIGHT
+	var w := minf(360.0 if on else WIDTH, vs.x - rm * 2.0)
+	var y := 20.0 if on else TOP
 	for box in shown:
 		if not is_instance_valid(box):
 			continue
 		box.size = Vector2(w, box.height())
-		box.position = Vector2(vs.x - RIGHT - w, y)
+		box.position = Vector2(vs.x - rm - w, y)
 		box.queue_redraw()
 		y += box.size.y + GAP
 
@@ -146,6 +150,7 @@ func _layout() -> void:
 ## 一条通告：自己画字
 class NoticeBox extends Control:
 	var row := {}
+	var skinned := false
 	var font: Font = XSkillNotice.font()
 	var style := StyleBoxFlat.new()
 
@@ -159,16 +164,37 @@ class NoticeBox extends Control:
 		style.shadow_offset = Vector2(0, 4)
 
 	func lines() -> Array:
+		if skinned:
+			return [["技能升级", 14, XUiSkin.GOLD, 0.0, XUiSkin.font("body")],
+				[str(row.actorName) + " · " + str(row.skillName), 18, XUiSkin.TEXT, 4.0, XUiSkin.font("body")],
+				["Lv %d → Lv %d" % [int(row.from), int(row.to)], 18, XUiSkin.UP, 4.0, XUiSkin.font("num")]]
 		return [["技能升级", TITLE_SIZE, SYSTEM, 0.0], [str(row.actorName) + " · " + str(row.skillName), BODY_SIZE, Color.WHITE, TITLE_GAP],
 			["Lv.%d → Lv.%d" % [int(row.from), int(row.to)], BODY_SIZE, LEVEL, LEVEL_GAP]]
 
 	func height() -> float:
-		var h := (BORDER + PAD.y) * 2.0
+		var h := 28.0 if skinned else (BORDER + PAD.y) * 2.0
 		for l in lines():
-			h += float(l[3]) + font.get_height(int(l[1]))
+			var f: Font = l[4] if l.size() > 4 else font
+			h += float(l[3]) + f.get_height(int(l[1]))
 		return h
 
 	func _draw() -> void:
+		if skinned:
+			draw_style_box(XUiSkin.shadow_style(), Rect2(Vector2.ZERO, size))
+			draw_style_box(XUiSkin.panel_style(), Rect2(Vector2.ZERO, size))
+			var bar := StyleBoxFlat.new()
+			bar.bg_color = XUiSkin.GOLD
+			bar.set_corner_radius_all(2)
+			draw_style_box(bar, Rect2(10, 12, 3, size.y - 24))
+			var y := 14.0
+			for l in lines():
+				var f: Font = l[4]
+				var fs := int(l[1])
+				y += float(l[3])
+				var at := Vector2(22.0, roundf(y + f.get_ascent(fs)))
+				draw_string(f, at, str(l[0]), HORIZONTAL_ALIGNMENT_LEFT, size.x - 38.0, fs, l[2])
+				y += f.get_height(fs)
+			return
 		draw_style_box(style, Rect2(Vector2.ZERO, size))
 		var y := BORDER + PAD.y
 		for l in lines():
