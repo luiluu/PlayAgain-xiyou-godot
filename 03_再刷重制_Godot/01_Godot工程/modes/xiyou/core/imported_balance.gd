@@ -41,6 +41,18 @@ static func released_actor(id: int) -> bool:
 	return RELEASE_CANGLONG and id == CANGLONG
 
 
+## 苍龙破晓号角 274 上架条件（Kyo 11-15，#005）：要等漩涡二阶段过场（CodexWhisper 'rift2'）看过之后才进 Map132 EV16 商店；
+## 没看过的新档买不到。已经有 274 号角或 146 已入队的老档不受影响（始终上架）。HORN_AFTER_RIFT2 = false 回到「解放即上架」。
+static var HORN_AFTER_RIFT2 := true
+
+
+static func canglong_horn_on_sale() -> bool:
+	if not HORN_AFTER_RIFT2 or XConfig.whisper_seen("rift2"):
+		return true
+	var s: XState = XState.current
+	return s != null and (s.item_count(CANGLONG_HORN) > 0 or s.saved_actors.has(CANGLONG) or s.party.has(CANGLONG))
+
+
 ## 号角编号是不是停用号角（商店过滤、能否购买、菜单「使用」灰）
 static func horn_id_disabled(id: int) -> bool:
 	return DISABLED_HORNS.has(id) and not (RELEASE_CANGLONG and id == CANGLONG_HORN)

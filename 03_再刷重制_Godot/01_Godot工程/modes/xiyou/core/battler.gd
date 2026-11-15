@@ -369,6 +369,8 @@ func states() -> Array:
 func _states_now() -> Array:
 	var out := []
 	for id in state_ids:
+		if XVegetaTune.shadowed(id, state_ids):
+			continue  # 贝吉特合体赛亚人拆开（Kyo 11-15 D3）：2565 在身上时 2803 不算（原版同号只算一份）
 		var s := state_rec(id)
 		if not s.is_empty():
 			out.append(XZhenqi.pojia_state(s, zq_pojia_rate) if id == XZhenqi.POJIA_STATE else s)
