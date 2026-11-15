@@ -13,7 +13,7 @@ extends XSkinTemplatePage
 const CATS := [
 	["general", "常规", 688, ["MapXy", "alwaysDash", "commandRemember", "dhtg", "codexFollow", "cq", "codexCostumes", "pingbiDrop", "codexNotices"]],
 	["battle", "战斗", 160, ["battleCamera", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "CombatDamageShow", "CombatSkillAnimation",
-		"codexSmartAI", "battleAniSpeed", "codexBattleAutoDefault", "codexBossStatusPanel", "codexPowerEnabled"]],
+		"codexSmartAI", "battleAniSpeed", "codexBattleAutoDefault", "codexPartyFormation", "codexBossStatusPanel", "codexPowerEnabled"]],
 	["encounter", "遇敌", 193, ["Boss", "BOSS", "boss", "codexEncounterTarget", "ydgb", "yd100"]],
 	["screen", "画面", 100, ["codexScreenFx", "codexScreenSmooth", "codexQuality", "codexUiSkin", "codexUiMotion"]],
 	["sound", "声音", 384, ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]],
@@ -43,6 +43,7 @@ const DESC := {
 	"codexSmartAI": "自动战斗时，由智能战斗 AI 来选择行动。",
 	"battleAniSpeed": "战斗动画与行动节奏的播放速度。倍数越高越快，「原速」为正常速度。",
 	"codexBattleAutoDefault": "开启后，每场战斗一开始就是自动战斗。",
+	"codexPartyFormation": "设置我方战斗中的站位阵型，按编队顺序站位。下一场战斗生效。",
 	"codexBossStatusPanel": "与首领战斗时，显示首领的状态面板。",
 	"codexPowerEnabled": "显示战力数值与估算。",
 	"Boss": "本次游戏只遇到「稀有」的敌群。只在本次游戏有效。",
