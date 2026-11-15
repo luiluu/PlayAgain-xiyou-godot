@@ -14,12 +14,22 @@ const EXPECTED := {
 	"escape": [0, 4], "victory": [13, 1], "dying": [14, 1], "abnormal": [15, 1], "sleep": [16, 1], "dead": [17, 1],
 }
 var out_dir := ""
+## 临时预览，合并前可去掉：仅测试截图用的渡鸦神话与米拉黑龙战斗图临时缩放倍数（默认 1.0，不影响正式游戏逻辑）
+static var PREVIEW_MYTH_SCALE := 1.0
+var size_out_dir := ""
 
 
 func _ready() -> void:
+	var env_scale := OS.get_environment("XIYOU_PREVIEW_SCALE").strip_edges()
+	if env_scale != "" and env_scale.is_valid_float():
+		PREVIEW_MYTH_SCALE = float(env_scale)
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--size-out="):
+			size_out_dir = arg.substr(11)
+		elif arg.begins_with("--preview-scale="):
+			PREVIEW_MYTH_SCALE = float(arg.substr(16))
 	_run.call_deferred()
 
 
@@ -39,6 +49,8 @@ func _run() -> void:
 	_rollback()
 	if out_dir != "" and DisplayServer.get_name() != "headless":
 		await _capture_shots()
+	if size_out_dir != "" and DisplayServer.get_name() != "headless":
+		await _capture_size_preview()
 	XRaven.ART = true
 	XAppearance.overrides = null
 	XState.current = null
@@ -286,6 +298,147 @@ func _stitch_compare() -> void:
 	both.blit_rect(idle_cmp, Rect2i(0, 0, crop.size.x * 2, crop.size.y), Vector2i(0, 0))
 	both.blit_rect(atk_cmp, Rect2i(0, 0, crop.size.x * 2, crop.size.y), Vector2i(0, crop.size.y))
 	both.save_png(out_dir.path_join("battle_myth_compare.png"))
+
+
+## 临时预览，合并前可去掉：在真实 4 人队＋BOSS 战里按 4 个倍数截取渡鸦神话与米拉黑龙实际战斗画面，并拼出 2×2 总览图
+func _capture_size_preview() -> void:
+	XMessageBox.auto = true
+	XRaven.ART = true
+	var prev_gojo_unlock := XGojo.unlock_override
+	XGojo.unlock_override = 1
+	var s := XState.new_game_blank()
+	XState.current = s
+	s.actor_max_level = 99
+	s.switches[2494] = true
+	s.party.clear()
+	s.battle_slots.clear()
+
+	s.actor_advance[XRaven.ACTOR] = 5
+	s.actor_advance[XMira.ACTOR] = 3
+	var lineup: Array[int] = [XRaven.ACTOR, XGojo.ACTOR, XMira.ACTOR, XSukuna.ACTOR]
+	for id in lineup:
+		var act := s.actor(id)
+		act.change_level_mv(60)
+		act.recover_all()
+	s.actor(XMira.ACTOR).learn_skill(10161)
+	s.party.assign(lineup)
+	s.battle_slots.assign(lineup)
+
+	var battle := XBattleScene.new()
+	battle.force_auto = false
+	battle.setup(693, true, false, XDB.map(5))
+	s.raven["myth"] = 3
+	var mira := s.actor(XMira.ACTOR)
+	if not mira.state_ids.has(XMira.DRAGON):
+		mira.state_ids.append(XMira.DRAGON)
+	add_child(battle)
+	await _frames(105)
+
+	var raven := s.actor(XRaven.ACTOR)
+	var gojo := s.actor(XGojo.ACTOR)
+	var sukuna := s.actor(XSukuna.ACTOR)
+	var sp_raven: XBattlerSprite = battle.sprites.get(raven)
+	var sp_mira: XBattlerSprite = battle.sprites.get(mira)
+	var party_sprites := [battle.sprites.get(raven), battle.sprites.get(gojo), battle.sprites.get(mira), battle.sprites.get(sukuna)]
+	for sp in party_sprites:
+		if sp != null:
+			(sp as XBattlerSprite).position = (sp as XBattlerSprite).home
+			(sp as XBattlerSprite).seq_driven = true
+			(sp as XBattlerSprite).set_motion("wait")
+			(sp as XBattlerSprite)._frame = 0
+			(sp as XBattlerSprite)._apply()
+
+	var prev_scale := PREVIEW_MYTH_SCALE
+	var entries := [
+		{"scale": 1.0, "tag": "1.0", "label": "×1.0"},
+		{"scale": 1.2, "tag": "1.2", "label": "×1.2"},
+		{"scale": 1.35, "tag": "1.35", "label": "×1.35"},
+		{"scale": 1.5, "tag": "1.5", "label": "×1.5"},
+	]
+	for item in entries:
+		PREVIEW_MYTH_SCALE = float(item.scale)
+		for sp in [sp_raven, sp_mira]:
+			if sp != null:
+				sp.look.scale = PREVIEW_MYTH_SCALE
+				sp._apply()
+		for _f in 4:
+			if battle.cmd_win != null:
+				battle.cmd_win.visible = false
+			for sp in party_sprites:
+				if sp != null:
+					(sp as XBattlerSprite).position = (sp as XBattlerSprite).home
+			await get_tree().process_frame
+		if battle.cmd_win != null:
+			battle.cmd_win.visible = false
+		for sp in party_sprites:
+			if sp != null:
+				(sp as XBattlerSprite).position = (sp as XBattlerSprite).home
+		await RenderingServer.frame_post_draw
+		print("SIZE_PREVIEW scale=%s actors=%d raven=%s(%.3f) mira=%s(%.3f)" % [
+			item.tag,
+			battle.logic.actors.size(),
+			sp_raven._look_key if sp_raven != null else "null",
+			sp_raven.body_scale if sp_raven != null else 0.0,
+			sp_mira._look_key if sp_mira != null else "null",
+			sp_mira.body_scale if sp_mira != null else 0.0,
+		])
+		get_viewport().get_texture().get_image().save_png(size_out_dir.path_join("battle_scale_%s.png" % item.tag))
+
+	PREVIEW_MYTH_SCALE = prev_scale
+	XGojo.unlock_override = prev_gojo_unlock
+	battle.queue_free()
+	await _frames(2)
+	await _stitch_size_overview(entries)
+
+
+func _stitch_size_overview(entries: Array) -> void:
+	var imgs: Array[Image] = []
+	for item in entries:
+		var img := Image.load_from_file(size_out_dir.path_join("battle_scale_%s.png" % item.tag))
+		if img == null:
+			return
+		imgs.append(img)
+	var cell := Vector2i(1280, 720)
+	var vp := SubViewport.new()
+	vp.size = Vector2i(cell.x * 2, cell.y * 2)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.transparent_bg = false
+	add_child(vp)
+
+	for i in range(4):
+		var col := i % 2
+		var row := i / 2
+		var origin := Vector2(col * cell.x, row * cell.y)
+		var resized := imgs[i].duplicate() as Image
+		resized.resize(cell.x, cell.y, Image.INTERPOLATE_LANCZOS)
+		var tex := ImageTexture.create_from_image(resized)
+		var tr := TextureRect.new()
+		tr.texture = tex
+		tr.position = origin
+		tr.size = Vector2(cell)
+		vp.add_child(tr)
+
+		var badge := ColorRect.new()
+		badge.position = origin + Vector2(16, 16)
+		badge.size = Vector2(138, 52)
+		badge.color = Color(0.05, 0.06, 0.10, 0.86)
+		vp.add_child(badge)
+
+		var lbl := Label.new()
+		lbl.position = origin + Vector2(26, 20)
+		lbl.size = Vector2(120, 44)
+		lbl.text = entries[i].label
+		lbl.add_theme_font_size_override("font_size", 34)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.45, 1.0))
+		lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+		lbl.add_theme_constant_override("outline_size", 4)
+		vp.add_child(lbl)
+
+	await _frames(3)
+	await RenderingServer.frame_post_draw
+	vp.get_texture().get_image().save_png(size_out_dir.path_join("battle_scale_overview_2x2.png"))
+	vp.queue_free()
+	await _frames(1)
 
 
 func finish() -> void:
