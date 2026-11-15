@@ -339,7 +339,7 @@ func _signature(obs: Dictionary) -> Array:
 				if obs.screen == "overlay":
 					var menu := _find_ui(obs.map, XMenu)
 					if menu != null:
-						sig.append([str(menu._mode), int(menu._cmd_index)])
+						sig.append([str(menu._mode), int(menu._cmd_index) if menu.skin == null else menu.skin.gi * 100 + menu.skin.ii])
 						var eq := _equip_scene(menu)
 						if eq != null:
 							sig.append([str(eq._mode), int(eq._slot), int(eq._item_index), int(eq.actor_index)])
@@ -1448,6 +1448,20 @@ func _act_equip(obs: Dictionary) -> void:
 			return
 		match str(menu._mode):
 			"command":
+				if menu.skin != null:  # 天启篇新界面主菜单（XSkinMainMenu，第 1A 批）：左右换组到「装备」组，确定直接进
+					var sk: XSkinMainMenu = menu.skin
+					var gw := -1
+					for g in sk.groups.size():
+						if (sk.groups[g].items as Array).any(func(it): return str(it.get("cmd", "")) == "equip"):
+							gw = g
+					if gw < 0:
+						job.done = true
+					elif str(sk.current_item().get("cmd", "")) != "equip":
+						await _tap("right" if gw > sk.gi else "left")
+					else:
+						await _tap("accept")
+						await _frames(3)
+					return
 				var want: int = menu.command_names().find("装备")
 				if want < 0:
 					job.done = true

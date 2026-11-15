@@ -34,7 +34,7 @@ static func from_actor(a: XActor) -> Dictionary:
 		if ic > 0:
 			states.append(ic)
 	return {"name": a.display_name(), "level": a.level, "cls": str(a.class_data().get("name", "")),
-		"face": XUI.face_texture(str(d.get("faceName", "")), int(d.get("faceIndex", 0))),
+		"face": XUiSkin.face(str(d.get("faceName", "")), int(d.get("faceIndex", 0))),
 		"hp": a.hp, "mhp": a.mhp, "mp": a.mp, "mmp": a.mmp, "tp": a.tp, "mtp": a.max_tp(), "states": states}
 
 
@@ -136,7 +136,7 @@ func _draw() -> void:
 		var states: Array = m.get("states", [])
 		var sx := right
 		for k in range(mini(states.size(), 4)):
-			var tex := XUI.icon_texture(int(states[k]))
+			var tex := XUiSkin.icon(int(states[k]))
 			sx -= 22
 			if tex != null:
 				draw_texture_rect(tex, Rect2(sx, r.position.y + 6, 22, 22), false)

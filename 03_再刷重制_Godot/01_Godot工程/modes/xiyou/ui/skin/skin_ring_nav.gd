@@ -201,7 +201,7 @@ func _draw() -> void:
 		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85))
 		draw_circle(p, r, Color(XUiSkin.SEL_LINE, 1.0) if on else Color(line, 0.65), false, 2.5 if on else 1.5, true)
 		var icon = items[i].get("icon")
-		var tex: Texture2D = icon if icon is Texture2D else (XUI.icon_texture(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
+		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
 			var s := 40.0 * (1.16 if on else 1.0)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)

@@ -207,7 +207,7 @@ func _draw() -> void:
 		var base := r.position.y + r.size.y / 2.0
 		var dis := bool(it.get("disabled", false))
 		var icon = it.get("icon")
-		var tex: Texture2D = icon if icon is Texture2D else (XUI.icon_texture(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
+		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
 			draw_texture_rect(tex, Rect2(x, base - icon_size / 2.0, icon_size, icon_size), false, Color(1, 1, 1, 0.45 if dis else 1.0))
 			x += icon_size + 10.0
