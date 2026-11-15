@@ -434,12 +434,17 @@ static func help_rows(rows: Array, skip_first := true) -> Array:
 		var t := esc.sub(col.sub(XMVText.convert_escapes(str(r[0])), "　　", true), "", true).strip_edges()
 		if t == "":
 			continue
-		if XUiSkin.CORE_V2 and drop_help_row(t):
-			continue
 		var c := XHelpCard._css(str(r[2])) if r.size() > 2 else XUiSkin.TEXT_2
 		if c.get_luminance() < 0.35:
 			c = XUiSkin.TEXT_2
-		out.append({"text": t, "color": XUiSkin.legacy_color(c)})
+		if not XUiSkin.CORE_V2:
+			out.append({"text": t, "color": c})
+			continue
+		# 收口批：一格里换行连着的几句（如「武器种类:书」＋说明）拆开逐句判，别整格丢掉
+		for line in t.split("\n", false):
+			var lt := str(line).strip_edges()
+			if lt != "" and not drop_help_row(lt):
+				out.append({"text": lt, "color": XUiSkin.legacy_color(c)})
 	return out
 
 
@@ -453,7 +458,7 @@ static func drop_help_row(t: String) -> bool:
 static func help_sections(rows: Array) -> Array:
 	if not XUiSkin.CORE_V2:
 		return [{"title": "", "rows": rows}]
-	var base_re := RegEx.create_from_string("^[^：:，。]{1,10}[：:]\\s*[+\\-]?\\d[\\d.,%％]*(?:\\s|　|$)")
+	var base_re := RegEx.create_from_string("^[^：:，。]{1,10}[：:]\\s*[+\\-]?\\d[\\d.,%％]*(?:\\s|　|$)|^[^：:，。\\s]{2,8}[+\\-]\\d[\\d.%％]*$")
 	var affix_re := RegEx.create_from_string("^(?:特效|效果|词条|成长|异化|吸取|专武|被动|◆|●|★|【)")
 	var set_re := RegEx.create_from_string("套装|^\\d\\s*件[：:]|\\(\\d/\\d\\)|（\\d/\\d）")
 	var buckets := {"自带": [], "词条": [], "套装": [], "说明": []}

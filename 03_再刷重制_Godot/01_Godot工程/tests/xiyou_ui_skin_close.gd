@@ -109,13 +109,13 @@ func _core() -> void:
 	var raw := [["名字", 20, "#fff", false, 0], ["品质：精良", 17, "rgba(57,185,255,1)", false, 0], ["武器种类:刀/剑", 16, "#fff", false, 0],
 		["最大生命值：50", 16, "rgba(255,128,128,1)", false, 0], ["攻击力：45", 16, "rgba(255,76,76,1)", false, 0],
 		["特效：暴击率+5%", 16, "rgba(128,255,128,1)", false, 0], ["龙鳞套装（2/4）", 16, "rgba(255,255,0,1)", false, 0],
-		["一把普通的剑。", 16, "rgba(170,215,245,1)", false, 0], ["购买价格：150", 16, "rgba(255,255,0,1)", false, 0], ["出售价格：21000", 16, "rgba(255,255,0,1)", false, 0]]
+		["武器种类:剑\n一把普通的剑。", 16, "rgba(170,215,245,1)", false, 0], ["攻击速度+4", 16, "#fff", false, 0], ["购买价格：150", 16, "rgba(255,255,0,1)", false, 0], ["出售价格：21000", 16, "rgba(255,255,0,1)", false, 0]]
 	var rows := XSkinTemplatePage.help_rows(raw)
 	var texts := rows.map(func(r): return str(r.text))
 	check("core_drop_rows", not texts.any(func(t): return t.begins_with("品质") or t.begins_with("武器种类") or t.contains("价格")), texts)
 	check("core_row_colors", rows[0].color == XUiSkin.TEXT and rows[1].color == XUiSkin.TEXT, rows)
 	var secs := XSkinTemplatePage.help_sections(rows)
-	check("core_sections", secs.map(func(x): return x.title) == ["自带", "词条", "套装", "说明"] and secs[0].rows.size() == 2, secs.map(func(x): return [x.title, x.rows.size()]))
+	check("core_sections", secs.map(func(x): return x.title) == ["自带", "词条", "套装", "说明"] and secs[0].rows.size() == 3 and secs[3].rows[0].text == "一把普通的剑。", secs.map(func(x): return [x.title, x.rows.size()]))
 	check("core_battle_card_above_otb", XSkinBattle.help_card_pos(Vector2(400, 500), Vector2(412, 310)).y + 310 <= XSkinOTBBar.POS.y - 12.0 \
 		and XSkinBattle.help_card_pos(Vector2(400, 100), Vector2(412, 310)).y == 100.0)
 	XUiSkin.CORE_V2 = false
@@ -237,6 +237,10 @@ func _comfort() -> void:
 		prev = v
 	check("comfort_pulse_slow", peaks == 0, peaks)
 	check("comfort_altar_shapes", XTianqiSkinAltar.STATE_TEXT[2].begins_with("◆") and XTianqiSkinAltar.STATE_TEXT[1].begins_with("◇"))
+	check("d45_default_face", XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.FACE)
+	var s0 := _state()
+	check("d45_sv_frame", XSkinMainMenu.sv_frame(s0.members()[0]) != null and XSkinMainMenu.sv_frame(s0.members()[0], 2).region.position.x > XSkinMainMenu.sv_frame(s0.members()[0]).region.position.x)
+	XState.current = null
 	check("warm_bg_default_off", not XUiSkin.WARM_BG and XUiSkin.BG == Color("050506"))
 	XUiSkin.COMFORT_V2 = false
 	check("comfort_off", XUiSkin.TEXT == Color("f0f0ee") and XUiSkin.TEXT_3 == Color("7d8086") and XUiSkin.QUALITY[1] == Color("80ff1c") and XUiSkin.bar_h("hp") == 5.0 \
@@ -296,6 +300,55 @@ func _shots() -> void:
 	get_window().size = Vector2i(1280, 720)
 	await frames(4)
 	_set_all(true)
+	await _d45()
+	await _d44()
+
+
+## D45：环心三种（现在的大头像／方案 A 小人＋右栏头像／方案 B 小人＋叠放小头像），16:9 与 20:9
+func _d45() -> void:
+	XUiSkin.touch_override = 0
+	for sz in SIZES.slice(0, 2):
+		get_window().size = sz[0]
+		await frames(6)
+		var imgs := []
+		for st in [XUiSkin.CenterStyle.FACE, XUiSkin.CenterStyle.SPRITE, XUiSkin.CenterStyle.SPRITE_BADGE]:
+			XUiSkin.CENTER_STYLE = st
+			var node: Node = await _build_menu()
+			await frames(6)
+			var img: Image = await grab()
+			imgs.append(img)
+			save(img, "d45_%s_%s" % [["now_face", "A_sprite", "B_sprite_badge"][st], sz[1]])
+			node.queue_free()
+			await frames(3)
+		check("d45_differs_" + sz[1], imgs[0].get_data() != imgs[1].get_data() and imgs[1].get_data() != imgs[2].get_data())
+		save_compare(imgs[1], imgs[2], "d45_A_vs_B_%s" % sz[1])
+	XUiSkin.CENTER_STYLE = XUiSkin.CenterStyle.FACE
+	get_window().size = Vector2i(1280, 720)
+	await frames(4)
+
+
+## D44：冷黑（默认）对暖炭黑，主菜单、物品、七印祭坛；只出图
+func _d44() -> void:
+	XUiSkin.touch_override = 0
+	for page in ["menu", "items", "altar"]:
+		var imgs := []
+		for warm in [false, true]:
+			XUiSkin.WARM_BG = warm
+			XUiSkin._tex.clear()
+			XUiSkin._styles.clear()
+			var node: Node = await call("_build_" + page)
+			await frames(6)
+			var img: Image = await grab()
+			imgs.append(img)
+			save(img, "d44_%s_%s" % [page, "warm" if warm else "cold"])
+			node.queue_free()
+			await frames(3)
+			XTianqiQiyin.set_current("")
+			XTianqiQiyin.rng_override = null
+		save_compare(imgs[0], imgs[1], "d44_%s_cold_vs_warm" % page)
+	XUiSkin.WARM_BG = false
+	XUiSkin._tex.clear()
+	XUiSkin._styles.clear()
 
 
 func _key(action: String) -> InputEventAction:
