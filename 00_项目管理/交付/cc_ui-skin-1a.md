@@ -136,3 +136,16 @@
 - 有窗模式重新跑 `python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main` 与 `xiyou_ui_skin_menu.tscn -- --out=...` 截图（本次仅对已有对照图跑了 `--compare`）；
 - 长测试：`xiyou_tianqi_e2e`、`xiyou_virtual_player`、事件对照四段 `xiyou_event_compare*`、完整 `工具回归.py` 与 `选测.py` 全集。
 
+### 返修复核（提交 `4b780b162`，相对 `136851f60`）
+
+- **复核对象**：`cc/ui-skin-1a`（返修提交 `4b780b162` 相对 `136851f60` 的 diff，乙档复核），执行者：小A（只读核查＋前台轻量无头复跑，未改游戏代码）。
+- **结论：通过**（上次 1 条 P2 必改、协调定夺 2 处文案、3 条 P3 均已按要求落实，按 `ba1f7ed` 口径核对无误，未带出新问题）。
+- **逐项确认**：
+  1. **P2 单项组折叠行（`skin_main_menu.gd`、`ui_skin.gd`）**：新增 `XSkinMainMenu.collapsed_text(g)`，单项组（`items.size() == 1`）改返回 `items[0].desc`，多项组用全角空格 `"　"` 拼 `it.name`，`_draw_pane()` `"group"` 行改调它；`物品` 折叠行右侧为 `使用和查看随身物品`、`装备` 为 `更换角色装备`、`宠物`（放开后）为 `查看和培养宠物`，不再重复组名。
+  2. **协调定夺文案（`ui_skin.gd`）**：`game_end` 项名称改 `返回标题`（`cmd: "gameEnd"`、`desc: "回到标题画面"`，全局仅影响新主菜单显示名、无测试冲突）；`options` 项说明改 `画面、声音、挂机与操作`；全量 `GROUPS`（6＋1 组名、18 子项名及说明）按 `ba1f7ed` 与协调定夺口径核对全部一致。
+  3. **三条 P3 落实与防引入新问题**：
+     - P3-1（选人态锁环）：`skin_main_menu.gd` 在 `refresh()` 按 `actor_mode` 设 `ring.mouse_filter`（`IGNORE`／`STOP`）、`ring.activated` 判 `host._mode == "command"`、`_on_ring_changed` 非 `"command"` 时 `ring.select(gi, false)` 兜底转回当前组（对照 `XSkinRingNav.select` 在 `animate=false` 先置 `_arc_t = 1.0` 再 emit `changed`，不会无限递归）。
+     - P3-2（隐藏项按符号可用性）：`menu.gd` `symbol_enabled(sym)` 改遍历 `commands()`，隐藏的 `"pet"` 与发行／开关隐藏时的 `"alienation"` 均返回 `false`。
+     - P3-3（交付单文字表）：`cc_ui-skin-1a.md`「新增可见文字」表已补全组名、18 个子项名（含 `返回标题`）及同步后的 `装备`、`设置` 说明。
+  4. **测试补充与前台复跑**：`tests/xiyou_ui_skin_menu.gd` 新增 7 条断言（`collapsed_single_desc`、`collapsed_multi_names`、`system_names`、`actor_ring_locked`、`ring_mouse_back`、`hidden_symbol_disabled`、`alien_symbol_back`）；前台单跑 `./03_再刷重制_Godot/07_开发环境/godot --headless --path 03_再刷重制_Godot/01_Godot工程 res://tests/xiyou_ui_skin_menu.tscn` 实测 `TEST_RESULT={"passed":58,"total":58}`。
+
