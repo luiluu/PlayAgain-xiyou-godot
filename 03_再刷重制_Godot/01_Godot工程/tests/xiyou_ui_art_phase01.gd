@@ -358,7 +358,7 @@ func _save_shot(name: String, sz: Array) -> void:
 	var img := get_viewport().get_texture().get_image()
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	check("shot_" + name, img.save_png(out_dir.path_join(name + ".png")) == OK)
-	if sz[1] == "4x3" and img.get_size() == Vector2i(1280, 720):   # 4:3 窗口：视口锁 16:9、上下留边，另存玩家看到的样子
+	if sz[1] == "4x3" and img.get_width() * 9 == img.get_height() * 16:   # 4:3 窗口：视口锁 16:9、上下留边，另存玩家看到的样子
 		var view := img.duplicate() as Image
 		view.resize(960, 540, Image.INTERPOLATE_BILINEAR)
 		var frame := Image.create(960, 720, false, view.get_format())
