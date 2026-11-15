@@ -3,8 +3,9 @@
   "total_batches": 108,
   "issue_type_counts": {
     "punct_mix": 398,
+    "bracket_mismatch": 190,
     "trad_simp_mix": 179,
-    "bracket_mismatch": 122,
+    "ctrl_char": 65,
     "bracket_half_full_mix": 45,
     "mv_ctrl_missing_arg": 33,
     "garbled": 20,
@@ -305,11 +306,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -387,7 +388,7 @@
       "batch": 29,
       "total_segments": 546,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 3,
+      "hit_count": 9,
       "term_hit_count": 0,
       "hits": [
         {
@@ -399,6 +400,78 @@
             {
               "type": "trad_simp_mix",
               "detail": "含非常用/繁体字: 藉"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1157/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "即兴碎拨﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1161/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "天才手感﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1183/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "旧弦羁绊﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1184/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "重低音共鸣﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1250/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "时之主宰﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:1251/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "无尽空间﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         },
@@ -433,7 +506,7 @@
       "batch": 30,
       "total_segments": 547,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 4,
+      "hit_count": 5,
       "term_hit_count": 0,
       "hits": [
         {
@@ -481,6 +554,18 @@
             {
               "type": "trad_simp_mix",
               "detail": "含非常用/繁体字: 鉾"
+            }
+          ]
+        },
+        {
+          "loc": "States.json:2664/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "祸祝·旧弦羁绊﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         }
@@ -1340,9 +1425,21 @@
       "batch": 34,
       "total_segments": 1488,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 7,
+      "hit_count": 8,
       "term_hit_count": 30,
       "hits": [
+        {
+          "loc": "Weapons.json:1641/note#1",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[13]符石:凌波舞(造成任何伤害都有2%概率获得”凌波舞”效果，行动次数+1，持续2回合)",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 “” (0 vs 2)"
+            }
+          ]
+        },
         {
           "loc": "Weapons.json:1708/note#13",
           "field": "note.pos",
@@ -1351,11 +1448,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -3022,7 +3119,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             }
           ]
         },
@@ -3262,11 +3359,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -3762,9 +3859,222 @@
       "batch": 49,
       "total_segments": 931,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 0,
+      "hit_count": 14,
       "term_hit_count": 1,
-      "hits": [],
+      "hits": [
+        {
+          "loc": "Items.json:1642/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "时之主宰﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1642/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘时之主宰﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1643/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "无尽空间﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1643/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘无尽空间﻿﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1644/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘命运指引﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1645/name",
+          "field": "name",
+          "tianqi_reworked": false,
+          "text": "因果丝线﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1645/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘因果丝线﻿﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1646/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘生命之火﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1647/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘死之掌握﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1648/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘轮回不止﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1649/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘阴阳合一·阴﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1650/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘阴阳合一·阳﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1651/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘气运昌隆﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:1652/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘劲儿特大﻿‘",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        }
+      ],
       "term_hits": [
         {
           "loc": "Items.json:1718/note#3",
@@ -3778,7 +4088,7 @@
       "batch": 50,
       "total_segments": 929,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 60,
+      "hit_count": 101,
       "term_hit_count": 9,
       "hits": [
         {
@@ -3813,11 +4123,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -4486,6 +4796,498 @@
           ]
         },
         {
+          "loc": "Items.json:2231/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘玄天功·入门‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2232/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘玄天功·小成‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2233/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘玄天功·大成‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2234/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘玄天功·圆满‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2235/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘九秘:行字诀‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2236/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘九秘:行字诀‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2237/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘炎黄后裔‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2238/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘易筋经‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2239/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘洗髓经‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2240/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘九阳淬体图‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2241/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《碎空霸体诀》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2242/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《碎空霸体诀》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2243/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《炎阳焚天录》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2244/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《炎阳焚天录》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2245/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《冰魄寒光诀》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2246/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《冰魄寒光诀》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2247/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《厚土镇世典》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2248/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《厚土镇世典》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2277/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《紫霄神雷经》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2278/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《紫霄神雷经》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2279/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《灵韵万象功》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2280/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《灵韵万象功》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2281/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《星穹幻算典》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2282/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《星穹幻算典》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2283/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《圣光救赎典》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2284/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《圣光救赎典》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2285/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《幽影噬魂咒》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2286/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《幽影噬魂咒》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2287/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会主动技能 ‘《百草回春经》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2288/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会主动技能 ‘《百草回春经》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2289/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会主动技能 ‘《轮回转生决》‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2290/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《裂魔碎空劲》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2291/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《裂魔碎空劲》中篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2292/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《裂魔碎空劲》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2293/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《瑞气盈身寻宝决》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2294/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《瑞气盈身寻宝决》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2295/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《易筋经妙法》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2296/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《易筋经妙法》中篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2297/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《易筋经妙法》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2298/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《九阳神功决》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2299/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《九阳神功决》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
           "loc": "Items.json:2311/name",
           "field": "name",
           "tianqi_reworked": false,
@@ -4571,9 +5373,154 @@
       "batch": 51,
       "total_segments": 928,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 0,
+      "hit_count": 12,
       "term_hit_count": 0,
-      "hits": [],
+      "hits": [
+        {
+          "loc": "Items.json:2326/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《九阴真经录》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2327/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《九阴真经录》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2328/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《紫霞神功录》上篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2329/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《紫霞神功录》下篇‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2330/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《神照经妙法》‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2331/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《孤独九剑式》‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2332/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《斩天拔剑术》突破‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2333/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《无畏之愿》突破‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2334/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《瞬影一绝斩》突破‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2335/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《神龙炎弹》突破‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2336/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘《冥花葬》突破‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        },
+        {
+          "loc": "Items.json:2337/note#3",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:使用后学会被动技能 ‘传承升华‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (2 vs 0)"
+            }
+          ]
+        }
+      ],
       "term_hits": []
     },
     "52": {
@@ -5788,7 +6735,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -5804,7 +6751,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -6054,7 +7001,7 @@
         823,
         824
       ],
-      "hit_count": 20,
+      "hit_count": 21,
       "term_hit_count": 12,
       "hits": [
         {
@@ -6294,6 +7241,18 @@
             {
               "type": "punct_mix",
               "detail": "汉字间夹半角标点(,;?!) "
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:824/name",
+          "field": "name",
+          "tianqi_reworked": true,
+          "text": "‌顾盼生姿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         }
@@ -10334,7 +11293,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -10346,7 +11305,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -10358,7 +11317,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -10370,7 +11329,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -10382,7 +11341,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         }
@@ -10458,7 +11417,7 @@
         4552,
         4553
       ],
-      "hit_count": 18,
+      "hit_count": 19,
       "term_hit_count": 10,
       "hits": [
         {
@@ -10554,6 +11513,18 @@
             {
               "type": "trad_simp_mix",
               "detail": "含非常用/繁体字: 濛"
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:4459/note#5",
+          "field": "note.pos",
+          "tianqi_reworked": true,
+          "text": "\\c[1]效果:‘空自若‘、’夜幕凉‘可额外凝聚一点杀气",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (3 vs 1)"
             }
           ]
         },
@@ -11270,9 +12241,33 @@
         5108,
         5109
       ],
-      "hit_count": 6,
+      "hit_count": 8,
       "term_hit_count": 7,
       "hits": [
+        {
+          "loc": "Skills.json:4901/note#5",
+          "field": "note.pos",
+          "tianqi_reworked": true,
+          "text": "\\c[1]效果:普通攻击变为‌花御天下",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:4903/note#4",
+          "field": "note.pos",
+          "tianqi_reworked": true,
+          "text": "\\c[1]再次行动+50%，‌学习“顾盼生姿”",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
         {
           "loc": "Skills.json:4917/note#11",
           "field": "note.pos",
@@ -11281,11 +12276,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 2)"
+              "detail": "括号/引号不成对 （） (1 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -11301,11 +12296,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 2)"
+              "detail": "括号/引号不成对 （） (1 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -11321,11 +12316,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 2)"
+              "detail": "括号/引号不成对 （） (1 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -12216,7 +13211,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -12228,7 +13223,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (3 vs 2)"
+              "detail": "括号/引号不成对 () (3 vs 2)"
             }
           ]
         },
@@ -12312,7 +13307,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -12336,7 +13331,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             }
           ]
         },
@@ -12348,7 +13343,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             }
           ]
         },
@@ -12376,11 +13371,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 2)"
+              "detail": "括号/引号不成对 () (1 vs 2)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -12396,7 +13391,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             }
           ]
         },
@@ -12408,11 +13403,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -12428,11 +13423,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -12602,11 +13597,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (2 vs 1)"
+              "detail": "括号/引号不成对 （） (2 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             }
           ]
         },
@@ -12630,11 +13625,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -12919,7 +13914,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (3 vs 2)"
+              "detail": "括号/引号不成对 () (3 vs 2)"
             }
           ]
         },
@@ -13193,11 +14188,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13213,11 +14208,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13233,11 +14228,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13253,11 +14248,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13273,11 +14268,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13293,11 +14288,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13313,11 +14308,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13333,11 +14328,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13353,7 +14348,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             }
           ]
         }
@@ -13543,7 +14538,7 @@
         7313,
         7316
       ],
-      "hit_count": 9,
+      "hit_count": 11,
       "term_hit_count": 6,
       "hits": [
         {
@@ -13651,6 +14646,30 @@
             {
               "type": "punct_mix",
               "detail": "汉字间夹半角标点(,;?!) "
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:7212/note#4",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:​物理属性伤害*0.1",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:7214/note#4",
+          "field": "note.pos",
+          "tianqi_reworked": false,
+          "text": "\\c[1]效果:​怪物再动+1",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         }
@@ -13783,7 +14802,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -13795,7 +14814,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -13807,7 +14826,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -13819,7 +14838,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -13831,11 +14850,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13851,11 +14870,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13871,11 +14890,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13891,11 +14910,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 1)"
+              "detail": "括号/引号不成对 () (2 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -13935,7 +14954,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             }
           ]
         }
@@ -14235,11 +15254,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 0)"
+              "detail": "括号/引号不成对 （） (1 vs 0)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14255,11 +15274,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (2 vs 1)"
+              "detail": "括号/引号不成对 （） (2 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14622,7 +15641,7 @@
         10222,
         10223
       ],
-      "hit_count": 24,
+      "hit_count": 26,
       "term_hit_count": 3,
       "hits": [
         {
@@ -14657,11 +15676,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 2)"
+              "detail": "括号/引号不成对 （） (1 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (3 vs 2)"
+              "detail": "括号/引号不成对 () (3 vs 2)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14677,11 +15696,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 2)"
+              "detail": "括号/引号不成对 () (4 vs 2)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14697,11 +15716,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 1)"
+              "detail": "括号/引号不成对 () (4 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14717,11 +15736,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 1)"
+              "detail": "括号/引号不成对 () (4 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14737,7 +15756,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14753,11 +15772,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (2 vs 3)"
+              "detail": "括号/引号不成对 （） (2 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14773,11 +15792,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 0)"
+              "detail": "括号/引号不成对 () (2 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14793,11 +15812,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 0)"
+              "detail": "括号/引号不成对 () (2 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14813,11 +15832,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 2)"
+              "detail": "括号/引号不成对 （） (0 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 0)"
+              "detail": "括号/引号不成对 () (2 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -14833,11 +15852,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (2 vs 1)"
+              "detail": "括号/引号不成对 （） (2 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             }
           ]
         },
@@ -14849,7 +15868,19 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:10109/note#5",
+          "field": "note.pos",
+          "tianqi_reworked": true,
+          "text": "\\c[1]效果:释放’天问三誓之人剑‘ 会有50%几率释放一次‘天问三誓之地剑‘，释放完‘天问三誓之地剑’50%几率在释放一次 ‘天问三誓之天剑‘",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (6 vs 2)"
             }
           ]
         },
@@ -14861,15 +15892,27 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
               "detail": "全角/半角括号混搭"
+            }
+          ]
+        },
+        {
+          "loc": "Skills.json:10113/note#6",
+          "field": "note.pos",
+          "tianqi_reworked": true,
+          "text": "\\c[1]效果:每强化5层会领悟一个特殊技能，5层领悟 ‘星痕*麒麟圣击",
+          "issues": [
+            {
+              "type": "bracket_mismatch",
+              "detail": "括号/引号不成对 ‘’ (1 vs 0)"
             }
           ]
         },
@@ -14881,7 +15924,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -14893,7 +15936,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -14905,7 +15948,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -14917,7 +15960,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -15185,11 +16228,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 2)"
+              "detail": "括号/引号不成对 () (4 vs 2)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15205,11 +16248,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 2)"
+              "detail": "括号/引号不成对 （） (1 vs 2)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (3 vs 2)"
+              "detail": "括号/引号不成对 () (3 vs 2)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15225,11 +16268,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 1)"
+              "detail": "括号/引号不成对 () (4 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15245,11 +16288,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (1 vs 3)"
+              "detail": "括号/引号不成对 （） (1 vs 3)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 1)"
+              "detail": "括号/引号不成对 () (4 vs 1)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15265,7 +16308,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15293,7 +16336,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -15305,7 +16348,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -15317,7 +16360,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (4 vs 3)"
+              "detail": "括号/引号不成对 () (4 vs 3)"
             }
           ]
         },
@@ -15329,7 +16372,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (2 vs 3)"
+              "detail": "括号/引号不成对 () (2 vs 3)"
             }
           ]
         },
@@ -15341,11 +16384,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15457,11 +16500,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (2 vs 1)"
+              "detail": "括号/引号不成对 （） (2 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
             }
           ]
         },
@@ -15584,7 +16627,7 @@
       "batch": 90,
       "total_segments": 682,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 8,
+      "hit_count": 45,
       "term_hit_count": 0,
       "hits": [
         {
@@ -15607,7 +16650,7 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             }
           ]
         },
@@ -15619,7 +16662,19 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (0 vs 1)"
+              "detail": "括号/引号不成对 () (0 vs 1)"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#9(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：时间暂停、时间回溯、时间加速/减速、永生不老、操控时间线﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         },
@@ -15630,8 +16685,444 @@
           "text": "\\n<破阵·投影>效果:﻿技能消耗-1000%,TP+2000,保留TP 终伤+750%,爆伤+1000% 免疫放逐,封魔,封技﻿",
           "issues": [
             {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            },
+            {
               "type": "punct_mix",
               "detail": "汉字间夹半角标点(,;?!) "
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#12(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "敏捷+5000% ﻿再动+5,在释放+100%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#21(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:﻿次元吞噬:对敌人造成15%最大生命值(CD3回合)﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#22(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "免死五回合﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#23(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "免死三回合(全队效果)﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#24(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "获取30万肝帝积分﻿，并且当前积分*5",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#34(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：预知未来、规避灾祸、锁定最优抉择、趋吉避凶﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#36(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:﻿暴击率命中率+3000%，爆伤+750%(全队效果)﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#37(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "敌人暴击率-500% 命中率-95%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#38(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "技能伤害+500%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#47(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：改写因果、种下前因收获指定后果、篡改事物逻辑﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#49(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:﻿获得2000个人道碎片﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#50(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "结算伤害*3，全属性*1.5(全队)﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#51(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "可提前购买人道碎片商店所有物品﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#60(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：无限生命力、超速自愈、断肢重生、赐予/剥夺生命、不死身﻿﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#62(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:﻿生命值+10000%﻿，每回合恢复100%生命值﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#63(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "免疫中毒，流血，诅咒，睡眠，混乱，愤怒，沉默，魅惑﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#64(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "百分之75%概率满血复活﻿，治疗属性+3000%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#71(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：执掌生死、灵魂操控、死灵大军、即死判定、免疫死亡﻿﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#73(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:﻿每段伤害有0.01%秒杀敌人﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#74(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "每段伤害额外造成敌人0.02%最大生命值伤害，造成2000次后秒杀敌人﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#75(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "免疫放逐，免疫封魔，免疫封技﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#76(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "免疫死亡五回合，﻿双攻+500%",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#83(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：无限转世、保留记忆能力、轮回存档、重置世界线﻿﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#85(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:死亡后60%满血复活并且全属性*3(全队效果)﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#93(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：阴阳平衡、生死同存、正负能量兼容、万法不侵、大道圆满﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#95(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:阴﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#96(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "全伤+1500% 全抗性+99% 命中率+500%﻿ 魔攻+2w",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#97(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "魔法值+1000% 魔攻+300% 魔抗+500% 幸运+300%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#98(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "可穿戴所有武器与装备并且可以携带俩把武器﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#100(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "\\n<破阵·投影>效果:阳﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#101(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "爆伤+1500% 终伤+1000% 暴击率+500%﻿ 物攻+2w",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#102(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "生命值+1000% 物攻+300% 物抗+500% 敏捷+300%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#103(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "可穿戴所有武器与装备并且可以携带俩把武器﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#111(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：欧皇本体、逢凶化吉、万事顺遂、天地偏爱﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#114(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "敏捷幸运+2000%﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
+        {
+          "loc": "CommonEvents.json:1441/cmd#123(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "核心权能：开天辟地、天地同寿﻿",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
             }
           ]
         },
@@ -15655,11 +17146,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15687,11 +17178,11 @@
           "issues": [
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 （） (0 vs 1)"
+              "detail": "括号/引号不成对 （） (0 vs 1)"
             },
             {
               "type": "bracket_mismatch",
-              "detail": "括号不成对 () (1 vs 0)"
+              "detail": "括号/引号不成对 () (1 vs 0)"
             },
             {
               "type": "bracket_half_full_mix",
@@ -15728,9 +17219,21 @@
       "batch": 92,
       "total_segments": 514,
       "tianqi_reworked_skill_ids": [],
-      "hit_count": 6,
+      "hit_count": 7,
       "term_hit_count": 0,
       "hits": [
+        {
+          "loc": "Map001.json:ev1/p0/cmd#154(401)",
+          "field": "cmd401",
+          "tianqi_reworked": false,
+          "text": "宝宝:无视敌人3000%爆闪，无视敌人300%抗性 精魂和爆率增加9999%﻿ 获得结算伤害*99999，爆伤终伤+99999%，究极福利，开启宝宝巴士",
+          "issues": [
+            {
+              "type": "ctrl_char",
+              "detail": "含不可见控制字符"
+            }
+          ]
+        },
         {
           "loc": "Map001.json:ev1/p0/cmd#155(401)",
           "field": "cmd401",

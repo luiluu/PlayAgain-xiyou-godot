@@ -34,7 +34,7 @@ PURE_DIGITS_RE = re.compile(r"^\d+$")
 
 # 乱码 / 替换符 / 明显占位
 GARBLED_RE = re.compile(r"[\ufffd\u25a1\u25a0]|\?\?\?|？{3,}|◆小明")
-CTRL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+CTRL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\ufeff\u200b-\u200f]")
 
 # HTML 实体与常见 HTML 标签
 HTML_RE = re.compile(
@@ -121,14 +121,14 @@ def check_brackets(text: str) -> list[tuple[str, str]]:
     issues: list[tuple[str, str]] = []
     # 剔除 \n<...> 名字框与 \evalText<<...>> 中的内容以免干扰
     cleaned = NAMEBOX_TAG_RE.sub("", text)
-    pairs = [("（", "）"), ("(", ")"), ("【", "】"), ("「", "」"), ("『", "』")]
+    pairs = [("（", "）"), ("(", ")"), ("【", "】"), ("「", "」"), ("『", "』"), ("‘", "’"), ("“", "”")]
     for left, right in pairs:
         lc = cleaned.count(left)
         rc = cleaned.count(right)
         if lc != rc:
             if left == "(" and rc - lc == 1 and re.match(r"^\s*[0-9A-Za-z]\)", cleaned):
                 continue
-            issues.append(("bracket_mismatch", f"括号不成对 {left}{right} ({lc} vs {rc})"))
+            issues.append(("bracket_mismatch", f"括号/引号不成对 {left}{right} ({lc} vs {rc})"))
     if re.search(r"（[^（）()]*\)|\([^（）()]*）", cleaned):
         issues.append(("bracket_half_full_mix", "全角/半角括号混搭"))
     return issues
@@ -749,9 +749,10 @@ def inspect_batch(batch_num: int, sample_count: int = 50, skip_reworked: bool = 
 
     # 均匀抽样 N 段用于人工排查错字、半截句子
     pool = [r for r in recs if not (skip_reworked and r.get("tianqi_reworked"))]
-    print(f"\n--- [3] 人工抽读样本（从 {len(pool)} 段非跳过段中均匀抽 {min(sample_count, len(pool))} 段） ---")
-    if pool:
-        step = max(1, len(pool) / min(sample_count, len(pool)))
+    if sample_count > 0:
+        print(f"\n--- [3] 人工抽读样本（从 {len(pool)} 段非跳过段中均匀抽 {min(sample_count, len(pool))} 段） ---")
+        if pool:
+            step = max(1, len(pool) / min(sample_count, len(pool)))
         seen = set()
         idx_float = 0.0
         n = 0
