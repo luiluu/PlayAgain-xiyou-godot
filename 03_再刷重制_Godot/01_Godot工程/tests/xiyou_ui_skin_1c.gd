@@ -215,6 +215,13 @@ func _equip_page() -> void:
 	# Y：全部属性与词条
 	page._unhandled_input(_keycode(KEY_Y))
 	check("equip_y_expands", sk.expanded and sk.detail.visible and not sk.list_panel.visible and not sk.card.visible)
+	# 展开时左边栏位环不收点击（小A核查 P2-3）：环忽略鼠标，就算信号来了也不换栏位、不进出候选
+	var slot_before := page._slot
+	check("equip_detail_ring_ignores_mouse", sk.ring.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	sk._on_ring_changed(2)
+	sk._equip_ring_activated(0)
+	check("equip_detail_ring_blocked", page._slot == slot_before and page._mode == "item" and sk.expanded, [page._slot, page._mode])
+	check("equip_detail_hints", sk.hint_list == XSkinEquipPage.detail_hints() and sk.hint_list[-1] == ["Y / 取消", "收起"])
 	check("equip_detail_rows", not sk.detail._rows.is_empty() and sk.detail.item == pick, sk.detail._rows.size())
 	page._unhandled_input(_key("ui_right"))
 	check("equip_detail_compare", sk.detail.tab == 1 and sk.detail._cmp.size() == 8 and sk.detail.compare, sk.detail._cmp.size())
@@ -222,7 +229,10 @@ func _equip_page() -> void:
 	page._unhandled_input(_key("ui_right"))
 	check("equip_detail_socket", sk.detail.tab == 2)
 	page._unhandled_input(_key("ui_cancel"))
-	check("equip_detail_cancel_collapses", not sk.expanded and page._mode == "item" and sk.list_panel.visible)
+	check("equip_detail_cancel_collapses", not sk.expanded and page._mode == "item" and sk.list_panel.visible and sk.ring.mouse_filter == Control.MOUSE_FILTER_STOP)
+	# 按键提示（小A文字审 P2-2）：候选时也有「Q / E 换人」，栏位时清空写「键盘 C」
+	check("equip_item_hints_qe", sk.hint_list == [["确定", "装备"], ["取消", "回栏位"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["Q / E", "换人"]], sk.hint_list)
+	check("equip_slot_hints_c", XSkinEquipPage.slot_hints() == [["确定", "更换"], ["取消", "返回"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["键盘 C", "清空"], ["Q / E", "换人"]])
 	# 换上
 	page._unhandled_input(_key("ui_accept"))
 	check("equip_changed", is_same(a.equips[int(view[0])], pick) and page._mode == "slot" and sk.focus == "ring", page._mode)
@@ -302,6 +312,18 @@ func _search_skin() -> void:
 	_state()
 	check("web_skin_text", XWebPanel.skin_color(XWebPanel.TEXT) == XUiSkin.TEXT and XWebPanel.skin_color(XWebPanel.SYSTEM) == XUiSkin.GOLD)
 	check("web_skin_cursor", XWebPanel.skin_color(XWebPanel.CURSOR_EDGE) == XUiSkin.SEL_LINE)
+	# 检索列表选中行：底线、悬停底色都换成新皮肤的（小A核查 P2-1）
+	XGearSearch.reset_session()
+	var gs := XGearSearch.new()
+	gs.source = XGearQuery.collection(XState.current)
+	XGearSearch.selected_key = "k1"
+	var row := gs._row({"key": "k1", "item": {"name": "测试剑", "params": [0, 0, 0, 0, 0, 0, 0, 0]}, "owner": ""})
+	var nb: StyleBoxFlat = row.get_theme_stylebox("normal")
+	var hb: StyleBoxFlat = row.get_theme_stylebox("hover")
+	check("web_search_row_line", nb.border_color == XUiSkin.SEL_LINE and hb.bg_color == Color(XUiSkin.SEL_FILL, XUiSkin.FILL_ALPHA), [nb.border_color, hb.bg_color])
+	row.free()
+	gs.free()
+	XGearSearch.reset_session()
 	check("web_skin_other_kept", XWebPanel.skin_color(Color("#123456")) == Color("#123456"))
 	_state(false)
 	check("web_old_kept", XWebPanel.skin_color(XWebPanel.TEXT) == XWebPanel.TEXT and XWebPanel.skin_color(XWebPanel.SYSTEM) == XWebPanel.SYSTEM)

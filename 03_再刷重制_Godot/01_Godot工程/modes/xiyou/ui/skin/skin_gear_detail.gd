@@ -71,7 +71,7 @@ func _build() -> void:
 	match tab:
 		0:
 			if not item.is_empty():
-				_rows = XSkinTemplatePage.help_rows(XHelpCard.detail_rows(item, 300.0))
+				_rows = XSkinTemplatePage.help_rows(XHelpCard.detail_rows(absorb_view(item), 300.0))
 		1:
 			var names: Array = XDB.system().get("terms", {}).get("params", [])
 			if actor != null:
@@ -88,6 +88,11 @@ func _build() -> void:
 	scroll = clampf(scroll, 0.0, max_scroll())
 	queue_redraw()
 	body.queue_redraw()
+
+
+## 吸取过特效的专武：照说明卡（XHelpCard.show_for）用效果视图，详情里带上吸取的特效行（小A核查 P3-3）
+static func absorb_view(rec: Dictionary) -> Dictionary:
+	return XAffixAbsorb.view(rec) if rec.has(XAffixAbsorb.KEY) else rec
 
 
 func choose(i: int) -> void:

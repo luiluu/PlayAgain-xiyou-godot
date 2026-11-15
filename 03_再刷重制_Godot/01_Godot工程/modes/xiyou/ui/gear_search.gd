@@ -421,9 +421,9 @@ func _row(r: Dictionary) -> Button:
 	var active: bool = r.key == selected_key
 	var normal := _box(CURSOR if active else Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 0, Vector2(12, 8))
 	normal.border_width_bottom = 1
-	normal.border_color = CURSOR_EDGE if active else Color(1, 1, 1, 0.1)
+	normal.border_color = skin_color(CURSOR_EDGE) if active else Color(1, 1, 1, 0.1)
 	var hover := normal.duplicate()
-	hover.bg_color = CURSOR
+	hover.bg_color = skin_color(CURSOR)
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", hover)

@@ -96,15 +96,15 @@ func relayout() -> void:
 
 
 static func slot_hints() -> Array:
-	return [["确定", "更换"], ["取消", "返回"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["C", "清空"], ["Q / E", "换人"]]
+	return [["确定", "更换"], ["取消", "返回"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["键盘 C", "清空"], ["Q / E", "换人"]]
 
 
 static func item_hints() -> Array:
-	return [["确定", "装备"], ["取消", "回栏位"], ["Y", "全部属性与词条"], ["X", "检索排序"]]
+	return [["确定", "装备"], ["取消", "回栏位"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["Q / E", "换人"]]
 
 
 static func detail_hints() -> Array:
-	return [["左右", "换页"], ["上下", "滚动"], ["取消", "收起"]]
+	return [["左右", "换页"], ["上下", "滚动"], ["Y / 取消", "收起"]]
 
 
 # ---- 显示顺序：「卸下」放第一行（候选数据里它在最后） ----
@@ -147,6 +147,8 @@ func sync() -> void:
 	else:
 		set_focus("list" if sc._mode == "item" else "ring")
 		set_hint_list(item_hints() if sc._mode == "item" else slot_hints())
+	# 展开时详情盖住中、右两块，左边栏位环不收点击（触屏点到会换栏位，小A核查 P2-3）
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE if expanded else Control.MOUSE_FILTER_STOP
 	list_panel.visible = not expanded
 	card.visible = not expanded
 	detail.visible = expanded
@@ -323,7 +325,7 @@ func _sync_card(a: XActor) -> void:
 		d = {"icon": null, "title": remove_text() if item_mode else sc.slot_name(sc._slot), "title_color": XUiSkin.TEXT,
 			"subtitle": "" if item_mode else "空", "desc": "", "sections": []}
 	else:
-		d = XSkinItemPage.card_data(rec)
+		d = XSkinItemPage.card_data(XSkinGearDetail.absorb_view(rec))
 	if item_mode:
 		var temp := preview_actor(a)
 		_cache_compare(a, temp)
@@ -475,7 +477,7 @@ func clear_all() -> void:
 # ---- 点击 → 同样的状态变化 ----
 
 func _on_ring_changed(i: int) -> void:
-	if _syncing:
+	if _syncing or expanded:
 		return
 	var view := scene.slot_view()
 	var per: int = ring_pages(view.size())[1]
@@ -491,7 +493,7 @@ func _on_ring_changed(i: int) -> void:
 
 
 func _equip_ring_activated(_i: int) -> void:
-	if _syncing:
+	if _syncing or expanded:
 		return
 	if scene._mode == "item":
 		scene._cancel()
