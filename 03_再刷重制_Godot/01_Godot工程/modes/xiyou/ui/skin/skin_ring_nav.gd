@@ -137,7 +137,7 @@ var style: Dictionary = {}
 const DEFAULT_STYLE := {
 	"ring_line": Color(0.0, 0.0, 0.0, -1.0), "ring_line_a": 0.75, "ring_w": 1.5,   # ring_line 的 a<0＝用 XUiSkin.LINE
 	"band": Color(0.81, 0.165, 0.12, 0.05), "band_w": 10.0, "halo_line_a": 0.22,
-	"dash_a": 0.30, "notch": Color(0.89, 0.741, 0.447, 1.0), "notch_size": 5.5,
+	"dash_a": 0.30, "notches": true, "notch": Color(0.89, 0.741, 0.447, 1.0), "notch_size": 5.5,   # notches＝环上七颗刻痕菱形（七印）；项数不是 7 的页（装备页）关掉，免得画面上有没含义的点
 	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "knot": Color(0.89, 0.741, 0.447, 1.0), "knot_size": 4.0,
 	"orb_low": Color(0.071, 0.075, 0.082, 1.0), "orb_hi": Color(0.204, 0.212, 0.231, 0.85), "orb_line_a": 0.65,
 }
@@ -330,7 +330,7 @@ func _draw() -> void:
 		var a0 := off + k * TAU / dashes
 		draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a"))), 1.5, true)
 	# 刻痕
-	for k in NOTCHES:
+	for k in (NOTCHES if bool(sty("notches")) else 0):
 		var p := c + Vector2.from_angle(deg_to_rad(notch_deg(k))) * (R + 11.0)
 		_diamond(p, float(sty("notch_size")), sty("notch"))
 	# 中心图

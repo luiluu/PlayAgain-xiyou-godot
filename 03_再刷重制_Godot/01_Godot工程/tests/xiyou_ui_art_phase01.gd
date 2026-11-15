@@ -337,8 +337,16 @@ func _equip_layout(lay: int) -> void:
 						lab_ok = false
 						bad.append(["orb", i, j])
 			check("equip13_c_labels_clear_" + tag, lab_ok, bad)
-			check("equip13_c_links_elbow_" + tag, ring.links.size() == 5 and ring.links.all(func(l): return (l as Array).size() == 3 \
-				and absf((l[1] as Vector2).length() - 148.0) < 0.5 and absf((l[1] as Vector2).angle_to(l[0])) < 0.01), ring.links)
+			# 连线：三点直角折线，拐点在根栏径向上、离副栏比离根栏近（Kyo 11-16 v5）
+			var link_ok := ring.links.size() == 5
+			for l in ring.links:
+				var r0: Vector2 = l[0]
+				var k: Vector2 = l[1] if (l as Array).size() == 3 else Vector2.ZERO
+				if (l as Array).size() != 3 or absf(k.angle_to(r0)) > 0.01 or absf((l[2] - k).normalized().dot(k.normalized())) > 0.05 \
+					or k.distance_to(l[2]) >= k.distance_to(r0):
+					link_ok = false
+			check("equip13_c_links_elbow_" + tag, link_ok, ring.links)
+			check("equip13_no_notches_" + tag, not bool(ring.sty("notches")))
 			var far := 0.0
 			for i in n:
 				if not ring.on_ring(i):
