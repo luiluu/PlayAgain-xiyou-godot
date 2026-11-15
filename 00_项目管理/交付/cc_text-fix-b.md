@@ -1,7 +1,7 @@
 # 交付：cc/text-fix-b
 
 - 车道／工作者：A 内容·文字（cc，Orca worker task_4987ef323d12，claude-opus-5-5＋medium）
-- 状态：进行中
+- 状态：可合并
 - 分支底子：从 `xa/text-audit-b` 切（它又含 `xa/text-audit` 的未合并提交，含小A的界面文字改动与两份交付单 `xa_text-audit.md`、`xa_text-audit-b.md`）。**合并顺序：先合 xa/text-audit、xa/text-audit-b，再合本分支**；或三条一起合。本分支只新增下文列的文件、改 `xdb.gd`／`zhenqi.gd`／`encounter_target.gd` 各一两行与 `tests/xiyou_event_compare.gd` 一处。
 
 ## 变更记录草稿
@@ -77,4 +77,10 @@
 
 ## 本分支提交
 
-- （待写）
+- a1345939a 合并 main（web_panel 冲突两边都留）
+- 4f0e2169e XTextFix 初版（六开关、rules.json、overrides.json）＋专项
+- e24c35b65 只扫 pos 行、修正结果进解析缓存；导出工具 text_fix_dump
+- 25ea39cee `<<pos=` 笔误行、Boos 全词、两条单边引号覆盖；扫描 --gen-dir、核对必改.py
+- b78653908 事件对照关文字修正；专项逐开关回退；交付单初稿
+- fb0a0d771 提示卡参照专项关文字修正；交付单验证
+- （本提交）交付单可合并
