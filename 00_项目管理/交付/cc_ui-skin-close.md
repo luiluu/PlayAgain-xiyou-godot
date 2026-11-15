@@ -1,7 +1,7 @@
 # 交付：cc/ui-skin-close
 
 - 车道／工作者：B 界面·新皮肤「收口批」（换芯＋字号触屏＋舒适＋D45／D44 方案图）／cc（Opus＋medium，派单定：跨多页、碰共用皮肤组件和字号设置）
-- 分支：`cc/ui-skin-close`（从 `cc/ui-skin-p1fix` 41956d0e1 切出；已合当时的 main 238cd1822，无冲突。**p1fix 还没进 main**，它合进去后要再 merge 一次 main，见「交接板」）
+- 分支：`cc/ui-skin-close`（从 `cc/ui-skin-p1fix` 41956d0e1 切出；p1fix 进 main 后已再合 main，无冲突，合后本地重跑皮肤专项全过）
 - 状态：可合并
 
 ## 变更记录草稿
@@ -58,7 +58,7 @@
 
 ## 交接板
 
-- 下一步：p1fix 合进 main 后，本分支 merge 一次 main（会删掉随分支带来的 `cc_ui-skin-p1fix.md`），再交总装合。
+- 下一步：本单可直接合（p1fix 已进 main、已合）；之后按 Fable 审的顺序排 4A。
 - 需要用户决定：D45 选 A 还是 B（`XUiSkin.CENTER_STYLE`）；D44 要不要换暖炭黑（`XUiSkin.WARM_BG`）。图见「截图」。
 - 用户试玩说明：天启篇存档里看物品／装备详情牌、战斗技能说明、手机上点底部提示和左上返回、拖列表。
 
