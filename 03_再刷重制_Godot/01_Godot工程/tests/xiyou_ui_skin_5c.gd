@@ -157,7 +157,7 @@ func _symbols(page: XOptionsScene) -> Array:
 # ---- 设置主页（天启篇：新布局）----
 func _options_tianqi() -> void:
 	_state()
-	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	XUiSkin.motion_override = -1   # 截图用默认动效档（没选过＝全部），不钉成「关」
 	var page := XOptionsScene.new()
 	var closed := {"n": 0}
 	page.closed.connect(func(): closed.n += 1)
@@ -180,8 +180,22 @@ func _options_tianqi() -> void:
 	sk.input(_act("ui_accept"))
 	await frames(2)
 	check("opt_ok_toggles", XConfig.flag("MapXy") != before)
-	check("opt_row_status_updates", str(sk.list.items[0].right) == ("ON" if XConfig.flag("MapXy") else "OFF"), sk.list.items[0])
+	check("opt_row_status_updates", str(sk.list.items[0].right) == ("开" if XConfig.flag("MapXy") else "关"), sk.list.items[0])
 	check("opt_card_title", sk.card.title == "坐标显示" and sk.card.desc != "", [sk.card.title, sk.card.desc])
+	# 屏蔽掉落是会话开关但确定进子页：详情牌写「确定进入」；战斗变速第 4 档显示「原速」；状态词没有英文 ON／OFF
+	var pi: int = page._list.find_custom(func(o): return o[1] == "pingbiDrop")
+	sk._sync_card(pi)
+	check("opt_pingbi_card_enter", str(sk.card.sections[0].text) == "确定进入。", sk.card.sections)
+	var bi: int = page._list.find_custom(func(o): return o[1] == "battleAniSpeed")
+	var sp0 := XConfig.battle_speed()
+	XConfig.set_battle_speed(4)
+	check("opt_speed_off_is_original", sk.status_of(bi) == "原速" and page.status_text(bi) == "OFF", [sk.status_of(bi), page.status_text(bi)])
+	XConfig.set_battle_speed(sp0)
+	var bad := false
+	for i in page._list.size():
+		bad = bad or ["ON", "OFF"].has(sk.status_of(i))
+	check("opt_no_english_status", not bad)
+	check("opt_single_backdrop", page.skin.backdrop == null and page.skin.get_node_or_null("SkinBackdrop") == null)
 	# 下一项
 	sk.input(_act("ui_down"))
 	await frames(2)

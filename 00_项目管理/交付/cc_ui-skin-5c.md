@@ -167,3 +167,12 @@
 - 未跑 `并行测试.py`、`工具回归.py`，以及因修改 `xconfig.gd` 扩到的 206 个选测场景全集（含 `xiyou_ui_skin_menu`、`1b`、`1c`、`battle_options`、`hangup_options`、`power`、`smart_ai`、`tianqi_e2e`、`virtual_player` 等），按要求留总装 `--affected --cloud`；
 - 未在当前工作树直接读到 `重制设定/界面风格提案_v0.7/` 与早先 `ba1f7ed` 原提交，对照 `ui_skin.gd`、`4b780b162` 及过往交付记录的 `ba1f7ed` 口径核实。
 
+
+## 核查后返工（cc，小A 17e193430 不通过后）
+
+- P2-1：`XSkinOptionsPage._sync_card` 先判子页（`PAGE_SYMBOLS`）再判开关，屏蔽掉落详情牌改为「确定进入。」。
+- P2-2：状态词只在新设置页展示层统一（新增 `XSkinOptionsPage.status_of`，右列与详情牌副标题都走它）：ON→开、OFF→关、战斗变速的 OFF→原速。`XOptionsScene.status_text`、`XConfig.battle_speed_text` 与存值不动，重制版旧设置页玩家看到的不变（皮肤关闭对照 25 张仍逐像素 SAME）。专项断言同步改（`opt_row_status_updates`），另加：英文状态词不再出现、「原速」、详情牌「确定进入」。
+- 文字：必改 5 条 DESC（屏蔽掉落、战斗伤害记录、战斗变速改用「原速」版、挂机设置、定向遇怪）按小A原文；P3-3 四条润色也采纳（界面风格、画面特效、对话跳过、显示伤害数字）。这些 DESC 只在 `XSkinOptionsPage.DESC`，旧设置页不读，所以**重制版旧页未改**（旧页没有说明文字）；旧页的 ON／OFF 若要也汉化，要改共用函数并走重制版补丁，等 Kyo 定。
+- P3-1：专项截图前不再把 `motion_override` 钉成 OFF，`ui_skin_5c_options_screen` 已重拍（界面动效显示默认「全部」）；全部 9 页 18 张重拍。
+- P3-2：新设置页不再自建第二层 `SkinBackdrop`（只留 `XOptionsScene` 自己那层，子页盖上时也有底），专项加断言。
+- 复验：专项 `xiyou_ui_skin_5c` 无头 79/79、有窗 97/97；`xiyou_ui_skin_offshot`、`xiyou_options_basic`、`_misc`、`xiyou_graphics_options`、`xiyou_ui_skin_menu` 全过；语法检查 0 问题；`发行空壳.py check` 通过；`皮肤关闭对照.py --base 17be52a65`（本分支切出点；对最新 main 比时 main 已有新类、克隆的类缓存认不得，报解析错，与本批无关）25 张 SAME。
