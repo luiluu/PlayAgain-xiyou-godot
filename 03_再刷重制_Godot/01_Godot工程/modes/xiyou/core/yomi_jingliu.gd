@@ -425,12 +425,12 @@ static func soul(a, level: int) -> bool:
 
 
 const STAR_ROWS := [
-	[20, "特效:星魂 I：月犯天关：最大生命＋100%"],
-	[25, "特效:星魂 II：朔晕七星：寒冰伤害＋100%"],
-	[30, "特效:星魂 III：半璧迫望：普通战技伤害＋100%"],
-	[35, "特效:星魂 IV：持秉玄烛：物攻＋100%"],
-	[40, "特效:星魂 V：晦入三台：额外最大生命＋100%"],
-	[45, "特效:星魂 VI：蚀变于娄：强化战技伤害＋100%"]]
+	[20, "特效：星魂 I：月犯天关：最大生命＋100%"],
+	[25, "特效：星魂 II：朔晕七星：寒冰伤害＋100%"],
+	[30, "特效：星魂 III：半璧迫望：普通战技伤害＋100%"],
+	[35, "特效：星魂 IV：持秉玄烛：物攻＋100%"],
+	[40, "特效：星魂 V：晦入三台：额外最大生命＋100%"],
+	[45, "特效：星魂 VI：蚀变于娄：强化战技伤害＋100%"]]
 
 
 ## J.visibleSoulRows＋Sprite_ItemHelp.setItem 包装（原版 541-556）：10194 的卡去掉备注里原有的「特效:星魂」行，
@@ -438,7 +438,8 @@ const STAR_ROWS := [
 static func help_rows(skill: Dictionary, rows: Array) -> Array:
 	if int(skill.get("id", 0)) != 10194 or not skill.has("stypeId") or XState.current == null:
 		return rows
-	var out := rows.filter(func(r): return not XHelpCard.plain(str(r[0])).contains("特效:星魂"))
+	# 原版备注里的旧星魂行是半角「特效:星魂」；STAR_ROWS 改成全角后（文字审 18-004）两种都滤掉
+	var out := rows.filter(func(r): var t := XHelpCard.plain(str(r[0])); return not (t.contains("特效:星魂") or t.contains("特效：星魂")))
 	var who = XState.current.actors.get(JINGLIU)
 	for e in STAR_ROWS:
 		if soul(who, int(e[0])):

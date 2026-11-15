@@ -25,7 +25,7 @@ const STATUS_W := 120.0
 static var KEEP_INDEX_AFTER_PAGE := true
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
-	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", true], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],
+	["记住指令", "commandRemember", true], ["战斗镜头", "battleCamera", true], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],
 	["战斗伤害记录", "CombatDamageRecordKey", true], ["显示伤害数字", "CombatDamageShow", true], ["显示技能动画", "CombatSkillAnimation", true],
 	["屏蔽掉落", "pingbiDrop", true], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
 	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", true],

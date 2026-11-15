@@ -45,11 +45,11 @@ static func listed() -> Array:
 	return out
 
 
-## 天启篇修炼的八项（id＝能力编号，max＝10）
+## 天启篇强化的八项（id＝能力编号，max＝10）
 static func tianqi_entries() -> Array:
 	var out := []
 	for i in 8:
-		out.append({"id": i, "name": PARAM_NAMES[i] + "修炼", "max": XTianqiMoney.training_levels(), "param": i, "value": 0, "tianqi": true})
+		out.append({"id": i, "name": PARAM_NAMES[i] + "强化", "max": XTianqiMoney.training_levels(), "param": i, "value": 0, "tianqi": true})
 	return out
 
 
@@ -91,17 +91,17 @@ static func line(s: XState, actor_id: int, e: Dictionary) -> String:
 		space = "         "
 	elif pid == 6 or pid == 7:
 		space = "              "
-	return "%s  %d/%d 增加%s%d%s下一级费用%sw" % [e.name, lv, e.max, PARAM_NAMES[pid], e.value, space, _wan(int(e.gold))]
+	return "%s  %d/%d 增加%s%d%s下一级费用%s万" % [e.name, lv, e.max, PARAM_NAMES[pid], e.value, space, _wan(int(e.gold))]
 
 
-## 天启篇一行：名字 等级/满级 每级＋1%（全队）　下一级费用 Nw；没开放到的写开放到几级
+## 天启篇一行：名字 等级/满级 每级＋1%（全队）　下一级费用 N万；没开放到的写开放到几级
 static func tianqi_line(s: XState, e: Dictionary) -> String:
 	var lv := XTianqiMoney.training_level(s, int(e.id))
 	if lv >= int(e.max):
 		return "%s %d/%d 等级已满" % [e.name, lv, e.max]
 	var pct := roundi(float(XTianqiMoney.data().get("training", {}).get("pct_per_level", 0.01)) * 100.0)
 	var open := XTianqiMoney.training_open(s)
-	var tail := "本层开到 %d 级" % open if lv >= open else _wan(XTianqiMoney.training_price(s, lv + 1)) + "w"
+	var tail := "本层开到 %d 级" % open if lv >= open else _wan(XTianqiMoney.training_price(s, lv + 1)) + "万"
 	return "%s  %d/%d 全队%s+%d%%  下一级费用 %s" % [e.name, lv, e.max, PARAM_NAMES[int(e.param)], pct, tail]
 
 

@@ -64,6 +64,7 @@ func _run() -> void:
 		c.paint()
 		check("difficulty_" + str(i + 1), c.text == "当前难度：" + names[i] and c.color == Color(colors[i]))
 	check("rainbow_original_rgb", XDifficultyNotice.difficulty_color(9, 0) == Color8(247, 83, 83) and XDifficultyNotice.difficulty_color(9, 30) == Color8(83,247,83))
+	_undef_fallbacks(c)
 	c.free()
 	# 实际地图挂载；统一墙钟不会被战斗加速改变，快照包含提示，活提示不盖在战斗上。
 	XSave.dir_override = "user://test_xiyou_difficulty_notice"
@@ -124,3 +125,21 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed":passed,"total":results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
+
+
+## O-待定·越界兜底不显示undefined（文字审 13-006／15-001／16-001）：名字表越界时显示中文；XUI.UNDEF_TEXT_FIX = false 回到原版 undefined
+func _undef_fallbacks(c: XDifficultyNotice) -> void:
+	var tr_rec := {"traits": [{"code": 22, "dataId": 99, "value": 0.1}]}
+	var cond := {"conditionType": 6, "conditionParam1": 999999, "rating": 5}
+	for fix in [true, false]:
+		XUI.UNDEF_TEXT_FIX = fix
+		var tag := "fix" if fix else "orig"
+		c.difficulty = 99
+		c.remaining = 200
+		c.paint()
+		check("undef_difficulty_" + tag, c.text == "当前难度：" + ("未知" if fix else "undefined"), c.text)
+		check("undef_race_" + tag, XEnemyBookPage.race_name(9999) == ("未知" if fix else "undefined"), XEnemyBookPage.race_name(9999))
+		check("undef_switch_" + tag, XEnemyBookPage.action_text(cond).begins_with("开关: " + ("未知开关" if fix else "undefined")), XEnemyBookPage.action_text(cond))
+		check("undef_trait_" + tag, XPartyStatusPanel.trait_description(tr_rec).contains("未知属性" if fix else "undefined"), XPartyStatusPanel.trait_description(tr_rec))
+	XUI.UNDEF_TEXT_FIX = true
+	check("undef_in_range_unchanged", XEnemyBookPage.race_name(1) != "未知" and XEnemyBookPage.race_name(1) != "")

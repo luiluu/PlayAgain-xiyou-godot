@@ -96,6 +96,7 @@ func shot(name: String) -> void:
 
 ## 战力数字换成 N（正式版浏览器开着五乘区成长修正，数字不同）；承伤与页签照原样比
 static func norm(t: String) -> String:
+	t = {"已穿装备": "已装备", "未穿装备，自身战力仍然有效。": "未装备，自身战力仍然有效。"}.get(t, t)  # 文字审批 15 改的两处（参照是原版）
 	if t.contains("承伤"):
 		return t
 	return RegEx.create_from_string("\\d+(?:\\.\\d+)?(?:万亿|万|亿)?").sub(t, "N", true)

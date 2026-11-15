@@ -6,7 +6,7 @@ extends Node
 ## - 预掷池：长度不是 20 或已用次数 gn > 15 才重掷（gn = 15 不重掷），重掷后 20 个都在 1～9999、gn 归零；
 ## - 站在第一个没挖过的宝点上才挖（「挖宝成功」），否则只提示当前与目标位置，不扣图、不动 gn；只看这一个宝点；
 ## - 发奖：v % 80 <20 物品、<40 防具、<60 武器、其余预约公共事件，候选取第 v % 长度 个；先扣一张图，候选为空时还回来并提示
-##   「获取X失败: 请重新使用」；无论成败 gn + 1、宝点记为挖过；
+##   「获取X失败：请重新使用」；无论成败 gn + 1、宝点记为挖过；
 ## - a～b 全挖过：整段清掉，同一次调用接着从 a 找；
 ## - 新源 v0.29 路径（V029_SPECS）：不看站位、不提示「挖宝成功」、四类候选都不空的宝点才算、扣的是这张图；背包没有这张图什么也不做；
 ##   公共事件对不上时按首尾找，同首尾后写的覆盖（1～10 落到 342／189）。
@@ -82,7 +82,7 @@ func _run() -> void:
 	s.rom.gn = 0
 	s.rom.m = []
 	var r := XTreasureMap.run(s, 1, 3)
-	check("away_toasts", r.toasts == ["%s 坐标:1,2" % _name("MapInfos", m2), "目标位置:%s 5,6" % _name("MapInfos", m1)] and int(r.reserve) == 0, r)
+	check("away_toasts", r.toasts == ["%s 坐标：1,2" % _name("MapInfos", m2), "目标位置：%s 5,6" % _name("MapInfos", m1)] and int(r.reserve) == 0, r)
 	check("away_no_change", s.item_count(TICKET) == 5 and int(s.rom.gn) == 0 and (s.rom.m as Array).is_empty(), [s.item_count(TICKET), s.rom])
 
 	# ---- 站在宝点 1：v=5 → 物品 items[5 % 3] ----
@@ -92,13 +92,13 @@ func _run() -> void:
 	var want_item: int = items[5 % 3]
 	var had := s.item_count(want_item)
 	r = XTreasureMap.run(s, 1, 3)
-	check("dig_item_toasts", r.toasts == ["挖宝成功", "获得物品:" + _name("Items", want_item)], r.toasts)
+	check("dig_item_toasts", r.toasts == ["挖宝成功", "获得物品：" + _name("Items", want_item)], r.toasts)
 	check("dig_item_gain", s.item_count(want_item) == had + 1 and s.item_count(TICKET) == 4, [s.item_count(want_item), s.item_count(TICKET)])
 	check("dig_item_record", int(s.rom.gn) == 1 and s.rom.m == [1], s.rom)
 
 	# ---- 宝点 1 挖过：目标换成宝点 2（只看这一个，不往后挖） ----
 	r = XTreasureMap.run(s, 1, 3)
-	check("next_spot_target", r.toasts.size() == 2 and str(r.toasts[1]) == "目标位置:%s 7,8" % _name("MapInfos", m2) and int(s.rom.gn) == 1, r.toasts)
+	check("next_spot_target", r.toasts.size() == 2 and str(r.toasts[1]) == "目标位置：%s 7,8" % _name("MapInfos", m2) and int(s.rom.gn) == 1, r.toasts)
 
 	# ---- 宝点 2：v=25 → 防具 armors[25 % 2] ----
 	s.map_id = m2
@@ -108,7 +108,7 @@ func _run() -> void:
 	var want_armor: int = armors[25 % 2]
 	var armor_had := s.gear_count("armor", want_armor)
 	r = XTreasureMap.run(s, 1, 3)
-	check("dig_armor", r.toasts == ["挖宝成功", "获得防具:" + _name("Armors", want_armor)] and s.gear_count("armor", want_armor) == armor_had + 1
+	check("dig_armor", r.toasts == ["挖宝成功", "获得防具：" + _name("Armors", want_armor)] and s.gear_count("armor", want_armor) == armor_had + 1
 		and s.item_count(TICKET) == 3 and int(s.rom.gn) == 2 and s.rom.m == [1, 2], [r.toasts, s.rom])
 
 	# ---- 宝点 3 候选全空：v=45 → 武器失败，图还回来，gn 照样 +1、记为挖过 ----
@@ -117,9 +117,9 @@ func _run() -> void:
 	s.y = 9
 	s.rom.g[2] = 45
 	r = XTreasureMap.run(s, 1, 3)
-	check("dig_empty_refund", r.toasts == ["挖宝成功", "获取武器失败: 请重新使用"] and s.item_count(TICKET) == 3 and int(s.rom.gn) == 3
+	check("dig_empty_refund", r.toasts == ["挖宝成功", "获取武器失败：请重新使用"] and s.item_count(TICKET) == 3 and int(s.rom.gn) == 3
 		and s.rom.m == [1, 2, 3], [r.toasts, s.item_count(TICKET), s.rom])
-	for pair in [[5, "获取物品失败: 请重新使用"], [25, "获取防具失败: 请重新使用"], [65, "触发事件失败: 请重新使用"]]:
+	for pair in [[5, "获取物品失败：请重新使用"], [25, "获取防具失败：请重新使用"], [65, "触发事件失败：请重新使用"]]:
 		s.rom.m = [1, 2]
 		s.rom.g[int(s.rom.gn)] = int(pair[0])
 		var gn0 := int(s.rom.gn)
@@ -131,7 +131,7 @@ func _run() -> void:
 	s.rom.m = [1, 2, 3]
 	var gn_before := int(s.rom.gn)
 	r = XTreasureMap.run(s, 1, 3)
-	check("cycle_reset", (s.rom.m as Array).is_empty() and r.toasts.size() == 2 and str(r.toasts[1]) == "目标位置:%s 5,6" % _name("MapInfos", m1)
+	check("cycle_reset", (s.rom.m as Array).is_empty() and r.toasts.size() == 2 and str(r.toasts[1]) == "目标位置：%s 5,6" % _name("MapInfos", m1)
 		and int(s.rom.gn) == gn_before and s.item_count(TICKET) == 3, [s.rom.m, r.toasts])
 	# 段外挖过的不受影响
 	s.rom.m = [1, 2, 3, 7]
@@ -148,14 +148,14 @@ func _run() -> void:
 	var want_weapon: int = weapons[45 % 3]
 	var weapon_had := s.gear_count("weapon", want_weapon)
 	r = XTreasureMap.run(s, 1, 3)
-	check("dig_weapon", r.toasts == ["挖宝成功", "获得武器:" + _name("Weapons", want_weapon)] and s.gear_count("weapon", want_weapon) == weapon_had + 1, r.toasts)
+	check("dig_weapon", r.toasts == ["挖宝成功", "获得武器：" + _name("Weapons", want_weapon)] and s.gear_count("weapon", want_weapon) == weapon_had + 1, r.toasts)
 	s.rom.m = []
 	s.rom.g = _pool(79)
 	s.rom.gn = 0
 	var tickets := s.item_count(TICKET)
 	r = XTreasureMap.run(s, 1, 3)
 	var want_ce: int = commons[79 % 2]
-	check("dig_common_reserve", r.toasts == ["挖宝成功", "触发事件:" + _name("CommonEvents", want_ce)] and int(r.reserve) == want_ce
+	check("dig_common_reserve", r.toasts == ["挖宝成功", "触发事件：" + _name("CommonEvents", want_ce)] and int(r.reserve) == want_ce
 		and s.item_count(TICKET) == tickets - 1, r)
 
 	# ---- 预掷池 ----
@@ -201,7 +201,7 @@ func _v029(s: XState, items: Array, armors: Array, weapons: Array, commons: Arra
 	var want_item: int = items[5 % 3]
 	var had := s.item_count(want_item)
 	r = XTreasureMap.run(s, 1, 10, 117)
-	check("v029_digs_anywhere", r.toasts == ["获得物品:" + _name("Items", want_item)] and s.item_count(want_item) == had + 1
+	check("v029_digs_anywhere", r.toasts == ["获得物品：" + _name("Items", want_item)] and s.item_count(want_item) == had + 1
 		and s.item_count(TICKET) == 1 and s.rom.m == [1] and int(s.rom.gn) == 1, [r.toasts, s.rom])
 	r = XTreasureMap.run(s, 1, 10, 117)
 	check("v029_skips_partial_spot", s.rom.m == [1, 3] and s.item_count(TICKET) == 0, [r.toasts, s.rom])

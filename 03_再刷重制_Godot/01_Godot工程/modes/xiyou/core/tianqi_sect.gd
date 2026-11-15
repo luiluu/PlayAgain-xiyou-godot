@@ -114,8 +114,8 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 			"intro": "\\n<老钱>嘿嘿，天平那摊子忙不过来，我在这儿顺手放点小贷。你要是缺用，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
 			"no_courage": "\\n<老钱>连胆气都没有，这种买卖可做不成，算了。",
 			"repaid_ok": "\\n<老钱>不错不错，你果然是言而有信之人！",
-			"short_money": "\\n<老钱>钱都不够，还想糊弄我？",
-			"remind": "\\n<老钱>记得赶紧把钱还了！别拖延，不然有你好瞧的！",
+			"short_money": "\\n<老钱>积分都不够，还想糊弄我？",
+			"remind": "\\n<老钱>记得赶紧把积分还了！别拖延，不然有你好瞧的！",
 			"done_talk": "\\n<老钱>做买卖讲究一个和气生财，有空常来光顾。",
 		}
 	return {
@@ -127,8 +127,8 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 		"intro": "\\n<小钱>攀登这座塔也太难了，不如跟老爷子一块儿放点贷款赚外快。我这里有些肝帝积分，你要是需要，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
 		"no_courage": "\\n<小钱>你还是没有那份胆量，这单生意不做了。",
 		"repaid_ok": "\\n<小钱>有借有还，再借不难！",
-		"short_money": "\\n<小钱>这些钱不够啊，你可别糊弄我！",
-		"remind": "\\n<小钱>记得还钱，不然我可是要动真格了！",
+		"short_money": "\\n<小钱>这些积分不够啊，你可别糊弄我！",
+		"remind": "\\n<小钱>记得还积分，不然我可是要动真格了！",
 		"done_talk": "\\n<小钱>有什么事吗？",
 	}
 
@@ -208,7 +208,7 @@ static func _bing_run_loan(host, s, event_id: int) -> void:
 			s.set_self_switch(HALL_MAP, event_id, "C", true)
 			await host.show_text(face, fidx, [m.done_talk])
 			return
-		var ch: int = await host.show_text_with_choices(face, fidx, ["\\n<%s>欠债还钱，天经地义！" % m.name], ["还钱", "先不还钱"], 1)
+		var ch: int = await host.show_text_with_choices(face, fidx, ["\\n<%s>欠债还钱，天经地义！" % m.name], ["还积分", "先不还"], 1)
 		if ch == 0:
 			var res := bing_repay(s, event_id)
 			if bool(res.get("ok", false)):
@@ -230,7 +230,7 @@ static func _bing_run_loan(host, s, event_id: int) -> void:
 		s.set_self_switch(HALL_MAP, event_id, "C", true)
 		await host.show_text(face, fidx, [m.done_talk])
 		return
-	var pick: int = await host.show_text_with_choices(face, fidx, [m.intro], ["借钱", "感到怀疑，离开"], -1)
+	var pick: int = await host.show_text_with_choices(face, fidx, [m.intro], ["借积分", "感到怀疑，离开"], -1)
 	if pick == 0:
 		var res := bing_borrow(s, event_id)
 		if bool(res.get("ok", false)):

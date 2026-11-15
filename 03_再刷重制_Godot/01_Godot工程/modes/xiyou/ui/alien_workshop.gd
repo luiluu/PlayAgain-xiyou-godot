@@ -187,8 +187,8 @@ func build() -> Array:
 	if all.is_empty() and tq_on:  # 天启篇：异化装备只有本线异化怪掉
 		list.append(el("p", "尚未获得异化装备。"))
 		detail.append(el("div", null, "alien-guide", [el("h2", "如何获得异化装备"),
-			el("p", "只有本线的异化怪会掉：侵染、蚀骨、化形按几率掉一件，终焉必掉。词条从本线 4 条里出，级跟着那只怪。"),
-			el("p", "分解按级给能量；取核把词条连同级取出来，花 1 颗异化石刻到别的装备上；净化去掉词条，退还一部分能量。")]))
+			el("p", "只有本路线的异化怪会掉落：侵染、蚀骨、化形按概率掉落一件，终焉必定掉落。词条从本路线 4 条中抽取，异化等级跟随对应怪物。"),
+			el("p", "分解按异化等级给予能量；取核把词条连同异化等级取出，消耗 1 颗异化石刻印到其他装备上；净化移除词条，退还部分能量。")]))
 	elif all.is_empty():
 		list.append(el("p", "尚未获得异化装备。"))
 		var maps := []
@@ -237,7 +237,7 @@ func build() -> Array:
 		detail.append(el("div", null, "alien-actions", actions))
 		if confirming_core:
 			detail.append(el("section", null, "alien-confirm", [el("h3", "确认取核 " + str(item.name)),
-				el("p", "装备本身没了，得到一颗记着词条和级的异化核，之后花 1 颗异化石刻到别的武器或防具上。"),
+				el("p", "原装备将会销毁，得到一颗记录词条与异化等级的异化核，之后消耗 1 颗异化石刻印到其他武器或防具上。"),
 				btn("确认取核", _extract_core.bind(item)), btn("取消", _cancel_confirm)]))
 		if confirming:
 			detail.append(el("section", null, "alien-confirm", [el("h3", "确认分解 " + str(item.name)),
@@ -370,7 +370,7 @@ func _reforge_section(st: XState) -> Dictionary:
 	var targets := XTianqiReforge.targets(st)
 	var kids := [el("h2", "装备重铸")]
 	if targets.is_empty():
-		kids.append(el("p", "背包里没有带天启篇词条的装备（穿着的、锁定的不能重铸）。", "alien-note"))
+		kids.append(el("p", "背包里没有带天启篇词条的装备（已装备或锁定的不能重铸）。", "alien-note"))
 		return el("section", null, "alien-reforge", kids)
 	var opts := targets.map(func(i): return _opt(str(i.get("instanceId", "")), str(i.name)))
 	if cfg_vals.get("reforge") == null or not opts.any(func(o): return str(o.value) == str(cfg_vals.reforge)):
@@ -378,17 +378,18 @@ func _reforge_section(st: XState) -> Dictionary:
 	kids.append(_select_node("重铸哪件", opts, cfg_vals.get("reforge"), "reforge"))
 	var item = _reforge_target(st)
 	if item != null:
+		var unit := str(XDB.system().get("currencyUnit", "精魂"))
 		var list: Array = item.tianqi_affixes
 		for n in list.size():
 			var a: Dictionary = list[n]
 			var price := XTianqiReforge.price_of(st, item, n)
 			var row := [el("p", XTianqiAffixText.line(str(a.key), int(a.tier), str(a.grade), a.get("extra", {}))),
-				btn("重铸第%d条（%d金钱）" % [n + 1, price], _reforge.bind(n), st.gold < price or XTianqiReforge.choices(item, n).is_empty())]
+				btn("重铸第%d条（%d%s）" % [n + 1, price, unit], _reforge.bind(n), st.gold < price or XTianqiReforge.choices(item, n).is_empty())]
 			if XTianqiReforge.can_lock(st, item):  # 天启篇金钱重构：锁这一条、洗其余
 				var lp := XTianqiMoney.lock_price(st, item, n)
-				row.append(btn("锁第%d条洗其余（%d金钱）" % [n + 1, lp], _reforge_lock.bind(n), st.gold < lp))
+				row.append(btn("锁第%d条洗其余（%d%s）" % [n + 1, lp, unit], _reforge_lock.bind(n), st.gold < lp))
 			kids.append(el("div", null, "alien-actions", row))
-		kids.append(el("p", "在同一层里重抽一条（不会和这件别的词条重复），成色重新掷；连击、再动重铸不出来。", "alien-note"))
+		kids.append(el("p", "在同级池中重抽一条（不会与该装备已有词条重复），品质随机重掷；不会重铸出「连击」「再动」词条。", "alien-note"))
 		if XTianqiMoney.reforge_on(st):
 			kids.append(el("p", "这件已重铸 %d 次：每重铸一次涨价三成，最多涨到 10 倍；锁一条洗其余三倍价。" % int(item.get("tq_reforges", 0)), "alien-note"))
 	return el("section", null, "alien-reforge", kids)

@@ -464,7 +464,7 @@ static func panel_lines(s: XState) -> Dictionary:
 	keys.sort()
 	for id in keys:
 		if s.item_count(id) > 0:
-			potions.append("%s 剩余: %d" % [XDB.rec("Items", id).get("name", ""), s.item_count(id)])
+			potions.append("%s 剩余：%d" % [XDB.rec("Items", id).get("name", ""), s.item_count(id)])
 	var summary := []
 	var c: Dictionary = s.hang_up.get("SellWeapon", {}) if s.hang_up.get("SellWeapon") is Dictionary else {}
 	if int(c.get("SellQuality", 0)) > 0:

@@ -886,6 +886,9 @@ func _trace_norm(trace: Array) -> Array:
 			# 选项里的控制符：原版脚本拼的选项直接带 ESC（\x1b，即 convertEscapeCharacters 之后的写法，如称号选项 \x1bI[0]），
 			# 重制写成反斜杠；显示时两者一样，比较前统一成反斜杠（悟空 dmg2，m4e1p2／p3）
 			x.choices = (x.choices as Array).map(func(t): return str(t).replace(char(27), "\\"))
+		if x.t == "msg" and x.has("lines"):
+			# 已移除地图提示（CodexMapRemoval.notice）文字审批 19 改写：原版「【区域已移除】X因地图文件损坏，已从当前版本移除。」→「（X 区域暂未开放。）」
+			x.lines = (x.lines as Array).map(func(t): return RegEx.create_from_string("^【区域已移除】(.*)因地图文件损坏，已从当前版本移除。$").sub(str(t), "（$1 区域暂未开放。）"))
 		return _norm(x))
 
 

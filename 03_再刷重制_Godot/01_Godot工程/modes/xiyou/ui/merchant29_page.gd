@@ -325,7 +325,7 @@ func _collection(g: String) -> void:
 	var rows := XTianqiMerchant.collection_choices(s, g).map(func(c):
 		return {"text": "%d点　%s%s" % [int(c.cost), str(c.name), "（稀有）" if c.rare else ""], "affix": str(c.key),
 			"help": XTianqiAffixText.detail(str(c.key), 4, "normal"), "enabled": _can_pay(s, int(c.cost))})
-	choose(rows, func(r): _tianqi_draw("collection", g, str(r.affix)), tiers.bind(g), ["%s珍藏　指定传说词条" % g, "成色照常掷，不保证是极；其余词条照常掷。"])
+	choose(rows, func(r): _tianqi_draw("collection", g, str(r.affix)), tiers.bind(g), ["%s珍藏　指定传说词条" % g, "成色随机，不保底「极」；其余词条照常随机抽取。"])
 
 
 func _tianqi_draw(shelf_key: String, g: String, affix: String) -> void:

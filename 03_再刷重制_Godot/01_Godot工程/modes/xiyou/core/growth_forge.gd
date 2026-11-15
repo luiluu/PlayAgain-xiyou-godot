@@ -230,7 +230,7 @@ static func help_text(id: int, source, picking: bool, shown: bool) -> String:
 	var k: Dictionary = KINDS[id]
 	if not (source is Dictionary) or source.is_empty():
 		return "%s：选择一件%s升级；消耗200人道意志碎片与5锻造锤" % [k.to, k.from]
-	return "选择: " + str(source.name) + "\n品质、词条、" + str(k.label) + "及强化进度保留" + (("；按 Shift 返回升级预览" if shown else "；按 Shift 查看词条") if picking else "")
+	return "选择：" + str(source.name) + "\n品质、词条、" + str(k.label) + "及强化进度保留" + (("；按 Shift 返回升级预览" if shown else "；按 Shift 查看词条") if picking else "")
 
 static func growth_of(id: int, item) -> int:
 	return XHeartsteel.stacks(item) if id == LEVIATHAN_RECIPE else XHubris.growth(item)
@@ -238,4 +238,4 @@ static func growth_of(id: int, item) -> int:
 ## 选原件列表第二行：品质 · 层数 · 已装备／背包
 static func source_row(s: XState, id: int, item: Dictionary) -> String:
 	var worn := s.members().any(func(a): return a.raw_equip_list().any(func(e): return is_same(e, item)))
-	return "%s · %s:%d%s" % [XGear.quality_name(item), KINDS[id].label, growth_of(id, item), " · 已装备" if worn else " · 背包"]
+	return "%s · %s：%d%s" % [XGear.quality_name(item), KINDS[id].label, growth_of(id, item), " · 已装备" if worn else " · 背包"]

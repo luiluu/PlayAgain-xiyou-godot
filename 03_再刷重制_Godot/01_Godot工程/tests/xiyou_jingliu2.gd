@@ -278,7 +278,10 @@ func _soul_help() -> void:
 	var base := [["名字", 20, "#fff", false, 0], ["特效:星魂 X：旧行", 18, "#fff", false, 0]]
 	var rows := XYomiJingliu.help_rows(sk, base)
 	var t := rows.map(func(r): return str(r[0]))
-	check("soul_help.rows", rows.size() == 5 and t[0] == "名字" and t[1] == "\\c[1]特效:星魂 I：月犯天关：最大生命＋100%" and t[4].begins_with("\\c[1]特效:星魂 IV") and int(rows[2][1]) == 18, t)
+	check("soul_help.rows", rows.size() == 5 and t[0] == "名字" and t[1] == "\\c[1]特效：星魂 I：月犯天关：最大生命＋100%" and t[4].begins_with("\\c[1]特效：星魂 IV") and int(rows[2][1]) == 18, t)
+	# 文字审 18-004：星魂行改全角冒号后，传进来的全角旧行也照样滤掉（不会重复出两份）
+	var base_full := [["名字", 20, "#fff", false, 0], ["特效：星魂 X：旧行", 18, "#fff", false, 0]]
+	check("soul_help.full_width_filtered", XYomiJingliu.help_rows(sk, base_full).size() == 5)
 	a.change_level_mv(10)
 	check("soul_help.none", XYomiJingliu.help_rows(sk, base).size() == 1)
 	check("soul_help.other_skill", XYomiJingliu.help_rows(XDB.rec("Skills", 10187), base) == base)
