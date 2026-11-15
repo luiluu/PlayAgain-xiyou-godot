@@ -264,8 +264,8 @@ func _run() -> void:
 	_same("idem_bytes", first, again)
 	check("backup_kept", XSaveSeal.read_text(bak.call(1)) == old_text)
 	var log1 := XSaveSlim.read_log()
-	check("log_first_slim", log1.size() == 1 and str(log1[0].kind) == "save" and str(log1[0].file) == "save_1.json" and int(log1[0].saved) > 0 \
-		and int(log1[0].gear) == mem_tables and int(log1[0].seen) == 3 and str(log1[0].backup) == "save_1.json.before_slim.bak", log1)
+	check("log_first_slim", log1.size() == 1 and str(log1[0].kind) == "save" and str(log1[0].file) == "save_1.ksv" and int(log1[0].saved) > 0 \
+		and int(log1[0].gear) == mem_tables and int(log1[0].seen) == 3 and str(log1[0].backup) == "save_1.ksv.before_slim.bak", log1)
 	# 又换成没瘦过的（导入）再存：备份换成这次的原文件（每格只留最新一份）
 	var imported: Dictionary = JSON.parse_string(old_text)
 	imported.gold = 4321.0
@@ -397,7 +397,7 @@ func _run() -> void:
 	var f_other: String = fake.call(2, "2026-01-01T000000")
 	var f_ten: String = fake.call(10, "2026-01-01T000000")
 	check("imp_import", XSaveTransfer.import_to(1, imported) == "")
-	var left := Array(DirAccess.get_files_at(_dir)).filter(func(f): return str(f).begins_with("save_1.json.before_import_"))
+	var left := Array(DirAccess.get_files_at(_dir)).filter(func(f): return str(f).begins_with("save_1.ksv.before_import_"))
 	left.sort()
 	check("imp_keep_two", left.size() == 2 and left[0] == f_c and left[1] > f_c and not left.has(f_a) and not left.has(f_b), left)
 	check("imp_other_slots_untouched", FileAccess.file_exists(_dir.path_join(f_other)) and FileAccess.file_exists(_dir.path_join(f_ten)))
@@ -406,7 +406,7 @@ func _run() -> void:
 	fake.call(1, "2026-04-01T000000")
 	fake.call(1, "2026-05-01T000000")
 	check("imp_off_import", XSaveTransfer.import_to(1, imported) == "")
-	check("imp_off_keeps_all", Array(DirAccess.get_files_at(_dir)).filter(func(f): return str(f).begins_with("save_1.json.before_import_")).size() >= 4)
+	check("imp_off_keeps_all", Array(DirAccess.get_files_at(_dir)).filter(func(f): return str(f).begins_with("save_1.ksv.before_import_")).size() >= 4)
 	XSaveSlim.IMPORT_BACKUPS = true
 	var n_before := Array(DirAccess.get_files_at(_dir)).size()
 	check("imp_bad_target_noop", XSaveSlim.prune_import_backups("").is_empty() and XSaveSlim.prune_import_backups("save_1.json").is_empty()

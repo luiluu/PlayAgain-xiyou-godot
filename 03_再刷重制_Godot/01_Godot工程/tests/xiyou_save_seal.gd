@@ -83,6 +83,7 @@ func _run() -> void:
 	_import_keeps_failed()
 	_feedback()
 	_release_cold_legacy()
+	_migrate_fails()
 	_release_keys()
 	XSaveSeal.ENABLED = true
 	XSaveSeal.STRICT_AFTER_MIGRATE = true
@@ -457,3 +458,26 @@ func _release_keys() -> void:
 	XSaveSeal.key_file_override = ""
 	XSaveSeal.reload_keys()
 	check("keys.dev_test_key_back", XSaveSeal.active_now() and XSaveSeal.unseal(test_blob).ok)
+
+
+## 迁移写不进（.ksv 的临时文件位置被占）：不放记号，旧档照旧从 .json 读，不当成空档；腾出来后下个进程迁移
+func _migrate_fails() -> void:
+	var d2 := dir.path_join("mfail")
+	DirAccess.make_dir_recursive_absolute(d2)
+	XSave.dir_override = d2
+	XSaveSeal.ENABLED = false
+	_reset_caches()
+	var s := _new_state()
+	s.gold = 1357
+	XState.current = s
+	XSave.save(1)
+	XSaveSeal.ENABLED = true
+	_reset_caches()
+	DirAccess.make_dir_recursive_absolute(d2.path_join("save_1.ksv.tmp"))
+	XState.current = null
+	check("mfail.falls_back_to_json", XSave.exists(1) and XSave.path(1).ends_with(".json") and XSave.load_slot(1) and XState.current.gold == 1357)
+	check("mfail.no_marker", not XSaveSeal.marker_ok(d2) and not FileAccess.file_exists(d2.path_join("save_1.ksv")))
+	DirAccess.remove_absolute(d2.path_join("save_1.ksv.tmp"))
+	XSaveSeal.forget_dirs()
+	check("mfail.retry_next_process", XSave.load_slot(1) and XSave.path(1).ends_with(".ksv") and XSaveSeal.marker_ok(d2))
+	XSave.dir_override = dir

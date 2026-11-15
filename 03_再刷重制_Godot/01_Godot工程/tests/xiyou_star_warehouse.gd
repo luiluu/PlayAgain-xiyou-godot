@@ -121,7 +121,7 @@ func _fresh_store() -> void:
 	XSave.dir_override = DIR
 	XStarWarehouse.path_override = ""
 	DirAccess.make_dir_recursive_absolute(DIR)
-	for f in ["star_warehouse.json", "star_warehouse.json.tmp"]:
+	for f in ["star_warehouse.json", "star_warehouse.json.tmp", "star_warehouse.ksv"]:
 		DirAccess.remove_absolute(DIR.path_join(f))
 	XStarWarehouse._loaded_path = "<unloaded>"
 	XStarWarehouse.o_save_now = true
@@ -494,7 +494,7 @@ func _store() -> void:
 	XSaveSeal.store(XStarWarehouse.path(), "{坏")
 	XStarWarehouse._loaded_path = "<unloaded>"
 	check("corrupt_empty", XStarWarehouse.gear().is_empty() and XStarWarehouse.pets().is_empty())
-	check("path_follows_save_dir", XStarWarehouse.path() == DIR.path_join("star_warehouse.json"), XStarWarehouse.path())
+	check("path_follows_save_dir", XStarWarehouse.path() == DIR.path_join("star_warehouse.ksv"), XStarWarehouse.path())
 	# 出战宠物不收
 	check("war_pet_refused", not XStarWarehouse.deposit_pet(t, XPets.war_index(t)) if XPets.war_index(t) >= 0 else true)
 

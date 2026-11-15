@@ -154,7 +154,11 @@ static func covered(path: String) -> bool:
 static func resolve(json_path: String) -> String:
 	if covered(json_path):
 		if active_now():
-			ensure_dir(json_path.get_base_dir())
+			var dir := json_path.get_base_dir()
+			if not ensure_dir(dir) and json_path.ends_with(".json") and FileAccess.file_exists(json_path) \
+					and not FileAccess.file_exists(active(json_path)):
+				# 这个目录迁移没成（磁盘满、写不进）：没封存过的旧档照旧用明文 .json，别当成空档（下个进程再试迁移）
+				return json_path
 		else:
 			ensure_plain_dir(json_path.get_base_dir())
 	return active(json_path)
@@ -297,7 +301,7 @@ static func write_file(path: String, text: String) -> bool:
 		return false
 	if DirAccess.make_dir_recursive_absolute(path.get_base_dir()) != OK:
 		return false
-	var temp := "%s.%s.tmp" % [path, Crypto.new().generate_random_bytes(6).hex_encode()]
+	var temp := path + ".tmp"  # 同 XSave 原来的写法（残留的由 XSaveSlim.sweep_temp 清）
 	if not _put(temp, bytes) or not _verify(temp, bytes, text, sealed) or DirAccess.rename_absolute(temp, path) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
@@ -410,7 +414,7 @@ static func _migrate_dir(dir: String) -> bool:
 		var json := JSON.new()
 		if json.parse(text) != OK:
 			continue  # 写了一半的坏明文：不封，原样留着
-		if quarantine_if_failed(k) and write_file(k, text):
+		if quarantine_if_failed(k) and write_file(k, text) and FileAccess.file_exists(k):
 			last_migration.sealed.append(name)
 		else:
 			last_migration.failed.append(name)

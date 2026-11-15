@@ -125,6 +125,8 @@ func _run() -> void:
 	platform.on_paused()
 	check("fail_logged_no_popup", XAutoSave.last_result == "fail" and not XSave.exists_auto() and not map.busy and XSave.current_slot == 1, XAutoSave.last_result)
 	DirAccess.remove_absolute(XSave.auto_path() + ".tmp")
+	for f in DirAccess.get_files_at(bad_dir):
+		DirAccess.remove_absolute(bad_dir.path_join(f))  # 封存记号等
 	DirAccess.remove_absolute(bad_dir)
 	XSave.dir_override = good_dir
 

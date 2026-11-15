@@ -111,7 +111,7 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_floor30_gifts"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	DirAccess.make_dir_recursive_absolute(XSave.dir_override)
-	DirAccess.remove_absolute(XSave.dir_override.path_join("global.json"))
+	for _g in ["global.json", "global.ksv"]: DirAccess.remove_absolute(XSave.dir_override.path_join(_g))
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	var s := XState.new_game(3, 1, [8, 9, 10])

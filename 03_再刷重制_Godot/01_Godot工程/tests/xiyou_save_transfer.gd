@@ -126,7 +126,7 @@ func _run() -> void:
 	before = _files(dir)
 	check("import_empty_slot", XSaveTransfer.import_to(5, got.get("data", {})) == "")
 	var added := _files(dir).filter(func(f): return not before.has(f))
-	check("import_empty_slot_no_backup", added == ["save_5.json"], added)
+	check("import_empty_slot_no_backup", added == ["save_5.ksv"], added)
 	check("import_no_tmp_left", not _files(dir).any(func(f): return str(f).ends_with(".tmp")), _files(dir))
 	s.gold = 1
 	s.items.erase(7)
@@ -140,7 +140,7 @@ func _run() -> void:
 	other.gold = 77
 	before = _files(dir)
 	check("import_over_slot", XSaveTransfer.import_to(1, other) == "")
-	var backups := _files(dir).filter(func(f): return str(f).begins_with("save_1.json.before_import_") and not before.has(f))
+	var backups := _files(dir).filter(func(f): return str(f).begins_with("save_1.ksv.before_import_") and not before.has(f))
 	check("import_over_backup_original", backups.size() == 1 and XSaveSeal.read_text(dir.path_join(backups[0])) == original, backups)
 	check("import_over_loads_new", XSave.load_slot(1) and XState.current.gold == 77, XState.current.gold)
 	# 同一秒里再导一次：备份文件名只精确到秒，第二次的备份会盖掉第一次（第一次备份的原档就找不回了）。

@@ -739,12 +739,12 @@ func _child_submit() -> void:
 ## 真实的短写：子进程在 ulimit -f 下跑（忽略 SIGXFSZ，写超了只返回错误），账本比上限大。
 ## 旧代码 store_string／close 不查，截断的账本照样换上去、订单照扣天丝；现在写不完整就不替换、不扣材料、不留临时文件
 func ledger_short_write() -> void:
-	var file := XSave.dir().path_join(XYunshangOrders.FILE)
-	var pad := "x".repeat(FSIZE_BLOCKS * 1024 + 4096)   # sh 的 ulimit -f 在 macOS 上按 1024 字节一块
+	var file := XYunshangOrders.path()  # 封存开着时是 .ksv
+	# sh 的 ulimit -f 在 macOS 上按 1024 字节一块。存档封存（XSaveSeal）先压缩再写，所以垫随机十六进制（压不小），压缩后仍超上限
+	var pad := Crypto.new().generate_random_bytes(FSIZE_BLOCKS * 1024 * 2).hex_encode()
 	var original := JSON.stringify({"version": 2, "profiles": {}, "legacyProfiles": {"pad": pad}})
-	var f := FileAccess.open(file, FileAccess.WRITE)
-	f.store_string(original)
-	f.close()
+	XSaveSeal.write_file(file, original)
+	var original_bytes := FileAccess.get_file_as_bytes(file)
 	XYunshangOrders.reload()
 	var out := []
 	# 包一层小脚本（OS.execute 自己会再套一层 sh，"$@" 写在命令行里会被外层先展开）
@@ -760,7 +760,7 @@ func ledger_short_write() -> void:
 	check("ledger.short.child_ran", code == 0 and got is Dictionary, [code, log.right(600)])
 	if got is Dictionary:
 		check("ledger.short.refused", str(got.submit) != "" and int(got.silk) == 15, got)
-	check("ledger.short.file_unchanged", FileAccess.get_file_as_string(file) == original, FileAccess.get_file_as_string(file).length())
+	check("ledger.short.file_unchanged", FileAccess.get_file_as_bytes(file) == original_bytes and XSaveSeal.read_text(file) == original, FileAccess.get_file_as_bytes(file).size())
 	var leftovers := Array(DirAccess.get_files_at(XSave.dir())).filter(func(n): return n.ends_with(".tmp"))
 	check("ledger.short.no_tmp", leftovers.is_empty(), leftovers)
 	DirAccess.remove_absolute(file)
@@ -770,7 +770,7 @@ func ledger_short_write() -> void:
 
 ## 正常写：替换前留一份上一版 <账本>.bak，内容就是替换前那份
 func ledger_backup() -> void:
-	var file := XSave.dir().path_join(XYunshangOrders.FILE)
+	var file := XYunshangOrders.path()  # 封存开着时是 .ksv
 	DirAccess.remove_absolute(file)
 	DirAccess.remove_absolute(file + ".bak")
 	XYunshangOrders.reload()

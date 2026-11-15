@@ -745,7 +745,7 @@ func _run() -> void:
 	var import_ok := XSaveTransfer.import_to(1, got.data) == ""
 	var kept := false
 	for f in DirAccess.get_files_at(save_dir):
-		if f.begins_with("save_1.json.before_import_") and XSaveSeal.read_text(save_dir.path_join(f)) == old_text:
+		if f.begins_with("save_1.ksv.before_import_") and XSaveSeal.read_text(save_dir.path_join(f)) == old_text:
 			kept = true
 	check("transfer_import_backs_up", import_ok and kept and DirAccess.get_files_at(save_dir).size() == before_files + 1)
 	# O-206 回退：BACKUP_BEFORE_IMPORT = false 时覆盖有档的格子不留 .before_import 备份（照样导入）

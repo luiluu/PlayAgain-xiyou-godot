@@ -81,7 +81,7 @@ func _has(host: FakeHost, text: String) -> bool:
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_summit")
 	seed(20261111)
-	DirAccess.remove_absolute(XSave.dir().path_join("global.json"))
+	for _g in ["global.json", "global.ksv"]: DirAccess.remove_absolute(XSave.dir().path_join(_g))
 	_data()
 	await _door34()
 	await _door35()
