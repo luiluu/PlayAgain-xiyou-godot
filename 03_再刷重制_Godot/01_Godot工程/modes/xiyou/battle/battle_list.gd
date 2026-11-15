@@ -67,6 +67,13 @@ func place(x: float, y: float, screen := Vector2(1280, 720)) -> void:
 	position = Vector2(minf(screen.x - size.x, x), minf(screen.y - size.y, y))
 
 
+## 第 i 行（默认选中行）在父节点里的矩形（说明卡贴它；新皮肤的列表行高不同，自己覆写）
+func row_rect(i := -1) -> Rect2:
+	if i < 0:
+		i = index
+	return Rect2(position + Vector2(0, padding + (i - top) * LH), Vector2(size.x, LH))
+
+
 func current_enabled() -> bool:
 	return index >= 0 and index < entries.size() and bool(entries[index].get("enabled", true))
 

@@ -5,7 +5,7 @@
  1. 在临时目录 git clone --shared 本库、只检出 Godot 工程（sparse），切到 --base（默认 main）；
  2. generated 软链到本工作树的（转换产物不入库，两边一样），.godot 导入缓存用 cp -c 克隆（APFS 写时复制，不占空间、免重导）；
  3. 把本分支的 tests/xiyou_ui_skin_offshot.gd/.tscn 拷进去（脚本不引用新类，main 上能跑）；
- 4. main 克隆和本工作树各开窗口跑一次截图（主菜单、状态、物品、装备、设置 × 西游存档默认／天启篇存档关新皮肤）；
+ 4. main 克隆和本工作树各开窗口跑一次截图（主菜单、状态、物品、装备、设置 × 西游存档默认／天启篇存档关新皮肤；战斗指令窗、战技列表、选目标 × 西游存档，2A 加）；
  5. 用同一个脚本的 --compare 逐像素比，全部 SAME 退出 0。
 
   python3 皮肤关闭对照.py [--base main] [--out 目录] [--keep]
