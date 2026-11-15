@@ -93,7 +93,7 @@ func _ready() -> void:
 	card = XSkinCard.new()
 	card.position = Vector2(0, 308)
 	card.size = Vector2(360, 288)
-	card.setup({"icon": XUI.icon_texture(160), "title": "彼亥汀,斩首刀", "title_color": XUiSkin.quality_color(4),
+	card.setup({"icon": XUiSkin.icon(160), "title": "彼亥汀,斩首刀", "title_color": XUiSkin.quality_color(4),
 		"subtitle": "传说 · 刀/剑 · 等级需求 13", "desc": "血腥的味道，让人瑟瑟发抖。",
 		"sections": [{"title": "自带", "lines": [{"left": "攻击力", "right": "+35", "right_color": XUiSkin.UP}, {"left": "暴击率", "right": "+5%", "right_color": XUiSkin.UP}]}],
 		"buttons": [{"text": "装备", "primary": true}, {"text": "取消"}], "button_index": 0})
@@ -193,7 +193,7 @@ func _demo_items() -> Array:
 func _members(s: XState) -> Array:
 	if s != null and not s.members().is_empty():
 		return s.members().slice(0, 4).map(func(a): return XSkinPartyStrip.from_actor(a))
-	return [{"name": "狗逍遥", "level": 1, "cls": "断腿狗", "face": XUI.face_texture("gxyface2", 0), "hp": 485, "mhp": 485, "mp": 200, "mmp": 200, "tp": 12, "mtp": 100},
-		{"name": "修", "level": 1, "cls": "医师", "face": XUI.face_texture("Actor2", 2), "hp": 312, "mhp": 450, "mp": 220, "mmp": 220, "tp": 12, "mtp": 100},
-		{"name": "罗琳", "level": 1, "cls": "见习骑士", "face": XUI.face_texture("Actor1", 1), "hp": 525, "mhp": 525, "mp": 96, "mmp": 150, "tp": 12, "mtp": 100},
-		{"name": "美娜", "level": 1, "cls": "小贼猫", "face": XUI.face_texture("mn", 0), "hp": 480, "mhp": 480, "mp": 200, "mmp": 200, "tp": 12, "mtp": 100}]
+	return [{"name": "狗逍遥", "level": 1, "cls": "断腿狗", "face": XUiSkin.face("gxyface2", 0), "hp": 485, "mhp": 485, "mp": 200, "mmp": 200, "tp": 12, "mtp": 100},
+		{"name": "修", "level": 1, "cls": "医师", "face": XUiSkin.face("Actor2", 2), "hp": 312, "mhp": 450, "mp": 220, "mmp": 220, "tp": 12, "mtp": 100},
+		{"name": "罗琳", "level": 1, "cls": "见习骑士", "face": XUiSkin.face("Actor1", 1), "hp": 525, "mhp": 525, "mp": 96, "mmp": 150, "tp": 12, "mtp": 100},
+		{"name": "美娜", "level": 1, "cls": "小贼猫", "face": XUiSkin.face("mn", 0), "hp": 480, "mhp": 480, "mp": 200, "mmp": 200, "tp": 12, "mtp": 100}]
