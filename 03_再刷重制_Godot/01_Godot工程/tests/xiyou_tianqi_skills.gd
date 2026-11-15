@@ -810,8 +810,11 @@ func _p6() -> void:
 		{"op": "mul", "field": "magicalDefenseRate", "value": 0.1}, {"op": "set", "field": "mode", "value": "magical"},
 		{"op": "mul", "field": "incomingMultiplier", "value": 0.8}]
 	var capped := XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods)
+	XTianqiSkills.MODULE_CAP_ALL = false  # 旧口径：只拦改写过的技能，普攻原样（总账期一改成卡开着就默认拦，见 xiyou_tianqi_ledger）
 	var kept := XTianqiSkills.module_ops(XDB.rec("Skills", 1), rv, mods)
-	_check("p6_module_ops", capped.size() == 3 and is_equal_approx(float(capped[0].value), 0.7) and kept.size() == 5, capped)
+	XTianqiSkills.MODULE_CAP_ALL = true
+	var kept_all := XTianqiSkills.module_ops(XDB.rec("Skills", 1), rv, mods)
+	_check("p6_module_ops", capped.size() == 3 and is_equal_approx(float(capped[0].value), 0.7) and kept.size() == 5 and kept_all.size() == 3, [capped, kept_all])
 	XTianqiSkills.MODULE_CAP = false
 	_check("p6_module_cap_switch", XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods).size() == 5)
 	XTianqiSkills.MODULE_CAP = true

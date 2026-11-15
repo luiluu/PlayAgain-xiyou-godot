@@ -353,8 +353,14 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			var row := {"element": e, "bonus": bonus, "defense": defense, "matchup": match_rate, "resistance": resistance, "tianqiKind": tq_kind,
 				"incoming": incoming, "terminal": final_mult, "normal": normal_mult, "race": race.multiplier, "growth": 1.0 if absorb else growth,
 				"critical": crit, "independent": independent, "guard": guard, "fixedMitigation": flat, "beforeFixed": gross, "value": value}
+			if XTianqiLedger.detail_on():  # 伤害加成总账：五池明细（只加明细，天启篇档才有）
+				var em := float(frame.elementMultiplier.get(str(oe), 1.0))
+				row.merge(XTianqiLedger.pools(frame, oe, bonus / em if em != 0.0 else 0.0, normal_mult, crit, tianqi, race.multiplier, independent))
 			if best.is_empty() or value > best.value:
 				best = row
+	if XTianqiLedger.auditing(a):  # 伤害加成总账守卫：单独相乘的口子都要能认出来源（只记、不改数）
+		var self_rates := _self_rates(a)
+		XTianqiLedger.audit(item, a, report.trace, facts, {"skill_pass": maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0))), "race": race.multiplier, "independent": float(self_rates[0]) * float(self_rates[1])})
 	var settled: float = best.value
 	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
@@ -499,6 +505,16 @@ static func _flat_mitigation(a: XBattler, b: XBattler, e: int, frame: Dictionary
 
 
 static func _independent(a: XBattler, item: Dictionary, e: int, frame: Dictionary) -> float:
+	var rates := _self_rates(a)
+	var pr: float = rates[0]
+	var er: float = rates[1]
+	var physical: bool = frame.mode == "physical" if frame.noElement else e == 1
+	var category: float = maxf(pr, er) if frame.categoryMax and not frame.noElement else (pr if physical else 1.0) * (er if ACTIVE.has(e) else 1.0)
+	return maxf(0.0, frame.settlementMultiplier * category)
+
+
+## 原版独立乘区 <SelfPhysRate>／<SelfElemRate>：[物理, 元素] 各自连乘
+static func _self_rates(a: XBattler) -> Array:
 	var pr := 1.0
 	var er := 1.0
 	for o in objects(a):
@@ -509,9 +525,7 @@ static func _independent(a: XBattler, item: Dictionary, e: int, frame: Dictionar
 			pr *= float(p.get_string(1))
 		if q:
 			er *= float(q.get_string(1))
-	var physical: bool = frame.mode == "physical" if frame.noElement else e == 1
-	var category: float = maxf(pr, er) if frame.categoryMax and not frame.noElement else (pr if physical else 1.0) * (er if ACTIVE.has(e) else 1.0)
-	return maxf(0.0, frame.settlementMultiplier * category)
+	return [pr, er]
 
 
 # ---- 状态脚本（YEP BuffsStatesCore）：Confirm = 行动者的状态，React = 目标的状态 ----

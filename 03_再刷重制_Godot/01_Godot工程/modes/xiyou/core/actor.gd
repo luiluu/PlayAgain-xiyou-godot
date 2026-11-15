@@ -1471,7 +1471,7 @@ func _refresh_passive_now() -> void:
 		for o in objs:
 			sig_notes.append(str(o.get("note", "")))
 			sig_meta.append((o.get("meta", {}) as Dictionary).hash())
-		if not _pm_base.is_empty() and _pm_fix == FIX_CRIT_PUSH and _pm_meta == sig_meta and _pm_notes == sig_notes:
+		if not _pm_base.is_empty() and _pm_fix == FIX_CRIT_PUSH and _pm_meta == sig_meta and _pm_notes == sig_notes and _pm_base.has("bySource") == XTianqiLedger.bucketing():
 			var memo: Dictionary = _pm_base.duplicate(true)
 			if READ_VERIFY:
 				PASSIVE_MEMO = false
@@ -1561,6 +1561,8 @@ func _refresh_passive_now() -> void:
 			elif suffix.is_valid_int():
 				var id := int(suffix)
 				c.consumeReduce.bySkill[id] = c.consumeReduce.bySkill.get(id, 0) + value
+	if XTianqiLedger.bucketing():  # 伤害加成总账：求和处并排存一份按来源分桶的数（原合计字段不动；西游档不建）
+		c["bySource"] = XTianqiLedger.passive_buckets(self, objs)
 	if PASSIVE_MEMO:
 		_pm_base = c.duplicate(true)
 		_pm_notes = sig_notes
