@@ -2115,7 +2115,7 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 	var s: XBattlerSprite = sprites[a]
 	if XBattleLogic.is_item(skill):
 		s.set_motion("item")
-	elif a.is_attack(skill):  # action.isAttack()：替换后的技能也按武器动作
+	elif a.attack_motion(skill):  # action.isAttack()：原版替换后的技能也按武器动作；O-478 起带技能类型的替换技能按技能动作（XBattler.attack_motion）
 		var v := a.attack_visual()
 		s.set_motion("swing" if XAppearance.cat_visual(a) else v.motion)  # installNativeCharacterVisualRuntime performAttack：小猫剑圣原动作之后再要挥舞
 		if int(v.image) > 0:
