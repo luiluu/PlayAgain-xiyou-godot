@@ -90,3 +90,32 @@
 - 2f746a480 WIP：3A 七印祭坛页、号卷与七印装备展示、七印外观角色条、专项
 - 9ab619356 合并 main（dev.602，解 offshot 冲突：2A 战斗三张＋本批天启篇物品都留）
 - （交付提交见 git log）
+
+## 小A 乙档核查
+
+- **结论**：**不通过**（逻辑／开关／发行空壳乙档核查均过，无 P1；卡在 **2 项 P2 文字必改**；另 1 项队伍条 P2 为第 0 期组件遗留，记总装待修）。
+- **已跑验证（前台实跑）**：
+  - `res://tests/xiyou_ui_skin_3a.tscn`：85/85 通过；
+  - `res://tests/xiyou_tianqi_qiyin_altar.tscn`：173/173 通过；
+  - `res://tests/xiyou_tianqi_qiyin_equip.tscn`：104/104 通过；
+  - `res://tests/xiyou_tianqi_trumpet.tscn`：161/161 通过；
+  - `res://tests/xiyou_ui_skin_offshot.tscn`（无头）：15/15 通过；
+  - `07_开发环境/发行空壳.py check`：60 脚本 520 函数全部通过（7 个旧 `return true` 警告无新增）；`show XTianqiSkinAltar`／`XTianqiSkinShow` 壳签名与安全返回值对；
+  - `07_开发环境/语法检查.py`：914 `.gd` 0 错误；
+  - `04_验证/本地结果/ui_skin_3a/关闭对照/` 17 对 PNG 逐文件校验全 `SAME`。
+- **分项核查**：
+  1. **开关（核了规则＋代码）**：`XUiSkin.ENABLED = false` 时 `XTianqiSkinAltar.use(host)` 返回 `false`，`XTianqiQiyin.run_altar` 走原 `ask(host, "head", ...)`、`preset = ""`，`choose_and_run` 走原 `ask(host, "pick_seal", ...)`；`XSkinItemPage`／`XSkinPartyStrip` 不构建且 `XTianqiSkinShow` 均以 `XUiSkin.on()` 守卫。已跑 `3a` `_flow_off` 与 `offshot` 验证。
+  2. **七印逻辑未改（核了规则＋代码）**：`tianqi_qiyin.gd` 仅改 `run_altar` 选单分支与 `choose_and_run(host, s, preset := "")` 可选参数；全仓调用处（仅 `tests/xiyou_tianqi_qiyin_altar.gd`、`tests/xiyou_tianqi_qiyin_equip.gd`）均按两参调用、无子类覆写，未传 `preset` 或 `preset` 未开启时回退原 `ask` 流程；`XTianqiSkinAltar`／`XTianqiSkinShow` 只读不写存档/RNG/印钥/印屑/印库/熔分解兑换。未改七印结果，无 P1。
+  3. **发行空壳与重制版兼容（核了代码＋空壳 check）**：两个新类均带 `XTianqi` 前缀走自动空壳（`use→false`、`pick→{}`、`look_seal→""`、其余 `pass`）；`XSkinItemPage.card_data`／`target_rows`、`XSkinPartyStrip` 接线在重制版（无天启篇数据或空壳）均短路/空实现，不报错。
+  4. **协调截图专项问题（核了代码＋截图 OCR）**：
+     - **① `gear_card`／`trumpet_card` 列表上方空一行**：**1B 模板＋3A 截图用法共同导致（游戏内实际物品页无此问题）**——`XSkinTemplatePage`（1B）无条件保留 `LIST_TOP := 56.0` 给 `list_title`，而 3A `tests/xiyou_ui_skin_3a.gd` `_shots_82` 为同框展示 `#81`＋`#82` 构造了裸 `XSkinTemplatePage`（`show_ring = false` 且未设 `list_title`）。游戏内真实 `XSkinItemPage` 一定会填 `list_title` 且带左环，不会空着。建议：总装/界面车道可在 `XSkinTemplatePage.relayout()` 判断 `list_title != ""` 才留 `LIST_TOP`，或 3A `_shots_82` 补 `page.list_title = "物品"`。
+     - **② 队伍条「窃格瓦拉·周 Lv」等级数字被挤掉**：**属第 0 期 `XSkinPartyStrip._draw()` 组件问题（非 3A 导致，记给总装／界面车道待修）**——`skin_party_strip.gd` 无条件在右侧减去 `80px`（即使 `states` 为空），且用未截断的 `nw` 定位 `info`，在 300px 窄栏（或长名字）下把 `Lv 1 · 剑仙` 挤到只剩 `16px` 宽从而裁成 `「Lv」`。建议记待修：仅按 `mini(states.size(), 4) * 22` 预留图标宽，并用 `fit_text` 先保 `Lv N` 完整显示。
+     - **③ 装备牌与号卷牌重复/残留「品质：」行**：**P2（文字必改）**，见下条。
+  5. **文字审（核了交付单表＋源码＋截图 OCR，对照 `ba1f7ed` 口径）**：
+     - **P2 文字必改 1（七印装备牌）**：`XTianqiSkinShow._qiyin_card` 把品质拼进上方小字（`白印 · 七印套装 · 真印　神话（神话特效）`），下方 `XHelpCard.detail_rows` 又保留 `「品质：神话（神话特效）」` 造成上下重复。**改好文案**：上方小字统一分隔符为 `白印 · 七印套装 · 真印 · 神话（神话特效）`（武器/神器同理），下方正文**删掉** `品质：…` 重复行。
+     - **P2 文字必改 2（号卷牌）**：`XTianqiSkinShow._trumpet_card` 只过滤 `begins_with("天启号卷")`，漏掉了 `XHelpCard.panel_view` 合并后的 `「品质：神话　天启号卷·消耗品」`，导致正文首行重复出现 `天启号卷` 且带出 `消耗品` 与多余 `品质：` 行。**改好文案**：保留上方小字 `号卷 · 第 1 卷 · 持有 1`（如需标品级可写成 `神话 · 号卷 · 第 1 卷 · 持有 1`），下方正文**删掉整行** `品质：神话　天启号卷·消耗品`（仅留 `获得：`、`效果：`、`限制：`、`代价：`、`无法出售给普通商店`）。
+     - **P3（非必改建议）**：默印开启条件 `「前六印的首领都打过开启」` 可按需润色为 `「前六印的首领都打过后开启」`；七印祭坛页按钮、状态、规则弹窗（「怎么玩」六条＋本印规则）与按键提示（`← / → 切换印`、`↑ / ↓ 选入口`、`确定 选择`、`Y 看规则`、`取消 离开`；规则弹窗 `Y / 取消 关闭`）均符合 `ba1f7ed` 口径与胶囊框写法。
+- **未核到（留待总装／后续）**：
+  - `事件对照四片`、`xiyou_tianqi_qiyin_effects`／`drop`／`dragon` 及 `--affected --cloud` 全量云端长测未在此单跑；
+  - `皮肤关闭对照.py` 未在此工作树重跑实窗（仅校验已落盘的 17 对 PNG 全 `SAME` 加上无头 `xiyou_ui_skin_offshot`）。
+
