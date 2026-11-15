@@ -13,7 +13,7 @@ extends RefCounted
 ##   庆典成就（第 2 天，模块 G）读存档 flags.fest_champion.road 的 cleared／flawless_done 就够，本文件不发成就。
 ## - 只开给原版档（天启篇档的守层者另有一套血量，第 1 天不开）。
 ## - 档位：第 1 天只开正赛（基准 20 层守层者石日天，敌群 456）；海选（10 层）、巅峰（30 层）第 2 天补进 TIERS。
-## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定。
+## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定·冠军之路。
 
 static var ENABLED := true
 
@@ -464,6 +464,11 @@ static func talk(host, s = null) -> void:
 		"resume":
 			continue_run(s)
 			await run(host, s, 0, resume)
+
+
+## 大厅报名处（乙车道 XFestLobby 按 ROAD_CLASS／ROAD_METHOD 调 enter）：同 talk
+static func enter(host, s = null) -> void:
+	await talk(host, s)
 
 
 ## 从 stage 起连打到决赛（tier：档位序）
