@@ -55,7 +55,6 @@ func _proj(s: XState, id: int):
 
 
 func _run() -> void:
-	XPartyFormation.ENABLED = false  # 对照原版站位：战斗站位回退到原版竖排（新阵型见 xiyou_party_formation）
 	XMessageBox.auto = true
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("oracle", ref is Dictionary and ref.cases.size() == 3 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
@@ -184,7 +183,11 @@ func _scene() -> void:
 	var home_t: Vector2 = st.position
 	ts.mp = ts.mmp
 	l.act(ts, XDB.rec("Skills", XTusu.skill_id("huawu.sword")), host)
-	await frames(4)
+	# 演出排队，帧数随负载与站位距离变：等到换成武具形态并贴到宿主脚下，最多 30 帧
+	for i in 30:
+		await frames(1)
+		if str(st.look.frame("wait", 0).get("asset", "")) == "Codex_Tusu_sword_v1" and st.position == sh.position + Vector2(0, 1) and sh.has_meta("xt_held"):
+			break
 	check("scene.tusu_form", str(st.look.frame("wait", 0).get("asset", "")) == "Codex_Tusu_sword_v1", st.look.frame("wait", 0).get("asset"))
 	check("scene.tusu_attach", st.position == sh.position + Vector2(0, 1), [st.position, sh.position])
 	check("scene.tusu_no_shadow", st.shadow == null or not st.shadow.visible)
@@ -194,7 +197,11 @@ func _scene() -> void:
 		var hs: float = held.scale.x
 		check("scene.held_size", hs > 0.1 and hs < 1.5, hs)
 	l.act(a, XDB.rec("Skills", XTusuXuan.skill_id(XUAN, "jixing")), host)
-	await frames(4)
+	# 屠苏附身的移动按两人距离算帧数（战斗站位两排错开时更远），璇的演出排在它后面：等到藏起来，最多 30 帧
+	for i in 30:
+		await frames(1)
+		if not sa.sprite.visible and sh.has_meta("xt_proj"):
+			break
 	check("scene.xuan_hidden", not sa.sprite.visible)
 	var proj = sh.get_meta("xt_proj") if sh.has_meta("xt_proj") else null
 	check("scene.proj", proj != null and proj.texture != null, proj)
