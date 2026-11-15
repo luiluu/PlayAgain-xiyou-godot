@@ -167,6 +167,9 @@ func _cards() -> void:
 	await frames(3)
 	check("cards_skin", c.skin and c._cards.size() == 4 and c._cards.all(func(k): return k.skin) and c._hints != null)
 	check("cards_min_font", c._cards.all(func(k): return k.get_children().filter(func(l): return l is Label).all(func(l): return l.get_theme_font_size("font_size") >= XUiSkin.FS_MIN)))
+	var hr := Rect2(c._hints.position, c._hints.size)
+	check("cards_hints_clear_version", hr.end.x <= XSkinKeyHints.right_edge(c.size) + 0.5 and (not XVersionLabel.SHOW or hr.end.x < c.size.x - XVersionLabel.MARGIN.x - 16.0), [hr, c.size])
+	check("cards_unready_text", c._cards[2].get_children().any(func(l): return l is Label and l.text == "暂未开放"))
 	check("cards_inside_safe", c._cards[0].position.x >= XSkinLayout.margin_for(c.size.x) and c._cards[3].position.x + c._cards[3].size.x <= c.size.x - XSkinLayout.margin_for(c.size.x), [c._cards[0].position, c.size])
 	await shots("ui_skin_3b_line_cards")
 	c._handle(_key("ui_left"))
@@ -300,9 +303,14 @@ func _workshop() -> void:
 	await frames(3)
 	check("ws_tab_switch", page.skin_tab == 1 and page.skin_tab_name().begins_with(names[1]), page.skin_tab_name())
 	await shots("ui_skin_3b_alien_workshop_tab2", 8)
-	page.skin_switch(-1)
+	var pd := InputEventAction.new()
+	pd.action = "ui_page_up"
+	pd.pressed = true
+	page._unhandled_input(pd)
 	await frames(3)
-	check("ws_tab_back", page.skin_tab == 0)
+	check("ws_tab_back_pageup", page.skin_tab == 0)
+	var wh: XSkinKeyHints = page._skin_hints
+	check("ws_hints_clear_version", wh.position.x + wh.size.x <= XSkinKeyHints.right_edge(page.size) + 0.5, [wh.position, wh.size])
 	# 点屏上的按钮：分解→确认框→确认分解（走 XAlienation.dismantle）
 	acts = _find(page, func(c): return c.name == "SkinActions")
 	dis = _find(acts, func(c): return c is Button and c.text.begins_with("分解为"))

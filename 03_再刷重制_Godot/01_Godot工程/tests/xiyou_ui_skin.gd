@@ -314,7 +314,14 @@ func _components() -> void:
 	host.add_child(h)
 	h.set_hints([["确定", "进入"], ["Q / E", "换组"]])
 	h.place(Vector2(1600, 720))
-	check("hints_place", is_equal_approx(h.position.x + h.total_width(), 1600 - 56) and is_equal_approx(h.position.y, 720 - 10 - XSkinKeyHints.H))
+	# 右边：安全边距 56，且让出右下角版本号（ui-skin-3b 把 1A 主菜单的让位收进 place）；版本号关掉时就是安全边距
+	check("hints_place", is_equal_approx(h.position.x + h.total_width(), XSkinKeyHints.right_edge(Vector2(1600, 720))) and h.position.x + h.total_width() <= 1600 - 56
+		and is_equal_approx(h.position.y, 720 - 10 - XSkinKeyHints.H))
+	var keep_show := XVersionLabel.SHOW
+	XVersionLabel.SHOW = false
+	h.place(Vector2(1600, 720))
+	check("hints_place_no_version", is_equal_approx(h.position.x + h.total_width(), 1600 - 56))
+	XVersionLabel.SHOW = keep_show
 	await frames()
 	host.queue_free()
 	await frames()

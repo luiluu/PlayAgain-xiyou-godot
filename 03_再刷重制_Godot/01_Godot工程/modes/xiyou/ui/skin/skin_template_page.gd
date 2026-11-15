@@ -175,8 +175,7 @@ func relayout() -> void:
 		tabs.position = Vector2(XSkinLayout.margin_for(view.x) + f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x + 24, 14)
 		tabs.size = Vector2(tabs.total_width(), XSkinTabStrip.TAB_H)
 	hints.set_hints(hint_list)
-	# 右边让出右下角版本号（同 1A 主菜单 XSkinMainMenu.hint_right）
-	hints.position = Vector2(XSkinMainMenu.hint_right(view) - hints.total_width(), view.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
+	hints.place(view)   # 右边让出右下角版本号（XSkinKeyHints.right_edge）
 	top_layer.queue_redraw()
 	list_panel.queue_redraw()
 

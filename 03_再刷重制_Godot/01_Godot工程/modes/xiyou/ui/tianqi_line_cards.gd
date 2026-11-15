@@ -2,7 +2,7 @@ class_name XTianqiLineCards
 extends Control
 ## 【cc·天启篇·未经审查】选线画面：四张竖卡并排（四线剧情与关卡设计稿 v0.4 第 2.2 节）。
 ## 每张：骑士剪影（本线颜色；打过这条线、或 XTianqiLook.CARD_PORTRAIT 开时画立绘）＋线名·骑士＋一句话＋「传闻」（骑士来历）＋「本线特点」＋卡底「骑士遗物」（打过才点亮）。
-## 还没做好的线照列，压暗并标「还没修好」，仍可选中看说明（小小鱼会说这条路还没修好）。
+## 还没做好的线照列，压暗并标「暂未开放」，仍可选中看说明（小小鱼会说这条路还没修好）。
 ## 左右键／鼠标选，确认键或点卡定；取消键或「再想想」返回 -1。开关 XTianqiLook.CARDS（O-322）。
 ## 新界面（ui-skin-3b，盘点清册 #76）：XUiSkin.on() 时同样四张卡、同样的字和选择逻辑，只换外观：黑底＋绯红底光＋火星、
 ## 卡是黑面板细线（本线颜色留在人像光、分隔线和名字上）、选中的卡朱红描边＋绯红外晕＋顶上一道朱红光标、小标题旧金、
@@ -279,7 +279,7 @@ func _make_card(i: int) -> Control:
 			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			card.add_child(badge)
 	if not ok:
-		var tag := XUI.label("还没修好", 18, Color(0.85, 0.82, 0.86))
+		var tag := XUI.label("暂未开放", 18, Color(0.85, 0.82, 0.86))
 		tag.position = Vector2(0, FIG_H / 2.0)
 		tag.size = Vector2(CARD.x, 30)
 		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

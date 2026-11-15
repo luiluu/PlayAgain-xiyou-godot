@@ -242,19 +242,15 @@ func _place() -> void:
 	party.position = Vector2(0, rh + XUiSkin.PANEL_GAP)
 	party.size = Vector2(RIGHT_W, party.custom_minimum_size.y)
 	var view := layout.view_size()
-	hints.position = Vector2(hint_right(view) - hints.total_width(), view.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
+	hints.place(view)
 	_layout_rows()
 	_place_bar(true)
 	top.queue_redraw()
 
 
-## 按键提示的右边：安全边距，且让出右下角版本号（XVersionLabel，全局一直显示，字号 14）
+## 按键提示的右边：ui-skin-3b 起统一在 XSkinKeyHints.right_edge（place() 自带让位）；留着这个名字给旧调用
 static func hint_right(view: Vector2) -> float:
-	var right := view.x - XSkinLayout.margin_for(view.x)
-	if XVersionLabel.SHOW:
-		var vw := GameFont.current().get_string_size(XVersionLabel.version_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, XVersionLabel.FONT_SIZE).x
-		right = minf(right, view.x - XVersionLabel.MARGIN.x - vw - 16.0)
-	return right
+	return XSkinKeyHints.right_edge(view)
 
 
 ## 中块各行：[{kind: group／header／item, g, i, rect}]

@@ -108,11 +108,19 @@ func close() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if skin and skin_tabs.size() > 1 and event is InputEventKey and event.pressed and not event.echo \
-			and (event.keycode == KEY_Q or event.keycode == KEY_E):
-		skin_switch(1 if event.keycode == KEY_E else -1)
-		XKeyMap.handled(self)
-		return
+	if skin and skin_tabs.size() > 1:
+		# 换页：pageup／pagedown（键盘 Q／E、手柄肩键，小A 3B 核查 P3），没绑到动作的 Q／E 键也认
+		var step := 0
+		if event.is_action_pressed("ui_page_up"):
+			step = -1
+		elif event.is_action_pressed("ui_page_down"):
+			step = 1
+		elif event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_Q or event.keycode == KEY_E):
+			step = 1 if event.keycode == KEY_E else -1
+		if step != 0:
+			skin_switch(step)
+			XKeyMap.handled(self)
+			return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		close()
