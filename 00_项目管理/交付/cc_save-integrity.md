@@ -112,7 +112,7 @@
 ## 可优化（流程／工具／效率）
 
 - 建议：守卫检查加一条 rg，禁止测试和游戏代码直接 `FileAccess.get_file_as_string(XSave.path(…))`／写 `save_*.json`（预计收益：防新代码绕过封存或一上来就崩在解析封存字节；归工具车道）。
-- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 偶发（第一轮云端挂过，封存关掉本机也挂过一次），归步步遇敌车道改成确定性；co 提醒「main 上也挂」尚未在 main 隔离复跑证实。
+- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 偶发（见「验证」，main 版本本机 16 次没挂过，原来「main 上也挂」的说法撤回）；归步步遇敌车道把等待改成确定性。
 - 已做：存档相关测试夹具改走 `XSaveSeal.read_text`／`write_file`、`.ksv` 文件名。
 
 ## 验证
@@ -120,7 +120,8 @@
 - 专项 `xiyou_save_seal` 119/119（新）：编码往返；改任一段一字节／截断／追加／空；带合法签名的超大声明、坏补齐；明文旧档迁移（七个文件 `.ksv` 解开＝原文、`.json` 原件不动、记号）；旧底包退回模拟；新档往返、改字节、截断、明文写进 `.ksv`、迁移后丢进来的 `.json`、存到失败格改名留着、删除改名；自动存档；多槽；账本、仓库、跨存档变量改过不读不写；开关关闭／再打开；导出导入；导入保留失败原件；反馈 zip 原样；发行模拟冷启动读旧档；迁移写不进回落 `.json`；发行密钥（无密钥不封存、不认测试密钥、号轮换）。
 - 本机直跑（`test_main_loop`，本机测试槽被别的车道占着）：save_corrupt 53/53、save_cat_slots 15/15、save_slim 126/126、save_page 42/42、save_events 31/31、save_transfer 39/39（原 skipped 一项现在通过）、star_warehouse 99/99、global_vars 17/17、demon_crown 106/106、demon_crown_compact 48/48、autosave 10/10、pause_save 46/46、save_cold_load 27/27、splash_autosave 74/74、feedback_v001 32/32、yunshang_shop 436/436、yunshang_gear_load 137/137、platform 155/155、percent_pills 65/65、review_regressions 29/29、random_streams 490/490、floor30_gifts 30/30、tianqi_affix_seed 23/23、tianqi_opening 44/44、tianqi_seed_fix 77/77、lottery_seed 12/12、tianqi_save 82/82、battleback_save 5/5、newgame_back 68/68、entry_release 16/16。
 - 工具快速回归全部通过（98 秒）；语法检查通过。
-- 云端选测：CLOUD_RESULT
+- 云端选测（返修＋D37 后，提交 7bd3bb794，基准 main fa0562032，254 个场景）：**全部通过**。
+- `xiyou_step_encounter_stop`：返修中途那次云端（dc6b231d1）又挂了 `rollback_stale_target_walks`，本机前后几轮里本分支也挂过几次，main 版本没挂过（16/16）；最后一轮本机交替跑 main 版本与本分支版本各 8 次全过，最终云端也过。失败那一段（挂机前留下目的地、停挂机后该接着走）不经过任何存档读写（挂机存档要整点＋固定档位，测试新局都没有），封存每次存档只多约 0.4 毫秒，`XSave.path` 每次约 40 微秒。**结论：没证实和本改动有关，也没证实无关**，看着是负载相关的偶发；请 co 复核时留意，总装合并时它若再挂就单跑重试并把日志附上。
 - 真发行包实机冷启动、Windows／安卓文件替换、真磁盘满／断电没做（要出包或实机）。
 - 合并建议：`合并车道.sh … --finish --affected --cloud`。
 
@@ -133,7 +134,7 @@
 - 6b696d2a6 存档封存 XSaveSeal 接入
 - 81d3f31d2 专项 xiyou_save_seal；旧存档专项改走 XSaveSeal 读写
 - abe3b2397 交付单
-- 返修：封存档改 .ksv、发行密钥出包注入、上限、读回核对、补齐逐字节、导入保留失败原件；测试改 .ksv；迁移失败回落 .json
+- 返修：封存档改 .ksv、发行密钥出包注入、上限、读回核对、补齐逐字节、导入保留失败原件；测试改 .ksv；迁移失败回落 .json；D37 旧明文导出照收、导入时封存（7bd3bb794 云端 254 个全过）
 
 ## co 甲档核查
 
