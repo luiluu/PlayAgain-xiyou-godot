@@ -98,6 +98,8 @@ var _vehicle_gathering := false
 var _bgm_audio = null
 ## 大厅初步异化叠加层（XLobbyCorruption，只在 Map004 且漩涡二阶起才建；换图时释放）
 var lobby_fx: XLobbyCorruption
+## 冠军庆典大厅叠加层（XFestLobby，只在 Map004 且活动期间才建；换图时释放）
+var fest_fx: XFestLobby
 ## 天启篇大厅方桌的裂纹（XTianqiTable，只在 Map004、天启篇存档才建；换图时释放）
 var tianqi_table: XTianqiTable
 ## 正在跑的顶层事件号（run_event 期间；没有为 0）：叠加层看是不是漩涡过场
@@ -353,7 +355,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id)) and not XFestLobby.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -376,6 +378,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_clear_treasure_popups()
 	_place_party(x, y, d)
 	_setup_lobby_fx()
+	_setup_fest_fx()
 	_setup_tianqi_look()
 
 
@@ -405,6 +408,17 @@ func _setup_lobby_fx() -> void:
 		lobby_fx = XLobbyCorruption.new()
 		add_child(lobby_fx)
 		lobby_fx.setup(self)
+
+
+## 冠军庆典：换图时先拆旧的，到了大厅且活动进行中（开关开着）再建
+func _setup_fest_fx() -> void:
+	if fest_fx != null and is_instance_valid(fest_fx):
+		fest_fx.queue_free()
+	fest_fx = null
+	if map_id == XFestLobby.MAP_ID and XFestLobby.decor():
+		fest_fx = XFestLobby.new()
+		add_child(fest_fx)
+		fest_fx.setup(self)
 
 
 ## 存档时的当前地图事件状态（XState.to_dict 调用）
