@@ -1672,11 +1672,18 @@ func _snapshot() -> Texture2D:
 	var r := Rect2i(Rect2(ft.origin, ft.get_scale() * get_viewport().get_visible_rect().size)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
 	if r.size.x <= 0 or r.size.y <= 0:
 		return null
+	var want := Vector2i(1280, 720)
+	if wide_active() and r.size.y > 0 and r.size.x * 9 > r.size.y * 16 + 4:
+		# 新界面 4A：铺满时，地图够宽（或横向循环）就保留宽度（战斗背景照原尺寸铺开）；地图比画面窄（两边是黑的）只取中间 16:9，
+		# 战斗那边再垫一张放大压暗的同图把两侧延展出来
+		var vw := get_viewport().get_visible_rect().size.x
+		if lower != null and (lower.loop_x or lower.width * TS >= vw - 1.0):
+			want.x = maxi(1280, roundi(720.0 * r.size.x / r.size.y))
+		else:
+			var cw := roundi(r.size.y * 16.0 / 9.0)
+			r = Rect2i(r.position.x + (r.size.x - cw) / 2, r.position.y, cw, r.size.y)
 	img = img.get_region(r)
 	# MV 快照是 1280×720 位图；高分屏截到的大图缩回画布尺寸，放大镜头时才会和原版一样柔化
-	var want := Vector2i(1280, 720)
-	if wide_active() and r.size.y > 0:   # 新界面 4A：铺满时快照保留宽度（战斗背景照原尺寸铺开）
-		want.x = maxi(1280, roundi(720.0 * r.size.x / r.size.y))
 	if img.get_size() != want:
 		img.resize(want.x, want.y, Image.INTERPOLATE_BILINEAR)
 	return ImageTexture.create_from_image(img)

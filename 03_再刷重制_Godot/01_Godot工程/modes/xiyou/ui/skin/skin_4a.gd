@@ -165,6 +165,20 @@ static func draw_hud_icon(ci: CanvasItem, name: String, c: Vector2, s: float, al
 			ci.draw_circle(c, h * 0.6, gold)
 
 
+## 触屏虚拟键（右下 A／B／信息那一组）开着时，把 c（画面坐标）往左挪到键组左边再空 12；最左不过 min_x。HUD_V2 关着不动
+static func avoid_touch_keys(c: Control, min_x: float) -> void:
+	var pad := XTouchControls.instance
+	if not hud_on() or pad == null or not pad.is_inside_tree() or not pad.visible or pad.hidden or pad._menu_hidden:
+		return
+	var act = pad.group_rects.get("actions")
+	if not (act is Rect2):
+		return
+	var r := Rect2(c.position, c.size)
+	if not r.intersects(act):
+		return
+	c.position.x = maxf(min_x, (act as Rect2).position.x - 12.0 - c.size.x)
+
+
 ## ---- C8 战斗背景压暗 ----
 ## 现在的压暗档（0／15／30）；没开（皮肤关、DIM_V2 关）恒为 0
 static func dim_percent() -> int:

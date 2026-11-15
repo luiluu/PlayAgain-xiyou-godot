@@ -111,7 +111,8 @@ func _run() -> void:
 	var a: XActor = b._active
 	_check("fixture_actor", a == s.actor(10), null if a == null else a.actor_id)
 	_party(b, a)
-	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(XSkinBattle.TOGGLE_POS.x, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.get_parent().position)
+	var tx: float = XSkin4A.safe_rect(b).position.x if XSkin4A.hud_on() else XSkinBattle.TOGGLE_POS.x   # 4A：跟挂机胶囊一起贴安全边距
+	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(tx, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.get_parent().position)
 	_otb(b, a)
 	await _boss(b)
 	await _shot("battle_2b_hud")

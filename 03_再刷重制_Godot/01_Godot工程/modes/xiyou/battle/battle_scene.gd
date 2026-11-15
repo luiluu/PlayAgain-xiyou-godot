@@ -1322,6 +1322,8 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
 		w.place_for_actor(s.position, BOX)
 		w.position += _origin
+		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner():
+			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏固定右下的指令环让开 A／B 键组
 		return
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)

@@ -812,7 +812,7 @@ func _style_button(name: String) -> void:
 	if _skinned:   # 新界面 4A：黑底、旧金细边（A／B 粗一点）
 		sb.bg_color = SKIN_FILL
 		sb.border_color = Color(XUiSkin.GOLD, 0.75)
-		sb.set_border_width_all(2 if name in ["ok", "cancel"] else 1)
+		sb.set_border_width_all(2 if name in ["ok", "cancel", "info", "run"] else 1)   # 圆键 1px 边在正中会有一道接缝，圆的都用 2px
 		if ghost() and name in ["ok", "cancel", "save", "info"]:
 			if not _ghost_alpha.has(name) or _ghost_alpha[name] < _idle_alpha():
 				_ghost_alpha[name] = _idle_alpha()

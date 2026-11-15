@@ -7,7 +7,8 @@ extends Node
 ## - 战斗浮字底：回合提示、敌人名字／血量数字画了胶囊底；3 倍速时受击闪白与整屏闪光不画（帧数不变）。
 ## - 开关关、皮肤关：HUD 回原位置原画法、视口回 1280、压暗 0、闪白系数 1。
 ## 内存新游戏（地图 5、敌群 2、队伍 8/9/10），XUiSkin.FORCE 强开；设置写到临时文件。
-## 窗口模式：-- --out=<目录> 截图；--wide（1600×720）／--tablet（1024×768）；--before（4A 五个开关全关＝改前）；--touch（按触屏画、建虚拟键）。
+## 窗口模式：-- --out=<目录> 截图；--wide（1600×720）／--tablet（1024×768）；--before（4A 五个开关全关＝改前）；--touch（按触屏画、建虚拟键）；
+## --desert（战斗用沙漠战斗背景，不带时是雪地地图快照）。
 
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const OPTIONS := "user://test_xiyou_ui_skin_4a_options.json"
@@ -17,6 +18,7 @@ var wide := false
 var tablet := false
 var before := false
 var touch := false
+var desert := false
 var pad: XTouchControls
 
 
@@ -32,6 +34,8 @@ func _ready() -> void:
 			before = true
 		elif arg == "--touch":
 			touch = true
+		elif arg == "--desert":
+			desert = true
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -68,7 +72,7 @@ func _shot(name: String) -> void:
 	await _frames(20)
 	RenderingServer.force_draw(false)
 	var ratio := "4x3" if tablet else ("20x9" if wide else "16x9")
-	var tag := "before" if before else ("after_touch" if touch else "after")
+	var tag := ("before" if before else ("after_touch" if touch else "after")) + ("_desert" if desert else "")
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	_check("screenshot_%s_%s_%s" % [name, ratio, tag], get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_%s_%s.png" % [name, ratio, tag])) == OK)
 
@@ -131,7 +135,6 @@ func _run() -> void:
 		return
 	var map: XMapScene = get_tree().current_scene
 	await _frames(10)
-	XMessageBox.auto = false
 	if not before:
 		_map_hud(map)
 		await _map_wide(map)
@@ -140,7 +143,9 @@ func _run() -> void:
 	await _shot("map")
 	if _windowed() and not before and wide:
 		var shot := await map._snapshot()
-		_check("snapshot_keeps_width", shot != null and shot.get_width() == 1600, shot.get_size() if shot else null)
+		# 地图够宽保留 1600 宽；比画面窄（两边是黑的，如地图 5）只取中间 16:9
+		var want := 1600 if map.lower.loop_x or map.lower.width * XMapScene.TS >= 1600 else 1280
+		_check("snapshot_width", shot != null and shot.get_width() == want, [shot.get_size() if shot else null, want])
 	await _battle_checks(map)
 	if not before:
 		await _skin_off(map)
@@ -298,7 +303,9 @@ func _touch_keys() -> void:
 
 # ---- 战斗 ----
 func _battle_checks(map: XMapScene) -> void:
-	map.battleback_override = ["Sand", "Snowfield"]   # 亮背景（沙漠＋雪原）
+	XMessageBox.auto = false
+	if desert:
+		XState.current.battleback = ["Sand", ""]   # 亮背景：沙漠战斗背景（不带这个参数时用雪地地图快照当背景）
 	map._set_busy(true)
 	var go := func(): await map.start_battle(2, true, false)
 	go.call()
@@ -320,6 +327,8 @@ func _battle_checks(map: XMapScene) -> void:
 		if c is TextureRect and (c as TextureRect).stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED:
 			cover = cover and Rect2(c.position, c.size).encloses(Rect2(Vector2.ZERO, vs))
 	_check("battle_background_fills", cover)
+	if _windowed() and wide and not desert and b.snapshot != null and b.snapshot.get_width() == 1280:
+		_check("battle_snapshot_extended", b.find_child("SnapshotExtend", false, false) != null)
 	var dim := b.find_child("BattleDim", false, false) as ColorRect
 	_check("battle_dim_15", dim != null and is_equal_approx(dim.color.a, 0.15) and Rect2(dim.position, dim.size).encloses(Rect2(Vector2.ZERO, vs)), dim.color if dim else null)
 	_check("battle_dim_below_field", dim != null and dim.get_index() < b.field.get_index())
@@ -337,6 +346,7 @@ func _battle_checks(map: XMapScene) -> void:
 	await _frames(3)
 	_check("text_backing_off", XSkin4A.backing_count == 0, XSkin4A.backing_count)
 	XSkin4A.TEXT_V2 = true
+	b.cmd_win.queue_redraw()
 	await _shot("battle")
 	# 3 倍速：受击闪白、整屏闪光不画（帧数照旧）
 	var saved_speed := XConfig.battle_speed()
