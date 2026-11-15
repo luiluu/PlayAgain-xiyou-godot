@@ -1,0 +1,27 @@
+{
+ "sha": "17a5ca5c07274dff84273c2580e7172b5830894b",
+ "branch": "ci/cc/fix-treasure-map-1115",
+ "mode": "affected",
+ "base": "89ab06686123df771a58fd6a3726415c07c9787d",
+ "passed": true,
+ "scenes": 6,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 2,
+ "longestShardSeconds": 160.2,
+ "testSeconds": 503,
+ "generatedRef": "refs/ci/generated/cc/fix-treasure-map-1115",
+ "generatedCommit": "e9f63a9485b6f279c6165cf2a4aa2e1c1464950d",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43720007893",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_treasure_batch.tscn",
+  "xiyou_treasure_map.tscn"
+ ],
+ "time": "2026-11-15T13:43:41+00:00"
+}
