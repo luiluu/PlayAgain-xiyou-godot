@@ -309,6 +309,8 @@ func _run() -> void:
 	XDeadContent.ICHIGO_BANKAI = false
 	XDeadContent.DOMAIN_ALL_MATK = false
 	XDeadContent.clear_cache()
+	# 原版文字错的加载时修正（XTextFix，乙类文字审，O 号见优化登记）：参照是原版文字，对照时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	# 漩涡二阶段、苍龙重做与解放（XRift／XCanglong／RELEASE_CANGLONG，优化登记三条）：对照原版语义，关掉；本身由 tests/xiyou_rift2_canglong 核
 	XCanglong.original_data()
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）

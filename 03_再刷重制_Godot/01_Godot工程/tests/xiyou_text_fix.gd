@@ -103,6 +103,32 @@ func _run() -> void:
 	# 五、名字改了首领判定照旧
 	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
 
+	# 六、逐个开关单独关掉，只回退那一类（其余照旧修）
+	XTextFix.set_all(true)
+	XTextFix.STRIP_ZW = false
+	XTextFix.clear_cache()
+	_check("off_zw_only", _rec("States", 1157).name == "即兴碎拨\ufeff" and _rec("Skills", 7765).name == "终极奥术伤")
+	XTextFix.set_all(true)
+	XTextFix.NAMEBOX = false
+	XTextFix.clear_cache()
+	_check("off_namebox_only", str(_cmd(8, 7, 0, 1)).begins_with("<副本协会主席>") and str(_cmd(4, 36, 0, 175)).begins_with("/n<天才灵魂>此塔是我开，此塔"))
+	XTextFix.set_all(true)
+	XTextFix.PAIRS = false
+	XTextFix.clear_cache()
+	_check("off_pairs_only", _rec("Enemies", 858).name == "【超级Boss】龙之祖(天龙）")
+	XTextFix.set_all(true)
+	XTextFix.DICT = false
+	XTextFix.clear_cache()
+	_check("off_dict_only", _rec("Skills", 7765).name == "终级奥数伤" and _rec("MapInfos", 206).name == "宫殿")
+	XTextFix.set_all(true)
+	XTextFix.TRAD = false
+	XTextFix.clear_cache()
+	_check("off_trad_only", _rec("MapInfos", 206).name == "宮殿" and _rec("Skills", 7765).name == "终极奥术伤")
+	XTextFix.set_all(true)
+	XTextFix.OVERRIDES = false
+	XTextFix.clear_cache()
+	_check("off_overrides_only", str(_rec("Skills", 1481).description).ends_with("一种共享型宠物技能，所有友方都会得到加成") and _rec("States", 1157).name == "即兴碎拨")
+
 	# 四、全关回原版
 	XTextFix.set_all(false)
 	_check("off_enemies_raw", JSON.stringify(XDB.table("Enemies")) == JSON.stringify(XDB.parse_file(XDB.BASE + "db/Enemies.json")))
