@@ -150,6 +150,8 @@ static func plugin(name: String) -> Dictionary:
 
 static func map(map_id: int) -> Dictionary:
 	var key := "map:%d" % map_id
+	if map_id == XFestLobby.MAP_ID and XFestLobby.cache_stale():
+		_tables.erase(key)  # 冠军庆典：活动状态变了（跨日期、开关）大厅补丁要重做
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
