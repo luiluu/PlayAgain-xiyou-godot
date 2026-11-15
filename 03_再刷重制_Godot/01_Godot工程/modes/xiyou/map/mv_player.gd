@@ -19,6 +19,11 @@ static var MV_HOLD_MOVE := true
 ## 原版点地移动走到目的地停下时，触发脚下「确定键、角色下方」的事件（triggerTouchActionD1）；重制原先走到就停、要再按确定。
 ## 回退开关 MV_TOUCH_D1 = false。
 static var MV_TOUCH_D1 := true
+## 原版 Scene_Map.updateDestination：地图不在前台或玩家不能动（isMapTouchOk 假：开战后场景已停、事件／文字在跑、去菜单）时每帧清目的地。
+## 重制原先点地的目的地跨战斗、事件、挂机一直留着：开了「步步遇敌」点远处一格，每走一步一场、打完接着走，一路打到目的地，
+## 挂机前留下的目的地停挂机后也接着走（v0.01.10 玩家反馈「停了挂机，一局之后立刻下一局，停不下来、跑不出去」）。
+## 这里玩家不收输入（input_enabled 假：busy、菜单、挂机、载具升降）时清掉目的地与按住拖动。回退开关 MV_CLEAR_DEST = false：目的地一直留着。
+static var MV_CLEAR_DEST := true
 var _hold_count := 0
 var _hold_cell := Vector2i(-1, -1)
 var dash := true
@@ -83,6 +88,12 @@ func _update_hold() -> void:
 		if c != _hold_cell:
 			_hold_cell = c
 			touch_target = c if c != grid else Vector2i(-1, -1)
+
+
+## $gameTemp.clearDestination（连同 Scene_Map._touchCount）
+func clear_destination() -> void:
+	touch_target = Vector2i(-1, -1)
+	_hold_count = 0
 
 
 func update_character() -> void:
