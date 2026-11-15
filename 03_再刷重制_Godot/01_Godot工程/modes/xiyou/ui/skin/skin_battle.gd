@@ -15,6 +15,15 @@ static func on() -> bool:
 	return XUiSkin.on()
 
 
+## 收口批（CORE_V2）：战斗里旧说明卡（XHelpCard）挪到行动顺序条上面——卡底不低于行动条顶（XSkinOTBBar.POS.y）再空 12，
+## 太高就贴屏幕上沿 8；横向不动。pos、size 是 ui 坐标（不含 _origin）。
+static func help_card_pos(pos: Vector2, size: Vector2) -> Vector2:
+	var limit: float = XSkinOTBBar.POS.y - 12.0
+	if pos.y + size.y > limit:
+		pos.y = maxf(8.0, limit - size.y)
+	return pos
+
+
 ## 图标贴图：转到 XUiSkin.icon（1A 修白块的缓存，已进 main）
 static func icon(index: int) -> Texture2D:
 	return XUiSkin.icon(index)

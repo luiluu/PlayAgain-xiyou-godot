@@ -733,6 +733,8 @@ func _help(entry = null) -> void:
 	var row := list_win.row_rect()
 	row.position -= _origin
 	help_card.place_for_row(row, true)
+	if XSkinBattle.on() and XUiSkin.CORE_V2:
+		help_card.position = XSkinBattle.help_card_pos(help_card.position, help_card.size)   # 收口批：不盖左下行动顺序条
 	help_card.position += _origin
 
 

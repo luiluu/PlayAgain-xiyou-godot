@@ -278,7 +278,7 @@ static func card_data(rec: Dictionary) -> Dictionary:
 		"subtitle": " · ".join(sub), "desc": str(rec.get("description", "")).strip_edges(), "sections": []}
 	if gear:
 		d.desc = ""
-		d.sections = [{"title": "", "rows": XSkinTemplatePage.help_rows(XHelpCard.detail_rows(rec, 300.0))}]
+		d.sections = XSkinTemplatePage.help_sections(XSkinTemplatePage.help_rows(XHelpCard.detail_rows(rec, 300.0)))
 		XTianqiSkinShow.dress_card(rec, d)   # 天启篇七印装备（3A，#82）：印、类别、真印、成色
 		return d
 	var fx := effect_lines(rec)

@@ -17,6 +17,12 @@ static var ENABLED := true
 static var FORCE := false
 static var GLOBAL_FONT := false
 
+## ---- 收口批（cc/ui-skin-close，Fable／小A 三审 2026-11-15 汇总，Kyo 定）----
+## CORE_V2（O-待定，换芯）：详情牌里旧说明卡的行过「旧颜色对照表」（legacy_color：纯黄→淡金、大红属性→正文、青蓝说明→次要灰、荧光绿→正文），
+## 去掉品质／武器种类／买卖价格行（牌上小字已有，价格只在商店看），装备按「自带／词条／套装／说明」分节；战斗里旧说明卡不再盖行动条。
+## false＝详情牌照旧原样灌说明卡的行、战斗说明卡照旧位置。
+static var CORE_V2 := true
+
 ## ---- 颜色（第三节定稿）----
 const BG := Color("050506")          # 底
 const BG_MID := Color("0b0b0d")      # 底的径向渐变中段
@@ -244,6 +250,26 @@ static func breath_alpha(t := -1.0) -> float:
 ## 品质色（0 普通 … 6 神话）
 static func quality_color(q: int) -> Color:
 	return QUALITY[clampi(q, 0, QUALITY.size() - 1)]
+
+
+## 旧颜色对照表（CORE_V2）：说明卡里 MV 老颜色（\\c[n]、rgba）→ 皮肤色。只给详情牌的说明行用，品质名的颜色不走这里。
+static func legacy_color(c: Color) -> Color:
+	if not CORE_V2:
+		return c
+	if c.s < 0.18:   # 白、灰：亮的当正文，暗的当次要字
+		return TEXT if c.v > 0.8 else TEXT_2
+	var h := c.h
+	if h >= 0.11 and h < 0.2 and c.s > 0.45:   # 纯黄（价格、旧强调）→ 淡金
+		return GOLD_LIGHT
+	if (h < 0.045 or h > 0.93) and c.s > 0.3:   # 红、粉红（属性、消耗品）→ 正文
+		return TEXT
+	if h >= 0.2 and h < 0.42 and c.s > 0.4:   # 荧光绿（旧 TP、强调）→ 正文；绿只留给「优秀」品质名
+		return TEXT
+	if h >= 0.42 and h < 0.75:   # 青、蓝、蓝紫说明字 → 次要字
+		return TEXT_2
+	if h >= 0.045 and h < 0.11:   # 橙：保留（下降、警示），压到皮肤的橙
+		return DOWN
+	return TEXT_2
 
 
 ## 八的倍数（向上取）

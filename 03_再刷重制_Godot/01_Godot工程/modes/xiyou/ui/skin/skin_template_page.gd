@@ -425,8 +425,41 @@ static func help_rows(rows: Array, skip_first := true) -> Array:
 		var t := esc.sub(col.sub(XMVText.convert_escapes(str(r[0])), "　　", true), "", true).strip_edges()
 		if t == "":
 			continue
+		if XUiSkin.CORE_V2 and drop_help_row(t):
+			continue
 		var c := XHelpCard._css(str(r[2])) if r.size() > 2 else XUiSkin.TEXT_2
 		if c.get_luminance() < 0.35:
 			c = XUiSkin.TEXT_2
-		out.append({"text": t, "color": c})
+		out.append({"text": t, "color": XUiSkin.legacy_color(c)})
+	return out
+
+
+## 收口批（CORE_V2）：牌上不再列的说明行——品质（名字颜色和小字已有）、武器／防具种类（小字已有）、买卖价格（只在商店看）
+static func drop_help_row(t: String) -> bool:
+	return RegEx.create_from_string("^(?:品质|武器种类|防具种类|装备类型|类别)\\s*[：:]|^(?:购买价格|出售价格|无法出售)").search(t) != null
+
+
+## 收口批（CORE_V2）：装备说明按样稿分节——自带（「名：数」的基础属性）、词条（特效／效果／成长／异化等）、套装、说明（其余）。
+## rows 是 help_rows 的结果。CORE_V2 关时原样一节无标题（同旧）。
+static func help_sections(rows: Array) -> Array:
+	if not XUiSkin.CORE_V2:
+		return [{"title": "", "rows": rows}]
+	var base_re := RegEx.create_from_string("^[^：:，。]{1,10}[：:]\\s*[+\\-]?\\d[\\d.,%％]*(?:\\s|　|$)")
+	var affix_re := RegEx.create_from_string("^(?:特效|效果|词条|成长|异化|吸取|专武|被动|◆|●|★|【)")
+	var set_re := RegEx.create_from_string("套装|^\\d\\s*件[：:]|\\(\\d/\\d\\)|（\\d/\\d）")
+	var buckets := {"自带": [], "词条": [], "套装": [], "说明": []}
+	for r in rows:
+		var t := str(r.get("text", ""))
+		if set_re.search(t) != null:
+			buckets["套装"].append(r)
+		elif affix_re.search(t) != null:
+			buckets["词条"].append(r)
+		elif base_re.search(t) != null:
+			buckets["自带"].append(r)
+		else:
+			buckets["说明"].append(r)
+	var out := []
+	for k in ["自带", "词条", "套装", "说明"]:
+		if not (buckets[k] as Array).is_empty():
+			out.append({"title": k, "rows": buckets[k]})
 	return out

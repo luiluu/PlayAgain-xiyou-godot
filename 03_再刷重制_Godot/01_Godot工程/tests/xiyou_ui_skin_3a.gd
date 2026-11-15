@@ -79,6 +79,9 @@ func shots(name: String) -> void:
 	win.size = Vector2i(1600, 720)
 	await frames(12)
 	await shot(name + "_20x9")
+	win.size = Vector2i(960, 720)   # 收口批：4:3 也拍
+	await frames(12)
+	await shot(name + "_4x3")
 	win.size = old
 	await frames(8)
 
