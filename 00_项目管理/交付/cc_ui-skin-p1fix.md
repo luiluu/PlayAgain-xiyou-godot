@@ -99,3 +99,41 @@
 - 406e3174a 组入口图标 u4 定稿接入
 - 350efeaab 主菜单两级操作＋右栏助力位卡
 - （本提交）xiyou_tianqi_e2e 菜单导航跟上两级
+
+## 小A乙档核查
+
+- **结论：不通过**（发现 **1 条 P1**、**1 条 P2**、**2 条 P3**；两级主菜单的触屏两指返回／鼠标右键及 `Q/E` 切到单项组存在卡层／无返回问题，修完再复核或合）。
+
+### 一、P1 / P2 / P3 问题清单
+
+- **P1-1（触屏两指返回与鼠标右键在 `XSkinMainMenu` 全程失效）**：`menu.gd` 在 `skin != null` 时把 `_gui_input` 直接 `return` 交给 `XSkinMainMenu`，但 `skin_main_menu.gd`（`_pane_input`、`ring._gui_input`、`party._gui_input`、`XSkinMainMenu` 本体）均未处理 `MOUSE_BUTTON_RIGHT`。按 `core/platform.gd:two_finger_cancel`，触屏双指点击就是发送 `MOUSE_BUTTON_RIGHT`，因此触屏端进入第二级（`level == 1`）、在主菜单第一级想退回地图、或点「技能／装备／状态」进入选人（`host._mode == "actor"`）后，**双指取消和桌面鼠标右键全无反应**（iOS／无返回键设备会卡在选人态或子项层，必须重选或点人进页再退出）；与旧 `XMenu` 及其他新皮肤页（`skin_equip_page.gd` 等均有 `MOUSE_BUTTON_RIGHT`）不一致。
+- **P2-1（第二级用 `Q / E` 或手柄 `LB / RB` 切到单项组会卡在「幽灵第二级」）**：`skin_main_menu.gd` `_two_level_input` 在 `level == 1` 时按 `XMenu.page_dir` 调 `step_group()`，切到「物品」「装备」这类只有 1 项的大类时 `level` 仍保持 `1`。此时 `_layout_rows_two()` 生成的是 `note` 行而非 `item` 行，`selected_row_rect()` 返回空矩形，导致**选中条消失（`bar.visible = false`）**、底栏仍提示 `确定 打开 / 取消 返回`、按一次取消只把 `level` 从 `1` 降为 `0` 画面无任何变化（需按两次取消才能回地图）。建议在 `_set_group`／`step_group` 中：`TWO_LEVEL` 下落到 `items.size() <= 1` 的组时把 `level` 设为 `0`。
+- **P3-1（截图对比文件失效，`p1fix` 测试脚本缺陷）**：`tests/xiyou_ui_skin_p1fix.gd` 中 `_menu()` 只调 `_set_group(2, 2)` 未进 `level = 1`（`bar.visible = false`），`_equip()` 停在左环选槽（`list.active = false`），导致 `p1_select_menu_{16x9,20x9}_v07.png` 与 `_v2.png`、以及 `p1_select_equip_{16x9,20x9}_v07.png` 与 `_v2.png` **逐字节完全一致**（SHA-256 相同，`*_compare.png` 左右无任何差异）；另 `_board()` 未调 `XSkinLayout.request_wide`，`p1_select_board_20x9_compare.png` 实际截成 `1280×720`（`2576×720`）而非 `1600×720`。给 Kyo 审图前应补正，目前仅 `p1_select_board_16x9_compare.png` 有效展示 `v0.7 ↔ SELECT_V2` 差异。
+- **P3-2（满员时助力位卡右上「助力」角标可能叠状态图标）**：`skin_party_strip.gd` `_draw_helper_frame()` 把「助力」角标画在卡右上角（约宽 42、高 20），而 `states` 状态图标画在 `right - 22*k, r.y + 6`。当队伍 ≥6 人（`row_height ≈ 60～72`，竖直居中偏移小）且助力角色身上带状态时，角标与最右侧状态图标重叠（`≤5` 人时 `row_height ≥ 86` 偏开较多）。
+
+### 二、五项核查结果
+
+1. **对照 v0.7 审稿三条 P1 ＋ P2-1**：
+   - **P1-1（选中态加强＋三态＋单焦点）**：代码与 `p1_select_board_16x9_v2` 像素均确认修好——实心暗红渐变底（`#761c14 → #4e1410`）、2px 不透明朱红框、6px 光标＋淡金小三角、`SEL2_RED_TEXT` 亮珊瑚换色、`Hover/Focus/Pressed` 三态区分与按钮按住替换 `focus` 均生效；`menu2_l0` 中栏朱红像素 0、`l1` 为 466（单焦点）。
+   - **P1-2（4:3 上下黑边）**：只看代码与无头纯函数断言——`XSkinLayout.aspect_for/view_for` 与 `request_wide` 监听 `size_changed` 逻辑正确（4:3 `KEEP` 锁 1280×720、宽屏 `KEEP_HEIGHT`、`NARROW_LETTERBOX=false` 回旧）；`p1_tablet_4x3_*.png` 为 `1024×576`（视口图本身，黑边在窗口外框，待真窗口实机目视确认）。
+   - **P1-3（技能窗避开行动条）**：`XSkinOTBBar.occupied_rect()` 覆盖审稿区域，`battle_p1fix_list_8rows_16x9.png` 像素测得面板纵向范围 `y≈161～610`，留出 `616` 行动条；`AVOID_OTB=false` 回退正确。
+   - **P2-1（同屏多处红光）**：主菜单两级＋u4 选中球改旧金外晕（30%）与旧金描边已修；其余（模板页左环旧金细圈、祭坛／详情牌底部按钮组）按交付单已登记至下一批。
+2. **两级菜单与助力位卡**：
+   - 键盘／手柄 `level 0 ↔ level 1 ↔ 选人 ↔ 子页返回`、记忆 `_mem`、单向直开均通；**但存在上述 P1-1（触屏双指／鼠标右键不退）与 P2-1（`level 1` 用 `Q/E` 切进单项组卡在幽灵第二级）**。
+   - 助力位卡空位（`「助力位 · 空」`、选人跳过空位）与有人（挪至末尾、带「助力」角标且可选中进入页）、底边对齐中栏、`HELPER_CARD=false` 回旧均正常（另有 P3-2 状态图标轻度重叠）。
+3. **u4 图标 16:9／20:9 不糊、选中态清楚**：28 张贴图尺寸均为 `64×64`／`32×32`，`.import` 全为无损（`compress/mode=0`）且无 mipmap；`skin_ring_nav.gd` 用最近邻子画布项整数坐标绘制、选中换 `selected` 贴图不缩放不叠双红；`u4_menu_{16x9,20x9}.png` 与 `u4_each_selected_*` 规格一致（20:9 实际窗口锐度仅看代码／配置，未开窗目测）。
+4. **皮肤关闭时完全回旧**：只看代码核对——`XUiSkin.on()` 为假时 `XMenu._ready` 不建 `XSkinMainMenu` 走旧三窗，`XSkinLayout.request_wide` 直接返回，`XWindowStyle` 与 `XSkinBattle` 均走旧路径；6 个新增开关全被 `回退开关覆盖.py` 覆盖。
+5. **新增可见文字文字审**：新增文字（「助力」「助力位 · 空」「确定 进入／打开」「取消 返回／回地图」「Q / E 换组」「……确定直接打开」）用语准确一致、无重复组名；经无头脚本实测 `TianqiUiSerif-Heavy.otf` 与 `TianqiUiSans-Medium.otf` 裁剪字库均已包含全部新增字符（`missing=[]`）。
+
+### 三、实测与只看代码分清
+
+- **本轮前景实测（已跑且通过）**：
+  - `语法检查.py`：937 个 `.gd` 0 问题。
+  - `交付自检.py`：交付单、草稿、优化登记、占位、试合并全过。
+  - `回退开关覆盖.py`：新增 6 个开关均已覆盖，无新增缺口。
+  - Godot 无头专项：`xiyou_ui_skin.tscn` 104/104、`xiyou_ui_skin_menu.tscn` 91/91、`xiyou_ui_skin_battle.tscn` 61/61（无头跳过 5 项窗口截图断言）、`xiyou_ui_skin_p1fix.tscn` 1/1（无头跳过窗口截图与 4:3 窗口断言）。
+  - 字库字集无头脚本实测：新增文字 `missing=[]`。
+  - 离线素材与截图数据检查（Python PNG 像素与 SHA-256）：确认 28 张图标尺寸与 `.import` 无损设置、板对比图 `v07`/`v2` 三态像素值、`l0`/`l1` 朱红计数（0 vs 466）、8 行战技列表底边 `y≈610`、以及 `p1_select_menu_*`／`p1_select_equip_*` 同名对比图全等缺陷。
+- **只看代码／留给总装或云端（本轮未跑）**：
+  - 真窗口运行与目测（4:3 窗口实际上下黑边、20:9 实机锐度、`xiyou_ui_skin_battle` 5 项窗口模式断言、`xiyou_ui_skin_p1fix` 40 项窗口截图与 4:3 断言）、`xiyou_tianqi_e2e`（90 项）、`皮肤关闭对照.py` 逐像素克隆对比、全量 `检查.sh`（注：交付单已附云端 628＋9 场景通过记录）。
+
