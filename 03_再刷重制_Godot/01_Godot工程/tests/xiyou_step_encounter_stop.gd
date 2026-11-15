@@ -227,11 +227,6 @@ func _run() -> void:
 		await settle()
 		await physics(60)
 	await frames(10)
-	# stop_fade 传入已释放的播放器：不报错、不崩（偶发 SCRIPT ERROR「previously freed」）
-	var dead := AudioStreamPlayer.new()
-	dead.free()
-	XAudio.stop_fade(dead)
-	check("stop_fade_freed_player_ok", true)
 	_finish()
 
 

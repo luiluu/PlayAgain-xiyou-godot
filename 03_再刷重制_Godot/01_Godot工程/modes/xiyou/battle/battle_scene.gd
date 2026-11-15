@@ -248,10 +248,10 @@ func _change_bgm(music) -> void:
 			bgm.play()
 
 
-## O-待定·战斗曲播放器已释放的守卫（同 XAudio.STOP_FADE_GUARD）：prestarted_bgm 的节点归地图，地图收掉后战斗场景
-## 收场（败北／胜利）再碰它会报「previously freed」。开关关了＝照旧不检查
-func _bgm_alive() -> bool:
-	return bgm != null and (not XAudio.STOP_FADE_GUARD or is_instance_valid(bgm))
+## O-待定·战斗曲播放器已释放守卫（开关 XAudio.STOP_FADE_GUARD）：bgm 引用的节点归地图（prestarted_bgm），地图收掉后
+## 战斗场景收场（胜利）再碰它会报「previously freed」。开着：已释放就跳过；关了永远返回假，胜利分支逐字回到改动前（无条件操作 bgm）
+func _bgm_released() -> bool:
+	return XAudio.STOP_FADE_GUARD and not is_instance_valid(bgm)
 
 
 ## 战斗收场 replayBgmAndBgs 换回地图曲：战斗曲／胜利曲停掉（地图 start_battle 调）。ME 不在这里停，由地图接过去
@@ -1055,7 +1055,7 @@ func _defeat() -> void:
 func _defeat_me() -> void:
 	play_me(XDB.system().get("defeatMe", {}))
 	_bgm_after_me = false
-	if bgm != null and _bgm_alive():
+	if bgm != null:
 		XAudio.stop_fade(bgm)
 		bgm.stop()
 		bgm.stream_paused = false
@@ -2581,11 +2581,12 @@ func _victory() -> void:
 	# Olivia BattleManager.processVictory：playVictoryMe（Victory2）再 playVictoryBgm（Ship3）。ME 在放时 AudioManager.playBgm
 	# 只换上新曲、不开始放（!this._meBuffer），等 ME 放完 stopMe 从头放、0.5 秒淡入；没有 ME 时直接放
 	play_me(XDB.system().get("victoryMe", {}))
-	if _bgm_alive():
+	var bgm_gone := _bgm_released()
+	if not bgm_gone:
 		XAudio.stop_fade(bgm)
 		bgm.stop()
 		bgm.stream_paused = false
-	var music := XDB.audio_path("bgm", str(params.get("Victory Screen BGM", "Ship3"))) if _bgm_alive() else ""
+	var music := "" if bgm_gone else XDB.audio_path("bgm", str(params.get("Victory Screen BGM", "Ship3")))
 	if music != "":
 		bgm.stream = XAppearance.kept_load(music)
 		bgm.volume_db = linear_to_db(float(params.get("Victory Screen BGM Volume", 90)) / 100)
@@ -2593,7 +2594,7 @@ func _victory() -> void:
 		_bgm_after_me = true
 		if not me.playing:
 			bgm.play()
-	elif _bgm_alive():
+	elif not bgm_gone:
 		bgm.stream = null
 	# 胜利镜头（YEP_X_ActSeqPack3 战斗镜头）：镜头点从画面中心 (640,360) 移到 (700,460)、放大 1→2，
 	# 都在 300 帧内线性完成；场景层位置 = −镜头点×放大 + 画面中心，并夹在放大后的画面内。结算文字不缩放。
