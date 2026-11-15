@@ -51,7 +51,7 @@ func _same_map(mv: Dictionary, gd: Dictionary) -> bool:
 
 
 func _file() -> Dictionary:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XGlobalVars.path())) if FileAccess.file_exists(XGlobalVars.path()) else null
+	var d = JSON.parse_string(XSaveSeal.read_text(XGlobalVars.path())) if FileAccess.file_exists(XGlobalVars.path()) else null
 	if not d is Dictionary:
 		return {}
 	var out := {"switches": {}, "variables": {}}
@@ -156,9 +156,7 @@ func _run() -> void:
 	XState.new_game_blank()
 	check("untracked_not_carried", not XState.current.variables.has(901), XState.current.variables)
 	# 损坏的文件按空处理，改值时整份重写
-	var f := FileAccess.open(XGlobalVars.path(), FileAccess.WRITE)
-	f.store_string("{坏")
-	f.close()
+	XSaveSeal.store(XGlobalVars.path(), "{坏")
 	XGlobalVars._loaded_path = "<unloaded>"
 	s = XState.new_game_blank()
 	check("corrupt_file_empty", not s.variables.has(900) and XGlobalVars.stored().variables.is_empty(), s.variables)

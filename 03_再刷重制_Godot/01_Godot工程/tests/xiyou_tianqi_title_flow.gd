@@ -161,7 +161,7 @@ func _hub(tag: String, slot: int, key: String, dao: String, names: Array) -> voi
 	_check(tag + "_dao_hao", s.actor_name == dao, s.actor_name)
 	_check(tag + "_slot", s.fixed_save_slot() == slot and XSave.exists(slot), [s.fixed_save_slot(), XSave.exists(slot)])
 	_check(tag + "_party_matches_page", s.party.size() == 5 and XTianqi.lineup_ok(key, s.party) and _party_names(s) == names, [_party_names(s), names])
-	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot)))
+	var saved = JSON.parse_string(XSaveSeal.read_text(XSave.path(slot)))
 	var flags = saved.get("flags", {}) if saved is Dictionary else {}
 	_check(tag + "_saved", flags is Dictionary and flags.get("tianqi") is Dictionary and str(flags.tianqi.get("difficulty", "")) == key
 		and str(saved.get("actor_name", dao)) == dao, flags.get("tianqi") if flags is Dictionary else saved)

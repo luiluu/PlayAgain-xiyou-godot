@@ -86,13 +86,11 @@ static func _drop_ledger_cache() -> void:
 
 
 func _ledger_text() -> String:
-	return FileAccess.get_file_as_string(XYunshangOrders.path())
+	return XSaveSeal.read_text(XYunshangOrders.path())
 
 
 func _write_ledger(text: String) -> void:
-	var f := FileAccess.open(XYunshangOrders.path(), FileAccess.WRITE)
-	f.store_string(text)
-	f.close()
+	XSaveSeal.store(XYunshangOrders.path(), text)
 	_drop_ledger_cache()
 
 
@@ -164,11 +162,9 @@ func _run() -> void:
 			else:
 				_write_ledger(cases[k])
 			if k == "seq0":
-				var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+				var d: Dictionary = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
 				d.flags[XYunshangOrders.SEQ_FLAG] = 0
-				var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
-				f.store_string(JSON.stringify(d))
-				f.close()
+				XSaveSeal.store(XSave.path(1), JSON.stringify(d))
 			var t := _cold_load(release)
 			if not check(tag + ".loaded", t != null):
 				continue

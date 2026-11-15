@@ -148,19 +148,17 @@ func _save_roundtrip() -> void:
 	XPercentPills.apply(XDB.rec("Items", 2885), a)
 	var mat := a.param(4)
 	check("save_write", XSave.save(1) and FileAccess.file_exists(XSave.path(1)))
-	check("save_on_disk", FileAccess.get_file_as_string(XSave.path(1)).contains("_codexPills"))
+	check("save_on_disk", XSaveSeal.read_text(XSave.path(1)).contains("_codexPills"))
 	XState.current = null
 	check("save_load", XSave.load_slot(1))
 	var b := XState.current.actor(1)
 	check("save_count", XPercentPills.count(b, 4) == 2, b.state_data)
 	check("save_param", b.param(4) == mat and mat > base, [base, mat, b.param(4)])
 	# 老存档：把文件里的 _codexPills 键整个删掉再读
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
 	var removed := _strip_key(d, "_codexPills")
-	var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
-	f.store_string(JSON.stringify(d))
-	f.close()
-	check("old_save_key_removed", removed > 0 and not FileAccess.get_file_as_string(XSave.path(1)).contains("_codexPills"), removed)
+	XSaveSeal.store(XSave.path(1), JSON.stringify(d))
+	check("old_save_key_removed", removed > 0 and not XSaveSeal.read_text(XSave.path(1)).contains("_codexPills"), removed)
 	XState.current = null
 	check("old_save_load", XSave.load_slot(1))
 	var c := XState.current.actor(1)

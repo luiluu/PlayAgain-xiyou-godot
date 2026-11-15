@@ -128,11 +128,9 @@ func _run() -> void:
 	_check("load.route_finishes", e7 != null and not e7.is_route_forcing() and e7.grid == initial_7 + Vector2i(0, 4), [e7.grid if e7 else null, initial_7])
 
 	# 旧档没有 mapEvents：事件回初始（自开关、临时消除照旧随档）
-	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var d: Dictionary = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
 	d.erase("mapEvents")
-	var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
-	f.store_string(JSON.stringify(d))
-	f.close()
+	XSaveSeal.store(XSave.path(1), JSON.stringify(d))
 	_check("legacy_load", XSave.load_slot(1))
 	map = await _open(4)
 	var legacy := _snap(map) if map != null else {}
@@ -202,13 +200,11 @@ func _check_jump_save() -> void:
 		_check("jump.lands", not e7.is_jumping() and not e7.is_route_forcing() and e7.grid == start + Vector2i(0, 2)
 			and e7.real == Vector2(e7.grid), _jump_snap(e7))
 	# 旧档的事件状态没有跳跃字段：读档后不在跳跃（位置、路线照旧）
-	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
+	var d: Dictionary = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
 	var saved7: Dictionary = d.mapEvents.events["7"]
 	for k in ["jumpPeak", "jumpCount", "stopCount", "animeCount", "moveWait"]:
 		saved7.erase(k)
-	var f := FileAccess.open(XSave.path(1), FileAccess.WRITE)
-	f.store_string(JSON.stringify(d))
-	f.close()
+	XSaveSeal.store(XSave.path(1), JSON.stringify(d))
 	map = await _load_frozen(1)
 	e7 = _event(map, 7) if map != null else null
 	var legacy := _jump_snap(e7) if e7 != null else {}

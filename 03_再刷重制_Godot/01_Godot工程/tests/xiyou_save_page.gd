@@ -91,15 +91,13 @@ func _save_count() -> void:
 	var s := _state()
 	XSave.save(5)
 	XSave.save(5)
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(5)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(5)))
 	check("save_count_two", int(d.get("saveCount", -1)) == 2 and s.save_count == 2)
 	d.erase("saveCount")
-	var f := FileAccess.open(XSave.path(5), FileAccess.WRITE)
-	f.store_string(JSON.stringify(d))
-	f.close()
+	XSaveSeal.store(XSave.path(5), JSON.stringify(d))
 	check("save_count_legacy_zero", XSave.load_slot(5) and XState.current.save_count == 0)
 	XSave.save(5)
-	d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(5)))
+	d = JSON.parse_string(XSaveSeal.read_text(XSave.path(5)))
 	check("save_count_legacy_then_one", int(d.get("saveCount", -1)) == 1)
 	XSave.remove(5)
 	check("remove_slot", not XSave.exists(5))
@@ -309,12 +307,10 @@ class RecCanvas extends XMVCanvas:
 ## O-042 回退（REAL_FILE_SIZE = false）：原版 drawFileSize 数的是 encodeURI 后 %XX 的个数（只算要转义的字节）。
 ## 内容 a b"中：实际 7 字节；要转义的是空格、引号各 1 字节和「中」3 字节，共 5
 func _file_size_original() -> void:
-	var f := FileAccess.open(XSave.path(XSave.SLOTS), FileAccess.WRITE)
-	f.store_string('a b"中')
-	f.close()
+	XSaveSeal.store(XSave.path(XSave.SLOTS), 'a b"中')
 	var real := XSaveScene.file_size(XSave.SLOTS)
 	XSaveScene.REAL_FILE_SIZE = false
 	var orig := XSaveScene.file_size(XSave.SLOTS)
 	XSaveScene.REAL_FILE_SIZE = true
-	check("file_size_real", real == "7B", real)
+	check("file_size_real", real == "%dB" % FileAccess.get_file_as_bytes(XSave.path(XSave.SLOTS)).size(), real)  # 封存后是实际文件字节数
 	check("file_size_original_escape_count", orig == "5B", orig)

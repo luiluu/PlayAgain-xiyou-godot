@@ -366,7 +366,7 @@ func _load_slot(slot: int) -> bool:
 
 
 func _saved_flags(slot: int) -> Dictionary:
-	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot)))
+	var saved = JSON.parse_string(XSaveSeal.read_text(XSave.path(slot)))
 	return saved if saved is Dictionary else {}
 
 

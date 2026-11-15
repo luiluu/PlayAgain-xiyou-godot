@@ -32,7 +32,7 @@ func _diff_at(a: String, b: String) -> Array:
 
 
 func _text(p: String) -> String:
-	return FileAccess.get_file_as_string(p)
+	return XSaveSeal.read_text(p)  # 封存格式先解开
 
 
 func _read(slot: int):
@@ -241,7 +241,7 @@ func _run() -> void:
 	check("slim_smaller", slim_text.length() < old_text.length() * 0.9, [old_text.length(), slim_text.length()])
 	check("slim_stats", XSaveSlim.last.slim and int(XSaveSlim.last.gear) == mem_tables and int(XSaveSlim.last.seen) == 3, XSaveSlim.last)
 	check("memory_untouched", _affix_tables(XState.current.to_dict()) == mem_tables and XState.current.seen.size() == mem_seen)
-	check("backup_exact", FileAccess.get_file_as_bytes(bak.call(1)) == old_text.to_utf8_buffer())
+	check("backup_exact", XSaveSeal.read_text(bak.call(1)) == old_text)
 	check("slim_load", XSave.load_slot(1))
 	var reloaded := JSON.stringify(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
 	check("as_reloaded_matches_load", as_rel == reloaded, _diff_at(as_rel, reloaded))
@@ -262,7 +262,7 @@ func _run() -> void:
 	var first = slim_d.duplicate(true)
 	first.erase("savedAt"); first.erase("saveCount")
 	_same("idem_bytes", first, again)
-	check("backup_kept", FileAccess.get_file_as_bytes(bak.call(1)) == old_text.to_utf8_buffer())
+	check("backup_kept", XSaveSeal.read_text(bak.call(1)) == old_text)
 	var log1 := XSaveSlim.read_log()
 	check("log_first_slim", log1.size() == 1 and str(log1[0].kind) == "save" and str(log1[0].file) == "save_1.json" and int(log1[0].saved) > 0 \
 		and int(log1[0].gear) == mem_tables and int(log1[0].seen) == 3 and str(log1[0].backup) == "save_1.json.before_slim.bak", log1)
@@ -507,13 +507,13 @@ func _run() -> void:
 	check("pool_import", parsed.has("data") and XSaveTransfer.import_to(9, parsed.data) == "" and XSave.load_slot(9))
 	_same("pool_import_visible", vis_plain, _visible(XState.current))
 	# 没包外层的新格式文件直接导入也行
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true  # 直接一份明文存档的导入（封存开着时默认拒，见 xiyou_save_seal）
 	check("pool_import_raw", XSaveTransfer.parse_import(_text(XSave.path(8))).has("data"))
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
 	# 编号对不上：当坏档，不读
 	var broken = JSON.parse_string(_text(XSave.path(8)))
 	(broken.gearPool as Array).resize(1)
-	var fb := FileAccess.open(XSave.path(12), FileAccess.WRITE)
-	fb.store_string(JSON.stringify(broken))
-	fb.close()
+	XSaveSeal.store(XSave.path(12), JSON.stringify(broken))
 	check("pool_broken_rejected", not XSave.load_slot(12) and XSave.summary(12).ends_with("无法读取"))
 	# 只有备注的编号对不上（别的字段都还原得了）：也当坏档，不能读成一件没有备注的装备
 	var broken2 = JSON.parse_string(_text(XSave.path(8)))
@@ -523,9 +523,7 @@ func _run() -> void:
 			victim[k] = broken2.gearPool[int(victim["@"][k])]
 			victim["@"].erase(k)
 	victim["@"]["note"] = 99999
-	fb = FileAccess.open(XSave.path(12), FileAccess.WRITE)
-	fb.store_string(JSON.stringify(broken2))
-	fb.close()
+	XSaveSeal.store(XSave.path(12), JSON.stringify(broken2))
 	check("pool_broken_note_rejected", not XSave.load_slot(12) and XSave.summary(12).ends_with("无法读取"))
 	check("unpool_plain_untouched", XSaveSlim.unpool(JSON.parse_string(off_text)) and XSaveSlim.unpool({}) and not XSaveSlim.unpool({"gearPool": 3}))
 	# 自动存档也走新格式、读得回

@@ -144,7 +144,7 @@ func _run() -> void:
 	await _run_event(map, 1, [1])
 	_check("setvalue_900", s.variable(900) == 1.0, s.variable(900))
 	_check("global_900_stored", _stored(900) == 1.0, XGlobalVars.stored())
-	_check("global_900_file", FileAccess.file_exists(XGlobalVars.path()) and float(JSON.parse_string(FileAccess.get_file_as_string(XGlobalVars.path())).variables.get("900", 0)) == 1.0, XGlobalVars.path())
+	_check("global_900_file", FileAccess.file_exists(XGlobalVars.path()) and float(JSON.parse_string(XSaveSeal.read_text(XGlobalVars.path())).variables.get("900", 0)) == 1.0, XGlobalVars.path())
 	_check("passive_6176", _learned(s, 6176), s.actor(8).skill_ids)
 	_check("passive_toast", map.toasts.has("你达成了高难度挑战，获得被动：胜天半子！"), map.toasts)
 	# 新开局：900 从跨存档盖回来，开局 Map002 调的公共事件 1322 让全员学到 6176

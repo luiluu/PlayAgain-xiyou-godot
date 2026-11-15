@@ -31,7 +31,7 @@ func _load() -> XState:
 
 
 func _strip_file(fn: Callable) -> void:
-	var d = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var d = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	fn.call(d)
 	XSave._write(XSave.path(SLOT), d)
 
@@ -50,7 +50,7 @@ func _run() -> void:
 	XState.current = s
 	_check("never_drawn", s.lottery_random.is_empty())
 	_check("saved", XSave.save(SLOT))
-	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	_check("file_no_stream", (raw.get("lotteryRandom", {}) as Dictionary).is_empty())
 	var a := _run_after_load(10)
 	var b := _run_after_load(10)
@@ -71,7 +71,7 @@ func _run() -> void:
 	_load()
 	XLotteryRework.stream(XState.current)
 	XSave.save(SLOT)
-	raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(SLOT)))
+	raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(SLOT)))
 	_check("seed_only_saved", (raw.lotteryRandom as Dictionary).has("seed") and not (raw.lotteryRandom as Dictionary).has("state"), raw.lotteryRandom)
 	_check("seed_only_same", _run_after_load(6) == _run_after_load(6))
 	# 存档里的种子（旧版现开的、不是 orb_seed 派生的）没有进度：照用这颗种子

@@ -145,7 +145,7 @@ func _opening() -> void:
 	_check("first_slot_skills", s.actor(lineup[0]).skill_ids.has(2571) and s.actor(lineup[0]).skill_ids.has(2786))
 	_check("init_events_ran", s.switch(1561) and range(1694, 1700).any(func(id): return s.switch(id)))
 	_check("active", XTianqi.active(s) and XTianqi.super_cap(s) == 1)
-	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(3)))
+	var saved = JSON.parse_string(XSaveSeal.read_text(XSave.path(3)))
 	var flags = saved.get("flags", {}) if saved is Dictionary else {}
 	_check("saved_rules", flags is Dictionary and flags.get("tianqi") is Dictionary and int(flags.tianqi.get("rules", 0)) == 1
 		and str(flags.tianqi.get("difficulty", "")) == "jiusi", flags.get("tianqi") if flags is Dictionary else saved)

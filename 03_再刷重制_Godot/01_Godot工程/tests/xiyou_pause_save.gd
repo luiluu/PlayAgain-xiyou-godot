@@ -201,7 +201,7 @@ func _run() -> void:
 		done.v = true
 	go.call()
 	await _until(func(): return _battle(map) != null)
-	var saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	var saved = JSON.parse_string(XSaveSeal.read_text(XSave.auto_path()))
 	check("event_battle_no_checkpoint", XAutoSave.last_result == "skip:in_event" and gs.gold == 400, "%s gold=%d" % [XAutoSave.last_result, gs.gold])
 	check("event_battle_auto_keeps_pre_event", saved is Dictionary and int(saved.get("gold", -1)) == 500, str(saved.get("gold", null) if saved is Dictionary else saved))
 	await _end_battle(map)
@@ -216,7 +216,7 @@ func _run() -> void:
 	done.v = false
 	go.call()
 	await _until(func(): return _battle(map) != null)
-	saved = JSON.parse_string(FileAccess.get_file_as_string(XSave.auto_path()))
+	saved = JSON.parse_string(XSaveSeal.read_text(XSave.auto_path()))
 	check("event_battle_rollback_saves_after_deduct", XAutoSave.last_result == "checkpoint:battle" and saved is Dictionary and int(saved.get("gold", -1)) == 400, XAutoSave.last_result)
 	await _end_battle(map)
 	await _until(func(): return done.v)

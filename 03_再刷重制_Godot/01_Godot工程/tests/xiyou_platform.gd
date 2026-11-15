@@ -714,8 +714,8 @@ func _run() -> void:
 	check("transfer_make_save", XSave.save(1))
 	var out := XSaveTransfer.export_text(1)
 	var wrapped = JSON.parse_string(str(out.get("text", "")))
-	check("transfer_export", wrapped is Dictionary and wrapped.format == XSaveTransfer.FORMAT and int(wrapped.slot) == 1
-		and XSave.valid_data(wrapped.data), out.get("error"))
+	check("transfer_export", wrapped is Dictionary and wrapped.format == XSaveTransfer.FORMAT_SEALED and int(wrapped.slot) == 1
+		and XSave.valid_data(XSaveTransfer.parse_import(str(out.get("text", ""))).get("data")), out.get("error"))
 	check("transfer_export_empty", XSaveTransfer.export_text(3).has("error"))
 	var file := save_dir.path_join("exported.json")
 	var picked := []
@@ -731,19 +731,21 @@ func _run() -> void:
 	check("transfer_pick_cancel", cancelled[0] == "")
 	XSaveTransfer.dialog_override = Callable()
 	var got := XSaveTransfer.read_import(file)
-	check("transfer_read_back", got.has("data") and JSON.stringify(got.data) == JSON.stringify(wrapped.data), got.get("error"))
-	check("transfer_bare_save_ok", XSaveTransfer.parse_import(FileAccess.get_file_as_string(XSave.path(1))).has("data"))
+	check("transfer_read_back", got.has("data") and JSON.stringify(got.data) == JSON.stringify(XSaveTransfer.parse_import(str(out.text)).data), got.get("error"))
+	# 直接选一份存档文件：封存格式的能导入；明文的（没签名）封存开着时默认拒（D28，XSaveTransfer.ACCEPT_PLAIN_IMPORT）
+	check("transfer_bare_save_ok", XSaveTransfer.read_import(XSave.path(1)).has("data")
+		and XSaveTransfer.parse_import(XSaveSeal.read_text(XSave.path(1))).has("error"))
 	var mv_err := str(XSaveTransfer.parse_import(JSON.stringify({"format": "kyo-save-json-v1", "game": "org.kyo.xiyou", "data": {}})).get("error", ""))
 	check("transfer_rejects_mv", mv_err.contains("原版"), mv_err)
 	check("transfer_rejects_junk", XSaveTransfer.parse_import("not json").has("error") and XSaveTransfer.parse_import("{\"format\":\"x\"}").has("error")
 		and XSaveTransfer.parse_import(JSON.stringify({"format": XSaveTransfer.FORMAT, "game": XSaveTransfer.GAME, "data": {"mode": "xiyou"}})).has("error"))
 	check("transfer_import_empty_slot", XSaveTransfer.import_to(2, got.data) == "" and XSave.exists(2) and XSave.summary(2) != "存档 2：无法读取")
 	var before_files := DirAccess.get_files_at(save_dir).size()
-	var old_text := FileAccess.get_file_as_string(XSave.path(1))
+	var old_text := XSaveSeal.read_text(XSave.path(1))
 	var import_ok := XSaveTransfer.import_to(1, got.data) == ""
 	var kept := false
 	for f in DirAccess.get_files_at(save_dir):
-		if f.begins_with("save_1.json.before_import_") and FileAccess.get_file_as_string(save_dir.path_join(f)) == old_text:
+		if f.begins_with("save_1.json.before_import_") and XSaveSeal.read_text(save_dir.path_join(f)) == old_text:
 			kept = true
 	check("transfer_import_backs_up", import_ok and kept and DirAccess.get_files_at(save_dir).size() == before_files + 1)
 	# O-206 回退：BACKUP_BEFORE_IMPORT = false 时覆盖有档的格子不留 .before_import 备份（照样导入）

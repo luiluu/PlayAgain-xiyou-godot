@@ -778,9 +778,9 @@ func ledger_backup() -> void:
 	XState.current = s
 	s.gain_item(SILK, 15)
 	check("ledger.bak.profile", XYunshangOrders.profile(s) != null)
-	var before := FileAccess.get_file_as_string(file)
+	var before := XSaveSeal.read_text(file)  # 账本封存（XSaveSeal）：比解开后的内容
 	check("ledger.bak.submit", XYunshangOrders.submit(s) == "" and s.item_count(SILK) == 0)
-	check("ledger.bak.previous_kept", FileAccess.get_file_as_string(file + ".bak") == before and FileAccess.get_file_as_string(file) != before)
+	check("ledger.bak.previous_kept", XSaveSeal.read_text(file + ".bak") == before and XSaveSeal.read_text(file) != before)
 	DirAccess.remove_absolute(file)
 	DirAccess.remove_absolute(file + ".bak")
 	XYunshangOrders.reload()

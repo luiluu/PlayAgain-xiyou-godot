@@ -47,6 +47,9 @@ func _run() -> void:
 		DirAccess.remove_absolute(dir.path_join(f))
 	XSaveTransfer.dialog_override = Callable()
 	XSaveTransfer.BACKUP_BEFORE_IMPORT = true
+	# 这里查的是外层格式与旧明文导出（kyo-remake-save-json-v1）的各种情形，所以放行明文导入；
+	# 封存导出、改过的拒收、默认拒明文在 xiyou_save_seal 里查（D28）
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = true
 
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
@@ -57,9 +60,10 @@ func _run() -> void:
 	var out := XSaveTransfer.export_text(1)
 	check("export_ok", out.has("text") and not out.has("error"), out.get("error"))
 	var wrapped: Dictionary = JSON.parse_string(str(out.get("text", "{}")))
-	check("export_wrapper_fields", str(wrapped.get("format")) == XSaveTransfer.FORMAT and str(wrapped.get("game")) == XSaveTransfer.GAME
-		and int(wrapped.get("slot", 0)) == 1 and str(wrapped.get("exportedAt", "")) != "", wrapped.keys())
-	var data: Dictionary = wrapped.get("data", {})
+	check("export_wrapper_fields", str(wrapped.get("format")) == XSaveTransfer.FORMAT_SEALED and str(wrapped.get("game")) == XSaveTransfer.GAME
+		and int(wrapped.get("slot", 0)) == 1 and str(wrapped.get("exportedAt", "")) != "" and wrapped.get("sealed") is String, wrapped.keys())
+	var data: Dictionary = XSaveTransfer.parse_import(str(out.get("text", "{}"))).get("data", {})
+	check("export_sealed_roundtrip", int(data.get("gold", 0)) == 4321)
 
 	# ---- 存档位越界：不写盘 ----
 	var before := _files(dir)
@@ -69,7 +73,7 @@ func _run() -> void:
 
 	# ---- 导出：空格、坏档 ----
 	check("export_empty_slot", str(XSaveTransfer.export_text(2).get("error", "")) == "这一格没有存档")
-	_write(XSave.path(4), "{\"mode\":\"xiyou\"}")
+	XSaveSeal.store(XSave.path(4), "{\"mode\":\"xiyou\"}")
 	check("export_corrupt_slot", str(XSaveTransfer.export_text(4).get("error", "")) == "存档为空或损坏")
 	# 空文件同样该报「存档为空或损坏」，但 export_text 用 JSON.parse_string 会往日志打 ERROR（并行测试按 ERROR 判失败），
 	# 所以不在这里测；见交付单「发现」3。
@@ -131,13 +135,13 @@ func _run() -> void:
 	check("import_summary_readable", XSave.summary(5) != "存档 5：无法读取" and XSave.summary(5) != "存档 5：空", XSave.summary(5))
 
 	# ---- 导入有档的格：备份是原来那格的原文 ----
-	var original := FileAccess.get_file_as_string(XSave.path(1))
+	var original := XSaveSeal.read_text(XSave.path(1))
 	var other := data.duplicate(true)
 	other.gold = 77
 	before = _files(dir)
 	check("import_over_slot", XSaveTransfer.import_to(1, other) == "")
 	var backups := _files(dir).filter(func(f): return str(f).begins_with("save_1.json.before_import_") and not before.has(f))
-	check("import_over_backup_original", backups.size() == 1 and FileAccess.get_file_as_string(dir.path_join(backups[0])) == original, backups)
+	check("import_over_backup_original", backups.size() == 1 and XSaveSeal.read_text(dir.path_join(backups[0])) == original, backups)
 	check("import_over_loads_new", XSave.load_slot(1) and XState.current.gold == 77, XState.current.gold)
 	# 同一秒里再导一次：备份文件名只精确到秒，第二次的备份会盖掉第一次（第一次备份的原档就找不回了）。
 	# 疑似问题，见交付单「发现」1；这里只记录，不判失败。
@@ -147,7 +151,7 @@ func _run() -> void:
 	XSaveTransfer.import_to(1, third)
 	var same_second := Time.get_datetime_string_from_system() == t0
 	var first_backup := dir.path_join(backups[0]) if backups.size() == 1 else ""
-	var kept_original := first_backup != "" and FileAccess.get_file_as_string(first_backup) == original
+	var kept_original := first_backup != "" and XSaveSeal.read_text(first_backup) == original
 	if same_second and not kept_original:
 		skip("import_twice_same_second_keeps_original", "同一秒两次导入同一格，第一份备份被第二次覆盖（交付单「发现」1）")
 	else:
@@ -172,6 +176,7 @@ func _run() -> void:
 		DirAccess.remove_absolute(dir.path_join(f))
 	DirAccess.remove_absolute(dir)
 	XSave.dir_override = ""
+	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
 	finish()
 
 

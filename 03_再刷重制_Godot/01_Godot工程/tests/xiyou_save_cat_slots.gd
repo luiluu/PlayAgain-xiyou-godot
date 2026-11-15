@@ -18,7 +18,7 @@ func check(name: String, ok: bool, detail = null) -> void:
 
 
 func _read(slot: int):
-	return JSON.parse_string(FileAccess.get_file_as_string(XSave.path(slot))) if XSave.exists(slot) else null
+	return JSON.parse_string(XSaveSeal.read_text(XSave.path(slot))) if XSave.exists(slot) else null
 
 
 func _run() -> void:
@@ -45,10 +45,10 @@ func _run() -> void:
 	XSave.CAT_SLOTS_OK = false
 	check("old_check_rejects_cat", not XSave.valid_data(_read(2)))
 	# 写盘守卫：读不回来的内容不写，原来那格的好档留着
-	var before := FileAccess.get_file_as_string(XSave.path(1))
+	var before := XSaveSeal.read_text(XSave.path(1))
 	XState.current = s
 	check("guard_refuses", not XSave.save(1))
-	check("guard_keeps_old", FileAccess.get_file_as_string(XSave.path(1)) == before)
+	check("guard_keeps_old", XSaveSeal.read_text(XSave.path(1)) == before)
 	check("guard_no_tmp", not FileAccess.file_exists(XSave.path(1) + ".tmp"))
 	check("guard_auto_refuses", not XSave.save_auto() and not XSave.exists_auto())
 	# 两个开关都关：旧写法照写（盖掉好档，读不回来）

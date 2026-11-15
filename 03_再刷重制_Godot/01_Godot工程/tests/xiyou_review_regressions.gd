@@ -126,19 +126,17 @@ func _run() -> void:
 	a.buffs[2] = 1
 	a.buff_turns[2] = 3
 	check("save_valid", XSave.save(1))
-	var before := FileAccess.get_file_as_string(XSave.path(1))
+	var before := XSaveSeal.read_text(XSave.path(1))
 	check("saved_shape_valid", XSave.valid_data(JSON.parse_string(before)))
 	DirAccess.make_dir_recursive_absolute(XSave.path(1) + ".tmp")
-	check("failed_write_preserves_save", not XSave.save(1) and FileAccess.get_file_as_string(XSave.path(1)) == before)
+	check("failed_write_preserves_save", not XSave.save(1) and XSaveSeal.read_text(XSave.path(1)) == before)
 	DirAccess.remove_absolute(XSave.path(1) + ".tmp")
 	s.gold = 12345
 	check("atomic_overwrite", XSave.save(1) and XSave.load_slot(1) and XState.current.gold == 12345 and not FileAccess.file_exists(XSave.path(1) + ".tmp"))
 	var restored := XState.current.actor(1)
 	check("save_preserves_combat_state", restored.tp == 37 and restored.state_turns.get(2) == 4 and restored.buffs[2] == 1 and restored.buff_turns[2] == 3)
 	var previous := XState.current
-	var f := FileAccess.open(XSave.path(2), FileAccess.WRITE)
-	f.store_string('{"mode":"xiyou","version":2}')
-	f.close()
+	XSaveSeal.store(XSave.path(2), '{"mode":"xiyou","version":2}')
 	check("broken_summary_safe", XSave.summary(2) == "存档 2：无法读取")
 	check("broken_load_keeps_current", not XSave.load_slot(2) and is_same(XState.current, previous) and XSave.current_slot == 1)
 	var future: Dictionary = JSON.parse_string(before)
