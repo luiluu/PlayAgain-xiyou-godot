@@ -49,8 +49,13 @@ static func fade_in(player: AudioStreamPlayer, seconds := REPLAY_FADE) -> void:
 	t.tween_callback(func(): player.volume_db = target)
 
 ## 收掉还在走的淡入（换歌、改音量前调用），音量回到淡入的目标值
-static func stop_fade(player: AudioStreamPlayer) -> void:
-	if player == null:
+## O-待定·stop_fade 已释放对象守卫：战斗曲播放器（battle_scene.bgm）可能已被 queue_free 释放（场景退出／换曲收尾），
+## 参数写成 AudioStreamPlayer 时，传入已释放对象在调用处就报「previously freed」，函数体里再检查来不及，故参数不标类型。
+## 关了（STOP_FADE_GUARD=false）不再挡已释放对象（照旧在函数体里报错）
+static var STOP_FADE_GUARD := true
+
+static func stop_fade(player) -> void:
+	if player == null or (STOP_FADE_GUARD and not is_instance_valid(player)):
 		return
 	var old = player.get_meta("fade_tween") if player.has_meta("fade_tween") else null
 	if old is Tween and old.is_valid():
