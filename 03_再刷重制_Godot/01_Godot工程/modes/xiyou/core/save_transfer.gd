@@ -72,7 +72,7 @@ static func export_text(slot: int) -> Dictionary:
 	if XSaveSeal.active_now():
 		# valid_data 会就地还原同档去重，导出原文（读出来的那份字）再封一次，内容与存档一字不差
 		return {"text": JSON.stringify({"format": FORMAT_SEALED, "game": GAME, "slot": slot,
-			"exportedAt": Time.get_datetime_string_from_system(), "sealed": Marshalls.raw_to_base64(XSaveSeal.seal(str(r.text)))})}
+			"exportedAt": Time.get_datetime_string_from_system(), "sealed": Marshalls.raw_to_base64(XSaveSeal.seal(str(r.text)))}), "tianqi": is_tianqi_data(d)}
 	return {"text": JSON.stringify({"format": FORMAT, "game": GAME, "slot": slot,
 		"exportedAt": Time.get_datetime_string_from_system(), "data": d}), "tianqi": is_tianqi_data(d)}
 

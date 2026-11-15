@@ -169,7 +169,7 @@ func _run() -> void:
 	var tq_out := XSaveTransfer.export_text(6)
 	check("export_tianqi_flag", tq_out.get("tianqi") == true and not tq_out.has("error"), tq_out.keys())
 	var tq_wrapped: Dictionary = JSON.parse_string(str(tq_out.get("text", "{}")))
-	check("export_tianqi_wrapper_unchanged", tq_wrapped.keys() == wrapped.keys() and str(tq_wrapped.get("format")) == XSaveTransfer.FORMAT, tq_wrapped.keys())
+	check("export_tianqi_wrapper_unchanged", tq_wrapped.keys() == wrapped.keys() and str(tq_wrapped.get("format")) == XSaveTransfer.FORMAT_SEALED, tq_wrapped.keys())  # 封存导出（D28）
 	var old_named := dir.path_join("再刷重制存档06_20261101_120000.json")  # 改名前导出的文件名
 	_write(old_named, str(tq_out.text))
 	var tq_got := XSaveTransfer.read_import(old_named)
