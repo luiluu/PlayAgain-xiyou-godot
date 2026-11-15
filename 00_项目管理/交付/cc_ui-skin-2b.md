@@ -93,3 +93,33 @@
 ## 本分支提交
 
 - （见 git log：`git log --oneline cc/ui-skin-2a..cc/ui-skin-2b`）
+
+## cc 乙档核查（代小A）
+
+- **核查对象**：`cc/ui-skin-2b` @ `377340cee`（只读，未改游戏代码）。核查人 cc（核查），不是 2B 的执行会话；代小A（周额度用完），配 Sonnet＋medium。
+- **结论**：**通过**（P1 0、P2 0、P3 5；文字必改 2 处小改；**不需要转 co 甲档**）。
+- **核了规则本身（前台实跑）**：`并行测试.py --full` 跑 8 个：`xiyou_ui_skin_hud` 103/103、`xiyou_ui_skin_offshot` 13/13、`xiyou_otb` 34/34、`xiyou_side_status_order` 15/15、`xiyou_boss_hp_bar` 100/100、`xiyou_boss_status` 57/57、`xiyou_party_status_panel` 19/19、`xiyou_determinism` 372/372，全部通过（62 秒）。另看了 `ui_skin_2b/` 下 20:9、16:9 截图。
+- **只看代码／截图（没重跑）**：关闭对照 16 张 SAME（用交付单已有结果，没重跑 `皮肤关闭对照.py`）；有窗口专项没重跑；131 场景、楼层、事件对照留总装 `--affected --cloud`。
+
+逐项：
+1. **开关（实跑＋看代码）**：`XSkinBattle` 2B 的五个工厂（`side_status`／`otb`／`boss_hp`／`boss_panel`／`status_panel`）关着都返回原类（`XSideStatus.new()`、`XOTBBar.new()`、`XBossHpBar.new()`、`XBossStatusPanel.new()`、`XPartyStatusPanel.open`），`side_backdrop` 关着返回 null、`style_toggles` 关着首行 return。`battle_scene.gd` 2B 的 7 处各一行，关着与原一致；`_help` 里 `list_win.row_rect()` 是原算式搬移，数值一致（2A 已核）。`otb_bar.gd`：`painter` 默认空 Callable，`is_valid()` 为假，`_process`／`_draw` 走原路径；`_icon(b)` 默认就是 `Icon.new(b)`。口径与「皮肤关闭对照 16 张 SAME」相符（含我方状态详情一张）。
+2. **没碰战斗流程（只看代码）**：5 个新子类里没有改 hp／mp／tp、增减状态、取随机数、`XAppearance`／`XSukuna.full_look` 的调用；`refresh()` 只是 `XSideStatus`／`XBossStatusPanel` 自己的重画，不是战斗者的 refresh。`xiyou_determinism` 372/372 通过。没发现改战斗结果，无 P1。
+3. **自动／变速挪位（看代码＋截图）**：功能、`focus_mode = NONE`、点击回调都没动，`style_toggles` 只改样式和 `side.position`＝origin＋(20,84)；挂机快捷界面 (20,10,240×74) 下沿正好 84，上下相接不重叠；离血弧（弧在 y≈84 处 x≈472 起）、指令环、行动顺序都远。20:9：战斗仍 1280 居中，按钮在 x≈180（origin 160＋20），挂机界面贴屏幕左缘 x≈20，两者在横向错开（不重叠，但不齐）。
+4. **两排站位参数现状（看代码＋交付单）**：写清了。队伍条 `XSkinSideStatus` static var `RIGHT 16`／`TOP 12`／`ROW_W 290`／`ROW_H 58`，五人高 294（到 y306），不跟站位走；行动顺序 `XSkinOTBBar.POS (15,627)`／`WIDTH 550`／`R_NOW 31`／`R_ROW 22`／`R_SELECTED 26`／`R_PREVIEW 15`；血弧 `XSkinBossArc.CENTER (640,−188)`／`RADIUS 320`／`SPAN_DEG 126`／`THICK 14`；`XSkinBattle.TOGGLE_POS (20,84)`。均为 static var，定了只改这几个数；待 Kyo 拍板（五人时指令环、队伍条挪不挪）。
+5. **选测对照.json 漏项：属实（看 `07_开发环境/选测对照.json`）**：全文件没有 `xiyou_otb`、`xiyou_side_status_order`；`ui_skin` 组 `scenes` 只有 `xiyou_ui_skin.tscn`、`xiyou_ui_skin_offshot.tscn`（缺 `xiyou_ui_skin_battle`、`xiyou_ui_skin_hud`、1B 专项）；`match` 只有 `content/ui_skin/*`，没有 `modes/xiyou/ui/skin/*`；`modes/xiyou/battle/*` 只归 `game` 组。总装合并时补：`ui_skin` 加上述场景和 skin/* 的 match，`battle/otb_bar.gd`、`battle/side_status.gd` 对应 `xiyou_otb`、`xiyou_side_status_order`。
+
+**P3（不挡合并）**
+1. 20:9 下自动／变速在 x≈180、挂机界面在屏幕左缘 x≈20，没对齐（战斗背景 1280 居中，归 4A 铺满时一起解）。
+2. 自动／变速点击区比原版小：原 `XUI.button` 高 46、最小宽 120，现 104×40（触屏偏小，建议至少 44 高）。
+3. 20:9 截图里行动顺序「下回合」竖排小字被两侧头像盖住一部分，竖排字几乎看不清（交付单已说人多会挤）；建议分隔处多留 20px 宽或字放到圆下方。
+4. 我方状态详情「人物属性」下的元素承伤是一段连排文字，会在词中间折行（截图：「雷／电承伤 90%」「混沌承／伤 100%」「风承伤／100%」）。建议每个元素「火焰 90%」一组，用不换行的组（或 2～3 列）排，别让「承伤」与数字分开。
+5. `选测对照.json` 漏项见第 5 条（流程类）。
+
+**文字审（按 ba1f7ed 口径：数字与单位空格、全角中文标点、按键用键名符号、名词统一）**
+- 通过：「下回合」（#221）、「黑暗 4 回合」「2 层」「异常 · 3 回合 · 2 层」空格与「·」；「+3」；「详情 ▾／收起 ▴」做成胶囊按钮（#189 建议项已照做）；「人物属性」小标题；底部提示 `↑ / ↓ 选状态`、`← / → 换分类`、`Q / E 换人`、`取消 返回战斗` 键名都套框、写法与第 0 期主菜单 `确定／取消／Q / E` 一致（#249 `← / →` 已照改）；「Lv 10」；「某某 · 状态详情」「查看时暂停战斗，关闭后继续。」。
+- **文字必改 1**：我方状态详情空列表字「没有异常状态」「没有状态」与首领详情的「当前没有异常状态」「当前没有增益状态」「当前没有状态」不一致，同一概念两种写法。改成：「当前没有异常状态」「当前没有增益状态」「当前没有常驻状态」「当前没有状态」（`skin_party_status.gd:204`，`"当前没有%s状态" % ...`，「全部」时写「当前没有状态」）。
+- **文字必改 2（小）**：队伍条护盾写「盾 1234」，原侧栏是「盾1234」；交付单已说明加空格，口径一致没问题，但同一行 Lv 后是空格分隔，建议保留；这条**只需**确认首领血弧上限字「 / 500万」前后空格与此一致（截图一致）。→ 实际无需改；仅记录「盾 数值」写法与 Lv 一致，通过。
+- 因此真正要改的只有**必改 1**（空列表字统一）。
+- 字库：没有重新比对 `charset_hei`／`charset_song`（没核到）；「承伤」「胶囊」类字都是原有字。
+
+**没核到的**：有窗口截图重拍、`皮肤关闭对照.py` 现场重跑、选测 131 场景与 `工具回归.py`、`charset` 零缺字、20:9 之外的真机／触屏点击区；主菜单类按键提示的第 0 期口径只对照了代码里的写法，没回看设计稿原文全文。
