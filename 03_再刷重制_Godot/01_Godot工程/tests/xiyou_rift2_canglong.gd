@@ -152,6 +152,7 @@ func _source(t: String):
 		for id in [XHeartsteel.ARMOR, XHeartsteel.LEVIATHAN, XHubris.ARMOR, XHubris.ATARAXIA]:
 			if id < raw.size() and raw[id] is Dictionary:
 				XGrowthHelp.describe(raw[id])
+		XFestRing.patch_armors(raw)  # 冠军庆典三枚冠军戒指 8010～8012（常驻，XDB.table 同样打上）
 	return raw
 
 
