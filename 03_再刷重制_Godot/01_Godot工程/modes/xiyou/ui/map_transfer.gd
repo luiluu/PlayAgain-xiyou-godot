@@ -204,7 +204,7 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.draw_texture_rect(tex, Rect2(PAD, image_y, tex.get_width() * s, tex.get_height() * s), false)
 			hp_y = image_y + tex.get_height() * s + 10
 		else:
-			c.text("(图片加载中...)", PAD, image_y, 150)
+			c.text("（图片加载中……）", PAD, image_y, 150)
 			hp_y = image_y + 10
 		c.text("HP: " + XMapTransfer.format_hp(float(e.get("params", [0])[0])), PAD, hp_y, ENEMY_COL)
 		var list: Array = drops[int(e.id)]
@@ -223,7 +223,7 @@ func _paint_info(c: XMVCanvas) -> void:
 			c.text("当前地图不可传送", 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 		elif int(m.transferItem) > 0:
 			var item := XDB.rec("Items", int(m.transferItem))
-			var head := ("确定看详情 / %s，消耗 " % _transfer_hint()) if XState.current and XState.current.item_count(int(m.transferItem)) > 0 else "确定看详情；不可传送，需 "
+			var head := ("确定查看详情 / %s，消耗 " % _transfer_hint()) if XState.current and XState.current.item_count(int(m.transferItem)) > 0 else "确定查看详情；不可传送，需 "
 			c.text(head, 0, prompt_y, INFO_RECT.size.x, "left", XUI.SYSTEM)
 			var tw := c.text_width(head)
 			c.icon(int(item.get("iconIndex", 0)), tw, prompt_y + 2)
@@ -347,7 +347,7 @@ func _paint_confirm(c: XMVCanvas) -> void:
 		if i == confirm_index:
 			c.cursor(Rect2(0, y, c.size.x, LH), mode == "confirm")
 		c.text(["确认", "取消"][i], 6, y, c.size.x - 12)
-	c.text("是否传送至 %s?" % str(current_map().get("name", "未知地图")), 0, 0, c.size.x, "center")
+	c.text("是否传送至 %s？" % str(current_map().get("name", "未知地图")), 0, 0, c.size.x, "center")
 
 
 # ---- 操作 ----

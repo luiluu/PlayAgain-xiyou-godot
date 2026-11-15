@@ -116,7 +116,7 @@ func rows() -> Array:
 			return _potions.map(func(e): return ["%s 剩余:%d" % [XDB.rec("Items", int(e.id)).get("name", ""), int(e.num)],
 				"ON" if XHangUpAuto.potion_on(s, kind == "mp", int(e.id)) else "OFF"])
 		"sell":
-			var out := [["卖出的回合(为0不卖出)", str(int(XHangUpAuto.sell_config(s).SellQuality))]]
+			var out := [["自动卖出间隔场数（0 为不卖出）", str(int(XHangUpAuto.sell_config(s).SellQuality))]]
 			var names: Array = XQuality.config().names
 			for g in names.size():
 				out.append([str(names[g]), {"none": "不卖", "all": "卖", "partial": "部分"}[XHangUpAuto.grade_state(s, g)]])
