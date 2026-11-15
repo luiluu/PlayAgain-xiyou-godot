@@ -195,7 +195,8 @@ func _menu(s: XState) -> void:
 	await frames(2)
 	var page: Node = _child_of(menu, "XItemScene")
 	check("direct_item_page", menu._mode == "page" and page != null and not m.visible)
-	check("wide_released_in_page", root.content_scale_aspect == aspect)
+	# 1B 起物品页按新稿排好、自己 request_wide（XSkinItemPage）：主菜单让出后由物品页接着铺满，计数不乱
+	check("wide_held_by_new_item_page", page != null and page.get("skin") != null and root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT and XSkinLayout._wide_users == 1)
 	if page != null:
 		page.closed.emit()
 	await frames(2)
