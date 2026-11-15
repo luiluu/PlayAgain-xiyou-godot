@@ -1047,22 +1047,28 @@ static func start_turns(list: Array, foes: Array = []) -> void:
 						x.state_turns[int(r.state)] = int(r.turns)
 
 
-## 专属角色模块（渡鸦、米拉、黄泉、镜流、甚尔、宿傩、饿狼、云裳、璇、屠苏、流萤等）的伤害帧操作收口（第六期）：天启篇卡开着、放的是表里改写过的技能时，
+## 专属角色模块（渡鸦、米拉、黄泉、镜流、甚尔、宿傩、饿狼、云裳、璇、屠苏、流萤等）的伤害帧操作收口（第六期）：天启篇卡开着时，
 ## 模块自己的增伤乘区（终伤／技能／结算倍率 >1、终伤／普通／元素／暴击加成 >0）去掉，增伤改由卡里的被动和条件按预算给；
-## 无视双防最多 30%（防御率乘数不低于 0.7），抗性穿透最多 10%；承伤、治疗、伤害种类这些照旧。原版档、卡没开、别的技能原样返回。
+## 无视双防最多 30%（防御率乘数不低于 0.7），抗性穿透最多 10%；承伤、治疗、伤害种类这些照旧。原版档、卡没开原样返回。
+## 伤害加成总账期一（MODULE_CAP_ALL）：卡开着就默认拦——普攻、防御、没改写的技能、模块派生（借普攻号或表外号）一样拦；
+## 要保留的写进 damage_ledger.json 的 module_whitelist（模块、技能号、字段），期初为空。false＝回到只拦表里改写过的技能。
 static var MODULE_CAP := true
+static var MODULE_CAP_ALL := true
 
 
-static func module_ops(item: Dictionary, a, ops: Array) -> Array:
-	if not MODULE_CAP or not (a is XActor) or not has(int(item.get("id", 0))) or not cards_on():
+static func module_ops(item: Dictionary, a, ops: Array, module := "") -> Array:
+	if not MODULE_CAP or not (a is XActor) or not cards_on():
+		return ops
+	var id := int(item.get("id", 0))
+	if not MODULE_CAP_ALL and not has(id):
 		return ops
 	var out := []
 	for o in ops:
 		var f := str(o.get("field", ""))
 		var kind := str(o.get("op", ""))
-		if kind == "mul" and f in ["finalMultiplier", "skillMultiplier", "settlementMultiplier"] and float(o.get("value", 1.0)) > 1.0:
-			continue
-		if kind == "add" and f in ["finalAdd", "normalAdd", "elementAdd", "criticalAdd"] and float(o.get("value", 0.0)) > 0.0:
+		var boost := (kind == "mul" and f in ["finalMultiplier", "skillMultiplier", "settlementMultiplier"] and float(o.get("value", 1.0)) > 1.0) \
+			or (kind == "add" and f in ["finalAdd", "normalAdd", "elementAdd", "criticalAdd"] and float(o.get("value", 0.0)) > 0.0)
+		if boost and not (MODULE_CAP_ALL and module != "" and XTianqiLedger.whitelisted(module, id, f)):
 			continue
 		if kind == "mul" and f in ["magicalDefenseRate", "physicalDefenseRate"]:
 			o = o.duplicate()
