@@ -345,9 +345,11 @@ func _envoy_menu() -> void:
 
 
 func _load_hooks() -> void:
-	# 读档提醒：活动期间每个存档每天一次
+	# 读档提醒：活动期间每天一次（记在这次运行里，不写进存档）
 	XFest.TODAY_OVERRIDE = "2026-11-16"
+	XFestReward._reminded_day = ""
 	var s := _state()
+	var snap := JSON.stringify(s.to_dict())
 	XFestReward.after_load(s)
 	var p1 := XFestReward.pending()
 	XFestReward.after_load(s)
@@ -359,6 +361,7 @@ func _load_hooks() -> void:
 	XFestReward.after_load(s)
 	var p4 := XFestReward.pending()
 	_check("remind_once_a_day", p1 == [XFestText.REMIND_TOAST] and p2.is_empty() and p3 == [XFestText.REMIND_TOAST] and p4.is_empty(), [p1, p2, p3, p4])
+	_check("load_hook_does_not_touch_save", JSON.stringify(s.to_dict()) == snap)
 	# 剩币：收尾期里不换；收尾期过后读档按 10 币＝1 万精魂换掉、提示
 	XFest.add_coins(s, 275)
 	XFestReward.after_load(s)
@@ -405,5 +408,6 @@ func _tianqi() -> void:
 	await XFestLobby.envoy(it2)
 	_check("tianqi_envoy_once", it2.host.toasts.is_empty() and it2.host.menus.is_empty())
 	_check("tianqi_no_sign_shop", XFestReward.menu(tq).is_empty() and not bool(XFestReward.sign_in(tq).ok) and XFestReward.buy(tq, "gold") == "closed")
+	XFestReward._reminded_day = ""
 	XFestReward.after_load(tq)
 	_check("tianqi_no_remind_after_gift", XFestReward.pending().is_empty())

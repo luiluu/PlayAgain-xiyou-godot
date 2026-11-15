@@ -9,9 +9,9 @@ extends RefCounted
 ## - 庆典币收支（2.6）：一个存档最多 750（贺礼 50＋签到 200＋三档 200／150／150）。
 ## - 剩币（2.6）：收尾期过后，下一次读档自动按 10 币＝1 万精魂换掉，进地图弹一条提示（after_load → map_start）。
 ##   不看 XFest.ENABLED：币是玩家已经拿到的东西，开关关了也照换（换法只有这一个，不会多给）。
-## - 读档提醒（2.3）：活动进行中，每个存档每天第一次读档进地图时提示一次「回大厅看庆典」。
+## - 读档提醒（2.3）：活动进行中，每天第一次读档进地图时提示一次「回大厅看庆典」（记在这次运行里，不写进存档）。
 ## - 天启篇存档（第 4 节）：不开冠军之路、签到、兑换店；使者直接送称号「冠军观赛团」（43）和成就「我在现场」，不发币、精魂、门票、戒指。
-## - 成就（144～147，类型「节日」，不带奖励）：我在现场、冠军之路、一穿四、全勤观众。XAchievement 读表时并进来（常驻，已拿到的永远显示）。
+## - 成就（144～147，类型「节日」，不带奖励）：我在现场、冠军之路、一穿四、全勤观众。XAchievement 读表时并进来（活动结束照列；总开关关掉不列）。
 ## - 迁移：改三档前分支里的称号 45「冠军之路·洪荒」没发给玩家，并进 41；读档时手里有 45 没有 41 的补 41。
 
 ## 签到每天给的庆典币（累计第几天）
@@ -47,6 +47,8 @@ const ACHIEVEMENT_ICONS := {"scene": 1800, "road": 1469, "one_four": 2506, "atte
 
 ## 读档后要在进地图时弹的提示（after_load 填，map_start 放）
 static var _pending: Array = []
+## 读档提醒这次运行里提示过的那天（不写进存档：读档本身不改存档内容；重开游戏同一天会再提示一次）
+static var _reminded_day := ""
 
 
 static func tianqi(s) -> bool:
@@ -55,9 +57,11 @@ static func tianqi(s) -> bool:
 
 # ==== 成就 ====
 
-## XAchievement._ensure 并进来的定义：{编号: 原版插件同格式的字段}
+## XAchievement._ensure 并进来的定义：{编号: 原版插件同格式的字段}。活动总开关关着时不并（和称号一样「整件不存在」；成就记录留在配置里，开回来照显示）
 static func achievement_defs() -> Dictionary:
 	var out := {}
+	if not XFest.ENABLED:
+		return out
 	for a in XFestText.ACHIEVEMENTS:
 		var id := int(ACHIEVEMENT_IDS.get(str(a.key), 0))
 		if id > 0:
@@ -256,13 +260,13 @@ static func after_load(s) -> void:
 		_pending.append(XFestText.LEFTOVER_TOAST.replace("{coins}", str(got[0])).replace("{gold}", str(got[1])))
 	var msg := remind_text(s)
 	if msg != "":
-		XFest.data(s)["remind_day"] = XFest.today()
+		_reminded_day = XFest.today()
 		_pending.append(msg)
 
 
-## 今天要不要提醒（活动进行中、这个存档今天还没提醒过）；要就返回文字
+## 今天要不要提醒（活动进行中、这次运行今天还没提醒过）；要就返回文字
 static func remind_text(s) -> String:
-	if s == null or not XFest.active() or str(XFest.data(s).get("remind_day", "")) == XFest.today():
+	if s == null or not XFest.active() or _reminded_day == XFest.today():
 		return ""
 	if tianqi(s):
 		return "" if bool(XFest.data(s).get("envoy_gift", false)) else XFestText.REMIND_TOAST_TIANQI

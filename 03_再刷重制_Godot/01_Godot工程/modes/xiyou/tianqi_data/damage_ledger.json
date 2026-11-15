@@ -288,6 +288,16 @@
    "note": "期一时有确认阶段效果的状态号见 state_confirm_ids（转换数据 190 个＋贝吉特合体复制 2803）；只认这批，新状态出现确认阶段乘就失败。需设计稿补记归哪一期"
   },
   {
+   "id": "fest_road",
+   "name": "冠军庆典：冠军之路「势如破竹」＋冠军戒指「一穿四」 XFestRoad／XFestRing.damage_ops",
+   "ref": "稿外·冠军庆典 v0.3.1",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "pooled",
+   "note": "天启篇存档不开冠军之路，冠军戒指存不进星级仓库、带不进天启篇；出现就失败"
+  },
+  {
    "id": "weak_challenge",
    "name": "弱者挑战 10357 终伤 ×3",
    "ref": "A9",
