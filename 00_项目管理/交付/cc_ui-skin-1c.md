@@ -179,3 +179,18 @@
 - 未跑 `并行测试.py`、`选测.py` 全集、`工具回归.py`、`xiyou_virtual_player`、`xiyou_tianqi_e2e`、楼层及事件对照四片；
 - 交付单所引私密设计仓 `重制设定/界面风格提案_v0.7/` 与早先 `ba1f7ed` 原提交未在当前工作树直接读到，文字审对照 `cc_ui-skin-1b.md` 与 `变更记录.md` 所载 `ba1f7ed` 口径核实。
 
+## 小A 复核
+
+- **复核对象**：`cc/ui-skin-1c` 返修提交 `100fae544`（对比上次核查基线 `0ddc431cb`），执行者：小A（只读代码核实＋轻量化前台无头自测，未改任何游戏代码）。
+- **结论：通过**（**P1 0 条**；**P2 0 条**〔原 P2×3 全部解决〕；**文字必改 0 条**；原记档 P3-1 跨批保留，顺手完成的 P3-2、P3-3 已核通过）。
+- **逐项复核**：
+  1. **P2-1（通过）**：`modes/xiyou/ui/gear_search.gd:424-426` 已改为 `normal.border_color = skin_color(CURSOR_EDGE) if active else Color(1, 1, 1, 0.1)` 与 `hover.bg_color = skin_color(CURSOR)`。`XWebPanel.skin_color()` 在 `XUiSkin.on()` 关闭时原样返回入参，开启时切至 `XUiSkin.SEL_LINE` / `Color(XUiSkin.SEL_FILL, XUiSkin.FILL_ALPHA)`；专项 `web_search_row_line` 实测通过。
+  2. **P2-2（通过）**：`modes/xiyou/ui/skin/skin_equip_page.gd:98-103` 中 `slot_hints()`（含 `["键盘 C", "清空"]`）与 `item_hints()`（含 `["Q / E", "换人"]`）与核查所给字样逐字一致，交付单「新增可见文字」表已同步；专项 `equip_slot_hints_c`、`equip_item_hints_qe` 通过。
+  3. **P2-3（通过）**：`skin_equip_page.gd:151` 在 `sync()` 中设 `ring.mouse_filter = Control.MOUSE_FILTER_IGNORE if expanded else Control.MOUSE_FILTER_STOP`（`ring_top` 与 `actor_strip` 均为 `IGNORE`），展开遮盖时不收鼠标点击、收起即恢复 `STOP`；`_on_ring_changed`（`L480`）与 `_equip_ring_activated`（`L496`）均在开头 `if _syncing or expanded: return`；专项 `equip_detail_ring_ignores_mouse`、`equip_detail_ring_blocked`、`equip_detail_cancel_collapses` 通过。
+  4. **顺手 P3（通过）**：
+     - P3-2：`detail_hints()`（`skin_equip_page.gd:107`）改为 `[["左右", "换页"], ["上下", "滚动"], ["Y / 取消", "收起"]]`，与交付单文字表及 `input()` 行为一致；
+     - P3-3：`skin_gear_detail.gd:74, 94-95` 新增 `absorb_view(rec)`（`XAffixAbsorb.view(rec) if rec.has(XAffixAbsorb.KEY) else rec`），并在详情牌 `_sync_card`（`skin_equip_page.gd:328`）与展开页「装备详情」页签（`skin_gear_detail.gd:74`）只读使用；`XAffixAbsorb.view` 经 `duplicate(true)` 返回视图且 `scene._ok()`／`XEquipment.change`/`clear` 仍走原始对象，未改装备数据与结果。
+  5. **diff `0ddc431cb..100fae544` 回归检查**：仅改上述 3 个 UI 脚本、交付单与 `tests/xiyou_ui_skin_1c.gd`（新增 7 项断言且正确 `free()` 临时节点并 `reset_session()`），未带入新问题。
+- **前台实测（无头）**：`语法检查.py`（906 个 `.gd` 0 问题）、`发行空壳.py check`（58 脚本 492 函数通过）、`xiyou_ui_skin_1c.tscn`（78/78）、`xiyou_gear_search.tscn`（60/60）、`xiyou_gear_detail.tscn`（56/56）、`xiyou_affix_absorb.tscn`（42/42）、`xiyou_ui_skin_offshot.tscn`（14/14）、`xiyou_tianqi_gear.tscn`（36/36）。
+- **未核／留总装 `--affected --cloud`**：有窗模式截图重拍（`xiyou_ui_skin_1c` 90/90 与 `皮肤关闭对照.py --base main` 14 张图未在本轮重拍）、`并行测试.py`／`选测.py` 全集、`工具回归.py`、`xiyou_virtual_player`、`xiyou_tianqi_e2e` 与原记档跨批项 P3-1（`alien_workshop` 归 3B、`party_status_panel` 归 2B）。
+
