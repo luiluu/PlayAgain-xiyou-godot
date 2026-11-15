@@ -253,7 +253,7 @@ func _alien_verdict() -> void:
 	_check("omen_stats_from", e.mhp < hp_plain / 10.0 and lg.enemies[1].mhp < hp_plain / 10.0 and _near(e.hp, e.mhp), [e.mhp, lg.enemies[1].mhp, hp_plain])
 	var plain_e: XEnemy = lg.enemies[1]
 	var hp_rate := plain_e.mhp / maxf(1.0, float(XDB.rec("Enemies", 31).params[0]))
-	_check("omen_others_borrowed", lg.enemies.slice(1).all(func(x): return _near(x.mhp, plain_e.mhp)) and _near(plain_e.mhp, 200000.0), [plain_e.mhp, hp_rate])  # 火焰哥布林 2000 × 艰险敌人血量 100
+	_check("omen_others_borrowed", lg.enemies.slice(1).all(func(x): return _near(x.mhp, plain_e.mhp)) and absf(plain_e.mhp - 200000.0 * XTianqiNoX6.hp_unit()) <= 1.0, [plain_e.mhp, hp_rate])  # 火焰哥布林 2000 × 艰险敌人血量 100（去全队 ×6 开着再 ÷6）
 	_check("omen_hp_tier", _near(e.mhp, plain_e.mhp * 1.25, 1e-2), [e.mhp, plain_e.mhp])
 	# 侵染：每 5 回合挂一次
 	lg.turn = 3

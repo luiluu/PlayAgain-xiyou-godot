@@ -279,7 +279,7 @@ func _actions() -> void:
 	e.add_state(1)
 	XTianqiAffixBattle.after_apply(lg, a, sk, e, {"hp": 10.0})
 	XTianqiAffixBattle.after_apply(lg, a, sk, e, {"hp": 10.0})
-	_check("harvest_once", _near(a.hp, 1.0 + floorf(a.mhp * 0.09) + floorf(minf(0.6, a.mhp * 0.1))) and _near(a.mp, floorf(a.mmp * 0.09)), [a.hp, a.mp, a.mhp, a.mmp])
+	_check("harvest_once", _near(a.hp, 1.0 + floorf(a.mhp * 0.09) + 2.0 * floorf(minf(0.6 * XTianqiNoX6.steal_mult(a), a.mhp * 0.1))) and _near(a.mp, floorf(a.mmp * 0.09)), [a.hp, a.mp, a.mhp, a.mmp])
 	XTianqiAffixBattle.end_action(lg, a, sk)
 	# 回春：治疗溢出转护盾，上限目标最大生命 10%
 	var h: XActor = lg.actors[1]

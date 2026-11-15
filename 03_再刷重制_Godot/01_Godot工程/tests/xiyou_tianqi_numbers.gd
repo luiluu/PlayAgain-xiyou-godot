@@ -84,7 +84,7 @@ func _enemy_rates() -> void:
 		var row := XTianqiBalance.difficulty(key)
 		var got := XTianqiCombat.enemy_rates(int(XTianqi.difficulty(key).legacy))
 		var want := base.duplicate()
-		want[0] = float(base[0]) * float(row.enemy_hp)
+		want[0] = float(base[0]) * float(row.enemy_hp) * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-470）：敌人生命同缩 1/6
 		want[2] = float(base[2]) * float(row.enemy_atk)
 		want[4] = float(base[4]) * float(row.enemy_atk)
 		_check("enemy_rates_" + key, range(8).all(func(i): return _near(float(got[i]), float(want[i]))), [got, want])
@@ -100,7 +100,7 @@ func _enemy_rates() -> void:
 		var split_base := XEnemy.difficulty_rates(own)
 		XTianqi.UNIFIED_LEGACY = true
 		var split_want := split_base.duplicate()
-		split_want[0] = float(split_base[0]) * float(row.enemy_hp)
+		split_want[0] = float(split_base[0]) * float(row.enemy_hp) * XTianqiNoX6.hp_unit()
 		split_want[2] = float(split_base[2]) * float(row.enemy_atk)
 		split_want[4] = float(split_base[4]) * float(row.enemy_atk)
 		_check("enemy_rates_split_" + key, range(8).all(func(i): return _near(float(split[i]), float(split_want[i]))), [own, split, split_want])

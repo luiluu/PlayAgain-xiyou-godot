@@ -86,13 +86,13 @@ static func is_absorb_actor(id: int) -> bool:
 
 ## CodexBalance41.hasWeapon：背包武器或任一角色身上的武器里有这个角色的开放专武
 func has_absorb_weapon() -> bool:
-	var list: Array = equip_list()
+	var list: Array = raw_equip_list()  # 只看 kind／base，不需要吸取视图（核查 P3，11-15）
 	var s = XState.current
 	if s != null:
 		list = list + s.gear
 		for other in s.actors.values():
 			if other != self and other is XActor:
-				list = list + other.equip_list()
+				list = list + other.raw_equip_list()
 	for e in list:
 		if e is Dictionary and e.get("kind") == "weapon" and absorb_owners(int(e.get("base", e.get("id", 0)))).has(actor_id):
 			return true

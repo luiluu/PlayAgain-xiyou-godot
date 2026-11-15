@@ -150,6 +150,8 @@ func setup(troop: int, paid := false, trial_seed := 1000, party: Array = []) -> 
 
 
 func _run() -> void:
+	# 原版对照：漩涡怪物异化对齐大厅稿（Kyo 11-15 D8）二阶就把守层者、稀有等变成异化怪（XRift.stage() 恒为 2），这里关掉，由 tests/xiyou_rift_alien 核
+	XRiftAlien.ALIGN_LOBBY = false
 	var ref = XDB.load_json("oracle/troop_events.json")
 	if not (ref is Dictionary and ref.has("cases")):
 		check("oracle_present", false)
