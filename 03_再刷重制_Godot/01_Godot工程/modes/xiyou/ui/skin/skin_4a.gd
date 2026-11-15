@@ -40,6 +40,8 @@ const DIM_KEY := "codexBattleDim"
 ## C7：整屏闪光最短间隔（毫秒）＝每秒最多 3 次
 const FLASH_MIN_GAP_MS := 334
 static var _last_screen_flash_ms := -100000
+## 画过几次浮字胶囊底（测试读）
+static var backing_count := 0
 ## 测试钉住时间（-1＝真实时间）
 static var clock_override_ms := -1
 
@@ -101,6 +103,7 @@ static func draw_capsule(ci: CanvasItem, r: Rect2, hot := false, disabled := fal
 static func draw_text_backing(ci: CanvasItem, x0: float, base_y: float, w: float, fs: int, alpha := 1.0) -> void:
 	if w <= 0.0 or alpha <= 0.0:
 		return
+	backing_count += 1
 	var h := roundf(fs * 1.35)
 	var pad := roundf(fs * 0.55)
 	var r := Rect2(x0 - pad, base_y - fs * 0.98, w + pad * 2.0, h)
