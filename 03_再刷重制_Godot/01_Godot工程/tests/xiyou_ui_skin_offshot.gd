@@ -1,8 +1,8 @@
 extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
-## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）；天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：
-## 标题还没读档，新皮肤按构建开，发行构建不开）。两种情形：
+## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）；
+## 天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：标题还没读档，新皮肤按构建开，发行构建不开）。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
 ##   tq_off     天启篇存档、XUiSkin.ENABLED = false（新皮肤关掉回退）。main 上没有 XUiSkin，两种都是旧界面。
 ## 去掉不确定因素：菜单粒子隐藏、MV 光标不闪烁、每页等固定帧数。
@@ -10,7 +10,7 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop"]
 
 var out_dir := ""
 var compare := ""
@@ -46,6 +46,9 @@ func _run() -> void:
 			if page == null:
 				print("SKIP ", cls)
 				continue
+			if page.has_method("reset_session"):   # 装备检索：照 XGearSearch.open 先重置条件、给检索源
+				page.call("reset_session")
+				page.set("source", XGearQuery.collection(s))
 			var sim_release := false
 			if cls == "XTianqiTitle":   # ui-skin-3b：五项给空函数；西游情形按发行构建（重制版玩家看到的）
 				sim_release = scenario == "xiyou"
