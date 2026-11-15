@@ -148,7 +148,11 @@ func _run() -> void:
 	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进；(14,16) 留空
 	m1.player.locate(12, 17)
 	m1.player.direction = 8
-	check("active.trophy_blocks_12", not m1.player.can_pass_to(12, 16) if m1.player.has_method("can_pass_to") else true)
+	check("active.trophy_blocks_12", not m1.player.can_pass(8))
+	m1.player.locate(13, 17)
+	check("active.trophy_blocks_13", not m1.player.can_pass(8))
+	m1.player.locate(14, 17)
+	check("active.landing_cell_passable", m1.player.can_pass(8))
 	check("active.landing_cell_free", ids(m1).all(func(i): return ev(m1, i).grid != Vector2i(14, 16) or i == 0))
 	check("active.passability_unchanged", pass1 == base_pass)
 	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(12, 16) and ev(m1, 81).grid == Vector2i(13, 16))
@@ -191,12 +195,12 @@ func _run() -> void:
 	check("envoy.second.not_congrats", not j2.contains(XFest.CONGRATS))
 	# 存档往返：贺礼记录跟存档走，读回来仍然领过
 	var snap := s.to_dict()
-	var s2 := XState.new()
-	s2.from_dict(snap)
+	var s2 := XState.from_dict(snap)
 	check("envoy.gift_saved", bool(XFest.data(s2).get("envoy_gift", false)))
 	# 旧档（没有活动数据）：当没领过
 	var s3 := XState.new_game(3, 1, [8, 9, 10])
 	check("envoy.old_save_empty", XFest.data(s3).is_empty() and XFest.coins(s3) == 0)
+	XState.current = s   # new_game／from_dict 会换掉当前存档，换回来接着测
 	# 扩展菜单项（第 2 天的签到、兑换）
 	var hit := [false]
 	XFestLobby.EXTRA_MENU = [{"label": "今日签到", "call": func(_i): hit[0] = true}]
@@ -208,16 +212,16 @@ func _run() -> void:
 	var tt := join(await talk(m1, 80))
 	check("trophy.text", tt.contains("奖杯"), tt)
 	var e1 := join(await talk(m1, 79, [0]))
-	check("enroll.placeholder", XFestRoadProbe.road_class_exists() or e1.contains(XFestText.ENROLL_NOT_READY[0][1].split("\n")[0]), e1)
+	check("enroll.placeholder", road_exists() or e1.contains(XFestText.ENROLL_NOT_READY[0][1].split("\n")[0]), e1)
 	var e2 := join(await talk(m1, 79, [1, 2]))
 	check("enroll.teams", XFestText.TEAMS.all(func(t): return e2.contains(t.name)), e2)
 	var e3 := join(await talk(m1, 79, [2]))
 	check("enroll.bye", e3.contains(XFestText.ENROLL_BYE[0][1]), e3)
 
 	# 画面特效关掉：不放粒子
-	XGraphics.fx_enabled_override = 0
+	XConfig.set_flag("codexScreenFx", false)
 	check("fx_off.no_confetti", m1.fest_fx.confetti_count() == 0)
-	XGraphics.fx_enabled_override = -1
+	XConfig.set_flag("codexScreenFx", true)
 	await close(m1)
 
 	# ---- 收尾期：只剩使者 ----
@@ -250,8 +254,9 @@ func _run() -> void:
 
 	# ---- 文案 ----
 	var strs: Array = []
-	for k in XFestText.get_script_constant_map():
-		all_strings(XFestText.get_script_constant_map()[k], strs)
+	var consts: Dictionary = (load("res://modes/xiyou/core/fest_text.gd") as GDScript).get_script_constant_map()
+	for k in consts:
+		all_strings(consts[k], strs)
 	var blob := "\n".join(PackedStringArray(strs))
 	check("text.nonempty", strs.size() > 40, strs.size())
 	# 真名只在贺词：BLG 只在 CONGRATS 那一处
@@ -279,6 +284,10 @@ func _run() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=", JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(0 if passed == results.size() else 1)
+
+
+static func road_exists() -> bool:
+	return ProjectSettings.get_global_class_list().any(func(c): return str(c.get("class", "")) == "XFestRoad")
 
 
 static func _plus(date: String, days: int) -> String:
