@@ -253,7 +253,7 @@ func _change_bgm(music) -> void:
 			bgm.play()
 
 
-## O-待定·战斗曲播放器已释放守卫（开关 XAudio.STOP_FADE_GUARD）：bgm 引用的节点归地图（prestarted_bgm），地图收掉后
+## O-508 战斗曲播放器已释放守卫（开关 XAudio.STOP_FADE_GUARD）：bgm 引用的节点归地图（prestarted_bgm），地图收掉后
 ## 战斗场景收场（胜利）再碰它会报「previously freed」。开着：已释放就跳过；关了永远返回假，胜利分支逐字回到改动前（无条件操作 bgm）
 func _bgm_released() -> bool:
 	return XAudio.STOP_FADE_GUARD and not is_instance_valid(bgm)

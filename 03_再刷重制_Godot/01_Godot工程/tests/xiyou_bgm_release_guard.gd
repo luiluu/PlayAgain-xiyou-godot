@@ -1,5 +1,5 @@
 extends Node
-## 战斗曲播放器已释放守卫（O-待定，XAudio.STOP_FADE_GUARD）：开时已释放的 bgm 被判为「已释放」跳过；
+## 战斗曲播放器已释放守卫（O-508，XAudio.STOP_FADE_GUARD）：开时已释放的 bgm 被判为「已释放」跳过；
 ## 关时 XBattleScene._bgm_released 恒假（胜利分支回到无条件操作 bgm 的原样），stop_fade 的签名与空值判断保持改动前原样。
 var results := []
 
