@@ -152,6 +152,8 @@ func _state(team: Array, f: int) -> XState:
 	var s := XState.new_game(XTianqi.legacy_of(difficulty), int(team[0]), team.slice(1))
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": difficulty, "lineup": team.duplicate()}
 	s.random_master = XRandomStream.hex64(seed + f)
+	s.orb_seed = seed * 1000 + f   # 装备孔、底子等按存档种子派生；新档是现开的随机数，不定住同一设置两遍穿的装备就不同
+	seed(seed * 1000 + f)   # 全局随机也定住（兜底；cc/tianqi-no-x6 返修：不定住时同一设置跑两遍 25/72 队不同）
 	s.set_variable(20, f)
 	s.actor_max_level = level_cap(f)
 	for id in team:
@@ -228,7 +230,8 @@ static func _enemy_hp(logic: XBattleLogic) -> float:
 func _fight(s: XState, troop: int) -> Dictionary:
 	var logic := XBattleLogic.new()
 	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
-	logic.setup(troop, s)
+	# 战斗随机流按本层种子给定：天启篇档回合内的随机取运行时主种子（R3 设计，读档可变），不给定同一设置跑两遍也对不上
+	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if duel else null)
 	logic.auto = true
 	var total := 0.0
 	var done := 0
