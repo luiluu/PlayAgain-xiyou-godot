@@ -17,6 +17,7 @@ var index := 0
 var top := 0
 var _ok: Callable
 var _cancel: Callable
+var _hints: XSkinKeyHints
 
 
 func _ready() -> void:
@@ -24,20 +25,55 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	win = XMVWindow.make(self, Rect2(0, 0, WIDTH, 100), XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
+	_hints = XSkinKeyHints.new()
+	_hints.set_hints([["确定", "选择"], ["取消", "返回"]])
+	_hints.visible = false
+	add_child(_hints)
+	resized.connect(_relayout)
 	visible = false
 
 
+func _view_size() -> Vector2:
+	return get_viewport_rect().size if is_inside_tree() else Vector2(1280, 720)
+
+
+func _lh() -> float:
+	return 42.0 if XUiSkin.on() else LH
+
+
+func _pad() -> float:
+	return 20.0 if XUiSkin.on() else XMVWindow.PADDING
+
+
 func info_height() -> float:
-	return info.size() * LH + 12.0 if not info.is_empty() else 0.0
+	return info.size() * _lh() + 12.0 if not info.is_empty() else 0.0
 
 
 func window_height() -> float:
+	var lh := _lh()
 	var n := mini(12, maxi(3, rows.size()))
-	return minf(720.0, n * LH + XMVWindow.PADDING * 2 + info_height())
+	var max_h := (_view_size().y - 88.0) if XUiSkin.on() else 720.0
+	return minf(max_h, n * lh + _pad() * 2.0 + info_height())
 
 
 func page_rows() -> int:
-	return maxi(1, floori((win.size.y - XMVWindow.PADDING * 2 - info_height()) / LH))
+	return maxi(1, floori((win.size.y - win.padding * 2.0 - info_height()) / _lh()))
+
+
+func _relayout() -> void:
+	if not visible:
+		return
+	var on := XUiSkin.on()
+	var view := _view_size()
+	var w := minf(WIDTH + 20.0, view.x - XSkinLayout.margin_for(view.x) * 2.0) if on else WIDTH
+	var h := window_height()
+	win.size = Vector2(w, h)
+	win.position = Vector2(floorf((view.x - w) / 2.0), floorf((view.y - h) / 2.0))
+	if _hints != null:
+		_hints.visible = on
+		if on:
+			_hints.place(view)
+	queue_redraw()
 
 
 ## openRows：换行与说明，居中，选第一行
@@ -46,13 +82,20 @@ func open(list: Array, ok: Callable, cancel: Callable, lines := []) -> void:
 	info = lines
 	_ok = ok
 	_cancel = cancel
-	var h := window_height()
-	win.size = Vector2(WIDTH, h)
-	win.position = Vector2(floorf((1280.0 - WIDTH) / 2.0), floorf((720.0 - h) / 2.0))
+	var on := XUiSkin.on()
+	win.padding = _pad()
+	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	win.canvas.clean_text = on
 	index = 0
 	top = 0
 	visible = true
+	_relayout()
 	_refresh()
+
+
+func _draw() -> void:
+	if visible and XUiSkin.on():
+		draw_rect(Rect2(Vector2.ZERO, size), Color(XUiSkin.BG, 0.56))
 
 
 func _refresh() -> void:
@@ -62,17 +105,26 @@ func _refresh() -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	var lh := _lh()
 	var w := c.size.x
 	for i in range(info.size()):
-		c.text(str(info[i]), 0, i * LH, w, "left", XUI.SYSTEM if i == 0 else XUI.TEXT, XUI.FONT_SIZE, LH, 1.0 if i < 2 else XUI.DIM.a)
+		if on:
+			c.text(str(info[i]), 6, i * lh, w - 12, "left", XUiSkin.GOLD if i == 0 else XUiSkin.TEXT_2, 21 if i == 0 else 19, lh, 1.0 if i < 2 else 0.65)
+		else:
+			c.text(str(info[i]), 0, i * lh, w, "left", XUI.SYSTEM if i == 0 else XUI.TEXT, XUI.FONT_SIZE, lh, 1.0 if i < 2 else XUI.DIM.a)
 	if not info.is_empty():
-		c.draw_rect(Rect2(0, info.size() * LH + 5, w, 2), Color(XUI.TEXT, SEPARATOR_ALPHA))
+		c.draw_rect(Rect2(0, info.size() * lh + 5, w, 1 if on else 2), Color(XUiSkin.LINE, 0.25) if on else Color(XUI.TEXT, SEPARATOR_ALPHA))
 	var y0 := info_height()
 	for i in range(top, mini(rows.size(), top + page_rows())):
-		var y := y0 + (i - top) * LH
+		var y := y0 + (i - top) * lh
 		if i == index:
-			c.cursor(Rect2(0, y, w, LH))
-		c.text(str(rows[i].get("label", "")), 6, y, w - 12, "left", XUI.TEXT, XUI.FONT_SIZE, LH, 1.0 if rows[i].get("enabled", true) != false else XUI.DIM.a)
+			c.cursor(Rect2(0, y, w, lh))
+		var en: bool = rows[i].get("enabled", true) != false
+		if on:
+			c.text(str(rows[i].get("label", "")), 10, y, w - 20, "left", XUiSkin.TEXT if en else XUiSkin.TEXT_3, 20, lh)
+		else:
+			c.text(str(rows[i].get("label", "")), 6, y, w - 12, "left", XUI.TEXT, XUI.FONT_SIZE, lh, 1.0 if en else XUI.DIM.a)
 
 
 func move(d: int, wrap := true) -> void:
@@ -149,11 +201,12 @@ func _gui_input(event: InputEvent) -> void:
 			top = clampi(top + d, 0, maxi(0, rows.size() - page_rows()))
 			_refresh()
 		MOUSE_BUTTON_LEFT:
-			var p: Vector2 = event.position - win.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING + info_height())
+			var lh := _lh()
+			var p: Vector2 = event.position - win.position - Vector2(win.padding, win.padding + info_height())
 			if not Rect2(Vector2.ZERO, win.size).has_point(event.position - win.position) or p.y < 0:
 				return
-			var row := floori(p.y / LH)
-			if row >= page_rows():   # 底部留白：不选画面外的下一行
+			var row := floori(p.y / lh)
+			if row >= page_rows():   # 底部空白：不选画面外的下一行
 				return
 			var i := top + row
 			if i >= 0 and i < rows.size():
