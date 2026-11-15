@@ -1,0 +1,210 @@
+[
+ {
+  "name": "ok_one",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": true
+ },
+ {
+  "name": "ok_rotated",
+  "data": {
+   "current": 3,
+   "keys": {
+    "2": "abababababababababababababababababababababababababababababababab",
+    "3": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+   }
+  },
+  "ok": true
+ },
+ {
+  "name": "ok_255",
+  "data": {
+   "current": 255,
+   "keys": {
+    "255": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": true
+ },
+ {
+  "name": "cur_256",
+  "data": {
+   "current": 256,
+   "keys": {
+    "256": "x"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "id_256_valid_seed",
+  "data": {
+   "current": 256,
+   "keys": {
+    "256": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "empty_seed",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": ""
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "short_seed",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "abababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "upper_seed",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "nonhex_seed",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "seed_number",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": 12345
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "id_zero",
+  "data": {
+   "current": 0,
+   "keys": {
+    "0": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "id_leading_zero",
+  "data": {
+   "current": 1,
+   "keys": {
+    "01": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "id_not_number",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab",
+    "a": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "one_bad_among_good",
+  "data": {
+   "current": 1,
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab",
+    "2": "x"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "cur_missing",
+  "data": {
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "cur_not_in_keys",
+  "data": {
+   "current": 2,
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "cur_string",
+  "data": {
+   "current": "1",
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "cur_fraction",
+  "data": {
+   "current": 1.5,
+   "keys": {
+    "1": "abababababababababababababababababababababababababababababababab"
+   }
+  },
+  "ok": false
+ },
+ {
+  "name": "keys_empty",
+  "data": {
+   "current": 1,
+   "keys": {}
+  },
+  "ok": false
+ },
+ {
+  "name": "keys_list",
+  "data": {
+   "current": 1,
+   "keys": [
+    "abababababababababababababababababababababababababababababababab"
+   ]
+  },
+  "ok": false
+ },
+ {
+  "name": "top_list",
+  "data": [
+   1,
+   2
+  ],
+  "ok": false
+ }
+]

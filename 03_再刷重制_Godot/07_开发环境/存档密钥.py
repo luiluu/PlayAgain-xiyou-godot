@@ -12,8 +12,11 @@
 import argparse
 import json
 import os
+import re
 import secrets
 from pathlib import Path
+
+SEED_RE = re.compile(r'^[0-9a-f]{64}$')
 
 DEFAULT = Path(os.environ.get('XIYOU_SAVE_KEY') or Path.home() / 'Documents' / 'xiyou-design-docs' / '发行密钥' / 'save_seal_key.json')
 
@@ -22,14 +25,24 @@ def load(p: Path) -> dict:
     return json.loads(p.read_text(encoding='utf-8'))
 
 
-def check(d: dict) -> str:
+def check(d) -> str:
+    """密钥文件格式检查；与游戏运行时 XSaveSeal._load_keys 的要求逐条一致（改一边必须改另一边，两边测试用同一批样例）：
+    keys 非空；每个号是 1～255 的十进制整数串；每个种子是 64 位小写十六进制；current 是整数 1～255 且在 keys 里。
+    任何一条不符整份不认（运行时就不封存）。返回问题，空串＝合格。"""
+    if not isinstance(d, dict):
+        return '不是 JSON 对象'
     keys = d.get('keys')
     if not isinstance(keys, dict) or not keys:
         return '没有 keys'
     for k, v in keys.items():
-        if not str(k).isdigit() or not 1 <= int(k) <= 255 or not isinstance(v, str) or len(v) < 32:
-            return f'号 {k} 不对'
-    if str(d.get('current')) not in keys:
+        if not re.fullmatch(r'[1-9][0-9]{0,2}', str(k)) or not 1 <= int(k) <= 255:
+            return f'号 {k} 不对（要 1～255）'
+        if not isinstance(v, str) or not SEED_RE.match(v):
+            return f'号 {k} 的种子不对（要 64 位小写十六进制）'
+    cur = d.get('current')
+    if isinstance(cur, bool) or not isinstance(cur, int) or not 1 <= cur <= 255:
+        return 'current 要是 1～255 的整数'
+    if str(cur) not in keys:
         return 'current 不在 keys 里'
     return ''
 

@@ -83,6 +83,7 @@ func _run() -> void:
 	_import_keeps_failed()
 	_feedback()
 	_release_cold_legacy()
+	_plain_mode_archives()
 	_migrate_fails()
 	_release_keys()
 	XSaveSeal.ENABLED = true
@@ -233,10 +234,18 @@ func _old_code_rollback() -> void:
 	check("rollback.ksv_untouched", _bytes(dir.path_join("save_1.ksv")) == ksv1 and FileAccess.file_exists(dir.path_join("save_auto.ksv")))
 	check("rollback.new_reads_ksv", XSave.load_slot(1) and XState.current.gold == 4321)
 	check("rollback.auto_still_there", XSave.exists_auto() and XSave.load_auto())
-	# 人工找回：删记号重进，比 .ksv 新的 .json 重新封存
+	# 人工找回：删记号重进，比 .ksv 新的 .json 重新封存；被换掉的 .ksv 先原样留成 .ksv.replaced_<时间>（复核 P2）
 	DirAccess.remove_absolute(dir.path_join(XSaveSeal.MARKER))
 	XSaveSeal.forget_dirs()
 	check("rollback.recover_by_marker", XSave.load_slot(1) and XState.current.gold == 1 and XSaveSeal.marker_ok(dir))
+	var arch := _files("save_1.ksv" + XSaveSeal.REPLACED_MARK)
+	check("rollback.previous_ksv_archived", arch.size() == 1 and _bytes(dir.path_join(arch[0])) == ksv1, arch)
+	# 想回到原来那条：把留底改回 .ksv
+	if arch.size() == 1:
+		DirAccess.remove_absolute(dir.path_join("save_1.ksv"))
+		DirAccess.rename_absolute(dir.path_join(arch[0]), dir.path_join("save_1.ksv"))
+	check("rollback.archive_restorable", XSave.load_slot(1) and XState.current.gold == 4321)
+	check("rollback.unchanged_not_archived", _files("save_2.ksv" + XSaveSeal.REPLACED_MARK).is_empty())
 	# 还原成 4321 给后面用
 	XState.current.gold = 4321
 	XSave.save(1)
@@ -442,6 +451,24 @@ func _release_cold_legacy() -> void:
 
 ## 发行密钥（co 甲档核查 P2④）：发行构建没注入密钥就不封存（照旧 .json 明文）、不认测试密钥；注入后用私密号写、旧号照读
 func _release_keys() -> void:
+	# 密钥文件格式：与 07_开发环境/存档密钥.py check 用同一批样例（tests/fixtures/save_key_cases.json），两边结论都要和 ok 一致
+	var cases = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/save_key_cases.json"))
+	var agree := 0
+	var loaded := 0
+	XSaveSeal.simulate_template = true
+	for c in cases:
+		var good: bool = XSaveSeal.key_file_problem(c.data) == ""
+		agree += 1 if good == bool(c.ok) else 0
+		var kf := dir.path_join("case_key.json")
+		_put(kf, JSON.stringify(c.data).to_utf8_buffer())
+		XSaveSeal.key_file_override = kf
+		XSaveSeal.reload_keys()
+		loaded += 1 if XSaveSeal.active_now() == bool(c.ok) else 0
+	check("keys.cases_rules", agree == cases.size(), [agree, cases.size()])
+	check("keys.cases_runtime_load", loaded == cases.size(), [loaded, cases.size()])
+	XSaveSeal.simulate_template = false
+	XSaveSeal.key_file_override = ""
+	XSaveSeal.reload_keys()
 	var test_blob := XSaveSeal.seal("{\"a\":1}")
 	XSaveSeal.simulate_template = true
 	XSaveSeal.key_file_override = dir.path_join("no_such_key.json")
@@ -462,6 +489,30 @@ func _release_keys() -> void:
 	XSaveSeal.key_file_override = ""
 	XSaveSeal.reload_keys()
 	check("keys.dev_test_key_back", XSaveSeal.active_now() and XSaveSeal.unseal(test_blob).ok)
+
+
+## 开关关着把较新的 .ksv 解开写回 .json 时，被换掉的 .json 先留底
+func _plain_mode_archives() -> void:
+	var d3 := dir.path_join("plainarch")
+	DirAccess.make_dir_recursive_absolute(d3)
+	XSave.dir_override = d3
+	_reset_caches()
+	_put(d3.path_join("save_1.json"), "{\"old\":1}".to_utf8_buffer())
+	XSaveSeal.forget_dirs()
+	OS.delay_msec(1100)
+	var s := _new_state()
+	s.gold = 864
+	XState.current = s
+	XSaveSeal.write_file(d3.path_join("save_1.ksv"), JSON.stringify(s.to_dict()))  # 直接写 .ksv（比 .json 新），不经迁移
+	XSaveSeal.ENABLED = false
+	_reset_caches()
+	var ok := XSave.load_slot(1)
+	var arch := _files("save_1.json" + XSaveSeal.REPLACED_MARK, d3)
+	check("plainmode.json_archived", arch.size() == 1 and _bytes(d3.path_join(arch[0])).get_string_from_utf8() == "{\"old\":1}", arch)
+	check("plainmode.reads_newer", ok and XState.current.gold == 864)
+	XSaveSeal.ENABLED = true
+	_reset_caches()
+	XSave.dir_override = dir
 
 
 ## 迁移写不进（.ksv 的临时文件位置被占）：不放记号，旧档照旧从 .json 读，不当成空档；腾出来后下个进程迁移

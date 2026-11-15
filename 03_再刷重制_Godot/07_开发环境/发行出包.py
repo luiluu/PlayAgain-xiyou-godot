@@ -234,19 +234,69 @@ SAVE_KEY_DEST = 'content/save_seal_key.json'
 NO_SAVE_KEY = False
 
 
+def _key_tool():
+    spec = importlib.util.spec_from_file_location('存档密钥', HERE / '存档密钥.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def inject_save_key(src: Path) -> str:
-    """把发行密钥写进 src 工程；返回问题（空＝好了或 --no-save-key）。"""
+    """把发行密钥写进 src 工程；返回问题（空＝好了或 --no-save-key）。
+    注入前按游戏运行时的要求逐条查（存档密钥.py check，与 XSaveSeal.key_file_problem 一致）；写进去后读回逐字节比。
+    任何一步不对都返回问题、不出包（不会把运行时不认的密钥报成「已注入」，那样发行包会悄悄写明文）。"""
     if NO_SAVE_KEY:
         print('== 存档密钥：--no-save-key，发行包不封存存档（照旧明文）')
         return ''
     if not SAVE_KEY_SRC.is_file():
         return f'存档封存密钥不在 {SAVE_KEY_SRC}（先跑 存档密钥.py --init，或 --no-save-key 出不封存的包）'
-    d = json.loads(SAVE_KEY_SRC.read_text(encoding='utf-8'))
-    if not isinstance(d.get('keys'), dict) or str(d.get('current')) not in d['keys'] or int(d.get('current', 0)) < 1:
-        return f'存档封存密钥格式不对：{SAVE_KEY_SRC}'
-    shutil.copyfile(SAVE_KEY_SRC, src / SAVE_KEY_DEST)
+    raw = SAVE_KEY_SRC.read_bytes()
+    try:
+        d = json.loads(raw.decode('utf-8'))
+    except (ValueError, UnicodeDecodeError):
+        return f'存档封存密钥不是 JSON：{SAVE_KEY_SRC}'
+    bad = _key_tool().check(d)
+    if bad:
+        return f'存档封存密钥格式不对（游戏运行时不认，发行包会写明文）：{bad}；{SAVE_KEY_SRC}'
+    dest = src / SAVE_KEY_DEST
+    shutil.copyfile(SAVE_KEY_SRC, dest)
+    if dest.read_bytes() != raw:
+        return f'存档封存密钥写进 {dest} 后读回不一致'
     print(f'== 存档密钥：已注入（号 {d["current"]}，不进仓库）')
     return ''
+
+
+def artifact_has_key(path: Path, key: bytes) -> bool:
+    """导出的包里读得到注入的密钥文件吗：zip（mac 包、apk）逐项看，名字是 save_seal_key.json 的比内容，.pck 在里面找这段字节；
+    单独的 .pck（Windows）直接找。Godot 打包 .json 不改内容，所以找原字节。"""
+    import mmap
+    def in_blob(data) -> bool:
+        return data.find(key) >= 0
+    if zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as z:
+            for info in z.infolist():
+                if info.filename.endswith('save_seal_key.json') and z.read(info) == key:
+                    return True
+                if info.filename.endswith('.pck') and in_blob(z.read(info)):
+                    return True
+        return False
+    with open(path, 'rb') as f:
+        if os.path.getsize(path) == 0:
+            return False
+        with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as m:
+            return in_blob(m)
+
+
+def verify_save_key(out: Path) -> list:
+    """导完在产物里读回密钥；没注入（--no-save-key）不查。返回问题。"""
+    if NO_SAVE_KEY:
+        return []
+    key = SAVE_KEY_SRC.read_bytes()
+    problems = []
+    for p in [out / MAC_ZIP, out / WIN_DIR / WIN_FILES[1], out / APK]:
+        if p.is_file() and not artifact_has_key(p, key):
+            problems.append(f'存档密钥：{p.name} 里读不到注入的密钥（发行包会写明文，不出包）')
+    return problems
 
 
 def export_all(out: Path, logs: Path) -> list:
@@ -256,7 +306,8 @@ def export_all(out: Path, logs: Path) -> list:
         bad = inject_save_key(src)
         if bad:
             return [bad]
-        return _export_all(out, logs, src, problems)
+        problems = _export_all(out, logs, src, problems)
+        return problems or verify_save_key(out)
     finally:
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)

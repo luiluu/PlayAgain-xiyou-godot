@@ -31,8 +31,10 @@ extends RefCounted
 ##
 ## 旧档（明文 <名>.json）：某个存档目录第一次被读时（ensure_dir），目录里每个能解析、又比同名 .ksv 新（或没有 .ksv）的明文封存文件，
 ## 封成 .ksv（写临时文件 → 读回临时文件解开、和原文一字不差 → 改名替换），原 .json 不动、留作备份；全部成功后放记号 .sealed_v1（本身也封存）。
-## 有记号之后不再看 .json（STRICT_AFTER_MIGRATE）：旧代码在退回期间写的 .json、手改的 .json 都不会被读进来（原文件都在，可人工找回：
-## 删掉 .sealed_v1 后重进，比 .ksv 新的 .json 会重新封存）。迁移有一步不成：那个文件不动，不放记号，下个进程再试。
+## 有记号之后不再看 .json（STRICT_AFTER_MIGRATE）：旧代码在退回期间写的 .json、手改的 .json 都不会被读进来（原文件都在）。
+## 人工找回退回期间的进度：先整个备份存档目录，再删掉 .sealed_v1 重进，比 .ksv 新的 .json 会重新封存；被换掉的 .ksv 先原样
+## 留成 <名>.ksv.replaced_<时间>（archive_before_replace，逐字节核对过才替换），想回到原来那条进度就把它改回 <名>.ksv。
+## 迁移有一步不成：那个文件不动，不放记号，下个进程再试。
 ##
 ## 校验失败（read 返回 status＝"failed"）：调用方不读、不覆盖、不删。写到校验失败的文件之前先把它改名成 <文件>.failed_<时间>[_n]
 ## （quarantine），内容一字不动地留着，跟着「反馈问卷」导出的存档包一起走；这个名字不会被任何自动清理删掉。
@@ -58,6 +60,7 @@ const MAC_LEN := 32
 const EXT := ".ksv"
 const MARKER := ".sealed_v1"
 const FAILED_MARK := ".failed_"
+const REPLACED_MARK := ".replaced_"
 const KEY_FILE := "res://content/save_seal_key.json"
 ## 明文上限 128 MiB（现在最大的存档几 MB）；文件上限按明文上限加头尾算（deflate 最坏也只比原文多一点）
 const MAX_PLAIN := 128 * 1024 * 1024
@@ -76,6 +79,8 @@ static var _migrating := {}
 static var _ok_dirs := {}
 ## 最近一次迁移的结果（测试、日志用）：{dir, sealed: [文件名], failed: [文件名]}
 static var last_migration := {}
+## 本进程替换前留底的文件名（测试、日志用）
+static var last_replaced := []
 
 ## 号 → [加密钥, 签名钥]；_key_src 记从哪儿读的（换了覆盖路径重读）
 static var _keys := {}
@@ -105,15 +110,36 @@ static func _load_keys() -> void:
 		_current = 0
 	if FileAccess.file_exists(src):
 		var json := JSON.new()
-		if json.parse(FileAccess.get_file_as_string(src)) == OK and json.data is Dictionary and json.data.get("keys") is Dictionary:
-			for k in json.data.keys:
-				var id := int(str(k)) if str(k).is_valid_int() else 0
-				var hex := str(json.data.keys[k])
-				if id >= 1 and id <= 255 and hex.length() >= 32:
-					_keys[id] = _derive(hex)
-			var cur := int(json.data.get("current", 0))
-			if _keys.has(cur) and cur >= 1:
-				_current = cur
+		var d = json.data if json.parse(FileAccess.get_file_as_string(src)) == OK else null
+		var why := key_file_problem(d)
+		if why != "":
+			push_warning("XSaveSeal: 密钥文件不合格，不用（不封存）：" + why)
+		else:
+			for k in d.keys:
+				_keys[int(str(k))] = _derive(str(d.keys[k]))
+			_current = int(d.current)
+
+
+## 密钥文件格式（与 07_开发环境/存档密钥.py check 逐条一致，出包前它先查；两边测试用同一批样例）：keys 非空；每个号是 1～255
+## 的十进制整数串（不带前导 0）；每个种子是 64 位小写十六进制；current 是 1～255 的整数且在 keys 里。任何一条不符整份不认。返回问题，空串＝合格。
+static func key_file_problem(d) -> String:
+	if not d is Dictionary:
+		return "不是 JSON 对象"
+	if not d.get("keys") is Dictionary or (d.keys as Dictionary).is_empty():
+		return "没有 keys"
+	var id_re := RegEx.create_from_string("^[1-9][0-9]{0,2}$")
+	var seed_re := RegEx.create_from_string("^[0-9a-f]{64}$")
+	for k in d.keys:
+		if not k is String or id_re.search(k) == null or int(k) > 255:
+			return "号 %s 不对（要 1～255）" % str(k)
+		if not d.keys[k] is String or seed_re.search(d.keys[k]) == null:
+			return "号 %s 的种子不对（要 64 位小写十六进制）" % str(k)
+	var cur = d.get("current")
+	if not (cur is int or cur is float) or float(cur) != floorf(float(cur)) or float(cur) < 1 or float(cur) > 255:
+		return "current 要是 1～255 的整数"
+	if not d.keys.has(str(int(cur))):
+		return "current 不在 keys 里"
+	return ""
 
 
 ## 换了密钥文件、模拟开关后重读（测试用）
@@ -414,7 +440,8 @@ static func _migrate_dir(dir: String) -> bool:
 		var json := JSON.new()
 		if json.parse(text) != OK:
 			continue  # 写了一半的坏明文：不封，原样留着
-		if quarantine_if_failed(k) and write_file(k, text) and FileAccess.file_exists(k):
+		# 要替换的 .ksv 是好的（删了记号人工找回、开关来回切）：先原样留一份 <名>.ksv.replaced_<时间>[_n]，核对过才替换（复核 P2）
+		if quarantine_if_failed(k) and archive_before_replace(k) and write_file(k, text) and FileAccess.file_exists(k):
 			last_migration.sealed.append(name)
 		else:
 			last_migration.failed.append(name)
@@ -446,7 +473,8 @@ static func ensure_plain_dir(dir: String) -> void:
 			continue
 		var r := unseal(raw)
 		if r.ok:
-			write_file(p, str(r.text))
+			if archive_before_replace(p):  # 被换掉的 .json 也先留一份
+				write_file(p, str(r.text))
 	var m := dir.path_join(MARKER)
 	if FileAccess.file_exists(m):
 		DirAccess.remove_absolute(m)
@@ -460,11 +488,28 @@ static func forget_dirs() -> void:
 	_ok_dirs.clear()
 
 
+## 换掉一个现有文件之前：把它原样复制成唯一的 <文件>.replaced_<时间>[_n]，逐字节核对（这个名字不归封存管、不被任何自动清理删）。
+## 没有原文件返回 true；复制不成返回 false（调用方就不替换）。
+static func archive_before_replace(path: String) -> bool:
+	if not FileAccess.file_exists(path):
+		return true
+	var keep := unique_name("%s%s%s" % [path, REPLACED_MARK, _stamp()])
+	var part := keep + ".part"
+	var raw = _read_bytes(path)
+	if raw == null or not _put(part, raw) or _read_bytes(part) != raw or DirAccess.rename_absolute(part, keep) != OK:
+		DirAccess.remove_absolute(part)
+		push_warning("XSaveSeal: 替换前留底失败，不替换：" + path)
+		return false
+	last_replaced.append(keep.get_file())
+	return true
+
+
 static func _put_marker(dir: String) -> bool:
 	var m := dir.path_join(MARKER)
 	var temp := m + ".tmp"
 	var b := seal(JSON.stringify({"sealedAt": Time.get_datetime_string_from_system(), "version": VERSION}))
-	if b.is_empty() or not _put(temp, b) or DirAccess.rename_absolute(temp, m) != OK:
+	# 记号也读回核对（复核 P3）：读回的字节一致、解得开才改名
+	if b.is_empty() or not _put(temp, b) or _read_bytes(temp) != b or not unseal(b).ok or DirAccess.rename_absolute(temp, m) != OK:
 		DirAccess.remove_absolute(temp)
 		return false
 	return true
