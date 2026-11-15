@@ -197,6 +197,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		enemies.append(e)
 	XTianqiQiyinDragonRun.setup(self, s)  # 天启篇七首之龙（prepare 过才换）：借来的普拉顿换成七首之龙（在各线异化之前，名字不带【首领】就不会被按段异化）
 	XTianqiHorsemen.setup(self, s)  # 天启四骑士战（prepare 过才换）：整组换成骑士＋援军／小怪的位子
+	XFestRoad.battle_setup(self)  # 冠军庆典·冠军之路：敌人固定吃本档难度倍率（普通版天灾／困难版洪荒），不看存档难度
 	XTianqiGojoTrial.setup(self, s)  # 天启篇五条悟专属试炼（prepare 过才换）：整组换成甚尔／宿傩的影子
 	XTianqiWarAlien.setup(self, s)  # 天启篇战争线异化（prepare 过才变）：火花、战狂、战意、号令官、烟火师
 	XTianqiFamineAlien.setup(self, s)  # 天启篇饥荒线异化（prepare 过才变）：饥饿、口粮、枯竭者、荒年者、掠夺者、熬夜者、透支者

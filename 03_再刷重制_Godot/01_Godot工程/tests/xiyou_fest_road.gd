@@ -66,6 +66,7 @@ func _run() -> void:
 	await _flow_loss_resume()
 	await _pause_and_quit()
 	await _small_party()
+	await _two_tiers()
 	await _closed_outside_event()
 	await _switch_off()
 	XFest.TODAY_OVERRIDE = ""
@@ -204,7 +205,7 @@ func _flow_flawless() -> void:
 	_reset_config()
 	var s := _state()
 	var h := MockHost.new()
-	h.choices_queue = [0, 0, 0, 0]  # 从第一关开始；三次两关之间都选「继续」
+	h.choices_queue = [0, 0, 0, 0, 0]  # 从第一关开始；三次两关之间都选「继续」
 	await XFestRoad.talk(h, s)
 	var troops := h.battles.map(func(b): return int(b.troop))
 	_check("road_order", troops == [9300, 9301, 9302, 9303], troops)
@@ -220,7 +221,7 @@ func _flow_flawless() -> void:
 	_check("flawless_flags", bool(p.cleared) and bool(p.flawless_done) and int(p.next) == 4)
 	# 再打一趟：庆典币不再发
 	var h2 := MockHost.new()
-	h2.choices_queue = [0, 0, 0, 0]
+	h2.choices_queue = [0, 0, 0, 0, 0]
 	await XFestRoad.talk(h2, s)
 	_check("rewards_only_once", h2.battles.size() == 4 and XFest.coins(s) == 4 * XFestRoad.COIN_FIRST_WIN + XFestRoad.COIN_FLAWLESS, XFest.coins(s))
 	# 称号表列庆典称号
@@ -244,7 +245,7 @@ func _flow_loss_resume() -> void:
 	var s := _state()
 	var h := MockHost.new()
 	h.battle_results = [0, 2]  # 赢第一关，输第二关
-	h.choices_queue = [0, 0]
+	h.choices_queue = [0, 0, 0]
 	var a = s.battle_members()[0]
 	await XFestRoad.talk(h, s)
 	_check("loss_stops_run", h.battles.size() == 2, h.battles.size())
@@ -254,7 +255,7 @@ func _flow_loss_resume() -> void:
 	_check("loss_first_win_coin", XFest.coins(s) == XFestRoad.COIN_FIRST_WIN)
 	# 接着打：从第二关起、势如破竹从 0 起；打完给「冠军之路」不给「一穿四」
 	var h2 := MockHost.new()
-	h2.choices_queue = [1, 0, 0]  # 接着打第 2 关；两关之间继续
+	h2.choices_queue = [0, 1, 0, 0]  # 接着打第 2 关；两关之间继续
 	await XFestRoad.talk(h2, s)
 	var troops := h2.battles.map(func(b): return int(b.troop))
 	_check("resume_from_lost_stage", troops == [9301, 9302, 9303], troops)
@@ -270,7 +271,7 @@ func _pause_and_quit() -> void:
 	var h := MockHost.new()
 	h.kill_on_battle = 0  # 第一关里打死一号位
 	# 从第一关开始；第一关后选暂停，再选继续；第二关后（暂停已用，选项只剩继续／退出）选退出
-	h.choices_queue = [0, 1, 0, 1]
+	h.choices_queue = [0, 0, 1, 0, 1]
 	var a = s.battle_members()[0]
 	var b = s.battle_members()[1]
 	b.hp = floorf(b.mhp * 0.5)
@@ -295,24 +296,105 @@ func _pause_and_quit() -> void:
 	b = b
 
 
+func _two_tiers() -> void:
+	# 两档基准：普通版＝天灾（难度 6）、困难版＝洪荒（难度 8）的 26 层守层者金角 529；存档难度不影响
+	var g: Dictionary = XDB.table("Enemies")[529]
+	var r6 := XEnemy.difficulty_rates(6)
+	var r8 := XEnemy.difficulty_rates(8)
+	_check("tier_bases", XFestRoad.TIERS.size() == 2 and int(XFestRoad.TIERS[0].base) == 529 and int(XFestRoad.TIERS[1].base) == 529
+		and int(XFestRoad.TIERS[0].difficulty) == 6 and int(XFestRoad.TIERS[1].difficulty) == 8 and int(XFestRoad.TIERS[0].guard_troop) == 462
+		and XEnemy.difficulty_name(6) == "天灾" and XEnemy.difficulty_name(8) == "洪荒")
+	# 内战幻神队·上单（×1.5）在两档里的实建能力值＝金角×摊比×位置×1.5×本档倍率；换存档难度（2 简单、5 地狱）结果一样
+	var ok := true
+	var detail := []
+	for diff in [2, 5]:
+		var s := _state()
+		s.difficulty = diff
+		for tier in 2:
+			var lg := XBattleLogic.new()
+			lg.setup(XFestRoad.troop_id(tier, 3), s)
+			var e = lg.enemies[0]
+			var rates := r6 if tier == 0 else r8
+			var want_hp := floorf(float(g.params[0]) * XFestRoad.HP_SHARE * 1.5 * 1.6) * float(rates[0])
+			var want_atk := floorf(float(g.params[2]) * XFestRoad.ATK_SHARE * 1.5 * 0.7) * float(rates[2])
+			var got_hp := float(e.mhp)
+			var got_atk := float(e.param(2))
+			detail.append([diff, tier, got_hp, want_hp, got_atk, want_atk])
+			ok = ok and absf(got_hp / want_hp - 1.0) < 0.001 and absf(got_atk / want_atk - 1.0) < 0.02 and e.hp == e.mhp
+			ok = ok and absf(got_hp - XFestRoad.effective_param(tier, 3, 0, 0)) / got_hp < 0.001
+	_check("tier_effective_params_fixed_difficulty", ok, detail)
+	var h6 := XFestRoad.effective_param(1, 0, 0, 0) / XFestRoad.effective_param(0, 0, 0, 0)
+	_check("hard_is_honghuang_over_tianzai", absf(h6 - float(r8[0]) / float(r6[0])) < 0.001, h6)
+	_check("hard_troops_and_enemies", (XDB.rec("Troops", 9313).members as Array).size() == 5 and str(XDB.rec("Troops", 9313).name) == "冠军之路·内战幻神队"
+		and str(XDB.rec("Enemies", 9434).name) == "内战幻神队·辅助" and XDB.rec("Troops", 9320).is_empty() and XDB.rec("Enemies", 9500).is_empty())
+	# 两档奖励分开、只发一次、互不顶替
+	_reset_config()
+	for id in [XFest.TITLE_ROAD_HARD, XFest.TITLE_ONE_FOUR_HARD]:
+		XConfig.designations().erase(str(id))
+	XConfig.save_designations()
+	var s := _state()
+	var h := MockHost.new()
+	h.choices_queue = [1, 0, 0, 0, 0]  # 困难版 → 从第一关开始 → 继续×3
+	await XFestRoad.talk(h, s)
+	var hard_troops := h.battles.map(func(b): return int(b.troop))
+	var rw: Dictionary = XFestRoad.REWARDS[1]
+	var hard_coins := 4 * int(rw.first) + int(rw.clear) + int(rw.flawless)
+	_check("hard_run_order", hard_troops == [9310, 9311, 9312, 9313], hard_troops)
+	_check("hard_rewards", XFest.coins(s) == hard_coins and XDesignation.unlocked(XFest.TITLE_ROAD_HARD) and XDesignation.unlocked(XFest.TITLE_ONE_FOUR_HARD)
+		and not XDesignation.unlocked(XFest.TITLE_ROAD) and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR)
+		and XFestRoad.cleared(s, 1) and XFestRoad.flawless_done(s, 1) and not XFestRoad.cleared(s, 0), XFest.coins(s))
+	var h2 := MockHost.new()
+	h2.choices_queue = [1, 0, 0, 0, 0]
+	await XFestRoad.talk(h2, s)
+	_check("hard_rewards_once", h2.battles.size() == 4 and XFest.coins(s) == hard_coins, XFest.coins(s))
+	# 打完困难还能拿普通的
+	var h3 := MockHost.new()
+	h3.choices_queue = [0, 0, 0, 0, 0]
+	await XFestRoad.talk(h3, s)
+	var normal_coins := 4 * XFestRoad.COIN_FIRST_WIN + XFestRoad.COIN_FLAWLESS
+	_check("normal_after_hard_still_pays", XFest.coins(s) == hard_coins + normal_coins and XDesignation.unlocked(XFest.TITLE_ROAD)
+		and XDesignation.unlocked(XFest.TITLE_ONE_FOUR) and XFestRoad.cleared(s, 0), XFest.coins(s))
+	# 一档输了接着打的点不串到另一档
+	var s2 := _state()
+	var h4 := MockHost.new()
+	h4.battle_results = [0, 2]
+	h4.choices_queue = [1, 0, 0]
+	await XFestRoad.talk(h4, s2)
+	_check("resume_per_tier", XFestRoad.resume_stage(s2, 1) == 1 and XFestRoad.resume_stage(s2, 0) == 0
+		and int(XFestRoad.progress(s2, 0).next) == 4 and not (XFestRoad.progress(s2, 0).first as Array).has(true))
+	# 读档往返：两档进度都在；旧档（只有 road 键）按普通版
+	XState.current = s
+	var back = kit.roundtrip()
+	_check("tiers_survive_save", back != null and XFestRoad.cleared(back, 0) and XFestRoad.cleared(back, 1) and XFestRoad.flawless_done(back, 1)
+		and XFest.coins(back) == hard_coins + normal_coins, null if back == null else back.flags.get(XFest.FLAG_KEY))
+	var old := _state()
+	XFest.data(old)["road"] = {"next": 4, "first": [true, true, true, true], "cleared": true, "flawless_done": false}
+	_check("legacy_road_is_normal", XFestRoad.cleared(old, 0) and not XFestRoad.cleared(old, 1))
+	# 称号表列 45、46
+	var ids := XDesignation.table().map(func(d): return int(d.id))
+	_check("hard_titles_in_table", ids.has(XFest.TITLE_ROAD_HARD) and ids.has(XFest.TITLE_ONE_FOUR_HARD))
+	# 报名处选档文字写对标难度
+	_check("tier_labels", str(XFestRoad.tier_labels()) .contains("天灾") and str(XFestRoad.tier_labels()).contains("洪荒") and str(XFestRoad.tier_labels()).contains("26"))
+
+
 func _small_party() -> void:
 	# 出战 4 人：报名出「建议满五人」提示；选「回去整队」不开打、进度不动，选「仍要出战」照常连打
 	var s := _state()
 	s.set_battle_slot(4, 0)
 	var n := s.battle_members().size()
 	var h := MockHost.new()
-	h.choices_queue = [0, 1]  # 从第一关开始 → 回去整队
+	h.choices_queue = [0, 0, 1]  # 从第一关开始 → 回去整队
 	await XFestRoad.talk(h, s)
 	var warned := h.texts.any(func(t): return str(t.get("lines", [])).contains("建议满五人") and str(t.get("options", [])).contains("仍要出战"))
 	_check("small_party_warned_and_back", n == 4 and warned and h.battles.is_empty() and int(XFestRoad.progress(s).next) == 4, [n, h.texts.size(), h.battles.size()])
 	var h2 := MockHost.new()
-	h2.choices_queue = [0, 0, 0, 0, 0]  # 从第一关开始 → 仍要出战 → 两关之间都继续
+	h2.choices_queue = [0, 0, 0, 0, 0, 0]  # 从第一关开始 → 仍要出战 → 两关之间都继续
 	await XFestRoad.talk(h2, s)
 	_check("small_party_confirm_enters", h2.battles.size() == 4 and int(h2.battles[0].troop) == 9300, h2.battles.size())
 	# 满五人不出提示
 	var s5 := _state()
 	var h3 := MockHost.new()
-	h3.choices_queue = [0, 0, 0, 0]
+	h3.choices_queue = [0, 0, 0, 0, 0]
 	await XFestRoad.talk(h3, s5)
 	_check("full_party_no_warning", not h3.texts.any(func(t): return str(t.get("lines", [])).contains("建议满五人")) and h3.battles.size() == 4)
 

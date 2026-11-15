@@ -25,15 +25,21 @@ func _go() -> void:
 	for i in 5:
 		s.set_battle_slot(i, [1, 2, 3, 4, 5][i])
 	DirAccess.make_dir_recursive_absolute(out_dir)
+	var shots := []
 	for st in XFestRoad.TEAMS.size():
+		shots.append([0, st])
+	shots.append([1, XFestRoad.TEAMS.size() - 1])  # 困难版决赛
+	for pair in shots:
+		var tier: int = pair[0]
+		var st: int = pair[1]
 		XFestRoad.in_road_battle = true
 		XFestRoad.battle_streak = st
 		var b := XBattleScene.new()
-		b.setup(XFestRoad.troop_id(0, st), false, true, XDB.map(4))
+		b.setup(XFestRoad.troop_id(tier, st), false, true, XDB.map(4))
 		add_child(b)
 		for _i in 150:
 			await get_tree().process_frame
-		var path := out_dir.path_join("fest_road_%d_%s.png" % [st + 1, str(XFestRoad.TEAMS[st].name)])
+		var path := out_dir.path_join("fest_road_%s_%d_%s.png" % [str(XFestRoad.TIERS[tier].key), st + 1, str(XFestRoad.TEAMS[st].name)])
 		RenderingServer.force_draw(false)
 		var err := get_viewport().get_texture().get_image().save_png(path)
 		print("SHOT ", path, " ", err, " enemies=", b.logic.enemies.map(func(e): return "%s mhp=%d hp=%d atk=%d mat=%d" % [str(e.data().name), int(e.mhp), int(e.hp), int(e.param(2)), int(e.param(4))]))

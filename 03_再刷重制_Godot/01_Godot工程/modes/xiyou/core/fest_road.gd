@@ -9,16 +9,17 @@ extends RefCounted
 ## - 势如破竹：每赢一关全队伤害 +10%，最多三层；只在冠军之路的战斗里生效（XActorDamageHooks 的 finalMultiplier），退出或输了清零。
 ## - 场间暂停：整趟一次，两关之间全队回三成血蓝、复活阵亡的人。
 ## - 输了：回到大厅、队伍回满；下次可以从输的那关接着打，但接着打的这趟不算「不败」。
-## - 奖励（每个存档各算各的；称号全局）：每关首胜庆典币 ×30；四关全胜称号「冠军之路」；从第一关起一次不败连穿称号「一穿四」（金）＋庆典币 ×100。
-##   庆典成就（第 2 天，模块 G）读存档 flags.fest_champion.road 的 cleared／flawless_done 就够，本文件不发成就。
+## - 两档（Kyo 11-15 定，取代海选／正赛／巅峰三档）：普通版对标「天灾」难度 26 层守层者，困难版对标「洪荒」难度 26 层守层者；
+##   敌人的难度倍率固定按本档（天灾 6／洪荒 8），不看玩家存档的难度（battle_setup）。四队相对强度 ×0.8／1.0／1.2／1.5 在两档上各乘。
+## - 奖励两档分开给、互不顶替（每个存档各算各的；称号全局），见 REWARDS：每关首胜庆典币、四关全胜（称号＋币）、从第一关起一次不败连穿（称号＋币）。
+##   庆典成就（第 2 天，模块 G）按档读 cleared(s, 档)／flawless_done(s, 档)（存档 flags.fest_champion.road／road_hard），本文件不发成就。
 ## - 只开给原版档（天启篇档的守层者另有一套血量，第 1 天不开）。
-## - 档位：第 1 天只开正赛（基准 20 层守层者石日天，敌群 456）；海选（10 层）、巅峰（30 层）第 2 天补进 TIERS。
 ## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定·冠军之路。
 
 static var ENABLED := true
 
-const ENEMY_BASE := 9300   # 敌人号＝ENEMY_BASE＋档位序×100＋关序×10＋位置序
-const TROOP_BASE := 9300   # 敌群号＝TROOP_BASE＋档位序×10＋关序
+const ENEMY_BASE := 9300   # 敌人号＝ENEMY_BASE＋档位序×100＋关序×10＋位置序（普通 9300～9334，困难 9400～9434）
+const TROOP_BASE := 9300   # 敌群号＝TROOP_BASE＋档位序×10＋关序（普通 9300～9303，困难 9310～9313）
 const HEAL_SKILL := 19300  # 辅助的「应援」：全体友方回复最大生命的 HEAL_RATE
 const HEAL_RATE := 0.04
 const HEAL_FROM := 906     # 外观、动画照「治愈之歌」
@@ -29,6 +30,7 @@ const STREAK_MAX := 3
 ## 场间暂停回复比例
 const PAUSE_RATE := 0.3
 ## 奖励
+## 普通版的两项（旧名留给测试与说明；数值以 REWARDS 为准）
 const COIN_FIRST_WIN := 30
 const COIN_FLAWLESS := 100
 
@@ -57,17 +59,25 @@ const ROLES := [
 	{"name": "辅助", "hp": 1.0, "atk": 0.8, "mat": 1.0, "def": 1.1, "mdf": 1.1, "agi": 1.0,
 		"actions": [[HEAL_SKILL, 5], [1025, 3]]},
 ]
-## 第一版（11-15，没实测）：一关五人血量合计约 0.4～0.8 只守层者、四关合计约 2.4 只；每人攻击、魔攻是守层者的 0.35 倍再乘位置与队强度。
-## 守层者基准队探针（tests/virtual_player/fest_road_probe）用的是天启篇弱者队，不代表原版档玩家，数值要等试打再调
-const HP_SHARE := 0.1
-const ATK_SHARE := 0.35
+## 26 层那场是金角、银角两只守层者（敌群 462），血量合计约金角的 1.83 倍、两只出手。按「×1.0 的队≈这一场」摊：
+## 五人血量倍率合计 5.2，每人血量＝金角 ×0.35×位置×队强度（×1.0 队合计 ≈1.82 只金角）；每人攻击、魔攻＝金角 ×0.4（五人出手合计 ≈2 只）。
+## 防御、速度不摊，按金角×位置×队强度。没实测，Kyo 或玩家试打后再调
+const HP_SHARE := 0.35
+const ATK_SHARE := 0.4
 
 ## 站位（照 853 号五人敌群的范围摆）：上单、打野、下路前排，中单、辅助后排
 const POS := [[470, 340], [440, 230], [250, 290], [440, 450], [250, 410]]
 
-## 档位：base＝基准守层者敌人号（复制它的特性、伤害抵抗被动），guard_troop 只作说明
+## 档位：base＝基准守层者敌人号（复制它的特性、伤害抵抗被动；26 层敌群 462 的第一只金角 529），difficulty＝敌人固定吃的难度倍率（Vitsuno_Difficulty 编号）
 const TIERS := [
-	{"key": "main", "name": "正赛", "base": 523, "guard_troop": 456, "hint": "二十层上下"},
+	{"key": "normal", "name": "普通版", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 6, "diff_name": "天灾", "save_key": "road"},
+	{"key": "hard", "name": "困难版", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 8, "diff_name": "洪荒", "save_key": "road_hard"},
+]
+
+## 两档奖励（互不顶替）。庆典币不占物品号，兑换处（第 2 天）有限购，全换完 400 币，资源总量由兑换处的限购封顶
+const REWARDS := [
+	{"first": 30, "clear": 0, "flawless": 100, "title_clear": XFest.TITLE_ROAD, "title_flawless": XFest.TITLE_ONE_FOUR},
+	{"first": 50, "clear": 50, "flawless": 150, "title_clear": XFest.TITLE_ROAD_HARD, "title_flawless": XFest.TITLE_ONE_FOUR_HARD},
 ]
 
 
@@ -285,6 +295,24 @@ static func skill_rec(id: int, table: Array) -> Dictionary:
 	return out
 
 
+## 开战（XBattleLogic.setup 建完敌人后调）：冠军之路的敌人固定吃本档难度倍率（天灾／洪荒），不看玩家存档的难度，再回满
+static func battle_setup(logic) -> void:
+	var d := _decode_troop(int(logic.troop_id))
+	if not on() or d.is_empty():
+		return
+	var rates := XEnemy.difficulty_rates(int(TIERS[int(d[0])].difficulty))
+	for e in logic.enemies:
+		if not _decode_enemy(int(e.enemy_id)).is_empty():
+			e._rates = rates
+			e.recover_all()
+
+
+## 本档敌人的实际能力值（不含等级、状态；测试和说明用）：基准×摊比×位置×队强度×本档难度倍率
+static func effective_param(tier: int, stage: int, role: int, i: int) -> float:
+	var base: Dictionary = XDB.table("Enemies")[int(TIERS[tier].base)]
+	return float(enemy_params(tier, stage, role, base.params)[i]) * float(XEnemy.difficulty_rates(int(TIERS[tier].difficulty))[i])
+
+
 # ==== 势如破竹（本场伤害加成） ====
 
 ## 当前这场冠军之路战斗的层数；只在 run 里开战前设、打完清零（不进存档）
@@ -302,7 +330,7 @@ static func damage_ops(a) -> Array:
 
 # ==== 存档进度 ====
 
-## 存档 flags.fest_champion.road：
+## 存档 flags.fest_champion.road（普通版；改两档前的旧进度就在这个键，按普通版算）／road_hard（困难版）：
 ##   next     下一关（0～3；4 以上＝没在打）
 ##   flawless 这趟从第一关起没输过、也没中途接着打
 ##   pause    这趟的场间暂停用过没有
@@ -310,11 +338,12 @@ static func damage_ops(a) -> Array:
 ##   first    [四个布尔] 每关首胜（发过庆典币）
 ##   cleared  四关全胜过（发过「冠军之路」）
 ##   flawless_done  一次不败连穿过（发过「一穿四」和 100 币）
-static func progress(s) -> Dictionary:
+static func progress(s, tier := 0) -> Dictionary:
 	var d := XFest.data(s)
-	if not d.get("road") is Dictionary:
-		d["road"] = {}
-	var r: Dictionary = d["road"]
+	var key := str(TIERS[tier].save_key)
+	if not d.get(key) is Dictionary:
+		d[key] = {}
+	var r: Dictionary = d[key]
 	if not r.has("next"):
 		r["next"] = TEAMS.size()
 	if not r.get("first") is Array or (r["first"] as Array).size() != TEAMS.size():
@@ -328,14 +357,14 @@ static func progress(s) -> Dictionary:
 
 
 ## 有没有中途输掉、能接着打的关（1～3；0 表示没有）
-static func resume_stage(s) -> int:
-	var n := int(progress(s).next)
+static func resume_stage(s, tier := 0) -> int:
+	var n := int(progress(s, tier).next)
 	return n if n > 0 and n < TEAMS.size() else 0
 
 
 ## 开新的一趟（从第一关起，可以拿「一穿四」）
-static func begin_run(s) -> void:
-	var r := progress(s)
+static func begin_run(s, tier := 0) -> void:
+	var r := progress(s, tier)
 	r["next"] = 0
 	r["flawless"] = true
 	r["pause"] = false
@@ -343,15 +372,16 @@ static func begin_run(s) -> void:
 
 
 ## 从输掉的那关接着打（不算不败；势如破竹清零）
-static func continue_run(s) -> void:
-	var r := progress(s)
+static func continue_run(s, tier := 0) -> void:
+	var r := progress(s, tier)
 	r["flawless"] = false
 	r["streak"] = 0
 
 
 ## 一关打完结算（result：0 胜 1 逃 2 败）。返回发了什么 {coins, titles: [], finished: bool}
-static func settle(s, stage: int, result: int) -> Dictionary:
-	var r := progress(s)
+static func settle(s, stage: int, result: int, tier := 0) -> Dictionary:
+	var r := progress(s, tier)
+	var rw: Dictionary = REWARDS[tier]
 	var out := {"coins": 0, "titles": [], "finished": false}
 	if result != 0:
 		r["next"] = stage  # 下次从这关接着打
@@ -361,25 +391,27 @@ static func settle(s, stage: int, result: int) -> Dictionary:
 	var first: Array = r["first"]
 	if not bool(first[stage]):
 		first[stage] = true
-		XFest.add_coins(s, COIN_FIRST_WIN)
-		out.coins += COIN_FIRST_WIN
+		XFest.add_coins(s, int(rw.first))
+		out.coins += int(rw.first)
 	r["streak"] = mini(int(r.get("streak", 0)) + 1, STREAK_MAX)
 	r["next"] = stage + 1
 	if stage + 1 >= TEAMS.size():
 		out.finished = true
 		if not bool(r.cleared):
 			r["cleared"] = true
-		if not XDesignation.unlocked(XFest.TITLE_ROAD):
-			out.titles.append(XFest.TITLE_ROAD)
-		XFest.unlock_title(XFest.TITLE_ROAD)
+			XFest.add_coins(s, int(rw.clear))
+			out.coins += int(rw.clear)
+		if not XDesignation.unlocked(int(rw.title_clear)):
+			out.titles.append(int(rw.title_clear))
+		XFest.unlock_title(int(rw.title_clear))
 		if bool(r.flawless):
 			if not bool(r.flawless_done):
 				r["flawless_done"] = true
-				XFest.add_coins(s, COIN_FLAWLESS)
-				out.coins += COIN_FLAWLESS
-			if not XDesignation.unlocked(XFest.TITLE_ONE_FOUR):
-				out.titles.append(XFest.TITLE_ONE_FOUR)
-			XFest.unlock_title(XFest.TITLE_ONE_FOUR)
+				XFest.add_coins(s, int(rw.flawless))
+				out.coins += int(rw.flawless)
+			if not XDesignation.unlocked(int(rw.title_flawless)):
+				out.titles.append(int(rw.title_flawless))
+			XFest.unlock_title(int(rw.title_flawless))
 		r["streak"] = 0
 		r["flawless"] = false
 		r["pause"] = false
@@ -387,8 +419,8 @@ static func settle(s, stage: int, result: int) -> Dictionary:
 
 
 ## 场间暂停：全队回三成血蓝、复活阵亡的人（整趟一次）。返回是否用成
-static func use_pause(s) -> bool:
-	var r := progress(s)
+static func use_pause(s, tier := 0) -> bool:
+	var r := progress(s, tier)
 	if bool(r.pause):
 		return false
 	r["pause"] = true
@@ -402,6 +434,15 @@ static func use_pause(s) -> bool:
 			a.hp = minf(mhp, a.hp + floorf(mhp * PAUSE_RATE))
 		a.mp = minf(mmp, a.mp + floorf(mmp * PAUSE_RATE))
 	return true
+
+
+## 成就组（第 2 天）按档读：四关全胜过／一次不败连穿过
+static func cleared(s, tier := 0) -> bool:
+	return bool(progress(s, tier).cleared)
+
+
+static func flawless_done(s, tier := 0) -> bool:
+	return bool(progress(s, tier).flawless_done)
 
 
 ## 输了或打完回大厅：队伍回满
@@ -426,7 +467,8 @@ static func _ask(host, lines: Array, choices: Array, cancel: int) -> int:
 static func intro_lines() -> Array:
 	return [SPEAKER + "冠军之路·一穿四：五打五，连打四支五人战队，中间不回大厅。",
 		"血量、蓝量、阵亡都带进下一关；每赢一关全队伤害 +10%（最多三层）。",
-		"整趟有一次场间暂停：全队回三成血蓝、复活阵亡的人。四关都不能逃跑。"]
+		"整趟有一次场间暂停：全队回三成血蓝、复活阵亡的人。四关都不能逃跑。",
+		"普通版对标「天灾」难度、困难版对标「洪荒」难度的 26 层守层者；两版的奖励和称号分开拿。"]
 
 
 static func lineup_text() -> String:
@@ -450,22 +492,35 @@ static func talk(host, s = null) -> void:
 		# 天启篇守层者另有一套血量（XGuardianRework），本表按原版守层者定的数值对不上；天启篇档先不开（第 1 天）
 		await _say(host, [SPEAKER + "这份存档暂时不能报名冠军之路。"])
 		return
-	var resume := resume_stage(s)
-	var opts := ["从第一关开始", "接着打第%d关（不算不败）" % (resume + 1), "规则说明", "离开"] if resume > 0 else ["从第一关开始", "规则说明", "离开"]
-	var keys := ["new", "resume", "rules", "leave"] if resume > 0 else ["new", "rules", "leave"]
-	var pick := await _ask(host, [SPEAKER + "欢迎来到冠军之路！今天的对手：", lineup_text()], opts, opts.size() - 1)
+	# 先选档：普通／困难（两档奖励分开、互不顶替）
+	var top := tier_labels()
+	top.append_array(["规则说明", "离开"])
+	var tp := await _ask(host, [SPEAKER + "欢迎来到冠军之路！今天的对手：", lineup_text()], top, top.size() - 1)
+	if tp == TIERS.size():
+		await _say(host, intro_lines())
+		return
+	if tp < 0 or tp >= TIERS.size():
+		return
+	var tier := tp
+	var resume := resume_stage(s, tier)
+	var opts := ["从第一关开始", "接着打第%d关（不算不败）" % (resume + 1), "返回"] if resume > 0 else ["从第一关开始", "返回"]
+	var keys := ["new", "resume", "leave"] if resume > 0 else ["new", "leave"]
+	var pick := await _ask(host, [SPEAKER + "%s：对手按「%s」难度 %d 层守层者的强度来。" % [TIERS[tier].name, TIERS[tier].diff_name, int(TIERS[tier].floor)]], opts, opts.size() - 1)
 	var key: String = keys[pick] if pick >= 0 and pick < keys.size() else "leave"
 	if (key == "new" or key == "resume") and not await _confirm_small_party(host, s):
 		return
 	match key:
-		"rules":
-			await _say(host, intro_lines())
 		"new":
-			begin_run(s)
-			await run(host, s, 0, 0)
+			begin_run(s, tier)
+			await run(host, s, tier, 0)
 		"resume":
-			continue_run(s)
-			await run(host, s, 0, resume)
+			continue_run(s, tier)
+			await run(host, s, tier, resume)
+
+
+## 报名处选档的选项文字
+static func tier_labels() -> Array:
+	return TIERS.map(func(t): return "%s（对标%s难度 %d 层守层者）" % [t.name, t.diff_name, int(t.floor)])
 
 
 ## 出战不满五人：提示一句，选「仍要出战」才进（co 核查 P2，协调 11-15 裁定不强制五人：角色不够或想挑战的不挡）
@@ -484,7 +539,7 @@ static func enter(host, s = null) -> void:
 
 ## 从 stage 起连打到决赛（tier：档位序）
 static func run(host, s, tier: int, stage: int) -> void:
-	var r := progress(s)
+	var r := progress(s, tier)
 	var i := stage
 	while i < TEAMS.size():
 		if not on():
@@ -497,7 +552,7 @@ static func run(host, s, tier: int, stage: int) -> void:
 		var result: int = await host.start_battle(troop_id(tier, i), false, true)
 		in_road_battle = false
 		battle_streak = 0
-		var got := settle(s, i, result)
+		var got := settle(s, i, result, tier)
 		if result != 0:
 			recover_party(s)
 			await _say(host, [SPEAKER + "这一关输给了%s。队伍已经回满，下次可以从这一关接着打。" % TEAMS[i].name])
@@ -506,7 +561,7 @@ static func run(host, s, tier: int, stage: int) -> void:
 			XToast.show_text("获得庆典币 ×%d（现有 %d）" % [int(got.coins), XFest.coins(s)])
 		if bool(got.finished):
 			recover_party(s)
-			var lines := [SPEAKER + "四关全胜，冠军之路完成！"]
+			var lines := [SPEAKER + "%s四关全胜，冠军之路完成！" % TIERS[tier].name]
 			for t in got.titles:
 				lines.append("获得称号「%s」！" % _title_name(int(t)))
 			await _say(host, lines)
@@ -524,7 +579,7 @@ static func run(host, s, tier: int, stage: int) -> void:
 			var pick := await _ask(host, [SPEAKER + "拿下%s！势如破竹 ×%d。" % [TEAMS[i - 1].name, int(r.streak)]], opts, -1)
 			var key: String = keys[pick] if pick >= 0 and pick < keys.size() else "go"
 			if key == "pause":
-				use_pause(s)
+				use_pause(s, tier)
 				XToast.show_text("场间暂停：全队回复三成")
 				continue
 			if key == "quit":

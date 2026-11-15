@@ -25,16 +25,20 @@ static var TODAY_OVERRIDE := ""
 ## 贺词：真实名称只出现这一处（方案第 5 节）
 const CONGRATS := "恭喜 BLG 夺得 2026 全球总决赛冠军"
 
-## 庆典称号编号（XDesignation 表里接在原版 1～30、kyo 专属 31 之后；全局解锁、所有存档共用、永久）
+## 庆典称号编号 41～46（XDesignation 表里接在原版 1～30、kyo 专属 31 之后；全局解锁、所有存档共用、永久）
 const TITLE_ROAD := 41        # 冠军之路：冠军之路四关全胜（甲车道发）
 const TITLE_ONE_FOUR := 42    # 一穿四（金）：一次不败连穿四关（甲车道发）
 const TITLE_WATCH := 43       # 冠军观赛团：兑换（第 2 天）
 const TITLE_ATTEND := 44      # 全勤观众：签到满 7 天（第 2 天）
+const TITLE_ROAD_HARD := 45   # 冠军之路·洪荒：困难版四关全胜（甲车道发，Kyo 11-15 两档）
+const TITLE_ONE_FOUR_HARD := 46  # 一穿四·洪荒（金红）：困难版一次不败连穿（甲车道发）
 const TITLES := [
 	{"id": TITLE_ROAD, "name": "冠军之路", "icon": 1469, "color": "#f5f7fa"},
 	{"id": TITLE_ONE_FOUR, "name": "一穿四", "icon": 2506, "color": "#ffd700"},
 	{"id": TITLE_WATCH, "name": "冠军观赛团", "icon": 1800, "color": "#00bfff"},
 	{"id": TITLE_ATTEND, "name": "全勤观众", "icon": 2607, "color": "#00ff00"},
+	{"id": TITLE_ROAD_HARD, "name": "冠军之路·洪荒", "icon": 1471, "color": "#ff8c00"},
+	{"id": TITLE_ONE_FOUR_HARD, "name": "一穿四·洪荒", "icon": 2506, "color": "#ff4500"},
 ]
 
 ## 存档里活动数据都放在 flags 这一个键下（每个存档各算各的）：{"coins": 庆典币, "road": 冠军之路进度, …}；旧档没有就当空
