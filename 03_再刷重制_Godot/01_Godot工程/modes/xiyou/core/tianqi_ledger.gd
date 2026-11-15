@@ -141,9 +141,7 @@ static func suit_confirm_effects(a) -> Array:
 	var out := []
 	if not a is XActor or not pool_on("POOL_SUIT"):
 		return out
-	for sid in XEquipSuits.ids(a, "states"):
-		if not a.is_state_affected(int(sid)):
-			continue
+	for sid in XEquipSuits.ids(a, "states"):  # 套装状态不进 state_ids，只在 states() 里（XActor._actor_states_memo）
 		for e in XDB.rec("States", int(sid)).get("effects", []):
 			if e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0:
 				out.append([int(sid), e])
