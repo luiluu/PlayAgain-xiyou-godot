@@ -44,7 +44,7 @@ const SMOOTH_OPTION := ["画面平滑", "codexScreenSmooth", true]
 const TARGET_OPTION := ["定向遇怪", XEncounterTarget.KEY, true]
 ## 重制新增：进战斗默认自动（O-383，XBattleScene.AUTO_DEFAULT）：ON 时每场战斗开局自动按钮就是开；默认 OFF
 const AUTO_OPTION := ["进战斗默认自动", "codexBattleAutoDefault", true]
-## 重制新增：战斗站位（O-待定，XPartyFormation）：两排错开／菱形／原版竖排，左右与确定切换，存配置，下一场战斗生效
+## 重制新增：战斗站位（O-473，XPartyFormation）：两排错开／菱形／原版竖排，左右与确定切换，存配置，下一场战斗生效
 const FORMATION_OPTION := ["战斗站位", XPartyFormation.KEY, true]
 ## 重制新增：画质设置（XGraphics）：状态「调整」，确定音后打开 XGraphicsOptionsScene，左右无作用
 const QUALITY_OPTION := ["画质设置", "codexQuality", true]
