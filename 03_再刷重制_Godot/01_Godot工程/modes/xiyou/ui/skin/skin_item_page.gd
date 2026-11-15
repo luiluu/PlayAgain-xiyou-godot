@@ -97,6 +97,13 @@ func sync() -> void:
 			set_focus("targets")
 	if mode != "action":
 		close_menu()
+	match mode:
+		"category":
+			set_hint_list([["确定", "选择"], ["取消", "返回"], ["X", "检索排序"]])
+		"list":
+			set_hint_list([["确定", "选择"], ["取消", "回分类"], ["X", "检索排序"]])
+		_:
+			set_hint_list([["确定", "选择"], ["取消", "返回"]])
 	_syncing = false
 
 

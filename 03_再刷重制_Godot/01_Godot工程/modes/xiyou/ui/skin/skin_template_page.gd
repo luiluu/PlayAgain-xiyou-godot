@@ -171,9 +171,19 @@ func relayout() -> void:
 		tabs.position = Vector2(XSkinLayout.margin_for(view.x) + f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x + 24, 14)
 		tabs.size = Vector2(tabs.total_width(), XSkinTabStrip.TAB_H)
 	hints.set_hints(hint_list)
-	hints.place(view)
+	# 右边让出右下角版本号（同 1A 主菜单 XSkinMainMenu.hint_right）
+	hints.position = Vector2(XSkinMainMenu.hint_right(view) - hints.total_width(), view.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
 	top_layer.queue_redraw()
 	list_panel.queue_redraw()
+
+
+## 换按键提示（随焦点变时用）；内容没变不重排
+func set_hint_list(arr: Array) -> void:
+	if arr == hint_list:
+		return
+	hint_list = arr
+	if hints != null:
+		relayout()
 
 
 # ---- 喂数据 ----
