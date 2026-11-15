@@ -66,7 +66,9 @@ func _ready() -> void:
 	face.draw.connect(_draw_face)
 	ring.add_child(face)
 	ring.changed.connect(_on_ring_changed)
-	ring.activated.connect(func(_i): activate())
+	ring.activated.connect(func(_i):
+		if host != null and host._mode == "command":
+			activate())
 	# 中块：分组子项
 	pane = Panel.new()
 	pane.name = "Groups"
@@ -198,6 +200,7 @@ func refresh() -> void:
 	var members := host._members()
 	var actor_mode := host._mode == "actor"
 	party.selectable = actor_mode
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE if actor_mode else Control.MOUSE_FILTER_STOP
 	var rows := party_rows()
 	if actor_mode:
 		var ai := clampi(host._actor_index, 0, maxi(members.size() - 1, 0))
@@ -359,8 +362,19 @@ func activate() -> void:
 
 
 func _on_ring_changed(i: int) -> void:
+	if host != null and host._mode != "command":  # 选人时环不收鼠标（refresh 里关了），这里再兜一次：转回当前组
+		ring.select(gi, false)
+		return
 	if i != gi:
 		_set_group(i, 0)
+
+
+## 收起的组那一行右边：多项组列子项名；只一项的组写那一项的说明（不重复组名，小A核查 P2）
+static func collapsed_text(g: Dictionary) -> String:
+	var items: Array = g.get("items", [])
+	if items.size() == 1:
+		return str(items[0].get("desc", ""))
+	return "　".join(items.map(func(it): return str(it.name)))
 
 
 func _on_party_index(i: int) -> void:
@@ -461,8 +475,7 @@ func _draw_pane() -> void:
 				var nm := str(g.name)
 				text_layer.draw_string(body, Vector2(x, base + XUiSkin.FS_LIST * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT)
 				var sx := x + maxf(60.0, body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST).x + 16.0)
-				var names := " ".join(group_items(g).map(func(it): return str(it.name)))
-				text_layer.draw_string(body, Vector2(sx, base + 15 * 0.36), names.replace(" ", "　"), HORIZONTAL_ALIGNMENT_LEFT, rect.end.x - sx - 8.0, 15, XUiSkin.TEXT_2)
+				text_layer.draw_string(body, Vector2(sx, base + 15 * 0.36), collapsed_text(g), HORIZONTAL_ALIGNMENT_LEFT, rect.end.x - sx - 8.0, 15, XUiSkin.TEXT_2)
 			"header":
 				text_layer.draw_string(head, Vector2(x, base + 21 * 0.36), str(g.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
 			"item":

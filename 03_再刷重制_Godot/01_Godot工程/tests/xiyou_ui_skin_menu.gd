@@ -208,8 +208,12 @@ func _menu(s: XState) -> void:
 	check("hints_actor", m.hints.hints == [["确定", "进入"], ["取消", "返回"]])
 	_press(m, "ui_down")
 	check("actor_down", menu._actor_index == 1 and m.party.index == 1)
+	var gi_before := m.gi
+	m.ring.select(4)
+	check("actor_ring_locked", m.gi == gi_before and m.ring.index == gi_before and m.ring.mouse_filter == Control.MOUSE_FILTER_IGNORE and menu._mode == "actor")
 	_press(m, "ui_cancel")
 	check("actor_cancel", menu._mode == "command" and not m.party.selectable and m.hints.hints.size() == 3)
+	check("ring_mouse_back", m.ring.mouse_filter == Control.MOUSE_FILTER_STOP)
 	_press(m, "ui_accept")
 	check("actor_resets_to_selected", menu._actor_index == 0)   # 同旧菜单：重进选人从上次进过页的人开始
 	_press(m, "ui_down")
@@ -220,6 +224,15 @@ func _menu(s: XState) -> void:
 	if page != null:
 		page.closed.emit()
 	await frames(2)
+	# 收起行：单项组写说明、不重复名字（小A P2）；多项组列子项名
+	check("collapsed_single_desc", XSkinMainMenu.collapsed_text(m.groups[0]) == "使用和查看随身物品" and XSkinMainMenu.collapsed_text(m.groups[1]) == "更换角色装备")
+	check("collapsed_multi_names", XSkinMainMenu.collapsed_text(m.groups[3]) == "制作　宝珠坊　异化工坊", XSkinMainMenu.collapsed_text(m.groups[3]))
+	check("system_names", m.groups[5].items.map(func(i): return i.name) == ["存档", "设置", "反馈", "返回标题"])
+	# 被隐藏的子项按符号问也不可用（宠物天启篇隐藏；异化隐藏时工坊）
+	XAlienBattle.HIDDEN_V058 = true
+	check("hidden_symbol_disabled", not menu.symbol_enabled("pet") and not menu.symbol_enabled("alienation") and menu.symbol_enabled("orbs"))
+	XAlienBattle.HIDDEN_V058 = false
+	check("alien_symbol_back", menu.symbol_enabled("alienation"))
 	# 不可用：反馈（没做）蜂鸣不进；整队至少 2 人
 	m._set_group(5, 2)
 	check("feedback_item", m.current_item().key == "feedback" and not m.item_enabled(m.current_item()))
