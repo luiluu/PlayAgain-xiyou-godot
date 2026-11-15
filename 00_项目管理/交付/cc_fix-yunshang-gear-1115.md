@@ -52,3 +52,19 @@
 - 75d3f409c 交付单
 - b0e5b58a5 补专项 .gd.uid
 - 验证：专项 93/93；云端选测 13 个场景全过（97a13f02b，run 43721665878）；语法检查 927 个 .gd 0 问题；工具回归全过；交付自检通过；发行模拟（ReleaseEntry.simulate_release）在专项里冷启动读档各情况都跑了，没导出发行包做入口冒烟（改动不碰入口与天启篇空壳，`发行空壳` 名单里没有 yunshang）
+
+## co 甲档核查
+
+2026-11-15，co（派单 gpt-6.1-sol＋medium），核查 97a13f02b／75d3f409c／b0e5b58a5／dbee07553；仅追加本节，未改游戏代码。
+
+**结论：问题（P2），建议补进阶消耗保护和专项后再进补丁；原症状修复路径成立，玩家个案仍未实证。**
+
+- **P2｜`modes/xiyou/core/yunshang_orders.gd:216`（关联 258、568）｜进阶消耗也被读档保留。** 触发：穿着一件带 `_yunUid` 的天衣存档，卸下后把它和另两件一起用于第一次进阶，不存档再读旧档；`remove` 被保留判断跳过，但 `stage=1` 仍从账本同步，得到「进阶结果＋已消耗的穿着天衣」。独立临时探针实际调用 `advance`、真写盘再 `XSave.load_slot`，输出 `advance= stage=1`、`loaded_stage=1`、`kept=[co-probe-0]`、读档身体栏 `actual_uid=co-probe-0`，确认可复现。非无限刷钱，进阶仅两次、数量受旧档穿着件数限制，但永久进阶收益与消耗装备同时保留，是新增的成本绕过；交付单「进阶消耗不变」不成立。建议 remove 明确记录来源／事务类型，至少对进阶消耗保持原移除语义，并补真实进阶→读旧档专项；旧账本无来源时要明确兼容策略，不能仅凭 uid 猜来源。
+- 根因：`XSave._load_data:295` 在反序列化后进入 `after_load`，旧 `_yunSeq` 之后的 `remove` 经 `replay:255` 到 `remove_uid`，原逻辑确实先卸后移除；正是派单提到的旧账本 remove 重放路径。账本与存档的持久化时间不同，推理成立。自动卖装不动穿着装备，所以仍需要存档后换装／另档操作；无玩家档，不把推理写成玩家个案定论。
+- 复制判断：普通卖出／分解的金钱和材料在 XState 存档内；读回交易前旧档也回滚收益，再卖一次只是重新得到同一笔收益，不能由这一步累积刷钱；交易后档没有天衣，亦不会凭空恢复。另一存档保留其收益是分叉进度，不能据此称同档无限复制。上述进阶例外因 stage 在独立账本持久化，确有双得。星级仓库 `star_warehouse.gd:132` 显式 `lose_gear(rec, false)`，不记云裳 remove；该仓库跨档语义不由本补丁保护，不应当作本补丁新增的 remove 复制漏洞。
+- 覆盖缺口：专项 11 种情况验证了账本形状和身体栏保留，但未走真实卖出／分解／进阶入口；尤其缺「进阶后的 stage＋remove」组合。还未覆盖旧 uid 缺失时按 instance/base 回退、其他角色穿着、读档后局中再次 remove、同进程换档；代码上局中 `_loading=false` 会照旧移除，未见新增整排清空装备的读档路径。不能把有限夹具当作排除所有读档损坏的证明。
+- 专项复跑：本树 headless `xiyou_yunshang_gear_load` **93/93，退出 0**，含开发／`ReleaseEntry.simulate_release` 两路及 `switch_off.worn_removed`。本专项使用直接清缓存，未调 `reload()`，回退断言有效。三项反向清单分别删除保留、扩大到背包、取消 loading，各有直接装备／背包／kept 断言能咬住；本轮只读核查没有再次改代码执行突变，车道已有的反向执行结果沿用并审阅其对应断言。发行模拟覆盖读档分支，未等同导出包入口验收。
+- 摘取：用独立临时 Git index 装载本地 `release/v0.01`（fb3c99edf），对 97a13f02b 四文件完整 binary patch 执行 `git apply --cached --check`，**退出 0**；未动工作树／发行分支。97a13f02b 单摘文本干净；测试 `.gd.uid` 在 b0e5b58a5，建议同时摘，避免后续编辑器生成不同 uid。本结论不冒充发行分支编译／导出验收。
+- `reload()`：独立探针把 `KEEP_WORN_ON_LOAD`、`V062` 设 false，调用 `XYunshangOrders.reload()` 后两者均变 true，且 `path_override` 变空，确认命中 Script.reload 并重置静态状态。现有 7 处调用中，`review20_fix:22` 后才设置 `o_profile_stage`；`yunshang_shop:103` 在前缀／V062开关用例之前，另五处在文件写入专项；未发现开关设 false 后跨 reload 再断言的现存用例，因此**不能据此认定当前专项假通过**。它会悄悄丢测试路径和内存状态，建议另单改名 `reload_journal`，并加「清缓存不改开关和路径」验证。
+
+验证日志（本机临时文件，不入 Git）：`/tmp/co-yunshang-baseline.log`、`/tmp/co-yun-probe2.log`；探针在独立测试目录运行，已清夹具，没有读取玩家档。初次用 SceneTree --script 的探针因缺少 GameApp 自动加载编译失败，改以临时 Node 场景运行后通过；上述结论均来自后者。
