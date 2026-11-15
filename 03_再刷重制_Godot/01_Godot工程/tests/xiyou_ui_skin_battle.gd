@@ -6,6 +6,7 @@ extends Node
 const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 var results := []
 var out_dir := ""
+var tablet := false
 var wide := false
 
 
@@ -15,6 +16,8 @@ func _ready() -> void:
 			out_dir = arg.substr(6)
 		if arg == "--wide":
 			wide = true
+		if arg == "--tablet":
+			tablet = true
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -46,7 +49,7 @@ func _shot(name: String) -> void:
 		return
 	await _frames(20)
 	RenderingServer.force_draw(false)
-	var suffix := "_20x9" if wide else "_16x9"
+	var suffix := "_4x3" if tablet else ("_20x9" if wide else "_16x9")
 	_check("screenshot_" + name + suffix, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + suffix + ".png")) == OK)
 
 
@@ -91,6 +94,9 @@ func _global(w: Control, local: Vector2) -> Vector2:
 
 
 func _run() -> void:
+	if tablet and DisplayServer.get_name() != "headless":   # p1fix：4:3 平板窗口（战斗不 request_wide，视口 1280×720 上下黑边）
+		get_window().size = Vector2i(1024, 768)
+		await _frames(5)
 	if wide and DisplayServer.get_name() != "headless":
 		get_window().size = Vector2i(1600, 720)
 		get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT

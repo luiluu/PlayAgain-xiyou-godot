@@ -68,7 +68,9 @@ static func compute(view: Vector2, lw := 416.0, rw := 360.0, g := 16.0, t := 72.
 
 
 func view_size() -> Vector2:
-	return view_override if view_override != Vector2.ZERO else get_viewport_rect().size
+	if view_override != Vector2.ZERO:
+		return view_override
+	return get_viewport_rect().size if is_inside_tree() else size   # 离树途中（拉伸方式还原触发的重排）不报错
 
 
 func rects() -> Dictionary:
