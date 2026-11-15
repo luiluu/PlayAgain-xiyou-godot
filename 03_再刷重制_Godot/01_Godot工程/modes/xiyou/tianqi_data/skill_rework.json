@@ -440,7 +440,7 @@
   "380": {"actor": 26, "name": "寻敌术", "kind": "被动", "note_remove": ["passivePBST6", "passiveXPBST0"], "note_add": "<passivePBST6:10%>", "desc": ["效果:敏捷+10%"]},
   "537": {"actor": 26, "name": "波斯绮罗步", "kind": "被动", "note_remove": ["passiveXPBST\\d"], "note_add": "<passiveXPBST1:20%><passiveXPBST3:20%><passiveXPBST4:20%>", "desc": ["效果:闪避、魔闪、暴击闪避各+20%"]},
   "818": {"actor": 26, "name": "圣火令", "kind": "被动", "note_remove": ["passivePBST2", "passiveHarmRi"], "note_add": "<passiveELUP01:10%><passiveELUP02:10%><passiveELUP03:10%><passiveELUP04:10%><passiveELUP05:10%><passiveELUP06:10%><passiveELUP07:10%><passiveELUP08:10%><passiveELUP09:10%>", "desc": ["效果:全伤+10%"]},
-  "1801": {"actor": 26, "name": "利刃圆舞曲", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:原伤害加成已移除（若仍有原版效果请以实际为准）"]},
+  "1801": {"actor": 26, "name": "利刃圆舞曲", "kind": "被动", "note_remove": ["passiveHarmRi"], "desc": ["效果:原伤害加成已移除（本技能无额外效果）"]},
   "1771": {"actor": 26, "name": "觉醒:曼德斯", "kind": "被动", "note_remove": ["SkillPass\\d+"], "note_add": "<passiveELUP01:10%><passiveELUP02:10%><passiveELUP03:10%><passiveELUP04:10%><passiveELUP05:10%><passiveELUP06:10%><passiveELUP07:10%><passiveELUP08:10%><passiveELUP09:10%>", "desc": ["效果:全伤+10%"]},
   "725": {"actor": 26, "name": "波斯舞步", "kind": "领袖", "note_remove": ["passiveXPBST\\d", "passivePBST6"], "note_add": "<passiveXPBST1:5%>", "desc": ["效果:闪避率+5%"]},
   "724": {"actor": 26, "name": "领袖:波斯舞步", "kind": "领袖说明", "desc": ["效果:全队闪避率+5%"]},
