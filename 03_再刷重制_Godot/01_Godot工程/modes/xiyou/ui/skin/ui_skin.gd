@@ -7,7 +7,7 @@ extends RefCounted
 ## 现有窗口不逐个改：XWindowStyle（MV 窗口框与光标框，约 120 处窗口都走它）、XUI.menu_background、MV 窗口的翻页／滚动箭头
 ## 在画的那一刻问 on()，开着就改画黑面板＋细线、红乙选中条、黑底；关着一行旧代码都不变。新组件（ui/skin/skin_*.gd）只读这里的常量。
 ##
-## 开关（O-待定）：ENABLED＝false 时一律旧界面。true 时只在天启篇存档里（XTianqiLine.open_for：天启篇标记＋发行门）换新皮肤，
+## 开关（O-467）：ENABLED＝false 时一律旧界面。true 时只在天启篇存档里（XTianqiLine.open_for：天启篇标记＋发行门）换新皮肤，
 ## 重制版（玩家现在玩的 0.01.x）、标题画面、西游存档都保持旧界面，等 Kyo 另说才给重制版开。
 ## 调试强开：FORCE＝true，或调试构建的启动参数 --ui-skin=new（--ui-skin=old 强关），重制版里也能看效果；发行构建不认启动参数。
 ## GLOBAL_FONT：旧页面的文字也换思源黑体（XUI.font）。第 0 期默认关——旧页面的排版是按方正兰亭量的，换字会挤行；
