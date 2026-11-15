@@ -12,6 +12,9 @@ var _t := 1.0
 var _dur := XUiSkin.SLIDE_TIME
 ## 发出过几次滑动（测试看连按）
 var slides := 0
+## 按下反馈（p1fix）：手指／鼠标点下去后这段时间内画按下态（压暗、下沉 1px）
+var _press_until := -1.0
+var presses := 0
 
 
 func _init() -> void:
@@ -45,6 +48,19 @@ func current_rect() -> Rect2:
 	return Rect2(_from.position.lerp(target.position, k), _from.size.lerp(target.size, k))
 
 
+## 点下去：按下态停 SEL2_PRESS_TIME 秒（列表的鼠标／触屏点击调；SELECT_V2 关时不画）
+func press() -> void:
+	if not XUiSkin.SELECT_V2:
+		return
+	_press_until = XUiSkin.now() + XUiSkin.SEL2_PRESS_TIME
+	presses += 1
+	queue_redraw()
+
+
+func pressed_now() -> bool:
+	return _press_until >= 0.0 and XUiSkin.now() < _press_until
+
+
 func moving() -> bool:
 	return _t < 1.0
 
@@ -55,6 +71,10 @@ func advance(delta: float) -> void:
 		_t = minf(1.0, _t + delta / maxf(_dur, 0.001))
 		_apply()
 	elif XUiSkin.breathing():
+		queue_redraw()
+	if _press_until >= 0.0:
+		if not pressed_now():
+			_press_until = -1.0
 		queue_redraw()
 
 
@@ -70,4 +90,5 @@ func _apply() -> void:
 
 
 func _draw() -> void:
-	XUiSkin.draw_select(get_canvas_item(), Rect2(Vector2.ZERO, size), XUiSkin.breath_alpha())
+	XUiSkin.draw_select(get_canvas_item(), Rect2(Vector2.ZERO, size), XUiSkin.breath_alpha(), 1.0,
+		XUiSkin.SelState.PRESSED if pressed_now() else XUiSkin.SelState.FOCUS)

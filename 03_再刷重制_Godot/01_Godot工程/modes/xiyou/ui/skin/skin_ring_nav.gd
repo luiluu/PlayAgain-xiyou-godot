@@ -8,6 +8,8 @@ extends Control
 ##   选中的球放大 1.16、朱红 2.5px 描边＋绯红外晕，名字白色加大；
 ## - 焦点光弧：主环上 9% 周长的朱红弧，转到选中项（0.14 秒冲过 4°、0.2 秒回正；动效关时直接到）。
 ## 项按 items 排（第一项在正上方，顺时针等分），项数随数据（可见组 6 或 7）变，不用改布局。
+## 项带 art_normal／art_selected（组入口 u4，XUiSkin.GROUP_ICONS_U4）时：贴图按原生大小画（64）、最近邻、整数像素位置，选中只换贴图；
+## 选中贴图自带朱红圆底，这时选中球不再加绯红外晕、描边改旧金，免得叠成两层红（p1fix 追加）。
 
 signal changed(index: int)
 signal activated(index: int)
@@ -31,9 +33,56 @@ const ARC_OVERSHOOT := 4.0
 const NOTCHES := 7
 
 
+## u4 贴图画在这个子画布项（最近邻；法阵 svg 照旧线性过滤）。_draw 里同步清空重画，不另排一帧
+var _art_ci := RID()
+## 上次画了哪些 u4 贴图（测试看）：[{i, tex, rect}]
+var art_drawn: Array = []
+
+
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)
+	_art_ci = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_art_ci, get_canvas_item())
+	RenderingServer.canvas_item_set_default_texture_filter(_art_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_NEAREST)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and _art_ci.is_valid():
+		RenderingServer.free_rid(_art_ci)
+
+
+## 主菜单组 → 环上的项（有 u4 贴图时带 art_normal／art_selected）
+static func group_item(g: Dictionary) -> Dictionary:
+	var it := {"key": g.key, "name": g.name, "icon": int(g.get("icon", 0))}
+	var n := XUiSkin.group_icon(str(g.get("art", "")), false)
+	var sel := XUiSkin.group_icon(str(g.get("art", "")), true)
+	if n != null and sel != null:
+		it["art_normal"] = n
+		it["art_selected"] = sel
+	return it
+
+
+func has_art(i: int) -> bool:
+	return i >= 0 and i < items.size() and items[i].get("art_normal") is Texture2D
+
+
+## 第 i 项 u4 贴图画在哪（本节点坐标，整数像素、原生大小）
+func art_rect(i: int) -> Rect2:
+	var tex: Texture2D = items[i].get("art_selected" if i == index else "art_normal")
+	var ts := tex.get_size()
+	return Rect2((item_pos(i) - ts / 2.0).round(), ts)
+
+
+func _draw_art() -> void:
+	RenderingServer.canvas_item_clear(_art_ci)
+	art_drawn.clear()
+	for i in items.size():
+		if has_art(i):
+			var tex: Texture2D = items[i].get("art_selected" if i == index else "art_normal")
+			var r := art_rect(i)
+			RenderingServer.canvas_item_add_texture_rect(_art_ci, r, tex.get_rid())
+			art_drawn.append({"i": i, "tex": tex, "rect": r})
 
 
 func set_items(arr: Array, keep := false) -> void:
@@ -151,6 +200,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _draw() -> void:
+	_draw_art()
 	var c := center()
 	var R := radius
 	var line := XUiSkin.LINE
@@ -193,16 +243,20 @@ func _draw() -> void:
 		var p := item_pos(i)
 		var on := i == index
 		var r := orb_radius * (1.16 if on else 1.0)
+		var art := has_art(i)
 		if on:
 			var g := XUiSkin.glow_texture()
-			draw_texture_rect(g, Rect2(p - Vector2(r + 24, r + 24), Vector2(r + 24, r + 24) * 2), false, Color(XUiSkin.SEL_FILL, 0.85))
+			# u4 选中贴图自带朱红底：外晕减成淡旧金，不叠第二层红
+			draw_texture_rect(g, Rect2(p - Vector2(r + 24, r + 24), Vector2(r + 24, r + 24) * 2), false,
+				Color(XUiSkin.GOLD, 0.30) if art else Color(XUiSkin.SEL_FILL, 0.85))
 		draw_circle(p + Vector2(0, 3), r + 2, Color(0, 0, 0, 0.45))
 		draw_circle(p, r, XUiSkin.ORB_LOW)
 		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85))
-		draw_circle(p, r, Color(XUiSkin.SEL_LINE, 1.0) if on else Color(line, 0.65), false, 2.5 if on else 1.5, true)
+		var ring_col := (Color(XUiSkin.GOLD, 1.0) if art else Color(XUiSkin.SEL_LINE, 1.0)) if on else Color(line, 0.65)
+		draw_circle(p, r, ring_col, false, 2.5 if on else 1.5, true)
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
-		if tex != null:
+		if tex != null and not art:
 			var s := 40.0 * (1.16 if on else 1.0)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
 		var name := str(items[i].get("name", ""))

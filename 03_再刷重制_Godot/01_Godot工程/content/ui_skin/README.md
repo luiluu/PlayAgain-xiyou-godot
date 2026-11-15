@@ -8,6 +8,7 @@
 | `fonts/TianqiUiSans-Medium.otf` | 正文字体 | 思源黑体 CN Medium（Adobe，SIL OFL 1.1），裁字＋改名 |
 | `fonts/TianqiUiSerif-Heavy.otf` | 标题字体（页名、牌上的名字） | 思源宋体 CN Heavy（Adobe，SIL OFL 1.1），裁字＋改名 |
 | `fonts/TianqiUiNum-Medium.ttf` | 窄体数字字 | Barlow Condensed Medium（The Barlow Project Authors，SIL OFL 1.1），裁字＋改名 |
+| `group_icons/{key}_{normal\|selected}_{64\|32}.png` | 主菜单组入口图标 u4（7 物件×常态／选中×64／32，共 28 张；alpha 只有 0/255，按原生大小最近邻画） | co 画，Kyo 2026-11-15 定稿；源在 gpt-tianqi-teaser 工作树 `local_art/UI_Icons/u4/`（审图件、源图、脚本不进工程） |
 | `fonts/charset_*.txt` | 三款字各收了哪些字 | `裁字.py` 写出 |
 | `fonts/OFL_*.txt` | 授权文本（OFL 要求随字体附上） | 原字体仓库 |
 

@@ -164,6 +164,7 @@ func _gui_input(event: InputEvent) -> void:
 		var i := item_at(mb.position)
 		if i < 0:
 			return
+		bar.press()
 		if i == index:
 			if not bool(items[i].get("disabled", false)):
 				activated.emit(i)
@@ -257,6 +258,8 @@ func _draw() -> void:
 				XUiSkin.TEXT_3 if dis else rc)
 		var max_w := end_x - right_w - (10.0 if right_w > 0 else 0.0) - x
 		var col: Color = it.get("color", XUiSkin.TEXT)
+		if i == index and active:
+			col = XUiSkin.sel_text(col)
 		var fit := fit_text(body, str(it.get("text", "")), max_w, font_size, min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]

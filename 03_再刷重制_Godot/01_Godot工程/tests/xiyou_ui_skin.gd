@@ -92,6 +92,15 @@ func _tokens() -> void:
 	check("row_heights", XUiSkin.ROW_H == 46 and XUiSkin.ROW_H_ITEMS == 48 and XUiSkin.ROW_H_MENU == 56 and XUiSkin.ROW_H_SKILL == 44)
 	check("select_params", XUiSkin.BAR_W == 4.0 and XUiSkin.BAR_INSET == 5.0 and XUiSkin.OUTLINE_ALPHA == 0.45
 		and XUiSkin.FILL_ALPHA == 0.40 and XUiSkin.SLIDE_TIME == 0.09 and XUiSkin.BREATH_TIME == 1.6)
+	# p1fix（小A审 P1-1）：加厚版默认开；v0.7 的值留着可切回
+	check("select_v2_params", XUiSkin.SELECT_V2 and XUiSkin.SEL2_BAR_W == 6.0 and XUiSkin.SEL2_BAR_INSET == 2.0 and XUiSkin.SEL2_OUTLINE_W == 2
+		and XUiSkin.SEL2_OUTLINE_ALPHA == 1.0 and XUiSkin.SEL2_FILL_ALPHA >= 0.9 and XUiSkin.SEL2_FILL_R.a == 1.0)
+	check("select_v2_red_text", XUiSkin.sel_text(XUiSkin.QUALITY[6]) == XUiSkin.SEL2_RED_TEXT and XUiSkin.sel_text(XUiSkin.SEL_LINE) == XUiSkin.SEL2_RED_TEXT
+		and XUiSkin.sel_text(XUiSkin.QUALITY[4]) == XUiSkin.QUALITY[4] and XUiSkin.sel_text(XUiSkin.TEXT) == XUiSkin.TEXT and XUiSkin.sel_text(XUiSkin.HP) == XUiSkin.HP)
+	XUiSkin.SELECT_V2 = false
+	check("select_v2_off_keeps_text", XUiSkin.sel_text(XUiSkin.QUALITY[6]) == XUiSkin.QUALITY[6])
+	XUiSkin.SELECT_V2 = true
+	_select_pixels()
 	check("snap", XUiSkin.snap(1) == 8 and XUiSkin.snap(16) == 16 and XUiSkin.snap(17) == 24)
 
 
@@ -341,6 +350,17 @@ func _layout() -> void:
 	var w := XSkinLayout.compute(Vector2(1720, 720))
 	check("layout_center_cap", (w.center as Rect2).size.x == 720.0 and is_equal_approx((w.center as Rect2).get_center().x,
 		((w.left as Rect2).end.x + (w.right as Rect2).position.x) / 2.0), w.center)
+	# p1fix（小A审 P1-2）：比 16:9 窄的屏 KEEP（视口 1280×720、上下黑边），宽的 KEEP_HEIGHT；开关关掉回一律 KEEP_HEIGHT
+	check("aspect_43_letterbox", XSkinLayout.aspect_for(Vector2(1024, 768)) == Window.CONTENT_SCALE_ASPECT_KEEP and XSkinLayout.view_for(Vector2(1024, 768)) == Vector2(1280, 720)
+		and XSkinLayout.view_for(Vector2(2048, 1536)) == Vector2(1280, 720) and XSkinLayout.view_for(Vector2(2732, 2048)) == Vector2(1280, 720))
+	check("aspect_169_keep", XSkinLayout.aspect_for(Vector2(1280, 720)) == Window.CONTENT_SCALE_ASPECT_KEEP and XSkinLayout.aspect_for(Vector2(1920, 1080)) == Window.CONTENT_SCALE_ASPECT_KEEP
+		and XSkinLayout.view_for(Vector2(1920, 1080)) == Vector2(1280, 720))
+	check("aspect_209_wide", XSkinLayout.aspect_for(Vector2(2400, 1080)) == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT and XSkinLayout.view_for(Vector2(2400, 1080)) == Vector2(1600, 720))
+	var c43 := XSkinLayout.compute(XSkinLayout.view_for(Vector2(1024, 768)))
+	check("layout_43_not_squeezed", (c43.center as Rect2).size.x == 424.0 and (c43.right as Rect2).end.x <= 1256.0, c43.center)
+	XSkinLayout.NARROW_LETTERBOX = false
+	check("aspect_switch_off_old", XSkinLayout.aspect_for(Vector2(1024, 768)) == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT)
+	XSkinLayout.NARROW_LETTERBOX = true
 	check("layout_margin_ramp", XSkinLayout.margin_for(1280) == 24.0 and XSkinLayout.margin_for(1312) == 40.0 and XSkinLayout.margin_for(1344) == 56.0
 		and XSkinLayout.margin_for(2000) == 56.0 and XSkinLayout.margin_for(960) == 24.0)
 	var node := XSkinLayout.new()
@@ -375,10 +395,16 @@ func _hooks() -> void:
 	var before := root.content_scale_aspect
 	var page := Control.new()
 	add_child(page)
+	XSkinLayout.window_override = Vector2(2400, 1080)
 	XSkinLayout.request_wide(page)
 	check("wide_on", root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT and XSkinLayout.wide_active())
+	# 窗口换成 4:3（平板）：跟着换 KEEP，上下留边
+	XSkinLayout.window_override = Vector2(1024, 768)
+	root.size_changed.emit()
+	check("wide_43_follows_window", root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP)
 	page.queue_free()
 	await frames()
+	XSkinLayout.window_override = Vector2.ZERO
 	check("wide_restored", root.content_scale_aspect == before and not XSkinLayout.wide_active())
 	XUiSkin.ENABLED = false
 	var page2 := Control.new()
@@ -451,3 +477,43 @@ func _showcase() -> void:
 		XUiSkin.ENABLED = true
 		m2.queue_free()
 		await frames(2)
+
+
+## 选中条三态（p1fix）：按钮的悬停／按下／焦点各是各的样式，按下字下沉 1px；按住时焦点换成按下态（Godot 把 focus 叠在上面画）；
+## 列表点一下按下态停 SEL2_PRESS_TIME 秒；SELECT_V2 关时回到三态同一个（v0.7）
+func _select_pixels() -> void:
+	var b := Button.new()
+	b.text = "确定"
+	XSkinButton.apply(b)
+	var hv := b.get_theme_stylebox("hover") as XSkinSelectStyle
+	var pr := b.get_theme_stylebox("pressed") as XSkinSelectStyle
+	var fc := b.get_theme_stylebox("focus") as XSkinSelectStyle
+	var nm := b.get_theme_stylebox("normal")
+	check("button_three_states", hv != null and pr != null and fc != null and hv.state == XUiSkin.SelState.HOVER
+		and pr.state == XUiSkin.SelState.PRESSED and fc.state == XUiSkin.SelState.FOCUS and hv != fc and pr != fc)
+	check("button_pressed_sinks", pr != null and pr.content_margin_top == nm.content_margin_top + 1 and pr.content_margin_bottom == nm.content_margin_bottom - 1)
+	b.button_down.emit()
+	var held := b.get_theme_stylebox("focus")
+	b.button_up.emit()
+	check("button_focus_swaps_while_held", held == pr and b.get_theme_stylebox("focus") == fc)
+	b.free()
+	XUiSkin.SELECT_V2 = false
+	var b2 := Button.new()
+	XSkinButton.apply(b2)
+	check("button_v07_one_style", b2.get_theme_stylebox("hover") == b2.get_theme_stylebox("pressed") and b2.get_theme_stylebox("hover") == b2.get_theme_stylebox("focus")
+		and not b2.has_meta("skin_press_wired"))
+	b2.free()
+	XUiSkin.SELECT_V2 = true
+	var t := XUiSkin.theme()
+	check("theme_three_states", (t.get_stylebox("hover", "Button") as XSkinSelectStyle).state == XUiSkin.SelState.HOVER
+		and (t.get_stylebox("pressed", "Button") as XSkinSelectStyle).state == XUiSkin.SelState.PRESSED
+		and (t.get_stylebox("focus", "Button") as XSkinSelectStyle).state == XUiSkin.SelState.FOCUS)
+	var bar := XSkinSelectBar.new()
+	XUiSkin._clock_ms = 100000
+	bar.press()
+	var on_now := bar.pressed_now()
+	XUiSkin._clock_ms = 100000 + int(XUiSkin.SEL2_PRESS_TIME * 1000) + 1
+	bar.advance(0.016)
+	check("bar_press_flash", on_now and not bar.pressed_now() and bar.presses == 1)
+	XUiSkin._clock_ms = -1
+	bar.free()
