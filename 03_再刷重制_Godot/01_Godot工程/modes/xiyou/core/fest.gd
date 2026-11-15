@@ -8,7 +8,7 @@ extends RefCounted
 ## - 进行中 active()：START 起 DAYS 天（含 START 当天）。大厅装饰、使者、冠军之路、签到都开。
 ## - 收尾期 in_grace()：之后 GRACE_DAYS 天。只留使者兑换（方案第 4 节「没花完的庆典币留 3 天」），冠军之路、装饰、签到都关。
 ## - 结束：都关；已拿到的称号永久保留（称号表照常列，见 XDesignation.table）。
-## 开关 ENABLED＝false：活动整件不存在（不出 NPC、不进冠军之路、称号表不列庆典称号、伤害加成不生效），回到没有活动时的样子。O-待定。
+## 开关 ENABLED＝false：活动整件不存在（不出 NPC、不进冠军之路、称号表不列庆典称号、伤害加成不生效），回到没有活动时的样子。O-466。
 
 static var ENABLED := true
 
