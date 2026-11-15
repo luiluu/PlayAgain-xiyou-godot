@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.612",
-  "sequence": 612,
-  "next": "dev.613",
-  "nextSequence": 613,
+  "current": "dev.613",
+  "sequence": 613,
+  "next": "dev.614",
+  "nextSequence": 614,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "fix-treasure-map-1115",
+  "currentChange": "fix-yunshang-gear-1115",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
