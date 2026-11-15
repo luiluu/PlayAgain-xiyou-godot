@@ -668,9 +668,13 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		return ops
 	var st := _store(logic)
 	var mult := 1.0
+	# 伤害加成总账期二（XTianqiLedger.POOL_QIYIN，D16＝乙：数不动只归池）：每条条件增伤记成 [池, x]；
+	# 归池时 ＋x 进各自的池（skill＝①normalAdd、element＝②elementAdd、bonus＝③finalAdd），关掉回到各自 ×(1＋x) 连乘进 finalMultiplier。
+	var terms := []
+	var derived_scale := 1.0
 	if a is XActor and b is XEnemy:
 		var f: Dictionary = st.act if not st.act.is_empty() and is_same(st.act.u, a) else {}
-		mult *= float(st.scale)
+		derived_scale = float(st.scale)
 		var attack: bool = a.is_attack(item)
 		var skillish := not attack or _has(logic, a, "normal_attack_as_skill")
 		var es := _elements(item, a)
@@ -678,63 +682,84 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		var un := _unit(logic, a)
 		var bu := _unit(logic, b)
 		var lost_b: float = 1.0 - b.hp / b.mhp if b.mhp > 0.0 else 0.0
-		mult *= 1.0 + minf(float(_p(logic, a, "dmg_per_target_debuff_pct").get("max", 0)), debuff_count(logic, b) * float(_p(logic, a, "dmg_per_target_debuff_pct").get("value", 0))) / 100.0
+		terms.append(["bonus", minf(float(_p(logic, a, "dmg_per_target_debuff_pct").get("max", 0)), debuff_count(logic, b) * float(_p(logic, a, "dmg_per_target_debuff_pct").get("value", 0))) / 100.0])
 		if int(item.get("scope", 0)) in TUNE.aoe_scopes and skillish:
-			mult *= 1.0 + float(_p(logic, a, "aoe_skill_dmg_pct").get("value", 0)) / 100.0
+			terms.append(["skill", float(_p(logic, a, "aoe_skill_dmg_pct").get("value", 0)) / 100.0])
 		var ks := _p(logic, a, "kill_stack_dmg_pct")
 		if not ks.is_empty():
-			mult *= 1.0 + mini(int(un.kills), int(ks.max_stacks)) * float(ks.value) / 100.0
+			terms.append(["bonus", mini(int(un.kills), int(ks.max_stacks)) * float(ks.value) / 100.0])
 		if not f.is_empty() and int(f.weight) > 0:
-			mult *= 1.0 + int(f.weight) * float(_p(logic, a, "weight_stack").per_stack_pct) / 100.0
+			terms.append(["bonus", int(f.weight) * float(_p(logic, a, "weight_stack").per_stack_pct) / 100.0])
 			var full := _p(logic, a, "weight_full_crit")
 			if not full.is_empty() and int(f.weight) >= int(full.stacks):
 				ops.append({"op": "add", "field": "criticalAdd", "value": float(full.crit_dmg_pct) / 100.0})
 		var lt := _p(logic, a, "low_hp_target_dmg_pct")
 		if not lt.is_empty() and b.hp < b.mhp * float(lt.below_pct) / 100.0:
-			mult *= 1.0 + float(lt.value) / 100.0
+			terms.append(["bonus", float(lt.value) / 100.0])
 		var ls := _p(logic, a, "low_self_hp_dmg_pct")
 		if not ls.is_empty() and a.mhp > 0.0:
-			mult *= 1.0 + float(ls.max) / 100.0 * clampf(1.0 - a.hp / a.mhp, 0.0, 1.0)
+			terms.append(["bonus", float(ls.max) / 100.0 * clampf(1.0 - a.hp / a.mhp, 0.0, 1.0)])
 		if int(un.cheat_turns) > 0:
-			mult *= 1.0 + float(_p(logic, a, "cheat_death").get("dmg_pct", 0)) / 100.0
+			terms.append(["bonus", float(_p(logic, a, "cheat_death").get("dmg_pct", 0)) / 100.0])
 		if elemental:
-			mult *= 1.0 + float(_p(logic, a, "element_dmg_pct").get("value", 0)) / 100.0
-			mult *= 1.0 + int(un.switch) * float(_p(logic, a, "element_switch_stack").get("per_stack_pct", 0)) / 100.0
+			terms.append(["element", float(_p(logic, a, "element_dmg_pct").get("value", 0)) / 100.0])
+			terms.append(["bonus", int(un.switch) * float(_p(logic, a, "element_switch_stack").get("per_stack_pct", 0)) / 100.0])
 			if int(bu.resist_down) > 0 and not XTianqiElements.deck_on(logic.state):
 				ops.append({"op": "mul", "field": "incomingMultiplier", "value": 1.0 - float(_p_any(logic, "star_pages").get("value", 0)) / 100.0})
 		var sa := _p(logic, a, "single_action_dmg_pct")
 		if not sa.is_empty() and not f.is_empty() and not f.has("derived") and int(un.acted) <= 1 and not logic.current_order.has(a):
-			mult *= 1.0 + float(sa.value) / 100.0
+			terms.append(["bonus", float(sa.value) / 100.0])
 		var er := _p(logic, a, "execute_ramp")
 		if not er.is_empty():
-			mult *= 1.0 + floorf(lost_b * 100.0 / float(er.per_lost_pct)) * float(er.value) / 100.0
+			terms.append(["bonus", floorf(lost_b * 100.0 / float(er.per_lost_pct)) * float(er.value) / 100.0])
 		if skillish:
-			mult *= 1.0 + float(_p(logic, a, "skill_dmg_pct").get("value", 0)) / 100.0
+			terms.append(["skill", float(_p(logic, a, "skill_dmg_pct").get("value", 0)) / 100.0])
 		var bl := _p(logic, a, "boss_low_hp_dmg_pct")
 		if not bl.is_empty() and XBossStatus.is_boss(b) and b.hp < b.mhp * float(bl.below_pct) / 100.0:
-			mult *= 1.0 + float(bl.value) / 100.0
+			terms.append(["bonus", float(bl.value) / 100.0])
 		if not f.is_empty():
-			mult *= 1.0 + float(f.mp_bonus)
+			terms.append(["bonus", float(f.mp_bonus)])
 			if bool(f.idle):
-				mult *= 1.0 + float(_p(logic, a, "idle_charge").get("dmg_pct", 0)) / 100.0
+				terms.append(["bonus", float(_p(logic, a, "idle_charge").get("dmg_pct", 0)) / 100.0])
 			var idx := int(f.per_target.get(b, 0))
-			mult *= 1.0 + int(f.hits) * float(_p(logic, a, "combo_hit_ramp_pct").get("value", 0)) / 100.0
+			terms.append(["bonus", int(f.hits) * float(_p(logic, a, "combo_hit_ramp_pct").get("value", 0)) / 100.0])
 			var lh := _p(logic, a, "last_hit_mult")
 			if not lh.is_empty() and idx == int(f.planned) - 1:
-				mult *= float(lh.mult)
+				terms.append(["bonus", float(lh.mult) - 1.0])  # 大刀阔斧末段 ×2 → 归池后 ＋100% 进③
 		if attack and not a.traits_set(XBattler.TRAIT_STYPE_SEAL).is_empty():
-			mult *= 1.0 + float(_p(logic, a, "silenced_normal_attack_dmg_pct").get("value", 0)) / 100.0
+			terms.append(["bonus", float(_p(logic, a, "silenced_normal_attack_dmg_pct").get("value", 0)) / 100.0])
 		var ig := _p(logic, a, "ignore_def_pct")
 		if not ig.is_empty():
 			var keep := 1.0 - float(ig.value) / 100.0
 			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": keep})
+	var taken := 1.0
 	if b is XActor:
-		mult *= 1.0 + float(_p(logic, b, "dmg_taken_pct").get("value", 0)) / 100.0
+		taken *= 1.0 + float(_p(logic, b, "dmg_taken_pct").get("value", 0)) / 100.0
 		if int(_unit(logic, b).ward) > 0:
-			mult *= 1.0 + float(_p_any(logic, "support_ally_dmg_taken_pct").get("value", 0)) / 100.0
-	if mult != 1.0:
-		ops.append({"op": "mul", "field": "finalMultiplier", "value": mult})
+			taken *= 1.0 + float(_p_any(logic, "support_ally_dmg_taken_pct").get("value", 0)) / 100.0
+	if not XTianqiLedger.pool_on("POOL_QIYIN"):
+		mult *= derived_scale
+		for t in terms:
+			mult *= 1.0 + float(t[1])
+		mult *= taken
+		if mult != 1.0:
+			ops.append({"op": "mul", "field": "finalMultiplier", "value": mult})
+		return ops
+	var sums := {"skill": 0.0, "element": 0.0, "bonus": 0.0}
+	for t in terms:
+		sums[t[0]] = float(sums[t[0]]) + float(t[1])
+	if sums.skill != 0.0:
+		ops.append({"op": "add", "field": "normalAdd", "value": sums.skill})
+	if sums.element != 0.0:
+		for e in range(0, 16):  # 这一下落在哪一系都算（原来是整下乘，候选元素里哪个都吃到）
+			ops.append({"op": "add", "field": "elementAdd", "element": e, "value": sums.element})
+	if sums.bonus != 0.0:
+		ops.append({"op": "add", "field": "finalAdd", "value": sums.bonus})
+	if derived_scale != 1.0:
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": derived_scale, "src": "qiyin_derived"})  # 派生一击的伤害系数（再射 50% 等）：机制，不是加成
+	if taken != 1.0:
+		ops.append({"op": "mul", "field": "incomingMultiplier", "value": taken})  # 打到我方：承伤（靶）
 	return ops
 
 

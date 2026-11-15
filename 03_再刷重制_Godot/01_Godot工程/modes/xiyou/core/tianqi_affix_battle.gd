@@ -378,7 +378,7 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 		if float(v.d.crit_add) != 0.0:
 			ops.append({"op": "add", "field": "criticalAdd", "value": float(v.d.crit_add) / 100.0})
 		if not a.is_attack(item) and float(p.get("skill_damage", 0.0)) != 0.0:
-			ops.append({"op": "add", "field": "skillMultiplier", "value": float(p.skill_damage) / 100.0})
+			ops.append({"op": "add", "field": "normalAdd" if XTianqiLedger.pool_on("POOL_AFFIX_SKILL") else "skillMultiplier", "value": float(p.skill_damage) / 100.0})  # 伤害加成总账期二：词条技能伤进①
 		for k in p:
 			if str(k).begins_with("element_damage:"):
 				var eid := element_id(str(k).get_slice(":", 1))

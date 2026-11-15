@@ -167,7 +167,7 @@ static func confirm_rows(holder: XBattler, rows: Array) -> Array:
 static func traits_pi(a: XActor, code: int, id: int, v: float) -> float:
 	if code != TRAIT_PARAM or id != AGI or not a.param_cache_on or not on():
 		return v
-	var add := float(table().get("agi_rate", 0.0))
+	var add := _rule("agi_rate")
 	if add == 0.0 or a.is_state_affected(995):
 		return v
 	return maxf(0.0, v + add)
@@ -177,4 +177,11 @@ static func traits_pi(a: XActor, code: int, id: int, v: float) -> float:
 static func xparam_add(a: XActor, i: int) -> float:
 	if i != CRIT or not on() or a.skill_ids.has(6168):
 		return 0.0
-	return float(table().get("crit_add", 0.0))
+	return _rule("crit_add")
+
+
+## 暴击、敏捷两项：伤害加成总账期二挪成档位表全局规则 combat_rules（XTianqiLedger.COMBAT_RULES；关掉回到读 legacy_passive，数一样）
+static func _rule(key: String) -> float:
+	if XTianqiLedger.COMBAT_RULES:
+		return XTianqiCombat.combat_rule(key, float(table().get(key, 0.0)))
+	return float(table().get(key, 0.0))

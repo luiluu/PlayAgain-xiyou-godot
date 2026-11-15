@@ -39,11 +39,16 @@ static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
 	var tagging := XTianqiLedger.auditing(a)
 	for i in parts.size():
 		var part: Array = XTianqiSkills.module_ops(item, a, parts[i], MODULE_TAGS[i]) if i < MODULE_TAGS.size() else parts[i]
-		ops.append_array(part)
-		if tagging:
-			var tag: String = MODULE_TAGS[i] if i < MODULE_TAGS.size() else REST_TAGS[i - MODULE_TAGS.size()]
-			for _o in part:
-				tags.append(tag)
+		var tag: String = MODULE_TAGS[i] if i < MODULE_TAGS.size() else REST_TAGS[i - MODULE_TAGS.size()]
+		for o in part:
+			var src := ""
+			if o is Dictionary and o.has("src"):  # 段内单条另记来源（七印派生一击的系数 qiyin_derived，总账期二）；交给注册表前去掉
+				src = str(o.src)
+				o = o.duplicate()
+				o.erase("src")
+			ops.append(o)
+			if tagging:
+				tags.append(src if src != "" else tag)
 	return {"ops": ops, "tags": tags} if tagging else {"ops": ops}
 
 

@@ -39,9 +39,12 @@ static func orb_descriptor() -> Dictionary:
 	# adjacent enter/build order when future modules acquire both handlers.
 	return {"id": "orb-sets", "version": "1", "capabilities": ["damage.orb_sets"],
 		"contexts": ["item", "subject", "facts"], "hooks": [{"point": "damage.before", "order": 39,
-		"reads": ["facts.orbMultiplier"], "writes": ["finalMultiplier"], "handler": _orb_sets}]}
+		"reads": ["facts.orbMultiplier"], "writes": ["finalMultiplier", "finalAdd"], "handler": _orb_sets}]}
 
+## 天启篇伤害加成总账期二（XTianqiLedger.POOL_ORB）：facts.orbPooled 时 ＋g 进③（finalAdd）；原版档照旧乘 finalMultiplier
 static func _orb_sets(context: Dictionary, _frame: Dictionary) -> Dictionary:
+	if bool(context.facts.get("orbPooled", false)):
+		return {"ops": [{"op": "add", "field": "finalAdd", "value": float(context.facts.orbMultiplier) - 1.0}]}
 	return {"ops": [{"op": "mul", "field": "finalMultiplier", "value": context.facts.orbMultiplier}]}
 
 ## No register/unregister operation exists on a live table. Session enablement

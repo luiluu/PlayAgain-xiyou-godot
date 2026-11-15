@@ -22,6 +22,12 @@ static func on(s = null) -> bool:
 	return ENABLED and XTianqi.active(s)
 
 
+## 天启篇常驻战斗规则（balance_table.json 的 combat_rules：暴击率 ＋50%、战斗中敏捷 ×0.8，伤害加成总账期二从「难度被动等价」挪来，数不变）
+static func combat_rule(key: String, fallback := 0.0) -> float:
+	var t = XTianqiBalance.data().get("combat_rules", {})
+	return float(t.get(key, fallback)) if t is Dictionary else fallback
+
+
 ## 本档数值行（XTianqiBalance.difficulty 拍平的一行）；不是天启篇存档为空
 static func row(s = null) -> Dictionary:
 	if s == null:
