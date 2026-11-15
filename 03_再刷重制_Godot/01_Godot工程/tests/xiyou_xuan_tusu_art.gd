@@ -55,6 +55,7 @@ func _proj(s: XState, id: int):
 
 
 func _run() -> void:
+	XPartyFormation.ENABLED = false  # 对照原版站位：战斗站位回退到原版竖排（新阵型见 xiyou_party_formation）
 	XMessageBox.auto = true
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("oracle", ref is Dictionary and ref.cases.size() == 3 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))

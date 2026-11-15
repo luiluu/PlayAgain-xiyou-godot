@@ -38,6 +38,17 @@ const SLOT_NAMES := {
 }
 
 
+## 指令窗等贴在角色旁的窗口（XBattleScene._place_near_actor，角色位置＋(32, −64)）：两排错开、菱形时后排角色更靠右、更靠下，
+## 窗口会盖住右侧状态栏和底部行动顺序条；锚点最右、最下不超过原版竖排 4 人最下那位的锚点 (851, 462)。原版竖排不变。
+const WINDOW_ANCHOR_MAX := Vector2(851, 462)
+
+
+static func window_anchor(p: Vector2) -> Vector2:
+	if current() == COLUMN:
+		return p
+	return Vector2(minf(p.x, WINDOW_ANCHOR_MAX.x), minf(p.y, WINDOW_ANCHOR_MAX.y))
+
+
 static func current() -> int:
 	return XConfig.party_formation() if ENABLED else COLUMN
 

@@ -1288,7 +1288,7 @@ func _command_entries(a: XActor) -> Array:
 ## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
-	var p := s.position + Vector2(32, -64)
+	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
 
